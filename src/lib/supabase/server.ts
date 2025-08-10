@@ -1,12 +1,33 @@
+import { cookies, headers } from 'next/headers';
+import { createServerClient, type CookieOptions } from '@supabase/ssr';
+import type { SupabaseClient } from '@supabase/supabase-js';
+
 /**
- * Placeholder do cliente Supabase server-side.
- * Não expõe segredos nem cria dependência de lib agora.
- * Trocar por implementação real depois (ex.: criarClientServer()).
+ * Cliente Supabase server-side (RLS ON via sessão do usuário).
+ * Sem Service Role. Sem cookies manuais.
  */
+export function getServerSupabase(): SupabaseClient {
+  const cookieStore = cookies();
 
-export type ServerSupabaseClient = unknown;
+  const cookieAdapter = {
+    get(name: string) {
+      return cookieStore.get(name)?.value;
+    },
+    set(_name: string, _value: string, _options: CookieOptions) {
+      // Fase 1: no-op (login/logout fazem isso nas rotas de auth)
+    },
+    remove(_name: string, _options: CookieOptions) {
+      // Fase 1: no-op
+    },
+  };
 
-export function getServerSupabase(): ServerSupabaseClient {
-  // TODO: retornar cliente real (auth-helpers ou fetch c/ headers)
-  throw new Error('getServerSupabase() não implementado.');
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+
+  return createServerClient(supabaseUrl, supabaseAnonKey, {
+    cookies: cookieAdapter,
+    headers: {
+      'x-forwarded-host': headers().get('host') ?? undefined,
+    },
+  });
 }
