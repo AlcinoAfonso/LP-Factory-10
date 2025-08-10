@@ -1,8 +1,22 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { getServerSupabase } from "@/src/lib/supabase/server";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+
+type Acc = { id: string; name: string; subdomain: string };
+
+// Normaliza a relação: pode vir objeto (1:1) ou array (1:N)
+function pickAccount(a: any): Acc | undefined {
+  if (!a) return undefined;
+  return (Array.isArray(a) ? a[0] : a) as Acc | undefined;
+}
 
 export default async function SelectAccountPage() {
   const supabase = getServerSupabase();
@@ -25,7 +39,9 @@ export default async function SelectAccountPage() {
         <Card className="w-full max-w-md">
           <CardHeader>
             <CardTitle>Nenhuma conta encontrada</CardTitle>
-            <CardDescription>Você não possui acesso a nenhuma conta ativa.</CardDescription>
+            <CardDescription>
+              Você não possui acesso a nenhuma conta ativa.
+            </CardDescription>
           </CardHeader>
           <CardContent className="flex justify-center">
             <Button asChild>
@@ -38,7 +54,7 @@ export default async function SelectAccountPage() {
   }
 
   // Se houver somente 1 conta ativa, redireciona direto
-  const first = rows[0]?.accounts as { id: string; name: string; subdomain: string } | undefined;
+  const first = pickAccount(rows[0]?.accounts);
   if (rows.length === 1 && first) {
     redirect(`/a/${first.subdomain}`);
   }
@@ -52,8 +68,8 @@ export default async function SelectAccountPage() {
             <CardDescription>Escolha a conta para continuar.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
-            {rows.map((r) => {
-              const acc = r.accounts as { id: string; name: string; subdomain: string } | null;
+            {rows.map((r: any) => {
+              const acc = pickAccount(r.accounts);
               if (!acc) return null;
               return (
                 <Link
@@ -62,7 +78,9 @@ export default async function SelectAccountPage() {
                   className="block rounded-2xl border p-4 hover:bg-accent hover:text-accent-foreground transition"
                 >
                   <div className="font-semibold">{acc.name}</div>
-                  <div className="text-sm text-muted-foreground">{acc.subdomain}</div>
+                  <div className="text-sm text-muted-foreground">
+                    {acc.subdomain}
+                  </div>
                 </Link>
               );
             })}
