@@ -1,23 +1,29 @@
-import { createServerClient, type CookieOptions } from '@supabase/ssr';
-import { cookies } from 'next/headers';
-import type { SupabaseClient } from '@supabase/supabase-js';
+// src/lib/supabase/server.ts
+import { createServerClient as _createServerClient } from "@supabase/ssr";
+import { cookies } from "next/headers";
 
-export function getServerSupabase(): SupabaseClient {
+/** Cliente do Supabase para uso no servidor (Route Handlers, Server Actions, etc.) */
+export function createServerClient() {
   const cookieStore = cookies();
 
-  return createServerClient(
+  return _createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
-        get(name: string) {
-          return cookieStore.get(name)?.value;
+        getAll() {
+          return cookieStore.getAll();
         },
-        set(name: string, value: string, options: CookieOptions) {
-          cookieStore.set({ name, value, ...options });
-        },
-        remove(name: string, options: CookieOptions) {
-          cookieStore.set({ name, value: '', ...options, maxAge: 0 });
+        /** Supabase SSR pede setAll; ignore erros quando cookies não puderem ser setados (p.ex. durante build). */
+        setAll(cookiesToSet) {
+          try {
+            cookiesToSet.forEach(({ name, value, options }) => {
+              // @ts-expect-error next types aceitam options parciais
+              cookieStore.set(name, value, options);
+            });
+          } catch {
+            // no-op em contextos onde cookies() é somente leitura
+          }
         },
       },
     }
