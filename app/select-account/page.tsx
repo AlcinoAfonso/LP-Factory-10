@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { getServerSupabase } from "@/src/lib/supabase/server";
+import { chooseAccount } from "./actions";
 import {
   Card,
   CardContent,
@@ -53,12 +54,7 @@ export default async function SelectAccountPage() {
     );
   }
 
-  // Se houver somente 1 conta ativa, redireciona direto
-  const first = pickAccount(rows[0]?.accounts);
-  if (rows.length === 1 && first) {
-    redirect(`/a/${first.subdomain}`);
-  }
-
+  // Lista de contas com Server Action para auditar e redirecionar
   return (
     <main className="min-h-[70vh] flex items-center justify-center p-6">
       <div className="w-full max-w-lg space-y-4">
@@ -72,20 +68,25 @@ export default async function SelectAccountPage() {
               const acc = pickAccount(r.accounts);
               if (!acc) return null;
               return (
-                <Link
+                <form
                   key={acc.id}
-                  href={`/a/${acc.subdomain}`}
-                  className="block rounded-2xl border p-4 hover:bg-accent hover:text-accent-foreground transition"
+                  action={chooseAccount}
+                  className="rounded-2xl border p-4 flex items-center justify-between gap-4 hover:bg-accent hover:text-accent-foreground transition"
                 >
-                  <div className="font-semibold">{acc.name}</div>
-                  <div className="text-sm text-muted-foreground">
-                    {acc.subdomain}
+                  <div>
+                    <div className="font-semibold">{acc.name}</div>
+                    <div className="text-sm text-muted-foreground">
+                      {acc.subdomain}
+                    </div>
                   </div>
-                </Link>
+                  <input type="hidden" name="account_id" value={acc.id} />
+                  <Button type="submit">Entrar</Button>
+                </form>
               );
             })}
           </CardContent>
         </Card>
+
         <div className="text-center">
           <Button asChild variant="link">
             <Link href="/login">Trocar de usuário</Link>
