@@ -17,13 +17,15 @@ export async function fetchPlanAndLimits(
     { p_account_id: account_id }
   );
 
-  if (error || !data) {
-    throw new Error(`get_account_effective_limits failed: ${error?.message ?? "no data"}`);
+  if (error) {
+    throw new Error(`get_account_effective_limits failed: ${error.message}`);
   }
 
-  const row = data as unknown as DBEffectiveLimitsRow;
-  const mapped = mapEffectiveLimitsFromDB(row);
+  // A RPC pode retornar 1 objeto ou 1 array com 1 linha
+  const row = (Array.isArray(data) ? data[0] : data) as unknown as DBEffectiveLimitsRow | undefined;
+  if (!row) throw new Error("get_account_effective_limits returned no rows");
 
+  const mapped = mapEffectiveLimitsFromDB(row);
   const plan: Access.PlanInfo = { id: mapped.plan.id, name: mapped.plan.name };
   const limits: Access.Limits = toLegacyLimits(mapped.limits);
 
