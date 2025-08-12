@@ -15,13 +15,13 @@ export function createServerClient() {
           return cookieStore.getAll();
         },
         setAll(cookiesToSet) {
+          // Em runtime funciona; durante o build pode ser somente leitura.
           try {
             cookiesToSet.forEach(({ name, value, options }) => {
-              // @ts-expect-error next types permitem opções parciais
-              cookieStore.set(name, value, options);
+              cookieStore.set(name, value, (options as any) ?? {});
             });
           } catch {
-            // no-op em contextos somente leitura (ex.: build)
+            // no-op em contextos onde não é possível setar cookies (ex.: build)
           }
         },
       },
@@ -29,5 +29,5 @@ export function createServerClient() {
   );
 }
 
-/** Alias p/ compatibilidade com código existente */
+/** Alias para compatibilidade com código existente */
 export const getServerSupabase = createServerClient;
