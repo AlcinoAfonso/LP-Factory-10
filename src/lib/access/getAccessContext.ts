@@ -7,7 +7,7 @@ import {
   pickAccount,
   type DBAccountRow,
   type DBMemberRow,
-} from "./accountAdapter";
+} from "./adapters/accountAdapter";
 
 /**
  * getAccessContext — resolve o vínculo ativo (active|trial) do usuário.
