@@ -1,71 +1,86 @@
-import { headers } from 'next/headers';
-import { getServerSupabase } from '../supabase/server';
-import type { AccessContext, AccessInput, Role } from './types';
-import { AccessError } from './types';
+// src/lib/access/getAccessContext.ts
+import { getServerSupabase } from "@/src/lib/supabase/server";
+import type * as Access from "./types";
+import {
+  mapAccountFromDB,
+  mapMemberFromDB,
+  pickAccount,
+  type DBAccountRow,
+  type DBMemberRow,
+} from "./accountAdapter";
 
 /**
- * Fase 1: resolve tenant, valida vínculo ativo e retorna contexto mínimo.
- * - RLS sempre ON
- * - Sem auditoria / planos reais (defaults)
- * - Sem acting_as/super_admin (defaults)
+ * getAccessContext — resolve o vínculo ativo (active|trial) do usuário.
+ * Mantém defaults para plan/limits/acting_as conforme Blueprint atual.
  */
-export async function getAccessContext(input: AccessInput = {}): Promise<AccessContext> {
-  const h = headers();
-  const host = (input.host ?? h.get('host') ?? '').toLowerCase();
-  const pathname = input.pathname ?? '';
-
-  // 1) Resolver account_slug
-  const account_slug = resolveAccountSlug(host, pathname, input.params);
-  if (!account_slug) throw new AccessError('UNRESOLVED_TENANT', 'Tenant não resolvido.');
-
-  // 2) Sessão do usuário
+export async function getAccessContext(input?: {
+  accountId?: string;
+  host?: string;
+  pathname?: string;
+  params?: { account?: string };
+}): Promise<Access.AccessContext | null> {
   const supabase = getServerSupabase();
-  const { data: userRes, error: userErr } = await supabase.auth.getUser();
-  if (userErr || !userRes?.user) throw new AccessError('FORBIDDEN_ACCOUNT', 'Usuário não autenticado.');
-  const userId = userRes.user.id;
 
-  // 3) Account pelo slug (RLS)
-  const { data: account, error: accErr } = await supabase
-    .from('accounts')
-    .select('id, subdomain')
-    .eq('subdomain', account_slug)
-    .single();
-  if (accErr || !account) throw new AccessError('UNRESOLVED_TENANT', 'Conta não encontrada.');
+  // Autenticação
+  const { data: userData } = await supabase.auth.getUser();
+  const user = userData?.user;
+  if (!user) return null;
 
-  // 4) Vínculo na account (RLS)
-  const { data: membership, error: memErr } = await supabase
-    .from('account_users')
-    .select('role, status')
-    .eq('account_id', account.id)
-    .eq('user_id', userId)
-    .single();
-  if (memErr || !membership) throw new AccessError('FORBIDDEN_ACCOUNT', 'Sem vínculo com esta conta.');
-  if (membership.status !== 'active') throw new AccessError('INACTIVE_MEMBER', 'Vínculo não está ativo.');
+  // Busca vínculos do usuário (com status do account)
+  const q = supabase
+    .from("account_users")
+    .select(`
+      id, account_id, user_id, role, status, permissions,
+      accounts:accounts!inner(id, name, subdomain, domain, status)
+    `)
+    .eq("user_id", user.id)
+    .limit(50);
 
-  // 5) Contexto com defaults seguros (Fase 1)
-  const ctx: AccessContext = {
-    account_id: account.id,
-    account_slug,
-    role: membership.role as Role,
-    status: membership.status,
+  if (input?.accountId) q.eq("account_id", input.accountId);
+
+  const { data, error } = await q;
+  if (error || !data || data.length === 0) return null;
+
+  // Normaliza + guarda (permitir active|trial; bloquear suspended/canceled)
+  const mapped = data
+    .map((row: any) => {
+      const accRow = pickAccount(row.accounts) as DBAccountRow | null;
+      if (!accRow) return null;
+      const account = mapAccountFromDB(accRow);
+      const member = mapMemberFromDB(row as DBMemberRow);
+      return account.status === "active" || account.status === "trial"
+        ? { account, member }
+        : null;
+    })
+    .filter(Boolean) as {
+    account: ReturnType<typeof mapAccountFromDB>;
+    member: ReturnType<typeof mapMemberFromDB>;
+  }[];
+
+  if (mapped.length === 0) return null;
+
+  // Escolha final (respeita accountId quando passado)
+  const chosen =
+    (input?.accountId
+      ? mapped.find((x) => x.account.id === input.accountId)
+      : mapped[0]) ?? mapped[0];
+
+  // Monta AccessContext (defaults para plan/limits/acting_as)
+  const ctx: Access.AccessContext = {
+    account_id: chosen.account.id,
+    account_slug: chosen.account.subdomain,
+    role: chosen.member.role as Access.Role,
+    status: chosen.member.status as Access.MemberStatus,
     is_super_admin: false,
     acting_as: false,
-    plan: { id: '', name: 'MVP' },
-    limits: { max_lps: 0, max_conversions: 0, max_domains: 0 },
+    // Defaults (Fase 2 ligará RPC plans/limits)
+    plan: { id: "", name: "" },
+    limits: {
+      max_lps: 0,
+      max_conversions: 0,
+      max_domains: 1,
+    },
   };
-  return ctx;
-}
 
-// Preferência: subdomínio; fallback: rota /a/[account]
-function resolveAccountSlug(host: string, pathname: string, params?: { account?: string }) {
-  const isLocal = host.startsWith('localhost') || host.startsWith('127.0.0.1');
-  const parts = host.split('.');
-  if (!isLocal && parts.length >= 3) {
-    const sub = parts[0];
-    if (sub && sub !== 'www') return sub;
-  }
-  if (params?.account) return params.account;
-  const match = pathname?.match(/\/a\/([^/]+)/);
-  if (match?.[1]) return match[1];
-  return null;
+  return ctx;
 }
