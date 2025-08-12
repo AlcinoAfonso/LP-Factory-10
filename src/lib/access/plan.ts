@@ -12,18 +12,18 @@ export async function fetchPlanAndLimits(
 ): Promise<{ plan: Access.PlanInfo; limits: Access.Limits }> {
   const supabase = createServerClient();
 
-  const { data, error } = await supabase
-  .rpc<DBEffectiveLimitsRow, { p_account_id: string }>(
+  const { data, error } = await supabase.rpc(
     "get_account_effective_limits",
     { p_account_id: account_id }
-  )
-  .single();
+  );
 
   if (error || !data) {
     throw new Error(`get_account_effective_limits failed: ${error?.message ?? "no data"}`);
   }
 
-  const mapped = mapEffectiveLimitsFromDB(data);
+  const row = data as unknown as DBEffectiveLimitsRow;
+  const mapped = mapEffectiveLimitsFromDB(row);
+
   const plan: Access.PlanInfo = { id: mapped.plan.id, name: mapped.plan.name };
   const limits: Access.Limits = toLegacyLimits(mapped.limits);
 
