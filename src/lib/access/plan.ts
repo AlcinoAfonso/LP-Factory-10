@@ -13,8 +13,11 @@ export async function fetchPlanAndLimits(
   const supabase = createServerClient();
 
   const { data, error } = await supabase
-    .rpc<DBEffectiveLimitsRow>("get_account_effective_limits", { p_account_id: account_id })
-    .single();
+  .rpc<DBEffectiveLimitsRow, { p_account_id: string }>(
+    "get_account_effective_limits",
+    { p_account_id: account_id }
+  )
+  .single();
 
   if (error || !data) {
     throw new Error(`get_account_effective_limits failed: ${error?.message ?? "no data"}`);
