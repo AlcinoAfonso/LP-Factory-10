@@ -17,7 +17,7 @@ import {
   pickAccount,
   type DBAccountRow,
   type DBMemberRow,
-} from "@/src/lib/access/accountAdapter";
+} from "@/src/lib/access/adapters/accountAdapter";
 
 export default async function SelectAccountPage() {
   const supabase = getServerSupabase();
