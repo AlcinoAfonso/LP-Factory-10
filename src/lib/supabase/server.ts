@@ -1,33 +1,45 @@
 // src/lib/supabase/server.ts
-import { createServerClient as _createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
+import {
+  createServerClient as createSSRClient,
+  type CookieOptions,
+} from "@supabase/ssr";
 
-/** Cliente do Supabase para uso no servidor (Route Handlers, Server Actions, etc.) */
 export function createServerClient() {
   const cookieStore = cookies();
 
-  return _createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() {
-          return cookieStore.getAll();
-        },
-        setAll(cookiesToSet) {
-          // Em runtime funciona; durante o build pode ser somente leitura.
-          try {
-            cookiesToSet.forEach(({ name, value, options }) => {
-              cookieStore.set(name, value, (options as any) ?? {});
-            });
-          } catch {
-            // no-op em contextos onde não é possível setar cookies (ex.: build)
-          }
-        },
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseKey =
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ??
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+
+  if (!supabaseUrl || !supabaseKey) {
+    throw new Error(
+      "Missing Supabase env: set NEXT_PUBLIC_SUPABASE_URL and ANON_KEY or PUBLISHABLE_KEY."
+    );
+  }
+
+  return createSSRClient(supabaseUrl, supabaseKey, {
+    cookies: {
+      get(name: string) {
+        return cookieStore.get(name)?.value;
       },
-    }
-  );
+      set(name: string, value: string, options: CookieOptions) {
+        try {
+          cookieStore.set(name, value, options);
+        } catch {
+          /* ignore in edge runtimes without mutable cookies */
+        }
+      },
+      remove(name: string, options: CookieOptions) {
+        try {
+          cookieStore.set(name, "", { ...options, maxAge: 0 });
+        } catch {
+          /* ignore */
+        }
+      },
+    },
+  });
 }
 
-/** Alias para compatibilidade com código existente */
 export const getServerSupabase = createServerClient;
