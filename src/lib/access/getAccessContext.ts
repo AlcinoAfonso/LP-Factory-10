@@ -26,7 +26,7 @@ export async function getAccessContext(input?: {
   const user = userData?.user;
   if (!user) return null;
 
-  // Busca vínculos do usuário (com status do account)
+  // Vínculos do usuário (RLS ON) + status do account
   const q = supabase
     .from("account_users")
     .select(`
@@ -34,6 +34,7 @@ export async function getAccessContext(input?: {
       accounts:accounts!inner(id, name, subdomain, domain, status)
     `)
     .eq("user_id", user.id)
+    .eq("status", "active") // membro ativo
     .limit(50);
 
   if (input?.accountId) q.eq("account_id", input.accountId);
@@ -53,19 +54,19 @@ export async function getAccessContext(input?: {
         : null;
     })
     .filter(Boolean) as {
-    account: ReturnType<typeof mapAccountFromDB>;
-    member: ReturnType<typeof mapMemberFromDB>;
-  }[];
+      account: ReturnType<typeof mapAccountFromDB>;
+      member: ReturnType<typeof mapMemberFromDB>;
+    }[];
 
   if (mapped.length === 0) return null;
 
-  // Escolha final (respeita accountId quando passado)
+  // Respeita accountId quando passado
   const chosen =
     (input?.accountId
       ? mapped.find((x) => x.account.id === input.accountId)
       : mapped[0]) ?? mapped[0];
 
-  // Monta AccessContext (defaults para plan/limits/acting_as)
+  // Monta AccessContext (defaults — Fase 2 liga plan/limits via RPC)
   const ctx: Access.AccessContext = {
     account_id: chosen.account.id,
     account_slug: chosen.account.subdomain,
@@ -73,7 +74,6 @@ export async function getAccessContext(input?: {
     status: chosen.member.status as Access.MemberStatus,
     is_super_admin: false,
     acting_as: false,
-    // Defaults (Fase 2 ligará RPC plans/limits)
     plan: { id: "", name: "" },
     limits: {
       max_lps: 0,
