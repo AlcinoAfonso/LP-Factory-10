@@ -1,4 +1,5 @@
 // app/a/[account]/page.tsx
+import { headers } from "next/headers";
 import { notFound, redirect } from "next/navigation";
 import { getAccessContext } from "@/src/lib/access/getAccessContext";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
@@ -8,11 +9,19 @@ type Props = { params: { account: string } };
 export default async function AccountHome({ params }: Props) {
   const subdomain = params.account;
 
-  // getAccessContext é a FONTE ÚNICA (ele usa os adapters internamente)
-  // Assinatura atual espera params.account (não 'subdomain')
-  const ctx = await getAccessContext({ params: { account: subdomain } });
+  // Cabeçalhos do request (server component): resolvemos host/proto de forma segura
+  const hdrs = headers();
+  const host = hdrs.get("x-forwarded-host") ?? hdrs.get("host") ?? undefined;
+  const proto = hdrs.get("x-forwarded-proto") ?? "https";
 
-  // Sem sessão → reforça redirecionamento (middleware já ajuda)
+  // Monta o que o getAccessContext espera (sem burlar nada)
+  const ctx = await getAccessContext({
+    host: host ? `${proto}://${host}` : undefined,
+    pathname: `/a/${subdomain}`,
+    params: { account: subdomain },
+  });
+
+  // Sem sessão → reforça redirect (middleware já cobre, mas mantemos explícito)
   if (!ctx?.session) {
     redirect("/login");
   }
