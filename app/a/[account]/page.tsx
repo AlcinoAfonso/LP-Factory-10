@@ -8,25 +8,26 @@ type Props = { params: { account: string } };
 export default async function AccountHome({ params }: Props) {
   const subdomain = params.account;
 
-  // getAccessContext é a FONTE ÚNICA (usa adapters internamente)
-  const ctx = await getAccessContext({ subdomain });
+  // getAccessContext é a FONTE ÚNICA (ele usa os adapters internamente)
+  // Assinatura atual espera params.account (não 'subdomain')
+  const ctx = await getAccessContext({ params: { account: subdomain } });
 
-  // Se não houver sessão, manda pro login (middleware já ajuda, mas reforçamos)
-  if (!ctx.session) {
+  // Sem sessão → reforça redirecionamento (middleware já ajuda)
+  if (!ctx?.session) {
     redirect("/login");
   }
 
-  // Vínculo inexistente ou inválido → 404 (guard rail)
+  // Vínculo válido apenas para membros active|trial
+  const status = ctx?.member?.status;
   const isValid =
-    ctx.account &&
-    ctx.member &&
-    (ctx.member.status === "active" || ctx.member.status === "trial");
+    !!ctx?.account &&
+    !!ctx?.member &&
+    (status === "active" || status === "trial");
 
   if (!isValid) {
     notFound();
   }
 
-  // Tudo certo: render de boas-vindas (placeholder do dashboard)
   return (
     <div className="mx-auto max-w-3xl p-6">
       <Card className="rounded-2xl shadow-sm">
@@ -44,7 +45,7 @@ export default async function AccountHome({ params }: Props) {
           </p>
           {/* Fase 2: quando ligar Plan/Limits, exibir ctx.plan/ctx.limits aqui */}
           <div className="pt-4 text-sm text-muted-foreground">
-            <span>Dashboard em construção.</span>
+            Dashboard em construção.
           </div>
         </CardContent>
       </Card>
