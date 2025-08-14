@@ -1,5 +1,5 @@
 // app/a/[account]/page.tsx
-export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 import { notFound, redirect } from "next/navigation";
 import { getAccessContext } from "@/lib/access/getAccessContext";
@@ -8,18 +8,26 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 type Props = { params: { account: string } };
 
 export default async function AccountHome({ params }: Props) {
-  const subdomain = params.account;
+  const slug = params.account;
 
-  // getAccessContext é a FONTE ÚNICA (usa adapters internamente)
-  // Contrato atual: passe o slug em params.account
-  const ctx = await getAccessContext({ params: { account: subdomain } });
-
-  // Sem sessão → reforça redirect
-  if (!ctx?.session) {
-    redirect("/login");
+  let ctx: Awaited<ReturnType<typeof getAccessContext>>;
+  try {
+    // Contrato atual: use params.account (nada de 'subdomain')
+    ctx = await getAccessContext({ params: { account: slug } } satisfies {
+      params: { account: string };
+    });
+  } catch (_err) {
+    // Se o contexto não pode ser resolvido (sem sessão, etc.), trate com redirect adequado
+    // Mantemos a política mínima: primeiro tenta login; bloqueios específicos podem redirecionar a /blocked
+    return redirect("/login");
   }
 
-  // Vínculo válido apenas para membros active|trial
+  // Sem sessão → reforça redirect (middleware já cobre, mas mantemos explícito)
+  if (!ctx?.session) {
+    return redirect("/login");
+  }
+
+  // Válido apenas p/ membros active|trial
   const status = ctx?.member?.status;
   const isValid =
     !!ctx?.account &&
@@ -27,7 +35,7 @@ export default async function AccountHome({ params }: Props) {
     (status === "active" || status === "trial");
 
   if (!isValid) {
-    notFound();
+    return notFound();
   }
 
   return (
@@ -40,7 +48,7 @@ export default async function AccountHome({ params }: Props) {
         </CardHeader>
         <CardContent className="space-y-2">
           <p className="text-sm text-muted-foreground">
-            Subdomínio: <span className="font-mono">{subdomain}</span>
+            Subdomínio: <span className="font-mono">{slug}</span>
           </p>
           <p className="text-sm">
             Seu papel: <span className="font-medium">{ctx.member?.role}</span>
