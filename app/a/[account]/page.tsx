@@ -2,7 +2,7 @@
 export const revalidate = 0;
 
 import { notFound, redirect } from "next/navigation";
-import { getAccessContext } from "@/lib/access/getAccessContext";
+import { getAccessContext } from "@/src/lib/access/getAccessContext"; // <-- ajustado
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 
 type Props = { params: { account: string } };
@@ -12,22 +12,18 @@ export default async function AccountHome({ params }: Props) {
 
   let ctx: Awaited<ReturnType<typeof getAccessContext>>;
   try {
-    // Contrato atual: use params.account (nada de 'subdomain')
+    // contrato atual: params.account
     ctx = await getAccessContext({ params: { account: slug } } satisfies {
       params: { account: string };
     });
-  } catch (_err) {
-    // Se o contexto não pode ser resolvido (sem sessão, etc.), trate com redirect adequado
-    // Mantemos a política mínima: primeiro tenta login; bloqueios específicos podem redirecionar a /blocked
+  } catch {
     return redirect("/login");
   }
 
-  // Sem sessão → reforça redirect (middleware já cobre, mas mantemos explícito)
   if (!ctx?.session) {
     return redirect("/login");
   }
 
-  // Válido apenas p/ membros active|trial
   const status = ctx?.member?.status;
   const isValid =
     !!ctx?.account &&
