@@ -2,7 +2,7 @@
 export const revalidate = 0;
 
 import { notFound, redirect } from "next/navigation";
-import { getAccessContext } from "@/src/lib/access/getAccessContext"; // <-- ajustado
+import { getAccessContext } from "@/src/lib/access/getAccessContext";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 
 type Props = { params: { account: string } };
@@ -10,28 +10,31 @@ type Props = { params: { account: string } };
 export default async function AccountHome({ params }: Props) {
   const slug = params.account;
 
-  let ctx: Awaited<ReturnType<typeof getAccessContext>>;
-  try {
-    // contrato atual: params.account
-    ctx = await getAccessContext({ params: { account: slug } } satisfies {
-      params: { account: string };
-    });
-  } catch {
-    return redirect("/login");
-  }
+  // getAccessContext: contrato atual usa params.account
+  const ctx = await getAccessContext({ params: { account: slug } } satisfies {
+    params: { account: string };
+  });
 
-  if (!ctx?.session) {
-    return redirect("/login");
-  }
+  // Regras de acesso (Bússola): permitir apenas membro active|trial
+  const status = (ctx as any)?.member?.status as
+    | "active"
+    | "trial"
+    | "invited"
+    | "inactive"
+    | undefined;
 
-  const status = ctx?.member?.status;
+  const hasAccount = Boolean((ctx as any)?.account);
+  const hasMember = Boolean((ctx as any)?.member);
+
   const isValid =
-    !!ctx?.account &&
-    !!ctx?.member &&
-    (status === "active" || status === "trial");
+    hasAccount && hasMember && (status === "active" || status === "trial");
 
+  // Se não houver vínculo válido, 404
   if (!isValid) {
-    return notFound();
+    // Se preferir separar bloqueio de vínculo de ausência de login:
+    // - ausência de login já deve ser tratada no middleware
+    // - vínculo inválido → 404 (guard rail)
+    notFound();
   }
 
   return (
@@ -39,7 +42,7 @@ export default async function AccountHome({ params }: Props) {
       <Card className="rounded-2xl shadow-sm">
         <CardHeader>
           <CardTitle className="text-2xl">
-            {ctx.account?.name ?? "Conta"}
+            {(ctx as any)?.account?.name ?? "Conta"}
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-2">
@@ -47,7 +50,8 @@ export default async function AccountHome({ params }: Props) {
             Subdomínio: <span className="font-mono">{slug}</span>
           </p>
           <p className="text-sm">
-            Seu papel: <span className="font-medium">{ctx.member?.role}</span>
+            Seu papel:{" "}
+            <span className="font-medium">{(ctx as any)?.member?.role}</span>
           </p>
           {/* Fase 2: quando ligar Plan/Limits, exibir ctx.plan/ctx.limits aqui */}
           <div className="pt-4 text-sm text-muted-foreground">
