@@ -1,31 +1,43 @@
-import { NextResponse } from 'next/server';
-import type { NextRequest } from 'next/server';
+// middleware.ts
+import type { NextRequest } from "next/server";
+import { NextResponse } from "next/server";
 
-/**
- * Protege rotas dos dashboards exigindo sessão (cookie Supabase).
- * Controlado por ACCESS_CONTEXT_ENFORCED para rollout seguro.
- */
+/** Rotas públicas (não passam pelos guards enquanto o Auth/Context não está pronto) */
+const PUBLIC_PATHS = new Set<string>([
+  "/",             // landing
+  "/login",        // placeholder/login
+  "/select-account",
+]);
+function isPublic(pathname: string) {
+  return (
+    PUBLIC_PATHS.has(pathname) ||
+    pathname.startsWith("/auth") ||         // callback do Supabase
+    pathname.startsWith("/_next") ||        // assets Next
+    pathname.startsWith("/assets") ||
+    pathname === "/favicon.ico"
+  );
+}
+
 export function middleware(req: NextRequest) {
-  const enforce = process.env.ACCESS_CONTEXT_ENFORCED === 'true';
-  if (!enforce) return NextResponse.next();
-
   const { pathname } = req.nextUrl;
-  const protectedPrefixes = ['/dashboard', '/a'];
-  const isProtected = protectedPrefixes.some((p) => pathname.startsWith(p));
-  if (!isProtected) return NextResponse.next();
 
-  const hasSession =
-    req.cookies.has('sb-access-token') || req.cookies.has('sb:token');
-
-  if (!hasSession) {
-    const url = req.nextUrl.clone();
-    url.pathname = '/login';
-    url.searchParams.set('next', pathname);
-    return NextResponse.redirect(url);
+  // 1) Libera rotas públicas
+  if (isPublic(pathname)) {
+    return NextResponse.next();
   }
+
+  // 2) Habilita/Desabilita enforcement via ENV (Preview pode ficar OFF)
+  const ENFORCED = process.env.ACCESS_CONTEXT_ENFORCED === "true";
+  if (!ENFORCED) {
+    return NextResponse.next();
+  }
+
+  // 3) (Futuro) Aqui entra a checagem real de sessão/tenant/guards
+  // Por ora, apenas deixa passar.
   return NextResponse.next();
 }
 
+/** Aplica o middleware em todas as rotas de app/ (exceto api/static/image/favicon) */
 export const config = {
-  matcher: ['/dashboard/:path*', '/a/:path*'],
+  matcher: ["/((?!api|_next/static|_next/image|favicon.ico).*)"],
 };

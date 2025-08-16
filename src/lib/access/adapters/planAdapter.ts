@@ -1,5 +1,4 @@
-// src/lib/access/adapters.ts
-// Adapter único: DB (snake_case) → TS (camelCase) + compat com types.ts atual
+// src/lib/access/adapters/planAdapter.ts
 
 // Linha retornada pela RPC `get_account_effective_limits`
 export type DBEffectiveLimitsRow = {
@@ -15,7 +14,7 @@ export type DBEffectiveLimitsRow = {
   max_conversions_effective: number | null;
 };
 
-// Mapeia para formato camelCase canônico (uso interno do adapter/wiring)
+// DB (snake_case) → TS (camelCase) interno do adapter
 export function mapEffectiveLimitsFromDB(row: DBEffectiveLimitsRow): {
   plan: { id: string; name: string; priceMonthly?: number | null; features?: Record<string, unknown> | null };
   limits: { maxLPs: number; maxConversions: number; unlimitedLPs: boolean; unlimitedConversions: boolean; maxDomains?: number };
@@ -43,7 +42,7 @@ export function mapEffectiveLimitsFromDB(row: DBEffectiveLimitsRow): {
   };
 }
 
-// Compat: converte camelCase → shape legado usado em src/lib/access/types.ts (snake_case)
+// Compat: camelCase → shape legado (snake_case) esperado por Access.Limits atual
 export function toLegacyLimits(l: {
   maxLPs: number;
   maxConversions: number;
@@ -58,14 +57,4 @@ export function toLegacyLimits(l: {
     max_lps_unlimited: l.unlimitedLPs,
     max_conversions_unlimited: l.unlimitedConversions,
   };
-}
-
-// Utilitários simples (opcional)
-export function ensureLowerAction(action: string): string {
-  return (action ?? "").toLowerCase();
-}
-export type Role = "owner" | "admin" | "editor" | "viewer";
-export function normalizeRole(role: string): Role {
-  const r = (role ?? "").toLowerCase();
-  return (["owner", "admin", "editor", "viewer"] as const).includes(r as Role) ? (r as Role) : "viewer";
 }

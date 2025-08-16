@@ -1,19 +1,18 @@
-import type { AccessContext } from './types';
+// src/lib/access/audit.ts
+import { createServerClient } from "../supabase/server";
 
-/**
- * Auditoria de eventos de contexto (MVP obrigatório).
- * Implementação real usará RPC/queue -> triggers -> audit_logs.
- * Aqui mantemos só as assinaturas.
- */
-
-export async function auditAccountSwitch(_ctx: AccessContext): Promise<void> {
-  // TODO: chamar RPC audit_context_event('account_switch', ...)
-}
-
-export async function auditActingAsEnter(_ctx: AccessContext): Promise<void> {
-  // TODO: RPC audit_context_event('acting_as_enter', ...)
-}
-
-export async function auditActingAsExit(_ctx: AccessContext): Promise<void> {
-  // TODO: RPC audit_context_event('acting_as_exit', ...)
+/** Audita a troca de conta (não quebra o fluxo se falhar). */
+export async function auditAccountSwitch(accountId: string) {
+  const supabase = createServerClient();
+  try {
+    await supabase.rpc("audit_context_event", {
+      p_event: "account_switch",
+      p_entity: "accounts",
+      p_entity_id: accountId,
+      p_diff: {},
+      p_account_id: accountId,
+    });
+  } catch {
+    // no-op
+  }
 }
