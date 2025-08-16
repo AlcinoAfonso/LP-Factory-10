@@ -10,68 +10,86 @@ import {
 } from "./adapters/accountAdapter";
 
 /**
- * getAccessContext — resolve o vínculo ativo (active|trial) do usuário.
- * Mantém defaults para plan/limits/acting_as conforme Blueprint atual.
+ * getAccessContext — resolve o vínculo ativo (active|trial) do usuário
+ * para uma conta específica (via slug em params.account ou accountId)
+ * e retorna tanto os objetos ricos (account/member) quanto um shape
+ * plano compatível com a UI atual.
  */
 export async function getAccessContext(input?: {
   accountId?: string;
   host?: string;
   pathname?: string;
-  params?: { account?: string };
+  params?: { account?: string }; // slug
 }): Promise<Access.AccessContext | null> {
   const supabase = getServerSupabase();
 
-  // Autenticação
+  // 1) Auth
   const { data: userData } = await supabase.auth.getUser();
   const user = userData?.user;
   if (!user) return null;
 
-  // Vínculos do usuário (RLS ON) + status do account
+  // 2) Base query (RLS ON): vínculo do usuário + dados da conta
   const q = supabase
     .from("account_users")
-    .select(`
+    .select(
+      `
       id, account_id, user_id, role, status, permissions,
       accounts:accounts!inner(id, name, subdomain, domain, status)
-    `)
+    `
+    )
     .eq("user_id", user.id)
-    .eq("status", "active") // membro ativo
+    // membro ativo OU trial
+    .in("status", ["active", "trial"])
     .limit(50);
 
+  // Filtro opcional por accountId
   if (input?.accountId) q.eq("account_id", input.accountId);
 
   const { data, error } = await q;
   if (error || !data || data.length === 0) return null;
 
-  // Normaliza + guarda (permitir active|trial; bloquear suspended/canceled)
-  const mapped = data
-    .map((row: any) => {
-      const accRow = pickAccount(row.accounts) as DBAccountRow | null;
-      if (!accRow) return null;
-      const account = mapAccountFromDB(accRow);
-      const member = mapMemberFromDB(row as DBMemberRow);
-      return account.status === "active" || account.status === "trial"
-        ? { account, member }
-        : null;
-    })
-    .filter(Boolean) as {
-      account: ReturnType<typeof mapAccountFromDB>;
-      member: ReturnType<typeof mapMemberFromDB>;
-    }[];
+  // 3) Normaliza rows e descarta contas fora de active|trial
+  const rows = (data as any[]).map((row) => {
+    const accRow = pickAccount(row.accounts) as DBAccountRow | null;
+    if (!accRow) return null;
+    const account = mapAccountFromDB(accRow);
+    const member = mapMemberFromDB(row as DBMemberRow);
+    const accountOk = account.status === "active" || account.status === "trial";
+    const memberOk = member.status === "active" || member.status === "trial";
+    return accountOk && memberOk ? { account, member } : null;
+  }).filter(Boolean) as {
+    account: ReturnType<typeof mapAccountFromDB>;
+    member: ReturnType<typeof mapMemberFromDB>;
+  }[];
 
-  if (mapped.length === 0) return null;
+  if (rows.length === 0) return null;
 
-  // Respeita accountId quando passado
+  // 4) Escolha da conta: pelo slug (params.account) > accountId > primeira
+  const wantedSlug = input?.params?.account?.trim().toLowerCase();
   const chosen =
+    (wantedSlug
+      ? rows.find((x) => x.account.subdomain?.toLowerCase() === wantedSlug)
+      : undefined) ??
     (input?.accountId
-      ? mapped.find((x) => x.account.id === input.accountId)
-      : mapped[0]) ?? mapped[0];
+      ? rows.find((x) => x.account.id === input.accountId)
+      : undefined) ??
+    rows[0];
 
-  // Monta AccessContext (defaults — Fase 2 liga plan/limits via RPC)
-  const ctx: Access.AccessContext = {
+  if (!chosen) return null;
+
+  // 5) Monta AccessContext completo (objetos + shape plano)
+  const ctx: any = {
+    // objetos ricos para a UI atual
+    account: chosen.account,
+    member: chosen.member,
+
+    // shape plano legado/compatível
     account_id: chosen.account.id,
     account_slug: chosen.account.subdomain,
     role: chosen.member.role as Access.Role,
     status: chosen.member.status as Access.MemberStatus,
+
+    // flags padrão (Fase 2 pode ligar via RPC)
     is_super_admin: false,
     acting_as: false,
     plan: { id: "", name: "" },
@@ -82,5 +100,5 @@ export async function getAccessContext(input?: {
     },
   };
 
-  return ctx;
+  return ctx as Access.AccessContext;
 }
