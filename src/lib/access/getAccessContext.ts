@@ -39,7 +39,7 @@ export async function getAccessContext(input?: {
     )
     .eq("user_id", user.id)
     // membro ativo OU trial
-    .in("status", ["active", "trial"])
+    .eq("status", "active")
     .limit(50);
 
   // Filtro opcional por accountId
@@ -55,7 +55,7 @@ export async function getAccessContext(input?: {
     const account = mapAccountFromDB(accRow);
     const member = mapMemberFromDB(row as DBMemberRow);
     const accountOk = account.status === "active" || account.status === "trial";
-    const memberOk = member.status === "active" || member.status === "trial";
+    const memberOk = member.status === "active";
     return accountOk && memberOk ? { account, member } : null;
   }).filter(Boolean) as {
     account: ReturnType<typeof mapAccountFromDB>;
