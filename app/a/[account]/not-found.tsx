@@ -1,6 +1,4 @@
 // app/a/[account]/not-found.tsx
-import Link from "next/link";
-
 export default function NotFound() {
   return (
     <div className="mx-auto max-w-md p-6 text-center">
@@ -8,12 +6,19 @@ export default function NotFound() {
       <p className="mb-6 text-sm text-muted-foreground">
         Você não possui vínculo ativo com esta conta ou o subdomínio é inválido.
       </p>
-      <Link
-        href="/select-account"
+
+      {/* Botão simples para voltar à página anterior (sem depender de rotas legadas) */}
+      <a
+        href="javascript:history.back()"
         className="inline-flex items-center rounded-xl border px-4 py-2 text-sm"
       >
-        Voltar para seleção de conta
-      </Link>
+        Voltar
+      </a>
+
+      {/* Opcional: instrução de fallback */}
+      <p className="mt-3 text-xs text-muted-foreground">
+        Se não funcionar, retorne pelo Dashboard principal.
+      </p>
     </div>
   );
 }
