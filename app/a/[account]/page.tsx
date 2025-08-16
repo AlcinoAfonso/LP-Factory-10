@@ -40,19 +40,21 @@ export default async function AccountHome({ params, searchParams }: Props) {
     hasAccount && hasMember && (status === "active" || status === "trial");
 
   if (!isValid) {
-    // ausência de login já deve ser tratada no middleware;
-    // vínculo inválido → 404 (guard rail)
+    // ausência de login já tratada no middleware; vínculo inválido → 404
     notFound();
   }
 
-  // Deep link do convite (?invite=new) — só abre para quem pode convidar
-  const wantsInvite =
-    (searchParams?.invite === "new" ||
-      (Array.isArray(searchParams?.invite) &&
-        searchParams?.invite?.[0] === "new")) ?? false;
+  // Deep link do convite (?invite=new) — só mostra overlay para quem pode convidar
+  const inviteParam =
+    typeof searchParams?.invite === "string"
+      ? searchParams?.invite
+      : Array.isArray(searchParams?.invite)
+      ? searchParams?.invite?.[0]
+      : undefined;
 
+  const wantsInvite = inviteParam === "new";
   const canInvite = role === "owner" || role === "admin" || role === "editor";
-  const openInviteModal = Boolean(wantsInvite && canInvite);
+  const showInviteOverlay = Boolean(wantsInvite && canInvite);
 
   return (
     <div className="mx-auto max-w-3xl p-6">
@@ -71,112 +73,62 @@ export default async function AccountHome({ params, searchParams }: Props) {
             <span className="font-medium">{(ctx as any)?.member?.role}</span>
           </p>
 
-          {/* Placeholder simples enquanto a UI definitiva do modal não chega */}
-          <InviteModal initialOpen={openInviteModal} accountSlug={slug} />
-
           {/* Fase 2: quando ligar Plan/Limits, exibir ctx.plan/ctx.limits aqui */}
           <div className="pt-4 text-sm text-muted-foreground">
             Dashboard em construção.
           </div>
         </CardContent>
       </Card>
-    </div>
-  );
-}
 
-/**
- * Componente cliente de modal leve, sem dependências extras.
- * Abre quando initialOpen = true e fecha limpando o query param ?invite.
- */
-function ModalStyles() {
-  return (
-    <style
-      dangerouslySetInnerHTML={{
-        __html: `
-      .__overlay{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.4);z-index:50}
-      .__dialog{width:100%;max-width:520px;background:white;border-radius:1rem;box-shadow:0 10px 30px rgba(0,0,0,.15)}
-      .__hd{padding:1rem 1.25rem;border-bottom:1px solid rgba(0,0,0,.06);font-weight:600}
-      .__bd{padding:1rem 1.25rem}
-      .__ft{padding:1rem 1.25rem;border-top:1px solid rgba(0,0,0,.06);display:flex;justify-content:flex-end;gap:.5rem}
-      `,
-      }}
-    />
-  );
-}
-
-function noop() {}
-
-/* ------------------------------------------- */
-/*                CLIENT COMPONENT             */
-/* ------------------------------------------- */
-"use client";
-import { useEffect, useMemo, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
-
-function InviteModal({
-  initialOpen,
-  accountSlug,
-}: {
-  initialOpen: boolean;
-  accountSlug: string;
-}) {
-  const router = useRouter();
-  const search = useSearchParams();
-  const [open, setOpen] = useState<boolean>(initialOpen);
-
-  // remove ?invite=new ao fechar
-  const close = useMemo(
-    () => () => {
-      const params = new URLSearchParams(search?.toString() ?? "");
-      params.delete("invite");
-      const qs = params.toString();
-      router.replace(qs ? `/a/${accountSlug}?${qs}` : `/a/${accountSlug}`);
-      setOpen(false);
-    },
-    [router, search, accountSlug]
-  );
-
-  // Se o usuário navegar manualmente mudando a query, refletir abertura
-  useEffect(() => {
-    const v = search?.get("invite");
-    if (v === "new") setOpen(true);
-  }, [search]);
-
-  if (!open) return null;
-
-  return (
-    <div className="__overlay" onClick={close}>
-      <ModalStyles />
-      <div className="__dialog" onClick={(e) => e.stopPropagation()}>
-        <div className="__hd">Novo convite</div>
-        <div className="__bd text-sm">
-          {/* Placeholder de conteúdo — substitua pela UI real (shadcn/ui) */}
-          <p className="mb-2">
-            Este é um modal preliminar apenas para validar o fluxo{" "}
-            <code>?invite=new</code>.
-          </p>
-          <ul className="list-disc pl-5 space-y-1">
-            <li>Account: <code>{accountSlug}</code></li>
-            <li>Envio/aceite será validado no Preview.</li>
-          </ul>
-        </div>
-        <div className="__ft">
-          <button
-            type="button"
-            onClick={close}
-            className="rounded-lg px-3 py-1.5 border text-sm"
-          >
-            Fechar
-          </button>
-          <button
-            type="button"
-            onClick={noop}
-            className="rounded-lg px-3 py-1.5 bg-black text-white text-sm"
-          >
-            Enviar convite (stub)
-          </button>
-        </div>
-      </div>
+      {/* Overlay mínimo para validar o fluxo ?invite=new (sem client/hook) */}
+      {showInviteOverlay ? (
+        <>
+          <style
+            dangerouslySetInnerHTML={{
+              __html: `
+            .__overlay{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.4);z-index:50}
+            .__dialog{width:100%;max-width:520px;background:white;border-radius:1rem;box-shadow:0 10px 30px rgba(0,0,0,.15)}
+            .__hd{padding:1rem 1.25rem;border-bottom:1px solid rgba(0,0,0,.06);font-weight:600}
+            .__bd{padding:1rem 1.25rem}
+            .__ft{padding:1rem 1.25rem;border-top:1px solid rgba(0,0,0,.06);display:flex;justify-content:flex-end;gap:.5rem}
+          `,
+            }}
+          />
+          <div className="__overlay">
+            <div className="__dialog">
+              <div className="__hd">Novo convite</div>
+              <div className="__bd text-sm">
+                <p className="mb-2">
+                  Fluxo preliminar para validar o deep link{" "}
+                  <code>?invite=new</code>.
+                </p>
+                <ul className="list-disc pl-5 space-y-1">
+                  <li>
+                    Account: <code>{slug}</code>
+                  </li>
+                  <li>Envio/aceite será validado no Preview.</li>
+                </ul>
+              </div>
+              <div className="__ft">
+                {/* Fecha o "modal" removendo o query param */}
+                <a
+                  href={`/a/${slug}`}
+                  className="rounded-lg px-3 py-1.5 border text-sm"
+                >
+                  Fechar
+                </a>
+                <a
+                  href="#"
+                  className="rounded-lg px-3 py-1.5 bg-black text-white text-sm pointer-events-none opacity-60"
+                  aria-disabled
+                >
+                  Enviar convite (stub)
+                </a>
+              </div>
+            </div>
+          </div>
+        </>
+      ) : null}
     </div>
   );
 }
