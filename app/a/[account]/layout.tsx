@@ -1,8 +1,6 @@
 // app/a/[account]/layout.tsx
 export const revalidate = 0;
 
-// use caminho com alias "@/..." se seu tsconfig estiver configurado.
-// Caso não, use: "../../../src/lib/access/getAccessContext"
 import { getAccessContext } from "@/src/lib/access/getAccessContext";
 import { AccessProvider } from "@/src/providers/AccessProvider";
 import { AccessError } from "@/src/lib/access/types";
@@ -19,31 +17,30 @@ export default async function AccountLayout({
   try {
     const ctx = await getAccessContext({ params });
 
-    // Guard: permitir apenas membro active|trial (Bússola)
+    // Sem sessão/ctx → visitante: deixa renderizar (popup de login virá na page)
+    if (!ctx) {
+      return <AccessProvider value={null}>{children}</AccessProvider>;
+    }
+
+    // Com sessão: só permite member active
     const status = (ctx as any)?.member?.status as
       | "active"
-      | "trial"
-      | "invited"
       | "inactive"
+      | "pending"
+      | "revoked"
       | undefined;
 
     const hasAccount = Boolean((ctx as any)?.account);
     const hasMember = Boolean((ctx as any)?.member);
-    const isValid =
-      hasAccount && hasMember && (status === "active" || status === "trial");
+    const isValid = hasAccount && hasMember && status === "active";
 
-    if (!isValid) {
-      return notFound();
-    }
+    if (!isValid) return notFound();
 
     return <AccessProvider value={ctx}>{children}</AccessProvider>;
   } catch (e) {
-    // Mapeamento de erros tipados para UX padrão (sem redirects legados)
     if (e instanceof AccessError) {
-      if (e.code === "UNRESOLVED_TENANT") return notFound();
-      if (e.code === "INACTIVE_MEMBER" || e.code === "FORBIDDEN_ACCOUNT") {
-        return notFound();
-      }
+      // Qualquer erro tipado vira 404 (sem redirects legados)
+      return notFound();
     }
     return notFound();
   }
