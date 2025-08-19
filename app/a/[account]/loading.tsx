@@ -1,10 +1,7 @@
-// app/a/[account]/loading.tsx
 export default function Loading() {
   return (
-    <div className="flex h-[60vh] items-center justify-center">
-      <span className="animate-pulse text-sm text-muted-foreground">
-        Carregando conta…
-      </span>
+    <div className="mx-auto max-w-3xl px-6 py-16 animate-pulse text-gray-500">
+      Carregando Account Dashboard…
     </div>
   );
 }
