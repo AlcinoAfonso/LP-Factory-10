@@ -53,6 +53,7 @@ export default function Page({ params }: { params: { account: string } }) {
         mode={authMode}
         open={authOpen}
         onOpenChange={setAuthOpen}
+        onRequestModeChange={setAuthMode}
       />
     </>
   );
