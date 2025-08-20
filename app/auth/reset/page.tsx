@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { supabase } from "@/lib/supabase-browser";
+import { supabase } from "@/lib/supabase/client";
 
 export default function ResetPasswordPage() {
   const [pwd1, setPwd1] = useState("");
