@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { supabase } from "@/lib/supabase/client"; // 🔄 usando o client oficial
+import { supabase } from "@/lib/supabase/client"; // client oficial (browser)
 
 type Props = { onBackToLogin?: () => void };
 
@@ -16,12 +16,22 @@ export default function RecoveryForm({ onBackToLogin }: Props) {
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
-    setLoading(true); setErr(null);
-    const redirectTo = `${window.location.origin}/auth/reset`;
-    const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo });
-    setLoading(false);
-    if (error) { setErr("Não foi possível enviar o e-mail."); return; }
-    setOk(true);
+    setLoading(true);
+    setErr(null);
+
+    // Hardening: evita acesso a window em ambientes não-browser
+    const origin = typeof window !== "undefined" ? window.location.origin : "";
+
+    try {
+      const redirectTo = `${origin}/auth/reset`;
+      const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo });
+      if (error) throw error;
+      setOk(true);
+    } catch {
+      setErr("Não foi possível enviar o e-mail.");
+    } finally {
+      setLoading(false);
+    }
   }
 
   if (ok) {
@@ -40,13 +50,23 @@ export default function RecoveryForm({ onBackToLogin }: Props) {
       <div className="grid gap-1">
         <Label htmlFor="rec-email">E-mail</Label>
         <Input
-          id="rec-email" type="email" required placeholder="seu@email.com"
+          id="rec-email"
+          type="email"
+          required
+          placeholder="seu@email.com"
           value={email}
-          onChange={(e) => { setEmail(e.target.value); if (err) setErr(null); }}
+          onChange={(e) => {
+            setEmail(e.target.value);
+            if (err) setErr(null);
+          }}
         />
       </div>
 
-      {err && <p role="alert" aria-live="polite" className="mt-1 text-sm text-red-600">{err}</p>}
+      {err && (
+        <p role="alert" aria-live="polite" className="mt-1 text-sm text-red-600">
+          {err}
+        </p>
+      )}
 
       <Button type="submit" disabled={loading || !email}>
         {loading ? "Enviando..." : "Enviar e-mail de redefinição"}
