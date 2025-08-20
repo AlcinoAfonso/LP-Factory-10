@@ -8,7 +8,10 @@ import { supabase } from "@/lib/supabase/client";
 type Mode = "login" | "signup" | "recovery" | "invite";
 
 export default function Page({ params }: { params: { account: string } }) {
-  const ctx = useAccessContext(); // ✅ dados: account, member, role, status, etc.
+  const ctx = useAccessContext();
+  // 🔧 contorno de tipagem até alinharmos AccessContext
+  const anyCtx = (ctx ?? {}) as any;
+
   const [authOpen, setAuthOpen] = useState(false);
   const [authMode, setAuthMode] = useState<Mode>("login");
   const [email, setEmail] = useState<string | null>(null);
@@ -34,9 +37,9 @@ export default function Page({ params }: { params: { account: string } }) {
     setEmail(null);
   }
 
-  const role = ctx?.member?.role ?? "—";
-  const accountName = ctx?.account?.name ?? params.account;
-  const accountSlug = ctx?.account?.subdomain ?? params.account;
+  const role = anyCtx.member?.role ?? "—";
+  const accountName = anyCtx.account?.name ?? params.account;
+  const accountSlug = anyCtx.account?.subdomain ?? params.account;
 
   return (
     <>
@@ -102,24 +105,24 @@ export default function Page({ params }: { params: { account: string } }) {
       <main className="mx-auto max-w-3xl px-6 py-12">
         <h1 className="text-3xl font-semibold">Account Dashboard</h1>
 
-        {ctx ? (
+        {anyCtx && (anyCtx.account || anyCtx.member) ? (
           <div className="mt-4 grid gap-2 text-sm text-gray-700">
             <div>
               <span className="font-medium">Conta: </span>
-              {ctx.account?.name ?? "—"}{" "}
-              <span className="text-gray-500">({ctx.account?.id ?? "—"})</span>
+              {anyCtx.account?.name ?? "—"}{" "}
+              <span className="text-gray-500">({anyCtx.account?.id ?? "—"})</span>
             </div>
             <div>
               <span className="font-medium">Slug: </span>
-              {ctx.account?.subdomain ?? "—"}
+              {anyCtx.account?.subdomain ?? "—"}
             </div>
             <div>
               <span className="font-medium">Papel: </span>
-              {ctx.member?.role ?? "—"}
+              {anyCtx.member?.role ?? "—"}
             </div>
             <div>
               <span className="font-medium">Status membro: </span>
-              {ctx.member?.status ?? "—"}
+              {anyCtx.member?.status ?? "—"}
             </div>
           </div>
         ) : (
