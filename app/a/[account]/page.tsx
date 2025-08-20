@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import AuthDialog from "../../../src/components/auth/AuthDialog";
-import { supabase } from "../../../lib/supabase-browser";
+import AuthDialog from "@/components/auth/AuthDialog"; // 🔄 usando alias @
+import { supabase } from "@/lib/supabase/client";      // 🔄 client oficial
 
 type Mode = "login" | "signup" | "recovery" | "invite";
 
