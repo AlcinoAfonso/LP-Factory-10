@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import { supabase } from "@/lib/supabase-browser";
 
 type Props = {
   onSuccess?: () => void;
@@ -17,16 +18,20 @@ export default function LoginForm({ onSuccess, onForgotClick }: Props) {
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState<string | null>(null);
 
-  function submit(e: React.FormEvent) {
+  async function submit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
     setErr(null);
-    // simulação (sem Supabase)
-    setTimeout(() => {
-      setLoading(false);
-      setErr("Credenciais inválidas (exemplo).");
-      // onSuccess?.();
-    }, 600);
+    const { error } = await supabase.auth.signInWithPassword({
+      email,
+      password: pwd,
+    });
+    setLoading(false);
+    if (error) {
+      setErr("Credenciais inválidas.");
+      return;
+    }
+    onSuccess?.();
   }
 
   return (
@@ -34,15 +39,9 @@ export default function LoginForm({ onSuccess, onForgotClick }: Props) {
       <div className="grid gap-1">
         <Label htmlFor="email">E-mail</Label>
         <Input
-          id="email"
-          type="email"
-          required
-          placeholder="seu@email.com"
+          id="email" type="email" required placeholder="seu@email.com"
           value={email}
-          onChange={(e) => {
-            setEmail(e.target.value);
-            if (err) setErr(null);
-          }}
+          onChange={(e) => { setEmail(e.target.value); if (err) setErr(null); }}
         />
       </div>
 
@@ -50,21 +49,13 @@ export default function LoginForm({ onSuccess, onForgotClick }: Props) {
         <Label htmlFor="password">Senha</Label>
         <div className="relative">
           <Input
-            id="password"
-            type={show ? "text" : "password"}
-            required
-            placeholder="••••••••"
+            id="password" type={show ? "text" : "password"} required placeholder="••••••••"
             value={pwd}
-            onChange={(e) => {
-              setPwd(e.target.value);
-              if (err) setErr(null);
-            }}
+            onChange={(e) => { setPwd(e.target.value); if (err) setErr(null); }}
             className="pr-20"
           />
           <Button
-            type="button"
-            variant="outline"
-            size="sm"
+            type="button" variant="outline" size="sm"
             aria-label={show ? "Ocultar senha" : "Mostrar senha"}
             aria-pressed={show}
             onClick={() => setShow((v) => !v)}
@@ -75,22 +66,14 @@ export default function LoginForm({ onSuccess, onForgotClick }: Props) {
         </div>
       </div>
 
-      {err && (
-        <p role="alert" aria-live="polite" className="mt-1 text-sm text-red-600">
-          {err}
-        </p>
-      )}
+      {err && <p role="alert" aria-live="polite" className="mt-1 text-sm text-red-600">{err}</p>}
 
       <Button type="submit" disabled={loading || !email || !pwd}>
         {loading ? "Entrando..." : "Entrar"}
       </Button>
 
-      <Button
-        type="button"
-        variant="link"
-        className="justify-start px-0"
-        onClick={() => onForgotClick?.(email)}
-      >
+      <Button type="button" variant="link" className="justify-start px-0"
+        onClick={() => onForgotClick?.(email)}>
         Esqueci minha senha →
       </Button>
     </form>
