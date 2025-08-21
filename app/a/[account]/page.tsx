@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import AuthDialog from "@/components/auth/AuthDialog";
 import { useAccessContext } from "@/providers/AccessProvider";
 import { supabase } from "@/lib/supabase/client";
@@ -8,6 +9,7 @@ import { supabase } from "@/lib/supabase/client";
 type Mode = "login" | "signup" | "recovery" | "invite";
 
 export default function Page({ params }: { params: { account: string } }) {
+  const router = useRouter();
   const ctx = useAccessContext();
   // 🔧 contorno de tipagem até alinharmos AccessContext
   const anyCtx = (ctx ?? {}) as any;
@@ -33,8 +35,16 @@ export default function Page({ params }: { params: { account: string } }) {
   }, []);
 
   async function signOut() {
+    // encerra sessão no Supabase
     await supabase.auth.signOut();
+
+    // limpa UI local imediatamente
     setEmail(null);
+
+    // volta para o mesmo slug (ex.: /a/preview) e força revalidação do App Router
+    // evita “rastros” visuais pós-logout
+    router.replace(`/a/${params.account}`);
+    router.refresh();
   }
 
   const role = anyCtx.member?.role ?? "—";
