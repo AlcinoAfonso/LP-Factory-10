@@ -1,73 +1,157 @@
-// app/a/[account]/page.tsx
-export const revalidate = 0;
+"use client";
 
-import { notFound } from "next/navigation";
-import { getAccessContext } from "@/src/lib/access/getAccessContext";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import Link from "next/link";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import AuthDialog from "@/components/auth/AuthDialog";
+import { useAccessContext } from "@/providers/AccessProvider";
+import { supabase } from "@/lib/supabase/client";
 
-type Props = { params: { account: string } };
+type Mode = "login" | "signup" | "recovery" | "invite";
 
-export default async function AccountHome({ params }: Props) {
-  const slug = params.account;
+export default function Page({ params }: { params: { account: string } }) {
+  const router = useRouter();
+  const ctx = useAccessContext();
+  // 🔧 contorno de tipagem até alinharmos AccessContext
+  const anyCtx = (ctx ?? {}) as any;
 
-  const ctx = await getAccessContext({ params }); // pode ser null (visitante)
-  const isAnon = !ctx;
+  const [authOpen, setAuthOpen] = useState(false);
+  const [authMode, setAuthMode] = useState<Mode>("login");
+  const [email, setEmail] = useState<string | null>(null);
 
-  // Se logado, validamos de novo (defesa em profundidade)
-  if (!isAnon) {
-    const status = (ctx as any)?.member?.status as
-      | "active"
-      | "inactive"
-      | "pending"
-      | "revoked"
-      | undefined;
-    const hasAccount = Boolean((ctx as any)?.account);
-    const hasMember = Boolean((ctx as any)?.member);
-    const isValid = hasAccount && hasMember && status === "active";
-    if (!isValid) notFound();
+  // Apenas e-mail via Auth (sem SQL). Restante vem do AccessContext.
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      const { data } = await supabase.auth.getUser();
+      if (mounted) setEmail(data.user?.email ?? null);
+    })();
+    const { data: sub } = supabase.auth.onAuthStateChange((_e, sess) => {
+      setEmail(sess?.user?.email ?? null);
+    });
+    return () => {
+      mounted = false;
+      sub.subscription.unsubscribe();
+    };
+  }, []);
+
+  async function signOut() {
+    // encerra sessão no Supabase
+    await supabase.auth.signOut();
+
+    // limpa UI local imediatamente
+    setEmail(null);
+
+    // volta para o mesmo slug (ex.: /a/preview) e força revalidação do App Router
+    // evita “rastros” visuais pós-logout
+    router.replace(`/a/${params.account}`);
+    router.refresh();
   }
 
+  const role = anyCtx.member?.role ?? "—";
+  const accountName = anyCtx.account?.name ?? params.account;
+  const accountSlug = anyCtx.account?.subdomain ?? params.account;
+
   return (
-    <div className="mx-auto max-w-3xl p-6">
-      <Card className="rounded-2xl shadow-sm">
-        <CardHeader>
-          <CardTitle className="text-2xl">
-            {isAnon ? "Bem-vindo" : (ctx as any)?.account?.name ?? "Conta"}
-          </CardTitle>
-        </CardHeader>
+    <>
+      {/* HEADER */}
+      <header className="border-b bg-white">
+        <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-4">
+          <div className="text-sm font-semibold tracking-wide">
+            LP Factory — <span className="text-gray-600">{accountName}</span>
+            <span className="ml-2 rounded-full border px-2 py-0.5 text-xs text-gray-600">
+              /a/{accountSlug}
+            </span>
+          </div>
 
-        <CardContent className="space-y-4">
-          <p className="text-sm text-muted-foreground">
-            Subdomínio: <span className="font-mono">{slug}</span>
-          </p>
-
-          {isAnon ? (
-            <>
-              <p className="text-sm">
-                Para continuar, entre ou crie sua conta com Magic Link.
-              </p>
-              {/* Próxima etapa: trocar por popup (modal) de Magic Link */}
-              <Link
-                href="/auth/callback" // placeholder: depois troca por ação de envio do link
-                className="inline-flex rounded-xl border px-4 py-2 text-sm"
-              >
-                Entrar / Criar conta
-              </Link>
-            </>
-          ) : (
-            <>
-              <p className="text-sm">
-                Seu papel:{" "}
-                <span className="font-medium">{(ctx as any)?.member?.role}</span>
-              </p>
-              <div className="pt-2 text-sm text-muted-foreground">
-                Dashboard em construção.
+          {email ? (
+            <div className="flex items-center gap-3">
+              <div className="text-sm">
+                <span className="font-medium">{email}</span>{" "}
+                <span className="rounded-full border px-2 py-0.5 text-xs text-gray-600">
+                  {role}
+                </span>
               </div>
-            </>
+              <button
+                onClick={signOut}
+                className="rounded-md border px-3 py-1.5 text-sm hover:bg-gray-50"
+              >
+                Sair
+              </button>
+              <div
+                aria-label="Avatar do usuário"
+                className="ml-1 h-8 w-8 rounded-full border border-gray-300 bg-gray-100"
+              />
+            </div>
+          ) : (
+            <nav className="flex items-center gap-3">
+              <button
+                onClick={() => {
+                  setAuthMode("login");
+                  setAuthOpen(true);
+                }}
+                className="rounded-md border px-3 py-1.5 text-sm hover:bg-gray-50"
+              >
+                Entrar
+              </button>
+              <button
+                onClick={() => {
+                  setAuthMode("signup");
+                  setAuthOpen(true);
+                }}
+                className="rounded-md border px-3 py-1.5 text-sm hover:bg-gray-50"
+              >
+                Criar conta
+              </button>
+              <div
+                aria-label="Avatar do usuário"
+                className="ml-2 h-8 w-8 rounded-full border border-gray-300 bg-gray-100"
+              />
+            </nav>
           )}
-        </CardContent>
-      </Card>
-    </div>
+        </div>
+      </header>
+
+      {/* CONTEÚDO */}
+      <main className="mx-auto max-w-3xl px-6 py-12">
+        <h1 className="text-3xl font-semibold">Account Dashboard</h1>
+
+        {anyCtx && (anyCtx.account || anyCtx.member) ? (
+          <div className="mt-4 grid gap-2 text-sm text-gray-700">
+            <div>
+              <span className="font-medium">Conta: </span>
+              {anyCtx.account?.name ?? "—"}{" "}
+              <span className="text-gray-500">({anyCtx.account?.id ?? "—"})</span>
+            </div>
+            <div>
+              <span className="font-medium">Slug: </span>
+              {anyCtx.account?.subdomain ?? "—"}
+            </div>
+            <div>
+              <span className="font-medium">Papel: </span>
+              {anyCtx.member?.role ?? "—"}
+            </div>
+            <div>
+              <span className="font-medium">Status membro: </span>
+              {anyCtx.member?.status ?? "—"}
+            </div>
+          </div>
+        ) : (
+          <p className="mt-2 text-gray-600">
+            {email
+              ? "Não foi possível resolver seu vínculo de acesso para esta conta."
+              : "Use os links no header para continuar."}
+          </p>
+        )}
+      </main>
+
+      {/* AUTH DIALOG */}
+      <AuthDialog
+        context="account"
+        mode={authMode}
+        open={authOpen}
+        onOpenChange={setAuthOpen}
+        onRequestModeChange={setAuthMode}
+      />
+    </>
   );
 }

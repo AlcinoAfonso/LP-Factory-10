@@ -1,5 +1,5 @@
 // src/lib/access/getAccessContext.ts
-import { getServerSupabase } from "@/src/lib/supabase/server";
+import { getServerSupabase } from "@/lib/supabase/server";
 import type * as Access from "./types";
 import {
   mapAccountFromDB,

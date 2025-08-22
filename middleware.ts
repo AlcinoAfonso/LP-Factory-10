@@ -1,28 +1,31 @@
-// middleware.ts
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 
-/**
- * Middleware mínimo para o escopo do Dashboard.
- * - Aplica-se apenas a rotas que começam com /a/
- * - Sem referências a rotas legadas (/login, /select-account)
- * - Mantém a flag ACCESS_CONTEXT_ENFORCED para ativar lógica futura
- */
-export function middleware(_req: NextRequest) {
-  // Toggle global (pode deixar OFF em Preview enquanto o guard real não estiver pronto)
-  const ENFORCED = process.env.ACCESS_CONTEXT_ENFORCED === "true";
-
-  if (!ENFORCED) {
-    // Sem enforcement: deixa passar
+export function middleware(req: NextRequest) {
+  if (req.method !== "GET" && req.method !== "HEAD") {
     return NextResponse.next();
   }
 
-  // Aqui entra a checagem real de sessão/tenant/guards (futuro)
-  // Por ora, apenas deixa passar.
+  const { pathname, search } = req.nextUrl;
+  const normalized = pathname.endsWith("/") && pathname !== "/" 
+    ? pathname.slice(0, -1) 
+    : pathname;
+  
+  if (normalized === "/a/preview") {
+    const url = new URL("/a", req.url);
+    url.search = search;
+    return NextResponse.redirect(url, 307);
+  }
+  
+  if (normalized === "/a") {
+    const url = new URL("/a/preview", req.url);
+    url.search = search;
+    return NextResponse.rewrite(url);
+  }
+  
   return NextResponse.next();
 }
 
-/** Aplica SOMENTE em /a/*  (auth/callback e estáticos ficam fora) */
 export const config = {
-  matcher: ["/a/:path*"],
+  matcher: ["/a", "/a/:path*"],
 };
