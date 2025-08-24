@@ -2,6 +2,25 @@
 import { createServerClient } from "@/lib/supabase/server";
 import type * as Access from "./types";
 
+/** Identificadores canônicos dos planos (alinhados ao banco). */
+export type PlanId = "free" | "light" | "pro" | "ultra";
+
+/**
+ * Mapeamento temporário: PlanId ↔ Stripe Price ID
+ * ⚠️ Fonte de verdade será a tabela plan_price_map (Stripe Sync 10).
+ */
+const PLAN_PRICE_MAP: Record<PlanId, string> = {
+  free: "price_free_placeholder",
+  light: "price_light_placeholder",
+  pro: "price_pro_placeholder",
+  ultra: "price_ultra_placeholder",
+};
+
+/** Retorna o Stripe Price ID de um planId (ou undefined se não existir). */
+export function mapPlanIdToStripePrice(planId: PlanId): string | undefined {
+  return PLAN_PRICE_MAP[planId];
+}
+
 /** Linha retornada pela RPC `get_account_effective_limits` */
 export type DBEffectiveLimitsRow = {
   plan_id: string;
