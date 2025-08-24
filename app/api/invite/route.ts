@@ -3,9 +3,9 @@ export const runtime = "nodejs";
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { createServerClient } from "@supabase/ssr";
-import { admin } from "@/src/lib/supabase/admin";
-import { getAccessContext } from "@/src/lib/access/getAccessContext";
-import { AccessError } from "@/src/lib/access/types";
+import { admin } from "@/lib/supabase/admin";
+import { getAccessContext } from "@/lib/access/getAccessContext";
+import { AccessError } from "@/lib/access/types";
 
 type Body = { email: string; role: "admin" | "editor" | "viewer" };
 
