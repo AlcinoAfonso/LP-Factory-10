@@ -18,7 +18,7 @@ type Props = {
 };
 
 export default function AuthDialog({
-  context, // reservado para futuros textos/contexto
+  context,
   mode,
   open,
   onOpenChange,
@@ -47,14 +47,13 @@ export default function AuthDialog({
         </DialogHeader>
 
         {mode === "login" && (
-          <LoginForm
-            onForgotClick={() => onRequestModeChange?.("recovery")}
-          />
+          <LoginForm onForgotClick={() => onRequestModeChange?.("recovery")} />
         )}
 
         {mode === "recovery" && (
           <RecoveryForm
             onBackToLogin={() => onRequestModeChange?.("login")}
+            onDone={() => onOpenChange(false)}  // <<< fecha o modal após confirmar envio
           />
         )}
 
