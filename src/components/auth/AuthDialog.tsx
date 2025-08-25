@@ -51,10 +51,7 @@ export default function AuthDialog({
         )}
 
         {mode === "recovery" && (
-          <RecoveryForm
-            onBackToLogin={() => onRequestModeChange?.("login")}
-            onDone={() => onOpenChange(false)}  // <<< fecha o modal após confirmar envio
-          />
+          <RecoveryForm onBackToLogin={() => onRequestModeChange?.("login")} />
         )}
 
         {mode !== "login" && mode !== "recovery" && (
