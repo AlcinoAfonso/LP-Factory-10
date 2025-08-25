@@ -18,7 +18,7 @@ type Props = {
 };
 
 export default function AuthDialog({
-  context,
+  context, // reservado para futuros textos/contexto
   mode,
   open,
   onOpenChange,
@@ -41,26 +41,27 @@ export default function AuthDialog({
           <DialogDescription>
             {mode === "login" && "Acesse sua conta com seu e-mail e senha."}
             {mode === "signup" && "Crie sua conta gratuita."}
-            {mode === "recovery" &&
-              "Digite seu e-mail para recuperar o acesso."}
+            {mode === "recovery" && "Digite seu e-mail para recuperar o acesso."}
             {mode === "invite" && "Finalize o convite recebido."}
           </DialogDescription>
         </DialogHeader>
 
         {mode === "login" && (
           <LoginForm
-            context={context}
-            onRequestModeChange={onRequestModeChange}
+            onForgotClick={() => onRequestModeChange?.("recovery")}
           />
         )}
 
         {mode === "recovery" && (
           <RecoveryForm
-            onBackToLogin={() => {
-              // Ao concluir o envio ou clicar em voltar → troca para login
-              onRequestModeChange?.("login");
-            }}
+            onBackToLogin={() => onRequestModeChange?.("login")}
           />
+        )}
+
+        {mode !== "login" && mode !== "recovery" && (
+          <div className="text-sm text-gray-500">
+            Formulário “{mode}” virá na próxima etapa.
+          </div>
         )}
       </DialogContent>
     </Dialog>
