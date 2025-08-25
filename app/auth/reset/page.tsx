@@ -14,7 +14,7 @@ const hasDigit = (s: string) => /\d/.test(s);
 export default function ResetPasswordPage() {
   const router = useRouter();
   const search = useSearchParams();
-  const code = search.get("code"); // <<< definido aqui e usado abaixo
+  const code = search.get("code"); // token/token_hash do link de e-mail
 
   const [sessionReady, setSessionReady] = useState(false);
   const [tokenErr, setTokenErr] = useState<string | null>(null);
@@ -25,24 +25,49 @@ export default function ResetPasswordPage() {
   const [msg, setMsg] = useState<string | null>(null);
   const [ok, setOk] = useState(false);
 
-  // Troca o code do e-mail por sessão válida
+  // 1) Validar link e obter sessão
   useEffect(() => {
     (async () => {
       if (!code) {
         setTokenErr("Link inválido. Solicite uma nova redefinição.");
         return;
       }
-      const { error } = await supabase.auth.exchangeCodeForSession(code);
-      if (error) {
+
+      // Tenta o método mais novo; se não existir na sua versão do supabase-js, usa verifyOtp com token_hash
+      let authError: { message?: string } | null = null;
+
+      try {
+        // @ts-ignore - presente em versões mais novas
+        if (typeof supabase.auth.exchangeCodeForSession === "function") {
+          // @ts-ignore
+          const { error } = await supabase.auth.exchangeCodeForSession(code);
+          authError = error ?? null;
+        } else {
+          const { error } = await supabase.auth.verifyOtp({
+            type: "recovery",
+            token_hash: code,
+          } as any);
+          authError = error ?? null;
+        }
+      } catch (e: any) {
+        authError = { message: e?.message || "auth error" };
+      }
+
+      if (authError) {
         setTokenErr("O link expirou ou já foi usado. Solicite novamente.");
         return;
       }
 
-      // Avisar a outra aba que o link foi aberto (mitigação UX)
+      // Avisar a aba original (se suportado) que o link abriu aqui
       try {
-        const bc = new BroadcastChannel("lp-auth-reset");
-        bc.postMessage({ type: "opened" });
-        setTimeout(() => bc.close(), 0);
+        if (
+          typeof window !== "undefined" &&
+          (window as any).BroadcastChannel
+        ) {
+          const bc = new (window as any).BroadcastChannel("lp-auth-reset");
+          bc.postMessage({ type: "opened" });
+          setTimeout(() => bc.close(), 0);
+        }
       } catch {
         /* ignore */
       }
@@ -60,6 +85,7 @@ export default function ResetPasswordPage() {
     return null;
   }
 
+  // 2) Atualizar senha (requer sessão válida do passo 1)
   async function handleReset() {
     setMsg(null);
     const v = validate();
@@ -79,15 +105,16 @@ export default function ResetPasswordPage() {
     setMsg("Senha atualizada com sucesso! Você será redirecionado.");
   }
 
-  // Redirect automático após sucesso
+  // 3) Redirect automático após sucesso
   useEffect(() => {
     if (ok) {
-      const t = setTimeout(() => router.push("/a"), 3000); // middleware envia para /a/demo
+      const t = setTimeout(() => router.push("/a"), 3000); // middleware → /a/demo
       return () => clearTimeout(t);
     }
   }, [ok, router]);
 
-  // Estados
+  // ---- Estados de UI ----
+
   if (tokenErr) {
     return (
       <div className="max-w-md mx-auto mt-20 space-y-6 text-center">
