@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -24,76 +24,90 @@ export default function ResetPasswordPage() {
     if (!hasUpper(pwd1) || !hasLower(pwd1) || !hasDigit(pwd1)) {
       return "Use ao menos 1 letra maiúscula, 1 minúscula e 1 número.";
     }
-    if (pwd1 !== pwd2) return "Senhas não coincidem.";
+    if (pwd1 !== pwd2) return "As senhas não coincidem.";
     return null;
-    }
+  }
 
-  async function submit(e: React.FormEvent) {
-    e.preventDefault();
-    const v = validate();
-    if (v) { setMsg(v); return; }
-
-    setLoading(true);
+  async function handleReset() {
     setMsg(null);
-    const { error } = await supabase.auth.updateUser({ password: pwd1 });
-    setLoading(false);
+    const error = validate();
+    if (error) {
+      setMsg(error);
+      return;
+    }
+    setLoading(true);
 
-    if (error) { setMsg("Não foi possível atualizar a senha."); return; }
-    setOk(true);
+    try {
+      const { error: updateError } = await supabase.auth.updateUser({
+        password: pwd1,
+      });
+      if (updateError) {
+        if (updateError.message.includes("expired")) {
+          setMsg("O link expirou, solicite uma nova redefinição de senha.");
+        } else {
+          setMsg("Não foi possível atualizar a senha. Tente novamente.");
+        }
+        return;
+      }
+      setOk(true);
+      setMsg("Senha atualizada com sucesso! Você será redirecionado.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  // Redirect automático após sucesso
+  useEffect(() => {
+    if (ok) {
+      const t = setTimeout(() => {
+        router.push("/a"); // middleware cuida de /a → /a/demo
+      }, 3000);
+      return () => clearTimeout(t);
+    }
+  }, [ok, router]);
+
+  if (ok) {
+    return (
+      <div className="max-w-md mx-auto mt-20 space-y-6 text-center">
+        <h1 className="text-xl font-semibold">Senha redefinida</h1>
+        <p>{msg}</p>
+        <Button onClick={() => router.push("/a")}>
+          Ir para página principal
+        </Button>
+      </div>
+    );
   }
 
   return (
-    <main className="mx-auto max-w-md p-6">
-      <h1 className="mb-4 text-2xl font-semibold">Definir nova senha</h1>
+    <div className="max-w-md mx-auto mt-20 space-y-6">
+      <h1 className="text-xl font-semibold">Redefinir senha</h1>
 
-      {ok ? (
-        <div className="grid gap-3">
-          <p className="text-sm text-gray-700">
-            Senha alterada com sucesso. Você já pode fazer login.
-          </p>
-          <Button
-            onClick={() => {
-              router.replace("/a/preview");
-              router.refresh();
-            }}
-          >
-            Ir para o login
-          </Button>
+      <div className="space-y-4">
+        <div>
+          <Label htmlFor="pwd1">Nova senha</Label>
+          <Input
+            id="pwd1"
+            type="password"
+            value={pwd1}
+            onChange={(e) => setPwd1(e.target.value)}
+          />
         </div>
-      ) : (
-        <form onSubmit={submit} className="grid gap-3">
-          <div className="grid gap-1">
-            <Label htmlFor="pwd1">Nova senha</Label>
-            <Input
-              id="pwd1"
-              type="password"
-              required
-              value={pwd1}
-              onChange={(e) => setPwd1(e.target.value)}
-            />
-          </div>
-          <div className="grid gap-1">
-            <Label htmlFor="pwd2">Confirmar senha</Label>
-            <Input
-              id="pwd2"
-              type="password"
-              required
-              value={pwd2}
-              onChange={(e) => setPwd2(e.target.value)}
-            />
-          </div>
+        <div>
+          <Label htmlFor="pwd2">Confirmar senha</Label>
+          <Input
+            id="pwd2"
+            type="password"
+            value={pwd2}
+            onChange={(e) => setPwd2(e.target.value)}
+          />
+        </div>
+      </div>
 
-          {msg && <p className="text-sm text-red-600">{msg}</p>}
+      {msg && <p className="text-sm text-red-600">{msg}</p>}
 
-          <Button type="submit" disabled={loading}>
-            {loading ? "Salvando..." : "Salvar senha"}
-          </Button>
-
-          <p className="text-xs text-gray-500">
-            Requisitos: mínimo 8 caracteres, com ao menos 1 maiúscula, 1 minúscula e 1 número.
-          </p>
-        </form>
-      )}
-    </main>
+      <Button disabled={loading} onClick={handleReset}>
+        {loading ? "Atualizando..." : "Salvar nova senha"}
+      </Button>
+    </div>
   );
 }
