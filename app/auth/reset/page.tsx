@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import React, { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -11,7 +11,22 @@ const hasUpper = (s: string) => /[A-Z]/.test(s);
 const hasLower = (s: string) => /[a-z]/.test(s);
 const hasDigit = (s: string) => /\d/.test(s);
 
+// Wrapper com Suspense (exigido pelo Next p/ useSearchParams)
 export default function ResetPasswordPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="max-w-md mx-auto mt-20 text-center">
+          <p>Carregando…</p>
+        </div>
+      }
+    >
+      <ResetPasswordInner />
+    </Suspense>
+  );
+}
+
+function ResetPasswordInner() {
   const router = useRouter();
   const search = useSearchParams();
   const code = search.get("code"); // token/token_hash do link de e-mail
@@ -33,11 +48,10 @@ export default function ResetPasswordPage() {
         return;
       }
 
-      // Tenta o método mais novo; se não existir na sua versão do supabase-js, usa verifyOtp com token_hash
+      // Tenta método novo; senão, fallback p/ verifyOtp(token_hash)
       let authError: { message?: string } | null = null;
-
       try {
-        // @ts-ignore - presente em versões mais novas
+        // @ts-ignore (presentes em versões mais novas do supabase-js)
         if (typeof supabase.auth.exchangeCodeForSession === "function") {
           // @ts-ignore
           const { error } = await supabase.auth.exchangeCodeForSession(code);
@@ -58,13 +72,10 @@ export default function ResetPasswordPage() {
         return;
       }
 
-      // Avisar a aba original (se suportado) que o link abriu aqui
+      // Avisar aba original que o link foi aberto (mitigação UX)
       try {
-        if (
-          typeof window !== "undefined" &&
-          (window as any).BroadcastChannel
-        ) {
-          const bc = new (window as any).BroadcastChannel("lp-auth-reset");
+        if (typeof window !== "undefined" && "BroadcastChannel" in window) {
+          const bc = new BroadcastChannel("lp-auth-reset");
           bc.postMessage({ type: "opened" });
           setTimeout(() => bc.close(), 0);
         }
