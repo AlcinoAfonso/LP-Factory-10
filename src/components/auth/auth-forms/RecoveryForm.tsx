@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { supabase } from "@/lib/supabase/client"; // client oficial (browser)
+import { supabase } from "@/lib/supabase/client";
 
 type Props = { onBackToLogin?: () => void };
 
@@ -19,16 +19,17 @@ export default function RecoveryForm({ onBackToLogin }: Props) {
     setLoading(true);
     setErr(null);
 
-    // Hardening: evita acesso a window em ambientes não-browser
     const origin = typeof window !== "undefined" ? window.location.origin : "";
 
     try {
-      const redirectTo = `${origin}/auth/reset`;
-      const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo });
-      if (error) throw error;
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${origin}/auth/reset`,
+      });
+      if (error) {
+        setErr("Não foi possível enviar o e-mail. Tente novamente.");
+        return;
+      }
       setOk(true);
-    } catch {
-      setErr("Não foi possível enviar o e-mail.");
     } finally {
       setLoading(false);
     }
@@ -36,44 +37,35 @@ export default function RecoveryForm({ onBackToLogin }: Props) {
 
   if (ok) {
     return (
-      <div className="grid gap-3">
-        <p className="text-sm text-gray-700">
-          Se o e-mail existir, enviamos um link para redefinição. Verifique sua caixa de entrada.
+      <div className="space-y-4 text-center">
+        <h2 className="text-lg font-semibold">Verifique seu e-mail</h2>
+        <p>
+          Enviamos um link para redefinir sua senha. O link expira em 10 minutos.
         </p>
-        <Button onClick={onBackToLogin}>Voltar ao login</Button>
+        {onBackToLogin && (
+          <Button onClick={onBackToLogin}>Voltar ao login</Button>
+        )}
       </div>
     );
   }
 
   return (
-    <form onSubmit={submit} className="grid gap-3">
-      <div className="grid gap-1">
-        <Label htmlFor="rec-email">E-mail</Label>
+    <form onSubmit={submit} className="space-y-4">
+      <div>
+        <Label htmlFor="email">E-mail</Label>
         <Input
-          id="rec-email"
+          id="email"
           type="email"
           required
-          placeholder="seu@email.com"
           value={email}
-          onChange={(e) => {
-            setEmail(e.target.value);
-            if (err) setErr(null);
-          }}
+          onChange={(e) => setEmail(e.target.value)}
         />
       </div>
 
-      {err && (
-        <p role="alert" aria-live="polite" className="mt-1 text-sm text-red-600">
-          {err}
-        </p>
-      )}
+      {err && <p className="text-sm text-red-600">{err}</p>}
 
-      <Button type="submit" disabled={loading || !email}>
+      <Button type="submit" disabled={loading}>
         {loading ? "Enviando..." : "Enviar e-mail de redefinição"}
-      </Button>
-
-      <Button type="button" variant="link" className="justify-start px-0" onClick={onBackToLogin}>
-        ← Voltar para Entrar
       </Button>
     </form>
   );
