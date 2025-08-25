@@ -17,35 +17,42 @@ export default function RecoveryForm({ onBackToLogin }: Props) {
   const [status, setStatus] = useState<Status>("idle");
   const [err, setErr] = useState<string | null>(null);
 
-  // Reenvio após 30s
+  // cooldown 30s p/ evitar spam
   const INITIAL = 30;
-  const [count, setCount] = useState(INITIAL);
+  const [count, setCount] = useState(0);
   const timerRef = useRef<number | null>(null);
 
-  // Banner: link foi aberto em outra aba
   const [openedInAnotherTab, setOpenedInAnotherTab] = useState(false);
+  const [processDone, setProcessDone] = useState(false);
 
   useEffect(() => {
-    // Ouve sinal vindo de /auth/reset quando o link for aberto
+    // Listener dos eventos vindos da /auth/reset
     let bc: BroadcastChannel | null = null;
     try {
-      bc = new BroadcastChannel("lp-auth-reset");
-      bc.onmessage = (ev) => {
-        if (ev?.data?.type === "opened") setOpenedInAnotherTab(true);
-      };
-    } catch {
-      // BroadcastChannel indisponível (ok ignorar)
-    }
+      if (typeof window !== "undefined" && "BroadcastChannel" in window) {
+        bc = new BroadcastChannel("lp-auth-reset");
+        bc.onmessage = (ev) => {
+          const t = ev?.data?.type;
+          if (t === "opened") setOpenedInAnotherTab(true);
+          if (t === "success") setProcessDone(true);
+          if (t === "expired" || t === "used") {
+            // Mantém o modal; usuário pode reenviar pelo próprio e-mail novamente
+            setOpenedInAnotherTab(false);
+          }
+        };
+      }
+    } catch {}
     return () => {
       try {
         bc?.close();
       } catch {}
+      if (timerRef.current) window.clearInterval(timerRef.current);
     };
   }, []);
 
   function startCountdown() {
-    setCount(INITIAL);
     if (timerRef.current) window.clearInterval(timerRef.current);
+    setCount(INITIAL);
     timerRef.current = window.setInterval(() => {
       setCount((c) => {
         if (c <= 1) {
@@ -55,7 +62,7 @@ export default function RecoveryForm({ onBackToLogin }: Props) {
         }
         return c - 1;
       });
-    });
+    }, 1000);
   }
 
   async function submit(e: React.FormEvent) {
@@ -68,11 +75,16 @@ export default function RecoveryForm({ onBackToLogin }: Props) {
       redirectTo: `${origin}/auth/reset`,
     });
 
+    // **Mensagem neutra** — não revela se e-mail existe
     if (error) {
       setStatus("error");
-      setErr("Não foi possível enviar o e-mail. Tente novamente.");
+      setErr(null);
+      // Mesmo com erro, mostramos mensagem neutra para não vazar existência
+      setStatus("sent");
+      startCountdown();
       return;
     }
+
     setStatus("sent");
     startCountdown();
   }
@@ -89,27 +101,35 @@ export default function RecoveryForm({ onBackToLogin }: Props) {
       redirectTo: `${origin}/auth/reset`,
     });
 
+    // Continua **neutro** em caso de erro
     if (error) {
-      setStatus("error");
-      setErr("Não foi possível reenviar. Tente novamente.");
+      setStatus("sent");
+      startCountdown();
       return;
     }
     setStatus("sent");
     startCountdown();
   }
 
-  // --- UI ---
-
+  // ---- UI ----
   if (status === "sent") {
     return (
       <div className="space-y-4 text-center">
         <h2 className="text-lg font-semibold">Verifique seu e-mail</h2>
-        <p>Enviamos um link para redefinir sua senha. O link expira em 10 minutos.</p>
-        <p className="text-sm text-muted-foreground">Dica: confira também a pasta de spam.</p>
+        <p>Se este e-mail estiver cadastrado, você receberá instruções.</p>
+        <p className="text-sm text-muted-foreground">
+          Dica: veja também a pasta de spam. O link expira em 10 minutos.
+        </p>
 
         {openedInAnotherTab && (
           <div className="text-sm rounded-md border p-2">
-            Link aberto em outra aba — continue por lá para definir a nova senha.
+            Abrimos o link em outra aba — continue por lá para definir a nova senha.
+          </div>
+        )}
+
+        {processDone && (
+          <div className="text-sm rounded-md border p-2">
+            Processo concluído. Você já pode fechar este modal.
           </div>
         )}
 
@@ -153,3 +173,4 @@ export default function RecoveryForm({ onBackToLogin }: Props) {
     </form>
   );
 }
+

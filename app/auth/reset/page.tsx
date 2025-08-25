@@ -1,6 +1,6 @@
 "use client";
 
-import React, { Suspense, useEffect, useState } from "react";
+import React, { Suspense, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -11,7 +11,6 @@ const hasUpper = (s: string) => /[A-Z]/.test(s);
 const hasLower = (s: string) => /[a-z]/.test(s);
 const hasDigit = (s: string) => /\d/.test(s);
 
-// Wrapper com Suspense (exigido pelo Next p/ useSearchParams)
 export default function ResetPasswordPage() {
   return (
     <Suspense
@@ -26,13 +25,15 @@ export default function ResetPasswordPage() {
   );
 }
 
+type LinkState = "valid" | "expired" | "used" | "invalid" | "network_error";
+
 function ResetPasswordInner() {
   const router = useRouter();
   const search = useSearchParams();
-  const code = search.get("code"); // token/token_hash do link de e-mail
+  const code = search.get("code");
 
+  const [linkState, setLinkState] = useState<LinkState>("invalid");
   const [sessionReady, setSessionReady] = useState(false);
-  const [tokenErr, setTokenErr] = useState<string | null>(null);
 
   const [pwd1, setPwd1] = useState("");
   const [pwd2, setPwd2] = useState("");
@@ -40,63 +41,94 @@ function ResetPasswordInner() {
   const [msg, setMsg] = useState<string | null>(null);
   const [ok, setOk] = useState(false);
 
-  // 1) Validar link e obter sessão
+  // Reenvio inline (quando expirado/usado/invalid)
+  const [resendEmail, setResendEmail] = useState("");
+  const [resendMsg, setResendMsg] = useState<string | null>(null);
+  const [resendLoading, setResendLoading] = useState(false);
+  const [cooldown, setCooldown] = useState(0);
+
+  useEffect(() => {
+    if (!cooldown) return;
+    const t = setInterval(() => setCooldown((c) => Math.max(0, c - 1)), 1000);
+    return () => clearInterval(t);
+  }, [cooldown]);
+
+  // Sempre avisar a aba original que o link foi aberto (mitigação de "duas abas")
+  useEffect(() => {
+    try {
+      if (typeof window !== "undefined" && "BroadcastChannel" in window) {
+        const bc = new BroadcastChannel("lp-auth-reset");
+        bc.postMessage({ type: "opened" });
+        setTimeout(() => bc.close(), 0);
+      }
+    } catch {}
+  }, []);
+
+  // Validar link e obter sessão (exchange/verify)
   useEffect(() => {
     (async () => {
       if (!code) {
-        setTokenErr("Link inválido. Solicite uma nova redefinição.");
+        setLinkState("invalid");
         return;
       }
-
-      // Tenta método novo; senão, fallback p/ verifyOtp(token_hash)
-      let authError: { message?: string } | null = null;
       try {
-        // @ts-ignore (presentes em versões mais novas do supabase-js)
-        if (typeof supabase.auth.exchangeCodeForSession === "function") {
-          // @ts-ignore
-          const { error } = await supabase.auth.exchangeCodeForSession(code);
-          authError = error ?? null;
+        const anyAuth = (supabase as any).auth;
+        if (typeof anyAuth.exchangeCodeForSession === "function") {
+          const { error } = await anyAuth.exchangeCodeForSession(code);
+          if (error) {
+            const m = (error.message || "").toLowerCase();
+            setLinkState(m.includes("used") ? "used" : "expired");
+            // Sinalizar aba original
+            try {
+              if (typeof window !== "undefined" && "BroadcastChannel" in window) {
+                const bc = new BroadcastChannel("lp-auth-reset");
+                bc.postMessage({ type: m.includes("used") ? "used" : "expired" });
+                setTimeout(() => bc.close(), 0);
+              }
+            } catch {}
+            return;
+          }
         } else {
           const { error } = await supabase.auth.verifyOtp({
             type: "recovery",
             token_hash: code,
           } as any);
-          authError = error ?? null;
+          if (error) {
+            const m = (error.message || "").toLowerCase();
+            setLinkState(m.includes("used") ? "used" : "expired");
+            try {
+              if (typeof window !== "undefined" && "BroadcastChannel" in window) {
+                const bc = new BroadcastChannel("lp-auth-reset");
+                bc.postMessage({ type: m.includes("used") ? "used" : "expired" });
+                setTimeout(() => bc.close(), 0);
+              }
+            } catch {}
+            return;
+          }
         }
-      } catch (e: any) {
-        authError = { message: e?.message || "auth error" };
-      }
 
-      if (authError) {
-        setTokenErr("O link expirou ou já foi usado. Solicite novamente.");
-        return;
-      }
-
-      // Avisar aba original que o link foi aberto (mitigação UX)
-      try {
-        if (typeof window !== "undefined" && "BroadcastChannel" in window) {
-          const bc = new BroadcastChannel("lp-auth-reset");
-          bc.postMessage({ type: "opened" });
-          setTimeout(() => bc.close(), 0);
-        }
+        setLinkState("valid");
+        setSessionReady(true);
       } catch {
-        /* ignore */
+        setLinkState("network_error");
       }
-
-      setSessionReady(true);
     })();
   }, [code]);
 
-  function validate(): string | null {
-    if (pwd1.length < 8) return "A senha deve ter pelo menos 8 caracteres.";
-    if (!hasUpper(pwd1) || !hasLower(pwd1) || !hasDigit(pwd1)) {
-      return "Use ao menos 1 letra maiúscula, 1 minúscula e 1 número.";
-    }
-    if (pwd1 !== pwd2) return "As senhas não coincidem.";
-    return null;
-  }
+  const validate = useMemo(
+    () =>
+      function (): string | null {
+        if (pwd1.length < 8) return "A senha deve ter pelo menos 8 caracteres.";
+        if (!hasUpper(pwd1) || !hasLower(pwd1) || !hasDigit(pwd1)) {
+          return "Use ao menos 1 letra maiúscula, 1 minúscula e 1 número.";
+        }
+        if (pwd1 !== pwd2) return "As senhas não coincidem.";
+        return null;
+      },
+    [pwd1, pwd2]
+  );
 
-  // 2) Atualizar senha (requer sessão válida do passo 1)
+  // Atualizar senha (mantém sessão de recovery ativa -> permite nova tentativa por ~5min)
   async function handleReset() {
     setMsg(null);
     const v = validate();
@@ -109,29 +141,105 @@ function ResetPasswordInner() {
     setLoading(false);
 
     if (error) {
-      setMsg("Não foi possível atualizar a senha. Solicite um novo link.");
+      setMsg("Erro ao salvar. Tente novamente.");
       return;
     }
     setOk(true);
-    setMsg("Senha atualizada com sucesso! Você será redirecionado.");
+    setMsg("Senha alterada com sucesso! Redirecionando…");
+    try {
+      if (typeof window !== "undefined" && "BroadcastChannel" in window) {
+        const bc = new BroadcastChannel("lp-auth-reset");
+        bc.postMessage({ type: "success" });
+        setTimeout(() => bc.close(), 0);
+      }
+    } catch {}
   }
 
-  // 3) Redirect automático após sucesso
+  // Redirect automático após sucesso
   useEffect(() => {
     if (ok) {
-      const t = setTimeout(() => router.push("/a"), 3000); // middleware → /a/demo
+      const t = setTimeout(() => router.push("/a"), 3000);
       return () => clearTimeout(t);
     }
   }, [ok, router]);
 
-  // ---- Estados de UI ----
+  async function handleResend() {
+    setResendMsg(null);
+    setResendLoading(true);
+    try {
+      const origin = typeof window !== "undefined" ? window.location.origin : "";
+      const { error } = await supabase.auth.resetPasswordForEmail(resendEmail, {
+        redirectTo: `${origin}/auth/reset`,
+      });
+      if (error) {
+        setResendMsg("Não foi possível reenviar. Verifique o e-mail e tente novamente.");
+      } else {
+        setResendMsg("Enviamos um novo link. Verifique sua caixa de entrada (ou spam).");
+        setCooldown(30);
+      }
+    } finally {
+      setResendLoading(false);
+    }
+  }
 
-  if (tokenErr) {
+  // ---------- UI ----------
+  if (linkState === "invalid") {
     return (
       <div className="max-w-md mx-auto mt-20 space-y-6 text-center">
         <h1 className="text-xl font-semibold">Redefinir senha</h1>
-        <p className="text-red-600">{tokenErr}</p>
+        <p className="text-red-600">Link inválido. Solicite uma nova redefinição.</p>
         <Button onClick={() => router.push("/a")}>Ir para página principal</Button>
+      </div>
+    );
+  }
+
+  if (linkState === "expired" || linkState === "used" || linkState === "network_error") {
+    return (
+      <div className="max-w-md mx-auto mt-20 space-y-6">
+        <h1 className="text-xl font-semibold text-center">Redefinir senha</h1>
+        <p className="text-center text-red-600">
+          {linkState === "expired" && "Este link expirou."}
+          {linkState === "used" && "Este link já foi usado."}
+          {linkState === "network_error" && "Falha na validação do link. Tente novamente."}
+        </p>
+
+        <div className="space-y-3">
+          <Label htmlFor="re-email">E-mail</Label>
+          <Input
+            id="re-email"
+            type="email"
+            value={resendEmail}
+            onChange={(e) => setResendEmail(e.target.value)}
+            placeholder="seu@email.com"
+          />
+          {resendMsg && (
+            <p
+              className={`text-sm ${
+                resendMsg.includes("novo link") ? "text-green-600" : "text-red-600"
+              }`}
+            >
+              {resendMsg}
+            </p>
+          )}
+          <div className="flex gap-2">
+            <Button
+              onClick={handleResend}
+              disabled={resendLoading || !resendEmail || cooldown > 0}
+            >
+              {cooldown > 0
+                ? `Reenviar em ${cooldown}s`
+                : resendLoading
+                ? "Enviando..."
+                : "Reenviar e-mail de redefinição"}
+            </Button>
+            <Button variant="secondary" onClick={() => router.push("/a")}>
+              Ir para página principal
+            </Button>
+          </div>
+          <p className="text-sm text-muted-foreground">
+            Dica: verifique também a pasta de spam. O link expira em 10 minutos.
+          </p>
+        </div>
       </div>
     );
   }
@@ -186,3 +294,4 @@ function ResetPasswordInner() {
     </div>
   );
 }
+
