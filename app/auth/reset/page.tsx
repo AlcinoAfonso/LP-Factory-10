@@ -14,7 +14,7 @@ const hasDigit = (s: string) => /\d/.test(s);
 export default function ResetPasswordPage() {
   const router = useRouter();
   const search = useSearchParams();
-  const code = search.get("code");
+  const code = search.get("code"); // <<< definido aqui e usado abaixo
 
   const [sessionReady, setSessionReady] = useState(false);
   const [tokenErr, setTokenErr] = useState<string | null>(null);
@@ -25,7 +25,7 @@ export default function ResetPasswordPage() {
   const [msg, setMsg] = useState<string | null>(null);
   const [ok, setOk] = useState(false);
 
-  // 1) Trocar o code do e-mail por sessão válida
+  // Troca o code do e-mail por sessão válida
   useEffect(() => {
     (async () => {
       if (!code) {
@@ -38,12 +38,14 @@ export default function ResetPasswordPage() {
         return;
       }
 
-      // Avisar a aba original que o link foi aberto
+      // Avisar a outra aba que o link foi aberto (mitigação UX)
       try {
         const bc = new BroadcastChannel("lp-auth-reset");
         bc.postMessage({ type: "opened" });
         setTimeout(() => bc.close(), 0);
-      } catch {}
+      } catch {
+        /* ignore */
+      }
 
       setSessionReady(true);
     })();
@@ -77,14 +79,15 @@ export default function ResetPasswordPage() {
     setMsg("Senha atualizada com sucesso! Você será redirecionado.");
   }
 
+  // Redirect automático após sucesso
   useEffect(() => {
     if (ok) {
-      const t = setTimeout(() => router.push("/a"), 3000); // middleware → /a/demo
+      const t = setTimeout(() => router.push("/a"), 3000); // middleware envia para /a/demo
       return () => clearTimeout(t);
     }
   }, [ok, router]);
 
-  // Estados de token
+  // Estados
   if (tokenErr) {
     return (
       <div className="max-w-md mx-auto mt-20 space-y-6 text-center">
@@ -145,29 +148,3 @@ export default function ResetPasswordPage() {
     </div>
   );
 }
-// ...imports e estados já existentes...
-
-// 1) Trocar o code por sessão válida
-useEffect(() => {
-  (async () => {
-    if (!code) {
-      setTokenErr("Link inválido. Solicite uma nova redefinição.");
-      return;
-    }
-    const { error } = await supabase.auth.exchangeCodeForSession(code);
-    if (error) {
-      setTokenErr("O link expirou ou já foi usado. Solicite novamente.");
-      return;
-    }
-
-    // >>> avisa a aba original que o link foi aberto
-    try {
-      const bc = new BroadcastChannel("lp-auth-reset");
-      bc.postMessage({ type: "opened" });
-      // fecha o canal logo após enviar
-      setTimeout(() => bc.close(), 0);
-    } catch {}
-
-    setSessionReady(true);
-  })();
-}, [code]);
