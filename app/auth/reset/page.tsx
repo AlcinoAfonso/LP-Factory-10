@@ -13,13 +13,7 @@ const hasDigit = (s: string) => /\d/.test(s);
 
 export default function ResetPasswordPage() {
   return (
-    <Suspense
-      fallback={
-        <div className="max-w-md mx-auto mt-20 text-center">
-          <p>Carregando…</p>
-        </div>
-      }
-    >
+    <Suspense fallback={<div className="max-w-md mx-auto mt-20 text-center"><p>Carregando…</p></div>}>
       <ResetPasswordInner />
     </Suspense>
   );
@@ -30,7 +24,9 @@ type LinkState = "valid" | "expired" | "used" | "invalid" | "network_error";
 function ResetPasswordInner() {
   const router = useRouter();
   const search = useSearchParams();
-  const code = search.get("code");
+
+  // Supabase pode enviar ?token_hash=... (padrão) ou ?code=...
+  const queryToken = search.get("token_hash") || search.get("code");
 
   const [linkState, setLinkState] = useState<LinkState>("invalid");
   const [sessionReady, setSessionReady] = useState(false);
@@ -53,7 +49,7 @@ function ResetPasswordInner() {
     return () => clearInterval(t);
   }, [cooldown]);
 
-  // Sempre avisar a aba original que o link foi aberto (mitigação de "duas abas")
+  // Avisar a aba original que o link foi aberto
   useEffect(() => {
     try {
       if (typeof window !== "undefined" && "BroadcastChannel" in window) {
@@ -64,35 +60,22 @@ function ResetPasswordInner() {
     } catch {}
   }, []);
 
-  // Validar link e obter sessão (exchange/verify)
+  // Validar link e abrir sessão — **somente verifyOtp(type:'recovery')**
   useEffect(() => {
     (async () => {
-      if (!code) {
-        setLinkState("invalid");
-        return;
-      }
+      // Alguns templates antigos trazem tokens no hash (#access_token&refresh_token)
+      const hash = typeof window !== "undefined" ? window.location.hash : "";
+      const hashParams = new URLSearchParams(hash.startsWith("#") ? hash.slice(1) : hash);
+      const access_token = hashParams.get("access_token");
+      const refresh_token = hashParams.get("refresh_token");
+
       try {
-        const anyAuth = (supabase as any).auth;
-        if (typeof anyAuth.exchangeCodeForSession === "function") {
-          const { error } = await anyAuth.exchangeCodeForSession(code);
-          if (error) {
-            const m = (error.message || "").toLowerCase();
-            setLinkState(m.includes("used") ? "used" : "expired");
-            // Sinalizar aba original
-            try {
-              if (typeof window !== "undefined" && "BroadcastChannel" in window) {
-                const bc = new BroadcastChannel("lp-auth-reset");
-                bc.postMessage({ type: m.includes("used") ? "used" : "expired" });
-                setTimeout(() => bc.close(), 0);
-              }
-            } catch {}
-            return;
-          }
-        } else {
+        if (queryToken) {
           const { error } = await supabase.auth.verifyOtp({
             type: "recovery",
-            token_hash: code,
+            token_hash: queryToken,
           } as any);
+
           if (error) {
             const m = (error.message || "").toLowerCase();
             setLinkState(m.includes("used") ? "used" : "expired");
@@ -105,15 +88,31 @@ function ResetPasswordInner() {
             } catch {}
             return;
           }
+
+          setLinkState("valid");
+          setSessionReady(true);
+          return;
         }
 
-        setLinkState("valid");
-        setSessionReady(true);
+        // Fallback: se vierem tokens no hash, tentamos setar sessão
+        if (access_token && refresh_token) {
+          const { error } = await supabase.auth.setSession({ access_token, refresh_token });
+          if (error) {
+            setLinkState("network_error");
+            return;
+          }
+          setLinkState("valid");
+          setSessionReady(true);
+          return;
+        }
+
+        // Sem nenhum token reconhecido
+        setLinkState("invalid");
       } catch {
         setLinkState("network_error");
       }
     })();
-  }, [code]);
+  }, [queryToken]);
 
   const validate = useMemo(
     () =>
@@ -128,7 +127,6 @@ function ResetPasswordInner() {
     [pwd1, pwd2]
   );
 
-  // Atualizar senha (mantém sessão de recovery ativa -> permite nova tentativa por ~5min)
   async function handleReset() {
     setMsg(null);
     const v = validate();
@@ -155,7 +153,6 @@ function ResetPasswordInner() {
     } catch {}
   }
 
-  // Redirect automático após sucesso
   useEffect(() => {
     if (ok) {
       const t = setTimeout(() => router.push("/a"), 3000);
@@ -222,10 +219,7 @@ function ResetPasswordInner() {
             </p>
           )}
           <div className="flex gap-2">
-            <Button
-              onClick={handleResend}
-              disabled={resendLoading || !resendEmail || cooldown > 0}
-            >
+            <Button onClick={handleResend} disabled={resendLoading || !resendEmail || cooldown > 0}>
               {cooldown > 0
                 ? `Reenviar em ${cooldown}s`
                 : resendLoading
@@ -245,11 +239,7 @@ function ResetPasswordInner() {
   }
 
   if (!sessionReady) {
-    return (
-      <div className="max-w-md mx-auto mt-20 text-center">
-        <p>Validando seu link…</p>
-      </div>
-    );
+    return <div className="max-w-md mx-auto mt-20 text-center"><p>Validando seu link…</p></div>;
   }
 
   if (ok) {
@@ -268,21 +258,11 @@ function ResetPasswordInner() {
       <div className="space-y-4">
         <div>
           <Label htmlFor="pwd1">Nova senha</Label>
-          <Input
-            id="pwd1"
-            type="password"
-            value={pwd1}
-            onChange={(e) => setPwd1(e.target.value)}
-          />
+          <Input id="pwd1" type="password" value={pwd1} onChange={(e) => setPwd1(e.target.value)} />
         </div>
         <div>
           <Label htmlFor="pwd2">Confirmar senha</Label>
-          <Input
-            id="pwd2"
-            type="password"
-            value={pwd2}
-            onChange={(e) => setPwd2(e.target.value)}
-          />
+          <Input id="pwd2" type="password" value={pwd2} onChange={(e) => setPwd2(e.target.value)} />
         </div>
       </div>
 
@@ -294,4 +274,3 @@ function ResetPasswordInner() {
     </div>
   );
 }
-
