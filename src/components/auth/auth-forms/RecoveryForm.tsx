@@ -1,14 +1,17 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/lib/supabase/client";
 
-type Props = { onBackToLogin?: () => void };
+type Props = {
+  onBackToLogin?: () => void;
+  onDone?: () => void; // fecha modal após confirmação
+};
 
-export default function RecoveryForm({ onBackToLogin }: Props) {
+export default function RecoveryForm({ onBackToLogin, onDone }: Props) {
   const [email, setEmail] = useState("");
   const [ok, setOk] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -35,16 +38,29 @@ export default function RecoveryForm({ onBackToLogin }: Props) {
     }
   }
 
+  // após mostrar a confirmação, fechamos o modal em ~1.5s
+  useEffect(() => {
+    if (ok) {
+      const t = setTimeout(() => {
+        onDone?.();
+      }, 1500);
+      return () => clearTimeout(t);
+    }
+  }, [ok, onDone]);
+
   if (ok) {
     return (
       <div className="space-y-4 text-center">
         <h2 className="text-lg font-semibold">Verifique seu e-mail</h2>
-        <p>
-          Enviamos um link para redefinir sua senha. O link expira em 10 minutos.
-        </p>
-        {onBackToLogin && (
-          <Button onClick={onBackToLogin}>Voltar ao login</Button>
-        )}
+        <p>Enviamos um link para redefinir sua senha. O link expira em 10 minutos.</p>
+        <Button
+          type="button"
+          onClick={() => {
+            onDone?.() ?? onBackToLogin?.();
+          }}
+        >
+          Fechar
+        </Button>
       </div>
     );
   }
