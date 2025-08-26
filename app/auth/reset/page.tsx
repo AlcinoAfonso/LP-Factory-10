@@ -100,8 +100,7 @@ export default function ResetPasswordPage() {
 
       // Fallback: token_hash (algumas versões antigas/links)
       if (tokenHash) {
-        // @ts-expect-error — typings antigas não têm token_hash
-        const { error } = await supabase.auth.verifyOtp({
+              const { error } = await supabase.auth.verifyOtp({
           type: "recovery",
           token_hash: tokenHash,
         });
