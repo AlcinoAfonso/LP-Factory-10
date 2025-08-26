@@ -1,6 +1,7 @@
+// app/auth/reset/page.tsx
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import React, { Suspense, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -14,7 +15,22 @@ const hasUpper = (s: string) => /[A-Z]/.test(s);
 const hasLower = (s: string) => /[a-z]/.test(s);
 const hasDigit = (s: string) => /\d/.test(s);
 
+// Wrapper com Suspense (requisito do Next p/ useSearchParams)
 export default function ResetPasswordPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="max-w-md mx-auto mt-20 text-center">
+          <p>Carregando…</p>
+        </div>
+      }
+    >
+      <ResetPasswordInner />
+    </Suspense>
+  );
+}
+
+function ResetPasswordInner() {
   const router = useRouter();
   const search = useSearchParams();
 
@@ -55,42 +71,33 @@ export default function ResetPasswordPage() {
     return "network_error";
   }
 
-  // Troca o token do link por uma sessão de recovery válida
+  // Troca o token do link por sessão válida (ou classifica erro)
   useEffect(() => {
-    // Notificar a outra aba que este link foi aberto
+    // Notificar a aba original
     try {
       bcRef.current = new BroadcastChannel("lp-auth-reset");
       bcRef.current.postMessage({ type: "opened" } as RemoteEvent);
     } catch {
-      // ignore
+      /* ignore */
     }
 
     (async () => {
-      // 1) Token via query (?code=...) — mais comum com resetPasswordForEmail
       const code = search.get("code");
-
-      // 2) Também aceitamos ?token_hash=... (formato alternativo)
       const tokenHash = search.get("token_hash");
 
-      // 3) Acesso direto sem token algum → inválido
       const hasHashFragment = typeof window !== "undefined" && !!window.location.hash;
       if (!code && !tokenHash && !hasHashFragment) {
         setLinkState("invalid");
         return;
       }
 
-      // Tenta exchangeCodeForSession quando houver "code"
       if (code) {
         const { error } = await supabase.auth.exchangeCodeForSession(code);
         if (error) {
-          setLinkState(classifyError(error));
-          // Propaga estado para o modal original
+          const state = classifyError(error);
+          setLinkState(state);
           try {
-            if (bcRef.current) {
-              bcRef.current.postMessage({
-                type: classifyError(error) === "used" ? "used" : "expired",
-              } as RemoteEvent);
-            }
+            bcRef.current?.postMessage({ type: state === "used" ? "used" : "expired" } as RemoteEvent);
           } catch {}
           return;
         }
@@ -98,20 +105,16 @@ export default function ResetPasswordPage() {
         return;
       }
 
-      // Fallback: token_hash (algumas versões antigas/links)
       if (tokenHash) {
-              const { error } = await supabase.auth.verifyOtp({
+        const { error } = await supabase.auth.verifyOtp({
           type: "recovery",
           token_hash: tokenHash,
-        });
+        } as any);
         if (error) {
-          setLinkState(classifyError(error));
+          const state = classifyError(error);
+          setLinkState(state);
           try {
-            if (bcRef.current) {
-              bcRef.current.postMessage({
-                type: classifyError(error) === "used" ? "used" : "expired",
-              } as RemoteEvent);
-            }
+            bcRef.current?.postMessage({ type: state === "used" ? "used" : "expired" } as RemoteEvent);
           } catch {}
           return;
         }
@@ -119,22 +122,18 @@ export default function ResetPasswordPage() {
         return;
       }
 
-      // Qualquer outro formato cai como inválido
       setLinkState("invalid");
     })();
 
     return () => {
       try {
-        if (bcRef.current) {
-          bcRef.current.close();
-          bcRef.current = null;
-        }
+        bcRef.current?.close();
+        bcRef.current = null;
       } catch {}
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Validação do formulário de nova senha
   function validate(): string | null {
     if (pwd1.length < 8) return "A senha deve ter pelo menos 8 caracteres.";
     if (!hasUpper(pwd1) || !hasLower(pwd1) || !hasDigit(pwd1)) {
@@ -157,17 +156,16 @@ export default function ResetPasswordPage() {
 
     if (error) {
       setMsg("Não foi possível atualizar a senha. Tente novamente.");
-      // Mantém a sessão de recovery ativa para nova tentativa por alguns minutos
       return;
     }
 
     setOk(true);
     setMsg("Senha alterada com sucesso!");
     try {
-      if (bcRef.current) bcRef.current.postMessage({ type: "success" } as RemoteEvent);
+      bcRef.current?.postMessage({ type: "success" } as RemoteEvent);
     } catch {}
 
-    setTimeout(() => router.push("/a"), 1800); // middleware leva à conta
+    setTimeout(() => window.location.assign("/a"), 1800);
   }
 
   async function handleResend() {
@@ -189,13 +187,12 @@ export default function ResetPasswordPage() {
 
   // --- Render ---
 
-  // Estados de erro de link
   if (linkState === "invalid") {
     return (
       <div className="max-w-md mx-auto mt-20 space-y-6 text-center">
         <h1 className="text-xl font-semibold">Redefinir senha</h1>
         <p className="text-red-600">Link inválido. Solicite uma nova redefinição.</p>
-        <Button onClick={() => router.push("/a")}>Ir para página principal</Button>
+        <Button onClick={() => window.location.assign("/a")}>Ir para página principal</Button>
       </div>
     );
   }
@@ -230,7 +227,7 @@ export default function ResetPasswordPage() {
             <Button onClick={handleResend} disabled={cooldown > 0}>
               {cooldown > 0 ? `Reenviar em ${cooldown}s` : "Reenviar e-mail de redefinição"}
             </Button>
-            <Button variant="ghost" onClick={() => router.push("/a")}>
+            <Button variant="ghost" onClick={() => window.location.assign("/a")}>
               Ir para página principal
             </Button>
           </div>
@@ -247,12 +244,11 @@ export default function ResetPasswordPage() {
       <div className="max-w-md mx-auto mt-20 space-y-6 text-center">
         <h1 className="text-xl font-semibold">Redefinir senha</h1>
         <p className="text-red-600">Erro de conexão. Tente novamente mais tarde.</p>
-        <Button onClick={() => router.push("/a")}>Ir para página principal</Button>
+        <Button onClick={() => window.location.assign("/a")}>Ir para página principal</Button>
       </div>
     );
   }
 
-  // Link válido, mas ainda trocando por sessão
   if (!sessionReady) {
     return (
       <div className="max-w-md mx-auto mt-20 text-center">
@@ -261,7 +257,6 @@ export default function ResetPasswordPage() {
     );
   }
 
-  // Formulário de nova senha
   return (
     <div className="max-w-md mx-auto mt-20 space-y-6">
       <h1 className="text-xl font-semibold">Redefinir senha</h1>
@@ -300,7 +295,9 @@ export default function ResetPasswordPage() {
       {ok && (
         <div className="space-y-3 text-center">
           <p className="text-green-600">{msg}</p>
-          <Button onClick={() => router.push("/a")}>Ir para página principal</Button>
+          <Button onClick={() => window.location.assign("/a")}>
+            Ir para página principal
+          </Button>
         </div>
       )}
     </div>
