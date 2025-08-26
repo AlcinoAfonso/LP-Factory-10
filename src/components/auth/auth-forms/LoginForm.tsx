@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -14,8 +13,6 @@ type Props = {
 };
 
 export default function LoginForm({ onForgotClick, onSuccess }: Props) {
-  const router = useRouter();
-
   const [email, setEmail] = useState("");
   const [pwd, setPwd] = useState("");
   const [loading, setLoading] = useState(false);
@@ -51,17 +48,23 @@ export default function LoginForm({ onForgotClick, onSuccess }: Props) {
     setLoading(false);
 
     if (!error) {
-      // sucesso
-      onSuccess?.();            // fecha modal
-      router.push("/a");        // middleware leva à conta
+      // 1) fecha o modal (UX)
+      onSuccess?.();
+
+      // 2) aguarda um tick para cookies de sessão estabilizarem
+      // (defensivo; evita race com render SSR de /a)
+      await new Promise((r) => setTimeout(r, 150));
+
+      // 3) navegação FULL para garantir envio de cookies ao servidor
+      if (typeof window !== "undefined") {
+        window.location.assign("/a"); // middleware leva ao slug canônico (/a/demo)
+      }
       return;
     }
 
     // erro
     const msg = (error.message || "").toLowerCase();
     const isNetwork = msg.includes("fetch") || msg.includes("network");
-    const isCred = msg.includes("invalid") || msg.includes("credential") || msg.includes("email") || msg.includes("senha") || msg.includes("password");
-
     if (isNetwork) {
       setErr("Erro de conexão. Tente novamente.");
       return;
@@ -109,7 +112,7 @@ export default function LoginForm({ onForgotClick, onSuccess }: Props) {
       )}
 
       <Button
-        type="submit"                 // <<< garante submit no Enter/clique
+        type="submit"
         disabled={loading || cooldown > 0}
         className="w-full"
       >
