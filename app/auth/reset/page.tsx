@@ -1,3 +1,4 @@
+// app/auth/reset/page.tsx
 "use client";
 
 import React, { Suspense, useEffect, useMemo, useState } from "react";
@@ -13,7 +14,13 @@ const hasDigit = (s: string) => /\d/.test(s);
 
 export default function ResetPasswordPage() {
   return (
-    <Suspense fallback={<div className="max-w-md mx-auto mt-20 text-center"><p>Carregando…</p></div>}>
+    <Suspense
+      fallback={
+        <div className="max-w-md mx-auto mt-20 text-center">
+          <p>Carregando…</p>
+        </div>
+      }
+    >
       <ResetPasswordInner />
     </Suspense>
   );
@@ -25,7 +32,8 @@ function ResetPasswordInner() {
   const router = useRouter();
   const search = useSearchParams();
 
-  // Supabase pode enviar ?token_hash=... (padrão) ou ?code=...
+  // Supabase pode mandar: ?token_hash=... ou ?code=... (type=recovery)
+  // e em alguns clientes: #access_token=...&refresh_token=...
   const queryToken = search.get("token_hash") || search.get("code");
 
   const [linkState, setLinkState] = useState<LinkState>("invalid");
@@ -37,7 +45,7 @@ function ResetPasswordInner() {
   const [msg, setMsg] = useState<string | null>(null);
   const [ok, setOk] = useState(false);
 
-  // Reenvio inline (quando expirado/usado/invalid)
+  // Reenvio inline
   const [resendEmail, setResendEmail] = useState("");
   const [resendMsg, setResendMsg] = useState<string | null>(null);
   const [resendLoading, setResendLoading] = useState(false);
@@ -49,7 +57,7 @@ function ResetPasswordInner() {
     return () => clearInterval(t);
   }, [cooldown]);
 
-  // Avisar a aba original que o link foi aberto
+  // Notifica a aba original
   useEffect(() => {
     try {
       if (typeof window !== "undefined" && "BroadcastChannel" in window) {
@@ -60,16 +68,30 @@ function ResetPasswordInner() {
     } catch {}
   }, []);
 
-  // Validar link e abrir sessão — **somente verifyOtp(type:'recovery')**
+  // Validação do link + preparação de sessão
   useEffect(() => {
     (async () => {
-      // Alguns templates antigos trazem tokens no hash (#access_token&refresh_token)
-      const hash = typeof window !== "undefined" ? window.location.hash : "";
-      const hashParams = new URLSearchParams(hash.startsWith("#") ? hash.slice(1) : hash);
-      const access_token = hashParams.get("access_token");
-      const refresh_token = hashParams.get("refresh_token");
-
       try {
+        // --- Guard: acesso direto sem QUALQUER token é inválido ---
+        const rawHash = typeof window !== "undefined" ? window.location.hash : "";
+        const hashParams = new URLSearchParams(rawHash.replace(/^#/, ""));
+        const hasHashTokens = !!hashParams.get("access_token") && !!hashParams.get("refresh_token");
+
+        if (!queryToken && !hasHashTokens) {
+          setLinkState("invalid");
+          return;
+        }
+        // -----------------------------------------------------------
+
+        // 1) Sessão já pronta? (SDK pode ter setado via #access_token)
+        const { data: sess } = await supabase.auth.getSession();
+        if (sess.session) {
+          setLinkState("valid");
+          setSessionReady(true);
+          return;
+        }
+
+        // 2) verifyOtp com token_hash/code (fluxo padrão)
         if (queryToken) {
           const { error } = await supabase.auth.verifyOtp({
             type: "recovery",
@@ -78,11 +100,16 @@ function ResetPasswordInner() {
 
           if (error) {
             const m = (error.message || "").toLowerCase();
-            setLinkState(m.includes("used") ? "used" : "expired");
+            if (m.includes("used")) setLinkState("used");
+            else if (m.includes("expire")) setLinkState("expired");
+            else setLinkState("invalid");
+
             try {
               if (typeof window !== "undefined" && "BroadcastChannel" in window) {
                 const bc = new BroadcastChannel("lp-auth-reset");
-                bc.postMessage({ type: m.includes("used") ? "used" : "expired" });
+                bc.postMessage({
+                  type: m.includes("used") ? "used" : m.includes("expire") ? "expired" : "invalid",
+                });
                 setTimeout(() => bc.close(), 0);
               }
             } catch {}
@@ -94,8 +121,10 @@ function ResetPasswordInner() {
           return;
         }
 
-        // Fallback: se vierem tokens no hash, tentamos setar sessão
-        if (access_token && refresh_token) {
+        // 3) Fallback: tokens no hash → setSession
+        if (hasHashTokens) {
+          const access_token = hashParams.get("access_token")!;
+          const refresh_token = hashParams.get("refresh_token")!;
           const { error } = await supabase.auth.setSession({ access_token, refresh_token });
           if (error) {
             setLinkState("network_error");
@@ -106,7 +135,6 @@ function ResetPasswordInner() {
           return;
         }
 
-        // Sem nenhum token reconhecido
         setLinkState("invalid");
       } catch {
         setLinkState("network_error");
@@ -210,11 +238,7 @@ function ResetPasswordInner() {
             placeholder="seu@email.com"
           />
           {resendMsg && (
-            <p
-              className={`text-sm ${
-                resendMsg.includes("novo link") ? "text-green-600" : "text-red-600"
-              }`}
-            >
+            <p className={`text-sm ${resendMsg.includes("novo link") ? "text-green-600" : "text-red-600"}`}>
               {resendMsg}
             </p>
           )}
@@ -239,7 +263,11 @@ function ResetPasswordInner() {
   }
 
   if (!sessionReady) {
-    return <div className="max-w-md mx-auto mt-20 text-center"><p>Validando seu link…</p></div>;
+    return (
+      <div className="max-w-md mx-auto mt-20 text-center">
+        <p>Validando seu link…</p>
+      </div>
+    );
   }
 
   if (ok) {
