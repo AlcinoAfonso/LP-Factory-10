@@ -1,304 +1,158 @@
-// app/auth/reset/page.tsx
-"use client";
-
-import React, { Suspense, useEffect, useMemo, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
-import { supabase } from "@/lib/supabase/client";
-
-const hasUpper = (s: string) => /[A-Z]/.test(s);
-const hasLower = (s: string) => /[a-z]/.test(s);
-const hasDigit = (s: string) => /\d/.test(s);
-
-export default function ResetPasswordPage() {
-  return (
-    <Suspense
-      fallback={
-        <div className="max-w-md mx-auto mt-20 text-center">
-          <p>Carregando…</p>
-        </div>
-      }
-    >
-      <ResetPasswordInner />
-    </Suspense>
-  );
-}
-
-type LinkState = "valid" | "expired" | "used" | "invalid" | "network_error";
-
-function ResetPasswordInner() {
-  const router = useRouter();
-  const search = useSearchParams();
-
-  // Supabase pode mandar: ?token_hash=... ou ?code=... (type=recovery)
-  // e em alguns clientes: #access_token=...&refresh_token=...
-  const queryToken = search.get("token_hash") || search.get("code");
-
-  const [linkState, setLinkState] = useState<LinkState>("invalid");
-  const [sessionReady, setSessionReady] = useState(false);
-
-  const [pwd1, setPwd1] = useState("");
-  const [pwd2, setPwd2] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [msg, setMsg] = useState<string | null>(null);
-  const [ok, setOk] = useState(false);
-
-  // Reenvio inline
-  const [resendEmail, setResendEmail] = useState("");
-  const [resendMsg, setResendMsg] = useState<string | null>(null);
-  const [resendLoading, setResendLoading] = useState(false);
-  const [cooldown, setCooldown] = useState(0);
-
-  useEffect(() => {
-    if (!cooldown) return;
-    const t = setInterval(() => setCooldown((c) => Math.max(0, c - 1)), 1000);
-    return () => clearInterval(t);
-  }, [cooldown]);
-
-  // Notifica a aba original
-  useEffect(() => {
-    try {
-      if (typeof window !== "undefined" && "BroadcastChannel" in window) {
-        const bc = new BroadcastChannel("lp-auth-reset");
-        bc.postMessage({ type: "opened" });
-        setTimeout(() => bc.close(), 0);
-      }
-    } catch {}
-  }, []);
-
-  // Validação do link + preparação de sessão
-  useEffect(() => {
-    (async () => {
-      try {
-        // --- Guard: acesso direto sem QUALQUER token é inválido ---
-        const rawHash = typeof window !== "undefined" ? window.location.hash : "";
-        const hashParams = new URLSearchParams(rawHash.replace(/^#/, ""));
-        const hasHashTokens = !!hashParams.get("access_token") && !!hashParams.get("refresh_token");
-
-        if (!queryToken && !hasHashTokens) {
-          setLinkState("invalid");
-          return;
-        }
-        // -----------------------------------------------------------
-
-        // 1) Sessão já pronta? (SDK pode ter setado via #access_token)
-        const { data: sess } = await supabase.auth.getSession();
-        if (sess.session) {
-          setLinkState("valid");
-          setSessionReady(true);
-          return;
-        }
-
-        // 2) verifyOtp com token_hash/code (fluxo padrão)
-        if (queryToken) {
-          const { error } = await supabase.auth.verifyOtp({
-            type: "recovery",
-            token_hash: queryToken,
-          } as any);
-
-          if (error) {
-            const m = (error.message || "").toLowerCase();
-            if (m.includes("used")) setLinkState("used");
-            else if (m.includes("expire")) setLinkState("expired");
-            else setLinkState("invalid");
-
-            try {
-              if (typeof window !== "undefined" && "BroadcastChannel" in window) {
-                const bc = new BroadcastChannel("lp-auth-reset");
-                bc.postMessage({
-                  type: m.includes("used") ? "used" : m.includes("expire") ? "expired" : "invalid",
-                });
-                setTimeout(() => bc.close(), 0);
-              }
-            } catch {}
-            return;
-          }
-
-          setLinkState("valid");
-          setSessionReady(true);
-          return;
-        }
-
-        // 3) Fallback: tokens no hash → setSession
-        if (hasHashTokens) {
-          const access_token = hashParams.get("access_token")!;
-          const refresh_token = hashParams.get("refresh_token")!;
-          const { error } = await supabase.auth.setSession({ access_token, refresh_token });
-          if (error) {
-            setLinkState("network_error");
-            return;
-          }
-          setLinkState("valid");
-          setSessionReady(true);
-          return;
-        }
-
-        setLinkState("invalid");
-      } catch {
-        setLinkState("network_error");
-      }
-    })();
-  }, [queryToken]);
-
-  const validate = useMemo(
-    () =>
-      function (): string | null {
-        if (pwd1.length < 8) return "A senha deve ter pelo menos 8 caracteres.";
-        if (!hasUpper(pwd1) || !hasLower(pwd1) || !hasDigit(pwd1)) {
-          return "Use ao menos 1 letra maiúscula, 1 minúscula e 1 número.";
-        }
-        if (pwd1 !== pwd2) return "As senhas não coincidem.";
-        return null;
-      },
-    [pwd1, pwd2]
-  );
-
-  async function handleReset() {
-    setMsg(null);
-    const v = validate();
-    if (v) {
-      setMsg(v);
-      return;
-    }
-    setLoading(true);
-    const { error } = await supabase.auth.updateUser({ password: pwd1 });
-    setLoading(false);
-
-    if (error) {
-      setMsg("Erro ao salvar. Tente novamente.");
-      return;
-    }
-    setOk(true);
-    setMsg("Senha alterada com sucesso! Redirecionando…");
-    try {
-      if (typeof window !== "undefined" && "BroadcastChannel" in window) {
-        const bc = new BroadcastChannel("lp-auth-reset");
-        bc.postMessage({ type: "success" });
-        setTimeout(() => bc.close(), 0);
-      }
-    } catch {}
-  }
-
-  useEffect(() => {
-    if (ok) {
-      const t = setTimeout(() => router.push("/a"), 3000);
-      return () => clearTimeout(t);
-    }
-  }, [ok, router]);
-
-  async function handleResend() {
-    setResendMsg(null);
-    setResendLoading(true);
-    try {
-      const origin = typeof window !== "undefined" ? window.location.origin : "";
-      const { error } = await supabase.auth.resetPasswordForEmail(resendEmail, {
-        redirectTo: `${origin}/auth/reset`,
-      });
-      if (error) {
-        setResendMsg("Não foi possível reenviar. Verifique o e-mail e tente novamente.");
-      } else {
-        setResendMsg("Enviamos um novo link. Verifique sua caixa de entrada (ou spam).");
-        setCooldown(30);
-      }
-    } finally {
-      setResendLoading(false);
-    }
-  }
-
-  // ---------- UI ----------
-  if (linkState === "invalid") {
-    return (
-      <div className="max-w-md mx-auto mt-20 space-y-6 text-center">
-        <h1 className="text-xl font-semibold">Redefinir senha</h1>
-        <p className="text-red-600">Link inválido. Solicite uma nova redefinição.</p>
-        <Button onClick={() => router.push("/a")}>Ir para página principal</Button>
-      </div>
-    );
-  }
-
-  if (linkState === "expired" || linkState === "used" || linkState === "network_error") {
-    return (
-      <div className="max-w-md mx-auto mt-20 space-y-6">
-        <h1 className="text-xl font-semibold text-center">Redefinir senha</h1>
-        <p className="text-center text-red-600">
-          {linkState === "expired" && "Este link expirou."}
-          {linkState === "used" && "Este link já foi usado."}
-          {linkState === "network_error" && "Falha na validação do link. Tente novamente."}
-        </p>
-
-        <div className="space-y-3">
-          <Label htmlFor="re-email">E-mail</Label>
-          <Input
-            id="re-email"
-            type="email"
-            value={resendEmail}
-            onChange={(e) => setResendEmail(e.target.value)}
-            placeholder="seu@email.com"
-          />
-          {resendMsg && (
-            <p className={`text-sm ${resendMsg.includes("novo link") ? "text-green-600" : "text-red-600"}`}>
-              {resendMsg}
-            </p>
-          )}
-          <div className="flex gap-2">
-            <Button onClick={handleResend} disabled={resendLoading || !resendEmail || cooldown > 0}>
-              {cooldown > 0
-                ? `Reenviar em ${cooldown}s`
-                : resendLoading
-                ? "Enviando..."
-                : "Reenviar e-mail de redefinição"}
-            </Button>
-            <Button variant="secondary" onClick={() => router.push("/a")}>
-              Ir para página principal
-            </Button>
-          </div>
-          <p className="text-sm text-muted-foreground">
-            Dica: verifique também a pasta de spam. O link expira em 10 minutos.
-          </p>
-        </div>
-      </div>
-    );
-  }
-
-  if (!sessionReady) {
-    return (
-      <div className="max-w-md mx-auto mt-20 text-center">
-        <p>Validando seu link…</p>
-      </div>
-    );
-  }
-
-  if (ok) {
-    return (
-      <div className="max-w-md mx-auto mt-20 space-y-6 text-center">
-        <h1 className="text-xl font-semibold">Senha redefinida</h1>
-        <p>{msg}</p>
-        <Button onClick={() => router.push("/a")}>Ir para página principal</Button>
-      </div>
-    );
-  }
-
-  return (
-    <div className="max-w-md mx-auto mt-20 space-y-6">
-      <h1 className="text-xl font-semibold">Redefinir senha</h1>
-      <div className="space-y-4">
-        <div>
-          <Label htmlFor="pwd1">Nova senha</Label>
-          <Input id="pwd1" type="password" value={pwd1} onChange={(e) => setPwd1(e.target.value)} />
-        </div>
-        <div>
-          <Label htmlFor="pwd2">Confirmar senha</Label>
-          <Input id="pwd2" type="password" value={pwd2} onChange={(e) => setPwd2(e.target.value)} />
-        </div>
-      </div>
-
-      {msg && <p className="text-sm text-red-600">{msg}</p>}
-
-      <Button disabled={loading} onClick={handleReset}>
-        {loading ? "Atualizando..." : "Salvar nova senha"}
-      </Button>
-    </div>
-  );
-}
+diff --git a/app/auth/reset/page.tsx b/app/auth/reset/page.tsx
+index 1d2abc1..8a9f0d3 100644
+--- a/app/auth/reset/page.tsx
++++ b/app/auth/reset/page.tsx
+@@ -1,9 +1,12 @@
+ "use client";
+ 
+-import { useEffect, useState } from "react";
+-import { useRouter, useSearchParams } from "next/navigation";
++import { useEffect, useState } from "react";
++import { useRouter, useSearchParams } from "next/navigation";
+ import { Input } from "@/components/ui/input";
+ import { Button } from "@/components/ui/button";
+ import { Label } from "@/components/ui/label";
+ import { supabase } from "@/lib/supabase/client";
+ 
++type LinkState = "idle" | "valid" | "expired" | "used" | "invalid" | "network_error";
++
+ const hasUpper = (s: string) => /[A-Z]/.test(s);
+ const hasLower = (s: string) => /[a-z]/.test(s);
+ const hasDigit = (s: string) => /\d/.test(s);
+@@ -13,14 +16,17 @@ export default function ResetPasswordPage() {
+   const router = useRouter();
+   const search = useSearchParams();
+   const code = search.get("code"); // token do e-mail (quando presente)
+ 
+   const [sessionReady, setSessionReady] = useState(false);
+   const [tokenErr, setTokenErr] = useState<string | null>(null);
+ 
+   const [pwd1, setPwd1] = useState("");
+   const [pwd2, setPwd2] = useState("");
+   const [loading, setLoading] = useState(false);
+   const [msg, setMsg] = useState<string | null>(null);
+   const [ok, setOk] = useState(false);
++  const [linkState, setLinkState] = useState<LinkState>("idle");
+ 
+   // Troca o code do e-mail por sessão válida
+   useEffect(() => {
+     (async () => {
+-      if (!code) {
+-        setTokenErr("Link inválido. Solicite uma nova redefinição.");
+-        return;
+-      }
++      // Quando não há token no query, alguns provedores voltam com erros no query/hash.
++      const errQuery = search.get("error");
++      const errCodeQuery = search.get("error_code");
++      let errHash: string | null = null;
++      let errCodeHash: string | null = null;
++      if (typeof window !== "undefined" && window.location.hash) {
++        const hp = new URLSearchParams(window.location.hash.slice(1));
++        errHash = hp.get("error");
++        errCodeHash = hp.get("error_code");
++      }
++      const err = errQuery || errHash;
++      const errCode = errCodeQuery || errCodeHash;
++
++      if (!code) {
++        // Casos sem token: classificar por erro do callback (se houver)
++        if (errCode === "otp_expired") {
++          setLinkState("expired");
++          setTokenErr("Este link expirou.");
++          try { const bc = new BroadcastChannel("lp-auth-reset"); bc.postMessage({ type: "expired" }); setTimeout(() => bc.close(), 0); } catch {}
++          return;
++        }
++        if (err === "access_denied") {
++          setLinkState("invalid");
++          setTokenErr("Link inválido. Solicite uma nova redefinição.");
++          return;
++        }
++        // Acesso direto sem token/erro: tratar como inválido
++        setLinkState("invalid");
++        setTokenErr("Link inválido. Solicite uma nova redefinição.");
++        return;
++      }
+ 
+       const { error } = await supabase.auth.exchangeCodeForSession(code);
+       if (error) {
+-        setTokenErr("O link expirou ou já foi usado. Solicite novamente.");
++        // Preferir status quando presente; fallback para mensagem
++        const anyErr = error as any;
++        if (anyErr?.status === 410) {
++          setLinkState("expired");
++          setTokenErr("Este link expirou.");
++          try { const bc = new BroadcastChannel("lp-auth-reset"); bc.postMessage({ type: "expired" }); setTimeout(() => bc.close(), 0); } catch {}
++          return;
++        }
++        if (anyErr?.status === 400) {
++          setLinkState("invalid");
++          setTokenErr("Link inválido. Solicite uma nova redefinição.");
++          return;
++        }
++        const m = (error.message || "").toLowerCase();
++        if (m.includes("used")) {
++          setLinkState("used");
++          setTokenErr("Este link já foi usado. Solicite nova redefinição.");
++          try { const bc = new BroadcastChannel("lp-auth-reset"); bc.postMessage({ type: "used" }); setTimeout(() => bc.close(), 0); } catch {}
++        } else if (m.includes("expire")) {
++          setLinkState("expired");
++          setTokenErr("Este link expirou.");
++          try { const bc = new BroadcastChannel("lp-auth-reset"); bc.postMessage({ type: "expired" }); setTimeout(() => bc.close(), 0); } catch {}
++        } else {
++          setLinkState("invalid");
++          setTokenErr("Link inválido. Solicite uma nova redefinição.");
++        }
+         return;
+       }
+ 
+       // Avisar a outra aba que o link foi aberto (mitigação UX)
+       try {
+         const bc = new BroadcastChannel("lp-auth-reset");
+         bc.postMessage({ type: "opened" });
+         setTimeout(() => bc.close(), 0);
+       } catch {
+         /* ignore */
+       }
+ 
+-      setSessionReady(true);
++      setSessionReady(true);
++      setLinkState("valid");
+     })();
+-  }, [code]);
++  }, [code, search]);
+ 
+   function validate(): string | null {
+     if (pwd1.length < 8) return "A senha deve ter pelo menos 8 caracteres.";
+     if (!hasUpper(pwd1) || !hasLower(pwd1) || !hasDigit(pwd1)) {
+       return "Use ao menos 1 letra maiúscula, 1 minúscula e 1 número.";
+     }
+     if (pwd1 !== pwd2) return "As senhas não coincidem.";
+     return null;
+   }
+@@ -64,6 +100,10 @@ export default function ResetPasswordPage() {
+     setOk(true);
+     setMsg("Senha atualizada com sucesso! Você será redirecionado.");
++    // notifica aba original sobre sucesso
++    try { const bc = new BroadcastChannel("lp-auth-reset"); bc.postMessage({ type: "success" }); setTimeout(() => bc.close(), 0); } catch {}
+   }
+ 
+   // Redirect automático após sucesso
+   useEffect(() => {
+     if (ok) {
+       const t = setTimeout(() => router.push("/a"), 3000); // middleware envia para /a/demo
+       return () => clearTimeout(t);
+     }
+   }, [ok, router]);
+ 
+   // Estados
+-  if (tokenErr) {
++  if (tokenErr && linkState !== "valid") {
+     return (
+       <div className="max-w-md mx-auto mt-20 space-y-6 text-center">
+         <h1 className="text-xl font-semibold">Redefinir senha</h1>
+-        <p className="text-red-600">{tokenErr}</p>
++        <p className="text-red-600">{tokenErr}</p>
+         <Button onClick={() => router.push("/a")}>Ir para página principal</Button>
+       </div>
+     );
+   }
