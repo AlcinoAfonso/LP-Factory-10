@@ -47,7 +47,10 @@ export default function AuthDialog({
         </DialogHeader>
 
         {mode === "login" && (
-          <LoginForm onForgotClick={() => onRequestModeChange?.("recovery")} />
+          <LoginForm
+            onForgotClick={() => onRequestModeChange?.("recovery")}
+            onSuccess={() => onOpenChange(false)}   // <<< fecha modal no sucesso
+          />
         )}
 
         {mode === "recovery" && (
