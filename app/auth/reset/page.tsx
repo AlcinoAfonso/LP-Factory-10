@@ -180,8 +180,7 @@ function ResetPageInner() {
       if (tokenHash) {
         const { error } = await supabase.auth.verifyOtp({
           type: "recovery",
-          // @ts-expect-error – typings antigos não declaram "token_hash"
-          token_hash: tokenHash,
+       token_hash: tokenHash,
         });
         if (!error) {
           setState("form");
