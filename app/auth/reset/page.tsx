@@ -1,223 +1,240 @@
 "use client";
 
-import { Suspense, useEffect, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
+import { supabase } from "@/lib/supabase/client";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { supabase } from "@/lib/supabase/client";
-
-export const dynamic = "force-dynamic";
-export const revalidate = false;
 
 type LinkState = "checking" | "valid" | "expired" | "used" | "invalid" | "network_error";
 
-function ResetInner() {
-  const router = useRouter();
-  const search = useSearchParams();
+const hasUpper = (s: string) => /[A-Z]/.test(s);
+const hasLower = (s: string) => /[a-z]/.test(s);
+const hasDigit = (s: string) => /\d/.test(s);
 
+export default function ResetPasswordPage() {
   const [state, setState] = useState<LinkState>("checking");
   const [pwd1, setPwd1] = useState("");
   const [pwd2, setPwd2] = useState("");
+  const [loading, setLoading] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
-  const [busy, setBusy] = useState(false);
+  const [ok, setOk] = useState(false);
+  const closeTimer = useRef<number | null>(null);
 
-  const [email, setEmail] = useState("");
-  const [cooldown, setCooldown] = useState(0);
+  // ---- Helpers -------------------------------------------------------------
 
-  useEffect(() => {
-    if (cooldown <= 0) return;
-    const t = setTimeout(() => setCooldown((c) => c - 1), 1000);
-    return () => clearTimeout(t);
-  }, [cooldown]);
-
-  useEffect(() => {
+  function postBC(type: "opened" | "success" | "expired" | "used") {
     try {
       const bc = new BroadcastChannel("lp-auth-reset");
-      bc.postMessage({ type: "opened" });
+      bc.postMessage({ type });
       setTimeout(() => bc.close(), 0);
-    } catch {}
-  }, []);
+    } catch {
+      /* ignore */
+    }
+  }
 
-  useEffect(() => {
-    let cancelled = false;
+  function mapError(message: string) {
+    const m = (message || "").toLowerCase();
+    if (m.includes("expire")) {
+      setState("expired");
+      postBC("expired");
+      return;
+    }
+    if (m.includes("used")) {
+      setState("used");
+      postBC("used");
+      return;
+    }
+    if (m.includes("invalid") || m.includes("malformed")) {
+      setState("invalid");
+      return;
+    }
+    setState("network_error");
+  }
 
-    (async () => {
-      const mapError = (m: string) => {
-        const s = (m || "").toLowerCase();
-        if (s.includes("expire")) return setState("expired");
-        if (s.includes("used")) return setState("used");
-        if (s.includes("invalid") || s.includes("not found")) return setState("invalid");
-        return setState("network_error");
-      };
-
-      try {
-        const code = search.get("code");
-        const tokenHash = search.get("token_hash");
-        const hash = typeof window !== "undefined" ? window.location.hash : "";
-
-        if (code) {
-          const { error } = await supabase.auth.exchangeCodeForSession(code);
-          if (cancelled) return;
-          if (error) return mapError(error.message);
-          setState("valid");
-          return;
-        }
-
-        // <<< fluxo antigo com token_hash (CORRIGIDO: usa token_hash, não token)
-        if (tokenHash) {
-          const { error } = await supabase.auth.verifyOtp({
-            type: "recovery",
-            token_hash: tokenHash,
-          });
-          if (cancelled) return;
-          if (error) return mapError(error.message);
-          setState("valid");
-          return;
-        }
-
-        // hash-style: #access_token=...&type=recovery
-        if (hash && hash.includes("access_token") && /type=recovery/.test(hash)) {
-          const { error } = await supabase.auth.getSessionFromUrl();
-          if (cancelled) return;
-          if (error) return mapError(error.message);
-          window.history.replaceState({}, "", window.location.pathname + window.location.search);
-          setState("valid");
-          return;
-        }
-
-        setState("invalid");
-      } catch (e: any) {
-        const m = e?.message || String(e);
-        const s = (m || "").toLowerCase();
-        if (s.includes("expire")) setState("expired");
-        else if (s.includes("used")) setState("used");
-        else if (s.includes("invalid")) setState("invalid");
-        else setState("network_error");
-      }
-    })();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [search]);
-
-  function validate(): string | null {
-    if (pwd1.length < 8) return "Mínimo 8 caracteres.";
-    if (!/[A-Z]/.test(pwd1) || !/[a-z]/.test(pwd1) || !/\d/.test(pwd1)) {
-      return "Use ao menos 1 maiúscula, 1 minúscula e 1 número.";
+  function validatePassword(): string | null {
+    if (pwd1.length < 8) return "A senha deve ter pelo menos 8 caracteres.";
+    if (!hasUpper(pwd1) || !hasLower(pwd1) || !hasDigit(pwd1)) {
+      return "Use ao menos 1 letra maiúscula, 1 minúscula e 1 número.";
     }
     if (pwd1 !== pwd2) return "As senhas não coincidem.";
     return null;
   }
 
-  async function handleSave() {
-    const v = validate();
-    if (v) return setMsg(v);
+  // ---- Parse & validar link ------------------------------------------------
 
-    setBusy(true);
+  useEffect(() => {
+    let cancelled = false;
+
+    (async () => {
+      try {
+        const url = new URL(window.location.href);
+        const hash = url.hash; // ex.: #access_token=...&refresh_token=...&type=recovery
+        const code = url.searchParams.get("code");
+        const tokenHash = url.searchParams.get("token_hash");
+
+        // avisa modal que abrimos o link
+        postBC("opened");
+
+        // 1) Fluxo hash (links novos do Supabase)
+        if (hash && hash.includes("access_token") && /type=recovery/.test(hash)) {
+          const params = new URLSearchParams(hash.slice(1));
+          const access_token = params.get("access_token");
+          const refresh_token = params.get("refresh_token");
+
+          if (!access_token || !refresh_token) {
+            setState("invalid");
+            return;
+          }
+
+          const { error } = await supabase.auth.setSession({ access_token, refresh_token });
+          if (cancelled) return;
+          if (error) {
+            mapError(error.message);
+            return;
+          }
+
+          // limpa o fragmento (#...) da URL
+          window.history.replaceState({}, "", url.pathname + url.search);
+
+          setState("valid");
+          return;
+        }
+
+        // 2) Fluxo de query "code" (exchangeCodeForSession, se disponível)
+        if (code && typeof (supabase.auth as any).exchangeCodeForSession === "function") {
+          const { error } = await (supabase.auth as any).exchangeCodeForSession(code);
+          if (cancelled) return;
+          if (error) {
+            mapError(error.message);
+            return;
+          }
+          setState("valid");
+          return;
+        }
+
+        // 3) Fluxo de query "token_hash" (fallback antigo)
+        if (tokenHash) {
+          const { error } = await (supabase.auth as any).verifyOtp({
+            type: "recovery",
+            // algumas tipagens antigas não têm "token_hash", por isso o cast via "any"
+            token_hash: tokenHash,
+          } as any);
+          if (cancelled) return;
+          if (error) {
+            mapError(error.message);
+            return;
+          }
+          setState("valid");
+          return;
+        }
+
+        // Nenhum token → acesso direto inválido
+        setState("invalid");
+      } catch (e: any) {
+        setState("network_error");
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+      if (closeTimer.current) window.clearTimeout(closeTimer.current);
+    };
+  }, []);
+
+  // ---- Salvar nova senha ---------------------------------------------------
+
+  async function handleReset() {
+    setMsg(null);
+    const v = validatePassword();
+    if (v) {
+      setMsg(v);
+      return;
+    }
+    setLoading(true);
     const { error } = await supabase.auth.updateUser({ password: pwd1 });
-    setBusy(false);
+    setLoading(false);
 
     if (error) {
-      setMsg("Erro ao salvar. Tente novamente.");
+      setMsg("Não foi possível atualizar a senha. Tente novamente.");
       return;
     }
 
-    try {
-      const bc = new BroadcastChannel("lp-auth-reset");
-      bc.postMessage({ type: "success" });
-      setTimeout(() => bc.close(), 0);
-    } catch {}
+    setOk(true);
+    setMsg("Senha atualizada com sucesso! Você será redirecionado.");
+    postBC("success");
 
-    setMsg("Senha alterada com sucesso! Redirecionando…");
-    setTimeout(() => router.push("/a"), 1500);
+    // redireciona após 3s
+    closeTimer.current = window.setTimeout(() => {
+      window.location.href = "/a";
+    }, 3000);
   }
 
-  async function resend() {
-    const ok = /\S+@\S+\.\S+/.test(email);
-    if (!ok) return setMsg("Informe um e-mail válido.");
-    setMsg(null);
-    await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/auth/reset`,
-    });
-    setCooldown(30);
-    setMsg("Se este e-mail estiver cadastrado, você receberá um novo link.");
-  }
+  // ---- UI ------------------------------------------------------------------
 
   if (state === "checking") {
     return (
-      <div className="max-w-md mx-auto mt-20 text-center">Validando seu link…</div>
+      <div className="max-w-md mx-auto mt-20 text-center">
+        <h1 className="text-xl font-semibold">Redefinir senha</h1>
+        <p>Validando seu link…</p>
+      </div>
     );
   }
 
   if (state === "invalid") {
     return (
-      <div className="max-w-md mx-auto mt-20 text-center space-y-4">
+      <div className="max-w-md mx-auto mt-20 space-y-6 text-center">
         <h1 className="text-xl font-semibold">Redefinir senha</h1>
         <p className="text-red-600">Link inválido. Solicite uma nova redefinição.</p>
-        <Button onClick={() => router.push("/a")}>Ir para página principal</Button>
+        <Button onClick={() => (window.location.href = "/a")}>Ir para página principal</Button>
       </div>
     );
   }
 
-  if (state === "expired" || state === "used" || state === "network_error") {
+  if (state === "expired" || state === "used") {
+    const text =
+      state === "expired"
+        ? "Este link expirou. Solicite uma nova redefinição."
+        : "Este link já foi usado. Solicite uma nova redefinição.";
     return (
-      <div className="max-w-md mx-auto mt-20 text-center space-y-5">
+      <div className="max-w-md mx-auto mt-20 space-y-6 text-center">
         <h1 className="text-xl font-semibold">Redefinir senha</h1>
-        <p className="text-red-600">
-          {state === "expired" && "Este link expirou."}
-          {state === "used" && "Este link já foi usado."}
-          {state === "network_error" && "Não foi possível validar o link agora."}
-        </p>
-
-        <div className="space-y-2 text-left">
-          <Label htmlFor="em">E-mail</Label>
-          <Input
-            id="em"
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="seu@email.com"
-          />
-        </div>
-
-        {msg && <p className="text-sm">{msg}</p>}
-
-        <div className="flex gap-2 justify-center">
-          <Button onClick={resend} disabled={cooldown > 0}>
-            {cooldown > 0 ? `Reenviar em ${cooldown}s` : "Reenviar e-mail de redefinição"}
-          </Button>
-          <Button variant="secondary" onClick={() => router.push("/a")}>
-            Ir para página principal
-          </Button>
-        </div>
-
-        <p className="text-xs text-muted-foreground">
-          Dica: verifique também a pasta de spam. O link expira em 10 minutos.
-        </p>
+        <p className="text-red-600">{text}</p>
+        <Button onClick={() => (window.location.href = "/a")}>Ir para página principal</Button>
       </div>
     );
   }
 
+  if (state === "network_error") {
+    return (
+      <div className="max-w-md mx-auto mt-20 space-y-6 text-center">
+        <h1 className="text-xl font-semibold">Redefinir senha</h1>
+        <p className="text-red-600">Erro de conexão. Tente novamente.</p>
+        <Button onClick={() => (window.location.href = "/a")}>Ir para página principal</Button>
+      </div>
+    );
+  }
+
+  // state === "valid"
   return (
     <div className="max-w-md mx-auto mt-20 space-y-6">
       <h1 className="text-xl font-semibold">Redefinir senha</h1>
 
       <div className="space-y-4">
         <div>
-          <Label htmlFor="p1">Nova senha</Label>
+          <Label htmlFor="pwd1">Nova senha</Label>
           <Input
-            id="p1"
+            id="pwd1"
             type="password"
             value={pwd1}
             onChange={(e) => setPwd1(e.target.value)}
+            autoFocus
           />
         </div>
         <div>
-          <Label htmlFor="p2">Confirmar senha</Label>
+          <Label htmlFor="pwd2">Confirmar senha</Label>
           <Input
-            id="p2"
+            id="pwd2"
             type="password"
             value={pwd2}
             onChange={(e) => setPwd2(e.target.value)}
@@ -225,23 +242,11 @@ function ResetInner() {
         </div>
       </div>
 
-      {msg && <p className="text-sm">{msg}</p>}
+      {msg && <p className="text-sm text-muted-foreground">{msg}</p>}
 
-      <Button onClick={handleSave} disabled={busy}>
-        {busy ? "Salvando…" : "Salvar nova senha"}
+      <Button disabled={loading} onClick={handleReset}>
+        {loading ? "Atualizando..." : "Salvar nova senha"}
       </Button>
     </div>
-  );
-}
-
-export default function ResetPage() {
-  return (
-    <Suspense
-      fallback={
-        <div className="max-w-md mx-auto mt-20 text-center">Validando seu link…</div>
-      }
-    >
-      <ResetInner />
-    </Suspense>
   );
 }
