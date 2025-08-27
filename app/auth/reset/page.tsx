@@ -1,7 +1,6 @@
 "use client";
 
 export const dynamic = "force-dynamic"; // evita SSG/HTML estático
-export const revalidate = 0;
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
