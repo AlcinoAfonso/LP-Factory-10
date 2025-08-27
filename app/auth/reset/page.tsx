@@ -7,7 +7,6 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/lib/supabase/client";
 
-// Garante que a página não seja prerenderizada/ISReada
 export const dynamic = "force-dynamic";
 export const revalidate = false;
 
@@ -17,36 +16,29 @@ function ResetInner() {
   const router = useRouter();
   const search = useSearchParams();
 
-  // Estado do link e formulário
   const [state, setState] = useState<LinkState>("checking");
   const [pwd1, setPwd1] = useState("");
   const [pwd2, setPwd2] = useState("");
   const [msg, setMsg] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
-  // Campos de reenvio (usados quando expired/used/network_error)
   const [email, setEmail] = useState("");
   const [cooldown, setCooldown] = useState(0);
 
-  // Cooldown do botão "Reenviar"
   useEffect(() => {
     if (cooldown <= 0) return;
     const t = setTimeout(() => setCooldown((c) => c - 1), 1000);
     return () => clearTimeout(t);
   }, [cooldown]);
 
-  // Informa a outra aba que o link foi aberto
   useEffect(() => {
     try {
       const bc = new BroadcastChannel("lp-auth-reset");
       bc.postMessage({ type: "opened" });
       setTimeout(() => bc.close(), 0);
-    } catch {
-      /* ignore */
-    }
+    } catch {}
   }, []);
 
-  // Validação do link ao carregar
   useEffect(() => {
     let cancelled = false;
 
@@ -60,8 +52,8 @@ function ResetInner() {
       };
 
       try {
-        const code = search.get("code"); // fluxo PKCE (novo)
-        const tokenHash = search.get("token_hash"); // fluxo antigo
+        const code = search.get("code");
+        const tokenHash = search.get("token_hash");
         const hash = typeof window !== "undefined" ? window.location.hash : "";
 
         if (code) {
@@ -72,11 +64,11 @@ function ResetInner() {
           return;
         }
 
+        // <<< fluxo antigo com token_hash (CORRIGIDO: usa token_hash, não token)
         if (tokenHash) {
-          // Em versões recentes verifyOtp espera 'token' (não 'token_hash')
           const { error } = await supabase.auth.verifyOtp({
             type: "recovery",
-            token: tokenHash,
+            token_hash: tokenHash,
           });
           if (cancelled) return;
           if (error) return mapError(error.message);
@@ -84,19 +76,16 @@ function ResetInner() {
           return;
         }
 
-        // Alguns templates do Supabase chegam como hash: #access_token=…&type=recovery
+        // hash-style: #access_token=...&type=recovery
         if (hash && hash.includes("access_token") && /type=recovery/.test(hash)) {
-          const { error } = await supabase.auth.getSessionFromUrl(); // armazena a sessão a partir do hash
+          const { error } = await supabase.auth.getSessionFromUrl();
           if (cancelled) return;
           if (error) return mapError(error.message);
-
-          // Limpa o hash para evitar reprocessar ao recarregar
           window.history.replaceState({}, "", window.location.pathname + window.location.search);
           setState("valid");
           return;
         }
 
-        // Nenhum formato reconhecido
         setState("invalid");
       } catch (e: any) {
         const m = e?.message || String(e);
@@ -113,7 +102,6 @@ function ResetInner() {
     };
   }, [search]);
 
-  // Validação local de senha
   function validate(): string | null {
     if (pwd1.length < 8) return "Mínimo 8 caracteres.";
     if (!/[A-Z]/.test(pwd1) || !/[a-z]/.test(pwd1) || !/\d/.test(pwd1)) {
@@ -125,10 +113,8 @@ function ResetInner() {
 
   async function handleSave() {
     const v = validate();
-    if (v) {
-      setMsg(v);
-      return;
-    }
+    if (v) return setMsg(v);
+
     setBusy(true);
     const { error } = await supabase.auth.updateUser({ password: pwd1 });
     setBusy(false);
@@ -138,14 +124,11 @@ function ResetInner() {
       return;
     }
 
-    // Notifica a outra aba (modal) sobre sucesso
     try {
       const bc = new BroadcastChannel("lp-auth-reset");
       bc.postMessage({ type: "success" });
       setTimeout(() => bc.close(), 0);
-    } catch {
-      /* ignore */
-    }
+    } catch {}
 
     setMsg("Senha alterada com sucesso! Redirecionando…");
     setTimeout(() => router.push("/a"), 1500);
@@ -153,10 +136,7 @@ function ResetInner() {
 
   async function resend() {
     const ok = /\S+@\S+\.\S+/.test(email);
-    if (!ok) {
-      setMsg("Informe um e-mail válido.");
-      return;
-    }
+    if (!ok) return setMsg("Informe um e-mail válido.");
     setMsg(null);
     await supabase.auth.resetPasswordForEmail(email, {
       redirectTo: `${window.location.origin}/auth/reset`,
@@ -165,12 +145,9 @@ function ResetInner() {
     setMsg("Se este e-mail estiver cadastrado, você receberá um novo link.");
   }
 
-  // ——— UI ———
   if (state === "checking") {
     return (
-      <div className="max-w-md mx-auto mt-20 text-center">
-        Validando seu link…
-      </div>
+      <div className="max-w-md mx-auto mt-20 text-center">Validando seu link…</div>
     );
   }
 
@@ -223,7 +200,6 @@ function ResetInner() {
     );
   }
 
-  // state === "valid" → formulário
   return (
     <div className="max-w-md mx-auto mt-20 space-y-6">
       <h1 className="text-xl font-semibold">Redefinir senha</h1>
