@@ -1,4 +1,7 @@
 "use client";
+
+import { useEffect, useRef } from "react";
+import { useRouter } from "next/navigation";
 import {
   Dialog,
   DialogContent,
@@ -24,6 +27,29 @@ export default function AuthDialog({
   onOpenChange,
   onRequestModeChange,
 }: Props) {
+  const router = useRouter();
+  const debounceTimer = useRef<number | null>(null);
+
+  // Listener de sincronização (PPS 2.2 / 8.2)
+  useEffect(() => {
+    function handleStorage(ev: StorageEvent) {
+      if (ev.key === "lf10:auth_reset_success" && ev.newValue) {
+        if (debounceTimer.current) window.clearTimeout(debounceTimer.current);
+
+        debounceTimer.current = window.setTimeout(() => {
+          localStorage.removeItem("lf10:auth_reset_success");
+          onOpenChange(false); // fecha modal
+          router.refresh(); // garante atualização pós-reset
+        }, 500);
+      }
+    }
+    window.addEventListener("storage", handleStorage);
+    return () => {
+      window.removeEventListener("storage", handleStorage);
+      if (debounceTimer.current) window.clearTimeout(debounceTimer.current);
+    };
+  }, [onOpenChange, router]);
+
   const title =
     mode === "login"
       ? "Entrar"
@@ -49,7 +75,7 @@ export default function AuthDialog({
         {mode === "login" && (
           <LoginForm
             onForgotClick={() => onRequestModeChange?.("recovery")}
-            onSuccess={() => onOpenChange(false)}   // <<< fecha modal no sucesso
+            onSuccess={() => onOpenChange(false)} // login fecha modal
           />
         )}
 
