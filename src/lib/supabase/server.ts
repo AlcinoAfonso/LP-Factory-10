@@ -5,17 +5,24 @@ import {
   type CookieOptions,
 } from "@supabase/ssr";
 
+/**
+ * createServerClient
+ *
+ * - Usa cookies() síncrono (Next 14.2.18).
+ * - Integra com @supabase/ssr para instância segura no server.
+ * - Atenção: cookies() não requer await (confirmado em Item 1).
+ */
 export function createServerClient() {
-  const cookieStore = cookies();
+  const cookieStore = cookies(); // síncrono
 
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const supabaseKey =
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ??
-    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ??
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY; // fallback opcional
 
   if (!supabaseUrl || !supabaseKey) {
     throw new Error(
-      "Missing Supabase env: set NEXT_PUBLIC_SUPABASE_URL and ANON_KEY or PUBLISHABLE_KEY."
+      "Missing Supabase env: defina NEXT_PUBLIC_SUPABASE_URL e NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY (ou ANON_KEY como fallback)."
     );
   }
 
