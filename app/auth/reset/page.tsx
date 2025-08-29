@@ -1,5 +1,7 @@
 "use client";
 
+export const dynamic = "force-dynamic"; // força CSR, evita erro no build
+
 import { useEffect, useRef, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase/client";
