@@ -1,7 +1,8 @@
 "use client";
 
-export const dynamic = "force-dynamic"; // força CSR, evita erro no build
+export const dynamic = "force-dynamic";
 
+import { Suspense } from "react";
 import { useEffect, useRef, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase/client";
@@ -15,7 +16,7 @@ const hasUpper = (s: string) => /[A-Z]/.test(s);
 const hasLower = (s: string) => /[a-z]/.test(s);
 const hasDigit = (s: string) => /\d/.test(s);
 
-export default function ResetPasswordPage() {
+function ResetPasswordInner() {
   const params = useSearchParams();
   const router = useRouter();
   const state = (params.get("state") as ResetState) || "invalid";
@@ -56,13 +57,12 @@ export default function ResetPasswordPage() {
     // PPS 8.1: sinalizar sucesso via localStorage
     localStorage.setItem("lf10:auth_reset_success", String(Date.now()));
 
-    // redirect após 3s (fallback)
+    // fallback: redireciona após 3s
     closeTimer.current = window.setTimeout(() => {
       router.push("/a");
     }, 3000);
   }
 
-  // limpar timer
   useEffect(() => {
     return () => {
       if (closeTimer.current) window.clearTimeout(closeTimer.current);
@@ -135,5 +135,13 @@ export default function ResetPasswordPage() {
         {loading ? "Atualizando..." : "Salvar nova senha"}
       </Button>
     </div>
+  );
+}
+
+export default function ResetPasswordPage() {
+  return (
+    <Suspense fallback={<div>Carregando…</div>}>
+      <ResetPasswordInner />
+    </Suspense>
   );
 }
