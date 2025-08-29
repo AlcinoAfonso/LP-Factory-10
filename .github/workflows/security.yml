@@ -9,8 +9,17 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Check for forbidden Supabase implicit flow APIs
+      - name: Block implicit flow patterns in client/UI
         run: |
-          ! grep -R -nE "#access_token|refresh_token|setSession\\(|getSessionFromUrl\\(|verifyOtp\\(" src/ app/ || (
-            echo "❌ Forbidden Supabase implicit flow API found. Use @supabase/ssr instead." && exit 1
+          # Bloqueia padrões proibidos em src/ e app/, exceto o confirm server
+          ! grep -R -nE "#access_token|refresh_token|setSession\\(|getSessionFromUrl\\(" src/ app/ || (
+            echo "❌ Forbidden implicit flow (tokens/setSession/getSessionFromUrl) found in client/UI." && exit 1
           )
+          # verifyOtp só pode aparecer no handler server de confirm
+          # Lista qualquer ocorrência fora de app/auth/confirm/**
+          OFFENDERS=$(grep -R -n "verifyOtp(" src/ app/ | grep -v "app/auth/confirm/")
+          if [ -n "$OFFENDERS" ]; then
+            echo "❌ verifyOtp() found outside server confirm handler:"
+            echo "$OFFENDERS"
+            exit 1
+          fi
