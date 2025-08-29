@@ -1,6 +1,5 @@
 // app/auth/error/page.tsx
-"use client";
-
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 
 type Props = {
@@ -22,14 +21,11 @@ export default function AuthErrorPage({ searchParams }: Props) {
       <h1 className="text-xl font-semibold">{title}</h1>
       <p className="text-muted-foreground">{message}</p>
       <div className="flex items-center justify-center gap-2">
-        {/* Vai para seletor multi-tenant padrão */}
-        <Button onClick={() => (window.location.href = "/a")}>Ir para /a</Button>
-        {/* Alternativa: voltar ao login/modal da home */}
-        <Button
-          variant="ghost"
-          onClick={() => (window.location.href = "/")}
-        >
-          Voltar ao login
+        <Button asChild>
+          <Link href="/a">Ir para /a</Link>
+        </Button>
+        <Button variant="ghost" asChild>
+          <Link href="/">Voltar ao login</Link>
         </Button>
       </div>
     </div>
