@@ -1,0 +1,16 @@
+name: Security Checks
+
+on:
+  pull_request:
+    branches: [ "main", "macro" ]
+
+jobs:
+  no-implicit-flow:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check for forbidden Supabase implicit flow APIs
+        run: |
+          ! grep -R -nE "#access_token|refresh_token|setSession\\(|getSessionFromUrl\\(|verifyOtp\\(" src/ app/ || (
+            echo "❌ Forbidden Supabase implicit flow API found. Use @supabase/ssr instead." && exit 1
+          )
