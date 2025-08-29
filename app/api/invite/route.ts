@@ -1,8 +1,8 @@
+// app/api/invite/route.ts
 export const runtime = "nodejs";
 
 import { NextResponse } from "next/server";
-import { cookies } from "next/headers";
-import { createServerClient } from "@supabase/ssr";
+import { getServerSupabase } from "@/lib/supabase/server";
 import { admin } from "@/lib/supabase/admin";
 import { getAccessContext } from "@/lib/access/getAccessContext";
 import { AccessError } from "@/lib/access/types";
@@ -12,20 +12,16 @@ type Body = { email: string; role: "admin" | "editor" | "viewer" };
 export async function POST(req: Request) {
   try {
     // 1) usuário autenticado
-    const cookieStore = cookies();
-    const supa = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
-      {
-        cookies: {
-          get: (k) => cookieStore.get(k)?.value,
-          set() {},
-          remove() {},
-        },
-      }
-    );
-    const { data: { user } } = await supa.auth.getUser();
-    if (!user) return NextResponse.json({ ok: false, error: "unauthenticated" }, { status: 401 });
+    const supa = getServerSupabase();
+    const {
+      data: { user },
+    } = await supa.auth.getUser();
+    if (!user) {
+      return NextResponse.json(
+        { ok: false, error: "unauthenticated" },
+        { status: 401 }
+      );
+    }
 
     // 2) resolver conta (slug) e validar papel
     const url = new URL(req.url);
@@ -59,7 +55,10 @@ export async function POST(req: Request) {
 
     const invitedId = invited.data.user?.id;
     if (!invitedId) {
-      return NextResponse.json({ ok: false, error: "invite_failed" }, { status: 500 });
+      return NextResponse.json(
+        { ok: false, error: "invite_failed" },
+        { status: 500 }
+      );
     }
 
     const up = await svc.from("account_users").upsert({
@@ -72,6 +71,9 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ ok: true });
   } catch (e: any) {
-    return NextResponse.json({ ok: false, error: e?.message ?? "error" }, { status: 500 });
+    return NextResponse.json(
+      { ok: false, error: e?.message ?? "error" },
+      { status: 500 }
+    );
   }
 }
