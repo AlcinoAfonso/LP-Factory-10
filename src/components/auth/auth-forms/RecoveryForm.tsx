@@ -22,31 +22,21 @@ export default function RecoveryForm({ onBackToLogin }: Props) {
     return () => window.clearTimeout(t);
   }, [cooldown]);
 
-  // Ouvir eventos da página /auth/reset (BroadcastChannel)
+  // Listener de sincronização (localStorage + storage event)
   useEffect(() => {
-    let bc: BroadcastChannel | null = null;
-    try {
-      bc = new BroadcastChannel("lp-auth-reset");
-      bc.onmessage = (
-        ev: MessageEvent<{ type?: "opened" | "expired" | "used" | "success" }>
-      ) => {
-        const kind = ev?.data?.type;
-        if (!kind) return;
-        if (kind === "opened") setInfo("Abrimos o link em outra aba; continue por lá.");
-        if (kind === "expired") setInfo("O link expirou. Reenvie um novo e-mail por aqui.");
-        if (kind === "used") setInfo("Este link já foi usado. Reenvie um novo e-mail.");
-        if (kind === "success") {
-          setInfo("Processo concluído. Este diálogo será fechado.");
-          if (closeTimer.current) window.clearTimeout(closeTimer.current);
-          closeTimer.current = window.setTimeout(() => onBackToLogin?.(), 2000);
-        }
-      };
-    } catch {}
-    return () => {
-      if (bc) {
-        bc.onmessage = null;
-        bc.close();
+    function handleStorage(ev: StorageEvent) {
+      if (ev.key === "lf10:auth_reset_success" && ev.newValue) {
+        setInfo("Processo concluído. Este diálogo será fechado.");
+        if (closeTimer.current) window.clearTimeout(closeTimer.current);
+        closeTimer.current = window.setTimeout(() => {
+          localStorage.removeItem("lf10:auth_reset_success");
+          onBackToLogin?.();
+        }, 2000);
       }
+    }
+    window.addEventListener("storage", handleStorage);
+    return () => {
+      window.removeEventListener("storage", handleStorage);
       if (closeTimer.current) window.clearTimeout(closeTimer.current);
     };
   }, [onBackToLogin]);
@@ -54,7 +44,7 @@ export default function RecoveryForm({ onBackToLogin }: Props) {
   async function handleSend() {
     setInfo(null);
     const emailTrim = email.trim();
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailTrim)) {
+    if (!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(emailTrim)) {
       setInfo("Informe um e-mail válido.");
       return;
     }
@@ -67,7 +57,7 @@ export default function RecoveryForm({ onBackToLogin }: Props) {
       setInfo("Se este e-mail estiver cadastrado, você receberá instruções.");
       setCooldown(30);
       if (error) {
-        // Mantém cópia neutra
+        // Mantém cópia neutra (não expõe detalhes)
       }
     } finally {
       setSending(false);
