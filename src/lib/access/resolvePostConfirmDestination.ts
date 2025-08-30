@@ -1,15 +1,18 @@
 // src/lib/access/resolvePostConfirmDestination.ts
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-// PPS 4.1.5 — rotas canônicas internas
+// PPS 4.1.5 — rotas canônicas internas permitidas
 const ALLOW_PREFIX = ["/a", "/onboarding", "/auth/error"] as const;
+
+// Billing bloqueado (strings conforme Acesso 10.1)
+const BLOCKED_BILLING = ["canceled", "incomplete_expired", "past_due_hard"] as const;
 
 export function sanitizeNext(raw?: string | null) {
   if (!raw) return null;
   try {
-    const u = new URL(raw, "http://x");
+    const u = new URL(raw, "http://x"); // base dummy
     // normaliza barra final e preserva query/hash
-    const normPath = u.pathname.replace(/\/+$/, "") || "/";
+    const normPath = (u.pathname.replace(/\/+$/, "") || "/");
     const path = normPath + (u.search || "") + (u.hash || "");
     return ALLOW_PREFIX.some((p) => path === p || path.startsWith(p)) ? path : null;
   } catch {
@@ -17,17 +20,23 @@ export function sanitizeNext(raw?: string | null) {
   }
 }
 
-// Tipos explícitos do join (ajuste nomes conforme seu schema)
-type AccountJoin = {
+// Tipos do join (aceitando objeto ou array, conforme retorno do PostgREST)
+type AccountJoin =
+  | { slug: string; status?: "active" | "disabled"; billing_status?: string }
+  | null;
+
+type AccountJoinMany = AccountJoin | AccountJoin[] | null;
+
+type Row = {
   role: "owner" | "admin" | "editor" | "viewer";
   status: "active" | "pending" | "revoked";
-  accounts: { slug: string; status?: "active" | "disabled"; billing_status?: string } | null;
+  accounts: AccountJoinMany;
 };
 
 /**
  * Decide destino pós-confirm (signup/email change) usando a sessão corrente.
- * Regras PPS 7: 0→/onboarding, 1→/a/[slug], N→/a
- * Restrições 10.1: vínculo status=active, conta ativa e billing não bloqueada.
+ * PPS 7: 0→/onboarding, 1→/a/[slug], N→/a
+ * Acesso 10.1: vínculo status=active, conta ativa e billing não bloqueada.
  */
 export async function resolvePostConfirmDestination(
   supa: SupabaseClient,
@@ -47,30 +56,31 @@ export async function resolvePostConfirmDestination(
     .select("role,status, accounts!inner ( slug, status, billing_status )")
     .eq("user_id", userData.user.id);
 
-  if (error) {
+  if (error || !data) {
     console.log({
       event: "resolvePostConfirmDestination",
       status: "error",
-      reason: error.message,
+      reason: error?.message ?? "no-data",
       timestamp: Date.now(),
+      route: "helper",
     });
     return "/a";
   }
 
-  const validSlugs = (data as AccountJoin[]).filter((r) => {
-    const acc = r.accounts;
-    if (!acc?.slug) return false;
-    // vínculo ativo
-    if (r.status !== "active") return false;
-    // conta ativa
-    if (acc.status && acc.status !== "active") return false;
-    // billing não bloqueado (exemplos de bloqueio; ajuste conforme seu domínio)
-    const blockedBilling = ["canceled", "incomplete_expired", "past_due_hard"].includes(
-      acc.billing_status || ""
-    );
-    if (blockedBilling) return false;
-    return true;
-  }).map((r) => r.accounts!.slug);
+  // normaliza `accounts` para array e aplica filtros de Acesso 10.1
+  const validSlugs = (data as Row[]).flatMap((r) => {
+    if (r.status !== "active") return [];
+    const accs = r.accounts
+      ? Array.isArray(r.accounts)
+        ? r.accounts
+        : [r.accounts]
+      : [];
+    return accs
+      .filter((acc): acc is NonNullable<AccountJoin> => !!acc && !!acc.slug)
+      .filter((acc) => !acc.status || acc.status === "active")
+      .filter((acc) => !BLOCKED_BILLING.includes((acc.billing_status || "") as any))
+      .map((acc) => acc.slug);
+  });
 
   if (validSlugs.length === 0) return "/onboarding";
   if (validSlugs.length === 1) return `/a/${validSlugs[0]}`;
