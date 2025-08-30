@@ -9,19 +9,21 @@ import { resolvePostConfirmDestination } from "@/lib/access/resolvePostConfirmDe
 function mapReason(msg: string | undefined): "expired" | "used" | "invalid" {
   const m = (msg || "").toLowerCase();
   if (m.includes("expire")) return "expired";
-  if (m.includes("used")) return "used";
+  if (m.includes("used") || m.includes("already been used")) return "used";
   return "invalid";
 }
 
 // Telemetria mínima (PPS 4.3) — sem PII
 function log(payload: {
-  event: "confirm_handler";
+  event: "confirm_handler" | "confirm_handler_debug";
   status: "success" | "error";
-  type?: "recovery" | "email" | "signup";
+  type?: "recovery" | "email_change" | "signup";
   reason?: "expired" | "used" | "invalid" | "missing";
   route: "/auth/confirm";
   timestamp: number;
-  event_id: string;
+  event_id?: string;
+  reason_raw?: string;
+  token_prefix?: string;
 }) {
   try {
     // eslint-disable-next-line no-console
@@ -35,7 +37,15 @@ export async function GET(req: Request) {
   const origin = url.origin;
 
   const token_hash = url.searchParams.get("token_hash") || undefined;
-  const type = (url.searchParams.get("type") as "recovery" | "email" | "signup" | null) || null;
+
+  // normaliza "email" -> "email_change" (Supabase)
+  const rawType = url.searchParams.get("type");
+  const normalized =
+    rawType === "email" ? "email_change" : rawType;
+
+  const type =
+    (normalized as "recovery" | "email_change" | "signup" | null) || null;
+
   const nextRaw = url.searchParams.get("next");
 
   if (!token_hash || !type) {
@@ -52,11 +62,24 @@ export async function GET(req: Request) {
 
   const supabase = createServerClient();
 
-  // `verifyOtp` no server centraliza todos os tipos (PPS 4.1)
+  // verifyOtp centralizado (PPS 4.1)
   const { error } = await supabase.auth.verifyOtp({ token_hash, type });
 
   if (error) {
+    // log de diagnóstico detalhado (sem PII)
+    log({
+      event: "confirm_handler_debug",
+      status: "error",
+      type,
+      route: "/auth/confirm",
+      timestamp: now,
+      reason_raw: error.message,
+      token_prefix: String(token_hash).slice(0, 12),
+    });
+
     const reason = mapReason(error.message);
+
+    // log canônico
     log({
       event: "confirm_handler",
       status: "error",
@@ -71,7 +94,8 @@ export async function GET(req: Request) {
     if (type === "recovery") {
       return NextResponse.redirect(`${origin}/auth/error?reason=${reason}`, 303);
     }
-    // email/signup com erro → reason=invalid (genérico)
+
+    // email_change | signup com erro → genérico
     return NextResponse.redirect(`${origin}/auth/error?reason=invalid`, 303);
   }
 
@@ -85,13 +109,12 @@ export async function GET(req: Request) {
     event_id: crypto.randomUUID(),
   });
 
-  // Regras de destino (PPS 4.1.1–4.1.4 + 7)
   if (type === "recovery") {
     // sucesso de recovery → /auth/reset?state=valid
     return NextResponse.redirect(`${origin}/auth/reset?state=valid`, 303);
   }
 
-  // email|signup (success) → destino multi-tenant (helper aplica whitelist e filtros)
+  // email_change | signup → destino multi-tenant
   const dest = await resolvePostConfirmDestination(supabase, nextRaw);
   return NextResponse.redirect(`${origin}${dest}`, 303);
 }
