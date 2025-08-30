@@ -1,9 +1,18 @@
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 
-export function middleware(_req: NextRequest) {
+const CANONICAL_ACCOUNT_SLUG = "demo";
+
+export function middleware(req: NextRequest) {
+  const { pathname, search } = req.nextUrl;
+  
+  if (pathname === "/a" || pathname === "/a/") {
+    const url = new URL(`/a/${CANONICAL_ACCOUNT_SLUG}`, req.url);
+    url.search = search;
+    return NextResponse.redirect(url, 307);
+  }
+  
   return NextResponse.next();
 }
 
-// Rodar só em /a e /a/ (não interfere em /auth/*)
 export const config = { matcher: ["/a", "/a/"] };
