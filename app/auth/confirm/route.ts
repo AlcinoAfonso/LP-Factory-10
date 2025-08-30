@@ -3,19 +3,7 @@ export const runtime = "nodejs";
 
 import { NextResponse } from "next/server";
 import { createServerClient } from "@/lib/supabase/server";
-
-// PPS 4.1.5 — whitelist de destinos internos
-const ALLOW = ["/a", "/a/", "/auth/error", "/onboarding"] as const;
-function sanitizeNext(raw: string | null | undefined): string {
-  if (!raw) return "/a";
-  try {
-    const url = new URL(raw, "http://x");
-    const path = url.pathname + (url.search || "");
-    return ALLOW.some((p) => path === p || path.startsWith(p)) ? path : "/a";
-  } catch {
-    return "/a";
-  }
-}
+import { resolvePostConfirmDestination } from "@/lib/access/resolvePostConfirmDestination";
 
 // Mapeia erro do Supabase p/ reason canônica (PPS 6.1)
 function mapReason(msg: string | undefined): "expired" | "used" | "invalid" {
@@ -48,7 +36,7 @@ export async function GET(req: Request) {
 
   const token_hash = url.searchParams.get("token_hash") || undefined;
   const type = (url.searchParams.get("type") as "recovery" | "email" | "signup" | null) || null;
-  const next = sanitizeNext(url.searchParams.get("next"));
+  const nextRaw = url.searchParams.get("next");
 
   if (!token_hash || !type) {
     log({
@@ -103,6 +91,7 @@ export async function GET(req: Request) {
     return NextResponse.redirect(`${origin}/auth/reset?state=valid`);
   }
 
-  // email|signup (success) → destino multi-tenant whitelisted
-  return NextResponse.redirect(`${origin}${next}`);
+  // email|signup (success) → destino multi-tenant (helper aplica whitelist e filtros)
+  const dest = await resolvePostConfirmDestination(supabase, nextRaw);
+  return NextResponse.redirect(`${origin}${dest}`);
 }
