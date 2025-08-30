@@ -44,7 +44,7 @@ export default function RecoveryForm({ onBackToLogin }: Props) {
   async function handleSend() {
     setInfo(null);
     const emailTrim = email.trim();
-    if (!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(emailTrim)) {
+   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailTrim)) {
       setInfo("Informe um e-mail válido.");
       return;
     }
