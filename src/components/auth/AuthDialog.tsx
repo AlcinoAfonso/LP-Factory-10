@@ -1,7 +1,6 @@
+// src/components/auth/AuthDialog.tsx
 "use client";
 
-import { useEffect, useRef } from "react";
-import { useRouter } from "next/navigation";
 import {
   Dialog,
   DialogContent,
@@ -9,6 +8,9 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import LoginForm from "./auth-forms/LoginForm";
 import RecoveryForm from "./auth-forms/RecoveryForm";
 
@@ -20,6 +22,9 @@ type Props = {
   onRequestModeChange?: (m: Props["mode"]) => void;
 };
 
+// PPS 8.x — chave de sincronização (usar mesma string na tela /auth/reset)
+const KEY = "lf10:auth_reset_success";
+
 export default function AuthDialog({
   context,
   mode,
@@ -28,27 +33,79 @@ export default function AuthDialog({
   onRequestModeChange,
 }: Props) {
   const router = useRouter();
-  const debounceTimer = useRef<number | null>(null);
+  const [synced, setSynced] = useState(false); // idempotência
+  // timer robusto p/ Node/Edge/Browser
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Listener de sincronização (PPS 2.2 / 8.2)
+  // Consumir sinal on-mount (caso o evento tenha ocorrido antes de montarmos)
   useEffect(() => {
-    function handleStorage(ev: StorageEvent) {
-      if (ev.key === "lf10:auth_reset_success" && ev.newValue) {
-        if (debounceTimer.current) window.clearTimeout(debounceTimer.current);
+    try {
+      // só consome se modal estiver aberto
+      if (open && !synced && typeof window !== "undefined") {
+        const had = window.localStorage.getItem(KEY);
+        if (had) {
+          // telemetria leve (sem PII)
+          console.log({
+            event: "modal_sync",
+            action: "consume_on_mount",
+            ts: Date.now(),
+          });
+          setSynced(true);
+          if (debounceRef.current) clearTimeout(debounceRef.current);
+          debounceRef.current = setTimeout(() => {
+            try {
+              router.refresh();
+            } catch {}
+            onOpenChange(false); // fecha modal
+            try {
+              window.localStorage.removeItem(KEY);
+            } catch {}
+          }, 500);
+        }
+      }
+    } catch {
+      // localStorage indisponível — usuário pode usar fallback “Verificar status”
+    }
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, synced]);
 
-        debounceTimer.current = window.setTimeout(() => {
-          localStorage.removeItem("lf10:auth_reset_success");
+  // Listener de storage para sincronização entre abas
+  useEffect(() => {
+    if (!open) return; // ativa listener só com modal aberto
+    const onStorage = (e: StorageEvent) => {
+      if (synced) return; // idempotência
+      if (e.key === KEY && e.newValue) {
+        console.log({
+          event: "modal_sync",
+          action: "consume_storage_event",
+          ts: Date.now(),
+        });
+        setSynced(true);
+        if (debounceRef.current) clearTimeout(debounceRef.current);
+        debounceRef.current = setTimeout(() => {
+          try {
+            router.refresh();
+          } catch {}
           onOpenChange(false); // fecha modal
-          router.refresh(); // garante atualização pós-reset
+          try {
+            window.localStorage.removeItem(KEY);
+          } catch {}
         }, 500);
       }
-    }
-    window.addEventListener("storage", handleStorage);
-    return () => {
-      window.removeEventListener("storage", handleStorage);
-      if (debounceTimer.current) window.clearTimeout(debounceTimer.current);
     };
-  }, [onOpenChange, router]);
+    try {
+      window.addEventListener("storage", onStorage);
+    } catch {}
+    return () => {
+      try {
+        window.removeEventListener("storage", onStorage);
+      } catch {}
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  }, [open, synced]);
 
   const title =
     mode === "login"
@@ -75,7 +132,7 @@ export default function AuthDialog({
         {mode === "login" && (
           <LoginForm
             onForgotClick={() => onRequestModeChange?.("recovery")}
-            onSuccess={() => onOpenChange(false)} // login fecha modal
+            onSuccess={() => onOpenChange(false)} // fecha modal só no sucesso
           />
         )}
 
@@ -88,6 +145,42 @@ export default function AuthDialog({
             Formulário “{mode}” virá na próxima etapa.
           </div>
         )}
+
+        {/* Fallback: se localStorage estiver bloqueado, usuário pode verificar */}
+        <div className="mt-4 flex justify-end">
+          <Button
+            variant="ghost"
+            onClick={() => {
+              console.log({
+                event: "modal_sync",
+                action: "manual_check",
+                ts: Date.now(),
+              });
+              try {
+                const had = window.localStorage.getItem(KEY);
+                if (had && !synced) {
+                  setSynced(true);
+                  if (debounceRef.current) clearTimeout(debounceRef.current);
+                  debounceRef.current = setTimeout(() => {
+                    try {
+                      router.refresh();
+                    } catch {}
+                    onOpenChange(false);
+                    try {
+                      window.localStorage.removeItem(KEY);
+                    } catch {}
+                  }, 500);
+                  return;
+                }
+              } catch {}
+              try {
+                router.refresh();
+              } catch {}
+            }}
+          >
+            Verificar status
+          </Button>
+        </div>
       </DialogContent>
     </Dialog>
   );
