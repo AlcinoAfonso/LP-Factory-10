@@ -1,27 +1,21 @@
+// app/auth/reset/page.tsx
 "use client";
 
-export const dynamic = "force-dynamic";
-
-import { Suspense } from "react";
-import { useEffect, useRef, useState } from "react";
-import { useSearchParams, useRouter } from "next/navigation";
-import { supabase } from "@/lib/supabase/client";
+import { useRef, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import { supabase } from "@/lib/supabase/client";
 
-type ResetState = "valid" | "expired" | "used" | "invalid";
+// Opção 2 (PPS ajustado):
+// - /auth/reset só é acessada em state=valid (confirm já filtrou erros)
+// - Nenhuma leitura de query/state aqui; apenas o formulário de nova senha
 
 const hasUpper = (s: string) => /[A-Z]/.test(s);
 const hasLower = (s: string) => /[a-z]/.test(s);
 const hasDigit = (s: string) => /\d/.test(s);
 
-function ResetPasswordInner() {
-  const params = useSearchParams();
-  const router = useRouter();
-  const state = (params.get("state") as ResetState) || "invalid";
-  const reason = params.get("reason") || null;
-
+export default function ResetPasswordPage() {
   const [pwd1, setPwd1] = useState("");
   const [pwd2, setPwd2] = useState("");
   const [loading, setLoading] = useState(false);
@@ -44,6 +38,7 @@ function ResetPasswordInner() {
       setMsg(v);
       return;
     }
+
     setLoading(true);
     const { error } = await supabase.auth.updateUser({ password: pwd1 });
     setLoading(false);
@@ -53,56 +48,20 @@ function ResetPasswordInner() {
       return;
     }
 
-    setMsg("Senha atualizada com sucesso! Este diálogo será fechado.");
-    // PPS 8.1: sinalizar sucesso via localStorage
-    localStorage.setItem("lf10:auth_reset_success", String(Date.now()));
+    setMsg("Senha atualizada com sucesso! Redirecionando…");
+    try {
+      // Sinal para o AuthDialog fechar + refresh (PPS 8.x)
+      localStorage.setItem("lf10:auth_reset_success", String(Date.now()));
+    } catch {
+      /* ignore */
+    }
 
-    // fallback: redireciona após 3s
+    // Redireciona após 3s para o destino padrão multi-tenant
     closeTimer.current = window.setTimeout(() => {
-      router.push("/a");
+      window.location.href = "/a";
     }, 3000);
   }
 
-  useEffect(() => {
-    return () => {
-      if (closeTimer.current) window.clearTimeout(closeTimer.current);
-    };
-  }, []);
-
-  // ---- UI ----
-  if (state === "invalid") {
-    return (
-      <div className="max-w-md mx-auto mt-20 text-center space-y-4">
-        <h1 className="text-xl font-semibold">Redefinir senha</h1>
-        <p className="text-red-600">
-          {reason === "expired"
-            ? "Este link expirou."
-            : reason === "used"
-            ? "Este link já foi usado."
-            : "Link inválido."}
-        </p>
-        <Button onClick={() => router.push("/a")}>Voltar</Button>
-      </div>
-    );
-  }
-
-  if (state !== "valid") {
-    return (
-      <div className="max-w-md mx-auto mt-20 text-center space-y-4">
-        <h1 className="text-xl font-semibold">Redefinir senha</h1>
-        <p className="text-red-600">
-          {state === "expired"
-            ? "Este link expirou."
-            : state === "used"
-            ? "Este link já foi usado."
-            : "Link inválido."}
-        </p>
-        <Button onClick={() => router.push("/a")}>Voltar</Button>
-      </div>
-    );
-  }
-
-  // state === "valid"
   return (
     <div className="max-w-md mx-auto mt-20 space-y-6">
       <h1 className="text-xl font-semibold">Redefinir senha</h1>
@@ -131,17 +90,14 @@ function ResetPasswordInner() {
 
       {msg && <p className="text-sm text-muted-foreground">{msg}</p>}
 
-      <Button disabled={loading} onClick={handleReset}>
-        {loading ? "Atualizando..." : "Salvar nova senha"}
-      </Button>
+      <div className="flex gap-2">
+        <Button disabled={loading} onClick={handleReset}>
+          {loading ? "Atualizando..." : "Salvar nova senha"}
+        </Button>
+        <Button variant="ghost" onClick={() => (window.location.href = "/")}>
+          Voltar ao login
+        </Button>
+      </div>
     </div>
-  );
-}
-
-export default function ResetPasswordPage() {
-  return (
-    <Suspense fallback={<div>Carregando…</div>}>
-      <ResetPasswordInner />
-    </Suspense>
   );
 }
