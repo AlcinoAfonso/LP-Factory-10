@@ -6,7 +6,7 @@ import AuthDialog from "@/components/auth/AuthDialog";
 import { useAccessContext } from "@/providers/AccessProvider";
 import { createClient } from "@/lib/supabase/client";
 
-type Mode = "login" | "signup" | "recovery" | "invite";
+type Mode = "login" | "signup" | "reset";
 
 export default function Page({ params }: { params: { account: string } }) {
   const router = useRouter();
