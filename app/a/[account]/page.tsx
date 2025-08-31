@@ -6,21 +6,15 @@ import AuthDialog from "@/components/auth/AuthDialog";
 import { useAccessContext } from "@/providers/AccessProvider";
 import { createClient } from "@/lib/supabase/client";
 
-type Mode = "login" | "signup" | "reset";
-
 export default function Page({ params }: { params: { account: string } }) {
   const router = useRouter();
   const ctx = useAccessContext();
-  // 🔧 contorno de tipagem até alinharmos AccessContext
   const anyCtx = (ctx ?? {}) as any;
 
   const supabase = createClient();
 
-  const [authOpen, setAuthOpen] = useState(false);
-  const [authMode, setAuthMode] = useState<Mode>("login");
   const [email, setEmail] = useState<string | null>(null);
 
-  // Apenas e-mail via Auth (sem SQL). Restante vem do AccessContext.
   useEffect(() => {
     let mounted = true;
     (async () => {
@@ -37,14 +31,8 @@ export default function Page({ params }: { params: { account: string } }) {
   }, []);
 
   async function signOut() {
-    // encerra sessão no Supabase
     await supabase.auth.signOut();
-
-    // limpa UI local imediatamente
     setEmail(null);
-
-    // volta para o mesmo slug (ex.: /a/preview) e força revalidação do App Router
-    // evita “rastros” visuais pós-logout
     router.replace(`/a/${params.account}`);
     router.refresh();
   }
@@ -88,8 +76,7 @@ export default function Page({ params }: { params: { account: string } }) {
             <nav className="flex items-center gap-3">
               <button
                 onClick={() => {
-                  setAuthMode("login");
-                  setAuthOpen(true);
+                  // No AuthDialog novo, ele já controla sua própria abertura
                 }}
                 className="rounded-md border px-3 py-1.5 text-sm hover:bg-gray-50"
               >
@@ -97,8 +84,7 @@ export default function Page({ params }: { params: { account: string } }) {
               </button>
               <button
                 onClick={() => {
-                  setAuthMode("signup");
-                  setAuthOpen(true);
+                  // idem: controle interno do AuthDialog
                 }}
                 className="rounded-md border px-3 py-1.5 text-sm hover:bg-gray-50"
               >
@@ -147,12 +133,7 @@ export default function Page({ params }: { params: { account: string } }) {
       </main>
 
       {/* AUTH DIALOG */}
-     <AuthDialog
-  mode={authMode}
-  open={authOpen}
-  onOpenChange={setAuthOpen}
-  onRequestModeChange={setAuthMode}
-/>
+      <AuthDialog />
     </>
   );
 }
