@@ -9,7 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "@supabase/supabase-js": "latest",
+    "@supabase/ui-library": "latest",
     "@supabase/ssr": "latest",
     "@supabase/ui": "latest",
     "next": "14.2.5",
