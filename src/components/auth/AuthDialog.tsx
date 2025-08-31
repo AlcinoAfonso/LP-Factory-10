@@ -1,3 +1,4 @@
+// src/components/auth/AuthDialog.tsx
 "use client";
 
 import { useRouter } from "next/navigation";
