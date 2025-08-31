@@ -1,5 +1,5 @@
 // src/lib/access/getAccessContext.ts
-import { getServerSupabase } from "@/lib/supabase/server";
+import { createServer } from "@/lib/supabase/server";
 import type * as Access from "./types";
 import {
   mapAccountFromDB,
@@ -21,7 +21,7 @@ export async function getAccessContext(input?: {
   pathname?: string;
   params?: { account?: string }; // slug
 }): Promise<Access.AccessContext | null> {
-  const supabase = getServerSupabase();
+  const supabase = createServer();
 
   // 1) Auth
   const { data: userData } = await supabase.auth.getUser();
@@ -49,15 +49,17 @@ export async function getAccessContext(input?: {
   if (error || !data || data.length === 0) return null;
 
   // 3) Normaliza rows e descarta contas fora de active|trial
-  const rows = (data as any[]).map((row) => {
-    const accRow = pickAccount(row.accounts) as DBAccountRow | null;
-    if (!accRow) return null;
-    const account = mapAccountFromDB(accRow);
-    const member = mapMemberFromDB(row as DBMemberRow);
-    const accountOk = account.status === "active" || account.status === "trial";
-    const memberOk = member.status === "active";
-    return accountOk && memberOk ? { account, member } : null;
-  }).filter(Boolean) as {
+  const rows = (data as any[])
+    .map((row) => {
+      const accRow = pickAccount(row.accounts) as DBAccountRow | null;
+      if (!accRow) return null;
+      const account = mapAccountFromDB(accRow);
+      const member = mapMemberFromDB(row as DBMemberRow);
+      const accountOk = account.status === "active" || account.status === "trial";
+      const memberOk = member.status === "active";
+      return accountOk && memberOk ? { account, member } : null;
+    })
+    .filter(Boolean) as {
     account: ReturnType<typeof mapAccountFromDB>;
     member: ReturnType<typeof mapMemberFromDB>;
   }[];
