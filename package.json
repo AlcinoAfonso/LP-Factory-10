@@ -6,31 +6,20 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint",
-    "type-check": "tsc --noEmit"
+    "lint": "next lint"
   },
   "dependencies": {
-    "@radix-ui/react-slot": "^1.0.2",
-    "@supabase/ssr": "0.5.2",
-    "@supabase/supabase-js": "2.46.2",
-    "class-variance-authority": "^0.7.0",
-    "clsx": "^2.1.0",
-    "lucide-react": "^0.454.0",
-    "next": "14.2.18",
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1",
-    "tailwind-merge": "^2.5.2",
-    "tailwindcss-animate": "^1.0.7"
+    "@supabase/supabase-js": "latest",
+    "@supabase/ssr": "latest",
+    "@supabase/ui": "latest",
+    "next": "14.2.5",
+    "react": "18.3.1",
+    "react-dom": "18.3.1"
   },
   "devDependencies": {
-    "@types/node": "^22",
-    "@types/react": "^18",
-    "@types/react-dom": "^18",
-    "autoprefixer": "^10",
-    "eslint": "^8",
-    "eslint-config-next": "14.2.18",
-    "postcss": "^8",
-    "tailwindcss": "^3.4.1",
-    "typescript": "^5"
+    "autoprefixer": "10.4.20",
+    "postcss": "8.4.41",
+    "tailwindcss": "3.4.10",
+    "typescript": "5.5.4"
   }
 }
