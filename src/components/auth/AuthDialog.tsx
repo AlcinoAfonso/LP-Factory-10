@@ -1,29 +1,31 @@
-// src/components/auth/AuthDialog.tsx
 "use client";
 
 import { useRouter } from "next/navigation";
 import { Dialog } from "@/components/ui/dialog";
-import { Login, SignUp, ResetPassword } from "@supabase/ui";
+import { Auth } from "@supabase/auth-ui-react";
+import { ThemeSupa } from "@supabase/auth-ui-shared";
+import { createClient } from "@/lib/supabase/client";
 
 interface Props {
   open: boolean;
-  mode: "login" | "signup" | "reset";
+  mode?: "login" | "signup" | "reset";
   onClose: () => void;
 }
 
-export default function AuthDialog({ open, mode, onClose }: Props) {
+export default function AuthDialog({ open, mode = "login", onClose }: Props) {
   const router = useRouter();
-
-  const handleSuccess = () => {
-    onClose();
-    router.push("/a"); // middleware decide conta ou onboarding
-  };
+  const supabase = createClient();
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      {mode === "login" && <Login onSuccess={handleSuccess} />}
-      {mode === "signup" && <SignUp onSuccess={handleSuccess} />}
-      {mode === "reset" && <ResetPassword onSuccess={handleSuccess} />}
+      <Auth
+        supabaseClient={supabase}
+        appearance={{ theme: ThemeSupa }}
+        providers={[]}
+        view={mode}
+        redirectTo="/a"
+        magicLink={false}
+      />
     </Dialog>
   );
 }
