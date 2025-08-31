@@ -5,8 +5,8 @@ export function createServer() {
   const cookieStore = cookies();
 
   return createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,       // URL pública
-    process.env.SUPABASE_SECRET_KEY!,           // chave secreta (server-only)
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,           // URL pública
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!, // publishable key
     {
       cookies: {
         get: (name: string) => cookieStore.get(name)?.value,
