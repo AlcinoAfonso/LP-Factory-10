@@ -147,13 +147,12 @@ export default function Page({ params }: { params: { account: string } }) {
       </main>
 
       {/* AUTH DIALOG */}
-      <AuthDialog
-        context="account"
-        mode={authMode}
-        open={authOpen}
-        onOpenChange={setAuthOpen}
-        onRequestModeChange={setAuthMode}
-      />
+     <AuthDialog
+  mode={authMode}
+  open={authOpen}
+  onOpenChange={setAuthOpen}
+  onRequestModeChange={setAuthMode}
+/>
     </>
   );
 }
