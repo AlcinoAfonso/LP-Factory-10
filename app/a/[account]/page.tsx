@@ -14,6 +14,7 @@ export default function Page({ params }: { params: { account: string } }) {
   const supabase = createClient();
 
   const [email, setEmail] = useState<string | null>(null);
+  const [authOpen, setAuthOpen] = useState(false);
 
   useEffect(() => {
     let mounted = true;
@@ -75,17 +76,13 @@ export default function Page({ params }: { params: { account: string } }) {
           ) : (
             <nav className="flex items-center gap-3">
               <button
-                onClick={() => {
-                  // No AuthDialog novo, ele já controla sua própria abertura
-                }}
+                onClick={() => setAuthOpen(true)}
                 className="rounded-md border px-3 py-1.5 text-sm hover:bg-gray-50"
               >
                 Entrar
               </button>
               <button
-                onClick={() => {
-                  // idem: controle interno do AuthDialog
-                }}
+                onClick={() => setAuthOpen(true)}
                 className="rounded-md border px-3 py-1.5 text-sm hover:bg-gray-50"
               >
                 Criar conta
@@ -133,7 +130,7 @@ export default function Page({ params }: { params: { account: string } }) {
       </main>
 
       {/* AUTH DIALOG */}
-      <AuthDialog />
+      <AuthDialog open={authOpen} onClose={() => setAuthOpen(false)} />
     </>
   );
 }
