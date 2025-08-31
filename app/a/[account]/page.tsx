@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import AuthDialog from "@/components/auth/AuthDialog";
 import { useAccessContext } from "@/providers/AccessProvider";
-import { supabase } from "@/lib/supabase/client";
+import { createClient } from "@/lib/supabase/client";
 
 type Mode = "login" | "signup" | "recovery" | "invite";
 
@@ -13,6 +13,8 @@ export default function Page({ params }: { params: { account: string } }) {
   const ctx = useAccessContext();
   // 🔧 contorno de tipagem até alinharmos AccessContext
   const anyCtx = (ctx ?? {}) as any;
+
+  const supabase = createClient();
 
   const [authOpen, setAuthOpen] = useState(false);
   const [authMode, setAuthMode] = useState<Mode>("login");
