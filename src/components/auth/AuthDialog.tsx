@@ -5,16 +5,12 @@ import { Auth } from "@supabase/auth-ui-react";
 import { ThemeSupa } from "@supabase/auth-ui-shared";
 import { createClient } from "@/lib/supabase/client";
 
-// definimos manualmente os modos válidos do <Auth />
-type AuthMode = "sign_in" | "sign_up" | "forgotten_password";
-
 interface Props {
   open: boolean;
-  mode?: AuthMode;
   onClose: () => void;
 }
 
-export default function AuthDialog({ open, mode = "sign_in", onClose }: Props) {
+export default function AuthDialog({ open, onClose }: Props) {
   const supabase = createClient();
 
   return (
@@ -23,9 +19,9 @@ export default function AuthDialog({ open, mode = "sign_in", onClose }: Props) {
         supabaseClient={supabase}
         appearance={{ theme: ThemeSupa }}
         providers={[]}
-        view={mode}
-        magicLink={false}
+        view="sign_in" // 🔧 mínimo, só login
         redirectTo="/a"
+        magicLink={false}
       />
     </Dialog>
   );
