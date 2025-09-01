@@ -3,6 +3,7 @@
 
 import { Dialog } from "@/components/ui/dialog";
 import { Auth } from "@supabase/auth-ui-react";
+import type { ViewType } from "@supabase/auth-ui-react";
 import { ThemeSupa } from "@supabase/auth-ui-shared";
 import { createClient } from "@/lib/supabase/client";
 
@@ -11,17 +12,23 @@ export type AuthMode = "login" | "signup" | "reset";
 interface Props {
   open: boolean;
   onClose: () => void;
-  mode?: AuthMode; // opcional; default login
+  mode?: AuthMode; // default login
 }
+
+const viewMap: Record<AuthMode, ViewType> = {
+  login: "sign_in",
+  signup: "sign_up",
+  reset: "forgotten_password",
+};
 
 export default function AuthDialog({ open, onClose, mode = "login" }: Props) {
   const supabase = createClient();
+  const view: ViewType = viewMap[mode];
 
   return (
     <Dialog
       open={open}
       onOpenChange={(v) => {
-        // fecha quando o usuário fecha o modal
         if (!v) onClose();
       }}
     >
@@ -30,9 +37,8 @@ export default function AuthDialog({ open, onClose, mode = "login" }: Props) {
           supabaseClient={supabase}
           appearance={{ theme: ThemeSupa }}
           providers={[]}
-          view={mode}
+          view={view}
           magicLink={false}
-          // ajuste este redirect conforme sua rota pós-login (middleware cobre)
           redirectTo="/a"
         />
       </div>
