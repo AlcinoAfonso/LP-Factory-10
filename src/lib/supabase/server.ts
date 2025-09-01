@@ -15,8 +15,8 @@ export function createServer() {
         },
         remove: (name: string, options: any) => {
           cookieStore.set({ name, value: "", ...options, maxAge: 0 });
-        }
-      }
+        },
+      },
     }
   );
 }
