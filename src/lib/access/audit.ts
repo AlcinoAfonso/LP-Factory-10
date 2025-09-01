@@ -1,18 +1,18 @@
 // src/lib/access/audit.ts
-import { createServerClient } from "../supabase/server";
+import { createServer } from "../supabase/server";
 
 /** Audita a troca de conta (não quebra o fluxo se falhar). */
 export async function auditAccountSwitch(accountId: string) {
-  const supabase = createServerClient();
+  const supabase = createServer();
+
   try {
-    await supabase.rpc("audit_context_event", {
-      p_event: "account_switch",
-      p_entity: "accounts",
-      p_entity_id: accountId,
-      p_diff: {},
-      p_account_id: accountId,
+    await supabase.from("audit_logs").insert({
+      event: "account_switch",
+      account_id: accountId,
+      // adicione campos opcionais se existirem na sua tabela:
+      // user_id, metadata, created_at...
     });
   } catch {
-    // no-op
+    // silêncio: auditoria não deve bloquear fluxo
   }
 }
