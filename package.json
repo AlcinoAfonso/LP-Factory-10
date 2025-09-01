@@ -9,14 +9,17 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "@supabase/auth-ui-react": "latest",
-    "@supabase/auth-ui-shared": "latest",
-    "@supabase/ssr": "latest",
-    "@supabase/supabase-js": "latest",
+    "@radix-ui/react-dialog": "1.0.5",
+    "@radix-ui/react-slot": "1.0.2",
+    "@supabase/auth-ui-react": "0.4.7",
+    "@supabase/auth-ui-shared": "0.1.8",
+    "@supabase/ssr": "0.4.0",
+    "@supabase/supabase-js": "2.45.3",
+    "class-variance-authority": "0.7.0",
     "next": "14.2.5",
     "react": "18.3.1",
     "react-dom": "18.3.1",
-    "tailwindcss-animate": "latest"
+    "tailwindcss-animate": "1.0.7"
   },
   "devDependencies": {
     "@types/react": "18.3.1",
