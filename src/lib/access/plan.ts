@@ -1,5 +1,4 @@
-// src/lib/access/plan.ts
-import { createServerClient } from "@/lib/supabase/server";
+import { createServer } from "@/lib/supabase/server";
 import type * as Access from "./types";
 
 /** Identificadores canônicos dos planos (alinhados ao banco). */
@@ -95,7 +94,7 @@ function toLegacyLimits(l: {
 export async function fetchPlanAndLimits(
   account_id: string
 ): Promise<{ plan: Access.PlanInfo; limits: Access.Limits }> {
-  const supabase = createServerClient();
+  const supabase = createServer();
 
   const { data, error } = await supabase.rpc("get_account_effective_limits", {
     p_account_id: account_id,
