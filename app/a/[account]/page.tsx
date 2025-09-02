@@ -73,12 +73,18 @@ export default function Page({ params }: { params: { account: string } }) {
             </div>
           ) : (
             <nav className="flex items-center gap-3">
-              <button className="rounded-md border px-3 py-1.5 text-sm hover:bg-gray-50">
+              <a
+                href="/auth/login"
+                className="rounded-md border px-3 py-1.5 text-sm hover:bg-gray-50"
+              >
                 Entrar
-              </button>
-              <button className="rounded-md border px-3 py-1.5 text-sm hover:bg-gray-50">
+              </a>
+              <a
+                href="/auth/sign-up"
+                className="rounded-md border px-3 py-1.5 text-sm hover:bg-gray-50"
+              >
                 Criar conta
-              </button>
+              </a>
               <div
                 aria-label="Avatar do usuário"
                 className="ml-2 h-8 w-8 rounded-full border border-gray-300 bg-gray-100"
