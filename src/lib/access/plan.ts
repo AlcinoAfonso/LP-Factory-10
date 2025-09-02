@@ -1,4 +1,4 @@
-import { createServer } from "@/lib/supabase/server";
+import { createServer } from "@/supabase/server";
 import type * as Access from "./types";
 
 /** Identificadores canônicos dos planos (alinhados ao banco). */
