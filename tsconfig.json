@@ -3,7 +3,6 @@
     "baseUrl": ".",
     "paths": {
       "@/supabase/*": ["lib/supabase/*"],
-      "@/lib/*": ["lib/*"],
       "@/components/*": ["components/*"],
       "@/*": ["src/*", "lib/*"]
     },
@@ -20,11 +19,7 @@
     "isolatedModules": true,
     "jsx": "preserve",
     "incremental": true,
-    "plugins": [
-      {
-        "name": "next"
-      }
-    ],
+    "plugins": [{ "name": "next" }],
     "forceConsistentCasingInFileNames": true
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
