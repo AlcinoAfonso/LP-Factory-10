@@ -21,7 +21,7 @@ export async function getAccessContext(input?: {
   pathname?: string;
   params?: { account?: string }; // slug
 }): Promise<Access.AccessContext | null> {
-  const supabase = createClient();
+  const supabase = await createClient(); // precisa de await (SULB retorna Promise)
 
   // 1) Auth
   const { data: userData } = await supabase.auth.getUser();
