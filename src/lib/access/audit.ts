@@ -1,5 +1,6 @@
 // src/lib/access/audit.ts
-import { createClient } from "@/supabase/server";
+import { createClient } from "@/supabase/server
+";
 
 /** Audita a troca de conta (não quebra o fluxo se falhar). */
 export async function auditAccountSwitch(accountId: string) {
