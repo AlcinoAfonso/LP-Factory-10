@@ -1,6 +1,3 @@
-Aqui está o arquivo sem a numeração:
-
-```tsx
 import { UpdatePasswordForm } from '@/components/update-password-form'
 
 export default function Page() {
@@ -12,6 +9,3 @@ export default function Page() {
     </div>
   )
 }
-```
-
-Pode enviar o próximo.
