@@ -2,6 +2,9 @@
   "compilerOptions": {
     "baseUrl": ".",
     "paths": {
+      "@/lib/supabase/*": ["lib/supabase/*"],
+      "@/lib/access/*": ["src/lib/access/*"],
+      "@/lib/utils": ["src/lib/utils"],
       "@/supabase/*": ["lib/supabase/*"],
       "@/components/*": ["components/*"],
       "@/*": ["src/*", "lib/*"]
