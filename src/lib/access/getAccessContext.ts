@@ -1,5 +1,5 @@
 // src/lib/access/getAccessContext.ts
-import { createServer } from "@/lib/supabase/server";
+import { createClient } from "@/supabase/server";
 import type * as Access from "./types";
 import {
   mapAccountFromDB,
@@ -21,7 +21,7 @@ export async function getAccessContext(input?: {
   pathname?: string;
   params?: { account?: string }; // slug
 }): Promise<Access.AccessContext | null> {
-  const supabase = createServer();
+  const supabase = createClient();
 
   // 1) Auth
   const { data: userData } = await supabase.auth.getUser();
