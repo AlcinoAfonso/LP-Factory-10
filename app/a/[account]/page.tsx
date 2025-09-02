@@ -2,9 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import AuthDialog from "@/components/auth/AuthDialog";
 import { useAccessContext } from "@/providers/AccessProvider";
-import { createClient } from "@/lib/supabase/client";
+import { createClient } from "@/supabase/client";
 
 export default function Page({ params }: { params: { account: string } }) {
   const router = useRouter();
@@ -14,7 +13,6 @@ export default function Page({ params }: { params: { account: string } }) {
   const supabase = createClient();
 
   const [email, setEmail] = useState<string | null>(null);
-  const [authOpen, setAuthOpen] = useState(false);
 
   useEffect(() => {
     let mounted = true;
@@ -75,16 +73,10 @@ export default function Page({ params }: { params: { account: string } }) {
             </div>
           ) : (
             <nav className="flex items-center gap-3">
-              <button
-                onClick={() => setAuthOpen(true)}
-                className="rounded-md border px-3 py-1.5 text-sm hover:bg-gray-50"
-              >
+              <button className="rounded-md border px-3 py-1.5 text-sm hover:bg-gray-50">
                 Entrar
               </button>
-              <button
-                onClick={() => setAuthOpen(true)}
-                className="rounded-md border px-3 py-1.5 text-sm hover:bg-gray-50"
-              >
+              <button className="rounded-md border px-3 py-1.5 text-sm hover:bg-gray-50">
                 Criar conta
               </button>
               <div
@@ -128,9 +120,6 @@ export default function Page({ params }: { params: { account: string } }) {
           </p>
         )}
       </main>
-
-      {/* AUTH DIALOG */}
-      <AuthDialog open={authOpen} onClose={() => setAuthOpen(false)} />
     </>
   );
 }
