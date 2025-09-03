@@ -1,18 +1,20 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { useAccessContext } from "@/providers/AccessProvider";
 import { createClient } from "@/supabase/client";
 
 export default function Page({ params }: { params: { account: string } }) {
   const router = useRouter();
-  const ctx = useAccessContext();
-  const anyCtx = (ctx ?? {}) as any;
-
   const supabase = createClient();
 
+  const ctx = useAccessContext();
+  const anyCtx = (ctx ?? {}) as any;
   const [email, setEmail] = useState<string | null>(null);
+
+  const isHome = params.account === "home";
+  const hasCtx = Boolean(anyCtx.account || anyCtx.member);
 
   useEffect(() => {
     let mounted = true;
@@ -39,6 +41,18 @@ export default function Page({ params }: { params: { account: string } }) {
   const role = anyCtx.member?.role ?? "—";
   const accountName = anyCtx.account?.name ?? params.account;
   const accountSlug = anyCtx.account?.subdomain ?? params.account;
+
+  // Estados:
+  // - Public: !email (anônimo)
+  // - Onboarding: isHome && email && !hasCtx
+  // - Authenticated: hasCtx
+  // - Slug inválido: email && !isHome && !hasCtx
+  const state = useMemo<"public" | "onboarding" | "auth" | "invalid">(() => {
+    if (!email) return "public";
+    if (isHome && !hasCtx) return "onboarding";
+    if (hasCtx) return "auth";
+    return "invalid";
+  }, [email, isHome, hasCtx]);
 
   return (
     <>
@@ -98,7 +112,7 @@ export default function Page({ params }: { params: { account: string } }) {
       <main className="mx-auto max-w-3xl px-6 py-12">
         <h1 className="text-3xl font-semibold">Account Dashboard</h1>
 
-        {anyCtx && (anyCtx.account || anyCtx.member) ? (
+        {state === "auth" && (
           <div className="mt-4 grid gap-2 text-sm text-gray-700">
             <div>
               <span className="font-medium">Conta: </span>
@@ -118,11 +132,29 @@ export default function Page({ params }: { params: { account: string } }) {
               {anyCtx.member?.status ?? "—"}
             </div>
           </div>
-        ) : (
+        )}
+
+        {state === "onboarding" && (
+          <div className="mt-4 space-y-3 text-gray-700">
+            <p>Bem-vindo! Vamos criar sua primeira conta para começar.</p>
+            <a
+              href="/a/home?modal=new"
+              className="inline-flex items-center rounded-md border px-3 py-1.5 text-sm hover:bg-gray-50"
+            >
+              Criar primeira conta
+            </a>
+          </div>
+        )}
+
+        {state === "public" && (
           <p className="mt-2 text-gray-600">
-            {email
-              ? "Não foi possível resolver seu vínculo de acesso para esta conta."
-              : "Use os links no header para continuar."}
+            Use os botões no topo para entrar ou criar sua conta.
+          </p>
+        )}
+
+        {state === "invalid" && (
+          <p className="mt-2 text-gray-600">
+            Não foi possível resolver seu vínculo de acesso para esta conta.
           </p>
         )}
       </main>
