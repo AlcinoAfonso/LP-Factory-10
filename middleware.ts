@@ -11,3 +11,5 @@ export const config = {
 matcher: [
 // Aplica o middleware em tudo, exceto estáticos/imagens/favicon **e** /a/home (público)
 '/((?!a/home|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+],
+}
