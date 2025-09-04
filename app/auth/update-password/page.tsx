@@ -16,7 +16,6 @@ function validatePassword(pw: string, confirm: string): string | null {
 
 async function updatePasswordAction(formData: FormData) {
   'use server'
-
   const password = String(formData.get('password') || '')
   const confirm = String(formData.get('confirm') || '')
   const validationError = validatePassword(password, confirm)
@@ -25,7 +24,6 @@ async function updatePasswordAction(formData: FormData) {
   }
 
   const supabase = await createClient()
-
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) {
     redirect(`/auth/error?error=${encodeURIComponent('Auth session missing! Solicite um novo e-mail de reset.')}`)
@@ -33,10 +31,9 @@ async function updatePasswordAction(formData: FormData) {
 
   const { error } = await supabase.auth.updateUser({ password })
   if (error) {
-    const msg =
-      error.message === 'Auth session missing!'
-        ? 'Sessão ausente. Solicite um novo e-mail de reset.'
-        : error.message
+    const msg = error.message === 'Auth session missing!'
+      ? 'Sessão ausente. Solicite um novo e-mail de reset.'
+      : error.message
     redirect(`/auth/update-password?e=${encodeURIComponent(msg)}`)
   }
 
@@ -51,9 +48,9 @@ export default async function UpdatePasswordPage({
   const supabase = await createClient()
   let { data: { user } } = await supabase.auth.getUser()
 
-  // ⚡ Novo: se não há user mas temos token_hash, troca por sessão
+  // ⚡ Novo: se não há sessão mas veio token_hash=...&type=recovery, valida aqui
   if (!user && searchParams?.token_hash && searchParams?.type === 'recovery') {
-    const { data, error } = await supabase.auth.exchangeCodeForSession({
+    const { data, error } = await supabase.auth.verifyOtp({
       type: 'recovery',
       token_hash: searchParams.token_hash,
     })
@@ -65,7 +62,9 @@ export default async function UpdatePasswordPage({
         </main>
       )
     }
-    user = data.session?.user ?? null
+    // Após verifyOtp, cookies de sessão são aplicados via adapter do @supabase/ssr
+    const refreshed = await supabase.auth.getUser()
+    user = refreshed.data.user
   }
 
   if (!user) {
@@ -98,30 +97,15 @@ export default async function UpdatePasswordPage({
       <form action={updatePasswordAction} className="grid gap-3">
         <label className="grid gap-1">
           <span className="text-sm font-medium">Nova senha</span>
-          <input
-            name="password"
-            type="password"
-            required
-            className="w-full rounded-md border px-3 py-2"
-            autoComplete="new-password"
-          />
+          <input name="password" type="password" required className="w-full rounded-md border px-3 py-2" autoComplete="new-password" />
         </label>
 
         <label className="grid gap-1">
           <span className="text-sm font-medium">Confirmar nova senha</span>
-          <input
-            name="confirm"
-            type="password"
-            required
-            className="w-full rounded-md border px-3 py-2"
-            autoComplete="new-password"
-          />
+          <input name="confirm" type="password" required className="w-full rounded-md border px-3 py-2" autoComplete="new-password" />
         </label>
 
-        <button
-          type="submit"
-          className="mt-2 inline-flex items-center justify-center rounded-md border px-4 py-2 text-sm font-medium"
-        >
+        <button type="submit" className="mt-2 inline-flex items-center justify-center rounded-md border px-4 py-2 text-sm font-medium">
           Salvar nova senha
         </button>
       </form>
