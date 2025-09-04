@@ -2,7 +2,6 @@
 import { type EmailOtpType } from '@supabase/supabase-js'
 import { createServerClient } from '@supabase/ssr'
 import { NextRequest, NextResponse } from 'next/server'
-import type { CookieSerializeOptions } from 'cookie'
 
 function isSafeInternal(path?: string | null) {
   if (!path) return false
@@ -24,7 +23,7 @@ function interstitialHTML(token_hash: string, type: string, next: string) {
   </body></html>`
 }
 
-type PendingCookie = { name: string; value: string; options?: CookieSerializeOptions }
+type PendingCookie = { name: string; value: string; options?: unknown }
 
 export async function GET(req: NextRequest) {
   const url = new URL(req.url)
@@ -67,7 +66,7 @@ export async function GET(req: NextRequest) {
     ? NextResponse.redirect(new URL(`/auth/error?error=${encodeURIComponent(error.message)}`, url))
     : NextResponse.redirect(new URL(next, url))
 
-  pendingCookies.forEach(({ name, value, options }) => res.cookies.set(name, value, options))
+  pendingCookies.forEach(({ name, value, options }) => res.cookies.set(name, value, options as any))
   return res
 }
 
@@ -105,6 +104,6 @@ export async function POST(req: NextRequest) {
     ? NextResponse.redirect(new URL(`/auth/error?error=${encodeURIComponent(error.message)}`, url))
     : NextResponse.redirect(new URL(next, url))
 
-  pendingCookies.forEach(({ name, value, options }) => res.cookies.set(name, value, options))
+  pendingCookies.forEach(({ name, value, options }) => res.cookies.set(name, value, options as any))
   return res
 }
