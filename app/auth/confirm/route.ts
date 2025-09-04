@@ -35,6 +35,7 @@ async function verifyAndRedirect(req: NextRequest, token_hash: string, type: Ema
   )
 
   const { data, error } = await supabase.auth.verifyOtp({ type, token_hash })
+console.log('verifyOtp result:', { data, error })
 
   const dest = error
     ? new URL(`/auth/error?error=${encodeURIComponent(error.message)}`, url)
