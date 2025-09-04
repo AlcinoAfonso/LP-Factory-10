@@ -1,16 +1,13 @@
-// app/auth/update-password/page.tsx
-// Referência: Supabase Auth (App Router + @supabase/ssr) + SULB
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 
-export const dynamic = 'force-dynamic' // evita cache estático na página
+export const dynamic = 'force-dynamic'
 export const revalidate = 0
 
 function validatePassword(pw: string, confirm: string): string | null {
   if (!pw || !confirm) return 'Preencha os dois campos.'
   if (pw !== confirm) return 'As senhas não coincidem.'
   if (pw.length < 8) return 'A senha deve ter pelo menos 8 caracteres.'
-  // Exemplo simples de força mínima; ajuste se quiser:
   const hasNumber = /\d/.test(pw)
   const hasLetter = /[A-Za-z]/.test(pw)
   if (!hasNumber || !hasLetter) return 'Use letras e números na senha.'
@@ -27,10 +24,8 @@ async function updatePasswordAction(formData: FormData) {
     redirect(`/auth/update-password?e=${encodeURIComponent(validationError)}`)
   }
 
-  // SSR client com cookies do usuário
   const supabase = await createClient()
 
-  // Garante sessão antes de atualizar
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) {
     redirect(`/auth/error?error=${encodeURIComponent('Auth session missing! Solicite um novo e-mail de reset.')}`)
@@ -45,19 +40,34 @@ async function updatePasswordAction(formData: FormData) {
     redirect(`/auth/update-password?e=${encodeURIComponent(msg)}`)
   }
 
-  // Sucesso: leve para a home pública (o middleware/SSR decide destino final)
   redirect('/a/home')
 }
 
 export default async function UpdatePasswordPage({
   searchParams,
 }: {
-  searchParams?: { e?: string }
+  searchParams?: { e?: string; token_hash?: string; type?: string }
 }) {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  let { data: { user } } = await supabase.auth.getUser()
 
-  // Se não houver sessão, mostre instrução clara
+  // ⚡ Novo: se não há user mas temos token_hash, troca por sessão
+  if (!user && searchParams?.token_hash && searchParams?.type === 'recovery') {
+    const { data, error } = await supabase.auth.exchangeCodeForSession({
+      type: 'recovery',
+      token_hash: searchParams.token_hash,
+    })
+    if (error) {
+      return (
+        <main className="max-w-md mx-auto p-6">
+          <h1 className="text-2xl font-semibold mb-2">Redefinir senha</h1>
+          <p className="text-sm text-red-600">Erro ao validar link: {error.message}</p>
+        </main>
+      )
+    }
+    user = data.session?.user ?? null
+  }
+
   if (!user) {
     return (
       <main className="max-w-md mx-auto p-6">
