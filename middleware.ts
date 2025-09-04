@@ -7,7 +7,7 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    // Protege tudo, exceto estáticos/imagens/favicon e "/a/home" (página pública/Onboarding)
-    '/((?!a/home|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    // Isenta /a/home e /a; protege o resto (além de estáticos)
+    '/((?!a$|a/home|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
 }
