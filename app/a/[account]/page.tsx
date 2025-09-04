@@ -1,8 +1,7 @@
-// app/a/[account]/page.tsx
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useAccessContext } from "@/providers/AccessProvider";
 import { createClient } from "@/supabase/client";
 
@@ -10,6 +9,7 @@ type DashState = "public" | "onboarding" | "auth" | "invalid";
 
 export default function Page({ params }: { params: { account: string } }) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const supabase = createClient();
 
   const ctx = useAccessContext() as any;
@@ -17,6 +17,11 @@ export default function Page({ params }: { params: { account: string } }) {
 
   const isHome = params.account === "home";
   const hasCtx = Boolean(ctx?.account || ctx?.member);
+
+  // Query params para abrir modais/estados (6.2.2)
+  const modalQP = searchParams.get("modal");
+  const stateQP = searchParams.get("state");
+  const qpOnboarding = modalQP === "new" || stateQP === "onboarding";
 
   useEffect(() => {
     let mounted = true;
@@ -31,14 +36,25 @@ export default function Page({ params }: { params: { account: string } }) {
       mounted = false;
       sub.subscription.unsubscribe();
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Limpa a URL após abrir via query (?modal / ?state) — 6.2.2
+  useEffect(() => {
+    if (modalQP || stateQP) {
+      const url = new URL(window.location.href);
+      url.searchParams.delete("modal");
+      url.searchParams.delete("state");
+      router.replace(url.pathname + url.hash, { scroll: false });
+    }
+  }, [modalQP, stateQP, router]);
 
   const state: DashState = useMemo(() => {
     if (!email) return "public";
-    if (isHome && !hasCtx) return "onboarding";
+    if ((isHome && !hasCtx) || qpOnboarding) return "onboarding";
     if (hasCtx) return "auth";
     return "invalid";
-  }, [email, isHome, hasCtx]);
+  }, [email, isHome, hasCtx, qpOnboarding]);
 
   async function signOut() {
     await supabase.auth.signOut();
@@ -47,16 +63,22 @@ export default function Page({ params }: { params: { account: string } }) {
     router.refresh();
   }
 
+  const role = ctx?.member?.role ?? "—";
+  const accountName = ctx?.account?.name ?? params.account;
+  const accountSlug = ctx?.account?.subdomain ?? params.account;
+
   return (
     <>
+      {/* HEADER */}
       <Header
         email={email}
-        role={ctx?.member?.role}
-        accountName={ctx?.account?.name ?? params.account}
-        accountSlug={ctx?.account?.subdomain ?? params.account}
+        role={role}
+        accountName={accountName}
+        accountSlug={accountSlug}
         onSignOut={signOut}
       />
 
+      {/* CONTEÚDO */}
       <main className="mx-auto max-w-3xl px-6 py-12">
         <h1 className="text-3xl font-semibold">Account Dashboard</h1>
 
