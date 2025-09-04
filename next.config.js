@@ -7,7 +7,7 @@ const nextConfig = {
     return config;
   },
 
-  // 6.3.1 — validação do `next` via rewrites (somente caminhos internos)
+  // (já aplicado) 6.3.1
   async rewrites() {
     return [
       { source: '/auth/confirm', has: [{ type: 'query', key: 'next', value: '^//.*' }], destination: '/auth/confirm?next=/a/home' },
@@ -16,17 +16,18 @@ const nextConfig = {
     ];
   },
 
-  // 6.3.2 — noindex via cabeçalho (sem alterar páginas do SULB)
+  // (já aplicado) 6.3.2
   async headers() {
     return [
-      {
-        source: '/auth/:path*',
-        headers: [{ key: 'X-Robots-Tag', value: 'noindex, nofollow, noarchive' }],
-      },
-      {
-        source: '/protected',
-        headers: [{ key: 'X-Robots-Tag', value: 'noindex, nofollow, noarchive' }],
-      },
+      { source: '/auth/:path*', headers: [{ key: 'X-Robots-Tag', value: 'noindex, nofollow, noarchive' }] },
+      { source: '/protected',   headers: [{ key: 'X-Robots-Tag', value: 'noindex, nofollow, noarchive' }] },
+    ];
+  },
+
+  // NOVO: garante UX correta para quem digitar /a
+  async redirects() {
+    return [
+      { source: '/a', destination: '/a/home', permanent: false },
     ];
   },
 };
