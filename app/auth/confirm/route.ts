@@ -28,7 +28,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.redirect(new URL('/auth/error?error=No%20token%20hash%20or%20type', url))
   }
 
-  // Mitigação contra scanners
+  // Mitigação anti-scanner
   const isUserGesture = req.headers.get('sec-fetch-user') === '?1'
   if (!isUserGesture) {
     return new Response(interstitialHTML(token_hash, type, next), {
@@ -36,7 +36,6 @@ export async function GET(req: NextRequest) {
     })
   }
 
-  // Em vez de verificar aqui, redireciona com os parâmetros
   const dest = new URL(`${next}?token_hash=${encodeURIComponent(token_hash)}&type=${encodeURIComponent(type)}`, url)
   return NextResponse.redirect(dest)
 }
