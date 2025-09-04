@@ -1,13 +1,10 @@
+// app/auth/confirm/route.ts
 import { type EmailOtpType } from '@supabase/supabase-js'
 import { createServerClient } from '@supabase/ssr'
 import { NextRequest, NextResponse } from 'next/server'
 
 function isSafeInternal(path?: string | null) {
-  if (!path) return false
-  if (!path.startsWith('/')) return false
-  if (path.startsWith('//')) return false
-  if (path.includes('://')) return false
-  return true
+  return !!path && path.startsWith('/') && !path.startsWith('//') && !path.includes('://')
 }
 
 function interstitialHTML(token_hash: string, type: string, next: string) {
@@ -22,6 +19,35 @@ function interstitialHTML(token_hash: string, type: string, next: string) {
   </body></html>`
 }
 
+type PendingCookie = { name: string; value: string; options?: unknown }
+
+async function verifyAndRedirect(req: NextRequest, token_hash: string, type: EmailOtpType, next: string) {
+  const url = new URL(req.url)
+  const pending: PendingCookie[] = []
+
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
+    {
+      cookies: {
+        getAll: () => req.cookies.getAll(),
+        setAll: (cookiesToSet) => {
+          cookiesToSet.forEach(({ name, value, options }) => pending.push({ name, value, options }))
+        },
+      },
+    }
+  )
+
+  const { error } = await supabase.auth.verifyOtp({ type, token_hash })
+  const dest = error
+    ? new URL(`/auth/error?error=${encodeURIComponent(error.message)}`, url)
+    : new URL(next, url)
+
+  const res = NextResponse.redirect(dest)
+  pending.forEach(({ name, value, options }) => res.cookies.set(name, value, options as any))
+  return res
+}
+
 export async function GET(req: NextRequest) {
   const url = new URL(req.url)
   const token_hash = url.searchParams.get('token_hash')
@@ -33,7 +59,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.redirect(new URL('/auth/error?error=No%20token%20hash%20or%20type', url))
   }
 
-  // Evita consumo por scanners (GET automático)
+  // Mitigação contra scanners (GET automático)
   const isUserGesture = req.headers.get('sec-fetch-user') === '?1'
   if (!isUserGesture) {
     return new Response(interstitialHTML(token_hash, type, next), {
@@ -41,37 +67,7 @@ export async function GET(req: NextRequest) {
     })
   }
 
-  // Padrão de ponte de cookies estilo middleware
-  let res = NextResponse.next({ request: req })
-
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
-    {
-      cookies: {
-        getAll() {
-          return req.cookies.getAll()
-        },
-        setAll(cookiesToSet) {
-          // atualiza o request e o response que será retornado
-          cookiesToSet.forEach(({ name, value }) => req.cookies.set(name, value))
-          res = NextResponse.redirect(new URL(next, url))
-          cookiesToSet.forEach(({ name, value, options }) =>
-            res.cookies.set(name, value, options)
-          )
-        },
-      },
-    }
-  )
-
-  const { error } = await supabase.auth.verifyOtp({ type, token_hash })
-
-  if (error) {
-    const err = encodeURIComponent(error.message)
-    res = NextResponse.redirect(new URL(`/auth/error?error=${err}`, url))
-  }
-
-  return res
+  return verifyAndRedirect(req, token_hash, type, next)
 }
 
 export async function POST(req: NextRequest) {
@@ -79,40 +75,12 @@ export async function POST(req: NextRequest) {
   const token_hash = String(form.get('token_hash') || '')
   const type = String(form.get('type') || '') as EmailOtpType
   const rawNext = String(form.get('next') || '')
-  const url = new URL(req.url)
   const next = isSafeInternal(rawNext) ? rawNext : '/auth/update-password'
+  const url = new URL(req.url)
 
   if (!token_hash || !type) {
     return NextResponse.redirect(new URL('/auth/error?error=No%20token%20hash%20or%20type', url))
   }
 
-  let res = NextResponse.next({ request: req })
-
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
-    {
-      cookies: {
-        getAll() {
-          return req.cookies.getAll()
-        },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value }) => req.cookies.set(name, value))
-          res = NextResponse.redirect(new URL(next, url))
-          cookiesToSet.forEach(({ name, value, options }) =>
-            res.cookies.set(name, value, options)
-          )
-        },
-      },
-    }
-  )
-
-  const { error } = await supabase.auth.verifyOtp({ type, token_hash })
-
-  if (error) {
-    const err = encodeURIComponent(error.message)
-    res = NextResponse.redirect(new URL(`/auth/error?error=${err}`, url))
-  }
-
-  return res
+  return verifyAndRedirect(req, token_hash, type, next)
 }
