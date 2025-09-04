@@ -16,27 +16,44 @@ function validatePassword(pw: string, confirm: string): string | null {
 
 async function updatePasswordAction(formData: FormData) {
   'use server'
+
   const password = String(formData.get('password') || '')
-  const confirm = String(formData.get('confirm') || '')
+  const confirm  = String(formData.get('confirm')  || '')
+  const token_hash = String(formData.get('token_hash') || '')
+  const type = (String(formData.get('type') || 'recovery') as 'recovery')
+
   const validationError = validatePassword(password, confirm)
   if (validationError) {
-    redirect(`/auth/update-password?e=${encodeURIComponent(validationError)}`)
+    redirect(`/auth/update-password?e=${encodeURIComponent(validationError)}${token_hash ? `&token_hash=${encodeURIComponent(token_hash)}&type=${type}` : ''}`)
   }
 
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+
+  // 1) Se ainda não há sessão no momento do submit, valida o token aqui
+  let { data: { user } } = await supabase.auth.getUser()
+  if (!user && token_hash) {
+    const { error } = await supabase.auth.verifyOtp({ type, token_hash })
+    if (error) {
+      redirect(`/auth/update-password?e=${encodeURIComponent('Link inválido ou expirado. Solicite um novo e-mail.')}`)
+    }
+    const refreshed = await supabase.auth.getUser()
+    user = refreshed.data.user
+  }
+
   if (!user) {
     redirect(`/auth/error?error=${encodeURIComponent('Auth session missing! Solicite um novo e-mail de reset.')}`)
   }
 
+  // 2) Atualiza a senha
   const { error } = await supabase.auth.updateUser({ password })
   if (error) {
     const msg = error.message === 'Auth session missing!'
       ? 'Sessão ausente. Solicite um novo e-mail de reset.'
       : error.message
-    redirect(`/auth/update-password?e=${encodeURIComponent(msg)}`)
+    redirect(`/auth/update-password?e=${encodeURIComponent(msg)}${token_hash ? `&token_hash=${encodeURIComponent(token_hash)}&type=${type}` : ''}`)
   }
 
+  // 3) Sucesso
   redirect('/a/home')
 }
 
@@ -46,39 +63,7 @@ export default async function UpdatePasswordPage({
   searchParams?: { e?: string; token_hash?: string; type?: string }
 }) {
   const supabase = await createClient()
-  let { data: { user } } = await supabase.auth.getUser()
-
-  // ⚡ Novo: se não há sessão mas veio token_hash=...&type=recovery, valida aqui
-  if (!user && searchParams?.token_hash && searchParams?.type === 'recovery') {
-    const { data, error } = await supabase.auth.verifyOtp({
-      type: 'recovery',
-      token_hash: searchParams.token_hash,
-    })
-    if (error) {
-      return (
-        <main className="max-w-md mx-auto p-6">
-          <h1 className="text-2xl font-semibold mb-2">Redefinir senha</h1>
-          <p className="text-sm text-red-600">Erro ao validar link: {error.message}</p>
-        </main>
-      )
-    }
-    // Após verifyOtp, cookies de sessão são aplicados via adapter do @supabase/ssr
-    const refreshed = await supabase.auth.getUser()
-    user = refreshed.data.user
-  }
-
-  if (!user) {
-    return (
-      <main className="max-w-md mx-auto p-6">
-        <h1 className="text-2xl font-semibold mb-2">Redefinir senha</h1>
-        <p className="text-sm text-gray-600">
-          Sua sessão não foi encontrada. Por favor, volte à página de{' '}
-          <a href="/auth/forgot-password" className="underline">esqueci minha senha</a> e solicite um novo e-mail.
-        </p>
-      </main>
-    )
-  }
-
+  const { data: { user } } = await supabase.auth.getUser()
   const errorMsg = searchParams?.e
 
   return (
@@ -95,6 +80,14 @@ export default async function UpdatePasswordPage({
       ) : null}
 
       <form action={updatePasswordAction} className="grid gap-3">
+        {/* passa o token para a Server Action garantir a sessão no submit */}
+        {searchParams?.token_hash ? (
+          <>
+            <input type="hidden" name="token_hash" value={searchParams.token_hash} />
+            <input type="hidden" name="type" value={searchParams.type ?? 'recovery'} />
+          </>
+        ) : null}
+
         <label className="grid gap-1">
           <span className="text-sm font-medium">Nova senha</span>
           <input name="password" type="password" required className="w-full rounded-md border px-3 py-2" autoComplete="new-password" />
