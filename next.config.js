@@ -7,26 +7,25 @@ const nextConfig = {
     return config;
   },
 
-  // 6.3.1 — validação do `next` via rewrites (sem alterar SULB)
+  // 6.3.1 — validação do `next` via rewrites (somente caminhos internos)
   async rewrites() {
     return [
-      // next começando com "//" → força interno
+      { source: '/auth/confirm', has: [{ type: 'query', key: 'next', value: '^//.*' }], destination: '/auth/confirm?next=/a/home' },
+      { source: '/auth/confirm', has: [{ type: 'query', key: 'next', value: '.*://.*' }], destination: '/auth/confirm?next=/a/home' },
+      { source: '/auth/confirm', has: [{ type: 'query', key: 'next', value: '^(?!/).*' }], destination: '/auth/confirm?next=/a/home' },
+    ];
+  },
+
+  // 6.3.2 — noindex via cabeçalho (sem alterar páginas do SULB)
+  async headers() {
+    return [
       {
-        source: '/auth/confirm',
-        has: [{ type: 'query', key: 'next', value: '^//.*' }],
-        destination: '/auth/confirm?next=/a/home',
+        source: '/auth/:path*',
+        headers: [{ key: 'X-Robots-Tag', value: 'noindex, nofollow, noarchive' }],
       },
-      // next com "://” (URL externa) → força interno
       {
-        source: '/auth/confirm',
-        has: [{ type: 'query', key: 'next', value: '.*://.*' }],
-        destination: '/auth/confirm?next=/a/home',
-      },
-      // next que NÃO começa com "/" → força interno
-      {
-        source: '/auth/confirm',
-        has: [{ type: 'query', key: 'next', value: '^(?!/).*' }],
-        destination: '/auth/confirm?next=/a/home',
+        source: '/protected',
+        headers: [{ key: 'X-Robots-Tag', value: 'noindex, nofollow, noarchive' }],
       },
     ];
   },
