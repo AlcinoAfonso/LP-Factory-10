@@ -2,6 +2,7 @@
 import { type EmailOtpType } from '@supabase/supabase-js'
 import { createServerClient } from '@supabase/ssr'
 import { NextRequest, NextResponse } from 'next/server'
+import type { CookieSerializeOptions } from 'cookie'
 
 function isSafeInternal(path?: string | null) {
   if (!path) return false
@@ -23,6 +24,8 @@ function interstitialHTML(token_hash: string, type: string, next: string) {
   </body></html>`
 }
 
+type PendingCookie = { name: string; value: string; options?: CookieSerializeOptions }
+
 export async function GET(req: NextRequest) {
   const url = new URL(req.url)
   const token_hash = url.searchParams.get('token_hash')
@@ -42,8 +45,7 @@ export async function GET(req: NextRequest) {
     })
   }
 
-  // Coleta de cookies a serem aplicados no redirect final
-  const pendingCookies: { name: string; value: string; options?: Parameters<NextResponse['cookies']['set']>[2] }[] = []
+  const pendingCookies: PendingCookie[] = []
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -52,34 +54,36 @@ export async function GET(req: NextRequest) {
       cookies: {
         getAll: () => req.cookies.getAll(),
         setAll: (cookiesToSet) => {
-          cookiesToSet.forEach(({ name, value }) => req.cookies.set(name, value))
-          cookiesToSet.forEach((c) => pendingCookies.push(c))
+          cookiesToSet.forEach(({ name, value, options }) =>
+            pendingCookies.push({ name, value, options })
+          )
         },
       },
     }
   )
 
   const { error } = await supabase.auth.verifyOtp({ type, token_hash })
-  const final = error
+  const res = error
     ? NextResponse.redirect(new URL(`/auth/error?error=${encodeURIComponent(error.message)}`, url))
     : NextResponse.redirect(new URL(next, url))
 
-  pendingCookies.forEach(({ name, value, options }) => final.cookies.set(name, value, options))
-  return final
+  pendingCookies.forEach(({ name, value, options }) => res.cookies.set(name, value, options))
+  return res
 }
 
 export async function POST(req: NextRequest) {
   const form = await req.formData()
   const token_hash = String(form.get('token_hash') || '')
   const type = String(form.get('type') || '') as EmailOtpType
-  const next = isSafeInternal(String(form.get('next'))) ? String(form.get('next')) : '/auth/update-password'
+  const rawNext = String(form.get('next') || '')
+  const next = isSafeInternal(rawNext) ? rawNext : '/auth/update-password'
   const url = new URL(req.url)
 
   if (!token_hash || !type) {
     return NextResponse.redirect(new URL('/auth/error?error=No%20token%20hash%20or%20type', url))
   }
 
-  const pendingCookies: { name: string; value: string; options?: Parameters[2] }[] = []
+  const pendingCookies: PendingCookie[] = []
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -88,18 +92,19 @@ export async function POST(req: NextRequest) {
       cookies: {
         getAll: () => req.cookies.getAll(),
         setAll: (cookiesToSet) => {
-          cookiesToSet.forEach(({ name, value }) => req.cookies.set(name, value))
-          cookiesToSet.forEach((c) => pendingCookies.push(c))
+          cookiesToSet.forEach(({ name, value, options }) =>
+            pendingCookies.push({ name, value, options })
+          )
         },
       },
     }
   )
 
   const { error } = await supabase.auth.verifyOtp({ type, token_hash })
-  const final = error
+  const res = error
     ? NextResponse.redirect(new URL(`/auth/error?error=${encodeURIComponent(error.message)}`, url))
     : NextResponse.redirect(new URL(next, url))
 
-  pendingCookies.forEach(({ name, value, options }) => final.cookies.set(name, value, options))
-  return final
+  pendingCookies.forEach(({ name, value, options }) => res.cookies.set(name, value, options))
+  return res
 }
