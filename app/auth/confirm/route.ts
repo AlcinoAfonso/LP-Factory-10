@@ -19,11 +19,8 @@ function interstitialHTML(token_hash: string, type: string, next: string) {
   </body></html>`
 }
 
-type PendingCookie = { name: string; value: string; options?: unknown }
-
 async function verifyAndRedirect(req: NextRequest, token_hash: string, type: EmailOtpType, next: string) {
   const url = new URL(req.url)
-  const pending: PendingCookie[] = []
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -31,20 +28,36 @@ async function verifyAndRedirect(req: NextRequest, token_hash: string, type: Ema
     {
       cookies: {
         getAll: () => req.cookies.getAll(),
-        setAll: (cookiesToSet) => {
-          cookiesToSet.forEach(({ name, value, options }) => pending.push({ name, value, options }))
-        },
+        // aqui não usamos setAll porque vamos setar manualmente
+        setAll: () => {},
       },
     }
   )
 
-  const { error } = await supabase.auth.verifyOtp({ type, token_hash })
+  const { data, error } = await supabase.auth.verifyOtp({ type, token_hash })
+
   const dest = error
     ? new URL(`/auth/error?error=${encodeURIComponent(error.message)}`, url)
     : new URL(next, url)
 
   const res = NextResponse.redirect(dest)
-  pending.forEach(({ name, value, options }) => res.cookies.set(name, value, options as any))
+
+  // 👇 Gravação manual dos cookies de sessão
+  if (data?.session) {
+    res.cookies.set('sb-access-token', data.session.access_token, {
+      path: '/',
+      httpOnly: true,
+      secure: true,
+      sameSite: 'lax',
+    })
+    res.cookies.set('sb-refresh-token', data.session.refresh_token, {
+      path: '/',
+      httpOnly: true,
+      secure: true,
+      sameSite: 'lax',
+    })
+  }
+
   return res
 }
 
