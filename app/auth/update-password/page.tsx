@@ -20,9 +20,10 @@ async function updatePasswordAction(formData: FormData) {
 
   const password   = String(formData.get('password')   || '')
   const confirm    = String(formData.get('confirm')    || '')
-  const token_hash = String(formData.get('token_hash') || '') // repassado só para manter a URL de retorno amigável
+  const token_hash = String(formData.get('token_hash') || '')
   const type       = (String(formData.get('type') || 'recovery') as 'recovery')
 
+  // 1) Validação local
   const validationError = validatePassword(password, confirm)
   if (validationError) {
     redirect(
@@ -34,24 +35,41 @@ async function updatePasswordAction(formData: FormData) {
 
   const supabase = await createClient()
 
-  // 👉 NUNCA revalida o token aqui. Se não há sessão, o link já expirou/foi usado
-  const { data: { user } } = await supabase.auth.getUser()
+  // 2) Garantir sessão apenas no SUBMIT (consome o token UMA vez aqui)
+  let { data: { user } } = await supabase.auth.getUser()
+
   if (!user) {
-    redirect(`/auth/error?error=${encodeURIComponent('Auth session missing! Solicite um novo e-mail de reset.')}`)
+    if (token_hash && type === 'recovery') {
+      const { data, error } = await supabase.auth.verifyOtp({ type, token_hash })
+      if (error || !data?.user) {
+        redirect(
+          `/auth/update-password?e=${encodeURIComponent('Este link expirou ou já foi usado. Solicite um novo e-mail.')}`
+        )
+      }
+      // Sessão estabelecida pelo verifyOtp
+      const refreshed = await supabase.auth.getUser()
+      user = refreshed.data.user
+    }
   }
 
-  const { error } = await supabase.auth.updateUser({ password })
-  if (error) {
-    const msg = error.message === 'Auth session missing!'
-      ? 'Sessão ausente. Solicite um novo e-mail de reset.'
-      : error.message
+  if (!user) {
     redirect(
-      `/auth/update-password?e=${encodeURIComponent(msg)}${
-        token_hash ? `&token_hash=${encodeURIComponent(token_hash)}&type=${type}` : ''
-      }`
+      `/auth/update-password?e=${encodeURIComponent('Sessão ausente. Solicite um novo e-mail de redefinição.')}`
     )
   }
 
+  // 3) Atualizar senha
+  const { error: updErr } = await supabase.auth.updateUser({ password })
+  if (updErr) {
+    const msg = updErr.message === 'Auth session missing!'
+      ? 'Sessão ausente. Solicite um novo e-mail de redefinição.'
+      : 'Não foi possível salvar a nova senha. Tente novamente.'
+    redirect(
+      `/auth/update-password?e=${encodeURIComponent(msg)}`
+    )
+  }
+
+  // 4) Sucesso → rota limpa
   redirect('/a/home')
 }
 
@@ -60,40 +78,12 @@ export default async function UpdatePasswordPage({
 }: {
   searchParams?: { e?: string; token_hash?: string; type?: string }
 }) {
-  const supabase = await createClient()
-  let { data: { user } } = await supabase.auth.getUser()
+  // 📌 IMPORTANTE:
+  // Não chamamos verifyOtp aqui (GET). Apenas lemos mensagens e preservamos token na URL.
   const errorMsg = searchParams?.e
+  const tokenHash = searchParams?.token_hash
+  const type = searchParams?.type ?? 'recovery'
 
-  // 1) Primeiro uso: se veio token_hash&type=recovery, valida aqui (consome o token UMA vez)
-  if (!user && searchParams?.token_hash && searchParams?.type === 'recovery') {
-    const { data, error } = await supabase.auth.verifyOtp({
-      type: 'recovery',
-      token_hash: searchParams.token_hash,
-    })
-
-    // 2) Expirado/já usado: mensagem imediata
-    if (error || !data?.user) {
-      return (
-        <main className="max-w-md mx-auto p-6">
-          <h1 className="text-2xl font-semibold mb-2">Redefinir senha</h1>
-          <p className="text-sm text-gray-700">
-            Este link de redefinição <strong>já expirou ou já foi usado</strong>.
-          </p>
-          <p className="text-sm text-gray-600 mt-2">
-            Volte à página de{' '}
-            <a href="/auth/forgot-password" className="underline">esqueci minha senha</a>{' '}
-            e solicite um novo e-mail.
-          </p>
-        </main>
-      )
-    }
-
-    // Sessão criada → atualiza o user para render do formulário
-    const refreshed = await supabase.auth.getUser()
-    user = refreshed.data.user
-  }
-
-  // 3) Render do formulário (com ou sem sessão; o submit exige sessão)
   return (
     <main className="max-w-md mx-auto p-6">
       <h1 className="text-2xl font-semibold mb-1">Defina sua nova senha</h1>
@@ -108,11 +98,11 @@ export default async function UpdatePasswordPage({
       ) : null}
 
       <form action={updatePasswordAction} className="grid gap-3">
-        {/* Mantemos o token no submit apenas para preservar a navegação/retorno amigável */}
-        {searchParams?.token_hash ? (
+        {/* Mantemos os params apenas para o SUBMIT consumir o token (sem verificar no GET) */}
+        {tokenHash ? (
           <>
-            <input type="hidden" name="token_hash" value={searchParams.token_hash} />
-            <input type="hidden" name="type" value={searchParams.type ?? 'recovery'} />
+            <input type="hidden" name="token_hash" value={tokenHash} />
+            <input type="hidden" name="type" value={type} />
           </>
         ) : null}
 
@@ -145,6 +135,11 @@ export default async function UpdatePasswordPage({
           Salvar nova senha
         </button>
       </form>
+
+      <p className="mt-4 text-xs text-gray-500">
+        Se o link estiver inválido/expirado, solicite um novo em{' '}
+        <a href="/auth/forgot-password" className="underline">Esqueci minha senha</a>.
+      </p>
     </main>
   )
 }
