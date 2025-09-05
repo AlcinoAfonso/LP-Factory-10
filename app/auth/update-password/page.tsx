@@ -18,9 +18,9 @@ function validatePassword(pw: string, confirm: string): string | null {
 async function updatePasswordAction(formData: FormData) {
   'use server'
 
-  const password   = String(formData.get('password')    || '')
-  const confirm    = String(formData.get('confirm')     || '')
-  const token_hash = String(formData.get('token_hash')  || '')
+  const password   = String(formData.get('password')   || '')
+  const confirm    = String(formData.get('confirm')    || '')
+  const token_hash = String(formData.get('token_hash') || '')
   const type       = (String(formData.get('type') || 'recovery') as 'recovery')
 
   const validationError = validatePassword(password, confirm)
@@ -30,7 +30,7 @@ async function updatePasswordAction(formData: FormData) {
 
   const supabase = await createClient()
 
-  // 1) Garante sessão no submit (fallback)
+  // 1) Garante sessão no submit (consome o token UMA ÚNICA vez)
   let { data: { user } } = await supabase.auth.getUser()
   if (!user && token_hash) {
     const { error } = await supabase.auth.verifyOtp({ type, token_hash })
@@ -63,40 +63,8 @@ export default async function UpdatePasswordPage({
 }: {
   searchParams?: { e?: string; token_hash?: string; type?: string }
 }) {
-  const supabase = await createClient()
-  let { data: { user } } = await supabase.auth.getUser()
+  // OBS: não validamos o token no GET para não consumi-lo antes do submit
   const errorMsg = searchParams?.e
-
-  // ⚡ NOVO: valida o token no primeiro carregamento para tratar expirado/já usado
-  if (!user && searchParams?.token_hash && searchParams?.type === 'recovery') {
-    const { data, error } = await supabase.auth.verifyOtp({
-      type: 'recovery',
-      token_hash: searchParams.token_hash,
-    })
-
-    if (error || !data?.user) {
-      return (
-        <main className="max-w-md mx-auto p-6">
-          <h1 className="text-2xl font-semibold mb-2">Redefinir senha</h1>
-          <p className="text-sm text-gray-700">
-            Este link de redefinição <strong>já expirou ou já foi usado</strong>.
-          </p>
-          <p className="text-sm text-gray-600 mt-2">
-            Volte à página de{' '}
-            <a href="/auth/forgot-password" className="underline">esqueci minha senha</a>{' '}
-            e solicite um novo e-mail.
-          </p>
-        </main>
-      )
-    }
-
-    // Caso válido, sessão é criada; atualiza user para renderizar o formulário já autenticado
-    const refreshed = await supabase.auth.getUser()
-    user = refreshed.data.user
-  }
-
-  // (Observação: se o usuário chegar aqui sem token e sem sessão, permitimos ver o formulário,
-  // mas o submit ainda verificará e exibirá mensagem apropriada; opcionalmente você pode bloquear aqui.)
 
   return (
     <main className="max-w-md mx-auto p-6">
@@ -112,7 +80,7 @@ export default async function UpdatePasswordPage({
       ) : null}
 
       <form action={updatePasswordAction} className="grid gap-3">
-        {/* Passa o token para a Server Action garantir sessão no submit (fallback) */}
+        {/* Passa o token ao submit para validar e criar a sessão */}
         {searchParams?.token_hash ? (
           <>
             <input type="hidden" name="token_hash" value={searchParams.token_hash} />
