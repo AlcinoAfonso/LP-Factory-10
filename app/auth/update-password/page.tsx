@@ -20,39 +20,69 @@ async function updatePasswordAction(formData: FormData) {
 
   const password   = String(formData.get('password')   || '')
   const confirm    = String(formData.get('confirm')    || '')
+  const token_hash = String(formData.get('token_hash') || '')
+  const type       = (String(formData.get('type') || 'recovery') as 'recovery')
 
+  // 1) Validação local
   const validationError = validatePassword(password, confirm)
   if (validationError) {
-    redirect(`/auth/update-password?e=${encodeURIComponent(validationError)}`)
+    redirect(
+      `/auth/update-password?e=${encodeURIComponent(validationError)}${
+        token_hash ? `&token_hash=${encodeURIComponent(token_hash)}&type=${type}` : ''
+      }`
+    )
   }
 
   const supabase = await createClient()
 
-  // Requer sessão criada anteriormente pelo /auth/confirm
-  const { data: { user } } = await supabase.auth.getUser()
+  // 2) Garantir sessão apenas no SUBMIT (consome o token UMA vez aqui)
+  let { data: { user } } = await supabase.auth.getUser()
+
+  if (!user) {
+    if (token_hash && type === 'recovery') {
+      const { data, error } = await supabase.auth.verifyOtp({ type, token_hash })
+      if (error || !data?.user) {
+        redirect(
+          `/auth/update-password?e=${encodeURIComponent('Este link expirou ou já foi usado. Solicite um novo e-mail.')}`
+        )
+      }
+      // Sessão estabelecida pelo verifyOtp
+      const refreshed = await supabase.auth.getUser()
+      user = refreshed.data.user
+    }
+  }
+
   if (!user) {
     redirect(
       `/auth/update-password?e=${encodeURIComponent('Sessão ausente. Solicite um novo e-mail de redefinição.')}`
     )
   }
 
+  // 3) Atualizar senha
   const { error: updErr } = await supabase.auth.updateUser({ password })
   if (updErr) {
     const msg = updErr.message === 'Auth session missing!'
       ? 'Sessão ausente. Solicite um novo e-mail de redefinição.'
       : 'Não foi possível salvar a nova senha. Tente novamente.'
-    redirect(`/auth/update-password?e=${encodeURIComponent(msg)}`)
+    redirect(
+      `/auth/update-password?e=${encodeURIComponent(msg)}`
+    )
   }
 
+  // 4) Sucesso → rota limpa
   redirect('/a/home')
 }
 
 export default async function UpdatePasswordPage({
   searchParams,
 }: {
-  searchParams?: { e?: string }
+  searchParams?: { e?: string; token_hash?: string; type?: string }
 }) {
+  // 📌 IMPORTANTE:
+  // Não chamamos verifyOtp aqui (GET). Apenas lemos mensagens e preservamos token na URL.
   const errorMsg = searchParams?.e
+  const tokenHash = searchParams?.token_hash
+  const type = searchParams?.type ?? 'recovery'
 
   return (
     <main className="max-w-md mx-auto p-6">
@@ -68,6 +98,14 @@ export default async function UpdatePasswordPage({
       ) : null}
 
       <form action={updatePasswordAction} className="grid gap-3">
+        {/* Mantemos os params apenas para o SUBMIT consumir o token (sem verificar no GET) */}
+        {tokenHash ? (
+          <>
+            <input type="hidden" name="token_hash" value={tokenHash} />
+            <input type="hidden" name="type" value={type} />
+          </>
+        ) : null}
+
         <label className="grid gap-1">
           <span className="text-sm font-medium">Nova senha</span>
           <input
