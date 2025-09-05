@@ -23,7 +23,6 @@ async function updatePasswordAction(formData: FormData) {
   const token_hash = String(formData.get('token_hash') || '')
   const type       = (String(formData.get('type') || 'recovery') as 'recovery')
 
-  // 1) Validação local
   const validationError = validatePassword(password, confirm)
   if (validationError) {
     redirect(
@@ -35,41 +34,37 @@ async function updatePasswordAction(formData: FormData) {
 
   const supabase = await createClient()
 
-  // 2) Garantir sessão apenas no SUBMIT (consome o token UMA vez aqui)
+  // 1) Cria sessão usando o token (consome UMA ÚNICA vez) se ainda não houver
   let { data: { user } } = await supabase.auth.getUser()
-
-  if (!user) {
-    if (token_hash && type === 'recovery') {
-      const { data, error } = await supabase.auth.verifyOtp({ type, token_hash })
-      if (error || !data?.user) {
-        redirect(
-          `/auth/update-password?e=${encodeURIComponent('Este link expirou ou já foi usado. Solicite um novo e-mail.')}`
-        )
-      }
-      // Sessão estabelecida pelo verifyOtp
-      const refreshed = await supabase.auth.getUser()
-      user = refreshed.data.user
+  if (!user && token_hash) {
+    const { error } = await supabase.auth.verifyOtp({ type, token_hash })
+    if (error) {
+      // Link inválido/expirado/ já usado
+      redirect(`/auth/update-password?e=${encodeURIComponent('Link inválido ou expirado. Solicite um novo e-mail.')}`)
     }
+    const refreshed = await supabase.auth.getUser()
+    user = refreshed.data.user
   }
 
+  // 2) Sem sessão => fluxo inválido
   if (!user) {
+    redirect(`/auth/error?error=${encodeURIComponent('Auth session missing! Solicite um novo e-mail de reset.')}`)
+  }
+
+  // 3) Atualiza a senha
+  const { error } = await supabase.auth.updateUser({ password })
+  if (error) {
+    const msg = error.message === 'Auth session missing!'
+      ? 'Sessão ausente. Solicite um novo e-mail de reset.'
+      : error.message
     redirect(
-      `/auth/update-password?e=${encodeURIComponent('Sessão ausente. Solicite um novo e-mail de redefinição.')}`
+      `/auth/update-password?e=${encodeURIComponent(msg)}${
+        token_hash ? `&token_hash=${encodeURIComponent(token_hash)}&type=${type}` : ''
+      }`
     )
   }
 
-  // 3) Atualizar senha
-  const { error: updErr } = await supabase.auth.updateUser({ password })
-  if (updErr) {
-    const msg = updErr.message === 'Auth session missing!'
-      ? 'Sessão ausente. Solicite um novo e-mail de redefinição.'
-      : 'Não foi possível salvar a nova senha. Tente novamente.'
-    redirect(
-      `/auth/update-password?e=${encodeURIComponent(msg)}`
-    )
-  }
-
-  // 4) Sucesso → rota limpa
+  // 4) Sucesso
   redirect('/a/home')
 }
 
@@ -78,11 +73,8 @@ export default async function UpdatePasswordPage({
 }: {
   searchParams?: { e?: string; token_hash?: string; type?: string }
 }) {
-  // 📌 IMPORTANTE:
-  // Não chamamos verifyOtp aqui (GET). Apenas lemos mensagens e preservamos token na URL.
+  // ⚠️ Não chamamos verifyOtp no GET para não consumir o token antes do submit
   const errorMsg = searchParams?.e
-  const tokenHash = searchParams?.token_hash
-  const type = searchParams?.type ?? 'recovery'
 
   return (
     <main className="max-w-md mx-auto p-6">
@@ -98,11 +90,11 @@ export default async function UpdatePasswordPage({
       ) : null}
 
       <form action={updatePasswordAction} className="grid gap-3">
-        {/* Mantemos os params apenas para o SUBMIT consumir o token (sem verificar no GET) */}
-        {tokenHash ? (
+        {/* Passa o token para a Server Action garantir a sessão no submit */}
+        {searchParams?.token_hash ? (
           <>
-            <input type="hidden" name="token_hash" value={tokenHash} />
-            <input type="hidden" name="type" value={type} />
+            <input type="hidden" name="token_hash" value={searchParams.token_hash} />
+            <input type="hidden" name="type" value={searchParams.type ?? 'recovery'} />
           </>
         ) : null}
 
@@ -135,11 +127,6 @@ export default async function UpdatePasswordPage({
           Salvar nova senha
         </button>
       </form>
-
-      <p className="mt-4 text-xs text-gray-500">
-        Se o link estiver inválido/expirado, solicite um novo em{' '}
-        <a href="/auth/forgot-password" className="underline">Esqueci minha senha</a>.
-      </p>
     </main>
   )
 }
