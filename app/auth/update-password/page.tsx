@@ -1,7 +1,7 @@
 // app/auth/update-password/page.tsx
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
-import { emitPasswordResetCompleted } from '@/src/lib/auth/tab-sync'
+import { emitPasswordResetCompleted } from '../../../src/lib/auth/tab-sync'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
