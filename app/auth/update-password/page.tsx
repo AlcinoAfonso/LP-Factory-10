@@ -1,7 +1,6 @@
 // app/auth/update-password/page.tsx
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
-import { emitPasswordResetCompleted } from '../../../src/lib/auth/tab-sync'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
@@ -65,64 +64,30 @@ async function updatePasswordAction(formData: FormData) {
     )
   }
 
-  // 4) Sucesso - Emitir evento para atualizar aba forgot-password
-  // Só emite se veio do fluxo de email (tem token_hash)
+  // 4) Sucesso - Redireciona com flag de sucesso
+  // Se veio do fluxo de email (tem token_hash), marca para emitir evento
   if (token_hash) {
-    // Emite evento para a outra aba
-    // Note: Este código roda no servidor, então precisamos fazer isso no cliente
-    // Vamos adicionar um script inline que executa no cliente após o redirect
-    const scriptContent = `
-      <script>
-        if (typeof window !== 'undefined') {
-          try {
-            // Tenta BroadcastChannel primeiro
-            if ('BroadcastChannel' in window) {
-              const channel = new BroadcastChannel('lp-factory-auth');
-              channel.postMessage({ type: 'password-reset-completed', timestamp: Date.now() });
-              channel.close();
-            } else {
-              // Fallback para localStorage
-              localStorage.setItem('lp-factory-auth-message', JSON.stringify({ 
-                type: 'password-reset-completed', 
-                timestamp: Date.now() 
-              }));
-              setTimeout(() => localStorage.removeItem('lp-factory-auth-message'), 1000);
-            }
-          } catch (e) {
-            console.error('Failed to emit reset completion:', e);
-          }
-          // Redireciona após emitir
-          setTimeout(() => {
-            window.location.href = '/a/home';
-          }, 100);
-        }
-      </script>
-    `
-    // Como estamos em Server Component, vamos usar uma abordagem diferente
-    // Vamos redirecionar para uma página intermediária que emite o evento
-    redirect(`/auth/update-password?success=true&token=${encodeURIComponent(token_hash)}`)
+    redirect(`/auth/update-password?success=true&from_email=true`)
   }
 
   // Redirect normal se não veio de email
   redirect('/a/home')
 }
 
-export default async function UpdatePasswordPage({
-  searchParams,
-}: {
-  searchParams?: { e?: string; token_hash?: string; type?: string; success?: string; token?: string }
-}) {
-  // Se success=true, mostra mensagem de sucesso e emite evento
-  if (searchParams?.success === 'true' && searchParams?.token) {
-    return (
+// Componente Cliente para lidar com o sucesso
+function SuccessRedirect() {
+  return (
+    <>
       <main className="max-w-md mx-auto p-6">
         <div className="text-center">
           <h1 className="text-2xl font-semibold mb-2 text-green-600">✓ Senha Atualizada</h1>
           <p className="text-sm text-gray-600 mb-4">Redirecionando...</p>
         </div>
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `
+      </main>
+      <script
+        dangerouslySetInnerHTML={{
+          __html: `
+            (function() {
               // Emite evento para a aba forgot-password
               try {
                 if ('BroadcastChannel' in window) {
@@ -134,20 +99,33 @@ export default async function UpdatePasswordPage({
                     type: 'password-reset-completed', 
                     timestamp: Date.now() 
                   }));
-                  setTimeout(() => localStorage.removeItem('lp-factory-auth-message'), 1000);
+                  setTimeout(function() { 
+                    localStorage.removeItem('lp-factory-auth-message') 
+                  }, 1000);
                 }
               } catch (e) {
                 console.error('Failed to emit:', e);
               }
               // Redireciona após emitir
-              setTimeout(() => {
+              setTimeout(function() {
                 window.location.href = '/a/home';
               }, 500);
-            `
-          }}
-        />
-      </main>
-    )
+            })();
+          `
+        }}
+      />
+    </>
+  )
+}
+
+export default async function UpdatePasswordPage({
+  searchParams,
+}: {
+  searchParams?: { e?: string; token_hash?: string; type?: string; success?: string; from_email?: string }
+}) {
+  // Se success=true, mostra mensagem de sucesso e redireciona
+  if (searchParams?.success === 'true') {
+    return <SuccessRedirect />
   }
   
   // ⚠️ Não chamamos verifyOtp no GET para não consumir o token antes do submit
