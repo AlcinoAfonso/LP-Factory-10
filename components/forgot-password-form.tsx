@@ -13,7 +13,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import Link from 'next/link'
 import { useState, useEffect } from 'react'
-import { onPasswordResetCompleted } from '@/src/lib/auth/tab-sync'
+import { onPasswordResetCompleted } from '../src/lib/auth/tab-sync'
 import { useRouter } from 'next/navigation'
 
 export function ForgotPasswordForm({ className, ...props }: React.ComponentPropsWithoutRef<'div'>) {
