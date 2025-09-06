@@ -1,6 +1,7 @@
 // app/auth/update-password/page.tsx
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import PasswordResetSuccess from './PasswordResetSuccess'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
@@ -74,58 +75,14 @@ async function updatePasswordAction(formData: FormData) {
   redirect('/a/home')
 }
 
-// Componente Cliente para lidar com o sucesso
-function SuccessRedirect() {
-  return (
-    <>
-      <main className="max-w-md mx-auto p-6">
-        <div className="text-center">
-          <h1 className="text-2xl font-semibold mb-2 text-green-600">✓ Senha Atualizada</h1>
-          <p className="text-sm text-gray-600 mb-4">Redirecionando...</p>
-        </div>
-      </main>
-      <script
-        dangerouslySetInnerHTML={{
-          __html: `
-            (function() {
-              // Emite evento para a aba forgot-password
-              try {
-                if ('BroadcastChannel' in window) {
-                  const channel = new BroadcastChannel('lp-factory-auth');
-                  channel.postMessage({ type: 'password-reset-completed', timestamp: Date.now() });
-                  channel.close();
-                } else {
-                  localStorage.setItem('lp-factory-auth-message', JSON.stringify({ 
-                    type: 'password-reset-completed', 
-                    timestamp: Date.now() 
-                  }));
-                  setTimeout(function() { 
-                    localStorage.removeItem('lp-factory-auth-message') 
-                  }, 1000);
-                }
-              } catch (e) {
-                console.error('Failed to emit:', e);
-              }
-              // Redireciona após emitir
-              setTimeout(function() {
-                window.location.href = '/a/home';
-              }, 500);
-            })();
-          `
-        }}
-      />
-    </>
-  )
-}
-
 export default async function UpdatePasswordPage({
   searchParams,
 }: {
   searchParams?: { e?: string; token_hash?: string; type?: string; success?: string; from_email?: string }
 }) {
-  // Se success=true, mostra mensagem de sucesso e redireciona
+  // Se success=true, mostra componente cliente que emite evento e redireciona
   if (searchParams?.success === 'true') {
-    return <SuccessRedirect />
+    return <PasswordResetSuccess fromEmail={searchParams?.from_email === 'true'} />
   }
   
   // ⚠️ Não chamamos verifyOtp no GET para não consumir o token antes do submit
