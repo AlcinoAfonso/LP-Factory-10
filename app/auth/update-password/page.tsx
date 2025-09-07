@@ -1,7 +1,6 @@
 // app/auth/update-password/page.tsx
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
-import PasswordResetSuccess from './PasswordResetSuccess'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
@@ -65,26 +64,15 @@ async function updatePasswordAction(formData: FormData) {
     )
   }
 
-  // 4) Sucesso - Redireciona com flag de sucesso
-  // Se veio do fluxo de email (tem token_hash), marca para emitir evento
-  if (token_hash) {
-    redirect(`/auth/update-password?success=true&from_email=true`)
-  }
-
-  // Redirect normal se não veio de email
+  // 4) Sucesso
   redirect('/a/home')
 }
 
 export default async function UpdatePasswordPage({
   searchParams,
 }: {
-  searchParams?: { e?: string; token_hash?: string; type?: string; success?: string; from_email?: string }
+  searchParams?: { e?: string; token_hash?: string; type?: string }
 }) {
-  // Se success=true, mostra componente cliente que emite evento e redireciona
-  if (searchParams?.success === 'true') {
-    return <PasswordResetSuccess fromEmail={searchParams?.from_email === 'true'} />
-  }
-  
   // ⚠️ Não chamamos verifyOtp no GET para não consumir o token antes do submit
   const errorMsg = searchParams?.e
 
