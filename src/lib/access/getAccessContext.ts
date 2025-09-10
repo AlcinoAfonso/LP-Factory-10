@@ -3,9 +3,11 @@ import type * as Access from "./types";
 import {
   mapAccountFromDB,
   mapMemberFromDB,
-  pickAccount,
   type DBAccountRow,
   type DBMemberRow,
+  getMembershipsByUser,
+  getAccountById,
+  getAccountBySlug,
 } from "./adapters/accountAdapter";
 
 type Chosen = {
@@ -13,11 +15,30 @@ type Chosen = {
   member: ReturnType<typeof mapMemberFromDB>;
 };
 
+// Log leve e estruturado (não lança erro)
+function logAccess(outcome: string, extra: Record<string, unknown> = {}) {
+  try {
+    // eslint-disable-next-line no-console
+    console.log(
+      JSON.stringify({
+        scope: "access_ctx",
+        env: process.env.VERCEL_ENV ? "prod" : "dev",
+        ...extra,
+      })
+    );
+  } catch {
+    /* noop */
+  }
+}
+
 /**
- * getAccessContext — resolve o vínculo ativo (active|trial) do usuário
- * para uma conta específica (via slug em params.account ou accountId)
- * e retorna tanto os objetos ricos (account/member) quanto um shape
- * plano compatível com a UI atual.
+ * getAccessContext — resolve vínculo do usuário com uma conta.
+ * Estratégia E8:
+ * 1) Auth
+ * 2) Memberships (sem filtrar status)
+ * 3) Bypass super_admin
+ * 4) Conta por ID (evita choque de RLS); slug só quando necessário
+ * 5) Bloqueios server-side (inactive/forbidden) sem 500
  */
 export async function getAccessContext(input?: {
   accountId?: string;
@@ -25,90 +46,202 @@ export async function getAccessContext(input?: {
   pathname?: string;
   params?: { account?: string }; // slug
 }): Promise<Access.AccessContext | null> {
+  const t0 = Date.now();
   const supabase = await createClient();
 
   // 1) Auth
   const { data: userData } = await supabase.auth.getUser();
   const user = userData?.user;
-  if (!user) return null;
-
-  // 2) Base query (RLS ON): vínculo do usuário + dados da conta
-  const q = supabase
-    .from("account_users")
-    .select(
-      `
-      id, account_id, user_id, role, status, permissions,
-      accounts:accounts!inner(id, name, subdomain, domain, status)
-    `
-    )
-    .eq("user_id", user.id)
-    // membro ativo (trial via status da conta)
-    .eq("status", "active")
-    .limit(50);
-
-  // Filtro opcional por accountId
-  if (input?.accountId) q.eq("account_id", input.accountId);
-
-  const { data, error } = await q;
-  if (error || !data || data.length === 0) return null;
-
-  // 3) Normaliza rows e descarta contas fora de active|trial
-  const rows: Chosen[] = (data as any[])
-    .map((row) => {
-      const accRow = pickAccount(row.accounts) as DBAccountRow | null;
-      if (!accRow) return null;
-      const account = mapAccountFromDB(accRow);
-      const member = mapMemberFromDB(row as DBMemberRow);
-      const accountOk = account.status === "active" || account.status === "trial";
-      const memberOk = member.status === "active";
-      return accountOk && memberOk ? { account, member } : null;
-    })
-    .filter((x): x is Chosen => Boolean(x));
-
-  if (rows.length === 0) return null;
-
-  // 4) Escolha da conta: pelo slug (params.account) > accountId > primeira
-  const wantedSlug = input?.params?.account?.trim().toLowerCase();
-
-  // Slug 'home' → estado público/onboarding (não escolher conta)
-  if (wantedSlug === "home") return null;
-
-  let chosen: Chosen | undefined;
-
-  if (wantedSlug) {
-    chosen = rows.find((x) => x.account.subdomain?.toLowerCase() === wantedSlug);
-    // Slug informado mas não encontrado → não fazer fallback silencioso
-    if (!chosen) return null;
-  } else if (input?.accountId) {
-    chosen = rows.find((x) => x.account.id === input.accountId);
-  } else {
-    chosen = rows[0];
+  if (!user) {
+    logAccess("no_user", { route: input?.pathname, ms: Date.now() - t0 });
+    return null;
   }
 
-  if (!chosen) return null;
+  const slug = input?.params?.account?.trim().toLowerCase();
+  if (slug === "home") {
+    logAccess("home_route", { route: input?.pathname, ms: Date.now() - t0 });
+    return null;
+  }
 
-  // 5) Monta AccessContext completo (objetos + shape plano)
-  const ctx: any = {
-    // objetos ricos para a UI atual
-    account: chosen.account,
-    member: chosen.member,
+  // 2) Memberships (sem JOIN com accounts; respeita RLS para ler inactive)
+  let memberships: DBMemberRow[] = [];
+  try {
+    memberships = await getMembershipsByUser(user.id);
+  } catch {
+    logAccess("member_error", {
+      route: input?.pathname,
+      user_id: user.id,
+      ms: Date.now() - t0,
+    });
+    return { blocked: true, error_code: "UNRESOLVED_TENANT" } as Access.AccessContext;
+  }
+  if (!memberships.length) {
+    logAccess("member_not_found", {
+      route: input?.pathname,
+      user_id: user.id,
+      ms: Date.now() - t0,
+    });
+    return null; // /a page cuida de redirecionar para onboarding
+  }
 
-    // shape plano legado/compatível
-    account_id: chosen.account.id,
-    account_slug: chosen.account.subdomain,
-    role: chosen.member.role as Access.Role,
-    status: chosen.member.status as Access.MemberStatus,
+  // 3) Bypass super_admin
+  let isPlatformAdmin = false;
+  try {
+    const { data: rpc } = await supabase.rpc("is_platform_admin");
+    isPlatformAdmin = !!rpc;
+  } catch {
+    // segue sem bypass
+  }
 
-    // flags padrão (Fase 2 pode ligar via RPC)
-    is_super_admin: false,
+  // 4) Escolher membership alvo
+  let target: DBMemberRow | null = null;
+  if (input?.accountId) {
+    target = memberships.find((m) => m.account_id === input.accountId) ?? null;
+  }
+
+  let accRow: DBAccountRow | null = null;
+  if (!target && slug) {
+    // tentar por slug (pode retornar null por RLS; não quebra)
+    accRow = await getAccountBySlug(slug);
+    if (accRow) {
+      target =
+        memberships.find((m) => m.account_id === accRow!.id) ?? null;
+    }
+    // se slug informado mas não pertence ao usuário, não faz fallback silencioso
+    if (!target && input?.params?.account) {
+      logAccess("slug_not_owned", {
+        route: input?.pathname,
+        user_id: user.id,
+        ms: Date.now() - t0,
+      });
+      return null;
+    }
+  }
+
+  if (!target) {
+    // Fallback: prioriza membership active; senão, primeira
+    target =
+      memberships.find((m) => m.status === "active") ?? memberships[0] ?? null;
+  }
+
+  if (!target) {
+    logAccess("no_membership_choice", {
+      route: input?.pathname,
+      user_id: user.id,
+      ms: Date.now() - t0,
+    });
+    return null;
+  }
+
+  // 5) Bloqueio SSR por inactive (a menos que seja super_admin)
+  if (!isPlatformAdmin && String(target.status).toLowerCase() === "inactive") {
+    const member = mapMemberFromDB(target);
+    logAccess("inactive", {
+      route: input?.pathname,
+      user_id: user.id,
+      account_id: member.accountId,
+      ms: Date.now() - t0,
+    });
+    const ctxInactive: any = {
+      member,
+      account_id: member.accountId,
+      account_slug: "",
+      role: member.role,
+      status: member.status,
+      is_super_admin: isPlatformAdmin,
+      acting_as: false,
+      plan: { id: "", name: "" },
+      limits: { max_lps: 0, max_conversions: 0, max_domains: 1 },
+      blocked: true,
+      error_code: "INACTIVE_MEMBER",
+      account_status: undefined,
+    };
+    return ctxInactive as Access.AccessContext;
+  }
+
+  // 6) Carregar conta por ID (se ainda não carregada por slug)
+  if (!accRow) {
+    accRow = await getAccountById(target.account_id);
+  }
+  if (!accRow) {
+    const member = mapMemberFromDB(target);
+    logAccess("forbidden_account", {
+      route: input?.pathname,
+      user_id: user.id,
+      account_id: member.accountId,
+      ms: Date.now() - t0,
+    });
+    const ctxForbidden: any = {
+      member,
+      account_id: member.accountId,
+      account_slug: "",
+      role: member.role,
+      status: member.status,
+      is_super_admin: isPlatformAdmin,
+      acting_as: false,
+      plan: { id: "", name: "" },
+      limits: { max_lps: 0, max_conversions: 0, max_domains: 1 },
+      blocked: true,
+      error_code: "FORBIDDEN_ACCOUNT",
+      account_status: undefined,
+    };
+    return ctxForbidden as Access.AccessContext;
+  }
+
+  // 7) Normalização + checagem de status da conta
+  const account = mapAccountFromDB(accRow);
+  const member = mapMemberFromDB(target);
+
+  const accStatus = String(account.status ?? "").toLowerCase();
+  const accountOk =
+    accStatus === "active" || accStatus === "trial" || isPlatformAdmin;
+
+  if (!accountOk) {
+    logAccess("forbidden_account_status", {
+      route: input?.pathname,
+      user_id: user.id,
+      account_id: account.id,
+      ms: Date.now() - t0,
+    });
+    const ctxForbidden: any = {
+      account,
+      member,
+      account_id: account.id,
+      account_slug: account.subdomain,
+      role: member.role,
+      status: member.status,
+      is_super_admin: isPlatformAdmin,
+      acting_as: false,
+      plan: { id: "", name: "" },
+      limits: { max_lps: 0, max_conversions: 0, max_domains: 1 },
+      blocked: true,
+      error_code: "FORBIDDEN_ACCOUNT",
+      account_status: account.status,
+    };
+    return ctxForbidden as Access.AccessContext;
+  }
+
+  // 8) OK
+  logAccess("ok", {
+    route: input?.pathname,
+    user_id: user.id,
+    account_id: account.id,
+    ms: Date.now() - t0,
+  });
+
+  const ctxOk: any = {
+    account,
+    member,
+    account_id: account.id,
+    account_slug: account.subdomain,
+    role: member.role,
+    status: member.status,
+    is_super_admin: isPlatformAdmin,
     acting_as: false,
     plan: { id: "", name: "" },
-    limits: {
-      max_lps: 0,
-      max_conversions: 0,
-      max_domains: 1,
-    },
+    limits: { max_lps: 0, max_conversions: 0, max_domains: 1 },
+    account_status: account.status,
   };
 
-  return ctx as Access.AccessContext;
+  return ctxOk as Access.AccessContext;
 }
