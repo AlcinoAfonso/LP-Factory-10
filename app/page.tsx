@@ -1,6 +1,5 @@
 // app/page.tsx
 import { redirect } from "next/navigation";
-import { getAccessContext } from "@/lib/access/getAccessContext";
 import { createClient } from "@/supabase/server";
 
 export default async function Home() {
@@ -12,10 +11,7 @@ export default async function Home() {
     redirect("/auth/login");
   }
 
-  const ctx = await getAccessContext();
-  if (!ctx?.account_slug) {
-    redirect("/onboarding/new");
-  }
-
-  redirect(`/a/${ctx.account_slug}`);
+  // Sem resolver Access Context aqui.
+  // Canonicalização para /a; a escolha da conta acontecerá em /a/page.tsx.
+  redirect("/a");
 }
