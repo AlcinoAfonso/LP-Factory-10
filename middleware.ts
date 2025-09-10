@@ -5,9 +5,10 @@ export async function middleware(request: NextRequest) {
   return await updateSession(request)
 }
 
+// Matcher seguro: não intercepta /auth/**, /api/** e estáticos.
+// Mantemos updateSession nas demais rotas (incluindo /a e /a/[account]).
 export const config = {
   matcher: [
-    // Isenta /a/home e /a; protege o resto (além de estáticos)
-    '/((?!a$|a/home|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    '/((?!auth/|api/|_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
 }
