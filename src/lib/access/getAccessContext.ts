@@ -15,14 +15,20 @@ type Chosen = {
   member: ReturnType<typeof mapMemberFromDB>;
 };
 
-// Log leve e estruturado (não lança erro)
-function logAccess(outcome: string, extra: Record<string, unknown> = {}) {
+type Outcome = "ok" | "inactive" | "forbidden";
+
+// Log leve e estruturado: SEM PII além de IDs; outcome sempre presente.
+function logAccess(
+  outcome: Outcome,
+  extra: Record<string, unknown> = {}
+) {
   try {
     // eslint-disable-next-line no-console
     console.log(
       JSON.stringify({
         scope: "access_ctx",
         env: process.env.VERCEL_ENV ? "prod" : "dev",
+        outcome,
         ...extra,
       })
     );
@@ -37,7 +43,7 @@ function logAccess(outcome: string, extra: Record<string, unknown> = {}) {
  * 1) Auth
  * 2) Memberships (sem filtrar status)
  * 3) Bypass super_admin
- * 4) Conta por ID (evita choque de RLS); slug só quando necessário
+ * 4) Conta por ID (evita choque RLS); slug só quando necessário
  * 5) Bloqueios server-side (inactive/forbidden) sem 500
  */
 export async function getAccessContext(input?: {
@@ -49,39 +55,43 @@ export async function getAccessContext(input?: {
   const t0 = Date.now();
   const supabase = await createClient();
 
+  const route = input?.pathname ?? (input?.params?.account ? `/a/${input.params.account}` : "/a");
+
   // 1) Auth
   const { data: userData } = await supabase.auth.getUser();
   const user = userData?.user;
   if (!user) {
-    logAccess("no_user", { route: input?.pathname, ms: Date.now() - t0 });
+    logAccess("forbidden", { route, reason: "no_user", ms: Date.now() - t0 });
     return null;
   }
 
   const slug = input?.params?.account?.trim().toLowerCase();
   if (slug === "home") {
-    logAccess("home_route", { route: input?.pathname, ms: Date.now() - t0 });
+    logAccess("forbidden", { route, reason: "home_route", ms: Date.now() - t0 });
     return null;
   }
 
-  // 2) Memberships (sem JOIN com accounts; respeita RLS para ler inactive)
+  // 2) Memberships (sem JOIN; respeita RLS)
   let memberships: DBMemberRow[] = [];
   try {
     memberships = await getMembershipsByUser(user.id);
   } catch {
-    logAccess("member_error", {
-      route: input?.pathname,
+    logAccess("forbidden", {
+      route,
       user_id: user.id,
+      reason: "member_error",
       ms: Date.now() - t0,
     });
     return { blocked: true, error_code: "UNRESOLVED_TENANT" } as Access.AccessContext;
   }
   if (!memberships.length) {
-    logAccess("member_not_found", {
-      route: input?.pathname,
+    logAccess("forbidden", {
+      route,
       user_id: user.id,
+      reason: "member_not_found",
       ms: Date.now() - t0,
     });
-    return null; // /a page cuida de redirecionar para onboarding
+    return null; // /a page redireciona para onboarding
   }
 
   // 3) Bypass super_admin
@@ -101,17 +111,16 @@ export async function getAccessContext(input?: {
 
   let accRow: DBAccountRow | null = null;
   if (!target && slug) {
-    // tentar por slug (pode retornar null por RLS; não quebra)
-    accRow = await getAccountBySlug(slug);
+    accRow = await getAccountBySlug(slug); // pode ser null por RLS
     if (accRow) {
-      target =
-        memberships.find((m) => m.account_id === accRow!.id) ?? null;
+      target = memberships.find((m) => m.account_id === accRow!.id) ?? null;
     }
-    // se slug informado mas não pertence ao usuário, não faz fallback silencioso
-    if (!target && input?.params?.account) {
-      logAccess("slug_not_owned", {
-        route: input?.pathname,
+    // slug informado mas não pertencente ao usuário → sem fallback silencioso
+    if (!target) {
+      logAccess("forbidden", {
+        route,
         user_id: user.id,
+        reason: "slug_not_owned",
         ms: Date.now() - t0,
       });
       return null;
@@ -125,21 +134,23 @@ export async function getAccessContext(input?: {
   }
 
   if (!target) {
-    logAccess("no_membership_choice", {
-      route: input?.pathname,
+    logAccess("forbidden", {
+      route,
       user_id: user.id,
+      reason: "no_membership_choice",
       ms: Date.now() - t0,
     });
     return null;
   }
 
-  // 5) Bloqueio SSR por inactive (a menos que seja super_admin)
+  // 5) Bloqueio SSR por inactive (exceto super_admin)
   if (!isPlatformAdmin && String(target.status).toLowerCase() === "inactive") {
     const member = mapMemberFromDB(target);
     logAccess("inactive", {
-      route: input?.pathname,
+      route,
       user_id: user.id,
       account_id: member.accountId,
+      reason: "member_inactive",
       ms: Date.now() - t0,
     });
     const ctxInactive: any = {
@@ -165,10 +176,11 @@ export async function getAccessContext(input?: {
   }
   if (!accRow) {
     const member = mapMemberFromDB(target);
-    logAccess("forbidden_account", {
-      route: input?.pathname,
+    logAccess("forbidden", {
+      route,
       user_id: user.id,
       account_id: member.accountId,
+      reason: "forbidden_account",
       ms: Date.now() - t0,
     });
     const ctxForbidden: any = {
@@ -197,10 +209,11 @@ export async function getAccessContext(input?: {
     accStatus === "active" || accStatus === "trial" || isPlatformAdmin;
 
   if (!accountOk) {
-    logAccess("forbidden_account_status", {
-      route: input?.pathname,
+    logAccess("forbidden", {
+      route,
       user_id: user.id,
       account_id: account.id,
+      reason: "forbidden_account_status",
       ms: Date.now() - t0,
     });
     const ctxForbidden: any = {
@@ -223,7 +236,7 @@ export async function getAccessContext(input?: {
 
   // 8) OK
   logAccess("ok", {
-    route: input?.pathname,
+    route,
     user_id: user.id,
     account_id: account.id,
     ms: Date.now() - t0,
