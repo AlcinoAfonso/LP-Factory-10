@@ -5,8 +5,8 @@ import { getAccessContext } from "@/lib/access/getAccessContext";
 
 /**
  * Índice de /a (SSR)
- * - Se logado e houver conta válida → redireciona para /a/[slug]
- * - Se logado e sem conta → renderiza fallback mínimo (sem 404)
+ * - Se logado e houver conta válida → /a/[slug]
+ * - Se logado e sem conta → fallback mínimo (sem 404/rotas ausentes)
  * - Se não logado → /auth/login
  */
 export default async function AIndex() {
