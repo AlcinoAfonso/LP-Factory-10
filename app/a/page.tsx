@@ -4,15 +4,10 @@ import { createClient } from "@/supabase/server";
 import { getAccessContext } from "@/lib/access/getAccessContext";
 
 /**
- * Índice de /a
- * - Requer usuário logado (usa getUser()).
- * - Não resolve UI aqui; apenas decide para onde ir:
- *    - Se existir conta válida → /a/[account_slug]
- *    - Se não existir → /onboarding/new
- *
- * Observação (E8.4):
- * A lógica de "qual conta" fica aqui (SSR), não no middleware.
- * O layout /a/[account] continuará resolvendo o Access Context completo.
+ * Índice de /a (SSR)
+ * - Se logado e houver conta válida → redireciona para /a/[slug]
+ * - Se logado e sem conta → renderiza fallback mínimo (sem 404)
+ * - Se não logado → /auth/login
  */
 export default async function AIndex() {
   const supabase = await createClient();
@@ -23,13 +18,33 @@ export default async function AIndex() {
     redirect("/auth/login");
   }
 
-  // Usa o contexto atual para descobrir a primeira conta válida.
-  // (Após o refactor [E8.3], getAccessContext estará adapters-only e membership-first.)
   const ctx = await getAccessContext();
 
-  if (!ctx?.account_slug) {
-    redirect("/onboarding/new");
+  if (ctx?.account_slug) {
+    redirect(`/a/${ctx.account_slug}`);
   }
 
-  redirect(`/a/${ctx.account_slug}`);
+  // Fallback seguro: sessão ativa mas sem vínculo de conta
+  return (
+    <div className="mx-auto max-w-lg p-6">
+      <h1 className="text-xl font-semibold mb-2">Nenhuma conta encontrada</h1>
+      <p className="text-sm text-gray-600">
+        Sua sessão está ativa, mas não há vínculo com nenhuma conta.
+      </p>
+      <div className="mt-4 flex gap-3">
+        <a
+          href="/"
+          className="inline-flex items-center rounded-md border px-3 py-2 text-sm"
+        >
+          Página inicial
+        </a>
+        <a
+          href="/auth/login"
+          className="inline-flex items-center rounded-md border px-3 py-2 text-sm"
+        >
+          Trocar usuário
+        </a>
+      </div>
+    </div>
+  );
 }
