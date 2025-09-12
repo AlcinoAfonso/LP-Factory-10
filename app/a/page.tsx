@@ -1,12 +1,12 @@
 // app/a/page.tsx
-// Landing pública de /a — não depende de contexto/sessão e não redireciona.
-export const dynamic = 'force-static';
+// Landing pública — sem Supabase, sem Access Context, sem redirect automático.
+export const dynamic = 'force-dynamic';
 
 export default function AIndexPublic() {
   return (
     <main className="mx-auto max-w-3xl px-6 py-16">
-      <h1 className="text-3xl font-semibold mb-3">LP Factory — Dashboard</h1>
-      <p className="text-gray-600 mb-6">
+      <h1 className="mb-3 text-3xl font-semibold">LP Factory — Dashboard</h1>
+      <p className="mb-6 text-gray-600">
         Esta é a landing pública do dashboard. Entre ou crie sua conta para continuar.
       </p>
       <div className="flex gap-3">
