@@ -5,10 +5,6 @@
  *  - (2) Toda leitura de contexto via view v_access_context (security_invoker=on).
  *  - (3) Adapter dedicado; SSR/middleware apenas chamam o adapter.
  *  - (6) Logging estruturado access_context_decision no ponto de I/O.
- *
- * Observação: v_access_context não expõe o ID do membership (account_users.id).
- * O adapter não depende desse ID para a governança mínima do E8 (status/role).
- * Se necessário no futuro, podemos extender a view com `member_id` sem quebrar o contrato.
  */
 
 import { createClient } from "@/supabase/server";
@@ -34,7 +30,6 @@ type AccessContextRow = {
 export type AccessPair = {
   account: AccountInfo;
   member: {
-    // Sem member_id na view; manter shape mínimo exigido pelo E8
     accountId: string;
     userId: string;
     role: Role;
@@ -44,13 +39,13 @@ export type AccessPair = {
 
 type ReadOpts = {
   userId: string;
-  accountSlug?: string; // preferencial (rota /a/[account])
+  accountSlug?: string; // preferencial (/a/[account])
   accountId?: string;   // alternativo
   route?: string;       // para logging
-  requestId?: string;   // para correlação em logs
+  requestId?: string;   // correlação
 };
 
-/** Normalizações locais (mantém contrato estável) */
+/** Normalizações locais */
 const normRole = (s?: string): Role => {
   const v = (s ?? "").toLowerCase().trim();
   return (["owner", "admin", "editor", "viewer"] as const).includes(v as Role)
@@ -77,15 +72,18 @@ const normAStatus = (s?: string): AccountStatus => {
 };
 
 /** Logger canônico exigido pelo E8 (item 6.1) */
+type DecisionReason =
+  | "ok"
+  | "no_user"
+  | "no_rows"
+  | "account_blocked"
+  | "member_inactive"
+  | "missing_params"
+  | "error";
+
 function logDecision(input: {
   decision: "allow" | "deny";
-  reason:
-    | "no_user"
-    | "no_rows"
-    | "account_blocked"
-    | "member_inactive"
-    | "missing_params"
-    | "error";
+  reason: DecisionReason;
   userId?: string;
   accountId?: string;
   role?: Role;
@@ -93,8 +91,6 @@ function logDecision(input: {
   requestId?: string;
   latencyMs: number;
 }) {
-  // JSON compacto para observabilidade unificada/Vercel
-  // scope fixo para facilitar filtros
   // eslint-disable-next-line no-console
   console.log(
     JSON.stringify({
@@ -107,16 +103,14 @@ function logDecision(input: {
 }
 
 /**
- * Lê o contexto de acesso via view (RLS ON) e aplica governança mínima:
+ * Lê o contexto via view (RLS ON) e aplica governança mínima:
  * - account_status ∈ { active, trial }
  * - member_status  = active
- *
- * Retorna o primeiro par que satisfaz os critérios ou null.
  */
 export async function readAccessContext(opts: ReadOpts): Promise<AccessPair | null> {
   const t0 = Date.now();
   const { userId, accountSlug, accountId } = opts || {};
-  const supabase = await createClient(); // escopo por request (cookies/headers do App Router)
+  const supabase = await createClient(); // escopo por request (App Router)
 
   if (!userId || (!accountSlug && !accountId)) {
     logDecision({
@@ -176,7 +170,6 @@ export async function readAccessContext(opts: ReadOpts): Promise<AccessPair | nu
   });
 
   if (!chosen) {
-    // diagnosticar motivo principal
     const hasBlocked = rows.some(
       (r) => !["active", "trial"].includes((r.account_status ?? "").toLowerCase())
     );
@@ -198,7 +191,6 @@ export async function readAccessContext(opts: ReadOpts): Promise<AccessPair | nu
     name: chosen.account_name ?? "",
     subdomain: (chosen.account_key ?? "").toLowerCase(),
     status: normAStatus(chosen.account_status ?? undefined),
-    // domain não está na view mínima; pode ser acrescentado depois
   };
 
   const member = {
@@ -210,7 +202,7 @@ export async function readAccessContext(opts: ReadOpts): Promise<AccessPair | nu
 
   logDecision({
     decision: "allow",
-    reason: "—",
+    reason: "ok",
     userId,
     accountId: chosen.account_id,
     role: member.role,
