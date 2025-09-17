@@ -1,10 +1,10 @@
 // src/lib/access/adapters/accessContextAdapter.ts
 /**
- * Referências: MRVG 1.5 (D/F/G), Fluxos Sistema de Acesso.
- * Regras E8:
- *  - (2) Leitura via view v_access_context (security_invoker=on).
- *  - (3) Adapter dedicado; SSR/middleware apenas chamam o adapter.
- *  - (6) Log estruturado access_context_decision no ponto de I/O.
+ * Refs: MRVG 1.5 (D/F/G), Fluxos Sistema de Acesso, Supabase Updates Ago/2025
+ * Regra Concisa E8:
+ *  (2) leitura via view v_access_context (security_invoker=on)
+ *  (3) adapter dedicado; SSR/middleware só chamam o adapter
+ *  (6) logging estruturado access_context_decision (ponto de I/O)
  */
 
 import { createClient } from "@/supabase/server";
@@ -14,16 +14,17 @@ import type {
   MemberStatus,
   Role,
 } from "./accountAdapter";
+import { getAccountById } from "./accountAdapter";
 
-// Linha mínima da view (sem account_name)
-type AccessContextRow = {
+// Linha da view mínima (sem account_name)
+type AccessContextRow = Readonly<{
   account_id: string;
   account_key: string | null;
   account_status: string | null;
   user_id: string;
   member_role: string | null;
   member_status: string | null;
-};
+}>;
 
 // Par de retorno do adapter
 export type AccessPair = {
@@ -40,7 +41,7 @@ type ReadOpts = {
   userId: string;
   accountSlug?: string; // preferencial (/a/[account])
   accountId?: string;   // alternativo
-  route?: string;       // p/ logging
+  route?: string;       // para logging
   requestId?: string;   // correlação
 };
 
@@ -89,6 +90,7 @@ function logDecision(input: {
   route?: string;
   requestId?: string;
   latencyMs: number;
+  count?: number; // número de linhas retornadas pela view (útil para métricas)
 }) {
   // eslint-disable-next-line no-console
   console.log(
@@ -111,17 +113,7 @@ export async function readAccessContext(opts: ReadOpts): Promise<AccessPair | nu
   const { userId, accountSlug, accountId } = opts || {};
   const supabase = await createClient(); // escopo por request (App Router)
 
-  if (!userId) {
-    logDecision({
-      decision: "deny",
-      reason: "no_user",
-      route: opts?.route,
-      requestId: opts?.requestId,
-      latencyMs: Date.now() - t0,
-    });
-    return null;
-  }
-  if (!accountSlug && !accountId) {
+  if (!userId || (!accountSlug && !accountId)) {
     logDecision({
       decision: "deny",
       reason: "missing_params",
@@ -133,19 +125,21 @@ export async function readAccessContext(opts: ReadOpts): Promise<AccessPair | nu
     return null;
   }
 
+  // Base query
   let q = supabase
     .from("v_access_context")
     .select(
       "account_id, account_key, account_status, user_id, member_role, member_status"
     )
-    .eq("user_id", userId)
-    .limit(50);
+    .eq("user_id", userId);
 
+  // Otimização: quando alvo é específico, limitar a 1
   if (accountId) {
-    q = q.eq("account_id", accountId);
+    q = q.eq("account_id", accountId).limit(1);
   } else if (accountSlug) {
-    // A view expõe account_key (ex.: 'demo')
-    q = q.eq("account_key", accountSlug);
+    q = q.eq("account_key", accountSlug).limit(1);
+  } else {
+    q = q.limit(50);
   }
 
   const { data, error } = await q;
@@ -171,6 +165,7 @@ export async function readAccessContext(opts: ReadOpts): Promise<AccessPair | nu
       route: opts?.route,
       requestId: opts?.requestId,
       latencyMs: Date.now() - t0,
+      count: 0,
     });
     return null;
   }
@@ -195,13 +190,16 @@ export async function readAccessContext(opts: ReadOpts): Promise<AccessPair | nu
       route: opts?.route,
       requestId: opts?.requestId,
       latencyMs: Date.now() - t0,
+      count: rows.length,
     });
     return null;
   }
 
+  // Monta objetos normalizados (view mínima não tem 'name')
+  let accountName = "";
   const account: AccountInfo = {
     id: chosen.account_id,
-    name: "", // v_access_context mínima não expõe nome
+    name: accountName,
     subdomain: (chosen.account_key ?? "").toLowerCase(),
     status: normAStatus(chosen.account_status ?? undefined),
   };
@@ -213,6 +211,17 @@ export async function readAccessContext(opts: ReadOpts): Promise<AccessPair | nu
     status: normMStatus(chosen.member_status ?? undefined),
   };
 
+  // (Opcional) Fallback para nome da conta via adapter existente — não afeta decisão
+  // Ative definindo ACCESS_CTX_FETCH_ACCOUNT_NAME="true"
+  if (!account.name && process.env.ACCESS_CTX_FETCH_ACCOUNT_NAME === "true") {
+    try {
+      const acc = await getAccountById(chosen.account_id);
+      account.name = acc?.name ?? "";
+    } catch {
+      // silencioso; nome é decorativo no MVP
+    }
+  }
+
   logDecision({
     decision: "allow",
     reason: "ok",
@@ -222,6 +231,7 @@ export async function readAccessContext(opts: ReadOpts): Promise<AccessPair | nu
     route: opts?.route,
     requestId: opts?.requestId,
     latencyMs: Date.now() - t0,
+    count: rows.length,
   });
 
   return { account, member };
