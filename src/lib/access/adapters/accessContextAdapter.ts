@@ -15,11 +15,10 @@ import type {
   Role,
 } from "./accountAdapter";
 
-// Linha da view
+// Linha da view (mínima v_access_context — sem account_name)
 type AccessContextRow = {
   account_id: string;
   account_key: string | null;
-  account_name: string | null;
   account_status: string | null;
   user_id: string;
   member_role: string | null;
@@ -127,7 +126,7 @@ export async function readAccessContext(opts: ReadOpts): Promise<AccessPair | nu
   let q = supabase
     .from("v_access_context")
     .select(
-      "account_id, account_key, account_name, account_status, user_id, member_role, member_status"
+      "account_id, account_key, account_status, user_id, member_role, member_status"
     )
     .eq("user_id", userId)
     .limit(50);
@@ -188,7 +187,7 @@ export async function readAccessContext(opts: ReadOpts): Promise<AccessPair | nu
 
   const account: AccountInfo = {
     id: chosen.account_id,
-    name: chosen.account_name ?? "",
+    name: "", // v_access_context mínima não expõe nome; opcional adicionar depois
     subdomain: (chosen.account_key ?? "").toLowerCase(),
     status: normAStatus(chosen.account_status ?? undefined),
   };
