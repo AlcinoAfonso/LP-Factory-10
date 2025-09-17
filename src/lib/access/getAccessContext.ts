@@ -1,105 +1,106 @@
+// src/lib/access/getAccessContext.ts
+// E8 MVP — Orquestrador SSR (Refactor P0)
+// Regras: sem queries diretas; lê pelo adapter (v_access_context); contrato estável.
+
 import { createClient } from "@/supabase/server";
 import type * as Access from "./types";
 import {
   mapAccountFromDB,
   mapMemberFromDB,
-  pickAccount,
-  type DBAccountRow,
-  type DBMemberRow,
+  type AccountInfo,
+  type MemberInfo,
 } from "./adapters/accountAdapter";
+import { readAccessContext } from "./adapters/accessContextAdapter";
 
-type Chosen = {
-  account: ReturnType<typeof mapAccountFromDB>;
-  member: ReturnType<typeof mapMemberFromDB>;
+type Input = {
+  /** Preferencial: slug vindo de /a/[account] */
+  params?: { account?: string };
+  /** Alternativo (casos especiais) */
+  accountId?: string;
+  /** Opcional — se não vier, busco via supabase.auth.getUser() */
+  userId?: string;
+  /** Metadados de rota para logs */
+  route?: string;
+  requestId?: string;
+};
+
+type AccessContextLegacy = Access.AccessContext & {
+  // shape plano legado/compatível (mantido p/ UI atual)
+  account_id: string;
+  account_slug: string | null;
+  role: Access.Role;
+  status: Access.MemberStatus;
+  is_super_admin: boolean;
+  acting_as: boolean | string;
+  plan: { id: string; name: string };
+  limits: { max_lps: number; max_conversions: number; max_domains: number };
 };
 
 /**
- * getAccessContext — resolve o vínculo ativo (active|trial) do usuário
- * para uma conta específica (via slug em params.account ou accountId)
- * e retorna tanto os objetos ricos (account/member) quanto um shape
- * plano compatível com a UI atual.
+ * Resolve o contexto de acesso para SSR do Account Dashboard.
+ * - Usa exclusivamente o adapter (readAccessContext) -> v_access_context
+ * - Mantém contrato legado/compatível com a UI atual
+ * - Não faz redirect; quem chama (layout SSR) decide o que fazer com null
  */
-export async function getAccessContext(input?: {
-  accountId?: string;
-  host?: string;
-  pathname?: string;
-  params?: { account?: string }; // slug
-}): Promise<Access.AccessContext | null> {
-  const supabase = await createClient();
-
-  // 1) Auth
-  const { data: userData } = await supabase.auth.getUser();
-  const user = userData?.user;
-  if (!user) return null;
-
-  // 2) Base query (RLS ON): vínculo do usuário + dados da conta
-  const q = supabase
-    .from("account_users")
-    .select(
-      `
-      id, account_id, user_id, role, status, permissions,
-      accounts:accounts!inner(id, name, subdomain, domain, status)
-    `
-    )
-    .eq("user_id", user.id)
-    // membro ativo (trial via status da conta)
-    .eq("status", "active")
-    .limit(50);
-
-  // Filtro opcional por accountId
-  if (input?.accountId) q.eq("account_id", input.accountId);
-
-  const { data, error } = await q;
-  if (error || !data || data.length === 0) return null;
-
-  // 3) Normaliza rows e descarta contas fora de active|trial
-  const rows: Chosen[] = (data as any[])
-    .map((row) => {
-      const accRow = pickAccount(row.accounts) as DBAccountRow | null;
-      if (!accRow) return null;
-      const account = mapAccountFromDB(accRow);
-      const member = mapMemberFromDB(row as DBMemberRow);
-      const accountOk = account.status === "active" || account.status === "trial";
-      const memberOk = member.status === "active";
-      return accountOk && memberOk ? { account, member } : null;
-    })
-    .filter((x): x is Chosen => Boolean(x));
-
-  if (rows.length === 0) return null;
-
-  // 4) Escolha da conta: pelo slug (params.account) > accountId > primeira
-  const wantedSlug = input?.params?.account?.trim().toLowerCase();
+export async function getAccessContext(input?: Input): Promise<AccessContextLegacy | null> {
+  const slugRaw = input?.params?.account?.trim().toLowerCase();
+  const accId = input?.accountId?.trim();
 
   // Slug 'home' → estado público/onboarding (não escolher conta)
-  if (wantedSlug === "home") return null;
+  if (slugRaw === "home") return null;
 
-  let chosen: Chosen | undefined;
-
-  if (wantedSlug) {
-    chosen = rows.find((x) => x.account.subdomain?.toLowerCase() === wantedSlug);
-    // Slug informado mas não encontrado → não fazer fallback silencioso
-    if (!chosen) return null;
-  } else if (input?.accountId) {
-    chosen = rows.find((x) => x.account.id === input.accountId);
-  } else {
-    chosen = rows[0];
+  // Auth (se userId não foi fornecido)
+  let userId = input?.userId;
+  if (!userId) {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user?.id) return null;
+    userId = user.id;
   }
 
-  if (!chosen) return null;
+  // Chama o adapter (ele próprio aplica governança mínima e loga decisão)
+  const pair = await readAccessContext({
+    userId,
+    accountSlug: slugRaw,
+    accountId: accId,
+    route: input?.route,
+    requestId: input?.requestId,
+  });
+  if (!pair) return null;
 
-  // 5) Monta AccessContext completo (objetos + shape plano)
-  const ctx: any = {
-    // objetos ricos para a UI atual
-    account: chosen.account,
-    member: chosen.member,
+  // Normaliza para os tipos já usados no front (reaproveita mappers)
+  // Nota: pair.account/pair.member já estão normalizados pelo adapter,
+  // mas mantemos o uso dos mappers para compat com o domínio atual.
+  const account: AccountInfo = mapAccountFromDB({
+    id: pair.account.id,
+    name: pair.account.name,
+    subdomain: pair.account.subdomain,
+    domain: (pair as any).account?.domain ?? null, // opcional/futuro
+    status: pair.account.status,
+  } as any);
+
+  const member: MemberInfo = mapMemberFromDB({
+    id: (pair as any).member?.id ?? "—", // não exposto na view mínima (ok para MVP)
+    account_id: pair.member.accountId,
+    user_id: pair.member.userId,
+    role: pair.member.role,
+    status: pair.member.status,
+    permissions: undefined,
+  } as any);
+
+  // Monta contrato estável + shape plano legado
+  const ctx: AccessContextLegacy = {
+    // objetos ricos para UI atual
+    account,
+    member,
 
     // shape plano legado/compatível
-    account_id: chosen.account.id,
-    account_slug: chosen.account.subdomain,
-    role: chosen.member.role as Access.Role,
-    status: chosen.member.status as Access.MemberStatus,
+    account_id: account.id,
+    account_slug: account.subdomain ?? null,
+    role: member.role as Access.Role,
+    status: member.status as Access.MemberStatus,
 
-    // flags padrão (Fase 2 pode ligar via RPC)
+    // flags padrão (podem ser ligadas via RPC no futuro)
     is_super_admin: false,
     acting_as: false,
     plan: { id: "", name: "" },
@@ -110,5 +111,7 @@ export async function getAccessContext(input?: {
     },
   };
 
-  return ctx as Access.AccessContext;
+  return ctx;
 }
+
+export type { AccessContextLegacy as AccessContext };
