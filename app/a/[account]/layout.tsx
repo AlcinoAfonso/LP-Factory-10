@@ -1,5 +1,6 @@
 // app/a/[account]/layout.tsx
 import { redirect } from "next/navigation";
+import { headers } from "next/headers";
 import { AccessProvider } from "@/providers/AccessProvider";
 import { getAccessContext } from "@/lib/access/getAccessContext";
 
@@ -17,17 +18,37 @@ export default async function Layout({
     return <AccessProvider value={null}>{children}</AccessProvider>;
   }
 
-  // Gate SSR: usa orquestrador (que chama o adapter -> v_access_context)
+  // ── Observabilidade: timer SSR (fim-a-fim do gate) ─────────────────────────────
+  const t0 = Date.now();
+  const hdrs = headers();
+  const requestId = hdrs.get("x-request-id") ?? undefined;
+  const route = `/a/${slug}`;
+
   const ctx = await getAccessContext({
     params: { account: slug },
-    route: `/a/${slug}`,
+    route,
+    requestId,
   });
 
-  // Fallback seguro (MVP): negar acesso redireciona para /auth/confirm
+  const latency_ms = Date.now() - t0;
+
+  // Log leve no SSR (o adapter já loga decisão detalhada por request)
+  // eslint-disable-next-line no-console
+  console.log(
+    JSON.stringify({
+      scope: "access_ctx",
+      event: "access_context_ssr",
+      route,
+      request_id: requestId,
+      outcome: ctx ? "allow" : "deny",
+      latency_ms,
+      ts: new Date().toISOString(),
+    })
+  );
+
   if (!ctx) {
     redirect("/auth/confirm");
   }
 
-  // Contexto válido injeta no provider
   return <AccessProvider value={ctx}>{children}</AccessProvider>;
 }
