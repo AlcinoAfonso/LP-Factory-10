@@ -1,13 +1,10 @@
-17/09/2025 16:36 — accessContextAdapter.ts (corrige sintaxe e build)
-
-```ts
 // src/lib/access/adapters/accessContextAdapter.ts
 /**
- * Referências: MRVG 1.5 (D/F/G), Fluxos Sistema de Acesso, Supabase Updates Ago/2025.
- * Regra Concisa E8:
+ * Referências: MRVG 1.5 (D/F/G), Fluxos Sistema de Acesso.
+ * Regras E8:
  *  - (2) Leitura via view v_access_context (security_invoker=on).
  *  - (3) Adapter dedicado; SSR/middleware apenas chamam o adapter.
- *  - (6) Logging estruturado access_context_decision no ponto de I/O.
+ *  - (6) Log estruturado access_context_decision no ponto de I/O.
  */
 
 import { createClient } from "@/supabase/server";
@@ -18,7 +15,7 @@ import type {
   Role,
 } from "./accountAdapter";
 
-// Linha da view mínima (sem account_name)
+// Linha mínima da view (sem account_name)
 type AccessContextRow = {
   account_id: string;
   account_key: string | null;
@@ -43,7 +40,7 @@ type ReadOpts = {
   userId: string;
   accountSlug?: string; // preferencial (/a/[account])
   accountId?: string;   // alternativo
-  route?: string;       // para logging
+  route?: string;       // p/ logging
   requestId?: string;   // correlação
 };
 
@@ -147,7 +144,7 @@ export async function readAccessContext(opts: ReadOpts): Promise<AccessPair | nu
   if (accountId) {
     q = q.eq("account_id", accountId);
   } else if (accountSlug) {
-    // A view expõe `account_key` (ex.: 'demo')
+    // A view expõe account_key (ex.: 'demo')
     q = q.eq("account_key", accountSlug);
   }
 
@@ -229,4 +226,3 @@ export async function readAccessContext(opts: ReadOpts): Promise<AccessPair | nu
 
   return { account, member };
 }
-```
