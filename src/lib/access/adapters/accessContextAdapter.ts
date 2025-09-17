@@ -111,7 +111,17 @@ export async function readAccessContext(opts: ReadOpts): Promise<AccessPair | nu
   const { userId, accountSlug, accountId } = opts || {};
   const supabase = await createClient(); // escopo por request (App Router)
 
-  if (!userId || (!accountSlug && !accountId)) {
+  if (!userId) {
+    logDecision({
+      decision: "deny",
+      reason: "no_user",
+      route: opts?.route,
+      requestId: opts?.requestId,
+      latencyMs: Date.now() - t0,
+    });
+    return null;
+  }
+  if (!accountSlug && !accountId) {
     logDecision({
       decision: "deny",
       reason: "missing_params",
@@ -131,8 +141,14 @@ export async function readAccessContext(opts: ReadOpts): Promise<AccessPair | nu
     .eq("user_id", userId)
     .limit(50);
 
-  if (accountId) q = q.eq("account_id", accountId);
-  if (accountSlug && !accountId) q = q.eq("account_key", accountSlug);
+  if (accountId) {
+    q = q.eq("account_id", accountId);
+  } else if (accountSlug) {
+    // AJUSTE FINAL: filtro robusto por slug (compatível com nomes alternativos na view)
+    q = q.or(
+      `account_key.eq.${accountSlug},subdomain.eq.${accountSlug},account_slug.eq.${accountSlug}`
+    );
+  }
 
   const { data, error } = await q;
 
@@ -141,74 +157,4 @@ export async function readAccessContext(opts: ReadOpts): Promise<AccessPair | nu
       decision: "deny",
       reason: "error",
       userId,
-      route: opts?.route,
-      requestId: opts?.requestId,
-      latencyMs: Date.now() - t0,
-    });
-    return null;
-  }
-
-  const rows = (data as AccessContextRow[] | null) ?? [];
-  if (rows.length === 0) {
-    logDecision({
-      decision: "deny",
-      reason: "no_rows",
-      userId,
-      route: opts?.route,
-      requestId: opts?.requestId,
-      latencyMs: Date.now() - t0,
-    });
-    return null;
-  }
-
-  // Aplica governança mínima
-  const chosen = rows.find((r) => {
-    const accOk = ["active", "trial"].includes((r.account_status ?? "").toLowerCase());
-    const memOk = (r.member_status ?? "").toLowerCase() === "active";
-    return accOk && memOk;
-  });
-
-  if (!chosen) {
-    const hasBlocked = rows.some(
-      (r) => !["active", "trial"].includes((r.account_status ?? "").toLowerCase())
-    );
-    logDecision({
-      decision: "deny",
-      reason: hasBlocked ? "account_blocked" : "member_inactive",
-      userId,
-      accountId: rows[0]?.account_id,
-      role: normRole(rows[0]?.member_role ?? undefined),
-      route: opts?.route,
-      requestId: opts?.requestId,
-      latencyMs: Date.now() - t0,
-    });
-    return null;
-  }
-
-  const account: AccountInfo = {
-    id: chosen.account_id,
-    name: "", // v_access_context mínima não expõe nome; opcional adicionar depois
-    subdomain: (chosen.account_key ?? "").toLowerCase(),
-    status: normAStatus(chosen.account_status ?? undefined),
-  };
-
-  const member = {
-    accountId: chosen.account_id,
-    userId: chosen.user_id,
-    role: normRole(chosen.member_role ?? undefined),
-    status: normMStatus(chosen.member_status ?? undefined),
-  };
-
-  logDecision({
-    decision: "allow",
-    reason: "ok",
-    userId,
-    accountId: chosen.account_id,
-    role: member.role,
-    route: opts?.route,
-    requestId: opts?.requestId,
-    latencyMs: Date.now() - t0,
-  });
-
-  return { account, member };
-}
+      route: opt
