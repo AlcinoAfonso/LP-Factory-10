@@ -4,7 +4,7 @@
 // Log mínimo: access_context_decision.
 
 import { headers } from "next/headers";
-import { createClient } from "@/lib/supabase/server"; // <- sua função async zero-args
+import { createClient } from "@/lib/supabase/server"; // sua função async zero-args
 
 export type AccessAccount = {
   id: string;
@@ -63,12 +63,11 @@ function logDecision(input: {
 }
 
 export async function readAccessContext(subdomain: string): Promise<AccessContext | null> {
-  // Usa seu client server-side (assina cookies internamente)
   const supabase = await createClient();
 
-  // Consulta direta à super view v2
+  // Consulta direta à super view v2 (sem genéricos — compat ampla das libs)
   const { data, error } = await supabase
-    .from<RowV2>("v_access_context_v2")
+    .from("v_access_context_v2")
     .select(
       [
         "account_id",
@@ -90,45 +89,42 @@ export async function readAccessContext(subdomain: string): Promise<AccessContex
     return null;
   }
 
-  // Nenhuma linha (slug inválido ou RLS não liberou nenhum registro visível)
   if (!data) {
     logDecision({ decision: "deny", reason: "no_membership_or_invalid_account" });
     return null;
   }
 
-  const allow = Boolean(data.allow);
-  const reason = data.reason ?? null;
+  const row = data as unknown as RowV2;
 
-  if (!allow) {
+  if (!row.allow) {
     logDecision({
-      user_id: data.user_id ?? null,
-      account_id: data.account_id ?? null,
-      role: data.member_role ?? null,
+      user_id: row.user_id ?? null,
+      account_id: row.account_id ?? null,
+      role: row.member_role ?? null,
       decision: "deny",
-      reason: reason ?? "denied_by_view",
+      reason: row.reason ?? "denied_by_view",
     });
     return null;
   }
 
-  // allow === true → contrato mínimo {account, member}
   const ctx: AccessContext = {
     account: {
-      id: data.account_id,
-      subdomain: data.account_key,
-      status: data.account_status as AccessAccount["status"],
+      id: row.account_id,
+      subdomain: row.account_key,
+      status: row.account_status as AccessAccount["status"],
     },
     member: {
-      user_id: data.user_id as string,
-      account_id: data.account_id,
-      role: (data.member_role ?? "member") as AccessMember["role"],
-      status: (data.member_status ?? "active") as AccessMember["status"],
+      user_id: row.user_id as string,
+      account_id: row.account_id,
+      role: (row.member_role ?? "member") as AccessMember["role"],
+      status: (row.member_status ?? "active") as AccessMember["status"],
     },
   };
 
   logDecision({
-    user_id: data.user_id,
-    account_id: data.account_id,
-    role: data.member_role,
+    user_id: row.user_id,
+    account_id: row.account_id,
+    role: row.member_role,
     decision: "allow",
     reason: null,
   });
