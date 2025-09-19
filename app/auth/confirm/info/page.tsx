@@ -20,15 +20,15 @@ export default function Page() {
             </CardContent>
 
             <div className="flex flex-col gap-2 sm:flex-row sm:justify-end p-6 pt-0">
-              <Button asChild variant="secondary">
-                <Link href="/auth/login">Voltar ao login</Link>
-              </Button>
-              <Button asChild variant="outline">
-                <Link href="/auth/login?mode=switch">Trocar conta</Link>
-              </Button>
-              <Button asChild>
-                <Link href="/support">Solicitar acesso</Link>
-              </Button>
+              <Link href="/auth/login">
+                <Button variant="secondary">Voltar ao login</Button>
+              </Link>
+              <Link href="/auth/login?mode=switch">
+                <Button variant="outline">Trocar conta</Button>
+              </Link>
+              <Link href="/support">
+                <Button>Solicitar acesso</Button>
+              </Link>
             </div>
           </Card>
         </div>
