@@ -58,22 +58,17 @@ export async function getAccessContext(input?: Input): Promise<AccessContextLega
     userId = user.id;
   }
 
-  // Chama o adapter (ele próprio aplica governança mínima e loga decisão)
-  const pair = await readAccessContext({
-    userId,
-    accountSlug: slugRaw,
-    accountId: accId,
-    route: input?.route,
-    requestId: input?.requestId,
-  });
+  // Chama o adapter (ele decide allow/deny e loga decisão)
+  // >>> Correção: readAccessContext espera APENAS o subdomain (string)
+  const pair = await readAccessContext(slugRaw ?? "");
   if (!pair) return null;
 
   // Normaliza para os tipos já usados no front (reaproveita mappers)
-  // Nota: pair.account/pair.member já estão normalizados pelo adapter,
-  // mas mantemos o uso dos mappers para compat com o domínio atual.
+  // Nota: pair.account/pair.member vêm do adapter no shape mínimo;
+  // usamos os mappers para manter compat com o domínio atual.
   const account: AccountInfo = mapAccountFromDB({
     id: pair.account.id,
-    name: pair.account.name,
+    name: (pair as any).account?.name ?? null, // opcional para MVP (view mínima não expõe)
     subdomain: pair.account.subdomain,
     domain: (pair as any).account?.domain ?? null, // opcional/futuro
     status: pair.account.status,
@@ -81,10 +76,11 @@ export async function getAccessContext(input?: Input): Promise<AccessContextLega
 
   const member: MemberInfo = mapMemberFromDB({
     id: (pair as any).member?.id ?? "—", // não exposto na view mínima (ok para MVP)
-    account_id: pair.member.accountId,
-    user_id: pair.member.userId,
-    role: pair.member.role,
-    status: pair.member.status,
+    // >>> Correção: usar snake_case retornado pelo adapter
+    account_id: (pair as any).member?.account_id ?? accId ?? account.id,
+    user_id: (pair as any).member?.user_id ?? userId,
+    role: (pair as any).member?.role,
+    status: (pair as any).member?.status,
     permissions: undefined,
   } as any);
 
