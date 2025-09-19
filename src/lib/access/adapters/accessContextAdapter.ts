@@ -1,10 +1,10 @@
 // src/lib/access/adapters/accessContextAdapter.ts
 // Fonte única de leitura do Access Context (E8).
-// Regras: decidir via super view v2; retornar null quando allow=false.
-// Logs mínimos: access_context_decision.
+// Decide via super view v2; retorna null quando allow=false.
+// Log mínimo: access_context_decision.
 
-import { cookies, headers } from "next/headers";
-import { createClient } from "@/lib/supabase/server"; // já existente no projeto
+import { headers } from "next/headers";
+import { createClient } from "@/lib/supabase/server"; // <- sua função async zero-args
 
 export type AccessAccount = {
   id: string;
@@ -44,9 +44,6 @@ function logDecision(input: {
   route?: string;
 }) {
   try {
-    // Log mínimo e síncrono (console). Observabilidade avançada fica para depois.
-    // Estrutura padronizada: access_context_decision
-    // Ex.: {"event":"access_context_decision","decision":"deny","reason":"member_inactive",...}
     const h = headers();
     const route = input.route ?? h.get("x-invoke-path") ?? "";
     const payload = {
@@ -66,12 +63,10 @@ function logDecision(input: {
 }
 
 export async function readAccessContext(subdomain: string): Promise<AccessContext | null> {
-  // Client atrelado ao request (SSR)
-  const cookieStore = cookies();
-  const supabase = createClient({ cookies: () => cookieStore });
+  // Usa seu client server-side (assina cookies internamente)
+  const supabase = await createClient();
 
   // Consulta direta à super view v2
-  // Filtro: account_key = subdomain; user = auth.uid() (RLS via security_invoker)
   const { data, error } = await supabase
     .from<RowV2>("v_access_context_v2")
     .select(
@@ -91,12 +86,11 @@ export async function readAccessContext(subdomain: string): Promise<AccessContex
     .maybeSingle();
 
   if (error) {
-    // Falha de leitura: não arriscamos expor nada → retorna null.
     logDecision({ decision: "null", reason: "adapter_error_read_v2" });
     return null;
   }
 
-  // Nenhuma linha (slug inexistente ou sem visibilidade pelo RLS)
+  // Nenhuma linha (slug inválido ou RLS não liberou nenhum registro visível)
   if (!data) {
     logDecision({ decision: "deny", reason: "no_membership_or_invalid_account" });
     return null;
@@ -105,7 +99,6 @@ export async function readAccessContext(subdomain: string): Promise<AccessContex
   const allow = Boolean(data.allow);
   const reason = data.reason ?? null;
 
-  // Se a view diz que NÃO pode, respeitamos e retornamos null.
   if (!allow) {
     logDecision({
       user_id: data.user_id ?? null,
@@ -117,7 +110,7 @@ export async function readAccessContext(subdomain: string): Promise<AccessContex
     return null;
   }
 
-  // allow === true → montamos o contrato mínimo {account, member}
+  // allow === true → contrato mínimo {account, member}
   const ctx: AccessContext = {
     account: {
       id: data.account_id,
