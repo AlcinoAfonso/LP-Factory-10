@@ -47,7 +47,7 @@ export default async function Layout({
   );
 
   if (!ctx) {
-    redirect("/auth/confirm");
+    redirect("/auth/confirm/info");
   }
 
   return <AccessProvider value={ctx}>{children}</AccessProvider>;
