@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 
 export default function Page() {
@@ -11,13 +11,15 @@ export default function Page() {
             <CardHeader>
               <CardTitle className="text-2xl">Acesso não disponível</CardTitle>
             </CardHeader>
+
             <CardContent>
               <p className="text-sm text-muted-foreground">
                 Não encontramos um vínculo válido para esta conta. Você pode fazer login novamente,
                 trocar de conta ou solicitar acesso.
               </p>
             </CardContent>
-            <CardFooter className="flex flex-col gap-2 sm:flex-row sm:justify-end">
+
+            <div className="flex flex-col gap-2 sm:flex-row sm:justify-end p-6 pt-0">
               <Button asChild variant="secondary">
                 <Link href="/auth/login">Voltar ao login</Link>
               </Button>
@@ -27,7 +29,7 @@ export default function Page() {
               <Button asChild>
                 <Link href="/support">Solicitar acesso</Link>
               </Button>
-            </CardFooter>
+            </div>
           </Card>
         </div>
       </div>
