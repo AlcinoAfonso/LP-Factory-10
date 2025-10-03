@@ -3,7 +3,8 @@
 // Tipos compatíveis com o legado E8. Mantém os "nomes" esperados pelos imports.
 // Pode continuar válidos no MVP 1:1 (member pode ficar null).
 
-// Re-exporta tipos canônicos (fonte única de verdade)
+// Usa e reexporta a fonte única de verdade (bindings locais + reexport)
+import type { AccountStatus, MemberStatus, MemberRole as Role } from '../types/status';
 export type { AccountStatus, MemberStatus, MemberRole as Role } from '../types/status';
 
 /** Códigos de erro usados no Access Context (compat) */
