@@ -1,4 +1,5 @@
 // src/lib/access/types.ts
+
 // Tipos compatíveis com o legado E8. Mantém os "nomes" esperados pelos imports.
 // Pode continuar válidos no MVP 1:1 (member pode ficar null).
 
@@ -33,6 +34,7 @@ export interface Limits {
 }
 
 /** Entidades opcionais (úteis para páginas que leem campos) */
+
 export interface Account {
   id: string;
   name?: string | null;
@@ -66,3 +68,8 @@ export interface AccessContext {
   is_super_admin?: boolean;
   acting_as?: boolean;
 }
+
+
+
+
+
