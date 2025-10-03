@@ -3,14 +3,8 @@
 // Tipos compatíveis com o legado E8. Mantém os "nomes" esperados pelos imports.
 // Pode continuar válidos no MVP 1:1 (member pode ficar null).
 
-/** Estados de conta (amplo para compat) */
-export type AccountStatus = 'active' | 'suspended' | 'deleted' | string;
-
-/** Papéis de membro (mantém o nome esperado: Role) */
-export type Role = 'owner' | 'admin' | 'editor' | 'viewer' | string;
-
-/** Status de membro (mantém o nome esperado: MemberStatus) */
-export type MemberStatus = 'active' | 'inactive' | 'pending' | 'revoked' | string;
+// Re-exporta tipos canônicos (fonte única de verdade)
+export type { AccountStatus, MemberStatus, MemberRole as Role } from '../types/status';
 
 /** Códigos de erro usados no Access Context (compat) */
 export type AccessErrorCode =
@@ -34,7 +28,6 @@ export interface Limits {
 }
 
 /** Entidades opcionais (úteis para páginas que leem campos) */
-
 export interface Account {
   id: string;
   name?: string | null;
@@ -68,8 +61,3 @@ export interface AccessContext {
   is_super_admin?: boolean;
   acting_as?: boolean;
 }
-
-
-
-
-
