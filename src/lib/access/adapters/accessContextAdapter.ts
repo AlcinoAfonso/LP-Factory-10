@@ -5,18 +5,19 @@
 
 import { headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
+import type { AccountStatus, MemberStatus, MemberRole } from '../../types/status';
 
 export type AccessAccount = {
   id: string;
   subdomain: string;
-  status: "active" | "inactive" | "suspended" | string;
+  status: AccountStatus;
 };
 
 export type AccessMember = {
   user_id: string;
   account_id: string;
-  role: string;
-  status: "active" | "inactive" | string;
+  role: MemberRole;
+  status: MemberStatus;
 };
 
 export type AccessContext = {
@@ -129,13 +130,13 @@ export async function readAccessContext(subdomain: string): Promise<AccessContex
     account: {
       id: row.account_id,
       subdomain: row.account_key,
-      status: row.account_status as AccessAccount["status"],
+      status: row.account_status as AccountStatus,
     },
     member: {
       user_id: row.user_id as string,
       account_id: row.account_id,
-      role: (row.member_role ?? "member") as AccessMember["role"],
-      status: (row.member_status ?? "active") as AccessMember["status"],
+      role: (row.member_role ?? "viewer") as MemberRole,
+      status: (row.member_status ?? "active") as MemberStatus,
     },
   };
 
