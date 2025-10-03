@@ -1,6 +1,6 @@
 // src/lib/access/adapters/accountAdapter.ts
-
 import { createClient } from "@/supabase/server";
+import type { AccountStatus, MemberStatus, MemberRole } from '../../types/status';
 
 /** Tipos de linha do DB */
 export type DBAccountRow = {
@@ -20,11 +20,7 @@ export type DBMemberRow = {
   permissions?: Record<string, unknown> | null;
 };
 
-/** Tipos de domínio (legado do adapter) */
-export type AccountStatus = "active" | "trial" | "suspended" | "canceled";
-export type MemberStatus = "pending" | "active" | "inactive" | "revoked";
-export type Role = "owner" | "admin" | "editor" | "viewer";
-
+/** Tipos de domínio (mapeados do DB) */
 export type AccountInfo = {
   id: string;
   name: string;
@@ -37,7 +33,7 @@ export type MemberInfo = {
   id: string;
   accountId: string;
   userId: string;
-  role: Role;
+  role: MemberRole;
   status: MemberStatus;
   permissions?: Record<string, unknown>;
 };
@@ -45,11 +41,11 @@ export type MemberInfo = {
 /** Normalização */
 const ROLES = ["owner", "admin", "editor", "viewer"] as const;
 const MSTAT = ["pending", "active", "inactive", "revoked"] as const;
-const ASTAT = ["active", "trial", "suspended", "canceled"] as const;
+const ASTAT = ["active", "inactive", "suspended", "pending_setup"] as const;
 
-export const normalizeRole = (s?: string): Role => {
+export const normalizeRole = (s?: string): MemberRole => {
   const v = (s ?? "").toLowerCase().trim();
-  return (ROLES as readonly string[]).includes(v) ? (v as Role) : "viewer";
+  return (ROLES as readonly string[]).includes(v) ? (v as MemberRole) : "viewer";
 };
 
 export const normalizeMemberStatus = (s?: string): MemberStatus => {
@@ -104,7 +100,6 @@ export async function getMembershipsByUser(
     .select("id, account_id, user_id, role, status, permissions")
     .eq("user_id", userId)
     .limit(50);
-
   return (data as DBMemberRow[]) ?? [];
 }
 
@@ -118,7 +113,6 @@ export async function getAccountById(
     .select("id, name, subdomain, domain, status")
     .eq("id", accountId)
     .maybeSingle();
-
   return (data as DBAccountRow) ?? null;
 }
 
@@ -132,6 +126,5 @@ export async function getAccountBySlug(
     .select("id, name, subdomain, domain, status")
     .eq("subdomain", slug)
     .maybeSingle();
-
   return (data as DBAccountRow) ?? null;
 }
