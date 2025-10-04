@@ -40,6 +40,44 @@ function mapTokenUsageFromDB(row: DBTokenUsageRow): TokenWithUsage {
   };
 }
 
+/**
+ * Verifica se usuário autenticado é super_admin
+ * Fail-closed: qualquer erro retorna false
+ */
+export async function checkSuperAdmin(): Promise<{
+  isSuper: boolean;
+  userId?: string;
+  email?: string;
+}> {
+  try {
+    const supabase = await createClient();
+
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    
+    if (userError || !user) {
+      return { isSuper: false };
+    }
+
+    const { data: isSuperAdmin, error: rpcError } = await supabase.rpc('is_super_admin');
+
+    if (rpcError) {
+      // eslint-disable-next-line no-console
+      console.error('[adminAdapter] RPC is_super_admin failed:', rpcError);
+      return { isSuper: false, userId: user.id, email: user.email };
+    }
+
+    return {
+      isSuper: !!isSuperAdmin,
+      userId: user.id,
+      email: user.email,
+    };
+  } catch (err) {
+    // eslint-disable-next-line no-console
+    console.error('[adminAdapter] Unexpected error:', err);
+    return { isSuper: false };
+  }
+}
+
 export const tokens = {
   /**
    * Lista tokens da view v_admin_tokens_with_usage
