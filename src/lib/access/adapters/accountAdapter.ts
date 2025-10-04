@@ -128,3 +128,54 @@ export async function getAccountBySlug(
     .maybeSingle();
   return (data as DBAccountRow) ?? null;
 }
+
+/* ===========================================================
+ * E7 - Conta Consultiva
+ * ===========================================================
+ */
+
+/** Cria conta a partir de token (delega para RPC) */
+export async function createFromToken(
+  tokenId: string,
+  actorId: string
+): Promise<string | null> {
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("create_account_with_owner", {
+    p_token_id: tokenId,
+    p_actor_id: actorId,
+  });
+
+  if (error) {
+    // eslint-disable-next-line no-console
+    console.error("createFromToken failed:", error);
+    return null;
+  }
+
+  return data as string;
+}
+
+/** Renomeia conta e ativa (pending_setup → active) */
+export async function renameAndActivate(
+  accountId: string,
+  name: string,
+  slug: string
+): Promise<boolean> {
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("accounts")
+    .update({
+      name: name.trim(),
+      slug: slug.toLowerCase().trim(),
+      status: "active",
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", accountId);
+
+  if (error) {
+    // eslint-disable-next-line no-console
+    console.error("renameAndActivate failed:", error);
+    return false;
+  }
+
+  return true;
+}
