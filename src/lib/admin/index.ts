@@ -5,5 +5,5 @@
  */
 
 export * from "./contracts";
-export { tokens as adminTokens } from "./adapters/adminAdapter";
+export { tokens as adminTokens, checkSuperAdmin } from "./adapters/adminAdapter";
 export * as postSaleTokenAdapter from "./adapters/postSaleTokenAdapter";
