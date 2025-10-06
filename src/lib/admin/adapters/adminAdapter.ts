@@ -1,6 +1,8 @@
 // src/lib/admin/adapters/adminAdapter.ts
-import { createClient } from "@/lib/supabase/server";
-import { createServiceClient } from "@/lib/supabase/service";
+import { createClient as createServerClient } from "@/lib/supabase/server";
+// ⬇️ troque o alias pelo caminho relativo estável
+import { createServiceClient } from "../../supabase/service";
+
 import type { TokenWithUsage, TokenStats, PostSaleToken } from "../contracts";
 import * as postSaleTokenAdapter from "./postSaleTokenAdapter";
 
