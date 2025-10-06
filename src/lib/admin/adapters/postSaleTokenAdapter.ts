@@ -1,5 +1,5 @@
 // src/lib/admin/adapters/postSaleTokenAdapter.ts
-import { createClient } from "@/lib/supabase/server";
+import { createServiceClient } from "../../supabase/service";
 import type { PostSaleToken, TokenValidation } from "../contracts";
 
 /**
@@ -42,11 +42,11 @@ export async function generate(
   contractRef?: string,
   expiresAt?: Date
 ): Promise<PostSaleToken | null> {
-  const supabase = await createClient();
-  
+  const svc = createServiceClient();
+
   const expires = expiresAt || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
-  
-  const { data, error } = await supabase
+
+  const { data, error } = await svc
     .from("post_sale_tokens")
     .insert({
       email: email.toLowerCase().trim(),
@@ -65,9 +65,9 @@ export async function generate(
  * Valida token (read-only, não consome)
  */
 export async function validate(tokenId: string): Promise<TokenValidation> {
-  const supabase = await createClient();
+  const svc = createServiceClient();
 
-  const { data, error } = await supabase
+  const { data, error } = await svc
     .from("post_sale_tokens")
     .select("id, used_at, expires_at")
     .eq("id", tokenId)
@@ -96,9 +96,9 @@ export async function consume(
   tokenId: string,
   actorId: string
 ): Promise<string | null> {
-  const supabase = await createClient();
+  const svc = createServiceClient();
 
-  const { data, error } = await supabase.rpc("create_account_with_owner", {
+  const { data, error } = await svc.rpc("create_account_with_owner", {
     p_token_id: tokenId,
     p_actor_id: actorId,
   });
@@ -116,9 +116,9 @@ export async function consume(
  * Revoga token (marca como expirado imediatamente)
  */
 export async function revoke(tokenId: string): Promise<boolean> {
-  const supabase = await createClient();
+  const svc = createServiceClient();
 
-  const { error } = await supabase
+  const { error } = await svc
     .from("post_sale_tokens")
     .update({ expires_at: new Date().toISOString() })
     .eq("id", tokenId);
