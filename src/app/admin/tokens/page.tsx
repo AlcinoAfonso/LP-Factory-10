@@ -136,3 +136,4 @@ export default async function AdminTokensPage() {
     </div>
   );
 }
+touch rebuild /admin/tokens
