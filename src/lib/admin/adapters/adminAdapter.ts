@@ -1,15 +1,15 @@
 // src/lib/admin/adapters/adminAdapter.ts
 import { createClient as createServerClient } from "@/lib/supabase/server";
-// ⬇️ troque o alias pelo caminho relativo estável
+// usar caminho relativo para evitar issues de alias no build da Vercel
 import { createServiceClient } from "../../supabase/service";
 
 import type { TokenWithUsage, TokenStats, PostSaleToken } from "../contracts";
 import * as postSaleTokenAdapter from "./postSaleTokenAdapter";
 
 /**
- * Adapter de orquestração Admin (E7.1)
- * - checkSuperAdmin: usa server client (precisa sessão do usuário)
- * - tokens.*: usa service client (acessa v_admin_tokens_with_usage)
+ * Adapter de orquestração Admin (E7/E7.1)
+ * - Leituras de views com GRANT para service_role via SERVICE CLIENT (server-only)
+ * - Verificação de sessão/claims via SERVER CLIENT (contexto do usuário)
  */
 
 type DBTokenUsageRow = {
@@ -46,8 +46,8 @@ function mapTokenUsageFromDB(row: DBTokenUsageRow): TokenWithUsage {
 
 /**
  * Verifica se usuário autenticado é super_admin
- * Usa server client (precisa da sessão do usuário)
  * Fail-closed: qualquer erro retorna false
+ * Usa SERVER CLIENT para preservar contexto do usuário (auth.uid()).
  */
 export async function checkSuperAdmin(): Promise<{
   isSuper: boolean;
@@ -55,30 +55,35 @@ export async function checkSuperAdmin(): Promise<{
   email?: string;
 }> {
   try {
-    const supabase = await createClient();
+    const supabase = await createServerClient();
 
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
-    
+    const {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser();
+
     if (userError || !user) {
       return { isSuper: false };
     }
 
-    const { data: isSuperAdmin, error: rpcError } = await supabase.rpc('is_super_admin');
+    const { data: isSuperAdmin, error: rpcError } = await supabase.rpc(
+      "is_super_admin"
+    );
 
     if (rpcError) {
       // eslint-disable-next-line no-console
-      console.error('[adminAdapter] RPC is_super_admin failed:', rpcError);
-      return { isSuper: false, userId: user.id, email: user.email };
+      console.error("[adminAdapter] RPC is_super_admin failed:", rpcError);
+      return { isSuper: false, userId: user.id, email: user.email ?? undefined };
     }
 
     return {
       isSuper: !!isSuperAdmin,
       userId: user.id,
-      email: user.email,
+      email: user.email ?? undefined,
     };
   } catch (err) {
     // eslint-disable-next-line no-console
-    console.error('[adminAdapter] Unexpected error:', err);
+    console.error("[adminAdapter] Unexpected error:", err);
     return { isSuper: false };
   }
 }
@@ -86,16 +91,16 @@ export async function checkSuperAdmin(): Promise<{
 export const tokens = {
   /**
    * Lista tokens da view v_admin_tokens_with_usage
-   * Usa service client (view com GRANT service_role)
-   * Filtros opcionais: usado, expirado
+   * Filtros opcionais: used, expired
+   * Usa SERVICE CLIENT (service_role) — server-only.
    */
   async list(params?: {
     used?: boolean;
     expired?: boolean;
   }): Promise<TokenWithUsage[]> {
-    const supabase = createServiceClient();
+    const svc = createServiceClient();
 
-    let query = supabase
+    let query = svc
       .from("v_admin_tokens_with_usage")
       .select("*")
       .order("created_at", { ascending: false });
@@ -110,23 +115,29 @@ export const tokens = {
 
     const { data, error } = await query;
 
-    if (error || !data) return [];
+    if (error || !data) {
+      // eslint-disable-next-line no-console
+      console.error("[adminAdapter.tokens.list] query error:", error);
+      return [];
+    }
 
-    return data.map((row) => mapTokenUsageFromDB(row as DBTokenUsageRow));
+    return (data as DBTokenUsageRow[]).map(mapTokenUsageFromDB);
   },
 
   /**
    * Estatísticas agregadas da view
-   * Usa service client (view com GRANT service_role)
+   * Usa SERVICE CLIENT (service_role) — server-only.
    */
   async getStats(): Promise<TokenStats> {
-    const supabase = createServiceClient();
+    const svc = createServiceClient();
 
-    const { data, error } = await supabase
+    const { data, error } = await svc
       .from("v_admin_tokens_with_usage")
       .select("is_used, is_valid");
 
     if (error || !data) {
+      // eslint-disable-next-line no-console
+      console.error("[adminAdapter.tokens.getStats] query error:", error);
       return { total: 0, used: 0, expired: 0, valid: 0 };
     }
 
@@ -140,6 +151,7 @@ export const tokens = {
 
   /**
    * Gera novo token (delega para postSaleTokenAdapter)
+   * A implementação de geração/revogação usa SERVICE CLIENT dentro do postSaleTokenAdapter.
    */
   async generate(
     email: string,
