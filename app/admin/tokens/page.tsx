@@ -1,6 +1,3 @@
-Doc de referência: **Base Técnica** + **Template de Roteiro**.
-
-```tsx
 // app/admin/tokens/page.tsx
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
@@ -66,81 +63,4 @@ export default async function AdminTokensPage() {
 
       {/* Formulário: Gerar Token (C1) */}
       <section className="space-y-3">
-        <h2 className="text-lg font-medium">Gerar novo token</h2>
-        <form action={generateAction} method="post" className="flex flex-wrap gap-2 items-center">
-          <input
-            name="email"
-            type="email"
-            placeholder="E-mail do cliente"
-            required
-            className="border rounded px-3 py-2 w-72"
-          />
-          <input
-            name="contractRef"
-            type="text"
-            placeholder="Referência do contrato (opcional)"
-            className="border rounded px-3 py-2 w-64"
-          />
-          <button
-            type="submit"
-            className="px-4 py-2 rounded bg-black text-white disabled:opacity-50"
-          >
-            Gerar Token
-          </button>
-        </form>
-      </section>
-
-      {/* Lista de Tokens */}
-      <section className="space-y-3">
-        <h2 className="text-lg font-medium">Tokens gerados</h2>
-        <div className="overflow-x-auto">
-          <table className="min-w-full text-sm border">
-            <thead>
-              <tr className="bg-gray-50">
-                <th className="text-left p-2 border-b">Email</th>
-                <th className="text-left p-2 border-b">Status</th>
-                <th className="text-left p-2 border-b">Expira</th>
-                <th className="text-left p-2 border-b">Conta</th>
-                <th className="text-right p-2 border-b">Ações</th>
-              </tr>
-            </thead>
-            <tbody>
-              {list.map((t) => {
-                const status = t.is_used ? "Usado" : t.is_valid ? "Ativo" : "Expirado";
-                return (
-                  <tr key={t.token_id} className="border-b">
-                    <td className="p-2">{t.email}</td>
-                    <td className="p-2">{status}</td>
-                    <td className="p-2">{t.expires_at ?? "—"}</td>
-                    <td className="p-2">{t.account_slug ?? "—"}</td>
-                    <td className="p-2 text-right">
-                      <form action={revokeAction} method="post" className="inline-block">
-                        <input type="hidden" name="tokenId" value={t.token_id} />
-                        <button
-                          type="submit"
-                          className="px-3 py-1 rounded border hover:bg-gray-50 disabled:opacity-40"
-                          disabled={t.is_used}
-                          title={t.is_used ? "Token já utilizado" : "Revogar token"}
-                        >
-                          Revogar
-                        </button>
-                      </form>
-                    </td>
-                  </tr>
-                );
-              })}
-              {list.length === 0 && (
-                <tr>
-                  <td className="p-3 text-gray-500" colSpan={5}>
-                    Nenhum token encontrado.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      </section>
-    </div>
-  );
-}
-```
+        <h2 class
