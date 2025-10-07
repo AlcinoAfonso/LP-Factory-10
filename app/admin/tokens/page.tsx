@@ -1,3 +1,6 @@
+Doc de referência: **Base Técnica** + **Template de Roteiro**.
+
+```tsx
 // app/admin/tokens/page.tsx
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
@@ -17,18 +20,22 @@ async function requireSuper() {
 
 async function generateAction(formData: FormData) {
   "use server";
-  await requireSuper();
+  try {
+    await requireSuper();
 
-  const email = String(formData.get("email") || "").trim();
-  const contractRef = String(formData.get("contractRef") || "").trim() || undefined;
+    const email = String(formData.get("email") || "").trim();
+    const contractRef = String(formData.get("contractRef") || "").trim() || undefined;
 
-  if (!email || !email.includes("@")) {
-    // Em SSR simples, podemos apenas abortar silenciosamente; logs vêm dos adapters no Passo 5
-    return;
+    if (!email || !email.includes("@")) {
+      return;
+    }
+
+    await tokens.generate(email, contractRef);
+    console.error("[admin/tokens] token_generated:", { email, contractRef }); // log server
+    revalidatePath("/admin/tokens");
+  } catch (e) {
+    console.error("[admin/tokens] generateAction error:", e);
   }
-
-  await tokens.generate(email, contractRef);
-  revalidatePath("/admin/tokens");
 }
 
 async function revokeAction(formData: FormData) {
@@ -60,7 +67,7 @@ export default async function AdminTokensPage() {
       {/* Formulário: Gerar Token (C1) */}
       <section className="space-y-3">
         <h2 className="text-lg font-medium">Gerar novo token</h2>
-        <form action={generateAction} className="flex flex-wrap gap-2 items-center">
+        <form action={generateAction} method="post" className="flex flex-wrap gap-2 items-center">
           <input
             name="email"
             type="email"
@@ -107,7 +114,7 @@ export default async function AdminTokensPage() {
                     <td className="p-2">{t.expires_at ?? "—"}</td>
                     <td className="p-2">{t.account_slug ?? "—"}</td>
                     <td className="p-2 text-right">
-                      <form action={revokeAction} className="inline-block">
+                      <form action={revokeAction} method="post" className="inline-block">
                         <input type="hidden" name="tokenId" value={t.token_id} />
                         <button
                           type="submit"
@@ -136,3 +143,4 @@ export default async function AdminTokensPage() {
     </div>
   );
 }
+```
