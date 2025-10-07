@@ -15,7 +15,7 @@ async function requireSuper() {
   }
 }
 
-export async function generateAction(formData: FormData) {
+async function generateAction(formData: FormData) {
   "use server";
   await requireSuper();
 
@@ -31,7 +31,7 @@ export async function generateAction(formData: FormData) {
   revalidatePath("/admin/tokens");
 }
 
-export async function revokeAction(formData: FormData) {
+async function revokeAction(formData: FormData) {
   "use server";
   await requireSuper();
 
@@ -136,4 +136,3 @@ export default async function AdminTokensPage() {
     </div>
   );
 }
-
