@@ -98,39 +98,37 @@ export const tokens = {
     used?: boolean;
     expired?: boolean;
   }): Promise<TokenWithUsage[]> {
-    const svc = createServiceClient();
-
-    // === Prova do client usado (Passo 1) ===
     try {
-      const sess = await svc.auth.getSession();
-      console.error("[tokens.list] session?", !!sess.data.session); // deve imprimir false (service)
+      const svc = await createServiceClient(); // <- await
+
+      let query = svc
+        .from("v_admin_tokens_with_usage")
+        .select("*")
+        .order("created_at", { ascending: false });
+
+      if (params?.used !== undefined) {
+        query = query.eq("is_used", params.used);
+      }
+
+      if (params?.expired !== undefined) {
+        // expired=true => is_valid=false
+        query = query.eq("is_valid", !params.expired);
+      }
+
+      const { data, error } = await query;
+
+      if (error || !data) {
+        // eslint-disable-next-line no-console
+        console.error("[adminAdapter.tokens.list] query error:", error);
+        return [];
+      }
+
+      return (data as DBTokenUsageRow[]).map(mapTokenUsageFromDB);
     } catch (e) {
-      console.error("[tokens.list] session? (erro ao consultar):", e);
-    }
-    // =======================================
-
-    let query = svc
-      .from("v_admin_tokens_with_usage")
-      .select("*")
-      .order("created_at", { ascending: false });
-
-    if (params?.used !== undefined) {
-      query = query.eq("is_used", params.used);
-    }
-
-    if (params?.expired !== undefined) {
-      query = query.eq("is_valid", !params.expired);
-    }
-
-    const { data, error } = await query;
-
-    if (error || !data) {
       // eslint-disable-next-line no-console
-      console.error("[adminAdapter.tokens.list] query error:", error);
+      console.error("[adminAdapter.tokens.list] unexpected error:", e);
       return [];
     }
-
-    return (data as DBTokenUsageRow[]).map(mapTokenUsageFromDB);
   },
 
   /**
@@ -138,24 +136,30 @@ export const tokens = {
    * Usa SERVICE CLIENT (service_role) — server-only.
    */
   async getStats(): Promise<TokenStats> {
-    const svc = createServiceClient();
+    try {
+      const svc = await createServiceClient(); // <- await
 
-    const { data, error } = await svc
-      .from("v_admin_tokens_with_usage")
-      .select("is_used, is_valid");
+      const { data, error } = await svc
+        .from("v_admin_tokens_with_usage")
+        .select("is_used, is_valid");
 
-    if (error || !data) {
+      if (error || !data) {
+        // eslint-disable-next-line no-console
+        console.error("[adminAdapter.tokens.getStats] query error:", error);
+        return { total: 0, used: 0, expired: 0, valid: 0 };
+      }
+
+      const total = data.length;
+      const used = data.filter((r) => r.is_used).length;
+      const valid = data.filter((r) => r.is_valid && !r.is_used).length;
+      const expired = total - used - valid;
+
+      return { total, used, expired, valid };
+    } catch (e) {
       // eslint-disable-next-line no-console
-      console.error("[adminAdapter.tokens.getStats] query error:", error);
+      console.error("[adminAdapter.tokens.getStats] unexpected error:", e);
       return { total: 0, used: 0, expired: 0, valid: 0 };
     }
-
-    const total = data.length;
-    const used = data.filter((r) => r.is_used).length;
-    const valid = data.filter((r) => r.is_valid && !r.is_used).length;
-    const expired = data.filter((r) => !r.is_valid && !r.is_used).length;
-
-    return { total, used, expired, valid };
   },
 
   /**
