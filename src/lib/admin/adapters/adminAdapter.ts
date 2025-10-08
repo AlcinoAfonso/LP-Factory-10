@@ -100,6 +100,15 @@ export const tokens = {
   }): Promise<TokenWithUsage[]> {
     const svc = createServiceClient();
 
+    // === Prova do client usado (Passo 1) ===
+    try {
+      const sess = await svc.auth.getSession();
+      console.error("[tokens.list] session?", !!sess.data.session); // deve imprimir false (service)
+    } catch (e) {
+      console.error("[tokens.list] session? (erro ao consultar):", e);
+    }
+    // =======================================
+
     let query = svc
       .from("v_admin_tokens_with_usage")
       .select("*")
