@@ -2,23 +2,25 @@
 import React from "react";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
-import { tokens, checkSuperAdmin } from "@/lib/admin/adapters/adminAdapter";
+import { adminTokens } from "@/lib/admin";
+import { requirePlatformAdmin } from "@/lib/access/guards";
 
 export const dynamic = "force-dynamic";
 
 /** ==== Guards (SSR) ==== */
-async function requireSuper() {
-  const { isSuper } = await checkSuperAdmin();
-  if (!isSuper) redirect("/auth/confirm/info");
+async function requirePlatform() {
+  const { allowed, redirect: redirectTo } = await requirePlatformAdmin();
+  if (!allowed) redirect(redirectTo ?? "/auth/confirm/info");
 }
 
 /** ==== Server Actions ==== */
 async function generateAction(formData: FormData) {
   "use server";
   try {
-    await requireSuper();
+    await requirePlatform();
     const rawEmail = String(formData.get("email") || "");
     const email = rawEmail.trim().toLowerCase();
+
     if (!email || !email.includes("@")) {
       console.error(
         JSON.stringify({
@@ -35,7 +37,7 @@ async function generateAction(formData: FormData) {
     const contractRefRaw = String(formData.get("contractRef") || "").trim();
     const contractRef = contractRefRaw || undefined;
 
-    const token = await tokens.generate(email, contractRef);
+    const token = await adminTokens.generate(email, contractRef);
     console.error(
       JSON.stringify({
         event: "token_generated",
@@ -64,7 +66,7 @@ async function generateAction(formData: FormData) {
 async function revokeAction(formData: FormData) {
   "use server";
   try {
-    await requireSuper();
+    await requirePlatform();
     const tokenId = String(formData.get("tokenId") || "").trim();
     if (!tokenId) {
       console.error(
@@ -77,7 +79,7 @@ async function revokeAction(formData: FormData) {
       );
       redirect("/admin/tokens");
     }
-    const ok = await tokens.revoke(tokenId);
+    const ok = await adminTokens.revoke(tokenId);
     console.error(
       JSON.stringify({
         event: ok ? "token_revoked" : "token_revoke_failed",
@@ -109,7 +111,7 @@ export default async function AdminTokensPage({
 }: {
   searchParams?: SearchParams;
 }) {
-  await requireSuper();
+  await requirePlatform();
 
   const used =
     typeof searchParams?.used === "string"
@@ -122,8 +124,8 @@ export default async function AdminTokensPage({
       : undefined;
 
   const [list, stats] = await Promise.all([
-    tokens.list({ used, expired }),
-    tokens.getStats(),
+    adminTokens.list({ used, expired }),
+    adminTokens.getStats(),
   ]);
 
   return (
@@ -136,10 +138,7 @@ export default async function AdminTokensPage({
       </header>
 
       {/* Resumo / Métricas */}
-      <section
-        aria-label="Resumo"
-        className="grid grid-cols-2 md:grid-cols-4 gap-3"
-      >
+      <section aria-label="Resumo" className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <div className="rounded-xl border p-3">
           <div className="text-xs text-gray-500">Total</div>
           <div className="text-xl font-semibold">{stats.total}</div>
@@ -161,11 +160,7 @@ export default async function AdminTokensPage({
       {/* Gerar */}
       <section className="space-y-3" aria-label="Gerar token">
         <h2 className="text-lg font-medium">Gerar novo token</h2>
-        <form
-          action={generateAction}
-          method="post"
-          className="flex flex-wrap gap-2 items-center"
-        >
+        <form action={generateAction} method="post" className="flex flex-wrap gap-2 items-center">
           <input
             name="email"
             type="email"
@@ -199,9 +194,7 @@ export default async function AdminTokensPage({
             Usado:
             <select
               name="used"
-              defaultValue={
-                used === undefined ? "" : used ? "true" : "false"
-              }
+              defaultValue={used === undefined ? "" : used ? "true" : "false"}
               className="ml-2 border rounded px-2 py-1"
               aria-label="Filtrar por usado"
             >
@@ -214,9 +207,7 @@ export default async function AdminTokensPage({
             Expirado:
             <select
               name="expired"
-              defaultValue={
-                expired === undefined ? "" : expired ? "true" : "false"
-              }
+              defaultValue={expired === undefined ? "" : expired ? "true" : "false"}
               className="ml-2 border rounded px-2 py-1"
               aria-label="Filtrar por expirado"
             >
@@ -225,11 +216,7 @@ export default async function AdminTokensPage({
               <option value="false">Não</option>
             </select>
           </label>
-          <button
-            type="submit"
-            className="px-3 py-1 rounded border hover:bg-gray-50"
-            aria-label="Aplicar filtros"
-          >
+          <button type="submit" className="px-3 py-1 rounded border hover:bg-gray-50" aria-label="Aplicar filtros">
             Aplicar
           </button>
         </form>
@@ -251,11 +238,7 @@ export default async function AdminTokensPage({
             </thead>
             <tbody>
               {list.map((t) => {
-                const status = t.is_used
-                  ? "Usado"
-                  : t.is_valid
-                  ? "Ativo"
-                  : "Expirado";
+                const status = t.is_used ? "Usado" : t.is_valid ? "Ativo" : "Expirado";
                 return (
                   <tr key={t.token_id} className="border-b">
                     <td className="p-2">{t.email}</td>
@@ -263,19 +246,13 @@ export default async function AdminTokensPage({
                     <td className="p-2">{t.expires_at ?? "—"}</td>
                     <td className="p-2">{t.account_slug ?? "—"}</td>
                     <td className="p-2 text-right">
-                      <form
-                        action={revokeAction}
-                        method="post"
-                        className="inline-block"
-                      >
+                      <form action={revokeAction} method="post" className="inline-block">
                         <input type="hidden" name="tokenId" value={t.token_id} />
                         <button
                           type="submit"
                           className="px-3 py-1 rounded border hover:bg-gray-50 disabled:opacity-40"
                           disabled={t.is_used}
-                          title={
-                            t.is_used ? "Token já utilizado" : "Revogar token"
-                          }
+                          title={t.is_used ? "Token já utilizado" : "Revogar token"}
                           aria-label={`Revogar token ${t.token_id}`}
                         >
                           Revogar
