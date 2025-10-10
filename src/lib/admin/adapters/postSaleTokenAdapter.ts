@@ -33,6 +33,51 @@ function mapTokenFromDB(row: DBTokenRow): PostSaleToken {
   };
 }
 
+/** ==== Log helpers (inline, sem dependências) ==== */
+type ActorRole = "super_admin" | "platform_admin" | "user" | null;
+type Ctx = {
+  actor_id?: string | null;
+  actor_role?: ActorRole;
+  ip?: string | null;
+  t0?: number; // performance.now() de quem chamou (opcional)
+};
+
+function now() {
+  return typeof globalThis.performance?.now === "function"
+    ? globalThis.performance.now()
+    : Date.now();
+}
+function latencyMs(t0?: number) {
+  if (typeof t0 !== "number") return undefined;
+  const t1 =
+    typeof globalThis.performance?.now === "function"
+      ? globalThis.performance.now()
+      : Date.now();
+  return Math.round(t1 - t0);
+}
+function logEvent(
+  event:
+    | "token_consumed"
+    | "token_expired"
+    | "token_consume_failed",
+  extra: Record<string, unknown>,
+  ctx?: Ctx
+) {
+  // eslint-disable-next-line no-console
+  console.error(
+    JSON.stringify({
+      event,
+      scope: "admin",
+      actor_id: ctx?.actor_id ?? null,
+      actor_role: ctx?.actor_role ?? null,
+      ip: ctx?.ip ?? null,
+      latency_ms: latencyMs(ctx?.t0),
+      timestamp: new Date().toISOString(),
+      ...extra,
+    })
+  );
+}
+
 /**
  * Gera novo token de pós-venda
  * TTL default: 7 dias
@@ -63,8 +108,13 @@ export async function generate(
 
 /**
  * Valida token (read-only, não consome)
+ * - Loga token_expired quando TTL vencido.
  */
-export async function validate(tokenId: string): Promise<TokenValidation> {
+export async function validate(
+  tokenId: string,
+  ctx?: Ctx
+): Promise<TokenValidation> {
+  const t0 = ctx?.t0 ?? now();
   const svc = createServiceClient();
 
   const { data, error } = await svc
@@ -82,6 +132,11 @@ export async function validate(tokenId: string): Promise<TokenValidation> {
   }
 
   if (new Date(data.expires_at) <= new Date()) {
+    logEvent(
+      "token_expired",
+      { token_id: tokenId },
+      { ...ctx, t0 }
+    );
     return { valid: false, reason: "expired" };
   }
 
@@ -91,11 +146,15 @@ export async function validate(tokenId: string): Promise<TokenValidation> {
 /**
  * Consome token via RPC create_account_with_owner
  * Retorna account_id criado ou null em caso de erro
+ * - Loga token_consumed no sucesso.
+ * - Loga token_consume_failed no erro.
  */
 export async function consume(
   tokenId: string,
-  actorId: string
+  actorId: string,
+  ctx?: Ctx
 ): Promise<string | null> {
+  const t0 = ctx?.t0 ?? now();
   const svc = createServiceClient();
 
   const { data, error } = await svc.rpc("create_account_with_owner", {
@@ -104,10 +163,19 @@ export async function consume(
   });
 
   if (error) {
-    // eslint-disable-next-line no-console
-    console.error("Token consume failed:", error);
+    logEvent(
+      "token_consume_failed",
+      { token_id: tokenId, error: String(error?.message ?? error) },
+      { ...ctx, t0 }
+    );
     return null;
   }
+
+  logEvent(
+    "token_consumed",
+    { token_id: tokenId, account_id: data ?? null, actor_id: actorId },
+    { ...ctx, t0 }
+  );
 
   return data as string;
 }
