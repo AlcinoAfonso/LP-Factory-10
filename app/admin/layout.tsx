@@ -1,18 +1,18 @@
 // app/admin/layout.tsx
 import { redirect } from 'next/navigation';
-import { requireSuperAdmin } from '@/lib/access/guards';
+import { requirePlatformAdmin } from '@/lib/access/guards';
 
 export default async function AdminLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const { allowed, redirect: redirectTo } = await requireSuperAdmin();
+  const { allowed, redirect: redirectTo } = await requirePlatformAdmin();
   
   if (!allowed && redirectTo) {
     redirect(redirectTo);
   }
-
+  
   return (
     <div className="min-h-screen bg-gray-50">
       <nav className="bg-white shadow-sm">
