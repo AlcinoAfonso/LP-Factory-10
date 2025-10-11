@@ -2,10 +2,43 @@
 import React from "react";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
-import { adminTokens } from "@/lib/admin";
+import { headers } from "next/headers";
+import { adminTokens, checkSuperAdmin, checkPlatformAdmin } from "@/lib/admin";
 import { requirePlatformAdmin } from "@/lib/access/guards";
+import { createClient as createServerClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
+
+/** ==== Helpers (inline) ==== */
+async function getActorContext() {
+  const h = headers();
+  const ip =
+    h.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+    h.get("x-real-ip") ||
+    "unknown";
+
+  const supabase = await createServerClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  let actor_role: "super_admin" | "platform_admin" | "user" = "user";
+  const superInfo = await checkSuperAdmin();
+  if (superInfo.isSuper) {
+    actor_role = "super_admin";
+  } else {
+    const platInfo = await checkPlatformAdmin();
+    if (platInfo.isPlatform) actor_role = "platform_admin";
+  }
+
+  return { actor_id: user?.id ?? null, actor_role, ip };
+}
+
+function now() {
+  return typeof globalThis.performance?.now === "function"
+    ? globalThis.performance.now()
+    : Date.now();
+}
 
 /** ==== Guards (SSR) ==== */
 async function requirePlatform() {
@@ -16,11 +49,13 @@ async function requirePlatform() {
 /** ==== Server Actions ==== */
 async function generateAction(formData: FormData) {
   "use server";
+  const t0 = now();
   try {
     await requirePlatform();
+    const { actor_id, actor_role, ip } = await getActorContext();
+
     const rawEmail = String(formData.get("email") || "");
     const email = rawEmail.trim().toLowerCase();
-
     if (!email || !email.includes("@")) {
       console.error(
         JSON.stringify({
@@ -28,6 +63,10 @@ async function generateAction(formData: FormData) {
           scope: "admin",
           error: "invalid_email",
           email,
+          actor_id,
+          actor_role,
+          ip,
+          latency_ms: Math.round(now() - t0),
           timestamp: new Date().toISOString(),
         })
       );
@@ -35,16 +74,27 @@ async function generateAction(formData: FormData) {
     }
 
     const contractRefRaw = String(formData.get("contractRef") || "").trim();
-    const contractRef = contractRefRaw || undefined;
+    const contract_ref = contractRefRaw || undefined;
 
-    const token = await adminTokens.generate(email, contractRef);
+    // >>> ALTERAÇÃO: passa o contexto para aplicar rate-limit e registrar created_by
+    const token = await adminTokens.generate(
+      email,
+      contract_ref,
+      undefined,
+      { actor_id, actor_role, ip, t0 }
+    );
+
     console.error(
       JSON.stringify({
-        event: "token_generated",
+        event: token ? "token_generated" : "token_generate_error",
         scope: "admin",
         email,
-        contract_ref: contractRef ?? null,
+        contract_ref: contract_ref ?? null,
         token_id: token?.id ?? null,
+        actor_id,
+        actor_role,
+        ip,
+        latency_ms: Math.round(now() - t0),
         timestamp: new Date().toISOString(),
       })
     );
@@ -54,6 +104,7 @@ async function generateAction(formData: FormData) {
         event: "token_generate_error",
         scope: "admin",
         error: (e as Error)?.message ?? String(e),
+        latency_ms: Math.round(now() - t0),
         timestamp: new Date().toISOString(),
       })
     );
@@ -65,26 +116,39 @@ async function generateAction(formData: FormData) {
 
 async function revokeAction(formData: FormData) {
   "use server";
+  const t0 = now();
   try {
     await requirePlatform();
-    const tokenId = String(formData.get("tokenId") || "").trim();
-    if (!tokenId) {
+    const { actor_id, actor_role, ip } = await getActorContext();
+
+    const token_id = String(formData.get("tokenId") || "").trim();
+    if (!token_id) {
       console.error(
         JSON.stringify({
           event: "token_revoke_failed",
           scope: "admin",
           error: "missing_token_id",
+          actor_id,
+          actor_role,
+          ip,
+          latency_ms: Math.round(now() - t0),
           timestamp: new Date().toISOString(),
         })
       );
       redirect("/admin/tokens");
     }
-    const ok = await adminTokens.revoke(tokenId);
+
+    const ok = await adminTokens.revoke(token_id);
+
     console.error(
       JSON.stringify({
         event: ok ? "token_revoked" : "token_revoke_failed",
         scope: "admin",
-        token_id: tokenId,
+        token_id,
+        actor_id,
+        actor_role,
+        ip,
+        latency_ms: Math.round(now() - t0),
         timestamp: new Date().toISOString(),
       })
     );
@@ -94,6 +158,7 @@ async function revokeAction(formData: FormData) {
         event: "token_revoke_failed",
         scope: "admin",
         error: (e as Error)?.message ?? String(e),
+        latency_ms: Math.round(now() - t0),
         timestamp: new Date().toISOString(),
       })
     );
