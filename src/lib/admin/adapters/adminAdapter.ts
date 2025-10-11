@@ -208,14 +208,15 @@ export const tokens = {
 
   /**
    * Gera novo token (delega para postSaleTokenAdapter)
-   * A implementação de geração/revogação usa SERVICE CLIENT dentro do postSaleTokenAdapter.
+   * Agora aceita `ctx` opcional (rate-limit/observabilidade).
    */
   async generate(
     email: string,
     contractRef?: string,
-    expiresAt?: Date
+    expiresAt?: Date,
+    ctx?: any
   ): Promise<PostSaleToken | null> {
-    return postSaleTokenAdapter.generate(email, contractRef, expiresAt);
+    return postSaleTokenAdapter.generate(email, contractRef, expiresAt, ctx);
   },
 
   /**
