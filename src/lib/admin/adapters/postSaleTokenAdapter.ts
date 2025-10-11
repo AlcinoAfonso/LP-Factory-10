@@ -77,9 +77,6 @@ export async function generate(
   const normalizedEmail = email.toLowerCase().trim();
   const actorId = ctx?.actor_id ?? null;
 
-  // Super_admin pode ter limites maiores/ilimitado se desejado (aqui mantemos igual).
-  // if (ctx?.actor_role === "super_admin") { /* opcional: bypass */ }
-
   // 1) Checagem por ator (últimas 24h)
   if (actorId) {
     const { count: byActor, error: errActor } = await svc
@@ -179,13 +176,52 @@ export async function consume(tokenId: string, actorId: string, ctx?: Ctx): Prom
   return data as string;
 }
 
-/** Revoga token (marca como expirado imediatamente) */
-export async function revoke(tokenId: string): Promise<boolean> {
+/** Revoga token — IDEMPOTENTE */
+export async function revoke(tokenId: string, ctx?: Ctx): Promise<boolean> {
+  const t0 = ctx?.t0 ?? now();
   const svc = createServiceClient();
-  const { error } = await svc
+
+  // 1) Checa estado atual
+  const { data: row, error: selErr } = await svc
+    .from("post_sale_tokens")
+    .select("id, expires_at, used_at")
+    .eq("id", tokenId)
+    .maybeSingle();
+
+  if (selErr) {
+    logEvent("token_revoke_failed", { token_id: tokenId, error: String(selErr?.message ?? selErr) }, { ...ctx, t0 });
+    return false;
+  }
+
+  // 2) Não encontrado → NOOP idempotente
+  if (!row) {
+    logEvent("token_revoke_noop", { token_id: tokenId, reason: "not_found" }, { ...ctx, t0 });
+    return true;
+  }
+
+  const alreadyExpired = new Date(row.expires_at) <= new Date();
+  const alreadyUsed = !!row.used_at;
+
+  // 3) Já expirado ou já usado → NOOP idempotente
+  if (alreadyExpired || alreadyUsed) {
+    logEvent("token_revoke_noop", {
+      token_id: tokenId,
+      reason: alreadyExpired ? "already_expired" : "already_used",
+    }, { ...ctx, t0 });
+    return true;
+  }
+
+  // 4) Atualiza para expirar agora
+  const { error: updErr } = await svc
     .from("post_sale_tokens")
     .update({ expires_at: new Date().toISOString() })
     .eq("id", tokenId);
 
-  return !error;
+  if (updErr) {
+    logEvent("token_revoke_failed", { token_id: tokenId, error: String(updErr?.message ?? updErr) }, { ...ctx, t0 });
+    return false;
+  }
+
+  logEvent("token_revoked", { token_id: tokenId }, { ...ctx, t0 });
+  return true;
 }
