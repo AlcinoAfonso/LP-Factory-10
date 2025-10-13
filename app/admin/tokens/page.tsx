@@ -74,7 +74,6 @@ async function generateAction(formData: FormData) {
       redirect("/admin/tokens");
     }
 
-    // >>> ALTERAÇÃO: contractRef agora é obrigatório
     const contractRefRaw = String(formData.get("contractRef") || "").trim();
     if (!contractRefRaw) {
       console.error(
@@ -93,26 +92,12 @@ async function generateAction(formData: FormData) {
       redirect("/admin/tokens");
     }
 
-    const token = await adminTokens.generate(
+    // Adapter já emite log token_generated ou token_generate_error
+    await adminTokens.generate(
       email,
       contractRefRaw,
       undefined,
       { actor_id, actor_role, ip, t0 }
-    );
-
-    console.error(
-      JSON.stringify({
-        event: token ? "token_generated" : "token_generate_error",
-        scope: "admin",
-        email,
-        contract_ref: contractRefRaw,
-        token_id: token?.id ?? null,
-        actor_id,
-        actor_role,
-        ip,
-        latency_ms: Math.round(now() - t0),
-        timestamp: new Date().toISOString(),
-      })
     );
   } catch (e) {
     console.error(
