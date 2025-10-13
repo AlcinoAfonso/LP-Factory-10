@@ -194,11 +194,11 @@ export default async function OnboardPage({
         timestamp: new Date().toISOString(),
       })
     );
-    return <TokenStatus reason={validation.reason} />;
+    return <TokenStatus reason={validation.reason ?? "not_found"} />;
   }
 
   // 5. Buscar dados do token
-  const tokenData = await getTokenData(tokenId, { t0, ip });
+  const tokenData = await fetchTokenData(tokenId, { t0, ip });
 
   if (!tokenData) {
     return <TokenStatus reason="not_found" />;
