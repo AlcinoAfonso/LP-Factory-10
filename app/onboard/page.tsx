@@ -1,7 +1,7 @@
 // app/onboard/page.tsx
 import React from "react";
 import { headers } from "next/headers";
-import { postSaleTokenAdapter } from "@/lib/admin/adapters/postSaleTokenAdapter";
+import * as postSaleTokenAdapter from "@/lib/admin/adapters/postSaleTokenAdapter";
 import { createServiceClient } from "@/lib/supabase/service";
 
 // Placeholder components (serão implementados nos próximos passos)
