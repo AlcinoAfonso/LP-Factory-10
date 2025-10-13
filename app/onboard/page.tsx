@@ -2,7 +2,6 @@
 import React from "react";
 import { headers } from "next/headers";
 import * as postSaleTokenAdapter from "@/lib/admin/adapters/postSaleTokenAdapter";
-import { createServiceClient } from "@/lib/supabase/service";
 
 // Placeholder components (serão implementados nos próximos passos)
 function OnboardForm({ 
@@ -93,22 +92,17 @@ async function getIP() {
   return h.get("x-forwarded-for")?.split(",")[0]?.trim() || h.get("x-real-ip") || "unknown";
 }
 
-// Helper: buscar dados do token
-async function getTokenData(tokenId: string, ctx: { t0?: number; ip?: string }) {
-  const svc = createServiceClient();
-  const { data, error } = await svc
-    .from("post_sale_tokens")
-    .select("email, contract_ref")
-    .eq("id", tokenId)
-    .maybeSingle();
+// Helper: buscar dados do token via adapter
+async function fetchTokenData(tokenId: string, ctx: { t0?: number; ip?: string }) {
+  const tokenData = await postSaleTokenAdapter.getTokenData(tokenId);
 
-  if (error || !data) {
+  if (!tokenData) {
     console.error(
       JSON.stringify({
         event: "onboard_token_fetch_error",
         scope: "onboard",
         token_id: tokenId,
-        error: error?.message ?? "not_found",
+        error: "not_found",
         ip: ctx.ip,
         latency_ms: latencyMs(ctx.t0),
         timestamp: new Date().toISOString(),
@@ -117,10 +111,7 @@ async function getTokenData(tokenId: string, ctx: { t0?: number; ip?: string }) 
     return null;
   }
 
-  return {
-    email: data.email,
-    contract_ref: data.contract_ref ?? "Minha Conta",
-  };
+  return tokenData;
 }
 
 // Metadata
