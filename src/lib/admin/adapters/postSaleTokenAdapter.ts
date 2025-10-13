@@ -56,14 +56,26 @@ function logEvent(event: string, extra: Record<string, unknown>, ctx?: Ctx) {
 }
 
 /** ==== Rate limits (configuráveis) ==== */
-const RL_DAY_PER_ACTOR = Number(process.env.RATE_LIMIT_TOKENS_PER_DAY ?? 20);
 const RL_DAY_PER_EMAIL = Number(process.env.RATE_LIMIT_TOKENS_PER_EMAIL ?? 3);
 const RL_BURST_5M = Number(process.env.RATE_LIMIT_BURST_5M ?? 5);
 
 /**
+ * Retorna limite diário de tokens baseado no papel do ator
+ * super_admin: 200/dia
+ * platform_admin: 20/dia
+ * outros: 20/dia (fallback)
+ */
+function getDailyLimitForRole(role?: ActorRole): number {
+  if (role === "super_admin") {
+    return Number(process.env.RATE_LIMIT_SUPER_ADMIN_PER_DAY ?? 200);
+  }
+  return Number(process.env.RATE_LIMIT_TOKENS_PER_DAY ?? 20);
+}
+
+/**
  * Gera novo token de pós-venda
  * TTL default: 7 dias
- * Aplica rate-limit por ator, por e-mail e burst 5m.
+ * Aplica rate-limit por ator (diferenciado por papel), por e-mail e burst 5m.
  */
 export async function generate(
   email: string,
@@ -76,8 +88,10 @@ export async function generate(
 
   const normalizedEmail = email.toLowerCase().trim();
   const actorId = ctx?.actor_id ?? null;
+  const actorRole = ctx?.actor_role ?? null;
+  const dailyLimit = getDailyLimitForRole(actorRole);
 
-  // 1) Checagem por ator (últimas 24h)
+  // 1) Checagem por ator (últimas 24h) - limite diferenciado por papel
   if (actorId) {
     const { count: byActor, error: errActor } = await svc
       .from("post_sale_tokens")
@@ -85,8 +99,13 @@ export async function generate(
       .eq("created_by", actorId)
       .gte("created_at", new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString());
 
-    if (!errActor && (byActor ?? 0) >= RL_DAY_PER_ACTOR) {
-      logEvent("rate_limit_exceeded", { scope_detail: "per_actor_day", actor_daily: byActor, limit: RL_DAY_PER_ACTOR }, ctx);
+    if (!errActor && (byActor ?? 0) >= dailyLimit) {
+      logEvent("rate_limit_exceeded", { 
+        scope_detail: "per_actor_day", 
+        actor_daily: byActor, 
+        limit: dailyLimit,
+        actor_role: actorRole 
+      }, ctx);
       return null;
     }
   }
