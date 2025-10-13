@@ -6,6 +6,7 @@ import { headers } from "next/headers";
 import { adminTokens, checkSuperAdmin, checkPlatformAdmin } from "@/lib/admin";
 import { requirePlatformAdmin } from "@/lib/access/guards";
 import { createClient as createServerClient } from "@/lib/supabase/server";
+import { CopyLinkButton } from "@/components/admin/CopyLinkButton";
 
 export const dynamic = "force-dynamic";
 
@@ -181,36 +182,6 @@ async function revokeAction(formData: FormData) {
     revalidatePath("/admin/tokens");
     redirect("/admin/tokens");
   }
-}
-
-/** ==== Client Component: Copy Link ==== */
-function CopyLinkButton({ tokenId, isActive }: { tokenId: string; isActive: boolean }) {
-  "use client";
-  const [copied, setCopied] = React.useState(false);
-
-  const handleCopy = async () => {
-    const link = `${window.location.origin}/onboard?token=${tokenId}`;
-    try {
-      await navigator.clipboard.writeText(link);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch (err) {
-      console.error("Erro ao copiar:", err);
-    }
-  };
-
-  return (
-    <button
-      type="button"
-      onClick={handleCopy}
-      disabled={!isActive}
-      className="px-3 py-1 rounded border hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
-      title={isActive ? "Copiar link de ativação" : "Token inválido"}
-      aria-label={`Copiar link do token ${tokenId}`}
-    >
-      {copied ? "✓ Copiado" : "Copiar Link"}
-    </button>
-  );
 }
 
 /** ==== Page (SSR) ==== */
