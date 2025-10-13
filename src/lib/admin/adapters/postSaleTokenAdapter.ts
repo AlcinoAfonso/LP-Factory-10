@@ -244,3 +244,26 @@ export async function revoke(tokenId: string, ctx?: Ctx): Promise<boolean> {
   logEvent("token_revoked", { token_id: tokenId }, { ...ctx, t0 });
   return true;
 }
+
+/**
+ * Busca dados do token (email, contract_ref) para uso no onboarding
+ * Read-only, não consome token
+ */
+export async function getTokenData(tokenId: string): Promise<{
+  email: string;
+  contract_ref: string;
+} | null> {
+  const svc = createServiceClient();
+  const { data, error } = await svc
+    .from("post_sale_tokens")
+    .select("email, contract_ref")
+    .eq("id", tokenId)
+    .maybeSingle();
+
+  if (error || !data) return null;
+  
+  return {
+    email: data.email,
+    contract_ref: data.contract_ref ?? "Minha Conta",
+  };
+}
