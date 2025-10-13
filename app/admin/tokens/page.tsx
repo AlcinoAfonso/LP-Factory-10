@@ -73,13 +73,28 @@ async function generateAction(formData: FormData) {
       redirect("/admin/tokens");
     }
 
+    // >>> ALTERAÇÃO: contractRef agora é obrigatório
     const contractRefRaw = String(formData.get("contractRef") || "").trim();
-    const contract_ref = contractRefRaw || undefined;
+    if (!contractRefRaw) {
+      console.error(
+        JSON.stringify({
+          event: "token_generate_error",
+          scope: "admin",
+          error: "missing_contract_ref",
+          email,
+          actor_id,
+          actor_role,
+          ip,
+          latency_ms: Math.round(now() - t0),
+          timestamp: new Date().toISOString(),
+        })
+      );
+      redirect("/admin/tokens");
+    }
 
-    // >>> ALTERAÇÃO: passa o contexto para aplicar rate-limit e registrar created_by
     const token = await adminTokens.generate(
       email,
-      contract_ref,
+      contractRefRaw,
       undefined,
       { actor_id, actor_role, ip, t0 }
     );
@@ -89,7 +104,7 @@ async function generateAction(formData: FormData) {
         event: token ? "token_generated" : "token_generate_error",
         scope: "admin",
         email,
-        contract_ref: contract_ref ?? null,
+        contract_ref: contractRefRaw,
         token_id: token?.id ?? null,
         actor_id,
         actor_role,
@@ -168,6 +183,36 @@ async function revokeAction(formData: FormData) {
   }
 }
 
+/** ==== Client Component: Copy Link ==== */
+function CopyLinkButton({ tokenId, isActive }: { tokenId: string; isActive: boolean }) {
+  "use client";
+  const [copied, setCopied] = React.useState(false);
+
+  const handleCopy = async () => {
+    const link = `${window.location.origin}/onboard?token=${tokenId}`;
+    try {
+      await navigator.clipboard.writeText(link);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      console.error("Erro ao copiar:", err);
+    }
+  };
+
+  return (
+    <button
+      type="button"
+      onClick={handleCopy}
+      disabled={!isActive}
+      className="px-3 py-1 rounded border hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
+      title={isActive ? "Copiar link de ativação" : "Token inválido"}
+      aria-label={`Copiar link do token ${tokenId}`}
+    >
+      {copied ? "✓ Copiado" : "Copiar Link"}
+    </button>
+  );
+}
+
 /** ==== Page (SSR) ==== */
 type SearchParams = { used?: "true" | "false"; expired?: "true" | "false" };
 
@@ -237,7 +282,8 @@ export default async function AdminTokensPage({
           <input
             name="contractRef"
             type="text"
-            placeholder="Referência do contrato (opcional)"
+            placeholder="Referência do contrato"
+            required
             className="border rounded px-3 py-2 w-64"
             aria-label="Referência do contrato"
           />
@@ -304,13 +350,15 @@ export default async function AdminTokensPage({
             <tbody>
               {list.map((t) => {
                 const status = t.is_used ? "Usado" : t.is_valid ? "Ativo" : "Expirado";
+                const isActive = t.is_valid && !t.is_used;
                 return (
                   <tr key={t.token_id} className="border-b">
                     <td className="p-2">{t.email}</td>
                     <td className="p-2">{status}</td>
                     <td className="p-2">{t.expires_at ?? "—"}</td>
                     <td className="p-2">{t.account_slug ?? "—"}</td>
-                    <td className="p-2 text-right">
+                    <td className="p-2 text-right space-x-2">
+                      <CopyLinkButton tokenId={t.token_id} isActive={isActive} />
                       <form action={revokeAction} method="post" className="inline-block">
                         <input type="hidden" name="tokenId" value={t.token_id} />
                         <button
