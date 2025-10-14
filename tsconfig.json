@@ -2,11 +2,12 @@
   "compilerOptions": {
     "baseUrl": ".",
     "paths": {
-      "@/*": ["src/*", "lib/*"],
       "@/lib/supabase/*": ["lib/supabase/*"],
+      "@/lib/access/*": ["src/lib/access/*"],
+      "@/lib/utils": ["src/lib/utils"],
       "@/supabase/*": ["lib/supabase/*"],
       "@/components/*": ["components/*"],
-      "@/lib/access/*": ["src/lib/access/*"]
+      "@/*": ["src/*", "lib/*"]
     },
     "target": "ES2022",
     "lib": ["dom", "dom.iterable", "esnext"],
