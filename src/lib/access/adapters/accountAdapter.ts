@@ -1,8 +1,6 @@
-// src/lib/access/adapters/accountAdapter.ts
-import "server-only";
-import { createClient } from "@/lib/supabase/server";
-import { createServiceClient } from "@/lib/supabase/service";
-import type { AccountStatus, MemberStatus, MemberRole } from '@/lib/access/types/status';
+/ src/lib/access/adapters/accountAdapter.ts
+import { createClient } from "@/supabase/server";
+import type { AccountStatus, MemberStatus, MemberRole } from '../../types/status';
 
 /** Tipos de linha do DB */
 export type DBAccountRow = {
@@ -43,7 +41,7 @@ export type MemberInfo = {
 /** Normalização */
 const ROLES = ["owner", "admin", "editor", "viewer"] as const;
 const MSTAT = ["pending", "active", "inactive", "revoked"] as const;
-const ASTAT = ["active", "inactive", "suspended", "pending_setup", "trial"] as const;
+const ASTAT = ["active", "inactive", "suspended", "pending_setup"] as const;
 
 export const normalizeRole = (s?: string): MemberRole => {
   const v = (s ?? "").toLowerCase().trim();
@@ -136,37 +134,7 @@ export async function getAccountBySlug(
  * ===========================================================
  */
 
-/**
- * E7 - Cria conta via service client (privilegiado)
- * Usa SUPABASE_SECRET_KEY para executar RPC que requer service_role
- */
-export async function createFromTokenAsService(
-  tokenId: string,
-  actorId: string
-): Promise<string | null> {
-  const supabase = createServiceClient();
-  const { data, error } = await supabase.rpc("create_account_with_owner", {
-    p_token_id: tokenId,
-    p_actor_id: actorId,
-  });
-
-  if (error) {
-    // eslint-disable-next-line no-console
-    console.error("createFromTokenAsService failed:", {
-      error: error.message,
-      code: error.code,
-      token_id: tokenId,
-    });
-    return null;
-  }
-
-  return data as string;
-}
-
-/**
- * @deprecated Use createFromTokenAsService para onboarding E7
- * Cria conta a partir de token (delega para RPC)
- */
+/** Cria conta a partir de token (delega para RPC) */
 export async function createFromToken(
   tokenId: string,
   actorId: string
@@ -197,7 +165,7 @@ export async function renameAndActivate(
     .from("accounts")
     .update({
       name: name.trim(),
-      subdomain: slug.toLowerCase().trim(), // ← CORRIGIDO: slug → subdomain
+      slug: slug.toLowerCase().trim(),
       status: "active",
       updated_at: new Date().toISOString(),
     })
