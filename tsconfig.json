@@ -2,7 +2,8 @@
   "compilerOptions": {
     "baseUrl": ".",
     "paths": {
-      "@/*": ["src/*"]
+      "@/*": ["src/*"],
+      "@/supabase/*": ["lib/supabase/*"]
     },
     "target": "ES2022",
     "lib": ["dom", "dom.iterable", "esnext"],
@@ -23,3 +24,13 @@
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
   "exclude": ["node_modules"]
 }
+```
+
+**Mensagem:**
+```
+fix(config): restore SULB alias for vendor code
+
+- @/* → src/* (14 custom imports)
+- @/supabase/* → lib/supabase/* (5 SULB vendor imports)
+- Validated by file system structure and import analysis
+- Aligns with Base Técnica §6.3 (vendor/custom separation)
