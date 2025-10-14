@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { onboardAction } from "@/app/onboard/actions";
+import { onboardAction } from "../../app/onboard/actions";
 
 interface OnboardFormProps {
   tokenId: string;
