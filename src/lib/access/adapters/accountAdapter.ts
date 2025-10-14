@@ -1,7 +1,8 @@
 // src/lib/access/adapters/accountAdapter.ts
-import { createClient } from "@/supabase/server";
+import "server-only";
+import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
-import type { AccountStatus, MemberStatus, MemberRole } from '../../types/status';
+import type { AccountStatus, MemberStatus, MemberRole } from '@/lib/access/types/status';
 
 /** Tipos de linha do DB */
 export type DBAccountRow = {
@@ -42,7 +43,7 @@ export type MemberInfo = {
 /** Normalização */
 const ROLES = ["owner", "admin", "editor", "viewer"] as const;
 const MSTAT = ["pending", "active", "inactive", "revoked"] as const;
-const ASTAT = ["active", "inactive", "suspended", "pending_setup"] as const;
+const ASTAT = ["active", "inactive", "suspended", "pending_setup", "trial"] as const;
 
 export const normalizeRole = (s?: string): MemberRole => {
   const v = (s ?? "").toLowerCase().trim();
@@ -151,7 +152,11 @@ export async function createFromTokenAsService(
 
   if (error) {
     // eslint-disable-next-line no-console
-    console.error("createFromToken failed:", error);
+    console.error("createFromTokenAsService failed:", {
+      error: error.message,
+      code: error.code,
+      token_id: tokenId,
+    });
     return null;
   }
 
@@ -192,7 +197,7 @@ export async function renameAndActivate(
     .from("accounts")
     .update({
       name: name.trim(),
-      slug: slug.toLowerCase().trim(),
+      subdomain: slug.toLowerCase().trim(), // ← CORRIGIDO: slug → subdomain
       status: "active",
       updated_at: new Date().toISOString(),
     })
