@@ -34,7 +34,7 @@ type OnboardResult =
  * Server Action: Onboarding completo
  * 1. Revalida token
  * 2. Cria usuário (signUp)
- * 3. Consome token (createFromToken)
+ * 3. Consome token (createFromTokenAsService - service_role)
  * 4. Autentica (signIn)
  * 5. Busca slug
  * 6. Redirect /a/{slug}
@@ -141,8 +141,8 @@ export async function onboardAction(
       return { success: false, error: "Erro ao criar conta. Tente novamente." };
     }
 
-    // 3. Consumir token e criar conta (ANTES de logar)
-    const accountId = await accountAdapter.createFromToken(tokenId, userId);
+    // 3. Consumir token e criar conta (service_role via adapter)
+    const accountId = await accountAdapter.createFromTokenAsService(tokenId, userId);
 
     if (!accountId) {
       console.error(
