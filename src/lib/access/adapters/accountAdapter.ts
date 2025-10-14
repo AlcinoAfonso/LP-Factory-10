@@ -1,5 +1,6 @@
 // src/lib/access/adapters/accountAdapter.ts
 import { createClient } from "@/supabase/server";
+import { createServiceClient } from "@/lib/supabase/service";
 import type { AccountStatus, MemberStatus, MemberRole } from '../../types/status';
 
 /** Tipos de linha do DB */
@@ -134,7 +135,33 @@ export async function getAccountBySlug(
  * ===========================================================
  */
 
-/** Cria conta a partir de token (delega para RPC) */
+/**
+ * E7 - Cria conta via service client (privilegiado)
+ * Usa SUPABASE_SECRET_KEY para executar RPC que requer service_role
+ */
+export async function createFromTokenAsService(
+  tokenId: string,
+  actorId: string
+): Promise<string | null> {
+  const supabase = createServiceClient();
+  const { data, error } = await supabase.rpc("create_account_with_owner", {
+    p_token_id: tokenId,
+    p_actor_id: actorId,
+  });
+
+  if (error) {
+    // eslint-disable-next-line no-console
+    console.error("createFromToken failed:", error);
+    return null;
+  }
+
+  return data as string;
+}
+
+/**
+ * @deprecated Use createFromTokenAsService para onboarding E7
+ * Cria conta a partir de token (delega para RPC)
+ */
 export async function createFromToken(
   tokenId: string,
   actorId: string
