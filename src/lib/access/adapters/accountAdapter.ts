@@ -1,4 +1,4 @@
-/ src/lib/access/adapters/accountAdapter.ts
+// src/lib/access/adapters/accountAdapter.ts
 import { createClient } from "@/supabase/server";
 import type { AccountStatus, MemberStatus, MemberRole } from '../../types/status';
 
