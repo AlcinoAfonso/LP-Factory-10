@@ -26,11 +26,19 @@
 }
 ```
 
-**Mensagem:**
-```
-fix(config): restore SULB alias for vendor code
+**NADA DEPOIS DA LINHA 26!**
 
-- @/* → src/* (14 custom imports)
-- @/supabase/* → lib/supabase/* (5 SULB vendor imports)
-- Validated by file system structure and import analysis
-- Aligns with Base Técnica §6.3 (vendor/custom separation)
+---
+
+## 🛠️ Correção
+
+**No GitHub:**
+1. Editar `tsconfig.json`
+2. **DELETAR linhas 27-36** (todo o texto de commit)
+3. Arquivo deve ter **APENAS 26 linhas**
+4. Última linha: `}`
+5. Salvar
+
+**Mensagem de commit:**
+```
+fix(config): remove commit message from tsconfig.json
