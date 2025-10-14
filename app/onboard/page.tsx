@@ -2,26 +2,7 @@
 import React from "react";
 import { headers } from "next/headers";
 import * as postSaleTokenAdapter from "@/lib/admin/adapters/postSaleTokenAdapter";
-
-// Placeholder components (serão implementados nos próximos passos)
-function OnboardForm({ 
-  tokenId, 
-  email, 
-  accountName 
-}: { 
-  tokenId: string; 
-  email: string; 
-  accountName: string;
-}) {
-  return (
-    <div className="p-6 border rounded">
-      <p>OnboardForm placeholder</p>
-      <p>Token: {tokenId}</p>
-      <p>Email: {email}</p>
-      <p>Account: {accountName}</p>
-    </div>
-  );
-}
+import { OnboardForm } from "@/components/onboard/OnboardForm";
 
 function TokenStatus({ reason }: { reason: string }) {
   const messages = {
