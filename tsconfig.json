@@ -24,21 +24,3 @@
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
   "exclude": ["node_modules"]
 }
-```
-
-**NADA DEPOIS DA LINHA 26!**
-
----
-
-## 🛠️ Correção
-
-**No GitHub:**
-1. Editar `tsconfig.json`
-2. **DELETAR linhas 27-36** (todo o texto de commit)
-3. Arquivo deve ter **APENAS 26 linhas**
-4. Última linha: `}`
-5. Salvar
-
-**Mensagem de commit:**
-```
-fix(config): remove commit message from tsconfig.json
