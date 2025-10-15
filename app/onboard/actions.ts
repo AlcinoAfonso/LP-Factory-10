@@ -142,7 +142,7 @@ export async function onboardAction(
     }
 
     // 3. Consumir token e criar conta (service_role via adapter)
-    const accountId = await accountAdapter.createFromTokenAsService(tokenId, userId);
+    const accountId = await accountAdapter.createFromToken(tokenId, userId);
 
     if (!accountId) {
       console.error(
