@@ -1,7 +1,7 @@
 // src/lib/access/adapters/accountAdapter.ts
 import { createClient } from "@/supabase/server";
-import { createServiceClient } from "@/lib/supabase/service"; // ✅ caminho corrigido
-import type { AccountStatus, MemberStatus, MemberRole } from '../../types/status';
+import { createServiceClient } from "../../supabase/service"; // ✅ caminho relativo conforme Base Técnica
+import type { AccountStatus, MemberStatus, MemberRole } from "../../types/status";
 
 /** Tipos de linha do DB */
 export type DBAccountRow = {
