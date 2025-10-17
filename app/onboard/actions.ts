@@ -34,8 +34,8 @@ type OnboardResult =
  * Server Action: Onboarding completo
  * 1. Revalida token
  * 2. Cria usuário (signUp)
- * 3. Consome token (createFromTokenAsService - service_role)
- * 4. Autentica (signIn)
+ * 3. Autentica (signIn) ← MOVIDO PARA ANTES
+ * 4. Consome token (createFromToken - agora com auth.uid())
  * 5. Busca slug
  * 6. Redirect /a/{slug}
  */
@@ -90,7 +90,7 @@ export async function onboardAction(
     });
 
     if (signUpError) {
-      // Tratar email já existente (Opção A)
+      // Tratar email já existente
       if (signUpError.message?.toLowerCase().includes("already") || 
           signUpError.message?.toLowerCase().includes("duplicate")) {
         console.error(
@@ -113,7 +113,7 @@ export async function onboardAction(
         JSON.stringify({
           event: "onboard_failed",
           scope: "onboard",
-          reason: "auth_failed",
+          reason: "auth_signup_failed",
           token_id: tokenId,
           error: signUpError.message,
           ip,
@@ -130,7 +130,7 @@ export async function onboardAction(
         JSON.stringify({
           event: "onboard_failed",
           scope: "onboard",
-          reason: "auth_failed",
+          reason: "auth_signup_failed",
           token_id: tokenId,
           error: "user_id_missing",
           ip,
@@ -141,7 +141,30 @@ export async function onboardAction(
       return { success: false, error: "Erro ao criar conta. Tente novamente." };
     }
 
-    // 3. Consumir token e criar conta (service_role via adapter)
+    // 3. Autenticar ANTES de criar conta (para ter auth.uid())
+    const { error: signInError } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+
+    if (signInError) {
+      console.error(
+        JSON.stringify({
+          event: "onboard_failed",
+          scope: "onboard",
+          reason: "auth_signin_failed",
+          token_id: tokenId,
+          error: signInError.message,
+          user_id: userId,
+          ip,
+          latency_ms: latencyMs(t0),
+          timestamp: new Date().toISOString(),
+        })
+      );
+      return { success: false, error: "Erro ao autenticar. Tente novamente." };
+    }
+
+    // 4. Consumir token e criar conta (AGORA com auth.uid() válido)
     const accountId = await accountAdapter.createFromToken(tokenId, userId);
 
     if (!accountId) {
@@ -158,29 +181,6 @@ export async function onboardAction(
         })
       );
       return { success: false, error: "Erro ao criar conta. Entre em contato com o suporte." };
-    }
-
-    // 4. Autenticar (agora que conta existe)
-    const { error: signInError } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-
-    if (signInError) {
-      console.error(
-        JSON.stringify({
-          event: "onboard_failed",
-          scope: "onboard",
-          reason: "auth_failed",
-          token_id: tokenId,
-          error: signInError.message,
-          account_id: accountId,
-          ip,
-          latency_ms: latencyMs(t0),
-          timestamp: new Date().toISOString(),
-        })
-      );
-      return { success: false, error: "Erro ao autenticar. Tente fazer login manualmente." };
     }
 
     // 5. Buscar slug da conta criada
@@ -204,7 +204,7 @@ export async function onboardAction(
     // Log sucesso
     console.error(
       JSON.stringify({
-        event: "onboard_success",
+        event: "onboard_succeeded",
         scope: "onboard",
         token_id: tokenId,
         account_id: accountId,
