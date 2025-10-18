@@ -1,6 +1,6 @@
 // src/lib/access/adapters/accountAdapter.ts
 import { createClient } from "@/supabase/server";
-import { createServiceClient } from "../../supabase/service"; // ✅ caminho relativo conforme Base Técnica
+import { createServiceClient } from "../../supabase/service"; // ✅ server-only para mutações
 import type { AccountStatus, MemberStatus, MemberRole } from "../../types/status";
 
 /** Tipos de linha do DB */
@@ -42,7 +42,8 @@ export type MemberInfo = {
 /** Normalização */
 const ROLES = ["owner", "admin", "editor", "viewer"] as const;
 const MSTAT = ["pending", "active", "inactive", "revoked"] as const;
-const ASTAT = ["active", "inactive", "suspended", "pending_setup"] as const;
+// ✅ inclui 'trial' conforme Base Técnica/Access Context
+const ASTAT = ["active", "inactive", "suspended", "pending_setup", "trial"] as const;
 
 export const normalizeRole = (s?: string): MemberRole => {
   const v = (s ?? "").toLowerCase().trim();
@@ -117,7 +118,7 @@ export async function getAccountById(
   return (data as DBAccountRow) ?? null;
 }
 
-/** Opcional: buscar account por slug (pode falhar por RLS) */
+/** Opcional: buscar account por slug/subdomain (pode falhar por RLS) */
 export async function getAccountBySlug(
   slug: string
 ): Promise<DBAccountRow | null> {
@@ -181,20 +182,26 @@ export async function renameAndActivate(
   name: string,
   slug: string
 ): Promise<boolean> {
-  const supabase = await createClient();
+  const supabase = createServiceClient(); // ✅ mutação via service_role
+
+  // Atenção: a coluna é subdomain (não "slug")
   const { error } = await supabase
     .from("accounts")
     .update({
       name: name.trim(),
-      slug: slug.toLowerCase().trim(),
+      subdomain: slug.toLowerCase().trim(),
       status: "active",
-      updated_at: new Date().toISOString(),
+      // updated_at por trigger
     })
     .eq("id", accountId);
 
   if (error) {
+    // 23505 = unique_violation (slug/subdomain duplicado)
     // eslint-disable-next-line no-console
-    console.error("renameAndActivate failed:", error);
+    console.error("renameAndActivate failed:", {
+      code: (error as any)?.code,
+      message: error.message,
+    });
     return false;
   }
 
