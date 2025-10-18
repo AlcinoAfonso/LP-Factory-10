@@ -34,7 +34,7 @@ type OnboardResult =
  * Server Action: Onboarding completo
  * 1. Revalida token
  * 2. Cria usuário (signUp)
- * 3. Autentica (signIn) ← MOVIDO PARA ANTES
+ * 3. Autentica (signIn)
  * 4. Consome token (createFromToken - agora com auth.uid())
  * 5. Busca slug
  * 6. Redirect /a/{slug}
@@ -58,6 +58,8 @@ export async function onboardAction(
       timestamp: new Date().toISOString(),
     })
   );
+
+  let accountSlug: string | undefined;
 
   try {
     // 1. Revalidar token (segurança - pode ter expirado durante preenchimento)
@@ -201,6 +203,8 @@ export async function onboardAction(
       return { success: false, error: "Conta criada, mas erro ao redirecionar. Faça login manualmente." };
     }
 
+    accountSlug = account.subdomain;
+
     // Log sucesso
     console.error(
       JSON.stringify({
@@ -208,7 +212,7 @@ export async function onboardAction(
         scope: "onboard",
         token_id: tokenId,
         account_id: accountId,
-        slug: account.subdomain,
+        slug: accountSlug,
         user_id: userId,
         ip,
         latency_ms: latencyMs(t0),
@@ -216,9 +220,14 @@ export async function onboardAction(
       })
     );
 
-    // 6. Redirect
-    redirect(`/a/${account.subdomain}`);
+    // ✅ Sucesso — redirect será executado fora do try/catch
   } catch (error) {
+    // ❌ NUNCA capturar NEXT_REDIRECT (Next.js usa exceção para controlar redirect)
+    if (error && typeof error === 'object' && 'digest' in error && String(error.digest).startsWith('NEXT_REDIRECT')) {
+      throw error; // Re-lançar para Next.js processar
+    }
+
+    // Log apenas erros reais (não NEXT_REDIRECT)
     console.error(
       JSON.stringify({
         event: "onboard_failed",
@@ -233,4 +242,12 @@ export async function onboardAction(
     );
     return { success: false, error: "Erro inesperado. Tente novamente." };
   }
+
+  // 6. Redirect (fora do try/catch para não ser capturado como erro)
+  if (accountSlug) {
+    redirect(`/a/${accountSlug}`);
+  }
+
+  // Fallback (nunca deve chegar aqui se accountSlug foi setado)
+  return { success: false, error: "Erro ao redirecionar. Faça login manualmente." };
 }
