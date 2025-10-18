@@ -1,131 +1,84 @@
-"use client";
+'use client';
 
-import { useEffect, useMemo, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
-import { useAccessContext } from "@/providers/AccessProvider";
-import { createClient } from "@/supabase/client";
-import AlertBanner from "@/components/ui/AlertBanner"; // ✅ novo import
+import { useMemo } from 'react';
+import { useAccessContext } from '@/providers/AccessProvider';
+import AlertBanner from '@/components/ui/AlertBanner';
 
-type DashState = "public" | "onboarding" | "auth" | "invalid";
+type DashState = 'auth' | 'onboarding' | 'public' | 'invalid';
 
 export default function Page({ params }: { params: { account: string } }) {
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const supabase = createClient();
-
   const ctx = useAccessContext() as any;
-  const [email, setEmail] = useState<string | null>(null);
 
-  const isHome = params.account === "home";
+  const isHome = params.account === 'home';
   const hasCtx = Boolean(ctx?.account || ctx?.member);
 
-  // Query params para abrir modais/estados (6.2.2)
-  const modalQP = searchParams.get("modal");
-  const stateQP = searchParams.get("state");
-  const qpOnboarding = modalQP === "new" || stateQP === "onboarding";
-
-  useEffect(() => {
-    let mounted = true;
-    (async () => {
-      const { data } = await supabase.auth.getUser();
-      if (mounted) setEmail(data.user?.email ?? null);
-    })();
-    const { data: sub } = supabase.auth.onAuthStateChange((_e, sess) => {
-      setEmail(sess?.user?.email ?? null);
-    });
-    return () => {
-      mounted = false;
-      sub.subscription.unsubscribe();
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  // Limpa a URL após abrir via query (?modal / ?state) — 6.2.2
-  useEffect(() => {
-    if (modalQP || stateQP) {
-      const url = new URL(window.location.href);
-      url.searchParams.delete("modal");
-      url.searchParams.delete("state");
-      router.replace(url.pathname + url.hash, { scroll: false });
-    }
-  }, [modalQP, stateQP, router]);
-
   const state: DashState = useMemo(() => {
-    if (!email) return "public";
-    if ((isHome && !hasCtx) || qpOnboarding) return "onboarding";
-    if (hasCtx) return "auth";
-    return "invalid";
-  }, [email, isHome, hasCtx, qpOnboarding]);
+    if (isHome && !hasCtx) return 'onboarding';
+    if (hasCtx) return 'auth';
+    return 'public';
+  }, [isHome, hasCtx]);
 
-  async function signOut() {
-    await supabase.auth.signOut();
-    setEmail(null);
-    router.replace(`/a/${params.account}`);
-    router.refresh();
-  }
-
-  const role = ctx?.member?.role ?? "—";
+  const role = ctx?.member?.role ?? '—';
   const accountName = ctx?.account?.name ?? params.account;
   const accountSlug = ctx?.account?.subdomain ?? params.account;
+  const accountId = ctx?.account?.id as string | undefined;
+  const memberStatus = ctx?.member?.status ?? '—';
 
-  // ✅ status da conta vindo do Access Context (para exibir o banner do E7)
   const accountStatus = ctx?.account?.status as
-    | "active"
-    | "inactive"
-    | "suspended"
-    | "pending_setup"
-    | "trial"
+    | 'active'
+    | 'inactive'
+    | 'suspended'
+    | 'pending_setup'
+    | 'trial'
     | undefined;
+
+  const showSetupBanner = state === 'auth' && accountStatus === 'pending_setup';
 
   return (
     <>
-      {/* HEADER */}
       <Header
-        email={email}
-        role={role}
         accountName={accountName}
         accountSlug={accountSlug}
-        onSignOut={signOut}
+        role={role}
+        memberStatus={memberStatus}
       />
 
-      {/* CONTEÚDO */}
       <main className="mx-auto max-w-3xl px-6 py-12">
         <h1 className="text-3xl font-semibold">Account Dashboard</h1>
 
-        {/* ✅ Banner E7: aparece apenas enquanto a conta estiver em pending_setup */}
-        {accountStatus === "pending_setup" && (
+        {/* Banner de setup apenas enquanto a conta estiver em pending_setup */}
+        {showSetupBanner && (
           <AlertBanner
             type="info"
             title="Defina o nome da sua conta"
             description="Você pode alterá-lo quando quiser. Ao salvar, sua conta será ativada."
             actionLabel="Salvar nome da conta"
             fields={[
-              { name: "name", type: "text", placeholder: "Nome da conta", required: true, minLength: 3 },
-              { name: "account_id", type: "hidden", defaultValue: ctx?.account?.id },
-              { name: "user_id", type: "hidden", defaultValue: ctx?.member?.user_id }, // opcional
+              { name: 'name', type: 'text', placeholder: 'Nome da conta', required: true, minLength: 3 },
+              { name: 'account_id', type: 'hidden', defaultValue: accountId },
             ]}
             onSubmit={async (fd) => {
-              const { renameAccountAction } = await import("./actions");
+              const { renameAccountAction } = await import('./actions');
               await renameAccountAction(undefined, fd);
             }}
           />
         )}
 
-        {state === "auth" && (
+        {state === 'auth' && (
           <DashboardAuthenticated
-            accountName={ctx?.account?.name}
-            accountId={ctx?.account?.id}
-            accountSlug={ctx?.account?.subdomain}
-            role={ctx?.member?.role}
-            memberStatus={ctx?.member?.status}
+            accountName={accountName}
+            accountId={accountId}
+            accountSlug={accountSlug}
+            role={role}
+            memberStatus={memberStatus}
           />
         )}
 
-        {state === "onboarding" && <DashboardOnboarding />}
+        {state === 'onboarding' && <DashboardOnboarding />}
 
-        {state === "public" && <DashboardPublic />}
+        {state === 'public' && <DashboardPublic />}
 
-        {state === "invalid" && (
+        {state === 'invalid' && (
           <p className="mt-2 text-gray-600">
             Não foi possível resolver seu vínculo de acesso para esta conta.
           </p>
@@ -138,17 +91,15 @@ export default function Page({ params }: { params: { account: string } }) {
 /* ===================== Components ===================== */
 
 function Header({
-  email,
-  role,
   accountName,
   accountSlug,
-  onSignOut,
+  role,
+  memberStatus,
 }: {
-  email: string | null;
-  role?: string;
   accountName: string;
   accountSlug: string;
-  onSignOut: () => Promise<void>;
+  role?: string;
+  memberStatus?: string;
 }) {
   return (
     <header className="border-b bg-white">
@@ -160,45 +111,25 @@ function Header({
           </span>
         </div>
 
-        {email ? (
-          <div className="flex items-center gap-3">
-            <div className="text-sm">
-              <span className="font-medium">{email}</span>{" "}
-              <span className="rounded-full border px-2 py-0.5 text-xs text-gray-600">
-                {role ?? "—"}
-              </span>
-            </div>
-            <button
-              onClick={onSignOut}
-              className="rounded-md border px-3 py-1.5 text-sm hover:bg-gray-50"
-            >
-              Sair
-            </button>
-            <div
-              aria-label="Avatar do usuário"
-              className="ml-1 h-8 w-8 rounded-full border border-gray-300 bg-gray-100"
-            />
-          </div>
-        ) : (
-          <nav className="flex items-center gap-3">
-            <a
-              href="/auth/login"
-              className="rounded-md border px-3 py-1.5 text-sm hover:bg-gray-50"
-            >
-              Entrar
-            </a>
-            <a
-              href="/auth/sign-up"
-              className="rounded-md border px-3 py-1.5 text-sm hover:bg-gray-50"
-            >
-              Criar conta
-            </a>
-            <div
-              aria-label="Avatar do usuário"
-              className="ml-2 h-8 w-8 rounded-full border border-gray-300 bg-gray-100"
-            />
-          </nav>
-        )}
+        {/* Botões básicos; logout deve usar componente SULB dedicado quando aplicável */}
+        <nav className="flex items-center gap-3">
+          <a
+            href="/auth/login"
+            className="rounded-md border px-3 py-1.5 text-sm hover:bg-gray-50"
+          >
+            Entrar
+          </a>
+          <a
+            href="/auth/sign-up"
+            className="rounded-md border px-3 py-1.5 text-sm hover:bg-gray-50"
+          >
+            Criar conta
+          </a>
+          <div
+            aria-label="Avatar do usuário"
+            className="ml-2 h-8 w-8 rounded-full border border-gray-300 bg-gray-100"
+          />
+        </nav>
       </div>
     </header>
   );
@@ -221,20 +152,19 @@ function DashboardAuthenticated({
     <div className="mt-4 grid gap-2 text-sm text-gray-700">
       <div>
         <span className="font-medium">Conta: </span>
-        {accountName ?? "—"}{" "}
-        <span className="text-gray-500">({accountId ?? "—"})</span>
+        {accountName ?? '—'} <span className="text-gray-500">({accountId ?? '—'})</span>
       </div>
       <div>
         <span className="font-medium">Slug: </span>
-        {accountSlug ?? "—"}
+        {accountSlug ?? '—'}
       </div>
       <div>
         <span className="font-medium">Papel: </span>
-        {role ?? "—"}
+        {role ?? '—'}
       </div>
       <div>
         <span className="font-medium">Status membro: </span>
-        {memberStatus ?? "—"}
+        {memberStatus ?? '—'}
       </div>
     </div>
   );
