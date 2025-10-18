@@ -4,7 +4,7 @@ import { useMemo } from 'react';
 import { useAccessContext } from '@/providers/AccessProvider';
 import AlertBanner from '@/components/ui/AlertBanner';
 
-type DashState = 'auth' | 'onboarding' | 'public' | 'invalid';
+type DashState = 'auth' | 'onboarding' | 'public';
 
 export default function Page({ params }: { params: { account: string } }) {
   const ctx = useAccessContext() as any;
@@ -77,12 +77,6 @@ export default function Page({ params }: { params: { account: string } }) {
         {state === 'onboarding' && <DashboardOnboarding />}
 
         {state === 'public' && <DashboardPublic />}
-
-        {state === 'invalid' && (
-          <p className="mt-2 text-gray-600">
-            Não foi possível resolver seu vínculo de acesso para esta conta.
-          </p>
-        )}
       </main>
     </>
   );
@@ -111,7 +105,6 @@ function Header({
           </span>
         </div>
 
-        {/* Botões básicos; logout deve usar componente SULB dedicado quando aplicável */}
         <nav className="flex items-center gap-3">
           <a
             href="/auth/login"
