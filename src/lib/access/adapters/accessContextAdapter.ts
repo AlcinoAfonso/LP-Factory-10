@@ -10,6 +10,7 @@ import type { AccountStatus, MemberStatus, MemberRole } from '../../types/status
 export type AccessAccount = {
   id: string;
   subdomain: string;
+  name?: string;  // ✅ ADICIONADO
   status: AccountStatus;
 };
 
@@ -28,6 +29,7 @@ export type AccessContext = {
 type RowV2 = {
   account_id: string;
   account_key: string; // subdomain
+  account_name?: string;  // ✅ ADICIONADO
   account_status: string;
   user_id: string | null;
   member_role: string | null;
@@ -81,6 +83,7 @@ export async function readAccessContext(subdomain: string): Promise<AccessContex
       [
         "account_id",
         "account_key",
+        "account_name",  // ✅ ADICIONADO
         "account_status",
         "user_id",
         "member_role",
@@ -130,6 +133,7 @@ export async function readAccessContext(subdomain: string): Promise<AccessContex
     account: {
       id: row.account_id,
       subdomain: row.account_key,
+      name: row.account_name || row.account_key,  // ✅ ADICIONADO (fallback para subdomain)
       status: row.account_status as AccountStatus,
     },
     member: {
