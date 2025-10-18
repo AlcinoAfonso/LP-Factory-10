@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAccessContext } from "@/providers/AccessProvider";
 import { createClient } from "@/supabase/client";
+import AlertBanner from "@/components/ui/AlertBanner"; // ✅ novo import
 
 type DashState = "public" | "onboarding" | "auth" | "invalid";
 
@@ -67,6 +68,15 @@ export default function Page({ params }: { params: { account: string } }) {
   const accountName = ctx?.account?.name ?? params.account;
   const accountSlug = ctx?.account?.subdomain ?? params.account;
 
+  // ✅ status da conta vindo do Access Context (para exibir o banner do E7)
+  const accountStatus = ctx?.account?.status as
+    | "active"
+    | "inactive"
+    | "suspended"
+    | "pending_setup"
+    | "trial"
+    | undefined;
+
   return (
     <>
       {/* HEADER */}
@@ -81,6 +91,25 @@ export default function Page({ params }: { params: { account: string } }) {
       {/* CONTEÚDO */}
       <main className="mx-auto max-w-3xl px-6 py-12">
         <h1 className="text-3xl font-semibold">Account Dashboard</h1>
+
+        {/* ✅ Banner E7: aparece apenas enquanto a conta estiver em pending_setup */}
+        {accountStatus === "pending_setup" && (
+          <AlertBanner
+            type="info"
+            title="Defina o nome da sua conta"
+            description="Você pode alterá-lo quando quiser. Ao salvar, sua conta será ativada."
+            actionLabel="Salvar nome da conta"
+            fields={[
+              { name: "name", type: "text", placeholder: "Nome da conta", required: true, minLength: 3 },
+              { name: "account_id", type: "hidden", defaultValue: ctx?.account?.id },
+              { name: "user_id", type: "hidden", defaultValue: ctx?.member?.user_id }, // opcional
+            ]}
+            onSubmit={async (fd) => {
+              const { renameAccountAction } = await import("./actions");
+              await renameAccountAction(undefined, fd);
+            }}
+          />
+        )}
 
         {state === "auth" && (
           <DashboardAuthenticated
