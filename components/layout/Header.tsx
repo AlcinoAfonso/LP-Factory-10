@@ -4,6 +4,7 @@
 import { useAccessContext } from '@/providers/AccessProvider';
 import Link from 'next/link';
 import { useState } from 'react';
+import { LogoutButton } from '@/components/logout-button'; // ✅ import real
 
 type HeaderVariant = 'public' | 'authenticated' | 'account';
 
@@ -13,15 +14,15 @@ interface HeaderProps {
 
 export function Header({ userEmail }: HeaderProps) {
   const ctx = useAccessContext();
-  
+
   // Precedência: account > authenticated > public
   const variant = getVariant(ctx, userEmail);
-  
+
   // Estados loading/error degradam para public
   if (!ctx && !userEmail) {
     return <HeaderPublic />;
   }
-  
+
   switch (variant) {
     case 'account':
       return <HeaderAccount userEmail={userEmail} account={ctx.account!} />;
@@ -48,18 +49,18 @@ function getVariant(
 function HeaderPublic() {
   const [showLogin, setShowLogin] = useState(false);
   const [showConsultive, setShowConsultive] = useState(false);
-  
+
   return (
     <header className="border-b bg-white">
       <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-4">
-        <Link 
-          href="/a/home" 
+        <Link
+          href="/a/home"
           aria-label="Ir para início"
           className="text-sm font-semibold tracking-wide"
         >
           LP Factory
         </Link>
-        
+
         <nav className="flex items-center gap-3">
           <button
             onClick={() => setShowLogin(true)}
@@ -77,7 +78,7 @@ function HeaderPublic() {
           </button>
         </nav>
       </div>
-      
+
       {/* Modals - implementar depois */}
       {showLogin && <div>Login SULB Modal (TODO)</div>}
       {showConsultive && <div>Consultive Modal (TODO)</div>}
@@ -89,36 +90,36 @@ function HeaderAuthenticated({ userEmail }: { userEmail?: string | null }) {
   return (
     <header className="border-b bg-white">
       <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-4">
-        <Link 
-          href="/a/home" 
+        <Link
+          href="/a/home"
           aria-label="Ir para início"
           className="text-sm font-semibold tracking-wide"
         >
           LP Factory
         </Link>
-        
+
         <nav className="flex items-center gap-3">
           <span className="text-sm text-gray-600">{userEmail}</span>
-          <LogoutButtonPlaceholder />
+          <LogoutButton /> {/* ✅ botão funcional */}
         </nav>
       </div>
     </header>
   );
 }
 
-function HeaderAccount({ 
-  userEmail, 
-  account 
-}: { 
-  userEmail?: string | null; 
+function HeaderAccount({
+  userEmail,
+  account,
+}: {
+  userEmail?: string | null;
   account: any;
 }) {
   return (
     <header className="border-b bg-white">
       <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-4">
         <div className="flex items-center gap-3">
-          <Link 
-            href="/a/home" 
+          <Link
+            href="/a/home"
             aria-label="Ir para início"
             className="text-sm font-semibold tracking-wide"
           >
@@ -131,25 +132,12 @@ function HeaderAccount({
             /a/{account.subdomain}
           </span>
         </div>
-        
+
         <nav className="flex items-center gap-3">
           <span className="text-sm text-gray-600">{userEmail}</span>
-          <LogoutButtonPlaceholder />
+          <LogoutButton /> {/* ✅ botão funcional */}
         </nav>
       </div>
     </header>
-  );
-}
-
-/* ==================== Placeholders ==================== */
-
-function LogoutButtonPlaceholder() {
-  return (
-    <button 
-      className="rounded-md border px-3 py-1.5 text-sm hover:bg-gray-50"
-      onClick={() => console.log('Logout TODO')}
-    >
-      Sair
-    </button>
   );
 }
