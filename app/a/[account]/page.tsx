@@ -38,7 +38,6 @@ export default function Page({ params }: { params: { account: string } }) {
     <main className="mx-auto max-w-3xl px-6 py-12">
       <h1 className="text-3xl font-semibold">Account Dashboard</h1>
 
-      {/* Banner de setup apenas enquanto a conta estiver em pending_setup */}
       {showSetupBanner && (
         <AlertBanner
           type="info"
@@ -72,8 +71,6 @@ export default function Page({ params }: { params: { account: string } }) {
     </main>
   );
 }
-
-/* ===================== Components ===================== */
 
 function DashboardAuthenticated({
   accountName,
