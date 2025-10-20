@@ -1,10 +1,9 @@
-// components/layout/Header.tsx
 'use client';
 
 import { useAccessContext } from '@/providers/AccessProvider';
 import Link from 'next/link';
 import { useState } from 'react';
-import { LogoutButton } from '@/components/logout-button'; // ✅ import real
+import { LogoutButton } from '@/components/logout-button';
 
 type HeaderVariant = 'public' | 'authenticated' | 'account';
 
@@ -47,7 +46,6 @@ function getVariant(
 /* ==================== Variações ==================== */
 
 function HeaderPublic() {
-  const [showLogin, setShowLogin] = useState(false);
   const [showConsultive, setShowConsultive] = useState(false);
 
   return (
@@ -62,13 +60,12 @@ function HeaderPublic() {
         </Link>
 
         <nav className="flex items-center gap-3">
-          <button
-            onClick={() => setShowLogin(true)}
-            aria-controls="login-modal"
+          <Link
+            href="/auth/login"
             className="rounded-md border px-3 py-1.5 text-sm hover:bg-gray-50"
           >
             Entrar
-          </button>
+          </Link>
           <button
             onClick={() => setShowConsultive(true)}
             aria-controls="consultive-modal"
@@ -79,8 +76,7 @@ function HeaderPublic() {
         </nav>
       </div>
 
-      {/* Modals - implementar depois */}
-      {showLogin && <div>Login SULB Modal (TODO)</div>}
+      {/* Modal consultivo - implementar depois */}
       {showConsultive && <div>Consultive Modal (TODO)</div>}
     </header>
   );
@@ -100,7 +96,7 @@ function HeaderAuthenticated({ userEmail }: { userEmail?: string | null }) {
 
         <nav className="flex items-center gap-3">
           <span className="text-sm text-gray-600">{userEmail}</span>
-          <LogoutButton /> {/* ✅ botão funcional */}
+          <LogoutButton />
         </nav>
       </div>
     </header>
@@ -135,7 +131,7 @@ function HeaderAccount({
 
         <nav className="flex items-center gap-3">
           <span className="text-sm text-gray-600">{userEmail}</span>
-          <LogoutButton /> {/* ✅ botão funcional */}
+          <LogoutButton />
         </nav>
       </div>
     </header>
