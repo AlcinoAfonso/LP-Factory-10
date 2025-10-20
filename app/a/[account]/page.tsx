@@ -35,98 +35,45 @@ export default function Page({ params }: { params: { account: string } }) {
   const showSetupBanner = state === 'auth' && accountStatus === 'pending_setup';
 
   return (
-    <>
-      <Header
-        accountName={accountName}
-        accountSlug={accountSlug}
-        role={role}
-        memberStatus={memberStatus}
-      />
+    <main className="mx-auto max-w-3xl px-6 py-12">
+      <h1 className="text-3xl font-semibold">Account Dashboard</h1>
 
-      <main className="mx-auto max-w-3xl px-6 py-12">
-        <h1 className="text-3xl font-semibold">Account Dashboard</h1>
+      {/* Banner de setup apenas enquanto a conta estiver em pending_setup */}
+      {showSetupBanner && (
+        <AlertBanner
+          type="info"
+          title="Defina o nome da sua conta"
+          description="Você pode alterá-lo quando quiser. Ao salvar, sua conta será ativada."
+          actionLabel="Salvar nome da conta"
+          fields={[
+            { name: 'name', type: 'text', placeholder: 'Nome da conta', required: true, minLength: 3 },
+            { name: 'account_id', type: 'hidden', defaultValue: accountId },
+          ]}
+          onSubmit={async (fd) => {
+            const { renameAccountAction } = await import('./actions');
+            await renameAccountAction(undefined, fd);
+          }}
+        />
+      )}
 
-        {/* Banner de setup apenas enquanto a conta estiver em pending_setup */}
-        {showSetupBanner && (
-          <AlertBanner
-            type="info"
-            title="Defina o nome da sua conta"
-            description="Você pode alterá-lo quando quiser. Ao salvar, sua conta será ativada."
-            actionLabel="Salvar nome da conta"
-            fields={[
-              { name: 'name', type: 'text', placeholder: 'Nome da conta', required: true, minLength: 3 },
-              { name: 'account_id', type: 'hidden', defaultValue: accountId },
-            ]}
-            onSubmit={async (fd) => {
-              const { renameAccountAction } = await import('./actions');
-              await renameAccountAction(undefined, fd);
-            }}
-          />
-        )}
+      {state === 'auth' && (
+        <DashboardAuthenticated
+          accountName={accountName}
+          accountId={accountId}
+          accountSlug={accountSlug}
+          role={role}
+          memberStatus={memberStatus}
+        />
+      )}
 
-        {state === 'auth' && (
-          <DashboardAuthenticated
-            accountName={accountName}
-            accountId={accountId}
-            accountSlug={accountSlug}
-            role={role}
-            memberStatus={memberStatus}
-          />
-        )}
+      {state === 'onboarding' && <DashboardOnboarding />}
 
-        {state === 'onboarding' && <DashboardOnboarding />}
-
-        {state === 'public' && <DashboardPublic />}
-      </main>
-    </>
+      {state === 'public' && <DashboardPublic />}
+    </main>
   );
 }
 
 /* ===================== Components ===================== */
-
-function Header({
-  accountName,
-  accountSlug,
-  role,
-  memberStatus,
-}: {
-  accountName: string;
-  accountSlug: string;
-  role?: string;
-  memberStatus?: string;
-}) {
-  return (
-    <header className="border-b bg-white">
-      <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-4">
-        <div className="text-sm font-semibold tracking-wide">
-          LP Factory — <span className="text-gray-600">{accountName}</span>
-          <span className="ml-2 rounded-full border px-2 py-0.5 text-xs text-gray-600">
-            /a/{accountSlug}
-          </span>
-        </div>
-
-        <nav className="flex items-center gap-3">
-          <a
-            href="/auth/login"
-            className="rounded-md border px-3 py-1.5 text-sm hover:bg-gray-50"
-          >
-            Entrar
-          </a>
-          <a
-            href="/auth/sign-up"
-            className="rounded-md border px-3 py-1.5 text-sm hover:bg-gray-50"
-          >
-            Criar conta
-          </a>
-          <div
-            aria-label="Avatar do usuário"
-            className="ml-2 h-8 w-8 rounded-full border border-gray-300 bg-gray-100"
-          />
-        </nav>
-      </div>
-    </header>
-  );
-}
 
 function DashboardAuthenticated({
   accountName,
@@ -167,7 +114,7 @@ function DashboardOnboarding() {
   return (
     <div className="mt-4 space-y-3 text-gray-700">
       <p>Bem-vindo! Vamos criar sua primeira conta para começar.</p>
-      <a
+      
         href="/a/home?modal=new"
         className="inline-flex items-center rounded-md border px-3 py-1.5 text-sm hover:bg-gray-50"
       >
