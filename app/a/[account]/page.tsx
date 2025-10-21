@@ -3,7 +3,7 @@
 
 import { useMemo } from 'react';
 import { useAccessContext } from '@/providers/AccessProvider';
-import AlertBanner from '@/components/ui/AlertBanner';
+
 
 type DashState = 'auth' | 'onboarding' | 'public';
 
@@ -31,32 +31,18 @@ export default function Page({ params }: { params: { account: string } }) {
     | 'suspended'
     | 'pending_setup'
     | 'trial'
-    | undefined;
+    
 
-  const showSetupBanner = state === 'auth' && accountStatus === 'pending_setup';
+  
 
   return (
     <main className="mx-auto max-w-3xl px-6 py-12">
       <h1 className="text-3xl font-semibold">Account Dashboard</h1>
-
-      {/* Banner de setup apenas enquanto a conta estiver em pending_setup */}
-      {showSetupBanner && (
+  //    {/* Banner de setup apenas enquanto a conta estiver em pending_setup */}
+  // //     {showSetupBanner && (
         <AlertBanner
           type="info"
           title="Defina o nome da sua conta"
-          description="Você pode alterá-lo quando quiser. Ao salvar, sua conta será ativada."
-          actionLabel="Salvar nome da conta"
-          fields={[
-            { name: 'name', type: 'text', placeholder: 'Nome da conta', required: true, minLength: 3 },
-            { name: 'account_id', type: 'hidden', defaultValue: accountId },
-          ]}
-          onSubmit={async (fd) => {
-            const { renameAccountAction } = await import('./actions');
-            await renameAccountAction(undefined, fd);
-          }}
-        />
-      )}
-
       {state === 'auth' && (
         <DashboardAuthenticated
           accountName={accountName}
@@ -102,7 +88,7 @@ function DashboardAuthenticated({
       <div>
         <span className="font-medium">Papel: </span>
         {role ?? '—'}
-      </div>
+      
       <div>
         <span className="font-medium">Status membro: </span>
         {memberStatus ?? '—'}
