@@ -207,3 +207,31 @@ export async function renameAndActivate(
 
   return true;
 }
+
+/** ✅ NOVO (E7.2 seguro): Renomeia conta/slug SEM alterar o status */
+export async function renameAccountNoStatus(
+  accountId: string,
+  name: string,
+  slug: string
+): Promise<boolean> {
+  const supabase = createServiceClient(); // server-only
+  const { error } = await supabase
+    .from("accounts")
+    .update({
+      name: name.trim(),
+      subdomain: slug.toLowerCase().trim(),
+      // status inalterado deliberadamente
+    })
+    .eq("id", accountId);
+
+  if (error) {
+    // eslint-disable-next-line no-console
+    console.error("renameAccountNoStatus failed:", {
+      code: (error as any)?.code,
+      message: error.message,
+    });
+    return false;
+  }
+
+  return true;
+}
