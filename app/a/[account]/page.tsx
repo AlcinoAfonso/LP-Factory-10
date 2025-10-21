@@ -4,7 +4,6 @@
 import { useMemo } from 'react';
 import { useAccessContext } from '@/providers/AccessProvider';
 
-
 type DashState = 'auth' | 'onboarding' | 'public';
 
 export default function Page({ params }: { params: { account: string } }) {
@@ -25,24 +24,10 @@ export default function Page({ params }: { params: { account: string } }) {
   const accountId = ctx?.account?.id as string | undefined;
   const memberStatus = ctx?.member?.status ?? '—';
 
-  const accountStatus = ctx?.account?.status as
-    | 'active'
-    | 'inactive'
-    | 'suspended'
-    | 'pending_setup'
-    | 'trial'
-    
-
-  
-
   return (
     <main className="mx-auto max-w-3xl px-6 py-12">
       <h1 className="text-3xl font-semibold">Account Dashboard</h1>
-  //    {/* Banner de setup apenas enquanto a conta estiver em pending_setup */}
-  // //     {showSetupBanner && (
-        <AlertBanner
-          type="info"
-          title="Defina o nome da sua conta"
+
       {state === 'auth' && (
         <DashboardAuthenticated
           accountName={accountName}
@@ -88,7 +73,7 @@ function DashboardAuthenticated({
       <div>
         <span className="font-medium">Papel: </span>
         {role ?? '—'}
-      
+      </div>
       <div>
         <span className="font-medium">Status membro: </span>
         {memberStatus ?? '—'}
