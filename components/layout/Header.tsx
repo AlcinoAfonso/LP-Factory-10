@@ -22,7 +22,13 @@ export function Header({ userEmail }: HeaderProps) {
 
   switch (variant) {
     case 'account':
-      return <HeaderAccount account={ctx.account!} userEmail={userEmail ?? undefined} role={ctx?.member?.role} />;
+      return (
+        <HeaderAccount
+          account={ctx.account!}
+          userEmail={userEmail ?? undefined}
+          role={(ctx?.member?.role ?? undefined) as string | undefined}
+        />
+      );
     case 'authenticated':
       return <HeaderAuthenticated userEmail={userEmail} />;
     case 'public':
@@ -48,12 +54,19 @@ function HeaderPublic() {
   return (
     <header className="border-b bg-white">
       <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-4">
-        <Link href="/a/home" aria-label="Ir para início" className="text-sm font-semibold tracking-wide">
+        <Link
+          href="/a/home"
+          aria-label="Ir para início"
+          className="text-sm font-semibold tracking-wide"
+        >
           LP Factory
         </Link>
 
         <nav className="flex items-center gap-3">
-          <Link href="/auth/login" className="rounded-md border px-3 py-1.5 text-sm hover:bg-gray-50">
+          <Link
+            href="/auth/login"
+            className="rounded-md border px-3 py-1.5 text-sm hover:bg-gray-50"
+          >
             Entrar
           </Link>
           <button
@@ -66,6 +79,7 @@ function HeaderPublic() {
         </nav>
       </div>
 
+      {/* Modal consultivo - implementar depois */}
       {showConsultive && <div id="consultive-modal">Consultive Modal (TODO)</div>}
     </header>
   );
@@ -75,7 +89,11 @@ function HeaderAuthenticated({ userEmail }: { userEmail?: string | null }) {
   return (
     <header className="border-b bg-white">
       <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-4">
-        <Link href="/a/home" aria-label="Ir para início" className="text-sm font-semibold tracking-wide">
+        <Link
+          href="/a/home"
+          aria-label="Ir para início"
+          className="text-sm font-semibold tracking-wide"
+        >
           LP Factory
         </Link>
 
@@ -101,7 +119,11 @@ function HeaderAccount({
   return (
     <header className="border-b bg-white">
       <div className="mx-auto flex h-14 max-w-6xl items-center px-4">
-        <Link href="/a/home" aria-label="Ir para início" className="text-sm font-semibold tracking-wide">
+        <Link
+          href="/a/home"
+          aria-label="Ir para início"
+          className="text-sm font-semibold tracking-wide"
+        >
           LP Factory
         </Link>
 
@@ -118,6 +140,8 @@ function HeaderAccount({
     </header>
   );
 }
+
+/* ======= Auxiliar inline (chip de status) ======= */
 
 function StatusChip({ status }: { status?: string | null }) {
   const st = (status ?? 'inactive').toString();
