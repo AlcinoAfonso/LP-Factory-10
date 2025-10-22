@@ -1,24 +1,20 @@
 'use client';
 
-import { useAccessContext } from '@/providers/AccessProvider';
 import Link from 'next/link';
 import { useState } from 'react';
+import { useAccessContext } from '@/providers/AccessProvider';
 import UserMenu from '@/components/layout/UserMenu';
 
 type HeaderVariant = 'public' | 'authenticated' | 'account';
 
-interface HeaderProps {
-  userEmail?: string | null;
-}
-
-export function Header({ userEmail }: HeaderProps) {
+export function Header() {
   const ctx = useAccessContext();
 
   // Precedência: account > authenticated > public
-  const variant = getVariant(ctx, userEmail);
+  const variant = getVariant(ctx);
 
   // Estados loading/error degradam para public
-  if (!ctx && !userEmail) {
+  if (!ctx) {
     return <HeaderPublic />;
   }
 
@@ -26,19 +22,16 @@ export function Header({ userEmail }: HeaderProps) {
     case 'account':
       return <HeaderAccount account={ctx.account!} />;
     case 'authenticated':
-      return <HeaderAuthenticated userEmail={userEmail} />;
+      return <HeaderAuthenticated />;
     case 'public':
     default:
       return <HeaderPublic />;
   }
 }
 
-function getVariant(
-  ctx: Partial<any>,
-  userEmail?: string | null
-): HeaderVariant {
+function getVariant(ctx: Partial<any>): HeaderVariant {
   if (ctx?.account?.subdomain) return 'account';
-  if (userEmail) return 'authenticated';
+  if (ctx?.member?.user_id) return 'authenticated';
   return 'public';
 }
 
@@ -75,13 +68,13 @@ function HeaderPublic() {
         </nav>
       </div>
 
-      {/* Modal consultivo - implementar depois */}
-      {showConsultive && <div id="consultive-modal">Consultive Modal (TODO)</div>}
+      {/* Modal consultivo - C4.1 (pendente E7.2) */}
+      {showConsultive && <div id="consultive-modal" className="p-4">Consultive Modal (TODO)</div>}
     </header>
   );
 }
 
-function HeaderAuthenticated({ userEmail }: { userEmail?: string | null }) {
+function HeaderAuthenticated() {
   return (
     <header className="border-b bg-white">
       <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-4">
@@ -93,6 +86,9 @@ function HeaderAuthenticated({ userEmail }: { userEmail?: string | null }) {
         >
           LP Factory
         </Link>
+
+        {/* Centro vazio (reservado para futuras ações) */}
+        <div />
 
         {/* Direita: Avatar menu */}
         <nav className="flex items-center gap-3">
@@ -126,7 +122,7 @@ function HeaderAccount({
           LP Factory
         </Link>
 
-        {/* Centro: espaço reservado para ações futuras */}
+        {/* Centro: flex-1 garante que o menu fique colado à direita */}
         <div className="flex-1" />
 
         {/* Direita: Conta + Status + Avatar menu */}
@@ -142,17 +138,17 @@ function HeaderAccount({
   );
 }
 
-/* ======= Auxiliar inline (chip de status) ======= */
+/* ======= Chip de status (canônico) ======= */
 
 function StatusChip({ status }: { status?: string | null }) {
   const st = (status ?? 'inactive').toString();
 
+  // Tipos canônicos atuais (trial ainda não canônico)
   const map: Record<string, { cls: string; label: string }> = {
     active: { cls: 'bg-green-100 text-green-700 border-green-200', label: 'active' },
     inactive: { cls: 'bg-gray-100 text-gray-700 border-gray-200', label: 'inactive' },
     suspended: { cls: 'bg-red-100 text-red-700 border-red-200', label: 'suspended' },
     pending_setup: { cls: 'bg-blue-100 text-blue-700 border-blue-200', label: 'pending_setup' },
-    trial: { cls: 'bg-blue-100 text-blue-700 border-blue-200', label: 'trial' },
   };
 
   const fallback = { cls: 'bg-gray-100 text-gray-700 border-gray-200', label: st };
