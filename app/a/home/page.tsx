@@ -23,10 +23,11 @@ export default async function HomePage() {
   return (
     <>
       <Header userEmail={null} />
-      <main className="mx-auto max-w-3xl px-6 py-12">
-        <h1 className="text-3xl font-semibold">
-          Crie páginas incríveis em minutos. Comece agora.
-        </h1>
+      <main className="mx-auto max-w-3xl px-6 py-12 text-center">
+        <h1 className="text-3xl font-semibold mb-2">Bem-vindo ao LP Factory</h1>
+        <p className="text-base text-gray-600">
+          Crie páginas incríveis em minutos. <span className="font-medium text-gray-700">Comece agora.</span>
+        </p>
       </main>
     </>
   );
