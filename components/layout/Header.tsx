@@ -24,7 +24,7 @@ export function Header({ userEmail }: HeaderProps) {
 
   switch (variant) {
     case 'account':
-      return <HeaderAccount userEmail={userEmail} account={ctx.account!} />;
+      return <HeaderAccount account={ctx.account!} />;
     case 'authenticated':
       return <HeaderAuthenticated userEmail={userEmail} />;
     case 'public':
@@ -77,7 +77,7 @@ function HeaderPublic() {
       </div>
 
       {/* Modal consultivo - implementar depois */}
-      {showConsultive && <div>Consultive Modal (TODO)</div>}
+      {showConsultive && <div id="consultive-modal">Consultive Modal (TODO)</div>}
     </header>
   );
 }
@@ -94,8 +94,8 @@ function HeaderAuthenticated({ userEmail }: { userEmail?: string | null }) {
           LP Factory
         </Link>
 
+        {/* Temporário: manter apenas Logout até o UserMenu (Item 2) */}
         <nav className="flex items-center gap-3">
-          <span className="text-sm text-gray-600">{userEmail}</span>
           <LogoutButton />
         </nav>
       </div>
@@ -104,36 +104,79 @@ function HeaderAuthenticated({ userEmail }: { userEmail?: string | null }) {
 }
 
 function HeaderAccount({
-  userEmail,
   account,
 }: {
-  userEmail?: string | null;
-  account: any;
+  account: { name?: string; subdomain?: string; status?: 'active' | 'inactive' | 'suspended' | 'trial' | string };
 }) {
+  const accountLabel = account?.name ?? account?.subdomain ?? 'Minha conta';
+
   return (
     <header className="border-b bg-white">
       <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-4">
-        <div className="flex items-center gap-3">
-          <Link
-            href="/a/home"
-            aria-label="Ir para início"
-            className="text-sm font-semibold tracking-wide"
-          >
-            LP Factory
-          </Link>
-          <span className="text-sm text-gray-600">
-            — {account.name ?? account.subdomain}
-          </span>
-          <span className="rounded-full border px-2 py-0.5 text-xs text-gray-600">
-            /a/{account.subdomain}
-          </span>
+        <Link
+          href="/a/home"
+          aria-label="Ir para início"
+          className="text-sm font-semibold tracking-wide"
+        >
+          LP Factory
+        </Link>
+
+        {/* Centro: nome da conta + chip de status */}
+        <div className="flex items-center gap-2">
+          <span className="text-sm text-gray-800">{accountLabel}</span>
+          <StatusChip status={account?.status} />
         </div>
 
+        {/* Temporário: manter apenas Logout até o UserMenu (Item 2) */}
         <nav className="flex items-center gap-3">
-          <span className="text-sm text-gray-600">{userEmail}</span>
           <LogoutButton />
         </nav>
       </div>
     </header>
+  );
+}
+
+/* ======= Auxiliares inline (sem novos arquivos) ======= */
+
+function StatusChip({
+  status,
+}: {
+  status?: 'active' | 'inactive' | 'suspended' | 'trial' | string | null;
+}) {
+  const st = (status ?? 'inactive') as string;
+
+  const map: Record<
+    string,
+    { cls: string; label: string }
+  > = {
+    active: {
+      cls: 'bg-green-100 text-green-700 border-green-200',
+      label: 'active',
+    },
+    inactive: {
+      cls: 'bg-gray-100 text-gray-700 border-gray-200',
+      label: 'inactive',
+    },
+    suspended: {
+      cls: 'bg-red-100 text-red-700 border-red-200',
+      label: 'suspended',
+    },
+    trial: {
+      cls: 'bg-blue-100 text-blue-700 border-blue-200',
+      label: 'trial',
+    },
+  };
+
+  const fallback = { cls: 'bg-gray-100 text-gray-700 border-gray-200', label: st };
+  const { cls, label } = map[st] ?? fallback;
+
+  return (
+    <span
+      className={`rounded-full border px-2 py-0.5 text-xs leading-none ${cls}`}
+      aria-label={`status da conta: ${label}`}
+      title={`Status: ${label}`}
+    >
+      {label}
+    </span>
   );
 }
