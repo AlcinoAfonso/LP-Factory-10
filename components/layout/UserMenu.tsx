@@ -5,24 +5,27 @@ import Link from 'next/link';
 import { LogoutButton } from '@/components/logout-button';
 import { useAccessContext } from '@/providers/AccessProvider';
 
-/**
- * Avatar / User Menu (versão simplificada conforme pedido)
- * - Header do menu: mostra EMAIL e, logo abaixo, o PAPEL (status do usuário na conta).
- * - NÃO mostra "Conta atual" nem o nome da conta (já está no header).
- * - Ações: Perfil • Trocar conta • Criar outra conta • Sair (apenas um botão).
- */
-export default function UserMenu() {
+export default function UserMenu({
+  userEmail: emailProp,
+  userRole: roleProp,
+}: {
+  userEmail?: string;
+  userRole?: string;
+}) {
   const ctx = useAccessContext() as any;
   const [open, setOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement | null>(null);
   const btnRef = useRef<HTMLButtonElement | null>(null);
 
+  // Fonte principal: props; fallback: contexto
   const userEmail: string =
+    emailProp ??
     (ctx?.user?.email as string | undefined) ??
     (ctx?.member?.email as string | undefined) ??
     '—';
 
-  const userRole: string = (ctx?.member?.role as string | undefined) ?? '—';
+  const userRole: string =
+    roleProp ?? (ctx?.member?.role as string | undefined) ?? '—';
 
   const initials = useMemo(() => {
     const src = userEmail?.trim();
@@ -30,7 +33,6 @@ export default function UserMenu() {
     return /[A-Z0-9]/i.test(ch) ? ch : 'U';
   }, [userEmail]);
 
-  // Fechar ao clicar fora / ESC
   useEffect(() => {
     function handleClickOutside(ev: MouseEvent) {
       if (!open) return;
@@ -91,7 +93,7 @@ export default function UserMenu() {
 
             <div className="my-1 h-px w-full bg-gray-100" />
 
-            {/* Apenas UM botão de sair (sem label duplicado) */}
+            {/* Apenas UM botão de sair */}
             <div className="px-2 pb-2">
               <LogoutButton />
             </div>
@@ -102,7 +104,6 @@ export default function UserMenu() {
   );
 }
 
-/* Item padrão do menu */
 function MenuItem({
   href,
   children,
