@@ -37,7 +37,6 @@ function getVariant(
   ctx: Partial<any>,
   userEmail?: string | null
 ): HeaderVariant {
-  // Precedência clara
   if (ctx?.account?.subdomain) return 'account';
   if (userEmail) return 'authenticated';
   return 'public';
@@ -94,7 +93,7 @@ function HeaderAuthenticated({ userEmail }: { userEmail?: string | null }) {
           LP Factory
         </Link>
 
-        {/* Temporário: manter apenas Logout até o UserMenu (Item 2) */}
+        {/* Direita: por enquanto apenas Logout (UserMenu no Item 2) */}
         <nav className="flex items-center gap-3">
           <LogoutButton />
         </nav>
@@ -116,7 +115,8 @@ function HeaderAccount({
 
   return (
     <header className="border-b bg-white">
-      <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-4">
+      <div className="mx-auto flex h-14 max-w-6xl items-center px-4">
+        {/* Esquerda: logo */}
         <Link
           href="/a/home"
           aria-label="Ir para início"
@@ -125,47 +125,33 @@ function HeaderAccount({
           LP Factory
         </Link>
 
-        {/* Centro: nome da conta + chip de status */}
-        <div className="flex items-center gap-2">
-          <span className="text-sm text-gray-800">{accountLabel}</span>
-          <StatusChip status={account?.status} />
-        </div>
+        {/* Centro: vazio (reserva para futuras ações globais) */}
+        <div className="flex-1" />
 
-        {/* Temporário: manter apenas Logout até o UserMenu (Item 2) */}
-        <nav className="flex items-center gap-3">
+        {/* Direita: Conta + Status + (futuro Avatar) + Logout */}
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-gray-800">{accountLabel}</span>
+            <StatusChip status={account?.status} />
+          </div>
           <LogoutButton />
-        </nav>
+        </div>
       </div>
     </header>
   );
 }
 
-/* ======= Auxiliares inline (sem novos arquivos) ======= */
+/* ======= Auxiliar inline (chip de status) ======= */
 
-function StatusChip({
-  status,
-}: {
-  status?: string | null;
-}) {
+function StatusChip({ status }: { status?: string | null }) {
   const st = (status ?? 'inactive').toString();
 
   const map: Record<string, { cls: string; label: string }> = {
-    active: {
-      cls: 'bg-green-100 text-green-700 border-green-200',
-      label: 'active',
-    },
-    inactive: {
-      cls: 'bg-gray-100 text-gray-700 border-gray-200',
-      label: 'inactive',
-    },
-    suspended: {
-      cls: 'bg-red-100 text-red-700 border-red-200',
-      label: 'suspended',
-    },
-    pending_setup: {
-      cls: 'bg-blue-100 text-blue-700 border-blue-200',
-      label: 'pending_setup',
-    },
+    active: { cls: 'bg-green-100 text-green-700 border-green-200', label: 'active' },
+    inactive: { cls: 'bg-gray-100 text-gray-700 border-gray-200', label: 'inactive' },
+    suspended: { cls: 'bg-red-100 text-red-700 border-red-200', label: 'suspended' },
+    pending_setup: { cls: 'bg-blue-100 text-blue-700 border-blue-200', label: 'pending_setup' },
+    trial: { cls: 'bg-blue-100 text-blue-700 border-blue-200', label: 'trial' },
   };
 
   const fallback = { cls: 'bg-gray-100 text-gray-700 border-gray-200', label: st };
