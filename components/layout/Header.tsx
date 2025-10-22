@@ -3,7 +3,7 @@
 import { useAccessContext } from '@/providers/AccessProvider';
 import Link from 'next/link';
 import { useState } from 'react';
-import { LogoutButton } from '@/components/logout-button';
+import UserMenu from '@/components/layout/UserMenu';
 
 type HeaderVariant = 'public' | 'authenticated' | 'account';
 
@@ -85,6 +85,7 @@ function HeaderAuthenticated({ userEmail }: { userEmail?: string | null }) {
   return (
     <header className="border-b bg-white">
       <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-4">
+        {/* Esquerda: logo */}
         <Link
           href="/a/home"
           aria-label="Ir para início"
@@ -93,9 +94,9 @@ function HeaderAuthenticated({ userEmail }: { userEmail?: string | null }) {
           LP Factory
         </Link>
 
-        {/* Direita: por enquanto apenas Logout (UserMenu no Item 2) */}
+        {/* Direita: Avatar menu */}
         <nav className="flex items-center gap-3">
-          <LogoutButton />
+          <UserMenu />
         </nav>
       </div>
     </header>
@@ -125,16 +126,16 @@ function HeaderAccount({
           LP Factory
         </Link>
 
-        {/* Centro: vazio (reserva para futuras ações globais) */}
+        {/* Centro: espaço reservado para ações futuras */}
         <div className="flex-1" />
 
-        {/* Direita: Conta + Status + (futuro Avatar) + Logout */}
+        {/* Direita: Conta + Status + Avatar menu */}
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-2">
             <span className="text-sm text-gray-800">{accountLabel}</span>
             <StatusChip status={account?.status} />
           </div>
-          <LogoutButton />
+          <UserMenu />
         </div>
       </div>
     </header>
