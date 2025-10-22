@@ -106,7 +106,11 @@ function HeaderAuthenticated({ userEmail }: { userEmail?: string | null }) {
 function HeaderAccount({
   account,
 }: {
-  account: { name?: string; subdomain?: string; status?: 'active' | 'inactive' | 'suspended' | 'trial' | string };
+  account: {
+    name?: string | null;
+    subdomain?: string | null;
+    status?: string | null;
+  };
 }) {
   const accountLabel = account?.name ?? account?.subdomain ?? 'Minha conta';
 
@@ -141,14 +145,11 @@ function HeaderAccount({
 function StatusChip({
   status,
 }: {
-  status?: 'active' | 'inactive' | 'suspended' | 'trial' | string | null;
+  status?: string | null;
 }) {
-  const st = (status ?? 'inactive') as string;
+  const st = (status ?? 'inactive').toString();
 
-  const map: Record<
-    string,
-    { cls: string; label: string }
-  > = {
+  const map: Record<string, { cls: string; label: string }> = {
     active: {
       cls: 'bg-green-100 text-green-700 border-green-200',
       label: 'active',
@@ -161,9 +162,9 @@ function StatusChip({
       cls: 'bg-red-100 text-red-700 border-red-200',
       label: 'suspended',
     },
-    trial: {
+    pending_setup: {
       cls: 'bg-blue-100 text-blue-700 border-blue-200',
-      label: 'trial',
+      label: 'pending_setup',
     },
   };
 
