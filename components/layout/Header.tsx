@@ -14,17 +14,15 @@ interface HeaderProps {
 export function Header({ userEmail }: HeaderProps) {
   const ctx = useAccessContext();
 
-  // Precedência: account > authenticated > public
   const variant = getVariant(ctx, userEmail);
 
-  // Estados loading/error degradam para public
   if (!ctx && !userEmail) {
     return <HeaderPublic />;
   }
 
   switch (variant) {
     case 'account':
-      return <HeaderAccount account={ctx.account!} />;
+      return <HeaderAccount account={ctx.account!} userEmail={userEmail ?? undefined} role={ctx?.member?.role} />;
     case 'authenticated':
       return <HeaderAuthenticated userEmail={userEmail} />;
     case 'public':
@@ -50,19 +48,12 @@ function HeaderPublic() {
   return (
     <header className="border-b bg-white">
       <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-4">
-        <Link
-          href="/a/home"
-          aria-label="Ir para início"
-          className="text-sm font-semibold tracking-wide"
-        >
+        <Link href="/a/home" aria-label="Ir para início" className="text-sm font-semibold tracking-wide">
           LP Factory
         </Link>
 
         <nav className="flex items-center gap-3">
-          <Link
-            href="/auth/login"
-            className="rounded-md border px-3 py-1.5 text-sm hover:bg-gray-50"
-          >
+          <Link href="/auth/login" className="rounded-md border px-3 py-1.5 text-sm hover:bg-gray-50">
             Entrar
           </Link>
           <button
@@ -75,7 +66,6 @@ function HeaderPublic() {
         </nav>
       </div>
 
-      {/* Modal consultivo - implementar depois */}
       {showConsultive && <div id="consultive-modal">Consultive Modal (TODO)</div>}
     </header>
   );
@@ -85,18 +75,12 @@ function HeaderAuthenticated({ userEmail }: { userEmail?: string | null }) {
   return (
     <header className="border-b bg-white">
       <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-4">
-        {/* Esquerda: logo */}
-        <Link
-          href="/a/home"
-          aria-label="Ir para início"
-          className="text-sm font-semibold tracking-wide"
-        >
+        <Link href="/a/home" aria-label="Ir para início" className="text-sm font-semibold tracking-wide">
           LP Factory
         </Link>
 
-        {/* Direita: Avatar menu */}
         <nav className="flex items-center gap-3">
-          <UserMenu />
+          <UserMenu userEmail={userEmail ?? undefined} />
         </nav>
       </div>
     </header>
@@ -105,44 +89,35 @@ function HeaderAuthenticated({ userEmail }: { userEmail?: string | null }) {
 
 function HeaderAccount({
   account,
+  userEmail,
+  role,
 }: {
-  account: {
-    name?: string | null;
-    subdomain?: string | null;
-    status?: string | null;
-  };
+  account: { name?: string | null; subdomain?: string | null; status?: string | null };
+  userEmail?: string;
+  role?: string;
 }) {
   const accountLabel = account?.name ?? account?.subdomain ?? 'Minha conta';
 
   return (
     <header className="border-b bg-white">
       <div className="mx-auto flex h-14 max-w-6xl items-center px-4">
-        {/* Esquerda: logo */}
-        <Link
-          href="/a/home"
-          aria-label="Ir para início"
-          className="text-sm font-semibold tracking-wide"
-        >
+        <Link href="/a/home" aria-label="Ir para início" className="text-sm font-semibold tracking-wide">
           LP Factory
         </Link>
 
-        {/* Centro: espaço reservado para ações futuras */}
         <div className="flex-1" />
 
-        {/* Direita: Conta + Status + Avatar menu */}
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-2">
             <span className="text-sm text-gray-800">{accountLabel}</span>
             <StatusChip status={account?.status} />
           </div>
-          <UserMenu />
+          <UserMenu userEmail={userEmail} userRole={role} />
         </div>
       </div>
     </header>
   );
 }
-
-/* ======= Auxiliar inline (chip de status) ======= */
 
 function StatusChip({ status }: { status?: string | null }) {
   const st = (status ?? 'inactive').toString();
