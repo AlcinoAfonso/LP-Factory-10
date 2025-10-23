@@ -132,6 +132,61 @@ export async function getAccountBySlug(
 }
 
 /* ===========================================================
+ * NOVO — Lista de contas para o AccountSwitcher (v_user_accounts_list)
+ * ===========================================================
+ */
+
+export type UserAccountListItem = {
+  accountId: string;
+  accountName: string;
+  accountSubdomain: string;
+  accountStatus: AccountStatus;
+  memberRole: MemberRole;
+  memberStatus: MemberStatus;
+  createdAt?: string;
+};
+
+type VUserAccountsListRow = {
+  account_id: string;
+  account_name: string | null;
+  account_subdomain: string;
+  account_status: string;
+  member_role: string;
+  member_status: string;
+  created_at?: string | null;
+};
+
+const mapUserAccountListRow = (r: VUserAccountsListRow): UserAccountListItem => ({
+  accountId: r.account_id,
+  accountName: (r.account_name ?? r.account_subdomain) as string,
+  accountSubdomain: r.account_subdomain,
+  accountStatus: normalizeAccountStatus(r.account_status),
+  memberRole: normalizeRole(r.member_role),
+  memberStatus: normalizeMemberStatus(r.member_status),
+  createdAt: r.created_at ?? undefined,
+});
+
+/** Lista contas visíveis ao usuário autenticado (RLS via view) */
+export async function listUserAccounts(): Promise<UserAccountListItem[]> {
+  const supabase = await createClient(); // ✅ client do usuário (RLS aplicada)
+  const { data, error } = await supabase
+    .from("v_user_accounts_list")
+    .select(
+      "account_id, account_name, account_subdomain, account_status, member_role, member_status, created_at"
+    )
+    .order("created_at", { ascending: true });
+
+  if (error) {
+    // eslint-disable-next-line no-console
+    console.error("listUserAccounts failed:", error);
+    return [];
+  }
+
+  const rows = (data as VUserAccountsListRow[]) ?? [];
+  return rows.map(mapUserAccountListRow);
+}
+
+/* ===========================================================
  * E7 - Conta Consultiva
  * ===========================================================
  */
