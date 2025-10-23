@@ -1,6 +1,4 @@
 // components/features/account-switcher/useUserAccounts.ts
-// Client-only: obtém a lista de contas via GET /api/user/accounts, com timeout e refetch.
-
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -14,9 +12,16 @@ export type UserAccount = {
   memberStatus: "pending" | "active" | "inactive" | "revoked";
 };
 
+type ErrorCode =
+  | "timeout"
+  | "network_error"
+  | "server_error"
+  | "invalid_payload"
+  | "unauthorized";
+
 type FetchResult =
   | { ok: true; data: UserAccount[] }
-  | { ok: false; error: string };
+  | { ok: false; error: ErrorCode };
 
 async function fetchWithTimeout(
   input: RequestInfo,
@@ -42,7 +47,6 @@ export async function fetchUserAccounts(timeoutMs = 6000): Promise<FetchResult> 
   try {
     const res = await fetchWithTimeout("/api/user/accounts", { method: "GET" }, timeoutMs);
 
-    // Diferenciar sessão ausente (401) de lista vazia (200 com [])
     if (res.status === 401) {
       return { ok: false, error: "unauthorized" };
     }
@@ -50,16 +54,13 @@ export async function fetchUserAccounts(timeoutMs = 6000): Promise<FetchResult> 
       return { ok: false, error: "server_error" };
     }
 
-    const data = (await res.json()) as UserAccount[];
+    const data = (await res.json()) as unknown;
     if (!Array.isArray(data)) {
       return { ok: false, error: "invalid_payload" };
     }
-    return { ok: true, data };
+    return { ok: true, data: data as UserAccount[] };
   } catch (e: any) {
-    // AbortError → timeout
-    if (e?.name === "AbortError") {
-      return { ok: false, error: "timeout" };
-    }
+    if (e?.name === "AbortError") return { ok: false, error: "timeout" };
     return { ok: false, error: "network_error" };
   }
 }
@@ -74,7 +75,7 @@ const sessionCache: { data?: UserAccount[]; ts?: number } = {};
 
 export function useUserAccounts(enabled: boolean, cacheTtlMs = 5 * 60 * 1000) {
   const [data, setData] = useState<UserAccount[] | null>(null);
-  const [error, setError] = useState<null | "timeout" | "network_error" | "server_error" | "invalid_payload" | "unauthorized">(null);
+  const [error, setError] = useState<ErrorCode | null>(null);
   const [loading, setLoading] = useState(false);
   const loadingRef = useRef(false);
 
@@ -112,7 +113,6 @@ export function useUserAccounts(enabled: boolean, cacheTtlMs = 5 * 60 * 1000) {
   }, [enabled, load]);
 
   const refetch = useCallback(async () => {
-    // invalida cache e força nova leitura
     sessionCache.data = undefined;
     sessionCache.ts = undefined;
     await load();
