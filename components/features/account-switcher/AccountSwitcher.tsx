@@ -10,7 +10,8 @@ import { useAccessContext } from "@/providers/AccessProvider";
  * AccountSwitcher
  * - Exibe lista de contas do usuário com destaque para a ativa.
  * - Oculta "Trocar conta" se só houver uma conta.
- * - Dropdown leve sem dependências externas.
+ * - Mostra chip de status (active/inactive/suspended/pending_setup).
+ * - Dropdown leve sem dependências externas; mantém ordenação vinda do servidor.
  */
 export function AccountSwitcher() {
   const router = useRouter();
@@ -23,7 +24,7 @@ export function AccountSwitcher() {
   const { data, loading, error, refetch } = useUserAccounts(open);
   const list = useMemo(() => data ?? [], [data]);
 
-  // Se não há mais de 1 conta, não renderiza o switcher
+  // Se não há mais de 1 conta, não renderiza o switcher (C6.3)
   if (!loading && !error && list.length <= 1) return null;
 
   // Fechar ao clicar fora / ESC
@@ -68,7 +69,7 @@ export function AccountSwitcher() {
           ref={menuRef}
           role="menu"
           aria-label="Minhas contas"
-          className="absolute right-0 mt-2 w-64 origin-top-right rounded-2xl border bg-popover p-2 shadow-lg z-50"
+          className="absolute right-0 mt-2 w-72 origin-top-right rounded-2xl border bg-popover p-2 shadow-lg z-50"
         >
           <div className="px-2 py-1.5 text-xs text-muted-foreground">Minhas contas</div>
 
@@ -83,7 +84,7 @@ export function AccountSwitcher() {
               <div className="mb-2 text-sm text-red-500">Falha ao carregar.</div>
               <button
                 onClick={() => refetch()}
-                className="rounded-lg bg-secondary px-3 py-1.5 text-sm hover:opacity-90"
+                className="rounded-lg bg-secondary px-3 py-1.5 text-sm hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-ring/40"
               >
                 Tentar novamente
               </button>
@@ -97,6 +98,17 @@ export function AccountSwitcher() {
                 const isDisabled =
                   acc.accountStatus === "inactive" ||
                   acc.accountStatus === "suspended";
+
+                // Chip de status (cores leves, acessível)
+                const statusClass =
+                  acc.accountStatus === "active"
+                    ? "bg-emerald-500/10 text-emerald-600 border-emerald-600/20"
+                    : acc.accountStatus === "pending_setup"
+                    ? "bg-amber-500/10 text-amber-600 border-amber-600/20"
+                    : acc.accountStatus === "inactive"
+                    ? "bg-slate-500/10 text-slate-600 border-slate-600/20"
+                    : "bg-rose-500/10 text-rose-600 border-rose-600/20"; // suspended
+
                 return (
                   <button
                     key={acc.accountId}
@@ -113,14 +125,24 @@ export function AccountSwitcher() {
                         : undefined
                     }
                     className={[
-                      "w-full text-left px-3 py-2 rounded-xl text-sm flex items-center justify-between",
+                      "w-full text-left px-3 py-2 rounded-xl text-sm flex items-center justify-between gap-2",
                       "hover:bg-accent focus:outline-none focus:ring-2 focus:ring-ring/40",
                       isDisabled ? "opacity-50 cursor-not-allowed" : "cursor-pointer",
                       isActive ? "font-semibold text-primary" : "",
                     ].join(" ")}
                   >
+                    {/* React já escapa o texto (sanitização) */}
                     <span className="truncate">{acc.accountName}</span>
-                    {isActive && <span className="text-xs">✓</span>}
+
+                    <span
+                      className={[
+                        "inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-medium",
+                        statusClass,
+                      ].join(" ")}
+                      aria-label={`status: ${acc.accountStatus}`}
+                    >
+                      {acc.accountStatus}
+                    </span>
                   </button>
                 );
               })}
