@@ -1,7 +1,7 @@
 // src/lib/access/adapters/accountAdapter.ts
-import { createClient } from "@/supabase/server";
-import { createServiceClient } from "../../supabase/service"; // ✅ server-only para mutações
-import type { AccountStatus, MemberStatus, MemberRole } from "../../types/status";
+import { createClient } from "@/lib/supabase/server";
+import { createServiceClient } from "@/lib/supabase/service"; // ✅ server-only para mutações
+import type { AccountStatus, MemberStatus, MemberRole } from "@/lib/access/types";
 
 /** Tipos de linha do DB */
 export type DBAccountRow = {
@@ -42,8 +42,8 @@ export type MemberInfo = {
 /** Normalização */
 const ROLES = ["owner", "admin", "editor", "viewer"] as const;
 const MSTAT = ["pending", "active", "inactive", "revoked"] as const;
-// ✅ inclui 'trial' conforme Base Técnica/Access Context
-const ASTAT = ["active", "inactive", "suspended", "pending_setup", "trial"] as const;
+// ⚠️ Tipos canônicos atuais não incluem 'trial'
+const ASTAT = ["active", "inactive", "suspended", "pending_setup"] as const;
 
 export const normalizeRole = (s?: string): MemberRole => {
   const v = (s ?? "").toLowerCase().trim();
@@ -174,11 +174,15 @@ export async function listUserAccounts(): Promise<UserAccountListItem[]> {
     .select(
       "account_id, account_name, account_subdomain, account_status, member_role, member_status, created_at"
     )
+    .order("account_name", { ascending: true, nullsFirst: true })
     .order("created_at", { ascending: true });
 
   if (error) {
     // eslint-disable-next-line no-console
-    console.error("listUserAccounts failed:", error);
+    console.error("listUserAccounts failed:", {
+      code: (error as any)?.code,
+      message: (error as any)?.message ?? String(error),
+    });
     return [];
   }
 
@@ -204,7 +208,10 @@ export async function createFromToken(
 
   if (error) {
     // eslint-disable-next-line no-console
-    console.error("createFromToken failed:", error);
+    console.error("createFromToken failed:", {
+      code: (error as any)?.code,
+      message: (error as any)?.message ?? String(error),
+    });
     return null;
   }
 
@@ -224,7 +231,10 @@ export async function createFromTokenAsService(
 
   if (error) {
     // eslint-disable-next-line no-console
-    console.error("createFromTokenAsService failed:", error);
+    console.error("createFromTokenAsService failed:", {
+      code: (error as any)?.code,
+      message: (error as any)?.message ?? String(error),
+    });
     return null;
   }
 
@@ -255,7 +265,7 @@ export async function renameAndActivate(
     // eslint-disable-next-line no-console
     console.error("renameAndActivate failed:", {
       code: (error as any)?.code,
-      message: error.message,
+      message: (error as any)?.message ?? String(error),
     });
     return false;
   }
@@ -263,7 +273,7 @@ export async function renameAndActivate(
   return true;
 }
 
-/** ✅ NOVO (E7.2 seguro): Renomeia conta/slug SEM alterar o status */
+/** ✅ E7.2 seguro: Renomeia conta/slug SEM alterar o status */
 export async function renameAccountNoStatus(
   accountId: string,
   name: string,
@@ -283,7 +293,7 @@ export async function renameAccountNoStatus(
     // eslint-disable-next-line no-console
     console.error("renameAccountNoStatus failed:", {
       code: (error as any)?.code,
-      message: error.message,
+      message: (error as any)?.message ?? String(error),
     });
     return false;
   }
