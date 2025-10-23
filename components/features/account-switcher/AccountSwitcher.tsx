@@ -11,6 +11,10 @@ import { useAccessContext } from "@/providers/AccessProvider";
  * - Lista contas do usuário (ordenação vem do servidor).
  * - Destaque da conta ativa e chip de status.
  * - Oculta "Trocar conta" se só houver uma conta.
+ * - Estados & bordas (Item 5):
+ *   • pending_setup → clicável (para concluir setup).
+ *   • inactive/suspended → desabilitado + tooltip com motivo.
+ *   • member_status ≠ active → desabilitado + motivo.
  * - Interações: clique, teclado (↑/↓/Enter/ESC), fechar ao clicar fora.
  * - Telemetria leve via console.
  */
@@ -32,12 +36,33 @@ export function AccountSwitcher() {
   const [focusIndex, setFocusIndex] = useState<number>(-1);
   const itemRefs = useRef<Array<HTMLButtonElement | null>>([]);
 
-  // Util: checar se item está desabilitado
+  // Regra de disponibilidade:
+  // - Clicável: accountStatus = active OR pending_setup, AND memberStatus = active
+  // - Desabilitado: accountStatus in (inactive, suspended) OR memberStatus != active
   const isDisabledAt = useCallback(
     (idx: number) => {
       const acc = list[idx];
       if (!acc) return true;
-      return acc.accountStatus === "inactive" || acc.accountStatus === "suspended";
+      const clickableAccount =
+        acc.accountStatus === "active" || acc.accountStatus === "pending_setup";
+      const memberOk = acc.memberStatus === "active";
+      return !(clickableAccount && memberOk);
+    },
+    [list]
+  );
+
+  const disabledReasonAt = useCallback(
+    (idx: number): string | undefined => {
+      const acc = list[idx];
+      if (!acc) return undefined;
+      if (acc.memberStatus !== "active") {
+        if (acc.memberStatus === "pending") return "Convite pendente — aguarde aprovação.";
+        if (acc.memberStatus === "revoked") return "Acesso revogado — contate o administrador.";
+        return "Membro inativo — contate o administrador.";
+      }
+      if (acc.accountStatus === "inactive") return "Conta inativa — reative pelo suporte.";
+      if (acc.accountStatus === "suspended") return "Conta suspensa — acesso temporariamente bloqueado.";
+      return undefined;
     },
     [list]
   );
@@ -81,7 +106,7 @@ export function AccountSwitcher() {
     };
   }, [open]);
 
-  // Ao abrir: telemetria + foco inicial (primeiro item habilitado)
+  // Ao abrir: telemetria + foco inicial (primeiro item habilitado; se ativo for habilitado, prioriza-o)
   React.useEffect(() => {
     if (open) {
       openedAtRef.current = performance.now();
@@ -94,11 +119,9 @@ export function AccountSwitcher() {
       );
 
       if (!loading && !error && list.length > 0) {
-        const start = Math.max(
-          0,
-          list.findIndex((acc) => acc.accountSubdomain === account?.subdomain)
-        );
-        const first = isDisabledAt(start) ? findNextEnabled(start, 1) : start;
+        const activeIdx = list.findIndex((a) => a.accountSubdomain === account?.subdomain);
+        const start = activeIdx >= 0 ? activeIdx : -1;
+        const first = start >= 0 && !isDisabledAt(start) ? start : findNextEnabled(start, 1);
         setFocusIndex(first);
         setTimeout(() => {
           if (first >= 0 && itemRefs.current[first]) {
@@ -229,9 +252,12 @@ export function AccountSwitcher() {
             <div className="max-h-72 overflow-auto">
               {list.map((acc, idx) => {
                 const isActive = acc.accountSubdomain === account?.subdomain;
-                const isDisabled =
-                  acc.accountStatus === "inactive" || acc.accountStatus === "suspended";
 
+                // Disponibilidade / tooltip de motivo
+                const disabled = isDisabledAt(idx);
+                const reason = disabledReasonAt(idx);
+
+                // Chip de status (cores leves, acessível)
                 const statusClass =
                   acc.accountStatus === "active"
                     ? "bg-emerald-500/10 text-emerald-600 border-emerald-600/20"
@@ -248,20 +274,16 @@ export function AccountSwitcher() {
                       itemRefs.current[idx] = el;
                     }}
                     role="menuitem"
-                    disabled={isDisabled}
+                    disabled={disabled}
                     onClick={() => {
-                      if (isDisabled) return;
+                      if (disabled) return;
                       handleSelect(idx);
                     }}
-                    title={
-                      isDisabled
-                        ? "Conta indisponível (inactive/suspended)"
-                        : undefined
-                    }
+                    title={disabled ? reason : undefined}
                     className={[
                       "w-full text-left px-3 py-2 rounded-xl text-sm flex items-center justify-between gap-2",
                       "hover:bg-accent focus:outline-none focus:ring-2 focus:ring-ring/40",
-                      isDisabled ? "opacity-50 cursor-not-allowed" : "cursor-pointer",
+                      disabled ? "opacity-50 cursor-not-allowed" : "cursor-pointer",
                       isActive ? "font-semibold text-primary" : "",
                       focusIndex === idx ? "ring-2 ring-ring/40" : "",
                     ].join(" ")}
