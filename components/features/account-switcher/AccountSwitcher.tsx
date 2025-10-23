@@ -244,7 +244,9 @@ export function AccountSwitcher() {
                 return (
                   <button
                     key={acc.accountId}
-                    ref={(el) => (itemRefs.current[idx] = el)}
+                    ref={(el) => {
+                      itemRefs.current[idx] = el;
+                    }}
                     role="menuitem"
                     disabled={isDisabled}
                     onClick={() => {
