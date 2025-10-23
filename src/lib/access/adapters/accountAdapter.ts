@@ -1,6 +1,6 @@
 // src/lib/access/adapters/accountAdapter.ts
 import { createClient } from "@/lib/supabase/server";
-import { createServiceClient } from "@/supabase/service"; // ✅ server-only para mutações
+import { createServiceClient } from "../../../../supabase/service"; // ✅ server-only para mutações
 import type { AccountStatus, MemberStatus, MemberRole } from "@/lib/access/types";
 
 /** Tipos de linha do DB */
