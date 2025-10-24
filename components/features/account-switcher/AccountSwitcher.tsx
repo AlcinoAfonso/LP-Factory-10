@@ -7,16 +7,16 @@ import { useUserAccounts } from "./useUserAccounts";
 import { useAccessContext } from "@/providers/AccessProvider";
 
 /**
- * AccountSwitcher — Telemetria leve (Item 8)
- * - Captura eventos: account_switcher_open, account_selected, create_account_click.
- * - Usa console.error para logs estruturados (padrão de observabilidade).
- * - Campos: {event, scope:"ui", account_id?, account_subdomain?, latency_ms?, timestamp}.
- * - Mantém todas as regras de A11y e UX anteriores.
+ * AccountSwitcher — versão com “hide após confirmação”
+ * - O botão “Trocar conta” SEMPRE aparece até carregarmos a lista.
+ * - Após resposta: se houver só 1 conta, ocultamos o trigger e fechamos o submenu.
+ * - Demais regras (A11y, telemetria, estados, segurança) preservadas.
  */
 export function AccountSwitcher() {
   const router = useRouter();
   const { account } = useAccessContext() || {};
   const [open, setOpen] = useState(false);
+  const [hideTrigger, setHideTrigger] = useState(false); // novo
   const menuRef = useRef<HTMLDivElement | null>(null);
   const btnRef = useRef<HTMLButtonElement | null>(null);
 
@@ -26,14 +26,14 @@ export function AccountSwitcher() {
   // Medir latência desde abertura até seleção
   const openedAtRef = useRef<number | null>(null);
 
-  // Dados
+  // Dados (carrega quando open=true)
   const { data, loading, error, refetch } = useUserAccounts(open);
   const list = useMemo(() => data ?? [], [data]);
 
   const [focusIndex, setFocusIndex] = useState<number>(-1);
   const itemRefs = useRef<Array<HTMLButtonElement | null>>([]);
 
-  // Regras de disponibilidade
+  // Disponibilidade
   const isDisabledAt = useCallback(
     (idx: number) => {
       const acc = list[idx];
@@ -62,7 +62,6 @@ export function AccountSwitcher() {
     [list]
   );
 
-  // Próximo índice habilitado
   const findNextEnabled = useCallback(
     (start: number, dir: 1 | -1) => {
       if (!list.length) return -1;
@@ -105,7 +104,7 @@ export function AccountSwitcher() {
     };
   }, [open]);
 
-  // Abrir menu: log de telemetria
+  // Abrir menu: telemetria + foco inicial
   React.useEffect(() => {
     if (open) {
       openedAtRef.current = performance.now();
@@ -135,7 +134,17 @@ export function AccountSwitcher() {
     }
   }, [open, loading, error, list, account?.subdomain, findNextEnabled, isDisabledAt]);
 
-  // Teclado dentro do menu
+  // NOVO: após carregar, decide ocultar trigger quando só há 1 conta
+  React.useEffect(() => {
+    if (!loading && !error) {
+      const shouldHide = (list?.length ?? 0) <= 1;
+      setHideTrigger(shouldHide);
+      if (shouldHide && open) setOpen(false);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loading, error, list?.length, open]);
+
+  // Teclado no menu
   const onMenuKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
     if (!open || loading || error || list.length === 0) return;
 
@@ -199,7 +208,8 @@ export function AccountSwitcher() {
     router.push("/a/home?consultive=1");
   };
 
-  if (!loading && !error && list.length <= 1) return null;
+  // 🔒 Não ocultamos o trigger antes de confirmar o total de contas
+  if (hideTrigger) return null;
 
   return (
     <div className="relative inline-block text-left">
