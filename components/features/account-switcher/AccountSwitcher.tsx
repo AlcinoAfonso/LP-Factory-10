@@ -1,4 +1,4 @@
-/ components/features/account-switcher/AccountSwitcher.tsx
+// components/features/account-switcher/AccountSwitcher.tsx
 "use client";
 
 import React, { useMemo, useRef, useState, useCallback } from "react";
@@ -6,14 +6,6 @@ import { useRouter } from "next/navigation";
 import { useUserAccounts } from "./useUserAccounts";
 import { useAccessContext } from "@/providers/AccessProvider";
 
-/**
- * AccountSwitcher — corrigido para exibir lista de contas
- * Ajustes aplicados:
- * 1. Logs de debug temporários para diagnóstico
- * 2. Exibição forçada de "Carregando" quando data=null
- * 3. CSS com min-w-0 e fallback de nome (accountName || accountSubdomain)
- * 4. Lógica de ocultação ajustada (só após loading completo)
- */
 export function AccountSwitcher() {
   const router = useRouter();
   const { account } = useAccessContext() || {};
@@ -25,34 +17,14 @@ export function AccountSwitcher() {
   const menuId = "account-switcher-menu";
   const btnId = "account-switcher-trigger";
 
-  // Telemetria (latência)
   const openedAtRef = useRef<number | null>(null);
 
-  // Carrega SOMENTE quando o submenu abre
+  // Carrega quando abre
   const { data, loading, error, refetch } = useUserAccounts(open);
   const list = useMemo(() => data ?? [], [data]);
 
   const [focusIndex, setFocusIndex] = useState<number>(-1);
   const itemRefs = useRef<Array<HTMLButtonElement | null>>([]);
-
-  // 🔧 DEBUG temporário — remover após validação
-  React.useEffect(() => {
-    if (open) {
-      console.log('🔍 AccountSwitcher state:', {
-        open,
-        loading,
-        error: error || null,
-        dataIsNull: data === null,
-        listLength: list.length,
-        hideTrigger,
-        firstAccount: list[0] ? {
-          name: list[0].accountName,
-          subdomain: list[0].accountSubdomain,
-          status: list[0].accountStatus
-        } : null
-      });
-    }
-  }, [open, loading, error, data, list, hideTrigger]);
 
   const isDisabledAt = useCallback(
     (idx: number) => {
@@ -95,7 +67,7 @@ export function AccountSwitcher() {
     [list, isDisabledAt]
   );
 
-  // Fechar ao clicar fora/ESC
+  // Fechar fora/ESC
   React.useEffect(() => {
     if (!open) return;
     const onClick = (e: MouseEvent) => {
@@ -124,23 +96,22 @@ export function AccountSwitcher() {
     };
   }, [open]);
 
-  // Abertura: telemetria + foco inicial
+  // Abertura: telemetria + foco + log simples
   React.useEffect(() => {
     if (open) {
       openedAtRef.current = performance.now();
-      console.error(JSON.stringify({ 
-        event: "account_switcher_open", 
-        scope: "ui", 
-        timestamp: new Date().toISOString() 
-      }));
+      console.error(JSON.stringify({ event: "account_switcher_open", scope: "ui", timestamp: new Date().toISOString() }));
+      // diagnóstico rápido — remova após QA
+      // eslint-disable-next-line no-console
+      console.log({ len: list.length, firstName: list[0]?.accountName, firstSub: list[0]?.accountSubdomain });
 
       if (!loading && !error && list.length > 0) {
         const activeIdx = list.findIndex((a) => a.accountSubdomain === account?.subdomain);
         const start = activeIdx >= 0 ? activeIdx : -1;
-        const first = start >= 0 && !isDisabledAt(start) ? start : findNextEnabled(start, 1);
-        setFocusIndex(first);
+        const firstEnabled = start >= 0 && !isDisabledAt(start) ? start : findNextEnabled(start, 1);
+        setFocusIndex(firstEnabled);
         setTimeout(() => {
-          if (first >= 0 && itemRefs.current[first]) itemRefs.current[first]?.focus();
+          if (firstEnabled >= 0 && itemRefs.current[firstEnabled]) itemRefs.current[firstEnabled]?.focus();
         }, 0);
       } else {
         setFocusIndex(-1);
@@ -151,20 +122,18 @@ export function AccountSwitcher() {
     }
   }, [open, loading, error, list, account?.subdomain, findNextEnabled, isDisabledAt]);
 
-  // 🔧 Só oculta o trigger DEPOIS de confirmar que há apenas 1 conta (loading completo)
+  // Decidir esconder trigger só após data real
   React.useEffect(() => {
-    // Só decide ocultar após ter carregado dados pelo menos uma vez
-    if (data !== null && !loading) {
+    if (data !== null && !loading && !error) {
       const shouldHide = list.length <= 1;
       setHideTrigger(shouldHide);
       if (shouldHide && open) setOpen(false);
     }
-  }, [data, loading, list.length, open]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data, loading, error, list.length, open]);
 
-  // Teclado no menu
   const onMenuKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
     if (!open || loading || error || list.length === 0) return;
-
     if (e.key === "ArrowDown") {
       e.preventDefault();
       const next = focusIndex < 0 ? findNextEnabled(-1, 1) : findNextEnabled(focusIndex, 1);
@@ -189,7 +158,6 @@ export function AccountSwitcher() {
     }
   };
 
-  // Seleção
   const handleSelect = (idx: number) => {
     const acc = list[idx];
     if (!acc) return;
@@ -209,18 +177,12 @@ export function AccountSwitcher() {
     router.push(`/a/${acc.accountSubdomain}`);
   };
 
-  // Criar
   const handleCreate = () => {
-    console.error(JSON.stringify({ 
-      event: "create_account_click", 
-      scope: "ui", 
-      timestamp: new Date().toISOString() 
-    }));
+    console.error(JSON.stringify({ event: "create_account_click", scope: "ui", timestamp: new Date().toISOString() }));
     setOpen(false);
     router.push("/a/home?consultive=1");
   };
 
-  // 👉 Não esconda o botão antes de termos data
   if (hideTrigger) return null;
 
   return (
@@ -250,9 +212,8 @@ export function AccountSwitcher() {
         >
           <div className="px-2 py-1.5 text-xs text-muted-foreground">Minhas contas</div>
 
-          {/* 🔧 Exibir "Carregando" quando loading=true OU quando ainda não temos dados */}
-          {(loading || (!error && list.length === 0 && data === null)) && (
-            <div className="px-3 py-2 text-sm text-muted-foreground animate-pulse" aria-live="polite">
+          {loading && (
+            <div className="px-3 py-2 text-sm text-muted-foreground" aria-live="polite">
               Carregando contas…
             </div>
           )}
@@ -269,13 +230,13 @@ export function AccountSwitcher() {
             </div>
           )}
 
-          {/* 🔧 Só renderiza lista quando temos dados E não estamos em loading */}
-          {!loading && !error && data !== null && list.length > 0 && (
-            <div className="max-h-72 overflow-auto">
+          {!loading && !error && (
+            <div className="max-h-72 overflow-auto pr-1">
               {list.map((acc, idx) => {
                 const isActive = acc.accountSubdomain === account?.subdomain;
                 const disabled = isDisabledAt(idx);
                 const reason = disabledReasonAt(idx);
+                const displayName = acc.accountName ?? acc.accountSubdomain;
 
                 const statusClass =
                   acc.accountStatus === "active"
@@ -297,19 +258,24 @@ export function AccountSwitcher() {
                     onClick={() => { if (!disabled) handleSelect(idx); }}
                     title={disabled ? reason : undefined}
                     className={[
-                      "w-full min-w-0 text-left px-3 py-2 rounded-xl text-sm flex items-center justify-between gap-2",
+                      "w-full px-3 py-2 rounded-xl text-sm",
+                      // ✅ grid resolve clipping do texto
+                      "grid grid-cols-[1fr_auto] items-center gap-2",
                       "hover:bg-accent focus:outline-none focus:ring-2 focus:ring-ring/40",
                       disabled ? "opacity-50 cursor-not-allowed" : "cursor-pointer",
-                      isActive ? "font-semibold text-primary" : "",
+                      isActive ? "font-semibold text-primary" : "text-foreground",
                     ].join(" ")}
                   >
-                    {/* 🔧 Fallback: accountName || accountSubdomain || 'Sem nome' */}
-                    <span className="truncate min-w-0 flex-1">
-                      {acc.accountName || acc.accountSubdomain || 'Sem nome'}
+                    {/* coluna 1 — nome (cresce, trunca, sempre visível) */}
+                    <span className="min-w-0 overflow-hidden truncate leading-tight text-foreground">
+                      {displayName}
                     </span>
+
+                    {/* coluna 2 — chip (tamanho auto, não encolhe) */}
                     <span
                       className={[
-                        "inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-medium shrink-0",
+                        "justify-self-end inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-medium",
+                        "shrink-0",
                         statusClass,
                       ].join(" ")}
                       aria-label={`status: ${acc.accountStatus}`}
