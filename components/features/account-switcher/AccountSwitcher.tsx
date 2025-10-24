@@ -6,6 +6,11 @@ import { useRouter } from "next/navigation";
 import { useUserAccounts } from "./useUserAccounts";
 import { useAccessContext } from "@/providers/AccessProvider";
 
+/**
+ * AccountSwitcher — não oculta antes de ter dados
+ * - Botão “Trocar conta” sempre visível inicialmente.
+ * - Só decide ocultar após DATA REAL (data !== null).
+ */
 export function AccountSwitcher() {
   const router = useRouter();
   const { account } = useAccessContext() || {};
@@ -17,9 +22,10 @@ export function AccountSwitcher() {
   const menuId = "account-switcher-menu";
   const btnId = "account-switcher-trigger";
 
+  // Telemetria (latência)
   const openedAtRef = useRef<number | null>(null);
 
-  // Carrega quando abre
+  // Carrega SOMENTE quando o submenu abre
   const { data, loading, error, refetch } = useUserAccounts(open);
   const list = useMemo(() => data ?? [], [data]);
 
@@ -67,7 +73,7 @@ export function AccountSwitcher() {
     [list, isDisabledAt]
   );
 
-  // Fechar fora/ESC
+  // Fechar ao clicar fora/ESC
   React.useEffect(() => {
     if (!open) return;
     const onClick = (e: MouseEvent) => {
@@ -96,21 +102,37 @@ export function AccountSwitcher() {
     };
   }, [open]);
 
-  // Abertura: telemetria + foco + log simples
+  // Abertura: telemetria + foco inicial
   React.useEffect(() => {
     if (open) {
       openedAtRef.current = performance.now();
-      console.error(JSON.stringify({ event: "account_switcher_open", scope: "ui", timestamp: new Date().toISOString() }));
+      // Log temporário de QA (remover antes do merge final)
+      // Mostra tamanho da lista/dados retornados
       // eslint-disable-next-line no-console
-      console.log({ len: list.length, firstName: list[0]?.accountName, firstSub: list[0]?.accountSubdomain });
+      console.log("account_switcher_open_state", {
+        len: list?.length,
+        first: list?.[0],
+        loading,
+        error,
+      });
+
+      // Telemetria padronizada
+      // eslint-disable-next-line no-console
+      console.error(
+        JSON.stringify({
+          event: "account_switcher_open",
+          scope: "ui",
+          timestamp: new Date().toISOString(),
+        })
+      );
 
       if (!loading && !error && list.length > 0) {
         const activeIdx = list.findIndex((a) => a.accountSubdomain === account?.subdomain);
         const start = activeIdx >= 0 ? activeIdx : -1;
-        const firstEnabled = start >= 0 && !isDisabledAt(start) ? start : findNextEnabled(start, 1);
-        setFocusIndex(firstEnabled);
+        const first = start >= 0 && !isDisabledAt(start) ? start : findNextEnabled(start, 1);
+        setFocusIndex(first);
         setTimeout(() => {
-          if (firstEnabled >= 0 && itemRefs.current[firstEnabled]) itemRefs.current[firstEnabled]?.focus();
+          if (first >= 0 && itemRefs.current[first]) itemRefs.current[first]?.focus();
         }, 0);
       } else {
         setFocusIndex(-1);
@@ -121,7 +143,7 @@ export function AccountSwitcher() {
     }
   }, [open, loading, error, list, account?.subdomain, findNextEnabled, isDisabledAt]);
 
-  // Esconder trigger só após data real
+  // 🔧 Só oculta o trigger DEPOIS de termos DATA REAL (data !== null)
   React.useEffect(() => {
     if (data !== null && !loading && !error) {
       const shouldHide = list.length <= 1;
@@ -131,8 +153,10 @@ export function AccountSwitcher() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [data, loading, error, list.length, open]);
 
+  // Teclado no menu
   const onMenuKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
     if (!open || loading || error || list.length === 0) return;
+
     if (e.key === "ArrowDown") {
       e.preventDefault();
       const next = focusIndex < 0 ? findNextEnabled(-1, 1) : findNextEnabled(focusIndex, 1);
@@ -157,31 +181,44 @@ export function AccountSwitcher() {
     }
   };
 
+  // Seleção
   const handleSelect = (idx: number) => {
     const acc = list[idx];
     if (!acc) return;
 
     const t0 = openedAtRef.current ?? performance.now();
     const latency = Math.max(0, performance.now() - t0);
-    console.error(JSON.stringify({
-      event: "account_selected",
-      scope: "ui",
-      account_id: acc.accountId,
-      account_subdomain: acc.accountSubdomain,
-      latency_ms: Math.round(latency),
-      timestamp: new Date().toISOString(),
-    }));
+    // eslint-disable-next-line no-console
+    console.error(
+      JSON.stringify({
+        event: "account_selected",
+        scope: "ui",
+        account_id: acc.accountId,
+        account_subdomain: acc.accountSubdomain,
+        latency_ms: Math.round(latency),
+        timestamp: new Date().toISOString(),
+      })
+    );
 
     setOpen(false);
     router.push(`/a/${acc.accountSubdomain}`);
   };
 
+  // Criar
   const handleCreate = () => {
-    console.error(JSON.stringify({ event: "create_account_click", scope: "ui", timestamp: new Date().toISOString() }));
+    // eslint-disable-next-line no-console
+    console.error(
+      JSON.stringify({
+        event: "create_account_click",
+        scope: "ui",
+        timestamp: new Date().toISOString(),
+      })
+    );
     setOpen(false);
     router.push("/a/home?consultive=1");
   };
 
+  // 👉 Não esconda o botão antes de termos data
   if (hideTrigger) return null;
 
   return (
@@ -209,10 +246,10 @@ export function AccountSwitcher() {
           onKeyDown={onMenuKeyDown}
           className="absolute right-0 mt-2 w-80 origin-top-right rounded-2xl border bg-popover p-2 shadow-lg z-50"
         >
-          <div className="px-2 py-1.5 text-xs text-popover-foreground/80">Minhas contas</div>
+          <div className="px-2 py-1.5 text-xs text-muted-foreground">Minhas contas</div>
 
           {loading && (
-            <div className="px-3 py-2 text-sm text-popover-foreground/70" aria-live="polite">
+            <div className="px-3 py-2 text-sm text-muted-foreground" aria-live="polite">
               Carregando contas…
             </div>
           )}
@@ -230,12 +267,11 @@ export function AccountSwitcher() {
           )}
 
           {!loading && !error && (
-            <div className="max-h-72 overflow-auto pr-1">
+            <div className="max-h-72 overflow-auto">
               {list.map((acc, idx) => {
                 const isActive = acc.accountSubdomain === account?.subdomain;
                 const disabled = isDisabledAt(idx);
                 const reason = disabledReasonAt(idx);
-                const displayName = acc.accountName ?? acc.accountSubdomain;
 
                 const statusClass =
                   acc.accountStatus === "active"
@@ -249,31 +285,31 @@ export function AccountSwitcher() {
                 return (
                   <button
                     key={acc.accountId}
-                    ref={(el) => { itemRefs.current[idx] = el; }}
+                    ref={(el) => {
+                      itemRefs.current[idx] = el;
+                    }}
                     role="menuitem"
                     aria-current={isActive ? "true" : undefined}
                     aria-disabled={disabled ? true : undefined}
                     disabled={disabled}
-                    onClick={() => { if (!disabled) handleSelect(idx); }}
+                    onClick={() => {
+                      if (disabled) return;
+                      handleSelect(idx);
+                    }}
                     title={disabled ? reason : undefined}
                     className={[
-                      "w-full px-3 py-2 rounded-xl text-sm",
-                      "grid grid-cols-[1fr_auto] items-center gap-2",
+                      "w-full text-left px-3 py-2 rounded-xl text-sm flex items-center justify-between gap-2 min-w-0 overflow-hidden",
                       "hover:bg-accent focus:outline-none focus:ring-2 focus:ring-ring/40",
                       disabled ? "opacity-50 cursor-not-allowed" : "cursor-pointer",
-                      isActive ? "font-semibold" : "",
+                      isActive ? "font-semibold text-primary" : "",
                     ].join(" ")}
                   >
-                    {/* Nome com cor correta do popover */}
-                    <span className="min-w-0 overflow-hidden truncate leading-tight text-popover-foreground">
-                      {displayName}
+                    <span className="min-w-0 truncate text-foreground">
+                      {acc.accountName ?? acc.accountSubdomain ?? "Sem nome"}
                     </span>
-
-                    {/* Chip (não encolher) */}
                     <span
                       className={[
-                        "justify-self-end inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-medium",
-                        "shrink-0",
+                        "inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-medium",
                         statusClass,
                       ].join(" ")}
                       aria-label={`status: ${acc.accountStatus}`}
@@ -291,7 +327,7 @@ export function AccountSwitcher() {
           <button
             role="menuitem"
             onClick={handleCreate}
-            className="w-full text-left px-3 py-2 rounded-xl text-sm hover:bg-accent focus:outline-none focus:ring-2 focus:ring-ring/40 text-popover-foreground"
+            className="w-full text-left px-3 py-2 rounded-xl text-sm hover:bg-accent focus:outline-none focus:ring-2 focus:ring-ring/40"
           >
             Criar outra conta
           </button>
