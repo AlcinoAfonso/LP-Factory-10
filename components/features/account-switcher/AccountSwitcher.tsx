@@ -7,9 +7,7 @@ import { useUserAccounts } from "./useUserAccounts";
 import { useAccessContext } from "@/providers/AccessProvider";
 
 /**
- * AccountSwitcher — não oculta antes de ter dados
- * - Botão “Trocar conta” sempre visível inicialmente.
- * - Só decide ocultar após DATA REAL (data !== null).
+ * AccountSwitcher — mantém o trigger visível até ter DATA REAL.
  */
 export function AccountSwitcher() {
   const router = useRouter();
@@ -102,19 +100,27 @@ export function AccountSwitcher() {
     };
   }, [open]);
 
-  // Abertura: telemetria + foco inicial
+  // Abertura: telemetria + foco inicial + log leve p/ diagnóstico
   React.useEffect(() => {
     if (open) {
       openedAtRef.current = performance.now();
       console.error(JSON.stringify({ event: "account_switcher_open", scope: "ui", timestamp: new Date().toISOString() }));
+      if (list) {
+        // 👇 Diagnóstico rápido para confirmar chegada de nomes
+        // (remover após QA)
+        // len, primeiro item e campos críticos
+        const first = list[0];
+        // eslint-disable-next-line no-console
+        console.log({ len: list.length, firstName: first?.accountName, firstSub: first?.accountSubdomain });
+      }
 
       if (!loading && !error && list.length > 0) {
         const activeIdx = list.findIndex((a) => a.accountSubdomain === account?.subdomain);
         const start = activeIdx >= 0 ? activeIdx : -1;
-        const first = start >= 0 && !isDisabledAt(start) ? start : findNextEnabled(start, 1);
-        setFocusIndex(first);
+        const firstEnabled = start >= 0 && !isDisabledAt(start) ? start : findNextEnabled(start, 1);
+        setFocusIndex(firstEnabled);
         setTimeout(() => {
-          if (first >= 0 && itemRefs.current[first]) itemRefs.current[first]?.focus();
+          if (firstEnabled >= 0 && itemRefs.current[firstEnabled]) itemRefs.current[firstEnabled]?.focus();
         }, 0);
       } else {
         setFocusIndex(-1);
@@ -125,10 +131,10 @@ export function AccountSwitcher() {
     }
   }, [open, loading, error, list, account?.subdomain, findNextEnabled, isDisabledAt]);
 
-  // 🔧 Só oculta o trigger DEPOIS de termos DATA REAL (data !== null)
+  // Só oculta o trigger DEPOIS de termos DATA REAL (data !== null)
   React.useEffect(() => {
     if (data !== null && !loading && !error) {
-      const shouldHide = (list.length) <= 1;
+      const shouldHide = list.length <= 1;
       setHideTrigger(shouldHide);
       if (shouldHide && open) setOpen(false);
     }
@@ -216,7 +222,7 @@ export function AccountSwitcher() {
           aria-labelledby={btnId}
           tabIndex={-1}
           onKeyDown={onMenuKeyDown}
-          className="absolute right-0 mt-2 w-72 origin-top-right rounded-2xl border bg-popover p-2 shadow-lg z-50"
+          className="absolute right-0 mt-2 w-80 origin-top-right rounded-2xl border bg-popover p-2 shadow-lg z-50"
         >
           <div className="px-2 py-1.5 text-xs text-muted-foreground">Minhas contas</div>
 
@@ -239,11 +245,12 @@ export function AccountSwitcher() {
           )}
 
           {!loading && !error && (
-            <div className="max-h-72 overflow-auto">
+            <div className="max-h-72 overflow-auto pr-1">
               {list.map((acc, idx) => {
                 const isActive = acc.accountSubdomain === account?.subdomain;
                 const disabled = isDisabledAt(idx);
                 const reason = disabledReasonAt(idx);
+                const displayName = acc.accountName ?? acc.accountSubdomain;
 
                 const statusClass =
                   acc.accountStatus === "active"
@@ -265,16 +272,22 @@ export function AccountSwitcher() {
                     onClick={() => { if (!disabled) handleSelect(idx); }}
                     title={disabled ? reason : undefined}
                     className={[
-                      "w-full text-left px-3 py-2 rounded-xl text-sm flex items-center justify-between gap-2",
+                      "w-full px-3 py-2 rounded-xl text-sm",
+                      "flex items-center gap-3",
                       "hover:bg-accent focus:outline-none focus:ring-2 focus:ring-ring/40",
                       disabled ? "opacity-50 cursor-not-allowed" : "cursor-pointer",
-                      isActive ? "font-semibold text-primary" : "",
+                      isActive ? "font-semibold text-primary" : "text-foreground",
                     ].join(" ")}
                   >
-                    <span className="truncate">{acc.accountName}</span>
+                    {/* Nome (não pode encolher sem min-w-0) */}
+                    <span className="flex-1 min-w-0 truncate leading-tight">
+                      {displayName}
+                    </span>
+
+                    {/* Chip de status (não encolher) */}
                     <span
                       className={[
-                        "inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-medium",
+                        "flex-shrink-0 inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-medium",
                         statusClass,
                       ].join(" ")}
                       aria-label={`status: ${acc.accountStatus}`}
