@@ -10,13 +10,13 @@ import { useAccessContext } from "@/providers/AccessProvider";
  * AccountSwitcher — versão com “hide após confirmação”
  * - O botão “Trocar conta” SEMPRE aparece até carregarmos a lista.
  * - Após resposta: se houver só 1 conta, ocultamos o trigger e fechamos o submenu.
- * - Demais regras (A11y, telemetria, estados, segurança) preservadas.
+ * - Regras anteriores (A11y, telemetria, estados, segurança) preservadas.
  */
 export function AccountSwitcher() {
   const router = useRouter();
   const { account } = useAccessContext() || {};
   const [open, setOpen] = useState(false);
-  const [hideTrigger, setHideTrigger] = useState(false); // novo
+  const [hideTrigger, setHideTrigger] = useState(false); // evita ocultar antes de saber o total
   const menuRef = useRef<HTMLDivElement | null>(null);
   const btnRef = useRef<HTMLButtonElement | null>(null);
 
@@ -51,12 +51,16 @@ export function AccountSwitcher() {
       const acc = list[idx];
       if (!acc) return undefined;
       if (acc.memberStatus !== "active") {
-        if (acc.memberStatus === "pending") return "Convite pendente — aguarde aprovação.";
-        if (acc.memberStatus === "revoked") return "Acesso revogado — contate o administrador.";
+        if (acc.memberStatus === "pending")
+          return "Convite pendente — aguarde aprovação.";
+        if (acc.memberStatus === "revoked")
+          return "Acesso revogado — contate o administrador.";
         return "Membro inativo — contate o administrador.";
       }
-      if (acc.accountStatus === "inactive") return "Conta inativa — reative pelo suporte.";
-      if (acc.accountStatus === "suspended") return "Conta suspensa — acesso temporariamente bloqueado.";
+      if (acc.accountStatus === "inactive")
+        return "Conta inativa — reative pelo suporte.";
+      if (acc.accountStatus === "suspended")
+        return "Conta suspensa — acesso temporariamente bloqueado.";
       return undefined;
     },
     [list]
@@ -118,12 +122,17 @@ export function AccountSwitcher() {
       );
 
       if (!loading && !error && list.length > 0) {
-        const activeIdx = list.findIndex((a) => a.accountSubdomain === account?.subdomain);
+        const activeIdx = list.findIndex(
+          (a) => a.accountSubdomain === account?.subdomain
+        );
         const start = activeIdx >= 0 ? activeIdx : -1;
-        const first = start >= 0 && !isDisabledAt(start) ? start : findNextEnabled(start, 1);
+        const first =
+          start >= 0 && !isDisabledAt(start) ? start : findNextEnabled(start, 1);
         setFocusIndex(first);
         setTimeout(() => {
-          if (first >= 0 && itemRefs.current[first]) itemRefs.current[first]?.focus();
+          if (first >= 0 && itemRefs.current[first]) {
+            itemRefs.current[first]?.focus();
+          }
         }, 0);
       } else {
         setFocusIndex(-1);
@@ -132,9 +141,17 @@ export function AccountSwitcher() {
       openedAtRef.current = null;
       setFocusIndex(-1);
     }
-  }, [open, loading, error, list, account?.subdomain, findNextEnabled, isDisabledAt]);
+  }, [
+    open,
+    loading,
+    error,
+    list,
+    account?.subdomain,
+    findNextEnabled,
+    isDisabledAt,
+  ]);
 
-  // NOVO: após carregar, decide ocultar trigger quando só há 1 conta
+  // Após carregar, decide ocultar trigger quando só há 1 conta
   React.useEffect(() => {
     if (!loading && !error) {
       const shouldHide = (list?.length ?? 0) <= 1;
@@ -150,14 +167,18 @@ export function AccountSwitcher() {
 
     if (e.key === "ArrowDown") {
       e.preventDefault();
-      const next = focusIndex < 0 ? findNextEnabled(-1, 1) : findNextEnabled(focusIndex, 1);
+      const next =
+        focusIndex < 0 ? findNextEnabled(-1, 1) : findNextEnabled(focusIndex, 1);
       if (next >= 0) {
         setFocusIndex(next);
         itemRefs.current[next]?.focus();
       }
     } else if (e.key === "ArrowUp") {
       e.preventDefault();
-      const prev = focusIndex < 0 ? findNextEnabled(list.length, -1) : findNextEnabled(focusIndex, -1);
+      const prev =
+        focusIndex < 0
+          ? findNextEnabled(list.length, -1)
+          : findNextEnabled(focusIndex, -1);
       if (prev >= 0) {
         setFocusIndex(prev);
         itemRefs.current[prev]?.focus();
@@ -208,7 +229,7 @@ export function AccountSwitcher() {
     router.push("/a/home?consultive=1");
   };
 
-  // 🔒 Não ocultamos o trigger antes de confirmar o total de contas
+  // Não ocultamos o trigger antes de confirmar o total de contas
   if (hideTrigger) return null;
 
   return (
@@ -236,10 +257,15 @@ export function AccountSwitcher() {
           onKeyDown={onMenuKeyDown}
           className="absolute right-0 mt-2 w-72 origin-top-right rounded-2xl border bg-popover p-2 shadow-lg z-50"
         >
-          <div className="px-2 py-1.5 text-xs text-muted-foreground">Minhas contas</div>
+          <div className="px-2 py-1.5 text-xs text-muted-foreground">
+            Minhas contas
+          </div>
 
           {loading && (
-            <div className="px-3 py-2 text-sm text-muted-foreground" aria-live="polite">
+            <div
+              className="px-3 py-2 text-sm text-muted-foreground"
+              aria-live="polite"
+            >
               Carregando contas…
             </div>
           )}
