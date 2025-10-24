@@ -209,9 +209,9 @@ export function AccountSwitcher() {
           tabIndex={-1}
           onKeyDown={onMenuKeyDown}
           style={{ position: 'absolute', right: 0, top: '100%', marginTop: '0.5rem' }}
-          className="w-80 rounded-2xl border bg-popover p-2 shadow-lg z-50"
+          className="w-[280px] rounded-2xl border bg-popover p-1 shadow-lg z-50"
         >
-          <div className="px-2 py-1.5 text-xs text-muted-foreground">Minhas contas</div>
+          <div className="px-3 py-1.5 text-xs text-muted-foreground">Minhas contas</div>
 
           {(loading || (!error && list.length === 0 && data === null)) && (
             <div className="px-3 py-2 text-sm text-muted-foreground animate-pulse" aria-live="polite">
@@ -220,7 +220,7 @@ export function AccountSwitcher() {
           )}
 
           {error && (
-            <div className="px-2 py-2" aria-live="polite">
+            <div className="px-3 py-2" aria-live="polite">
               <div className="mb-2 text-sm text-red-500">Falha ao carregar.</div>
               <button
                 onClick={() => refetch()}
@@ -258,41 +258,37 @@ export function AccountSwitcher() {
                     onClick={() => { if (!disabled) handleSelect(idx); }}
                     title={disabled ? reason : undefined}
                     className={[
-                      "w-full text-left px-3 py-2 rounded-xl text-sm",
-                      "flex flex-row items-center justify-between gap-3",
+                      "w-full text-left px-2 py-1.5 rounded-lg text-sm",
+                      "flex flex-row items-center justify-between gap-2",
                       "hover:bg-accent focus:outline-none focus:ring-2 focus:ring-ring/40",
                       disabled ? "opacity-50 cursor-not-allowed" : "cursor-pointer",
                       isActive ? "font-semibold text-primary" : "",
                     ].join(" ")}
                   >
-                    <div className="flex-1 min-w-0">
-                      <div className="truncate text-sm">
-                        {acc.accountName || acc.accountSubdomain}
-                      </div>
-                    </div>
-                    <div className="flex-shrink-0">
-                      <span
-                        className={[
-                          "inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-medium whitespace-nowrap",
-                          statusClass,
-                        ].join(" ")}
-                        aria-label={`status: ${acc.accountStatus}`}
-                      >
-                        {acc.accountStatus}
-                      </span>
-                    </div>
+                    <span className="flex-1 min-w-0 truncate text-sm">
+                      {acc.accountName || acc.accountSubdomain}
+                    </span>
+                    <span
+                      className={[
+                        "inline-flex items-center rounded-full border px-1.5 py-0.5 text-[10px] font-medium whitespace-nowrap flex-shrink-0",
+                        statusClass,
+                      ].join(" ")}
+                      aria-label={`status: ${acc.accountStatus}`}
+                    >
+                      {acc.accountStatus}
+                    </span>
                   </button>
                 );
               })}
             </div>
           )}
 
-          <div className="my-2 h-px bg-border" />
+          <div className="my-1.5 h-px bg-border" />
 
           <button
             role="menuitem"
             onClick={handleCreate}
-            className="w-full text-left px-3 py-2 rounded-xl text-sm hover:bg-accent focus:outline-none focus:ring-2 focus:ring-ring/40"
+            className="w-full text-left px-2 py-1.5 rounded-lg text-sm hover:bg-accent focus:outline-none focus:ring-2 focus:ring-ring/40"
           >
             Criar outra conta
           </button>
