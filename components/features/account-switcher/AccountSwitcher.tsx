@@ -1,4 +1,4 @@
-// components/features/account-switcher/AccountSwitcher.tsx
+/ components/features/account-switcher/AccountSwitcher.tsx
 "use client";
 
 import React, { useMemo, useRef, useState, useCallback } from "react";
@@ -41,7 +41,7 @@ export function AccountSwitcher() {
       console.log('🔍 AccountSwitcher state:', {
         open,
         loading,
-        error: error?.message || null,
+        error: error || null,
         dataIsNull: data === null,
         listLength: list.length,
         hideTrigger,
