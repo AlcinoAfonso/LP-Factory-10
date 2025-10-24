@@ -7,11 +7,11 @@ import { useUserAccounts } from "./useUserAccounts";
 import { useAccessContext } from "@/providers/AccessProvider";
 
 /**
- * AccountSwitcher — A11y
- * - ARIA: botão com aria-haspopup/expanded/controls; menu com role="menu" e id; itens com role="menuitem".
- * - Teclado: ↑/↓/Enter/ESC; foco visível; retorno de foco ao botão ao fechar.
- * - aria-current="true" no item da conta ativa.
- * - Mensagens de loading/erro com aria-live="polite".
+ * AccountSwitcher — Telemetria leve (Item 8)
+ * - Captura eventos: account_switcher_open, account_selected, create_account_click.
+ * - Usa console.error para logs estruturados (padrão de observabilidade).
+ * - Campos: {event, scope:"ui", account_id?, account_subdomain?, latency_ms?, timestamp}.
+ * - Mantém todas as regras de A11y e UX anteriores.
  */
 export function AccountSwitcher() {
   const router = useRouter();
@@ -23,26 +23,25 @@ export function AccountSwitcher() {
   const menuId = "account-switcher-menu";
   const btnId = "account-switcher-trigger";
 
-  // Telemetria: medir latência desde open até seleção
+  // Medir latência desde abertura até seleção
   const openedAtRef = useRef<number | null>(null);
 
-  // Carrega apenas quando o menu abre
+  // Dados
   const { data, loading, error, refetch } = useUserAccounts(open);
   const list = useMemo(() => data ?? [], [data]);
 
-  // Índice focado para navegação por teclado
   const [focusIndex, setFocusIndex] = useState<number>(-1);
   const itemRefs = useRef<Array<HTMLButtonElement | null>>([]);
 
-  // Regra de disponibilidade (UX + Access Context)
+  // Regras de disponibilidade
   const isDisabledAt = useCallback(
     (idx: number) => {
       const acc = list[idx];
       if (!acc) return true;
-      const clickableAccount =
+      const clickable =
         acc.accountStatus === "active" || acc.accountStatus === "pending_setup";
       const memberOk = acc.memberStatus === "active";
-      return !(clickableAccount && memberOk);
+      return !(clickable && memberOk);
     },
     [list]
   );
@@ -63,7 +62,7 @@ export function AccountSwitcher() {
     [list]
   );
 
-  // Próximo índice habilitado (para ↑/↓)
+  // Próximo índice habilitado
   const findNextEnabled = useCallback(
     (start: number, dir: 1 | -1) => {
       if (!list.length) return -1;
@@ -89,7 +88,7 @@ export function AccountSwitcher() {
         !btnRef.current.contains(t!)
       ) {
         setOpen(false);
-        btnRef.current?.focus(); // retorna foco ao trigger
+        btnRef.current?.focus();
       }
     };
     const onKey = (e: KeyboardEvent) => {
@@ -106,12 +105,18 @@ export function AccountSwitcher() {
     };
   }, [open]);
 
-  // Ao abrir: telemetria + foco inicial (ativo se habilitado; senão próximo habilitado)
+  // Abrir menu: log de telemetria
   React.useEffect(() => {
     if (open) {
       openedAtRef.current = performance.now();
-      // eslint-disable-next-line no-console
-      console.log(JSON.stringify({ event: "account_switcher_open", timestamp: new Date().toISOString() }));
+
+      console.error(
+        JSON.stringify({
+          event: "account_switcher_open",
+          scope: "ui",
+          timestamp: new Date().toISOString(),
+        })
+      );
 
       if (!loading && !error && list.length > 0) {
         const activeIdx = list.findIndex((a) => a.accountSubdomain === account?.subdomain);
@@ -158,17 +163,18 @@ export function AccountSwitcher() {
     }
   };
 
-  // Seleção de item (clique/Enter)
+  // Seleção (clique/Enter)
   const handleSelect = (idx: number) => {
     const acc = list[idx];
     if (!acc) return;
 
     const t0 = openedAtRef.current ?? performance.now();
     const latency = Math.max(0, performance.now() - t0);
-    // eslint-disable-next-line no-console
-    console.log(
+
+    console.error(
       JSON.stringify({
         event: "account_selected",
+        scope: "ui",
         account_id: acc.accountId,
         account_subdomain: acc.accountSubdomain,
         latency_ms: Math.round(latency),
@@ -182,13 +188,17 @@ export function AccountSwitcher() {
 
   // Criar nova conta
   const handleCreate = () => {
-    // eslint-disable-next-line no-console
-    console.log(JSON.stringify({ event: "create_account_click", timestamp: new Date().toISOString() }));
+    console.error(
+      JSON.stringify({
+        event: "create_account_click",
+        scope: "ui",
+        timestamp: new Date().toISOString(),
+      })
+    );
     setOpen(false);
     router.push("/a/home?consultive=1");
   };
 
-  // Se não há mais de 1 conta, não renderiza o switcher (C6.3)
   if (!loading && !error && list.length <= 1) return null;
 
   return (
@@ -218,7 +228,6 @@ export function AccountSwitcher() {
         >
           <div className="px-2 py-1.5 text-xs text-muted-foreground">Minhas contas</div>
 
-          {/* Loading/Erro com aria-live para leitores de tela */}
           {loading && (
             <div className="px-3 py-2 text-sm text-muted-foreground" aria-live="polite">
               Carregando contas…
@@ -241,12 +250,9 @@ export function AccountSwitcher() {
             <div className="max-h-72 overflow-auto">
               {list.map((acc, idx) => {
                 const isActive = acc.accountSubdomain === account?.subdomain;
-
-                // Disponibilidade / tooltip de motivo
                 const disabled = isDisabledAt(idx);
                 const reason = disabledReasonAt(idx);
 
-                // Chip de status
                 const statusClass =
                   acc.accountStatus === "active"
                     ? "bg-emerald-500/10 text-emerald-600 border-emerald-600/20"
@@ -254,7 +260,7 @@ export function AccountSwitcher() {
                     ? "bg-amber-500/10 text-amber-600 border-amber-600/20"
                     : acc.accountStatus === "inactive"
                     ? "bg-slate-500/10 text-slate-600 border-slate-600/20"
-                    : "bg-rose-500/10 text-rose-600 border-rose-600/20"; // suspended
+                    : "bg-rose-500/10 text-rose-600 border-rose-600/20";
 
                 return (
                   <button
@@ -276,8 +282,6 @@ export function AccountSwitcher() {
                       "hover:bg-accent focus:outline-none focus:ring-2 focus:ring-ring/40",
                       disabled ? "opacity-50 cursor-not-allowed" : "cursor-pointer",
                       isActive ? "font-semibold text-primary" : "",
-                      // Foco visível (também ao navegar por teclado)
-                      "focus-visible:ring-2 focus-visible:ring-ring/40",
                     ].join(" ")}
                   >
                     <span className="truncate">{acc.accountName}</span>
