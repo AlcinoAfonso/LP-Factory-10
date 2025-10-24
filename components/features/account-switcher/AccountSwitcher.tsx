@@ -7,33 +7,31 @@ import { useUserAccounts } from "./useUserAccounts";
 import { useAccessContext } from "@/providers/AccessProvider";
 
 /**
- * AccountSwitcher — versão com “hide após confirmação”
- * - O botão “Trocar conta” SEMPRE aparece até carregarmos a lista.
- * - Após resposta: se houver só 1 conta, ocultamos o trigger e fechamos o submenu.
- * - Regras anteriores (A11y, telemetria, estados, segurança) preservadas.
+ * AccountSwitcher — não oculta antes de ter dados
+ * - Botão “Trocar conta” sempre visível inicialmente.
+ * - Só decide ocultar após DATA REAL (data !== null).
  */
 export function AccountSwitcher() {
   const router = useRouter();
   const { account } = useAccessContext() || {};
   const [open, setOpen] = useState(false);
-  const [hideTrigger, setHideTrigger] = useState(false); // evita ocultar antes de saber o total
+  const [hideTrigger, setHideTrigger] = useState(false);
   const menuRef = useRef<HTMLDivElement | null>(null);
   const btnRef = useRef<HTMLButtonElement | null>(null);
 
   const menuId = "account-switcher-menu";
   const btnId = "account-switcher-trigger";
 
-  // Medir latência desde abertura até seleção
+  // Telemetria (latência)
   const openedAtRef = useRef<number | null>(null);
 
-  // Dados (carrega quando open=true)
+  // Carrega SOMENTE quando o submenu abre
   const { data, loading, error, refetch } = useUserAccounts(open);
   const list = useMemo(() => data ?? [], [data]);
 
   const [focusIndex, setFocusIndex] = useState<number>(-1);
   const itemRefs = useRef<Array<HTMLButtonElement | null>>([]);
 
-  // Disponibilidade
   const isDisabledAt = useCallback(
     (idx: number) => {
       const acc = list[idx];
@@ -51,16 +49,12 @@ export function AccountSwitcher() {
       const acc = list[idx];
       if (!acc) return undefined;
       if (acc.memberStatus !== "active") {
-        if (acc.memberStatus === "pending")
-          return "Convite pendente — aguarde aprovação.";
-        if (acc.memberStatus === "revoked")
-          return "Acesso revogado — contate o administrador.";
+        if (acc.memberStatus === "pending") return "Convite pendente — aguarde aprovação.";
+        if (acc.memberStatus === "revoked") return "Acesso revogado — contate o administrador.";
         return "Membro inativo — contate o administrador.";
       }
-      if (acc.accountStatus === "inactive")
-        return "Conta inativa — reative pelo suporte.";
-      if (acc.accountStatus === "suspended")
-        return "Conta suspensa — acesso temporariamente bloqueado.";
+      if (acc.accountStatus === "inactive") return "Conta inativa — reative pelo suporte.";
+      if (acc.accountStatus === "suspended") return "Conta suspensa — acesso temporariamente bloqueado.";
       return undefined;
     },
     [list]
@@ -79,7 +73,7 @@ export function AccountSwitcher() {
     [list, isDisabledAt]
   );
 
-  // Fechar ao clicar fora / ESC
+  // Fechar ao clicar fora/ESC
   React.useEffect(() => {
     if (!open) return;
     const onClick = (e: MouseEvent) => {
@@ -108,31 +102,19 @@ export function AccountSwitcher() {
     };
   }, [open]);
 
-  // Abrir menu: telemetria + foco inicial
+  // Abertura: telemetria + foco inicial
   React.useEffect(() => {
     if (open) {
       openedAtRef.current = performance.now();
-
-      console.error(
-        JSON.stringify({
-          event: "account_switcher_open",
-          scope: "ui",
-          timestamp: new Date().toISOString(),
-        })
-      );
+      console.error(JSON.stringify({ event: "account_switcher_open", scope: "ui", timestamp: new Date().toISOString() }));
 
       if (!loading && !error && list.length > 0) {
-        const activeIdx = list.findIndex(
-          (a) => a.accountSubdomain === account?.subdomain
-        );
+        const activeIdx = list.findIndex((a) => a.accountSubdomain === account?.subdomain);
         const start = activeIdx >= 0 ? activeIdx : -1;
-        const first =
-          start >= 0 && !isDisabledAt(start) ? start : findNextEnabled(start, 1);
+        const first = start >= 0 && !isDisabledAt(start) ? start : findNextEnabled(start, 1);
         setFocusIndex(first);
         setTimeout(() => {
-          if (first >= 0 && itemRefs.current[first]) {
-            itemRefs.current[first]?.focus();
-          }
+          if (first >= 0 && itemRefs.current[first]) itemRefs.current[first]?.focus();
         }, 0);
       } else {
         setFocusIndex(-1);
@@ -141,25 +123,17 @@ export function AccountSwitcher() {
       openedAtRef.current = null;
       setFocusIndex(-1);
     }
-  }, [
-    open,
-    loading,
-    error,
-    list,
-    account?.subdomain,
-    findNextEnabled,
-    isDisabledAt,
-  ]);
+  }, [open, loading, error, list, account?.subdomain, findNextEnabled, isDisabledAt]);
 
-  // Após carregar, decide ocultar trigger quando só há 1 conta
+  // 🔧 Só oculta o trigger DEPOIS de termos DATA REAL (data !== null)
   React.useEffect(() => {
-    if (!loading && !error) {
-      const shouldHide = (list?.length ?? 0) <= 1;
+    if (data !== null && !loading && !error) {
+      const shouldHide = (list.length) <= 1;
       setHideTrigger(shouldHide);
       if (shouldHide && open) setOpen(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [loading, error, list?.length, open]);
+  }, [data, loading, error, list.length, open]);
 
   // Teclado no menu
   const onMenuKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
@@ -167,18 +141,14 @@ export function AccountSwitcher() {
 
     if (e.key === "ArrowDown") {
       e.preventDefault();
-      const next =
-        focusIndex < 0 ? findNextEnabled(-1, 1) : findNextEnabled(focusIndex, 1);
+      const next = focusIndex < 0 ? findNextEnabled(-1, 1) : findNextEnabled(focusIndex, 1);
       if (next >= 0) {
         setFocusIndex(next);
         itemRefs.current[next]?.focus();
       }
     } else if (e.key === "ArrowUp") {
       e.preventDefault();
-      const prev =
-        focusIndex < 0
-          ? findNextEnabled(list.length, -1)
-          : findNextEnabled(focusIndex, -1);
+      const prev = focusIndex < 0 ? findNextEnabled(list.length, -1) : findNextEnabled(focusIndex, -1);
       if (prev >= 0) {
         setFocusIndex(prev);
         itemRefs.current[prev]?.focus();
@@ -193,43 +163,34 @@ export function AccountSwitcher() {
     }
   };
 
-  // Seleção (clique/Enter)
+  // Seleção
   const handleSelect = (idx: number) => {
     const acc = list[idx];
     if (!acc) return;
 
     const t0 = openedAtRef.current ?? performance.now();
     const latency = Math.max(0, performance.now() - t0);
-
-    console.error(
-      JSON.stringify({
-        event: "account_selected",
-        scope: "ui",
-        account_id: acc.accountId,
-        account_subdomain: acc.accountSubdomain,
-        latency_ms: Math.round(latency),
-        timestamp: new Date().toISOString(),
-      })
-    );
+    console.error(JSON.stringify({
+      event: "account_selected",
+      scope: "ui",
+      account_id: acc.accountId,
+      account_subdomain: acc.accountSubdomain,
+      latency_ms: Math.round(latency),
+      timestamp: new Date().toISOString(),
+    }));
 
     setOpen(false);
     router.push(`/a/${acc.accountSubdomain}`);
   };
 
-  // Criar nova conta
+  // Criar
   const handleCreate = () => {
-    console.error(
-      JSON.stringify({
-        event: "create_account_click",
-        scope: "ui",
-        timestamp: new Date().toISOString(),
-      })
-    );
+    console.error(JSON.stringify({ event: "create_account_click", scope: "ui", timestamp: new Date().toISOString() }));
     setOpen(false);
     router.push("/a/home?consultive=1");
   };
 
-  // Não ocultamos o trigger antes de confirmar o total de contas
+  // 👉 Não esconda o botão antes de termos data
   if (hideTrigger) return null;
 
   return (
@@ -257,15 +218,10 @@ export function AccountSwitcher() {
           onKeyDown={onMenuKeyDown}
           className="absolute right-0 mt-2 w-72 origin-top-right rounded-2xl border bg-popover p-2 shadow-lg z-50"
         >
-          <div className="px-2 py-1.5 text-xs text-muted-foreground">
-            Minhas contas
-          </div>
+          <div className="px-2 py-1.5 text-xs text-muted-foreground">Minhas contas</div>
 
           {loading && (
-            <div
-              className="px-3 py-2 text-sm text-muted-foreground"
-              aria-live="polite"
-            >
+            <div className="px-3 py-2 text-sm text-muted-foreground" aria-live="polite">
               Carregando contas…
             </div>
           )}
@@ -301,17 +257,12 @@ export function AccountSwitcher() {
                 return (
                   <button
                     key={acc.accountId}
-                    ref={(el) => {
-                      itemRefs.current[idx] = el;
-                    }}
+                    ref={(el) => { itemRefs.current[idx] = el; }}
                     role="menuitem"
                     aria-current={isActive ? "true" : undefined}
                     aria-disabled={disabled ? true : undefined}
                     disabled={disabled}
-                    onClick={() => {
-                      if (disabled) return;
-                      handleSelect(idx);
-                    }}
+                    onClick={() => { if (!disabled) handleSelect(idx); }}
                     title={disabled ? reason : undefined}
                     className={[
                       "w-full text-left px-3 py-2 rounded-xl text-sm flex items-center justify-between gap-2",
