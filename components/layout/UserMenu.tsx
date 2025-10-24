@@ -1,9 +1,11 @@
+// components/layout/UserMenu.tsx
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { LogoutButton } from '@/components/logout-button';
 import { useAccessContext } from '@/providers/AccessProvider';
+import { AccountSwitcher } from '@/components/features/account-switcher/AccountSwitcher';
 
 export default function UserMenu({
   userEmail: emailProp,
@@ -37,7 +39,12 @@ export default function UserMenu({
     function handleClickOutside(ev: MouseEvent) {
       if (!open) return;
       const t = ev.target as Node | null;
-      if (menuRef.current && !menuRef.current.contains(t!) && btnRef.current && !btnRef.current.contains(t!)) {
+      if (
+        menuRef.current &&
+        !menuRef.current.contains(t!) &&
+        btnRef.current &&
+        !btnRef.current.contains(t!)
+      ) {
         setOpen(false);
       }
     }
@@ -84,13 +91,14 @@ export default function UserMenu({
             <MenuItem href="/workspace/profile" onClick={() => setOpen(false)}>
               Perfil
             </MenuItem>
-            <MenuItem href="/a/home" onClick={() => setOpen(false)}>
-              Trocar conta
-            </MenuItem>
-            <MenuItem href="/a/home?consultive=1" onClick={() => setOpen(false)}>
-              Criar outra conta
-            </MenuItem>
 
+            {/* Novo — Switcher de contas dentro do menu */}
+            <div className="px-2 py-1">
+              <AccountSwitcher />
+            </div>
+
+            {/* Removido "Criar outra conta" aqui para evitar duplicidade:
+                já existe dentro do AccountSwitcher */}
             <div className="my-1 h-px w-full bg-gray-100" />
 
             {/* Apenas UM botão de sair */}
