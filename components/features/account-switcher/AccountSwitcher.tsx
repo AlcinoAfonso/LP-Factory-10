@@ -283,13 +283,13 @@ export function AccountSwitcher() {
                     onClick={() => { if (!disabled) handleSelect(idx); }}
                     title={disabled ? reason : undefined}
                     className={[
-                      "w-full min-w-0 text-left px-3 py-2 rounded-xl text-sm flex items-center justify-between gap-2",
+                      "w-full text-left px-3 py-2 rounded-xl text-sm flex items-center gap-2",
                       "hover:bg-accent focus:outline-none focus:ring-2 focus:ring-ring/40",
                       disabled ? "opacity-50 cursor-not-allowed" : "cursor-pointer",
                       isActive ? "font-semibold text-primary" : "",
                     ].join(" ")}
                   >
-                    <span className="truncate min-w-0 flex-1">
+                    <span className="flex-1 truncate overflow-hidden">
                       {acc.accountName || acc.accountSubdomain || 'Sem nome'}
                     </span>
                     <span
