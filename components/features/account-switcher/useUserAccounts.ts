@@ -1,122 +1,88 @@
 // components/features/account-switcher/useUserAccounts.ts
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import * as React from "react";
 
-export type UserAccount = {
+/** Formato vindo do endpoint (/api/user/accounts) */
+export type ApiUserAccount = {
   accountId: string;
-  accountName: string;
+  accountName: string | null;
   accountSubdomain: string;
-  accountStatus: "active" | "inactive" | "suspended" | "pending_setup";
+  accountStatus: string;       // pode vir 'trial' (não está no tipo canônico)
   memberRole: "owner" | "admin" | "editor" | "viewer";
   memberStatus: "pending" | "active" | "inactive" | "revoked";
 };
 
-type ErrorCode =
-  | "timeout"
-  | "network_error"
-  | "server_error"
-  | "invalid_payload"
-  | "unauthorized";
+/** Formato usado internamente pelo AccountSwitcher */
+export type UserAccount = {
+  accountId: string;
+  accountName: string | null;
+  accountSubdomain: string;
+  accountStatus: string;       // manter string para incluir 'trial' sem quebrar TS
+  memberRole: ApiUserAccount["memberRole"];
+  memberStatus: ApiUserAccount["memberStatus"];
+};
 
-type FetchResult =
-  | { ok: true; data: UserAccount[] }
-  | { ok: false; error: ErrorCode };
+type State = {
+  data: UserAccount[] | null;
+  loading: boolean;
+  error: string | null;
+};
 
-async function fetchWithTimeout(
-  input: RequestInfo,
-  init: RequestInit = {},
-  timeoutMs = 6000
-): Promise<Response> {
-  const controller = new AbortController();
-  const id = setTimeout(() => controller.abort(), timeoutMs);
-  try {
-    const res = await fetch(input, { ...init, signal: controller.signal, cache: "no-store" });
-    return res;
-  } finally {
-    clearTimeout(id);
-  }
-}
+export function useUserAccounts(shouldLoad: boolean) {
+  const [state, setState] = React.useState<State>({
+    data: null,
+    loading: false,
+    error: null,
+  });
 
-/**
- * Busca a lista de contas do usuário autenticado.
- * - Timeout padrão: 6s
- * - Sem cache: sempre lê do servidor
- */
-export async function fetchUserAccounts(timeoutMs = 6000): Promise<FetchResult> {
-  try {
-    const res = await fetchWithTimeout("/api/user/accounts", { method: "GET" }, timeoutMs);
+  const abortRef = React.useRef<AbortController | null>(null);
 
-    if (res.status === 401) {
-      return { ok: false, error: "unauthorized" };
+  const fetcher = React.useCallback(async () => {
+    abortRef.current?.abort();
+    const ac = new AbortController();
+    abortRef.current = ac;
+
+    setState((s) => ({ ...s, loading: true, error: null }));
+
+    try {
+      const res = await fetch("/api/user/accounts", {
+        cache: "no-store",
+        signal: ac.signal,
+      });
+
+      if (!res.ok) {
+        throw new Error(`http_${res.status}`);
+      }
+
+      const json = await res.json();
+      const rows: ApiUserAccount[] = Array.isArray(json) ? json : json?.data ?? [];
+
+      const mapped: UserAccount[] = rows.map((i) => ({
+        accountId: i.accountId,
+        accountName: i.accountName ?? null,
+        accountSubdomain: i.accountSubdomain,
+        accountStatus: String(i.accountStatus), // <- preserva 'trial'
+        memberRole: i.memberRole,
+        memberStatus: i.memberStatus,
+      }));
+
+      setState({ data: mapped, loading: false, error: null });
+    } catch (e: any) {
+      if (e?.name === "AbortError") return;
+      setState({ data: null, loading: false, error: e?.message ?? "fetch_error" });
     }
-    if (!res.ok) {
-      return { ok: false, error: "server_error" };
-    }
+  }, []);
 
-    const data = (await res.json()) as unknown;
-    if (!Array.isArray(data)) {
-      return { ok: false, error: "invalid_payload" };
-    }
-    return { ok: true, data: data as UserAccount[] };
-  } catch (e: any) {
-    if (e?.name === "AbortError") return { ok: false, error: "timeout" };
-    return { ok: false, error: "network_error" };
-  }
-}
+  React.useEffect(() => {
+    if (shouldLoad) fetcher();
+    return () => abortRef.current?.abort();
+  }, [shouldLoad, fetcher]);
 
-/**
- * Hook para carregar as contas sob demanda (lazy).
- * - `enabled`: quando true, dispara a carga.
- * - Retorna data, loading, error e refetch().
- * - Cache simples em memória por aba (evita refetchs no mesmo open).
- */
-const sessionCache: { data?: UserAccount[]; ts?: number } = {};
-
-export function useUserAccounts(enabled: boolean, cacheTtlMs = 5 * 60 * 1000) {
-  const [data, setData] = useState<UserAccount[] | null>(null);
-  const [error, setError] = useState<ErrorCode | null>(null);
-  const [loading, setLoading] = useState(false);
-  const loadingRef = useRef(false);
-
-  const load = useCallback(async () => {
-    if (loadingRef.current) return;
-    setError(null);
-    setLoading(true);
-    loadingRef.current = true;
-
-    // Cache leve por sessão (se dentro do TTL)
-    const now = Date.now();
-    if (sessionCache.data && sessionCache.ts && now - sessionCache.ts < cacheTtlMs) {
-      setData(sessionCache.data);
-      setLoading(false);
-      loadingRef.current = false;
-      return;
-    }
-
-    const res = await fetchUserAccounts(6000);
-    if (res.ok) {
-      sessionCache.data = res.data;
-      sessionCache.ts = now;
-      setData(res.data);
-    } else {
-      setError(res.error);
-      setData(null);
-    }
-
-    setLoading(false);
-    loadingRef.current = false;
-  }, [cacheTtlMs]);
-
-  useEffect(() => {
-    if (enabled) void load();
-  }, [enabled, load]);
-
-  const refetch = useCallback(async () => {
-    sessionCache.data = undefined;
-    sessionCache.ts = undefined;
-    await load();
-  }, [load]);
-
-  return { data, error, loading, refetch };
+  return {
+    data: state.data,
+    loading: state.loading,
+    error: state.error,
+    refetch: fetcher,
+  };
 }
