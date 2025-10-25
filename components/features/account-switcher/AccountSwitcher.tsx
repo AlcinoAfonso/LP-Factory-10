@@ -35,7 +35,9 @@ export function AccountSwitcher() {
       const acc = list[idx];
       if (!acc) return true;
       const clickable =
-        acc.accountStatus === "active" || acc.accountStatus === "pending_setup";
+        acc.accountStatus === "active" ||
+        acc.accountStatus === "pending_setup" ||
+        acc.accountStatus === "trial"; // tratar trial como ativo
       const memberOk = acc.memberStatus === "active";
       return !(clickable && memberOk);
     },
@@ -51,7 +53,7 @@ export function AccountSwitcher() {
         if (acc.memberStatus === "revoked") return "Acesso revogado — contate o administrador.";
         return "Membro inativo — contate o administrador.";
       }
-      if (acc.accountStatus === "inactive") return "Conta inativa — reativa pelo suporte.";
+      if (acc.accountStatus === "inactive")  return "Conta inativa — reative pelo suporte.";
       if (acc.accountStatus === "suspended") return "Conta suspensa — acesso temporariamente bloqueado.";
       return undefined;
     },
@@ -105,8 +107,6 @@ export function AccountSwitcher() {
     if (open) {
       openedAtRef.current = performance.now();
       console.error(JSON.stringify({ event: "account_switcher_open", scope: "ui", timestamp: new Date().toISOString() }));
-      // eslint-disable-next-line no-console
-      console.log({ len: list.length, firstName: list[0]?.accountName, firstSub: list[0]?.accountSubdomain });
 
       if (!loading && !error && list.length > 0) {
         const activeIdx = list.findIndex((a) => a.accountSubdomain === account?.subdomain);
@@ -276,12 +276,12 @@ export function AccountSwitcher() {
                   const displayName = acc.accountName ?? acc.accountSubdomain ?? "(sem nome)";
 
                   const statusClass =
-                    acc.accountStatus === "active"
+                    acc.accountStatus === "active" || acc.accountStatus === "trial"
                       ? "bg-emerald-500/10 text-emerald-600 border-emerald-600/20"
                       : acc.accountStatus === "pending_setup"
                       ? "bg-amber-500/10 text-amber-600 border-amber-600/20"
                       : acc.accountStatus === "inactive"
-                      ? "bg-slate-500/10 text-slate-600 border-slate-600/20"
+                      ? "bg-slate-500/10 text-slate-600 border-rose-600/20"
                       : "bg-rose-500/10 text-rose-600 border-rose-600/20";
 
                   return (
