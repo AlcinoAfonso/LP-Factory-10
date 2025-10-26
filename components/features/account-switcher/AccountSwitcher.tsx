@@ -55,7 +55,7 @@ export function AccountSwitcher() {
         if (acc.memberStatus === "revoked") return "Acesso revogado — contate o administrador.";
         return "Membro inativo — contate o administrador.";
       }
-      if (acc.accountStatus === "inactive")  return "Conta inativa — reative pelo suporte.";
+      if (acc.accountStatus === "inactive") return "Conta inativa — reativa pelo suporte.";
       if (acc.accountStatus === "suspended") return "Conta suspensa — acesso temporariamente bloqueado.";
       return undefined;
     },
@@ -75,18 +75,19 @@ export function AccountSwitcher() {
     [list, isDisabledAt]
   );
 
-  // Fechar fora/ESC
+  // Fechar fora/ESC — usar 'click' (não 'mousedown') para não matar onClick dos itens
   React.useEffect(() => {
     if (!open) return;
-    const onClick = (e: MouseEvent) => {
+    const onDocClick = (e: MouseEvent) => {
       const t = e.target as Node | null;
-      if (
-        popRef.current && !popRef.current.contains(t!) &&
-        btnRef.current && !btnRef.current.contains(t!)
-      ) {
-        setOpen(false);
-        btnRef.current?.focus();
-      }
+      if (!t) return;
+      // clique dentro do popover (portal) → ignora
+      if (popRef.current && (t instanceof Node) && popRef.current.contains(t)) return;
+      // clique no botão trigger → ignora (o próprio botão gerencia)
+      if (btnRef.current && (t instanceof Node) && btnRef.current.contains(t)) return;
+      // fora de tudo → fechar
+      setOpen(false);
+      btnRef.current?.focus();
     };
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
@@ -94,10 +95,10 @@ export function AccountSwitcher() {
         btnRef.current?.focus();
       }
     };
-    document.addEventListener("mousedown", onClick);
+    document.addEventListener("click", onDocClick);   // ⬅️ trocado de 'mousedown' para 'click'
     document.addEventListener("keydown", onKey);
     return () => {
-      document.removeEventListener("mousedown", onClick);
+      document.removeEventListener("click", onDocClick);
       document.removeEventListener("keydown", onKey);
     };
   }, [open]);
@@ -225,6 +226,7 @@ export function AccountSwitcher() {
 
       {open && pos && createPortal(
         <div
+          data-account-switcher-portal="1"  // marcador para o outside-click
           ref={popRef}
           id={menuId}
           role="menu"
