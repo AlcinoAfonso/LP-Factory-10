@@ -75,18 +75,21 @@ export function AccountSwitcher() {
     [list, isDisabledAt]
   );
 
-  // Fechar fora/ESC — usar 'click' (não 'mousedown') para não matar o onClick/Enter dos itens
+  // Fechar fora/ESC — usa 'click' (não 'mousedown') + defer para não atropelar onClick interno
   React.useEffect(() => {
     if (!open) return;
     const onClick = (e: MouseEvent) => {
       const t = e.target as Node | null;
-      if (
-        popRef.current && !popRef.current.contains(t!) &&
-        btnRef.current && !btnRef.current.contains(t!)
-      ) {
-        setOpen(false);
-        btnRef.current?.focus();
-      }
+      // Defer para o próximo tick, garantindo que o onClick do item rode antes
+      setTimeout(() => {
+        if (
+          popRef.current && !popRef.current.contains(t!) &&
+          btnRef.current && !btnRef.current.contains(t!)
+        ) {
+          setOpen(false);
+          btnRef.current?.focus();
+        }
+      }, 0);
     };
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
