@@ -35,7 +35,7 @@ export function AccountSwitcher() {
       const acc = list[idx];
       if (!acc) return true;
 
-      // ⚠️ Tipagem canônica não inclui 'trial'. Tratar em runtime:
+      // Tipagem canônica não inclui 'trial' → tratar em runtime
       const status = acc.accountStatus as unknown as string;
       const clickable =
         status === "active" || status === "pending_setup" || status === "trial";
@@ -177,12 +177,27 @@ export function AccountSwitcher() {
     }
   };
 
-  // Seleção
+  // Seleção: navegação robusta (App Router + fallback hard)
   const handleSelect = (idx: number) => {
     const acc = list[idx];
     if (!acc) return;
+
+    const nextUrl = `/a/${acc.accountSubdomain}`;
+    // Se já está na conta selecionada, apenas fecha
+    if (typeof window !== "undefined" && window.location.pathname === nextUrl) {
+      setOpen(false);
+      return;
+    }
+
     setOpen(false);
-    router.push(`/a/${acc.accountSubdomain}`);
+    router.push(nextUrl);
+
+    // Fallback hard caso algo impeça a navegação client-side
+    setTimeout(() => {
+      if (typeof window !== "undefined" && window.location.pathname !== nextUrl) {
+        window.location.assign(nextUrl);
+      }
+    }, 150);
   };
 
   // Criar
@@ -198,6 +213,7 @@ export function AccountSwitcher() {
       <button
         id={btnId}
         ref={btnRef}
+        type="button"
         onClick={() => setOpen((v) => !v)}
         aria-haspopup="menu"
         aria-expanded={open}
@@ -237,6 +253,7 @@ export function AccountSwitcher() {
             <div className="px-2 py-2" aria-live="polite">
               <div className="mb-2 text-sm text-red-500">Falha ao carregar.</div>
               <button
+                type="button"
                 onClick={() => refetch()}
                 className="rounded-lg bg-secondary px-3 py-1.5 text-sm hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-ring/40"
               >
@@ -261,13 +278,14 @@ export function AccountSwitcher() {
                     : status === "pending_setup"
                     ? "bg-amber-500/10 text-amber-600 border-amber-600/20"
                     : status === "inactive"
-                    ? "bg-slate-500/10 text-slate-600 border-slate-600/20"
+                    ? "bg-slate-500/10 text-slate-600 border-rose-600/20"
                     : "bg-rose-500/10 text-rose-600 border-rose-600/20";
 
                 return (
                   <button
                     key={acc.accountId}
                     ref={(el) => { itemRefs.current[idx] = el; }}
+                    type="button"
                     role="menuitem"
                     aria-current={isActive ? "true" : undefined}
                     aria-disabled={disabled ? true : undefined}
@@ -304,6 +322,7 @@ export function AccountSwitcher() {
           <div className="my-2 h-px bg-border" />
 
           <button
+            type="button"
             role="menuitem"
             onClick={handleCreate}
             className="w-full text-left px-3 py-2 rounded-xl text-sm hover:bg-accent focus:outline-none focus:ring-2 focus:ring-ring/40 text-popover-foreground"
