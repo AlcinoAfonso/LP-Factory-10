@@ -75,12 +75,12 @@ export function AccountSwitcher() {
     [list, isDisabledAt]
   );
 
-  // Fechar fora/ESC — usa 'click' (não 'mousedown') + defer para não atropelar onClick interno
+  // Fechar fora/ESC — usa 'click' (não 'mousedown') + defer p/ não atropelar o onClick interno
   React.useEffect(() => {
     if (!open) return;
     const onClick = (e: MouseEvent) => {
       const t = e.target as Node | null;
-      // Defer para o próximo tick, garantindo que o onClick do item rode antes
+      // Defer: permite o handler do item executar antes
       setTimeout(() => {
         if (
           popRef.current && !popRef.current.contains(t!) &&
@@ -159,7 +159,7 @@ export function AccountSwitcher() {
     };
   }, [open, computePos]);
 
-  // Teclado
+  // Teclado (contêiner)
   const onMenuKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
     if (!open || loading || error || list.length === 0) return;
     if (e.key === "ArrowDown") {
@@ -293,7 +293,13 @@ export function AccountSwitcher() {
                     aria-current={isActive ? "true" : undefined}
                     aria-disabled={disabled ? true : undefined}
                     disabled={disabled}
-                    onClick={() => { if (!disabled) handleSelect(idx); }}
+                    // Garante seleção antes de qualquer fechamento externo
+                    onPointerDown={(e) => {
+                      if (!disabled) {
+                        e.preventDefault();
+                        handleSelect(idx);
+                      }
+                    }}
                     title={disabled ? reason : undefined}
                     className={[
                       "w-full px-3 py-2 rounded-xl text-sm",
