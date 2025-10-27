@@ -2,16 +2,21 @@
 "use client";
 
 import React, { useMemo, useRef, useState, useCallback, useLayoutEffect } from "react";
-import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import { useUserAccounts } from "./useUserAccounts";
 import { useAccessContext } from "@/providers/AccessProvider";
+
+// Novos componentes (apresentação)
+import { AccountSwitcherTrigger } from "./AccountSwitcherTrigger";
+import { AccountSwitcherList } from "./AccountSwitcherList";
 
 type Pos = { top: number; leftCenter: number };
 
 export function AccountSwitcher() {
   const router = useRouter();
   const { account } = useAccessContext() || {};
+
+  // ---------- estado & refs ----------
   const [open, setOpen] = useState(false);
   const [hideTrigger, setHideTrigger] = useState(false);
 
@@ -30,6 +35,7 @@ export function AccountSwitcher() {
   const [focusIndex, setFocusIndex] = useState<number>(-1);
   const [pos, setPos] = useState<Pos | null>(null);
 
+  // ---------- utilidades ----------
   const isDisabledAt = useCallback(
     (idx: number) => {
       const acc = list[idx];
@@ -75,6 +81,7 @@ export function AccountSwitcher() {
     [list, isDisabledAt]
   );
 
+  // ---------- efeitos: clique-fora / ESC ----------
   // Fechar fora/ESC — usa 'click' (não 'mousedown') + defer p/ não atropelar o onClick interno
   React.useEffect(() => {
     if (!open) return;
@@ -105,7 +112,7 @@ export function AccountSwitcher() {
     };
   }, [open]);
 
-  // Abertura: foco inicial
+  // ---------- efeitos: foco inicial ----------
   React.useEffect(() => {
     if (open) {
       openedAtRef.current = performance.now();
@@ -126,7 +133,7 @@ export function AccountSwitcher() {
     }
   }, [open, loading, error, list, account?.subdomain, findNextEnabled, isDisabledAt]);
 
-  // Só esconder trigger depois de DATA REAL
+  // ---------- efeitos: esconder trigger quando só há 1 conta ----------
   React.useEffect(() => {
     if (data !== null && !loading && !error) {
       const shouldHide = list.length <= 1;
@@ -136,7 +143,7 @@ export function AccountSwitcher() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [data, loading, error, list.length, open]);
 
-  // Posicionamento (portal) centralizado ao botão
+  // ---------- posicionamento do popover ----------
   const computePos = useCallback(() => {
     const b = btnRef.current?.getBoundingClientRect();
     if (!b) return;
@@ -159,7 +166,7 @@ export function AccountSwitcher() {
     };
   }, [open, computePos]);
 
-  // Teclado (contêiner)
+  // ---------- teclado no contêiner ----------
   const onMenuKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
     if (!open || loading || error || list.length === 0) return;
     if (e.key === "ArrowDown") {
@@ -180,7 +187,7 @@ export function AccountSwitcher() {
     }
   };
 
-  // Seleção: navegação robusta (App Router + fallback hard)
+  // ---------- seleção / navegação ----------
   const handleSelect = (idx: number) => {
     const acc = list[idx];
     if (!acc) return;
@@ -203,7 +210,7 @@ export function AccountSwitcher() {
     }, 150);
   };
 
-  // Criar
+  // ---------- criar conta ----------
   const handleCreate = () => {
     setOpen(false);
     router.push("/a/home?consultive=1");
@@ -211,136 +218,37 @@ export function AccountSwitcher() {
 
   if (hideTrigger) return null;
 
+  // ---------- render ----------
   return (
     <div className="relative inline-block text-left">
-      <button
+      <AccountSwitcherTrigger
+        open={open}
+        onToggle={() => setOpen((v) => !v)}
+        btnRef={btnRef}
         id={btnId}
-        ref={btnRef}
-        type="button"
-        onClick={() => setOpen((v) => !v)}
-        aria-haspopup="menu"
-        aria-expanded={open}
-        aria-controls={menuId}
-        className="w-full select-none rounded-xl px-3 py-2 text-sm hover:bg-accent focus:outline-none focus:ring-2 focus:ring-ring/40"
+        label="Trocar conta"
+      />
+
+      <div
+        // contêiner invisível apenas para keydown centralizado
+        onKeyDown={onMenuKeyDown}
       >
-        Trocar conta
-      </button>
-
-      {open && pos && createPortal(
-        <div
-          ref={popRef}
-          id={menuId}
-          role="menu"
-          aria-label="Minhas contas"
-          aria-labelledby={btnId}
-          tabIndex={-1}
-          onKeyDown={onMenuKeyDown}
-          style={{
-            position: "fixed",
-            top: pos.top,
-            left: pos.leftCenter,
-            transform: "translateX(-50%)",
-            zIndex: 60,
-          }}
-          className="w-80 rounded-2xl border bg-popover p-2 shadow-lg"
-        >
-          <div className="px-2 py-1.5 text-xs text-popover-foreground/80">Minhas contas</div>
-
-          {loading && (
-            <div className="px-3 py-2 text-sm text-popover-foreground/70" aria-live="polite">
-              Carregando contas…
-            </div>
-          )}
-
-          {error && (
-            <div className="px-2 py-2" aria-live="polite">
-              <div className="mb-2 text-sm text-red-500">Falha ao carregar.</div>
-              <button
-                type="button"
-                onClick={() => refetch()}
-                className="rounded-lg bg-secondary px-3 py-1.5 text-sm hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-ring/40"
-              >
-                Tentar novamente
-              </button>
-            </div>
-          )}
-
-          {!loading && !error && (
-            <div className="max-h-72 overflow-auto pr-1">
-              {list.map((acc, idx) => {
-                const isActive = acc.accountSubdomain === account?.subdomain;
-                const disabled = isDisabledAt(idx);
-                const reason = disabledReasonAt(idx);
-                const displayName = acc.accountName ?? acc.accountSubdomain ?? "(sem nome)";
-
-                // Mapear classe por string para considerar 'trial' sem quebrar TS
-                const status = acc.accountStatus as unknown as string;
-                const statusClass =
-                  status === "active" || status === "trial"
-                    ? "bg-emerald-500/10 text-emerald-600 border-emerald-600/20"
-                    : status === "pending_setup"
-                    ? "bg-amber-500/10 text-amber-600 border-amber-600/20"
-                    : status === "inactive"
-                    ? "bg-slate-500/10 text-slate-600 border-rose-600/20"
-                    : "bg-rose-500/10 text-rose-600 border-rose-600/20";
-
-                return (
-                  <button
-                    key={acc.accountId}
-                    ref={(el) => { itemRefs.current[idx] = el; }}
-                    type="button"
-                    role="menuitem"
-                    aria-current={isActive ? "true" : undefined}
-                    aria-disabled={disabled ? true : undefined}
-                    disabled={disabled}
-                    // Garante seleção antes de qualquer fechamento externo
-                    onPointerDown={(e) => {
-                      if (!disabled) {
-                        e.preventDefault();
-                        handleSelect(idx);
-                      }
-                    }}
-                    title={disabled ? reason : undefined}
-                    className={[
-                      "w-full px-3 py-2 rounded-xl text-sm",
-                      "grid grid-cols-[1fr_auto] items-center gap-2",
-                      "hover:bg-accent focus:outline-none focus:ring-2 focus:ring-ring/40",
-                      disabled ? "opacity-50 cursor-not-allowed" : "cursor-pointer",
-                      isActive ? "font-semibold" : "",
-                    ].join(" ")}
-                  >
-                    <span className="min-w-0 overflow-hidden truncate leading-tight text-popover-foreground">
-                      {displayName}
-                    </span>
-                    <span
-                      className={[
-                        "justify-self-end inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-medium",
-                        "shrink-0",
-                        statusClass,
-                      ].join(" ")}
-                      aria-label={`status: ${status}`}
-                    >
-                      {status}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-          )}
-
-          <div className="my-2 h-px bg-border" />
-
-          <button
-            type="button"
-            role="menuitem"
-            onClick={handleCreate}
-            className="w-full text-left px-3 py-2 rounded-xl text-sm hover:bg-accent focus:outline-none focus:ring-2 focus:ring-ring/40 text-popover-foreground"
-          >
-            Criar outra conta
-          </button>
-        </div>,
-        document.body
-      )}
+        <AccountSwitcherList
+          list={list}
+          focusIndex={focusIndex}
+          itemRefs={itemRefs}
+          loading={loading}
+          error={error}
+          onRetry={refetch}
+          onSelect={handleSelect}
+          onCreate={handleCreate}
+          open={open}
+          popRef={popRef}
+          pos={pos}
+          menuId={menuId}
+          labelledBy={btnId}
+        />
+      </div>
     </div>
   );
 }
