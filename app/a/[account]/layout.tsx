@@ -62,12 +62,14 @@ export default async function Layout({
     const subdomain = ctx.account?.subdomain;
 
     if (subdomain && accountStatus === "active" && memberStatus === "active") {
+      const isProd = process.env.NODE_ENV === "production";
+
       cookies().set("last_account_subdomain", subdomain, {
         httpOnly: true,
-        secure: true,
+        secure: isProd,              // em dev, evita falha no localhost
         sameSite: "lax",
         path: "/",
-        maxAge: 60 * 60 * 24 * 90, // 90 dias
+        maxAge: 60 * 60 * 24 * 30,   // 30 dias conforme plano
       });
 
       // eslint-disable-next-line no-console
