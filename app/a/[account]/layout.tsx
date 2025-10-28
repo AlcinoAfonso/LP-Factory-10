@@ -49,9 +49,8 @@ export default async function Layout({
     })
   );
 
-  // 🔹 Ajuste: quando não há contexto (sem sessão/vínculo), ir para página pública
   if (!ctx) {
-    redirect("/a/home");
+    redirect("/auth/confirm/info");
   }
 
   // ⚙️ Persistência da última conta (itens C6.3–C6.4)
@@ -63,14 +62,12 @@ export default async function Layout({
     const subdomain = ctx.account?.subdomain;
 
     if (subdomain && accountStatus === "active" && memberStatus === "active") {
-      const isProd = process.env.NODE_ENV === "production";
-
       cookies().set("last_account_subdomain", subdomain, {
         httpOnly: true,
-        secure: isProd,              // em dev, evita falha no localhost
+        secure: true,
         sameSite: "lax",
         path: "/",
-        maxAge: 60 * 60 * 24 * 30,   // 30 dias conforme plano
+        maxAge: 60 * 60 * 24 * 90, // 90 dias
       });
 
       // eslint-disable-next-line no-console
