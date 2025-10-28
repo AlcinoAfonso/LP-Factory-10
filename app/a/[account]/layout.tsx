@@ -49,8 +49,9 @@ export default async function Layout({
     })
   );
 
+  // 🔹 Ajuste: quando não há contexto (sem sessão/vínculo), ir para página pública
   if (!ctx) {
-    redirect("/auth/confirm/info");
+    redirect("/a/home");
   }
 
   // ⚙️ Persistência da última conta (itens C6.3–C6.4)
