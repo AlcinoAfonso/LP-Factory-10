@@ -28,6 +28,19 @@ export function useAccountSwitcher() {
   const { data, loading, error, refetch } = useUserAccounts(open);
   const list = React.useMemo(() => data ?? [], [data]);
 
+  // Contas elegíveis para troca (regra: membro ativo + conta active/pending_setup/trial)
+  const eligible = React.useMemo(
+    () =>
+      list.filter(
+        (a) =>
+          a.memberStatus === "active" &&
+          (a.accountStatus === "active" ||
+            a.accountStatus === "pending_setup" ||
+            a.accountStatus === "trial")
+      ),
+    [list]
+  );
+
   const [focusIndex, setFocusIndex] = React.useState<number>(-1);
   const [pos, setPos] = React.useState<Pos | null>(null);
 
@@ -128,15 +141,15 @@ export function useAccountSwitcher() {
     }
   }, [open, loading, error, list, account?.subdomain, findNextEnabled, isDisabledAt]);
 
-  // ----- efeitos: esconder trigger quando só há 1 conta -----
+  // ----- efeitos: esconder trigger quando só há 1 conta elegível -----
   React.useEffect(() => {
     if (data !== null && !loading && !error) {
-      const shouldHide = list.length <= 1;
+      const shouldHide = eligible.length <= 1;
       setHideTrigger(shouldHide);
       if (shouldHide && open) setOpen(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [data, loading, error, list.length, open]);
+  }, [data, loading, error, eligible.length, open]);
 
   // ----- posicionamento do popover -----
   const computePos = React.useCallback(() => {
@@ -236,7 +249,7 @@ export function useAccountSwitcher() {
     // UX/A11y
     focusIndex,
     onMenuKeyDown,
-    disabledReasonAt, // disponível se precisar exibir tooltips/razões
+    disabledReasonAt,
     isDisabledAt,
 
     // ações
