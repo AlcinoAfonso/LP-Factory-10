@@ -1,0 +1,204 @@
+# LP Factory 10 — Roadmap 1.4
+**Data:** 29/10/2025  
+**Propósito:** Roteiro de implementação e visão estratégica do produto  
+**Versão anterior:** 1.3 (18/10/2025)
+
+---
+
+## E1 — Estrutura de Dados
+**Status:** ✅ Concluído (03/10/2025)
+
+- **Implementado:**
+  - Tabelas: `accounts`, `account_users`, `audit_logs`, `plans`, `partners`, `partner_accounts`, `post_sale_tokens`
+  - Views: `v_access_context_v2`, `v_account_effective_limits`, `v_account_effective_limits_secure`, `v_admin_tokens_with_usage`, `v_audit_logs_norm`
+  - Constraints e índices otimizados
+- **Critérios de Aceite:**
+  - Multi-tenant funcional (subdomain/domain UNIQUE)
+  - 1 owner ativo por conta
+  - Auditoria automática
+- **Pendências:** Nenhuma
+
+---
+
+## E2 — Núcleo de Acesso
+**Status:** ✅ Concluído
+
+- **Implementado:**
+  - Autenticação email/senha (SULB)
+  - Roles: `owner`, `admin`, `editor`, `viewer`, `super_admin`
+  - RLS em todas as tabelas
+  - Helpers: `is_super_admin`, `is_platform_admin`, `has_account_min_role`
+- **Critérios de Aceite:**
+  - Login funcional e seguro
+  - Reset de senha com expiração
+  - Auditoria ativa
+- **Pendências:** futuras features (Magic Link, Social Login, 2FA)
+
+---
+
+## E3 — Adapters Base
+**Status:** ✅ Concluído
+
+- **Implementado:**
+  - `accountAdapter`, `accessContextAdapter`, `adminAdapter`, `postSaleTokenAdapter`
+  - Tipos normalizados (DB → TS)
+  - Logs estruturados
+- **Pendências:** Adapters de planos e LPs futuras (`planAdapter`, `landingPageAdapter`, `sectionAdapter`)
+
+---
+
+## E4 — Account Dashboard (Infraestrutura SSR)
+**Status:** ✅ Concluído
+
+- **Implementado:**
+  - Rota canônica `/a/[account]`
+  - Middleware + SSR gate (`getAccessContext`)
+  - Página neutra `/auth/confirm/info`
+- **Critérios de Aceite:**
+  - Redirect `/a → /a/[account]`
+  - Sessão validada antes do render
+  - Deny seguro com logs estruturados
+
+---
+
+## E5 — UI/Auth Account Dashboard
+**Status:** ✅ Concluído
+
+- **Implementado:**
+  - Forms de login/reset/update-password (SULB)
+  - Mensagens neutras e bloqueios progressivos
+- **Critérios de Aceite:**
+  - Modal fecha apenas em sucesso
+  - Erros genéricos, UX segura
+
+---
+
+## E6 — UI Kit Provisório
+**Status:** ✅ Concluído
+
+- **Implementado:**
+  - Componentes `Button`, `Card`, `Input`, `Label`, `AlertBanner`
+  - Base `shadcn/ui`
+- **Pendências:** futura migração para Supabase Platform Kit
+
+---
+
+## E7 — Conta Consultiva
+**Status:** ✅ Concluído (18/10/2025)
+
+- **Escopo:**
+  - Criação de contas via token pós-venda
+  - Painel `/admin/tokens` (gerar, listar, revogar)
+  - RPC `create_account_with_owner`
+- **Critérios de Aceite:**
+  - Conta criada com `contract_ref` e status `pending_setup`
+  - Redirecionamento automático pós-onboard
+  - Banner de setup visível
+- **Pendências:** Refinamentos de UX migrados para E10.1
+
+---
+
+### E7.1 — Platform Admin
+- Helper `is_platform_admin()`
+- RLS e rate limit diferenciados
+- **Pendência:** gestão visual de papéis
+
+### E7.3 — Conta Consultiva Express
+- Criação direta de conta e usuário pelo admin
+- RPC `create_account_for_client_express()`
+- Reset obrigatório no primeiro login
+- **Status:** 🟡 Planejado
+
+---
+
+## E8 — Access Context & Governança
+**Status:** ✅ Concluído (03/10/2025)
+
+- **Implementado:**
+  - `v_access_context_v2` (fonte única de acesso)
+  - `AccessProvider` com `account.name`
+  - Logs canônicos (`access_context_decision`)
+- **Critérios de Aceite:**
+  - Bloqueio correto para contas/membros inativos
+  - Redirect seguro e rastreável
+
+---
+
+## E9 — Stripe Sync (Billing)
+**Status:** 🟡 Em planejamento
+
+- **Escopo MVP:**
+  - Webhooks (`checkout.session.completed`, `subscription.updated`)
+  - Colunas billing em `accounts`
+  - Tabela `plan_price_map`
+- **Critérios de Aceite:**
+  - Plano ativo = billing_status=‘active’
+  - Auditoria de transições
+
+---
+
+## E10 — Account Dashboard (UX)
+**Status:** 🟡 Em andamento (nova definição)
+
+- **Objetivo:** Consolidar a experiência pós-login do usuário principal.  
+  Inclui header unificado, troca de contas, persistência e telemetria.
+
+### E10.1 — Refinamento UX (ex-E7.2)
+- **Escopo:**  
+  - Header unificado (logo + nome da conta + avatar)  
+  - `AccountSwitcher` multi-conta  
+  - Cookie `last_account_subdomain` (HttpOnly, 30d)  
+  - Telemetria (`account_selected`, `create_account_click`)
+- **Critérios de Aceite:**  
+  - Persistência última conta ✅  
+  - Navegação previsível ✅  
+  - Responsividade completa 📱  
+- **Status:** 85% (QA final)
+
+---
+
+## E11 — Gestão de Usuários e Convites
+**Status:** 🟡 Planejado
+
+- UI `/a/[account]/members`
+- Convites via email com tokens
+- Controle de papéis (`Admin`, `Editor`, `Viewer`)
+- Critério: `Viewer` não convida, Admin pode revogar
+
+---
+
+## E12 — Partner Dashboard
+**Status:** 📋 Planejado
+
+- Painel de agências e parceiros
+- Branding, gestão de clientes, relatórios
+- Integração futura com Partner API
+
+---
+
+## E17 — Workspace Dashboard
+**Status:** 📋 Planejado
+
+- Perfil e preferências do usuário
+- Seleção de conta ativa
+- Integração com Access Context
+
+---
+
+## Fases Estratégicas
+
+| Fase | Nome | Status | Descrição |
+|------|------|---------|------------|
+| 1 | Sistema de Acesso | ✅ | Login, reset, RLS, auditoria |
+| 2 | Account Dashboard | 🟡 | UX completa (E10) |
+| 3 | Dogfooding | 📋 | Teste interno de LPs |
+| 4 | Verticalização Piloto | 📋 | Nicho inicial (ex: imobiliário) |
+| 5 | Prospecção Consultiva | 📋 | Modelo DWY (Do With You) |
+| 6 | Expansão de Nichos | 📋 | Múltiplos verticais |
+| 7 | SaaS Automático | 📋 | Self-service opcional |
+| 8 | Parcerias e White Label | 📋 | Rede de agências e afiliados |
+
+---
+
+**Última atualização:** 29/10/2025  
+**Próxima revisão:** Após conclusão E10.1 (Account Dashboard UX)
