@@ -24,8 +24,8 @@ export function useAccountSwitcher() {
   const btnId = "account-switcher-trigger";
   const openedAtRef = React.useRef<number | null>(null);
 
-  // Carrega somente quando abrir
-  const { data, loading, error, refetch } = useUserAccounts(open);
+  // Carrega SEMPRE (para decidir hideTrigger antes do clique)
+  const { data, loading, error, refetch } = useUserAccounts(true);
   const list = React.useMemo(() => data ?? [], [data]);
 
   const [focusIndex, setFocusIndex] = React.useState<number>(-1);
