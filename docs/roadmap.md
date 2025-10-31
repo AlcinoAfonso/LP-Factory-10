@@ -5,6 +5,28 @@
 
 ---
 
+## 📑 Sumário
+
+- [E1 — Estrutura de Dados](#e1--estrutura-de-dados)
+- [E2 — Núcleo de Acesso](#e2--núcleo-de-acesso)
+- [E3 — Adapters Base](#e3--adapters-base)
+- [E4 — Account Dashboard (Infraestrutura SSR)](#e4--account-dashboard-infraestrutura-ssr)
+- [E5 — UI/Auth Account Dashboard](#e5--uiauth-account-dashboard)
+- [E6 — UI Kit Provisório](#e6--ui-kit-provisório)
+- [E7 — Conta Consultiva](#e7--conta-consultiva)
+  - [E7.1 — Platform Admin](#e71--platform-admin)
+  - [E7.3 — Conta Consultiva Express](#e73--conta-consultiva-express)
+- [E8 — Access Context & Governança](#e8--access-context--governança)
+- [E9 — Stripe Sync (Billing)](#e9--stripe-sync-billing)
+- [E10 — Account Dashboard (UX)](#e10--account-dashboard-ux)
+  - [E10.1 — Account Dashboard UX (ex-E7.2)](#e101--account-dashboard-ux-ex-e72)
+- [E11 — Gestão de Usuários e Convites](#e11--gestão-de-usuários-e-convites)
+- [E12 — Partner Dashboard](#e12--partner-dashboard)
+- [E17 — Workspace Dashboard](#e17--workspace-dashboard)
+- [Fases Estratégicas](#fases-estratégicas)
+
+---
+
 ## E1 — Estrutura de Dados
 **Status:** ✅ Concluído (03/10/2025)
 
