@@ -143,21 +143,32 @@
 - **Objetivo:** Consolidar a experiência pós-login do usuário principal.  
   Inclui header unificado, troca de contas, persistência e telemetria.
 
-### E10.1 — Refinamento UX (ex-E7.2)
-- **Escopo:**  
-  - Header unificado (logo + nome da conta + avatar)  
-  - `AccountSwitcher` multi-conta  
-  - Cookie `last_account_subdomain` (HttpOnly, 30d)  
-  - Telemetria (`account_selected`, `create_account_click`)
-- **Critérios de Aceite:**  
-  - Persistência última conta ✅  
-  - Navegação previsível ✅  
-  - Responsividade completa 📱  
-- **Status:** 85% (QA final)
+### E10.1 — Account Dashboard UX (ex-E7.2)
+**Status:** ✅ 100% concluído (29/10/2025)  
+**Versão:** Roadmap 1.4
+
+- **Objetivo:** Refinar UX e comportamento multi-conta no Account Dashboard, consolidando persistência da última conta e previsibilidade no pipeline público/privado.
+- **Implementado:**
+  - Componentes `AccountSwitcher`, `AccountSwitcherTrigger`, `AccountSwitcherList`
+  - Hooks `useAccountSwitcher`, `useUserAccounts`
+  - Header unificado com nome da conta e avatar
+  - Persistência da última conta via cookie (30d, HttpOnly)
+  - Integração `UserMenu` + `AccessProvider`
+  - Middleware simplificado (gravação e leitura de cookie)
+  - Telemetria (`account_switcher_open`, `account_selected`, `create_account_click`)
+- **QA Validado:**
+  - ✅ Troca de conta, logout e reabertura (/a)
+  - ✅ Persistência última conta 30d
+  - ✅ Ocultação automática quando há ≤1 conta
+  - ✅ Comportamento mobile/touch
+  - ✅ SSR deny → público seguro
+- **Valor agregado:**
+  - UX limpa e previsível
+  - Pipeline público/privado estável
+  - Componentes desacoplados e fáceis de manter
+- **Próxima revisão:** E10.2 (UX Partner Dashboard)
 
 ---
-
-## E11 — Gestão de Usuários e Convites
 **Status:** 🟡 Planejado
 
 - UI `/a/[account]/members`
