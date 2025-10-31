@@ -334,7 +334,7 @@ WHERE au.user_id = auth.uid();
 **Arquivo: `src/lib/types/status.ts` (fonte única)**
 
 ```typescript
-export type AccountStatus = 'active' | 'inactive' | 'suspended' | 'pending_setup';
+export type AccountStatus = 'active' | 'inactive' | 'suspended' | 'pending_setup' | 'trial';
 export type MemberStatus = 'pending' | 'active' | 'inactive' | 'revoked';
 export type MemberRole = 'owner' | 'admin' | 'editor' | 'viewer';
 ```
@@ -342,8 +342,6 @@ export type MemberRole = 'owner' | 'admin' | 'editor' | 'viewer';
 **Importadores: `src/lib/access/types.ts`, adapters (accountAdapter, accessContextAdapter)**
 
 **Normalização: accountAdapter contém `normalizeAccountStatus()`, `normalizeMemberStatus()`, `normalizeRole()`**
-
-**Nota: Documentação cita `trial` em alguns lugares, mas tipo canônico não inclui. Avaliar padronização futura.**
 
 ---
 
@@ -818,6 +816,14 @@ Sistema de troca de contas com persistência via cookie (`last_account_subdomain
 **Endpoint:** `/api/user/accounts`  
 **Funcionalidades:** Persistência 30d, ocultação automática (≤1 conta), suporte teclado/touch
 
+**Orquestração SSR:**
+1. `app/a/[account]/layout.tsx` executa gate SSR via `getAccessContext()`
+2. Se `allow=true`, define cookie antes de responder (atributos: ver seção 4.1 ou 5.1.2)
+3. Middleware lê cookie e redireciona `/a` → `/a/{subdomain}` (quando autenticado)
+4. Logout expira cookie (`Max-Age=0`)
+
+**Benefício:** Usuário autenticado reabre `/a` e retorna à última conta automaticamente, sem depender de client state.
+
 Histórico de implementação: Ver `docs/roadmap.md` seção E10.1
 
 #### 5.3.4 Observabilidade
@@ -831,7 +837,7 @@ Histórico de implementação: Ver `docs/roadmap.md` seção E10.1
 | `create_account_click` | Header / UserMenu | ✅ |
 | `preferred_account_cookie_set` | /a/[account]/layout.tsx | 🟡 planejado |
 
-**Padrão:** JSON único (event, scope, latency_ms, timestamp)
+**Padrão:** JSON único (event, scope, latency_ms, timestamp, error?)
 
 ---
 
