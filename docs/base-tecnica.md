@@ -7,6 +7,39 @@
 
 ---
 
+## 📑 Sumário
+
+- [1. Identificação do Projeto](#1-identificação-do-projeto)
+- [2. Stack & Dependências](#2-stack--dependências)
+  - [2.1 Referências Rápidas](#21-referências-rápidas)
+- [3. Schema](#3-schema)
+  - [3.1 Tabelas Ativas](#31-tabelas-ativas)
+  - [3.2 Views Ativas](#32-views-ativas)
+  - [3.3 Functions Ativas](#33-functions-ativas)
+  - [3.4 Triggers Ativos](#34-triggers-ativos)
+  - [3.5 Tipos TypeScript Canônicos](#35-tipos-typescript-canônicos)
+- [4. Regras Técnicas Globais](#4-regras-técnicas-globais)
+  - [4.1 Segurança](#41-segurança)
+  - [4.2 Camadas (Estrutura Rígida)](#42-camadas-estrutura-rígida)
+  - [4.3 Estrutura de Arquivos](#43-estrutura-de-arquivos)
+  - [4.4 CI/Lint (Classes de Bloqueio)](#44-cilint-classes-de-bloqueio)
+  - [4.5 Secrets & Variáveis](#45-secrets--variáveis)
+  - [4.6 Tipos TypeScript](#46-tipos-typescript)
+  - [4.7 Convenções](#47-convenções)
+  - [4.8 Anti-Regressão](#48-anti-regressão)
+  - [4.9 Rate Limit](#49-rate-limit)
+  - [4.10 ❌ Anti-Patterns](#410--anti-patterns)
+- [5. Arquitetura de Acesso](#5-arquitetura-de-acesso)
+  - [5.1 Conceitos Fundamentais](#51-conceitos-fundamentais)
+  - [5.2 Implementação (Adapters, Guards, Providers)](#52-implementação-adapters-guards-providers)
+  - [5.3 Fluxos Principais](#53-fluxos-principais)
+- [6. Estrutura de Arquivos](#6-estrutura-de-arquivos)
+  - [6.1 Princípios de Organização](#61-princípios-de-organização)
+  - [6.2 Inventário de Arquivos](#62-inventário-de-arquivos)
+  - [6.3 Biblioteca Supabase (SULB)](#63-biblioteca-supabase-sulb)
+
+---
+
 ## 1. Identificação do Projeto
 
 **Nome: LP Factory 10**  
