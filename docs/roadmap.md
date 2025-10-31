@@ -169,6 +169,8 @@
 - **Próxima revisão:** E10.2 (UX Partner Dashboard)
 
 ---
+
+## E11 — Gestão de Usuários e Convites
 **Status:** 🟡 Planejado
 
 - UI `/a/[account]/members`
@@ -179,7 +181,7 @@
 ---
 
 ## E12 — Partner Dashboard
-**Status:** 📋 Planejado
+**Status:** 🟋 Planejado
 
 - Painel de agências e parceiros
 - Branding, gestão de clientes, relatórios
@@ -188,7 +190,7 @@
 ---
 
 ## E17 — Workspace Dashboard
-**Status:** 📋 Planejado
+**Status:** 🟋 Planejado
 
 - Perfil e preferências do usuário
 - Seleção de conta ativa
@@ -202,12 +204,12 @@
 |------|------|---------|------------|
 | 1 | Sistema de Acesso | ✅ | Login, reset, RLS, auditoria |
 | 2 | Account Dashboard | 🟡 | UX completa (E10) |
-| 3 | Dogfooding | 📋 | Teste interno de LPs |
-| 4 | Verticalização Piloto | 📋 | Nicho inicial (ex: imobiliário) |
-| 5 | Prospecção Consultiva | 📋 | Modelo DWY (Do With You) |
-| 6 | Expansão de Nichos | 📋 | Múltiplos verticais |
-| 7 | SaaS Automático | 📋 | Self-service opcional |
-| 8 | Parcerias e White Label | 📋 | Rede de agências e afiliados |
+| 3 | Dogfooding | 🟋 | Teste interno de LPs |
+| 4 | Verticalização Piloto | 🟋 | Nicho inicial (ex: imobiliário) |
+| 5 | Prospecção Consultiva | 🟋 | Modelo DWY (Do With You) |
+| 6 | Expansão de Nichos | 🟋 | Múltiplos verticais |
+| 7 | SaaS Automático | 🟋 | Self-service opcional |
+| 8 | Parcerias e White Label | 🟋 | Rede de agências e afiliados |
 
 ---
 
