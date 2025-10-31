@@ -100,8 +100,8 @@ UI → Providers → Adapters → DB
 ```
 
 **📍 Localização de Features**
-- **E7 Onboarding:** Seção 5.3
-- **E10.1 Multi-conta:** Seção 7
+- **E7 Onboarding:** Seção 5.3.2
+- **Multi-conta:** Seção 5.3.3
 - **Rate Limit:** Seção 4.9
 - **SULB (Auth):** Seção 6.3
 
@@ -808,11 +808,17 @@ Autoriza SSR e sincroniza a UI via AccessProvider.
 - `/onboard/actions.ts` - Server Action `onboardAction()`
 - `accountAdapter.createFromToken()` - RPC wrapper
 
-#### 5.3.3 E10.1 Multi-conta (AccountSwitcher)
+#### 5.3.3 Multi-conta (AccountSwitcher)
 
-**Ver seção 7 para detalhes completos.**
+Sistema de troca de contas com persistência via cookie (`last_account_subdomain`, 30d, HttpOnly).
 
-**Resumo:** Switcher de contas com persistência via cookie, ocultação automática (≤1 conta), suporte teclado/touch.
+**Componentes:** `AccountSwitcher`, `AccountSwitcherTrigger`, `AccountSwitcherList`  
+**Hooks:** `useAccountSwitcher`, `useUserAccounts`  
+**View:** `v_user_accounts_list` (seção 3.2)  
+**Endpoint:** `/api/user/accounts`  
+**Funcionalidades:** Persistência 30d, ocultação automática (≤1 conta), suporte teclado/touch
+
+Histórico de implementação: Ver `docs/roadmap.md` seção E10.1
 
 #### 5.3.4 Observabilidade
 
@@ -893,7 +899,7 @@ UI → Providers → Adapters → DB
 | | login/page.tsx | Login SULB | ✅ |
 | | forgot-password/page.tsx | Reset senha SULB | ✅ |
 | | update-password/page.tsx | SSR redefinição (validação + verifyOtp) | ✅ |
-| **a/** | [account]/layout.tsx | Gate SSR + set-cookie last_account_subdomain | ✅ E10.1 |
+| **a/** | [account]/layout.tsx | Gate SSR + set-cookie last_account_subdomain | ✅ |
 | | [account]/page.tsx | Dashboard principal | ✅ |
 | | [account]/actions.ts | renameAccountAction (E7) | ✅ |
 | | home/page.tsx | Página pública entrada | ✅ |
@@ -901,7 +907,7 @@ UI → Providers → Adapters → DB
 | | tokens/page.tsx | Painel tokens (gera/revoga) | ✅ E7 |
 | **onboard/** | page.tsx | Valida token SSR + formulário | ✅ E7 |
 | | actions.ts | onboardAction (signUp→signIn→createFromToken) | ✅ E7 |
-| **api/** | user/accounts/route.ts | Lista contas via v_user_accounts_list | ✅ E10.1 |
+| **api/** | user/accounts/route.ts | Lista contas via v_user_accounts_list | ✅ |
 
 #### 🧩 Interface (components/)
 
@@ -909,8 +915,8 @@ UI → Providers → Adapters → DB
 |-----------|----------|------------------|--------|
 | **ui/** | button, card, input, label | Base shadcn/ui | ✅ |
 | | AlertBanner.tsx | Aviso genérico (setup consultivo) | ✅ |
-| **layout/** | UserMenu.tsx | Dropdown Avatar + AccountSwitcher | ✅ E10.1 |
-| **features/account-switcher/** | 5 arquivos | Ver seção 7.1 | ✅ E10.1 |
+| **layout/** | UserMenu.tsx | Dropdown Avatar + AccountSwitcher | ✅ |
+| **features/account-switcher/** | AccountSwitcher.tsx, AccountSwitcherTrigger.tsx, AccountSwitcherList.tsx, useAccountSwitcher.ts, useUserAccounts.ts | Multi-conta (5 arquivos) | ✅ |
 | **admin/** | CopyLinkButton.tsx | Copia link onboarding | ✅ E7 |
 | **onboard/** | OnboardForm.tsx | Formulário senha/validação | ✅ E7 |
 
@@ -918,8 +924,8 @@ UI → Providers → Adapters → DB
 
 | Arquivo | Responsabilidade | Status |
 |---------|------------------|--------|
-| AccessProvider.tsx | Contexto {account, member}, expõe account.name | ✅ E10.1 |
-| middleware.ts | Bypass routes, lê cookie, redirect /a | ✅ E10.1 |
+| AccessProvider.tsx | Contexto {account, member}, expõe account.name | ✅ |
+| middleware.ts | Bypass routes, lê cookie last_account_subdomain, redirect /a | ✅ |
 | next.config.js | Rewrites, redirects, headers | ✅ |
 | .github/workflows/security.yml | CI: bloqueia implicit flow, views sem security_invoker | ✅ |
 
@@ -962,38 +968,6 @@ UI → Providers → Adapters → DB
 
 ---
 
-## 7. E10.1 — Account Switcher & Multi-conta
-
-**Status:** ✅ 100% concluído (29/10/2025)  
-**Detalhes completos:** Ver `docs/roadmap.md` seção E10.1
-
-### 7.1 Resumo Técnico
-
-**Arquivos-chave criados:**
-- `components/features/account-switcher/`
-  - `AccountSwitcher.tsx` - Container principal
-  - `AccountSwitcherTrigger.tsx` - Botão "Trocar conta"
-  - `AccountSwitcherList.tsx` - Popover com lista
-  - `useUserAccounts.ts` - Hook consulta API
-  - `useAccountSwitcher.ts` - Hook domínio (estado/navegação)
-- `/api/user/accounts/route.ts` - endpoint lista contas via `v_user_accounts_list`
-
-**Modificações principais:**
-- `layout.tsx`: cookie `last_account_subdomain` (HttpOnly, 30d)
-- `UserMenu.tsx`: integração AccountSwitcher
-- `middleware.ts`: leitura cookie + redirect `/a`
-- `AccessProvider.tsx`: expõe `account.name`
-
-**Funcionalidades:**
-- Multi-conta com persistência (30d)
-- Ocultação automática (≤1 conta)
-- Suporte completo teclado/touch
-- Pipeline público/privado estável
-
-**QA:** ✅ C1-C9 validados (ver roadmap)
-
----
-
-**Última atualização: 31/10/2025 (E10.1 Concluído)**  
+**Última atualização: 31/10/2025**  
 **Versão anterior: 1.3 (18/10/2025)**  
 **Próxima revisão: Após E10.2 (UX Partner Dashboard) ou E9 (Stripe Sync)**
