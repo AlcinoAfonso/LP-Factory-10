@@ -65,6 +65,10 @@
 - Postgres: snake_case
 - Deploy: GitHub → Vercel (sem comandos locais)
 
+> **⚠️ Ambiente:** LP Factory 10 opera via **GitHub Web + Vercel** (sem CLI local).  
+> Edição, auditoria e testes são feitos no navegador.  
+> Toda recomendação técnica deve ser executável via GitHub Web ou Vercel Dashboard.
+
 **Nota: não usar `SUPABASE_SERVICE_ROLE_KEY`. Mantemos apenas `SUPABASE_SECRET_KEY` para evitar divergências entre ambiente e código.**
 
 ---
