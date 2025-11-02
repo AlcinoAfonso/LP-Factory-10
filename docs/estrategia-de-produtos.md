@@ -1,5 +1,5 @@
 # LP Factory 10 — Estratégia de Produto
-**Versão:** 1.1  
+**Versão:** 1.2  
 **Data:** 05/10/2025  
 **Propósito:** Benchmark competitivo e visão estratégica de diferenciação.
 
@@ -146,6 +146,22 @@ Atualmente em beta, disponível apenas para campanhas em inglês.
 
 ---
 
+### 2.10 Vercel AI Cloud (Ship 2025) 🟢 Preparado
+Nova fundação da Vercel voltada a aplicações **IA-native**, introduzindo **AI Gateway**, **Fluid Compute**, **Active CPU Pricing**, **Rolling Releases** e **BotID**.  
+
+**Impacto no projeto:**  
+- Reduz custos em workloads intermitentes (ex.: geração de copy e insights IA).  
+- Garante deploys seguros e reversíveis com monitoramento nativo.  
+- Protege rotas críticas (login, APIs, endpoints de IA) com detecção invisível de bots.  
+- Cria base ideal para automações e agentes futuros (**E17 — Workspace Dashboard**).  
+
+**Ações:**  
+1. Ativar **Rolling Releases** e **BotID** nas próximas atualizações.  
+2. Testar **Active CPU** em funções de uso eventual (IA e relatórios).  
+3. Planejar uso do **AI Gateway** na fase IA-ready do produto.  
+
+---
+
 ### Última Atualização
-**Data:** 27/10/2025  
+**Data:** 02/11/2025  
 **Próxima Revisão:** Trimestral ou quando concorrência mover.
