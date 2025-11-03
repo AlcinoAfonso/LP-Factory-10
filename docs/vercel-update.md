@@ -127,6 +127,28 @@ O documento descreve os recursos aplicáveis, status de maturidade e ações de 
 
 ---
 
+## 📡 Server-side Tracking API (Ads Integration)
+
+### Objetivo
+Permitir envio de eventos de conversão direto do servidor (server-side tagging) para Google Ads e Meta Ads.
+
+### Estrutura técnica
+- Função Edge `/api/track` para receber e encaminhar eventos.
+- Webhook Supabase → Vercel Edge → Ads APIs.
+- Variáveis de ambiente seguras (`AD_API_KEY`, `META_ACCESS_TOKEN`).
+- Mapeamento de eventos: `form_submit`, `cta_click`, `view_lp`.
+
+### Benefícios
+- Retroalimenta algoritmos de mídia com leads qualificados.
+- Elimina tags de browser, melhora desempenho e privacidade.
+- Sinergia direta com o módulo `events_analytics` do Supabase Update.
+
+### Status
+🧪 **Experimental**
+
+
+---
+
 ## 🧾 Próximas Ações
 
 1. Criar ambiente de *staging* “next16-edge” para testes de Cache Components + Turbopack.  
