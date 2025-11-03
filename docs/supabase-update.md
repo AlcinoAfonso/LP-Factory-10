@@ -101,6 +101,28 @@ Valor: amplia as opções de autenticação e integra o LP Factory 10 a ecossist
 Aplicação: complementa o item de Observabilidade com AI, oferecendo sugestões inteligentes e análise de métricas.  
 Valor: reforça monitoramento preditivo e reduz necessidade de intervenção manual.
 
+## 📊 Tracking e Analytics Interno (novo módulo)
+
+### Objetivo
+Criar tracking nativo de eventos nas LPs, medindo comportamento e conversão de forma anônima, segura e escalável, sem dependência de tags externas.
+
+### Estrutura técnica
+- Nova tabela `events_analytics` (`account_id`, `lp_id`, `event_type`, `ts`, `visitor_hash`, `utm_source`, `utm_campaign`, `utm_medium`).
+- Views agregadas (`vw_events_15m`, `vw_events_daily`) com RLS ativo.
+- `visitor_hash` gerado via `digest(ip || user_agent || salt_rotativo, 'sha256')`.
+- Retenção: eventos brutos 90 dias, agregados até 24 meses.
+- Integração futura com `audit_logs` e `leads`.
+
+### Benefícios
+- Reduz dependência de Google Tag/Meta Pixel.
+- Fornece métricas reais de conversão e engajamento diretamente no Dashboard.
+- Base para A/B tests, precificação por uso e relatórios de performance.
+- Mantém conformidade (sem PII, salt rotativo, RLS ativo).
+
+### Status
+🧪 **Experimental**
+
+
 ## 📊 Resumo Geral
 
 | Categoria | Recursos | Status |
