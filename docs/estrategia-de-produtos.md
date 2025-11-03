@@ -112,21 +112,28 @@ Garantir visibilidade personalizada mesmo em ambiente de buscas cada vez mais co
 
 ---
 
-### 2.8 Meta Ads – Reels, Threads e Value Rules (2025)
-**UX/Valor:**  
-Permite otimizar campanhas da Meta com base em **valor real de conversão** (ex.: SQL > MQL > clique), combinando os novos formatos culturais de **Reels e Threads** com a entrega inteligente do algoritmo (*Value Rules*).
+### 2.8 Meta Ads – Value Rules, Smart Gating e Tracking Inteligente (2025)
 
-**Posicionamento:**  
-Iniciativa alinhada à visão de **IA-driven Ads + LPs Inteligentes**, permitindo que as LPs do LP Factory sirvam como base de aprendizado para o algoritmo, priorizando leads de maior valor.  
-Amplia o alcance conversacional no topo de funil (Reels/Threads) e direciona tráfego qualificado para LPs com Smart Gating no meio e fundo do funil.
+#### Visão
+As LPs do LP Factory 10 tornam-se sensores inteligentes que alimentam os algoritmos de mídia com dados de comportamento e valor real de lead.
 
-**Estratégia:**  
-Ativar de forma experimental no pós-MVP com testes curtos (2 semanas) em Reels e Threads, utilizando *value rules* mapeadas:  
-`SQL = 100`, `MQL = 40`, `TOFU = 10`.  
-Mensurar impacto em qualidade de lead, não apenas volume.
+#### 1. Tracking nativo
+O sistema passa a medir visitas, cliques e envios via módulo `events_analytics` do Supabase, enriquecido com UTM e dados anônimos.
 
-**Benefício:**  
-Cria vantagem competitiva frente a agências tradicionais, posicionando o LP Factory como **IA-ready e orientado a performance real**, unindo mídia, automação e captura qualificada.
+#### 2. Qualificação e scoring
+Cada lead recebe score de intenção baseado em interações (tempo, profundidade, CTA), permitindo distinguir leads frios, mornos e quentes.
+
+#### 3. Retroalimentação de campanhas
+Eventos de conversão são enviados via Server-side Tracking API (Vercel Edge) para Google Ads e Meta Ads, melhorando o aprendizado e reduzindo custo por lead.
+
+#### 4. Benefícios diretos
+- Menor dependência de tags externas.
+- Aprendizado automatizado em campanhas.
+- LPs mais eficientes e autorreguladas.
+- Base para pricing e relatórios consultivos.
+
+### Status
+🧪 **Experimental**
 
 ---
 
