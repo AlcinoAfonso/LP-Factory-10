@@ -1,9 +1,6 @@
 # LP Factory 10 - Base Técnica
 
-**Versão: 1.4**  
-**Data: 31/10/2025**  
 **Propósito: Documentação técnica do estado atual do sistema**  
-**Versão anterior: 1.3 (18/10/2025)**
 
 ---
 
@@ -18,6 +15,7 @@
   - [3.3 Functions Ativas](#33-functions-ativas)
   - [3.4 Triggers Ativos](#34-triggers-ativos)
   - [3.5 Tipos TypeScript Canônicos](#35-tipos-typescript-canônicos)
+  - [3.6 Modelo de Grants e Feature Flags](#36-modelo-de-grants-e-feature-flags)
 - [4. Regras Técnicas Globais](#4-regras-técnicas-globais)
   - [4.1 Segurança](#41-segurança)
   - [4.2 Camadas (Estrutura Rígida)](#42-camadas-estrutura-rígida)
@@ -37,6 +35,8 @@
   - [6.1 Princípios de Organização](#61-princípios-de-organização)
   - [6.2 Inventário de Arquivos](#62-inventário-de-arquivos)
   - [6.3 Biblioteca Supabase (SULB)](#63-biblioteca-supabase-sulb)
+- [📜 Changelog (Keep a Changelog + SemVer)](#-changelog-keep-a-changelog--semver)
+
 
 ---
 
@@ -141,6 +141,14 @@ UI → Providers → Adapters → DB
 - **Multi-conta:** Seção 5.3.3
 - **Rate Limit:** Seção 4.9
 - **SULB (Auth):** Seção 6.3
+'''  
+
+  **🧩 Grants**
+- **Tabela:** `model_grants`  
+- **Função:** `get_feature(account_id, feature_key, lp_id?, section_id?)`  
+- **Adapter:** `src/lib/grants/adapters/grantsAdapter.ts`  
+- **Descrição:** Ativa ou desativa recursos (tracking, remarketing, temas, A/B, limites) sem alterar o schema.  
+- **Status:** 🧪 Experimental
 
 ---
 
@@ -380,6 +388,19 @@ export type MemberRole = 'owner' | 'admin' | 'editor' | 'viewer';
 
 **Normalização: accountAdapter contém `normalizeAccountStatus()`, `normalizeMemberStatus()`, `normalizeRole()`**
 
+### 3.6 Modelo de Grants e Feature Flags
+
+O modelo de **grants** define uma estrutura única para ativar, restringir ou configurar recursos do sistema (ex.: remarketing, tracking, temas, limites e variações A/B) sem alterar schema ou código.
+
+- **Tabela:** `model_grants`  
+  - Campos principais: `account_id`, `feature_key`, `scope`, `scope_id`, `enabled`, `limit_json`, `starts_at`, `ends_at`.  
+  - Escopos possíveis: `account`, `lp`, `section`.  
+- **Função:** `get_feature(account_id, feature_key, lp_id?, section_id?)` — retorna `{enabled, limit_json}` considerando prioridade `section > lp > account`.  
+- **Adapter:** `src/lib/grants/adapters/grantsAdapter.ts` — fonte única de leitura e decisão.  
+- **RLS:** ativa e restrita a `owner/admin`. Views e functions usam `security_invoker=true`.  
+- **Uso:** todas as features configuráveis devem consultar `get_feature()` em vez de colunas booleanas (`has_x`).  
+- **Status:** 🟩 **Estável (uso imediato em novas tabelas e recursos configuráveis)**
+
 ---
 
 ## 4. Regras Técnicas Globais
@@ -392,6 +413,13 @@ export type MemberRole = 'owner' | 'admin' | 'editor' | 'viewer';
   - Leitura exclusiva no servidor (middleware).
 - O logout deve expirar o cookie (`Max-Age=0`) para evitar persistência entre sessões diferentes no mesmo device.
 - Nenhum dado sensível (subdomain, ids) é acessível via client JavaScript.
+
+- **Novo item — Grants e Feature Flags**
+
+- A tabela `model_grants` e a função `get_feature()` devem ter **RLS ativa** e usar `security_invoker=true`.  
+- Todas as consultas ou atualizações de recursos configuráveis devem passar pela função `get_feature()` ou pelo adapter `grantsAdapter`.  
+- É proibido acesso direto à tabela `model_grants` fora desses contextos.  
+- A auditoria de alterações é obrigatória via `audit_logs`.  
 
 ### 4.2 Camadas (Estrutura Rígida)
 
@@ -720,6 +748,16 @@ const client = createClient(url, process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KE
 
 **Regra:** Ver seção 6.3 para lista de arquivos SULB modificados vs originais
 
+#### ❌ Nunca Fazer: Colunas booleanas para recursos configuráveis
+
+```typescript
+// ❌ ERRADO — criar coluna fixa para um recurso
+ALTER TABLE accounts ADD COLUMN has_tracking boolean;
+
+// ✅ CORRETO — usar grants
+INSERT INTO model_grants (account_id, feature_key, enabled)
+VALUES ('acc...', 'tracking', true);
+
 ---
 
 #### 🎯 Checklist Anti-Patterns (Code Review)
@@ -1011,6 +1049,21 @@ UI → Providers → Adapters → DB
 
 ---
 
-**Última atualização: 31/10/2025**  
-**Versão anterior: 1.3 (18/10/2025)**  
-**Próxima revisão: Após E10.2 (UX Partner Dashboard) ou E9 (Stripe Sync)**
+## 📜 Changelog (Keep a Changelog + SemVer)
+
+### [1.5.0] — 2025-11-03
+**Adicionado**
+- Seção 3.6 “Modelo de Grants e Feature Flags”: estrutura unificada para controle dinâmico de recursos configuráveis.  
+- Regra de uso imediato em novas tabelas e funções com RLS ativa.
+
+**Motivação**
+- Escalabilidade sem alterações de schema.  
+- Padronização de governança e ativação de features no Account Dashboard.
+
+**Status**
+🟩 Estável — uso imediato em novas tabelas e recursos configuráveis.
+
+
+**Última atualização:** 03/11/2025  
+**Versão anterior:** 1.4 (31/10/2025)  
+**Próxima revisão:** Após E10.2 (UX Partner Dashboard) ou E9 (Stripe Sync)
