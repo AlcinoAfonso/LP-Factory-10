@@ -116,6 +116,18 @@ Criar tracking nativo de eventos nas LPs, medindo comportamento e conversão de 
 - Views agregadas (`vw_events_15m`, `vw_events_daily`) com RLS ativo.  
 - `visitor_hash` gerado via `digest(ip || user_agent || salt_rotativo, 'sha256')`.  
 - Retenção: eventos brutos 90 dias, agregados até 24 meses.  
+2025-11-05 — Camada Inteligente de Remarketing (Experimental)
+
+- Orquestração centralizada de pixels e parâmetros de remarketing em Supabase (Google Ads, Meta, RD Station etc.).
+- Simplifica a gestão e o deploy de scripts, permitindo ativar, pausar ou testar variações sem tocar no front-end.
+- Gera base para automações contextuais e coleta de dados unificada.
+
+2025-11-05 — Integração HubSpot ↔ RD Station (Experimental)
+
+- Ponte leve (Edge Function + cron jobs) para sincronizar leads, tags e status entre HubSpot e RD Station.
+- Útil para agências que operam com múltiplos CRMs ou clientes em migração.
+- Evita duplicidade e perda de dados, e permite segmentação unificada para automações.
+
 - Integração futura com `audit_logs` e `leads`.
 
 ### Benefícios
