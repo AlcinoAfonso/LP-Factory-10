@@ -1,7 +1,6 @@
-# LP Factory 10 — Roadmap 1.4
-**Data:** 29/10/2025  
+# LP Factory 10 — Roadmap 1.5
+
 **Propósito:** Roteiro de implementação e visão estratégica do produto  
-**Versão anterior:** 1.3 (18/10/2025)
 
 ---
 
@@ -14,16 +13,21 @@
 - [E5 — UI/Auth Account Dashboard](#e5--uiauth-account-dashboard)
 - [E6 — UI Kit Provisório](#e6--ui-kit-provisório)
 - [E7 — Conta Consultiva](#e7--conta-consultiva)
-  - [E7.1 — Platform Admin](#e71--platform-admin)
-  - [E7.3 — Conta Consultiva Express](#e73--conta-consultiva-express)
+  - [E7.1 — Conta Consultiva Update](#e71--conta-consultiva-update)
 - [E8 — Access Context & Governança](#e8--access-context--governança)
-- [E9 — Stripe Sync (Billing)](#e9--stripe-sync-billing)
+- [E9 — Billing Engine & Stripe Sync](#e9--billing-engine--stripe-sync)
 - [E10 — Account Dashboard (UX)](#e10--account-dashboard-ux)
   - [E10.1 — Account Dashboard UX (ex-E7.2)](#e101--account-dashboard-ux-ex-e72)
 - [E11 — Gestão de Usuários e Convites](#e11--gestão-de-usuários-e-convites)
-- [E12 — Partner Dashboard](#e12--partner-dashboard)
-- [E17 — Workspace Dashboard](#e17--workspace-dashboard)
+- [E12 — Admin Dashboard](#e12--admin-dashboard)
+  - [E12.1 — Platform Admin (Núcleo de Acesso)](#e121--platform-admin-núcleo-de-acesso)
+  - [E12.2 — Painel de Tokens / Configurador de Conta](#e122--painel-de-tokens--configurador-de-conta)
+  - [E12.3 — Painel de Contas / Prospects / Status](#e123--painel-de-contas--prospects--status)
+  - [E12.4 — Relatórios e Auditoria Consultiva](#e124--relatórios-e-auditoria-consultiva)
+- [E13 — Partner Dashboard](#e13--partner-dashboard)
+- [E14 — Workspace Dashboard](#e14--workspace-dashboard)
 - [Fases Estratégicas](#fases-estratégicas)
+
 
 ---
 
@@ -109,27 +113,43 @@
 **Status:** ✅ Concluído (18/10/2025)
 
 - **Escopo:**
-  - Criação de contas via token pós-venda
-  - Painel `/admin/tokens` (gerar, listar, revogar)
-  - RPC `create_account_with_owner`
+  - Criação de contas via token pós-venda.  
+  - Painel `/admin/tokens` para geração e revogação de tokens.  
+  - RPC `create_account_with_owner()` para criação segura e automatizada da conta.  
+
 - **Critérios de Aceite:**
-  - Conta criada com `contract_ref` e status `pending_setup`
-  - Redirecionamento automático pós-onboard
-  - Banner de setup visível
-- **Pendências:** Refinamentos de UX migrados para E10.1
+  - Conta criada com `contract_ref` e status inicial `pending_setup`.  
+  - Redirecionamento automático após onboarding.  
+  - Banner de setup visível e editável.  
+
+- **Pendências:**
+  - Refinamentos de UX migrados para **E10.1 — Account Dashboard UX (ex-E7.2)**.  
+
+> **Nota:** O item **E7.2** original foi movido para **E10.1 — Account Dashboard UX**, mantendo a numeração apenas como referência histórica.
 
 ---
 
-### E7.1 — Platform Admin
-- Helper `is_platform_admin()`
-- RLS e rate limit diferenciados
-- **Pendência:** gestão visual de papéis
+### E7.1 — Conta Consultiva Update
+**Status:** 🧩 Em evolução  
 
-### E7.3 — Conta Consultiva Express
-- Criação direta de conta e usuário pelo admin
-- RPC `create_account_for_client_express()`
-- Reset obrigatório no primeiro login
-- **Status:** 🟡 Planejado
+- **Objetivo:** Aprimorar o fluxo consultivo, ampliando o painel `/admin/tokens` para funcionar como **configurador de conta**.  
+- **Escopo:**
+  - Coleta de dados do cliente (CNPJ, razão social, contato, segmento, dores e metas).  
+  - Seleção de plano base (Lite, Pro, Ultra) e definição de recursos adicionais (grants).  
+  - Snapshot de recursos e preço conforme reunião consultiva.  
+  - Geração de token nos modos `onboard` (cliente ativa) ou `handoff` (entrega pronta).  
+  - Integração futura com criação opcional de LPs pré-configuradas.  
+- **Critérios de Aceite:**
+  - Token gerado apenas após configuração completa da conta.  
+  - Conta criada com grants e preço definidos (snapshot).  
+  - Registro auditável de plano base e recursos customizados.  
+- **Valor agregado:**
+  - Elimina duplicidade entre fluxo técnico e comercial.  
+  - Garante que toda conta consultiva já nasça configurada e pronta para ativação.  
+- **Próximos Passos:**
+  - Implementar campos `token_type`, `billing_mode` e `plan_price_snapshot`.  
+  - Adicionar interface de seleção de recursos no painel Admin.  
+  - Preparar suporte para LPs automáticas (modo `handoff`).  
 
 ---
 
@@ -146,16 +166,93 @@
 
 ---
 
-## E9 — Stripe Sync (Billing)
-**Status:** 🟡 Em planejamento
+## E9 — Billing Engine & Stripe Sync
+**Status:** 🧩 Em desenvolvimento  
 
-- **Escopo MVP:**
-  - Webhooks (`checkout.session.completed`, `subscription.updated`)
-  - Colunas billing em `accounts`
-  - Tabela `plan_price_map`
+- **Objetivo:** Unificar a estrutura de cobrança (manual, híbrida e automatizada) e o controle de recursos (grants), permitindo que todas as contas — inclusive as consultivas — operem sob um modelo único de billing e planos com snapshot.  
+
+- **Escopo geral:**
+  - Definir o modelo técnico de planos, recursos e billing snapshot.  
+  - Implementar o motor de grants dinâmicos (`model_grants` + `get_feature()`).  
+  - Integrar com Stripe apenas como uma das modalidades (`billing_mode='stripe'`).  
+  - Garantir compatibilidade total com o fluxo de criação de contas consultivas (E7).  
+
+---
+
+### E9.1 — Grants e Features
+**Status:** 🧩 Em evolução  
+
+- **Escopo:**
+  - Criar tabela `model_grants` para controlar recursos e limites por conta.  
+  - Implementar função `get_feature(account_id, feature_key, lp_id?, section_id?)` com fallback: `section > lp > account > plan > default`.  
+  - Adicionar colunas `origin_plan_id`, `origin_plan_version`, `locked` e `limit_json` para rastreabilidade.  
 - **Critérios de Aceite:**
-  - Plano ativo = billing_status=‘active’
-  - Auditoria de transições
+  - Cada conta tem seu conjunto de grants independente do plano.  
+  - Mudanças em planos não alteram contas existentes automaticamente (snapshot).  
+  - Sincronização com o plano atual apenas via ação explícita (“Atualizar com plano atual”).  
+- **Integrações:**
+  - E7.1 (Conta Consultiva Update) — cria os grants no onboarding consultivo.  
+  - E12.2 (Painel Admin) — interface de seleção e visualização de recursos.  
+
+---
+
+### E9.2 — Billing Snapshot e Ciclos
+**Status:** 🧩 Em planejamento  
+
+- **Escopo:**
+  - Adicionar campos em `accounts`:  
+    - `billing_mode enum('stripe','manual','hybrid')`  
+    - `plan_price_snapshot numeric`  
+    - `billing_recurring_snapshot numeric`  
+    - `billing_cycle_start`, `billing_cycle_end`, `next_adjustment_at`.  
+  - Implementar regra de *grandfathering*: contas antigas mantêm o preço e recursos vigentes na adesão.  
+  - Permitir reajustes apenas via upgrade, downgrade ou contrato.  
+  - **Cada conta grava seu snapshot de preço e recursos no momento da criação**, preservando histórico e independência de alterações futuras nos planos.  
+
+- **Critérios de Aceite:**
+  - Contas consultivas e SaaS usam a mesma estrutura.  
+  - **Os campos `plan_price_snapshot` e `billing_recurring_snapshot` são sempre específicos por conta (snapshot no ato da adesão).**  
+  - Preços e recursos registrados por snapshot no momento da criação.  
+  - Histórico auditável de alterações de preço e ciclo.  
+
+- **Integrações:**
+  - E7 (Conta Consultiva) — snapshot inicial.  
+  - E12 (Admin Dashboard) — visualização e edição dos dados de billing.  
+  
+
+---
+
+### E9.3 — Stripe Sync (Automação SaaS)
+**Status:** 🟡 Planejado  
+
+- **Escopo:**
+  - Implementar webhooks `checkout.session.completed` e `subscription.updated`.  
+  - Sincronizar `billing_status`, `subscription_id` e `subscription_current_period_end`.  
+  - Atualizar tabela `plan_price_map` com planos e valores atuais.  
+  - Suportar upgrade/downgrade automático para planos SaaS.  
+- **Critérios de Aceite:**
+  - Billing automático ativo apenas em contas com `billing_mode='stripe'`.  
+  - Auditoria das transições de status (trial, active, canceled).  
+  - Integração validada com Supabase Stripe Sync Engine.  
+
+---
+
+### E9.4 — Auditoria e Drift
+**Status:** 🟡 Planejado  
+
+- **Escopo:**
+  - Criar relatório comparativo entre grants/preços da conta e plano original.  
+  - Detectar divergências de configuração (“drift”) e registrar em `audit_logs`.  
+  - Expor métricas de billing e recursos (limites, upgrades, consumo).  
+- **Critérios de Aceite:**
+  - Logs automáticos para toda atualização de plano, grant ou ciclo de billing.  
+  - Painel de auditoria integrado ao Admin Dashboard (E12.4).  
+  - Exportação CSV/JSON.  
+
+---
+
+**Compatibilidade:**  
+O Billing Engine (E9) é o núcleo técnico que garante a coerência entre **Conta Consultiva (E7)**, **Admin Dashboard (E12)** e **Account Dashboard (E10)** — fornecendo a base para a futura operação SaaS do LP Factory 10.  
 
 ---
 
@@ -202,7 +299,82 @@
 
 ---
 
-## E12 — Partner Dashboard
+## E12 — Admin Dashboard
+**Status:** 🧩 Em desenvolvimento  
+
+- **Objetivo:** Consolidar todas as operações administrativas e consultivas em um único painel central, permitindo ao time LP Factory gerenciar contas, prospects, tokens e relatórios de forma integrada.
+
+- **Escopo geral:**
+  - Centralizar o acesso de administradores e consultores.  
+  - Unificar geração de tokens, coleta de dados de clientes e controle de status das contas.  
+  - Servir como núcleo operacional das contas consultivas (pré e pós-venda).  
+  - Integrar com o Billing Engine (E9) e Account Dashboard (E10) para visibilidade completa do ciclo de clientes.
+
+---
+
+### E12.1 — Platform Admin (Núcleo de Acesso)
+**Status:** ✅ Implementado (migrado do E7.1)  
+
+- **Escopo:**
+  - Helper `is_platform_admin()` e validações RLS específicas.  
+  - Rate limits diferenciados para operações administrativas.  
+  - Middleware e guards (`requirePlatformAdmin()`) para rotas `/admin/**`.  
+- **Critérios de Aceite:**
+  - Apenas usuários com flag `platform_admin=true` ou `super_admin` podem acessar o painel.  
+  - Todas as ações administrativas auditadas em `audit_logs`.  
+- **Valor agregado:**
+  - Cria a base de segurança e controle de permissões do Admin Dashboard.  
+
+---
+
+### E12.2 — Painel de Tokens / Configurador de Conta
+**Status:** 🧩 Em evolução  
+
+- **Escopo:**
+  - Evoluir o painel `/admin/tokens` para **configurador completo de contas consultivas**.  
+  - Coleta de dados do cliente (CNPJ, contato, segmento, dores e metas).  
+  - Seleção de plano base (Lite, Pro, Ultra) e definição de recursos personalizados (grants).  
+  - Snapshot de recursos e preço definidos conforme a reunião consultiva.  
+  - **Nota:** Token em modos `onboard` (antes da entrega) ou `handoff` (após LP pronta).  
+
+- **Critérios de Aceite:**
+  - Token gerado apenas após configuração completa da conta.  
+  - Conta criada com grants e preço definidos (snapshot).  
+
+- **Integrações:**
+  - E9 (Billing Engine)  
+  - E10 (Account Dashboard)
+
+---
+
+### E12.3 — Painel de Contas / Prospects / Status
+**Status:** 🟡 Planejado  
+
+- **Escopo:**
+  - Listagem e filtro de contas ativas, pendentes e prospects (pré-token).  
+  - Campos principais: nome da empresa, CNPJ, responsável, segmento, status da conta e consultor responsável.  
+  - Funções: visualizar, editar, reenviar token, gerar nova reunião.  
+- **Critérios de Aceite:**
+  - Todas as contas e prospects exibidos com status sincronizado (draft, token_sent, active).  
+  - Filtros por consultor, data e status.  
+
+---
+
+### E12.4 — Relatórios e Auditoria Consultiva
+**Status:** 🟡 Planejado  
+
+- **Escopo:**
+  - Monitoramento de criação e ativação de contas consultivas.  
+  - Relatórios de uso, planos e recursos customizados.  
+  - Logs de auditoria de tokens, billing e alterações de grants.  
+- **Critérios de Aceite:**
+  - Métricas visíveis por consultor e por cliente.  
+  - Exportação CSV/JSON.  
+  - Integração futura com o módulo de observabilidade (E9.4).  
+
+---
+
+## E13 — Partner Dashboard
 **Status:** 🟋 Planejado
 
 - Painel de agências e parceiros
@@ -211,7 +383,7 @@
 
 ---
 
-## E17 — Workspace Dashboard
+## E14 — Workspace Dashboard
 **Status:** 🟋 Planejado
 
 - Perfil e preferências do usuário
@@ -235,5 +407,5 @@
 
 ---
 
-**Última atualização:** 29/10/2025  
-**Próxima revisão:** Após conclusão E10.1 (Account Dashboard UX)
+**Última atualização:** 05/11/2025  
+
