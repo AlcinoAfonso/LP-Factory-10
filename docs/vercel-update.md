@@ -152,12 +152,25 @@ Permitir envio de eventos de conversão direto do servidor (server-side tagging)
 ## 🧾 Próximas Ações
 
 1. Criar ambiente de *staging* “next16-edge” para testes de Cache Components + Turbopack.  
+#a otimizar rotas e caching.
+
 2. Avaliar Active CPU e Rolling Releases quando disponíveis.  
 3. Atualizar Base Técnica 1.4 com seção “Edge Runtime 2025”.  
 4. Referenciar este update no **Supabase Update 1.2**:  
    > 🔗 *Ver “Vercel + Next.js Update 1.2” para novidades de deploy e edge.*  
 5. Monitorar métricas p95/p99 pós-migração.  
 6. Planejar E12 — Edge & AI Refactor para consolidar cache, AI Gateway e proxy.
+--
+## 2025-11-03 — Observability: Redirects & External Rewrites (GA)
+
+**Statu🟩:**🟩 Estável (GA)
+
+**Descrição:** Novo painel no Vercel Observability inclui métricas para redirecionamentos (rewrites e proxies externos) por hostname/path, latência de conexão e erros. Permite diagnosticar gargalos e latências em proxies e configurar alertas via Vercel AI Gateway.
+
+**Ações:**
+1. Ativar a seção de "Redirects & External Rewrites" no painel de Observability.
+2. Configurar alertas para p95/p99 de latência e taxa de erro.
+3. Analisar dados de rewrites par-
 
 ---
 

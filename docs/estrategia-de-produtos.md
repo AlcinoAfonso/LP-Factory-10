@@ -156,3 +156,29 @@ Atualmente em beta, disponível apenas para campanhas em inglês.
 ### Última Atualização
 **Data:** 02/11/2025  
 **Próxima Revisão:** Trimestral ou quando concorrência mover.
+
+## 3. Estratégias Futuras (2025‑2026)
+
+### 3.1 Simplificação de UX no Account Dashboard 🪧 Ideia Inicial
+**Objetivo:** Propor um layout de dashboard focado em métricas essenciais (leads, gastos e saúde das LPs) já na primeira dobra, antes de camadas complexas.
+**Valor:** Reduz a carga cognitiva e melhora a adoção do produto, oferecendo contexto imediato e facilidade de navegação.
+
+### 3.2 Estratégia de Verticais 2025 🪧 Ideia Inicial
+**Objetivo:** Testar dois nichos por mês com LPs completas (copy, schema e analytics) para aprender e validar mercados promissores.
+**Valor:** Gera ritmo de produção, coleta dados reais e identifica verticais com maior tração, guiando expansão.
+
+### 3.3 Modelo Light da LP Factory 🪧 Ideia Inicial
+**Objetivo:** Disponibilizar uma versão mais enxuta das landing pages, com menos seções dinâmicas, para pacotes de entrada e entregas rápidas.
+**Valor:** Permite adesão rápida e acessível, reduz tempo de desenvolvimento e incentiva upgrades conforme o cliente evolui.
+
+### 3.4 Ajuste entre Setup e Mensalidade 🪧 Ideia Inicial
+**Objetivo:** Criar modelo híbrido de cobrança, combinando uma taxa inicial menor com componente variável baseada no sucesso do cliente.
+**Valor:** Diminui a barreira de entrada e alinha incentivos, remunerando a agência conforme o desempenho e valor entregue.
+
+### 3.5 Priorizar Reconhecimento nos Testes Iniciais 🪧 Ideia Inicial
+**Objetivo:** Estruturar interfaces e roteiros de testes que priorizem ações visíveis e aprendizado por reconhecimento, evitando interfaces escondidas e o "mito dos 3 cliques".
+**Valor:** Melhora a experiência nos primeiros usos, reduz atritos e aumenta a confiança do usuário ao evidenciar as possibilidades da plataforma.
+
+### 3.6 Modelo de Pricing por Ação/Consumo 🪧 Ideia Inicial
+**Objetivo:** Adotar cobrança baseada em uso (por ação ou consumo), como tokens processados ou geração de imagens, para ofertas de IA e automações.
+**Valor:** Cria transparência e confiança, alinhando custos ao consumo real e garantindo que clientes paguem pelo que de fato utilizam.
