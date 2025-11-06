@@ -1,5 +1,5 @@
-# 🚀 Vercel + Next.js Update 1.2 — LP Factory 10
-**Data:** 11/10/2025  
+# 🚀 Vercel + Next.js Update 1.3 — LP Factory 10
+**Data:** 05/11/2025  
 **Propósito:** Consolidar as inovações da Vercel e do Next.js 16 apresentadas entre o **Ship 2025 (junho)** e a **Next.js Conf 2025 (outubro)**, avaliando impacto técnico e estratégico para o LP Factory 10.  
 **Versão anterior:** 1.1 (11/10/2025 — antes da padronização de status)  
 **Próxima revisão:** Após o rollout estável do Next.js 16.1 e Vercel AI Gateway.  
@@ -161,7 +161,7 @@ Permitir envio de eventos de conversão direto do servidor (server-side tagging)
 5. Monitorar métricas p95/p99 pós-migração.  
 6. Planejar E12 — Edge & AI Refactor para consolidar cache, AI Gateway e proxy.
 --
-## 2025-11-03 — Observability: Redirects & External Rewrites (GA)
+## 2025-11-05 — Observability: Redirects & External Rewrites (GA)
 
 **Statu🟩:**🟩 Estável (GA)
 
@@ -196,6 +196,4 @@ Permitir envio de eventos de conversão direto do servidor (server-side tagging)
 
 ---
 
-**Responsável técnico:** LP Factory 10 — Core DevOps  
-**Última verificação:** 11/10/2025  
 **Fontes:** Vercel Ship 2025 • Next.js Conf 2025 • nextjs.org/blog/next-16 • vercel.com/blog/ship-2025
