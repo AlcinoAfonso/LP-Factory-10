@@ -1,6 +1,6 @@
 # LP Factory 10 — Estratégia de Produto
 **Versão:** 1.2  
-**Data:** 05/10/2025  
+**Data:** 05/11/2025  
 **Propósito:** Benchmark competitivo e visão estratégica de diferenciação.
 
 ---
@@ -154,7 +154,7 @@ Atualmente em beta, disponível apenas para campanhas em inglês.
 ---
 
 ### Última Atualização
-**Data:** 02/11/2025  
+**Data:** 05/11/2025  
 **Próxima Revisão:** Trimestral ou quando concorrência mover.
 
 ## 3. Estratégias Futuras (2025‑2026)
