@@ -1,4 +1,3 @@
-// src/lib/admin/adapters/postSaleTokenAdapter.ts
 import { createServiceClient } from "../../supabase/service";
 import type { PostSaleToken, TokenValidation } from "../contracts";
 
@@ -230,11 +229,15 @@ export async function revoke(tokenId: string, ctx?: Ctx): Promise<boolean> {
     return true;
   }
 
-  // 4) Atualiza para expirar agora
-  const { error: updErr } = await svc
+  // 4) Atualiza para expirar agora (limitado a 1 linha no v13+)
+  let q3: any = svc
     .from("post_sale_tokens")
     .update({ expires_at: new Date().toISOString() })
     .eq("id", tokenId);
+
+  if (typeof q3?.maxAffected === "function") q3 = q3.maxAffected(1);
+
+  const { error: updErr } = await q3;
 
   if (updErr) {
     logEvent("token_revoke_failed", { token_id: tokenId, error: String(updErr?.message ?? updErr) }, { ...ctx, t0 });
