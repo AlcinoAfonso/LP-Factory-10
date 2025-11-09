@@ -1,4 +1,3 @@
-// src/lib/access/adapters/accountAdapter.ts
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "../../supabase/service"; // ✅ server-only para mutações (relativo estável)
 import type { AccountStatus, MemberStatus, MemberRole } from "@/lib/types/status";
@@ -250,7 +249,7 @@ export async function renameAndActivate(
   const supabase = createServiceClient(); // ✅ mutação via service_role
 
   // Atenção: a coluna é subdomain (não "slug")
-  const { error } = await supabase
+  let q1: any = supabase
     .from("accounts")
     .update({
       name: name.trim(),
@@ -259,6 +258,11 @@ export async function renameAndActivate(
       // updated_at por trigger
     })
     .eq("id", accountId);
+
+  // v12-safe: só aplica no v13+
+  if (typeof q1?.maxAffected === "function") q1 = q1.maxAffected(1);
+
+  const { error } = await q1;
 
   if (error) {
     // 23505 = unique_violation (slug/subdomain duplicado)
@@ -280,7 +284,8 @@ export async function renameAccountNoStatus(
   slug: string
 ): Promise<boolean> {
   const supabase = createServiceClient(); // server-only
-  const { error } = await supabase
+
+  let q2: any = supabase
     .from("accounts")
     .update({
       name: name.trim(),
@@ -288,6 +293,10 @@ export async function renameAccountNoStatus(
       // status inalterado deliberadamente
     })
     .eq("id", accountId);
+
+  if (typeof q2?.maxAffected === "function") q2 = q2.maxAffected(1);
+
+  const { error } = await q2;
 
   if (error) {
     // eslint-disable-next-line no-console
