@@ -85,13 +85,13 @@
 
 **Backend:**
 
-- Supabase (PostgreSQL + Auth + Storage + RLS)
-- PostgREST 12.2.12 — preparado para v13 (aguardando liberação no plano Free)
-- `@supabase/supabase-js` ≥ 2.56.0 — atualizado e validado com build verde no Vercel
-- `.maxAffected(1)` aplicado em mutações 1-a-1 (ignorado com segurança no v12)
-- Search Path: apenas `public` (sem `pg_temp`)
-- Autenticação: email/senha (Magic Link = futuro)
-- JWT Legacy (HMAC) — migração pendente para JWT Signing Keys (kid)
+- Supabase (PostgreSQL 17.6 + Auth + Storage + RLS)  
+- PostgREST 12.2.12 — preparado para v13 (aguardando liberação no plano Free)  
+- `@supabase/supabase-js` ≥ 2.56.0 — atualizado e validado com build verde no Vercel  
+- `.maxAffected(1)` aplicado em mutações 1-a-1 (ignorado com segurança no v12)  
+- **Search Path: fixado em `public` (nas funções críticas, sem `pg_temp`)**  
+- Autenticação: email/senha (Magic Link = futuro)  
+- JWT Legacy (HMAC) — migração pendente para JWT Signing Keys (kid)  
 
 **UI:**
 
@@ -1121,6 +1121,20 @@ UI → Providers → Adapters → DB
 - **JWT:** ainda em modo HMAC (Legacy); migração para JWT Signing Keys pendente.  
 - **Rollback validado** — reversão segura de SDK e migrations.  
 - **Status:** 🟩 **Estável / Pronto para upgrade PostgREST 13**
+
+---
+
+### v1.7.1 (12/11/2025) — Atualização PostgreSQL e Hardening de Funções
+
+- **Atualizado:** ambiente Supabase para **PostgreSQL 17.6**, aplicando patches de segurança mais recentes.  
+- **Ajustado:** funções críticas com **`search_path` fixado em `public`**, eliminando os avisos *Function Search Path Mutable* no Security Advisor.  
+- **Mantido:** PostgREST 12.2.12 — preparado para v13 (aguardando liberação no plano Free).  
+- **Confirmado:** build verde no Vercel com `@supabase/supabase-js ≥ 2.56.0`.  
+- **Sem impacto funcional:** fluxos E5, E7 e E10 testados e validados.  
+- **Ignorado:** aviso *Leaked Password Protection* — recurso disponível apenas em planos pagos.  
+
+**Status:** 🟩 Estável / Pronto para PostgREST 13  
+
 
 
 
