@@ -1,5 +1,7 @@
 # LP Factory 10 - Base Técnica
 
+**Versão: 1.7**  
+**Data: 11/11/2025**  
 **Propósito: Documentação técnica do estado atual do sistema**  
 
 ---
@@ -15,7 +17,6 @@
   - [3.3 Functions Ativas](#33-functions-ativas)
   - [3.4 Triggers Ativos](#34-triggers-ativos)
   - [3.5 Tipos TypeScript Canônicos](#35-tipos-typescript-canônicos)
-  - [3.6 Modelo de Grants e Feature Flags](#36-modelo-de-grants-e-feature-flags)
 - [4. Regras Técnicas Globais](#4-regras-técnicas-globais)
   - [4.1 Segurança](#41-segurança)
   - [4.2 Camadas (Estrutura Rígida)](#42-camadas-estrutura-rígida)
@@ -27,6 +28,8 @@
   - [4.8 Anti-Regressão](#48-anti-regressão)
   - [4.9 Rate Limit](#49-rate-limit)
   - [4.10 ❌ Anti-Patterns](#410--anti-patterns)
+  - [4.11 Sistema de Grants (Controle de Features)](#411-sistema-de-grants-controle-de-features)
+  - [4.12 Compatibilidade PostgREST 13](#412-compatibilidade-postgrest-13)
 - [5. Arquitetura de Acesso](#5-arquitetura-de-acesso)
   - [5.1 Conceitos Fundamentais](#51-conceitos-fundamentais)
   - [5.2 Implementação (Adapters, Guards, Providers)](#52-implementação-adapters-guards-providers)
@@ -35,7 +38,6 @@
   - [6.1 Princípios de Organização](#61-princípios-de-organização)
   - [6.2 Inventário de Arquivos](#62-inventário-de-arquivos)
   - [6.3 Biblioteca Supabase (SULB)](#63-biblioteca-supabase-sulb)
-- [📜 Changelog (Keep a Changelog + SemVer)](#-changelog-keep-a-changelog--semver)
 
 
 ---
@@ -84,28 +86,37 @@
 **Backend:**
 
 - Supabase (PostgreSQL + Auth + Storage + RLS)
+- PostgREST 12.2.12 — preparado para v13 (aguardando liberação no plano Free)
+- `@supabase/supabase-js` ≥ 2.56.0 — atualizado e validado com build verde no Vercel
+- `.maxAffected(1)` aplicado em mutações 1-a-1 (ignorado com segurança no v12)
+- Search Path: apenas `public` (sem `pg_temp`)
 - Autenticação: email/senha (Magic Link = futuro)
+- JWT Legacy (HMAC) — migração pendente para JWT Signing Keys (kid)
 
 **UI:**
 
-- Supabase UI Library (SULB) - auth forms
-- shadcn/ui - componentes base (provisório até Platform Kit)
+- Supabase UI Library (SULB) – auth forms  
+- shadcn/ui – componentes base (provisório até Platform Kit)
 
 **Deploy:**
 
-- Vercel (CI/CD automático)
-- Preview + Produção
+- Vercel (CI/CD automático)  
+- Ambientes: Preview + Produção  
+- Variáveis validadas no Vercel:  
+  - `SUPABASE_SECRET_KEY` (server-only)  
+  - `NEXT_PUBLIC_SUPABASE_URL`  
+  - `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`
 
-**Billing (planejado):**
+**Billing (planed):**
 
-- Stripe + @supabase/stripe-sync-engine (não implementado)
+- Stripe + `@supabase/stripe-sync-engine` (ainda não implementado)
 
 **Regras de import:**
 
 - `@supabase/*` APENAS em `src/lib/**/adapters/**`
-- **Exceção:** Componentes SULB (Supabase UI Library) podem importar `@supabase/*` diretamente
-  - Lista completa de arquivos SULB: Ver seção 6.3
-  - SULB são componentes de UI prontos do Supabase para auth forms
+- **Exceção:** componentes SULB (Supabase UI Library) podem importar `@supabase/*` diretamente  
+  - Lista completa: ver seção 6.3  
+  - SULB são componentes de UI prontos do Supabase para auth forms  
 - UI/rotas (fora SULB) NUNCA importam Supabase diretamente
 
 ### 2.1 Referências Rápidas
@@ -141,14 +152,6 @@ UI → Providers → Adapters → DB
 - **Multi-conta:** Seção 5.3.3
 - **Rate Limit:** Seção 4.9
 - **SULB (Auth):** Seção 6.3
-'''  
-
-  **🧩 Grants**
-- **Tabela:** `model_grants`  
-- **Função:** `get_feature(account_id, feature_key, lp_id?, section_id?)`  
-- **Adapter:** `src/lib/grants/adapters/grantsAdapter.ts`  
-- **Descrição:** Ativa ou desativa recursos (tracking, remarketing, temas, A/B, limites) sem alterar o schema.  
-- **Status:** 🧪 Experimental
 
 ---
 
@@ -156,20 +159,26 @@ UI → Providers → Adapters → DB
 
 ### 3.1 Tabelas Ativas
 
-**accounts - Tenants multi-tenant**
+**accounts — Tenants multi-tenant**
 
-- PK: `id` (uuid)
-- Unique: `subdomain`, `domain`, `slug` (case-insensitive)
-- Status: `active | inactive | suspended | pending_setup | trial`
-  - `active`: Conta operacional normal
-  - `inactive`: Conta desativada (não pode acessar)
-  - `suspended`: Conta suspensa (problema de pagamento/violação)
-  - `pending_setup`: Conta criada via E7 onboarding, aguardando conclusão de setup
-  - `trial`: Conta em período de avaliação (com limites temporários ou reduzidos)
-- FK: `plan_id` → plans, `owner_user_id` → auth.users
-- Constraint: `idx_one_owner_per_account` (1 owner ativo)
-- Campos: id, name, subdomain, domain, slug, status, plan_id, owner_user_id, created_at, updated_at
-- Nota: `subdomain` é campo oficial (UNIQUE + CHECKs), `slug` é legado
+- **PK:** `id` (uuid)  
+- **Unique:** `subdomain`, `domain`, `slug` (case-insensitive)  
+- **Status:** `active | inactive | suspended | pending_setup | trial`  
+  - `active`: conta operacional normal  
+  - `inactive`: conta desativada (sem acesso)  
+  - `suspended`: conta suspensa (pagamento ou violação)  
+  - `pending_setup`: criada via E7 onboarding, aguardando conclusão de setup  
+  - `trial`: conta em avaliação, com limites temporários ou reduzidos  
+- **FK:** `plan_id` → `plans`, `owner_user_id` → `auth.users`  
+- **Constraint:** `idx_one_owner_per_account` (1 owner ativo)  
+- **Campos:** `id`, `name`, `subdomain`, `domain`, `slug`, `status`, `plan_id`, `owner_user_id`, `created_at`, `updated_at`  
+- **Índice adicional (v13-ready):**
+    
+    CREATE INDEX IF NOT EXISTS accounts_name_gin_idx  
+    ON accounts USING gin(to_tsvector('portuguese', name));
+    
+  → habilita busca full-text (`textSearch()`) compatível com PostgREST 13, sem impacto em versões anteriores.  
+- **Nota:** `subdomain` é o campo oficial (UNIQUE + CHECKs); `slug` é legado.
 
 **account_users - Memberships**
 
@@ -207,19 +216,28 @@ UI → Providers → Adapters → DB
 
 - PK composto: `(partner_id, account_id)`
 
-**post_sale_tokens - Onboarding consultivo (E7)**
+**post_sale_tokens — Onboarding consultivo (E7)**
 
-- PK: id (uuid)
-- Campos: email, contract_ref, expires_at, used_at, used_by, account_id, meta, created_at (DEFAULT now()), created_by (uuid)
-- Índices: email, expires_at, used_at, account_id, (created_by, created_at DESC), (email, created_at DESC)
-- RLS: pst_admin_all (super_admin | platform_admin | is_service_role), pst_self_history_select (usuário vê tokens próprios)
+- **PK:** `id` (uuid)  
+- **Campos:** `email`, `contract_ref`, `expires_at`, `used_at`, `used_by`, `account_id`, `meta`, `created_at`, `created_by`  
+- **Índices:**  
+  - `(email, created_at DESC)`  
+  - `(created_by, created_at DESC)`  
+- **Função:** armazena tokens únicos para o fluxo de **onboarding consultivo (E7)**, permitindo criação segura de contas via convite administrado.  
+- **RLS:** ativo — políticas `pst_admin_all` (acesso administrativo) e `pst_self_history_select` (usuário visualiza tokens próprios).  
+- **Auditoria:** integrada ao `audit_logs` via Trigger Hub indireto (eventos registrados por funções do adapter).  
+- **Rate limit:** controlado por adapter (`postSaleTokenAdapter.generate()`), com limites diários por papel e email.  
+- **Situação:** tabela ativa e funcional, **fora do Trigger Hub** apenas por não exigir guardas diretas.  
+- **Uso principal:** base do processo de geração, consumo e revogação de tokens de conta consultiva.
+
 
 ### 3.2 Views Ativas
 
+> **📘 Definição técnica:** Esta seção contém estrutura SQL e campos. Para casos de uso e integração → **Ver seção 5.1.1**
+
 #### v_access_context_v2 — Access Context (fonte única)
 
-**Retorna o contexto de acesso completo entre usuário e conta.**  
-**Usada pelo SSR (`getAccessContext.ts`) e pelo `AccessProvider`.**
+**Retorna o contexto de acesso completo entre usuário e conta.**
 
 **Colunas retornadas:**
 
@@ -241,138 +259,297 @@ UI → Providers → Adapters → DB
 **Configuração de segurança:**  
 `security_invoker = true`
 
-**Usos:**
-
-- SSR gate em `/a/[account]/layout.tsx`
-- Adapter `accessContextAdapter.readAccessContext()`
-- `AccessProvider` (exposição de `account.name` à UI)
-- Cookie `last_account_subdomain` definido quando `allow = true`
-
 ---
 
 #### v_user_accounts_list — Lista de Contas do Usuário (E10.1)
 
-**View criada para alimentar o componente AccountSwitcher.**
+**Objetivo:** alimentar o AccountSwitcher.
+
+**Colunas:**
+
+* `account_id uuid`
+* `account_name text`
+* `account_subdomain text`
+* `account_status text`
+* `member_status text`
+* `member_role text`
+* `created_at timestamptz`
+
+**Fonte & Lógica (atual):**
+Deriva de `public.v_access_context_v2` (invoker) com `JOIN public.accounts a ON a.id = v.account_id`.
+Filtros efetivos: `v.user_id = auth.uid()` e `v.allow = true`.
+
+**Segurança (conforme BT 1.6/1.7):**
+
+* `security_invoker = true` (definido na view).
+* RLS aplicado nas tabelas base via invoker.
+* Sem funções `SECURITY DEFINER`.
+* `GRANT SELECT ON public.v_user_accounts_list TO authenticated`.
+* `search_path` esperado: `public`.
+
+**Exposição:** `public.v_user_accounts_list` (PostgREST/Supabase).
+
+**Consumidores:**
+
+* Hook de dados: `useUserAccounts()` (chamado por `useAccountSwitcher`).
+* Endpoint: `/api/user/accounts`.
+* UI: `AccountSwitcher.tsx`.
+
+**Contrato de erro/estado:**
+
+* Sem vínculo ativo ⇒ lista vazia.
+* Não requer service role; cliente autenticado padrão.
+
+---
+
+#### v_account_effective_limits — Limites Efetivos da Conta
+
+**Retorna os limites e configurações do plano associado à conta.**
 
 **Colunas retornadas:**
 
 - `account_id uuid`
 - `account_name text`
-- `account_subdomain text`
 - `account_status text`
-- `member_status text`
-- `member_role text`
+- `subdomain text`
+- `domain text`
+- `plan_id uuid`
+- `plan_name text`
+- `price_monthly numeric`
+- `plan_features jsonb`
+- `max_lps int`
+- `max_conversions int`
+- `max_lps_unlimited boolean`
+- `max_lps_effective bigint`
+- `max_conversions_unlimited boolean`
+- `max_conversions_effective bigint`
+- `created_at timestamptz`
+- `updated_at timestamptz`
 
 **Lógica:**  
-JOIN entre `account_users` e `accounts`
-
-```sql
-SELECT
-  a.id AS account_id,
-  a.name AS account_name,
-  a.subdomain AS account_subdomain,
-  a.status AS account_status,
-  au.status AS member_status,
-  au.role AS member_role
-FROM account_users au
-JOIN accounts a ON a.id = au.account_id
-WHERE au.user_id = auth.uid();
-```
+JOIN entre `accounts` e `plans` com helpers de limite (`plan_limit_is_unlimited`, `plan_limit_value`).
 
 **Configuração:**
-
 - `security_invoker = true`
-- `GRANT SELECT ON v_user_accounts_list TO authenticated;`
 
-**Usos:**
-
-- Hook `useUserAccounts()`
-- Endpoint `/api/user/accounts`
-- `AccountSwitcher.tsx` (dropdown multi-conta)
+**Uso:**
+- Base para verificação de limites de plano
+- Função `get_account_effective_limits(account_id)` usa esta view
 
 ---
 
+#### v_account_effective_limits_secure — Limites Efetivos (Segura)
+
+**Versão filtrada de `v_account_effective_limits` com controle de acesso.**
+
+**Colunas retornadas:**
+*(mesmas de `v_account_effective_limits`)*
+
+**Lógica:**  
+Proxy sobre `v_account_effective_limits` com filtro: apenas platform_admin ou membro ativo da conta (`is_platform_admin()` OR `is_member_active(account_id, auth.uid())`).
+
+**Configuração:**
+- `security_invoker = true`
+- Filtro RLS aplicado
+
+**Uso:**
+- API endpoints que expõem limites de plano
+- Dashboard de administração
+
+---
+
+#### v_admin_tokens_with_usage — Tokens Consultivos com Status
+
+**View para gerenciamento de tokens de onboarding (E7).**
+
+**Colunas retornadas:**
+
+- `token_id uuid`
+- `email text`
+- `expires_at timestamptz`
+- `is_used boolean`
+- `is_valid boolean`
+- `account_slug text`
+- `created_at timestamptz`
+
+**Lógica:**  
+JOIN entre `post_sale_tokens` e `accounts`. Campos calculados: `is_used` (token consumido), `is_valid` (não usado e não expirado).
+
+**Configuração:**
+- `security_invoker = true`
+
+**Uso:**
+- Painel `/admin/tokens` (E7)
+- Listagem e revogação de tokens consultivos
+
+---
+
+#### v_audit_logs_norm — Logs de Auditoria Normalizados
+
+**View simplificada para consulta de logs de auditoria.**
+
+**Colunas retornadas:**
+
+- `id uuid`
+- `entity text` (nome da tabela)
+- `entity_id uuid`
+- `action text`
+- `diff jsonb` (changes_json)
+- `account_id uuid`
+- `actor_user_id uuid`
+- `ip_address text`
+- `created_at timestamptz`
+
+**Lógica:**  
+Renomeia campos de `audit_logs` para nomenclatura mais clara (ex: `table_name` → `entity`, `changes_json` → `diff`).
+
+**Configuração:**
+- `security_invoker = true`
+
+**Uso:**
+- Relatórios de auditoria
+- Dashboard administrativo
+- Integração futura com Supabase Unified Logs
+
+---
+
+---
+
+
 ### 3.3 Functions Ativas
 
-**RPC E7 (Onboarding):**
+---
 
-- **create_account_with_owner(token_id, actor_id) → uuid** - Cria conta via token
-  - Status: SECURITY DEFINER
-  - Busca contract_ref do token e usa como nome inicial da conta
+#### **RPC E7 (Onboarding)**
+
+- **create_account_with_owner(token_id, actor_id) → uuid**
+  - **Status:** SECURITY DEFINER  
+  - Cria conta via token (E7)
+  - Busca `contract_ref` do token e usa como nome inicial da conta
   - Insere em `subdomain` (não `slug`)
   - Status inicial: `pending_setup`
-  - Valida auth.uid() = actor_id
-  - Consome token (marca used_at)
-  - Cria vínculo owner
-  - Registra auditoria
-- **_gen_provisional_slug() → text** - Gera slugs temporários (acc-{uuid8})
+  - Valida `auth.uid()` = `actor_id`
+  - Consome token (`used_at`)
+  - Cria vínculo owner e registra auditoria
+- **_gen_provisional_slug() → text**
+  - Gera slugs temporários (`acc-{uuid8}`)
 
-**RPC Limites:**
+---
 
-- **get_account_effective_limits(account_id) → table** - Retorna limites da conta
+#### **RPC Limites**
 
-**Auth Helpers:**
+- **get_account_effective_limits(account_id) → table**
+  - Retorna limites efetivos da conta (LPs, seções, conversões)
 
-- **is_super_admin() → boolean**
-- **is_service_role() → boolean**
-- **is_platform_admin() → boolean** - atualizada (E7): retorna `true` se `platform_admin=true` (claim) ou `auth.uid()` = UUID legado ou `is_super_admin()`
-- **is_admin_active() → boolean**
+---
+
+#### **Auth Helpers**
+
+- **is_super_admin() → boolean**  
+- **is_service_role() → boolean**  
+- **is_platform_admin() → boolean**
+  - Atualizada (E7): retorna `true` se `platform_admin=true` (claim)
+- **is_admin_active() → boolean**  
 - **is_member_active() → boolean**
 
-**RLS Helpers (usadas em policies):**
+---
 
-- **has_account_min_role(account_id, min_role) → boolean** - Valida papel mínimo (DEFINER)
-- **role_rank(role) → int** - Precedência (owner=4, admin=3, editor=2, viewer=1)
+#### **RLS Helpers (Policies)**
 
-**Convites:**
+- **has_account_min_role(account_id, min_role) → boolean**
+  - **Status:** SECURITY DEFINER  
+  - Valida papel mínimo exigido em policies  
+- **role_rank(role) → int**
+  - Define precedência de papéis (`owner=4`, `admin=3`, `editor=2`, `viewer=1`)
 
-- **accept_account_invite(account_id, ttl_days) → boolean** - Aceita convite (pending→active)
-- **revoke_account_invite(account_id, user_id) → boolean** - Revoga/inativa convites
-- **invitation_expires_at(account_user_id, ttl_days) → timestamptz** - Calcula expiração
-- **invitation_is_expired(account_user_id, ttl_days) → boolean** - Verifica expiração
+---
 
-**Planos (helpers para limites):**
+#### **Convites**
 
-- **plan_limit_is_unlimited(value int) → boolean** 
-  - Verifica se valor representa "ilimitado" (value = -1)
-  - Uso: Checar se conta tem limite ou não
-  - Exemplo: `plan_limit_is_unlimited(account.max_lps)` → true se ilimitado
-  
-- **plan_limit_value(value int) → bigint** 
-  - Converte -1 para bigint::max (representação numérica de ilimitado)
-  - Converte outros valores para bigint
-  - Uso: Comparações numéricas que precisam tratar "ilimitado"
+- **accept_account_invite(account_id, ttl_days) → boolean**
+  - Aceita convite (pending → active)
+- **revoke_account_invite(account_id, user_id) → boolean**
+  - Revoga convites ativos
+- **invitation_expires_at(account_user_id, ttl_days) → timestamptz**
+  - Calcula expiração
+- **invitation_is_expired(account_user_id, ttl_days) → boolean**
+  - Verifica expiração
 
-**Auditoria (usadas por triggers):**
+---
 
-- **audit_accounts(), audit_account_users(), audit_partner_accounts()**
-- **jsonb_diff_val() → jsonb** - Calcula diffs para changes_json
+#### **Planos (Helpers de limites)**
 
-**Governança:**
+- **plan_limit_is_unlimited(value int) → boolean**
+  - Verifica se o valor representa ilimitado (`-1`)
+- **plan_limit_value(value int) → bigint**
+  - Converte `-1` para `bigint::max`
+  - Mantém outros valores conforme definidos
 
-- **protect_last_owner()** - Impede remover último owner
-- **tg_guard_last_owner(), tg_guard_accounts_transfer_owner()** - Proteções owner
-- **tg_account_users_normalize_role()** - Normaliza papéis
+---
+
+#### **Auditoria / Guardas — Trigger Hub (núcleo v1.6)**
+
+- **hub_router()**
+  - Trigger único BEFORE INSERT/UPDATE/DELETE (ROW)
+  - Normaliza o evento (`TG_OP`, tabela, `OLD/NEW`, `actor`)
+  - Executa `fn_audit_dispatch` e guardas específicas
+
+- **fn_audit_dispatch(table text, kind text, payload jsonb)**
+  - Grava `audit_logs` com `event='hub_dispatch'`
+  - Campos mínimos: `table`, `kind`, `txid_current()`, `actor(jwt_claims)`, `payload`
+
+- **fn_guard_last_owner(kind text, new account_users, old account_users)**
+  - Impede remoção ou downgrade do último owner ativo
+
+- **fn_owner_transfer_rules(kind text, new accounts, old accounts)**
+  - Valida trocas de `owner_user_id` em `accounts`
+  - Bloqueia se `owner_user_id` nulo ou redundante
+
+- **fn_event_bus_publish(table text, kind text, payload jsonb)**
+  - Opcional — fan-out futuro (notificações/webhooks)
+
+---
+
+#### **Auditoria (helpers complementares)**
+
+- **jsonb_diff_val() → jsonb**
+  - Calcula diferenças entre estados JSON para log de alterações
+
+---
+
+> **Nota:**  
+> Funções legadas (`audit_*`, `protect_last_owner()`, `tg_guard_*`) permanecem apenas para rollback.  
+> As triggers ativas agora utilizam exclusivamente o **Trigger Hub**.
+
 
 ### 3.4 Triggers Ativos
 
-**Auditoria:**
+**Trigger Hub (única por tabela):**
+- `tg_accounts_hub` — BEFORE INSERT/UPDATE/DELETE ON accounts → hub_router()  
+- `tg_account_users_hub` — BEFORE INSERT/UPDATE/DELETE ON account_users → hub_router()  
+- `tg_partner_accounts_hub` — BEFORE INSERT/UPDATE/DELETE ON partner_accounts → hub_router()
 
-- `trg_audit_accounts` → audit_accounts()
-- `trg_audit_account_users` → audit_account_users()
-- `trg_audit_partner_accounts` → audit_partner_accounts()
+**Desativadas (legadas, apenas para rollback):**
+- Auditoria: `trg_audit_accounts`, `trg_audit_account_users`, `trg_audit_partner_accounts`  
+- Governança: `trg_protect_last_owner`, `trg_account_users_guard_last_owner`, `trg_accounts_guard_transfer_owner`  
+- Utilitários: `trg_accounts_set_updated_at`, `trg_account_users_normalize_role`, `trg_partner_accounts_audit`
 
-**Governança:**
+**Exceções:**
+- `audit_logs` não possui trigger (sink de eventos).
 
-- `trg_protect_last_owner` - Protege último owner
-- `trg_account_users_guard_last_owner` - Impede remoção
-- `trg_accounts_guard_transfer_owner` - Valida transferência
+---
 
-**Utilitários:**
+### 3.4.1 Tabelas Fora do Escopo do Trigger Hub
 
-- `trg_accounts_set_updated_at` - Timestamp automático
-- `trg_account_users_normalize_role` - Normaliza papéis
-- `trg_partner_accounts_audit` - Auditoria parceiros
+As tabelas abaixo não foram integradas ao Trigger Hub por não exigirem auditoria ou guardas de governança.
+
+| Tabela | Situação | Observações |
+|---------|-----------|-------------|
+| **plans** | 🚫 Fora do escopo | Tabela estática de referência, apenas leitura. Não possui triggers nem eventos de negócio. Mantida apenas para RLS de leitura. |
+| **partners** | 🚫 Fora do escopo | Cadastro simples; não contém guardas. As alterações são refletidas em `partner_accounts`, que já é auditada via Hub. |
+| **post_sale_tokens** | 🟡 Stand-by (decisão pendente) | Tabela obsoleta, ligada à view `v_admin_tokens_with_usage`. Mantida apenas por compatibilidade. Sem triggers nem guardas. Se for descontinuada, exportar dados e remover a view dependente. |
+
+---
 
 ### 3.5 Tipos TypeScript Canônicos
 
@@ -388,19 +565,6 @@ export type MemberRole = 'owner' | 'admin' | 'editor' | 'viewer';
 
 **Normalização: accountAdapter contém `normalizeAccountStatus()`, `normalizeMemberStatus()`, `normalizeRole()`**
 
-### 3.6 Modelo de Grants e Feature Flags
-
-O modelo de **grants** define uma estrutura única para ativar, restringir ou configurar recursos do sistema (ex.: remarketing, tracking, temas, limites e variações A/B) sem alterar schema ou código.
-
-- **Tabela:** `model_grants`  
-  - Campos principais: `account_id`, `feature_key`, `scope`, `scope_id`, `enabled`, `limit_json`, `starts_at`, `ends_at`.  
-  - Escopos possíveis: `account`, `lp`, `section`.  
-- **Função:** `get_feature(account_id, feature_key, lp_id?, section_id?)` — retorna `{enabled, limit_json}` considerando prioridade `section > lp > account`.  
-- **Adapter:** `src/lib/grants/adapters/grantsAdapter.ts` — fonte única de leitura e decisão.  
-- **RLS:** ativa e restrita a `owner/admin`. Views e functions usam `security_invoker=true`.  
-- **Uso:** todas as features configuráveis devem consultar `get_feature()` em vez de colunas booleanas (`has_x`).  
-- **Status:** 🟩 **Estável (uso imediato em novas tabelas e recursos configuráveis)**
-
 ---
 
 ## 4. Regras Técnicas Globais
@@ -408,18 +572,8 @@ O modelo de **grants** define uma estrutura única para ativar, restringir ou co
 ### 4.1 Segurança
 
 - Todas as views que expõem dados de contas de usuário (ex.: `v_user_accounts_list`) devem usar `security_invoker = true` e filtrar `user_id = auth.uid()`.
-- O cookie `last_account_subdomain` é definido somente no SSR (`/a/[account]/layout.tsx`) após validação `allow=true`.
-  - Atributos: `HttpOnly; Secure; SameSite=Lax; Max-Age=2592000` (30 dias).
-  - Leitura exclusiva no servidor (middleware).
-- O logout deve expirar o cookie (`Max-Age=0`) para evitar persistência entre sessões diferentes no mesmo device.
+- **Cookie `last_account_subdomain`:** Definição, atributos, leitura servidor e logout → **Ver seção 5.1.2**
 - Nenhum dado sensível (subdomain, ids) é acessível via client JavaScript.
-
-- **Novo item — Grants e Feature Flags**
-
-- A tabela `model_grants` e a função `get_feature()` devem ter **RLS ativa** e usar `security_invoker=true`.  
-- Todas as consultas ou atualizações de recursos configuráveis devem passar pela função `get_feature()` ou pelo adapter `grantsAdapter`.  
-- É proibido acesso direto à tabela `model_grants` fora desses contextos.  
-- A auditoria de alterações é obrigatória via `audit_logs`.  
 
 ### 4.2 Camadas (Estrutura Rígida)
 
@@ -428,9 +582,8 @@ O modelo de **grants** define uma estrutura única para ativar, restringir ou co
 **Proibições:**
 
 - `app/**` e `components/**` NUNCA importam `@supabase/*` ou `lib/supabase/*`
-- **Exceção:** Componentes SULB (ver seção 6.3) podem importar `@supabase/*` diretamente
+- **Exceção SULB:** Lista completa de componentes auth permitidos → **Ver seção 6.3**
 - Toda query ao banco passa por `src/lib/**/adapters/**`
-- UI (exceto SULB) nunca fala diretamente com Supabase
 
 **Quando criar adapter:**
 
@@ -520,35 +673,30 @@ src/lib/
 
 ### 4.8 Anti-Regressão
 
-**Antes de modificar código existente:**
+**Regra geral:** toda modificação deve preservar compatibilidade e segurança sem afetar fluxos existentes.
 
-**Schema (tabelas/views/functions):**
-
-- Buscar nome no repositório (grep/search global)
-- Identificar views/policies/adapters dependentes
-- Atualizar todos ou rejeitar mudança
+**Schema:**
+- Alterações sempre via migration idempotente.
+- Views e functions dependentes devem ser revisadas antes da execução.
+- `security_invoker=true` obrigatório em todas as views de acesso.
 
 **Adapters:**
-
-- Verificar importadores antes de mudar assinatura de método
-- Manter contratos retrocompatíveis (adicionar campos opcionais, não remover/renomear)
+- Manter contratos compatíveis; nunca remover campos esperados.
+- `.maxAffected(1)` aplicado em mutações 1-a-1 (ativo no v13, ignorado no v12).
+- Revisar importadores antes de mudar assinatura.
 
 **Tipos TS:**
+- Fonte única: `src/lib/types/status.ts`
+- Após mudanças, validar normalização nos adapters.
 
-- Modificar apenas em fonte única (`src/lib/types/status.ts`)
-- Verificar normalização em adapters após mudança (accountAdapter, accessContextAdapter)
+**JWT e SDK:**
+- Projeto utiliza JWT Legacy (HMAC); migração para JWT Signing Keys pendente.
+- SDK atualizado (`@supabase/supabase-js ≥ 2.56.0`) e compatível com PostgREST 13.
+- Search Path restrito a `public`.
 
-**Arquivos com regras especiais:**
-
-- Arquivos SULB originais: manter compatibilidade com upstream
-- `middleware.ts` raiz: fluxo único estabelecido (bypass /a, /a/home)
-- Tipos canônicos: fonte única inviolável (`src/lib/types/status.ts`)
-
-**Quando criar novo arquivo:**
-
-- Novo módulo/domínio → `src/lib/{domínio}/`
-- Nova UI feature → `components/features/{feature}/`
-- Novo adapter → quando lógica repetida em 3+ locais
+**Rollback seguro:**
+- Reverter SDK ou migrations se surgir erro inesperado.
+- Logs Supabase são a primeira referência para diagnóstico.
 
 ### 4.9 Rate Limit
 
@@ -573,190 +721,71 @@ src/lib/
 
 ### 4.10 ❌ Anti-Patterns
 
-**Lista consolidada de práticas PROIBIDAS no projeto.**
+> **📌 Índice de Referência Cruzada:** Esta seção lista práticas proibidas com links para as regras detalhadas. Exemplos de código estão nas seções originais.
 
-#### ❌ Nunca Fazer: Imports
+**Lista consolidada de práticas PROIBIDAS no projeto:**
 
-```typescript
-// ❌ ERRADO - UI comum importando Supabase diretamente
-import { createClient } from '@supabase/supabase-js'
+| Anti-Pattern | Regra Original | Seção | Resumo |
+|--------------|----------------|--------|--------|
+| Imports `@supabase/*` em UI comum | Camadas (Estrutura Rígida) | 4.2 | UI/rotas nunca importam Supabase diretamente (exceto SULB) |
+| Views sem `security_invoker` | Segurança | 4.1 | Toda view com dados de usuário DEVE usar `security_invoker = true` |
+| `SECURITY DEFINER` não aprovado | CI/Lint (Classes de Bloqueio) | 4.4 | Requer aprovação explícita em CR + documentação no roadmap |
+| Tipos duplicados | Tipos TypeScript | 4.6 | Tipos canônicos APENAS em `src/lib/types/status.ts` |
+| Cookie manipulado no client | Segurança + Persistência SSR | 4.1, 5.1.2 | Cookie `last_account_subdomain` APENAS no SSR (layout.tsx) |
+| Bypass do Fluxo de Dados | Camadas (Estrutura Rígida) | 4.2 | Fluxo obrigatório: UI → Providers → Adapters → DB |
+| IDs/emails hardcoded | Auth Helpers | 3.3 | Usar helpers `is_super_admin()`, `is_platform_admin()` do DB |
+| Schema mutation sem migration | Convenções | 4.7 | Toda mudança de schema via migration file |
+| Secrets em client | Secrets & Variáveis | 4.5 | `SUPABASE_SECRET_KEY` APENAS server-side |
+| Modificar SULB sem validação | Biblioteca Supabase (SULB) | 6.3 | Apenas 6 arquivos foram adaptados, resto é original upstream |
 
-// ✅ CORRETO - UI importa adapter
-import { accountAdapter } from '@/lib/access'
-
-// ✅ EXCEÇÃO - Componentes SULB podem importar Supabase
-// components/login-form.tsx (SULB)
-import { createBrowserClient } from '@supabase/ssr'
-```
-
-```typescript
-// ❌ ERRADO - Componente comum acessando DB
-const accounts = await supabase.from('accounts').select()
-
-// ✅ CORRETO - Componente usa adapter
-const accounts = await accountAdapter.list()
-```
-
-**Regra:** `@supabase/*` APENAS em `src/lib/**/adapters/**`  
-**Exceção:** Componentes SULB (auth forms) - Ver seção 6.3 para lista completa
-
----
-
-#### ❌ Nunca Fazer: Views sem Security Invoker
-
-```sql
--- ❌ ERRADO - View sem security_invoker
-CREATE VIEW v_user_data AS
-SELECT * FROM accounts WHERE owner_user_id = auth.uid();
-
--- ✅ CORRETO - View com security_invoker
-CREATE VIEW v_user_data
-WITH (security_invoker = true) AS
-SELECT * FROM accounts WHERE owner_user_id = auth.uid();
-```
-
-**Regra:** Toda view que expõe dados de usuário DEVE usar `security_invoker = true`
-
----
-
-#### ❌ Nunca Fazer: SECURITY DEFINER sem Aprovação
-
-```sql
--- ❌ ERRADO - Function DEFINER não aprovada
-CREATE FUNCTION delete_user_account()
-RETURNS void
-SECURITY DEFINER
-AS $$...$$;
-
--- ✅ CORRETO - Function INVOKER (padrão seguro)
-CREATE FUNCTION delete_user_account()
-RETURNS void
-SECURITY INVOKER
-AS $$...$$;
-```
-
-**Regra:** `SECURITY DEFINER` requer aprovação explícita em CR + documentação no roadmap
-
-**Functions DEFINER aprovadas:**
+**Functions SECURITY DEFINER aprovadas:**
 - `create_account_with_owner()` - E7 onboarding
 - `has_account_min_role()` - RLS helper
 
----
+### 4.11 Sistema de Grants (Controle de Features)
 
-#### ❌ Nunca Fazer: Tipos Duplicados
+**Regra obrigatória:** Nunca hardcode verificação de planos ou limites. Use o sistema de grants.
 
+**Padrão correto:**
 ```typescript
-// ❌ ERRADO - Redefinindo tipo
-export type AccountStatus = 'active' | 'inactive'
-
-// ✅ CORRETO - Importando da fonte única
-import { AccountStatus } from '@/lib/types/status'
-```
-
-**Regra:** Tipos canônicos APENAS em `src/lib/types/status.ts`
-
----
-
-#### ❌ Nunca Fazer: Cookie no Client
-
-```typescript
-// ❌ ERRADO - Cookie manipulado no client
-document.cookie = 'last_account_subdomain=xyz'
-
-// ✅ CORRETO - Cookie definido no SSR
-// app/a/[account]/layout.tsx define via Set-Cookie header
-```
-
-**Regra:** Cookie `last_account_subdomain` APENAS no SSR (layout.tsx)
-
----
-
-#### ❌ Nunca Fazer: Bypass do Fluxo de Dados
-
-```typescript
-// ❌ ERRADO - Provider chamando DB diretamente
-const AccessProvider = () => {
-  const data = await supabase.from('accounts').select()
+// ❌ ERRADO - lógica hardcoded
+if (account.plan_id === 'pro') {
+  // permite feature
 }
 
-// ✅ CORRETO - Provider chama adapter
-const AccessProvider = () => {
-  const data = await accountAdapter.list()
+// ✅ CORRETO - usa sistema de grants
+const allowed = await getFeature(accountId, 'advanced_analytics')
+if (allowed) {
+  // permite feature
 }
 ```
 
-**Regra:** Fluxo obrigatório: `UI → Providers → Adapters → DB`
+**Arquitetura (E9.1 - 🧩 Em evolução):**
+- Tabela: `model_grants` (controle por conta)
+- Function: `get_feature(account_id, feature_key, lp_id?, section_id?)`
+- Fallback: section → lp → account → plan → default
+- Snapshot: Cada conta preserva recursos independente de mudanças no plano
 
----
+**Schema técnico:** Ver seção 3.1  
+**Implementação:** Ver Roadmap E9.1
 
-#### ❌ Nunca Fazer: Hardcoded IDs/Emails
+**Critério de uso:**
+- Sempre que verificar disponibilidade de feature
+- Sempre que checar limites (max_lps, max_conversions)
+- Nunca comparar `plan_id` diretamente no código
 
-```typescript
-// ❌ ERRADO - Super admin hardcoded
-if (user.id === '12345-abc-...') {
-  // super admin logic
-}
+### 4.12 Compatibilidade PostgREST 13
 
-// ✅ CORRETO - Helper function
-if (await is_super_admin()) {
-  // super admin logic
-}
-```
+**Estado atual:**  
+- Projeto opera com **PostgREST 12.2.12**, pronto para migração ao **v13**.  
+- **SDK:** `@supabase/supabase-js ≥ 2.56.0` validado e compatível.  
+- **Mutações 1-a-1:** `.maxAffected(1)` aplicado nos adapters (`renameAndActivate`, `revoke`).  
+- **Índice GIN:** `accounts_name_gin_idx` ativo para suporte ao `textSearch()`.  
+- **Search Path:** restrito a `public`.  
+- **JWT:** ainda no modo HMAC (Legacy); migração planejada para **JWT Signing Keys**.  
 
-**Regra:** Usar helpers `is_super_admin()`, `is_platform_admin()` do DB
-
----
-
-#### ❌ Nunca Fazer: Mutation de Schema sem Migration
-
-```typescript
-// ❌ ERRADO - ALTER TABLE no código
-await supabase.sql`ALTER TABLE accounts ADD COLUMN new_field text`
-
-// ✅ CORRETO - Migration file
-// supabase/migrations/20251031_add_new_field.sql
-ALTER TABLE accounts ADD COLUMN new_field text;
-```
-
-**Regra:** Toda mudança de schema via migration file
-
----
-
-#### ❌ Nunca Fazer: Secrets em Client
-
-```typescript
-// ❌ ERRADO - Secret exposta
-const client = createClient(url, process.env.SUPABASE_SECRET_KEY)
-
-// ✅ CORRETO - Publishable key no client
-const client = createClient(url, process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY)
-```
-
-**Regra:** `SUPABASE_SECRET_KEY` APENAS server-side (`src/lib/supabase/service.ts`)
-
----
-
-#### ❌ Nunca Fazer: Modificar SULB sem Testar
-
-```typescript
-// ❌ ERRADO - Alterar SULB original sem plano
-// components/login-form.tsx - mudar lógica core
-
-// ✅ CORRETO - Verificar lista de arquivos modificados (seção 6.3)
-// Apenas 6 arquivos SULB foram adaptados, resto é original
-```
-
-**Regra:** Ver seção 6.3 para lista de arquivos SULB modificados vs originais
-
-#### ❌ Nunca Fazer: Colunas booleanas para recursos configuráveis
-
-```typescript
-// ❌ ERRADO — criar coluna fixa para um recurso
-ALTER TABLE accounts ADD COLUMN has_tracking boolean;
-
-// ✅ CORRETO — usar grants
-INSERT INTO model_grants (account_id, feature_key, enabled)
-VALUES ('acc...', 'tracking', true);
+**Pronto para upgrade:**  
+A atualização para o PostgREST 13 poderá ser executada assim que disponível no painel do Supabase, **sem necessidade de ajustes adicionais** no código ou schema.
 
 ---
 
@@ -774,8 +803,6 @@ Antes de aprovar PR, validar:
 - [ ] Sem secrets no client
 - [ ] SULB: apenas arquivos aprovados modificados (ver seção 6.3)
 
-**Índices de suporte: `(created_by, created_at DESC)` e `(email, created_at DESC)`.**
-
 ---
 
 ## 5. Arquitetura de Acesso
@@ -784,10 +811,12 @@ Antes de aprovar PR, validar:
 
 #### 5.1.1 Access Context v2
 
+> **📘 Estrutura técnica completa (colunas, SQL, grants):** Ver seção 3.2
+
 **Fonte única de decisão de acesso entre usuário e conta.**  
 Autoriza SSR e sincroniza a UI via AccessProvider.
 
-**View:** `v_access_context_v2` (ver seção 3.2 para detalhes completos)
+**View:** `v_access_context_v2`
 
 **Integrações principais:**
 - SSR gate: `/a/[account]/layout.tsx` (define cookie `last_account_subdomain`)
@@ -797,21 +826,32 @@ Autoriza SSR e sincroniza a UI via AccessProvider.
 
 #### 5.1.2 Persistência SSR (Cookie)
 
+> **📌 Seção de referência única:** Toda lógica de cookie `last_account_subdomain` está consolidada aqui.
+
 **Função:** Mantém a última conta usada entre sessões.
 
-**Local:** `app/a/[account]/layout.tsx`
+**Local de definição:** `app/a/[account]/layout.tsx`
 
-**Processo:**
+**Atributos de segurança:**
+```
+Set-Cookie: last_account_subdomain=<subdomain>;
+Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=2592000
+```
+- **HttpOnly:** Inacessível via JavaScript (proteção XSS)
+- **Secure:** Apenas HTTPS
+- **SameSite=Lax:** Proteção CSRF
+- **Max-Age:** 30 dias (2592000 segundos)
+- **Leitura:** Exclusiva no servidor (middleware)
+
+**Processo completo (Orquestração SSR):**
 1. `getAccessContext()` valida acesso via `v_access_context_v2`
-2. Se `allow=true`, define cookie antes de renderizar:
-   ```
-   Set-Cookie: last_account_subdomain=<subdomain>;
-   Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=2592000
-   ```
-3. Middleware lê cookie e redireciona `/a` → `/a/{subdomain}`
-4. Logout expira o cookie (`Max-Age=0`)
+2. Se `allow=true`, define cookie antes de renderizar
+3. Middleware lê cookie e redireciona `/a` → `/a/{subdomain}` (quando autenticado)
+4. **Logout:** expira o cookie (`Max-Age=0`) para evitar persistência entre sessões diferentes
 
-**Benefício:** Usuário autenticado reabre `/a` e retorna à última conta, sem depender de client state.
+**Benefício:** Usuário autenticado reabre `/a` e retorna à última conta automaticamente, sem depender de client state.
+
+**Restrição de segurança:** Nenhum dado sensível (subdomain, ids) é acessível via client JavaScript.
 
 ---
 
@@ -820,23 +860,29 @@ Autoriza SSR e sincroniza a UI via AccessProvider.
 #### 5.2.1 Adapters de Acesso
 
 **accountAdapter** (`src/lib/access/adapters/`)
-- `createFromToken(tokenId, actorId)` - E7 onboarding
-- `renameAndActivate(accountId, name, slug)` - E7 setup
-- Normaliza status/role do DB para tipos TS (fonte: seção 3.5)
+- `createFromToken(tokenId, actorId)` — criação de conta via token (E7 onboarding).  
+- `renameAndActivate(accountId, name, slug)` — atualização e ativação da conta.  
+  - `.maxAffected(1)` aplicado para limitar atualizações a uma linha (compatível v13, ignorado no v12).  
+- Normaliza status e papéis conforme tipos canônicos (`AccountStatus`, `MemberStatus`, `MemberRole`).
 
 **accessContextAdapter** (`src/lib/access/adapters/`)
-- Única função de acesso ao contexto via `v_access_context_v2`
-- Logging padronizado, fail-closed (erro → null)
-- Retorna: `{ account: { id, subdomain, name?, status }, member: { user_id, account_id, role, status } }`
+- Lê `v_access_context_v2` (Access Context v2).  
+- Retorna `{ account, member }` com segurança fail-closed (erro → `null`).  
+- Campos retornados incluem `account.name` para o header e switcher.  
 
-**adminAdapter** (`src/lib/admin/adapters/`) - E7
-- `checkSuperAdmin()` - valida JWT claims
-- `tokens.*` - CRUD post_sale_tokens (usa service client)
+**adminAdapter** (`src/lib/admin/adapters/`)
+- Valida privilégios `super_admin` e `platform_admin`.  
+- Gerencia tokens administrativos (`post_sale_tokens`).  
 
-**postSaleTokenAdapter** (`src/lib/admin/adapters/`) - E7
-- `generate()`, `validate()`, `consume()`, `revoke()`
-- Usa service client (GRANT service_role na view)
-- Rate limits aplicados (ver seção 4.9)
+**postSaleTokenAdapter** (`src/lib/admin/adapters/`)
+- Métodos: `generate()`, `validate()`, `consume()`, `revoke()`.  
+  - `.maxAffected(1)` aplicado em `revoke()` para garantir operação única.  
+- Controla limites de geração (`rate limit`) e integra com auditoria.  
+
+**Observação:**  
+Todos os adapters seguem o fluxo **UI → Providers → Adapters → DB**.  
+Nenhum componente de UI acessa o Supabase diretamente, exceto os autorizados na SULB (ver seção 6.3).
+
 
 #### 5.2.2 Guards SSR
 
@@ -883,7 +929,7 @@ Autoriza SSR e sincroniza a UI via AccessProvider.
 
 #### 5.3.3 Multi-conta (AccountSwitcher)
 
-Sistema de troca de contas com persistência via cookie (`last_account_subdomain`, 30d, HttpOnly).
+**Sistema de troca de contas com persistência via cookie.**
 
 **Componentes:** `AccountSwitcher`, `AccountSwitcherTrigger`, `AccountSwitcherList`  
 **Hooks:** `useAccountSwitcher`, `useUserAccounts`  
@@ -891,15 +937,11 @@ Sistema de troca de contas com persistência via cookie (`last_account_subdomain
 **Endpoint:** `/api/user/accounts`  
 **Funcionalidades:** Persistência 30d, ocultação automática (≤1 conta), suporte teclado/touch
 
-**Orquestração SSR:**
-1. `app/a/[account]/layout.tsx` executa gate SSR via `getAccessContext()`
-2. Se `allow=true`, define cookie antes de responder (atributos: ver seção 4.1 ou 5.1.2)
-3. Middleware lê cookie e redireciona `/a` → `/a/{subdomain}` (quando autenticado)
-4. Logout expira cookie (`Max-Age=0`)
+**Cookie SSR:** Orquestração completa (set, read, expire) → **Ver seção 5.1.2**
 
 **Benefício:** Usuário autenticado reabre `/a` e retorna à última conta automaticamente, sem depender de client state.
 
-Histórico de implementação: Ver `docs/roadmap.md` seção E10.1
+**Histórico de implementação:** Ver `docs/roadmap.md` seção E10.1
 
 #### 5.3.4 Observabilidade
 
@@ -1015,7 +1057,9 @@ UI → Providers → Adapters → DB
 
 ### 6.3 Biblioteca Supabase (SULB)
 
-**Origem: `github.com/supabase/supabase/tree/master/examples/auth/nextjs`**
+> **📌 Seção de referência única:** Esta é a lista oficial de exceções SULB mencionadas em 4.2 e 4.10. Componentes listados aqui podem importar `@supabase/*` diretamente.
+
+**Origem:** `github.com/supabase/supabase/tree/master/examples/auth/nextjs`
 
 **Arquivos modificados (adaptados ao LP Factory 10):**
 
@@ -1049,21 +1093,34 @@ UI → Providers → Adapters → DB
 
 ---
 
-## 📜 Changelog (Keep a Changelog + SemVer)
+---
 
-### [1.5.0] — 2025-11-03
-**Adicionado**
-- Seção 3.6 “Modelo de Grants e Feature Flags”: estrutura unificada para controle dinâmico de recursos configuráveis.  
-- Regra de uso imediato em novas tabelas e funções com RLS ativa.
+## 🧾 Changelog
 
-**Motivação**
-- Escalabilidade sem alterações de schema.  
-- Padronização de governança e ativação de features no Account Dashboard.
+### v1.6 (07/11/2025)
+- **Adicionada:** Seção 4.11 — Sistema de Grants (Controle de Features).  
+  - Introduz `model_grants`, função `get_feature`, fallback hierárquico e snapshots por conta.  
+  - Regra obrigatória: nunca hardcode planos ou limites.
 
-**Status**
-🟩 Estável — uso imediato em novas tabelas e recursos configuráveis.
+### v1.6 (08/11/2025)
+- **Trigger Hub ativado** em `accounts`, `account_users`, `partner_accounts`.  
+- **Funções principais:** `hub_router`, `fn_audit_dispatch`, `fn_guard_last_owner`, `fn_owner_transfer_rules`.  
+- **Triggers legadas desativadas** e mantidas apenas para rollback.  
+- **`audit_logs`** sem trigger (sink de eventos).  
+- **Tabelas fora do escopo:** `plans`, `partners`, `post_sale_tokens` (mantida ativa).  
+- **Status:** ✅ **Implementado / Estável (v1.6)**
+
+---
+
+### v1.7 (11/11/2025)
+- **Compatibilidade verificada com PostgREST 13 (QA concluído).**  
+  - `@supabase/supabase-js` atualizado para ≥ 2.56.0.  
+  - `.maxAffected(1)` aplicado em mutações 1-a-1 (`renameAndActivate`, `revoke`).  
+  - Search Path validado: apenas `public`.  
+- **Adicionado índice GIN** `accounts_name_gin_idx` para suporte a `textSearch()` (v13-ready).  
+- **JWT:** ainda em modo HMAC (Legacy); migração para JWT Signing Keys pendente.  
+- **Rollback validado** — reversão segura de SDK e migrations.  
+- **Status:** 🟩 **Estável / Pronto para upgrade PostgREST 13**
 
 
-**Última atualização:** 03/11/2025  
-**Versão anterior:** 1.4 (31/10/2025)  
-**Próxima revisão:** Após E10.2 (UX Partner Dashboard) ou E9 (Stripe Sync)
+
