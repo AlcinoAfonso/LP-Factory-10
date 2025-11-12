@@ -1,184 +1,154 @@
-# LP Factory 10 — Estratégia de Produto
-**Versão:** 1.2  
-**Data:** 05/11/2025  
-**Propósito:** Benchmark competitivo e visão estratégica de diferenciação.
+# LP Factory 10 — Estratégia de Produtos  
 
 ---
 
-## 1. Benchmark Competitivo
+## 1 — SSO Self-Service *(🟩 Estável)*  
+2025-05-11  
 
-### 1.1 RD Station
-**Posicionamento atual:**  
-Foca em IA aplicada a campanhas, automação de marketing e CRM (eficiência e simplicidade), além de forte uso de conteúdo *gated/free* (ebooks, templates, calendários) para capturar e nutrir leads.
+### Descrição  
+Permite configuração autônoma de logins corporativos (Google Workspace, Azure AD, Okta) no Dashboard.  
 
-**Exemplos:**
-- (24/09/2025) Demonstração gratuita de IA integrada ao RD Station.  
-- (24/09/2025) Email com múltiplos ebooks e templates gratuitos como iscas de segmentação e captura.
+### Valor para o Projeto  
+- Reduz suporte técnico.  
+- Reforça governança multi-tenant.  
 
-**Risco para LP Factory:**  
-Percepção de que a RD já resolve tudo (IA + geração/nutrição de leads) → pode abafar nossa narrativa.
-
-**Oportunidade:**  
-LP Factory pode se diferenciar ao entregar **IA-ready em LPs (SEO 2.0, Zero-Click, LLMO)** e infraestrutura pronta para **Smart Gating** de conteúdos premium — algo que a RD não entrega no nível de página.
+### Valor para o Usuário  
+- Simplifica onboarding em empresas.  
 
 ---
 
-### 1.2 Validity
-**Posicionamento:**  
-Foco em uso ético de dados (*zero/first/third-party*) + *compliance* como valor de marca.
+## 2 — Tokens Pessoais com Expiração *(🟩 Estável)*  
+2025-05-18  
 
-**Exemplo:**  
-(01/10/2025) Webinar sobre coleta transparente de dados e segmentação via IA.
+### Descrição  
+Admins e desenvolvedores podem criar tokens temporários (30/90 dias) no Dashboard para integrações seguras.  
 
-**Oportunidade para LP Factory:**  
-Destacar que nossas LPs já nascem **LGPD-ready**, com blocos de consentimento claros e **governança nativa** (audit logs, tokens) — indo além do discurso de campanhas.
+### Valor para o Projeto  
+- Melhora governança e segurança.  
+- Facilita automações entre parceiros.  
 
----
-
-## 2. Visão Estratégica LP
-
-### 2.1 SSO Self-Service (Teams/Enterprise)
-**UX:**  
-Empresas dos planos avançados poderão configurar **Single Sign-On** diretamente no Dashboard, sem depender de suporte ou integrações externas.
-
-**Valor:**  
-Reduz atrito na ativação de clientes enterprise, permitindo uso autônomo de provedores corporativos (Google Workspace, Microsoft Azure AD, Okta).
-
-**Posicionamento:**  
-Recurso estratégico para planos **Ultra/White-label**, complementando a governança multi-tenant já prevista no Access Context.
+### Valor para o Usuário  
+- Garante controle e rastreabilidade de acessos.  
 
 ---
 
-### 2.2 Tokens Pessoais com Expiração
-**UX:**  
-Admins e desenvolvedores poderão criar tokens de acesso ao Supabase com prazo definido (ex.: 30/90 dias) diretamente no Dashboard.
+## 3 — Speed Insights *(🟩 Estável)*  
+2025-06-01  
 
-**Valor:**  
-Facilita governança em equipes e parceiros externos, permitindo acessos temporários para integrações, automações ou colaboradores terceirizados sem comprometer a segurança.
+### Descrição  
+Monitoramento contínuo de Core Web Vitals (LCP, CLS, FID) com dados reais de usuários.  
 
-**Posicionamento:**  
-Recurso estratégico para fases futuras com múltiplos devs/times, complementando a política de *secrets* e CI/CD já estabelecida no núcleo técnico.
+### Valor para o Projeto  
+- Integra métricas da Vercel para diagnósticos de UX.  
 
----
-
-### 2.3 Speed Insights (Performance em Produção)
-**UX/Valor:**  
-Monitorar **Core Web Vitals** (LCP, CLS, FID) com dados reais dos usuários em produção.
-
-**Posicionamento:**  
-Recurso opcional da Vercel, sem impacto em segurança/governança.
-
-**Estratégia:**  
-Ativar apenas pós-MVP, quando houver tráfego real de leads, para formar *baseline* de performance.
-
-**Benefício:**  
-Identificar gargalos de UX e otimizar experiência sem depender só de testes locais/laboratoriais.
+### Valor para o Usuário  
+- Experiência mais fluida e responsiva.  
 
 ---
 
-### 2.4 Agent Experience (AX)
-Projetar interfaces que **agentes de IA “entendam” ou naveguem melhor**, com endpoints, metadados e estrutura semântica que permitam operação automatizada sobre o produto com menos ajustes manuais.
+## 4 — Agent Experience (AX) *(🧪 Experimental)*  
+2025-07-01  
+
+### Descrição  
+Estruturar o produto para ser “compreendido” por agentes de IA via endpoints e metadados semânticos.  
+
+### Valor para o Projeto  
+- Prepara o produto para automações avançadas.  
+
+### Valor para o Usuário  
+- Experiências inteligentes e adaptativas.  
 
 ---
 
-### 2.5 Checklist + CI/ESLint (Governança Pós-MVP)
-**Objetivo:**  
-Transformar regras do MRVG em barreira automática (CI + lint), evitando violações de segurança e acesso direto ao DB.
+## 5 — Checklist + CI/ESLint *(🟩 Estável)*  
+2025-08-01  
 
-**Valor:**  
-Padroniza revisões, reduz retrabalho e garante consistência quando houver múltiplos devs/parceiros.
+### Descrição  
+Implementa validações automáticas de segurança e governança (CI + Lint) com base no MRVG.  
 
-**Estratégia:**  
-Ativar apenas pós-MVP, quando o core (LPs rápidas, integradas e dashboards) já estiver validado.
+### Valor para o Projeto  
+- Reduz regressões e falhas manuais.  
+- Garante conformidade com a Base Técnica.  
 
----
-
-### 2.6 Conteúdo IA-ready + Smart Gating + AI Visibility (SEO 2.0 & LLMO)
-Entrega futura de LPs preparadas para **Zero-Click/IA**, com suporte a FAQ, HowTo, Product e Article Schema, combinadas a um modelo híbrido de conteúdo (valor aberto para autoridade/alcance e ativos premium sob formulário).
-
-**Diferencial:**  
-Visibilidade sem clique em SERP/IA, confiança em escala e leads qualificados.  
-A mensuração vai além do clique, incluindo impressões, SERP-features e citações em IAs (*AI Visibility*).
-
-Inclui também princípios de **LLMO (Large Language Model Optimization)**: reforço de autoridade topical, credibilidade e conteúdo estruturado citável, garantindo que clientes do LP Factory sejam fontes reconhecidas por modelos de linguagem.
+### Valor para o Usuário  
+- Mais estabilidade e confiança no produto.  
 
 ---
 
-### 2.7 Estratégia de Lealdade Opt-in (Preferred Sources)
-Ativar CTAs para que usuários adicionem a marca como **fonte preferida** (Google Preferred Sources, newsletters, etc.).
+## 6 — Conteúdo IA-Ready + Smart Gating *(🟧 Em Rollout)*  
+2025-09-01  
 
-**Objetivo:**  
-Garantir visibilidade personalizada mesmo em ambiente de buscas cada vez mais controladas pelo usuário.
+### Descrição  
+LPs otimizadas para Zero-Click/IA, combinando conteúdo aberto e premium com gating inteligente.  
 
----
+### Valor para o Projeto  
+- Cria base para IA Visibility e LLMO.  
+- Reforça autoridade topical.  
 
-### 2.8 Meta Ads – Value Rules, Smart Gating e Tracking Inteligente (2025)
-
-#### Visão
-As LPs do LP Factory 10 tornam-se sensores inteligentes que alimentam os algoritmos de mídia com dados de comportamento e valor real de lead.
-
-#### 1. Tracking nativo
-O sistema passa a medir visitas, cliques e envios via módulo `events_analytics` do Supabase, enriquecido com UTM e dados anônimos.
-
-#### 2. Qualificação e scoring
-Cada lead recebe score de intenção baseado em interações (tempo, profundidade, CTA), permitindo distinguir leads frios, mornos e quentes.
-
-#### 3. Retroalimentação de campanhas
-Eventos de conversão são enviados via Server-side Tracking API (Vercel Edge) para Google Ads e Meta Ads, melhorando o aprendizado e reduzindo custo por lead.
-
-#### 4. Benefícios diretos
-- Menor dependência de tags externas.
-- Aprendizado automatizado em campanhas.
-- LPs mais eficientes e autorreguladas.
-- Base para pricing e relatórios consultivos.
-
-### Status
-🧪 **Experimental**
+### Valor para o Usuário  
+- Gera visibilidade sem clique e leads mais qualificados.  
 
 ---
 
-### 2.9 Google Ads: Text Guidelines (Beta) 🟢 Preparado
-Novo recurso do Google Ads que permite definir **regras de redação para a IA** (tom, linguagem e palavras bloqueadas), garantindo consistência e conformidade da marca.  
-Atualmente em beta, disponível apenas para campanhas em inglês.
+## 7 — Estratégia de Lealdade Opt-in *(🟧 Em Rollout)*  
+2025-09-15  
 
-**Impacto no projeto:**
-- Mantém a voz e identidade das LPs em anúncios gerados por IA.  
-- Reforça governança e padrões de mensagem por vertical.  
-- Integra-se ao Roteiro → Conformidade Técnica (Guia de Texto).
+### Descrição  
+Implementar CTAs para que usuários adicionem a marca como “fonte preferida” em buscadores e newsletters.  
 
-**Ações:**
-1. Criar “Guia de Texto da Marca” com tom, CTAs e termos proibidos.  
-2. Aplicar em campanhas AI Max/PMax com “text customization” ativo.  
-3. Monitorar rollout em português para ativação imediata.
+### Valor para o Projeto  
+- Amplia retenção de tráfego orgânico.  
+
+### Valor para o Usuário  
+- Experiência personalizada e contínua.  
 
 ---
 
-### Última Atualização
-**Data:** 05/11/2025  
-**Próxima Revisão:** Trimestral ou quando concorrência mover.
+## 8 — Meta Ads Value Rules + Tracking Inteligente *(🧪 Experimental)*  
+2025-10-10  
 
-## 3. Estratégias Futuras (2025‑2026)
+### Descrição  
+LPs passam a enviar dados de comportamento diretamente para Ads APIs (Server-side Tracking).  
 
-### 3.1 Simplificação de UX no Account Dashboard 🪧 Ideia Inicial
-**Objetivo:** Propor um layout de dashboard focado em métricas essenciais (leads, gastos e saúde das LPs) já na primeira dobra, antes de camadas complexas.
-**Valor:** Reduz a carga cognitiva e melhora a adoção do produto, oferecendo contexto imediato e facilidade de navegação.
+### Valor para o Projeto  
+- Reduz dependência de tags externas.  
+- Base para pricing e relatórios consultivos.  
 
-### 3.2 Estratégia de Verticais 2025 🪧 Ideia Inicial
-**Objetivo:** Testar dois nichos por mês com LPs completas (copy, schema e analytics) para aprender e validar mercados promissores.
-**Valor:** Gera ritmo de produção, coleta dados reais e identifica verticais com maior tração, guiando expansão.
+### Valor para o Usuário  
+- Leads mais qualificados e campanhas otimizadas.  
 
-### 3.3 Modelo Light da LP Factory 🪧 Ideia Inicial
-**Objetivo:** Disponibilizar uma versão mais enxuta das landing pages, com menos seções dinâmicas, para pacotes de entrada e entregas rápidas.
-**Valor:** Permite adesão rápida e acessível, reduz tempo de desenvolvimento e incentiva upgrades conforme o cliente evolui.
+---
 
-### 3.4 Ajuste entre Setup e Mensalidade 🪧 Ideia Inicial
-**Objetivo:** Criar modelo híbrido de cobrança, combinando uma taxa inicial menor com componente variável baseada no sucesso do cliente.
-**Valor:** Diminui a barreira de entrada e alinha incentivos, remunerando a agência conforme o desempenho e valor entregue.
+## 9 — Google Ads Text Guidelines *(🟩 Preparado)*  
+2025-10-14  
 
-### 3.5 Priorizar Reconhecimento nos Testes Iniciais 🪧 Ideia Inicial
-**Objetivo:** Estruturar interfaces e roteiros de testes que priorizem ações visíveis e aprendizado por reconhecimento, evitando interfaces escondidas e o "mito dos 3 cliques".
-**Valor:** Melhora a experiência nos primeiros usos, reduz atritos e aumenta a confiança do usuário ao evidenciar as possibilidades da plataforma.
+### Descrição  
+Permite definir regras de redação e tom de marca para anúncios IA (Text Customization).  
 
-### 3.6 Modelo de Pricing por Ação/Consumo 🪧 Ideia Inicial
-**Objetivo:** Adotar cobrança baseada em uso (por ação ou consumo), como tokens processados ou geração de imagens, para ofertas de IA e automações.
-**Valor:** Cria transparência e confiança, alinhando custos ao consumo real e garantindo que clientes paguem pelo que de fato utilizam.
+### Valor para o Projeto  
+- Reforça governança e consistência da comunicação.  
+
+### Valor para o Usuário  
+- Clareza e coerência nas mensagens de campanha.  
+
+---
+
+## 10 — Estratégias Futuras (2025-2026) *(🟣 Ideias Iniciais)*  
+2025-11-12  
+
+### Descrição  
+Conjunto de iniciativas em estudo, priorizando expansão e automação:  
+- Simplificação de UX no Dashboard  
+- Teste de Verticais mensais  
+- Modelo Light de LPs  
+- Ajuste entre Setup e Mensalidade  
+- Pricing por Ação/Consumo  
+
+### Valor para o Projeto  
+- Garante escalabilidade controlada.  
+- Direciona roadmap de inovação.  
+
+### Valor para o Usuário  
+- Experiência mais simples, previsível e sob demanda.  
+
+---
