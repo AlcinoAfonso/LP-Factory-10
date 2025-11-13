@@ -430,3 +430,21 @@ Implementa tracking nativo de eventos no banco, substituindo dependência de fer
 
 ---
 
+
+
+2025-11-12
+
+### Descrição
+Retenção por camadas: PII (30–90 dias), eventos brutos (180 dias) e agregados anônimos (18–24 meses), com salting rotativo e RLS.
+
+### Valor para o Projeto
+- Equilibra compliance e visão de longo prazo.
+
+### Valor para o Usuário / Negócio
+- Proteção de dados pessoais e métricas confiáveis.
+
+### Ações Recomendadas
+1. Criar/ajustar `visitor_identifiers`, `events_raw`, `metrics_daily`.
+2. Configurar jobs de TTL e rotação de salts.
+
+---
