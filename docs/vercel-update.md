@@ -201,3 +201,25 @@ API para envio direto de eventos de conversão do servidor para Google Ads e Met
 2. Validar integração com Ads APIs.  
 
 ---
+
+## 12 — Vercel AI Cloud + Gateway *(🟩 Estável)*  
+2025-11-12  
+
+### Descrição  
+Infraestrutura IA-native da Vercel, com AI Gateway e Fluid Compute, oferecendo deploy inteligente e seguro com detecção automática de bots.  
+
+### Valor para o Projeto  
+- Reduz custo de execução de rotas IA e workloads intermitentes.  
+- Cria base para automações de agentes IA na camada Edge.  
+- Facilita observabilidade e rollback de releases críticos.  
+
+### Valor para o Usuário  
+- Performance aprimorada e rotas mais estáveis.  
+- Experiência de IA responsiva e sem interrupções.  
+
+### Ações Recomendadas  
+1. Ativar AI Gateway e Rolling Releases em ambiente staging.  
+2. Validar compatibilidade com Supabase Auth e Access Context.  
+
+---
+
