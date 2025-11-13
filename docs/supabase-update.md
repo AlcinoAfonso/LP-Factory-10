@@ -332,3 +332,100 @@ Sistema de tracking nativo de eventos, medindo comportamento e conversão com se
 2. Criar views agregadas para relatórios.  
 
 ---
+
+## 20 — Bundles de Grants por Plano *(🟩 Estável)*  
+2025-11-12  
+
+### Descrição  
+Modelo de controle dinâmico de recursos e permissões por plano, utilizando bundles configuráveis armazenados em `model_grants`.  
+
+### Valor para o Projeto  
+- Simplifica manutenção e pricing.  
+- Elimina dependência de migrações para novos recursos.  
+- Base técnica do Billing Engine (E9).  
+
+### Valor para o Usuário  
+- Flexibilidade para upgrades e personalização de planos.  
+
+### Ações Recomendadas  
+1. Criar tabela `model_grants` e função `get_feature()`.  
+2. Integrar ao Admin Dashboard e Account Setup.  
+
+---
+
+## 21 — Ajuste `security_invoker` nas Views *(🟩 Estável)*  
+2025-11-12  
+
+### Descrição  
+Padronização das views do Supabase para uso de `security_invoker = true`, garantindo compatibilidade com PostgREST 13.  
+
+### Valor para o Projeto  
+- Reforça segurança e evita falhas de permissão.  
+- Simplifica manutenção com controle centralizado.  
+
+### Valor para o Usuário  
+- Maior estabilidade e confiança no sistema.  
+
+### Ações Recomendadas  
+1. Atualizar views críticas (`v_user_accounts_list`, `v_access_context_v2`).  
+2. Validar execução em ambiente staging antes do rollout.  
+
+---
+
+## 22 — Remote MCP Server *(🟦 Estável)*  
+2025-11-12  
+
+### Descrição  
+Permite conexão entre o Supabase e agentes IA (GPT, Claude, etc.) via servidor MCP HTTP.  
+
+### Valor para o Projeto  
+- Automatiza queries e tarefas de manutenção.  
+- Integração direta com o ecossistema de agentes IA.  
+
+### Valor para o Usuário  
+- Funcionalidades de diagnóstico e suporte IA mais rápidas e inteligentes.  
+
+### Ações Recomendadas  
+1. Configurar endpoint remoto MCP no Supabase.  
+2. Integrar com pipeline de observabilidade e logs.  
+
+---
+
+## 23 — AI Reasoning no Dashboard *(🟣 Previsto)*  
+2025-11-12  
+
+### Descrição  
+Módulo IA que processa métricas do Supabase e gera insights automáticos de desempenho e uso.  
+
+### Valor para o Projeto  
+- Complementa Observabilidade IA com raciocínio contextual.  
+- Reduz dependência de análises manuais.  
+
+### Valor para o Usuário  
+- Painel inteligente com alertas preditivos e recomendações.  
+
+### Ações Recomendadas  
+1. Integrar com dados do módulo Unified Logs.  
+2. Ativar IA Debugging para coleta de contexto.  
+
+---
+
+## 24 — Tracking Interno de Eventos *(🟣 Previsto)*  
+2025-11-12  
+
+### Descrição  
+Implementa tracking nativo de eventos no banco, substituindo dependência de ferramentas externas (Google Tag, Meta Pixel).  
+
+### Valor para o Projeto  
+- Coleta anônima e segura via Supabase (`events_analytics`).  
+- Facilita relatórios e análises internas de conversão.  
+
+### Valor para o Usuário  
+- Métricas reais de engajamento e performance no dashboard.  
+
+### Ações Recomendadas  
+1. Implementar views agregadas (`vw_events_15m`, `vw_events_daily`).  
+2. Conectar com server-side tracking da Vercel.  
+
+---
+
