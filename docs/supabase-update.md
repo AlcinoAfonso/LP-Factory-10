@@ -1,160 +1,334 @@
-# Supabase Update 1.3 — LP Factory 10
+# LP Factory 10 — Supabase Update  
 
-> **Legendas**
-> ✅ Implementado — ativo e funcional
-> 🟧 Implementado parcialmente — em uso limitado ou fase inicial
-> 🟦 Estável — disponível e maduro, ainda não implementado
-> 🟣 Previsto — em rollout, preview ou indisponível (beta)
+---
 
-## 2025-08-01 — JWT Signing Keys
-✅ Novo sistema de chaves assimétricas substitui o JWT Secret.  
-Aplicado no Auth atual do LP Factory 10; garante rotação segura e menor latência sem desconectar usuários.
+## 1 — JWT Signing Keys *(✅ Implementado)*  
+2025-08-01  
 
-## 2025-08-05 — Security Controls Dashboard
-🟦 Centraliza permissões e governança no painel Supabase.  
-Melhora a administração de papéis e políticas; previsto para reforçar o Admin Dashboard.
+### Descrição  
+Novo sistema de chaves assimétricas substitui o JWT Secret, garantindo rotação segura e menor latência sem desconectar usuários.  
 
-## 2025-08-10 — Apache Iceberg Buckets
-🟦 Suporte a análise de dados frios com formato Iceberg.  
-Benefício potencial para relatórios históricos e planos Ultra.
+### Valor para o Projeto  
+- Melhora segurança e estabilidade da autenticação.  
+- Compatível com PostgREST 13 e Supabase-js 2.56+.  
 
-## 2025-08-12 — FDWs (DuckDB / Iceberg)
-🟦 Permite consultas diretas a dados externos (Data Lakes, BIs).  
-Aplicação futura para Data Hub e integrações analíticas.
+### Valor para o Usuário  
+- Sessões mais seguras e contínuas.  
 
-## 2025-08-15 — Unified Logs + AI Debugging
-🟦 Painel unificado com assistente de logs via IA.  
-Facilita depuração e identificação de falhas; substitui alertas manuais p95 no futuro.
+### Ações Recomendadas  
+1. Validar chave no painel Supabase.  
+2. Testar integração com SDK atualizado.  
 
-## 2025-08-20 — Branching 2.0 (GitHub Opcional)
-🟦 Criação e merge de branches direto no Dashboard Supabase.  
-Reduz dependência do GitHub e simplifica DevOps visual.
+---
 
-## 2025-08-25 — Build via Figma + Supabase
-🟦 Protótipos criados no Figma podem gerar apps Supabase.  
-Acelerará a criação de templates e LPs com backend automático.
+## 2 — Security Controls Dashboard *(🟦 Estável)*  
+2025-08-05  
 
-## 2025-08-30 — Storage 500 GB + Egress 3× Mais Barato
-🟦 Ampliação de armazenamento e redução de custo de tráfego.  
-Benefício direto para planos com uso de mídia e vídeos.
+### Descrição  
+Novo painel de governança e permissões dentro do Supabase.  
 
-## 2025-09-01 — Edge Functions Persistent Storage
-🟦 Permite arquivos persistentes dentro de funções edge.  
-Pode otimizar geração de relatórios e automações locais no futuro.
+### Valor para o Projeto  
+- Centraliza papéis e políticas RLS.  
+- Facilita controle administrativo.  
 
-## 2025-09-15 — Supabase Platform Kit (UI)
-🟦 Kit oficial de componentes UI (Auth, Logs, Storage).  
-Será adotado quando substituirmos o shadcn/ui no E10.
+### Valor para o Usuário  
+- Garantia de segurança e transparência.  
 
-## 2025-09-20 — Stripe Sync Engine v2 (complementa versão anterior)
-🟧 Integração Stripe-to-Postgres nativa.  
-Automatiza planos e webhooks; ampliação futura (trials, descontos) prevista para Light/Pro.
+### Ações Recomendadas  
+1. Revisar papéis e políticas.  
+2. Integrar métricas de acesso no Admin Dashboard.  
 
-## 2025-09-25 — Algolia Connector
-🟦 Conector oficial para indexação full-text.  
-Pode substituir adapter custom para busca global e ranking inteligente.
+---
 
-## 2025-09-30 — PostgREST 13
-🟦 Recurso estável (GA) — já disponível.  
-Versão atual no projeto: PostgREST 12.2.12 (Free Plan).
+## 3 — Apache Iceberg Buckets *(🟦 Estável)*  
+2025-08-10  
 
-### Principais melhorias:
-1. Spread to-many — relacionamentos 1‑N e N‑N retornam como arrays JSON, reduzindo código em adapters.  
-2. Busca simplificada (textSearch) — dispensa colunas tsvector; exige índices GIN (to_tsvector('portuguese', coluna)).  
-3. `maxAffected()` — limita atualizações em massa (tokens E7, convites E11).  
-4. Headers de observabilidade — `Content-Length` e `Proxy-Status` ajudam a rastrear egress e erros PGRSTxxx.  
-5. Segurança reforçada — validação de `kid` em JWT e verificação de schemas no `search_path`.
+### Descrição  
+Suporte a dados frios com formato Iceberg, ideal para análises históricas.  
 
-### Impacto para o LP Factory 10:
-- Código mais limpo (menos boilerplate nos adapters)  
-- Segurança aprimorada em mutações críticas  
-- Monitoramento mais preciso via Logs Explorer  
-- Sem efeito nas LPs estáticas (Vercel Edge)  
-- Requer atualização `supabase-js` ≥ 2.56.0.
+### Valor para o Projeto  
+- Aumenta flexibilidade analítica.  
 
-### Critérios para adoção:
-1. E7 finalizado e ambiente estável.  
-2. Backup manual confirmado.  
-3. Teste em staging com smoke tests: login → reset → onboarding → Access Context.  
-4. Atualizar `supabase-js`.  
-5. Validar JWT/JWKS (`kid`).
+### Valor para o Usuário  
+- Relatórios mais amplos em planos Ultra.  
 
-### Próximos passos:
-- Aguardar liberação total no painel (atualmente disponível apenas para novos projetos).  
-- Solicitar early access via suporte se necessário.
+### Ações Recomendadas  
+1. Avaliar custo-benefício em ambientes de produção.  
 
-## 2025-10-01 — Edge Functions Cache Layer (substitui Persistent Storage)
-🟣 Cache com TTL e *event bust* integrado.  
-Substitui storage persistente, otimizando *cold starts* e respostas rápidas.
+---
 
-## 2025-10-05 — Observabilidade com AI e Alertas Automáticos
-🟦 Detecção automática de latência e falhas críticas.  
-Ideal para monitorar Access Context e tokens E7 em produção.
+## 4 — FDWs (DuckDB / Iceberg) *(🟦 Estável)*  
+2025-08-12  
 
-## 2025-10-10 — Remote MCP Server (novo)
-🟦 Permite conectar agentes de IA (Claude, GPT etc.) ao Supabase via servidor MCP remoto HTTP.  
-Aplicação: automação de queries, geração de código e integração direta entre o LP Factory 10 e agentes de desenvolvimento IA.  
-Valor: agrega automação e produtividade em fluxos de desenvolvimento e monitoramento.
+### Descrição  
+Permite consultas diretas a fontes externas (Data Lakes e BIs).  
 
-## 2025-10-12 — Login com Solana e Ethereum (novo)
-🟦 Supabase Auth agora suporta login Web3.  
-Aplicação: relevante para clientes enterprise/white‑label com identidade descentralizada.  
-Valor: amplia as opções de autenticação e integra o LP Factory 10 a ecossistemas Web3.
+### Valor para o Projeto  
+- Expande integração analítica.  
 
-## 2025-10-14 — AI Reasoning no Dashboard (novo)
-🟣 O Dashboard ganhou um módulo de raciocínio com IA para insights automáticos.  
-Aplicação: complementa o item de Observabilidade com AI, oferecendo sugestões inteligentes e análise de métricas.  
-Valor: reforça monitoramento preditivo e reduz necessidade de intervenção manual.
+### Valor para o Usuário  
+- Relatórios conectados a múltiplas origens.  
 
-## Tracking e Analytics Interno (novo módulo)
+### Ações Recomendadas  
+1. Mapear uso em Data Hub futuro.  
 
-### Objetivo
-Criar tracking nativo de eventos nas LPs, medindo comportamento e conversão de forma anônima, segura e escalável, sem dependência de tags externas.
+---
 
-### Estrutura técnica
-- Nova tabela `events_analytics` (`account_id`, `lp_id`, `event_type`, `ts`, `visitor_hash`, `utm_source`, `utm_campaign`, `utm_medium`).  
-- Views agregadas (`vw_events_15m`, `vw_events_daily`) com RLS ativo.  
-- `visitor_hash` gerado via `digest(ip || user_agent || salt_rotativo, 'sha256')`.  
-- Retenção: eventos brutos 90 dias, agregados até 24 meses.  
-2025-11-05 — Camada Inteligente de Remarketing (Experimental)
+## 5 — Unified Logs + AI Debugging *(🟦 Estável)*  
+2025-08-15  
 
-- Orquestração centralizada de pixels e parâmetros de remarketing em Supabase (Google Ads, Meta, RD Station etc.).
-- Simplifica a gestão e o deploy de scripts, permitindo ativar, pausar ou testar variações sem tocar no front-end.
-- Gera base para automações contextuais e coleta de dados unificada.
+### Descrição  
+Painel de logs unificado com suporte a depuração via IA.  
 
-2025-11-05 — Integração HubSpot ↔ RD Station (Experimental)
+### Valor para o Projeto  
+- Melhora diagnóstico e reduz tempo de correção.  
 
-- Ponte leve (Edge Function + cron jobs) para sincronizar leads, tags e status entre HubSpot e RD Station.
-- Útil para agências que operam com múltiplos CRMs ou clientes em migração.
-- Evita duplicidade e perda de dados, e permite segmentação unificada para automações.
+### Valor para o Usuário  
+- Maior confiabilidade e tempo de resposta rápido.  
 
-- Integração futura com `audit_logs` e `leads`.
+### Ações Recomendadas  
+1. Habilitar IA Debugging.  
+2. Integrar com Observabilidade.  
 
-### Benefícios
-- Reduz dependência de Google Tag/Meta Pixel.  
-- Fornece métricas reais de conversão e engajamento diretamente no Dashboard.  
-- Base para A/B tests, precificação por uso e relatórios de performance.  
-- Mantém conformidade (sem PII, salt rotativo, RLS ativo).
+---
 
-### Status
-🟣 Previsto (Preview/Beta)
+## 6 — Branching 2.0 *(🟦 Estável)*  
+2025-08-20  
 
-## Resumo Geral
+### Descrição  
+Criação e merge de branches diretamente no dashboard Supabase.  
 
-| Categoria | Recursos | Quantidade |
-|---|---|---|
-| ✅ | JWT Keys | 1 |
-| 🟧 | Stripe Sync Engine v2 | 1 |
-| 🟦 | 14 (Security Controls Dashboard, Iceberg, FDWs, Unified Logs + AI Debugging, Branching 2.0, Build via Figma + Supabase, Storage 500 GB + Egress 3×, Edge Functions Persistent Storage, Supabase Platform Kit, Algolia Connector, Observabilidade com AI + Alertas, Remote MCP Server, Login com Solana/Ethereum, PostgREST 13) | 14 |
-| 🟣 | 3 (Edge Functions Cache Layer, AI Reasoning, Tracking e Analytics Interno) | 3 |
+### Valor para o Projeto  
+- Diminui dependência de GitHub.  
+- Simplifica DevOps visual.  
 
-## Próximas Ações
-1. Aguardar PostgREST 13 completo para projetos Free.  
-2. Testar `supabase-js` 2.56.0 em *staging*.  
-3. Criar índices GIN nas colunas de busca (`audit_logs`, `accounts`).  
-4. Aplicar `.maxAffected(1)` em *mutations* críticas.  
-5. Avaliar adoção do Platform Kit e novos recursos AI (Remote MCP, Reasoning).
+### Valor para o Usuário  
+- Deploys mais ágeis.  
 
-**Última verificação:** 05/11/2025  
-**Responsável técnico:** LP Factory 10 — Core DevOps  
+### Ações Recomendadas  
+1. Testar merges em staging.  
 
+---
+
+## 7 — Build via Figma *(🟦 Estável)*  
+2025-08-25  
+
+### Descrição  
+Protótipos criados no Figma geram apps Supabase automaticamente.  
+
+### Valor para o Projeto  
+- Acelera criação de templates e LPs.  
+
+### Valor para o Usuário  
+- Entregas mais rápidas e consistentes.  
+
+### Ações Recomendadas  
+1. Explorar uso no pipeline de design.  
+
+---
+
+## 8 — Storage 500 GB + Egress 3× Mais Barato *(🟦 Estável)*  
+2025-08-30  
+
+### Descrição  
+Ampliação de armazenamento e redução de custo de tráfego.  
+
+### Valor para o Projeto  
+- Melhora escalabilidade e custo-benefício.  
+
+### Valor para o Usuário  
+- Mais conteúdo sem custo adicional.  
+
+### Ações Recomendadas  
+1. Avaliar planos para LPs com mídia.  
+
+---
+
+## 9 — Edge Functions Persistent Storage *(🟦 Estável)*  
+2025-09-01  
+
+### Descrição  
+Permite arquivos persistentes dentro de funções edge.  
+
+### Valor para o Projeto  
+- Maior performance e cache local.  
+
+### Valor para o Usuário  
+- Respostas mais rápidas e estáveis.  
+
+### Ações Recomendadas  
+1. Implementar em relatórios e automações.  
+
+---
+
+## 10 — Supabase Platform Kit (UI) *(🟦 Estável)*  
+2025-09-15  
+
+### Descrição  
+Novo kit oficial de componentes UI (Auth, Logs, Storage).  
+
+### Valor para o Projeto  
+- Substitui shadcn/ui.  
+
+### Valor para o Usuário  
+- Interface padronizada e profissional.  
+
+### Ações Recomendadas  
+1. Migrar componentes gradualmente.  
+
+---
+
+## 11 — Stripe Sync Engine v2 *(🟧 Parcial)*  
+2025-09-20  
+
+### Descrição  
+Integração nativa entre Stripe e Postgres, automatizando planos e webhooks.  
+
+### Valor para o Projeto  
+- Simplifica Billing Engine (E9).  
+
+### Valor para o Usuário  
+- Atualizações de plano automáticas.  
+
+### Ações Recomendadas  
+1. Testar integração com Light/Pro.  
+
+---
+
+## 12 — Algolia Connector *(🟦 Estável)*  
+2025-09-25  
+
+### Descrição  
+Conector para indexação full-text e busca inteligente.  
+
+### Valor para o Projeto  
+- Substitui adapters customizados.  
+
+### Valor para o Usuário  
+- Buscas mais rápidas e relevantes.  
+
+### Ações Recomendadas  
+1. Criar índices e validar ranking.  
+
+---
+
+## 13 — PostgREST 13 *(🟧 Parcial)*  
+2025-09-30  
+
+### Descrição  
+Nova versão estável do PostgREST com suporte a arrays JSON e busca otimizada.  
+
+### Valor para o Projeto  
+- Código mais limpo e seguro.  
+
+### Valor para o Usuário  
+- Performance superior e menor latência.  
+
+### Ações Recomendadas  
+1. Atualizar `supabase-js` ≥ 2.56.0.  
+2. Validar compatibilidade de queries.  
+
+---
+
+## 14 — Edge Functions Cache Layer *(🟣 Previsto)*  
+2025-10-01  
+
+### Descrição  
+Cache com TTL e *event bust* integrado.  
+
+### Valor para o Projeto  
+- Otimiza cold starts e performance edge.  
+
+### Valor para o Usuário  
+- LPs e APIs mais rápidas.  
+
+### Ações Recomendadas  
+1. Testar em staging.  
+
+---
+
+## 15 — Observabilidade com AI *(🟦 Estável)*  
+2025-10-05  
+
+### Descrição  
+Monitoramento automático de latência e falhas críticas com IA.  
+
+### Valor para o Projeto  
+- Reduz tempo de reação a falhas.  
+
+### Valor para o Usuário  
+- Sistema mais confiável.  
+
+### Ações Recomendadas  
+1. Configurar alertas de p95/p99.  
+
+---
+
+## 16 — Remote MCP Server *(🟦 Estável)*  
+2025-10-10  
+
+### Descrição  
+Conecta agentes IA (Claude, GPT) ao Supabase via servidor MCP remoto HTTP.  
+
+### Valor para o Projeto  
+- Facilita automação de queries e geração de código.  
+
+### Valor para o Usuário  
+- Acesso a diagnósticos e automações inteligentes.  
+
+### Ações Recomendadas  
+1. Integrar ao pipeline de debug IA.  
+
+---
+
+## 17 — Login com Solana e Ethereum *(🟦 Estável)*  
+2025-10-12  
+
+### Descrição  
+Autenticação Web3 nativa para Supabase Auth.  
+
+### Valor para o Projeto  
+- Expande público enterprise e white-label.  
+
+### Valor para o Usuário  
+- Alternativas modernas de login.  
+
+### Ações Recomendadas  
+1. Validar para clientes enterprise.  
+
+---
+
+## 18 — AI Reasoning no Dashboard *(🟣 Previsto)*  
+2025-10-14  
+
+### Descrição  
+Módulo de raciocínio com IA para insights automáticos.  
+
+### Valor para o Projeto  
+- Complementa Observabilidade IA.  
+
+### Valor para o Usuário  
+- Recomendações e diagnósticos proativos.  
+
+### Ações Recomendadas  
+1. Integrar métricas com observabilidade.  
+
+---
+
+## 19 — Tracking e Analytics Interno *(🟣 Previsto)*  
+2025-10-20  
+
+### Descrição  
+Sistema de tracking nativo de eventos, medindo comportamento e conversão com segurança e LGPD.  
+
+### Valor para o Projeto  
+- Reduz dependência de Google Tag e Meta Pixel.  
+
+### Valor para o Usuário  
+- Métricas reais e confiáveis no Dashboard.  
+
+### Ações Recomendadas  
+1. Implementar `events_analytics`.  
+2. Criar views agregadas para relatórios.  
+
+---
