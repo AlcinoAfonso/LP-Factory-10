@@ -430,6 +430,8 @@ Implementa tracking nativo de eventos no banco, substituindo dependência de fer
 
 ---
 
+## 25  — Política de Dados: TTL Graduado (LGPD + Remarketing) 🟩 Estável)*
+
 
 
 2025-11-12
