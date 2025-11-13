@@ -58,3 +58,42 @@ Fluxos CI/CD e validações automáticas de segurança e atualização de docume
 2. Ativar verificação de status para branches e merges.  
 
 ---
+
+## 3 — Passagens Eficazes entre Agentes (Handoff Design) *(🟦 Estável)*  
+2025-11-12  
+
+### Descrição  
+Modelo padronizado de handoff para transferência de contexto entre agentes IA, garantindo consistência e rastreabilidade em fluxos automatizados.  
+
+### Valor para o Projeto  
+- Define formato JSON universal (`goal`, `state`, `evidence`, `next`).  
+- Facilita depuração e coordenação entre múltiplos agentes GPT/Claude.  
+
+### Valor para o Usuário  
+- Interações de IA mais coerentes e contínuas.  
+- Redução de erros em automações interligadas.  
+
+### Ações Recomendadas  
+1. Adotar formato `handoff.json` no pipeline de agentes.  
+2. Integrar logs de handoff ao Supabase (Unified Logs).  
+
+---
+
+## 4 — Agentes com Ferramentas em Pipelines Reais *(🧪 Experimental)*  
+2025-11-12  
+
+### Descrição  
+Integração de bots e agentes IA com CRMs e fluxos de marketing reais (ex.: HubSpot, Supabase MCP), permitindo automação ponta a ponta.  
+
+### Valor para o Projeto  
+- Conecta agentes do LP Factory 10 a dados reais via MCP.  
+- Automatiza tarefas de pesquisa e sincronização de leads.  
+
+### Valor para o Usuário  
+- Respostas mais rápidas, campanhas otimizadas e suporte proativo.  
+
+### Ações Recomendadas  
+1. Criar agente de integração CRM piloto (HubSpot / RD Station).  
+2. Logar execuções e métricas no Supabase para auditoria.  
+
+---
