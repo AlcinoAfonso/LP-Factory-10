@@ -333,8 +333,9 @@ Sistema de tracking nativo de eventos, medindo comportamento e conversão com se
 
 ---
 
-## 20 — Bundles de Grants por Plano *(🟩 Estável)*  
-2025-11-12  
+## 20 — Bundles de Grants por Plano *(✅ Implementado)*  
+2025-11-12 
+“Implementado conforme Base Técnica 1.7 — seção 4.11 (Sistema de Grants) e Roadmap E9.1 (Grants e Features).”
 
 ### Descrição  
 Modelo de controle dinâmico de recursos e permissões por plano, utilizando bundles configuráveis armazenados em `model_grants`.  
