@@ -152,3 +152,24 @@ Conjunto de iniciativas em estudo, priorizando expansão e automação:
 - Experiência mais simples, previsível e sob demanda.  
 
 ---
+
+## 11 — Casos 2025 — Automações de Vendas *(🟩 Estável)*  
+2025-11-12  
+
+### Descrição  
+Iniciativa estratégica baseada em estudos de caso reais (FUNNYFUZZY e Sandler) para estruturar automações de qualificação e scoring de leads.  
+
+### Valor para o Projeto  
+- Cria sinergia entre Supabase e Vercel Edge Tracking.  
+- Oferece modelo prático de retroalimentação de campanhas e dados de conversão.  
+- Fundamenta a camada de automação de marketing consultivo.  
+
+### Valor para o Usuário  
+- Leads mais qualificados e custos de mídia reduzidos.  
+- Campanhas com aprendizado automático e foco em resultado.  
+
+### Ações Recomendadas  
+1. Mapear fluxos de automação por vertical.  
+2. Integrar métricas de scoring ao dashboard de contas.  
+
+---
