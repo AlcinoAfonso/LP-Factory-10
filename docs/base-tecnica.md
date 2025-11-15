@@ -9,12 +9,17 @@
 # 📑 Sumário
 
 1. Identificação do Projeto  
+   1.1 Variáveis Obrigatórias (server-only)  
+   1.2 Variáveis Públicas  
+   1.3 Convenções  
+
 2. Stack & Dependências  
    2.1 Framework  
    2.2 Backend  
    2.3 UI  
    2.4 Deploy  
    2.5 Regras de Import  
+
 3. Regras Técnicas Globais  
    3.1 Segurança  
    3.2 Estrutura de Camadas  
@@ -28,26 +33,31 @@
    3.10 Anti-Patterns  
    3.11 Sistema de Grants  
    3.12 Compatibilidade PostgREST 13  
+
 4. Schema  
    4.1 Tabelas  
    4.2 Views  
    4.3 Functions  
    4.4 Triggers  
    4.5 Tipos Canônicos  
+
 5. Arquitetura de Acesso  
    5.1 Conceitos Fundamentais  
    5.2 Adapters, Guards, Providers  
    5.3 Fluxos Principais  
-6. Estrutura de Arquivos (Essencial)  
+
+6. Estrutura de Arquivos Essencial  
    6.1 Estrutura Base  
    6.2 Arquivos Críticos  
    6.3 Tipos & Contratos  
    6.4 Exceções SULB  
    6.5 Regras Rápidas  
+
 7. Checklists Declarativos  
+
 8. Changelog
 
----
+```
 
 # 1. Identificação do Projeto
 
@@ -474,7 +484,7 @@ Regra:
 
 ---
 
-# 6. Estrutura de Arquivos (Resumo Essencial)
+# 6. Estrutura de Arquivos Essencial
 
 > Somente o necessário para a IA localizar **pontos críticos** do projeto.  
 > Inventário completo fica fora da Base Técnica em `docs/repository-inventory.md`.
