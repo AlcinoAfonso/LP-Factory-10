@@ -1,5 +1,5 @@
 # LP Factory 10 — Supabase Update  
-
+Atualização 16/11 item 26
 ---
 
 ## 1 — JWT Signing Keys *(✅ Implementado)*  
@@ -431,9 +431,6 @@ Implementa tracking nativo de eventos no banco, substituindo dependência de fer
 ---
 
 ## 25  — Política de Dados: TTL Graduado (LGPD + Remarketing) 🟩 Estável)*
-
-
-
 2025-11-12
 
 ### Descrição
@@ -450,3 +447,24 @@ Retenção por camadas: PII (30–90 dias), eventos brutos (180 dias) e agregado
 2. Configurar jobs de TTL e rotação de salts.
 
 ---
+
+## 26 — Realtime Replay (Alpha) *(🧪 Experimental)*
+2025-11-09  
+
+### Descrição
+Permite que canais privados do Supabase Realtime recuperem mensagens anteriores, desde que tenham sido publicadas via *Broadcast From the Database*. Funciona como um histórico consultável de eventos Realtime.
+
+### Valor para o Projeto
+- Base técnica para colaboração em tempo real.  
+- Possibilita recuperar logs temporários de ações no dashboard.  
+- Útil para prototipação de edição colaborativa de LPs no futuro.
+
+### Valor para o Usuário
+- Visualização de eventos anteriores mesmo entrando depois no sistema.  
+- Experiência contínua em funcionalidades colaborativas futuras.
+
+### Ações Recomendadas
+1. Aguardar estabilização do recurso (ainda em alpha).  
+2. Testar integração com dashboards internos.  
+3. Avaliar uso em módulos de logs e colaboração futura.  
+
