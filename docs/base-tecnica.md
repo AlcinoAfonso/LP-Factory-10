@@ -1,7 +1,5 @@
 # LP Factory 10 - Base Técnica
-
-**Versão: 1.7.2**  
-**Data: 15/11/2025**
+  
 **Propósito: Documentação técnica do estado atual do sistema**  
 
 ---
