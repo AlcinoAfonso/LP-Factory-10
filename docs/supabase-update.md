@@ -1,5 +1,5 @@
 # LP Factory 10 — Supabase Update  
-Atualização 16/11 item 26
+
 ---
 
 ## 1 — JWT Signing Keys *(✅ Implementado)*  
