@@ -173,3 +173,73 @@ Iniciativa estratégica baseada em estudos de caso reais (FUNNYFUZZY e Sandler) 
 2. Integrar métricas de scoring ao dashboard de contas.  
 
 ---
+
+---
+## 12 — Navegação Multi-contas e LPs (UX mínima viável) *(🟣 Ideia Inicial)*  
+2025-11-20  
+
+### Descrição  
+Definir uma navegação hierárquica clara — **Parceiro → Conta → LP → Seção** — com breadcrumbs clicáveis, troca rápida via atalho (⌘K/ctrl+K), favoritos/recentes e identificação visual por cores/avatars em cada nível.
+
+### Valor para o Projeto  
+- Reduz a complexidade de uso em cenários multi-conta e multi-LP.  
+- Cria base de UX para o **Partner Dashboard** e para operação de agências.  
+- Prepara terreno para futuras automações contextuais (IA, relatórios, ações em massa).
+
+### Valor para o Usuário  
+- Entende rapidamente “onde está” e “de quem é” cada LP.  
+- Encontra contas, LPs e seções com menos cliques e mais previsibilidade.  
+- Ganha velocidade no dia a dia, especialmente em agências com muitos clientes.
+
+### Ações Recomendadas  
+1. Definir padrão canônico de breadcrumbs (Parceiro/Conta/LP/Seção) e estados vazios.  
+2. Implementar um **Switcher global (⌘K/ctrl+K)** com busca unificada e favoritos/recentes.  
+3. Padronizar cores e avatars por entidade (Parceiro, Conta, LP, Seção).  
+4. Integrar telemetria de navegação (aberturas, trocas, favoritos) ao dashboard de contas.  
+
+---
+## 13 — Planos como Rótulos → Bundles de Grants *(🟣 Ideia Inicial)*  
+2025-11-20  
+
+### Descrição  
+Desacoplar os planos comerciais (Light/Pro/Ultra/Consultivo) das features codificadas, tratando cada plano como um **rótulo** que aponta para um **bundle de grants** (permissões e limites) configurável por conta.
+
+### Valor para o Projeto  
+- Permite alterar o que cada plano inclui **sem migração de schema**.  
+- Unifica a lógica de planos entre SaaS e contas consultivas (modelo híbrido).  
+- Reduz risco de regressão ao lançar novas features ou limites.  
+
+### Valor para o Usuário  
+- Facilita upgrades/downgrades e ofertas personalizadas por conta.  
+- Habilita modelos de teste (trial, beta fechado) sem “quebrar” contratos atuais.  
+- Garante maior previsibilidade: o cliente sabe o que está ativo na própria conta.  
+
+### Ações Recomendadas  
+1. Definir taxonomia de **grants** (ex.: `lp.create`, `lp.analytics.view`, `section.ab_test.run`).  
+2. Mapear bundles padrão por plano (`plan.light`, `plan.pro`, `plan.ultra`, `plan.consultivo`).  
+3. Implementar resolução de acesso via grants (fallback: seção → LP → conta → plano → default).  
+4. Documentar estratégia de snapshot por conta para preservar histórico de recursos.  
+
+---
+## 14 — Priorizar Reconhecimento nos Testes Iniciais *(🟣 Ideia Inicial)*  
+2025-11-20  
+
+### Descrição  
+Estabelecer diretrizes de UX e roteiros de teste que privilegiem **ações visíveis e reconhecimento** (o usuário “vê o que pode fazer”), evitando interfaces escondidas e o “mito dos 3 cliques” como métrica única.
+
+### Valor para o Projeto  
+- Melhora a taxa de sucesso em testes internos (dogfooding) e pilotos com clientes.  
+- Reduz ruído na avaliação de features, focando em clareza e não apenas em profundidade de navegação.  
+- Cria um padrão de UX testável e replicável para novos módulos do produto.  
+
+### Valor para o Usuário  
+- Entende mais rápido o que o painel oferece logo nos primeiros acessos.  
+- Encontra caminhos óbvios para “próximas ações” (criar LP, ver resultados, ajustar plano).  
+- Ganha confiança na plataforma ao perceber controle e transparência desde o início.  
+
+### Ações Recomendadas  
+1. Definir um conjunto de **cenários de onboarding** focados em reconhecimento (ex.: “criar primeira LP”, “ver resultados”, “convidar alguém”).  
+2. Padronizar layouts iniciais com CTAs claros e seções prioritárias sempre visíveis na primeira dobra.  
+3. Incluir métricas de sucesso específicas em testes (tempo até a primeira ação, ações descobertas sem ajuda, abandono).  
+4. Incorporar essas diretrizes no checklist de UX dos próximos releases (E10, E12, novos dashboards).  
+
