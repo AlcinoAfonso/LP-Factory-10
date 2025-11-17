@@ -466,5 +466,78 @@ Permite que canais privados do Supabase Realtime recuperem mensagens anteriores,
 ### Ações Recomendadas
 1. Aguardar estabilização do recurso (ainda em alpha).  
 2. Testar integração com dashboards internos.  
-3. Avaliar uso em módulos de logs e colaboração futura.  
+3. Avaliar uso em módulos de logs e colaboração futura.
+
+---
+
+## 27 — Camada Inteligente de Remarketing *(🧪 Experimental)*
+2025-11-10  
+
+### Descrição
+Centraliza, no Supabase, a configuração e ativação de scripts e parâmetros de remarketing (Google Ads, Meta Ads e RD Station). Substitui a necessidade de editar cada LP individualmente, usando tabelas e views para gerenciar pixels e eventos.
+
+### Valor para o Projeto
+- Orquestração única de pixels e UTM sem tocar no front-end.  
+- Reduz risco de inconsistência entre LPs.  
+- Cria base técnica para automações orientadas a eventos (A/B, campanhas dinâmicas).
+
+### Valor para o Usuário
+- Pixels sempre atualizados sem necessidade de suporte técnico.  
+- Campanhas mais eficientes, com menor custo por lead.  
+- Configurações por conta/LP unificadas, previsíveis e seguras.
+
+### Ações Recomendadas
+1. Criar tabela `remarketing_settings` (account_id, lp_id, provider, config_json).  
+2. Criar função de leitura com fallback (lp → conta → default).  
+3. Integrar leitura da camada a uma única função SSR na Vercel Edge.  
+4. Mapear eventos do módulo `events_analytics` como gatilhos de remarketing.  
+
+---
+
+## 28 — Integração HubSpot ↔ RD Station *(🧪 Experimental)*
+2025-11-10  
+
+### Descrição
+Fornece uma ponte leve, via Supabase Functions e Webhooks, para sincronização de leads, tags e eventos entre HubSpot e RD Station — útil para migração, operações híbridas ou para agências que atendem clientes que usam CRMs diferentes.
+
+### Valor para o Projeto
+- Centraliza tráfego de dados de CRM dentro da infraestrutura existente.  
+- Reduz dependência de soluções externas (Zapier/Make).  
+- Cria ativo técnico de automação entre plataformas de marketing.
+
+### Valor para o Usuário
+- Dados sempre sincronizados entre CRMs sem retrabalho manual.  
+- Mais consistência em campanhas e funis híbridos.  
+- Possibilidade de usar LP Factory como “hub de dados” da operação.
+
+### Ações Recomendadas
+1. Implementar webhook público (`/api/crm-sync`) com validação assíncrona.  
+2. Criar tabela `crm_sync_queue` para armazenar eventos pendentes.  
+3. Criar função cron (`supabase.functions.schedule`) para processar fila.  
+4. Mapear campos padrão (nome, email, tags, origem, campanha).  
+
+---
+
+## 29 — Changelog Técnico Automatizável (Triggers & Policies) *(🧪 Experimental)*
+2025-11-11  
+
+### Descrição
+Define um padrão unificado para rastrear mudanças em triggers, policies e funções do Supabase. Utiliza cabeçalhos YAML em migrations para permitir que uma Function ou GitHub Action gere automaticamente o changelog técnico a cada PR.
+
+### Valor para o Projeto
+- Rastreabilidade clara entre versões (ex.: v2.8 → v2.9).  
+- Menos risco de drift entre schema, triggers e lógica do projeto.  
+- Facilita QA, rollback e auditoria técnica.
+
+### Valor para o Usuário
+- Redução de erros em permissões, auditoria, convites e billing.  
+- Menos instabilidade técnica ao ativar novas features.  
+- Evolução previsível e documentada do backend.
+
+### Ações Recomendadas
+1. Padronizar migrations com cabeçalho YAML (`change_id`, `component`, `breaking`).  
+2. Criar function `fn_changelog_collect()` para ler cabeçalhos.  
+3. Gerar arquivo `docs/changelog-tecnico.md` automaticamente via GitHub Action.  
+4. Adicionar validação obrigatória em PR (campo ausente → PR bloqueado).  
+
 
