@@ -1,275 +1,61 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://lp-factory-10/schemas/base-tecnica.schema.json",
-  "title": "LP Factory 10 — Base Técnica",
-  "description": "Schema JSON Estruturado da Base Técnica do LP Factory 10 (versão 1.7.x+).",
+  "$id": "https://lp-factory-10/schemas/base-tecnica.update.schema.json",
+  "title": "LP Factory 10 — Atualização da Base Técnica",
+  "description": "Schema mínimo para a IA descrever ajustes necessários na Base Técnica, sem reescrever o documento inteiro.",
   "type": "object",
   "additionalProperties": false,
   "properties": {
-    "meta": {
-      "type": "object",
-      "description": "Metadados da Base Técnica.",
-      "additionalProperties": false,
-      "properties": {
-        "version": {
-          "type": "string",
-          "description": "Versão do documento (ex.: 1.7.2)."
-        },
-        "date": {
-          "type": "string",
-          "description": "Data da última atualização (ex.: 2025-11-15)."
-        },
-        "doc_type": {
-          "type": "string",
-          "const": "base_tecnica",
-          "description": "Tipo do documento (fixo: base_tecnica)."
-        },
-        "status": {
-          "type": "string",
-          "description": "Status do documento.",
-          "enum": [
-            "rascunho",
-            "estavel",
-            "legado"
-          ]
-        }
-      },
-      "required": [
-        "version",
-        "date",
-        "doc_type",
-        "status"
-      ]
-    },
-    "sections": {
+    "changes": {
       "type": "array",
-      "description": "Lista de seções da Base Técnica (1, 2, 3, …).",
-      "items": {
-        "$ref": "#/$defs/section"
-      }
-    },
-    "changelog": {
-      "type": "array",
-      "description": "Histórico de alterações relevantes da Base Técnica.",
-      "items": {
-        "$ref": "#/$defs/changelogEntry"
-      }
+      "minItems": 1,
+      "description": "Lista de ajustes necessários na Base Técnica.",
+      "items": { "$ref": "#/$defs/changeItem" }
     }
   },
-  "required": [
-    "meta",
-    "sections",
-    "changelog"
-  ],
+  "required": ["changes"],
+
   "$defs": {
-    "section": {
+    "changeItem": {
       "type": "object",
-      "description": "Seção ou subseção da Base Técnica.",
       "additionalProperties": false,
+      "description": "Operação de mudança em uma seção/subseção da Base Técnica.",
       "properties": {
-        "id": {
+        "section_id": {
           "type": "string",
-          "description": "Identificador numérico hierárquico (ex.: \"1\", \"2\", \"3.6\", \"4.1.2\").",
+          "description": "Número da seção onde o ajuste deve ocorrer (ex.: '4.1', '4.2', '5.3', '6.2').",
           "pattern": "^[0-9]+(\\.[0-9]+)*$"
         },
-        "title": {
+        "target_type": {
           "type": "string",
-          "description": "Título da seção (ex.: \"Regras Técnicas Globais\")."
+          "description": "Tipo do alvo que será ajustado.",
+          "enum": ["table", "view", "function", "trigger", "file", "checklist", "text"]
         },
-        "slug": {
+        "action": {
           "type": "string",
-          "description": "Slug da seção (ex.: \"regras-tecnicas-globais\")."
+          "description": "Tipo da operação a executar.",
+          "enum": ["add", "update", "remove"]
         },
-        "summary": {
+        "name": {
           "type": "string",
-          "description": "Resumo curto do objetivo da seção."
+          "description": "Nome do item (ex.: nome da tabela, view, função, arquivo ou checklist)."
         },
-        "blocks": {
-          "type": "array",
-          "description": "Blocos de conteúdo normativo desta seção.",
-          "items": {
-            "$ref": "#/$defs/block"
-          }
+        "reason": {
+          "type": "string",
+          "description": "Motivo da mudança (ex.: 'nova tabela criada', 'view atualizada', 'arquivo removido')."
         },
-        "children": {
-          "type": "array",
-          "description": "Subseções (ex.: 3.1, 3.2, 3.3…).",
-          "items": {
-            "$ref": "#/$defs/section"
-          },
-          "default": []
+        "suggested_markdown": {
+          "type": "string",
+          "description": "Bloco de markdown pronto para substituir ou inserir diretamente na Base Técnica. Deve seguir o padrão atual do documento."
         }
       },
       "required": [
-        "id",
-        "title",
-        "blocks"
-      ]
-    },
-    "block": {
-      "type": "object",
-      "description": "Bloco de conteúdo dentro de uma seção.",
-      "additionalProperties": false,
-      "properties": {
-        "type": {
-          "type": "string",
-          "description": "Tipo do bloco.",
-          "enum": [
-            "markdown",
-            "list",
-            "table",
-            "code",
-            "note",
-            "checklist"
-          ]
-        },
-        "label": {
-          "type": "string",
-          "description": "Rótulo opcional do bloco (ex.: \"Segurança\", \"CI/Lint\")."
-        },
-        "content": {
-          "type": "string",
-          "description": "Conteúdo em texto/markdown quando aplicável (exceto para checklists detalhados)."
-        },
-        "items": {
-          "type": "array",
-          "description": "Itens de checklist ou lista estruturada (principalmente para seção 7.x).",
-          "items": {
-            "$ref": "#/$defs/checkItem"
-          }
-        },
-        "meta": {
-          "type": "object",
-          "description": "Metadados do bloco.",
-          "additionalProperties": false,
-          "properties": {
-            "last_updated_at": {
-              "type": "string",
-              "description": "ISO date/time da última atualização do bloco (opcional)."
-            },
-            "last_updated_by": {
-              "type": "string",
-              "description": "Identificador de quem atualizou (ex.: \"gpt\", \"alcino\")."
-            },
-            "related_entities": {
-              "type": "array",
-              "description": "Entidades relacionadas a este bloco (ex.: [\"accounts\", \"account_users\"]).",
-              "items": {
-                "type": "string"
-              }
-            }
-          }
-        }
-      },
-      "required": [
-        "type"
-      ],
-      "allOf": [
-        {
-          "if": {
-            "properties": {
-              "type": {
-                "const": "checklist"
-              }
-            }
-          },
-          "then": {
-            "required": [
-              "items"
-            ]
-          }
-        }
-      ]
-    },
-    "checkItem": {
-      "type": "object",
-      "description": "Item de checklist ou validação declarativa.",
-      "additionalProperties": false,
-      "properties": {
-        "text": {
-          "type": "string",
-          "description": "Texto do item (ex.: \"Todas as views usam security_invoker = true\")."
-        },
-        "required": {
-          "type": "boolean",
-          "description": "Se o item é obrigatório para considerar a checklist OK.",
-          "default": true
-        },
-        "category": {
-          "type": "string",
-          "description": "Categoria opcional (ex.: \"seguranca\", \"ci\", \"sql\", \"governanca\")."
-        }
-      },
-      "required": [
-        "text"
-      ]
-    },
-    "changelogEntry": {
-      "type": "object",
-      "description": "Entrada do changelog da Base Técnica.",
-      "additionalProperties": false,
-      "properties": {
-        "version": {
-          "type": "string",
-          "description": "Versão (ex.: \"1.7.2\")."
-        },
-        "date": {
-          "type": "string",
-          "description": "Data da alteração (ex.: \"2025-11-15\")."
-        },
-        "summary": {
-          "type": "string",
-          "description": "Resumo curto da mudança."
-        },
-        "changes": {
-          "type": "array",
-          "description": "Lista de mudanças mais detalhadas.",
-          "items": {
-            "type": "object",
-            "additionalProperties": false,
-            "properties": {
-              "id": {
-                "type": "string",
-                "description": "Seção/ID afetado (ex.: \"3.6\", \"4.2.1\")."
-              },
-              "title": {
-                "type": "string",
-                "description": "Título da mudança ou da seção afetada."
-              },
-              "summary": {
-                "type": "string",
-                "description": "Descrição curta do que foi alterado."
-              },
-              "impact": {
-                "type": "array",
-                "description": "Tags de impacto (ex.: [\"seguranca\", \"sql\", \"nextjs\"]).",
-                "items": {
-                  "type": "string"
-                }
-              },
-              "status": {
-                "type": "string",
-                "description": "Estado da mudança.",
-                "enum": [
-                  "planejado",
-                  "em_teste",
-                  "implementado",
-                  "legado"
-                ]
-              }
-            },
-            "required": [
-              "id",
-              "title",
-              "summary",
-              "status"
-            ]
-          }
-        }
-      },
-      "required": [
-        "version",
-        "date"
+        "section_id",
+        "target_type",
+        "action",
+        "name",
+        "reason",
+        "suggested_markdown"
       ]
     }
   }
