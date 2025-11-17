@@ -226,3 +226,27 @@ Fluxo fim‑a‑fim combinando RLS por `account_id`, JWT de curta expiração co
 2. Registrar pré e pós execução no `audit_logs` com `request_id`.
 
 ---
+
+## 13 — Assistente de Metadados de LP *(🧪 Experimental)*
+2025-11-17
+
+### Descrição
+Assistente contextual no Dashboard que sugere automaticamente título, slug, segmento e objetivo de uma nova Landing Page com base no contexto da conta e no histórico. Integrado via AgentKit/ChatKit no front‑end (Next.js), permite aplicar as sugestões ao formulário com um clique.
+
+### Valor para o Projeto
+- Demonstra aplicação prática do AgentKit no produto e valida o fluxo agente ↔ UI com RLS/grants.
+- Cria base para futuras automações (herói copy, seções padrão, FAQs) ligadas à criação de LPs.
+- Ajuda a alinhar a visão de “Agent Experience (AX)” com uma feature tangível.
+
+### Valor para o Usuário
+- Reduz tempo na criação de LPs ao pré‑preencher metadados coerentes com o segmento e meta da conta.
+- Garante consistência nos nomes e objetivos das LPs, evitando erros manuais.
+- Permite experimentar IA de forma não intrusiva, com possibilidade de revisão antes de aplicar.
+
+### Ações Recomendadas
+1. Criar endpoint `/api/ai/guess-lp-metadata` via adapter, validando sessão e `account_id`.
+2. Embutir componente `AssistantPanel` nas telas de criação/edição de LP.
+3. Registrar a tool `guess_lp_metadata` no AgentKit e auditar chamadas (gravar `agent_id`, tool e `account_id`).
+4. Habilitar a feature apenas para contas internas ou via flag `ai_lp_metadata_assistant` até validar o MVP.
+
+---
