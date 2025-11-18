@@ -241,5 +241,33 @@ Estabelecer diretrizes de UX e roteiros de teste que privilegiem **ações visí
 1. Definir um conjunto de **cenários de onboarding** focados em reconhecimento (ex.: “criar primeira LP”, “ver resultados”, “convidar alguém”).  
 2. Padronizar layouts iniciais com CTAs claros e seções prioritárias sempre visíveis na primeira dobra.  
 3. Incluir métricas de sucesso específicas em testes (tempo até a primeira ação, ações descobertas sem ajuda, abandono).  
-4. Incorporar essas diretrizes no checklist de UX dos próximos releases (E10, E12, novos dashboards).  
+4. Incorporar essas diretrizes no checklist de UX dos próximos releases (E10, E12, novos dashboards).
+
+   ---
+
+   ## 15 — Automação de Microeventos em LPs *(🧪 Experimental)*
+2025-11-17
+
+### Descrição
+Implementar um fluxo de marketing que detecta microeventos da Landing Page (ex.: scroll 25/50/75%, visualização de preços, clique em CTA, envio de formulário) para taguear dinamicamente os leads (e.g. `interesse_preço`, `scroll_75`, `form_enviado`) e disparar ações em RD Station e Meta Ads. As tags alimentam segmentações de remarketing e fluxos de follow‑up (e‑mail/WhatsApp), encurtando o ciclo de vendas e aumentando o ROI.
+
+### Valor para o Projeto
+- Conecta a camada de tracking interno e a camada de remarketing em um modelo de automação reutilizável:contentReference[oaicite:4]{index=4}.
+- Aproveita integrações existentes (events_analytics, RD, Meta) para oferecer uma solução pronta de “microeventos → tags → fluxos”.
+- Testa, em ambiente controlado, a eficácia de eventos contextuais antes de escalar para outras verticais.
+
+### Valor para o Usuário
+- Aumenta a relevância dos contatos ao reagir em minutos ao comportamento real do visitante:contentReference[oaicite:5]{index=5}.
+- Diminui o custo de aquisição reaproveitando o tráfego da própria LP com remarketing segmentado:contentReference[oaicite:6]{index=6}.
+- Permite otimizar criativos e mensagens por contexto (interesse em preços, FAQ, scroll avançado).
+
+### Ações Recomendadas
+1. Definir a taxonomia de microeventos (`scroll_25/50/75`, `cta_click`, `faq_open`, `pricing_view`, `form_submit`) e padrão de nomes (`lp.{slug}.{evento}`).
+2. Registrar esses eventos no `events_analytics` e expor função server‑side para enviá‑los a RD Station e Meta (via Camada de Remarketing).
+3. Configurar tags e fluxos no RD: sequências específicas para quem visualizou preços sem converter, abriu FAQ sem clicar, enviou formulário etc.
+4. Criar públicos de remarketing e lookalike em Meta Ads com base nas tags (`pricing_view`, `scroll_75`, `form_submit`), com criativos adaptados.
+5. Medir KPIs essenciais: tempo até primeiro contato, taxa de qualificação (MQL), CPL/CPA por microevento e redução no ciclo de vendas.
+
+---
+
 
