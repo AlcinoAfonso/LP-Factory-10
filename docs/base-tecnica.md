@@ -84,9 +84,9 @@
 ## 2. Stack & Dependências
 
 ### 2.1 Framework
-- **Next.js ≥ 15** (App Router, SSR, Server Components)
-- **TypeScript (strict)**
-- **Tailwind CSS**
+- Next.js 14.2.5 (App Router, SSR, Server Components) — ⚠ upgrade planejado para versão corrigida (15.5.7+) devido ao CVE-2025-55182
+- TypeScript (strict)
+- Tailwind CSS
 
 ### 2.2 Backend
 - **Supabase** (PostgreSQL 17.6, Auth, Storage, RLS)  
