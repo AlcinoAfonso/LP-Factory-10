@@ -9,8 +9,8 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "@radix-ui/react-dialog": "1.0.5",
-    "@radix-ui/react-slot": "1.0.2",
+    "@radix-ui/react-dialog": "1.1.7",
+    "@radix-ui/react-slot": "1.2.0",
     "@supabase/auth-ui-react": "0.4.7",
     "@supabase/auth-ui-shared": "0.1.8",
     "@supabase/ssr": "0.4.0",
