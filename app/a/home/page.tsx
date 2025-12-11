@@ -1,44 +1,36 @@
 // app/a/home/page.tsx
-import { redirect } from 'next/navigation';
-import { cookies } from 'next/headers';
-import { getUserEmail } from '@/lib/auth/authAdapter';
-import { getFirstAccountForCurrentUser } from '@/lib/access/adapters/accessContextAdapter';
-import { Header } from '@/components/layout/Header';
+import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
+
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 export default async function HomePage() {
-  const userEmail = await getUserEmail();
+  // 1) Precedência: cookie 'last_account_subdomain'
+  const cookieStore = await cookies();
+  const last = cookieStore.get("last_account_subdomain")?.value?.trim();
 
-  // C0.2 — Usuário logado
-  if (userEmail) {
-    // 1) Precedência: cookie 'last_account_subdomain'
-    const cookieStore = cookies();
-    const last = cookieStore.get('last_account_subdomain')?.value?.trim();
-
-    if (last) {
-      // Redirect direto: o gate SSR validará allow/deny e higienizará se necessário
-      redirect(`/a/${last}`);
-    }
-
-    // 2) Fallback: primeira conta ativa (adapter atual)
-    const accountSubdomain = await getFirstAccountForCurrentUser();
-    if (accountSubdomain) {
-      redirect(`/a/${accountSubdomain}`);
-    }
-
-    // 3) Fallback final: logado mas sem conta
-    redirect('/auth/confirm/info');
+  if (last) {
+    // Redirect direto: o gate SSR em /a/[account] valida allow/deny
+    redirect(`/a/${last}`);
   }
 
-  // C0.1 — Usuário não logado (copy ajustado, mantendo hierarquia visual)
+  // 2) Fallback quando não há cookie / primeira vez
   return (
-    <>
-      <Header userEmail={null} />
-      <main className="mx-auto max-w-3xl px-6 py-12 text-center">
-        <h1 className="mb-2 text-3xl font-semibold">Bem-vindo ao LP Factory</h1>
-        <p className="text-base text-gray-600">
-          Crie páginas incríveis em minutos. <span className="font-medium text-gray-700">Comece agora.</span>
-        </p>
-      </main>
-    </>
+    <main className="mx-auto max-w-3xl px-6 py-12">
+      <h1 className="text-2xl font-semibold mb-3">
+        Bem-vindo ao LP Factory 10
+      </h1>
+      <p className="text-gray-600 mb-4">
+        Você ainda não tem uma conta preferida. Use o topo da tela para
+        entrar ou criar sua primeira conta.
+      </p>
+      <a
+        href="/a/home?modal=new"
+        className="inline-flex items-center rounded-md border px-3 py-1.5 text-sm hover:bg-gray-50"
+      >
+        Criar primeira conta
+      </a>
+    </main>
   );
 }
