@@ -23,7 +23,8 @@ function TokenStatus({ reason }: { reason: string }) {
     already_used: {
       emoji: "🔐",
       title: "Link Já Utilizado",
-      description: "Este link já foi usado para criar uma conta. Faça login com seu email.",
+      description:
+        "Este link já foi usado para criar uma conta. Faça login com seu email.",
       cta: "Fazer Login",
       ctaHref: "/auth/login",
     },
@@ -59,22 +60,33 @@ function now() {
 
 function latencyMs(t0?: number) {
   if (typeof t0 !== "number") return undefined;
-  const t1 = typeof globalThis.performance?.now === "function" ? globalThis.performance.now() : Date.now();
+  const t1 =
+    typeof globalThis.performance?.now === "function"
+      ? globalThis.performance.now()
+      : Date.now();
   return Math.round(t1 - t0);
 }
 
 function isValidUUID(str: string): boolean {
-  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  const uuidRegex =
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
   return uuidRegex.test(str);
 }
 
 async function getIP() {
   const h = headers();
-  return h.get("x-forwarded-for")?.split(",")[0]?.trim() || h.get("x-real-ip") || "unknown";
+  return (
+    h.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+    h.get("x-real-ip") ||
+    "unknown"
+  );
 }
 
 // Helper: buscar dados do token via adapter
-async function fetchTokenData(tokenId: string, ctx: { t0?: number; ip?: string }) {
+async function fetchTokenData(
+  tokenId: string,
+  ctx: { t0?: number; ip?: string }
+) {
   const tokenData = await postSaleTokenAdapter.getTokenData(tokenId);
 
   if (!tokenData) {
@@ -111,11 +123,11 @@ export const revalidate = 0;
 // Page Component
 type SearchParams = { token?: string };
 
-export default async function OnboardPage({
-  searchParams,
-}: {
-  searchParams?: SearchParams;
-}) {
+export default async function OnboardPage(props: any) {
+  const searchParams = (props.searchParams
+    ? await props.searchParams
+    : undefined) as SearchParams | undefined;
+
   const t0 = now();
   const ip = await getIP();
   const tokenId = searchParams?.token;
