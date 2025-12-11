@@ -1,4 +1,3 @@
-// app/admin/tokens/page.tsx
 import React from "react";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
@@ -93,12 +92,12 @@ async function generateAction(formData: FormData) {
     }
 
     // Adapter já emite log token_generated ou token_generate_error
-    await adminTokens.generate(
-      email,
-      contractRefRaw,
-      undefined,
-      { actor_id, actor_role, ip, t0 }
-    );
+    await adminTokens.generate(email, contractRefRaw, undefined, {
+      actor_id,
+      actor_role,
+      ip,
+      t0,
+    });
   } catch (e) {
     console.error(
       JSON.stringify({
@@ -172,21 +171,19 @@ async function revokeAction(formData: FormData) {
 /** ==== Page (SSR) ==== */
 type SearchParams = { used?: "true" | "false"; expired?: "true" | "false" };
 
-export default async function AdminTokensPage({
-  searchParams,
-}: {
-  searchParams?: SearchParams;
-}) {
+export default async function AdminTokensPage(props: any) {
+  const searchParams = props.searchParams as SearchParams | undefined;
+
   await requirePlatform();
 
   const used =
     typeof searchParams?.used === "string"
-      ? searchParams!.used === "true"
+      ? searchParams.used === "true"
       : undefined;
 
   const expired =
     typeof searchParams?.expired === "string"
-      ? searchParams!.expired === "true"
+      ? searchParams.expired === "true"
       : undefined;
 
   const [list, stats] = await Promise.all([
@@ -274,7 +271,9 @@ export default async function AdminTokensPage({
             Expirado:
             <select
               name="expired"
-              defaultValue={expired === undefined ? "" : expired ? "true" : "false"}
+              defaultValue={
+                expired === undefined ? "" : expired ? "true" : "false"
+              }
               className="ml-2 border rounded px-2 py-1"
               aria-label="Filtrar por expirado"
             >
@@ -283,7 +282,11 @@ export default async function AdminTokensPage({
               <option value="false">Não</option>
             </select>
           </label>
-          <button type="submit" className="px-3 py-1 rounded border hover:bg-gray-50" aria-label="Aplicar filtros">
+          <button
+            type="submit"
+            className="px-3 py-1 rounded border hover:bg-gray-50"
+            aria-label="Aplicar filtros"
+          >
             Aplicar
           </button>
         </form>
