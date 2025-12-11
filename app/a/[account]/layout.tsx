@@ -6,18 +6,14 @@ import { getAccessContext } from "@/lib/access/getAccessContext";
 import { getUserEmail } from "@/lib/auth/authAdapter";
 import { Header } from "@/components/layout/Header";
 
-type LayoutParams = {
-  account: string;
-};
-
 type LayoutProps = {
   children: React.ReactNode;
-  params: Promise<LayoutParams>;
+  params: Promise<{ account: string }>;
 };
 
 export default async function Layout({ children, params }: LayoutProps) {
-  const { account } = await params;
-  const slug = (account || "").trim().toLowerCase();
+  const resolvedParams = await params;
+  const slug = (resolvedParams?.account || "").trim().toLowerCase();
 
   // Bypass canônico: /a/home é público (sem consulta de contexto)
   if (slug === "home") {
@@ -26,7 +22,7 @@ export default async function Layout({ children, params }: LayoutProps) {
 
   // ── Observabilidade: timer SSR (fim-a-fim do gate) ─────────────────────────────
   const t0 = Date.now();
-  const hdrs = headers();
+  const hdrs = await headers();
   const requestId = hdrs.get("x-request-id") ?? undefined;
   const route = `/a/${slug}`;
 
