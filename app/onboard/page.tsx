@@ -74,7 +74,7 @@ function isValidUUID(str: string): boolean {
 }
 
 async function getIP() {
-  const h = headers();
+  const h = await headers();
   return (
     h.get("x-forwarded-for")?.split(",")[0]?.trim() ||
     h.get("x-real-ip") ||
@@ -123,11 +123,11 @@ export const revalidate = 0;
 // Page Component
 type SearchParams = { token?: string };
 
-export default async function OnboardPage(props: any) {
-  const searchParams = (props.searchParams
-    ? await props.searchParams
-    : undefined) as SearchParams | undefined;
-
+export default async function OnboardPage({
+  searchParams,
+}: {
+  searchParams?: SearchParams;
+}) {
   const t0 = now();
   const ip = await getIP();
   const tokenId = searchParams?.token;
