@@ -62,7 +62,9 @@ export default async function Layout({ children, params }: LayoutProps) {
     const subdomain = ctx.account?.subdomain;
 
     if (subdomain && accountStatus === "active" && memberStatus === "active") {
-      cookies().set("last_account_subdomain", subdomain, {
+      const cookieStore = await cookies();
+
+      cookieStore.set("last_account_subdomain", subdomain, {
         httpOnly: true,
         secure: true,
         sameSite: "lax",
