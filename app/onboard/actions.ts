@@ -1,55 +1,11 @@
-// app/onboard/page.tsx
-import React from "react";
+// app/onboard/actions.ts
+"use server";
+
+import { redirect } from "next/navigation";
 import { headers } from "next/headers";
+import { createClient } from "@/lib/supabase/server";
 import * as postSaleTokenAdapter from "@/lib/admin/adapters/postSaleTokenAdapter";
-import { OnboardForm } from "@/components/onboard/OnboardForm";
-
-function TokenStatus({ reason }: { reason: string }) {
-  const messages = {
-    not_found: {
-      emoji: "❌",
-      title: "Link Inválido",
-      description: "Este link não é válido. Entre em contato com o suporte.",
-      cta: "Falar com Suporte",
-      ctaHref: "mailto:suporte@lpfactory.com.br",
-    },
-    expired: {
-      emoji: "⏰",
-      title: "Link Expirado",
-      description: "Seu link não é mais válido. Solicite um novo ao suporte.",
-      cta: "Falar com Suporte",
-      ctaHref: "mailto:suporte@lpfactory.com.br",
-    },
-    already_used: {
-      emoji: "🔐",
-      title: "Link Já Utilizado",
-      description:
-        "Este link já foi usado para criar uma conta. Faça login com seu email.",
-      cta: "Fazer Login",
-      ctaHref: "/auth/login",
-    },
-  };
-
-  const msg = messages[reason as keyof typeof messages] || messages.not_found;
-
-  return (
-    <div className="min-h-screen flex items-center justify-center p-4">
-      <div className="max-w-md w-full text-center space-y-6">
-        <div className="text-6xl">{msg.emoji}</div>
-        <div className="space-y-2">
-          <h1 className="text-2xl font-semibold">{msg.title}</h1>
-          <p className="text-gray-600">{msg.description}</p>
-        </div>
-        <a
-          href={msg.ctaHref}
-          className="inline-block px-6 py-3 rounded bg-black text-white hover:bg-gray-800"
-        >
-          {msg.cta}
-        </a>
-      </div>
-    </div>
-  );
-}
+import * as accountAdapter from "@/lib/access/adapters/accountAdapter";
 
 // Helpers
 function now() {
@@ -67,12 +23,6 @@ function latencyMs(t0?: number) {
   return Math.round(t1 - t0);
 }
 
-function isValidUUID(str: string): boolean {
-  const uuidRegex =
-    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-  return uuidRegex.test(str);
-}
-
 async function getIP() {
   const h = await headers();
   return (
@@ -82,160 +32,253 @@ async function getIP() {
   );
 }
 
-// Helper: buscar dados do token via adapter
-async function fetchTokenData(
+// Tipos
+type OnboardResult =
+  | { success: true }
+  | { success: false; error: string };
+
+/**
+ * Server Action: Onboarding completo
+ * 1. Revalida token
+ * 2. Cria usuário (signUp)
+ * 3. Autentica (signIn)
+ * 4. Consome token (createFromToken - agora com auth.uid())
+ * 5. Busca slug
+ * 6. Redirect /a/{slug}
+ */
+export async function onboardAction(
   tokenId: string,
-  ctx: { t0?: number; ip?: string }
-) {
-  const tokenData = await postSaleTokenAdapter.getTokenData(tokenId);
-
-  if (!tokenData) {
-    console.error(
-      JSON.stringify({
-        event: "onboard_token_fetch_error",
-        scope: "onboard",
-        token_id: tokenId,
-        error: "not_found",
-        ip: ctx.ip,
-        latency_ms: latencyMs(ctx.t0),
-        timestamp: new Date().toISOString(),
-      })
-    );
-    return null;
-  }
-
-  return tokenData;
-}
-
-// Metadata
-export const metadata = {
-  title: "Ativar Conta | LP Factory",
-  description: "Complete seu cadastro e acesse o dashboard",
-  robots: {
-    index: false,
-    follow: false,
-  },
-};
-
-export const dynamic = "force-dynamic";
-export const revalidate = 0;
-
-// Page Component
-type SearchParams = { token?: string };
-
-export default async function OnboardPage({
-  searchParams,
-}: {
-  searchParams?: SearchParams;
-}) {
+  email: string,
+  password: string
+): Promise<OnboardResult> {
   const t0 = now();
   const ip = await getIP();
-  const tokenId = searchParams?.token;
 
-  // 1. Token ausente
-  if (!tokenId || typeof tokenId !== "string") {
-    console.error(
-      JSON.stringify({
-        event: "onboard_missing_token",
-        scope: "onboard",
-        ip,
-        latency_ms: latencyMs(t0),
-        timestamp: new Date().toISOString(),
-      })
-    );
-    return <TokenStatus reason="not_found" />;
-  }
-
-  // 2. Validar formato UUID
-  if (!isValidUUID(tokenId)) {
-    console.error(
-      JSON.stringify({
-        event: "onboard_invalid_uuid",
-        scope: "onboard",
-        token_id: tokenId,
-        ip,
-        latency_ms: latencyMs(t0),
-        timestamp: new Date().toISOString(),
-      })
-    );
-    return <TokenStatus reason="not_found" />;
-  }
-
-  // 3. Log de tentativa (rate limit futuro)
+  // Log início
   console.error(
     JSON.stringify({
-      event: "onboard_attempt",
+      event: "onboard_started",
       scope: "onboard",
       token_id: tokenId,
+      email,
       ip,
       timestamp: new Date().toISOString(),
     })
   );
 
-  // 4. Validar token
-  const validation = await postSaleTokenAdapter.validate(tokenId);
+  let accountSlug: string | undefined;
 
-  if (!validation.valid) {
+  try {
+    // 1. Revalidar token (segurança - pode ter expirado durante preenchimento)
+    const validation = await postSaleTokenAdapter.validate(tokenId);
+    if (!validation.valid) {
+      console.error(
+        JSON.stringify({
+          event: "onboard_failed",
+          scope: "onboard",
+          reason: "token_invalid",
+          token_id: tokenId,
+          validation_reason: validation.reason,
+          ip,
+          latency_ms: latencyMs(t0),
+          timestamp: new Date().toISOString(),
+        })
+      );
+      return {
+        success: false,
+        error: "Token inválido ou expirado. Solicite um novo link.",
+      };
+    }
+
+    const supabase = await createClient();
+
+    // 2. Criar usuário (signUp)
+    const { data: signUpData, error: signUpError } = await supabase.auth.signUp(
+      {
+        email,
+        password,
+        options: {
+          // Não enviar email de confirmação neste fluxo
+          emailRedirectTo: undefined,
+        },
+      }
+    );
+
+    if (signUpError) {
+      const msgLower = signUpError.message?.toLowerCase() ?? "";
+      // Tratar email já existente
+      if (msgLower.includes("already") || msgLower.includes("duplicate")) {
+        console.error(
+          JSON.stringify({
+            event: "onboard_failed",
+            scope: "onboard",
+            reason: "email_already_exists",
+            token_id: tokenId,
+            email,
+            ip,
+            latency_ms: latencyMs(t0),
+            timestamp: new Date().toISOString(),
+          })
+        );
+        return {
+          success: false,
+          error: "Este email já está cadastrado. Entre em contato com o suporte.",
+        };
+      }
+
+      // Erro genérico de signUp
+      console.error(
+        JSON.stringify({
+          event: "onboard_failed",
+          scope: "onboard",
+          reason: "auth_signup_failed",
+          token_id: tokenId,
+          error: signUpError.message,
+          ip,
+          latency_ms: latencyMs(t0),
+          timestamp: new Date().toISOString(),
+        })
+      );
+      return { success: false, error: "Erro ao criar conta. Tente novamente." };
+    }
+
+    const userId = signUpData.user?.id;
+    if (!userId) {
+      console.error(
+        JSON.stringify({
+          event: "onboard_failed",
+          scope: "onboard",
+          reason: "auth_signup_failed",
+          token_id: tokenId,
+          error: "user_id_missing",
+          ip,
+          latency_ms: latencyMs(t0),
+          timestamp: new Date().toISOString(),
+        })
+      );
+      return { success: false, error: "Erro ao criar conta. Tente novamente." };
+    }
+
+    // 3. Autenticar ANTES de criar conta (para ter auth.uid())
+    const { error: signInError } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+
+    if (signInError) {
+      console.error(
+        JSON.stringify({
+          event: "onboard_failed",
+          scope: "onboard",
+          reason: "auth_signin_failed",
+          token_id: tokenId,
+          error: signInError.message,
+          user_id: userId,
+          ip,
+          latency_ms: latencyMs(t0),
+          timestamp: new Date().toISOString(),
+        })
+      );
+      return { success: false, error: "Erro ao autenticar. Tente novamente." };
+    }
+
+    // 4. Consumir token e criar conta (AGORA com auth.uid() válido)
+    const accountId = await accountAdapter.createFromToken(tokenId, userId);
+
+    if (!accountId) {
+      console.error(
+        JSON.stringify({
+          event: "onboard_failed",
+          scope: "onboard",
+          reason: "account_creation_failed",
+          token_id: tokenId,
+          user_id: userId,
+          ip,
+          latency_ms: latencyMs(t0),
+          timestamp: new Date().toISOString(),
+        })
+      );
+      return {
+        success: false,
+        error: "Erro ao criar conta. Entre em contato com o suporte.",
+      };
+    }
+
+    // 5. Buscar slug da conta criada
+    const account = await accountAdapter.getAccountById(accountId);
+    if (!account) {
+      console.error(
+        JSON.stringify({
+          event: "onboard_failed",
+          scope: "onboard",
+          reason: "account_not_found",
+          token_id: tokenId,
+          account_id: accountId,
+          ip,
+          latency_ms: latencyMs(t0),
+          timestamp: new Date().toISOString(),
+        })
+      );
+      return {
+        success: false,
+        error:
+          "Conta criada, mas houve um erro ao redirecionar. Faça login manualmente.",
+      };
+    }
+
+    accountSlug = account.subdomain;
+
+    // Log sucesso
     console.error(
       JSON.stringify({
-        event: "onboard_invalid_token",
+        event: "onboard_succeeded",
         scope: "onboard",
         token_id: tokenId,
-        reason: validation.reason,
+        account_id: accountId,
+        slug: accountSlug,
+        user_id: userId,
         ip,
         latency_ms: latencyMs(t0),
         timestamp: new Date().toISOString(),
       })
     );
-    return <TokenStatus reason={validation.reason ?? "not_found"} />;
+
+    // Sucesso — redirect será executado fora do try/catch
+  } catch (error) {
+    // NUNCA capturar NEXT_REDIRECT (Next.js usa exceção para controlar redirect)
+    if (
+      error &&
+      typeof error === "object" &&
+      "digest" in error &&
+      String((error as any).digest).startsWith("NEXT_REDIRECT")
+    ) {
+      throw error; // Re-lança para o Next.js processar
+    }
+
+    // Log apenas erros reais (não NEXT_REDIRECT)
+    console.error(
+      JSON.stringify({
+        event: "onboard_failed",
+        scope: "onboard",
+        reason: "unexpected_error",
+        token_id: tokenId,
+        error: (error as Error)?.message ?? String(error),
+        ip,
+        latency_ms: latencyMs(t0),
+        timestamp: new Date().toISOString(),
+      })
+    );
+    return { success: false, error: "Erro inesperado. Tente novamente." };
   }
 
-  // 5. Buscar dados do token
-  const tokenData = await fetchTokenData(tokenId, { t0, ip });
-
-  if (!tokenData) {
-    return <TokenStatus reason="not_found" />;
+  // 6. Redirect (fora do try/catch para não ser capturado como erro)
+  if (accountSlug) {
+    redirect(`/a/${accountSlug}`);
   }
 
-  // 6. Log acesso válido
-  console.error(
-    JSON.stringify({
-      event: "onboard_page_loaded",
-      scope: "onboard",
-      token_id: tokenId,
-      email: tokenData.email,
-      ip,
-      latency_ms: latencyMs(t0),
-      timestamp: new Date().toISOString(),
-    })
-  );
-
-  // 7. Renderizar formulário
-  return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-gray-50">
-      <div className="max-w-md w-full">
-        <div className="bg-white rounded-lg shadow-sm p-8 space-y-6">
-          <div className="text-center space-y-2">
-            <div className="text-4xl">🚀</div>
-            <h1 className="text-2xl font-semibold">Bem-vindo ao LP Factory</h1>
-            <p className="text-gray-600">
-              Defina sua senha para acessar o dashboard.
-            </p>
-          </div>
-
-          <OnboardForm
-            tokenId={tokenId}
-            email={tokenData.email}
-            accountName={tokenData.contract_ref}
-          />
-
-          <div className="text-center text-sm text-gray-500">
-            Sua conta: <strong>{tokenData.contract_ref}</strong>
-            <br />
-            <span className="text-xs">(você pode alterar no dashboard)</span>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
+  // Fallback (não deveria chegar aqui se accountSlug foi setado)
+  return {
+    success: false,
+    error: "Erro ao redirecionar. Faça login manualmente.",
+  };
 }
