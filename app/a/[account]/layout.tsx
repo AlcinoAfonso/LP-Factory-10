@@ -6,14 +6,18 @@ import { getAccessContext } from "@/lib/access/getAccessContext";
 import { getUserEmail } from "@/lib/auth/authAdapter";
 import { Header } from "@/components/layout/Header";
 
-export default async function Layout({
-  children,
-  params,
-}: {
+type LayoutParams = {
+  account: string;
+};
+
+type LayoutProps = {
   children: React.ReactNode;
-  params: { account: string };
-}) {
-  const slug = (params?.account || "").trim().toLowerCase();
+  params: Promise<LayoutParams>;
+};
+
+export default async function Layout({ children, params }: LayoutProps) {
+  const { account } = await params;
+  const slug = (account || "").trim().toLowerCase();
 
   // Bypass canônico: /a/home é público (sem consulta de contexto)
   if (slug === "home") {
