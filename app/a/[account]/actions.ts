@@ -33,8 +33,14 @@ export async function renameAccountAction(
   formData: FormData
 ): Promise<RenameAccountState> {
   const t0 = Date.now();
-  const hdrs = headers();
-  const requestId = hdrs.get('x-vercel-id') ?? hdrs.get('x-request-id') ?? null;
+
+  // 🔥 AJUSTE OBRIGATÓRIO PARA NEXT 15:
+  // headers() agora retorna Promise — precisa de await
+  const hdrs = await headers();
+
+  const requestId =
+    hdrs.get('x-vercel-id') ?? hdrs.get('x-request-id') ?? null;
+
   const ip = hdrs.get('x-forwarded-for') ?? null;
 
   try {
@@ -64,10 +70,9 @@ export async function renameAccountAction(
         })
       );
 
-      // Sem payload do adapter, usamos o slug calculado localmente
       redirect(`/a/${slug}`);
     } else {
-      // Falha lógica sem exceção (retorno false)
+      // Falha lógica sem exceção
       // eslint-disable-next-line no-console
       console.error(
         JSON.stringify({
@@ -81,10 +86,15 @@ export async function renameAccountAction(
           ip,
         })
       );
-      return { ok: false, error: 'Não foi possível renomear a conta. Tente novamente.' };
+
+      return {
+        ok: false,
+        error: 'Não foi possível renomear a conta. Tente novamente.',
+      };
     }
   } catch (err: unknown) {
     const latency = Date.now() - t0;
+
     // eslint-disable-next-line no-console
     console.error(
       JSON.stringify({
@@ -96,6 +106,10 @@ export async function renameAccountAction(
         ip,
       })
     );
-    return { ok: false, error: 'Não foi possível renomear a conta. Tente novamente.' };
+
+    return {
+      ok: false,
+      error: 'Não foi possível renomear a conta. Tente novamente.',
+    };
   }
 }
