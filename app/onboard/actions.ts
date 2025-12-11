@@ -16,13 +16,20 @@ function now() {
 
 function latencyMs(t0?: number) {
   if (typeof t0 !== "number") return undefined;
-  const t1 = typeof globalThis.performance?.now === "function" ? globalThis.performance.now() : Date.now();
+  const t1 =
+    typeof globalThis.performance?.now === "function"
+      ? globalThis.performance.now()
+      : Date.now();
   return Math.round(t1 - t0);
 }
 
 async function getIP() {
-  const h = headers();
-  return h.get("x-forwarded-for")?.split(",")[0]?.trim() || h.get("x-real-ip") || "unknown";
+  const h = await headers();
+  return (
+    h.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+    h.get("x-real-ip") ||
+    "unknown"
+  );
 }
 
 // Tipos
@@ -77,24 +84,30 @@ export async function onboardAction(
           timestamp: new Date().toISOString(),
         })
       );
-      return { success: false, error: "Token inválido ou expirado. Solicite um novo link." };
+      return {
+        success: false,
+        error: "Token inválido ou expirado. Solicite um novo link.",
+      };
     }
 
     const supabase = await createClient();
 
     // 2. Criar usuário (signUp)
-    const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        emailRedirectTo: undefined, // Não enviar email de confirmação
-      },
-    });
+    const { data: signUpData, error: signUpError } =
+      await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          emailRedirectTo: undefined, // Não enviar email de confirmação
+        },
+      });
 
     if (signUpError) {
       // Tratar email já existente
-      if (signUpError.message?.toLowerCase().includes("already") || 
-          signUpError.message?.toLowerCase().includes("duplicate")) {
+      if (
+        signUpError.message?.toLowerCase().includes("already") ||
+        signUpError.message?.toLowerCase().includes("duplicate")
+      ) {
         console.error(
           JSON.stringify({
             event: "onboard_failed",
@@ -107,7 +120,10 @@ export async function onboardAction(
             timestamp: new Date().toISOString(),
           })
         );
-        return { success: false, error: "Este email já está cadastrado. Entre em contato com o suporte." };
+        return {
+          success: false,
+          error: "Este email já está cadastrado. Entre em contato com o suporte.",
+        };
       }
 
       // Erro genérico de signUp
@@ -182,7 +198,10 @@ export async function onboardAction(
           timestamp: new Date().toISOString(),
         })
       );
-      return { success: false, error: "Erro ao criar conta. Entre em contato com o suporte." };
+      return {
+        success: false,
+        error: "Erro ao criar conta. Entre em contato com o suporte.",
+      };
     }
 
     // 5. Buscar slug da conta criada
@@ -200,7 +219,11 @@ export async function onboardAction(
           timestamp: new Date().toISOString(),
         })
       );
-      return { success: false, error: "Conta criada, mas erro ao redirecionar. Faça login manualmente." };
+      return {
+        success: false,
+        error:
+          "Conta criada, mas erro ao redirecionar. Faça login manualmente.",
+      };
     }
 
     accountSlug = account.subdomain;
@@ -223,7 +246,12 @@ export async function onboardAction(
     // ✅ Sucesso — redirect será executado fora do try/catch
   } catch (error) {
     // ❌ NUNCA capturar NEXT_REDIRECT (Next.js usa exceção para controlar redirect)
-    if (error && typeof error === 'object' && 'digest' in error && String(error.digest).startsWith('NEXT_REDIRECT')) {
+    if (
+      error &&
+      typeof error === "object" &&
+      "digest" in error &&
+      String((error as any).digest).startsWith("NEXT_REDIRECT")
+    ) {
       throw error; // Re-lançar para Next.js processar
     }
 
@@ -249,5 +277,8 @@ export async function onboardAction(
   }
 
   // Fallback (nunca deve chegar aqui se accountSlug foi setado)
-  return { success: false, error: "Erro ao redirecionar. Faça login manualmente." };
+  return {
+    success: false,
+    error: "Erro ao redirecionar. Faça login manualmente.",
+  };
 }
