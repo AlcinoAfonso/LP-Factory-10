@@ -82,6 +82,8 @@ async function getIP() {
   );
 }
 
+type SearchParams = { token?: string };
+
 // Helper: buscar dados do token via adapter
 async function fetchTokenData(
   tokenId: string,
@@ -121,15 +123,16 @@ export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 // Page Component
-type SearchParams = { token?: string };
-
-export default async function OnboardPage({
-  searchParams,
-}: {
-  searchParams?: SearchParams;
-}) {
+export default async function OnboardPage(props: any) {
   const t0 = now();
   const ip = await getIP();
+
+  const rawSearchParams = props?.searchParams;
+  const searchParams: SearchParams =
+    rawSearchParams && typeof rawSearchParams.then === "function"
+      ? await rawSearchParams
+      : rawSearchParams ?? {};
+
   const tokenId = searchParams?.token;
 
   // 1. Token ausente
