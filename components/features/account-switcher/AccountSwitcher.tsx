@@ -63,7 +63,7 @@ export function AccountSwitcher() {
           onSelect={handleSelect}
           onCreate={handleCreate}
           open={open}
-          popRef={popRef}
+          popRef={popRef as React.RefObject<HTMLDivElement>}
           pos={pos}
           menuId={menuId}
           labelledBy={btnId}
