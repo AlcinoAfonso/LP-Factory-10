@@ -46,7 +46,7 @@ export function AccountSwitcher() {
       <AccountSwitcherTrigger
         open={open}
         onToggle={toggleOpen}
-        btnRef={btnRef}
+        btnRef={btnRef as React.RefObject<HTMLButtonElement>}
         id={btnId}
         label="Trocar conta"
       />
