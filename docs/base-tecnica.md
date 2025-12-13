@@ -84,7 +84,7 @@
 ## 2. Stack & Dependências
 
 ### 2.1 Framework
-- Next.js 14.2.5 (App Router, SSR, Server Components) — ⚠ upgrade planejado para versão corrigida (15.5.7+) devido ao CVE-2025-55182
+- Next.js 15.5.7 (App Router, SSR, Server Components) — upgrade devido ao CVE-2025-55182
 - TypeScript (strict)
 - Tailwind CSS
 
