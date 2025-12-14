@@ -1,18 +1,11 @@
 // lib/supabase/middleware.ts
-import { createServerClient } from "@supabase/ssr";
-import { NextResponse, type NextRequest } from "next/server";
+import { createServerClient } from "@supabase/ssr"
+import { NextResponse, type NextRequest } from "next/server"
 
-/**
- * Atualiza / sincroniza cookies do Supabase na borda.
- *
- * ⚠ Importante:
- * - NÃO faz mais await em chamadas ao Supabase (para não estourar timeout do middleware).
- * - Toda a lógica de "tem usuário / não tem usuário" fica nas páginas (SSR),
- *   via readAccessContext / guards específicos.
- */
-export function updateSession(request: NextRequest) {
-  // Response base reaproveitado
-  const response = NextResponse.next({ request });
+export async function updateSession(request: NextRequest) {
+  let supabaseResponse = NextResponse.next({
+    request,
+  })
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -20,33 +13,34 @@ export function updateSession(request: NextRequest) {
     {
       cookies: {
         getAll() {
-          return request.cookies.getAll();
+          return request.cookies.getAll()
         },
         setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) => {
-            response.cookies.set(name, value, options);
-          });
+          cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value))
+          supabaseResponse = NextResponse.next({
+            request,
+          })
+          cookiesToSet.forEach(({ name, value, options }) =>
+            supabaseResponse.cookies.set(name, value, options)
+          )
         },
       },
     }
-  );
+  )
 
-  // Dispara o refresh da sessão em background, sem bloquear o middleware.
-  // Se der erro / timeout dentro do client, só loga e segue a vida.
-  void supabase.auth.getUser().catch((err) => {
-    try {
-      // eslint-disable-next-line no-console
-      console.error(
-        JSON.stringify({
-          event: "middleware_supabase_get_user_failed",
-          error: err instanceof Error ? err.message : String(err),
-          ts: new Date().toISOString(),
-        })
-      );
-    } catch {
-      // ignore
-    }
-  });
+  // 🔹 Atualizado: usa getUser em vez de getClaims
+  const { data: { user } } = await supabase.auth.getUser()
 
-  return response;
+  if (
+    !user &&
+    !request.nextUrl.pathname.startsWith("/login") &&
+    !request.nextUrl.pathname.startsWith("/auth") &&
+    !request.nextUrl.pathname.startsWith("/onboard")  // ← NOVA EXCEÇÃO
+  ) {
+    const url = request.nextUrl.clone()
+    url.pathname = "/auth/login"
+    return NextResponse.redirect(url)
+  }
+
+  return supabaseResponse
 }
