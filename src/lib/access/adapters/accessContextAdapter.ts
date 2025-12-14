@@ -4,6 +4,7 @@
 // Log padronizado: access_context_decision (MRVG 1.5 D/F).
 
 import 'server-only';
+import { headers } from 'next/headers';
 import { createClient } from '@/lib/supabase/server';
 import type { AccountStatus, MemberStatus, MemberRole } from '../../types/status';
 
@@ -59,8 +60,9 @@ type LogInput = {
   source?: 'view_v2' | 'view_v1' | 'adapter_error';
 };
 
-function logDecision(input: LogInput) {
+async function logDecision(input: LogInput) {
   try {
+    const h = await headers();
     const payload = {
       event: 'access_context_decision',
       source: input.source ?? 'view_v2',
@@ -69,9 +71,8 @@ function logDecision(input: LogInput) {
       user_id: input.user_id ?? null,
       account_id: input.account_id ?? null,
       role: input.role ?? null,
-      // 🔹 Não usamos mais headers() aqui para evitar problemas com Promise<ReadonlyHeaders>
-      route: input.route ?? null,
-      request_id: input.request_id ?? null,
+      route: input.route ?? h.get('x-invoke-path') ?? null,
+      request_id: input.request_id ?? h.get('x-request-id') ?? null,
       latency_ms: input.latency_ms ?? null,
       ts: new Date().toISOString(),
     };
@@ -106,7 +107,7 @@ export async function readAccessContext(subdomain: string): Promise<AccessContex
     .maybeSingle();
 
   if (error) {
-    logDecision({
+    await logDecision({
       decision: 'null',
       reason: 'adapter_error_read_v2',
       source: 'adapter_error',
@@ -116,7 +117,7 @@ export async function readAccessContext(subdomain: string): Promise<AccessContex
   }
 
   if (!data) {
-    logDecision({
+    await logDecision({
       decision: 'deny',
       reason: 'no_membership_or_invalid_account',
       latency_ms: Date.now() - t0,
@@ -127,7 +128,7 @@ export async function readAccessContext(subdomain: string): Promise<AccessContex
   const row = data as unknown as RowV2;
 
   if (!row.allow) {
-    logDecision({
+    await logDecision({
       user_id: row.user_id ?? null,
       account_id: row.account_id ?? null,
       role: row.member_role ?? null,
@@ -153,7 +154,7 @@ export async function readAccessContext(subdomain: string): Promise<AccessContex
     },
   };
 
-  logDecision({
+  await logDecision({
     user_id: row.user_id,
     account_id: row.account_id,
     role: row.member_role,
@@ -181,7 +182,7 @@ export async function getFirstAccountForCurrentUser(): Promise<string | null> {
   } = await supabase.auth.getUser();
 
   if (authError || !user) {
-    logDecision({
+    await logDecision({
       decision: 'null',
       reason: 'adapter_error_auth',
       source: 'adapter_error',
@@ -203,7 +204,7 @@ export async function getFirstAccountForCurrentUser(): Promise<string | null> {
     .maybeSingle();
 
   if (error) {
-    logDecision({
+    await logDecision({
       decision: 'null',
       reason: 'adapter_error_read_first_account',
       source: 'adapter_error',
@@ -214,7 +215,7 @@ export async function getFirstAccountForCurrentUser(): Promise<string | null> {
   }
 
   if (!data) {
-    logDecision({
+    await logDecision({
       decision: 'deny',
       reason: 'no_membership',
       user_id: user.id,
@@ -223,7 +224,7 @@ export async function getFirstAccountForCurrentUser(): Promise<string | null> {
     return null;
   }
 
-  logDecision({
+  await logDecision({
     decision: 'allow',
     reason: 'ok',
     user_id: user.id,
