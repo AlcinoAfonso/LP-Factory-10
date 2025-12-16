@@ -11,28 +11,37 @@ export default async function Home() {
   const { data } = await supabase.auth.getUser();
   const user = data?.user;
 
-  // ✅ Público: não redireciona para /auth/login
+  // ✅ Deslogado: mostra a HOME pública (não manda para /auth/login)
   if (!user) {
     return (
-      <main className="mx-auto max-w-3xl px-6 py-16">
-        <h1 className="text-3xl font-semibold mb-3">Bem-vindo ao LP Factory 10</h1>
-        <p className="text-gray-600 mb-6">
-          Acesse para entrar no seu dashboard.
-        </p>
+      <div className="min-h-screen bg-white">
+        <header className="mx-auto max-w-6xl px-6 py-4 flex items-center justify-between">
+          <div className="text-sm font-semibold">LP Factory</div>
+          <div className="flex gap-3">
+            <a
+              href="/?modal=login&next=/a"
+              className="inline-flex items-center rounded-md border px-3 py-1.5 text-sm hover:bg-gray-50"
+            >
+              Entrar
+            </a>
+            <a
+              href="/?modal=signup"
+              className="inline-flex items-center rounded-md border px-3 py-1.5 text-sm hover:bg-gray-50"
+            >
+              Criar conta
+            </a>
+          </div>
+        </header>
 
-        <div className="flex gap-3">
-          <a
-            href="/?modal=login&next=/a"
-            className="inline-flex items-center rounded-md border px-4 py-2 text-sm hover:bg-gray-50"
-          >
-            Entrar
-          </a>
-        </div>
-      </main>
+        <main className="mx-auto max-w-3xl px-6 py-16 text-center">
+          <h1 className="text-4xl font-semibold mb-3">Bem-vindo ao LP Factory</h1>
+          <p className="text-gray-600">Crie páginas incríveis em minutos. Comece agora.</p>
+        </main>
+      </div>
     );
   }
 
-  // ✅ Logado: segue fluxo normal
+  // ✅ Logado: mantém seu fluxo atual
   const ctx = await getAccessContext();
   if (!ctx?.account_slug) redirect("/onboarding/new");
   redirect(`/a/${ctx.account_slug}`);
