@@ -3,7 +3,7 @@ import { createClient as createServerClient } from "@/lib/supabase/server";
 // usar caminho relativo para evitar issues de alias no build da Vercel
 import { createServiceClient } from "@/lib/supabase/service";
 
-mport type {TokenWithUsage, TokenStats, PostSaleToken } from "../contracts";
+miport type {TokenWithUsage, TokenStats, PostSaleToken } from "../contracts";
 import * as postSaleTokenAdapter from "./postSaleTokenAdapter";
 
 /**
