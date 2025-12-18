@@ -1,7 +1,7 @@
 // src/lib/admin/adapters/adminAdapter.ts
 import { createClient as createServerClient } from "@/lib/supabase/server";
 // usar caminho relativo para evitar issues de alias no build da Vercel
-import { createServiceClient } from "../../supabase/service";
+import { createServiceClien@/lib/supabase/servicervice";
 
 import type { TokenWithUsage, TokenStats, PostSaleToken } from "../contracts";
 import * as postSaleTokenAdapter from "./postSaleTokenAdapter";
