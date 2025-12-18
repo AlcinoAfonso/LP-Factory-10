@@ -1,4 +1,4 @@
-import { createServiceClient } from "../../supabase/service";
+import { createServiceClient } from "@/lib/supabase/service";
 import type { PostSaleToken, TokenValidation } from "../contracts";
 
 type DBTokenRow = {
