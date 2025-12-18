@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
-import { createServiceClient } from "../../supabase/service"; // ✅ server-only para mutações (relativo estável)
+import { createServiceClient } from "@/lib/supabase/service"; // ✅ server-only para mutações (relativo estável)
 import type { AccountStatus, MemberStatus, MemberRole } from "@/lib/types/status";
 
 /** Tipos de linha do DB */
