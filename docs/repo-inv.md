@@ -1,12 +1,9 @@
-20/12/2025 22:30 — repo-inv.md completo (Markdown Lite Zero) com seção 7 ajustada
-
 20/12/2025 13:31 — repo-inv-2.2
 
 Inventário do Repositório
 
 Propósito: mapa completo e atualizado da estrutura do repositório.
 Status: Documento complementar à Base Técnica (não normativo).
-Última atualização: 16/12/2025
 
 1. Estrutura Geral
 
@@ -174,18 +171,11 @@ Status: Documento complementar à Base Técnica (não normativo).
 
 8. SULB — Arquivos autorizados a importar @supabase/* (allowlist oficial)
 
-* lib/supabase/client.ts
-* lib/supabase/middleware.ts
-* lib/supabase/server.ts
-* lib/supabase/service.ts
-* app/auth/confirm/route.ts
-* app/auth/update-password/page.tsx
-* app/auth/protected/page.tsx
+* Allowlist e regra canônica de imports: ver Base Técnica seção 6.4.
 
 9. Notas de alinhamento (não é regra, é alerta)
 
-* A allowlist SULB da seção 8 é o ponto de referência para imports @supabase/*.
-* No snapshot atual, não há imports relevantes reportados fora da allowlist.
+* Notas removidas para evitar duplicação com a Base Técnica.
 
 10. Regras do Inventário
 
