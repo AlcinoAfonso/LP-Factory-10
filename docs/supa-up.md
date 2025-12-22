@@ -212,21 +212,53 @@ Conector para indexação full-text e busca inteligente.
 
 ---
 
-## 13 — PostgREST 13 *(🟧 Parcial)*  
-2025-09-30  
+22/12/2025 15:07 — Item 13 (PostgREST 13) no formato do print
 
-### Descrição  
-Nova versão estável do PostgREST com suporte a arrays JSON e busca otimizada.  
+## 13 — PostgREST 13 *(✅ Implementado)*
 
-### Valor para o Projeto  
-- Código mais limpo e seguro.  
+2025-12-22
 
-### Valor para o Usuário  
-- Performance superior e menor latência.  
+### Descrição
 
-### Ações Recomendadas  
-1. Atualizar `supabase-js` ≥ 2.56.0.  
-2. Validar compatibilidade de queries.  
+Upgrade do PostgREST para v13 (Supabase Data API). Release incremental com ganhos concretos em consultas, segurança e observabilidade, sem mudar o modelo “Database as API”.
+
+**Ganhos reais (v12.0.2 → v13.0.0):**
+
+* **Spread `...` em relações to-many**: JSON mais simples, com arrays “flat” correlacionados no objeto pai.
+* **FTS nativo em `text/json`**: filtros `fts/plfts/phfts/wfts` direto na coluna, com conversão automática para `tsvector`.
+* **Modificadores `any/all`** em alguns operadores (ex.: `like(any)` / `like(all)`), reduzindo repetição de coluna em filtros.
+* **JWT mais estrito**: se o JWT vier com `kid`, precisa existir chave correspondente no JWKS (senão 401).
+* **Observabilidade melhor**: `Server-Timing` (quando habilitado), `Proxy-Status` em erros e logs mais ricos.
+* **Erros mais explícitos**: `HTTP 416 / PGRST103` para range/paginação inválida; novos códigos PGRST em casos específicos.
+
+**O que NÃO é ganho garantido do v13:**
+
+* “Performance superior”/“menor latência” como regra geral.
+* Mudança no modelo de RLS/multi-tenant (continua 100% Postgres/RLS).
+* Mudança em CRUD/RPC básico (upgrade é transparente; novos recursos são opt-in).
+
+### Valor para o Projeto
+
+* Dashboards com relações (accounts → LPs → sections) ficam mais fáceis de montar com **spread `...`**, reduzindo transformação no frontend.
+* Busca global/textual fica mais simples com **FTS direto em `text/json`**, sem exigir colunas/views `tsvector` dedicadas.
+* Segurança mais robusta por padrão em cenários com JWT customizado (`kid`/JWKS).
+* Debug mais rápido com headers/erros mais informativos (ex.: 416/PGRST103, Proxy-Status).
+
+### Valor para o Usuário
+
+* Listas/tabelas com dados relacionados mais consistentes e menos “quebras” de payload.
+* Busca textual mais simples de evoluir e manter.
+* Erros de paginação/consulta mais claros, reduzindo comportamentos silenciosos.
+
+### Ações Recomendadas
+
+1. Registrar evidência: confirmar no painel `Settings > Infrastructure` (PostgREST 13.x ativo).
+2. Manter clientes atualizados: `supabase-js` ≥ 2.56 (e libs relacionadas).
+3. Se usa JWT customizado/JWKS: validar chaves quando houver `kid` (sem chave correspondente deve falhar 401).
+4. Adotar **spread `...`** nas listagens com relações to-many (usar alias para evitar chaves duplicadas).
+5. Para busca: usar `fts/plfts/phfts/wfts` em colunas `text/json` quando fizer sentido; otimizar com índices no Postgres conforme necessidade.
+6. Tratar `HTTP 416 / PGRST103` no frontend para UX amigável (quando offset/range for inválido).
+7. (Opcional) Se disponível no ambiente: usar `Server-Timing`/`Proxy-Status` para diagnóstico de latência/erros em produção.
 
 ---
 
