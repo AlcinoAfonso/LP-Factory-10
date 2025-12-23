@@ -1,4 +1,4 @@
-19/12/2025 14:11 — LP Factory 10 — Base Técnica v1.9.1 (Markdown Lite Zero)
+23/12/2025 LP Factory 10 — Base Técnica v1.9.2 (Markdown Lite Zero)
 
 Propósito: documentação técnica prescritiva do estado atual do sistema (foco em Next.js + Supabase + Acesso + SQL).
 Regra de formatação: sem sumário/âncoras; sem tabelas; sem code fences; sem crases.
@@ -53,12 +53,12 @@ Backend: Supabase — projeto lp-factory-10
 * Tailwind CSS
 
 ### 2.2 Backend
-
-* Supabase (PostgreSQL 17.6, Auth, Storage, RLS)
-* PostgREST 12.2.12 — pronto para v13
+* Supabase (PostgreSQL 17.6.1.063, Auth, Storage, RLS)
+* Regra: versões devem refletir Settings > Infrastructure (Supabase)
+* PostgREST (Supabase Data API) ≥ 13 (ver painel; ex.: 14.1)
 * @supabase/supabase-js ≥ 2.56.0
 * .maxAffected(1) em mutações 1-a-1
-* JWT HMAC (migração futura para Signing Keys)
+* JWT Signing Keys ativo: Current ECC (P-256); Previous Legacy HS256 (não revogar por padrão); integrações futuras (se houver) devem validar JWT via JWKS + kid
 
 ### 2.3 UI
 
@@ -181,11 +181,13 @@ PR deve falhar se:
 * Cada conta preserva seu snapshot de recursos
 
 ### 3.12 Compatibilidade PostgREST 13
-
-* SDK pronto (@supabase/supabase-js ≥ 2.56.0)
-* .maxAffected(1) ativo para mutações críticas
+* Ambiente atual: PostgREST ≥ 13 (ver painel; ex.: 14.1)
 * Índice GIN accounts_name_gin_idx obrigatório
 * search_path fixado em public
+* Recurso: Spread (...) em relações to-many (disponível). Estado: não utilizado no código atualmente. Regra: em pai + filhos na mesma resposta, usar alias para evitar colisão de chaves
+* Recurso: busca FTS (fts, plfts, phfts, wfts) em text/json (disponível). Estado: sem escopo de telas. Regra: ao ativar busca em UI, preferir wfts como padrão e adicionar índices GIN conforme necessidade de performance
+* UX/Erro: HTTP 416 / PGRST103 em paginação. Interpretação: range/offset inválido. Comportamento obrigatório: tratar como fim da lista (não é erro de sistema), manter itens já carregados e parar novas requisições
+
 
 ### 3.13 Compatibilidade Next.js 15 / React 19
 
@@ -481,18 +483,16 @@ Fluxo:
 4. SSR grava cookie last_account_subdomain para persistir última conta
 
 #### 5.3.4 Observabilidade de Acesso
-
 Eventos:
-
 * account_switcher_open
 * account_selected
 * create_account_click
 * preferred_account_cookie_set (planejado)
-
 Regra:
-
 * formato: { event, scope, latency_ms, timestamp, error? }
 * sem logs com dados sensíveis
+* Headers HTTP (diagnóstico opcional): server-timing e proxy-status não observados nos requests testados via DevTools (páginas públicas, login e rotas autenticadas); se houver necessidade de diagnóstico de latência, considerar instrumentação para expor server-timing e/ou coletar sinais equivalentes via logs/APM; proxy-status depende do provedor/proxy
+
 
 ### 5.4 Comportamento da rota /a (anti-regressão)
 
