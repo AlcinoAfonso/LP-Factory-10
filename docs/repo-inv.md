@@ -157,17 +157,16 @@ Status: Documento complementar à Base Técnica (não normativo).
 
 7. docs — Documentação interna (principais)
 
-* docs/automacao_e_agentes_update.md
-* docs/base-tecnica.md
-* docs/base-tecnica.schema.json
+* docs/automacao-up.md
+* docs/base-tec.md
 * docs/benchmark-de-mercado-update.md
 * docs/estrategia-de-produtos-update.md
 * docs/fluxos.md
 * docs/recursos_gerais_update.md
 * docs/repo-inv.md (este arquivo)
 * docs/roadmap.md
-* docs/supabase-update.md
-* docs/vercel-update.md
+* docs/supa-up.md
+* docs/vercel-up.md
 
 8. SULB — Arquivos autorizados a importar @supabase/* (allowlist oficial)
 
