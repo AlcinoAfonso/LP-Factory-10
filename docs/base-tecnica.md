@@ -604,6 +604,15 @@ Regra: qualquer novo arquivo em app/auth/* não pode importar @supabase/* até s
 
 ## 8. Changelog
 
+### v1.9.2 (23/12/2025) — Infra/Auth/PostgREST (estado atual)
+* Atualizado 2.2 Backend: Supabase PostgreSQL 17.6.1.063.
+* Atualizado 2.2 Backend: PostgREST (Supabase Data API) ≥ 13 (ver painel; ex.: 14.1) + regra “versões devem refletir Settings > Infrastructure”.
+* Atualizado 2.2 Backend: Auth com JWT Signing Keys ativo (Current ECC P-256; Previous Legacy HS256), regra “não revogar anterior por padrão” e validação futura via JWKS + kid.
+* Atualizado 3.12 Compatibilidade PostgREST 13: registrado Spread (...) em relações to-many (disponível; ainda não usado) + regra de alias para evitar colisão de chaves.
+* Atualizado 3.12 Compatibilidade PostgREST 13: registrado FTS (fts/plfts/phfts/wfts) (disponível; sem escopo de telas) + preferência por wfts e índices GIN conforme necessidade.
+* Atualizado 3.12 Compatibilidade PostgREST 13: UX de paginação — HTTP 416 / PGRST103 = fim da lista (não erro de sistema).
+* Atualizado 5.3.4 Observabilidade: server-timing/proxy-status não observados nos requests testados via DevTools; diretriz de instrumentação/logs/APM se necessário.
+
 ### v1.9.0 (18/12/2025) — Simplificação de formatação + consistência lib/
 
 * Removido sumário/âncoras para reduzir erros de Markdown.
