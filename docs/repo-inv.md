@@ -158,13 +158,14 @@ Status: Documento complementar à Base Técnica (não normativo).
 7. docs — Documentação interna (principais)
 
 * docs/auto-agentes-up.md
-* docs/base-tec.md
+* docs/base-tecnica.md
 * docs/benchmark-de-mercado-update.md
 * docs/estrategia-de-produtos-update.md
 * docs/fluxos.md
 * docs/recursos_gerais_update.md
 * docs/repo-inv.md (este arquivo)
 * docs/roadmap.md
+* docs/schema.md
 * docs/supa-up.md
 * docs/vercel-up.md
 
