@@ -129,6 +129,16 @@ Backend: Supabase — projeto lp-factory-10
 	• Runtime oficial do App Router: React 19.x (React DOM 19.x)
 	• Em novos códigos de forms/Server Actions: preferir useActionState (não usar useFormState)
 
+3.14 Padrão de Adapters (vNext)
+* Novas páginas/casos de uso: DB somente via adapters (PATH: src/lib/**/adapters/).
+* 1 adapter = 1 caso de uso; se crescer, dividir (<=150 linhas ou <=6 exports).
+* Adapter retorna DTO final; UI não normaliza; não expor DBRow.
+* Mudança de shape: v2; manter v1 até migrar.
+* Queries: colunas explícitas; listas com order determinístico.
+* Paginação (range): 416/PGRST103 = fim da lista somente em range/paginação.
+* Enums: proibido fallback silencioso.
+* Gate adapters: pode retornar null, mas logs devem diferenciar deny vs error.
+
 4. DB Contract (Schema)
 Fonte única: PATH: docs/schema.md
 Regras:
@@ -153,10 +163,10 @@ Adapters:
 	• src/lib/access/adapters/accountAdapter.ts
 		○ createFromToken(tokenId, actorId) → RPC create_account_with_owner
 		○ renameAndActivate(accountId, name, slug) com .maxAffected(1)
-		○ normaliza AccountStatus, MemberStatus, MemberRole
+		○ AccountStatus inclui trial (PATH: src/lib/types/status.ts), sem fallback silencioso
 	• src/lib/access/adapters/accessContextAdapter.ts
 		○ lê v_access_context_v2
-		○ retorna { account, member } para SSR e AccessProvider
+		○ gate adapter: null permitido; logs deny vs error
 	• src/lib/admin/adapters/adminAdapter.ts
 		○ valida super_admin / platform_admin
 		○ opera post_sale_tokens via postSaleTokenAdapter
@@ -164,11 +174,11 @@ Guards:
 	• src/lib/access/guards.ts
 		○ bloqueia Admin quando não for super_admin ou platform_admin
 Providers:
-	• src/providers/AccessProvider.tsx 
+	• src/providers/AccessProvider.tsx
 		○ carrega contexto de acesso no app
-		○ bloqueia UI quando allow=false
 	• components/features/account-switcher/*
 		○ consome v_user_accounts_list via /api/user/accounts
+
 5.3 Fluxos de Sessão
 5.3.1 Login (MVP)
 	• Modal → autenticação SULB → redirect para /a
@@ -226,10 +236,13 @@ Regra: qualquer novo arquivo em app/auth/ não pode importar @supabase/* até se
 	• Migrations idempotentes (ver 3.8)
 	• Funções críticas: search_path = public (ver 3.12)
 	• SECURITY DEFINER somente quando aprovado (ver 4 e PATH: docs/schema.md)
-	• Tipos canônicos: fonte única em status.ts (ver 3.6 e PATH: docs/schema.md)
+	• Tipos canônicos: fonte única em PATH: src/lib/types/status.ts
 	• /a: público sem sessão; privado só em /a/{account_slug} com gate SSR (ver 5.4)
+	• Adapters vNext: seguir 3.14
 
 8. Changelog
+v1.9.4 (26/12/2025) — Adapters vNext
+	• Adicionada seção 3.14 (regras simples para adapters: caso de uso, DTO final, v2, order, paginação 416=fim somente em range, enums sem fallback silencioso, gate logs deny vs error).
 v1.9.3 (23/12/2025) — Schema extraído para docs/schema.md
 	• Movido o conteúdo da seção 4 (Schema) para PATH: docs/schema.md como DB Contract.
 	• Atualizado checklist/referências para apontar para PATH: docs/schema.md.
@@ -242,8 +255,7 @@ v1.9.2 (23/12/2025) — Infra/Auth/PostgREST (estado atual)
 	• Atualizado 3.12 Compatibilidade PostgREST 13: registrado FTS (fts/plfts/phfts/wfts) (disponível; sem escopo de telas) + preferência por wfts e índices GIN conforme necessidade.
 	• Atualizado 3.12 Compatibilidade PostgREST 13: UX de paginação — HTTP 416 / PGRST103 = fim da lista (não erro de sistema).
 	• Atualizado 5.3.4 Observabilidade: server-timing/proxy-status não observados nos requests testados via DevTools; diretriz de instrumentação/logs/APM se necessário.
-v1.9.0 (18/12/2025) — Simplificação de formatação + consistência lib/
-	• Removido sumário/âncoras para reduzir erros de Markdown.
-	• Consolidada regra canônica de imports Supabase (seção 2.5).
-	• Padronizado lib/supabase/* como núcleo SSR/Auth + service (inclui lib/supabase/service.ts).
-	• Simplificada seção 6 (sem árvore/code fence), mantendo todos os dados.
+
+
+• Mantido o restante do documento alinhado ao estado atual do repositório na data da versão.
+
