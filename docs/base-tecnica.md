@@ -1,4 +1,4 @@
-23/12/2025 LP Factory 10 — Base Técnica v1.9.3 (Markdown Lite Zero)
+26/12/2025 LP Factory 10 — Base Técnica v1.9.4 (Markdown Lite Zero)
 Propósito: documentação técnica prescritiva do estado atual do sistema (foco em Next.js + Supabase + Acesso + SQL).
 Regra de formatação: sem sumário/âncoras; sem tabelas; sem code fences; sem crases.
 
