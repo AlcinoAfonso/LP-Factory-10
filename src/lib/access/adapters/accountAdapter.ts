@@ -41,7 +41,7 @@ export type MemberInfo = {
 /** Normalização */
 const ROLES = ["owner", "admin", "editor", "viewer"] as const;
 const MSTAT = ["pending", "active", "inactive", "revoked"] as const;
-// ⚠️ Tipos canônicos atuais não incluem 'trial'
+// Tipos canônicos atuais incluem 'trial'
 const ASTAT = ["active", "inactive", "suspended", "pending_setup", "trial"] as const;
 
 export const normalizeRole = (s?: string): MemberRole => {
