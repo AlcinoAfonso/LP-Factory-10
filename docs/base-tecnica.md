@@ -6,7 +6,6 @@ Regra de formatação: sem sumário/âncoras; sem tabelas; sem code fences; sem 
 	• Sem crases; sem blocos de código; sem tabelas.
 	• Preservar exatamente títulos e numeração.
 	• Não reformatar: não converter parágrafos em lista; não mexer em linhas que não forem necessárias.
-	• Alterar somente o conteúdo solicitado e entregar sempre o documento completo atualizado (não patch).
 
 1. Identificação do Projeto
 Nome: LP Factory 10
@@ -36,7 +35,7 @@ Backend: Supabase — projeto lp-factory-10
 2.2 Backend
 	• Supabase (PostgreSQL 17.6.1.063, Auth, Storage, RLS)
 	• Regra: versões devem refletir Settings > Infrastructure (Supabase)
-	• PostgREST (Supabase Data API) ≥ 13 (ver painel; ex.: 14.1)
+	• PostgREST (Supabase Data API) 14.1
 	• @supabase/supabase-js ≥ 2.56.0
 	• .maxAffected(1) em mutações 1-a-1
 	• JWT Signing Keys ativo: Current ECC (P-256); Previous Legacy HS256 (não revogar por padrão); integrações futuras (se houver) devem validar JWT via JWKS + kid
@@ -115,8 +114,8 @@ Backend: Supabase — projeto lp-factory-10
 	• Hierarquia: section → lp → account → plan → default
 	• Cada conta preserva seu snapshot de recursos
 
-3.12 Compatibilidade PostgREST 13
-	•  Ambiente atual: PostgREST ≥ 13 (ver painel; ex.: 14.1)
+3.12 Compatibilidade PostgREST 14.1
+	•  Ambiente atual: PostgREST 14.1
 	• Índice GIN accounts_name_gin_idx obrigatório quando a feature de busca por nome (FTS) estiver ativa
 	• search_path fixado em public
 	•  Recurso: Spread (...) em relações to-many (disponível). Estado: não utilizado no código atualmente. Regra: em pai + filhos na mesma resposta, usar alias para evitar colisão de chaves
@@ -158,12 +157,14 @@ Regras:
 	• Atributos obrigatórios: HttpOnly; Secure; SameSite=Lax; Max-Age=2592000; Path=/
 	• Lido apenas no servidor (middleware) para redirecionar /a → /a/{subdomain}
 	• No logout, o cookie deve expirar (Max-Age=0)
+	• last_account_subdomain só é definido em /a/{account_slug} após allow; /a/home não define cookie.
+
 5.2 Adapters, Guards, Providers
 Adapters:
 	• src/lib/access/adapters/accountAdapter.ts
 		○ createFromToken(tokenId, actorId) → RPC create_account_with_owner
 		○ renameAndActivate(accountId, name, slug) com .maxAffected(1)
-		○ AccountStatus inclui trial (PATH: src/lib/types/status.ts), sem fallback silencioso
+		○ ○ normalizeAccountStatus preserva trial (trial não pode virar active por fallback)
 	• src/lib/access/adapters/accessContextAdapter.ts
 		○ lê v_access_context_v2
 		○ gate adapter: null permitido; logs deny vs error
@@ -201,6 +202,7 @@ Providers:
 		○ existe sessão válida, e
 		○ conta foi resolvida (cookie last_account_subdomain ou fallback)
 	• allow/deny é responsabilidade do gate SSR em /a/{account_slug}
+	• /a/home é pública e bypassa o gate SSR de conta em app/a/[account]/layout.tsx
 
 6. Estrutura de Arquivos Essencial
 6.1 Visão rápida (fonte única)
@@ -249,11 +251,11 @@ v1.9.3 (23/12/2025) — Schema extraído para docs/schema.md
 	• Mantido o restante do documento alinhado ao estado atual do zip35 (v1.9.2).
 v1.9.2 (23/12/2025) — Infra/Auth/PostgREST (estado atual)
 	• Atualizado 2.2 Backend: Supabase PostgreSQL 17.6.1.063.
-	• Atualizado 2.2 Backend: PostgREST (Supabase Data API) ≥ 13 (ver painel; ex.: 14.1) + regra “versões devem refletir Settings > Infrastructure”.
+	• Atualizado 2.2 Backend: PostgREST (Supabase Data API) 14.1 + regra “versões devem refletir Settings > Infrastructure”.
 	• Atualizado 2.2 Backend: Auth com JWT Signing Keys ativo (Current ECC P-256; Previous Legacy HS256), regra “não revogar anterior por padrão” e validação futura via JWKS + kid.
-	• Atualizado 3.12 Compatibilidade PostgREST 13: registrado Spread (...) em relações to-many (disponível; ainda não usado) + regra de alias para evitar colisão de chaves.
-	• Atualizado 3.12 Compatibilidade PostgREST 13: registrado FTS (fts/plfts/phfts/wfts) (disponível; sem escopo de telas) + preferência por wfts e índices GIN conforme necessidade.
-	• Atualizado 3.12 Compatibilidade PostgREST 13: UX de paginação — HTTP 416 / PGRST103 = fim da lista (não erro de sistema).
+	• Atualizado 3.12 Compatibilidade PostgREST 14.1: registrado Spread (...) em relações to-many (disponível; ainda não usado) + regra de alias para evitar colisão de chaves.
+	• Atualizado 3.12 Compatibilidade PostgREST 14.1: registrado FTS (fts/plfts/phfts/wfts) (disponível; sem escopo de telas) + preferência por wfts e índices GIN conforme necessidade.
+	• Atualizado 3.12 Compatibilidade PostgREST 14.1: UX de paginação — HTTP 416 / PGRST103 = fim da lista (não erro de sistema).
 	• Atualizado 5.3.4 Observabilidade: server-timing/proxy-status não observados nos requests testados via DevTools; diretriz de instrumentação/logs/APM se necessário.
 
 
