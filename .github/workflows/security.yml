@@ -2,24 +2,44 @@ name: Security Checks
 
 on:
   pull_request:
-    branches: [ "main", "macro" ]
+    branches: ["main", "macro"]
 
 jobs:
   no-implicit-flow:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
       - name: Block implicit flow patterns in client/UI
+        shell: bash
         run: |
-          # Bloqueia padrões proibidos em src/ e app/, exceto o confirm server
-          ! grep -R -nE "#access_token|refresh_token|setSession\\(|getSessionFromUrl\\(" src/ app/ || (
-            echo "❌ Forbidden implicit flow (tokens/setSession/getSessionFromUrl) found in client/UI." && exit 1
-          )
-          # verifyOtp só pode aparecer no handler server de confirm
-          # Lista qualquer ocorrência fora de app/auth/confirm/**
-          OFFENDERS=$(grep -R -n "verifyOtp(" src/ app/ | grep -v "app/auth/confirm/")
+          set -euo pipefail
+
+          echo "# Bloqueia padrões proibidos em src/ e app/ (com log dos ofensores)"
+
+          TARGETS=()
+          [ -d "src" ] && TARGETS+=("src")
+          [ -d "app" ] && TARGETS+=("app")
+
+          if [ ${#TARGETS[@]} -eq 0 ]; then
+            echo "No src/ or app/ folders found; skipping."
+            exit 0
+          fi
+
+          # 1) Tokens/setSession/getSessionFromUrl NÃO podem aparecer em client/UI
+          OFFENDERS="$(grep -R -n -E "access_token|refresh_token|setSession\(|getSessionFromUrl\(" "${TARGETS[@]}" || true)"
           if [ -n "$OFFENDERS" ]; then
-            echo "❌ verifyOtp() found outside server confirm handler:"
+            echo "❌ Forbidden implicit flow (tokens/setSession/getSessionFromUrl) found in client/UI:"
             echo "$OFFENDERS"
             exit 1
           fi
+
+          # 2) verifyOtp só pode aparecer em app/auth/confirm/**
+          OTP_OFFENDERS="$(grep -R -n "verifyOtp(" "${TARGETS[@]}" | grep -v "app/auth/confirm/" || true)"
+          if [ -n "$OTP_OFFENDERS" ]; then
+            echo "❌ verifyOtp() found outside server confirm handler:"
+            echo "$OTP_OFFENDERS"
+            exit 1
+          fi
+
+          echo "✅ no-implicit-flow OK"
