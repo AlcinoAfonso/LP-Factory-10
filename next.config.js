@@ -1,8 +1,6 @@
 /** @type {import('next').NextConfig} */
-const path = require('path');
 
-const nextConfig =  { {
-
+const nextConfig = {
   // 6.3.1 — validação do `next` em /auth/confirm (somente caminhos internos)
   async rewrites() {
     return [
@@ -27,8 +25,14 @@ const nextConfig =  { {
   // 6.3.2 — noindex para rotas de auth/protected (sem tocar no SULB)
   async headers() {
     return [
-      { source: '/auth/:path*', headers: [{ key: 'X-Robots-Tag', value: 'noindex, nofollow, noarchive' }] },
-      { source: '/protected', headers: [{ key: 'X-Robots-Tag', value: 'noindex, nofollow, noarchive' }] },
+      {
+        source: '/auth/:path*',
+        headers: [{ key: 'X-Robots-Tag', value: 'noindex, nofollow, noarchive' }],
+      },
+      {
+        source: '/protected',
+        headers: [{ key: 'X-Robots-Tag', value: 'noindex, nofollow, noarchive' }],
+      },
     ];
   },
 
