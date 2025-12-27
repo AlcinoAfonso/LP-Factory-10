@@ -1,14 +1,7 @@
 /** @type {import('next').NextConfig} */
 const path = require('path');
 
-const nextConfig = {
-  webpack: (config) => {
-    // Alias do app
-    config.resolve.alias['@'] = path.resolve(__dirname, 'src');
-    // Alias específico para o SULB: garante que "@/lib/supabase/*" aponte para /lib/supabase (raiz)
-    config.resolve.alias['@/lib/supabase'] = path.resolve(__dirname, 'lib/supabase');
-    return config;
-  },
+const nextConfig =  { {
 
   // 6.3.1 — validação do `next` em /auth/confirm (somente caminhos internos)
   async rewrites() {
