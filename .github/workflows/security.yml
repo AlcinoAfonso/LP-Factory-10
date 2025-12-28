@@ -15,9 +15,8 @@ jobs:
         run: |
           set -euo pipefail
 
-          echo "# Bloqueia padrões proibidos em src/ e app/, exceto o confirm server"
+          echo "# Bloqueia padrões proibidos em src/ e app/ (com log dos ofensores)"
 
-          # Alvos existentes (evita erro se src/ não existir)
           TARGETS=()
           [ -d "src" ] && TARGETS+=("src")
           [ -d "app" ] && TARGETS+=("app")
@@ -27,7 +26,7 @@ jobs:
             exit 0
           fi
 
-          # 1) Tokens/setSession/getSessionFromUrl NUNCA podem aparecer em client/UI
+          # 1) Tokens/setSession/getSessionFromUrl NÃO podem aparecer em client/UI
           OFFENDERS="$(grep -R -n -E "access_token|refresh_token|setSession\(|getSessionFromUrl\(" "${TARGETS[@]}" || true)"
           if [ -n "$OFFENDERS" ]; then
             echo "❌ Forbidden implicit flow (tokens/setSession/getSessionFromUrl) found in client/UI:"
@@ -35,7 +34,7 @@ jobs:
             exit 1
           fi
 
-          # 2) verifyOtp só pode aparecer no handler server de confirm
+          # 2) verifyOtp só pode aparecer em app/auth/confirm/**
           OTP_OFFENDERS="$(grep -R -n "verifyOtp(" "${TARGETS[@]}" | grep -v "app/auth/confirm/" || true)"
           if [ -n "$OTP_OFFENDERS" ]; then
             echo "❌ verifyOtp() found outside server confirm handler:"
