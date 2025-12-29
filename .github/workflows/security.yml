@@ -20,33 +20,31 @@ jobs:
         run: |
           set -euo pipefail
 
-          # Só varre diretórios que existem (evita erro/falso fail)
+          # Só escaneia diretórios que existirem (evita erro/falso "pass")
           SCAN_PATHS=()
           [ -d "src" ] && SCAN_PATHS+=("src")
           [ -d "app" ] && SCAN_PATHS+=("app")
 
-          if [ "${#SCAN_PATHS[@]}" -eq 0 ]; then
-            echo "ℹ️ No src/ or app/ directory found; skipping client/UI checks."
+          if [ ${#SCAN_PATHS[@]} -eq 0 ]; then
+            echo "ℹ️ Nenhum diretório src/ ou app/ encontrado. Nada para escanear."
             exit 0
           fi
 
-          # 1) Bloqueia implicit flow patterns em client/UI (exceto confirm server)
-          FORBIDDEN_REGEX='(#access_token|refresh_token|setSession\(|getSessionFromUrl\()'
-          MATCHES=$(grep -R -nE "$FORBIDDEN_REGEX" "${SCAN_PATHS[@]}" 2>/dev/null | grep -v "app/auth/confirm/" || true)
+          echo "🔎 Scanning paths: ${SCAN_PATHS[*]}"
 
-          if [ -n "$MATCHES" ]; then
+          # Bloqueia padrões proibidos em src/ e app/
+          if grep -R -nE '#access_token|refresh_token|setSession\(|getSessionFromUrl\(' "${SCAN_PATHS[@]}"; then
             echo "❌ Forbidden implicit flow (tokens/setSession/getSessionFromUrl) found in client/UI."
-            echo "$MATCHES"
             exit 1
           fi
 
-          # 2) verifyOtp() só pode aparecer no handler server de confirm (app/auth/confirm/**)
-          OFFENDERS=$(grep -R -n "verifyOtp(" "${SCAN_PATHS[@]}" 2>/dev/null | grep -v "app/auth/confirm/" || true)
-
+          # verifyOtp só pode aparecer no handler server de confirm
+          # Lista qualquer ocorrência fora de app/auth/confirm/**
+          OFFENDERS="$(grep -R -n 'verifyOtp(' "${SCAN_PATHS[@]}" | grep -v 'app/auth/confirm/' || true)"
           if [ -n "$OFFENDERS" ]; then
-            echo "❌ verifyOtp() found outside server confirm handler (app/auth/confirm/**):"
+            echo "❌ verifyOtp() found outside server confirm handler:"
             echo "$OFFENDERS"
             exit 1
           fi
 
-          echo "✅ Security checks passed."
+          echo "✅ Security scan passed."
