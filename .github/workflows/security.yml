@@ -2,9 +2,7 @@ name: Security Checks
 
 on:
   pull_request:
-    branches:
-      - main
-      - macro
+    branches: ["main", "macro"]
 
 permissions:
   contents: read
@@ -20,31 +18,33 @@ jobs:
         run: |
           set -euo pipefail
 
-          # Só escaneia diretórios que existirem (evita erro/falso "pass")
-          SCAN_PATHS=()
-          [ -d "src" ] && SCAN_PATHS+=("src")
-          [ -d "app" ] && SCAN_PATHS+=("app")
+          echo "# Bloqueia padrões proibidos em src/ e app/ (com log dos ofensores)"
 
-          if [ ${#SCAN_PATHS[@]} -eq 0 ]; then
+          TARGETS=()
+          [ -d "src" ] && TARGETS+=("src")
+          [ -d "app" ] && TARGETS+=("app")
+
+          if [ ${#TARGETS[@]} -eq 0 ]; then
             echo "ℹ️ Nenhum diretório src/ ou app/ encontrado. Nada para escanear."
             exit 0
           fi
 
-          echo "🔎 Scanning paths: ${SCAN_PATHS[*]}"
+          echo "🔎 Scanning paths: ${TARGETS[*]}"
 
-          # Bloqueia padrões proibidos em src/ e app/
-          if grep -R -nE '#access_token|refresh_token|setSession\(|getSessionFromUrl\(' "${SCAN_PATHS[@]}"; then
-            echo "❌ Forbidden implicit flow (tokens/setSession/getSessionFromUrl) found in client/UI."
-            exit 1
-          fi
-
-          # verifyOtp só pode aparecer no handler server de confirm
-          # Lista qualquer ocorrência fora de app/auth/confirm/**
-          OFFENDERS="$(grep -R -n 'verifyOtp(' "${SCAN_PATHS[@]}" | grep -v 'app/auth/confirm/' || true)"
+          # 1) Tokens/setSession/getSessionFromUrl NÃO podem aparecer em client/UI
+          OFFENDERS="$(grep -R -n -E "access_token|refresh_token|setSession\(|getSessionFromUrl\(" "${TARGETS[@]}" || true)"
           if [ -n "$OFFENDERS" ]; then
-            echo "❌ verifyOtp() found outside server confirm handler:"
+            echo "❌ Forbidden implicit flow (tokens/setSession/getSessionFromUrl) found in client/UI:"
             echo "$OFFENDERS"
             exit 1
           fi
 
-          echo "✅ Security scan passed."
+          # 2) verifyOtp só pode aparecer em app/auth/confirm/**
+          OTP_OFFENDERS="$(grep -R -n "verifyOtp(" "${TARGETS[@]}" | grep -v "app/auth/confirm/" || true)"
+          if [ -n "$OTP_OFFENDERS" ]; then
+            echo "❌ verifyOtp() found outside server confirm handler:"
+            echo "$OTP_OFFENDERS"
+            exit 1
+          fi
+
+          echo "✅ no-implicit-flow OK"

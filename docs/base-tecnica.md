@@ -1,4 +1,5 @@
-26/12/2025 LP Factory 10 — Base Técnica v1.9.4 (Markdown Lite Zero)
+26/12/2025 LP Factory 10 — Base Técnica v1.9.4 — Referência normativa ativa
+(Markdown Lite Zero)
 Propósito: documentação técnica prescritiva do estado atual do sistema (foco em Next.js + Supabase + Acesso + SQL).
 Regra de formatação: sem sumário/âncoras; sem tabelas; sem code fences; sem crases.
 
@@ -12,21 +13,26 @@ Nome: LP Factory 10
 Repositório: https://github.com/AlcinoAfonso/LP-Factory-10
 Controle de versão: GitHub Web (edição e commit pelo navegador; não assumir repo local, terminal, git cli ou paths locais)
 Deploy: Vercel (preview + produção)
-Backend: Supabase — projeto lp-factory-10
-1.1 Variáveis Obrigatórias (server-only)
+
+1.1 Backend: Supabase — projeto lp-factory-10
+1.1.1 Segredos e flags de execução (server-side)
 	• SUPABASE_SECRET_KEY
 	• ACCESS_CONTEXT_ENFORCED=true
 	• ACCESS_CTX_USE_V2=true
-	• RUNTIME_NODEJS=22.x (Vercel)
-	• RUNTIME_TYPESCRIPT=5.5.4 (repo)
-1.2 Variáveis Públicas
+
+1.1.2 Variáveis Públicas
 	• NEXT_PUBLIC_SUPABASE_URL
 	• NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
-1.3 Convenções
+
+1.1.3 Convenções
 	• TypeScript: camelCase
 	• SQL/Postgres: snake_case
 	• Pipeline: GitHub Web → Vercel
 	• Regra: não usar SUPABASE_SERVICE_ROLE_KEY (usar apenas SUPABASE_SECRET_KEY)
+
+1.1.4 Runtime & Toolchain
+	• Node.js: 22.x (Vercel > Settings > Build and Deployment > Node.js Version)
+	• TypeScript: 5.5.4 (repo; versão do compilador)
 
 2. Stack & Dependências
 2.1 Framework
@@ -75,7 +81,7 @@ Backend: Supabase — projeto lp-factory-10
 	• Tipos canônicos só em src/lib/types/status.ts.
 3.4 CI/Lint (Bloqueios)
 	• Não há CI/Lint com bloqueios em uso no projeto no momento.
-	• Regra: antes de merge, seguir obrigatoriamente o checklist da seção 7 (anti-regressão)..
+	• Regra: antes de merge, seguir obrigatoriamente o checklist da seção 7 (anti-regressão).
 3.5 Secrets & Variáveis
 	• Server-only: SUPABASE_SECRET_KEY, STRIPE_SECRET_KEY (futuro)
 	• Públicas: NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
@@ -117,10 +123,10 @@ Backend: Supabase — projeto lp-factory-10
 	• Cada conta preserva seu snapshot de recursos
 
 3.12 Compatibilidade PostgREST 14.1
-	•  Ambiente atual: PostgREST 14.1
+	• Ambiente atual: PostgREST 14.1
 	• Índice GIN accounts_name_gin_idx obrigatório quando a feature de busca por nome (FTS) estiver ativa
 	• search_path fixado em public
-	•  Recurso: Spread (...) em relações to-many (disponível). Estado: não utilizado no código atualmente. Regra: em pai + filhos na mesma resposta, usar alias para evitar colisão de chaves
+	• Recurso: Spread (...) em relações to-many (disponível). Estado: não utilizado no código atualmente. Regra: em pai + filhos na mesma resposta, usar alias para evitar colisão de chaves
 	• Recurso: busca FTS (fts, plfts, phfts, wfts) em text/json (disponível). Estado: sem escopo de telas. Regra: ao ativar busca em UI, preferir wfts como padrão e adicionar índices GIN conforme necessidade de performance
 	• UX/Erro: HTTP 416 / PGRST103 em paginação. Interpretação: range/offset inválido. Comportamento obrigatório: tratar como fim da lista (não é erro de sistema), manter itens já carregados e parar novas requisições
 
@@ -131,14 +137,14 @@ Backend: Supabase — projeto lp-factory-10
 	• Em novos códigos de forms/Server Actions: preferir useActionState (não usar useFormState)
 
 3.14 Padrão de Adapters (vNext)
-* Novas páginas/casos de uso: DB somente via adapters (PATH: src/lib/**/adapters/).
-* 1 adapter = 1 caso de uso; se crescer, dividir (<=150 linhas ou <=6 exports).
-* Adapter retorna DTO final; UI não normaliza; não expor DBRow.
-* Mudança de shape: v2; manter v1 até migrar.
-* Queries: colunas explícitas; listas com order determinístico.
-* Paginação (range): 416/PGRST103 = fim da lista somente em range/paginação.
-* Enums: proibido fallback silencioso.
-* Gate adapters: pode retornar null, mas logs devem diferenciar deny vs error.
+	• Novas páginas/casos de uso: DB somente via adapters (PATH: src/lib/**/adapters/).
+	• 1 adapter = 1 caso de uso; se crescer, dividir (<=150 linhas ou <=6 exports).
+	• Adapter retorna DTO final; UI não normaliza; não expor DBRow.
+	• Mudança de shape: v2; manter v1 até migrar.
+	• Queries: colunas explícitas; listas com order determinístico.
+	• Paginação (range): 416/PGRST103 = fim da lista somente em range/paginação.
+	• Enums: proibido fallback silencioso.
+	• Gate adapters: pode retornar null, mas logs devem diferenciar deny vs error.
 
 4. DB Contract (Schema)
 Fonte única: PATH: docs/schema.md
@@ -162,21 +168,21 @@ Regras:
 	• last_account_subdomain só é definido em /a/{account_slug} após allow; /a/home não define cookie.
 
 5.2 Adapters, Guards, Providers
-Adapters:
+5.2.1 Adapters
 	• src/lib/access/adapters/accountAdapter.ts
 		○ createFromToken(tokenId, actorId) → RPC create_account_with_owner
 		○ renameAndActivate(accountId, name, slug) com .maxAffected(1)
-		○ ○ normalizeAccountStatus preserva trial (trial não pode virar active por fallback)
+		○ normalizeAccountStatus preserva trial (trial não pode virar active por fallback)
 	• src/lib/access/adapters/accessContextAdapter.ts
 		○ lê v_access_context_v2
 		○ gate adapter: null permitido; logs deny vs error
 	• src/lib/admin/adapters/adminAdapter.ts
 		○ valida super_admin / platform_admin
 		○ opera post_sale_tokens via postSaleTokenAdapter
-Guards:
+5.2.2 Guards
 	• src/lib/access/guards.ts
 		○ bloqueia Admin quando não for super_admin ou platform_admin
-Providers:
+5.2.3 Providers
 	• src/providers/AccessProvider.tsx
 		○ carrega contexto de acesso no app
 	• components/features/account-switcher/*

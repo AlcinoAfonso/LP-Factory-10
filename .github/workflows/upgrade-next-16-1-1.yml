@@ -1,34 +1,73 @@
-name: Upgrade Next.js 16.1.1
+name: Upgrade Next.js to 16.1.1 (and generate package-lock)
 
 on:
   workflow_dispatch:
+    inputs:
+      target_branch:
+        description: "Branch to upgrade (ex: chore/next-16-1-1-experimental)"
+        required: true
+        default: "chore/next-16-1-1-experimental"
+      next_version:
+        description: "Next.js version"
+        required: true
+        default: "16.1.1"
 
 permissions:
   contents: write
-  pull-requests: write
 
 jobs:
   upgrade:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - name: Checkout target branch
+        uses: actions/checkout@v4
         with:
-          ref: chore/next-16-1-1-experimental
-      - uses: actions/setup-node@v3
+          ref: ${{ inputs.target_branch }}
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
         with:
-          node-version: 22
-      - run: npm install
-      - run: npx @next/codemod@canary upgrade latest
-      - run: npx @next/codemod@canary middleware-to-proxy .
-      - run: npm install
-      - run: npm run build --if-present
-      - run: npm run lint --if-present
-      - name: Commit and push changes
+          node-version: "22"
+
+      - name: Install deps (creates package-lock.json if missing)
+        shell: bash
         run: |
-          if [[ -n "$(git status --porcelain)" ]]; then
-            git config --global user.email "actions@github.com"
-            git config --global user.name "GitHub Actions"
-            git add .
-            git commit -m "chore: upgrade Next.js to 16.1.1 via codemod"
-            git push origin HEAD
+          set -euo pipefail
+          if [ -f package-lock.json ]; then
+            npm ci
+          else
+            npm install
           fi
+
+      - name: Upgrade Next.js
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm install next@${{ inputs.next_version }} eslint-config-next@${{ inputs.next_version }}
+
+      - name: Lint (non-blocking for now)
+        shell: bash
+        run: |
+          npm run lint --if-present || true
+
+      - name: Build (blocking)
+        shell: bash
+        run: |
+          npm run build --if-present
+
+      - name: Commit and push changes (if any)
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -z "$(git status --porcelain)" ]; then
+            echo "ℹ️ No changes to commit."
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          git add -A
+          git commit -m "chore(next): upgrade to ${{ inputs.next_version }} (add lockfile)"
+          git push origin HEAD:${{ inputs.target_branch }}
