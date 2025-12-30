@@ -2,15 +2,32 @@
   "compilerOptions": {
     "baseUrl": ".",
     "paths": {
-      "@/lib/supabase/*": ["lib/supabase/*"],
-      "@/lib/access/*": ["src/lib/access/*"],
-      "@/lib/utils": ["src/lib/utils"],
-      "@/supabase/*": ["lib/supabase/*"],
-      "@/components/*": ["components/*"],
-      "@/*": ["src/*", "lib/*"]
+      "@/lib/supabase/*": [
+        "lib/supabase/*"
+      ],
+      "@/lib/access/*": [
+        "src/lib/access/*"
+      ],
+      "@/lib/utils": [
+        "src/lib/utils"
+      ],
+      "@/supabase/*": [
+        "lib/supabase/*"
+      ],
+      "@/components/*": [
+        "components/*"
+      ],
+      "@/*": [
+        "src/*",
+        "lib/*"
+      ]
     },
     "target": "ES2022",
-    "lib": ["dom", "dom.iterable", "esnext"],
+    "lib": [
+      "dom",
+      "dom.iterable",
+      "esnext"
+    ],
     "allowJs": false,
     "skipLibCheck": true,
     "strict": true,
@@ -20,11 +37,23 @@
     "moduleResolution": "bundler",
     "resolveJsonModule": true,
     "isolatedModules": true,
-    "jsx": "preserve",
+    "jsx": "react-jsx",
     "incremental": true,
-    "plugins": [{ "name": "next" }],
+    "plugins": [
+      {
+        "name": "next"
+      }
+    ],
     "forceConsistentCasingInFileNames": true
   },
-  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
-  "exclude": ["node_modules"]
+  "include": [
+    "next-env.d.ts",
+    "**/*.ts",
+    "**/*.tsx",
+    ".next/types/**/*.ts",
+    ".next/dev/types/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules"
+  ]
 }

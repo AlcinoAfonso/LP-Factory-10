@@ -20,73 +20,42 @@ async function updatePasswordAction(formData: FormData) {
 
   const password = String(formData.get("password") || "");
   const confirm = String(formData.get("confirm") || "");
-  const token_hash = String(formData.get("token_hash") || "");
-  const type = String(formData.get("type") || "recovery") as "recovery";
 
   const validationError = validatePassword(password, confirm);
   if (validationError) {
-    redirect(
-      `/auth/update-password?e=${encodeURIComponent(validationError)}${
-        token_hash
-          ? `&token_hash=${encodeURIComponent(token_hash)}&type=${type}`
-          : ""
-      }`
-    );
+    redirect(`/auth/update-password?e=${encodeURIComponent(validationError)}`);
   }
 
   const supabase = await createClient();
 
-  // 1) Cria sessão usando o token (consome UMA ÚNICA vez) se ainda não houver
-  let {
+  // Precisa estar com sessão válida (criada em /auth/confirm)
+  const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user && token_hash) {
-    const { error } = await supabase.auth.verifyOtp({ type, token_hash });
-    if (error) {
-      // Link inválido/expirado/ já usado
-      redirect(
-        `/auth/update-password?e=${encodeURIComponent(
-          "Link inválido ou expirado. Solicite um novo e-mail."
-        )}`
-      );
-    }
-    const refreshed = await supabase.auth.getUser();
-    user = refreshed.data.user;
-  }
 
-  // 2) Sem sessão => fluxo inválido
   if (!user) {
     redirect(
       `/auth/error?error=${encodeURIComponent(
-        "Auth session missing! Solicite um novo e-mail de reset."
+        "Sessão ausente. Abra o link do e-mail novamente para confirmar e tente de novo."
       )}`
     );
   }
 
-  // 3) Atualiza a senha
   const { error } = await supabase.auth.updateUser({ password });
   if (error) {
     const msg =
       error.message === "Auth session missing!"
-        ? "Sessão ausente. Solicite um novo e-mail de reset."
+        ? "Sessão ausente. Abra o link do e-mail novamente e tente de novo."
         : error.message;
-    redirect(
-      `/auth/update-password?e=${encodeURIComponent(msg)}${
-        token_hash
-          ? `&token_hash=${encodeURIComponent(token_hash)}&type=${type}`
-          : ""
-      }`
-    );
+
+    redirect(`/auth/update-password?e=${encodeURIComponent(msg)}`);
   }
 
-  // 4) Sucesso
   redirect("/a/home");
 }
 
 type UpdatePasswordSearchParams = {
   e?: string;
-  token_hash?: string;
-  type?: string;
 };
 
 export default async function UpdatePasswordPage(props: any) {
@@ -94,7 +63,6 @@ export default async function UpdatePasswordPage(props: any) {
     ? await props.searchParams
     : undefined) as UpdatePasswordSearchParams | undefined;
 
-  // ⚠️ Não chamamos verifyOtp no GET para não consumir o token antes do submit
   const errorMsg = searchParams?.e;
 
   return (
@@ -111,22 +79,6 @@ export default async function UpdatePasswordPage(props: any) {
       ) : null}
 
       <form action={updatePasswordAction} className="grid gap-3">
-        {/* Passa o token para a Server Action garantir a sessão no submit */}
-        {searchParams?.token_hash ? (
-          <>
-            <input
-              type="hidden"
-              name="token_hash"
-              value={searchParams.token_hash}
-            />
-            <input
-              type="hidden"
-              name="type"
-              value={searchParams.type ?? "recovery"}
-            />
-          </>
-        ) : null}
-
         <label className="grid gap-1">
           <span className="text-sm font-medium">Nova senha</span>
           <input
