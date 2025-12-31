@@ -1,0 +1,64 @@
+name: Doc Agent
+
+on:
+  workflow_dispatch:
+    inputs:
+      report_path:
+        description: "Path do JSON Actions-ready (ex: reports/base-tecnica-2025-12-31.json)"
+        required: true
+        default: "reports/base-tecnica-YYYY-MM-DD.json"
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: doc-agent-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Validate report file exists
+        run: |
+          if [ ! -f "${{ inputs.report_path }}" ]; then
+            echo "Report not found: ${{ inputs.report_path }}" >&2
+            exit 1
+          fi
+
+      - name: Apply report (scripts/apply-doc-report.mjs)
+        run: |
+          node scripts/apply-doc-report.mjs "${{ inputs.report_path }}"
+
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v6
+        with:
+          branch: doc-agent/${{ github.run_id }}
+          delete-branch: true
+          title: "Doc Agent: aplicar report ${{ inputs.report_path }}"
+          commit-message: "Doc Agent: aplicar report"
+          body: |
+            Aplicação automática do report JSON.
+
+            - Report: `${{ inputs.report_path }}`
+            - Workflow run: `${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}`
+          labels: |
+            docs
+            automation
+            needs-review
+          signoff: false
+
+      - name: Summary
+        run: |
+          echo "Report: ${{ inputs.report_path }}" >> $GITHUB_STEP_SUMMARY
+          echo "PR criado automaticamente (ver etapa Create Pull Request)." >> $GITHUB_STEP_SUMMARY
