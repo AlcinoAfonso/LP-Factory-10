@@ -35,11 +35,16 @@ Deploy: Vercel (preview + produção)
 	• TypeScript: 5.5.4 (repo; versão do compilador)
 
 2. Stack & Dependências
-2.1 Framework
-	• Next.js 15.5.7 (App Router, SSR, Server Components) — upgrade devido ao CVE-2025-55182
-	• React 19.2.x + React DOM 19.2.x (runtime oficial do Next.js 15)
-	• TypeScript (strict)
-	• Tailwind CSS
+2.1 Framework (Frontend)
+
+• Next.js 16.1.1 (App Router)
+• React 19.2.x
+• TypeScript 5.5.4
+• Node 22 (Vercel + GitHub Actions)
+• Package manager: npm
+• Arquivo canônico (lockfile): package-lock.json (deve ficar commitado e alinhado ao package.json)
+• Build: Next 16.x usa Turbopack por padrão no build; evitar customizações via webpack() no next.config (preferir alias via tsconfig.json > paths)
+• Observação: pode aparecer warning “middleware file convention is deprecated”; migrar para proxy.* apenas quando necessário (ex.: exigência do build/codemod)
 2.2 Backend
 	• Supabase (PostgreSQL 17.6.1.063, Auth, Storage, RLS)
 	• Regra: versões devem refletir Settings > Infrastructure (Supabase)
@@ -79,9 +84,28 @@ Deploy: Vercel (preview + produção)
 		○ adapters/ (DB) → contracts.ts (interface pública) → index.ts (re-exports)
 	• Nenhum módulo acessa DB fora de adapters.
 	• Tipos canônicos só em src/lib/types/status.ts.
-3.4 CI/Lint (Bloqueios)
-	• Não há CI/Lint com bloqueios em uso no projeto no momento.
-	• Regra: antes de merge, seguir obrigatoriamente o checklist da seção 7 (anti-regressão).
+3.4 CI / Lint (bloqueios)
+
+• CI principal é via GitHub Actions + Vercel Preview (validação por PR)
+• Security (bloqueante em PR):
+• PATH: .github/workflows/security.yml (job: no-implicit-flow)
+• Regra: bloquear padrões de implicit flow (access_token/refresh_token/setSession/getSessionFromUrl) em client/UI
+• Regra: verifyOtp() só pode existir em app/auth/confirm/**
+• Workflow de upgrade (manutenção): ver seção 3.4.1
+• Lint:
+• No workflow de upgrade, lint é non-blocking (não deve impedir o bump/lockfile)
+• Regra de merge (mínimo): checks verdes + Vercel Preview ok + smoke tests de acesso (login/logout/reset de senha/navegação pós-login)
+3.4.1 Workflows de manutenção (Upgrade Next.js + lockfile)
+
+• PATH: .github/workflows/upgrade-next-16-1-1.yml
+• Disparo: workflow_dispatch (inputs: target_branch, next_version)
+• Objetivo: atualizar next + eslint-config-next para a versão informada e garantir package-lock.json versionado (npm)
+• Setup: Node 22 (npm)
+• Regras:
+• Se existir package-lock.json: usar npm ci; senão: npm install (gera lockfile)
+• Lint: npm run lint --if-present (non-blocking)
+• Build: npm run build --if-present (blocking)
+• Commit/push automático para a branch alvo quando houver mudanças
 3.5 Secrets & Variáveis
 	• Server-only: SUPABASE_SECRET_KEY, STRIPE_SECRET_KEY (futuro)
 	• Públicas: NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
@@ -130,12 +154,25 @@ Deploy: Vercel (preview + produção)
 	• Recurso: busca FTS (fts, plfts, phfts, wfts) em text/json (disponível). Estado: sem escopo de telas. Regra: ao ativar busca em UI, preferir wfts como padrão e adicionar índices GIN conforme necessidade de performance
 	• UX/Erro: HTTP 416 / PGRST103 em paginação. Interpretação: range/offset inválido. Comportamento obrigatório: tratar como fim da lista (não é erro de sistema), manter itens já carregados e parar novas requisições
 
-3.13 Compatibilidade Next.js 15 / React 19
-	• cookies() e headers() são async em SSR/Server Components (usar await)
-	• Rotas que dependem de sessão/cookies devem ser dinâmicas (evitar cache entre usuários)
-	• Runtime oficial do App Router: React 19.x (React DOM 19.x)
-	• Em novos códigos de forms/Server Actions: preferir useActionState (não usar useFormState)
+3.13 Versionamento Next.js (MVP)
 
+• Base atual: Next.js 16.1.1 + eslint-config-next 16.1.1
+• Node padrão (CI/Vercel): 22
+• Arquivo canônico (lockfile): package-lock.json (npm)
+• Upgrades:
+• Devem ser feitos preferencialmente via workflow manual
+• PATH: .github/workflows/upgrade-next-16-1-1.yml
+• Preferir minor/patch; saltos maiores só por CVE/breaking inevitável
+• Breaking changes práticas a considerar na geração de código (App Router):
+• APIs de request podem exigir await: cookies(), headers(), draftMode() (usar async quando necessário)
+• params/searchParams podem exigir await em algumas rotas/pages (usar async quando necessário)
+• Performance/build:
+• Next 16.x usa Turbopack por padrão no build; evitar webpack() custom no next.config quando possível
+• Smoke mínimo antes de merge:
+• Login (sucesso + erro credencial)
+• Logout + re-login (cookies/sessão ok)
+• Password reset (MVP)
+• Navegação básica pós-login (carrega dashboard/página principal)
 3.14 Padrão de Adapters (vNext)
 	• Novas páginas/casos de uso: DB somente via adapters (PATH: src/lib/**/adapters/).
 	• 1 adapter = 1 caso de uso; se crescer, dividir (<=150 linhas ou <=6 exports).
@@ -251,6 +288,7 @@ Regra: qualquer novo arquivo em app/auth/ não pode importar @supabase/* até se
 	• Adapters vNext: seguir 3.14
 
 8. Changelog
+• v1.9.5 | 30/12/2025 — Upgrade para Next.js 16.1.1 (App Router) + eslint-config-next 16.1.1; padronização do lockfile canônico (package-lock.json, npm); CI/automação via workflows (security.yml + upgrade-next-16-1-1.yml); registro de contexto Turbopack (build) e regras mínimas de smoke tests pós-upgrade
 v1.9.4 (26/12/2025) — Adapters vNext
 	• Adicionada seção 3.14 (regras simples para adapters: caso de uso, DTO final, v2, order, paginação 416=fim somente em range, enums sem fallback silencioso, gate logs deny vs error).
 v1.9.3 (23/12/2025) — Schema extraído para docs/schema.md
