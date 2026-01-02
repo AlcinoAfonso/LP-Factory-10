@@ -3,10 +3,8 @@
 0.1 Cabeçalho
 	• Data da última atualização: 26/12/2025
 	• Documento: LP Factory 10 — Base Técnica v1.9.4 — Referência normativa ativa
-
 0.2 Propósito
 	• Documentação técnica prescritiva do estado atual do sistema (foco em Next.js + Supabase + Acesso + SQL).
-
 0.3 Regra de formatação (fixa)
 	• Markdown Lite Zero: sem crases; sem code fences; sem tabelas. Preservar exatamente títulos e numeração. Não reformatar.
 
@@ -21,17 +19,14 @@
 	• SUPABASE_SECRET_KEY
 	• ACCESS_CONTEXT_ENFORCED=true
 	• ACCESS_CTX_USE_V2=true
-
 1.1.2 Variáveis Públicas
 	• NEXT_PUBLIC_SUPABASE_URL
 	• NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
-
 1.1.3 Convenções
 	• TypeScript: camelCase
 	• SQL/Postgres: snake_case
 	• Pipeline: GitHub Web → Vercel
 	• Regra: não usar SUPABASE_SERVICE_ROLE_KEY (usar apenas SUPABASE_SECRET_KEY)
-
 1.1.4 Runtime & Toolchain
 	• Node.js: 22.x (Vercel > Settings > Build and Deployment > Node.js Version)
 	• TypeScript: 5.5.4 (repo; versão do compilador)
@@ -146,10 +141,9 @@
 	• Enums: proibido fallback silencioso.
 	• Gate adapters: pode retornar null, mas logs devem diferenciar deny vs error.
 
-4. DB Contract (Schema)
-Fonte única: PATH: docs/schema.md
-Regras:
+4. DB Contract - Fonte única: PATH: docs/schema.md
 	• Este documento não lista mais tabelas/views/functions/triggers/policies; isso está em PATH: docs/schema.md.
+	• Trigger Hub é regra do contrato de DB (governança/auditoria). Fonte única e detalhes: PATH: docs/schema.md (seções 3.5 e 4.1).
 	• Alterações no DB exigem atualizar PATH: docs/schema.md e revisar dependências no código (views/RPC/adapters).
 	• SECURITY DEFINER só é permitido quando estiver explicitamente registrado/aprovado em PATH: docs/schema.md (com motivo e limites).
 	• Views expostas a usuário: security_invoker=true e registro no PATH: docs/schema.md.
@@ -166,7 +160,6 @@ Regras:
 	• Lido apenas no servidor (middleware) para redirecionar /a → /a/{subdomain}
 	• No logout, o cookie deve expirar (Max-Age=0)
 	• last_account_subdomain só é definido em /a/{account_slug} após allow; /a/home não define cookie.
-
 5.2 Adapters, Guards, Providers
 5.2.1 Adapters
 	• src/lib/access/adapters/accountAdapter.ts
@@ -187,7 +180,6 @@ Regras:
 		○ carrega contexto de acesso no app
 	• components/features/account-switcher/*
 		○ consome v_user_accounts_list via /api/user/accounts
-
 5.3 Fluxos de Sessão
 5.3.1 Login (MVP)
 	• Modal → autenticação SULB → redirect para /a
@@ -266,6 +258,4 @@ v1.9.2 (23/12/2025) — Infra/Auth/PostgREST (estado atual)
 	• Atualizado 3.12 Compatibilidade PostgREST 14.1: UX de paginação — HTTP 416 / PGRST103 = fim da lista (não erro de sistema).
 	• Atualizado 5.3.4 Observabilidade: server-timing/proxy-status não observados nos requests testados via DevTools; diretriz de instrumentação/logs/APM se necessário.
 
-
-• Mantido o restante do documento alinhado ao estado atual do repositório na data da versão.
 
