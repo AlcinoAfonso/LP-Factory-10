@@ -248,7 +248,6 @@ v1.9.4 (26/12/2025) — Adapters vNext
 v1.9.3 (23/12/2025) — Schema extraído para docs/schema.md
 	• Movido o conteúdo da seção 4 (Schema) para PATH: docs/schema.md como DB Contract.
 	• Atualizado checklist/referências para apontar para PATH: docs/schema.md.
-	• Mantido o restante do documento alinhado ao estado atual do zip35 (v1.9.2).
 v1.9.2 (23/12/2025) — Infra/Auth/PostgREST (estado atual)
 	• Atualizado 2.2 Backend: Supabase PostgreSQL 17.6.1.063.
 	• Atualizado 2.2 Backend: PostgREST (Supabase Data API) 14.1 + regra “versões devem refletir Settings > Infrastructure”.
