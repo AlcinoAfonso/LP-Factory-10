@@ -1,18 +1,20 @@
-26/12/2025 LP Factory 10 — Base Técnica v1.9.4 — Referência normativa ativa
-(Markdown Lite Zero)
-Propósito: documentação técnica prescritiva do estado atual do sistema (foco em Next.js + Supabase + Acesso + SQL).
-Regra de formatação: sem sumário/âncoras; sem tabelas; sem code fences; sem crases.
+0. Introdução
 
-0. Regra de Edição (fixa)
-	• Sem crases; sem blocos de código; sem tabelas.
-	• Preservar exatamente títulos e numeração.
-	• Não reformatar: não converter parágrafos em lista; não mexer em linhas que não forem necessárias.
+0.1 Cabeçalho
+	• Data da última atualização: 26/12/2025
+	• Documento: LP Factory 10 — Base Técnica v1.9.4 — Referência normativa ativa
+
+0.2 Propósito
+	• Documentação técnica prescritiva do estado atual do sistema (foco em Next.js + Supabase + Acesso + SQL).
+
+0.3 Regra de formatação (fixa)
+	• Markdown Lite Zero: sem crases; sem code fences; sem tabelas. Preservar exatamente títulos e numeração. Não reformatar.
 
 1. Identificação do Projeto
-Nome: LP Factory 10
-Repositório: https://github.com/AlcinoAfonso/LP-Factory-10
-Controle de versão: GitHub Web (edição e commit pelo navegador; não assumir repo local, terminal, git cli ou paths locais)
-Deploy: Vercel (preview + produção)
+	• Nome: LP Factory 10
+	• Repositório: https://github.com/AlcinoAfonso/LP-Factory-10
+	• Controle de versão: GitHub Web (edição e commit pelo navegador; não assumir repo local, terminal, git cli ou paths locais)
+	• Deploy: Vercel (preview + produção)
 
 1.1 Backend: Supabase — projeto lp-factory-10
 1.1.1 Segredos e flags de execução (server-side)
@@ -63,6 +65,7 @@ Deploy: Vercel (preview + produção)
 	• Exceção: rotas SULB autorizadas em app/auth/* (lista na seção 6.4)
 	• UI e componentes client nunca acessam Supabase diretamente
 	• Paths canônicos confirmados no repo: src/lib/**/adapters/ e lib/supabase/*
+
 3. Regras Técnicas Globais
 3.1 Segurança
 	• Views que expõem dados de usuário devem usar security_invoker = true.
@@ -121,7 +124,6 @@ Deploy: Vercel (preview + produção)
 	• Usar sempre get_feature(account_id, feature_key)
 	• Hierarquia: section → lp → account → plan → default
 	• Cada conta preserva seu snapshot de recursos
-
 3.12 Compatibilidade PostgREST 14.1
 	• Ambiente atual: PostgREST 14.1
 	• Índice GIN accounts_name_gin_idx obrigatório quando a feature de busca por nome (FTS) estiver ativa
@@ -129,13 +131,11 @@ Deploy: Vercel (preview + produção)
 	• Recurso: Spread (...) em relações to-many (disponível). Estado: não utilizado no código atualmente. Regra: em pai + filhos na mesma resposta, usar alias para evitar colisão de chaves
 	• Recurso: busca FTS (fts, plfts, phfts, wfts) em text/json (disponível). Estado: sem escopo de telas. Regra: ao ativar busca em UI, preferir wfts como padrão e adicionar índices GIN conforme necessidade de performance
 	• UX/Erro: HTTP 416 / PGRST103 em paginação. Interpretação: range/offset inválido. Comportamento obrigatório: tratar como fim da lista (não é erro de sistema), manter itens já carregados e parar novas requisições
-
 3.13 Compatibilidade Next.js 15 / React 19
 	• cookies() e headers() são async em SSR/Server Components (usar await)
 	• Rotas que dependem de sessão/cookies devem ser dinâmicas (evitar cache entre usuários)
 	• Runtime oficial do App Router: React 19.x (React DOM 19.x)
 	• Em novos códigos de forms/Server Actions: preferir useActionState (não usar useFormState)
-
 3.14 Padrão de Adapters (vNext)
 	• Novas páginas/casos de uso: DB somente via adapters (PATH: src/lib/**/adapters/).
 	• 1 adapter = 1 caso de uso; se crescer, dividir (<=150 linhas ou <=6 exports).
