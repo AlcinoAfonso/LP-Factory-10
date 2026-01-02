@@ -1,8 +1,8 @@
 0. Introdução
 
 0.1 Cabeçalho
-	• Data da última atualização: 26/12/2025
-	• Documento: LP Factory 10 — Base Técnica v1.9.4 — Referência normativa ativa
+• Data da última atualização: 30/12/2025
+• Documento: LP Factory 10 — Base Técnica v1.9.5 — Referência normativa ativa
 0.2 Propósito
 	• Documentação técnica prescritiva do estado atual do sistema (foco em Next.js + Supabase + Acesso + SQL).
 0.3 Regra de formatação (fixa)
@@ -33,10 +33,13 @@
 
 2. Stack & Dependências
 2.1 Framework
-	• Next.js 15.5.7 (App Router, SSR, Server Components) — upgrade devido ao CVE-2025-55182
-	• React 19.2.x + React DOM 19.2.x (runtime oficial do Next.js 15)
-	• TypeScript (strict)
-	• Tailwind CSS
+• Next.js 16.1.1 (App Router, SSR, Server Components)
+• React 19.2.x + React DOM 19.2.x
+• TypeScript 5.5.4 (strict)
+• Node.js 22.x
+• Package manager: npm
+• Lockfile canônico: package-lock.json (deve ficar commitado e alinhado ao package.json)
+• Next 16.x prioriza Turbopack; evitar customizações via webpack() no next.config quando possível (preferir alias via tsconfig.json > paths)
 2.2 Backend
 	• Supabase (PostgreSQL 17.6.1.063, Auth, Storage, RLS)
 	• Regra: versões devem refletir Settings > Infrastructure (Supabase)
@@ -78,8 +81,19 @@
 	• Nenhum módulo acessa DB fora de adapters.
 	• Tipos canônicos só em src/lib/types/status.ts.
 3.4 CI/Lint (Bloqueios)
-	• Não há CI/Lint com bloqueios em uso no projeto no momento.
-	• Regra: antes de merge, seguir obrigatoriamente o checklist da seção 7 (anti-regressão).
+• Validação por PR + preview de deploy (Vercel)
+• Bloqueio de segurança: impedir padrões de implicit flow em client/UI (access_token, refresh_token, setSession, getSessionFromUrl)
+• Regra: verifyOtp() só pode existir em app/auth/confirm/**
+• Regra de merge (mínimo): validação automática ok + preview ok + smoke de acesso (login/logout/reset de senha/navegação pós-login)
+• Regra: antes de merge, seguir obrigatoriamente o checklist da seção 7 (anti-regressão)
+3.4.1 Manutenção (Upgrade Next.js + lockfile)
+• Objetivo: atualizar Next.js + eslint-config-next para a versão informada e manter lockfile canônico versionado (npm)
+• Regra: lockfile canônico é package-lock.json (deve ficar commitado e alinhado ao package.json)
+• Setup: Node.js 22.x
+• Regra: se existir package-lock.json, usar instalação reprodutível; se não existir, gerar e commitar package-lock.json
+• Lint: non-blocking em manutenção (não deve impedir o bump/lockfile)
+• Build: blocking (não publicar se build falhar)
+• Regra: commitar alterações somente quando houver mudanças detectadas
 3.5 Secrets & Variáveis
 	• Server-only: SUPABASE_SECRET_KEY, STRIPE_SECRET_KEY (futuro)
 	• Públicas: NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
@@ -127,10 +141,12 @@
 	• Recurso: busca FTS (fts, plfts, phfts, wfts) em text/json (disponível). Estado: sem escopo de telas. Regra: ao ativar busca em UI, preferir wfts como padrão e adicionar índices GIN conforme necessidade de performance
 	• UX/Erro: HTTP 416 / PGRST103 em paginação. Interpretação: range/offset inválido. Comportamento obrigatório: tratar como fim da lista (não é erro de sistema), manter itens já carregados e parar novas requisições
 3.13 Compatibilidade Next.js 15 / React 19
-	• cookies() e headers() são async em SSR/Server Components (usar await)
-	• Rotas que dependem de sessão/cookies devem ser dinâmicas (evitar cache entre usuários)
-	• Runtime oficial do App Router: React 19.x (React DOM 19.x)
-	• Em novos códigos de forms/Server Actions: preferir useActionState (não usar useFormState)
+• Contexto: notas de compatibilidade da migração Next.js 15 → Next.js 16 (estado atual: Next.js 16.1.1 + React 19.x)
+• cookies() e headers() podem exigir await em SSR/Server Components (usar async quando necessário)
+• params/searchParams podem exigir await em algumas rotas/pages (usar async quando necessário)
+• Rotas que dependem de sessão/cookies devem ser dinâmicas (evitar cache entre usuários)
+• Next 16.x prioriza Turbopack; evitar webpack() custom no next.config quando possível
+• Em novos códigos de forms/Server Actions: preferir useActionState (não usar useFormState)
 3.14 Padrão de Adapters (vNext)
 	• Novas páginas/casos de uso: DB somente via adapters (PATH: src/lib/**/adapters/).
 	• 1 adapter = 1 caso de uso; se crescer, dividir (<=150 linhas ou <=6 exports).
@@ -243,6 +259,12 @@ Regra: qualquer novo arquivo em app/auth/ não pode importar @supabase/* até se
 	• Adapters vNext: seguir 3.14
 
 8. Changelog
+v1.9.5 (30/12/2025) — Upgrade Next.js 16.1.1
+• Atualizado 0.1 Cabeçalho: data/versão para v1.9.5.
+• Atualizado 2.1 Framework: Next.js 16.1.1 + lockfile canônico (package-lock.json, npm) + contexto Turbopack.
+• Atualizado 3.4 CI/Lint (Bloqueios): bloqueios de segurança (implicit flow + allowlist de verifyOtp) e smoke mínimo antes de merge.
+• Atualizado 3.13 Compatibilidade Next.js 15 / React 19: registrado estado atual em Next.js 16.1.1 e impactos práticos (await e build).
+• Adicionada 3.4.1: manutenção de upgrade + lockfile canônico.
 v1.9.4 (26/12/2025) — Adapters vNext
 	• Adicionada seção 3.14 (regras simples para adapters: caso de uso, DTO final, v2, order, paginação 416=fim somente em range, enums sem fallback silencioso, gate logs deny vs error).
 v1.9.3 (23/12/2025) — Schema extraído para docs/schema.md
