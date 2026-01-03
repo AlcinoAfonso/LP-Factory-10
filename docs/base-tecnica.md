@@ -48,10 +48,9 @@
 • .maxAffected(1) em mutações 1-a-1
 • JWT Signing Keys ativo: Current ECC (P-256); Previous Legacy HS256 (não revogar por padrão); integrações futuras (se houver) devem validar JWT via JWKS + kid
 2.3 UI
-	• SULB (auth forms)
-		○ Definição: conjunto de rotas/arquivos de autenticação copiados do Supabase (vendor interno).
-		○ Regra: não criar auth fora do SULB; alterações no SULB só quando necessário e sempre respeitando a allowlist 6.4.
-	• shadcn/ui (base provisória)
+• SULB (auth forms): definição: rotas/arquivos de autenticação copiados do Supabase (vendor interno).
+• Regra (SULB): não criar auth fora do SULB; alterações no SULB só quando necessário e sempre respeitando a allowlist 6.4.
+• shadcn/ui: base provisória.
 2.4 Deploy
 	• Vercel (CI automático)
 	• Variáveis validadas:
