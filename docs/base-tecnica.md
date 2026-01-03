@@ -52,11 +52,8 @@
 • Regra (SULB): não criar auth fora do SULB; alterações no SULB só quando necessário e sempre respeitando a allowlist 6.4.
 • shadcn/ui: base provisória.
 2.4 Deploy
-	• Vercel (CI automático)
-	• Variáveis validadas:
-		○ SUPABASE_SECRET_KEY
-		○ NEXT_PUBLIC_SUPABASE_URL
-		○ NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
+• Vercel: CI automático.
+• Variáveis validadas: SUPABASE_SECRET_KEY; NEXT_PUBLIC_SUPABASE_URL; NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY.
 2.5 Regras de Import (canônica)
 • @supabase/* somente em: src/lib/**/adapters/ (ex.: src/lib/access/adapters/, src/lib/admin/adapters/) e lib/supabase/*.
 • Exceção: rotas SULB autorizadas em app/auth/* (lista na seção 6.4)
