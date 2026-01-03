@@ -76,10 +76,9 @@
 • Fora de adapters, @supabase/* só em lib/supabase/* e allowlist SULB (6.4).
 • Imports Supabase devem obedecer 2.5 (fonte única).
 3.3 Estrutura de Arquivos
-	• Cada domínio segue:
-		○ adapters/ (DB) → contracts.ts (interface pública) → index.ts (re-exports)
-	• Nenhum módulo acessa DB fora de adapters.
-	• Tipos canônicos só em src/lib/types/status.ts.
+• Padrão por domínio: adapters/ (DB); contracts.ts (interface pública); index.ts (re-exports).
+• Regra: nenhum módulo acessa DB fora de adapters.
+• Tipos canônicos só em src/lib/types/status.ts.
 3.4 CI/Lint (Bloqueios)
 • Validação por PR + preview de deploy (Vercel)
 • Bloqueio de segurança: impedir padrões de implicit flow em client/UI (access_token, refresh_token, setSession, getSessionFromUrl)
@@ -95,11 +94,9 @@
 • Build: blocking (não publicar se build falhar)
 • Regra: commitar alterações somente quando houver mudanças detectadas
 3.5 Secrets & Variáveis
-	• Server-only: SUPABASE_SECRET_KEY, STRIPE_SECRET_KEY (futuro)
-	• Públicas: NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
-	• Flags obrigatórias:
-		○ ACCESS_CONTEXT_ENFORCED=true
-		○ ACCESS_CTX_USE_V2=true
+• Server-only: SUPABASE_SECRET_KEY, STRIPE_SECRET_KEY (futuro)
+• Públicas: NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
+• Flags obrigatórias: ACCESS_CONTEXT_ENFORCED=true; ACCESS_CTX_USE_V2=true.
 3.6 Tipos TypeScript
 • Fonte única: src/lib/types/status.ts
 • Proibido redefinir tipos em qualquer outro módulo
@@ -115,13 +112,11 @@
 • Alteração de schema exige revisão de views/functions dependentes e atualização do PATH: docs/schema.md
 • Sem secrets expostos no client
 3.9 Rate Limit (E7)
-	• super_admin: 200 tokens/dia
-	• platform_admin: 20 tokens/dia
-	• 3 tokens/email/dia
-	• 5 burst/5min
-	• Índices obrigatórios:
-		○ (created_by, created_at DESC)
-		○ (email, created_at DESC)
+• super_admin: 200 tokens/dia
+• platform_admin: 20 tokens/dia
+• 3 tokens/email/dia
+• 5 burst/5min
+• Índices obrigatórios: (created_by, created_at DESC); (email, created_at DESC).
 3.10 Anti-Patterns
 • Importar Supabase na UI (exceto SULB allowlist)
 • Views sem security_invoker=true
@@ -178,24 +173,14 @@
 • last_account_subdomain só é definido em /a/{account_slug} após allow; /a/home não define cookie.
 5.2 Adapters, Guards, Providers
 5.2.1 Adapters
-	• src/lib/access/adapters/accountAdapter.ts
-		○ createFromToken(tokenId, actorId) → RPC create_account_with_owner
-		○ renameAndActivate(accountId, name, slug) com .maxAffected(1)
-		○ normalizeAccountStatus preserva trial (trial não pode virar active por fallback)
-	• src/lib/access/adapters/accessContextAdapter.ts
-		○ lê v_access_context_v2
-		○ gate adapter: null permitido; logs deny vs error
-	• src/lib/admin/adapters/adminAdapter.ts
-		○ valida super_admin / platform_admin
-		○ opera post_sale_tokens via postSaleTokenAdapter
+• accountAdapter (PATH: src/lib/access/adapters/accountAdapter.ts): createFromToken(tokenId, actorId) → RPC create_account_with_owner; renameAndActivate(accountId, name, slug) com .maxAffected(1); normalizeAccountStatus preserva trial (trial não pode virar active por fallback).
+• accessContextAdapter (PATH: src/lib/access/adapters/accessContextAdapter.ts): lê v_access_context_v2; gate adapter permite null; logs diferenciam deny vs error.
+• adminAdapter (PATH: src/lib/admin/adapters/adminAdapter.ts): valida super_admin / platform_admin; opera post_sale_tokens via postSaleTokenAdapter.
 5.2.2 Guards
-	• src/lib/access/guards.ts
-		○ bloqueia Admin quando não for super_admin ou platform_admin
+• guards (PATH: src/lib/access/guards.ts): bloqueia Admin quando não for super_admin ou platform_admin.
 5.2.3 Providers
-	• src/providers/AccessProvider.tsx
-		○ carrega contexto de acesso no app
-	• components/features/account-switcher/*
-		○ consome v_user_accounts_list via /api/user/accounts
+• AccessProvider (PATH: src/providers/AccessProvider.tsx): carrega contexto de acesso no app.
+• account-switcher (PATH: components/features/account-switcher/*): consome v_user_accounts_list via /api/user/accounts.
 5.3 Fluxos de Sessão
 5.3.1 Login (MVP)
 • Modal → autenticação SULB → redirect para /a
