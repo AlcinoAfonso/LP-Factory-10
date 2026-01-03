@@ -167,15 +167,15 @@
 5. Arquitetura de Acesso
 5.1 Conceitos Fundamentais
 5.1.1 Access Context v2
-	• Fonte única: v_access_context_v2
-	• Decide se o usuário pode acessar uma conta (allow + reason)
-	• Usado em SSR (getAccessContext), AccessProvider e AccountSwitcher
+• Fonte única: v_access_context_v2
+• Decide se o usuário pode acessar uma conta (allow + reason)
+• Usado em SSR (getAccessContext), AccessProvider e AccountSwitcher
 5.1.2 Persistência SSR (cookie last_account_subdomain)
-	• Definido em /a/[account]/layout.tsx após allow=true
-	• Atributos obrigatórios: HttpOnly; Secure; SameSite=Lax; Max-Age=2592000; Path=/
-	• Lido apenas no servidor (middleware) para redirecionar /a → /a/{subdomain}
-	• No logout, o cookie deve expirar (Max-Age=0)
-	• last_account_subdomain só é definido em /a/{account_slug} após allow; /a/home não define cookie.
+• Definido em /a/[account]/layout.tsx após allow=true
+• Atributos obrigatórios: HttpOnly; Secure; SameSite=Lax; Max-Age=2592000; Path=/
+• Lido apenas no servidor (middleware) para redirecionar /a → /a/{subdomain}
+• No logout, o cookie deve expirar (Max-Age=0)
+• last_account_subdomain só é definido em /a/{account_slug} após allow; /a/home não define cookie.
 5.2 Adapters, Guards, Providers
 5.2.1 Adapters
 	• src/lib/access/adapters/accountAdapter.ts
@@ -198,18 +198,18 @@
 		○ consome v_user_accounts_list via /api/user/accounts
 5.3 Fluxos de Sessão
 5.3.1 Login (MVP)
-	• Modal → autenticação SULB → redirect para /a
-	• Se já estiver logado, /a deve resolver conta e redirecionar
+• Modal → autenticação SULB → redirect para /a
+• Se já estiver logado, /a deve resolver conta e redirecionar
 5.3.2 Password Reset (MVP)
-	• Modal → email → link abre nova aba → define senha (2x) → sucesso → auto-redirect dashboard
-	• Link expirado (10m): tela mostra “link expirou” + reenvio inline
-	• Email não cadastrado: mensagem neutra “Se este email estiver cadastrado…”
+• Modal → email → link abre nova aba → define senha (2x) → sucesso → auto-redirect dashboard
+• Link expirado (10m): tela mostra “link expirou” + reenvio inline
+• Email não cadastrado: mensagem neutra “Se este email estiver cadastrado…”
 5.3.3 Throttling
-	• Login: 3s após 3 falhas; 10s após 5 (com countdown)
-	• Reset: throttle 5min com countdown
+• Login: 3s após 3 falhas; 10s após 5 (com countdown)
+• Reset: throttle 5min com countdown
 5.3.4 Observabilidade
-	• server-timing/proxy-status não observados nos requests testados via DevTools
-	• Diretriz: se precisar medir, instrumentar via logs/Apm e/ou headers próprios no server
+• server-timing/proxy-status não observados nos requests testados via DevTools
+• Diretriz: se precisar medir, instrumentar via logs/Apm e/ou headers próprios no server
 5.4 Regras da rota /a (anti-regressão)
 	• /a é pública sem sessão
 	• em navegação limpa (sem sessão), /a não redireciona automaticamente para /auth/login
