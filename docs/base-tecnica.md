@@ -1,5 +1,4 @@
 0. Introdução
-
 0.1 Cabeçalho
 • Data da última atualização: 30/12/2025
 • Documento: LP Factory 10 — Base Técnica v1.9.5 — Referência normativa ativa
