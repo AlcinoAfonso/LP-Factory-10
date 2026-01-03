@@ -196,14 +196,12 @@
 • server-timing/proxy-status não observados nos requests testados via DevTools
 • Diretriz: se precisar medir, instrumentar via logs/Apm e/ou headers próprios no server
 5.4 Regras da rota /a (anti-regressão)
-	• /a é pública sem sessão
-	• em navegação limpa (sem sessão), /a não redireciona automaticamente para /auth/login
-	• dashboard privado só em /a/{account_slug}
-	• /a → /a/{account_slug} só quando:
-		○ existe sessão válida, e
-		○ conta foi resolvida (cookie last_account_subdomain ou fallback)
-	• allow/deny é responsabilidade do gate SSR em /a/{account_slug}
-	• /a/home é pública e bypassa o gate SSR de conta em app/a/[account]/layout.tsx
+• /a é pública sem sessão.
+• Em navegação limpa (sem sessão), /a não redireciona automaticamente para /auth/login.
+• Dashboard privado só em /a/{account_slug}.
+• /a → /a/{account_slug} só quando existe sessão válida e a conta foi resolvida (cookie last_account_subdomain ou fallback).
+• allow/deny é responsabilidade do gate SSR em /a/{account_slug}.
+• /a/home é pública e bypassa o gate SSR de conta em app/a/[account]/layout.tsx.
 
 6. Estrutura de Arquivos Essencial
 6.1 Visão rápida (fonte única)
