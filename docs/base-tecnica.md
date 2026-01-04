@@ -12,7 +12,6 @@
 • Repositório: https://github.com/AlcinoAfonso/LP-Factory-10
 • Controle de versão: GitHub Web (edição e commit pelo navegador; não assumir repo local, terminal, git cli ou paths locais)
 • Deploy: Vercel (preview + produção)
-
 1.1 Backend: Supabase — projeto lp-factory-10
 1.1.1 Segredos e flags de execução (server-side)
 • SUPABASE_SECRET_KEY
