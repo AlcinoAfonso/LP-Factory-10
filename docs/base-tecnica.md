@@ -75,11 +75,14 @@
 • Tipos canônicos só em src/lib/types/status.ts.
 3.4 CI/Lint (Bloqueios)
 • Validação por PR + preview de deploy (Vercel)
-• Bloqueio de segurança: impedir padrões de implicit flow em client/UI (access_token, refresh_token, setSession, getSessionFromUrl)
+• PATH: .github/workflows/security.yml
+• Bloqueio de segurança: impedir padrões de implicit flow em cl...UI (access_token, refresh_token, setSession, getSessionFromUrl)
 • Regra: verifyOtp() só pode existir em app/auth/confirm/**
-• Regra de merge (mínimo): validação automática ok + preview ok + smoke de acesso (login/logout/reset de senha/navegação pós-login)
+• Regra de merge (mínimo): validação automática ok + preview ok ...moke de acesso (login/logout/reset de senha/navegação pós-login)
 • Regra: antes de merge, seguir obrigatoriamente o checklist da seção 7 (anti-regressão)
 3.4.1 Manutenção (Upgrade Next.js + lockfile)
+• PATH: .github/workflows/upgrade-next-16-1-1.yml
+• Disparo: manual (inputs: target_branch, next_version)
 • Objetivo: atualizar Next.js + eslint-config-next para a versão informada e manter lockfile canônico versionado (npm)
 • Regra: lockfile canônico é package-lock.json (deve ficar commitado e alinhado ao package.json)
 • Setup: Node.js 22.x
