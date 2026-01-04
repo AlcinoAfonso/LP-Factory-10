@@ -16,7 +16,7 @@ function warn(msg) {
 }
 
 function ok(msg) {
-  console.log(`[doc-agent] ${msg}`);
+  console.log(`[doc-agent] OK: ${msg}`);
 }
 
 function escapeRegExp(s) {
@@ -46,41 +46,45 @@ async function fileExists(p) {
 }
 
 function parseSectionIdFromContentBlock(content) {
-  // primeira linha deve começar com "X.Y..." (ex: "3.4.1 Workflows ...")
-  const firstLine = content.split("\n")[0] ?? "";
-  const m = firstLine.match(/^\s*(\d+(?:\.\d+)*)\b/);
-  return m?.[1] ?? null;
+  const head = normalizeNewlines(String(content ?? "")).split("\n")[0] ?? "";
+  const m = head.match(/^\s*(\d+(?:\.\d+)*)\b/);
+  return m ? m[1] : null;
 }
 
 function sectionStartRegex(sectionId) {
-  // início de linha + sectionId + boundary (evita 3.1 casar com 3.10)
-  return new RegExp(`^\\s*${escapeRegExp(sectionId)}\\b`, "m");
+  // início de linha + sectionId, garantindo:
+  // - pai não casa filho (3.4 não casa 3.4.1)
+  // - permite títulos com pontuação colada (ex.: "3.4:", "3.4—", "3.4)")
+  // Regra: após o número da seção, NÃO pode haver ".<dígito>".
+  // E deve haver whitespace, fim de linha, ou pontuação comum.
+  return new RegExp(
+    `^\\s*${escapeRegExp(sectionId)}(?!\\.\\d)(?=\\s|$|[:;—–\\-\\)\\]\\}])`,
+    "m"
+  );
 }
 
-function anySectionLineRegex() {
-  // linha iniciando com numeração tipo 1, 1.2, 3.4.1 etc.
-  return /^\s*\d+(?:\.\d+)*\b/m;
+function anySectionLineRegex(sectionIdPrefix) {
+  // qualquer linha que comece com "3.4" ou "3.4.1" etc.
+  return new RegExp(`^\\s*${escapeRegExp(sectionIdPrefix)}(?:\\.|\\b)`, "m");
 }
 
 function splitLinesKeepEOL(text) {
-  // preserva quebras de linha no final de cada linha
-  // (para facilitar recomposição sem reformatar)
-  const lines = [];
-  let start = 0;
-  for (let i = 0; i < text.length; i++) {
-    if (text[i] === "\n") {
-      lines.push(text.slice(start, i + 1));
-      start = i + 1;
-    }
+  // mantém \n como parte da linha (mais fácil de reconstituir sem reformatar)
+  const s = normalizeNewlines(text);
+  const parts = s.split("\n");
+  const out = [];
+  for (let i = 0; i < parts.length; i++) {
+    const isLast = i === parts.length - 1;
+    out.push(isLast ? parts[i] : parts[i] + "\n");
   }
-  if (start < text.length) lines.push(text.slice(start));
-  return lines;
+  return out;
 }
 
-function findAllMatches(lines, regex) {
+function findAllMatches(lines, re) {
   const idxs = [];
   for (let i = 0; i < lines.length; i++) {
-    if (regex.test(lines[i])) idxs.push(i);
+    if (re.test(lines[i])) idxs.push(i);
+    re.lastIndex = 0;
   }
   return idxs;
 }
@@ -89,8 +93,154 @@ function sectionLevel(sectionId) {
   return sectionId.split(".").length;
 }
 
-function findSectionRange(lines, sectionId) {
-  // retorna {startIdx, endIdxExclusive} do bloco da seção (inclui subseções)
+function isSectionIdLike(s) {
+  return typeof s === "string" && /^\s*\d+(?:\.\d+)*\s*$/.test(s);
+}
+
+function isDescendantSection(childId, parentId) {
+  if (!childId || !parentId) return false;
+  return childId.startsWith(parentId + ".");
+}
+
+function normalizeReplaceMode(mode) {
+  if (!mode) return "subtree";
+  const m = String(mode).trim().toLowerCase();
+  if (m === "subtree" || m === "shallow") return m;
+  die(`mode inválido em replace_section: "${mode}". Use "subtree" ou "shallow".`);
+}
+
+function getOpDocPath(op, report) {
+  return toPosix(op.doc_path ?? report.meta.target_doc);
+}
+
+function getSectionRefsForOp(op) {
+  // (mantido para uso futuro; não é obrigatório para a validação atual)
+  const refs = [];
+  if (!op || typeof op !== "object") return refs;
+
+  if (op.op === "replace_section") {
+    const target = typeof op.target === "string" ? op.target.trim() : null;
+    if (target && isSectionIdLike(target)) refs.push(target);
+    return refs;
+  }
+
+  if (op.op === "insert_after_section") {
+    const anchor = typeof op.anchor === "string" ? op.anchor.trim() : null;
+    if (anchor && isSectionIdLike(anchor)) refs.push(anchor);
+
+    if (typeof op.content === "string") {
+      const newId = parseSectionIdFromContentBlock(op.content);
+      if (newId && isSectionIdLike(newId)) refs.push(newId.trim());
+    }
+    return refs;
+  }
+
+  return refs;
+}
+
+function validateNoOverlappingSectionOps(report) {
+  // Evita operações sobrepostas quando um replace_section está em mode "subtree".
+  //
+  // Proibido (subtree default):
+  // - replace_section 3.4
+  // - replace_section 3.4.1
+  //
+  // Permitido:
+  // - replace_section 3.4 (mode: "shallow")
+  // - replace_section 3.4.1
+  //
+  // Observação: insert_after_section com anchor == pai (ex.: anchor 3.4 para inserir 3.5)
+  // é permitido, desde que a nova seção NÃO seja descendente do pai.
+  const byDoc = new Map(); // docPath -> entries
+
+  for (const op of report.ops) {
+    const docPath = getOpDocPath(op, report);
+    const list = byDoc.get(docPath) ?? [];
+    list.push({
+      op,
+      opId: op?.id ?? "(sem id)",
+      docPath,
+    });
+    byDoc.set(docPath, list);
+  }
+
+  for (const [docPath, entries] of byDoc.entries()) {
+    const replaceOps = entries
+      .filter((e) => e.op?.op === "replace_section")
+      .map((e) => ({
+        opId: e.opId,
+        target: typeof e.op.target === "string" ? e.op.target.trim() : "",
+        mode: normalizeReplaceMode(e.op?.mode),
+      }))
+      .filter((r) => isSectionIdLike(r.target));
+
+    // duplicadas (mesmo target)
+    const seen = new Map();
+    for (const r of replaceOps) {
+      if (seen.has(r.target)) {
+        die(
+          `Ops duplicadas em ${docPath}: replace_section ${r.target} aparece em ${seen.get(r.target)} e ${r.opId}.`
+        );
+      }
+      seen.set(r.target, r.opId);
+    }
+
+    // overlap: apenas quando o pai estiver em subtree
+    for (const parent of replaceOps) {
+      if (parent.mode !== "subtree") continue;
+
+      const parentId = parent.target;
+
+      for (const e of entries) {
+        if (e.opId === parent.opId) continue;
+
+        const opType = e.op?.op;
+
+        if (opType === "replace_section") {
+          const childTarget = typeof e.op.target === "string" ? e.op.target.trim() : "";
+          if (isDescendantSection(childTarget, parentId)) {
+            die(
+              `Ops sobrepostas em ${docPath}: ${parent.opId} replace_section ${parentId} (mode=subtree) conflita com ${e.opId} replace_section ${childTarget}. ` +
+                `Use mode:"shallow" no pai, ou remova as ops do subtree e mova o conteúdo para dentro do bloco do pai.`
+            );
+          }
+          continue;
+        }
+
+        if (opType === "insert_after_section") {
+          const anchor = typeof e.op.anchor === "string" ? e.op.anchor.trim() : "";
+          const newId = typeof e.op.content === "string" ? parseSectionIdFromContentBlock(e.op.content) : null;
+
+          // inserir depois de um nó dentro da subárvore é conflito
+          if (isDescendantSection(anchor, parentId)) {
+            die(
+              `Ops sobrepostas em ${docPath}: ${parent.opId} replace_section ${parentId} (mode=subtree) conflita com ${e.opId} insert_after_section anchor ${anchor}. ` +
+                `Use mode:"shallow" no pai, ou mova a inserção para fora da subárvore.`
+            );
+          }
+
+          // inserir uma nova seção descendente do pai (ex.: 3.4.2) enquanto substitui a subárvore também é conflito
+          if (newId && isDescendantSection(newId, parentId)) {
+            die(
+              `Ops sobrepostas em ${docPath}: ${parent.opId} replace_section ${parentId} (mode=subtree) conflita com ${e.opId} insert_after_section (nova seção ${newId}). ` +
+                `Use mode:"shallow" no pai, ou inclua a nova seção dentro do bloco do replace_section ${parentId}.`
+            );
+          }
+
+          continue;
+        }
+
+        // insert_after_heading não é validado por overlap (âncora textual pode estar em qualquer lugar).
+      }
+    }
+  }
+}
+
+function findSectionRange(lines, sectionId, mode = "subtree") {
+  // retorna {startIdx, endIdxExclusive} do bloco da seção
+  // mode:
+  // - "subtree" (default): inclui subseções (X.Y.*)
+  // - "shallow": apenas o corpo do pai (X.Y), sem tocar filhas (para antes de X.Y.1)
   const startRe = sectionStartRegex(sectionId);
   const startMatches = findAllMatches(lines, startRe);
 
@@ -102,7 +252,7 @@ function findSectionRange(lines, sectionId) {
   const startIdx = startMatches[0];
   const targetLevel = sectionLevel(sectionId);
 
-  // procurar o próximo heading numérico com nível <= targetLevel e diferente da própria seção
+  // procurar o próximo heading numérico que define o fim do range
   let endIdxExclusive = lines.length;
 
   for (let i = startIdx + 1; i < lines.length; i++) {
@@ -112,8 +262,22 @@ function findSectionRange(lines, sectionId) {
     const foundId = m[1];
     if (foundId === sectionId) continue;
 
-    const foundLevel = sectionLevel(foundId);
+    // shallow: termina antes do primeiro filho/descendente (X.Y.*)
+    if (mode === "shallow") {
+      if (isDescendantSection(foundId, sectionId)) {
+        endIdxExclusive = i;
+        break;
+      }
+      const foundLevel = sectionLevel(foundId);
+      if (foundLevel <= targetLevel) {
+        endIdxExclusive = i;
+        break;
+      }
+      continue;
+    }
 
+    // subtree (default): termina no próximo heading com nível <= targetLevel
+    const foundLevel = sectionLevel(foundId);
     if (foundLevel <= targetLevel) {
       endIdxExclusive = i;
       break;
@@ -123,39 +287,37 @@ function findSectionRange(lines, sectionId) {
   return { startIdx, endIdxExclusive };
 }
 
-function insertAt(lines, index, content) {
-  const block = ensureEndsWithNewline(normalizeNewlines(content));
-  const blockLines = splitLinesKeepEOL(block);
-  return [...lines.slice(0, index), ...blockLines, ...lines.slice(index)];
+function insertAt(lines, idx, content) {
+  const block = splitLinesKeepEOL(ensureEndsWithNewline(normalizeNewlines(content)));
+  const out = lines.slice(0, idx).concat(block).concat(lines.slice(idx));
+  return out;
 }
 
 function replaceRange(lines, startIdx, endIdxExclusive, content) {
-  const block = ensureEndsWithNewline(normalizeNewlines(content));
-  const blockLines = splitLinesKeepEOL(block);
-  return [...lines.slice(0, startIdx), ...blockLines, ...lines.slice(endIdxExclusive)];
+  const block = splitLinesKeepEOL(ensureEndsWithNewline(normalizeNewlines(content)));
+  const out = lines.slice(0, startIdx).concat(block).concat(lines.slice(endIdxExclusive));
+  return out;
 }
 
 function findHeadingLineIndex(lines, heading) {
-  // heading literal deve aparecer no início da linha (padrão do seu docs/base-tecnica.md: "8. Changelog")
   const re = new RegExp(`^\\s*${escapeRegExp(heading)}\\b`, "m");
   const matches = findAllMatches(lines, re);
   if (matches.length === 0) return null;
-  if (matches.length > 1) {
-    return { error: `Match ambíguo para heading "${heading}" (encontrei ${matches.length}).` };
-  }
-  return { index: matches[0] };
+  if (matches.length > 1) return { error: `Match ambíguo para heading "${heading}" (encontrei ${matches.length}).` };
+  return matches[0];
 }
 
 function validateReportShape(report) {
-  if (!report || typeof report !== "object") die("Report JSON inválido (não é objeto).");
-  if (!report.meta || typeof report.meta !== "object") die("Report sem meta.");
-  if (!Array.isArray(report.ops)) die("Report sem ops (array).");
-  if (!report.meta.target_doc || typeof report.meta.target_doc !== "string") {
-    die("meta.target_doc ausente (ex: docs/base-tecnica.md).");
-  }
+  if (!report || typeof report !== "object") die("Report inválido (não é objeto).");
+  if (!report.meta || typeof report.meta !== "object") die("meta ausente.");
+  if (!Array.isArray(report.ops)) die("ops ausente (array).");
 
-  // default rules (fail-fast por padrão)
-  const rules = report.rules && typeof report.rules === "object" ? report.rules : {};
+  const targetDoc = report.meta.target_doc;
+  if (targetDoc != null && typeof targetDoc !== "string") die("meta.target_doc inválido.");
+
+  const rules = report.rules ?? {};
+  if (rules && typeof rules !== "object") die("rules inválidas.");
+
   return {
     fail_if_anchor_missing: rules.fail_if_anchor_missing !== false,
     fail_if_target_missing: rules.fail_if_target_missing !== false,
@@ -183,6 +345,9 @@ async function main() {
   }
 
   const rules = validateReportShape(report);
+
+  // validação estrutural: evita overlap de ops em subárvore (pai+filho) quando mode=subtree
+  validateNoOverlappingSectionOps(report);
 
   // warnings list
   if (!Array.isArray(report.meta.warnings)) report.meta.warnings = [];
@@ -221,7 +386,7 @@ async function main() {
     const docPath = op.doc_path ?? report.meta.target_doc;
 
     if (!docPath || typeof docPath !== "string") die(`Op ${opId}: doc_path ausente.`);
-    const doc = (getDoc(toPosix(docPath)) ?? (await loadDoc(docPath)));
+    const doc = getDoc(toPosix(docPath)) ?? (await loadDoc(docPath));
 
     const opType = op.op;
     if (typeof opType !== "string") die(`Op ${opId}: op ausente.`);
@@ -232,7 +397,9 @@ async function main() {
       if (!target || typeof target !== "string") die(`Op ${opId}: target ausente (ex: "2.1").`);
       if (typeof content !== "string") die(`Op ${opId}: content ausente.`);
 
-      const range = findSectionRange(doc.lines, target);
+      const mode = normalizeReplaceMode(op.mode);
+
+      const range = findSectionRange(doc.lines, target, mode);
       if (!range) {
         const msg = `Op ${opId}: seção alvo ${target} não encontrada em ${doc.path}.`;
         if (rules.fail_if_target_missing) die(msg);
@@ -242,14 +409,13 @@ async function main() {
       }
       ensureNotAmbiguous(range);
       if (range.error) {
-        const msg = `Op ${opId}: ${range.error}`;
-        report.meta.warnings.push(msg);
+        report.meta.warnings.push(range.error);
         continue;
       }
 
       doc.lines = replaceRange(doc.lines, range.startIdx, range.endIdxExclusive, content);
       touchedDocs.add(doc.path);
-      ok(`Op ${opId}: replace_section ${target} em ${doc.path}`);
+      ok(`Op ${opId}: replace_section ${target} (mode=${mode}) em ${doc.path}`);
       continue;
     }
 
@@ -284,59 +450,52 @@ async function main() {
       }
       ensureNotAmbiguous(range);
       if (range.error) {
-        const msg = `Op ${opId}: ${range.error}`;
-        report.meta.warnings.push(msg);
+        report.meta.warnings.push(range.error);
         continue;
       }
 
-      // inserir após o fim do bloco da âncora
+      // inserir após o bloco da âncora
       doc.lines = insertAt(doc.lines, range.endIdxExclusive, content);
       touchedDocs.add(doc.path);
-      ok(`Op ${opId}: insert_after_section ${anchor} (inseriu ${newSectionId}) em ${doc.path}`);
+      ok(`Op ${opId}: insert_after_section após ${anchor} em ${doc.path}`);
       continue;
     }
 
     if (opType === "insert_after_heading") {
       const heading = op.heading;
       const content = op.content;
-      if (!heading || typeof heading !== "string") die(`Op ${opId}: heading ausente (ex: "8. Changelog").`);
+      if (!heading || typeof heading !== "string") die(`Op ${opId}: heading ausente.`);
       if (typeof content !== "string") die(`Op ${opId}: content ausente.`);
 
-      const h = findHeadingLineIndex(doc.lines, heading);
-      if (!h) {
+      const idx = findHeadingLineIndex(doc.lines, heading);
+      if (idx == null) {
         const msg = `Op ${opId}: heading "${heading}" não encontrado em ${doc.path}.`;
         if (rules.fail_if_anchor_missing) die(msg);
         report.meta.warnings.push(msg);
         warn(msg);
         continue;
       }
-      ensureNotAmbiguous(h);
-      if (h.error) {
-        const msg = `Op ${opId}: ${h.error}`;
-        report.meta.warnings.push(msg);
+      ensureNotAmbiguous(idx);
+      if (idx.error) {
+        report.meta.warnings.push(idx.error);
         continue;
       }
 
       // inserir logo após a linha do heading
-      doc.lines = insertAt(doc.lines, h.index + 1, content);
+      doc.lines = insertAt(doc.lines, idx + 1, content);
       touchedDocs.add(doc.path);
       ok(`Op ${opId}: insert_after_heading "${heading}" em ${doc.path}`);
       continue;
     }
 
-    die(`Op ${opId}: op "${opType}" não suportada (v1 suporta replace_section, insert_after_section, insert_after_heading).`);
+    die(`Op ${opId}: op "${opType}" não suportada. Use (replace_section, insert_after_section, insert_after_heading).`);
   }
 
   // gravar docs alterados
-  if (touchedDocs.size === 0) {
-    ok("Nenhuma alteração aplicada (0 docs tocados).");
-    // Ainda assim, não falhar — permite PR vazio se desejado.
-    return;
-  }
-
   for (const docPath of touchedDocs) {
     const entry = docCache.get(docPath);
     if (!entry) continue;
+
     const outText = entry.lines.join("");
     await fs.writeFile(docPath, outText, "utf8");
     ok(`Escreveu ${docPath}`);
