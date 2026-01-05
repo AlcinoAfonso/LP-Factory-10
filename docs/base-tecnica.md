@@ -12,23 +12,21 @@
 • Repositório: https://github.com/AlcinoAfonso/LP-Factory-10
 • Controle de versão: GitHub Web (edição e commit pelo navegador; não assumir repo local, terminal, git cli ou paths locais)
 • Deploy: Vercel (preview + produção)
-1.1 Backend: Supabase — projeto lp-factory-10
-1.1.1 Segredos e flags de execução (server-side)
-• SUPABASE_SECRET_KEY
-• ACCESS_CONTEXT_ENFORCED=true
-• ACCESS_CTX_USE_V2=true
-1.1.2 Variáveis Públicas
-• NEXT_PUBLIC_SUPABASE_URL
-• NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
-1.1.3 Convenções
-• TypeScript: camelCase
-• SQL/Postgres: snake_case
-• Pipeline: GitHub Web → Vercel
-• Regra: não usar SUPABASE_SERVICE_ROLE_KEY (usar apenas SUPABASE_SECRET_KEY)
-1.1.4 Runtime & Toolchain
-• Node.js: 22.x (Vercel > Settings > Build and Deployment > Node.js Version)
-• TypeScript: 5.5.4 (repo; versão do compilador)
-
+1.1 accounts
+1.1.1 Chaves, constraints e relacionamentos
+• PK: id uuid
+• UNIQUE: subdomain, domain, slug
+• Status: active | inactive | suspended | pending_setup | trial
+• FK: plan_id → plans; owner_user_id → auth.users
+1.1.2 Índices
+• accounts_name_gin_idx (GIN to_tsvector portuguese, name)
+1.1.3 Segurança
+• Trigger Hub: sim (ver seção 4)
+• RLS: obrigatório
+1.1.4 Policies (TBD: preencher nomes reais no Supabase)
+• Select: membro ativo ou platform_admin
+• Update: owner/admin (restrito)
+• Insert: somente via RPC (quando aplicável)
 2. Stack & Dependências
 2.1 Framework
 • Next.js 16.1.1 (App Router, SSR, Server Components)
