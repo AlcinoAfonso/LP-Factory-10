@@ -1,0 +1,31 @@
+{
+  "meta": {
+    "datetime": "05/01/2026 14:00",
+    "origin": "revisao normativa",
+    "scope": "documentacao",
+    "execution_mode": "github_actions",
+    "target_doc": "docs/base-tecnica.md",
+    "warnings": [
+      "A1 omitido: replace_section exige que a primeira linha do content comece exatamente com \"0 \" (target \"0\"), mas o bloco começa com \"0. Introdução\".",
+      "C1 omitido: bloco de CHANGELOG não fornecido (content vazio)."
+    ]
+  },
+  "ops": [
+    {
+      "id": "A2",
+      "doc_path": "docs/base-tecnica.md",
+      "op": "replace_section",
+      "target": "1.1",
+      "content": "1.1 accounts\n1.1.1 Chaves, constraints e relacionamentos\n• PK: id uuid\n• UNIQUE: subdomain, domain, slug\n• Status: active | inactive | suspended | pending_setup | trial\n• FK: plan_id → plans; owner_user_id → auth.users\n1.1.2 Índices\n• accounts_name_gin_idx (GIN to_tsvector portuguese, name)\n1.1.3 Segurança\n• Trigger Hub: sim (ver seção 4)\n• RLS: obrigatório\n1.1.4 Policies (TBD: preencher nomes reais no Supabase)\n• Select: membro ativo ou platform_admin\n• Update: owner/admin (restrito)\n• Insert: somente via RPC (quando aplicável)\n"
+    }
+  ],
+  "rules": {
+    "fail_if_anchor_missing": true,
+    "fail_if_target_missing": true,
+    "fail_if_section_already_exists_on_insert": true,
+    "fail_if_ambiguous_match": true,
+    "no_renumber": true,
+    "no_reformat": true,
+    "no_out_of_scope_changes": true
+  }
+}
