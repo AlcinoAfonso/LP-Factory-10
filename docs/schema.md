@@ -72,7 +72,7 @@ Regra anti-drift: base-tec.md não repete listas de DB; apenas referencia este a
 	• Policies (TBD: nomes reais):
 		○ Admin: gerir tokens (platform_admin/super_admin)
 		○ Próprio usuário: histórico (created_by = auth.uid()) quando aplicável
-2. Views 
+2. Views
 2.1 v_access_context_v2
 	• Objetivo: fonte única de decisão user ↔ conta
 	• Colunas garantidas:
@@ -116,7 +116,7 @@ Regra anti-drift: base-tec.md não repete listas de DB; apenas referencia este a
 	• Colunas garantidas: id, entity, entity_id, action, diff, account_id, actor_user_id, ip_address, created_at
 	• Segurança: security_invoker = true
 	• Consumidores: Admin/Auditoria
-3. Functions / RPC 
+3. Functions / RPC
 3.1 Onboarding (E7)
 	• create_account_with_owner(token_id uuid, actor_id uuid) → uuid
 		○ Segurança: SECURITY DEFINER (aprovado)
