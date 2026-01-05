@@ -238,7 +238,7 @@ Regra: qualquer novo arquivo em app/auth/ não pode importar @supabase/* até se
 • /a: público sem sessão; privado só em /a/{account_slug} com gate SSR (ver 5.4)
 • Adapters vNext: seguir 3.14
 
-8. Changelog
+99. Changelog
 v1.9.6 (04/01/2026) — Base Técnica: correções de texto truncado e reforço de referências de manutenção/validação (paths e disparo manual) para o contexto do Next.js 16.1.1
 v1.9.5 (30/12/2025) — Upgrade Next.js 16.1.1
 • Atualizado 0.1 Cabeçalho: data/versão para v1.9.5.
