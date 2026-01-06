@@ -182,3 +182,4 @@ Regra anti-drift: base-tec.md não repete listas de DB; apenas referencia este a
 	• MemberStatus: pending | active | inactive | revoked
 	• MemberRole: owner | admin | editor | viewer
 	• Regra: proibido redefinir fora do arquivo canônico; adapters normalizam valores do DB
+99. Changelog
