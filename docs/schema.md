@@ -17,6 +17,7 @@
 • Policies: quando Delete não estiver listado, assumir proibido/TBD.
 
 2. Tabelas
+
 1.1 accounts
 1.1.1 Chaves, constraints e relacionamentos
 • PK: id uuid
@@ -101,6 +102,7 @@
 • Próprio usuário: histórico (created_by = auth.uid()) quando aplicável
 
 2. Views
+
 2.1 v_access_context_v2
 2.1.1 Objetivo
 • Fonte única de decisão user ↔ conta
@@ -163,6 +165,7 @@
 • Consumidores: Admin/Auditoria
 
 3. Functions / RPC
+
 3.1 Onboarding (E7)
 3.1.1 create_account_with_owner(token_id uuid, actor_id uuid) → uuid
 • Segurança: SECURITY DEFINER (aprovado)
@@ -215,6 +218,7 @@
 • jsonb_diff_val(old jsonb, new jsonb) → jsonb
 
 4. Triggers 
+
 4.1 Trigger Hub (governança)
 4.1.1 tg_accounts_hub
 • Tabela: accounts
@@ -235,9 +239,11 @@
 • post_sale_tokens: sem trigger
 
 5. Tipos canônicos 
+
 • Fonte única: PATH: src/lib/types/status.ts
 • AccountStatus: active | inactive | suspended | pending_setup | trial
 • MemberStatus: pending | active | inactive | revoked
 • MemberRole: owner | admin | editor | viewer
 • Regra: proibido redefinir fora do arquivo canônico; adapters normalizam valores do DB
+
 99. Changelog
