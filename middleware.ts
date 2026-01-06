@@ -10,21 +10,13 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // 🔹 Para /a/{sub} (exceto 'home'): atualiza sessão e grava cookie de última conta
+  // Para /a/{sub} (exceto 'home'): atualiza sessãoa
   if (request.method === "GET" && pathname.startsWith("/a/")) {
     const segs = pathname.split("/");
     const sub = segs[2] || "";
     if (sub && sub !== "home") {
       const res = await updateSession(request);
-      const isProd = process.env.NODE_ENV === "production";
-      res.cookies.set("last_account_subdomain", sub, {
-        httpOnly: true,
-        sameSite: "lax",
-        path: "/",
-        maxAge: 60 * 60 * 24 * 30, // 30 dias
-        secure: isProd,
-      });
-      return res;
+         return res;
     }
   }
 
