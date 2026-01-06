@@ -50,6 +50,19 @@ export default async function Layout({ children, params }: LayoutProps) {
   );
 
   if (!ctx) {
+    // Se o usuário estiver autenticado, evita loop com cookie de "última conta"
+    // e manda para /a/home pedindo limpeza do cookie no middleware.
+    let userEmail: string | null = null;
+    try {
+      userEmail = await getUserEmail();
+    } catch {
+      userEmail = null;
+    }
+
+    if (userEmail) {
+      redirect("/a/home?clear_last=1");
+    }
+
     redirect("/auth/confirm/info");
   }
 
