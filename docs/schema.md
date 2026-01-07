@@ -230,3 +230,5 @@
 • Regra: proibido redefinir fora do arquivo canônico; adapters normalizam valores do DB
 
 99. Changelog
+vSMOKE (07/01/2026) — Smoke test do executor
+• Entrada de teste (pode remover).
