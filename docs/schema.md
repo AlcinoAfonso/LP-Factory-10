@@ -151,6 +151,11 @@
 • Segurança: security_invoker = true
 • Consumidores: Admin/Auditoria
 
+2.7 v_smoke_view
+2.7.1 Objetivo
+• Smoke test: validar insert_after_section com âncora inteira (2).
+2.7.2 Segurança
+• security_invoker = true
 3. Functions / RPC
 
 3.1 Onboarding (E7)
@@ -230,3 +235,5 @@
 • Regra: proibido redefinir fora do arquivo canônico; adapters normalizam valores do DB
 
 99. Changelog
+vSMOKE (07/01/2026) — Adiciona view de smoke test
+• Adiciona 2.7 v_smoke_view para validar insert_after_section com âncora 2.
