@@ -1,0 +1,28 @@
+{
+  "meta": {
+    "datetime": "07/01/2026 10:42",
+    "origin": "smoke_test",
+    "scope": "documentacao",
+    "execution_mode": "github_actions",
+    "target_doc": "docs/schema.md",
+    "warnings": []
+  },
+  "ops": [
+    {
+      "id": "A1",
+      "doc_path": "docs/schema.md",
+      "op": "replace_section",
+      "target": "99",
+      "content": "99. Changelog\nvSMOKE (07/01/2026) — Smoke test do executor\n• Entrada de teste (pode remover).\n"
+    }
+  ],
+  "rules": {
+    "fail_if_anchor_missing": true,
+    "fail_if_target_missing": true,
+    "fail_if_section_already_exists_on_insert": true,
+    "fail_if_ambiguous_match": true,
+    "no_renumber": true,
+    "no_reformat": true,
+    "no_out_of_scope_changes": true
+  }
+}
