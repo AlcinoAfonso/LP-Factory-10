@@ -1,7 +1,7 @@
 {
   "meta": {
-    "datetime": "07/01/2026 10:42",
-    "origin": "smoke_test",
+    "datetime": "07/01/2026 11:52",
+    "origin": "ajuste pontual",
     "scope": "documentacao",
     "execution_mode": "github_actions",
     "target_doc": "docs/schema.md",
