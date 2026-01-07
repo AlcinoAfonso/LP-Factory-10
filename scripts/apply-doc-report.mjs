@@ -56,9 +56,9 @@ function sectionStartRegex(sectionId) {
   // - pai não casa filho (3.4 não casa 3.4.1)
   // - permite títulos com pontuação colada (ex.: "3.4:", "3.4—", "3.4)")
   // Regra: após o número da seção, NÃO pode haver ".<dígito>".
-  // E deve haver whitespace, fim de linha, ou pontuação comum.
+  // E deve haver whitespace, fim de linha, ou pontuação comum (inclui "." para headings como "2. Título").
   return new RegExp(
-    `^\\s*${escapeRegExp(sectionId)}(?!\\.\\d)(?=\\s|$|[:;—–\\-\\)\\]\\}])`,
+    `^\\s*${escapeRegExp(sectionId)}(?!\\.\\d)(?=\\s|$|[.:;—–\\-\\)\\]\\}])`,
     "m"
   );
 }
