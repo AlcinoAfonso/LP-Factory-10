@@ -1,7 +1,7 @@
 {
   "meta": {
-    "datetime": "07/01/2026 11:52",
-    "origin": "ajuste pontual",
+    "datetime": "07/01/2026 14:13",
+    "origin": "smoke_test",
     "scope": "documentacao",
     "execution_mode": "github_actions",
     "target_doc": "docs/schema.md",
@@ -12,8 +12,9 @@
       "id": "A1",
       "doc_path": "docs/schema.md",
       "op": "replace_section",
-      "target": "99",
-      "content": "99. Changelog\nvSMOKE (07/01/2026) — Smoke test do executor\n• Entrada de teste (pode remover).\n"
+      "target": "2",
+      "mode": "shallow",
+      "content": "2. Views\n• vSMOKE (07/01/2026): valida replace_section em seção inteira (target \"2\") com mode=shallow, preservando subseções 2.x.\n"
     }
   ],
   "rules": {
