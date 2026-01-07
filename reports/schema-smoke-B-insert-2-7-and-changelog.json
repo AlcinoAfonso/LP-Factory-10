@@ -1,7 +1,7 @@
 {
   "meta": {
-    "datetime": "07/01/2026 10:42",
-    "origin": "smoke_test",
+    "datetime": "07/01/2026 11:52",
+    "origin": "ajuste pontual",
     "scope": "documentacao",
     "execution_mode": "github_actions",
     "target_doc": "docs/schema.md",
@@ -13,14 +13,14 @@
       "doc_path": "docs/schema.md",
       "op": "insert_after_section",
       "anchor": "2",
-      "content": "2.7 v_smoke_view\n2.7.1 Objetivo\n• Smoke test: validar insert_after_section com âncora inteira (2).\n2.7.2 Segurança\n• security_invoker = true\n"
+      "content": "2.7 v_smoke_view\n2.7.1 Objetivo\n• Smoke test: validar insert_after_section com ancora inteira (2).\n2.7.2 Segurança\n• security_invoker = true\n"
     },
     {
       "id": "C1",
       "doc_path": "docs/schema.md",
       "op": "insert_after_heading",
       "heading": "99. Changelog",
-      "content": "vSMOKE (07/01/2026) — Adiciona view de smoke test\n• Adiciona 2.7 v_smoke_view para validar insert_after_section com âncora 2.\n"
+      "content": "vSMOKE (07/01/2026) — Adiciona view de smoke test\n• Adiciona 2.7 v_smoke_view para validar insert_after_section com ancora 2.\n"
     }
   ],
   "rules": {
