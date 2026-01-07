@@ -94,7 +94,7 @@
 • Próprio usuário: histórico (created_by = auth.uid()) quando aplicável
 
 2. Views
-
+• vSMOKE (07/01/2026): valida replace_section em seção inteira (target "2") com mode=shallow, preservando subseções 2.x.
 2.1 v_access_context_v2
 2.1.1 Objetivo
 • Fonte única de decisão user ↔ conta
