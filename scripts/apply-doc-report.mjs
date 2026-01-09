@@ -396,6 +396,34 @@ async function main() {
       const content = op.content;
       if (!target || typeof target !== "string") die(`Op ${opId}: target ausente (ex: "2.1").`);
       if (typeof content !== "string") die(`Op ${opId}: content ausente.`);
+            // capture explicit mode before normalization
+      const explicitMode = op.mode;
+
+            // Guard: when no explicit mode is provided (default "subtree"), avoid silently
+      // replacing a section that has child subsections. Detect if the target section
+      // has any descendant headings in the document. If so, require the author to
+      // specify mode:"shallow" explicitly or to include the subsections in the replacement.
+      if (!explicitMode) {
+        const targetTrim = target.trim();
+        // determine if any line in the document starts with a section id that
+        // is a descendant of the target (e.g. 3.4.1 is a descendant of 3.4)
+        const hasDescendants = doc.lines.some((line) => {
+          const m = line.match(/^\s*(\d+(?:\.\d+)*)\b/);
+          if (!m) return false;
+          const foundId = m[1];
+          return isDescendantSection(foundId, targetTrim);
+        });
+        if (hasDescendants) {
+          die(
+            'Op ' +
+              opId +
+              ': replace_section ' +
+              targetTrim +
+              ' afeta uma seção com subseções. Defina mode:"shallow" explicitamente ou inclua as subseções no bloco de content.'
+          );
+        }
+      }
+
 
       const mode = normalizeReplaceMode(op.mode);
 
