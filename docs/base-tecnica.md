@@ -241,7 +241,6 @@ Regra: qualquer novo arquivo em app/auth/ não pode importar @supabase/* até se
 
 99. Changelog
 v1.9.7 (08/01/2026) — Ajustes normativos para Auth, PostgREST e rota /a
-• Atualizado cabeçalho de versão/data (0.1).
 • Registrada regra de Site URL e Redirect URLs do Supabase Auth para produção e previews quando necessário (2.4).
 • Removidas linhas truncadas e consolidada a orientação de PostgREST 14.1 (3.12).
 • Refinada mensagem neutra do reset para email não cadastrado (5.3.2).
