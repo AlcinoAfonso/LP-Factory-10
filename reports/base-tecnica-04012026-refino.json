@@ -1,50 +1,48 @@
 {
   "meta": {
-    "datetime": "04/01/2026 00:00",
+    "datetime": "09/01/2026 09:00",
     "origin": "revisao normativa",
     "scope": "documentacao",
     "execution_mode": "github_actions",
     "target_doc": "docs/base-tecnica.md",
-    "warnings": [
-      "meta.datetime preenchido com horário 00:00 por ausência de horário explícito no relatório humano."
-    ]
+    "warnings": []
   },
   "ops": [
     {
-      "id": "A1",
-      "doc_path": "docs/base-tecnica.md",
       "op": "replace_section",
+      "doc_path": "docs/base-tecnica.md",
       "target": "0.1",
-      "content": "0.1 Cabeçalho\n• Data da última atualização: 04/01/2026\n• Documento: LP Factory 10 — Base Técnica v1.9.6 — Referência normativa ativa\n"
+      "content": "0.1 Cabeçalho\n• Data da última atualização: 08/01/2026\n• Documento: LP Factory 10 — Base Técnica v1.9.7 — Referência normativa ativa\n"
     },
     {
-      "id": "A2",
-      "doc_path": "docs/base-tecnica.md",
       "op": "replace_section",
-      "target": "2.1",
-      "content": "2.1 Framework\n• Next.js 16.1.1 (App Router, SSR, Server Components)\n• React 19.2.x + React DOM 19.2.x\n• TypeScript 5.5.4 (strict)\n• Node.js 22.x\n• Package manager: npm\n• Lockfile canônico: package-lock.json (deve ficar commitado e alinhado ao package.json)\n• Next 16.x prioriza Turbopack; evitar customizações via webpack() no next.config quando possível (preferir alias via tsconfig.json > paths)\n"
+      "doc_path": "docs/base-tecnica.md",
+      "target": "2.4",
+      "content": "2.4 Deploy\n• Vercel: CI automático.\n• Variáveis validadas: SUPABASE_SECRET_KEY; NEXT_PUBLIC_SUPABASE_URL; NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY.\n• Supabase Auth URLs: Site URL e Redirect URLs devem cobrir o domínio de produção; incluir previews apenas quando necessário.\n"
     },
     {
-      "id": "A3",
-      "doc_path": "docs/base-tecnica.md",
       "op": "replace_section",
-      "target": "3.4",
-      "mode": "shallow",
-      "content": "3.4 CI/Lint (Bloqueios)\n• Validação por PR + preview de deploy (Vercel)\n• PATH: .github/workflows/security.yml\n• Bloqueio de segurança: impedir padrões de implicit flow em client/UI (access_token, refresh_token, setSession, getSessionFromUrl)\n• Regra: verifyOtp() só pode existir em app/auth/confirm/**\n• Regra de merge (mínimo): validação automática ok + preview ok + smoke de acesso (login/logout/reset de senha/navegação pós-login)\n• Regra: antes de merge, seguir obrigatoriamente o checklist da seção 7 (anti-regressão)\n"
+      "doc_path": "docs/base-tecnica.md",
+      "target": "3.12",
+      "content": "3.12 Compatibilidade PostgREST 14.1\n• Ambiente atual: PostgREST 14.1\n• Índice GIN accounts_name_gin_idx obrigatório quando a feature de busca por nome (FTS) estiver ativa\n• search_path fixado em public\n• Recurso: Spread (to-many) em relações to-many (disponível). Estratégia: usar alias para evitar colisão de chaves quando retornar múltiplas relações na mesma resposta\n• Recurso: busca FTS (fts, plfts, phfts, wfts) em text/json. Preferir wfts e criar índices GIN conforme necessidade de performance\n• UX/Erro: HTTP 416 / PGRST103 em paginação. Interpretação: resultado vazio (fim da lista), não erro de sistema; manter itens já carregados e parar novas requisições\n"
     },
     {
-      "id": "A4",
-      "doc_path": "docs/base-tecnica.md",
       "op": "replace_section",
-      "target": "3.4.1",
-      "content": "3.4.1 Manutenção (Upgrade Next.js + lockfile)\n• PATH: .github/workflows/upgrade-next-16-1-1.yml\n• Disparo: manual (inputs: target_branch, next_version)\n• Objetivo: atualizar Next.js + eslint-config-next para a versão informada e manter lockfile canônico versionado (npm)\n• Regra: lockfile canônico é package-lock.json (deve ficar commitado e alinhado ao package.json)\n• Setup: Node.js 22.x\n• Regra: se existir package-lock.json, usar instalação reprodutível; se não existir, gerar e commitar package-lock.json\n• Lint: non-blocking em manutenção (não deve impedir o bump/lockfile)\n• Build: blocking (não publicar se build falhar)\n• Regra: commitar alterações somente quando houver mudanças detectadas\n"
+      "doc_path": "docs/base-tecnica.md",
+      "target": "5.3.2",
+      "content": "5.3.2 Password Reset (MVP)\n• Modal → email → link abre nova aba → define senha (2x) → sucesso → auto-redirect dashboard\n• Link expirado (10m): tela mostra “link expirou” + reenvio inline\n• Email não cadastrado: mensagem neutra “Se este email estiver cadastrado, você receberá um link de recuperação.”\n"
     },
     {
-      "id": "C1",
+      "op": "replace_section",
       "doc_path": "docs/base-tecnica.md",
+      "target": "5.4",
+      "content": "5.4 Regras da rota /a (anti-regressão)\n• /a é pública sem sessão.\n• Em navegação limpa (sem sessão), /a não redireciona automaticamente para /auth/login.\n• Dashboard privado só em /a/{account_slug}.\n• /a → /a/{account_slug} só quando existe sessão válida e a conta foi resolvida (cookie last_account_subdomain ou fallback).\n• allow/deny é responsabilidade do gate SSR em /a/{account_slug}.\n• /a/home é pública e bypassa o gate SSR de conta em app/a/[account]/layout.tsx.\n• Se last_account_subdomain estiver inválido: limpar cookie e retomar resolução de conta em /a/home (sem loop).\n"
+    },
+    {
       "op": "insert_after_heading",
-      "heading": "8. Changelog",
-      "content": "v1.9.6 | 04/01/2026 — Base Técnica: correções de texto truncado e reforço de referências de manutenção/validação (paths e disparo manual) para o contexto do Next.js 16.1.1\n\n"
+      "doc_path": "docs/base-tecnica.md",
+      "heading": "99. Changelog",
+      "content": "v1.9.7 (08/01/2026) — Ajustes normativos para Auth, PostgREST e rota /a\n• Atualizado cabeçalho de versão/data (0.1).\n• Registrada regra de Site URL e Redirect URLs do Supabase Auth para produção e previews quando necessário (2.4).\n• Removidas linhas truncadas e consolidada a orientação de PostgREST 14.1 (3.12).\n• Refinada mensagem neutra do reset para email não cadastrado (5.3.2).\n• Documentado comportamento de recuperação para cookie last_account_subdomain inválido (5.4).\n"
     }
   ],
   "rules": {
