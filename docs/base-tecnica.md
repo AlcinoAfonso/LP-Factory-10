@@ -1,7 +1,7 @@
 0. Introdução
 0.1 Cabeçalho
-• Data da última atualização: 04/01/2026
-• Documento: LP Factory 10 — Base Técnica v1.9.6 — Referência normativa ativa
+• Data da última atualização: 08/01/2026
+• Documento: LP Factory 10 — Base Técnica v1.9.7 — Referência normativa ativa
 0.2 Propósito
 • Documentação técnica prescritiva do estado atual do sistema (foco em Next.js + Supabase + Acesso + SQL).
 0.3 Regra de formatação (fixa)
@@ -52,6 +52,7 @@
 2.4 Deploy
 • Vercel: CI automático.
 • Variáveis validadas: SUPABASE_SECRET_KEY; NEXT_PUBLIC_SUPABASE_URL; NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY.
+• Supabase Auth URLs: Site URL e Redirect URLs devem cobrir o domínio de produção; incluir previews apenas quando necessário.
 2.5 Regras de Import (canônica)
 • @supabase/* somente em: src/lib/**/adapters/ (ex.: src/lib/access/adapters/, src/lib/admin/adapters/) e lib/supabase/*.
 • Exceção: rotas SULB autorizadas em app/auth/* (lista na seção 6.4)
@@ -129,9 +130,9 @@
 • Ambiente atual: PostgREST 14.1
 • Índice GIN accounts_name_gin_idx obrigatório quando a feature de busca por nome (FTS) estiver ativa
 • search_path fixado em public
-• Recurso: Spread (...) em relações to-many (disponível). Estado: não utilizado no código atualmente. Regra: em pai + filhos na mesma resposta, usar alias para evitar colisão de chaves
-• Recurso: busca FTS (fts, plfts, phfts, wfts) em text/json (disponível). Estado: sem escopo de telas. Regra: ao ativar busca em UI, preferir wfts como padrão e adicionar índices GIN conforme necessidade de performance
-• UX/Erro: HTTP 416 / PGRST103 em paginação. Interpretação: range/offset inválido. Comportamento obrigatório: tratar como fim da lista (não é erro de sistema), manter itens já carregados e parar novas requisições
+• Recurso: Spread (to-many) em relações to-many (disponível). Estratégia: usar alias para evitar colisão de chaves quando retornar múltiplas relações na mesma resposta
+• Recurso: busca FTS (fts, plfts, phfts, wfts) em text/json. Preferir wfts e criar índices GIN conforme necessidade de performance
+• UX/Erro: HTTP 416 / PGRST103 em paginação. Interpretação: resultado vazio (fim da lista), não erro de sistema; manter itens já carregados e parar novas requisições
 3.13 Compatibilidade Next.js 15 / React 19
 • Contexto: notas de compatibilidade da migração Next.js 15 → Next.js 16 (estado atual: Next.js 16.1.1 + React 19.x)
 • cookies() e headers() podem exigir await em SSR/Server Components (usar async quando necessário)
@@ -185,7 +186,7 @@
 5.3.2 Password Reset (MVP)
 • Modal → email → link abre nova aba → define senha (2x) → sucesso → auto-redirect dashboard
 • Link expirado (10m): tela mostra “link expirou” + reenvio inline
-• Email não cadastrado: mensagem neutra “Se este email estiver cadastrado…”
+• Email não cadastrado: mensagem neutra “Se este email estiver cadastrado, você receberá um link de recuperação.”
 5.3.3 Throttling
 • Login: 3s após 3 falhas; 10s após 5 (com countdown)
 • Reset: throttle 5min com countdown
@@ -199,7 +200,7 @@
 • /a → /a/{account_slug} só quando existe sessão válida e a conta foi resolvida (cookie last_account_subdomain ou fallback).
 • allow/deny é responsabilidade do gate SSR em /a/{account_slug}.
 • /a/home é pública e bypassa o gate SSR de conta em app/a/[account]/layout.tsx.
-
+• Se last_account_subdomain estiver inválido: limpar cookie e retomar resolução de conta em /a/home (sem loop).
 6. Estrutura de Arquivos Essencial
 6.1 Visão rápida (fonte única)
 • Fonte única do inventário (pastas/arquivos e mapa do repo): PATH: docs/repo-inv.md
@@ -239,6 +240,12 @@ Regra: qualquer novo arquivo em app/auth/ não pode importar @supabase/* até se
 • Adapters vNext: seguir 3.14
 
 99. Changelog
+v1.9.7 (08/01/2026) — Ajustes normativos para Auth, PostgREST e rota /a
+• Atualizado cabeçalho de versão/data (0.1).
+• Registrada regra de Site URL e Redirect URLs do Supabase Auth para produção e previews quando necessário (2.4).
+• Removidas linhas truncadas e consolidada a orientação de PostgREST 14.1 (3.12).
+• Refinada mensagem neutra do reset para email não cadastrado (5.3.2).
+• Documentado comportamento de recuperação para cookie last_account_subdomain inválido (5.4).
 v1.9.6 (04/01/2026) — Base Técnica: correções de texto truncado e reforço de referências de manutenção/validação (paths e disparo manual) para o contexto do Next.js 16.1.1
 v1.9.5 (30/12/2025) — Upgrade Next.js 16.1.1
 • Atualizado 0.1 Cabeçalho: data/versão para v1.9.5.
