@@ -162,25 +162,15 @@ export async function POST(req: NextRequest) {
     return redirectRes;
   }
 
-  const { data, error } = await supabase.auth.verifyOtp({ type, token_hash });
-  if (error) {
-    return NextResponse.redirect(
-      new URL(
-        "/auth/error?error=" +
-          encodeURIComponent("Link inválido/expirado. Solicite um novo e-mail."),
-        url
-      )
-    );
-  }
+const { error: verifyError } = await supabase.auth.verifyOtp({ type, token_hash });
+    if (verifyError) {
+      return NextResponse.redirect(
+        new URL(
+          "/auth/error?error=" +
+            encodeURIComponent("Link inv\u00e1lido/expirado. Solicite um novo e-mail."),
+          url
+        )
+      );
+    }
 
-  // Persistência defensiva: se o verifyOtp trouxe session, força setSession
-  // para disparar escrita de cookies no SSR bridge.
-  if (data?.session?.access_token && data?.session?.refresh_token) {
-    await supabase.auth.setSession({
-      access_token: data.session.access_token,
-      refresh_token: data.session.refresh_token,
-    });
-  }
-
-  return redirectRes;
-}
+    return redirectRes;
