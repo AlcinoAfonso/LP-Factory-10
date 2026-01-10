@@ -91,4 +91,82 @@ export async function POST(req: NextRequest) {
   const form = await req.formData();
 
   const token_hash = String(form.get("token_hash") || "");
-  const code = String(form.get("code") || ""
+  const code = String(form.get("code") || "");
+  const typeRaw = String(form.get("type") || "");
+  const type = isValidEmailOtpType(typeRaw) ? (typeRaw as EmailOtpType) : null;
+
+  const rawNext = String(form.get("next") || "");
+  const next = isSafeInternal(rawNext)
+    ? rawNext
+    : type === "recovery"
+      ? "/auth/update-password"
+      : "/";
+
+  if ((!token_hash && !code) || !type) {
+    return NextResponse.redirect(
+      new URL("/auth/error?error=No%20token%20hash/code%20or%20type", url)
+    );
+  }
+
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseKey =
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ??
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+  if (!supabaseUrl || !supabaseKey) {
+    return NextResponse.redirect(
+      new URL(
+        "/auth/error?error=" +
+          encodeURIComponent("Config Supabase ausente (URL/KEY)."),
+        url
+      )
+    );
+  }
+
+  // Mesmo response que receberá os cookies via SSR bridge
+  const redirectRes = NextResponse.redirect(new URL(next, url), 303);
+  redirectRes.headers.set("Cache-Control", "no-store, max-age=0");
+  redirectRes.headers.set("Pragma", "no-cache");
+
+  const supabase = createServerClient(supabaseUrl, supabaseKey, {
+    cookies: {
+      getAll() {
+        return req.cookies.getAll();
+      },
+      setAll(cookiesToSet: CookieToSet[]) {
+        for (const { name, value, options } of cookiesToSet) {
+          redirectRes.cookies.set(name, value, options);
+        }
+      },
+    },
+  });
+
+  if (code) {
+    const { error } = await supabase.auth.exchangeCodeForSession(code);
+    if (error) {
+      return NextResponse.redirect(
+        new URL(
+          "/auth/error?error=" +
+            encodeURIComponent(
+              "Link inválido/expirado. Solicite um novo e-mail."
+            ),
+          url
+        )
+      );
+    }
+    return redirectRes;
+  }
+
+  const { error: verifyError } = await supabase.auth.verifyOtp({ type, token_hash });
+  if (verifyError) {
+    return NextResponse.redirect(
+      new URL(
+        "/auth/error?error=" +
+          encodeURIComponent("Link inválido/expirado. Solicite um novo e-mail."),
+        url
+      )
+    );
+  }
+
+  return redirectRes;
+}
