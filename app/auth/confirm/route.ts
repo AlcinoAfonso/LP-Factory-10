@@ -1,7 +1,8 @@
 // app/auth/confirm/route.ts
 import { type EmailOtpType } from "@supabase/supabase-js";
-import { createServerClient, type CookieOptions } from "@supabase/ssr";
+import { cookies } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
+import { createServerClient, type CookieOptions } from "@supabase/ssr";
 
 type CookieToSet = { name: string; value: string; options: CookieOptions };
 
@@ -33,27 +34,7 @@ function interstitialHTML(params: {
   const ty = escAttr(params.type);
   const nx = escAttr(params.next);
 
-  return `<!doctype html><html><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/></head>
-  <body style="display:flex;min-height:100dvh;align-items:center;justify-content:center;font-family:system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif">
-    <form method="POST" action="/auth/confirm" style="display:flex;gap:8px;flex-direction:column;align-items:center">
-      <input type="hidden" name="token_hash" value="${th}"/>
-      <input type="hidden" name="code" value="${cd}"/>
-      <input type="hidden" name="type" value="${ty}"/>
-      <input type="hidden" name="next" value="${nx}"/>
-      <button type="submit" style="padding:.75rem 1rem;border-radius:.5rem;border:1px solid #ccc;cursor:pointer">Continuar</button>
-    </form>
-  </body></html>`;
-}
-
-function isValidEmailOtpType(v: string): v is EmailOtpType {
-  // valores suportados na prática pelo Supabase para Email OTP flows
-  return (
-    v === "signup" ||
-    v === "invite" ||
-    v === "magiclink" ||
-    v === "recovery" ||
-    v === "email_change"
-  );
+  return `<!doctype html><html><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/><title>Continuar</title></head><body style="font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; padding: 32px; line-height: 1.4;"><main style="max-width: 520px; margin: 0 auto;"><h1 style="font-size: 20px; margin: 0 0 12px;">Confirmar para continuar</h1><p style="margin: 0 0 20px; color: #444;">Para sua segurança, confirme para prosseguir.</p><form method="POST" action="/auth/confirm"><input type="hidden" name="token_hash" value="${th}"/><input type="hidden" name="code" value="${cd}"/><input type="hidden" name="type" value="${ty}"/><input type="hidden" name="next" value="${nx}"/><button type="submit" style="padding: 10px 14px; border-radius: 10px; border: 1px solid #ddd; background: #111; color: #fff; cursor: pointer;">Continuar</button></form></main></body></html>`;
 }
 
 export async function GET(req: NextRequest) {
@@ -61,85 +42,58 @@ export async function GET(req: NextRequest) {
 
   const token_hash = url.searchParams.get("token_hash") ?? "";
   const code = url.searchParams.get("code") ?? "";
-  const typeRaw = url.searchParams.get("type") ?? "";
-  const type = isValidEmailOtpType(typeRaw) ? typeRaw : null;
+  const type = (url.searchParams.get("type") ?? "") as EmailOtpType | "";
+  const nextRaw = url.searchParams.get("next") ?? "/auth/update-password";
+  const next = isSafeInternal(nextRaw) ? nextRaw : "/auth/update-password";
 
-  const rawNext = url.searchParams.get("next");
-  const next = isSafeInternal(rawNext)
-    ? rawNext!
-    : type === "recovery"
-      ? "/auth/update-password"
-      : "/";
-
-  if ((!token_hash && !code) || !type) {
-    return NextResponse.redirect(
-      new URL("/auth/error?error=No%20token%20hash/code%20or%20type", url)
-    );
-  }
-
-  // Mitigação anti-scanner: sempre exige gesto do usuário (POST)
-  return new Response(
-    interstitialHTML({ token_hash, code, type, next }),
+  // Intersticial: evita consumir token no GET (anti preview/scanner).
+  return new NextResponse(
+    interstitialHTML({ token_hash, code, type: String(type), next }),
     {
-      headers: { "Content-Type": "text/html; charset=utf-8" },
+      status: 200,
+      headers: {
+        "content-type": "text/html; charset=utf-8",
+        "cache-control": "no-store",
+      },
     }
   );
 }
 
 export async function POST(req: NextRequest) {
   const url = new URL(req.url);
+
   const form = await req.formData();
+  const token_hash = String(form.get("token_hash") ?? "");
+  const code = String(form.get("code") ?? "");
+  const type = String(form.get("type") ?? "") as EmailOtpType | "";
+  const nextRaw = String(form.get("next") ?? "/auth/update-password");
+  const next = isSafeInternal(nextRaw) ? nextRaw : "/auth/update-password";
 
-  const token_hash = String(form.get("token_hash") || "");
-  const code = String(form.get("code") || "");
-  const typeRaw = String(form.get("type") || "");
-  const type = isValidEmailOtpType(typeRaw) ? (typeRaw as EmailOtpType) : null;
+  const cookieStore = await cookies();
+  const cookiesToSet: CookieToSet[] = [];
 
-  const rawNext = String(form.get("next") || "");
-  const next = isSafeInternal(rawNext)
-    ? rawNext
-    : type === "recovery"
-      ? "/auth/update-password"
-      : "/";
-
-  if ((!token_hash && !code) || !type) {
-    return NextResponse.redirect(
-      new URL("/auth/error?error=No%20token%20hash/code%20or%20type", url)
-    );
-  }
-
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const supabaseKey =
-    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ??
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-
-  if (!supabaseUrl || !supabaseKey) {
-    return NextResponse.redirect(
-      new URL(
-        "/auth/error?error=" +
-          encodeURIComponent("Config Supabase ausente (URL/KEY)."),
-        url
-      )
-    );
-  }
-
-  // Importante: o mesmo NextResponse que receberá os cookies
-  const redirectRes = NextResponse.redirect(new URL(next, url), 303);
-  redirectRes.headers.set("Cache-Control", "no-store, max-age=0");
-  redirectRes.headers.set("Pragma", "no-cache");
-
-  // Cookie bridge preso ao redirectRes (garante Set-Cookie no POST)
-  const supabase = createServerClient(supabaseUrl, supabaseKey, {
-    cookies: {
-      getAll() {
-        return req.cookies.getAll();
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return cookieStore.getAll();
+        },
+        setAll(cookies) {
+          cookies.forEach(({ name, value, options }) => {
+            cookiesToSet.push({ name, value, options });
+          });
+        },
       },
-      setAll(cookiesToSet: CookieToSet[]) {
-        for (const { name, value, options } of cookiesToSet) {
-          redirectRes.cookies.set(name, value, options);
-        }
-      },
-    },
+    }
+  );
+
+  const redirectRes = NextResponse.redirect(new URL(next, url));
+
+  // Aplica cookies gerados pelo supabase no response de redirect
+  cookiesToSet.forEach(({ name, value, options }) => {
+    redirectRes.cookies.set(name, value, options);
   });
 
   // Fluxo:
@@ -162,16 +116,21 @@ export async function POST(req: NextRequest) {
     return redirectRes;
   }
 
-const { error: verifyError } = await supabase.auth.verifyOtp({ type, token_hash });
-    if (verifyError) {
-      return NextResponse.redirect(
-        new URL(
-          "/auth/error?error=" +
-            encodeURIComponent("Link inv\u00e1lido/expirado. Solicite um novo e-mail."),
-          url
-        )
-      );
-    }
-
-    return redirectRes;
+  // Chama verifyOtp para validar o token. Não captura a sessão retornada
+  // porque referências diretas a tokens de sessão (como access/refresh) são bloqueadas pelo CI (security.yml).
+  const { error: verifyError } = await supabase.auth.verifyOtp({
+    type,
+    token_hash,
+  });
+  if (verifyError) {
+    return NextResponse.redirect(
+      new URL(
+        "/auth/error?error=" +
+          encodeURIComponent("Link inválido/expirado. Solicite um novo e-mail."),
+        url
+      )
+    );
   }
+
+  return redirectRes;
+}
