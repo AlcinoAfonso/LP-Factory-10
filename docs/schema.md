@@ -3,16 +3,20 @@
 0.1 Cabeçalho
 • Data da última atualização: 23/12/2025
 • Documento: LP Factory 10 — Schema (DB Contract) v1.0
-0.2 Propósito
-• Contrato do banco (DB) para orientar IA em views/RPC/triggers/RLS sem inflar a Base Técnica.
-0.3 Regra anti-drift
-• base-tecnica.md não repete listas de DB; apenas referencia este arquivo.
-0.4 Como este arquivo é mantido
-• Este arquivo descreve o que existe no DB e o que é esperado como contrato.
-• Onde faltarem detalhes (ex.: nomes exatos de policies), marcar como TBD e preencher ao confirmar no Supabase.
-• Caminho para validar RLS/policies: Supabase > Database > Tables > {tabela} > Policies
-• Caminho para validar views/functions: Supabase > Database > Views / Functions
-• Policies: quando Delete não estiver listado, assumir proibido/TBD.
+0.2 Contrato do documento (parseável)
+• Esta seção define o que é relevante atualizar e como escrever.
+0.2.1 TIPO_DO_DOCUMENTO
+• TIPO_DO_DOCUMENTO: prescritivo
+0.2.2 ALLOWLIST_RELEVANCIA
+• CONTRATO_DB: somente o que existe/é esperado no banco (tabelas, colunas, enums, relacionamentos, views, RPCs/functions, triggers, RLS/policies).
+• ANTI_DRIFT: Base Técnica não repete listas de DB; deve apenas referenciar este arquivo quando precisar citar DB.
+• MANUTENCAO: quando faltar detalhe confirmado no Supabase, marcar como TBD e registrar o caminho de validação (Supabase > Database > Tables/Views/Functions/Policies).
+0.2.3 ALLOWLIST_CHANGELOG (blocklist mínima)
+• PROIBIDO: bullets administrativos (ex.: “atualizado cabeçalho/data/versão”).
+0.2.4 ESTILO (opcional)
+• Estado final (o que existe/é esperado), sem narrativa.
+• Frases curtas e normativas; preferir bullets; manter numeração estável; incluir paths e nomes exatos quando confirmados.
+
 
 1. Tabelas
 
