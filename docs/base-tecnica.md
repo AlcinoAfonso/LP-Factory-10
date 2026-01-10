@@ -2,10 +2,19 @@
 0.1 Cabeçalho
 • Data da última atualização: 08/01/2026
 • Documento: LP Factory 10 — Base Técnica v1.9.7 — Referência normativa ativa
-0.2 Propósito
-• Documentação técnica prescritiva do estado atual do sistema (foco em Next.js + Supabase + Acesso + SQL).
-0.3 Regra de formatação (fixa)
-• Markdown Lite Zero: sem crases; sem code fences; sem tabelas. Preservar exatamente títulos e numeração. Não reformatar.
+0.2 Contrato do documento (parseável)
+• Esta seção define o que é relevante atualizar e como escrever.
+0.2.1 TIPO_DO_DOCUMENTO
+• TIPO_DO_DOCUMENTO: prescritivo
+0.2.2 ALLOWLIST_RELEVANCIA
+• ARQUITETURA: Regras prescritivas que impactam implementação (arquitetura, fluxo UI > Providers > Adapters > DB, auth/SSR/cookies, guardrails).
+• CONTRATOS_CI: Contratos/restrições verificáveis (paths, allowlists, padrões proibidos, CI/security.yml, dependências permitidas).
+• GERACAO_CODIGO_SQL: Convenções necessárias para gerar código/SQL com segurança (stack oficial, fonte única de Supabase, separação Schema em docs/schema.md).
+0.2.3 ALLOWLIST_CHANGELOG (blocklist mínima)
+• PROIBIDO: bullets administrativos (ex.: “atualizado cabeçalho/data/versão”).
+0.2.4 ESTILO (opcional)
+• Estado final (o que é), sem narrativa/justificativa.
+• Frases curtas e normativas; preferir bullets; incluir paths/termos exatos; sem tabelas e sem code fences.
 
 1. Identificação do Projeto
 • Nome: LP Factory 10
