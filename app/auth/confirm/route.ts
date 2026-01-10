@@ -174,3 +174,4 @@ const { error: verifyError } = await supabase.auth.verifyOtp({ type, token_hash 
     }
 
     return redirectRes;
+  }
