@@ -396,34 +396,40 @@ async function main() {
       const content = op.content;
       if (!target || typeof target !== "string") die(`Op ${opId}: target ausente (ex: "2.1").`);
       if (typeof content !== "string") die(`Op ${opId}: content ausente.`);
-            // capture explicit mode before normalization
-      const explicitMode = op.mode;
 
-            // Guard: when no explicit mode is provided (default "subtree"), avoid silently
-      // replacing a section that has child subsections. Detect if the target section
-      // has any descendant headings in the document. If so, require the author to
-      // specify mode:"shallow" explicitly or to include the subsections in the replacement.
-      if (!explicitMode) {
-        const targetTrim = target.trim();
-        // determine if any line in the document starts with a section id that
-        // is a descendant of the target (e.g. 3.4.1 is a descendant of 3.4)
-        const hasDescendants = doc.lines.some((line) => {
+      // Guard (compat + segurança):
+      // Se mode NÃO foi fornecido e a seção alvo tem subseções no documento, evitamos apagar
+      // subseções por acidente. Permitimos seguir em "subtree" somente quando o content inclui
+      // explicitamente headings descendentes (ex.: 3.4.1) — caso contrário, falha pedindo
+      // mode:"shallow" ou inclusão das subseções no content.
+      const explicitModeProvided =
+        op.mode != null && String(op.mode).trim().length > 0;
+
+      if (!explicitModeProvided) {
+        const targetTrim = String(target).trim();
+
+        const hasDescendantsInDoc = doc.lines.some((line) => {
           const m = line.match(/^\s*(\d+(?:\.\d+)*)\b/);
           if (!m) return false;
-          const foundId = m[1];
-          return isDescendantSection(foundId, targetTrim);
+          return isDescendantSection(m[1], targetTrim);
         });
-        if (hasDescendants) {
-          die(
-            'Op ' +
-              opId +
-              ': replace_section ' +
-              targetTrim +
-              ' afeta uma seção com subseções. Defina mode:"shallow" explicitamente ou inclua as subseções no bloco de content.'
-          );
+
+        if (hasDescendantsInDoc) {
+          const contentLines = splitLinesKeepEOL(normalizeNewlines(content));
+          const hasDescendantsInContent = contentLines.some((line) => {
+            const m = line.match(/^\s*(\d+(?:\.\d+)*)\b/);
+            if (!m) return false;
+            return isDescendantSection(m[1], targetTrim);
+          });
+
+          if (!hasDescendantsInContent) {
+            die(
+              `Op ${opId}: replace_section ${targetTrim} afeta uma seção com subseções. ` +
+                `Defina mode:"shallow" (para alterar só o pai) ou inclua as subseções no bloco de content (para substituir a árvore).`
+            );
+          }
         }
       }
-
 
       const mode = normalizeReplaceMode(op.mode);
 
