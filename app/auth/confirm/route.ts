@@ -46,7 +46,6 @@ function interstitialHTML(params: {
 }
 
 function isValidEmailOtpType(v: string): v is EmailOtpType {
-  // valores suportados na prática pelo Supabase para Email OTP flows
   return (
     v === "signup" ||
     v === "invite" ||
@@ -77,13 +76,14 @@ export async function GET(req: NextRequest) {
     );
   }
 
-  // Mitigação anti-scanner: sempre exige gesto do usuário (POST)
-  return new Response(
-    interstitialHTML({ token_hash, code, type, next }),
-    {
-      headers: { "Content-Type": "text/html; charset=utf-8" },
-    }
-  );
+  // Mitigação anti-scanner: exige gesto do usuário (POST).
+  return new Response(interstitialHTML({ token_hash, code, type, next }), {
+    headers: {
+      "Content-Type": "text/html; charset=utf-8",
+      "Cache-Control": "no-store, max-age=0",
+      Pragma: "no-cache",
+    },
+  });
 }
 
 export async function POST(req: NextRequest) {
@@ -123,12 +123,11 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // Importante: o mesmo NextResponse que receberá os cookies
+  // Mesmo response que receberá os cookies via SSR bridge
   const redirectRes = NextResponse.redirect(new URL(next, url), 303);
   redirectRes.headers.set("Cache-Control", "no-store, max-age=0");
   redirectRes.headers.set("Pragma", "no-cache");
 
-  // Cookie bridge preso ao redirectRes (garante Set-Cookie no POST)
   const supabase = createServerClient(supabaseUrl, supabaseKey, {
     cookies: {
       getAll() {
@@ -142,9 +141,6 @@ export async function POST(req: NextRequest) {
     },
   });
 
-  // Fluxo:
-  // - se vier "code" -> exchangeCodeForSession(code)
-  // - se vier "token_hash" -> verifyOtp({ type, token_hash })
   if (code) {
     const { error } = await supabase.auth.exchangeCodeForSession(code);
     if (error) {
@@ -158,12 +154,11 @@ export async function POST(req: NextRequest) {
         )
       );
     }
-
     return redirectRes;
   }
 
-  const { data, error } = await supabase.auth.verifyOtp({ type, token_hash });
-  if (error) {
+  const { error: verifyError } = await supabase.auth.verifyOtp({ type, token_hash });
+  if (verifyError) {
     return NextResponse.redirect(
       new URL(
         "/auth/error?error=" +
@@ -171,15 +166,6 @@ export async function POST(req: NextRequest) {
         url
       )
     );
-  }
-
-  // Persistência defensiva: se o verifyOtp trouxe session, força setSession
-  // para disparar escrita de cookies no SSR bridge.
-  if (data?.session?.access_token && data?.session?.refresh_token) {
-    await supabase.auth.setSession({
-      access_token: data.session.access_token,
-      refresh_token: data.session.refresh_token,
-    });
   }
 
   return redirectRes;
