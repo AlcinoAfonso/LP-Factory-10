@@ -3,6 +3,7 @@
 0.1 Cabeçalho
 • Data da última atualização: 12/01/2026
 • Documento: LP Factory 10 — repo-inv v2.2.1 — Referência normativa ativa
+
 0.2 Contrato do documento (parseável)
 • Esta seção define o que é relevante atualizar e como escrever.
 0.2.1 TIPO_DO_DOCUMENTO
@@ -51,24 +52,6 @@
 
 1.5 reports — artefatos gerados por automações (não-normativos)
 • reports/ (diretório com JSONs de operações/relatórios do doc agent; manter como histórico)
-1.1 Pastas na raiz
-• .github/
-• app/
-• components/
-• docs/
-• lib/
-• src/
-• supabase/
-
-1.2 Arquivos na raiz
-• README.md
-• .gitignore
-• middleware.ts
-• next.config.js
-• package.json
-• postcss.config.js
-• tailwind.config.ts
-• tsconfig.json
 
 2. app — Rotas (Next.js App Router)
 
