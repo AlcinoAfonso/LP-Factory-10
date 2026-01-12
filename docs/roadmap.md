@@ -2,34 +2,6 @@
 
 **Propósito:** Roteiro de implementação e visão estratégica do produto  
 
----
-
-## 📑 Sumário
-
-- [E1 — Estrutura de Dados](#e1--estrutura-de-dados)
-- [E2 — Núcleo de Acesso](#e2--núcleo-de-acesso)
-- [E3 — Adapters Base](#e3--adapters-base)
-- [E4 — Account Dashboard (Infraestrutura SSR)](#e4--account-dashboard-infraestrutura-ssr)
-- [E5 — UI/Auth Account Dashboard](#e5--uiauth-account-dashboard)
-- [E6 — UI Kit Provisório](#e6--ui-kit-provisório)
-- [E7 — Conta Consultiva](#e7--conta-consultiva)
-  - [E7.1 — Conta Consultiva Update](#e71--conta-consultiva-update)
-- [E8 — Access Context & Governança](#e8--access-context--governança)
-- [E9 — Billing Engine & Stripe Sync](#e9--billing-engine--stripe-sync)
-- [E10 — Account Dashboard (UX)](#e10--account-dashboard-ux)
-  - [E10.1 — Account Dashboard UX (ex-E7.2)](#e101--account-dashboard-ux-ex-e72)
-- [E11 — Gestão de Usuários e Convites](#e11--gestão-de-usuários-e-convites)
-- [E12 — Admin Dashboard](#e12--admin-dashboard)
-  - [E12.1 — Platform Admin (Núcleo de Acesso)](#e121--platform-admin-núcleo-de-acesso)
-  - [E12.2 — Painel de Tokens / Configurador de Conta](#e122--painel-de-tokens--configurador-de-conta)
-  - [E12.3 — Painel de Contas / Prospects / Status](#e123--painel-de-contas--prospects--status)
-  - [E12.4 — Relatórios e Auditoria Consultiva](#e124--relatórios-e-auditoria-consultiva)
-- [E13 — Partner Dashboard](#e13--partner-dashboard)
-- [E14 — Workspace Dashboard](#e14--workspace-dashboard)
-- [Fases Estratégicas](#fases-estratégicas)
-
-
----
 
 ## E1 — Estrutura de Dados
 **Status:** ✅ Concluído (03/10/2025)
