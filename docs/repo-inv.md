@@ -2,7 +2,7 @@
 
 0.1 Cabeçalho
 • Data da última atualização: 20/12/2025
-• Documento: LP Factory 10 — repo-inv v2.2 — Referência normativa ativa
+• Documento: LP Factory 10 — repo-inv v2.2.0 — Referência normativa ativa
 0.2 Contrato do documento (parseável)
 • Esta seção define o que é relevante atualizar e como escrever.
 0.2.1 TIPO_DO_DOCUMENTO
