@@ -2,7 +2,7 @@
 
 0.1 Cabeçalho
 • Data da última atualização: 05/11/2025
-• Documento: LP Factory 10 — Roadmap 1.5 — Referência estratégica ativa
+• Documento: LP Factory 10 — Roadmap v1.5.0 — Referência estratégica ativa
 0.2 Contrato do documento (parseável)
 • Este documento registra o roadmap e o histórico de execução por marcos (E1, E2, ...).
 0.2.1 TIPO_DO_DOCUMENTO
