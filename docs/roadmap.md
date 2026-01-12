@@ -1,7 +1,21 @@
-# LP Factory 10 — Roadmap 1.5
+0. Introdução
 
-**Propósito:** Roteiro de implementação e visão estratégica do produto  
-
+0.1 Cabeçalho
+• Data da última atualização: 05/11/2025
+• Documento: LP Factory 10 — Roadmap 1.5 — Referência estratégica ativa
+0.2 Contrato do documento (parseável)
+• Este documento registra o roadmap e o histórico de execução por marcos (E1, E2, ...).
+0.2.1 TIPO_DO_DOCUMENTO
+• TIPO_DO_DOCUMENTO: prescritivo
+0.2.2 ALLOWLIST_RELEVANCIA
+• MARCOS: Itens E* com status, escopo, critérios e pendências.
+• FASES: Agrupamentos estratégicos do roadmap (alto nível).
+• MIGRACOES: Movimentos de itens (ex.: E7.2 → E10.1) apenas como referência histórica.
+0.2.3 ALLOWLIST_CHANGELOG (blocklist mínima)
+• PROIBIDO: bullets administrativos (ex.: “atualizado cabeçalho/data/versão”).
+0.2.4 ESTILO (opcional)
+• Estado final (snapshot por marco), sem narrativa longa.
+• Frases curtas; preferir bullets; sem tabelas; sem code fences.
 
 ## E1 — Estrutura de Dados
 **Status:** ✅ Concluído (03/10/2025)
