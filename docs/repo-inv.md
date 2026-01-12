@@ -1,8 +1,8 @@
 0. Introdução
 
 0.1 Cabeçalho
-• Data da última atualização: 20/12/2025
-• Documento: LP Factory 10 — repo-inv v2.2.0 — Referência normativa ativa
+• Data da última atualização: 12/01/2026
+• Documento: LP Factory 10 — repo-inv v2.2.1 — Referência normativa ativa
 0.2 Contrato do documento (parseável)
 • Esta seção define o que é relevante atualizar e como escrever.
 0.2.1 TIPO_DO_DOCUMENTO
@@ -19,6 +19,38 @@
 
 1. Estrutura Geral
 
+1.1 Pastas na raiz
+• .github/
+• app/
+• components/
+• docs/
+• lib/
+• reports/
+• scripts/
+• src/
+• supabase/
+
+1.2 Arquivos na raiz
+• README.md
+• .gitignore
+• middleware.ts
+• next.config.js
+• package.json
+• package-lock.json
+• postcss.config.js
+• tailwind.config.ts
+• tsconfig.json
+
+1.3 .github/workflows — CI, segurança e automações
+• .github/workflows/doc-agent.yml
+• .github/workflows/security.yml
+• .github/workflows/upgrade-next-16-1-1.yml
+
+1.4 scripts — utilitários de automação (Doc Agent)
+• scripts/apply-doc-report.mjs
+
+1.5 reports — artefatos gerados por automações (não-normativos)
+• reports/ (diretório com JSONs de operações/relatórios do doc agent; manter como histórico)
 1.1 Pastas na raiz
 • .github/
 • app/
@@ -150,7 +182,7 @@
 • docs/auto-agentes-up.md
 • docs/base-tecnica.md
 • docs/benchmark-de-mercado-update.md
-• docs/estrategia-de-produtos-update.md
+• docs/prod-up.md
 • docs/fluxos.md
 • docs/recursos_gerais_update.md
 • docs/repo-inv.md (este arquivo)
@@ -158,7 +190,6 @@
 • docs/schema.md
 • docs/supa-up.md
 • docs/vercel-up.md
-
 8. SULB — Arquivos autorizados a importar @supabase/*
 • Allowlist e regra canônica de imports: ver Base Técnica seção 6.4.
 
@@ -176,4 +207,9 @@
 • Atualizar sempre que houver mudança de caminho (ex.: src/app ↔ app, src/components ↔ components).
 
 99. Changelog
+v2.2.1 (12/01/2026) — Atualização do inventário do repositório
+• Atualizado inventário da raiz para incluir reports/ e scripts/.
+• Adicionado inventário de .github/workflows com os workflows existentes.
+• Adicionado package-lock.json ao inventário de arquivos na raiz.
+• Atualizada lista de docs principais (inclui prod-up.md; remove doc inexistente).
 
