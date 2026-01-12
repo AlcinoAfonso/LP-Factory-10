@@ -1,0 +1,45 @@
+{
+"meta": {
+"datetime": "12/01/2026 07:45",
+"origin": "revisao normativa",
+"scope": "documentacao",
+"execution_mode": "github_actions",
+"target_doc": "docs/repo-inv.md",
+"warnings": []
+},
+"ops": [
+{
+"op": "replace_section",
+"doc_path": "docs/repo-inv.md",
+"target": "0.1",
+"content": "0.1 Cabe\u00e7alho\n\u2022 Data da \u00faltima atualiza\u00e7\u00e3o: 12/01/2026\n\u2022 Documento: LP Factory 10 \u2014 repo-inv v2.2.1 \u2014 Refer\u00eancia normativa ativa\n"
+},
+{
+"op": "replace_section",
+"doc_path": "docs/repo-inv.md",
+"target": "1.",
+"content": "1. Estrutura Geral\n\n1.1 Pastas na raiz\n\u2022 .github/\n\u2022 app/\n\u2022 components/\n\u2022 docs/\n\u2022 lib/\n\u2022 reports/\n\u2022 scripts/\n\u2022 src/\n\u2022 supabase/\n\n1.2 Arquivos na raiz\n\u2022 README.md\n\u2022 .gitignore\n\u2022 middleware.ts\n\u2022 next.config.js\n\u2022 package.json\n\u2022 package-lock.json\n\u2022 postcss.config.js\n\u2022 tailwind.config.ts\n\u2022 tsconfig.json\n\n1.3 .github/workflows \u2014 CI, seguran\u00e7a e automa\u00e7\u00f5es\n\u2022 .github/workflows/doc-agent.yml\n\u2022 .github/workflows/security.yml\n\u2022 .github/workflows/upgrade-next-16-1-1.yml\n\n1.4 scripts \u2014 utilit\u00e1rios de automa\u00e7\u00e3o (Doc Agent)\n\u2022 scripts/apply-doc-report.mjs\n\n1.5 reports \u2014 artefatos gerados por automa\u00e7\u00f5es (n\u00e3o-normativos)\n\u2022 reports/ (diret\u00f3rio com JSONs de opera\u00e7\u00f5es/relat\u00f3rios do doc agent; manter como hist\u00f3rico)\n"
+},
+{
+"op": "replace_section",
+"doc_path": "docs/repo-inv.md",
+"target": "7.",
+"content": "7. docs \u2014 Documenta\u00e7\u00e3o interna (principais)\n\u2022 docs/auto-agentes-up.md\n\u2022 docs/base-tecnica.md\n\u2022 docs/benchmark-de-mercado-update.md\n\u2022 docs/prod-up.md\n\u2022 docs/fluxos.md\n\u2022 docs/recursos_gerais_update.md\n\u2022 docs/repo-inv.md (este arquivo)\n\u2022 docs/roadmap.md\n\u2022 docs/schema.md\n\u2022 docs/supa-up.md\n\u2022 docs/vercel-up.md\n"
+},
+{
+"op": "insert_after_heading",
+"doc_path": "docs/repo-inv.md",
+"heading": "99. Changelog",
+"content": "v2.2.1 (12/01/2026) \u2014 Atualiza\u00e7\u00e3o do invent\u00e1rio do reposit\u00f3rio\n\u2022 Atualizado invent\u00e1rio da raiz para incluir reports/ e scripts/.\n\u2022 Adicionado invent\u00e1rio de .github/workflows com os workflows existentes.\n\u2022 Adicionado package-lock.json ao invent\u00e1rio de arquivos na raiz.\n\u2022 Atualizada lista de docs principais (inclui prod-up.md; remove doc inexistente).\n"
+}
+],
+"rules": {
+"fail_if_anchor_missing": true,
+"fail_if_target_missing": true,
+"fail_if_section_already_exists_on_insert": true,
+"fail_if_ambiguous_match": true,
+"no_renumber": true,
+"no_reformat": true,
+"no_out_of_scope_changes": true
+}
+}
