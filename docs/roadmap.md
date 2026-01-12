@@ -62,31 +62,33 @@
 3.3 Pendências
 • Adapters de planos e LPs futuras (planAdapter, landingPageAdapter, sectionAdapter)
 
-## E4 — Account Dashboard (Infraestrutura SSR)
-**Status:** ✅ Concluído
+4. E4 — Account Dashboard (Infraestrutura SSR)
 
-- **Implementado:**
-  - Rota canônica `/a/[account]`
-  - Middleware + SSR gate (`getAccessContext`)
-  - Página neutra `/auth/confirm/info`
-- **Critérios de Aceite:**
-  - Redirect `/a → /a/[account]`
-  - Sessão validada antes do render
-  - Deny seguro com logs estruturados
+4.1 Status
+• Concluído
 
----
+4.2 Implementado
+• Rota canônica /a/[account]
+• Middleware + SSR gate (getAccessContext)
+• Página neutra /auth/confirm/info
 
-## E5 — UI/Auth Account Dashboard
-**Status:** ✅ Concluído
+4.3 Critérios de Aceite
+• Redirect /a → /a/[account]
+• Sessão validada antes do render
+• Deny seguro com logs estruturados
 
-- **Implementado:**
-  - Forms de login/reset/update-password (SULB)
-  - Mensagens neutras e bloqueios progressivos
-- **Critérios de Aceite:**
-  - Modal fecha apenas em sucesso
-  - Erros genéricos, UX segura
+5. E5 — UI/Auth Account Dashboard
 
----
+5.1 Status
+• Concluído
+
+5.2 Implementado
+• Forms de login/reset/update-password (SULB)
+• Mensagens neutras e bloqueios progressivos
+
+5.3 Critérios de Aceite
+• Modal fecha apenas em sucesso
+• Erros genéricos, UX segura
 
 ## E6 — UI Kit Provisório
 **Status:** ✅ Concluído
