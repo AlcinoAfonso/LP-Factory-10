@@ -17,47 +17,50 @@
 • Estado final (snapshot por marco), sem narrativa longa.
 • Frases curtas; preferir bullets; sem tabelas; sem code fences.
 
-## E1 — Estrutura de Dados
-**Status:** ✅ Concluído (03/10/2025)
+1. E1 — Estrutura de Dados
 
-- **Implementado:**
-  - Tabelas: `accounts`, `account_users`, `audit_logs`, `plans`, `partners`, `partner_accounts`, `post_sale_tokens`
-  - Views: `v_access_context_v2`, `v_account_effective_limits`, `v_account_effective_limits_secure`, `v_admin_tokens_with_usage`, `v_audit_logs_norm`
-  - Constraints e índices otimizados
-- **Critérios de Aceite:**
-  - Multi-tenant funcional (subdomain/domain UNIQUE)
-  - 1 owner ativo por conta
-  - Auditoria automática
-- **Pendências:** Nenhuma
+1.1 Status
+• Concluído (03/10/2025)
+1.2 Implementado
+• Tabelas: accounts, account_users, audit_logs, plans, partners, partner_accounts, post_sale_tokens
+• Views: v_access_context_v2, v_account_effective_limits, v_account_effective_limits_secure, v_admin_tokens_with_usage, v_audit_logs_norm, v_audit_logs_norm
+• Constraints e índices otimizados
+1.3 Critérios de Aceite
+• Multi-tenant funcional (subdomain/domain UNIQUE)
+• 1 owner ativo por conta
+• Auditoria automática
+1.4 Pendências
+• Nenhuma
 
----
+2. E2 — Núcleo de Acesso
 
-## E2 — Núcleo de Acesso
-**Status:** ✅ Concluído
+2.1 Status
+• Concluído
+2.2 Implementado
+• Autenticação email/senha (SULB)
+• Roles: owner, admin, editor, viewer, super_admin
+• RLS em todas as tabelas do núcleo de acesso
+• Helpers: is_super_admin, is_platform_admin, has_account_min_role
+2.3 Critérios de Aceite
+• Login funcional e seguro
+• Reset de senha com expiração
+• Auditoria ativa
+2.4 Pendências
+• Futuras features (Magic Link, Social Login, 2FA)
 
-- **Implementado:**
-  - Autenticação email/senha (SULB)
-  - Roles: `owner`, `admin`, `editor`, `viewer`, `super_admin`
-  - RLS em todas as tabelas
-  - Helpers: `is_super_admin`, `is_platform_admin`, `has_account_min_role`
-- **Critérios de Aceite:**
-  - Login funcional e seguro
-  - Reset de senha com expiração
-  - Auditoria ativa
-- **Pendências:** futuras features (Magic Link, Social Login, 2FA)
+3. E3 — Adapters Base
 
----
-
-## E3 — Adapters Base
-**Status:** ✅ Concluído
-
-- **Implementado:**
-  - `accountAdapter`, `accessContextAdapter`, `adminAdapter`, `postSaleTokenAdapter`
-  - Tipos normalizados (DB → TS)
-  - Logs estruturados
-- **Pendências:** Adapters de planos e LPs futuras (`planAdapter`, `landingPageAdapter`, `sectionAdapter`)
-
----
+3.1 Status
+• Concluído
+3.2 Implementado
+• accountAdapter
+• accessContextAdapter
+• adminAdapter
+• postSaleTokenAdapter
+• Tipos normalizados (DB → TS)
+• Logs estruturados
+3.3 Pendências
+• Adapters de planos e LPs futuras (planAdapter, landingPageAdapter, sectionAdapter)
 
 ## E4 — Account Dashboard (Infraestrutura SSR)
 **Status:** ✅ Concluído
