@@ -90,59 +90,59 @@
 • Modal fecha apenas em sucesso
 • Erros genéricos, UX segura
 
-## E6 — UI Kit Provisório
-**Status:** ✅ Concluído
+6. E6 — UI Kit Provisório
 
-- **Implementado:**
-  - Componentes `Button`, `Card`, `Input`, `Label`, `AlertBanner`
-  - Base `shadcn/ui`
-- **Pendências:** futura migração para Supabase Platform Kit
+6.1 Status
+• Concluído
 
----
+6.2 Implementado
+• Componentes: Button, Card, Input, Label, AlertBanner
+• Base: shadcn/ui
 
-## E7 — Conta Consultiva
-**Status:** ✅ Concluído (18/10/2025)
+6.3 Pendências
+• Futura migração para Supabase Platform Kit
 
-- **Escopo:**
-  - Criação de contas via token pós-venda.  
-  - Painel `/admin/tokens` para geração e revogação de tokens.  
-  - RPC `create_account_with_owner()` para criação segura e automatizada da conta.  
+7. E7 — Conta Consultiva
 
-- **Critérios de Aceite:**
-  - Conta criada com `contract_ref` e status inicial `pending_setup`.  
-  - Redirecionamento automático após onboarding.  
-  - Banner de setup visível e editável.  
+7.1 Status
+• Concluído (18/10/2025)
 
-- **Pendências:**
-  - Refinamentos de UX migrados para **E10.1 — Account Dashboard UX (ex-E7.2)**.  
+7.2 Escopo (entrega concluída)
+• Criação de contas via token pós-venda
+• Painel /admin/tokens para geração e revogação de tokens
+• RPC create_account_with_owner() para criação segura e automatizada da conta
 
-> **Nota:** O item **E7.2** original foi movido para **E10.1 — Account Dashboard UX**, mantendo a numeração apenas como referência histórica.
+7.3 Critérios de Aceite (entrega concluída)
+• Conta criada com contract_ref e status inicial pending_setup
+• Redirecionamento automático após onboarding
+• Banner de setup visível e editável
 
----
+7.4 Pendências (migradas)
+• Refinamentos de UX migrados para Account Dashboard UX (ex-E7.2)
 
-### E7.1 — Conta Consultiva Update
-**Status:** 🧩 Em evolução  
+7.5 Evolução — Conta Consultiva Update
+7.5.1 Status
+• Em evolução
+7.5.2 Objetivo
+• Ampliar /admin/tokens para funcionar como configurador de conta
+7.5.3 Escopo
+• Coleta de dados do cliente (CNPJ, razão social, contato, segmento, dores e metas)
+• Seleção de plano base (Lite, Pro, Ultra) e definição de recursos adicionais (grants)
+• Snapshot de recursos e preço conforme reunião consultiva
+• Token nos modos onboard (cliente ativa) ou handoff (entrega pronta)
+• Integração futura com criação opcional de LPs pré-configuradas
+7.5.4 Critérios de Aceite
+• Token gerado apenas após configuração completa da conta
+• Conta criada com grants e preço definidos (snapshot)
+• Registro auditável de plano base e recursos customizados
+7.5.5 Valor agregado
+• Elimina duplicidade entre fluxo técnico e comercial
+• Garante que toda conta consultiva já nasça configurada e pronta para ativação
+7.5.6 Próximos Passos
+• Implementar campos token_type, billing_mode e plan_price_snapshot
+• Adicionar interface de seleção de recursos no painel Admin
+• Preparar suporte para LPs automáticas (modo handoff)
 
-- **Objetivo:** Aprimorar o fluxo consultivo, ampliando o painel `/admin/tokens` para funcionar como **configurador de conta**.  
-- **Escopo:**
-  - Coleta de dados do cliente (CNPJ, razão social, contato, segmento, dores e metas).  
-  - Seleção de plano base (Lite, Pro, Ultra) e definição de recursos adicionais (grants).  
-  - Snapshot de recursos e preço conforme reunião consultiva.  
-  - Geração de token nos modos `onboard` (cliente ativa) ou `handoff` (entrega pronta).  
-  - Integração futura com criação opcional de LPs pré-configuradas.  
-- **Critérios de Aceite:**
-  - Token gerado apenas após configuração completa da conta.  
-  - Conta criada com grants e preço definidos (snapshot).  
-  - Registro auditável de plano base e recursos customizados.  
-- **Valor agregado:**
-  - Elimina duplicidade entre fluxo técnico e comercial.  
-  - Garante que toda conta consultiva já nasça configurada e pronta para ativação.  
-- **Próximos Passos:**
-  - Implementar campos `token_type`, `billing_mode` e `plan_price_snapshot`.  
-  - Adicionar interface de seleção de recursos no painel Admin.  
-  - Preparar suporte para LPs automáticas (modo `handoff`).  
-
----
 
 ## E8 — Access Context & Governança
 **Status:** ✅ Concluído (03/10/2025)
