@@ -1,7 +1,9 @@
 0. Introdução
-0.1 Cabeçalho
-• Data da última atualização: 08/01/2026
-• Documento: LP Factory 10 — Base Técnica v1.9.7 — Referência normativa ativa
+0.1. Cabeçalho
+• Documento: Base Técnica LP Factory 10
+• Versão: v1.9.8
+• Data: 14/01/2026
+• Escopo: regras e contratos técnicos do repositório (Next.js + Supabase + Vercel)
 0.2 Contrato do documento (parseável)
 • Esta seção define o que é relevante atualizar e como escrever.
 0.2.1 TIPO_DO_DOCUMENTO
@@ -58,10 +60,11 @@
 • SULB (auth forms): definição: rotas/arquivos de autenticação copiados do Supabase (vendor interno).
 • Regra (SULB): não criar auth fora do SULB; alterações no SULB só quando necessário e sempre respeitando a allowlist 6.4.
 • shadcn/ui: base provisória.
-2.4 Deploy
-• Vercel: CI automático.
-• Variáveis validadas: SUPABASE_SECRET_KEY; NEXT_PUBLIC_SUPABASE_URL; NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY.
-• Supabase Auth URLs: Site URL e Redirect URLs devem cobrir o domínio de produção; incluir previews apenas quando necessário.
+2.4. Supabase Auth URL allowlist (Redirect URLs)
+• Local: Supabase Dashboard → Authentication → URL Configuration → Redirect URLs
+• Regra: permitir somente domínios/paths necessários (produção + localhost).
+• Regra (Preview Vercel): quando for necessário habilitar preview, usar wildcard com “/**” para cobrir paths profundos (ex.: https://*-<slug>.vercel.app/**).
+• Regra: não usar curingas amplos fora de preview (evitar allowlist que aceite domínios externos).
 2.5 Regras de Import (canônica)
 • @supabase/* somente em: src/lib/**/adapters/ (ex.: src/lib/access/adapters/, src/lib/admin/adapters/) e lib/supabase/*.
 • Exceção: rotas SULB autorizadas em app/auth/* (lista na seção 6.4)
@@ -87,6 +90,7 @@
 • Validação por PR + preview de deploy (Vercel)
 • PATH: .github/workflows/security.yml
 • Bloqueio de segurança: impedir padrões de implicit flow em client/UI (access_token, refresh_token, setSession, getSessionFromUrl)
+• Regra: o bloqueio de tokens/sessão ignora app/auth/confirm/** (allowlist mínima para handler server-side)
 • Regra: verifyOtp() só pode existir em app/auth/confirm/**
 • Regra de merge (mínimo): validação automática ok + preview ok + smoke de acesso (login/logout/reset de senha/navegação pós-login)
 • Regra: antes de merge, seguir obrigatoriamente o checklist da seção 7 (anti-regressão)
@@ -192,10 +196,17 @@
 5.3.1 Login (MVP)
 • Modal → autenticação SULB → redirect para /a
 • Se já estiver logado, /a deve resolver conta e redirecionar
-5.3.2 Password Reset (MVP)
-• Modal → email → link abre nova aba → define senha (2x) → sucesso → auto-redirect dashboard
-• Link expirado (10m): tela mostra “link expirou” + reenvio inline
-• Email não cadastrado: mensagem neutra “Se este email estiver cadastrado, você receberá um link de recuperação.”
+5.3.2. Password Reset (MVP)
+• Success: request from modal → email → link opens new tab → set new password (2x) → success → auto-redirect to dashboard; original modal shows “Processo concluído”.
+• Regra: link do e-mail deve apontar direto para /auth/update-password com token_hash e type=recovery (sem verificação em GET fora do app).
+• Regra anti-scanner: não consumir token no GET; confirmação do token ocorre somente no POST ao “Salvar nova senha”.
+• Expired link (10m): reset page shows “link expirou” + inline field to resend link.
+• Email not registered: modal shows neutral “Se este email estiver cadastrado…”.
+• Repeated requests: throttle; modal shows “aguarde” with countdown (5 min).
+• Save password errors: mismatch/weak/network-specific messages; allow another attempt; keep validity for 5 minutes after first error.
+• Link already used: reset page says so + inline resend.
+• User can go back to login anytime.
+• Rules: modal doesn’t auto-close except after final success; always alternatives; never force restart; clear, specific messages.
 5.3.3 Throttling
 • Login: 3s após 3 falhas; 10s após 5 (com countdown)
 • Reset: throttle 5min com countdown
@@ -249,6 +260,10 @@ Regra: qualquer novo arquivo em app/auth/ não pode importar @supabase/* até se
 • Adapters vNext: seguir 3.14
 
 99. Changelog
+v1.9.8 (14/01/2026) — Password Reset sem etapa “Continuar” (anti-scanner)
+• Atualizada a regra de Redirect URLs para preview Vercel (wildcard com “/**” para paths profundos).
+• Refinado o bloqueio de implicit flow no CI para permitir o handler server-side em app/auth/confirm/** sem afrouxar o restante do app/src.
+• Consolidado o fluxo de Password Reset para abrir direto em /auth/update-password e consumir token apenas no POST ao salvar a nova senha.
 v1.9.7 (08/01/2026) — Ajustes normativos para Auth, PostgREST e rota /a
 • Registrada regra de Site URL e Redirect URLs do Supabase Auth para produção e previews quando necessário (2.4).
 • Removidas linhas truncadas e consolidada a orientação de PostgREST 14.1 (3.12).
