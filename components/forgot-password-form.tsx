@@ -15,20 +15,12 @@ import { Label } from '@/components/ui/label'
 import Link from 'next/link'
 import { useEffect, useMemo, useState } from 'react'
 
-const COOLDOWN_MS = 5 * 60 * 1000
-const STORAGE_KEY = 'lp10_forgot_password_cooldown_until'
-
-function formatMMSS(totalSeconds: number) {
-  const m = Math.floor(totalSeconds / 60)
-  const s = totalSeconds % 60
-  const mm = String(m).padStart(2, '0')
-  const ss = String(s).padStart(2, '0')
-  return `${mm}:${ss}`
+function isValidEmail(email: string) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
 }
 
-function isValidEmail(email: string) {
-  // Validação simples (evita falsos positivos óbvios)
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())
+function sleep(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms))
 }
 
 export function ForgotPasswordForm({
@@ -36,62 +28,33 @@ export function ForgotPasswordForm({
   ...props
 }: React.ComponentPropsWithoutRef<'div'>) {
   const [email, setEmail] = useState('')
-  const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
+  const [isLoading, setIsLoading] = useState(false)
 
-  const [cooldownUntil, setCooldownUntil] = useState<number | null>(null)
-  const [now, setNow] = useState(Date.now())
+  // cooldown simples para evitar spam
+  const COOLDOWN_SECONDS = 60
+  const [cooldownLeft, setCooldownLeft] = useState(0)
 
-  const remainingSeconds = useMemo(() => {
-    if (!cooldownUntil) return 0
-    const diff = Math.ceil((cooldownUntil - now) / 1000)
-    return diff > 0 ? diff : 0
-  }, [cooldownUntil, now])
-
-  const inCooldown = remainingSeconds > 0
+  const inCooldown = cooldownLeft > 0
 
   useEffect(() => {
-    // Recupera cooldown local (evita spam do botão ao recarregar)
-    try {
-      const raw = window.localStorage.getItem(STORAGE_KEY)
-      const val = raw ? Number(raw) : 0
-      if (val && Number.isFinite(val) && val > Date.now()) {
-        setCooldownUntil(val)
-      } else {
-        window.localStorage.removeItem(STORAGE_KEY)
-      }
-    } catch {
-      // ignore
-    }
-  }, [])
+    if (!inCooldown) return
+    const id = setInterval(() => {
+      setCooldownLeft((v) => (v > 0 ? v - 1 : 0))
+    }, 1000)
+    return () => clearInterval(id)
+  }, [inCooldown])
 
-  useEffect(() => {
-    if (!cooldownUntil) return
-    const id = window.setInterval(() => setNow(Date.now()), 500)
-    return () => window.clearInterval(id)
-  }, [cooldownUntil])
-
-  useEffect(() => {
-    if (!cooldownUntil) return
-    if (remainingSeconds === 0) {
-      setCooldownUntil(null)
-      try {
-        window.localStorage.removeItem(STORAGE_KEY)
-      } catch {
-        // ignore
-      }
-    }
-  }, [cooldownUntil, remainingSeconds])
+  const cooldownLabel = useMemo(() => {
+    if (!inCooldown) return null
+    return `Aguarde ${cooldownLeft}s para tentar novamente.`
+  }, [inCooldown, cooldownLeft])
 
   async function startCooldown() {
-    const until = Date.now() + COOLDOWN_MS
-    setCooldownUntil(until)
-    try {
-      window.localStorage.setItem(STORAGE_KEY, String(until))
-    } catch {
-      // ignore
-    }
+    setCooldownLeft(COOLDOWN_SECONDS)
+    // garante ao menos 1 tick (evita “0s” visual em alguns devices)
+    await sleep(10)
   }
 
   async function onSubmit(e: React.FormEvent) {
@@ -111,8 +74,8 @@ export function ForgotPasswordForm({
     try {
       const supabase = createClient()
 
-      // Recovery deve passar por /auth/confirm para validar OTP e setar sessão
-      const redirectTo = `${window.location.origin}/auth/confirm?next=/auth/update-password`
+      // Commit 2 (Item 4): redirectTo direto para /auth/update-password (sem querystring).
+      const redirectTo = `${window.location.origin}/auth/update-password`
 
       const { error: resetError } = await supabase.auth.resetPasswordForEmail(
         trimmed,
@@ -154,34 +117,29 @@ export function ForgotPasswordForm({
                 <Input
                   id="email"
                   type="email"
-                  placeholder="seuemail@exemplo.com"
-                  autoComplete="email"
+                  placeholder="nome@exemplo.com"
+                  required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  disabled={isLoading}
-                  required
                 />
               </div>
 
-              {error && <p className="text-sm text-red-500">{error}</p>}
+              {error ? (
+                <div className="text-sm text-red-600">{error}</div>
+              ) : null}
 
-              {success && (
-                <div className="rounded-md border p-3 text-sm">
-                  <p className="text-muted-foreground">
-                    Se este e-mail estiver cadastrado, o link deve chegar em alguns minutos.
-                    Verifique também Spam/Promoções.
-                  </p>
+              {success ? (
+                <div className="text-sm text-green-600">
+                  Se este e-mail estiver cadastrado, você receberá um link para redefinir a senha.
                 </div>
-              )}
+              ) : null}
+
+              {cooldownLabel ? (
+                <div className="text-xs text-muted-foreground">{cooldownLabel}</div>
+              ) : null}
 
               <Button type="submit" className="w-full" disabled={isLoading || inCooldown}>
-                {isLoading
-                  ? 'Enviando...'
-                  : inCooldown
-                    ? `Aguarde ${formatMMSS(remainingSeconds)}`
-                    : success
-                      ? 'Reenviar link'
-                      : 'Enviar link'}
+                {isLoading ? 'Enviando…' : 'Enviar link de redefinição'}
               </Button>
             </div>
 

@@ -32,7 +32,12 @@ jobs:
           echo "🔎 Scanning paths: ${TARGETS[*]}"
 
           # 1) Tokens/setSession/getSessionFromUrl NÃO podem aparecer em client/UI
-          OFFENDERS="$(grep -R -n -E "access_token|refresh_token|setSession\(|getSessionFromUrl\(" "${TARGETS[@]}" || true)"
+          #    Exceção: app/auth/confirm/** (handler server-side de Auth)
+          OFFENDERS="$(
+            (
+              grep -R -n -E "access_token|refresh_token|setSession\(|getSessionFromUrl\(" "${TARGETS[@]}" || true
+            ) | grep -v "app/auth/confirm/" || true
+          )"
           if [ -n "$OFFENDERS" ]; then
             echo "❌ Forbidden implicit flow (tokens/setSession/getSessionFromUrl) found in client/UI:"
             echo "$OFFENDERS"
