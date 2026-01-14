@@ -1,51 +1,50 @@
 {
-  "meta": {
-    "datetime": "14/01/2026 16:25",
-    "origin": "ajuste pontual",
-    "scope": "documentacao",
-    "execution_mode": "github_actions",
-    "target_doc": "docs/base-tecnica.md",
-    "warnings": []
-  },
-  "ops": [
-    {
-      "op": "replace_section",
-      "doc_path": "docs/base-tecnica.md",
-      "target": "0.1",
-      "content": "0.1 Cabeçalho\n• Data da última atualização: 14/01/2026\n• Documento: LP Factory 10 — Base Técnica v1.9.8 — Referência normativa ativa\n"
-    },
-    {
-      "op": "replace_section",
-      "doc_path": "docs/base-tecnica.md",
-      "target": "2.4",
-      "content": "2.4 Deploy\n• Usar a Vercel como plataforma principal.\n• Deploy automático a partir de Pull Requests (Preview) e merge na branch principal (Production).\n• Supabase Auth URLs devem refletir ENV: NEXT_PUBLIC_SITE_URL e ENV: NEXT_PUBLIC_SUPABASE_AUTH_REDIRECT_URL. A allowlist em Authentication → URL Configuration → Redirect URLs deve cobrir rotas de Auth por e-mail do domínio de produção e, se usar Preview da Vercel para testes, também um wildcard de Preview com `/**` (ex.: https://*-alcino-afonsos-projects.vercel.app/**) para permitir paths multi-nível como `/auth/update-password`.\n"
-    },
-    {
-      "op": "replace_section",
-      "doc_path": "docs/base-tecnica.md",
-      "target": "3.4",
-      "content": "3.4 CI/Lint\n• Lint e tests rodam no PR.\n• Bloqueio de segurança: impedir padrões de implicit flow em client/UI (access_token, refresh_token, setSession(, getSessionFromUrl(). Exceção: app/auth/confirm/** (server-side) pode conter esses padrões para suportar confirmação/recuperação, e deve permanecer o único local permitido.\n• verifyOtp() deve ocorrer somente em app/auth/confirm/**.\n• Regra de merge (mínimo): garantir smoke de acesso (login/logout/reset de senha) em Preview antes de merge.\n"
-    },
-    {
-      "op": "replace_section",
-      "doc_path": "docs/base-tecnica.md",
-      "target": "5.3.2",
-      "content": "5.3.2 Password reset (“Esqueci minha senha”)\n• Sucesso: request do modal → email → link abre diretamente em `/auth/update-password?token_hash=...&type=recovery` → usuário define nova senha (2x) → submit aciona POST `/auth/confirm` → validar senha → verifyOtp/exchange → updateUser(password) → sucesso → auto-redirect para `/a/home`.\n• Anti-scanner: nunca consumir token no GET; consumir/validar somente no POST (gesto do usuário).\n• Erros ao salvar senha: mensagens específicas (mismatch/weak/network). Não forçar reinício; preservar `token_hash` e `type` na URL para permitir nova tentativa sem consumir o token.\n• Template (Supabase Recovery): construir o link usando `{{ .RedirectTo }}` + `{{ .TokenHash }}`; não usar `{{ .ConfirmationURL }}` (evita consumir token em GET via `/auth/v1/verify`).\n"
-    },
-    {
-      "op": "insert_after_heading",
-      "doc_path": "docs/base-tecnica.md",
-      "heading": "99. Changelog",
-      "content": "v1.9.8 (14/01/2026) — Password reset sem “Continuar” (anti-scanner)\n• Atualizado o fluxo de 5.3.2 para link direto em `/auth/update-password` e consumo/validação do token somente no POST (`/auth/confirm`).\n• Documentado o template Recovery do Supabase usando `RedirectTo` + `TokenHash`, evitando `ConfirmationURL` (/auth/v1/verify em GET).\n• Ajustado 2.4 para reforçar allowlist de Redirect URLs com wildcard `/**` em Preview para suportar rotas multi-nível como `/auth/update-password`.\n• Ajustado 3.4 para explicitar a exceção controlada em `app/auth/confirm/**` e manter `verifyOtp()` permitido somente nesse local.\n"
-    }
-  ],
-  "rules": {
-    "fail_if_anchor_missing": true,
-    "fail_if_target_missing": true,
-    "fail_if_section_already_exists_on_insert": true,
-    "fail_if_ambiguous_match": true,
-    "no_renumber": true,
-    "no_reformat": true,
-    "no_out_of_scope_changes": true
-  }
+"meta": {
+"datetime": "14/01/2026 20:00",
+"origin": "ajuste pontual",
+"scope": "documentacao",
+"execution_mode": "github_actions",
+"target_doc": "docs/base-tecnica.md",
+"warnings": [
+"Omitido A4 (target=5.3.2): violação de anti-truncamento — content contém "..."."
+]
+},
+"ops": [
+{
+"op": "replace_section",
+"target": "0.1",
+"mode": "shallow",
+"doc_path": "docs/base-tecnica.md",
+"content": "0.1 Cabeçalho\n• Data da última atualização: 14/01/2026\n• Documento: LP Factory 10 — Base Técnica v1.9.8 — Referência normativa ativa\n"
+},
+{
+"op": "replace_section",
+"target": "2.4",
+"mode": "shallow",
+"doc_path": "docs/base-tecnica.md",
+"content": "2.4 Deploy\n• Usar a Vercel como plataforma principal.\n• Deploy automático a partir de Pull Requests (Preview) e merge na branch principal (Production).\n• Supabase Auth URLs devem refletir ENV: NEXT_PUBLIC_SITE_URL e ENV: NEXT_PUBLIC_SUPABASE_AUTH_REDIRECT_URL. A allowlist em Authentication → URL Configuration → Redirect URLs deve cobrir rotas de Auth por e-mail do domínio de produção e, se usar Preview da Vercel para testes, também um wildcard de Preview com `/**` (ex.: https://*-alcino-afonsos-projects.vercel.app/**) para permitir paths multi-nível como `/auth/update-password`.\n"
+},
+{
+"op": "replace_section",
+"target": "3.4",
+"mode": "shallow",
+"doc_path": "docs/base-tecnica.md",
+"content": "3.4 CI/Lint\n• Lint e tests rodam no PR.\n• Bloqueio de segurança: impedir padrões de implicit flow em client/UI (access_token, refresh_token, setSession(, getSessionFromUrl(). Exceção: app/auth/confirm/** (server-side) pode conter esses padrões para suportar confirmação/recuperação, e deve permanecer o único local permitido.\n• verifyOtp() deve ocorrer somente em app/auth/confirm/**.\n• Regra de merge (mínimo): garantir smoke de acesso (login/logout/reset de senha) em Preview antes de merge.\n"
+},
+{
+"op": "insert_after_heading",
+"heading": "99. Changelog",
+"doc_path": "docs/base-tecnica.md",
+"content": "v1.9.8 (14/01/2026) — Password reset sem “Continuar” (anti-scanner)\n• Atualizado o fluxo de 5.3.2 para link direto em `/auth/update-password` e consumo/validação do token somente no POST (`/auth/confirm`).\n• Documentado o template Recovery do Supabase usando `RedirectTo` + `TokenHash`, evitando `ConfirmationURL` (/auth/v1/verify em GET).\n• Ajustado 2.4 para reforçar allowlist de Redirect URLs com wildcard `/**` em Preview para suportar rotas multi-nível como `/auth/update-password`.\n• Ajustado 3.4 para explicitar a exceção controlada em `app/auth/confirm/**` e manter `verifyOtp()` permitido somente nesse local.\n"
+}
+],
+"rules": {
+"fail_if_anchor_missing": true,
+"fail_if_target_missing": true,
+"fail_if_section_already_exists_on_insert": true,
+"fail_if_ambiguous_match": true,
+"no_renumber": true,
+"no_reformat": true,
+"no_out_of_scope_changes": true
+}
 }
