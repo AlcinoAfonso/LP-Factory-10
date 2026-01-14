@@ -1,8 +1,8 @@
 0. Introdução
 
 0.1 Cabeçalho
-• Data da última atualização: 05/11/2025
-• Documento: LP Factory 10 — Roadmap v1.5.0 — Referência estratégica ativa
+• Data: 14/01/2026
+• Versão: v1.5.1
 0.2 Contrato do documento (parseável)
 • Este documento registra o roadmap e o histórico de execução por marcos (E1, E2, ...).
 0.2.1 TIPO_DO_DOCUMENTO
@@ -41,9 +41,10 @@
 • Roles: owner, admin, editor, viewer, super_admin
 • RLS em todas as tabelas do núcleo de acesso
 • Helpers: is_super_admin, is_platform_admin, has_account_min_role
+• Recovery de senha: e-mail → /auth/update-password (token_hash/type=recovery); confirmação e troca somente no POST /auth/confirm (anti-scanner)
 2.3 Critérios de Aceite
 • Login funcional e seguro
-• Reset de senha com expiração
+• Reset de senha com expiração (token consumido somente no POST)
 • Auditoria ativa
 2.4 Pendências
 • Futuras features (Magic Link, Social Login, 2FA)
@@ -83,9 +84,9 @@
 • Concluído
 
 5.2 Implementado
-• Forms de login/reset/update-password (SULB)
-• Mensagens neutras e bloqueios progressivos
-
+• Tela de Login
+• Tela "Esqueci minha senha"
+• Recovery sem “Continuar”: link do e-mail abre direto em /auth/update-password; submit confirma e troca senha via POST /auth/confirm
 5.3 Critérios de Aceite
 • Modal fecha apenas em sucesso
 • Erros genéricos, UX segura
