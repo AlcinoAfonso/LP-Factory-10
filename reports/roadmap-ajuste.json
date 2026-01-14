@@ -1,0 +1,45 @@
+{
+  "meta": {
+    "datetime": "14/01/2026 15:26",
+    "origin": "ajuste pontual",
+    "scope": "documentacao",
+    "execution_mode": "github_actions",
+    "target_doc": "docs/roadmap.md",
+    "warnings": []
+  },
+  "ops": [
+    {
+      "op": "replace_section",
+      "doc_path": "docs/roadmap.md",
+      "target": "0.1",
+      "content": "0.1 Cabeçalho\n• Data: 14/01/2026\n• Versão: v1.5.1\n"
+    },
+    {
+      "op": "replace_section",
+      "doc_path": "docs/roadmap.md",
+      "target": "2.2",
+      "content": "2.2 Implementado\n• Autenticação email/senha (SULB)\n• Roles: owner, admin, editor, viewer, super_admin\n• RLS em todas as tabelas do núcleo de acesso\n• Helpers: is_super_admin, is_platform_admin, has_account_min_role\n• Recovery de senha: e-mail → /auth/update-password (token_hash/type=recovery); confirmação e troca somente no POST /auth/confirm (anti-scanner)\n"
+    },
+    {
+      "op": "replace_section",
+      "doc_path": "docs/roadmap.md",
+      "target": "2.3",
+      "content": "2.3 Critérios de Aceite\n• Login funcional e seguro\n• Reset de senha com expiração (token consumido somente no POST)\n• Auditoria ativa\n"
+    },
+    {
+      "op": "replace_section",
+      "doc_path": "docs/roadmap.md",
+      "target": "5.2",
+      "content": "5.2 Implementado\n• Tela de Login\n• Tela \"Esqueci minha senha\"\n• Recovery sem “Continuar”: link do e-mail abre direto em /auth/update-password; submit confirma e troca senha via POST /auth/confirm\n"
+    }
+  ],
+  "rules": {
+    "fail_if_anchor_missing": true,
+    "fail_if_target_missing": true,
+    "fail_if_section_already_exists_on_insert": true,
+    "fail_if_ambiguous_match": true,
+    "no_renumber": true,
+    "no_reformat": true,
+    "no_out_of_scope_changes": true
+  }
+}
