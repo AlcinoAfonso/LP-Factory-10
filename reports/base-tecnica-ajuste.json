@@ -5,37 +5,42 @@
 "scope": "documentacao",
 "execution_mode": "github_actions",
 "target_doc": "docs/base-tecnica.md",
-"warnings": [
-"Omitido A4 (target=5.3.2): violação de anti-truncamento — content contém "..."."
-]
+"warnings": []
 },
 "ops": [
 {
 "op": "replace_section",
+"doc_path": "docs/base-tecnica.md",
 "target": "0.1",
 "mode": "shallow",
-"doc_path": "docs/base-tecnica.md",
-"content": "0.1 Cabeçalho\n• Data da última atualização: 14/01/2026\n• Documento: LP Factory 10 — Base Técnica v1.9.8 — Referência normativa ativa\n"
+"content": "0.1. Cabeçalho\n• Documento: Base Técnica LP Factory 10\n• Versão: v1.9.8\n• Data: 14/01/2026\n• Escopo: regras e contratos técnicos do repositório (Next.js + Supabase + Vercel)\n"
 },
 {
 "op": "replace_section",
+"doc_path": "docs/base-tecnica.md",
 "target": "2.4",
 "mode": "shallow",
-"doc_path": "docs/base-tecnica.md",
-"content": "2.4 Deploy\n• Usar a Vercel como plataforma principal.\n• Deploy automático a partir de Pull Requests (Preview) e merge na branch principal (Production).\n• Supabase Auth URLs devem refletir ENV: NEXT_PUBLIC_SITE_URL e ENV: NEXT_PUBLIC_SUPABASE_AUTH_REDIRECT_URL. A allowlist em Authentication → URL Configuration → Redirect URLs deve cobrir rotas de Auth por e-mail do domínio de produção e, se usar Preview da Vercel para testes, também um wildcard de Preview com `/**` (ex.: https://*-alcino-afonsos-projects.vercel.app/**) para permitir paths multi-nível como `/auth/update-password`.\n"
+"content": "2.4. Supabase Auth URL allowlist (Redirect URLs)\n• Local: Supabase Dashboard → Authentication → URL Configuration → Redirect URLs\n• Regra: permitir somente domínios/paths necessários (produção + localhost).\n• Regra (Preview Vercel): quando for necessário habilitar preview, usar wildcard com “/**” para cobrir paths profundos (ex.: https://*-<slug>.vercel.app/**).\n• Regra: não usar curingas amplos fora de preview (evitar allowlist que aceite domínios externos).\n"
 },
 {
 "op": "replace_section",
+"doc_path": "docs/base-tecnica.md",
 "target": "3.4",
 "mode": "shallow",
+"content": "3.4 CI/Lint (Bloqueios)\n• Validação por PR + preview de deploy (Vercel)\n• PATH: .github/workflows/security.yml\n• Bloqueio de segurança: impedir padrões de implicit flow em client/UI (access_token, refresh_token, setSession, getSessionFromUrl)\n• Regra: o bloqueio de tokens/sessão ignora app/auth/confirm/** (allowlist mínima para handler server-side)\n• Regra: verifyOtp() só pode existir em app/auth/confirm/**\n• Regra de merge (mínimo): validação automática ok + preview ok + smoke de acesso (login/logout/reset de senha/navegação pós-login)\n• Regra: antes de merge, seguir obrigatoriamente o checklist da seção 7 (anti-regressão)\n"
+},
+{
+"op": "replace_section",
 "doc_path": "docs/base-tecnica.md",
-"content": "3.4 CI/Lint\n• Lint e tests rodam no PR.\n• Bloqueio de segurança: impedir padrões de implicit flow em client/UI (access_token, refresh_token, setSession(, getSessionFromUrl(). Exceção: app/auth/confirm/** (server-side) pode conter esses padrões para suportar confirmação/recuperação, e deve permanecer o único local permitido.\n• verifyOtp() deve ocorrer somente em app/auth/confirm/**.\n• Regra de merge (mínimo): garantir smoke de acesso (login/logout/reset de senha) em Preview antes de merge.\n"
+"target": "5.3.2",
+"mode": "shallow",
+"content": "5.3.2. Password Reset (MVP)\n• Success: request from modal → email → link opens new tab → set new password (2x) → success → auto-redirect to dashboard; original modal shows “Processo concluído”.\n• Regra: link do e-mail deve apontar direto para /auth/update-password com token_hash e type=recovery (sem verificação em GET fora do app).\n• Regra anti-scanner: não consumir token no GET; confirmação do token ocorre somente no POST ao “Salvar nova senha”.\n• Expired link (10m): reset page shows “link expirou” + inline field to resend link.\n• Email not registered: modal shows neutral “Se este email estiver cadastrado…”.\n• Repeated requests: throttle; modal shows “aguarde” with countdown (5 min).\n• Save password errors: mismatch/weak/network-specific messages; allow another attempt; keep validity for 5 minutes after first error.\n• Link already used: reset page says so + inline resend.\n• User can go back to login anytime.\n• Rules: modal doesn’t auto-close except after final success; always alternatives; never force restart; clear, specific messages.\n"
 },
 {
 "op": "insert_after_heading",
-"heading": "99. Changelog",
 "doc_path": "docs/base-tecnica.md",
-"content": "v1.9.8 (14/01/2026) — Password reset sem “Continuar” (anti-scanner)\n• Atualizado o fluxo de 5.3.2 para link direto em `/auth/update-password` e consumo/validação do token somente no POST (`/auth/confirm`).\n• Documentado o template Recovery do Supabase usando `RedirectTo` + `TokenHash`, evitando `ConfirmationURL` (/auth/v1/verify em GET).\n• Ajustado 2.4 para reforçar allowlist de Redirect URLs com wildcard `/**` em Preview para suportar rotas multi-nível como `/auth/update-password`.\n• Ajustado 3.4 para explicitar a exceção controlada em `app/auth/confirm/**` e manter `verifyOtp()` permitido somente nesse local.\n"
+"heading": "99. Changelog",
+"content": "v1.9.8 (14/01/2026) — Password Reset sem etapa “Continuar” (anti-scanner)\n• Atualizada a regra de Redirect URLs para preview Vercel (wildcard com “/**” para paths profundos).\n• Refinado o bloqueio de implicit flow no CI para permitir o handler server-side em app/auth/confirm/** sem afrouxar o restante do app/src.\n• Consolidado o fluxo de Password Reset para abrir direto em /auth/update-password e consumir token apenas no POST ao salvar a nova senha.\n"
 }
 ],
 "rules": {
