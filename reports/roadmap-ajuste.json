@@ -1,6 +1,6 @@
 {
   "meta": {
-    "datetime": "16/01/2026 00:00",
+    "datetime": "16/01/2026 14:27",
     "origin": "ajuste pontual",
     "scope": "documentacao",
     "execution_mode": "github_actions",
@@ -33,4 +33,45 @@
       "op": "replace_section",
       "target": "4.3",
       "mode": "shallow",
-      "doc_path": "doc_
+      "doc_path": "docs/roadmap.md",
+      "content": "4.3 Crit\u00e9rios de Aceite\n\u2022 Redirect /a \u2192 /a/home \u2192 /a/{account} (quando houver sess\u00e3o e conta resolvida)\n\u2022 Sess\u00e3o validada antes do render\n\u2022 Deny seguro com logs estruturados\n"
+    },
+    {
+      "op": "replace_section",
+      "target": "5.2",
+      "mode": "shallow",
+      "doc_path": "docs/roadmap.md",
+      "content": "5.2 Implementado\n\u2022 Tela de Login (page-based em /auth/login)\n\u2022 Tela \"Esqueci minha senha\" (/auth/forgot-password)\n\u2022 Recovery sem \u201cContinuar\u201d: link do e-mail abre direto em /auth/update-password; submit confirma e troca senha via POST /auth/confirm (anti-scanner)\n\u2022 Cooldown UI do reset: 60s com contador e bot\u00e3o desabilitado ap\u00f3s solicitar\n"
+    },
+    {
+      "op": "replace_section",
+      "target": "5.3",
+      "mode": "shallow",
+      "doc_path": "docs/roadmap.md",
+      "content": "5.3 Crit\u00e9rios de Aceite\n\u2022 Fluxo page-based (sem modal overlay prim\u00e1rio)\n\u2022 Mensagens seguras e anti-enumera\u00e7\u00e3o no reset\n\u2022 Erros gen\u00e9ricos/seguro no login, sem expor detalhes sens\u00edveis\n"
+    },
+    {
+      "op": "replace_section",
+      "target": "10.3.4",
+      "mode": "shallow",
+      "doc_path": "docs/roadmap.md",
+      "content": "10.3.4 Implementado\n\u2022 Componentes AccountSwitcher, AccountSwitcherTrigger, AccountSwitcherList\n\u2022 Hooks useAccountSwitcher, useUserAccounts\n\u2022 Header unificado com nome da conta e avatar\n\u2022 Persist\u00eancia da \u00faltima conta via cookie (90d, HttpOnly)\n\u2022 Leitura do cookie no gateway /a/home para redirecionar para /a/{account}\n\u2022 Defini\u00e7\u00e3o do cookie no SSR de /a/[account] quando allow=true\n\u2022 Middleware usado para limpeza do cookie quando necess\u00e1rio (clear_last=1)\n\u2022 Integra\u00e7\u00e3o UserMenu + AccessProvider\n\u2022 Telemetria (account_switcher_open, account_selected, create_account_click)\n"
+    },
+    {
+      "op": "replace_section",
+      "target": "10.3.5",
+      "mode": "shallow",
+      "doc_path": "docs/roadmap.md",
+      "content": "10.3.5 QA Validado\n\u2022 Known issue (produ\u00e7\u00e3o, multi-contas): last account n\u00e3o reabre consistentemente a \u00faltima conta ap\u00f3s troca de conta e/ou ap\u00f3s logout/login\n\u2022 Troca de conta (UI) e navega\u00e7\u00e3o para /a/{account}\n\u2022 Oculta\u00e7\u00e3o autom\u00e1tica quando h\u00e1 \u22641 conta\n\u2022 Comportamento mobile/touch\n\u2022 SSR deny \u2192 p\u00fablico seguro\n"
+    }
+  ],
+  "rules": {
+    "fail_if_anchor_missing": true,
+    "fail_if_target_missing": true,
+    "fail_if_section_already_exists_on_insert": true,
+    "fail_if_ambiguous_match": true,
+    "no_renumber": true,
+    "no_reformat": true,
+    "no_out_of_scope_changes": true
+  }
+}
