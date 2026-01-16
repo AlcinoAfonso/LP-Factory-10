@@ -1,6 +1,6 @@
 {
   "meta": {
-    "datetime": "14/01/2026 15:26",
+    "datetime": "16/01/2026 00:00",
     "origin": "ajuste pontual",
     "scope": "documentacao",
     "execution_mode": "github_actions",
@@ -10,36 +10,27 @@
   "ops": [
     {
       "op": "replace_section",
-      "doc_path": "docs/roadmap.md",
       "target": "0.1",
-      "content": "0.1 Cabeçalho\n• Data: 14/01/2026\n• Versão: v1.5.1\n"
+      "mode": "shallow",
+      "doc_path": "docs/roadmap.md",
+      "content": "0.1 Cabe\u00e7alho\n\u2022 Data: 16/01/2026\n\u2022 Vers\u00e3o: v1.5.2\n"
     },
     {
       "op": "replace_section",
-      "doc_path": "docs/roadmap.md",
       "target": "2.2",
-      "content": "2.2 Implementado\n• Autenticação email/senha (SULB)\n• Roles: owner, admin, editor, viewer, super_admin\n• RLS em todas as tabelas do núcleo de acesso\n• Helpers: is_super_admin, is_platform_admin, has_account_min_role\n• Recovery de senha: e-mail → /auth/update-password (token_hash/type=recovery); confirmação e troca somente no POST /auth/confirm (anti-scanner)\n"
+      "mode": "shallow",
+      "doc_path": "docs/roadmap.md",
+      "content": "2.2 Implementado\n\u2022 Autentica\u00e7\u00e3o email/senha (SULB)\n\u2022 Roles: owner, admin, editor, viewer, super_admin\n\u2022 RLS em todas as tabelas do n\u00facleo de acesso\n\u2022 Helpers: is_super_admin, is_platform_admin, has_account_min_role\n\u2022 Recovery de senha: /auth/forgot-password \u2192 e-mail \u2192 /auth/update-password (token_hash/type=recovery); confirma\u00e7\u00e3o e troca somente no POST /auth/confirm (anti-scanner)\n"
     },
     {
       "op": "replace_section",
+      "target": "4.2",
+      "mode": "shallow",
       "doc_path": "docs/roadmap.md",
-      "target": "2.3",
-      "content": "2.3 Critérios de Aceite\n• Login funcional e seguro\n• Reset de senha com expiração (token consumido somente no POST)\n• Auditoria ativa\n"
+      "content": "4.2 Implementado\n\u2022 Gateway /a/home (p\u00fablico sem sess\u00e3o; com sess\u00e3o resolve conta)\n\u2022 Redirect /a \u2192 /a/home\n\u2022 Rota privada /a/[account]\n\u2022 Middleware + SSR gate (getAccessContext)\n\u2022 Persist\u00eancia last account via cookie (defini\u00e7\u00e3o em /a/[account] e leitura em /a/home)\n\u2022 P\u00e1gina neutra /auth/confirm/info\n"
     },
     {
       "op": "replace_section",
-      "doc_path": "docs/roadmap.md",
-      "target": "5.2",
-      "content": "5.2 Implementado\n• Tela de Login\n• Tela \"Esqueci minha senha\"\n• Recovery sem “Continuar”: link do e-mail abre direto em /auth/update-password; submit confirma e troca senha via POST /auth/confirm\n"
-    }
-  ],
-  "rules": {
-    "fail_if_anchor_missing": true,
-    "fail_if_target_missing": true,
-    "fail_if_section_already_exists_on_insert": true,
-    "fail_if_ambiguous_match": true,
-    "no_renumber": true,
-    "no_reformat": true,
-    "no_out_of_scope_changes": true
-  }
-}
+      "target": "4.3",
+      "mode": "shallow",
+      "doc_path": "doc_
