@@ -371,3 +371,5 @@ E14 — Workspace Dashboard
 • Perfil e preferências do usuário
 • Seleção de conta ativa
 • Integração com Access Context
+
+99. Changelog
