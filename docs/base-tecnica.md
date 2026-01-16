@@ -178,7 +178,7 @@
 • Usado em SSR (getAccessContext), AccessProvider e AccountSwitcher
 5.1.2 Persistência SSR (cookie last_account_subdomain)
 • Definido em /a/[account]/layout.tsx somente quando allow=true, membro ativo e conta em status active|trial|pending_setup.
-• Atributos obrigatórios: HttpOnly; Secure; SameSite=Lax; Max-Age=7776000; Path=/.
+• Atributos obrigatórios: HttpOnly; Secure; SameSite=Lax; Max-Age=7776000; Path=/.https://github.com/AlcinoAfonso/LP-Factory-10/blob/main/docs/base-tecnica.md
 • Leitura do cookie ocorre no SSR do gateway /a/home para redirecionar /a/home → /a/{account_slug}.
 • Limpeza do cookie ocorre via /a/home?clear_last=1 (middleware zera Max-Age=0).
 • last_account_subdomain só é definido em /a/{account_slug} após allow; /a/home não define cookie.
@@ -201,7 +201,7 @@
 • /a/home (gateway) resolve conta e redireciona para /a/{account_slug}.
 • Erro de credenciais: exibir error.message do Supabase (ex.: “Invalid login credentials”).
 • Throttling específico de login não está implementado na UI atual (ver 5.3.3).
-5.3.2. Password Reset (MVP)
+5.3.2 Password Reset (MVP)
 • Entrada do reset: /auth/forgot-password.
 • Mensagem neutra obrigatória (anti-enumeração): “Se este e-mail estiver cadastrado…” (em sucesso e descrição).
 • Cooldown UI: 60s com contador e botão desabilitado após solicitar.
