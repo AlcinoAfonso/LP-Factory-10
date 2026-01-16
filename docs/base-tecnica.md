@@ -1,8 +1,8 @@
 0. Introdução
 0.1. Cabeçalho
 • Documento: Base Técnica LP Factory 10
-• Versão: v1.9.8
-• Data: 14/01/2026
+• Versão: v1.9.9
+• Data: 16/01/2026
 • Escopo: regras e contratos técnicos do repositório (Next.js + Supabase + Vercel)
 0.2 Contrato do documento (parseável)
 • Esta seção define o que é relevante atualizar e como escrever.
@@ -177,10 +177,10 @@
 • Decide se o usuário pode acessar uma conta (allow + reason)
 • Usado em SSR (getAccessContext), AccessProvider e AccountSwitcher
 5.1.2 Persistência SSR (cookie last_account_subdomain)
-• Definido em /a/[account]/layout.tsx após allow=true
-• Atributos obrigatórios: HttpOnly; Secure; SameSite=Lax; Max-Age=2592000; Path=/
-• Lido apenas no servidor (middleware) para redirecionar /a → /a/{subdomain}
-• No logout, o cookie deve expirar (Max-Age=0)
+• Definido em /a/[account]/layout.tsx somente quando allow=true, membro ativo e conta em status active|trial|pending_setup.
+• Atributos obrigatórios: HttpOnly; Secure; SameSite=Lax; Max-Age=7776000; Path=/.
+• Leitura do cookie ocorre no SSR do gateway /a/home para redirecionar /a/home → /a/{account_slug}.
+• Limpeza do cookie ocorre via /a/home?clear_last=1 (middleware zera Max-Age=0).
 • last_account_subdomain só é definido em /a/{account_slug} após allow; /a/home não define cookie.
 5.2 Adapters, Guards, Providers
 5.2.1 Adapters
@@ -194,33 +194,40 @@
 • account-switcher (PATH: components/features/account-switcher/*): consome v_user_accounts_list via /api/user/accounts.
 5.3 Fluxos de Sessão
 5.3.1 Login (MVP)
-• Modal → autenticação SULB → redirect para /a
-• Se já estiver logado, /a deve resolver conta e redirecionar
+• Login primário é page-based em /auth/login (card central).
+• CTA “Entrar” na home pública (/a/home) navega para /auth/login.
+• Sucesso: /auth/login cria sessão via signInWithPassword e navega para /protected (rota técnica).
+• /protected redireciona para /a/home (redirect em next.config.js).
+• /a/home (gateway) resolve conta e redireciona para /a/{account_slug}.
+• Erro de credenciais: exibir error.message do Supabase (ex.: “Invalid login credentials”).
+• Throttling específico de login não está implementado na UI atual (ver 5.3.3).
 5.3.2. Password Reset (MVP)
-• Success: request from modal → email → link opens new tab → set new password (2x) → success → auto-redirect to dashboard; original modal shows “Processo concluído”.
-• Regra: link do e-mail deve apontar direto para /auth/update-password com token_hash e type=recovery (sem verificação em GET fora do app).
-• Regra anti-scanner: não consumir token no GET; confirmação do token ocorre somente no POST ao “Salvar nova senha”.
-• Expired link (10m): reset page shows “link expirou” + inline field to resend link.
-• Email not registered: modal shows neutral “Se este email estiver cadastrado…”.
-• Repeated requests: throttle; modal shows “aguarde” with countdown (5 min).
-• Save password errors: mismatch/weak/network-specific messages; allow another attempt; keep validity for 5 minutes after first error.
-• Link already used: reset page says so + inline resend.
-• User can go back to login anytime.
-• Rules: modal doesn’t auto-close except after final success; always alternatives; never force restart; clear, specific messages.
+• Entrada do reset: /auth/forgot-password.
+• Mensagem neutra obrigatória (anti-enumeração): “Se este e-mail estiver cadastrado…” (em sucesso e descrição).
+• Cooldown UI: 60s com contador e botão desabilitado após solicitar.
+• resetPasswordForEmail deve usar redirectTo direto para /auth/update-password (sem querystring).
+• Link de recovery abre /auth/update-password com type=recovery e token_hash=<TOKEN_HASH> ou code=<CODE>.
+• Regra anti-scanner: não consumir token no GET; confirmação ocorre somente no POST ao “Salvar nova senha”.
+• /auth/update-password faz POST para /auth/confirm com type=recovery, token_hash/code e next=/a/home.
+• Ao concluir, o usuário retorna para /a/home (gateway) e segue a resolução de conta.
 5.3.3 Throttling
-• Login: 3s após 3 falhas; 10s após 5 (com countdown)
-• Reset: throttle 5min com countdown
+• Login: sem throttling dedicado; UI apenas desabilita o botão durante a request e exibe error.message em falha.
+• Reset: cooldown UI de 60s (contador), iniciado após uma solicitação bem-sucedida.
+• Limitação adicional (server-side) é responsabilidade do Supabase Auth.
 5.3.4 Observabilidade
 • server-timing/proxy-status não observados nos requests testados via DevTools
 • Diretriz: se precisar medir, instrumentar via logs/Apm e/ou headers próprios no server
 5.4 Regras da rota /a (anti-regressão)
-• /a é pública sem sessão.
-• Em navegação limpa (sem sessão), /a não redireciona automaticamente para /auth/login.
+• /a é o entrypoint público e redireciona para /a/home.
+• /a/home é pública e funciona como gateway:
+• Sem sessão: renderiza home pública.
+• Com sessão: resolve conta via cookie last_account_subdomain e redireciona para /a/{account_slug}.
+• Com sessão e sem conta resolvida: redireciona para /auth/confirm/info.
 • Dashboard privado só em /a/{account_slug}.
-• /a → /a/{account_slug} só quando existe sessão válida e a conta foi resolvida (cookie last_account_subdomain ou fallback).
 • allow/deny é responsabilidade do gate SSR em /a/{account_slug}.
-• /a/home é pública e bypassa o gate SSR de conta em app/a/[account]/layout.tsx.
-• Se last_account_subdomain estiver inválido: limpar cookie e retomar resolução de conta em /a/home (sem loop).
+• /a/home bypassa o gate SSR de conta em app/a/[account]/layout.tsx.
+• Se o gate negar com usuário autenticado: redirecionar para /a/home?clear_last=1 para limpar o cookie e forçar fallback determinístico (sem loop).
+• “Solicitar acesso” em /auth/confirm/info abre mailto (não é rota interna do app).
 6. Estrutura de Arquivos Essencial
 6.1 Visão rápida (fonte única)
 • Fonte única do inventário (pastas/arquivos e mapa do repo): PATH: docs/repo-inv.md
@@ -260,6 +267,11 @@ Regra: qualquer novo arquivo em app/auth/ não pode importar @supabase/* até se
 • Adapters vNext: seguir 3.14
 
 99. Changelog
+v1.9.9 (16/01/2026) — Alinhamento do contrato de Auth ao fluxo real do MVP
+• Ajustado 5.3.1 para refletir login page-based em /auth/login e uso de /protected → /a/home.
+• Ajustado 5.3.2 e 5.3.3 para refletir reset via /auth/forgot-password e cooldown UI de 60s (sem modal/throttle 5min).
+• Ajustado 5.1.2 e 5.4 para refletir leitura do cookie no gateway /a/home, TTL de 90 dias e limpeza via clear_last=1 no middleware, incluindo fallback /auth/confirm/info e mailto de solicitação de acesso.
+• Known issue (produção, multi-contas): “last_account_subdomain” não está reabrindo consistentemente a última conta após troca de conta e/ou após logout/login; investigação em andamento (evidência: teste manual em /a).
 v1.9.8 (14/01/2026) — Password Reset sem etapa “Continuar” (anti-scanner)
 • Atualizada a regra de Redirect URLs para preview Vercel (wildcard com “/**” para paths profundos).
 • Refinado o bloqueio de implicit flow no CI para permitir o handler server-side em app/auth/confirm/** sem afrouxar o restante do app/src.
