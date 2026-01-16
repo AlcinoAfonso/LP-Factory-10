@@ -1,55 +1,69 @@
 {
-"meta": {
-"datetime": "14/01/2026 20:00",
-"origin": "ajuste pontual",
-"scope": "documentacao",
-"execution_mode": "github_actions",
-"target_doc": "docs/base-tecnica.md",
-"warnings": []
-},
-"ops": [
-{
-"op": "replace_section",
-"doc_path": "docs/base-tecnica.md",
-"target": "0.1",
-"mode": "shallow",
-"content": "0.1. Cabeçalho\n• Documento: Base Técnica LP Factory 10\n• Versão: v1.9.8\n• Data: 14/01/2026\n• Escopo: regras e contratos técnicos do repositório (Next.js + Supabase + Vercel)\n"
-},
-{
-"op": "replace_section",
-"doc_path": "docs/base-tecnica.md",
-"target": "2.4",
-"mode": "shallow",
-"content": "2.4. Supabase Auth URL allowlist (Redirect URLs)\n• Local: Supabase Dashboard → Authentication → URL Configuration → Redirect URLs\n• Regra: permitir somente domínios/paths necessários (produção + localhost).\n• Regra (Preview Vercel): quando for necessário habilitar preview, usar wildcard com “/**” para cobrir paths profundos (ex.: https://*-<slug>.vercel.app/**).\n• Regra: não usar curingas amplos fora de preview (evitar allowlist que aceite domínios externos).\n"
-},
-{
-"op": "replace_section",
-"doc_path": "docs/base-tecnica.md",
-"target": "3.4",
-"mode": "shallow",
-"content": "3.4 CI/Lint (Bloqueios)\n• Validação por PR + preview de deploy (Vercel)\n• PATH: .github/workflows/security.yml\n• Bloqueio de segurança: impedir padrões de implicit flow em client/UI (access_token, refresh_token, setSession, getSessionFromUrl)\n• Regra: o bloqueio de tokens/sessão ignora app/auth/confirm/** (allowlist mínima para handler server-side)\n• Regra: verifyOtp() só pode existir em app/auth/confirm/**\n• Regra de merge (mínimo): validação automática ok + preview ok + smoke de acesso (login/logout/reset de senha/navegação pós-login)\n• Regra: antes de merge, seguir obrigatoriamente o checklist da seção 7 (anti-regressão)\n"
-},
-{
-"op": "replace_section",
-"doc_path": "docs/base-tecnica.md",
-"target": "5.3.2",
-"mode": "shallow",
-"content": "5.3.2. Password Reset (MVP)\n• Success: request from modal → email → link opens new tab → set new password (2x) → success → auto-redirect to dashboard; original modal shows “Processo concluído”.\n• Regra: link do e-mail deve apontar direto para /auth/update-password com token_hash e type=recovery (sem verificação em GET fora do app).\n• Regra anti-scanner: não consumir token no GET; confirmação do token ocorre somente no POST ao “Salvar nova senha”.\n• Expired link (10m): reset page shows “link expirou” + inline field to resend link.\n• Email not registered: modal shows neutral “Se este email estiver cadastrado…”.\n• Repeated requests: throttle; modal shows “aguarde” with countdown (5 min).\n• Save password errors: mismatch/weak/network-specific messages; allow another attempt; keep validity for 5 minutes after first error.\n• Link already used: reset page says so + inline resend.\n• User can go back to login anytime.\n• Rules: modal doesn’t auto-close except after final success; always alternatives; never force restart; clear, specific messages.\n"
-},
-{
-"op": "insert_after_heading",
-"doc_path": "docs/base-tecnica.md",
-"heading": "99. Changelog",
-"content": "v1.9.8 (14/01/2026) — Password Reset sem etapa “Continuar” (anti-scanner)\n• Atualizada a regra de Redirect URLs para preview Vercel (wildcard com “/**” para paths profundos).\n• Refinado o bloqueio de implicit flow no CI para permitir o handler server-side em app/auth/confirm/** sem afrouxar o restante do app/src.\n• Consolidado o fluxo de Password Reset para abrir direto em /auth/update-password e consumir token apenas no POST ao salvar a nova senha.\n"
-}
-],
-"rules": {
-"fail_if_anchor_missing": true,
-"fail_if_target_missing": true,
-"fail_if_section_already_exists_on_insert": true,
-"fail_if_ambiguous_match": true,
-"no_renumber": true,
-"no_reformat": true,
-"no_out_of_scope_changes": true
-}
+  "meta": {
+    "datetime": "16/01/2026 00:00",
+    "origin": "ajuste pontual",
+    "scope": "documentacao",
+    "execution_mode": "github_actions",
+    "target_doc": "docs/base-tecnica.md",
+    "warnings": []
+  },
+  "ops": [
+    {
+      "op": "replace_section",
+      "target": "0.1",
+      "mode": "shallow",
+      "doc_path": "docs/base-tecnica.md",
+      "content": "0.1. Cabe\u00e7alho\n\u2022 Documento: Base T\u00e9cnica LP Factory 10\n\u2022 Vers\u00e3o: v1.9.9\n\u2022 Data: 16/01/2026\n\u2022 Escopo: regras e contratos t\u00e9cnicos do reposit\u00f3rio (Next.js + Supabase + Vercel)\n"
+    },
+    {
+      "op": "replace_section",
+      "target": "5.1.2",
+      "mode": "shallow",
+      "doc_path": "docs/base-tecnica.md",
+      "content": "5.1.2 Persist\u00eancia SSR (cookie last_account_subdomain)\n\u2022 Definido em /a/[account]/layout.tsx somente quando allow=true, membro ativo e conta em status active|trial|pending_setup.\n\u2022 Atributos obrigat\u00f3rios: HttpOnly; Secure; SameSite=Lax; Max-Age=7776000; Path=/.\n\u2022 Leitura do cookie ocorre no SSR do gateway /a/home para redirecionar /a/home \u2192 /a/{account_slug}.\n\u2022 Limpeza do cookie ocorre via /a/home?clear_last=1 (middleware zera Max-Age=0).\n\u2022 last_account_subdomain s\u00f3 \u00e9 definido em /a/{account_slug} ap\u00f3s allow; /a/home n\u00e3o define cookie.\n"
+    },
+    {
+      "op": "replace_section",
+      "target": "5.3.1",
+      "mode": "shallow",
+      "doc_path": "docs/base-tecnica.md",
+      "content": "5.3.1 Login (MVP)\n\u2022 Login prim\u00e1rio \u00e9 page-based em /auth/login (card central).\n\u2022 CTA \u201cEntrar\u201d na home p\u00fablica (/a/home) navega para /auth/login.\n\u2022 Sucesso: /auth/login cria sess\u00e3o via signInWithPassword e navega para /protected (rota t\u00e9cnica).\n\u2022 /protected redireciona para /a/home (redirect em next.config.js).\n\u2022 /a/home (gateway) resolve conta e redireciona para /a/{account_slug}.\n\u2022 Erro de credenciais: exibir error.message do Supabase (ex.: \u201cInvalid login credentials\u201d).\n\u2022 Throttling espec\u00edfico de login n\u00e3o est\u00e1 implementado na UI atual (ver 5.3.3).\n"
+    },
+    {
+      "op": "replace_section",
+      "target": "5.3.2",
+      "mode": "shallow",
+      "doc_path": "docs/base-tecnica.md",
+      "content": "5.3.2. Password Reset (MVP)\n\u2022 Entrada do reset: /auth/forgot-password.\n\u2022 Mensagem neutra obrigat\u00f3ria (anti-enumera\u00e7\u00e3o): \u201cSe este e-mail estiver cadastrado\u2026\u201d (em sucesso e descri\u00e7\u00e3o).\n\u2022 Cooldown UI: 60s com contador e bot\u00e3o desabilitado ap\u00f3s solicitar.\n\u2022 resetPasswordForEmail deve usar redirectTo direto para /auth/update-password (sem querystring).\n\u2022 Link de recovery abre /auth/update-password com type=recovery e token_hash=<TOKEN_HASH> ou code=<CODE>.\n\u2022 Regra anti-scanner: n\u00e3o consumir token no GET; confirma\u00e7\u00e3o ocorre somente no POST ao \u201cSalvar nova senha\u201d.\n\u2022 /auth/update-password faz POST para /auth/confirm com type=recovery, token_hash/code e next=/a/home.\n\u2022 Ao concluir, o usu\u00e1rio retorna para /a/home (gateway) e segue a resolu\u00e7\u00e3o de conta.\n"
+    },
+    {
+      "op": "replace_section",
+      "target": "5.3.3",
+      "mode": "shallow",
+      "doc_path": "docs/base-tecnica.md",
+      "content": "5.3.3 Throttling\n\u2022 Login: sem throttling dedicado; UI apenas desabilita o bot\u00e3o durante a request e exibe error.message em falha.\n\u2022 Reset: cooldown UI de 60s (contador), iniciado ap\u00f3s uma solicita\u00e7\u00e3o bem-sucedida.\n\u2022 Limita\u00e7\u00e3o adicional (server-side) \u00e9 responsabilidade do Supabase Auth.\n"
+    },
+    {
+      "op": "replace_section",
+      "target": "5.4",
+      "mode": "shallow",
+      "doc_path": "docs/base-tecnica.md",
+      "content": "5.4 Regras da rota /a (anti-regress\u00e3o)\n\u2022 /a \u00e9 o entrypoint p\u00fablico e redireciona para /a/home.\n\u2022 /a/home \u00e9 p\u00fablica e funciona como gateway:\n\u2022 Sem sess\u00e3o: renderiza home p\u00fablica.\n\u2022 Com sess\u00e3o: resolve conta via cookie last_account_subdomain e redireciona para /a/{account_slug}.\n\u2022 Com sess\u00e3o e sem conta resolvida: redireciona para /auth/confirm/info.\n\u2022 Dashboard privado s\u00f3 em /a/{account_slug}.\n\u2022 allow/deny \u00e9 responsabilidade do gate SSR em /a/{account_slug}.\n\u2022 /a/home bypassa o gate SSR de conta em app/a/[account]/layout.tsx.\n\u2022 Se o gate negar com usu\u00e1rio autenticado: redirecionar para /a/home?clear_last=1 para limpar o cookie e for\u00e7ar fallback determin\u00edstico (sem loop).\n\u2022 \u201cSolicitar acesso\u201d em /auth/confirm/info abre mailto (n\u00e3o \u00e9 rota interna do app).\n"
+    },
+    {
+      "op": "insert_after_heading",
+      "heading": "99. Changelog",
+      "doc_path": "docs/base-tecnica.md",
+      "content": "v1.9.9 (16/01/2026) \u2014 Alinhamento do contrato de Auth ao fluxo real do MVP\n\u2022 Ajustado 5.3.1 para refletir login page-based em /auth/login e uso de /protected \u2192 /a/home.\n\u2022 Ajustado 5.3.2 e 5.3.3 para refletir reset via /auth/forgot-password e cooldown UI de 60s (sem modal/throttle 5min).\n\u2022 Ajustado 5.1.2 e 5.4 para refletir leitura do cookie no gateway /a/home, TTL de 90 dias e limpeza via clear_last=1 no middleware, incluindo fallback /auth/confirm/info e mailto de solicita\u00e7\u00e3o de acesso.\n\u2022 Known issue (produ\u00e7\u00e3o, multi-contas): \u201clast_account_subdomain\u201d n\u00e3o est\u00e1 reabrindo consistentemente a \u00faltima conta ap\u00f3s troca de conta e/ou ap\u00f3s logout/login; investiga\u00e7\u00e3o em andamento (evid\u00eancia: teste manual em /a).\n"
+    }
+  ],
+  "rules": {
+    "fail_if_anchor_missing": true,
+    "fail_if_target_missing": true,
+    "fail_if_section_already_exists_on_insert": true,
+    "fail_if_ambiguous_match": true,
+    "no_renumber": true,
+    "no_reformat": true,
+    "no_out_of_scope_changes": true
+  }
 }
