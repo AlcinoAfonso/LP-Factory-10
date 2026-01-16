@@ -1,8 +1,8 @@
 0. Introdução
 
 0.1 Cabeçalho
-• Data: 14/01/2026
-• Versão: v1.5.1
+• Data: 16/01/2026
+• Versão: v1.5.2
 0.2 Contrato do documento (parseável)
 • Este documento registra o roadmap e o histórico de execução por marcos (E1, E2, ...).
 0.2.1 TIPO_DO_DOCUMENTO
@@ -41,7 +41,7 @@
 • Roles: owner, admin, editor, viewer, super_admin
 • RLS em todas as tabelas do núcleo de acesso
 • Helpers: is_super_admin, is_platform_admin, has_account_min_role
-• Recovery de senha: e-mail → /auth/update-password (token_hash/type=recovery); confirmação e troca somente no POST /auth/confirm (anti-scanner)
+• Recovery de senha: /auth/forgot-password → e-mail → /auth/update-password (token_hash/type=recovery); confirmação e troca somente no POST /auth/confirm (anti-scanner)
 2.3 Critérios de Aceite
 • Login funcional e seguro
 • Reset de senha com expiração (token consumido somente no POST)
@@ -69,28 +69,30 @@
 • Concluído
 
 4.2 Implementado
-• Rota canônica /a/[account]
+• Gateway /a/home (público sem sessão; com sessão resolve conta)
+• Redirect /a → /a/home
+• Rota privada /a/[account]
 • Middleware + SSR gate (getAccessContext)
+• Persistência last account via cookie (definição em /a/[account] e leitura em /a/home)
 • Página neutra /auth/confirm/info
-
 4.3 Critérios de Aceite
-• Redirect /a → /a/[account]
+• Redirect /a → /a/home → /a/{account} (quando houver sessão e conta resolvida)
 • Sessão validada antes do render
 • Deny seguro com logs estruturados
-
 5. E5 — UI/Auth Account Dashboard
 
 5.1 Status
 • Concluído
 
 5.2 Implementado
-• Tela de Login
-• Tela "Esqueci minha senha"
-• Recovery sem “Continuar”: link do e-mail abre direto em /auth/update-password; submit confirma e troca senha via POST /auth/confirm
+• Tela de Login (page-based em /auth/login)
+• Tela "Esqueci minha senha" (/auth/forgot-password)
+• Recovery sem “Continuar”: link do e-mail abre direto em /auth/update-password; submit confirma e troca senha via POST /auth/confirm (anti-scanner)
+• Cooldown UI do reset: 60s com contador e botão desabilitado após solicitar
 5.3 Critérios de Aceite
-• Modal fecha apenas em sucesso
-• Erros genéricos, UX segura
-
+• Fluxo page-based (sem modal overlay primário)
+• Mensagens seguras e anti-enumeração no reset
+• Erros genéricos/seguro no login, sem expor detalhes sensíveis
 6. E6 — UI Kit Provisório
 
 6.1 Status
@@ -255,13 +257,15 @@
 • Componentes AccountSwitcher, AccountSwitcherTrigger, AccountSwitcherList
 • Hooks useAccountSwitcher, useUserAccounts
 • Header unificado com nome da conta e avatar
-• Persistência da última conta via cookie (30d, HttpOnly)
+• Persistência da última conta via cookie (90d, HttpOnly)
+• Leitura do cookie no gateway /a/home para redirecionar para /a/{account}
+• Definição do cookie no SSR de /a/[account] quando allow=true
+• Middleware usado para limpeza do cookie quando necessário (clear_last=1)
 • Integração UserMenu + AccessProvider
-• Middleware simplificado (gravação e leitura de cookie)
 • Telemetria (account_switcher_open, account_selected, create_account_click)
 10.3.5 QA Validado
-• Troca de conta, logout e reabertura (/a)
-• Persistência última conta 30d
+• Known issue (produção, multi-contas): last account não reabre consistentemente a última conta após troca de conta e/ou após logout/login
+• Troca de conta (UI) e navegação para /a/{account}
 • Ocultação automática quando há ≤1 conta
 • Comportamento mobile/touch
 • SSR deny → público seguro
