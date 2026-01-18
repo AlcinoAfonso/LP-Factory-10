@@ -271,7 +271,6 @@ v1.9.9 (16/01/2026) — Alinhamento do contrato de Auth ao fluxo real do MVP
 • Ajustado 5.3.1 para refletir login page-based em /auth/login e uso de /protected → /a/home.
 • Ajustado 5.3.2 e 5.3.3 para refletir reset via /auth/forgot-password e cooldown UI de 60s (sem modal/throttle 5min).
 • Ajustado 5.1.2 e 5.4 para refletir leitura do cookie no gateway /a/home, TTL de 90 dias e limpeza via clear_last=1 no middleware, incluindo fallback /auth/confirm/info e mailto de solicitação de acesso.
-• Known issue (produção, multi-contas): “last_account_subdomain” não está reabrindo consistentemente a última conta após troca de conta e/ou após logout/login; investigação em andamento (evidência: teste manual em /a).
 v1.9.8 (14/01/2026) — Password Reset sem etapa “Continuar” (anti-scanner)
 • Atualizada a regra de Redirect URLs para preview Vercel (wildcard com “/**” para paths profundos).
 • Refinado o bloqueio de implicit flow no CI para permitir o handler server-side em app/auth/confirm/** sem afrouxar o restante do app/src.
