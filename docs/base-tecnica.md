@@ -208,8 +208,8 @@
 • resetPasswordForEmail deve usar redirectTo direto para /auth/update-password (sem querystring).
 • Link de recovery abre /auth/update-password com type=recovery e token_hash=<TOKEN_HASH> ou code=<CODE>.
 • Regra anti-scanner: não consumir token no GET; confirmação ocorre somente no POST ao “Salvar nova senha”.
-• /auth/update-password faz POST para /auth/confirm com type=recovery, token_hash/code e next=/a/home.
-• Ao concluir, o usuário retorna para /a/home (gateway) e segue a resolução de conta.
+• /auth/update-password faz POST para /auth/confirm com type=recovery, token_hash/code e next=/a.
+• Ao concluir, o usuário retorna para /a (entrypoint público) e segue a resolução de conta pelo gateway.
 5.3.3 Throttling
 • Login: sem throttling dedicado; UI apenas desabilita o botão durante a request e exibe error.message em falha.
 • Reset: cooldown UI de 60s (contador), iniciado após uma solicitação bem-sucedida.
