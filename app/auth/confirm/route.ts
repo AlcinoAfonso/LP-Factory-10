@@ -119,10 +119,10 @@ export async function POST(req: NextRequest) {
 
   const rawNext = String(form.get("next") || "");
   const next = isSafeInternal(rawNext)
-    ? rawNext
-    : type === "recovery"
-      ? "/a/home"
-      : "/";
+  ? rawNext
+  : type === "recovery"
+    ? "/a"
+    : "/a";
 
   if ((!token_hash && !code) || !type) {
     return NextResponse.redirect(

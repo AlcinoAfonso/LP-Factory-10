@@ -5,6 +5,10 @@ import { getUserEmail } from '@/lib/auth/authAdapter';
 import { getFirstAccountForCurrentUser } from '@/lib/access/adapters/accessContextAdapter';
 import { Header } from '@/components/layout/Header';
 
+// Garantir que a leitura do cookie e os redirects não sofram cache.
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 type HomeSearchParams = {
   clear_last?: string;
 };

@@ -7,17 +7,17 @@ const nextConfig = {
       {
         source: '/auth/confirm',
         has: [{ type: 'query', key: 'next', value: '^//.*' }],
-        destination: '/auth/confirm?next=/a/home',
+        destination: '/auth/confirm?next=/a',
       },
       {
         source: '/auth/confirm',
         has: [{ type: 'query', key: 'next', value: '.*://.*' }],
-        destination: '/auth/confirm?next=/a/home',
+        destination: '/auth/confirm?next=/a',
       },
       {
         source: '/auth/confirm',
         has: [{ type: 'query', key: 'next', value: '^(?!/).*' }],
-        destination: '/auth/confirm?next=/a/home',
+        destination: '/auth/confirm?next=/a',
       },
     ];
   },

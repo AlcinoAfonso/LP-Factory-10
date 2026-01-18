@@ -67,25 +67,18 @@ export default async function Layout({ children, params }: LayoutProps) {
   }
 
   // ⚙️ Persistência da última conta (itens C6.3–C6.4)
-  // Gravar cookie APENAS quando allow=true e membro ATIVO.
-  // Tipos canônicos: status de conta -> 'active' | 'inactive' | 'suspended' | 'pending_setup' | 'trial'
+  // Gravar cookie sempre que allow=true e houver subdomain canônico.
+  // Obs: o gate (getAccessContext) já garante que ctx != null significa allow.
   try {
-    const accountStatus = ctx.account?.status;
-    const memberStatus = ctx.member?.status;
     const subdomain = ctx.account?.subdomain;
 
-    if (
-      subdomain &&
-      (accountStatus === "active" ||
-        accountStatus === "trial" ||
-        accountStatus === "pending_setup") &&
-      memberStatus === "active"
-    ) {
+    if (subdomain) {
       const cookieStore = await cookies();
+      const isProd = process.env.NODE_ENV === "production";
 
       cookieStore.set("last_account_subdomain", subdomain, {
         httpOnly: true,
-        secure: true,
+        secure: isProd,
         sameSite: "lax",
         path: "/",
         maxAge: 60 * 60 * 24 * 90, // 90 dias
