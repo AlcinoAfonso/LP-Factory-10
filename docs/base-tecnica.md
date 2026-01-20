@@ -9,9 +9,7 @@
 0.2.1 TIPO_DO_DOCUMENTO
 • TIPO_DO_DOCUMENTO: prescritivo
 0.2.2 ALLOWLIST_RELEVANCIA
-• ARQUITETURA: Regras prescritivas que impactam implementação (arquitetura, fluxo UI > Providers > Adapters > DB, auth/SSR/cookies, guardrails).
-• CONTRATOS_CI: Contratos/restrições verificáveis (paths, allowlists, padrões proibidos, CI/security.yml, dependências permitidas).
-• GERACAO_CODIGO_SQL: Convenções necessárias para gerar código/SQL com segurança (stack oficial, fonte única de Supabase, separação Schema em docs/schema.md).
+• Baseando-se nas características do documento, a IA deve incluir apenas o que for necessário para manter o estado final correto e utilizável como referência para: gerar/ajustar código (SQL/Supabase e Next.js), orientar fluxos e segurança, e criar planos/DoD de casos de uso do projeto, mantendo escopo mínimo (somente o necessário).
 0.2.3 ALLOWLIST_CHANGELOG (blocklist mínima)
 • PROIBIDO: bullets administrativos (ex.: “atualizado cabeçalho/data/versão”).
 0.2.4 ESTILO (opcional)
