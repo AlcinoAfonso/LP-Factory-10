@@ -53,13 +53,18 @@ export async function getAccessContext(input?: Input): Promise<AccessContextLega
   let userId = input?.userId;
   if (!userId) {
     const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
     if (!user?.id) return null;
     userId = user.id;
   }
 
   // Chama o adapter (ele decide allow/deny e loga decisão)
-  // >>> Correção: readAccessContext espera APENAS o subdomain (string)
+  // readAccessContext:
+  // - allow=true  -> retorna ctx
+  // - allow=false -> retorna ctx "bloqueado" SOMENTE quando existir membership (B1-Fase1)
+  // - caso contrário -> null (fail-closed)
   const pair = await readAccessContext(slugRaw ?? "");
   if (!pair) return null;
 
@@ -68,19 +73,18 @@ export async function getAccessContext(input?: Input): Promise<AccessContextLega
   // usamos os mappers para manter compat com o domínio atual.
   const account: AccountInfo = mapAccountFromDB({
     id: pair.account.id,
-    name: (pair as any).account?.name ?? null, // opcional para MVP (view mínima não expõe)
+    name: pair.account.name ?? null,
     subdomain: pair.account.subdomain,
-    domain: (pair as any).account?.domain ?? null, // opcional/futuro
+    domain: null,
     status: pair.account.status,
   } as any);
 
   const member: MemberInfo = mapMemberFromDB({
-    id: (pair as any).member?.id ?? "—", // não exposto na view mínima (ok para MVP)
-    // >>> Correção: usar snake_case retornado pelo adapter
-    account_id: (pair as any).member?.account_id ?? accId ?? account.id,
-    user_id: (pair as any).member?.user_id ?? userId,
-    role: (pair as any).member?.role,
-    status: (pair as any).member?.status,
+    id: "—", // não exposto na view mínima (ok para MVP)
+    account_id: pair.member?.account_id ?? accId ?? account.id,
+    user_id: pair.member?.user_id ?? userId,
+    role: pair.member?.role,
+    status: pair.member?.status,
     permissions: undefined,
   } as any);
 
@@ -106,6 +110,30 @@ export async function getAccessContext(input?: Input): Promise<AccessContextLega
       max_domains: 1,
     },
   };
+
+  // B1-Fase1: propagar bloqueio para o gate SSR (layout decide UX)
+  const isBlocked = pair.allow === false;
+  if (isBlocked) {
+    ctx.blocked = true;
+
+    // error_code é "compat" (string). Mantém nomes simples para UI/telemetria.
+    const ms = (member.status ?? "") as string;
+    const reason = (pair.reason ?? "") as string;
+
+    if (reason === "member_inactive") {
+      if (ms === "pending") ctx.error_code = "MEMBERSHIP_PENDING";
+      else if (ms === "inactive") ctx.error_code = "INACTIVE_MEMBER";
+      else if (ms === "revoked") ctx.error_code = "MEMBERSHIP_REVOKED";
+      else ctx.error_code = "MEMBERSHIP_BLOCKED";
+    } else if (reason === "account_blocked") {
+      ctx.error_code = "FORBIDDEN_ACCOUNT";
+    } else {
+      ctx.error_code = "ACCESS_DENIED";
+    }
+  } else {
+    ctx.blocked = false;
+    ctx.error_code = null;
+  }
 
   return ctx;
 }
