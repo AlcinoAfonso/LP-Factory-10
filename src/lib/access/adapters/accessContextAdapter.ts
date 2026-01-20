@@ -1,12 +1,17 @@
 // src/lib/access/adapters/accessContextAdapter.ts
 // Fonte única de leitura do Access Context (E8).
-// Decide via super view v2; retorna null quando allow=false.
+// Decide via super view v2.
+// B1-Fase1: quando houver membership mas allow=false, retorna contexto "bloqueado"
+// (para o SSR encaminhar UX por status). Continua fail-closed para:
+// - conta inexistente
+// - usuário sem membership na conta
+// - dados incompletos na view
 // Log padronizado: access_context_decision (MRVG 1.5 D/F).
 
-import 'server-only';
-import { headers } from 'next/headers';
-import { createClient } from '@/lib/supabase/server';
-import type { AccountStatus, MemberStatus, MemberRole } from '../../types/status';
+import "server-only";
+import { headers } from "next/headers";
+import { createClient } from "@/lib/supabase/server";
+import type { AccountStatus, MemberStatus, MemberRole } from "../../types/status";
 
 export type AccessAccount = {
   id: string;
@@ -25,6 +30,9 @@ export type AccessMember = {
 export type AccessContext = {
   account: AccessAccount;
   member: AccessMember;
+  // Campos de decisão (SSR/UI podem usar para UX por status)
+  allow: boolean;
+  reason: RowV2["reason"] | null;
 };
 
 type RowV2 = {
@@ -40,14 +48,14 @@ type RowV2 = {
 };
 
 type LogInput = {
-  decision: 'allow' | 'deny' | 'null';
+  decision: "allow" | "deny" | "null";
   reason?:
-    | 'ok'
-    | 'account_blocked'
-    | 'member_inactive'
-    | 'no_membership'
-    | 'no_membership_or_invalid_account'
-    | 'denied_by_view'
+    | "ok"
+    | "account_blocked"
+    | "member_inactive"
+    | "no_membership"
+    | "no_membership_or_invalid_account"
+    | "denied_by_view"
     | `adapter_error_${string}`
     | string
     | null;
@@ -57,22 +65,22 @@ type LogInput = {
   route?: string | null;
   request_id?: string | null;
   latency_ms?: number | null;
-  source?: 'view_v2' | 'view_v1' | 'adapter_error';
+  source?: "view_v2" | "view_v1" | "adapter_error";
 };
 
 async function logDecision(input: LogInput) {
   try {
     const h = await headers();
     const payload = {
-      event: 'access_context_decision',
-      source: input.source ?? 'view_v2',
+      event: "access_context_decision",
+      source: input.source ?? "view_v2",
       decision: input.decision,
       reason: input.reason ?? null,
       user_id: input.user_id ?? null,
       account_id: input.account_id ?? null,
       role: input.role ?? null,
-      route: input.route ?? h.get('x-invoke-path') ?? null,
-      request_id: input.request_id ?? h.get('x-request-id') ?? null,
+      route: input.route ?? h.get("x-invoke-path") ?? null,
+      request_id: input.request_id ?? h.get("x-request-id") ?? null,
       latency_ms: input.latency_ms ?? null,
       ts: new Date().toISOString(),
     };
@@ -88,29 +96,29 @@ export async function readAccessContext(subdomain: string): Promise<AccessContex
   const supabase = await createClient();
 
   const { data, error } = await supabase
-    .from('v_access_context_v2')
+    .from("v_access_context_v2")
     .select(
       [
-        'account_id',
-        'account_key',
-        'account_name',
-        'account_status',
-        'user_id',
-        'member_role',
-        'member_status',
-        'allow',
-        'reason',
-      ].join(',')
+        "account_id",
+        "account_key",
+        "account_name",
+        "account_status",
+        "user_id",
+        "member_role",
+        "member_status",
+        "allow",
+        "reason",
+      ].join(",")
     )
-    .eq('account_key', subdomain)
+    .eq("account_key", subdomain)
     .limit(1)
     .maybeSingle();
 
   if (error) {
     await logDecision({
-      decision: 'null',
-      reason: 'adapter_error_read_v2',
-      source: 'adapter_error',
+      decision: "null",
+      reason: "adapter_error_read_v2",
+      source: "adapter_error",
       latency_ms: Date.now() - t0,
     });
     return null;
@@ -118,8 +126,8 @@ export async function readAccessContext(subdomain: string): Promise<AccessContex
 
   if (!data) {
     await logDecision({
-      decision: 'deny',
-      reason: 'no_membership_or_invalid_account',
+      decision: "deny",
+      reason: "no_membership_or_invalid_account",
       latency_ms: Date.now() - t0,
     });
     return null;
@@ -127,16 +135,48 @@ export async function readAccessContext(subdomain: string): Promise<AccessContex
 
   const row = data as unknown as RowV2;
 
+  // Se a view negou, pode ser por:
+  // - membership bloqueado (pending/inactive/revoked)
+  // - conta bloqueada (status não permitido)
+  // - sem membership / conta inválida (tratamos como null)
   if (!row.allow) {
     await logDecision({
       user_id: row.user_id ?? null,
       account_id: row.account_id ?? null,
       role: row.member_role ?? null,
-      decision: 'deny',
-      reason: (row.reason as LogInput['reason']) ?? 'denied_by_view',
+      decision: "deny",
+      reason: (row.reason as LogInput["reason"]) ?? "denied_by_view",
       latency_ms: Date.now() - t0,
     });
-    return null;
+
+    const hasMembership = !!row.user_id && !!row.member_status;
+    const isMemberBlocked = row.reason === "member_inactive" && hasMembership;
+    const isAccountBlocked = row.reason === "account_blocked" && hasMembership;
+
+    // Fail-closed: se não temos membership claro, devolve null (vai para /auth/confirm/info)
+    if (!isMemberBlocked && !isAccountBlocked) {
+      return null;
+    }
+
+    // Retorna contexto bloqueado (SSR decide qual tela mostrar)
+    const blockedCtx: AccessContext = {
+      account: {
+        id: row.account_id,
+        subdomain: row.account_key,
+        name: row.account_name || row.account_key,
+        status: row.account_status as AccountStatus,
+      },
+      member: {
+        user_id: row.user_id as string,
+        account_id: row.account_id,
+        role: (row.member_role ?? "viewer") as MemberRole,
+        status: (row.member_status ?? "inactive") as MemberStatus,
+      },
+      allow: false,
+      reason: row.reason,
+    };
+
+    return blockedCtx;
   }
 
   const ctx: AccessContext = {
@@ -149,17 +189,19 @@ export async function readAccessContext(subdomain: string): Promise<AccessContex
     member: {
       user_id: row.user_id as string,
       account_id: row.account_id,
-      role: (row.member_role ?? 'viewer') as MemberRole,
-      status: (row.member_status ?? 'active') as MemberStatus,
+      role: (row.member_role ?? "viewer") as MemberRole,
+      status: (row.member_status ?? "active") as MemberStatus,
     },
+    allow: true,
+    reason: row.reason,
   };
 
   await logDecision({
     user_id: row.user_id,
     account_id: row.account_id,
     role: row.member_role,
-    decision: 'allow',
-    reason: 'ok',
+    decision: "allow",
+    reason: "ok",
     latency_ms: Date.now() - t0,
   });
 
@@ -183,9 +225,9 @@ export async function getFirstAccountForCurrentUser(): Promise<string | null> {
 
   if (authError || !user) {
     await logDecision({
-      decision: 'null',
-      reason: 'adapter_error_auth',
-      source: 'adapter_error',
+      decision: "null",
+      reason: "adapter_error_auth",
+      source: "adapter_error",
       latency_ms: Date.now() - t0,
     });
     return null;
@@ -195,19 +237,19 @@ export async function getFirstAccountForCurrentUser(): Promise<string | null> {
   // Observação: adicionado order determinístico para evitar variação entre execuções.
   // Trocar para coluna de preferência (ex.: last_accessed) quando disponível.
   const { data, error } = await supabase
-    .from('v_access_context_v2')
-    .select('account_key, account_id')
-    .eq('user_id', user.id)
-    .eq('allow', true)
-    .order('account_key', { ascending: true })
+    .from("v_access_context_v2")
+    .select("account_key, account_id")
+    .eq("user_id", user.id)
+    .eq("allow", true)
+    .order("account_key", { ascending: true })
     .limit(1)
     .maybeSingle();
 
   if (error) {
     await logDecision({
-      decision: 'null',
-      reason: 'adapter_error_read_first_account',
-      source: 'adapter_error',
+      decision: "null",
+      reason: "adapter_error_read_first_account",
+      source: "adapter_error",
       user_id: user.id,
       latency_ms: Date.now() - t0,
     });
@@ -216,8 +258,8 @@ export async function getFirstAccountForCurrentUser(): Promise<string | null> {
 
   if (!data) {
     await logDecision({
-      decision: 'deny',
-      reason: 'no_membership',
+      decision: "deny",
+      reason: "no_membership",
       user_id: user.id,
       latency_ms: Date.now() - t0,
     });
@@ -225,8 +267,8 @@ export async function getFirstAccountForCurrentUser(): Promise<string | null> {
   }
 
   await logDecision({
-    decision: 'allow',
-    reason: 'ok',
+    decision: "allow",
+    reason: "ok",
     user_id: user.id,
     account_id: (data as any).account_id ?? null,
     latency_ms: Date.now() - t0,
