@@ -84,6 +84,14 @@ export default async function Layout({ children, params }: LayoutProps) {
     if (ms === "inactive") redirect("/auth/confirm/inactive");
     if (ms === "revoked") redirect("/auth/confirm/revoked");
 
+    // B1.2: conta bloqueada — diferenciar UX por status de conta (B2)
+    if (ctx.error_code === "FORBIDDEN_ACCOUNT") {
+      const as = ctx.account?.status;
+      if (as === "inactive") redirect("/auth/confirm/account/inactive");
+      if (as === "suspended") redirect("/auth/confirm/account/suspended");
+      redirect("/auth/confirm/account");
+    }
+
     // fallback: conta bloqueada (ou motivo desconhecido)
     redirect("/auth/confirm/account");
   }
