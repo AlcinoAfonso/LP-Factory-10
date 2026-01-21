@@ -369,7 +369,7 @@
 • Branding, gestão de clientes, relatórios
 • Integração futura com Partner API
 
-E14 — Workspace Dashboard
+14. E14 — Workspace Dashboard
 
 14.1 Status
 • Planejado
@@ -378,5 +378,34 @@ E14 — Workspace Dashboard
 • Perfil e preferências do usuário
 • Seleção de conta ativa
 • Integração com Access Context
+
+15. E15 — Usuário e Membership (B1)
+
+15.1 Status
+• Concluído
+
+15.2 Escopo
+• Definição formal de usuário vs membership.
+• Definição dos status de membership: pending, active, inactive, revoked.
+• Regra única de ativação: pending → active somente via claim/aceite de convite.
+• Confirmação de que status é por membership, não por usuário global.
+• UX definida por status (gate SSR):
+
+active: acesso normal ao dashboard.
+
+pending: bloqueio com mensagem “Convite pendente” + CTA de aceite.
+
+inactive: bloqueio com mensagem “Acesso suspenso”.
+
+revoked: bloqueio com mensagem “Acesso removido/expirado”.
+
+15.3 Critérios de conclusão
+• Gate SSR diferencia corretamente todos os status de membership.
+• Usuário sem membership é tratado como “logado sem conta”.
+• Não existe ativação automática paralela fora do fluxo de claim.
+
+15.4 Dependências resolvidas
+• Alinhado com B2-MVP (pending_setup como vitrine).
+• Bloqueio de drifts críticos identificados no QA do B1.
 
 99. Changelog
