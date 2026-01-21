@@ -1,3 +1,4 @@
+// trigger production rebuild
 // middleware.ts — sessão + persistência da última conta (SEM redirects)
 import { NextResponse, type NextRequest } from "next/server";
 import { updateSession } from "@/lib/supabase/middleware";
