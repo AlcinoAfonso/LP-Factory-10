@@ -80,6 +80,7 @@
 • Redirect /a → /a/home → /a/{account} (quando houver sessão e conta resolvida)
 • Sessão validada antes do render
 • Deny seguro com logs estruturados
+
 5. E5 — UI/Auth Account Dashboard
 
 5.1 Status
@@ -94,6 +95,7 @@
 • Fluxo page-based (sem modal overlay primário)
 • Mensagens seguras e anti-enumeração no reset
 • Erros genéricos/seguro no login, sem expor detalhes sensíveis
+
 6. E6 — UI Kit Provisório
 
 6.1 Status
