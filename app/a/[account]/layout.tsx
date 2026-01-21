@@ -43,7 +43,10 @@ export default async function Layout({ children, params }: LayoutProps) {
       route,
       account_id: ctx?.account?.id ?? null,
       request_id: requestId,
-      outcome: ctx ? "allow" : "deny",
+      outcome: !ctx ? "deny" : ctx.blocked ? "deny" : "allow",
+      blocked: ctx?.blocked ?? null,
+      member_status: ctx?.member?.status ?? null,
+      account_status: ctx?.account?.status ?? null,
       latency_ms,
       ts: new Date().toISOString(),
     })
@@ -66,9 +69,27 @@ export default async function Layout({ children, params }: LayoutProps) {
     redirect("/auth/confirm/info");
   }
 
+  // B1-Fase1: UX por status de membership/account (bloqueio explícito)
+  if (ctx.blocked) {
+    // Evitar loop: limpar cookie da última conta antes de mandar para telas de bloqueio
+    try {
+      const cookieStore = await cookies();
+      cookieStore.delete("last_account_subdomain");
+    } catch {
+      /* best-effort */
+    }
+
+    const ms = ctx.member?.status;
+    if (ms === "pending") redirect("/auth/confirm/pending");
+    if (ms === "inactive") redirect("/auth/confirm/inactive");
+    if (ms === "revoked") redirect("/auth/confirm/revoked");
+
+    // fallback: conta bloqueada (ou motivo desconhecido)
+    redirect("/auth/confirm/account");
+  }
+
   // ⚙️ Persistência da última conta (itens C6.3–C6.4)
-  // Gravar cookie sempre que allow=true e houver subdomain canônico.
-  // Obs: o gate (getAccessContext) já garante que ctx != null significa allow.
+  // Gravar cookie somente quando allow=true (ctx.blocked=false) e houver subdomain canônico.
   try {
     const subdomain = ctx.account?.subdomain;
 
