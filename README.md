@@ -2,4 +2,4 @@
 Fábrica de Landing Pages no modelo SaaS multi-tenant
 Testando o Sistema de Acesso 2
 <!-- trigger -->
-Forçar deploy
+Forçar deploy 21/01/2026
