@@ -1,8 +1,8 @@
 0. Introdução
 0.1. Cabeçalho
 • Documento: Base Técnica LP Factory 10
-• Versão: v1.9.9
-• Data: 16/01/2026
+• Versão: v1.9.10
+• Data: 22/01/2026
 • Escopo: regras e contratos técnicos do repositório (Next.js + Supabase + Vercel)
 0.2 Contrato do documento (parseável)
 • Esta seção define o que é relevante atualizar e como escrever.
@@ -178,7 +178,7 @@
 • Usado em SSR (getAccessContext), AccessProvider e AccountSwitcher
 5.1.2 Persistência SSR (cookie last_account_subdomain)
 • Definido em /a/[account]/layout.tsx somente quando allow=true, membro ativo e conta em status active|trial|pending_setup.
-• Atributos obrigatórios: HttpOnly; Secure; SameSite=Lax; Max-Age=7776000; Path=/.https://github.com/AlcinoAfonso/LP-Factory-10/blob/main/docs/base-tecnica.md
+• Atributos obrigatórios: HttpOnly; Secure; SameSite=Lax; Max-Age=7776000; Path=/.
 • Leitura do cookie ocorre no SSR do gateway /a/home para redirecionar /a/home → /a/{account_slug}.
 • Limpeza do cookie ocorre via /a/home?clear_last=1 (middleware zera Max-Age=0).
 • last_account_subdomain só é definido em /a/{account_slug} após allow; /a/home não define cookie.
@@ -228,6 +228,14 @@
 • /a/home bypassa o gate SSR de conta em app/a/[account]/layout.tsx.
 • Se o gate negar com usuário autenticado: redirecionar para /a/home?clear_last=1 para limpar o cookie e forçar fallback determinístico (sem loop).
 • “Solicitar acesso” em /auth/confirm/info abre mailto (não é rota interna do app).
+• Se ctx.blocked por membership.status: redirecionar para:
+• pending → /auth/confirm/pending
+• inactive → /auth/confirm/inactive
+• revoked → /auth/confirm/revoked
+• Se ctx.blocked por conta (ctx.error_code="FORBIDDEN_ACCOUNT"): redirecionar para:
+• accounts.status=inactive → /auth/confirm/account/inactive
+• accounts.status=suspended → /auth/confirm/account/suspended
+• fallback → /auth/confirm/account
 6. Estrutura de Arquivos Essencial
 6.1 Visão rápida (fonte única)
 • Fonte única do inventário (pastas/arquivos e mapa do repo): PATH: docs/repo-inv.md
@@ -267,6 +275,9 @@ Regra: qualquer novo arquivo em app/auth/ não pode importar @supabase/* até se
 • Adapters vNext: seguir 3.14
 
 99. Changelog
+v1.9.10 (22/01/2026) — Gate SSR: bloqueio por status (membership/conta)
+• Ajustado 5.4 para incluir roteamento de bloqueio por status de membership e por conta via FORBIDDEN_ACCOUNT (inactive/suspended) para rotas /auth/confirm dedicadas, mantendo fallback genérico.
+• Corrigida linha truncada em 5.1.2 (atributos do cookie last_account_subdomain: Path=/.)
 v1.9.9 (16/01/2026) — Alinhamento do contrato de Auth ao fluxo real do MVP
 • Ajustado 5.3.1 para refletir login page-based em /auth/login e uso de /protected → /a/home.
 • Ajustado 5.3.2 e 5.3.3 para refletir reset via /auth/forgot-password e cooldown UI de 60s (sem modal/throttle 5min).
