@@ -9,7 +9,9 @@
 0.2.1 TIPO_DO_DOCUMENTO
 • TIPO_DO_DOCUMENTO: prescritivo
 0.2.2 ALLOWLIST_RELEVANCIA
-• Baseando-se nas características do documento, a IA deve incluir apenas o que for necessário para manter o estado final correto e utilizável como referência para: gerar/ajustar código (SQL/Supabase e Next.js), orientar fluxos e segurança, e criar planos/DoD de casos de uso do projeto, mantendo escopo mínimo (somente o necessário).
+• Incluir apenas o necessário para manter o estado final correto e utilizável como referência para: (a) gerar/ajustar código (SQL/Supabase e Next.js), (b) orientar fluxos e segurança, (c) definir DoD de casos de uso, mantendo escopo mínimo.
+• “Necessário” = corrigir contradição, remover ambiguidade que possa gerar implementação errada, ou registrar regra/fluxo indispensável ausente.
+• Se não houver lacunas/contradições/ambiguidades relevantes no DOC_ALVO, a IA deve responder: “SEM ALTERAÇÕES NECESSÁRIAS” e não sugerir reescritas, reorganizações ou melhorias cosméticas.
 0.2.3 ALLOWLIST_CHANGELOG (blocklist mínima)
 • PROIBIDO: bullets administrativos (ex.: “atualizado cabeçalho/data/versão”).
 0.2.4 ESTILO (opcional)
