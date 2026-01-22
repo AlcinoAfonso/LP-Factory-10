@@ -1,8 +1,8 @@
 0. Introdução
 
 0.1 Cabeçalho
-• Data: 16/01/2026
-• Versão: v1.5.2
+• Data: 21/01/2026
+• Versão: v1.5.3
 0.2 Contrato do documento (parseável)
 • Este documento registra o roadmap e o histórico de execução por marcos (E1, E2, ...).
 0.2.1 TIPO_DO_DOCUMENTO
@@ -70,12 +70,18 @@
 • Concluído
 
 4.2 Implementado
+4.2 Implementado
 • Gateway /a/home (público sem sessão; com sessão resolve conta)
 • Redirect /a → /a/home
 • Rota privada /a/[account]
 • Middleware + SSR gate (getAccessContext)
 • Persistência last account via cookie (definição em /a/[account] e leitura em /a/home)
 • Página neutra /auth/confirm/info
+• Bloqueio por membership no gate SSR com rotas dedicadas: /auth/confirm/pending | /auth/confirm/inactive | /auth/confirm/revoked
+• Fallback de conta bloqueada diferenciado por status quando FORBIDDEN_ACCOUNT:
+• inactive → /auth/confirm/account/inactive
+• suspended → /auth/confirm/account/suspended
+• fallback → /auth/confirm/account
 4.3 Critérios de Aceite
 • Redirect /a → /a/home → /a/{account} (quando houver sessão e conta resolvida)
 • Sessão validada antes do render
@@ -389,15 +395,12 @@
 • Definição dos status de membership: pending, active, inactive, revoked.
 • Regra única de ativação: pending → active somente via claim/aceite de convite.
 • Confirmação de que status é por membership, não por usuário global.
-• UX definida por status (gate SSR):
-
-active: acesso normal ao dashboard.
-
-pending: bloqueio com mensagem “Convite pendente” + CTA de aceite.
-
-inactive: bloqueio com mensagem “Acesso suspenso”.
-
-revoked: bloqueio com mensagem “Acesso removido/expirado”.
+• UX definida por status (gate SSR + rotas /auth/confirm/*):
+• active: acesso normal ao dashboard (/a/[account]).
+• pending: redirect /auth/confirm/pending — mensagem “Convite pendente”; CTAs: “Pedir reenvio do convite”, “Trocar de conta”, “Voltar para login”.
+• inactive: redirect /auth/confirm/inactive — mensagem “Acesso suspenso”; CTAs: “Solicitar reativação”, “Trocar de conta”, “Voltar para login”.
+• revoked: redirect /auth/confirm/revoked — mensagem “Acesso removido”; CTAs: “Solicitar novo convite”, “Trocar de conta”, “Voltar para login”.
+• Tratamento de usuário autenticado sem membership: redirect para /a/home?clear_last=1 (evita loop de last account).
 
 15.3 Critérios de conclusão
 • Gate SSR diferencia corretamente todos os status de membership.
@@ -408,4 +411,7 @@ revoked: bloqueio com mensagem “Acesso removido/expirado”.
 • Alinhado com B2-MVP (pending_setup como vitrine).
 • Bloqueio de drifts críticos identificados no QA do B1.
 
-99. Changelog
+99. Changelo
+v1.5.3 (21/01/2026) — Gate SSR: UX de bloqueio por status (membership/conta)
+• E4: Gate SSR roteia bloqueios de membership para rotas dedicadas e diferencia fallback de conta bloqueada por status (inactive/suspended) com páginas específicas.
+• E15: Detalhada a UX/CTAs e rotas por status de membership, incluindo tratamento de usuário autenticado sem membership (clear_last).
