@@ -2,6 +2,7 @@
 "use client";
 
 import { useMemo } from "react";
+import Link from "next/link";
 import { useAccessContext } from "@/providers/AccessProvider";
 
 type DashState = "auth" | "onboarding" | "public";
@@ -20,12 +21,23 @@ export default function Page(props: any) {
     return "public";
   }, [isHome, hasCtx]);
 
-  // Estado autenticado: por enquanto, dashboard “limpo” (sem diagnóstico/IDs/slug)
   if (state === "auth") {
+    const accountStatus = (ctx?.account?.status ?? null) as
+      | "pending_setup"
+      | "active"
+      | "inactive"
+      | "suspended"
+      | "trial"
+      | null;
+
+    if (accountStatus === "pending_setup") {
+      return <PendingSetupShowcase />;
+    }
+
+    // Mantém o dashboard “limpo” para demais status (por enquanto)
     return <main className="mx-auto max-w-5xl px-6 py-10" />;
   }
 
-  // Estados não autenticados seguem mínimos
   if (state === "onboarding") {
     return <DashboardOnboarding />;
   }
@@ -33,7 +45,67 @@ export default function Page(props: any) {
   return <DashboardPublic />;
 }
 
-/* ===================== Components ===================== */
+function PendingSetupShowcase() {
+  return (
+    <main className="mx-auto max-w-5xl px-6 py-10">
+      <div className="space-y-6">
+        <div className="space-y-2">
+          <h1 className="text-2xl font-semibold">Modo vitrine</h1>
+          <p className="text-sm text-gray-600">
+            Você pode navegar e ver uma LP demo completa, mas sem publicar e sem
+            recursos ativos (ex.: tracking). Para operar, inicie o Starter ou
+            peça uma conta consultiva.
+          </p>
+        </div>
+
+        <div className="rounded-lg border p-5">
+          <h2 className="text-base font-semibold">LP Demo (visualização)</h2>
+          <p className="mt-1 text-sm text-gray-600">
+            Exemplo do que você terá quando a conta estiver ativa.
+          </p>
+
+          <div className="mt-4 grid gap-3 sm:grid-cols-2">
+            <div className="rounded-md border p-4">
+              <p className="text-sm font-medium">Seções prontas</p>
+              <p className="mt-1 text-sm text-gray-600">
+                Hero, prova social, FAQ, CTA, formulário.
+              </p>
+            </div>
+            <div className="rounded-md border p-4">
+              <p className="text-sm font-medium">Recursos (bloqueados)</p>
+              <p className="mt-1 text-sm text-gray-600">
+                Publicação, domínio, tracking e integrações.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="flex flex-wrap gap-2">
+          <a
+            href="mailto:suporte@lpfactory.com.br?subject=LP%20Factory%20-%20Quero%20iniciar%20Starter"
+            className="inline-flex items-center justify-center rounded-md bg-black px-4 py-2 text-sm font-medium text-white hover:opacity-90"
+          >
+            Iniciar Starter
+          </a>
+
+          <a
+            href="mailto:suporte@lpfactory.com.br?subject=LP%20Factory%20-%20Quero%20conta%20consultiva"
+            className="inline-flex items-center justify-center rounded-md border px-4 py-2 text-sm font-medium hover:bg-gray-50"
+          >
+            Quero conta consultiva
+          </a>
+
+          <Link
+            href="/a/home?clear_last=1"
+            className="inline-flex items-center justify-center rounded-md border px-4 py-2 text-sm font-medium hover:bg-gray-50"
+          >
+            Trocar de conta
+          </Link>
+        </div>
+      </div>
+    </main>
+  );
+}
 
 function DashboardOnboarding() {
   return (
