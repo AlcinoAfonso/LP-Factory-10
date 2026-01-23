@@ -90,7 +90,7 @@ export async function GET(req: NextRequest) {
     ? rawNext!
     : type === "recovery"
       ? "/auth/update-password"
-      : "/";
+      : "/a/home";
 
   if ((!token_hash && !code) || !type) {
     return NextResponse.redirect(
@@ -119,10 +119,10 @@ export async function POST(req: NextRequest) {
 
   const rawNext = String(form.get("next") || "");
   const next = isSafeInternal(rawNext)
-  ? rawNext
-  : type === "recovery"
-    ? "/a"
-    : "/a";
+    ? rawNext
+    : type === "recovery"
+      ? "/a"
+      : "/a/home";
 
   if ((!token_hash && !code) || !type) {
     return NextResponse.redirect(
