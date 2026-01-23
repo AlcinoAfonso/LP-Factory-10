@@ -1,8 +1,8 @@
 0. Introdução
 
 0.1 Cabeçalho
-• Data: 21/01/2026
-• Versão: v1.5.3
+• Data: 23/01/2026
+• Versão: v1.5.4
 0.2 Contrato do documento (parseável)
 • Este documento registra o roadmap e o histórico de execução por marcos (E1, E2, ...).
 0.2.1 TIPO_DO_DOCUMENTO
@@ -410,6 +410,7 @@
 15.4 Dependências resolvidas
 • Alinhado com B2-MVP (pending_setup como vitrine).
 • Bloqueio de drifts críticos identificados no QA do B1.
+• Hardening executado (B2): public.accounts.status com DEFAULT 'pending_setup'::text e NOT NULL (produção).
 
 99. Changelo
 v1.5.3 (21/01/2026) — Gate SSR: UX de bloqueio por status (membership/conta)
