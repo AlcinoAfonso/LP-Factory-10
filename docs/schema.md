@@ -1,8 +1,8 @@
 0. Introdução
 
 0.1 Cabeçalho
-• Data da última atualização: 23/12/2025
-• Documento: LP Factory 10 — Schema (DB Contract) v1.0
+• Data da última atualização: 23/01/2026
+• Documento: LP Factory 10 — Schema (DB Contract) v1.0.1
 0.2 Contrato do documento (parseável)
 • Esta seção define o que é relevante atualizar e como escrever.
 0.2.1 TIPO_DO_DOCUMENTO
@@ -24,7 +24,8 @@
 1.1.1 Chaves, constraints e relacionamentos
 • PK: id uuid
 • UNIQUE: subdomain, domain, slug
-• Status: active | inactive | suspended | pending_setup | trial
+• Status: active | inactive | suspended | pending_setup
+• Coluna status: text; CHECK accounts_status_chk; NOT NULL; DEFAULT 'pending_setup'::text
 • FK: plan_id → plans; owner_user_id → auth.users
 1.1.2 Índices
 • accounts_name_gin_idx (GIN to_tsvector portuguese, name)
@@ -108,6 +109,7 @@
 • allow, reason
 2.1.3 Assunções e filtros
 • allow=true só para conta active/trial/pending_setup + membro ativo
+• DRIFT (caso H): trial está hardcoded na view, mas accounts.status não permite trial (CHECK não inclui); remover quando existir billing/entitlements
 2.1.4 Segurança
 • security_invoker = true
 2.1.5 Consumidores
@@ -225,12 +227,15 @@
 • partners: sem trigger hub
 • post_sale_tokens: sem trigger
 
-5. Tipos canônicos 
-
+5. Tipos canônicos
 • Fonte única: PATH: src/lib/types/status.ts
 • AccountStatus: active | inactive | suspended | pending_setup | trial
 • MemberStatus: pending | active | inactive | revoked
 • MemberRole: owner | admin | editor | viewer
-• Regra: proibido redefinir fora do arquivo canônico; adapters normalizam valores do DB
+• DRIFT (caso H): AccountStatus inclui trial, mas accounts.status não aceita trial; alinhar quando o caso H remover trial da view e modelar trial via plano/assinatura
 
 99. Changelog
+v1.0.1 (23/01/2026) — Hardening de accounts.status + registro de drift trial
+• accounts: status consolidado como active|inactive|suspended|pending_setup e documentado como NOT NULL + DEFAULT 'pending_setup'::text (CHECK accounts_status_chk).
+• v_access_context_v2: trial hardcoded mantido como drift para resolução no caso H (billing/entitlements).
+• Tipos canônicos: registrado drift de trial no código vs CHECK do BD (owner: caso H).
