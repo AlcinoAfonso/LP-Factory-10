@@ -55,6 +55,15 @@ function isValidEmailOtpType(v: string): v is EmailOtpType {
   );
 }
 
+// ✅ Normaliza o "type" vindo do link do Supabase.
+// Observação: com "Confirm email" ligado, o Supabase pode mandar type=email.
+// Aqui tratamos "email" como alias de "signup".
+function normalizeEmailOtpType(v: string): EmailOtpType | null {
+  if (!v) return null;
+  if (v === "email") return "signup";
+  return isValidEmailOtpType(v) ? v : null;
+}
+
 function validatePassword(pw: string, confirm: string): string | null {
   if (!pw || !confirm) return "Preencha os dois campos.";
   if (pw !== confirm) return "As senhas não coincidem.";
@@ -83,7 +92,7 @@ export async function GET(req: NextRequest) {
   const token_hash = url.searchParams.get("token_hash") ?? "";
   const code = url.searchParams.get("code") ?? "";
   const typeRaw = url.searchParams.get("type") ?? "";
-  const type = isValidEmailOtpType(typeRaw) ? typeRaw : null;
+  const type = normalizeEmailOtpType(typeRaw);
 
   const rawNext = url.searchParams.get("next");
   const next = isSafeInternal(rawNext)
@@ -92,17 +101,27 @@ export async function GET(req: NextRequest) {
       ? "/auth/update-password"
       : "/a/home";
 
-  if ((!token_hash && !code) || !type) {
+  // ✅ Regra:
+  // - Se tiver "code", não precisa de "type"
+  // - Se NÃO tiver "code", precisa de token_hash + type
+  if (!code && (!token_hash || !type)) {
     return NextResponse.redirect(
       new URL("/auth/error?error=No%20token%20hash/code%20or%20type", url)
     );
   }
 
   // Mitigação anti-scanner: sempre exige gesto do usuário (POST) quando o link chega aqui.
-  // (No fluxo novo, o e-mail NÃO aponta para /auth/confirm, mas mantemos compatibilidade.)
-  return new Response(interstitialHTML({ token_hash, code, type, next }), {
-    headers: { "Content-Type": "text/html; charset=utf-8" },
-  });
+  return new Response(
+    interstitialHTML({
+      token_hash,
+      code,
+      type: typeRaw, // mantém o valor original; o POST normaliza novamente
+      next,
+    }),
+    {
+      headers: { "Content-Type": "text/html; charset=utf-8" },
+    }
+  );
 }
 
 export async function POST(req: NextRequest) {
@@ -112,7 +131,7 @@ export async function POST(req: NextRequest) {
   const token_hash = String(form.get("token_hash") || "");
   const code = String(form.get("code") || "");
   const typeRaw = String(form.get("type") || "");
-  const type = isValidEmailOtpType(typeRaw) ? (typeRaw as EmailOtpType) : null;
+  const type = normalizeEmailOtpType(typeRaw);
 
   const password = String(form.get("password") || "");
   const confirm = String(form.get("confirm") || "");
@@ -124,7 +143,8 @@ export async function POST(req: NextRequest) {
       ? "/a"
       : "/a/home";
 
-  if ((!token_hash && !code) || !type) {
+  // ✅ Mesma regra do GET
+  if (!code && (!token_hash || !type)) {
     return NextResponse.redirect(
       new URL("/auth/error?error=No%20token%20hash/code%20or%20type", url)
     );
@@ -202,7 +222,10 @@ export async function POST(req: NextRequest) {
       );
     }
   } else {
-    const { data, error } = await supabase.auth.verifyOtp({ type, token_hash });
+    const { data, error } = await supabase.auth.verifyOtp({
+      type: type as EmailOtpType, // aqui é seguro (sem code => type obrigatório)
+      token_hash,
+    });
     if (error) {
       if (type === "recovery") {
         const back = buildUpdatePasswordRedirect(url, {
