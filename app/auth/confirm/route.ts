@@ -51,17 +51,10 @@ function isValidEmailOtpType(v: string): v is EmailOtpType {
     v === "invite" ||
     v === "magiclink" ||
     v === "recovery" ||
-    v === "email_change"
+    v === "email_change" ||
+    // IMPORTANTE: usado em links de confirmação (token_hash=pkce_...&type=email)
+    v === "email"
   );
-}
-
-/**
- * Compat: alguns links chegam como type=email (como nos seus testes).
- * Para o nosso fluxo de confirmação pós-signup, isso equivale a "signup".
- */
-function normalizeEmailOtpType(raw: string): EmailOtpType | null {
-  if (raw === "email") return "signup";
-  return isValidEmailOtpType(raw) ? raw : null;
 }
 
 function validatePassword(pw: string, confirm: string): string | null {
@@ -92,7 +85,7 @@ export async function GET(req: NextRequest) {
   const token_hash = url.searchParams.get("token_hash") ?? "";
   const code = url.searchParams.get("code") ?? "";
   const typeRaw = url.searchParams.get("type") ?? "";
-  const type = normalizeEmailOtpType(typeRaw);
+  const type = isValidEmailOtpType(typeRaw) ? typeRaw : null;
 
   const rawNext = url.searchParams.get("next");
   const next = isSafeInternal(rawNext)
@@ -121,7 +114,7 @@ export async function POST(req: NextRequest) {
   const token_hash = String(form.get("token_hash") || "");
   const code = String(form.get("code") || "");
   const typeRaw = String(form.get("type") || "");
-  const type = normalizeEmailOtpType(typeRaw);
+  const type = isValidEmailOtpType(typeRaw) ? (typeRaw as EmailOtpType) : null;
 
   const password = String(form.get("password") || "");
   const confirm = String(form.get("confirm") || "");
