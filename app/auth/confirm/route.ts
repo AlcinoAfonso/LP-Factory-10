@@ -55,12 +55,13 @@ function isValidEmailOtpType(v: string): v is EmailOtpType {
   );
 }
 
-// Normaliza variações vindas do template/link.
-// Hoje o seu e-mail chega com `type=email`.
-// Para o Supabase verifyOtp, isso precisa virar um EmailOtpType válido.
-function normalizeEmailOtpType(v: string): EmailOtpType | null {
-  if (v === "email") return "signup";
-  return isValidEmailOtpType(v) ? v : null;
+/**
+ * Compat: alguns links chegam como type=email (como nos seus testes).
+ * Para o nosso fluxo de confirmação pós-signup, isso equivale a "signup".
+ */
+function normalizeEmailOtpType(raw: string): EmailOtpType | null {
+  if (raw === "email") return "signup";
+  return isValidEmailOtpType(raw) ? raw : null;
 }
 
 function validatePassword(pw: string, confirm: string): string | null {
