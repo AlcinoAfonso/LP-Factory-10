@@ -32,6 +32,9 @@
 • Auditoria automática
 1.4 Pendências
 • Nenhuma
+1.5 Updates externos (avaliar)
+• 2026-01 — Supabase: Index Advisor (Table Editor) — Link: https://supabase.com/docs/guides/database/extensions/index_advisor
+• Nota: quando revisitar performance/índices, rodar o advisor e avaliar recomendações antes de criar índices novos (sem auto-aplicar).
 
 2. E2 — Núcleo de Acesso
 
@@ -63,6 +66,9 @@
 • Logs estruturados
 3.3 Pendências
 • Adapters de planos e LPs futuras (planAdapter, landingPageAdapter, sectionAdapter)
+3.4 Updates externos (avaliar)
+• 2026-01 — Supabase: Data API / PostgREST v14 — Link: https://github.com/orgs/supabase/discussions/41288
+• Nota: como há uso de supabase.from().select() em adapters/SSR, ao iniciar ajustes nessa camada, revisar o que muda na v14 (filters/embeds/comportamentos) e validar impacto antes de mexer em queries.
 
 4. E4 — Account Dashboard (Infraestrutura SSR)
 
@@ -229,6 +235,8 @@
 • Ativar apenas em contas billing_mode = stripe
 • Auditoria das transições de status (trial, active, canceled)
 • Integração validada com a solução de Stripe Sync do Supabase (ou equivalente)
+9.6.4 Updates externos (avaliar)
+• 2026-01 — Supabase: Stripe Sync Engine 1-click no Dashboard — (link) — Nota: comparar com seus webhooks/fields de 9.6.2; decidir “Supabase Sync” vs equivalente.
 
 9.7 Auditoria e Drift
 9.7.1 Status
