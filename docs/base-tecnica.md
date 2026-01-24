@@ -1,8 +1,8 @@
 0. Introdução
 0.1. Cabeçalho
 • Documento: Base Técnica LP Factory 10
-• Versão: v1.9.10
-• Data: 22/01/2026
+• Versão: v2.0.1
+• Data: 23/01/2026
 • Escopo: regras e contratos técnicos do repositório (Next.js + Supabase + Vercel)
 0.2 Contrato do documento (parseável)
 • Esta seção define o que é relevante atualizar e como escrever.
@@ -169,6 +169,7 @@
 • Alterações no DB exigem atualizar PATH: docs/schema.md e revisar dependências no código (views/RPC/adapters).
 • SECURITY DEFINER só é permitido quando estiver explicitamente registrado/aprovado em PATH: docs/schema.md (com motivo e limites).
 • Views expostas a usuário: security_invoker=true e registro no PATH: docs/schema.md.
+• Hardening executado (B2): public.accounts.status é obrigatório (NOT NULL) e tem DEFAULT 'pending_setup'::text.
 
 5. Arquitetura de Acesso
 5.1 Conceitos Fundamentais
@@ -275,6 +276,8 @@ Regra: qualquer novo arquivo em app/auth/ não pode importar @supabase/* até se
 • Adapters vNext: seguir 3.14
 
 99. Changelog
+v2.0.1 (23/01/2026) — Hardening accounts.status (B2)
+• Registrado hardening executado em produção: public.accounts.status com DEFAULT 'pending_setup'::text e NOT NULL.
 v1.9.10 (22/01/2026) — Gate SSR: bloqueio por status (membership/conta)
 • Ajustado 5.4 para incluir roteamento de bloqueio por status de membership e por conta via FORBIDDEN_ACCOUNT (inactive/suspended) para rotas /auth/confirm dedicadas, mantendo fallback genérico.
 • Corrigida linha truncada em 5.1.2 (atributos do cookie last_account_subdomain: Path=/.)

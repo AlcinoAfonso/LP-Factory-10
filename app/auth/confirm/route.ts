@@ -51,7 +51,9 @@ function isValidEmailOtpType(v: string): v is EmailOtpType {
     v === "invite" ||
     v === "magiclink" ||
     v === "recovery" ||
-    v === "email_change"
+    v === "email_change" ||
+    // IMPORTANTE: usado em links de confirmação (token_hash=pkce_...&type=email)
+    v === "email"
   );
 }
 
@@ -90,7 +92,7 @@ export async function GET(req: NextRequest) {
     ? rawNext!
     : type === "recovery"
       ? "/auth/update-password"
-      : "/";
+      : "/a/home";
 
   if ((!token_hash && !code) || !type) {
     return NextResponse.redirect(
@@ -119,10 +121,10 @@ export async function POST(req: NextRequest) {
 
   const rawNext = String(form.get("next") || "");
   const next = isSafeInternal(rawNext)
-  ? rawNext
-  : type === "recovery"
-    ? "/a"
-    : "/a";
+    ? rawNext
+    : type === "recovery"
+      ? "/a"
+      : "/a/home";
 
   if ((!token_hash && !code) || !type) {
     return NextResponse.redirect(

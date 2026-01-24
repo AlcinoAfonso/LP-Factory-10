@@ -1,8 +1,8 @@
 0. Introdução
 
 0.1 Cabeçalho
-• Data: 21/01/2026
-• Versão: v1.5.3
+• Data: 23/01/2026
+• Versão: v1.5.4
 0.2 Contrato do documento (parseável)
 • Este documento registra o roadmap e o histórico de execução por marcos (E1, E2, ...).
 0.2.1 TIPO_DO_DOCUMENTO
@@ -32,6 +32,9 @@
 • Auditoria automática
 1.4 Pendências
 • Nenhuma
+1.5 Updates externos (avaliar)
+• 2026-01 — Supabase: Index Advisor (Table Editor) — Link: https://supabase.com/docs/guides/database/extensions/index_advisor
+• Nota: quando revisitar performance/índices, rodar o advisor e avaliar recomendações antes de criar índices novos (sem auto-aplicar).
 
 2. E2 — Núcleo de Acesso
 
@@ -63,6 +66,9 @@
 • Logs estruturados
 3.3 Pendências
 • Adapters de planos e LPs futuras (planAdapter, landingPageAdapter, sectionAdapter)
+3.4 Updates externos (avaliar)
+• 2026-01 — Supabase: Data API / PostgREST v14 — Link: https://github.com/orgs/supabase/discussions/41288
+• Nota: como há uso de supabase.from().select() em adapters/SSR, ao iniciar ajustes nessa camada, revisar o que muda na v14 (filters/embeds/comportamentos) e validar impacto antes de mexer em queries.
 
 4. E4 — Account Dashboard (Infraestrutura SSR)
 
@@ -229,6 +235,8 @@
 • Ativar apenas em contas billing_mode = stripe
 • Auditoria das transições de status (trial, active, canceled)
 • Integração validada com a solução de Stripe Sync do Supabase (ou equivalente)
+9.6.4 Updates externos (avaliar)
+• 2026-01 — Supabase: Stripe Sync Engine 1-click no Dashboard — (link) — Nota: comparar com seus webhooks/fields de 9.6.2; decidir “Supabase Sync” vs equivalente.
 
 9.7 Auditoria e Drift
 9.7.1 Status
@@ -410,6 +418,7 @@
 15.4 Dependências resolvidas
 • Alinhado com B2-MVP (pending_setup como vitrine).
 • Bloqueio de drifts críticos identificados no QA do B1.
+• Hardening executado (B2): public.accounts.status com DEFAULT 'pending_setup'::text e NOT NULL (produção).
 
 99. Changelo
 v1.5.3 (21/01/2026) — Gate SSR: UX de bloqueio por status (membership/conta)
