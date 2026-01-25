@@ -208,10 +208,42 @@ export async function readAccessContext(subdomain: string): Promise<AccessContex
   return ctx;
 }
 
+type EnsureFirstAccountRow = {
+  account_id: string;
+  account_key: string;
+};
+
+async function ensureFirstAccountForCurrentUserRpc(
+  supabase: any,
+  userId: string,
+  startedAt: number
+): Promise<EnsureFirstAccountRow | null> {
+  const { data, error } = await supabase.rpc("ensure_first_account_for_current_user");
+
+  if (error) {
+    await logDecision({
+      decision: "null",
+      reason: "adapter_error_ensure_first_account",
+      source: "adapter_error",
+      user_id: userId,
+      latency_ms: Date.now() - startedAt,
+    });
+    return null;
+  }
+
+  const row = (Array.isArray(data) ? data[0] : data) as any;
+  if (!row?.account_key || !row?.account_id) return null;
+
+  return { account_id: String(row.account_id), account_key: String(row.account_key) };
+}
+
 /**
  * Retorna subdomain da primeira conta ativa do usuário autenticado.
  * Usado para redirect em /a/home (C0.2).
  * Server-only. Fail-closed (erro ou sem conta → null).
+ *
+ * F2: se não houver vínculo (account_users), tenta auto-criar 1ª conta (pending_setup) + owner/active via RPC.
+ * Importante: NÃO cria conta se já existir qualquer vínculo (mesmo bloqueado/pending/inactive).
  */
 export async function getFirstAccountForCurrentUser(): Promise<string | null> {
   const t0 = Date.now();
@@ -233,10 +265,8 @@ export async function getFirstAccountForCurrentUser(): Promise<string | null> {
     return null;
   }
 
-  // 2) Buscar primeira conta via v_access_context_v2
-  // Observação: adicionado order determinístico para evitar variação entre execuções.
-  // Trocar para coluna de preferência (ex.: last_accessed) quando disponível.
-  const { data, error } = await supabase
+  // 2) Preferência: primeira conta liberada (allow=true) pela v_access_context_v2
+  const { data: allowedRow, error: allowedErr } = await supabase
     .from("v_access_context_v2")
     .select("account_key, account_id")
     .eq("user_id", user.id)
@@ -245,7 +275,7 @@ export async function getFirstAccountForCurrentUser(): Promise<string | null> {
     .limit(1)
     .maybeSingle();
 
-  if (error) {
+  if (allowedErr) {
     await logDecision({
       decision: "null",
       reason: "adapter_error_read_first_account",
@@ -256,23 +286,67 @@ export async function getFirstAccountForCurrentUser(): Promise<string | null> {
     return null;
   }
 
-  if (!data) {
+  if (allowedRow) {
     await logDecision({
-      decision: "deny",
-      reason: "no_membership",
+      decision: "allow",
+      reason: "ok",
+      user_id: user.id,
+      account_id: (allowedRow as any).account_id ?? null,
+      latency_ms: Date.now() - t0,
+    });
+    return (allowedRow as any).account_key as string;
+  }
+
+  // 3) Se existe QUALQUER vínculo (mesmo bloqueado), não cria conta (fora do escopo do F2)
+  const { data: anyMembership, error: memErr } = await supabase
+    .from("account_users")
+    .select("account_id, status, role, created_at")
+    .eq("user_id", user.id)
+    .order("created_at", { ascending: true })
+    .limit(1)
+    .maybeSingle();
+
+  if (memErr) {
+    await logDecision({
+      decision: "null",
+      reason: "adapter_error_read_membership",
+      source: "adapter_error",
       user_id: user.id,
       latency_ms: Date.now() - t0,
     });
     return null;
   }
 
+  if (anyMembership) {
+    await logDecision({
+      decision: "deny",
+      reason: "denied_by_view",
+      user_id: user.id,
+      account_id: (anyMembership as any).account_id ?? null,
+      role: (anyMembership as any).role ?? null,
+      latency_ms: Date.now() - t0,
+    });
+    return null;
+  }
+
+  // 4) Sem vínculo: F2 cria 1ª conta + vínculo via RPC (quando existir no BD)
+  await logDecision({
+    decision: "deny",
+    reason: "no_membership",
+    user_id: user.id,
+    latency_ms: Date.now() - t0,
+  });
+
+  const ensured = await ensureFirstAccountForCurrentUserRpc(supabase, user.id, t0);
+  if (!ensured) return null;
+
   await logDecision({
     decision: "allow",
     reason: "ok",
     user_id: user.id,
-    account_id: (data as any).account_id ?? null,
+    account_id: ensured.account_id,
     latency_ms: Date.now() - t0,
   });
 
-  return (data as any).account_key as string; // subdomain
+  return ensured.account_key;
 }
