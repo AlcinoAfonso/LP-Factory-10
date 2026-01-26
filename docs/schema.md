@@ -8,8 +8,9 @@
 0.2.1 TIPO_DO_DOCUMENTO
 • TIPO_DO_DOCUMENTO: prescritivo
 0.2.2 ALLOWLIST_RELEVANCIA
+• OBJETIVO_DOC: ser o contrato do DB (estado atual esperado) e a referência única para detalhes de banco.
 • CONTRATO_DB: somente o que existe/é esperado no banco (tabelas, colunas, enums, relacionamentos, views, RPCs/functions, triggers, RLS/policies).
-• ANTI_DRIFT: Base Técnica não repete listas de DB; deve apenas referenciar este arquivo quando precisar citar DB.
+• ANTI_DRIFT: Base Técnica e Roadmap não repetem listas/detalhes de DB; devem apenas referenciar este arquivo quando precisarem citar DB.
 • MANUTENCAO: quando faltar detalhe confirmado no Supabase, marcar como TBD e registrar o caminho de validação (Supabase > Database > Tables/Views/Functions/Policies).
 0.2.3 ALLOWLIST_CHANGELOG (blocklist mínima)
 • PROIBIDO: bullets administrativos (ex.: “atualizado cabeçalho/data/versão”).
