@@ -8,10 +8,13 @@
 0.2.1 TIPO_DO_DOCUMENTO
 • TIPO_DO_DOCUMENTO: prescritivo
 0.2.2 ALLOWLIST_RELEVANCIA
-• MARCOS: Itens E* com status, escopo, critérios e pendências; quando fizer sentido para este documento, incluir também sub-seções de Fluxos e Cenários (numeradas como subseções do próprio marco) descrevendo comportamento/decisões de UX e regras.
-• FASES: Agrupamentos estratégicos do roadmap (alto nível).
-• MIGRACOES: Movimentos de itens (ex.: E7.2 → E10.1) apenas como referência histórica.
+• OBJETIVO_DOC: registrar marcos, decisões, fluxo e histórico de execução do produto (snapshot por marco), orientando o que fazer e em que ordem.
+• MARCOS: Itens E* com status, escopo, critérios e pendências; quando fizer sentido, incluir sub-seções de Fluxos e Cenários (como subseções do próprio marco) descrevendo comportamento/decisões de UX e regras de produto.
+• FASES: agrupamentos estratégicos do roadmap (alto nível).
+• MIGRACOES: movimentos de itens (ex.: E7.2 → E10.1) apenas como referência histórica.
 • Microcopy (guia): registrar mensagens-chave + intenção (segurança, anti-abuso, clareza), evitando texto final longo; detalhar mais apenas quando o comportamento depender da redação.
+• ANTI_DRIFT_DB: não detalhar contrato de banco (tabelas/colunas/views/RPCs/triggers/policies); referenciar docs/schema.md.
+• ANTI_DRIFT_REGRAS: não duplicar regras técnicas; referenciar docs/base-tecnica.md
 0.2.3 ALLOWLIST_CHANGELOG (blocklist mínima)
 • PROIBIDO: bullets administrativos (ex.: “atualizado cabeçalho/data/versão”).
 0.2.4 ESTILO (opcional)
