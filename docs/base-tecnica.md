@@ -9,9 +9,11 @@
 0.2.1 TIPO_DO_DOCUMENTO
 • TIPO_DO_DOCUMENTO: prescritivo
 0.2.2 ALLOWLIST_RELEVANCIA
-• Incluir apenas o necessário para manter o estado final correto e utilizável como referência para: (a) gerar/ajustar código (SQL/Supabase e Next.js), (b) orientar fluxos e segurança, (c) definir DoD de casos de uso, mantendo escopo mínimo.
-• “Necessário” = corrigir contradição, remover ambiguidade que possa gerar implementação errada, ou registrar regra/fluxo indispensável ausente.
-• Se não houver lacunas/contradições/ambiguidades relevantes no DOC_ALVO, a IA deve responder: “SEM ALTERAÇÕES NECESSÁRIAS” e não sugerir reescritas, reorganizações ou melhorias cosméticas.
+• OBJETIVO_DOC: regras e contratos técnicos do repositório (Next.js + Supabase + Vercel) para orientar implementação segura e consistente.
+• ANTI_DRIFT_DB: contrato/inventário de DB pertence ao docs/schema.md (não duplicar listas de DB aqui).
+• ANTI_DRIFT_ROADMAP: marcos, decisões, fluxo e histórico pertencem ao docs/roadmap.md (não registrar updates aqui).
+• INCLUIR: apenas regras necessárias para evitar implementação errada (segurança, governança, padrões obrigatórios).
+• SE NÃO HOUVER LACUNAS/CONTRADIÇÕES RELEVANTES: responder “SEM ALTERAÇÕES NECESSÁRIAS”.
 0.2.3 ALLOWLIST_CHANGELOG (blocklist mínima)
 • PROIBIDO: bullets administrativos (ex.: “atualizado cabeçalho/data/versão”).
 0.2.4 ESTILO (opcional)
