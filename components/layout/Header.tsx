@@ -2,7 +2,6 @@
 
 import { useAccessContext } from '@/providers/AccessProvider';
 import Link from 'next/link';
-import { useState } from 'react';
 import UserMenu from '@/components/layout/UserMenu';
 
 type HeaderVariant = 'public' | 'authenticated' | 'account';
@@ -49,8 +48,6 @@ function getVariant(
 /* ==================== Variações ==================== */
 
 function HeaderPublic() {
-  const [showConsultive, setShowConsultive] = useState(false);
-
   return (
     <header className="border-b bg-white">
       <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-4">
@@ -69,18 +66,15 @@ function HeaderPublic() {
           >
             Entrar
           </Link>
-          <button
-            onClick={() => setShowConsultive(true)}
-            aria-controls="consultive-modal"
+
+          <Link
+            href="/auth/sign-up"
             className="rounded-md border px-3 py-1.5 text-sm hover:bg-gray-50"
           >
             Criar conta
-          </button>
+          </Link>
         </nav>
       </div>
-
-      {/* Modal consultivo - implementar depois */}
-      {showConsultive && <div id="consultive-modal">Consultive Modal (TODO)</div>}
     </header>
   );
 }
