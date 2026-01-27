@@ -60,6 +60,7 @@
 
 3.1 Status
 • Concluído
+
 3.2 Implementado
 • accountAdapter
 • accessContextAdapter
@@ -67,8 +68,10 @@
 • postSaleTokenAdapter
 • Tipos normalizados (DB → TS)
 • Logs estruturados
+
 3.3 Pendências
 • Adapters de planos e LPs futuras (planAdapter, landingPageAdapter, sectionAdapter)
+
 3.4 Updates externos (avaliar)
 • 2026-01 — Supabase: Data API / PostgREST v14 — Link: https://github.com/orgs/supabase/discussions/41288
 • Nota: como há uso de supabase.from().select() em adapters/SSR, ao iniciar ajustes nessa camada, revisar o que muda na v14 (filters/embeds/comportamentos) e validar impacto antes de mexer em queries.
@@ -91,6 +94,7 @@
 • inactive → /auth/confirm/account/inactive
 • suspended → /auth/confirm/account/suspended
 • fallback → /auth/confirm/account
+
 5. E5 — UI/Auth Account Dashboard
 
 5.1 Status
@@ -104,6 +108,7 @@
 • Tela de Signup (/auth/sign-up) com envio de e-mail de confirmação
 • Confirmação de e-mail (signup): link abre em /auth/confirm com type=signup e next=/a/home; token consumido somente no POST (anti-scanner)
 • Pós-confirmação: usuário autenticado cai em /a/home; se não houver membership, F2 auto-cria 1ª conta pending_setup + vínculo owner/active e redireciona para /a/acc-... (modo vitrine)
+
 5.3 Critérios de Aceite
 • Fluxo page-based (sem modal overlay primário)
 • Mensagens seguras e anti-enumeração no reset
