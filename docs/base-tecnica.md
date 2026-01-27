@@ -1,8 +1,8 @@
 0. Introdução
 0.1. Cabeçalho
 • Documento: Base Técnica LP Factory 10
-• Versão: v2.0.2
-• Data: 26/01/2026
+• Versão: v2.0.3
+• Data: 27/01/2026
 0.2 Contrato do documento (parseável)
 • Esta seção define o que é relevante atualizar e como escrever.
 0.2.1 TIPO_DO_DOCUMENTO
@@ -187,7 +187,7 @@
 5.2 Adapters, Guards, Providers
 5.2.1 Adapters
 • accountAdapter (PATH: src/lib/access/adapters/accountAdapter.ts): createFromToken(tokenId, actorId) → RPC create_account_with_owner; renameAndActivate(accountId, name, slug) com .maxAffected(1); normalizeAccountStatus preserva trial (trial não pode virar active por fallback).
-• accessContextAdapter (PATH: src/lib/access/adapters/accessContextAdapter.ts): lê v_access_context_v2; gate adapter permite null; logs diferenciam deny vs error.
+• accessContextAdapter (PATH: src/lib/access/adapters/accessContextAdapter.ts): lê v_access_context_v2; getFirstAccountForCurrentUser(): se existir conta allow=true → retorna; se existir qualquer membership → não cria; sem membership → chama RPC ensure_first_account_for_current_user(); logs access_context_decision; gate adapter permite null; logs diferenciam deny vs error.
 • adminAdapter (PATH: src/lib/admin/adapters/adminAdapter.ts): valida super_admin / platform_admin; opera post_sale_tokens via postSaleTokenAdapter.
 5.2.2 Guards
 • guards (PATH: src/lib/access/guards.ts): bloqueia Admin quando não for super_admin ou platform_admin.
@@ -226,13 +226,15 @@
 • Regra (template Supabase — Confirm sign up): manter type=signup no link de confirmação (compatibilidade: handler também aceita type=email).
 • Confirmação: /auth/confirm (GET) exibe interstitial “Continuar” e consome token apenas no POST (anti-scanner).
 • Pós-confirmação: /auth/confirm (POST) cria sessão e redireciona para next=/a/home.
-• Com sessão e sem conta/membership resolvida: /a/home redireciona para /auth/confirm/info (não auto-criar conta neste fluxo).
+• Com sessão e sem membership: /a/home cria 1ª conta via RPC ensure_first_account_for_current_user() e redireciona para /a/{account_slug} (pending_setup; owner/active).
+• Com sessão e sem conta allow e com qualquer membership: /a/home redireciona para /auth/confirm/info.
 5.4 Regras da rota /a (anti-regressão)
 • /a é o entrypoint público e redireciona para /a/home.
 • /a/home é pública e funciona como gateway:
 • Sem sessão: renderiza home pública.
-• Com sessão: resolve conta via cookie last_account_subdomain e redireciona para /a/{account_slug}.
-• Com sessão e sem conta resolvida: redireciona para /auth/confirm/info.
+• Com sessão: tenta resolver conta via cookie last_account_subdomain e redireciona para /a/{account_slug} (quando houver allow=true).
+• Com sessão e sem membership: cria 1ª conta via RPC ensure_first_account_for_current_user() e redireciona para /a/{account_slug} (pending_setup; owner/active).
+• Com sessão e sem conta allow e com qualquer membership: redireciona para /auth/confirm/info.
 • Dashboard privado só em /a/{account_slug}.
 • allow/deny é responsabilidade do gate SSR em /a/{account_slug}.
 • /a/home bypassa o gate SSR de conta em app/a/[account]/layout.tsx.
@@ -286,6 +288,9 @@ Regra: qualquer novo arquivo em app/auth/ não pode importar @supabase/* até se
 • Adapters vNext: seguir 3.14
 
 99. Changelog
+v2.0.3 (27/01/2026) — F2: auto 1ª conta (pending_setup) quando usuário não tem membership
+• Atualizado accessContextAdapter (v_access_context_v2) com fallback: sem membership → ensure_first_account_for_current_user(); com qualquer membership → não cria.
+• Atualizado fluxo pós-confirmação (Signup) e gateway /a para refletir criação automática de 1ª conta e redirecionamento para /a/{account_slug} (modo vitrine).
 v2.0.2 (26/01/2026) — Auth: Signup documentado
 • Adicionada 5.3.5 com o fluxo mínimo de signup (/auth/sign-up → /auth/sign-up-success → confirmação via /auth/confirm?next=/a/home), incluindo regra de type=signup no template e comportamento esperado sem vínculo (fallback /auth/confirm/info).
 v2.0.1 (23/01/2026) — Hardening accounts.status
