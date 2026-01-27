@@ -1,8 +1,8 @@
 0. Introdução
 
 0.1 Cabeçalho
-• Data: 26/01/2026
-• Versão: v1.5.5
+• Data: 27/01/2026
+• Versão: v1.5.6
 0.2 Contrato do documento (parseável)
 • Este documento registra o roadmap e o histórico de execução por marcos (E1, E2, ...).
 0.2.1 TIPO_DO_DOCUMENTO
@@ -79,7 +79,7 @@
 • Concluído
 
 4.2 Implementado
-• Gateway /a/home (público sem sessão; com sessão resolve conta)
+• Gateway /a/home (público sem sessão; com sessão resolve conta; sem membership → auto-criar 1ª conta pending_setup e seguir para /a/[account] em modo vitrine)
 • Redirect /a → /a/home
 • Rota privada /a/[account]
 • Middleware + SSR gate (getAccessContext)
@@ -90,10 +90,6 @@
 • inactive → /auth/confirm/account/inactive
 • suspended → /auth/confirm/account/suspended
 • fallback → /auth/confirm/account
-4.3 Critérios de Aceite
-• Redirect /a → /a/home → /a/{account} (quando houver sessão e conta resolvida)
-• Sessão validada antes do render
-• Deny seguro com logs estruturados
 
 5. E5 — UI/Auth Account Dashboard
 
@@ -107,7 +103,7 @@
 • Cooldown UI do reset: 60s com contador e botão desabilitado após solicitar
 • Tela de Signup (/auth/sign-up) com envio de e-mail de confirmação
 • Confirmação de e-mail (signup): link abre em /auth/confirm com type=signup e next=/a/home; token consumido somente no POST (anti-scanner)
-• Pós-confirmação: usuário autenticado cai em /a/home; se não houver vínculo válido, acesso é negado e o usuário é direcionado para /auth/confirm/info (“Acesso não disponível”)
+• Pós-confirmação: usuário autenticado cai em /a/home; se não houver membership, F2 auto-cria 1ª conta pending_setup + vínculo owner/active e redireciona para /a/acc-... (modo vitrine)
 5.3 Critérios de Aceite
 • Fluxo page-based (sem modal overlay primário)
 • Mensagens seguras e anti-enumeração no reset
@@ -176,6 +172,7 @@
 • v_access_context_v2 (fonte única de acesso)
 • AccessProvider com account.name
 • Logs canônicos (access_context_decision)
+• Resolução de primeira conta (F2): sem membership → cria 1ª conta pending_setup + vínculo owner/active; com qualquer membership → não cria
 
 8.3 Critérios de Aceite
 • Bloqueio correto para contas/membros inativos
@@ -413,11 +410,11 @@
 • pending: redirect /auth/confirm/pending — mensagem “Convite pendente”; CTAs: “Pedir reenvio do convite”, “Trocar de conta”, “Voltar para login”.
 • inactive: redirect /auth/confirm/inactive — mensagem “Acesso suspenso”; CTAs: “Solicitar reativação”, “Trocar de conta”, “Voltar para login”.
 • revoked: redirect /auth/confirm/revoked — mensagem “Acesso removido”; CTAs: “Solicitar novo convite”, “Trocar de conta”, “Voltar para login”.
-• Tratamento de usuário autenticado sem membership: redirect para /a/home?clear_last=1 (evita loop de last account).
+• Tratamento de usuário autenticado sem membership: no 1º acesso autenticado sem vínculo, F2 auto-cria 1ª conta pending_setup + vínculo owner/active e redireciona para /a/acc-... (modo vitrine); /a/home?clear_last=1 permanece como proteção anti-loop quando houver last account inválida.
 
 15.3 Critérios de conclusão
 • Gate SSR diferencia corretamente todos os status de membership.
-• Usuário sem membership é tratado como “logado sem conta”.
+• Usuário sem membership aciona F2 (auto 1ª conta pending_setup + vínculo owner/active).
 • Não existe ativação automática paralela fora do fluxo de claim.
 
 15.4 Dependências resolvidas
@@ -426,6 +423,10 @@
 • Hardening executado (B2): public.accounts.status com DEFAULT 'pending_setup'::text e NOT NULL (produção).
 
 99. Changelog
+v1.5.6 (27/01/2026) — F2: Auto 1ª conta (pending_setup) e atualização do fluxo pós-confirmação
+• E4/E5: usuário autenticado sem membership passa a auto-criar 1ª conta pending_setup e cair em /a/[account] (modo vitrine).
+• E8/E15: registrada a regra “sem membership cria; com qualquer membership não cria” e alinhado o tratamento de usuário sem membership.
+• E5: registrada pendência de regressão em /auth/forgot-password (produção).
 v1.5.3 (21/01/2026) — Gate SSR: UX de bloqueio por status (membership/conta)
 • E4: Gate SSR roteia bloqueios de membership para rotas dedicadas e diferencia fallback de conta bloqueada por status (inactive/suspended) com páginas específicas.
 • E15: Detalhada a UX/CTAs e rotas por status de membership, incluindo tratamento de usuário autenticado sem membership (clear_last).
