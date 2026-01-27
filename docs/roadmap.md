@@ -79,7 +79,6 @@
 • Concluído
 
 4.2 Implementado
-4.2 Implementado
 • Gateway /a/home (público sem sessão; com sessão resolve conta)
 • Redirect /a → /a/home
 • Rota privada /a/[account]
