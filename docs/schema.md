@@ -1,8 +1,8 @@
 0. Introdução
 
 0.1 Cabeçalho
-• Data da última atualização: 23/01/2026
-• Documento: LP Factory 10 — Schema (DB Contract) v1.0.1
+• Data da última atualização: 27/01/2026
+• Documento: LP Factory 10 — Schema (DB Contract) v1.0.2
 0.2 Contrato do documento (parseável)
 • Esta seção define o que é relevante atualizar e como escrever.
 0.2.1 TIPO_DO_DOCUMENTO
@@ -189,12 +189,14 @@
 • is_member_active(p_account_id uuid, p_user_id uuid) → boolean
 • has_account_min_role(account_id uuid, min_role text) → boolean
 • role_rank(role text) → int (owner=4, admin=3, editor=2, viewer=1)
+• ensure_first_account_for_current_user() → table(account_id uuid, account_key text)
 3.3.2 has_account_min_role(account_id uuid, min_role text) — segurança
 • Segurança: SECURITY DEFINER (aprovado; usado em RLS)
 • search_path: public (obrigatório)
 3.3.3 SECURITY DEFINER allowlist
 • create_account_with_owner (motivo: onboarding; limites: TBD)
 • has_account_min_role (motivo: helper RLS; limites: somente leitura; sem writes)
+• ensure_first_account_for_current_user (motivo: F2 auto 1ª conta; limites: idempotente; cria 1ª conta + owner/active)
 3.4 Convites de Conta
 • accept_account_invite(account_id uuid, ttl_days int) → boolean
 • revoke_account_invite(account_id uuid, user_id uuid) → boolean
@@ -236,6 +238,9 @@
 • DRIFT (caso H): AccountStatus inclui trial, mas accounts.status não aceita trial; alinhar quando o caso H remover trial da view e modelar trial via plano/assinatura
 
 99. Changelog
+v1.0.2 (27/01/2026) — F2: RPC ensure_first_account_for_current_user (auto 1ª conta)
+• Adicionada a RPC public.ensure_first_account_for_current_user() ao contrato (retorna account_id, account_key).
+• Atualizada a allowlist SECURITY DEFINER para incluir ensure_first_account_for_current_user.
 v1.0.1 (23/01/2026) — Hardening de accounts.status + registro de drift trial
 • accounts: status consolidado como active|inactive|suspended|pending_setup e documentado como NOT NULL + DEFAULT 'pending_setup'::text (CHECK accounts_status_chk).
 • v_access_context_v2: trial hardcoded mantido como drift para resolução no caso H (billing/entitlements).
