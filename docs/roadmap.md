@@ -2,7 +2,7 @@
 
 0.1 Cabeçalho
 • Data: 27/01/2026
-• Versão: v1.5.6
+• Versão: v1.5.7
 0.2 Contrato do documento (parseável)
 • Este documento registra o roadmap e o histórico de execução por marcos (E1, E2, ...).
 0.2.1 TIPO_DO_DOCUMENTO
@@ -80,6 +80,7 @@
 
 4.2 Implementado
 • Gateway /a/home (público sem sessão; com sessão resolve conta; sem membership → auto-criar 1ª conta pending_setup e seguir para /a/[account] em modo vitrine)
+• CTA Criar conta no /a/home (sem sessão) navega para /auth/sign-up (remove placeholder/modal)
 • Redirect /a → /a/home
 • Rota privada /a/[account]
 • Middleware + SSR gate (getAccessContext)
@@ -90,7 +91,6 @@
 • inactive → /auth/confirm/account/inactive
 • suspended → /auth/confirm/account/suspended
 • fallback → /auth/confirm/account
-
 5. E5 — UI/Auth Account Dashboard
 
 5.1 Status
@@ -423,6 +423,8 @@
 • Hardening executado (B2): public.accounts.status com DEFAULT 'pending_setup'::text e NOT NULL (produção).
 
 99. Changelog
+v1.5.7 (27/01/2026) — F1.1: CTA Criar conta no /a/home direciona para signup
+• E4: registrado que o CTA Criar conta no /a/home (sem sessão) navega para /auth/sign-up (remoção de placeholder/modal).
 v1.5.6 (27/01/2026) — F2: Auto 1ª conta (pending_setup) e atualização do fluxo pós-confirmação
 • E4/E5: usuário autenticado sem membership passa a auto-criar 1ª conta pending_setup e cair em /a/[account] (modo vitrine).
 • E8/E15: registrada a regra “sem membership cria; com qualquer membership não cria” e alinhado o tratamento de usuário sem membership.
