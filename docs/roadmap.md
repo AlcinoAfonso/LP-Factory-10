@@ -1,8 +1,8 @@
 0. Introdução
 
 0.1 Cabeçalho
-• Data: 23/01/2026
-• Versão: v1.5.4
+• Data: 26/01/2026
+• Versão: v1.5.5
 0.2 Contrato do documento (parseável)
 • Este documento registra o roadmap e o histórico de execução por marcos (E1, E2, ...).
 0.2.1 TIPO_DO_DOCUMENTO
@@ -106,6 +106,9 @@
 • Tela "Esqueci minha senha" (/auth/forgot-password)
 • Recovery sem “Continuar”: link do e-mail abre direto em /auth/update-password; submit confirma e troca senha via POST /auth/confirm (anti-scanner)
 • Cooldown UI do reset: 60s com contador e botão desabilitado após solicitar
+• Tela de Signup (/auth/sign-up) com envio de e-mail de confirmação
+• Confirmação de e-mail (signup): link abre em /auth/confirm com type=signup e next=/a/home; token consumido somente no POST (anti-scanner)
+• Pós-confirmação: usuário autenticado cai em /a/home; se não houver vínculo válido, acesso é negado e o usuário é direcionado para /auth/confirm/info (“Acesso não disponível”)
 5.3 Critérios de Aceite
 • Fluxo page-based (sem modal overlay primário)
 • Mensagens seguras e anti-enumeração no reset
@@ -423,7 +426,7 @@
 • Bloqueio de drifts críticos identificados no QA do B1.
 • Hardening executado (B2): public.accounts.status com DEFAULT 'pending_setup'::text e NOT NULL (produção).
 
-99. Changelo
+99. Changelog
 v1.5.3 (21/01/2026) — Gate SSR: UX de bloqueio por status (membership/conta)
 • E4: Gate SSR roteia bloqueios de membership para rotas dedicadas e diferencia fallback de conta bloqueada por status (inactive/suspended) com páginas específicas.
 • E15: Detalhada a UX/CTAs e rotas por status de membership, incluindo tratamento de usuário autenticado sem membership (clear_last).
