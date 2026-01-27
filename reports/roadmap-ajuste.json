@@ -5,9 +5,7 @@
 "scope": "documentacao",
 "execution_mode": "github_actions",
 "target_doc": "docs/roadmap.md",
-"warnings": [
-"B1 omitida: não foi possível inferir a âncora com segurança para inserir a seção 5.4 (seção imediatamente anterior no mesmo nível não está disponível no relatório)."
-]
+"warnings": []
 },
 "ops": [
 {
@@ -15,55 +13,20 @@
 "doc_path": "docs/roadmap.md",
 "target": "0.1",
 "mode": "shallow",
-"content": "0.1 Cabe\u00e7alho\n\u2022 Data: 27/01/2026\n\u2022 Vers\u00e3o: v1.5.6\n"
+"content": "0.1 Cabe\u00e7alho\n\u2022 Data: 27/01/2026\n\u2022 Vers\u00e3o: v1.5.7\n"
 },
 {
 "op": "replace_section",
 "doc_path": "docs/roadmap.md",
 "target": "4.2",
 "mode": "shallow",
-"content": "4.2 Implementado\n\u2022 Gateway /a/home (p\u00fablico sem sess\u00e3o; com sess\u00e3o resolve conta; sem membership \u2192 auto-criar 1\u00aa conta pending_setup e seguir para /a/[account] em modo vitrine)\n\u2022 Redirect /a \u2192 /a/home\n\u2022 Rota privada /a/[account]\n\u2022 Middleware + SSR gate (getAccessContext)\n\u2022 Persist\u00eancia last account via cookie (defini\u00e7\u00e3o em /a/[account] e leitura em /a/home)\n\u2022 P\u00e1gina neutra /auth/confirm/info\n\u2022 Bloqueio por membership no gate SSR com rotas dedicadas: /auth/confirm/pending | /auth/confirm/inactive | /auth/confirm/revoked\n\u2022 Fallback de conta bloqueada diferenciado por status quando FORBIDDEN_ACCOUNT:\n\u2022 inactive \u2192 /auth/confirm/account/inactive\n\u2022 suspended \u2192 /auth/confirm/account/suspended\n\u2022 fallback \u2192 /auth/confirm/account\n"
-},
-{
-"op": "replace_section",
-"doc_path": "docs/roadmap.md",
-"target": "5.2",
-"mode": "shallow",
-"content": "5.2 Implementado\n\u2022 Tela de Login (page-based em /auth/login)\n\u2022 Tela "Esqueci minha senha" (/auth/forgot-password)\n\u2022 Recovery sem \u201cContinuar\u201d: link do e-mail abre direto em /auth/update-password; submit confirma e troca senha via POST /auth/confirm (anti-scanner)\n\u2022 Cooldown UI do reset: 60s com contador e bot\u00e3o desabilitado ap\u00f3s solicitar\n\u2022 Tela de Signup (/auth/sign-up) com envio de e-mail de confirma\u00e7\u00e3o\n\u2022 Confirma\u00e7\u00e3o de e-mail (signup): link abre em /auth/confirm com type=signup e next=/a/home; token consumido somente no POST (anti-scanner)\n\u2022 P\u00f3s-confirma\u00e7\u00e3o: usu\u00e1rio autenticado cai em /a/home; se n\u00e3o houver membership, F2 auto-cria 1\u00aa conta pending_setup + v\u00ednculo owner/active e redireciona para /a/acc-... (modo vitrine)\n"
-},
-{
-"op": "replace_section",
-"doc_path": "docs/roadmap.md",
-"target": "8.2",
-"mode": "shallow",
-"content": "8.2 Implementado\n\u2022 v_access_context_v2 (fonte \u00fanica de acesso)\n\u2022 AccessProvider com account.name\n\u2022 Logs can\u00f4nicos (access_context_decision)\n\u2022 Resolu\u00e7\u00e3o de primeira conta (F2): sem membership \u2192 cria 1\u00aa conta pending_setup + v\u00ednculo owner/active; com qualquer membership \u2192 n\u00e3o cria\n"
-},
-{
-"op": "replace_section",
-"doc_path": "docs/roadmap.md",
-"target": "15.2",
-"mode": "shallow",
-"content": "15.2 Escopo\n\u2022 Defini\u00e7\u00e3o formal de usu\u00e1rio vs membership.\n\u2022 Defini\u00e7\u00e3o dos status de membership: pending, active, inactive, revoked.\n\u2022 Regra \u00fanica de ativa\u00e7\u00e3o: pending \u2192 active somente via claim/aceite de convite.\n\u2022 Confirma\u00e7\u00e3o de que status \u00e9 por membership, n\u00e3o por usu\u00e1rio global.\n\u2022 UX definida por status (gate SSR + rotas /auth/confirm/*):\n\u2022 active: acesso normal ao dashboard (/a/[account]).\n\u2022 pending: redirect /auth/confirm/pending \u2014 mensagem \u201cConvite pendente\u201d; CTAs: \u201cPedir reenvio do convite\u201d, \u201cTrocar de conta\u201d, \u201cVoltar para login\u201d.\n\u2022 inactive: redirect /auth/confirm/inactive \u2014 mensagem \u201cAcesso suspenso\u201d; CTAs: \u201cSolicitar reativa\u00e7\u00e3o\u201d, \u201cTrocar de conta\u201d, \u201cVoltar para login\u201d.\n\u2022 revoked: redirect /auth/confirm/revoked \u2014 mensagem \u201cAcesso removido\u201d; CTAs: \u201cSolicitar novo convite\u201d, \u201cTrocar de conta\u201d, \u201cVoltar para login\u201d.\n\u2022 Tratamento de usu\u00e1rio autenticado sem membership: no 1\u00ba acesso autenticado sem v\u00ednculo, F2 auto-cria 1\u00aa conta pending_setup + v\u00ednculo owner/active e redireciona para /a/acc-... (modo vitrine); /a/home?clear_last=1 permanece como prote\u00e7\u00e3o anti-loop quando houver last account inv\u00e1lida.\n"
-},
-{
-"op": "replace_section",
-"doc_path": "docs/roadmap.md",
-"target": "15.3",
-"mode": "shallow",
-"content": "15.3 Crit\u00e9rios de conclus\u00e3o\n\u2022 Gate SSR diferencia corretamente todos os status de membership.\n\u2022 Usu\u00e1rio sem membership aciona F2 (auto 1\u00aa conta pending_setup + v\u00ednculo owner/active).\n\u2022 N\u00e3o existe ativa\u00e7\u00e3o autom\u00e1tica paralela fora do fluxo de claim.\n"
-},
-{
-"op": "replace_section",
-"doc_path": "docs/roadmap.md",
-"target": "99",
-"mode": "shallow",
-"content": "99. Changelog\nv1.5.6 (27/01/2026) \u2014 F2: Auto 1\u00aa conta (pending_setup) e atualiza\u00e7\u00e3o do fluxo p\u00f3s-confirma\u00e7\u00e3o\n\u2022 E4/E5: usu\u00e1rio autenticado sem membership passa a auto-criar 1\u00aa conta pending_setup e cair em /a/[account] (modo vitrine).\n\u2022 E8/E15: registrada a regra \u201csem membership cria; com qualquer membership n\u00e3o cria\u201d e alinhado o tratamento de usu\u00e1rio sem membership.\n\u2022 E5: registrada pend\u00eancia de regress\u00e3o em /auth/forgot-password (produ\u00e7\u00e3o).\nv1.5.3 (21/01/2026) \u2014 Gate SSR: UX de bloqueio por status (membership/conta)\n\u2022 E4: Gate SSR roteia bloqueios de membership para rotas dedicadas e diferencia fallback de conta bloqueada por status (inactive/suspended) com p\u00e1ginas espec\u00edficas.\n\u2022 E15: Detalhada a UX/CTAs e rotas por status de membership, incluindo tratamento de usu\u00e1rio autenticado sem membership (clear_last).\n"
+"content": "4.2 Implementado\n\u2022 Gateway /a/home (p\u00fablico sem sess\u00e3o; com sess\u00e3o resolve conta; sem membership \u2192 auto-criar 1\u00aa conta pending_setup e seguir para /a/[account] em modo vitrine)\n\u2022 CTA Criar conta no /a/home (sem sess\u00e3o) navega para /auth/sign-up (remove placeholder/modal)\n\u2022 Redirect /a \u2192 /a/home\n\u2022 Rota privada /a/[account]\n\u2022 Middleware + SSR gate (getAccessContext)\n\u2022 Persist\u00eancia last account via cookie (defini\u00e7\u00e3o em /a/[account] e leitura em /a/home)\n\u2022 P\u00e1gina neutra /auth/confirm/info\n\u2022 Bloqueio por membership no gate SSR com rotas dedicadas: /auth/confirm/pending | /auth/confirm/inactive | /auth/confirm/revoked\n\u2022 Fallback de conta bloqueada diferenciado por status quando FORBIDDEN_ACCOUNT:\n\u2022 inactive \u2192 /auth/confirm/account/inactive\n\u2022 suspended \u2192 /auth/confirm/account/suspended\n\u2022 fallback \u2192 /auth/confirm/account\n"
 },
 {
 "op": "insert_after_heading",
 "doc_path": "docs/roadmap.md",
 "heading": "99. Changelog",
-"content": "v1.5.6 (27/01/2026) \u2014 F2: Auto 1\u00aa conta (pending_setup) e atualiza\u00e7\u00e3o do fluxo p\u00f3s-confirma\u00e7\u00e3o\n\u2022 E4/E5: usu\u00e1rio autenticado sem membership passa a auto-criar 1\u00aa conta pending_setup e cair em /a/[account] (modo vitrine).\n\u2022 E8/E15: registrada a regra \u201csem membership cria; com qualquer membership n\u00e3o cria\u201d e alinhado o tratamento de usu\u00e1rio sem membership.\n\u2022 E5: registrada pend\u00eancia de regress\u00e3o em /auth/forgot-password (produ\u00e7\u00e3o).\n"
+"content": "v1.5.7 (27/01/2026) \u2014 F1.1: CTA Criar conta no /a/home direciona para signup\n\u2022 E4: registrado que o CTA Criar conta no /a/home (sem sess\u00e3o) navega para /auth/sign-up (remo\u00e7\u00e3o de placeholder/modal).\n"
 }
 ],
 "rules": {
