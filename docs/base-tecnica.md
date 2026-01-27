@@ -1,9 +1,8 @@
 0. Introdução
 0.1. Cabeçalho
 • Documento: Base Técnica LP Factory 10
-• Versão: v2.0.1
-• Data: 23/01/2026
-• Escopo: regras e contratos técnicos do repositório (Next.js + Supabase + Vercel)
+• Versão: v2.0.2
+• Data: 26/01/2026
 0.2 Contrato do documento (parseável)
 • Esta seção define o que é relevante atualizar e como escrever.
 0.2.1 TIPO_DO_DOCUMENTO
@@ -220,6 +219,14 @@
 5.3.4 Observabilidade
 • server-timing/proxy-status não observados nos requests testados via DevTools
 • Diretriz: se precisar medir, instrumentar via logs/Apm e/ou headers próprios no server
+5.3.5 Signup
+• Entrada: /auth/sign-up (SignUpForm usa supabase.auth.signUp).
+• Sucesso do signUp: redirecionar para /auth/sign-up-success (mensagem de confirmação para checar o e-mail).
+• Regra: signUp deve usar emailRedirectTo apontando para /auth/confirm?next=/a/home (somente path interno).
+• Regra (template Supabase — Confirm sign up): manter type=signup no link de confirmação (compatibilidade: handler também aceita type=email).
+• Confirmação: /auth/confirm (GET) exibe interstitial “Continuar” e consome token apenas no POST (anti-scanner).
+• Pós-confirmação: /auth/confirm (POST) cria sessão e redireciona para next=/a/home.
+• Com sessão e sem conta/membership resolvida: /a/home redireciona para /auth/confirm/info (não auto-criar conta neste fluxo).
 5.4 Regras da rota /a (anti-regressão)
 • /a é o entrypoint público e redireciona para /a/home.
 • /a/home é pública e funciona como gateway:
@@ -239,6 +246,7 @@
 • accounts.status=inactive → /auth/confirm/account/inactive
 • accounts.status=suspended → /auth/confirm/account/suspended
 • fallback → /auth/confirm/account
+
 6. Estrutura de Arquivos Essencial
 6.1 Visão rápida (fonte única)
 • Fonte única do inventário (pastas/arquivos e mapa do repo): PATH: docs/repo-inv.md
@@ -278,7 +286,9 @@ Regra: qualquer novo arquivo em app/auth/ não pode importar @supabase/* até se
 • Adapters vNext: seguir 3.14
 
 99. Changelog
-v2.0.1 (23/01/2026) — Hardening accounts.status (B2)
+v2.0.2 (26/01/2026) — Auth: Signup documentado
+• Adicionada 5.3.5 com o fluxo mínimo de signup (/auth/sign-up → /auth/sign-up-success → confirmação via /auth/confirm?next=/a/home), incluindo regra de type=signup no template e comportamento esperado sem vínculo (fallback /auth/confirm/info).
+v2.0.1 (23/01/2026) — Hardening accounts.status
 • Registrado hardening executado em produção: public.accounts.status com DEFAULT 'pending_setup'::text e NOT NULL.
 v1.9.10 (22/01/2026) — Gate SSR: bloqueio por status (membership/conta)
 • Ajustado 5.4 para incluir roteamento de bloqueio por status de membership e por conta via FORBIDDEN_ACCOUNT (inactive/suspended) para rotas /auth/confirm dedicadas, mantendo fallback genérico.
