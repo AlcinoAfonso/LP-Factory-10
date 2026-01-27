@@ -2,7 +2,7 @@
 
 0.1 Cabeçalho
 • Data: 27/01/2026
-• Versão: v1.5.7
+• Versão: v1.5.8
 0.2 Contrato do documento (parseável)
 • Este documento registra o roadmap e o histórico de execução por marcos (E1, E2, ...).
 0.2.1 TIPO_DO_DOCUMENTO
@@ -81,19 +81,25 @@
 4.1 Status
 • Concluído
 
+27/01/2026 16:18 — E4.2 (enxuto / anti-drift)
+
 4.2 Implementado
-• Gateway /a/home (público sem sessão; com sessão resolve conta; sem membership → auto-criar 1ª conta pending_setup e seguir para /a/[account] em modo vitrine)
-• CTA Criar conta no /a/home (sem sessão) navega para /auth/sign-up (remove placeholder/modal)
-• Redirect /a → /a/home
-• Rota privada /a/[account]
-• Middleware + SSR gate (getAccessContext)
-• Persistência last account via cookie (definição em /a/[account] e leitura em /a/home)
-• Página neutra /auth/confirm/info
-• Bloqueio por membership no gate SSR com rotas dedicadas: /auth/confirm/pending | /auth/confirm/inactive | /auth/confirm/revoked
-• Fallback de conta bloqueada diferenciado por status quando FORBIDDEN_ACCOUNT:
-• inactive → /auth/confirm/account/inactive
-• suspended → /auth/confirm/account/suspended
-• fallback → /auth/confirm/account
+• Redirect `/a` → `/a/home`
+• Gateway `/a/home`
+• Público sem sessão
+• Com sessão: resolve conta/acesso e direciona para a melhor rota disponível
+• Sem qualquer vínculo: cria a 1ª conta em modo **vitrine** (`pending_setup`) e direciona para `/a/[account]`
+• Com vínculos, mas sem conta permitida: aplica anti-loop e direciona para um estado neutro de “acesso indisponível”
+• CTA “Criar conta” (público) no `/a/home` → `/auth/sign-up`
+• Rota privada `/a/[account]` com gate SSR (ponto único de decisão)
+• Persistência de “última conta” para melhorar retorno do usuário e evitar loops
+• Página neutra `/auth/confirm/info` para usuário autenticado sem vínculo válido
+• Bloqueios com UX dedicada (sem deny genérico)
+• Por **membership**: telas específicas (ver E15)
+• Por **status da conta**: telas específicas para conta inativa/suspensa (ver E16)
+4.2.1 Referências
+• Regras técnicas do gate/adapters: `docs/base-tecnica.md`
+• Contrato/DB e evidências: `docs/schema.md`
 
 5. E5 — UI/Auth Account Dashboard
 
@@ -174,14 +180,20 @@
 • Concluído (03/10/2025)
 
 8.2 Implementado
-• v_access_context_v2 (fonte única de acesso)
-• AccessProvider com account.name
-• Logs canônicos (access_context_decision)
-• Resolução de primeira conta (F2): sem membership → cria 1ª conta pending_setup + vínculo owner/active; com qualquer membership → não cria
+• Access Context como fonte única para decisão de acesso e roteamento (SSR/UI)
+• Contexto mínimo para UI (ex.: dados básicos da conta)
+• Decisão “fail-closed” (quando não houver contexto permitido, não entra)
+• Logs canônicos de decisão de acesso (para rastreabilidade)
+• Resolução de “melhor destino” pós-login (inclui cenário de usuário sem vínculo, em modo vitrine) — ver E4.2/E5.2/E16
+8.2.1 Referências
+• Regras técnicas (gate/adapters/logs): docs/base-tecnica.md
+• Contrato/DB do Access Context: docs/schema.md
 
 8.3 Critérios de Aceite
-• Bloqueio correto para contas/membros inativos
-• Redirect seguro e rastreável
+• Decisão de acesso rastreável (log) e sem “deny genérico” quando houver status conhecido
+• Bloqueios por membership seguem UX dedicada (ver E15)
+• Bloqueios por status da conta seguem UX dedicada (ver E16)
+• Redirect seguro e anti-loop (ver E4.2
 
 9. E9 — Billing Engine & Stripe Sync
 
@@ -259,6 +271,7 @@
 
 9.8 Compatibilidade
 • Billing Engine é o núcleo técnico que garante coerência entre Conta Consultiva (E7), Admin (E12) e Account Dashboard (E10)
+9.8.1 Trial como entitlements (billing) e remoção do trial hardcoded
 
 10. E10 — Account Dashboard (UX)
 
@@ -406,28 +419,90 @@
 • Concluído
 
 15.2 Escopo
-• Definição formal de usuário vs membership.
-• Definição dos status de membership: pending, active, inactive, revoked.
-• Regra única de ativação: pending → active somente via claim/aceite de convite.
-• Confirmação de que status é por membership, não por usuário global.
-• UX definida por status (gate SSR + rotas /auth/confirm/*):
-• active: acesso normal ao dashboard (/a/[account]).
-• pending: redirect /auth/confirm/pending — mensagem “Convite pendente”; CTAs: “Pedir reenvio do convite”, “Trocar de conta”, “Voltar para login”.
-• inactive: redirect /auth/confirm/inactive — mensagem “Acesso suspenso”; CTAs: “Solicitar reativação”, “Trocar de conta”, “Voltar para login”.
-• revoked: redirect /auth/confirm/revoked — mensagem “Acesso removido”; CTAs: “Solicitar novo convite”, “Trocar de conta”, “Voltar para login”.
-• Tratamento de usuário autenticado sem membership: no 1º acesso autenticado sem vínculo, F2 auto-cria 1ª conta pending_setup + vínculo owner/active e redireciona para /a/acc-... (modo vitrine); /a/home?clear_last=1 permanece como proteção anti-loop quando houver last account inválida.
+• Definir Usuário vs Membership (vínculo por conta).
+• Definir status do membership: pending | active | inactive | revoked.
+• Regra única: pending → active somente via claim/aceite de convite.
+• Status é por membership (o mesmo usuário pode ter status diferentes em contas diferentes).
+• UX por status (snapshot): bloqueios por membership levam a telas dedicadas /auth/confirm/* (sem “deny genérico”).
+• Usuário autenticado sem membership: segue o fluxo de “primeiro acesso” (auto 1ª conta vitrine) e retorna ao dashboard (ver E5/E8)..
+15.2.1 Referências
+• Regras técnicas do gate/adapters: docs/base-tecnica.md
+• Contrato/DB (membership/status): docs/schema.md
 
 15.3 Critérios de conclusão
-• Gate SSR diferencia corretamente todos os status de membership.
-• Usuário sem membership aciona F2 (auto 1ª conta pending_setup + vínculo owner/active).
-• Não existe ativação automática paralela fora do fluxo de claim.
+• Gate SSR diferencia corretamente todos os status de membership (UX dedicada por status).
+• Não existe “atalho” que ative membership fora do claim/aceite oficial.
+• Usuário autenticado sem membership não fica bloqueado (fluxo de 1ª conta vitrine concluído) (ver E5/E8).
 
 15.4 Dependências resolvidas
-• Alinhado com B2-MVP (pending_setup como vitrine).
-• Bloqueio de drifts críticos identificados no QA do B1.
-• Hardening executado (B2): public.accounts.status com DEFAULT 'pending_setup'::text e NOT NULL (produção).
+• Alinhamento com lifecycle de contas (vitrine pending_setup como entrada padrão) (ver E16).
+• Hardening do lifecycle de accounts.status aplicado (detalhes/evidências em docs/schema.md)..
+
+16. E16 — Accounts
+
+16.1 Status
+• Concluído
+
+16.2 Objetivo
+• Definir o lifecycle de **contas** e o comportamento esperado no dashboard (Produto + UX).
+• Manter **billing/trial/entitlements** fora de `accounts.status` (ver E9).
+
+16.3 Status de conta (definição prática)
+
+16.3.1 `pending_setup` (vitrine/marketing)
+• Entra no dashboard e navega em modo vitrine.
+• Vê demo/placeholder do produto.
+• Não cria/publica/ativa recursos com custo enquanto não estiver `active`.
+• CTAs típicos: “Ativar/Assinar” (self-serve) e “Falar com suporte/consultor” (consultiva).
+
+16.3.2 `active` (operação normal)
+• Uso normal do dashboard e recursos conforme plano/grants.
+
+16.3.3 `inactive` (bloqueio por pagamento — reversível)
+• Acesso restrito com explicação clara do motivo (pagamento).
+• CTA: reativar/pagar.
+• Política definida: despublicar após grace period (MVP: 7 dias).
+• Enforcement automático fica para caso de uso operacional (Admin/Jobs).
+
+16.3.4 `suspended` (bloqueio admin)
+• Acesso restrito com explicação clara do motivo (bloqueio administrativo).
+• CTA: contatar suporte.
+• Política definida: despublicar imediato.
+• Enforcement automático fica para caso de uso operacional (Admin/Jobs).
+
+16.4 Regras de produto (alto nível)
+• Bloqueio por conta é independente do vínculo do usuário: mesmo com acesso “ativo” à conta, pode haver restrição por status da conta.
+• Trial comercial não é status de conta; é estado de plano/assinatura (ver E9).
+
+16.5 Transições oficiais (lifecycle)
+• `pending_setup → active`
+• Self-serve: evento de ativação de plano/assinatura (E9).
+• Consultiva: ativação manual operacional (E12/E7).
+• `active → inactive` (evento de billing) (E9).
+• `inactive → active` (reativação) (E9/E12).
+• `* → suspended` e `suspended → active` (admin/operacional) (E12).
+
+16.6 UX por status (snapshot)
+• `inactive`: tela de conta inativa com CTA reativar/pagar.
+• `suspended`: tela de conta suspensa com CTA suporte.
+• Observação: detalhes de rotas/gate e regras técnicas ficam em `docs/base-tecnica.md` (ver também E4/E8).
+
+16.7 QA e evidência (snapshot)
+• Confirmar que o produto não apresenta “deny genérico” para `inactive/suspended`.
+• Confirmar que contas novas “nascem” em `pending_setup`.
+• Detalhes de contrato/DB e evidências de hardening ficam em `docs/schema.md`.
+
+16.8 Casos relacionados / drifts (owners)
+• E9 (H): trial/entitlements (remover hardcode antigo quando houver fonte real).
+• E12 (G): enforcement operacional (jobs) de despublicação/retention/grace period e settings configuráveis.
+• E10: refinamento da vitrine `pending_setup` (mensagens/CTAs/limites detalhados) sem mudar lifecycle.
 
 99. Changelog
+v1.5.8 (27/01/2026)
+• Adicionado E16 (Accounts) para consolidar lifecycle de accounts.status (definições, transições e UX/CTAs), com referências para docs/base-tecnica.md e docs/schema.md (anti-drift).
+• Ajustado E4.2 para remover redundâncias e focar no fluxo/UX do gateway e roteamentos, adicionando subitem de referências numerado.
+• Ajustado E8 para focar em Access Context como decisão única e remover sobreposição com E4/E15/E16, com referências numeradas.
+• Ajustado E15 (15.2–15.4) para reduzir redundâncias, apontar dependências para E16 e reforçar referências para docs/base-tecnica.md e docs/schema.md (anti-drift).
 v1.5.7 (27/01/2026) — F1.1: CTA Criar conta no /a/home direciona para signup
 • E4: registrado que o CTA Criar conta no /a/home (sem sessão) navega para /auth/sign-up (remoção de placeholder/modal).
 v1.5.6 (27/01/2026) — F2: Auto 1ª conta (pending_setup) e atualização do fluxo pós-confirmação
