@@ -9,6 +9,9 @@ export type DBAccountRow = {
   subdomain: string;
   domain: string | null;
   status: string;
+
+  /** E10.4.1 infra */
+  setup_completed_at?: string | null;
 };
 
 export type DBMemberRow = {
@@ -27,6 +30,9 @@ export type AccountInfo = {
   subdomain: string;
   domain?: string;
   status: AccountStatus;
+
+  /** E10.4.1 infra: marcador (NULL vs NOT NULL) */
+  setupCompletedAt?: string | null;
 };
 
 export type MemberInfo = {
@@ -74,6 +80,7 @@ export const mapAccountFromDB = (r: DBAccountRow): AccountInfo => ({
   subdomain: r.subdomain,
   domain: r.domain ?? undefined,
   status: normalizeAccountStatus(r.status),
+  setupCompletedAt: r.setup_completed_at ?? null,
 });
 
 export const mapMemberFromDB = (r: DBMemberRow): MemberInfo => ({
@@ -84,6 +91,38 @@ export const mapMemberFromDB = (r: DBMemberRow): MemberInfo => ({
   status: normalizeMemberStatus(r.status),
   permissions: r.permissions ?? undefined,
 });
+
+/**
+ * E10.4.1 infra — Seta accounts.setup_completed_at quando chamado.
+ * Preferência: idempotente (só seta quando NULL).
+ * Não define evento de negócio; apenas fornece o método.
+ */
+export async function setSetupCompletedAtIfNull(accountId: string): Promise<boolean> {
+  const supabase = createServiceClient();
+
+  let q: any = supabase
+    .from("accounts")
+    .update({ setup_completed_at: new Date().toISOString() })
+    .eq("id", accountId)
+    .is("setup_completed_at", null);
+
+  // v12-safe: só aplica no v13+
+  if (typeof q?.maxAffected === "function") q = q.maxAffected(1);
+
+  const { error } = await q;
+
+  if (error) {
+    // eslint-disable-next-line no-console
+    console.error("setSetupCompletedAtIfNull failed:", {
+      code: (error as any)?.code,
+      message: (error as any)?.message ?? String(error),
+      account_id: accountId,
+    });
+    return false;
+  }
+
+  return true;
+}
 
 /* ===========================================================
  * Leituras read-only (Adapters-only)
