@@ -1,8 +1,8 @@
 0. Introdução
 0.1. Cabeçalho
 • Documento: Base Técnica LP Factory 10
-• Versão: v2.0.3
-• Data: 27/01/2026
+• Versão: v2.0.4
+• Data: 30/01/2026
 0.2 Contrato do documento (parseável)
 • Esta seção define o que é relevante atualizar e como escrever.
 0.2.1 TIPO_DO_DOCUMENTO
@@ -179,14 +179,14 @@
 • Decide se o usuário pode acessar uma conta (allow + reason)
 • Usado em SSR (getAccessContext), AccessProvider e AccountSwitcher
 5.1.2 Persistência SSR (cookie last_account_subdomain)
-• Definido em /a/[account]/layout.tsx somente quando allow=true, membro ativo e conta em status active|trial|pending_setup.
+• Definido em /a/[account]/layout.tsx somente quando allow=true, membro ativo e conta em status active|pending_setup.
 • Atributos obrigatórios: HttpOnly; Secure; SameSite=Lax; Max-Age=7776000; Path=/.
 • Leitura do cookie ocorre no SSR do gateway /a/home para redirecionar /a/home → /a/{account_slug}.
 • Limpeza do cookie ocorre via /a/home?clear_last=1 (middleware zera Max-Age=0).
 • last_account_subdomain só é definido em /a/{account_slug} após allow; /a/home não define cookie.
 5.2 Adapters, Guards, Providers
 5.2.1 Adapters
-• accountAdapter (PATH: src/lib/access/adapters/accountAdapter.ts): createFromToken(tokenId, actorId) → RPC create_account_with_owner; renameAndActivate(accountId, name, slug) com .maxAffected(1); normalizeAccountStatus preserva trial (trial não pode virar active por fallback).
+• accountAdapter (PATH: src/lib/access/adapters/accountAdapter.ts): createFromToken(tokenId, actorId) → RPC create_account_with_owner; renameAndActivate(accountId, name, slug) com .maxAffected(1); normalizeAccountStatus não faz fallback para active em status desconhecido.
 • accessContextAdapter (PATH: src/lib/access/adapters/accessContextAdapter.ts): lê v_access_context_v2; getFirstAccountForCurrentUser(): se existir conta allow=true → retorna; se existir qualquer membership → não cria; sem membership → chama RPC ensure_first_account_for_current_user(); logs access_context_decision; gate adapter permite null; logs diferenciam deny vs error.
 • adminAdapter (PATH: src/lib/admin/adapters/adminAdapter.ts): valida super_admin / platform_admin; opera post_sale_tokens via postSaleTokenAdapter.
 5.2.2 Guards
@@ -288,7 +288,9 @@ Regra: qualquer novo arquivo em app/auth/ não pode importar @supabase/* até se
 • Adapters vNext: seguir 3.14
 
 99. Changelog
-v2.0.3 (27/01/2026) — F2: auto 1ª conta (pending_setup) quando usuário não tem membership
+v2.0.4 (30/01/2026) — E10.4.1: alinhamento do contrato de status (sem trial no access)
+• Removidas referências a 'trial' como status de conta em 5.1.2 (cookie SSR) e 5.2.1 (accountAdapter), alinhando ao contrato active|pending_setup.
+v2.0.3 (27/01/2026) — E4.2 + E8.2: auto 1ª conta (pending_setup) quando usuário não tem membership
 • Atualizado accessContextAdapter (v_access_context_v2) com fallback: sem membership → ensure_first_account_for_current_user(); com qualquer membership → não cria.
 • Atualizado fluxo pós-confirmação (Signup) e gateway /a para refletir criação automática de 1ª conta e redirecionamento para /a/{account_slug} (modo vitrine).
 v2.0.2 (26/01/2026) — Auth: Signup documentado
