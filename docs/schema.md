@@ -1,8 +1,8 @@
 0. Introdução
 
 0.1 Cabeçalho
-• Data da última atualização: 27/01/2026
-• Documento: LP Factory 10 — Schema (DB Contract) v1.0.2
+• Data da última atualização: 30/01/2026
+• Documento: LP Factory 10 — Schema (DB Contract) v1.0.3
 0.2 Contrato do documento (parseável)
 • Esta seção define o que é relevante atualizar e como escrever.
 0.2.1 TIPO_DO_DOCUMENTO
@@ -27,6 +27,7 @@
 • UNIQUE: subdomain, domain, slug
 • Status: active | inactive | suspended | pending_setup
 • Coluna status: text; CHECK accounts_status_chk; NOT NULL; DEFAULT 'pending_setup'::text
+• Coluna setup_completed_at: timestamptz; NULL (marcador técnico de setup concluído)
 • FK: plan_id → plans; owner_user_id → auth.users
 1.1.2 Índices
 • accounts_name_gin_idx (GIN to_tsvector portuguese, name)
@@ -108,9 +109,10 @@
 • account_id, account_key, account_name, account_status
 • user_id, member_role, member_status
 • allow, reason
+• account_setup_completed_at
 2.1.3 Assunções e filtros
-• allow=true só para conta active/trial/pending_setup + membro ativo
-• DRIFT (caso H): trial está hardcoded na view, mas accounts.status não permite trial (CHECK não inclui); remover quando existir billing/entitlements
+• allow=true só para conta active/pending_setup + membro ativo
+• allow é boolean estrito (COALESCE(..., false)) — nunca NULL
 2.1.4 Segurança
 • security_invoker = true
 2.1.5 Consumidores
@@ -238,6 +240,9 @@
 • DRIFT (caso H): AccountStatus inclui trial, mas accounts.status não aceita trial; alinhar quando o caso H remover trial da view e modelar trial via plano/assinatura
 
 99. Changelog
+v1.0.3 (30/01/2026) — E10.4.1: marcador de setup concluído + alinhamento v_access_context_v2
+• accounts: adicionada coluna setup_completed_at (timestamptz, nullable).
+• v_access_context_v2: expõe account_setup_completed_at; remove trial do allowlist; endurece allow para nunca NULL (COALESCE(..., false)).
 v1.0.2 (27/01/2026) — F2: RPC ensure_first_account_for_current_user (auto 1ª conta)
 • Adicionada a RPC public.ensure_first_account_for_current_user() ao contrato (retorna account_id, account_key).
 • Atualizada a allowlist SECURITY DEFINER para incluir ensure_first_account_for_current_user.
