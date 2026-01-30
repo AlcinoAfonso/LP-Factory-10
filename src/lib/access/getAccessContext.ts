@@ -77,6 +77,7 @@ export async function getAccessContext(input?: Input): Promise<AccessContextLega
     subdomain: pair.account.subdomain,
     domain: null,
     status: pair.account.status,
+    setup_completed_at: pair.account.setupCompletedAt ?? null,
   } as any);
 
   const member: MemberInfo = mapMemberFromDB({
