@@ -18,6 +18,9 @@ export type AccessAccount = {
   subdomain: string;
   name?: string;
   status: AccountStatus;
+
+  /** E10.4.1 infra: marcador para subestados dentro de pending_setup (NULL vs NOT NULL) */
+  setupCompletedAt?: string | null;
 };
 
 export type AccessMember = {
@@ -40,10 +43,15 @@ type RowV2 = {
   account_key: string; // subdomain
   account_name?: string | null;
   account_status: string;
+  account_setup_completed_at?: string | null;
+
   user_id: string | null;
   member_role: string | null;
   member_status: string | null;
+
+  // view foi hardenada para boolean, mas mantemos compat
   allow: boolean | null;
+
   reason: string | null; // 'account_blocked' | 'member_inactive' | 'no_membership' | null
 };
 
@@ -103,6 +111,7 @@ export async function readAccessContext(subdomain: string): Promise<AccessContex
         "account_key",
         "account_name",
         "account_status",
+        "account_setup_completed_at",
         "user_id",
         "member_role",
         "member_status",
@@ -165,6 +174,7 @@ export async function readAccessContext(subdomain: string): Promise<AccessContex
         subdomain: row.account_key,
         name: row.account_name || row.account_key,
         status: row.account_status as AccountStatus,
+        setupCompletedAt: row.account_setup_completed_at ?? null,
       },
       member: {
         user_id: row.user_id as string,
@@ -185,6 +195,7 @@ export async function readAccessContext(subdomain: string): Promise<AccessContex
       subdomain: row.account_key,
       name: row.account_name || row.account_key,
       status: row.account_status as AccountStatus,
+      setupCompletedAt: row.account_setup_completed_at ?? null,
     },
     member: {
       user_id: row.user_id as string,
