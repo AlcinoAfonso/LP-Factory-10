@@ -18,6 +18,7 @@ export type AccessAccount = {
   subdomain: string;
   name?: string;
   status: AccountStatus;
+
   /** E10.4.1 infra: marcador para subestados dentro de pending_setup (NULL vs NOT NULL) */
   setupCompletedAt?: string | null;
 };
@@ -41,12 +42,16 @@ type RowV2 = {
   account_id: string;
   account_key: string; // subdomain
   account_name?: string | null;
-  account_setup_completed_at?: string | null;
   account_status: string;
+  account_setup_completed_at?: string | null;
+
   user_id: string | null;
   member_role: string | null;
   member_status: string | null;
+
+  // view foi hardenada para boolean, mas mantemos compat
   allow: boolean | null;
+
   reason: string | null; // 'account_blocked' | 'member_inactive' | 'no_membership' | null
 };
 
@@ -105,8 +110,8 @@ export async function readAccessContext(subdomain: string): Promise<AccessContex
         "account_id",
         "account_key",
         "account_name",
-        "account_setup_completed_at",
         "account_status",
+        "account_setup_completed_at",
         "user_id",
         "member_role",
         "member_status",
@@ -244,32 +249,32 @@ async function ensureFirstAccountForCurrentUserRpc(
 }
 
 /**
- * E10.4.1 não altera este fluxo — mantido aqui por contexto.
- * Resolve primeira conta do usuário:
- * 1) RPC ensure_first_account_for_current_user()
- * 2) fallback: primeira conta allow=true na v_access_context_v2
- * 3) fallback: se existir qualquer vínculo, não cria conta (fora do escopo)
+ * Retorna subdomain da primeira conta ativa do usuário autenticado.
+ * Usado para redirect em /a/home (C0.2).
+ * Server-only. Fail-closed (erro ou sem conta → null).
+ *
+ * F2: se não houver vínculo (account_users), tenta auto-criar 1ª conta (pending_setup) + owner/active via RPC.
+ * Importante: NÃO cria conta se já existir qualquer vínculo (mesmo bloqueado/pending/inactive).
  */
-export async function ensureFirstAccountForCurrentUser(): Promise<string | null> {
+export async function getFirstAccountForCurrentUser(): Promise<string | null> {
   const t0 = Date.now();
   const supabase = await createClient();
 
+  // 1) Obter user_id da sessão (interno, não exposto à UI)
   const {
     data: { user },
+    error: authError,
   } = await supabase.auth.getUser();
 
-  if (!user?.id) {
+  if (authError || !user) {
     await logDecision({
-      decision: "deny",
-      reason: "no_membership_or_invalid_account",
+      decision: "null",
+      reason: "adapter_error_auth",
+      source: "adapter_error",
       latency_ms: Date.now() - t0,
     });
     return null;
   }
-
-  // 1) RPC (preferencial)
-  const ensured = await ensureFirstAccountForCurrentUserRpc(supabase, user.id, t0);
-  if (ensured?.account_key) return ensured.account_key;
 
   // 2) Preferência: primeira conta liberada (allow=true) pela v_access_context_v2
   const { data: allowedRow, error: allowedErr } = await supabase
@@ -315,7 +320,7 @@ export async function ensureFirstAccountForCurrentUser(): Promise<string | null>
   if (memErr) {
     await logDecision({
       decision: "null",
-      reason: "adapter_error_read_any_membership",
+      reason: "adapter_error_read_membership",
       source: "adapter_error",
       user_id: user.id,
       latency_ms: Date.now() - t0,
@@ -326,20 +331,33 @@ export async function ensureFirstAccountForCurrentUser(): Promise<string | null>
   if (anyMembership) {
     await logDecision({
       decision: "deny",
-      reason: "no_membership_or_invalid_account",
+      reason: "denied_by_view",
       user_id: user.id,
+      account_id: (anyMembership as any).account_id ?? null,
+      role: (anyMembership as any).role ?? null,
       latency_ms: Date.now() - t0,
     });
     return null;
   }
 
-  // Fora do escopo: criação automática adicional
+  // 4) Sem vínculo: F2 cria 1ª conta + vínculo via RPC (quando existir no BD)
   await logDecision({
     decision: "deny",
-    reason: "no_membership_or_invalid_account",
+    reason: "no_membership",
     user_id: user.id,
     latency_ms: Date.now() - t0,
   });
 
-  return null;
+  const ensured = await ensureFirstAccountForCurrentUserRpc(supabase, user.id, t0);
+  if (!ensured) return null;
+
+  await logDecision({
+    decision: "allow",
+    reason: "ok",
+    user_id: user.id,
+    account_id: ensured.account_id,
+    latency_ms: Date.now() - t0,
+  });
+
+  return ensured.account_key;
 }
