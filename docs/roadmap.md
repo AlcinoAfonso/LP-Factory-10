@@ -1,8 +1,8 @@
 0. Introdução
 
 0.1 Cabeçalho
-• Data: 27/01/2026
-• Versão: v1.5.8
+• Data: 30/01/2026
+• Versão: v1.5.9
 0.2 Contrato do documento (parseável)
 • Este documento registra o roadmap e o histórico de execução por marcos (E1, E2, ...).
 0.2.1 TIPO_DO_DOCUMENTO
@@ -271,7 +271,8 @@
 
 9.8 Compatibilidade
 • Billing Engine é o núcleo técnico que garante coerência entre Conta Consultiva (E7), Admin (E12) e Account Dashboard (E10)
-9.8.1 Trial como entitlements (billing) e remoção do trial hardcoded
+9.8.1 Trial como entitlements (billing)
+• Nota: a remoção do hardcode/allowlist de trial no Access Context (public.v_access_context_v2) foi concluída no E10.4.1; entitlements de trial/plano permanecem neste marco (E9.8.1).
 
 10. E10 — Account Dashboard (UX)
 
@@ -312,6 +313,18 @@
 • Componentes desacoplados e fáceis de manter
 10.3.7 Próxima revisão
 • UX Partner Dashboard
+
+10.4 Onboarding mínimo + Vitrine (pending_setup)
+• Status: Briefing
+• Dependências: E10.4.1 (infra do marcador setup_completed_at), E9.8.1 (trial/entitlements)
+• Nota: E10.4 usará account_setup_completed_at para diferenciar subestados de pending_setup (A: NULL / B: NOT NULL).
+10.4.1 Indicador de setup concluído (infra)
+• Status: Concluído (30/01/2026)
+• Implementado:
+• Marcador por conta accounts.setup_completed_at (timestamptz, NULL)
+• Exposição no Access Context: account_setup_completed_at
+• Ajuste não-regressão no Access Context: hardening de allow (boolean, nunca NULL) e remoção de trial do allowlist
+• Migração: supabase/migrations/0003__accounts_setup_completed_at.sql
 
 11. E11 — Gestão de Usuários e Convites
 
@@ -498,6 +511,10 @@
 • E10: refinamento da vitrine `pending_setup` (mensagens/CTAs/limites detalhados) sem mudar lifecycle.
 
 99. Changelog
+v1.5.9 (30/01/2026)
+• Adicionado E10.4.1 (infra do marcador setup_completed_at) como pré-requisito para diferenciar subestados de pending_setup.
+• Ajustado 9.8.1 para manter foco em entitlements; remoção do hardcode/allowlist de trial no Access Context foi concluída em E10.4.1.
+• Adicionado placeholder do E10.4 (Briefing) com dependências (E10.4.1, E9.8.1).
 v1.5.8 (27/01/2026)
 • Adicionado E16 (Accounts) para consolidar lifecycle de accounts.status (definições, transições e UX/CTAs), com referências para docs/base-tecnica.md e docs/schema.md (anti-drift).
 • Ajustado E4.2 para remover redundâncias e focar no fluxo/UX do gateway e roteamentos, adicionando subitem de referências numerado.
