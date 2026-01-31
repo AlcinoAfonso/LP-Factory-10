@@ -1,8 +1,8 @@
 0. Introdução
 
 0.1 Cabeçalho
-• Data: 30/01/2026
-• Versão: v1.5.9
+• Data: 31/01/2026
+• Versão: v1.5.10
 0.2 Contrato do documento (parseável)
 • Este documento registra o roadmap e o histórico de execução por marcos (E1, E2, ...).
 0.2.1 TIPO_DO_DOCUMENTO
@@ -316,8 +316,8 @@
 
 10.4 Onboarding mínimo + Vitrine (pending_setup)
 • Status: Briefing
-• Dependências: E10.4.1 (infra do marcador setup_completed_at), E9.8.1 (trial/entitlements)
-• Nota: E10.4 usará account_setup_completed_at para diferenciar subestados de pending_setup (A: NULL / B: NOT NULL).
+• Dependências: E10.4.1 (infra do marcador setup_completed_at), E10.4.2 (regra v0 setup concluído), E10.4.3 (política do marcador), E10.4.4 (matriz preparo vs produtivo + enforcement), E9.8.1 (trial/entitlements)
+• Nota: usar account_setup_completed_at para diferenciar subestados de pending_setup (A: NULL / B: NOT NULL).
 10.4.1 Indicador de setup concluído (infra)
 • Status: Concluído (30/01/2026)
 • Implementado:
@@ -325,6 +325,25 @@
 • Exposição no Access Context: account_setup_completed_at
 • Ajuste não-regressão no Access Context: hardening de allow (boolean, nunca NULL) e remoção de trial do allowlist
 • Migração: supabase/migrations/0003__accounts_setup_completed_at.sql
+10.4.2 Setup concluído (MVP v0 — Exec)
+• Status: Concluído (31/01/2026)
+• Regra (1 linha): setup concluído v0 = “Salvar/Confirmar” + accounts.name não vazio + accounts.name ≠ 'Conta ' || subdomain.
+• Set do marcador: chamar setSetupCompletedAtIfNull(accountId) somente no evento, se regra ok.
+• QA mínimo: incompleto (não seta) / completo (pode setar) / reentrada (idempotente).
+• Assunção a validar: padrão provisório do nome da conta ('Conta ' || subdomain) é o padrão real de criação.
+• Pendência: abrir E10.4.5 (dados mínimos v1: nicho/WhatsApp/outros).
+10.4.3 Política do marcador setup_completed_at (MVP)
+• Status: Briefing
+• Objetivo: definir política operacional do marcador (set/re-set/unset) no MVP, sem mexer em accounts.status.
+• Saída esperada: política explícita (ex.: “once set, never unset”) + invariantes + QA conceitual mínimo.
+10.4.4 Matriz “preparação vs produtivo” + enforcement
+• Status: Briefing
+• Objetivo: fechar lista de ações/rotas produtivas vs preparação e onde bloquear no servidor (SSR + ações), para não depender só de UI.
+• Saída esperada: matriz fechada + pontos de enforcement + QA mínimo (não-regressão).
+10.4.5 Onboarding: dados mínimos v1 (nicho/WhatsApp e outros)
+• Status: Briefing
+• Objetivo: definir obrigatórios/opcionais (v1) e o contrato de armazenamento/validações, sem inventar campos.
+• Escopo: contrato de armazenamento + validações + impactos no onboarding (sem mexer em accounts.status).
 
 11. E11 — Gestão de Usuários e Convites
 
@@ -511,6 +530,11 @@
 • E10: refinamento da vitrine `pending_setup` (mensagens/CTAs/limites detalhados) sem mudar lifecycle.
 
 99. Changelog
+v1.5.10 (31/01/2026)
+• Adicionado E10.4.2 (setup concluído v0 — regra executável) com evento “Salvar/Confirmar” e chamada idempotente do marcador.
+• Adicionado E10.4.3 (Briefing) para política do marcador setup_completed_at (MVP).
+• Adicionado E10.4.4 (Briefing) para matriz “preparação vs produtivo” + enforcement no servidor.
+• Adicionado E10.4.5 (Briefing) para dados mínimos v1 (nicho/WhatsApp/outros) com contrato de armazenamento/validações.
 v1.5.9 (30/01/2026)
 • Adicionado E10.4.1 (infra do marcador setup_completed_at) como pré-requisito para diferenciar subestados de pending_setup.
 • Ajustado 9.8.1 para manter foco em entitlements; remoção do hardcode/allowlist de trial no Access Context foi concluída em E10.4.1.
