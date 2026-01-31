@@ -1,41 +1,53 @@
 {
-"meta": {
-"datetime": "27/01/2026 12:42",
-"origin": "ajuste pontual",
-"scope": "documentacao",
-"execution_mode": "github_actions",
-"target_doc": "docs/roadmap.md",
-"warnings": []
-},
-"ops": [
-{
-"op": "replace_section",
-"doc_path": "docs/roadmap.md",
-"target": "0.1",
-"mode": "shallow",
-"content": "0.1 Cabe\u00e7alho\n\u2022 Data: 27/01/2026\n\u2022 Vers\u00e3o: v1.5.7\n"
-},
-{
-"op": "replace_section",
-"doc_path": "docs/roadmap.md",
-"target": "4.2",
-"mode": "shallow",
-"content": "4.2 Implementado\n\u2022 Gateway /a/home (p\u00fablico sem sess\u00e3o; com sess\u00e3o resolve conta; sem membership \u2192 auto-criar 1\u00aa conta pending_setup e seguir para /a/[account] em modo vitrine)\n\u2022 CTA Criar conta no /a/home (sem sess\u00e3o) navega para /auth/sign-up (remove placeholder/modal)\n\u2022 Redirect /a \u2192 /a/home\n\u2022 Rota privada /a/[account]\n\u2022 Middleware + SSR gate (getAccessContext)\n\u2022 Persist\u00eancia last account via cookie (defini\u00e7\u00e3o em /a/[account] e leitura em /a/home)\n\u2022 P\u00e1gina neutra /auth/confirm/info\n\u2022 Bloqueio por membership no gate SSR com rotas dedicadas: /auth/confirm/pending | /auth/confirm/inactive | /auth/confirm/revoked\n\u2022 Fallback de conta bloqueada diferenciado por status quando FORBIDDEN_ACCOUNT:\n\u2022 inactive \u2192 /auth/confirm/account/inactive\n\u2022 suspended \u2192 /auth/confirm/account/suspended\n\u2022 fallback \u2192 /auth/confirm/account\n"
-},
-{
-"op": "insert_after_heading",
-"doc_path": "docs/roadmap.md",
-"heading": "99. Changelog",
-"content": "v1.5.7 (27/01/2026) \u2014 F1.1: CTA Criar conta no /a/home direciona para signup\n\u2022 E4: registrado que o CTA Criar conta no /a/home (sem sess\u00e3o) navega para /auth/sign-up (remo\u00e7\u00e3o de placeholder/modal).\n"
-}
-],
-"rules": {
-"fail_if_anchor_missing": true,
-"fail_if_target_missing": true,
-"fail_if_section_already_exists_on_insert": true,
-"fail_if_ambiguous_match": true,
-"no_renumber": true,
-"no_reformat": true,
-"no_out_of_scope_changes": true
-}
+  "meta": {
+    "datetime": "31/01/2026 13:00",
+    "origin": "ajuste pontual",
+    "scope": "documentacao",
+    "execution_mode": "github_actions",
+    "target_doc": "docs/roadmap.md",
+    "warnings": []
+  },
+  "ops": [
+    {
+      "op": "replace_section",
+      "doc_path": "docs/roadmap.md",
+      "target": "0.1",
+      "mode": "shallow",
+      "content": "0.1 Cabeçalho\n• Data: 31/01/2026\n• Versão: v1.5.11\n"
+    },
+    {
+      "op": "replace_section",
+      "doc_path": "docs/roadmap.md",
+      "target": "9.8.1",
+      "mode": "shallow",
+      "content": "9.8.1 Trial como entitlements (billing)\n• Status: Concluído (31/01/2026) — definição\n• Definição (MVP)\n• Prazo default: 7 dias (flexível em contas consultivas)\n• Elegibilidade: flexível (promoções por período/nicho/contas específicas)\n• Início: somente após setup concluído (referência: E10.4.2)\n• Fim: por prazo; pode ser renovado\n• Pós-expiração: `active → inactive` (coerente com E16/Op4)\n• Contrato mínimo do “sinal comercial” (entitlement) consumido por SSR/gate/UX (sem amarrar em BD)\n• `commercial.kind`: `trial | plan | none`\n• `commercial.state`: `active | expired`\n• `commercial.started_at`, `commercial.expires_at`, `commercial.promo`\n• Proibição (anti-drift): não tratar `trial` como `accounts.status` (nem enum/allowlist/UI de status)\n• Nota: remoção do hardcode/allowlist de trial no Access Context (public.v_access_context_v2) foi concluída em E10.4.1; entitlements de trial/plano permanecem neste marco (E9.8.1)\n• Dependência operacional: se exigir rotina/job para expiração, registrar em E12.x (sem implementar aqui)\n"
+    },
+    {
+      "op": "insert_after_section",
+      "doc_path": "docs/roadmap.md",
+      "anchor": "9.8.1",
+      "content": "9.8.2 Motivos de `inactive` para marketing (trial_expired vs churn)\n• Status: Briefing\n• Objetivo: distinguir pelo menos `trial_expired` vs `churn` (opcional `payment_failed`) de forma consultável para campanhas diferentes\n• Observação: “motivo” deve viver na camada comercial/entitlements (não em `accounts.status`)\n"
+    },
+    {
+      "op": "insert_after_section",
+      "doc_path": "docs/roadmap.md",
+      "anchor": "9.8.2",
+      "content": "9.8.3 Exec: Remover drift `trial` do runtime + docs\n• Status: Briefing\n• Objetivo: remover `trial` de status/tipos/allowlists/UX no runtime e alinhar docs ao estado final do E9.8.1 (sem tocar BD)\n• Governança: múltiplos arquivos/runtime → feature branch + QA gate/SSR; sem migrations por padrão\n"
+    },
+    {
+      "op": "insert_after_heading",
+      "doc_path": "docs/roadmap.md",
+      "heading": "99. Changelog",
+      "content": "v1.5.11 (31/01/2026)\n• Atualizado 9.8.1 com definição do trial como entitlement (início pós-setup; expiração `active → inactive`) e contrato mínimo do sinal comercial consumido por SSR/gate/UX.\n• Adicionado 9.8.2 (Briefing) para motivos de `inactive` (trial_expired vs churn) para segmentação de marketing.\n• Adicionado 9.8.3 (Briefing) para execução: remoção do drift `trial` no runtime + alinhamento de docs ao estado final.\n"
+    }
+  ],
+  "rules": {
+    "fail_if_anchor_missing": true,
+    "fail_if_target_missing": true,
+    "fail_if_section_already_exists_on_insert": true,
+    "fail_if_ambiguous_match": true,
+    "no_renumber": true,
+    "no_reformat": true,
+    "no_out_of_scope_changes": true
+  }
 }
