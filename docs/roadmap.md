@@ -2,7 +2,7 @@
 
 0.1 Cabeçalho
 • Data: 31/01/2026
-• Versão: v1.5.10
+• Versão: v1.5.11
 0.2 Contrato do documento (parseável)
 • Este documento registra o roadmap e o histórico de execução por marcos (E1, E2, ...).
 0.2.1 TIPO_DO_DOCUMENTO
@@ -272,8 +272,28 @@
 9.8 Compatibilidade
 • Billing Engine é o núcleo técnico que garante coerência entre Conta Consultiva (E7), Admin (E12) e Account Dashboard (E10)
 9.8.1 Trial como entitlements (billing)
-• Nota: a remoção do hardcode/allowlist de trial no Access Context (public.v_access_context_v2) foi concluída no E10.4.1; entitlements de trial/plano permanecem neste marco (E9.8.1).
-
+• Status: Concluído (31/01/2026) — definição
+• Definição (MVP)
+• Prazo default: 7 dias (flexível em contas consultivas)
+• Elegibilidade: flexível (promoções por período/nicho/contas específicas)
+• Início: somente após setup concluído (referência: E10.4.2)
+• Fim: por prazo; pode ser renovado
+• Pós-expiração: `active → inactive` (coerente com E16/Op4)
+• Contrato mínimo do “sinal comercial” (entitlement) consumido por SSR/gate/UX (sem amarrar em BD)
+• `commercial.kind`: `trial | plan | none`
+• `commercial.state`: `active | expired`
+• `commercial.started_at`, `commercial.expires_at`, `commercial.promo`
+• Proibição (anti-drift): não tratar `trial` como `accounts.status` (nem enum/allowlist/UI de status)
+• Nota: remoção do hardcode/allowlist de trial no Access Context (public.v_access_context_v2) foi concluída em E10.4.1; entitlements de trial/plano permanecem neste marco (E9.8.1)
+• Dependência operacional: se exigir rotina/job para expiração, registrar em E12.x (sem implementar aqui)
+9.8.2 Motivos de `inactive` para marketing (trial_expired vs churn)
+• Status: Briefing
+• Objetivo: distinguir pelo menos `trial_expired` vs `churn` (opcional `payment_failed`) de forma consultável para campanhas diferentes
+• Observação: “motivo” deve viver na camada comercial/entitlements (não em `accounts.status`)
+9.8.3 Exec: Remover drift `trial` do runtime + docs
+• Status: Briefing
+• Objetivo: remover `trial` de status/tipos/allowlists/UX no runtime e alinhar docs ao estado final do E9.8.1 (sem tocar BD)
+• Governança: múltiplos arquivos/runtime → feature branch + QA gate/SSR; sem migrations por padrão
 10. E10 — Account Dashboard (UX)
 
 10.1 Status
@@ -530,6 +550,10 @@
 • E10: refinamento da vitrine `pending_setup` (mensagens/CTAs/limites detalhados) sem mudar lifecycle.
 
 99. Changelog
+v1.5.11 (31/01/2026)
+• Atualizado 9.8.1 com definição do trial como entitlement (início pós-setup; expiração `active → inactive`) e contrato mínimo do sinal comercial consumido por SSR/gate/UX.
+• Adicionado 9.8.2 (Briefing) para motivos de `inactive` (trial_expired vs churn) para segmentação de marketing.
+• Adicionado 9.8.3 (Briefing) para execução: remoção do drift `trial` no runtime + alinhamento de docs ao estado final.
 v1.5.10 (31/01/2026)
 • Adicionado E10.4.2 (setup concluído v0 — regra executável) com evento “Salvar/Confirmar” e chamada idempotente do marcador.
 • Adicionado E10.4.3 (Briefing) para política do marcador setup_completed_at (MVP).
