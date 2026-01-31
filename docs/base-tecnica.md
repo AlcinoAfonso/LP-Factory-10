@@ -1,8 +1,8 @@
 0. Introdução
 0.1. Cabeçalho
 • Documento: Base Técnica LP Factory 10
-• Versão: v2.0.4
-• Data: 30/01/2026
+• Versão: v2.0.5
+• Data: 31/01/2026
 0.2 Contrato do documento (parseável)
 • Esta seção define o que é relevante atualizar e como escrever.
 0.2.1 TIPO_DO_DOCUMENTO
@@ -179,11 +179,14 @@
 • Decide se o usuário pode acessar uma conta (allow + reason)
 • Usado em SSR (getAccessContext), AccessProvider e AccountSwitcher
 5.1.2 Persistência SSR (cookie last_account_subdomain)
-• Definido em /a/[account]/layout.tsx somente quando allow=true, membro ativo e conta em status active|pending_setup.
-• Atributos obrigatórios: HttpOnly; Secure; SameSite=Lax; Max-Age=7776000; Path=/.
-• Leitura do cookie ocorre no SSR do gateway /a/home para redirecionar /a/home → /a/{account_slug}.
-• Limpeza do cookie ocorre via /a/home?clear_last=1 (middleware zera Max-Age=0).
-• last_account_subdomain só é definido em /a/{account_slug} após allow; /a/home não define cookie.
+• Cookie HttpOnly de “última conta”, usado pelo gateway /a/home (SSR) para redirecionar /a/home → /a/{account_slug}.
+• Escrita (best-effort) em middleware.ts para GET /a/{account_slug} (exceto 'home'), somente em navegação real (sem prefetch).
+• Escrita (autoritativa) em /a/[account]/layout.tsx somente quando ctx existe, ctx.blocked=false e houver subdomain canônico (ctx.account.subdomain).
+• Atributos obrigatórios: HttpOnly; SameSite=Lax; Max-Age=7776000; Path=/.
+• Secure: true em produção (NODE_ENV=production).
+• Leitura do cookie ocorre no SSR do gateway /a/home.
+• Limpeza do cookie: /a/home?clear_last=1 (middleware zera Max-Age=0) e, em bloqueio, o gate SSR de /a/[account] deleta cookie (best-effort) antes de redirecionar.
+• /a/home não define cookie (apenas lê; clear_last=1 ignora cookie no SSR e delega limpeza ao middleware).
 5.2 Adapters, Guards, Providers
 5.2.1 Adapters
 • accountAdapter (PATH: src/lib/access/adapters/accountAdapter.ts): createFromToken(tokenId, actorId) → RPC create_account_with_owner; renameAndActivate(accountId, name, slug) com .maxAffected(1); normalizeAccountStatus não faz fallback para active em status desconhecido.
@@ -288,6 +291,9 @@ Regra: qualquer novo arquivo em app/auth/ não pode importar @supabase/* até se
 • Adapters vNext: seguir 3.14
 
 99. Changelog
+v2.0.5 (31/01/2026) — Correções de contrato vs implementação (cookie SSR + referência a trial)
+• Corrigida 5.1.2: persistência do cookie last_account_subdomain reflete runtime (middleware best-effort em /a/{slug} sem prefetch + escrita autoritativa no gate SSR com ctx.blocked=false e subdomain canônico; Secure apenas em produção; TTL 90 dias; limpeza via clear_last=1 e delete em bloqueio).
+• Retificada a referência do changelog v2.0.4 sobre “remoção de trial” no runtime: o repo ainda contém trial em tipos/adapter (drift de runtime), embora o contrato de access (v_access_context_v2) permaneça sem trial.
 v2.0.4 (30/01/2026) — E10.4.1: alinhamento do contrato de status (sem trial no access)
 • Removidas referências a 'trial' como status de conta em 5.1.2 (cookie SSR) e 5.2.1 (accountAdapter), alinhando ao contrato active|pending_setup.
 v2.0.3 (27/01/2026) — E4.2 + E8.2: auto 1ª conta (pending_setup) quando usuário não tem membership
