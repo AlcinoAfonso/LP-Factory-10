@@ -1,8 +1,8 @@
 0. Introdução
 
 0.1 Cabeçalho
-• Data da última atualização: 30/01/2026
-• Documento: LP Factory 10 — Schema (DB Contract) v1.0.3
+• Data da última atualização: 31/01/2026
+• Documento: LP Factory 10 — Schema (DB Contract) v1.0.4
 0.2 Contrato do documento (parseável)
 • Esta seção define o que é relevante atualizar e como escrever.
 0.2.1 TIPO_DO_DOCUMENTO
@@ -237,9 +237,12 @@
 • AccountStatus: active | inactive | suspended | pending_setup | trial
 • MemberStatus: pending | active | inactive | revoked
 • MemberRole: owner | admin | editor | viewer
-• DRIFT (caso H): AccountStatus inclui trial, mas accounts.status não aceita trial; alinhar quando o caso H remover trial da view e modelar trial via plano/assinatura
+• DRIFT: accounts.status não aceita trial (CHECK accounts_status_chk) e, no estado atual, não há ocorrência de trial em definições de views. O runtime ainda inclui trial em AccountStatus (ver PATH) e deve ser tratado como drift a remover no repo.
 
 99. Changelog
+v1.0.4 (31/01/2026) — Drift trial: escopo do schema (DB) vs runtime
+• Clarificado: no estado atual do BD, accounts.status não aceita trial (CHECK) e as definições atuais de views não contêm trial; o drift remanescente é de runtime/tipos.
+• Atualizada a seção 5 (Tipos canônicos) para manter o registro do drift restrito ao contrato do BD e ao apontamento do PATH no runtime.
 v1.0.3 (30/01/2026) — E10.4.1: marcador de setup concluído + alinhamento v_access_context_v2
 • accounts: adicionada coluna setup_completed_at (timestamptz, nullable).
 • v_access_context_v2: expõe account_setup_completed_at; remove trial do allowlist; endurece allow para nunca NULL (COALESCE(..., false)).
