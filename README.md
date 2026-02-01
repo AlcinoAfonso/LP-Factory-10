@@ -51,8 +51,8 @@
 • Base técnica: docs/base-tecnica.md
 • Schema (DB contract): docs/schema.md
 • Inventário do repositório: docs/repo-inv.md → defasado (não usar como fonte principal)
-• Fluxos (legado): docs/fluxo.md → defasado / descontinuado (não usar; será substituído)
-• Fluxos (atual): docs/fluxo2.md → conversa apenas com docs/roadmap.md
+• Fluxos (legado): docs/fluxos.md → defasado / descontinuado (não usar; será substituído)
+• Fluxos (atual): docs/fluxos2.md → conversa apenas com docs/roadmap.md
 
 8. Como trabalhamos (para evitar suposições erradas)
 8.1. GitHub
