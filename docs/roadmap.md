@@ -1,8 +1,8 @@
 0. Introdução
 
 0.1 Cabeçalho
-• Data: 31/01/2026
-• Versão: v1.5.11
+• Data: 01/02/2026
+• Versão: v1.5.12
 0.2 Contrato do documento (parseável)
 • Este documento registra o roadmap e o histórico de execução por marcos (E1, E2, ...).
 0.2.1 TIPO_DO_DOCUMENTO
@@ -334,10 +334,12 @@
 10.3.7 Próxima revisão
 • UX Partner Dashboard
 
-10.4 Onboarding mínimo + Vitrine (pending_setup)
+10.4 Onboarding mínimo + Vitrine (pending_setup — setup incompleto)
 • Status: Briefing
-• Dependências: E10.4.1 (infra do marcador setup_completed_at), E10.4.2 (regra v0 setup concluído), E10.4.3 (política do marcador), E10.4.4 (matriz preparo vs produtivo + enforcement), E9.8.1 (trial/entitlements)
-• Nota: usar account_setup_completed_at para diferenciar subestados de pending_setup (A: NULL / B: NOT NULL).
+• Escopo: UX/CTAs para conta em pending_setup quando account_setup_completed_at IS NULL (setup ainda não concluído).
+• Dependências: E10.4.1 (infra do marcador setup_completed_at), E10.4.2 (regra v0 setup concluído), E10.4.3 (política do marcador), E10.4.4 (dados mínimos v1), E9.8.1 (trial/entitlements — apenas CTA/roteamento).
+• Nota: ao setar setup_completed_at, a conta continua pending_setup e passa ao fluxo 10.5 (pós-setup sem plano/trial).
+
 10.4.1 Indicador de setup concluído (infra)
 • Status: Concluído (30/01/2026)
 • Implementado:
@@ -345,25 +347,35 @@
 • Exposição no Access Context: account_setup_completed_at
 • Ajuste não-regressão no Access Context: hardening de allow (boolean, nunca NULL) e remoção de trial do allowlist
 • Migração: supabase/migrations/0003__accounts_setup_completed_at.sql
+
 10.4.2 Setup concluído (MVP v0 — Exec)
 • Status: Concluído (31/01/2026)
 • Regra (1 linha): setup concluído v0 = “Salvar/Confirmar” + accounts.name não vazio + accounts.name ≠ 'Conta ' || subdomain.
 • Set do marcador: chamar setSetupCompletedAtIfNull(accountId) somente no evento, se regra ok.
 • QA mínimo: incompleto (não seta) / completo (pode setar) / reentrada (idempotente).
 • Assunção a validar: padrão provisório do nome da conta ('Conta ' || subdomain) é o padrão real de criação.
-• Pendência: abrir E10.4.5 (dados mínimos v1: nicho/WhatsApp/outros).
+• Pendência: abrir E10.4.4 (dados mínimos v1: nicho/WhatsApp/outros).
+
 10.4.3 Política do marcador setup_completed_at (MVP)
 • Status: Briefing
 • Objetivo: definir política operacional do marcador (set/re-set/unset) no MVP, sem mexer em accounts.status.
 • Saída esperada: política explícita (ex.: “once set, never unset”) + invariantes + QA conceitual mínimo.
-10.4.4 Matriz “preparação vs produtivo” + enforcement
-• Status: Briefing
-• Objetivo: fechar lista de ações/rotas produtivas vs preparação e onde bloquear no servidor (SSR + ações), para não depender só de UI.
-• Saída esperada: matriz fechada + pontos de enforcement + QA mínimo (não-regressão).
-10.4.5 Onboarding: dados mínimos v1 (nicho/WhatsApp e outros)
+
+10.4.4 Onboarding: dados mínimos v1 (nicho/WhatsApp e outros)
 • Status: Briefing
 • Objetivo: definir obrigatórios/opcionais (v1) e o contrato de armazenamento/validações, sem inventar campos.
 • Escopo: contrato de armazenamento + validações + impactos no onboarding (sem mexer em accounts.status).
+
+10.5 Vitrine pós-setup sem plano/trial (pending_setup — setup concluído)
+• Status: Briefing
+• Escopo: UX/CTAs para conta em pending_setup quando account_setup_completed_at IS NOT NULL (setup ok; falta ativar trial/plano).
+• Dependências: E10.4.1 (exposição do marcador no Access Context), E10.5.1 (matriz preparação vs produtivo + enforcement), E9.8.1 (trial/entitlements).
+• Nota: não muda accounts.status; active permanece “serviço ligado (trial/plano)”.
+
+10.5.1 Matriz “preparação vs produtivo” + enforcement
+• Status: Briefing
+• Objetivo: fechar lista de ações/rotas produtivas vs preparação e onde bloquear no servidor (SSR + ações), para não depender só de UI.
+• Saída esperada: matriz fechada + pontos de enforcement + QA mínimo (não-regressão).
 
 11. E11 — Gestão de Usuários e Convites
 
@@ -550,6 +562,12 @@
 • E10: refinamento da vitrine `pending_setup` (mensagens/CTAs/limites detalhados) sem mudar lifecycle.
 
 99. Changelog
+v1.5.12 (01/02/2026)
+• Reestruturado o fluxo pending_setup por subestado via account_setup_completed_at, separando 10.4 (setup incompleto: IS NULL) e 10.5 (pós-setup sem plano/trial: IS NOT NULL).
+• Atualizado 10.4 para focar em UX/CTAs do subestado “setup incompleto” e registrar a transição para 10.5 ao setar setup_completed_at (sem mudar accounts.status).
+• Registrados 10.4.1 e 10.4.2 como Concluídos (infra do marcador + regra v0 executável de setup concluído), com dependências e pendência explícita de dados mínimos v1.
+• Mantidos como Briefing: 10.4.3 (política do marcador), 10.4.4 (dados mínimos v1: nicho/WhatsApp/outros) e criado 10.5.1 (matriz “preparação vs produtivo” + enforcement servidor).
+• Ajustadas dependências de 10.4 e 10.5 para incluir E9.8.1 apenas como referência de CTA/roteamento (sem implementar entitlements aqui).
 v1.5.11 (31/01/2026)
 • Atualizado 9.8.1 com definição do trial como entitlement (início pós-setup; expiração `active → inactive`) e contrato mínimo do sinal comercial consumido por SSR/gate/UX.
 • Adicionado 9.8.2 (Briefing) para motivos de `inactive` (trial_expired vs churn) para segmentação de marketing.

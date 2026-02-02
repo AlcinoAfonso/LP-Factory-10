@@ -46,11 +46,13 @@
 • Decidir entre “cliente como owner desde o início” vs “LP Factory monta primeiro e faz handoff depois”.
 
 7. Documentos oficiais (fonte de verdade)
-• Como a IA deve interpretar/ajustar cada documento: ver seção `0.2` (Contrato do documento) no próprio arquivo.
-• Base técnica: `docs/base-tecnica.md`
-• Schema (DB contract): `docs/schema.md`
-• Inventário do repositório: `docs/repo-inv.md`
-• Roadmap: `docs/roadmap.md`
+• Como a IA deve interpretar/ajustar cada documento: ver seção 0.2 (Contrato do documento) no próprio arquivo.
+• Roadmap: docs/roadmap.md → conversa com todos os documentos oficiais abaixo (fonte de verdade por referência)
+• Base técnica: docs/base-tecnica.md
+• Schema (DB contract): docs/schema.md
+• Inventário do repositório: docs/repo-inv.md → defasado (não usar como fonte principal)
+• Fluxos (legado): docs/fluxos.md → defasado / descontinuado (não usar; será substituído)
+• Fluxos (atual): docs/fluxos2.md → conversa apenas com docs/roadmap.md
 
 8. Como trabalhamos (para evitar suposições erradas)
 8.1. GitHub
