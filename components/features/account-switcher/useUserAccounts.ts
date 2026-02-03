@@ -8,7 +8,7 @@ export type ApiUserAccount = {
   accountId: string;
   accountName: string | null;
   accountSubdomain: string;
-  accountStatus: string; // valores de status do runtime (sem 'trial')
+  accountStatus: string;
   memberRole: "owner" | "admin" | "editor" | "viewer";
   memberStatus: "pending" | "active" | "inactive" | "revoked";
 };
@@ -18,7 +18,7 @@ export type UserAccount = {
   accountId: string;
   accountName: string | null;
   accountSubdomain: string;
-  accountStatus: string; // manter string por segurança (UI), sem depender de union aqui
+  accountStatus: string;
   memberRole: ApiUserAccount["memberRole"];
   memberStatus: ApiUserAccount["memberStatus"];
 };
