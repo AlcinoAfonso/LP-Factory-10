@@ -8,8 +8,7 @@ export type AccountStatus =
   | 'active'
   | 'inactive'
   | 'suspended'
-  | 'pending_setup'
-  | 'trial'; // ✅ novo status compatível com Access Context e Supabase Update
+  | 'pending_setup';
 
 // account_users.account_users_status_check
 export type MemberStatus =
