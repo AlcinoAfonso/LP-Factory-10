@@ -21,6 +21,7 @@ export function Header({ userEmail }: HeaderProps) {
   const accountStatus = ctx?.account?.status ?? null;
 
   const safeUserEmail = userEmail ?? undefined;
+  const safeUserRole = role ?? undefined;
 
   if (variant === 'public') {
     return (
@@ -58,7 +59,7 @@ export function Header({ userEmail }: HeaderProps) {
           </Link>
 
           <div className="flex items-center gap-2">
-            <UserMenu userEmail={safeUserEmail} userRole={role} />
+            <UserMenu userEmail={safeUserEmail} userRole={safeUserRole} />
           </div>
         </div>
       </header>
@@ -87,7 +88,7 @@ export function Header({ userEmail }: HeaderProps) {
         </div>
 
         <div className="flex items-center gap-2">
-          <UserMenu userEmail={safeUserEmail} userRole={role} />
+          <UserMenu userEmail={safeUserEmail} userRole={safeUserRole} />
         </div>
       </div>
     </header>
@@ -99,8 +100,6 @@ function getVariant(ctx: any): HeaderVariant {
   if (!ctx?.account) return 'authenticated';
   return 'account';
 }
-
-/* ======= Auxiliar inline (chip de status) ======= */
 
 function StatusChip({ status }: { status?: string | null }) {
   const st = (status ?? 'inactive').toString();
