@@ -1,8 +1,8 @@
 0. Introdução
 
 0.1 Cabeçalho
-• Data: 01/02/2026
-• Versão: v1.5.12
+• Data: 02/02/2026
+• Versão: v1.5.13
 0.2 Contrato do documento (parseável)
 • Este documento registra o roadmap e o histórico de execução por marcos (E1, E2, ...).
 0.2.1 TIPO_DO_DOCUMENTO
@@ -286,14 +286,27 @@
 • Proibição (anti-drift): não tratar `trial` como `accounts.status` (nem enum/allowlist/UI de status)
 • Nota: remoção do hardcode/allowlist de trial no Access Context (public.v_access_context_v2) foi concluída em E10.4.1; entitlements de trial/plano permanecem neste marco (E9.8.1)
 • Dependência operacional: se exigir rotina/job para expiração, registrar em E12.x (sem implementar aqui)
-9.8.2 Motivos de `inactive` para marketing (trial_expired vs churn)
-• Status: Briefing
-• Objetivo: distinguir pelo menos `trial_expired` vs `churn` (opcional `payment_failed`) de forma consultável para campanhas diferentes
-• Observação: “motivo” deve viver na camada comercial/entitlements (não em `accounts.status`)
+9.8.2 Motivos de inactive para marketing (trial_expired vs churn)
+• Status: Concluído (definição)
+• Objetivo: segmentar inactive sem criar novo status (motivo vive na camada comercial).
+• Campo (camada comercial): commercial.inactive_reason
+• Valores: trial_expired | churn | payment_failed | null (payment_failed opcional)
+• Regra: relevante apenas quando accounts.status = inactive (senão null/ignorar).
+• Atribuição (definição)
+• trial expirou ⇒ trial_expired
+• cancelamento/abandono ⇒ churn
+• (opcional) falha cobrança ⇒ payment_failed
+• QA (conceitual)
+• não altera accounts.status; não vaza para enums/allowlists de status; distingue trial_expired vs churn.
 9.8.3 Exec: Remover drift `trial` do runtime + docs
 • Status: Briefing
 • Objetivo: remover `trial` de status/tipos/allowlists/UX no runtime e alinhar docs ao estado final do E9.8.1 (sem tocar BD)
 • Governança: múltiplos arquivos/runtime → feature branch + QA gate/SSR; sem migrations por padrão
+9.8.4 Persistência/consulta de commercial.inactive_reason (CRM/relatórios)
+• Status: Pendente
+• Objetivo: decidir se/como o motivo precisa ser persistido/consultável (BD/pipeline/CRM) e impactos (migrations/rollback se aplicável).
+• Dependências: E9.8.2, E9.8.1
+
 10. E10 — Account Dashboard (UX)
 
 10.1 Status
@@ -562,6 +575,9 @@
 • E10: refinamento da vitrine `pending_setup` (mensagens/CTAs/limites detalhados) sem mudar lifecycle.
 
 99. Changelog
+v1.5.13 (02/02/2026)
+• E9.8.2 concluído (definição): commercial.inactive_reason com trial_expired e churn (opcional payment_failed), sem alterar accounts.status.
+• Criado E9.8.4 (pendente): decisão sobre persistência/consulta do motivo para CRM/relatórios
 v1.5.12 (01/02/2026)
 • Reestruturado o fluxo pending_setup por subestado via account_setup_completed_at, separando 10.4 (setup incompleto: IS NULL) e 10.5 (pós-setup sem plano/trial: IS NOT NULL).
 • Atualizado 10.4 para focar em UX/CTAs do subestado “setup incompleto” e registrar a transição para 10.5 ao setar setup_completed_at (sem mudar accounts.status).
