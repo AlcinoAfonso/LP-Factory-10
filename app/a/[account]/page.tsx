@@ -27,7 +27,6 @@ export default function Page(props: any) {
       | "active"
       | "inactive"
       | "suspended"
-      | "trial"
       | null;
 
     if (accountStatus === "pending_setup") {
