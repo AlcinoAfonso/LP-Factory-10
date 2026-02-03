@@ -20,6 +20,8 @@
 0.2.4 ESTILO (opcional)
 • Estado final (snapshot por marco), sem narrativa longa.
 • Frases curtas; preferir bullets; sem tabelas; sem code fences.
+0.3 Nota operacional (dependência externa)
+• 2026-02 — Supabase: Project Clone / Restore to a New Project (beta) pode ficar indisponível; sem impacto no runtime do projeto existente. Não depender disso para staging/espelho/backup. Se precisar duplicar ambiente: criar projeto novo + aplicar migrations do repositório + configurar env/secrets manualmente.
 
 1. E1 — Estrutura de Dados
 
