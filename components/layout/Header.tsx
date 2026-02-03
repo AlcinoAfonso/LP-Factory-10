@@ -13,126 +13,86 @@ interface HeaderProps {
 export function Header({ userEmail }: HeaderProps) {
   const ctx = useAccessContext();
 
-  const variant = getVariant(ctx, userEmail);
+  const variant = getVariant(ctx);
 
-  if (!ctx && !userEmail) {
-    return <HeaderPublic />;
-  }
+  const role = ctx?.member?.role ?? null;
+  const accountKey = ctx?.account?.subdomain ?? null;
+  const accountName = ctx?.account?.name ?? null;
+  const accountStatus = ctx?.account?.status ?? null;
 
-  switch (variant) {
-    case 'account':
-      return (
-        <HeaderAccount
-          account={ctx.account!}
-          userEmail={userEmail ?? undefined}
-          role={(ctx?.member?.role ?? undefined) as string | undefined}
-        />
-      );
-    case 'authenticated':
-      return <HeaderAuthenticated userEmail={userEmail} />;
-    case 'public':
-    default:
-      return <HeaderPublic />;
-  }
-}
-
-function getVariant(
-  ctx: Partial<any>,
-  userEmail?: string | null
-): HeaderVariant {
-  if (ctx?.account?.subdomain) return 'account';
-  if (userEmail) return 'authenticated';
-  return 'public';
-}
-
-/* ==================== Variações ==================== */
-
-function HeaderPublic() {
-  return (
-    <header className="border-b bg-white">
-      <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-4">
-        <Link
-          href="/a/home"
-          aria-label="Ir para início"
-          className="text-sm font-semibold tracking-wide"
-        >
-          LP Factory
-        </Link>
-
-        <nav className="flex items-center gap-3">
-          <Link
-            href="/auth/login"
-            className="rounded-md border px-3 py-1.5 text-sm hover:bg-gray-50"
-          >
-            Entrar
+  if (variant === 'public') {
+    return (
+      <header className="border-b bg-background">
+        <div className="mx-auto flex h-14 max-w-5xl items-center justify-between px-4">
+          <Link href="/" className="text-sm font-semibold">
+            LP Factory
           </Link>
 
-          <Link
-            href="/auth/sign-up"
-            className="rounded-md border px-3 py-1.5 text-sm hover:bg-gray-50"
-          >
-            Criar conta
-          </Link>
-        </nav>
-      </div>
-    </header>
-  );
-}
-
-function HeaderAuthenticated({ userEmail }: { userEmail?: string | null }) {
-  return (
-    <header className="border-b bg-white">
-      <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-4">
-        <Link
-          href="/a/home"
-          aria-label="Ir para início"
-          className="text-sm font-semibold tracking-wide"
-        >
-          LP Factory
-        </Link>
-
-        <nav className="flex items-center gap-3">
-          <UserMenu userEmail={userEmail ?? undefined} />
-        </nav>
-      </div>
-    </header>
-  );
-}
-
-function HeaderAccount({
-  account,
-  userEmail,
-  role,
-}: {
-  account: { name?: string | null; subdomain?: string | null; status?: string | null };
-  userEmail?: string;
-  role?: string;
-}) {
-  const accountLabel = account?.name ?? account?.subdomain ?? 'Minha conta';
-
-  return (
-    <header className="border-b bg-white">
-      <div className="mx-auto flex h-14 max-w-6xl items-center px-4">
-        <Link
-          href="/a/home"
-          aria-label="Ir para início"
-          className="text-sm font-semibold tracking-wide"
-        >
-          LP Factory
-        </Link>
-
-        <div className="flex-1" />
-
-        <div className="flex items-center gap-3">
           <div className="flex items-center gap-2">
-            <span className="text-sm text-gray-800">{accountLabel}</span>
-            <StatusChip status={account?.status} />
+            <Link href="/auth/login" className="rounded-md border px-3 py-1.5 text-sm hover:bg-muted">
+              Entrar
+            </Link>
+            <Link
+              href="/auth/sign-up"
+              className="rounded-md bg-foreground px-3 py-1.5 text-sm text-background hover:opacity-90"
+            >
+              Criar conta
+            </Link>
           </div>
+        </div>
+      </header>
+    );
+  }
+
+  if (variant === 'authenticated') {
+    return (
+      <header className="border-b bg-background">
+        <div className="mx-auto flex h-14 max-w-5xl items-center justify-between px-4">
+          <Link href="/a/home" className="text-sm font-semibold">
+            LP Factory
+          </Link>
+
+          <div className="flex items-center gap-2">
+            <UserMenu userEmail={userEmail} userRole={role} />
+          </div>
+        </div>
+      </header>
+    );
+  }
+
+  return (
+    <header className="border-b bg-background">
+      <div className="mx-auto flex h-14 max-w-5xl items-center justify-between px-4">
+        <div className="flex min-w-0 items-center gap-2">
+          <Link href="/a/home" className="text-sm font-semibold">
+            LP Factory
+          </Link>
+
+          <span className="text-muted-foreground">/</span>
+
+          <Link
+            href={accountKey ? `/a/${accountKey}` : '/a/home'}
+            className="min-w-0 truncate text-sm font-medium"
+            title={accountName ?? accountKey ?? undefined}
+          >
+            {accountName ?? accountKey ?? 'Conta'}
+          </Link>
+
+          <StatusChip status={accountStatus} />
+        </div>
+
+        <div className="flex items-center gap-2">
           <UserMenu userEmail={userEmail} userRole={role} />
         </div>
       </div>
     </header>
   );
+}
+
+function getVariant(ctx: any): HeaderVariant {
+  if (!ctx?.user) return 'public';
+  if (!ctx?.account) return 'authenticated';
+  return 'account';
 }
 
 /* ======= Auxiliar inline (chip de status) ======= */
@@ -145,7 +105,6 @@ function StatusChip({ status }: { status?: string | null }) {
     inactive: { cls: 'bg-gray-100 text-gray-700 border-gray-200', label: 'inactive' },
     suspended: { cls: 'bg-red-100 text-red-700 border-red-200', label: 'suspended' },
     pending_setup: { cls: 'bg-blue-100 text-blue-700 border-blue-200', label: 'pending_setup' },
-    trial: { cls: 'bg-blue-100 text-blue-700 border-blue-200', label: 'trial' },
   };
 
   const fallback = { cls: 'bg-gray-100 text-gray-700 border-gray-200', label: st };
