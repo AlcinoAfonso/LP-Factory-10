@@ -20,6 +20,8 @@ export function Header({ userEmail }: HeaderProps) {
   const accountName = ctx?.account?.name ?? null;
   const accountStatus = ctx?.account?.status ?? null;
 
+  const safeUserEmail = userEmail ?? undefined;
+
   if (variant === 'public') {
     return (
       <header className="border-b bg-background">
@@ -29,7 +31,10 @@ export function Header({ userEmail }: HeaderProps) {
           </Link>
 
           <div className="flex items-center gap-2">
-            <Link href="/auth/login" className="rounded-md border px-3 py-1.5 text-sm hover:bg-muted">
+            <Link
+              href="/auth/login"
+              className="rounded-md border px-3 py-1.5 text-sm hover:bg-muted"
+            >
               Entrar
             </Link>
             <Link
@@ -53,7 +58,7 @@ export function Header({ userEmail }: HeaderProps) {
           </Link>
 
           <div className="flex items-center gap-2">
-            <UserMenu userEmail={userEmail} userRole={role} />
+            <UserMenu userEmail={safeUserEmail} userRole={role} />
           </div>
         </div>
       </header>
@@ -82,7 +87,7 @@ export function Header({ userEmail }: HeaderProps) {
         </div>
 
         <div className="flex items-center gap-2">
-          <UserMenu userEmail={userEmail} userRole={role} />
+          <UserMenu userEmail={safeUserEmail} userRole={role} />
         </div>
       </div>
     </header>
