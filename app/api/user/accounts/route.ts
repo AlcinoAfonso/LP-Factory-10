@@ -33,7 +33,7 @@ export async function GET() {
       });
     }
 
-    // 🔁 Normaliza nomes para o AccountSwitcher (camelCase + preserva 'trial')
+    // 🔁 Normaliza nomes para o AccountSwitcher (camelCase)
     const rows = (data ?? []).map((i) => ({
       accountId: i.account_id,
       accountName: i.account_name ?? null,
