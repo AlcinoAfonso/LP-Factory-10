@@ -8,7 +8,7 @@ export type ApiUserAccount = {
   accountId: string;
   accountName: string | null;
   accountSubdomain: string;
-  accountStatus: string;       // pode vir 'trial' (não está no tipo canônico)
+  accountStatus: string;
   memberRole: "owner" | "admin" | "editor" | "viewer";
   memberStatus: "pending" | "active" | "inactive" | "revoked";
 };
@@ -18,7 +18,7 @@ export type UserAccount = {
   accountId: string;
   accountName: string | null;
   accountSubdomain: string;
-  accountStatus: string;       // manter string para incluir 'trial' sem quebrar TS
+  accountStatus: string;
   memberRole: ApiUserAccount["memberRole"];
   memberStatus: ApiUserAccount["memberStatus"];
 };
@@ -62,7 +62,7 @@ export function useUserAccounts(shouldLoad: boolean) {
         accountId: i.accountId,
         accountName: i.accountName ?? null,
         accountSubdomain: i.accountSubdomain,
-        accountStatus: String(i.accountStatus), // <- preserva 'trial'
+        accountStatus: String(i.accountStatus),
         memberRole: i.memberRole,
         memberStatus: i.memberStatus,
       }));

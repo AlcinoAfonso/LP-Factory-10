@@ -36,10 +36,7 @@ export function Header({ userEmail }: HeaderProps) {
   }
 }
 
-function getVariant(
-  ctx: Partial<any>,
-  userEmail?: string | null
-): HeaderVariant {
+function getVariant(ctx: Partial<any>, userEmail?: string | null): HeaderVariant {
   if (ctx?.account?.subdomain) return 'account';
   if (userEmail) return 'authenticated';
   return 'public';
@@ -145,7 +142,6 @@ function StatusChip({ status }: { status?: string | null }) {
     inactive: { cls: 'bg-gray-100 text-gray-700 border-gray-200', label: 'inactive' },
     suspended: { cls: 'bg-red-100 text-red-700 border-red-200', label: 'suspended' },
     pending_setup: { cls: 'bg-blue-100 text-blue-700 border-blue-200', label: 'pending_setup' },
-    trial: { cls: 'bg-blue-100 text-blue-700 border-blue-200', label: 'trial' },
   };
 
   const fallback = { cls: 'bg-gray-100 text-gray-700 border-gray-200', label: st };

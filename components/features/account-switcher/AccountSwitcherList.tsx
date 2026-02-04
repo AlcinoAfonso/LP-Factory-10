@@ -105,7 +105,7 @@ export function AccountSwitcherList({
             const status = acc.accountStatus as string;
 
             const statusClass =
-              status === "active" || status === "trial"
+              status === "active"
                 ? "bg-emerald-500/10 text-emerald-600 border-emerald-600/20"
                 : status === "pending_setup"
                 ? "bg-amber-500/10 text-amber-600 border-amber-600/20"

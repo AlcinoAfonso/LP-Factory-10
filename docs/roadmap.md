@@ -1,8 +1,8 @@
 0. Introdução
 
 0.1 Cabeçalho
-• Data: 02/02/2026
-• Versão: v1.5.13
+• Data: 03/02/2026
+• Versão: v1.5.14
 0.2 Contrato do documento (parseável)
 • Este documento registra o roadmap e o histórico de execução por marcos (E1, E2, ...).
 0.2.1 TIPO_DO_DOCUMENTO
@@ -20,6 +20,8 @@
 0.2.4 ESTILO (opcional)
 • Estado final (snapshot por marco), sem narrativa longa.
 • Frases curtas; preferir bullets; sem tabelas; sem code fences.
+0.3 Nota operacional (dependência externa)
+• 2026-02 — Supabase: Project Clone / Restore to a New Project (beta) pode ficar indisponível; sem impacto no runtime do projeto existente. Não depender disso para staging/espelho/backup. Se precisar duplicar ambiente: criar projeto novo + aplicar migrations do repositório + configurar env/secrets manualmente.
 
 1. E1 — Estrutura de Dados
 
@@ -306,6 +308,15 @@
 • Status: Pendente
 • Objetivo: decidir se/como o motivo precisa ser persistido/consultável (BD/pipeline/CRM) e impactos (migrations/rollback se aplicável).
 • Dependências: E9.8.2, E9.8.1
+9.8.5 Persistência do sinal comercial (trial/entitlements) — expires_at
+• Status: Briefing
+• Objetivo: decidir onde persiste o sinal comercial (trial/plano), em especial commercial.expires_at, e definir o destino de accounts.trial_ends_at.
+• Decisão esperada (fechada):
+• Opção A: reaproveitar accounts.trial_ends_at como commercial.expires_at (formalizar contrato e evitar drift).
+• Opção B: criar outra persistência para o comercial e então deprecar/remover accounts.trial_ends_at com migration + rollback.
+• Regra de agora (legado): manter accounts.trial_ends_at como legado por enquanto (não mexer neste momento).
+• Dependências: E9.8.1 (contrato do sinal comercial); E9.8.3 (remoção do drift trial no runtime/docs).
+• Fora de escopo: billing/checkout; alterar accounts.status; mexer em accounts.trial_ends_at neste momento.
 
 10. E10 — Account Dashboard (UX)
 
@@ -575,6 +586,8 @@
 • E10: refinamento da vitrine `pending_setup` (mensagens/CTAs/limites detalhados) sem mudar lifecycle.
 
 99. Changelog
+v1.5.14 (03/02/2026)
+• Adicionado E9.8.5 para decidir a persistência do sinal comercial (commercial.expires_at) e o destino de accounts.trial_ends_at (manter como legado até decisão).
 v1.5.13 (02/02/2026)
 • E9.8.2 concluído (definição): commercial.inactive_reason com trial_expired e churn (opcional payment_failed), sem alterar accounts.status.
 • Criado E9.8.4 (pendente): decisão sobre persistência/consulta do motivo para CRM/relatórios

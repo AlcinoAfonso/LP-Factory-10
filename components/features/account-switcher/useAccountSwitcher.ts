@@ -37,10 +37,8 @@ export function useAccountSwitcher() {
       const acc = list[idx];
       if (!acc) return true;
 
-      // Tipagem canônica não inclui 'trial' → tratar em runtime
       const status = acc.accountStatus as unknown as string;
-      const clickable =
-        status === "active" || status === "pending_setup" || status === "trial";
+      const clickable = status === "active" || status === "pending_setup";
 
       const memberOk = acc.memberStatus === "active";
       return !(clickable && memberOk);
