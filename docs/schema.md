@@ -1,8 +1,9 @@
 0. Introdução
 
 0.1 Cabeçalho
-• Data da última atualização: 31/01/2026
-• Documento: LP Factory 10 — Schema (DB Contract) v1.0.4
+• Data da última atualização: 04/02/2026
+• Documento: LP Factory 10 — Schema (DB Contract) v1.0.5
+
 0.2 Contrato do documento (parseável)
 • Esta seção define o que é relevante atualizar e como escrever.
 0.2.1 TIPO_DO_DOCUMENTO
@@ -38,6 +39,7 @@
 • Select: membro ativo ou platform_admin
 • Update: owner/admin (restrito)
 • Insert: somente via RPC (quando aplicável)
+
 1.2 account_users
 1.2.1 Chaves, constraints e relacionamentos
 • PK: id uuid
@@ -51,6 +53,7 @@
 1.2.3 Policies (TBD: preencher nomes reais no Supabase)
 • Select: usuário vê seus vínculos
 • Insert/Update: regras via convites e governança (hub + RPC)
+
 1.3 audit_logs
 1.3.1 Chaves e campos-chave
 • PK: id uuid
@@ -60,6 +63,7 @@
 • RLS: recomendado/obrigatório conforme exposição
 1.3.3 Policies (TBD: preencher nomes reais no Supabase)
 • Select: admins/roles autorizados ou via view v_audit_logs_norm
+
 1.4 plans
 1.4.1 Chaves e campos críticos
 • PK: id uuid
@@ -70,12 +74,14 @@
 • RLS: conforme uso (geralmente read-only)
 1.4.3 Policies (TBD: preencher nomes reais no Supabase)
 • Select: público autenticado (se aplicável) ou somente admins
+
 1.5 partners
 • PK: id uuid
 • Campos: name, type (agency | reseller | affiliate), status (active | inactive | suspended)
 • Trigger Hub: não
 • RLS: conforme uso
 • Policies (TBD)
+
 1.6 partner_accounts
 1.6.1 Chaves e relacionamentos
 • PK composto: (partner_id, account_id)
@@ -86,6 +92,7 @@
 1.6.3 Policies (TBD: preencher nomes reais no Supabase)
 • Select: platform_admin/partner autorizado
 • Insert/Update/Delete: governado via hub/regras administrativas
+
 1.7 post_sale_tokens
 1.7.1 Chaves e campos
 • PK: id uuid
@@ -117,6 +124,7 @@
 • security_invoker = true
 2.1.5 Consumidores
 • SSR + adapter (ver docs/repo-inv.md)
+
 2.2 v_user_accounts_list
 2.2.1 Objetivo
 • AccountSwitcher e /api/user/accounts
@@ -129,6 +137,7 @@
 • security_invoker = true
 2.2.5 Consumidores
 • API + UI (ver docs/repo-inv.md)
+
 2.3 v_account_effective_limits
 2.3.1 Objetivo
 • Limites efetivos por conta
@@ -140,6 +149,7 @@
 • security_invoker = true
 2.3.4 Consumidores
 • Dashboards/APIs de plano e limites
+
 2.4 v_account_effective_limits_secure
 2.4.1 Objetivo
 • Expor limites apenas para quem pode ver
@@ -149,11 +159,13 @@
 • security_invoker = true
 2.4.4 Consumidores
 • APIs e dashboards com detalhes de plano
+
 2.5 v_admin_tokens_with_usage
 • Objetivo: /admin/tokens (E7)
 • Colunas garantidas: token_id, email, expires_at, is_used, is_valid, account_slug, created_at
 • Segurança: security_invoker = true
 • Consumidores: Admin (tokens)
+
 2.6 v_audit_logs_norm
 • Objetivo: leitura simplificada de audit_logs
 • Colunas garantidas: id, entity, entity_id, action, diff, account_id, actor_user_id, ip_address, created_at
@@ -172,6 +184,7 @@
 • Segurança: invoker (TBD confirmar)
 • search_path: public (obrigatório)
 • Efeito: slug temporário acc-{uuid8}
+
 3.2 Limites de Plano
 3.2.1 get_account_effective_limits(account_id uuid) → SETOF record
 • Segurança: invoker (TBD confirmar)
@@ -182,6 +195,7 @@
 • TBD
 3.2.3 plan_limit_value(value int) → bigint
 • TBD
+
 3.3 Auth / RLS Helpers
 3.3.1 Funções
 • is_super_admin() → boolean
@@ -199,11 +213,13 @@
 • create_account_with_owner (motivo: onboarding; limites: TBD)
 • has_account_min_role (motivo: helper RLS; limites: somente leitura; sem writes)
 • ensure_first_account_for_current_user (motivo: F2 auto 1ª conta; limites: idempotente; cria 1ª conta + owner/active)
+
 3.4 Convites de Conta
 • accept_account_invite(account_id uuid, ttl_days int) → boolean
 • revoke_account_invite(account_id uuid, user_id uuid) → boolean
 • invitation_expires_at(account_user_id uuid, ttl_days int) → timestamptz
 • invitation_is_expired(account_user_id uuid, ttl_days int) → boolean
+
 3.5 Trigger Hub & Auditoria
 • hub_router()
 • fn_audit_dispatch(table text, kind text, payload jsonb)
@@ -227,6 +243,7 @@
 • Tabela: partner_accounts
 • Evento: TBD (confirmar no Supabase)
 • Função: hub_router()
+
 4.2 Fora do Hub
 • plans: sem trigger
 • partners: sem trigger hub
@@ -234,12 +251,14 @@
 
 5. Tipos canônicos
 • Fonte única: PATH: src/lib/types/status.ts
-• AccountStatus: active | inactive | suspended | pending_setup | trial
+• AccountStatus: active | inactive | suspended | pending_setup
 • MemberStatus: pending | active | inactive | revoked
 • MemberRole: owner | admin | editor | viewer
-• DRIFT: accounts.status não aceita trial (CHECK accounts_status_chk) e, no estado atual, não há ocorrência de trial em definições de views. O runtime ainda inclui trial em AccountStatus (ver PATH) e deve ser tratado como drift a remover no repo.
+• Nota: accounts.status não aceita trial (CHECK accounts_status_chk). No estado atual, views não contêm trial e o runtime/tipos (PATH) não incluem trial (drift resolvido).
 
 99. Changelog
+v1.0.5 (04/02/2026) — E9.8.3: drift de runtime/tipos (trial) resolvido
+• Atualizada a seção 5 (Tipos canônicos): removido trial de AccountStatus e removida a nota de drift remanescente de runtime/tipos (alinhado ao estado atual do BD e ao PATH).
 v1.0.4 (31/01/2026) — Drift trial: escopo do schema (DB) vs runtime
 • Clarificado: no estado atual do BD, accounts.status não aceita trial (CHECK) e as definições atuais de views não contêm trial; o drift remanescente é de runtime/tipos.
 • Atualizada a seção 5 (Tipos canônicos) para manter o registro do drift restrito ao contrato do BD e ao apontamento do PATH no runtime.
