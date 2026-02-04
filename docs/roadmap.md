@@ -1,8 +1,8 @@
 0. Introdução
 
 0.1 Cabeçalho
-• Data: 03/02/2026
-• Versão: v1.5.14
+• Data: 04/02/2026
+• Versão: v1.5.15
 0.2 Contrato do documento (parseável)
 • Este documento registra o roadmap e o histórico de execução por marcos (E1, E2, ...).
 0.2.1 TIPO_DO_DOCUMENTO
@@ -300,10 +300,10 @@
 • (opcional) falha cobrança ⇒ payment_failed
 • QA (conceitual)
 • não altera accounts.status; não vaza para enums/allowlists de status; distingue trial_expired vs churn.
-9.8.3 Exec: Remover drift `trial` do runtime + docs
-• Status: Briefing
-• Objetivo: remover `trial` de status/tipos/allowlists/UX no runtime e alinhar docs ao estado final do E9.8.1 (sem tocar BD)
-• Governança: múltiplos arquivos/runtime → feature branch + QA gate/SSR; sem migrations por padrão
+9.8.3 Exec: Remover drift trial do runtime + docs
+• Status: Concluído (04/02/2026)
+• Objetivo: remover trial como status (drift) do runtime e alinhar docs; trial permanece apenas como commercial.kind='trial' (E9.8.1).
+• Implementado (runtime): removido trial de tipos/allowlists/condicionais/UI onde aparecia como status.
 9.8.4 Persistência/consulta de commercial.inactive_reason (CRM/relatórios)
 • Status: Pendente
 • Objetivo: decidir se/como o motivo precisa ser persistido/consultável (BD/pipeline/CRM) e impactos (migrations/rollback se aplicável).
@@ -586,6 +586,8 @@
 • E10: refinamento da vitrine `pending_setup` (mensagens/CTAs/limites detalhados) sem mudar lifecycle.
 
 99. Changelog
+v1.5.15 (04/02/2026)
+• E9.8.3 marcado como Concluído (remoção do drift trial do runtime + alinhamento de docs; sem migrations; smoke test em preview e produção).
 v1.5.14 (03/02/2026)
 • Adicionado E9.8.5 para decidir a persistência do sinal comercial (commercial.expires_at) e o destino de accounts.trial_ends_at (manter como legado até decisão).
 v1.5.13 (02/02/2026)
