@@ -1,8 +1,10 @@
 0. Introdução
+
 0.1. Cabeçalho
 • Documento: Base Técnica LP Factory 10
-• Versão: v2.0.5
-• Data: 31/01/2026
+• Versão: v2.0.6
+• Data: 04/02/2026
+
 0.2 Contrato do documento (parseável)
 • Esta seção define o que é relevante atualizar e como escrever.
 0.2.1 TIPO_DO_DOCUMENTO
@@ -24,6 +26,7 @@
 • Repositório: https://github.com/AlcinoAfonso/LP-Factory-10
 • Controle de versão: GitHub Web (edição e commit pelo navegador; não assumir repo local, terminal, git cli ou paths locais)
 • Deploy: Vercel (preview + produção)
+
 1.1 Backend: Supabase — projeto lp-factory-10
 1.1.1 Segredos e flags de execução (server-side)
 • SUPABASE_SECRET_KEY
@@ -42,6 +45,7 @@
 • TypeScript: 5.5.4 (repo; versão do compilador)
 
 2. Stack & Dependências
+
 2.1 Framework
 • Next.js 16.1.1 (App Router, SSR, Server Components)
 • React 19.2.x + React DOM 19.2.x
@@ -50,6 +54,7 @@
 • Package manager: npm
 • Lockfile canônico: package-lock.json (deve ficar commitado e alinhado ao package.json)
 • Next 16.x prioriza Turbopack; evitar customizações via webpack() no next.config quando possível (preferir alias via tsconfig.json > paths)
+
 2.2 Backend
 • Supabase (PostgreSQL 17.6.1.063, Auth, Storage, RLS)
 • Regra: versões devem refletir Settings > Infrastructure (Supabase)
@@ -57,15 +62,18 @@
 • @supabase/supabase-js ≥ 2.56.0
 • .maxAffected(1) em mutações 1-a-1
 • JWT Signing Keys ativo: Current ECC (P-256); Previous Legacy HS256 (não revogar por padrão); integrações futuras (se houver) devem validar JWT via JWKS + kid
+
 2.3 UI
 • SULB (auth forms): definição: rotas/arquivos de autenticação copiados do Supabase (vendor interno).
 • Regra (SULB): não criar auth fora do SULB; alterações no SULB só quando necessário e sempre respeitando a allowlist 6.4.
 • shadcn/ui: base provisória.
+
 2.4. Supabase Auth URL allowlist (Redirect URLs)
 • Local: Supabase Dashboard → Authentication → URL Configuration → Redirect URLs
 • Regra: permitir somente domínios/paths necessários (produção + localhost).
 • Regra (Preview Vercel): quando for necessário habilitar preview, usar wildcard com “/**” para cobrir paths profundos (ex.: https://*-<slug>.vercel.app/**).
 • Regra: não usar curingas amplos fora de preview (evitar allowlist que aceite domínios externos).
+
 2.5 Regras de Import (canônica)
 • @supabase/* somente em: src/lib/**/adapters/ (ex.: src/lib/access/adapters/, src/lib/admin/adapters/) e lib/supabase/*.
 • Exceção: rotas SULB autorizadas em app/auth/* (lista na seção 6.4)
@@ -73,20 +81,24 @@
 • Paths canônicos confirmados no repo: src/lib/**/adapters/ e lib/supabase/*
 
 3. Regras Técnicas Globais
+
 3.1 Segurança
 • Views que expõem dados de usuário devem usar security_invoker = true.
 • RLS obrigatório em todas as tabelas sensíveis.
 • Cookie last_account_subdomain só pode ser definido/lido no SSR (HttpOnly, Secure, SameSite=Lax).
 • Nenhum dado sensível pode ser acessível no client.
+
 3.2 Estrutura de Camadas
 • Fluxo obrigatório: UI → Providers → Adapters → DB.
 • Regra: UI/rotas não importam @supabase/*.
 • Fora de adapters, @supabase/* só em lib/supabase/* e allowlist SULB (6.4).
 • Imports Supabase devem obedecer 2.5 (fonte única).
+
 3.3 Estrutura de Arquivos
 • Padrão por domínio: adapters/ (DB); contracts.ts (interface pública); index.ts (re-exports).
 • Regra: nenhum módulo acessa DB fora de adapters.
 • Tipos canônicos só em src/lib/types/status.ts.
+
 3.4 CI/Lint (Bloqueios)
 • Validação por PR + preview de deploy (Vercel)
 • PATH: .github/workflows/security.yml
@@ -105,41 +117,49 @@
 • Lint: non-blocking em manutenção (não deve impedir o bump/lockfile)
 • Build: blocking (não publicar se build falhar)
 • Regra: commitar alterações somente quando houver mudanças detectadas
+
 3.5 Secrets & Variáveis
 • Server-only: SUPABASE_SECRET_KEY, STRIPE_SECRET_KEY (futuro)
 • Públicas: NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
 • Flags obrigatórias: ACCESS_CONTEXT_ENFORCED=true; ACCESS_CTX_USE_V2=true.
+
 3.6 Tipos TypeScript
 • Fonte única: src/lib/types/status.ts
 • Proibido redefinir tipos em qualquer outro módulo
 • Adapters normalizam valores lidos do DB
+
 3.7 Convenções
 • TS: camelCase
 • SQL: snake_case
 • -1 = ilimitado para limites numéricos
 • Auditoria via jsonb_diff_val()
+
 3.8 Anti-Regressão
 • Migrations sempre idempotentes
 • .maxAffected(1) obrigatório em mutações 1-a-1
 • Alteração de schema exige revisão de views/functions dependentes e atualização do PATH: docs/schema.md
 • Sem secrets expostos no client
+
 3.9 Rate Limit (E7)
 • super_admin: 200 tokens/dia
 • platform_admin: 20 tokens/dia
 • 3 tokens/email/dia
 • 5 burst/5min
 • Índices obrigatórios: (created_by, created_at DESC); (email, created_at DESC).
+
 3.10 Anti-Patterns
 • Importar Supabase na UI (exceto SULB allowlist)
 • Views sem security_invoker=true
 • Hardcode de lógica de planos/limites
 • Modificar SULB fora dos arquivos autorizados
 • Manipular last_account_subdomain no client
+
 3.11 Sistema de Grants (E9)
 • Nunca usar plan_id para liberar features
 • Usar sempre get_feature(account_id, feature_key)
 • Hierarquia: section → lp → account → plan → default
 • Cada conta preserva seu snapshot de recursos
+
 3.12 Compatibilidade PostgREST 14.1
 • Ambiente atual: PostgREST 14.1
 • Índice GIN accounts_name_gin_idx obrigatório quando a feature de busca por nome (FTS) estiver ativa
@@ -147,6 +167,7 @@
 • Recurso: Spread (to-many) em relações to-many (disponível). Estratégia: usar alias para evitar colisão de chaves quando retornar múltiplas relações na mesma resposta
 • Recurso: busca FTS (fts, plfts, phfts, wfts) em text/json. Preferir wfts e criar índices GIN conforme necessidade de performance
 • UX/Erro: HTTP 416 / PGRST103 em paginação. Interpretação: resultado vazio (fim da lista), não erro de sistema; manter itens já carregados e parar novas requisições
+
 3.13 Compatibilidade Next.js 15 / React 19
 • Contexto: notas de compatibilidade da migração Next.js 15 → Next.js 16 (estado atual: Next.js 16.1.1 + React 19.x)
 • cookies() e headers() podem exigir await em SSR/Server Components (usar async quando necessário)
@@ -154,6 +175,7 @@
 • Rotas que dependem de sessão/cookies devem ser dinâmicas (evitar cache entre usuários)
 • Next 16.x prioriza Turbopack; evitar webpack() custom no next.config quando possível
 • Em novos códigos de forms/Server Actions: preferir useActionState (não usar useFormState)
+
 3.14 Padrão de Adapters (vNext)
 • Novas páginas/casos de uso: DB somente via adapters (PATH: src/lib/**/adapters/).
 • 1 adapter = 1 caso de uso; se crescer, dividir (<=150 linhas ou <=6 exports).
@@ -173,6 +195,7 @@
 • Hardening executado (B2): public.accounts.status é obrigatório (NOT NULL) e tem DEFAULT 'pending_setup'::text.
 
 5. Arquitetura de Acesso
+
 5.1 Conceitos Fundamentais
 5.1.1 Access Context v2
 • Fonte única: v_access_context_v2
@@ -187,6 +210,7 @@
 • Leitura do cookie ocorre no SSR do gateway /a/home.
 • Limpeza do cookie: /a/home?clear_last=1 (middleware zera Max-Age=0) e, em bloqueio, o gate SSR de /a/[account] deleta cookie (best-effort) antes de redirecionar.
 • /a/home não define cookie (apenas lê; clear_last=1 ignora cookie no SSR e delega limpeza ao middleware).
+
 5.2 Adapters, Guards, Providers
 5.2.1 Adapters
 • accountAdapter (PATH: src/lib/access/adapters/accountAdapter.ts): createFromToken(tokenId, actorId) → RPC create_account_with_owner; renameAndActivate(accountId, name, slug) com .maxAffected(1); normalizeAccountStatus não faz fallback para active em status desconhecido.
@@ -197,6 +221,7 @@
 5.2.3 Providers
 • AccessProvider (PATH: src/providers/AccessProvider.tsx): carrega contexto de acesso no app.
 • account-switcher (PATH: components/features/account-switcher/*): consome v_user_accounts_list via /api/user/accounts.
+
 5.3 Fluxos de Sessão
 5.3.1 Login (MVP)
 • Login primário é page-based em /auth/login (card central).
@@ -231,6 +256,7 @@
 • Pós-confirmação: /auth/confirm (POST) cria sessão e redireciona para next=/a/home.
 • Com sessão e sem membership: /a/home cria 1ª conta via RPC ensure_first_account_for_current_user() e redireciona para /a/{account_slug} (pending_setup; owner/active).
 • Com sessão e sem conta allow e com qualquer membership: /a/home redireciona para /auth/confirm/info.
+
 5.4 Regras da rota /a (anti-regressão)
 • /a é o entrypoint público e redireciona para /a/home.
 • /a/home é pública e funciona como gateway:
@@ -253,16 +279,20 @@
 • fallback → /auth/confirm/account
 
 6. Estrutura de Arquivos Essencial
+
 6.1 Visão rápida (fonte única)
 • Fonte única do inventário (pastas/arquivos e mapa do repo): PATH: docs/repo-inv.md
 • Regra: esta Base Técnica não mantém “árvore” nem lista completa de paths fora das exceções normativas (6.4)
+
 6.2 Arquivos críticos por fluxo (fonte única)
 • Lista completa e atualizada de arquivos críticos (Acesso, Onboarding, Multi-conta, Supabase núcleo, SULB, Admin): PATH: docs/repo-inv.md
 • Regra: se um arquivo crítico mudar de path, atualizar primeiro o PATH: docs/repo-inv.md
+
 6.3 Tipos e contratos críticos (mínimo normativo)
 • Fonte única de tipos canônicos: PATH: src/lib/types/status.ts
 • Regra: proibido redefinir AccountStatus, MemberStatus, MemberRole fora do arquivo canônico
 • Contratos e reexports do domínio permanecem em src/lib/** (detalhes no PATH: docs/repo-inv.md)
+
 6.4 Arquivos SULB autorizados a importar Supabase (fonte única normativa)
 Exceção oficial: somente os arquivos listados abaixo podem importar @supabase/* fora de src/lib/**/adapters/ e lib/supabase/.
 Regra: qualquer novo arquivo em app/auth/ não pode importar @supabase/* até ser incluído nesta allowlist.
@@ -273,6 +303,7 @@ Regra: qualquer novo arquivo em app/auth/ não pode importar @supabase/* até se
 • app/auth/confirm/route.ts
 • app/auth/update-password/page.tsx
 • app/auth/protected/page.tsx
+
 6.5 Regras rápidas (sem drift)
 • Acesso ao DB: somente via adapters (PATH: src/lib/**/adapters/).
 • Exceções de @supabase/: lib/supabase/* e allowlist SULB (6.4).
@@ -291,6 +322,8 @@ Regra: qualquer novo arquivo em app/auth/ não pode importar @supabase/* até se
 • Adapters vNext: seguir 3.14
 
 99. Changelog
+v2.0.6 (04/02/2026) — E9.8.3: drift de trial no runtime/tipos resolvido
+• Confirmado no zip 29: não há ocorrências de trial em arquivos .ts/.tsx do repo (drift citado em v2.0.5 encerrado).
 v2.0.5 (31/01/2026) — Correções de contrato vs implementação (cookie SSR + referência a trial)
 • Corrigida 5.1.2: persistência do cookie last_account_subdomain reflete runtime (middleware best-effort em /a/{slug} sem prefetch + escrita autoritativa no gate SSR com ctx.blocked=false e subdomain canônico; Secure apenas em produção; TTL 90 dias; limpeza via clear_last=1 e delete em bloqueio).
 • Retificada a referência do changelog v2.0.4 sobre “remoção de trial” no runtime: o repo ainda contém trial em tipos/adapter (drift de runtime), embora o contrato de access (v_access_context_v2) permaneça sem trial.
