@@ -3,6 +3,8 @@
 0.1 Cabeçalho
 • Data: 04/02/2026
 • Versão: v1.5.15
+04/02/2026 16:22 — Seção 0.2 ajustada com “PROIBIDO” em bullet exclusivo
+
 0.2 Contrato do documento (parseável)
 • Este documento registra o roadmap e o histórico de execução por marcos (E1, E2, ...).
 0.2.1 TIPO_DO_DOCUMENTO
@@ -15,11 +17,13 @@
 • Microcopy (guia): registrar mensagens-chave + intenção (segurança, anti-abuso, clareza), evitando texto final longo; detalhar mais apenas quando o comportamento depender da redação.
 • ANTI_DRIFT_DB: não detalhar contrato de banco (tabelas/colunas/views/RPCs/triggers/policies); referenciar docs/schema.md.
 • ANTI_DRIFT_REGRAS: não duplicar regras técnicas; referenciar docs/base-tecnica.md
+• **PROIBIDO_EXECUCAO_NO_CORPO: no corpo dos itens E* é proibido registrar narrativa operacional de execução (PR/branch/CI/deploy), passos de QA, prints e relato “como foi feito”; registrar apenas estado final (snapshot) e critérios mínimos de aceite.**
 0.2.3 ALLOWLIST_CHANGELOG (blocklist mínima)
 • PROIBIDO: bullets administrativos (ex.: “atualizado cabeçalho/data/versão”).
 0.2.4 ESTILO (opcional)
 • Estado final (snapshot por marco), sem narrativa longa.
 • Frases curtas; preferir bullets; sem tabelas; sem code fences.
+
 0.3 Nota operacional (dependência externa)
 • 2026-02 — Supabase: Project Clone / Restore to a New Project (beta) pode ficar indisponível; sem impacto no runtime do projeto existente. Não depender disso para staging/espelho/backup. Se precisar duplicar ambiente: criar projeto novo + aplicar migrations do repositório + configurar env/secrets manualmente.
 
