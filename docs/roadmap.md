@@ -3,7 +3,6 @@
 0.1 Cabeçalho
 • Data: 04/02/2026
 • Versão: v1.5.15
-04/02/2026 16:22 — Seção 0.2 ajustada com “PROIBIDO” em bullet exclusivo
 
 0.2 Contrato do documento (parseável)
 • Este documento registra o roadmap e o histórico de execução por marcos (E1, E2, ...).
@@ -362,11 +361,13 @@
 10.3.7 Próxima revisão
 • UX Partner Dashboard
 
+06/02/2026 15:58 — E10.4 ajustado (alinhado ao fluxo ponta a ponta)
+
 10.4 Onboarding mínimo + Vitrine (pending_setup — setup incompleto)
 • Status: Briefing
-• Escopo: UX/CTAs para conta em pending_setup quando account_setup_completed_at IS NULL (setup ainda não concluído).
-• Dependências: E10.4.1 (infra do marcador setup_completed_at), E10.4.2 (regra v0 setup concluído), E10.4.3 (política do marcador), E10.4.4 (dados mínimos v1), E9.8.1 (trial/entitlements — apenas CTA/roteamento).
-• Nota: ao setar setup_completed_at, a conta continua pending_setup e passa ao fluxo 10.5 (pós-setup sem plano/trial).
+• Escopo: Entregar o fluxo ponta a ponta de “Primeiros passos” no dashboard da conta (/a/[account]) quando `accounts.status=pending_setup` e `setup_completed_at IS NULL`: exibir tela com formulário inline, validar campos (incl. regras condicionais), salvar com estados/erros (loading, validação inline, erro sistêmico com retry), marcar setup concluído e redirecionar para o E10.5.
+• Dependências: E10.4.1 (infra do marcador `setup_completed_at`), E10.4.2 (setter idempotente do setup concluído), E10.4.3 (política do marcador), E10.4.4 (campos + validações), E10.4.5 (decisão + contrato de persistência dos dados do onboarding), E10.4.6 (exec de persistência conforme E10.4.5), E9.8.1 (trial/entitlements — apenas CTA/roteamento).
+• Nota: ao setar `setup_completed_at`, a conta continua `pending_setup` e passa ao fluxo 10.5 (pós-setup sem plano/trial).
 
 10.4.1 Indicador de setup concluído (infra)
 • Status: Concluído (30/01/2026)
