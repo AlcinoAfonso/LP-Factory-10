@@ -246,7 +246,25 @@ Assistente contextual no Dashboard que sugere automaticamente título, slug, seg
 ### Ações Recomendadas
 1. Criar endpoint `/api/ai/guess-lp-metadata` via adapter, validando sessão e `account_id`.
 2. Embutir componente `AssistantPanel` nas telas de criação/edição de LP.
-3. Registrar a tool `guess_lp_metadata` no AgentKit e auditar chamadas (gravar `agent_id`, tool e `account_id`).
+3. RegiABCstrar a tool `guess_lp_metadata` no AgentKit e auditar chamadas (gravar `agent_id`, tool e `account_id`).
 4. Habilitar a feature apenas para contas internas ou via flag `ai_lp_metadata_assistant` até validar o MVP.
+
+---
+
+## 14 — mcp-use no Supabase (MCP Server em Edge Functions) *(🛫 Estável)*
+2025-12-17
+
+### Descrição
+Guia de implementação para construir apps do ChatGPT conectados ao Supabase usando **mcp-use**, facilitando o deploy de **MCP Servers** em **Supabase Edge Functions**.
+
+### Valor para o Projeto
+- Caminho prático para agentes acessarem dados do Supabase com uma superfície de integração padronizada (MCP).
+
+### Valor para o Usuário
+- Possibilita automações e diagnósticos mais rápidos quando (e se) você expuser isso no produto.
+
+### Ações Recomendadas
+1. Tratar como “padrão candidato” para integrações IA↔Dados (antes de criar conectores ad‑hoc).
+2. Quando for usar em produção: definir guardrails (escopo mínimo, auditoria, RLS) no desenho do caso.
 
 ---
