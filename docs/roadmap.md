@@ -2,7 +2,7 @@
 
 0.1 Cabeçalho
 • Data: 06/02/2026
-• Versão: v1.5.16
+• Versão: v1.5.17
 
 0.2 Contrato do documento (parseável)
 • Este documento registra o roadmap e o histórico de execução por marcos (E1, E2, ...).
@@ -394,9 +394,24 @@
 • Evolução: correção/backfill/reset/unset somente via novo caso E10.4.x
 
 10.4.4 Onboarding: dados mínimos v1 (nicho/WhatsApp e outros)
-• Status: Briefing
-• Objetivo: definir obrigatórios/opcionais (v1) e o contrato de armazenamento/validações, sem inventar campos.
-• Escopo: contrato de armazenamento + validações + impactos no onboarding (sem mexer em accounts.status).
+• Status: Concluído (definição) (06/02/2026)
+• Campos v1 (Primeiros passos / inline):
+• name (obrigatório)
+• niche (opcional)
+• preferred_channel (opcional; default = Email; domínio: Email | WhatsApp)
+• whatsapp (opcional; obrigatório se preferred_channel = WhatsApp)
+• link (opcional; link da LP/site)
+• Nome padrão (regra simples): name não pode ser igual ao placeholder/default do input (string a confirmar no UI)
+• Validações v1 (critérios mínimos):
+• name: trim; obrigatório; erro inline se vazio ou se igual ao placeholder/default
+• whatsapp (quando exigido): somente dígitos; 10–15 dígitos; erro inline se ausente/fora do critério
+• link (se preenchido): URL web sem espaços iniciando com http:// ou https://; erro inline se inválido
+• Microcopy (guia por intenção):
+• name.required_or_default
+• whatsapp.required_when_channel
+• whatsapp.invalid
+• link.invalid
+• Nota: persistência/schema dos campos segue para E10.4.5 (decisão) e E10.4.6 (exec).
 
 10.5 Vitrine pós-setup sem plano/trial (pending_setup — setup concluído)
 • Status: Briefing
@@ -594,6 +609,8 @@
 • E10: refinamento da vitrine `pending_setup` (mensagens/CTAs/limites detalhados) sem mudar lifecycle.
 
 99. Changelog
+v1.5.17 (06/02/2026)
+• E10.4.4 concluído (definição): contrato v1 de campos/validações do formulário “Primeiros passos” (incl. regra condicional do WhatsApp e microcopy por intenção)
 v1.5.16 (06/02/2026)
 • E10.4.3 concluído: política do marcador de setup (once set, never unset) + permitido/proibido (snapshot).
 v1.5.15 (04/02/2026)
