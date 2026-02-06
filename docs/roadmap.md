@@ -361,8 +361,6 @@
 10.3.7 Próxima revisão
 • UX Partner Dashboard
 
-06/02/2026 15:58 — E10.4 ajustado (alinhado ao fluxo ponta a ponta)
-
 10.4 Onboarding mínimo + Vitrine (pending_setup — setup incompleto)
 • Status: Briefing
 • Escopo: Entregar o fluxo ponta a ponta de “Primeiros passos” no dashboard da conta (/a/[account]) quando `accounts.status=pending_setup` e `setup_completed_at IS NULL`: exibir tela com formulário inline, validar campos (incl. regras condicionais), salvar com estados/erros (loading, validação inline, erro sistêmico com retry), marcar setup concluído e redirecionar para o E10.5.
