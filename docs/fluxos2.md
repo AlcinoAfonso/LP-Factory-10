@@ -12,24 +12,69 @@ Introdução
   - Casos do Roadmap que implementam aquele trecho
 
 
-E10.4 — Conta em pending_setup (setup incompleto)
+E10.4 — Conta em pending_setup (setup incompleto) — Primeiros passos (formulário inline)
 
 Ponto de Partida
 1. Usuário entra no dashboard da conta (/a/[account]).
 2. A conta está em pending_setup.
 3. setup_completed_at está vazio.
+4. A página mostra o estado “Primeiros passos” com um formulário inline.
 
-Cenário 1 — (a definir)
-- (a definir)
+Cenário 1 — Entrada no E10.4 (Primeiros passos)
+- O que o usuário vê
+  - Título: “Primeiros passos”.
+  - Subtexto curto: “Complete uma configuração rápida para continuar.”
+  - Microcopy de valor (configurável, curto).
+  - Formulário inline com:
+    - Nome do projeto (obrigatório).
+    - Nicho (opcional).
+    - Preferência de canal (Email padrão / WhatsApp).
+    - WhatsApp (opcional; se canal = WhatsApp, validação exige número).
+    - Link da LP/site (opcional).
+  - CTA único: “Salvar e continuar”.
+- Resultado
+  - Usuário entende o que precisa fazer e o que ganha ao concluir (microcopy configurável).
 
-Cenário 2 — (a definir)
-- (a definir)
+Cenário 2 — Salvar com Nome válido (com ou sem dados opcionais)
+- Usuário preenche o Nome (obrigatório) com valor válido (não vazio e não padrão).
+- Usuário pode ou não preencher os campos opcionais.
+- Usuário escolhe a preferência de canal:
+  - Email (padrão), ou
+  - WhatsApp (se escolhido, exige WhatsApp preenchido).
+- Usuário clica em “Salvar e continuar”.
+- O que o usuário vê
+  - Estado de carregamento no botão (“Salvando…”), com inputs desabilitados.
+- Resultado
+  - setup_completed_at é preenchido.
+  - Usuário é redirecionado imediatamente para o E10.5.
+  - Benefício (configurável): previsto para envio automático; no início pode operar em modo manual.
 
-Cenário 3 — (a definir)
-- (a definir)
+Cenário 3 — Erro de validação (permanece no E10.4)
+- Usuário tenta salvar com:
+  - Nome vazio, ou
+  - Nome padrão (não aceito), ou
+  - Canal = WhatsApp e WhatsApp vazio/inválido, ou
+  - Link preenchido e claramente inválido.
+- O que o usuário vê
+  - Mensagem de erro inline no campo correspondente.
+  - CTA permanece disponível após correção.
+- Resultado
+  - setup não é concluído; usuário permanece no E10.4 e corrige os campos.
+
+Cenário 4 — Erro de sistema (rede/servidor)
+- O salvamento falha por erro de sistema.
+- O que o usuário vê
+  - Mensagem discreta (banner) perto das ações: “Não foi possível salvar agora. Tente novamente.”
+  - Dados digitados permanecem.
+  - Botão volta ao normal.
+- Resultado
+  - Usuário pode tentar salvar novamente.
 
 Casos do Roadmap
 - E10.4
+- E10.4.2 (setup concluído v0: nome válido e não padrão)
+- E10.4.4 (dados mínimos v1 + contrato de armazenamento/validações)
+- E10.5 (destino após salvar)
 
 
 E10.5 — Conta em pending_setup (setup concluído, sem trial/plano)
@@ -39,15 +84,3 @@ Ponto de Partida
 2. A conta está em pending_setup.
 3. setup_completed_at está preenchido.
 4. Ainda não há trial/plano.
-
-Cenário 1 — (a definir)
-- (a definir)
-
-Cenário 2 — (a definir)
-- (a definir)
-
-Cenário 3 — (a definir)
-- (a definir)
-
-Casos do Roadmap
-- E10.5
