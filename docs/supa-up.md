@@ -597,3 +597,142 @@ Permite editar, no Supabase Dashboard, os templates de emails transacionais do A
 
 
 
+---
+
+
+## 31 — Security progress + roadmap 2026 *(🗾 Estável)*
+2026-01-07
+
+### Descrição  
+Resumo das mudanças de segurança do Supabase em 2025 e das direções previstas para 2026 (algumas delas podem ser *breaking* dependendo do uso). O post oficial apresenta o retrospecto de segurança de 2025 e as metas para endurecer a plataforma em 2026.
+
+### Valor para o Projeto  
+- Reduz risco de drift: mudanças de segurança podem impactar Auth, Data API, chaves e secrets.  
+
+### Valor para o Usuário  
+- Menos instabilidade e menos retrabalho em hardening.
+
+### Ações Recomendadas  
+1. Ler o post de retro/roadmap e extrair itens que afetem Auth, API Keys, PostgREST/Data API, Vault/Secrets e padrões de segurança.  
+2. Se houver item com potencial de quebra: abrir um caso dedicado (E16.xx/E9.xx conforme escopo).
+
+---
+
+## 32 — Stripe Sync Engine no Dashboard (1‑click) *(🗾 Estável)*
+2025-12-19
+
+### Descrição  
+Integração do Stripe Sync Engine diretamente no Supabase Dashboard (setup em um clique). Permite consultar **customers**, **subscriptions**, **invoices** e **payments** via SQL.
+
+### Valor para o Projeto  
+- Pode simplificar a camada de billing/assinaturas, reduzindo integração manual.  
+
+### Valor para o Usuário  
+- Menos falhas de sincronização; dados financeiros mais confiáveis no backoffice.
+
+### Ações Recomendadas  
+1. Decidir se essa integração vira caminho padrão do Billing Engine (para reduzir retrabalho).  
+2. Se adotar: registrar quais tabelas/objetos do Sync Engine serão fonte de verdade para entitlement/grants.
+
+---
+
+## 33 — Metrics API: observabilidade via Prometheus *(🗾 Estável)*
+2025-12-16
+
+### Descrição  
+Documentação aprimorada para exportar telemetria do banco (Metrics API) para stacks compatíveis com Prometheus.
+
+### Valor para o Projeto  
+- Caminho claro para monitorar a saúde/performance do Postgres/Supabase com ferramenta padrão de mercado.  
+
+### Valor para o Usuário  
+- Maior estabilidade percebida e menos indisponibilidades.
+
+### Ações Recomendadas  
+1. Decidir se entra no MVP (agora) ou se fica como setup recomendado após os primeiros clientes.
+
+---
+
+## 34 — ChatGPT Apps + mcp-use (MCP Servers em Edge Functions) *(🗾 Estável)*
+2025-12-17
+
+### Descrição  
+Guia para criar apps do ChatGPT conectados ao Supabase; usa **mcp-use** para facilitar o deploy de **MCP Servers** em **Supabase Edge Functions**.
+
+### Valor para o Projeto  
+- Opção concreta para “agentes com acesso a dados reais” usando a infraestrutura do Supabase.  
+
+### Valor para o Usuário  
+- Suporte, diagnóstico e automação mais rápidos quando essa funcionalidade for exposta no produto.
+
+### Ações Recomendadas  
+1. Registrar este update também no `docs/auto-agentes-up.md` (ponte de governança).
+
+---
+
+## 35 — Index Advisor no Table Editor *(🗾 Estável)*
+2026-01-08
+
+### Descrição  
+Recurso/integração do **index_advisor** para ajudar a identificar índices faltantes diretamente pelo Table Editor/Studio.
+
+### Valor para o Projeto  
+- Reduz tentativa‑e‑erro em performance (principalmente em listagens/views e queries pesadas).  
+
+### Valor para o Usuário  
+- Dashboards mais rápidos.
+
+### Ações Recomendadas  
+1. Adotar como checklist em incidentes de lentidão antes de mexer em arquitetura.
+
+---
+
+## 36 — Data API: PostgREST v14 (no projeto: 14.1) *(✅ Implementado no projeto)*
+2025-12-11
+
+### Descrição  
+O Supabase Data API está em PostgREST **14.1** no ambiente do LP Factory 10 (registrado na Base Técnica).  
+
+### Valor para o Projeto  
+- Regras e compatibilidades já normatizadas na Base Técnica (3.12), incluindo: spread/alias em relações *to‑many*, FTS e interpretação de **HTTP 416 / PGRST103** como “fim da lista” (não erro).  
+
+### Valor para o Usuário  
+- Menos “engasgos” em endpoints REST/queries em momentos de pico.
+
+### Ações Recomendadas  
+1. Tratar a Base Técnica **3.12** como fonte de verdade operacional para PostgREST 14.1 (paginação, alias, FTS, índices).  
+2. Remover a ideia de “rollout pendente” deste item (porque o ambiente atual já está em 14.1).  
+
+---
+
+## 37 — Geração de tipos Python via Supabase CLI *(🗾 Estável)*
+2026-01-08
+
+### Descrição  
+Guia oficial para gerar **tipos Python** via CLI (`supabase gen types --lang=python`), com requisito de versão mínima e opção de geração local/remota.
+
+### Valor para o Projeto  
+- Útil se houver serviços auxiliares em Python (ex.: automações internas, jobs, scripts).  
+
+### Valor para o Usuário  
+- Menos bugs de contrato (type-safe) em integrações Python.
+
+### Ações Recomendadas  
+1. Registrar versão mínima e comando no doc (já descritos no guia).
+
+---
+
+## 38 — Quick announcements (Jan/2026) *(🗾 Estável)*
+2026-01-08
+
+### Descrição  
+Pacote de anúncios rápidos do mês: quickstarts (Expo React Native, TanStack Start e Flask) e “Explain/Analyze diagrams” no Dashboard, entre outros.
+
+### Valor para o Projeto  
+- Referência rápida para não perder novidades menores que podem virar atalhos no futuro.  
+
+### Valor para o Usuário  
+- Evolução incremental sem surpresas.
+
+### Ações Recomendadas  
+1. Manter como log de rastreabilidade (sem obrigação de adoção imediata).
