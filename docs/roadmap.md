@@ -1,8 +1,8 @@
 0. Introdução
 
 0.1 Cabeçalho
-• Data: 04/02/2026
-• Versão: v1.5.15
+• Data: 06/02/2026
+• Versão: v1.5.16
 
 0.2 Contrato do documento (parseável)
 • Este documento registra o roadmap e o histórico de execução por marcos (E1, E2, ...).
@@ -385,10 +385,15 @@
 • Assunção a validar: padrão provisório do nome da conta ('Conta ' || subdomain) é o padrão real de criação.
 • Pendência: abrir E10.4.4 (dados mínimos v1: nicho/WhatsApp/outros).
 
-10.4.3 Política do marcador setup_completed_at (MVP)
-• Status: Briefing
-• Objetivo: definir política operacional do marcador (set/re-set/unset) no MVP, sem mexer em accounts.status.
-• Saída esperada: política explícita (ex.: “once set, never unset”) + invariantes + QA conceitual mínimo.
+10.4.3 Política do marcador de setup (MVP)
+• Status: Concluído (06/02/2026)
+• Objetivo: definir política operacional do marcador de setup no MVP para segmentar subestado dentro de pending_setup, sem alterar lifecycle e sem alterar regras de acesso.
+• Decisão (MVP): once set, never unset
+• Permitido: NULL → timestamp
+• Permitido: chamadas repetidas (idempotente; não sobrescreve)
+• Proibido no MVP: overwrite/re-set, backfill/correção, reset/unset
+• Uso: segmentar subestado de pending_setup (setup incompleto vs setup concluído)
+• Evolução: correção/backfill/reset/unset somente via novo caso E10.4.x
 
 10.4.4 Onboarding: dados mínimos v1 (nicho/WhatsApp e outros)
 • Status: Briefing
@@ -591,6 +596,8 @@
 • E10: refinamento da vitrine `pending_setup` (mensagens/CTAs/limites detalhados) sem mudar lifecycle.
 
 99. Changelog
+v1.5.16 (06/02/2026)
+• E10.4.3 concluído: política do marcador de setup (once set, never unset) + permitido/proibido (snapshot).
 v1.5.15 (04/02/2026)
 • E9.8.3 marcado como Concluído (remoção do drift trial do runtime + alinhamento de docs; sem migrations; smoke test em preview e produção).
 v1.5.14 (03/02/2026)
