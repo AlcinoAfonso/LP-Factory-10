@@ -374,6 +374,7 @@
 • Exposição no Access Context: account_setup_completed_at
 • Ajuste não-regressão no Access Context: hardening de allow (boolean, nunca NULL) e remoção de trial do allowlist
 • Migração: supabase/migrations/0003__accounts_setup_completed_at.sql
+• View do Access Context com hardening: public.v_access_context_v2 com security_invoker=true (via migração)
 
 10.4.2 Setup concluído (MVP v0 — Exec)
 • Status: Concluído (31/01/2026)
