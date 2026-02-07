@@ -2,8 +2,8 @@
 
 0.1. Cabeçalho
 • Documento: Base Técnica LP Factory 10
-• Versão: v2.0.6
-• Data: 04/02/2026
+• Versão: v2.0.7
+• Data: 07/02/2026
 
 0.2 Contrato do documento (parseável)
 • Esta seção define o que é relevante atualizar e como escrever.
@@ -213,7 +213,7 @@
 
 5.2 Adapters, Guards, Providers
 5.2.1 Adapters
-• accountAdapter (PATH: src/lib/access/adapters/accountAdapter.ts): createFromToken(tokenId, actorId) → RPC create_account_with_owner; renameAndActivate(accountId, name, slug) com .maxAffected(1); normalizeAccountStatus não faz fallback para active em status desconhecido.
+• accountAdapter (PATH: src/lib/access/adapters/accountAdapter.ts): createFromToken(tokenId, actorId) → RPC create_account_with_owner; renameAndActivate(accountId, name, slug) com .maxAffected(1); setSetupCompletedAtIfNull(accountId) seta setup_completed_at somente quando NULL (idempotente); normalizeAccountStatus não faz fallback para active em status desconhecido.
 • accessContextAdapter (PATH: src/lib/access/adapters/accessContextAdapter.ts): lê v_access_context_v2; getFirstAccountForCurrentUser(): se existir conta allow=true → retorna; se existir qualquer membership → não cria; sem membership → chama RPC ensure_first_account_for_current_user(); logs access_context_decision; gate adapter permite null; logs diferenciam deny vs error.
 • adminAdapter (PATH: src/lib/admin/adapters/adminAdapter.ts): valida super_admin / platform_admin; opera post_sale_tokens via postSaleTokenAdapter.
 5.2.2 Guards
@@ -322,6 +322,8 @@ Regra: qualquer novo arquivo em app/auth/ não pode importar @supabase/* até se
 • Adapters vNext: seguir 3.14
 
 99. Changelog
+v2.0.7 (07/02/2026) — E10.4.3: setter idempotente do marcador setup_completed_at no accountAdapter
+• Documentado setSetupCompletedAtIfNull(accountId) como operação NULL-only (write-once no MVP).
 v2.0.6 (04/02/2026) — E9.8.3: drift de trial no runtime/tipos resolvido
 • Confirmado no zip 29: não há ocorrências de trial em arquivos .ts/.tsx do repo (drift citado em v2.0.5 encerrado).
 v2.0.5 (31/01/2026) — Correções de contrato vs implementação (cookie SSR + referência a trial)
