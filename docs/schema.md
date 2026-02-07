@@ -1,8 +1,8 @@
 0. Introdução
 
 0.1 Cabeçalho
-• Data da última atualização: 04/02/2026
-• Documento: LP Factory 10 — Schema (DB Contract) v1.0.5
+• Data da última atualização: 07/02/2026
+• Documento: LP Factory 10 — Schema (DB Contract) v1.0.6
 
 0.2 Contrato do documento (parseável)
 • Esta seção define o que é relevante atualizar e como escrever.
@@ -28,7 +28,7 @@
 • UNIQUE: subdomain, domain, slug
 • Status: active | inactive | suspended | pending_setup
 • Coluna status: text; CHECK accounts_status_chk; NOT NULL; DEFAULT 'pending_setup'::text
-• Coluna setup_completed_at: timestamptz; NULL (marcador técnico de setup concluído)
+• Coluna setup_completed_at: timestamptz; NULL (marcador técnico de setup concluído; write-once no MVP: set NULL → timestamp; sem overwrite)
 • FK: plan_id → plans; owner_user_id → auth.users
 1.1.2 Índices
 • accounts_name_gin_idx (GIN to_tsvector portuguese, name)
@@ -116,7 +116,7 @@
 • account_id, account_key, account_name, account_status
 • user_id, member_role, member_status
 • allow, reason
-• account_setup_completed_at
+• account_setup_completed_at (alias de accounts.setup_completed_at)
 2.1.3 Assunções e filtros
 • allow=true só para conta active/pending_setup + membro ativo
 • allow é boolean estrito (COALESCE(..., false)) — nunca NULL
@@ -257,6 +257,9 @@
 • Nota: accounts.status não aceita trial (CHECK accounts_status_chk). No estado atual, views não contêm trial e o runtime/tipos (PATH) não incluem trial (drift resolvido).
 
 99. Changelog
+v1.0.6 (07/02/2026) — E10.4.3: clarificações do marcador setup_completed_at e do alias account_setup_completed_at
+• Accounts: setup_completed_at declarado como write-once no MVP (NULL → timestamp; sem overwrite).
+• v_access_context_v2: account_setup_completed_at explicitado como alias de accounts.setup_completed_at
 v1.0.5 (04/02/2026) — E9.8.3: drift de runtime/tipos (trial) resolvido
 • Atualizada a seção 5 (Tipos canônicos): removido trial de AccountStatus e removida a nota de drift remanescente de runtime/tipos (alinhado ao estado atual do BD e ao PATH).
 v1.0.4 (31/01/2026) — Drift trial: escopo do schema (DB) vs runtime
