@@ -1,8 +1,8 @@
 0. Introdução
 
 0.1 Cabeçalho
-• Data: 06/02/2026
-• Versão: v1.5.17
+• Data: 07/02/2026
+• Versão: v1.5.18
 
 0.2 Contrato do documento (parseável)
 • Este documento registra o roadmap e o histórico de execução por marcos (E1, E2, ...).
@@ -414,6 +414,17 @@
 • link.invalid
 • Nota: persistência/schema dos campos segue para E10.4.5 (decisão) e E10.4.6 (exec).
 
+10.4.5 Onboarding: persistência dos dados mínimos v1 (perfil 1:1)
+• Status: Concluído (definição) (07/02/2026)
+• Decisão: persistir dados do onboarding/perfil em tabela dedicada 1:1 (account_profiles), não em novas colunas em accounts.
+• Manter accounts.name no core (consumido pelas views/UX atuais).
+• account_profiles (contrato mínimo v1):
+• niche
+• preferred_channel (default email, valores esperados email|whatsapp)
+• whatsapp
+• site_url (link)
+• Evolução (fora do escopo): reservar billing/legal para futura 1:1 separada (ex.: account_billing_profiles).
+
 10.5 Vitrine pós-setup sem plano/trial (pending_setup — setup concluído)
 • Status: Briefing
 • Escopo: UX/CTAs para conta em pending_setup quando account_setup_completed_at IS NOT NULL (setup ok; falta ativar trial/plano).
@@ -610,6 +621,8 @@
 • E10: refinamento da vitrine `pending_setup` (mensagens/CTAs/limites detalhados) sem mudar lifecycle.
 
 99. Changelog
+v1.5.18 (07/02/2026)
+• E10.4.5 concluído (definição): decisão de persistência do onboarding/perfil em account_profiles (1:1), mantendo accounts.name no core, com contrato mínimo v1 (niche, preferred_channel, whatsapp, site_url).
 v1.5.17 (06/02/2026)
 • E10.4.4 concluído (definição): contrato v1 de campos/validações do formulário “Primeiros passos” (incl. regra condicional do WhatsApp e microcopy por intenção)
 v1.5.16 (06/02/2026)
