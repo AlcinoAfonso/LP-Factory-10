@@ -11,8 +11,9 @@
 0.2.2 ALLOWLIST_RELEVANCIA
 • OBJETIVO_DOC: ser o contrato do DB (estado atual esperado) e a referência única para detalhes de banco.
 • CONTRATO_DB: somente o que existe/é esperado no banco (tabelas, colunas, enums, relacionamentos, views, RPCs/functions, triggers, RLS/policies).
+• GATE (anti-antecipação): é proibido registrar objeto/alteração que esteja apenas “decidido/planejado” sem evidência de estado final executado/observável (conforme RELATÓRIO do executor).
 • ANTI_DRIFT: Base Técnica e Roadmap não repetem listas/detalhes de DB; devem apenas referenciar este arquivo quando precisarem citar DB.
-• MANUTENCAO: quando faltar detalhe confirmado no Supabase, marcar como TBD e registrar o caminho de validação (Supabase > Database > Tables/Views/Functions/Policies).
+• MANUTENCAO: quando faltar detalhe confirmado no Supabase, marcar como TBD e registrar o caminho de validação (Supabase > Database > Tables/Views/Functions/Policies). TBD não pode ser usado para “criar” objeto futuro; apenas para detalhe faltante de algo já existente.
 0.2.3 ALLOWLIST_CHANGELOG (blocklist mínima)
 • PROIBIDO: bullets administrativos (ex.: “atualizado cabeçalho/data/versão”).
 0.2.4 ESTILO (opcional)
