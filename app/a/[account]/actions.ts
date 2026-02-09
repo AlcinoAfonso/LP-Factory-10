@@ -3,7 +3,7 @@
 import 'server-only';
 
 import { redirect } from 'next/navigation';
-import { headers } from 'next/headers';
+import { headers, cookies } from 'next/headers';
 
 import { getAccessContext } from '@/lib/access/getAccessContext';
 import { setSetupCompletedAtIfNull, updateAccountNameCore, renameAccountNoStatus } from '@/lib/access/adapters/accountAdapter';
@@ -131,6 +131,33 @@ function normalizeText(input: unknown): string {
   return (input ?? '').toString().trim();
 }
 
+function extractAccountSubdomainFromReferer(referer: string | null): string | null {
+  if (!referer) return null;
+  try {
+    const url = new URL(referer);
+    const parts = url.pathname.split('/').filter(Boolean);
+    // Esperado: /a/{subdomain}
+    if (parts[0] !== 'a') return null;
+    const sub = (parts[1] ?? '').trim().toLowerCase();
+    if (!sub || sub === 'home') return null;
+    return sub;
+  } catch {
+    return null;
+  }
+}
+
+async function readLastAccountSubdomainCookie(): Promise<string | null> {
+  try {
+    const cookieStore = await cookies();
+    const v = cookieStore.get('last_account_subdomain')?.value ?? '';
+    const sub = v.trim().toLowerCase();
+    if (!sub || sub === 'home') return null;
+    return sub;
+  } catch {
+    return null;
+  }
+}
+
 function validatePreferredChannel(input: unknown): 'email' | 'whatsapp' {
   const v = normalizeText(input).toLowerCase();
   if (!v) return 'email';
@@ -184,10 +211,31 @@ export async function saveSetupAndContinueAction(
   const requestId =
     hdrs.get('x-vercel-id') ?? hdrs.get('x-request-id') ?? (globalThis.crypto?.randomUUID?.() ?? null);
 
-  const accountSubdomain = normalizeText(formData.get('account_subdomain')).toLowerCase();
-  const route = `/a/${accountSubdomain}`;
+  // Resolver o subdomain sem depender apenas do hidden input.
+  // Ordem: FormData -> Referer -> Cookie last_account_subdomain (best-effort).
+  const formSubdomain = normalizeText(formData.get('account_subdomain')).toLowerCase();
+  const refererSubdomain = extractAccountSubdomainFromReferer(hdrs.get('referer'));
+  const cookieSubdomain = await readLastAccountSubdomainCookie();
+
+  const accountSubdomain = formSubdomain || refererSubdomain || cookieSubdomain || '';
+  const route = accountSubdomain ? `/a/${accountSubdomain}` : '/a';
 
   // Campos do form (sem logar valores)
+
+  // Log leve para diagnosticar perda do hidden input (sem PII)
+  if (!formSubdomain && (refererSubdomain || cookieSubdomain)) {
+    // eslint-disable-next-line no-console
+    console.warn(
+      JSON.stringify({
+        scope: 'onboarding',
+        event: 'setup_account_subdomain_fallback',
+        source: refererSubdomain ? 'referer' : 'cookie',
+        request_id: requestId,
+        ts: new Date().toISOString(),
+      })
+    );
+  }
+
   const nameRaw = formData.get('name');
   const nicheRaw = formData.get('niche');
   const preferredRaw = formData.get('preferred_channel');
