@@ -6,11 +6,7 @@ import { redirect } from 'next/navigation';
 import { headers, cookies } from 'next/headers';
 
 import { getAccessContext } from '@/lib/access/getAccessContext';
-import {
-  setSetupCompletedAtIfNull,
-  updateAccountNameCore,
-  renameAccountNoStatus,
-} from '@/lib/access/adapters/accountAdapter';
+import { setSetupCompletedAtIfNull, updateAccountNameCore, renameAccountNoStatus } from '@/lib/access/adapters/accountAdapter';
 import { upsertAccountProfileV1 } from '@/lib/access/adapters/accountProfileAdapter';
 
 export type RenameAccountState = {
@@ -55,7 +51,8 @@ export async function renameAccountAction(
   // headers() agora retorna Promise — precisa de await
   const hdrs = await headers();
 
-  const requestId = hdrs.get('x-vercel-id') ?? hdrs.get('x-request-id') ?? null;
+  const requestId =
+    hdrs.get('x-vercel-id') ?? hdrs.get('x-request-id') ?? null;
 
   const ip = hdrs.get('x-forwarded-for') ?? null;
 
@@ -211,6 +208,38 @@ function validateNameForSetup(name: unknown, accountSubdomain: string): string {
  * - Marcador: setSetupCompletedAtIfNull(accountId) (NULL-only)
  * - Logs mínimos (E10.4.6 SUPA-24 + SUPA-05 + VERCE-10): mesmos request_id; sem PII
  */
+
+async function setAccountStatusActiveIfPending(accountId: string): Promise<void> {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const serviceKey = process.env.SUPABASE_SECRET_KEY;
+
+  if (!supabaseUrl || !serviceKey) {
+    throw new Error('missing_service_env');
+  }
+
+  // Use PostgREST with service key (server-only) to bypass RLS.
+  const url = new URL(`${supabaseUrl}/rest/v1/accounts`);
+  url.searchParams.set('id', `eq.${accountId}`);
+  url.searchParams.set('status', 'eq.pending_setup');
+
+  const res = await fetch(url.toString(), {
+    method: 'PATCH',
+    headers: {
+      apikey: serviceKey,
+      Authorization: `Bearer ${serviceKey}`,
+      'Content-Type': 'application/json',
+      Prefer: 'return=representation',
+    },
+    body: JSON.stringify({ status: 'active' }),
+    cache: 'no-store',
+  });
+
+  if (!res.ok) {
+    const body = await res.text().catch(() => '');
+    throw new Error(`status_update_failed:${res.status}:${body}`);
+  }
+}
+
 export async function saveSetupAndContinueAction(
   _prevState: SetupSaveState | undefined,
   formData: FormData
@@ -326,12 +355,7 @@ export async function saveSetupAndContinueAction(
     }
 
     // Se houve qualquer erro de validação → inline e não persiste/não seta marcador
-    if (
-      fieldErrors.name ||
-      fieldErrors.preferred_channel ||
-      fieldErrors.whatsapp ||
-      fieldErrors.site_url
-    ) {
+    if (fieldErrors.name || fieldErrors.preferred_channel || fieldErrors.whatsapp || fieldErrors.site_url) {
       const latency = Date.now() - t0;
 
       // eslint-disable-next-line no-console
@@ -369,6 +393,9 @@ export async function saveSetupAndContinueAction(
 
     const okMarker = await setSetupCompletedAtIfNull(accountId);
     if (!okMarker) throw new Error('setup_marker_failed');
+
+    // Promote: pending_setup -> active (status drives routing/badge)
+    await setAccountStatusActiveIfPending(accountId);
 
     const latency = Date.now() - t0;
 
