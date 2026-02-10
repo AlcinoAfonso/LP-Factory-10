@@ -6,7 +6,11 @@ import { redirect } from 'next/navigation';
 import { headers, cookies } from 'next/headers';
 
 import { getAccessContext } from '@/lib/access/getAccessContext';
-import { setSetupCompletedAtIfNull, updateAccountNameCore, renameAccountNoStatus } from '@/lib/access/adapters/accountAdapter';
+import {
+  setSetupCompletedAtIfNull,
+  updateAccountNameCore,
+  renameAccountNoStatus,
+} from '@/lib/access/adapters/accountAdapter';
 import { upsertAccountProfileV1 } from '@/lib/access/adapters/accountProfileAdapter';
 
 export type RenameAccountState = {
@@ -51,8 +55,7 @@ export async function renameAccountAction(
   // headers() agora retorna Promise — precisa de await
   const hdrs = await headers();
 
-  const requestId =
-    hdrs.get('x-vercel-id') ?? hdrs.get('x-request-id') ?? null;
+  const requestId = hdrs.get('x-vercel-id') ?? hdrs.get('x-request-id') ?? null;
 
   const ip = hdrs.get('x-forwarded-for') ?? null;
 
@@ -131,12 +134,16 @@ function normalizeText(input: unknown): string {
   return (input ?? '').toString().trim();
 }
 
+/**
+ * Extrai o subdomínio da conta a partir da URL de referência.
+ * Espera um caminho do tipo /a/{subdominio}/... e retorna o segmento {subdominio}.
+ */
 function extractAccountSubdomainFromReferer(referer: string | null): string | null {
   if (!referer) return null;
   try {
     const url = new URL(referer);
     const parts = url.pathname.split('/').filter(Boolean);
-    // Esperado: /a/{subdomain}
+    // Formato esperado: /a/{subdomain}
     if (parts[0] !== 'a') return null;
     const sub = (parts[1] ?? '').trim().toLowerCase();
     if (!sub || sub === 'home') return null;
@@ -146,6 +153,9 @@ function extractAccountSubdomainFromReferer(referer: string | null): string | nu
   }
 }
 
+/**
+ * Lê o cookie last_account_subdomain definido no layout da conta para fallback.
+ */
 async function readLastAccountSubdomainCookie(): Promise<string | null> {
   try {
     const cookieStore = await cookies();
@@ -211,18 +221,14 @@ export async function saveSetupAndContinueAction(
   const requestId =
     hdrs.get('x-vercel-id') ?? hdrs.get('x-request-id') ?? (globalThis.crypto?.randomUUID?.() ?? null);
 
-  // Resolver o subdomain sem depender apenas do hidden input.
-  // Ordem: FormData -> Referer -> Cookie last_account_subdomain (best-effort).
+  // Fallback para resolver o subdomínio da conta sem depender apenas do hidden input
   const formSubdomain = normalizeText(formData.get('account_subdomain')).toLowerCase();
   const refererSubdomain = extractAccountSubdomainFromReferer(hdrs.get('referer'));
   const cookieSubdomain = await readLastAccountSubdomainCookie();
-
   const accountSubdomain = formSubdomain || refererSubdomain || cookieSubdomain || '';
   const route = accountSubdomain ? `/a/${accountSubdomain}` : '/a';
 
-  // Campos do form (sem logar valores)
-
-  // Log leve para diagnosticar perda do hidden input (sem PII)
+  // Log de fallback (sem PII): indica que o hidden input estava vazio
   if (!formSubdomain && (refererSubdomain || cookieSubdomain)) {
     // eslint-disable-next-line no-console
     console.warn(
@@ -236,6 +242,7 @@ export async function saveSetupAndContinueAction(
     );
   }
 
+  // Campos do form (sem logar valores)
   const nameRaw = formData.get('name');
   const nicheRaw = formData.get('niche');
   const preferredRaw = formData.get('preferred_channel');
@@ -319,7 +326,12 @@ export async function saveSetupAndContinueAction(
     }
 
     // Se houve qualquer erro de validação → inline e não persiste/não seta marcador
-    if (fieldErrors.name || fieldErrors.preferred_channel || fieldErrors.whatsapp || fieldErrors.site_url) {
+    if (
+      fieldErrors.name ||
+      fieldErrors.preferred_channel ||
+      fieldErrors.whatsapp ||
+      fieldErrors.site_url
+    ) {
       const latency = Date.now() - t0;
 
       // eslint-disable-next-line no-console
@@ -390,6 +402,17 @@ export async function saveSetupAndContinueAction(
     redirect(route);
   } catch (err: unknown) {
     const latency = Date.now() - t0;
+
+    // Se o erro for um NEXT_REDIRECT (Next.js usa exceção para controlar redirect),
+    // relança a exceção para que o framework faça o redirecionamento sem tratar como falha.
+    if (
+      err &&
+      typeof err === 'object' &&
+      'digest' in err &&
+      String((err as any)?.digest ?? '').startsWith('NEXT_REDIRECT')
+    ) {
+      throw err;
+    }
 
     // eslint-disable-next-line no-console
     console.error(
