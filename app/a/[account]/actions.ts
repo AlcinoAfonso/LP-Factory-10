@@ -6,7 +6,7 @@ import { redirect } from 'next/navigation';
 import { headers, cookies } from 'next/headers';
 
 import { getAccessContext } from '@/lib/access/getAccessContext';
-import { setSetupCompletedAtIfNull, updateAccountNameCore, renameAccountNoStatus } from '@/lib/access/adapters/accountAdapter';
+import { updateAccountNameCore, renameAccountNoStatus } from '@/lib/access/adapters/accountAdapter';
 import { upsertAccountProfileV1 } from '@/lib/access/adapters/accountProfileAdapter';
 
 export type RenameAccountState = {
@@ -47,13 +47,9 @@ export async function renameAccountAction(
 ): Promise<RenameAccountState> {
   const t0 = Date.now();
 
-  // 🔥 AJUSTE OBRIGATÓRIO PARA NEXT 15:
-  // headers() agora retorna Promise — precisa de await
   const hdrs = await headers();
 
-  const requestId =
-    hdrs.get('x-vercel-id') ?? hdrs.get('x-request-id') ?? null;
-
+  const requestId = hdrs.get('x-vercel-id') ?? hdrs.get('x-request-id') ?? null;
   const ip = hdrs.get('x-forwarded-for') ?? null;
 
   try {
@@ -69,7 +65,6 @@ export async function renameAccountAction(
     const latency = Date.now() - t0;
 
     if (ok) {
-      // sucesso — log canônico
       // eslint-disable-next-line no-console
       console.error(
         JSON.stringify({
@@ -85,7 +80,6 @@ export async function renameAccountAction(
 
       redirect(`/a/${slug}`);
     } else {
-      // Falha lógica sem exceção
       // eslint-disable-next-line no-console
       console.error(
         JSON.stringify({
@@ -140,7 +134,6 @@ function extractAccountSubdomainFromReferer(referer: string | null): string | nu
   try {
     const url = new URL(referer);
     const parts = url.pathname.split('/').filter(Boolean);
-    // Formato esperado: /a/{subdomain}
     if (parts[0] !== 'a') return null;
     const sub = (parts[1] ?? '').trim().toLowerCase();
     if (!sub || sub === 'home') return null;
@@ -177,8 +170,6 @@ function validateWhatsappIfNeeded(preferred: 'email' | 'whatsapp', input: unknow
   if (preferred !== 'whatsapp') return raw ? raw : null;
 
   if (!raw) throw new Error('whatsapp_required_when_channel');
-
-  // contrato v1: somente dígitos; 10–15 dígitos
   if (!/^\d{10,15}$/.test(raw)) throw new Error('whatsapp_invalid');
   return raw;
 }
@@ -187,7 +178,6 @@ function validateSiteUrl(input: unknown): string | null {
   const raw = normalizeText(input);
   if (!raw) return null;
 
-  // contrato v1: URL web sem espaços iniciando com http:// ou https://
   if (raw.includes(' ')) throw new Error('site_url_invalid');
   if (!/^https?:\/\//i.test(raw)) throw new Error('site_url_invalid');
   return raw;
@@ -202,11 +192,11 @@ function validateNameForSetup(name: unknown, accountSubdomain: string): string {
 }
 
 /**
- * E10.4.6 — Handler do “Salvar e continuar” (E10.4)
+ * E10.4.x — Handler do “Salvar e continuar” (E10.4)
  * - Guard: owner/admin (via Access Context)
  * - Persistência: account_profiles (niche/preferred_channel/whatsapp/site_url) + accounts.name (core)
- * - Marcador: setSetupCompletedAtIfNull(accountId) (NULL-only)
- * - Logs mínimos (E10.4.6 SUPA-24 + SUPA-05 + VERCE-10): mesmos request_id; sem PII
+ * - Regra oficial: sucesso promove status `pending_setup -> active` (idempotente)
+ * - Logs mínimos (sem PII)
  */
 
 async function setAccountStatusActiveIfPending(accountId: string): Promise<void> {
@@ -217,7 +207,6 @@ async function setAccountStatusActiveIfPending(accountId: string): Promise<void>
     throw new Error('missing_service_env');
   }
 
-  // Use PostgREST with service key (server-only) to bypass RLS.
   const url = new URL(`${supabaseUrl}/rest/v1/accounts`);
   url.searchParams.set('id', `eq.${accountId}`);
   url.searchParams.set('status', 'eq.pending_setup');
@@ -248,16 +237,16 @@ export async function saveSetupAndContinueAction(
   const hdrs = await headers();
 
   const requestId =
-    hdrs.get('x-vercel-id') ?? hdrs.get('x-request-id') ?? (globalThis.crypto?.randomUUID?.() ?? null);
+    hdrs.get('x-vercel-id') ??
+    hdrs.get('x-request-id') ??
+    (globalThis.crypto?.randomUUID?.() ?? null);
 
-  // Fallback para resolver o subdomínio da conta sem depender apenas do hidden input
   const formSubdomain = normalizeText(formData.get('account_subdomain')).toLowerCase();
   const refererSubdomain = extractAccountSubdomainFromReferer(hdrs.get('referer'));
   const cookieSubdomain = await readLastAccountSubdomainCookie();
   const accountSubdomain = formSubdomain || refererSubdomain || cookieSubdomain || '';
   const route = accountSubdomain ? `/a/${accountSubdomain}` : '/a';
 
-  // Log de fallback (sem PII): indica que o hidden input estava vazio
   if (!formSubdomain && (refererSubdomain || cookieSubdomain)) {
     // eslint-disable-next-line no-console
     console.warn(
@@ -271,7 +260,6 @@ export async function saveSetupAndContinueAction(
     );
   }
 
-  // Campos do form (sem logar valores)
   const nameRaw = formData.get('name');
   const nicheRaw = formData.get('niche');
   const preferredRaw = formData.get('preferred_channel');
@@ -288,7 +276,6 @@ export async function saveSetupAndContinueAction(
     });
 
     if (!ctx || ctx.blocked) {
-      // Fail-closed
       return { ok: false, formError: 'Não foi possível salvar agora. Tente novamente.' };
     }
 
@@ -297,12 +284,10 @@ export async function saveSetupAndContinueAction(
 
     if (!accountId) throw new Error('missing_account_id');
 
-    // Guard: owner/admin
     if (memberRole !== 'owner' && memberRole !== 'admin') {
       return { ok: false, formError: 'Você não tem permissão para salvar esta configuração.' };
     }
 
-    // Log canônico: tentativa (sem PII)
     // eslint-disable-next-line no-console
     console.log(
       JSON.stringify({
@@ -314,7 +299,6 @@ export async function saveSetupAndContinueAction(
       })
     );
 
-    // Validações v1 (E10.4.4 + regra do nome padrão)
     const fieldErrors: SetupSaveState['fieldErrors'] = {};
 
     let preferred: 'email' | 'whatsapp' = 'email';
@@ -354,7 +338,6 @@ export async function saveSetupAndContinueAction(
       fieldErrors.site_url = 'Link inválido (use http:// ou https://, sem espaços).';
     }
 
-    // Se houve qualquer erro de validação → inline e não persiste/não seta marcador
     if (fieldErrors.name || fieldErrors.preferred_channel || fieldErrors.whatsapp || fieldErrors.site_url) {
       const latency = Date.now() - t0;
 
@@ -377,7 +360,6 @@ export async function saveSetupAndContinueAction(
 
     const niche = normalizeText(nicheRaw) || null;
 
-    // Persistência: profile v1 (opcionais) + core accounts.name
     const okProfile = await upsertAccountProfileV1({
       accountId,
       niche,
@@ -391,15 +373,10 @@ export async function saveSetupAndContinueAction(
     const okName = await updateAccountNameCore(accountId, name);
     if (!okName) throw new Error('account_name_update_failed');
 
-    const okMarker = await setSetupCompletedAtIfNull(accountId);
-    if (!okMarker) throw new Error('setup_marker_failed');
-
-    // Promote: pending_setup -> active (status drives routing/badge)
     await setAccountStatusActiveIfPending(accountId);
 
     const latency = Date.now() - t0;
 
-    // sucesso — log canônico (sem PII)
     // eslint-disable-next-line no-console
     console.log(
       JSON.stringify({
@@ -412,7 +389,6 @@ export async function saveSetupAndContinueAction(
       })
     );
 
-    // redirect — log canônico (VERCE-10)
     // eslint-disable-next-line no-console
     console.log(
       JSON.stringify({
@@ -430,8 +406,6 @@ export async function saveSetupAndContinueAction(
   } catch (err: unknown) {
     const latency = Date.now() - t0;
 
-    // Se o erro for um NEXT_REDIRECT (Next.js usa exceção para controlar redirect),
-    // relança a exceção para que o framework faça o redirecionamento sem tratar como falha.
     if (
       err &&
       typeof err === 'object' &&
