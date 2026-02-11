@@ -10,6 +10,7 @@
 
 import "server-only";
 import { headers } from "next/headers";
+import { unstable_noStore as noStore } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import type { AccountStatus, MemberStatus, MemberRole } from "../../types/status";
 
@@ -18,9 +19,6 @@ export type AccessAccount = {
   subdomain: string;
   name?: string;
   status: AccountStatus;
-
-  /** E10.4.1 infra: marcador para subestados dentro de pending_setup (NULL vs NOT NULL) */
-  setupCompletedAt?: string | null;
 };
 
 export type AccessMember = {
@@ -43,7 +41,6 @@ type RowV2 = {
   account_key: string; // subdomain
   account_name?: string | null;
   account_status: string;
-  account_setup_completed_at?: string | null;
 
   user_id: string | null;
   member_role: string | null;
@@ -100,6 +97,8 @@ async function logDecision(input: LogInput) {
 }
 
 export async function readAccessContext(subdomain: string): Promise<AccessContext | null> {
+  noStore();
+
   const t0 = Date.now();
   const supabase = await createClient();
 
@@ -111,7 +110,6 @@ export async function readAccessContext(subdomain: string): Promise<AccessContex
         "account_key",
         "account_name",
         "account_status",
-        "account_setup_completed_at",
         "user_id",
         "member_role",
         "member_status",
@@ -144,10 +142,6 @@ export async function readAccessContext(subdomain: string): Promise<AccessContex
 
   const row = data as unknown as RowV2;
 
-  // Se a view negou, pode ser por:
-  // - membership bloqueado (pending/inactive/revoked)
-  // - conta bloqueada (status não permitido)
-  // - sem membership / conta inválida (tratamos como null)
   if (!row.allow) {
     await logDecision({
       user_id: row.user_id ?? null,
@@ -167,14 +161,12 @@ export async function readAccessContext(subdomain: string): Promise<AccessContex
       return null;
     }
 
-    // Retorna contexto bloqueado (SSR decide qual tela mostrar)
     const blockedCtx: AccessContext = {
       account: {
         id: row.account_id,
         subdomain: row.account_key,
         name: row.account_name || row.account_key,
         status: row.account_status as AccountStatus,
-        setupCompletedAt: row.account_setup_completed_at ?? null,
       },
       member: {
         user_id: row.user_id as string,
@@ -195,7 +187,6 @@ export async function readAccessContext(subdomain: string): Promise<AccessContex
       subdomain: row.account_key,
       name: row.account_name || row.account_key,
       status: row.account_status as AccountStatus,
-      setupCompletedAt: row.account_setup_completed_at ?? null,
     },
     member: {
       user_id: row.user_id as string,
@@ -257,10 +248,11 @@ async function ensureFirstAccountForCurrentUserRpc(
  * Importante: NÃO cria conta se já existir qualquer vínculo (mesmo bloqueado/pending/inactive).
  */
 export async function getFirstAccountForCurrentUser(): Promise<string | null> {
+  noStore();
+
   const t0 = Date.now();
   const supabase = await createClient();
 
-  // 1) Obter user_id da sessão (interno, não exposto à UI)
   const {
     data: { user },
     error: authError,
@@ -276,7 +268,6 @@ export async function getFirstAccountForCurrentUser(): Promise<string | null> {
     return null;
   }
 
-  // 2) Preferência: primeira conta liberada (allow=true) pela v_access_context_v2
   const { data: allowedRow, error: allowedErr } = await supabase
     .from("v_access_context_v2")
     .select("account_key, account_id")
@@ -308,7 +299,6 @@ export async function getFirstAccountForCurrentUser(): Promise<string | null> {
     return (allowedRow as any).account_key as string;
   }
 
-  // 3) Se existe QUALQUER vínculo (mesmo bloqueado), não cria conta (fora do escopo do F2)
   const { data: anyMembership, error: memErr } = await supabase
     .from("account_users")
     .select("account_id, status, role, created_at")
@@ -340,7 +330,6 @@ export async function getFirstAccountForCurrentUser(): Promise<string | null> {
     return null;
   }
 
-  // 4) Sem vínculo: F2 cria 1ª conta + vínculo via RPC (quando existir no BD)
   await logDecision({
     decision: "deny",
     reason: "no_membership",
