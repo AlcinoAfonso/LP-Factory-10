@@ -347,3 +347,79 @@ export async function renameAccountNoStatus(
 
   return true;
 }
+
+/**
+ * E10.4.6 — Atualiza apenas accounts.name (core).
+ * NÃO altera subdomain nem status.
+ */
+export async function updateAccountNameCore(
+  accountId: string,
+  name: string
+): Promise<boolean> {
+  const supabase = createServiceClient(); // server-only
+
+  let q: any = supabase
+    .from("accounts")
+    .update({
+      name: name.trim(),
+      // updated_at por trigger
+    })
+    .eq("id", accountId);
+
+  if (typeof q?.maxAffected === "function") q = q.maxAffected(1);
+
+  const { error } = await q;
+
+  if (error) {
+    // eslint-disable-next-line no-console
+    console.error("updateAccountNameCore failed:", {
+      code: (error as any)?.code,
+      message: (error as any)?.message ?? String(error),
+      account_id: accountId,
+    });
+    return false;
+  }
+
+  return true;
+}
+
+/** Leitura: uma account por subdomain (via RLS) */
+export async function getAccountBySubdomain(
+  subdomain: string
+): Promise<AccountInfo | null> {
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+    .from("accounts")
+    .select("id,name,subdomain,domain,status,setup_completed_at")
+    .eq("subdomain", subdomain)
+    .maybeSingle();
+
+  if (error || !data) return null;
+
+  return mapAccountFromDB(data as any);
+}
+
+/** Leitura: membership do usuário atual na account (via RLS) */
+export async function getMyMembership(
+  accountId: string
+): Promise<MemberInfo | null> {
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user?.id) return null;
+
+  const { data, error } = await supabase
+    .from("account_users")
+    .select("id,account_id,user_id,role,status,permissions")
+    .eq("account_id", accountId)
+    .eq("user_id", user.id)
+    .maybeSingle();
+
+  if (error || !data) return null;
+
+  return mapMemberFromDB(data as any);
+}
