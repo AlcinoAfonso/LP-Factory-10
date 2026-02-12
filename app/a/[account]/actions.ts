@@ -4,6 +4,7 @@ import 'server-only';
 
 import { redirect } from 'next/navigation';
 import { headers, cookies } from 'next/headers';
+import { revalidatePath } from 'next/cache';
 
 import { getAccessContext } from '@/lib/access/getAccessContext';
 import { updateAccountNameCore, renameAccountNoStatus } from '@/lib/access/adapters/accountAdapter';
@@ -59,6 +60,7 @@ export async function renameAccountAction(
 
     if (!accountId) throw new Error('missing_account_id');
 
+    // Apenas renomeia (status inalterado)
     const ok = await renameAccountNoStatus(accountId, name, slug);
     const latency = Date.now() - t0;
 
@@ -77,23 +79,23 @@ export async function renameAccountAction(
       );
 
       redirect(`/a/${slug}`);
-    } else {
-      // eslint-disable-next-line no-console
-      console.error(
-        JSON.stringify({
-          event: 'account_rename_failed',
-          error: 'adapter_returned_false',
-          account_id: accountId,
-          user_id: userId ?? null,
-          latency_ms: latency,
-          timestamp: new Date().toISOString(),
-          request_id: requestId,
-          ip,
-        })
-      );
-
-      return { ok: false, error: 'Não foi possível renomear a conta. Tente novamente.' };
     }
+
+    // eslint-disable-next-line no-console
+    console.error(
+      JSON.stringify({
+        event: 'account_rename_failed',
+        error: 'adapter_returned_false',
+        account_id: accountId,
+        user_id: userId ?? null,
+        latency_ms: latency,
+        timestamp: new Date().toISOString(),
+        request_id: requestId,
+        ip,
+      })
+    );
+
+    return { ok: false, error: 'Não foi possível renomear a conta. Tente novamente.' };
   } catch (err: unknown) {
     const latency = Date.now() - t0;
 
@@ -169,7 +171,6 @@ function validateWhatsappIfNeeded(preferred: 'email' | 'whatsapp', input: unknow
 function validateSiteUrl(input: unknown): string | null {
   const raw = normalizeText(input);
   if (!raw) return null;
-
   if (raw.includes(' ')) throw new Error('site_url_invalid');
   if (!/^https?:\/\//i.test(raw)) throw new Error('site_url_invalid');
   return raw;
@@ -184,11 +185,12 @@ function validateNameForSetup(name: unknown, accountSubdomain: string): string {
 }
 
 /**
- * E10.4.x — Handler do “Salvar e continuar” (E10.4)
+ * E10.4.6 — Handler do “Salvar e continuar” (E10.4)
  * - Guard: owner/admin (via Access Context)
  * - Persistência: account_profiles (niche/preferred_channel/whatsapp/site_url) + accounts.name (core)
- * - Promoção: accounts.status pending_setup -> active (idempotente)
- * - Logs mínimos: mesmos request_id; sem PII
+ * - Status: pending_setup → active
+ * - Observability mínima: logs canônicos sem PII
+ * - Importante: revalidatePath(route) antes do redirect para evitar UI stale
  */
 
 async function setAccountStatusActiveIfPending(accountId: string): Promise<void> {
@@ -231,13 +233,12 @@ export async function saveSetupAndContinueAction(
   const requestId =
     hdrs.get('x-vercel-id') ?? hdrs.get('x-request-id') ?? (globalThis.crypto?.randomUUID?.() ?? null);
 
+  // Resolver subdomínio sem depender só do hidden input
   const formSubdomain = normalizeText(formData.get('account_subdomain')).toLowerCase();
   const refererSubdomain = extractAccountSubdomainFromReferer(hdrs.get('referer'));
   const cookieSubdomain = await readLastAccountSubdomainCookie();
   const accountSubdomain = formSubdomain || refererSubdomain || cookieSubdomain || '';
-
   const route = accountSubdomain ? `/a/${accountSubdomain}` : '/a';
-  const nextRoute = accountSubdomain ? `/a/${accountSubdomain}/next` : '/a';
 
   if (!formSubdomain && (refererSubdomain || cookieSubdomain)) {
     // eslint-disable-next-line no-console
@@ -309,9 +310,7 @@ export async function saveSetupAndContinueAction(
     } catch (e: unknown) {
       const code = e instanceof Error ? e.message : String(e);
       fieldErrors.name =
-        code === 'name_is_default'
-          ? 'Escolha um nome diferente do padrão.'
-          : 'Informe um nome válido.';
+        code === 'name_is_default' ? 'Escolha um nome diferente do padrão.' : 'Informe um nome válido.';
     }
 
     try {
@@ -364,6 +363,7 @@ export async function saveSetupAndContinueAction(
     const okName = await updateAccountNameCore(accountId, name);
     if (!okName) throw new Error('account_name_update_failed');
 
+    // Status (fonte de verdade)
     await setAccountStatusActiveIfPending(accountId);
 
     const latency = Date.now() - t0;
@@ -380,21 +380,23 @@ export async function saveSetupAndContinueAction(
       })
     );
 
+    // CRÍTICO: evita stale na volta para a mesma rota
+    revalidatePath(route);
+
     // eslint-disable-next-line no-console
     console.log(
       JSON.stringify({
         scope: 'onboarding',
         event: 'setup_redirect',
         from: route,
-        to: nextRoute,
+        to: route,
         account_id: accountId,
         request_id: requestId,
         ts: new Date().toISOString(),
       })
     );
 
-    // IMPORTANTE: redirecionar para URL DIFERENTE para evitar “stale UI”
-    redirect(nextRoute);
+    redirect(route);
   } catch (err: unknown) {
     const latency = Date.now() - t0;
 
@@ -420,9 +422,6 @@ export async function saveSetupAndContinueAction(
       })
     );
 
-    return {
-      ok: false,
-      formError: 'Não foi possível salvar agora. Tente novamente.',
-    };
+    return { ok: false, formError: 'Não foi possível salvar agora. Tente novamente.' };
   }
 }
