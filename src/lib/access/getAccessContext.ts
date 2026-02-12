@@ -2,25 +2,15 @@
 // E8 MVP — Orquestrador SSR (Refactor P0)
 // Regras: sem queries diretas; lê pelo adapter (v_access_context); contrato estável.
 
-import { unstable_noStore as noStore } from "next/cache";
-import { createClient } from "@/supabase/server";
-import type * as Access from "./types";
-import {
-  mapAccountFromDB,
-  mapMemberFromDB,
-  type AccountInfo,
-  type MemberInfo,
-} from "./adapters/accountAdapter";
-import { readAccessContext } from "./adapters/accessContextAdapter";
+import { createClient } from '@/supabase/server';
+import type * as Access from './types';
+import { mapAccountFromDB, mapMemberFromDB, type AccountInfo, type MemberInfo } from './adapters/accountAdapter';
+import { readAccessContext } from './adapters/accessContextAdapter';
 
 type Input = {
-  /** Preferencial: slug vindo de /a/[account] */
   params?: { account?: string };
-  /** Alternativo (casos especiais) */
   accountId?: string;
-  /** Opcional — se não vier, busco via supabase.auth.getUser() */
   userId?: string;
-  /** Metadados de rota para logs */
   route?: string;
   requestId?: string;
 };
@@ -36,19 +26,11 @@ type AccessContextLegacy = Access.AccessContext & {
   limits: { max_lps: number; max_conversions: number; max_domains: number };
 };
 
-/**
- * Resolve o contexto de acesso para SSR do Account Dashboard.
- * - Usa exclusivamente o adapter (readAccessContext) -> v_access_context
- * - Mantém contrato legado/compatível com a UI atual
- * - Não faz redirect; quem chama (layout SSR) decide o que fazer com null
- */
 export async function getAccessContext(input?: Input): Promise<AccessContextLegacy | null> {
-  noStore();
-
   const slugRaw = input?.params?.account?.trim().toLowerCase();
   const accId = input?.accountId?.trim();
 
-  if (slugRaw === "home") return null;
+  if (slugRaw === 'home') return null;
 
   let userId = input?.userId;
   if (!userId) {
@@ -60,21 +42,21 @@ export async function getAccessContext(input?: Input): Promise<AccessContextLega
     userId = user.id;
   }
 
-  const pair = await readAccessContext(slugRaw ?? "");
+  const pair = await readAccessContext(slugRaw ?? '');
   if (!pair) return null;
 
+  // Marcador removido do runtime: passamos null apenas por compat com mapAccountFromDB
   const account: AccountInfo = mapAccountFromDB({
     id: pair.account.id,
     name: pair.account.name ?? null,
     subdomain: pair.account.subdomain,
     domain: null,
     status: pair.account.status,
-    // Marcador removido do Access Context: manter null por compat (não usar para gating)
     setup_completed_at: null,
   } as any);
 
   const member: MemberInfo = mapMemberFromDB({
-    id: "—",
+    id: '—',
     account_id: pair.member?.account_id ?? accId ?? account.id,
     user_id: pair.member?.user_id ?? userId,
     role: pair.member?.role,
@@ -93,30 +75,26 @@ export async function getAccessContext(input?: Input): Promise<AccessContextLega
 
     is_super_admin: false,
     acting_as: false,
-    plan: { id: "", name: "" },
-    limits: {
-      max_lps: 0,
-      max_conversions: 0,
-      max_domains: 1,
-    },
+    plan: { id: '', name: '' },
+    limits: { max_lps: 0, max_conversions: 0, max_domains: 1 },
   };
 
   const isBlocked = pair.allow === false;
   if (isBlocked) {
     ctx.blocked = true;
 
-    const ms = (member.status ?? "") as string;
-    const reason = (pair.reason ?? "") as string;
+    const ms = (member.status ?? '') as string;
+    const reason = (pair.reason ?? '') as string;
 
-    if (reason === "member_inactive") {
-      if (ms === "pending") ctx.error_code = "MEMBERSHIP_PENDING";
-      else if (ms === "inactive") ctx.error_code = "INACTIVE_MEMBER";
-      else if (ms === "revoked") ctx.error_code = "MEMBERSHIP_REVOKED";
-      else ctx.error_code = "MEMBERSHIP_BLOCKED";
-    } else if (reason === "account_blocked") {
-      ctx.error_code = "FORBIDDEN_ACCOUNT";
+    if (reason === 'member_inactive') {
+      if (ms === 'pending') ctx.error_code = 'MEMBERSHIP_PENDING';
+      else if (ms === 'inactive') ctx.error_code = 'INACTIVE_MEMBER';
+      else if (ms === 'revoked') ctx.error_code = 'MEMBERSHIP_REVOKED';
+      else ctx.error_code = 'MEMBERSHIP_BLOCKED';
+    } else if (reason === 'account_blocked') {
+      ctx.error_code = 'FORBIDDEN_ACCOUNT';
     } else {
-      ctx.error_code = "ACCESS_DENIED";
+      ctx.error_code = 'ACCESS_DENIED';
     }
   } else {
     ctx.blocked = false;
