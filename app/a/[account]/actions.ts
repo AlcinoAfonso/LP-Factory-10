@@ -46,7 +46,6 @@ export async function renameAccountAction(
   formData: FormData
 ): Promise<RenameAccountState> {
   const t0 = Date.now();
-
   const hdrs = await headers();
 
   const requestId = hdrs.get('x-vercel-id') ?? hdrs.get('x-request-id') ?? null;
@@ -60,7 +59,6 @@ export async function renameAccountAction(
 
     if (!accountId) throw new Error('missing_account_id');
 
-    // Apenas renomeia (status inalterado)
     const ok = await renameAccountNoStatus(accountId, name, slug);
     const latency = Date.now() - t0;
 
@@ -94,10 +92,7 @@ export async function renameAccountAction(
         })
       );
 
-      return {
-        ok: false,
-        error: 'Não foi possível renomear a conta. Tente novamente.',
-      };
+      return { ok: false, error: 'Não foi possível renomear a conta. Tente novamente.' };
     }
   } catch (err: unknown) {
     const latency = Date.now() - t0;
@@ -114,10 +109,7 @@ export async function renameAccountAction(
       })
     );
 
-    return {
-      ok: false,
-      error: 'Não foi possível renomear a conta. Tente novamente.',
-    };
+    return { ok: false, error: 'Não foi possível renomear a conta. Tente novamente.' };
   }
 }
 
@@ -195,8 +187,8 @@ function validateNameForSetup(name: unknown, accountSubdomain: string): string {
  * E10.4.x — Handler do “Salvar e continuar” (E10.4)
  * - Guard: owner/admin (via Access Context)
  * - Persistência: account_profiles (niche/preferred_channel/whatsapp/site_url) + accounts.name (core)
- * - Regra oficial: sucesso promove status `pending_setup -> active` (idempotente)
- * - Logs mínimos (sem PII)
+ * - Promoção: accounts.status pending_setup -> active (idempotente)
+ * - Logs mínimos: mesmos request_id; sem PII
  */
 
 async function setAccountStatusActiveIfPending(accountId: string): Promise<void> {
@@ -237,15 +229,15 @@ export async function saveSetupAndContinueAction(
   const hdrs = await headers();
 
   const requestId =
-    hdrs.get('x-vercel-id') ??
-    hdrs.get('x-request-id') ??
-    (globalThis.crypto?.randomUUID?.() ?? null);
+    hdrs.get('x-vercel-id') ?? hdrs.get('x-request-id') ?? (globalThis.crypto?.randomUUID?.() ?? null);
 
   const formSubdomain = normalizeText(formData.get('account_subdomain')).toLowerCase();
   const refererSubdomain = extractAccountSubdomainFromReferer(hdrs.get('referer'));
   const cookieSubdomain = await readLastAccountSubdomainCookie();
   const accountSubdomain = formSubdomain || refererSubdomain || cookieSubdomain || '';
+
   const route = accountSubdomain ? `/a/${accountSubdomain}` : '/a';
+  const nextRoute = accountSubdomain ? `/a/${accountSubdomain}/next` : '/a';
 
   if (!formSubdomain && (refererSubdomain || cookieSubdomain)) {
     // eslint-disable-next-line no-console
@@ -367,7 +359,6 @@ export async function saveSetupAndContinueAction(
       whatsapp,
       siteUrl,
     });
-
     if (!okProfile) throw new Error('profile_upsert_failed');
 
     const okName = await updateAccountNameCore(accountId, name);
@@ -395,14 +386,15 @@ export async function saveSetupAndContinueAction(
         scope: 'onboarding',
         event: 'setup_redirect',
         from: route,
-        to: route,
+        to: nextRoute,
         account_id: accountId,
         request_id: requestId,
         ts: new Date().toISOString(),
       })
     );
 
-    redirect(route);
+    // IMPORTANTE: redirecionar para URL DIFERENTE para evitar “stale UI”
+    redirect(nextRoute);
   } catch (err: unknown) {
     const latency = Date.now() - t0;
 
