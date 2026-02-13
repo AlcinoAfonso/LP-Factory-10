@@ -14,9 +14,10 @@
 • FASES: agrupamentos estratégicos do roadmap (alto nível).
 • MIGRACOES: movimentos de itens (ex.: E7.2 → E10.1) apenas como referência histórica.
 • Microcopy (guia): registrar mensagens-chave + intenção (segurança, anti-abuso, clareza), evitando texto final longo; detalhar mais apenas quando o comportamento depender da redação.
+• ARTEFATOS_REPO: em marcos com execução, registrar também os paths exatos dos arquivos do repositório afetados no caso (criados, ajustados e excluídos), em bullets curtos, sem descrever “como foi feito”.
 • ANTI_DRIFT_DB: não detalhar contrato de banco (tabelas/colunas/views/RPCs/triggers/policies); referenciar docs/schema.md.
 • ANTI_DRIFT_REGRAS: não duplicar regras técnicas; referenciar docs/base-tecnica.md
-• **PROIBIDO_EXECUCAO_NO_CORPO: no corpo dos itens E* é proibido registrar narrativa operacional de execução (PR/branch/CI/deploy), passos de QA, prints e relato “como foi feito”; registrar apenas estado final (snapshot) e critérios mínimos de aceite.**
+• PROIBIDO_EXECUCAO_NO_CORPO: no corpo dos itens E é proibido registrar narrativa operacional de execução (PR/branch/CI/deploy), passos de QA, prints e relato “como foi feito”; registrar apenas estado final (snapshot) e critérios mínimos de aceite.*
 0.2.3 ALLOWLIST_CHANGELOG (blocklist mínima)
 • PROIBIDO: bullets administrativos (ex.: “atualizado cabeçalho/data/versão”).
 0.2.4 ESTILO (opcional)
