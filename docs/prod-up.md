@@ -44,6 +44,10 @@ Monitoramento contínuo de Core Web Vitals (LCP, CLS, FID) com dados reais de us
 ### Valor para o Usuário  
 - Experiência mais fluida e responsiva.  
 
+### Registro (Tipo A — Plataforma)  
+- Status: DEFERIDO  
+- Observação: não bloquear E10.4.6; ativar após estabilizar onboarding v0/v1. Primeira rota-alvo: E10.4.  
+
 ---
 
 ## 4 — Agent Experience (AX) *(🧪 Experimental)*  
