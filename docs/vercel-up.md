@@ -181,6 +181,13 @@ Novo painel Observability da Vercel inclui métricas de redirecionamentos e rewr
 1. Ativar a seção de Redirects & Rewrites.  
 2. Configurar alertas p95/p99.  
 
+### Registro (Tipo A — Plataforma)  
+- Status: OK  
+- Verificado em: 08/02/2026  
+- Ambiente: Vercel Dashboard (projeto `lp-factory-10`) → Observability → Edge Requests  
+- Evidência: gráficos + tabela de rotas acessíveis; busca/filtro de rotas (ex.: `/a/home`) disponível.  
+- Observação: no smoke do preview `e10.4.6`, validar também `/a/[account]` e sequência E10.4 → E10.5 (redirect/latência).  
+
 ---
 
 ## 11 — Server-side Tracking API *(🧪 Experimental)*  
