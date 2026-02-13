@@ -88,7 +88,14 @@ Painel de logs unificado com suporte a depuração via IA.
 
 ### Ações Recomendadas  
 1. Habilitar IA Debugging.  
-2. Integrar com Observabilidade.  
+2. Integrar com Observabilidade.
+
+### Registro (Tipo A — Plataforma)  
+- Status: OK  
+- Verificado em: 08/02/2026  
+- Ambiente: Supabase Dashboard (projeto LP-Factory-10)  
+- Evidência: Logs & Analytics → Logs Explorer; origem `auth_logs`; consulta padrão carregou; filtros de intervalo e busca “error” disponíveis.  
+- Observação: correlação por `request_id` depende do Tipo B no E10.4.6 (logs estruturados).  
 
 ---
 
