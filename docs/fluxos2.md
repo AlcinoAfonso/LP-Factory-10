@@ -12,13 +12,12 @@ Introdução
   - Casos do Roadmap que implementam aquele trecho
 
 
-E10.4 — Conta em pending_setup (setup incompleto) — Primeiros passos (formulário inline)
+E10.4 — Conta em pending_setup — Primeiros passos (formulário inline)
 
 Ponto de Partida
 1. Usuário entra no dashboard da conta (/a/[account]).
 2. A conta está em pending_setup.
-3. setup_completed_at está vazio.
-4. A página mostra o estado “Primeiros passos” com um formulário inline.
+3. A página mostra o estado “Primeiros passos” com um formulário inline.
 
 Cenário 1 — Entrada no E10.4 (Primeiros passos)
 - O que o usuário vê
@@ -45,9 +44,9 @@ Cenário 2 — Salvar com Nome válido (com ou sem dados opcionais)
 - O que o usuário vê
   - Estado de carregamento no botão (“Salvando…”), com inputs desabilitados.
 - Resultado
-  - setup_completed_at é preenchido.
-  - Usuário é redirecionado imediatamente para o E10.5.
-  - Benefício (configurável): previsto para envio automático; no início pode operar em modo manual.
+  - Dados do perfil v1 são persistidos (conforme contrato do onboarding).
+  - Se a conta estava pending_setup, ela é promovida para active (status-based).
+  - “Primeiros passos” deixa de ser renderizado e o usuário segue para o pós-setup (E10.5).
 
 Cenário 3 — Erro de validação (permanece no E10.4)
 - Usuário tenta salvar com:
@@ -59,7 +58,7 @@ Cenário 3 — Erro de validação (permanece no E10.4)
   - Mensagem de erro inline no campo correspondente.
   - CTA permanece disponível após correção.
 - Resultado
-  - setup não é concluído; usuário permanece no E10.4 e corrige os campos.
+  - Setup não é concluído; usuário permanece no E10.4 e corrige os campos.
 
 Cenário 4 — Erro de sistema (rede/servidor)
 - O salvamento falha por erro de sistema.
@@ -72,15 +71,16 @@ Cenário 4 — Erro de sistema (rede/servidor)
 
 Casos do Roadmap
 - E10.4
-- E10.4.2 (setup concluído v0: nome válido e não padrão)
-- E10.4.4 (dados mínimos v1 + contrato de armazenamento/validações)
-- E10.5 (destino após salvar)
+- E10.4.4 (dados mínimos v1 + validações)
+- E10.4.5 (persistência do perfil v1)
+- E10.4.6 (exec: persistência + promoção status-based pending_setup → active)
+- E10.5 (destino pós-setup)
 
 
-E10.5 — Conta em pending_setup (setup concluído, sem trial/plano)
+E10.5 — Conta active sem entitlements — Pós-setup persuasivo
 
 Ponto de Partida
 1. Usuário entra no dashboard da conta (/a/[account]).
-2. A conta está em pending_setup.
-3. setup_completed_at está preenchido.
-4. Ainda não há trial/plano.
+2. A conta está active.
+3. A conta ainda não possui trial/plano (sem entitlements para criar LPs).
+4. A página mostra a etapa pós-setup persuasiva (CTAs para conversão e alternativas claras).
