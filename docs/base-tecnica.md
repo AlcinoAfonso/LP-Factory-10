@@ -2,8 +2,8 @@
 
 0.1. Cabeçalho
 • Documento: Base Técnica LP Factory 10
-• Versão: v2.0.7
-• Data: 07/02/2026
+• Versão: v2.0.8
+• Data: 13/02/2026
 
 0.2 Contrato do documento (parseável)
 • Esta seção define o que é relevante atualizar e como escrever.
@@ -213,9 +213,11 @@
 
 5.2 Adapters, Guards, Providers
 5.2.1 Adapters
-• accountAdapter (PATH: src/lib/access/adapters/accountAdapter.ts): createFromToken(tokenId, actorId) → RPC create_account_with_owner; renameAndActivate(accountId, name, slug) com .maxAffected(1); setSetupCompletedAtIfNull(accountId) seta setup_completed_at somente quando NULL (idempotente); normalizeAccountStatus não faz fallback para active em status desconhecido.
-• accessContextAdapter (PATH: src/lib/access/adapters/accessContextAdapter.ts): lê v_access_context_v2; getFirstAccountForCurrentUser(): se existir conta allow=true → retorna; se existir qualquer membership → não cria; sem membership → chama RPC ensure_first_account_for_current_user(); logs access_context_decision; gate adapter permite null; logs diferenciam deny vs error.
+• accountAdapter (PATH: src/lib/access/adapters/accountAdapter.ts): createFromToken(tokenId, actorId) → RPC create_account_with_owner; renameAndActivate(accountId, name, slug) atualiza name+subdomain e seta status='active'; renameAccountNoStatus(accountId, name, slug) renomeia sem alterar status; updateAccountNameCore(accountId, name) atualiza apenas accounts.name; setSetupCompletedAtIfNull(accountId) (infra E10.4.1) seta setup_completed_at somente quando NULL (idempotente); marcador setup_completed_at é deprecated sem uso no gating do runtime; normalizeAccountStatus usa allowlist ASTAT; fallback atual: 'active'.
+• accountProfileAdapter (PATH: src/lib/access/adapters/accountProfileAdapter.ts): upsertAccountProfileV1({ accountId, niche, preferredChannel, whatsapp, siteUrl }) (E10.4.6).
+• accessContextAdapter (PATH: src/lib/access/adapters/accessContextAdapter.ts): lê v_access_context_v2; readAccessContext(subdomain) retorna allow=true ou contexto bloqueado (member_inactive/account_blocked) quando houver membership; getFirstAccountForCurrentUser(): se existir conta allow=true → retorna; se existir qualquer membership → não cria; sem membership → chama RPC ensure_first_account_for_current_user(); logs access_context_decision; adapter permite null; logs diferenciam deny vs error.
 • adminAdapter (PATH: src/lib/admin/adapters/adminAdapter.ts): valida super_admin / platform_admin; opera post_sale_tokens via postSaleTokenAdapter.
+
 5.2.2 Guards
 • guards (PATH: src/lib/access/guards.ts): bloqueia Admin quando não for super_admin ou platform_admin.
 5.2.3 Providers
@@ -233,13 +235,14 @@
 • Throttling específico de login não está implementado na UI atual (ver 5.3.3).
 5.3.2 Password Reset (MVP)
 • Entrada do reset: /auth/forgot-password.
-• Mensagem neutra obrigatória (anti-enumeração): “Se este e-mail estiver cadastrado…” (em sucesso e descrição).
+• Mensagem neutra obrigatória (anti-enumeração): “Se este e-mail estiver cadastrado, enviaremos instruções para redefinir a senha.” (em sucesso e descrição).
 • Cooldown UI: 60s com contador e botão desabilitado após solicitar.
 • resetPasswordForEmail deve usar redirectTo direto para /auth/update-password (sem querystring).
+• Regra (template Supabase — Reset password): usar {{ .RedirectTo }}?token_hash={{ .TokenHash }}&type=recovery (RedirectTo aponta para /auth/update-password).
 • Link de recovery abre /auth/update-password com type=recovery e token_hash=<TOKEN_HASH> ou code=<CODE>.
 • Regra anti-scanner: não consumir token no GET; confirmação ocorre somente no POST ao “Salvar nova senha”.
-• /auth/update-password faz POST para /auth/confirm com type=recovery, token_hash/code e next=/a.
-• Ao concluir, o usuário retorna para /a (entrypoint público) e segue a resolução de conta pelo gateway.
+• /auth/update-password faz POST para supabase.auth.updateUser({ password }) e, em sucesso, redireciona para /auth/update-password/success.
+
 5.3.3 Throttling
 • Login: sem throttling dedicado; UI apenas desabilita o botão durante a request e exibe error.message em falha.
 • Reset: cooldown UI de 60s (contador), iniciado após uma solicitação bem-sucedida.
@@ -247,15 +250,19 @@
 5.3.4 Observabilidade
 • server-timing/proxy-status não observados nos requests testados via DevTools
 • Diretriz: se precisar medir, instrumentar via logs/Apm e/ou headers próprios no server
+• Server Actions críticas devem emitir logs estruturados (JSON) com request_id e latency_ms (padrão mínimo).
+• Regra (logs sem PII): não logar valores de formulário (ex.: name, whatsapp, site_url).
+• Onboarding pós-save (E10.4.6): revalidatePath(route) antes do redirect para evitar UI stale.
+
 5.3.5 Signup
 • Entrada: /auth/sign-up (SignUpForm usa supabase.auth.signUp).
 • Sucesso do signUp: redirecionar para /auth/sign-up-success (mensagem de confirmação para checar o e-mail).
 • Regra: signUp deve usar emailRedirectTo apontando para /auth/confirm?next=/a/home (somente path interno).
-• Regra (template Supabase — Confirm sign up): manter type=signup no link de confirmação (compatibilidade: handler também aceita type=email).
+• Regra (template Supabase — Confirm sign up): usar {{ .RedirectTo }} (não {{ .SiteURL }}); quando RedirectTo já contém querystring (ex.: ?next=/a/home), anexar &token_hash={{ .TokenHash }}&type=signup.
 • Confirmação: /auth/confirm (GET) exibe interstitial “Continuar” e consome token apenas no POST (anti-scanner).
 • Pós-confirmação: /auth/confirm (POST) cria sessão e redireciona para next=/a/home.
 • Com sessão e sem membership: /a/home cria 1ª conta via RPC ensure_first_account_for_current_user() e redireciona para /a/{account_slug} (pending_setup; owner/active).
-• Com sessão e sem conta allow e com qualquer membership: /a/home redireciona para /auth/confirm/info.
+• Sem vínculo e sem auto-criação (negado pela view): /auth/confirm/info (fallback genérico).
 
 5.4 Regras da rota /a (anti-regressão)
 • /a é o entrypoint público e redireciona para /a/home.
@@ -322,6 +329,11 @@ Regra: qualquer novo arquivo em app/auth/ não pode importar @supabase/* até se
 • Adapters vNext: seguir 3.14
 
 99. Changelog
+v2.0.8 (13/02/2026) — E10.4.6: setup status-based + account_profiles + logs canônicos + templates Supabase
+• Retificada 5.2.1: accountAdapter e accountProfileAdapter; setup concluído = accounts.status='active'; setup_completed_at deprecated sem uso no gating do runtime.
+• Retificada 5.3.2 e 5.3.5: regras de Email Templates Supabase usando {{ .RedirectTo }} (signup/reset).
+• Retificada 5.3.4: observabilidade mínima com logs JSON + request_id e regra sem PII; revalidatePath no pós-save.
+
 v2.0.7 (07/02/2026) — E10.4.3: setter idempotente do marcador setup_completed_at no accountAdapter
 • Documentado setSetupCompletedAtIfNull(accountId) como operação NULL-only (write-once no MVP).
 v2.0.6 (04/02/2026) — E9.8.3: drift de trial no runtime/tipos resolvido
