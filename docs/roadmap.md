@@ -587,6 +587,8 @@
 • Alinhamento com lifecycle de contas (vitrine pending_setup como entrada padrão) (ver E16).
 • Hardening do lifecycle de accounts.status aplicado (detalhes/evidências em docs/schema.md)..
 
+14/02/2026 11:18 — E16 ajustado para refletir a nova abordagem (status-based) e o consolidado 2
+
 16. E16 — Accounts
 
 16.1 Status
@@ -595,56 +597,57 @@
 16.2 Objetivo
 • Definir o lifecycle de **contas** e o comportamento esperado no dashboard (Produto + UX).
 • Manter **billing/trial/entitlements** fora de `accounts.status` (ver E9).
+• Setup concluído (produto) é representado por **status** (ver E10.4/E10.4.6).
 
 16.3 Status de conta (definição prática)
 
-16.3.1 `pending_setup` (vitrine/marketing)
-• Entra no dashboard e navega em modo vitrine.
-• Vê demo/placeholder do produto.
-• Não cria/publica/ativa recursos com custo enquanto não estiver `active`.
-• CTAs típicos: “Ativar/Assinar” (self-serve) e “Falar com suporte/consultor” (consultiva).
+16.3.1 `pending_setup` (onboarding mínimo)
+• Ao entrar no dashboard da conta, renderiza **“Primeiros passos”** (formulário inline).
+• Objetivo: coletar dados mínimos e concluir setup.
+• Ao salvar com sucesso, a conta **deixa de ser `pending_setup`** (ver transição 16.5).
+• CTAs típicos: “Salvar e continuar” (onboarding) e alternativas de suporte/consultoria (quando aplicável).
 
-16.3.2 `active` (operação normal)
-• Uso normal do dashboard e recursos conforme plano/grants.
+16.3.2 `active` (pós-setup / operação normal)
+• Setup concluído; uso normal do dashboard.
+• **Permissões de features** (ex.: criar/publicar recursos) são controladas por **entitlements/trial/plano** (E9), não por `accounts.status`.
 
-16.3.3 `inactive` (bloqueio por pagamento — reversível)
-• Acesso restrito com explicação clara do motivo (pagamento).
-• CTA: reativar/pagar.
-• Política definida: despublicar após grace period (MVP: 7 dias).
+16.3.3 `inactive` (restrição operacional — reversível)
+• Acesso restrito com explicação clara do motivo (ex.: billing), com CTA de reativação.
 • Enforcement automático fica para caso de uso operacional (Admin/Jobs).
 
 16.3.4 `suspended` (bloqueio admin)
 • Acesso restrito com explicação clara do motivo (bloqueio administrativo).
 • CTA: contatar suporte.
-• Política definida: despublicar imediato.
 • Enforcement automático fica para caso de uso operacional (Admin/Jobs).
 
 16.4 Regras de produto (alto nível)
-• Bloqueio por conta é independente do vínculo do usuário: mesmo com acesso “ativo” à conta, pode haver restrição por status da conta.
-• Trial comercial não é status de conta; é estado de plano/assinatura (ver E9).
+• Bloqueio por conta é independente do vínculo do usuário: mesmo com membership “ativo”, pode haver restrição por status da conta.
+• Trial comercial não é status de conta; é estado de plano/assinatura/entitlements (ver E9).
+• `pending_setup` é exclusivo para **setup incompleto**; `active` é o estado pós-setup.
 
 16.5 Transições oficiais (lifecycle)
-• `pending_setup → active`
-• Self-serve: evento de ativação de plano/assinatura (E9).
-• Consultiva: ativação manual operacional (E12/E7).
-• `active → inactive` (evento de billing) (E9).
-• `inactive → active` (reativação) (E9/E12).
-• `* → suspended` e `suspended → active` (admin/operacional) (E12).
+• `pending_setup → active`: evento = **sucesso no “Salvar e continuar” de “Primeiros passos”** (E10.4.6).
+• `active → inactive`: evento de billing/operacional (E9/E12) (regras detalhadas fora deste item).
+• `inactive → active`: reativação (E9/E12).
+• `* → suspended` e `suspended → active`: decisão/admin/operacional (E12).
 
 16.6 UX por status (snapshot)
+• `pending_setup`: tela da conta com **Primeiros passos** (onboarding mínimo).
+• `active`: estado pós-setup (inclui vitrine/CTAs de conversão quando **sem plano/trial**, ver E10.5; gating de features via entitlements, ver E9).
 • `inactive`: tela de conta inativa com CTA reativar/pagar.
 • `suspended`: tela de conta suspensa com CTA suporte.
 • Observação: detalhes de rotas/gate e regras técnicas ficam em `docs/base-tecnica.md` (ver também E4/E8).
 
 16.7 QA e evidência (snapshot)
-• Confirmar que o produto não apresenta “deny genérico” para `inactive/suspended`.
 • Confirmar que contas novas “nascem” em `pending_setup`.
+• Confirmar que, após sucesso no onboarding, a conta passa a renderizar estado `active` (sem “deny genérico”).
 • Detalhes de contrato/DB e evidências de hardening ficam em `docs/schema.md`.
 
 16.8 Casos relacionados / drifts (owners)
-• E9 (H): trial/entitlements (remover hardcode antigo quando houver fonte real).
-• E12 (G): enforcement operacional (jobs) de despublicação/retention/grace period e settings configuráveis.
-• E10: refinamento da vitrine `pending_setup` (mensagens/CTAs/limites detalhados) sem mudar lifecycle.
+• E10.4/E10.4.6: onboarding mínimo e transição `pending_setup → active` (setup status-based).
+• E10.5: “active persuasiva” sem plano/trial (UX pós-setup; gating por entitlements).
+• E9: trial/entitlements (fonte de verdade de permissões).
+• E12: enforcement operacional (jobs) e políticas de restrição/reativação/configurações.
 
 99. Changelog
 v1.5.19 (13/02/2026)
