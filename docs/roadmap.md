@@ -402,19 +402,19 @@
 • Campos v1 (Primeiros passos / inline):
 • name (obrigatório)
 • niche (opcional)
-• preferred_channel (opcional; default = Email; domínio: Email | WhatsApp)
-• whatsapp (opcional; obrigatório se preferred_channel = WhatsApp)
-• link (opcional; link da LP/site)
+• preferred_channel (opcional; default = email; domínio: email | whatsapp)
+• whatsapp (opcional; obrigatório se preferred_channel = whatsapp)
+• site_url (opcional; link da LP/site)
 • Nome padrão (regra simples): name não pode ser igual ao placeholder/default do input (string a confirmar no UI)
 • Validações v1 (critérios mínimos):
 • name: trim; obrigatório; erro inline se vazio ou se igual ao placeholder/default
 • whatsapp (quando exigido): somente dígitos; 10–15 dígitos; erro inline se ausente/fora do critério
-• link (se preenchido): URL web sem espaços iniciando com http:// ou https://; erro inline se inválido
+• site_url (se preenchido): URL web sem espaços iniciando com http:// ou https://; erro inline se inválido
 • Microcopy (guia por intenção):
 • name.required_or_default
 • whatsapp.required_when_channel
 • whatsapp.invalid
-• link.invalid
+• site_url.invalid
 • Nota: persistência/schema dos campos segue para E10.4.5 (decisão) e E10.4.6 (exec).
 
 10.4.5 Onboarding: persistência dos dados mínimos v1 (perfil 1:1)
@@ -443,7 +443,6 @@
 • src/lib/access/getAccessContext.ts
 • src/lib/access/adapters/accessContextAdapter.ts
 • src/lib/access/adapters/accountAdapter.ts
-• src/lib/access/adapters/accountProfileAdapter.ts
 • Criados:
 • src/lib/access/adapters/accountProfileAdapter.ts
 • supabase/migrations/0004__account_profiles.sql
