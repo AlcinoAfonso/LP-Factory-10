@@ -1,0 +1,54 @@
+{
+"meta": {
+"datetime": "13/02/2026 16:00",
+"origin": "ajuste pontual",
+"scope": "documentacao",
+"execution_mode": "github_actions",
+"target_doc": "docs/schema.md",
+"warnings": []
+},
+"ops": [
+{
+"op": "replace_section",
+"doc_path": "docs/schema.md",
+"target": "0.1",
+"mode": "shallow",
+"content": "0.1 Cabeçalho\n• Data da última atualização: 13/02/2026\n• Documento: LP Factory 10 — Schema (DB Contract) v1.0.7\n\n"
+},
+{
+"op": "replace_section",
+"doc_path": "docs/schema.md",
+"target": "1.1.1",
+"mode": "shallow",
+"content": "1.1.1 Chaves, constraints e relacionamentos\n• PK: id uuid\n• UNIQUE: subdomain, domain, slug\n• Status: active | inactive | suspended | pending_setup\n• Coluna status: text; CHECK accounts_status_chk; NOT NULL; DEFAULT 'pending_setup'::text\n• Coluna setup_completed_at: timestamptz; NULL (marcador técnico de setup concluído; write-once no MVP: set NULL → timestamp; sem overwrite; deprecated sem uso no gating/fluxo)\n• FK: plan_id → plans; owner_user_id → auth.users\n\n"
+},
+{
+"op": "replace_section",
+"doc_path": "docs/schema.md",
+"target": "2.1.2",
+"mode": "shallow",
+"content": "2.1.2 Colunas garantidas\n• account_id, account_key, account_name, account_status\n• user_id, member_role, member_status\n• allow, reason\n• account_setup_completed_at (alias de accounts.setup_completed_at; deprecated sem uso no gating/fluxo)\n\n"
+},
+{
+"op": "insert_after_section",
+"doc_path": "docs/schema.md",
+"anchor": "1.7",
+"content": "1.8 account_profiles\n1.8.1 Chaves, constraints e relacionamentos\n• PK: account_id uuid (constraint account_profiles_pkey)\n• FK: account_id → accounts(id) ON DELETE CASCADE (constraint account_profiles_account_id_fkey)\n• CHECK: account_profiles_preferred_channel_chk (preferred_channel IN ('email', 'whatsapp'))\n1.8.2 Campos\n• niche text null\n• preferred_channel text not null default 'email'\n• whatsapp text null\n• site_url text null\n• created_at timestamptz not null default now()\n• updated_at timestamptz not null default now()\n1.8.3 Segurança\n• Trigger Hub: não (sem triggers)\n• RLS: ativo (enable row level security)\n1.8.4 Policies\n• account_profiles_select_member_or_platform (SELECT to public): is_platform_admin() OU membro ativo do tenant (account_users.account_id = account_profiles.account_id; account_users.user_id = auth.uid(); account_users.status='active')\n• account_profiles_insert_owner_admin_or_platform (INSERT to public): is_platform_admin() OU owner/admin ativo do tenant (account_users.role IN ('owner','admin'); status='active')\n• account_profiles_update_owner_admin_or_platform (UPDATE to public): is_platform_admin() OU owner/admin ativo do tenant (USING + WITH CHECK)\n\n"
+},
+{
+"op": "insert_after_heading",
+"doc_path": "docs/schema.md",
+"heading": "99. Changelog",
+"content": "v1.0.7 (13/02/2026) — E10.4.6: account_profiles (tabela + RLS/policies) e deprecação do marcador de setup\n• Adicionada a tabela public.account_profiles (1:1 com accounts via account_id PK/FK ON DELETE CASCADE) com campos: niche, preferred_channel (default 'email' + CHECK email|whatsapp), whatsapp, site_url, created_at, updated_at.\n• account_profiles: RLS ativo e policies reais: account_profiles_select_member_or_platform; account_profiles_insert_owner_admin_or_platform; account_profiles_update_owner_admin_or_platform.\n• Accounts/v_access_context_v2: setup_completed_at e account_setup_completed_at marcados como deprecated sem uso no gating/fluxo (mantidos no DB).\n\n"
+}
+],
+"rules": {
+"fail_if_anchor_missing": true,
+"fail_if_target_missing": true,
+"fail_if_section_already_exists_on_insert": true,
+"fail_if_ambiguous_match": true,
+"no_renumber": true,
+"no_reformat": true,
+"no_out_of_scope_changes": true
+}
+}
