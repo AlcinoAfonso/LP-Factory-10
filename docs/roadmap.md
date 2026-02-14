@@ -443,8 +443,9 @@
 • src/lib/access/adapters/accessContextAdapter.ts
 • src/lib/access/adapters/accountAdapter.ts
 • src/lib/access/adapters/accountProfileAdapter.ts
-• Criado: supabase/migrations/0004__account_profiles.sql
-• Removido: app/a/[account]/next/page.tsx
+• Criados:
+• src/lib/access/adapters/accountProfileAdapter.ts
+• supabase/migrations/0004__account_profiles.sql
 
 10.5 Vitrine pós-setup sem plano/trial (active — conta ativa persuasiva)
 • Status: Briefing
