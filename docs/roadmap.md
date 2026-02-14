@@ -447,16 +447,31 @@
 • src/lib/access/adapters/accountProfileAdapter.ts
 • supabase/migrations/0004__account_profiles.sql
 
-10.5 Vitrine pós-setup sem plano/trial (active — conta ativa persuasiva)
+10.5 Pós-setup persuasivo sem entitlements (active — conversão)
 • Status: Briefing
-• Escopo: UX/CTAs para conta em `accounts.status=active` quando não há plano/trial (entitlements), pós-setup, orientando próximos passos sem retornar ao fluxo de “Primeiros passos”.
-• Dependências: E10.4.6 (setup status-based + pós-save com redirect), E10.5.1 (matriz preparação vs produtivo + enforcement), E9.8.1 (trial/entitlements).
-• Nota: não usa `account_setup_completed_at`; a renderização de “Primeiros passos” fica restrita a `accounts.status=pending_setup`.
+• Escopo: UX/CTAs para conta em `accounts.status=active` quando **não há plano/trial (sem entitlements)**, imediatamente após o E10.4 (pós-setup). Deve orientar próximos passos e conversão **sem retornar** ao fluxo de “Primeiros passos”.
+• DoD mínimo (MVP):
+• Renderizar uma tela pós-setup (não pode ficar “em branco”) com:
+  • 1 CTA primário para “adquirir plano / iniciar trial” (texto a definir).
+  • 1 CTA secundário para “agendar consultoria / conta consultiva”.
+  • Alternativa clara para continuar explorando limitado (ex.: “ver demo” / “continuar limitado”) — sem prometer recursos produtivos.
+  • Mensagem curta explicando: conta está ativa, mas criar/publicar LP depende de entitlements.
+• Regras de gating:
+• “Primeiros passos” renderiza **somente** se `accounts.status=pending_setup`.
+• Conta `active` **não** implica permissão de criar LP; liberar “Criar LP” apenas com trial/plano (entitlement).
+• Nota: não usa `setup_completed_at` nem `account_setup_completed_at` (não usar em lugar nenhum; manter no DB apenas por segurança).
+• Dependências: E10.4.6 (setup status-based + pós-save com redirect/refresh), E9.8.1 (trial/entitlements), E10.5.1 (enforcement server-side; hardening).
 
-10.5.1 Matriz “preparação vs produtivo” + enforcement
+10.5.1 Matriz “preparação vs produtivo” + enforcement (SSR + actions)
 • Status: Briefing
-• Objetivo: fechar lista de ações/rotas produtivas vs preparação e onde bloquear no servidor (SSR + ações), para não depender só de UI.
+• Objetivo: fechar lista de ações/rotas “produtivas” vs “preparação” e definir onde bloquear no servidor (SSR + server actions) para não depender só de UI.
+• Escopo:
+• Definir matriz (rotas + ações) com status/entitlements mínimos exigidos.
+• Aplicar enforcement no SSR e nas ações críticas (ex.: “Criar LP”, “Publicar”, “Domínio”, “Tracking” e integrações) conforme matriz.
+• Garantir mensagens/CTAs coerentes no bloqueio (“iniciar trial/plano”, “agendar consultoria”, alternativas).
 • Saída esperada: matriz fechada + pontos de enforcement + QA mínimo (não-regressão).
+• Dependências: E9.8.1 (trial/entitlements), E10.5 (UX pós-setup para reutilizar CTAs/mensagens).
+
 
 11. E11 — Gestão de Usuários e Convites
 
