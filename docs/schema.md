@@ -1,8 +1,8 @@
 0. Introdução
 
 0.1 Cabeçalho
-• Data da última atualização: 07/02/2026
-• Documento: LP Factory 10 — Schema (DB Contract) v1.0.6
+• Data da última atualização: 13/02/2026
+• Documento: LP Factory 10 — Schema (DB Contract) v1.0.7
 
 0.2 Contrato do documento (parseável)
 • Esta seção define o que é relevante atualizar e como escrever.
@@ -29,8 +29,9 @@
 • UNIQUE: subdomain, domain, slug
 • Status: active | inactive | suspended | pending_setup
 • Coluna status: text; CHECK accounts_status_chk; NOT NULL; DEFAULT 'pending_setup'::text
-• Coluna setup_completed_at: timestamptz; NULL (marcador técnico de setup concluído; write-once no MVP: set NULL → timestamp; sem overwrite)
+• Coluna setup_completed_at: timestamptz; NULL (marcador técnico de setup concluído; write-once no MVP: set NULL → timestamp; sem overwrite; deprecated sem uso no gating/fluxo)
 • FK: plan_id → plans; owner_user_id → auth.users
+
 1.1.2 Índices
 • accounts_name_gin_idx (GIN to_tsvector portuguese, name)
 1.1.3 Segurança
@@ -108,6 +109,26 @@
 • Admin: gerir tokens (platform_admin/super_admin)
 • Próprio usuário: histórico (created_by = auth.uid()) quando aplicável
 
+1.8 account_profiles
+1.8.1 Chaves, constraints e relacionamentos
+• PK: account_id uuid (constraint account_profiles_pkey)
+• FK: account_id → accounts(id) ON DELETE CASCADE (constraint account_profiles_account_id_fkey)
+• CHECK: account_profiles_preferred_channel_chk (preferred_channel IN ('email', 'whatsapp'))
+1.8.2 Campos
+• niche text null
+• preferred_channel text not null default 'email'
+• whatsapp text null
+• site_url text null
+• created_at timestamptz not null default now()
+• updated_at timestamptz not null default now()
+1.8.3 Segurança
+• Trigger Hub: não (sem triggers)
+• RLS: ativo (enable row level security)
+1.8.4 Policies
+• account_profiles_select_member_or_platform (SELECT to public): is_platform_admin() OU membro ativo do tenant (account_users.account_id = account_profiles.account_id; account_users.user_id = auth.uid(); account_users.status='active')
+• account_profiles_insert_owner_admin_or_platform (INSERT to public): is_platform_admin() OU owner/admin ativo do tenant (account_users.role IN ('owner','admin'); status='active')
+• account_profiles_update_owner_admin_or_platform (UPDATE to public): is_platform_admin() OU owner/admin ativo do tenant (USING + WITH CHECK)
+
 2. Views
 
 2.1 v_access_context_v2
@@ -117,7 +138,8 @@
 • account_id, account_key, account_name, account_status
 • user_id, member_role, member_status
 • allow, reason
-• account_setup_completed_at (alias de accounts.setup_completed_at)
+• account_setup_completed_at (alias de accounts.setup_completed_at; deprecated sem uso no gating/fluxo)
+
 2.1.3 Assunções e filtros
 • allow=true só para conta active/pending_setup + membro ativo
 • allow é boolean estrito (COALESCE(..., false)) — nunca NULL
@@ -258,6 +280,11 @@
 • Nota: accounts.status não aceita trial (CHECK accounts_status_chk). No estado atual, views não contêm trial e o runtime/tipos (PATH) não incluem trial (drift resolvido).
 
 99. Changelog
+v1.0.7 (13/02/2026) — E10.4.6: account_profiles (tabela + RLS/policies) e deprecação do marcador de setup
+• Adicionada a tabela public.account_profiles (1:1 com accounts via account_id PK/FK ON DELETE CASCADE) com campos: niche, preferred_channel (default 'email' + CHECK email|whatsapp), whatsapp, site_url, created_at, updated_at.
+• account_profiles: RLS ativo e policies reais: account_profiles_select_member_or_platform; account_profiles_insert_owner_admin_or_platform; account_profiles_update_owner_admin_or_platform.
+• Accounts/v_access_context_v2: setup_completed_at e account_setup_completed_at marcados como deprecated sem uso no gating/fluxo (mantidos no DB).
+
 v1.0.6 (07/02/2026) — E10.4.3: clarificações do marcador setup_completed_at e do alias account_setup_completed_at
 • Accounts: setup_completed_at declarado como write-once no MVP (NULL → timestamp; sem overwrite).
 • v_access_context_v2: account_setup_completed_at explicitado como alias de accounts.setup_completed_at
