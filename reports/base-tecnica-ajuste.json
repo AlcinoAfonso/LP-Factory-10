@@ -1,48 +1,62 @@
 {
-  "meta": {
-    "datetime": "22/01/2026 11:00",
-    "origin": "revisao normativa",
-    "scope": "documentacao",
-    "execution_mode": "github_actions",
-    "target_doc": "docs/base-tecnica.md",
-    "warnings": []
-  },
-  "ops": [
-    {
-      "op": "replace_section",
-      "doc_path": "docs/base-tecnica.md",
-      "target": "0.1",
-      "mode": "shallow",
-      "content": "0.1. Cabeçalho\n• Documento: Base Técnica LP Factory 10\n• Versão: v1.9.10\n• Data: 22/01/2026\n• Escopo: regras e contratos técnicos do repositório (Next.js + Supabase + Vercel)\n"
-    },
-    {
-      "op": "replace_section",
-      "doc_path": "docs/base-tecnica.md",
-      "target": "5.1.2",
-      "mode": "shallow",
-      "content": "5.1.2 Persistência SSR (cookie last_account_subdomain)\n• Definido em /a/[account]/layout.tsx somente quando allow=true, membro ativo e conta em status active|trial|pending_setup.\n• Atributos obrigatórios: HttpOnly; Secure; SameSite=Lax; Max-Age=7776000; Path=/.\n• Leitura do cookie ocorre no SSR do gateway /a/home para redirecionar /a/home → /a/{account_slug}.\n• Limpeza do cookie ocorre via /a/home?clear_last=1 (middleware zera Max-Age=0).\n• last_account_subdomain só é definido em /a/{account_slug} após allow; /a/home não define cookie.\n"
-    },
-    {
-      "op": "replace_section",
-      "doc_path": "docs/base-tecnica.md",
-      "target": "5.4",
-      "mode": "shallow",
-      "content": "5.4 Regras da rota /a (anti-regressão)\n• /a é o entrypoint público e redireciona para /a/home.\n• /a/home é pública e funciona como gateway:\n• Sem sessão: renderiza home pública.\n• Com sessão: resolve conta via cookie last_account_subdomain e redireciona para /a/{account_slug}.\n• Com sessão e sem conta resolvida: redireciona para /auth/confirm/info.\n• Dashboard privado só em /a/{account_slug}.\n• allow/deny é responsabilidade do gate SSR em /a/{account_slug}.\n• /a/home bypassa o gate SSR de conta em app/a/[account]/layout.tsx.\n• Se o gate negar com usuário autenticado: redirecionar para /a/home?clear_last=1 para limpar o cookie e forçar fallback determinístico (sem loop).\n• “Solicitar acesso” em /auth/confirm/info abre mailto (não é rota interna do app).\n• Se ctx.blocked por membership.status: redirecionar para:\n• pending → /auth/confirm/pending\n• inactive → /auth/confirm/inactive\n• revoked → /auth/confirm/revoked\n• Se ctx.blocked por conta (ctx.error_code=\"FORBIDDEN_ACCOUNT\"): redirecionar para:\n• accounts.status=inactive → /auth/confirm/account/inactive\n• accounts.status=suspended → /auth/confirm/account/suspended\n• fallback → /auth/confirm/account\n"
-    },
-    {
-      "op": "insert_after_heading",
-      "doc_path": "docs/base-tecnica.md",
-      "heading": "99. Changelog",
-      "content": "v1.9.10 (22/01/2026) — Gate SSR: bloqueio por status (membership/conta)\n• Ajustado 5.4 para incluir roteamento de bloqueio por status de membership e por conta via FORBIDDEN_ACCOUNT (inactive/suspended) para rotas /auth/confirm dedicadas, mantendo fallback genérico.\n• Corrigida linha truncada em 5.1.2 (atributos do cookie last_account_subdomain: Path=/.)\n"
-    }
-  ],
-  "rules": {
-    "fail_if_anchor_missing": true,
-    "fail_if_target_missing": true,
-    "fail_if_section_already_exists_on_insert": true,
-    "fail_if_ambiguous_match": true,
-    "no_renumber": true,
-    "no_reformat": true,
-    "no_out_of_scope_changes": true
-  }
+"meta": {
+"datetime": "13/02/2026 16:00",
+"origin": "ajuste pontual",
+"scope": "documentacao",
+"execution_mode": "github_actions",
+"target_doc": "docs/base-tecnica.md",
+"warnings": []
+},
+"ops": [
+{
+"op": "replace_section",
+"doc_path": "docs/base-tecnica.md",
+"target": "0.1",
+"mode": "shallow",
+"content": "0.1. Cabe\u00e7alho\n\u2022 Documento: Base T\u00e9cnica LP Factory 10\n\u2022 Vers\u00e3o: v2.0.8\n\u2022 Data: 13/02/2026\n\n"
+},
+{
+"op": "replace_section",
+"doc_path": "docs/base-tecnica.md",
+"target": "5.2.1",
+"mode": "shallow",
+"content": "5.2.1 Adapters\n\u2022 accountAdapter (PATH: src/lib/access/adapters/accountAdapter.ts): createFromToken(tokenId, actorId) \u2192 RPC create_account_with_owner; renameAndActivate(accountId, name, slug) atualiza name+subdomain e seta status='active'; renameAccountNoStatus(accountId, name, slug) renomeia sem alterar status; updateAccountNameCore(accountId, name) atualiza apenas accounts.name; setSetupCompletedAtIfNull(accountId) (infra E10.4.1) seta setup_completed_at somente quando NULL (idempotente); marcador setup_completed_at \u00e9 deprecated sem uso no gating do runtime; normalizeAccountStatus usa allowlist ASTAT; fallback atual: 'active'.\n\u2022 accountProfileAdapter (PATH: src/lib/access/adapters/accountProfileAdapter.ts): upsertAccountProfileV1({ accountId, niche, preferredChannel, whatsapp, siteUrl }) (E10.4.6).\n\u2022 accessContextAdapter (PATH: src/lib/access/adapters/accessContextAdapter.ts): l\u00ea v_access_context_v2; readAccessContext(subdomain) retorna allow=true ou contexto bloqueado (member_inactive/account_blocked) quando houver membership; getFirstAccountForCurrentUser(): se existir conta allow=true \u2192 retorna; se existir qualquer membership \u2192 n\u00e3o cria; sem membership \u2192 chama RPC ensure_first_account_for_current_user(); logs access_context_decision; adapter permite null; logs diferenciam deny vs error.\n\u2022 adminAdapter (PATH: src/lib/admin/adapters/adminAdapter.ts): valida super_admin / platform_admin; opera post_sale_tokens via postSaleTokenAdapter.\n\n"
+},
+{
+"op": "replace_section",
+"doc_path": "docs/base-tecnica.md",
+"target": "5.3.2",
+"mode": "shallow",
+"content": "5.3.2 Password Reset (MVP)\n\u2022 Entrada do reset: /auth/forgot-password.\n\u2022 Mensagem neutra obrigat\u00f3ria (anti-enumera\u00e7\u00e3o): \u201cSe este e-mail estiver cadastrado, enviaremos instru\u00e7\u00f5es para redefinir a senha.\u201d (em sucesso e descri\u00e7\u00e3o).\n\u2022 Cooldown UI: 60s com contador e bot\u00e3o desabilitado ap\u00f3s solicitar.\n\u2022 resetPasswordForEmail deve usar redirectTo direto para /auth/update-password (sem querystring).\n\u2022 Regra (template Supabase \u2014 Reset password): usar {{ .RedirectTo }}?token_hash={{ .TokenHash }}&type=recovery (RedirectTo aponta para /auth/update-password).\n\u2022 Link de recovery abre /auth/update-password com type=recovery e token_hash=<TOKEN_HASH> ou code=<CODE>.\n\u2022 Regra anti-scanner: n\u00e3o consumir token no GET; confirma\u00e7\u00e3o ocorre somente no POST ao \u201cSalvar nova senha\u201d.\n\u2022 /auth/update-password faz POST para supabase.auth.updateUser({ password }) e, em sucesso, redireciona para /auth/update-password/success.\n\n"
+},
+{
+"op": "replace_section",
+"doc_path": "docs/base-tecnica.md",
+"target": "5.3.4",
+"mode": "shallow",
+"content": "5.3.4 Observabilidade\n\u2022 server-timing/proxy-status n\u00e3o observados nos requests testados via DevTools\n\u2022 Diretriz: se precisar medir, instrumentar via logs/Apm e/ou headers pr\u00f3prios no server\n\u2022 Server Actions cr\u00edticas devem emitir logs estruturados (JSON) com request_id e latency_ms (padr\u00e3o m\u00ednimo).\n\u2022 Regra (logs sem PII): n\u00e3o logar valores de formul\u00e1rio (ex.: name, whatsapp, site_url).\n\u2022 Onboarding p\u00f3s-save (E10.4.6): revalidatePath(route) antes do redirect para evitar UI stale.\n\n"
+},
+{
+"op": "replace_section",
+"doc_path": "docs/base-tecnica.md",
+"target": "5.3.5",
+"mode": "shallow",
+"content": "5.3.5 Signup\n\u2022 Entrada: /auth/sign-up (SignUpForm usa supabase.auth.signUp).\n\u2022 Sucesso do signUp: redirecionar para /auth/sign-up-success (mensagem de confirma\u00e7\u00e3o para checar o e-mail).\n\u2022 Regra: signUp deve usar emailRedirectTo apontando para /auth/confirm?next=/a/home (somente path interno).\n\u2022 Regra (template Supabase \u2014 Confirm sign up): usar {{ .RedirectTo }} (n\u00e3o {{ .SiteURL }}); quando RedirectTo j\u00e1 cont\u00e9m querystring (ex.: ?next=/a/home), anexar &token_hash={{ .TokenHash }}&type=signup.\n\u2022 Confirma\u00e7\u00e3o: /auth/confirm (GET) exibe interstitial \u201cContinuar\u201d e consome token apenas no POST (anti-scanner).\n\u2022 P\u00f3s-confirma\u00e7\u00e3o: /auth/confirm (POST) cria sess\u00e3o e redireciona para next=/a/home.\n\u2022 Com sess\u00e3o e sem membership: /a/home cria 1\u00aa conta via RPC ensure_first_account_for_current_user() e redireciona para /a/{account_slug} (pending_setup; owner/active).\n\u2022 Sem v\u00ednculo e sem auto-cria\u00e7\u00e3o (negado pela view): /auth/confirm/info (fallback gen\u00e9rico).\n\n"
+},
+{
+"op": "insert_after_heading",
+"doc_path": "docs/base-tecnica.md",
+"heading": "99. Changelog",
+"content": "v2.0.8 (13/02/2026) \u2014 E10.4.6: setup status-based + account_profiles + logs can\u00f4nicos + templates Supabase\n\u2022 Retificada 5.2.1: accountAdapter e accountProfileAdapter; setup conclu\u00eddo = accounts.status='active'; setup_completed_at deprecated sem uso no gating do runtime.\n\u2022 Retificada 5.3.2 e 5.3.5: regras de Email Templates Supabase usando {{ .RedirectTo }} (signup/reset).\n\u2022 Retificada 5.3.4: observabilidade m\u00ednima com logs JSON + request_id e regra sem PII; revalidatePath no p\u00f3s-save.\n\n"
+}
+],
+"rules": {
+"fail_if_anchor_missing": true,
+"fail_if_target_missing": true,
+"fail_if_section_already_exists_on_insert": true,
+"fail_if_ambiguous_match": true,
+"no_renumber": true,
+"no_reformat": true,
+"no_out_of_scope_changes": true
+}
 }
