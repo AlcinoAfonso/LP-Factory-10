@@ -362,14 +362,16 @@
 10.3.7 Próxima revisão
 • UX Partner Dashboard
 
-10.4 Onboarding mínimo + Vitrine (pending_setup — setup incompleto)
+10.4 Primeiros passos (pending_setup — status-based)
+
 • Status: Concluído (exec) (13/02/2026)
-• Escopo: Entregar o fluxo ponta a ponta de “Primeiros passos” no dashboard da conta (/a/[account]) quando `accounts.status=pending_setup`: exibir formulário inline, validar campos (incl. regras condicionais), salvar com estados/erros (loading, validação inline, erro sistêmico com retry), persistir perfil v1, promover status e redirecionar para o fluxo pós-setup.
-• Dependências: E10.4.1 (infra do marcador `setup_completed_at`), E10.4.2 (setter idempotente do marcador), E10.4.3 (política do marcador), E10.4.4 (campos + validações), E10.4.5 (decisão + contrato de persistência dos dados do onboarding), E10.4.6 (exec de persistência conforme E10.4.5), E9.8.1 (trial/entitlements — apenas CTA/roteamento).
-• Nota (estado atual): setup concluído no MVP = `accounts.status=active` (status-based); `setup_completed_at/account_setup_completed_at` ficam deprecated sem uso no gating/fluxo (mantidos no DB).
+• Escopo: Entregar o fluxo ponta a ponta de “Primeiros passos” no dashboard da conta (/a/[account]) quando `accounts.status=pending_setup`: exibir formulário inline, validar campos (incl. regras condicionais), salvar com estados/erros (loading, validação inline, erro sistêmico com retry), persistir perfil v1, promover status (`pending_setup → active`) e redirecionar para o fluxo pós-setup.
+• Dependências: E10.4.1 (infra do marcador `setup_completed_at` — deprecated; sem uso), E10.4.2 (setter idempotente do marcador — deprecated; sem uso), E10.4.3 (política do marcador — deprecated; sem uso), E10.4.4 (campos + validações), E10.4.5 (decisão + contrato de persistência dos dados do onboarding), E10.4.6 (exec de persistência conforme E10.4.5 + status-based), E9.8.1 (trial/entitlements — apenas CTA/roteamento).
+• Nota (estado atual): setup concluído no MVP = `accounts.status=active` (status-based). `setup_completed_at/account_setup_completed_at` não devem ser usados em lugar nenhum (nem gating, nem fluxo, nem logs); ficam mantidos no DB apenas por segurança.
 
 10.4.1 Indicador de setup concluído (infra)
 • Status: Concluído (30/01/2026)
+• Estado atual: deprecated (manter no DB por segurança; não usar/consumir em runtime/gating/fluxos/logs).
 • Implementado:
 • Marcador por conta accounts.setup_completed_at (timestamptz, NULL)
 • Exposição no Access Context: account_setup_completed_at
@@ -379,22 +381,21 @@
 
 10.4.2 Setup concluído (MVP v0 — Exec)
 • Status: Concluído (31/01/2026)
-• Nota (estado atual desde E10.4.6): setup concluído no runtime = `accounts.status=active`; o marcador `setup_completed_at` não é fonte de verdade do gating/fluxo.
+• Estado atual: deprecated (substituído por status-based em E10.4.6; não usar/consumir em runtime/gating/fluxos/logs).
 • Regra v0 (deprecated): setup concluído v0 = “Salvar/Confirmar” + accounts.name não vazio + accounts.name ≠ 'Conta ' || subdomain.
-• Set do marcador (infra): chamar setSetupCompletedAtIfNull(accountId) somente no evento, se regra ok.
-• QA mínimo: incompleto (não seta) / completo (pode setar) / reentrada (idempotente).
-• Assunção a validar: padrão provisório do nome da conta ('Conta ' || subdomain) é o padrão real de criação.
-• Pendência: abrir E10.4.4 (dados mínimos v1: nicho/WhatsApp/outros).
+• Set do marcador (infra; deprecated): chamar setSetupCompletedAtIfNull(accountId) somente no evento, se regra ok.
+• QA mínimo (histórico): incompleto (não seta) / completo (pode setar) / reentrada (idempotente).
+• Assunção a validar (histórico): padrão provisório do nome da conta ('Conta ' || subdomain) é o padrão real de criação.
 
 10.4.3 Política do marcador de setup (MVP)
 • Status: Concluído (06/02/2026)
-• Objetivo: definir política operacional do marcador de setup no MVP como infra write-once, sem alterar lifecycle e sem alterar regras de acesso.
-• Decisão (MVP): once set, never unset
+• Estado atual: deprecated (substituído por status-based; não usar/consumir em runtime/gating/fluxos/logs).
+• Objetivo (histórico): definir política operacional do marcador de setup no MVP como infra write-once, sem alterar lifecycle e sem alterar regras de acesso.
+• Decisão (histórico/MVP): once set, never unset
 • Permitido: NULL → timestamp
 • Permitido: chamadas repetidas (idempotente; não sobrescreve)
 • Proibido no MVP: overwrite/re-set, backfill/correção, reset/unset
-• Estado atual (desde E10.4.6): `setup_completed_at/account_setup_completed_at` ficam deprecated sem uso no gating/fluxo; setup concluído = `accounts.status=active`.
-• Evolução: correção/backfill/reset/unset somente via novo caso E10.4.x
+• Evolução (histórico): correção/backfill/reset/unset somente via novo caso E10.4.x
 
 10.4.4 Onboarding: dados mínimos v1 (nicho/WhatsApp e outros)
 • Status: Concluído (definição) (06/02/2026)
@@ -432,7 +433,7 @@
 • Setup concluído (fonte de verdade): `accounts.status=active` (promoção `pending_setup → active` com update condicional/idempotente no pós-save).
 • “Primeiros passos” (Salvar e continuar): persiste `account_profiles` (v1), atualiza `accounts.name`, promove status e redireciona para a rota correta da conta (sem exigir logout/login).
 • Access Context: v_access_context_v2 endurecido (seleção de conta/tenant mais robusta, fallback para “primeira conta” quando necessário e tratamento de conta/membro bloqueado/inativo).
-• DB (exec): `account_profiles` criado com RLS/policies reais (ver docs/schema.md); `setup_completed_at/account_setup_completed_at` deprecated sem uso no gating/fluxo (mantidos no DB).
+• DB (exec): `account_profiles` criado com RLS/policies reais (ver docs/schema.md). `setup_completed_at/account_setup_completed_at` mantidos no DB apenas por segurança e não devem ser usados (nem runtime, nem gating, nem fluxo, nem logs).
 • Observability mínima: logs canônicos `setup_*` com `request_id` no server action; regra “logs sem PII”; uso de revalidação de cache no pós-save antes do redirect.
 • Supabase Auth (fora do repo): Redirect URLs do Preview ajustados (wildcard) e Email Templates de signup/reset ajustados para usar RedirectTo.
 • ARTEFATOS_REPO (paths):
