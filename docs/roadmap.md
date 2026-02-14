@@ -256,12 +256,11 @@
 • Sincronizar billing_status, subscription_id e subscription_current_period_end
 • Atualizar plan_price_map com planos e valores atuais
 • Suportar upgrade/downgrade automático para planos SaaS
-9.6.3 Critérios de Aceite
-• Ativar apenas em contas billing_mode = stripe
-• Auditoria das transições de status (trial, active, canceled)
-• Integração validada com a solução de Stripe Sync do Supabase (ou equivalente)
-9.6.4 Updates externos (avaliar)
-• 2026-01 — Supabase: Stripe Sync Engine 1-click no Dashboard — (link) — Nota: comparar com seus webhooks/fields de 9.6.2; decidir “Supabase Sync” vs equivalente.
+9.6.3 Pós-venda
+• Status: Concluído (definição)
+• Escopo: eventos/estados de pós-venda e billing (ex.: trial iniciado, trial expirado, assinatura ativa, cancelamento, inadimplência).
+• Importante: “status” aqui se refere a billing/subscription, e não a accounts.status.
+• Regra: billing/subscription controla entitlements/permissões; accounts.status permanece como lifecycle do setup (ver E10.4.6/E10.4.2).
 
 9.7 Auditoria e Drift
 9.7.1 Status
@@ -277,33 +276,23 @@
 
 9.8 Compatibilidade
 • Billing Engine é o núcleo técnico que garante coerência entre Conta Consultiva (E7), Admin (E12) e Account Dashboard (E10)
-9.8.1 Trial como entitlements (billing)
-• Status: Concluído (31/01/2026) — definição
-• Definição (MVP)
-• Prazo default: 7 dias (flexível em contas consultivas)
-• Elegibilidade: flexível (promoções por período/nicho/contas específicas)
-• Início: somente após setup concluído (referência: E10.4.2)
-• Fim: por prazo; pode ser renovado
-• Pós-expiração: `active → inactive` (coerente com E16/Op4)
-• Contrato mínimo do “sinal comercial” (entitlement) consumido por SSR/gate/UX (sem amarrar em BD)
-• `commercial.kind`: `trial | plan | none`
-• `commercial.state`: `active | expired`
-• `commercial.started_at`, `commercial.expires_at`, `commercial.promo`
-• Proibição (anti-drift): não tratar `trial` como `accounts.status` (nem enum/allowlist/UI de status)
-• Nota: remoção do hardcode/allowlist de trial no Access Context (public.v_access_context_v2) foi concluída em E10.4.1; entitlements de trial/plano permanecem neste marco (E9.8.1)
-• Dependência operacional: se exigir rotina/job para expiração, registrar em E12.x (sem implementar aqui)
-9.8.2 Motivos de inactive para marketing (trial_expired vs churn)
+9.8.1 Trial como entitlement (trial não é status)
 • Status: Concluído (definição)
-• Objetivo: segmentar inactive sem criar novo status (motivo vive na camada comercial).
-• Campo (camada comercial): commercial.inactive_reason
-• Valores: trial_expired | churn | payment_failed | null (payment_failed opcional)
-• Regra: relevante apenas quando accounts.status = inactive (senão null/ignorar).
-• Atribuição (definição)
-• trial expirou ⇒ trial_expired
-• cancelamento/abandono ⇒ churn
-• (opcional) falha cobrança ⇒ payment_failed
-• QA (conceitual)
-• não altera accounts.status; não vaza para enums/allowlists de status; distingue trial_expired vs churn.
+• Regra (fonte de verdade): trial/plano controla apenas entitlements/permissões (ex.: “pode criar LPs”).
+• Importante: trial/plano não define accounts.status.
+• Pré-condição (pós-setup): conta já passou por setup concluído (ver E10.4.6/E10.4.2: setup concluído = accounts.status='active').
+• Pós-expiração do trial (sem plano):
+• Manter accounts.status='active' (nesta fase).
+• Remover/zerar entitlements do trial (feature gating).
+• UX esperada: “active persuasiva sem plano/trial” (ver E10.5).
+• Nota (lifecycle futuro): transições para inactive/suspended ficam para um ciclo posterior, quando houver regra de churn/inadimplência/banimento formalizada.
+• Dependência operacional: se exigir rotina/job para expiração, registrar em E12.x (sem implementar aqui)
+9.8.2 Motivos de inactive (definição; não aplicado no runtime ainda)
+• Status: Concluído (definição)
+• Objetivo: catalogar motivos de “inactive” para futura ativação do lifecycle (ex.: churn, inadimplência, fraude, banimento, etc.).
+• Estado atual (desde E10.4.6): inactive/suspended não são disparados por expiração de trial/plano nesta fase.
+• Regra atual: expiração de trial/plano afeta entitlements, não accounts.status.
+• Nota: quando o lifecycle for ativado, esta seção passará a ter enforcement no runtime (fora do escopo atual).
 9.8.3 Exec: Remover drift trial do runtime + docs
 • Status: Concluído (04/02/2026)
 • Objetivo: remover trial como status (drift) do runtime e alinhar docs; trial permanece apenas como commercial.kind='trial' (E9.8.1).
