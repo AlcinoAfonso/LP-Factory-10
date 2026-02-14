@@ -1,8 +1,8 @@
 0. Introdução
 
 0.1 Cabeçalho
-• Data: 07/02/2026
-• Versão: v1.5.18
+• Data: 13/02/2026
+• Versão: v1.5.19
 
 0.2 Contrato do documento (parseável)
 • Este documento registra o roadmap e o histórico de execução por marcos (E1, E2, ...).
@@ -363,10 +363,10 @@
 • UX Partner Dashboard
 
 10.4 Onboarding mínimo + Vitrine (pending_setup — setup incompleto)
-• Status: Briefing
-• Escopo: Entregar o fluxo ponta a ponta de “Primeiros passos” no dashboard da conta (/a/[account]) quando `accounts.status=pending_setup` e `setup_completed_at IS NULL`: exibir tela com formulário inline, validar campos (incl. regras condicionais), salvar com estados/erros (loading, validação inline, erro sistêmico com retry), marcar setup concluído e redirecionar para o E10.5.
-• Dependências: E10.4.1 (infra do marcador `setup_completed_at`), E10.4.2 (setter idempotente do setup concluído), E10.4.3 (política do marcador), E10.4.4 (campos + validações), E10.4.5 (decisão + contrato de persistência dos dados do onboarding), E10.4.6 (exec de persistência conforme E10.4.5), E9.8.1 (trial/entitlements — apenas CTA/roteamento).
-• Nota: ao setar `setup_completed_at`, a conta continua `pending_setup` e passa ao fluxo 10.5 (pós-setup sem plano/trial).
+• Status: Concluído (exec) (13/02/2026)
+• Escopo: Entregar o fluxo ponta a ponta de “Primeiros passos” no dashboard da conta (/a/[account]) quando `accounts.status=pending_setup`: exibir formulário inline, validar campos (incl. regras condicionais), salvar com estados/erros (loading, validação inline, erro sistêmico com retry), persistir perfil v1, promover status e redirecionar para o fluxo pós-setup.
+• Dependências: E10.4.1 (infra do marcador `setup_completed_at`), E10.4.2 (setter idempotente do marcador), E10.4.3 (política do marcador), E10.4.4 (campos + validações), E10.4.5 (decisão + contrato de persistência dos dados do onboarding), E10.4.6 (exec de persistência conforme E10.4.5), E9.8.1 (trial/entitlements — apenas CTA/roteamento).
+• Nota (estado atual): setup concluído no MVP = `accounts.status=active` (status-based); `setup_completed_at/account_setup_completed_at` ficam deprecated sem uso no gating/fluxo (mantidos no DB).
 
 10.4.1 Indicador de setup concluído (infra)
 • Status: Concluído (30/01/2026)
@@ -379,20 +379,21 @@
 
 10.4.2 Setup concluído (MVP v0 — Exec)
 • Status: Concluído (31/01/2026)
-• Regra (1 linha): setup concluído v0 = “Salvar/Confirmar” + accounts.name não vazio + accounts.name ≠ 'Conta ' || subdomain.
-• Set do marcador: chamar setSetupCompletedAtIfNull(accountId) somente no evento, se regra ok.
+• Nota (estado atual desde E10.4.6): setup concluído no runtime = `accounts.status=active`; o marcador `setup_completed_at` não é fonte de verdade do gating/fluxo.
+• Regra v0 (deprecated): setup concluído v0 = “Salvar/Confirmar” + accounts.name não vazio + accounts.name ≠ 'Conta ' || subdomain.
+• Set do marcador (infra): chamar setSetupCompletedAtIfNull(accountId) somente no evento, se regra ok.
 • QA mínimo: incompleto (não seta) / completo (pode setar) / reentrada (idempotente).
 • Assunção a validar: padrão provisório do nome da conta ('Conta ' || subdomain) é o padrão real de criação.
 • Pendência: abrir E10.4.4 (dados mínimos v1: nicho/WhatsApp/outros).
 
 10.4.3 Política do marcador de setup (MVP)
 • Status: Concluído (06/02/2026)
-• Objetivo: definir política operacional do marcador de setup no MVP para segmentar subestado dentro de pending_setup, sem alterar lifecycle e sem alterar regras de acesso.
+• Objetivo: definir política operacional do marcador de setup no MVP como infra write-once, sem alterar lifecycle e sem alterar regras de acesso.
 • Decisão (MVP): once set, never unset
 • Permitido: NULL → timestamp
 • Permitido: chamadas repetidas (idempotente; não sobrescreve)
 • Proibido no MVP: overwrite/re-set, backfill/correção, reset/unset
-• Uso: segmentar subestado de pending_setup (setup incompleto vs setup concluído)
+• Estado atual (desde E10.4.6): `setup_completed_at/account_setup_completed_at` ficam deprecated sem uso no gating/fluxo; setup concluído = `accounts.status=active`.
 • Evolução: correção/backfill/reset/unset somente via novo caso E10.4.x
 
 10.4.4 Onboarding: dados mínimos v1 (nicho/WhatsApp e outros)
@@ -426,11 +427,30 @@
 • site_url (link)
 • Evolução (fora do escopo): reservar billing/legal para futura 1:1 separada (ex.: account_billing_profiles).
 
-10.5 Vitrine pós-setup sem plano/trial (pending_setup — setup concluído)
+10.4.6 Exec: persistência do perfil v1 + setup status-based
+• Status: Concluído (13/02/2026)
+• Setup concluído (fonte de verdade): `accounts.status=active` (promoção `pending_setup → active` com update condicional/idempotente no pós-save).
+• “Primeiros passos” (Salvar e continuar): persiste `account_profiles` (v1), atualiza `accounts.name`, promove status e redireciona para a rota correta da conta (sem exigir logout/login).
+• Access Context: v_access_context_v2 endurecido (seleção de conta/tenant mais robusta, fallback para “primeira conta” quando necessário e tratamento de conta/membro bloqueado/inativo).
+• DB (exec): `account_profiles` criado com RLS/policies reais (ver docs/schema.md); `setup_completed_at/account_setup_completed_at` deprecated sem uso no gating/fluxo (mantidos no DB).
+• Observability mínima: logs canônicos `setup_*` com `request_id` no server action; regra “logs sem PII”; uso de revalidação de cache no pós-save antes do redirect.
+• Supabase Auth (fora do repo): Redirect URLs do Preview ajustados (wildcard) e Email Templates de signup/reset ajustados para usar RedirectTo.
+• ARTEFATOS_REPO (paths):
+• Ajustados:
+• app/a/[account]/actions.ts
+• app/a/[account]/page.tsx
+• src/lib/access/getAccessContext.ts
+• src/lib/access/adapters/accessContextAdapter.ts
+• src/lib/access/adapters/accountAdapter.ts
+• src/lib/access/adapters/accountProfileAdapter.ts
+• Criado: supabase/migrations/0004__account_profiles.sql
+• Removido: app/a/[account]/next/page.tsx
+
+10.5 Vitrine pós-setup sem plano/trial (active — conta ativa persuasiva)
 • Status: Briefing
-• Escopo: UX/CTAs para conta em pending_setup quando account_setup_completed_at IS NOT NULL (setup ok; falta ativar trial/plano).
-• Dependências: E10.4.1 (exposição do marcador no Access Context), E10.5.1 (matriz preparação vs produtivo + enforcement), E9.8.1 (trial/entitlements).
-• Nota: não muda accounts.status; active permanece “serviço ligado (trial/plano)”.
+• Escopo: UX/CTAs para conta em `accounts.status=active` quando não há plano/trial (entitlements), pós-setup, orientando próximos passos sem retornar ao fluxo de “Primeiros passos”.
+• Dependências: E10.4.6 (setup status-based + pós-save com redirect), E10.5.1 (matriz preparação vs produtivo + enforcement), E9.8.1 (trial/entitlements).
+• Nota: não usa `account_setup_completed_at`; a renderização de “Primeiros passos” fica restrita a `accounts.status=pending_setup`.
 
 10.5.1 Matriz “preparação vs produtivo” + enforcement
 • Status: Briefing
@@ -622,6 +642,11 @@
 • E10: refinamento da vitrine `pending_setup` (mensagens/CTAs/limites detalhados) sem mudar lifecycle.
 
 99. Changelog
+v1.5.19 (13/02/2026)
+• E10.4.6 concluído (exec): “Primeiros passos” persiste `account_profiles`, atualiza `accounts.name` e promove `pending_setup → active`; setup concluído passa a ser status-based (`accounts.status=active`) e `setup_completed_at/account_setup_completed_at` ficam deprecated sem uso no gating/fluxo.
+• E10.5 ajustado para “active persuasiva” (pós-setup sem plano/trial), removendo dependência do marcador no fluxo.
+• Access Context endurecido (v_access_context_v2) e ajustes de Supabase Auth fora do repo (Redirect URLs Preview + templates de signup/reset usando RedirectTo).
+
 v1.5.18 (07/02/2026)
 • E10.4.5 concluído (definição): decisão de persistência do onboarding/perfil em account_profiles (1:1), mantendo accounts.name no core, com contrato mínimo v1 (niche, preferred_channel, whatsapp, site_url).
 v1.5.17 (06/02/2026)
