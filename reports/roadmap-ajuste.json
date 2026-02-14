@@ -1,53 +1,68 @@
 {
-  "meta": {
-    "datetime": "31/01/2026 13:00",
-    "origin": "ajuste pontual",
-    "scope": "documentacao",
-    "execution_mode": "github_actions",
-    "target_doc": "docs/roadmap.md",
-    "warnings": []
-  },
-  "ops": [
-    {
-      "op": "replace_section",
-      "doc_path": "docs/roadmap.md",
-      "target": "0.1",
-      "mode": "shallow",
-      "content": "0.1 Cabeçalho\n• Data: 31/01/2026\n• Versão: v1.5.11\n"
-    },
-    {
-      "op": "replace_section",
-      "doc_path": "docs/roadmap.md",
-      "target": "9.8.1",
-      "mode": "shallow",
-      "content": "9.8.1 Trial como entitlements (billing)\n• Status: Concluído (31/01/2026) — definição\n• Definição (MVP)\n• Prazo default: 7 dias (flexível em contas consultivas)\n• Elegibilidade: flexível (promoções por período/nicho/contas específicas)\n• Início: somente após setup concluído (referência: E10.4.2)\n• Fim: por prazo; pode ser renovado\n• Pós-expiração: `active → inactive` (coerente com E16/Op4)\n• Contrato mínimo do “sinal comercial” (entitlement) consumido por SSR/gate/UX (sem amarrar em BD)\n• `commercial.kind`: `trial | plan | none`\n• `commercial.state`: `active | expired`\n• `commercial.started_at`, `commercial.expires_at`, `commercial.promo`\n• Proibição (anti-drift): não tratar `trial` como `accounts.status` (nem enum/allowlist/UI de status)\n• Nota: remoção do hardcode/allowlist de trial no Access Context (public.v_access_context_v2) foi concluída em E10.4.1; entitlements de trial/plano permanecem neste marco (E9.8.1)\n• Dependência operacional: se exigir rotina/job para expiração, registrar em E12.x (sem implementar aqui)\n"
-    },
-    {
-      "op": "insert_after_section",
-      "doc_path": "docs/roadmap.md",
-      "anchor": "9.8.1",
-      "content": "9.8.2 Motivos de `inactive` para marketing (trial_expired vs churn)\n• Status: Briefing\n• Objetivo: distinguir pelo menos `trial_expired` vs `churn` (opcional `payment_failed`) de forma consultável para campanhas diferentes\n• Observação: “motivo” deve viver na camada comercial/entitlements (não em `accounts.status`)\n"
-    },
-    {
-      "op": "insert_after_section",
-      "doc_path": "docs/roadmap.md",
-      "anchor": "9.8.2",
-      "content": "9.8.3 Exec: Remover drift `trial` do runtime + docs\n• Status: Briefing\n• Objetivo: remover `trial` de status/tipos/allowlists/UX no runtime e alinhar docs ao estado final do E9.8.1 (sem tocar BD)\n• Governança: múltiplos arquivos/runtime → feature branch + QA gate/SSR; sem migrations por padrão\n"
-    },
-    {
-      "op": "insert_after_heading",
-      "doc_path": "docs/roadmap.md",
-      "heading": "99. Changelog",
-      "content": "v1.5.11 (31/01/2026)\n• Atualizado 9.8.1 com definição do trial como entitlement (início pós-setup; expiração `active → inactive`) e contrato mínimo do sinal comercial consumido por SSR/gate/UX.\n• Adicionado 9.8.2 (Briefing) para motivos de `inactive` (trial_expired vs churn) para segmentação de marketing.\n• Adicionado 9.8.3 (Briefing) para execução: remoção do drift `trial` no runtime + alinhamento de docs ao estado final.\n"
-    }
-  ],
-  "rules": {
-    "fail_if_anchor_missing": true,
-    "fail_if_target_missing": true,
-    "fail_if_section_already_exists_on_insert": true,
-    "fail_if_ambiguous_match": true,
-    "no_renumber": true,
-    "no_reformat": true,
-    "no_out_of_scope_changes": true
-  }
+"meta": {
+"datetime": "13/02/2026 16:00",
+"origin": "ajuste pontual",
+"scope": "documentacao",
+"execution_mode": "github_actions",
+"target_doc": "docs/roadmap.md",
+"warnings": []
+},
+"ops": [
+{
+"op": "replace_section",
+"doc_path": "docs/roadmap.md",
+"target": "0.1",
+"mode": "shallow",
+"content": "0.1 Cabe\u00e7alho\n\u2022 Data: 13/02/2026\n\u2022 Vers\u00e3o: v1.5.19\n\n"
+},
+{
+"op": "replace_section",
+"doc_path": "docs/roadmap.md",
+"target": "10.4",
+"mode": "shallow",
+"content": "10.4 Onboarding m\u00ednimo + Vitrine (pending_setup \u2014 setup incompleto)\n\u2022 Status: Conclu\u00eddo (exec) (13/02/2026)\n\u2022 Escopo: Entregar o fluxo ponta a ponta de \u201cPrimeiros passos\u201d no dashboard da conta (/a/[account]) quando `accounts.status=pending_setup`: exibir formul\u00e1rio inline, validar campos (incl. regras condicionais), salvar com estados/erros (loading, valida\u00e7\u00e3o inline, erro sist\u00eamico com retry), persistir perfil v1, promover status e redirecionar para o fluxo p\u00f3s-setup.\n\u2022 Depend\u00eancias: E10.4.1 (infra do marcador `setup_completed_at`), E10.4.2 (setter idempotente do marcador), E10.4.3 (pol\u00edtica do marcador), E10.4.4 (campos + valida\u00e7\u00f5es), E10.4.5 (decis\u00e3o + contrato de persist\u00eancia dos dados do onboarding), E10.4.6 (exec de persist\u00eancia conforme E10.4.5), E9.8.1 (trial/entitlements \u2014 apenas CTA/roteamento).\n\u2022 Nota (estado atual): setup conclu\u00eddo no MVP = `accounts.status=active` (status-based); `setup_completed_at/account_setup_completed_at` ficam deprecated sem uso no gating/fluxo (mantidos no DB).\n\n"
+},
+{
+"op": "replace_section",
+"doc_path": "docs/roadmap.md",
+"target": "10.4.2",
+"mode": "shallow",
+"content": "10.4.2 Setup conclu\u00eddo (MVP v0 \u2014 Exec)\n\u2022 Status: Conclu\u00eddo (31/01/2026)\n\u2022 Nota (estado atual desde E10.4.6): setup conclu\u00eddo no runtime = `accounts.status=active`; o marcador `setup_completed_at` n\u00e3o \u00e9 fonte de verdade do gating/fluxo.\n\u2022 Regra v0 (deprecated): setup conclu\u00eddo v0 = \u201cSalvar/Confirmar\u201d + accounts.name n\u00e3o vazio + accounts.name \u2260 'Conta ' || subdomain.\n\u2022 Set do marcador (infra): chamar setSetupCompletedAtIfNull(accountId) somente no evento, se regra ok.\n\u2022 QA m\u00ednimo: incompleto (n\u00e3o seta) / completo (pode setar) / reentrada (idempotente).\n\u2022 Assun\u00e7\u00e3o a validar: padr\u00e3o provis\u00f3rio do nome da conta ('Conta ' || subdomain) \u00e9 o padr\u00e3o real de cria\u00e7\u00e3o.\n\u2022 Pend\u00eancia: abrir E10.4.4 (dados m\u00ednimos v1: nicho/WhatsApp/outros).\n\n"
+},
+{
+"op": "replace_section",
+"doc_path": "docs/roadmap.md",
+"target": "10.4.3",
+"mode": "shallow",
+"content": "10.4.3 Pol\u00edtica do marcador de setup (MVP)\n\u2022 Status: Conclu\u00eddo (06/02/2026)\n\u2022 Objetivo: definir pol\u00edtica operacional do marcador de setup no MVP como infra write-once, sem alterar lifecycle e sem alterar regras de acesso.\n\u2022 Decis\u00e3o (MVP): once set, never unset\n\u2022 Permitido: NULL \u2192 timestamp\n\u2022 Permitido: chamadas repetidas (idempotente; n\u00e3o sobrescreve)\n\u2022 Proibido no MVP: overwrite/re-set, backfill/corre\u00e7\u00e3o, reset/unset\n\u2022 Estado atual (desde E10.4.6): `setup_completed_at/account_setup_completed_at` ficam deprecated sem uso no gating/fluxo; setup conclu\u00eddo = `accounts.status=active`.\n\u2022 Evolu\u00e7\u00e3o: corre\u00e7\u00e3o/backfill/reset/unset somente via novo caso E10.4.x\n\n"
+},
+{
+"op": "replace_section",
+"doc_path": "docs/roadmap.md",
+"target": "10.5",
+"mode": "shallow",
+"content": "10.5 Vitrine p\u00f3s-setup sem plano/trial (active \u2014 conta ativa persuasiva)\n\u2022 Status: Briefing\n\u2022 Escopo: UX/CTAs para conta em `accounts.status=active` quando n\u00e3o h\u00e1 plano/trial (entitlements), p\u00f3s-setup, orientando pr\u00f3ximos passos sem retornar ao fluxo de \u201cPrimeiros passos\u201d.\n\u2022 Depend\u00eancias: E10.4.6 (setup status-based + p\u00f3s-save com redirect), E10.5.1 (matriz prepara\u00e7\u00e3o vs produtivo + enforcement), E9.8.1 (trial/entitlements).\n\u2022 Nota: n\u00e3o usa `account_setup_completed_at`; a renderiza\u00e7\u00e3o de \u201cPrimeiros passos\u201d fica restrita a `accounts.status=pending_setup`.\n\n"
+},
+{
+"op": "insert_after_section",
+"doc_path": "docs/roadmap.md",
+"anchor": "10.4.5",
+"content": "10.4.6 Exec: persist\u00eancia do perfil v1 + setup status-based\n\u2022 Status: Conclu\u00eddo (13/02/2026)\n\u2022 Setup conclu\u00eddo (fonte de verdade): `accounts.status=active` (promo\u00e7\u00e3o `pending_setup \u2192 active` com update condicional/idempotente no p\u00f3s-save).\n\u2022 \u201cPrimeiros passos\u201d (Salvar e continuar): persiste `account_profiles` (v1), atualiza `accounts.name`, promove status e redireciona para a rota correta da conta (sem exigir logout/login).\n\u2022 Access Context: v_access_context_v2 endurecido (sele\u00e7\u00e3o de conta/tenant mais robusta, fallback para \u201cprimeira conta\u201d quando necess\u00e1rio e tratamento de conta/membro bloqueado/inativo).\n\u2022 DB (exec): `account_profiles` criado com RLS/policies reais (ver docs/schema.md); `setup_completed_at/account_setup_completed_at` deprecated sem uso no gating/fluxo (mantidos no DB).\n\u2022 Observability m\u00ednima: logs can\u00f4nicos `setup_*` com `request_id` no server action; regra \u201clogs sem PII\u201d; uso de revalida\u00e7\u00e3o de cache no p\u00f3s-save antes do redirect.\n\u2022 Supabase Auth (fora do repo): Redirect URLs do Preview ajustados (wildcard) e Email Templates de signup/reset ajustados para usar RedirectTo.\n\u2022 ARTEFATOS_REPO (paths):\n\u2022 Ajustados:\n\u2022 app/a/[account]/actions.ts\n\u2022 app/a/[account]/page.tsx\n\u2022 src/lib/access/getAccessContext.ts\n\u2022 src/lib/access/adapters/accessContextAdapter.ts\n\u2022 src/lib/access/adapters/accountAdapter.ts\n\u2022 src/lib/access/adapters/accountProfileAdapter.ts\n\u2022 Criado: supabase/migrations/0004__account_profiles.sql\n\u2022 Removido: app/a/[account]/next/page.tsx\n\n"
+},
+{
+"op": "insert_after_heading",
+"doc_path": "docs/roadmap.md",
+"heading": "99. Changelog",
+"content": "v1.5.19 (13/02/2026)\n\u2022 E10.4.6 conclu\u00eddo (exec): \u201cPrimeiros passos\u201d persiste `account_profiles`, atualiza `accounts.name` e promove `pending_setup \u2192 active`; setup conclu\u00eddo passa a ser status-based (`accounts.status=active`) e `setup_completed_at/account_setup_completed_at` ficam deprecated sem uso no gating/fluxo.\n\u2022 E10.5 ajustado para \u201cactive persuasiva\u201d (p\u00f3s-setup sem plano/trial), removendo depend\u00eancia do marcador no fluxo.\n\u2022 Access Context endurecido (v_access_context_v2) e ajustes de Supabase Auth fora do repo (Redirect URLs Preview + templates de signup/reset usando RedirectTo).\n\n"
+}
+],
+"rules": {
+"fail_if_anchor_missing": true,
+"fail_if_target_missing": true,
+"fail_if_section_already_exists_on_insert": true,
+"fail_if_ambiguous_match": true,
+"no_renumber": true,
+"no_reformat": true,
+"no_out_of_scope_changes": true
+}
 }
