@@ -436,6 +436,33 @@
 • src/lib/access/adapters/accountProfileAdapter.ts
 • supabase/migrations/0004__account_profiles.sql
 
+10.4.7 Refinar UX (pós-implementação E10.4)
+• Status: Briefing
+• Objetivo: corrigir fricções e inconsistências de UX identificadas após a execução do E10.4, sem alterar o objetivo do fluxo (concluir setup e seguir para E10.5).
+• Escopo: ajustes de formulário, validação e microinterações na tela “Primeiros passos” (formulário inline).
+• Dependências: E10.4.6 (exec do runtime do E10.4)
+
+10.4.7.1 Preservar dados do formulário em erro (não resetar campos corretos)
+• Status: Briefing
+• Problema: ao ocorrer erro de validação em um campo, os demais campos preenchidos corretamente perdem os valores e o usuário precisa digitar tudo novamente.
+• Regra de UX: em erro de validação, manter todos os valores já preenchidos e destacar apenas o(s) campo(s) inválido(s) com erro inline.
+• Saída esperada: submit com erro mantém state do formulário; apenas mensagens/estados de erro são atualizados.
+10.4.7.2 Campo “site” aceitar domínio sem https:// (normalização)
+• Status: Briefing
+• Problema: exigir que o lead digite https:// aumenta fricção e gera erro desnecessário.
+• Regra de UX: aceitar formatos simples (ex.: unicodigital.com.br, www.unicodigital.com.br, unicodigital.com) e também URL completa.
+• Regra de normalização: se o usuário não informar esquema (http:// ou https://), o sistema deve prefixar https:// internamente (armazenamento/uso).
+• Saída esperada: validação tolerante + normalização consistente para URL final.
+10.4.7.3 Indicar campo obrigatório com asterisco em “Nome do projeto”
+• Status: Briefing
+• Problema: falta de sinalização clara do campo obrigatório aumenta tentativa/erro no submit.
+• Regra de UX: label “Nome do projeto*” (asterisco) + erro inline quando vazio.
+• Saída esperada: obrigatoriedade explícita no primeiro contato, reduzindo falhas.
+10.4.7.4 Ajustes finos de microcopy e labels (se necessário)
+• Status: Briefing
+• Escopo: microcopy curta acima do formulário e labels/ajudas dos campos (sem aumentar fricção).
+• Saída esperada: texto mais claro e objetivo, sem “marketing longo”, mantendo o padrão de empty state acionável.
+
 10.5 Pós-setup persuasivo sem entitlements (active — conversão)
 • Status: Briefing
 • Escopo: UX/CTAs para conta em `accounts.status=active` quando **não há plano/trial (sem entitlements)**, imediatamente após o E10.4 (pós-setup). Deve orientar próximos passos e conversão **sem retornar** ao fluxo de “Primeiros passos”.
