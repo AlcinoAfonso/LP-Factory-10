@@ -234,40 +234,26 @@ Infraestrutura IA-native da Vercel, com AI Gateway e Fluid Compute, oferecendo d
 
 2025-12-05
 
-Descrição
-
+### Descrição
 Quando há vários pushes no mesmo branch/PR enquanto um build está em execução, a Vercel prioriza o commit mais recente e cancela jobs intermediários enfileirados, mantendo o Preview alinhado ao “último estado” do branch.
 
-Valor para o Projeto
-
+### Valor para o Projeto
 Reduz desperdício de builds em branches com commits rápidos (menos fila e menos ruído operacional).
-
 Diminui risco de QA abrir Preview “antigo” quando há muitas iterações na mesma branch.
-
 Acelera ciclos de correção durante execuções (ex.: branches de features como e10.4.6).
 
-Valor para o Usuário
-
+### Valor para o Usuário
 Correções e melhorias chegam mais rápido ao Preview/produção (menos tempo de espera por deploys).
-
 Menor chance de validação em estado desatualizado quando houver aprovação por Preview.
 
-Ações Recomendadas
-
+###  Ações Recomendadas
 Tratar como comportamento padrão do Vercel↔GitHub e registrar como capacidade ativa.
-
 Se houver necessidade de buildar todos os commits (caso específico de CI), avaliar opt-out via vercel.json (config de GitHub).
 
-Registro (Tipo B — Repo)
-
+### Registro (Tipo B — Repo)
 Status: PENDENTE
-
 Nota (classificação): Default ON (sem ação). Mudança de comportamento (opt-out) via vercel.json = Tipo B.
-
 Verificado em: —
-
 Ambiente: Repo (vercel.json) + Vercel Project Settings (Git)
-
 Evidência: —
-
 Observação: manter default; só alterar se houver requisito explícito de CI por commit.
