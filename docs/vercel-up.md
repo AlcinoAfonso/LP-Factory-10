@@ -230,7 +230,7 @@ Infraestrutura IA-native da Vercel, com AI Gateway e Fluid Compute, oferecendo d
 
 ---
 
-13 — Auto Job Cancellation (deploys em fila no mesmo branch) (🟩 Estável)
+## 13 — Auto Job Cancellation (deploys em fila no mesmo branch) (🟩 Estável)
 
 2025-12-05
 
@@ -258,15 +258,16 @@ Tratar como comportamento padrão do Vercel↔GitHub e registrar como capacidade
 
 Se houver necessidade de buildar todos os commits (caso específico de CI), avaliar opt-out via vercel.json (config de GitHub).
 
-Registro (Tipo A — Plataforma)
+Registro (Tipo B — Repo)
 
 Status: PENDENTE
 
+Nota (classificação): Default ON (sem ação). Mudança de comportamento (opt-out) via vercel.json = Tipo B.
+
 Verificado em: —
 
-Ambiente: Vercel Dashboard → Project Settings → Git (integração GitHub)
+Ambiente: Repo (vercel.json) + Vercel Project Settings (Git)
 
 Evidência: —
 
 Observação: manter default; só alterar se houver requisito explícito de CI por commit.
-
