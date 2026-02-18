@@ -548,81 +548,21 @@ Padronização das views do Supabase para uso de `security_invoker = true`, gara
 
 ---
 
-## 22 — Remote MCP Server *(🟦 Estável)*  
+## 22 — Remote MCP Server *(DEPRECADO — duplicado)*  
 
-2025-11-12  
-
-### Descrição  
-
-Permite conexão entre o Supabase e agentes IA (GPT, Claude, etc.) via servidor MCP HTTP.  
-
-### Valor para o Projeto  
-
-- Automatiza queries e tarefas de manutenção.  
-
-- Integração direta com o ecossistema de agentes IA.  
-
-### Valor para o Usuário  
-
-- Funcionalidades de diagnóstico e suporte IA mais rápidas e inteligentes.  
-
-### Ações Recomendadas  
-
-1. Configurar endpoint remoto MCP no Supabase.  
-
-2. Integrar com pipeline de observabilidade e logs.  
+Duplicado do item #16. Manter apenas #16 como fonte neste documento.
 
 ---
 
-## 23 — AI Reasoning no Dashboard *(🟣 Previsto)*  
+## 23 — AI Reasoning no Dashboard *(DEPRECADO — duplicado)*  
 
-2025-11-12  
-
-### Descrição  
-
-Módulo IA que processa métricas do Supabase e gera insights automáticos de desempenho e uso.  
-
-### Valor para o Projeto  
-
-- Complementa Observabilidade IA com raciocínio contextual.  
-
-- Reduz dependência de análises manuais.  
-
-### Valor para o Usuário  
-
-- Painel inteligente com alertas preditivos e recomendações.  
-
-### Ações Recomendadas  
-
-1. Integrar com dados do módulo Unified Logs.  
-
-2. Ativar IA Debugging para coleta de contexto.  
+Duplicado do item #18. Manter apenas #18 como fonte neste documento.
 
 ---
 
-## 24 — Tracking Interno de Eventos *(🟣 Previsto)*  
+## 24 — Tracking Interno de Eventos *(DEPRECADO — duplicado)*  
 
-2025-11-12  
-
-### Descrição  
-
-Implementa tracking nativo de eventos no banco, substituindo dependência de ferramentas externas (Google Tag, Meta Pixel).  
-
-### Valor para o Projeto  
-
-- Coleta anônima e segura via Supabase (`events_analytics`).  
-
-- Facilita relatórios e análises internas de conversão.  
-
-### Valor para o Usuário  
-
-- Métricas reais de engajamento e performance no dashboard.  
-
-### Ações Recomendadas  
-
-1. Implementar views agregadas (`vw_events_15m`, `vw_events_daily`).  
-
-2. Conectar com server-side tracking da Vercel.  
+Corpo (curto): “Duplicado do item #19. Manter apenas #19 como fonte neste documento.
 
 ---
 
@@ -1157,3 +1097,124 @@ Permite conectar o banco Supabase a recursos na AWS por rede privada (sem exposi
 * Ambiente: —
 * Evidência: —
 * Observação: avaliar elegibilidade de plano/necessidade quando houver demanda.
+
+---
+
+## 44 — pg_graphql desabilitado por padrão em novos projetos *(🟩 Estável)*
+
+2026-02-XX
+
+### Descrição
+A extensão **`pg_graphql`** passa a vir **desabilitada por padrão** em **novos projetos**. Projetos existentes com **zero requisições GraphQL** também podem ter a extensão desabilitada. Se você usa GraphQL, precisa **habilitar manualmente** a extensão.
+
+### Valor para o Projeto
+- Reduz superfície de ataque e “features ligadas sem uso”.
+- Evita depender de GraphQL sem perceber (especialmente em projetos novos).
+
+### Valor para o Usuário
+- Menos risco de exposição desnecessária.
+- Maior previsibilidade (só fica ativo se o produto realmente usar).
+
+### Ações Recomendadas
+1. Confirmar se o LP Factory 10 usa GraphQL hoje (sim/não).
+2. Se **não usa**: apenas registrar como “mudança de default” (nenhuma ação).
+3. Se **usa/pretende usar**: habilitar `pg_graphql` no projeto e registrar evidência (print + data).
+4. (Opcional, se for requisito do produto) Criar uma rotina/checklist “Extensões obrigatórias do projeto” para onboarding de ambientes.
+
+### Registro (Tipo A — Plataforma)
+- Status: PENDENTE
+- Verificado em: —
+- Ambiente: Supabase Dashboard → Database → Extensions
+- Evidência: —
+- Observação: item “Action Required” (mudança de default); só vira execução se GraphQL for requisito.
+
+---
+
+## 45 — SQL snippets no Studio (salvar local + versionar via Git) *(🟩 Estável)*
+
+2026-02-XX
+
+### Descrição
+O Supabase Studio permite **salvar snippets SQL localmente** e **compartilhar via Git** usando a pasta **`supabase/snippets/`** (workflow “snippets versionados no repositório”).
+
+### Valor para o Projeto
+- Padroniza e versiona queries operacionais (debug, auditoria, checks).
+- Reduz “SQL perdido em chat/print” e melhora rastreabilidade.
+
+### Valor para o Usuário
+- Mais estabilidade (diagnósticos e correções mais rápidos).
+- Menos risco de erro manual em operações repetidas.
+
+### Ações Recomendadas
+1. Decidir se o repositório vai **adotar** `supabase/snippets/` como padrão (sim/não).
+2. Se **sim**: criar a pasta `supabase/snippets/` no repo e registrar convenção de nomes (ex.: `check__access_context.sql`, `fix__rls_policy.sql`).
+3. Definir regra mínima: snippet deve ter cabeçalho com objetivo + impacto + data.
+4. (Opcional) Criar um “pack” de snippets padrão (health-check do onboarding, smoke do Access Context, etc.).
+
+### Registro (Tipo B — Repo)
+- Status: PENDENTE
+- Verificado em: —
+- Ambiente: Supabase Studio + repositório GitHub
+- Evidência: —
+- Observação: não muda runtime/BD; é governança/operacional via repo.
+
+---
+
+## 46 — Supabase Assistant com sugestões de performance de query *(🟦 Estável)*
+
+2026-02-XX
+
+### Descrição
+Recurso no Dashboard/Studio em que o **Supabase Assistant** ajuda a analisar **performance de queries** e sugere **otimizações** (ex.: melhorias de query/índices) diretamente na interface.
+
+### Valor para o Projeto
+- Acelera diagnóstico de lentidão (menos tentativa-e-erro).
+- Ajuda a priorizar otimizações antes de “mexer em arquitetura”.
+
+### Valor para o Usuário
+- Páginas/listagens mais rápidas quando o sistema crescer.
+- Menos instabilidade por queries pesadas.
+
+### Ações Recomendadas
+1. Adotar como **checklist** quando houver “tabela lenta / listagem lenta”.
+2. Registrar no playbook de incidentes: “consultar Assistant + Index Advisor antes de mudanças grandes”.
+3. Manter evidências mínimas quando aplicado (query, recomendação, decisão tomada).
+
+### Registro (Tipo A — Plataforma)
+- Status: PENDENTE
+- Verificado em: —
+- Ambiente: Supabase Dashboard/Studio
+- Evidência: —
+- Observação: não exige mudança de código; vira valor quando usado em incidentes/perf.
+
+---
+
+## 47 — Postgres Best Practices for AI Agents *(🟦 Estável)*
+
+2026-02-XX
+
+### Descrição
+Guia com **regras de boas práticas de Postgres para agentes de IA** (conjunto de regras para evitar SQL incorreto/perigoso e melhorar qualidade de queries/migrations geradas por IA).
+
+### Valor para o Projeto
+- Reduz risco de SQL “errado mas convincente” em migrações e manutenção.
+- Aumenta consistência com a Base Técnica (governança, segurança, idempotência).
+
+### Valor para o Usuário
+- Menos bugs e regressões de banco.
+- Evolução mais estável do produto ao longo do tempo.
+
+### Ações Recomendadas
+1. Extrair as regras que batem com a Base Técnica e registrar como **checklist de revisão** (principalmente para migrations/policies/views).
+2. Usar como “gate” quando IA gerar SQL: revisar contra o checklist antes do merge.
+3. Manter como referência (sem obrigar adoção total de uma vez).
+
+### Registro (Tipo C — Processo)
+- Status: PENDENTE
+- Verificado em: —
+- Ambiente: Governança do projeto (Base Técnica / checklist de PR)
+- Evidência: —
+- Observação: não é toggle nem código; é padrão operacional para reduzir risco.
+
+---
+
