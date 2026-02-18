@@ -190,7 +190,7 @@ Define fases evolutivas: Fase 1 (assistente reativo), Fase 2 (agente com metas
 
 ---
 
-## 12 — Trio de Segurança p/ Agentes: RLS + Tokens Curtos + Auditoria *(🍾 Estável)*
+## 11 — Trio de Segurança p/ Agentes: RLS + Tokens Curtos + Auditoria *(🍾 Estável)*
 2025-11-12
 
 ### Descrição
@@ -208,7 +208,7 @@ Fluxo fim‑a‑fim combinando RLS por `account_id`, JWT de curta expiração co
 
 ---
 
-## 13 — Assistente de Metadados de LP *(🧪 Experimental)*
+## 12 — Assistente de Metadados de LP *(🧪 Experimental)*
 2025-11-17
 
 ### Descrição
