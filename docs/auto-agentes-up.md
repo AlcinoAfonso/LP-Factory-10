@@ -1,4 +1,4 @@
-# LP Factory 10 — Automação e Agentes Update
+# LP Factory 10 — Agentes GPT (Updates)
 
 ---
 
@@ -40,26 +40,7 @@ Uso do GPT para execução de tarefas automatizadas (resumos, análises, geraç�
 
 ---
 
-## 3 — Automação via GitHub Actions *(🍾 Estável)*
-2025-11-10
-
-### Descrição
-Fluxos CI/CD e validações automáticas de segurança e atualização de documentos.
-
-### Valor para o Projeto
-- Garante consistência e atualização diária.
-- Reduz intervenção manual.
-
-### Valor para o Usuário
-- Melhor confiabilidade e transparência.
-
-### Ações Recomendadas
-1. Criar rotinas de sincronização diária (benchmark, updates).
-2. Ativar verificação de status para branches e merges.
-
----
-
-## 4 — Passagens Eficazes entre Agentes (Handoff Design) *(🟣 Estável)*
+## 3 — Passagens Eficazes entre Agentes (Handoff Design) *(🟣 Estável)*
 2025-11-12
 
 ### Descrição
@@ -79,7 +60,7 @@ Modelo padronizado de handoff para transferência de contexto entre agentes IA, 
 
 ---
 
-## 5 — Agentes com Ferramentas em Pipelines Reais *(🍿 Experimental)*
+## 4 — Agentes com Ferramentas em Pipelines Reais *(🍿 Experimental)*
 2025-11-12
 
 ### Descrição
@@ -98,7 +79,7 @@ Integração de bots e agentes IA com CRMs e fluxos de marketing reais (ex.: Hub
 
 ---
 
-## 6 — Guia prático: Assistentes vs. Agentes *(🍾 Estável)*
+## 5 — Guia prático: Assistentes vs. Agentes *(🍾 Estável)*
 2025-11-12
 
 ### Descrição
@@ -117,7 +98,7 @@ Define assistente (reativo, sob solicitação) versus agente (autonomia com meta
 
 ---
 
-## 7 — Padrão Orquestrador‑Trabalhador *(🟣 Estável)*
+## 6 — Padrão Orquestrador‑Trabalhador *(🟣 Estável)*
 2025-11-12
 
 ### Descrição
@@ -136,7 +117,7 @@ Arquitetura em que um orquestrador quebra metas e delega a trabalhadores (ferram
 
 ---
 
-## 8 — Tooling: AgentKit + Ecossistema *(🍿 Experimental)*
+## 7 — Tooling: AgentKit + Ecossistema *(🍿 Experimental)*
 2025-11-12
 
 ### Descrição
@@ -155,7 +136,7 @@ Explora a família de ferramentas AgentKit da OpenAI (Builder, ChatKit, Registry
 
 ---
 
-## 9 — Segurança de Agentes: riscos e guardrails *(🍾 Estável)*
+## 8 — Segurança de Agentes: riscos e guardrails *(🍾 Estável)*
 2025-11-12
 
 ### Descrição
@@ -173,7 +154,7 @@ Resume os principais riscos (prompt injection, autoexec sem revisão, escopo amp
 
 ---
 
-## 10 — Checklist Operacional de Agentes *(🍾 Estável)*
+## 9 — Checklist Operacional de Agentes *(🍾 Estável)*
 2025-11-12
 
 ### Descrição
@@ -191,7 +172,7 @@ Checklist em 5 frentes para operar agentes: Risco/Regulação, Catálogo de Ferr
 
 ---
 
-## 11 — Roadmap de Adoção (Fase 1→3) *(🍾 Estável)*
+## 10 — Roadmap de Adoção (Fase 1→3) *(🍾 Estável)*
 2025-11-12
 
 ### Descrição
@@ -249,19 +230,6 @@ Assistente contextual no Dashboard que sugere automaticamente título, slug, seg
 3. RegiABCstrar a tool `guess_lp_metadata` no AgentKit e auditar chamadas (gravar `agent_id`, tool e `account_id`).
 4. Habilitar a feature apenas para contas internas ou via flag `ai_lp_metadata_assistant` até validar o MVP.
 
----
-
-## 14 — mcp-use no Supabase (MCP Server em Edge Functions) *(🛫 Estável)*
-2025-12-17
-
-### Descrição
-Guia de implementação para construir apps do ChatGPT conectados ao Supabase usando **mcp-use**, facilitando o deploy de **MCP Servers** em **Supabase Edge Functions**.
-
-### Valor para o Projeto
-- Caminho prático para agentes acessarem dados do Supabase com uma superfície de integração padronizada (MCP).
-
-### Valor para o Usuário
-- Possibilita automações e diagnósticos mais rápidos quando (e se) você expuser isso no produto.
 
 ### Ações Recomendadas
 1. Tratar como “padrão candidato” para integrações IA↔Dados (antes de criar conectores ad‑hoc).
