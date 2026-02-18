@@ -1189,32 +1189,33 @@ Recurso no Dashboard/Studio em que o **Supabase Assistant** ajuda a analisar **p
 
 ---
 
-## 47 — Postgres Best Practices for AI Agents *(🟦 Estável)*
+## 47 — MCP Servers em Edge Functions (mcp-use) *(🟦 Estável)*
 
 2026-02-XX
 
 ### Descrição
-Guia com **regras de boas práticas de Postgres para agentes de IA** (conjunto de regras para evitar SQL incorreto/perigoso e melhorar qualidade de queries/migrations geradas por IA).
+Guia oficial da Supabase para criar **MCP Servers** (Model Context Protocol) usando **Edge Functions**, permitindo que agentes de IA (GPT, Claude etc.) acessem dados reais do banco com controle de autenticação, RLS e escopo definido. O pacote `mcp-use` simplifica o deploy e a exposição de ferramentas (tools) via HTTP.
 
 ### Valor para o Projeto
-- Reduz risco de SQL “errado mas convincente” em migrações e manutenção.
-- Aumenta consistência com a Base Técnica (governança, segurança, idempotência).
+- Permite criar agentes com acesso seguro ao banco sem expor service keys no frontend.
+- Centraliza regras de acesso via RLS, mantendo o padrão multi-tenant.
+- Base técnica para futuras automações inteligentes (diagnóstico, suporte, geração assistida).
 
 ### Valor para o Usuário
-- Menos bugs e regressões de banco.
-- Evolução mais estável do produto ao longo do tempo.
+- Diagnósticos e automações mais rápidos.
+- Funcionalidades IA conectadas a dados reais com controle de segurança.
 
 ### Ações Recomendadas
-1. Extrair as regras que batem com a Base Técnica e registrar como **checklist de revisão** (principalmente para migrations/policies/views).
-2. Usar como “gate” quando IA gerar SQL: revisar contra o checklist antes do merge.
-3. Manter como referência (sem obrigar adoção total de uma vez).
+1. Registrar padrão arquitetural: agentes acessam dados via Edge Function (nunca direto com service_role no cliente).
+2. Garantir uso de RLS + escopos limitados por tenant.
+3. Documentar contrato mínimo de segurança (JWT curto, logs de auditoria, rate limit).
+4. Se adotado, registrar endpoint MCP e data de ativação.
 
-### Registro (Tipo C — Processo)
+### Registro (Tipo B — Infra/Edge)
 - Status: PENDENTE
 - Verificado em: —
-- Ambiente: Governança do projeto (Base Técnica / checklist de PR)
+- Ambiente: Supabase → Edge Functions
 - Evidência: —
-- Observação: não é toggle nem código; é padrão operacional para reduzir risco.
+- Observação: não exige uso imediato; registrar como capacidade arquitetural disponível.
 
----
 
