@@ -481,13 +481,18 @@
 10.5.1 Matriz “preparação vs produtivo” + enforcement (SSR + actions)
 • Status: Briefing
 • Objetivo: fechar lista de ações/rotas “produtivas” vs “preparação” e definir onde bloquear no servidor (SSR + server actions) para não depender só de UI.
-• Escopo:
+10.5.1.1 Escopo
 • Definir matriz (rotas + ações) com status/entitlements mínimos exigidos.
 • Aplicar enforcement no SSR e nas ações críticas (ex.: “Criar LP”, “Publicar”, “Domínio”, “Tracking” e integrações) conforme matriz.
 • Garantir mensagens/CTAs coerentes no bloqueio (“iniciar trial/plano”, “agendar consultoria”, alternativas).
-• Saída esperada: matriz fechada + pontos de enforcement + QA mínimo (não-regressão).
-• Dependências: E9.8.1 (trial/entitlements), E10.5 (UX pós-setup para reutilizar CTAs/mensagens).
-
+10.5.1.2 Sinal canônico (mínimo)
+• Declarar 1 fonte canônica de entitlements/limites efetivos (view/RPC) conforme docs/schema.md.
+• Declarar 1 booleano operacional derivado dessa fonte (nome final; ex.: can_create_lp ou is_productive).
+10.5.1.3 Saída esperada
+• Matriz fechada + pontos de enforcement + QA mínimo (não-regressão).
+10.5.1.4 Dependências
+• E9.8.1 (trial/entitlements).
+• E10.5 (UX pós-setup para reutilizar CTAs/mensagens).
 
 11. E11 — Gestão de Usuários e Convites
 
