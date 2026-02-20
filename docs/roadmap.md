@@ -1,8 +1,8 @@
 0. Introdução
 
 0.1 Cabeçalho
-• Data: 13/02/2026
-• Versão: v1.5.19
+• Data: 19/02/2026
+• Versão: v1.5.20
 
 0.2 Contrato do documento (parseável)
 • Este documento registra o roadmap e o histórico de execução por marcos (E1, E2, ...).
@@ -134,6 +134,9 @@
 6.2 Implementado
 • Componentes: Button, Card, Input, Label, AlertBanner
 • Base: shadcn/ui
+• Tipografia oficial (UI do dashboard): Inter via next/font/google aplicada globalmente no <html> (PATH: app/layout.tsx)
+• Tailwind tokens LP Factory (aditivo, sem substituir tokens shadcn): namespaces brand/ink/graytech/surface/state + boxShadow.card (PATH: tailwind.config.ts)
+• Tailwind content: incluir js/jsx/mdx em {pages,components,app,src} para evitar purge silencioso (PATH: tailwind.config.ts)
 
 6.3 Pendências
 • Futura migração para Supabase Platform Kit
@@ -682,11 +685,11 @@
 • E12: enforcement operacional (jobs) e políticas de restrição/reativação/configurações.
 
 99. Changelog
+• E6 atualizado (exec): tipografia Inter aplicada globalmente e tokens Tailwind LP Factory adicionados de forma aditiva (preservando shadcn), incluindo expansão do content para js/jsx/mdx.
 v1.5.19 (13/02/2026)
 • E10.4.6 concluído (exec): “Primeiros passos” persiste `account_profiles`, atualiza `accounts.name` e promove `pending_setup → active`; setup concluído passa a ser status-based (`accounts.status=active`) e `setup_completed_at/account_setup_completed_at` ficam deprecated sem uso no gating/fluxo.
 • E10.5 ajustado para “active persuasiva” (pós-setup sem plano/trial), removendo dependência do marcador no fluxo.
 • Access Context endurecido (v_access_context_v2) e ajustes de Supabase Auth fora do repo (Redirect URLs Preview + templates de signup/reset usando RedirectTo).
-
 v1.5.18 (07/02/2026)
 • E10.4.5 concluído (definição): decisão de persistência do onboarding/perfil em account_profiles (1:1), mantendo accounts.name no core, com contrato mínimo v1 (niche, preferred_channel, whatsapp, site_url).
 v1.5.17 (06/02/2026)
