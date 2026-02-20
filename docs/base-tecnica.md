@@ -2,8 +2,8 @@
 
 0.1. Cabeçalho
 • Documento: Base Técnica LP Factory 10
-• Versão: v2.0.8
-• Data: 13/02/2026
+• Versão: v2.0.9
+• Data: 19/02/2026
 
 0.2 Contrato do documento (parseável)
 • Esta seção define o que é relevante atualizar e como escrever.
@@ -64,6 +64,10 @@
 • JWT Signing Keys ativo: Current ECC (P-256); Previous Legacy HS256 (não revogar por padrão); integrações futuras (se houver) devem validar JWT via JWKS + kid
 
 2.3 UI
+• Tipografia oficial do produto (UI do dashboard): Inter via next/font/google; aplicar globalmente no <html> com className={inter.className} (PATH: app/layout.tsx); weights 400/500/600/700; display=swap.
+• Tailwind tokens LP Factory: adicionar de forma aditiva (sem substituir tokens shadcn) com namespaces brand/ink/graytech/surface/state e boxShadow.card (PATH: tailwind.config.ts).
+• Tailwind content: incluir js/ts/jsx/tsx/mdx em {pages,components,app,src} para evitar purge silencioso (PATH: tailwind.config.ts).
+• Padrão shadcn preservado: primary/background/foreground/... continuam baseados em hsl(var(--...)); paleta shadcn ainda não foi remapeada para a marca (globals.css inalterado).
 • SULB (auth forms): definição: rotas/arquivos de autenticação copiados do Supabase (vendor interno).
 • Regra (SULB): não criar auth fora do SULB; alterações no SULB só quando necessário e sempre respeitando a allowlist 6.4.
 • shadcn/ui: base provisória.
@@ -329,6 +333,10 @@ Regra: qualquer novo arquivo em app/auth/ não pode importar @supabase/* até se
 • Adapters vNext: seguir 3.14
 
 99. Changelog
+v2.0.9 (19/02/2026) — Design System: Inter + tokens Tailwind
+• Registrada tipografia oficial Inter via next/font/google e aplicação global no app/layout.tsx.
+• Registrados tokens Tailwind LP Factory (brand/ink/graytech/surface/state + boxShadow.card) como extensão aditiva, preservando padrão shadcn.
+• Registrada expansão do content Tailwind para incluir js/jsx/mdx, prevenindo purge silencioso.
 v2.0.8 (13/02/2026) — E10.4.6: setup status-based + account_profiles + logs canônicos + templates Supabase
 • Retificada 5.2.1: accountAdapter e accountProfileAdapter; setup concluído = accounts.status='active'; setup_completed_at deprecated sem uso no gating do runtime.
 • Retificada 5.3.2 e 5.3.5: regras de Email Templates Supabase usando {{ .RedirectTo }} (signup/reset).
