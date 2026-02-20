@@ -75,7 +75,11 @@ function normalizeAndValidateSiteUrl(input: unknown): string | null {
 }
 
 function nameErrorMessage(code: string): string {
-  return code === "name_is_default" ? "Escolha um nome diferente do padrão." : "Informe um nome válido.";
+  // Evita “padrão” e explica o que preencher.
+  if (code === "name_required" || code === "name_is_default") {
+    return "Informe o nome do projeto (ex.: Unico Digital).";
+  }
+  return "Informe um nome válido.";
 }
 
 function whatsappErrorMessage(code: string): string {
@@ -135,7 +139,11 @@ export function validateE10_4SetupForm(args: {
 
   const niche = normalizeText(args.niche) || null;
 
-  const ok = !fieldErrors.name && !fieldErrors.preferred_channel && !fieldErrors.whatsapp && !fieldErrors.site_url;
+  const ok =
+    !fieldErrors.name &&
+    !fieldErrors.preferred_channel &&
+    !fieldErrors.whatsapp &&
+    !fieldErrors.site_url;
 
   return {
     ok,
