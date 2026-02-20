@@ -21,6 +21,10 @@ function normalizeText(input: unknown): string {
   return (input ?? "").toString().trim();
 }
 
+function normalizeForCompare(input: unknown): string {
+  return normalizeText(input).replace(/\s+/g, " ").trim().toLowerCase();
+}
+
 function validatePreferredChannel(input: unknown): PreferredChannel {
   const v = normalizeText(input).toLowerCase();
   if (!v) return "email";
@@ -28,11 +32,26 @@ function validatePreferredChannel(input: unknown): PreferredChannel {
   throw new Error("invalid_preferred_channel");
 }
 
+function isLikelyMachineDefaultName(name: string, accountSubdomain: string): boolean {
+  const n = normalizeForCompare(name);
+  if (!n) return false;
+
+  const bySubdomain = normalizeForCompare(`Conta ${accountSubdomain}`);
+  if (n === bySubdomain) return true;
+
+  if (/^conta\s+acc-[a-z0-9]+$/i.test(name.trim())) return true;
+
+  return false;
+}
+
 function validateNameForSetup(name: unknown, accountSubdomain: string): string {
   const trimmed = normalizeText(name);
   if (!trimmed) throw new Error("name_required");
-  const defaultName = `Conta ${accountSubdomain}`;
-  if (trimmed === defaultName) throw new Error("name_is_default");
+
+  if (isLikelyMachineDefaultName(trimmed, accountSubdomain)) {
+    throw new Error("name_is_default");
+  }
+
   return trimmed;
 }
 
@@ -50,7 +69,6 @@ function normalizeAndValidateSiteUrl(input: unknown): string | null {
   if (!raw) return null;
   if (raw.includes(" ")) throw new Error("site_url_invalid");
 
-  // Aceita domínio simples (sem esquema) e URL completa.
   const withScheme = /^https?:\/\//i.test(raw) ? raw : `https://${raw}`;
 
   let u: URL;
@@ -64,7 +82,6 @@ function normalizeAndValidateSiteUrl(input: unknown): string | null {
     throw new Error("site_url_invalid");
   }
 
-  // Evita inserir trailing slash quando o usuário não digitou.
   const originalHadTrailingSlash = withScheme.endsWith("/");
   const hasQueryOrHash = Boolean(u.search) || Boolean(u.hash);
   if (!hasQueryOrHash && u.pathname === "/" && !originalHadTrailingSlash) {
@@ -75,7 +92,6 @@ function normalizeAndValidateSiteUrl(input: unknown): string | null {
 }
 
 function nameErrorMessage(code: string): string {
-  // Evita “padrão” e explica o que preencher.
   if (code === "name_required" || code === "name_is_default") {
     return "Informe o nome do projeto (ex.: Unico Digital).";
   }
