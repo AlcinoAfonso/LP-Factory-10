@@ -4,10 +4,7 @@
 import { useEffect, useMemo, useRef, useState, useActionState } from "react";
 import type { FormEvent } from "react";
 import { useAccessContext } from "@/providers/AccessProvider";
-import {
-  saveSetupAndContinueAction,
-  type SetupSaveState,
-} from "./actions";
+import { saveSetupAndContinueAction, type SetupSaveState } from "./actions";
 import { validateE10_4SetupForm } from "@/lib/onboarding/e10_4_setup_validation";
 
 type DashState = "auth" | "onboarding" | "public";
@@ -34,9 +31,7 @@ export default function Page(props: any) {
       | "suspended"
       | null;
 
-    const setupCompletedAt = (ctx?.account?.setupCompletedAt ?? null) as
-      | string
-      | null;
+    const setupCompletedAt = (ctx?.account?.setupCompletedAt ?? null) as string | null;
 
     // E10.4: pending_setup + setup incompleto → Primeiros passos (form inline)
     if (accountStatus === "pending_setup" && !setupCompletedAt) {
@@ -68,18 +63,28 @@ function PendingSetupFirstSteps({
     initialState
   );
 
-  const defaultName = (ctx?.account?.name ?? `Conta ${accountSubdomain}`) as string;
+  const defaultName = `Conta ${accountSubdomain}`;
+  const existingName = ((ctx?.account?.name ?? "") as string).trim();
+  const initialNameFromCtx = existingName && existingName !== defaultName ? existingName : "";
 
   const [submitted, setSubmitted] = useState(false);
   const [touched, setTouched] = useState<{ [k: string]: boolean }>({});
   const [nameValidatedOnce, setNameValidatedOnce] = useState(false);
   const [whatsappValidatedOnce, setWhatsappValidatedOnce] = useState(false);
 
-  const [name, setName] = useState<string>(defaultName);
+  const [nameDirty, setNameDirty] = useState(false);
+
+  const [name, setName] = useState<string>(initialNameFromCtx);
   const [niche, setNiche] = useState<string>("");
   const [preferredChannel, setPreferredChannel] = useState<"email" | "whatsapp">("email");
   const [whatsapp, setWhatsapp] = useState<string>("");
   const [siteUrl, setSiteUrl] = useState<string>("");
+
+  // Se o ctx chegar depois (ou mudar), só preenche se o usuário ainda não digitou.
+  useEffect(() => {
+    if (nameDirty) return;
+    setName(initialNameFromCtx);
+  }, [nameDirty, initialNameFromCtx]);
 
   const nameRef = useRef<HTMLInputElement | null>(null);
   const channelRef = useRef<HTMLSelectElement | null>(null);
@@ -115,10 +120,20 @@ function PendingSetupFirstSteps({
     });
   }, [accountSubdomain, name, niche, preferredChannel, whatsapp, siteUrl]);
 
-  const mergedFieldErrors = {
-    ...(serverState?.fieldErrors ?? {}),
-    ...(validation.fieldErrors ?? {}),
-  } as any;
+  // IMPORTANTE: evita “erro grudado” vindo do server
+  // Regra: se a validação atual do client não acusa erro para um campo, removemos o erro do server desse campo.
+  const mergedFieldErrors: any = useMemo(() => {
+    const serverErrors: any = { ...(serverState?.fieldErrors ?? {}) };
+    const clientErrors: any = { ...(validation.fieldErrors ?? {}) };
+
+    const keys = ["name", "preferred_channel", "whatsapp", "site_url"] as const;
+    for (const k of keys) {
+      if (clientErrors[k]) serverErrors[k] = clientErrors[k];
+      else delete serverErrors[k];
+    }
+
+    return serverErrors;
+  }, [serverState?.fieldErrors, validation.fieldErrors]);
 
   const isNameValidNow = !mergedFieldErrors?.name;
   const canSubmitByName = isNameValidNow && !isPending;
@@ -174,7 +189,9 @@ function PendingSetupFirstSteps({
       <div className="space-y-6">
         <div className="space-y-2">
           <h1 className="text-2xl font-semibold">Ativar sua conta</h1>
-          <p className="text-sm text-gray-600">Leva menos de 1 minuto. Isso personaliza seu dashboard.</p>
+          <p className="text-sm text-gray-600">
+            Leva menos de 1 minuto. Isso personaliza seu dashboard.
+          </p>
           <p className="text-xs text-gray-500">Você poderá ajustar essas informações depois.</p>
         </div>
 
@@ -194,9 +211,12 @@ function PendingSetupFirstSteps({
               name="name"
               ref={nameRef}
               value={name}
-              onChange={(e) => setName(e.target.value)}
-              onBlur={() => {
+              onChange={(e) => {
+                setNameDirty(true);
+                setName(e.target.value);
                 setTouched((t) => ({ ...t, name: true }));
+              }}
+              onBlur={() => {
                 const v = validateE10_4SetupForm({
                   accountSubdomain,
                   name,
@@ -209,7 +229,7 @@ function PendingSetupFirstSteps({
               }}
               disabled={isPending}
               className="w-full rounded-md border px-3 py-2 text-sm"
-              placeholder={`Conta ${accountSubdomain}`}
+              placeholder="Ex.: Unico Digital"
               autoComplete="off"
               enterKeyHint={isMobile ? "next" : undefined}
             />
@@ -217,12 +237,12 @@ function PendingSetupFirstSteps({
               <p className="text-sm text-red-600">{showFieldError("name")}</p>
             ) : (
               <p className="text-xs text-gray-500">
-                Dica: não pode ser o nome padrão da conta.
+                Digite o nome do projeto que aparecerá no seu dashboard.
               </p>
             )}
           </div>
 
-          <div className={isMobile && !canRevealAfterName ? "space-y-1" : "space-y-1"}>
+          <div className="space-y-1">
             <label className="text-sm font-medium">Nicho (opcional)</label>
             <input
               name="niche"
@@ -333,9 +353,7 @@ function DashboardOnboarding() {
     <main className="mx-auto max-w-5xl px-6 py-10">
       <div className="space-y-2">
         <h1 className="text-2xl font-semibold">Onboarding</h1>
-        <p className="text-sm text-gray-600">
-          Faça login ou crie sua conta para continuar.
-        </p>
+        <p className="text-sm text-gray-600">Faça login ou crie sua conta para continuar.</p>
       </div>
     </main>
   );
@@ -346,9 +364,7 @@ function DashboardPublic() {
     <main className="mx-auto max-w-5xl px-6 py-10">
       <div className="space-y-2">
         <h1 className="text-2xl font-semibold">LP Factory</h1>
-        <p className="text-sm text-gray-600">
-          Acesse sua conta ou visite a home pública.
-        </p>
+        <p className="text-sm text-gray-600">Acesse sua conta ou visite a home pública.</p>
       </div>
     </main>
   );
