@@ -9,6 +9,23 @@ import { validateE10_4SetupForm } from "@/lib/onboarding/e10_4_setup_validation"
 
 type DashState = "auth" | "onboarding" | "public";
 
+function normalizeForCompare(s: string): string {
+  return (s ?? "").toString().replace(/\s+/g, " ").trim().toLowerCase();
+}
+
+function isLikelyMachineDefaultName(name: string, accountSubdomain: string): boolean {
+  const n = normalizeForCompare(name);
+  if (!n) return false;
+
+  const bySubdomain = normalizeForCompare(`Conta ${accountSubdomain}`);
+  if (n === bySubdomain) return true;
+
+  // Padrão “máquina” observado: "Conta acc-...."
+  if (/^conta\s+acc-[a-z0-9]+$/i.test(name.trim())) return true;
+
+  return false;
+}
+
 export default function Page(props: any) {
   const params = props.params as { account: string };
 
@@ -63,16 +80,18 @@ function PendingSetupFirstSteps({
     initialState
   );
 
-  const defaultName = `Conta ${accountSubdomain}`;
   const existingName = ((ctx?.account?.name ?? "") as string).trim();
-  const initialNameFromCtx = existingName && existingName !== defaultName ? existingName : "";
+  const initialNameFromCtx =
+    existingName && !isLikelyMachineDefaultName(existingName, accountSubdomain) ? existingName : "";
 
   const [submitted, setSubmitted] = useState(false);
   const [touched, setTouched] = useState<{ [k: string]: boolean }>({});
+  const [dirty, setDirty] = useState<{ [k: string]: boolean }>({});
+
   const [nameValidatedOnce, setNameValidatedOnce] = useState(false);
   const [whatsappValidatedOnce, setWhatsappValidatedOnce] = useState(false);
 
-  const [nameDirty, setNameDirty] = useState(false);
+  const [nameDirtyOnce, setNameDirtyOnce] = useState(false);
 
   const [name, setName] = useState<string>(initialNameFromCtx);
   const [niche, setNiche] = useState<string>("");
@@ -80,11 +99,16 @@ function PendingSetupFirstSteps({
   const [whatsapp, setWhatsapp] = useState<string>("");
   const [siteUrl, setSiteUrl] = useState<string>("");
 
-  // Se o ctx chegar depois (ou mudar), só preenche se o usuário ainda não digitou.
+  // Se o ctx chegar depois, só preenche se o usuário ainda não digitou.
   useEffect(() => {
-    if (nameDirty) return;
+    if (nameDirtyOnce) return;
     setName(initialNameFromCtx);
-  }, [nameDirty, initialNameFromCtx]);
+  }, [nameDirtyOnce, initialNameFromCtx]);
+
+  // Após cada resposta do server (submit), “zera” dirty (para mostrar erros do server novamente).
+  useEffect(() => {
+    setDirty({});
+  }, [serverState]);
 
   const nameRef = useRef<HTMLInputElement | null>(null);
   const channelRef = useRef<HTMLSelectElement | null>(null);
@@ -120,20 +144,21 @@ function PendingSetupFirstSteps({
     });
   }, [accountSubdomain, name, niche, preferredChannel, whatsapp, siteUrl]);
 
-  // IMPORTANTE: evita “erro grudado” vindo do server
-  // Regra: se a validação atual do client não acusa erro para um campo, removemos o erro do server desse campo.
+  // Merge: server + client. Só “some” o erro do server depois que o usuário editar aquele campo.
   const mergedFieldErrors: any = useMemo(() => {
     const serverErrors: any = { ...(serverState?.fieldErrors ?? {}) };
     const clientErrors: any = { ...(validation.fieldErrors ?? {}) };
+    const out: any = { ...serverErrors, ...clientErrors };
 
     const keys = ["name", "preferred_channel", "whatsapp", "site_url"] as const;
     for (const k of keys) {
-      if (clientErrors[k]) serverErrors[k] = clientErrors[k];
-      else delete serverErrors[k];
+      if (dirty[k] && !clientErrors[k]) {
+        delete out[k];
+      }
     }
 
-    return serverErrors;
-  }, [serverState?.fieldErrors, validation.fieldErrors]);
+    return out;
+  }, [serverState?.fieldErrors, validation.fieldErrors, dirty]);
 
   const isNameValidNow = !mergedFieldErrors?.name;
   const canSubmitByName = isNameValidNow && !isPending;
@@ -202,7 +227,6 @@ function PendingSetupFirstSteps({
         ) : null}
 
         <form action={action} onSubmit={onSubmit} className="space-y-5">
-          {/* Guard do handler é server-side via Access Context, mas precisamos do subdomain para resolver o tenant */}
           <input type="hidden" name="account_subdomain" value={accountSubdomain} />
 
           <div className="space-y-1">
@@ -212,9 +236,10 @@ function PendingSetupFirstSteps({
               ref={nameRef}
               value={name}
               onChange={(e) => {
-                setNameDirty(true);
+                setNameDirtyOnce(true);
                 setName(e.target.value);
                 setTouched((t) => ({ ...t, name: true }));
+                setDirty((d) => ({ ...d, name: true }));
               }}
               onBlur={() => {
                 const v = validateE10_4SetupForm({
@@ -247,7 +272,10 @@ function PendingSetupFirstSteps({
             <input
               name="niche"
               value={niche}
-              onChange={(e) => setNiche(e.target.value)}
+              onChange={(e) => {
+                setNiche(e.target.value);
+                setDirty((d) => ({ ...d, niche: true }));
+              }}
               disabled={isPending}
               className="w-full rounded-md border px-3 py-2 text-sm"
               placeholder="Ex.: Harmonização facial"
@@ -266,6 +294,7 @@ function PendingSetupFirstSteps({
                 onChange={(e) => {
                   setPreferredChannel(e.target.value as any);
                   setTouched((t) => ({ ...t, preferred_channel: true }));
+                  setDirty((d) => ({ ...d, preferred_channel: true }));
                 }}
                 disabled={isPending}
                 className="w-full rounded-md border px-3 py-2 text-sm"
@@ -286,7 +315,10 @@ function PendingSetupFirstSteps({
                 name="whatsapp"
                 ref={whatsappRef}
                 value={whatsapp}
-                onChange={(e) => setWhatsapp(e.target.value)}
+                onChange={(e) => {
+                  setWhatsapp(e.target.value);
+                  setDirty((d) => ({ ...d, whatsapp: true }));
+                }}
                 onBlur={() => {
                   setTouched((t) => ({ ...t, whatsapp: true }));
                   const v = validateE10_4SetupForm({
@@ -319,7 +351,10 @@ function PendingSetupFirstSteps({
                 name="site_url"
                 ref={siteRef}
                 value={siteUrl}
-                onChange={(e) => setSiteUrl(e.target.value)}
+                onChange={(e) => {
+                  setSiteUrl(e.target.value);
+                  setDirty((d) => ({ ...d, site_url: true }));
+                }}
                 onBlur={() => setTouched((t) => ({ ...t, site_url: true }))}
                 disabled={isPending}
                 className="w-full rounded-md border px-3 py-2 text-sm"
