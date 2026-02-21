@@ -1,11 +1,13 @@
 {
 "meta": {
-"datetime": "13/02/2026 16:00",
+"datetime": "21/02/2026 16:00",
 "origin": "ajuste pontual",
 "scope": "documentacao",
 "execution_mode": "github_actions",
 "target_doc": "docs/roadmap.md",
-"warnings": []
+"warnings": [
+"Omitida op replace_section target=10.4.4: content cont\u00e9m "..." (anti-truncamento)."
+]
 },
 "ops": [
 {
@@ -13,47 +15,20 @@
 "doc_path": "docs/roadmap.md",
 "target": "0.1",
 "mode": "shallow",
-"content": "0.1 Cabe\u00e7alho\n\u2022 Data: 13/02/2026\n\u2022 Vers\u00e3o: v1.5.19\n\n"
+"content": "0.1 Cabe\u00e7alho\n\u2022 Data: 21/02/2026\n\u2022 Vers\u00e3o: v1.5.21\n\n"
 },
 {
 "op": "replace_section",
 "doc_path": "docs/roadmap.md",
-"target": "10.4",
+"target": "10.4.7",
 "mode": "shallow",
-"content": "10.4 Onboarding m\u00ednimo + Vitrine (pending_setup \u2014 setup incompleto)\n\u2022 Status: Conclu\u00eddo (exec) (13/02/2026)\n\u2022 Escopo: Entregar o fluxo ponta a ponta de \u201cPrimeiros passos\u201d no dashboard da conta (/a/[account]) quando `accounts.status=pending_setup`: exibir formul\u00e1rio inline, validar campos (incl. regras condicionais), salvar com estados/erros (loading, valida\u00e7\u00e3o inline, erro sist\u00eamico com retry), persistir perfil v1, promover status e redirecionar para o fluxo p\u00f3s-setup.\n\u2022 Depend\u00eancias: E10.4.1 (infra do marcador `setup_completed_at`), E10.4.2 (setter idempotente do marcador), E10.4.3 (pol\u00edtica do marcador), E10.4.4 (campos + valida\u00e7\u00f5es), E10.4.5 (decis\u00e3o + contrato de persist\u00eancia dos dados do onboarding), E10.4.6 (exec de persist\u00eancia conforme E10.4.5), E9.8.1 (trial/entitlements \u2014 apenas CTA/roteamento).\n\u2022 Nota (estado atual): setup conclu\u00eddo no MVP = `accounts.status=active` (status-based); `setup_completed_at/account_setup_completed_at` ficam deprecated sem uso no gating/fluxo (mantidos no DB).\n\n"
-},
-{
-"op": "replace_section",
-"doc_path": "docs/roadmap.md",
-"target": "10.4.2",
-"mode": "shallow",
-"content": "10.4.2 Setup conclu\u00eddo (MVP v0 \u2014 Exec)\n\u2022 Status: Conclu\u00eddo (31/01/2026)\n\u2022 Nota (estado atual desde E10.4.6): setup conclu\u00eddo no runtime = `accounts.status=active`; o marcador `setup_completed_at` n\u00e3o \u00e9 fonte de verdade do gating/fluxo.\n\u2022 Regra v0 (deprecated): setup conclu\u00eddo v0 = \u201cSalvar/Confirmar\u201d + accounts.name n\u00e3o vazio + accounts.name \u2260 'Conta ' || subdomain.\n\u2022 Set do marcador (infra): chamar setSetupCompletedAtIfNull(accountId) somente no evento, se regra ok.\n\u2022 QA m\u00ednimo: incompleto (n\u00e3o seta) / completo (pode setar) / reentrada (idempotente).\n\u2022 Assun\u00e7\u00e3o a validar: padr\u00e3o provis\u00f3rio do nome da conta ('Conta ' || subdomain) \u00e9 o padr\u00e3o real de cria\u00e7\u00e3o.\n\u2022 Pend\u00eancia: abrir E10.4.4 (dados m\u00ednimos v1: nicho/WhatsApp/outros).\n\n"
-},
-{
-"op": "replace_section",
-"doc_path": "docs/roadmap.md",
-"target": "10.4.3",
-"mode": "shallow",
-"content": "10.4.3 Pol\u00edtica do marcador de setup (MVP)\n\u2022 Status: Conclu\u00eddo (06/02/2026)\n\u2022 Objetivo: definir pol\u00edtica operacional do marcador de setup no MVP como infra write-once, sem alterar lifecycle e sem alterar regras de acesso.\n\u2022 Decis\u00e3o (MVP): once set, never unset\n\u2022 Permitido: NULL \u2192 timestamp\n\u2022 Permitido: chamadas repetidas (idempotente; n\u00e3o sobrescreve)\n\u2022 Proibido no MVP: overwrite/re-set, backfill/corre\u00e7\u00e3o, reset/unset\n\u2022 Estado atual (desde E10.4.6): `setup_completed_at/account_setup_completed_at` ficam deprecated sem uso no gating/fluxo; setup conclu\u00eddo = `accounts.status=active`.\n\u2022 Evolu\u00e7\u00e3o: corre\u00e7\u00e3o/backfill/reset/unset somente via novo caso E10.4.x\n\n"
-},
-{
-"op": "replace_section",
-"doc_path": "docs/roadmap.md",
-"target": "10.5",
-"mode": "shallow",
-"content": "10.5 Vitrine p\u00f3s-setup sem plano/trial (active \u2014 conta ativa persuasiva)\n\u2022 Status: Briefing\n\u2022 Escopo: UX/CTAs para conta em `accounts.status=active` quando n\u00e3o h\u00e1 plano/trial (entitlements), p\u00f3s-setup, orientando pr\u00f3ximos passos sem retornar ao fluxo de \u201cPrimeiros passos\u201d.\n\u2022 Depend\u00eancias: E10.4.6 (setup status-based + p\u00f3s-save com redirect), E10.5.1 (matriz prepara\u00e7\u00e3o vs produtivo + enforcement), E9.8.1 (trial/entitlements).\n\u2022 Nota: n\u00e3o usa `account_setup_completed_at`; a renderiza\u00e7\u00e3o de \u201cPrimeiros passos\u201d fica restrita a `accounts.status=pending_setup`.\n\n"
-},
-{
-"op": "insert_after_section",
-"doc_path": "docs/roadmap.md",
-"anchor": "10.4.5",
-"content": "10.4.6 Exec: persist\u00eancia do perfil v1 + setup status-based\n\u2022 Status: Conclu\u00eddo (13/02/2026)\n\u2022 Setup conclu\u00eddo (fonte de verdade): `accounts.status=active` (promo\u00e7\u00e3o `pending_setup \u2192 active` com update condicional/idempotente no p\u00f3s-save).\n\u2022 \u201cPrimeiros passos\u201d (Salvar e continuar): persiste `account_profiles` (v1), atualiza `accounts.name`, promove status e redireciona para a rota correta da conta (sem exigir logout/login).\n\u2022 Access Context: v_access_context_v2 endurecido (sele\u00e7\u00e3o de conta/tenant mais robusta, fallback para \u201cprimeira conta\u201d quando necess\u00e1rio e tratamento de conta/membro bloqueado/inativo).\n\u2022 DB (exec): `account_profiles` criado com RLS/policies reais (ver docs/schema.md); `setup_completed_at/account_setup_completed_at` deprecated sem uso no gating/fluxo (mantidos no DB).\n\u2022 Observability m\u00ednima: logs can\u00f4nicos `setup_*` com `request_id` no server action; regra \u201clogs sem PII\u201d; uso de revalida\u00e7\u00e3o de cache no p\u00f3s-save antes do redirect.\n\u2022 Supabase Auth (fora do repo): Redirect URLs do Preview ajustados (wildcard) e Email Templates de signup/reset ajustados para usar RedirectTo.\n\u2022 ARTEFATOS_REPO (paths):\n\u2022 Ajustados:\n\u2022 app/a/[account]/actions.ts\n\u2022 app/a/[account]/page.tsx\n\u2022 src/lib/access/getAccessContext.ts\n\u2022 src/lib/access/adapters/accessContextAdapter.ts\n\u2022 src/lib/access/adapters/accountAdapter.ts\n\u2022 src/lib/access/adapters/accountProfileAdapter.ts\n\u2022 Criado: supabase/migrations/0004__account_profiles.sql\n\u2022 Removido: app/a/[account]/next/page.tsx\n\n"
+"content": "10.4.7 Refinar UX (p\u00f3s-implementa\u00e7\u00e3o E10.4)\n\u2022 Status: Conclu\u00eddo (exec) (21/02/2026)\n\u2022 Objetivo: corrigir fric\u00e7\u00f5es e inconsist\u00eancias de UX identificadas ap\u00f3s a execu\u00e7\u00e3o do E10.4, sem alterar o objetivo do fluxo (concluir setup e seguir para E10.5).\n\u2022 Escopo: ajustes de formul\u00e1rio, valida\u00e7\u00e3o e microintera\u00e7\u00f5es na tela \u201cPrimeiros passos\u201d (formul\u00e1rio inline).\n\u2022 Depend\u00eancias: E10.4.6 (exec do runtime do E10.4)\n\u2022 ARTEFATOS_REPO (paths):\n\u2022 Criados:\n\u2022 src/lib/onboarding/e10_4_setup_validation.ts\n\u2022 Ajustados:\n\u2022 app/a/[account]/page.tsx\n\u2022 app/a/[account]/actions.ts\n\n10.4.7.1 Preservar dados do formul\u00e1rio em erro (n\u00e3o resetar campos corretos)\n\u2022 Status: Conclu\u00eddo (exec) (21/02/2026)\n\u2022 Regra de UX: em erro de valida\u00e7\u00e3o/submiss\u00e3o, manter todos os valores j\u00e1 preenchidos e destacar apenas o(s) campo(s) inv\u00e1lido(s) com erro inline.\n\n10.4.7.2 Campo \u201csite\u201d aceitar dom\u00ednio sem https:// (normaliza\u00e7\u00e3o)\n\u2022 Status: Conclu\u00eddo (exec) (21/02/2026)\n\u2022 Regra de UX: aceitar formatos simples (ex.: unicodigital.com.br, [www.unicodigital.com.br](http://www.unicodigital.com.br), unicodigital.com) e tamb\u00e9m URL completa.\n\u2022 Regra de normaliza\u00e7\u00e3o: se o usu\u00e1rio n\u00e3o informar esquema (http:// ou https://), o sistema deve prefixar https:// internamente (armazenamento/uso).\n\n10.4.7.3 Indicar campo obrigat\u00f3rio com asterisco em \u201cNome do projeto\u201d\n\u2022 Status: Briefing\n\u2022 Problema: falta de sinaliza\u00e7\u00e3o clara do campo obrigat\u00f3rio aumenta tentativa/erro no submit.\n\u2022 Regra de UX: label \u201cNome do projeto*\u201d (asterisco) + erro inline quando vazio.\n\u2022 Sa\u00edda esperada: obrigatoriedade expl\u00edcita no primeiro contato, reduzindo falhas.\n\n10.4.7.4 Ajustes finos de microcopy e labels (se necess\u00e1rio)\n\u2022 Status: Briefing\n\u2022 Escopo: microcopy curta acima do formul\u00e1rio e labels/ajudas dos campos (sem aumentar fric\u00e7\u00e3o).\n\u2022 Sa\u00edda esperada: texto mais claro e objetivo, sem \u201cmarketing longo\u201d, mantendo o padr\u00e3o de empty state acion\u00e1vel.\n\n10.4.7.5 Nome do projeto (placeholder + CTA gated + erro n\u00e3o \u201cgrudado\u201d)\n\u2022 Status: Conclu\u00eddo (exec) (21/02/2026)\n\u2022 Regra de UX: campo inicia vazio com placeholder (ex.: \u201cEx.: Unico Digital\u201d).\n\u2022 Regra de UX: bot\u00e3o \u201cSalvar e continuar\u201d desabilitado at\u00e9 nome v\u00e1lido.\n\u2022 Regra de UX: ap\u00f3s corre\u00e7\u00e3o, erros n\u00e3o ficam \u201cgrudados\u201d.\n\n10.4.7.6 Teclado/Enter + foco (desktop e mobile)\n\u2022 Status: Conclu\u00eddo (exec) (21/02/2026)\n\u2022 Regra de UX: Enter s\u00f3 submete quando v\u00e1lido.\n\u2022 Regra de UX: se inv\u00e1lido, n\u00e3o submete, mostra erro e foca no primeiro inv\u00e1lido.\n\u2022 Regra de UX (mobile): fluxo sem bot\u00f5es \u201cNext\u201d.\n\n10.4.7.7 Mobile progressive disclosure (sequ\u00eancia de campos)\n\u2022 Status: Conclu\u00eddo (exec) (21/02/2026)\n\u2022 Regra de UX (mobile): exibir campos em sequ\u00eancia (Nome+Nicho \u2192 Canal \u2192 WhatsApp condicional \u2192 Site por \u00faltimo), bloqueando avan\u00e7o quando h\u00e1 erro.\n\n"
 },
 {
 "op": "insert_after_heading",
 "doc_path": "docs/roadmap.md",
 "heading": "99. Changelog",
-"content": "v1.5.19 (13/02/2026)\n\u2022 E10.4.6 conclu\u00eddo (exec): \u201cPrimeiros passos\u201d persiste `account_profiles`, atualiza `accounts.name` e promove `pending_setup \u2192 active`; setup conclu\u00eddo passa a ser status-based (`accounts.status=active`) e `setup_completed_at/account_setup_completed_at` ficam deprecated sem uso no gating/fluxo.\n\u2022 E10.5 ajustado para \u201cactive persuasiva\u201d (p\u00f3s-setup sem plano/trial), removendo depend\u00eancia do marcador no fluxo.\n\u2022 Access Context endurecido (v_access_context_v2) e ajustes de Supabase Auth fora do repo (Redirect URLs Preview + templates de signup/reset usando RedirectTo).\n\n"
+"content": "v1.5.21 (21/02/2026)\n\u2022 E10.4.7 conclu\u00eddo (exec): refinamentos de UX no \u201cPrimeiros passos\u201d (sem reset de campos em erro; nome com placeholder + CTA gated; Enter com foco no primeiro inv\u00e1lido; progressive disclosure no mobile; site_url aceita dom\u00ednio sem esquema e normaliza para https://), com ARTEFATOS_REPO (criados/ajustados) registrados.\n\n"
 }
 ],
 "rules": {
