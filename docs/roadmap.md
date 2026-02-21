@@ -526,6 +526,25 @@
 • Escopo: microcopy curta acima do formulário e labels/ajudas dos campos (sem aumentar fricção).
 • Saída esperada: texto mais claro e objetivo, sem “marketing longo”, mantendo o padrão de empty state acionável.
 
+10.4.8 Anti-drift: validação compartilhada UI/server (opcional)
+
+• Status: Briefing (opcional)
+• Objetivo: reduzir drift entre validações do E10.4 feitas na UI e no server (SSR/actions), garantindo consistência de erros e preparando base para tracking interno (ex.: e10_4_error_field) sem inconsistência.
+
+10.4.8.1 Escopo
+• Consolidar regras de validação do onboarding mínimo em um único módulo compartilhado (UI + server), com outputs padronizados de erro (campo + tipo).
+• Garantir que a UI use o mesmo contrato de validação que o server actions/submit.
+
+10.4.8.2 Dependências
+• E10.4.6 (fluxo de persistência/submit do onboarding).
+• E10.4.7 (UX refinado do formulário).
+• E12.8.1 / Tracking interno (se implementado) para consumir erros consistentes.
+
+10.4.8.3 Fora de escopo
+• Mudanças de BD.
+• Implementar tracking interno (fica em E12.8.1 / E12.x).
+• Alterar escopo de campos do onboarding (somente consistência de validação).
+
 10.5 Pós-setup persuasivo sem entitlements (active — conversão)
 • Status: Briefing
 • Escopo: UX/CTAs para conta em `accounts.status=active` quando **não há plano/trial (sem entitlements)**, imediatamente após o E10.4 (pós-setup). Deve orientar próximos passos e conversão **sem retornar** ao fluxo de “Primeiros passos”.
