@@ -1,43 +1,44 @@
 {
-"meta": {
-"datetime": "21/02/2026 16:00",
-"origin": "ajuste pontual",
-"scope": "documentacao",
-"execution_mode": "github_actions",
-"target_doc": "docs/roadmap.md",
-"warnings": [
-"Omitida op replace_section target=10.4.4: content cont\u00e9m "..." (anti-truncamento)."
-]
-},
-"ops": [
-{
-"op": "replace_section",
-"doc_path": "docs/roadmap.md",
-"target": "0.1",
-"mode": "shallow",
-"content": "0.1 Cabe\u00e7alho\n\u2022 Data: 21/02/2026\n\u2022 Vers\u00e3o: v1.5.21\n\n"
-},
-{
-"op": "replace_section",
-"doc_path": "docs/roadmap.md",
-"target": "10.4.7",
-"mode": "shallow",
-"content": "10.4.7 Refinar UX (p\u00f3s-implementa\u00e7\u00e3o E10.4)\n\u2022 Status: Conclu\u00eddo (exec) (21/02/2026)\n\u2022 Objetivo: corrigir fric\u00e7\u00f5es e inconsist\u00eancias de UX identificadas ap\u00f3s a execu\u00e7\u00e3o do E10.4, sem alterar o objetivo do fluxo (concluir setup e seguir para E10.5).\n\u2022 Escopo: ajustes de formul\u00e1rio, valida\u00e7\u00e3o e microintera\u00e7\u00f5es na tela \u201cPrimeiros passos\u201d (formul\u00e1rio inline).\n\u2022 Depend\u00eancias: E10.4.6 (exec do runtime do E10.4)\n\u2022 ARTEFATOS_REPO (paths):\n\u2022 Criados:\n\u2022 src/lib/onboarding/e10_4_setup_validation.ts\n\u2022 Ajustados:\n\u2022 app/a/[account]/page.tsx\n\u2022 app/a/[account]/actions.ts\n\n10.4.7.1 Preservar dados do formul\u00e1rio em erro (n\u00e3o resetar campos corretos)\n\u2022 Status: Conclu\u00eddo (exec) (21/02/2026)\n\u2022 Regra de UX: em erro de valida\u00e7\u00e3o/submiss\u00e3o, manter todos os valores j\u00e1 preenchidos e destacar apenas o(s) campo(s) inv\u00e1lido(s) com erro inline.\n\n10.4.7.2 Campo \u201csite\u201d aceitar dom\u00ednio sem https:// (normaliza\u00e7\u00e3o)\n\u2022 Status: Conclu\u00eddo (exec) (21/02/2026)\n\u2022 Regra de UX: aceitar formatos simples (ex.: unicodigital.com.br, [www.unicodigital.com.br](http://www.unicodigital.com.br), unicodigital.com) e tamb\u00e9m URL completa.\n\u2022 Regra de normaliza\u00e7\u00e3o: se o usu\u00e1rio n\u00e3o informar esquema (http:// ou https://), o sistema deve prefixar https:// internamente (armazenamento/uso).\n\n10.4.7.3 Indicar campo obrigat\u00f3rio com asterisco em \u201cNome do projeto\u201d\n\u2022 Status: Briefing\n\u2022 Problema: falta de sinaliza\u00e7\u00e3o clara do campo obrigat\u00f3rio aumenta tentativa/erro no submit.\n\u2022 Regra de UX: label \u201cNome do projeto*\u201d (asterisco) + erro inline quando vazio.\n\u2022 Sa\u00edda esperada: obrigatoriedade expl\u00edcita no primeiro contato, reduzindo falhas.\n\n10.4.7.4 Ajustes finos de microcopy e labels (se necess\u00e1rio)\n\u2022 Status: Briefing\n\u2022 Escopo: microcopy curta acima do formul\u00e1rio e labels/ajudas dos campos (sem aumentar fric\u00e7\u00e3o).\n\u2022 Sa\u00edda esperada: texto mais claro e objetivo, sem \u201cmarketing longo\u201d, mantendo o padr\u00e3o de empty state acion\u00e1vel.\n\n10.4.7.5 Nome do projeto (placeholder + CTA gated + erro n\u00e3o \u201cgrudado\u201d)\n\u2022 Status: Conclu\u00eddo (exec) (21/02/2026)\n\u2022 Regra de UX: campo inicia vazio com placeholder (ex.: \u201cEx.: Unico Digital\u201d).\n\u2022 Regra de UX: bot\u00e3o \u201cSalvar e continuar\u201d desabilitado at\u00e9 nome v\u00e1lido.\n\u2022 Regra de UX: ap\u00f3s corre\u00e7\u00e3o, erros n\u00e3o ficam \u201cgrudados\u201d.\n\n10.4.7.6 Teclado/Enter + foco (desktop e mobile)\n\u2022 Status: Conclu\u00eddo (exec) (21/02/2026)\n\u2022 Regra de UX: Enter s\u00f3 submete quando v\u00e1lido.\n\u2022 Regra de UX: se inv\u00e1lido, n\u00e3o submete, mostra erro e foca no primeiro inv\u00e1lido.\n\u2022 Regra de UX (mobile): fluxo sem bot\u00f5es \u201cNext\u201d.\n\n10.4.7.7 Mobile progressive disclosure (sequ\u00eancia de campos)\n\u2022 Status: Conclu\u00eddo (exec) (21/02/2026)\n\u2022 Regra de UX (mobile): exibir campos em sequ\u00eancia (Nome+Nicho \u2192 Canal \u2192 WhatsApp condicional \u2192 Site por \u00faltimo), bloqueando avan\u00e7o quando h\u00e1 erro.\n\n"
-},
-{
-"op": "insert_after_heading",
-"doc_path": "docs/roadmap.md",
-"heading": "99. Changelog",
-"content": "v1.5.21 (21/02/2026)\n\u2022 E10.4.7 conclu\u00eddo (exec): refinamentos de UX no \u201cPrimeiros passos\u201d (sem reset de campos em erro; nome com placeholder + CTA gated; Enter com foco no primeiro inv\u00e1lido; progressive disclosure no mobile; site_url aceita dom\u00ednio sem esquema e normaliza para https://), com ARTEFATOS_REPO (criados/ajustados) registrados.\n\n"
-}
-],
-"rules": {
-"fail_if_anchor_missing": true,
-"fail_if_target_missing": true,
-"fail_if_section_already_exists_on_insert": true,
-"fail_if_ambiguous_match": true,
-"no_renumber": true,
-"no_reformat": true,
-"no_out_of_scope_changes": true
-}
+  "meta": {
+    "datetime": "",
+    "origin": "ajuste pontual",
+    "scope": "documentacao",
+    "execution_mode": "github_actions",
+    "target_doc": "docs/roadmap.md",
+    "warnings": [
+      "meta.datetime ausente/invalido: nao foi fornecida a primeira linha do relatorio humano no formato \"DD/MM/YYYY HH:MM — ...\"; definido como string vazia.",
+      "A2 omitida (replace_section target=10.4.4): anti-truncamento violado; content contem \"...\" (\"https://...\") em pelo menos uma linha."
+    ]
+  },
+  "ops": [
+    {
+      "op": "replace_section",
+      "target": "0.1",
+      "mode": "shallow",
+      "doc_path": "docs/roadmap.md",
+      "content": "0.1 Cabeçalho\n• Data: 21/02/2026\n• Versão: v1.5.21\n"
+    },
+    {
+      "op": "replace_section",
+      "target": "10.4.7",
+      "mode": "shallow",
+      "doc_path": "docs/roadmap.md",
+      "content": "10.4.7 Refinar UX (pós-implementação E10.4)\n• Status: Concluído (exec) (21/02/2026)\n• Objetivo: corrigir fricções e inconsistências de UX identificadas após a execução do E10.4, sem alterar o objetivo do fluxo (concluir setup e seguir para E10.5).\n• Escopo: ajustes de formulário, validação e microinterações na tela “Primeiros passos” (formulário inline).\n• Dependências: E10.4.6 (exec do runtime do E10.4)\n• ARTEFATOS_REPO (paths):\n• Criados:\n• src/lib/onboarding/e10_4_setup_validation.ts\n• Ajustados:\n• app/a/[account]/page.tsx\n• app/a/[account]/actions.ts\n\n10.4.7.1 Preservar dados do formulário em erro (não resetar campos corretos)\n• Status: Concluído (exec) (21/02/2026)\n• Regra de UX: em erro de validação/submissão, manter todos os valores já preenchidos e destacar apenas o(s) campo(s) inválido(s) com erro inline.\n\n10.4.7.2 Campo “site” aceitar domínio sem https:// (normalização)\n• Status: Concluído (exec) (21/02/2026)\n• Regra de UX: aceitar formatos simples (ex.: unicodigital.com.br, [www.unicodigital.com.br](http://www.unicodigital.com.br), unicodigital.com) e também URL completa.\n• Regra de normalização: se o usuário não informar esquema (http:// ou https://), o sistema deve prefixar https:// internamente (armazenamento/uso).\n\n10.4.7.3 Indicar campo obrigatório com asterisco em “Nome do projeto”\n• Status: Briefing\n• Problema: falta de sinalização clara do campo obrigatório aumenta tentativa/erro no submit.\n• Regra de UX: label “Nome do projeto*” (asterisco) + erro inline quando vazio.\n• Saída esperada: obrigatoriedade explícita no primeiro contato, reduzindo falhas.\n\n10.4.7.4 Ajustes finos de microcopy e labels (se necessário)\n• Status: Briefing\n• Escopo: microcopy curta acima do formulário e labels/ajudas dos campos (sem aumentar fricção).\n• Saída esperada: texto mais claro e objetivo, sem “marketing longo”, mantendo o padrão de empty state acionável.\n\n10.4.7.5 Nome do projeto (placeholder + CTA gated + erro não “grudado”)\n• Status: Concluído (exec) (21/02/2026)\n• Regra de UX: campo inicia vazio com placeholder (ex.: “Ex.: Unico Digital”).\n• Regra de UX: botão “Salvar e continuar” desabilitado até nome válido.\n• Regra de UX: após correção, erros não ficam “grudados”.\n\n10.4.7.6 Teclado/Enter + foco (desktop e mobile)\n• Status: Concluído (exec) (21/02/2026)\n• Regra de UX: Enter só submete quando válido.\n• Regra de UX: se inválido, não submete, mostra erro e foca no primeiro inválido.\n• Regra de UX (mobile): fluxo sem botões “Next”.\n\n10.4.7.7 Mobile progressive disclosure (sequência de campos)\n• Status: Concluído (exec) (21/02/2026)\n• Regra de UX (mobile): exibir campos em sequência (Nome+Nicho → Canal → WhatsApp condicional → Site por último), bloqueando avanço quando há erro.\n"
+    },
+    {
+      "op": "insert_after_heading",
+      "heading": "99. Changelog",
+      "doc_path": "docs/roadmap.md",
+      "content": "v1.5.21 (21/02/2026)\n• E10.4.7 concluído (exec): refinamentos de UX no “Primeiros passos” (sem reset de campos em erro; nome com placeholder + CTA gated; Enter com foco no primeiro inválido; progressive disclosure no mobile; site_url aceita domínio sem esquema e normaliza para https://), com ARTEFATOS_REPO (criados/ajustados) registrados.\n"
+    }
+  ],
+  "rules": {
+    "fail_if_anchor_missing": true,
+    "fail_if_target_missing": true,
+    "fail_if_section_already_exists_on_insert": true,
+    "fail_if_ambiguous_match": true,
+    "no_renumber": true,
+    "no_reformat": true,
+    "no_out_of_scope_changes": true
+  }
 }
