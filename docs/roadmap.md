@@ -126,6 +126,25 @@
 • Mensagens seguras e anti-enumeração no reset
 • Erros genéricos/seguro no login, sem expor detalhes sensíveis
 
+5.4 Signup/Confirmação mobile + rate limit (Auth hardening)
+• Status: Briefing
+• Objetivo: garantir estabilidade no fluxo de criação de conta e confirmação de e-mail (especialmente mobile), reduzindo bloqueios por “email rate limit exceeded” e melhorando UX de erro/reenvio.
+• Escopo:
+• Revisar limites e estratégia de envio (SMTP/infra quando aplicável).
+• Implementar UX de resend com cooldown/contador e mensagens claras.
+• Tratar erro de rate limit com mensagem neutra e orientação (sem expor detalhes sensíveis).
+• Garantir que o fluxo não bloqueie QA nem onboarding real.
+• Dependências:
+• Fluxos Sistema de Acesso 2.0 (login/reset/confirm).
+• Supabase Auth (configuração de e-mail e limites).
+• Fora de escopo:
+• Billing/plano.
+• Alterar accounts.status.
+• Tracking de Ads.
+• Observação estrutural:
+• Seguir Base Técnica (RLS/allowlist/idempotência quando aplicável).
+• Evitar lógica duplicada entre UI e server (SSR/actions).
+
 6. E6 — UI Kit Provisório
 
 6.1 Status
@@ -576,6 +595,15 @@
 • Exportação CSV/JSON
 12.7.4 Integrações
 • Auditoria e Drift (E9.7)
+
+12.8 Políticas globais + Jobs (E12.x)
+12.8.1 Tracking interno (admin-only) — Supa #19 (gated)
+• Status: Briefing (gated)
+• Objetivo: criar base mínima de tracking interno estruturado (admin-only) para medir eventos críticos do produto (ex.: onboarding E10.4), sem PII e sem dependência de ferramentas externas.
+• Escopo: tabela mínima + 1 view agregada; escrita server-side; leitura restrita a contexto administrativo.
+• Gate: planejar agora; implementar após E10.5 estar operacional e com uso real suficiente para gerar sinal relevante.
+• Dependências: E10.4; E10.5; E10.5.1; E9.8.1.
+• Fora de escopo: Ads/remarketing; automações outbound; BI/dashboards complexos; coleta de dados sensíveis/PII.
 
 13. E13 — Partner Dashboard
 
