@@ -1,9 +1,8 @@
 0. Introdução
 
 0.1 Cabeçalho
-• Data: 19/02/2026
-• Versão: v1.5.20
-
+• Data: 21/02/2026
+• Versão: v1.5.21
 0.2 Contrato do documento (parseável)
 • Este documento registra o roadmap e o histórico de execução por marcos (E1, E2, ...).
 0.2.1 TIPO_DO_DOCUMENTO
@@ -460,11 +459,52 @@
 • supabase/migrations/0004__account_profiles.sql
 
 10.4.7 Refinar UX (pós-implementação E10.4)
-• Status: Briefing
+• Status: Concluído (exec) (21/02/2026)
 • Objetivo: corrigir fricções e inconsistências de UX identificadas após a execução do E10.4, sem alterar o objetivo do fluxo (concluir setup e seguir para E10.5).
 • Escopo: ajustes de formulário, validação e microinterações na tela “Primeiros passos” (formulário inline).
 • Dependências: E10.4.6 (exec do runtime do E10.4)
+• ARTEFATOS_REPO (paths):
+• Criados:
+• src/lib/onboarding/e10_4_setup_validation.ts
+• Ajustados:
+• app/a/[account]/page.tsx
+• app/a/[account]/actions.ts
 
+10.4.7.1 Preservar dados do formulário em erro (não resetar campos corretos)
+• Status: Concluído (exec) (21/02/2026)
+• Regra de UX: em erro de validação/submissão, manter todos os valores já preenchidos e destacar apenas o(s) campo(s) inválido(s) com erro inline.
+
+10.4.7.2 Campo “site” aceitar domínio sem https:// (normalização)
+• Status: Concluído (exec) (21/02/2026)
+• Regra de UX: aceitar formatos simples (ex.: unicodigital.com.br, [www.unicodigital.com.br](http://www.unicodigital.com.br), unicodigital.com) e também URL completa.
+• Regra de normalização: se o usuário não informar esquema (http:// ou https://), o sistema deve prefixar https:// internamente (armazenamento/uso).
+
+10.4.7.3 Indicar campo obrigatório com asterisco em “Nome do projeto”
+• Status: Briefing
+• Problema: falta de sinalização clara do campo obrigatório aumenta tentativa/erro no submit.
+• Regra de UX: label “Nome do projeto*” (asterisco) + erro inline quando vazio.
+• Saída esperada: obrigatoriedade explícita no primeiro contato, reduzindo falhas.
+
+10.4.7.4 Ajustes finos de microcopy e labels (se necessário)
+• Status: Briefing
+• Escopo: microcopy curta acima do formulário e labels/ajudas dos campos (sem aumentar fricção).
+• Saída esperada: texto mais claro e objetivo, sem “marketing longo”, mantendo o padrão de empty state acionável.
+
+10.4.7.5 Nome do projeto (placeholder + CTA gated + erro não “grudado”)
+• Status: Concluído (exec) (21/02/2026)
+• Regra de UX: campo inicia vazio com placeholder (ex.: “Ex.: Unico Digital”).
+• Regra de UX: botão “Salvar e continuar” desabilitado até nome válido.
+• Regra de UX: após correção, erros não ficam “grudados”.
+
+10.4.7.6 Teclado/Enter + foco (desktop e mobile)
+• Status: Concluído (exec) (21/02/2026)
+• Regra de UX: Enter só submete quando válido.
+• Regra de UX: se inválido, não submete, mostra erro e foca no primeiro inválido.
+• Regra de UX (mobile): fluxo sem botões “Next”.
+
+10.4.7.7 Mobile progressive disclosure (sequência de campos)
+• Status: Concluído (exec) (21/02/2026)
+• Regra de UX (mobile): exibir campos em sequência (Nome+Nicho → Canal → WhatsApp condicional → Site por último), bloqueando avanço quando há erro.
 10.4.7.1 Preservar dados do formulário em erro (não resetar campos corretos)
 • Status: Briefing
 • Problema: ao ocorrer erro de validação em um campo, os demais campos preenchidos corretamente perdem os valores e o usuário precisa digitar tudo novamente.
@@ -734,6 +774,8 @@
 • E12: enforcement operacional (jobs) e políticas de restrição/reativação/configurações.
 
 99. Changelog
+v1.5.21 (21/02/2026)
+• E10.4.7 concluído (exec): refinamentos de UX no “Primeiros passos” (sem reset de campos em erro; nome com placeholder + CTA gated; Enter com foco no primeiro inválido; progressive disclosure no mobile; site_url aceita domínio sem esquema e normaliza para https://), com ARTEFATOS_REPO (criados/ajustados) registrados.
 • E6 atualizado (exec): tipografia Inter aplicada globalmente e tokens Tailwind LP Factory adicionados de forma aditiva (preservando shadcn), incluindo expansão do content para js/jsx/mdx.
 v1.5.19 (13/02/2026)
 • E10.4.6 concluído (exec): “Primeiros passos” persiste `account_profiles`, atualiza `accounts.name` e promove `pending_setup → active`; setup concluído passa a ser status-based (`accounts.status=active`) e `setup_completed_at/account_setup_completed_at` ficam deprecated sem uso no gating/fluxo.
