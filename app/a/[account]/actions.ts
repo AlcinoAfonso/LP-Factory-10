@@ -9,6 +9,7 @@ import { revalidatePath } from 'next/cache';
 import { getAccessContext } from '@/lib/access/getAccessContext';
 import { updateAccountNameCore, renameAccountNoStatus } from '@/lib/access/adapters/accountAdapter';
 import { upsertAccountProfileV1 } from '@/lib/access/adapters/accountProfileAdapter';
+import { validateE10_4SetupForm } from '@/lib/onboarding/e10_4_setup_validation';
 
 export type RenameAccountState = {
   ok: boolean;
@@ -152,37 +153,7 @@ async function readLastAccountSubdomainCookie(): Promise<string | null> {
   }
 }
 
-function validatePreferredChannel(input: unknown): 'email' | 'whatsapp' {
-  const v = normalizeText(input).toLowerCase();
-  if (!v) return 'email';
-  if (v === 'email' || v === 'whatsapp') return v;
-  throw new Error('invalid_preferred_channel');
-}
-
-function validateWhatsappIfNeeded(preferred: 'email' | 'whatsapp', input: unknown): string | null {
-  const raw = normalizeText(input);
-  if (preferred !== 'whatsapp') return raw ? raw : null;
-
-  if (!raw) throw new Error('whatsapp_required_when_channel');
-  if (!/^\d{10,15}$/.test(raw)) throw new Error('whatsapp_invalid');
-  return raw;
-}
-
-function validateSiteUrl(input: unknown): string | null {
-  const raw = normalizeText(input);
-  if (!raw) return null;
-  if (raw.includes(' ')) throw new Error('site_url_invalid');
-  if (!/^https?:\/\//i.test(raw)) throw new Error('site_url_invalid');
-  return raw;
-}
-
-function validateNameForSetup(name: unknown, accountSubdomain: string): string {
-  const trimmed = normalizeText(name);
-  if (!trimmed) throw new Error('name_required');
-  const defaultName = `Conta ${accountSubdomain}`;
-  if (trimmed === defaultName) throw new Error('name_is_default');
-  return trimmed;
-}
+// Validações do E10.4.7 ficam em módulo compartilhado (server+client) para evitar drift.
 
 /**
  * E10.4.6 — Handler do “Salvar e continuar” (E10.4)
@@ -292,44 +263,18 @@ export async function saveSetupAndContinueAction(
       })
     );
 
-    const fieldErrors: SetupSaveState['fieldErrors'] = {};
+    const validated = validateE10_4SetupForm({
+      accountSubdomain,
+      name: nameRaw,
+      niche: nicheRaw,
+      preferred_channel: preferredRaw,
+      whatsapp: whatsappRaw,
+      site_url: siteUrlRaw,
+    });
 
-    let preferred: 'email' | 'whatsapp' = 'email';
-    let name = '';
-    let whatsapp: string | null = null;
-    let siteUrl: string | null = null;
+    const fieldErrors: SetupSaveState['fieldErrors'] = validated.fieldErrors;
 
-    try {
-      preferred = validatePreferredChannel(preferredRaw);
-    } catch {
-      fieldErrors.preferred_channel = 'Canal inválido.';
-    }
-
-    try {
-      name = validateNameForSetup(nameRaw, accountSubdomain);
-    } catch (e: unknown) {
-      const code = e instanceof Error ? e.message : String(e);
-      fieldErrors.name =
-        code === 'name_is_default' ? 'Escolha um nome diferente do padrão.' : 'Informe um nome válido.';
-    }
-
-    try {
-      whatsapp = validateWhatsappIfNeeded(preferred, whatsappRaw);
-    } catch (e: unknown) {
-      const code = e instanceof Error ? e.message : String(e);
-      fieldErrors.whatsapp =
-        code === 'whatsapp_required_when_channel'
-          ? 'WhatsApp é obrigatório quando o canal é WhatsApp.'
-          : 'WhatsApp inválido. Use apenas dígitos (10–15).';
-    }
-
-    try {
-      siteUrl = validateSiteUrl(siteUrlRaw);
-    } catch {
-      fieldErrors.site_url = 'Link inválido (use http:// ou https://, sem espaços).';
-    }
-
-    if (fieldErrors.name || fieldErrors.preferred_channel || fieldErrors.whatsapp || fieldErrors.site_url) {
+    if (!validated.ok) {
       const latency = Date.now() - t0;
 
       // eslint-disable-next-line no-console
@@ -349,18 +294,16 @@ export async function saveSetupAndContinueAction(
       return { ok: false, fieldErrors };
     }
 
-    const niche = normalizeText(nicheRaw) || null;
-
     const okProfile = await upsertAccountProfileV1({
       accountId,
-      niche,
-      preferredChannel: preferred,
-      whatsapp,
-      siteUrl,
+      niche: validated.values.niche,
+      preferredChannel: validated.values.preferred_channel,
+      whatsapp: validated.values.whatsapp,
+      siteUrl: validated.values.site_url,
     });
     if (!okProfile) throw new Error('profile_upsert_failed');
 
-    const okName = await updateAccountNameCore(accountId, name);
+    const okName = await updateAccountNameCore(accountId, validated.values.name);
     if (!okName) throw new Error('account_name_update_failed');
 
     // Status (fonte de verdade)
