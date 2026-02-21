@@ -126,24 +126,25 @@
 • Mensagens seguras e anti-enumeração no reset
 • Erros genéricos/seguro no login, sem expor detalhes sensíveis
 
-5.4 Signup/Confirmação mobile + rate limit (Auth hardening)
+5.4 Signup/Confirmação mobile (Auth hardening — produto)
+
 • Status: Briefing
-• Objetivo: garantir estabilidade no fluxo de criação de conta e confirmação de e-mail (especialmente mobile), reduzindo bloqueios por “email rate limit exceeded” e melhorando UX de erro/reenvio.
-• Escopo:
-• Revisar limites e estratégia de envio (SMTP/infra quando aplicável).
-• Implementar UX de resend com cooldown/contador e mensagens claras.
-• Tratar erro de rate limit com mensagem neutra e orientação (sem expor detalhes sensíveis).
-• Garantir que o fluxo não bloqueie QA nem onboarding real.
-• Dependências:
-• Fluxos Sistema de Acesso 2.0 (login/reset/confirm).
-• Supabase Auth (configuração de e-mail e limites).
-• Fora de escopo:
-• Billing/plano.
-• Alterar accounts.status.
-• Tracking de Ads.
-• Observação estrutural:
-• Seguir Base Técnica (RLS/allowlist/idempotência quando aplicável).
-• Evitar lógica duplicada entre UI e server (SSR/actions).
+• Objetivo: corrigir o problema de sign-up no celular em que o e-mail de confirmação não é enviado/recebido, garantindo um fluxo estável de criação de conta e confirmação.
+
+5.4.1 Escopo
+• Diagnosticar e corrigir o fluxo de sign-up/confirm no mobile (UI + comportamento de erro).
+• Melhorar UX de “reenvio” (resend) com mensagens claras e neutralidade (“Se este e-mail estiver cadastrado…”, quando aplicável).
+• Incluir cooldown/contador no resend para evitar múltiplas tentativas em sequência.
+• Garantir que QA e onboarding real não fiquem bloqueados por comportamento específico de mobile.
+
+5.4.2 Dependências
+• Fluxos Sistema de Acesso 2.0 (signup/confirm/resend).
+• Configurações do Supabase Auth (URL/redirect/confirm).
+
+5.4.3 Fora de escopo
+• Troca de provedor de e-mail (ex.: Resend).
+• Mudança de limites/rate limit no envio.
+• DNS/domínio/entregabilidade (infra).
 
 6. E6 — UI Kit Provisório
 
@@ -604,6 +605,26 @@
 • Gate: planejar agora; implementar após E10.5 estar operacional e com uso real suficiente para gerar sinal relevante.
 • Dependências: E10.4; E10.5; E10.5.1; E9.8.1.
 • Fora de escopo: Ads/remarketing; automações outbound; BI/dashboards complexos; coleta de dados sensíveis/PII.
+
+12.9 Provedor de e-mail transacional (Auth) — Infra/entregabilidade (ex.: Resend)
+
+• Status: Briefing
+• Objetivo: migrar/configurar o envio de e-mails transacionais do Auth em provedor dedicado (ex.: Resend) para melhorar entregabilidade e mitigar bloqueios operacionais (incluindo rate limit) sem mexer no fluxo de produto.
+
+12.9.1 Escopo
+• Configuração de provedor (Resend ou equivalente) para e-mails de Auth.
+• Configuração de domínio/DNS (SPF/DKIM/DMARC) conforme necessário.
+• Ajuste/validação de templates de e-mail do Auth.
+• Validação de entregabilidade (principal) e redução de falhas por limite/capacidade (secundário).
+
+12.9.2 Dependências
+• Supabase Auth (integração/config).
+• Base Técnica (padrões e governança).
+
+12.9.3 Fora de escopo
+• Alterar UX do sign-up/confirm no app (isso fica no 5.4).
+• Tracking de Ads, automações outbound.
+
 
 13. E13 — Partner Dashboard
 
