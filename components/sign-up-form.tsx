@@ -16,6 +16,39 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 
+function newRid() {
+  try {
+    // browsers modernos
+    return crypto.randomUUID()
+  } catch {
+    return `${Date.now()}-${Math.random().toString(16).slice(2)}`
+  }
+}
+
+function buildEmailRedirectTo(rid: string) {
+  const u = new URL('/auth/confirm', window.location.origin)
+  u.searchParams.set('next', '/a/home')
+  if (rid) u.searchParams.set('rid', rid)
+  return u.toString()
+}
+
+function logAuth(event: string, payload: Record<string, unknown>) {
+  // SUPA-05: logs estruturados, sem PII (não logar email/senha)
+  try {
+    // eslint-disable-next-line no-console
+    console.info(
+      JSON.stringify({
+        ts: new Date().toISOString(),
+        event,
+        ...payload,
+      })
+    )
+  } catch {
+    // eslint-disable-next-line no-console
+    console.info(event)
+  }
+}
+
 export function SignUpForm({ className, ...props }: React.ComponentPropsWithoutRef<'div'>) {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -36,15 +69,40 @@ export function SignUpForm({ className, ...props }: React.ComponentPropsWithoutR
       return
     }
 
+    const rid = newRid()
+    const emailRedirectTo = buildEmailRedirectTo(rid)
+
+    logAuth('auth_signup_submit', {
+      rid,
+      emailRedirectTo_path: '/auth/confirm',
+      next: '/a/home',
+    })
+
     try {
-      const { error } = await supabase.auth.signUp({
+      const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
-          emailRedirectTo: `${window.location.origin}/auth/confirm?next=/a/home`,
+          emailRedirectTo,
         },
       })
+
+      logAuth('auth_signup_result', {
+        rid,
+        ok: !error,
+        has_user: !!data?.user,
+        has_session: !!data?.session,
+        error_message: error ? String(error.message || 'error') : null,
+      })
+
       if (error) throw error
+
+      // Guardar apenas para UX no success page (não logar isso)
+      try {
+        sessionStorage.setItem('lp10_signup_email', email)
+        sessionStorage.setItem('lp10_signup_rid', rid)
+      } catch {}
+
       router.push('/auth/sign-up-success')
     } catch (error: unknown) {
       setError(error instanceof Error ? error.message : 'An error occurred')
