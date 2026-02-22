@@ -14,7 +14,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 
 function newRid() {
   try {
@@ -49,19 +49,102 @@ function logAuth(event: string, payload: Record<string, unknown>) {
   }
 }
 
+function normalizeErrMessage(err: unknown): string {
+  if (!err) return 'An error occurred'
+  if (err instanceof Error) return err.message || 'An error occurred'
+  try {
+    // @ts-expect-error - tentativa defensiva
+    if (typeof err?.message === 'string') return err.message
+  } catch {}
+  return 'An error occurred'
+}
+
+function isRateLimitMessage(msg: string) {
+  const m = msg.toLowerCase()
+  return m.includes('rate limit') || m.includes('too many') || m.includes('exceeded')
+}
+
+function isAlreadyRegisteredMessage(msg: string) {
+  const m = msg.toLowerCase()
+  // mensagens típicas do Supabase
+  return (
+    m.includes('already registered') ||
+    m.includes('already exists') ||
+    m.includes('user already') ||
+    m.includes('already been registered')
+  )
+}
+
 export function SignUpForm({ className, ...props }: React.ComponentPropsWithoutRef<'div'>) {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [repeatPassword, setRepeatPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
+
+  // Novo: CTA de resend aparece apenas quando faz sentido (erro "já cadastrado")
+  const [canResend, setCanResend] = useState(false)
+  const [isResending, setIsResending] = useState(false)
+  const [resendFeedback, setResendFeedback] = useState<string | null>(null)
+
   const [isLoading, setIsLoading] = useState(false)
   const router = useRouter()
+
+  const normalizedEmail = useMemo(() => email.trim().toLowerCase(), [email])
+  const resendEnabled = useMemo(() => canResend && normalizedEmail.length > 0, [canResend, normalizedEmail])
+
+  const handleResend = async () => {
+    if (!resendEnabled) return
+    const supabase = createClient()
+
+    setIsResending(true)
+    setResendFeedback(null)
+    setError(null)
+
+    const rid = newRid()
+    const emailRedirectTo = buildEmailRedirectTo(rid)
+
+    logAuth('auth_signup_resend_submit', {
+      rid,
+      emailRedirectTo_path: '/auth/confirm',
+      next: '/a/home',
+    })
+
+    try {
+      const { error } = await supabase.auth.resend({
+        type: 'signup',
+        email: normalizedEmail,
+        options: { emailRedirectTo },
+      })
+
+      logAuth('auth_signup_resend_result', {
+        rid,
+        ok: !error,
+        error_message: error ? String(error.message || 'error') : null,
+      })
+
+      if (error) throw error
+
+      setResendFeedback('Enviamos um novo e-mail de confirmação. Verifique sua caixa de entrada e spam.')
+    } catch (err) {
+      const msg = normalizeErrMessage(err)
+      if (isRateLimitMessage(msg)) {
+        setResendFeedback('Muitas tentativas. Aguarde alguns minutos e tente novamente.')
+      } else {
+        setResendFeedback(msg)
+      }
+    } finally {
+      setIsResending(false)
+    }
+  }
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault()
     const supabase = createClient()
+
     setIsLoading(true)
     setError(null)
+    setResendFeedback(null)
+    setCanResend(false)
 
     if (password !== repeatPassword) {
       setError('Passwords do not match')
@@ -80,7 +163,7 @@ export function SignUpForm({ className, ...props }: React.ComponentPropsWithoutR
 
     try {
       const { data, error } = await supabase.auth.signUp({
-        email,
+        email: normalizedEmail,
         password,
         options: {
           emailRedirectTo,
@@ -97,15 +180,32 @@ export function SignUpForm({ className, ...props }: React.ComponentPropsWithoutR
 
       if (error) throw error
 
-      // Guardar apenas para UX no success page (não logar isso)
+      // Guardar apenas para UX (sem PII nos logs)
       try {
-        sessionStorage.setItem('lp10_signup_email', email)
+        sessionStorage.setItem('lp10_signup_email', normalizedEmail)
         sessionStorage.setItem('lp10_signup_rid', rid)
       } catch {}
 
       router.push('/auth/sign-up-success')
-    } catch (error: unknown) {
-      setError(error instanceof Error ? error.message : 'An error occurred')
+    } catch (err: unknown) {
+      const msg = normalizeErrMessage(err)
+
+      // Rate limit: instrução clara
+      if (isRateLimitMessage(msg)) {
+        setError('Muitas tentativas de envio de e-mail. Aguarde alguns minutos e tente novamente.')
+        return
+      }
+
+      // Já cadastrado: orientar a confirmar e oferecer "resend" aqui (não na success page)
+      if (isAlreadyRegisteredMessage(msg)) {
+        setError(
+          'Este e-mail já foi cadastrado. Se você ainda não confirmou, verifique sua caixa de entrada (e spam) ou reenvie o e-mail de confirmação.'
+        )
+        setCanResend(true)
+        return
+      }
+
+      setError(msg || 'An error occurred')
     } finally {
       setIsLoading(false)
     }
@@ -132,6 +232,7 @@ export function SignUpForm({ className, ...props }: React.ComponentPropsWithoutR
                   onChange={(e) => setEmail(e.target.value)}
                 />
               </div>
+
               <div className="grid gap-2">
                 <div className="flex items-center">
                   <Label htmlFor="password">Password</Label>
@@ -144,6 +245,7 @@ export function SignUpForm({ className, ...props }: React.ComponentPropsWithoutR
                   onChange={(e) => setPassword(e.target.value)}
                 />
               </div>
+
               <div className="grid gap-2">
                 <div className="flex items-center">
                   <Label htmlFor="repeat-password">Repeat Password</Label>
@@ -156,11 +258,32 @@ export function SignUpForm({ className, ...props }: React.ComponentPropsWithoutR
                   onChange={(e) => setRepeatPassword(e.target.value)}
                 />
               </div>
+
               {error && <p className="text-sm text-red-500">{error}</p>}
+
+              {canResend && (
+                <div className="flex flex-col gap-2">
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    className="w-full"
+                    onClick={handleResend}
+                    disabled={!resendEnabled || isResending}
+                  >
+                    {isResending ? 'Reenviando...' : 'Reenviar e-mail de confirmação'}
+                  </Button>
+
+                  {resendFeedback && (
+                    <p className="text-sm text-muted-foreground">{resendFeedback}</p>
+                  )}
+                </div>
+              )}
+
               <Button type="submit" className="w-full" disabled={isLoading}>
                 {isLoading ? 'Creating an account...' : 'Sign up'}
               </Button>
             </div>
+
             <div className="mt-4 text-center text-sm">
               Already have an account?{' '}
               <Link href="/auth/login" className="underline underline-offset-4">
