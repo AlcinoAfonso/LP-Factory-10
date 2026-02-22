@@ -81,7 +81,7 @@ export function SignUpForm({ className, ...props }: React.ComponentPropsWithoutR
   const [repeatPassword, setRepeatPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
 
-  // Novo: CTA de resend aparece apenas quando faz sentido (erro "já cadastrado")
+  // CTA de resend aparece apenas quando faz sentido (erro "já cadastrado")
   const [canResend, setCanResend] = useState(false)
   const [isResending, setIsResending] = useState(false)
   const [resendFeedback, setResendFeedback] = useState<string | null>(null)
@@ -90,7 +90,10 @@ export function SignUpForm({ className, ...props }: React.ComponentPropsWithoutR
   const router = useRouter()
 
   const normalizedEmail = useMemo(() => email.trim().toLowerCase(), [email])
-  const resendEnabled = useMemo(() => canResend && normalizedEmail.length > 0, [canResend, normalizedEmail])
+  const resendEnabled = useMemo(
+    () => canResend && normalizedEmail.length > 0,
+    [canResend, normalizedEmail]
+  )
 
   const handleResend = async () => {
     if (!resendEnabled) return
@@ -265,8 +268,7 @@ export function SignUpForm({ className, ...props }: React.ComponentPropsWithoutR
                 <div className="flex flex-col gap-2">
                   <Button
                     type="button"
-                    variant="secondary"
-                    className="w-full"
+                    className="w-full border border-input bg-background text-foreground shadow-sm hover:bg-accent"
                     onClick={handleResend}
                     disabled={!resendEnabled || isResending}
                   >
