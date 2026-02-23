@@ -73,13 +73,24 @@ function isAlreadyRegisteredMessage(msg: string) {
   )
 }
 
+function getIdentitiesCount(user: unknown): number | null {
+  try {
+    // supabase-js: user.identities?: Identity[]
+    // @ts-expect-error - leitura defensiva
+    const identities = user?.identities
+    return Array.isArray(identities) ? identities.length : null
+  } catch {
+    return null
+  }
+}
+
 export function SignUpForm({ className, ...props }: React.ComponentPropsWithoutRef<'div'>) {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [repeatPassword, setRepeatPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
 
-  // CTA de resend aparece apenas quando faz sentido (erro "já cadastrado")
+  // CTA de resend aparece quando o e-mail já existe (Opção A: neutro)
   const [canResend, setCanResend] = useState(false)
   const [isResending, setIsResending] = useState(false)
   const [resendFeedback, setResendFeedback] = useState<string | null>(null)
@@ -169,15 +180,26 @@ export function SignUpForm({ className, ...props }: React.ComponentPropsWithoutR
         options: { emailRedirectTo },
       })
 
+      const identitiesCount = getIdentitiesCount(data?.user)
+
       logAuth('auth_signup_result', {
         rid,
         ok: !error,
         has_user: !!data?.user,
         has_session: !!data?.session,
+        identities_count: identitiesCount,
         error_message: error ? String(error.message || 'error') : null,
       })
 
       if (error) throw error
+
+      // Opção A: se o Supabase retornou "ok" mas user.identities veio vazio,
+      // tratamos como "e-mail já cadastrado" (não é erro) e NÃO redirecionamos
+      if (identitiesCount === 0) {
+        setError('Este e-mail já foi cadastrado. Verifique sua caixa de entrada (e spam) para confirmar ou faça login.')
+        setCanResend(true)
+        return
+      }
 
       // Guardar apenas para UX (sem PII nos logs)
       try {
@@ -189,17 +211,14 @@ export function SignUpForm({ className, ...props }: React.ComponentPropsWithoutR
     } catch (err: unknown) {
       const msg = normalizeErrMessage(err)
 
-      // Rate limit: sem CTA extra (só aguardar)
       if (isRateLimitMessage(msg)) {
         setError('Muitas tentativas de envio de e-mail. Aguarde alguns minutos e tente novamente.')
         return
       }
 
-      // Opção A: mensagem única neutra (não diferencia caso 2 vs caso 3)
+      // fallback por mensagem (caso Supabase devolva erro explícito)
       if (isAlreadyRegisteredMessage(msg)) {
-        setError(
-          'Este e-mail já foi cadastrado. Verifique sua caixa de entrada (e spam) para confirmar ou faça login.'
-        )
+        setError('Este e-mail já foi cadastrado. Verifique sua caixa de entrada (e spam) para confirmar ou faça login.')
         setCanResend(true)
         return
       }
