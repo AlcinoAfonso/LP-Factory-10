@@ -16,19 +16,12 @@ export default function Page() {
           <Card>
             <CardHeader>
               <CardTitle className="text-2xl">Cadastro iniciado</CardTitle>
-              <CardDescription>Confirme seu e-mail para continuar</CardDescription>
+              <CardDescription>Clique no link de confirmação no e-mail que enviamos.</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="flex flex-col gap-3">
-                <p className="text-sm text-muted-foreground">
-                  Enviamos um link de confirmação para o seu e-mail. Abra sua caixa de entrada (e spam)
-                  e clique no link para ativar sua conta.
-                </p>
-                <p className="text-sm text-muted-foreground">
-                  Ao clicar no link, você será redirecionado automaticamente para concluir a ativação da
-                  conta.
-                </p>
-              </div>
+              <p className="text-sm text-muted-foreground">
+                Não encontrou? Verifique o spam.
+              </p>
             </CardContent>
           </Card>
         </div>
