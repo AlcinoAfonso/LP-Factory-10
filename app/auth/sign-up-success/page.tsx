@@ -15,14 +15,14 @@ export default function Page() {
         <div className="flex flex-col gap-6">
           <Card>
             <CardHeader>
-              <CardTitle className="text-2xl">Conta criada</CardTitle>
-              <CardDescription>Agora confirme seu e-mail para continuar</CardDescription>
+              <CardTitle className="text-2xl">Cadastro iniciado</CardTitle>
+              <CardDescription>Confirme seu e-mail para continuar</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="flex flex-col gap-3">
                 <p className="text-sm text-muted-foreground">
-                  Enviamos um e-mail de confirmação. Abra sua caixa de entrada (e spam) e clique no link
-                  para continuar.
+                  Enviamos um link de confirmação para o seu e-mail. Abra sua caixa de entrada (e spam)
+                  e clique no link para ativar sua conta.
                 </p>
                 <p className="text-sm text-muted-foreground">
                   Ao clicar no link, você será redirecionado automaticamente para concluir a ativação da
