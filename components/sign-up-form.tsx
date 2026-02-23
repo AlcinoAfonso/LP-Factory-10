@@ -18,7 +18,6 @@ import { useMemo, useState } from 'react'
 
 function newRid() {
   try {
-    // browsers modernos
     return crypto.randomUUID()
   } catch {
     return `${Date.now()}-${Math.random().toString(16).slice(2)}`
@@ -66,7 +65,6 @@ function isRateLimitMessage(msg: string) {
 
 function isAlreadyRegisteredMessage(msg: string) {
   const m = msg.toLowerCase()
-  // mensagens típicas do Supabase
   return (
     m.includes('already registered') ||
     m.includes('already exists') ||
@@ -168,9 +166,7 @@ export function SignUpForm({ className, ...props }: React.ComponentPropsWithoutR
       const { data, error } = await supabase.auth.signUp({
         email: normalizedEmail,
         password,
-        options: {
-          emailRedirectTo,
-        },
+        options: { emailRedirectTo },
       })
 
       logAuth('auth_signup_result', {
@@ -193,16 +189,16 @@ export function SignUpForm({ className, ...props }: React.ComponentPropsWithoutR
     } catch (err: unknown) {
       const msg = normalizeErrMessage(err)
 
-      // Rate limit: instrução clara
+      // Rate limit: sem CTA extra (só aguardar)
       if (isRateLimitMessage(msg)) {
         setError('Muitas tentativas de envio de e-mail. Aguarde alguns minutos e tente novamente.')
         return
       }
 
-      // Já cadastrado: orientar a confirmar e oferecer "resend" aqui (não na success page)
+      // Já cadastrado: mensagem neutra + oferecer resend (se não confirmou) e orientar login (se já confirmou)
       if (isAlreadyRegisteredMessage(msg)) {
         setError(
-          'Este e-mail já foi cadastrado. Se você ainda não confirmou, verifique sua caixa de entrada (e spam) ou reenvie o e-mail de confirmação.'
+          'Este e-mail já foi cadastrado. Se você já confirmou o e-mail, vá para Login. Se ainda não confirmou, verifique sua caixa de entrada (e spam) ou reenvie o e-mail de confirmação.'
         )
         setCanResend(true)
         return
@@ -275,9 +271,7 @@ export function SignUpForm({ className, ...props }: React.ComponentPropsWithoutR
                     {isResending ? 'Reenviando...' : 'Reenviar e-mail de confirmação'}
                   </Button>
 
-                  {resendFeedback && (
-                    <p className="text-sm text-muted-foreground">{resendFeedback}</p>
-                  )}
+                  {resendFeedback && <p className="text-sm text-muted-foreground">{resendFeedback}</p>}
                 </div>
               )}
 
