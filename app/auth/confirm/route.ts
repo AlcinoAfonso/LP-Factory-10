@@ -22,26 +22,76 @@ function escAttr(v: string) {
     .replaceAll(">", "&gt;");
 }
 
+function logAuth(event: string, payload: Record<string, unknown>) {
+  // SUPA-05/VERCE-10: logs estruturados, sem PII
+  // Não logar email, token_hash, code.
+  try {
+    // eslint-disable-next-line no-console
+    console.info(
+      JSON.stringify({
+        ts: new Date().toISOString(),
+        event,
+        ...payload,
+      })
+    );
+  } catch {
+    // eslint-disable-next-line no-console
+    console.info(event);
+  }
+}
+
 function interstitialHTML(params: {
   token_hash: string;
   code: string;
   type: string;
   next: string;
+  rid: string;
 }) {
   const th = escAttr(params.token_hash);
   const cd = escAttr(params.code);
   const ty = escAttr(params.type);
   const nx = escAttr(params.next);
+  const rid = escAttr(params.rid);
 
-  return `<!doctype html><html><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/></head>
-  <body style="display:flex;min-height:100dvh;align-items:center;justify-content:center;font-family:system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif">
-    <form method="POST" action="/auth/confirm" style="display:flex;gap:8px;flex-direction:column;align-items:center">
-      <input type="hidden" name="token_hash" value="${th}"/>
-      <input type="hidden" name="code" value="${cd}"/>
-      <input type="hidden" name="type" value="${ty}"/>
-      <input type="hidden" name="next" value="${nx}"/>
-      <button type="submit" style="padding:.75rem 1rem;border-radius:.5rem;border:1px solid #ccc;cursor:pointer">Continuar</button>
-    </form>
+  return `<!doctype html><html><head>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width,initial-scale=1"/>
+    <meta name="referrer" content="no-referrer"/>
+    <title>Confirmando...</title>
+  </head>
+  <body style="display:flex;min-height:100dvh;align-items:center;justify-content:center;font-family:system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif;background:#0b0b0b;color:#fff">
+    <div style="width:min(420px,92vw);padding:20px;border:1px solid rgba(255,255,255,.15);border-radius:14px;background:rgba(255,255,255,.06)">
+      <div style="font-size:18px;font-weight:600;margin-bottom:8px">Confirmando…</div>
+      <div style="font-size:14px;opacity:.85;margin-bottom:14px">Aguarde. Estamos validando seu link.</div>
+
+      <form id="f" method="POST" action="/auth/confirm" style="display:flex;gap:8px;flex-direction:column;align-items:stretch">
+        <input type="hidden" name="token_hash" value="${th}"/>
+        <input type="hidden" name="code" value="${cd}"/>
+        <input type="hidden" name="type" value="${ty}"/>
+        <input type="hidden" name="next" value="${nx}"/>
+        <input type="hidden" name="rid" value="${rid}"/>
+
+        <noscript>
+          <div style="font-size:13px;opacity:.9;margin:10px 0">
+            Seu navegador bloqueou scripts. Clique para continuar.
+          </div>
+          <button type="submit" style="padding:.75rem 1rem;border-radius:.75rem;border:1px solid rgba(255,255,255,.25);background:transparent;color:#fff;cursor:pointer">
+            Continuar
+          </button>
+        </noscript>
+      </form>
+
+      <script>
+        (function () {
+          try {
+            var f = document.getElementById('f');
+            if (!f) return;
+            // Auto-avança sem clique (mantém consumo do token SOMENTE no POST)
+            requestAnimationFrame(function () { f.submit(); });
+          } catch (e) {}
+        })();
+      </script>
+    </div>
   </body></html>`;
 }
 
@@ -87,6 +137,8 @@ export async function GET(req: NextRequest) {
   const typeRaw = url.searchParams.get("type") ?? "";
   const type = isValidEmailOtpType(typeRaw) ? typeRaw : null;
 
+  const rid = url.searchParams.get("rid") ?? "";
+
   const rawNext = url.searchParams.get("next");
   const next = isSafeInternal(rawNext)
     ? rawNext!
@@ -94,16 +146,29 @@ export async function GET(req: NextRequest) {
       ? "/auth/update-password"
       : "/a/home";
 
+  logAuth("auth_confirm_get", {
+    rid,
+    has_token_hash: !!token_hash,
+    has_code: !!code,
+    type: typeRaw,
+    type_valid: !!type,
+    next,
+  });
+
   if ((!token_hash && !code) || !type) {
     return NextResponse.redirect(
       new URL("/auth/error?error=No%20token%20hash/code%20or%20type", url)
     );
   }
 
-  // Mitigação anti-scanner: sempre exige gesto do usuário (POST) quando o link chega aqui.
-  // (No fluxo novo, o e-mail NÃO aponta para /auth/confirm, mas mantemos compatibilidade.)
-  return new Response(interstitialHTML({ token_hash, code, type, next }), {
-    headers: { "Content-Type": "text/html; charset=utf-8" },
+  // Mitigação anti-scanner: token é consumido SOMENTE no POST.
+  // UX: sem clique manual (auto-avança) com fallback (noscript).
+  return new Response(interstitialHTML({ token_hash, code, type, next, rid }), {
+    headers: {
+      "Content-Type": "text/html; charset=utf-8",
+      "Cache-Control": "no-store, max-age=0",
+      Pragma: "no-cache",
+    },
   });
 }
 
@@ -116,6 +181,8 @@ export async function POST(req: NextRequest) {
   const typeRaw = String(form.get("type") || "");
   const type = isValidEmailOtpType(typeRaw) ? (typeRaw as EmailOtpType) : null;
 
+  const rid = String(form.get("rid") || "");
+
   const password = String(form.get("password") || "");
   const confirm = String(form.get("confirm") || "");
 
@@ -126,7 +193,22 @@ export async function POST(req: NextRequest) {
       ? "/a"
       : "/a/home";
 
+  logAuth("auth_confirm_post_start", {
+    rid,
+    has_token_hash: !!token_hash,
+    has_code: !!code,
+    type: typeRaw,
+    type_valid: !!type,
+    next,
+    has_password_fields: !!password || !!confirm,
+  });
+
   if ((!token_hash && !code) || !type) {
+    logAuth("auth_confirm_post_error", {
+      rid,
+      reason: "missing_token_or_type",
+    });
+
     return NextResponse.redirect(
       new URL("/auth/error?error=No%20token%20hash/code%20or%20type", url)
     );
@@ -138,6 +220,11 @@ export async function POST(req: NextRequest) {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
   if (!supabaseUrl || !supabaseKey) {
+    logAuth("auth_confirm_post_error", {
+      rid,
+      reason: "missing_supabase_config",
+    });
+
     return NextResponse.redirect(
       new URL(
         "/auth/error?error=" +
@@ -154,6 +241,11 @@ export async function POST(req: NextRequest) {
   if (isRecoveryWithPassword) {
     const validationError = validatePassword(password, confirm);
     if (validationError) {
+      logAuth("auth_confirm_post_error", {
+        rid,
+        reason: "password_validation_failed",
+      });
+
       const back = buildUpdatePasswordRedirect(url, {
         token_hash,
         code,
@@ -186,6 +278,11 @@ export async function POST(req: NextRequest) {
   if (code) {
     const { error } = await supabase.auth.exchangeCodeForSession(code);
     if (error) {
+      logAuth("auth_confirm_post_error", {
+        rid,
+        reason: "exchange_code_for_session_failed",
+      });
+
       if (type === "recovery") {
         const back = buildUpdatePasswordRedirect(url, {
           token_hash,
@@ -206,6 +303,11 @@ export async function POST(req: NextRequest) {
   } else {
     const { data, error } = await supabase.auth.verifyOtp({ type, token_hash });
     if (error) {
+      logAuth("auth_confirm_post_error", {
+        rid,
+        reason: "verify_otp_failed",
+      });
+
       if (type === "recovery") {
         const back = buildUpdatePasswordRedirect(url, {
           token_hash,
@@ -236,6 +338,11 @@ export async function POST(req: NextRequest) {
   if (isRecoveryWithPassword) {
     const { error } = await supabase.auth.updateUser({ password });
     if (error) {
+      logAuth("auth_confirm_post_error", {
+        rid,
+        reason: "update_user_password_failed",
+      });
+
       const msg =
         error.message === "Auth session missing!"
           ? "Sessão ausente. Solicite um novo link de recuperação."
@@ -250,9 +357,22 @@ export async function POST(req: NextRequest) {
       return NextResponse.redirect(back, 303);
     }
 
+    logAuth("auth_confirm_post_ok", {
+      rid,
+      type: typeRaw,
+      next,
+      recovery_password_set: true,
+    });
+
     return redirectRes;
   }
 
   // 4) Outros tipos (signup/magiclink/invite/email_change) mantêm comportamento atual
+  logAuth("auth_confirm_post_ok", {
+    rid,
+    type: typeRaw,
+    next,
+  });
+
   return redirectRes;
 }

@@ -1,3 +1,5 @@
+'use client'
+
 import {
   Card,
   CardContent,
@@ -13,14 +15,20 @@ export default function Page() {
         <div className="flex flex-col gap-6">
           <Card>
             <CardHeader>
-              <CardTitle className="text-2xl">Thank you for signing up!</CardTitle>
-              <CardDescription>Check your email to confirm</CardDescription>
+              <CardTitle className="text-2xl">Conta criada</CardTitle>
+              <CardDescription>Agora confirme seu e-mail para continuar</CardDescription>
             </CardHeader>
             <CardContent>
-              <p className="text-sm text-muted-foreground">
-                You&apos;ve successfully signed up. Please check your email to confirm your account
-                before signing in.
-              </p>
+              <div className="flex flex-col gap-3">
+                <p className="text-sm text-muted-foreground">
+                  Enviamos um e-mail de confirmação. Abra sua caixa de entrada (e spam) e clique no link
+                  para continuar.
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  Ao clicar no link, você será redirecionado automaticamente para concluir a ativação da
+                  conta.
+                </p>
+              </div>
             </CardContent>
           </Card>
         </div>
