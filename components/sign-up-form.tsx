@@ -195,10 +195,10 @@ export function SignUpForm({ className, ...props }: React.ComponentPropsWithoutR
         return
       }
 
-      // Já cadastrado: mensagem neutra + oferecer resend (se não confirmou) e orientar login (se já confirmou)
+      // Opção A: mensagem única neutra (não diferencia caso 2 vs caso 3)
       if (isAlreadyRegisteredMessage(msg)) {
         setError(
-          'Este e-mail já foi cadastrado. Se você já confirmou o e-mail, vá para Login. Se ainda não confirmou, verifique sua caixa de entrada (e spam) ou reenvie o e-mail de confirmação.'
+          'Este e-mail já foi cadastrado. Verifique sua caixa de entrada (e spam) para confirmar ou faça login.'
         )
         setCanResend(true)
         return
