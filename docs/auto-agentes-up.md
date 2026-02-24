@@ -1,5 +1,9 @@
 # LP Factory 10 — Agentes GPT (Updates)
 
+Este doc deve conter apenas updates do universo “Agentes GPT” (tools, automações, AgentKit, padrões de uso).
+
+Qualquer coisa de Supabase ou Vercel (infra, deploy, logs, MCP via Edge Functions etc.) fica nos respectivos docs e só referencia aqui se for governança de agentes (ex.: “como o agente deve usar a infra”, não “o que a infra lançou”).
+
 ---
 
 ## 1 — AgentKit *(🍿 Experimental)*
@@ -121,7 +125,7 @@ Arquitetura em que um orquestrador quebra metas e delega a trabalhadores (ferram
 2025-11-12
 
 ### Descrição
-Explora a família de ferramentas AgentKit da OpenAI (Builder, ChatKit, Registry) e compara com LangGraph, LangChain e CrewAI. Foca em versionamento, avaliação e embarque de agentes.
+“comparativo + critérios de decisão” (quando usar AgentKit, quando usar outro, riscos, etc.)
 
 ### Valor para o Projeto
 - Padroniza versionamento, avaliação e observabilidade de agentes.
@@ -227,12 +231,7 @@ Assistente contextual no Dashboard que sugere automaticamente título, slug, seg
 ### Ações Recomendadas
 1. Criar endpoint `/api/ai/guess-lp-metadata` via adapter, validando sessão e `account_id`.
 2. Embutir componente `AssistantPanel` nas telas de criação/edição de LP.
-3. RegiABCstrar a tool `guess_lp_metadata` no AgentKit e auditar chamadas (gravar `agent_id`, tool e `account_id`).
+3. Registrar a tool `guess_lp_metadata` no AgentKit e auditar chamadas (gravar `agent_id`, tool e `account_id`).
 4. Habilitar a feature apenas para contas internas ou via flag `ai_lp_metadata_assistant` até validar o MVP.
-
-
-### Ações Recomendadas
-1. Tratar como “padrão candidato” para integrações IA↔Dados (antes de criar conectores ad‑hoc).
-2. Quando for usar em produção: definir guardrails (escopo mínimo, auditoria, RLS) no desenho do caso.
 
 ---
