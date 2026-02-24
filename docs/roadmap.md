@@ -140,11 +140,6 @@
 • Fluxos Sistema de Acesso 2.0 (signup/confirm/resend).
 • Configurações do Supabase Auth (URL/redirect/confirm).
 
-5.4.3 Fora de escopo
-• Troca de provedor de e-mail (ex.: Resend).
-• Mudança de limites/rate limit no envio.
-• DNS/domínio/entregabilidade (infra).
-
 6. E6 — UI Kit Provisório
 
 6.1 Status
