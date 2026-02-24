@@ -209,24 +209,11 @@ API para envio direto de eventos de conversão do servidor para Google Ads e Met
 
 ---
 
-## 12 — Vercel AI Cloud + Gateway *(🟩 Estável)*  
+## 12 — Vercel AI Cloud + Gateway *(DEPRECADO — duplicado)  
 2025-11-12  
 
 ### Descrição  
-Infraestrutura IA-native da Vercel, com AI Gateway e Fluid Compute, oferecendo deploy inteligente e seguro com detecção automática de bots.  
-
-### Valor para o Projeto  
-- Reduz custo de execução de rotas IA e workloads intermitentes.  
-- Cria base para automações de agentes IA na camada Edge.  
-- Facilita observabilidade e rollback de releases críticos.  
-
-### Valor para o Usuário  
-- Performance aprimorada e rotas mais estáveis.  
-- Experiência de IA responsiva e sem interrupções.  
-
-### Ações Recomendadas  
-1. Ativar AI Gateway e Rolling Releases em ambiente staging.  
-2. Validar compatibilidade com Supabase Auth e Access Context.  
+Duplicado com item 1  
 
 ---
 
@@ -251,9 +238,6 @@ Tratar como comportamento padrão do Vercel↔GitHub e registrar como capacidade
 Se houver necessidade de buildar todos os commits (caso específico de CI), avaliar opt-out via vercel.json (config de GitHub).
 
 ### Registro (Tipo B — Repo)
-Status: PENDENTE
-Nota (classificação): Default ON (sem ação). Mudança de comportamento (opt-out) via vercel.json = Tipo B.
-Verificado em: —
-Ambiente: Repo (vercel.json) + Vercel Project Settings (Git)
-Evidência: —
-Observação: manter default; só alterar se houver requisito explícito de CI por commit.
+- Status: N/A (default ON)
+- Ação necessária: nenhuma
+- Observação: somente criar `vercel.json` se optar por desabilitar o cancelamento automático.
