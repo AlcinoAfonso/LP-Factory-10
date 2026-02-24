@@ -2,8 +2,8 @@
 
 0.1. Cabeçalho
 • Documento: Base Técnica LP Factory 10
-• Versão: v2.0.9
-• Data: 19/02/2026
+• Versão: v2.0.10
+• Data: 24/02/2026
 
 0.2 Contrato do documento (parseável)
 • Esta seção define o que é relevante atualizar e como escrever.
@@ -259,10 +259,13 @@
 • Onboarding pós-save (E10.4.6): revalidatePath(route) antes do redirect para evitar UI stale.
 
 5.3.5 Signup
-• Entrada: /auth/sign-up (SignUpForm usa supabase.auth.signUp).
+• Entrada: /auth/sign-up (SignUpForm usa supabase.auth.signUp) (PATH: components/sign-up-form.tsx).
 • Sucesso do signUp: redirecionar para /auth/sign-up-success (mensagem de confirmação para checar o e-mail).
 • Regra: signUp deve usar emailRedirectTo apontando para /auth/confirm?next=/a/home (somente path interno).
-• Regra (template Supabase — Confirm sign up): usar {{ .RedirectTo }} (não {{ .SiteURL }}); quando RedirectTo já contém querystring (ex.: ?next=/a/home), anexar &token_hash={{ .TokenHash }}&type=signup.
+• Regra (correlação ponta a ponta): gerar rid no client (não-PII) e anexar no emailRedirectTo como querystring (ex.: &rid=<rid>) para rastrear submit → e-mail → confirm → redirect.
+• Regra (SUPA-05 no client — Auth/signup): emitir logs estruturados para eventos de signup/resend com rid e sem PII (não logar email/senha nem valores sensíveis).
+• Regra (VERC mínimo): logs no runtime do front em produção devem permitir diagnóstico rápido do fluxo por rid (submit/resultado).
+• Regra (template Supabase — Confirm sign up): usar {{ .RedirectTo }} (não {{ .SiteURL }}); quando RedirectTo já contém querystring (ex.: ?next=/a/home&rid=...), anexar &token_hash={{ .TokenHash }}&type=signup.
 • Confirmação: /auth/confirm (GET) exibe interstitial “Continuar” e consome token apenas no POST (anti-scanner).
 • Pós-confirmação: /auth/confirm (POST) cria sessão e redireciona para next=/a/home.
 • Com sessão e sem membership: /a/home cria 1ª conta via RPC ensure_first_account_for_current_user() e redireciona para /a/{account_slug} (pending_setup; owner/active).
@@ -333,6 +336,8 @@ Regra: qualquer novo arquivo em app/auth/ não pode importar @supabase/* até se
 • Adapters vNext: seguir 3.14
 
 99. Changelog
+v2.0.10 (24/02/2026) — E5.4: signup/confirm com correlação rid + logs (SUPA-05/VERC mínimo)
+• Signup documentado com rid (não-PII) para correlação ponta a ponta e logs estruturados no client (SUPA-05) para signup/resend sem PII, com sinal mínimo no runtime Vercel (VERC).
 v2.0.9 (19/02/2026) — Design System: Inter + tokens Tailwind
 • Registrada tipografia oficial Inter via next/font/google e aplicação global no app/layout.tsx.
 • Registrados tokens Tailwind LP Factory (brand/ink/graytech/surface/state + boxShadow.card) como extensão aditiva, preservando padrão shadcn.
