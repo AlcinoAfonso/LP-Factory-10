@@ -1,8 +1,8 @@
 0. Introdução
 
 0.1 Cabeçalho
-• Data: 21/02/2026
-• Versão: v1.5.21
+• Data: 24/02/2026
+• Versão: v1.5.22
 0.2 Contrato do documento (parseável)
 • Este documento registra o roadmap e o histórico de execução por marcos (E1, E2, ...).
 0.2.1 TIPO_DO_DOCUMENTO
@@ -127,18 +127,27 @@
 
 5.4 Signup/Confirmação mobile (Auth hardening — produto)
 
-• Status: Briefing
-• Objetivo: corrigir o problema de sign-up no celular em que o e-mail de confirmação não é enviado/recebido, garantindo um fluxo estável de criação de conta e confirmação.
+• Status: Concluído (exec) (24/02/2026)
+• Implementado (estado final): fluxo sign-up → envio do e-mail de confirmação → clique no link → /auth/confirm → redirect para /a/home executado (happy path).
+• emailRedirectTo: configurado para apontar para /auth/confirm com next=/a/home e rid para correlação (não-PII).
+• UX mínima: página /auth/sign-up-success orientando “cadastro iniciado / confirme no e-mail”.
+• Observability mínima: logs estruturados no client para eventos de signup/resend sem PII, com rid (SUPA-05) e sinal mínimo via logs no runtime do front em produção (VERC).
+• ARTEFATOS_REPO:
+• Ajustados: components/sign-up-form.tsx
 
 5.4.1 Escopo
-• Diagnosticar e corrigir o fluxo de sign-up/confirm no mobile (UI + comportamento de erro).
-• Melhorar UX de “reenvio” (resend) com mensagens claras e neutralidade (“Se este e-mail estiver cadastrado…”, quando aplicável).
-• Incluir cooldown/contador no resend para evitar múltiplas tentativas em sequência.
-• Garantir que QA e onboarding real não fiquem bloqueados por comportamento específico de mobile.
+• Garantir fluxo estável de sign-up/confirm no mobile (happy path) com redirect correto para /a/home.
+• Incluir correlação por rid (não-PII) no redirect para rastrear signup → confirm → redirect.
+• Entregar UX mínima de “cadastro iniciado / confirme no e-mail” em /auth/sign-up-success.
+• Emitir logs estruturados (SUPA-05) sem PII com rid e sinal mínimo no runtime Vercel.
 
 5.4.2 Dependências
 • Fluxos Sistema de Acesso 2.0 (signup/confirm/resend).
 • Configurações do Supabase Auth (URL/redirect/confirm).
+
+5.4.3 Pendências
+• Repetir o happy path em mobile (teste manual ponta a ponta) para fechar “ponta a ponta no mobile”.
+• Repetição de tentativas pode ser afetada por rate limit (fora do escopo do E5.4; tratar em caso separado).
 
 6. E6 — UI Kit Provisório
 
@@ -788,6 +797,8 @@
 • E12: enforcement operacional (jobs) e políticas de restrição/reativação/configurações.
 
 99. Changelog
+v1.5.22 (24/02/2026)
+• E5.4 concluído (exec): fluxo signup → e-mail → /auth/confirm → redirect /a/home (happy path), com emailRedirectTo incluindo next=/a/home e rid (não-PII), /auth/sign-up-success (UX mínima) e logs estruturados no client (SUPA-05) com sinal mínimo no runtime Vercel (VERC).
 v1.5.21 (21/02/2026)
 • E10.4.7 concluído (exec): refinamentos de UX no “Primeiros passos” (sem reset de campos em erro; nome com placeholder + CTA gated; Enter com foco no primeiro inválido; progressive disclosure no mobile; site_url aceita domínio sem esquema e normaliza para https://), com ARTEFATOS_REPO (criados/ajustados) registrados.
 • E6 atualizado (exec): tipografia Inter aplicada globalmente e tokens Tailwind LP Factory adicionados de forma aditiva (preservando shadcn), incluindo expansão do content para js/jsx/mdx.
