@@ -149,6 +149,12 @@
 • Repetir o happy path em mobile (teste manual ponta a ponta) para fechar “ponta a ponta no mobile”.
 • Repetição de tentativas pode ser afetada por rate limit (fora do escopo do E5.4; tratar em caso separado).
 
+5.5 E-mail já cadastrado (estado dedicado + cooldown)
+• Status: Briefing
+• Objetivo: reduzir fricção no sign-up quando o e-mail já foi usado (confirmado ou não), com estado dedicado + Reenviar confirmação + Fazer login + cooldown com contador e feedback.
+• Escopo (MVP): detectar duplicidade (erro exists/already registered ou ok com identities_count==0), ocultar senha/submit, auth.resend({ type: 'signup' }), cooldown ~60s, logs SUPA-05 sem PII (incl. resend).
+• Fora de escopo: diferenciar Caso 2 vs 3, mudanças de infra/SMTP/Resend, BD.
+
 6. E6 — UI Kit Provisório
 
 6.1 Status
