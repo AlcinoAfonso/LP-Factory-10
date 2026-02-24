@@ -100,7 +100,7 @@ export function SignUpForm({ className, ...props }: React.ComponentPropsWithoutR
   const [password, setPassword] = useState('')
   const [repeatPassword, setRepeatPassword] = useState('')
 
-  // Erros gerais (ex.: rate limit / validação) — continuam em vermelho
+  // Erros gerais (ex.: rate limit / validação)
   const [error, setError] = useState<string | null>(null)
 
   // Estado UX unificado: “Este e-mail já está cadastrado” (caso 2 e 3)
@@ -149,6 +149,12 @@ export function SignUpForm({ className, ...props }: React.ComponentPropsWithoutR
     return alreadyRegistered && normalizedEmail.length > 0 && cooldownLeft === 0
   }, [alreadyRegistered, normalizedEmail, cooldownLeft])
 
+  const resendButtonLabel = useMemo(() => {
+    if (isResending) return 'Reenviando...'
+    if (cooldownLeft > 0) return `Reenviar em ${formatMMSS(cooldownLeft)}`
+    return 'Reenviar confirmação'
+  }, [isResending, cooldownLeft])
+
   const handleResend = async () => {
     if (!resendEnabled || isResending) return
 
@@ -181,7 +187,7 @@ export function SignUpForm({ className, ...props }: React.ComponentPropsWithoutR
 
       if (error) throw error
 
-      setResendFeedback('E-mail reenviado.')
+      setResendFeedback('E-mail reenviado. Confira inbox e spam.')
       setCooldownUntil(Date.now() + RESEND_COOLDOWN_SEC * 1000)
     } catch (err) {
       const msg = normalizeErrMessage(err)
@@ -196,6 +202,17 @@ export function SignUpForm({ className, ...props }: React.ComponentPropsWithoutR
     } finally {
       setIsResending(false)
     }
+  }
+
+  const handleUseAnotherEmail = () => {
+    // link discreto: volta para o formulário sem competir com o CTA primário
+    setAlreadyRegistered(false)
+    setResendFeedback(null)
+    setCooldownUntil(0)
+    setCooldownLeft(0)
+    setError(null)
+    setPassword('')
+    setRepeatPassword('')
   }
 
   const handleSignUp = async (e: React.FormEvent) => {
@@ -281,108 +298,118 @@ export function SignUpForm({ className, ...props }: React.ComponentPropsWithoutR
     <div className={cn('flex flex-col gap-6', className)} {...props}>
       <Card>
         <CardHeader>
-          <CardTitle className="text-2xl">Sign up</CardTitle>
-          <CardDescription>Create a new account</CardDescription>
+          {alreadyRegistered ? (
+            <CardTitle className="text-2xl">Este e-mail já está cadastrado</CardTitle>
+          ) : (
+            <>
+              <CardTitle className="text-2xl">Sign up</CardTitle>
+              <CardDescription>Create a new account</CardDescription>
+            </>
+          )}
         </CardHeader>
 
         <CardContent>
-          <form onSubmit={handleSignUp}>
-            <div className="flex flex-col gap-6">
-              <div className="grid gap-2">
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="m@example.com"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                />
-              </div>
-
-              <div className="grid gap-2">
-                <div className="flex items-center">
-                  <Label htmlFor="password">Password</Label>
-                </div>
-                <Input
-                  id="password"
-                  type="password"
-                  required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                />
-              </div>
-
-              <div className="grid gap-2">
-                <div className="flex items-center">
-                  <Label htmlFor="repeat-password">Repeat Password</Label>
-                </div>
-                <Input
-                  id="repeat-password"
-                  type="password"
-                  required
-                  value={repeatPassword}
-                  onChange={(e) => setRepeatPassword(e.target.value)}
-                />
-              </div>
-
-              {/* Erros gerais */}
-              {error && <p className="text-sm text-red-500">{error}</p>}
-
-              {/* Estado UX unificado (Opção 3.1) */}
-              {alreadyRegistered && (
-                <div className="flex flex-col gap-3 rounded-lg border border-input bg-background p-4">
-                  <p className="text-sm font-medium">Este e-mail já está cadastrado</p>
-
-                  <p className="text-sm text-muted-foreground">
-                    Se você ainda não confirmou, confira a caixa de entrada e o spam e clique no link.
-                  </p>
-
-                  <p className="text-sm text-muted-foreground">
-                    Se você já confirmou antes, faça login.
-                  </p>
-
-                  <Button
-                    type="button"
-                    className="w-full"
-                    onClick={handleResend}
-                    disabled={!resendEnabled || isResending}
-                  >
-                    {isResending ? 'Reenviando...' : 'Reenviar confirmação'}
-                  </Button>
-
-                  {resendFeedback && <p className="text-sm text-muted-foreground">{resendFeedback}</p>}
-
-                  {cooldownLeft > 0 && (
-                    <p className="text-sm text-muted-foreground">Aguarde {formatMMSS(cooldownLeft)}.</p>
-                  )}
-
-                  <div className="text-center">
-                    <Link href="/auth/login" className="text-sm underline underline-offset-4">
-                      Fazer login
-                    </Link>
-                  </div>
+          {/* Estado dedicado (3.2): uma tarefa por tela */}
+          {alreadyRegistered ? (
+            <div className="flex flex-col gap-3">
+              {/* Email opcional, read-only */}
+              {normalizedEmail && (
+                <div className="grid gap-2">
+                  <Label htmlFor="email_ro">Email</Label>
+                  <Input id="email_ro" type="email" value={normalizedEmail} readOnly />
                 </div>
               )}
 
-              {/* Regra 3.1: ocultar o botão “Sign up” quando o estado “já cadastrado” estiver ativo */}
-              {!alreadyRegistered && (
+              <p className="text-sm text-muted-foreground">
+                Se você ainda não confirmou, confira a caixa de entrada e o spam e clique no link.
+              </p>
+              <p className="text-sm text-muted-foreground">Se você já confirmou antes, faça login.</p>
+
+              <Button
+                type="button"
+                className="w-full"
+                onClick={handleResend}
+                disabled={!resendEnabled || isResending}
+              >
+                {resendButtonLabel}
+              </Button>
+
+              {resendFeedback && <p className="text-sm text-muted-foreground">{resendFeedback}</p>}
+
+              <div className="text-center">
+                <Link href="/auth/login" className="text-sm underline underline-offset-4">
+                  Fazer login
+                </Link>
+              </div>
+
+              {/* Opcional, bem discreto */}
+              <div className="text-center">
+                <button
+                  type="button"
+                  onClick={handleUseAnotherEmail}
+                  className="text-xs text-muted-foreground underline underline-offset-4"
+                >
+                  Usar outro e-mail
+                </button>
+              </div>
+            </div>
+          ) : (
+            <form onSubmit={handleSignUp}>
+              <div className="flex flex-col gap-6">
+                <div className="grid gap-2">
+                  <Label htmlFor="email">Email</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="m@example.com"
+                    required
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                  />
+                </div>
+
+                <div className="grid gap-2">
+                  <div className="flex items-center">
+                    <Label htmlFor="password">Password</Label>
+                  </div>
+                  <Input
+                    id="password"
+                    type="password"
+                    required
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                  />
+                </div>
+
+                <div className="grid gap-2">
+                  <div className="flex items-center">
+                    <Label htmlFor="repeat-password">Repeat Password</Label>
+                  </div>
+                  <Input
+                    id="repeat-password"
+                    type="password"
+                    required
+                    value={repeatPassword}
+                    onChange={(e) => setRepeatPassword(e.target.value)}
+                  />
+                </div>
+
+                {/* Erros gerais */}
+                {error && <p className="text-sm text-red-500">{error}</p>}
+
                 <Button type="submit" className="w-full" disabled={isLoading}>
                   {isLoading ? 'Creating an account...' : 'Sign up'}
                 </Button>
-              )}
-            </div>
+              </div>
 
-            {/* Evita duplicar CTA quando alreadyRegistered */}
-            {!alreadyRegistered && (
               <div className="mt-4 text-center text-sm">
                 Already have an account?{' '}
                 <Link href="/auth/login" className="underline underline-offset-4">
                   Login
                 </Link>
               </div>
-            )}
-          </form>
+            </form>
+          )}
         </CardContent>
       </Card>
     </div>
