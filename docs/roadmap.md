@@ -690,11 +690,6 @@
 • Supabase Auth (integração/config).
 • Base Técnica (padrões e governança).
 
-12.9.3 Fora de escopo
-• Alterar UX do sign-up/confirm no app (isso fica no 5.4).
-• Tracking de Ads, automações outbound.
-
-
 13. E13 — Partner Dashboard
 
 13.1 Status
