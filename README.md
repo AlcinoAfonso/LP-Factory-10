@@ -1,3 +1,4 @@
+Teste Codex
 0. Introdução
 0.1. Cabeçalho
 • Documento: README — LP Factory 10 (MVP)
