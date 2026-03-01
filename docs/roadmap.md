@@ -1,8 +1,8 @@
 0. Introdução
 
 0.1 Cabeçalho
-• Data: 24/02/2026
-• Versão: v1.5.22
+• Data: 01/03/2026
+• Versão: v1.5.23
 0.2 Contrato do documento (parseável)
 • Este documento registra o roadmap e o histórico de execução por marcos (E1, E2, ...).
 0.2.1 TIPO_DO_DOCUMENTO
@@ -154,6 +154,16 @@
 • Objetivo: reduzir fricção no sign-up quando o e-mail já foi usado (confirmado ou não), com estado dedicado + Reenviar confirmação + Fazer login + cooldown com contador e feedback.
 • Escopo (MVP): detectar duplicidade (erro exists/already registered ou ok com identities_count==0), ocultar senha/submit, auth.resend({ type: 'signup' }), cooldown ~60s, logs SUPA-05 sem PII (incl. resend).
 • Fora de escopo: diferenciar Caso 2 vs 3, mudanças de infra/SMTP/Resend, BD.
+
+5.6 Infra Auth — E-mail transacional (Supabase Auth via Resend SMTP)
+• Status: Concluído (exec) (26/02/2026)
+• Objetivo: estabilizar envio de e-mails transacionais do Supabase Auth (signup confirm e reset password) com entrega validada, baixo risco e zero custo adicional no MVP.
+• Implementado (estado final): Resend com domínio verificado `lpfactory.com.br` (plano Free); Supabase Auth configurado para SMTP Resend; sender `no-reply@lpfactory.com.br`; signup e forgot password testados com entrega confirmada e links funcionais.
+• Decisão: manter sender no domínio raiz (`no-reply@lpfactory.com.br`) no estágio atual; não adotar `no-reply@mail.lpfactory.com.br` por limitação do plano e ausência de escala/volume.
+• Consequência (domínio raiz): reputação compartilhada entre site, e-mails transacionais e futuros e-mails humanos (SPF/DKIM/DMARC únicos).
+• Operação: e-mails humanos (ex.: alcinoafonso@, support@, vendas@) em provedor humano (Workspace/M365/Zoho); Resend permanece apenas para envio transacional.
+• Evolução (quando houver escala): avaliar migração para subdomínio dedicado (`mail.`) para isolamento de reputação, com plano pago e novos registros DNS.
+• Referência técnica: detalhes e parâmetros ficam em `docs/base-tecnica.md` (Supabase Auth — E-mail transacional).
 
 6. E6 — UI Kit Provisório
 
@@ -798,6 +808,8 @@
 • E12: enforcement operacional (jobs) e políticas de restrição/reativação/configurações.
 
 99. Changelog
+v1.5.23 (01/03/2026)
+• E5.6 concluído (exec): e-mail transacional do Supabase Auth estabilizado via Resend SMTP com sender `no-reply@lpfactory.com.br` (domínio raiz), com decisão registrada e condição de migração futura para subdomínio dedicado quando houver escala.
 v1.5.22 (24/02/2026)
 • E5.4 concluído (exec): fluxo signup → e-mail → /auth/confirm → redirect /a/home (happy path), com emailRedirectTo incluindo next=/a/home e rid (não-PII), /auth/sign-up-success (UX mínima) e logs estruturados no client (SUPA-05) com sinal mínimo no runtime Vercel (VERC).
 v1.5.21 (21/02/2026)
