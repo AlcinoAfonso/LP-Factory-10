@@ -807,6 +807,16 @@
 • E9: trial/entitlements (fonte de verdade de permissões).
 • E12: enforcement operacional (jobs) e políticas de restrição/reativação/configurações.
 
+17 E17 - Automations & Agents
+
+17.1 Status
+• A definir
+
+17.2 Objetivo
+• Consolidar uma linha de evolução de automações/agentes (OpenAI, Supabase, Vercel, GitHub) para tarefas operacionais e diagnósticos.
+• Garantir execução controlada (permissões mínimas, read-only quando aplicável), com governança e baixo risco.
+• Padronizar rastreabilidade/observabilidade (logs estruturados, correlação) para acelerar investigação e execução de casos sem alterar o core do app.
+
 99. Changelog
 v1.5.23 (01/03/2026)
 • E5.6 concluído (exec): e-mail transacional do Supabase Auth estabilizado via Resend SMTP com sender `no-reply@lpfactory.com.br` (domínio raiz), com decisão registrada e condição de migração futura para subdomínio dedicado quando houver escala.
