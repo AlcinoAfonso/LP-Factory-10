@@ -1,4 +1,3 @@
-Teste Codex
 0. Introdução
 0.1. Cabeçalho
 • Documento: README — LP Factory 10 (MVP)
@@ -38,35 +37,14 @@ Teste Codex
 • Ainda não definido.
 
 6.2. Definições do MVP
-• Starter mínimo.
-• Tracking mínimo.
-• Agendamento no MVP.
-• Primeira recomendação concreta de IA.
+• Starter mínimo • Tracking mínimo • Atendimento no MVP • Primeira recomendação concreta da IA
 
-6.3. Estratégia consultiva (modelo operacional)
-• Decidir entre “cliente como owner desde o início” vs “LP Factory monta primeiro e faz handoff depois”.
+6.3. Padrões de entrega
+• Definir regra de “o que é uma LP entregue”, com checklist.
 
-7. Documentos oficiais (fonte de verdade)
-• Como a IA deve interpretar/ajustar cada documento: ver seção 0.2 (Contrato do documento) no próprio arquivo.
-• Roadmap: docs/roadmap.md → conversa com todos os documentos oficiais abaixo (fonte de verdade por referência)
-• Base técnica: docs/base-tecnica.md
-• Schema (DB contract): docs/schema.md
-• Inventário do repositório: docs/repo-inv.md → defasado (não usar como fonte principal)
-• Fluxos (legado): docs/fluxos.md → defasado / descontinuado (não usar; será substituído)
-• Fluxos (atual): docs/fluxos2.md → conversa apenas com docs/roadmap.md
-
-8. Como trabalhamos (para evitar suposições erradas)
-8.1. GitHub
-• Uso via interface web (não assumir repo local/terminal/git cli).
-
-8.2. Migrations (governança atual)
-• Pasta: `supabase/migrations/`
-• Naming: `000X__descricao.sql` (não assumir timestamp/CLI runner por enquanto).
-• Conteúdo: migrations contêm apenas SQL de implementação (sem SQL de consultas/verificação).
-
-8.3. Fluxo prático (SQL ↔ migrations)
-• Iteramos no SQL Editor do Supabase até estabilizar.
-• Quando estabiliza, registramos o SQL final em um migration (efeito líquido do caso).
-
-8.4. Branch / rollback
-• Se houver risco real de a branch não ir para main e mudanças tiverem sido aplicadas no BD principal, o caso deve prever rollback separado (fora de migrations).
+7. Referências oficiais
+• Base Técnica (versão ativa do projeto)
+• Schema Reference
+• Roadmap
+• Dashboards 10
+• Fluxos Sistema de Acesso 2.0
