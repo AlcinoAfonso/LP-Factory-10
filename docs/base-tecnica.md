@@ -2,8 +2,8 @@
 
 0.1. Cabeçalho
 • Documento: Base Técnica LP Factory 10
-• Versão: v2.0.10
-• Data: 24/02/2026
+• Versão: v2.0.11
+• Data: 01/03/2026
 
 0.2 Contrato do documento (parseável)
 • Esta seção define o que é relevante atualizar e como escrever.
@@ -77,6 +77,17 @@
 • Regra: permitir somente domínios/paths necessários (produção + localhost).
 • Regra (Preview Vercel): quando for necessário habilitar preview, usar wildcard com “/**” para cobrir paths profundos (ex.: https://*-<slug>.vercel.app/**).
 • Regra: não usar curingas amplos fora de preview (evitar allowlist que aceite domínios externos).
+
+2.4.1 Supabase Auth — E-mail transacional (SMTP via Resend)
+• Objetivo: estabilizar e-mails transacionais do Supabase Auth (signup confirm e reset password) via Resend SMTP (MVP; zero custo adicional; baixo risco).
+• Resend: domínio verificado `lpfactory.com.br`; plano Free (1 domínio); região São Paulo (sa-east-1).
+• Sender (Supabase): `no-reply@lpfactory.com.br` (domínio raiz; não usar `mail.lpfactory.com.br` no estágio atual por limitação do plano).
+• SMTP (Supabase Auth): Host `smtp.resend.com`; Port `587`; Username `resend`; Password: secret configurado no Supabase (não versionar).
+• DNS (Registro.br): manter SPF/DKIM do domínio raiz compatíveis com Resend; sem migração estrutural de domínio.
+• Validação (estado final): signup testado; forgot password testado; entrega confirmada; links funcionais; sem erro de envio.
+• Consequência (domínio raiz): reputação compartilhada entre site, transacional e futuros e-mails humanos (SPF/DKIM/DMARC únicos).
+• Operação: e-mails humanos (ex.: alcinoafonso@, support@, vendas@) ficam em provedor humano (Workspace/M365/Zoho); Resend permanece apenas para envio transacional.
+• Evolução (quando houver escala): avaliar migração para `no-reply@mail.lpfactory.com.br` (domínio dedicado; isolamento de reputação; SPF/DKIM/DMARC dedicados) com plano pago do Resend.
 
 2.5 Regras de Import (canônica)
 • @supabase/* somente em: src/lib/**/adapters/ (ex.: src/lib/access/adapters/, src/lib/admin/adapters/) e lib/supabase/*.
@@ -336,6 +347,8 @@ Regra: qualquer novo arquivo em app/auth/ não pode importar @supabase/* até se
 • Adapters vNext: seguir 3.14
 
 99. Changelog
+v2.0.11 (01/03/2026) — Infra Auth: e-mail transacional via Resend (SMTP) no domínio raiz
+• Registrada a configuração estável de e-mails transacionais do Supabase Auth via Resend (SMTP) com sender `no-reply@lpfactory.com.br`, incluindo consequências do domínio raiz e condição de migração futura para subdomínio dedicado.
 v2.0.10 (24/02/2026) — E5.4: signup/confirm com correlação rid + logs (SUPA-05/VERC mínimo)
 • Signup documentado com rid (não-PII) para correlação ponta a ponta e logs estruturados no client (SUPA-05) para signup/resend sem PII, com sinal mínimo no runtime Vercel (VERC).
 v2.0.9 (19/02/2026) — Design System: Inter + tokens Tailwind
