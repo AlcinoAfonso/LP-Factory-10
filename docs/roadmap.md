@@ -3,25 +3,20 @@
 0.1 Cabeçalho
 • Data: 01/03/2026
 • Versão: v1.5.23
-0.2 Contrato do documento (parseável)
-• Este documento registra o roadmap e o histórico de execução por marcos (E1, E2, ...).
+
+0.2 Contrato do documento (consulta)
+• Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
+
 0.2.1 TIPO_DO_DOCUMENTO
 • TIPO_DO_DOCUMENTO: prescritivo
-0.2.2 ALLOWLIST_RELEVANCIA
-• OBJETIVO_DOC: registrar marcos, decisões, fluxo e histórico de execução do produto (snapshot por marco), orientando o que fazer e em que ordem.
-• MARCOS: Itens E* com status, escopo, critérios e pendências; quando fizer sentido, incluir sub-seções de Fluxos e Cenários (como subseções do próprio marco) descrevendo comportamento/decisões de UX e regras de produto.
-• FASES: agrupamentos estratégicos do roadmap (alto nível).
-• MIGRACOES: movimentos de itens (ex.: E7.2 → E10.1) apenas como referência histórica.
-• Microcopy (guia): registrar mensagens-chave + intenção (segurança, anti-abuso, clareza), evitando texto final longo; detalhar mais apenas quando o comportamento depender da redação.
-• ARTEFATOS_REPO: em marcos com execução, registrar também os paths exatos dos arquivos do repositório afetados no caso (criados, ajustados e excluídos), em bullets curtos, sem descrever “como foi feito”.
-• ANTI_DRIFT_DB: não detalhar contrato de banco (tabelas/colunas/views/RPCs/triggers/policies); referenciar docs/schema.md.
-• ANTI_DRIFT_REGRAS: não duplicar regras técnicas; referenciar docs/base-tecnica.md
-• PROIBIDO_EXECUCAO_NO_CORPO: no corpo dos itens E é proibido registrar narrativa operacional de execução (PR/branch/CI/deploy), passos de QA, prints e relato “como foi feito”; registrar apenas estado final (snapshot) e critérios mínimos de aceite.*
-0.2.3 ALLOWLIST_CHANGELOG (blocklist mínima)
-• PROIBIDO: bullets administrativos (ex.: “atualizado cabeçalho/data/versão”).
-0.2.4 ESTILO (opcional)
-• Estado final (snapshot por marco), sem narrativa longa.
-• Frases curtas; preferir bullets; sem tabelas; sem code fences.
+
+0.2.2 GUIA_DE_CONSULTA
+• O QUE É: a referência única do projeto para o contrato de casos (E*): status, escopo final e dependências.
+• POR QUE CONSULTAR: para entender “o que já foi definido/implementado” e “qual é o próximo marco”, evitando drift com docs técnicas.
+• COMO USAR: ao planejar execução, priorização e validação de escopo por caso, consultar este documento para o estado final de cada E*.
+• QUANDO CONSULTAR: status/escopo/dependências de E*, decisões de produto/UX registradas no caso, e paths/artefatos quando fizerem parte do estado final do caso.
+• QUANDO NÃO CONSULTAR: regras técnicas do runtime (usar `docs/base-tecnica.md`) e contrato/inventário de DB (usar `docs/schema.md`).
+• NOTA: este documento registra estado final por caso; não é lugar de narrativa operacional.
 
 0.3 Nota operacional (dependência externa)
 • 2026-02 — Supabase: Project Clone / Restore to a New Project (beta) pode ficar indisponível; sem impacto no runtime do projeto existente. Não depender disso para staging/espelho/backup. Se precisar duplicar ambiente: criar projeto novo + aplicar migrations do repositório + configurar env/secrets manualmente.
