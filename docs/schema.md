@@ -4,22 +4,19 @@
 • Data da última atualização: 13/02/2026
 • Documento: LP Factory 10 — Schema (DB Contract) v1.0.7
 
-0.2 Contrato do documento (parseável)
-• Esta seção define o que é relevante atualizar e como escrever.
+0.2 Contrato do documento (consulta)
+• Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
+
 0.2.1 TIPO_DO_DOCUMENTO
 • TIPO_DO_DOCUMENTO: prescritivo
-0.2.2 ALLOWLIST_RELEVANCIA
-• OBJETIVO_DOC: ser o contrato do DB (estado atual esperado) e a referência única para detalhes de banco.
-• CONTRATO_DB: somente o que existe/é esperado no banco (tabelas, colunas, enums, relacionamentos, views, RPCs/functions, triggers, RLS/policies).
-• GATE (anti-antecipação): é proibido registrar objeto/alteração que esteja apenas “decidido/planejado” sem evidência de estado final executado/observável (conforme RELATÓRIO do executor).
-• ANTI_DRIFT: Base Técnica e Roadmap não repetem listas/detalhes de DB; devem apenas referenciar este arquivo quando precisarem citar DB.
-• MANUTENCAO: quando faltar detalhe confirmado no Supabase, marcar como TBD e registrar o caminho de validação (Supabase > Database > Tables/Views/Functions/Policies). TBD não pode ser usado para “criar” objeto futuro; apenas para detalhe faltante de algo já existente.
-0.2.3 ALLOWLIST_CHANGELOG (blocklist mínima)
-• PROIBIDO: bullets administrativos (ex.: “atualizado cabeçalho/data/versão”).
-0.2.4 ESTILO (opcional)
-• Estado final (o que existe/é esperado), sem narrativa.
-• Frases curtas e normativas; preferir bullets; manter numeração estável; incluir paths e nomes exatos quando confirmados.
 
+0.2.2 GUIA_DE_CONSULTA
+• O QUE É: a referência única do projeto para o contrato do DB (objetos e detalhes de banco).
+• POR QUE CONSULTAR: para implementar/avaliar mudanças de banco sem drift (tabelas/constraints/views/RPCs/RLS/policies) e responder dúvidas sobre “o que existe no DB”.
+• COMO USAR: antes de criar/alterar SQL/migration/RLS/policies, consultar este documento para nomes/estruturas/regras de DB.
+• QUANDO CONSULTAR: tabelas, colunas, constraints, enums/tipos, relacionamentos, views, RPCs/functions, triggers, RLS/policies.
+• QUANDO NÃO CONSULTAR: regras de app/runtime (usar `docs/base-tecnica.md`) e status/escopo de casos E* (usar `docs/roadmap.md`).
+• NOTA: este documento descreve o estado do DB (não plano/decisão futura).
 
 1. Tabelas
 
