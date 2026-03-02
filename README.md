@@ -43,8 +43,9 @@
 • Definir regra de “o que é uma LP entregue”, com checklist.
 
 7. Referências oficiais
-• Base Técnica (versão ativa do projeto)
-• Schema Reference
-• Roadmap
-• Dashboards 10
-• Fluxos Sistema de Acesso 2.0
+• docs/base-tecnica.md
+• docs/schema.md
+• docs/roadmap.md
+• docs/fluxos2.md
+
+
