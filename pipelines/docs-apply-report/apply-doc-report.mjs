@@ -1,4 +1,4 @@
-// scripts/apply-doc-report.mjs
+// pipelines/docs-apply-report/apply-doc-report.mjs
 // Executor v1: aplica reports JSON (Actions-ready) em arquivos .md do repo.
 // Suporta ops: replace_section, insert_after_section, insert_after_heading.
 // Regras: fail-fast (âncora ausente, alvo ausente, match ambíguo, seção já existe em insert).
@@ -331,7 +331,7 @@ function validateReportShape(report) {
 
 async function main() {
   const reportPathArg = process.argv[2];
-  if (!reportPathArg) die("Uso: node scripts/apply-doc-report.mjs <reports/arquivo.json>");
+  if (!reportPathArg) die("Uso: node pipelines/docs-apply-report/run.mjs <reports/arquivo.json>");
 
   const reportPath = toPosix(reportPathArg);
   if (!(await fileExists(reportPath))) die(`Report não encontrado: ${reportPath}`);

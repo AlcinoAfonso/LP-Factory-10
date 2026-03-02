@@ -1,4 +1,4 @@
-name: Doc Agent
+name: Pipeline Docs — Apply Report
 
 on:
   workflow_dispatch:
@@ -13,7 +13,7 @@ permissions:
   pull-requests: write
 
 concurrency:
-  group: doc-agent-${{ github.ref }}
+  group: pipeline-docs-apply-report-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
@@ -36,14 +36,14 @@ jobs:
             exit 1
           fi
 
-      - name: Apply report (scripts/apply-doc-report.mjs)
+      - name: Apply report (pipelines/docs-apply-report/run.mjs)
         run: |
-          node scripts/apply-doc-report.mjs "${{ inputs.report_path }}"
+          node pipelines/docs-apply-report/run.mjs "${{ inputs.report_path }}"
 
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@v6
         with:
-          branch: doc-agent/${{ github.run_id }}
+          branch: pipeline/docs-apply-report/${{ github.run_id }}
           delete-branch: true
           title: "Doc Agent: aplicar report ${{ inputs.report_path }}"
           commit-message: "Doc Agent: aplicar report"

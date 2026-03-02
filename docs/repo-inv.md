@@ -27,7 +27,7 @@
 • docs/
 • lib/
 • reports/
-• scripts/
+• pipelines/
 • src/
 • supabase/
 
@@ -43,12 +43,13 @@
 • tsconfig.json
 
 1.3 .github/workflows — CI, segurança e automações
-• .github/workflows/doc-agent.yml
+• .github/workflows/pipeline-docs-apply-report.yml
 • .github/workflows/security.yml
 • .github/workflows/upgrade-next-16-1-1.yml
 
-1.4 scripts — utilitários de automação (Doc Agent)
-• scripts/apply-doc-report.mjs
+1.4 pipelines — pipelines de automação
+• pipelines/docs-apply-report/run.mjs
+• pipelines/docs-apply-report/apply-doc-report.mjs
 
 1.5 reports — artefatos gerados por automações (não-normativos)
 • reports/ (diretório com JSONs de operações/relatórios do doc agent; manter como histórico)
