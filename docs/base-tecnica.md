@@ -2,8 +2,8 @@
 
 0.1. Cabeçalho
 • Documento: Base Técnica LP Factory 10
-• Versão: v2.0.11
-• Data: 01/03/2026
+• Versão: v2.0.12
+• Data: 02/03/2026
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -132,10 +132,24 @@
 • Build: blocking (não publicar se build falhar)
 • Regra: commitar alterações somente quando houver mudanças detectadas
 
+3.4.2 GitHub Actions — OpenAI smoke (integração mínima)
+• PATH: .github/workflows/openai-smoke.yml
+• Secret obrigatório: OPENAI_API_KEY (Actions secrets do repo).
+• Objetivo: teste mínimo de integração (chamada real à OpenAI via GitHub Actions) para validar key/configuração.
+• Regra: não truncar output com pipe para `head` (evitar falha SIGPIPE no workflow).
+
 3.5 Secrets & Variáveis
 • Server-only: SUPABASE_SECRET_KEY, STRIPE_SECRET_KEY (futuro)
+• CI/Automations (GitHub Actions secrets): OPENAI_API_KEY
 • Públicas: NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
 • Flags obrigatórias: ACCESS_CONTEXT_ENFORCED=true; ACCESS_CTX_USE_V2=true.
+• Regra (keys): nunca expor keys em chat/logs; se vazar, revogar imediatamente e substituir por nova key.
+
+3.5.1 OpenAI Platform — Projects e governança mínima (DEV/PROD)
+• Projects: LPF10-DEV e LPF10-PROD.
+• Sharing: “Enabled for selected projects” com apenas LPF10-DEV selecionado (DEV compartilha; Default e PROD não).
+• Service Account: criada no LPF10-DEV com key gerada (uso em DEV).
+• Hygiene: manter apenas keys necessárias ativas; revogar imediatamente keys expostas/indevidas; estado final reportado = 1 key ativa no LPF10-DEV.
 
 3.6 Tipos TypeScript
 • Fonte única: src/lib/types/status.ts
@@ -346,6 +360,9 @@ Regra: qualquer novo arquivo em app/auth/ não pode importar @supabase/* até se
 • Adapters vNext: seguir 3.14
 
 99. Changelog
+v2.0.12 (02/03/2026) — OpenAI Platform (DEV/PROD) + GitHub Actions `openai-smoke`
+• Registrados OPENAI_API_KEY (Actions secret) e workflow `.github/workflows/openai-smoke.yml` como teste mínimo de integração.
+• Registrada governança mínima de OpenAI Projects (DEV/PROD), sharing isolado no DEV e higiene de keys (revogação imediata em caso de exposição).
 v2.0.11 (01/03/2026) — Infra Auth: e-mail transacional via Resend (SMTP) no domínio raiz
 • Registrada a configuração estável de e-mails transacionais do Supabase Auth via Resend (SMTP) com sender `no-reply@lpfactory.com.br`, incluindo consequências do domínio raiz e condição de migração futura para subdomínio dedicado.
 v2.0.10 (24/02/2026) — E5.4: signup/confirm com correlação rid + logs (SUPA-05/VERC mínimo)

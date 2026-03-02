@@ -1,8 +1,8 @@
 0. Introdução
 
 0.1 Cabeçalho
-• Data: 01/03/2026
-• Versão: v1.5.23
+• Data: 02/03/2026
+• Versão: v1.5.24
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -805,14 +805,33 @@
 17 E17 - Automations & Agents
 
 17.1 Status
-• A definir
+• Em evolução (setup mínimo concluído) (02/03/2026)
 
 17.2 Objetivo
 • Consolidar uma linha de evolução de automações/agentes (OpenAI, Supabase, Vercel, GitHub) para tarefas operacionais e diagnósticos.
 • Garantir execução controlada (permissões mínimas, read-only quando aplicável), com governança e baixo risco.
 • Padronizar rastreabilidade/observabilidade (logs estruturados, correlação) para acelerar investigação e execução de casos sem alterar o core do app.
 
+17.3 Implementado (exec) — OpenAI Platform (02/03/2026)
+• Projects criados: `LPF10-DEV` e `LPF10-PROD`.
+• Sharing: “Enabled for selected projects” com apenas `LPF10-DEV` selecionado (DEV compartilha; Default e PROD não).
+• Service Account criada no `LPF10-DEV` com key gerada.
+• Segurança de keys: key exposta em chat revogada; key ativa no Default project revogada; estado final reportado = 1 key ativa no `LPF10-DEV`.
+
+17.4 Implementado (exec) — GitHub (repo) (02/03/2026)
+• Secret configurado: `OPENAI_API_KEY` (Actions secrets).
+• Workflow criado: `.github/workflows/openai-smoke.yml` como teste mínimo de integração (chamada real à OpenAI via GitHub Actions).
+• Ajuste aplicado: remover `head` no pipeline para evitar falha SIGPIPE (`curl | head`).
+
+17.5 Pendente (definição/planejado, não implementado)
+• OpenAI (LPF10-DEV): confirmar se há limits/budget/model usage configuráveis no nível do projeto no tier atual (UI redirecionou para nível organizacional).
+• Piloto Agent SDK `supabase_inspector` (read-only): especificado, não implementado (pré-MR). Snapshot definido: Responses API; Node 20; modelo default `gpt-4.1-mini` (override via `OPENAI_MODEL`); guard SQL read-only (somente SELECT/WITH; LIMIT obrigatório; denylist; sem `;`; limites de output/queries).
+• Supabase (para viabilizar read-only): criar role/usuário read-only (ex.: `ai_readonly`) e gerar secret `SUPABASE_DB_URL_READONLY` no GitHub.
+• Vercel: definir se haverá endpoint server-side no app para chamadas OpenAI (não iniciado).
+
 99. Changelog
+v1.5.24 (02/03/2026)
+• E17 atualizado: setup mínimo concluído (OpenAI Projects DEV/PROD com sharing isolado no DEV e hardening de keys; GitHub secret `OPENAI_API_KEY` + workflow `.github/workflows/openai-smoke.yml` verde), com pendências registradas para limits por projeto, piloto `supabase_inspector` read-only, role Supabase read-only e decisão de endpoint Vercel.
 v1.5.23 (01/03/2026)
 • E5.6 concluído (exec): e-mail transacional do Supabase Auth estabilizado via Resend SMTP com sender `no-reply@lpfactory.com.br` (domínio raiz), com decisão registrada e condição de migração futura para subdomínio dedicado quando houver escala.
 v1.5.22 (24/02/2026)
