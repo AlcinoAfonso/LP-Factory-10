@@ -5,21 +5,20 @@
 • Versão: v2.0.11
 • Data: 01/03/2026
 
-0.2 Contrato do documento (parseável)
-• Esta seção define o que é relevante atualizar e como escrever.
+0.2 Contrato do documento (consulta)
+• Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
+
 0.2.1 TIPO_DO_DOCUMENTO
 • TIPO_DO_DOCUMENTO: prescritivo
-0.2.2 ALLOWLIST_RELEVANCIA
-• OBJETIVO_DOC: regras e contratos técnicos do repositório (Next.js + Supabase + Vercel) para orientar implementação segura e consistente.
-• ANTI_DRIFT_DB: contrato/inventário de DB pertence ao docs/schema.md (não duplicar listas de DB aqui).
-• ANTI_DRIFT_ROADMAP: marcos, decisões, fluxo e histórico pertencem ao docs/roadmap.md (não registrar updates aqui).
-• INCLUIR: apenas regras necessárias para evitar implementação errada (segurança, governança, padrões obrigatórios).
-• SE NÃO HOUVER LACUNAS/CONTRADIÇÕES RELEVANTES: responder “SEM ALTERAÇÕES NECESSÁRIAS”.
-0.2.3 ALLOWLIST_CHANGELOG (blocklist mínima)
-• PROIBIDO: bullets administrativos (ex.: “atualizado cabeçalho/data/versão”).
-0.2.4 ESTILO (opcional)
-• Estado final (o que é), sem narrativa/justificativa.
-• Frases curtas e normativas; preferir bullets; incluir paths/termos exatos; sem tabelas e sem code fences.
+
+0.2.2 GUIA_DE_CONSULTA
+• O QUE É: a fonte única de regras técnicas e contratos operacionais do produto (Next.js + Supabase + Vercel + integrações).
+• POR QUE CONSULTAR: para evitar implementação errada, manter consistência técnica e reduzir risco (segurança, acesso, observabilidade, convenções).
+• COMO USAR: ao gerar plano / macro-roteiro / código / ajustes de código, consultar primeiro este documento e seguir suas regras como contrato.
+• QUANDO CONSULTAR: decisões de runtime (rotas/gating/estados), segurança (PII/secrets/keys), padrões mínimos de logs/observability, integrações e convenções de repo.
+• QUANDO NÃO CONSULTAR:
+• detalhes/inventário de DB (usar docs/schema.md)
+• status/escopo/histórico de casos E* (usar docs/roadmap.md)
 
 1. Identificação do Projeto
 • Nome: LP Factory 10
