@@ -226,6 +226,7 @@ async function main() {
           sql: { type: "string", description: "SQL (WITH/SELECT) com LIMIT <= 50." },
         },
         required: ["sql"],
+        additionalProperties: false,
       },
       strict: true,
     },
