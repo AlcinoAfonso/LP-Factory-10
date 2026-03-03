@@ -1,0 +1,51 @@
+name: Pipeline Supabase — Inspect
+
+on:
+  workflow_dispatch:
+    inputs:
+      briefing:
+        description: "Briefing curto (opcional). Para briefings longos, use briefing_path."
+        required: false
+        default: ""
+      briefing_path:
+        description: "Path de um arquivo .md/.txt no repo com o briefing (opcional). Ex: pipelines/supabase-inspect/templates/briefings/exemplo.md"
+        required: false
+        default: ""
+      openai_model:
+        description: "Override do modelo (opcional). Default: gpt-4.1-mini"
+        required: false
+        default: "gpt-4.1-mini"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pipeline-supabase-inspect-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install deps (pilot)
+        run: |
+          npm install --no-save openai pg
+
+      - name: Run inspector (pipelines/supabase-inspect/run.mjs)
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          SUPABASE_DB_URL_READONLY: ${{ secrets.SUPABASE_DB_URL_READONLY }}
+          BRIEFING: ${{ inputs.briefing }}
+          BRIEFING_PATH: ${{ inputs.briefing_path }}
+          OPENAI_MODEL: ${{ inputs.openai_model }}
+        run: |
+          node pipelines/supabase-inspect/run.mjs
