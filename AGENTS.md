@@ -4,8 +4,7 @@
 Rodar, nesta ordem:
 
 1. `npm ci`
-2. `npm run lint`
-3. `npx tsc -p tsconfig.json --noEmit`
+2. `npm run check`
 
 ## Observação
 - No sandbox do Codex, não incluir `npm run build` na rotina de `check`.
