@@ -1,8 +1,8 @@
 0. Introdução
 
 0.1 Cabeçalho
-• Data da última atualização: 13/02/2026
-• Documento: LP Factory 10 — Schema (DB Contract) v1.0.7
+• Data da última atualização: 04/03/2026
+• Documento: LP Factory 10 — Schema (DB Contract) v1.0.8
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -125,6 +125,15 @@
 • account_profiles_select_member_or_platform (SELECT to public): is_platform_admin() OU membro ativo do tenant (account_users.account_id = account_profiles.account_id; account_users.user_id = auth.uid(); account_users.status='active')
 • account_profiles_insert_owner_admin_or_platform (INSERT to public): is_platform_admin() OU owner/admin ativo do tenant (account_users.role IN ('owner','admin'); status='active')
 • account_profiles_update_owner_admin_or_platform (UPDATE to public): is_platform_admin() OU owner/admin ativo do tenant (USING + WITH CHECK)
+
+1.9 ai_readonly (role)
+1.9.1 Segurança (parâmetros)
+• LOGIN: sim
+• statement_timeout: 5s
+1.9.2 Escopo e grants (schema public)
+• Schema: public (USAGE)
+• Tabelas existentes em public: GRANT SELECT
+• Novas tabelas em public: default privileges com GRANT SELECT
 
 2. Views
 
@@ -277,6 +286,9 @@
 • Nota: accounts.status não aceita trial (CHECK accounts_status_chk). No estado atual, views não contêm trial e o runtime/tipos (PATH) não incluem trial (drift resolvido).
 
 99. Changelog
+v1.0.8 (04/03/2026) — Role read-only `ai_readonly` (public + timeout)
+• Registrado o role `ai_readonly` (LOGIN + statement_timeout=5s) com escopo read-only no schema public (USAGE + GRANT SELECT em tabelas existentes e default privileges para novas tabelas).
+
 v1.0.7 (13/02/2026) — E10.4.6: account_profiles (tabela + RLS/policies) e deprecação do marcador de setup
 • Adicionada a tabela public.account_profiles (1:1 com accounts via account_id PK/FK ON DELETE CASCADE) com campos: niche, preferred_channel (default 'email' + CHECK email|whatsapp), whatsapp, site_url, created_at, updated_at.
 • account_profiles: RLS ativo e policies reais: account_profiles_select_member_or_platform; account_profiles_insert_owner_admin_or_platform; account_profiles_update_owner_admin_or_platform.
