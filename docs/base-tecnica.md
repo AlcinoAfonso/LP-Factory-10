@@ -2,7 +2,7 @@
 
 0.1. Cabeçalho
 • Documento: Base Técnica LP Factory 10
-• Versão: v2.0.13
+• Versão: v2.0.14
 • Data: 04/03/2026
 
 0.2 Contrato do documento (consulta)
@@ -150,12 +150,21 @@
 • Regra temporária (lint): `react-hooks/set-state-in-effect: off` (remover no harden do lint)
 • Nota: `eslint .` analisa o repo inteiro; warnings não quebram o check; errors quebram.
 
+3.4.4 Pipeline `supabase-inspect` (v1, read-only)
+• PATH (workflow): .github/workflows/pipeline-supabase-inspect.yml
+• PATH (pipeline): pipelines/supabase-inspect/
+• Objetivo (v1): inspeção read-only no Supabase via GitHub Actions, com output apenas em logs + Job Summary.
+• Princípio (v1): somente SELECT/WITH (sem mutações).
+• Secrets (job): OPENAI_API_KEY e SUPABASE_DB_URL_READONLY (preferir session pooler; role/usuário read-only).
+• Contrato do pipeline (detalhes): pipelines/supabase-inspect/README.md (não duplicar guardrails/limites aqui).
+
 3.5 Secrets & Variáveis
 • Server-only: SUPABASE_SECRET_KEY, STRIPE_SECRET_KEY (futuro)
-• CI/Automations (GitHub Actions secrets): OPENAI_API_KEY
+• CI/Automations (GitHub Actions secrets): OPENAI_API_KEY, SUPABASE_DB_URL_READONLY
 • Públicas: NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
 • Flags obrigatórias: ACCESS_CONTEXT_ENFORCED=true; ACCESS_CTX_USE_V2=true.
 • Regra (keys): nunca expor keys em chat/logs; se vazar, revogar imediatamente e substituir por nova key.
+• Regra (read-only DB): SUPABASE_DB_URL_READONLY deve autenticar com role/usuário read-only e usar preferencialmente session pooler.
 
 3.5.1 OpenAI Platform — Projects e governança mínima (DEV/PROD)
 • Projects: LPF10-DEV e LPF10-PROD.
@@ -372,6 +381,8 @@ Regra: qualquer novo arquivo em app/auth/ não pode importar @supabase/* até se
 • Adapters vNext: seguir 3.14
 
 99. Changelog
+v2.0.14 (04/03/2026) — Pipeline `supabase-inspect` v1 (read-only) + secret SUPABASE_DB_URL_READONLY
+• Registrado o pipeline read-only `supabase-inspect` (workflow + contrato em pipelines/supabase-inspect/README.md) e o secret `SUPABASE_DB_URL_READONLY` para execução via GitHub Actions (preferir session pooler).
 v2.0.13 (04/03/2026) — ESLint CLI + AGENTS.md (Codex checks)
 • Registrada a rotina determinística no sandbox do Codex via AGENTS.md (`npm ci` + `npm run check`) e a divisão “build fora do sandbox (CI/Vercel)”.
 • Registrados scripts de lint/typecheck/check e o ESLint Flat Config com exceção temporária `react-hooks/set-state-in-effect: off`.
@@ -443,4 +454,3 @@ v1.9.2 (23/12/2025) — Infra/Auth/PostgREST (estado atual)
 • Atualizado 3.12 Compatibilidade PostgREST 14.1: registrado FTS (fts/plfts/phfts/wfts) (disponível; sem escopo de telas) + preferência por wfts e índices GIN conforme necessidade.
 • Atualizado 3.12 Compatibilidade PostgREST 14.1: UX de paginação — HTTP 416 / PGRST103 = fim da lista (não erro de sistema).
 • Atualizado 5.3.4 Observabilidade: server-timing/proxy-status não observados nos requests testados via DevTools; diretriz de instrumentação/logs/APM se necessário.
-
