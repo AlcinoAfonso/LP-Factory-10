@@ -1,8 +1,8 @@
 0. Introdução
 
 0.1 Cabeçalho
-• Data: 04/03/2026
-• Versão: v1.5.26
+• Data: 05/03/2026
+• Versão: v1.5.27
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -846,7 +846,30 @@
 • Harden lint (futuro): migrar para `eslint-config-next/core-web-vitals`, remover a exceção temporária de regra e avaliar eventual bloqueio de warnings.
 • Governança de pipelines: linkar/registrar o contrato v1 do `supabase-inspect` no índice central de pipelines do projeto.
 
+18 E18 - IA (fase IA-ready)
+
+18.1 Status
+• Planejado
+
+18.2 Objetivo
+• Estabelecer o ponto de ativação dos recursos de IA do LP Factory 10 (fase IA-ready).
+
+18.3 Arquitetura (referência de plataforma)
+• Padrão de integração de IA: **Vercel AI Gateway**.
+• Referência técnica: `docs/vercel-up.md` — Item 1 (Vercel AI Cloud / Experimental).
+
+18.4 Escopo inicial (alto nível)
+• geração assistida de landing pages
+• automações internas
+• agentes operacionais
+
+18.5 Condição de ativação
+• início da fase de geração de LPs
+• após estabilização do sistema de acesso e onboarding
+
 99. Changelog
+v1.5.27 (05/03/2026)
+• E18 adicionado (planejado): referência ao **Vercel AI Gateway** como padrão de integração de IA na fase IA-ready (ver `docs/vercel-up.md`, Item 1).
 v1.5.26 (04/03/2026)
 • E17 atualizado (exec): pipeline `supabase-inspect` v1 (read-only) implementado (workflow + pipeline em `pipelines/`), com secret `SUPABASE_DB_URL_READONLY` e referência ao contrato detalhado no README do pipeline e ao contrato de DB em docs/schema.md.
 v1.5.25 (04/03/2026)
