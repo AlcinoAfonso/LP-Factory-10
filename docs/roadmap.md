@@ -2,7 +2,7 @@
 
 0.1 Cabeçalho
 • Data: 04/03/2026
-• Versão: v1.5.25
+• Versão: v1.5.26
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -805,7 +805,7 @@
 17 E17 - Automations & Agents
 
 17.1 Status
-• Em evolução (setup mínimo concluído) (02/03/2026)
+• Em evolução (setup mínimo concluído) (04/03/2026)
 
 17.2 Objetivo
 • Consolidar uma linha de evolução de automações/agentes (OpenAI, Supabase, Vercel, GitHub) para tarefas operacionais e diagnósticos.
@@ -816,7 +816,7 @@
 • Projects criados: `LPF10-DEV` e `LPF10-PROD`.
 • Sharing: “Enabled for selected projects” com apenas `LPF10-DEV` selecionado (DEV compartilha; Default e PROD não).
 • Service Account criada no `LPF10-DEV` com key gerada.
-• Segurança de keys: key exposta em chat revogada; key ativa no Default project revogada; estado final reportado = 1 key ativa no `LPF10-DEV`.
+• Segurança de keys: revogação imediata em caso de exposição; estado final reportado = 1 key ativa no `LPF10-DEV`.
 
 17.4 Implementado (exec) — GitHub (repo) (02/03/2026)
 • Secret configurado: `OPENAI_API_KEY` (Actions secrets).
@@ -831,14 +831,24 @@
 • Build: validado fora do sandbox (CI/Vercel).
 • ARTEFATOS_REPO: `package.json`, `package-lock.json`, `eslint.config.mjs`, `AGENTS.md`.
 
-17.6 Pendente (definição/planejado, não implementado)
-• OpenAI (LPF10-DEV): confirmar se há limits/budget/model usage configuráveis no nível do projeto no tier atual.
-• Piloto Agent SDK `supabase_inspector` (read-only): especificado, não implementado (pré-MR). Snapshot definido: Responses API; Node 20; modelo default `gpt-4.1-mini` (override via `OPENAI_MODEL`); guard SQL read-only (somente SELECT/WITH; LIMIT obrigatório; denylist; sem `;`; limites de output/queries).
-• Supabase (para viabilizar read-only): criar role/usuário read-only (ex.: `ai_readonly`) e gerar secret `SUPABASE_DB_URL_READONLY` no GitHub.
+17.6 Implementado (exec) — Pipeline `supabase-inspect` (v1, read-only) (03/03/2026)
+• Objetivo (v1): inspeção read-only no Supabase via GitHub Actions, com output apenas em logs + Job Summary.
+• Workflow: `.github/workflows/pipeline-supabase-inspect.yml`.
+• Pipeline: `pipelines/supabase-inspect/` (contrato v1 no README).
+• Secret criado: `SUPABASE_DB_URL_READONLY` (Actions secrets).
+• DB (pré-requisito executado): role read-only criada para automations (detalhes em docs/schema.md).
+• Referências: regras/contratos técnicos em docs/base-tecnica.md; contrato detalhado do pipeline em pipelines/supabase-inspect/README.md.
+• ARTEFATOS_REPO: `.github/workflows/pipeline-supabase-inspect.yml`, `pipelines/supabase-inspect/`.
+
+17.7 Pendências (definição/planejado, não implementado)
+• OpenAI (LPF10-DEV): confirmar se há limits/model usage configuráveis no nível do projeto no tier atual.
 • Vercel: definir se haverá endpoint server-side no app para chamadas OpenAI (não iniciado).
 • Harden lint (futuro): migrar para `eslint-config-next/core-web-vitals`, remover a exceção temporária de regra e avaliar eventual bloqueio de warnings.
+• Governança de pipelines: linkar/registrar o contrato v1 do `supabase-inspect` no índice central de pipelines do projeto.
 
 99. Changelog
+v1.5.26 (04/03/2026)
+• E17 atualizado (exec): pipeline `supabase-inspect` v1 (read-only) implementado (workflow + pipeline em `pipelines/`), com secret `SUPABASE_DB_URL_READONLY` e referência ao contrato detalhado no README do pipeline e ao contrato de DB em docs/schema.md.
 v1.5.25 (04/03/2026)
 • E17 atualizado (exec): checks determinísticos do Codex no sandbox (AGENTS.md + lint via ESLint CLI + typecheck), com build validado fora do sandbox (CI/Vercel) e pendência futura “harden lint” registrada.
 v1.5.24 (02/03/2026)
