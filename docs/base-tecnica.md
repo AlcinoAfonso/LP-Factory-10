@@ -2,8 +2,8 @@
 
 0.1. Cabeçalho
 • Documento: Base Técnica LP Factory 10
-• Versão: v2.0.12
-• Data: 02/03/2026
+• Versão: v2.0.13
+• Data: 04/03/2026
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -137,6 +137,18 @@
 • Secret obrigatório: OPENAI_API_KEY (Actions secrets do repo).
 • Objetivo: teste mínimo de integração (chamada real à OpenAI via GitHub Actions) para validar key/configuração.
 • Regra: não truncar output com pipe para `head` (evitar falha SIGPIPE no workflow).
+
+3.4.3 Codex (sandbox) — checks determinísticos (lint/typecheck)
+• PATH: AGENTS.md (rotina padrão no sandbox)
+• Rotina padrão (sandbox): `npm ci` → `npm run check`
+• package.json (scripts):
+• `lint`: `eslint .`
+• `typecheck`: `tsc -p tsconfig.json --noEmit`
+• `check`: `npm run lint && npm run typecheck`
+• Build: não rodar `npm run build` no sandbox (sem rede; `next/font/google` faz download no build). Build é validado no CI/Vercel.
+• ESLint config: PATH: eslint.config.mjs (Flat Config baseado em eslint-config-next)
+• Regra temporária (lint): `react-hooks/set-state-in-effect: off` (remover no harden do lint)
+• Nota: `eslint .` analisa o repo inteiro; warnings não quebram o check; errors quebram.
 
 3.5 Secrets & Variáveis
 • Server-only: SUPABASE_SECRET_KEY, STRIPE_SECRET_KEY (futuro)
@@ -360,6 +372,9 @@ Regra: qualquer novo arquivo em app/auth/ não pode importar @supabase/* até se
 • Adapters vNext: seguir 3.14
 
 99. Changelog
+v2.0.13 (04/03/2026) — ESLint CLI + AGENTS.md (Codex checks)
+• Registrada a rotina determinística no sandbox do Codex via AGENTS.md (`npm ci` + `npm run check`) e a divisão “build fora do sandbox (CI/Vercel)”.
+• Registrados scripts de lint/typecheck/check e o ESLint Flat Config com exceção temporária `react-hooks/set-state-in-effect: off`.
 v2.0.12 (02/03/2026) — OpenAI Platform (DEV/PROD) + GitHub Actions `openai-smoke`
 • Registrados OPENAI_API_KEY (Actions secret) e workflow `.github/workflows/openai-smoke.yml` como teste mínimo de integração.
 • Registrada governança mínima de OpenAI Projects (DEV/PROD), sharing isolado no DEV e higiene de keys (revogação imediata em caso de exposição).
@@ -428,5 +443,4 @@ v1.9.2 (23/12/2025) — Infra/Auth/PostgREST (estado atual)
 • Atualizado 3.12 Compatibilidade PostgREST 14.1: registrado FTS (fts/plfts/phfts/wfts) (disponível; sem escopo de telas) + preferência por wfts e índices GIN conforme necessidade.
 • Atualizado 3.12 Compatibilidade PostgREST 14.1: UX de paginação — HTTP 416 / PGRST103 = fim da lista (não erro de sistema).
 • Atualizado 5.3.4 Observabilidade: server-timing/proxy-status não observados nos requests testados via DevTools; diretriz de instrumentação/logs/APM se necessário.
-
 

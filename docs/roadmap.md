@@ -1,8 +1,8 @@
 0. Introdução
 
 0.1 Cabeçalho
-• Data: 02/03/2026
-• Versão: v1.5.24
+• Data: 04/03/2026
+• Versão: v1.5.25
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -823,13 +823,24 @@
 • Workflow criado: `.github/workflows/openai-smoke.yml` como teste mínimo de integração (chamada real à OpenAI via GitHub Actions).
 • Ajuste aplicado: remover `head` no pipeline para evitar falha SIGPIPE (`curl | head`).
 
-17.5 Pendente (definição/planejado, não implementado)
-• OpenAI (LPF10-DEV): confirmar se há limits/budget/model usage configuráveis no nível do projeto no tier atual (UI redirecionou para nível organizacional).
+17.5 Implementado (exec) — Codex (sandbox) checks determinísticos (03/03/2026)
+• Objetivo: padronizar checks determinísticos no sandbox antes de abrir PR (lint + typecheck).
+• `AGENTS.md` criado no root: rotina padrão `npm ci` → `npm run check` (não incluir `npm run build` no sandbox).
+• `package.json`: `lint` migrou para ESLint CLI (`eslint .`), `typecheck` adicionado (`tsc -p tsconfig.json --noEmit`) e `check` padronizado (`npm run lint && npm run typecheck`).
+• `eslint.config.mjs` criado (Flat Config baseado em `eslint-config-next`).
+• Build: validado fora do sandbox (CI/Vercel).
+• ARTEFATOS_REPO: `package.json`, `package-lock.json`, `eslint.config.mjs`, `AGENTS.md`.
+
+17.6 Pendente (definição/planejado, não implementado)
+• OpenAI (LPF10-DEV): confirmar se há limits/budget/model usage configuráveis no nível do projeto no tier atual.
 • Piloto Agent SDK `supabase_inspector` (read-only): especificado, não implementado (pré-MR). Snapshot definido: Responses API; Node 20; modelo default `gpt-4.1-mini` (override via `OPENAI_MODEL`); guard SQL read-only (somente SELECT/WITH; LIMIT obrigatório; denylist; sem `;`; limites de output/queries).
 • Supabase (para viabilizar read-only): criar role/usuário read-only (ex.: `ai_readonly`) e gerar secret `SUPABASE_DB_URL_READONLY` no GitHub.
 • Vercel: definir se haverá endpoint server-side no app para chamadas OpenAI (não iniciado).
+• Harden lint (futuro): migrar para `eslint-config-next/core-web-vitals`, remover a exceção temporária de regra e avaliar eventual bloqueio de warnings.
 
 99. Changelog
+v1.5.25 (04/03/2026)
+• E17 atualizado (exec): checks determinísticos do Codex no sandbox (AGENTS.md + lint via ESLint CLI + typecheck), com build validado fora do sandbox (CI/Vercel) e pendência futura “harden lint” registrada.
 v1.5.24 (02/03/2026)
 • E17 atualizado: setup mínimo concluído (OpenAI Projects DEV/PROD com sharing isolado no DEV e hardening de keys; GitHub secret `OPENAI_API_KEY` + workflow `.github/workflows/openai-smoke.yml` verde), com pendências registradas para limits por projeto, piloto `supabase_inspector` read-only, role Supabase read-only e decisão de endpoint Vercel.
 v1.5.23 (01/03/2026)
