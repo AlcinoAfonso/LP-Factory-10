@@ -2,8 +2,8 @@
 
 0.1. Cabeçalho
 • Documento: Base Técnica LP Factory 10
-• Versão: v2.0.14
-• Data: 04/03/2026
+• Versão: v2.0.15
+• Data: 06/03/2026
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -155,8 +155,9 @@
 • PATH (pipeline): pipelines/supabase-inspect/
 • Objetivo (v1): inspeção read-only no Supabase via GitHub Actions, com output apenas em logs + Job Summary.
 • Princípio (v1): somente SELECT/WITH (sem mutações).
+• Modo batch (SQLs em bloco): colar múltiplas queries separadas por `---` no briefing (ou via briefing_path); execução determinística em ordem; relatório completo por query no Job Summary (detalhes no contrato do pipeline).
 • Secrets (job): OPENAI_API_KEY e SUPABASE_DB_URL_READONLY (preferir session pooler; role/usuário read-only).
-• Contrato do pipeline (detalhes): pipelines/supabase-inspect/README.md (não duplicar guardrails/limites aqui).
+• Contrato do pipeline (detalhes): pipelines/supabase-inspect/README.md.
 
 3.5 Secrets & Variáveis
 • Server-only: SUPABASE_SECRET_KEY, STRIPE_SECRET_KEY (futuro)
@@ -381,6 +382,8 @@ Regra: qualquer novo arquivo em app/auth/ não pode importar @supabase/* até se
 • Adapters vNext: seguir 3.14
 
 99. Changelog
+v2.0.15 (06/03/2026) — `supabase-inspect`: SQL batch no briefing + relatório completo no Summary
+• Registrado o modo batch com delimitador `---` (briefing e briefing_path) com execução determinística e relatório completo por query no Job Summary (contrato em pipelines/supabase-inspect/README.md).
 v2.0.14 (04/03/2026) — Pipeline `supabase-inspect` v1 (read-only) + secret SUPABASE_DB_URL_READONLY
 • Registrado o pipeline read-only `supabase-inspect` (workflow + contrato em pipelines/supabase-inspect/README.md) e o secret `SUPABASE_DB_URL_READONLY` para execução via GitHub Actions (preferir session pooler).
 v2.0.13 (04/03/2026) — ESLint CLI + AGENTS.md (Codex checks)
