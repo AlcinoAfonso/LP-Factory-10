@@ -149,12 +149,12 @@ function loadBriefing() {
 }
 
 function detectBatchMode(text) {
-  return text.includes("\n---") || text.startsWith("---") || text.includes("\n---\n");
+  return /(?:^|\n)\s*---\s*(?=\n|$)|\s+---\s+/.test(text);
 }
 
 function splitSqlBatch(text) {
   const parts = text
-    .split(/\n\s*---\s*\n/g)
+    .split(/(?:^|\n)\s*---\s*(?=\n|$)|\s+---\s+/g)
     .map((p) => p.trim())
     .filter(Boolean);
   return parts;

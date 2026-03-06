@@ -68,10 +68,18 @@ O pipeline aceita múltiplas queries diretamente no campo `briefing`.
 
 Se o texto contiver o delimitador `---`, o pipeline entra em **modo SQL batch** e executa as queries em ordem.
 
-**Delimitador**
+**Delimitador suportado**
+
+- Em linha própria
 
 ```txt
 ---
+```
+
+- Inline (mesma linha, com espaços ao redor)
+
+```txt
+SELECT ... LIMIT 10 --- SELECT ... LIMIT 10
 ```
 
 **Regras**
@@ -98,6 +106,10 @@ SELECT schemaname, tablename, policyname
 FROM pg_policies
 WHERE schemaname = 'public'
 LIMIT 50
+```
+
+```txt
+SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' LIMIT 20 --- SELECT schemaname, tablename, policyname FROM pg_policies WHERE schemaname = 'public' LIMIT 50
 ```
 
 ## Templates
