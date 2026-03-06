@@ -1,8 +1,8 @@
 0. Introdução
 
 0.1 Cabeçalho
-• Data: 05/03/2026
-• Versão: v1.5.27
+• Data: 06/03/2026
+• Versão: v1.5.28
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -840,11 +840,13 @@
 • Referências: regras/contratos técnicos em docs/base-tecnica.md; contrato detalhado do pipeline em pipelines/supabase-inspect/README.md.
 • ARTEFATOS_REPO: `.github/workflows/pipeline-supabase-inspect.yml`, `pipelines/supabase-inspect/`.
 
-17.7 Pendências (definição/planejado, não implementado)
-• OpenAI (LPF10-DEV): confirmar se há limits/model usage configuráveis no nível do projeto no tier atual.
-• Vercel: definir se haverá endpoint server-side no app para chamadas OpenAI (não iniciado).
-• Harden lint (futuro): migrar para `eslint-config-next/core-web-vitals`, remover a exceção temporária de regra e avaliar eventual bloqueio de warnings.
-• Governança de pipelines: linkar/registrar o contrato v1 do `supabase-inspect` no índice central de pipelines do projeto.
+17.7 Implementado (exec) — `supabase-inspect` batch SQL + relatório completo no Summary (06/03/2026)
+• Status: Concluído (exec) (06/03/2026)
+• Implementado: modo determinístico para colar múltiplas queries SQL no campo `briefing` (delimitador `---`, linha própria ou inline) e receber relatório completo (queries + outputs) no Job Summary.
+• Summary: inclui por query SQL + rowCount + columns + rows (amostra truncada).
+• briefing_path: arquivo no repo também pode conter batch com `---` (funciona igual).
+• Contrato atualizado: `pipelines/supabase-inspect/README.md`.
+• Pendência sugerida (quando houver demanda): biblioteca de templates em `pipelines/supabase-inspect/templates/briefings/` (ex.: schema_inventory.md, rls_policies.md, table_counts.md).
 
 18 E18 - IA (fase IA-ready)
 
@@ -868,6 +870,8 @@
 • após estabilização do sistema de acesso e onboarding
 
 99. Changelog
+v1.5.28 (06/03/2026)
+• E17 atualizado (exec): `supabase-inspect` ganhou modo batch (`---`) com execução determinística e relatório completo por query no Job Summary; contrato atualizado no README do pipeline e pendência opcional de templates registrada.
 v1.5.27 (05/03/2026)
 • E18 adicionado (planejado): referência ao **Vercel AI Gateway** como padrão de integração de IA na fase IA-ready (ver `docs/vercel-up.md`, Item 1).
 v1.5.26 (04/03/2026)
