@@ -162,6 +162,7 @@ function splitSqlBatch(text) {
 
 async function executeSqlBatch(db, briefing) {
   const queries = splitSqlBatch(briefing);
+  const summaryOutputLimit = Math.min(9_000, MAX_QUERY_OUTPUT_CHARS);
 
   if (queries.length > MAX_QUERIES) {
     throw new Error(`SQL batch excede max_queries (${MAX_QUERIES}).`);
@@ -187,6 +188,16 @@ async function executeSqlBatch(db, briefing) {
       columns: (res.fields || []).map((f) => f.name),
       rows,
     };
+
+    let summaryJson = JSON.stringify(payload, null, 2);
+    summaryJson = trunc(summaryJson, summaryOutputLimit);
+
+    writeSummary(`\n### Query ${queryCount}\n`);
+    writeSummary(`\`\`\`sql\n${safeSql}\n\`\`\`\n`);
+    writeSummary(`**Output (truncado)**\n`);
+    writeSummary(`- rowCount: ${payload.rowCount}`);
+    writeSummary(`- columns: ${payload.columns.join(", ") || "(sem colunas)"}\n`);
+    writeSummary(`\`\`\`json\n${summaryJson}\n\`\`\`\n`);
 
     console.log(`Rows (sample <= ${MAX_ROWS}): ${rows.length}`);
 
@@ -240,12 +251,6 @@ async function main() {
 ## Execução (SQL batch)
 `);
     writeSummary(`Queries executadas: ${executed.length}\n`);
-
-    for (let i = 0; i < executed.length; i++) {
-      const q = executed[i];
-      writeSummary(`\n### Query ${i + 1}\n`);
-      writeSummary(`\`\`\`sql\n${q.sql}\n\`\`\`\n`);
-    }
 
     await db.end();
     process.exit(0);

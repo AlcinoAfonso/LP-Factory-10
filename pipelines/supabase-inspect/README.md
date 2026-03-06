@@ -94,6 +94,28 @@ SELECT ... LIMIT 10 --- SELECT ... LIMIT 10
 
 - máximo de 20 queries
 
+No Job Summary, o modo batch inclui:
+
+- lista das queries executadas
+- output por query com `rowCount`, `columns` e sample de `rows` (truncado)
+
+Exemplo de output no Job Summary (1 query):
+
+````md
+### Query 1
+```sql
+SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' LIMIT 2
+```
+
+**Output (truncado)**
+- rowCount: 2
+- columns: table_name
+
+```json
+{ "rowCount": 2, "columns": ["table_name"], "rows": [{ "table_name": "accounts" }, { "table_name": "profiles" }] }
+```
+````
+
 **Exemplo**
 
 ```sql
