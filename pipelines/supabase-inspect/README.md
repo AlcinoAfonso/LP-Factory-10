@@ -63,6 +63,43 @@ No Job Summary:
 - Lista das queries (compacta)
 - Relatório final
 
+## Modo SQL Batch (v1.1)
+O pipeline aceita múltiplas queries diretamente no campo `briefing`.
+
+Se o texto contiver o delimitador `---`, o pipeline entra em **modo SQL batch** e executa as queries em ordem.
+
+**Delimitador**
+
+```txt
+---
+```
+
+**Regras**
+
+- uma única statement
+- sem `;`
+- iniciar com `WITH` ou `SELECT`
+- `LIMIT` obrigatório
+- `LIMIT <= 50`
+
+**Limites**
+
+- máximo de 20 queries
+
+**Exemplo**
+
+```sql
+SELECT table_name
+FROM information_schema.tables
+WHERE table_schema = 'public'
+LIMIT 20
+---
+SELECT schemaname, tablename, policyname
+FROM pg_policies
+WHERE schemaname = 'public'
+LIMIT 50
+```
+
 ## Templates
 A pasta `templates/` existe como slot para:
 - briefings de exemplo

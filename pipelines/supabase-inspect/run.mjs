@@ -148,6 +148,54 @@ function loadBriefing() {
   return { briefing: inline, source: "input:briefing" };
 }
 
+function detectBatchMode(text) {
+  return text.includes("\n---") || text.startsWith("---") || text.includes("\n---\n");
+}
+
+function splitSqlBatch(text) {
+  const parts = text
+    .split(/\n\s*---\s*\n/g)
+    .map((p) => p.trim())
+    .filter(Boolean);
+  return parts;
+}
+
+async function executeSqlBatch(db, briefing) {
+  const queries = splitSqlBatch(briefing);
+
+  if (queries.length > MAX_QUERIES) {
+    throw new Error(`SQL batch excede max_queries (${MAX_QUERIES}).`);
+  }
+
+  let queryCount = 0;
+  const executed = [];
+
+  for (const raw of queries) {
+    const safeSql = enforceGuard(raw);
+
+    queryCount += 1;
+
+    console.log(`\n--- QUERY ${queryCount} ---`);
+    console.log(safeSql);
+
+    const res = await db.query(safeSql);
+
+    const rows = summarizeRows(res.rows || []);
+
+    const payload = {
+      rowCount: res.rowCount ?? rows.length,
+      columns: (res.fields || []).map((f) => f.name),
+      rows,
+    };
+
+    console.log(`Rows (sample <= ${MAX_ROWS}): ${rows.length}`);
+
+    executed.push({ sql: safeSql, result: payload });
+  }
+
+  return executed;
+}
+
 async function main() {
   const openaiKey = process.env.OPENAI_API_KEY;
   const dbUrl = process.env.SUPABASE_DB_URL_READONLY;
@@ -157,6 +205,7 @@ async function main() {
   if (!dbUrl) die("Falta SUPABASE_DB_URL_READONLY (GitHub secret).");
 
   const { briefing, source } = loadBriefing();
+  const batchMode = detectBatchMode(briefing);
 
   console.log("=== Supabase Inspector (read-only) ===");
   console.log(`Model: ${model}`);
@@ -181,6 +230,26 @@ async function main() {
   });
 
   await db.connect();
+
+  if (batchMode) {
+    console.log("Modo SQL batch detectado.");
+
+    const executed = await executeSqlBatch(db, briefing);
+
+    writeSummary(`
+## Execução (SQL batch)
+`);
+    writeSummary(`Queries executadas: ${executed.length}\n`);
+
+    for (let i = 0; i < executed.length; i++) {
+      const q = executed[i];
+      writeSummary(`\n### Query ${i + 1}\n`);
+      writeSummary(`\`\`\`sql\n${q.sql}\n\`\`\`\n`);
+    }
+
+    await db.end();
+    process.exit(0);
+  }
 
   let queryCount = 0;
   const executed = [];
