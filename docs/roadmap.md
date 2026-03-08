@@ -740,8 +740,6 @@
 • Alinhamento com lifecycle de contas (vitrine pending_setup como entrada padrão) (ver E16).
 • Hardening do lifecycle de accounts.status aplicado (detalhes/evidências em docs/schema.md)..
 
-14/02/2026 11:18 — E16 ajustado para refletir a nova abordagem (status-based) e o consolidado 2
-
 16. E16 — Accounts
 
 16.1 Status
