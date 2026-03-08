@@ -42,31 +42,37 @@ function getVariant(ctx: Partial<any>, userEmail?: string | null): HeaderVariant
   return 'public';
 }
 
+function BrandWordmark() {
+  return (
+    <Link
+      href="/a/home"
+      aria-label="Ir para início"
+      className="inline-flex items-center rounded-md border border-brand-600/20 bg-brand-50 px-2.5 py-1 text-sm font-semibold tracking-wide text-brand-700 transition-colors hover:border-brand-600/35 hover:bg-brand-50/70"
+    >
+      LP Factory
+    </Link>
+  );
+}
+
 /* ==================== Variações ==================== */
 
 function HeaderPublic() {
   return (
-    <header className="border-b bg-white">
+    <header className="border-b border-border bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/85">
       <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-4">
-        <Link
-          href="/a/home"
-          aria-label="Ir para início"
-          className="text-sm font-semibold tracking-wide"
-        >
-          LP Factory
-        </Link>
+        <BrandWordmark />
 
         <nav className="flex items-center gap-3">
           <Link
             href="/auth/login"
-            className="rounded-md border px-3 py-1.5 text-sm hover:bg-gray-50"
+            className="rounded-md border border-border bg-white px-3 py-1.5 text-sm text-foreground transition-colors hover:bg-accent"
           >
             Entrar
           </Link>
 
           <Link
             href="/auth/sign-up"
-            className="rounded-md border px-3 py-1.5 text-sm hover:bg-gray-50"
+            className="rounded-md border border-brand-600/30 bg-brand-50 px-3 py-1.5 text-sm font-medium text-brand-700 transition-colors hover:bg-brand-50/70"
           >
             Criar conta
           </Link>
@@ -78,15 +84,9 @@ function HeaderPublic() {
 
 function HeaderAuthenticated({ userEmail }: { userEmail?: string | null }) {
   return (
-    <header className="border-b bg-white">
+    <header className="border-b border-border bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/85">
       <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-4">
-        <Link
-          href="/a/home"
-          aria-label="Ir para início"
-          className="text-sm font-semibold tracking-wide"
-        >
-          LP Factory
-        </Link>
+        <BrandWordmark />
 
         <nav className="flex items-center gap-3">
           <UserMenu userEmail={userEmail ?? undefined} />
@@ -108,21 +108,15 @@ function HeaderAccount({
   const accountLabel = account?.name ?? account?.subdomain ?? 'Minha conta';
 
   return (
-    <header className="border-b bg-white">
+    <header className="border-b border-border bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/85">
       <div className="mx-auto flex h-14 max-w-6xl items-center px-4">
-        <Link
-          href="/a/home"
-          aria-label="Ir para início"
-          className="text-sm font-semibold tracking-wide"
-        >
-          LP Factory
-        </Link>
+        <BrandWordmark />
 
         <div className="flex-1" />
 
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-2">
-            <span className="text-sm text-gray-800">{accountLabel}</span>
+            <span className="text-sm text-foreground">{accountLabel}</span>
             <StatusChip status={account?.status} />
           </div>
           <UserMenu userEmail={userEmail} userRole={role} />
@@ -138,13 +132,13 @@ function StatusChip({ status }: { status?: string | null }) {
   const st = (status ?? 'inactive').toString();
 
   const map: Record<string, { cls: string; label: string }> = {
-    active: { cls: 'bg-green-100 text-green-700 border-green-200', label: 'active' },
-    inactive: { cls: 'bg-gray-100 text-gray-700 border-gray-200', label: 'inactive' },
-    suspended: { cls: 'bg-red-100 text-red-700 border-red-200', label: 'suspended' },
-    pending_setup: { cls: 'bg-blue-100 text-blue-700 border-blue-200', label: 'pending_setup' },
+    active: { cls: 'bg-state-success/10 text-state-success border-state-success/20', label: 'active' },
+    inactive: { cls: 'bg-muted text-muted-foreground border-border', label: 'inactive' },
+    suspended: { cls: 'bg-state-error/10 text-state-error border-state-error/20', label: 'suspended' },
+    pending_setup: { cls: 'bg-brand-500/10 text-brand-700 border-brand-600/20', label: 'pending_setup' },
   };
 
-  const fallback = { cls: 'bg-gray-100 text-gray-700 border-gray-200', label: st };
+  const fallback = { cls: 'bg-muted text-muted-foreground border-border', label: st };
   const { cls, label } = map[st] ?? fallback;
 
   return (

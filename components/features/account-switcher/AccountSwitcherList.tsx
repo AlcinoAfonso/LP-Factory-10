@@ -68,24 +68,19 @@ export function AccountSwitcherList({
         transform: "translateX(-50%)",
         zIndex: 60,
       }}
-      className="w-80 rounded-2xl border bg-popover p-2 shadow-lg"
+      className="w-80 rounded-2xl border border-border bg-popover p-2 shadow-lg"
     >
-      <div className="px-2 py-1.5 text-xs text-popover-foreground/80">
-        Minhas contas
-      </div>
+      <div className="px-2 py-1.5 text-xs text-muted-foreground">Minhas contas</div>
 
       {loading && (
-        <div
-          className="px-3 py-2 text-sm text-popover-foreground/70"
-          aria-live="polite"
-        >
+        <div className="px-3 py-2 text-sm text-muted-foreground" aria-live="polite">
           Carregando contas…
         </div>
       )}
 
       {error && (
         <div className="px-2 py-2" aria-live="polite">
-          <div className="mb-2 text-sm text-red-500">Falha ao carregar.</div>
+          <div className="mb-2 text-sm text-state-error">Falha ao carregar.</div>
           <button
             type="button"
             onClick={onRetry}
@@ -106,12 +101,12 @@ export function AccountSwitcherList({
 
             const statusClass =
               status === "active"
-                ? "bg-emerald-500/10 text-emerald-600 border-emerald-600/20"
+                ? "bg-state-success/10 text-state-success border-state-success/20"
                 : status === "pending_setup"
-                ? "bg-amber-500/10 text-amber-600 border-amber-600/20"
+                ? "bg-state-warning/10 text-state-warning border-state-warning/25"
                 : status === "inactive"
-                ? "bg-slate-500/10 text-slate-600 border-rose-600/20"
-                : "bg-rose-500/10 text-rose-600 border-rose-600/20";
+                ? "bg-muted text-muted-foreground border-border"
+                : "bg-state-error/10 text-state-error border-state-error/20";
 
             return (
               <button
@@ -159,7 +154,7 @@ export function AccountSwitcherList({
         type="button"
         role="menuitem"
         onClick={onCreate}
-        className="w-full text-left px-3 py-2 rounded-xl text-sm hover:bg-accent focus:outline-none focus:ring-2 focus:ring-ring/40 text-popover-foreground"
+        className="w-full rounded-xl px-3 py-2 text-left text-sm text-popover-foreground hover:bg-accent focus:outline-none focus:ring-2 focus:ring-ring/40"
       >
         Criar outra conta
       </button>
