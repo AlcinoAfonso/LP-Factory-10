@@ -834,17 +834,19 @@ Documentação aprimorada para exportar telemetria do banco (Metrics API) para 
 
 ---
 
-## 34 — ChatGPT Apps + mcp-use (MCP Servers em Edge Functions) *(🗾 Estável)*
+## 34 — ChatGPT Apps + mcp-use (MCP Servers em Edge Functions) *(🗾 Estável)*
 
 2025-12-17
 
 ### Descrição  
 
-Guia para criar apps do ChatGPT conectados ao Supabase; usa **mcp-use** para facilitar o deploy de **MCP Servers** em **Supabase Edge Functions**.
+Guia oficial da Supabase para criar apps do ChatGPT conectados ao banco usando **mcp-use**, facilitando o deploy de **MCP Servers** em **Supabase Edge Functions**.
 
 ### Valor para o Projeto  
 
 - Opção concreta para “agentes com acesso a dados reais” usando a infraestrutura do Supabase.  
+
+- Mantém a arquitetura de integração concentrada no stack já adotado.
 
 ### Valor para o Usuário  
 
@@ -852,7 +854,11 @@ Guia para criar apps do ChatGPT conectados ao Supabase; usa **mcp-use** para fac
 
 ### Ações Recomendadas  
 
-1. Registrar este update também no `docs/auto-agentes-up.md` (ponte de governança).
+1. Manter este update registrado no `docs/supa-up.md` como referência oficial da stack.  
+
+2. Se um dia for adotado no produto, exigir RLS, escopo mínimo, auditoria e logs correlacionáveis.  
+
+3. Não duplicar este conteúdo no `docs/auto-agentes-up.md`.
 
 ---
 
@@ -1100,5 +1106,60 @@ Permite conectar o banco Supabase a recursos na AWS por rede privada (sem exposi
 
 ---
 
+## 44 — Query Ethereum directly from Postgres *(🗾 Estável)*
+
+2026-02-05
+
+### Descrição
+Nova capacidade oficial para consultar dados Ethereum em tempo real diretamente do Postgres, via wrapper/integração suportada pela Supabase.
+
+### Valor para o Projeto
+- Amplia possibilidades de integração analítica e consultas externas.
+- Mostra evolução da plataforma em wrappers e acesso a fontes especializadas.
+
+### Valor para o Usuário
+- Indireto no LP Factory 10; pode servir como referência de capacidade técnica da stack.
+
+### Ações Recomendadas
+1. Registrar como capacidade opcional da stack.
+2. Não adotar agora no MVP.
+3. Reavaliar apenas se surgir caso de uso real.
+
+### Registro (Tipo B — Stack/Integração)
+- Status: PENDENTE
+- Verificado em: —
+- Ambiente: Supabase / wrappers
+- Evidência: —
+- Observação: update oficial, mas sem prioridade prática imediata para o projeto.
+
+---
+
+## 45 — Supabase official Claude connector *(🗾 Estável)*
+
+2026-02-05
+
+### Descrição
+A Supabase passou a oferecer integração oficial com o Claude, permitindo conectar projetos Supabase ao assistente para consultar e operar dados por instruções.
+
+### Valor para o Projeto
+- Abre caminho para fluxos assistidos por IA com dados reais.
+- Pode acelerar diagnóstico e operações administrativas no futuro.
+
+### Valor para o Usuário
+- Indireto no MVP; potencial para suporte e automações mais rápidas no futuro.
+
+### Ações Recomendadas
+1. Registrar como integração oficial disponível.
+2. Não adotar no MVP sem caso de uso claro.
+3. Se um dia for adotado, exigir as mesmas travas de segurança já previstas no projeto.
+
+### Registro (Tipo B — Integração)
+- Status: PENDENTE
+- Verificado em: —
+- Ambiente: Supabase / Claude connector
+- Evidência: —
+- Observação: manter no radar, sem execução imediata.
+
+---
 
 
