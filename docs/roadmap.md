@@ -2,7 +2,7 @@
 
 0.1 Cabeçalho
 • Data: 09/03/2026
-• Versão: v1.5.29
+• Versão: v1.5.30
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -199,8 +199,34 @@
 • ajuste fino futuro desejável para uniformizar tratamento visual de estados como `pending_setup`
 
 6.5 UI Component Library
-• Status: Planejado
-• Objetivo: padronizar componentes-base (`Button`, `Input`, `Select`, `Card`, `FormField`).
+• Status: Concluído (exec) (09/03/2026)
+• Natureza: repo-only (sem Supabase; sem migrations; sem SQL; sem backend novo; sem mudança de regra de negócio).
+• Objetivo: padronizar biblioteca base de UI proprietária e reduzir markup cru em Auth e onboarding mínimo com baixo risco.
+• Implementado (biblioteca base):
+• Ajustes leves e compatíveis em `Button`, `Input`, `Card`.
+• Novos componentes mínimos: `Select` proprietário simples e `FormField` mínimo (label/hint/error).
+• Aplicação mínima real:
+• Auth: login, sign up, forgot password, update password.
+• Onboarding: `pending_setup`.
+• Admin simples: `app/admin/tokens/page.tsx` (validação complementar do `Select`).
+• Docs: `docs/design-system.md` atualizado com componentes padronizados desta fase, API mínima, regras de uso, superfícies cobertas e itens fora do escopo.
+• ARTEFATOS_REPO:
+• Criados:
+• `components/ui/form-field.tsx`
+• `components/ui/select.tsx`
+• Ajustados:
+• `app/a/[account]/page.tsx`
+• `app/admin/tokens/page.tsx`
+• `app/auth/update-password/page.tsx`
+• `components/forgot-password-form.tsx`
+• `components/login-form.tsx`
+• `components/sign-up-form.tsx`
+• `components/ui/button.tsx`
+• `components/ui/card.tsx`
+• `components/ui/input.tsx`
+• `docs/design-system.md`
+• Checks/QA (reportado): `npm ci` ok; `npm run check` ok; QA manual ok nas superfícies tocadas (Auth, `pending_setup` com Email/WhatsApp, `admin/tokens`).
+• Fora do escopo mantido: `Textarea`, `EmptyState`, redesign amplo de dashboards, Supabase/migrations/SQL/policies/backend.
 
 6.6 Visual States & Feedback
 • Status: Planejado
@@ -903,6 +929,8 @@
 • após estabilização do sistema de acesso e onboarding
 
 99. Changelog
+v1.5.30 (09/03/2026)
+• 6.5 concluído (exec): UI Component Library base (Button/Input/Card ajustados; Select e FormField criados) aplicada em Auth + `pending_setup` + `admin/tokens`, com `docs/design-system.md` atualizado (repo-only; sem Supabase/SQL/migrations).
 v1.5.29 (09/03/2026)
 • 6.4 concluído (exec): identidade visual mínima aplicada (repo-only) + `docs/design-system.md`; wordmark temporário até versionar asset oficial de logo; pendências e novos casos (6.5–6.7) registrados.
 v1.5.28 (06/03/2026)
