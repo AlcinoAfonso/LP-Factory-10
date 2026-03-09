@@ -2,8 +2,8 @@
 
 0.1. Cabeçalho
 • Documento: Base Técnica LP Factory 10
-• Versão: v2.0.15
-• Data: 06/03/2026
+• Versão: v2.0.16
+• Data: 09/03/2026
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -63,10 +63,12 @@
 • JWT Signing Keys ativo: Current ECC (P-256); Previous Legacy HS256 (não revogar por padrão); integrações futuras (se houver) devem validar JWT via JWKS + kid
 
 2.3 UI
+• Design System (identidade visual — E6.4): referência oficial em docs/design-system.md.
+• Marca provisória: wordmark textual temporário “LP Factory” enquanto o asset oficial de logo não estiver versionado no repo.
 • Tipografia oficial do produto (UI do dashboard): Inter via next/font/google; aplicar globalmente no <html> com className={inter.className} (PATH: app/layout.tsx); weights 400/500/600/700; display=swap.
 • Tailwind tokens LP Factory: adicionar de forma aditiva (sem substituir tokens shadcn) com namespaces brand/ink/graytech/surface/state e boxShadow.card (PATH: tailwind.config.ts).
 • Tailwind content: incluir js/ts/jsx/tsx/mdx em {pages,components,app,src} para evitar purge silencioso (PATH: tailwind.config.ts).
-• Padrão shadcn preservado: primary/background/foreground/... continuam baseados em hsl(var(--...)); paleta shadcn ainda não foi remapeada para a marca (globals.css inalterado).
+• Padrão shadcn preservado: cores baseadas em hsl(var(--...)); remapeamento semântico contido em app/globals.css para tokens `--primary`, `--ring`, `--border`, `--accent` (sem redesign amplo de `--background`, `--foreground`, `--card`) — ver docs/design-system.md.
 • SULB (auth forms): definição: rotas/arquivos de autenticação copiados do Supabase (vendor interno).
 • Regra (SULB): não criar auth fora do SULB; alterações no SULB só quando necessário e sempre respeitando a allowlist 6.4.
 • shadcn/ui: base provisória.
@@ -382,6 +384,8 @@ Regra: qualquer novo arquivo em app/auth/ não pode importar @supabase/* até se
 • Adapters vNext: seguir 3.14
 
 99. Changelog
+v2.0.16 (09/03/2026) — E6.4: identidade visual mínima + docs/design-system.md
+• Registrada a referência oficial `docs/design-system.md`, o uso de wordmark textual temporário e o remapeamento semântico contido em `app/globals.css` (primary/ring/border/accent) para aplicação mínima de identidade visual.
 v2.0.15 (06/03/2026) — `supabase-inspect`: SQL batch no briefing + relatório completo no Summary
 • Registrado o modo batch com delimitador `---` (briefing e briefing_path) com execução determinística e relatório completo por query no Job Summary (contrato em pipelines/supabase-inspect/README.md).
 v2.0.14 (04/03/2026) — Pipeline `supabase-inspect` v1 (read-only) + secret SUPABASE_DB_URL_READONLY

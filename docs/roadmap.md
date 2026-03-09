@@ -1,8 +1,8 @@
 0. Introdução
 
 0.1 Cabeçalho
-• Data: 06/03/2026
-• Versão: v1.5.28
+• Data: 09/03/2026
+• Versão: v1.5.29
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -174,6 +174,42 @@
 
 6.3 Pendências
 • Futura migração para Supabase Platform Kit
+
+6.4 E6.4 — Identidade visual da LP Factory (design system / UI infra)
+• Status: Concluído (exec) (09/03/2026)
+• Implementado/Definido: base visual proprietária consolidada no repo (remapeamento semântico contido).
+• Docs: criado `docs/design-system.md` como documentação oficial do design system.
+• Aplicação mínima perceptível: header, menu do usuário, seletor de conta e área admin.
+• Escopo: repo-only (sem Supabase; sem alterações funcionais de fluxos).
+• Decisão: uso de wordmark textual temporário enquanto o asset oficial da logo não estiver versionado no repo.
+• ARTEFATOS_REPO:
+• Criados: `docs/design-system.md`
+• Ajustados:
+• `app/globals.css`
+• `components/layout/Header.tsx`
+• `components/layout/UserMenu.tsx`
+• `components/features/account-switcher/AccountSwitcherList.tsx`
+• `app/admin/layout.tsx`
+• `app/admin/tokens/page.tsx`
+• Pendências:
+• asset oficial de logo ainda não versionado no repo
+• formulários/componentes-base ainda não padronizados pelo design system
+• telas como `pending_setup` e `/a/home` ainda herdam mais a infraestrutura do que uma componentização visual completa
+• responsividade ainda depende da implementação de cada nova página/componente
+• ajuste fino futuro desejável para uniformizar tratamento visual de estados como `pending_setup`
+
+6.5 E6.5 — UI Component Library
+• Status: Planejado
+• Objetivo: padronizar componentes-base (`Button`, `Input`, `Select`, `Card`, `FormField`).
+
+6.6 E6.6 — Visual States & Feedback
+• Status: Planejado
+• Objetivo: padronizar estados de loading, empty, success e error.
+
+6.7 E6.7 — Dashboard Layout Patterns
+• Status: Planejado
+• Objetivo: consolidar padrões visuais reutilizáveis para corpo de páginas proprietárias.
+
 
 7. E7 — Conta Consultiva
 
@@ -868,6 +904,8 @@
 • após estabilização do sistema de acesso e onboarding
 
 99. Changelog
+v1.5.29 (09/03/2026)
+• E6.4 concluído (exec): identidade visual mínima aplicada (repo-only) + `docs/design-system.md`; wordmark temporário até versionar asset oficial de logo; pendências e novos casos (E6.5–E6.7) registrados.
 v1.5.28 (06/03/2026)
 • E17 atualizado (exec): `supabase-inspect` ganhou modo batch (`---`) com execução determinística e relatório completo por query no Job Summary; contrato atualizado no README do pipeline e pendência opcional de templates registrada.
 v1.5.27 (05/03/2026)
