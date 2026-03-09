@@ -4,8 +4,8 @@ import { cn } from '@/lib/utils'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { FormField, FormFieldError, FormFieldLabel } from '@/components/ui/form-field'
 import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
@@ -49,8 +49,8 @@ export function LoginForm({ className, ...props }: React.ComponentPropsWithoutRe
         <CardContent>
           <form onSubmit={handleLogin}>
             <div className="flex flex-col gap-6">
-              <div className="grid gap-2">
-                <Label htmlFor="email">E-mail</Label>
+              <FormField>
+                <FormFieldLabel htmlFor="email">E-mail</FormFieldLabel>
                 <Input
                   id="email"
                   type="email"
@@ -59,10 +59,10 @@ export function LoginForm({ className, ...props }: React.ComponentPropsWithoutRe
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                 />
-              </div>
+              </FormField>
 
-              <div className="grid gap-2">
-                <Label htmlFor="password">Senha</Label>
+              <FormField>
+                <FormFieldLabel htmlFor="password">Senha</FormFieldLabel>
                 <Input
                   id="password"
                   type="password"
@@ -78,9 +78,9 @@ export function LoginForm({ className, ...props }: React.ComponentPropsWithoutRe
                 >
                   Esqueci minha senha
                 </Link>
-              </div>
+              </FormField>
 
-              {error && <p className="text-sm text-red-500">{error}</p>}
+              {error && <FormFieldError>{error}</FormFieldError>}
 
               <Button type="submit" className="w-full" disabled={isLoading}>
                 {isLoading ? 'Entrando...' : 'Entrar'}

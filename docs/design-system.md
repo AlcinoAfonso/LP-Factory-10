@@ -1,40 +1,77 @@
-# Design System — LP Factory (Caso 6.4)
+# Design System — LP Factory (Caso 6.5)
 
-## Status da identidade visual
-A identidade visual da LP Factory está consolidada nesta fase de forma **leve, aditiva e de baixo risco**, com foco em remapeamento semântico e aplicação nas superfícies compartilhadas centrais (header, menus e área admin).
+## Objetivo desta fase
+Padronizar a biblioteca UI base proprietária com baixo risco, sem alterar lógica de negócio.
 
-## Status do asset oficial de logo
-Até esta entrega, **não há asset oficial de logo evidenciado no repositório**.
+## Componentes padronizados
+- `Button`
+- `Input`
+- `Select` (novo, nativo)
+- `Card` (`Card`, `CardHeader`, `CardTitle`, `CardDescription`, `CardContent`)
+- `FormField` (novo, estrutura mínima para `label + hint + error`)
 
-## Uso provisório de marca
-Enquanto o asset oficial não estiver versionado no repo, o produto utiliza **wordmark textual temporário**: `LP Factory`.
+## API mínima esperada
 
-> Observação: esse wordmark textual é apenas provisório e **não substitui** a logo oficial definida fora do repositório.
+### Button
+- Arquivo: `components/ui/button.tsx`
+- API: `ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement>`
+- Comportamento:
+  - foco visível com `ring`
+  - estado `disabled` consistente
+  - hover semântico (`bg-primary/90`)
 
-## Paleta LP Factory (ativa nesta fase)
-Baseada nos tokens já existentes em `tailwind.config.ts`:
+### Input
+- Arquivo: `components/ui/input.tsx`
+- API: `InputProps extends React.InputHTMLAttributes<HTMLInputElement>`
+- Comportamento:
+  - borda/token semântico (`border-input`, `background`)
+  - placeholder semântico
+  - foco visível e `disabled` consistente
 
-- `brand.50`, `brand.500`, `brand.600`, `brand.700`, `brand.dark.800`, `brand.dark.900`
-- `ink.800`, `ink.900`
-- `graytech.200`, `graytech.300`, `graytech.500`, `graytech.600`
-- `surface.base`, `surface.app`, `surface.border`
-- `state.success`, `state.warning`, `state.error`
+### Select
+- Arquivo: `components/ui/select.tsx`
+- API: `SelectProps extends React.SelectHTMLAttributes<HTMLSelectElement>`
+- Implementação:
+  - `forwardRef`
+  - `<select>` nativo
+  - sem dropdown custom/headless
+  - foco visível, `disabled` e largura previsível (`w-full`)
 
-## Tipografia global
-A tipografia global do dashboard permanece **Inter** (já aplicada globalmente no app).
+### Card
+- Arquivo: `components/ui/card.tsx`
+- API preservada:
+  - `Card`
+  - `CardHeader`
+  - `CardTitle`
+  - `CardDescription`
+  - `CardContent`
+- Uso com tokens semânticos de borda/superfície.
 
-## Tokens semânticos usados nesta fase
-Remapeamento contido em `app/globals.css`, priorizando:
+### FormField
+- Arquivo: `components/ui/form-field.tsx`
+- Estrutura mínima:
+  - `FormField` (container)
+  - `FormFieldLabel`
+  - `FormFieldHint`
+  - `FormFieldError`
+- Finalidade: padronizar acessibilidade e apresentação de campo sem virar framework de formulário.
 
-- `--primary`
-- `--ring`
-- `--border`
-- `--accent`
+## Regras de uso
+- Usar os componentes base nas telas de auth/onboarding/admin tocadas nesta fase.
+- Preservar contratos de props e fluxos existentes.
+- Evitar variações extras sem uso real imediato.
+- Priorizar tokens semânticos (`primary`, `ring`, `border`, `muted/accent`).
 
-Sem redesign amplo de `--background`, `--foreground` e `--card`.
+## Aplicação mínima visível nesta fase
+- `components/login-form.tsx`
+- `components/sign-up-form.tsx`
+- `components/forgot-password-form.tsx`
+- `app/auth/update-password/page.tsx`
+- `app/a/[account]/page.tsx` (somente superfície `pending_setup`)
+- `app/admin/tokens/page.tsx` (validação complementar de `Select`)
 
-## Regras básicas de uso (fase atual)
-- Priorizar tokens semânticos (`primary`, `accent`, `border`, `ring`) em vez de cores hardcoded.
-- Preservar comportamento e acessibilidade das superfícies existentes.
-- Evitar expansão de escopo para telas de auth nesta fase.
-- Não criar branding por cliente/multi-tenant nesta camada base.
+## Fora de escopo nesta fase
+- `Textarea`
+- `EmptyState`
+- Redesign amplo de dashboards
+- Branding por cliente/multi-tenant visual

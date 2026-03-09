@@ -6,6 +6,10 @@ import { adminTokens, checkSuperAdmin, checkPlatformAdmin } from "@/lib/admin";
 import { requirePlatformAdmin } from "@/lib/access/guards";
 import { createClient as createServerClient } from "@/lib/supabase/server";
 import { CopyLinkButton } from "@/components/admin/CopyLinkButton";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select } from "@/components/ui/select";
 
 export const dynamic = "force-dynamic";
 
@@ -223,72 +227,52 @@ export default async function AdminTokensPage(props: any) {
       {/* Gerar */}
       <section className="space-y-3" aria-label="Gerar token">
         <h2 className="text-lg font-medium">Gerar novo token</h2>
-        <form action={generateAction} method="post" className="flex flex-wrap gap-2 items-center">
-          <input
-            name="email"
-            type="email"
-            placeholder="E-mail do cliente"
-            required
-            className="w-72 rounded-md border border-input bg-background px-3 py-2"
-            aria-label="E-mail do cliente"
-          />
-          <input
-            name="contractRef"
-            type="text"
-            placeholder="Referência do contrato"
-            required
-            className="w-64 rounded-md border border-input bg-background px-3 py-2"
-            aria-label="Referência do contrato"
-          />
-          <button
-            type="submit"
-            className="rounded-md bg-primary px-4 py-2 text-primary-foreground disabled:opacity-50"
-            aria-label="Gerar token"
-          >
-            Gerar Token
-          </button>
+        <form action={generateAction} method="post" className="flex flex-wrap gap-2 items-end">
+          <div className="w-72 space-y-1">
+            <Label htmlFor="email">E-mail do cliente</Label>
+            <Input id="email" name="email" type="email" placeholder="E-mail do cliente" required aria-label="E-mail do cliente" />
+          </div>
+          <div className="w-64 space-y-1">
+            <Label htmlFor="contractRef">Referência do contrato</Label>
+            <Input id="contractRef" name="contractRef" type="text" placeholder="Referência do contrato" required aria-label="Referência do contrato" />
+          </div>
+          <Button type="submit" aria-label="Gerar token">Gerar Token</Button>
         </form>
       </section>
 
       {/* Filtros */}
       <section className="space-y-3" aria-label="Filtros">
         <h2 className="text-lg font-medium">Filtros</h2>
-        <form method="get" className="flex flex-wrap gap-2 items-center">
-          <label className="text-sm">
-            Usado:
-            <select
+        <form method="get" className="flex flex-wrap gap-2 items-end">
+          <div className="space-y-1">
+            <Label htmlFor="used">Usado</Label>
+            <Select
+              id="used"
               name="used"
               defaultValue={used === undefined ? "" : used ? "true" : "false"}
-              className="ml-2 rounded-md border border-input bg-background px-2 py-1"
               aria-label="Filtrar por usado"
             >
               <option value="">—</option>
               <option value="true">Sim</option>
               <option value="false">Não</option>
-            </select>
-          </label>
-          <label className="text-sm">
-            Expirado:
-            <select
+            </Select>
+          </div>
+          <div className="space-y-1">
+            <Label htmlFor="expired">Expirado</Label>
+            <Select
+              id="expired"
               name="expired"
-              defaultValue={
-                expired === undefined ? "" : expired ? "true" : "false"
-              }
-              className="ml-2 rounded-md border border-input bg-background px-2 py-1"
+              defaultValue={expired === undefined ? "" : expired ? "true" : "false"}
               aria-label="Filtrar por expirado"
             >
               <option value="">—</option>
               <option value="true">Sim</option>
               <option value="false">Não</option>
-            </select>
-          </label>
-          <button
-            type="submit"
-            className="rounded-md border border-border px-3 py-1 transition-colors hover:bg-accent"
-            aria-label="Aplicar filtros"
-          >
+            </Select>
+          </div>
+          <Button type="submit" className="border border-border bg-background text-foreground hover:bg-accent" aria-label="Aplicar filtros">
             Aplicar
-          </button>
+          </Button>
         </form>
       </section>
 
@@ -320,15 +304,15 @@ export default async function AdminTokensPage(props: any) {
                       <CopyLinkButton tokenId={t.token_id} isActive={isActive} />
                       <form action={revokeAction} method="post" className="inline-block">
                         <input type="hidden" name="tokenId" value={t.token_id} />
-                        <button
+                        <Button
                           type="submit"
-                          className="rounded-md border border-border px-3 py-1 transition-colors hover:bg-accent disabled:opacity-40"
+                          className="h-auto border border-border bg-background px-3 py-1 text-foreground hover:bg-accent disabled:opacity-40"
                           disabled={t.is_used}
                           title={t.is_used ? "Token já utilizado" : "Revogar token"}
                           aria-label={`Revogar token ${t.token_id}`}
                         >
                           Revogar
-                        </button>
+                        </Button>
                       </form>
                     </td>
                   </tr>
