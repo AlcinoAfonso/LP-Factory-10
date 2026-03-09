@@ -192,30 +192,30 @@ export default async function AdminTokensPage(props: any) {
   ]);
 
   return (
-    <div className="p-6 space-y-8">
+    <div className="space-y-8 p-6">
       <header className="space-y-1">
         <h1 className="text-2xl font-semibold">Admin • Tokens</h1>
-        <p className="text-sm text-gray-600">
+        <p className="text-sm text-muted-foreground">
           Gere, liste e revogue tokens de pós-venda (Fluxo QA: C1–C5).
         </p>
       </header>
 
       {/* Resumo / Métricas */}
       <section aria-label="Resumo" className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <div className="rounded-xl border p-3">
-          <div className="text-xs text-gray-500">Total</div>
+        <div className="rounded-xl border border-border bg-white p-3 shadow-card">
+          <div className="text-xs text-muted-foreground">Total</div>
           <div className="text-xl font-semibold">{stats.total}</div>
         </div>
-        <div className="rounded-xl border p-3">
-          <div className="text-xs text-gray-500">Válidos</div>
+        <div className="rounded-xl border border-border bg-white p-3 shadow-card">
+          <div className="text-xs text-muted-foreground">Válidos</div>
           <div className="text-xl font-semibold">{stats.valid}</div>
         </div>
-        <div className="rounded-xl border p-3">
-          <div className="text-xs text-gray-500">Expirados</div>
+        <div className="rounded-xl border border-border bg-white p-3 shadow-card">
+          <div className="text-xs text-muted-foreground">Expirados</div>
           <div className="text-xl font-semibold">{stats.expired}</div>
         </div>
-        <div className="rounded-xl border p-3">
-          <div className="text-xs text-gray-500">Usados</div>
+        <div className="rounded-xl border border-border bg-white p-3 shadow-card">
+          <div className="text-xs text-muted-foreground">Usados</div>
           <div className="text-xl font-semibold">{stats.used}</div>
         </div>
       </section>
@@ -229,7 +229,7 @@ export default async function AdminTokensPage(props: any) {
             type="email"
             placeholder="E-mail do cliente"
             required
-            className="border rounded px-3 py-2 w-72"
+            className="w-72 rounded-md border border-input bg-background px-3 py-2"
             aria-label="E-mail do cliente"
           />
           <input
@@ -237,12 +237,12 @@ export default async function AdminTokensPage(props: any) {
             type="text"
             placeholder="Referência do contrato"
             required
-            className="border rounded px-3 py-2 w-64"
+            className="w-64 rounded-md border border-input bg-background px-3 py-2"
             aria-label="Referência do contrato"
           />
           <button
             type="submit"
-            className="px-4 py-2 rounded bg-black text-white disabled:opacity-50"
+            className="rounded-md bg-primary px-4 py-2 text-primary-foreground disabled:opacity-50"
             aria-label="Gerar token"
           >
             Gerar Token
@@ -259,7 +259,7 @@ export default async function AdminTokensPage(props: any) {
             <select
               name="used"
               defaultValue={used === undefined ? "" : used ? "true" : "false"}
-              className="ml-2 border rounded px-2 py-1"
+              className="ml-2 rounded-md border border-input bg-background px-2 py-1"
               aria-label="Filtrar por usado"
             >
               <option value="">—</option>
@@ -274,7 +274,7 @@ export default async function AdminTokensPage(props: any) {
               defaultValue={
                 expired === undefined ? "" : expired ? "true" : "false"
               }
-              className="ml-2 border rounded px-2 py-1"
+              className="ml-2 rounded-md border border-input bg-background px-2 py-1"
               aria-label="Filtrar por expirado"
             >
               <option value="">—</option>
@@ -284,7 +284,7 @@ export default async function AdminTokensPage(props: any) {
           </label>
           <button
             type="submit"
-            className="px-3 py-1 rounded border hover:bg-gray-50"
+            className="rounded-md border border-border px-3 py-1 transition-colors hover:bg-accent"
             aria-label="Aplicar filtros"
           >
             Aplicar
@@ -296,14 +296,14 @@ export default async function AdminTokensPage(props: any) {
       <section className="space-y-3" aria-label="Tokens gerados">
         <h2 className="text-lg font-medium">Tokens gerados</h2>
         <div className="overflow-x-auto">
-          <table className="min-w-full text-sm border">
+          <table className="min-w-full overflow-hidden rounded-xl border border-border bg-white text-sm">
             <thead>
-              <tr className="bg-gray-50">
-                <th className="text-left p-2 border-b">Email</th>
-                <th className="text-left p-2 border-b">Status</th>
-                <th className="text-left p-2 border-b">Expira</th>
-                <th className="text-left p-2 border-b">Conta</th>
-                <th className="text-right p-2 border-b">Ações</th>
+              <tr className="bg-accent/40">
+                <th className="border-b border-border p-2 text-left">Email</th>
+                <th className="border-b border-border p-2 text-left">Status</th>
+                <th className="border-b border-border p-2 text-left">Expira</th>
+                <th className="border-b border-border p-2 text-left">Conta</th>
+                <th className="border-b border-border p-2 text-right">Ações</th>
               </tr>
             </thead>
             <tbody>
@@ -311,7 +311,7 @@ export default async function AdminTokensPage(props: any) {
                 const status = t.is_used ? "Usado" : t.is_valid ? "Ativo" : "Expirado";
                 const isActive = t.is_valid && !t.is_used;
                 return (
-                  <tr key={t.token_id} className="border-b">
+                  <tr key={t.token_id} className="border-b border-border">
                     <td className="p-2">{t.email}</td>
                     <td className="p-2">{status}</td>
                     <td className="p-2">{t.expires_at ?? "—"}</td>
@@ -322,7 +322,7 @@ export default async function AdminTokensPage(props: any) {
                         <input type="hidden" name="tokenId" value={t.token_id} />
                         <button
                           type="submit"
-                          className="px-3 py-1 rounded border hover:bg-gray-50 disabled:opacity-40"
+                          className="rounded-md border border-border px-3 py-1 transition-colors hover:bg-accent disabled:opacity-40"
                           disabled={t.is_used}
                           title={t.is_used ? "Token já utilizado" : "Revogar token"}
                           aria-label={`Revogar token ${t.token_id}`}
@@ -336,7 +336,7 @@ export default async function AdminTokensPage(props: any) {
               })}
               {list.length === 0 && (
                 <tr>
-                  <td className="p-3 text-gray-500" colSpan={5}>
+                  <td className="p-3 text-muted-foreground" colSpan={5}>
                     Nenhum token encontrado.
                   </td>
                 </tr>
