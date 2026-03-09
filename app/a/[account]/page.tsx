@@ -6,6 +6,10 @@ import type { FormEvent } from "react";
 import { useAccessContext } from "@/providers/AccessProvider";
 import { saveSetupAndContinueAction, type SetupSaveState } from "./actions";
 import { validateE10_4SetupForm } from "@/lib/onboarding/e10_4_setup_validation";
+import { Button } from "@/components/ui/button";
+import { FormField, FormFieldError, FormFieldHint, FormFieldLabel } from "@/components/ui/form-field";
+import { Input } from "@/components/ui/input";
+import { Select } from "@/components/ui/select";
 
 type DashState = "auth" | "onboarding" | "public";
 
@@ -229,9 +233,12 @@ function PendingSetupFirstSteps({
         <form action={action} onSubmit={onSubmit} className="space-y-5">
           <input type="hidden" name="account_subdomain" value={accountSubdomain} />
 
-          <div className="space-y-1">
-            <label className="text-sm font-medium">Nome do projeto*</label>
-            <input
+          <FormField>
+            <FormFieldLabel htmlFor="name" required>
+              Nome do projeto
+            </FormFieldLabel>
+            <Input
+              id="name"
               name="name"
               ref={nameRef}
               value={name}
@@ -253,23 +260,21 @@ function PendingSetupFirstSteps({
                 if (!v.fieldErrors?.name) setNameValidatedOnce(true);
               }}
               disabled={isPending}
-              className="w-full rounded-md border px-3 py-2 text-sm"
               placeholder="Ex.: Unico Digital"
               autoComplete="off"
               enterKeyHint={isMobile ? "next" : undefined}
             />
             {showFieldError("name") ? (
-              <p className="text-sm text-red-600">{showFieldError("name")}</p>
+              <FormFieldError>{showFieldError("name")}</FormFieldError>
             ) : (
-              <p className="text-xs text-gray-500">
-                Digite o nome do projeto que aparecerá no seu dashboard.
-              </p>
+              <FormFieldHint>Digite o nome do projeto que aparecerá no seu dashboard.</FormFieldHint>
             )}
-          </div>
+          </FormField>
 
-          <div className="space-y-1">
-            <label className="text-sm font-medium">Nicho (opcional)</label>
-            <input
+          <FormField>
+            <FormFieldLabel htmlFor="niche">Nicho (opcional)</FormFieldLabel>
+            <Input
+              id="niche"
               name="niche"
               value={niche}
               onChange={(e) => {
@@ -277,17 +282,17 @@ function PendingSetupFirstSteps({
                 setDirty((d) => ({ ...d, niche: true }));
               }}
               disabled={isPending}
-              className="w-full rounded-md border px-3 py-2 text-sm"
               placeholder="Ex.: Harmonização facial"
               autoComplete="off"
               enterKeyHint={isMobile ? "next" : undefined}
             />
-          </div>
+          </FormField>
 
           {shouldShowChannel ? (
-            <div className="space-y-1">
-              <label className="text-sm font-medium">Preferência de canal</label>
-              <select
+            <FormField>
+              <FormFieldLabel htmlFor="preferred_channel">Preferência de canal</FormFieldLabel>
+              <Select
+                id="preferred_channel"
                 name="preferred_channel"
                 ref={channelRef}
                 value={preferredChannel}
@@ -297,21 +302,21 @@ function PendingSetupFirstSteps({
                   setDirty((d) => ({ ...d, preferred_channel: true }));
                 }}
                 disabled={isPending}
-                className="w-full rounded-md border px-3 py-2 text-sm"
               >
                 <option value="email">Email</option>
                 <option value="whatsapp">WhatsApp</option>
-              </select>
+              </Select>
               {showFieldError("preferred_channel") ? (
-                <p className="text-sm text-red-600">{showFieldError("preferred_channel")}</p>
+                <FormFieldError>{showFieldError("preferred_channel")}</FormFieldError>
               ) : null}
-            </div>
+            </FormField>
           ) : null}
 
           {shouldShowWhatsapp ? (
-            <div className="space-y-1">
-              <label className="text-sm font-medium">WhatsApp</label>
-              <input
+            <FormField>
+              <FormFieldLabel htmlFor="whatsapp">WhatsApp</FormFieldLabel>
+              <Input
+                id="whatsapp"
                 name="whatsapp"
                 ref={whatsappRef}
                 value={whatsapp}
@@ -332,22 +337,22 @@ function PendingSetupFirstSteps({
                   if (!v.fieldErrors?.whatsapp) setWhatsappValidatedOnce(true);
                 }}
                 disabled={isPending}
-                className="w-full rounded-md border px-3 py-2 text-sm"
                 placeholder="Somente dígitos (10–15)"
                 autoComplete="off"
                 inputMode="tel"
                 enterKeyHint={isMobile ? "next" : undefined}
               />
               {showFieldError("whatsapp") ? (
-                <p className="text-sm text-red-600">{showFieldError("whatsapp")}</p>
+                <FormFieldError>{showFieldError("whatsapp")}</FormFieldError>
               ) : null}
-            </div>
+            </FormField>
           ) : null}
 
           {shouldShowSite ? (
-            <div className="space-y-1">
-              <label className="text-sm font-medium">Link da LP/site (opcional)</label>
-              <input
+            <FormField>
+              <FormFieldLabel htmlFor="site_url">Link da LP/site (opcional)</FormFieldLabel>
+              <Input
+                id="site_url"
                 name="site_url"
                 ref={siteRef}
                 value={siteUrl}
@@ -357,25 +362,20 @@ function PendingSetupFirstSteps({
                 }}
                 onBlur={() => setTouched((t) => ({ ...t, site_url: true }))}
                 disabled={isPending}
-                className="w-full rounded-md border px-3 py-2 text-sm"
                 placeholder="dominio.com.br ou https://..."
                 autoComplete="off"
                 inputMode="url"
                 enterKeyHint={isMobile ? "done" : undefined}
               />
               {showFieldError("site_url") ? (
-                <p className="text-sm text-red-600">{showFieldError("site_url")}</p>
+                <FormFieldError>{showFieldError("site_url")}</FormFieldError>
               ) : null}
-            </div>
+            </FormField>
           ) : null}
 
-          <button
-            type="submit"
-            disabled={!canSubmitByName}
-            className="inline-flex items-center justify-center rounded-md bg-black px-4 py-2 text-sm font-medium text-white disabled:opacity-60"
-          >
+          <Button type="submit" disabled={!canSubmitByName}>
             {isPending ? "Salvando…" : "Salvar e continuar"}
-          </button>
+          </Button>
         </form>
       </div>
     </main>

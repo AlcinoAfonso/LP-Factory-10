@@ -4,8 +4,8 @@ import { cn } from '@/lib/utils'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { FormField, FormFieldError, FormFieldLabel } from '@/components/ui/form-field'
 import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useEffect, useMemo, useState } from 'react'
@@ -314,10 +314,10 @@ export function SignUpForm({ className, ...props }: React.ComponentPropsWithoutR
             <div className="flex flex-col gap-3">
               {/* Email opcional, read-only */}
               {normalizedEmail && (
-                <div className="grid gap-2">
-                  <Label htmlFor="email_ro">Email</Label>
+                <FormField>
+                  <FormFieldLabel htmlFor="email_ro">Email</FormFieldLabel>
                   <Input id="email_ro" type="email" value={normalizedEmail} readOnly />
-                </div>
+                </FormField>
               )}
 
               <p className="text-sm text-muted-foreground">
@@ -356,8 +356,8 @@ export function SignUpForm({ className, ...props }: React.ComponentPropsWithoutR
           ) : (
             <form onSubmit={handleSignUp}>
               <div className="flex flex-col gap-6">
-                <div className="grid gap-2">
-                  <Label htmlFor="email">Email</Label>
+                <FormField>
+                  <FormFieldLabel htmlFor="email">Email</FormFieldLabel>
                   <Input
                     id="email"
                     type="email"
@@ -366,12 +366,10 @@ export function SignUpForm({ className, ...props }: React.ComponentPropsWithoutR
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                   />
-                </div>
+                </FormField>
 
-                <div className="grid gap-2">
-                  <div className="flex items-center">
-                    <Label htmlFor="password">Password</Label>
-                  </div>
+                <FormField>
+                  <FormFieldLabel htmlFor="password">Password</FormFieldLabel>
                   <Input
                     id="password"
                     type="password"
@@ -379,12 +377,10 @@ export function SignUpForm({ className, ...props }: React.ComponentPropsWithoutR
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                   />
-                </div>
+                </FormField>
 
-                <div className="grid gap-2">
-                  <div className="flex items-center">
-                    <Label htmlFor="repeat-password">Repeat Password</Label>
-                  </div>
+                <FormField>
+                  <FormFieldLabel htmlFor="repeat-password">Repeat Password</FormFieldLabel>
                   <Input
                     id="repeat-password"
                     type="password"
@@ -392,10 +388,10 @@ export function SignUpForm({ className, ...props }: React.ComponentPropsWithoutR
                     value={repeatPassword}
                     onChange={(e) => setRepeatPassword(e.target.value)}
                   />
-                </div>
+                </FormField>
 
                 {/* Erros gerais */}
-                {error && <p className="text-sm text-red-500">{error}</p>}
+                {error && <FormFieldError>{error}</FormFieldError>}
 
                 <Button type="submit" className="w-full" disabled={isLoading}>
                   {isLoading ? 'Creating an account...' : 'Sign up'}

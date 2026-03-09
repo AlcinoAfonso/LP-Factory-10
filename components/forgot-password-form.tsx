@@ -10,8 +10,8 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
+import { FormField, FormFieldError, FormFieldHint, FormFieldLabel } from '@/components/ui/form-field'
 import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
 import Link from 'next/link'
 import { useEffect, useMemo, useState } from 'react'
 
@@ -112,8 +112,8 @@ export function ForgotPasswordForm({
         <CardContent>
           <form onSubmit={onSubmit}>
             <div className="flex flex-col gap-6">
-              <div className="grid gap-2">
-                <Label htmlFor="email">E-mail</Label>
+              <FormField>
+                <FormFieldLabel htmlFor="email">E-mail</FormFieldLabel>
                 <Input
                   id="email"
                   type="email"
@@ -122,10 +122,10 @@ export function ForgotPasswordForm({
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                 />
-              </div>
+              </FormField>
 
               {error ? (
-                <div className="text-sm text-red-600">{error}</div>
+                <FormFieldError>{error}</FormFieldError>
               ) : null}
 
               {success ? (
@@ -135,7 +135,7 @@ export function ForgotPasswordForm({
               ) : null}
 
               {cooldownLabel ? (
-                <div className="text-xs text-muted-foreground">{cooldownLabel}</div>
+                <FormFieldHint>{cooldownLabel}</FormFieldHint>
               ) : null}
 
               <Button type="submit" className="w-full" disabled={isLoading || inCooldown}>
