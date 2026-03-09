@@ -2,7 +2,7 @@
 
 0.1. Cabeçalho
 • Documento: Base Técnica LP Factory 10
-• Versão: v2.0.16
+• Versão: v2.0.17
 • Data: 09/03/2026
 
 0.2 Contrato do documento (consulta)
@@ -63,8 +63,15 @@
 • JWT Signing Keys ativo: Current ECC (P-256); Previous Legacy HS256 (não revogar por padrão); integrações futuras (se houver) devem validar JWT via JWKS + kid
 
 2.3 UI
-• Design System (identidade visual — E6.4): referência oficial em docs/design-system.md.
+• Design System (identidade visual — E6.4/E6.5): referência oficial em docs/design-system.md (API mínima, regras de uso e superfícies cobertas).
 • Marca provisória: wordmark textual temporário “LP Factory” enquanto o asset oficial de logo não estiver versionado no repo.
+• UI Component Library (E6.5): componentes proprietários mínimos em components/ui/ para reduzir markup cru e manter consistência:
+• Button (PATH: components/ui/button.tsx)
+• Input (PATH: components/ui/input.tsx)
+• Card (PATH: components/ui/card.tsx)
+• Select (PATH: components/ui/select.tsx)
+• FormField (PATH: components/ui/form-field.tsx) — label/hint/error
+• Regra: em Auth e onboarding mínimo, preferir os componentes acima (evitar markup cru) e seguir docs/design-system.md.
 • Tipografia oficial do produto (UI do dashboard): Inter via next/font/google; aplicar globalmente no <html> com className={inter.className} (PATH: app/layout.tsx); weights 400/500/600/700; display=swap.
 • Tailwind tokens LP Factory: adicionar de forma aditiva (sem substituir tokens shadcn) com namespaces brand/ink/graytech/surface/state e boxShadow.card (PATH: tailwind.config.ts).
 • Tailwind content: incluir js/ts/jsx/tsx/mdx em {pages,components,app,src} para evitar purge silencioso (PATH: tailwind.config.ts).
@@ -384,6 +391,8 @@ Regra: qualquer novo arquivo em app/auth/ não pode importar @supabase/* até se
 • Adapters vNext: seguir 3.14
 
 99. Changelog
+v2.0.17 (09/03/2026) — E6.5: UI Component Library (base) + docs/design-system.md atualizado
+• Registrada a biblioteca base de UI proprietária (components/ui/*) e a regra de uso para reduzir markup cru em Auth e onboarding mínimo (referência em docs/design-system.md).
 v2.0.16 (09/03/2026) — E6.4: identidade visual mínima + docs/design-system.md
 • Registrada a referência oficial `docs/design-system.md`, o uso de wordmark textual temporário e o remapeamento semântico contido em `app/globals.css` (primary/ring/border/accent) para aplicação mínima de identidade visual.
 v2.0.15 (06/03/2026) — `supabase-inspect`: SQL batch no briefing + relatório completo no Summary
