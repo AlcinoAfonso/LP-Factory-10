@@ -175,7 +175,7 @@
 6.3 Pendências
 • Futura migração para Supabase Platform Kit
 
-6.4 E6.4 — Identidade visual da LP Factory (design system / UI infra)
+6.4 Identidade visual da LP Factory (design system / UI infra)
 • Status: Concluído (exec) (09/03/2026)
 • Implementado/Definido: base visual proprietária consolidada no repo (remapeamento semântico contido).
 • Docs: criado `docs/design-system.md` como documentação oficial do design system.
@@ -209,7 +209,6 @@
 6.7 Dashboard Layout Patterns
 • Status: Planejado
 • Objetivo: consolidar padrões visuais reutilizáveis para corpo de páginas proprietárias.
-
 
 7. E7 — Conta Consultiva
 
