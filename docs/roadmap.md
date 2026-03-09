@@ -198,15 +198,15 @@
 • responsividade ainda depende da implementação de cada nova página/componente
 • ajuste fino futuro desejável para uniformizar tratamento visual de estados como `pending_setup`
 
-6.5 E6.5 — UI Component Library
+6.5 UI Component Library
 • Status: Planejado
 • Objetivo: padronizar componentes-base (`Button`, `Input`, `Select`, `Card`, `FormField`).
 
-6.6 E6.6 — Visual States & Feedback
+6.6 Visual States & Feedback
 • Status: Planejado
 • Objetivo: padronizar estados de loading, empty, success e error.
 
-6.7 E6.7 — Dashboard Layout Patterns
+6.7 Dashboard Layout Patterns
 • Status: Planejado
 • Objetivo: consolidar padrões visuais reutilizáveis para corpo de páginas proprietárias.
 
@@ -905,7 +905,7 @@
 
 99. Changelog
 v1.5.29 (09/03/2026)
-• E6.4 concluído (exec): identidade visual mínima aplicada (repo-only) + `docs/design-system.md`; wordmark temporário até versionar asset oficial de logo; pendências e novos casos (E6.5–E6.7) registrados.
+• 6.4 concluído (exec): identidade visual mínima aplicada (repo-only) + `docs/design-system.md`; wordmark temporário até versionar asset oficial de logo; pendências e novos casos (6.5–6.7) registrados.
 v1.5.28 (06/03/2026)
 • E17 atualizado (exec): `supabase-inspect` ganhou modo batch (`---`) com execução determinística e relatório completo por query no Job Summary; contrato atualizado no README do pipeline e pendência opcional de templates registrada.
 v1.5.27 (05/03/2026)
