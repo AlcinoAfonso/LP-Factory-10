@@ -1163,3 +1163,91 @@ A Supabase passou a oferecer integração oficial com o Claude, permitindo conec
 ---
 
 
+## 46 — Logs Drains *(🗾 Estável)*
+
+2026-03-05
+
+### Descrição
+A Supabase lançou **Logs Drains**, permitindo enviar logs de **Postgres, Auth, Storage, Edge Functions e Realtime** para destinos externos.
+
+### Valor para o Projeto
+- Centraliza observabilidade fora do dashboard do Supabase.
+- Facilita retenção, correlação e auditoria de incidentes.
+
+### Valor para o Usuário
+- Indireto: melhora a confiabilidade operacional e reduz tempo de investigação de falhas.
+
+### Status no plano atual
+- **Plano atual (Free): NÃO APTO**
+- Motivo: este recurso foi lançado para **planos Pro**.
+
+### Ações Recomendadas
+1. Registrar como capacidade oficial da stack.
+2. Não adotar agora no LP Factory 10 enquanto o projeto estiver no plano Free.
+3. Reavaliar quando houver necessidade real de observabilidade centralizada e upgrade de plano.
+
+### Registro (Tipo A — Plataforma)
+- Status: NÃO APTO NO FREE
+- Verificado em: —
+- Ambiente: Supabase Dashboard / Logs Drains
+- Evidência: —
+- Observação: recurso oficial, mas indisponível no plano atual.
+
+---
+
+## 47 — Storage: performance and security overhaul *(🗾 Estável)*
+
+2026-03-05
+
+### Descrição
+A Supabase atualizou a arquitetura do Storage, tornando a listagem de objetos significativamente mais rápida em bases muito grandes e corrigindo problemas de segurança relacionados ao gerenciamento de arquivos.
+
+### Valor para o Projeto
+- Melhora a escalabilidade do Storage para cenários com muitos arquivos.
+- Reduz risco de problemas de segurança no módulo de arquivos.
+
+### Valor para o Usuário
+- Uploads e listagens potencialmente mais rápidos.
+- Maior confiabilidade no uso de arquivos.
+
+### Ações Recomendadas
+1. Registrar como melhoria oficial da stack.
+2. Não abrir caso técnico só por isso agora.
+3. Se o projeto passar a depender mais de Storage, usar este item como referência de capacidade já disponível.
+
+### Registro (Tipo A — Plataforma)
+- Status: PENDENTE
+- Verificado em: —
+- Ambiente: Supabase Storage
+- Evidência: —
+- Observação: melhoria de plataforma; não exige implementação imediata no projeto.
+
+---
+
+## 48 — Edge Functions dashboard for self-hosted and CLI *(🗾 Estável)*
+
+2026-03-05
+
+### Descrição
+O dashboard de **Edge Functions** passou a funcionar também em ambientes **self-hosted** e **CLI**, permitindo listar, buscar, ver detalhes, testar e baixar funções como `.zip`.
+
+### Valor para o Projeto
+- Amplia o tooling operacional para Edge Functions.
+- Pode facilitar inspeção e empacotamento de funções em fluxos mais avançados.
+
+### Valor para o Usuário
+- Indireto: mais agilidade operacional quando o projeto evoluir no uso de Edge Functions.
+
+### Ações Recomendadas
+1. Registrar como capacidade oficial da stack.
+2. Não tratar como prioridade do MVP.
+3. Reavaliar apenas se o uso de Edge Functions crescer no projeto.
+
+### Registro (Tipo B — Tooling/Infra)
+- Status: PENDENTE
+- Verificado em: —
+- Ambiente: Supabase Edge Functions / CLI
+- Evidência: —
+- Observação: manter no radar, sem execução imediata.
+
+---
