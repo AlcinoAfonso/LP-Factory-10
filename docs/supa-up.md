@@ -11,7 +11,7 @@
 
 ---
 
-## 1 — JWT Signing Keys *(✅ Implementado)*  
+## 1 — JWT Signing Keys *(🟦 Estável)*  
 
 2025-08-01  
 
@@ -373,7 +373,7 @@ Conector para indexação full-text e busca inteligente.
 
 22/12/2025 15:07 — Item 13 (PostgREST 13) no formato do print
 
-## 13 — PostgREST 13 *(✅ Implementado)*
+## 13 — PostgREST 13 *(🟦 Estável)*
 
 2025-12-22
 
@@ -383,7 +383,7 @@ Conector para indexação full-text e busca inteligente.
 
 - Status: Não implementado
 - Evidência: docs/base-tecnica.md (ambiente atual em PostgREST 14.1)
-- Observação: Superado por item mais novo (#36).
+- Observação: Superado pelo item #36; ambiente atual do projeto em PostgREST 14.1.
 
 
 ### Descrição
@@ -618,7 +618,7 @@ Sistema de tracking nativo de eventos, medindo comportamento e conversão com se
 
 ---
 
-## 20 — Bundles de Grants por Plano *(✅ Implementado)*  
+## 20 — Bundles de Grants por Plano *(🟦 Estável)*  
 
 2025-11-12 
 
@@ -628,7 +628,6 @@ Sistema de tracking nativo de eventos, medindo comportamento e conversão com se
 - Evidência: docs/roadmap.md (E9.x; model_grants/grants em evolução por casos)
 
 
-“Implementado conforme Base Técnica 1.7 — seção 4.11 (Sistema de Grants) e Roadmap E9.1 (Grants e Features).”
 
 ### Descrição  
 
@@ -1088,7 +1087,7 @@ Recurso/integração do **index_advisor** para ajudar a identificar índices fal
 
 ---
 
-## 36 — Data API: PostgREST v14 (no projeto: 14.1) *(✅ Implementado no projeto)*
+## 36 — Data API: PostgREST v14 *(🟦 Estável)*
 
 2025-12-11
 
