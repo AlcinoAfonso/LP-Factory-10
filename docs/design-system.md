@@ -1,4 +1,4 @@
-# Design System — LP Factory (Caso 6.5)
+# Design System — LP Factory (Caso 6.6)
 
 ## Objetivo desta fase
 Padronizar a biblioteca UI base proprietária com baixo risco, sem alterar lógica de negócio.
@@ -6,9 +6,13 @@ Padronizar a biblioteca UI base proprietária com baixo risco, sem alterar lógi
 ## Componentes padronizados
 - `Button`
 - `Input`
-- `Select` (novo, nativo)
+- `Textarea` (novo, biblioteca base)
+- `Select` (nativo)
 - `Card` (`Card`, `CardHeader`, `CardTitle`, `CardDescription`, `CardContent`)
-- `FormField` (novo, estrutura mínima para `label + hint + error`)
+- `FormField` (estrutura mínima para `label + hint + error`)
+- `FeedbackMessage` (novo, para `error | success | warning`)
+- `EmptyState` (novo, estado vazio simples)
+- `LoadingState` (novo, estado de carregamento simples)
 
 ## API mínima esperada
 
@@ -27,6 +31,16 @@ Padronizar a biblioteca UI base proprietária com baixo risco, sem alterar lógi
   - borda/token semântico (`border-input`, `background`)
   - placeholder semântico
   - foco visível e `disabled` consistente
+
+### Textarea
+- Arquivo: `components/ui/textarea.tsx`
+- API: `TextareaProps extends React.TextareaHTMLAttributes<HTMLTextAreaElement>`
+- Implementação:
+  - `forwardRef`
+  - estilo compatível com `Input`
+  - foco visível, placeholder e `disabled` consistentes
+  - sem variants extras
+- Observação: entra como componente de biblioteca sem uso obrigatório nesta rodada.
 
 ### Select
 - Arquivo: `components/ui/select.tsx`
@@ -56,22 +70,58 @@ Padronizar a biblioteca UI base proprietária com baixo risco, sem alterar lógi
   - `FormFieldError`
 - Finalidade: padronizar acessibilidade e apresentação de campo sem virar framework de formulário.
 
+### FeedbackMessage
+- Arquivo: `components/ui/feedback-message.tsx`
+- API mínima:
+  - `tone: "error" | "success" | "warning"`
+  - `children: React.ReactNode`
+  - `className?: string`
+- Comportamento:
+  - usa tokens semânticos existentes
+  - `role="alert"` quando `tone="error"`
+  - componente propositalmente simples (sem ícones obrigatórios)
+
+### EmptyState
+- Arquivo: `components/ui/empty-state.tsx`
+- API mínima:
+  - `title: string`
+  - `description?: React.ReactNode`
+  - `action?: React.ReactNode`
+  - `className?: string`
+- Comportamento:
+  - sem ilustração
+  - sem layout complexo
+
+### LoadingState
+- Arquivo: `components/ui/loading-state.tsx`
+- API mínima:
+  - `label?: string`
+  - `className?: string`
+- Comportamento:
+  - loading leve e textual
+  - sem spinner complexo
+  - sem framework de skeleton
+
 ## Regras de uso
 - Usar os componentes base nas telas de auth/onboarding/admin tocadas nesta fase.
 - Preservar contratos de props e fluxos existentes.
 - Evitar variações extras sem uso real imediato.
-- Priorizar tokens semânticos (`primary`, `ring`, `border`, `muted/accent`).
+- Priorizar tokens semânticos (`primary`, `ring`, `border`, `muted/accent`, `destructive`, `state`).
 
 ## Aplicação mínima visível nesta fase
+- `components/forgot-password-form.tsx`
+  - sucesso migrado para `FeedbackMessage tone="success"`
+- `app/auth/update-password/page.tsx`
+  - aviso de ausência de token migrado para `FeedbackMessage tone="warning"`
+- `app/a/[account]/page.tsx` (somente superfície `pending_setup`)
+  - erro de formulário do server migrado para `FeedbackMessage tone="error"`
+- `app/admin/tokens/page.tsx`
+  - estado sem resultados migrado para `EmptyState`
+- `app/a/[account]/loading.tsx`
+  - loading migrado para `LoadingState`
 - `components/login-form.tsx`
 - `components/sign-up-form.tsx`
-- `components/forgot-password-form.tsx`
-- `app/auth/update-password/page.tsx`
-- `app/a/[account]/page.tsx` (somente superfície `pending_setup`)
-- `app/admin/tokens/page.tsx` (validação complementar de `Select`)
 
 ## Fora de escopo nesta fase
-- `Textarea`
-- `EmptyState`
 - Redesign amplo de dashboards
 - Branding por cliente/multi-tenant visual

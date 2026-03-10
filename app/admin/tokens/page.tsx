@@ -7,6 +7,7 @@ import { requirePlatformAdmin } from "@/lib/access/guards";
 import { createClient as createServerClient } from "@/lib/supabase/server";
 import { CopyLinkButton } from "@/components/admin/CopyLinkButton";
 import { Button } from "@/components/ui/button";
+import { EmptyState } from "@/components/ui/empty-state";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
@@ -320,8 +321,11 @@ export default async function AdminTokensPage(props: any) {
               })}
               {list.length === 0 && (
                 <tr>
-                  <td className="p-3 text-muted-foreground" colSpan={5}>
-                    Nenhum token encontrado.
+                  <td className="p-3" colSpan={5}>
+                    <EmptyState
+                      title="Nenhum token encontrado"
+                      description="Ajuste os filtros ou gere um novo token para começar."
+                    />
                   </td>
                 </tr>
               )}

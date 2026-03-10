@@ -11,6 +11,7 @@ import {
   CardTitle,
 } from '@/components/ui/card'
 import { FormField, FormFieldError, FormFieldHint, FormFieldLabel } from '@/components/ui/form-field'
+import { FeedbackMessage } from '@/components/ui/feedback-message'
 import { Input } from '@/components/ui/input'
 import Link from 'next/link'
 import { useEffect, useMemo, useState } from 'react'
@@ -129,9 +130,9 @@ export function ForgotPasswordForm({
               ) : null}
 
               {success ? (
-                <div className="text-sm text-green-600">
+                <FeedbackMessage tone="success">
                   Se este e-mail estiver cadastrado, você receberá um link para redefinir a senha.
-                </div>
+                </FeedbackMessage>
               ) : null}
 
               {cooldownLabel ? (
