@@ -2,6 +2,7 @@
 
 ---
 
+
 ## 1 — JWT Signing Keys *(✅ Implementado)*  
 
 2025-08-01  
@@ -1162,4 +1163,48 @@ A Supabase passou a oferecer integração oficial com o Claude, permitindo conec
 
 ---
 
+## 46 — Developer Update (Mar/2026): Logs Drains, Storage e Edge self-hosted *(🗾 Estável)*
+
+2026-03-05
+
+### Descrição
+O changelog oficial da Supabase publicou o **Developer Update — March 2026** com melhorias relevantes de plataforma e DX, incluindo:
+
+* **Logs Drains (Pro):** envio de logs de Postgres, Auth, Storage, Edge Functions e Realtime para destinos externos.
+* **Export de guias em Markdown:** documentação com exportação direta e links para fluxos com ChatGPT/Claude.
+* **Reestruturação do Storage:** listagem de objetos até **14,8×** mais rápida (benchmark de 60M linhas) e correções de brechas de segurança.
+* **Dashboard de Edge Functions para self-hosted/CLI:** listar, testar e baixar funções em `.zip` também fora do dashboard cloud padrão.
+* **Parser Multigres Postgres:** anunciado como **2,5×** mais rápido que alternativa baseada em cgo.
+* **Quick announcements:** depreciação de acesso anônimo ao endpoint OpenAPI `/rest/v1/`, filtros IA no Table Editor, operações em lote, export de prompts IA, snippets SQL versionáveis, atalhos no Command Menu, gestão de read replicas e download de recibos.
+
+### Valor para o Projeto
+
+* Aumenta maturidade operacional com observabilidade exportável (**Logs Drains**) e melhor governança de incidentes.
+* Reforça necessidade de revisar integrações que dependam de OpenAPI com `anon key`.
+* Pode reduzir gargalos de listagem e custos operacionais em fluxos com alto volume de arquivos (Storage).
+* Melhora portabilidade de operações com Edge Functions em cenários híbridos/self-hosted.
+
+### Valor para o Usuário
+
+* Sistema mais estável, com menor tempo de resposta em casos de falha e melhor rastreabilidade.
+* Possível ganho de performance em experiências dependentes de Storage.
+* Menor risco de indisponibilidade por antecipação de ajustes em APIs deprecadas.
+
+### Ações Recomendadas
+
+1. Atualizar o roadmap interno com os itens de março/2026.
+2. Auditar qualquer uso de OpenAPI `/rest/v1/` com `anon key` e planejar migração.
+3. Avaliar adoção de **Logs Drains** para centralização de observabilidade.
+4. Registrar benchmark interno de Storage se houver listagens pesadas.
+5. Catalogar os anúncios rápidos (batch ops, snippets versionáveis, read replicas etc.) como capacidades disponíveis para fases futuras.
+
+### Registro (Tipo A — Plataforma)
+
+* Status: OK
+* Verificado em: 10/03/2026
+* Ambiente: Supabase Changelog + documentação interna (`docs/supa-up.md`)
+* Evidência: “Developer Update — March 2026” (publicado em 05/03/2026)
+* Observação: update posterior ao recorte anterior do documento interno (fev/2026), recomendado incorporar no planejamento.
+
+---
 
