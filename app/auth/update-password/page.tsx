@@ -2,6 +2,7 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { FormField, FormFieldError, FormFieldHint, FormFieldLabel } from "@/components/ui/form-field";
+import { FeedbackMessage } from "@/components/ui/feedback-message";
 import { Input } from "@/components/ui/input";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
@@ -92,10 +93,10 @@ export default async function UpdatePasswordPage(props: any) {
           {errorMsg ? <FormFieldError>{errorMsg}</FormFieldError> : null}
 
           {!isRecoveryTokenFlow ? (
-            <div className="rounded-lg border border-border bg-accent/40 p-3 text-sm text-muted-foreground">
+            <FeedbackMessage tone="warning">
               Este link não contém um token de recuperação. Se você abriu esta página diretamente,
               solicite um novo link em <a className="underline" href="/auth/forgot-password">Esqueci minha senha</a>.
-            </div>
+            </FeedbackMessage>
           ) : null}
 
           {isRecoveryTokenFlow ? (

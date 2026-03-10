@@ -8,6 +8,7 @@ import { saveSetupAndContinueAction, type SetupSaveState } from "./actions";
 import { validateE10_4SetupForm } from "@/lib/onboarding/e10_4_setup_validation";
 import { Button } from "@/components/ui/button";
 import { FormField, FormFieldError, FormFieldHint, FormFieldLabel } from "@/components/ui/form-field";
+import { FeedbackMessage } from "@/components/ui/feedback-message";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 
@@ -225,9 +226,7 @@ function PendingSetupFirstSteps({
         </div>
 
         {serverState?.formError ? (
-          <div className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700">
-            {serverState.formError}
-          </div>
+          <FeedbackMessage tone="error">{serverState.formError}</FeedbackMessage>
         ) : null}
 
         <form action={action} onSubmit={onSubmit} className="space-y-5">

@@ -1,14 +1,18 @@
-# Design System — LP Factory (Caso 6.5)
+# Design System — LP Factory
 
-## Objetivo desta fase
-Padronizar a biblioteca UI base proprietária com baixo risco, sem alterar lógica de negócio.
+## Visão geral
+Este documento consolida o estado atual do design system ao final do ciclo E6.4–E6.6, com foco em componentes base reutilizáveis, acessibilidade e consistência visual sem mudança de regra de negócio.
 
 ## Componentes padronizados
 - `Button`
 - `Input`
-- `Select` (novo, nativo)
+- `Textarea` (biblioteca base)
+- `Select` (nativo)
 - `Card` (`Card`, `CardHeader`, `CardTitle`, `CardDescription`, `CardContent`)
-- `FormField` (novo, estrutura mínima para `label + hint + error`)
+- `FormField` (estrutura mínima para `label + hint + error`)
+- `FeedbackMessage` (para `error | success | warning`)
+- `EmptyState` (estado vazio simples)
+- `LoadingState` (estado de carregamento simples)
 
 ## API mínima esperada
 
@@ -27,6 +31,16 @@ Padronizar a biblioteca UI base proprietária com baixo risco, sem alterar lógi
   - borda/token semântico (`border-input`, `background`)
   - placeholder semântico
   - foco visível e `disabled` consistente
+
+### Textarea
+- Arquivo: `components/ui/textarea.tsx`
+- API: `TextareaProps extends React.TextareaHTMLAttributes<HTMLTextAreaElement>`
+- Implementação:
+  - `forwardRef`
+  - estilo compatível com `Input`
+  - foco visível, placeholder e `disabled` consistentes
+  - sem variants extras
+- Observação: componente de biblioteca com adoção por demanda; não possui uso obrigatório em todas as telas.
 
 ### Select
 - Arquivo: `components/ui/select.tsx`
@@ -56,22 +70,59 @@ Padronizar a biblioteca UI base proprietária com baixo risco, sem alterar lógi
   - `FormFieldError`
 - Finalidade: padronizar acessibilidade e apresentação de campo sem virar framework de formulário.
 
+### FeedbackMessage
+- Arquivo: `components/ui/feedback-message.tsx`
+- API mínima:
+  - `tone: "error" | "success" | "warning"`
+  - `children: React.ReactNode`
+  - `className?: string`
+- Comportamento:
+  - usa tokens semânticos existentes
+  - `role="alert"` quando `tone="error"`
+  - suporte a anúncio não intrusivo para mensagens dinâmicas de sucesso/aviso
+  - componente propositalmente simples (sem ícones obrigatórios)
+
+### EmptyState
+- Arquivo: `components/ui/empty-state.tsx`
+- API mínima:
+  - `title: string`
+  - `description?: React.ReactNode`
+  - `action?: React.ReactNode`
+  - `className?: string`
+- Comportamento:
+  - sem ilustração
+  - sem layout complexo
+
+### LoadingState
+- Arquivo: `components/ui/loading-state.tsx`
+- API mínima:
+  - `label?: string`
+  - `className?: string`
+- Comportamento:
+  - loading leve e textual
+  - sem spinner complexo
+  - sem framework de skeleton
+
 ## Regras de uso
-- Usar os componentes base nas telas de auth/onboarding/admin tocadas nesta fase.
+- Usar os componentes base nas superfícies de auth/onboarding/admin conforme adoção incremental.
 - Preservar contratos de props e fluxos existentes.
 - Evitar variações extras sem uso real imediato.
-- Priorizar tokens semânticos (`primary`, `ring`, `border`, `muted/accent`).
+- Priorizar tokens semânticos (`primary`, `ring`, `border`, `muted/accent`, `destructive`, `state`).
 
-## Aplicação mínima visível nesta fase
+## Aplicação mínima visível atual
 - `components/login-form.tsx`
 - `components/sign-up-form.tsx`
 - `components/forgot-password-form.tsx`
+  - sucesso com `FeedbackMessage tone="success"`
 - `app/auth/update-password/page.tsx`
-- `app/a/[account]/page.tsx` (somente superfície `pending_setup`)
-- `app/admin/tokens/page.tsx` (validação complementar de `Select`)
+  - aviso de ausência de token com `FeedbackMessage tone="warning"`
+- `app/a/[account]/page.tsx` (superfície `pending_setup`)
+  - erro de formulário do server com `FeedbackMessage tone="error"`
+- `app/admin/tokens/page.tsx`
+  - estado sem resultados com `EmptyState`
+- `app/a/[account]/loading.tsx`
+  - loading com `LoadingState`
 
-## Fora de escopo nesta fase
-- `Textarea`
-- `EmptyState`
+## Fora de escopo atual
 - Redesign amplo de dashboards
 - Branding por cliente/multi-tenant visual
