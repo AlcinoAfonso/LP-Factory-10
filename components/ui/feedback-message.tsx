@@ -19,6 +19,7 @@ export function FeedbackMessage({ tone, children, className }: FeedbackMessagePr
   return (
     <div
       role={tone === "error" ? "alert" : undefined}
+      aria-live={tone === "error" ? undefined : "polite"}
       className={cn("rounded-md border p-3 text-sm", toneClasses[tone], className)}
     >
       {children}

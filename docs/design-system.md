@@ -1,18 +1,18 @@
-# Design System — LP Factory (Caso 6.6)
+# Design System — LP Factory
 
-## Objetivo desta fase
-Padronizar a biblioteca UI base proprietária com baixo risco, sem alterar lógica de negócio.
+## Visão geral
+Este documento consolida o estado atual do design system ao final do ciclo E6.4–E6.6, com foco em componentes base reutilizáveis, acessibilidade e consistência visual sem mudança de regra de negócio.
 
 ## Componentes padronizados
 - `Button`
 - `Input`
-- `Textarea` (novo, biblioteca base)
+- `Textarea` (biblioteca base)
 - `Select` (nativo)
 - `Card` (`Card`, `CardHeader`, `CardTitle`, `CardDescription`, `CardContent`)
 - `FormField` (estrutura mínima para `label + hint + error`)
-- `FeedbackMessage` (novo, para `error | success | warning`)
-- `EmptyState` (novo, estado vazio simples)
-- `LoadingState` (novo, estado de carregamento simples)
+- `FeedbackMessage` (para `error | success | warning`)
+- `EmptyState` (estado vazio simples)
+- `LoadingState` (estado de carregamento simples)
 
 ## API mínima esperada
 
@@ -40,7 +40,7 @@ Padronizar a biblioteca UI base proprietária com baixo risco, sem alterar lógi
   - estilo compatível com `Input`
   - foco visível, placeholder e `disabled` consistentes
   - sem variants extras
-- Observação: entra como componente de biblioteca sem uso obrigatório nesta rodada.
+- Observação: componente de biblioteca com adoção por demanda; não possui uso obrigatório em todas as telas.
 
 ### Select
 - Arquivo: `components/ui/select.tsx`
@@ -79,6 +79,7 @@ Padronizar a biblioteca UI base proprietária com baixo risco, sem alterar lógi
 - Comportamento:
   - usa tokens semânticos existentes
   - `role="alert"` quando `tone="error"`
+  - suporte a anúncio não intrusivo para mensagens dinâmicas de sucesso/aviso
   - componente propositalmente simples (sem ícones obrigatórios)
 
 ### EmptyState
@@ -103,25 +104,25 @@ Padronizar a biblioteca UI base proprietária com baixo risco, sem alterar lógi
   - sem framework de skeleton
 
 ## Regras de uso
-- Usar os componentes base nas telas de auth/onboarding/admin tocadas nesta fase.
+- Usar os componentes base nas superfícies de auth/onboarding/admin conforme adoção incremental.
 - Preservar contratos de props e fluxos existentes.
 - Evitar variações extras sem uso real imediato.
 - Priorizar tokens semânticos (`primary`, `ring`, `border`, `muted/accent`, `destructive`, `state`).
 
-## Aplicação mínima visível nesta fase
-- `components/forgot-password-form.tsx`
-  - sucesso migrado para `FeedbackMessage tone="success"`
-- `app/auth/update-password/page.tsx`
-  - aviso de ausência de token migrado para `FeedbackMessage tone="warning"`
-- `app/a/[account]/page.tsx` (somente superfície `pending_setup`)
-  - erro de formulário do server migrado para `FeedbackMessage tone="error"`
-- `app/admin/tokens/page.tsx`
-  - estado sem resultados migrado para `EmptyState`
-- `app/a/[account]/loading.tsx`
-  - loading migrado para `LoadingState`
+## Aplicação mínima visível atual
 - `components/login-form.tsx`
 - `components/sign-up-form.tsx`
+- `components/forgot-password-form.tsx`
+  - sucesso com `FeedbackMessage tone="success"`
+- `app/auth/update-password/page.tsx`
+  - aviso de ausência de token com `FeedbackMessage tone="warning"`
+- `app/a/[account]/page.tsx` (superfície `pending_setup`)
+  - erro de formulário do server com `FeedbackMessage tone="error"`
+- `app/admin/tokens/page.tsx`
+  - estado sem resultados com `EmptyState`
+- `app/a/[account]/loading.tsx`
+  - loading com `LoadingState`
 
-## Fora de escopo nesta fase
+## Fora de escopo atual
 - Redesign amplo de dashboards
 - Branding por cliente/multi-tenant visual
