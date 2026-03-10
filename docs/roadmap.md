@@ -1,8 +1,8 @@
 0. Introdução
 
 0.1 Cabeçalho
-• Data: 09/03/2026
-• Versão: v1.5.30
+• Data: 10/03/2026
+• Versão: v1.5.31
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -229,8 +229,20 @@
 • Fora do escopo mantido: `Textarea`, `EmptyState`, redesign amplo de dashboards, Supabase/migrations/SQL/policies/backend.
 
 6.6 Visual States & Feedback
-• Status: Planejado
-• Objetivo: padronizar estados de loading, empty, success e error.
+• Status: Concluído (exec) (10/03/2026)
+• Natureza: repo-only (sem Supabase; sem migrations; sem SQL; sem backend novo; sem mudança de regra de negócio).
+• Objetivo: padronizar estados visuais reutilizáveis (loading/empty/feedback) e completar a infraestrutura visual do ciclo E6.4–E6.6 com baixo risco.
+• Implementado:
+• Componentes novos: `Textarea`, `FeedbackMessage` (erro/sucesso/aviso), `EmptyState`, `LoadingState`.
+• Aplicação mínima real:
+• `components/forgot-password-form.tsx` (sucesso no novo padrão)
+• `app/auth/update-password/page.tsx` (aviso sem token no novo padrão)
+• `app/a/[account]/page.tsx` (`pending_setup` ajustado)
+• `app/a/[account]/loading.tsx` (loading reutilizável)
+• `app/admin/tokens/page.tsx` (estado vazio preparado com `EmptyState`; não validado em runtime por provável descontinuação)
+• Docs: `docs/design-system.md` atualizado como documento consolidado do ciclo E6.4–E6.6 (componentes, API mínima, uso e superfícies cobertas).
+• Checks/QA (reportado): `npm ci` ok; `npm run check` ok; QA manual ok nas superfícies validadas (forgot password, update password sem token, `pending_setup`, loading da conta).
+• Observação residual (não bloqueante): `admin/tokens` vazio não foi validado manualmente em runtime; impacto baixo se a descontinuação se confirmar; se a tela permanecer ativa, validar em ciclo futuro.
 
 6.7 Dashboard Layout Patterns
 • Status: Planejado
@@ -929,6 +941,8 @@
 • após estabilização do sistema de acesso e onboarding
 
 99. Changelog
+v1.5.31 (10/03/2026)
+• 6.6 concluído (exec): adicionados estados reutilizáveis (FeedbackMessage/EmptyState/LoadingState) e Textarea, com aplicação mínima em Auth, `pending_setup` e loading da conta; `docs/design-system.md` consolidado (E6.4–E6.6) atualizado; observação residual de `admin/tokens` vazio registrada.
 v1.5.30 (09/03/2026)
 • 6.5 concluído (exec): UI Component Library base (Button/Input/Card ajustados; Select e FormField criados) aplicada em Auth + `pending_setup` + `admin/tokens`, com `docs/design-system.md` atualizado (repo-only; sem Supabase/SQL/migrations).
 v1.5.29 (09/03/2026)
