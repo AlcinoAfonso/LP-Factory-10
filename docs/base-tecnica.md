@@ -2,8 +2,8 @@
 
 0.1. Cabeçalho
 • Documento: Base Técnica LP Factory 10
-• Versão: v2.0.17
-• Data: 09/03/2026
+• Versão: v2.0.18
+• Data: 10/03/2026
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -63,15 +63,19 @@
 • JWT Signing Keys ativo: Current ECC (P-256); Previous Legacy HS256 (não revogar por padrão); integrações futuras (se houver) devem validar JWT via JWKS + kid
 
 2.3 UI
-• Design System (identidade visual — E6.4/E6.5): referência oficial em docs/design-system.md (API mínima, regras de uso e superfícies cobertas).
+• Design System (identidade visual — E6.4–E6.6): referência oficial em docs/design-system.md (documento consolidado do ciclo E6.4–E6.6; API mínima, regras de uso e superfícies cobertas).
 • Marca provisória: wordmark textual temporário “LP Factory” enquanto o asset oficial de logo não estiver versionado no repo.
-• UI Component Library (E6.5): componentes proprietários mínimos em components/ui/ para reduzir markup cru e manter consistência:
+• UI Component Library (E6.5/E6.6): componentes proprietários mínimos para reduzir markup cru e manter consistência:
 • Button (PATH: components/ui/button.tsx)
 • Input (PATH: components/ui/input.tsx)
 • Card (PATH: components/ui/card.tsx)
 • Select (PATH: components/ui/select.tsx)
 • FormField (PATH: components/ui/form-field.tsx) — label/hint/error
-• Regra: em Auth e onboarding mínimo, preferir os componentes acima (evitar markup cru) e seguir docs/design-system.md.
+• Textarea (componente mínimo de biblioteca; ver docs/design-system.md)
+• FeedbackMessage (erro/sucesso/aviso; ver docs/design-system.md)
+• EmptyState (reutilizável; ver docs/design-system.md)
+• LoadingState (reutilizável; ver docs/design-system.md)
+• Regra: em Auth, onboarding mínimo e superfícies reais tocadas, preferir os componentes e estados reutilizáveis acima (evitar markup cru) e seguir docs/design-system.md.
 • Tipografia oficial do produto (UI do dashboard): Inter via next/font/google; aplicar globalmente no <html> com className={inter.className} (PATH: app/layout.tsx); weights 400/500/600/700; display=swap.
 • Tailwind tokens LP Factory: adicionar de forma aditiva (sem substituir tokens shadcn) com namespaces brand/ink/graytech/surface/state e boxShadow.card (PATH: tailwind.config.ts).
 • Tailwind content: incluir js/ts/jsx/tsx/mdx em {pages,components,app,src} para evitar purge silencioso (PATH: tailwind.config.ts).
@@ -391,6 +395,8 @@ Regra: qualquer novo arquivo em app/auth/ não pode importar @supabase/* até se
 • Adapters vNext: seguir 3.14
 
 99. Changelog
+v2.0.18 (10/03/2026) — E6.6: Visual States & Feedback (Textarea + estados reutilizáveis)
+• Registrados os componentes mínimos do E6.6 (Textarea, FeedbackMessage, EmptyState e LoadingState) como parte da UI proprietária, com referência ao docs/design-system.md consolidado (E6.4–E6.6).
 v2.0.17 (09/03/2026) — E6.5: UI Component Library (base) + docs/design-system.md atualizado
 • Registrada a biblioteca base de UI proprietária (components/ui/*) e a regra de uso para reduzir markup cru em Auth e onboarding mínimo (referência em docs/design-system.md).
 v2.0.16 (09/03/2026) — E6.4: identidade visual mínima + docs/design-system.md
