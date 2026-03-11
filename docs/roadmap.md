@@ -919,6 +919,10 @@
 • Contrato atualizado: `pipelines/supabase-inspect/README.md`.
 • Pendência sugerida (quando houver demanda): biblioteca de templates em `pipelines/supabase-inspect/templates/briefings/` (ex.: schema_inventory.md, rls_policies.md, table_counts.md).
 
+17.8 Supabase STAGING (espelho operacional para validação de casos de uso)
+• Objetivo: criar e manter um projeto Supabase STAGING espelhado do projeto principal para validar mudanças de banco, Auth, Storage e configurações operacionais antes da aplicação no ambiente principal, reduzindo risco operacional.
+• Resumo: criar um projeto Supabase separado para STAGING, inicialmente espelhado a partir do estado atual do projeto principal, incluindo schema, dados de teste e configurações operacionais necessárias. A partir dessa estrutura, casos de uso com impacto em Supabase devem ser validados primeiro no STAGING e, quando aprovados, replicados de forma controlada no projeto principal. Esse staging funciona como camada simples de segurança e teste, sem substituir a governança por repositório, migrations versionadas e documentação oficial.
+
 18 E18 - IA (fase IA-ready)
 
 18.1 Status
