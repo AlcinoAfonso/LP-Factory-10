@@ -252,6 +252,7 @@ Painel de Observability da Vercel com visibilidade de tráfego, incluindo rotas 
 ### Status no Projeto
 - Status: Não implementado
 - Evidência: roadmap/base técnica registram tracking interno em planejamento, sem adoção explícita de `@vercel/analytics/server` no projeto.
+- Observação: custom events server-side dependem de disponibilidade/plano (tipicamente Pro/Enterprise).
 
 ### Descrição
 Capacidade de envio de eventos customizados server-side via stack de analytics da Vercel, sem depender apenas de eventos client-side.
