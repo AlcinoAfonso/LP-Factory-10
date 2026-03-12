@@ -873,7 +873,7 @@
 • E9: trial/entitlements (fonte de verdade de permissões).
 • E12: enforcement operacional (jobs) e políticas de restrição/reativação/configurações.
 
-17 E17 - Automations & Agents
+17 E17 - Automations, Agents & Validation Infrastructure
 
 17.1 Status
 • Em evolução (setup mínimo concluído) (04/03/2026)
