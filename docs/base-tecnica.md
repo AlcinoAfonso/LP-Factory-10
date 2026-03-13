@@ -32,8 +32,8 @@
 • ACCESS_CONTEXT_ENFORCED=true
 • ACCESS_CTX_USE_V2=true
 1.1.2 Variáveis Públicas
-• NEXT_PUBLIC_SUPABASE_URL
-• NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
+• NEXT_PUBLIC_SUPABASE_URL=https://dpikmjgiteuafsbaubue.supabase.co
+• NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=sb_publishable_DiHMVvkSiFqmn1hP0hc9Xg_sVmRaLdb
 1.1.3 Convenções
 • TypeScript: camelCase
 • SQL/Postgres: snake_case
