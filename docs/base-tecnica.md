@@ -25,6 +25,8 @@
 • Repositório: https://github.com/AlcinoAfonso/LP-Factory-10
 • Controle de versão: GitHub Web (edição e commit pelo navegador; não assumir repo local, terminal, git cli ou paths locais)
 • Deploy: Vercel (preview + produção)
+• Domínio oficial do app (produção): https://lp-factory-10.vercel.app
+• Base URL das API routes do app: https://lp-factory-10.vercel.app/api
 
 1.1 Backend: Supabase — projeto lp-factory-10
 1.1.1 Segredos e flags de execução (server-side)
