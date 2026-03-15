@@ -9,6 +9,14 @@ import {
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
+type AuthorizationResult =
+  | { ok: true }
+  | {
+      ok: false;
+      status: 401 | 403;
+      message: string;
+    };
+
 function httpStatusFromToolStatus(status: string): number {
   switch (status) {
     case "ok":
@@ -22,8 +30,55 @@ function httpStatusFromToolStatus(status: string): number {
   }
 }
 
+function authorize(request: NextRequest): AuthorizationResult {
+  const expectedKey = process.env.AGENT_INTERNAL_KEY;
+  const receivedKey = request.headers.get("x-agent-key");
+
+  if (!receivedKey) {
+    return {
+      ok: false,
+      status: 401,
+      message: "Header x-agent-key ausente.",
+    };
+  }
+
+  if (!expectedKey || receivedKey !== expectedKey) {
+    return {
+      ok: false,
+      status: 403,
+      message: "Header x-agent-key inválido.",
+    };
+  }
+
+  return { ok: true };
+}
+
 export async function POST(request: NextRequest) {
   try {
+    const auth = authorize(request);
+
+    if (!auth.ok) {
+      return NextResponse.json(
+        {
+          status: "blocked",
+          requestSummary: "Acesso não autorizado ao Supabase Inspect Agent.",
+          normalizedScope: null,
+          findings: [],
+          inspectedObjects: [],
+          warnings: [],
+          limitations: [auth.message],
+          nextSteps: ["Enviar o header x-agent-key válido na requisição."],
+        },
+        {
+          status: auth.status,
+          headers: {
+            "Cache-Control": "no-store",
+            "x-lpf-tool": SUPABASE_INSPECT_TOOL_NAME,
+          },
+        }
+      );
+    }
+
     const body = await request.json();
     const normalized = normalizeInspectReadonlyInput(body);
 
@@ -48,16 +103,7 @@ export async function POST(request: NextRequest) {
     });
   } catch (error: unknown) {
     const message =
-      error instanceof Error ? error.message : "unknown_error";
-
-    // eslint-disable-next-line no-console
-    console.error(
-      JSON.stringify({
-        event: "supabase_inspect_route_unhandled",
-        scope: "api",
-        msg: message,
-      })
-    );
+      error instanceof Error ? error.message : "Erro desconhecido ao processar a rota.";
 
     return NextResponse.json(
       {
@@ -68,7 +114,10 @@ export async function POST(request: NextRequest) {
         inspectedObjects: [],
         warnings: [],
         limitations: [message],
-        nextSteps: ["Revisar logs do servidor e tentar novamente."],
+        nextSteps: [
+          "Validar payload e autorização da requisição.",
+          "Revisar logs do servidor e tentar novamente.",
+        ],
       },
       {
         status: 500,

@@ -7,9 +7,17 @@ import type {
   InspectReadonlyOutput,
   NormalizedInspectReadonlyInput,
 } from "../contracts";
-import { buildBlockedOutput, buildErrorOutput } from "../contracts";
+import {
+  MAX_ROW_LIMIT,
+  buildBlockedOutput,
+  buildErrorOutput,
+} from "../contracts";
 
 type SupabaseLikeClient = ReturnType<typeof createServiceClient>;
+
+type FindingResult =
+  | { ok: true; finding: InspectFinding }
+  | { ok: false; detail: string };
 
 function objectName(input: NormalizedInspectReadonlyInput): string {
   const { schema, name } = input.target;
@@ -24,8 +32,12 @@ function toRows(data: unknown): Record<string, unknown>[] {
   );
 }
 
-function limitPayload(rows: Record<string, unknown>[]): Record<string, unknown>[] {
-  return rows.slice(0, 50);
+function safeRowLimit(raw: number): number {
+  return Math.min(Math.max(Math.trunc(raw || 0), 1), MAX_ROW_LIMIT);
+}
+
+function limitPayload(rows: Record<string, unknown>[], rowLimit: number): Record<string, unknown>[] {
+  return rows.slice(0, safeRowLimit(rowLimit));
 }
 
 function queryErrorMessage(error: unknown): string {
@@ -39,7 +51,7 @@ function queryErrorMessage(error: unknown): string {
 async function readSchemaColumns(
   svc: SupabaseLikeClient,
   input: NormalizedInspectReadonlyInput
-): Promise<InspectFinding> {
+): Promise<FindingResult> {
   const { data, error } = await svc
     .schema("information_schema")
     .from("columns")
@@ -51,23 +63,26 @@ async function readSchemaColumns(
     .order("ordinal_position", { ascending: true });
 
   if (error) {
-    throw new Error(`schema_columns_failed: ${queryErrorMessage(error)}`);
+    return { ok: false, detail: `schema_columns_failed: ${queryErrorMessage(error)}` };
   }
 
-  const rows = limitPayload(toRows(data));
+  const rows = limitPayload(toRows(data), input.rowLimit);
 
   return {
-    title: "Colunas do objeto alvo",
-    severity: "info",
-    detail: `Foram encontradas ${rows.length} coluna(s) em ${objectName(input)}.`,
-    payload: rows,
+    ok: true,
+    finding: {
+      title: "Colunas do objeto alvo",
+      severity: "info",
+      detail: `Foram encontradas ${rows.length} coluna(s) em ${objectName(input)}.`,
+      payload: rows,
+    },
   };
 }
 
 async function readRlsPolicies(
   svc: SupabaseLikeClient,
   input: NormalizedInspectReadonlyInput
-): Promise<InspectFinding> {
+): Promise<FindingResult> {
   const { data, error } = await svc
     .schema("pg_catalog")
     .from("pg_policies")
@@ -77,26 +92,29 @@ async function readRlsPolicies(
     .order("policyname", { ascending: true });
 
   if (error) {
-    throw new Error(`rls_policies_failed: ${queryErrorMessage(error)}`);
+    return { ok: false, detail: `rls_policies_failed: ${queryErrorMessage(error)}` };
   }
 
-  const rows = limitPayload(toRows(data));
+  const rows = limitPayload(toRows(data), input.rowLimit);
 
   return {
-    title: "Policies RLS",
-    severity: rows.length > 0 ? "attention" : "info",
-    detail:
-      rows.length > 0
-        ? `Foram encontradas ${rows.length} policy/policies em ${objectName(input)}.`
-        : `Nenhuma policy foi retornada para ${objectName(input)}.`,
-    payload: rows,
+    ok: true,
+    finding: {
+      title: "Policies RLS",
+      severity: rows.length > 0 ? "attention" : "info",
+      detail:
+        rows.length > 0
+          ? `Foram encontradas ${rows.length} policy/policies em ${objectName(input)}.`
+          : `Nenhuma policy foi retornada para ${objectName(input)}.`,
+      payload: rows,
+    },
   };
 }
 
 async function readIndexes(
   svc: SupabaseLikeClient,
   input: NormalizedInspectReadonlyInput
-): Promise<InspectFinding> {
+): Promise<FindingResult> {
   const { data, error } = await svc
     .schema("pg_catalog")
     .from("pg_indexes")
@@ -106,29 +124,32 @@ async function readIndexes(
     .order("indexname", { ascending: true });
 
   if (error) {
-    throw new Error(`indexes_failed: ${queryErrorMessage(error)}`);
+    return { ok: false, detail: `indexes_failed: ${queryErrorMessage(error)}` };
   }
 
-  const rows = limitPayload(toRows(data));
+  const rows = limitPayload(toRows(data), input.rowLimit);
 
   return {
-    title: "Índices",
-    severity: "info",
-    detail: `Foram encontrados ${rows.length} índice(s) em ${objectName(input)}.`,
-    payload: rows,
+    ok: true,
+    finding: {
+      title: "Índices",
+      severity: "info",
+      detail: `Foram encontrados ${rows.length} índice(s) em ${objectName(input)}.`,
+      payload: rows,
+    },
   };
 }
 
 async function readViews(
   svc: SupabaseLikeClient,
   input: NormalizedInspectReadonlyInput
-): Promise<InspectFinding> {
+): Promise<FindingResult> {
   let query = svc
     .schema("information_schema")
     .from("views")
     .select("table_schema,table_name")
     .eq("table_schema", input.target.schema)
-    .limit(input.rowLimit);
+    .limit(safeRowLimit(input.rowLimit));
 
   if (input.target.name) {
     query = query.eq("table_name", input.target.name);
@@ -139,29 +160,32 @@ async function readViews(
   });
 
   if (error) {
-    throw new Error(`views_failed: ${queryErrorMessage(error)}`);
+    return { ok: false, detail: `views_failed: ${queryErrorMessage(error)}` };
   }
 
-  const rows = limitPayload(toRows(data));
+  const rows = limitPayload(toRows(data), input.rowLimit);
 
   return {
-    title: "Views",
-    severity: "info",
-    detail: `Foram retornadas ${rows.length} view(s) para o schema ${input.target.schema}.`,
-    payload: rows,
+    ok: true,
+    finding: {
+      title: "Views",
+      severity: "info",
+      detail: `Foram retornadas ${rows.length} view(s) para o schema ${input.target.schema}.`,
+      payload: rows,
+    },
   };
 }
 
 async function readFunctions(
   svc: SupabaseLikeClient,
   input: NormalizedInspectReadonlyInput
-): Promise<InspectFinding> {
+): Promise<FindingResult> {
   let query = svc
     .schema("information_schema")
     .from("routines")
     .select("routine_schema,routine_name,routine_type,data_type,specific_name")
     .eq("routine_schema", input.target.schema)
-    .limit(input.rowLimit);
+    .limit(safeRowLimit(input.rowLimit));
 
   if (input.target.name) {
     query = query.eq("routine_name", input.target.name);
@@ -172,23 +196,26 @@ async function readFunctions(
   });
 
   if (error) {
-    throw new Error(`functions_failed: ${queryErrorMessage(error)}`);
+    return { ok: false, detail: `functions_failed: ${queryErrorMessage(error)}` };
   }
 
-  const rows = limitPayload(toRows(data));
+  const rows = limitPayload(toRows(data), input.rowLimit);
 
   return {
-    title: "Functions / routines",
-    severity: "info",
-    detail: `Foram retornadas ${rows.length} routine(s) para o schema ${input.target.schema}.`,
-    payload: rows,
+    ok: true,
+    finding: {
+      title: "Functions / routines",
+      severity: "info",
+      detail: `Foram retornadas ${rows.length} routine(s) para o schema ${input.target.schema}.`,
+      payload: rows,
+    },
   };
 }
 
 async function readTriggers(
   svc: SupabaseLikeClient,
   input: NormalizedInspectReadonlyInput
-): Promise<InspectFinding> {
+): Promise<FindingResult> {
   let query = svc
     .schema("information_schema")
     .from("triggers")
@@ -196,7 +223,7 @@ async function readTriggers(
       "trigger_schema,trigger_name,event_object_table,event_manipulation,action_timing,action_statement"
     )
     .eq("trigger_schema", input.target.schema)
-    .limit(input.rowLimit);
+    .limit(safeRowLimit(input.rowLimit));
 
   if (input.target.name) {
     query = query.eq("event_object_table", input.target.name);
@@ -207,58 +234,110 @@ async function readTriggers(
   });
 
   if (error) {
-    throw new Error(`triggers_failed: ${queryErrorMessage(error)}`);
+    return { ok: false, detail: `triggers_failed: ${queryErrorMessage(error)}` };
   }
 
-  const rows = limitPayload(toRows(data));
+  const rows = limitPayload(toRows(data), input.rowLimit);
 
   return {
-    title: "Triggers",
-    severity: "info",
-    detail: `Foram retornados ${rows.length} trigger(s) para o schema ${input.target.schema}.`,
-    payload: rows,
+    ok: true,
+    finding: {
+      title: "Triggers",
+      severity: "info",
+      detail: `Foram retornados ${rows.length} trigger(s) para o schema ${input.target.schema}.`,
+      payload: rows,
+    },
   };
 }
 
 async function readDataSample(
   svc: SupabaseLikeClient,
   input: NormalizedInspectReadonlyInput
-): Promise<InspectFinding> {
-  if (!input.target.name) {
-    throw new Error("data_sample_requires_target_name");
-  }
-
+): Promise<FindingResult> {
   const { data, error } = await svc
     .schema(input.target.schema)
-    .from(input.target.name)
+    .from(input.target.name as string)
     .select("*")
-    .limit(input.rowLimit);
+    .limit(safeRowLimit(input.rowLimit));
 
   if (error) {
-    throw new Error(`data_sample_failed: ${queryErrorMessage(error)}`);
+    return { ok: false, detail: `data_sample_failed: ${queryErrorMessage(error)}` };
   }
 
-  const rows = limitPayload(toRows(data));
+  const rows = limitPayload(toRows(data), input.rowLimit);
 
   return {
-    title: "Amostra de dados",
-    severity: "info",
-    detail: `Foram retornadas ${rows.length} linha(s) de amostra de ${objectName(input)}.`,
-    payload: rows,
+    ok: true,
+    finding: {
+      title: "Amostra de dados",
+      severity: "info",
+      detail: `Foram retornadas ${rows.length} linha(s) de amostra de ${objectName(input)}.`,
+      payload: rows,
+    },
   };
 }
 
 async function readTableOverview(
   svc: SupabaseLikeClient,
   input: NormalizedInspectReadonlyInput
-): Promise<InspectFinding[]> {
-  const [columns, indexes, policies] = await Promise.all([
-    readSchemaColumns(svc, input),
-    readIndexes(svc, input),
-    readRlsPolicies(svc, input),
-  ]);
+): Promise<{ ok: true; findings: InspectFinding[] } | { ok: false; detail: string }> {
+  const columns = await readSchemaColumns(svc, input);
+  if (!columns.ok) return columns;
 
-  return [columns, indexes, policies];
+  const indexes = await readIndexes(svc, input);
+  if (!indexes.ok) return indexes;
+
+  const policies = await readRlsPolicies(svc, input);
+  if (!policies.ok) return policies;
+
+  return { ok: true, findings: [columns.finding, indexes.finding, policies.finding] };
+}
+
+function ensureTargetName(
+  input: NormalizedInspectReadonlyInput,
+  requestSummary: string
+): InspectReadonlyOutput | null {
+  const requiredNameInspections: readonly NormalizedInspectReadonlyInput["inspectionType"][] = [
+    "schemaColumns",
+    "indexes",
+    "rlsPolicies",
+    "triggers",
+    "dataSample",
+    "tableOverview",
+  ];
+
+  if (requiredNameInspections.includes(input.inspectionType) && !input.target.name) {
+    return buildBlockedOutput({
+      requestSummary,
+      normalizedScope: input,
+      detail: `target.name é obrigatório para ${input.inspectionType}.`,
+    });
+  }
+
+  return null;
+}
+
+function buildSuccessOutput(
+  input: NormalizedInspectReadonlyInput,
+  requestSummary: string,
+  findings: InspectFinding[]
+): InspectReadonlyOutput {
+  return {
+    status: "ok",
+    requestSummary,
+    normalizedScope: {
+      ...input,
+      rowLimit: safeRowLimit(input.rowLimit),
+    },
+    findings,
+    inspectedObjects: [objectName(input)],
+    warnings: [],
+    limitations: [
+      "Modo somente leitura.",
+      "O resultado depende da exposição dos schemas via API do Supabase.",
+    ],
+    nextSteps: [],
+  };
 }
 
 export async function inspectReadonly(
@@ -268,60 +347,63 @@ export async function inspectReadonly(
   const inspectedObject = objectName(input);
   const requestSummary = `Inspeção read-only ${input.inspectionType} em ${inspectedObject}.`;
 
-  try {
-    let findings: InspectFinding[] = [];
+  const missingName = ensureTargetName(input, requestSummary);
+  if (missingName) {
+    return missingName;
+  }
 
-    switch (input.inspectionType) {
-      case "tableOverview":
-        findings = await readTableOverview(svc, input);
-        break;
-      case "schemaColumns":
-        findings = [await readSchemaColumns(svc, input)];
-        break;
-      case "rlsPolicies":
-        findings = [await readRlsPolicies(svc, input)];
-        break;
-      case "indexes":
-        findings = [await readIndexes(svc, input)];
-        break;
-      case "views":
-        findings = [await readViews(svc, input)];
-        break;
-      case "functions":
-        findings = [await readFunctions(svc, input)];
-        break;
-      case "triggers":
-        findings = [await readTriggers(svc, input)];
-        break;
-      case "dataSample":
-        findings = [await readDataSample(svc, input)];
-        break;
-      default:
-        return buildBlockedOutput({
-          requestSummary,
-          normalizedScope: input,
-          detail: `inspectionType não suportado: ${input.inspectionType}`,
-        });
+  if (input.inspectionType === "tableOverview") {
+    const overview = await readTableOverview(svc, input);
+    if (!overview.ok) {
+      return buildErrorOutput({
+        requestSummary,
+        normalizedScope: input,
+        detail: overview.detail,
+      });
     }
 
-    return {
-      status: "ok",
-      requestSummary,
-      normalizedScope: input,
-      findings,
-      inspectedObjects: [inspectedObject],
-      warnings: [],
-      limitations: [
-        "Modo somente leitura.",
-        "O resultado depende da exposição dos schemas via API do Supabase.",
-      ],
-      nextSteps: [],
-    };
-  } catch (error) {
+    return buildSuccessOutput(input, requestSummary, overview.findings);
+  }
+
+  let result: FindingResult;
+
+  switch (input.inspectionType) {
+    case "schemaColumns":
+      result = await readSchemaColumns(svc, input);
+      break;
+    case "rlsPolicies":
+      result = await readRlsPolicies(svc, input);
+      break;
+    case "indexes":
+      result = await readIndexes(svc, input);
+      break;
+    case "views":
+      result = await readViews(svc, input);
+      break;
+    case "functions":
+      result = await readFunctions(svc, input);
+      break;
+    case "triggers":
+      result = await readTriggers(svc, input);
+      break;
+    case "dataSample":
+      result = await readDataSample(svc, input);
+      break;
+    default:
+      return buildBlockedOutput({
+        requestSummary,
+        normalizedScope: input,
+        detail: `inspectionType não suportado: ${input.inspectionType}`,
+      });
+  }
+
+  if (!result.ok) {
     return buildErrorOutput({
       requestSummary,
       normalizedScope: input,
-      detail: queryErrorMessage(error),
+      detail: result.detail,
     });
   }
+
+  return buildSuccessOutput(input, requestSummary, [result.finding]);
 }

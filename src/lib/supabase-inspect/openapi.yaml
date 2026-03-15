@@ -8,6 +8,9 @@ info:
 servers:
   - url: https://REPLACE_WITH_APP_URL
 
+security:
+  - AgentKeyAuth: []
+
 paths:
   /api/agent-tools/supabase-inspect:
     post:
@@ -93,6 +96,12 @@ paths:
                 $ref: "#/components/schemas/InspectReadonlyOutput"
 
 components:
+  securitySchemes:
+    AgentKeyAuth:
+      type: apiKey
+      in: header
+      name: x-agent-key
+
   schemas:
     InspectFinding:
       type: object

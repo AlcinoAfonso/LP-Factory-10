@@ -128,13 +128,40 @@ function buildInvalidInputOutput(detail: string): InspectReadonlyOutput {
   };
 }
 
-function requiresTargetName(
-  inspectionType: InspectionType,
-  targetKind: TargetKind
-): boolean {
-  if (targetKind === "schema") return false;
-  if (inspectionType === "views" || inspectionType === "functions") return false;
-  return true;
+const TARGET_RULES: Record<
+  InspectionType,
+  {
+    allowedKinds: readonly TargetKind[];
+    requiresName: boolean;
+  }
+> = {
+  tableOverview: { allowedKinds: ["table"], requiresName: true },
+  schemaColumns: { allowedKinds: ["table"], requiresName: true },
+  rlsPolicies: { allowedKinds: ["table"], requiresName: true },
+  indexes: { allowedKinds: ["table"], requiresName: true },
+  views: { allowedKinds: ["schema", "view"], requiresName: false },
+  functions: { allowedKinds: ["schema", "function"], requiresName: false },
+  triggers: { allowedKinds: ["table"], requiresName: true },
+  dataSample: { allowedKinds: ["table"], requiresName: true },
+};
+
+function validateTargetForInspection(args: {
+  inspectionType: InspectionType;
+  targetKind: TargetKind;
+  targetName: string;
+}): string | null {
+  const rule = TARGET_RULES[args.inspectionType];
+
+  if (!rule.allowedKinds.includes(args.targetKind)) {
+    const allowed = rule.allowedKinds.join(", ");
+    return `target.kind inválido para ${args.inspectionType}. Permitidos: ${allowed}.`;
+  }
+
+  if (rule.requiresName && !args.targetName) {
+    return `target.name é obrigatório para ${args.inspectionType}.`;
+  }
+
+  return null;
 }
 
 export function normalizeInspectReadonlyInput(
@@ -181,10 +208,16 @@ export function normalizeInspectReadonlyInput(
     };
   }
 
-  if (requiresTargetName(inspectionTypeRaw, kindRaw) && !name) {
+  const targetValidationError = validateTargetForInspection({
+    inspectionType: inspectionTypeRaw,
+    targetKind: kindRaw,
+    targetName: name,
+  });
+
+  if (targetValidationError) {
     return {
       ok: false,
-      error: buildInvalidInputOutput("target.name é obrigatório para esta inspeção."),
+      error: buildInvalidInputOutput(targetValidationError),
     };
   }
 
