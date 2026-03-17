@@ -816,6 +816,13 @@ Workflows e pipelines devem deixar rastro suficiente para diagnóstico.
 Quando possível, preferir logs e Job Summary claros a execuções opacas.
 Em automações de documentação, manter revisão humana via PR continua sendo desejável.
 
+4.13 Aprendizado operacional — Supabase Inspect Agent (tentativa malsucedida)
+A tentativa de implementação do Supabase Inspect Agent gerou ROI negativo.
+O problema principal não foi falta de esforço, e sim expansão de arquitetura antes da prova mínima do fluxo.
+Foram criadas múltiplas camadas — Builder, ChatKit session, frontend lab, rota intermediária, tool route, adapter server-side e OpenAPI — sem evidência suficiente de chamada real da tool com output útil.
+Regra consolidada: em casos de integração com agentes, primeiro provar o fluxo mínimo ponta a ponta com request real, resposta real, log real e output real. Só depois expandir UI, sessão, rotas adicionais, adapters ou refactors.
+Regra adicional: toda criação de arquivo novo deve justificar explicitamente qual hipótese está sendo validada.
+
 5. Decisões registradas
 5.1 Decisões
 docs/automacoes.md é a fonte oficial do tema automações.
