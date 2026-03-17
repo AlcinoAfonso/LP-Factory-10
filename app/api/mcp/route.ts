@@ -401,6 +401,7 @@ async function runInspectRlsBundle(rawTableName: unknown) {
     rls_enabled: false,
     rls_forced: false,
   }
+  const policyCount = policiesResult.rowCount ?? 0
 
   return clampPayload({
     schema: 'public',
@@ -416,8 +417,8 @@ async function runInspectRlsBundle(rawTableName: unknown) {
       withCheck: row.with_check,
     })),
     summary: {
-      policyCount: policiesResult.rowCount,
-      hasPolicies: policiesResult.rowCount > 0,
+      policyCount: policyCount,
+      hasPolicies: policyCount > 0,
     },
   })
 }
