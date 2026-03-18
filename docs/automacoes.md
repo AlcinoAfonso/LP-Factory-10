@@ -42,41 +42,44 @@ Informações observadas em execução real ou nos painéis das plataformas.
 
 2. Plataformas e configuração global
 2.1 OpenAI
-2.1.1 Uso atual
-Agent Builder, Agents SDK, Functions, MCP e execução de modelos.
-Integração atual com GitHub Actions via openai-smoke e supabase-inspect.
+
+2.1.1 Papel na automação
+
+- execução de modelos
+- Agent Builder
+- Agents SDK
+- integração com pipelines e agentes
 
 2.1.2 Ambientes
-LPF10-DEV
-LPF10-PROD
+
+- `LPF10-DEV`
+- `LPF10-PROD`
 
 2.1.3 Credencial registrada
-OPENAI_API_KEY
-Armazenamento: GitHub Secrets
-Uso atual: automações e pipelines que chamam modelos
-Key observada: lpf10-dev-sdk
-Projeto observado: LPF10-DEV
-Status observado: ativa
-Último uso observado: 06/03/2026
 
-2.1.4 Governança e operação
-Sharing habilitado apenas para projetos selecionados, com LPF10-DEV selecionado.
-Service Account criada no LPF10-DEV.
-Estado final reportado no setup mínimo: 1 key ativa no LPF10-DEV.
-Validar consumo por projeto no Usage quando houver dúvida.
-Preferir modelos mais baratos quando a tarefa permitir.
-Builder permanece como camada de protótipo e aprendizado; SDK/backend segue como direção principal.
+- `OPENAI_API_KEY`
+  - ambiente operacional prioritário: DEV
+  - armazenamento atualmente documentado: GitHub Secrets
+  - uso atual documentado: automações e pipelines que chamam modelos
 
-2.1.5 Monitoramento observado
-Credit grant: $10.00
-Saldo: $9.94
-Consumo observado: $0.06
-Recebimento observado: 31/01/2026
-Expiração observada: 28/02/2027
-Budget observado: $10
-Alertas observados: 80% e 100%
-Auto recharge: desligado
-Forma de pagamento cadastrada: sim
+2.1.4 Integrações atuais
+
+- GitHub Actions
+- `openai-smoke`
+- `supabase-inspect`
+
+2.1.5 Diretrizes operacionais
+
+- durante o desenvolvimento, usar preferencialmente o contexto e a credencial do projeto DEV
+- ao analisar consumo, validar por projeto antes de concluir onde houve gasto
+- preferir modelos mais baratos quando a tarefa permitir
+- usar modelos mais caros ou mais recentes apenas quando houver necessidade real
+
+2.1.6 Observações
+
+- há registro operacional de uso de Agent Builder no projeto
+- os projetos `LPF10-DEV` e `LPF10-PROD` permanecem como referência operacional
+- detalhes de billing, usage e templates nativos do Builder não precisam ficar expandidos nesta seção
 
 2.2 GitHub
 2.2.1 Uso atual
@@ -128,9 +131,6 @@ Discovery pode usar information_schema e pg_catalog.
 2.4 Vercel
 
 2.5 Resend
-2.5.1 Situação atual
-Domínio validado.
-Integração SMTP com Supabase Auth ativa.
 
 3. Catálogo de automações
 3.1 OpenAI setup mínimo + smoke no GitHub
@@ -186,8 +186,13 @@ Status: experimental
 Observações: criado para aprendizado da plataforma; não há arquivo operacional versionado identificado no repo e pode ser descontinuado após a extração do aprendizado operacional.
 
 3.8 Supabase Inspect Agent
-Status: em implementação
-Observações: base oficial criada no Agent Builder, com workflow, Node Agent, nome e instruções definidos; publicado como Supabase Inspect Agent e observado como Live.
+
+Status: em estudo
+
+Observação:
+- uso do Agent Builder foi testado
+- abordagem atual prioriza MCP + agentes via API
+- ainda não há implementação consolidada para este agente
 
 4. Aprendizados operacionais
 4.1 Princípios identificados
@@ -196,16 +201,16 @@ Automações devem reduzir trabalho humano.
 Agentes úteis tendem a filtrar, resumir, priorizar ou alertar.
 
 4.2 Agent Builder
-Verificar templates antes de criar agentes do zero.
-O Builder é adequado para aprendizado, prototipação, validação de fluxos e testes de integração.
-Não deve ser assumido automaticamente como a melhor camada para a automação principal.
+Uso prático principal: aprendizado rápido e prototipação.
+Ajuda a validar fluxos antes de consolidar uma automação.
+Não deve ser tratado automaticamente como a camada principal.
 
 4.3 Integração versus utilidade
 Valor prático aparece quando o agente filtra informação, prioriza o que importa, resume conteúdo, reduz carga cognitiva e entrega ação útil.
 
 4.4 MCP e conectores externos
-MCP ajuda a validar conexão entre plataformas, mas pode introduzir atritos de autenticação, permissões, tokens temporários e UX.
-Para o núcleo do LP Factory, Functions e Agent SDK tendem a ser caminhos mais sólidos.
+MCP funciona como ponte entre o agente e sistemas externos.
+Para Supabase, a abordagem exige implementação própria.
 
 4.5 Critério para o primeiro agente útil
-O primeiro agente útil deve ter função concreta e ganho prático claro.
+Começar por um agente com função concreta e ganho prático claro.
