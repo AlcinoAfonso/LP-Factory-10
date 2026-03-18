@@ -187,12 +187,120 @@ Observações: criado para aprendizado da plataforma; não há arquivo operacion
 
 3.8 Supabase Inspect Agent
 
-Status: em estudo
+Objetivo
 
-Observação:
-- uso do Agent Builder foi testado
-- abordagem atual prioriza MCP + agentes via API
-- ainda não há implementação consolidada para este agente
+- permitir que um agente utilize a MCP **LPF Supabase Inspect MCP** para executar inspeções read-only
+- evitar acesso direto ao banco
+
+Como funciona hoje
+
+- MCP **LPF Supabase Inspect MCP** publicada no app da LP Factory 10
+- endpoint: https://lp-factory-10.vercel.app/api/mcp
+- expõe tools read-only de inspeção
+- Agent Builder já conectado e operacional
+- resposta conversacional validada em preview
+- output estruturado final ainda não consolidado
+
+Tools
+
+- `list_tables`
+- `inspect_table_bundle`
+- `inspect_rls_bundle`
+- `sample_rows`
+
+Arquivos
+
+- `app/api/mcp/route.ts`
+- `package.json`
+- `package-lock.json`
+
+Credenciais
+
+- `LPF_MCP_SECRET`
+- `SUPABASE_DB_URL_READONLY`
+
+Infra
+
+- `LPF_MCP_SECRET` configurada na Vercel (Preview, Production)
+- `SUPABASE_DB_URL_READONLY` configurada na Vercel (Preview, Production)
+- URL ativa: https://lp-factory-10.vercel.app/api/mcp
+
+Status
+
+- parcialmente implementado
+
+Pendências
+
+- output estruturado do workflow no Agent Builder
+- `sample_rows` (permissão com RLS / auth.uid())
+
+Observações
+
+- MCP validada via console (`initialize`, `tools/list`, `list_tables`, `inspect_table_bundle`, `inspect_rls_bundle`)
+- Agent Builder já utiliza a MCP com sucesso em modo conversacional
+
+3.9 LPF Supabase Inspect MCP
+
+Objetivo
+
+- fornecer camada única de acesso read-only ao Supabase via MCP
+- permitir reutilização por múltiplos agentes
+
+Implementação
+
+- endpoint: https://lp-factory-10.vercel.app/api/mcp
+- autenticação via `LPF_MCP_SECRET` (Bearer token)
+- conexão via `SUPABASE_DB_URL_READONLY`
+- hospedado na Vercel
+- validado via testes manuais e Agent Builder
+
+Tools
+
+- `list_tables`
+- `inspect_table_bundle`
+- `inspect_rls_bundle`
+- `sample_rows` (parcial)
+
+Arquivos
+
+- `app/api/mcp/route.ts`
+- `package.json`
+- `package-lock.json`
+
+Variáveis (Vercel)
+
+- `LPF_MCP_SECRET` (Preview, Production)
+- `SUPABASE_DB_URL_READONLY` (Preview, Production)
+
+Status
+
+- implementado e validado (com pendência isolada)
+
+Observações
+
+- MCP reutilizável por múltiplos agentes
+- acesso protegido por token
+- `LPF_MCP_SECRET` não deve ter valor documentado neste arquivo
+
+3.9.1 Caso de uso — habilitar `sample_rows`
+
+Objetivo
+
+- permitir amostragem real de linhas em modo read-only
+
+Contexto
+
+- falha por permissão com RLS (`auth.uid()`)
+
+Escopo
+
+- ajustar permissões mínimas no banco
+- validar retorno real
+- manter segurança read-only
+
+Status
+
+- pendente em caso separado
 
 4. Aprendizados operacionais
 4.1 Princípios identificados
@@ -214,3 +322,8 @@ Para Supabase, a abordagem exige implementação própria.
 
 4.5 Critério para o primeiro agente útil
 Começar por um agente com função concreta e ganho prático claro.
+
+4.6
+
+- teste operacional no Agent Builder deve usar a seta de execução (não `Evaluate`)
+- gargalo atual não é a MCP, e sim o encadeamento do output estruturado
