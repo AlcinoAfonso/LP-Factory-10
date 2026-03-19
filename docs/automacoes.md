@@ -1,10 +1,10 @@
 0.1 Cabeçalho
-Data: 14/03/2026
-Versão: v1.6
-Status: Estrutura revisada
+Data: 18/03/2026
+Versão: v1.7
+Status: Estrutura ajustada para automações, agentes e MCP
 
 0.2 Função do documento
-Registrar a camada de automação do LP Factory 10 como referência operacional para plataformas, integrações, automações e credenciais sem segredos.
+Registrar a camada de automação do LP Factory 10 como referência operacional para plataformas, integrações, automações, agentes, workflows, MCPs, credenciais sem segredos e aprendizados operacionais reutilizáveis.
 
 0.3 Relação com outros documentos
 docs/base-tecnica.md: regras estruturais gerais.
@@ -13,15 +13,18 @@ docs/roadmap.md: evolução funcional.
 
 1. Objetivo e escopo
 1.1 Objetivo
-Registrar plataformas, integrações e automações do projeto.
+Registrar plataformas, integrações, automações, agentes, workflows e MCPs do projeto.
 Consolidar conhecimento operacional.
 Preservar decisões e aprendizados de implementação.
+Registrar governança operacional mínima dos fluxos relevantes.
 
 1.2 Inclui
 Plataformas usadas na camada de automação.
 Credenciais registradas sem valores secretos.
 Catálogo de automações.
-Checks e aprendizados operacionais relevantes.
+Catálogo de agentes e workflows relevantes.
+Catálogo de MCPs e integrações externas relevantes.
+Checks, limites, guardrails e aprendizados operacionais relevantes.
 
 1.3 Não inclui
 Valores brutos de chaves ou tokens.
@@ -129,8 +132,33 @@ O pipeline atual executa apenas SQL read-only.
 Discovery pode usar information_schema e pg_catalog.
 
 2.4 Vercel
+2.4.1 Papel na automação
+Hospedagem do app e da rota MCP publicada.
+
+2.4.2 Uso atual
+Hospeda a rota MCP ativa usada pelo caso `3.8 Supabase Inspect Agent` e pela infraestrutura descrita em `3.9 LPF Supabase Inspect MCP`.
+
+2.4.3 Variáveis operacionais registradas
+LPF_MCP_SECRET
+SUPABASE_DB_URL_READONLY
+
+2.4.4 Ambientes
+Preview
+Production
+
+2.4.5 Observações
+URL ativa documentada: https://lp-factory-10.vercel.app/api/mcp
+Os valores secretos não devem ser registrados neste arquivo.
 
 2.5 Resend
+2.5.1 Papel no ecossistema
+Plataforma relacionada ao ecossistema do projeto.
+
+2.5.2 Estado atual neste documento
+Não há automação operacional de Resend formalizada neste arquivo até esta versão.
+
+2.5.3 Regra de documentação
+Novos registros sobre Resend só devem entrar neste documento quando houver caso de automação formalizado.
 
 3. Catálogo de automações
 3.1 OpenAI setup mínimo + smoke no GitHub
@@ -189,17 +217,26 @@ Observações: criado para aprendizado da plataforma; não há arquivo operacion
 
 Objetivo
 
-- permitir que um agente utilize a MCP **LPF Supabase Inspect MCP** para executar inspeções read-only
+- permitir que um agente utilize a MCP `LPF Supabase Inspect MCP` para executar inspeções read-only
 - evitar acesso direto ao banco
 
-Como funciona hoje
+Dependência central
 
-- MCP **LPF Supabase Inspect MCP** publicada no app da LP Factory 10
-- endpoint: https://lp-factory-10.vercel.app/api/mcp
-- expõe tools read-only de inspeção
-- Agent Builder já conectado e operacional
-- resposta conversacional validada em preview
-- output estruturado final ainda não consolidado
+- MCP `LPF Supabase Inspect MCP`
+
+Input esperado do workflow
+
+- solicitação de inspeção read-only feita pelo usuário
+- contexto suficiente para decidir qual tool usar
+- sem acesso direto a credenciais ou banco fora da MCP
+
+Output esperado do workflow
+
+- resposta final ao usuário
+- evidências usadas na resposta
+- tools acionadas no fluxo
+- limitações, observações ou restrições relevantes
+- output estruturado final ainda pendente de consolidação completa no Agent Builder
 
 Tools
 
@@ -207,6 +244,20 @@ Tools
 - `inspect_table_bundle`
 - `inspect_rls_bundle`
 - `sample_rows`
+
+Aprovação / execução no Builder
+
+- Agent Builder já conectado e operacional
+- resposta conversacional validada em preview
+- política final de output estruturado do workflow ainda pendente
+
+Segurança e limites
+
+- acesso somente read-only via MCP
+- sem acesso direto ao banco pelo agente
+- risco de prompt injection continua existindo no fluxo
+- output estruturado e encadeamento do workflow ainda precisam de consolidação final
+- `sample_rows` permanece com pendência isolada por permissão com RLS / `auth.uid()`
 
 Arquivos
 
@@ -225,25 +276,30 @@ Infra
 - `SUPABASE_DB_URL_READONLY` configurada na Vercel (Preview, Production)
 - URL ativa: https://lp-factory-10.vercel.app/api/mcp
 
+Validação já realizada
+
+- MCP validada via console (`initialize`, `tools/list`, `list_tables`, `inspect_table_bundle`, `inspect_rls_bundle`)
+- Agent Builder já utiliza a MCP com sucesso em modo conversacional
+
 Status
 
 - parcialmente implementado
 
 Pendências
 
-- output estruturado do workflow no Agent Builder
-- `sample_rows` (permissão com RLS / auth.uid())
+- consolidar o output estruturado do workflow no Agent Builder
+- definir com mais precisão o contrato final de saída do fluxo
+- resolver `sample_rows` (permissão com RLS / `auth.uid()`)
 
 Observações
 
-- MCP validada via console (`initialize`, `tools/list`, `list_tables`, `inspect_table_bundle`, `inspect_rls_bundle`)
-- Agent Builder já utiliza a MCP com sucesso em modo conversacional
+- o gargalo atual está no contrato e no encadeamento do output do workflow, não na existência da MCP
 
 3.9 LPF Supabase Inspect MCP
 
 Objetivo
 
-- fornecer camada única de acesso read-only ao Supabase via MCP
+- fornecer camada reutilizável de acesso read-only ao Supabase via MCP
 - permitir reutilização por múltiplos agentes
 
 Implementação
@@ -281,6 +337,9 @@ Observações
 - MCP reutilizável por múltiplos agentes
 - acesso protegido por token
 - `LPF_MCP_SECRET` não deve ter valor documentado neste arquivo
+- autenticação atual atende ao estágio atual
+- eventual hardening futuro pode exigir evolução de autenticação, mas isso não faz parte do estado atual documentado
+- o caso de uso atual no Agent Builder está registrado em `3.8 Supabase Inspect Agent`
 
 3.9.1 Caso de uso — habilitar `sample_rows`
 
@@ -298,6 +357,11 @@ Escopo
 - validar retorno real
 - manter segurança read-only
 
+Observação
+
+- este caso é separado e não invalida a MCP como camada reutilizável
+- bloqueia apenas a completude funcional da tool `sample_rows`
+
 Status
 
 - pendente em caso separado
@@ -309,9 +373,11 @@ Automações devem reduzir trabalho humano.
 Agentes úteis tendem a filtrar, resumir, priorizar ou alertar.
 
 4.2 Agent Builder
-Uso prático principal: aprendizado rápido e prototipação.
+Uso prático principal: aprendizado, prototipação e validação operacional de fluxos.
+Também pode servir como camada de workflow operacional versionado quando o caso justificar.
 Ajuda a validar fluxos antes de consolidar uma automação.
-Não deve ser tratado automaticamente como a camada principal.
+Não deve ser tratado automaticamente como a camada principal de toda automação.
+Exige atenção ao contrato de entrada e saída do workflow.
 
 4.3 Integração versus utilidade
 Valor prático aparece quando o agente filtra informação, prioriza o que importa, resume conteúdo, reduz carga cognitiva e entrega ação útil.
@@ -323,7 +389,15 @@ Para Supabase, a abordagem exige implementação própria.
 4.5 Critério para o primeiro agente útil
 Começar por um agente com função concreta e ganho prático claro.
 
-4.6
-
+4.6 Operação prática no Agent Builder
 - teste operacional no Agent Builder deve usar a seta de execução (não `Evaluate`)
-- gargalo atual não é a MCP, e sim o encadeamento do output estruturado
+- `Evaluate` não substitui o teste operacional do fluxo
+- no caso `3.8`, o gargalo atual é o contrato e o encadeamento do output do workflow, não a existência da MCP
+- validação madura deve considerar também traces, critérios de avaliação e regressão quando o caso sair da fase experimental
+
+4.7 MCP e segurança operacional
+MCP não deve receber confiança automática só por ser servidor conhecido.
+O risco de prompt injection continua existindo.
+O acesso deve permanecer minimizado.
+Dados sensíveis não devem ser expandidos no contrato nem nas tools além do necessário.
+Parâmetros e escopo expostos devem ser revisados conforme o caso evoluir.
