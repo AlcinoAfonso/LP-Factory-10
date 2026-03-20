@@ -1,8 +1,8 @@
 0. Introdução
 
 0.1 Cabeçalho
-• Data: 10/03/2026
-• Versão: v1.5.31
+• Data: 20/03/2026
+• Versão: v1.5.32
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -926,6 +926,9 @@
 • após estabilização do sistema de acesso e onboarding
 
 99. Changelog
+v1.5.32 (20/03/2026)
+• E17 ajustado: removidos do roadmap os blocos operacionais de GitHub/openai-smoke e do pipeline `supabase-inspect`, preservando o caso de uso enxuto de checks determinísticos do Codex (com referência para `docs/base-tecnica.md`) e adicionando referência documental para que automações operacionais de produto, componentes consumidores, MCPs e evoluções dessa camada passem a ser documentados em `docs/automacoes.md`.
+• Renumeração local do E17 aplicada após a limpeza: o caso de sandbox passou a `17.4`, a referência documental passou a `17.5` e o item de Supabase STAGING descontinuado passou a `17.6`.
 v1.5.31 (10/03/2026)
 • 6.6 concluído (exec): adicionados estados reutilizáveis (FeedbackMessage/EmptyState/LoadingState) e Textarea, com aplicação mínima em Auth, `pending_setup` e loading da conta; `docs/design-system.md` consolidado (E6.4–E6.6) atualizado; observação residual de `admin/tokens` vazio registrada.
 v1.5.30 (09/03/2026)
