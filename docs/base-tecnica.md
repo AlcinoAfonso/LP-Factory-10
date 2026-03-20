@@ -147,13 +147,7 @@
 • Build: blocking (não publicar se build falhar)
 • Regra: commitar alterações somente quando houver mudanças detectadas
 
-3.4.2 GitHub Actions — OpenAI smoke (integração mínima)
-• PATH: .github/workflows/openai-smoke.yml
-• Secret obrigatório: OPENAI_API_KEY (Actions secrets do repo).
-• Objetivo: teste mínimo de integração (chamada real à OpenAI via GitHub Actions) para validar key/configuração.
-• Regra: não truncar output com pipe para `head` (evitar falha SIGPIPE no workflow).
-
-3.4.3 Codex (sandbox) — checks determinísticos (lint/typecheck)
+3.4.2 Codex (sandbox) — checks determinísticos (lint/typecheck)
 • PATH: AGENTS.md (rotina padrão no sandbox)
 • Rotina padrão (sandbox): `npm ci` → `npm run check`
 • package.json (scripts):
@@ -165,14 +159,13 @@
 • Regra temporária (lint): `react-hooks/set-state-in-effect: off` (remover no harden do lint)
 • Nota: `eslint .` analisa o repo inteiro; warnings não quebram o check; errors quebram.
 
-3.4.4 Pipeline `supabase-inspect` (v1, read-only)
+3.4.3 Pipeline `supabase-inspect` (referência mínima)
 • PATH (workflow): .github/workflows/pipeline-supabase-inspect.yml
 • PATH (pipeline): pipelines/supabase-inspect/
-• Objetivo (v1): inspeção read-only no Supabase via GitHub Actions, com output apenas em logs + Job Summary.
-• Princípio (v1): somente SELECT/WITH (sem mutações).
-• Modo batch (SQLs em bloco): colar múltiplas queries separadas por `---` no briefing (ou via briefing_path); execução determinística em ordem; relatório completo por query no Job Summary (detalhes no contrato do pipeline).
-• Secrets (job): OPENAI_API_KEY e SUPABASE_DB_URL_READONLY (preferir session pooler; role/usuário read-only).
-• Contrato do pipeline (detalhes): pipelines/supabase-inspect/README.md.
+• Regra (v1): somente SELECT/WITH (sem mutações).
+• Secrets (job): OPENAI_API_KEY e SUPABASE_DB_URL_READONLY.
+• Detalhamento operacional, evolução funcional e posicionamento na camada de automações: consultar docs/automacoes.md.
+• Contrato técnico detalhado do pipeline: pipelines/supabase-inspect/README.md.
 
 3.5 Secrets & Variáveis
 • Server-only: SUPABASE_SECRET_KEY, STRIPE_SECRET_KEY (futuro)
