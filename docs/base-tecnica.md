@@ -2,8 +2,8 @@
 
 0.1. Cabeçalho
 • Documento: Base Técnica LP Factory 10
-• Versão: v2.0.18
-• Data: 10/03/2026
+• Versão: v2.0.19
+• Data: 20/03/2026
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -127,6 +127,13 @@
 • Padrão por domínio: adapters/ (DB); contracts.ts (interface pública); index.ts (re-exports).
 • Regra: nenhum módulo acessa DB fora de adapters.
 • Tipos canônicos só em src/lib/types/status.ts.
+
+3.3.1 Topologia canônica do repositório
+• Regra canônica para código novo: usar paths na raiz do repositório.
+• A pasta src/ passa a ser tratada como legado controlado.
+• Fica vedada a criação de novos módulos, boundaries, providers, adapters, helpers ou contratos em src/.
+• Não fazer migração em big bang de src/ para a raiz.
+• Arquivos legados em src/ só podem ser movidos quando houver demanda funcional real ou refatoração estrutural aprovada.
 
 3.4 CI/Lint (Bloqueios)
 • Validação por PR + preview de deploy (Vercel)
@@ -390,6 +397,9 @@ Regra: qualquer novo arquivo em app/auth/ não pode importar @supabase/* até se
 • Adapters vNext: seguir 3.14
 
 99. Changelog
+v2.0.19 (20/03/2026) — Regra estrutural: raiz como padrão canônico; src/ como legado controlado
+• Adicionada 3.3.1 com a política mínima de topologia do repositório: código novo nasce na raiz, src/ fica como legado controlado e não haverá migração em big bang.
+
 v2.0.18 (10/03/2026) — E6.6: Visual States & Feedback (Textarea + estados reutilizáveis)
 • Registrados os componentes mínimos do E6.6 (Textarea, FeedbackMessage, EmptyState e LoadingState) como parte da UI proprietária, com referência ao docs/design-system.md consolidado (E6.4–E6.6).
 v2.0.17 (09/03/2026) — E6.5: UI Component Library (base) + docs/design-system.md atualizado
