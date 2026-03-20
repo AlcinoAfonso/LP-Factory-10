@@ -1,8 +1,8 @@
 0. Introdução
 
 0.1 Cabeçalho
-• Data: 10/03/2026
-• Versão: v1.5.31
+• Data: 20/03/2026
+• Versão: v1.5.32
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -889,37 +889,15 @@
 • Service Account criada no `LPF10-DEV` com key gerada.
 • Segurança de keys: revogação imediata em caso de exposição; estado final reportado = 1 key ativa no `LPF10-DEV`.
 
-17.4 Implementado (exec) — GitHub (repo) (02/03/2026)
-• Secret configurado: `OPENAI_API_KEY` (Actions secrets).
-• Workflow criado: `.github/workflows/openai-smoke.yml` como teste mínimo de integração (chamada real à OpenAI via GitHub Actions).
-• Ajuste aplicado: remover `head` no pipeline para evitar falha SIGPIPE (`curl | head`).
+17.4 Codex (sandbox) checks determinísticos
+• Status: Concluído (exec) (03/03/2026)
+• Objetivo: padronizar checks determinísticos no sandbox antes de abrir PR.
+• Referência técnica: `docs/base-tecnica.md`.
 
-17.5 Implementado (exec) — Codex (sandbox) checks determinísticos (03/03/2026)
-• Objetivo: padronizar checks determinísticos no sandbox antes de abrir PR (lint + typecheck).
-• `AGENTS.md` criado no root: rotina padrão `npm ci` → `npm run check` (não incluir `npm run build` no sandbox).
-• `package.json`: `lint` migrou para ESLint CLI (`eslint .`), `typecheck` adicionado (`tsc -p tsconfig.json --noEmit`) e `check` padronizado (`npm run lint && npm run typecheck`).
-• `eslint.config.mjs` criado (Flat Config baseado em `eslint-config-next`).
-• Build: validado fora do sandbox (CI/Vercel).
-• ARTEFATOS_REPO: `package.json`, `package-lock.json`, `eslint.config.mjs`, `AGENTS.md`.
+17.5 Referência documental
+• Automações operacionais de produto, componentes consumidores, MCPs e evoluções dessa camada passam a ser documentados em `docs/automacoes.md`.
 
-17.6 Implementado (exec) — Pipeline `supabase-inspect` (v1, read-only) (03/03/2026)
-• Objetivo (v1): inspeção read-only no Supabase via GitHub Actions, com output apenas em logs + Job Summary.
-• Workflow: `.github/workflows/pipeline-supabase-inspect.yml`.
-• Pipeline: `pipelines/supabase-inspect/` (contrato v1 no README).
-• Secret criado: `SUPABASE_DB_URL_READONLY` (Actions secrets).
-• DB (pré-requisito executado): role read-only criada para automations (detalhes em docs/schema.md).
-• Referências: regras/contratos técnicos em docs/base-tecnica.md; contrato detalhado do pipeline em pipelines/supabase-inspect/README.md.
-• ARTEFATOS_REPO: `.github/workflows/pipeline-supabase-inspect.yml`, `pipelines/supabase-inspect/`.
-
-17.7 Implementado (exec) — `supabase-inspect` batch SQL + relatório completo no Summary (06/03/2026)
-• Status: Concluído (exec) (06/03/2026)
-• Implementado: modo determinístico para colar múltiplas queries SQL no campo `briefing` (delimitador `---`, linha própria ou inline) e receber relatório completo (queries + outputs) no Job Summary.
-• Summary: inclui por query SQL + rowCount + columns + rows (amostra truncada).
-• briefing_path: arquivo no repo também pode conter batch com `---` (funciona igual).
-• Contrato atualizado: `pipelines/supabase-inspect/README.md`.
-• Pendência sugerida (quando houver demanda): biblioteca de templates em `pipelines/supabase-inspect/templates/briefings/` (ex.: schema_inventory.md, rls_policies.md, table_counts.md).
-
-17.8 Supabase STAGING (espelho operacional para validação de casos de uso) — descontinuado
+17.6 Supabase STAGING (espelho operacional para validação de casos de uso) — descontinuado
 
 • Objetivo: Criar ambiente Supabase separado para validação segura de alterações (schema, RLS, Auth e dados) antes de produção.
 • Resumo: O ambiente STAGING foi criado e validado, porém sua manutenção contínua não se mostrou eficiente no estágio atual do projeto. O preview da Vercel voltou a utilizar o Supabase de produção.
@@ -948,6 +926,9 @@
 • após estabilização do sistema de acesso e onboarding
 
 99. Changelog
+v1.5.32 (20/03/2026)
+• E17 ajustado: removidos do roadmap os blocos operacionais de GitHub/openai-smoke e do pipeline `supabase-inspect`, preservando o caso de uso enxuto de checks determinísticos do Codex (com referência para `docs/base-tecnica.md`) e adicionando referência documental para que automações operacionais de produto, componentes consumidores, MCPs e evoluções dessa camada passem a ser documentados em `docs/automacoes.md`.
+• Renumeração local do E17 aplicada após a limpeza: o caso de sandbox passou a `17.4`, a referência documental passou a `17.5` e o item de Supabase STAGING descontinuado passou a `17.6`.
 v1.5.31 (10/03/2026)
 • 6.6 concluído (exec): adicionados estados reutilizáveis (FeedbackMessage/EmptyState/LoadingState) e Textarea, com aplicação mínima em Auth, `pending_setup` e loading da conta; `docs/design-system.md` consolidado (E6.4–E6.6) atualizado; observação residual de `admin/tokens` vazio registrada.
 v1.5.30 (09/03/2026)
