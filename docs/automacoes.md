@@ -184,47 +184,71 @@ Observações: usa permissions de escrita em contents e pull-requests, cria PR c
 
 Objetivo
 
-- executar inspeções read-only por meio da MCP `3.4 LPF Supabase Inspect MCP`
-- atuar como caso de uso operacional da infraestrutura MCP
+- validar o uso operacional do Supabase Inspect no Agent Builder por meio da MCP `3.4 LPF Supabase Inspect MCP`
+- atuar como prova funcional de inspeção read-only no Builder
 - evitar acesso direto ao banco
 
-Como funciona hoje
+Implementação validada
 
-- fluxo implementado no Agent Builder consumindo a MCP `3.4 LPF Supabase Inspect MCP`
-- resposta conversacional validada em preview
-- output estruturado final ainda não consolidado
+- MCP remota conectada e uso validado de tools read-only relevantes
+- prompt refinado para reduzir ambiguidade, limitar tools inadequadas e melhorar respostas curtas
+- suporte melhor a inputs técnicos, inclusive SQL
+- saída estruturada mantida para maior consistência do retorno
+
+Testes executados
+
+- perguntas textuais simples sobre schema e tabelas
+- perguntas técnicas curtas sobre colunas e compatibilidade
+- análise de um único bloco SQL
+- teste com input técnico mais rico, inclusive SQL colado no prompt
+
+Limite identificado
+
+- o Builder não se mostrou confiável como camada final de orquestração mais robusta para múltiplos SQLs no mesmo input, parsing determinístico, separação mais rígida de subtarefas e contrato final de saída estável
+- houve casos em que o Agent node gerou resposta útil, mas o End node não refletiu corretamente esse conteúdo no fim do workflow
 
 Dependência central
 
 - `3.4 LPF Supabase Inspect MCP`
 
-Entradas esperadas
-
-- solicitação de inspeção read-only feita pelo usuário
-- contexto suficiente para decidir qual tool usar
-- sem acesso direto a credenciais ou banco fora da MCP
-
-Saídas esperadas
-
-- resposta final ao usuário
-- evidências usadas na resposta
-- tools acionadas no fluxo
-- limitações, observações ou restrições relevantes
-
 Status
 
-- parcialmente implementado
-
-Pendências
-
-- consolidar o output estruturado do workflow no Agent Builder
-- resolver `sample_rows` (permissão com RLS / `auth.uid()`)
+- concluído como validação funcional em Agent Builder
 
 Observações
 
-- este item descreve um componente consumidor / caso de uso operacional do MCP
-- endpoint, autenticação, tools, arquivos base e variáveis da infraestrutura estão documentados em `3.4`
-- o gargalo atual está no encadeamento do output do workflow, não na existência da MCP
+- este item deve ser tratado como prova funcional de uso do Supabase Inspect Agent no Agent Builder, e não como entrega final de orquestração robusta
+- o próximo passo natural para execução mais controlada e integrável em fluxo maior é o Agents SDK
+
+3.3.1 Update — Agents SDK
+
+Objetivo
+
+- transformar o caso validado no Builder em uma versão pronta para uso dentro de um fluxo maior, com orquestrador e contrato de saída confiável
+
+Escopo
+
+- migrar do nível de validação visual no Builder para execução programática via Agents SDK
+
+O que deverá ser implementado
+
+- exportar o workflow para código SDK
+- criar a versão controlada do workflow no projeto
+- ajustar o retorno final do `runWorkflow`
+- garantir que o output final seja devolvido corretamente para o orquestrador
+- tratar adequadamente casos com múltiplos blocos SQL no mesmo input
+
+Contrato de saída esperado
+
+- entrada: texto bruto do usuário
+- saída: objeto final pronto para o próximo agente/orquestrador
+
+Critério de conclusão
+
+- o workflow exportado está rodando fora da UI
+- o retorno final está correto e estável
+- o agente pode ser chamado por um orquestrador sem dependência manual do Builder
+- existe teste com bloco único contendo múltiplos SQLs e comportamento previsível
 
 3.4 LPF Supabase Inspect MCP
 
@@ -303,11 +327,11 @@ Automações devem reduzir trabalho humano.
 Agentes úteis tendem a filtrar, resumir, priorizar ou alertar.
 
 4.2 Agent Builder
-Uso prático principal: aprendizado, prototipação e validação operacional de fluxos.
-Também pode servir como camada de workflow operacional versionado quando o caso justificar.
-Ajuda a validar fluxos antes de consolidar uma automação.
-Não deve ser tratado automaticamente como a camada principal de toda automação.
-Exige atenção ao contrato de entrada e saída do workflow.
+Uso prático principal: validação funcional e prototipação operacional de fluxos.
+Para MVP e prova funcional, o Builder atende.
+Não deve ser tratado como camada final mais confiável para orquestração robusta, parsing determinístico, múltiplos SQLs no mesmo input e contrato final de saída estável.
+Builder e SDK não são dois agentes diferentes: o Builder é a camada visual; o SDK é a camada programática para execução, controle e orquestração fora da UI.
+O código exibido em Code → Agents SDK é exportação do workflow, não um arquivo vivo editável dentro do Builder.
 
 4.3 Integração versus utilidade
 Valor prático aparece quando o agente filtra informação, prioriza o que importa, resume conteúdo, reduz carga cognitiva e entrega ação útil.
@@ -320,9 +344,10 @@ Para Supabase, a abordagem exige implementação própria.
 Começar por um agente com função concreta e ganho prático claro.
 
 4.6 Operação prática no Agent Builder
-- teste operacional no Agent Builder deve usar a seta de execução (não `Evaluate`)
+- o caminho correto de teste operacional foi Preview, com apoio dos logs e das tool calls
+- teste operacional no Agent Builder deve usar a seta de execução, não `Evaluate`
 - `Evaluate` não substitui o teste operacional do fluxo
-- no caso `3.3`, o gargalo atual é o contrato e o encadeamento do output do workflow, não a existência da MCP
+- no caso `3.3`, o gargalo atual está na confiabilidade da camada final de orquestração, especialmente no encadeamento do output do workflow e no comportamento do End node
 - validação madura deve considerar também traces, critérios de avaliação e regressão quando o caso sair da fase experimental
 
 4.7 Experimento reclassificado como aprendizado
