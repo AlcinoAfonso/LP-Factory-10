@@ -250,6 +250,49 @@ Critério de conclusão
 - o agente pode ser chamado por um orquestrador sem dependência manual do Builder
 - existe teste com bloco único contendo múltiplos SQLs e comportamento previsível
 
+3.3.2 Update — ChatGPT + MCP
+
+Objetivo
+
+- permitir operação assistida de inspeção read-only diretamente no ChatGPT, reutilizando a MCP `3.4 LPF Supabase Inspect MCP`
+- usar o ChatGPT como camada de entrada humana para geração de briefing e acionamento da investigação
+
+Escopo
+
+- receber a solicitação do usuário no chat
+- estruturar o briefing de investigação
+- encaminhar a execução para a MCP já existente
+- devolver o resultado ao chat sem acesso direto ao banco fora da MCP
+
+Como deverá funcionar
+
+- entrada: texto bruto do usuário no ChatGPT
+- transformação da demanda em briefing estruturado de investigação
+- chamada da MCP `3.4 LPF Supabase Inspect MCP`
+- retorno da análise read-only no próprio chat
+
+Dependência central
+
+- `3.4 LPF Supabase Inspect MCP`
+
+Contrato de saída esperado
+
+- entrada: texto bruto do usuário
+- saída: resposta final no chat, com investigação read-only baseada no briefing estruturado
+
+Critério de conclusão
+
+- o ChatGPT consegue acionar a MCP existente sem criar nova infraestrutura paralela
+- o briefing é gerado de forma consistente a partir do pedido do usuário
+- a investigação read-only retorna no chat com comportamento previsível
+- o fluxo funciona como camada operacional assistida, sem depender do Agent Builder para execução manual
+
+Observações
+
+- este item reutiliza o mesmo MCP universal descrito em `3.4`
+- representa uma rota alternativa de consumo da infraestrutura, paralela ao Builder (`3.3`) e ao SDK (`3.3.1`)
+- não substitui o caminho via SDK quando houver necessidade de orquestração programática mais robusta
+
 3.4 LPF Supabase Inspect MCP
 
 Objetivo
