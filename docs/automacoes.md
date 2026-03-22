@@ -63,6 +63,9 @@ Informações observadas em execução real ou nos painéis das plataformas.
   - ambiente operacional prioritário: DEV
   - armazenamento atualmente documentado: GitHub Secrets
   - uso atual documentado: automações e pipelines que chamam modelos
+  - vínculo operacional por projeto:
+    - `LPF10-DEV` → `key_Vt1m7APFfxGpfeHU`
+    - `LPF10-PROD` → `key_OZ1nUMe8O75FGBaM`
 
 2.1.4 Integrações atuais
 
@@ -81,6 +84,18 @@ Informações observadas em execução real ou nos painéis das plataformas.
 - há registro operacional de uso de Agent Builder no projeto
 - os projetos `LPF10-DEV` e `LPF10-PROD` permanecem como referência operacional
 - detalhes de billing, usage e templates nativos do Builder não precisam ficar expandidos nesta seção
+
+2.1.7 Projeto, consumo e tokens bonificados
+
+- consumo OpenAI deve ser analisado por projeto
+- `LPF10-DEV` e `LPF10-PROD` permanecem como referências operacionais de ambiente e consumo
+- API keys e service accounts da OpenAI são vinculados ao projeto em que foram criados
+- o ambiente operacional prioritário para desenvolvimento permanece DEV
+- o projeto DEV possui bonificação ativa de `complimentary daily tokens` para compartilhamento elegível
+- o projeto DEV possui `complimentary weekly evals` como benefício separado
+- a bonificação de tokens é diária e não acumulada
+- `gpt-4.1` permanece no grupo operacional de até 250k tokens/dia dentro da bonificação elegível
+- cobertura de `tool use` deve ser tratada com cautela e validada conforme a política vigente da OpenAI
 
 2.2 GitHub
 2.2.1 Uso atual
@@ -219,6 +234,9 @@ Observações
 
 - este item deve ser tratado como prova funcional de uso do Supabase Inspect Agent no Agent Builder, e não como entrega final de orquestração robusta
 - o próximo passo natural para execução mais controlada e integrável em fluxo maior é o Agents SDK
+- o consumo OpenAI deste componente pertence ao projeto OpenAI em que o workflow/agente está publicado e executado
+- a MCP não define o projeto OpenAI de consumo
+- Supabase, GitHub e repositório não definem a cobrança OpenAI deste componente
 
 3.3.1 Update — Agents SDK
 
@@ -405,3 +423,12 @@ O risco de prompt injection continua existindo.
 O acesso deve permanecer minimizado.
 Dados sensíveis não devem ser expandidos no contrato nem nas tools além do necessário.
 Parâmetros e escopo expostos devem ser revisados conforme o caso evoluir.
+
+4.9 Consumo, projeto e bonificação
+
+Consumo OpenAI deve ser lido por projeto no Usage.
+API keys e service accounts pertencem ao projeto OpenAI em que foram criados.
+Agent Builder, ChatKit e Agents SDK consomem no projeto OpenAI em que a execução está vinculada.
+MCP atua como ponte para sistemas externos e não define projeto, billing ou bonificação OpenAI.
+Bonificação elegível deve ser interpretada como cota diária e não como saldo acumulado.
+Weekly evals e complimentary daily tokens são benefícios distintos.
