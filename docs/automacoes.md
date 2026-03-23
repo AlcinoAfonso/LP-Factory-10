@@ -268,48 +268,44 @@ Critério de conclusão
 - o agente pode ser chamado por um orquestrador sem dependência manual do Builder
 - existe teste com bloco único contendo múltiplos SQLs e comportamento previsível
 
-3.3.2 Update — ChatGPT + MCP
+3.3.2 Update — ChatGPT + MCP (bloqueado por incompatibilidade de autenticação)
 
 Objetivo
 
 - permitir operação assistida de inspeção read-only diretamente no ChatGPT, reutilizando a MCP `3.4 LPF Supabase Inspect MCP`
-- usar o ChatGPT como camada de entrada humana para geração de briefing e acionamento da investigação
 
-Escopo
+Escopo pretendido
 
 - receber a solicitação do usuário no chat
 - estruturar o briefing de investigação
 - encaminhar a execução para a MCP já existente
 - devolver o resultado ao chat sem acesso direto ao banco fora da MCP
 
-Como deverá funcionar
+Bloqueio identificado
 
-- entrada: texto bruto do usuário no ChatGPT
-- transformação da demanda em briefing estruturado de investigação
-- chamada da MCP `3.4 LPF Supabase Inspect MCP`
-- retorno da análise read-only no próprio chat
+- a implementação atual de `app/api/mcp/route.ts` exige `Authorization: Bearer <LPF_MCP_SECRET>` no endpoint MCP
+- o caso foi definido para reutilizar o mesmo MCP de `3.4` sem mudança de autenticação
+- no estado atual da validação operacional, o consumo via app MCP no ChatGPT não foi comprovado como compatível com esse contrato de Bearer estático
+
+Conclusão operacional
+
+- o caso não pode ser considerado implementável nem validado no estado atual sem reabrir o escopo
+- qualquer viabilização futura dependeria de mudança explícita de contrato de autenticação ou adaptação autorizada da integração
+- como isso contraria a regra original do caso, o status real passa a ser bloqueado
 
 Dependência central
 
 - `3.4 LPF Supabase Inspect MCP`
 
-Contrato de saída esperado
+Status
 
-- entrada: texto bruto do usuário
-- saída: resposta final no chat, com investigação read-only baseada no briefing estruturado
-
-Critério de conclusão
-
-- o ChatGPT consegue acionar a MCP existente sem criar nova infraestrutura paralela
-- o briefing é gerado de forma consistente a partir do pedido do usuário
-- a investigação read-only retorna no chat com comportamento previsível
-- o fluxo funciona como camada operacional assistida, sem depender do Agent Builder para execução manual
+- bloqueado
 
 Observações
 
-- este item reutiliza o mesmo MCP universal descrito em `3.4`
-- representa uma rota alternativa de consumo da infraestrutura, paralela ao Builder (`3.3`) e ao SDK (`3.3.1`)
-- não substitui o caminho via SDK quando houver necessidade de orquestração programática mais robusta
+- este item continua conceitualmente vinculado ao mesmo MCP de `3.4`
+- o bloqueio atual não invalida `3.4` como infraestrutura read-only existente
+- o bloqueio é específico da tentativa de consumo via ChatGPT no contrato atual de autenticação
 
 3.4 LPF Supabase Inspect MCP
 
@@ -398,8 +394,11 @@ O código exibido em Code → Agents SDK é exportação do workflow, não um ar
 Valor prático aparece quando o agente filtra informação, prioriza o que importa, resume conteúdo, reduz carga cognitiva e entrega ação útil.
 
 4.4 MCP e conectores externos
+
 MCP funciona como ponte entre o agente e sistemas externos.
 Para Supabase, a abordagem exige implementação própria.
+Na operação via ChatGPT, a compatibilidade de autenticação do app MCP deve ser validada antes de assumir reuso direto de um MCP já existente.
+Bearer token estático no endpoint MCP não deve ser presumido como compatível com a camada de consumo do ChatGPT.
 
 4.5 Critério para o primeiro agente útil
 Começar por um agente com função concreta e ganho prático claro.
