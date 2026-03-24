@@ -399,7 +399,6 @@ Regra: qualquer novo arquivo em app/auth/ não pode importar @supabase/* até se
 99. Changelog
 v2.0.19 (20/03/2026) — Regra estrutural: raiz como padrão canônico; src/ como legado controlado
 • Adicionada 3.3.1 com a política mínima de topologia do repositório: código novo nasce na raiz, src/ fica como legado controlado e não haverá migração em big bang.
-
 v2.0.18 (10/03/2026) — E6.6: Visual States & Feedback (Textarea + estados reutilizáveis)
 • Registrados os componentes mínimos do E6.6 (Textarea, FeedbackMessage, EmptyState e LoadingState) como parte da UI proprietária, com referência ao docs/design-system.md consolidado (E6.4–E6.6).
 v2.0.17 (09/03/2026) — E6.5: UI Component Library (base) + docs/design-system.md atualizado
@@ -428,7 +427,6 @@ v2.0.8 (13/02/2026) — E10.4.6: setup status-based + account_profiles + logs ca
 • Retificada 5.2.1: accountAdapter e accountProfileAdapter; setup concluído = accounts.status='active'; setup_completed_at deprecated sem uso no gating do runtime.
 • Retificada 5.3.2 e 5.3.5: regras de Email Templates Supabase usando {{ .RedirectTo }} (signup/reset).
 • Retificada 5.3.4: observabilidade mínima com logs JSON + request_id e regra sem PII; revalidatePath no pós-save.
-
 v2.0.7 (07/02/2026) — E10.4.3: setter idempotente do marcador setup_completed_at no accountAdapter
 • Documentado setSetupCompletedAtIfNull(accountId) como operação NULL-only (write-once no MVP).
 v2.0.6 (04/02/2026) — E9.8.3: drift de trial no runtime/tipos resolvido
