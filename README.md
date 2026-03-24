@@ -1,7 +1,7 @@
 0. Introdução
 0.1. Cabeçalho
 • Documento: README — LP Factory 10 (MVP)
-• Data: 25/01/2026
+• Data: 24/03/2026
 • Escopo: visão geral do produto + estratégia empresarial (alto nível) + referências oficiais do projeto
 
 1. O que é
@@ -47,5 +47,6 @@
 • docs/schema.md
 • docs/roadmap.md
 • docs/fluxos2.md
+• docs/repo-inv.md — descontinuado; usar o repositório real para localizar arquivos/paths e os documentos canônicos para regras e contratos
 
 
