@@ -2,8 +2,8 @@
 
 0.1. Cabeçalho
 • Documento: Base Técnica LP Factory 10
-• Versão: v2.0.19
-• Data: 20/03/2026
+• Versão: v2.0.20
+• Data: 24/03/2026
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -104,10 +104,10 @@
 • Evolução (quando houver escala): avaliar migração para `no-reply@mail.lpfactory.com.br` (domínio dedicado; isolamento de reputação; SPF/DKIM/DMARC dedicados) com plano pago do Resend.
 
 2.5 Regras de Import (canônica)
-• @supabase/* somente em: src/lib/**/adapters/ (ex.: src/lib/access/adapters/, src/lib/admin/adapters/) e lib/supabase/*.
-• Exceção: rotas SULB autorizadas em app/auth/* (lista na seção 6.4)
-• UI e componentes client nunca acessam Supabase diretamente
-• Paths canônicos confirmados no repo: src/lib/**/adapters/ e lib/supabase/*
+• @supabase/* somente em adapters do domínio, em lib/supabase/* e na allowlist SULB autorizada em 6.4.
+• Regra canônica para código novo: adapters devem nascer em paths na raiz do repositório, respeitando a topologia canônica definida em 3.3.1.
+• Exceção: arquivos legados já existentes em src/** podem permanecer até migração dirigida.
+• UI e componentes client nunca acessam Supabase diretamente.
 
 3. Regras Técnicas Globais
 
@@ -242,7 +242,9 @@
 • Em novos códigos de forms/Server Actions: preferir useActionState (não usar useFormState)
 
 3.14 Padrão de Adapters (vNext)
-• Novas páginas/casos de uso: DB somente via adapters (PATH: src/lib/**/adapters/).
+• Novas páginas/casos de uso: DB somente via adapters.
+• Regra canônica para código novo: adapters devem nascer em paths na raiz do repositório, conforme 3.3.1.
+• Adapters legados já existentes em src/** podem permanecer até migração dirigida.
 • 1 adapter = 1 caso de uso; se crescer, dividir (<=150 linhas ou <=6 exports).
 • Adapter retorna DTO final; UI não normaliza; não expor DBRow.
 • Mudança de shape: v2; manter v1 até migrar.
@@ -366,7 +368,7 @@
 6.3 Tipos e contratos críticos (mínimo normativo)
 • Fonte única de tipos canônicos: PATH: src/lib/types/status.ts
 • Regra: proibido redefinir AccountStatus, MemberStatus, MemberRole fora do arquivo canônico
-• Contratos e reexports do domínio permanecem em src/lib/** (detalhes no PATH: docs/repo-inv.md)
+• Contratos e reexports legados já existentes em src/lib/** podem permanecer até migração dirigida; isso não altera a regra canônica de código novo definida em 3.3.1.
 
 6.4 Arquivos SULB autorizados a importar Supabase (fonte única normativa)
 Exceção oficial: somente os arquivos listados abaixo podem importar @supabase/* fora de src/lib/**/adapters/ e lib/supabase/.
@@ -380,8 +382,10 @@ Regra: qualquer novo arquivo em app/auth/ não pode importar @supabase/* até se
 • app/auth/protected/page.tsx
 
 6.5 Regras rápidas (sem drift)
-• Acesso ao DB: somente via adapters (PATH: src/lib/**/adapters/).
+• Acesso ao DB: somente via adapters.
+• Regra canônica para código novo: adapters em paths na raiz do repositório, conforme 3.3.1.
 • Exceções de @supabase/: lib/supabase/* e allowlist SULB (6.4).
+• Arquivos legados em src/** seguem como legado controlado até migração dirigida.
 
 7. Checklist mínima (anti-regressão)
 • Views expostas a usuário: security_invoker = true (ver 3.1 e PATH: docs/schema.md)
@@ -397,6 +401,8 @@ Regra: qualquer novo arquivo em app/auth/ não pode importar @supabase/* até se
 • Adapters vNext: seguir 3.14
 
 99. Changelog
+v2.0.20 (24/03/2026) — Alinhamento mínimo de path canônico, adapters e boundaries
+• Ajustadas as seções 2.5, 3.14, 6.3 e 6.5 para alinhar imports, adapters e contratos à regra já vigente em 3.3.1: código novo nasce na raiz; src/** permanece apenas como legado controlado.
 v2.0.19 (20/03/2026) — Regra estrutural: raiz como padrão canônico; src/ como legado controlado
 • Adicionada 3.3.1 com a política mínima de topologia do repositório: código novo nasce na raiz, src/ fica como legado controlado e não haverá migração em big bang.
 v2.0.18 (10/03/2026) — E6.6: Visual States & Feedback (Textarea + estados reutilizáveis)
