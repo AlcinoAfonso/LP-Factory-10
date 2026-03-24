@@ -377,6 +377,89 @@ Status
 
 - pendente em caso separado
 
+3.5 Validador Final
+
+Categoria
+
+- workflow
+
+Objetivo
+
+- executar validação funcional real pós-implementação no app
+- operar como workflow independente no MVP, já preparado para encaixe futuro em fluxo maior
+- validar fluxos reais com navegação e e-mail, sem correção automática
+
+Escopo do MVP
+
+- receber lista de testes a executar
+- navegar em Preview ou Production conforme briefing
+- executar login, esqueci minha senha, criar conta e fluxos equivalentes quando solicitados
+- acessar a caixa `alcinoafonso380@gmail.com` para localizar mensagens do alias do teste e abrir links de confirmação ou reset
+- consolidar resultado por teste e status final
+- registrar aliases e metadados operacionais sem expor segredos brutos
+
+Arquitetura recomendada do MVP
+
+- 1 orquestrador principal
+- camadas ou ferramentas separadas para:
+  - navegação no app
+  - leitura de e-mail
+  - extração e abertura de links
+  - registro seguro de contas de teste
+  - relatório final
+- não iniciar como multiagente completo nesta fase
+
+Como funciona no MVP
+
+- recebe briefing com ambiente alvo, URL, testes, critérios de aprovação e aliases permitidos
+- executa o fluxo solicitado no app
+- consulta a caixa de e-mail para localizar a mensagem do alias usado no cenário
+- extrai e abre o link necessário
+- valida o comportamento observado e consolida resultado estruturado
+- devolve status final utilizável por etapa posterior do fluxo maior
+
+Aliases e registro operacional
+
+- padrão de alias: `alcinoafonso380+conviteXX@gmail.com`
+- registrar no mínimo: alias usado, cenário, ambiente, data/hora e status
+- nunca registrar senha bruta em log, documento ou relatório aberto
+- qualquer armazenamento de senha deve usar mecanismo protegido e fora deste documento
+
+Entrada esperada
+
+- lista de testes
+- ambiente alvo
+- URL alvo
+- critérios de aprovação
+- regras de execução
+- aliases permitidos
+
+Saída esperada
+
+- resultado por teste
+- evidências principais
+- falhas encontradas
+- status consolidado: `aprovado` | `reprovado` | `depende_validacao_manual`
+
+Limites
+
+- não implementa correção automática
+- não substitui o executor inicial do fluxo maior
+- não executa investigação de repositório ou banco como responsabilidade primária
+- não trata Preview e Production como equivalentes
+- Production só deve receber testes explicitamente autorizados no briefing
+
+Status
+
+- planejado
+
+Observações
+
+- este caso deve gerar ROI no estágio atual como validador funcional real independente
+- o desenho do MVP já deve preservar contrato de entrada e saída compatível com encaixe futuro em fluxo orquestrado maior
+- o retorno reprovado deve ser compatível com devolução ao executor inicial em ciclo posterior
+- o caso prioriza separação clara entre navegação, e-mail, registro operacional e relatório final
+
 4. Aprendizados operacionais
 4.1 Princípios identificados
 Integração entre plataformas não garante utilidade real.
