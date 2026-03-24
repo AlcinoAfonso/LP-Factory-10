@@ -1,8 +1,8 @@
 0. Introdução
 
 0.1 Cabeçalho
-• Data da última atualização: 04/03/2026
-• Documento: LP Factory 10 — Schema (DB Contract) v1.0.8
+• Data da última atualização: 24/03/2026
+• Documento: LP Factory 10 — Schema (DB Contract) v1.0.9
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -152,7 +152,7 @@
 2.1.4 Segurança
 • security_invoker = true
 2.1.5 Consumidores
-• SSR + adapter (ver docs/repo-inv.md)
+• SSR + adapter
 
 2.2 v_user_accounts_list
 2.2.1 Objetivo
@@ -165,7 +165,7 @@
 2.2.4 Segurança
 • security_invoker = true
 2.2.5 Consumidores
-• API + UI (ver docs/repo-inv.md)
+• API + UI
 
 2.3 v_account_effective_limits
 2.3.1 Objetivo
@@ -208,7 +208,7 @@
 • Segurança: SECURITY DEFINER (aprovado)
 • search_path: public (obrigatório)
 • Efeito: cria conta pending_setup, vincula owner, consome token
-• Consumidores: onboarding UI + adapter (ver docs/repo-inv.md)
+• Consumidores: onboarding UI + adapter
 3.1.2 _gen_provisional_slug() → text
 • Segurança: invoker (TBD confirmar)
 • search_path: public (obrigatório)
@@ -286,6 +286,9 @@
 • Nota: accounts.status não aceita trial (CHECK accounts_status_chk). No estado atual, views não contêm trial e o runtime/tipos (PATH) não incluem trial (drift resolvido).
 
 99. Changelog
+v1.0.9 (24/03/2026) — Remoção de referências ao repo-inv
+• Removidas referências a docs/repo-inv.md em consumidores e apontamentos de app/runtime, alinhando o Schema aos documentos canônicos ativos.
+
 v1.0.8 (04/03/2026) — Role read-only `ai_readonly` (public + timeout)
 • Registrado o role `ai_readonly` (LOGIN + statement_timeout=5s) com escopo read-only no schema public (USAGE + GRANT SELECT em tabelas existentes e default privileges para novas tabelas).
 
