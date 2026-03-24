@@ -401,7 +401,8 @@ Regra: qualquer novo arquivo em app/auth/ não pode importar @supabase/* até se
 • Adapters vNext: seguir 3.14
 
 99. Changelog
-v2.0.20 (24/03/2026) — Descontinuação do repo-inv
+v2.0.20 (24/03/2026) — Alinhamento de topologia canônica e descontinuação do repo-inv
+• Ajustadas as seções 2.5, 3.14, 6.3 e 6.5 para alinhar imports, adapters e contratos à regra já vigente em 3.3.1: código novo nasce na raiz; src/** permanece apenas como legado controlado.
 • Removidas referências normativas a docs/repo-inv.md; o estado atual de arquivos passa a ser consultado diretamente no repositório real.
 v2.0.19 (20/03/2026) — Regra estrutural: raiz como padrão canônico; src/ como legado controlado
 • Adicionada 3.3.1 com a política mínima de topologia do repositório: código novo nasce na raiz, src/ fica como legado controlado e não haverá migração em big bang.
