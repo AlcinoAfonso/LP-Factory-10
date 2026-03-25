@@ -88,27 +88,31 @@ function validateBriefing(briefing) {
   }
 }
 
-function resolveCredential(briefing, overrideEnvVar) {
+function resolveOverrideOrFallback(fallbackValue, overrideEnvVar) {
   const overrideValue = process.env[overrideEnvVar];
   if (typeof overrideValue === "string" && overrideValue.trim() !== "") {
     return overrideValue.trim();
   }
 
-  return briefing;
+  return fallbackValue;
 }
 
 async function main() {
-  const { parsed } = loadBriefing();
+  const { briefingPath, parsed } = loadBriefing();
   validateBriefing(parsed);
 
-  const loginEmail = resolveCredential(parsed.login_email, "LOGIN_EMAIL_OVERRIDE");
-  const loginPassword = resolveCredential(
+  const appUrlUsed = resolveOverrideOrFallback(parsed.app_url, "APP_URL_OVERRIDE");
+  const loginEmail = resolveOverrideOrFallback(
+    parsed.login_email,
+    "LOGIN_EMAIL_OVERRIDE",
+  );
+  const loginPassword = resolveOverrideOrFallback(
     parsed.login_password,
     "LOGIN_PASSWORD_OVERRIDE",
   );
 
   const loginAttempt = await executeLoginAttempt({
-    appUrl: parsed.app_url,
+    appUrl: appUrlUsed,
     loginEmail,
     loginPassword,
   });
@@ -116,6 +120,8 @@ async function main() {
   const output = {
     item: "3.5 Validador Final",
     stage: "item 6 do MR",
+    briefing_path: briefingPath,
+    app_url_used: appUrlUsed,
     login_attempt_executed: loginAttempt.login_attempt_executed,
     final_url: loginAttempt.final_url,
     ui_error: loginAttempt.ui_error,
@@ -127,12 +133,16 @@ async function main() {
   writeSummary("# Validador Final — tentativa real de login (item 6)");
   writeSummary(`- item: \`${output.item}\``);
   writeSummary(`- stage: \`${output.stage}\``);
+  writeSummary(`- briefing_path: \`${output.briefing_path}\``);
   writeSummary(`- environment: \`${parsed.environment}\``);
-  writeSummary(`- app_url: \`${parsed.app_url}\``);
+  writeSummary(`- app_url_used: \`${output.app_url_used}\``);
   writeSummary("- login_email: `provided`");
   writeSummary(`- login_attempt_executed: \`${output.login_attempt_executed}\``);
   writeSummary(`- final_url: \`${output.final_url ?? "null"}\``);
   writeSummary(`- has_ui_error: \`${output.ui_error ? "true" : "false"}\``);
+  writeSummary(
+    "- Fase 1: app_url manual por execução; credenciais reais via secrets override.",
+  );
   writeSummary(
     "> Item 6 implementa apenas a tentativa real de login com Playwright. Validação oficial de sucesso, screenshot obrigatória e saída final do MVP 1 ficam para os próximos itens (7, 8 e 9).",
   );
