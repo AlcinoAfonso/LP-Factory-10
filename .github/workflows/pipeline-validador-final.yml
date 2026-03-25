@@ -34,7 +34,15 @@ jobs:
       - name: Check project
         run: npm run check
 
-      - name: Validate base structure and briefing
+      - name: Build project
+        run: npm run build
+
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Validate base structure and run login attempt
         env:
           BRIEFING_PATH: ${{ inputs.briefing_path }}
+          LOGIN_EMAIL_OVERRIDE: ${{ secrets.LOGIN_EMAIL_OVERRIDE }}
+          LOGIN_PASSWORD_OVERRIDE: ${{ secrets.LOGIN_PASSWORD_OVERRIDE }}
         run: node pipelines/validador-final/run.mjs

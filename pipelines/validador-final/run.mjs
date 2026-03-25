@@ -1,4 +1,5 @@
 import { appendFileSync, existsSync, readFileSync } from "node:fs";
+import { executeLoginAttempt } from "./login-playwright.mjs";
 
 const DEFAULT_BRIEFING_PATH =
   "pipelines/validador-final/templates/briefings/mvp1-login.json";
@@ -30,11 +31,6 @@ function writeSummary(markdown) {
   } catch {
     // ignore summary write failure
   }
-}
-
-function maskPassword(value) {
-  if (typeof value !== "string" || value.length === 0) return "(vazio)";
-  return "***";
 }
 
 function loadBriefing() {
@@ -92,42 +88,60 @@ function validateBriefing(briefing) {
   }
 }
 
-function main() {
-  const { briefingPath, parsed } = loadBriefing();
+function resolveCredential(briefing, overrideEnvVar) {
+  const overrideValue = process.env[overrideEnvVar];
+  if (typeof overrideValue === "string" && overrideValue.trim() !== "") {
+    return overrideValue.trim();
+  }
+
+  return briefing;
+}
+
+async function main() {
+  const { parsed } = loadBriefing();
   validateBriefing(parsed);
+
+  const loginEmail = resolveCredential(parsed.login_email, "LOGIN_EMAIL_OVERRIDE");
+  const loginPassword = resolveCredential(
+    parsed.login_password,
+    "LOGIN_PASSWORD_OVERRIDE",
+  );
+
+  const loginAttempt = await executeLoginAttempt({
+    appUrl: parsed.app_url,
+    loginEmail,
+    loginPassword,
+  });
 
   const output = {
     item: "3.5 Validador Final",
-    stage: "item 5 do MR",
-    status: "estrutura_base_ok",
-    briefing_path: briefingPath,
-    briefing_valid: true,
-    next_step: "item 6 — implementar login real com Playwright",
+    stage: "item 6 do MR",
+    login_attempt_executed: loginAttempt.login_attempt_executed,
+    final_url: loginAttempt.final_url,
+    ui_error: loginAttempt.ui_error,
+    observed_result: loginAttempt.observed_result,
   };
 
   console.log(JSON.stringify(output, null, 2));
 
-  writeSummary("# Validador Final — estrutura base\n");
-  writeSummary(`- item: \`3.5 Validador Final\``);
-  writeSummary(`- stage: \`item 5 do MR\``);
-  writeSummary(`- briefing_path: \`${briefingPath}\``);
-  writeSummary(`- briefing_valid: \`true\``);
-  writeSummary("");
-  writeSummary("## Briefing validado");
+  writeSummary("# Validador Final — tentativa real de login (item 6)");
+  writeSummary(`- item: \`${output.item}\``);
+  writeSummary(`- stage: \`${output.stage}\``);
   writeSummary(`- environment: \`${parsed.environment}\``);
   writeSummary(`- app_url: \`${parsed.app_url}\``);
-  writeSummary(`- login_email: \`${parsed.login_email}\``);
-  writeSummary(`- login_password: \`${maskPassword(parsed.login_password)}\``);
+  writeSummary("- login_email: `provided`");
+  writeSummary(`- login_attempt_executed: \`${output.login_attempt_executed}\``);
+  writeSummary(`- final_url: \`${output.final_url ?? "null"}\``);
+  writeSummary(`- has_ui_error: \`${output.ui_error ? "true" : "false"}\``);
   writeSummary(
-    `- expected_result_type: \`${parsed.expected_result_type}\``,
-  );
-  writeSummary(
-    `- expected_result_value: \`${parsed.expected_result_value}\``,
-  );
-  writeSummary("");
-  writeSummary(
-    "> Estrutura base criada. Executor Playwright ainda não implementado.",
+    "> Item 6 implementa apenas a tentativa real de login com Playwright. Validação oficial de sucesso, screenshot obrigatória e saída final do MVP 1 ficam para os próximos itens (7, 8 e 9).",
   );
 }
 
-main();
+main().catch((error) => {
+  die(
+    `falha ao executar tentativa real de login: ${
+      error instanceof Error ? error.message : String(error)
+    }`,
+  );
+});

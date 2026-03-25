@@ -2,26 +2,26 @@
 
 ## Objetivo desta pasta
 
-Esta pasta concentra a estrutura base do caso `3.5 Validador Final`.
+Esta pasta concentra a estrutura do caso `3.5 Validador Final`.
 
-Neste momento, o escopo implementado é apenas o **item 5 do MR**:
+Neste momento, o escopo implementado cobre os itens **5 e 6 do MR**:
 - criar a estrutura base do pipeline
 - validar o briefing JSON do MVP 1
-- preparar o caminho para a implementação futura do executor real
+- executar tentativa real de login com Playwright
 
 ## Estado atual
 
-Implementado neste passo:
-- workflow base em `.github/workflows/pipeline-validador-final.yml`
-- runner base em `pipelines/validador-final/run.mjs`
+Implementado até este passo:
+- workflow em `.github/workflows/pipeline-validador-final.yml` com gates de CI e execução do runner
+- runner em `pipelines/validador-final/run.mjs` com validação do briefing e tentativa real de login
+- executor Playwright em `pipelines/validador-final/login-playwright.mjs`
 - briefing modelo em `pipelines/validador-final/templates/briefings/mvp1-login.json`
 - pasta de artifacts
 
 Ainda não implementado neste passo:
-- Playwright
-- login real
-- screenshot real
-- resultado bruto do executor
+- item 7: validação oficial do critério de sucesso do login
+- item 8: screenshot obrigatória
+- item 9: saída final estruturada do MVP 1
 - integração com OpenAI
 
 ## Briefing do MVP 1
@@ -43,18 +43,17 @@ O briefing deve seguir este contrato:
 
 Executar manualmente o workflow:
 
-* `Pipeline Validador Final`
+- `Pipeline Validador Final`
 
 Input disponível:
 
-* `briefing_path`
+- `briefing_path`
 
 Exemplo:
 
-* `pipelines/validador-final/templates/briefings/mvp1-login.json`
+- `pipelines/validador-final/templates/briefings/mvp1-login.json`
 
-## Próximo passo esperado
+## Segurança de credenciais
 
-Próximo item do MR:
-
-* implementar login real com Playwright
+- Não versionar credenciais reais no briefing.
+- Quando necessário, usar `LOGIN_EMAIL_OVERRIDE` e `LOGIN_PASSWORD_OVERRIDE` no ambiente/secrets do workflow.
