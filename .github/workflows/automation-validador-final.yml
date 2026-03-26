@@ -1,0 +1,36 @@
+name: Automation Validador Final
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: automation-validador-final-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: automations/validador-final
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install deps (isolated subproject)
+        run: npm ci
+
+      - name: Check automation subproject
+        run: npm run check
+
+      - name: Run automation bootstrap
+        run: npm run start

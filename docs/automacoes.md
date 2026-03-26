@@ -11,6 +11,12 @@ docs/base-tecnica.md: regras estruturais gerais, guardrails, checks e workflows 
 docs/schema.md: banco, tabelas, views, policies e functions.
 docs/roadmap.md: evolução funcional.
 
+0.4 Atualização estrutural — 26/03/2026
+- `automations/` passa a ser a raiz canônica para novas automações.
+- `.github/workflows/` permanece como camada de entrada/orquestração.
+- `pipelines/` permanece como estrutura em revisão/migração, sem migração ampla neste marco inicial.
+- Novas automações canônicas devem nascer como subprojetos isolados em `automations/<nome>/`.
+
 1. Objetivo e escopo
 1.1 Objetivo
 Registrar plataformas, integrações, automações, agentes, workflows e MCPs do projeto.
@@ -123,6 +129,8 @@ Workflows identificados:
 .github/workflows/pipeline-docs-apply-report.yml
 .github/workflows/security.yml
 .github/workflows/upgrade-next-16-1-1.yml
+.github/workflows/pipeline-validador-final.yml
+.github/workflows/automation-validador-final.yml
 
 2.3 Supabase
 2.3.1 Uso atual
