@@ -141,7 +141,7 @@ async function main() {
   writeSummary(`- final_url: \`${output.final_url ?? "null"}\``);
   writeSummary(`- has_ui_error: \`${output.ui_error ? "true" : "false"}\``);
   writeSummary(
-    "- Fase 1: app_url manual por execução; credenciais reais via secrets override.",
+    "- Fase 1: app_url, login_email e login_password manuais por execução.",
   );
   writeSummary(
     "> Item 6 implementa apenas a tentativa real de login com Playwright. Validação oficial de sucesso, screenshot obrigatória e saída final do MVP 1 ficam para os próximos itens (7, 8 e 9).",

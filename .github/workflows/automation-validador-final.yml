@@ -11,6 +11,14 @@ on:
         description: "URL manual do app para o teste de login da fase 1"
         required: true
         default: ""
+      login_email:
+        description: "E-mail manual da conta de teste para a fase 1"
+        required: true
+        default: ""
+      login_password:
+        description: "Senha manual da conta de teste para a fase 1"
+        required: true
+        default: ""
 
 permissions:
   contents: read
@@ -48,6 +56,6 @@ jobs:
         env:
           BRIEFING_PATH: ${{ github.workspace }}/${{ inputs.briefing_path }}
           APP_URL_OVERRIDE: ${{ inputs.app_url }}
-          LOGIN_EMAIL_OVERRIDE: ${{ secrets.LOGIN_EMAIL_OVERRIDE }}
-          LOGIN_PASSWORD_OVERRIDE: ${{ secrets.LOGIN_PASSWORD_OVERRIDE }}
+          LOGIN_EMAIL_OVERRIDE: ${{ inputs.login_email }}
+          LOGIN_PASSWORD_OVERRIDE: ${{ inputs.login_password }}
         run: npm run start
