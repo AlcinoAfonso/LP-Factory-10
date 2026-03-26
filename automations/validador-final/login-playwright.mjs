@@ -1,4 +1,6 @@
 import { chromium } from "@playwright/test";
+import { mkdirSync } from "node:fs";
+import { dirname, resolve } from "node:path";
 
 function assertNonEmptyString(value, field) {
   if (typeof value !== "string" || value.trim() === "") {
@@ -60,13 +62,21 @@ export async function executeLoginAttempt({
   appUrl,
   loginEmail,
   loginPassword,
+  expectedResultType,
+  expectedResultValue,
 }) {
   assertNonEmptyString(appUrl, "app_url");
   assertNonEmptyString(loginEmail, "login_email");
   assertNonEmptyString(loginPassword, "login_password");
+  assertNonEmptyString(expectedResultType, "expected_result_type");
+  assertNonEmptyString(expectedResultValue, "expected_result_value");
 
   const browser = await chromium.launch({ headless: true });
   const page = await browser.newPage();
+  const screenshotRelativePath =
+    "automations/validador-final/artifacts/login-final-state.png";
+  const screenshotPath = resolve(screenshotRelativePath);
+  let selectorVisibleResult = null;
 
   try {
     await page.goto(appUrl, { waitUntil: "domcontentloaded", timeout: 30000 });
@@ -84,6 +94,16 @@ export async function executeLoginAttempt({
     ]);
 
     await page.waitForTimeout(3000);
+    if (expectedResultType === "selector_visible") {
+      selectorVisibleResult = await page
+        .locator(expectedResultValue)
+        .first()
+        .isVisible()
+        .catch(() => false);
+    }
+
+    mkdirSync(dirname(screenshotPath), { recursive: true });
+    await page.screenshot({ path: screenshotPath, fullPage: true });
 
     const finalUrl = page.url();
     const uiError = await extractUiError(page);
@@ -92,10 +112,12 @@ export async function executeLoginAttempt({
       login_attempt_executed: true,
       final_url: finalUrl,
       ui_error: uiError,
+      screenshot_path: screenshotRelativePath,
+      selector_visible_result: selectorVisibleResult,
       observed_result: uiError
         ? "login submetido com erro visível na interface"
         : "login submetido sem erro visível imediato na interface",
-      stage: "item_6_login_real_playwright",
+      stage: "item_7_item_8_minimo_login_real_playwright",
     };
   } finally {
     await page.close().catch(() => {});

@@ -97,6 +97,35 @@ function resolveOverrideOrFallback(fallbackValue, overrideEnvVar) {
   return fallbackValue;
 }
 
+function evaluateStatus({ expectedResultType, expectedResultValue, loginAttempt }) {
+  if (expectedResultType === "url_contains") {
+    const finalUrl = loginAttempt.final_url;
+    const passed =
+      typeof finalUrl === "string" && finalUrl.includes(expectedResultValue);
+    return {
+      status: passed ? "passed" : "failed",
+      observedResult: passed
+        ? `final_url contém o valor esperado: ${expectedResultValue}`
+        : `final_url não contém o valor esperado: ${expectedResultValue}`,
+    };
+  }
+
+  if (expectedResultType === "selector_visible") {
+    const selectorVisible = loginAttempt.selector_visible_result === true;
+    return {
+      status: selectorVisible ? "passed" : "failed",
+      observedResult: selectorVisible
+        ? `seletor visível no estado final: ${expectedResultValue}`
+        : `seletor não visível no estado final: ${expectedResultValue}`,
+    };
+  }
+
+  return {
+    status: "failed",
+    observedResult: `tipo esperado não suportado: ${expectedResultType}`,
+  };
+}
+
 async function main() {
   const { briefingPath, parsed } = loadBriefing();
   validateBriefing(parsed);
@@ -115,36 +144,47 @@ async function main() {
     appUrl: appUrlUsed,
     loginEmail,
     loginPassword,
+    expectedResultType: parsed.expected_result_type,
+    expectedResultValue: parsed.expected_result_value,
+  });
+  const evaluation = evaluateStatus({
+    expectedResultType: parsed.expected_result_type,
+    expectedResultValue: parsed.expected_result_value,
+    loginAttempt,
   });
 
   const output = {
     item: "3.5 Validador Final",
-    stage: "item 6 do MR",
+    stage: "item 7 + item 8 mínimo do MR",
+    status: evaluation.status,
     briefing_path: briefingPath,
     app_url_used: appUrlUsed,
+    expected_result_type: parsed.expected_result_type,
+    expected_result_value: parsed.expected_result_value,
     login_attempt_executed: loginAttempt.login_attempt_executed,
     final_url: loginAttempt.final_url,
     ui_error: loginAttempt.ui_error,
-    observed_result: loginAttempt.observed_result,
+    observed_result: evaluation.observedResult,
+    screenshot_path: loginAttempt.screenshot_path,
   };
 
   console.log(JSON.stringify(output, null, 2));
 
-  writeSummary("# Validador Final — tentativa real de login (item 6)");
+  writeSummary("# Validador Final — item 7 + item 8 mínimo");
   writeSummary(`- item: \`${output.item}\``);
   writeSummary(`- stage: \`${output.stage}\``);
+  writeSummary(`- status: \`${output.status}\``);
   writeSummary(`- briefing_path: \`${output.briefing_path}\``);
   writeSummary(`- environment: \`${parsed.environment}\``);
   writeSummary(`- app_url_used: \`${output.app_url_used}\``);
-  writeSummary("- login_email: `provided`");
+  writeSummary(`- expected_result_type: \`${output.expected_result_type}\``);
+  writeSummary(`- expected_result_value: \`${output.expected_result_value}\``);
   writeSummary(`- login_attempt_executed: \`${output.login_attempt_executed}\``);
   writeSummary(`- final_url: \`${output.final_url ?? "null"}\``);
-  writeSummary(`- has_ui_error: \`${output.ui_error ? "true" : "false"}\``);
+  writeSummary(`- ui_error: \`${output.ui_error ?? "null"}\``);
+  writeSummary(`- screenshot_path: \`${output.screenshot_path}\``);
   writeSummary(
     "- Fase 1: app_url, login_email e login_password manuais por execução.",
-  );
-  writeSummary(
-    "> Item 6 implementa apenas a tentativa real de login com Playwright. Validação oficial de sucesso, screenshot obrigatória e saída final do MVP 1 ficam para os próximos itens (7, 8 e 9).",
   );
 }
 
