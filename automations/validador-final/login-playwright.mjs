@@ -1,6 +1,7 @@
 import { chromium } from "@playwright/test";
 import { mkdirSync } from "node:fs";
 import { dirname, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 
 function assertNonEmptyString(value, field) {
   if (typeof value !== "string" || value.trim() === "") {
@@ -73,9 +74,12 @@ export async function executeLoginAttempt({
 
   const browser = await chromium.launch({ headless: true });
   const page = await browser.newPage();
+  const scriptDir = dirname(fileURLToPath(import.meta.url));
+  const artifactsDir = resolve(scriptDir, "artifacts");
+  const screenshotFileName = "login-final-state.png";
   const screenshotRelativePath =
-    "automations/validador-final/artifacts/login-final-state.png";
-  const screenshotPath = resolve(screenshotRelativePath);
+    `automations/validador-final/artifacts/${screenshotFileName}`;
+  const screenshotPath = resolve(artifactsDir, screenshotFileName);
   let selectorVisibleResult = null;
 
   try {
