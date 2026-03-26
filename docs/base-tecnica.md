@@ -168,11 +168,11 @@
 
 3.4.3 Pipeline `supabase-inspect` (referência mínima)
 • PATH (workflow): .github/workflows/pipeline-supabase-inspect.yml
-• PATH (pipeline): pipelines/supabase-inspect/
+• PATH (pipeline): automations/supabase-inspect/
 • Regra (v1): somente SELECT/WITH (sem mutações).
 • Secrets (job): OPENAI_API_KEY e SUPABASE_DB_URL_READONLY.
 • Detalhamento operacional, evolução funcional e posicionamento na camada de automações: consultar docs/automacoes.md.
-• Contrato técnico detalhado do pipeline: pipelines/supabase-inspect/README.md.
+• Contrato técnico detalhado do pipeline: automations/supabase-inspect/README.md.
 
 3.5 Secrets & Variáveis
 • Server-only: SUPABASE_SECRET_KEY, STRIPE_SECRET_KEY (futuro)
@@ -413,9 +413,9 @@ v2.0.17 (09/03/2026) — E6.5: UI Component Library (base) + docs/design-system.
 v2.0.16 (09/03/2026) — E6.4: identidade visual mínima + docs/design-system.md
 • Registrada a referência oficial `docs/design-system.md`, o uso de wordmark textual temporário e o remapeamento semântico contido em `app/globals.css` (primary/ring/border/accent) para aplicação mínima de identidade visual.
 v2.0.15 (06/03/2026) — `supabase-inspect`: SQL batch no briefing + relatório completo no Summary
-• Registrado o modo batch com delimitador `---` (briefing e briefing_path) com execução determinística e relatório completo por query no Job Summary (contrato em pipelines/supabase-inspect/README.md).
+• Registrado o modo batch com delimitador `---` (briefing e briefing_path) com execução determinística e relatório completo por query no Job Summary (contrato em automations/supabase-inspect/README.md).
 v2.0.14 (04/03/2026) — Pipeline `supabase-inspect` v1 (read-only) + secret SUPABASE_DB_URL_READONLY
-• Registrado o pipeline read-only `supabase-inspect` (workflow + contrato em pipelines/supabase-inspect/README.md) e o secret `SUPABASE_DB_URL_READONLY` para execução via GitHub Actions (preferir session pooler).
+• Registrado o pipeline read-only `supabase-inspect` (workflow + contrato em automations/supabase-inspect/README.md) e o secret `SUPABASE_DB_URL_READONLY` para execução via GitHub Actions (preferir session pooler).
 v2.0.13 (04/03/2026) — ESLint CLI + AGENTS.md (Codex checks)
 • Registrada a rotina determinística no sandbox do Codex via AGENTS.md (`npm ci` + `npm run check`) e a divisão “build fora do sandbox (CI/Vercel)”.
 • Registrados scripts de lint/typecheck/check e o ESLint Flat Config com exceção temporária `react-hooks/set-state-in-effect: off`.

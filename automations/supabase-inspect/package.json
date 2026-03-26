@@ -1,0 +1,10 @@
+{
+  "name": "@lpf10/automation-supabase-inspect",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node run.mjs",
+    "check": "node --check run.mjs"
+  }
+}

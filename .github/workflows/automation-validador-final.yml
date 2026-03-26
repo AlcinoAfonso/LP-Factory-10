@@ -2,6 +2,15 @@ name: Automation Validador Final
 
 on:
   workflow_dispatch:
+    inputs:
+      briefing_path:
+        description: "Path do briefing JSON do MVP 1"
+        required: false
+        default: "automations/validador-final/templates/briefings/mvp1-login.json"
+      app_url:
+        description: "URL manual do app para o teste de login da fase 1"
+        required: true
+        default: ""
 
 permissions:
   contents: read
@@ -32,5 +41,13 @@ jobs:
       - name: Check automation subproject
         run: npm run check
 
-      - name: Run automation bootstrap
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Run validador final
+        env:
+          BRIEFING_PATH: ${{ github.workspace }}/${{ inputs.briefing_path }}
+          APP_URL_OVERRIDE: ${{ inputs.app_url }}
+          LOGIN_EMAIL_OVERRIDE: ${{ secrets.LOGIN_EMAIL_OVERRIDE }}
+          LOGIN_PASSWORD_OVERRIDE: ${{ secrets.LOGIN_PASSWORD_OVERRIDE }}
         run: npm run start

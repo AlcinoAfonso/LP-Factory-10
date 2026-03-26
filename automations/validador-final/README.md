@@ -1,14 +1,14 @@
 # automations/validador-final
 
-Primeiro subprojeto canônico da nova raiz `automations/`.
+Subprojeto isolado da automação **Validador Final**.
 
-## Objetivo
+## Escopo atual
 
-Estabelecer o runtime isolado inicial do **Validador Final** sem alterar funcionalmente o Core do SaaS.
+- valida briefing JSON do MVP 1
+- executa tentativa real de login com Playwright
+- publica resumo no `GITHUB_STEP_SUMMARY` quando executado em workflow
 
-> Neste PR, o executor `run.mjs` é um placeholder operacional explícito (bootstrap estrutural), não a implementação final da automação.
-
-## Como rodar localmente
+## Execução local
 
 ```bash
 npm ci
@@ -16,8 +16,10 @@ npm run check
 npm run start
 ```
 
-## Convenção estrutural
+## Briefing padrão
 
-- Novas automações relevantes devem nascer em `automations/<nome>/` como subprojetos isolados.
-- `.github/workflows/` continua sendo a camada de entrada e orquestração.
-- `pipelines/` permanece como estrutura legada em revisão/migração.
+`automations/validador-final/templates/briefings/mvp1-login.json`
+
+## Observação
+
+Esta automação está isolada do Core do SaaS. Dependências de automação ficam dentro desta pasta.

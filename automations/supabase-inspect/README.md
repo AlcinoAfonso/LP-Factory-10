@@ -15,7 +15,7 @@ GitHub → Actions → **Pipeline Supabase — Inspect** → Run workflow
 Inputs:
 - `briefing` (opcional, curto)
 - `briefing_path` (opcional): caminho de um arquivo no repo com briefing longo
-  - Ex: `pipelines/supabase-inspect/templates/briefings/exemplo.md`
+  - Ex: `automations/supabase-inspect/templates/briefings/exemplo.md`
 - `openai_model` (opcional): default `gpt-4.1-mini`
 
 ## Secrets / Env

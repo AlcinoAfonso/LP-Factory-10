@@ -8,7 +8,7 @@ on:
         required: false
         default: ""
       briefing_path:
-        description: "Path de um arquivo .md/.txt no repo com o briefing (opcional). Ex: pipelines/supabase-inspect/templates/briefings/exemplo.md"
+        description: "Path de um arquivo .md/.txt no repo com o briefing (opcional)."
         required: false
         default: ""
       openai_model:
@@ -26,6 +26,9 @@ concurrency:
 jobs:
   inspect:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: automations/supabase-inspect
 
     steps:
       - name: Checkout
@@ -36,16 +39,23 @@ jobs:
         with:
           node-version: "20"
 
-      - name: Install deps (pilot)
-        run: |
-          npm install --no-save openai pg
+      - name: Install deps
+        run: npm ci
 
-      - name: Run inspector (pipelines/supabase-inspect/run.mjs)
+      - name: Check project
+        run: npm run check
+
+      - name: Install runtime deps (pending lock migration)
+        run: npm install --no-save openai pg
+
+      - name: Run inspector
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           SUPABASE_DB_URL_READONLY: ${{ secrets.SUPABASE_DB_URL_READONLY }}
           BRIEFING: ${{ inputs.briefing }}
-          BRIEFING_PATH: ${{ inputs.briefing_path }}
           OPENAI_MODEL: ${{ inputs.openai_model }}
         run: |
-          node pipelines/supabase-inspect/run.mjs
+          if [ -n "${{ inputs.briefing_path }}" ]; then
+            export BRIEFING_PATH="${{ github.workspace }}/${{ inputs.briefing_path }}"
+          fi
+          npm run start
