@@ -1,0 +1,53 @@
+name: Pipeline Validador Final
+
+on:
+  workflow_dispatch:
+    inputs:
+      briefing_path:
+        description: "Path do briefing JSON do MVP 1 (ex: pipelines/validador-final/templates/briefings/mvp1-login.json)"
+        required: false
+        default: "pipelines/validador-final/templates/briefings/mvp1-login.json"
+      app_url:
+        description: "URL manual do app para o teste de login da fase 1"
+        required: true
+        default: ""
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pipeline-validador-final-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  validate-structure:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install deps
+        run: npm ci
+
+      - name: Check project
+        run: npm run check
+
+      - name: Build project
+        run: npm run build
+
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Validate base structure and run login attempt
+        env:
+          BRIEFING_PATH: ${{ inputs.briefing_path }}
+          APP_URL_OVERRIDE: ${{ inputs.app_url }}
+          LOGIN_EMAIL_OVERRIDE: ${{ secrets.LOGIN_EMAIL_OVERRIDE }}
+          LOGIN_PASSWORD_OVERRIDE: ${{ secrets.LOGIN_PASSWORD_OVERRIDE }}
+        run: node pipelines/validador-final/run.mjs

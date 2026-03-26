@@ -1,0 +1,8 @@
+{
+  "environment": "preview",
+  "app_url": "https://lp-factory-10-git-codex-create-b-5c42ae-alcino-afonsos-projects.vercel.app",
+  "login_email": "email-de-teste@exemplo.com",
+  "login_password": "senha-de-teste",
+  "expected_result_type": "url_contains",
+  "expected_result_value": "/a"
+}
