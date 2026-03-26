@@ -2,8 +2,8 @@
 
 0.1. Cabeçalho
 • Documento: Base Técnica LP Factory 10
-• Versão: v2.0.20
-• Data: 24/03/2026
+• Versão: v2.0.21
+• Data: 26/03/2026
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -134,6 +134,15 @@
 • Fica vedada a criação de novos módulos, boundaries, providers, adapters, helpers ou contratos em src/.
 • Não fazer migração em big bang de src/ para a raiz.
 • Arquivos legados em src/ só podem ser movidos quando houver demanda funcional real ou refatoração estrutural aprovada.
+
+3.3.2 Separação estrutural entre Core e automations
+• O root do repositório permanece como runtime canônico do Core SaaS (app Next.js, dashboard, auth, rotas do produto e dependências do Core).
+• `automations/` passa a ser a raiz canônica da camada de automações operacionais.
+• `.github/workflows/` permanece como camada de entrada/orquestração dos fluxos automatizados.
+• Dependências de automação não devem entrar no `package.json` do Core, salvo exceção técnica aprovada.
+• Cada automação relevante pode existir como subprojeto isolado em `automations/<nome>/`, com `package.json` e `package-lock.json` próprios.
+• `pipelines/` deve ser tratado como legado em revisão/migração; novos casos canônicos devem nascer em `automations/`.
+• Mudanças em automações não devem, por padrão, acoplar runtime do Core nem ampliar risco estrutural no deploy do app.
 
 3.4 CI/Lint (Bloqueios)
 • Validação por PR + preview de deploy (Vercel)
@@ -401,6 +410,12 @@ Regra: qualquer novo arquivo em app/auth/ não pode importar @supabase/* até se
 • Adapters vNext: seguir 3.14
 
 99. Changelog
+v2.0.21 (26/03/2026) — Separação estrutural entre Core SaaS e automations
+• Formalizada na Base Técnica a separação canônica entre o runtime do Core SaaS no root do repositório e a camada de automações em `automations/`.
+• Registrado que `.github/workflows/` permanece como camada de orquestração/entrada.
+• Registrado que dependências de automação não devem entrar no `package.json` do Core, salvo exceção técnica aprovada.
+• Registrado que automações relevantes podem nascer como subprojetos isolados com `package.json` e `package-lock.json` próprios.
+• Alinhamento documental com a convenção já registrada em `docs/automacoes.md`.
 v2.0.20 (24/03/2026) — Alinhamento de topologia canônica e descontinuação do repo-inv
 • Ajustadas as seções 2.5, 3.14, 6.3 e 6.5 para alinhar imports, adapters e contratos à regra já vigente em 3.3.1: código novo nasce na raiz; src/** permanece apenas como legado controlado.
 • Removidas referências normativas a docs/repo-inv.md; o estado atual de arquivos passa a ser consultado diretamente no repositório real.
