@@ -81,6 +81,13 @@ export async function executeLoginAttempt({
     `automations/validador-final/artifacts/${screenshotFileName}`;
   const screenshotPath = resolve(artifactsDir, screenshotFileName);
   let selectorVisibleResult = null;
+  let screenshotCaptured = false;
+
+  async function captureFinalStateScreenshot() {
+    mkdirSync(dirname(screenshotPath), { recursive: true });
+    await page.screenshot({ path: screenshotPath, fullPage: true });
+    screenshotCaptured = true;
+  }
 
   try {
     await page.goto(appUrl, { waitUntil: "domcontentloaded", timeout: 30000 });
@@ -106,8 +113,7 @@ export async function executeLoginAttempt({
         .catch(() => false);
     }
 
-    mkdirSync(dirname(screenshotPath), { recursive: true });
-    await page.screenshot({ path: screenshotPath, fullPage: true });
+    await captureFinalStateScreenshot();
 
     const finalUrl = page.url();
     const uiError = await extractUiError(page);
@@ -123,6 +129,11 @@ export async function executeLoginAttempt({
         : "login submetido sem erro visível imediato na interface",
       stage: "item_7_item_8_minimo_login_real_playwright",
     };
+  } catch (error) {
+    if (!screenshotCaptured) {
+      await captureFinalStateScreenshot().catch(() => {});
+    }
+    throw error;
   } finally {
     await page.close().catch(() => {});
     await browser.close().catch(() => {});
