@@ -11,6 +11,18 @@ docs/base-tecnica.md: regras estruturais gerais, guardrails, checks e workflows 
 docs/schema.md: banco, tabelas, views, policies e functions.
 docs/roadmap.md: evolução funcional.
 
+0.4 Atualização estrutural — 26/03/2026
+- `automations/` passa a ser a raiz canônica para novas automações.
+- `.github/workflows/` permanece como camada de entrada/orquestração.
+- `pipelines/` permanece como estrutura em revisão/migração, sem migração ampla neste marco inicial.
+- Novas automações canônicas devem nascer como subprojetos isolados em `automations/<nome>/`.
+
+0.5 Status de migração estrutural — 26/03/2026
+- `validador-final` migrado para `automations/validador-final/` e workflow legado removido.
+- `supabase-inspect` migrado para `automations/supabase-inspect/` com execução a partir da nova raiz canônica e sem fallback `npm install --no-save` no workflow.
+- `docs-apply-report` migrado para `automations/docs-apply-report/` com execução a partir da nova raiz canônica.
+- `pipelines/validador-final/`, `pipelines/supabase-inspect/` e `pipelines/docs-apply-report/` deixaram de ser paths oficiais.
+
 1. Objetivo e escopo
 1.1 Objetivo
 Registrar plataformas, integrações, automações, agentes, workflows e MCPs do projeto.
@@ -117,10 +129,11 @@ pipeline-docs-apply-report
 
 2.2.4 Estrutura operacional
 Workflows em .github/workflows.
-Pipelines em pipelines/.
+Automações canônicas em automations/.
 Workflows identificados:
 .github/workflows/pipeline-supabase-inspect.yml
 .github/workflows/pipeline-docs-apply-report.yml
+.github/workflows/automation-validador-final.yml
 .github/workflows/security.yml
 .github/workflows/upgrade-next-16-1-1.yml
 
@@ -179,7 +192,7 @@ Como funciona hoje: aceita briefing opcional ou arquivo via briefing_path, gera 
 Guardrails: proíbe ;, exige SQL iniciando com WITH ou SELECT, LIMIT obrigatório e, quando literal, <= 50, além de denylist de mutações e comandos proibidos.
 Limites: max_queries = 20, max_rows = 50, truncagem de 200 caracteres por célula e 10k por query.
 Saída atual: summary com SQL, rowCount, colunas, sample de rows e relatório completo por query.
-Arquivos / credenciais: .github/workflows/pipeline-supabase-inspect.yml, pipelines/supabase-inspect/run.mjs, pipelines/supabase-inspect/README.md, pipelines/supabase-inspect/PREMERGE_CHECK.md, pipelines/supabase-inspect/templates/.gitkeep, supabase/migrations/0005__ai_readonly.sql, OPENAI_API_KEY, SUPABASE_DB_URL_READONLY.
+Arquivos / credenciais: .github/workflows/pipeline-supabase-inspect.yml, automations/supabase-inspect/run.mjs, automations/supabase-inspect/README.md, automations/supabase-inspect/PREMERGE_CHECK.md, automations/supabase-inspect/templates/.gitkeep, supabase/migrations/0005__ai_readonly.sql, OPENAI_API_KEY, SUPABASE_DB_URL_READONLY.
 Status: implementada
 Observações: usa openai e pg, opera com a role ai_readonly no schema public, permite discovery com information_schema e pg_catalog, usa permissions: contents: read e concurrency por branch/ref.
 
@@ -191,7 +204,7 @@ Observações: o delimitador --- funciona em linha própria ou inline com espaç
 3.2 Pipeline Docs Apply Report
 Objetivo: aplicar reports JSON Actions-ready em arquivos Markdown e automatizar branch, commit e Pull Request para revisão humana.
 Como funciona hoje: o workflow recebe report_path, aplica o report e registra resumo no Job Summary.
-Arquivos / credenciais: .github/workflows/pipeline-docs-apply-report.yml, pipelines/docs-apply-report/run.mjs, pipelines/docs-apply-report/apply-doc-report.mjs, permissões do GitHub Actions.
+Arquivos / credenciais: .github/workflows/pipeline-docs-apply-report.yml, automations/docs-apply-report/run.mjs, automations/docs-apply-report/apply-doc-report.mjs, permissões do GitHub Actions.
 Status: implementada
 Observações: usa permissions de escrita em contents e pull-requests, cria PR com labels docs, automation e needs-review, suporta replace_section, insert_after_section e insert_after_heading, e falha em âncora ausente, alvo ausente, match ambíguo ou seção já existente em caso de insert.
 

@@ -2,7 +2,7 @@ import { appendFileSync, existsSync, readFileSync } from "node:fs";
 import { executeLoginAttempt } from "./login-playwright.mjs";
 
 const DEFAULT_BRIEFING_PATH =
-  "pipelines/validador-final/templates/briefings/mvp1-login.json";
+  "automations/validador-final/templates/briefings/mvp1-login.json";
 
 const REQUIRED_FIELDS = [
   "environment",

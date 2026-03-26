@@ -19,6 +19,9 @@ concurrency:
 jobs:
   apply:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: automations/docs-apply-report
 
     steps:
       - name: Checkout
@@ -29,16 +32,22 @@ jobs:
         with:
           node-version: "20"
 
+      - name: Install deps
+        run: npm ci
+
+      - name: Check project
+        run: npm run check
+
       - name: Validate report file exists
         run: |
-          if [ ! -f "${{ inputs.report_path }}" ]; then
+          if [ ! -f "${{ github.workspace }}/${{ inputs.report_path }}" ]; then
             echo "Report not found: ${{ inputs.report_path }}" >&2
             exit 1
           fi
 
-      - name: Apply report (pipelines/docs-apply-report/run.mjs)
+      - name: Apply report
         run: |
-          node pipelines/docs-apply-report/run.mjs "${{ inputs.report_path }}"
+          npm run start -- "${{ github.workspace }}/${{ inputs.report_path }}"
 
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@v6

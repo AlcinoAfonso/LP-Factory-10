@@ -21,7 +21,7 @@ Resumo do erro:
   - `Failed to fetch 'Inter' from Google Fonts`
   - URL: `https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap`
 
-### 3) `node --check pipelines/supabase-inspect/run.mjs`
+### 3) `node --check automations/supabase-inspect/run.mjs`
 Status: **ok**
 
 ## Validações solicitadas (sem executar Actions)
@@ -41,5 +41,5 @@ Status: **ok**
 - Workflow (secrets/env):
   - `.github/workflows/pipeline-supabase-inspect.yml:45-49`
 - Script (envs lidas):
-  - `pipelines/supabase-inspect/run.mjs:131-132`
-  - `pipelines/supabase-inspect/run.mjs:152-154`
+  - `automations/supabase-inspect/run.mjs:131-132`
+  - `automations/supabase-inspect/run.mjs:152-154`

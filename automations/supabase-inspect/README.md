@@ -15,7 +15,7 @@ GitHub → Actions → **Pipeline Supabase — Inspect** → Run workflow
 Inputs:
 - `briefing` (opcional, curto)
 - `briefing_path` (opcional): caminho de um arquivo no repo com briefing longo
-  - Ex: `pipelines/supabase-inspect/templates/briefings/exemplo.md`
+  - Ex: `automations/supabase-inspect/templates/briefings/exemplo.md`
 - `openai_model` (opcional): default `gpt-4.1-mini`
 
 ## Secrets / Env
@@ -31,9 +31,10 @@ Env usados pelo job:
 - `OPENAI_MODEL` (de `inputs.openai_model`)
 
 ## Dependências (v1)
-O workflow instala dependências apenas no runtime (piloto):
-- `openai`
+Dependências declaradas no subprojeto:
 - `pg`
+
+Integração com OpenAI é feita via API HTTP (`fetch`) usando `OPENAI_API_KEY`, sem SDK dedicado.
 
 ## Guardrails (v1)
 Read-only absoluto (enforced no script):

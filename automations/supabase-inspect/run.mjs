@@ -1,8 +1,29 @@
 import { readFileSync, existsSync, appendFileSync } from "node:fs";
-import OpenAI from "openai";
 import pg from "pg";
 
 const { Client } = pg;
+
+async function callResponsesApi({ apiKey, model, tools, input }) {
+  const res = await fetch("https://api.openai.com/v1/responses", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      model,
+      tools,
+      input,
+    }),
+  });
+
+  if (!res.ok) {
+    const body = await res.text().catch(() => "");
+    throw new Error(`OpenAI API error (${res.status}): ${body || "sem body"}`);
+  }
+
+  return res.json();
+}
 
 const MAX_QUERIES = 20;
 const MAX_ROWS = 50;
@@ -233,8 +254,6 @@ async function main() {
   writeSummary(`- Model: \`${model}\`\n- Briefing source: \`${source}\`\n- max_queries: \`${MAX_QUERIES}\`\n- max_rows: \`${MAX_ROWS}\`\n`);
   writeSummary(`\n## Briefing\n\n${trunc(briefing, 2000)}\n`);
 
-  const client = new OpenAI({ apiKey: openaiKey });
-
   const db = new Client({
     connectionString: dbUrl,
     ssl: { rejectUnauthorized: false }, // piloto
@@ -333,7 +352,8 @@ async function main() {
     },
   ];
 
-  let response = await client.responses.create({
+  let response = await callResponsesApi({
+    apiKey: openaiKey,
     model,
     tools,
     input,
@@ -375,7 +395,8 @@ async function main() {
       });
     }
 
-    response = await client.responses.create({
+    response = await callResponsesApi({
+      apiKey: openaiKey,
       model,
       tools,
       input,

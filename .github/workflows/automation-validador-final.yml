@@ -1,12 +1,12 @@
-name: Pipeline Validador Final
+name: Automation Validador Final
 
 on:
   workflow_dispatch:
     inputs:
       briefing_path:
-        description: "Path do briefing JSON do MVP 1 (ex: pipelines/validador-final/templates/briefings/mvp1-login.json)"
+        description: "Path do briefing JSON do MVP 1"
         required: false
-        default: "pipelines/validador-final/templates/briefings/mvp1-login.json"
+        default: "automations/validador-final/templates/briefings/mvp1-login.json"
       app_url:
         description: "URL manual do app para o teste de login da fase 1"
         required: true
@@ -16,12 +16,15 @@ permissions:
   contents: read
 
 concurrency:
-  group: pipeline-validador-final-${{ github.ref }}
+  group: automation-validador-final-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
-  validate-structure:
+  run:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: automations/validador-final
 
     steps:
       - name: Checkout
@@ -30,24 +33,21 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version: "22"
 
-      - name: Install deps
+      - name: Install deps (isolated subproject)
         run: npm ci
 
-      - name: Check project
+      - name: Check automation subproject
         run: npm run check
-
-      - name: Build project
-        run: npm run build
 
       - name: Install Playwright Chromium
         run: npx playwright install --with-deps chromium
 
-      - name: Validate base structure and run login attempt
+      - name: Run validador final
         env:
-          BRIEFING_PATH: ${{ inputs.briefing_path }}
+          BRIEFING_PATH: ${{ github.workspace }}/${{ inputs.briefing_path }}
           APP_URL_OVERRIDE: ${{ inputs.app_url }}
           LOGIN_EMAIL_OVERRIDE: ${{ secrets.LOGIN_EMAIL_OVERRIDE }}
           LOGIN_PASSWORD_OVERRIDE: ${{ secrets.LOGIN_PASSWORD_OVERRIDE }}
-        run: node pipelines/validador-final/run.mjs
+        run: npm run start
