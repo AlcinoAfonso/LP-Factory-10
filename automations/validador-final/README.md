@@ -6,6 +6,9 @@ Subprojeto isolado da automação **Validador Final**.
 
 - valida briefing JSON do MVP 1
 - executa tentativa real de login com Playwright
+- valida resultado observado contra `expected_result_type` e `expected_result_value`
+- marca status final como `passed` ou `failed`
+- captura 1 screenshot obrigatória do estado final do login em `artifacts/login-final-state.png`
 - publica resumo no `GITHUB_STEP_SUMMARY` quando executado em workflow
 
 ## Execução local
