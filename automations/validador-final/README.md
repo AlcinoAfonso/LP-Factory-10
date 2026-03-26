@@ -23,3 +23,4 @@ npm run start
 ## Observação
 
 Esta automação está isolada do Core do SaaS. Dependências de automação ficam dentro desta pasta.
+Na fase 1, `app_url`, `login_email` e `login_password` são informados manualmente em cada execução do workflow.
