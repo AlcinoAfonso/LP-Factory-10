@@ -45,9 +45,6 @@ jobs:
       - name: Check project
         run: npm run check
 
-      - name: Install runtime deps (pending lock migration)
-        run: npm install --no-save openai pg
-
       - name: Run inspector
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}

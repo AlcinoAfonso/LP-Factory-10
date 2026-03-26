@@ -19,7 +19,7 @@ docs/roadmap.md: evolução funcional.
 
 0.5 Status de migração estrutural — 26/03/2026
 - `validador-final` migrado para `automations/validador-final/` e workflow legado removido.
-- `supabase-inspect` migrado para `automations/supabase-inspect/` com execução a partir da nova raiz canônica.
+- `supabase-inspect` migrado para `automations/supabase-inspect/` com execução a partir da nova raiz canônica e sem fallback `npm install --no-save` no workflow.
 - `docs-apply-report` migrado para `automations/docs-apply-report/` com execução a partir da nova raiz canônica.
 - `pipelines/validador-final/`, `pipelines/supabase-inspect/` e `pipelines/docs-apply-report/` deixaram de ser paths oficiais.
 
