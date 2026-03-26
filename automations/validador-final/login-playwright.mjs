@@ -77,8 +77,7 @@ export async function executeLoginAttempt({
   const scriptDir = dirname(fileURLToPath(import.meta.url));
   const artifactsDir = resolve(scriptDir, "artifacts");
   const screenshotFileName = "login-final-state.png";
-  const screenshotRelativePath =
-    `automations/validador-final/artifacts/${screenshotFileName}`;
+  const screenshotRelativePath = `artifacts/${screenshotFileName}`;
   const screenshotPath = resolve(artifactsDir, screenshotFileName);
   let selectorVisibleResult = null;
   let screenshotCaptured = false;
