@@ -186,7 +186,16 @@ Não há automação operacional de Resend formalizada neste arquivo até esta v
 Novos registros sobre Resend só devem entrar neste documento quando houver caso de automação formalizado.
 
 3. Catálogo de automações
-3.1 Supabase Inspect
+3.1 Supabase Inspect Actions
+Acesso:
+GitHub → Actions → workflow `pipeline-supabase-inspect`
+
+Como usar:
+Executar o workflow informando `briefing_path` ou inputs manuais
+
+Resposta esperada:
+Job Summary com SQL executado, rowCount, colunas e sample de dados
+
 Data de criação: 03/03/2026
 Objetivo: executar inspeções read-only no Supabase via GitHub Actions, sem mutação, com resultado em logs e Job Summary, incluindo execução determinística de múltiplas queries e relatório completo por query.
 Como funciona hoje: aceita briefing opcional ou arquivo via briefing_path, gera plano e decisões do modelo, recebe uma ou múltiplas queries SQL read-only e executa em ordem.
@@ -209,7 +218,27 @@ Arquivos / credenciais: .github/workflows/pipeline-docs-apply-report.yml, automa
 Status: implementada
 Observações: usa permissions de escrita em contents e pull-requests, cria PR com labels docs, automation e needs-review, suporta replace_section, insert_after_section e insert_after_heading, e falha em âncora ausente, alvo ausente, match ambíguo ou seção já existente em caso de insert.
 
-3.3 Supabase Inspect — componente de execução (Agent Builder)
+3.3 Supabase Inspect Agente
+Acesso:
+Agent Builder (OpenAI)
+
+URL do Builder:
+https://platform.openai.com/agent-builder/edit?workflow=wf_69b57fed963c8190b9da8e40797aa5820147027ff7bd60d7&version=3
+
+Workflow ID:
+wf_69b57fed963c8190b9da8e40797aa5820147027ff7bd60d7
+
+MCP consumida:
+3.4 LPF Supabase Inspect MCP
+
+Endpoint MCP:
+https://lpf-10-services.vercel.app/api/mcp
+
+Como usar:
+Executar perguntas técnicas ou SQL dentro do Agent Builder
+
+Resposta esperada:
+Resposta assistida para validação funcional (não usar para orquestração robusta)
 
 Objetivo
 
