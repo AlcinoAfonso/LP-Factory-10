@@ -1,0 +1,7 @@
+{
+  "functions": {
+    "api/mcp.js": {
+      "runtime": "nodejs22.x"
+    }
+  }
+}
