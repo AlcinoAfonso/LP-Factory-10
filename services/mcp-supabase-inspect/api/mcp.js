@@ -1,9 +1,5 @@
-import { timingSafeEqual } from 'node:crypto'
-import { NextRequest, NextResponse } from 'next/server'
-import { Pool } from 'pg'
-
-export const runtime = 'nodejs'
-export const dynamic = 'force-dynamic'
+const { timingSafeEqual } = require('node:crypto')
+const { Pool } = require('pg')
 
 const PROTOCOL_VERSION = '2025-06-18'
 const SERVER_INFO = {
@@ -16,32 +12,13 @@ const MAX_SAMPLE_LIMIT = 20
 const MAX_CELL_CHARS = 200
 const MAX_PAYLOAD_CHARS = 10_000
 
-type JsonRpcId = string | number | null
-
-type JsonRpcRequest = {
-  jsonrpc?: '2.0'
-  id?: JsonRpcId
-  method?: string
-  params?: unknown
-}
-
-type ToolName =
-  | 'list_tables'
-  | 'inspect_table_bundle'
-  | 'inspect_rls_bundle'
-  | 'sample_rows'
-
-declare global {
-  var __lpfMcpPool: Pool | undefined
-}
-
-function requireEnv(name: string): string {
+function requireEnv(name) {
   const value = process.env[name]
   if (!value) throw new Error(`[mcp] Missing env: ${name}`)
   return value
 }
 
-function getPool(): Pool {
+function getPool() {
   if (global.__lpfMcpPool) return global.__lpfMcpPool
 
   global.__lpfMcpPool = new Pool({
@@ -55,106 +32,93 @@ function getPool(): Pool {
   return global.__lpfMcpPool
 }
 
-function baseHeaders(): HeadersInit {
+function baseHeaders() {
   return {
     'Cache-Control': 'no-store',
     'MCP-Protocol-Version': PROTOCOL_VERSION,
   }
 }
 
-function safeEqual(a: string, b: string): boolean {
+function safeEqual(a, b) {
   const aBuf = Buffer.from(a)
   const bBuf = Buffer.from(b)
   if (aBuf.length !== bBuf.length) return false
   return timingSafeEqual(aBuf, bBuf)
 }
 
-function getBearerToken(req: NextRequest): string | null {
-  const raw = req.headers.get('authorization')
-  if (!raw) return null
+function getBearerToken(req) {
+  const header = req.headers.authorization
+
+  if (!header) return null
+  const raw = Array.isArray(header) ? header[0] : header
+
   const [scheme, token] = raw.split(' ')
   if (scheme !== 'Bearer' || !token) return null
   return token
 }
 
-function isAuthorized(req: NextRequest): boolean {
+function isAuthorized(req) {
   const token = getBearerToken(req)
   const secret = process.env.LPF_MCP_SECRET
   if (!token || !secret) return false
   return safeEqual(token, secret)
 }
 
-function jsonRpcResult(id: JsonRpcId, result: unknown, status = 200) {
-  return NextResponse.json(
-    { jsonrpc: '2.0', id, result },
-    { status, headers: baseHeaders() },
-  )
+function sendJson(res, status, payload) {
+  res.status(status).setHeader('Cache-Control', 'no-store')
+  res.setHeader('MCP-Protocol-Version', PROTOCOL_VERSION)
+  res.json(payload)
 }
 
-function jsonRpcError(
-  id: JsonRpcId,
-  code: number,
-  message: string,
-  status = 200,
-  data?: unknown,
-) {
-  return NextResponse.json(
-    {
-      jsonrpc: '2.0',
-      id,
-      error: data ? { code, message, data } : { code, message },
-    },
-    { status, headers: baseHeaders() },
-  )
+function jsonRpcResult(res, id, result, status = 200) {
+  sendJson(res, status, { jsonrpc: '2.0', id, result })
 }
 
-function unauthorizedResponse() {
-  return NextResponse.json(
-    { error: 'Unauthorized' },
-    { status: 401, headers: baseHeaders() },
-  )
+function jsonRpcError(res, id, code, message, status = 200, data) {
+  sendJson(res, status, {
+    jsonrpc: '2.0',
+    id,
+    error: data ? { code, message, data } : { code, message },
+  })
 }
 
-function quoteIdent(value: string): string {
+function quoteIdent(value) {
   return `"${value.replace(/"/g, '""')}"`
 }
 
-function truncateString(value: string): string {
+function truncateString(value) {
   if (value.length <= MAX_CELL_CHARS) return value
   return `${value.slice(0, MAX_CELL_CHARS)}…`
 }
 
-function sanitizeValue(value: unknown): unknown {
+function sanitizeValue(value) {
   if (value == null) return value
   if (typeof value === 'string') return truncateString(value)
   if (Array.isArray(value)) return value.map(sanitizeValue)
   if (typeof value === 'object') {
     return Object.fromEntries(
-      Object.entries(value as Record<string, unknown>).map(([key, inner]) => [
-        key,
-        sanitizeValue(inner),
-      ]),
+      Object.entries(value).map(([key, inner]) => [key, sanitizeValue(inner)]),
     )
   }
   return value
 }
 
-function clampPayload<T>(value: T): T | { truncated: true; preview: string } {
+function clampPayload(value) {
   const sanitized = sanitizeValue(value)
   const raw = JSON.stringify(sanitized)
 
   if (raw.length <= MAX_PAYLOAD_CHARS) {
-    return sanitized as T
+    return sanitized
   }
 
   if (
     sanitized &&
     typeof sanitized === 'object' &&
     !Array.isArray(sanitized) &&
-    Array.isArray((sanitized as Record<string, unknown>).rows)
+    Array.isArray(sanitized.rows)
   ) {
-    const base = sanitized as Record<string, unknown>
-    const rows = [...((base.rows as unknown[]) ?? [])]
+    const base = sanitized
+    const rows = [...(base.rows ?? [])]
 
     while (rows.length > 0) {
       const candidate = {
@@ -164,7 +128,7 @@ function clampPayload<T>(value: T): T | { truncated: true; preview: string } {
         truncated: true,
       }
       if (JSON.stringify(candidate).length <= MAX_PAYLOAD_CHARS) {
-        return candidate as T
+        return candidate
       }
       rows.pop()
     }
@@ -176,24 +140,20 @@ function clampPayload<T>(value: T): T | { truncated: true; preview: string } {
   }
 }
 
-async function getPublicTables(): Promise<string[]> {
+async function getPublicTables() {
   const pool = getPool()
-  const result = await pool.query<{
-    table_name: string
-  }>(
-    `
+  const result = await pool.query(`
       select table_name
       from information_schema.tables
       where table_schema = 'public'
         and table_type = 'BASE TABLE'
       order by table_name
-    `,
-  )
+    `)
 
   return result.rows.map((row) => row.table_name)
 }
 
-async function assertTableExists(tableName: unknown): Promise<string> {
+async function assertTableExists(tableName) {
   if (typeof tableName !== 'string' || tableName.trim() === '') {
     throw new Error('table_name is required')
   }
@@ -210,19 +170,13 @@ async function assertTableExists(tableName: unknown): Promise<string> {
 
 async function runListTables() {
   const pool = getPool()
-  const result = await pool.query<{
-    table_schema: string
-    table_name: string
-    table_type: string
-  }>(
-    `
+  const result = await pool.query(`
       select table_schema, table_name, table_type
       from information_schema.tables
       where table_schema = 'public'
         and table_type = 'BASE TABLE'
       order by table_name
-    `,
-  )
+    `)
 
   return clampPayload({
     schema: 'public',
@@ -235,19 +189,13 @@ async function runListTables() {
   })
 }
 
-async function runInspectTableBundle(rawTableName: unknown) {
+async function runInspectTableBundle(rawTableName) {
   const tableName = await assertTableExists(rawTableName)
   const pool = getPool()
 
   const [columnsResult, pkResult, indexesResult, triggersResult] =
     await Promise.all([
-      pool.query<{
-        column_name: string
-        data_type: string
-        is_nullable: string
-        column_default: string | null
-        ordinal_position: number
-      }>(
+      pool.query(
         `
           select
             column_name,
@@ -262,9 +210,7 @@ async function runInspectTableBundle(rawTableName: unknown) {
         `,
         [tableName],
       ),
-      pool.query<{
-        column_name: string
-      }>(
+      pool.query(
         `
           select kcu.column_name
           from information_schema.table_constraints tc
@@ -279,10 +225,7 @@ async function runInspectTableBundle(rawTableName: unknown) {
         `,
         [tableName],
       ),
-      pool.query<{
-        indexname: string
-        indexdef: string
-      }>(
+      pool.query(
         `
           select indexname, indexdef
           from pg_indexes
@@ -292,12 +235,7 @@ async function runInspectTableBundle(rawTableName: unknown) {
         `,
         [tableName],
       ),
-      pool.query<{
-        trigger_name: string
-        trigger_definition: string
-        function_name: string
-        function_schema: string
-      }>(
+      pool.query(
         `
           select
             t.tgname as trigger_name,
@@ -357,15 +295,12 @@ async function runInspectTableBundle(rawTableName: unknown) {
   })
 }
 
-async function runInspectRlsBundle(rawTableName: unknown) {
+async function runInspectRlsBundle(rawTableName) {
   const tableName = await assertTableExists(rawTableName)
   const pool = getPool()
 
   const [tableSecurityResult, policiesResult] = await Promise.all([
-    pool.query<{
-      rls_enabled: boolean
-      rls_forced: boolean
-    }>(
+    pool.query(
       `
         select
           c.relrowsecurity as rls_enabled,
@@ -378,14 +313,7 @@ async function runInspectRlsBundle(rawTableName: unknown) {
       `,
       [tableName],
     ),
-    pool.query<{
-      policyname: string
-      permissive: string
-      roles: string[]
-      cmd: string
-      qual: string | null
-      with_check: string | null
-    }>(
+    pool.query(
       `
         select policyname, permissive, roles, cmd, qual, with_check
         from pg_policies
@@ -417,13 +345,13 @@ async function runInspectRlsBundle(rawTableName: unknown) {
       withCheck: row.with_check,
     })),
     summary: {
-      policyCount: policyCount,
+      policyCount,
       hasPolicies: policyCount > 0,
     },
   })
 }
 
-async function runSampleRows(rawTableName: unknown, rawLimit: unknown) {
+async function runSampleRows(rawTableName, rawLimit) {
   const tableName = await assertTableExists(rawTableName)
 
   const normalizedLimit =
@@ -511,7 +439,7 @@ function buildToolList() {
   ]
 }
 
-async function executeToolCall(name: ToolName, args: Record<string, unknown>) {
+async function executeToolCall(name, args) {
   switch (name) {
     case 'list_tables':
       return runListTables()
@@ -522,82 +450,61 @@ async function executeToolCall(name: ToolName, args: Record<string, unknown>) {
     case 'sample_rows':
       return runSampleRows(args.table_name, args.limit)
     default:
-      throw new Error(`Unsupported tool: ${name satisfies never}`)
+      throw new Error(`Unsupported tool: ${name}`)
   }
 }
 
-export async function GET(req: NextRequest) {
-  if (!isAuthorized(req)) {
-    return unauthorizedResponse()
-  }
-
-  return NextResponse.json(
-    {
-      ok: true,
-      endpoint: '/api/mcp',
-      protocolVersion: PROTOCOL_VERSION,
-      serverInfo: SERVER_INFO,
-      tools: buildToolList().map((tool) => tool.name),
-    },
-    { status: 200, headers: baseHeaders() },
-  )
-}
-
-export async function POST(req: NextRequest) {
-  if (!isAuthorized(req)) {
-    return unauthorizedResponse()
-  }
-
-  let body: JsonRpcRequest
-
-  try {
-    body = (await req.json()) as JsonRpcRequest
-  } catch {
-    return jsonRpcError(null, -32700, 'Parse error', 400)
-  }
+async function handlePost(req, res) {
+  const body = req.body
 
   if (!body || typeof body !== 'object' || Array.isArray(body)) {
-    return jsonRpcError(null, -32600, 'Invalid Request', 400)
+    jsonRpcError(res, null, -32600, 'Invalid Request', 400)
+    return
   }
 
   const id = body.id ?? null
   const method = body.method
 
   if (typeof method !== 'string' || method.length === 0) {
-    return jsonRpcError(id, -32600, 'Invalid Request', 400)
+    jsonRpcError(res, id, -32600, 'Invalid Request', 400)
+    return
   }
 
   if (method.startsWith('notifications/')) {
-    return new NextResponse(null, { status: 204, headers: baseHeaders() })
+    res.status(204).setHeader('Cache-Control', 'no-store')
+    res.setHeader('MCP-Protocol-Version', PROTOCOL_VERSION)
+    res.send('')
+    return
   }
 
   try {
     switch (method) {
       case 'initialize':
-        return jsonRpcResult(id, {
+        jsonRpcResult(res, id, {
           protocolVersion: PROTOCOL_VERSION,
           capabilities: { tools: {} },
           serverInfo: SERVER_INFO,
         })
+        return
 
       case 'ping':
-        return jsonRpcResult(id, {})
+        jsonRpcResult(res, id, {})
+        return
 
       case 'tools/list':
-        return jsonRpcResult(id, {
+        jsonRpcResult(res, id, {
           tools: buildToolList(),
         })
+        return
 
       case 'tools/call': {
         const params =
-          body.params && typeof body.params === 'object'
-            ? (body.params as Record<string, unknown>)
-            : {}
+          body.params && typeof body.params === 'object' ? body.params : {}
 
         const name = params.name
         const args =
           params.arguments && typeof params.arguments === 'object'
-            ? (params.arguments as Record<string, unknown>)
+            ? params.arguments
             : {}
 
         if (
@@ -606,12 +513,13 @@ export async function POST(req: NextRequest) {
           name !== 'inspect_rls_bundle' &&
           name !== 'sample_rows'
         ) {
-          return jsonRpcError(id, -32602, 'Invalid params: unknown tool')
+          jsonRpcError(res, id, -32602, 'Invalid params: unknown tool')
+          return
         }
 
         const structuredContent = await executeToolCall(name, args)
 
-        return jsonRpcResult(id, {
+        jsonRpcResult(res, id, {
           content: [
             {
               type: 'text',
@@ -621,10 +529,12 @@ export async function POST(req: NextRequest) {
           structuredContent,
           isError: false,
         })
+        return
       }
 
       default:
-        return jsonRpcError(id, -32601, `Method not found: ${method}`)
+        jsonRpcError(res, id, -32601, `Method not found: ${method}`)
+        return
     }
   } catch (error) {
     const message =
@@ -636,6 +546,35 @@ export async function POST(req: NextRequest) {
       message,
     })
 
-    return jsonRpcError(id, -32000, message)
+    jsonRpcError(res, id, -32000, message)
   }
+}
+
+module.exports = async function handler(req, res) {
+  for (const [key, value] of Object.entries(baseHeaders())) {
+    res.setHeader(key, value)
+  }
+
+  if (!isAuthorized(req)) {
+    sendJson(res, 401, { error: 'Unauthorized' })
+    return
+  }
+
+  if (req.method === 'GET') {
+    sendJson(res, 200, {
+      ok: true,
+      endpoint: '/api/mcp',
+      protocolVersion: PROTOCOL_VERSION,
+      serverInfo: SERVER_INFO,
+      tools: buildToolList().map((tool) => tool.name),
+    })
+    return
+  }
+
+  if (req.method === 'POST') {
+    await handlePost(req, res)
+    return
+  }
+
+  sendJson(res, 405, { error: 'Method not allowed' })
 }

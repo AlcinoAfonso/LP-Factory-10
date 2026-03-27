@@ -1,0 +1,11 @@
+{
+  "name": "mcp-supabase-inspect",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "check": "node --check api/mcp.js"
+  },
+  "dependencies": {
+    "pg": "^8.16.0"
+  }
+}

@@ -157,10 +157,11 @@ Discovery pode usar information_schema e pg_catalog.
 
 2.4 Vercel
 2.4.1 Papel na automação
-Hospedagem do app e da rota MCP publicada.
+Hospedagem do app principal e de serviços dedicados.
 
 2.4.2 Uso atual
-Hospeda a rota MCP ativa usada pelo caso `3.3 Supabase Inspect — componente de execução (Agent Builder)` e pela infraestrutura descrita em `3.4 LPF Supabase Inspect MCP`.
+Projeto `lp-factory-10` hospeda o Core SaaS.
+Projeto `lpf-10-services` hospeda a MCP descrita em `3.4 LPF Supabase Inspect MCP`.
 
 2.4.3 Variáveis operacionais registradas
 LPF_MCP_SECRET
@@ -171,7 +172,7 @@ Preview
 Production
 
 2.4.5 Observações
-URL ativa documentada: https://lp-factory-10.vercel.app/api/mcp
+Endpoint canônico MCP: https://lpf-10-services.vercel.app/api/mcp
 Os valores secretos não devem ser registrados neste arquivo.
 
 2.5 Resend
@@ -296,9 +297,9 @@ Escopo pretendido
 
 Bloqueio identificado
 
-- a implementação atual de `app/api/mcp/route.ts` exige `Authorization: Bearer <LPF_MCP_SECRET>` no endpoint MCP
+- a implementação canônica em `services/mcp-supabase-inspect/api/mcp.js` exige `Authorization: Bearer <LPF_MCP_SECRET>` no endpoint MCP
 - o caso foi definido para reutilizar o mesmo MCP de `3.4` sem mudança de autenticação
-- no estado atual da validação operacional, o consumo via app MCP no ChatGPT não foi comprovado como compatível com esse contrato de Bearer estático
+- no estado atual da validação operacional, o consumo via endpoint canônico no ChatGPT não foi comprovado como compatível com esse contrato de Bearer estático
 
 Conclusão operacional
 
@@ -329,11 +330,12 @@ Objetivo
 
 Implementação
 
-- endpoint: https://lp-factory-10.vercel.app/api/mcp
+- implementação canônica: `services/mcp-supabase-inspect/api/mcp.js`
+- projeto Vercel: `lpf-10-services`
+- endpoint canônico: https://lpf-10-services.vercel.app/api/mcp
 - autenticação via `LPF_MCP_SECRET` (Bearer token)
 - conexão via `SUPABASE_DB_URL_READONLY`
-- hospedado na Vercel
-- validado via testes manuais e Agent Builder
+- hospedagem dedicada fora do runtime do Core
 
 Tools
 
@@ -344,22 +346,25 @@ Tools
 
 Arquivos
 
-- `app/api/mcp/route.ts`
-- `package.json`
-- `package-lock.json`
+- `services/mcp-supabase-inspect/api/mcp.js`
+- `services/mcp-supabase-inspect/package.json`
+- `services/mcp-supabase-inspect/package-lock.json`
+- `services/mcp-supabase-inspect/vercel.json`
 
 Variáveis (Vercel)
 
-- `LPF_MCP_SECRET` (Preview, Production)
-- `SUPABASE_DB_URL_READONLY` (Preview, Production)
+- projeto `lpf-10-services`:
+  - `LPF_MCP_SECRET` (Preview, Production)
+  - `SUPABASE_DB_URL_READONLY` (Preview, Production)
 
 Status
 
-- implementado e validado (com pendência isolada)
+- implementado em serviço dedicado; validação fim a fim depende de operação/cutover externo por ambiente
 
 Observações
 
 - camada independente e universal da arquitetura de automações
+- o Core SaaS não hospeda mais esta MCP
 - o item `3.3` é apenas um consumidor atual dessa infraestrutura
 - MCP reutilizável por múltiplos agentes, workflows e componentes consumidores
 - acesso protegido por token

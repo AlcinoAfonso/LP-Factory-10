@@ -2,8 +2,8 @@
 
 0.1. Cabeçalho
 • Documento: Base Técnica LP Factory 10
-• Versão: v2.0.21
-• Data: 26/03/2026
+• Versão: v2.0.22
+• Data: 27/03/2026
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -25,8 +25,11 @@
 • Repositório: https://github.com/AlcinoAfonso/LP-Factory-10
 • Controle de versão: GitHub Web (edição e commit pelo navegador; não assumir repo local, terminal, git cli ou paths locais)
 • Deploy: Vercel (preview + produção)
+• Projeto Vercel do app (Core): `lp-factory-10`
+• Projeto Vercel de serviços: `lpf-10-services`
 • Domínio oficial do app (produção): https://lp-factory-10.vercel.app
 • Base URL das API routes do app: https://lp-factory-10.vercel.app/api
+• Endpoint canônico da MCP Supabase Inspect (serviço dedicado): https://lpf-10-services.vercel.app/api/mcp
 
 1.1 Backend: Supabase — projeto lp-factory-10
 1.1.1 Segredos e flags de execução (server-side)
@@ -135,14 +138,17 @@
 • Não fazer migração em big bang de src/ para a raiz.
 • Arquivos legados em src/ só podem ser movidos quando houver demanda funcional real ou refatoração estrutural aprovada.
 
-3.3.2 Separação estrutural entre Core e automations
+3.3.2 Separação estrutural entre Core, automations e services
 • O root do repositório permanece como runtime canônico do Core SaaS (app Next.js, dashboard, auth, rotas do produto e dependências do Core).
 • `automations/` passa a ser a raiz canônica da camada de automações operacionais.
+• `services/` passa a ser a raiz canônica de serviços e integrações implantáveis de forma independente do Core.
 • `.github/workflows/` permanece como camada de entrada/orquestração dos fluxos automatizados.
 • Dependências de automação não devem entrar no `package.json` do Core, salvo exceção técnica aprovada.
 • Cada automação relevante pode existir como subprojeto isolado em `automations/<nome>/`, com `package.json` e `package-lock.json` próprios.
+• Cada serviço relevante pode existir como subprojeto isolado em `services/<nome>/`, com `package.json` e `package-lock.json` próprios.
+• A MCP Supabase Inspect não é mais hospedada no runtime do Core; o runtime canônico fica em `services/mcp-supabase-inspect/`.
 • `pipelines/` deve ser tratado como legado em revisão/migração; novos casos canônicos devem nascer em `automations/`.
-• Mudanças em automações não devem, por padrão, acoplar runtime do Core nem ampliar risco estrutural no deploy do app.
+• Mudanças em automações e services não devem, por padrão, acoplar runtime do Core nem ampliar risco estrutural no deploy do app.
 
 3.4 CI/Lint (Bloqueios)
 • Validação por PR + preview de deploy (Vercel)
@@ -410,6 +416,10 @@ Regra: qualquer novo arquivo em app/auth/ não pode importar @supabase/* até se
 • Adapters vNext: seguir 3.14
 
 99. Changelog
+v2.0.22 (27/03/2026) — Formalização de `services/` e remoção da MCP do runtime do Core
+• Registrada na topologia canônica a terceira raiz `services/` para serviços e integrações com deploy independente.
+• Registrado o projeto Vercel de services `lpf-10-services` e o endpoint canônico da MCP Supabase Inspect.
+• Registrado que a MCP Supabase Inspect não é mais hospedada no runtime do app Core.
 v2.0.21 (26/03/2026) — Separação estrutural entre Core SaaS e automations
 • Formalizada na Base Técnica a separação canônica entre o runtime do Core SaaS no root do repositório e a camada de automações em `automations/`.
 • Registrado que `.github/workflows/` permanece como camada de orquestração/entrada.
