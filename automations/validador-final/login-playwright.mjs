@@ -99,6 +99,33 @@ function hasAuthSuccessUrl(url) {
   return typeof url === "string" && url.includes("/a/");
 }
 
+async function getBodyText(page) {
+  return ((await page.locator("body").innerText().catch(() => "")) || "").trim();
+}
+
+function hasCollisionSignal(text) {
+  return /já\s+(existe|cadastrad)|already\s+(exists|registered)|in use|taken|duplicate|email.+(exists|cadastrad)|account.+exists|conta.+existe/i.test(
+    text || "",
+  );
+}
+
+function hasSuccessSignal(text) {
+  return /verifique.+e-?mail|check.+email|confirm(a|ation)|enviamos.+e-?mail|link.+confirma/i.test(
+    text || "",
+  );
+}
+
+function hasNonRetryableErrorSignal(text) {
+  return /too many|rate limit|captcha|temporar|indispon|unavailable|blocked|forbidden/i.test(text || "");
+}
+
+async function isStillInAuthFlow(page) {
+  const authLikeUrl = /\/auth|\/login|\/signup|sign[-_]?in|sign[-_]?up/i.test(page.url());
+  const emailFieldVisible = await page.locator('input[type="email"], input[name*="email" i]').first().isVisible().catch(() => false);
+  const passwordFieldVisible = await page.locator('input[type="password"]').first().isVisible().catch(() => false);
+  return authLikeUrl || emailFieldVisible || passwordFieldVisible;
+}
+
 export async function withBrowserSession(handler, options = {}) {
   const browser = await chromium.launch({ headless: options.headless ?? true });
   const context = await browser.newContext();
@@ -156,18 +183,47 @@ export async function createAccount({ page, email, password }) {
   ]);
 
   if (!clicked) {
-    return { passed: false, collisionDetected: false, detail: "botão de criação não encontrado" };
+    return { passed: false, creationAccepted: false, collisionDetected: false, detail: "botão de criação não encontrado" };
   }
 
   await page.waitForTimeout(1800);
   const uiError = await detectUiError(page);
-  const collisionDetected = /existe|already exists|in use|taken|já cadastrad/i.test(uiError || "");
+  const bodyText = await getBodyText(page);
+  const observedText = `${uiError || ""}\n${bodyText}`.trim();
+  const collisionDetected = hasCollisionSignal(observedText);
+  const successByText = hasSuccessSignal(observedText);
+  const stillInAuthFlow = await isStillInAuthFlow(page);
+  const successByNavigation = !stillInAuthFlow && !collisionDetected;
+  const hasSuccessEvidence = successByText || successByNavigation;
 
   if (collisionDetected) {
     return {
       passed: false,
+      creationAccepted: false,
       collisionDetected: true,
-      detail: `colisão detectada para alias: ${uiError}`,
+      detail: `colisão detectada para alias: ${uiError || "sinal textual de conta existente"}`,
+      uiError,
+      finalUrl: page.url(),
+    };
+  }
+
+  if (!hasSuccessEvidence) {
+    if (hasNonRetryableErrorSignal(observedText)) {
+      return {
+        passed: false,
+        creationAccepted: false,
+        collisionDetected: false,
+        detail: `signup rejeitado com erro não tratável: ${uiError || "falha operacional detectada"}`,
+        uiError,
+        finalUrl: page.url(),
+      };
+    }
+
+    return {
+      passed: false,
+      creationAccepted: false,
+      collisionDetected: true,
+      detail: "signup ambíguo sem evidência de criação nova; tratando como colisão para retry",
       uiError,
       finalUrl: page.url(),
     };
@@ -175,8 +231,11 @@ export async function createAccount({ page, email, password }) {
 
   return {
     passed: true,
+    creationAccepted: true,
     collisionDetected: false,
-    detail: uiError ? `signup submetido com aviso: ${uiError}` : "signup submetido",
+    detail: successByText
+      ? "signup aceito com evidência textual de confirmação"
+      : "signup aceito com avanço fora do fluxo de auth",
     uiError,
     finalUrl: page.url(),
   };

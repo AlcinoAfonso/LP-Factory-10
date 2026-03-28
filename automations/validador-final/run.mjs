@@ -153,7 +153,7 @@ async function main() {
         continue;
       }
 
-      if (!signupResult.passed) {
+      if (!signupResult.passed || signupResult.creationAccepted !== true) {
         pushStep(steps, "create_account_request", "failed", signupResult.detail);
         return;
       }
