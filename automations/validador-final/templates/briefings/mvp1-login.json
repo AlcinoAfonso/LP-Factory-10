@@ -1,6 +1,9 @@
 {
+  "legacy": true,
+  "phase": "fase_1",
+  "note": "Arquivo legado. Mantido apenas para referência histórica; não utilizado no fluxo determinístico da Fase 2.",
   "environment": "preview",
-  "app_url": "https://lp-factory-10-git-codex-create-b-5c42ae-alcino-afonsos-projects.vercel.app",
+  "app_url": "https://exemplo-legado.local",
   "login_email": "email-de-teste@exemplo.com",
   "login_password": "senha-de-teste",
   "expected_result_type": "url_contains",

@@ -1,17 +1,36 @@
-import { appendFileSync, existsSync, readFileSync } from "node:fs";
-import { executeLoginAttempt } from "./login-playwright.mjs";
+import { appendFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { dirname, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
+import {
+  createAccount,
+  hasAuthSuccessUrl,
+  login,
+  logout,
+  openAuth,
+  requestPasswordReset,
+  submitNewPassword,
+  withBrowserSession,
+} from "./login-playwright.mjs";
+import { findLatestEmailLinkForAlias } from "./mailbox-client.mjs";
 
-const DEFAULT_BRIEFING_PATH =
-  "automations/validador-final/templates/briefings/mvp1-login.json";
+const MAX_ALIAS_RETRIES = 20;
+const MAILBOX_POLL_TIMEOUT_MS = 120000;
+const MAILBOX_POLL_INTERVAL_MS = 5000;
+const INITIAL_SEQUENCE = 30;
 
-const REQUIRED_FIELDS = [
-  "environment",
-  "app_url",
-  "login_email",
-  "login_password",
-  "expected_result_type",
-  "expected_result_value",
-];
+const criticalSteps = new Set([
+  "create_account_request",
+  "open_signup_link_from_email",
+  "validate_created_account_usable",
+  "login_correct_password",
+  "forgot_password_request",
+  "open_reset_link_from_email",
+  "reset_password_success",
+  "login_with_new_password",
+]);
+
+const scriptDir = dirname(fileURLToPath(import.meta.url));
+const statePath = resolve(scriptDir, "state/test-account.json");
 
 function die(message) {
   console.error(message);
@@ -21,177 +40,413 @@ function die(message) {
 function writeSummary(markdown) {
   const summaryPath = process.env.GITHUB_STEP_SUMMARY;
   if (!summaryPath) return;
-
-  try {
-    appendFileSync(
-      summaryPath,
-      markdown.endsWith("\n") ? markdown : `${markdown}\n`,
-      "utf-8",
-    );
-  } catch {
-    // ignore summary write failure
-  }
+  appendFileSync(summaryPath, markdown.endsWith("\n") ? markdown : `${markdown}\n`, "utf-8");
 }
 
-function loadBriefing() {
-  const briefingPath =
-    (process.env.BRIEFING_PATH || DEFAULT_BRIEFING_PATH).trim();
-
-  if (!existsSync(briefingPath)) {
-    die(`briefing_path não encontrado: ${briefingPath}`);
-  }
-
-  let parsed;
-  try {
-    parsed = JSON.parse(readFileSync(briefingPath, "utf-8"));
-  } catch (error) {
-    die(
-      `falha ao ler/parsear briefing JSON em ${briefingPath}: ${
-        error instanceof Error ? error.message : String(error)
-      }`,
-    );
-  }
-
-  return { briefingPath, parsed };
+function nowIso() {
+  return new Date().toISOString();
 }
 
-function validateBriefing(briefing) {
-  for (const field of REQUIRED_FIELDS) {
-    if (!(field in briefing)) {
-      die(`campo obrigatório ausente no briefing: ${field}`);
-    }
-  }
+function ensureStateFile() {
+  if (existsSync(statePath)) return;
 
-  if (!["preview", "production"].includes(briefing.environment)) {
-    die("environment inválido: use preview ou production");
-  }
-
-  if (
-    !["url_contains", "selector_visible"].includes(
-      briefing.expected_result_type,
-    )
-  ) {
-    die(
-      "expected_result_type inválido: use url_contains ou selector_visible",
-    );
-  }
-
-  for (const field of [
-    "app_url",
-    "login_email",
-    "login_password",
-    "expected_result_value",
-  ]) {
-    if (typeof briefing[field] !== "string" || briefing[field].trim() === "") {
-      die(`campo inválido ou vazio no briefing: ${field}`);
-    }
-  }
+  mkdirSync(dirname(statePath), { recursive: true });
+  writeFileSync(
+    statePath,
+    JSON.stringify(
+      {
+        email: "",
+        password: "",
+        status: "empty",
+        sequence: INITIAL_SEQUENCE,
+        last_updated_at: null,
+      },
+      null,
+      2,
+    ),
+  );
 }
 
-function resolveOverrideOrFallback(fallbackValue, overrideEnvVar) {
-  const overrideValue = process.env[overrideEnvVar];
-  if (typeof overrideValue === "string" && overrideValue.trim() !== "") {
-    return overrideValue.trim();
-  }
+function loadState() {
+  ensureStateFile();
 
-  return fallbackValue;
-}
-
-function evaluateStatus({ expectedResultType, expectedResultValue, loginAttempt }) {
-  if (expectedResultType === "url_contains") {
-    const finalUrl = loginAttempt.final_url;
-    const passed =
-      typeof finalUrl === "string" && finalUrl.includes(expectedResultValue);
-    return {
-      status: passed ? "passed" : "failed",
-      observedResult: passed
-        ? `final_url contém o valor esperado: ${expectedResultValue}`
-        : `final_url não contém o valor esperado: ${expectedResultValue}`,
-    };
-  }
-
-  if (expectedResultType === "selector_visible") {
-    const selectorVisible = loginAttempt.selector_visible_result === true;
-    return {
-      status: selectorVisible ? "passed" : "failed",
-      observedResult: selectorVisible
-        ? `seletor visível no estado final: ${expectedResultValue}`
-        : `seletor não visível no estado final: ${expectedResultValue}`,
-    };
-  }
-
+  const parsed = JSON.parse(readFileSync(statePath, "utf-8"));
   return {
-    status: "failed",
-    observedResult: `tipo esperado não suportado: ${expectedResultType}`,
+    email: typeof parsed.email === "string" ? parsed.email : "",
+    password: typeof parsed.password === "string" ? parsed.password : "",
+    status: typeof parsed.status === "string" ? parsed.status : "empty",
+    sequence: Number.isInteger(parsed.sequence) ? parsed.sequence : INITIAL_SEQUENCE,
+    last_updated_at: parsed.last_updated_at ?? null,
   };
 }
 
+function saveState(nextState) {
+  mkdirSync(dirname(statePath), { recursive: true });
+  writeFileSync(`${statePath}`, `${JSON.stringify(nextState, null, 2)}\n`, "utf-8");
+}
+
+function requireAppUrl() {
+  const value = process.env.APP_URL_OVERRIDE;
+  if (typeof value !== "string" || value.trim() === "") {
+    die("APP_URL_OVERRIDE obrigatório (workflow input app_url)");
+  }
+  return value.trim();
+}
+
+function buildAlias(sequence) {
+  return `alcinoafonso380+convite${sequence}@gmail.com`;
+}
+
+function buildPassword(sequence) {
+  return `Convite${sequence}!Aa`;
+}
+
+function evaluateGlobalStatus(steps) {
+  const criticalFailed = steps.some((entry) => criticalSteps.has(entry.step) && entry.status === "failed");
+  if (criticalFailed) return "failed";
+
+  const hasAnyFailed = steps.some((entry) => entry.status === "failed");
+  return hasAnyFailed ? "partial" : "passed";
+}
+
+function pushStep(steps, step, status, detail) {
+  steps.push({ step, status, detail });
+}
+
+function shouldStopOnCriticalFailure(step, status) {
+  return criticalSteps.has(step) && status === "failed";
+}
+
+function inspectUrlParts(value) {
+  try {
+    const parsed = new URL(value);
+    return {
+      pathname: parsed.pathname,
+      search: parsed.search || "",
+    };
+  } catch {
+    return { pathname: "invalid_url", search: "" };
+  }
+}
+
 async function main() {
-  const { briefingPath, parsed } = loadBriefing();
-  validateBriefing(parsed);
+  const appUrl = requireAppUrl();
+  const appOrigin = new URL(appUrl).origin;
+  const state = loadState();
+  const steps = [];
+  const runStartedAt = nowIso();
 
-  const appUrlUsed = resolveOverrideOrFallback(parsed.app_url, "APP_URL_OVERRIDE");
-  const loginEmail = resolveOverrideOrFallback(
-    parsed.login_email,
-    "LOGIN_EMAIL_OVERRIDE",
-  );
-  const loginPassword = resolveOverrideOrFallback(
-    parsed.login_password,
-    "LOGIN_PASSWORD_OVERRIDE",
-  );
+  let usedSequence = state.sequence;
+  let activeEmail = null;
+  let activePassword = null;
 
-  const loginAttempt = await executeLoginAttempt({
-    appUrl: appUrlUsed,
-    loginEmail,
-    loginPassword,
-    expectedResultType: parsed.expected_result_type,
-    expectedResultValue: parsed.expected_result_value,
+  await withBrowserSession(async ({ page }) => {
+    await openAuth({ page, appUrl });
+
+    let created = null;
+    let lastTriedSequence = state.sequence - 1;
+    for (let retry = 0; retry <= MAX_ALIAS_RETRIES; retry += 1) {
+      const candidateSequence = state.sequence + retry;
+      lastTriedSequence = candidateSequence;
+      const candidateEmail = buildAlias(candidateSequence);
+      const candidatePassword = buildPassword(candidateSequence);
+
+      const signupResult = await createAccount({
+        page,
+        email: candidateEmail,
+        password: candidatePassword,
+      });
+
+      if (signupResult.collisionDetected) {
+        pushStep(
+          steps,
+          "create_account_collision_retry",
+          "passed",
+          `colisão para ${candidateEmail}: ${signupResult.detail}; tentando próximo sequence`,
+        );
+        await openAuth({ page, appUrl });
+        continue;
+      }
+
+      if (signupResult.hardError === true) {
+        pushStep(steps, "create_account_request", "failed", signupResult.detail);
+        return;
+      }
+
+      if (!signupResult.passed || signupResult.creationAccepted !== true) {
+        pushStep(
+          steps,
+          "create_account_collision_retry",
+          "passed",
+          `alias não criado para ${candidateEmail}: ${signupResult.detail}; tentando próximo sequence`,
+        );
+        await openAuth({ page, appUrl });
+        continue;
+      }
+
+      created = { sequence: candidateSequence, email: candidateEmail, password: candidatePassword };
+      pushStep(
+        steps,
+        "create_account_request",
+        "passed",
+        `conta criada: ${candidateEmail} (${signupResult.detail})`,
+      );
+      break;
+    }
+
+    if (!created) {
+      const nextSequence = lastTriedSequence + 1;
+      saveState({
+        email: state.email,
+        password: state.password,
+        status: state.status,
+        sequence: nextSequence,
+        last_updated_at: nowIso(),
+      });
+      pushStep(
+        steps,
+        "create_account_collision_retry",
+        "failed",
+        `limite excedido de colisões (${MAX_ALIAS_RETRIES}); faixa tentada ${state.sequence}..${lastTriedSequence}; próximo sequence persistido: ${nextSequence}`,
+      );
+      return;
+    }
+
+    usedSequence = created.sequence;
+    activeEmail = created.email;
+    activePassword = created.password;
+
+    saveState({
+      email: activeEmail,
+      password: activePassword,
+      status: "pending_confirmation",
+      sequence: usedSequence,
+      last_updated_at: nowIso(),
+    });
+
+    let signupMail;
+    try {
+      signupMail = await findLatestEmailLinkForAlias({
+        aliasEmail: activeEmail,
+        timeoutMs: MAILBOX_POLL_TIMEOUT_MS,
+        intervalMs: MAILBOX_POLL_INTERVAL_MS,
+        linkIncludes: appOrigin,
+        expectedLinkKind: "signup_confirmation",
+      });
+      pushStep(
+        steps,
+        "open_signup_link_from_email",
+        "passed",
+        `link de confirmação encontrado: ${signupMail.matched_subject || "sem assunto"}`,
+      );
+    } catch (error) {
+      pushStep(
+        steps,
+        "open_signup_link_from_email",
+        "failed",
+        error instanceof Error ? error.message : String(error),
+      );
+      return;
+    }
+
+    const signupLinkParts = inspectUrlParts(signupMail.matched_link);
+    writeSummary(`- signup_mail_matched_link_raw: \`${signupMail.matched_link_raw ?? signupMail.matched_link}\``);
+    writeSummary(`- signup_mail_matched_link_sanitized: \`${signupMail.matched_link_sanitized ?? signupMail.matched_link}\``);
+    writeSummary(`- signup_mail_matched_link: \`${signupMail.matched_link}\``);
+    writeSummary(`- signup_mail_pathname: \`${signupLinkParts.pathname}\``);
+    writeSummary(`- signup_mail_search: \`${signupLinkParts.search || "(empty)"}\``);
+    await page.goto(signupMail.matched_link, { waitUntil: "domcontentloaded", timeout: 30000 });
+    writeSummary(`- signup_after_goto_url: \`${page.url()}\``);
+    if (page.url().includes("/auth/error")) {
+      const errorTitle = await page.title().catch(() => "");
+      const errorBodySnippet = ((await page.locator("body").innerText().catch(() => "")) || "")
+        .trim()
+        .slice(0, 300);
+      writeSummary(`- signup_error_title: \`${errorTitle || "(empty)"}\``);
+      writeSummary(`- signup_error_body_snippet: \`${errorBodySnippet || "(empty)"}\``);
+    }
+    await page.waitForTimeout(1200);
+    const usable = !page.url().includes("/auth") || hasAuthSuccessUrl(page.url());
+    pushStep(
+      steps,
+      "validate_created_account_usable",
+      usable ? "passed" : "failed",
+      usable ? `conta utilizável em ${page.url()}` : `conta não validada em ${page.url()}`,
+    );
+    if (!usable) return;
+
+    saveState({
+      email: activeEmail,
+      password: activePassword,
+      status: "active",
+      sequence: usedSequence,
+      last_updated_at: nowIso(),
+    });
+
+    const logoutAfterSignup = await logout({ page });
+    pushStep(
+      steps,
+      "logout_after_login",
+      logoutAfterSignup.passed ? "passed" : "failed",
+      logoutAfterSignup.detail,
+    );
+
+    await openAuth({ page, appUrl });
+    const wrongLogin = await login({ page, email: activeEmail, password: `${activePassword}-errada` });
+    const wrongLoginPassed = !wrongLogin.authenticated && Boolean(wrongLogin.uiError);
+    pushStep(
+      steps,
+      "login_wrong_password",
+      wrongLoginPassed ? "passed" : "failed",
+      wrongLoginPassed ? "erro esperado detectado" : wrongLogin.detail,
+    );
+
+    await openAuth({ page, appUrl });
+    const correctLogin = await login({ page, email: activeEmail, password: activePassword });
+    const correctLoginPassed = hasAuthSuccessUrl(correctLogin.finalUrl);
+    pushStep(
+      steps,
+      "login_correct_password",
+      correctLoginPassed ? "passed" : "failed",
+      correctLoginPassed ? "login correto com /a/" : correctLogin.detail,
+    );
+    if (!correctLoginPassed) return;
+
+    const logoutAfterLogin = await logout({ page });
+    pushStep(
+      steps,
+      "logout_after_reset",
+      logoutAfterLogin.passed ? "passed" : "failed",
+      logoutAfterLogin.detail,
+    );
+
+    await openAuth({ page, appUrl });
+    const forgotResult = await requestPasswordReset({ page, email: activeEmail });
+    pushStep(
+      steps,
+      "forgot_password_request",
+      forgotResult.passed ? "passed" : "failed",
+      forgotResult.detail,
+    );
+    if (!forgotResult.passed) return;
+
+    let resetMail;
+    try {
+      resetMail = await findLatestEmailLinkForAlias({
+        aliasEmail: activeEmail,
+        timeoutMs: MAILBOX_POLL_TIMEOUT_MS,
+        intervalMs: MAILBOX_POLL_INTERVAL_MS,
+        linkIncludes: appOrigin,
+        expectedLinkKind: "password_reset",
+      });
+      pushStep(steps, "open_reset_link_from_email", "passed", `link de reset encontrado: ${resetMail.matched_subject || "sem assunto"}`);
+    } catch (error) {
+      pushStep(
+        steps,
+        "open_reset_link_from_email",
+        "failed",
+        error instanceof Error ? error.message : String(error),
+      );
+      return;
+    }
+
+    const resetLinkParts = inspectUrlParts(resetMail.matched_link);
+    writeSummary(`- reset_mail_matched_link_raw: \`${resetMail.matched_link_raw ?? resetMail.matched_link}\``);
+    writeSummary(`- reset_mail_matched_link_sanitized: \`${resetMail.matched_link_sanitized ?? resetMail.matched_link}\``);
+    writeSummary(`- reset_mail_matched_link: \`${resetMail.matched_link}\``);
+    writeSummary(`- reset_mail_pathname: \`${resetLinkParts.pathname}\``);
+    writeSummary(`- reset_mail_search: \`${resetLinkParts.search || "(empty)"}\``);
+    await page.goto(resetMail.matched_link, { waitUntil: "domcontentloaded", timeout: 30000 });
+    writeSummary(`- reset_after_goto_url: \`${page.url()}\``);
+    if (page.url().includes("/auth/error")) {
+      const errorTitle = await page.title().catch(() => "");
+      const errorBodySnippet = ((await page.locator("body").innerText().catch(() => "")) || "")
+        .trim()
+        .slice(0, 300);
+      writeSummary(`- reset_error_title: \`${errorTitle || "(empty)"}\``);
+      writeSummary(`- reset_error_body_snippet: \`${errorBodySnippet || "(empty)"}\``);
+    }
+    const mismatchAttempt = await submitNewPassword({
+      page,
+      newPassword: `${activePassword}X`,
+      confirmPassword: `${activePassword}Y`,
+    });
+    pushStep(
+      steps,
+      "reset_password_mismatch",
+      mismatchAttempt.mismatchDetected ? "passed" : "failed",
+      mismatchAttempt.detail,
+    );
+
+    const nextPassword = `Reset${usedSequence}!Bb`;
+    const successReset = await submitNewPassword({
+      page,
+      newPassword: nextPassword,
+      confirmPassword: nextPassword,
+    });
+    pushStep(
+      steps,
+      "reset_password_success",
+      successReset.passed ? "passed" : "failed",
+      successReset.detail,
+    );
+    if (!successReset.passed) return;
+
+    activePassword = nextPassword;
+    saveState({
+      email: activeEmail,
+      password: activePassword,
+      status: "active",
+      sequence: usedSequence,
+      last_updated_at: nowIso(),
+    });
+
+    await openAuth({ page, appUrl });
+    const loginWithNewPassword = await login({
+      page,
+      email: activeEmail,
+      password: activePassword,
+    });
+    const loginWithNewPasswordPassed = hasAuthSuccessUrl(loginWithNewPassword.finalUrl);
+    pushStep(
+      steps,
+      "login_with_new_password",
+      loginWithNewPasswordPassed ? "passed" : "failed",
+      loginWithNewPasswordPassed ? "login com nova senha validado" : loginWithNewPassword.detail,
+    );
+    if (!loginWithNewPasswordPassed) return;
+
+    const finalLogout = await logout({ page });
+    pushStep(steps, "logout_final", finalLogout.passed ? "passed" : "failed", finalLogout.detail);
   });
-  const evaluation = evaluateStatus({
-    expectedResultType: parsed.expected_result_type,
-    expectedResultValue: parsed.expected_result_value,
-    loginAttempt,
-  });
 
+  const status = evaluateGlobalStatus(steps);
   const output = {
     item: "3.5 Validador Final",
-    stage: "item 7 + item 8 mínimo do MR",
-    status: evaluation.status,
-    briefing_path: briefingPath,
-    app_url_used: appUrlUsed,
-    expected_result_type: parsed.expected_result_type,
-    expected_result_value: parsed.expected_result_value,
-    login_attempt_executed: loginAttempt.login_attempt_executed,
-    final_url: loginAttempt.final_url,
-    ui_error: loginAttempt.ui_error,
-    observed_result: evaluation.observedResult,
-    screenshot_path: loginAttempt.screenshot_path,
+    stage: "fase_2_fluxo_deterministico",
+    status,
+    app_url_used: appUrl,
+    active_account_email: activeEmail,
+    steps,
+    last_updated_at: nowIso(),
   };
 
   console.log(JSON.stringify(output, null, 2));
 
-  writeSummary("# Validador Final — item 7 + item 8 mínimo");
-  writeSummary(`- item: \`${output.item}\``);
-  writeSummary(`- stage: \`${output.stage}\``);
-  writeSummary(`- status: \`${output.status}\``);
-  writeSummary(`- briefing_path: \`${output.briefing_path}\``);
-  writeSummary(`- environment: \`${parsed.environment}\``);
-  writeSummary(`- app_url_used: \`${output.app_url_used}\``);
-  writeSummary(`- expected_result_type: \`${output.expected_result_type}\``);
-  writeSummary(`- expected_result_value: \`${output.expected_result_value}\``);
-  writeSummary(`- login_attempt_executed: \`${output.login_attempt_executed}\``);
-  writeSummary(`- final_url: \`${output.final_url ?? "null"}\``);
-  writeSummary(`- ui_error: \`${output.ui_error ?? "null"}\``);
-  writeSummary(`- screenshot_path: \`${output.screenshot_path}\``);
-  writeSummary(
-    "- Fase 1: app_url, login_email e login_password manuais por execução.",
-  );
+  writeSummary("# Validador Final — fase 2 (determinístico)");
+  writeSummary(`- run_started_at: \`${runStartedAt}\``);
+  writeSummary(`- status: \`${status}\``);
+  writeSummary(`- app_url_used: \`${appUrl}\``);
+  writeSummary(`- active_account_email: \`${activeEmail ?? "null"}\``);
+  for (const step of steps) {
+    writeSummary(`- ${step.step}: **${step.status}** — ${step.detail}`);
+  }
+
+  if (steps.some((entry) => shouldStopOnCriticalFailure(entry.step, entry.status))) {
+    process.exitCode = 1;
+  }
 }
 
 main().catch((error) => {
-  die(
-    `falha ao executar tentativa real de login: ${
-      error instanceof Error ? error.message : String(error)
-    }`,
-  );
+  die(`falha no orquestrador determinístico: ${error instanceof Error ? error.message : String(error)}`);
 });
