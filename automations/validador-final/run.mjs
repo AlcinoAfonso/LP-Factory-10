@@ -250,6 +250,8 @@ async function main() {
     }
 
     const signupLinkParts = inspectUrlParts(signupMail.matched_link);
+    writeSummary(`- signup_mail_matched_link_raw: \`${signupMail.matched_link_raw ?? signupMail.matched_link}\``);
+    writeSummary(`- signup_mail_matched_link_sanitized: \`${signupMail.matched_link_sanitized ?? signupMail.matched_link}\``);
     writeSummary(`- signup_mail_matched_link: \`${signupMail.matched_link}\``);
     writeSummary(`- signup_mail_pathname: \`${signupLinkParts.pathname}\``);
     writeSummary(`- signup_mail_search: \`${signupLinkParts.search || "(empty)"}\``);
@@ -349,6 +351,8 @@ async function main() {
     }
 
     const resetLinkParts = inspectUrlParts(resetMail.matched_link);
+    writeSummary(`- reset_mail_matched_link_raw: \`${resetMail.matched_link_raw ?? resetMail.matched_link}\``);
+    writeSummary(`- reset_mail_matched_link_sanitized: \`${resetMail.matched_link_sanitized ?? resetMail.matched_link}\``);
     writeSummary(`- reset_mail_matched_link: \`${resetMail.matched_link}\``);
     writeSummary(`- reset_mail_pathname: \`${resetLinkParts.pathname}\``);
     writeSummary(`- reset_mail_search: \`${resetLinkParts.search || "(empty)"}\``);

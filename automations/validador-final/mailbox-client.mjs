@@ -108,6 +108,46 @@ function pickLink(links, { linkIncludes, expectedLinkKind }) {
   return ranked[0]?.link ?? null;
 }
 
+function sanitizeUrlTail(url) {
+  return String(url || "").trim().replace(/[\]\)\}>\"'.,;]+$/g, "");
+}
+
+function sanitizeSelectedLink(rawLink, { expectedLinkKind } = {}) {
+  const raw = String(rawLink || "").trim();
+  let sanitized = sanitizeUrlTail(raw);
+
+  try {
+    const parsed = new URL(sanitized);
+    const trailingGarbageRegex = /[\]\)\}>\"']+$/;
+    const entries = [...parsed.searchParams.entries()];
+    for (const [key, value] of entries) {
+      const cleanedValue = String(value || "").replace(trailingGarbageRegex, "");
+      if (cleanedValue !== value) {
+        parsed.searchParams.set(key, cleanedValue);
+      }
+    }
+
+    if (expectedLinkKind === "signup_confirmation" && parsed.searchParams.has("type")) {
+      const rawType = parsed.searchParams.get("type") || "";
+      const normalizedType = rawType.toLowerCase().replace(/[^a-z_]/g, "");
+      const allowedTypes = new Set(["signup", "invite", "magiclink", "recovery", "email_change"]);
+      if (allowedTypes.has(normalizedType)) {
+        parsed.searchParams.set("type", normalizedType);
+      }
+    }
+
+    sanitized = sanitizeUrlTail(parsed.toString());
+    new URL(sanitized); // valida formato final
+  } catch {
+    sanitized = sanitizeUrlTail(sanitized);
+  }
+
+  return {
+    raw,
+    sanitized,
+  };
+}
+
 function delay(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
@@ -260,7 +300,10 @@ export async function findLatestEmailLinkForAlias({
 
         const headers = parseHeaders(rawMessage);
         const links = extractLinksFromText(rawMessage);
-        const matchedLink = pickLink(links, { linkIncludes, expectedLinkKind });
+        const selectedLink = pickLink(links, { linkIncludes, expectedLinkKind });
+        const { raw: matchedLinkRaw, sanitized: matchedLink } = sanitizeSelectedLink(selectedLink, {
+          expectedLinkKind,
+        });
 
         if (!matchedLink) {
           if (typeof linkIncludes === "string" && linkIncludes.trim() !== "") {
@@ -273,6 +316,8 @@ export async function findLatestEmailLinkForAlias({
           matched_email: normalizedAlias,
           matched_subject: headers.subject,
           matched_received_at: parseDateToIso(headers.date),
+          matched_link_raw: matchedLinkRaw,
+          matched_link_sanitized: matchedLink,
           matched_link: matchedLink,
         };
       }
