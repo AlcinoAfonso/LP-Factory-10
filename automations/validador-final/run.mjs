@@ -180,7 +180,7 @@ async function main() {
     saveState({
       email: activeEmail,
       password: activePassword,
-      status: "active",
+      status: "pending_confirmation",
       sequence: usedSequence,
       last_updated_at: nowIso(),
     });
@@ -219,6 +219,14 @@ async function main() {
       usable ? `conta utilizável em ${page.url()}` : `conta não validada em ${page.url()}`,
     );
     if (!usable) return;
+
+    saveState({
+      email: activeEmail,
+      password: activePassword,
+      status: "active",
+      sequence: usedSequence,
+      last_updated_at: nowIso(),
+    });
 
     const logoutAfterSignup = await logout({ page });
     pushStep(
