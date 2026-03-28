@@ -147,7 +147,7 @@ async function main() {
           steps,
           "create_account_collision_retry",
           "passed",
-          `colisão para ${candidateEmail}; tentando próximo sequence`,
+          `colisão para ${candidateEmail}: ${signupResult.detail}; tentando próximo sequence`,
         );
         await openAuth({ page, appUrl });
         continue;

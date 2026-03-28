@@ -104,13 +104,13 @@ async function getBodyText(page) {
 }
 
 function hasCollisionSignal(text) {
-  return /já\s+(existe|cadastrad)|already\s+(exists|registered)|in use|taken|duplicate|email.+(exists|cadastrad)|account.+exists|conta.+existe/i.test(
+  return /este\s+e-?mail\s+já\s+está\s+cadastrad|e-?mail\s+já\s+está\s+cadastrad|e-?mail\s+já\s+cadastrad|já\s+(existe|cadastrad)|already\s+(exists|registered)|in use|taken|duplicate|email.+(exists|cadastrad)|account.+exists|conta.+existe/i.test(
     text || "",
   );
 }
 
 function hasSuccessSignal(text) {
-  return /verifique.+e-?mail|check.+email|confirm(a|ation)|enviamos.+e-?mail|link.+confirma/i.test(
+  return /verifique.+e-?mail|check.+email|enviamos.+e-?mail|link.+confirma|cadastro\s+iniciado\s+com\s+sucesso/i.test(
     text || "",
   );
 }
@@ -124,6 +124,23 @@ async function isStillInAuthFlow(page) {
   const emailFieldVisible = await page.locator('input[type="email"], input[name*="email" i]').first().isVisible().catch(() => false);
   const passwordFieldVisible = await page.locator('input[type="password"]').first().isVisible().catch(() => false);
   return authLikeUrl || emailFieldVisible || passwordFieldVisible;
+}
+
+async function hasExistingAccountActions(page) {
+  const actionLocators = [
+    page.getByRole("button", { name: /reenviar confirma|resend confirm/i }).first(),
+    page.getByRole("button", { name: /fazer login|entrar|login/i }).first(),
+    page.getByRole("link", { name: /usar outro e-?mail|use another email/i }).first(),
+    page.getByRole("link", { name: /fazer login|entrar|login/i }).first(),
+  ];
+
+  for (const locator of actionLocators) {
+    if ((await locator.count()) > 0 && (await locator.isVisible().catch(() => false))) {
+      return true;
+    }
+  }
+
+  return false;
 }
 
 export async function withBrowserSession(handler, options = {}) {
@@ -191,7 +208,8 @@ export async function createAccount({ page, email, password }) {
   const uiError = await detectUiError(page);
   const bodyText = await getBodyText(page);
   const observedText = `${uiError || ""}\n${bodyText}`.trim();
-  const collisionDetected = hasCollisionSignal(observedText);
+  const existingAccountActionsVisible = await hasExistingAccountActions(page);
+  const collisionDetected = hasCollisionSignal(observedText) || existingAccountActionsVisible;
   const successByText = hasSuccessSignal(observedText);
   const stillInAuthFlow = await isStillInAuthFlow(page);
   const finalUrl = page.url();
@@ -203,7 +221,9 @@ export async function createAccount({ page, email, password }) {
       passed: false,
       creationAccepted: false,
       collisionDetected: true,
-      detail: `colisão detectada para alias: ${uiError || "sinal textual de conta existente"}`,
+      detail: existingAccountActionsVisible
+        ? "colisão detectada por estado explícito de e-mail já cadastrado (reenviar confirmação/fazer login/usar outro e-mail)"
+        : `colisão detectada para alias: ${uiError || "sinal textual de conta existente"}`,
       uiError,
       finalUrl,
     };
