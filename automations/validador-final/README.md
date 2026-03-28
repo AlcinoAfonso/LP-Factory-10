@@ -9,7 +9,7 @@ Subprojeto isolado da automação **Validador Final** na **Fase 2 determinístic
 - estado local de **1 conta ativa por vez** em `state/test-account.json`;
 - persistência de estado entre execuções via `actions/cache/restore@v4` e `actions/cache/save@v4` no workflow;
 - caixa postal base via credenciais `MAILBOX_EMAIL` e `MAILBOX_PASSWORD`;
-- cliente da caixa postal implementado com Playwright (`mailbox-client.mjs`);
+- cliente da caixa postal implementado de forma programática via protocolo de e-mail (`mailbox-client.mjs`), sem Gmail web UI;
 - sem screenshot;
 - sem briefing funcional JSON no contrato da Fase 2.
 
@@ -21,6 +21,8 @@ npm run check
 npx playwright install --with-deps chromium
 npm run start
 ```
+
+> Observação: o Playwright é usado apenas para automação da aplicação; a leitura da caixa postal usa `MAILBOX_EMAIL` e `MAILBOX_PASSWORD` (credencial de app de mailbox).
 
 ## Estado da conta ativa
 
