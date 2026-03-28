@@ -110,7 +110,7 @@ function hasCollisionSignal(text) {
 }
 
 function hasSuccessSignal(text) {
-  return /verifique.+e-?mail|check.+email|enviamos.+e-?mail|link.+confirma|cadastro\s+iniciado\s+com\s+sucesso/i.test(
+  return /cadastro\s+iniciado|sign-?up\s+started|clique\s+no\s+link\s+de\s+confirmação\s+no\s+e-?mail\s+que\s+enviamos|check\s+your\s+email\s+for\s+confirmation|enviamos.+e-?mail|link.+confirma/i.test(
     text || "",
   );
 }
@@ -152,6 +152,12 @@ async function detectExistingAccountState(page, observedText) {
     fazerLoginVisible,
     usarOutroEmailVisible,
   };
+}
+
+function isExplicitSignupSuccess({ finalUrl, observedText }) {
+  const successUrl = /\/auth\/sign-up-success(?:[/?#]|$)/i.test(finalUrl || "");
+  const successText = hasSuccessSignal(observedText);
+  return successUrl || successText;
 }
 
 export async function withBrowserSession(handler, options = {}) {
@@ -221,11 +227,12 @@ export async function createAccount({ page, email, password }) {
   const observedText = `${uiError || ""}\n${bodyText}`.trim();
   const existingAccountState = await detectExistingAccountState(page, observedText);
   const collisionDetected = existingAccountState.isCollision;
+  const finalUrl = page.url();
+  const explicitSignupSuccess = isExplicitSignupSuccess({ finalUrl, observedText });
   const successByText = hasSuccessSignal(observedText);
   const stillInAuthFlow = await isStillInAuthFlow(page);
-  const finalUrl = page.url();
   const strongUrlTransition = finalUrl !== beforeSubmitUrl && !stillInAuthFlow;
-  const hasSuccessEvidence = !collisionDetected && (successByText || strongUrlTransition);
+  const hasSuccessEvidence = !collisionDetected && (explicitSignupSuccess || strongUrlTransition);
 
   if (collisionDetected) {
     return {
@@ -267,9 +274,11 @@ export async function createAccount({ page, email, password }) {
     passed: true,
     creationAccepted: true,
     collisionDetected: false,
-    detail: successByText
-      ? "signup aceito com evidência textual de confirmação"
-      : "signup aceito com transição forte de URL fora do fluxo de auth",
+    detail: /\/auth\/sign-up-success(?:[/?#]|$)/i.test(finalUrl)
+      ? "signup aceito por estado explícito /auth/sign-up-success"
+      : successByText
+        ? "signup aceito com evidência textual inequívoca (Cadastro iniciado / confirmação por e-mail)"
+        : "signup aceito com transição forte de URL fora do fluxo de auth",
     uiError,
     finalUrl,
   };
