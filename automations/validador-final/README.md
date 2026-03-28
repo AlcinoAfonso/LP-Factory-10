@@ -1,29 +1,43 @@
 # automations/validador-final
 
-Subprojeto isolado da automação **Validador Final**.
+Subprojeto isolado da automação **Validador Final** na **Fase 2 determinística**.
 
 ## Escopo atual
 
-- valida briefing JSON do MVP 1
-- executa tentativa real de login com Playwright
-- valida resultado observado contra `expected_result_type` e `expected_result_value`
-- marca status final como `passed` ou `failed`
-- captura 1 screenshot obrigatória do estado final do login em `artifacts/login-final-state.png`
-- publica resumo no `GITHUB_STEP_SUMMARY` quando executado em workflow
+- pipeline determinístico com ciclo completo de criação, confirmação, login e reset de senha;
+- único input manual no workflow: `app_url`;
+- estado local de **1 conta ativa por vez** em `state/test-account.json`;
+- persistência de estado entre execuções via `actions/cache/restore@v4` e `actions/cache/save@v4` no workflow;
+- caixa postal base via credenciais `MAILBOX_EMAIL` e `MAILBOX_PASSWORD`;
+- cliente da caixa postal implementado com Playwright (`mailbox-client.mjs`);
+- sem screenshot;
+- sem briefing funcional JSON no contrato da Fase 2.
 
-## Execução local
+## Execução local (gates)
 
 ```bash
 npm ci
 npm run check
+npx playwright install --with-deps chromium
 npm run start
 ```
 
-## Briefing padrão
+## Estado da conta ativa
 
-`automations/validador-final/templates/briefings/mvp1-login.json`
+Arquivo: `automations/validador-final/state/test-account.json`
+
+Estrutura padrão:
+
+```json
+{
+  "email": "",
+  "password": "",
+  "status": "empty",
+  "sequence": 30,
+  "last_updated_at": null
+}
+```
 
 ## Observação
 
-Esta automação está isolada do Core do SaaS. Dependências de automação ficam dentro desta pasta.
-Na fase 1, `app_url`, `login_email` e `login_password` são informados manualmente em cada execução do workflow.
+`templates/briefings/mvp1-login.json` permanece apenas como legado da fase 1 e não participa do fluxo funcional da Fase 2.

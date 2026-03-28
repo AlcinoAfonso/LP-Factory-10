@@ -3,20 +3,8 @@ name: Automation Validador Final
 on:
   workflow_dispatch:
     inputs:
-      briefing_path:
-        description: "Path do briefing JSON do MVP 1"
-        required: false
-        default: "automations/validador-final/templates/briefings/mvp1-login.json"
       app_url:
-        description: "URL manual do app para o teste de login da fase 1"
-        required: true
-        default: ""
-      login_email:
-        description: "E-mail manual da conta de teste para a fase 1"
-        required: true
-        default: ""
-      login_password:
-        description: "Senha manual da conta de teste para a fase 1"
+        description: "URL manual do app para o fluxo determinístico"
         required: true
         default: ""
 
@@ -38,6 +26,31 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Restore state cache
+        id: restore-state
+        uses: actions/cache/restore@v4
+        with:
+          path: automations/validador-final/state/test-account.json
+          key: automation-validador-final-state-${{ github.ref_name }}-${{ github.run_id }}
+          restore-keys: |
+            automation-validador-final-state-${{ github.ref_name }}-
+
+      - name: Ensure default state
+        working-directory: .
+        run: |
+          if [ ! -f automations/validador-final/state/test-account.json ]; then
+            mkdir -p automations/validador-final/state
+            cat <<'JSON' > automations/validador-final/state/test-account.json
+            {
+              "email": "",
+              "password": "",
+              "status": "empty",
+              "sequence": 30,
+              "last_updated_at": null
+            }
+            JSON
+          fi
+
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
@@ -54,8 +67,14 @@ jobs:
 
       - name: Run validador final
         env:
-          BRIEFING_PATH: ${{ github.workspace }}/${{ inputs.briefing_path }}
           APP_URL_OVERRIDE: ${{ inputs.app_url }}
-          LOGIN_EMAIL_OVERRIDE: ${{ inputs.login_email }}
-          LOGIN_PASSWORD_OVERRIDE: ${{ inputs.login_password }}
+          MAILBOX_EMAIL: ${{ secrets.MAILBOX_EMAIL }}
+          MAILBOX_PASSWORD: ${{ secrets.MAILBOX_PASSWORD }}
         run: npm run start
+
+      - name: Save state cache
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: automations/validador-final/state/test-account.json
+          key: automation-validador-final-state-${{ github.ref_name }}-${{ github.run_id }}
