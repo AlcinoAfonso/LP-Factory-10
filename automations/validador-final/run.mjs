@@ -131,8 +131,10 @@ async function main() {
     await openAuth({ page, appUrl });
 
     let created = null;
+    let lastTriedSequence = state.sequence - 1;
     for (let retry = 0; retry <= MAX_ALIAS_RETRIES; retry += 1) {
       const candidateSequence = state.sequence + retry;
+      lastTriedSequence = candidateSequence;
       const candidateEmail = buildAlias(candidateSequence);
       const candidatePassword = buildPassword(candidateSequence);
 
@@ -169,11 +171,19 @@ async function main() {
     }
 
     if (!created) {
+      const nextSequence = lastTriedSequence + 1;
+      saveState({
+        email: state.email,
+        password: state.password,
+        status: state.status,
+        sequence: nextSequence,
+        last_updated_at: nowIso(),
+      });
       pushStep(
         steps,
         "create_account_collision_retry",
         "failed",
-        `limite excedido de colisões (${MAX_ALIAS_RETRIES})`,
+        `limite excedido de colisões (${MAX_ALIAS_RETRIES}); faixa tentada ${state.sequence}..${lastTriedSequence}; próximo sequence persistido: ${nextSequence}`,
       );
       return;
     }
