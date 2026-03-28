@@ -40,15 +40,15 @@ jobs:
         run: |
           if [ ! -f automations/validador-final/state/test-account.json ]; then
             mkdir -p automations/validador-final/state
-            cat <<'JSON' > automations/validador-final/state/test-account.json
-            {
-              "email": "",
-              "password": "",
-              "status": "empty",
-              "sequence": 30,
-              "last_updated_at": null
-            }
-            JSON
+            printf '%s\n' \
+              '{' \
+              '  "email": "",' \
+              '  "password": "",' \
+              '  "status": "empty",' \
+              '  "sequence": 30,' \
+              '  "last_updated_at": null' \
+              '}' \
+              > automations/validador-final/state/test-account.json
           fi
 
       - name: Setup Node
