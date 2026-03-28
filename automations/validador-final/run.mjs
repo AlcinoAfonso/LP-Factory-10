@@ -159,7 +159,12 @@ async function main() {
       }
 
       created = { sequence: candidateSequence, email: candidateEmail, password: candidatePassword };
-      pushStep(steps, "create_account_request", "passed", `conta criada: ${candidateEmail}`);
+      pushStep(
+        steps,
+        "create_account_request",
+        "passed",
+        `conta criada: ${candidateEmail} (${signupResult.detail})`,
+      );
       break;
     }
 

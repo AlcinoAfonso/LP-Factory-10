@@ -171,6 +171,7 @@ export async function createAccount({ page, email, password }) {
 
   await fillEmail(page, email);
   await fillPassword(page, password, 0);
+  const beforeSubmitUrl = page.url();
 
   const passwordFields = page.locator('input[type="password"]');
   if ((await passwordFields.count()) > 1) {
@@ -193,8 +194,9 @@ export async function createAccount({ page, email, password }) {
   const collisionDetected = hasCollisionSignal(observedText);
   const successByText = hasSuccessSignal(observedText);
   const stillInAuthFlow = await isStillInAuthFlow(page);
-  const successByNavigation = !stillInAuthFlow && !collisionDetected;
-  const hasSuccessEvidence = successByText || successByNavigation;
+  const finalUrl = page.url();
+  const strongUrlTransition = finalUrl !== beforeSubmitUrl && !stillInAuthFlow;
+  const hasSuccessEvidence = !collisionDetected && (successByText || strongUrlTransition);
 
   if (collisionDetected) {
     return {
@@ -203,7 +205,7 @@ export async function createAccount({ page, email, password }) {
       collisionDetected: true,
       detail: `colisão detectada para alias: ${uiError || "sinal textual de conta existente"}`,
       uiError,
-      finalUrl: page.url(),
+      finalUrl,
     };
   }
 
@@ -215,7 +217,7 @@ export async function createAccount({ page, email, password }) {
         collisionDetected: false,
         detail: `signup rejeitado com erro não tratável: ${uiError || "falha operacional detectada"}`,
         uiError,
-        finalUrl: page.url(),
+        finalUrl,
       };
     }
 
@@ -223,9 +225,10 @@ export async function createAccount({ page, email, password }) {
       passed: false,
       creationAccepted: false,
       collisionDetected: true,
-      detail: "signup ambíguo sem evidência de criação nova; tratando como colisão para retry",
+      detail:
+        "signup ambíguo sem evidência forte de criação nova (sem mensagem inequívoca e sem transição forte de URL); tratando como colisão para retry",
       uiError,
-      finalUrl: page.url(),
+      finalUrl,
     };
   }
 
@@ -235,9 +238,9 @@ export async function createAccount({ page, email, password }) {
     collisionDetected: false,
     detail: successByText
       ? "signup aceito com evidência textual de confirmação"
-      : "signup aceito com avanço fora do fluxo de auth",
+      : "signup aceito com transição forte de URL fora do fluxo de auth",
     uiError,
-    finalUrl: page.url(),
+    finalUrl,
   };
 }
 
