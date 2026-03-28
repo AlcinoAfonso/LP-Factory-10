@@ -119,6 +119,7 @@ function shouldStopOnCriticalFailure(step, status) {
 
 async function main() {
   const appUrl = requireAppUrl();
+  const appOrigin = new URL(appUrl).origin;
   const state = loadState();
   const steps = [];
   const runStartedAt = nowIso();
@@ -217,7 +218,7 @@ async function main() {
         aliasEmail: activeEmail,
         timeoutMs: MAILBOX_POLL_TIMEOUT_MS,
         intervalMs: MAILBOX_POLL_INTERVAL_MS,
-        linkIncludes: appUrl,
+        linkIncludes: appOrigin,
       });
       pushStep(
         steps,
@@ -307,7 +308,7 @@ async function main() {
         aliasEmail: activeEmail,
         timeoutMs: MAILBOX_POLL_TIMEOUT_MS,
         intervalMs: MAILBOX_POLL_INTERVAL_MS,
-        linkIncludes: appUrl,
+        linkIncludes: appOrigin,
       });
       pushStep(steps, "open_reset_link_from_email", "passed", `link de reset encontrado: ${resetMail.matched_subject || "sem assunto"}`);
     } catch (error) {
