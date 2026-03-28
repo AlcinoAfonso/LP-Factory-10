@@ -43,18 +43,69 @@ function parseHeaders(rawMessage) {
 }
 
 function extractLinksFromText(rawText) {
-  const normalized = String(rawText || "")
-    .replace(/=\r?\n/g, "")
-    .replace(/&amp;/g, "&");
+  const normalized = decodeQuotedPrintable(String(rawText || "")).replace(/&amp;/g, "&");
 
   const matches = normalized.match(/https?:\/\/[^\s<>"')]+/gi) || [];
   return matches.map((entry) => entry.replace(/[.,;!?]+$/g, ""));
 }
 
-function pickLink(links, linkIncludes) {
+function decodeQuotedPrintable(input) {
+  return String(input || "")
+    .replace(/=\r?\n/g, "")
+    .replace(/=([A-Fa-f0-9]{2})/g, (_, hex) => String.fromCharCode(Number.parseInt(hex, 16)));
+}
+
+function toOrigin(value) {
+  if (typeof value !== "string" || value.trim() === "") return null;
+  try {
+    return new URL(value).origin;
+  } catch {
+    return null;
+  }
+}
+
+function hasTokenLikeSignals(url) {
+  return /token_hash=|[?&]code=|[?&]type=|#.*token_hash|#.*access_token|#.*type=/i.test(url);
+}
+
+function scoreLink(link, { expectedLinkKind, originFilter }) {
+  let score = 0;
+  const normalized = (link || "").toLowerCase();
+  const origin = toOrigin(link);
+
+  if (originFilter && origin === originFilter) score += 3;
+  if (expectedLinkKind === "signup_confirmation") {
+    if (/\/auth\/confirm/.test(normalized)) score += 10;
+    if (hasTokenLikeSignals(link)) score += 7;
+    if (/\/auth\/error/.test(normalized)) score -= 12;
+    if (/\/auth\/login/.test(normalized)) score -= 6;
+  }
+
+  if (expectedLinkKind === "password_reset") {
+    if (/recovery|reset|update-password|forgot|type=recovery|type=reset/i.test(link)) score += 10;
+    if (hasTokenLikeSignals(link)) score += 4;
+    if (/\/auth\/error/.test(normalized)) score -= 10;
+    if (/\/auth\/login/.test(normalized)) score -= 6;
+  }
+
+  return score;
+}
+
+function pickLink(links, { linkIncludes, expectedLinkKind }) {
   if (!Array.isArray(links) || links.length === 0) return null;
-  if (typeof linkIncludes !== "string" || linkIncludes.trim() === "") return links[0] ?? null;
-  return links.find((link) => link.includes(linkIncludes.trim())) ?? null;
+  const originFilter = toOrigin(linkIncludes);
+
+  const candidates = links.filter((link) => {
+    if (!originFilter) return true;
+    return toOrigin(link) === originFilter || link.includes(linkIncludes);
+  });
+
+  const pool = candidates.length > 0 ? candidates : links;
+  const ranked = pool
+    .map((link) => ({ link, score: scoreLink(link, { expectedLinkKind, originFilter }) }))
+    .sort((a, b) => b.score - a.score);
+
+  return ranked[0]?.link ?? null;
 }
 
 function delay(ms) {
@@ -177,6 +228,7 @@ export async function findLatestEmailLinkForAlias({
   timeoutMs = 120000,
   intervalMs = 5000,
   linkIncludes,
+  expectedLinkKind,
 }) {
   if (typeof aliasEmail !== "string" || aliasEmail.trim() === "") {
     throw new Error("aliasEmail obrigatório");
@@ -208,7 +260,7 @@ export async function findLatestEmailLinkForAlias({
 
         const headers = parseHeaders(rawMessage);
         const links = extractLinksFromText(rawMessage);
-        const matchedLink = pickLink(links, linkIncludes);
+        const matchedLink = pickLink(links, { linkIncludes, expectedLinkKind });
 
         if (!matchedLink) {
           if (typeof linkIncludes === "string" && linkIncludes.trim() !== "") {

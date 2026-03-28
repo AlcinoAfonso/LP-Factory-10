@@ -117,6 +117,18 @@ function shouldStopOnCriticalFailure(step, status) {
   return criticalSteps.has(step) && status === "failed";
 }
 
+function inspectUrlParts(value) {
+  try {
+    const parsed = new URL(value);
+    return {
+      pathname: parsed.pathname,
+      search: parsed.search || "",
+    };
+  } catch {
+    return { pathname: "invalid_url", search: "" };
+  }
+}
+
 async function main() {
   const appUrl = requireAppUrl();
   const appOrigin = new URL(appUrl).origin;
@@ -219,6 +231,7 @@ async function main() {
         timeoutMs: MAILBOX_POLL_TIMEOUT_MS,
         intervalMs: MAILBOX_POLL_INTERVAL_MS,
         linkIncludes: appOrigin,
+        expectedLinkKind: "signup_confirmation",
       });
       pushStep(
         steps,
@@ -236,7 +249,20 @@ async function main() {
       return;
     }
 
+    const signupLinkParts = inspectUrlParts(signupMail.matched_link);
+    writeSummary(`- signup_mail_matched_link: \`${signupMail.matched_link}\``);
+    writeSummary(`- signup_mail_pathname: \`${signupLinkParts.pathname}\``);
+    writeSummary(`- signup_mail_search: \`${signupLinkParts.search || "(empty)"}\``);
     await page.goto(signupMail.matched_link, { waitUntil: "domcontentloaded", timeout: 30000 });
+    writeSummary(`- signup_after_goto_url: \`${page.url()}\``);
+    if (page.url().includes("/auth/error")) {
+      const errorTitle = await page.title().catch(() => "");
+      const errorBodySnippet = ((await page.locator("body").innerText().catch(() => "")) || "")
+        .trim()
+        .slice(0, 300);
+      writeSummary(`- signup_error_title: \`${errorTitle || "(empty)"}\``);
+      writeSummary(`- signup_error_body_snippet: \`${errorBodySnippet || "(empty)"}\``);
+    }
     await page.waitForTimeout(1200);
     const usable = !page.url().includes("/auth") || hasAuthSuccessUrl(page.url());
     pushStep(
@@ -309,6 +335,7 @@ async function main() {
         timeoutMs: MAILBOX_POLL_TIMEOUT_MS,
         intervalMs: MAILBOX_POLL_INTERVAL_MS,
         linkIncludes: appOrigin,
+        expectedLinkKind: "password_reset",
       });
       pushStep(steps, "open_reset_link_from_email", "passed", `link de reset encontrado: ${resetMail.matched_subject || "sem assunto"}`);
     } catch (error) {
@@ -321,7 +348,20 @@ async function main() {
       return;
     }
 
+    const resetLinkParts = inspectUrlParts(resetMail.matched_link);
+    writeSummary(`- reset_mail_matched_link: \`${resetMail.matched_link}\``);
+    writeSummary(`- reset_mail_pathname: \`${resetLinkParts.pathname}\``);
+    writeSummary(`- reset_mail_search: \`${resetLinkParts.search || "(empty)"}\``);
     await page.goto(resetMail.matched_link, { waitUntil: "domcontentloaded", timeout: 30000 });
+    writeSummary(`- reset_after_goto_url: \`${page.url()}\``);
+    if (page.url().includes("/auth/error")) {
+      const errorTitle = await page.title().catch(() => "");
+      const errorBodySnippet = ((await page.locator("body").innerText().catch(() => "")) || "")
+        .trim()
+        .slice(0, 300);
+      writeSummary(`- reset_error_title: \`${errorTitle || "(empty)"}\``);
+      writeSummary(`- reset_error_body_snippet: \`${errorBodySnippet || "(empty)"}\``);
+    }
     const mismatchAttempt = await submitNewPassword({
       page,
       newPassword: `${activePassword}X`,
