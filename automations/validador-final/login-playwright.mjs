@@ -160,6 +160,29 @@ function isExplicitSignupSuccess({ finalUrl, observedText }) {
   return successUrl || successText;
 }
 
+async function evaluateSignupState(page, beforeSubmitUrl) {
+  const uiError = await detectUiError(page);
+  const bodyText = await getBodyText(page);
+  const observedText = `${uiError || ""}\n${bodyText}`.trim();
+  const existingAccountState = await detectExistingAccountState(page, observedText);
+  const finalUrl = page.url();
+  const explicitSignupSuccess = isExplicitSignupSuccess({ finalUrl, observedText });
+  const stillInAuthFlow = await isStillInAuthFlow(page);
+  const strongUrlTransition = finalUrl !== beforeSubmitUrl && !stillInAuthFlow;
+  const hardError = hasNonRetryableErrorSignal(observedText);
+
+  return {
+    uiError,
+    observedText,
+    finalUrl,
+    collisionDetected: existingAccountState.isCollision,
+    existingAccountState,
+    explicitSignupSuccess,
+    strongUrlTransition,
+    hardError,
+  };
+}
+
 export async function withBrowserSession(handler, options = {}) {
   const browser = await chromium.launch({ headless: options.headless ?? true });
   const context = await browser.newContext();
@@ -218,69 +241,74 @@ export async function createAccount({ page, email, password }) {
   ]);
 
   if (!clicked) {
-    return { passed: false, creationAccepted: false, collisionDetected: false, detail: "botão de criação não encontrado" };
-  }
-
-  await page.waitForTimeout(1800);
-  const uiError = await detectUiError(page);
-  const bodyText = await getBodyText(page);
-  const observedText = `${uiError || ""}\n${bodyText}`.trim();
-  const existingAccountState = await detectExistingAccountState(page, observedText);
-  const collisionDetected = existingAccountState.isCollision;
-  const finalUrl = page.url();
-  const explicitSignupSuccess = isExplicitSignupSuccess({ finalUrl, observedText });
-  const successByText = hasSuccessSignal(observedText);
-  const stillInAuthFlow = await isStillInAuthFlow(page);
-  const strongUrlTransition = finalUrl !== beforeSubmitUrl && !stillInAuthFlow;
-  const hasSuccessEvidence = !collisionDetected && (explicitSignupSuccess || strongUrlTransition);
-
-  if (collisionDetected) {
     return {
       passed: false,
       creationAccepted: false,
-      collisionDetected: true,
-      detail: existingAccountState.textCollision
-        ? `colisão detectada por texto explícito de e-mail já cadastrado: ${uiError || "estado de conta existente"}`
-        : "colisão detectada por estado estrutural de conta existente (reenviar confirmação + fazer login/usar outro e-mail)",
-      uiError,
-      finalUrl,
+      collisionDetected: false,
+      hardError: true,
+      detail: "botão de criação não encontrado",
     };
   }
+  const POLL_TIMEOUT_MS = 8000;
+  const POLL_INTERVAL_MS = 500;
+  const startedAt = Date.now();
 
-  if (!hasSuccessEvidence) {
-    if (hasNonRetryableErrorSignal(observedText)) {
+  while (Date.now() - startedAt <= POLL_TIMEOUT_MS) {
+    const state = await evaluateSignupState(page, beforeSubmitUrl);
+    const hasSuccessEvidence = !state.collisionDetected && (state.explicitSignupSuccess || state.strongUrlTransition);
+
+    if (state.collisionDetected) {
+      return {
+        passed: false,
+        creationAccepted: false,
+        collisionDetected: true,
+        hardError: false,
+        detail: state.existingAccountState.textCollision
+          ? `alias não criado (colisão explícita de e-mail já cadastrado): ${state.uiError || "estado de conta existente"}`
+          : "alias não criado (estado estrutural de conta existente: reenviar confirmação + fazer login/usar outro e-mail)",
+        uiError: state.uiError,
+        finalUrl: state.finalUrl,
+      };
+    }
+
+    if (state.hardError) {
       return {
         passed: false,
         creationAccepted: false,
         collisionDetected: false,
-        detail: `signup rejeitado com erro não tratável: ${uiError || "falha operacional detectada"}`,
-        uiError,
-        finalUrl,
+        hardError: true,
+        detail: `signup rejeitado por erro operacional duro: ${state.uiError || "falha operacional detectada"}`,
+        uiError: state.uiError,
+        finalUrl: state.finalUrl,
       };
     }
 
-    return {
-      passed: false,
-      creationAccepted: false,
-      collisionDetected: true,
-      detail:
-        "signup ambíguo sem evidência forte de criação nova (sem mensagem inequívoca e sem transição forte de URL); tratando como colisão para retry",
-      uiError,
-      finalUrl,
-    };
+    if (hasSuccessEvidence) {
+      return {
+        passed: true,
+        creationAccepted: true,
+        collisionDetected: false,
+        hardError: false,
+        detail: /\/auth\/sign-up-success(?:[/?#]|$)/i.test(state.finalUrl)
+          ? "signup aceito por estado explícito /auth/sign-up-success"
+          : "signup aceito com evidência textual inequívoca (Cadastro iniciado / confirmação por e-mail)",
+        uiError: state.uiError,
+        finalUrl: state.finalUrl,
+      };
+    }
+
+    await page.waitForTimeout(POLL_INTERVAL_MS);
   }
 
+  const lastState = await evaluateSignupState(page, beforeSubmitUrl);
   return {
-    passed: true,
-    creationAccepted: true,
-    collisionDetected: false,
-    detail: /\/auth\/sign-up-success(?:[/?#]|$)/i.test(finalUrl)
-      ? "signup aceito por estado explícito /auth/sign-up-success"
-      : successByText
-        ? "signup aceito com evidência textual inequívoca (Cadastro iniciado / confirmação por e-mail)"
-        : "signup aceito com transição forte de URL fora do fluxo de auth",
-    uiError,
-    finalUrl,
+    passed: false,
+    creationAccepted: false,
+    collisionDetected: true,
+    hardError: false,
+    detail: "alias não criado (sem sucesso explícito no tempo de polling); tentando próximo sequence",
+    uiError: lastState.uiError,
+    finalUrl: lastState.finalUrl,
   };
 }
 

@@ -155,9 +155,20 @@ async function main() {
         continue;
       }
 
-      if (!signupResult.passed || signupResult.creationAccepted !== true) {
+      if (signupResult.hardError === true) {
         pushStep(steps, "create_account_request", "failed", signupResult.detail);
         return;
+      }
+
+      if (!signupResult.passed || signupResult.creationAccepted !== true) {
+        pushStep(
+          steps,
+          "create_account_collision_retry",
+          "passed",
+          `alias não criado para ${candidateEmail}: ${signupResult.detail}; tentando próximo sequence`,
+        );
+        await openAuth({ page, appUrl });
+        continue;
       }
 
       created = { sequence: candidateSequence, email: candidateEmail, password: candidatePassword };
