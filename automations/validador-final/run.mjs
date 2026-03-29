@@ -374,14 +374,6 @@ async function main() {
     );
     if (!correctLoginPassed) return;
 
-    const logoutAfterLogin = await logout({ page });
-    pushStep(
-      steps,
-      "logout_after_login_before_reset",
-      logoutAfterLogin.passed ? "passed" : "failed",
-      logoutAfterLogin.detail,
-    );
-
     await openAuth({ page, appUrl });
     const forgotResult = await requestPasswordReset({ page, email: activeEmail });
     pushStep(
@@ -463,6 +455,24 @@ async function main() {
       sequence: usedSequence,
       last_updated_at: nowIso(),
     });
+
+    const authenticatedAfterReset = hasAuthSuccessUrl(page.url());
+    pushStep(
+      steps,
+      "validate_authenticated_after_reset_success",
+      authenticatedAfterReset ? "passed" : "failed",
+      authenticatedAfterReset ? `sessão autenticada após reset em ${page.url()}` : `reset não retornou sessão autenticada (${page.url()})`,
+    );
+    if (!authenticatedAfterReset) return;
+
+    const logoutAfterReset = await logout({ page });
+    pushStep(
+      steps,
+      "logout_after_reset_success",
+      logoutAfterReset.passed ? "passed" : "failed",
+      logoutAfterReset.detail,
+    );
+    if (!logoutAfterReset.passed) return;
 
     await openAuth({ page, appUrl });
     const loginWithNewPassword = await login({
