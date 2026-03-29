@@ -365,17 +365,24 @@ export async function logout({ page }) {
       page.locator(
         '[data-testid*="user" i], [data-testid*="menu" i], [data-testid*="avatar" i], [data-testid*="account" i], [data-testid*="profile" i]',
       ),
+      page.locator('header button:has(img), header [data-testid*="avatar" i] button, nav button:has(img)'),
       page.locator('[aria-label*="account" i], [aria-label*="profile" i], [aria-label*="perfil" i], [aria-label*="usuário" i]'),
       page.locator('[class*="avatar" i], [class*="profile" i], [class*="account" i], img[alt*="avatar" i]'),
     ];
 
     for (const menuTrigger of menuTriggers) {
-      if ((await menuTrigger.count()) === 0) continue;
-      const target = menuTrigger.first();
-      if (!(await target.isVisible().catch(() => false))) continue;
-      await target.click().catch(() => {});
-      await page.waitForTimeout(450);
-      trigger = await firstVisible(page, logoutTargets);
+      const count = await menuTrigger.count();
+      if (count === 0) continue;
+      for (let index = 0; index < Math.min(count, 4); index += 1) {
+        const target = menuTrigger.nth(index);
+        if (!(await target.isVisible().catch(() => false))) continue;
+        await target.click().catch(() => {});
+        await page.waitForTimeout(450);
+        trigger = await firstVisible(page, logoutTargets);
+        if (trigger) {
+          break;
+        }
+      }
       if (trigger) {
         break;
       }

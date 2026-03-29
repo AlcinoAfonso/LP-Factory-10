@@ -377,7 +377,7 @@ async function main() {
     const logoutAfterLogin = await logout({ page });
     pushStep(
       steps,
-      "logout_after_reset",
+      "logout_after_login_before_reset",
       logoutAfterLogin.passed ? "passed" : "failed",
       logoutAfterLogin.detail,
     );
