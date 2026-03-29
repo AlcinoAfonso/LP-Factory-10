@@ -42,4 +42,4 @@ Estrutura padrão:
 
 ## Observação
 
-`templates/briefings/mvp1-login.json` permanece apenas como legado da fase 1 e não participa do fluxo funcional da Fase 2.
+Os briefings JSON legados da fase 1 foram removidos do subprojeto. O fluxo funcional da Fase 2 é totalmente determinístico e não depende de `briefing_path`, `login_email` ou `login_password`.
