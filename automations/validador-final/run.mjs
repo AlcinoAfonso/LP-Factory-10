@@ -129,6 +129,63 @@ function inspectUrlParts(value) {
   }
 }
 
+async function handleAuthConfirmInterstitial({ page, flowLabel }) {
+  const INITIAL_TIMEOUT_MS = 9000;
+  const currentUrl = page.url();
+  if (!currentUrl.includes("/auth/confirm")) {
+    return { ok: true, detail: `${flowLabel}: sem intersticial /auth/confirm` };
+  }
+
+  writeSummary(`- ${flowLabel}_auth_confirm_initial_url: \`${currentUrl}\``);
+
+  try {
+    await page.waitForURL((url) => !url.toString().includes("/auth/confirm"), { timeout: INITIAL_TIMEOUT_MS });
+    writeSummary(`- ${flowLabel}_auth_confirm_after_auto_wait_url: \`${page.url()}\``);
+    return { ok: true, detail: `${flowLabel}: saiu automaticamente de /auth/confirm` };
+  } catch {
+    writeSummary(`- ${flowLabel}_auth_confirm_auto_wait_timeout: \`true\``);
+  }
+
+  const fallbackSubmitted = await page.evaluate(() => {
+    const primary = document.querySelector("form#f");
+    const secondary = document.querySelector('form[action="/auth/confirm"]');
+    const form = primary || secondary;
+    if (!form) return false;
+    if (typeof form.requestSubmit === "function") {
+      form.requestSubmit();
+      return true;
+    }
+    form.submit();
+    return true;
+  });
+
+  writeSummary(`- ${flowLabel}_auth_confirm_fallback_submitted: \`${fallbackSubmitted}\``);
+
+  if (fallbackSubmitted) {
+    try {
+      await page.waitForURL((url) => !url.toString().includes("/auth/confirm"), { timeout: INITIAL_TIMEOUT_MS });
+      writeSummary(`- ${flowLabel}_auth_confirm_after_fallback_url: \`${page.url()}\``);
+      return { ok: true, detail: `${flowLabel}: saiu de /auth/confirm após fallback` };
+    } catch {
+      writeSummary(`- ${flowLabel}_auth_confirm_fallback_wait_timeout: \`true\``);
+    }
+  }
+
+  const title = await page.title().catch(() => "");
+  const bodySnippet = ((await page.locator("body").innerText().catch(() => "")) || "")
+    .trim()
+    .slice(0, 300);
+
+  writeSummary(`- ${flowLabel}_auth_confirm_final_url: \`${page.url()}\``);
+  writeSummary(`- ${flowLabel}_auth_confirm_title: \`${title || "(empty)"}\``);
+  writeSummary(`- ${flowLabel}_auth_confirm_body_snippet: \`${bodySnippet || "(empty)"}\``);
+
+  return {
+    ok: false,
+    detail: `${flowLabel}: permaneceu em /auth/confirm após espera automática e fallback`,
+  };
+}
+
 async function main() {
   const appUrl = requireAppUrl();
   const appOrigin = new URL(appUrl).origin;
@@ -265,6 +322,11 @@ async function main() {
       writeSummary(`- signup_error_title: \`${errorTitle || "(empty)"}\``);
       writeSummary(`- signup_error_body_snippet: \`${errorBodySnippet || "(empty)"}\``);
     }
+    const signupInterstitial = await handleAuthConfirmInterstitial({ page, flowLabel: "signup" });
+    if (!signupInterstitial.ok) {
+      pushStep(steps, "validate_created_account_usable", "failed", signupInterstitial.detail);
+      return;
+    }
     await page.waitForTimeout(1200);
     const usable = !page.url().includes("/auth") || hasAuthSuccessUrl(page.url());
     pushStep(
@@ -366,6 +428,7 @@ async function main() {
       writeSummary(`- reset_error_title: \`${errorTitle || "(empty)"}\``);
       writeSummary(`- reset_error_body_snippet: \`${errorBodySnippet || "(empty)"}\``);
     }
+    await handleAuthConfirmInterstitial({ page, flowLabel: "reset" });
     const mismatchAttempt = await submitNewPassword({
       page,
       newPassword: `${activePassword}X`,
