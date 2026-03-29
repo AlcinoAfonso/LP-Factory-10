@@ -9,7 +9,7 @@
 Registrar a camada `services` do LP Factory 10 como referência oficial e amigável para humano para services implantáveis, MCPs, endpoints e infraestrutura reutilizável com identidade própria, sem expor segredos.
 
 0.3 Relação com outros documentos
-• docs/automacoes.md: automações operacionais, componentes consumidores, uso humano essencial e aprendizados reaproveitáveis dessa camada
+• docs/automacoes.md: automações operacionais, componentes consumidores, uso humano essencial e referências para services base quando houver dependência
 • docs/base-tecnica.md: guardrails, regras estruturais, checks de CI, segurança, workflows técnicos e topologia canônica do repositório
 • docs/roadmap.md: evolução planejada, próximos casos, fases futuras e itens ainda não materializados como caso operacional
 

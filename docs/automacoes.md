@@ -274,6 +274,7 @@ Incompatibilidade de autenticação no contrato atual da MCP
 
 Referências / dependências:
 docs/services.md — `1.1 LPF Supabase Inspect MCP`
+services/mcp-supabase-inspect/README.md
 
 3.5 Validador Final
 Objetivo:
