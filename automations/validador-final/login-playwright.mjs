@@ -339,10 +339,26 @@ export async function login({ page, email, password }) {
 }
 
 export async function logout({ page }) {
-  const trigger = await firstVisible(page, [
+  const logoutTargets = [
     page.getByRole("button", { name: /sair|logout|sign out/i }),
     page.getByRole("link", { name: /sair|logout|sign out/i }),
-  ]);
+  ];
+  let trigger = await firstVisible(page, logoutTargets);
+
+  if (!trigger) {
+    const menuTriggers = [
+      page.getByRole("button", { name: /perfil|conta|usuário|usuario|menu|account|profile/i }),
+      page.locator('button[aria-haspopup="menu"]'),
+      page.locator('[data-testid*="avatar"], [class*="avatar"], img[alt*="avatar" i]'),
+    ];
+
+    const menuTrigger = await firstVisible(page, menuTriggers);
+    if (menuTrigger) {
+      await menuTrigger.click().catch(() => {});
+      await page.waitForTimeout(600);
+      trigger = await firstVisible(page, logoutTargets);
+    }
+  }
 
   if (!trigger) {
     return { passed: false, detail: "ação de logout não encontrada", finalUrl: page.url() };
@@ -410,7 +426,10 @@ export async function submitNewPassword({ page, newPassword, confirmPassword }) 
   await page.waitForTimeout(1500);
 
   const uiError = await detectUiError(page);
-  const mismatchDetected = /não confere|diferent|mismatch|match/i.test(uiError || "");
+  const bodyText = ((await page.locator("body").innerText().catch(() => "")) || "").trim();
+  const mismatchDetected = /não confere|senhas?.*(diferent|iguais|coincid)|must match|diferent|mismatch|do not match/i.test(
+    `${uiError || ""}\n${bodyText}`,
+  );
 
   return {
     passed: !mismatchDetected,
