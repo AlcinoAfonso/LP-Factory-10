@@ -276,7 +276,7 @@ Referências / dependências:
 docs/services.md — `1.1 LPF Supabase Inspect MCP`
 services/mcp-supabase-inspect/README.md
 
-3.5 Validador Final
+3.4 Validador Final
 Objetivo:
 Validar fluxos reais do app por meio de navegação executada pelo workflow.
 
