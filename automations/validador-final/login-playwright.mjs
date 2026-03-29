@@ -390,7 +390,16 @@ export async function logout({ page }) {
     };
   }
 
-  await page.goto("/auth/login", { waitUntil: "domcontentloaded", timeout: 20000 }).catch(() => {});
+  const authLoginUrl = new URL("/auth/login", page.url()).toString();
+  try {
+    await page.goto(authLoginUrl, { waitUntil: "domcontentloaded", timeout: 20000 });
+  } catch (error) {
+    return {
+      passed: false,
+      detail: `logout inconclusivo: falha ao navegar para ${authLoginUrl} (${error instanceof Error ? error.message : String(error)})`,
+      finalUrl: page.url(),
+    };
+  }
   await page.waitForTimeout(800);
   finalUrl = page.url();
   const loginInputsVisible = await hasLoginInputsVisible();
