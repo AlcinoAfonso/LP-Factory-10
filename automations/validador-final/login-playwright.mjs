@@ -339,6 +339,15 @@ export async function login({ page, email, password }) {
 }
 
 export async function logout({ page }) {
+  function sanitizeText(value, max = 80) {
+    if (!value) return "";
+    return String(value)
+      .replace(/\s+/g, " ")
+      .replace(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi, "[email]")
+      .trim()
+      .slice(0, max);
+  }
+
   async function hasLoginInputsVisible() {
     const emailVisible = await page.locator('input[type="email"], input[name*="email" i]').first().isVisible().catch(() => false);
     const passwordVisible = await page.locator('input[type="password"]').first().isVisible().catch(() => false);
@@ -353,24 +362,89 @@ export async function logout({ page }) {
     page.getByRole("button", { name: /sair|logout|sign out/i }),
     page.getByRole("link", { name: /sair|logout|sign out/i }),
   ];
+  const menuTriggerGroups = [
+    {
+      name: "role_named_profile",
+      locator: page.getByRole("button", { name: /perfil|conta|usuário|usuario|menu|account|profile/i }),
+    },
+    {
+      name: "header_nav_haspopup",
+      locator: page.locator('header button[aria-haspopup="menu"], nav button[aria-haspopup="menu"]'),
+    },
+    {
+      name: "generic_haspopup",
+      locator: page.locator('button[aria-haspopup="menu"], [aria-haspopup="menu"][role="button"]'),
+    },
+    {
+      name: "collapsed_expanded_false",
+      locator: page.locator('button[aria-expanded="false"], [role="button"][aria-expanded="false"]'),
+    },
+    {
+      name: "data_state_closed",
+      locator: page.locator('[data-state="closed"][role="button"], [data-state="closed"] button'),
+    },
+    {
+      name: "data_testid_user_menu_avatar",
+      locator: page.locator(
+        '[data-testid*="user" i], [data-testid*="menu" i], [data-testid*="avatar" i], [data-testid*="account" i], [data-testid*="profile" i]',
+      ),
+    },
+    {
+      name: "header_avatar_button",
+      locator: page.locator('header button:has(img), header [data-testid*="avatar" i] button, nav button:has(img)'),
+    },
+    {
+      name: "aria_label_profile",
+      locator: page.locator('[aria-label*="account" i], [aria-label*="profile" i], [aria-label*="perfil" i], [aria-label*="usuário" i]'),
+    },
+    {
+      name: "class_avatar_profile_account",
+      locator: page.locator('[class*="avatar" i], [class*="profile" i], [class*="account" i], img[alt*="avatar" i]'),
+    },
+  ];
+
+  async function collectVisibleMenuDiagnostics(limit = 10) {
+    const candidates = [];
+    for (const group of menuTriggerGroups) {
+      if (candidates.length >= limit) break;
+      const count = await group.locator.count();
+      const scanLimit = Math.min(count, 6);
+      for (let index = 0; index < scanLimit && candidates.length < limit; index += 1) {
+        const node = group.locator.nth(index);
+        const isVisible = await node.isVisible().catch(() => false);
+        if (!isVisible) continue;
+        const metadata = await node
+          .evaluate((el) => ({
+            tag: el.tagName.toLowerCase(),
+            text: (el.textContent || "").replace(/\s+/g, " ").trim(),
+            ariaLabel: el.getAttribute("aria-label") || "",
+            testId: el.getAttribute("data-testid") || "",
+            className: el.getAttribute("class") || "",
+            ariaHaspopup: el.getAttribute("aria-haspopup") || "",
+            ariaExpanded: el.getAttribute("aria-expanded") || "",
+          }))
+          .catch(() => null);
+        if (!metadata) continue;
+        candidates.push({
+          group: group.name,
+          tag: metadata.tag,
+          text: sanitizeText(metadata.text, 60),
+          ariaLabel: sanitizeText(metadata.ariaLabel, 60),
+          dataTestId: sanitizeText(metadata.testId, 60),
+          classHints: sanitizeText(metadata.className, 80),
+          ariaHaspopup: metadata.ariaHaspopup || "none",
+          ariaExpanded: metadata.ariaExpanded || "none",
+        });
+      }
+    }
+    return candidates;
+  }
+
   let trigger = await firstVisible(page, logoutTargets);
 
   if (!trigger) {
-    const menuTriggers = [
-      page.getByRole("button", { name: /perfil|conta|usuário|usuario|menu|account|profile/i }),
-      page.locator('header button[aria-haspopup="menu"], nav button[aria-haspopup="menu"]'),
-      page.locator('button[aria-haspopup="menu"], [aria-haspopup="menu"][role="button"]'),
-      page.locator('button[aria-expanded="false"], [role="button"][aria-expanded="false"]'),
-      page.locator('[data-state="closed"][role="button"], [data-state="closed"] button'),
-      page.locator(
-        '[data-testid*="user" i], [data-testid*="menu" i], [data-testid*="avatar" i], [data-testid*="account" i], [data-testid*="profile" i]',
-      ),
-      page.locator('header button:has(img), header [data-testid*="avatar" i] button, nav button:has(img)'),
-      page.locator('[aria-label*="account" i], [aria-label*="profile" i], [aria-label*="perfil" i], [aria-label*="usuário" i]'),
-      page.locator('[class*="avatar" i], [class*="profile" i], [class*="account" i], img[alt*="avatar" i]'),
-    ];
-
-    for (const menuTrigger of menuTriggers) {
+    for (const group of menuTriggerGroups) {
+      const menuTrigger = group.locator;
       const count = await menuTrigger.count();
       if (count === 0) continue;
       for (let index = 0; index < Math.min(count, 4); index += 1) {
@@ -390,7 +464,16 @@ export async function logout({ page }) {
   }
 
   if (!trigger) {
-    return { passed: false, detail: "ação de logout não encontrada", finalUrl: page.url() };
+    const diagnosticPayload = {
+      url: page.url(),
+      title: sanitizeText(await page.title().catch(() => "sem título"), 100),
+      visibleCandidates: await collectVisibleMenuDiagnostics(10),
+    };
+    return {
+      passed: false,
+      detail: `ação de logout não encontrada | diag=${JSON.stringify(diagnosticPayload)}`,
+      finalUrl: page.url(),
+    };
   }
 
   await Promise.allSettled([
