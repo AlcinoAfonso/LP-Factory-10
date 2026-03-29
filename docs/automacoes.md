@@ -4,9 +4,10 @@ Versão: v1.7
 Status: Estrutura ajustada para automações, agentes e MCP
 
 0.2 Função do documento
-Registrar a camada de automação do LP Factory 10 como referência operacional para plataformas, integrações, automações operacionais, componentes consumidores, infraestrutura reutilizável da camada de automações e aprendizados operacionais, sem expor segredos.
+Registrar a camada de automações operacionais do LP Factory 10 como referência operacional para plataformas usadas nessa camada, integrações, automações operacionais, componentes consumidores e aprendizados operacionais, sem expor segredos.
 
 0.3 Relação com outros documentos
+docs/services.md: services implantáveis, MCPs, endpoints e infraestrutura reutilizável com identidade própria.
 docs/base-tecnica.md: regras estruturais gerais, guardrails, checks e workflows técnicos de manutenção.
 docs/schema.md: banco, tabelas, views, policies e functions.
 docs/roadmap.md: evolução funcional.
@@ -25,7 +26,7 @@ docs/roadmap.md: evolução funcional.
 
 1. Objetivo e escopo
 1.1 Objetivo
-Registrar plataformas, integrações, automações, agentes, workflows e MCPs do projeto.
+Registrar plataformas usadas na camada de automação, integrações, automações operacionais, agentes e workflows consumidores do projeto.
 Consolidar conhecimento operacional.
 Preservar decisões e aprendizados de implementação.
 Registrar governança operacional mínima dos fluxos relevantes.
@@ -34,12 +35,13 @@ Registrar governança operacional mínima dos fluxos relevantes.
 Plataformas usadas na camada de automação.
 Credenciais registradas sem valores secretos.
 Catálogo de automações operacionais.
-Componentes consumidores e infraestrutura reutilizável da camada de automações.
+Componentes consumidores da camada de automações.
 Aprendizados operacionais relevantes.
 
 1.3 Não inclui
 Valores brutos de chaves ou tokens.
 Detalhamento completo de banco fora de docs/schema.md.
+Services implantáveis, MCPs, endpoints e infraestrutura reutilizável fora de docs/services.md.
 Regras estruturais gerais, guardrails e workflows técnicos de manutenção fora de docs/base-tecnica.md.
 Roadmap funcional fora de docs/roadmap.md.
 
@@ -161,11 +163,11 @@ Hospedagem do app principal e de serviços dedicados.
 
 2.4.2 Uso atual
 Projeto `lp-factory-10` hospeda o Core SaaS.
-Projeto `lpf-10-services` hospeda a MCP descrita em `3.4 LPF Supabase Inspect MCP`.
+Projeto `lpf-10-services` hospeda services dedicados da camada `services`, incluindo a MCP documentada em `docs/services.md`.
 
 2.4.3 Variáveis operacionais registradas
-LPF_MCP_SECRET
-SUPABASE_DB_URL_READONLY
+Variáveis específicas de services dedicados não devem ser expandidas nesta seção.
+Consultar `docs/services.md` e o README local de cada service quando houver necessidade.
 
 2.4.4 Ambientes
 Preview
@@ -174,6 +176,7 @@ Production
 2.4.5 Observações
 Endpoint canônico MCP: https://lpf-10-services.vercel.app/api/mcp
 Os valores secretos não devem ser registrados neste arquivo.
+Detalhes de services dedicados devem ser consultados em `docs/services.md` e no README local de cada service.
 
 2.5 Resend
 2.5.1 Papel no ecossistema
@@ -185,8 +188,15 @@ Não há automação operacional de Resend formalizada neste arquivo até esta v
 2.5.3 Regra de documentação
 Novos registros sobre Resend só devem entrar neste documento quando houver caso de automação formalizado.
 
-3. Catálogo de automações
+3. Catálogo de automações operacionais
+
 3.1 Supabase Inspect Actions
+Objetivo:
+Executar inspeções read-only no Supabase via GitHub Actions, sem mutação, com resultado em logs e Job Summary.
+
+Status:
+Implementada
+
 Acesso:
 GitHub → Actions → workflow `pipeline-supabase-inspect`
 
@@ -196,244 +206,96 @@ Executar o workflow informando `briefing_path` ou inputs manuais
 Resposta esperada:
 Job Summary com SQL executado, rowCount, colunas e sample de dados
 
-Data de criação: 03/03/2026
-Objetivo: executar inspeções read-only no Supabase via GitHub Actions, sem mutação, com resultado em logs e Job Summary, incluindo execução determinística de múltiplas queries e relatório completo por query.
-Como funciona hoje: aceita briefing opcional ou arquivo via briefing_path, gera plano e decisões do modelo, recebe uma ou múltiplas queries SQL read-only e executa em ordem.
-Guardrails: proíbe ;, exige SQL iniciando com WITH ou SELECT, LIMIT obrigatório e, quando literal, <= 50, além de denylist de mutações e comandos proibidos.
-Limites: max_queries = 20, max_rows = 50, truncagem de 200 caracteres por célula e 10k por query.
-Saída atual: summary com SQL, rowCount, colunas, sample de rows e relatório completo por query.
-Arquivos / credenciais: .github/workflows/pipeline-supabase-inspect.yml, automations/supabase-inspect/run.mjs, automations/supabase-inspect/README.md, automations/supabase-inspect/PREMERGE_CHECK.md, automations/supabase-inspect/templates/.gitkeep, supabase/migrations/0005__ai_readonly.sql, OPENAI_API_KEY, SUPABASE_DB_URL_READONLY.
-Status: implementada
-Observações: usa openai e pg, opera com a role ai_readonly no schema public, permite discovery com information_schema e pg_catalog, usa permissions: contents: read e concurrency por branch/ref.
-
-3.1.1 Evolução registrada em 06/03/2026 — batch SQL + relatório completo
-Objetivo: permitir múltiplas queries SQL read-only em modo determinístico e entregar relatório completo por query no Job Summary.
-Como funciona hoje: recebe múltiplas queries no briefing ou em arquivo via briefing_path, com delimitador ---, e executa em ordem.
-Observações: o delimitador --- funciona em linha própria ou inline com espaços ao redor; as regras read-only do supabase-inspect continuam válidas.
+Referências / dependências:
+README local: `automations/supabase-inspect/README.md`
+Workflow: `.github/workflows/pipeline-supabase-inspect.yml`
+Runtime: `automations/supabase-inspect/`
+Referência estrutural: `docs/base-tecnica.md`
 
 3.2 Pipeline Docs Apply Report
-Objetivo: aplicar reports JSON Actions-ready em arquivos Markdown e automatizar branch, commit e Pull Request para revisão humana.
-Como funciona hoje: o workflow recebe report_path, aplica o report e registra resumo no Job Summary.
-Arquivos / credenciais: .github/workflows/pipeline-docs-apply-report.yml, automations/docs-apply-report/run.mjs, automations/docs-apply-report/apply-doc-report.mjs, permissões do GitHub Actions.
-Status: implementada
-Observações: usa permissions de escrita em contents e pull-requests, cria PR com labels docs, automation e needs-review, suporta replace_section, insert_after_section e insert_after_heading, e falha em âncora ausente, alvo ausente, match ambíguo ou seção já existente em caso de insert.
+Objetivo:
+Aplicar reports JSON em documentos Markdown e automatizar branch, commit e Pull Request para revisão humana.
+
+Status:
+Implementada
+
+Acesso:
+GitHub → Actions → workflow `pipeline-docs-apply-report`
+
+Como usar:
+Executar o workflow informando `report_path`
+
+Resposta esperada:
+Alteração documental aplicada em branch própria com Pull Request para revisão humana
+
+Referências / dependências:
+README local: `automations/docs-apply-report/README.md`
+Workflow: `.github/workflows/pipeline-docs-apply-report.yml`
+Runtime: `automations/docs-apply-report/`
 
 3.3 Supabase Inspect Agente
+Objetivo:
+Validar o uso operacional do Supabase Inspect no Agent Builder por meio da MCP base documentada em `docs/services.md`, sem acesso direto ao banco.
+
+Status:
+Concluído como validação funcional em Agent Builder
+
 Acesso:
 Agent Builder (OpenAI)
 
-URL do Builder:
-https://platform.openai.com/agent-builder/edit?workflow=wf_69b57fed963c8190b9da8e40797aa5820147027ff7bd60d7&version=3
-
-Workflow ID:
-wf_69b57fed963c8190b9da8e40797aa5820147027ff7bd60d7
-
-MCP consumida:
-3.4 LPF Supabase Inspect MCP
-
-Endpoint MCP:
-https://lpf-10-services.vercel.app/api/mcp
+Onde acessar:
+URL do Builder: https://platform.openai.com/agent-builder/edit?workflow=wf_69b57fed963c8190b9da8e40797aa5820147027ff7bd60d7&version=3
 
 Como usar:
-Executar perguntas técnicas ou SQL dentro do Agent Builder
+Executar perguntas técnicas ou SQL dentro do escopo read-only validado
 
 Resposta esperada:
-Resposta assistida para validação funcional (não usar para orquestração robusta)
+Resposta assistida para validação funcional (não usar como camada final de orquestração robusta)
 
-Objetivo
-
-- validar o uso operacional do Supabase Inspect no Agent Builder por meio da MCP `3.4 LPF Supabase Inspect MCP`
-- atuar como prova funcional de inspeção read-only no Builder
-- evitar acesso direto ao banco
-
-Implementação validada
-
-- MCP remota conectada e uso validado de tools read-only relevantes
-- prompt refinado para reduzir ambiguidade, limitar tools inadequadas e melhorar respostas curtas
-- suporte melhor a inputs técnicos, inclusive SQL
-- saída estruturada mantida para maior consistência do retorno
-
-Testes executados
-
-- perguntas textuais simples sobre schema e tabelas
-- perguntas técnicas curtas sobre colunas e compatibilidade
-- análise de um único bloco SQL
-- teste com input técnico mais rico, inclusive SQL colado no prompt
-
-Limite identificado
-
-- o Builder não se mostrou confiável como camada final de orquestração mais robusta para múltiplos SQLs no mesmo input, parsing determinístico, separação mais rígida de subtarefas e contrato final de saída estável
-- houve casos em que o Agent node gerou resposta útil, mas o End node não refletiu corretamente esse conteúdo no fim do workflow
-
-Dependência central
-
-- `3.4 LPF Supabase Inspect MCP`
-
-Status
-
-- concluído como validação funcional em Agent Builder
-
-Observações
-
-- este item deve ser tratado como prova funcional de uso do Supabase Inspect Agent no Agent Builder, e não como entrega final de orquestração robusta
-- o próximo passo natural para execução mais controlada e integrável em fluxo maior é o Agents SDK
-- o consumo OpenAI deste componente pertence ao projeto OpenAI em que o workflow/agente está publicado e executado
-- a MCP não define o projeto OpenAI de consumo
-- Supabase, GitHub e repositório não definem a cobrança OpenAI deste componente
+Referências / dependências:
+docs/services.md — `1.1 LPF Supabase Inspect MCP`
+services/mcp-supabase-inspect/README.md
+Workflow ID: `wf_69b57fed963c8190b9da8e40797aa5820147027ff7bd60d7`
+Endpoint MCP: `https://lpf-10-services.vercel.app/api/mcp`
 
 3.3.1 Update — Agents SDK
+Status:
+Planejado
 
-Objetivo
+Objetivo:
+Migrar a validação do Builder para execução programática mais controlada
 
-- transformar o caso validado no Builder em uma versão pronta para uso dentro de um fluxo maior, com orquestrador e contrato de saída confiável
+3.3.2 Update — ChatGPT + MCP
+Status:
+Bloqueado
 
-Escopo
+Motivo:
+Incompatibilidade de autenticação no contrato atual da MCP
 
-- migrar do nível de validação visual no Builder para execução programática via Agents SDK
+Referências / dependências:
+docs/services.md — `1.1 LPF Supabase Inspect MCP`
+services/mcp-supabase-inspect/README.md
 
-O que deverá ser implementado
+3.4 Validador Final
+Objetivo:
+Validar fluxos reais do app por meio de navegação executada pelo workflow.
 
-- exportar o workflow para código SDK
-- criar a versão controlada do workflow no projeto
-- ajustar o retorno final do `runWorkflow`
-- garantir que o output final seja devolvido corretamente para o orquestrador
-- tratar adequadamente casos com múltiplos blocos SQL no mesmo input
+Status:
+Implementada
 
-Contrato de saída esperado
+Acesso:
+GitHub → Actions → workflow `automation-validador-final`
 
-- entrada: texto bruto do usuário
-- saída: objeto final pronto para o próximo agente/orquestrador
+Como usar:
+Executar o workflow informando `app_url`, `login_email`, `login_password` e, quando aplicável, `briefing_path`
 
-Critério de conclusão
+Resposta esperada:
+Validação do fluxo com status final `passed` ou `failed`, screenshot final e resumo no workflow
 
-- o workflow exportado está rodando fora da UI
-- o retorno final está correto e estável
-- o agente pode ser chamado por um orquestrador sem dependência manual do Builder
-- existe teste com bloco único contendo múltiplos SQLs e comportamento previsível
-
-3.3.2 Update — ChatGPT + MCP (bloqueado por incompatibilidade de autenticação)
-
-Objetivo
-
-- permitir operação assistida de inspeção read-only diretamente no ChatGPT, reutilizando a MCP `3.4 LPF Supabase Inspect MCP`
-
-Escopo pretendido
-
-- receber a solicitação do usuário no chat
-- estruturar o briefing de investigação
-- encaminhar a execução para a MCP já existente
-- devolver o resultado ao chat sem acesso direto ao banco fora da MCP
-
-Bloqueio identificado
-
-- a implementação canônica em `services/mcp-supabase-inspect/api/mcp.js` exige `Authorization: Bearer <LPF_MCP_SECRET>` no endpoint MCP
-- o caso foi definido para reutilizar o mesmo MCP de `3.4` sem mudança de autenticação
-- no estado atual da validação operacional, o consumo via endpoint canônico no ChatGPT não foi comprovado como compatível com esse contrato de Bearer estático
-
-Conclusão operacional
-
-- o caso não pode ser considerado implementável nem validado no estado atual sem reabrir o escopo
-- qualquer viabilização futura dependeria de mudança explícita de contrato de autenticação ou adaptação autorizada da integração
-- como isso contraria a regra original do caso, o status real passa a ser bloqueado
-
-Dependência central
-
-- `3.4 LPF Supabase Inspect MCP`
-
-Status
-
-- bloqueado
-
-Observações
-
-- este item continua conceitualmente vinculado ao mesmo MCP de `3.4`
-- o bloqueio atual não invalida `3.4` como infraestrutura read-only existente
-- o bloqueio é específico da tentativa de consumo via ChatGPT no contrato atual de autenticação
-
-3.4 LPF Supabase Inspect MCP
-
-Objetivo
-
-- fornecer camada universal de acesso read-only ao Supabase via MCP
-- permitir reutilização por múltiplos agentes, workflows e componentes consumidores
-
-Implementação
-
-- implementação canônica: `services/mcp-supabase-inspect/api/mcp.js`
-- projeto Vercel: `lpf-10-services`
-- endpoint canônico: https://lpf-10-services.vercel.app/api/mcp
-- autenticação via `LPF_MCP_SECRET` (Bearer token)
-- conexão via `SUPABASE_DB_URL_READONLY`
-- hospedagem dedicada fora do runtime do Core
-
-Tools
-
-- `list_tables`
-- `inspect_table_bundle`
-- `inspect_rls_bundle`
-- `sample_rows` (parcial)
-
-Arquivos
-
-- `services/mcp-supabase-inspect/api/mcp.js`
-- `services/mcp-supabase-inspect/package.json`
-- `services/mcp-supabase-inspect/package-lock.json`
-- `services/mcp-supabase-inspect/vercel.json`
-
-Variáveis (Vercel)
-
-- projeto `lpf-10-services`:
-  - `LPF_MCP_SECRET` (Preview, Production)
-  - `SUPABASE_DB_URL_READONLY` (Preview, Production)
-
-Status
-
-- implementado em serviço dedicado; validação fim a fim depende de operação/cutover externo por ambiente
-
-Observações
-
-- camada independente e universal da arquitetura de automações
-- o Core SaaS não hospeda mais esta MCP
-- o item `3.3` é apenas um consumidor atual dessa infraestrutura
-- MCP reutilizável por múltiplos agentes, workflows e componentes consumidores
-- acesso protegido por token
-- `LPF_MCP_SECRET` não deve ter valor documentado neste arquivo
-
-3.4.1 Caso de uso — habilitar `sample_rows`
-
-Objetivo
-
-- permitir amostragem real de linhas em modo read-only
-
-Contexto
-
-- falha por permissão com RLS (`auth.uid()`)
-
-Escopo
-
-- ajustar permissões mínimas no banco
-- validar retorno real
-- manter segurança read-only
-
-Observações
-
-- esta pendência não invalida a MCP como camada reutilizável
-- bloqueia apenas a completude funcional da tool `sample_rows`
-
-Status
-
-- pendente em caso separado
-
-3.5 Validador Final
-
-Objetivo
-
-- validar fluxos reais do app por meio de navegação executada pelo workflow
-
-Observação
-
-- todo o conteúdo detalhado deste item está em discussão no momento
-- este item só deverá ser preenchido completamente após a implementação
+Referências / dependências:
+README local: `automations/validador-final/README.md`
+Workflow: `.github/workflows/automation-validador-final.yml`
+Runtime: `automations/validador-final/`
 
 4. Aprendizados operacionais
 4.1 Princípios identificados
