@@ -85,6 +85,36 @@ function saveState(nextState) {
   writeFileSync(`${statePath}`, `${JSON.stringify(nextState, null, 2)}\n`, "utf-8");
 }
 
+function savePendingConfirmationState({ sequence, email, password }) {
+  saveState({
+    email,
+    password,
+    status: "pending_confirmation",
+    sequence,
+    last_updated_at: nowIso(),
+  });
+}
+
+function saveActiveState({ sequence, email, password }) {
+  saveState({
+    email,
+    password,
+    status: "active",
+    sequence,
+    last_updated_at: nowIso(),
+  });
+}
+
+function saveStateWithAdvancedSequence({ state, nextSequence }) {
+  saveState({
+    email: state.email,
+    password: state.password,
+    status: state.status,
+    sequence: nextSequence,
+    last_updated_at: nowIso(),
+  });
+}
+
 function requireAppUrl() {
   const value = process.env.APP_URL_OVERRIDE;
   if (typeof value !== "string" || value.trim() === "") {
@@ -126,6 +156,31 @@ function inspectUrlParts(value) {
     };
   } catch {
     return { pathname: "invalid_url", search: "" };
+  }
+}
+
+async function writeAuthErrorSummary({ page, flowLabel }) {
+  const errorTitle = await page.title().catch(() => "");
+  const errorBodySnippet = ((await page.locator("body").innerText().catch(() => "")) || "")
+    .trim()
+    .slice(0, 300);
+  writeSummary(`- ${flowLabel}_error_title: \`${errorTitle || "(empty)"}\``);
+  writeSummary(`- ${flowLabel}_error_body_snippet: \`${errorBodySnippet || "(empty)"}\``);
+}
+
+async function openAndLogAuthLink({ page, flowLabel, matchedLinkRaw, matchedLinkSanitized, matchedLink }) {
+  const linkParts = inspectUrlParts(matchedLink);
+  writeSummary(`- ${flowLabel}_mail_matched_link_raw: \`${matchedLinkRaw ?? matchedLink}\``);
+  writeSummary(`- ${flowLabel}_mail_matched_link_sanitized: \`${matchedLinkSanitized ?? matchedLink}\``);
+  writeSummary(`- ${flowLabel}_mail_matched_link: \`${matchedLink}\``);
+  writeSummary(`- ${flowLabel}_mail_pathname: \`${linkParts.pathname}\``);
+  writeSummary(`- ${flowLabel}_mail_search: \`${linkParts.search || "(empty)"}\``);
+
+  await page.goto(matchedLink, { waitUntil: "domcontentloaded", timeout: 30000 });
+  writeSummary(`- ${flowLabel}_after_goto_url: \`${page.url()}\``);
+
+  if (page.url().includes("/auth/error")) {
+    await writeAuthErrorSummary({ page, flowLabel });
   }
 }
 
@@ -253,13 +308,7 @@ async function main() {
 
     if (!created) {
       const nextSequence = lastTriedSequence + 1;
-      saveState({
-        email: state.email,
-        password: state.password,
-        status: state.status,
-        sequence: nextSequence,
-        last_updated_at: nowIso(),
-      });
+      saveStateWithAdvancedSequence({ state, nextSequence });
       pushStep(
         steps,
         "create_account_collision_retry",
@@ -273,12 +322,10 @@ async function main() {
     activeEmail = created.email;
     activePassword = created.password;
 
-    saveState({
+    savePendingConfirmationState({
+      sequence: usedSequence,
       email: activeEmail,
       password: activePassword,
-      status: "pending_confirmation",
-      sequence: usedSequence,
-      last_updated_at: nowIso(),
     });
 
     let signupMail;
@@ -306,22 +353,13 @@ async function main() {
       return;
     }
 
-    const signupLinkParts = inspectUrlParts(signupMail.matched_link);
-    writeSummary(`- signup_mail_matched_link_raw: \`${signupMail.matched_link_raw ?? signupMail.matched_link}\``);
-    writeSummary(`- signup_mail_matched_link_sanitized: \`${signupMail.matched_link_sanitized ?? signupMail.matched_link}\``);
-    writeSummary(`- signup_mail_matched_link: \`${signupMail.matched_link}\``);
-    writeSummary(`- signup_mail_pathname: \`${signupLinkParts.pathname}\``);
-    writeSummary(`- signup_mail_search: \`${signupLinkParts.search || "(empty)"}\``);
-    await page.goto(signupMail.matched_link, { waitUntil: "domcontentloaded", timeout: 30000 });
-    writeSummary(`- signup_after_goto_url: \`${page.url()}\``);
-    if (page.url().includes("/auth/error")) {
-      const errorTitle = await page.title().catch(() => "");
-      const errorBodySnippet = ((await page.locator("body").innerText().catch(() => "")) || "")
-        .trim()
-        .slice(0, 300);
-      writeSummary(`- signup_error_title: \`${errorTitle || "(empty)"}\``);
-      writeSummary(`- signup_error_body_snippet: \`${errorBodySnippet || "(empty)"}\``);
-    }
+    await openAndLogAuthLink({
+      page,
+      flowLabel: "signup",
+      matchedLinkRaw: signupMail.matched_link_raw,
+      matchedLinkSanitized: signupMail.matched_link_sanitized,
+      matchedLink: signupMail.matched_link,
+    });
     const signupInterstitial = await handleAuthConfirmInterstitial({ page, flowLabel: "signup" });
     if (!signupInterstitial.ok) {
       pushStep(steps, "validate_created_account_usable", "failed", signupInterstitial.detail);
@@ -337,12 +375,10 @@ async function main() {
     );
     if (!usable) return;
 
-    saveState({
+    saveActiveState({
+      sequence: usedSequence,
       email: activeEmail,
       password: activePassword,
-      status: "active",
-      sequence: usedSequence,
-      last_updated_at: nowIso(),
     });
 
     const logoutAfterSignup = await logout({ page });
@@ -404,22 +440,13 @@ async function main() {
       return;
     }
 
-    const resetLinkParts = inspectUrlParts(resetMail.matched_link);
-    writeSummary(`- reset_mail_matched_link_raw: \`${resetMail.matched_link_raw ?? resetMail.matched_link}\``);
-    writeSummary(`- reset_mail_matched_link_sanitized: \`${resetMail.matched_link_sanitized ?? resetMail.matched_link}\``);
-    writeSummary(`- reset_mail_matched_link: \`${resetMail.matched_link}\``);
-    writeSummary(`- reset_mail_pathname: \`${resetLinkParts.pathname}\``);
-    writeSummary(`- reset_mail_search: \`${resetLinkParts.search || "(empty)"}\``);
-    await page.goto(resetMail.matched_link, { waitUntil: "domcontentloaded", timeout: 30000 });
-    writeSummary(`- reset_after_goto_url: \`${page.url()}\``);
-    if (page.url().includes("/auth/error")) {
-      const errorTitle = await page.title().catch(() => "");
-      const errorBodySnippet = ((await page.locator("body").innerText().catch(() => "")) || "")
-        .trim()
-        .slice(0, 300);
-      writeSummary(`- reset_error_title: \`${errorTitle || "(empty)"}\``);
-      writeSummary(`- reset_error_body_snippet: \`${errorBodySnippet || "(empty)"}\``);
-    }
+    await openAndLogAuthLink({
+      page,
+      flowLabel: "reset",
+      matchedLinkRaw: resetMail.matched_link_raw,
+      matchedLinkSanitized: resetMail.matched_link_sanitized,
+      matchedLink: resetMail.matched_link,
+    });
     await handleAuthConfirmInterstitial({ page, flowLabel: "reset" });
     const mismatchAttempt = await submitNewPassword({
       page,
@@ -448,12 +475,10 @@ async function main() {
     if (!successReset.passed) return;
 
     activePassword = nextPassword;
-    saveState({
+    saveActiveState({
+      sequence: usedSequence,
       email: activeEmail,
       password: activePassword,
-      status: "active",
-      sequence: usedSequence,
-      last_updated_at: nowIso(),
     });
 
     const authenticatedAfterReset = hasAuthSuccessUrl(page.url());
