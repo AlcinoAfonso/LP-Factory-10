@@ -358,16 +358,27 @@ export async function logout({ page }) {
   if (!trigger) {
     const menuTriggers = [
       page.getByRole("button", { name: /perfil|conta|usuário|usuario|menu|account|profile/i }),
-      page.locator('button[aria-haspopup="menu"]'),
-      page.locator('[aria-label*="account" i], [aria-label*="profile" i], [aria-label*="perfil" i]'),
-      page.locator('[data-testid*="avatar"], [class*="avatar"], img[alt*="avatar" i]'),
+      page.locator('header button[aria-haspopup="menu"], nav button[aria-haspopup="menu"]'),
+      page.locator('button[aria-haspopup="menu"], [aria-haspopup="menu"][role="button"]'),
+      page.locator('button[aria-expanded="false"], [role="button"][aria-expanded="false"]'),
+      page.locator('[data-state="closed"][role="button"], [data-state="closed"] button'),
+      page.locator(
+        '[data-testid*="user" i], [data-testid*="menu" i], [data-testid*="avatar" i], [data-testid*="account" i], [data-testid*="profile" i]',
+      ),
+      page.locator('[aria-label*="account" i], [aria-label*="profile" i], [aria-label*="perfil" i], [aria-label*="usuário" i]'),
+      page.locator('[class*="avatar" i], [class*="profile" i], [class*="account" i], img[alt*="avatar" i]'),
     ];
 
-    const menuTrigger = await firstVisible(page, menuTriggers);
-    if (menuTrigger) {
-      await menuTrigger.click().catch(() => {});
-      await page.waitForTimeout(600);
+    for (const menuTrigger of menuTriggers) {
+      if ((await menuTrigger.count()) === 0) continue;
+      const target = menuTrigger.first();
+      if (!(await target.isVisible().catch(() => false))) continue;
+      await target.click().catch(() => {});
+      await page.waitForTimeout(450);
       trigger = await firstVisible(page, logoutTargets);
+      if (trigger) {
+        break;
+      }
     }
   }
 
