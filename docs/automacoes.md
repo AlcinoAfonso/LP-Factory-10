@@ -166,8 +166,8 @@ Projeto `lp-factory-10` hospeda o Core SaaS.
 Projeto `lpf-10-services` hospeda services dedicados da camada `services`, incluindo a MCP documentada em `docs/services.md`.
 
 2.4.3 Variáveis operacionais registradas
-LPF_MCP_SECRET
-SUPABASE_DB_URL_READONLY
+Variáveis específicas de services dedicados não devem ser expandidas nesta seção.
+Consultar `docs/services.md` e o README local de cada service quando houver necessidade.
 
 2.4.4 Ambientes
 Preview

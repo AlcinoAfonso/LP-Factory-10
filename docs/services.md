@@ -54,9 +54,10 @@ Registrar a camada `services` do LP Factory 10 como referência oficial e amigá
 • `docs/base-tecnica.md` permanece responsável por guardrails, checks, segurança e regras estruturais
 • `docs/roadmap.md` permanece responsável por evolução futura
 
-3. Observação de transição
-• nesta etapa inicial, a criação de `docs/services.md` não remove nem simplifica automaticamente conteúdos ainda existentes em `docs/automacoes.md`
-• a simplificação do catálogo operacional deve acontecer em caso posterior e separado
+3. Observação de manutenção
+• `docs/services.md` passa a ser a referência oficial e amigável para humano da camada `services`
+• detalhes técnicos expandidos devem permanecer no README local de cada service
+• novos services devem seguir o mesmo padrão documental: catálogo curto em `docs/services.md` + README técnico local no diretório do service
 
 99. Changelog
 v1.0 (29/03/2026)
