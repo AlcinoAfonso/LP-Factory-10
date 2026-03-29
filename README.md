@@ -46,6 +46,7 @@
 • docs/base-tecnica.md
 • docs/schema.md
 • docs/roadmap.md
+• docs/services.md
 • docs/fluxos2.md
 • docs/repo-inv.md — descontinuado; usar o repositório real para localizar arquivos/paths e os documentos canônicos para regras e contratos
 
