@@ -339,6 +339,16 @@ export async function login({ page, email, password }) {
 }
 
 export async function logout({ page }) {
+  async function hasLoginInputsVisible() {
+    const emailVisible = await page.locator('input[type="email"], input[name*="email" i]').first().isVisible().catch(() => false);
+    const passwordVisible = await page.locator('input[type="password"]').first().isVisible().catch(() => false);
+    return emailVisible || passwordVisible;
+  }
+
+  function isAuthUrl(url) {
+    return /\/auth|\/login|sign[-_]?in/i.test(url || "");
+  }
+
   const logoutTargets = [
     page.getByRole("button", { name: /sair|logout|sign out/i }),
     page.getByRole("link", { name: /sair|logout|sign out/i }),
@@ -349,6 +359,7 @@ export async function logout({ page }) {
     const menuTriggers = [
       page.getByRole("button", { name: /perfil|conta|usuário|usuario|menu|account|profile/i }),
       page.locator('button[aria-haspopup="menu"]'),
+      page.locator('[aria-label*="account" i], [aria-label*="profile" i], [aria-label*="perfil" i]'),
       page.locator('[data-testid*="avatar"], [class*="avatar"], img[alt*="avatar" i]'),
     ];
 
@@ -370,10 +381,33 @@ export async function logout({ page }) {
   ]);
   await page.waitForTimeout(1200);
 
-  const finalUrl = page.url();
+  let finalUrl = page.url();
+  if (!hasAuthSuccessUrl(finalUrl)) {
+    return {
+      passed: true,
+      detail: "logout concluído (URL fora de /a/)",
+      finalUrl,
+    };
+  }
+
+  await page.goto("/auth/login", { waitUntil: "domcontentloaded", timeout: 20000 }).catch(() => {});
+  await page.waitForTimeout(800);
+  finalUrl = page.url();
+  const loginInputsVisible = await hasLoginInputsVisible();
+  const logoutStillVisible = await firstVisible(page, logoutTargets);
+  const authenticatedSignalsPresent = hasAuthSuccessUrl(finalUrl) || Boolean(logoutStillVisible);
+
+  if (isAuthUrl(finalUrl) && loginInputsVisible && !authenticatedSignalsPresent) {
+    return {
+      passed: true,
+      detail: "logout concluído (estado de auth confirmado em /auth/login)",
+      finalUrl,
+    };
+  }
+
   return {
-    passed: !hasAuthSuccessUrl(finalUrl),
-    detail: !hasAuthSuccessUrl(finalUrl) ? "logout concluído" : "logout não removeu sessão",
+    passed: false,
+    detail: "logout não removeu sessão",
     finalUrl,
   };
 }
