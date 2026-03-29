@@ -440,9 +440,7 @@ export async function logout({ page }) {
     return candidates;
   }
 
-  let trigger = await firstVisible(page, logoutTargets);
-
-  if (!trigger) {
+  async function tryResolveLogoutTriggerFromMenu() {
     for (const group of menuTriggerGroups) {
       const menuTrigger = group.locator;
       const count = await menuTrigger.count();
@@ -452,28 +450,48 @@ export async function logout({ page }) {
         if (!(await target.isVisible().catch(() => false))) continue;
         await target.click().catch(() => {});
         await page.waitForTimeout(450);
-        trigger = await firstVisible(page, logoutTargets);
-        if (trigger) {
-          break;
+        const resolvedTrigger = await firstVisible(page, logoutTargets);
+        if (resolvedTrigger) {
+          return resolvedTrigger;
         }
       }
-      if (trigger) {
-        break;
-      }
     }
+    return null;
+  }
+
+  let trigger = await firstVisible(page, logoutTargets);
+
+  if (!trigger) {
+    trigger = await tryResolveLogoutTriggerFromMenu();
+  }
+
+  if (!trigger && /\/a\/home(?:[/?#]|$)/i.test(page.url())) {
+    await Promise.race([
+      page.waitForSelector("header, nav", { timeout: 2000 }).catch(() => null),
+      page.waitForLoadState("domcontentloaded", { timeout: 2000 }).catch(() => null),
+    ]);
+    await page.waitForTimeout(600);
+    trigger = (await firstVisible(page, logoutTargets)) || (await tryResolveLogoutTriggerFromMenu());
   }
 
   if (!trigger) {
+    const currentUrl = page.url();
+    const failedOnHome = /\/a\/home(?:[/?#]|$)/i.test(currentUrl);
+    const headerVisible = await page.locator("header").first().isVisible().catch(() => false);
+    const navVisible = await page.locator("nav").first().isVisible().catch(() => false);
     const diagnosticPayload = {
-      url: page.url(),
+      context: failedOnHome ? "logout não encontrado após retry de estabilização da /a/home" : "logout não encontrado",
+      url: currentUrl,
       title: sanitizeText(await page.title().catch(() => "sem título"), 100),
+      headerVisible,
+      navVisible,
       visibleCandidates: await collectVisibleMenuDiagnostics(10),
     };
     return {
       passed: false,
       detail: `ação de logout não encontrada | diag=${JSON.stringify(diagnosticPayload)}`,
       finalUrl: page.url(),
-    };
+    }
   }
 
   await Promise.allSettled([
