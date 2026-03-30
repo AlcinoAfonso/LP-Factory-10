@@ -40,6 +40,8 @@ Estrutura padrão:
 }
 ```
 
+> `sequence` representa o **próximo sufixo de alias a tentar** (não o último alias já criado).
+
 ## Observação
 
 Os briefings JSON legados da fase 1 foram removidos do subprojeto. O fluxo funcional da Fase 2 é totalmente determinístico e não depende de `briefing_path`, `login_email` ou `login_password`.

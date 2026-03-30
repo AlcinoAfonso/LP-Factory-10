@@ -90,7 +90,7 @@ function savePendingConfirmationState({ sequence, email, password }) {
     email,
     password,
     status: "pending_confirmation",
-    sequence,
+    sequence: sequence + 1,
     last_updated_at: nowIso(),
   });
 }
@@ -100,7 +100,7 @@ function saveActiveState({ sequence, email, password }) {
     email,
     password,
     status: "active",
-    sequence,
+    sequence: sequence + 1,
     last_updated_at: nowIso(),
   });
 }
