@@ -278,24 +278,25 @@ services/mcp-supabase-inspect/README.md
 
 3.4 Validador Final
 Objetivo:
-Validar fluxos reais do app por meio de navegação executada pelo workflow.
+Validar ponta a ponta fluxos reais de autenticação do app por workflow determinístico, incluindo criação de conta, confirmação por e-mail, login, forgot password, reset, login com nova senha e logout.
 
 Status:
-Implementada
+Implementada e validada ponta a ponta na Fase 2 determinística.
 
 Acesso:
 GitHub → Actions → workflow `automation-validador-final`
 
 Como usar:
-Executar o workflow informando `app_url`, `login_email`, `login_password` e, quando aplicável, `briefing_path`
+Executar o workflow informando apenas `app_url`.
 
 Resposta esperada:
-Validação do fluxo com status final `passed` ou `failed`, screenshot final e resumo no workflow
+Job Summary com status final `passed` ou `failed`, evidências operacionais do fluxo e steps do pipeline determinístico.
 
 Referências / dependências:
 README local: `automations/validador-final/README.md`
 Workflow: `.github/workflows/automation-validador-final.yml`
 Runtime: `automations/validador-final/`
+Estado persistido: `automations/validador-final/state/test-account.json`
 
 4. Aprendizados operacionais
 4.1 Princípios identificados
@@ -351,3 +352,27 @@ Agent Builder, ChatKit e Agents SDK consomem no projeto OpenAI em que a execuç�
 MCP atua como ponte para sistemas externos e não define projeto, billing ou bonificação OpenAI.
 Bonificação elegível deve ser interpretada como cota diária e não como saldo acumulado.
 Weekly evals e complimentary daily tokens são benefícios distintos.
+
+4.10 Validador Final (3.4)
+
+4.10.1 Fluxos de auth complexos devem ser estabilizados com execução real e logs fortes primeiro, e só depois simplificados.
+
+4.10.2 Em automações de auth com e-mail:
+- separar UI automation de mailbox helper reduziu acoplamento
+- leitura programática da caixa postal foi mais confiável do que depender de webmail
+
+4.10.3 Em fluxos determinísticos:
+- persistir `sequence` entre runs ajudou a evitar loops e colisões cegas
+- manter 1 conta ativa por vez simplificou o controle operacional
+
+4.10.4 Em callbacks de e-mail:
+- a seleção do link deve considerar a intenção do fluxo, não apenas host ou base URL
+- sanitização e observabilidade do link foram decisivas na estabilização
+
+4.10.5 Em reset de senha:
+- o fluxo mais simples foi aproveitar a sessão autenticada aberta pela própria app após o reset bem-sucedido, em vez de forçar logout intermediário antes do reset
+
+4.10.6 Após validação ponta a ponta:
+- primeiro consolidar o fluxo
+- depois refatorar e remover legado
+- e só por último reduzir observabilidade e logs
