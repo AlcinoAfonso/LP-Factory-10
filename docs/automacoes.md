@@ -278,7 +278,7 @@ services/mcp-supabase-inspect/README.md
 
 3.4 Validador Final
 Objetivo:
-Validar ponta a ponta fluxos reais de autenticação do app por workflow determinístico, incluindo criação de conta, confirmação por e-mail, login, forgot password, reset, login com nova senha e logout.
+Validar ponta a ponta fluxos reais de autenticação do app por execução da Fase 2 determinística (criação de conta, confirmação por e-mail, login, forgot password, reset, login com nova senha e logout).
 
 Status:
 Implementada e validada ponta a ponta na Fase 2 determinística.
@@ -287,10 +287,16 @@ Acesso:
 GitHub → Actions → workflow `automation-validador-final`
 
 Como usar:
-Executar o workflow informando apenas `app_url`.
+Executar o workflow informando apenas o input manual `app_url`.
+
+Contrato atual da Fase 2:
+- fluxo determinístico (sem briefing funcional JSON);
+- único input manual: `app_url`;
+- sem screenshot no contrato operacional;
+- estado local de 1 conta ativa persistido em `state/test-account.json`.
 
 Resposta esperada:
-Job Summary com status final `passed` ou `failed`, evidências operacionais do fluxo e steps do pipeline determinístico.
+Logs e resultado final da execução determinística no job do workflow.
 
 Referências / dependências:
 README local: `automations/validador-final/README.md`
