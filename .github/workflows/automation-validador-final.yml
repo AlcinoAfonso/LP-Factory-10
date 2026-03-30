@@ -24,11 +24,11 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Restore state cache
         id: restore-state
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@v5
         with:
           path: automations/validador-final/state/test-account.json
           key: automation-validador-final-state-${{ github.ref_name }}-${{ github.run_id }}
@@ -52,7 +52,7 @@ jobs:
           fi
 
       - name: Setup Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: "22"
 
@@ -74,7 +74,7 @@ jobs:
 
       - name: Save state cache
         if: always()
-        uses: actions/cache/save@v4
+        uses: actions/cache/save@v5
         with:
           path: automations/validador-final/state/test-account.json
           key: automation-validador-final-state-${{ github.ref_name }}-${{ github.run_id }}
