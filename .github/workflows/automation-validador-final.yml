@@ -31,9 +31,9 @@ jobs:
         uses: actions/cache/restore@v5
         with:
           path: automations/validador-final/state/test-account.json
-          key: automation-validador-final-state-${{ github.ref_name }}-${{ github.run_id }}
+          key: automation-validador-final-state-${{ github.repository }}-${{ github.run_id }}
           restore-keys: |
-            automation-validador-final-state-${{ github.ref_name }}-
+            automation-validador-final-state-${{ github.repository }}-
 
       - name: Ensure default state
         working-directory: .
@@ -77,4 +77,4 @@ jobs:
         uses: actions/cache/save@v5
         with:
           path: automations/validador-final/state/test-account.json
-          key: automation-validador-final-state-${{ github.ref_name }}-${{ github.run_id }}
+          key: automation-validador-final-state-${{ github.repository }}-${{ github.run_id }}

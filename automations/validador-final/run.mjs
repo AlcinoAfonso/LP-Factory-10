@@ -80,6 +80,27 @@ function loadState() {
   };
 }
 
+function extractSequenceFromAliasEmail(email) {
+  if (typeof email !== "string" || email.trim() === "") return null;
+  const match = email.toLowerCase().match(/\+convite(\d+)(?=@)/);
+  if (!match) return null;
+  const parsed = Number.parseInt(match[1], 10);
+  return Number.isInteger(parsed) ? parsed : null;
+}
+
+function normalizeStateSequence(state) {
+  const aliasSequence = extractSequenceFromAliasEmail(state.email);
+  const nextFromAlias = aliasSequence === null ? null : aliasSequence + 1;
+  const effectiveSequence =
+    nextFromAlias === null ? state.sequence : Math.max(state.sequence, nextFromAlias);
+
+  return {
+    effectiveSequence,
+    aliasSequence,
+    normalized: effectiveSequence !== state.sequence,
+  };
+}
+
 function saveState(nextState) {
   mkdirSync(dirname(statePath), { recursive: true });
   writeFileSync(`${statePath}`, `${JSON.stringify(nextState, null, 2)}\n`, "utf-8");
@@ -244,7 +265,16 @@ async function handleAuthConfirmInterstitial({ page, flowLabel }) {
 async function main() {
   const appUrl = requireAppUrl();
   const appOrigin = new URL(appUrl).origin;
-  const state = loadState();
+  let state = loadState();
+  const sequenceNormalization = normalizeStateSequence(state);
+  if (sequenceNormalization.normalized) {
+    state = {
+      ...state,
+      sequence: sequenceNormalization.effectiveSequence,
+      last_updated_at: nowIso(),
+    };
+    saveState(state);
+  }
   const steps = [];
   const runStartedAt = nowIso();
 
@@ -533,6 +563,13 @@ async function main() {
 
   writeSummary("# Validador Final — fase 2 (determinístico)");
   writeSummary(`- run_started_at: \`${runStartedAt}\``);
+  writeSummary(
+    `- sequence_start: \`${state.sequence}\`${
+      sequenceNormalization.aliasSequence === null
+        ? ""
+        : ` (normalizado com alias convite${sequenceNormalization.aliasSequence})`
+    }`,
+  );
   writeSummary(`- status: \`${status}\``);
   writeSummary(`- app_url_used: \`${appUrl}\``);
   writeSummary(`- active_account_email: \`${activeEmail ?? "null"}\``);

@@ -7,7 +7,7 @@ Subprojeto isolado da automação **Validador Final** na **Fase 2 determinístic
 - pipeline determinístico com ciclo completo de criação, confirmação, login e reset de senha;
 - único input manual no workflow: `app_url`;
 - estado local de **1 conta ativa por vez** em `state/test-account.json`;
-- persistência de estado entre execuções via `actions/cache/restore@v4` e `actions/cache/save@v4` no workflow;
+- persistência de estado entre execuções via `actions/cache/restore@v5` e `actions/cache/save@v5` no workflow, com histórico único por repositório (não por branch);
 - caixa postal base via credenciais `MAILBOX_EMAIL` e `MAILBOX_PASSWORD`;
 - cliente da caixa postal implementado de forma programática via protocolo de e-mail (`mailbox-client.mjs`), sem Gmail web UI;
 - sem screenshot;
@@ -41,6 +41,8 @@ Estrutura padrão:
 ```
 
 > `sequence` representa o **próximo sufixo de alias a tentar** (não o último alias já criado).
+>
+> No início de cada run, o orquestrador normaliza o ponto de partida usando `max(sequence, suffix(email)+1)` quando o `email` salvo segue o padrão `+conviteNN`.
 
 ## Observação
 
