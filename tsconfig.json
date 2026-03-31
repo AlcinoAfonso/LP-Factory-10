@@ -6,7 +6,7 @@
         "lib/supabase/*"
       ],
       "@/lib/access/*": [
-        "src/lib/access/*"
+        "lib/access/*"
       ],
       "@/lib/utils": [
         "lib/utils"
@@ -18,14 +18,20 @@
         "components/*"
       ],
       "@/*": [
-        "src/*",
-        "lib/*"
+        "lib/*",
+        "src/*"
       ],
       "@/lib/onboarding/e10_4_setup_validation": [
         "lib/onboarding/e10_4_setup_validation"
       ],
       "@/lib/auth/authAdapter": [
         "lib/auth/authAdapter"
+      ],
+      "@/providers/AccessProvider": [
+        "providers/AccessProvider"
+      ],
+      "@/lib/types/status": [
+        "lib/types/status"
       ]
     },
     "target": "ES2022",
