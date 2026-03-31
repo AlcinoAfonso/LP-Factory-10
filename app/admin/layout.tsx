@@ -1,17 +1,11 @@
-// app/admin/layout.tsx
-import { redirect } from 'next/navigation';
-import { requirePlatformAdmin } from '@/lib/access/guards';
+import { requireAdminSectionAccess } from "./_server/section-guard";
 
 export default async function AdminLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const { allowed, redirect: redirectTo } = await requirePlatformAdmin();
-
-  if (!allowed && redirectTo) {
-    redirect(redirectTo);
-  }
+  await requireAdminSectionAccess();
 
   return (
     <div className="min-h-screen bg-surface-app">
