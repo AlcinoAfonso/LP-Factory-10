@@ -8,6 +8,12 @@
       "@/lib/access/*": [
         "lib/access/*"
       ],
+      "@/lib/admin": [
+        "lib/admin"
+      ],
+      "@/lib/admin/*": [
+        "lib/admin/*"
+      ],
       "@/lib/utils": [
         "lib/utils"
       ],
