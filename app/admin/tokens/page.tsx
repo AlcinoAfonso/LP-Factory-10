@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
 import { adminTokens, checkSuperAdmin, checkPlatformAdmin } from "@/lib/admin";
-import { requirePlatformAdmin } from "@/lib/access/guards";
+import { requireAdminSectionAccess } from "../_server/section-guard";
 import { createClient as createServerClient } from "@/lib/supabase/server";
 import { CopyLinkButton } from "@/components/admin/CopyLinkButton";
 import { Button } from "@/components/ui/button";
@@ -47,8 +47,7 @@ function now() {
 
 /** ==== Guards (SSR) ==== */
 async function requirePlatform() {
-  const { allowed, redirect: redirectTo } = await requirePlatformAdmin();
-  if (!allowed) redirect(redirectTo ?? "/auth/confirm/info");
+  await requireAdminSectionAccess();
 }
 
 /** ==== Server Actions ==== */
