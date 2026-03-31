@@ -9,7 +9,7 @@
         "src/lib/access/*"
       ],
       "@/lib/utils": [
-        "src/lib/utils"
+        "lib/utils"
       ],
       "@/supabase/*": [
         "lib/supabase/*"
