@@ -2,7 +2,7 @@
 
 0.1. Cabeçalho
 • Documento: Base Técnica LP Factory 10
-• Versão: v2.0.23
+• Versão: v2.0.24
 • Data: 31/03/2026
 
 0.2 Contrato do documento (consulta)
@@ -287,11 +287,11 @@
 5.1.2 Persistência SSR (cookie last_account_subdomain)
 • Cookie HttpOnly de “última conta”, usado pelo gateway /a/home (SSR) para redirecionar /a/home → /a/{account_slug}.
 • Escrita (best-effort) em middleware.ts para GET /a/{account_slug} (exceto 'home'), somente em navegação real (sem prefetch).
-• Escrita (autoritativa) em /a/[account]/layout.tsx somente quando ctx existe, ctx.blocked=false e houver subdomain canônico (ctx.account.subdomain).
+• Escrita (autoritativa) no guard SSR de seção cliente (PATH: app/a/_server/section-guard.ts), consumido por /a/[account]/layout.tsx, somente quando ctx existe, ctx.blocked=false e houver subdomain canônico (ctx.account.subdomain).
 • Atributos obrigatórios: HttpOnly; SameSite=Lax; Max-Age=7776000; Path=/.
 • Secure: true em produção (NODE_ENV=production).
 • Leitura do cookie ocorre no SSR do gateway /a/home.
-• Limpeza do cookie: /a/home?clear_last=1 (middleware zera Max-Age=0) e, em bloqueio, o gate SSR de /a/[account] deleta cookie (best-effort) antes de redirecionar.
+• Limpeza do cookie: /a/home?clear_last=1 (middleware zera Max-Age=0) e, em bloqueio, o guard SSR de seção cliente deleta cookie (best-effort) antes de redirecionar.
 • /a/home não define cookie (apenas lê; clear_last=1 ignora cookie no SSR e delega limpeza ao middleware).
 
 5.2 Adapters, Guards, Providers
@@ -302,7 +302,9 @@
 • adminAdapter (PATH: src/lib/admin/adapters/adminAdapter.ts): valida super_admin / platform_admin; opera post_sale_tokens via postSaleTokenAdapter.
 
 5.2.2 Guards
-• guards (PATH: src/lib/access/guards.ts): bloqueia Admin quando não for super_admin ou platform_admin.
+• guard SSR da seção cliente (PATH: app/a/_server/section-guard.ts): aplica allow/deny de /a/{account_slug} e redirecionamentos de bloqueio na seção cliente.
+• guard SSR da seção admin (PATH: app/admin/_server/section-guard.ts): aplica bloqueio de Admin quando não for super_admin ou platform_admin.
+• guards legados compartilhados (PATH: src/lib/access/guards.ts): utilitários de validação de acesso usados pelo runtime.
 5.2.3 Providers
 • AccessProvider (PATH: src/providers/AccessProvider.tsx): carrega contexto de acesso no app.
 • account-switcher (PATH: components/features/account-switcher/*): consome v_user_accounts_list via /api/user/accounts.
@@ -358,9 +360,9 @@
 • Com sessão e sem membership: cria 1ª conta via RPC ensure_first_account_for_current_user() e redireciona para /a/{account_slug} (pending_setup; owner/active).
 • Com sessão e sem conta allow e com qualquer membership: redireciona para /auth/confirm/info.
 • Dashboard privado só em /a/{account_slug}.
-• allow/deny é responsabilidade do gate SSR em /a/{account_slug}.
-• /a/home bypassa o gate SSR de conta em app/a/[account]/layout.tsx.
-• Se o gate negar com usuário autenticado: redirecionar para /a/home?clear_last=1 para limpar o cookie e forçar fallback determinístico (sem loop).
+• allow/deny é responsabilidade do guard SSR de seção cliente (PATH: app/a/_server/section-guard.ts), consumido por /a/[account]/layout.tsx.
+• /a/home bypassa o guard SSR de seção cliente consumido em app/a/[account]/layout.tsx.
+• Se o guard SSR de seção cliente negar com usuário autenticado: redirecionar para /a/home?clear_last=1 para limpar o cookie e forçar fallback determinístico (sem loop).
 • “Solicitar acesso” em /auth/confirm/info abre mailto (não é rota interna do app).
 • Se ctx.blocked por membership.status: redirecionar para:
 • pending → /auth/confirm/pending
@@ -417,6 +419,8 @@ Regra: qualquer novo arquivo em app/auth/ não pode importar @supabase/* até se
 • Adapters vNext: seguir 3.14
 
 99. Changelog
+v2.0.24 (31/03/2026) — Fase 1 do Core: extração dos guards SSR de seção
+• Atualizadas 5.1.2, 5.2.2 e 5.4 para refletir a extração dos guards SSR de seção cliente/admin (sem mudança de URL e sem nova camada no root).
 v2.0.23 (31/03/2026) — Nota operacional sobre STAGING
 • Registrado que não há Supabase STAGING ativo, que previews usam o projeto principal e que eventual novo staging não deve existir sem controles mínimos de segurança.
 v2.0.22 (27/03/2026) — Formalização de `services/` e remoção da MCP do runtime do Core
