@@ -900,8 +900,8 @@
 17.6 Supabase STAGING (espelho operacional para validação de casos de uso) — descontinuado
 
 • Objetivo: Criar ambiente Supabase separado para validação segura de alterações (schema, RLS, Auth e dados) antes de produção.
-• Resumo: O ambiente STAGING foi criado e validado, porém sua manutenção contínua não se mostrou eficiente no estágio atual do projeto. O preview da Vercel voltou a utilizar o Supabase de produção.
-• Situação atual: STAGING desativado e não utilizado no fluxo operacional.
+• Resumo: O ambiente STAGING foi descontinuado; o projeto `LP-Factory-10-staging` foi efetivamente deletado em 31/03/2026 após alerta crítico do Security Advisor associado a esse projeto já descontinuado.
+• Situação atual: não existe STAGING ativo no Supabase; os previews permanecem no projeto principal.
 • Status: Descontinuado.
 
 18 E18 - IA (fase IA-ready)
@@ -926,6 +926,8 @@
 • após estabilização do sistema de acesso e onboarding
 
 99. Changelog
+v1.5.33 (31/03/2026)
+• Atualização documental: item 17.6 retificado para registrar que o projeto `LP-Factory-10-staging` foi deletado em 31/03/2026 após alerta crítico do Security Advisor e que não existe staging ativo no Supabase.
 v1.5.32 (20/03/2026)
 • E17 ajustado: removidos do roadmap os blocos operacionais de GitHub/openai-smoke e do pipeline `supabase-inspect`, preservando o caso de uso enxuto de checks determinísticos do Codex (com referência para `docs/base-tecnica.md`) e adicionando referência documental para que automações operacionais de produto, componentes consumidores, MCPs e evoluções dessa camada passem a ser documentados em `docs/automacoes.md`.
 • Renumeração local do E17 aplicada após a limpeza: o caso de sandbox passou a `17.4`, a referência documental passou a `17.5` e o item de Supabase STAGING descontinuado passou a `17.6`.
