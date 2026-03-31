@@ -2,8 +2,8 @@
 
 0.1. Cabeçalho
 • Documento: Base Técnica LP Factory 10
-• Versão: v2.0.22
-• Data: 27/03/2026
+• Versão: v2.0.23
+• Data: 31/03/2026
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -32,6 +32,7 @@
 • Endpoint canônico da MCP Supabase Inspect (serviço dedicado): https://lpf-10-services.vercel.app/api/mcp
 
 1.1 Backend: Supabase — projeto lp-factory-10
+• Nota operacional: não existe ambiente Supabase STAGING ativo neste momento; os previews voltaram a usar o projeto principal. Se houver novo staging no futuro, não manter sem controles mínimos de segurança.
 1.1.1 Segredos e flags de execução (server-side)
 • SUPABASE_SECRET_KEY
 • ACCESS_CONTEXT_ENFORCED=true
@@ -416,6 +417,8 @@ Regra: qualquer novo arquivo em app/auth/ não pode importar @supabase/* até se
 • Adapters vNext: seguir 3.14
 
 99. Changelog
+v2.0.23 (31/03/2026) — Nota operacional sobre STAGING
+• Registrado que não há Supabase STAGING ativo, que previews usam o projeto principal e que eventual novo staging não deve existir sem controles mínimos de segurança.
 v2.0.22 (27/03/2026) — Formalização de `services/` e remoção da MCP do runtime do Core
 • Registrada na topologia canônica a terceira raiz `services/` para serviços e integrações com deploy independente.
 • Registrado o projeto Vercel de services `lpf-10-services` e o endpoint canônico da MCP Supabase Inspect.
