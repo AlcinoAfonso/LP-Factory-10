@@ -20,6 +20,12 @@
       "@/*": [
         "src/*",
         "lib/*"
+      ],
+      "@/lib/onboarding/e10_4_setup_validation": [
+        "lib/onboarding/e10_4_setup_validation"
+      ],
+      "@/lib/auth/authAdapter": [
+        "lib/auth/authAdapter"
       ]
     },
     "target": "ES2022",
