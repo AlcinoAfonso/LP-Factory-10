@@ -289,6 +289,20 @@ GitHub → Actions → workflow `automation-validador-final`
 Como usar:
 Executar o workflow informando apenas o input manual `app_url`.
 
+Como testar feature branch antes do merge:
+- quando a feature branch **não altera o pipeline**, executar o workflow a partir da branch `main`
+- nesse cenário, informar em `app_url` a URL de preview da feature branch que está sendo validada
+- este é o modo operacional recomendado para validação pré-merge
+
+Exceção: quando a própria feature altera o pipeline:
+- quando a feature branch altera arquivos do pipeline (`workflow`, `run.mjs`, `login-playwright.mjs` ou `mailbox-client.mjs`), executar o workflow a partir da própria feature branch
+- nesse cenário, informar em `app_url` a URL de preview da mesma feature branch
+- essa exceção garante que a validação use exatamente a versão de automação alterada pela feature
+
+Motivo operacional do padrão:
+- evita problemas de `sequence` e cache inconsistente em feature branches comuns
+- na prática, `workflow` da `main` + preview da feature virou o modo recomendado para validar features antes do merge
+
 Contrato atual da Fase 2:
 - fluxo determinístico (sem briefing funcional JSON);
 - único input manual: `app_url`;
@@ -382,3 +396,7 @@ Weekly evals e complimentary daily tokens são benefícios distintos.
 - primeiro consolidar o fluxo
 - depois refatorar e remover legado
 - e só por último reduzir observabilidade e logs
+
+4.10.7 Regra reutilizável pré-merge:
+- para feature branch sem alteração de pipeline, usar `workflow` da `main` + `app_url` da preview da feature
+- para feature branch com alteração de pipeline, usar `workflow` e `app_url` da própria feature branch
