@@ -1,7 +1,7 @@
 0. Introdução
 
 0.1 Cabeçalho
-• Data: 31/03/2026
+• Data: 01/04/2026
 • Versão: v1.5.34
 
 0.2 Contrato do documento (consulta)
@@ -926,7 +926,37 @@
 • início da fase de geração de LPs
 • após estabilização do sistema de acesso e onboarding
 
+19. E19 — LP Builder
+
+19.1 Status
+• Planejado
+
+19.2 Objetivo
+• Consolidar a seção do Core responsável pela criação, edição e organização de landing pages, seções de LP e templates reutilizáveis.
+
+19.3 Escopo
+• Criação de landing pages
+• Criação de seções de LP
+• Templates de landing pages
+• Templates de seções
+• Organização estrutural do builder dentro do Core
+
+19.4 Regra estrutural
+• E19 pertence à camada Core
+• E19 é uma seção própria, separada de Account Dashboard, Admin Dashboard e Partner Dashboard
+• Boundaries físicas internas devem nascer conforme houver massa real de código
+
+19.5 Dependências / referências
+• E10 — Account Dashboard
+• E12 — Admin Dashboard
+• E13 — Partner Dashboard
+
+19.6 Próximo passo
+• Definir o primeiro recorte funcional do LP Builder no roadmap
+
 99. Changelog
+v1.5.34 (01/04/2026)
+• Adicionado **E19 — LP Builder** como nova seção do Core, no mesmo nível estrutural de Account Dashboard, Admin Dashboard e Partner Dashboard.
 v1.5.34 (31/03/2026)
 • Fase 2 registrada: migração estrutural dos módulos legados ativos do runtime de `src/` para a raiz canônica e alinhamento documental dos paths finais dos casos afetados.
 v1.5.33 (31/03/2026)
