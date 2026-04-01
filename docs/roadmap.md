@@ -2,7 +2,7 @@
 
 0.1 Cabeçalho
 • Data: 01/04/2026
-• Versão: v1.5.34
+• Versão: v1.5.35
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -955,7 +955,7 @@
 • Definir o primeiro recorte funcional do LP Builder no roadmap
 
 99. Changelog
-v1.5.34 (01/04/2026)
+v1.5.35 (01/04/2026)
 • Adicionado **E19 — LP Builder** como nova seção do Core, no mesmo nível estrutural de Account Dashboard, Admin Dashboard e Partner Dashboard.
 v1.5.34 (31/03/2026)
 • Fase 2 registrada: migração estrutural dos módulos legados ativos do runtime de `src/` para a raiz canônica e alinhamento documental dos paths finais dos casos afetados.
