@@ -2,7 +2,7 @@
 
 0.1. Cabeçalho
 • Documento: Base Técnica LP Factory 10
-• Versão: v2.0.24
+• Versão: v2.0.25
 • Data: 31/03/2026
 
 0.2 Contrato do documento (consulta)
@@ -130,7 +130,7 @@
 3.3 Estrutura de Arquivos
 • Padrão por domínio: adapters/ (DB); contracts.ts (interface pública); index.ts (re-exports).
 • Regra: nenhum módulo acessa DB fora de adapters.
-• Tipos canônicos só em src/lib/types/status.ts.
+• Tipos canônicos só em lib/types/status.ts.
 
 3.3.1 Topologia canônica do repositório
 • Regra canônica para código novo: usar paths na raiz do repositório.
@@ -205,7 +205,7 @@
 • Hygiene: manter apenas keys necessárias ativas; revogar imediatamente keys expostas/indevidas; estado final reportado = 1 key ativa no LPF10-DEV.
 
 3.6 Tipos TypeScript
-• Fonte única: src/lib/types/status.ts
+• Fonte única: lib/types/status.ts
 • Proibido redefinir tipos em qualquer outro módulo
 • Adapters normalizam valores lidos do DB
 
@@ -296,17 +296,17 @@
 
 5.2 Adapters, Guards, Providers
 5.2.1 Adapters
-• accountAdapter (PATH: src/lib/access/adapters/accountAdapter.ts): createFromToken(tokenId, actorId) → RPC create_account_with_owner; renameAndActivate(accountId, name, slug) atualiza name+subdomain e seta status='active'; renameAccountNoStatus(accountId, name, slug) renomeia sem alterar status; updateAccountNameCore(accountId, name) atualiza apenas accounts.name; setSetupCompletedAtIfNull(accountId) (infra E10.4.1) seta setup_completed_at somente quando NULL (idempotente); marcador setup_completed_at é deprecated sem uso no gating do runtime; normalizeAccountStatus usa allowlist ASTAT; fallback atual: 'active'.
-• accountProfileAdapter (PATH: src/lib/access/adapters/accountProfileAdapter.ts): upsertAccountProfileV1({ accountId, niche, preferredChannel, whatsapp, siteUrl }) (E10.4.6).
-• accessContextAdapter (PATH: src/lib/access/adapters/accessContextAdapter.ts): lê v_access_context_v2; readAccessContext(subdomain) retorna allow=true ou contexto bloqueado (member_inactive/account_blocked) quando houver membership; getFirstAccountForCurrentUser(): se existir conta allow=true → retorna; se existir qualquer membership → não cria; sem membership → chama RPC ensure_first_account_for_current_user(); logs access_context_decision; adapter permite null; logs diferenciam deny vs error.
-• adminAdapter (PATH: src/lib/admin/adapters/adminAdapter.ts): valida super_admin / platform_admin; opera post_sale_tokens via postSaleTokenAdapter.
+• accountAdapter (PATH: lib/access/adapters/accountAdapter.ts): createFromToken(tokenId, actorId) → RPC create_account_with_owner; renameAndActivate(accountId, name, slug) atualiza name+subdomain e seta status='active'; renameAccountNoStatus(accountId, name, slug) renomeia sem alterar status; updateAccountNameCore(accountId, name) atualiza apenas accounts.name; setSetupCompletedAtIfNull(accountId) (infra E10.4.1) seta setup_completed_at somente quando NULL (idempotente); marcador setup_completed_at é deprecated sem uso no gating do runtime; normalizeAccountStatus usa allowlist ASTAT; fallback atual: 'active'.
+• accountProfileAdapter (PATH: lib/access/adapters/accountProfileAdapter.ts): upsertAccountProfileV1({ accountId, niche, preferredChannel, whatsapp, siteUrl }) (E10.4.6).
+• accessContextAdapter (PATH: lib/access/adapters/accessContextAdapter.ts): lê v_access_context_v2; readAccessContext(subdomain) retorna allow=true ou contexto bloqueado (member_inactive/account_blocked) quando houver membership; getFirstAccountForCurrentUser(): se existir conta allow=true → retorna; se existir qualquer membership → não cria; sem membership → chama RPC ensure_first_account_for_current_user(); logs access_context_decision; adapter permite null; logs diferenciam deny vs error.
+• adminAdapter (PATH: lib/admin/adapters/adminAdapter.ts): valida super_admin / platform_admin; opera post_sale_tokens via postSaleTokenAdapter.
 
 5.2.2 Guards
 • guard SSR da seção cliente (PATH: app/a/_server/section-guard.ts): aplica allow/deny de /a/{account_slug} e redirecionamentos de bloqueio na seção cliente.
 • guard SSR da seção admin (PATH: app/admin/_server/section-guard.ts): aplica bloqueio de Admin quando não for super_admin ou platform_admin.
-• guards legados compartilhados (PATH: src/lib/access/guards.ts): utilitários de validação de acesso usados pelo runtime.
+• guards legados compartilhados (PATH: lib/access/guards.ts): utilitários de validação de acesso usados pelo runtime.
 5.2.3 Providers
-• AccessProvider (PATH: src/providers/AccessProvider.tsx): carrega contexto de acesso no app.
+• AccessProvider (PATH: providers/AccessProvider.tsx): carrega contexto de acesso no app.
 • account-switcher (PATH: components/features/account-switcher/*): consome v_user_accounts_list via /api/user/accounts.
 
 5.3 Fluxos de Sessão
@@ -384,7 +384,7 @@
 • Regra: se um arquivo crítico mudar de path, atualizar esta Base Técnica somente quando a mudança afetar regra, boundary, allowlist ou contrato técnico.
 
 6.3 Tipos e contratos críticos (mínimo normativo)
-• Fonte única de tipos canônicos: PATH: src/lib/types/status.ts
+• Fonte única de tipos canônicos: PATH: lib/types/status.ts
 • Regra: proibido redefinir AccountStatus, MemberStatus, MemberRole fora do arquivo canônico
 • Contratos e reexports legados já existentes em src/lib/** podem permanecer até migração dirigida; isso não altera a regra canônica de código novo definida em 3.3.1.
 
@@ -414,11 +414,13 @@ Regra: qualquer novo arquivo em app/auth/ não pode importar @supabase/* até se
 • Migrations idempotentes (ver 3.8)
 • Funções críticas: search_path = public (ver 3.12)
 • SECURITY DEFINER somente quando aprovado (ver 4 e PATH: docs/schema.md)
-• Tipos canônicos: fonte única em PATH: src/lib/types/status.ts
+• Tipos canônicos: fonte única em PATH: lib/types/status.ts
 • /a: público sem sessão; privado só em /a/{account_slug} com gate SSR (ver 5.4)
 • Adapters vNext: seguir 3.14
 
 99. Changelog
+v2.0.25 (31/03/2026) — Fase 2: alinhamento documental pós-migração estrutural
+• Migração estrutural dos módulos ativos do runtime de `src/` para a raiz canônica documentada; paths canônicos atualizados em acesso, auth, onboarding, types, utils e admin; sem mudança funcional de produto.
 v2.0.24 (31/03/2026) — Fase 1 do Core: extração dos guards SSR de seção
 • Atualizadas 5.1.2, 5.2.2 e 5.4 para refletir a extração dos guards SSR de seção cliente/admin (sem mudança de URL e sem nova camada no root).
 v2.0.23 (31/03/2026) — Nota operacional sobre STAGING
