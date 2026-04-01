@@ -777,6 +777,7 @@
 • Painel de agências e parceiros
 • Branding, gestão de clientes, relatórios
 • Integração futura com Partner API
+• Partner só deve ganhar boundary própria quando houver massa real de código; até lá, novas estruturas não devem ser abertas por antecipação.
 
 14. E14 — Workspace Dashboard
 
