@@ -1,8 +1,8 @@
 0. Introdução
 
 0.1 Cabeçalho
-• Data: 20/03/2026
-• Versão: v1.5.32
+• Data: 31/03/2026
+• Versão: v1.5.34
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -539,11 +539,11 @@
 • Ajustados:
 • app/a/[account]/actions.ts
 • app/a/[account]/page.tsx
-• src/lib/access/getAccessContext.ts
-• src/lib/access/adapters/accessContextAdapter.ts
-• src/lib/access/adapters/accountAdapter.ts
+• lib/access/getAccessContext.ts
+• lib/access/adapters/accessContextAdapter.ts
+• lib/access/adapters/accountAdapter.ts
 • Criados:
-• src/lib/access/adapters/accountProfileAdapter.ts
+• lib/access/adapters/accountProfileAdapter.ts
 • supabase/migrations/0004__account_profiles.sql
 
 10.4.7 Refinar UX (pós-implementação E10.4)
@@ -553,7 +553,7 @@
 • Dependências: E10.4.6 (exec do runtime do E10.4)
 • ARTEFATOS_REPO (paths):
 • Criados:
-• src/lib/onboarding/e10_4_setup_validation.ts
+• lib/onboarding/e10_4_setup_validation.ts
 • Ajustados:
 • app/a/[account]/page.tsx
 • app/a/[account]/actions.ts
@@ -926,6 +926,8 @@
 • após estabilização do sistema de acesso e onboarding
 
 99. Changelog
+v1.5.34 (31/03/2026)
+• Fase 2 registrada: migração estrutural dos módulos legados ativos do runtime de `src/` para a raiz canônica e alinhamento documental dos paths finais dos casos afetados.
 v1.5.33 (31/03/2026)
 • Atualização documental: item 17.6 retificado para registrar que o projeto `LP-Factory-10-staging` foi deletado em 31/03/2026 após alerta crítico do Security Advisor e que não existe staging ativo no Supabase.
 • Execução da fase 1 estrutural do Core registrada: separação cliente/admin via guards SSR de seção, sem fase 2, sem Partner e sem nova camada no root.
