@@ -133,10 +133,11 @@
 • Tipos canônicos só em lib/types/status.ts.
 
 3.3.1 Topologia canônica do repositório
+• A migração principal dos módulos legados ativos do runtime para paths canônicos na raiz já foi concluída.
 • Regra canônica para código novo: usar paths na raiz do repositório.
-• A pasta src/ passa a ser tratada como legado controlado.
+• A pasta src/ permanece como legado controlado por governança estrutural permanente e anti-regressão.
 • Fica vedada a criação de novos módulos, boundaries, providers, adapters, helpers ou contratos em src/.
-• Não fazer migração em big bang de src/ para a raiz.
+• Isso não reabre migração em big bang de src/ para a raiz.
 • Arquivos legados em src/ só podem ser movidos quando houver demanda funcional real ou refatoração estrutural aprovada.
 
 3.3.2 Separação estrutural entre Core, automations e services
@@ -419,8 +420,8 @@ Regra: qualquer novo arquivo em app/auth/ não pode importar @supabase/* até se
 • Adapters vNext: seguir 3.14
 
 99. Changelog
-v2.0.25 (31/03/2026) — Fase 2: alinhamento documental pós-migração estrutural
-• Migração estrutural dos módulos ativos do runtime de `src/` para a raiz canônica documentada; paths canônicos atualizados em acesso, auth, onboarding, types, utils e admin; sem mudança funcional de produto.
+v2.0.25 (31/03/2026) — Fase 2 encerrada: alinhamento documental pós-migração estrutural
+• Migração estrutural principal dos módulos ativos do runtime de `src/` para a raiz canônica documentada e concluída; paths canônicos atualizados em acesso, auth, onboarding, types, utils e admin; sem mudança funcional de produto.
 v2.0.24 (31/03/2026) — Fase 1 do Core: extração dos guards SSR de seção
 • Atualizadas 5.1.2, 5.2.2 e 5.4 para refletir a extração dos guards SSR de seção cliente/admin (sem mudança de URL e sem nova camada no root).
 v2.0.23 (31/03/2026) — Nota operacional sobre STAGING
