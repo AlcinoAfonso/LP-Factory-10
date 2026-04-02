@@ -136,21 +136,31 @@
 • Tipos canônicos só em lib/types/status.ts.
 
 3.3.1 Topologia canônica do repositório
-• Regra canônica para código novo: usar paths na raiz do repositório.
-• Novos módulos, boundaries, providers, adapters, helpers e contratos devem seguir a topologia canônica vigente.
-• Exceções de compatibilidade em arquivos já existentes fora da topologia canônica só podem ser mantidas sem ampliar escopo.
+• Camadas vigentes: Core, automations, services  
+• Root: runtime canônico do Core  
+• `automations/`: raiz canônica da camada de automações  
+• `services/`: raiz canônica da camada de serviços implantáveis  
+• Leitura do Core: por seção  
+• Seções do Core: Account Dashboard, Admin Dashboard, Partner Dashboard, LP Builder  
 
-3.3.2 Separação estrutural entre Core, automations e services
-• O root do repositório permanece como runtime canônico do Core SaaS (app Next.js, dashboard, auth, rotas do produto e dependências do Core).
-• `automations/` passa a ser a raiz canônica da camada de automações operacionais.
-• `services/` passa a ser a raiz canônica de serviços e integrações implantáveis de forma independente do Core.
-• `.github/workflows/` permanece como camada de entrada/orquestração dos fluxos automatizados.
-• Dependências de automação não devem entrar no `package.json` do Core, salvo exceção técnica aprovada.
-• Cada automação relevante pode existir como subprojeto isolado em `automations/<nome>/`, com `package.json` e `package-lock.json` próprios.
-• Cada serviço relevante pode existir como subprojeto isolado em `services/<nome>/`, com `package.json` e `package-lock.json` próprios.
-• A MCP Supabase Inspect não é mais hospedada no runtime do Core; o runtime canônico fica em `services/mcp-supabase-inspect/`.
-• `pipelines/` deve ser tratado como legado em revisão/migração; novos casos canônicos devem nascer em `automations/`.
-• Mudanças em automações e services não devem, por padrão, acoplar runtime do Core nem ampliar risco estrutural no deploy do app.
+3.3.2 Paths canônicos e anti-drift de localização
+• Regra: path é contrato operacional  
+• Regra: não inventar path  
+• Regra: não assumir localização por padrão genérico  
+• Regra: em dúvida, confirmar no repositório real  
+• Regra: código novo nasce no path canônico correto  
+• Regra: exceção existente não vira padrão novo  
+• Risco de erro de path: churn, retrabalho, regressão  
+
+3.3.3 Separação estrutural entre Core, automations e services
+• Core: runtime principal do produto  
+• `automations/`: automações operacionais  
+• `services/`: serviços com deploy independente  
+• `.github/workflows/`: orquestração  
+• Ordem de classificação: camada, seção, boundary, path canônico, shared real ou shared falso  
+• Regra: boundary nova só com massa real de código  
+• Partner Dashboard: sem boundary por antecipação  
+• LP Builder: seção própria do Core, não dentro de Account Dashboard  
 
 3.4 CI/Lint (Bloqueios)
 • Validação por PR + preview de deploy (Vercel)
