@@ -110,7 +110,7 @@
 2.5 Regras de Import (canônica)
 • @supabase/* somente em adapters do domínio, em lib/supabase/* e na allowlist SULB autorizada em 6.4.
 • Regra canônica para código novo: adapters devem nascer em paths na raiz do repositório, respeitando a topologia canônica definida em 3.3.1.
-• Exceção: arquivos legados já existentes em src/** podem permanecer até migração dirigida.
+• Exceção de compatibilidade: arquivos já existentes fora dos paths canônicos podem permanecer sem ampliação de escopo.
 • UI e componentes client nunca acessam Supabase diretamente.
 
 3. Regras Técnicas Globais
@@ -134,10 +134,8 @@
 
 3.3.1 Topologia canônica do repositório
 • Regra canônica para código novo: usar paths na raiz do repositório.
-• A pasta src/ passa a ser tratada como legado controlado.
-• Fica vedada a criação de novos módulos, boundaries, providers, adapters, helpers ou contratos em src/.
-• Não fazer migração em big bang de src/ para a raiz.
-• Arquivos legados em src/ só podem ser movidos quando houver demanda funcional real ou refatoração estrutural aprovada.
+• Novos módulos, boundaries, providers, adapters, helpers e contratos devem seguir a topologia canônica vigente.
+• Exceções de compatibilidade em arquivos já existentes fora da topologia canônica só podem ser mantidas sem ampliar escopo.
 
 3.3.2 Separação estrutural entre Core, automations e services
 • O root do repositório permanece como runtime canônico do Core SaaS (app Next.js, dashboard, auth, rotas do produto e dependências do Core).
@@ -260,7 +258,7 @@
 3.14 Padrão de Adapters (vNext)
 • Novas páginas/casos de uso: DB somente via adapters.
 • Regra canônica para código novo: adapters devem nascer em paths na raiz do repositório, conforme 3.3.1.
-• Adapters legados já existentes em src/** podem permanecer até migração dirigida.
+• Adapters já existentes fora dos paths canônicos podem permanecer como compatibilidade, sem expansão de escopo.
 • 1 adapter = 1 caso de uso; se crescer, dividir (<=150 linhas ou <=6 exports).
 • Adapter retorna DTO final; UI não normaliza; não expor DBRow.
 • Mudança de shape: v2; manter v1 até migrar.
@@ -386,10 +384,10 @@
 6.3 Tipos e contratos críticos (mínimo normativo)
 • Fonte única de tipos canônicos: PATH: lib/types/status.ts
 • Regra: proibido redefinir AccountStatus, MemberStatus, MemberRole fora do arquivo canônico
-• Contratos e reexports legados já existentes em src/lib/** podem permanecer até migração dirigida; isso não altera a regra canônica de código novo definida em 3.3.1.
+• Contratos e reexports existentes fora dos paths canônicos podem permanecer por compatibilidade; isso não altera a regra canônica de código novo definida em 3.3.1.
 
 6.4 Arquivos SULB autorizados a importar Supabase (fonte única normativa)
-Exceção oficial: somente os arquivos listados abaixo podem importar @supabase/* fora de src/lib/**/adapters/ e lib/supabase/.
+Exceção oficial: somente os arquivos listados abaixo podem importar @supabase/* fora dos adapters de domínio e de lib/supabase/.
 Regra: qualquer novo arquivo em app/auth/ não pode importar @supabase/* até ser incluído nesta allowlist.
 • lib/supabase/client.ts
 • lib/supabase/middleware.ts
@@ -403,7 +401,7 @@ Regra: qualquer novo arquivo em app/auth/ não pode importar @supabase/* até se
 • Acesso ao DB: somente via adapters.
 • Regra canônica para código novo: adapters em paths na raiz do repositório, conforme 3.3.1.
 • Exceções de @supabase/: lib/supabase/* e allowlist SULB (6.4).
-• Arquivos legados em src/** seguem como legado controlado até migração dirigida.
+• Arquivos existentes fora dos paths canônicos permanecem apenas por compatibilidade, sem ampliar escopo.
 
 7. Checklist mínima (anti-regressão)
 • Views expostas a usuário: security_invoker = true (ver 3.1 e PATH: docs/schema.md)
@@ -419,8 +417,8 @@ Regra: qualquer novo arquivo em app/auth/ não pode importar @supabase/* até se
 • Adapters vNext: seguir 3.14
 
 99. Changelog
-v2.0.25 (31/03/2026) — Fase 2: alinhamento documental pós-migração estrutural
-• Migração estrutural dos módulos ativos do runtime de `src/` para a raiz canônica documentada; paths canônicos atualizados em acesso, auth, onboarding, types, utils e admin; sem mudança funcional de produto.
+v2.0.25 (31/03/2026) — Alinhamento documental de topologia e paths canônicos
+• Atualizados os paths canônicos em acesso, auth, onboarding, types, utils e admin, mantendo o escopo estritamente documental e sem mudança funcional de produto.
 v2.0.24 (31/03/2026) — Fase 1 do Core: extração dos guards SSR de seção
 • Atualizadas 5.1.2, 5.2.2 e 5.4 para refletir a extração dos guards SSR de seção cliente/admin (sem mudança de URL e sem nova camada no root).
 v2.0.23 (31/03/2026) — Nota operacional sobre STAGING

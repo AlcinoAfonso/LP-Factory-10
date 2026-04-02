@@ -279,7 +279,7 @@
 • post_sale_tokens: sem trigger
 
 5. Tipos canônicos
-• Fonte única: PATH: src/lib/types/status.ts
+• Fonte única: PATH: lib/types/status.ts
 • AccountStatus: active | inactive | suspended | pending_setup
 • MemberStatus: pending | active | inactive | revoked
 • MemberRole: owner | admin | editor | viewer
