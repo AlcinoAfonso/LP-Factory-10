@@ -958,8 +958,7 @@
 v1.5.35 (01/04/2026)
 • Adicionado **E19 — LP Builder** como nova seção do Core, no mesmo nível estrutural de Account Dashboard, Admin Dashboard e Partner Dashboard.
 v1.5.34 (31/03/2026)
-• Fase 2 registrada como concluída: migração estrutural principal dos módulos legados ativos do runtime de `src/` para a raiz canônica e alinhamento documental dos paths finais dos casos afetados.
-• Após o fechamento da Fase 2, `src/` deixa de ser lido como legado ativo principal do runtime; ajustes futuros nesse escopo passam a saneamento residual e prevenção de regressão.
+• Alinhamento documental dos paths canônicos atuais dos casos afetados no runtime e atualização dos artefatos/path finais correspondentes.
 v1.5.33 (31/03/2026)
 • Atualização documental: item 17.6 retificado para registrar que o projeto `LP-Factory-10-staging` foi deletado em 31/03/2026 após alerta crítico do Security Advisor e que não existe staging ativo no Supabase.
 • Execução da fase 1 estrutural do Core registrada: separação cliente/admin via guards SSR de seção, sem fase 2, sem Partner e sem nova camada no root.
