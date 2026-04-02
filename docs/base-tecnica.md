@@ -112,8 +112,8 @@
 
 2.5 Regras de Import (canônica)
 • @supabase/* somente em adapters do domínio, em lib/supabase/* e na allowlist SULB autorizada em 6.4.
-• Regra canônica para código novo: adapters devem nascer em paths na raiz do repositório, respeitando a topologia canônica definida em 3.3.1.
-• Exceção de compatibilidade: arquivos já existentes fora dos paths canônicos podem permanecer sem ampliação de escopo.
+• Regra canônica para código novo: adapters devem nascer em paths canônicos na raiz do repositório (ver 3.3.1 e 3.3.2).
+• Exceção de compatibilidade: arquivos já existentes fora dos paths canônicos podem permanecer sem ampliação de escopo (ver 3.3.2).
 • UI e componentes client nunca acessam Supabase diretamente.
 
 3. Regras Técnicas Globais
@@ -271,7 +271,7 @@
 
 3.14 Padrão de Adapters (vNext)
 • Novas páginas/casos de uso: DB somente via adapters.
-• Regra canônica para código novo: adapters devem nascer em paths na raiz do repositório, conforme 3.3.1.
+• Regra canônica para código novo: adapters devem nascer em paths canônicos na raiz do repositório (conforme 3.3.1 e 3.3.2).
 • Adapters já existentes fora dos paths canônicos podem permanecer como compatibilidade, sem expansão de escopo.
 • 1 adapter = 1 caso de uso; se crescer, dividir (<=150 linhas ou <=6 exports).
 • Adapter retorna DTO final; UI não normaliza; não expor DBRow.
@@ -399,12 +399,12 @@
 
 6.2 Arquivos críticos por fluxo (fonte única)
 • Localização atual de arquivos críticos (Acesso, Onboarding, Multi-conta, Supabase núcleo, SULB, Admin): consultar o repositório real.
-• Regra: se um arquivo crítico mudar de path, atualizar esta Base Técnica somente quando a mudança afetar regra, boundary, allowlist ou contrato técnico.
+• Regra: se um arquivo crítico mudar de path, atualizar esta Base Técnica somente quando a mudança afetar regra, boundary, allowlist ou contrato técnico (ver 3.3.2 e 3.3.3).
 
 6.3 Tipos e contratos críticos (mínimo normativo)
 • Fonte única de tipos canônicos: PATH: lib/types/status.ts
 • Regra: proibido redefinir AccountStatus, MemberStatus, MemberRole fora do arquivo canônico
-• Contratos e reexports existentes fora dos paths canônicos podem permanecer por compatibilidade; isso não altera a regra canônica de código novo definida em 3.3.1.
+• Contratos e reexports existentes fora dos paths canônicos podem permanecer por compatibilidade; isso não altera a regra canônica de código novo definida em 3.3.2.
 
 6.4 Arquivos SULB autorizados a importar Supabase (fonte única normativa)
 Exceção oficial: somente os arquivos listados abaixo podem importar @supabase/* fora dos adapters de domínio e de lib/supabase/.
@@ -419,9 +419,9 @@ Regra: qualquer novo arquivo em app/auth/ não pode importar @supabase/* até se
 
 6.5 Regras rápidas (sem drift)
 • Acesso ao DB: somente via adapters.
-• Regra canônica para código novo: adapters em paths na raiz do repositório, conforme 3.3.1.
+• Regra canônica para código novo: adapters em paths canônicos na raiz do repositório (ver 3.3.1 e 3.3.2).
 • Exceções de @supabase/: lib/supabase/* e allowlist SULB (6.4).
-• Arquivos existentes fora dos paths canônicos permanecem apenas por compatibilidade, sem ampliar escopo.
+• Arquivos existentes fora dos paths canônicos permanecem apenas por compatibilidade (ver 3.3.2).
 
 7. Checklist mínima (anti-regressão)
 • Views expostas a usuário: security_invoker = true (ver 3.1 e PATH: docs/schema.md)
