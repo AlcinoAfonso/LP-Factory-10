@@ -33,11 +33,13 @@
 
 1.1 Backend: Supabase — projeto lp-factory-10
 • Nota operacional: não existe ambiente Supabase STAGING ativo neste momento; os previews voltaram a usar o projeto principal. Se houver novo staging no futuro, não manter sem controles mínimos de segurança.
+
 1.1.1 Segredos e flags de execução (server-side)
 • SUPABASE_SECRET_KEY
 • ACCESS_CONTEXT_ENFORCED=true
 • ACCESS_CTX_USE_V2=true
 1.1.2 Variáveis Públicas
+
 • NEXT_PUBLIC_SUPABASE_URL=https://dpikmjgiteuafsbaubue.supabase.co
 • NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=sb_publishable_DiHMVvkSiFqmn1hP0hc9Xg_sVmRaLdb
 1.1.3 Convenções
@@ -45,6 +47,7 @@
 • SQL/Postgres: snake_case
 • Pipeline: GitHub Web → Vercel
 • Regra: não usar SUPABASE_SERVICE_ROLE_KEY (usar apenas SUPABASE_SECRET_KEY)
+
 1.1.4 Runtime & Toolchain
 • Node.js: 22.x (Vercel > Settings > Build and Deployment > Node.js Version)
 • TypeScript: 5.5.4 (repo; versão do compilador)
@@ -157,6 +160,7 @@
 • Regra: verifyOtp() só pode existir em app/auth/confirm/**
 • Regra de merge (mínimo): validação automática ok + preview ok + smoke de acesso (login/logout/reset de senha/navegação pós-login)
 • Regra: antes de merge, seguir obrigatoriamente o checklist da seção 7 (anti-regressão)
+
 3.4.1 Manutenção (Upgrade Next.js + lockfile)
 • PATH: .github/workflows/upgrade-next-16-1-1.yml
 • Disparo: manual (inputs: target_branch, next_version)
@@ -278,10 +282,12 @@
 5. Arquitetura de Acesso
 
 5.1 Conceitos Fundamentais
+
 5.1.1 Access Context v2
 • Fonte única: v_access_context_v2
 • Decide se o usuário pode acessar uma conta (allow + reason)
 • Usado em SSR (getAccessContext), AccessProvider e AccountSwitcher
+
 5.1.2 Persistência SSR (cookie last_account_subdomain)
 • Cookie HttpOnly de “última conta”, usado pelo gateway /a/home (SSR) para redirecionar /a/home → /a/{account_slug}.
 • Escrita (best-effort) em middleware.ts para GET /a/{account_slug} (exceto 'home'), somente em navegação real (sem prefetch).
@@ -293,6 +299,7 @@
 • /a/home não define cookie (apenas lê; clear_last=1 ignora cookie no SSR e delega limpeza ao middleware).
 
 5.2 Adapters, Guards, Providers
+
 5.2.1 Adapters
 • accountAdapter (PATH: lib/access/adapters/accountAdapter.ts): createFromToken(tokenId, actorId) → RPC create_account_with_owner; renameAndActivate(accountId, name, slug) atualiza name+subdomain e seta status='active'; renameAccountNoStatus(accountId, name, slug) renomeia sem alterar status; updateAccountNameCore(accountId, name) atualiza apenas accounts.name; setSetupCompletedAtIfNull(accountId) (infra E10.4.1) seta setup_completed_at somente quando NULL (idempotente); marcador setup_completed_at é deprecated sem uso no gating do runtime; normalizeAccountStatus usa allowlist ASTAT; fallback atual: 'active'.
 • accountProfileAdapter (PATH: lib/access/adapters/accountProfileAdapter.ts): upsertAccountProfileV1({ accountId, niche, preferredChannel, whatsapp, siteUrl }) (E10.4.6).
@@ -303,11 +310,13 @@
 • guard SSR da seção cliente (PATH: app/a/_server/section-guard.ts): aplica allow/deny de /a/{account_slug} e redirecionamentos de bloqueio na seção cliente.
 • guard SSR da seção admin (PATH: app/admin/_server/section-guard.ts): aplica bloqueio de Admin quando não for super_admin ou platform_admin.
 • guards legados compartilhados (PATH: lib/access/guards.ts): utilitários de validação de acesso usados pelo runtime.
+
 5.2.3 Providers
 • AccessProvider (PATH: providers/AccessProvider.tsx): carrega contexto de acesso no app.
 • account-switcher (PATH: components/features/account-switcher/*): consome v_user_accounts_list via /api/user/accounts.
 
 5.3 Fluxos de Sessão
+
 5.3.1 Login (MVP)
 • Login primário é page-based em /auth/login (card central).
 • CTA “Entrar” na home pública (/a/home) navega para /auth/login.
@@ -316,6 +325,7 @@
 • /a/home (gateway) resolve conta e redireciona para /a/{account_slug}.
 • Erro de credenciais: exibir error.message do Supabase (ex.: “Invalid login credentials”).
 • Throttling específico de login não está implementado na UI atual (ver 5.3.3).
+
 5.3.2 Password Reset (MVP)
 • Entrada do reset: /auth/forgot-password.
 • Mensagem neutra obrigatória (anti-enumeração): “Se este e-mail estiver cadastrado, enviaremos instruções para redefinir a senha.” (em sucesso e descrição).
