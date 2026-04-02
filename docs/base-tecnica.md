@@ -112,8 +112,8 @@
 
 2.5 Regras de Import (canônica)
 • @supabase/* somente em adapters do domínio, em lib/supabase/* e na allowlist SULB autorizada em 6.4.
-• Regra canônica para código novo: adapters devem nascer em paths na raiz do repositório, respeitando a topologia canônica definida em 3.3.1.
-• Exceção de compatibilidade: arquivos já existentes fora dos paths canônicos podem permanecer sem ampliação de escopo.
+• Regra canônica para código novo: adapters devem nascer em paths canônicos na raiz do repositório (ver 3.3.1 e 3.3.2).
+• Exceção de compatibilidade: arquivos já existentes fora dos paths canônicos podem permanecer sem ampliação de escopo (ver 3.3.2).
 • UI e componentes client nunca acessam Supabase diretamente.
 
 3. Regras Técnicas Globais
@@ -136,21 +136,31 @@
 • Tipos canônicos só em lib/types/status.ts.
 
 3.3.1 Topologia canônica do repositório
-• Regra canônica para código novo: usar paths na raiz do repositório.
-• Novos módulos, boundaries, providers, adapters, helpers e contratos devem seguir a topologia canônica vigente.
-• Exceções de compatibilidade em arquivos já existentes fora da topologia canônica só podem ser mantidas sem ampliar escopo.
+• Camadas vigentes: Core, automations, services  
+• Root: runtime canônico do Core  
+• `automations/`: raiz canônica da camada de automações  
+• `services/`: raiz canônica da camada de serviços implantáveis  
+• Leitura do Core: por seção  
+• Seções do Core: Account Dashboard, Admin Dashboard, Partner Dashboard, LP Builder  
 
-3.3.2 Separação estrutural entre Core, automations e services
-• O root do repositório permanece como runtime canônico do Core SaaS (app Next.js, dashboard, auth, rotas do produto e dependências do Core).
-• `automations/` passa a ser a raiz canônica da camada de automações operacionais.
-• `services/` passa a ser a raiz canônica de serviços e integrações implantáveis de forma independente do Core.
-• `.github/workflows/` permanece como camada de entrada/orquestração dos fluxos automatizados.
-• Dependências de automação não devem entrar no `package.json` do Core, salvo exceção técnica aprovada.
-• Cada automação relevante pode existir como subprojeto isolado em `automations/<nome>/`, com `package.json` e `package-lock.json` próprios.
-• Cada serviço relevante pode existir como subprojeto isolado em `services/<nome>/`, com `package.json` e `package-lock.json` próprios.
-• A MCP Supabase Inspect não é mais hospedada no runtime do Core; o runtime canônico fica em `services/mcp-supabase-inspect/`.
-• `pipelines/` deve ser tratado como legado em revisão/migração; novos casos canônicos devem nascer em `automations/`.
-• Mudanças em automações e services não devem, por padrão, acoplar runtime do Core nem ampliar risco estrutural no deploy do app.
+3.3.2 Paths canônicos e anti-drift de localização
+• Regra: path é contrato operacional  
+• Regra: não inventar path  
+• Regra: não assumir localização por padrão genérico  
+• Regra: em dúvida, confirmar no repositório real  
+• Regra: código novo nasce no path canônico correto  
+• Regra: exceção existente não vira padrão novo  
+• Risco de erro de path: churn, retrabalho, regressão  
+
+3.3.3 Separação estrutural entre Core, automations e services
+• Core: runtime principal do produto  
+• `automations/`: automações operacionais  
+• `services/`: serviços com deploy independente  
+• `.github/workflows/`: orquestração  
+• Ordem de classificação: camada, seção, boundary, path canônico, shared real ou shared falso  
+• Regra: boundary nova só com massa real de código  
+• Partner Dashboard: sem boundary por antecipação  
+• LP Builder: seção própria do Core, não dentro de Account Dashboard  
 
 3.4 CI/Lint (Bloqueios)
 • Validação por PR + preview de deploy (Vercel)
@@ -261,7 +271,7 @@
 
 3.14 Padrão de Adapters (vNext)
 • Novas páginas/casos de uso: DB somente via adapters.
-• Regra canônica para código novo: adapters devem nascer em paths na raiz do repositório, conforme 3.3.1.
+• Regra canônica para código novo: adapters devem nascer em paths canônicos na raiz do repositório (conforme 3.3.1 e 3.3.2).
 • Adapters já existentes fora dos paths canônicos podem permanecer como compatibilidade, sem expansão de escopo.
 • 1 adapter = 1 caso de uso; se crescer, dividir (<=150 linhas ou <=6 exports).
 • Adapter retorna DTO final; UI não normaliza; não expor DBRow.
@@ -389,12 +399,12 @@
 
 6.2 Arquivos críticos por fluxo (fonte única)
 • Localização atual de arquivos críticos (Acesso, Onboarding, Multi-conta, Supabase núcleo, SULB, Admin): consultar o repositório real.
-• Regra: se um arquivo crítico mudar de path, atualizar esta Base Técnica somente quando a mudança afetar regra, boundary, allowlist ou contrato técnico.
+• Regra: se um arquivo crítico mudar de path, atualizar esta Base Técnica somente quando a mudança afetar regra, boundary, allowlist ou contrato técnico (ver 3.3.2 e 3.3.3).
 
 6.3 Tipos e contratos críticos (mínimo normativo)
 • Fonte única de tipos canônicos: PATH: lib/types/status.ts
 • Regra: proibido redefinir AccountStatus, MemberStatus, MemberRole fora do arquivo canônico
-• Contratos e reexports existentes fora dos paths canônicos podem permanecer por compatibilidade; isso não altera a regra canônica de código novo definida em 3.3.1.
+• Contratos e reexports existentes fora dos paths canônicos podem permanecer por compatibilidade; isso não altera a regra canônica de código novo definida em 3.3.2.
 
 6.4 Arquivos SULB autorizados a importar Supabase (fonte única normativa)
 Exceção oficial: somente os arquivos listados abaixo podem importar @supabase/* fora dos adapters de domínio e de lib/supabase/.
@@ -409,9 +419,9 @@ Regra: qualquer novo arquivo em app/auth/ não pode importar @supabase/* até se
 
 6.5 Regras rápidas (sem drift)
 • Acesso ao DB: somente via adapters.
-• Regra canônica para código novo: adapters em paths na raiz do repositório, conforme 3.3.1.
+• Regra canônica para código novo: adapters em paths canônicos na raiz do repositório (ver 3.3.1 e 3.3.2).
 • Exceções de @supabase/: lib/supabase/* e allowlist SULB (6.4).
-• Arquivos existentes fora dos paths canônicos permanecem apenas por compatibilidade, sem ampliar escopo.
+• Arquivos existentes fora dos paths canônicos permanecem apenas por compatibilidade (ver 3.3.2).
 
 7. Checklist mínima (anti-regressão)
 • Views expostas a usuário: security_invoker = true (ver 3.1 e PATH: docs/schema.md)
