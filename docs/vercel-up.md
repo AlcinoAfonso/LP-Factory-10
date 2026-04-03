@@ -309,3 +309,39 @@ Quando há vários pushes no mesmo branch/PR enquanto um build está em execuç�
 - Status: N/A (default ON)
 - Ação necessária: nenhuma
 - Observação: somente criar `vercel.json` se optar por desabilitar o cancelamento automático.
+
+---
+
+## 14 — Optional AI model training / “Improve models with my data” *(🟩 Estável)*  
+2026-03-17
+
+### Status no Projeto
+- Status: Não implementado
+- Evidência: configuração sensível de plataforma sem registro de adoção deliberada no LP Factory 10.
+- Observação: governança de dados; avaliar explicitamente antes de manter ativo.
+
+### Descrição
+Configuração opcional da Vercel para permitir uso de código e chats de agentes da Vercel em melhoria/treino de modelos, com possibilidade de compartilhamento com provedores de modelos para essa finalidade.
+
+### Valor para o Projeto
+- Registra uma decisão sensível de governança de dados da plataforma.
+- Ajuda a evitar ativação por inércia em ambiente de projeto real.
+- Cria referência documental para revisão futura de compliance e segurança.
+
+### Valor para o Usuário
+- Não há ganho direto de produto para o usuário final.
+- O valor é indireto, na governança e no controle consciente da configuração.
+
+### Ações Recomendadas
+1. Registrar a configuração como sensível no contexto Vercel do projeto.
+2. Manter desativado por padrão, salvo justificativa explícita.
+3. Reavaliar somente se houver benefício claro e documentado para o projeto.
+
+### Registro (Tipo A — Plataforma)
+- Status: PENDENTE
+- Verificado em: —
+- Ambiente: Vercel Team/Project Settings / Data Preferences
+- Evidência: —
+- Observação: tratar como decisão consciente de governança; não como feature de produto.
+
+---
