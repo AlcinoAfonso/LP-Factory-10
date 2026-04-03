@@ -1224,7 +1224,7 @@ A extensão **pg_graphql** passa a vir **desativada por padrão** em novos proje
 
 
 ### Descrição
-O Supabase Studio passa a salvar **SQL snippets localmente**, permitindo versionamento e compartilhamento via Git pela pasta **`supabase/snippets`**.
+O Supabase Studio permite **criar e atualizar SQL snippets inline** e salvá-los localmente para versionamento e compartilhamento via Git pela pasta **`supabase/snippets`**.
 
 ### Valor para o Projeto
 
@@ -1439,7 +1439,7 @@ A Supabase passou a oferecer integração oficial com o Claude, permitindo conec
 
 
 ### Descrição
-A Supabase lançou **Logs Drains**, permitindo enviar logs de **Postgres, Auth, Storage, Edge Functions e Realtime** para destinos externos.
+A Supabase lançou **Logs Drains**, permitindo enviar logs de **Postgres, Auth, Storage, Edge Functions e Realtime** para destinos externos como **Datadog, Grafana Loki, Sentry, Axiom, S3** ou **endpoint próprio**.
 
 ### Valor para o Projeto
 - Centraliza observabilidade fora do dashboard do Supabase.
@@ -1477,7 +1477,7 @@ A Supabase lançou **Logs Drains**, permitindo enviar logs de **Postgres, Auth, 
 
 
 ### Descrição
-A Supabase atualizou a arquitetura do Storage, tornando a listagem de objetos significativamente mais rápida em bases muito grandes e corrigindo problemas de segurança relacionados ao gerenciamento de arquivos.
+A Supabase atualizou a arquitetura do Storage com listagem de objetos até **14.8x** mais rápida em bases muito grandes, removendo a tabela **`prefixes`** e seus triggers associados, adotando **skip-scan** e **cursor-based pagination**, além de corrigir **path traversal** e prevenir **orphan objects** em deletes diretos por SQL.
 
 ### Valor para o Projeto
 - Melhora a escalabilidade do Storage para cenários com muitos arquivos.
@@ -1532,5 +1532,71 @@ O dashboard de **Edge Functions** passou a funcionar também em ambientes **self
 - Ambiente: Supabase Edge Functions / CLI
 - Evidência: —
 - Observação: manter no radar, sem execução imediata.
+
+---
+
+## 49 — Table Editor com filtros por IA *(🗾 Estável)*
+
+2026-03-05
+
+### Status no Projeto
+
+- Status: Não implementado
+- Evidência: docs/roadmap.md (sem adoção definida no escopo atual)
+
+### Descrição
+O Table Editor do Supabase passa a aceitar descrições em linguagem natural para montar filtros Postgres no dashboard.
+
+### Valor para o Projeto
+- Simplifica investigações operacionais e exploração assistida de dados no Studio.
+- Pode reduzir atrito em consultas operacionais simples no dashboard.
+
+### Valor para o Usuário
+- Indireto: suporte e operação interna mais ágeis em análises exploratórias.
+
+### Ações Recomendadas
+1. Registrar como capacidade operacional do dashboard.
+2. Não substituir SQL/manual técnico por esse recurso.
+3. Reavaliar uso quando houver rotina operacional que se beneficie de filtros assistidos.
+
+### Registro (Tipo A — Plataforma)
+- Status: PENDENTE
+- Verificado em: —
+- Ambiente: Supabase Studio / Table Editor
+- Evidência: —
+- Observação: recurso de dashboard; não caracteriza implementação no produto.
+
+---
+
+## 50 — Read Replicas gerenciadas pela página de replicação *(🗾 Estável)*
+
+2026-03-05
+
+### Status no Projeto
+
+- Status: Não implementado
+- Evidência: docs/roadmap.md (sem adoção definida no escopo atual)
+
+### Descrição
+As Read Replicas passam a ser gerenciadas pela página oficial de Database Replication no dashboard do Supabase.
+
+### Valor para o Projeto
+- Registra uma capacidade futura relevante para escala de leitura e resiliência.
+- Facilita governança operacional de replicação quando esse tipo de arquitetura for necessário.
+
+### Valor para o Usuário
+- Indireto: pode sustentar melhor performance e estabilidade em cenários futuros de maior carga.
+
+### Ações Recomendadas
+1. Registrar como capacidade oficial da stack para evolução futura.
+2. Não adotar agora no MVP.
+3. Reavaliar apenas se o projeto exigir escala de leitura e plano/infra compatíveis.
+
+### Registro (Tipo A — Plataforma)
+- Status: PENDENTE
+- Verificado em: —
+- Ambiente: Supabase Dashboard / Database Replication
+- Evidência: —
+- Observação: capacidade futura; não caracteriza implementação no projeto.
 
 ---
