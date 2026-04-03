@@ -946,6 +946,11 @@
 • E19 é uma seção própria, separada de Account Dashboard, Admin Dashboard e Partner Dashboard
 • Boundaries físicas internas devem nascer conforme houver massa real de código
 
+19.4.1 Fronteira com E10 / E12
+• E19 não inclui, nesta fase, a camada persuasiva pós-setup do Account Dashboard (E10.5).
+• E19 também não inclui o template de ativação comercial, que pertence ao fluxo de ativação/comercial da conta.
+• O E19 só deve avançar para implementação quando houver recorte funcional real do LP Builder, evitando antecipação estrutural sem massa de código.
+
 19.5 Dependências / referências
 • E10 — Account Dashboard
 • E12 — Admin Dashboard
