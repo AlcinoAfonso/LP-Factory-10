@@ -1600,3 +1600,166 @@ As Read Replicas passam a ser gerenciadas pela página oficial de Database Repli
 - Observação: capacidade futura; não caracteriza implementação no projeto.
 
 ---
+
+## 51 — `pg_trgm` para similaridade textual e autocomplete *(🗾 Estável)*
+
+2026-04-03
+
+### Status no Projeto
+
+- Status: Não implementado
+- Evidência: `docs/base-tecnica.md` registra FTS nativo e compatibilidade PostgREST/PG; não há adoção explícita de `pg_trgm` no projeto.
+- Observação: candidato forte para matching textual leve sem IA no caso de taxonomia.
+
+### Descrição
+
+A extensão `pg_trgm` do PostgreSQL fornece operadores e índices para **similaridade textual por trigramas**, permitindo buscas aproximadas, tolerância a erro de digitação e suporte eficiente a `LIKE`/`ILIKE` com índice.
+
+### Valor para o Projeto
+
+- Potencializa matching entre texto livre e taxonomia canônica sem depender de IA no MVP.
+- Ajuda em sugestão/autocomplete, aliases e tratamento de pequenas variações de escrita.
+- Mantém baixo custo operacional por ficar dentro do Postgres.
+
+### Valor para o Usuário
+
+- Sugestões mais úteis enquanto digita.
+- Menos erro de classificação por grafia imperfeita.
+- Experiência mais fluida no onboarding e em fluxos de configuração.
+
+### Ações Recomendadas
+
+1. Considerar para a fase inicial do caso de taxonomia, junto com FTS.
+2. Usar principalmente em sugestão/autocomplete e matching leve.
+3. Evitar adoção ampla fora de casos com necessidade clara de busca aproximada.
+
+### Registro (Tipo C — Infra/Schema/Contrato)
+
+- Status: PENDENTE
+- Verificado em: —
+- Ambiente: PostgreSQL / Supabase
+- Evidência: —
+- Observação: recurso externo ainda não absorvido na base do projeto; documentado por potencial de ROI no caso de taxonomia.
+
+---
+
+## 52 — Generated columns para normalização e chaves derivadas *(🗾 Estável)*
+
+2026-04-03
+
+### Status no Projeto
+
+- Status: Não implementado
+- Evidência: não há uso explícito de generated columns registrado na base atual do projeto.
+- Observação: candidato forte para normalização automática em taxonomias e chaves auxiliares de busca.
+
+### Descrição
+
+Generated columns do PostgreSQL permitem manter **colunas derivadas automaticamente** a partir de outras colunas, úteis para normalização, slugs, versões simplificadas de texto e chaves auxiliares de busca.
+
+### Valor para o Projeto
+
+- Reduz retrabalho de normalização manual no código.
+- Ajuda a manter consistência entre valor original e valor derivado.
+- Facilita evolução futura da taxonomia com menos lógica espalhada.
+
+### Valor para o Usuário
+
+- Menos inconsistência em sugestões e classificações.
+- Melhor previsibilidade em buscas e listas relacionadas a nichos.
+
+### Ações Recomendadas
+
+1. Considerar no desenho inicial da taxonomia para campos derivados de busca/normalização.
+2. Usar apenas onde houver ganho claro de consistência.
+3. Evitar excesso de colunas derivadas sem necessidade comprovada.
+
+### Registro (Tipo C — Infra/Schema/Contrato)
+
+- Status: PENDENTE
+- Verificado em: —
+- Ambiente: PostgreSQL / Supabase
+- Evidência: —
+- Observação: recurso externo ainda não absorvido na documentação do projeto; relevante para taxonomia, aliases e manutenção futura.
+
+---
+
+## 53 — `pgmq` para fila de revisão de ambiguidades *(🗾 Estável)*
+
+2026-04-03
+
+### Status no Projeto
+
+- Status: Não implementado
+- Evidência: não há adoção explícita de `pgmq` no projeto.
+- Observação: recurso mais adequado para fase posterior do caso de taxonomia.
+
+### Descrição
+
+`pgmq` é uma fila leve baseada em Postgres, documentada pela Supabase, permitindo enfileirar eventos e mensagens sem dependência externa, com arquivamento e replay.
+
+### Valor para o Projeto
+
+- Pode suportar revisão futura de nichos ambíguos ou não classificados automaticamente.
+- Cria base simples para esteira de revisão humana/assistida sem sair do Postgres.
+- Mantém a arquitetura enxuta se o caso evoluir para curadoria operacional.
+
+### Valor para o Usuário
+
+- Indireto: melhora a qualidade futura das classificações e reduz inconsistências em casos ambíguos.
+
+### Ações Recomendadas
+
+1. Não adotar no MVP do caso de taxonomia.
+2. Manter como recurso documentado para fase posterior.
+3. Reavaliar quando houver volume real de ambiguidades ou necessidade de curadoria operacional.
+
+### Registro (Tipo C — Infra/Schema/Contrato)
+
+- Status: PENDENTE
+- Verificado em: —
+- Ambiente: Supabase / PostgreSQL
+- Evidência: —
+- Observação: recurso de fase posterior; não justifica abrir frente paralela agora.
+
+---
+
+## 54 — `pgvector` para similaridade semântica futura *(🗾 Estável)*
+
+2026-04-03
+
+### Status no Projeto
+
+- Status: Não implementado
+- Evidência: não há adoção explícita de `pgvector` no projeto atual.
+- Observação: recurso para fase futura, não recomendado para o MVP deste caso.
+
+### Descrição
+
+`pgvector` permite armazenar embeddings e realizar **busca por similaridade vetorial/semântica** no Postgres, servindo de base para classificação assistida, busca semântica e fluxos de IA.
+
+### Valor para o Projeto
+
+- Cria caminho futuro para matching semântico mais sofisticado.
+- Pode apoiar evolução para CRM, templates inteligentes e classificação assistida.
+- Mantém a possibilidade de IA sobre a própria stack de dados do projeto.
+
+### Valor para o Usuário
+
+- Indireto no curto prazo; potencial de recomendações e classificações mais inteligentes no futuro.
+
+### Ações Recomendadas
+
+1. Não adotar agora no MVP deste caso.
+2. Manter documentado como capacidade futura da stack.
+3. Reavaliar apenas quando houver necessidade real de semântica/IA além de FTS + similaridade textual leve.
+
+### Registro (Tipo C — Infra/Schema/Contrato)
+
+- Status: PENDENTE
+- Verificado em: —
+- Ambiente: Supabase / PostgreSQL
+- Evidência: —
+- Observação: documentar como capacidade futura, sem induzir implementação imediata.
+
+---
