@@ -5,8 +5,9 @@
 • Escopo: visão geral do produto + estratégia empresarial (alto nível) + referências oficiais do projeto
 
 1. O que é
-• LP Factory 10 é um produto em fase de MVP que evolui para um SaaS self-serve de landing pages por nicho com dashboard.
+• LP Factory 10 é uma plataforma SaaS de landing pages por nicho, com dashboards de análise para acompanhar e otimizar a performance.
 • O foco atual é validar a oferta, o processo e a repetibilidade antes de escalar.
+• O produto foi pensado para atender múltiplos nichos, com priorização orientada pela demanda captada no uso real.
 
 2. Estratégia (atual e evolutiva)
 2.1. Go-to-market inicial
@@ -16,8 +17,10 @@
 • Evoluir para SaaS self-serve quando houver sinais claros de repetibilidade e demanda.
 
 3. Proposta de valor
-• Reduzir fricção e custo de otimização de landing pages para o cliente.
-• Tornar o ciclo criar → medir → ajustar → testar simples e guiado por dados, reduzindo dependência de terceiros.
+• Oferecer landing pages por nicho com acompanhamento contínuo de performance.
+• Reduzir esforço, tempo e dependência para criar, medir, ajustar e otimizar LPs.
+• Transformar dados de uso e conversão em leitura prática para orientar melhorias.
+• Ajudar o cliente a evoluir a landing page com mais clareza, autonomia e direção.
 
 4. Produto (alto nível)
 4.1. Prático
@@ -34,7 +37,7 @@
 
 6. Pendências estratégicas (em aberto)
 6.1. Nicho inicial
-• Ainda não definido.
+• A prioridade inicial dos nichos será definida por demanda.
 
 6.2. Definições do MVP
 • Starter mínimo • Tracking mínimo • Atendimento no MVP • Primeira recomendação concreta da IA
