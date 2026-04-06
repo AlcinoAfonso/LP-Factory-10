@@ -53,6 +53,7 @@ Ela registra decisões, propostas e ajustes previstos do E10.5 e adjacências.
 * se houver nicho com template comercial válido, usa nicho
 * se não houver nicho, mas houver segmento com template comercial válido, usa segmento
 * se não houver nenhum dos dois, usa fallback genérico
+* nicho e segmento são critérios internos de resolução; o centro visível da personalização é o template comercial recomendado
 
 1.12 A página `active` do E10.5 será tratada como uma LP comercial.
 
@@ -69,26 +70,27 @@ Ela registra decisões, propostas e ajustes previstos do E10.5 e adjacências.
 * trial é opcional e depende do template
 * pode ficar fora da seção de planos, inclusive em ações posteriores
 
+1.15 A evolução dos templates comerciais tende a começar pelo segmento.
+
+* novos nichos usam o template do segmento enquanto não tiverem template próprio
+* se não houver sequer template de segmento aplicável, usa fallback genérico
+* templates próprios de nicho surgem quando a demanda justificar
+
 ## 2) Ambiguidades
-
-2.1 Centro da personalização do E10.5.
-
-* o eixo principal será segmento, nicho ou template comercial recomendado
-* como isso deve aparecer para o usuário sem aumentar complexidade
 
 ## 3) Propostas abertas
 
-3.1 Como operacionalizar a hierarquia de resolução do E10.5.
+3.1 Operacionalização da resolução do E10.5.
 
-* como detectar template comercial válido
-* qual sinal define nicho, segmento ou fallback genérico
-* onde essa decisão será resolvida no sistema
+* o sistema escolhe o melhor template comercial válido disponível
+* a resolução segue: nicho → segmento → fallback genérico
+* a decisão deve ser feita no servidor, antes da renderização da página `active`
 
-3.2 Relação entre taxonomia e templates comerciais.
+3.2 Evolução de nichos para templates próprios.
 
-* quantidade viável de templates por segmento
-* ROI de produzir templates por nicho
-* até onde a estrutura de templates comerciais pode ser reaproveitada por LPs futuras
+* qual sinal indica que um nicho já merece template próprio
+* como essa oportunidade será sinalizada para a administração
+* se essa triagem será manual, por relatório ou por agente
 
 3.3 Tabela `content_templates`.
 
