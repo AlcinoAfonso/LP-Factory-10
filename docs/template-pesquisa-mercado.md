@@ -1,3 +1,8 @@
+0- Contexto
+• Este documento é uma base de origem do projeto para duas frentes: captura de dados da conta e pesquisa de mercado por nicho.
+• Os blocos iniciais do template podem ser migrados, total ou parcialmente, para estruturas do produto, especialmente campos ligados ao setup e ao cadastro da conta.
+• Após essa migração, este documento deve permanecer focado no que será pesquisado para cada nicho, servindo como referência de inteligência de mercado e apoio à priorização.
+
 1- Dados de Prospecção
 Contato:
 Telefone:
