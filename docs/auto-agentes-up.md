@@ -16,41 +16,41 @@ Qualquer coisa de Supabase ou Vercel (infra, deploy, logs, MCP via Edge Function
 
 ---
 
-## 1 — AgentKit *(🍿 Experimental)*
+## 1 — AgentKit + Ecossistema *(🍿 Experimental)*
 2025-11-12
 
 ### Descrição
-Conjunto modular da OpenAI para criação e versionamento de agentes, integrando builder, registry e conectores MCP.
+AgentKit passa a ser tratado aqui como guarda-chuva de capacidades para experiências com agentes, cobrindo Agent Builder, Connector Registry, ChatKit e frentes de avaliação/otimização quando aplicáveis. O foco é usar o conjunto de forma pragmática, respeitando diferentes níveis de maturidade entre os componentes.
 
 ### Valor para o Projeto
-- Base técnica para criação de agentes internos (LP Factory Bot, Benchmark Bot, DevOps Bot).
-- Facilita orquestração de fluxos e rotinas.
+- Consolida critérios para decidir onde usar AgentKit versus integrações complementares no ecossistema.
+- Ajuda a padronizar versionamento, observabilidade e evolução de agentes úteis ao LP Factory 10.
 
 ### Valor para o Usuário
-- Acelera tarefas repetitivas (pesquisas, relatórios, análises de logs).
+- Entregas assistidas por agentes mais consistentes, com melhor previsibilidade de qualidade e rastreabilidade.
 
 ### Ações Recomendadas
-1. Definir agentes por domínio (Prod, Supabase, Estratégia).
-2. Criar camada de autenticação e logs no Supabase.
+1. Definir matriz de decisão por caso de uso (builder, conectores, chat embarcado e avaliação).
+2. Prototipar fluxos prioritários e medir latência, custo e qualidade antes de escalar.
 
 ---
 
-## 2 — GPT Agents *(🍾 Estável)*
+## 2 — Agents Platform: Responses API + Tools + Agents SDK *(🍾 Estável)*
 2025-11-13
 
 ### Descrição
-Uso do GPT para execução de tarefas automatizadas (resumos, análises, geração de relatórios).
+A base atual de agentes é tratada como plataforma composta por Responses API, built-in tools e Agents SDK, com suporte a tool use, orquestração e observabilidade.
 
 ### Valor para o Projeto
-- Centraliza automação de rotinas internas.
-- Base para interação autônoma com GitHub, Supabase e Vercel.
+- Atualiza o framing técnico para o padrão vigente de construção de agentes no ecossistema.
+- Dá base mais clara para integrações de agentes com dados, automações assistidas e supervisão operacional.
 
 ### Valor para o Usuário
-- Respostas rápidas e contextuais a partir de dados reais.
+- Respostas mais úteis em fluxos reais, com melhor continuidade entre contexto, ação e resultado.
 
 ### Ações Recomendadas
-1. Criar agentes por documento (Supabase Update, Estratégia, Benchmark).
-2. Integrar via MCP e API interna.
+1. Padronizar novos agentes no stack Responses API + tools + SDK.
+2. Definir trilha mínima de observabilidade por agente (execução, tool calls e falhas).
 
 ---
 
@@ -58,19 +58,19 @@ Uso do GPT para execução de tarefas automatizadas (resumos, análises, geraç�
 2025-11-12
 
 ### Descrição
-Modelo padronizado de handoff para transferência de contexto entre agentes IA, garantindo consistência e rastreabilidade em fluxos automatizados.
+Modelo de handoff para transferência de contexto entre agentes, garantindo consistência e rastreabilidade em fluxos automatizados.
 
 ### Valor para o Projeto
-- Define formato JSON universal (`goal`, `state`, `evidence`, `next`).
-- Facilita depuração e coordenação entre múltiplos agentes GPT/Claude.
+- Adota `goal`, `state`, `evidence` e `next` como convenção recomendada do projeto para handoffs.
+- Facilita depuração e coordenação entre múltiplos agentes em pipelines assistidos.
 
 ### Valor para o Usuário
-- Interações de IA mais coerentes e contínuas.
+- Interações mais coerentes e contínuas.
 - Redução de erros em automações interligadas.
 
 ### Ações Recomendadas
 1. Adotar formato `handoff.json` no pipeline de agentes.
-2. Integrar logs de handoff ao Supabase (Unified Logs).
+2. Integrar logs de handoff ao Unified Logs.
 
 ---
 
@@ -78,18 +78,18 @@ Modelo padronizado de handoff para transferência de contexto entre agentes IA, 
 2025-11-12
 
 ### Descrição
-Integração de bots e agentes IA com CRMs e fluxos de marketing reais (ex.: HubSpot, Supabase MCP), permitindo automação ponta a ponta.
+Integração de agentes com tools e dados reais em pipelines de automações assistidas, incluindo uso de MCP quando fizer sentido para conectar fontes e serviços do fluxo.
 
 ### Valor para o Projeto
-- Conecta agentes do LP Factory 10 a dados reais via MCP.
-- Automatiza tarefas de pesquisa e sincronização de leads.
+- Conecta agentes do LP Factory 10 a contexto operacional real sem limitar o desenho a um tipo único de sistema.
+- Fortalece automações ponta a ponta com execução auditável e reutilização de ferramentas.
 
 ### Valor para o Usuário
-- Respostas mais rápidas, campanhas otimizadas e suporte proativo.
+- Respostas mais acionáveis, com ganhos de tempo em tarefas recorrentes.
 
 ### Ações Recomendadas
-1. Criar agente de integração CRM piloto (HubSpot / RD Station).
-2. Logar execuções e métricas no Supabase para auditoria.
+1. Priorizar um pipeline piloto com tool calls e fonte de dados real.
+2. Logar execuções, saídas e falhas para diagnóstico e melhoria contínua.
 
 ---
 
@@ -97,18 +97,18 @@ Integração de bots e agentes IA com CRMs e fluxos de marketing reais (ex.: Hub
 2025-11-12
 
 ### Descrição
-Define assistente (reativo, sob solicitação) versus agente (autonomia com metas, planejamento, ferramentas e navegação). Fornece panorama operacional para decidir entre modelos.
+Define assistente como interação reativa e agente como execução orientada a objetivo com ferramentas, contexto e controle operacional. Mantém vocabulário prático para decisões de produto e operação.
 
 ### Valor para o Projeto
-- Vocabulário comum para processos e propostas.
-- Base para escolher quando usar agente ou assistente.
+- Preserva linguagem comum para especificação de fluxos e responsabilidades.
+- Evita confusão entre automação assistida, automação autônoma e suporte conversacional.
 
 ### Valor para o Usuário
-- Experiências previsíveis; evita autonomia indevida.
+- Experiência mais previsível, com nível de autonomia adequado ao risco da tarefa.
 
 ### Ações Recomendadas
-1. Adotar glossário “assistente vs agente” no repositório.
-2. Mapear onde cada um será aplicado (copy, pesquisa, PRs).
+1. Manter glossário “assistente vs agente” como referência transversal.
+2. Revisar fluxos existentes para confirmar o enquadramento correto em cada caso.
 
 ---
 
@@ -116,132 +116,89 @@ Define assistente (reativo, sob solicitação) versus agente (autonomia com meta
 2025-11-12
 
 ### Descrição
-Arquitetura em que um orquestrador quebra metas e delega a trabalhadores (ferramentas especializadas). Lista falhas comuns: loops, deriva de autonomia, timeout, fragilidade de esquemas e erros de DOM.
+Padrão de arquitetura/orquestração em que um orquestrador decompõe metas e delega para trabalhadores especializados (agentes ou tools), com controles de coordenação e retorno estruturado.
 
 ### Valor para o Projeto
-- Aumenta throughput em tarefas repetitivas (pesquisa, conteúdo, suporte).
-- Orienta diagnóstico rápido de falhas.
+- Aumenta throughput em tarefas paralelizáveis e melhora coordenação entre etapas.
+- Facilita diagnóstico de falhas recorrentes (loop, timeout, deriva de escopo e inconsistência de saída).
 
 ### Valor para o Usuário
-- Maior velocidade de entrega e consistência dos resultados.
+- Entregas mais rápidas e consistentes em fluxos compostos.
 
 ### Ações Recomendadas
-1. Registrar “Guide: OW-pattern” na pasta /docs.
-2. Adicionar testes de loop/timeout no pipeline dos agentes.
+1. Documentar contrato de entrada/saída entre orquestrador e trabalhadores.
+2. Adicionar testes de timeout, retry e prevenção de loop nos fluxos críticos.
 
 ---
 
-## 7 — Tooling: AgentKit + Ecossistema *(🍿 Experimental)*
+## 7 — Segurança de Agentes: riscos e guardrails *(🍾 Estável)*
 2025-11-12
 
 ### Descrição
-“comparativo + critérios de decisão” (quando usar AgentKit, quando usar outro, riscos, etc.)
+Consolida riscos em agentes com tools (prompt injection, escopo excessivo, execução indevida) e práticas de mitigação: menor privilégio, sanitização, telemetria, replays e testes adversariais.
 
 ### Valor para o Projeto
-- Padroniza versionamento, avaliação e observabilidade de agentes.
-- Facilita embed de agentes no Dashboard.
+- Reduz incidentes e aumenta capacidade de auditoria em automações assistidas.
 
 ### Valor para o Usuário
-- Automação mais confiável e auditável.
+- Mais segurança, menos ações indevidas e maior confiança no uso diário.
 
 ### Ações Recomendadas
-1. Prototipar um agente com AgentKit para pesquisa, draft e PR.
-2. Medir latência, custo e qualidade versus fluxo atual.
+1. Executar testes adversariais por release em fluxos com tool access.
+2. Versionar prompts/config e habilitar replay para investigação de falhas.
 
 ---
 
-## 8 — Segurança de Agentes: riscos e guardrails *(🍾 Estável)*
+## 8 — Checklist Operacional Interno de Agentes (LP Factory) *(🍾 Estável)*
 2025-11-12
 
 ### Descrição
-Resume os principais riscos (prompt injection, autoexec sem revisão, escopo amplo) e melhores práticas: menor privilégio, sanitização de entradas, gateways, telemetria, replays e testes adversariais.
+Checklist interno do LP Factory para operação de agentes em cinco frentes: risco/regulação, catálogo de ferramentas, telemetria/avaliação, handoff humano e rollback/modo degradado.
 
 ### Valor para o Projeto
-- Reduz incidentes; aumenta rastreabilidade.
+- Mantém governança operacional com critérios claros e auditáveis.
 
 ### Valor para o Usuário
-- Menos erros e decisões indevidas do agente.
+- Handoffs transparentes e recuperação segura quando houver degradação.
 
 ### Ações Recomendadas
-1. Implementar testes de injeção a cada release.
-2. Ativar replays e versionamento de prompts/config.
+1. Anexar checklist ao PR template de novos fluxos com agentes.
+2. Aplicar feature flags por agente e por ferramenta crítica.
 
 ---
 
-## 9 — Checklist Operacional de Agentes *(🍾 Estável)*
+## 9 — Roadmap Interno de Adoção de Agentes (Fase 1→3) *(🍾 Estável)*
 2025-11-12
 
 ### Descrição
-Checklist em 5 frentes para operar agentes: Risco/Regulação, Catálogo de Ferramentas, Telemetria/Avaliação, Handoffs humanos e Rollback/mode degradado.
+Roadmap interno de adoção progressiva: Fase 1 (assistência reativa), Fase 2 (agente com metas curtas e gate humano) e Fase 3 (operação estável com avaliação e observabilidade contínuas).
 
 ### Valor para o Projeto
-- Opera agentes com controles claros e auditáveis.
+- Define evolução controlada de risco baixo para uso mais maduro.
 
 ### Valor para o Usuário
-- Handoffs transparentes e recuperação segura.
+- Ganhos incrementais sem perda de previsibilidade.
 
 ### Ações Recomendadas
-1. Anexar checklist ao PR template de novos agentes.
-2. Criar feature flags por agente/ferramenta.
+1. Manter board de evolução por fase com critérios explícitos de entrada/saída.
+2. Definir SLAs e métricas mínimas por fase antes de avançar.
 
 ---
 
-## 10 — Roadmap de Adoção (Fase 1→3) *(🍾 Estável)*
+## 10 — Princípio Interno de Governança para Agentes com Dados *(🍾 Estável)*
 2025-11-12
 
 ### Descrição
-Define fases evolutivas: Fase 1 (assistente reativo), Fase 2 (agente com metas curtas e gate humano) e Fase 3 (produção com AgentKit, versionamento, avaliação e UI embarcada).
+Princípio interno para agentes com acesso a dados: escopo mínimo, rastreabilidade ponta a ponta, controles de acesso proporcionais ao risco e trilha auditável por execução.
 
 ### Valor para o Projeto
-- Trajeto claro de risco baixo até produção.
+- Reforça governança sem transformar este documento em guia de infraestrutura.
 
 ### Valor para o Usuário
-- Ganhos progressivos sem perda de controle.
+- Maior confiança no uso de agentes em fluxos com dados sensíveis.
 
 ### Ações Recomendadas
-1. Abrir board Kanban (Done/Next/Blocked) das fases.
-2. Definir SLAs e métricas por fase.
-
----
-
-## 11 — Trio de Segurança p/ Agentes: RLS + Tokens Curtos + Auditoria *(🍾 Estável)*
-2025-11-12
-
-### Descrição
-Fluxo fim‑a‑fim combinando RLS por `account_id`, JWT de curta expiração com `role=agent` e `scope` mínimo e logs imutáveis (`audit_logs`) para cada chamada.
-
-### Valor para o Projeto
-- Isolamento por conta, janela de risco pequena e rastros imutáveis.
-
-### Valor para o Usuário
-- Confiabilidade e governança nas ações do agente.
-
-### Ações Recomendadas
-1. Emitir tokens via Edge Function e validar `scope` no handler.
-2. Registrar pré e pós execução no `audit_logs` com `request_id`.
-
----
-
-## 12 — Assistente de Metadados de LP *(🧪 Experimental)*
-2025-11-17
-
-### Descrição
-Assistente contextual no Dashboard que sugere automaticamente título, slug, segmento e objetivo de uma nova Landing Page com base no contexto da conta e no histórico. Integrado via AgentKit/ChatKit no front‑end (Next.js), permite aplicar as sugestões ao formulário com um clique.
-
-### Valor para o Projeto
-- Demonstra aplicação prática do AgentKit no produto e valida o fluxo agente ↔ UI com RLS/grants.
-- Cria base para futuras automações (herói copy, seções padrão, FAQs) ligadas à criação de LPs.
-- Ajuda a alinhar a visão de “Agent Experience (AX)” com uma feature tangível.
-
-### Valor para o Usuário
-- Reduz tempo na criação de LPs ao pré‑preencher metadados coerentes com o segmento e meta da conta.
-- Garante consistência nos nomes e objetivos das LPs, evitando erros manuais.
-- Permite experimentar IA de forma não intrusiva, com possibilidade de revisão antes de aplicar.
-
-### Ações Recomendadas
-1. Criar endpoint `/api/ai/guess-lp-metadata` via adapter, validando sessão e `account_id`.
-2. Embutir componente `AssistantPanel` nas telas de criação/edição de LP.
-3. Registrar a tool `guess_lp_metadata` no AgentKit e auditar chamadas (gravar `agent_id`, tool e `account_id`).
-4. Habilitar a feature apenas para contas internas ou via flag `ai_lp_metadata_assistant` até validar o MVP.
+1. Exigir definição explícita de escopo e permissões antes da ativação de cada agente.
+2. Garantir logs auditáveis por execução, com correlação para investigação posterior.
 
 ---
