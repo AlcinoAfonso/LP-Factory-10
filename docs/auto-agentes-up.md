@@ -202,3 +202,96 @@ Princípio interno para agentes com acesso a dados: escopo mínimo, rastreabilid
 2. Garantir logs auditáveis por execução, com correlação para investigação posterior.
 
 ---
+
+## 11 — Agent Builder *(🟣 Beta)*  
+2025-10-06
+
+### Descrição
+Canvas visual da OpenAI para desenhar, versionar e iterar workflows com agentes, lógica de controle, tools e guardrails.
+
+### Valor para o Projeto
+- Facilita prototipação e validação rápida de fluxos multiagente antes de consolidar arquitetura definitiva.
+- Pode reduzir tempo de desenho e ajuste de automações assistidas mais complexas.
+
+### Valor para o Usuário
+- Acelera evolução de experiências assistidas mais consistentes e rastreáveis.
+
+### Ações Recomendadas
+1. Avaliar em quais automações vale prototipar primeiro no Builder antes de formalizar runtime definitivo.
+2. Registrar critérios de uso do Builder versus implementação programática.
+
+---
+
+## 12 — ChatKit *(🍾 Estável)*  
+2025-10-06
+
+### Descrição
+Toolkit da OpenAI para embutir experiências de chat com agentes em apps e sites, com customização visual e experiência mais nativa.
+
+### Valor para o Projeto
+- Pode acelerar interfaces conversacionais úteis no Dashboard sem exigir construção manual de toda a camada de chat.
+- Ajuda a testar experiência assistida de forma mais tangível no produto.
+
+### Valor para o Usuário
+- Experiência de interação com agentes mais fluida, contextual e integrada ao produto.
+
+### Ações Recomendadas
+1. Mapear se há caso real de chat embarcado prioritário no LP Factory 10.
+2. Comparar esforço de adoção do ChatKit com a abordagem atual antes de investir.
+
+---
+
+## 13 — Connector Registry *(🍿 Experimental / rollout controlado)*  
+2025-10-06
+
+### Descrição
+Camada central de governança para conectores e fontes de dados em produtos OpenAI, incluindo conectores pré-construídos e MCPs de terceiros.
+
+### Valor para o Projeto
+- Pode simplificar governança futura de fontes e tools em agentes com acesso a dados.
+- Ajuda a pensar conectividade de forma mais administrável e menos dispersa.
+
+### Valor para o Usuário
+- Potencializa agentes com acesso mais consistente a dados e ferramentas relevantes, com menor fricção operacional.
+
+### Ações Recomendadas
+1. Monitorar maturidade e requisitos do Connector Registry antes de planejar adoção.
+2. Avaliar impacto futuro sobre governança de conectores e MCPs no projeto.
+
+---
+
+## 14 — Evals para Agentes *(🍾 Estável)*  
+2025-10-06
+
+### Descrição
+Capacidades mais novas de avaliação para agentes, incluindo datasets, trace grading, automated prompt optimization e suporte a modelos de terceiros.
+
+### Valor para o Projeto
+- Reforça a necessidade de avaliar automações assistidas com critérios objetivos, e não só por impressão manual.
+- Dá base para medir qualidade, falhas e regressão em fluxos com agentes.
+
+### Valor para o Usuário
+- Aumenta previsibilidade e confiabilidade das respostas e ações assistidas.
+
+### Ações Recomendadas
+1. Definir conjunto mínimo de critérios de avaliação para agentes e automações assistidas do projeto.
+2. Priorizar traces e grading nos fluxos mais críticos antes de escalar uso de agentes.
+
+---
+
+## 15 — Responses API: remote MCP + novas tools *(🍾 Estável)*  
+2025-05-21
+
+### Descrição
+Evolução recente da Responses API com suporte a remote MCP servers e melhorias em tools como image generation, Code Interpreter e file search.
+
+### Valor para o Projeto
+- Amplia o leque de composição de agentes com ferramentas mais úteis e integração mais direta com servidores MCP remotos.
+- Pode reduzir atrito na construção de fluxos assistidos que precisem combinar raciocínio, tools e dados externos.
+
+### Valor para o Usuário
+- Respostas mais úteis e automações assistidas mais completas, com melhor capacidade de agir sobre diferentes tipos de tarefa.
+
+### Ações Recomendadas
+1. Avaliar quais automações do projeto podem se beneficiar de remote MCP de forma realista.
+2. Priorizar uso de tools novas apenas quando elas aumentarem valor operacional de forma clara.
