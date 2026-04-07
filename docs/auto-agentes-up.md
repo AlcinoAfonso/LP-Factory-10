@@ -1,8 +1,18 @@
-# LP Factory 10 — Agentes GPT (Updates)
+# LP Factory 10 — Agentes e Orquestração (Updates)
 
-Este doc deve conter apenas updates do universo “Agentes GPT” (tools, automações, AgentKit, padrões de uso).
+Este doc deve conter apenas updates do universo de agentes, tools, padrões de uso e orquestração que possam potencializar automações do projeto.
 
-Qualquer coisa de Supabase ou Vercel (infra, deploy, logs, MCP via Edge Functions etc.) fica nos respectivos docs e só referencia aqui se for governança de agentes (ex.: “como o agente deve usar a infra”, não “o que a infra lançou”).
+Isso inclui:
+- recursos e padrões da OpenAI ligados a agentes
+- handoffs, tool use, guardrails e arquitetura de agentes
+- workflows, pipelines e orquestrações quando forem relevantes para automações assistidas por agentes ou para fluxos híbridos humano + agente + automação
+
+Não inclui:
+- CI, build, deploy e workflows técnicos gerais sem relação com agentes ou automações assistidas
+- detalhes de infra de Supabase ou Vercel
+- documentação operacional de automações em si, que deve ficar em `docs/automacoes.md`
+
+Qualquer coisa de Supabase ou Vercel (infra, deploy, logs, MCP via Edge Functions etc.) fica nos respectivos docs e só referencia aqui se for governança de agentes, padrão de uso por agentes ou potencialização direta de automações assistidas.
 
 ---
 
