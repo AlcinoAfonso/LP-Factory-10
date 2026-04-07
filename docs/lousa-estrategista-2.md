@@ -1,4 +1,4 @@
-# E10.5 e adjacências imediatas
+# E10.5 e adjacências imediatas vs3
 
 ## 0) Introdução
 
@@ -76,28 +76,12 @@ Ela registra decisões, propostas e ajustes previstos do E10.5 e adjacências.
 * se não houver sequer template de segmento aplicável, usa fallback genérico
 * templates próprios de nicho surgem quando a demanda justificar
 
-## 2) Ambiguidades
-
-## 3) Propostas abertas
-
-3.1 Operacionalização da resolução do E10.5.
-
-* o sistema escolhe o melhor template comercial válido disponível
-* a resolução segue: nicho → segmento → fallback genérico
-* a decisão deve ser feita no servidor, antes da renderização da página `active`
-
-3.2 Evolução de nichos para templates próprios.
-
-* qual sinal indica que um nicho já merece template próprio
-* como essa oportunidade será sinalizada para a administração
-* se essa triagem será manual, por relatório ou por agente
-
-3.3 Tabela `content_templates`.
+1.16 Tabela `content_templates`.
 
 * uso inicial: E10.5
 * objetivo: catálogo neutro de templates para páginas/blocos de conteúdo
 * possibilidade futura: reaproveitamento em LPs, se a estrutura real for compatível
-* campos-base sugeridos:
+* campos:
 
   * `id`
   * `template_key`
@@ -113,11 +97,11 @@ Ela registra decisões, propostas e ajustes previstos do E10.5 e adjacências.
   * `created_at`
   * `updated_at`
 
-3.4 Tabela `content_template_taxons`.
+1.17 Tabela `content_template_taxons`.
 
 * objetivo: vincular templates à taxonomia oficial
 * uso esperado: permitir resolução por nicho, segmento e fallback genérico
-* campos-base sugeridos:
+* campos:
 
   * `id`
   * `template_id`
@@ -129,11 +113,11 @@ Ela registra decisões, propostas e ajustes previstos do E10.5 e adjacências.
   * `created_at`
   * `updated_at`
 
-3.5 Tabela `content_template_sections`.
+1.18 Tabela `content_template_sections`.
 
 * status atual: opcional
 * objetivo: quebrar templates em blocos reutilizáveis/editáveis, se isso fizer sentido depois
-* campos-base sugeridos:
+* campos:
 
   * `id`
   * `template_id`
@@ -145,7 +129,67 @@ Ela registra decisões, propostas e ajustes previstos do E10.5 e adjacências.
   * `created_at`
   * `updated_at`
 
-3.6 Próxima etapa do funil após o E10.5.
+1.19 A base estratégica por taxon será transversal.
+
+* servirá a LPs, E10.5 e demais comunicações
+* mesma base estratégica por taxon, com adaptação por contexto
+* a arquitetura deve nascer completa; a ativação dos contextos pode ser gradual
+
+1.20 Tabela `taxon_market_research`.
+
+* função: pesquisa consolidada por taxon
+* objetivo: concentrar a leitura estratégica principal de cada taxon em um registro-base
+
+1.21 Tabela `taxon_market_research_items`.
+
+* função: itens reutilizáveis da pesquisa por taxon
+* objetivo: registrar dores, objeções, desejos, tendências e outros itens em blocos reaproveitáveis
+* campos-base:
+
+  * `id`
+  * `research_id`
+  * `item_tag`
+  * `item_text`
+  * `priority`
+  * `is_active`
+  * `created_at`
+  * `updated_at`
+
+1.22 Tabela `taxon_message_guides`.
+
+* função: traduzir a mesma base estratégica para contextos diferentes
+* objetivo: orientar a adaptação da comunicação por contexto sem perder coerência estratégica
+
+## 2) Ambiguidades / aperfeiçoamento
+
+2.1 Estratégia de alimentação das 9 tabelas.
+
+* preenchimento manual direto fica fora de questão
+* uso inicial: prompts externos + saída estruturada + carga controlada
+* schema via migrations; conteúdo via seed/import/upsert
+* preparar formato de entrada para futura automação por agentes
+
+## 3) Propostas abertas
+
+3.1 Operacionalização da resolução do E10.5.
+
+* o sistema escolhe o melhor template comercial válido disponível
+* a decisão deve ser feita no servidor, antes da renderização da página `active`
+
+3.2 Evolução de nichos para templates próprios.
+
+* qual sinal indica que um nicho já merece template próprio
+* como essa oportunidade será sinalizada para a administração
+* se essa triagem será manual, por relatório ou por agente
+* avaliar se `account_taxonomy` precisa de `id` próprio
+
+3.3 Camada estratégica por taxon.
+
+* separar taxonomia, pesquisa, guias de mensagem e templates
+* pesquisa e guias complementam templates; não substituem templates
+* a mesma base estratégica deve poder servir a LPs, E10.5 e demais comunicações
+
+3.4 Próxima etapa do funil após o E10.5.
 
 * se convencer: cards e/ou trial
 * se não convencer: como amadurecer o lead com mais conhecimento
@@ -172,35 +216,7 @@ Ela registra decisões, propostas e ajustes previstos do E10.5 e adjacências.
 4. O campo **nicho** é obrigatório.
 5. O nicho é informado em **texto livre**.
 
-### 5.2 Cenário 1 — Entrada no E10.4 (Primeiros passos)
-
-**O que o usuário vê**
-
-* Título: “Primeiros passos”.
-* Subtexto curto.
-* Formulário inline.
-* Campo de nicho obrigatório.
-* Ajuda opcional no campo de nicho:
-
-  * exemplos
-  * sugestões
-  * orientação curta
-
-**O que o sistema faz**
-
-* carrega o formulário
-* prepara a captura do nicho em texto bruto
-
-**Resultado**
-
-* usuário entende que precisa informar seu nicho para continuar
-
-**Ambiguidades**
-
-* O nicho será texto livre puro ou texto livre com ajuda/sugestões?
-* Como essa ajuda aparecerá na UI?
-
-**Necessidades**
+$1**Necessidades**
 
 * definição de UX do campo
 * persistência do texto bruto
@@ -242,29 +258,7 @@ Ela registra decisões, propostas e ajustes previstos do E10.5 e adjacências.
 * regra de fallback
 * separação entre texto bruto e classificação oficial
 
-### 5.4 Cenário 3 — O sistema entende o nicho com confiança suficiente
-
-**O que o sistema faz**
-
-* guarda o texto original
-* identifica um taxon oficial
-* liga a conta à classificação oficial
-* decide qual nível usar no E10.5
-
-**O que o usuário vê**
-
-* uma página `active` mais aderente ao seu negócio
-
-**Resultado**
-
-* E10.5 fica menos genérico
-
-**Ambiguidades**
-
-* O E10.5 deve comunicar por nicho ou por segmento?
-* Quando o nicho melhora a conversão e quando complica?
-
-**Necessidades**
+$1**Necessidades**
 
 * taxonomia oficial
 * aliases/sinônimos
@@ -298,33 +292,8 @@ Ela registra decisões, propostas e ajustes previstos do E10.5 e adjacências.
 * regra de fallback
 * trilha futura de maturação/follow-up
 
-### 5.6 Cenário 5 — Entrada no E10.5 (`active` sem entitlements)
+$1**Ambiguidades**
 
-**O que o usuário vê**
-
-* uma página persuasiva pós-setup
-* hero
-* seções de valor
-* CTAs
-* cards em seção própria
-
-**O que o sistema faz**
-
-* decide qual versão do conteúdo comercial exibir
-* usa a taxonomia quando houver
-* usa fallback quando necessário
-
-**Resultado**
-
-* lead recebe uma narrativa comercial coerente com seu contexto
-
-**Ambiguidades**
-
-* O centro da página será:
-
-  * segmento
-  * nicho
-  * template comercial recomendado
 * Onde entra a oferta de trial?
 
 **Necessidades**
@@ -403,5 +372,3 @@ Ela registra decisões, propostas e ajustes previstos do E10.5 e adjacências.
 3. `business_taxon_aliases` para aliases, sugestões e normalização.
 4. `account_taxonomy` como vínculo oficial da conta com a taxonomia.
 5. tabela própria de templates comerciais do E10.5.
-
-Testando Compartilhamento
