@@ -1,6 +1,6 @@
-# E10.5 e adjacências imediatas vs5
+# E10.5 e adjacências imediatas vs6
 
-## 0) Introdução
+# 0) Introdução
 
 Esta lousa se baseia no repositório, mas não o espelha.
 Ela registra decisões, propostas e ajustes previstos do E10.5 e adjacências.
@@ -362,34 +362,61 @@ Ela registra decisões, propostas e ajustes previstos do E10.5 e adjacências.
   * `taxon_market_research_items`
   * `taxon_message_guides`
 * atualizar os docs no mesmo pacote
+* recursos a considerar nesta etapa:
+
+  * `supa#52` — generated columns
+  * `supa#40` — SQL snippets locais
+  * preparar base para `supa#36` e `supa#51`
 
 6.2 Etapa 2 — Popular a base inicial *(roadmap sugerido: E10.5.3)*.
 
 * cadastrar primeiros segmentos, nichos e aliases
 * cadastrar primeiros templates e vínculos com taxons
 * fechar o formato inicial de seed/import/upsert
+* recursos a considerar nesta etapa:
+
+  * `supa#40` — SQL snippets locais
+  * preparar formato para `supa#36` e `supa#51`
 
 6.3 Etapa 3 — Classificação da conta e escolha do template *(roadmap sugerido: E10.5.4)*.
 
 * definir o primeiro fluxo de classificação do nicho bruto
 * gravar o vínculo oficial em `account_taxonomy`
 * escolher no servidor o template recomendado
+* recursos a considerar nesta etapa:
+
+  * `supa#36` — FTS
+  * `supa#51` — `pg_trgm`
+  * `supa#52` — generated columns
 
 6.4 Etapa 4 — Colocar o E10.5 no runtime *(roadmap sugerido: E10.5.5)*.
 
 * integrar o E10.5 ao fluxo `active`
 * renderizar a página como LP comercial
 * ligar oferta, cards e trial conforme o template
+* recursos a considerar nesta etapa:
+
+  * `vercel#8` — `revalidateTag`
+  * `vercel#11` — tracking server-side
+  * `vercel#10` — observability redirects
 
 6.5 Etapa 5 — Base estratégica em uso *(roadmap sugerido: E10.5.6)*.
 
 * começar a usar pesquisa e guias de mensagem no E10.5
 * preparar reaproveitamento em LPs e outras comunicações
+* recursos a considerar nesta etapa:
+
+  * `vercel#11` — tracking server-side
+  * `supa#40` — SQL snippets locais
+  * fase posterior: `supa#53` e `supa#54`
 
 6.6 Etapa 6 — Seções dos templates *(roadmap sugerido: E10.5.7)*.
 
 * decidir se `content_template_sections` entra ou não
 * só implementar se o runtime realmente precisar de composição por blocos
+* recursos a reavaliar nesta etapa:
+
+  * sem recurso novo obrigatório por enquanto
 
 6.7 Regra de execução.
 
@@ -454,3 +481,21 @@ Ela registra decisões, propostas e ajustes previstos do E10.5 e adjacências.
 
 7.1 O próximo plano será preparado só depois desta etapa ser implementada e aprovada.
 7.2 O plano de testes desta etapa será entregue apenas depois do implementado e aprovado.
+
+8. Recursos documentados a considerar nesta etapa
+
+8.1 Usar agora.
+
+* `supa#52` — generated columns
+* `supa#40` — SQL snippets locais
+
+8.2 Preparar agora.
+
+* `supa#36` — FTS
+* `supa#51` — `pg_trgm`
+
+8.3 Não entra nesta etapa.
+
+* `vercel#8` — `revalidateTag`
+* `vercel#10` — observability redirects
+* `vercel#11` — tracking server-side
