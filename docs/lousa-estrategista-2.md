@@ -1,15 +1,15 @@
-# E10.5 e adjacências imediatas vs3
+E10.5 e adjacências imediatas vs4
 
-## 0) Introdução
+0) Introdução
 
 Esta lousa se baseia no repositório, mas não o espelha.
 Ela registra decisões, propostas e ajustes previstos do E10.5 e adjacências.
 
-## 1) Definido, mas ainda não registrado/implementado
+1) Definido, mas ainda não registrado/implementado
 
-1.1 Nicho no `pending_setup` será obrigatório, em texto livre com ajuda/sugestões.
+1.1 Nicho no pending_setup será obrigatório, em texto livre com ajuda/sugestões.
 
-1.2 `account_profiles.niche` permanece como texto livre bruto.
+1.2 account_profiles.niche permanece como texto livre bruto.
 
 1.3 O texto livre do lead não será a base oficial de produto.
 
@@ -17,184 +17,265 @@ Ela registra decisões, propostas e ajustes previstos do E10.5 e adjacências.
 
 1.5 A taxonomia deve nascer preparada para: segmento, nicho e ultranicho.
 
-1.6 O vínculo oficial da conta com a taxonomia será separado do `account_profiles`.
+1.6 O vínculo oficial da conta com a taxonomia será separado do account_profiles.
 
 1.7 O uso inicial será enxuto, mas a estrutura não deve nascer pobre.
 
-1.8 Tabela `business_taxons`.
+1.8 Tabela business_taxons.
 
-* `id`
-* `parent_id`
-* `level` (`segment`, `niche`, `ultra_niche`)
-* `name`
-* `slug`
-* `is_active`
+id
 
-1.9 Tabela `business_taxon_aliases`.
+parent_id
 
-* `id`
-* `taxon_id`
-* `alias_text`
-* `alias_text_normalized`
-* `is_active`
+level (segment, niche, ultra_niche)
 
-1.10 Tabela `account_taxonomy`.
+name
 
-* `account_id`
-* `taxon_id`
-* `is_primary`
-* `status`
-* `source_type`
-* `created_at`
-* `updated_at`
+slug
+
+is_active
+
+1.9 Tabela business_taxon_aliases.
+
+id
+
+taxon_id
+
+alias_text
+
+alias_text_normalized
+
+is_active
+
+1.10 Tabela account_taxonomy.
+
+account_id
+
+taxon_id
+
+is_primary
+
+status
+
+source_type
+
+created_at
+
+updated_at
 
 1.11 Hierarquia de resolução do E10.5.
 
-* se houver nicho com template comercial válido, usa nicho
-* se não houver nicho, mas houver segmento com template comercial válido, usa segmento
-* se não houver nenhum dos dois, usa fallback genérico
-* nicho e segmento são critérios internos de resolução; o centro visível da personalização é o template comercial recomendado
+se houver nicho com template comercial válido, usa nicho
 
-1.12 A página `active` do E10.5 será tratada como uma LP comercial.
+se não houver nicho, mas houver segmento com template comercial válido, usa segmento
 
-* não será tratada como grade simples de planos
-* a estrutura base deve trabalhar narrativa comercial, não apenas oferta seca
+se não houver nenhum dos dois, usa fallback genérico
 
-1.13 A página `active` terá estrutura de LP comercial, com composição variável por template.
+nicho e segmento são critérios internos de resolução; o centro visível da personalização é o template comercial recomendado
 
-* exemplos: hero, seções de valor, CTAs e seção própria de oferta
+1.12 A página active do E10.5 será tratada como uma LP comercial.
+
+não será tratada como grade simples de planos
+
+a estrutura base deve trabalhar narrativa comercial, não apenas oferta seca
+
+1.13 A página active terá estrutura de LP comercial, com composição variável por template.
+
+exemplos: hero, seções de valor, CTAs e seção própria de oferta
 
 1.14 Planos entram em seção própria de oferta dentro da página.
 
-* o formato inicial pode usar cards
-* trial é opcional e depende do template
-* pode ficar fora da seção de planos, inclusive em ações posteriores
+o formato inicial pode usar cards
+
+trial é opcional e depende do template
+
+pode ficar fora da seção de planos, inclusive em ações posteriores
 
 1.15 A evolução dos templates comerciais tende a começar pelo segmento.
 
-* novos nichos usam o template do segmento enquanto não tiverem template próprio
-* se não houver sequer template de segmento aplicável, usa fallback genérico
-* templates próprios de nicho surgem quando a demanda justificar
+novos nichos usam o template do segmento enquanto não tiverem template próprio
 
-1.16 Tabela `content_templates`.
+se não houver sequer template de segmento aplicável, usa fallback genérico
 
-* uso inicial: E10.5
-* objetivo: catálogo neutro de templates para páginas/blocos de conteúdo
-* possibilidade futura: reaproveitamento em LPs, se a estrutura real for compatível
-* campos:
+templates próprios de nicho surgem quando a demanda justificar
 
-  * `id`
-  * `template_key`
-  * `name`
-  * `slug`
-  * `template_family`
-  * `template_scope`
-  * `status`
-  * `version`
-  * `is_active`
-  * `payload_json`
-  * `notes`
-  * `created_at`
-  * `updated_at`
+1.16 Tabela content_templates.
 
-1.17 Tabela `content_template_taxons`.
+uso inicial: E10.5
 
-* objetivo: vincular templates à taxonomia oficial
-* uso esperado: permitir resolução por nicho, segmento e fallback genérico
-* campos:
+objetivo: catálogo neutro de templates para páginas/blocos de conteúdo
 
-  * `id`
-  * `template_id`
-  * `taxon_id`
-  * `resolution_level`
-  * `priority`
-  * `is_primary`
-  * `is_active`
-  * `created_at`
-  * `updated_at`
+possibilidade futura: reaproveitamento em LPs, se a estrutura real for compatível
 
-1.18 Tabela `content_template_sections`.
+campos:
 
-* status atual: opcional
-* objetivo: quebrar templates em blocos reutilizáveis/editáveis, se isso fizer sentido depois
-* campos:
+id
 
-  * `id`
-  * `template_id`
-  * `section_key`
-  * `section_type`
-  * `position`
-  * `is_active`
-  * `payload_json`
-  * `created_at`
-  * `updated_at`
+template_key
+
+name
+
+slug
+
+template_family
+
+template_scope
+
+status
+
+version
+
+is_active
+
+payload_json
+
+notes
+
+created_at
+
+updated_at
+
+1.17 Tabela content_template_taxons.
+
+objetivo: vincular templates à taxonomia oficial
+
+uso esperado: permitir resolução por nicho, segmento e fallback genérico
+
+campos:
+
+id
+
+template_id
+
+taxon_id
+
+resolution_level
+
+priority
+
+is_primary
+
+is_active
+
+created_at
+
+updated_at
+
+1.18 Tabela content_template_sections.
+
+status atual: opcional
+
+objetivo: quebrar templates em blocos reutilizáveis/editáveis, se isso fizer sentido depois
+
+campos:
+
+id
+
+template_id
+
+section_key
+
+section_type
+
+position
+
+is_active
+
+payload_json
+
+created_at
+
+updated_at
 
 1.19 A base estratégica por taxon será transversal.
 
-* servirá a LPs, E10.5 e demais comunicações
-* mesma base estratégica por taxon, com adaptação por contexto
-* a arquitetura deve nascer completa; a ativação dos contextos pode ser gradual
+servirá a LPs, E10.5 e demais comunicações
 
-1.20 Tabela `taxon_market_research`.
+mesma base estratégica por taxon, com adaptação por contexto
 
-* função: pesquisa consolidada por taxon
-* objetivo: concentrar a leitura estratégica principal de cada taxon em um registro-base
+a arquitetura deve nascer completa; a ativação dos contextos pode ser gradual
 
-1.21 Tabela `taxon_market_research_items`.
+1.20 Tabela taxon_market_research.
 
-* função: itens reutilizáveis da pesquisa por taxon
-* objetivo: registrar dores, objeções, desejos, tendências e outros itens em blocos reaproveitáveis
-* campos-base:
+função: pesquisa consolidada por taxon
 
-  * `id`
-  * `research_id`
-  * `item_tag`
-  * `item_text`
-  * `priority`
-  * `is_active`
-  * `created_at`
-  * `updated_at`
+objetivo: concentrar a leitura estratégica principal de cada taxon em um registro-base
 
-1.22 Tabela `taxon_message_guides`.
+1.21 Tabela taxon_market_research_items.
 
-* função: traduzir a mesma base estratégica para contextos diferentes
-* objetivo: orientar a adaptação da comunicação por contexto sem perder coerência estratégica
+função: itens reutilizáveis da pesquisa por taxon
 
-## 2) Ambiguidades / aperfeiçoamento
+objetivo: registrar dores, objeções, desejos, tendências e outros itens em blocos reaproveitáveis
+
+campos-base:
+
+id
+
+research_id
+
+item_tag
+
+item_text
+
+priority
+
+is_active
+
+created_at
+
+updated_at
+
+1.22 Tabela taxon_message_guides.
+
+função: traduzir a mesma base estratégica para contextos diferentes
+
+objetivo: orientar a adaptação da comunicação por contexto sem perder coerência estratégica
+
+2) Ambiguidades / aperfeiçoamento
 
 2.1 Estratégia de alimentação das 9 tabelas.
 
-* preenchimento manual direto fica fora de questão
-* uso inicial: prompts externos + saída estruturada + carga controlada
-* schema via migrations; conteúdo via seed/import/upsert
-* preparar formato de entrada para futura automação por agentes
+preenchimento manual direto fica fora de questão
 
-## 3) Propostas abertas
+uso inicial: prompts externos + saída estruturada + carga controlada
+
+schema via migrations; conteúdo via seed/import/upsert
+
+preparar formato de entrada para futura automação por agentes
+
+3) Propostas abertas
 
 3.1 Operacionalização da resolução do E10.5.
 
-* o sistema escolhe o melhor template comercial válido disponível
-* a decisão deve ser feita no servidor, antes da renderização da página `active`
+o sistema escolhe o melhor template comercial válido disponível
+
+a decisão deve ser feita no servidor, antes da renderização da página active
 
 3.2 Evolução de nichos para templates próprios.
 
-* qual sinal indica que um nicho já merece template próprio
-* como essa oportunidade será sinalizada para a administração
-* se essa triagem será manual, por relatório ou por agente
-* avaliar se `account_taxonomy` precisa de `id` próprio
+qual sinal indica que um nicho já merece template próprio
+
+como essa oportunidade será sinalizada para a administração
+
+se essa triagem será manual, por relatório ou por agente
+
+avaliar se account_taxonomy precisa de id próprio
 
 3.3 Camada estratégica por taxon.
 
-* separar taxonomia, pesquisa, guias de mensagem e templates
-* pesquisa e guias complementam templates; não substituem templates
-* a mesma base estratégica deve poder servir a LPs, E10.5 e demais comunicações
+separar taxonomia, pesquisa, guias de mensagem e templates
+
+pesquisa e guias complementam templates; não substituem templates
+
+a mesma base estratégica deve poder servir a LPs, E10.5 e demais comunicações
 
 3.4 Próxima etapa do funil após o E10.5.
 
-* se convencer: cards e/ou trial
-* se não convencer: como amadurecer o lead com mais conhecimento
+se convencer: cards e/ou trial
 
-## 4) Adjacências (fora do foco imediato)
+se não convencer: como amadurecer o lead com mais conhecimento
+
+4) Adjacências (fora do foco imediato)
 
 4.1 CRM para trabalhar leads que não adquiriram nada.
 
@@ -206,169 +287,284 @@ Ela registra decisões, propostas e ajustes previstos do E10.5 e adjacências.
 
 4.5 Como preencher e evoluir as tabelas de taxonomia e templates comerciais.
 
-## 5) Fluxo misto E10.4 / E10.5
+5) Fluxo misto E10.4 / E10.5
 
-### 5.1 Ponto de Partida
+5.1 Ponto de Partida
 
-1. Lead cria a conta e entra no dashboard da conta (`/a/[account]`).
-2. A conta está em `pending_setup`.
-3. A página mostra o estado “Primeiros passos”.
-4. O campo **nicho** é obrigatório.
-5. O nicho é informado em **texto livre**.
+Lead cria a conta e entra no dashboard da conta (/a/[account]).
 
-$1**Necessidades**
+A conta está em pending_setup.
 
-* definição de UX do campo
-* persistência do texto bruto
-* base futura para sugestões/aliases
+A página mostra o estado “Primeiros passos”.
 
-### 5.3 Cenário 2 — Salvar os Primeiros passos
+O campo nicho é obrigatório.
 
-**Usuário**
+O nicho é informado em texto livre.
 
-* preenche os campos obrigatórios
-* informa o nicho
-* clica em “Salvar e continuar”
+$1Necessidades
 
-**O que o usuário vê**
+definição de UX do campo
 
-* estado de carregamento no botão
+persistência do texto bruto
 
-**O que o sistema faz**
+base futura para sugestões/aliases
 
-* valida os campos
-* persiste os dados do onboarding
-* mantém o nicho digitado como texto bruto
-* tenta classificar esse nicho
-* promove a conta de `pending_setup` para `active`
+5.3 Cenário 2 — Salvar os Primeiros passos
 
-**Resultado**
+Usuário
 
-* usuário sai do E10.4
-* segue para o E10.5
+preenche os campos obrigatórios
 
-**Ambiguidades**
+informa o nicho
 
-* A classificação do nicho precisa acontecer já no save?
-* A classificação pode acontecer depois sem travar o fluxo?
+clica em “Salvar e continuar”
 
-**Necessidades**
+O que o usuário vê
 
-* regra de classificação
-* regra de fallback
-* separação entre texto bruto e classificação oficial
+estado de carregamento no botão
 
-$1**Necessidades**
+O que o sistema faz
 
-* taxonomia oficial
-* aliases/sinônimos
-* vínculo oficial da conta com a taxonomia
+valida os campos
 
-### 5.5 Cenário 4 — O sistema não entende bem o nicho
+persiste os dados do onboarding
 
-**O que o sistema faz**
+mantém o nicho digitado como texto bruto
 
-* guarda o texto bruto
-* não bloqueia a ativação
-* aplica fallback no E10.5
+tenta classificar esse nicho
 
-**O que o usuário vê**
+promove a conta de pending_setup para active
 
-* uma versão mais genérica ou por segmento da página `active`
+Resultado
 
-**Resultado**
+usuário sai do E10.4
 
-* o fluxo continua
-* a ambiguidade fica para tratamento posterior
+segue para o E10.5
 
-**Ambiguidades**
+Ambiguidades
 
-* O fallback deve ser por segmento ou totalmente genérico?
-* Vale pedir esclarecimento já nesta fase?
+A classificação do nicho precisa acontecer já no save?
 
-**Necessidades**
+A classificação pode acontecer depois sem travar o fluxo?
 
-* status de classificação
-* regra de fallback
-* trilha futura de maturação/follow-up
+Necessidades
 
-$1**Ambiguidades**
+regra de classificação
 
-* Onde entra a oferta de trial?
+regra de fallback
 
-**Necessidades**
+separação entre texto bruto e classificação oficial
 
-* tabela própria para templates comerciais
-* vínculo entre taxonomia e template comercial
-* regra de exibição de planos e trial
+$1Necessidades
 
-### 5.7 Cenário 6 — Lead se convence no E10.5
+taxonomia oficial
 
-**O que o usuário faz**
+aliases/sinônimos
 
-* escolhe um plano
-* ou aceita trial
+vínculo oficial da conta com a taxonomia
 
-**O que o sistema faz**
+5.5 Cenário 4 — O sistema não entende bem o nicho
 
-* registra a escolha
-* encaminha para a próxima etapa
+O que o sistema faz
 
-**Resultado**
+guarda o texto bruto
 
-* lead avança no funil
+não bloqueia a ativação
 
-**Ambiguidades**
+aplica fallback no E10.5
 
-* O CTA principal será plano ou trial?
-* Trial ajuda a conversão ou compete com os planos?
+O que o usuário vê
 
-**Necessidades**
+uma versão mais genérica ou por segmento da página active
 
-* regra comercial dos CTAs
-* lógica de passagem para a próxima etapa
+Resultado
 
-### 5.8 Cenário 7 — Lead não se convence no E10.5
+o fluxo continua
 
-**O que o usuário faz**
+a ambiguidade fica para tratamento posterior
 
-* não escolhe plano
-* não aceita trial
-* sai ou permanece sem avançar
+Ambiguidades
 
-**O que o sistema faz**
+O fallback deve ser por segmento ou totalmente genérico?
 
-* mantém a conta ativa
-* preserva o contexto já capturado
+Vale pedir esclarecimento já nesta fase?
 
-**Resultado**
+Necessidades
 
-* lead não converte agora
-* pode seguir para uma trilha futura de maturação
+status de classificação
 
-**Ambiguidades**
+regra de fallback
 
-* Como amadurecer esse lead depois?
-* Qual é o próximo passo fora do E10.5?
+trilha futura de maturação/follow-up
 
-**Necessidades**
+$1Ambiguidades
 
-* futura camada de CRM/follow-up
-* estratégia de conteúdo/maturação
-* possível uso de IA em etapa posterior
+Onde entra a oferta de trial?
 
-### 5.9 Casos do Roadmap
+Necessidades
 
-* E10.4
-* E10.5
-* adjacência direta: taxonomia oficial de segmento/nicho/ultranicho
-* adjacência futura: templates comerciais
-* adjacência futura: CRM/follow-up
+tabela própria para templates comerciais
 
-### 5.10 Estruturas sugeridas por este fluxo
+vínculo entre taxonomia e template comercial
 
-1. `account_profiles.niche` como texto bruto.
-2. `business_taxons` como taxonomia oficial.
-3. `business_taxon_aliases` para aliases, sugestões e normalização.
-4. `account_taxonomy` como vínculo oficial da conta com a taxonomia.
-5. tabela própria de templates comerciais do E10.5.
+regra de exibição de planos e trial
+
+5.7 Cenário 6 — Lead se convence no E10.5
+
+O que o usuário faz
+
+escolhe um plano
+
+ou aceita trial
+
+O que o sistema faz
+
+registra a escolha
+
+encaminha para a próxima etapa
+
+Resultado
+
+lead avança no funil
+
+Ambiguidades
+
+O CTA principal será plano ou trial?
+
+Trial ajuda a conversão ou compete com os planos?
+
+Necessidades
+
+regra comercial dos CTAs
+
+lógica de passagem para a próxima etapa
+
+5.8 Cenário 7 — Lead não se convence no E10.5
+
+O que o usuário faz
+
+não escolhe plano
+
+não aceita trial
+
+sai ou permanece sem avançar
+
+O que o sistema faz
+
+mantém a conta ativa
+
+preserva o contexto já capturado
+
+Resultado
+
+lead não converte agora
+
+pode seguir para uma trilha futura de maturação
+
+Ambiguidades
+
+Como amadurecer esse lead depois?
+
+Qual é o próximo passo fora do E10.5?
+
+Necessidades
+
+futura camada de CRM/follow-up
+
+estratégia de conteúdo/maturação
+
+possível uso de IA em etapa posterior
+
+5.9 Casos do Roadmap
+
+E10.4
+
+E10.5
+
+adjacência direta: taxonomia oficial de segmento/nicho/ultranicho
+
+adjacência futura: templates comerciais
+
+adjacência futura: CRM/follow-up
+
+5.10 Estruturas sugeridas por este fluxo
+
+account_profiles.niche como texto bruto.
+
+business_taxons como taxonomia oficial.
+
+business_taxon_aliases para aliases, sugestões e normalização.
+
+account_taxonomy como vínculo oficial da conta com a taxonomia.
+
+tabela própria de templates comerciais do E10.5.
+
+6) Esboço do plano por etapas
+
+6.1 Etapa 1 — Criar a base do BD (roadmap sugerido: E10.5.2).
+
+fechar só o mínimo que faltar e já subir as migrations
+
+criar as 8 tabelas aprovadas desta fase:
+
+business_taxons
+
+business_taxon_aliases
+
+account_taxonomy
+
+content_templates
+
+content_template_taxons
+
+taxon_market_research
+
+taxon_market_research_items
+
+taxon_message_guides
+
+atualizar os docs no mesmo pacote
+
+6.2 Etapa 2 — Popular a base inicial (roadmap sugerido: E10.5.3).
+
+cadastrar primeiros segmentos, nichos e aliases
+
+cadastrar primeiros templates e vínculos com taxons
+
+fechar o formato inicial de seed/import/upsert
+
+6.3 Etapa 3 — Classificação da conta e escolha do template (roadmap sugerido: E10.5.4).
+
+definir o primeiro fluxo de classificação do nicho bruto
+
+gravar o vínculo oficial em account_taxonomy
+
+escolher no servidor o template recomendado
+
+6.4 Etapa 4 — Colocar o E10.5 no runtime (roadmap sugerido: E10.5.5).
+
+integrar o E10.5 ao fluxo active
+
+renderizar a página como LP comercial
+
+ligar oferta, cards e trial conforme o template
+
+6.5 Etapa 5 — Base estratégica em uso (roadmap sugerido: E10.5.6).
+
+começar a usar pesquisa e guias de mensagem no E10.5
+
+preparar reaproveitamento em LPs e outras comunicações
+
+6.6 Etapa 6 — Seções dos templates (roadmap sugerido: E10.5.7).
+
+decidir se content_template_sections entra ou não
+
+só implementar se o runtime realmente precisar de composição por blocos
+
+6.7 Regra de execução.
+
+o plano detalhado do Executor será preparado uma etapa por vez
+
+a próxima etapa só será detalhada após a anterior ser implementada e aprovada
+
+o plano de testes vem depois do implementado e aprovado
