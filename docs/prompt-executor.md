@@ -1,4 +1,4 @@
-3. Prompt para o Chat Executor vs2
+3. Prompt para o Chat Executor vs3
 
 Status: em desenvolvimento nesta lousa.Referência no repositório: docs/prompt-executor.md.
 
@@ -28,7 +28,7 @@ As regras abaixo tratam dos briefings de implementação gerados com base no pla
 
 • Antes de preparar os briefings de implementação, o executor deve consultar docs/base-tecnica.md e, quando houver BD, também docs/schema.md.• Os briefings devem ser gerados com base no plano de execução aprovado ou ajustado.• Devem citar as referências oficiais aplicáveis ao tipo do caso, incluindo docs/base-tecnica.md (sempre) e docs/schema.md quando houver BD/SQL/RPC/RLS.
 
-• Devem registrar a evidência mínima do resultado, conforme o tipo do caso:• Repo-only → QA + smoke + descrição curta do resultado• Workflow / pipeline / integração → log/summary + exit 0 + referência da run• BD / migration → aplicação + verificação objetiva por query/resultado
+• Devem registrar a evidência mínima do resultado, conforme o tipo do caso:• Repo-only → QA + smoke + descrição curta do resultado• Workflow / pipeline / integração → log/summary + exit 0 + referência da run• BD / SQL de implementação → aplicação + verificação objetiva por query/resultado
 
 3.1.4.2 Briefing para Codex
 
@@ -36,7 +36,7 @@ As regras abaixo tratam dos briefings de implementação gerados com base no pla
 
 3.1.4.3 Briefing para implementação no Supabase
 
-• Quando houver alteração de BD, entregar briefing para implementação no Supabase.• Incluir rollback correspondente, quando houver alteração de BD, ou justificar explicitamente quando não houver rollback seguro aplicável.
+• Quando houver alteração de BD, entregar briefing para implementação no Supabase.• Na realidade atual, a implementação de BD deve ser feita por SQLs de implementação.• Incluir rollback correspondente para os SQLs de implementação, quando aplicável, ou justificar explicitamente quando não houver rollback seguro aplicável.
 
 3.1.5 Observability
 
@@ -48,7 +48,7 @@ As regras abaixo tratam dos briefings de implementação gerados com base no pla
 
 3.1.7 Migration
 
-• Quando houver migration, ela deve ser criada somente após a validação dos testes e antes do relatório final.
+• Quando houver alteração de BD, a migration deve ser gerada somente após a validação dos testes.• A migration deve registrar apenas o que foi de fato implementado e validado.• Na realidade atual, a migration deve servir como histórico final no repositório e ser gerada antes do relatório final.
 
 3.1.8 Relatório final
 
@@ -64,7 +64,7 @@ Testes• QA: feito | não feito• Smoke: feito | não feito• Caso de uso fun
 
 Observability• Aplicou? sim | não | N/A• Sinal observado (1 linha)
 
-Artefatos• Arquivos criados: [paths]• Arquivos ajustados: [paths]• Migration: [nome] | N/A• SQL de implementação: sim | não | N/A
+Artefatos• Arquivos criados: [paths]• Arquivos ajustados: [paths]• SQL de implementação: sim | não | N/A• Migration histórico final: [nome] | N/A
 
 Pendências• [bullets]
 
