@@ -1,4 +1,4 @@
-# E10.5 e adjacências imediatas vs6
+# E10.5 e adjacências imediatas vs7
 
 # 0) Introdução
 
@@ -40,6 +40,7 @@ Ela registra decisões, propostas e ajustes previstos do E10.5 e adjacências.
 
 1.10 Tabela `account_taxonomy`.
 
+* `id`
 * `account_id`
 * `taxon_id`
 * `is_primary`
@@ -181,7 +182,6 @@ Ela registra decisões, propostas e ajustes previstos do E10.5 e adjacências.
 * qual sinal indica que um nicho já merece template próprio
 * como essa oportunidade será sinalizada para a administração
 * se essa triagem será manual, por relatório ou por agente
-* avaliar se `account_taxonomy` precisa de `id` próprio
 
 3.3 Camada estratégica por taxon.
 
@@ -346,156 +346,198 @@ Ela registra decisões, propostas e ajustes previstos do E10.5 e adjacências.
 * o lead não converte agora
 * pode seguir para uma trilha futura de maturação
 
-## 6) Esboço do plano por etapas
+## 6) Esboço / plano de execução
 
-6.1 Etapa 1 — Criar a base do BD *(roadmap sugerido: E10.5.2)*.
+### 6.0 Regra universal dos planos de execução
 
-* fechar só o mínimo que faltar e já subir as migrations
-* criar as 8 tabelas aprovadas desta fase:
+Todo plano de execução deve ter como documento-alvo `docs/prompt-executor.md`.
+O plano deve definir apenas o recorte específico da etapa, sem reescrever o fluxo operacional já definido no prompt.
+O plano deve indicar os documentos canônicos da etapa.
+Em caso de conflito, prevalece `docs/prompt-executor.md`, salvo exceção explicitamente registrada no próprio plano.
+Cada item `6.x` nasce como esboço da etapa correspondente.
+Quando a etapa for ativada, o esboço correspondente é sobrescrito pelo plano de execução daquela etapa.
+O próximo plano só entra após a etapa anterior ser implementada e aprovada.
+O plano de testes vem depois do implementado e aprovado.
 
-  * `business_taxons`
-  * `business_taxon_aliases`
-  * `account_taxonomy`
-  * `content_templates`
-  * `content_template_taxons`
-  * `taxon_market_research`
-  * `taxon_market_research_items`
-  * `taxon_message_guides`
-* atualizar os docs no mesmo pacote
-* recursos a considerar nesta etapa:
+### 6.1 Plano de execução — E10.5.2 Criar a base do BD
 
-  * `supa#52` — generated columns
-  * `supa#40` — SQL snippets locais
-  * preparar base para `supa#36` e `supa#51`
+#### 6.1.1 Objetivo
 
-6.2 Etapa 2 — Popular a base inicial *(roadmap sugerido: E10.5.3)*.
+6.1.1.1 Criar no banco a base estrutural do E10.5 e adjacências imediatas.
+6.1.1.2 Entregar as 8 tabelas aprovadas desta fase com relações e estrutura mínima coerente.
+6.1.1.3 Ajustar a documentação canônica afetada no mesmo pacote.
+
+#### 6.1.2 Escopo desta etapa
+
+6.1.2.1 `business_taxons`
+6.1.2.2 `business_taxon_aliases`
+6.1.2.3 `account_taxonomy`
+6.1.2.4 `content_templates`
+6.1.2.5 `content_template_taxons`
+6.1.2.6 `taxon_market_research`
+6.1.2.7 `taxon_market_research_items`
+6.1.2.8 `taxon_message_guides`
+
+#### 6.1.3 Contrato das tabelas desta etapa
+
+##### 6.1.3.1 `business_taxons`
+
+* `id`
+* `parent_id`
+* `level` (`segment`, `niche`, `ultra_niche`)
+* `name`
+* `slug`
+* `is_active`
+
+##### 6.1.3.2 `business_taxon_aliases`
+
+* `id`
+* `taxon_id`
+* `alias_text`
+* `alias_text_normalized`
+* `is_active`
+
+##### 6.1.3.3 `account_taxonomy`
+
+* `id`
+* `account_id`
+* `taxon_id`
+* `is_primary`
+* `status`
+* `source_type`
+* `created_at`
+* `updated_at`
+
+##### 6.1.3.4 `content_templates`
+
+* `id`
+* `template_key`
+* `name`
+* `slug`
+* `template_family`
+* `template_scope`
+* `status`
+* `version`
+* `is_active`
+* `payload_json`
+* `notes`
+* `created_at`
+* `updated_at`
+
+##### 6.1.3.5 `content_template_taxons`
+
+* `id`
+* `template_id`
+* `taxon_id`
+* `resolution_level`
+* `priority`
+* `is_primary`
+* `is_active`
+* `created_at`
+* `updated_at`
+
+##### 6.1.3.6 `taxon_market_research`
+
+* `id`
+* `taxon_id`
+* `version`
+* `status`
+* `base_summary`
+* `created_at`
+* `updated_at`
+
+##### 6.1.3.7 `taxon_market_research_items`
+
+* `id`
+* `research_id`
+* `item_tag`
+* `item_text`
+* `priority`
+* `is_active`
+* `created_at`
+* `updated_at`
+
+##### 6.1.3.8 `taxon_message_guides`
+
+* `id`
+* `research_id`
+* `context_type`
+* `guide_payload_json`
+* `version`
+* `is_active`
+* `created_at`
+* `updated_at`
+
+#### 6.1.4 Decisões fechadas desta etapa
+
+6.1.4.1 `business_taxons.parent_id` como auto-relação da própria tabela.
+6.1.4.2 `slug` como campo estável da taxonomia e dos templates.
+6.1.4.3 `account_taxonomy` com `id` próprio.
+6.1.4.4 `content_template_sections` fica fora desta etapa.
+
+#### 6.1.5 Updates desta etapa
+
+6.1.5.1 Implementar `supa#52` nesta etapa, apenas no que impactar diretamente o schema das tabelas criadas.
+6.1.5.2 Implementar `supa#40` nesta etapa, com snippets SQL locais de apoio à governança e inspeção estrutural das tabelas novas.
+6.1.5.3 Referência de update desta etapa: `docs/supa-up.md`.
+
+#### 6.1.6 Resultado esperado da etapa
+
+6.1.6.1 As 8 tabelas ficam criadas no BD.
+6.1.6.2 As relações principais ficam fechadas sem conflito estrutural.
+6.1.6.3 `docs/schema.md` passa a refletir o novo contrato.
+6.1.6.4 `docs/roadmap.md` passa a registrar a etapa E10.5.2.
+6.1.6.5 `docs/base-tecnica.md` só é ajustado se surgir regra estrutural que realmente precise entrar nele.
+
+#### 6.1.7 Fora do escopo
+
+6.1.7.1 Seed.
+6.1.7.2 Importação de conteúdo.
+6.1.7.3 Classificação automática do nicho.
+6.1.7.4 Runtime do E10.5.
+6.1.7.5 Adapters.
+6.1.7.6 Views, RPCs ou jobs novos, salvo se forem indispensáveis para a integridade estrutural da etapa.
+
+#### 6.1.8 Documentos canônicos desta etapa
+
+* `docs/prompt-executor.md`
+* `docs/schema.md`
+* `docs/roadmap.md`
+* `docs/base-tecnica.md` (somente se houver ajuste estrutural que realmente precise entrar nele)
+
+### 6.2 Esboço — E10.5.3 Popular a base inicial
 
 * cadastrar primeiros segmentos, nichos e aliases
 * cadastrar primeiros templates e vínculos com taxons
 * fechar o formato inicial de seed/import/upsert
-* recursos a considerar nesta etapa:
 
-  * `supa#40` — SQL snippets locais
-  * preparar formato para `supa#36` e `supa#51`
+### 6.3 Esboço — E10.5.4 Classificação da conta e escolha do template
 
-6.3 Etapa 3 — Classificação da conta e escolha do template *(roadmap sugerido: E10.5.4)*.
-
-* definir o primeiro fluxo de classificação do nicho bruto
+* classificar o nicho bruto
 * gravar o vínculo oficial em `account_taxonomy`
 * escolher no servidor o template recomendado
-* recursos a considerar nesta etapa:
+* implementar nesta etapa:
 
   * `supa#36` — FTS
   * `supa#51` — `pg_trgm`
-  * `supa#52` — generated columns
 
-6.4 Etapa 4 — Colocar o E10.5 no runtime *(roadmap sugerido: E10.5.5)*.
+### 6.4 Esboço — E10.5.5 Colocar o E10.5 no runtime
 
 * integrar o E10.5 ao fluxo `active`
 * renderizar a página como LP comercial
 * ligar oferta, cards e trial conforme o template
-* recursos a considerar nesta etapa:
+* implementar nesta etapa:
 
   * `vercel#8` — `revalidateTag`
-  * `vercel#11` — tracking server-side
   * `vercel#10` — observability redirects
-
-6.5 Etapa 5 — Base estratégica em uso *(roadmap sugerido: E10.5.6)*.
-
-* começar a usar pesquisa e guias de mensagem no E10.5
-* preparar reaproveitamento em LPs e outras comunicações
-* recursos a considerar nesta etapa:
-
   * `vercel#11` — tracking server-side
-  * `supa#40` — SQL snippets locais
-  * fase posterior: `supa#53` e `supa#54`
 
-6.6 Etapa 6 — Seções dos templates *(roadmap sugerido: E10.5.7)*.
+### 6.5 Esboço — E10.5.6 Base estratégica em uso
+
+* usar pesquisa e guias de mensagem no E10.5
+* preparar reaproveitamento em LPs e outras comunicações
+
+### 6.6 Esboço — E10.5.7 Seções dos templates
 
 * decidir se `content_template_sections` entra ou não
 * só implementar se o runtime realmente precisar de composição por blocos
-* recursos a reavaliar nesta etapa:
-
-  * sem recurso novo obrigatório por enquanto
-
-6.7 Regra de execução.
-
-* o plano detalhado do Executor será preparado uma etapa por vez
-* a próxima etapa só será detalhada após a anterior ser implementada e aprovada
-* o plano de testes vem depois do implementado e aprovado
-
-## 7) Planos de execução
-
-### 7.1 E10.5.2 — Criar a base do BD
-
-1. Objetivo
-
-1.1 Criar no banco a base estrutural do E10.5 e adjacências imediatas.
-1.2 Entregar as 8 tabelas aprovadas desta fase com relações, constraints e estrutura mínima coerente.
-1.3 Atualizar a documentação canônica no mesmo pacote.
-
-2. Escopo desta etapa
-
-2.1 Criar `business_taxons`.
-2.2 Criar `business_taxon_aliases`.
-2.3 Criar `account_taxonomy`.
-2.4 Criar `content_templates`.
-2.5 Criar `content_template_taxons`.
-2.6 Criar `taxon_market_research`.
-2.7 Criar `taxon_market_research_items`.
-2.8 Criar `taxon_message_guides`.
-
-3. Decisões que precisam sair fechadas nesta etapa
-
-3.1 PKs, FKs e cardinalidade das 8 tabelas.
-3.2 `business_taxons.parent_id` como auto-relação da própria tabela.
-3.3 `slug` como campo estável da taxonomia e dos templates.
-3.4 `account_taxonomy` com `id` próprio.
-3.5 `content_template_sections` fica fora desta etapa.
-
-4. Entregáveis do Executor
-
-4.1 Migration única ou conjunto enxuto de migrations para criar as 8 tabelas.
-4.2 Constraints mínimas, índices mínimos e FKs coerentes.
-4.3 Atualização do `docs/schema.md` com o contrato das novas tabelas.
-4.4 Atualização do `docs/roadmap.md` registrando a etapa E10.5.2.
-4.5 Atualização do `docs/base-tecnica.md` somente se houver regra estrutural nova que realmente precise entrar lá.
-
-5. Fora do escopo
-
-5.1 Seed.
-5.2 Importação de conteúdo.
-5.3 Classificação automática do nicho.
-5.4 Runtime do E10.5.
-5.5 Adapters.
-5.6 Views, RPCs ou jobs novos, salvo se forem indispensáveis para a integridade estrutural da etapa.
-
-6. Critério de aceite
-
-6.1 As 8 tabelas existem no BD com relações válidas.
-6.2 O contrato em `docs/schema.md` bate com o que foi criado.
-6.3 O roadmap passa a refletir a execução da E10.5.2.
-6.4 A etapa termina sem invadir a próxima fase.
-
-7. Regra desta conversa
-
-7.1 O próximo plano será preparado só depois desta etapa ser implementada e aprovada.
-7.2 O plano de testes desta etapa será entregue apenas depois do implementado e aprovado.
-
-8. Recursos documentados a considerar nesta etapa
-
-8.1 Usar agora.
-
-* `supa#52` — generated columns
-* `supa#40` — SQL snippets locais
-
-8.2 Preparar agora.
-
-* `supa#36` — FTS
-* `supa#51` — `pg_trgm`
-
-8.3 Não entra nesta etapa.
-
-* `vercel#8` — `revalidateTag`
-* `vercel#10` — observability redirects
-* `vercel#11` — tracking server-side
