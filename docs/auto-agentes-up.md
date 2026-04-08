@@ -295,3 +295,98 @@ Evolução recente da Responses API com suporte a remote MCP servers e melhorias
 ### Ações Recomendadas
 1. Avaliar quais automações do projeto podem se beneficiar de remote MCP de forma realista.
 2. Priorizar uso de tools novas apenas quando elas aumentarem valor operacional de forma clara.
+
+---
+
+## 16 — Reusable Workflows (`workflow_call`) *(🍾 Estável)*
+2026-04-08
+
+### Descrição
+Padrão do GitHub Actions para reutilizar workflows inteiros entre fluxos diferentes, reduzindo duplicação e permitindo manter bibliotecas reutilizáveis de automações.
+
+### Valor para o Projeto
+- Ajuda a padronizar automações assistidas mais complexas sem copiar blocos grandes de YAML.
+- Facilita manutenção centralizada e evolução de workflows recorrentes.
+
+### Valor para o Usuário
+- Fluxos mais consistentes e previsíveis, com menos risco de divergência entre automações parecidas.
+
+### Ações Recomendadas
+1. Identificar automações candidatas a extração para reusable workflows.
+2. Definir convenção de inputs, outputs e versionamento para workflows reutilizáveis do projeto.
+
+---
+
+## 17 — Workflow Chaining e Disparos de Orquestração *(🍾 Estável)*
+2026-04-08
+
+### Descrição
+Uso coordenado de gatilhos como `workflow_dispatch`, `workflow_run` e eventos externos para encadear execuções e montar fluxos assistidos em múltiplas etapas.
+
+### Valor para o Projeto
+- Permite separar etapas de automação em fluxos mais modulares.
+- Ajuda a desenhar pipelines assistidos com melhor isolamento entre preparação, execução e validação.
+
+### Valor para o Usuário
+- Entregas mais organizadas e com menor risco de colisão entre etapas do fluxo.
+
+### Ações Recomendadas
+1. Mapear onde chaining real pode substituir automações excessivamente monolíticas.
+2. Definir critérios para quando usar encadeamento versus workflow único.
+
+---
+
+## 18 — Concurrency + Gates Humanos *(🍾 Estável)*
+2026-04-08
+
+### Descrição
+Combinação de controle de concorrência e checkpoints humanos para evitar colisões entre runs e aumentar segurança em fluxos mais sensíveis.
+
+### Valor para o Projeto
+- Reduz risco de execuções paralelas conflitantes.
+- Ajuda a incorporar aprovação humana quando a automação tocar etapas mais críticas.
+
+### Valor para o Usuário
+- Mais previsibilidade operacional e menor chance de ações concorrentes indesejadas.
+
+### Ações Recomendadas
+1. Revisar automações críticas para aplicar políticas explícitas de concurrency.
+2. Definir onde gates humanos são necessários em fluxos assistidos de maior risco.
+
+---
+
+## 19 — Artifacts, Outputs e Job Summaries como Handoff/Evidência *(🍾 Estável)*
+2026-04-08
+
+### Descrição
+Uso de artifacts, outputs e summaries como mecanismos de passagem de estado, evidência e contexto entre etapas de automações assistidas.
+
+### Valor para o Projeto
+- Melhora handoff entre jobs, workflows e etapas humanas.
+- Fortalece rastreabilidade e auditoria de execuções compostas.
+
+### Valor para o Usuário
+- Evidências mais claras do que aconteceu no fluxo e menor opacidade em falhas ou validações.
+
+### Ações Recomendadas
+1. Padronizar quando usar artifact, output e summary em cada tipo de fluxo.
+2. Tratar summaries como camada mínima de evidência humana nas automações assistidas.
+
+---
+
+## 20 — GitHub Models em Flows Assistidos *(🍿 Experimental)*
+2026-04-08
+
+### Descrição
+Capacidades do GitHub Models para comparar prompts, avaliar outputs, versionar experimentos no repositório e integrar modelos ao ecossistema do GitHub.
+
+### Valor para o Projeto
+- Pode aproximar prompts, avaliação e workflow em um mesmo ambiente operacional.
+- Abre espaço para fluxos assistidos com avaliação mais disciplinada dentro do GitHub.
+
+### Valor para o Usuário
+- Respostas assistidas mais consistentes e com maior capacidade de comparação e melhoria contínua.
+
+### Ações Recomendadas
+1. Avaliar se GitHub Models traz vantagem real em comparação ao stack atual do projeto.
+2. Priorizar uso apenas quando houver ganho concreto em avaliação, versionamento ou integração com workflows.
