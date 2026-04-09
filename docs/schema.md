@@ -1,8 +1,8 @@
 0. Introdução
 
 0.1 Cabeçalho
-• Data da última atualização: 24/03/2026
-• Documento: LP Factory 10 — Schema (DB Contract) v1.0.9
+• Data da última atualização: 09/04/2026
+• Documento: LP Factory 10 — Schema (DB Contract) v1.0.10
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -134,6 +134,223 @@
 • Schema: public (USAGE)
 • Tabelas existentes em public: GRANT SELECT
 • Novas tabelas em public: default privileges com GRANT SELECT
+
+1.10 business_taxons
+
+1.10.1 Chaves, constraints e relacionamentos
+• PK: id uuid
+• UNIQUE: slug
+• CHECK: business_taxons_level_chk (level IN ('segment', 'niche', 'ultra_niche'))
+• FK: parent_id → business_taxons(id) ON UPDATE CASCADE ON DELETE SET NULL
+
+1.10.2 Campos
+• parent_id uuid null
+• level text not null
+• name text not null
+• slug text not null
+• is_active boolean not null default true
+
+1.10.3 Segurança
+• Trigger Hub: não
+• RLS: ativo (enable row level security)
+
+1.10.4 Policies
+• business_taxons_select_admin_only (SELECT to public): is_super_admin() OU is_platform_admin()
+• business_taxons_insert_admin_only (INSERT to public): is_super_admin() OU is_platform_admin()
+• business_taxons_update_admin_only (UPDATE to public): is_super_admin() OU is_platform_admin() (USING + WITH CHECK)
+• business_taxons_delete_admin_only (DELETE to public): is_super_admin() OU is_platform_admin()
+
+1.11 business_taxon_aliases
+
+1.11.1 Chaves, constraints e relacionamentos
+• PK: id uuid
+• UNIQUE: (taxon_id, alias_text_normalized)
+• FK: taxon_id → business_taxons(id) ON UPDATE CASCADE ON DELETE RESTRICT
+• Generated column: alias_text_normalized (normalização derivada de alias_text)
+
+1.11.2 Campos
+• taxon_id uuid not null
+• alias_text text not null
+• alias_text_normalized text generated always as stored
+• is_active boolean not null default true
+
+1.11.3 Segurança
+• Trigger Hub: não
+• RLS: ativo (enable row level security)
+
+1.11.4 Policies
+• business_taxon_aliases_select_admin_only (SELECT to public): is_super_admin() OU is_platform_admin()
+• business_taxon_aliases_insert_admin_only (INSERT to public): is_super_admin() OU is_platform_admin()
+• business_taxon_aliases_update_admin_only (UPDATE to public): is_super_admin() OU is_platform_admin() (USING + WITH CHECK)
+• business_taxon_aliases_delete_admin_only (DELETE to public): is_super_admin() OU is_platform_admin()
+
+1.12 account_taxonomy
+
+1.12.1 Chaves, constraints e relacionamentos
+• PK: id uuid
+• UNIQUE: (account_id, taxon_id)
+• CHECK: account_taxonomy_status_chk (status IN ('active', 'inactive'))
+• CHECK: account_taxonomy_source_type_chk (source_type IN ('manual', 'taxonomy_match'))
+• FK: account_id → accounts(id) ON UPDATE CASCADE ON DELETE CASCADE
+• FK: taxon_id → business_taxons(id) ON UPDATE CASCADE ON DELETE RESTRICT
+
+1.12.2 Campos
+• account_id uuid not null
+• taxon_id uuid not null
+• is_primary boolean not null default false
+• status text not null
+• source_type text not null
+• created_at timestamptz not null default now()
+• updated_at timestamptz not null default now()
+
+1.12.3 Segurança
+• Trigger Hub: não
+• RLS: ativo (enable row level security)
+
+1.12.4 Policies
+• account_taxonomy_select_admin_only (SELECT to public): is_super_admin() OU is_platform_admin()
+• account_taxonomy_insert_admin_only (INSERT to public): is_super_admin() OU is_platform_admin()
+• account_taxonomy_update_admin_only (UPDATE to public): is_super_admin() OU is_platform_admin() (USING + WITH CHECK)
+• account_taxonomy_delete_admin_only (DELETE to public): is_super_admin() OU is_platform_admin()
+
+1.13 content_templates
+
+1.13.1 Chaves, constraints e relacionamentos
+• PK: id uuid
+• UNIQUE: template_key
+• UNIQUE: slug
+• CHECK: content_templates_template_family_chk (template_family IN ('commercial_activation', 'landing_page'))
+• CHECK: content_templates_template_scope_chk (template_scope IN ('page', 'section'))
+• CHECK: content_templates_status_chk (status IN ('draft', 'active', 'archived'))
+
+1.13.2 Campos
+• template_key text not null
+• name text not null
+• slug text not null
+• template_family text not null
+• template_scope text not null
+• status text not null
+• version integer not null default 1
+• is_active boolean not null default true
+• payload_json jsonb not null
+• notes text null
+• created_at timestamptz not null default now()
+• updated_at timestamptz not null default now()
+
+1.13.3 Segurança
+• Trigger Hub: não
+• RLS: ativo (enable row level security)
+
+1.13.4 Policies
+• content_templates_select_admin_only (SELECT to public): is_super_admin() OU is_platform_admin()
+• content_templates_insert_admin_only (INSERT to public): is_super_admin() OU is_platform_admin()
+• content_templates_update_admin_only (UPDATE to public): is_super_admin() OU is_platform_admin() (USING + WITH CHECK)
+• content_templates_delete_admin_only (DELETE to public): is_super_admin() OU is_platform_admin()
+
+1.14 content_template_taxons
+
+1.14.1 Chaves, constraints e relacionamentos
+• PK: id uuid
+• CHECK: content_template_taxons_resolution_level_chk (resolution_level IN ('generic', 'segment', 'niche', 'ultra_niche'))
+• FK: template_id → content_templates(id) ON UPDATE CASCADE ON DELETE CASCADE
+• FK: taxon_id → business_taxons(id) ON UPDATE CASCADE ON DELETE RESTRICT
+
+1.14.2 Campos
+• template_id uuid not null
+• taxon_id uuid not null
+• resolution_level text not null
+• priority integer not null default 0
+• is_primary boolean not null default false
+• is_active boolean not null default true
+• created_at timestamptz not null default now()
+• updated_at timestamptz not null default now()
+
+1.14.3 Segurança
+• Trigger Hub: não
+• RLS: ativo (enable row level security)
+
+1.14.4 Policies
+• content_template_taxons_select_admin_only (SELECT to public): is_super_admin() OU is_platform_admin()
+• content_template_taxons_insert_admin_only (INSERT to public): is_super_admin() OU is_platform_admin()
+• content_template_taxons_update_admin_only (UPDATE to public): is_super_admin() OU is_platform_admin() (USING + WITH CHECK)
+• content_template_taxons_delete_admin_only (DELETE to public): is_super_admin() OU is_platform_admin()
+
+1.15 taxon_market_research
+
+1.15.1 Chaves, constraints e relacionamentos
+• PK: id uuid
+• CHECK: taxon_market_research_status_chk (status IN ('draft', 'active', 'archived'))
+• FK: taxon_id → business_taxons(id) ON UPDATE CASCADE ON DELETE RESTRICT
+
+1.15.2 Campos
+• taxon_id uuid not null
+• version integer not null default 1
+• status text not null
+• base_summary text not null
+• created_at timestamptz not null default now()
+• updated_at timestamptz not null default now()
+
+1.15.3 Segurança
+• Trigger Hub: não
+• RLS: ativo (enable row level security)
+
+1.15.4 Policies
+• taxon_market_research_select_admin_only (SELECT to public): is_super_admin() OU is_platform_admin()
+• taxon_market_research_insert_admin_only (INSERT to public): is_super_admin() OU is_platform_admin()
+• taxon_market_research_update_admin_only (UPDATE to public): is_super_admin() OU is_platform_admin() (USING + WITH CHECK)
+• taxon_market_research_delete_admin_only (DELETE to public): is_super_admin() OU is_platform_admin()
+
+1.16 taxon_market_research_items
+
+1.16.1 Chaves, constraints e relacionamentos
+• PK: id uuid
+• FK: research_id → taxon_market_research(id) ON UPDATE CASCADE ON DELETE CASCADE
+
+1.16.2 Campos
+• research_id uuid not null
+• item_tag text not null
+• item_text text not null
+• priority integer not null default 0
+• is_active boolean not null default true
+• created_at timestamptz not null default now()
+• updated_at timestamptz not null default now()
+
+1.16.3 Segurança
+• Trigger Hub: não
+• RLS: ativo (enable row level security)
+
+1.16.4 Policies
+• taxon_market_research_items_select_admin_only (SELECT to public): is_super_admin() OU is_platform_admin()
+• taxon_market_research_items_insert_admin_only (INSERT to public): is_super_admin() OU is_platform_admin()
+• taxon_market_research_items_update_admin_only (UPDATE to public): is_super_admin() OU is_platform_admin() (USING + WITH CHECK)
+• taxon_market_research_items_delete_admin_only (DELETE to public): is_super_admin() OU is_platform_admin()
+
+1.17 taxon_message_guides
+
+1.17.1 Chaves, constraints e relacionamentos
+• PK: id uuid
+• CHECK: taxon_message_guides_context_type_chk (context_type IN ('e10_5', 'landing_page', 'email', 'whatsapp'))
+• FK: research_id → taxon_market_research(id) ON UPDATE CASCADE ON DELETE CASCADE
+
+1.17.2 Campos
+• research_id uuid not null
+• context_type text not null
+• guide_payload_json jsonb not null
+• version integer not null default 1
+• is_active boolean not null default true
+• created_at timestamptz not null default now()
+• updated_at timestamptz not null default now()
+
+1.17.3 Segurança
+• Trigger Hub: não
+• RLS: ativo (enable row level security)
+
+1.17.4 Policies
+• taxon_message_guides_select_admin_only (SELECT to public): is_super_admin() OU is_platform_admin()
+• taxon_message_guides_insert_admin_only (INSERT to public): is_super_admin() OU is_platform_admin()
+• taxon_message_guides_update_admin_only (UPDATE to public): is_super_admin() OU is_platform_admin() (USING + WITH CHECK)
+• taxon_message_guides_delete_admin_only (DELETE to public): is_super_admin() OU is_platform_admin()
+
 
 2. Views
 
@@ -286,6 +503,12 @@
 • Nota: accounts.status não aceita trial (CHECK accounts_status_chk). No estado atual, views não contêm trial e o runtime/tipos (PATH) não incluem trial (drift resolvido).
 
 99. Changelog
+v1.0.10 (09/04/2026) — E10.5.2: base estrutural de taxonomia, templates e guides
+• Adicionadas as tabelas: `business_taxons`, `business_taxon_aliases`, `account_taxonomy`, `content_templates`, `content_template_taxons`, `taxon_market_research`, `taxon_market_research_items` e `taxon_message_guides`.
+• Todas nascem com RLS ativo e policies CRUD admin-only (`is_super_admin()` OU `is_platform_admin()`).
+• `business_taxon_aliases.alias_text_normalized` registrado como generated column.
+• Nesta etapa, as 8 tabelas ficam fora de auditoria e fora de Trigger Hub.
+
 v1.0.9 (24/03/2026) — Remoção de referências ao repo-inv
 • Removidas referências a docs/repo-inv.md em consumidores e apontamentos de app/runtime, alinhando o Schema aos documentos canônicos ativos.
 
