@@ -233,6 +233,30 @@
 • Alteração de schema exige revisão de views/functions dependentes e atualização do PATH: docs/schema.md
 • Sem secrets expostos no client
 
+3.8.1 Convenção mínima para novas tabelas
+
+1. Chave primária
+1.1 Entidade: `id uuid primary key default gen_random_uuid()`
+1.2 Relação 1:1: FK como PK
+1.3 Vínculo puro N:N: PK composta
+
+2. Relacionamentos
+2.1 Toda FK deve ser explícita
+2.2 Toda FK deve definir `ON DELETE` e `ON UPDATE`
+
+3. Campos de domínio
+3.1 Campos como `status`, `type`, `scope`, `source_type`, `context_type` e equivalentes não nascem como texto solto sem contrato
+
+4. Constraints e índices
+4.1 Toda unicidade relevante deve ser protegida no BD
+4.2 Índice só entra por motivo claro: FK relevante, unicidade, hierarquia ou consulta operacional prevista
+
+5. Segurança e governança
+5.1 Toda tabela deve ter decisão explícita de segurança/acesso
+5.2 Se for exposta ao app, tenant, admin ou fluxo operacional, nasce com RLS e policies na mesma etapa
+5.3 Se for interna, schema e modelo de acesso devem ser definidos explicitamente
+5.4 Toda tabela deve decidir se entra em auditoria, Trigger Hub ou fica fora
+
 3.9 Rate Limit (E7)
 • super_admin: 200 tokens/dia
 • platform_admin: 20 tokens/dia
@@ -425,11 +449,9 @@ Regra: qualquer novo arquivo em app/auth/ não pode importar @supabase/* até se
 
 7. Checklist mínima (anti-regressão)
 • Views expostas a usuário: security_invoker = true (ver 3.1 e PATH: docs/schema.md)
-• RLS ativo nas tabelas sensíveis (ver 3.1 e PATH: docs/schema.md)
 • last_account_subdomain somente SSR (ver 5.1.2 e 5.4)
 • @supabase/* só em adapters + lib/supabase/* + allowlist SULB (ver 2.5 e 6.4)
 • Mutações 1-a-1: .maxAffected(1) (ver 3.8)
-• Migrations idempotentes (ver 3.8)
 • Funções críticas: search_path = public (ver 3.12)
 • SECURITY DEFINER somente quando aprovado (ver 4 e PATH: docs/schema.md)
 • Tipos canônicos: fonte única em PATH: lib/types/status.ts
