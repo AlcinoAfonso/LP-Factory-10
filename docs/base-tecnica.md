@@ -246,6 +246,7 @@
 
 3.8.1.3 Campos de domínio
 • Campos como `status`, `type`, `scope`, `source_type`, `context_type` e equivalentes não nascem como texto solto sem contrato
+• Quando a tabela tiver histórico operacional, deve haver decisão explícita sobre `created_at` e `updated_at`
 
 3.8.1.4 Constraints e índices
 • Toda unicidade relevante deve ser protegida no BD
