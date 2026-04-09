@@ -1,8 +1,8 @@
 0. Introdução
 
 0.1 Cabeçalho
-• Data: 01/04/2026
-• Versão: v1.5.35
+• Data: 09/04/2026
+• Versão: v1.5.36
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -634,7 +634,7 @@
 • Alterar escopo de campos do onboarding (somente consistência de validação).
 
 10.5 Pós-setup persuasivo sem entitlements (active — conversão)
-• Status: Briefing
+• Status: Em evolução
 • Escopo: UX/CTAs para conta em `accounts.status=active` quando **não há plano/trial (sem entitlements)**, imediatamente após o E10.4 (pós-setup). Deve orientar próximos passos e conversão **sem retornar** ao fluxo de “Primeiros passos”.
 • DoD mínimo (MVP):
 • Renderizar uma tela pós-setup (não pode ficar “em branco”) com:
@@ -646,7 +646,7 @@
 • “Primeiros passos” renderiza **somente** se `accounts.status=pending_setup`.
 • Conta `active` **não** implica permissão de criar LP; liberar “Criar LP” apenas com trial/plano (entitlement).
 • Nota: não usa `setup_completed_at` nem `account_setup_completed_at` (não usar em lugar nenhum; manter no DB apenas por segurança).
-• Dependências: E10.4.6 (setup status-based + pós-save com redirect/refresh), E9.8.1 (trial/entitlements), E10.5.1 (enforcement server-side; hardening).
+• Dependências: E10.4.6 (setup status-based + pós-save com redirect/refresh), E9.8.1 (trial/entitlements), E10.5.1 (enforcement server-side; hardening), E10.5.2 (base estrutural admin/interna de taxonomia, templates e guides).
 
 10.5.1 Matriz “preparação vs produtivo” + enforcement (SSR + actions)
 • Status: Briefing
@@ -663,6 +663,27 @@
 10.5.1.4 Dependências
 • E9.8.1 (trial/entitlements).
 • E10.5 (UX pós-setup para reutilizar CTAs/mensagens).
+
+10.5.2 Base estrutural admin/interna de taxonomia, templates e guides
+• Status: Concluído (exec) (09/04/2026)
+• Objetivo: criar a base estrutural de BD para sustentar a evolução do E10.5 com taxonomia, templates, pesquisa e guides, ainda sem exposição ao tenant/app nesta etapa.
+• Implementado/Definido:
+• criadas 8 tabelas do E10.5.2 no Supabase, com PK, FK, `CHECK`, índices e RLS admin-only
+• aplicado `supa#52` nesta etapa via `business_taxon_aliases.alias_text_normalized` como generated column
+• as 8 tabelas nascem como admin/internas nesta etapa, sem exposição a tenant/app, fora de auditoria e fora de Trigger Hub
+• contratos de domínio fechados com `text` + `CHECK`, sem texto solto
+• migration histórica final preparada no formato do repositório: `supabase/migrations/0006__e10_5_2_taxonomy_content_base.sql`
+• ARTEFATOS_REPO:
+• Criados: `supabase/migrations/0006__e10_5_2_taxonomy_content_base.sql`
+• Pendências:
+• `docs/schema.md` ainda não atualizado nesta conversa para refletir as 8 tabelas novas
+• Q1, Q2 e Q3 da conferência estrutural não foram validados até o fim, embora Q4, Q5, Q6 e Q7 tenham sido aprovados
+• a migration histórica final foi entregue em conteúdo, mas ainda não foi commitada no repositório nesta conversa
+
+10.5.3 Popular base inicial de taxons, aliases, templates e vínculos
+• Status: Planejado
+• Objetivo: popular a base inicial criada no E10.5.2 com os primeiros taxons, aliases, templates e vínculos necessários para evolução do E10.5.
+
 
 11. E11 — Gestão de Usuários e Convites
 
@@ -960,6 +981,10 @@
 • Definir o primeiro recorte funcional do LP Builder no roadmap
 
 99. Changelog
+v1.5.36 (09/04/2026)
+• 10.5 ajustado para “Em evolução”, com dependência explícita de 10.5.2.
+• 10.5.2 adicionado como concluído (exec): base estrutural admin/interna de taxonomia, templates e guides, com migration `0006__e10_5_2_taxonomy_content_base.sql`.
+• 10.5.3 adicionado como planejado para popular a base inicial de taxons, aliases, templates e vínculos.
 v1.5.35 (01/04/2026)
 • Adicionado **E19 — LP Builder** como nova seção do Core, no mesmo nível estrutural de Account Dashboard, Admin Dashboard e Partner Dashboard.
 v1.5.34 (31/03/2026)
