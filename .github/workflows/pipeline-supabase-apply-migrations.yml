@@ -1,0 +1,110 @@
+name: Pipeline Supabase — Apply Migrations
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "supabase/migrations/**"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pipeline-supabase-apply-migrations-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+      SUPABASE_PROJECT_REF: dpikmjgiteuafsbaubue
+      SUPABASE_MIGRATIONS_DIR: supabase/migrations
+      EVENT_BEFORE_SHA: ${{ github.event.before }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Apply migrations
+        shell: bash
+        run: |
+          set -uo pipefail
+
+          status="success"
+          failure_step=""
+          changed_migrations=""
+
+          if [ -z "${SUPABASE_ACCESS_TOKEN:-}" ]; then
+            status="failure"
+            failure_step="missing SUPABASE_ACCESS_TOKEN"
+          fi
+
+          if [ "$status" = "success" ] && [ -z "${SUPABASE_DB_PASSWORD:-}" ]; then
+            status="failure"
+            failure_step="missing SUPABASE_DB_PASSWORD"
+          fi
+
+          if [ "$status" = "success" ] && [ ! -d "$SUPABASE_MIGRATIONS_DIR" ]; then
+            status="failure"
+            failure_step="missing migrations directory"
+          fi
+
+          if [ "${GITHUB_EVENT_NAME}" = "push" ] && [ -n "${EVENT_BEFORE_SHA:-}" ] && [ "${EVENT_BEFORE_SHA}" != "0000000000000000000000000000000000000000" ]; then
+            changed_migrations="$(git diff --name-only "${EVENT_BEFORE_SHA}" "${GITHUB_SHA}" -- supabase/migrations || true)"
+          else
+            changed_migrations="(manual run or initial push; diff not computed)"
+          fi
+
+          if [ -z "${changed_migrations}" ]; then
+            changed_migrations="(no changed migration file detected by diff)"
+          fi
+
+          if [ "$status" = "success" ]; then
+            supabase link --project-ref "$SUPABASE_PROJECT_REF" || {
+              status="failure"
+              failure_step="supabase link"
+            }
+          fi
+
+          if [ "$status" = "success" ]; then
+            supabase db push --linked || {
+              status="failure"
+              failure_step="supabase db push"
+            }
+          fi
+
+          {
+            echo "## Pipeline Supabase — Apply Migrations"
+            echo ""
+            echo "- branch: \`${GITHUB_REF_NAME}\`"
+            echo "- commit: \`${GITHUB_SHA}\`"
+            echo "- projeto alvo: \`${SUPABASE_PROJECT_REF}\`"
+            echo "- diretório de migrations: \`${SUPABASE_MIGRATIONS_DIR}\`"
+            echo "- evento: \`${GITHUB_EVENT_NAME}\`"
+            echo "- status final: \`${status}\`"
+            echo ""
+            echo "### Migrations alteradas"
+            echo ""
+            echo '```text'
+            printf '%s\n' "$changed_migrations"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          if [ "$status" != "success" ]; then
+            {
+              echo ""
+              echo "### Etapa que falhou"
+              echo ""
+              echo "- \`${failure_step}\`"
+            } >> "$GITHUB_STEP_SUMMARY"
+            exit 1
+          fi
