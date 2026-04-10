@@ -1,4 +1,4 @@
-# E10.5 e adjacências imediatas vs7
+# E10.5 e adjacências imediatas vs8
 
 # 0) Introdução
 
@@ -9,112 +9,39 @@ Ela registra decisões, propostas e ajustes previstos do E10.5 e adjacências.
 
 1.1 Nicho no `pending_setup` será obrigatório, em texto livre com ajuda/sugestões.
 
-1.2 `account_profiles.niche` permanece como texto livre bruto.
+1.2 O texto livre do lead não será a base oficial de produto.
 
-1.3 O texto livre do lead não será a base oficial de produto.
+1.3 O uso inicial será enxuto, mas a estrutura não deve nascer pobre.
 
-1.4 Será criada uma taxonomia oficial separada no BD.
-
-1.5 A taxonomia deve nascer preparada para: segmento, nicho e ultranicho.
-
-1.6 O vínculo oficial da conta com a taxonomia será separado do `account_profiles`.
-
-1.7 O uso inicial será enxuto, mas a estrutura não deve nascer pobre.
-
-1.8 Tabela `business_taxons`.
-
-* `id`
-* `parent_id`
-* `level` (`segment`, `niche`, `ultra_niche`)
-* `name`
-* `slug`
-* `is_active`
-
-1.9 Tabela `business_taxon_aliases`.
-
-* `id`
-* `taxon_id`
-* `alias_text`
-* `alias_text_normalized`
-* `is_active`
-
-1.10 Tabela `account_taxonomy`.
-
-* `id`
-* `account_id`
-* `taxon_id`
-* `is_primary`
-* `status`
-* `source_type`
-* `created_at`
-* `updated_at`
-
-1.11 Hierarquia de resolução do E10.5.
+1.4 Hierarquia de resolução do E10.5.
 
 * se houver nicho com template comercial válido, usa nicho
 * se não houver nicho, mas houver segmento com template comercial válido, usa segmento
 * se não houver nenhum dos dois, usa fallback genérico
 * nicho e segmento são critérios internos de resolução; o centro visível da personalização é o template comercial recomendado
 
-1.12 A página `active` do E10.5 será tratada como uma LP comercial.
+1.5 A página `active` do E10.5 será tratada como uma LP comercial.
 
 * não será tratada como grade simples de planos
 * a estrutura base deve trabalhar narrativa comercial, não apenas oferta seca
 
-1.13 A página `active` terá estrutura de LP comercial, com composição variável por template.
+1.6 A página `active` terá estrutura de LP comercial, com composição variável por template.
 
 * exemplos: hero, seções de valor, CTAs e seção própria de oferta
 
-1.14 Planos entram em seção própria de oferta dentro da página.
+1.7 Planos entram em seção própria de oferta dentro da página.
 
 * o formato inicial pode usar cards
 * trial é opcional e depende do template
 * pode ficar fora da seção de planos, inclusive em ações posteriores
 
-1.15 A evolução dos templates comerciais tende a começar pelo segmento.
+1.8 A evolução dos templates comerciais tende a começar pelo segmento.
 
 * novos nichos usam o template do segmento enquanto não tiverem template próprio
 * se não houver sequer template de segmento aplicável, usa fallback genérico
 * templates próprios de nicho surgem quando a demanda justificar
 
-1.16 Tabela `content_templates`.
-
-* uso inicial: E10.5
-* objetivo: catálogo neutro de templates para páginas/blocos de conteúdo
-* possibilidade futura: reaproveitamento em LPs, se a estrutura real for compatível
-* campos:
-
-  * `id`
-  * `template_key`
-  * `name`
-  * `slug`
-  * `template_family`
-  * `template_scope`
-  * `status`
-  * `version`
-  * `is_active`
-  * `payload_json`
-  * `notes`
-  * `created_at`
-  * `updated_at`
-
-1.17 Tabela `content_template_taxons`.
-
-* objetivo: vincular templates à taxonomia oficial
-* uso esperado: permitir resolução por nicho, segmento e fallback genérico
-* campos:
-
-  * `id`
-  * `template_id`
-  * `taxon_id`
-  * `resolution_level`
-  * `priority`
-  * `is_primary`
-  * `is_active`
-  * `created_at`
-  * `updated_at`
-
-1.18 Tabela `content_template_sections`.
+1.9 Tabela `content_template_sections`.
 
 * status atual: opcional
 * objetivo: quebrar templates em blocos reutilizáveis/editáveis, se isso fizer sentido depois
@@ -130,36 +57,11 @@ Ela registra decisões, propostas e ajustes previstos do E10.5 e adjacências.
   * `created_at`
   * `updated_at`
 
-1.19 A base estratégica por taxon será transversal.
+1.10 A base estratégica por taxon será transversal.
 
 * servirá a LPs, E10.5 e demais comunicações
 * mesma base estratégica por taxon, com adaptação por contexto
 * a arquitetura deve nascer completa; a ativação dos contextos pode ser gradual
-
-1.20 Tabela `taxon_market_research`.
-
-* função: pesquisa consolidada por taxon
-* objetivo: concentrar a leitura estratégica principal de cada taxon em um registro-base
-
-1.21 Tabela `taxon_market_research_items`.
-
-* função: itens reutilizáveis da pesquisa por taxon
-* objetivo: registrar dores, objeções, desejos, tendências e outros itens em blocos reaproveitáveis
-* campos-base:
-
-  * `id`
-  * `research_id`
-  * `item_tag`
-  * `item_text`
-  * `priority`
-  * `is_active`
-  * `created_at`
-  * `updated_at`
-
-1.22 Tabela `taxon_message_guides`.
-
-* função: traduzir a mesma base estratégica para contextos diferentes
-* objetivo: orientar a adaptação da comunicação por contexto sem perder coerência estratégica
 
 ## 2) Ambiguidades / aperfeiçoamento
 
@@ -346,20 +248,29 @@ Ela registra decisões, propostas e ajustes previstos do E10.5 e adjacências.
 * o lead não converte agora
 * pode seguir para uma trilha futura de maturação
 
-## 6) Esboço / plano de execução
+## 6) Esboço / plano base do caso
 
 ### 6.0 Regra universal dos planos de execução
 
 Todo plano de execução deve ter como documento-alvo `docs/prompt-executor.md`.
 O plano deve definir apenas o recorte específico da etapa, sem reescrever o fluxo operacional já definido no prompt.
 O plano deve indicar os documentos canônicos da etapa.
-Em caso de conflito, prevalece `docs/prompt-executor.md`, salvo exceção explicitamente registrada no próprio plano.
-Cada item `6.x` nasce como esboço da etapa correspondente.
-Quando a etapa for ativada, o esboço correspondente é sobrescrito pelo plano de execução daquela etapa.
-O próximo plano só entra após a etapa anterior ser implementada e aprovada.
-O plano de testes vem depois do implementado e aprovado.
+Quando o plano envolver criação de tabelas, deve explicitar também:
 
-### 6.1 Plano de execução — E10.5.2 Criar a base do BD
+* a convenção mínima para novas tabelas
+* o modelo mínimo de acesso e governança por tabela
+  Em caso de conflito, prevalece `docs/prompt-executor.md`, salvo exceção explicitamente registrada no próprio plano.
+  Cada item `6.x` nasce como esboço da etapa correspondente.
+  Quando a etapa for ativada, o esboço correspondente é sobrescrito pelo plano de execução daquela etapa.
+  O próximo plano só entra após a etapa anterior ser implementada e aprovada.
+  O plano de testes vem depois do implementado e aprovado.
+
+### 6.1 Implementado — E10.5.2 Criar a base do BD
+
+* status: implementado
+* resultado: 8 tabelas criadas com PK, FK, `CHECK`, índices mínimos, RLS + policies CRUD admin-only
+* `supa#52` aplicado em `business_taxon_aliases.alias_text_normalized` como generated column
+* fora de auditoria e fora de Trigger Hub nesta etapa
 
 #### 6.1.1 Objetivo
 
@@ -394,7 +305,7 @@ O plano de testes vem depois do implementado e aprovado.
 * `id`
 * `taxon_id`
 * `alias_text`
-* `alias_text_normalized`
+* `alias_text_normalized` *(generated column)*
 * `is_active`
 
 ##### 6.1.3.3 `account_taxonomy`
@@ -477,9 +388,8 @@ O plano de testes vem depois do implementado e aprovado.
 
 #### 6.1.5 Updates desta etapa
 
-6.1.5.1 Implementar `supa#52` nesta etapa, apenas no que impactar diretamente o schema das tabelas criadas.
-6.1.5.2 Implementar `supa#40` nesta etapa, com snippets SQL locais de apoio à governança e inspeção estrutural das tabelas novas.
-6.1.5.3 Referência de update desta etapa: `docs/supa-up.md`.
+6.1.5.1 Implementar `supa#52` nesta etapa, de forma explícita, em `business_taxon_aliases.alias_text_normalized`.
+6.1.5.2 Referência de update desta etapa: `docs/supa-up.md`.
 
 #### 6.1.6 Resultado esperado da etapa
 
@@ -505,13 +415,80 @@ O plano de testes vem depois do implementado e aprovado.
 * `docs/roadmap.md`
 * `docs/base-tecnica.md` (somente se houver ajuste estrutural que realmente precise entrar nele)
 
-### 6.2 Esboço — E10.5.3 Popular a base inicial
+### 6.2 Plano base do caso — E10.5.3 Carga inicial da taxonomia oficial (Grupo A)
 
-* cadastrar primeiros segmentos, nichos e aliases
-* cadastrar primeiros templates e vínculos com taxons
-* fechar o formato inicial de seed/import/upsert
+#### 6.2.1 Objetivo
 
-### 6.3 Esboço — E10.5.4 Classificação da conta e escolha do template
+6.2.1.1 Popular a base inicial da taxonomia oficial criada no E10.5.2.
+6.2.1.2 Entregar os primeiros segmentos, nichos, ultranichos e aliases do caso.
+6.2.1.3 Fechar o formato inicial de carga controlada deste grupo.
+
+#### 6.2.2 Escopo desta etapa
+
+6.2.2.1 Investigar `business_taxons` e `business_taxon_aliases` para confirmar o que já existe.
+6.2.2.2 Propor 5 a 10 segmentos ainda não cadastrados.
+6.2.2.3 Propor 2 a 3 nichos por segmento proposto.
+6.2.2.4 Incluir aliases principais por taxon.
+6.2.2.5 Entregar os dados no formato canônico para carga no SQL Editor.
+6.2.2.6 Validar a base após a carga.
+
+#### 6.2.3 Decisões fechadas desta etapa
+
+6.2.3.1 O grupo A inicial cobre `business_taxons` e `business_taxon_aliases`.
+6.2.3.2 `account_taxonomy` não entra nesta carga inicial.
+6.2.3.3 A carga continua controlada; não haverá preenchimento manual direto tabela por tabela.
+6.2.3.4 O processo inicial será manual via chat, com aprovação antes da carga.
+6.2.3.5 `supa#40` entra nesta etapa.
+6.2.3.6 Os snippets locais concretos devem ser fechados em `supabase/snippets`.
+
+#### 6.2.4 Updates desta etapa
+
+6.2.4.1 Implementar `supa#40` nesta etapa.
+6.2.4.2 Fechar os snippets locais concretos de apoio operacional e inspeção do grupo A.
+6.2.4.3 Referência de update desta etapa: `docs/supa-up.md`.
+
+#### 6.2.5 Resultado esperado da etapa
+
+6.2.5.1 Primeiros segmentos, nichos e ultranichos cadastrados.
+6.2.5.2 Primeiros aliases cadastrados.
+6.2.5.3 Formato canônico de carga do grupo A fechado.
+6.2.5.4 Validação pós-carga concluída.
+
+#### 6.2.6 Fora do escopo
+
+6.2.6.1 `account_taxonomy`.
+6.2.6.2 Templates comerciais.
+6.2.6.3 Base estratégica por taxon.
+6.2.6.4 Classificação automática do nicho.
+6.2.6.5 Runtime do E10.5.
+6.2.6.6 Adapters.
+6.2.6.7 FTS e `pg_trgm`.
+6.2.6.8 Tracking, cache e observability do runtime.
+
+#### 6.2.7 Documentos canônicos desta etapa
+
+* `docs/prompt-executor.md`
+* `docs/schema.md`
+* `docs/roadmap.md`
+* `docs/supa-up.md`
+
+### 6.3 Esboço — E10.5.4 Carga inicial da base estratégica por taxon (Grupo C)
+
+* investigar `taxon_market_research`, `taxon_market_research_items` e `taxon_message_guides`
+* propor a primeira base estratégica por taxon
+* aprovar antes da carga
+* entregar no formato canônico para carga no SQL Editor
+* validar pós-carga
+
+### 6.4 Esboço — E10.5.5 Carga inicial dos templates comerciais (Grupo B)
+
+* investigar `content_templates` e `content_template_taxons`
+* usar a base estratégica do grupo C como insumo para títulos, subtítulos, seções e CTAs
+* aprovar antes da carga
+* entregar no formato canônico para carga no SQL Editor
+* validar pós-carga
+
+### 6.5 Esboço — E10.5.6 Classificação da conta e resolução do template
 
 * classificar o nicho bruto
 * gravar o vínculo oficial em `account_taxonomy`
@@ -521,7 +498,7 @@ O plano de testes vem depois do implementado e aprovado.
   * `supa#36` — FTS
   * `supa#51` — `pg_trgm`
 
-### 6.4 Esboço — E10.5.5 Colocar o E10.5 no runtime
+### 6.6 Esboço — E10.5.7 Colocar o E10.5 no runtime
 
 * integrar o E10.5 ao fluxo `active`
 * renderizar a página como LP comercial
@@ -532,12 +509,7 @@ O plano de testes vem depois do implementado e aprovado.
   * `vercel#10` — observability redirects
   * `vercel#11` — tracking server-side
 
-### 6.5 Esboço — E10.5.6 Base estratégica em uso
-
-* usar pesquisa e guias de mensagem no E10.5
-* preparar reaproveitamento em LPs e outras comunicações
-
-### 6.6 Esboço — E10.5.7 Seções dos templates
+### 6.7 Esboço — Etapa futura opcional
 
 * decidir se `content_template_sections` entra ou não
 * só implementar se o runtime realmente precisar de composição por blocos
