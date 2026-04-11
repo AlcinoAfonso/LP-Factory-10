@@ -1,4 +1,4 @@
-# Lousa — 3.5 Apply automático de migrations no Supabase vs2
+# Lousa — 3.5 Apply automático de migrations no Supabase vs3
 
 ## 1) Plano base
 
@@ -355,9 +355,9 @@ Plano de implementação definido, com dependências externas explicitadas e sem
 
 ### 5.2 Conflitos relevantes identificados
 
-* Ainda não existem, nos prints do GitHub Actions, os secrets de escrita esperados para o Supabase CLI.
+* Os secrets de escrita esperados para o Supabase CLI foram criados depois, por evidência externa trazida em prints do humano.
 * O painel do Supabase mostra `Last migration: No migrations`, o que indica risco de drift entre o histórico remoto e o diretório versionado do repositório.
-* Por esse motivo, a etapa foi executada até o limite seguro: briefing de repositório + instruções de configuração externa.
+* O primeiro smoke manual continua necessário antes de tratar o fluxo como operacionalmente validado.
 
 ### 5.3 Ajuste no repositório
 
@@ -366,9 +366,9 @@ Plano de implementação definido, com dependências externas explicitadas e sem
 
 ### 5.4 Configuração externa separada
 
-* `SUPABASE_ACCESS_TOKEN` criado no GitHub Actions.
-* `SUPABASE_DB_PASSWORD` criado no GitHub Actions.
-* A dependência externa mínima de secrets de escrita ficou atendida.
+* `SUPABASE_ACCESS_TOKEN` criado no GitHub Actions, por evidência externa trazida em prints do humano.
+* `SUPABASE_DB_PASSWORD` criado no GitHub Actions, por evidência externa trazida em prints do humano.
+* A dependência externa mínima de secrets de escrita ficou atendida por evidência externa, não por evidência do repositório.
 
 ### 5.5 Entrega do Codex avaliada
 
@@ -391,19 +391,21 @@ Plano de implementação definido, com dependências externas explicitadas e sem
 * a pendência de secrets mencionada no relatório do Codex ficou desatualizada, porque os dois secrets já foram criados depois
 * o status operacional do caso ainda não deve ser tratado como plenamente pronto sem o primeiro smoke manual
 * permanece o risco de drift/histórico remoto por causa da evidência no painel Supabase: `Last migration: No migrations`
+* o workflow usa `supabase/setup-cli@v1` com `version: latest`, o que funciona, mas deixa a execução mais sujeita a variação futura do CLI
 
 ### 5.6 Status consolidado da Etapa 3
 
-* Ajuste no repositório: preparado e validado em branch do Codex
-* Configuração externa mínima: concluída
-* Resultado da etapa: implementação aprovada com ressalvas operacionais
+* Ajuste no repositório: validado em branch do Codex
+* Configuração externa mínima: concluída por evidência externa
+* Smoke manual inicial: pendente
+* Risco de drift remoto: ainda aberto
 * Próxima etapa necessária: executar o primeiro smoke manual controlado do workflow
 
 ## 6) Etapa 4 — Testes
 
 ### 6.1 Estado atual
 
-Aguardando smoke manual inicial do workflow de apply de migrations.
+Etapa 4 iniciada.
 
 ### 6.2 Objetivo do primeiro smoke
 
@@ -414,3 +416,155 @@ Validar se o workflow autentica no Supabase, faz o link no projeto correto e reg
 * possível drift entre o histórico remoto e o diretório versionado de migrations
 * evidência atual do painel Supabase: `Last migration: No migrations`
 * por isso, a primeira execução deve ser manual e observada
+
+### 6.4 Testes executados pelo executor
+
+#### 6.4.1 Revisão estrutural do workflow na branch do Codex
+
+* arquivo avaliado: `.github/workflows/pipeline-supabase-apply-migrations.yml`
+* gatilhos confirmados: `push` em `main` com filtro em `supabase/migrations/**` e `workflow_dispatch`
+* referência de projeto confirmada no workflow: `dpikmjgiteuafsbaubue`
+* secrets esperados confirmados no workflow: `SUPABASE_ACCESS_TOKEN` e `SUPABASE_DB_PASSWORD`
+* evidência mínima confirmada no workflow: uso de `GITHUB_STEP_SUMMARY`
+* falhas de pré-condição previstas no próprio job: secret ausente, diretório ausente, falha em `supabase link`, falha em `supabase db push`
+
+#### 6.4.2 Limite do executor nesta etapa
+
+* o executor não executou o workflow real no GitHub Actions
+* o executor não executou `supabase db push` em ambiente real
+* portanto, funcionamento real ainda não pode ser declarado como validado
+
+### 6.5 Teste que depende do humano
+
+#### 6.5.1 Smoke manual inicial recomendado
+
+1. abrir a branch do Codex ou o PR correspondente
+2. garantir que o workflow esteja disponível na branch em que será testado
+3. ir em `Actions`
+4. abrir `Pipeline Supabase — Apply Migrations`
+5. clicar em `Run workflow`
+6. escolher a branch que contém o workflow
+7. executar manualmente
+8. ao final, abrir o run e capturar:
+
+   * status final do job
+   * etapa em que falhou ou concluiu
+   * conteúdo do `Summary`
+   * trecho do log onde apareça `supabase link` e `supabase db push`
+
+#### 6.5.2 Evidências que o humano deve trazer
+
+* print da tela final do run
+* print do `Summary`
+* print ou trecho do log da etapa `Apply migrations`
+
+### 6.6 Teste que depende de plataforma externa
+
+* autenticação do Supabase CLI com `SUPABASE_ACCESS_TOKEN`
+* aceitação do `SUPABASE_DB_PASSWORD` pelo projeto alvo
+* sucesso do `supabase link`
+* sucesso ou falha controlada do `supabase db push --linked`
+* comportamento do histórico remoto de migrations diante do estado atual do projeto
+
+### 6.7 Critério de leitura do primeiro smoke
+
+#### 6.7.1 Se o run falhar antes do link
+
+* tratar como problema de secret/configuração externa
+
+#### 6.7.2 Se o run falhar no `supabase db push`
+
+* tratar como evidência forte de conflito entre histórico remoto e migrations versionadas, ou outra incompatibilidade real de apply
+
+#### 6.7.3 Se o run concluir com sucesso
+
+* considerar o workflow validado no smoke inicial
+* ainda assim registrar o resultado como validação inicial, não como prova de ausência total de risco futuro
+
+### 6.8 Status da Etapa 4
+
+* testes do executor: concluídos no limite do ambiente disponível
+* smoke manual inicial: pendente de execução pelo humano
+* validação operacional final da etapa: pendente do primeiro run real
+
+## 7) Plano ajustado do caso 3.5 — fase baseline
+
+### 7.1 Motivo do ajuste de plano
+
+* o histórico remoto de migrations no projeto atual está ausente
+* a comparação entre `docs/schema.md` e o diretório `supabase/migrations/` confirmou que as migrations atuais representam apenas uma fração do histórico real do banco
+* por isso, o fluxo de apply automático não deve ser inaugurado com base no conjunto legado atual
+
+### 7.2 Diretriz central
+
+* tratar o banco remoto atual como fonte de verdade
+* gerar um baseline novo e oficial
+* alinhar o histórico remoto a esse baseline
+* só depois usar migrations incrementais novas com o workflow automático
+
+### 7.3 O que muda no caso 3.5
+
+* o objetivo do workflow automático permanece
+* o plano operacional passa a ter uma fase prévia obrigatória de baseline
+* o smoke do workflow de apply deixa de ser o próximo passo imediato e passa a ser posterior ao baseline
+
+### 7.4 Etapas do plano ajustado
+
+#### 7.4.1 Etapa A — congelar o legado atual
+
+* declarar explicitamente que o conjunto atual de migrations não é baseline confiável do banco
+* impedir que esse conjunto seja tratado como base oficial do primeiro `db push`
+* preservar os arquivos atuais até decisão controlada sobre destino técnico
+
+#### 7.4.2 Etapa B — gerar baseline oficial do estado remoto
+
+* usar o estado atual do banco como fonte de verdade
+* gerar uma migration baseline nova em formato compatível com o fluxo oficial do Supabase CLI
+* gravar o baseline no diretório canônico `supabase/migrations/`
+
+#### 7.4.3 Etapa C — sanear histórico remoto
+
+* conferir o estado local/remoto com a CLI
+* reparar o histórico remoto se necessário
+* deixar local e remoto alinhados ao baseline novo
+
+#### 7.4.4 Etapa D — decidir o destino do legado
+
+* arquivar ou retirar do fluxo operacional o conjunto legado atual
+* evitar coexistência ambígua entre histórico legado incompleto e histórico oficial novo
+* não fazer limpeza patch por patch no escuro
+
+#### 7.4.5 Etapa E — retomar o fluxo incremental
+
+* executor volta a gerar migrations incrementais novas
+* humano adiciona a migration ao repositório
+* workflow automático aplica somente o que estiver pendente
+* histórico remoto passa a refletir o novo ciclo oficial
+
+### 7.5 O que deve ser evitado
+
+* não usar uma migration de teste como substituto do baseline
+* não assumir que o primeiro `db push` vai considerar só a última migration
+* não apagar migrations de teste do repositório após execução
+* não ativar o fluxo automático como confiável antes do baseline saneado
+
+### 7.6 Tratamento do workflow já preparado
+
+* o workflow da branch do Codex continua válido como peça de infraestrutura
+* ele não deve ser tratado como fluxo operacional confiável antes do baseline
+* o primeiro smoke real do workflow deve ocorrer só depois do baseline e do saneamento do histórico
+
+### 7.7 Próximo trabalho do executor
+
+* preparar a fase baseline do caso 3.5
+* mapear o impacto do legado atual em `supabase/migrations/`
+* preparar a estratégia de geração do baseline e de saneamento do histórico remoto
+* separar claramente o que será ajuste no repositório e o que dependerá de ação externa
+
+### 7.8 Status consolidado após ajuste de plano
+
+* workflow de apply: preparado
+* secrets de escrita: configurados
+* histórico remoto de migrations: ausente
+* baseline oficial: pendente
+* fluxo automático confiável: ainda não liberado
