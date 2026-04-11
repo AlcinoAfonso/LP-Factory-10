@@ -5,6 +5,12 @@
 • Escopo: visão geral do produto + estratégia empresarial (alto nível) + referências oficiais do projeto
 
 1. O que é
+1.1. Classificação do negócio
+• Segmento: Marketing digital.
+• Nicho: SaaS de landing pages e conversão.
+• Ultranicho: não usar agora.
+
+1.2. Descrição
 • LP Factory 10 é uma plataforma SaaS de landing pages por nicho, com dashboards de análise para acompanhar e otimizar a performance.
 • O foco atual é validar a oferta, o processo e a repetibilidade antes de escalar.
 • O produto foi pensado para atender múltiplos nichos, com priorização orientada pela demanda captada no uso real.
@@ -36,13 +42,10 @@
 • Planos em camadas (Starter → Lite → Pro → Ultra), com capacidades escalando ao longo do tempo.
 
 6. Pendências estratégicas (em aberto)
-6.1. Nicho inicial
-• A prioridade inicial dos nichos será definida por demanda.
-
-6.2. Definições do MVP
+6.1. Definições do MVP
 • Starter mínimo • Tracking mínimo • Atendimento no MVP • Primeira recomendação concreta da IA
 
-6.3. Padrões de entrega
+6.2. Padrões de entrega
 • Definir regra de “o que é uma LP entregue”, com checklist.
 
 7. Referências oficiais
