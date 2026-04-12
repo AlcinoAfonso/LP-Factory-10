@@ -1,4 +1,4 @@
-# E10.5 e adjacências imediatas vs8
+# E10.5 e adjacências imediatas vs9
 
 # 0) Introdução
 
@@ -250,20 +250,22 @@ Ela registra decisões, propostas e ajustes previstos do E10.5 e adjacências.
 
 ## 6) Esboço / plano base do caso
 
-### 6.0 Regra universal dos planos de execução
+### 6.0 Regra dos planos base dos casos
 
-Todo plano de execução deve ter como documento-alvo `docs/prompt-executor.md`.
-O plano deve definir apenas o recorte específico da etapa, sem reescrever o fluxo operacional já definido no prompt.
-O plano deve indicar os documentos canônicos da etapa.
-Quando o plano envolver criação de tabelas, deve explicitar também:
+#### 6.0.1 Como gerar o plano base do caso
 
-* a convenção mínima para novas tabelas
-* o modelo mínimo de acesso e governança por tabela
-  Em caso de conflito, prevalece `docs/prompt-executor.md`, salvo exceção explicitamente registrada no próprio plano.
-  Cada item `6.x` nasce como esboço da etapa correspondente.
-  Quando a etapa for ativada, o esboço correspondente é sobrescrito pelo plano de execução daquela etapa.
-  O próximo plano só entra após a etapa anterior ser implementada e aprovada.
-  O plano de testes vem depois do implementado e aprovado.
+* o plano base do caso deve ser gerado em cima do esboço já definido na lousa
+* deve recortar apenas a etapa correspondente
+* deve apontar os documentos canônicos da etapa
+* deve trazer um objetivo bem traçado, deixando claro o que a etapa entrega e o que fica fora dela
+* pode incluir insights do que pode precisar ser investigado no repositório, quando isso ajudar a preparar melhor a execução
+* não deve reescrever o fluxo operacional do `docs/prompt-executor.md`
+
+#### 6.0.2 O que enviar ao Executor
+
+* acessar `docs/prompt-executor.md`
+* usar como plano base o item `6.x` correspondente em `docs/lousa-estrategista-2.md`
+* usar a lousa também como visão geral do caso, se necessário
 
 ### 6.1 Implementado — E10.5.2 Criar a base do BD
 
@@ -415,55 +417,66 @@ Quando o plano envolver criação de tabelas, deve explicitar também:
 * `docs/roadmap.md`
 * `docs/base-tecnica.md` (somente se houver ajuste estrutural que realmente precise entrar nele)
 
-### 6.2 Plano base do caso — E10.5.3 Carga inicial da taxonomia oficial (Grupo A)
+### 6.2 Parcialmente implementado — E10.5.3 Kit operacional de expansão do Grupo A
+
+* status: parcialmente implementado
+* entregue até agora: primeiro lote piloto do Grupo A
+* resultado atual: segmento `Marketing digital`, nicho `SaaS de landing pages e conversão` e 5 aliases iniciais carregados
+* formato canônico inicial de carga fechado como SQL idempotente
+* novo foco da etapa: criar o kit operacional para que outro chat investigue, proponha e carregue novos dados sem drift
 
 #### 6.2.1 Objetivo
 
-6.2.1.1 Popular a base inicial da taxonomia oficial criada no E10.5.2.
-6.2.1.2 Entregar os primeiros segmentos, nichos, ultranichos e aliases do caso.
-6.2.1.3 Fechar o formato inicial de carga controlada deste grupo.
+6.2.1.1 Criar o kit operacional de expansão do Grupo A.
+6.2.1.2 Padronizar como outro chat deve investigar duplicidades, propor novos taxons e aliases, formatar a saída e entregar o SQL final.
+6.2.1.3 Evitar carga manual solta e evitar drift entre chats.
+6.2.1.4 Arquivar os prompts operacionais desta etapa em `docs/`.
+6.2.1.5 Arquivar os SQLs/snippets operacionais desta etapa em `supabase/snippets/`.
+6.2.1.6 `supabase/snippets/` é a pasta-alvo dos snippets SQL operacionais do projeto e ainda não está materializada no repositório nesta conversa.
 
 #### 6.2.2 Escopo desta etapa
 
-6.2.2.1 Investigar `business_taxons` e `business_taxon_aliases` para confirmar o que já existe.
-6.2.2.2 Propor 5 a 10 segmentos ainda não cadastrados.
-6.2.2.3 Propor 2 a 3 nichos por segmento proposto.
-6.2.2.4 Incluir aliases principais por taxon.
-6.2.2.5 Entregar os dados no formato canônico para carga no SQL Editor.
-6.2.2.6 Validar a base após a carga.
+6.2.2.1 Criar o template de investigação do que já existe em `business_taxons` e `business_taxon_aliases`.
+6.2.2.2 Criar o prompt de proposta de novos segmentos, nichos, ultranichos e aliases.
+6.2.2.3 Criar o template canônico de saída dos dados aprovados.
+6.2.2.4 Criar o SQL canônico de carga do Grupo A.
+6.2.2.5 Criar o checklist de validação pós-carga.
 
 #### 6.2.3 Decisões fechadas desta etapa
 
-6.2.3.1 O grupo A inicial cobre `business_taxons` e `business_taxon_aliases`.
-6.2.3.2 `account_taxonomy` não entra nesta carga inicial.
-6.2.3.3 A carga continua controlada; não haverá preenchimento manual direto tabela por tabela.
-6.2.3.4 O processo inicial será manual via chat, com aprovação antes da carga.
-6.2.3.5 `supa#40` entra nesta etapa.
-6.2.3.6 Os snippets locais concretos devem ser fechados em `supabase/snippets`.
+6.2.3.1 O Grupo A cobre `business_taxons` e `business_taxon_aliases`.
+6.2.3.2 `account_taxonomy` não entra neste processo.
+6.2.3.3 O processo inicial será manual via chat, com aprovação antes da carga.
+6.2.3.4 Outro chat deve primeiro investigar para evitar duplicidades.
+6.2.3.5 A carga final deve sair em SQL no formato canônico definido nesta etapa.
+6.2.3.6 `supa#40` permanece como apoio operacional desta etapa.
+6.2.3.7 Os prompts operacionais do Grupo A devem ser versionados em `docs/`.
+6.2.3.8 Os SQLs/snippets operacionais do Grupo A devem ser versionados em `supabase/snippets/`.
+6.2.3.9 A criação/materialização dessa pasta e dos primeiros snippets continua pendente nesta etapa.
 
 #### 6.2.4 Updates desta etapa
 
-6.2.4.1 Implementar `supa#40` nesta etapa.
-6.2.4.2 Fechar os snippets locais concretos de apoio operacional e inspeção do grupo A.
+6.2.4.1 `supa#40` deve apoiar a governança e o QA do Grupo A.
+6.2.4.2 A materialização em `supabase/snippets` continua pendente.
 6.2.4.3 Referência de update desta etapa: `docs/supa-up.md`.
 
 #### 6.2.5 Resultado esperado da etapa
 
-6.2.5.1 Primeiros segmentos, nichos e ultranichos cadastrados.
-6.2.5.2 Primeiros aliases cadastrados.
-6.2.5.3 Formato canônico de carga do grupo A fechado.
-6.2.5.4 Validação pós-carga concluída.
+6.2.5.1 Template de investigação anti-duplicidade fechado.
+6.2.5.2 Prompt de proposta de novos taxons e aliases fechado.
+6.2.5.3 Template canônico de saída fechado.
+6.2.5.4 SQL canônico de carga do Grupo A fechado.
+6.2.5.5 Checklist de validação pós-carga fechado.
 
 #### 6.2.6 Fora do escopo
 
 6.2.6.1 `account_taxonomy`.
-6.2.6.2 Templates comerciais.
-6.2.6.3 Base estratégica por taxon.
+6.2.6.2 Base estratégica por taxon.
+6.2.6.3 Templates comerciais.
 6.2.6.4 Classificação automática do nicho.
 6.2.6.5 Runtime do E10.5.
 6.2.6.6 Adapters.
-6.2.6.7 FTS e `pg_trgm`.
-6.2.6.8 Tracking, cache e observability do runtime.
+6.2.6.7 `supa#51` e matching textual leve.
 
 #### 6.2.7 Documentos canônicos desta etapa
 
@@ -472,13 +485,64 @@ Quando o plano envolver criação de tabelas, deve explicitar também:
 * `docs/roadmap.md`
 * `docs/supa-up.md`
 
-### 6.3 Esboço — E10.5.4 Carga inicial da base estratégica por taxon (Grupo C)
+### 6.3 Esboço — E10.5.4 Kit operacional de expansão do Grupo C
 
-* investigar `taxon_market_research`, `taxon_market_research_items` e `taxon_message_guides`
-* propor a primeira base estratégica por taxon
-* aprovar antes da carga
-* entregar no formato canônico para carga no SQL Editor
-* validar pós-carga
+#### 6.3.1 Objetivo
+
+6.3.1.1 Criar o kit operacional de expansão do Grupo C.
+6.3.1.2 Padronizar como outro chat deve investigar lacunas, propor base estratégica por taxon, formatar a saída e entregar o SQL final.
+6.3.1.3 Evitar carga manual solta e evitar drift entre chats.
+6.3.1.4 Arquivar os prompts operacionais desta etapa em `docs/`.
+6.3.1.5 Arquivar os SQLs/snippets operacionais desta etapa em `supabase/snippets/`.
+6.3.1.6 `supabase/snippets/` é a pasta-alvo dos snippets SQL operacionais do projeto e ainda não está materializada no repositório nesta conversa.
+
+#### 6.3.2 Escopo desta etapa
+
+6.3.2.1 Criar o template de investigação do que já existe em `taxon_market_research`, `taxon_market_research_items` e `taxon_message_guides`.
+6.3.2.2 Criar o prompt de proposta da primeira base estratégica por taxon.
+6.3.2.3 Criar o template canônico de saída dos dados aprovados do Grupo C.
+6.3.2.4 Criar o SQL canônico de carga do Grupo C.
+6.3.2.5 Criar o checklist de validação pós-carga.
+
+#### 6.3.3 Decisões fechadas desta etapa
+
+6.3.3.1 O Grupo C cobre `taxon_market_research`, `taxon_market_research_items` e `taxon_message_guides`.
+6.3.3.2 O processo inicial será manual via chat, com aprovação antes da carga.
+6.3.3.3 Outro chat deve primeiro investigar para evitar duplicidades e lacunas.
+6.3.3.4 A carga final deve sair em SQL no formato canônico definido nesta etapa.
+6.3.3.5 Os prompts operacionais do Grupo C devem ser versionados em `docs/`.
+6.3.3.6 Os SQLs/snippets operacionais do Grupo C devem ser versionados em `supabase/snippets/`.
+6.3.3.7 A criação/materialização dessa pasta e dos primeiros snippets continua pendente nesta etapa.
+
+#### 6.3.4 Updates desta etapa
+
+6.3.4.1 `supa#40` deve apoiar a governança e o QA do Grupo C.
+6.3.4.2 A materialização em `supabase/snippets` continua pendente.
+6.3.4.3 Referência de update desta etapa: `docs/supa-up.md`.
+
+#### 6.3.5 Resultado esperado da etapa
+
+6.3.5.1 Template de investigação do Grupo C fechado.
+6.3.5.2 Prompt de proposta da base estratégica por taxon fechado.
+6.3.5.3 Template canônico de saída do Grupo C fechado.
+6.3.5.4 SQL canônico de carga do Grupo C fechado.
+6.3.5.5 Checklist de validação pós-carga fechado.
+
+#### 6.3.6 Fora do escopo
+
+6.3.6.1 Templates comerciais do Grupo B.
+6.3.6.2 `account_taxonomy`.
+6.3.6.3 Classificação automática do nicho.
+6.3.6.4 Runtime do E10.5.
+6.3.6.5 Adapters.
+6.3.6.6 `supa#51` e matching textual leve.
+
+#### 6.3.7 Documentos canônicos desta etapa
+
+* `docs/prompt-executor.md`
+* `docs/schema.md`
+* `docs/roadmap.md`
+* `docs/supa-up.md`
 
 ### 6.4 Esboço — E10.5.5 Carga inicial dos templates comerciais (Grupo B)
 
