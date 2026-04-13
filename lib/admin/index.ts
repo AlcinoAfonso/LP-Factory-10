@@ -1,13 +1,7 @@
 // src/lib/admin/index.ts
 /**
- * Módulo Admin (E7)
- * Exports centralizados
+ * Módulo Admin
+ * Exports mínimos de privilégio
  */
 
-export * from "./contracts";
-export {
-  tokens as adminTokens,
-  checkSuperAdmin,
-  checkPlatformAdmin, // novo export
-} from "./adapters/adminAdapter";
-export * as postSaleTokenAdapter from "./adapters/postSaleTokenAdapter";
+export { checkSuperAdmin, checkPlatformAdmin } from "./adapters/adminAdapter";

@@ -227,57 +227,6 @@ export async function listUserAccounts(): Promise<UserAccountListItem[]> {
   return rows.map(mapUserAccountListRow);
 }
 
-/* ===========================================================
- * E7 - Conta Consultiva
- * ===========================================================
- */
-
-/** Cria conta a partir de token (delega para RPC) — caminho authenticated */
-export async function createFromToken(
-  tokenId: string,
-  actorId: string
-): Promise<string | null> {
-  const supabase = await createClient();
-  const { data, error } = await supabase.rpc("create_account_with_owner", {
-    p_token_id: tokenId,
-    p_actor_id: actorId,
-  });
-
-  if (error) {
-    // eslint-disable-next-line no-console
-    console.error("createFromToken failed:", {
-      code: (error as any)?.code,
-      message: (error as any)?.message ?? String(error),
-    });
-    return null;
-  }
-
-  return data as string;
-}
-
-/** Cria conta via server-only (service_role) — caminho seguro por flag */
-export async function createFromTokenAsService(
-  tokenId: string,
-  actorId: string
-): Promise<string | null> {
-  const supabase = createServiceClient();
-  const { data, error } = await supabase.rpc("create_account_with_owner", {
-    p_token_id: tokenId,
-    p_actor_id: actorId,
-  });
-
-  if (error) {
-    // eslint-disable-next-line no-console
-    console.error("createFromTokenAsService failed:", {
-      code: (error as any)?.code,
-      message: (error as any)?.message ?? String(error),
-    });
-    return null;
-  }
-
-  return data as string;
-}
-
 /** Renomeia conta e ativa (pending_setup → active) */
 export async function renameAndActivate(
   accountId: string,
