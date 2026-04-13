@@ -1,10 +1,40 @@
-# Lousa — Admin Dashboard Reset vs1
+# Lousa — Admin Dashboard Reset vs2
 
 ## 1) Objetivo
 
 Remoção segura de tudo possível relacionado ao Admin Dashboard no repositório e no BD, com atualização dos documentos afetados.
 
 ## 2) Escopo da remoção
+
+2.1 Escopo de remoção
+
+* remover a superfície atual do admin ligada ao fluxo consultivo por tokens
+* remover do BD o fluxo legado de tokens, hoje sem dados operacionais
+* remover referências documentais ao fluxo consultivo por tokens
+
+2.2 Itens candidatos à remoção
+
+2.2.1 Repo
+
+* `app/admin/tokens/page.tsx`
+* `components/admin/CopyLinkButton.tsx`
+* `lib/admin/adapters/postSaleTokenAdapter.ts`
+* `lib/admin/contracts.ts`, se ficar exclusivo do fluxo de tokens
+* exports e trechos correspondentes em `lib/admin/index.ts` e `lib/admin/adapters/adminAdapter.ts`
+* `createFromToken()` e `createFromTokenAsService()` em `lib/access/adapters/accountAdapter.ts`
+
+2.2.2 BD
+
+* `public.post_sale_tokens`
+* `public.v_admin_tokens_with_usage`
+* `public.create_account_with_owner(uuid, uuid)`
+
+2.2.3 Documentos
+
+* `docs/roadmap.md`
+* `docs/schema.md`
+* `docs/base-tecnica.md`
+* `docs/design-system.md`, se houver referência à superfície atual
 
 ## 3) Inventário atual (repo)
 
@@ -201,6 +231,28 @@ Remoção segura de tudo possível relacionado ao Admin Dashboard no repositóri
 
 ## 7) Estratégia de substituição
 
+7.1 Premissas validadas
+
+* o fluxo consultivo por tokens foi decidido como removido definitivamente
+* o BD está zerado para `post_sale_tokens`
+* não há tokens usados, vinculados a contas ou válidos abertos
+* `is_platform_admin()` e `is_super_admin()` continuam necessários fora do painel legado
+
+7.2 Critérios mínimos de aceite
+
+* `npm run check` passa
+* login continua funcionando
+* `/a` e `/a/home` continuam funcionando
+* onboarding padrão sem token continua funcionando
+* acesso de conta existente continua funcionando
+* policies que dependem de `is_platform_admin()` continuam válidas
+* `v_audit_logs_norm` permanece intacta
+
+7.3 Observação de substituição
+
+* nesta etapa, o foco é remoção segura do legado
+* a substituição por um novo Admin Dashboard limpo fica para etapa posterior, após a limpeza validada
+
 ## 8) Decisões
 
 * objetivo definido: remoção segura de tudo possível relacionado ao Admin Dashboard no repositório e no BD, com atualização dos documentos afetados
@@ -210,4 +262,25 @@ Remoção segura de tudo possível relacionado ao Admin Dashboard no repositóri
 
 ## 9) Pendências
 
+* decidir depois da remoção se a rota `/admin` ficará inexistente temporariamente ou se nascerá uma home mínima nova
+* validar se `docs/design-system.md` ainda referencia `app/admin/tokens/page.tsx`
+* confirmar por smoke humano que nenhum fluxo ativo ainda dependia do legado removido
+
 ## 10) Próximos passos
+
+10.1 Pacote de execução
+
+* gerar lista final de arquivos do repo para remover e ajustar
+* gerar SQL idempotente para remover `post_sale_tokens`, `v_admin_tokens_with_usage` e `create_account_with_owner()`
+* listar exatamente os trechos documentais que precisarão ser atualizados
+
+10.2 Ordem obrigatória de execução
+
+* repo
+* BD
+* documentos
+* smoke test
+
+10.3 Uso com executor
+
+* esta lousa passa a servir como plano-base do caso para seguir o `docs/prompt-executor.md`
