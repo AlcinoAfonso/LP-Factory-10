@@ -95,7 +95,7 @@ Tarefas:
 5. proponha apenas o que realmente parece faltar
 6. não gere SQL
 7. entregue apenas análise e proposta preliminar
-````
+```
 
 ## 7. Prompt de proposta
 
