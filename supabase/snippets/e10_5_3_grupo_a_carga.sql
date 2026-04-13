@@ -10,6 +10,31 @@
 
 begin;
 
+do $$
+begin
+  if exists (
+    with staged_taxons(input_order, level, name, slug, parent_slug, is_active) as (
+      select *
+      from (
+        values
+          -- (10, 'segment', 'Marketing digital', 'marketing-digital', null, true),
+          -- (20, 'niche', 'SaaS de landing pages e conversão', 'saas-de-landing-pages-e-conversao', 'marketing-digital', true)
+          (0::int, ''::text, ''::text, ''::text, null::text, true::boolean)
+      ) as v(input_order, level, name, slug, parent_slug, is_active)
+      where slug <> ''
+    )
+    select 1
+    from staged_taxons st
+    left join public.business_taxons parent
+      on parent.slug = st.parent_slug
+    where st.level in ('niche', 'ultra_niche')
+      and st.parent_slug is not null
+      and parent.id is null
+  ) then
+    raise exception 'parent_slug informado não encontrado em business_taxons para niche/ultra_niche';
+  end if;
+end $$;
+
 -- =========================================================
 -- 1) STAGING DO LOTE APROVADO
 -- Preencher apenas após aprovação humana.
@@ -70,9 +95,10 @@ select
   parent.id as parent_id,
   st.is_active
 from staged_taxons st
-join public.business_taxons parent
+left join public.business_taxons parent
   on parent.slug = st.parent_slug
 where st.level = 'niche'
+  and (st.parent_slug is null or parent.id is not null)
 on conflict (slug) do update
 set
   level = excluded.level,
@@ -104,9 +130,10 @@ select
   parent.id as parent_id,
   st.is_active
 from staged_taxons st
-join public.business_taxons parent
+left join public.business_taxons parent
   on parent.slug = st.parent_slug
 where st.level = 'ultra_niche'
+  and (st.parent_slug is null or parent.id is not null)
 on conflict (slug) do update
 set
   level = excluded.level,
