@@ -708,7 +708,7 @@
 12.4.2 Escopo
 • Helper is_platform_admin() e validações RLS específicas
 • Rate limits diferenciados para operações administrativas
-• Middleware e guards (requirePlatformAdmin) para rotas /admin/**
+• Capacidade shared de privilégio administrativo (requirePlatformAdmin) preservada para uso em superfícies futuras, sem seção /admin ativa nesta etapa
 12.4.3 Critérios de Aceite
 • Apenas usuários platform_admin=true ou super_admin
 • Todas as ações administrativas auditadas em audit_logs

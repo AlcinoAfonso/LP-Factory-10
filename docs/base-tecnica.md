@@ -340,7 +340,7 @@
 
 5.2.2 Guards
 • guard SSR da seção cliente (PATH: app/a/_server/section-guard.ts): aplica allow/deny de /a/{account_slug} e redirecionamentos de bloqueio na seção cliente.
-• guard SSR da seção admin (PATH: app/admin/_server/section-guard.ts): aplica bloqueio de Admin quando não for super_admin ou platform_admin.
+• Infra shared de privilégio admin permanece ativa via helpers/guards (`requirePlatformAdmin()` e `requireSuperAdmin()`), sem superfície `/admin` ativa no runtime desta etapa.
 • guards legados compartilhados (PATH: lib/access/guards.ts): utilitários de validação de acesso usados pelo runtime.
 
 5.2.3 Providers
