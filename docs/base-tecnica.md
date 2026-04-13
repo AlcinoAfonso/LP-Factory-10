@@ -2,8 +2,8 @@
 
 0.1. Cabeçalho
 • Documento: Base Técnica LP Factory 10
-• Versão: v2.0.25
-• Data: 31/03/2026
+• Versão: v2.0.26
+• Data: 13/04/2026
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -258,12 +258,9 @@
 • Se for interna, schema e modelo de acesso devem ser definidos explicitamente
 • Toda tabela deve decidir se entra em auditoria, Trigger Hub ou fica fora
 
-3.9 Rate Limit (E7)
-• super_admin: 200 tokens/dia
-• platform_admin: 20 tokens/dia
-• 3 tokens/email/dia
-• 5 burst/5min
-• Índices obrigatórios: (created_by, created_at DESC); (email, created_at DESC).
+3.9 Rate Limit administrativo (estado atual)
+• Não há rate limit ativo do fluxo legado de tokens no runtime atual.
+• Qualquer nova política de limite para operações administrativas deve ser redefinida no contexto do novo Admin Dashboard (E12), sem reutilizar contrato legado removido.
 
 3.10 Anti-Patterns
 • Importar Supabase na UI (exceto SULB allowlist)
@@ -336,10 +333,10 @@
 5.2 Adapters, Guards, Providers
 
 5.2.1 Adapters
-• accountAdapter (PATH: lib/access/adapters/accountAdapter.ts): createFromToken(tokenId, actorId) → RPC create_account_with_owner; renameAndActivate(accountId, name, slug) atualiza name+subdomain e seta status='active'; renameAccountNoStatus(accountId, name, slug) renomeia sem alterar status; updateAccountNameCore(accountId, name) atualiza apenas accounts.name; setSetupCompletedAtIfNull(accountId) (infra E10.4.1) seta setup_completed_at somente quando NULL (idempotente); marcador setup_completed_at é deprecated sem uso no gating do runtime; normalizeAccountStatus usa allowlist ASTAT; fallback atual: 'active'.
+• accountAdapter (PATH: lib/access/adapters/accountAdapter.ts): renameAndActivate(accountId, name, slug) atualiza name+subdomain e seta status='active'; renameAccountNoStatus(accountId, name, slug) renomeia sem alterar status; updateAccountNameCore(accountId, name) atualiza apenas accounts.name; setSetupCompletedAtIfNull(accountId) (infra E10.4.1) seta setup_completed_at somente quando NULL (idempotente); marcador setup_completed_at é deprecated sem uso no gating do runtime; normalizeAccountStatus usa allowlist ASTAT; fallback atual: 'active'.
 • accountProfileAdapter (PATH: lib/access/adapters/accountProfileAdapter.ts): upsertAccountProfileV1({ accountId, niche, preferredChannel, whatsapp, siteUrl }) (E10.4.6).
 • accessContextAdapter (PATH: lib/access/adapters/accessContextAdapter.ts): lê v_access_context_v2; readAccessContext(subdomain) retorna allow=true ou contexto bloqueado (member_inactive/account_blocked) quando houver membership; getFirstAccountForCurrentUser(): se existir conta allow=true → retorna; se existir qualquer membership → não cria; sem membership → chama RPC ensure_first_account_for_current_user(); logs access_context_decision; adapter permite null; logs diferenciam deny vs error.
-• adminAdapter (PATH: lib/admin/adapters/adminAdapter.ts): valida super_admin / platform_admin; opera post_sale_tokens via postSaleTokenAdapter.
+• adminAdapter (PATH: lib/admin/adapters/adminAdapter.ts): valida super_admin / platform_admin e centraliza operações administrativas compatíveis com o runtime atual.
 
 5.2.2 Guards
 • guard SSR da seção cliente (PATH: app/a/_server/section-guard.ts): aplica allow/deny de /a/{account_slug} e redirecionamentos de bloqueio na seção cliente.
@@ -460,6 +457,9 @@ Regra: qualquer novo arquivo em app/auth/ não pode importar @supabase/* até se
 • Adapters vNext: seguir 3.14
 
 99. Changelog
+v2.0.26 (13/04/2026) — Limpeza documental pós-remoção do legado de tokens
+• Removidas referências ao onboarding consultivo por token no contrato técnico/runtime, incluindo menções de adapters e operações legadas.
+• Atualizada a seção de rate limit administrativo para refletir que o limite específico de tokens não faz parte do estado atual e será redefinido no novo Admin Dashboard (E12).
 v2.0.25 (31/03/2026) — Alinhamento documental de topologia e paths canônicos
 • Atualizados os paths canônicos em acesso, auth, onboarding, types, utils e admin, mantendo o escopo estritamente documental e sem mudança funcional de produto.
 v2.0.24 (31/03/2026) — Fase 1 do Core: extração dos guards SSR de seção

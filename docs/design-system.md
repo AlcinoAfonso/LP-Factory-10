@@ -104,7 +104,7 @@ Este documento consolida o estado atual do design system ao final do ciclo E6.4�
   - sem framework de skeleton
 
 ## Regras de uso
-- Usar os componentes base nas superfícies de auth/onboarding/admin conforme adoção incremental.
+- Usar os componentes base nas superfícies ativas de auth/onboarding e dashboards conforme adoção incremental.
 - Preservar contratos de props e fluxos existentes.
 - Evitar variações extras sem uso real imediato.
 - Priorizar tokens semânticos (`primary`, `ring`, `border`, `muted/accent`, `destructive`, `state`).
@@ -118,8 +118,6 @@ Este documento consolida o estado atual do design system ao final do ciclo E6.4�
   - aviso de ausência de token com `FeedbackMessage tone="warning"`
 - `app/a/[account]/page.tsx` (superfície `pending_setup`)
   - erro de formulário do server com `FeedbackMessage tone="error"`
-- `app/admin/tokens/page.tsx`
-  - estado sem resultados com `EmptyState`
 - `app/a/[account]/loading.tsx`
   - loading com `LoadingState`
 
