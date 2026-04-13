@@ -1,8 +1,8 @@
 0. Introdução
 
 0.1 Cabeçalho
-• Data: 09/04/2026
-• Versão: v1.5.36
+• Data: 13/04/2026
+• Versão: v1.5.37
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -26,8 +26,8 @@
 1.1 Status
 • Concluído (03/10/2025)
 1.2 Implementado
-• Tabelas: accounts, account_users, audit_logs, plans, partners, partner_accounts, post_sale_tokens
-• Views: v_access_context_v2, v_account_effective_limits, v_account_effective_limits_secure, v_admin_tokens_with_usage, v_audit_logs_norm, v_audit_logs_norm
+• Tabelas: accounts, account_users, audit_logs, plans, partners, partner_accounts
+• Views: v_access_context_v2, v_account_effective_limits, v_account_effective_limits_secure, v_audit_logs_norm
 • Constraints e índices otimizados
 1.3 Critérios de Aceite
 • Multi-tenant funcional (subdomain/domain UNIQUE)
@@ -65,7 +65,6 @@
 • accountAdapter
 • accessContextAdapter
 • adminAdapter
-• postSaleTokenAdapter
 • Tipos normalizados (DB → TS)
 • Logs estruturados
 
@@ -190,7 +189,6 @@
 • `components/layout/UserMenu.tsx`
 • `components/features/account-switcher/AccountSwitcherList.tsx`
 • `app/admin/layout.tsx`
-• `app/admin/tokens/page.tsx`
 • Pendências:
 • asset oficial de logo ainda não versionado no repo
 • formulários/componentes-base ainda não padronizados pelo design system
@@ -208,7 +206,6 @@
 • Aplicação mínima real:
 • Auth: login, sign up, forgot password, update password.
 • Onboarding: `pending_setup`.
-• Admin simples: `app/admin/tokens/page.tsx` (validação complementar do `Select`).
 • Docs: `docs/design-system.md` atualizado com componentes padronizados desta fase, API mínima, regras de uso, superfícies cobertas e itens fora do escopo.
 • ARTEFATOS_REPO:
 • Criados:
@@ -216,7 +213,6 @@
 • `components/ui/select.tsx`
 • Ajustados:
 • `app/a/[account]/page.tsx`
-• `app/admin/tokens/page.tsx`
 • `app/auth/update-password/page.tsx`
 • `components/forgot-password-form.tsx`
 • `components/login-form.tsx`
@@ -225,7 +221,7 @@
 • `components/ui/card.tsx`
 • `components/ui/input.tsx`
 • `docs/design-system.md`
-• Checks/QA (reportado): `npm ci` ok; `npm run check` ok; QA manual ok nas superfícies tocadas (Auth, `pending_setup` com Email/WhatsApp, `admin/tokens`).
+• Checks/QA (reportado): `npm ci` ok; `npm run check` ok; QA manual ok nas superfícies tocadas (Auth e `pending_setup` com Email/WhatsApp).
 • Fora do escopo mantido: `Textarea`, `EmptyState`, redesign amplo de dashboards, Supabase/migrations/SQL/policies/backend.
 
 6.6 Visual States & Feedback
@@ -239,10 +235,8 @@
 • `app/auth/update-password/page.tsx` (aviso sem token no novo padrão)
 • `app/a/[account]/page.tsx` (`pending_setup` ajustado)
 • `app/a/[account]/loading.tsx` (loading reutilizável)
-• `app/admin/tokens/page.tsx` (estado vazio preparado com `EmptyState`; não validado em runtime por provável descontinuação)
 • Docs: `docs/design-system.md` atualizado como documento consolidado do ciclo E6.4–E6.6 (componentes, API mínima, uso e superfícies cobertas).
 • Checks/QA (reportado): `npm ci` ok; `npm run check` ok; QA manual ok nas superfícies validadas (forgot password, update password sem token, `pending_setup`, loading da conta).
-• Observação residual (não bloqueante): `admin/tokens` vazio não foi validado manualmente em runtime; impacto baixo se a descontinuação se confirmar; se a tela permanecer ativa, validar em ciclo futuro.
 
 6.7 Dashboard Layout Patterns
 • Status: Planejado
@@ -254,40 +248,34 @@
 • Concluído (18/10/2025)
 
 7.2 Escopo (entrega concluída)
-• Criação de contas via token pós-venda
-• Painel /admin/tokens para geração e revogação de tokens
-• RPC create_account_with_owner() para criação segura e automatizada da conta
+• Fluxo consultivo legado por token encerrado e removido do runtime atual
+• Estrutura de conta consultiva mantida como referência histórica de produto (sem superfície ativa em /admin)
 
-7.3 Critérios de Aceite (entrega concluída)
-• Conta criada com contract_ref e status inicial pending_setup
-• Redirecionamento automático após onboarding
-• Banner de setup visível e editável
+7.3 Critérios de Aceite (estado atual)
+• Sem dependência ativa de token pós-venda no runtime
+• Onboarding legado por token removido de app e contrato de BD
 
 7.4 Pendências (migradas)
 • Refinamentos de UX migrados para Account Dashboard UX (ex-E7.2)
 
 7.5 Evolução — Conta Consultiva Update
 7.5.1 Status
-• Em evolução
+• Suspenso (aguardando novo Admin Dashboard)
 7.5.2 Objetivo
-• Ampliar /admin/tokens para funcionar como configurador de conta
+• Reintroduzir operações consultivas em nova superfície administrativa (etapa posterior)
 7.5.3 Escopo
-• Coleta de dados do cliente (CNPJ, razão social, contato, segmento, dores e metas)
-• Seleção de plano base (Lite, Pro, Ultra) e definição de recursos adicionais (grants)
-• Snapshot de recursos e preço conforme reunião consultiva
-• Token nos modos onboard (cliente ativa) ou handoff (entrega pronta)
-• Integração futura com criação opcional de LPs pré-configuradas
+• Definir novo fluxo administrativo sem reativar o legado removido
+• Coleta de dados do cliente e configuração comercial em arquitetura revisada
+• Integração futura com Billing Engine (E9) e Account Dashboard (E10)
 7.5.4 Critérios de Aceite
-• Token gerado apenas após configuração completa da conta
-• Conta criada com grants e preço definidos (snapshot)
-• Registro auditável de plano base e recursos customizados
+• Novo fluxo sem dependências de legado removido
+• Registro auditável e consistente com contratos atuais de app/DB
 7.5.5 Valor agregado
-• Elimina duplicidade entre fluxo técnico e comercial
-• Garante que toda conta consultiva já nasça configurada e pronta para ativação
+• Mantém a limpeza do legado intencional e reduz drift operacional
+• Permite evolução do Admin Dashboard com base estrutural atual
 7.5.6 Próximos Passos
-• Implementar campos token_type, billing_mode e plan_price_snapshot
-• Adicionar interface de seleção de recursos no painel Admin
-• Preparar suporte para LPs automáticas (modo handoff)
+• Definir briefing do novo Admin Dashboard consultivo
+• Validar escopo com E9/E10 antes de implementação
 
 
 8. E8 — Access Context & Governança
@@ -706,12 +694,12 @@
 
 12.2 Objetivo
 • Consolidar operações administrativas e consultivas em um painel central
-• Permitir gestão de contas, prospects, tokens e relatórios
+• Permitir gestão de contas, prospects e relatórios
 
 12.3 Escopo geral
 • Centralizar acesso de administradores e consultores
-• Unificar geração de tokens, coleta de dados de clientes e controle de status das contas
-• Servir como núcleo operacional das contas consultivas (pré e pós-venda)
+• Unificar coleta de dados de clientes e controle de status das contas
+• Servir como núcleo operacional das contas consultivas (pré e pós-venda) em nova implementação
 • Integrar com Billing Engine (E9) e Account Dashboard (E10)
 
 12.4 Platform Admin (Núcleo de Acesso)
@@ -720,23 +708,22 @@
 12.4.2 Escopo
 • Helper is_platform_admin() e validações RLS específicas
 • Rate limits diferenciados para operações administrativas
-• Middleware e guards (requirePlatformAdmin) para rotas /admin/**
+• Capacidade shared de privilégio administrativo (requirePlatformAdmin) preservada para uso em superfícies futuras, sem seção /admin ativa nesta etapa
 12.4.3 Critérios de Aceite
 • Apenas usuários platform_admin=true ou super_admin
 • Todas as ações administrativas auditadas em audit_logs
 
-12.5 Painel de Tokens / Configurador de Conta
+12.5 Operação consultiva no novo Admin Dashboard
 12.5.1 Status
-• Em evolução
+• Planejado
 12.5.2 Escopo
-• Evoluir /admin/tokens para configurador completo de contas consultivas
+• Definir superfície administrativa substituta para operação consultiva
 • Coleta de dados do cliente (CNPJ, contato, segmento, dores e metas)
 • Seleção de plano base (Lite, Pro, Ultra) e definição de recursos personalizados (grants)
 • Snapshot de recursos e preço conforme reunião consultiva
-• Token em modos onboard (antes da entrega) ou handoff (após LP pronta)
 12.5.3 Critérios de Aceite
-• Token gerado apenas após configuração completa
-• Conta criada com grants e preço definidos (snapshot)
+• Fluxo implementado sem dependência do legado removido
+• Conta operacional criada com grants e preço definidos (snapshot)
 12.5.4 Integrações
 • Billing Engine (E9)
 • Account Dashboard (E10)
@@ -745,11 +732,11 @@
 12.6.1 Status
 • Planejado
 12.6.2 Escopo
-• Listagem e filtro de contas ativas, pendentes e prospects (pré-token)
+• Listagem e filtro de contas ativas, pendentes e prospects
 • Campos principais (empresa, CNPJ, responsável, segmento, status, consultor)
-• Funções (visualizar, editar, reenviar token, gerar nova reunião)
+• Funções (visualizar, editar, registrar progresso consultivo, gerar nova reunião)
 12.6.3 Critérios de Aceite
-• Status sincronizado (draft, token_sent, active)
+• Status sincronizado (draft, configured, active)
 • Filtros por consultor, data e status
 
 12.7 Relatórios e Auditoria Consultiva
@@ -758,7 +745,7 @@
 12.7.2 Escopo
 • Monitoramento de criação e ativação de contas consultivas
 • Relatórios de uso, planos e recursos customizados
-• Logs de auditoria de tokens, billing e alterações de grants
+• Logs de auditoria de operações consultivas, billing e alterações de grants
 12.7.3 Critérios de Aceite
 • Métricas por consultor e por cliente
 • Exportação CSV/JSON
@@ -981,6 +968,9 @@
 • Definir o primeiro recorte funcional do LP Builder no roadmap
 
 99. Changelog
+v1.5.37 (13/04/2026)
+• Documentação alinhada ao estado pós-remoção do legado de tokens: E7/E7.5/E12.5 atualizados para registrar descontinuação do fluxo por token e planejamento do novo Admin Dashboard sem superfície legada ativa.
+• E1/E3 e registros de E6 ajustados para remover referências ativas ao fluxo legado descontinuado e às superfícies administrativas removidas.
 v1.5.36 (09/04/2026)
 • 10.5 ajustado para “Em evolução”, com dependência explícita de 10.5.2.
 • 10.5.2 adicionado como concluído (exec): base estrutural admin/interna de taxonomia, templates e guides, com migration `0006__e10_5_2_taxonomy_content_base.sql`.
@@ -996,9 +986,9 @@ v1.5.32 (20/03/2026)
 • E17 ajustado: removidos do roadmap os blocos operacionais de GitHub/openai-smoke e do pipeline `supabase-inspect`, preservando o caso de uso enxuto de checks determinísticos do Codex (com referência para `docs/base-tecnica.md`) e adicionando referência documental para que automações operacionais de produto, componentes consumidores, MCPs e evoluções dessa camada passem a ser documentados em `docs/automacoes.md`.
 • Renumeração local do E17 aplicada após a limpeza: o caso de sandbox passou a `17.4`, a referência documental passou a `17.5` e o item de Supabase STAGING descontinuado passou a `17.6`.
 v1.5.31 (10/03/2026)
-• 6.6 concluído (exec): adicionados estados reutilizáveis (FeedbackMessage/EmptyState/LoadingState) e Textarea, com aplicação mínima em Auth, `pending_setup` e loading da conta; `docs/design-system.md` consolidado (E6.4–E6.6) atualizado; observação residual de `admin/tokens` vazio registrada.
+• 6.6 concluído (exec): adicionados estados reutilizáveis (FeedbackMessage/EmptyState/LoadingState) e Textarea, com aplicação mínima em Auth, `pending_setup` e loading da conta; `docs/design-system.md` consolidado (E6.4–E6.6) atualizado.
 v1.5.30 (09/03/2026)
-• 6.5 concluído (exec): UI Component Library base (Button/Input/Card ajustados; Select e FormField criados) aplicada em Auth + `pending_setup` + `admin/tokens`, com `docs/design-system.md` atualizado (repo-only; sem Supabase/SQL/migrations).
+• 6.5 concluído (exec): UI Component Library base (Button/Input/Card ajustados; Select e FormField criados) aplicada em Auth + `pending_setup`, com `docs/design-system.md` atualizado (repo-only; sem Supabase/SQL/migrations).
 v1.5.29 (09/03/2026)
 • 6.4 concluído (exec): identidade visual mínima aplicada (repo-only) + `docs/design-system.md`; wordmark temporário até versionar asset oficial de logo; pendências e novos casos (6.5–6.7) registrados.
 v1.5.28 (06/03/2026)

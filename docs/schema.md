@@ -1,8 +1,8 @@
 0. Introdução
 
 0.1 Cabeçalho
-• Data da última atualização: 09/04/2026
-• Documento: LP Factory 10 — Schema (DB Contract) v1.0.10
+• Data da última atualização: 13/04/2026
+• Documento: LP Factory 10 — Schema (DB Contract) v1.0.11
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -91,20 +91,6 @@
 1.6.3 Policies (TBD: preencher nomes reais no Supabase)
 • Select: platform_admin/partner autorizado
 • Insert/Update/Delete: governado via hub/regras administrativas
-
-1.7 post_sale_tokens
-1.7.1 Chaves e campos
-• PK: id uuid
-• Campos: email, contract_ref, expires_at, used_at, used_by, account_id, meta, created_at, created_by
-1.7.2 Índices
-• (email, created_at DESC)
-• (created_by, created_at DESC)
-1.7.3 Segurança
-• Trigger Hub: não
-• RLS: ativo
-1.7.4 Policies (TBD: preencher nomes reais no Supabase)
-• Admin: gerir tokens (platform_admin/super_admin)
-• Próprio usuário: histórico (created_by = auth.uid()) quando aplicável
 
 1.8 account_profiles
 1.8.1 Chaves, constraints e relacionamentos
@@ -406,12 +392,6 @@
 2.4.4 Consumidores
 • APIs e dashboards com detalhes de plano
 
-2.5 v_admin_tokens_with_usage
-• Objetivo: /admin/tokens (E7)
-• Colunas garantidas: token_id, email, expires_at, is_used, is_valid, account_slug, created_at
-• Segurança: security_invoker = true
-• Consumidores: Admin (tokens)
-
 2.6 v_audit_logs_norm
 • Objetivo: leitura simplificada de audit_logs
 • Colunas garantidas: id, entity, entity_id, action, diff, account_id, actor_user_id, ip_address, created_at
@@ -420,13 +400,8 @@
 
 3. Functions / RPC
 
-3.1 Onboarding (E7)
-3.1.1 create_account_with_owner(token_id uuid, actor_id uuid) → uuid
-• Segurança: SECURITY DEFINER (aprovado)
-• search_path: public (obrigatório)
-• Efeito: cria conta pending_setup, vincula owner, consome token
-• Consumidores: onboarding UI + adapter
-3.1.2 _gen_provisional_slug() → text
+3.1 Onboarding
+3.1.1 _gen_provisional_slug() → text
 • Segurança: invoker (TBD confirmar)
 • search_path: public (obrigatório)
 • Efeito: slug temporário acc-{uuid8}
@@ -456,7 +431,6 @@
 • Segurança: SECURITY DEFINER (aprovado; usado em RLS)
 • search_path: public (obrigatório)
 3.3.3 SECURITY DEFINER allowlist
-• create_account_with_owner (motivo: onboarding; limites: TBD)
 • has_account_min_role (motivo: helper RLS; limites: somente leitura; sem writes)
 • ensure_first_account_for_current_user (motivo: F2 auto 1ª conta; limites: idempotente; cria 1ª conta + owner/active)
 
@@ -493,7 +467,6 @@
 4.2 Fora do Hub
 • plans: sem trigger
 • partners: sem trigger hub
-• post_sale_tokens: sem trigger
 
 5. Tipos canônicos
 • Fonte única: PATH: lib/types/status.ts
@@ -503,6 +476,10 @@
 • Nota: accounts.status não aceita trial (CHECK accounts_status_chk). No estado atual, views não contêm trial e o runtime/tipos (PATH) não incluem trial (drift resolvido).
 
 99. Changelog
+v1.0.11 (13/04/2026) — Remoção do legado de tokens no contrato de DB
+• Removidas do contrato as referências aos objetos legados de token/onboarding removidos na limpeza de BD.
+• Ajustado o inventário para refletir o estado pós-limpeza, preservando helpers admin/shared (`is_platform_admin()`, `is_super_admin()`, `ensure_first_account_for_current_user()`) e `v_audit_logs_norm`.
+
 v1.0.10 (09/04/2026) — E10.5.2: base estrutural de taxonomia, templates e guides
 • Adicionadas as tabelas: `business_taxons`, `business_taxon_aliases`, `account_taxonomy`, `content_templates`, `content_template_taxons`, `taxon_market_research`, `taxon_market_research_items` e `taxon_message_guides`.
 • Todas nascem com RLS ativo e policies CRUD admin-only (`is_super_admin()` OU `is_platform_admin()`).
