@@ -1,4 +1,4 @@
-3. Prompt para o Chat Executor vs9
+3. Prompt para o Chat Executor vs10
 
 Status: em desenvolvimento nesta lousa.Referência no repositório: docs/prompt-executor.md.
 
@@ -27,6 +27,8 @@ Status: em desenvolvimento nesta lousa.Referência no repositório: docs/prompt-
 • Preparar o plano de implementação com base no plano-base do caso e nas investigações realizadas.• Consolidar o que deve ser implementado, os impactos, as dependências e o escopo da etapa.• O plano de implementação deve listar os arquivos novos e ajustados, com path e objetivo curto de cada um.• Quando houver BD, deve listar também as estruturas a criar ou ajustar, com nome e objetivo curto.• Em conflito aparente entre investigação e plano-base do caso, prevalece o objetivo explícito do plano-base, salvo evidência concreta em contrário.
 
 3.3 Etapa 3 — Briefings de implementação
+
+• Na Etapa 3, a resposta deve conter apenas o briefing aplicável, limpo para copiar e colar.• Não incluir introdução, explicações, observações, fontes, N/A, próximo passo ou pergunta para continuar.
 
 3.3.1 Briefing para Codex
 
