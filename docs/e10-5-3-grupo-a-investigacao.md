@@ -52,9 +52,10 @@ Não entram neste processo:
 
 - `docs/e10-5-3-grupo-a-investigacao.md`
 
-### 3.2 Snippet read-only
+### 3.2 Snippets read-only
 
-- `supabase/snippets/e10_5_3_grupo_a_investigacao_validacao.sql`
+- `supabase/snippets/e10_5_3_grupo_a_investigacao_taxons.sql`
+- `supabase/snippets/e10_5_3_grupo_a_investigacao_aliases.sql`
 
 ### 3.3 Snippet de carga
 
@@ -63,14 +64,13 @@ Não entram neste processo:
 ## 4. Fluxo operacional obrigatório
 
 1. Ler este guia.
-2. Rodar o snippet read-only de investigação.
-3. Verificar de forma prática o que já existe em `business_taxons` e `business_taxon_aliases` (sem auditoria estrutural exaustiva nesta fase).
-4. Só depois disso montar a proposta do que falta.
-5. Submeter a proposta em formato canônico.
-6. Aguardar aprovação humana.
-7. Só após aprovação preencher e rodar o SQL de carga.
-8. Rodar a validação pós-carga.
-9. Confirmar se o lote carregado bate com o lote aprovado.
+2. Rodar `supabase/snippets/e10_5_3_grupo_a_investigacao_taxons.sql`.
+3. Rodar `supabase/snippets/e10_5_3_grupo_a_investigacao_aliases.sql`.
+4. Verificar de forma prática o que já existe em `business_taxons` e `business_taxon_aliases` (sem auditoria estrutural exaustiva nesta fase).
+5. Só depois disso montar a proposta do que falta.
+6. Submeter a proposta em formato canônico.
+7. Aguardar aprovação humana.
+8. Só após aprovação preencher e rodar o SQL de carga.
 
 ## 5. Regras fixas do processo
 
@@ -110,7 +110,7 @@ Objetivo:
 - apoiar proposta prática do que falta
 
 Tarefas:
-1. leia a saída do SQL read-only de investigação
+1. leia as saídas dos SQLs read-only de investigação (taxons primeiro, aliases depois)
 2. liste taxons já existentes que podem conflitar com a proposta
 3. liste aliases já existentes que podem conflitar com a proposta
 4. aponte possíveis duplicidades por:
@@ -185,23 +185,10 @@ Copiar e preencher exatamente neste formato:
 - [listar ambiguidades, riscos ou dependências]
 ```
 
-## 9. Checklist de validação pós-carga
-
-Após rodar a carga, conferir:
-
-1. os taxons esperados existem
-2. os níveis estão corretos
-3. os `parent_slug` esperados batem com a hierarquia real
-4. os aliases esperados existem
-5. não houve duplicidade operacional inesperada
-6. o lote carregado corresponde ao lote aprovado
-7. não entrou item fora do lote aprovado por engano
-8. o processo continua reaplicável sem drift
-
-## 10. Resultado esperado da etapa
+## 9. Resultado esperado da etapa
 
 Ao final, este caso deve deixar:
 
 1. um guia humano único em `docs/`
-2. um snippet read-only para investigar e validar
+2. dois snippets read-only para investigação preliminar (taxons e aliases)
 3. um snippet SQL canônico para carga idempotente
