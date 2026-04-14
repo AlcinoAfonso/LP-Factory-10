@@ -11,11 +11,21 @@ O Grupo A cobre apenas:
 
 Este guia existe para orientar:
 
-1. investigação anti-duplicidade
+1. investigação anti-duplicidade com foco operacional no que já existe
 2. proposta de novos taxons e aliases
 3. formatação canônica da saída aprovada
 4. carga via SQL canônico
 5. validação pós-carga
+
+Nesta rodada do Grupo A, a investigação inicial existe primeiro para:
+
+1. ver o que já existe
+2. não repropor o que já existe
+3. evitar duplicidade evidente de slug
+4. evitar duplicidade evidente de alias
+5. evitar hierarquia claramente incoerente
+
+Ela não precisa virar validação estrutural exaustiva antes da proposta e da aprovação humana.
 
 ## 2. Fora do escopo
 
@@ -47,8 +57,8 @@ Não entram neste processo:
 
 1. Ler este guia.
 2. Rodar o snippet read-only de investigação.
-3. Verificar o que já existe em `business_taxons` e `business_taxon_aliases`.
-4. Só depois disso montar a proposta.
+3. Verificar de forma prática o que já existe em `business_taxons` e `business_taxon_aliases` (sem auditoria estrutural exaustiva nesta fase).
+4. Só depois disso montar a proposta do que falta.
 5. Submeter a proposta em formato canônico.
 6. Aguardar aprovação humana.
 7. Só após aprovação preencher e rodar o SQL de carga.
@@ -58,12 +68,14 @@ Não entram neste processo:
 ## 5. Regras fixas do processo
 
 1. Nenhum novo taxon deve ser proposto sem investigação prévia.
-2. Nenhum alias deve ser proposto sem verificar colisões e duplicidades.
+2. Nenhum alias deve ser proposto sem verificar colisões e duplicidades evidentes.
 3. O SQL final de carga deve sair apenas do lote aprovado.
 4. O SQL de carga deve ser idempotente.
-5. O processo deve preservar a hierarquia pai-filho por `parent_slug`.
+5. O processo deve preservar a hierarquia pai-filho por `parent_slug`, evitando incoerência clara.
 6. O slug é a chave operacional estável do taxon neste processo.
 7. O vínculo de alias deve apontar para o `slug` aprovado do taxon-alvo.
+8. O processo deve evitar os dois extremos: permissividade excessiva e rigor excessivo que paralisa a proposta inicial.
+9. `ultra_niche` é permitido quando fizer sentido, mas não é obrigatório nesta proposta inicial.
 
 ## 6. Prompt de investigação anti-duplicidade
 
@@ -78,10 +90,12 @@ Escopo:
 
 Objetivo:
 - identificar o que já existe
-- evitar duplicidade de taxons
-- evitar colisão de slug
-- evitar alias redundante
-- evitar propor hierarquia incoerente
+- não repropor o que já existe
+- evitar duplicidade evidente de taxons
+- evitar colisão evidente de slug
+- evitar alias evidentemente redundante
+- evitar propor hierarquia claramente incoerente
+- apoiar proposta prática do que falta
 
 Tarefas:
 1. leia a saída do SQL read-only de investigação
@@ -92,9 +106,10 @@ Tarefas:
    4.2 slug igual
    4.3 alias_text_normalized igual
    4.4 mesma ideia distribuída em taxons diferentes
-5. proponha apenas o que realmente parece faltar
+5. proponha apenas o que realmente parece faltar nesta rodada
 6. não gere SQL
-7. entregue apenas análise e proposta preliminar
+7. não transforme esta etapa em auditoria estrutural exaustiva
+8. entregue apenas análise e proposta preliminar para aprovação humana
 ```
 
 ## 7. Prompt de proposta
