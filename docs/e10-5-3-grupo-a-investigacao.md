@@ -27,6 +27,13 @@ Nesta rodada do Grupo A, a investigação inicial existe primeiro para:
 
 Ela não precisa virar validação estrutural exaustiva antes da proposta e da aprovação humana.
 
+Nesta etapa, a curadoria de aliases deve ser enxuta e pragmática:
+
+1. evitar inflar aliases para cobrir microvariações meramente textuais
+2. não transformar grafias muito próximas, singular/plural óbvio ou pequenas diferenças de escrita em lista extensa de aliases
+3. priorizar aliases com valor semântico/comercial real (sigla, termo popular, sinônimo de mercado ou forma comercial realmente distinta)
+4. manter coerência com a estratégia documentada de similaridade textual leve no caso de taxonomia (item 51 de `docs/supa-up.md`), sem presumir implementação atual de `pg_trgm`
+
 ## 2. Fora do escopo
 
 Não entram neste processo:
@@ -76,6 +83,9 @@ Não entram neste processo:
 7. O vínculo de alias deve apontar para o `slug` aprovado do taxon-alvo.
 8. O processo deve evitar os dois extremos: permissividade excessiva e rigor excessivo que paralisa a proposta inicial.
 9. `ultra_niche` é permitido quando fizer sentido, mas não é obrigatório nesta proposta inicial.
+10. A lista de aliases desta rodada deve ser enxuta, priorizando cobertura semântica/comercial real.
+11. Não inflar aliases para microvariações textuais (grafias muito próximas, singular/plural óbvio e pequenas diferenças de escrita).
+12. O papel de similaridade textual leve documentado no item 51 de `docs/supa-up.md` é compatível com essa curadoria enxuta de aliases, sem afirmar adoção já implementada de `pg_trgm`.
 
 ## 6. Prompt de investigação anti-duplicidade
 
@@ -94,6 +104,8 @@ Objetivo:
 - evitar duplicidade evidente de taxons
 - evitar colisão evidente de slug
 - evitar alias evidentemente redundante
+- evitar inflar alias por microvariação textual
+- priorizar lacunas semânticas/comerciais reais na proposta de alias
 - evitar propor hierarquia claramente incoerente
 - apoiar proposta prática do que falta
 
@@ -106,10 +118,13 @@ Tarefas:
    4.2 slug igual
    4.3 alias_text_normalized igual
    4.4 mesma ideia distribuída em taxons diferentes
-5. proponha apenas o que realmente parece faltar nesta rodada
-6. não gere SQL
-7. não transforme esta etapa em auditoria estrutural exaustiva
-8. entregue apenas análise e proposta preliminar para aprovação humana
+5. ao analisar aliases faltantes, separe:
+   5.1 aliases semânticos/comerciais relevantes (sigla, termo popular, sinônimo de mercado, forma comercial distinta)
+   5.2 microvariações textuais que não justificam novo alias nesta rodada
+6. proponha apenas o que realmente parece faltar nesta rodada
+7. não gere SQL
+8. não transforme esta etapa em auditoria estrutural exaustiva
+9. entregue apenas análise e proposta preliminar para aprovação humana
 ```
 
 ## 7. Prompt de proposta
@@ -132,8 +147,12 @@ Regras:
    4.2 niche
    4.3 ultra_niche
 5. use slug estável e legível
-6. não gere SQL
-7. entregue exatamente no template canônico pedido
+6. proponha aliases em lista enxuta, priorizando valor semântico/comercial real
+7. não crie alias só para microvariações textuais (grafia muito próxima, singular/plural óbvio, pequenas diferenças de escrita)
+8. considere como prioritários aliases de sigla, termo popular, sinônimo de mercado e forma comercial realmente distinta
+9. mantenha essa curadoria coerente com a estratégia de similaridade textual leve documentada para taxonomia, sem afirmar implementação atual de `pg_trgm`
+10. não gere SQL
+11. entregue exatamente no template canônico pedido
 
 Saída esperada:
 - taxons propostos
