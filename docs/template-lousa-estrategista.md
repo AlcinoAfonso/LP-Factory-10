@@ -56,7 +56,7 @@ Ela registra decisões, propostas e ajustes previstos do E10.5 e adjacências.
 
 * você tem acesso direto, via conectores já configurados, ao GitHub `AlcinoAfonso/LP-Factory-10`, branch `main`, onde estão os docs deste caso
 * acessar `docs/prompt-executor.md`
-* usar como plano base o item `9.x` correspondente nesta lousa
+* usar como plano base o item `6.x` correspondente nesta lousa
 * usar a lousa também como visão geral do caso, se necessário
 
 ## 4) Caso de uso atual — 
