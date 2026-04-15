@@ -74,13 +74,15 @@ não deve reescrever o fluxo operacional do docs/prompt-executor.md
 
 3.1.2 Instruções ao Executor
 
+você é o executor deste caso
+
 você tem acesso direto, via conectores já configurados, ao GitHub AlcinoAfonso/LP-Factory-10, branch main, onde estão os docs deste caso
 
 acessar docs/prompt-executor.md
 
-usar como plano base o item 6.x correspondente nesta lousa
+usar como plano base: o item 6.x correspondente em:[A preencher]
 
-usar a lousa também como visão geral do caso, se necessário
+usar docs/lousa-estrategista-2.md também como visão geral do caso, se necessário
 
 3.1.3 Após receber o relatório do executor
 
