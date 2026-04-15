@@ -2,8 +2,8 @@
 
 0.1. Cabeçalho
 • Documento: Base Técnica LP Factory 10
-• Versão: v2.0.26
-• Data: 13/04/2026
+• Versão: v2.0.27
+• Data: 15/04/2026
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -27,6 +27,7 @@
 • Deploy: Vercel (preview + produção)
 • Projeto Vercel do app (Core): `lp-factory-10`
 • Projeto Vercel de serviços: `lpf-10-services`
+• Nota operacional (services): deploy isolado no projeto `lpf-10-services` com `Root Directory = services/mcp-supabase-inspect`, `Include files outside the root directory in the Build Step = OFF` e `Ignored Build Step` customizado para reduzir builds desnecessários fora do escopo do service
 • Domínio oficial do app (produção): https://lp-factory-10.vercel.app
 • Base URL das API routes do app: https://lp-factory-10.vercel.app/api
 • Endpoint canônico da MCP Supabase Inspect (serviço dedicado): https://lpf-10-services.vercel.app/api/mcp
@@ -457,6 +458,9 @@ Regra: qualquer novo arquivo em app/auth/ não pode importar @supabase/* até se
 • Adapters vNext: seguir 3.14
 
 99. Changelog
+v2.0.27 (15/04/2026) — Ajuste operacional Vercel do projeto de services
+• Registrada nota operacional do projeto `lpf-10-services` com boundary de deploy por `Root Directory = services/mcp-supabase-inspect`.
+• Registradas as regras operacionais `Include files outside the root directory in the Build Step = OFF` e `Ignored Build Step` customizado para reduzir builds desnecessários fora do escopo do service.
 v2.0.26 (13/04/2026) — Limpeza documental pós-remoção do legado de tokens
 • Removidas referências ao onboarding consultivo por token no contrato técnico/runtime, incluindo menções de adapters e operações legadas.
 • Atualizada a seção de rate limit administrativo para refletir que o limite específico de tokens não faz parte do estado atual e será redefinido no novo Admin Dashboard (E12).
