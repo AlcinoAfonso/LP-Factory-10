@@ -1,4 +1,4 @@
-3. Prompt para o Chat Executor vs10
+3. Prompt para o Chat Executor vs11
 
 Status: em desenvolvimento nesta lousa.Referência no repositório: docs/prompt-executor.md.
 
@@ -52,7 +52,7 @@ Status: em desenvolvimento nesta lousa.Referência no repositório: docs/prompt-
 
 3.7 Etapa 7 — Relatório final
 
-O relatório final deve seguir exatamente o template abaixo e servir de base para atualização documental.• O executor deve usar os mesmos rótulos e a mesma ordem dos blocos do template.• O executor não deve substituir os blocos do template por narrativa livre.• O executor não deve renomear seções do template.• Quando um campo não se aplicar ao caso, deve marcar N/A explicitamente.• O relatório final deve registrar apenas o que efetivamente ocorreu no caso, marcando N/A quando não se aplicar.• Quando o caso envolver BD estrutural, o relatório deve listar as tabelas criadas ou ajustadas e resumir a função de cada uma.
+O relatório final deve seguir exatamente o template abaixo e servir de base para atualização documental.• O executor deve usar os mesmos rótulos e a mesma ordem dos blocos do template.• O executor não deve substituir os blocos do template por narrativa livre.• O executor não deve renomear seções do template.• Quando um campo não se aplicar ao caso, deve marcar N/A explicitamente.• O relatório final deve registrar apenas o que efetivamente ocorreu no caso, marcando N/A quando não se aplicar.• Em Artefatos, “Arquivos ajustados” deve listar apenas arquivos que já existiam antes do caso. Arquivos criados no próprio caso devem aparecer apenas em “Arquivos criados”, mesmo que tenham sido editados depois.• Quando o caso envolver BD estrutural, o relatório deve listar as tabelas criadas ou ajustadas e resumir a função de cada uma.
 
 Implementado / Definido• [1–5 bullets]
 
