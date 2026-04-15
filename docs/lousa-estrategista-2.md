@@ -1,9 +1,9 @@
-# Título: E10.5 e adjacências imediatas vs10
+# Título: E10.5 e adjacências imediatas vs11
 
 ## 1) Objetivo
 
 Esta lousa se baseia no repositório, mas não o espelha.
-Ela registra decisões, propostas e ajustes previstos do E10.5 e adjacências.
+Ela registra o caso de uso atual, suas decisões, ambiguidades, propostas, fluxo e esboço de execução.
 
 ## 2) Fontes
 
@@ -17,6 +17,7 @@ Ela registra decisões, propostas e ajustes previstos do E10.5 e adjacências.
 ### 2.2 Docs de apoio e watchlist
 
 * `docs/prompt-executor.md`
+* `docs/prompt-abc.md`
 * `docs/template-briefing-codex.md`
 * `docs/supa-up.md`
 * `docs/vercel-up.md`
@@ -46,6 +47,7 @@ Ela registra decisões, propostas e ajustes previstos do E10.5 e adjacências.
 #### 3.1.1 Como gerar o plano base do caso
 
 * o plano base do caso deve ser gerado em cima do esboço já definido na lousa
+* quando o esboço for consolidado, o título da etapa deixa de ser esboço e passa a ser plano base
 * deve recortar apenas a etapa correspondente
 * deve apontar os documentos canônicos da etapa
 * deve trazer um objetivo bem traçado, deixando claro o que a etapa entrega e o que fica fora dela
@@ -56,8 +58,21 @@ Ela registra decisões, propostas e ajustes previstos do E10.5 e adjacências.
 
 * você tem acesso direto, via conectores já configurados, ao GitHub `AlcinoAfonso/LP-Factory-10`, branch `main`, onde estão os docs deste caso
 * acessar `docs/prompt-executor.md`
-* usar como plano base o item `9.x` correspondente nesta lousa
+* usar como plano base o item `6.x` correspondente nesta lousa
 * usar a lousa também como visão geral do caso, se necessário
+
+#### 3.1.3 Após receber o relatório do executor
+
+* etapa 1: ajustar a lousa com base no relatório recebido do executor
+* após concluir a etapa 1, a IA deve parar e aguardar comando do proprietário do produto para seguir
+* etapa 2: debater com o proprietário do produto os casos de uso propostos pelo executor
+* após concluir a etapa 2, a IA deve parar e aguardar comando do proprietário do produto para seguir
+* etapa 3: antes de entregar qualquer ABC, a IA deve avaliar os docs alvos do caso e informar quais precisam de atualização e quais não precisam de atualização
+* na etapa 3, a IA deve avaliar também se `docs/design-system.md` deve receber atualização documental própria, com base no impacto real do caso sobre UI, componentes, padrões visuais e superfícies do produto
+* após concluir essa triagem documental da etapa 3, a IA deve parar e aguardar comando do proprietário do produto para seguir
+* depois da triagem documental, a IA deve gerar o ABC de cada doc que exigir ajuste, com base no relatório do executor, na lousa já ajustada, na definição sobre novo caso de uso e em `docs/prompt-abc.md`
+* para os docs cobertos por `docs/prompt-abc.md`, a IA deve seguir esse documento e entregar um ABC por vez
+* após concluir cada ABC, a IA deve parar e aguardar comando do proprietário do produto para seguir
 
 ## 4) Caso de uso atual — E10.5 e adjacências imediatas
 
@@ -310,7 +325,7 @@ Ela registra decisões, propostas e ajustes previstos do E10.5 e adjacências.
 * o lead não converte agora
 * pode seguir para uma trilha futura de maturação
 
-## 6) Esboço / plano base do caso
+## 6) Plano base do caso
 
 ### 6.1 Implementado — E10.5.2 Criar a base do BD
 
@@ -343,16 +358,15 @@ Ela registra decisões, propostas e ajustes previstos do E10.5 e adjacências.
 * usar como referência estrutural `docs/schema.md`
 * usar como referência de regras técnicas `docs/base-tecnica.md`
 
-### 6.2 Parcialmente implementado — E10.5.3 Kit operacional de expansão do Grupo A
+### 6.2 Implementado — E10.5.3 Kit operacional de expansão do Grupo A
 
-* status: parcialmente implementado
-* entregue até agora: primeiro lote piloto do Grupo A
-* resultado atual: segmento `Marketing digital`, nicho `SaaS de landing pages e conversão` e 5 aliases iniciais carregados
-* formato canônico inicial de carga fechado como SQL idempotente
-* artefatos versionados de referência já existentes para esta etapa: `docs/roadmap.md` e `docs/supa-up.md`
-* em `docs/supa-up.md`, usar como apoio principal os itens `#40` e `#51`
-* artefatos operacionais próprios desta etapa em `docs/` e `supabase/snippets/` ainda seguem pendentes de materialização no repositório
-* novo foco da etapa: criar o kit operacional para que outro chat investigue, proponha e carregue novos dados sem drift
+* status: implementado em `main`
+* guia operacional do Grupo A versionado em `docs/`
+* snippets SQL operacionais do Grupo A versionados em `supabase/snippets/`
+* leitura pragmática desta rodada fechada como: investigar o que já existe, evitar duplicidade evidente, propor o que falta, aprovar, carregar e validar
+* investigação operacional consolidada em 2 snippets, utilizáveis tanto no momento pré-carga quanto no pós-carga
+* snippet de carga ajustado para refletir a flexibilidade real de `business_taxons`
+* carga prática reportada como concluída para o ultra_niche `implante-dentario`, com pai `odontologia`, e alias `implantodontia`
 
 #### 6.2.1 Objetivo
 
@@ -361,7 +375,6 @@ Ela registra decisões, propostas e ajustes previstos do E10.5 e adjacências.
 * evitar carga manual solta e evitar drift entre chats
 * arquivar os prompts operacionais desta etapa em `docs/`
 * arquivar os SQLs/snippets operacionais desta etapa em `supabase/snippets/`
-* `supabase/snippets/` é a pasta-alvo dos snippets SQL operacionais do projeto e ainda não está materializada no repositório nesta conversa
 
 #### 6.2.2 Escopo desta etapa
 
@@ -381,25 +394,29 @@ Ela registra decisões, propostas e ajustes previstos do E10.5 e adjacências.
 * `supa#40` permanece como apoio operacional desta etapa
 * os prompts operacionais do Grupo A devem ser versionados em `docs/`
 * os SQLs/snippets operacionais do Grupo A devem ser versionados em `supabase/snippets/`
-* a criação/materialização dessa pasta e dos primeiros snippets continua pendente nesta etapa
 * o cadastro inicial de aliases no Grupo A deve priorizar aliases de sentido, comerciais e realmente relevantes de mercado
 * o desenho dos aliases nesta etapa já deve considerar que o `supa#51` existirá depois, na etapa E10.5.6
 * o Grupo A não precisa tentar cobrir exaustivamente variações leves de grafia
 * essas variações serão parcialmente absorvidas depois por `supa#51` na etapa E10.5.6
 
-#### 6.2.4 Updates desta etapa
+#### 6.2.4 Artefatos versionados desta etapa
 
-* `supa#40` deve apoiar a governança e o QA do Grupo A
-* a materialização em `supabase/snippets` continua pendente
-* referência de update desta etapa: `docs/supa-up.md`
+* `docs/e10-5-3-grupo-a-investigacao.md`
+* `supabase/snippets/e10_5_3_grupo_a_carga.sql`
+* `supabase/snippets/e10_5_3_grupo_a_investigacao_taxons.sql`
+* `supabase/snippets/e10_5_3_grupo_a_investigacao_aliases.sql`
 
-#### 6.2.5 Resultado esperado da etapa
+#### 6.2.5 Resultado da etapa
 
-* template de investigação anti-duplicidade fechado
-* prompt de proposta de novos taxons e aliases fechado
-* template canônico de saída fechado
-* SQL canônico de carga do Grupo A fechado
-* checklist de validação pós-carga fechado
+* guia operacional do Grupo A criado e versionado no repositório
+* investigação operacional consolidada em 2 snippets
+* snippet de carga do Grupo A criado e ajustado
+* `parent_slug` nulo aceito para `niche` e `ultra_niche`
+* `parent_slug` preenchido e inexistente aborta explicitamente a carga
+* carga prática reportada como concluída para `implante-dentario` → pai `odontologia` → alias `implantodontia`
+* QA e smoke reportados como feitos
+* caso de uso reportado como funcionando, com evidência funcional
+* nenhuma pendência obrigatória aberta neste recorte
 
 #### 6.2.6 Fora do escopo
 
@@ -418,50 +435,67 @@ Ela registra decisões, propostas e ajustes previstos do E10.5 e adjacências.
 * `docs/roadmap.md`
 * `docs/supa-up.md`
 
-### 6.3 Esboço — E10.5.4 Kit operacional de expansão do Grupo C
+### 6.3 Plano base — E10.5.4 Kit operacional de expansão do Grupo C
 
 #### 6.3.1 Objetivo
 
 * criar o kit operacional de expansão do Grupo C
 * padronizar como outro chat deve investigar lacunas, propor base estratégica por taxon, formatar a saída e entregar o SQL final
-* evitar carga manual solta e evitar drift entre chats
-* arquivar os prompts operacionais desta etapa em `docs/`
-* arquivar os SQLs/snippets operacionais desta etapa em `supabase/snippets/`
-* `supabase/snippets/` é a pasta-alvo dos snippets SQL operacionais do projeto e ainda não está materializada no repositório nesta conversa
+* reduzir drift entre chats e evitar carga manual solta
+* versionar os artefatos operacionais desta etapa em `docs/` e `supabase/snippets/`
 
-#### 6.3.2 Escopo desta etapa
+#### 6.3.2 Recorte da etapa
 
-* criar o template de investigação do que já existe em `taxon_market_research`, `taxon_market_research_items` e `taxon_message_guides`
-* criar o prompt de proposta da primeira base estratégica por taxon
-* criar o template canônico de saída dos dados aprovados do Grupo C
-* criar o SQL canônico de carga do Grupo C
-* criar o checklist de validação pós-carga
+* esta etapa cobre apenas o Grupo C
+* tabelas-alvo:
 
-#### 6.3.3 Decisões fechadas desta etapa
+  * `taxon_market_research`
+  * `taxon_market_research_items`
+  * `taxon_message_guides`
 
-* o Grupo C cobre `taxon_market_research`, `taxon_market_research_items` e `taxon_message_guides`
+#### 6.3.3 Entregas esperadas
+
+* template de investigação do que já existe nas 3 tabelas do Grupo C
+* prompt de proposta da primeira base estratégica por taxon
+* template canônico de saída dos dados aprovados do Grupo C
+* SQL canônico de carga do Grupo C
+* checklist de validação pós-carga
+* artefatos versionados em `docs/` e `supabase/snippets/`
+
+#### 6.3.4 Documentos canônicos desta etapa
+
+* `docs/prompt-executor.md`
+* `docs/schema.md`
+* `docs/roadmap.md`
+* `docs/supa-up.md`
+
+#### 6.3.5 Decisões já fechadas desta etapa
+
+* o Grupo C cobre apenas `taxon_market_research`, `taxon_market_research_items` e `taxon_message_guides`
 * o processo inicial será manual via chat, com aprovação antes da carga
 * outro chat deve primeiro investigar para evitar duplicidades e lacunas
 * a carga final deve sair em SQL no formato canônico definido nesta etapa
 * os prompts operacionais do Grupo C devem ser versionados em `docs/`
 * os SQLs/snippets operacionais do Grupo C devem ser versionados em `supabase/snippets/`
-* a criação/materialização dessa pasta e dos primeiros snippets continua pendente nesta etapa
 
-#### 6.3.4 Updates desta etapa
+#### 6.3.6 O que a etapa deve responder
 
-* `supa#40` deve apoiar a governança e o QA do Grupo C
-* a materialização em `supabase/snippets` continua pendente
-* referência de update desta etapa: `docs/supa-up.md`
+* qual taxon terá a primeira base estratégica registrada
+* quais campos e blocos mínimos entram em `taxon_market_research`
+* quais tipos de itens entram em `taxon_market_research_items`
+* como estruturar `taxon_message_guides` para os contextos iniciais sem inflar a base
+* qual será o formato canônico de saída aprovado antes da carga
 
-#### 6.3.5 Resultado esperado da etapa
+#### 6.3.7 Critério de execução
 
-* template de investigação do Grupo C fechado
-* prompt de proposta da base estratégica por taxon fechado
-* template canônico de saída do Grupo C fechado
-* SQL canônico de carga do Grupo C fechado
-* checklist de validação pós-carga fechado
+* investigar primeiro o que já existe
+* evitar duplicidade e lacunas evidentes
+* propor a base estratégica inicial de forma enxuta e utilizável
+* aprovar antes de carregar
+* carregar por SQL canônico
+* validar pós-carga com checklist fechado
 
-#### 6.3.6 Fora do escopo
+#### 6.3.8 Fora do escopo
 
 * templates comerciais do Grupo B
 * `account_taxonomy`
@@ -470,12 +504,18 @@ Ela registra decisões, propostas e ajustes previstos do E10.5 e adjacências.
 * adapters
 * `supa#51` e matching textual leve
 
-#### 6.3.7 Documentos canônicos desta etapa
+#### 6.3.9 Investigação que pode ser necessária no repositório
 
-* `docs/prompt-executor.md`
-* `docs/schema.md`
-* `docs/roadmap.md`
-* `docs/supa-up.md`
+* confirmar se `supabase/snippets/` já foi materializada no `main`
+* verificar se já existem artefatos operacionais do Grupo C em `docs/` ou `supabase/snippets/`
+* confirmar no `docs/schema.md` o contrato atual das 3 tabelas do Grupo C antes de definir o template canônico
+* verificar em `docs/roadmap.md` se já existe algum taxon ou contexto inicial explicitamente priorizado para a primeira carga do Grupo C
+
+#### 6.3.10 Resultado final da etapa
+
+* kit operacional do Grupo C fechado
+* artefatos operacionais versionados
+* base mínima estratégica pronta para ser proposta, aprovada, carregada e validada sem drift
 
 ### 6.4 Esboço — E10.5.5 Carga inicial dos templates comerciais (Grupo B)
 
