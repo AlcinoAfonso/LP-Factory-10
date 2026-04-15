@@ -1,9 +1,9 @@
 0. Introdução
 
 0.1 Cabeçalho
-• Data: 29/03/2026
-• Versão: v1.0
-• Status: Estrutura inicial criada
+• Data: 15/04/2026
+• Versão: v1.1
+• Status: Atualizado com boundary operacional de deploy do service MCP
 
 0.2 Função do documento
 Registrar a camada `services` do LP Factory 10 como referência oficial e amigável para humano para services implantáveis, MCPs, endpoints e infraestrutura reutilizável com identidade própria, sem expor segredos.
@@ -28,6 +28,12 @@ Registrar a camada `services` do LP Factory 10 como referência oficial e amigá
 1.1.3 Onde acessar
 • Projeto Vercel: `lpf-10-services`
 • Endpoint canônico: `https://lpf-10-services.vercel.app/api/mcp`
+
+1.1.3.1 Boundary operacional de deploy
+• Projeto Vercel: `lpf-10-services`
+• `Root Directory`: `services/mcp-supabase-inspect`
+• `Include files outside the root directory in the Build Step`: OFF
+• `Ignored Build Step`: customizado para reduzir builds desnecessários quando não houver mudança no service
 
 1.1.4 Status
 • implementado em serviço dedicado
@@ -58,7 +64,12 @@ Registrar a camada `services` do LP Factory 10 como referência oficial e amigá
 • `docs/services.md` passa a ser a referência oficial e amigável para humano da camada `services`
 • detalhes técnicos expandidos devem permanecer no README local de cada service
 • novos services devem seguir o mesmo padrão documental: catálogo curto em `docs/services.md` + README técnico local no diretório do service
+• quando um service compartilhado com o Core tiver deploy independente no mesmo repositório, registrar explicitamente a boundary operacional (projeto Vercel, Root Directory e regras de build) para evitar drift documental e builds desnecessários
 
 99. Changelog
+v1.1 (15/04/2026)
+• registrada a boundary operacional de deploy do `LPF Supabase Inspect MCP` no projeto Vercel `lpf-10-services`
+• adicionadas as regras operacionais `Root Directory`, `Include files outside the root directory in the Build Step = OFF` e `Ignored Build Step` customizado
+• atualizada a observação de manutenção para exigir boundary operacional explícita em novos services com deploy independente e repositório compartilhado
 v1.0 (29/03/2026)
 • criado `docs/services.md` como documento oficial da camada `services`
