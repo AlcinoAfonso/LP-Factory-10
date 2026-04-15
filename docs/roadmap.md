@@ -1,8 +1,8 @@
 0. Introdução
 
 0.1 Cabeçalho
-• Data: 13/04/2026
-• Versão: v1.5.37
+• Data: 15/04/2026
+• Versão: v1.5.38
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -668,9 +668,42 @@
 • Q1, Q2 e Q3 da conferência estrutural não foram validados até o fim, embora Q4, Q5, Q6 e Q7 tenham sido aprovados
 • a migration histórica final foi entregue em conteúdo, mas ainda não foi commitada no repositório nesta conversa
 
-10.5.3 Popular base inicial de taxons, aliases, templates e vínculos
-• Status: Planejado
-• Objetivo: popular a base inicial criada no E10.5.2 com os primeiros taxons, aliases, templates e vínculos necessários para evolução do E10.5.
+10.5.3 Kit operacional de expansão do Grupo A
+• Status: Concluído (exec) (15/04/2026)
+• Objetivo: padronizar a expansão de `business_taxons` e `business_taxon_aliases` com investigação, proposta, aprovação, carga e validação sem drift entre chats.
+• Implementado (estado final):
+• guia operacional do Grupo A versionado em `docs/`
+• snippets SQL operacionais do Grupo A versionados em `supabase/snippets/`
+• leitura pragmática desta rodada fechada como: investigar o que já existe, evitar duplicidade evidente, propor o que falta, aprovar, carregar e validar
+• investigação operacional consolidada em 2 snippets, utilizáveis tanto no momento pré-carga quanto no pós-carga
+• snippet de carga ajustado para refletir a flexibilidade real de `business_taxons`
+• `parent_slug` nulo aceito para `niche` e `ultra_niche`
+• `parent_slug` preenchido e inexistente aborta explicitamente a carga
+• carga prática reportada como concluída para o ultra_niche `implante-dentario`, com pai `odontologia`, e alias `implantodontia`
+• ARTEFATOS_REPO:
+• Criados:
+• `docs/e10-5-3-grupo-a-investigacao.md`
+• `supabase/snippets/e10_5_3_grupo_a_carga.sql`
+• `supabase/snippets/e10_5_3_grupo_a_investigacao_taxons.sql`
+• `supabase/snippets/e10_5_3_grupo_a_investigacao_aliases.sql`
+• QA/Smoke:
+• QA feito
+• Smoke feito
+• Caso de uso funcionando
+• Evidência funcional reportada
+• Pendências:
+• Nenhuma pendência obrigatória aberta neste recorte
+
+10.5.3.1 Curadoria operacional de aliases enxutos vs microvariações textuais
+• Status: Briefing
+• Objetivo: definir o critério operacional de curadoria de aliases no Grupo A, separando o que deve ser cadastrado manualmente como alias do que deve ficar para matching textual leve futuro.
+• Escopo:
+• definir critérios para priorizar aliases de sentido, comerciais e realmente relevantes de mercado
+• definir critérios para não cadastrar exaustivamente microvariações leves de grafia
+• explicitar a fronteira entre a curadoria manual do Grupo A e o papel futuro do `supa#51` no E10.5.6
+• Dependências:
+• E10.5.3
+• E10.5.6
 
 
 11. E11 — Gestão de Usuários e Convites
@@ -968,6 +1001,9 @@
 • Definir o primeiro recorte funcional do LP Builder no roadmap
 
 99. Changelog
+v1.5.38 (15/04/2026)
+• 10.5.3 atualizado para Concluído (exec): kit operacional do Grupo A versionado em `docs/` e `supabase/snippets/`, com investigação consolidada, regra de `parent_slug` e carga prática reportada para `implante-dentario`.
+• Adicionado 10.5.3.1 (Briefing): curadoria operacional de aliases enxutos vs microvariações textuais, para separar cadastro manual do Grupo A e matching leve futuro do E10.5.6.
 v1.5.37 (13/04/2026)
 • Documentação alinhada ao estado pós-remoção do legado de tokens: E7/E7.5/E12.5 atualizados para registrar descontinuação do fluxo por token e planejamento do novo Admin Dashboard sem superfície legada ativa.
 • E1/E3 e registros de E6 ajustados para remover referências ativas ao fluxo legado descontinuado e às superfícies administrativas removidas.
