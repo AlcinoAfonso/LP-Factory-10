@@ -212,6 +212,18 @@ Workflow: `.github/workflows/pipeline-supabase-inspect.yml`
 Runtime: `automations/supabase-inspect/`
 Referência estrutural: `docs/base-tecnica.md`
 
+3.1.1 Supabase Inspect — presets opcionais de verificação
+
+Objetivo:
+Registrar a possibilidade futura de presets opcionais no `supabase-inspect` para reduzir SQL manual recorrente e apoiar a verificação do estado real do BD, sem substituir o modo livre por SQL nem o contrato canônico de `docs/schema.md`.
+
+Status:
+Proposto
+
+Observações:
+Exemplos futuros de presets: `schema_columns`, `rls_policies`, `indexes`, `triggers`, `functions`, `views`.
+A necessidade real desses presets deve ser avaliada antes de implementação.
+
 3.2 Pipeline Docs Apply Report
 Objetivo:
 Aplicar reports JSON em documentos Markdown e automatizar branch, commit e Pull Request para revisão humana.
