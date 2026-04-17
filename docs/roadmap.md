@@ -1,8 +1,8 @@
 0. Introdução
 
 0.1 Cabeçalho
-• Data: 15/04/2026
-• Versão: v1.5.38
+• Data: 17/04/2026
+• Versão: v1.5.40
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -726,88 +726,21 @@
 • Em desenvolvimento
 
 12.2 Objetivo
-• Consolidar operações administrativas e consultivas em um painel central
-• Permitir gestão de contas, prospects e relatórios
+• Registrar o reinício do Admin Dashboard com foco exclusivo na base mínima de privilégio admin/shared access já existente no repositório.
 
-12.3 Escopo geral
-• Centralizar acesso de administradores e consultores
-• Unificar coleta de dados de clientes e controle de status das contas
-• Servir como núcleo operacional das contas consultivas (pré e pós-venda) em nova implementação
-• Integrar com Billing Engine (E9) e Account Dashboard (E10)
+12.3 Escopo atual
+• O E12, neste momento, cobre apenas infraestrutura de autorização administrativa reutilizável.
+• Não há rota `/admin` ativa, layout admin ativo, telas prontas, relatórios prontos ou jobs implementados neste caso.
+• Novos fluxos/superfícies entram no E12 somente quando houver recorte real aprovado e artefato versionado.
 
-12.4 Platform Admin (Núcleo de Acesso)
-12.4.1 Status
-• Implementado
-12.4.2 Escopo
-• Helper is_platform_admin() e validações RLS específicas
-• Rate limits diferenciados para operações administrativas
-• Capacidade shared de privilégio administrativo (requirePlatformAdmin) preservada para uso em superfícies futuras, sem seção /admin ativa nesta etapa
-12.4.3 Critérios de Aceite
-• Apenas usuários platform_admin=true ou super_admin
-• Todas as ações administrativas auditadas em audit_logs
+12.4 Base existente no repositório
+• `lib/admin/index.ts`
+• `lib/admin/adapters/adminAdapter.ts`
+• `lib/access/guards.ts`
+• Essa base concentra checagens de privilégio admin e guards compartilhados para uso futuro.
 
-12.5 Operação consultiva no novo Admin Dashboard
-12.5.1 Status
-• Planejado
-12.5.2 Escopo
-• Definir superfície administrativa substituta para operação consultiva
-• Coleta de dados do cliente (CNPJ, contato, segmento, dores e metas)
-• Seleção de plano base (Lite, Pro, Ultra) e definição de recursos personalizados (grants)
-• Snapshot de recursos e preço conforme reunião consultiva
-12.5.3 Critérios de Aceite
-• Fluxo implementado sem dependência do legado removido
-• Conta operacional criada com grants e preço definidos (snapshot)
-12.5.4 Integrações
-• Billing Engine (E9)
-• Account Dashboard (E10)
-
-12.6 Painel de Contas / Prospects / Status
-12.6.1 Status
-• Planejado
-12.6.2 Escopo
-• Listagem e filtro de contas ativas, pendentes e prospects
-• Campos principais (empresa, CNPJ, responsável, segmento, status, consultor)
-• Funções (visualizar, editar, registrar progresso consultivo, gerar nova reunião)
-12.6.3 Critérios de Aceite
-• Status sincronizado (draft, configured, active)
-• Filtros por consultor, data e status
-
-12.7 Relatórios e Auditoria Consultiva
-12.7.1 Status
-• Planejado
-12.7.2 Escopo
-• Monitoramento de criação e ativação de contas consultivas
-• Relatórios de uso, planos e recursos customizados
-• Logs de auditoria de operações consultivas, billing e alterações de grants
-12.7.3 Critérios de Aceite
-• Métricas por consultor e por cliente
-• Exportação CSV/JSON
-12.7.4 Integrações
-• Auditoria e Drift (E9.7)
-
-12.8 Políticas globais + Jobs (E12.x)
-12.8.1 Tracking interno (admin-only) — Supa #19 (gated)
-• Status: Briefing (gated)
-• Objetivo: criar base mínima de tracking interno estruturado (admin-only) para medir eventos críticos do produto (ex.: onboarding E10.4), sem PII e sem dependência de ferramentas externas.
-• Escopo: tabela mínima + 1 view agregada; escrita server-side; leitura restrita a contexto administrativo.
-• Gate: planejar agora; implementar após E10.5 estar operacional e com uso real suficiente para gerar sinal relevante.
-• Dependências: E10.4; E10.5; E10.5.1; E9.8.1.
-• Fora de escopo: Ads/remarketing; automações outbound; BI/dashboards complexos; coleta de dados sensíveis/PII.
-
-12.9 Provedor de e-mail transacional (Auth) — Infra/entregabilidade (ex.: Resend)
-
-• Status: Briefing
-• Objetivo: migrar/configurar o envio de e-mails transacionais do Auth em provedor dedicado (ex.: Resend) para melhorar entregabilidade e mitigar bloqueios operacionais (incluindo rate limit) sem mexer no fluxo de produto.
-
-12.9.1 Escopo
-• Configuração de provedor (Resend ou equivalente) para e-mails de Auth.
-• Configuração de domínio/DNS (SPF/DKIM/DMARC) conforme necessário.
-• Ajuste/validação de templates de e-mail do Auth.
-• Validação de entregabilidade (principal) e redução de falhas por limite/capacidade (secundário).
-
-12.9.2 Dependências
-• Supabase Auth (integração/config).
-• Base Técnica (padrões e governança).
+12.5 Próximo subcaso
+• Definir o primeiro recorte funcional mínimo da futura superfície administrativa, sem ampliar o escopo além da base atual.
 
 13. E13 — Partner Dashboard
 
@@ -1001,6 +934,13 @@
 • Definir o primeiro recorte funcional do LP Builder no roadmap
 
 99. Changelog
+v1.5.40 (17/04/2026)
+• E12 enxugado para formato de reinício do Admin Dashboard com apenas 12.1–12.5 (status, objetivo, escopo atual, base existente e próximo subcaso), removendo subitens amplos que inflavam o caso.
+• E12 mantido aderente ao estado real do repo: base mínima em `lib/admin/index.ts`, `lib/admin/adapters/adminAdapter.ts` e `lib/access/guards.ts`, sem backlog amplo no corpo principal.
+v1.5.39 (17/04/2026)
+• E12 reescrito para refletir apenas o estado real implementado no repositório: infraestrutura mínima de privilégio admin (`lib/admin/index.ts`, `lib/admin/adapters/adminAdapter.ts` e `lib/access/guards.ts`), sem tratar dashboard amplo como já definido/implementado.
+• E12 limpo de escopo presente amplo (operação consultiva, painel de contas/prospects/status, relatórios/auditoria consultiva e jobs/tracking), mantendo essas frentes apenas como evolução futura.
+• 12.9 desassociado do E12 atual e realinhado ao estado concluído já registrado em E5.6 (Infra Auth — e-mail transacional).
 v1.5.38 (15/04/2026)
 • 10.5.3 atualizado para Concluído (exec): kit operacional do Grupo A versionado em `docs/` e `supabase/snippets/`, com investigação consolidada, regra de `parent_slug` e carga prática reportada para `implante-dentario`.
 • Adicionado 10.5.3.1 (Briefing): curadoria operacional de aliases enxutos vs microvariações textuais, para separar cadastro manual do Grupo A e matching leve futuro do E10.5.6.
