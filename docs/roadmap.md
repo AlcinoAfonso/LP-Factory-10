@@ -188,7 +188,6 @@
 • `components/layout/Header.tsx`
 • `components/layout/UserMenu.tsx`
 • `components/features/account-switcher/AccountSwitcherList.tsx`
-• `app/admin/layout.tsx`
 • Pendências:
 • asset oficial de logo ainda não versionado no repo
 • formulários/componentes-base ainda não padronizados pelo design system
