@@ -1,8 +1,8 @@
 0. Introdução
 
 0.1 Cabeçalho
-• Data: 15/04/2026
-• Versão: v1.5.38
+• Data: 17/04/2026
+• Versão: v1.5.39
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -726,64 +726,66 @@
 • Em desenvolvimento
 
 12.2 Objetivo
-• Consolidar operações administrativas e consultivas em um painel central
-• Permitir gestão de contas, prospects e relatórios
+• Consolidar uma base moderna e enxuta de privilégios administrativos reutilizáveis no Core
+• Preservar guard/shared access para habilitar futura superfície administrativa sem antecipar UI/fluxos
 
 12.3 Escopo geral
-• Centralizar acesso de administradores e consultores
-• Unificar coleta de dados de clientes e controle de status das contas
-• Servir como núcleo operacional das contas consultivas (pré e pós-venda) em nova implementação
-• Integrar com Billing Engine (E9) e Account Dashboard (E10)
+• Infra mínima de privilégio admin ativa no runtime:
+• `lib/admin/index.ts` exporta o núcleo de checagem administrativa
+• `lib/admin/adapters/adminAdapter.ts` centraliza checagens `super_admin` e `platform_admin` via RPC
+• `lib/access/guards.ts` provê guards compartilhados (`requireSuperAdmin` e `requirePlatformAdmin`)
+• Sem superfície `/admin` ativa nesta etapa (sem rotas, layouts, componentes, telas ou fluxos dedicados)
 
-12.4 Platform Admin (Núcleo de Acesso)
+12.4 Base de privilégios administrativos (Núcleo de Acesso)
 12.4.1 Status
 • Implementado
 12.4.2 Escopo
-• Helper is_platform_admin() e validações RLS específicas
-• Rate limits diferenciados para operações administrativas
-• Capacidade shared de privilégio administrativo (requirePlatformAdmin) preservada para uso em superfícies futuras, sem seção /admin ativa nesta etapa
+• `checkSuperAdmin()` e `checkPlatformAdmin()` no adapter admin (server client + RPC)
+• Estratégia fail-closed nas checagens (erro/sessão inválida => não autorizado)
+• Guards shared com diferenciação entre usuário não autenticado e autenticado sem privilégio
+• Capacidade de privilégio administrativo preservada para consumo por superfícies futuras
 12.4.3 Critérios de Aceite
-• Apenas usuários platform_admin=true ou super_admin
-• Todas as ações administrativas auditadas em audit_logs
+• Apenas usuários `platform_admin=true` ou `super_admin` passam no guard de platform
+• Apenas usuários `super_admin` passam no guard de super admin
+• Usuário sem sessão recebe redirect para `/auth/login`
+• Usuário autenticado sem privilégio recebe redirect para `/auth/confirm/info`
 
-12.5 Operação consultiva no novo Admin Dashboard
+12.5 Preparação estrutural para futura superfície administrativa
 12.5.1 Status
 • Planejado
 12.5.2 Escopo
-• Definir superfície administrativa substituta para operação consultiva
-• Coleta de dados do cliente (CNPJ, contato, segmento, dores e metas)
-• Seleção de plano base (Lite, Pro, Ultra) e definição de recursos personalizados (grants)
-• Snapshot de recursos e preço conforme reunião consultiva
+• Manter E12 como boundary técnico de privilégios administrativos no Core
+• Garantir ponto único de reutilização de checagens/guards admin
+• Preparar base para evolução incremental, sem antecipar contrato funcional de dashboard
 12.5.3 Critérios de Aceite
-• Fluxo implementado sem dependência do legado removido
-• Conta operacional criada com grants e preço definidos (snapshot)
+• E12 permanece alinhado ao estado real do repositório (infra de privilégios + guards)
+• Novas superfícies administrativas só entram no E12 quando houver artefatos implementados no repo
 12.5.4 Integrações
-• Billing Engine (E9)
-• Account Dashboard (E10)
+• Núcleo de Acesso (E2)
+• Adapters Base (E3)
 
-12.6 Painel de Contas / Prospects / Status
+12.6 Evolução futura do E12 (fora do escopo presente)
 12.6.1 Status
 • Planejado
 12.6.2 Escopo
-• Listagem e filtro de contas ativas, pendentes e prospects
-• Campos principais (empresa, CNPJ, responsável, segmento, status, consultor)
-• Funções (visualizar, editar, registrar progresso consultivo, gerar nova reunião)
+• Operação consultiva no novo Admin Dashboard
+• Painel de contas/prospects/status
+• Relatórios e auditoria consultiva
+• Jobs operacionais e tracking interno
 12.6.3 Critérios de Aceite
-• Status sincronizado (draft, configured, active)
-• Filtros por consultor, data e status
+• Cada subcaso só migra para escopo presente quando existir implementação concreta versionada no repo
 
-12.7 Relatórios e Auditoria Consultiva
+12.7 Dependências para expansão futura (não implementadas neste recorte)
 12.7.1 Status
 • Planejado
 12.7.2 Escopo
-• Monitoramento de criação e ativação de contas consultivas
-• Relatórios de uso, planos e recursos customizados
-• Logs de auditoria de operações consultivas, billing e alterações de grants
+• Billing Engine (E9)
+• Account Dashboard (E10)
+• Definições operacionais específicas por subcaso futuro
 12.7.3 Critérios de Aceite
-• Métricas por consultor e por cliente
-• Exportação CSV/JSON
+• Dependências explicitadas sem tratar essas frentes como já definidas/implementadas no E12 atual
 12.7.4 Integrações
-• Auditoria e Drift (E9.7)
+• A definir por subcaso futuro
 
 12.8 Políticas globais + Jobs (E12.x)
 12.8.1 Tracking interno (admin-only) — Supa #19 (gated)
@@ -794,20 +796,13 @@
 • Dependências: E10.4; E10.5; E10.5.1; E9.8.1.
 • Fora de escopo: Ads/remarketing; automações outbound; BI/dashboards complexos; coleta de dados sensíveis/PII.
 
-12.9 Provedor de e-mail transacional (Auth) — Infra/entregabilidade (ex.: Resend)
+12.9 E-mail transacional do Auth (desassociado do E12 atual)
 
-• Status: Briefing
-• Objetivo: migrar/configurar o envio de e-mails transacionais do Auth em provedor dedicado (ex.: Resend) para melhorar entregabilidade e mitigar bloqueios operacionais (incluindo rate limit) sem mexer no fluxo de produto.
-
-12.9.1 Escopo
-• Configuração de provedor (Resend ou equivalente) para e-mails de Auth.
-• Configuração de domínio/DNS (SPF/DKIM/DMARC) conforme necessário.
-• Ajuste/validação de templates de e-mail do Auth.
-• Validação de entregabilidade (principal) e redução de falhas por limite/capacidade (secundário).
-
-12.9.2 Dependências
-• Supabase Auth (integração/config).
-• Base Técnica (padrões e governança).
+• Status: Registrado em E5.6 como Concluído (exec) (26/02/2026)
+• Nota: este tema não compõe o escopo presente do E12 e permanece como decisão/infra já concluída no caso correto (E5.6).
+• Referências:
+• `5.6 Infra Auth — E-mail transacional (Supabase Auth via Resend SMTP)` neste roadmap
+• `docs/base-tecnica.md` (seção Supabase Auth — E-mail transacional)
 
 13. E13 — Partner Dashboard
 
@@ -1001,6 +996,10 @@
 • Definir o primeiro recorte funcional do LP Builder no roadmap
 
 99. Changelog
+v1.5.39 (17/04/2026)
+• E12 reescrito para refletir apenas o estado real implementado no repositório: infraestrutura mínima de privilégio admin (`lib/admin/index.ts`, `lib/admin/adapters/adminAdapter.ts` e `lib/access/guards.ts`), sem tratar dashboard amplo como já definido/implementado.
+• E12 limpo de escopo presente amplo (operação consultiva, painel de contas/prospects/status, relatórios/auditoria consultiva e jobs/tracking), mantendo essas frentes apenas como evolução futura.
+• 12.9 desassociado do E12 atual e realinhado ao estado concluído já registrado em E5.6 (Infra Auth — e-mail transacional).
 v1.5.38 (15/04/2026)
 • 10.5.3 atualizado para Concluído (exec): kit operacional do Grupo A versionado em `docs/` e `supabase/snippets/`, com investigação consolidada, regra de `parent_slug` e carga prática reportada para `implante-dentario`.
 • Adicionado 10.5.3.1 (Briefing): curadoria operacional de aliases enxutos vs microvariações textuais, para separar cadastro manual do Grupo A e matching leve futuro do E10.5.6.
