@@ -2,7 +2,7 @@
 
 0.1 Cabeçalho
 • Data: 17/04/2026
-• Versão: v1.5.39
+• Versão: v1.5.40
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -726,83 +726,21 @@
 • Em desenvolvimento
 
 12.2 Objetivo
-• Consolidar uma base moderna e enxuta de privilégios administrativos reutilizáveis no Core
-• Preservar guard/shared access para habilitar futura superfície administrativa sem antecipar UI/fluxos
+• Registrar o reinício do Admin Dashboard com foco exclusivo na base mínima de privilégio admin/shared access já existente no repositório.
 
-12.3 Escopo geral
-• Infra mínima de privilégio admin ativa no runtime:
-• `lib/admin/index.ts` exporta o núcleo de checagem administrativa
-• `lib/admin/adapters/adminAdapter.ts` centraliza checagens `super_admin` e `platform_admin` via RPC
-• `lib/access/guards.ts` provê guards compartilhados (`requireSuperAdmin` e `requirePlatformAdmin`)
-• Sem superfície `/admin` ativa nesta etapa (sem rotas, layouts, componentes, telas ou fluxos dedicados)
+12.3 Escopo atual
+• O E12, neste momento, cobre apenas infraestrutura de autorização administrativa reutilizável.
+• Não há rota `/admin` ativa, layout admin ativo, telas prontas, relatórios prontos ou jobs implementados neste caso.
+• Novos fluxos/superfícies entram no E12 somente quando houver recorte real aprovado e artefato versionado.
 
-12.4 Base de privilégios administrativos (Núcleo de Acesso)
-12.4.1 Status
-• Implementado
-12.4.2 Escopo
-• `checkSuperAdmin()` e `checkPlatformAdmin()` no adapter admin (server client + RPC)
-• Estratégia fail-closed nas checagens (erro/sessão inválida => não autorizado)
-• Guards shared com diferenciação entre usuário não autenticado e autenticado sem privilégio
-• Capacidade de privilégio administrativo preservada para consumo por superfícies futuras
-12.4.3 Critérios de Aceite
-• Apenas usuários `platform_admin=true` ou `super_admin` passam no guard de platform
-• Apenas usuários `super_admin` passam no guard de super admin
-• Usuário sem sessão recebe redirect para `/auth/login`
-• Usuário autenticado sem privilégio recebe redirect para `/auth/confirm/info`
+12.4 Base existente no repositório
+• `lib/admin/index.ts`
+• `lib/admin/adapters/adminAdapter.ts`
+• `lib/access/guards.ts`
+• Essa base concentra checagens de privilégio admin e guards compartilhados para uso futuro.
 
-12.5 Preparação estrutural para futura superfície administrativa
-12.5.1 Status
-• Planejado
-12.5.2 Escopo
-• Manter E12 como boundary técnico de privilégios administrativos no Core
-• Garantir ponto único de reutilização de checagens/guards admin
-• Preparar base para evolução incremental, sem antecipar contrato funcional de dashboard
-12.5.3 Critérios de Aceite
-• E12 permanece alinhado ao estado real do repositório (infra de privilégios + guards)
-• Novas superfícies administrativas só entram no E12 quando houver artefatos implementados no repo
-12.5.4 Integrações
-• Núcleo de Acesso (E2)
-• Adapters Base (E3)
-
-12.6 Evolução futura do E12 (fora do escopo presente)
-12.6.1 Status
-• Planejado
-12.6.2 Escopo
-• Operação consultiva no novo Admin Dashboard
-• Painel de contas/prospects/status
-• Relatórios e auditoria consultiva
-• Jobs operacionais e tracking interno
-12.6.3 Critérios de Aceite
-• Cada subcaso só migra para escopo presente quando existir implementação concreta versionada no repo
-
-12.7 Dependências para expansão futura (não implementadas neste recorte)
-12.7.1 Status
-• Planejado
-12.7.2 Escopo
-• Billing Engine (E9)
-• Account Dashboard (E10)
-• Definições operacionais específicas por subcaso futuro
-12.7.3 Critérios de Aceite
-• Dependências explicitadas sem tratar essas frentes como já definidas/implementadas no E12 atual
-12.7.4 Integrações
-• A definir por subcaso futuro
-
-12.8 Políticas globais + Jobs (E12.x)
-12.8.1 Tracking interno (admin-only) — Supa #19 (gated)
-• Status: Briefing (gated)
-• Objetivo: criar base mínima de tracking interno estruturado (admin-only) para medir eventos críticos do produto (ex.: onboarding E10.4), sem PII e sem dependência de ferramentas externas.
-• Escopo: tabela mínima + 1 view agregada; escrita server-side; leitura restrita a contexto administrativo.
-• Gate: planejar agora; implementar após E10.5 estar operacional e com uso real suficiente para gerar sinal relevante.
-• Dependências: E10.4; E10.5; E10.5.1; E9.8.1.
-• Fora de escopo: Ads/remarketing; automações outbound; BI/dashboards complexos; coleta de dados sensíveis/PII.
-
-12.9 E-mail transacional do Auth (desassociado do E12 atual)
-
-• Status: Registrado em E5.6 como Concluído (exec) (26/02/2026)
-• Nota: este tema não compõe o escopo presente do E12 e permanece como decisão/infra já concluída no caso correto (E5.6).
-• Referências:
-• `5.6 Infra Auth — E-mail transacional (Supabase Auth via Resend SMTP)` neste roadmap
-• `docs/base-tecnica.md` (seção Supabase Auth — E-mail transacional)
+12.5 Próximo subcaso
+• Definir o primeiro recorte funcional mínimo da futura superfície administrativa, sem ampliar o escopo além da base atual.
 
 13. E13 — Partner Dashboard
 
@@ -996,6 +934,9 @@
 • Definir o primeiro recorte funcional do LP Builder no roadmap
 
 99. Changelog
+v1.5.40 (17/04/2026)
+• E12 enxugado para formato de reinício do Admin Dashboard com apenas 12.1–12.5 (status, objetivo, escopo atual, base existente e próximo subcaso), removendo subitens amplos que inflavam o caso.
+• E12 mantido aderente ao estado real do repo: base mínima em `lib/admin/index.ts`, `lib/admin/adapters/adminAdapter.ts` e `lib/access/guards.ts`, sem backlog amplo no corpo principal.
 v1.5.39 (17/04/2026)
 • E12 reescrito para refletir apenas o estado real implementado no repositório: infraestrutura mínima de privilégio admin (`lib/admin/index.ts`, `lib/admin/adapters/adminAdapter.ts` e `lib/access/guards.ts`), sem tratar dashboard amplo como já definido/implementado.
 • E12 limpo de escopo presente amplo (operação consultiva, painel de contas/prospects/status, relatórios/auditoria consultiva e jobs/tracking), mantendo essas frentes apenas como evolução futura.
