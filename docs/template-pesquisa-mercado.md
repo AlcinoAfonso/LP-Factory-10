@@ -3,32 +3,30 @@
 • Os blocos iniciais do template podem ser migrados, total ou parcialmente, para estruturas do produto, especialmente campos ligados ao setup e ao cadastro da conta.
 • Após essa migração, este documento deve permanecer focado no que será pesquisado para cada nicho, servindo como referência de inteligência de mercado e apoio à priorização.
 
-1- Dados de Prospecção
+1- Pending_estup
+Nome do projeto: Talvez o nome fantasia
+Nicho:
+Email:
+WhatsApp:
+Link LP:
+
+
+2- Dados para plano inicial Starter/Trial
+2.1 Cadastro Admninistrativo
 Contato:
 Telefone:
-Email:
-
-2-Briefing Digital
-Nome Fantasia:
-Site:
+Razão Social
 Instagram:
-
-3- Produto/Serviços
-Região de atuação: 
-Objetivo: (lead, venda, agendamento, ligação).
-
-4- Briefing com Cliente
-Nome da Empresa:
 Data da Fundação:
 CNPJ:
 Sócios:
 Endereço: 
-Site Hospedagem:
-Permissões:
-Paleta de Cores:
-Mercado:
-Segmento:
-Nicho:
+
+2.3 Produto/Serviços
+Região de atuação: 
+Objetivo: (lead, venda, agendamento, ligação).
+Paleta de Cores/Logomarca
+
 Benefícios dos Serviços:
 Tecnologia / Ferramentas:
 Material de Depoimentos:
@@ -54,14 +52,20 @@ Lista de pontos fracos do mercado:
 Garantias e políticas especiais:
 “Você oferece alguma garantia de satisfação, reembolso, teste grátis, upgrade ou política especial para seus clientes? Se sim, descreva brevemente. Se não, escreva ‘Nenhuma’.”
 
-5- Pesquisa/Desenvolvimento com IA
-
-5.1 Concorrentes:
+2.4 Concorrentes:
 Com base nos valores definidos em **Nicho** e **Região de Atuação**,  em Pesquisa Estratégica, liste 3 concorrentes que anunciaram online nos últimos 30 dias.   
 > **Responda apenas** com uma **tabela Markdown** contendo **somente** as colunas Nome | URL | Oferta Relevante, sem títulos adicionais, explicações ou links repetidos.  
 > - **Nome**: apenas o nome da empresa  
 > - **URL**: site (verificado online; entre parênteses, data da checagem no formato DD/MM/AAAA)  
 > - **Oferta Relevante**: principal benefício ou diferencial (máx. 120 caracteres)
+
+
+===========================================================================
+
+Pesquisa de mercado para os segmentos/nichos
+
+5- Pesquisa/Desenvolvimento com IA
+
 
 5.2 Ofertas do Mercado
 "Com base nos Concorrentes mencionados, liste até 4 principais ofertas que se destacam nesse segmento. Para cada oferta, forneça uma breve descrição (máx. 180 caracteres)."
@@ -72,7 +76,7 @@ Responda de forma objetiva, sem citar nomes de empresas ou pessoas.
 Limite sua resposta a no máximo 2 itens curtos.
 Se não encontrar reclamação relevante, escreva: ‘Nenhuma crítica recorrente identificada’.”
 
-5.4Tendência de Mercado
+5.4 Tendência de Mercado
 Liste 3 tendências de mercado (máx. 80 car. cada) relevantes para o NICHO na REGIÃO DE ATUAÇÃO.
 Para cada, descreva em 40-60 car. o impacto no comportamento do cliente e cite uma fonte.
 Formato: Tendência — Impacto — Fonte
