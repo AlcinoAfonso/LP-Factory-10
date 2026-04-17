@@ -3,7 +3,7 @@
 • Os blocos iniciais do template podem ser migrados, total ou parcialmente, para estruturas do produto, especialmente campos ligados ao setup e ao cadastro da conta.
 • Após essa migração, este documento deve permanecer focado no que será pesquisado para cada nicho, servindo como referência de inteligência de mercado e apoio à priorização.
 
-1- Pending_estup
+1- Pending_sestup
 Nome do projeto: Talvez o nome fantasia
 Nicho:
 Email:
