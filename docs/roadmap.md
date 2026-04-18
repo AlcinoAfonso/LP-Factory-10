@@ -1,8 +1,8 @@
 0. Introdução
 
 0.1 Cabeçalho
-• Data: 17/04/2026
-• Versão: v1.5.40
+• Data: 18/04/2026
+• Versão: v1.5.41
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -728,18 +728,44 @@
 • Registrar o reinício do Admin Dashboard com foco exclusivo na base mínima de privilégio admin/shared access já existente no repositório.
 
 12.3 Escopo atual
-• O E12, neste momento, cobre apenas infraestrutura de autorização administrativa reutilizável.
-• Não há rota `/admin` ativa, layout admin ativo, telas prontas, relatórios prontos ou jobs implementados neste caso.
-• Novos fluxos/superfícies entram no E12 somente quando houver recorte real aprovado e artefato versionado.
+• O E12, neste momento, cobre a infraestrutura de autorização administrativa reutilizável e a primeira superfície protegida do Admin.
+• A superfície inicial de `/admin` foi entregue como base de acesso/UI do contexto administrativo.
+• Novos fluxos, módulos e superfícies operacionais mais densas entram no E12 somente quando houver recorte real aprovado e artefato versionado.
 
 12.4 Base existente no repositório
 • `lib/admin/index.ts`
 • `lib/admin/adapters/adminAdapter.ts`
 • `lib/access/guards.ts`
-• Essa base concentra checagens de privilégio admin e guards compartilhados para uso futuro.
+• `app/admin/layout.tsx`
+• `app/admin/page.tsx`
+• `components/admin/AdminHeader.tsx`
+• `components/admin/AdminUserMenu.tsx`
+• Essa base já concentra checagens de privilégio admin, guards compartilhados e a primeira superfície administrativa ativa do projeto.
 
-12.5 Próximo subcaso
-• Definir o primeiro recorte funcional mínimo da futura superfície administrativa, sem ampliar o escopo além da base atual.
+12.5 Acesso e superfície inicial do Admin
+12.5.1 Status
+• Concluído (exec) (18/04/2026)
+
+12.5.2 Escopo
+• Entregue a primeira superfície real de `/admin` com gate administrativo SSR reaproveitando a infraestrutura admin existente.
+• Entregue header próprio do Admin com `LP Factory Administrativo`.
+• Entregue página inicial neutra do Admin.
+• Entregue menu próprio do Admin com avatar/logout, sem `UserMenu`, sem `AccountSwitcher` e sem dependência de contexto de conta.
+• Ajustado o fluxo de login para preservar o retorno para `/admin` no modelo atual.
+
+12.5.3 ARTEFATOS_REPO
+• Criados:
+• `app/admin/layout.tsx`
+• `app/admin/page.tsx`
+• `components/admin/AdminHeader.tsx`
+• `components/admin/AdminUserMenu.tsx`
+• Ajustados:
+• `app/auth/login/page.tsx`
+• `components/login-form.tsx`
+
+12.5.4 Pendências
+• Avaliar reestruturação futura para `/admin` público com botão `Entrar` e área protegida separada.
+• Avaliar se o logout do contexto Admin deve voltar para uma página pública própria do Admin.
 
 13. E13 — Partner Dashboard
 
@@ -933,6 +959,11 @@
 • Definir o primeiro recorte funcional do LP Builder no roadmap
 
 99. Changelog
+v1.5.41 (18/04/2026)
+• E12 atualizado para refletir a execução do primeiro recorte real do Admin: superfície protegida de `/admin` entregue como base de acesso/UI do contexto administrativo.
+• 12.5 deixou de ser “próximo subcaso” genérico e passou a registrar o recorte executado de acesso e superfície inicial do Admin.
+• Registrados os ARTEFATOS_REPO do caso: `app/admin/layout.tsx`, `app/admin/page.tsx`, `components/admin/AdminHeader.tsx`, `components/admin/AdminUserMenu.tsx`, além dos ajustes em `app/auth/login/page.tsx` e `components/login-form.tsx`.
+• Registradas as pendências explícitas do caso sobre possível `/admin` público com área protegida separada e sobre destino próprio do logout administrativo.
 v1.5.40 (17/04/2026)
 • E12 enxugado para formato de reinício do Admin Dashboard com apenas 12.1–12.5 (status, objetivo, escopo atual, base existente e próximo subcaso), removendo subitens amplos que inflavam o caso.
 • E12 mantido aderente ao estado real do repo: base mínima em `lib/admin/index.ts`, `lib/admin/adapters/adminAdapter.ts` e `lib/access/guards.ts`, sem backlog amplo no corpo principal.
