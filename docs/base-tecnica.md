@@ -2,8 +2,8 @@
 
 0.1. Cabeçalho
 • Documento: Base Técnica LP Factory 10
-• Versão: v2.0.27
-• Data: 15/04/2026
+• Versão: v2.0.28
+• Data: 18/04/2026
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -341,7 +341,8 @@
 
 5.2.2 Guards
 • guard SSR da seção cliente (PATH: app/a/_server/section-guard.ts): aplica allow/deny de /a/{account_slug} e redirecionamentos de bloqueio na seção cliente.
-• Infra shared de privilégio admin permanece ativa via helpers/guards (`requirePlatformAdmin()` e `requireSuperAdmin()`), sem superfície `/admin` ativa no runtime desta etapa.
+• guard SSR da seção Admin (PATH: app/admin/layout.tsx): protege a seção administrativa, reaproveita `requirePlatformAdmin()` e concentra a moldura inicial do Admin.
+• Infra shared de privilégio admin permanece ativa via helpers/guards (`requirePlatformAdmin()` e `requireSuperAdmin()`), agora consumida pela superfície `/admin` ativa no runtime.
 • guards legados compartilhados (PATH: lib/access/guards.ts): utilitários de validação de acesso usados pelo runtime.
 
 5.2.3 Providers
@@ -353,7 +354,9 @@
 5.3.1 Login (MVP)
 • Login primário é page-based em /auth/login (card central).
 • CTA “Entrar” na home pública (/a/home) navega para /auth/login.
-• Sucesso: /auth/login cria sessão via signInWithPassword e navega para /protected (rota técnica).
+• Sucesso: /auth/login cria sessão via signInWithPassword e navega para o retorno previsto no modelo atual.
+• Regra: quando o login partir do contexto administrativo, o fluxo deve preservar o retorno para `/admin`.
+• Sem retorno administrativo explícito, /auth/login segue o fluxo padrão para /protected.
 • /protected redireciona para /a/home (redirect em next.config.js).
 • /a/home (gateway) resolve conta e redireciona para /a/{account_slug}.
 • Erro de credenciais: exibir error.message do Supabase (ex.: “Invalid login credentials”).
@@ -458,6 +461,9 @@ Regra: qualquer novo arquivo em app/auth/ não pode importar @supabase/* até se
 • Adapters vNext: seguir 3.14
 
 99. Changelog
+v2.0.28 (18/04/2026) — E12.5.1: primeira superfície ativa do Admin + retorno administrativo no login
+• Atualizada 5.2.2 para registrar a seção Admin ativa no runtime via `app/admin/layout.tsx`, protegida por guard SSR administrativo reaproveitando `requirePlatformAdmin()`.
+• Atualizada 5.3.1 para registrar a preservação do retorno para `/admin` quando o login partir do contexto administrativo, mantendo o fluxo padrão para `/protected` nos demais casos.
 v2.0.27 (15/04/2026) — Ajuste operacional Vercel do projeto de services
 • Registrada nota operacional do projeto `lpf-10-services` com boundary de deploy por `Root Directory = services/mcp-supabase-inspect`.
 • Registradas as regras operacionais `Include files outside the root directory in the Build Step = OFF` e `Ignored Build Step` customizado para reduzir builds desnecessários fora do escopo do service.
