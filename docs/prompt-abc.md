@@ -113,14 +113,11 @@ DATA_NOVA: <DD/MM/YYYY>
 OPERAÇÕES (emitir apenas as necessárias)
 
 OP1)
-TIPO: <SUBSTITUIR_TRECHO | SUBSTITUIR_SECAO | ADICIONAR_TRECHO | ADICIONAR_SECAO | REMOVER_TRECHO | REMOVER_SECAO>
-ALVO: <seção/título/identificador exato do alvo>
-ANCORA: <seção âncora> (obrigatória quando aplicável; omitir quando não aplicável)
+TIPO: <um dos tipos permitidos no item 8>
+ALVO: <seção/título/identificador do alvo>
+ANCORA: <seção âncora> (somente quando aplicável)
 CONTEUDO:
 <bloco literal correspondente à operação>
-
-OP2)
-... (repetir formato para cada operação adicional)
 
 CHANGELOG (somente se houver alteração real)
 CH1) (entrada nova)
