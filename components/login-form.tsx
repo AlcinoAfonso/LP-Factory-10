@@ -10,7 +10,18 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 
-export function LoginForm({ className, ...props }: React.ComponentPropsWithoutRef<'div'>) {
+type LoginFormProps = React.ComponentPropsWithoutRef<'div'> & {
+  next?: string | null
+}
+
+function sanitizeNext(next?: string | null): string {
+  if (!next) return '/a/home'
+  if (!next.startsWith('/')) return '/a/home'
+  if (next.startsWith('//')) return '/a/home'
+  return next
+}
+
+export function LoginForm({ className, next, ...props }: LoginFormProps) {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
@@ -29,8 +40,8 @@ export function LoginForm({ className, ...props }: React.ComponentPropsWithoutRe
         password,
       })
       if (error) throw error
-      // Update this route to redirect to an authenticated route. The user already has an active session.
-      router.push('/a/home')
+      const safeNext = sanitizeNext(next)
+      router.push(safeNext)
     } catch (error: unknown) {
       setError(error instanceof Error ? error.message : 'Ocorreu um erro')
     } finally {

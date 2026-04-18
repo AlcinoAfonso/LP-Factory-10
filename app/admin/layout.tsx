@@ -14,6 +14,10 @@ export default async function AdminLayout({ children }: AdminLayoutProps) {
   const gate = await requirePlatformAdmin();
 
   if (!gate.allowed) {
+    if (gate.redirect === '/auth/login') {
+      redirect('/auth/login?next=%2Fadmin');
+    }
+
     redirect(gate.redirect ?? '/auth/confirm/info');
   }
 
