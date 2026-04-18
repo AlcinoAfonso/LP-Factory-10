@@ -7,15 +7,22 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { FormField, FormFieldError, FormFieldLabel } from '@/components/ui/form-field'
 import { Input } from '@/components/ui/input'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+import { useSearchParams } from 'next/navigation'
 import { useState } from 'react'
+
+function sanitizeNext(next?: string | null): string {
+  if (!next) return '/a/home'
+  if (!next.startsWith('/')) return '/a/home'
+  if (next.startsWith('//')) return '/a/home'
+  return next
+}
 
 export function LoginForm({ className, ...props }: React.ComponentPropsWithoutRef<'div'>) {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
-  const router = useRouter()
+  const searchParams = useSearchParams()
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -29,8 +36,8 @@ export function LoginForm({ className, ...props }: React.ComponentPropsWithoutRe
         password,
       })
       if (error) throw error
-      // Update this route to redirect to an authenticated route. The user already has an active session.
-      router.push('/a/home')
+      const safeNext = sanitizeNext(searchParams.get('next'))
+      window.location.assign(safeNext)
     } catch (error: unknown) {
       setError(error instanceof Error ? error.message : 'Ocorreu um erro')
     } finally {
