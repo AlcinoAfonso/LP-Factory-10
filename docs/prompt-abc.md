@@ -69,55 +69,79 @@ COMPARAÇÃO (ESTADO FINAL vs DOC_ALVO)
 GERAÇÃO DO ABC (DELTA-ONLY)
 
 7. Classificar cada DELTA como:
-   * A) SUBSTITUIR (`replace_section`) quando a seção já existe.
-   * B) ADICIONAR (`insert_after_section`) quando a seção não existe.
-8. B) ADICIONAR: informar só a seção âncora imediatamente anterior (mesmo nível) e gerar B apenas se essa âncora existir no DOC_ALVO.
+   * A) SUBSTITUIR TRECHO (`replace_snippet`) para mudança localizada (1 linha, 1 bullet, parágrafo curto ou bloco pequeno estável dentro de seção existente).
+   * B) SUBSTITUIR SEÇÃO (`replace_section`) somente quando a mudança exigir refazer a estrutura da seção (ex.: múltiplos bullets/partes interdependentes).
+   * C) ADICIONAR TRECHO (`insert_snippet_after_anchor`) para inserir bloco pequeno dentro de seção existente.
+   * D) ADICIONAR SEÇÃO (`insert_after_section`) somente quando a seção ainda não existe.
+   * E) REMOVER TRECHO (`remove_snippet`) ou REMOVER SEÇÃO (`remove_section`) quando houver remoção explícita de conteúdo obsoleto.
+8. Regra principal de granularidade: sempre preferir o menor bloco estável que resolva o DELTA com clareza (priorizar TRECHO; usar SEÇÃO inteira apenas quando TRECHO não for suficiente).
+9. Regra de âncora:
+   * Para TRECHO (A/C/E de trecho): usar como âncora a seção em que o trecho entra/sai.
+   * Para SEÇÃO nova (D): usar a seção imediatamente anterior (mesmo nível), quando existir.
+   * Se a âncora não estiver clara no DOC_ALVO, não gerar ADICIONAR.
 
 REGRAS DE VERSIONAMENTO/CHANGELOG
 
-9. “99. Changelog” não entra em A/B.
-10. C) CHANGELOG só existe se houver alteração real no documento.
-11. Alteração real = existe pelo menos um item em A/B que não seja cabeçalho/versionamento nem seção 99.
-12. Cabeçalho (data/versão) só muda se houver alteração real.
-13. Em C1, incluir somente a nova entrada do changelog.
+10. “99. Changelog” não entra em A/B/C/D/E.
+11. F) CHANGELOG só existe se houver alteração real no documento.
+12. Alteração real = existe pelo menos um item em A/B/C/D/E que não seja cabeçalho/versionamento nem seção 99.
+13. Cabeçalho (data/versão) só muda se houver alteração real.
+14. Em F1, incluir somente a nova entrada do changelog.
 
 FORMATO DA SAÍDA (OBRIGATÓRIO; SEM TEXTO EXTRA)
 
-14. A resposta deve começar exatamente com:
+15. A resposta deve começar exatamente com:
 
 DD/MM/YYYY HH:MM — ABC (DELTA-ONLY) para <DOC_ALVO>
 
-15. Sem DELTAS permitidos:
+16. Sem DELTAS permitidos:
 
 DD/MM/YYYY HH:MM — ABC (DELTA-ONLY) para <DOC_ALVO>
 DOC_ALVO: <DOC_ALVO>
 SEM ALTERAÇÕES NECESSÁRIAS
 
-16. Com DELTAS permitidos:
+17. Com DELTAS permitidos:
 
 DD/MM/YYYY HH:MM — ABC (DELTA-ONLY) para <DOC_ALVO>
 DOC_ALVO: <DOC_ALVO>
 VERSAO_NOVA: <vX.Y.Z>
 DATA_NOVA: <DD/MM/YYYY>
 
-A) SUBSTITUIR
-A1) SUBSTITUIR — Seção **<título>** (bloco completo)
+Ordem sugerida: A, B, C, D, E, F (emitir apenas os blocos necessários).
+
+A) SUBSTITUIR TRECHO
+A1) SUBSTITUIR TRECHO — Seção **<título-da-seção-âncora>**
+<trecho literal mínimo a substituir>
+
+B) SUBSTITUIR SEÇÃO
+B1) SUBSTITUIR SEÇÃO — Seção **<título>** (bloco completo)
 <bloco literal da seção, começando pela linha do heading "<título>">
 
-B) ADICIONAR
-B1) ADICIONAR — Após **<âncora>** (bloco completo)
+C) ADICIONAR TRECHO
+C1) ADICIONAR TRECHO — Seção **<título-da-seção-âncora>**
+<trecho literal mínimo a inserir>
+
+D) ADICIONAR SEÇÃO
+D1) ADICIONAR SEÇÃO — Após **<âncora>** (bloco completo)
 <bloco literal da nova seção, começando pela linha do heading "<título>">
 
-C) CHANGELOG
-C1) (entrada nova)
+E) REMOVER
+E1) REMOVER TRECHO — Seção **<título-da-seção-âncora>**
+<trecho literal mínimo a remover>
+ou
+E2) REMOVER SEÇÃO — Seção **<título>**
+<título/identificador literal da seção a remover>
+
+F) CHANGELOG
+F1) (entrada nova)
 <bloco literal da entrada nova do changelog>
 
-17. Não usar reticências (“...”/“…”) nos blocos. Em A/B, começar pela linha do heading numerado da seção e preservar quebras/bullets.
+18. Não usar reticências (“...”/“…”) nos blocos. Em operações de TRECHO, fornecer somente o trecho mínimo estável e explícito; em operações de SEÇÃO, começar pela linha do heading numerado da seção e preservar quebras/bullets.
 
 PAUSA OBRIGATÓRIA (1 DOC POR EXECUÇÃO)
 
-18. Executar o ciclo completo apenas para o DOC_ALVO atual.
-19. Depois de emitir a saída, parar e aguardar próximo `DOC_ALVO`.
-20. Não gerar ABC de outro documento na mesma execução.
+19. Executar o ciclo completo apenas para o DOC_ALVO atual.
+20. Depois de emitir a saída, parar e aguardar próximo `DOC_ALVO`.
+21. Não gerar ABC de outro documento na mesma execução.
 
 ---
