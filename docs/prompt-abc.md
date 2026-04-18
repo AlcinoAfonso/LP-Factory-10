@@ -68,25 +68,28 @@ COMPARAÇÃO (ESTADO FINAL vs DOC_ALVO)
 
 GERAÇÃO DO ABC (DELTA-ONLY)
 
-7. Classificar cada DELTA como:
-   * A) SUBSTITUIR TRECHO (`replace_snippet`) para mudança localizada (1 linha, 1 bullet, parágrafo curto ou bloco pequeno estável dentro de seção existente).
-   * B) SUBSTITUIR SEÇÃO (`replace_section`) somente quando a mudança exigir refazer a estrutura da seção (ex.: múltiplos bullets/partes interdependentes).
-   * C) ADICIONAR TRECHO (`insert_snippet_after_anchor`) para inserir bloco pequeno dentro de seção existente.
-   * D) ADICIONAR SEÇÃO (`insert_after_section`) somente quando a seção ainda não existe.
-   * E) REMOVER TRECHO (`remove_snippet`) ou REMOVER SEÇÃO (`remove_section`) quando houver remoção explícita de conteúdo obsoleto.
-8. Regra principal de granularidade: sempre preferir o menor bloco estável que resolva o DELTA com clareza (priorizar TRECHO; usar SEÇÃO inteira apenas quando TRECHO não for suficiente).
-9. Regra de âncora:
-   * Para TRECHO (A/C/E de trecho): usar como âncora a seção em que o trecho entra/sai.
-   * Para SEÇÃO nova (D): usar a seção imediatamente anterior (mesmo nível), quando existir.
-   * Se a âncora não estiver clara no DOC_ALVO, não gerar ADICIONAR.
+7. Classificar cada DELTA pelo **menor bloco estável possível**.
+8. Tipos permitidos de operação:
+   * `SUBSTITUIR_TRECHO` (`replace_snippet`)
+   * `SUBSTITUIR_SECAO` (`replace_section`)
+   * `ADICIONAR_TRECHO` (`insert_snippet_after_anchor`)
+   * `ADICIONAR_SECAO` (`insert_after_section`)
+   * `REMOVER_TRECHO` (`remove_snippet`)
+   * `REMOVER_SECAO` (`remove_section`)
+9. Regra de uso:
+   * Preferir TRECHO (linha, bullet, parágrafo curto ou bloco pequeno estável).
+   * Usar SEÇÃO inteira somente quando a estrutura da seção precisar ser refeita.
+10. Regra de âncora:
+   * Em operações de TRECHO, usar a seção em que o trecho entra/sai.
+   * Em `ADICIONAR_SECAO`, usar a seção imediatamente anterior (mesmo nível), quando existir.
+   * Se a âncora não estiver clara no DOC_ALVO, não gerar operação de ADIÇÃO.
 
 REGRAS DE VERSIONAMENTO/CHANGELOG
 
-10. “99. Changelog” não entra em A/B/C/D/E.
-11. F) CHANGELOG só existe se houver alteração real no documento.
-12. Alteração real = existe pelo menos um item em A/B/C/D/E que não seja cabeçalho/versionamento nem seção 99.
-13. Cabeçalho (data/versão) só muda se houver alteração real.
-14. Em F1, incluir somente a nova entrada do changelog.
+11. “99. Changelog” não entra em OPERAÇÕES.
+12. Cabeçalho (data/versão) e CHANGELOG só mudam se houver alteração real no documento.
+13. Alteração real = existe pelo menos uma OPERAÇÃO que não seja cabeçalho/versionamento nem seção 99.
+14. Em CHANGELOG, incluir somente a nova entrada.
 
 FORMATO DA SAÍDA (OBRIGATÓRIO; SEM TEXTO EXTRA)
 
@@ -107,36 +110,26 @@ DOC_ALVO: <DOC_ALVO>
 VERSAO_NOVA: <vX.Y.Z>
 DATA_NOVA: <DD/MM/YYYY>
 
-Ordem sugerida: A, B, C, D, E, F (emitir apenas os blocos necessários).
+OPERAÇÕES (emitir apenas as necessárias)
 
-A) SUBSTITUIR TRECHO
-A1) SUBSTITUIR TRECHO — Seção **<título-da-seção-âncora>**
-<trecho literal mínimo a substituir>
+OP1)
+TIPO: <SUBSTITUIR_TRECHO | SUBSTITUIR_SECAO | ADICIONAR_TRECHO | ADICIONAR_SECAO | REMOVER_TRECHO | REMOVER_SECAO>
+ALVO: <seção/título/identificador exato do alvo>
+ANCORA: <seção âncora> (obrigatória quando aplicável; omitir quando não aplicável)
+CONTEUDO:
+<bloco literal correspondente à operação>
 
-B) SUBSTITUIR SEÇÃO
-B1) SUBSTITUIR SEÇÃO — Seção **<título>** (bloco completo)
-<bloco literal da seção, começando pela linha do heading "<título>">
+OP2)
+... (repetir formato para cada operação adicional)
 
-C) ADICIONAR TRECHO
-C1) ADICIONAR TRECHO — Seção **<título-da-seção-âncora>**
-<trecho literal mínimo a inserir>
-
-D) ADICIONAR SEÇÃO
-D1) ADICIONAR SEÇÃO — Após **<âncora>** (bloco completo)
-<bloco literal da nova seção, começando pela linha do heading "<título>">
-
-E) REMOVER
-E1) REMOVER TRECHO — Seção **<título-da-seção-âncora>**
-<trecho literal mínimo a remover>
-ou
-E2) REMOVER SEÇÃO — Seção **<título>**
-<título/identificador literal da seção a remover>
-
-F) CHANGELOG
-F1) (entrada nova)
+CHANGELOG (somente se houver alteração real)
+CH1) (entrada nova)
 <bloco literal da entrada nova do changelog>
 
-18. Não usar reticências (“...”/“…”) nos blocos. Em operações de TRECHO, fornecer somente o trecho mínimo estável e explícito; em operações de SEÇÃO, começar pela linha do heading numerado da seção e preservar quebras/bullets.
+18. Regras de bloco:
+   * Não usar reticências (“...”/“…”) em `CONTEUDO`.
+   * Em operações de TRECHO, fornecer somente o trecho mínimo estável e explícito.
+   * Em operações de SEÇÃO, começar pela linha do heading numerado da seção e preservar quebras/bullets.
 
 PAUSA OBRIGATÓRIA (1 DOC POR EXECUÇÃO)
 
