@@ -76,7 +76,7 @@ export function AdminUserMenu({ userEmail }: AdminUserMenuProps) {
             <div className="truncate text-sm font-medium text-popover-foreground">
               {safeEmail}
             </div>
-            <div className="text-xs text-muted-foreground">platform_admin</div>
+            <div className="text-xs text-muted-foreground">Administrador</div>
           </div>
 
           <div className="my-1 h-px w-full bg-border" />
