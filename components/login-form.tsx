@@ -7,12 +7,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { FormField, FormFieldError, FormFieldLabel } from '@/components/ui/form-field'
 import { Input } from '@/components/ui/input'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+import { useSearchParams } from 'next/navigation'
 import { useState } from 'react'
-
-type LoginFormProps = React.ComponentPropsWithoutRef<'div'> & {
-  next?: string | null
-}
 
 function sanitizeNext(next?: string | null): string {
   if (!next) return '/a/home'
@@ -21,12 +17,12 @@ function sanitizeNext(next?: string | null): string {
   return next
 }
 
-export function LoginForm({ className, next, ...props }: LoginFormProps) {
+export function LoginForm({ className, ...props }: React.ComponentPropsWithoutRef<'div'>) {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
-  const router = useRouter()
+  const searchParams = useSearchParams()
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -40,8 +36,8 @@ export function LoginForm({ className, next, ...props }: LoginFormProps) {
         password,
       })
       if (error) throw error
-      const safeNext = sanitizeNext(next)
-      router.push(safeNext)
+      const safeNext = sanitizeNext(searchParams.get('next'))
+      window.location.assign(safeNext)
     } catch (error: unknown) {
       setError(error instanceof Error ? error.message : 'Ocorreu um erro')
     } finally {
