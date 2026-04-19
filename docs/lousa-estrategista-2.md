@@ -1,4 +1,5 @@
-# Título: E10.5 e adjacências imediatas vs11
+# Título: docs/lousa-estrategista-E10.5
+Versão: 12
 
 ## 1) Objetivo
 
@@ -56,10 +57,11 @@ Ela registra o caso de uso atual, suas decisões, ambiguidades, propostas, fluxo
 
 #### 3.1.2 Instruções ao Executor
 
+* você é o executor deste caso
 * você tem acesso direto, via conectores já configurados, ao GitHub `AlcinoAfonso/LP-Factory-10`, branch `main`, onde estão os docs deste caso
 * acessar `docs/prompt-executor.md`
-* usar como plano base o item `6.x` correspondente nesta lousa
-* usar a lousa também como visão geral do caso, se necessário
+* usar como plano base o item `6.x` correspondente em `docs/lousa-estrategista-2.md`
+* usar `docs/lousa-estrategista-2.md` também como visão geral do caso, se necessário
 
 #### 3.1.3 Após receber o relatório do executor
 
@@ -138,6 +140,11 @@ Ela registra o caso de uso atual, suas decisões, ambiguidades, propostas, fluxo
 * mesma base estratégica por taxon, com adaptação por contexto
 * a arquitetura deve nascer completa; a ativação dos contextos pode ser gradual
 
+4.2.10 Grupo C — item_tag com padrão + flexíveis.
+
+* o Grupo C não deve seguir uma grade fixa igual para todos os nichos
+* o Grupo C deve operar com alguns itens padrão e outros flexíveis por nicho e contexto
+
 ### 4.3 Ambiguidades / aperfeiçoamento
 
 4.3.1 Estratégia de alimentação das 9 tabelas.
@@ -146,6 +153,11 @@ Ela registra o caso de uso atual, suas decisões, ambiguidades, propostas, fluxo
 * uso inicial: prompts externos + saída estruturada + carga controlada
 * schema via migrations; conteúdo via seed/import/upsert
 * preparar formato de entrada para futura automação por agentes
+
+4.3.2 Grupo C — catálogo operacional dos `item_tag`.
+
+* está definido que o Grupo C deve operar com alguns itens padrão e outros flexíveis por nicho e contexto
+* ainda está em aberto se essa governança ficará apenas em documento operacional e template canônico de saída ou se exigirá estrutura própria de BD no futuro
 
 ### 4.4 Propostas abertas
 
@@ -360,80 +372,18 @@ Ela registra o caso de uso atual, suas decisões, ambiguidades, propostas, fluxo
 
 ### 6.2 Implementado — E10.5.3 Kit operacional de expansão do Grupo A
 
-* status: implementado em `main`
-* guia operacional do Grupo A versionado em `docs/`
-* snippets SQL operacionais do Grupo A versionados em `supabase/snippets/`
-* leitura pragmática desta rodada fechada como: investigar o que já existe, evitar duplicidade evidente, propor o que falta, aprovar, carregar e validar
-* investigação operacional consolidada em 2 snippets, utilizáveis tanto no momento pré-carga quanto no pós-carga
-* snippet de carga ajustado para refletir a flexibilidade real de `business_taxons`
-* carga prática reportada como concluída para o ultra_niche `implante-dentario`, com pai `odontologia`, e alias `implantodontia`
-
 #### 6.2.1 Objetivo
 
-* criar o kit operacional de expansão do Grupo A
-* padronizar como outro chat deve investigar duplicidades, propor novos taxons e aliases, formatar a saída e entregar o SQL final
-* evitar carga manual solta e evitar drift entre chats
-* arquivar os prompts operacionais desta etapa em `docs/`
-* arquivar os SQLs/snippets operacionais desta etapa em `supabase/snippets/`
+* criar o kit operacional de expansão do Grupo A para padronizar a investigação, proposta, aprovação, carga e validação de `business_taxons` e `business_taxon_aliases` sem drift entre chats
 
-#### 6.2.2 Escopo desta etapa
+#### 6.2.2 Referência documental desta etapa
 
-* criar o template de investigação do que já existe em `business_taxons` e `business_taxon_aliases`
-* criar o prompt de proposta de novos segmentos, nichos, ultranichos e aliases
-* criar o template canônico de saída dos dados aprovados
-* criar o SQL canônico de carga do Grupo A
-* criar o checklist de validação pós-carga
-
-#### 6.2.3 Decisões fechadas desta etapa
-
-* o Grupo A cobre `business_taxons` e `business_taxon_aliases`
-* `account_taxonomy` não entra neste processo
-* o processo inicial será manual via chat, com aprovação antes da carga
-* outro chat deve primeiro investigar para evitar duplicidades
-* a carga final deve sair em SQL no formato canônico definido nesta etapa
-* `supa#40` permanece como apoio operacional desta etapa
-* os prompts operacionais do Grupo A devem ser versionados em `docs/`
-* os SQLs/snippets operacionais do Grupo A devem ser versionados em `supabase/snippets/`
-* o cadastro inicial de aliases no Grupo A deve priorizar aliases de sentido, comerciais e realmente relevantes de mercado
-* o desenho dos aliases nesta etapa já deve considerar que o `supa#51` existirá depois, na etapa E10.5.6
-* o Grupo A não precisa tentar cobrir exaustivamente variações leves de grafia
-* essas variações serão parcialmente absorvidas depois por `supa#51` na etapa E10.5.6
-
-#### 6.2.4 Artefatos versionados desta etapa
-
-* `docs/e10-5-3-grupo-a-investigacao.md`
-* `supabase/snippets/e10_5_3_grupo_a_carga.sql`
-* `supabase/snippets/e10_5_3_grupo_a_investigacao_taxons.sql`
-* `supabase/snippets/e10_5_3_grupo_a_investigacao_aliases.sql`
-
-#### 6.2.5 Resultado da etapa
-
-* guia operacional do Grupo A criado e versionado no repositório
-* investigação operacional consolidada em 2 snippets
-* snippet de carga do Grupo A criado e ajustado
-* `parent_slug` nulo aceito para `niche` e `ultra_niche`
-* `parent_slug` preenchido e inexistente aborta explicitamente a carga
-* carga prática reportada como concluída para `implante-dentario` → pai `odontologia` → alias `implantodontia`
-* QA e smoke reportados como feitos
-* caso de uso reportado como funcionando, com evidência funcional
-* nenhuma pendência obrigatória aberta neste recorte
-
-#### 6.2.6 Fora do escopo
-
-* `account_taxonomy`
-* base estratégica por taxon
-* templates comerciais
-* classificação automática do nicho
-* runtime do E10.5
-* adapters
-* implementação do `supa#51` e do matching textual leve
-
-#### 6.2.7 Documentos canônicos desta etapa
-
-* `docs/prompt-executor.md`
-* `docs/schema.md`
-* `docs/roadmap.md`
-* `docs/supa-up.md`
+* usar como referência principal `docs/roadmap.md`
+* usar como referência operacional `docs/supa-up.md`
+* usar como referência de execução `docs/e10-5-3-grupo-a-investigacao.md`
+* usar como referência de snippets `supabase/snippets/e10_5_3_grupo_a_carga.sql`
+* usar como referência de snippets `supabase/snippets/e10_5_3_grupo_a_investigacao_taxons.sql`
+* usar como referência de snippets `supabase/snippets/e10_5_3_grupo_a_investigacao_aliases.sql`
 
 ### 6.3 Plano base — E10.5.4 Kit operacional de expansão do Grupo C
 
