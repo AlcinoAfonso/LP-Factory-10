@@ -1,6 +1,6 @@
 Título:
 
-) Objetivo
+1) Objetivo
 
 Esta lousa se baseia no repositório, mas não o espelha.
 Ela registra o caso de uso atual, suas decisões, ambiguidades, propostas, fluxo e esboço de execução.
@@ -111,17 +111,19 @@ após concluir a etapa 2, a IA deve parar e aguardar comando do proprietário do
 
 3.1.3.3 Etapa 3
 
-antes de entregar qualquer ABC, a IA deve avaliar os docs alvos do caso e informar quais precisam de atualização e quais não precisam de atualização
-
-na etapa 3, a IA deve avaliar também se docs/design-system.md deve receber atualização documental própria, com base no impacto real do caso sobre UI, componentes, padrões visuais e superfícies do produto
-
-após concluir essa triagem documental da etapa 3, a IA deve parar e aguardar comando do proprietário do produto para seguir
-
-depois da triagem documental, a IA deve gerar o ABC de cada doc que exigir ajuste, com base no relatório do executor, na lousa já ajustada, na definição sobre novo caso de uso e em docs/prompt-abc.md
+a IA deve gerar o ABC de cada doc coberto por docs/prompt-abc.md, com base no relatório do executor, na lousa já ajustada, na definição sobre novo caso de uso e em docs/prompt-abc.md
 
 para os docs cobertos por docs/prompt-abc.md, a IA deve seguir esse documento e entregar um ABC por vez
 
 após concluir cada ABC, a IA deve parar e aguardar comando do proprietário do produto para seguir
+
+3.1.3.4 Etapa 4
+
+avaliar se docs/design-system.md precisa de ajuste documental próprio
+
+se precisar, entregar o ajuste correspondente
+
+após concluir a etapa 4, a IA deve parar e aguardar comando do proprietário do produto para seguir
 
 4) Caso de uso atual — E12 Admin Dashboard
 
