@@ -1,4 +1,4 @@
-# Título: docs/lousa-estrategista-E10.5
+# Título: docs/lousa-estrategista-E10.5.md
 Versão: 12
 
 ## 1) Objetivo
