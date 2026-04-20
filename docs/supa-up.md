@@ -1798,6 +1798,14 @@ Integração de governança e CI/CD de schema com GitHub no Supabase, permitindo
 
 3. Validar pipeline em branch de preview antes de ativação em produção.  
 
+### Registro (Tipo A — Plataforma)
+
+- Status: PENDENTE
+- Verificado em: —
+- Ambiente: Supabase Dashboard / GitHub Integration / Branching
+- Evidência: —
+- Observação: recurso de governança e CI/CD de schema; depende de baseline consolidado no diretório `supabase/` antes de adoção prática no projeto.
+
 ---
 
 ## 56 — Push Protection para `supabase_secret_key` *(🟦 Estável)*  
@@ -1832,6 +1840,14 @@ Recurso de segurança/governança para bloquear push acidental de chaves secreta
 
 3. Incluir checagem em onboarding técnico para reduzir recorrência de incidentes.  
 
+### Registro (Tipo A — Plataforma)
+
+- Status: PENDENTE
+- Verificado em: —
+- Ambiente: GitHub / Secret Scanning / Push Protection
+- Evidência: —
+- Observação: recurso de segurança e governança; reforça a política do projeto de uso controlado de `SUPABASE_SECRET_KEY` e prevenção de vazamento por push acidental.
+
 ---
 
 ## 57 — Schema Visualiser Improvements *(🟦 Estável)*  
@@ -1864,5 +1880,12 @@ Melhorias do Schema Visualiser para inspeção de modelagem (relações clicáve
 
 2. Registrar no playbook quando usar inspeção visual versus revisão textual em `docs/schema.md`.  
 
----
+### Registro (Tipo A — Plataforma)
 
+- Status: PENDENTE
+- Verificado em: —
+- Ambiente: Supabase Studio / Schema Visualiser
+- Evidência: —
+- Observação: recurso de apoio operacional de modelagem e inspeção visual; complementa `docs/schema.md`, sem substituí-lo.
+
+---
