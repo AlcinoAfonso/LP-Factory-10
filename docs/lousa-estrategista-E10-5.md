@@ -1,5 +1,6 @@
-# Título: docs/lousa-estrategista-E10.5.md
-Versão: 12
+## Título: docs/lousa-estrategista-E10-5.md
+
+Versão 13
 
 ## 1) Objetivo
 
@@ -60,8 +61,8 @@ Ela registra o caso de uso atual, suas decisões, ambiguidades, propostas, fluxo
 * você é o executor deste caso
 * você tem acesso direto, via conectores já configurados, ao GitHub `AlcinoAfonso/LP-Factory-10`, branch `main`, onde estão os docs deste caso
 * acessar `docs/prompt-executor.md`
-* usar como plano base o item `6.x` correspondente em `docs/lousa-estrategista-2.md`
-* usar `docs/lousa-estrategista-2.md` também como visão geral do caso, se necessário
+* usar como plano base o item `6.x` correspondente em `docs/lousa-estrategista-E10.5.md`
+* usar `docs/lousa-estrategista-E10.5.md` também como visão geral do caso, se necessário
 
 #### 3.1.3 Após receber o relatório do executor
 
@@ -145,6 +146,13 @@ Ela registra o caso de uso atual, suas decisões, ambiguidades, propostas, fluxo
 * o Grupo C não deve seguir uma grade fixa igual para todos os nichos
 * o Grupo C deve operar com alguns itens padrão e outros flexíveis por nicho e contexto
 
+4.2.11 Grupo C — ajuste estrutural prioritário de `taxon_market_research_items`.
+
+* o desenho do Grupo C deve manter as 3 tabelas já definidas
+* não deve ser criada nova tabela agora
+* o ajuste estrutural deve ocorrer na própria `taxon_market_research_items`
+* esse ajuste é pré-condição para a primeira carga real do Grupo C
+
 ### 4.3 Ambiguidades / aperfeiçoamento
 
 4.3.1 Estratégia de alimentação das 9 tabelas.
@@ -154,10 +162,10 @@ Ela registra o caso de uso atual, suas decisões, ambiguidades, propostas, fluxo
 * schema via migrations; conteúdo via seed/import/upsert
 * preparar formato de entrada para futura automação por agentes
 
-4.3.2 Grupo C — catálogo operacional dos `item_tag`.
+4.3.2 Grupo C — estrutura mínima final de `taxon_market_research_items`.
 
-* está definido que o Grupo C deve operar com alguns itens padrão e outros flexíveis por nicho e contexto
-* ainda está em aberto se essa governança ficará apenas em documento operacional e template canônico de saída ou se exigirá estrutura própria de BD no futuro
+* está definido que o ajuste estrutural da tabela é necessário antes da primeira carga real do Grupo C
+* a ambiguidade agora é qual é a estrutura mínima final da tabela para diferenciar com segurança tipo amplo do item, chave semântica, escopo de público, conteúdo, ordem e observação opcional
 
 ### 4.4 Propostas abertas
 
@@ -390,64 +398,65 @@ Ela registra o caso de uso atual, suas decisões, ambiguidades, propostas, fluxo
 #### 6.3.1 Objetivo
 
 * criar o kit operacional de expansão do Grupo C
-* padronizar como outro chat deve investigar lacunas, propor base estratégica por taxon, formatar a saída e entregar o SQL final
-* reduzir drift entre chats e evitar carga manual solta
-* versionar os artefatos operacionais desta etapa em `docs/` e `supabase/snippets/`
+* padronizar como outro chat deve estruturar, consolidar e preparar a base estratégica por taxon sem drift entre chats
+* reduzir carga manual solta e versionar os artefatos operacionais desta etapa em `docs/` e `supabase/snippets/`
 
-#### 6.3.2 Recorte da etapa
-
-* esta etapa cobre apenas o Grupo C
-* tabelas-alvo:
-
-  * `taxon_market_research`
-  * `taxon_market_research_items`
-  * `taxon_message_guides`
-
-#### 6.3.3 Entregas esperadas
-
-* template de investigação do que já existe nas 3 tabelas do Grupo C
-* prompt de proposta da primeira base estratégica por taxon
-* template canônico de saída dos dados aprovados do Grupo C
-* SQL canônico de carga do Grupo C
-* checklist de validação pós-carga
-* artefatos versionados em `docs/` e `supabase/snippets/`
-
-#### 6.3.4 Documentos canônicos desta etapa
+#### 6.3.2 Documentos canônicos desta etapa
 
 * `docs/prompt-executor.md`
 * `docs/schema.md`
 * `docs/roadmap.md`
 * `docs/supa-up.md`
 
-#### 6.3.5 Decisões já fechadas desta etapa
+#### 6.3.3 Decisões já fechadas desta etapa
 
-* o Grupo C cobre apenas `taxon_market_research`, `taxon_market_research_items` e `taxon_message_guides`
+* neste recorte, o Grupo C opera com `taxon_market_research` e `taxon_market_research_items`
 * o processo inicial será manual via chat, com aprovação antes da carga
-* outro chat deve primeiro investigar para evitar duplicidades e lacunas
-* a carga final deve sair em SQL no formato canônico definido nesta etapa
+* a saída consolidada desta etapa deve sair em formato canônico e utilizável na carga SQL posterior do Grupo B
 * os prompts operacionais do Grupo C devem ser versionados em `docs/`
 * os SQLs/snippets operacionais do Grupo C devem ser versionados em `supabase/snippets/`
+* o taxon já existente no E10.5.3 deve ser tratado apenas como pré-condição operacional
+* este fluxo não recadastra taxon nem alias
+* `taxon_message_guides` fica fora deste recorte
+* o ajuste estrutural de `taxon_market_research_items` é pré-condição para a primeira carga real do Grupo C
+* não deve ser criada nova tabela agora; o ajuste deve ocorrer na própria `taxon_market_research_items`
+* a saída consolidada desta etapa deve servir de base para a carga SQL posterior do Grupo B
 
-#### 6.3.6 O que a etapa deve responder
+#### 6.3.4 Recorte da etapa
 
-* qual taxon terá a primeira base estratégica registrada
-* quais campos e blocos mínimos entram em `taxon_market_research`
-* quais tipos de itens entram em `taxon_market_research_items`
-* como estruturar `taxon_message_guides` para os contextos iniciais sem inflar a base
-* qual será o formato canônico de saída aprovado antes da carga
+* esta etapa recorta a modelagem mínima final de `taxon_market_research_items`
+* a tabela deve ser ajustada neste recorte antes da primeira carga real do Grupo C
+* o objetivo é permitir diferenciação segura por tipo amplo do item, chave semântica, escopo de público, conteúdo, ordem e observação opcional
 
-#### 6.3.7 Critério de execução
+#### 6.3.5 Processo manual desta etapa
 
-* investigar primeiro o que já existe
-* evitar duplicidade e lacunas evidentes
-* propor a base estratégica inicial de forma enxuta e utilizável
-* aprovar antes de carregar
-* carregar por SQL canônico
-* validar pós-carga com checklist fechado
+* a admin define antes o taxon que será carregado neste recorte
+* primeiro, criar o prompt de pesquisa completa do nicho em `docs/prompt-E10-5-4-pesquisa-completa-nicho.md`
+* depois, criar o prompt de consolidação da pesquisa do nicho em `docs/prompt-E10-5-4-consolidacao-pesquisa-nicho.md`
+* depois, definir o template canônico de saída dos dados aprovados do Grupo C em `docs/`
+* depois, criar o SQL canônico de carga do Grupo C em `supabase/snippets/`
+* depois, registrar a instrução clara de como a saída consolidada desta etapa alimentará a carga SQL posterior do Grupo B
+* por fim, criar o checklist de validação pós-carga em `docs/`
+
+#### 6.3.6 Saídas obrigatórias da etapa
+
+* Fechar a estrutura mínima final de `taxon_market_research_items` antes da primeira carga real.
+* Definir o formato canônico de saída consolidada que será aprovado antes da carga.
+* Fechar a governança entre prompt de pesquisa, prompt de consolidação e carga SQL posterior do Grupo B.
+* Garantir que a saída consolidada final fique pronta para versionamento e uso operacional.
+
+#### 6.3.7 Princípios de execução
+
+* Não reabrir decisões já fechadas nesta lousa sem conflito real de fonte.
+* Não recadastrar taxon nem alias nesta etapa.
+* Resolver apenas o mínimo necessário para fechar a modelagem antes da primeira carga real.
+* Investigar no repositório apenas o necessário para confirmar aderência entre modelagem, prompts e carga.
 
 #### 6.3.8 Fora do escopo
 
-* templates comerciais do Grupo B
+* geração automática do comercial do E10.5 por IA em runtime
+* carga SQL do Grupo B em si
+* `taxon_message_guides`
 * `account_taxonomy`
 * classificação automática do nicho
 * runtime do E10.5
@@ -460,12 +469,6 @@ Ela registra o caso de uso atual, suas decisões, ambiguidades, propostas, fluxo
 * verificar se já existem artefatos operacionais do Grupo C em `docs/` ou `supabase/snippets/`
 * confirmar no `docs/schema.md` o contrato atual das 3 tabelas do Grupo C antes de definir o template canônico
 * verificar em `docs/roadmap.md` se já existe algum taxon ou contexto inicial explicitamente priorizado para a primeira carga do Grupo C
-
-#### 6.3.10 Resultado final da etapa
-
-* kit operacional do Grupo C fechado
-* artefatos operacionais versionados
-* base mínima estratégica pronta para ser proposta, aprovada, carregada e validada sem drift
 
 ### 6.4 Esboço — E10.5.5 Carga inicial dos templates comerciais (Grupo B)
 
@@ -501,3 +504,5 @@ Ela registra o caso de uso atual, suas decisões, ambiguidades, propostas, fluxo
 
 * decidir se `content_template_sections` entra ou não
 * só implementar se o runtime realmente precisar de composição por blocos
+
+---
