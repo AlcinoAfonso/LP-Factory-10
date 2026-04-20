@@ -426,7 +426,9 @@ Ela registra o caso de uso atual, suas decisões, ambiguidades, propostas, fluxo
 
 * esta etapa recorta a modelagem mínima final de `taxon_market_research_items`
 * a tabela deve ser ajustada neste recorte antes da primeira carga real do Grupo C
-* o objetivo é permitir diferenciação segura por tipo amplo do item, chave semântica, escopo de público, conteúdo, ordem e observação opcional
+* fechar os campos mínimos: `item_type`, `item_key`, `audience_scope`, `item_text`, `priority`, `sort_order`, `is_active`, `notes`
+* fechar valores iniciais de `audience_scope`: `end_customer` e `business_buyer`
+* governança: `item_key` novo descoberto na pesquisa não entra automaticamente no BD; só entra após aprovação humana e, se necessário, após ajuste do `docs/prompt-E10-5-4-consolidacao-pesquisa-nicho.md`
 
 #### 6.3.5 Processo manual desta etapa
 
