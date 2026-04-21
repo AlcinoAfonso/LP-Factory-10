@@ -1,6 +1,6 @@
 ## Título: docs/lousa-estrategista-E10-5.md
 
-Versão 14
+Versão 15
 
 ## 1) Objetivo
 
@@ -62,7 +62,7 @@ Ela registra o caso de uso atual, suas decisões, ambiguidades, propostas, fluxo
 * você tem acesso direto, via conectores já configurados, ao GitHub `AlcinoAfonso/LP-Factory-10`, branch `main`, onde estão os docs deste caso
 * acessar `docs/prompt-executor.md`
 * usar como plano base o item `6.x` correspondente em `docs/lousa-estrategista-E10.5.md`
-* usar `docs/lousa-estrategista-E10.5.md` também como visão geral do caso, se necessário
+* usar `docs/lousa-estrategista-E10-5.md` também como visão geral do caso, se necessário
 
 #### 3.1.3 Após receber o relatório do executor
 
@@ -430,12 +430,102 @@ Ela registra o caso de uso atual, suas decisões, ambiguidades, propostas, fluxo
 * fechar valores iniciais de `audience_scope`: `end_customer` e `business_buyer`
 * governança: `item_key` novo descoberto na pesquisa não entra automaticamente no BD; só entra após aprovação humana e, se necessário, após ajuste do `docs/prompt-E10-5-4-consolidacao-pesquisa-nicho.md`
 
+##### 6.3.4.1 Estrutura final alvo das tabelas do recorte
+
+`taxon_market_research`
+
+* papel na etapa:
+
+  * registrar a pesquisa estratégica consolidada do taxon.
+  * servir de base para os itens detalhados da pesquisa.
+* estrutura final alvo:
+
+  * `id uuid`
+
+    * identificador único da pesquisa.
+  * `taxon_id uuid not null`
+
+    * taxon oficial ao qual a pesquisa pertence.
+  * `version integer not null default 1`
+
+    * versão da pesquisa daquele taxon.
+  * `status text not null`
+
+    * estado da pesquisa no ciclo de uso.
+  * `base_summary text not null`
+
+    * resumo-base consolidado da pesquisa.
+  * `created_at timestamptz not null default now()`
+
+    * data e hora de criação do registro.
+  * `updated_at timestamptz not null default now()`
+
+    * data e hora da última atualização do registro.
+* regras relevantes:
+
+  * CHECK: `status IN ('draft', 'active', 'archived')`
+  * FK: `taxon_id -> business_taxons(id)` ON UPDATE CASCADE ON DELETE RESTRICT
+
+`taxon_market_research_items`
+
+* papel na etapa:
+
+  * registrar os itens detalhados da pesquisa estratégica.
+  * armazenar a pesquisa em granularidade suficiente para servir ao projeto sem exigir refazer toda a pesquisa depois.
+* estrutura final alvo:
+
+  * `id uuid`
+
+    * identificador único do item.
+  * `research_id uuid not null`
+
+    * pesquisa-pai à qual o item pertence.
+  * `item_type text not null`
+
+    * tipo amplo do item pesquisado.
+  * `item_key text not null`
+
+    * chave semântica específica do item.
+  * `audience_scope text not null`
+
+    * público ao qual o item se refere.
+  * `item_text text not null`
+
+    * conteúdo textual do item pesquisado.
+  * `priority integer not null default 0`
+
+    * prioridade relativa do item dentro da pesquisa.
+  * `sort_order integer not null`
+
+    * ordem de organização do item dentro do conjunto.
+  * `is_active boolean not null default true`
+
+    * indica se o item está ativo para uso.
+  * `notes text null`
+
+    * observação opcional sobre o item.
+  * `created_at timestamptz not null default now()`
+
+    * data e hora de criação do item.
+  * `updated_at timestamptz not null default now()`
+
+    * data e hora da última atualização do item.
+* valores iniciais já fechados:
+
+  * `audience_scope`: `end_customer`, `business_buyer`
+* governança já fechada:
+
+  * `item_key` novo descoberto na pesquisa não entra automaticamente no BD.
+  * ele só entra após aprovação humana.
+  * se necessário, também depende de ajuste do `docs/prompt-E10-5-4-consolidacao-pesquisa-nicho.md`.
+
 #### 6.3.5 Processo manual desta etapa
 
 * a admin define antes o taxon que será carregado neste recorte
 * primeiro, criar o prompt de pesquisa completa do nicho em `docs/prompt-E10-5-4-pesquisa-completa-nicho.md`
 * depois, criar o prompt de consolidação da pesquisa do nicho em `docs/prompt-E10-5-4-consolidacao-pesquisa-nicho.md`
 * depois, definir o template canônico de saída dos dados aprovados do Grupo C em `docs/`
+* depois, aplicar o template canônico de filtragem entre a pesquisa bruta e a carga no BD, separando referência operacional ao taxon, dados de `research` do registro principal e itens consultáveis da pesquisa; `taxon_name`, `taxon_slug` e `taxon_level` podem existir só para controle manual, e a carga final deve relacionar a `research` ao taxon já existente
 * depois, criar o SQL canônico de carga do Grupo C em `supabase/snippets/`
 * depois, registrar a instrução clara de como a saída consolidada desta etapa alimentará a carga SQL posterior do Grupo B
 * por fim, criar o checklist de validação pós-carga em `docs/`
