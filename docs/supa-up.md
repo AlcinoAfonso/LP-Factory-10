@@ -1763,3 +1763,129 @@ Generated columns do PostgreSQL permitem manter **colunas derivadas automaticame
 - Observação: documentar como capacidade futura, sem induzir implementação imediata.
 
 ---
+
+## 55 — GitHub Integration (Schema CI/CD) *(🟦 Estável)*  
+
+2026-04-20  
+
+### Status no Projeto
+
+- Status: Não implementado
+- Evidência: diretório `supabase/` ainda sem baseline consolidado para adoção do fluxo completo de migrations + preview/produção no projeto
+
+
+### Descrição  
+
+Integração de governança e CI/CD de schema com GitHub no Supabase, permitindo sincronizar branches e aplicar migrations versionadas de `supabase/migrations`, além de apoiar deploy declarativo de recursos do projeto.  
+
+### Valor para o Projeto  
+
+- Reduz drift entre repositório e banco em fluxos com migrations versionadas.  
+
+- Fortalece governança de mudanças de schema com checks de integração antes de merge.  
+
+- Não resolve baseline sozinho; depende da organização prévia do diretório `supabase/`.  
+
+### Valor para o Usuário  
+
+- Menor risco de regressões silenciosas por divergência de schema em produção.  
+
+### Ações Recomendadas  
+
+1. Consolidar baseline do diretório `supabase/` (migrations, config e convenções).  
+
+2. Conectar repositório ao projeto Supabase e configurar required checks no GitHub.  
+
+3. Validar pipeline em branch de preview antes de ativação em produção.  
+
+### Registro (Tipo A — Plataforma)
+
+- Status: PENDENTE
+- Verificado em: —
+- Ambiente: Supabase Dashboard / GitHub Integration / Branching
+- Evidência: —
+- Observação: recurso de governança e CI/CD de schema; depende de baseline consolidado no diretório `supabase/` antes de adoção prática no projeto.
+
+---
+
+## 56 — Push Protection para `supabase_secret_key` *(🟦 Estável)*  
+
+2026-04-20  
+
+### Status no Projeto
+
+- Status: Não implementado
+- Evidência: não há registro no repositório de política operacional formalizada de push protection específica para `supabase_secret_key`
+
+
+### Descrição  
+
+Recurso de segurança/governança para bloquear push acidental de chaves secretas Supabase detectadas pelo GitHub (push protection para `supabase_secret_key`).  
+
+### Valor para o Projeto  
+
+- Reforça a política de não exposição de segredos e o uso controlado de `SUPABASE_SECRET_KEY`.  
+
+- Reduz risco operacional de vazamento por erro humano em commits/pushes.  
+
+### Valor para o Usuário  
+
+- Maior proteção indireta de dados e continuidade do serviço.  
+
+### Ações Recomendadas  
+
+1. Habilitar/validar push protection no repositório GitHub do projeto.  
+
+2. Revisar documentação interna de segredos para refletir o controle automático.  
+
+3. Incluir checagem em onboarding técnico para reduzir recorrência de incidentes.  
+
+### Registro (Tipo A — Plataforma)
+
+- Status: PENDENTE
+- Verificado em: —
+- Ambiente: GitHub / Secret Scanning / Push Protection
+- Evidência: —
+- Observação: recurso de segurança e governança; reforça a política do projeto de uso controlado de `SUPABASE_SECRET_KEY` e prevenção de vazamento por push acidental.
+
+---
+
+## 57 — Schema Visualiser Improvements *(🟦 Estável)*  
+
+2026-04-20  
+
+### Status no Projeto
+
+- Status: Não implementado
+- Evidência: sem procedimento registrado no projeto para uso recorrente do visualizador como etapa de revisão de modelagem
+
+
+### Descrição  
+
+Melhorias do Schema Visualiser para inspeção de modelagem (relações clicáveis, ações de contexto em tabelas/colunas e navegação com popovers entre objetos conectados).  
+
+### Valor para o Projeto  
+
+- Apoia revisão operacional de modelagem em frentes de evolução de dados (ex.: E10.5 e Grupo C).  
+
+- Complementa documentação técnica (`docs/schema.md`), sem substituí-la.  
+
+### Valor para o Usuário  
+
+- Melhora indireta na consistência estrutural das funcionalidades dependentes de dados.  
+
+### Ações Recomendadas  
+
+1. Adotar o visualizador como apoio em revisões de schema e PRs com migrations.  
+
+2. Registrar no playbook quando usar inspeção visual versus revisão textual em `docs/schema.md`.  
+
+### Registro (Tipo A — Plataforma)
+
+- Status: PENDENTE
+- Verificado em: —
+- Ambiente: Supabase Studio / Schema Visualiser
+- Evidência: —
+- Observação: recurso de apoio operacional de modelagem e inspeção visual; complementa `docs/schema.md`, sem substituí-lo.
+
+---
