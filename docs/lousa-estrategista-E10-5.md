@@ -61,7 +61,7 @@ Ela registra o caso de uso atual, suas decisões, ambiguidades, propostas, fluxo
 * você é o executor deste caso
 * você tem acesso direto, via conectores já configurados, ao GitHub `AlcinoAfonso/LP-Factory-10`, branch `main`, onde estão os docs deste caso
 * acessar `docs/prompt-executor.md`
-* usar como plano base o item `6.x` correspondente em `docs/lousa-estrategista-E10.5.md`
+* usar como plano base o item `6.x` correspondente em `docs/lousa-estrategista-E10-5.md`
 * usar `docs/lousa-estrategista-E10-5.md` também como visão geral do caso, se necessário
 
 #### 3.1.3 Após receber o relatório do executor
