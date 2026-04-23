@@ -378,45 +378,20 @@ Ela registra o caso de uso atual, suas decisões, ambiguidades, propostas, fluxo
 * usar como referência estrutural `docs/schema.md`
 * usar como referência de regras técnicas `docs/base-tecnica.md`
 
-#### 6.1.4 Plano base — E10.5.2.1 Ajustar `taxon_market_research` e `taxon_market_research_items` no BD
+#### 6.1.4 Implementado — E10.5.2.1 Ajustar `taxon_market_research` e `taxon_market_research_items` no BD
 
 ##### 6.1.4.1 Objetivo
 
-* ajustar no BD as duas tabelas do Grupo C para refletir a modelagem já definida na seção 6.3
+* ajustar no BD as duas tabelas do Grupo C para refletir a modelagem definida na seção 6.3
 * preparar a base estrutural para a primeira carga real do Grupo C
 * manter o ajuste restrito às duas tabelas já existentes, sem criação de nova tabela
 
-##### 6.1.4.2 Escopo desta etapa
+##### 6.1.4.2 Referência documental desta etapa
 
-* ajustar `taxon_market_research` para incluir `research_block`
-* manter `research_block` como texto governado por prompts e processo operacional, sem `CHECK` fechado nesta etapa
-* manter a unicidade técnica de `taxon_market_research` por `taxon_id + research_block + version`
-* garantir no BD no máximo uma versão ativa por `taxon_id + research_block`
-* ajustar `taxon_market_research_items` para remover `item_type`
-* ajustar `taxon_market_research_items` para os campos: `item_key`, `audience_scope`, `item_text`, `priority`, `sort_order`, `is_active`, `notes`
-* aplicar `CHECK` fechado em `audience_scope` para `end_customer` e `business_buyer`
-* manter `taxon_market_research_items` sem unicidade extra nesta etapa
-* manter `sort_order` obrigatório com default `999`
-
-##### 6.1.4.3 Referência documental desta etapa
-
-* `docs/roadmap.md`
-* `docs/schema.md`
+* `docs/roadmap.md` — seção 10.5.2.1
 * `docs/base-tecnica.md`
-* `docs/supa-up.md`
-* `docs/lousa-estrategista-E10-5.md`
+* `docs/schema.md`
 
-##### 6.1.4.4 Resultado esperado
-
-* `taxon_market_research` ajustada para versionamento por `research_block`
-* `taxon_market_research_items` ajustada para a nova estrutura sem `item_type`
-* contrato do BD alinhado à seção 6.3
-
-##### 6.1.4.5 Fora do escopo
-
-* criação de nova tabela
-* ajuste de `taxon_message_guides`
-* reabertura de decisões de prompts, blocos operacionais ou carga do Grupo B
 
 ### 6.2 Implementado — E10.5.3 Kit operacional de expansão do Grupo A
 
