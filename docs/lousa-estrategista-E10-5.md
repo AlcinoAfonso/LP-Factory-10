@@ -1,6 +1,6 @@
 ## Título: docs/lousa-estrategista-E10-5.md
 
-Versão 16
+Versão 17
 
 ## 1) Objetivo
 
