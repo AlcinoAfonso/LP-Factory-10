@@ -1,8 +1,8 @@
 0. Introdução
 
 0.1 Cabeçalho
-• Data: 18/04/2026
-• Versão: v1.5.41
+• Data: 23/04/2026
+• Versão: v1.5.42
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -653,6 +653,21 @@
 
 10.5.2 Base estrutural admin/interna de taxonomia, templates e guides
 • Status: Concluído (exec) (09/04/2026)
+10.5.2.1 Ajustar taxon_market_research e taxon_market_research_items no BD
+• Status: Concluído (23/04/2026)
+• Escopo final:
+• taxon_market_research: remoção de base_summary; inclusão de research_block; unicidade por (taxon_id, research_block, version); índice único parcial para no máximo 1 versão active por (taxon_id, research_block)
+• taxon_market_research_items: substituição da estrutura baseada em item_tag por item_key, audience_scope, item_text, priority, sort_order, is_active, notes
+• audience_scope com CHECK ('end_customer', 'business_buyer')
+• sem unicidade extra na tabela-filha nesta etapa
+• sort_order como NOT NULL DEFAULT 999
+• Artefatos:
+• supabase/migrations/0007__e10_5_2_1_group_c_research_adjust.sql
+• supabase/rollbacks/20260423__e10_5_2_1_group_c_research_adjust.rollback.sql
+• Docs afetados:
+• docs/schema.md
+• docs/lousa-estrategista-E10-5.md
+
 • Objetivo: criar a base estrutural de BD para sustentar a evolução do E10.5 com taxonomia, templates, pesquisa e guides, ainda sem exposição ao tenant/app nesta etapa.
 • Implementado/Definido:
 • criadas 8 tabelas do E10.5.2 no Supabase, com PK, FK, `CHECK`, índices e RLS admin-only
@@ -959,6 +974,9 @@
 • Definir o primeiro recorte funcional do LP Builder no roadmap
 
 99. Changelog
+v1.5.42 (23/04/2026)
+• Adicionado 10.5.2.1 com o ajuste estrutural de taxon_market_research e taxon_market_research_items no BD.
+
 v1.5.41 (18/04/2026)
 • E12 atualizado para refletir a execução do primeiro recorte real do Admin: superfície protegida de `/admin` entregue como base de acesso/UI do contexto administrativo.
 • 12.5 deixou de ser “próximo subcaso” genérico e passou a registrar o recorte executado de acesso e superfície inicial do Admin.

@@ -1,8 +1,8 @@
 0. Introdução
 
 0.1 Cabeçalho
-• Data da última atualização: 13/04/2026
-• Documento: LP Factory 10 — Schema (DB Contract) v1.0.11
+• Data da última atualização: 23/04/2026
+• Documento: LP Factory 10 — Schema (DB Contract) v1.0.12
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -265,22 +265,27 @@
 
 1.15.1 Chaves, constraints e relacionamentos
 • PK: id uuid
+• UNIQUE: (taxon_id, research_block, version)
 • CHECK: taxon_market_research_status_chk (status IN ('draft', 'active', 'archived'))
 • FK: taxon_id → business_taxons(id) ON UPDATE CASCADE ON DELETE RESTRICT
 
 1.15.2 Campos
 • taxon_id uuid not null
+• research_block text not null
+• Regra: texto governado por processo operacional; sem CHECK fechado nesta etapa
 • version integer not null default 1
 • status text not null
-• base_summary text not null
 • created_at timestamptz not null default now()
 • updated_at timestamptz not null default now()
 
-1.15.3 Segurança
+1.15.3 Índices
+• uq_taxon_market_research_active_per_block (UNIQUE parcial em (taxon_id, research_block) WHERE status = 'active')
+
+1.15.4 Segurança
 • Trigger Hub: não
 • RLS: ativo (enable row level security)
 
-1.15.4 Policies
+1.15.5 Policies
 • taxon_market_research_select_admin_only (SELECT to public): is_super_admin() OU is_platform_admin()
 • taxon_market_research_insert_admin_only (INSERT to public): is_super_admin() OU is_platform_admin()
 • taxon_market_research_update_admin_only (UPDATE to public): is_super_admin() OU is_platform_admin() (USING + WITH CHECK)
@@ -290,14 +295,19 @@
 
 1.16.1 Chaves, constraints e relacionamentos
 • PK: id uuid
+• CHECK: taxon_market_research_items_audience_scope_chk (audience_scope IN ('end_customer', 'business_buyer'))
 • FK: research_id → taxon_market_research(id) ON UPDATE CASCADE ON DELETE CASCADE
+• UNIQUE adicional: nenhuma nesta etapa
 
 1.16.2 Campos
 • research_id uuid not null
-• item_tag text not null
+• item_key text not null
+• audience_scope text not null
 • item_text text not null
 • priority integer not null default 0
+• sort_order integer not null default 999
 • is_active boolean not null default true
+• notes text null
 • created_at timestamptz not null default now()
 • updated_at timestamptz not null default now()
 
@@ -476,6 +486,11 @@
 • Nota: accounts.status não aceita trial (CHECK accounts_status_chk). No estado atual, views não contêm trial e o runtime/tipos (PATH) não incluem trial (drift resolvido).
 
 99. Changelog
+v1.0.12 (23/04/2026) — E10.5.2.1: ajuste estrutural das tabelas do Grupo C
+• taxon_market_research: removido base_summary; adicionado research_block; registrada unicidade por (taxon_id, research_block, version) e índice único parcial para no máximo 1 versão active por (taxon_id, research_block).
+• taxon_market_research_items: substituída a estrutura baseada em item_tag por item_key, audience_scope, item_text, priority, sort_order, is_active e notes.
+• audience_scope registrado com CHECK fechado (end_customer, business_buyer); sem UNIQUE extra nesta etapa; sort_order como NOT NULL DEFAULT 999.
+
 v1.0.11 (13/04/2026) — Remoção do legado de tokens no contrato de DB
 • Removidas do contrato as referências aos objetos legados de token/onboarding removidos na limpeza de BD.
 • Ajustado o inventário para refletir o estado pós-limpeza, preservando helpers admin/shared (`is_platform_admin()`, `is_super_admin()`, `ensure_first_account_for_current_user()`) e `v_audit_logs_norm`.
