@@ -1,6 +1,6 @@
 ## Título: docs/lousa-estrategista-E10-5.md
 
-Versão 15
+Versão 16
 
 ## 1) Objetivo
 
@@ -393,6 +393,10 @@ Ela registra o caso de uso atual, suas decisões, ambiguidades, propostas, fluxo
 * usar como referência de snippets `supabase/snippets/e10_5_3_grupo_a_investigacao_taxons.sql`
 * usar como referência de snippets `supabase/snippets/e10_5_3_grupo_a_investigacao_aliases.sql`
 
+## Título: docs/lousa-estrategista-E10-5.md
+
+Versão 15
+
 ### 6.3 Plano base — E10.5.4 Kit operacional de expansão do Grupo C
 
 #### 6.3.1 Objetivo
@@ -408,143 +412,102 @@ Ela registra o caso de uso atual, suas decisões, ambiguidades, propostas, fluxo
 * `docs/roadmap.md`
 * `docs/supa-up.md`
 
-#### 6.3.3 Decisões já fechadas desta etapa
+#### 6.3.3 Definições e ambiguidades por item
 
-* neste recorte, o Grupo C opera com `taxon_market_research` e `taxon_market_research_items`
-* o processo inicial será manual via chat, com aprovação antes da carga
-* a saída consolidada desta etapa deve sair em formato canônico e utilizável na carga SQL posterior do Grupo B
-* os prompts operacionais do Grupo C devem ser versionados em `docs/`
+##### 6.3.3.1 Tabelas
+
+###### 6.3.3.1.1 `taxon_market_research`
+
+A) Definido
+
+* `taxon_market_research` será ajustada para incluir `research_block`
+* `research_block` será usado para versionar os blocos de pesquisa do Grupo C
+* os blocos previstos para cada etapa serão definidos pelos prompts operacionais
+* a unicidade técnica da tabela-pai deve ser por `taxon_id + research_block + version`
+* os campos mínimos de `taxon_market_research` passam a ser: `taxon_id`, `research_block`, `version`, `status`, `created_at`, `updated_at`
+* a regra de no máximo uma versão ativa por `taxon_id + research_block` será garantida no BD por índice único parcial
+
+B) Ambiguidades / A definir
+
+* sem ambiguidades relevantes nesta etapa
+
+###### 6.3.3.1.2 `taxon_market_research_items`
+
+A) Definido
+
+* `taxon_market_research_items` remove `item_type`
+* os campos mínimos de `taxon_market_research_items` passam a ser: `item_key`, `audience_scope`, `item_text`, `priority`, `sort_order`, `is_active`, `notes`
+* os valores iniciais de `audience_scope` ficam: `end_customer` e `business_buyer`
+* `item_key` novo descoberto na pesquisa não entra automaticamente no BD; só entra após aprovação humana e, se necessário, após ajuste do `docs/prompt-E10-5-4-consolidacao-pesquisa-nicho.md`
+
+B) Ambiguidades / A definir
+
+* definir se `audience_scope` entrará no BD com `CHECK` fechado
+* ou se entrará como texto governado por processo operacional
+* definir se `taxon_market_research_items` terá alguma unicidade extra além de PK + FK
+* ou se a tabela-filha ficará sem trava adicional nesta etapa
+* definir se `sort_order` terá `default`
+* ou se continuará obrigatório sem `default`
+
+##### 6.3.3.2 Prompt de pesquisa
+
+A) Definido
+
+* o prompt de pesquisa desta etapa deve ficar em `docs/prompt-E10-5-4-pesquisa-completa-nicho.md`
+* ele deve funcionar como prompt mestre do nicho
+* ele deve permitir selecionar um, vários ou todos os `research_block`
+* os `research_block` previstos para cada rodada de pesquisa serão definidos no próprio prompt
+* a pesquisa pode ter liberdade controlada, mas deve entregar apenas conteúdo útil à estrutura da tabela
+
+B) Ambiguidades / A definir
+
+* sem ambiguidades relevantes nesta etapa
+
+##### 6.3.3.3 Prompt de consolidação
+
+A) Definido
+
+* o prompt de consolidação desta etapa deve ficar em `docs/prompt-E10-5-4-consolidacao-pesquisa-nicho.md`
+* ele deve transformar a pesquisa bruta em saída canônica pronta para carga
+* a saída consolidada deve separar:
+
+  * referência operacional ao taxon
+  * registro pai de `research`
+  * itens filhos da pesquisa
+* `taxon_name`, `taxon_slug` e `taxon_level` podem existir no template apenas para controle manual
+* na carga final, a `research` deve ser relacionada ao taxon já existente
+
+B) Ambiguidades / A definir
+
+* sem ambiguidades relevantes nesta etapa
+
+##### 6.3.3.4 SQLs e snippets
+
+A) Definido
+
 * os SQLs/snippets operacionais do Grupo C devem ser versionados em `supabase/snippets/`
+* a carga deve criar 1 registro pai por `research_block`
+* os itens devem entrar ligados ao `research_id` correspondente
+* a saída consolidada desta etapa deve servir de base para a carga SQL posterior do Grupo B
+
+B) Ambiguidades / A definir
+
+* sem ambiguidades relevantes nesta etapa
+
+##### 6.3.3.5 Regras operacionais do recorte
+
+A) Definido
+
+* o processo inicial será manual via chat, com aprovação antes da carga
 * o taxon já existente no E10.5.3 deve ser tratado apenas como pré-condição operacional
 * este fluxo não recadastra taxon nem alias
 * `taxon_message_guides` fica fora deste recorte
-* o ajuste estrutural de `taxon_market_research_items` é pré-condição para a primeira carga real do Grupo C
-* não deve ser criada nova tabela agora; o ajuste deve ocorrer na própria `taxon_market_research_items`
-* a saída consolidada desta etapa deve servir de base para a carga SQL posterior do Grupo B
 
-#### 6.3.4 Recorte da etapa
+B) Ambiguidades / A definir
 
-* esta etapa recorta a modelagem mínima final de `taxon_market_research_items`
-* a tabela deve ser ajustada neste recorte antes da primeira carga real do Grupo C
-* fechar os campos mínimos: `item_type`, `item_key`, `audience_scope`, `item_text`, `priority`, `sort_order`, `is_active`, `notes`
-* fechar valores iniciais de `audience_scope`: `end_customer` e `business_buyer`
-* governança: `item_key` novo descoberto na pesquisa não entra automaticamente no BD; só entra após aprovação humana e, se necessário, após ajuste do `docs/prompt-E10-5-4-consolidacao-pesquisa-nicho.md`
+* sem ambiguidades relevantes nesta etapa
 
-##### 6.3.4.1 Estrutura final alvo das tabelas do recorte
-
-`taxon_market_research`
-
-* papel na etapa:
-
-  * registrar a pesquisa estratégica consolidada do taxon.
-  * servir de base para os itens detalhados da pesquisa.
-* estrutura final alvo:
-
-  * `id uuid`
-
-    * identificador único da pesquisa.
-  * `taxon_id uuid not null`
-
-    * taxon oficial ao qual a pesquisa pertence.
-  * `version integer not null default 1`
-
-    * versão da pesquisa daquele taxon.
-  * `status text not null`
-
-    * estado da pesquisa no ciclo de uso.
-  * `base_summary text not null`
-
-    * resumo-base consolidado da pesquisa.
-  * `created_at timestamptz not null default now()`
-
-    * data e hora de criação do registro.
-  * `updated_at timestamptz not null default now()`
-
-    * data e hora da última atualização do registro.
-* regras relevantes:
-
-  * CHECK: `status IN ('draft', 'active', 'archived')`
-  * FK: `taxon_id -> business_taxons(id)` ON UPDATE CASCADE ON DELETE RESTRICT
-
-`taxon_market_research_items`
-
-* papel na etapa:
-
-  * registrar os itens detalhados da pesquisa estratégica.
-  * armazenar a pesquisa em granularidade suficiente para servir ao projeto sem exigir refazer toda a pesquisa depois.
-* estrutura final alvo:
-
-  * `id uuid`
-
-    * identificador único do item.
-  * `research_id uuid not null`
-
-    * pesquisa-pai à qual o item pertence.
-  * `item_type text not null`
-
-    * tipo amplo do item pesquisado.
-  * `item_key text not null`
-
-    * chave semântica específica do item.
-  * `audience_scope text not null`
-
-    * público ao qual o item se refere.
-  * `item_text text not null`
-
-    * conteúdo textual do item pesquisado.
-  * `priority integer not null default 0`
-
-    * prioridade relativa do item dentro da pesquisa.
-  * `sort_order integer not null`
-
-    * ordem de organização do item dentro do conjunto.
-  * `is_active boolean not null default true`
-
-    * indica se o item está ativo para uso.
-  * `notes text null`
-
-    * observação opcional sobre o item.
-  * `created_at timestamptz not null default now()`
-
-    * data e hora de criação do item.
-  * `updated_at timestamptz not null default now()`
-
-    * data e hora da última atualização do item.
-* valores iniciais já fechados:
-
-  * `audience_scope`: `end_customer`, `business_buyer`
-* governança já fechada:
-
-  * `item_key` novo descoberto na pesquisa não entra automaticamente no BD.
-  * ele só entra após aprovação humana.
-  * se necessário, também depende de ajuste do `docs/prompt-E10-5-4-consolidacao-pesquisa-nicho.md`.
-
-#### 6.3.5 Processo manual desta etapa
-
-* a admin define antes o taxon que será carregado neste recorte
-* primeiro, criar o prompt de pesquisa completa do nicho em `docs/prompt-E10-5-4-pesquisa-completa-nicho.md`
-* depois, criar o prompt de consolidação da pesquisa do nicho em `docs/prompt-E10-5-4-consolidacao-pesquisa-nicho.md`
-* depois, definir o template canônico de saída dos dados aprovados do Grupo C em `docs/`
-* depois, aplicar o template canônico de filtragem entre a pesquisa bruta e a carga no BD, separando referência operacional ao taxon, dados de `research` do registro principal e itens consultáveis da pesquisa; `taxon_name`, `taxon_slug` e `taxon_level` podem existir só para controle manual, e a carga final deve relacionar a `research` ao taxon já existente
-* depois, criar o SQL canônico de carga do Grupo C em `supabase/snippets/`
-* depois, registrar a instrução clara de como a saída consolidada desta etapa alimentará a carga SQL posterior do Grupo B
-* por fim, criar o checklist de validação pós-carga em `docs/`
-
-#### 6.3.6 Saídas obrigatórias da etapa
-
-* Fechar a estrutura mínima final de `taxon_market_research_items` antes da primeira carga real.
-* Definir o formato canônico de saída consolidada que será aprovado antes da carga.
-* Fechar a governança entre prompt de pesquisa, prompt de consolidação e carga SQL posterior do Grupo B.
-* Garantir que a saída consolidada final fique pronta para versionamento e uso operacional.
-
-#### 6.3.7 Princípios de execução
-
-* Não reabrir decisões já fechadas nesta lousa sem conflito real de fonte.
-* Não recadastrar taxon nem alias nesta etapa.
-* Resolver apenas o mínimo necessário para fechar a modelagem antes da primeira carga real.
-* Investigar no repositório apenas o necessário para confirmar aderência entre modelagem, prompts e carga.
-
-#### 6.3.8 Fora do escopo
+#### 6.3.4 Fora do escopo
 
 * geração automática do comercial do E10.5 por IA em runtime
 * carga SQL do Grupo B em si
@@ -555,12 +518,8 @@ Ela registra o caso de uso atual, suas decisões, ambiguidades, propostas, fluxo
 * adapters
 * `supa#51` e matching textual leve
 
-#### 6.3.9 Investigação que pode ser necessária no repositório
+---
 
-* confirmar se `supabase/snippets/` já foi materializada no `main`
-* verificar se já existem artefatos operacionais do Grupo C em `docs/` ou `supabase/snippets/`
-* confirmar no `docs/schema.md` o contrato atual das 3 tabelas do Grupo C antes de definir o template canônico
-* verificar em `docs/roadmap.md` se já existe algum taxon ou contexto inicial explicitamente priorizado para a primeira carga do Grupo C
 
 ### 6.4 Esboço — E10.5.5 Carga inicial dos templates comerciais (Grupo B)
 
