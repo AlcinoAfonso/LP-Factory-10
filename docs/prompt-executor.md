@@ -4,7 +4,7 @@ Status: em desenvolvimento nesta lousa.Referência no repositório: docs/prompt-
 
 3.0 Disparo de execução
 
-• Ao receber um plano-base do caso, o executor deve assumir execução imediata do caso em modo por etapas.• Deve executar uma etapa por vez.• Se houver dúvida antes de iniciar uma etapa, deve perguntar antes de executar a etapa.• Se uma etapa não se aplicar, deve informar isso e perguntar se pode seguir para a próxima.• Ao final de cada etapa, deve entregar o resultado da etapa atual e perguntar se pode continuar.• Não deve antecipar etapas posteriores.
+• Ao receber um plano-base do caso, o executor deve assumir execução imediata do caso em modo por etapas.• Deve executar uma etapa por vez.• Se houver dúvida antes de iniciar uma etapa, deve perguntar antes de executar a etapa.• Se uma etapa não se aplicar, deve informar isso e perguntar se pode seguir para a próxima.• Ao final de cada etapa, deve entregar o resultado da etapa atual e perguntar se pode continuar.• Não deve antecipar etapas posteriores.• Não deve avançar para a etapa seguinte sem autorização explícita do proprietário do produto; se houver divergência de path entre a instrução recebida e o repositório real, deve usar o path confirmado no repositório.
 
 3.1 Etapa 1 — Investigações
 
@@ -36,7 +36,7 @@ Status: em desenvolvimento nesta lousa.Referência no repositório: docs/prompt-
 
 3.3.2 Implementação no Supabase
 
-• Quando o caso envolver alteração de BD, a resposta da Etapa 3 deve conter apenas os SQLs de implementação, sem qualquer texto fora desse conteúdo.
+• Quando o caso envolver alteração de BD, a resposta da Etapa 3 deve conter apenas os SQLs de implementação, sem qualquer texto fora desse conteúdo.• O SQL de implementação entregue na Etapa 3 não substitui a obrigação de entregar migration histórica final e rollback na Etapa 6.
 
 3.4 Etapa 4 — Observability
 
@@ -48,11 +48,14 @@ Status: em desenvolvimento nesta lousa.Referência no repositório: docs/prompt-
 
 3.6 Etapa 6 — Migration
 
-• Quando houver alteração de BD, a migration deve ser gerada somente após a validação dos testes.• A migration deve registrar apenas o que foi de fato implementado e validado.• Na realidade atual, a migration deve servir como histórico final no repositório e ser gerada antes do relatório final.
+• Quando houver alteração de BD, a migration deve ser gerada somente após a validação dos testes e antes do relatório final.
+• A Etapa 6 deve entregar, na mesma resposta, a migration e o rollback correspondentes, ambos com path completo, nome do arquivo e conteúdo completo.
+• O rollback deve ser entregue como artefato e não orientado para execução, salvo pedido explícito do proprietário do produto.
+• Antes de redigir migration e rollback, o executor deve inspecionar os arquivos reais já existentes em `supabase/migrations/` e `supabase/rollbacks/` para seguir o padrão vigente de naming, cabeçalho, estrutura e idempotência.
 
 3.7 Etapa 7 — Relatório final
 
-O relatório final deve seguir exatamente o template abaixo e servir de base para atualização documental.• O executor deve usar os mesmos rótulos e a mesma ordem dos blocos do template.• O executor não deve substituir os blocos do template por narrativa livre.• O executor não deve renomear seções do template.• Quando um campo não se aplicar ao caso, deve marcar N/A explicitamente.• O relatório final deve registrar apenas o que efetivamente ocorreu no caso, marcando N/A quando não se aplicar.• Em Artefatos, “Arquivos ajustados” deve listar apenas arquivos que já existiam antes do caso. Arquivos criados no próprio caso devem aparecer apenas em “Arquivos criados”, mesmo que tenham sido editados depois.• Quando o caso envolver BD estrutural, o relatório deve listar as tabelas criadas ou ajustadas e resumir a função de cada uma.
+O relatório final deve seguir exatamente o template abaixo e servir de base para atualização documental.• O executor deve usar os mesmos rótulos e a mesma ordem dos blocos do template.• O executor não deve substituir os blocos do template por narrativa livre.• O executor não deve renomear seções do template.• Quando um campo não se aplicar ao caso, deve marcar N/A explicitamente.• O relatório final deve registrar apenas o que efetivamente ocorreu no caso, marcando N/A quando não se aplicar.• Em Artefatos, “Arquivos ajustados” deve listar apenas arquivos que já existiam antes do caso. Arquivos criados no próprio caso devem aparecer apenas em “Arquivos criados”, mesmo que tenham sido editados depois.• Quando o caso envolver BD estrutural, o relatório deve listar as tabelas criadas ou ajustadas e resumir a função de cada uma.• Em casos com alteração de BD, o relatório final só pode ser entregue após a Etapa 6 concluída e deve registrar os paths da migration e do rollback.
 
 Implementado / Definido• [1–5 bullets]
 
