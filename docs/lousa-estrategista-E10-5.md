@@ -393,9 +393,6 @@ Ela registra o caso de uso atual, suas decisões, ambiguidades, propostas, fluxo
 * usar como referência de snippets `supabase/snippets/e10_5_3_grupo_a_investigacao_taxons.sql`
 * usar como referência de snippets `supabase/snippets/e10_5_3_grupo_a_investigacao_aliases.sql`
 
-## Título: docs/lousa-estrategista-E10-5.md
-
-Versão 15
 
 ### 6.3 Plano base — E10.5.4 Kit operacional de expansão do Grupo C
 
