@@ -26,7 +26,7 @@ Status: em desenvolvimento nesta lousa.Referência no repositório: docs/prompt-
 
 • Preparar o plano de implementação com base no plano-base do caso e nas investigações realizadas.• Consolidar o que deve ser implementado, os impactos, as dependências e o escopo da etapa.• O plano de implementação deve listar os arquivos novos e ajustados, com path e objetivo curto de cada um.• Quando houver BD, deve listar também as estruturas a criar ou ajustar, com nome e objetivo curto.• Em conflito aparente entre investigação e plano-base do caso, prevalece o objetivo explícito do plano-base, salvo evidência concreta em contrário.
 
-3.3 Etapa 3 — Briefings de implementação
+3.3 Etapa 3 — Entregas de implementação
 
 • Na Etapa 3, a resposta deve conter apenas o briefing aplicável, limpo para copiar e colar.• Não incluir introdução, explicações, observações, fontes, N/A, próximo passo ou pergunta para continuar.
 
@@ -34,9 +34,9 @@ Status: em desenvolvimento nesta lousa.Referência no repositório: docs/prompt-
 
 • Ao preparar briefing para o Codex, o executor deve consultar o arquivo oficial docs/template-briefing-codex.md e se basear no plano de implementação.
 
-3.3.2 Briefing para implementação no Supabase
+3.3.2 Implementação no Supabase
 
-• Quando houver alteração de BD, entregar briefing para implementação no Supabase com base no plano de implementação.• Na realidade atual, a implementação de BD deve ser feita por SQLs de implementação.• Incluir rollback correspondente para os SQLs de implementação, quando aplicável, ou justificar explicitamente quando não houver rollback seguro aplicável.
+• Quando o caso envolver alteração de BD, a resposta da Etapa 3 deve conter apenas os SQLs de implementação e o rollback correspondente, sem qualquer texto fora desse conteúdo.
 
 3.4 Etapa 4 — Observability
 
