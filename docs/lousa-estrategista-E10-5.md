@@ -378,6 +378,79 @@ Ela registra o caso de uso atual, suas decisões, ambiguidades, propostas, fluxo
 * usar como referência estrutural `docs/schema.md`
 * usar como referência de regras técnicas `docs/base-tecnica.md`
 
+#### 6.1.4 Plano base — E10.5.2.1 Ajustar `taxon_market_research` e `taxon_market_research_items` no BD
+
+##### 6.1.4.1 Objetivo
+
+* ajustar no BD as duas tabelas do Grupo C para refletir a modelagem já definida na seção 6.3
+* preparar a base estrutural para a primeira carga real do Grupo C
+* manter o ajuste restrito às duas tabelas já existentes, sem criação de nova tabela
+
+##### 6.1.4.2 Escopo desta etapa
+
+* ajustar `taxon_market_research`
+* ajustar `taxon_market_research_items`
+* criar a migration correspondente
+* criar o rollback correspondente
+* atualizar `docs/schema.md`
+* ajustar os snippets operacionais afetados em `supabase/snippets/`, se necessário
+
+##### 6.1.4.3 Ajustes previstos em `taxon_market_research`
+
+* incluir `research_block`
+* manter `research_block` como texto governado por prompts e processo operacional, sem `CHECK` fechado nesta etapa
+* manter a unicidade técnica por `taxon_id + research_block + version`
+* garantir no BD no máximo uma versão ativa por `taxon_id + research_block`, via índice único parcial
+* manter os campos mínimos:
+  * `id`
+  * `taxon_id`
+  * `research_block`
+  * `version`
+  * `status`
+  * `created_at`
+  * `updated_at`
+
+##### 6.1.4.4 Ajustes previstos em `taxon_market_research_items`
+
+* remover `item_type`
+* substituir a estrutura anterior pelos campos:
+  * `id`
+  * `research_id`
+  * `item_key`
+  * `audience_scope`
+  * `item_text`
+  * `priority`
+  * `sort_order`
+  * `is_active`
+  * `notes`
+* aplicar `CHECK` fechado em `audience_scope` com:
+  * `end_customer`
+  * `business_buyer`
+* não criar unicidade extra nesta etapa
+* manter `sort_order` obrigatório com default `999`
+
+##### 6.1.4.5 Referência documental desta etapa
+
+* usar como referência principal `docs/roadmap.md`
+* usar como referência estrutural `docs/schema.md`
+* usar como referência de regras técnicas `docs/base-tecnica.md`
+* usar como referência operacional `docs/supa-up.md`
+* usar como referência de visão do caso `docs/lousa-estrategista-E10-5.md`
+
+##### 6.1.4.6 Dependências desta etapa
+
+* usar como fonte de definição a seção 6.3 já consolidada na lousa
+* não reabrir nesta etapa decisões já fechadas sobre prompts, blocos operacionais e carga
+* tratar `taxon_message_guides` como fora de escopo
+
+##### 6.1.4.7 Resultado esperado
+
+* `taxon_market_research` ajustada para versionamento por `research_block`
+* `taxon_market_research_items` ajustada para a nova estrutura sem `item_type`
+* contrato do BD atualizado em `docs/schema.md`
+* migration e rollback versionados no repositório
+* base pronta para a próxima etapa operacional do Grupo C
+
 ### 6.2 Implementado — E10.5.3 Kit operacional de expansão do Grupo A
 
 #### 6.2.1 Objetivo
