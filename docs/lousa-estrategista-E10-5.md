@@ -54,7 +54,7 @@ Ela registra o caso de uso atual, suas decisões, ambiguidades, propostas, fluxo
 * deve apontar os documentos canônicos da etapa
 * deve trazer um objetivo bem traçado, deixando claro o que a etapa entrega e o que fica fora dela
 * pode incluir insights do que pode precisar ser investigado no repositório, quando isso ajudar a preparar melhor a execução
-* não deve reescrever o fluxo operacional do `docs/prompt-executor.md`
+* o plano base define apenas objetivo, escopo, docs canônicos e resultado esperado; nunca processo, sequência de execução ou etapas do executor, que pertencem exclusivamente ao docs/prompt-executor.md.
 
 #### 3.1.2 Instruções ao Executor
 
