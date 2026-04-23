@@ -388,68 +388,35 @@ Ela registra o caso de uso atual, suas decisões, ambiguidades, propostas, fluxo
 
 ##### 6.1.4.2 Escopo desta etapa
 
-* ajustar `taxon_market_research`
-* ajustar `taxon_market_research_items`
-* criar a migration correspondente
-* criar o rollback correspondente
-* atualizar `docs/schema.md`
-* ajustar os snippets operacionais afetados em `supabase/snippets/`, se necessário
-
-##### 6.1.4.3 Ajustes previstos em `taxon_market_research`
-
-* incluir `research_block`
+* ajustar `taxon_market_research` para incluir `research_block`
 * manter `research_block` como texto governado por prompts e processo operacional, sem `CHECK` fechado nesta etapa
-* manter a unicidade técnica por `taxon_id + research_block + version`
-* garantir no BD no máximo uma versão ativa por `taxon_id + research_block`, via índice único parcial
-* manter os campos mínimos:
-  * `id`
-  * `taxon_id`
-  * `research_block`
-  * `version`
-  * `status`
-  * `created_at`
-  * `updated_at`
-
-##### 6.1.4.4 Ajustes previstos em `taxon_market_research_items`
-
-* remover `item_type`
-* substituir a estrutura anterior pelos campos:
-  * `id`
-  * `research_id`
-  * `item_key`
-  * `audience_scope`
-  * `item_text`
-  * `priority`
-  * `sort_order`
-  * `is_active`
-  * `notes`
-* aplicar `CHECK` fechado em `audience_scope` com:
-  * `end_customer`
-  * `business_buyer`
-* não criar unicidade extra nesta etapa
+* manter a unicidade técnica de `taxon_market_research` por `taxon_id + research_block + version`
+* garantir no BD no máximo uma versão ativa por `taxon_id + research_block`
+* ajustar `taxon_market_research_items` para remover `item_type`
+* ajustar `taxon_market_research_items` para os campos: `item_key`, `audience_scope`, `item_text`, `priority`, `sort_order`, `is_active`, `notes`
+* aplicar `CHECK` fechado em `audience_scope` para `end_customer` e `business_buyer`
+* manter `taxon_market_research_items` sem unicidade extra nesta etapa
 * manter `sort_order` obrigatório com default `999`
 
-##### 6.1.4.5 Referência documental desta etapa
+##### 6.1.4.3 Referência documental desta etapa
 
-* usar como referência principal `docs/roadmap.md`
-* usar como referência estrutural `docs/schema.md`
-* usar como referência de regras técnicas `docs/base-tecnica.md`
-* usar como referência operacional `docs/supa-up.md`
-* usar como referência de visão do caso `docs/lousa-estrategista-E10-5.md`
+* `docs/roadmap.md`
+* `docs/schema.md`
+* `docs/base-tecnica.md`
+* `docs/supa-up.md`
+* `docs/lousa-estrategista-E10-5.md`
 
-##### 6.1.4.6 Dependências desta etapa
-
-* usar como fonte de definição a seção 6.3 já consolidada na lousa
-* não reabrir nesta etapa decisões já fechadas sobre prompts, blocos operacionais e carga
-* tratar `taxon_message_guides` como fora de escopo
-
-##### 6.1.4.7 Resultado esperado
+##### 6.1.4.4 Resultado esperado
 
 * `taxon_market_research` ajustada para versionamento por `research_block`
 * `taxon_market_research_items` ajustada para a nova estrutura sem `item_type`
-* contrato do BD atualizado em `docs/schema.md`
-* migration e rollback versionados no repositório
-* base pronta para a próxima etapa operacional do Grupo C
+* contrato do BD alinhado à seção 6.3
+
+##### 6.1.4.5 Fora do escopo
+
+* criação de nova tabela
+* ajuste de `taxon_message_guides`
+* reabertura de decisões de prompts, blocos operacionais ou carga do Grupo B
 
 ### 6.2 Implementado — E10.5.3 Kit operacional de expansão do Grupo A
 
@@ -508,16 +475,14 @@ A) Definido
 * `taxon_market_research_items` remove `item_type`
 * os campos mínimos de `taxon_market_research_items` passam a ser: `item_key`, `audience_scope`, `item_text`, `priority`, `sort_order`, `is_active`, `notes`
 * os valores iniciais de `audience_scope` ficam: `end_customer` e `business_buyer`
+* `audience_scope` entrará no BD com `CHECK` fechado para `end_customer` e `business_buyer`
+* `taxon_market_research_items` não terá unicidade extra nesta etapa, além de PK + FK
+* `sort_order` será obrigatório com default `999`
 * `item_key` novo descoberto na pesquisa não entra automaticamente no BD; só entra após aprovação humana e, se necessário, após ajuste do `docs/prompt-E10-5-4-consolidacao-pesquisa-nicho.md`
 
 B) Ambiguidades / A definir
 
-* definir se `audience_scope` entrará no BD com `CHECK` fechado
-* ou se entrará como texto governado por processo operacional
-* definir se `taxon_market_research_items` terá alguma unicidade extra além de PK + FK
-* ou se a tabela-filha ficará sem trava adicional nesta etapa
-* definir se `sort_order` terá `default`
-* ou se continuará obrigatório sem `default`
+* sem ambiguidades relevantes nesta etapa
 
 ##### 6.3.3.2 Prompt de pesquisa
 
