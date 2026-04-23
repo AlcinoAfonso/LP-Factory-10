@@ -36,7 +36,7 @@ Status: em desenvolvimento nesta lousa.Referência no repositório: docs/prompt-
 
 3.3.2 Implementação no Supabase
 
-• Quando o caso envolver alteração de BD, a resposta da Etapa 3 deve conter apenas os SQLs de implementação e o rollback correspondente, sem qualquer texto fora desse conteúdo.
+• Quando o caso envolver alteração de BD, a resposta da Etapa 3 deve conter apenas os SQLs de implementação, sem qualquer texto fora desse conteúdo.
 
 3.4 Etapa 4 — Observability
 
