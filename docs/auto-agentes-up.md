@@ -390,3 +390,24 @@ Capacidades do GitHub Models para comparar prompts, avaliar outputs, versionar e
 ### Ações Recomendadas
 1. Avaliar se GitHub Models traz vantagem real em comparação ao stack atual do projeto.
 2. Priorizar uso apenas quando houver ganho concreto em avaliação, versionamento ou integração com workflows.
+
+---
+
+## 21 — Structured Outputs para automações assistidas *(🍾 Estável)*
+2026-04-24
+
+### Descrição
+Recurso da OpenAI para forçar respostas aderentes a um schema estruturado, reduzindo saídas soltas em automações que precisam retornar JSON previsível.
+
+### Valor para o Projeto
+- Ajuda a transformar respostas de IA em dados utilizáveis pelo sistema.
+- Reduz risco de drift estrutural em classificações, recomendações e validações assistidas.
+- É útil para casos em que a IA deve devolver campos como slug sugerido, confiança, justificativa e necessidade de revisão.
+
+### Valor para o Usuário
+- Experiências assistidas mais confiáveis, com menos erro de interpretação e maior previsibilidade no resultado.
+
+### Ações Recomendadas
+1. Usar Structured Outputs em automações assistidas que precisem gerar resposta estruturada para o sistema.
+2. Priorizar esse recurso em classificações, recomendações e validações que afetem decisões do produto.
+3. Evitar geração livre quando o resultado precisar ser persistido ou usado por lógica de negócio.
