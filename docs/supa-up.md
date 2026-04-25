@@ -138,7 +138,8 @@ Permite consultas diretas a fontes externas (Data Lakes e BIs).
 ### Status no Projeto
 
 - Status: Em implementação por casos de uso
-- Evidência: docs/base-tecnica.md + docs/roadmap.md (E5.4/E10.4.6; logs estruturados com request_id/rid)
+- Evidência: docs/roadmap.md (E5.4, E10.4.6) + docs/base-tecnica.md (logs estruturados com request_id/rid)
+
 
 
 ### Descrição  
@@ -625,7 +626,8 @@ Sistema de tracking nativo de eventos, medindo comportamento e conversão com se
 ### Status no Projeto
 
 - Status: Em implementação por casos de uso
-- Evidência: docs/roadmap.md (E9.x; model_grants/grants em evolução por casos)
+- Evidência: docs/roadmap.md (E9.4, E9.8; grants/model_grants/get_feature em evolução por casos)
+
 
 
 
@@ -660,7 +662,8 @@ Modelo de controle dinâmico de recursos e permissões por plano, utilizando bun
 ### Status no Projeto
 
 - Status: Implementado globalmente no projeto
-- Evidência: docs/base-tecnica.md + docs/schema.md (views com security_invoker = true)
+- Evidência: docs/base-tecnica.md + docs/schema.md (views com security_invoker = true); sem seção E específica suficiente no roadmap para atribuição única.
+
 
 
 ### Descrição  
@@ -904,7 +907,8 @@ Define um padrão unificado para rastrear mudanças em triggers, policies e fun�
 ### Status no Projeto
 
 - Status: Em implementação por casos de uso
-- Evidência: docs/base-tecnica.md + docs/roadmap.md (templates de Auth já absorvidos parcialmente)
+- Evidência: docs/roadmap.md (E5.4, E5.6) + docs/base-tecnica.md (templates de Auth e SMTP via Resend)
+
 
 
 ### Descrição  
@@ -1094,7 +1098,9 @@ Recurso/integração do **index_advisor** para ajudar a identificar índices fal
 ### Status no Projeto
 
 - Status: Implementado globalmente no projeto
-- Evidência: docs/base-tecnica.md (ambiente atual PostgREST 14.1)
+- Evidência: docs/base-tecnica.md (ambiente atual PostgREST 14.1); docs/roadmap.md (E3.4 como update externo a considerar)
+- Observação: uso específico de FTS no E10.5 ainda está previsto em docs/lousa-estrategista-E10-5.md (E10.5.6), não implementado.
+
 
 
 ### Descrição  
@@ -1219,8 +1225,9 @@ A extensão **pg_graphql** passa a vir **desativada por padrão** em novos proje
 
 ### Status no Projeto
 
-- Status: Não implementado
-- Evidência: docs/roadmap.md (sem adoção definida no escopo atual)
+- Status: Em implementação por casos de uso
+- Evidência: docs/lousa-estrategista-E10-5.md (E10.5.3 implementado com snippets do Grupo A; E10.5.4 planejado com snippets do Grupo C)
+
 
 
 ### Descrição
@@ -1649,9 +1656,9 @@ A extensão `pg_trgm` do PostgreSQL fornece operadores e índices para **similar
 
 ### Status no Projeto
 
-- Status: Não implementado
-- Evidência: não há uso explícito de generated columns registrado na base atual do projeto.
-- Observação: candidato forte para normalização automática em taxonomias e chaves auxiliares de busca.
+- Status: Em implementação por casos de uso
+- Evidência: docs/lousa-estrategista-E10-5.md (E10.5.2 implementado; `business_taxon_aliases.alias_text_normalized` aplicado como generated column)
+
 
 ### Descrição
 
