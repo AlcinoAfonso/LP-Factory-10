@@ -437,12 +437,13 @@ A) Definido
 * o prompt de pesquisa desta etapa deve ficar em `docs/prompt-E10-5-4-pesquisa-completa-nicho.md`
 * ele deve funcionar como prompt mestre do nicho
 * ele deve permitir selecionar um, vários ou todos os `research_block`
-* os `research_block` previstos para cada rodada de pesquisa serão definidos no próprio prompt
+* os quatro blocos iniciais desta fase ficam: `strategic_core`, `lp_overview`, `lp_sections`, `seo`
 * a pesquisa pode ter liberdade controlada, mas deve entregar apenas conteúdo útil à estrutura da tabela
 
 B) Ambiguidades / A definir
 
-* sem ambiguidades relevantes nesta etapa
+* definir os `item_key` iniciais de cada `research_block`
+* definir os entregáveis obrigatórios mínimos de cada `research_block`
 
 ##### 6.3.3.3 Prompt de consolidação
 
