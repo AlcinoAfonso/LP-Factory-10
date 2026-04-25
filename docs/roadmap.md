@@ -653,21 +653,6 @@
 
 10.5.2 Base estrutural admin/interna de taxonomia, templates e guides
 • Status: Concluído (exec) (09/04/2026)
-10.5.2.1 Ajustar taxon_market_research e taxon_market_research_items no BD
-• Status: Concluído (23/04/2026)
-• Escopo final:
-• taxon_market_research: remoção de base_summary; inclusão de research_block; unicidade por (taxon_id, research_block, version); índice único parcial para no máximo 1 versão active por (taxon_id, research_block)
-• taxon_market_research_items: substituição da estrutura baseada em item_tag por item_key, audience_scope, item_text, priority, sort_order, is_active, notes
-• audience_scope com CHECK ('end_customer', 'business_buyer')
-• sem unicidade extra na tabela-filha nesta etapa
-• sort_order como NOT NULL DEFAULT 999
-• Artefatos:
-• supabase/migrations/0007__e10_5_2_1_group_c_research_adjust.sql
-• supabase/rollbacks/20260423__e10_5_2_1_group_c_research_adjust.rollback.sql
-• Docs afetados:
-• docs/schema.md
-• docs/lousa-estrategista-E10-5.md
-
 • Objetivo: criar a base estrutural de BD para sustentar a evolução do E10.5 com taxonomia, templates, pesquisa e guides, ainda sem exposição ao tenant/app nesta etapa.
 • Implementado/Definido:
 • criadas 8 tabelas do E10.5.2 no Supabase, com PK, FK, `CHECK`, índices e RLS admin-only
@@ -681,6 +666,18 @@
 • `docs/schema.md` ainda não atualizado nesta conversa para refletir as 8 tabelas novas
 • Q1, Q2 e Q3 da conferência estrutural não foram validados até o fim, embora Q4, Q5, Q6 e Q7 tenham sido aprovados
 • a migration histórica final foi entregue em conteúdo, mas ainda não foi commitada no repositório nesta conversa
+
+10.5.2.1 Ajustar taxon_market_research e taxon_market_research_items no BD
+• Status: Concluído (23/04/2026)
+• Escopo final:
+• taxon_market_research: remoção de base_summary; inclusão de research_block; unicidade por (taxon_id, research_block, version); índice único parcial para no máximo 1 versão active por (taxon_id, research_block)
+• taxon_market_research_items: substituição da estrutura baseada em item_tag por item_key, audience_scope, item_text, priority, sort_order, is_active, notes
+• audience_scope com CHECK ('end_customer', 'business_buyer')
+• sem unicidade extra na tabela-filha nesta etapa
+• sort_order como NOT NULL DEFAULT 999
+• Artefatos:
+• supabase/migrations/0007__e10_5_2_1_group_c_research_adjust.sql
+• supabase/rollbacks/20260423__e10_5_2_1_group_c_research_adjust.rollback.sql
 
 10.5.3 Kit operacional de expansão do Grupo A
 • Status: Concluído (exec) (15/04/2026)
