@@ -17,7 +17,7 @@ Todo briefing deve ser outcome-first e informar, de forma objetiva:
 
 - incluir `npm ci` e `npm run check`;
 - entregar arquivos novos com conteúdo completo;
-- instruir ajustes claros em arquivos existentes;
+- em arquivos existentes, orientar alteração mínima dentro do escopo definido;
 - evitar reestruturação ampla sem pedido explícito.
 
 ### Documentos
@@ -37,7 +37,7 @@ Nesses casos, exigir no briefing:
 - evidência do resultado (logs e resumo de sucesso/erro);
 - regra explícita de que não está pronto para merge se o gate falhar.
 
-## E) Relatório final
+## D) Relatório final
 
 Ao final, informar apenas itens aplicáveis:
 
