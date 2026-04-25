@@ -428,36 +428,7 @@ Ela registra o caso de uso atual, suas decisões, ambiguidades, propostas, fluxo
 
 ##### 6.3.3.1 Tabelas
 
-###### 6.3.3.1.1 `taxon_market_research`
-
-A) Definido
-
-* `taxon_market_research` será ajustada para incluir `research_block`
-* `research_block` será usado para versionar os blocos de pesquisa do Grupo C
-* os blocos previstos para cada etapa serão definidos pelos prompts operacionais
-* a unicidade técnica da tabela-pai deve ser por `taxon_id + research_block + version`
-* os campos mínimos de `taxon_market_research` passam a ser: `taxon_id`, `research_block`, `version`, `status`, `created_at`, `updated_at`
-* a regra de no máximo uma versão ativa por `taxon_id + research_block` será garantida no BD por índice único parcial
-
-B) Ambiguidades / A definir
-
-* sem ambiguidades relevantes nesta etapa
-
-###### 6.3.3.1.2 `taxon_market_research_items`
-
-A) Definido
-
-* `taxon_market_research_items` remove `item_type`
-* os campos mínimos de `taxon_market_research_items` passam a ser: `item_key`, `audience_scope`, `item_text`, `priority`, `sort_order`, `is_active`, `notes`
-* os valores iniciais de `audience_scope` ficam: `end_customer` e `business_buyer`
-* `audience_scope` entrará no BD com `CHECK` fechado para `end_customer` e `business_buyer`
-* `taxon_market_research_items` não terá unicidade extra nesta etapa, além de PK + FK
-* `sort_order` será obrigatório com default `999`
-* `item_key` novo descoberto na pesquisa não entra automaticamente no BD; só entra após aprovação humana e, se necessário, após ajuste do `docs/prompt-E10-5-4-consolidacao-pesquisa-nicho.md`
-
-B) Ambiguidades / A definir
-
-* sem ambiguidades relevantes nesta etapa
+Para a definição estrutural implementada de `taxon_market_research` e `taxon_market_research_items`, usar como referência E10.5.2.1, refletida na seção 6.1.4 desta lousa.
 
 ##### 6.3.3.2 Prompt de pesquisa
 
