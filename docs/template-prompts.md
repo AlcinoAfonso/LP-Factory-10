@@ -1,5 +1,9 @@
 # Template geral de prompts — LP Factory 10
 
+A nova abordagem de prompts do LP Factory 10 segue o princípio outcome-first: começar pelo resultado esperado, informar fontes/contexto, definir critérios de sucesso, declarar limites, especificar a entrega esperada e parar quando faltar fonte ou houver limite.
+
+Fonte conceitual: https://developers.openai.com/api/docs/guides/prompt-guidance
+
 ## 1. Objetivo
 
 Descreva o resultado esperado.
