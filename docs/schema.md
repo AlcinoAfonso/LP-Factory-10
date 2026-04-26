@@ -1,8 +1,8 @@
 0. Introdução
 
 0.1 Cabeçalho
-• Data da última atualização: 23/04/2026
-• Documento: LP Factory 10 — Schema (DB Contract) v1.0.12
+• Data da última atualização: 26/04/2026
+• Documento: LP Factory 10 — Schema (DB Contract) v1.0.13
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -265,21 +265,25 @@
 
 1.15.1 Chaves, constraints e relacionamentos
 • PK: id uuid
-• UNIQUE: (taxon_id, research_block, version)
+• UNIQUE: (taxon_id, research_block, audience_scope, version)
 • CHECK: taxon_market_research_status_chk (status IN ('draft', 'active', 'archived'))
+• CHECK: taxon_market_research_audience_scope_chk (audience_scope IN ('end_customer', 'business_buyer'))
 • FK: taxon_id → business_taxons(id) ON UPDATE CASCADE ON DELETE RESTRICT
 
 1.15.2 Campos
 • taxon_id uuid not null
 • research_block text not null
 • Regra: texto governado por processo operacional; sem CHECK fechado nesta etapa
+• audience_scope text not null
+• Regra: audience_scope define o público homogêneo da pesquisa-pai; valores permitidos: end_customer | business_buyer
 • version integer not null default 1
 • status text not null
 • created_at timestamptz not null default now()
 • updated_at timestamptz not null default now()
 
 1.15.3 Índices
-• uq_taxon_market_research_active_per_block (UNIQUE parcial em (taxon_id, research_block) WHERE status = 'active')
+• taxon_market_research_taxon_block_audience_version_uidx (UNIQUE em taxon_id, research_block, audience_scope, version)
+• taxon_market_research_one_active_per_block_audience_uidx (UNIQUE parcial em taxon_id, research_block, audience_scope WHERE status = 'active')
 
 1.15.4 Segurança
 • Trigger Hub: não
@@ -295,14 +299,12 @@
 
 1.16.1 Chaves, constraints e relacionamentos
 • PK: id uuid
-• CHECK: taxon_market_research_items_audience_scope_chk (audience_scope IN ('end_customer', 'business_buyer'))
 • FK: research_id → taxon_market_research(id) ON UPDATE CASCADE ON DELETE CASCADE
 • UNIQUE adicional: nenhuma nesta etapa
 
 1.16.2 Campos
 • research_id uuid not null
 • item_key text not null
-• audience_scope text not null
 • item_text text not null
 • priority integer not null default 0
 • sort_order integer not null default 999
@@ -486,6 +488,11 @@
 • Nota: accounts.status não aceita trial (CHECK accounts_status_chk). No estado atual, views não contêm trial e o runtime/tipos (PATH) não incluem trial (drift resolvido).
 
 99. Changelog
+v1.0.13 (26/04/2026) — E10.5.2.1: ajuste corretivo de audience_scope no Grupo C
+• taxon_market_research: adicionado audience_scope no registro-pai; registrada unicidade por (taxon_id, research_block, audience_scope, version) e índice único parcial para no máximo 1 versão active por (taxon_id, research_block, audience_scope).
+• taxon_market_research_items: removido audience_scope; itens passam a herdar o público pelo research_id.
+• taxon_market_research_items.item_key: registrado como NOT NULL conforme estado validado no Supabase.
+
 v1.0.12 (23/04/2026) — E10.5.2.1: ajuste estrutural das tabelas do Grupo C
 • taxon_market_research: removido base_summary; adicionado research_block; registrada unicidade por (taxon_id, research_block, version) e índice único parcial para no máximo 1 versão active por (taxon_id, research_block).
 • taxon_market_research_items: substituída a estrutura baseada em item_tag por item_key, audience_scope, item_text, priority, sort_order, is_active e notes.
