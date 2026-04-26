@@ -1,8 +1,8 @@
 0. Introdução
 
 0.1 Cabeçalho
-• Data: 23/04/2026
-• Versão: v1.5.42
+• Data: 26/04/2026
+• Versão: v1.5.43
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -667,17 +667,22 @@
 • Q1, Q2 e Q3 da conferência estrutural não foram validados até o fim, embora Q4, Q5, Q6 e Q7 tenham sido aprovados
 • a migration histórica final foi entregue em conteúdo, mas ainda não foi commitada no repositório nesta conversa
 
-10.5.2.1 Ajustar taxon_market_research e taxon_market_research_items no BD
-• Status: Concluído (23/04/2026)
-• Escopo final:
-• taxon_market_research: remoção de base_summary; inclusão de research_block; unicidade por (taxon_id, research_block, version); índice único parcial para no máximo 1 versão active por (taxon_id, research_block)
-• taxon_market_research_items: substituição da estrutura baseada em item_tag por item_key, audience_scope, item_text, priority, sort_order, is_active, notes
-• audience_scope com CHECK ('end_customer', 'business_buyer')
-• sem unicidade extra na tabela-filha nesta etapa
-• sort_order como NOT NULL DEFAULT 999
-• Artefatos:
-• supabase/migrations/0007__e10_5_2_1_group_c_research_adjust.sql
-• supabase/rollbacks/20260423__e10_5_2_1_group_c_research_adjust.rollback.sql
+10.5.2.1 Ajustar `taxon_market_research` e `taxon_market_research_items` no BD
+• Status: Concluído (exec) (26/04/2026)
+• Objetivo: corrigir a modelagem do Grupo C para separar o público da pesquisa no registro-pai, evitando mistura de `end_customer` e `business_buyer` no mesmo consolidado.
+• Implementado:
+• `taxon_market_research`: adicionada coluna `audience_scope` com CHECK restrito a `end_customer` e `business_buyer`.
+• `taxon_market_research`: unicidade ajustada para `(taxon_id, research_block, audience_scope, version)`.
+• `taxon_market_research`: ativo único ajustado para `(taxon_id, research_block, audience_scope) WHERE status = 'active'`.
+• `taxon_market_research_items`: removida coluna `audience_scope`; itens passam a herdar o público pelo `research_id`.
+• `taxon_market_research_items.item_key`: consolidado como `NOT NULL`.
+• Decisão operacional: a carga do Grupo C deve criar 1 registro pai por `taxon + research_block + audience_scope`.
+• Fora do escopo: carga real do Grupo C, prompts operacionais, runtime, adapters, `taxon_message_guides`, nova tabela e mudanças em RLS/policies.
+• ARTEFATOS_REPO:
+• Criados:
+• `supabase/migrations/0008__e10_5_2_1_research_audience_scope_parent.sql`
+• `supabase/rollbacks/20260426__e10_5_2_1_research_audience_scope_parent.rollback.sql`
+• Ajustados: N/A
 
 10.5.3 Kit operacional de expansão do Grupo A
 • Status: Concluído (exec) (15/04/2026)
@@ -971,6 +976,9 @@
 • Definir o primeiro recorte funcional do LP Builder no roadmap
 
 99. Changelog
+v1.5.43 (26/04/2026) — 10.5.2.1: ajuste corretivo do Grupo C
+• Registrado o estado final do ajuste de `audience_scope`: público da pesquisa no registro-pai, itens herdando público por `research_id`, unicidade por `taxon_id + research_block + audience_scope + version` e artefatos de migration/rollback.
+
 v1.5.42 (23/04/2026)
 • Adicionado 10.5.2.1 com o ajuste estrutural de taxon_market_research e taxon_market_research_items no BD.
 
