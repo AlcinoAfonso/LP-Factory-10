@@ -347,48 +347,34 @@ Ela registra o caso de uso atual, suas decisões, ambiguidades, propostas, fluxo
 
 ## 6) Plano base do caso
 
-### 6.1 Implementado — E10.5.2 Criar a base do BD
-
-* status: implementado
-* resultado: 8 tabelas criadas com PK, FK, `CHECK`, índices mínimos, RLS + policies CRUD admin-only
-* `supa#52` aplicado em `business_taxon_aliases.alias_text_normalized` como generated column
-* fora de auditoria e fora de Trigger Hub nesta etapa
+### 6.1 Implementado — E10.5.2 Base do BD do E10.5
 
 #### 6.1.1 Objetivo
 
-* criar no banco a base estrutural do E10.5 e adjacências imediatas
-* entregar as 8 tabelas aprovadas desta fase com relações e estrutura mínima coerente
-* ajustar a documentação canônica afetada no mesmo pacote
+* criar e consolidar a base do BD do E10.5
+* manter `taxon_market_research` e `taxon_market_research_items` alinhadas à modelagem atual do Grupo C
 
-#### 6.1.2 Escopo desta etapa
+#### 6.1.2 Escopo final
 
-* `business_taxons`
-* `business_taxon_aliases`
-* `account_taxonomy`
-* `content_templates`
-* `content_template_taxons`
-* `taxon_market_research`
-* `taxon_market_research_items`
-* `taxon_message_guides`
+* criação da base estrutural do E10.5 no BD
+* ajuste estrutural posterior de `taxon_market_research`
+* ajuste estrutural posterior de `taxon_market_research_items`
 
-#### 6.1.3 Referência documental desta etapa
+#### 6.1.3 Resultado implementado
 
-* o detalhamento desta etapa já está documentado nos documentos canônicos do projeto
-* usar como referência principal `docs/roadmap.md`
-* usar como referência estrutural `docs/schema.md`
-* usar como referência de regras técnicas `docs/base-tecnica.md`
+* base do BD do E10.5 criada
+* `taxon_market_research` ajustada para:
+  * `id`, `taxon_id`, `research_block`, `audience_scope`, `version`, `status`, `created_at`, `updated_at`
+  * unicidade por `taxon_id` + `research_block` + `audience_scope` + `version`
+  * no máximo 1 versão `active` por `taxon_id` + `research_block` + `audience_scope`
+* `taxon_market_research_items` ajustada para:
+  * `id`, `research_id`, `item_key`, `item_text`, `priority`, `sort_order`, `is_active`, `notes`, `created_at`, `updated_at`
+  * herdar `audience_scope` pelo `research_id`
+  * `sort_order` `not null default 999`
 
-#### 6.1.4 Implementado — E10.5.2.1 Ajustar `taxon_market_research` e `taxon_market_research_items` no BD
+#### 6.1.4 Referência documental desta etapa
 
-##### 6.1.4.1 Objetivo
-
-* ajustar no BD as duas tabelas do Grupo C para refletir a modelagem definida na seção 6.3
-* preparar a base estrutural para a primeira carga real do Grupo C
-* manter o ajuste restrito às duas tabelas já existentes, sem criação de nova tabela
-
-##### 6.1.4.2 Referência documental desta etapa
-
-* `docs/roadmap.md` — seção 10.5.2.1
+* `docs/roadmap.md` — seção 10.5.2
 * `docs/base-tecnica.md`
 * `docs/schema.md`
 
