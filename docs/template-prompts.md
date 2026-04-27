@@ -42,3 +42,11 @@ Defina o formato final e o nível de detalhe:
 ## 6. Regras de parada
 
 Informe quando parar, pedir fonte, declarar limite ou não prosseguir.
+
+## 7. Evidência / validação
+
+Informe como a resposta deve demonstrar que usou as fontes corretas ou validou o resultado esperado.
+
+## 8. Regra de concisão
+
+Evitar instruções repetidas, excesso de processo e detalhamento que não ajude na entrega final.
