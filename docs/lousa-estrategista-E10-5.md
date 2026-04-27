@@ -414,7 +414,7 @@ Ela registra o caso de uso atual, suas decisões, ambiguidades, propostas, fluxo
 
 ##### 6.3.3.1 Tabelas
 
-Para a definição estrutural implementada de `taxon_market_research` e `taxon_market_research_items`, usar como referência E10.5.2.1, refletida na seção 6.1.4 desta lousa.
+Para a definição estrutural implementada de `taxon_market_research` e `taxon_market_research_items`, usar como referência E10.5.2, refletida na seção 6.1.4 desta lousa.
 
 ##### 6.3.3.2 Prompt de pesquisa
 
