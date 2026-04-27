@@ -1,8 +1,8 @@
 0. Introdução
 
 0.1 Cabeçalho
-• Data: 26/04/2026
-• Versão: v1.5.43
+• Data: 27/04/2026
+• Versão: v1.5.44
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -651,38 +651,21 @@
 • E9.8.1 (trial/entitlements).
 • E10.5 (UX pós-setup para reutilizar CTAs/mensagens).
 
-10.5.2 Base estrutural admin/interna de taxonomia, templates e guides
-• Status: Concluído (exec) (09/04/2026)
-• Objetivo: criar a base estrutural de BD para sustentar a evolução do E10.5 com taxonomia, templates, pesquisa e guides, ainda sem exposição ao tenant/app nesta etapa.
-• Implementado/Definido:
-• criadas 8 tabelas do E10.5.2 no Supabase, com PK, FK, `CHECK`, índices e RLS admin-only
-• aplicado `supa#52` nesta etapa via `business_taxon_aliases.alias_text_normalized` como generated column
-• as 8 tabelas nascem como admin/internas nesta etapa, sem exposição a tenant/app, fora de auditoria e fora de Trigger Hub
-• contratos de domínio fechados com `text` + `CHECK`, sem texto solto
-• migration histórica final preparada no formato do repositório: `supabase/migrations/0006__e10_5_2_taxonomy_content_base.sql`
-• ARTEFATOS_REPO:
-• Criados: `supabase/migrations/0006__e10_5_2_taxonomy_content_base.sql`
-• Pendências:
-• `docs/schema.md` ainda não atualizado nesta conversa para refletir as 8 tabelas novas
-• Q1, Q2 e Q3 da conferência estrutural não foram validados até o fim, embora Q4, Q5, Q6 e Q7 tenham sido aprovados
-• a migration histórica final foi entregue em conteúdo, mas ainda não foi commitada no repositório nesta conversa
-
-10.5.2.1 Ajustar `taxon_market_research` e `taxon_market_research_items` no BD
-• Status: Concluído (exec) (26/04/2026)
-• Objetivo: corrigir a modelagem do Grupo C para separar o público da pesquisa no registro-pai, evitando mistura de `end_customer` e `business_buyer` no mesmo consolidado.
-• Implementado:
-• `taxon_market_research`: adicionada coluna `audience_scope` com CHECK restrito a `end_customer` e `business_buyer`.
-• `taxon_market_research`: unicidade ajustada para `(taxon_id, research_block, audience_scope, version)`.
-• `taxon_market_research`: ativo único ajustado para `(taxon_id, research_block, audience_scope) WHERE status = 'active'`.
-• `taxon_market_research_items`: removida coluna `audience_scope`; itens passam a herdar o público pelo `research_id`.
-• `taxon_market_research_items.item_key`: consolidado como `NOT NULL`.
-• Decisão operacional: a carga do Grupo C deve criar 1 registro pai por `taxon + research_block + audience_scope`.
-• Fora do escopo: carga real do Grupo C, prompts operacionais, runtime, adapters, `taxon_message_guides`, nova tabela e mudanças em RLS/policies.
-• ARTEFATOS_REPO:
-• Criados:
+10.5.2 Base do BD do E10.5
+• Status: Concluído (26/04/2026)
+• Escopo final:
+• criação da base estrutural do E10.5 no BD
+• ajuste estrutural de `taxon_market_research`
+• ajuste estrutural de `taxon_market_research_items`
+• Estado final:
+• `taxon_market_research`: `id`, `taxon_id`, `research_block`, `audience_scope`, `version`, `status`, `created_at`, `updated_at`
+• `taxon_market_research`: unicidade por (`taxon_id`, `research_block`, `audience_scope`, `version`) e no máximo 1 versão `active` por (`taxon_id`, `research_block`, `audience_scope`)
+• `taxon_market_research_items`: `id`, `research_id`, `item_key`, `item_text`, `priority`, `sort_order`, `is_active`, `notes`, `created_at`, `updated_at`
+• `taxon_market_research_items`: herda `audience_scope` pelo `research_id`; sem UNIQUE extra nesta etapa; `sort_order` como `NOT NULL DEFAULT 999`
+• Artefatos:
+• `supabase/migrations/0006__e10_5_2_taxonomy_content_base.sql`
+• `supabase/migrations/0007__e10_5_2_1_group_c_research_adjust.sql`
 • `supabase/migrations/0008__e10_5_2_1_research_audience_scope_parent.sql`
-• `supabase/rollbacks/20260426__e10_5_2_1_research_audience_scope_parent.rollback.sql`
-• Ajustados: N/A
 
 10.5.3 Kit operacional de expansão do Grupo A
 • Status: Concluído (exec) (15/04/2026)
@@ -976,6 +959,8 @@
 • Definir o primeiro recorte funcional do LP Builder no roadmap
 
 99. Changelog
+v1.5.44 (27/04/2026) — Simplificada a seção 10.5.2 do roadmap, fundindo 10.5.2 e 10.5.2.1 no estado final único da base do BD do E10.5.
+
 v1.5.43 (26/04/2026) — 10.5.2.1: ajuste corretivo do Grupo C
 • Registrado o estado final do ajuste de `audience_scope`: público da pesquisa no registro-pai, itens herdando público por `research_id`, unicidade por `taxon_id + research_block + audience_scope + version` e artefatos de migration/rollback.
 
