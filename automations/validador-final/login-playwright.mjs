@@ -324,16 +324,34 @@ export async function login({ page, email, password }) {
     return { passed: false, authenticated: false, detail: "botão de login não encontrado", finalUrl: page.url() };
   }
 
-  await page.waitForTimeout(1800);
-  const finalUrl = page.url();
-  const uiError = await detectUiError(page);
-  const authenticated = hasAuthSuccessUrl(finalUrl);
+  const OUTCOME_TIMEOUT_MS = 12000;
+  const POLL_INTERVAL_MS = 300;
+  const startedAt = Date.now();
+  let finalUrl = page.url();
+  let uiError = null;
+  let authenticated = hasAuthSuccessUrl(finalUrl);
+
+  while (Date.now() - startedAt <= OUTCOME_TIMEOUT_MS) {
+    finalUrl = page.url();
+    uiError = await detectUiError(page);
+    authenticated = hasAuthSuccessUrl(finalUrl);
+
+    if (authenticated) break;
+    if (uiError) break;
+
+    await page.waitForTimeout(POLL_INTERVAL_MS);
+  }
+
+  const elapsedMs = Date.now() - startedAt;
+  const timingSuffix = `(elapsed=${elapsedMs}ms, finalUrl=${finalUrl})`;
 
   return {
     passed: authenticated,
     authenticated,
     uiError,
-    detail: authenticated ? "login autenticado" : `login sem autenticação: ${uiError ?? "sem erro explícito"}`,
+    detail: authenticated
+      ? `login autenticado ${timingSuffix}`
+      : `login sem autenticação: ${uiError ?? "sem erro explícito"} ${timingSuffix}`,
     finalUrl,
   };
 }
