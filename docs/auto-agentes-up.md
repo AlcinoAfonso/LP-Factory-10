@@ -411,3 +411,26 @@ Recurso da OpenAI para forçar respostas aderentes a um schema estruturado, redu
 1. Usar Structured Outputs em automações assistidas que precisem gerar resposta estruturada para o sistema.
 2. Priorizar esse recurso em classificações, recomendações e validações que afetem decisões do produto.
 3. Evitar geração livre quando o resultado precisar ser persistido ou usado por lógica de negócio.
+
+---
+
+## 22 — GPT-5.5 / latest-model para automações e IA no produto *(🍾 Estável)*
+2026-04-28
+
+### Descrição
+Guia oficial da OpenAI sobre uso de GPT-5.5 como modelo de referência para tarefas complexas, multi-etapas, com tools, raciocínio, Structured Outputs, critérios de sucesso, testes e automações assistidas.
+
+### Valor para o Projeto
+- Reforça o uso de GPT-5.5 em tarefas de maior complexidade, como investigação, planejamento, Codex, análise de repositório e automações com múltiplas etapas.
+- Orienta planos base mais objetivos, com foco em resultado, fontes, restrições, evidência e critérios de sucesso.
+- Apoia decisões futuras sobre IA dentro do SaaS, especialmente quando houver uso de Responses API, tools e Structured Outputs.
+
+### Valor para o Usuário
+- Favorece experiências assistidas mais úteis, previsíveis e inteligentes dentro dos dashboards.
+- Ajuda a transformar IA em valor percebido no produto, não apenas em apoio interno de desenvolvimento.
+
+### Ações Recomendadas
+1. Usar GPT-5.5 como referência para automações complexas, análises multi-etapas e fluxos com tools.
+2. Aplicar a diretriz outcome-first em planos base, briefings e prompts operacionais.
+3. Usar Responses API e Structured Outputs quando a IA gerar dados que serão persistidos ou usados por lógica de negócio.
+4. Priorizar IA dentro do produto apenas quando houver usuário, entrada, saída esperada, ganho prático e controle de risco definidos.
