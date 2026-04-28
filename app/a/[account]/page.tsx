@@ -53,10 +53,8 @@ export default function Page(props: any) {
       | "suspended"
       | null;
 
-    const setupCompletedAt = (ctx?.account?.setupCompletedAt ?? null) as string | null;
-
-    // E10.4: pending_setup + setup incompleto → Primeiros passos (form inline)
-    if (accountStatus === "pending_setup" && !setupCompletedAt) {
+    // E10.4: pending_setup → Primeiros passos (form inline)
+    if (accountStatus === "pending_setup") {
       return <PendingSetupFirstSteps accountSubdomain={params.account} ctx={ctx} />;
     }
 
