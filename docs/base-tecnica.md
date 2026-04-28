@@ -23,7 +23,7 @@
 1. Identificação do Projeto
 • Nome: LP Factory 10
 • Repositório: https://github.com/AlcinoAfonso/LP-Factory-10
-• Controle de versão: GitHub Web (edição e commit pelo navegador; não assumir repo local, terminal, git cli ou paths locais)
+• Controle de versão: GitHub Web (edição e commit pelo navegador; consultar o repositório real via GitHub/conectores/fontes acessíveis quando necessário; não assumir repo local do usuário, terminal local, git cli local ou paths não verificados)
 • Deploy: Vercel (preview + produção)
 • Projeto Vercel do app (Core): `lp-factory-10`
 • Projeto Vercel de serviços: `lpf-10-services`
@@ -91,7 +91,8 @@
 • Tailwind content: incluir js/ts/jsx/tsx/mdx em {pages,components,app,src} para evitar purge silencioso (PATH: tailwind.config.ts).
 • Padrão shadcn preservado: cores baseadas em hsl(var(--...)); remapeamento semântico contido em app/globals.css para tokens `--primary`, `--ring`, `--border`, `--accent` (sem redesign amplo de `--background`, `--foreground`, `--card`) — ver docs/design-system.md.
 • SULB (auth forms): definição: rotas/arquivos de autenticação copiados do Supabase (vendor interno).
-• Regra (SULB): não criar auth fora do SULB; alterações no SULB só quando necessário e sempre respeitando a allowlist 6.4.
+• Regra (SULB): não criar auth fora do escopo SULB/autorizado; exceções só quando explicitamente previstas nesta Base Técnica (ex.: allowlist 6.4).
+• Alterações no SULB: somente quando necessário e sempre respeitando a allowlist 6.4.
 • shadcn/ui: base provisória.
 
 2.4. Supabase Auth URL allowlist (Redirect URLs)
@@ -116,6 +117,7 @@
 • Regra canônica para código novo: adapters devem nascer em paths canônicos na raiz do repositório (ver 3.3.1 e 3.3.2).
 • Exceção de compatibilidade: arquivos já existentes fora dos paths canônicos podem permanecer sem ampliação de escopo (ver 3.3.2).
 • UI e componentes client nunca acessam Supabase diretamente.
+• Esta é a regra normativa principal para imports/adapters; seções 3.2, 6.5 e 7 apenas referenciam este bloco.
 
 3. Regras Técnicas Globais
 
@@ -127,9 +129,7 @@
 
 3.2 Estrutura de Camadas
 • Fluxo obrigatório: UI → Providers → Adapters → DB.
-• Regra: UI/rotas não importam @supabase/*.
-• Fora de adapters, @supabase/* só em lib/supabase/* e allowlist SULB (6.4).
-• Imports Supabase devem obedecer 2.5 (fonte única).
+• Imports Supabase em UI/rotas/adapters seguem a regra canônica da seção 2.5 (fonte única).
 
 3.3 Estrutura de Arquivos
 • Padrão por domínio: adapters/ (DB); contracts.ts (interface pública); index.ts (re-exports).
@@ -146,9 +146,8 @@
 
 3.3.2 Paths canônicos e anti-drift de localização
 • Regra: path é contrato operacional  
-• Regra: não inventar path  
-• Regra: não assumir localização por padrão genérico  
-• Regra: em dúvida, confirmar no repositório real  
+• Regra: não inventar path nem assumir localização por padrão genérico  
+• Regra: em dúvida, confirmar no repositório real (GitHub/conectores/fontes acessíveis)  
 • Regra: código novo nasce no path canônico correto  
 • Regra: exceção existente não vira padrão novo  
 • Risco de erro de path: churn, retrabalho, regressão  
@@ -334,10 +333,11 @@
 5.2 Adapters, Guards, Providers
 
 5.2.1 Adapters
-• accountAdapter (PATH: lib/access/adapters/accountAdapter.ts): renameAndActivate(accountId, name, slug) atualiza name+subdomain e seta status='active'; renameAccountNoStatus(accountId, name, slug) renomeia sem alterar status; updateAccountNameCore(accountId, name) atualiza apenas accounts.name; setSetupCompletedAtIfNull(accountId) (infra E10.4.1) seta setup_completed_at somente quando NULL (idempotente); marcador setup_completed_at é deprecated sem uso no gating do runtime; normalizeAccountStatus usa allowlist ASTAT; fallback atual: 'active'.
-• accountProfileAdapter (PATH: lib/access/adapters/accountProfileAdapter.ts): upsertAccountProfileV1({ accountId, niche, preferredChannel, whatsapp, siteUrl }) (E10.4.6).
-• accessContextAdapter (PATH: lib/access/adapters/accessContextAdapter.ts): lê v_access_context_v2; readAccessContext(subdomain) retorna allow=true ou contexto bloqueado (member_inactive/account_blocked) quando houver membership; getFirstAccountForCurrentUser(): se existir conta allow=true → retorna; se existir qualquer membership → não cria; sem membership → chama RPC ensure_first_account_for_current_user(); logs access_context_decision; adapter permite null; logs diferenciam deny vs error.
-• adminAdapter (PATH: lib/admin/adapters/adminAdapter.ts): valida super_admin / platform_admin e centraliza operações administrativas compatíveis com o runtime atual.
+• accountAdapter (PATH: lib/access/adapters/accountAdapter.ts): operações de conta e status no runtime, com normalização de status e mutações idempotentes quando aplicável.
+• accountProfileAdapter (PATH: lib/access/adapters/accountProfileAdapter.ts): persistência/atualização do perfil operacional da conta (E10.4.6).
+• accessContextAdapter (PATH: lib/access/adapters/accessContextAdapter.ts): leitura do contexto em v_access_context_v2, decisão de acesso (allow/deny), fallback de primeira conta via RPC quando não há membership e observabilidade de deny vs error.
+• adminAdapter (PATH: lib/admin/adapters/adminAdapter.ts): valida privilégios administrativos (super_admin/platform_admin) e centraliza operações administrativas do runtime atual.
+• Regra: setup_completed_at/account_setup_completed_at é legado/deprecated; não usar em gating, fluxo, renderização ou logs. Setup concluído no runtime é decidido por accounts.status.
 
 5.2.2 Guards
 • guard SSR da seção cliente (PATH: app/a/_server/section-guard.ts): aplica allow/deny de /a/{account_slug} e redirecionamentos de bloqueio na seção cliente.
@@ -444,21 +444,15 @@ Regra: qualquer novo arquivo em app/auth/ não pode importar @supabase/* até se
 • app/auth/protected/page.tsx
 
 6.5 Regras rápidas (sem drift)
-• Acesso ao DB: somente via adapters.
-• Regra canônica para código novo: adapters em paths canônicos na raiz do repositório (ver 3.3.1 e 3.3.2).
-• Exceções de @supabase/: lib/supabase/* e allowlist SULB (6.4).
-• Arquivos existentes fora dos paths canônicos permanecem apenas por compatibilidade (ver 3.3.2).
+• Acesso ao DB e imports @supabase/*: seguir a regra canônica da seção 2.5.
+• Paths canônicos e exceções de compatibilidade: seguir 3.3.2.
 
 7. Checklist mínima (anti-regressão)
-• Views expostas a usuário: security_invoker = true (ver 3.1 e PATH: docs/schema.md)
-• last_account_subdomain somente SSR (ver 5.1.2 e 5.4)
-• @supabase/* só em adapters + lib/supabase/* + allowlist SULB (ver 2.5 e 6.4)
-• Mutações 1-a-1: .maxAffected(1) (ver 3.8)
-• Funções críticas: search_path = public (ver 3.12)
-• SECURITY DEFINER somente quando aprovado (ver 4 e PATH: docs/schema.md)
-• Tipos canônicos: fonte única em PATH: lib/types/status.ts
-• /a: público sem sessão; privado só em /a/{account_slug} com gate SSR (ver 5.4)
-• Adapters vNext: seguir 3.14
+• Segurança de DB e views (security_invoker, RLS, SECURITY DEFINER): validar pelas seções 3.1 e 4 (PATH: docs/schema.md).
+• Regras de acesso/SSR da rota /a e cookie last_account_subdomain: validar por 5.1.2 e 5.4.
+• Imports/adapters e allowlist SULB: validar por 2.5 e 6.4.
+• Anti-regressão de mutações/queries (ex.: .maxAffected(1), search_path): validar por 3.8 e 3.12.
+• Tipos canônicos e adapters vNext: validar por 3.6 e 3.14.
 
 99. Changelog
 v2.0.28 (18/04/2026) — E12.5.1: primeira superfície ativa do Admin + retorno administrativo no login
