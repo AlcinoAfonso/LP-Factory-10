@@ -337,6 +337,7 @@
 • accountProfileAdapter (PATH: lib/access/adapters/accountProfileAdapter.ts): persistência/atualização do perfil operacional da conta (E10.4.6).
 • accessContextAdapter (PATH: lib/access/adapters/accessContextAdapter.ts): leitura do contexto em v_access_context_v2, decisão de acesso (allow/deny), fallback de primeira conta via RPC quando não há membership e observabilidade de deny vs error.
 • adminAdapter (PATH: lib/admin/adapters/adminAdapter.ts): valida privilégios administrativos (super_admin/platform_admin) e centraliza operações administrativas do runtime atual.
+• Regra: setup_completed_at/account_setup_completed_at é legado/deprecated; não usar em gating, fluxo, renderização ou logs. Setup concluído no runtime é decidido por accounts.status.
 
 5.2.2 Guards
 • guard SSR da seção cliente (PATH: app/a/_server/section-guard.ts): aplica allow/deny de /a/{account_slug} e redirecionamentos de bloqueio na seção cliente.
