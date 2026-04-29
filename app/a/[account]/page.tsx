@@ -33,6 +33,7 @@ export default function Page(props: any) {
       return <PendingSetupFirstSteps accountSubdomain={params.account} ctx={ctx} />;
     }
 
+    // E10.5 (ainda sem UX): mantém o dashboard “limpo” para demais status/subestados
     return <main className="mx-auto max-w-5xl px-6 py-10" />;
   }
 
