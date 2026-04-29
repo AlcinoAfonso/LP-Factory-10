@@ -102,7 +102,7 @@
 • @supabase/* somente em adapters do domínio, em lib/supabase/* e na allowlist SULB autorizada em 6.4.
 • Regra canônica para código novo: adapters devem nascer em paths canônicos na raiz do repositório (ver 3.3.1 e 3.3.2).
 • Exceção de compatibilidade: arquivos já existentes fora dos paths canônicos podem permanecer sem ampliação de escopo (ver 3.3.2).
-• UI e componentes client não acessam Supabase para dados de domínio; exceções de Auth/SULB devem usar wrappers em lib/supabase/* e respeitar a allowlist 6.4.
+• UI e componentes client não acessam Supabase para dados de domínio; exceções de Auth/SULB devem usar wrappers em lib/supabase/*, salvo imports diretos explicitamente autorizados na allowlist 6.4.
 • Esta é a regra normativa principal para imports/adapters; seções 3.2, 6.4 e 7 apenas referenciam este bloco.
 
 3. Regras Técnicas Globais
