@@ -23,7 +23,7 @@
 1. Identificação do Projeto
 • Nome: LP Factory 10
 • Repositório: https://github.com/AlcinoAfonso/LP-Factory-10
-• Controle de versão: GitHub Web (edição e commit pelo navegador; consultar o repositório real via GitHub/conectores/fontes acessíveis quando necessário; não assumir repo local do usuário, terminal local, git cli local ou paths não verificados)
+• Controle de versão: GitHub Web (edição e commit pelo navegador; consultar o repositório real via GitHub/conectores/fontes acessíveis quando necessário; quando o contexto local não estiver verificado, não assumir repo local, terminal, git cli ou paths não verificados)
 • Deploy: Vercel (preview + produção)
 • Projeto Vercel do app (Core): `lp-factory-10`
 • Projeto Vercel de serviços: `lpf-10-services`
@@ -75,16 +75,7 @@
 2.3 UI
 • Design System (identidade visual — E6.4–E6.6): referência oficial em docs/design-system.md (documento consolidado do ciclo E6.4–E6.6; API mínima, regras de uso e superfícies cobertas).
 • Marca provisória: wordmark textual temporário “LP Factory” enquanto o asset oficial de logo não estiver versionado no repo.
-• UI Component Library (E6.5/E6.6): componentes proprietários mínimos para reduzir markup cru e manter consistência:
-• Button (PATH: components/ui/button.tsx)
-• Input (PATH: components/ui/input.tsx)
-• Card (PATH: components/ui/card.tsx)
-• Select (PATH: components/ui/select.tsx)
-• FormField (PATH: components/ui/form-field.tsx) — label/hint/error
-• Textarea (componente mínimo de biblioteca; ver docs/design-system.md)
-• FeedbackMessage (erro/sucesso/aviso; ver docs/design-system.md)
-• EmptyState (reutilizável; ver docs/design-system.md)
-• LoadingState (reutilizável; ver docs/design-system.md)
+• UI Component Library (E6.5/E6.6): componentes mínimos — Button, Input, Card, Select, FormField, Textarea, FeedbackMessage, EmptyState e LoadingState. Fonte detalhada: docs/design-system.md.
 • Regra: em Auth, onboarding mínimo e superfícies reais tocadas, preferir os componentes e estados reutilizáveis acima (evitar markup cru) e seguir docs/design-system.md.
 • Tipografia oficial do produto (UI do dashboard): Inter via next/font/google; aplicar globalmente no <html> com className={inter.className} (PATH: app/layout.tsx); weights 400/500/600/700; display=swap.
 • Tailwind tokens LP Factory: adicionar de forma aditiva (sem substituir tokens shadcn) com namespaces brand/ink/graytech/surface/state e boxShadow.card (PATH: tailwind.config.ts).
@@ -102,22 +93,17 @@
 • Regra: não usar curingas amplos fora de preview (evitar allowlist que aceite domínios externos).
 
 2.4.1 Supabase Auth — E-mail transacional (SMTP via Resend)
-• Objetivo: estabilizar e-mails transacionais do Supabase Auth (signup confirm e reset password) via Resend SMTP (MVP; zero custo adicional; baixo risco).
-• Resend: domínio verificado `lpfactory.com.br`; plano Free (1 domínio); região São Paulo (sa-east-1).
-• Sender (Supabase): `no-reply@lpfactory.com.br` (domínio raiz; não usar `mail.lpfactory.com.br` no estágio atual por limitação do plano).
-• SMTP (Supabase Auth): Host `smtp.resend.com`; Port `587`; Username `resend`; Password: secret configurado no Supabase (não versionar).
-• DNS (Registro.br): manter SPF/DKIM do domínio raiz compatíveis com Resend; sem migração estrutural de domínio.
-• Validação (estado final): signup testado; forgot password testado; entrega confirmada; links funcionais; sem erro de envio.
-• Consequência (domínio raiz): reputação compartilhada entre site, transacional e futuros e-mails humanos (SPF/DKIM/DMARC únicos).
-• Operação: e-mails humanos (ex.: alcinoafonso@, support@, vendas@) ficam em provedor humano (Workspace/M365/Zoho); Resend permanece apenas para envio transacional.
-• Evolução (quando houver escala): avaliar migração para `no-reply@mail.lpfactory.com.br` (domínio dedicado; isolamento de reputação; SPF/DKIM/DMARC dedicados) com plano pago do Resend.
+• Auth transacional via Resend SMTP para signup confirm e reset password.
+• Sender (Supabase): `no-reply@lpfactory.com.br`; SMTP `smtp.resend.com:587`; Username `resend`; Password: secret configurado no Supabase (não versionar).
+• DNS: manter SPF/DKIM compatíveis com Resend.
+• Validação: signup e forgot password testados, entrega confirmada, links funcionais e sem erro de envio.
 
 2.5 Regras de Import (canônica)
 • @supabase/* somente em adapters do domínio, em lib/supabase/* e na allowlist SULB autorizada em 6.4.
 • Regra canônica para código novo: adapters devem nascer em paths canônicos na raiz do repositório (ver 3.3.1 e 3.3.2).
 • Exceção de compatibilidade: arquivos já existentes fora dos paths canônicos podem permanecer sem ampliação de escopo (ver 3.3.2).
-• UI e componentes client nunca acessam Supabase diretamente.
-• Esta é a regra normativa principal para imports/adapters; seções 3.2, 6.5 e 7 apenas referenciam este bloco.
+• UI e componentes client não acessam Supabase para dados de domínio; exceções de Auth/SULB devem usar wrappers em lib/supabase/* e respeitar a allowlist 6.4.
+• Esta é a regra normativa principal para imports/adapters; seções 3.2, 6.4 e 7 apenas referenciam este bloco.
 
 3. Regras Técnicas Globais
 
@@ -265,7 +251,7 @@
 • Qualquer nova política de limite para operações administrativas deve ser redefinida no contexto do novo Admin Dashboard (E12), sem reutilizar contrato legado removido.
 
 3.10 Anti-Patterns
-• Importar Supabase na UI (exceto SULB allowlist)
+• Importar Supabase na UI para dados de domínio (exceções de Auth/SULB seguem 2.5 e 6.4)
 • Views sem security_invoker=true
 • Hardcode de lógica de planos/limites
 • Modificar SULB fora dos arquivos autorizados
@@ -354,13 +340,9 @@
 5.3 Fluxos de Sessão
 
 5.3.1 Login (MVP)
-• Login primário é page-based em /auth/login (card central).
-• CTA “Entrar” na home pública (/a/home) navega para /auth/login.
-• Sucesso: /auth/login cria sessão via signInWithPassword e navega para o retorno previsto no modelo atual.
-• Regra: quando o login partir do contexto administrativo, o fluxo deve preservar o retorno para `/admin`.
-• Sem retorno administrativo explícito, /auth/login segue o fluxo padrão para /protected.
-• /protected redireciona para /a/home (redirect em next.config.js).
-• /a/home (gateway) resolve conta e redireciona para /a/{account_slug}.
+• Login primário em /auth/login.
+• Sucesso preserva next seguro; quando partir do contexto administrativo, deve retornar para `/admin`.
+• Sem retorno explícito, fluxo padrão: /protected → /a/home → /a/{account_slug}.
 • Erro de credenciais: exibir error.message do Supabase (ex.: “Invalid login credentials”).
 • Throttling específico de login não está implementado na UI atual (ver 5.3.3).
 
@@ -435,8 +417,7 @@
 • Contratos e reexports existentes fora dos paths canônicos podem permanecer por compatibilidade; isso não altera a regra canônica de código novo definida em 3.3.2.
 
 6.4 Arquivos SULB autorizados a importar Supabase (fonte única normativa)
-Exceção oficial: somente os arquivos listados abaixo podem importar @supabase/* fora dos adapters de domínio e de lib/supabase/.
-Regra: qualquer novo arquivo em app/auth/ não pode importar @supabase/* até ser incluído nesta allowlist.
+Fonte normativa da allowlist SULB para exceções de Auth. Qualquer novo arquivo em app/auth/ não pode importar @supabase/* até ser incluído nesta lista.
 • lib/supabase/client.ts
 • lib/supabase/middleware.ts
 • lib/supabase/server.ts
@@ -444,10 +425,6 @@ Regra: qualquer novo arquivo em app/auth/ não pode importar @supabase/* até se
 • app/auth/confirm/route.ts
 • app/auth/update-password/page.tsx
 • app/auth/protected/page.tsx
-
-6.5 Regras rápidas (sem drift)
-• Acesso ao DB e imports @supabase/*: seguir a regra canônica da seção 2.5.
-• Paths canônicos e exceções de compatibilidade: seguir 3.3.2.
 
 7. Checklist mínima (anti-regressão)
 • Segurança de DB e views (security_invoker, RLS, SECURITY DEFINER): validar pelas seções 3.1 e 4 (PATH: docs/schema.md).
@@ -457,6 +434,7 @@ Regra: qualquer novo arquivo em app/auth/ não pode importar @supabase/* até se
 • Tipos canônicos e adapters vNext: validar por 3.6 e 3.14.
 
 99. Changelog
+v2.0.29 (29/04/2026) — Registra convenção route-local para componentes específicos de rota que dependem da própria boundary da rota.
 v2.0.28 (18/04/2026) — E12.5.1: primeira superfície ativa do Admin + retorno administrativo no login
 • Atualizada 5.2.2 para registrar a seção Admin ativa no runtime via `app/admin/layout.tsx`, protegida por guard SSR administrativo reaproveitando `requirePlatformAdmin()`.
 • Atualizada 5.3.1 para registrar a preservação do retorno para `/admin` quando o login partir do contexto administrativo, mantendo o fluxo padrão para `/protected` nos demais casos.
@@ -567,5 +545,3 @@ v1.9.2 (23/12/2025) — Infra/Auth/PostgREST (estado atual)
 • Atualizado 3.12 Compatibilidade PostgREST 14.1: registrado FTS (fts/plfts/phfts/wfts) (disponível; sem escopo de telas) + preferência por wfts e índices GIN conforme necessidade.
 • Atualizado 3.12 Compatibilidade PostgREST 14.1: UX de paginação — HTTP 416 / PGRST103 = fim da lista (não erro de sistema).
 • Atualizado 5.3.4 Observabilidade: server-timing/proxy-status não observados nos requests testados via DevTools; diretriz de instrumentação/logs/APM se necessário.
-
-v2.0.29 (29/04/2026) — Registra convenção route-local para componentes específicos de rota que dependem da própria boundary da rota.
