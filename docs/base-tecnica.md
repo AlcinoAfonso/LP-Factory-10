@@ -2,8 +2,8 @@
 
 0.1. Cabeçalho
 • Documento: Base Técnica LP Factory 10
-• Versão: v2.0.28
-• Data: 18/04/2026
+• Versão: v2.0.29
+• Data: 29/04/2026
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -145,6 +145,8 @@
 • Seções do Core: Account Dashboard, Admin Dashboard, Partner Dashboard, LP Builder  
 
 3.3.2 Paths canônicos e anti-drift de localização
+
+• Regra: componentes específicos de rota que dependem de Server Action, estado ou boundary da própria rota devem nascer como route-local em `app/.../_components`; não promover para `components/features` sem boundary compartilhada real.
 • Regra: path é contrato operacional  
 • Regra: não inventar path nem assumir localização por padrão genérico  
 • Regra: em dúvida, confirmar no repositório real (GitHub/conectores/fontes acessíveis)  
@@ -565,3 +567,5 @@ v1.9.2 (23/12/2025) — Infra/Auth/PostgREST (estado atual)
 • Atualizado 3.12 Compatibilidade PostgREST 14.1: registrado FTS (fts/plfts/phfts/wfts) (disponível; sem escopo de telas) + preferência por wfts e índices GIN conforme necessidade.
 • Atualizado 3.12 Compatibilidade PostgREST 14.1: UX de paginação — HTTP 416 / PGRST103 = fim da lista (não erro de sistema).
 • Atualizado 5.3.4 Observabilidade: server-timing/proxy-status não observados nos requests testados via DevTools; diretriz de instrumentação/logs/APM se necessário.
+
+v2.0.29 (29/04/2026) — Registra convenção route-local para componentes específicos de rota que dependem da própria boundary da rota.

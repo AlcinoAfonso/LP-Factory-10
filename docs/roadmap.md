@@ -1,8 +1,8 @@
 0. Introdução
 
 0.1 Cabeçalho
-• Data: 27/04/2026
-• Versão: v1.5.44
+• Data: 29/04/2026
+• Versão: v1.5.45
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -449,6 +449,12 @@
 • UX Partner Dashboard
 
 10.4 Primeiros passos (pending_setup — status-based)
+
+• Arquitetura runtime atual: `app/a/[account]/page.tsx` atua como orquestrador da rota; o formulário `PendingSetupFirstSteps` reside em `app/a/[account]/_components/PendingSetupFirstSteps.tsx` como componente route-local.
+• ARTEFATOS_REPO:
+• Criado: `app/a/[account]/_components/PendingSetupFirstSteps.tsx`
+• Ajustado: `app/a/[account]/page.tsx`
+• Checks/QA (reportado): `npm ci` ok; `npm run check` ok; Security Checks ok; Preview Vercel Ready; Validador Final passou; QA manual confirmou `pending_setup → active`.
 
 • Status: Concluído (exec) (13/02/2026)
 • Escopo: Entregar o fluxo ponta a ponta de “Primeiros passos” no dashboard da conta (/a/[account]) quando `accounts.status=pending_setup`: exibir formulário inline, validar campos (incl. regras condicionais), salvar com estados/erros (loading, validação inline, erro sistêmico com retry), persistir perfil v1, promover status (`pending_setup → active`) e redirecionar para o fluxo pós-setup.
@@ -1072,3 +1078,5 @@ v1.5.6 (27/01/2026) — F2: Auto 1ª conta (pending_setup) e atualização do fl
 v1.5.3 (21/01/2026) — Gate SSR: UX de bloqueio por status (membership/conta)
 • E4: Gate SSR roteia bloqueios de membership para rotas dedicadas e diferencia fallback de conta bloqueada por status (inactive/suspended) com páginas específicas.
 • E15: Detalhada a UX/CTAs e rotas por status de membership, incluindo tratamento de usuário autenticado sem membership (clear_last).
+
+v1.5.45 (29/04/2026) — E10.4: registra extração route-local do formulário `PendingSetupFirstSteps` e QA do fluxo `pending_setup → active`.
