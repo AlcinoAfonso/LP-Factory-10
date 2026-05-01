@@ -35,7 +35,7 @@ Nesses casos, exigir no briefing:
 
 - build e/ou validação de deploy conforme o caso;
 - evidência do resultado (logs e resumo de sucesso/erro);
-- regra explícita de que não está pronto para merge se o gate falhar.
+- regra explícita de que a entrega não está pronta para merge se o gate falhar.
 
 ## D) Relatório final
 
