@@ -15,7 +15,7 @@ Todo briefing deve ser outcome-first e informar, de forma objetiva:
 
 ### Código
 
-- incluir `npm ci` e `npm run check`;
+- seguir a rotina padrão de checks definida no `AGENTS.md`;
 - entregar arquivos novos com conteúdo completo;
 - em arquivos existentes, orientar alteração mínima dentro do escopo definido;
 - evitar reestruturação ampla sem pedido explícito.
