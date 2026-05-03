@@ -43,9 +43,9 @@ Use web, SERP, páginas reais do nicho, concorrentes, avaliações públicas e f
 ## 6. strategic_core
 
 
-Entregue uma tabela sobre o núcleo estratégico do taxon para o público selecionado.
+Entregue uma tabela sobre o núcleo estratégico do taxon confirmado para o audience_scope recebido na entrada confirmada.
 
-Antes da tabela, informe: Taxon, `research_block = strategic_core` e `audience_scope`.
+Antes da tabela, informe: `taxon_id`, `taxon_name`, `taxon_level`, `research_block = strategic_core` e `audience_scope`.
 
 Preencha: `pain`, `objection`, `desire`, `hidden_desire`, `belief`, `fear`, `awareness_level`, `vocabulary`, `trigger`, `proof_type`, `trend`, `positioning_opportunity`.
 
@@ -65,4 +65,4 @@ Para cada linha: `item_key` = um dos itens acima; `item_text` = achado específi
 
 Use web, SERP, páginas reais do nicho, concorrentes e avaliações públicas do mercado brasileiro.
 
-Limites: não incluir dados locais de cliente, não escrever copy final, não misturar públicos no mesmo resultado, não criar `item_key` fora da lista acima e não inventar quando faltar fonte.
+Limites: não incluir dados locais de cliente, não escrever copy final, usar apenas o audience_scope recebido na entrada confirmada, não criar `item_key` fora da lista acima e não inventar quando faltar fonte.
