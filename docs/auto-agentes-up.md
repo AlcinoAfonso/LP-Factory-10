@@ -434,3 +434,13 @@ Guia oficial da OpenAI sobre uso de GPT-5.5 como modelo de referência para tare
 2. Aplicar a diretriz outcome-first em planos base, briefings e prompts operacionais.
 3. Usar Responses API e Structured Outputs quando a IA gerar dados que serão persistidos ou usados por lógica de negócio.
 4. Priorizar IA dentro do produto apenas quando houver usuário, entrada, saída esperada, ganho prático e controle de risco definidos.
+
+### Observação futura — prompt guidance para automações
+
+- planos base e planos de implementação devem ser rastreáveis, com objetivo, fontes, arquivos/sistemas envolvidos, validações, comportamento de falha, riscos e dúvidas abertas;
+- prompts complexos devem seguir abordagem outcome-first, com menos processo repetido e mais resultado esperado, restrições, evidência e formato de saída;
+- agentes e automações devem validar o resultado antes de declarar pronto, usando testes, checks, logs, summaries ou evidência equivalente quando aplicável;
+- updates intermediários devem ser curtos, úteis e sem virar log operacional excessivo;
+- tools devem ser passadas como tools, com nomes e descrições claras, evitando simular ferramentas apenas por texto no prompt;
+- em agentes próprios com contexto longo, avaliar compaction apenas quando houver histórico extenso ou múltiplas etapas relevantes;
+- evitar instruções repetidas, contraditórias ou excessivamente processuais.
