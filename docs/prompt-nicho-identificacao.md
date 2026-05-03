@@ -41,7 +41,9 @@ Ao receber o resultado:
 Após a confirmação humana, entregue exatamente este bloco:
 
 ```md
-# Entrada confirmada para pesquisa profunda
+# Relatório-instrução para pesquisa profunda
+
+## 1. Entrada confirmada
 
 taxon_id:
 taxon_name:
@@ -59,13 +61,29 @@ research_blocks_order:
 3.
 4.
 
-modo_de_execucao:
-- pesquisar um `research_block` por vez
-- entregar o resultado de cada bloco separadamente
-- aguardar comando humano antes de seguir para o próximo bloco
-- após todos os blocos, aguardar comando humano para consolidar
-- após a consolidação, aguardar comando humano para gerar SQL de carregamento
-- após o carregamento, gerar SQL de verificação
+## 2. Instrução para a IA de pesquisa
+
+Acesse no repositório o arquivo:
+
+`docs/prompt-nicho-pesquisa.md`
+
+Execute esse prompt usando a entrada confirmada acima como contexto obrigatório.
+
+Use os dados confirmados como fonte de verdade para a pesquisa.
+
+Não refaça a identificação do taxon.
+
+Pesquise os `research_blocks` na ordem definida em `research_blocks_order`.
+
+Pesquise apenas um `research_block` por vez.
+
+Após entregar cada bloco, pare e aguarde comando humano para continuar.
+
+Após todos os blocos serem pesquisados, aguarde comando humano para consolidar.
+
+Após a consolidação, aguarde comando humano para gerar SQL de carregamento.
+
+Após o carregamento, gere SQL de verificação.
 ```
 
 ## Parada
