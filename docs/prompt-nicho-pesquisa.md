@@ -2,34 +2,46 @@
 
 ## 1. Objetivo
 
-Pesquisar o nicho/taxon informado para gerar uma base estratégica reutilizável.
+Pesquisar o taxon confirmado recebido no relatório-instrução de `docs/prompt-nicho-identificacao.md`, um `research_block` por vez.
 
-## 2. Parâmetros da pesquisa
+## 2. Entrada obrigatória
 
-Informe o taxon/nicho a pesquisar:
+Receba o relatório-instrução gerado por `docs/prompt-nicho-identificacao.md`.
 
-- Taxon/nicho: [preencher]
-- Nível do taxon: [segment | niche | ultra_niche]
+Use a entrada confirmada como fonte de verdade para:
 
-Selecione o `audience_scope` da pesquisa:
+- `taxon_id`
+- `taxon_name`
+- `taxon_slug`
+- `taxon_level`
+- `parent_id`
+- `parent_name`
+- `is_active`
+- `audience_scope`
+- `research_blocks_order`
 
-- [ ] `business_buyer`
-- [ ] `end_customer`
+## 3. Regras de execução
 
-Selecione os blocos a pesquisar:
+- Pesquise apenas o próximo `research_block` da ordem definida.
+- Entregue o resultado desse bloco separadamente.
+- Depois de entregar o bloco, pare e aguarde comando humano para continuar.
+- Quando o humano mandar continuar, pesquise o próximo `research_block` pendente.
+- Quando todos os blocos forem pesquisados, informe que a pesquisa foi concluída e aguarde comando humano para consolidar.
 
-- [ ] `strategic_core`
-- [ ] `lp_overview`
-- [ ] `lp_sections`
-- [ ] `seo`
+## 4. Limites
 
-Regra:
-- se faltar taxon, nível do taxon, `audience_scope` ou bloco selecionado, pare e peça o dado faltante antes de pesquisar
-- se o nível for `segment`, pesquise achados transversais do segmento, sem assumir subnicho, ultra-nicho ou tipo de oferta específico
-- se o nível for `niche` ou `ultra_niche`, pesquise achados específicos do recorte informado
-- não resolva ambiguidade escolhendo sozinho um submercado, subnicho ou modelo de oferta
+- Use a entrada confirmada como fonte de verdade.
+- Mantenha o `audience_scope` recebido.
+- Mantenha a ordem dos `research_blocks`.
+- Faça apenas pesquisa, sem SQL de carga.
+- Faça consolidação final somente com comando humano.
 
-## 3. strategic_core
+## 5. Fontes de pesquisa
+
+Use web, SERP, páginas reais do nicho, concorrentes, avaliações públicas e fontes adequadas ao mercado brasileiro.
+
+## 6. strategic_core
+
 
 Entregue uma tabela sobre o núcleo estratégico do taxon para o público selecionado.
 
