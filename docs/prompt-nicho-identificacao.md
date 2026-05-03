@@ -1,62 +1,49 @@
-Prompt — Identificação de nicho/taxon
-Objetivo
+# Prompt — Identificação de nicho/taxon
 
-Identificar o taxon cadastrado, definir o público da pesquisa e registrar os research_block que serão pesquisados.
+## Objetivo
 
-Contexto
+Identificar o taxon cadastrado, definir o público da pesquisa e registrar os `research_blocks` que serão pesquisados.
 
-Use o SQL de apoio:
-
-supabase/snippets/e10_5_4_nicho_identificacao_taxon_lookup.sql
-
-O SQL localiza o taxon em:
-
-business_taxons
-business_taxon_aliases
-Entrada
+## Entrada
 
 Peça ao humano:
 
-Nome do nicho/taxon:
-Público da pesquisa: business_buyer ou end_customer
-research_block e ordem desejada:
-strategic_core
-lp_overview
-lp_sections
-seo
+- Nome do nicho/taxon:
+- Público da pesquisa: `business_buyer` ou `end_customer`
+- `research_blocks` e ordem:
+  - `strategic_core`
+  - `lp_overview`
+  - `lp_sections`
+  - `seo`
 
-Exemplo:
+Aceite apenas um público por pesquisa.
 
-Nome do nicho/taxon: Harmonização Facial
-Público da pesquisa: end_customer
-research_block: 1. strategic_core, 2. lp_overview
+Aceite apenas `research_blocks` da lista acima.
 
-Ação 1 — Localizar taxon
+## Ação
 
-Oriente o humano a executar o SQL de apoio no Supabase usando o nome informado.
+Use o snippet:
 
-Depois, peça que cole o resultado no chat.
+`supabase/snippets/e10_5_4_nicho_identificacao_taxon_lookup.sql`
 
-Ação 2 — Confirmar taxon
+Peça ao humano para executar o SQL no Supabase com o nome informado e colar o resultado no chat.
 
-Ao receber o resultado do SQL, apresente os dados encontrados:
+Ao receber o resultado:
 
-taxon_id
-taxon_name
-taxon_slug
-taxon_level
-parent_id
-parent_name
-is_active
-match_source
+- apresente os taxons encontrados
+- peça confirmação do taxon correto
+- se houver mais de um resultado possível, peça ao humano para escolher
+- se não houver resultado, pare e oriente cadastrar o taxon antes da pesquisa
+- se `is_active = false`, peça confirmação explícita antes de continuar
 
-Se houver mais de um resultado possível, peça ao humano para escolher o taxon correto.
-
-Entrega final
+## Entrega final
 
 Após a confirmação humana, entregue exatamente este bloco:
 
-# Entrada confirmada para pesquisa profunda
+```md
+# Relatório-instrução para pesquisa profunda
+
+## 1. Entrada confirmada
 
 taxon_id:
 taxon_name:
@@ -74,13 +61,31 @@ research_blocks_order:
 3.
 4.
 
-modo_de_execucao:
-- pesquisar um `research_block` por vez
-- entregar o resultado de cada bloco separadamente
-- aguardar comando humano antes de seguir para o próximo bloco
-- após todos os blocos, aguardar comando humano para consolidar
-- após a consolidação, aguardar comando humano para gerar SQL de carregamento
-- após o carregamento, gerar SQL de verificação
-Parada
+## 2. Instrução para a IA de pesquisa
+
+Acesse no repositório o arquivo:
+
+`docs/prompt-nicho-pesquisa.md`
+
+Execute esse prompt usando a entrada confirmada acima como contexto obrigatório.
+
+Use os dados confirmados como fonte de verdade para a pesquisa.
+
+Não refaça a identificação do taxon.
+
+Pesquise os `research_blocks` na ordem definida em `research_blocks_order`.
+
+Pesquise apenas um `research_block` por vez.
+
+Após entregar cada bloco, pare e aguarde comando humano para continuar.
+
+Após todos os blocos serem pesquisados, aguarde comando humano para consolidar.
+
+Após a consolidação, aguarde comando humano para gerar SQL de carregamento.
+
+Após o carregamento, gere SQL de verificação.
+```
+
+## Parada
 
 Depois de entregar a entrada confirmada para pesquisa profunda, pare.
