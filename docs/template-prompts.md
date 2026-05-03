@@ -4,11 +4,17 @@ A abordagem de prompts do LP Factory 10 é outcome-first: começar pelo resultad
 
 Fonte conceitual: https://developers.openai.com/api/docs/guides/prompt-guidance
 
-## 1. Objetivo
+## 1. Papel / função
+
+Defina, em 1 ou 2 frases, qual função o modelo deve assumir na tarefa.
+
+Exemplos: Estrategista de produto, Gestor de UX, Designer de Produto UI, Especialista Codex.
+
+## 2. Objetivo
 
 Descreva o resultado esperado.
 
-## 2. Fontes / contexto disponível
+## 3. Fontes / contexto disponível
 
 Informe quais fontes ou contexto devem ser usados:
 
@@ -19,15 +25,15 @@ Informe quais fontes ou contexto devem ser usados:
 - web
 - print
 
-## 3. Critérios de sucesso
+## 4. Critérios de sucesso
 
 Liste o que precisa estar verdadeiro para a resposta ser considerada boa.
 
-## 4. Limites
+## 5. Limites
 
 Declare o que não pode ser inferido, alterado, removido ou criado.
 
-## 5. Entrega esperada
+## 6. Entrega esperada
 
 Defina o formato final e o nível de detalhe:
 
@@ -39,14 +45,14 @@ Defina o formato final e o nível de detalhe:
 - checklist
 - decisão
 
-## 6. Regras de parada
+## 7. Regras de parada
 
 Informe quando parar, pedir fonte, declarar limite ou não prosseguir.
 
-## 7. Evidência / validação
+## 8. Evidência / validação
 
 Informe como a resposta deve demonstrar que usou as fontes corretas ou validou o resultado esperado.
 
-## 8. Regra de concisão
+## 9. Regra de concisão
 
 Evitar instruções repetidas, excesso de processo e detalhamento que não ajude na entrega final.
