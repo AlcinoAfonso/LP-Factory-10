@@ -41,8 +41,6 @@ Use a entrada confirmada como fonte de verdade para:
 
 Entregue uma tabela sobre o núcleo estratégico do taxon confirmado para o audience_scope recebido na entrada confirmada.
 
-Antes da tabela, informe: `taxon_id`, `taxon_name`, `taxon_level`, `research_block = strategic_core` e `audience_scope`.
-
 Preencha: `pain`, `objection`, `desire`, `hidden_desire`, `belief`, `fear`, `awareness_level`, `vocabulary`, `trigger`, `proof_type`, `trend`, `positioning_opportunity`.
 
 Observação: `hidden_desire` significa motivação profunda ligada a identidade, autoimagem, status, pertencimento, autoconfiança ou reconhecimento; não é o desejo declarado.
