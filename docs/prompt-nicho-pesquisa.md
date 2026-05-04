@@ -74,6 +74,7 @@ Fontes específicas para `strategic_core`:
 - conteúdo de mercado, como páginas de clínicas, profissionais, prestadores ou infoprodutores
 - fontes oficiais ou regulatórias quando houver risco, segurança, regra profissional ou alegação técnica
 - inferência marcada em `evidência` quando não houver fonte direta
+- referências dos EUA aceitas apenas para `trend`, quando indicarem tendência macro do nicho; marcar em `evidência`. Demais `item_key` devem priorizar o mercado brasileiro.
 
 Limites: não incluir dados locais de cliente, não escrever copy final, usar apenas o audience_scope recebido na entrada confirmada, não criar `item_key` fora da lista acima e não inventar quando faltar fonte.
 
@@ -107,9 +108,10 @@ Atenção: em `priority`, número maior = maior força; em `sort_order`, número
 Para cada linha: `item_key` = um dos itens acima; `item_text` = padrão observado descrito de forma específica, não apenas o rótulo; `priority` = quão dominante o padrão é no mercado observado (`3` = padrão majoritário, `2` = padrão alternativo relevante, `1` = padrão minoritário ou de nicho específico); `sort_order` = ordem de relevância dentro do mesmo `item_key` e reinicia em cada `item_key`; `notes` = contexto, restrições do nicho, quando esse padrão se aplica vs alternativas; `evidência` = referência às LPs analisadas, URLs, número de exemplos observados ou descrição do padrão agregado.
 
 Fontes específicas para `lp_overview`:
-- páginas reais de concorrentes brasileiros do nicho
-- anúncios públicos observáveis do nicho, como Meta Ads Library e resultados patrocinados visíveis na SERP
+- páginas reais de concorrentes brasileiros do nicho como referência primária
+- anúncios públicos observáveis do nicho no Brasil, como Meta Ads Library e resultados patrocinados visíveis na SERP
 - top resultados do SERP brasileiro para queries comerciais do nicho
+- LPs dos EUA quando representarem tendência visual ou estrutural ainda não consolidada no Brasil; marcar em `evidência` como tendência emergente no Brasil e consolidada nos EUA
 - observação direta de pelo menos 3 LPs por achado significativo, quando houver amostra pública suficiente
 - inferência marcada em `evidência` quando o padrão for inferido sem amostra suficiente
 
