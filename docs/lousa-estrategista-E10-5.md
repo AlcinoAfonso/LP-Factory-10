@@ -399,9 +399,9 @@ Ela registra o caso de uso atual, suas decisões, ambiguidades, propostas, fluxo
 
 #### 6.3.1 Objetivo
 
-* criar o kit operacional de expansão do Grupo C
-* padronizar como outro chat deve estruturar, consolidar e preparar a base estratégica por taxon sem drift entre chats
-* reduzir carga manual solta e versionar os artefatos operacionais desta etapa em `docs/` e `supabase/snippets/`
+* preparar o fluxo de pesquisas do Grupo C por taxon, compatível com `taxon_market_research` e `taxon_market_research_items`
+* definir os prompts de identificação, pesquisa profunda, consolidação e carregamento desta etapa
+* definir os SQLs de apoio à identificação e de verificação da carga, em formato de snippet/patch para uso operacional
 
 #### 6.3.2 Documentos canônicos desta etapa
 
@@ -409,71 +409,56 @@ Ela registra o caso de uso atual, suas decisões, ambiguidades, propostas, fluxo
 * `docs/schema.md`
 * `docs/roadmap.md`
 * `docs/supa-up.md`
+* `docs/template-prompts.md`
 
 #### 6.3.3 Definições e ambiguidades por item
 
 ##### 6.3.3.1 Tabelas
 
-Para a definição estrutural implementada de `taxon_market_research` e `taxon_market_research_items`, usar como referência E10.5.2, refletida na seção 6.1.4 desta lousa.
+###### 6.3.3.1.1 `taxon_market_research`
 
-##### 6.3.3.2 Prompt de pesquisa
+* usar como referência E10.5.2, refletida na seção 6.1 desta lousa
+* campos: `id`, `taxon_id`, `research_block`, `audience_scope`, `version`, `status`, `created_at`, `updated_at`
 
-A) Definido
+###### 6.3.3.1.2 `taxon_market_research_items`
 
-* o prompt de pesquisa desta etapa deve ficar em `docs/prompt-E10-5-4-pesquisa-completa-nicho.md`
-* ele deve funcionar como prompt mestre do nicho
-* ele deve permitir selecionar um, vários ou todos os `research_block`
+* usar como referência E10.5.2, refletida na seção 6.1 desta lousa
+* campos: `id`, `research_id`, `item_key`, `item_text`, `priority`, `sort_order`, `is_active`, `notes`, `created_at`, `updated_at`
+
+##### 6.3.3.2 Prompts do fluxo de pesquisa
+
+###### 6.3.3.2.1 `docs/prompt-nicho-identificacao.md`
+
+* status: implementado
+* objetivo: identificar o taxon, receber `audience_scope`, `research_blocks` e ordem, usar SQL de apoio para localizar o taxon no banco e entregar relatório-instrução para a pesquisa profunda
+
+###### 6.3.3.2.2 `docs/prompt-nicho-pesquisa.md`
+
+* status: implementado
+* objetivo: executar a pesquisa profunda por bloco, usando a entrada confirmada da identificação como fonte de verdade, sem refazer a identificação do taxon
+* a pesquisa roda um `research_block` por vez
+* a IA deve aguardar comando humano antes de seguir para o próximo bloco
 * os quatro blocos iniciais desta fase ficam: `strategic_core`, `lp_overview`, `lp_sections`, `seo`
+* `strategic_core` inicia com: `pain`, `objection`, `desire`, `hidden_desire`, `belief`, `fear`, `awareness_level`, `vocabulary`, `trigger`, `proof_type`, `trend`, `positioning_opportunity`
+* `lp_overview` inicia com: `funnel_stage`, `conversion_action`, `offer_model`, `narrative_arc`, `visual_tone`, `color_direction`, `page_length`, `image_style`, `visual_density`, `typography_direction`, `mobile_priority`
+* `lp_sections` inicia com: `hero`, `problem`, `solution`, `proof`, `offer`, `faq`, `cta`
+* em `lp_sections`, a IA pode propor seções novas, mas elas não entram automaticamente como `item_key` aprovado
+* `seo` inicia com: `primary_keyword`, `secondary_keyword`, `search_intent`, `serp_pattern`, `content_gap`, `semantic_cluster`, `competition_level`
+* em `seo`, `secondary_keyword`, `content_gap` e `semantic_cluster` podem ser repetíveis
 * a pesquisa pode ter liberdade controlada, mas deve entregar apenas conteúdo útil à estrutura da tabela
+* cada execução deve declarar `research_block` e `audience_scope`
+* não misturar `business_buyer` e `end_customer` no mesmo consolidado de pesquisa
+* o prompt deve ser outcome-first: objetivo, critérios de sucesso, limites permitidos, regras de evidência e formato de saída
 
-B) Ambiguidades / A definir
+###### 6.3.3.2.3 `docs/prompt-nicho-consolidacao.md`
 
-* definir os `item_key` iniciais de cada `research_block`
-* definir os entregáveis obrigatórios mínimos de cada `research_block`
+* status: pendente
+* objetivo: consolidar os blocos aprovados, normalizar os dados para carga e preparar conteúdo compatível com o schema
 
-##### 6.3.3.3 Prompt de consolidação
+###### 6.3.3.2.4 `docs/prompt-nicho-carregamento.md`
 
-A) Definido
-
-* o prompt de consolidação desta etapa deve ficar em `docs/prompt-E10-5-4-consolidacao-pesquisa-nicho.md`
-* ele deve transformar a pesquisa bruta em saída canônica pronta para carga
-* a saída consolidada deve separar:
-
-  * referência operacional ao taxon
-  * registro pai de `research`
-  * itens filhos da pesquisa
-* `taxon_name`, `taxon_slug` e `taxon_level` podem existir no template apenas para controle manual
-* na carga final, a `research` deve ser relacionada ao taxon já existente
-
-B) Ambiguidades / A definir
-
-* sem ambiguidades relevantes nesta etapa
-
-##### 6.3.3.4 SQLs e snippets
-
-A) Definido
-
-* os SQLs/snippets operacionais do Grupo C devem ser versionados em `supabase/snippets/`
-* a carga deve criar 1 registro pai por `research_block`
-* os itens devem entrar ligados ao `research_id` correspondente
-* a saída consolidada desta etapa deve servir de base para a carga SQL posterior do Grupo B
-
-B) Ambiguidades / A definir
-
-* sem ambiguidades relevantes nesta etapa
-
-##### 6.3.3.5 Regras operacionais do recorte
-
-A) Definido
-
-* o processo inicial será manual via chat, com aprovação antes da carga
-* o taxon já existente no E10.5.3 deve ser tratado apenas como pré-condição operacional
-* este fluxo não recadastra taxon nem alias
-* `taxon_message_guides` fica fora deste recorte
-
-B) Ambiguidades / A definir
-
-* sem ambiguidades relevantes nesta etapa
+* status: pendente
+* objetivo: gerar o SQL de carga a partir dos dados consolidados, já no modelo de `taxon_market_research` e `taxon_market_research_items`
 
 #### 6.3.4 Fora do escopo
 
