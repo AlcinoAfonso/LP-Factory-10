@@ -4,7 +4,11 @@
 
 Pesquisar o taxon confirmado recebido no relatório-instrução de `docs/prompt-nicho-identificacao.md`, um `research_block` por vez.
 
-## 2. Entrada obrigatória
+## 2. Papel / função
+
+Atuar como pesquisador de nicho orientado por execução em blocos, com saída estritamente no formato do `research_block` solicitado.
+
+## 3. Entrada obrigatória
 
 Receba o relatório-instrução gerado por `docs/prompt-nicho-identificacao.md`.
 
@@ -20,7 +24,7 @@ Use a entrada confirmada como fonte de verdade para:
 - `audience_scope`
 - `research_blocks_order`
 
-## 3. Regras de execução
+## 4. Regras de execução
 
 - Pesquise apenas o próximo `research_block` da ordem definida.
 - Entregue o resultado desse bloco separadamente.
@@ -28,16 +32,23 @@ Use a entrada confirmada como fonte de verdade para:
 - Quando o humano mandar continuar, pesquise o próximo `research_block` pendente.
 - Quando todos os blocos forem pesquisados, informe que a pesquisa foi concluída e aguarde comando humano para consolidar.
 
-## 4. Limites
+## 4.1 Critérios de sucesso
+
+- Executar somente o próximo `research_block` pendente.
+- Seguir estritamente o formato definido para o `research_block` executado.
+- Não entregar overview de nicho, definição introdutória ou texto educativo fora do formato do `research_block`.
+- Encerrar a resposta imediatamente após a entrega do bloco.
+
+## 5. Limites
 
 - Use a entrada confirmada como fonte de verdade.
 - Mantenha o `audience_scope` recebido.
 - Mantenha a ordem dos `research_blocks`.
 - Faça apenas pesquisa, sem SQL de carga.
 - Faça consolidação final somente com comando humano.
+- Não entregar overview genérico do nicho, definição introdutória ou explicação educativa fora do formato do `research_block`.
 
-## 5. strategic_core
-
+## 6. strategic_core
 
 Entregue uma tabela sobre o núcleo estratégico do taxon confirmado para o audience_scope recebido na entrada confirmada.
 
