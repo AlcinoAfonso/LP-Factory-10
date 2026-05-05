@@ -41,3 +41,11 @@ Rodar, nesta ordem:
   - inspeção de arquivos locais
 
 - Motivo: Git/SSH local pode falhar dentro do sandbox no Windows, enquanto o fluxo pelo conector GitHub foi validado e é o fluxo operacional desejado para branch, commit, push e PR.
+
+## Entrega / validação
+
+- A resposta final deve informar o status da validação:
+  - `npm ci`: executado, não executado ou não aplicável, com motivo quando não passar ou não for executado;
+  - `npm run check`: executado, não executado ou não aplicável, com motivo quando não passar ou não for executado.
+
+- Se a rotina padrão não for rodada, informar explicitamente na entrega final.
