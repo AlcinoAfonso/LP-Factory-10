@@ -2,7 +2,11 @@
 
 ## Objetivo
 
-Identificar o taxon cadastrado, definir o público da pesquisa e registrar os `research_blocks` que serão pesquisados.
+## 1. Objetivo
+
+Executar o fluxo de identificação de nicho/taxon para preparar a entrada da pesquisa profunda.
+
+A partir do nicho informado pelo humano, localizar o taxon cadastrado no banco, confirmar o taxon correto, receber `audience_scope` e `research_blocks_order`, e entregar o relatório-instrução para uso com `docs/prompt-nicho-pesquisa.md`.
 
 ## Entrada
 
