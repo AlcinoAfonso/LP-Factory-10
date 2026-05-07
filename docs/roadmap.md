@@ -1,8 +1,8 @@
 0. Introdução
 
 0.1 Cabeçalho
-• Data: 29/04/2026
-• Versão: v1.5.45
+• Data: 07/05/2026
+• Versão: v1.5.46
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -449,6 +449,12 @@
 • UX Partner Dashboard
 
 10.4 Primeiros passos (pending_setup — status-based)
+
+• Refinamento técnico pós-PR #226: a mutação `pending_setup → active` passou a residir em `lib/access/adapters/accountAdapter.ts`; `app/a/[account]/actions.ts` permanece como orquestrador do fluxo.
+• ARTEFATOS_REPO:
+• Ajustados: `app/a/[account]/actions.ts`
+• Ajustados: `lib/access/adapters/accountAdapter.ts`
+• Checks/QA (reportado): Preview Vercel Ready e acessível; Validador Final passou; QA manual confirmou ativação `pending_setup → active`.
 
 • Arquitetura runtime atual: `app/a/[account]/page.tsx` atua como orquestrador da rota; o formulário `PendingSetupFirstSteps` reside em `app/a/[account]/_components/PendingSetupFirstSteps.tsx` como componente route-local.
 • ARTEFATOS_REPO:
@@ -965,6 +971,8 @@
 • Definir o primeiro recorte funcional do LP Builder no roadmap
 
 99. Changelog
+v1.5.46 (07/05/2026) — E10.4: registra refinamento técnico do PR #226, movendo a mutação `pending_setup → active` para `accountAdapter` e preservando a action como orquestradora do fluxo.
+
 v1.5.44 (27/04/2026) — Simplificada a seção 10.5.2 do roadmap, fundindo 10.5.2 e 10.5.2.1 no estado final único da base do BD do E10.5.
 
 v1.5.43 (26/04/2026) — 10.5.2.1: ajuste corretivo do Grupo C
