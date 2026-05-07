@@ -33,6 +33,15 @@ Rodar, nesta ordem:
 
 - Nunca aplicar alterações diretamente na `main`.
 
+### Gate pré-edição no Codex App
+
+Antes de editar arquivos no workspace local, verificar a branch ativa.
+
+- Se estiver em `main`, parar imediatamente.
+- Não editar arquivos diretamente na working tree da `main`.
+- Usar o conector GitHub para criar uma branch de trabalho e aplicar as alterações.
+- Se o conector GitHub não estiver disponível, reportar bloqueio antes de editar.
+
 - Se o conector GitHub não estiver disponível ou falhar, parar e informar o bloqueio. Não tentar substituir por Git remoto local dentro do sandbox.
 
 - Comandos Git locais continuam permitidos quando úteis:
