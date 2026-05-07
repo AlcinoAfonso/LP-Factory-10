@@ -568,3 +568,97 @@ Validar se o workflow autentica no Supabase, faz o link no projeto correto e reg
 * histórico remoto de migrations: ausente
 * baseline oficial: pendente
 * fluxo automático confiável: ainda não liberado
+
+## 8) Plano operacional da fase baseline
+
+### 8.1 Etapa 1 — Extração do baseline
+
+Responsável: executor + humano, com ação externa no ambiente do banco.
+
+Objetivo: obter o baseline real a partir do banco remoto atual.
+
+Saída esperada: arquivo bruto de baseline extraído do estado real do banco.
+
+Condição para avançar: baseline bruto extraído com sucesso.
+
+### 8.2 Etapa 2 — Revisão técnica do baseline
+
+Responsável: executor.
+
+Objetivo: revisar o baseline extraído e transformá-lo na migration baseline oficial.
+
+Saída esperada: arquivo completo da migration baseline + leitura curta do impacto no legado atual.
+
+Condição para avançar: baseline oficial tecnicamente aceito.
+
+### 8.3 Etapa 3 — Transição do legado
+
+Responsável: executor.
+
+Objetivo: definir exatamente como o legado atual sai do fluxo oficial.
+
+Saída esperada: destino técnico fechado para o legado durante a transição e regra de remoção posterior.
+
+Condição para avançar: legado classificado como transitório e sem papel no histórico oficial novo.
+
+### 8.4 Etapa 4 — Alinhamento do histórico remoto
+
+Responsável: executor + humano, com ação externa no Supabase CLI / ambiente.
+
+Objetivo: alinhar o histórico remoto ao baseline novo.
+
+Saída esperada: histórico remoto reconciliado com o baseline oficial.
+
+Condição para avançar: local e remoto alinhados ao novo histórico oficial.
+
+### 8.5 Etapa 5 — Liberação controlada do workflow
+
+Responsável: humano.
+
+Objetivo: liberar o primeiro uso real do workflow de apply depois da transição segura.
+
+Saída esperada: smoke manual do workflow com evidência em logs e Summary.
+
+Condição para fechar a fase: baseline oficial ativo, legado fora do fluxo e smoke manual concluído depois da transição.
+
+### 8.6 Regra de sequência
+
+* Não inverter a ordem das etapas.
+* Não executar smoke antes do baseline oficial.
+* Não remover o legado antes do alinhamento seguro do novo histórico.
+* Se surgir conflito relevante em qualquer etapa, parar e reportar antes de avançar.
+
+### 8.7 Execução segura no repositório
+
+* O baseline real ainda não está disponível no repositório e não deve ser improvisado.
+* O diretório `supabase/migrations/` permanece como legado técnico transitório enquanto a extração externa não voltar com o baseline bruto.
+* O workflow `.github/workflows/pipeline-supabase-apply-migrations.yml` deve permanecer impedido de executar apply real até a conclusão da fase baseline.
+* A liberação futura do workflow depende de configurar `SUPABASE_APPLY_MIGRATIONS_ENABLED=true` apenas depois de:
+  * baseline oficial versionado;
+  * histórico remoto alinhado;
+  * legado fora do fluxo ativo;
+  * smoke manual autorizado.
+
+### 8.8 Leitura do legado atual
+
+* `0001__baseline_e7.sql` está vazio e não representa baseline real.
+* `0002__ensure_first_account_for_current_user.sql` a `0008__e10_5_2_1_research_audience_scope_parent.sql` cobrem incrementos específicos do produto, não o histórico completo do banco remoto.
+* `accounts_name_gin_idx.sql` não segue o padrão timestamp/nome do Supabase CLI e deve ser tratado como apoio legado, não como peça do histórico oficial novo.
+* Não há `supabase/config.toml` no estado atual do repositório.
+* O destino técnico recomendado é retirar esses arquivos do fluxo ativo quando o baseline oficial entrar, preservando-os apenas como apoio de comparação até a transição segura. A remoção final só deve ocorrer depois do alinhamento remoto e do smoke manual pós-transição.
+
+### 8.9 Ações externas necessárias
+
+Estas ações devem ser executadas fora do Codex, por executor/humano com Supabase CLI autenticado, acesso ao projeto remoto e Docker disponível.
+
+1. Trabalhar em uma pasta temporária limpa, sem copiar as migrations legadas atuais.
+2. Rodar `supabase init`.
+3. Rodar `supabase link --project-ref dpikmjgiteuafsbaubue`.
+4. Rodar `supabase migration list --linked` e guardar a saída.
+5. Rodar `supabase db pull baseline_oficial --linked --schema public`.
+6. Quando o CLI perguntar se deve atualizar o histórico remoto nesta etapa, responder `n`, porque a revisão técnica do baseline ainda não foi concluída.
+7. Entregar ao repositório o arquivo SQL gerado e a saída inicial de `migration list`.
+8. Depois da revisão técnica aceitar o baseline oficial, rodar `supabase migration repair <timestamp_do_baseline> --status applied --linked`.
+9. Rodar novamente `supabase migration list --linked` e guardar a saída final.
+
+Não rodar `supabase db push` nesta fase.
