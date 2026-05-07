@@ -123,6 +123,33 @@ export async function setSetupCompletedAtIfNull(accountId: string): Promise<bool
   return true;
 }
 
+/** Atualiza accounts.status de pending_setup para active, se aplicável. */
+export async function setAccountStatusActiveIfPending(accountId: string): Promise<boolean> {
+  const supabase = createServiceClient();
+
+  let q: any = supabase
+    .from("accounts")
+    .update({ status: "active" })
+    .eq("id", accountId)
+    .eq("status", "pending_setup");
+
+  if (typeof q?.maxAffected === "function") q = q.maxAffected(1);
+
+  const { error } = await q;
+
+  if (error) {
+    // eslint-disable-next-line no-console
+    console.error("setAccountStatusActiveIfPending failed:", {
+      code: (error as any)?.code,
+      message: (error as any)?.message ?? String(error),
+      account_id: accountId,
+    });
+    return false;
+  }
+
+  return true;
+}
+
 /* ===========================================================
  * Leituras read-only (Adapters-only)
  * ===========================================================
