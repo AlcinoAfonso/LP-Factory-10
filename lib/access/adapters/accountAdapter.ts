@@ -138,6 +138,7 @@ export async function setAccountStatusActiveIfPending(accountId: string): Promis
   const { error } = await q;
 
   if (error) {
+    // eslint-disable-next-line no-console
     console.error("setAccountStatusActiveIfPending failed:", {
       code: (error as any)?.code,
       message: (error as any)?.message ?? String(error),
