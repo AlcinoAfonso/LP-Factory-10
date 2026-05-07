@@ -13,6 +13,15 @@ Todo briefing deve ser outcome-first e informar, de forma objetiva:
 
 ## B) Regras por tipo de entrega
 
+### Checklist pré-edição
+
+Antes de editar arquivos no Codex App:
+
+- verificar a branch ativa;
+- se estiver em `main`, parar e não editar a working tree local;
+- usar o conector GitHub para criar branch de trabalho e aplicar alterações;
+- se o conector GitHub não estiver disponível, reportar bloqueio antes de editar.
+
 ### Código
 
 - seguir a rotina padrão de checks definida no `AGENTS.md`;
