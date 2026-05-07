@@ -107,22 +107,42 @@ Use um dos status abaixo:
 ### 6.2 Worktrees
 
 - O que é:
-  - Recurso para permitir múltiplas frentes de trabalho isoladas no mesmo repositório.
+  - Recurso de isolamento local para permitir que diferentes tarefas trabalhem em áreas de trabalho separadas dentro do Codex App.
+  - Worktree não é a multitarefa em si; é o mecanismo que torna a multitarefa local mais segura.
 - Onde fica:
-  - Codex App / fluxo local com múltiplas tarefas.
+  - Codex App / execução local com múltiplos agentes ou tarefas paralelas.
 - Como usamos:
-  - ainda em avaliação.
+  - ainda em avaliação no LP Factory 10;
+  - deve ser usado apenas quando cada tarefa tiver área isolada, branch própria e PR próprio;
+  - o objetivo é evitar que alterações de tarefas diferentes apareçam misturadas no mesmo clone local ou no GitHub Desktop.
+- Diferença entre worktree, branch e PR:
+  - branch: linha de trabalho/versionamento no Git;
+  - PR: revisão e validação no GitHub Web antes do merge;
+  - worktree: área local isolada associada a uma tarefa/branch para evitar mistura de arquivos antes do PR.
+- Exemplo prático:
+  - Opção A para E10.5 → worktree A → branch A → PR A;
+  - Opção B para E10.5 → worktree B → branch B → PR B;
+  - Opção C para E10.5 → worktree C → branch C → PR C.
 - Quando usar:
-  - potencialmente útil para múltiplas tarefas paralelas.
+  - quando houver duas ou mais tarefas paralelas no Codex App;
+  - quando quisermos comparar alternativas para o mesmo caso de uso;
+  - quando uma tarefa local não deve contaminar outra;
+  - quando cada alternativa precisa gerar seu próprio diff e PR.
 - Quando evitar:
-  - quando uma única branch/tarefa for suficiente;
-  - quando aumentar complexidade operacional.
+  - quando houver apenas uma tarefa simples;
+  - quando branch + PR via Codex Web/Cloud ou conector GitHub já resolver com menos risco;
+  - quando o Codex App não conseguir garantir isolamento real;
+  - quando o processo exigir separação manual de arquivos pelo GitHub Desktop.
 - Status:
   - `em teste`.
 - Evidência/teste feito:
-  - ainda pendente.
+  - duas tarefas locais no Codex App geraram alterações que apareceram juntas no GitHub Desktop;
+  - o problema foi corrigido manualmente separando os arquivos em PRs diferentes;
+  - isso mostrou a necessidade de validar worktrees isoladas antes de adotar multitarefa local como padrão.
 - Observações:
-  - registrar aprendizado conforme for usado na prática.
+  - para o LP Factory 10, multitarefa paralela no Codex App só será considerada segura quando cada tarefa gerar branch e PR próprios sem depender do GitHub Desktop para separar arquivos;
+  - GitHub Desktop pode ser usado para inspeção ou fallback, mas não deve ser etapa normal para separar alterações misturadas;
+  - regras obrigatórias de branch, PR e gate pré-edição continuam centralizadas em `AGENTS.md`.
 
 ## 7. Recursos disponíveis, mas ainda não adotados
 
