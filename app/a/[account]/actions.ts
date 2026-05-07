@@ -7,7 +7,11 @@ import { headers, cookies } from 'next/headers';
 import { revalidatePath } from 'next/cache';
 
 import { getAccessContext } from '@/lib/access/getAccessContext';
-import { updateAccountNameCore, renameAccountNoStatus } from '@/lib/access/adapters/accountAdapter';
+import {
+  updateAccountNameCore,
+  renameAccountNoStatus,
+  setAccountStatusActiveIfPending,
+} from '@/lib/access/adapters/accountAdapter';
 import { upsertAccountProfileV1 } from '@/lib/access/adapters/accountProfileAdapter';
 import { validateE10_4SetupForm } from '@/lib/onboarding/e10_4_setup_validation';
 
@@ -164,36 +168,6 @@ async function readLastAccountSubdomainCookie(): Promise<string | null> {
  * - Importante: revalidatePath(route) antes do redirect para evitar UI stale
  */
 
-async function setAccountStatusActiveIfPending(accountId: string): Promise<void> {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const serviceKey = process.env.SUPABASE_SECRET_KEY;
-
-  if (!supabaseUrl || !serviceKey) {
-    throw new Error('missing_service_env');
-  }
-
-  const url = new URL(`${supabaseUrl}/rest/v1/accounts`);
-  url.searchParams.set('id', `eq.${accountId}`);
-  url.searchParams.set('status', 'eq.pending_setup');
-
-  const res = await fetch(url.toString(), {
-    method: 'PATCH',
-    headers: {
-      apikey: serviceKey,
-      Authorization: `Bearer ${serviceKey}`,
-      'Content-Type': 'application/json',
-      Prefer: 'return=representation',
-    },
-    body: JSON.stringify({ status: 'active' }),
-    cache: 'no-store',
-  });
-
-  if (!res.ok) {
-    const body = await res.text().catch(() => '');
-    throw new Error(`status_update_failed:${res.status}:${body}`);
-  }
-}
-
 export async function saveSetupAndContinueAction(
   _prevState: SetupSaveState | undefined,
   formData: FormData
@@ -307,7 +281,8 @@ export async function saveSetupAndContinueAction(
     if (!okName) throw new Error('account_name_update_failed');
 
     // Status (fonte de verdade)
-    await setAccountStatusActiveIfPending(accountId);
+    const okStatus = await setAccountStatusActiveIfPending(accountId);
+    if (!okStatus) throw new Error('status_update_failed');
 
     const latency = Date.now() - t0;
 
