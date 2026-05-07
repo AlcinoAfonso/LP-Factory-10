@@ -216,3 +216,7 @@ Use este modelo ao adicionar novo recurso:
 - Observações:
   - 
 ```
+
+## 10. Changelog de aprendizagem
+
+- 06/05/2026 — Criação do documento inicial de recursos do Codex.
