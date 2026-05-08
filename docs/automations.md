@@ -362,64 +362,32 @@ Observações:
 3.6 Apply automático de migrations no Supabase
 
 Objetivo:
-Preparar o fluxo para que migrations versionadas no repositório possam ser aplicadas ao Supabase por automação, depois que o baseline oficial do banco estiver concluído e o histórico remoto estiver alinhado.
+Manter o apply automático como fluxo preparado, mas bloqueado até a conclusão da baseline oficial de migrations e do alinhamento remoto.
 
 Status:
 Proposto / bloqueado por baseline oficial
 
-Acesso:
-GitHub Actions / Supabase, após liberação controlada do fluxo.
-
-Como usar:
-O fluxo só deve ser usado depois que a fase baseline estiver concluída, o legado atual estiver fora do fluxo oficial e houver smoke manual com evidência em logs e Summary.
-
-Resposta esperada:
-Aplicação controlada de migrations versionadas no Supabase, com evidência clara de sucesso ou falha, sem depender de copiar e colar SQL manualmente no painel.
+Resumo de controle:
+O workflow de apply não deve ser tratado como liberado enquanto a baseline A3.6.1 estiver pendente. A orientação operacional detalhada fica centralizada nas lousas de referência, sem duplicação neste índice.
 
 Referências / dependências:
 `docs/lousa-automations3-6.md`
 `docs/lousa-automations3-6-1.md`
-`docs/base-tecnica.md`
-`docs/schema.md`
-`supabase/migrations/`
-
-Observações:
-- o banco remoto atual é a fonte de verdade para a transição;
-- o histórico atual em `supabase/migrations/` é tratado como legado técnico transitório;
-- o legado atual não deve ser considerado histórico oficial futuro;
-- o workflow de apply só pode ser liberado após baseline oficial, histórico remoto alinhado, legado fora do fluxo ativo e smoke manual concluído;
-- enquanto a baseline não estiver concluída, o apply automático permanece bloqueado como fluxo confiável.
 
 3.6.1 Baseline de migrations no Supabase
 
 Objetivo:
-Extrair o baseline real do banco remoto atual, transformá-lo no novo histórico oficial de migrations e preparar a retirada segura do legado atual de `supabase/migrations/`.
+Consolidar o baseline real do banco remoto atual como novo histórico oficial de migrations antes de liberar o apply automático.
 
 Status:
 Proposto / pendente
 
-Acesso:
-Supabase CLI / ambiente externo do banco, com apoio do repositório para versionamento posterior do baseline oficial.
-
-Como usar:
-A fase baseline deve ser executada antes da liberação do workflow de apply automático. A extração e o alinhamento remoto dependem de ação externa controlada no Supabase CLI ou ambiente equivalente.
-
-Resposta esperada:
-Baseline oficial extraído do banco remoto atual, migration baseline tecnicamente aceita, histórico remoto alinhado ao baseline, legado retirado do fluxo oficial e workflow liberado apenas após smoke manual.
+Resumo de controle:
+A lousa operacional principal da baseline é `docs/lousa-automations3-6-1.md`. O contexto de controle do apply automático permanece em `docs/lousa-automations3-6.md`.
 
 Referências / dependências:
-`docs/lousa-automations3-6-1.md`
 `docs/lousa-automations3-6.md`
-`docs/schema.md`
-`supabase/migrations/`
-
-Observações:
-- o histórico remoto de migrations está ausente;
-- o conjunto atual de `supabase/migrations/` cobre apenas parte do banco;
-- o conjunto atual deve permanecer apenas como apoio transitório durante a fase baseline;
-- não fazer limpeza patch por patch no escuro;
-- a remoção do legado só deve acontecer depois de baseline oficial versionado, histórico remoto alinhado e transição segura concluída;
-- o workflow de apply está preparado, mas não liberado como fluxo confiável até a conclusão da baseline.
+`docs/lousa-automations3-6-1.md`
 
 4. Aprendizados operacionais
 4.1 Princípios identificados
