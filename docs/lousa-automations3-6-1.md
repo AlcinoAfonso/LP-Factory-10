@@ -1,4 +1,4 @@
-# Lousa — 3.5.1 Baseline de migrations no Supabase
+# Lousa — 3.6.1 Baseline de migrations no Supabase
 
 ## 1) Objetivo da fase baseline
 
