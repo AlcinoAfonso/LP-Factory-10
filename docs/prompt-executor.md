@@ -20,7 +20,21 @@ Status: em desenvolvimento nesta lousa.Referência no repositório: docs/prompt-
 
 3.1.3 Investigação BD
 
-• Em caso de BD, investigar apenas se os docs canônicos não forem suficientes.• Em criação de estrutura nova, investigar apenas o entorno do BD, se necessário.• Em ajuste estrutural do BD, investigar as estruturas a serem ajustadas e o entorno necessário.• A investigação de BD deve ser feita por meio da entrega de SQLs de inspeção para execução pelo Gestor.• Os SQLs de inspeção devem ser read-only, usar apenas SELECT ou WITH, ter LIMIT obrigatório, ser separados por --- e ter até 20 queries por execução.• Analisar os outputs retornados pelo Gestor.• Só deve bloquear a execução quando houver conflito concreto, drift relevante ou dependência não resolvida.
+• Em caso de BD, investigar apenas se os docs canônicos não forem suficientes.
+• Em criação de estrutura nova, investigar apenas o entorno do BD, se necessário.
+• Em ajuste estrutural do BD, investigar as estruturas a serem ajustadas e o entorno necessário.
+• A investigação de BD deve ser feita por meio da entrega de SQLs de inspeção para execução pelo Gestor.
+• Os SQLs de inspeção devem seguir o formato obrigatório definido em 3.1.3.1.
+• Só deve bloquear a execução quando houver conflito concreto, drift relevante ou dependência não resolvida.
+
+3.1.3.1 Formato dos SQLs para Supabase Inspect
+
+• Entregar bloco pronto para colar no input `briefing` do workflow.
+• Usar apenas SELECT ou WITH read-only.
+• Cada query deve ter LIMIT obrigatório de até 50.
+• Não usar ponto e vírgula (`;`) ao final das queries.
+• Separar queries com `---`, preferencialmente em linha própria.
+• Usar no máximo 20 queries por execução.
 
 3.2 Etapa 2 — Plano de implementação
 
