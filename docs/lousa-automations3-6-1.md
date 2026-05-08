@@ -100,14 +100,22 @@ A baseline só pode ser tratada como concluída quando os itens abaixo estiverem
 ## 9) Execução segura no repositório
 
 * O baseline real não deve ser improvisado no repositório.
-* `supabase/migrations/` continua como legado transitório até a extração externa devolver o baseline.
-* O workflow de apply não deve ser tratado como liberado antes da baseline oficial.
+* `supabase/migrations/` continua como legado transitório até a extração externa devolver o baseline bruto.
+* O workflow de apply não deve ser tratado como fluxo liberado antes da baseline oficial.
+* A liberação futura do workflow só pode acontecer depois de:
+
+  * baseline oficial versionado
+  * histórico remoto alinhado
+  * legado fora do fluxo ativo
+  * smoke manual autorizado
 
 ## 10) Leitura operacional do legado atual
 
-* Os arquivos legados atuais representam só parte do histórico.
-* Arquivos fora do padrão esperado do Supabase CLI devem ser tratados como apoio legado.
+* `0001__baseline_e7.sql` não deve ser tratado como baseline real do banco.
+* Os arquivos legados atuais em `supabase/migrations/` representam apenas parte do histórico do banco remoto.
+* Arquivos fora do padrão esperado do Supabase CLI devem ser tratados como apoio legado, não como histórico oficial novo.
 * A ausência de `supabase/config.toml` continua como observação operacional.
+* O destino técnico do legado é sair do fluxo ativo quando o baseline oficial entrar, permanecendo apenas como apoio transitório até a transição segura.
 
 ## 11) Ações externas necessárias
 
