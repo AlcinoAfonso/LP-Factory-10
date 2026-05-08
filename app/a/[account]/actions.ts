@@ -24,6 +24,7 @@ export type SetupSaveState = {
   ok: boolean;
   fieldErrors?: Partial<{
     name: string;
+    niche: string;
     preferred_channel: string;
     whatsapp: string;
     site_url: string;

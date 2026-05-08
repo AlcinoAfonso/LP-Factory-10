@@ -70,6 +70,7 @@ export function PendingSetupFirstSteps({
   }, [serverState]);
 
   const nameRef = useRef<HTMLInputElement | null>(null);
+  const nicheRef = useRef<HTMLInputElement | null>(null);
   const channelRef = useRef<HTMLSelectElement | null>(null);
   const whatsappRef = useRef<HTMLInputElement | null>(null);
   const siteRef = useRef<HTMLInputElement | null>(null);
@@ -107,7 +108,7 @@ export function PendingSetupFirstSteps({
     const clientErrors: any = { ...(validation.fieldErrors ?? {}) };
     const out: any = { ...serverErrors, ...clientErrors };
 
-    const keys = ["name", "preferred_channel", "whatsapp", "site_url"] as const;
+    const keys = ["name", "niche", "preferred_channel", "whatsapp", "site_url"] as const;
     for (const k of keys) {
       if (dirty[k] && !clientErrors[k]) {
         delete out[k];
@@ -118,7 +119,7 @@ export function PendingSetupFirstSteps({
   }, [serverState?.fieldErrors, validation.fieldErrors, dirty]);
 
   const isNameValidNow = !mergedFieldErrors?.name;
-  const canSubmitByName = isNameValidNow && !isPending;
+  const canSubmit = validation.ok && !isPending;
 
   const canRevealAfterName = isMobile && nameValidatedOnce && isNameValidNow;
   const shouldShowChannel = !isMobile || canRevealAfterName;
@@ -139,11 +140,12 @@ export function PendingSetupFirstSteps({
     return null;
   };
 
-  const focusFirstInvalid = () => {
-    if (mergedFieldErrors?.name) return nameRef.current?.focus();
-    if (mergedFieldErrors?.preferred_channel) return channelRef.current?.focus();
-    if (mergedFieldErrors?.whatsapp) return whatsappRef.current?.focus();
-    if (mergedFieldErrors?.site_url) return siteRef.current?.focus();
+  const focusFirstInvalid = (errors = mergedFieldErrors) => {
+    if (errors?.name) return nameRef.current?.focus();
+    if (errors?.niche) return nicheRef.current?.focus();
+    if (errors?.preferred_channel) return channelRef.current?.focus();
+    if (errors?.whatsapp) return whatsappRef.current?.focus();
+    if (errors?.site_url) return siteRef.current?.focus();
   };
 
   const onSubmit = (e: FormEvent<HTMLFormElement>) => {
@@ -160,7 +162,7 @@ export function PendingSetupFirstSteps({
 
     if (!v.ok) {
       e.preventDefault();
-      focusFirstInvalid();
+      focusFirstInvalid(v.fieldErrors);
     }
   };
 
@@ -221,20 +223,26 @@ export function PendingSetupFirstSteps({
           </FormField>
 
           <FormField>
-            <FormFieldLabel htmlFor="niche">Nicho (opcional)</FormFieldLabel>
+            <FormFieldLabel htmlFor="niche" required>Nicho</FormFieldLabel>
             <Input
               id="niche"
               name="niche"
+              ref={nicheRef}
               value={niche}
               onChange={(e) => {
                 setNiche(e.target.value);
+                setTouched((t) => ({ ...t, niche: true }));
                 setDirty((d) => ({ ...d, niche: true }));
               }}
+              onBlur={() => setTouched((t) => ({ ...t, niche: true }))}
               disabled={isPending}
               placeholder="Ex.: Harmonização facial"
               autoComplete="off"
               enterKeyHint={isMobile ? "next" : undefined}
             />
+            {showFieldError("niche") ? (
+              <FormFieldError>{showFieldError("niche")}</FormFieldError>
+            ) : null}
           </FormField>
 
           {shouldShowChannel ? (
@@ -322,7 +330,7 @@ export function PendingSetupFirstSteps({
             </FormField>
           ) : null}
 
-          <Button type="submit" disabled={!canSubmitByName}>
+          <Button type="submit" disabled={!canSubmit}>
             {isPending ? "Salvando…" : "Salvar e continuar"}
           </Button>
         </form>
