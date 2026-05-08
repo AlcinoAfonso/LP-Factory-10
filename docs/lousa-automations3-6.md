@@ -1,4 +1,4 @@
-# Lousa — 3.5 Apply automático de migrations no Supabase
+# Lousa — 3.6 Apply automático de migrations no Supabase
 
 ## 1) Objetivo do caso
 
