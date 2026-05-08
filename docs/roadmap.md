@@ -1,8 +1,8 @@
 0. Introdução
 
 0.1 Cabeçalho
-• Data: 07/05/2026
-• Versão: v1.5.46
+• Data: 08/05/2026
+• Versão: v1.5.47
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -450,6 +450,14 @@
 
 10.4 Primeiros passos (pending_setup — status-based)
 
+• Atualização de obrigatoriedade do nicho no `pending_setup` (08/05/2026): `niche` passou a ser obrigatório no formulário “Primeiros passos”, com validação client-side e server-side, `trim` e erro `Informe o nicho do projeto.` para valor vazio ou apenas espaços.
+• ARTEFATOS_REPO:
+• Ajustados: `lib/onboarding/e10_4_setup_validation.ts`
+• Ajustados: `app/a/[account]/_components/PendingSetupFirstSteps.tsx`
+• Ajustados: `app/a/[account]/actions.ts`
+• Checks/QA (reportado): Codex reportou `npm ci` ok e `npm run check` ok; QA manual em Preview Vercel confirmou bloqueio de `niche` vazio, erro para `niche` apenas com espaços, regressão aprovada dos demais campos e ativação `pending_setup → active` após salvar com `niche` preenchido.
+• Pendência: log independente de `npm ci` e `npm run check` não anexado; execução foi informada no summary do Codex.
+
 • Refinamento técnico pós-PR #226: a mutação `pending_setup → active` passou a residir em `lib/access/adapters/accountAdapter.ts`; `app/a/[account]/actions.ts` permanece como orquestrador do fluxo.
 • ARTEFATOS_REPO:
 • Ajustados: `app/a/[account]/actions.ts`
@@ -497,6 +505,7 @@
 
 10.4.4 Onboarding: dados mínimos v1 (nicho/WhatsApp e outros)
 • Status: Concluído (definição) (06/02/2026)
+• Estado atual dos campos do onboarding v1: `name` obrigatório; `niche` obrigatório; `preferred_channel` opcional com default `email`; `whatsapp` obrigatório somente quando `preferred_channel=whatsapp`; `site_url` opcional.
 • Campos v1 (Primeiros passos / inline):
 • name (obrigatório)
 • niche (opcional)
@@ -971,6 +980,8 @@
 • Definir o primeiro recorte funcional do LP Builder no roadmap
 
 99. Changelog
+v1.5.47 (08/05/2026) — E10.4: registrado `niche` obrigatório no `pending_setup`, com artefatos ajustados, validação client/server e QA funcional aprovado.
+
 v1.5.46 (07/05/2026) — E10.4: registra refinamento técnico do PR #226, movendo a mutação `pending_setup → active` para `accountAdapter` e preservando a action como orquestradora do fluxo.
 
 v1.5.44 (27/04/2026) — Simplificada a seção 10.5.2 do roadmap, fundindo 10.5.2 e 10.5.2.1 no estado final único da base do BD do E10.5.
