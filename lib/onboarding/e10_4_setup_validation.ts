@@ -4,6 +4,7 @@ export type PreferredChannel = "email" | "whatsapp";
 
 export type SetupFieldErrors = Partial<{
   name: string;
+  niche: string;
   preferred_channel: string;
   whatsapp: string;
   site_url: string;
@@ -11,7 +12,7 @@ export type SetupFieldErrors = Partial<{
 
 export type SetupValidatedValues = {
   name: string;
-  niche: string | null;
+  niche: string;
   preferred_channel: PreferredChannel;
   whatsapp: string | null;
   site_url: string | null; // normalizado; inclui esquema quando presente
@@ -98,6 +99,12 @@ function nameErrorMessage(code: string): string {
   return "Informe um nome válido.";
 }
 
+function validateNicheForSetup(input: unknown): string {
+  const trimmed = normalizeText(input);
+  if (!trimmed) throw new Error("niche_required");
+  return trimmed;
+}
+
 function whatsappErrorMessage(code: string): string {
   return code === "whatsapp_required_when_channel"
     ? "WhatsApp é obrigatório quando o canal é WhatsApp."
@@ -138,6 +145,13 @@ export function validateE10_4SetupForm(args: {
     fieldErrors.name = nameErrorMessage(code);
   }
 
+  let niche = normalizeText(args.niche);
+  try {
+    niche = validateNicheForSetup(args.niche);
+  } catch {
+    fieldErrors.niche = "Informe o nicho do projeto.";
+  }
+
   let whatsapp: string | null = normalizeText(args.whatsapp) || null;
   try {
     whatsapp = validateWhatsappIfNeeded(preferred, args.whatsapp);
@@ -153,10 +167,9 @@ export function validateE10_4SetupForm(args: {
     fieldErrors.site_url = siteUrlErrorMessage();
   }
 
-  const niche = normalizeText(args.niche) || null;
-
   const ok =
     !fieldErrors.name &&
+    !fieldErrors.niche &&
     !fieldErrors.preferred_channel &&
     !fieldErrors.whatsapp &&
     !fieldErrors.site_url;
