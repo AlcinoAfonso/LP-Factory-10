@@ -9,10 +9,11 @@ Rodar, nesta ordem:
 ## Observação
 - No sandbox do Codex, não incluir `npm run build` na rotina de `check`.
 
-## Referências de briefing
+## Referências de briefing e execução
 
 - Para estruturar pedidos incompletos em padrão outcome-first, usar `docs/template-prompts.md`.
-- Para tarefas gerais do Codex, usar `docs/template-briefing-codex.md`.
+- Para preparar briefings gerais para Codex, usar `docs/template-briefing-codex.md`.
+- Para execução de plano-base no Codex App, usar `docs/prompt-codex-app-executor.md`.
 - Para tarefas com impacto visual/frontend, usar também `docs/template-briefing-codex-frontend.md`.
 
 ## GitHub / fluxo remoto
