@@ -24,7 +24,7 @@ Ao receber um plano-base do caso:
 
 ## 3. Etapa 1 - Investigacao
 
-A investigacao deve se basear no plano-base do caso e preparar uma implementacao segura.
+A investigacao deve partir do plano-base do caso, mas pode incluir qualquer aprofundamento adicional que o Codex App identifique como necessario para implementar com seguranca, validar impacto ou resolver ambiguidades reais.
 
 ### 3.1 Docs obrigatorios
 
@@ -36,13 +36,15 @@ Examinar, conforme aplicavel:
 
 ### 3.2 Investigacao do repositorio
 
-Investigar somente o necessario para o caso:
+Investigar o necessario para o caso, incluindo pontos descobertos durante a propria leitura do repositorio:
 
 - arquivos, rotas, componentes, servicos e testes relacionados;
 - padroes existentes de implementacao;
 - dependencias e contratos locais;
 - riscos de regressao;
 - arquivos de migration e rollback quando houver BD.
+
+A investigacao adicional deve continuar vinculada ao objetivo do caso e nao deve virar auditoria ampla sem relacao com a entrega.
 
 Se a investigacao nao retornar o necessario para implementar com seguranca, pedir ajuda humana e bloquear a execucao.
 
