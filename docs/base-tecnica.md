@@ -2,8 +2,8 @@
 
 0.1. Cabeçalho
 • Documento: Base Técnica LP Factory 10
-• Versão: v2.0.29
-• Data: 29/04/2026
+• Versão: v2.0.30
+• Data: 09/05/2026
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -291,6 +291,13 @@
 • Enums: proibido fallback silencioso.
 • Gate adapters: pode retornar null, mas logs devem diferenciar deny vs error.
 
+3.14.1 Matching de taxonomia via adapter server-side
+• Regra: consumo de matching determinístico de taxonomia deve ocorrer somente via camada server/adapter do app.
+• Regra: não chamar RPC de matching diretamente do client/UI.
+• Regra: adapter deve retornar DTO final com candidatos oficiais; UI não normaliza nem interpreta rows crus do banco.
+• Regra: não logar nicho bruto, `p_query`, aliases digitados ou valores de formulário.
+• Regra: quando criado, o adapter deve nascer em path canônico de domínio, preferencialmente `lib/onboarding/niche-resolution/`, salvo decisão explícita diferente baseada no repositório real.
+
 4. DB Contract - Fonte única: PATH: docs/schema.md
 • Este documento não lista mais tabelas/views/functions/triggers/policies; isso está em PATH: docs/schema.md.
 • Trigger Hub é regra do contrato de DB (governança/auditoria). Fonte única e detalhes: PATH: docs/schema.md (seções 3.5 e 4.1).
@@ -366,6 +373,7 @@
 • Server Actions críticas devem emitir logs estruturados (JSON) com request_id e latency_ms (padrão mínimo).
 • Regra (logs sem PII): não logar valores de formulário (ex.: name, whatsapp, site_url).
 • Onboarding pós-save (E10.4.6): revalidatePath(route) antes do redirect para evitar UI stale.
+• Matching de taxonomia: quando a RPC determinística for consumida em runtime, observability mínima deve registrar apenas metadados não sensíveis, como request_id, latency_ms, candidates_count, top_match_source e top_score; não logar nicho bruto, `p_query`, aliases digitados ou valores identificáveis do usuário.
 
 5.3.5 Signup
 • Entrada: /auth/sign-up (SignUpForm usa supabase.auth.signUp) (PATH: components/sign-up-form.tsx).
@@ -434,6 +442,11 @@ Fonte normativa da allowlist SULB para exceções de Auth. Qualquer novo arquivo
 • Tipos canônicos e adapters vNext: validar por 3.6 e 3.14.
 
 99. Changelog
+v2.0.30 (09/05/2026) — E10.5.6: regras técnicas para consumo runtime do matching de taxonomia
+• Registrada regra de consumo server-side via adapter para matching determinístico de taxonomia.
+• Registrada restrição contra consumo direto pelo client/UI.
+• Registrada observability mínima sem PII para futura integração runtime da RPC de matching.
+
 v2.0.29 (29/04/2026) — Registra convenção route-local para componentes específicos de rota que dependem da própria boundary da rota.
 v2.0.28 (18/04/2026) — E12.5.1: primeira superfície ativa do Admin + retorno administrativo no login
 • Atualizada 5.2.2 para registrar a seção Admin ativa no runtime via `app/admin/layout.tsx`, protegida por guard SSR administrativo reaproveitando `requirePlatformAdmin()`.
