@@ -726,25 +726,29 @@
 • E10.5.6
 
 10.5.6 Classificação da conta e resolução do template
-• Status: Parcialmente concluído (BD determinístico inicial) (09/05/2026)
-• Escopo implementado: camada determinística inicial de matching de taxonomia para resolver texto livre de nicho contra taxons oficiais.
+• Status: Parcialmente concluído (BD determinístico inicial + adapter server-side) (09/05/2026)
+• Escopo implementado: camada determinística inicial de matching de taxonomia para resolver texto livre de nicho contra taxons oficiais, com adapter server-side tipado para consumo futuro pelo resolvedor de nicho.
 • Implementado:
 • `pg_trgm` habilitado no schema `extensions`.
 • Função `public.normalize_taxon_match_text(text)` criada para normalização textual.
 • RPC read-only `public.match_business_taxons_deterministic(text, integer)` criada para retornar candidatos oficiais com `taxon_id`, `name`, `slug`, `level`, `parent_id`, `parent_name`, `matched_aliases`, `match_source` e `score`.
 • Índices criados para match exato/normalizado, FTS e trigram em `business_taxons` e `business_taxon_aliases`.
+• Adapter server-side `matchBusinessTaxonsDeterministic(query, limit)` criado para consumir a RPC via `createServiceClient()`.
+• Contrato TypeScript criado para retorno em camelCase com `taxonId`, `name`, `slug`, `level`, `parentId`, `parentName`, `matchedAliases`, `matchSource` e `score`.
 • Estratégia determinística coberta: `alias_exact`, `alias_normalized`, `taxon_name_exact`, `taxon_name_normalized`, `taxon_slug_normalized`, `fts`, `trgm`.
 • Segurança: funções sem `SECURITY DEFINER`; grants restritos a `service_role`; consumo previsto via camada server/adapter, sem consumo direto pelo client nesta etapa.
 • ARTEFATOS_REPO:
 • Criado: `supabase/migrations/0009__e10_5_6_deterministic_taxon_matching.sql`
 • Criado: `supabase/rollbacks/20260509__e10_5_6_deterministic_taxon_matching.rollback.sql`
-• Validação: SQL aplicado no Supabase; `pg_trgm`, 8 índices e 2 funções confirmados; testes de nome exato, nome normalizado, alias, trigram, FTS e input vazio aprovados.
+• Criado: `lib/onboarding/niche-resolution/contracts.ts`
+• Criado: `lib/onboarding/niche-resolution/adapters/taxonMatchAdapter.ts`
+• Validação: SQL aplicado no Supabase; `pg_trgm`, 8 índices e 2 funções confirmados; testes de nome exato, nome normalizado, alias, trigram, FTS e input vazio aprovados; `npm ci` e `npm run check` aprovados na criação do adapter.
 • Fora do escopo mantido: IA, fallback final, `account_taxonomy`, `account_niche_resolutions`, microdiálogo, escolha de template e alteração no onboarding.
 • Pendências:
-• Criar adapter server-side para consumir a RPC.
 • Integrar a resolução determinística ao fluxo pós-save do `pending_setup`.
 • Definir regra de confiança mínima e etapa posterior de resolvedor IA/fallback.
 • Definir persistência futura em `account_taxonomy`.
+• Executar teste runtime contra a RPC real quando o adapter for integrado ao fluxo.
 
 
 11. E11 — Gestão de Usuários e Convites
@@ -1001,6 +1005,8 @@
 • Definir o primeiro recorte funcional do LP Builder no roadmap
 
 99. Changelog
+v1.5.49 — 09/05/2026 — E10.5.6: registrado adapter server-side `matchBusinessTaxonsDeterministic` e contrato TypeScript para consumo futuro da RPC de matching determinístico de taxonomia.
+
 v1.5.48 — 09/05/2026 — E10.5.6: registrado matching determinístico inicial de taxonomia, com `pg_trgm`, normalização textual, FTS, trigram, RPC read-only, migration/rollback e validação funcional no Supabase.
 
 v1.5.47 (08/05/2026) — E10.4: registrado `niche` obrigatório no `pending_setup`, com artefatos ajustados, validação client/server e QA funcional aprovado.

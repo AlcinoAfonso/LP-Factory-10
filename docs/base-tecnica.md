@@ -296,7 +296,8 @@
 • Regra: não chamar RPC de matching diretamente do client/UI.
 • Regra: adapter deve retornar DTO final com candidatos oficiais; UI não normaliza nem interpreta rows crus do banco.
 • Regra: não logar nicho bruto, `p_query`, aliases digitados ou valores de formulário.
-• Regra: quando criado, o adapter deve nascer em path canônico de domínio, preferencialmente `lib/onboarding/niche-resolution/`, salvo decisão explícita diferente baseada no repositório real.
+• Adapter canônico: PATH: `lib/onboarding/niche-resolution/adapters/taxonMatchAdapter.ts`.
+• Contrato público: PATH: `lib/onboarding/niche-resolution/contracts.ts`.
 
 4. DB Contract - Fonte única: PATH: docs/schema.md
 • Este documento não lista mais tabelas/views/functions/triggers/policies; isso está em PATH: docs/schema.md.
@@ -328,6 +329,7 @@
 5.2 Adapters, Guards, Providers
 
 5.2.1 Adapters
+• taxonMatchAdapter (PATH: lib/onboarding/niche-resolution/adapters/taxonMatchAdapter.ts): consumo server-side da RPC `match_business_taxons_deterministic`, com retorno DTO camelCase de candidatos oficiais de taxonomia e tratamento seguro de erro sem PII.
 • accountAdapter (PATH: lib/access/adapters/accountAdapter.ts): operações de conta e status no runtime, com normalização de status e mutações idempotentes quando aplicável.
 • accountProfileAdapter (PATH: lib/access/adapters/accountProfileAdapter.ts): persistência/atualização do perfil operacional da conta (E10.4.6).
 • accessContextAdapter (PATH: lib/access/adapters/accessContextAdapter.ts): leitura do contexto em v_access_context_v2, decisão de acesso (allow/deny), fallback de primeira conta via RPC quando não há membership e observabilidade de deny vs error.
@@ -442,6 +444,11 @@ Fonte normativa da allowlist SULB para exceções de Auth. Qualquer novo arquivo
 • Tipos canônicos e adapters vNext: validar por 3.6 e 3.14.
 
 99. Changelog
+v2.0.31 (09/05/2026) — E10.5.6: adapter server-side do matching determinístico de taxonomia
+• Registrado o path canônico do adapter `taxonMatchAdapter`.
+• Registrado o contrato público `TaxonMatchCandidate`.
+• Registrada a regra de consumo server-side da RPC de matching, com DTO camelCase e erro sem PII.
+
 v2.0.30 (09/05/2026) — E10.5.6: regras técnicas para consumo runtime do matching de taxonomia
 • Registrada regra de consumo server-side via adapter para matching determinístico de taxonomia.
 • Registrada restrição contra consumo direto pelo client/UI.
