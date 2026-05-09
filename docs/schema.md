@@ -1,8 +1,8 @@
 0. Introdução
 
 0.1 Cabeçalho
-• Data da última atualização: 26/04/2026
-• Documento: LP Factory 10 — Schema (DB Contract) v1.0.13
+• Data da última atualização: 09/05/2026
+• Documento: LP Factory 10 — Schema (DB Contract) v1.0.14
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -146,6 +146,13 @@
 • business_taxons_update_admin_only (UPDATE to public): is_super_admin() OU is_platform_admin() (USING + WITH CHECK)
 • business_taxons_delete_admin_only (DELETE to public): is_super_admin() OU is_platform_admin()
 
+1.10.5 Índices
+• business_taxons_name_normalized_idx (btree em normalize_taxon_match_text(name))
+• business_taxons_slug_normalized_idx (btree em normalize_taxon_match_text(replace(slug, '-', ' ')))
+• business_taxons_name_slug_fts_gin_idx (GIN em to_tsvector('portuguese', normalize_taxon_match_text(name) + slug normalizado))
+• business_taxons_name_normalized_trgm_gin_idx (GIN trigram em normalize_taxon_match_text(name))
+• business_taxons_slug_normalized_trgm_gin_idx (GIN trigram em slug normalizado)
+
 1.11 business_taxon_aliases
 
 1.11.1 Chaves, constraints e relacionamentos
@@ -169,6 +176,11 @@
 • business_taxon_aliases_insert_admin_only (INSERT to public): is_super_admin() OU is_platform_admin()
 • business_taxon_aliases_update_admin_only (UPDATE to public): is_super_admin() OU is_platform_admin() (USING + WITH CHECK)
 • business_taxon_aliases_delete_admin_only (DELETE to public): is_super_admin() OU is_platform_admin()
+
+1.11.5 Índices
+• business_taxon_aliases_alias_text_normalized_idx (btree em alias_text_normalized)
+• business_taxon_aliases_alias_text_normalized_fts_gin_idx (GIN em to_tsvector('portuguese', alias_text_normalized))
+• business_taxon_aliases_alias_text_normalized_trgm_gin_idx (GIN trigram em alias_text_normalized)
 
 1.12 account_taxonomy
 
@@ -460,6 +472,25 @@
 • fn_event_bus_publish(table text, kind text, payload jsonb)
 • jsonb_diff_val(old jsonb, new jsonb) → jsonb
 
+
+3.6 Matching determinístico de taxonomia
+3.6.1 normalize_taxon_match_text(input text) → text
+• Segurança: invoker; SECURITY DEFINER = false
+• search_path: public, extensions
+• Volatilidade: immutable
+• Grants: EXECUTE somente para service_role
+• Efeito: normaliza texto para matching determinístico com lower, remoção de acentos, compactação de espaços e trim
+
+3.6.2 match_business_taxons_deterministic(p_query text, p_limit integer default 10) → table
+• Segurança: invoker; SECURITY DEFINER = false
+• search_path: public, extensions
+• Volatilidade: stable
+• Grants: EXECUTE somente para service_role
+• Retorno: taxon_id, name, slug, level, parent_id, parent_name, matched_aliases, match_source, score
+• Estratégias cobertas: alias_exact, alias_normalized, taxon_name_exact, taxon_name_normalized, taxon_slug_normalized, fts, trgm
+• Consumidor previsto: camada server/adapter do app; sem consumo direto pelo client nesta etapa
+• Fora do escopo: writes, IA, fallback final, account_taxonomy, account_niche_resolutions e escolha de template
+
 4. Triggers 
 
 4.1 Trigger Hub (governança)
@@ -487,7 +518,21 @@
 • MemberRole: owner | admin | editor | viewer
 • Nota: accounts.status não aceita trial (CHECK accounts_status_chk). No estado atual, views não contêm trial e o runtime/tipos (PATH) não incluem trial (drift resolvido).
 
+
+6. Extensões
+6.1 pg_trgm
+• Schema: extensions
+• Uso atual: suporte a índices e scoring trigram no matching determinístico de taxonomia
+• Migration de origem: supabase/migrations/0009__e10_5_6_deterministic_taxon_matching.sql
+• Rollback: não remove automaticamente a extensão, pois pode ser reutilizada por outros recursos
+
 99. Changelog
+v1.0.14 (09/05/2026) — E10.5.6: matching determinístico inicial de taxonomia
+• Registrada a extensão `pg_trgm` no schema `extensions`.
+• Registrados índices auxiliares em `business_taxons` e `business_taxon_aliases` para normalização, FTS e trigram.
+• Registradas as funções `normalize_taxon_match_text(text)` e `match_business_taxons_deterministic(text, integer)`, com SECURITY DEFINER=false e grants restritos a `service_role`.
+• Registrado o contrato de retorno da RPC com candidatos oficiais, `match_source` e `score`.
+
 v1.0.13 (26/04/2026) — E10.5.2.1: ajuste corretivo de audience_scope no Grupo C
 • taxon_market_research: adicionado audience_scope no registro-pai; registrada unicidade por (taxon_id, research_block, audience_scope, version) e índice único parcial para no máximo 1 versão active por (taxon_id, research_block, audience_scope).
 • taxon_market_research_items: removido audience_scope; itens passam a herdar o público pelo research_id.
