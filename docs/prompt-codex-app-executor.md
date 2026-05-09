@@ -1,6 +1,6 @@
 # Prompt para Codex App Executor
 
-Status: em avaliacao.
+Status: vigente.
 Referencia no repositorio: `docs/prompt-codex-app-executor.md`.
 
 ## 1. Papel
