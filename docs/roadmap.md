@@ -1,8 +1,8 @@
 0. Introdução
 
 0.1 Cabeçalho
-• Data: 09/05/2026
-• Versão: v1.5.48
+• Data: 10/05/2026
+• Versão: v1.5.49
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -714,6 +714,27 @@
 • Pendências:
 • Nenhuma pendência obrigatória aberta neste recorte
 
+
+10.5.4 Helper puro de confiança determinística para taxon match
+• Status: Concluído (exec) (10/05/2026)
+• Natureza: repo-only (sem Supabase, sem logs, sem side effects, sem onboarding e sem mutation).
+• Objetivo: preparar a avaliação determinística de candidatos de taxonomia para evolução futura do E10.5, sem implementar IA nesta etapa.
+• Implementado/Definido:
+• criado helper puro `evaluateDeterministicTaxonMatch` para avaliar candidatos de taxonomia
+• adicionado contrato tipado para decisão de confiança determinística
+• adicionado `aiEscalationMode` para preparar evolução futura de IA sem implementar IA agora
+• corrigido reason semântico para fonte forte abaixo do threshold: `medium_confidence_below_high_threshold`
+• ARTEFATOS_REPO:
+• Criados: `lib/onboarding/niche-resolution/deterministicConfidence.ts`
+• Ajustados: `lib/onboarding/niche-resolution/contracts.ts`
+• Checks/QA (reportado): QA feito; smoke feito com `npm ci` e `npm run check` aprovados pelo Codex; evidência funcional por código + checks.
+• Pendências:
+• branch ainda não foi mergeada
+• helper ainda não está integrado ao pós-save do `pending_setup`
+• sem teste runtime porque ainda não há consumo em fluxo real
+• sem persistência em `account_taxonomy`
+• sem IA, microdiálogo, fallback final ou escolha de template comercial
+
 10.5.3.1 Curadoria operacional de aliases enxutos vs microvariações textuais
 • Status: Briefing
 • Objetivo: definir o critério operacional de curadoria de aliases no Grupo A, separando o que deve ser cadastrado manualmente como alias do que deve ficar para matching textual leve futuro.
@@ -1005,6 +1026,9 @@
 • Definir o primeiro recorte funcional do LP Builder no roadmap
 
 99. Changelog
+v1.5.49 (10/05/2026)
+• Adicionado 10.5.4 como concluído (exec): helper puro de confiança determinística para taxon match, com contrato tipado, `aiEscalationMode` e artefatos em `lib/onboarding/niche-resolution/`, mantendo escopo repo-only e pendência explícita de branch sem merge e sem integração ao `pending_setup`.
+
 v1.5.49 — 09/05/2026 — E10.5.6: registrado adapter server-side `matchBusinessTaxonsDeterministic` e contrato TypeScript para consumo futuro da RPC de matching determinístico de taxonomia.
 
 v1.5.48 — 09/05/2026 — E10.5.6: registrado matching determinístico inicial de taxonomia, com `pg_trgm`, normalização textual, FTS, trigram, RPC read-only, migration/rollback e validação funcional no Supabase.

@@ -2,8 +2,8 @@
 
 0.1. Cabeçalho
 • Documento: Base Técnica LP Factory 10
-• Versão: v2.0.30
-• Data: 09/05/2026
+• Versão: v2.0.31
+• Data: 10/05/2026
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -298,6 +298,10 @@
 • Regra: não logar nicho bruto, `p_query`, aliases digitados ou valores de formulário.
 • Adapter canônico: PATH: `lib/onboarding/niche-resolution/adapters/taxonMatchAdapter.ts`.
 • Contrato público: PATH: `lib/onboarding/niche-resolution/contracts.ts`.
+• Decisão de confiança determinística para taxon match deve usar o helper puro `evaluateDeterministicTaxonMatch` (PATH: `lib/onboarding/niche-resolution/deterministicConfidence.ts`).
+• Contrato tipado da decisão determinística e de `aiEscalationMode` fica em `lib/onboarding/niche-resolution/contracts.ts`.
+• Regra: não embutir avaliação de confiança, thresholds ou reasons semânticos inline em UI, route ou server action; reutilizar helper + contrato.
+• `aiEscalationMode` é preparação contratual para evolução futura e não autoriza IA no runtime atual sem caso específico.
 
 4. DB Contract - Fonte única: PATH: docs/schema.md
 • Este documento não lista mais tabelas/views/functions/triggers/policies; isso está em PATH: docs/schema.md.
@@ -444,6 +448,9 @@ Fonte normativa da allowlist SULB para exceções de Auth. Qualquer novo arquivo
 • Tipos canônicos e adapters vNext: validar por 3.6 e 3.14.
 
 99. Changelog
+v2.0.31 (10/05/2026)
+• Registrada a regra de confiança determinística para taxon match via helper puro `evaluateDeterministicTaxonMatch`, com contrato tipado em `lib/onboarding/niche-resolution/contracts.ts` e uso obrigatório sem lógica inline em UI/route/server action.
+
 v2.0.31 (09/05/2026) — E10.5.6: adapter server-side do matching determinístico de taxonomia
 • Registrado o path canônico do adapter `taxonMatchAdapter`.
 • Registrado o contrato público `TaxonMatchCandidate`.
