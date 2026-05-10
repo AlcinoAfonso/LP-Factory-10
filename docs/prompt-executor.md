@@ -35,6 +35,7 @@ Status: em desenvolvimento nesta lousa.Referência no repositório: docs/prompt-
 • Não usar ponto e vírgula (`;`) ao final das queries.
 • Separar queries com `---`, preferencialmente em linha própria.
 • Usar no máximo 20 queries por execução.
+• Em funções, views e retornos compostos, evitar `SELECT *`; preferir colunas explícitas quando o objetivo for validar retorno.
 
 3.2 Etapa 2 — Plano de implementação
 

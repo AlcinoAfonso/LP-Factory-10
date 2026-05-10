@@ -95,10 +95,26 @@ SELECT ... LIMIT 10 --- SELECT ... LIMIT 10
 
 - máximo de 20 queries
 
+No modo SQL batch, o pipeline pré-valida todas as queries antes de executar. Se qualquer query falhar nos guardrails, o batch inteiro é bloqueado e nenhuma query é executada. Se todas passarem nos guardrails, erros runtime SQL de uma query são registrados no relatório e não impedem a execução das próximas queries.
+
+**Taxonomia de erros**
+
+- Guardrail errors: bloqueiam o pipeline e retornam exit 1.
+- Runtime SQL errors: são registrados por query, não interrompem o batch e retornam exit 0 com status `completed_with_query_errors`.
+- Infra errors: bloqueiam o pipeline e retornam exit 1.
+
+**Status do batch**
+
+- `completed`: todas as queries válidas executaram sem erro runtime SQL.
+- `completed_with_query_errors`: uma ou mais queries válidas falharam em runtime SQL, mas o batch continuou até o fim.
+
 No Job Summary, o modo batch inclui:
 
 - lista das queries executadas
-- output por query com `rowCount`, `columns` e sample de `rows` (truncado)
+- status individual por query (`ok` ou `error`)
+- se `ok`: output por query com `rowCount`, `columns` e sample de `rows` (truncado)
+- se `error`: mensagem, SQLSTATE e campos úteis disponíveis do erro
+- resumo final com totais, sucessos, erros runtime, guardrail errors e status do batch
 
 Exemplo de output no Job Summary (1 query):
 
@@ -113,7 +129,7 @@ SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' L
 - columns: table_name
 
 ```json
-{ "rowCount": 2, "columns": ["table_name"], "rows": [{ "table_name": "accounts" }, { "table_name": "profiles" }] }
+{ "status": "ok", "queryNumber": 1, "rowCount": 2, "columns": ["table_name"], "rows": [{ "table_name": "accounts" }, { "table_name": "profiles" }] }
 ```
 ````
 

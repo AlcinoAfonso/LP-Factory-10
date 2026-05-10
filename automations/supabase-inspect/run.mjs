@@ -148,6 +148,63 @@ function writeSummary(md) {
   }
 }
 
+function serializeQueryError(err) {
+  return {
+    message: err?.message || String(err),
+    code: err?.code ?? null,
+    severity: err?.severity ?? null,
+    position: err?.position ?? null,
+    routine: err?.routine ?? null,
+    where: err?.where ?? null,
+    detail: err?.detail ?? null,
+    hint: err?.hint ?? null,
+    schema: err?.schema ?? null,
+    table: err?.table ?? null,
+    column: err?.column ?? null,
+    dataType: err?.dataType ?? null,
+    constraint: err?.constraint ?? null,
+  };
+}
+
+function isRuntimeSqlError(err) {
+  const code = err?.code;
+  if (typeof code !== "string" || !/^[0-9A-Z]{5}$/.test(code)) {
+    return false;
+  }
+
+  // Classes de erro do PostgreSQL ligadas a conexão/recursos/sistema são tratadas como infraestrutura.
+  const infraClasses = ["08", "53", "57", "58"];
+  return !infraClasses.includes(code.slice(0, 2));
+}
+
+function writeBatchOkSummary({ queryNumber, safeSql, payload, summaryOutputLimit }) {
+  let summaryJson = JSON.stringify(payload, null, 2);
+  summaryJson = trunc(summaryJson, summaryOutputLimit);
+
+  writeSummary(`\n### Query ${queryNumber} — ok\n`);
+  writeSummary(`\`\`\`sql\n${safeSql}\n\`\`\`\n`);
+  writeSummary(`**Output (truncado)**\n`);
+  writeSummary(`- status: ok`);
+  writeSummary(`- rowCount: ${payload.rowCount}`);
+  writeSummary(`- columns: ${payload.columns.join(", ") || "(sem colunas)"}\n`);
+  writeSummary(`\`\`\`json\n${summaryJson}\n\`\`\`\n`);
+}
+
+function writeBatchErrorSummary({ queryNumber, safeSql, payload, summaryOutputLimit }) {
+  let summaryJson = JSON.stringify(payload, null, 2);
+  summaryJson = trunc(summaryJson, summaryOutputLimit);
+
+  writeSummary(`\n### Query ${queryNumber} — error\n`);
+  writeSummary(`\`\`\`sql\n${safeSql}\n\`\`\`\n`);
+  writeSummary(`**Erro runtime SQL**\n`);
+  writeSummary(`- status: error`);
+  writeSummary(`- message: ${payload.error.message}`);
+  writeSummary(`- code: ${payload.error.code || "(sem SQLSTATE)"}`);
+  writeSummary(`- severity: ${payload.error.severity || "(sem severity)"}`);
+  writeSummary(`- routine: ${payload.error.routine || "(sem routine)"}\n`);
+  writeSummary(`\`\`\`json\n${summaryJson}\n\`\`\`\n`);
+}
+
 function loadBriefing() {
   const inline = (process.env.BRIEFING || "").trim();
   const path = (process.env.BRIEFING_PATH || "").trim();
@@ -189,43 +246,108 @@ async function executeSqlBatch(db, briefing) {
     throw new Error(`SQL batch excede max_queries (${MAX_QUERIES}).`);
   }
 
-  let queryCount = 0;
-  const executed = [];
+  const safeQueries = [];
+  const guardrailErrors = [];
 
-  for (const raw of queries) {
-    const safeSql = enforceGuard(raw);
-
-    queryCount += 1;
-
-    console.log(`\n--- QUERY ${queryCount} ---`);
-    console.log(safeSql);
-
-    const res = await db.query(safeSql);
-
-    const rows = summarizeRows(res.rows || []);
-
-    const payload = {
-      rowCount: res.rowCount ?? rows.length,
-      columns: (res.fields || []).map((f) => f.name),
-      rows,
-    };
-
-    let summaryJson = JSON.stringify(payload, null, 2);
-    summaryJson = trunc(summaryJson, summaryOutputLimit);
-
-    writeSummary(`\n### Query ${queryCount}\n`);
-    writeSummary(`\`\`\`sql\n${safeSql}\n\`\`\`\n`);
-    writeSummary(`**Output (truncado)**\n`);
-    writeSummary(`- rowCount: ${payload.rowCount}`);
-    writeSummary(`- columns: ${payload.columns.join(", ") || "(sem colunas)"}\n`);
-    writeSummary(`\`\`\`json\n${summaryJson}\n\`\`\`\n`);
-
-    console.log(`Rows (sample <= ${MAX_ROWS}): ${rows.length}`);
-
-    executed.push({ sql: safeSql, result: payload });
+  for (let i = 0; i < queries.length; i++) {
+    try {
+      safeQueries.push(enforceGuard(queries[i]));
+    } catch (err) {
+      guardrailErrors.push({
+        queryNumber: i + 1,
+        error: err?.message || String(err),
+      });
+    }
   }
 
-  return executed;
+  if (guardrailErrors.length) {
+    writeSummary(`
+## Execução (SQL batch)
+`);
+    writeSummary(`Guardrail errors: ${guardrailErrors.length}
+`);
+    for (const item of guardrailErrors) {
+      writeSummary(`- Query ${item.queryNumber}: ${item.error}`);
+    }
+    throw new Error(
+      `SQL batch bloqueado por guardrail em ${guardrailErrors.length} query(s). Nenhuma query foi executada.`,
+    );
+  }
+
+  const results = [];
+
+  writeSummary(`
+## Execução (SQL batch)
+`);
+
+  for (let i = 0; i < safeQueries.length; i++) {
+    const queryNumber = i + 1;
+    const safeSql = safeQueries[i];
+
+    console.log(`\n--- QUERY ${queryNumber} ---`);
+    console.log(safeSql);
+
+    try {
+      const res = await db.query(safeSql);
+      const rows = summarizeRows(res.rows || []);
+      const payload = {
+        status: "ok",
+        queryNumber,
+        rowCount: res.rowCount ?? rows.length,
+        columns: (res.fields || []).map((f) => f.name),
+        rows,
+      };
+
+      writeBatchOkSummary({ queryNumber, safeSql, payload, summaryOutputLimit });
+
+      console.log(`Status: ok`);
+      console.log(`Rows (sample <= ${MAX_ROWS}): ${rows.length}`);
+      console.log(trunc(JSON.stringify(payload), 2000));
+
+      results.push({ sql: safeSql, ...payload });
+    } catch (err) {
+      if (!isRuntimeSqlError(err)) {
+        throw err;
+      }
+
+      const payload = {
+        status: "error",
+        queryNumber,
+        error: serializeQueryError(err),
+      };
+
+      writeBatchErrorSummary({ queryNumber, safeSql, payload, summaryOutputLimit });
+
+      console.error(`Status: error`);
+      console.error(payload.error.message);
+      console.error(trunc(JSON.stringify(payload), 2000));
+
+      results.push({ sql: safeSql, ...payload });
+    }
+  }
+
+  const successCount = results.filter((item) => item.status === "ok").length;
+  const runtimeErrorCount = results.filter((item) => item.status === "error").length;
+  const status = runtimeErrorCount ? "completed_with_query_errors" : "completed";
+
+  writeSummary(`
+## Resumo do batch
+
+`);
+  writeSummary(`Queries totais: ${safeQueries.length}`);
+  writeSummary(`Sucesso: ${successCount}`);
+  writeSummary(`Erros runtime: ${runtimeErrorCount}`);
+  writeSummary(`Guardrail errors: 0`);
+  writeSummary(`Status: ${status}\n`);
+
+  return {
+    status,
+    totalQueries: safeQueries.length,
+    successCount,
+    runtimeErrorCount,
+    guardrailErrorCount: 0,
+    results,
+  };
 }
 
 async function main() {
@@ -258,169 +380,175 @@ async function main() {
     connectionString: dbUrl,
     ssl: { rejectUnauthorized: false }, // piloto
   });
+  let dbConnected = false;
 
-  await db.connect();
+  try {
+    await db.connect();
+    dbConnected = true;
 
-  if (batchMode) {
-    console.log("Modo SQL batch detectado.");
+    if (batchMode) {
+      console.log("Modo SQL batch detectado.");
 
-    const executed = await executeSqlBatch(db, briefing);
+      const batchResult = await executeSqlBatch(db, briefing);
 
-    writeSummary(`
-## Execução (SQL batch)
-`);
-    writeSummary(`Queries executadas: ${executed.length}\n`);
+      console.log("\n=== RESUMO DO BATCH ===");
+      console.log(`Queries totais: ${batchResult.totalQueries}`);
+      console.log(`Sucesso: ${batchResult.successCount}`);
+      console.log(`Erros runtime: ${batchResult.runtimeErrorCount}`);
+      console.log(`Guardrail errors: ${batchResult.guardrailErrorCount}`);
+      console.log(`Status: ${batchResult.status}`);
 
-    await db.end();
-    process.exit(0);
-  }
-
-  let queryCount = 0;
-  const executed = [];
-
-  async function runSqlReadonly({ sql }) {
-    if (queryCount >= MAX_QUERIES) {
-      throw new Error(`max_queries atingido (${MAX_QUERIES}).`);
+      return;
     }
 
-    const safeSql = enforceGuard(sql);
+    let queryCount = 0;
+    const executed = [];
 
-    queryCount += 1;
-    console.log(`\n--- QUERY ${queryCount} ---`);
-    console.log(safeSql);
+    async function runSqlReadonly({ sql }) {
+      if (queryCount >= MAX_QUERIES) {
+        throw new Error(`max_queries atingido (${MAX_QUERIES}).`);
+      }
 
-    const res = await db.query(safeSql);
-    const rows = summarizeRows(res.rows || []);
-    const payload = {
-      rowCount: res.rowCount ?? rows.length,
-      columns: (res.fields || []).map((f) => f.name),
-      rows,
-    };
+      const safeSql = enforceGuard(sql);
 
-    let out = JSON.stringify(payload);
-    out = trunc(out, MAX_QUERY_OUTPUT_CHARS);
+      queryCount += 1;
+      console.log(`\n--- QUERY ${queryCount} ---`);
+      console.log(safeSql);
 
-    console.log(`Rows (sample <= ${MAX_ROWS}): ${rows.length}`);
-    console.log(trunc(out, 2000));
+      const res = await db.query(safeSql);
+      const rows = summarizeRows(res.rows || []);
+      const payload = {
+        rowCount: res.rowCount ?? rows.length,
+        columns: (res.fields || []).map((f) => f.name),
+        rows,
+      };
 
-    executed.push({ sql: safeSql, result: payload });
-    return out;
-  }
+      let out = JSON.stringify(payload);
+      out = trunc(out, MAX_QUERY_OUTPUT_CHARS);
 
-  const tools = [
-    {
-      type: "function",
-      name: "run_sql_readonly",
-      description:
-        "Executa uma query SQL read-only (apenas WITH/SELECT com LIMIT obrigatório). Retorna JSON com colunas e amostras truncadas.",
-      parameters: {
-        type: "object",
-        properties: {
-          sql: { type: "string", description: "SQL (WITH/SELECT) com LIMIT <= 50." },
+      console.log(`Rows (sample <= ${MAX_ROWS}): ${rows.length}`);
+      console.log(trunc(out, 2000));
+
+      executed.push({ sql: safeSql, result: payload });
+      return out;
+    }
+
+    const tools = [
+      {
+        type: "function",
+        name: "run_sql_readonly",
+        description:
+          "Executa uma query SQL read-only (apenas WITH/SELECT com LIMIT obrigatório). Retorna JSON com colunas e amostras truncadas.",
+        parameters: {
+          type: "object",
+          properties: {
+            sql: { type: "string", description: "SQL (WITH/SELECT) com LIMIT <= 50." },
+          },
+          required: ["sql"],
+          additionalProperties: false,
         },
-        required: ["sql"],
-        additionalProperties: false,
+        strict: true,
       },
-      strict: true,
-    },
-  ];
+    ];
 
-  // Prompt inicial (regras + briefing)
-  let input = [
-    {
-      role: "user",
-      content: [
-        "Você é um inspetor read-only do banco (Supabase Postgres).",
-        "",
-        "REGRAS OBRIGATÓRIAS:",
-        "- Você só pode chamar a ferramenta run_sql_readonly.",
-        "- Gere apenas SQL WITH/SELECT.",
-        "- LIMIT é obrigatório (<= 50).",
-        "- Nunca use ; (single statement).",
-        "- Evite scans pesados; comece por discovery (information_schema) quando necessário.",
-        "- O escopo do piloto é schema public (pode usar information_schema/pg_catalog para discovery).",
-        "",
-        "ROTEIRO INTERNO (sempre):",
-        "1) O que preciso saber? (checklist curto)",
-        "2) Quais tabelas/entidades suspeitas?",
-        "3) Discovery de schema se necessário",
-        "4) Queries nas tabelas reais",
-        "5) Encerrar com achados, riscos e próximos passos (sem mudanças)",
-        "",
-        `BRIEFING:\n${briefing}`,
-      ].join("\n"),
-    },
-  ];
+    // Prompt inicial (regras + briefing)
+    let input = [
+      {
+        role: "user",
+        content: [
+          "Você é um inspetor read-only do banco (Supabase Postgres).",
+          "",
+          "REGRAS OBRIGATÓRIAS:",
+          "- Você só pode chamar a ferramenta run_sql_readonly.",
+          "- Gere apenas SQL WITH/SELECT.",
+          "- LIMIT é obrigatório (<= 50).",
+          "- Nunca use ; (single statement).",
+          "- Evite scans pesados; comece por discovery (information_schema) quando necessário.",
+          "- O escopo do piloto é schema public (pode usar information_schema/pg_catalog para discovery).",
+          "",
+          "ROTEIRO INTERNO (sempre):",
+          "1) O que preciso saber? (checklist curto)",
+          "2) Quais tabelas/entidades suspeitas?",
+          "3) Discovery de schema se necessário",
+          "4) Queries nas tabelas reais",
+          "5) Encerrar com achados, riscos e próximos passos (sem mudanças)",
+          "",
+          `BRIEFING:\n${briefing}`,
+        ].join("\n"),
+      },
+    ];
 
-  let response = await callResponsesApi({
-    apiKey: openaiKey,
-    model,
-    tools,
-    input,
-  });
-
-  // Loop de tool-calling
-  while (true) {
-    const calls = (response.output || []).filter((it) => it.type === "function_call" && it.name === "run_sql_readonly");
-
-    // sempre anexar output no input para manter estado
-    input.push(...(response.output || []));
-
-    if (!calls.length) break;
-    if (queryCount >= MAX_QUERIES) break;
-
-    for (const call of calls) {
-      if (queryCount >= MAX_QUERIES) break;
-
-      let args = call.arguments;
-      if (typeof args === "string") {
-        try {
-          args = JSON.parse(args);
-        } catch {
-          args = { sql: String(args) };
-        }
-      }
-
-      let toolOut;
-      try {
-        toolOut = await runSqlReadonly(args);
-      } catch (e) {
-        toolOut = JSON.stringify({ error: e?.message || String(e) });
-      }
-
-      input.push({
-        type: "function_call_output",
-        call_id: call.call_id,
-        output: toolOut,
-      });
-    }
-
-    response = await callResponsesApi({
+    let response = await callResponsesApi({
       apiKey: openaiKey,
       model,
       tools,
       input,
     });
+
+    // Loop de tool-calling
+    while (true) {
+      const calls = (response.output || []).filter((it) => it.type === "function_call" && it.name === "run_sql_readonly");
+
+      // sempre anexar output no input para manter estado
+      input.push(...(response.output || []));
+
+      if (!calls.length) break;
+      if (queryCount >= MAX_QUERIES) break;
+
+      for (const call of calls) {
+        if (queryCount >= MAX_QUERIES) break;
+
+        let args = call.arguments;
+        if (typeof args === "string") {
+          try {
+            args = JSON.parse(args);
+          } catch {
+            args = { sql: String(args) };
+          }
+        }
+
+        let toolOut;
+        try {
+          toolOut = await runSqlReadonly(args);
+        } catch (e) {
+          toolOut = JSON.stringify({ error: e?.message || String(e) });
+        }
+
+        input.push({
+          type: "function_call_output",
+          call_id: call.call_id,
+          output: toolOut,
+        });
+      }
+
+      response = await callResponsesApi({
+        apiKey: openaiKey,
+        model,
+        tools,
+        input,
+      });
+    }
+
+    const finalText = (response.output_text || "").trim();
+
+    console.log("\n=== RELATÓRIO FINAL ===\n");
+    console.log(finalText || "(sem output_text)");
+
+    // Job Summary (compacto)
+    writeSummary(`\n## Execução\n\n- Queries executadas: \`${queryCount}\`\n`);
+    writeSummary(`\n## Queries (lista)\n`);
+    for (let i = 0; i < executed.length; i++) {
+      const q = executed[i];
+      writeSummary(`\n### Query ${i + 1}\n\n\`\`\`sql\n${trunc(q.sql, 2000)}\n\`\`\`\n`);
+    }
+    writeSummary(`\n## Relatório\n\n${finalText || "_(sem output)_"}\n`);
+
+    // Se o modelo não devolveu nada, ainda assim finalizar ok
+  } finally {
+    if (dbConnected) {
+      await db.end();
+    }
   }
-
-  const finalText = (response.output_text || "").trim();
-
-  console.log("\n=== RELATÓRIO FINAL ===\n");
-  console.log(finalText || "(sem output_text)");
-
-  // Job Summary (compacto)
-  writeSummary(`\n## Execução\n\n- Queries executadas: \`${queryCount}\`\n`);
-  writeSummary(`\n## Queries (lista)\n`);
-  for (let i = 0; i < executed.length; i++) {
-    const q = executed[i];
-    writeSummary(`\n### Query ${i + 1}\n\n\`\`\`sql\n${trunc(q.sql, 2000)}\n\`\`\`\n`);
-  }
-  writeSummary(`\n## Relatório\n\n${finalText || "_(sem output)_"}\n`);
-
-  await db.end();
-
-  // Se o modelo não devolveu nada, ainda assim finalizar ok
-  process.exit(0);
 }
 
 main().catch((err) => {
