@@ -14,6 +14,8 @@ import {
 } from '@/lib/access/adapters/accountAdapter';
 import { upsertAccountProfileV1 } from '@/lib/access/adapters/accountProfileAdapter';
 import { validateE10_4SetupForm } from '@/lib/onboarding/e10_4_setup_validation';
+import { matchBusinessTaxonsDeterministic } from '../../../lib/onboarding/niche-resolution/adapters/taxonMatchAdapter';
+import { evaluateDeterministicTaxonMatch } from '../../../lib/onboarding/niche-resolution/deterministicConfidence';
 
 export type RenameAccountState = {
   ok: boolean;
@@ -284,6 +286,45 @@ export async function saveSetupAndContinueAction(
     // Status (fonte de verdade)
     const okStatus = await setAccountStatusActiveIfPending(accountId);
     if (!okStatus) throw new Error('status_update_failed');
+
+    try {
+      const taxonomyMatchStartedAt = Date.now();
+      const candidates = await matchBusinessTaxonsDeterministic(validated.values.niche, 10);
+      const decision = evaluateDeterministicTaxonMatch(candidates);
+      const topCandidate = candidates[0] ?? null;
+
+      console.log(
+        JSON.stringify({
+          scope: 'onboarding',
+          event: 'setup_taxonomy_match_evaluated',
+          candidates_count: candidates.length,
+          confidence: decision.confidence,
+          should_use_deterministic_match: decision.shouldUseDeterministicMatch,
+          should_escalate_to_ai: decision.shouldEscalateToAi,
+          ai_escalation_mode: decision.aiEscalationMode,
+          needs_admin_review: decision.needsAdminReview,
+          reason: decision.reason,
+          top_match_source: topCandidate?.matchSource ?? null,
+          top_score: topCandidate?.score ?? null,
+          account_id: accountId,
+          request_id: requestId,
+          latency_ms: Date.now() - taxonomyMatchStartedAt,
+          ts: new Date().toISOString(),
+        })
+      );
+    } catch (err: unknown) {
+      console.warn(
+        JSON.stringify({
+          scope: 'onboarding',
+          event: 'setup_taxonomy_match_failed',
+          error_type: 'non_blocking_taxonomy_match',
+          error: err instanceof Error ? err.message : String(err),
+          request_id: requestId,
+          latency_ms: Date.now() - t0,
+          ts: new Date().toISOString(),
+        })
+      );
+    }
 
     const latency = Date.now() - t0;
 
