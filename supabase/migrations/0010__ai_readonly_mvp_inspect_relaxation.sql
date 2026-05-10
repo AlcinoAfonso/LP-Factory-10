@@ -22,6 +22,8 @@ $$;
 grant usage on schema public to ai_readonly;
 grant select on all tables in schema public to ai_readonly;
 grant execute on all functions in schema public to ai_readonly;
+grant usage on schema extensions to ai_readonly;
+grant execute on all functions in schema extensions to ai_readonly;
 
 alter default privileges in schema public
 grant select on tables to ai_readonly;
@@ -29,7 +31,10 @@ grant select on tables to ai_readonly;
 alter default privileges in schema public
 grant execute on functions to ai_readonly;
 
+alter default privileges in schema extensions
+grant execute on functions to ai_readonly;
+
 comment on role ai_readonly is
-  'MVP read-only inspection role for Supabase Inspect. Temporarily uses BYPASSRLS and EXECUTE on public functions; no service_role/no write grants. Review before team access.';
+  'MVP read-only inspection role for Supabase Inspect. Temporarily uses BYPASSRLS and EXECUTE on public/extensions functions; no service_role/no write grants. Review before team access.';
 
 commit;

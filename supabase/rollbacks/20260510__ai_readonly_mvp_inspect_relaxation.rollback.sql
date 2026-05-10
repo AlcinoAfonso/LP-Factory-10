@@ -13,8 +13,13 @@ end
 $$;
 
 revoke execute on all functions in schema public from ai_readonly;
+revoke execute on all functions in schema extensions from ai_readonly;
+revoke usage on schema extensions from ai_readonly;
 
 alter default privileges in schema public
+revoke execute on functions from ai_readonly;
+
+alter default privileges in schema extensions
 revoke execute on functions from ai_readonly;
 
 comment on role ai_readonly is

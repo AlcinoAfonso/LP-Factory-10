@@ -59,6 +59,8 @@ Durante o MVP, o role `ai_readonly` usado pelo Supabase Inspect opera com permis
 
 - `SELECT` em tabelas do schema `public`;
 - `EXECUTE` em funções do schema `public`;
+- `USAGE` no schema `extensions`;
+- `EXECUTE` em funções do schema `extensions`, para funções auxiliares de extensões como `similarity()` do `pg_trgm`;
 - `BYPASSRLS`;
 - `statement_timeout = 5s`.
 
