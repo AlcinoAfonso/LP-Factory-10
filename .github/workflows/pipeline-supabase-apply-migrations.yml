@@ -23,6 +23,7 @@ jobs:
       SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
       SUPABASE_PROJECT_REF: dpikmjgiteuafsbaubue
       SUPABASE_MIGRATIONS_DIR: supabase/migrations
+      SUPABASE_APPLY_MIGRATIONS_ENABLED: ${{ vars.SUPABASE_APPLY_MIGRATIONS_ENABLED }}
       EVENT_BEFORE_SHA: ${{ github.event.before }}
 
     steps:
@@ -42,8 +43,14 @@ jobs:
           status="success"
           failure_step=""
           changed_migrations=""
+          apply_enabled="${SUPABASE_APPLY_MIGRATIONS_ENABLED:-false}"
 
-          if [ -z "${SUPABASE_ACCESS_TOKEN:-}" ]; then
+          if [ "$apply_enabled" != "true" ]; then
+            status="skipped"
+            failure_step="baseline gate disabled"
+          fi
+
+          if [ "$status" = "success" ] && [ -z "${SUPABASE_ACCESS_TOKEN:-}" ]; then
             status="failure"
             failure_step="missing SUPABASE_ACCESS_TOKEN"
           fi
@@ -90,6 +97,7 @@ jobs:
             echo "- projeto alvo: \`${SUPABASE_PROJECT_REF}\`"
             echo "- diretório de migrations: \`${SUPABASE_MIGRATIONS_DIR}\`"
             echo "- evento: \`${GITHUB_EVENT_NAME}\`"
+            echo "- apply habilitado: \`${apply_enabled}\`"
             echo "- status final: \`${status}\`"
             echo ""
             echo "### Migrations alteradas"
@@ -98,6 +106,16 @@ jobs:
             printf '%s\n' "$changed_migrations"
             echo '```'
           } >> "$GITHUB_STEP_SUMMARY"
+
+          if [ "$status" = "skipped" ]; then
+            {
+              echo ""
+              echo "### Gate de baseline"
+              echo ""
+              echo "- Apply nao executado porque \`SUPABASE_APPLY_MIGRATIONS_ENABLED\` nao esta definido como \`true\`."
+            } >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
 
           if [ "$status" != "success" ]; then
             {
