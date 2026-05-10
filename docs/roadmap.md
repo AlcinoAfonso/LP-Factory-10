@@ -2,7 +2,7 @@
 
 0.1 Cabeçalho
 • Data: 10/05/2026
-• Versão: v1.5.49
+• Versão: v1.5.50
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -449,6 +449,19 @@
 • UX Partner Dashboard
 
 10.4 Primeiros passos (pending_setup — status-based)
+
+• Integração de matching determinístico de taxonomia no pós-save do `pending_setup` (10/05/2026): após salvar perfil, atualizar nome e promover a conta para `active`, `saveSetupAndContinueAction` chama `matchBusinessTaxonsDeterministic(validated.values.niche, 10)` server-side e avalia os candidatos com `evaluateDeterministicTaxonMatch(candidates)` para log seguro de decisão.
+• Regra de fluxo: falha no matching não bloqueia o lead nem impede `revalidatePath(route)` e `redirect(route)`.
+• Observability mínima: logs seguros `setup_taxonomy_match_evaluated` e `setup_taxonomy_match_failed`, sem nicho bruto, query, aliases ou dados de formulário.
+• ARTEFATOS_REPO:
+• Ajustado: `app/a/[account]/actions.ts`
+• Checks/QA (reportado): QA feito; smoke feito; caso de uso funcionando; evidência funcional apresentada.
+• Pendências:
+• Branch ainda não mergeada.
+• Logs runtime da Vercel não apresentados no chat; observability validada por código, não por captura de log.
+• Adapter ainda trata falha da RPC como lista vazia; melhoria futura pode diferenciar “sem candidatos” de “falha técnica da RPC”.
+• Ainda não há persistência em `account_taxonomy`.
+• Ainda não há IA, microdiálogo, fallback final ou escolha de template comercial.
 
 • Atualização de obrigatoriedade do nicho no `pending_setup` (08/05/2026): `niche` passou a ser obrigatório no formulário “Primeiros passos”, com validação client-side e server-side, `trim` e erro `Informe o nicho do projeto.` para valor vazio ou apenas espaços.
 • ARTEFATOS_REPO:
@@ -1027,6 +1040,8 @@
 • Definir o primeiro recorte funcional do LP Builder no roadmap
 
 99. Changelog
+v1.5.50 — 10/05/2026 — Roadmap atualizado com o estado final da integração de matching determinístico de taxonomia no pós-save do `pending_setup`, incluindo artefato ajustado, regra não bloqueante, observability segura e pendências explícitas.
+
 v1.5.49 (10/05/2026)
 • Adicionado 10.5.4 como concluído (exec): helper puro de confiança determinística para taxon match, com contrato tipado, `aiEscalationMode` e artefatos em `lib/onboarding/niche-resolution/`, mantendo escopo repo-only e pendência explícita de branch sem merge e sem integração ao `pending_setup`.
 

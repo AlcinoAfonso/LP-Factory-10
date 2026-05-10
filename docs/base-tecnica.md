@@ -2,7 +2,7 @@
 
 0.1. Cabeçalho
 • Documento: Base Técnica LP Factory 10
-• Versão: v2.0.31
+• Versão: v2.0.32
 • Data: 10/05/2026
 
 0.2 Contrato do documento (consulta)
@@ -292,6 +292,9 @@
 • Gate adapters: pode retornar null, mas logs devem diferenciar deny vs error.
 
 3.14.1 Matching de taxonomia via adapter server-side
+• No pós-save do `pending_setup`, a integração determinística deve ocorrer server-side em `saveSetupAndContinueAction`, depois de salvar perfil, atualizar nome e promover a conta para `active`.
+• Regra: `matchBusinessTaxonsDeterministic(validated.values.niche, 10)` pode ser chamado no fluxo server-side após validação do onboarding, mas falha no matching não pode bloquear o lead, `revalidatePath(route)` ou `redirect(route)`.
+• Regra: a decisão observável do matching determinístico deve usar `evaluateDeterministicTaxonMatch(candidates)` e registrar somente metadados seguros.
 • Regra: consumo de matching determinístico de taxonomia deve ocorrer somente via camada server/adapter do app.
 • Regra: não chamar RPC de matching diretamente do client/UI.
 • Regra: adapter deve retornar DTO final com candidatos oficiais; UI não normaliza nem interpreta rows crus do banco.
@@ -379,7 +382,7 @@
 • Server Actions críticas devem emitir logs estruturados (JSON) com request_id e latency_ms (padrão mínimo).
 • Regra (logs sem PII): não logar valores de formulário (ex.: name, whatsapp, site_url).
 • Onboarding pós-save (E10.4.6): revalidatePath(route) antes do redirect para evitar UI stale.
-• Matching de taxonomia: quando a RPC determinística for consumida em runtime, observability mínima deve registrar apenas metadados não sensíveis, como request_id, latency_ms, candidates_count, top_match_source e top_score; não logar nicho bruto, `p_query`, aliases digitados ou valores identificáveis do usuário.
+• Matching de taxonomia: quando a RPC determinística for consumida em runtime, observability mínima deve registrar apenas metadados não sensíveis, como request_id, latency_ms, candidates_count, top_match_source e top_score; eventos canônicos: `setup_taxonomy_match_evaluated` e `setup_taxonomy_match_failed`; não logar nicho bruto, `p_query`, query, aliases digitados, dados de formulário ou valores identificáveis do usuário.
 
 5.3.5 Signup
 • Entrada: /auth/sign-up (SignUpForm usa supabase.auth.signUp) (PATH: components/sign-up-form.tsx).
@@ -448,6 +451,8 @@ Fonte normativa da allowlist SULB para exceções de Auth. Qualquer novo arquivo
 • Tipos canônicos e adapters vNext: validar por 3.6 e 3.14.
 
 99. Changelog
+v2.0.32 — 10/05/2026 — Base técnica atualizada com contrato runtime do matching determinístico de taxonomia no pós-save do `pending_setup`, regra não bloqueante e observability segura com eventos canônicos.
+
 v2.0.31 (10/05/2026)
 • Registrada a regra de confiança determinística para taxon match via helper puro `evaluateDeterministicTaxonMatch`, com contrato tipado em `lib/onboarding/niche-resolution/contracts.ts` e uso obrigatório sem lógica inline em UI/route/server action.
 
