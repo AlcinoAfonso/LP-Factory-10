@@ -155,6 +155,7 @@ function serializeQueryError(err) {
     severity: err?.severity ?? null,
     position: err?.position ?? null,
     routine: err?.routine ?? null,
+    where: err?.where ?? null,
     detail: err?.detail ?? null,
     hint: err?.hint ?? null,
     schema: err?.schema ?? null,
