@@ -90,11 +90,13 @@ A baseline só pode ser tratada como concluída quando os itens abaixo estiverem
 
 ## 8) Status atual
 
+* risco imediato de apply automático: mitigado pelo bloqueio no workflow atual
 * baseline oficial: pendente
 * extração real do baseline: pendente
 * histórico remoto alinhado: pendente
 * legado removido do fluxo oficial: pendente
-* workflow de apply: preparado, mas não liberado como fluxo confiável
+* workflow de apply: preparado, mas bloqueado por padrão e não liberado como fluxo confiável
+* A3.6.1: frente estrutural futura, sem execução urgente neste momento
 * bloqueio central atual: baseline
 
 ## 9) Execução segura no repositório
@@ -102,6 +104,7 @@ A baseline só pode ser tratada como concluída quando os itens abaixo estiverem
 * O baseline real não deve ser improvisado no repositório.
 * `supabase/migrations/` continua como legado transitório até a extração externa devolver o baseline bruto.
 * O workflow de apply não deve ser tratado como fluxo liberado antes da baseline oficial.
+* Como o apply automático está bloqueado no workflow atual, a baseline segue pendente sem exigir execução urgente de A3.6.1 neste momento.
 * A liberação futura do workflow só pode acontecer depois de:
 
   * baseline oficial versionado

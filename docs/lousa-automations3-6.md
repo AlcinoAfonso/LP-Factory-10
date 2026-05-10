@@ -41,13 +41,15 @@ O workflow de apply só pode ser tratado como liberado quando os itens abaixo es
 
 ## 6) Dependência operacional
 
-* O detalhamento completo da fase baseline fica em `docs/lousa-automations3-5-1.md`.
-* Enquanto a baseline não estiver concluída, o caso 3.5 permanece bloqueado.
+* O detalhamento completo da fase baseline fica em `docs/lousa-automations3-6-1.md`.
+* Enquanto a baseline não estiver concluída, o caso A3.6 permanece bloqueado.
 
 ## 7) Status consolidado
 
 * workflow de apply: preparado
+* apply automático: bloqueado por padrão no workflow atual
 * baseline oficial: pendente
+* `supabase/migrations/`: tratado no momento como histórico auxiliar, não como fluxo oficial confiável de apply
 * legado atual: transitório e marcado para remoção após a transição segura
-* bloqueio central do caso: baseline
-* próximo passo: executar o plano descrito em `docs/lousa-automations3-5-1.md`
+* bloqueio central do caso A3.6: baseline
+* próximo passo: executar o plano descrito em `docs/lousa-automations3-6-1.md`
