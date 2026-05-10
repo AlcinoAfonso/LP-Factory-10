@@ -715,6 +715,17 @@
 • Nenhuma pendência obrigatória aberta neste recorte
 
 
+10.5.3.1 Curadoria operacional de aliases enxutos vs microvariações textuais
+• Status: Briefing
+• Objetivo: definir o critério operacional de curadoria de aliases no Grupo A, separando o que deve ser cadastrado manualmente como alias do que deve ficar para matching textual leve futuro.
+• Escopo:
+• definir critérios para priorizar aliases de sentido, comerciais e realmente relevantes de mercado
+• definir critérios para não cadastrar exaustivamente microvariações leves de grafia
+• explicitar a fronteira entre a curadoria manual do Grupo A e o papel futuro do `supa#51` no E10.5.6
+• Dependências:
+• E10.5.3
+• E10.5.6
+
 10.5.4 Helper puro de confiança determinística para taxon match
 • Status: Concluído (exec) (10/05/2026)
 • Natureza: repo-only (sem Supabase, sem logs, sem side effects, sem onboarding e sem mutation).
@@ -735,16 +746,6 @@
 • sem persistência em `account_taxonomy`
 • sem IA, microdiálogo, fallback final ou escolha de template comercial
 
-10.5.3.1 Curadoria operacional de aliases enxutos vs microvariações textuais
-• Status: Briefing
-• Objetivo: definir o critério operacional de curadoria de aliases no Grupo A, separando o que deve ser cadastrado manualmente como alias do que deve ficar para matching textual leve futuro.
-• Escopo:
-• definir critérios para priorizar aliases de sentido, comerciais e realmente relevantes de mercado
-• definir critérios para não cadastrar exaustivamente microvariações leves de grafia
-• explicitar a fronteira entre a curadoria manual do Grupo A e o papel futuro do `supa#51` no E10.5.6
-• Dependências:
-• E10.5.3
-• E10.5.6
 
 10.5.6 Classificação da conta e resolução do template
 • Status: Parcialmente concluído (BD determinístico inicial + adapter server-side) (09/05/2026)
