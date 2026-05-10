@@ -153,6 +153,8 @@ Escopo: role/usuário read-only
 Role ai_readonly com login permitido, statement_timeout de 5s, USAGE no schema public, GRANT SELECT nas tabelas existentes em public e default privileges para novas tabelas em public.
 Migration relacionada: supabase/migrations/0005__ai_readonly.sql
 
+Durante o MVP, a migration supabase/migrations/0010__ai_readonly_mvp_inspect_relaxation.sql amplia temporariamente o role ai_readonly para acelerar inspeções do Supabase Inspect: SELECT em tabelas public, EXECUTE em funções public, USAGE no schema extensions, EXECUTE em funções extensions para auxiliares como similarity() do pg_trgm, BYPASSRLS e statement_timeout de 5s. A decisão não usa service_role, não concede escrita direta e não libera grants amplos em auth. Deve ser revisada antes de ampliar acesso do workflow para equipe/funcionários.
+
 2.3.4 Observações
 O pipeline atual executa apenas SQL read-only.
 Discovery pode usar information_schema e pg_catalog.
