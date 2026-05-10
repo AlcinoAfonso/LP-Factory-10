@@ -291,7 +291,7 @@ export async function saveSetupAndContinueAction(
       const taxonomyMatchStartedAt = Date.now();
       const candidates = await matchBusinessTaxonsDeterministic(validated.values.niche, 10);
       const decision = evaluateDeterministicTaxonMatch(candidates);
-      const topCandidate = candidates[0] ?? null;
+      const topCandidate = decision.selectedCandidate;
 
       console.log(
         JSON.stringify({
