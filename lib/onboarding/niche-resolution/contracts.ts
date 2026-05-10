@@ -25,6 +25,7 @@ export type DeterministicMatchReason =
   | "no_candidates"
   | "high_confidence_strong_match"
   | "medium_confidence_close_candidates"
+  | "medium_confidence_below_high_threshold"
   | "medium_confidence_weak_match_source"
   | "low_confidence_insufficient_score";
 

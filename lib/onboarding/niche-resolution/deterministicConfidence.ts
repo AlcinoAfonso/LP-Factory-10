@@ -71,10 +71,9 @@ export function evaluateDeterministicTaxonMatch(
     };
   }
 
-  if (
-    best.score >= HIGH_CONFIDENCE_SCORE &&
-    hasStrongMatchSource(best.matchSource)
-  ) {
+  const strongMatchSource = hasStrongMatchSource(best.matchSource);
+
+  if (best.score >= HIGH_CONFIDENCE_SCORE && strongMatchSource) {
     return {
       confidence: "high",
       selectedCandidate: best,
@@ -83,6 +82,18 @@ export function evaluateDeterministicTaxonMatch(
       aiEscalationMode: "none",
       needsAdminReview: false,
       reason: "high_confidence_strong_match",
+    };
+  }
+
+  if (strongMatchSource) {
+    return {
+      confidence: "medium",
+      selectedCandidate: best,
+      shouldUseDeterministicMatch: false,
+      shouldEscalateToAi: true,
+      aiEscalationMode: "rerank_candidates",
+      needsAdminReview: true,
+      reason: "medium_confidence_below_high_threshold",
     };
   }
 
