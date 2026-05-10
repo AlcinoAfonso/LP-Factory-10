@@ -53,6 +53,17 @@ Escopo:
 - Role `ai_readonly` com acesso apenas ao schema `public`
 - Discovery pode usar `information_schema` / `pg_catalog`
 
+## Permissões do role `ai_readonly` no MVP
+
+Durante o MVP, o role `ai_readonly` usado pelo Supabase Inspect opera com permissões temporariamente ampliadas para acelerar inspeções:
+
+- `SELECT` em tabelas do schema `public`;
+- `EXECUTE` em funções do schema `public`;
+- `BYPASSRLS`;
+- `statement_timeout = 5s`.
+
+Essa decisão é operacional e temporária. Não usa `service_role`, não concede escrita direta e não libera grants amplos em `auth`. Deve ser revisada antes de ampliar acesso do workflow para equipe/funcionários.
+
 ## Saída
 Nos logs do workflow:
 - Plano / decisões do modelo
