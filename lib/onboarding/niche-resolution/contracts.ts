@@ -38,3 +38,23 @@ export type DeterministicMatchDecision = {
   needsAdminReview: boolean;
   reason: DeterministicMatchReason;
 };
+
+export type AccountNicheResolutionStatus =
+  | "deterministic_high_confidence"
+  | "review_required"
+  | "unclassified";
+
+export type UpsertAccountNicheResolutionInput = {
+  accountId: string;
+  rawInput: string;
+  selectedTaxonId: string | null;
+  confidence: DeterministicMatchConfidence;
+  shouldUseDeterministicMatch: boolean;
+  shouldEscalateToAi: boolean;
+  aiEscalationMode: AiEscalationMode;
+  needsAdminReview: boolean;
+  reason: DeterministicMatchReason;
+  resolutionStatus: AccountNicheResolutionStatus;
+  matchSource: string | null;
+  score: number | null;
+};

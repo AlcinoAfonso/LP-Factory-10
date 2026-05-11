@@ -14,6 +14,10 @@ import {
 } from '@/lib/access/adapters/accountAdapter';
 import { upsertAccountProfileV1 } from '@/lib/access/adapters/accountProfileAdapter';
 import { validateE10_4SetupForm } from '@/lib/onboarding/e10_4_setup_validation';
+import {
+  mapDecisionToResolutionStatus,
+  upsertAccountNicheResolution,
+} from '../../../lib/onboarding/niche-resolution/adapters/accountNicheResolutionAdapter';
 import { matchBusinessTaxonsDeterministic } from '../../../lib/onboarding/niche-resolution/adapters/taxonMatchAdapter';
 import { evaluateDeterministicTaxonMatch } from '../../../lib/onboarding/niche-resolution/deterministicConfidence';
 
@@ -293,6 +297,34 @@ export async function saveSetupAndContinueAction(
       const decision = evaluateDeterministicTaxonMatch(candidates);
       const topCandidate = decision.selectedCandidate;
 
+      const resolutionSaved = await upsertAccountNicheResolution({
+        accountId,
+        rawInput: validated.values.niche,
+        selectedTaxonId: topCandidate?.taxonId ?? null,
+        confidence: decision.confidence,
+        shouldUseDeterministicMatch: decision.shouldUseDeterministicMatch,
+        shouldEscalateToAi: decision.shouldEscalateToAi,
+        aiEscalationMode: decision.aiEscalationMode,
+        needsAdminReview: decision.needsAdminReview,
+        reason: decision.reason,
+        resolutionStatus: mapDecisionToResolutionStatus(decision),
+        matchSource: topCandidate?.matchSource ?? null,
+        score: topCandidate?.score ?? null,
+      });
+
+      if (!resolutionSaved) {
+        console.warn(
+          JSON.stringify({
+            scope: 'onboarding',
+            event: 'setup_taxonomy_resolution_persist_failed',
+            error_type: 'non_blocking_niche_resolution_persist',
+            request_id: requestId,
+            latency_ms: Date.now() - taxonomyMatchStartedAt,
+            ts: new Date().toISOString(),
+          })
+        );
+      }
+
       console.log(
         JSON.stringify({
           scope: 'onboarding',
@@ -304,6 +336,7 @@ export async function saveSetupAndContinueAction(
           ai_escalation_mode: decision.aiEscalationMode,
           needs_admin_review: decision.needsAdminReview,
           reason: decision.reason,
+          resolution_saved: resolutionSaved,
           top_match_source: topCandidate?.matchSource ?? null,
           top_score: topCandidate?.score ?? null,
           account_id: accountId,
