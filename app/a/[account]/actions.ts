@@ -18,6 +18,10 @@ import {
   mapDecisionToResolutionStatus,
   upsertAccountNicheResolution,
 } from '../../../lib/onboarding/niche-resolution/adapters/accountNicheResolutionAdapter';
+import {
+  linkAccountTaxonomyFromDeterministicDecision,
+  shouldLinkAccountTaxonomyFromDecision,
+} from '../../../lib/onboarding/niche-resolution/adapters/accountTaxonomyAdapter';
 import { matchBusinessTaxonsDeterministic } from '../../../lib/onboarding/niche-resolution/adapters/taxonMatchAdapter';
 import { evaluateDeterministicTaxonMatch } from '../../../lib/onboarding/niche-resolution/deterministicConfidence';
 
@@ -325,6 +329,67 @@ export async function saveSetupAndContinueAction(
         );
       }
 
+      const shouldLinkAccountTaxonomy = shouldLinkAccountTaxonomyFromDecision(decision);
+      let accountTaxonomyLinkStatus: string = shouldLinkAccountTaxonomy
+        ? 'not_attempted'
+        : 'skipped_not_high_confidence';
+
+      console.log(
+        JSON.stringify({
+          scope: 'onboarding',
+          event: 'setup_account_taxonomy_link_evaluated',
+          account_id: accountId,
+          taxon_id: topCandidate?.taxonId ?? null,
+          source_type: 'taxonomy_match',
+          status: accountTaxonomyLinkStatus,
+          reason: decision.reason,
+          request_id: requestId,
+          latency_ms: Date.now() - taxonomyMatchStartedAt,
+          ts: new Date().toISOString(),
+        })
+      );
+
+      if (shouldLinkAccountTaxonomy) {
+        const linkResult = await linkAccountTaxonomyFromDeterministicDecision({
+          accountId,
+          decision,
+        });
+        accountTaxonomyLinkStatus = linkResult.status;
+
+        const linkLogEvent =
+          linkResult.status === 'saved'
+            ? 'setup_account_taxonomy_link_saved'
+            : linkResult.status === 'failed'
+              ? 'setup_account_taxonomy_link_failed'
+              : 'setup_account_taxonomy_link_skipped';
+
+        const linkLogReason =
+          linkResult.status === 'skipped_conflicting_primary'
+            ? 'conflicting_primary'
+            : linkResult.status === 'skipped_not_high_confidence'
+              ? 'not_high_confidence'
+              : linkResult.status;
+
+        const linkLogPayload: Record<string, unknown> = {
+          scope: 'onboarding',
+          event: linkLogEvent,
+          account_id: accountId,
+          taxon_id: linkResult.taxonId,
+          source_type: 'taxonomy_match',
+          status: linkResult.status,
+          reason: linkLogReason,
+          request_id: requestId,
+          latency_ms: Date.now() - taxonomyMatchStartedAt,
+          ts: new Date().toISOString(),
+        };
+
+        if (linkResult.status === 'failed') {
+          console.warn(JSON.stringify(linkLogPayload));
+        } else {
+          console.log(JSON.stringify(linkLogPayload));
+        }
+      }
+
       console.log(
         JSON.stringify({
           scope: 'onboarding',
@@ -337,6 +402,7 @@ export async function saveSetupAndContinueAction(
           needs_admin_review: decision.needsAdminReview,
           reason: decision.reason,
           resolution_saved: resolutionSaved,
+          account_taxonomy_link_status: accountTaxonomyLinkStatus,
           top_match_source: topCandidate?.matchSource ?? null,
           top_score: topCandidate?.score ?? null,
           account_id: accountId,
