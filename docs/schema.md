@@ -1,8 +1,8 @@
 0. Introdução
 
 0.1 Cabeçalho
-• Data da última atualização: 09/05/2026
-• Documento: LP Factory 10 — Schema (DB Contract) v1.0.14
+• Data da última atualização: 11/05/2026
+• Documento: LP Factory 10 — Schema (DB Contract) v1.0.15
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -139,6 +139,7 @@
 1.10.3 Segurança
 • Trigger Hub: não
 • RLS: ativo (enable row level security)
+• service_role: SELECT
 
 1.10.4 Policies
 • business_taxons_select_admin_only (SELECT to public): is_super_admin() OU is_platform_admin()
@@ -170,6 +171,7 @@
 1.11.3 Segurança
 • Trigger Hub: não
 • RLS: ativo (enable row level security)
+• service_role: SELECT
 
 1.11.4 Policies
 • business_taxon_aliases_select_admin_only (SELECT to public): is_super_admin() OU is_platform_admin()
@@ -361,6 +363,42 @@
 • taxon_message_guides_update_admin_only (UPDATE to public): is_super_admin() OU is_platform_admin() (USING + WITH CHECK)
 • taxon_message_guides_delete_admin_only (DELETE to public): is_super_admin() OU is_platform_admin()
 
+1.18 account_niche_resolutions
+
+1.18.1 Chaves, constraints e relacionamentos
+• PK: account_id uuid
+• FK: account_id → accounts(id)
+• FK: selected_taxon_id → business_taxons(id)
+• CHECK: raw_input não vazio
+• CHECK: confidence
+• CHECK: ai_escalation_mode
+• CHECK: reason
+• CHECK: resolution_status
+• CHECK: score entre 0 e 1 ou NULL
+
+1.18.2 Campos
+• account_id uuid not null
+• raw_input text not null
+• selected_taxon_id uuid null
+• confidence text not null
+• should_use_deterministic_match boolean not null
+• should_escalate_to_ai boolean not null
+• ai_escalation_mode text not null
+• needs_admin_review boolean not null
+• reason text not null
+• resolution_status text not null
+• match_source text null
+• score numeric null
+• created_at timestamptz not null default now()
+• updated_at timestamptz not null default now()
+
+1.18.3 Segurança
+• Trigger Hub: não
+• RLS: ativo
+• Policies: admin-only
+• Acesso direto removido de public, anon e authenticated
+• service_role: SELECT, INSERT e UPDATE
+
 
 2. Views
 
@@ -510,6 +548,7 @@
 4.2 Fora do Hub
 • plans: sem trigger
 • partners: sem trigger hub
+• account_niche_resolutions_set_updated_at: trigger de atualização de updated_at em account_niche_resolutions
 
 5. Tipos canônicos
 • Fonte única: PATH: lib/types/status.ts
@@ -527,6 +566,12 @@
 • Rollback: não remove automaticamente a extensão, pois pode ser reutilizada por outros recursos
 
 99. Changelog
+v1.0.15 (11/05/2026) — E10.5.6: account_niche_resolutions
+• Registrada a tabela `account_niche_resolutions` como persistência operacional da resolução atual da conta.
+• Registradas PK/FKs, constraints principais, RLS, policies admin-only e permissões operacionais de `service_role`.
+• Registrado o trigger `account_niche_resolutions_set_updated_at`.
+• Registrado `service_role` com SELECT em `business_taxons` e `business_taxon_aliases`.
+
 v1.0.14 (09/05/2026) — E10.5.6: matching determinístico inicial de taxonomia
 • Registrada a extensão `pg_trgm` no schema `extensions`.
 • Registrados índices auxiliares em `business_taxons` e `business_taxon_aliases` para normalização, FTS e trigram.
