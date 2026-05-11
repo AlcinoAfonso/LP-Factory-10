@@ -42,7 +42,6 @@ export async function upsertAccountNicheResolution(
     resolution_status: input.resolutionStatus,
     match_source: input.matchSource,
     score: input.score,
-    updated_at: new Date().toISOString(),
   };
 
   try {
