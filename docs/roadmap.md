@@ -1,8 +1,8 @@
 0. Introdução
 
 0.1 Cabeçalho
-• Data: 10/05/2026
-• Versão: v1.5.50
+• Data: 11/05/2026
+• Versão: v1.5.51
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -449,6 +449,23 @@
 • UX Partner Dashboard
 
 10.4 Primeiros passos (pending_setup — status-based)
+
+• Persistência da resolução operacional de nicho no pós-save do `pending_setup` (11/05/2026): após o matching determinístico, o fluxo passou a registrar a resolução atual da conta em `account_niche_resolutions`.
+• Decisão: `account_niche_resolutions` registra a resolução operacional atual; `account_taxonomy` permanece reservado para vínculo oficial futuro.
+• Regra de fluxo: falhas de matching ou persistência não bloqueiam a conclusão do setup nem o redirecionamento.
+• Fora do escopo: IA, microdiálogo, fallback final, vínculo oficial em `account_taxonomy` e escolha de template comercial.
+• ARTEFATOS_REPO:
+• Criado: `lib/onboarding/niche-resolution/adapters/accountNicheResolutionAdapter.ts`
+• Criado: `supabase/migrations/0011__e10_5_6_account_niche_resolutions.sql`
+• Criado: `supabase/rollbacks/20260511__e10_5_6_account_niche_resolutions.rollback.sql`
+• Ajustado: `lib/onboarding/niche-resolution/contracts.ts`
+• Ajustado: `app/a/[account]/actions.ts`
+• Checks/QA (reportado): `npm ci` ok; `npm run check` ok; runtime validado em deployment correto com caso forte, caso alias e caso sem candidato claro.
+• Status de entrega: PR da implementação 20.6 mergeado; 20.6 concluído.
+• Pendências futuras:
+• Definir quando `account_taxonomy` será gravado como vínculo oficial.
+• Decidir se haverá histórico/versionamento de resoluções.
+• Implementar IA/microdiálogo apenas em recorte futuro.
 
 • Integração de matching determinístico de taxonomia no pós-save do `pending_setup` (10/05/2026): após salvar perfil, atualizar nome e promover a conta para `active`, `saveSetupAndContinueAction` chama `matchBusinessTaxonsDeterministic(validated.values.niche, 10)` server-side e avalia os candidatos com `evaluateDeterministicTaxonMatch(candidates)` para log seguro de decisão.
 • Regra de fluxo: falha no matching não bloqueia o lead nem impede `revalidatePath(route)` e `redirect(route)`.
@@ -1040,6 +1057,8 @@
 • Definir o primeiro recorte funcional do LP Builder no roadmap
 
 99. Changelog
+v1.5.51 — 11/05/2026 — Roadmap atualizado com o estado final da implementação 20.6: persistência da resolução operacional em `account_niche_resolutions`, decisão sobre `account_taxonomy`, artefatos, QA e pendências futuras.
+
 v1.5.50 — 10/05/2026 — Roadmap atualizado com o estado final da integração de matching determinístico de taxonomia no pós-save do `pending_setup`, incluindo artefato ajustado, regra não bloqueante, observability segura e pendências explícitas.
 
 v1.5.49 (10/05/2026)

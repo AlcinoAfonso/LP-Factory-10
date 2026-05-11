@@ -2,8 +2,8 @@
 
 0.1. Cabeçalho
 • Documento: Base Técnica LP Factory 10
-• Versão: v2.0.32
-• Data: 10/05/2026
+• Versão: v2.0.33
+• Data: 11/05/2026
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -305,6 +305,11 @@
 • Contrato tipado da decisão determinística e de `aiEscalationMode` fica em `lib/onboarding/niche-resolution/contracts.ts`.
 • Regra: não embutir avaliação de confiança, thresholds ou reasons semânticos inline em UI, route ou server action; reutilizar helper + contrato.
 • `aiEscalationMode` é preparação contratual para evolução futura e não autoriza IA no runtime atual sem caso específico.
+• Resolução operacional: após avaliar o matching determinístico no pós-save do `pending_setup`, o runtime pode persistir a resolução atual da conta via adapter server-side canônico em `lib/onboarding/niche-resolution/adapters/accountNicheResolutionAdapter.ts`.
+• Regra: `account_niche_resolutions` registra a resolução operacional atual; `account_taxonomy` continua reservado para vínculo oficial futuro.
+• Regra: falha de matching ou persistência da resolução não pode bloquear o lead, `revalidatePath(route)` ou `redirect(route)`.
+• Regra: logs do fluxo devem permanecer sem PII e não devem registrar `raw_input`, nicho bruto, query, aliases, candidatos completos ou dados de formulário.
+• Regra: timestamps da resolução operacional devem ser controlados pelo banco.
 
 4. DB Contract - Fonte única: PATH: docs/schema.md
 • Este documento não lista mais tabelas/views/functions/triggers/policies; isso está em PATH: docs/schema.md.
@@ -451,6 +456,8 @@ Fonte normativa da allowlist SULB para exceções de Auth. Qualquer novo arquivo
 • Tipos canônicos e adapters vNext: validar por 3.6 e 3.14.
 
 99. Changelog
+v2.0.33 — 11/05/2026 — Base técnica atualizada com contrato mínimo de runtime para persistência operacional de resolução em `account_niche_resolutions`, sem gravação de `account_taxonomy`, com fluxo não bloqueante e logs sem PII.
+
 v2.0.32 — 10/05/2026 — Base técnica atualizada com contrato runtime do matching determinístico de taxonomia no pós-save do `pending_setup`, regra não bloqueante e observability segura com eventos canônicos.
 
 v2.0.31 (10/05/2026)
