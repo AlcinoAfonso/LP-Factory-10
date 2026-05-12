@@ -11,6 +11,14 @@ on:
         description: "Numero inicial para alcinoafonso380+conviteXX@gmail.com"
         required: true
         default: "100"
+      verification_mode:
+        description: "Nivel de verificacao apos preencher o pending_setup"
+        required: true
+        default: "setup_only"
+        type: choice
+        options:
+          - setup_only
+          - niche_resolution_20_6
 
 permissions:
   contents: read
@@ -33,11 +41,14 @@ jobs:
           MAILBOX_EMAIL: ${{ secrets.MAILBOX_EMAIL }}
           MAILBOX_PASSWORD: ${{ secrets.MAILBOX_PASSWORD }}
           SUPABASE_DB_URL_READONLY: ${{ secrets.SUPABASE_DB_URL_READONLY }}
+          VERIFICATION_MODE: ${{ inputs.verification_mode }}
         run: |
           test -n "$APP_URL_OVERRIDE" || (echo "Falta input app_url" && exit 1)
           test -n "$MAILBOX_EMAIL" || (echo "Falta secret MAILBOX_EMAIL" && exit 1)
           test -n "$MAILBOX_PASSWORD" || (echo "Falta secret MAILBOX_PASSWORD" && exit 1)
-          test -n "$SUPABASE_DB_URL_READONLY" || (echo "Falta secret SUPABASE_DB_URL_READONLY" && exit 1)
+          if [ "$VERIFICATION_MODE" != "setup_only" ]; then
+            test -n "$SUPABASE_DB_URL_READONLY" || (echo "Falta secret SUPABASE_DB_URL_READONLY" && exit 1)
+          fi
 
       - name: Setup Node
         uses: actions/setup-node@v5
@@ -69,19 +80,23 @@ jobs:
         run: node run-niche-setup.mjs
 
       - name: Install Supabase inspect deps
+        if: ${{ inputs.verification_mode != 'setup_only' }}
         working-directory: automations/supabase-inspect
         run: npm ci
 
       - name: Check Supabase verifier
+        if: ${{ inputs.verification_mode != 'setup_only' }}
         working-directory: automations/supabase-inspect
         run: |
           npm run check
           node --check verify-niche-runtime.mjs
 
       - name: Verify database evidence
+        if: ${{ inputs.verification_mode != 'setup_only' }}
         working-directory: automations/supabase-inspect
         env:
           NICHE_RUNTIME_INPUT_PATH: ../niche-runtime-results.json
+          NICHE_RUNTIME_VERIFICATION_MODE: ${{ inputs.verification_mode }}
           SUPABASE_DB_URL_READONLY: ${{ secrets.SUPABASE_DB_URL_READONLY }}
         run: node verify-niche-runtime.mjs
 
