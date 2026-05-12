@@ -21,21 +21,21 @@ const cases = [
     id: "strong_match",
     label: "Caso 1 - Match forte",
     sequenceOffset: 0,
-    projectName: "Convite teste runtime 100 A",
+    projectSuffix: "A",
     niche: "Harmonização Facial",
   },
   {
     id: "alias",
     label: "Caso 2 - Alias",
     sequenceOffset: 1,
-    projectName: "Convite teste runtime 101 B",
+    projectSuffix: "B",
     niche: "hof",
   },
   {
     id: "unclear",
     label: "Caso 3 - Sem candidato claro",
     sequenceOffset: 2,
-    projectName: "Convite teste runtime 102 C",
+    projectSuffix: "C",
     niche: "Beleza Facial",
   },
 ];
@@ -77,6 +77,10 @@ function buildAlias(sequence) {
 
 function buildPassword(sequence) {
   return `Convite${sequence}!Aa`;
+}
+
+function buildProjectName(sequence, testCase) {
+  return `Convite teste runtime ${sequence} ${testCase.projectSuffix}`;
 }
 
 function extractAccountSubdomain(value) {
@@ -187,7 +191,7 @@ async function firstVisible(page, locators) {
   return null;
 }
 
-async function fillPendingSetup(page, testCase) {
+async function fillPendingSetup(page, { projectName, niche }) {
   const nameInput = await firstVisible(page, [
     page.getByLabel(/nome do projeto/i),
     page.locator('input[name="name"]'),
@@ -206,8 +210,8 @@ async function fillPendingSetup(page, testCase) {
     throw new Error(`campo Nicho nao encontrado em ${page.url()}`);
   }
 
-  await nameInput.fill(testCase.projectName);
-  await nicheInput.fill(testCase.niche);
+  await nameInput.fill(projectName);
+  await nicheInput.fill(niche);
 
   const submit = await firstVisible(page, [
     page.getByRole("button", { name: /salvar e continuar|continuar|salvar/i }),
@@ -232,6 +236,7 @@ async function fillPendingSetup(page, testCase) {
 async function runCase({ appUrl, appOrigin, testCase, sequence }) {
   const email = buildAlias(sequence);
   const password = buildPassword(sequence);
+  const projectName = buildProjectName(sequence, testCase);
 
   return withBrowserSession(async ({ page }) => {
     await openAuth({ page, appUrl });
@@ -248,7 +253,7 @@ async function runCase({ appUrl, appOrigin, testCase, sequence }) {
     await page.waitForTimeout(1200);
 
     const subdomain = await waitForAccountSubdomain(page);
-    await fillPendingSetup(page, testCase);
+    await fillPendingSetup(page, { projectName, niche: testCase.niche });
 
     return {
       id: testCase.id,
@@ -256,7 +261,7 @@ async function runCase({ appUrl, appOrigin, testCase, sequence }) {
       sequence,
       email,
       password,
-      projectName: testCase.projectName,
+      projectName,
       niche: testCase.niche,
       subdomain,
       finalUrl: page.url(),
