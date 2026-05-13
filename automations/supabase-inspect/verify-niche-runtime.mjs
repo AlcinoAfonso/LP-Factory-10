@@ -6,6 +6,7 @@ const { Client } = pg;
 
 const allowedUnclearStatuses = new Set(["unclassified", "review_required"]);
 const supportedVerificationModes = new Set(["niche_resolution_20_6"]);
+const verificationModePresets = new Map([["niche_resolution_20_6", "niche-resolution-20-6"]]);
 
 function die(message) {
   console.error(message);
@@ -45,6 +46,17 @@ function readVerificationMode() {
   }
 
   return mode;
+}
+
+function assertVerificationPreset({ verificationMode, payload }) {
+  const expectedPreset = verificationModePresets.get(verificationMode);
+  if (!expectedPreset) return;
+
+  if (payload.casePreset !== expectedPreset) {
+    die(
+      `verification_mode ${verificationMode} exige case_preset ${expectedPreset}; recebido ${payload.casePreset ?? "null"}`,
+    );
+  }
 }
 
 async function fetchAccountEvidence(client, subdomain) {
@@ -192,13 +204,14 @@ function evaluateCase(testCase, evidence) {
   };
 }
 
-function renderSummary({ inputPath, appUrl, verificationMode, results }) {
+function renderSummary({ inputPath, appUrl, casePreset, verificationMode, results }) {
   const passed = results.filter((entry) => entry.status === "passed").length;
   const failed = results.length - passed;
 
   writeSummary("# Runtime niche resolution verification");
   writeSummary(`- input_path: \`${inputPath}\``);
   writeSummary(`- app_url: \`${appUrl ?? "null"}\``);
+  writeSummary(`- case_preset: \`${casePreset ?? "null"}\``);
   writeSummary(`- verification_mode: \`${verificationMode}\``);
   writeSummary(`- status: \`${failed === 0 ? "passed" : "failed"}\``);
   writeSummary(`- cases: \`${passed}/${results.length} passed\``);
@@ -225,6 +238,7 @@ async function main() {
   const connectionString = requireEnv("SUPABASE_DB_URL_READONLY");
   const { inputPath, payload } = readInput();
   const verificationMode = readVerificationMode();
+  assertVerificationPreset({ verificationMode, payload });
   const client = new Client({ connectionString });
   const results = [];
 
@@ -254,13 +268,20 @@ async function main() {
     kind: "niche_runtime_verification_results",
     verificationMode,
     appUrl: payload.appUrl ?? null,
+    casePreset: payload.casePreset ?? null,
     inputPath,
     completedAt: new Date().toISOString(),
     results,
   };
 
   console.log(JSON.stringify(output, null, 2));
-  renderSummary({ inputPath, appUrl: payload.appUrl, verificationMode, results });
+  renderSummary({
+    inputPath,
+    appUrl: payload.appUrl,
+    casePreset: payload.casePreset,
+    verificationMode,
+    results,
+  });
 
   if (results.some((entry) => entry.status !== "passed")) {
     process.exitCode = 1;
