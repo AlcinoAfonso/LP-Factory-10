@@ -10,13 +10,45 @@ Inputs manuais:
 
 - `app_url`: URL do app ou preview a ser validado.
 - `start_sequence`: numero inicial do alias `alcinoafonso380+conviteXX@gmail.com`. Default: `100`.
+- `case_preset`: arquivo em `automations/niche-runtime-tests/cases` sem a extensao `.json`. Default: `niche-resolution-20-6`.
 - `verification_mode`: nivel de verificacao apos preencher o setup.
   - `setup_only`: cria as contas, confirma email, preenche `pending_setup` e publica evidencia. Nao consulta o banco.
   - `niche_resolution_20_6`: executa o preset read-only que valida a expectativa da etapa 20.6 no Supabase.
 
-## Casos cobertos
+## Presets de casos
 
-O workflow cria e confirma tres contas reais, usando a mailbox programatica do `validador-final`, e preenche o `pending_setup`:
+Os nichos ficam fora do script runtime. Cada conjunto de teste deve ser declarado como JSON em:
+
+```text
+automations/niche-runtime-tests/cases/<case_preset>.json
+```
+
+Formato:
+
+```json
+{
+  "cases": [
+    {
+      "id": "strong_match",
+      "label": "Caso 1 - Match forte",
+      "sequenceOffset": 0,
+      "projectSuffix": "A",
+      "niche": "Harmonização Facial"
+    }
+  ]
+}
+```
+
+Campos:
+
+- `niche`: obrigatorio.
+- `id`: opcional, mas recomendado quando houver verificacao posterior.
+- `label`: opcional, usado no summary.
+- `sequenceOffset`: opcional; default e a posicao do caso no array.
+- `projectSuffix`: opcional; default e `A`, `B`, `C`...
+- `projectNameTemplate`: opcional; aceita `{sequence}`, `{suffix}` e `{id}`.
+
+O preset default `niche-resolution-20-6` cria e confirma tres contas reais, usando a mailbox programatica do `validador-final`, e preenche o `pending_setup`:
 
 - `convite100`: `Harmonização Facial` -> match forte.
 - `convite101`: `hof` -> alias.
@@ -39,7 +71,7 @@ Esse nucleo ja funciona como teste de funcionamento do fluxo.
 
 ## Preset de validacao no banco
 
-A validacao no banco e opcional porque a expectativa muda por etapa. No preset `niche_resolution_20_6`, a etapa read-only consulta o Supabase com `SUPABASE_DB_URL_READONLY` e valida:
+A validacao no banco e opcional porque a expectativa muda por etapa. O modo `niche_resolution_20_6` exige o `case_preset` `niche-resolution-20-6`, consulta o Supabase com `SUPABASE_DB_URL_READONLY` e valida:
 
 - conta criada e `accounts.status = active`;
 - `account_profiles.niche` igual ao input;
