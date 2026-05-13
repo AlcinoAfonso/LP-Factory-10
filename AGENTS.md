@@ -34,6 +34,25 @@ Rodar, nesta ordem:
 
 - Nunca aplicar alterações diretamente na `main`.
 
+### Fluxo operacional Codex / GitHub Desktop
+
+- Para alterações feitas pelo Codex, o fluxo padrão é remoto:
+  - criar branch via conector GitHub;
+  - criar/alterar/remover arquivos na branch remota;
+  - abrir PR contra `main`;
+  - validar via GitHub Actions;
+  - mergear pelo GitHub Web.
+
+- O workspace local e o GitHub Desktop devem ser tratados como espelho limpo da `main`:
+  - não criar commits locais pelo Codex;
+  - não publicar branches locais criadas incidentalmente;
+  - não levar alterações locais antigas para `main`;
+  - após merge de PR remoto, manter o Desktop em `main`, com `0 changed files`, usando apenas Fetch/Pull.
+
+- O Codex só deve editar arquivos diretamente no workspace local se o usuário pedir explicitamente um fluxo local.
+
+- Se houver mudanças locais no Desktop que já foram resolvidas por PR remoto mergeado, tratá-las como resíduo operacional e orientar descarte, sem commit e sem publish.
+
 ### Gate pré-edição no Codex App
 
 Antes de editar arquivos no workspace local, verificar a branch ativa.
