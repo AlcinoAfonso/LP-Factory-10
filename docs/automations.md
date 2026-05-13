@@ -22,6 +22,7 @@ docs/roadmap.md: evolução funcional.
 - `validador-final` migrado para `automations/validador-final/` e workflow legado removido.
 - `supabase-inspect` migrado para `automations/supabase-inspect/` com execução a partir da nova raiz canônica e sem fallback `npm install --no-save` no workflow.
 - `docs-apply-report` migrado para `automations/docs-apply-report/` com execução a partir da nova raiz canônica.
+- `niche-runtime-tests` criado como subprojeto canônico em `automations/niche-runtime-tests/`.
 - `pipelines/validador-final/`, `pipelines/supabase-inspect/` e `pipelines/docs-apply-report/` deixaram de ser paths oficiais.
 
 1. Objetivo e escopo
@@ -120,14 +121,22 @@ OPENAI_API_KEY
 Uso: pipelines com chamadas de modelo
 SUPABASE_DB_URL_READONLY
 Uso: inspeção read-only
+MAILBOX_EMAIL
+Uso: automações de runtime que precisam confirmar e-mails reais.
+MAILBOX_PASSWORD
+Uso: senha de app da mailbox para leitura programática por POP3.
 
 2.2.3 Integrações existentes
 OpenAI:
 supabase-inspect
 Supabase:
 supabase-inspect
+niche-runtime-tests quando o modo de verificação consulta banco
 Documentação:
 pipeline-docs-apply-report
+Mailbox:
+validador-final
+niche-runtime-tests
 
 2.2.4 Estrutura operacional
 Workflows em .github/workflows.
@@ -136,6 +145,7 @@ Workflows identificados:
 .github/workflows/pipeline-supabase-inspect.yml
 .github/workflows/pipeline-docs-apply-report.yml
 .github/workflows/automation-validador-final.yml
+.github/workflows/automation-niche-runtime-tests.yml
 .github/workflows/security.yml
 .github/workflows/upgrade-next-16-1-1.yml
 
@@ -146,7 +156,7 @@ Banco de dados, Auth e fonte de dados para inspeções automatizadas read-only.
 2.3.2 Credencial registrada
 SUPABASE_DB_URL_READONLY
 Armazenamento: GitHub Secrets
-Finalidade: inspeção read-only no pipeline supabase-inspect
+Finalidade: inspeção read-only no pipeline supabase-inspect e em verificações opcionais de runtime quando aplicável
 Escopo: role/usuário read-only
 
 2.3.3 Estrutura atual
@@ -157,6 +167,7 @@ Durante o MVP, a migration supabase/migrations/0010__ai_readonly_mvp_inspect_rel
 
 2.3.4 Observações
 O pipeline atual executa apenas SQL read-only.
+Verificações de runtime que consultam banco devem ser tratadas como presets versionados, não como expectativa genérica para qualquer teste.
 Discovery pode usar information_schema e pg_catalog.
 
 2.4 Vercel
@@ -391,6 +402,39 @@ Referências / dependências:
 `docs/lousa-automations3-6.md`
 `docs/lousa-automations3-6-1.md`
 
+3.7 Niche Runtime Tests
+
+Objetivo:
+Validar em runtime real o fluxo de criação de conta e preenchimento de `pending_setup` com nichos informados pelo usuário, usando contas reais, confirmação por e-mail e evidência operacional em Job Summary/artifact.
+
+Status:
+Implementada como piloto operacional flexível.
+
+Acesso:
+GitHub → Actions → workflow `automation-niche-runtime-tests`
+
+Como usar:
+Executar o workflow informando:
+- `app_url`: URL do app ou preview;
+- `start_sequence`: número inicial para `alcinoafonso380+conviteXX@gmail.com`;
+- `niches`: lista livre separada por `;`, quando o objetivo for explorar nichos escolhidos manualmente;
+- `case_preset`: fallback versionado quando o objetivo for repetir uma suíte formal;
+- `verification_mode`: `setup_only` para validação funcional flexível ou modo versionado quando a etapa tiver expectativa rígida de banco.
+
+Resposta esperada:
+Contas criadas e confirmadas, `pending_setup` preenchido, subdomínios capturados, evidência no Job Summary e artifact `niche-runtime-results`.
+
+Regra operacional:
+A automação não deve ser engessada por verificação de banco genérica. O teste base é criar conta e preencher o pipeline. Verificações no Supabase só devem entrar como presets versionados, porque a expectativa de tabelas como `account_niche_resolutions` e `account_taxonomy` muda conforme a etapa funcional.
+
+Referências / dependências:
+README local: `automations/niche-runtime-tests/README.md`
+Workflow: `.github/workflows/automation-niche-runtime-tests.yml`
+Runtime: `automations/niche-runtime-tests/`
+Casos versionados: `automations/niche-runtime-tests/cases/`
+Reuso de mailbox: `automations/validador-final/`
+Verificação opcional de banco: `automations/supabase-inspect/verify-niche-runtime.mjs`
+
 4. Aprendizados operacionais
 4.1 Princípios identificados
 Integração entre plataformas não garante utilidade real.
@@ -473,3 +517,15 @@ Weekly evals e complimentary daily tokens são benefícios distintos.
 4.10.7 Regra reutilizável pré-merge:
 - para feature branch sem alteração de pipeline, usar `workflow` da `main` + `app_url` da preview da feature
 - para feature branch com alteração de pipeline, usar `workflow` e `app_url` da própria feature branch
+
+4.11 Niche Runtime Tests (3.7)
+
+4.11.1 O núcleo estável da automação é criação de conta + confirmação + preenchimento de `pending_setup`. Isso já valida funcionamento real do fluxo.
+
+4.11.2 Nichos livres devem usar `verification_mode = setup_only`, porque a expectativa correta de banco depende da etapa funcional e não deve ser presumida.
+
+4.11.3 Presets versionados são o lugar correto para expectativa rígida de banco. Quando a regra muda, criar ou ajustar preset, em vez de engessar o workflow genérico.
+
+4.11.4 O uso de `start_sequence` e aliases `alcinoafonso380+conviteXX@gmail.com` permite criar múltiplas contas em uma mesma execução e reduz colisões previsíveis.
+
+4.11.5 Contas criadas por esse fluxo são evidência funcional temporária. Cleanup permanece manual até existir regra aprovada para remoção segura.
