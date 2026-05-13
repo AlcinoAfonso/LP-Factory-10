@@ -11,6 +11,10 @@ on:
         description: "Numero inicial para alcinoafonso380+conviteXX@gmail.com"
         required: true
         default: "100"
+      case_preset:
+        description: "Arquivo em automations/niche-runtime-tests/cases sem .json"
+        required: true
+        default: "niche-resolution-20-6"
       verification_mode:
         description: "Nivel de verificacao apos preencher o pending_setup"
         required: true
@@ -38,12 +42,14 @@ jobs:
       - name: Validate required inputs and secrets
         env:
           APP_URL_OVERRIDE: ${{ inputs.app_url }}
+          CASE_PRESET: ${{ inputs.case_preset }}
           MAILBOX_EMAIL: ${{ secrets.MAILBOX_EMAIL }}
           MAILBOX_PASSWORD: ${{ secrets.MAILBOX_PASSWORD }}
           SUPABASE_DB_URL_READONLY: ${{ secrets.SUPABASE_DB_URL_READONLY }}
           VERIFICATION_MODE: ${{ inputs.verification_mode }}
         run: |
           test -n "$APP_URL_OVERRIDE" || (echo "Falta input app_url" && exit 1)
+          test -n "$CASE_PRESET" || (echo "Falta input case_preset" && exit 1)
           test -n "$MAILBOX_EMAIL" || (echo "Falta secret MAILBOX_EMAIL" && exit 1)
           test -n "$MAILBOX_PASSWORD" || (echo "Falta secret MAILBOX_PASSWORD" && exit 1)
           if [ "$VERIFICATION_MODE" != "setup_only" ]; then
@@ -74,6 +80,7 @@ jobs:
         env:
           APP_URL_OVERRIDE: ${{ inputs.app_url }}
           NICHE_RUNTIME_START_SEQUENCE: ${{ inputs.start_sequence }}
+          NICHE_RUNTIME_CASE_PRESET: ${{ inputs.case_preset }}
           NICHE_RUNTIME_OUTPUT_PATH: ../niche-runtime-results.json
           MAILBOX_EMAIL: ${{ secrets.MAILBOX_EMAIL }}
           MAILBOX_PASSWORD: ${{ secrets.MAILBOX_PASSWORD }}
