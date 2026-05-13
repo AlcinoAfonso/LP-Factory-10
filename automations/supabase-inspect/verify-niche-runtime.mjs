@@ -52,6 +52,12 @@ function assertVerificationPreset({ verificationMode, payload }) {
   const expectedPreset = verificationModePresets.get(verificationMode);
   if (!expectedPreset) return;
 
+  if (payload.caseSource !== "preset") {
+    die(
+      `verification_mode ${verificationMode} exige case_source preset; recebido ${payload.caseSource ?? "null"}`,
+    );
+  }
+
   if (payload.casePreset !== expectedPreset) {
     die(
       `verification_mode ${verificationMode} exige case_preset ${expectedPreset}; recebido ${payload.casePreset ?? "null"}`,
