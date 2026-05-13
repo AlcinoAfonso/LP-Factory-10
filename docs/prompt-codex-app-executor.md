@@ -54,9 +54,11 @@ Quando houver BD:
 
 - usar `docs/schema.md` como fonte inicial;
 - investigar o BD real apenas se os docs canonicos nao forem suficientes;
-- em criacao de estrutura nova, investigar apenas o entorno necessario;
-- em ajuste estrutural, investigar a estrutura afetada e dependencias diretas;
-- entregar SQLs de inspecao para execucao pelo Gestor quando o Codex App nao tiver acesso direto ao ambiente.
+- em criacao de estrutura nova, investigar apenas o entorno do BD, se necessario;
+- em ajuste estrutural, investigar as estruturas a serem ajustadas e o entorno necessario;
+- a investigacao de BD deve ser feita por meio da entrega de SQLs de inspecao para execucao pelo Gestor;
+- os SQLs de inspecao devem seguir o formato obrigatorio definido em 3.4;
+- so deve bloquear a execucao quando houver conflito concreto, drift relevante ou dependencia nao resolvida.
 
 ### 3.4 Formato dos SQLs de inspecao
 
@@ -66,8 +68,9 @@ Quando entregar SQLs de inspecao para Supabase Inspect:
 - usar apenas `SELECT` ou `WITH` read-only;
 - cada query deve ter `LIMIT` obrigatorio de ate 50;
 - nao usar ponto e virgula ao final das queries;
-- separar queries com `---`;
-- usar no maximo 20 queries por execucao.
+- separar queries com `---`, preferencialmente em linha propria;
+- usar no maximo 20 queries por execucao;
+- em funcoes, views e retornos compostos, evitar `SELECT *`; preferir colunas explicitas quando o objetivo for validar retorno.
 
 ## 4. Etapa 2 - Plano de implementacao
 
