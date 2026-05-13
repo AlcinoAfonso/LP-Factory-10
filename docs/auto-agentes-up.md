@@ -52,6 +52,14 @@ A base atual de agentes é tratada como plataforma composta por Responses API, b
 1. Padronizar novos agentes no stack Responses API + tools + SDK.
 2. Definir trilha mínima de observabilidade por agente (execução, tool calls e falhas).
 
+### Nota futura — Agents SDK com sandbox/harness
+
+A evolução recente do Agents SDK deve ser tratada como caminho futuro para automações programáticas complexas, especialmente fluxos que precisem inspecionar arquivos, executar comandos, editar código, trabalhar em tarefas longas ou operar em sandbox controlado.
+
+Para o A3.5 `Resolver IA de Nicho no pending_setup`, não aplicar Agents SDK neste momento. O caso atual é curto, tem entrada simples e saída estruturada; se a camada de IA for ativada, `Responses API + Structured Outputs` continuam suficientes.
+
+Usar Agents SDK deve ser avaliado apenas quando houver orquestração real com múltiplas etapas, tools, sandbox, geração de patches, PRs ou execução programática mais complexa.
+
 ---
 
 ## 3 — Passagens Eficazes entre Agentes (Handoff Design) *(🟣 Estável)*
