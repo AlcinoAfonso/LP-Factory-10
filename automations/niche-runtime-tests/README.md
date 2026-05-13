@@ -10,14 +10,31 @@ Inputs manuais:
 
 - `app_url`: URL do app ou preview a ser validado.
 - `start_sequence`: numero inicial do alias `alcinoafonso380+conviteXX@gmail.com`. Default: `100`.
-- `case_preset`: arquivo em `automations/niche-runtime-tests/cases` sem a extensao `.json`. Default: `niche-resolution-20-6`.
+- `niches`: lista livre de nichos separada por `;`. Se preenchida, cria uma conta por nicho e ignora `case_preset`.
+- `case_preset`: fallback versionado em `automations/niche-runtime-tests/cases`, sem a extensao `.json`. Default: `niche-resolution-20-6`.
 - `verification_mode`: nivel de verificacao apos preencher o setup.
   - `setup_only`: cria as contas, confirma email, preenche `pending_setup` e publica evidencia. Nao consulta o banco.
   - `niche_resolution_20_6`: executa o preset read-only que valida a expectativa da etapa 20.6 no Supabase.
 
+## Nichos livres
+
+Para testes exploratorios, preencha `niches` diretamente no workflow:
+
+```text
+Marketing Digital; Market Digital; Digital marketing
+```
+
+Com `start_sequence = 103`, esse exemplo cria tres contas:
+
+- `alcinoafonso380+convite103@gmail.com` com nicho `Marketing Digital`;
+- `alcinoafonso380+convite104@gmail.com` com nicho `Market Digital`;
+- `alcinoafonso380+convite105@gmail.com` com nicho `Digital marketing`.
+
+Use `verification_mode = setup_only` para nichos livres. Verificacoes rigidas de banco continuam presas a presets versionados.
+
 ## Presets de casos
 
-Os nichos ficam fora do script runtime. Cada conjunto de teste deve ser declarado como JSON em:
+Para suites repetiveis, cada conjunto de teste pode ser declarado como JSON em:
 
 ```text
 automations/niche-runtime-tests/cases/<case_preset>.json
