@@ -60,9 +60,43 @@ function readCasePreset() {
   return preset;
 }
 
+function readManualNiches() {
+  const raw = process.env.NICHE_RUNTIME_NICHES;
+  if (typeof raw !== "string" || raw.trim() === "") return [];
+
+  const niches = raw
+    .split(/\r?\n|;/)
+    .map((entry) => entry.trim())
+    .filter(Boolean);
+
+  if (niches.length === 0) return [];
+
+  const unique = new Set();
+  for (const niche of niches) {
+    const key = niche.toLowerCase();
+    if (unique.has(key)) {
+      die(`NICHE_RUNTIME_NICHES contem nicho duplicado: ${niche}`);
+    }
+    unique.add(key);
+  }
+
+  return niches;
+}
+
 function defaultProjectSuffix(index) {
   if (index >= 0 && index < 26) return String.fromCharCode(65 + index);
   return String(index + 1);
+}
+
+function buildManualCase(niche, index) {
+  return {
+    id: `manual_${index + 1}`,
+    label: `Caso ${index + 1} - ${niche}`,
+    sequenceOffset: index,
+    projectSuffix: defaultProjectSuffix(index),
+    projectNameTemplate: null,
+    niche,
+  };
 }
 
 function normalizeCase(rawCase, index, preset) {
@@ -326,8 +360,13 @@ async function main() {
 
   const appOrigin = new URL(appUrl).origin;
   const startSequence = readStartSequence();
-  const casePreset = readCasePreset();
-  const cases = readCases(casePreset);
+  const manualNiches = readManualNiches();
+  const casePreset = manualNiches.length > 0 ? null : readCasePreset();
+  const caseSource = manualNiches.length > 0 ? "manual_niches" : "preset";
+  const cases =
+    manualNiches.length > 0
+      ? manualNiches.map((niche, index) => buildManualCase(niche, index))
+      : readCases(casePreset);
   const outputPath = resolve(process.env.NICHE_RUNTIME_OUTPUT_PATH || defaultOutputPath);
   const startedAt = new Date().toISOString();
   const results = [];
@@ -336,7 +375,9 @@ async function main() {
   writeSummary(`- started_at: \`${startedAt}\``);
   writeSummary(`- app_url: \`${appUrl}\``);
   writeSummary(`- start_sequence: \`${startSequence}\``);
-  writeSummary(`- case_preset: \`${casePreset}\``);
+  writeSummary(`- case_source: \`${caseSource}\``);
+  writeSummary(`- case_preset: \`${casePreset ?? "null"}\``);
+  writeSummary(`- case_count: \`${cases.length}\``);
 
   for (const testCase of cases) {
     const sequence = startSequence + testCase.sequenceOffset;
@@ -356,6 +397,7 @@ async function main() {
     kind: "niche_runtime_setup_results",
     appUrl,
     appOrigin,
+    caseSource,
     casePreset,
     startSequence,
     startedAt,
