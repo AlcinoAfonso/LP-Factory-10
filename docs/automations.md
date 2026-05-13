@@ -1,16 +1,19 @@
 0.1 Cabeçalho
-Data: 18/03/2026
-Versão: v1.7
-Status: Estrutura ajustada para automações, agentes e MCP
+Data: 13/05/2026
+Versão: v1.8
+Status: Catálogo operacional atualizado com Niche Runtime Tests
 
 0.2 Função do documento
-Registrar a camada de automações operacionais do LP Factory 10 como referência operacional para plataformas usadas nessa camada, integrações, automações operacionais, componentes consumidores e aprendizados operacionais, sem expor segredos.
+Registrar a camada de automações operacionais do LP Factory 10 como referência operacional para humanos: plataformas usadas nessa camada, integrações, automações disponíveis, componentes consumidores e aprendizados operacionais, sem expor segredos.
+
+Este documento é um orientador. Contratos técnicos detalhados ficam nos READMEs locais das automações, em `docs/base-tecnica.md` quando forem regra prescritiva do produto, e em `docs/schema.md` quando envolverem banco.
 
 0.3 Relação com outros documentos
 docs/services.md: services implantáveis, MCPs, endpoints e infraestrutura reutilizável com identidade própria.
 docs/base-tecnica.md: regras estruturais gerais, guardrails, checks e workflows técnicos de manutenção.
 docs/schema.md: banco, tabelas, views, policies e functions.
 docs/roadmap.md: evolução funcional.
+READMEs em `automations/<nome>/`: contrato operacional detalhado de cada automação.
 
 0.4 Atualização estrutural — 26/03/2026
 - `automations/` passa a ser a raiz canônica para novas automações.
@@ -18,10 +21,11 @@ docs/roadmap.md: evolução funcional.
 - `pipelines/` permanece como estrutura em revisão/migração, sem migração ampla neste marco inicial.
 - Novas automações canônicas devem nascer como subprojetos isolados em `automations/<nome>/`.
 
-0.5 Status de migração estrutural — 26/03/2026
+0.5 Status de migração estrutural
 - `validador-final` migrado para `automations/validador-final/` e workflow legado removido.
 - `supabase-inspect` migrado para `automations/supabase-inspect/` com execução a partir da nova raiz canônica e sem fallback `npm install --no-save` no workflow.
 - `docs-apply-report` migrado para `automations/docs-apply-report/` com execução a partir da nova raiz canônica.
+- `niche-runtime-tests` criado como subprojeto canônico em `automations/niche-runtime-tests/`.
 - `pipelines/validador-final/`, `pipelines/supabase-inspect/` e `pipelines/docs-apply-report/` deixaram de ser paths oficiais.
 
 1. Objetivo e escopo
@@ -60,56 +64,26 @@ Informações observadas em execução real ou nos painéis das plataformas.
 2.1 OpenAI
 
 2.1.1 Papel na automação
-
 - execução de modelos
 - Agent Builder
 - Agents SDK
 - integração com pipelines e agentes
 
 2.1.2 Ambientes
-
 - `LPF10-DEV`
 - `LPF10-PROD`
 
 2.1.3 Credencial registrada
-
 - `OPENAI_API_KEY`
   - ambiente operacional prioritário: DEV
   - armazenamento atualmente documentado: GitHub Secrets
   - uso atual documentado: automações e pipelines que chamam modelos
-  - vínculo operacional por projeto:
-    - `LPF10-DEV` → `key_Vt1m7APFfxGpfeHU`
-    - `LPF10-PROD` → `key_OZ1nUMe8O75FGBaM`
 
-2.1.4 Integrações atuais
-
-- GitHub Actions (`supabase-inspect`)
-- Agent Builder
-
-2.1.5 Diretrizes operacionais
-
+2.1.4 Diretrizes operacionais
 - durante o desenvolvimento, usar preferencialmente o contexto e a credencial do projeto DEV
 - ao analisar consumo, validar por projeto antes de concluir onde houve gasto
 - preferir modelos mais baratos quando a tarefa permitir
 - usar modelos mais caros ou mais recentes apenas quando houver necessidade real
-
-2.1.6 Observações
-
-- há registro operacional de uso de Agent Builder no projeto
-- os projetos `LPF10-DEV` e `LPF10-PROD` permanecem como referência operacional
-- detalhes de billing, usage e templates nativos do Builder não precisam ficar expandidos nesta seção
-
-2.1.7 Projeto, consumo e tokens bonificados
-
-- consumo OpenAI deve ser analisado por projeto
-- `LPF10-DEV` e `LPF10-PROD` permanecem como referências operacionais de ambiente e consumo
-- API keys e service accounts da OpenAI são vinculados ao projeto em que foram criados
-- o ambiente operacional prioritário para desenvolvimento permanece DEV
-- o projeto DEV possui bonificação ativa de `complimentary daily tokens` para compartilhamento elegível
-- o projeto DEV possui `complimentary weekly evals` como benefício separado
-- a bonificação de tokens é diária e não acumulada
-- `gpt-4.1` permanece no grupo operacional de até 250k tokens/dia dentro da bonificação elegível
-- cobertura de `tool use` deve ser tratada com cautela e validada conforme a política vigente da OpenAI
 
 2.2 GitHub
 2.2.1 Uso atual
@@ -117,25 +91,41 @@ Repositório principal, GitHub Actions, execução de pipelines e armazenamento 
 
 2.2.2 Credenciais registradas
 OPENAI_API_KEY
-Uso: pipelines com chamadas de modelo
+Uso: pipelines com chamadas de modelo.
+
 SUPABASE_DB_URL_READONLY
-Uso: inspeção read-only
+Uso: inspeção read-only.
+
+MAILBOX_EMAIL
+Uso: automações de runtime que precisam confirmar e-mails reais.
+
+MAILBOX_PASSWORD
+Uso: senha de app da mailbox para leitura programática por POP3.
 
 2.2.3 Integrações existentes
 OpenAI:
 supabase-inspect
+
 Supabase:
 supabase-inspect
+niche-runtime-tests quando o modo de verificação consulta banco
+
 Documentação:
 pipeline-docs-apply-report
 
+Mailbox:
+validador-final
+niche-runtime-tests
+
 2.2.4 Estrutura operacional
-Workflows em .github/workflows.
-Automações canônicas em automations/.
+Workflows em `.github/workflows`.
+Automações canônicas em `automations/`.
+
 Workflows identificados:
 .github/workflows/pipeline-supabase-inspect.yml
 .github/workflows/pipeline-docs-apply-report.yml
 .github/workflows/automation-validador-final.yml
+.github/workflows/automation-niche-runtime-tests.yml
 .github/workflows/security.yml
 .github/workflows/upgrade-next-16-1-1.yml
 
@@ -146,7 +136,7 @@ Banco de dados, Auth e fonte de dados para inspeções automatizadas read-only.
 2.3.2 Credencial registrada
 SUPABASE_DB_URL_READONLY
 Armazenamento: GitHub Secrets
-Finalidade: inspeção read-only no pipeline supabase-inspect
+Finalidade: inspeção read-only no pipeline supabase-inspect e em verificações opcionais de runtime quando aplicável
 Escopo: role/usuário read-only
 
 2.3.3 Estrutura atual
@@ -156,7 +146,8 @@ Migration relacionada: supabase/migrations/0005__ai_readonly.sql
 Durante o MVP, a migration supabase/migrations/0010__ai_readonly_mvp_inspect_relaxation.sql amplia temporariamente o role ai_readonly para acelerar inspeções do Supabase Inspect: SELECT em tabelas public, EXECUTE em funções public, USAGE no schema extensions, EXECUTE em funções extensions para auxiliares como similarity() do pg_trgm, BYPASSRLS e statement_timeout de 5s. A decisão não usa service_role, não concede escrita direta e não libera grants amplos em auth. Deve ser revisada antes de ampliar acesso do workflow para equipe/funcionários.
 
 2.3.4 Observações
-O pipeline atual executa apenas SQL read-only.
+O pipeline supabase-inspect executa apenas SQL read-only.
+Verificações de runtime que consultam banco devem ser tratadas como presets versionados, não como expectativa genérica para qualquer teste.
 Discovery pode usar information_schema e pg_catalog.
 
 2.4 Vercel
@@ -167,15 +158,11 @@ Hospedagem do app principal e de serviços dedicados.
 Projeto `lp-factory-10` hospeda o Core SaaS.
 Projeto `lpf-10-services` hospeda services dedicados da camada `services`, incluindo a MCP documentada em `docs/services.md`.
 
-2.4.3 Variáveis operacionais registradas
-Variáveis específicas de services dedicados não devem ser expandidas nesta seção.
-Consultar `docs/services.md` e o README local de cada service quando houver necessidade.
-
-2.4.4 Ambientes
+2.4.3 Ambientes
 Preview
 Production
 
-2.4.5 Observações
+2.4.4 Observações
 Endpoint canônico MCP: https://lpf-10-services.vercel.app/api/mcp
 Os valores secretos não devem ser registrados neste arquivo.
 Detalhes de services dedicados devem ser consultados em `docs/services.md` e no README local de cada service.
@@ -200,13 +187,13 @@ Status:
 Implementada
 
 Acesso:
-GitHub → Actions → workflow `pipeline-supabase-inspect`
+GitHub -> Actions -> workflow `pipeline-supabase-inspect`
 
 Como usar:
-Executar o workflow informando `briefing_path` ou inputs manuais
+Executar o workflow informando `briefing_path` ou inputs manuais.
 
 Resposta esperada:
-Job Summary com SQL executado, rowCount, colunas e sample de dados
+Job Summary com SQL executado, rowCount, colunas e sample de dados.
 
 Referências / dependências:
 README local: `automations/supabase-inspect/README.md`
@@ -215,7 +202,6 @@ Runtime: `automations/supabase-inspect/`
 Referência estrutural: `docs/base-tecnica.md`
 
 3.1.1 Supabase Inspect — presets opcionais de verificação
-
 Objetivo:
 Registrar a possibilidade futura de presets opcionais no `supabase-inspect` para reduzir SQL manual recorrente e apoiar a verificação do estado real do BD, sem substituir o modo livre por SQL nem o contrato canônico de `docs/schema.md`.
 
@@ -234,13 +220,13 @@ Status:
 Implementada
 
 Acesso:
-GitHub → Actions → workflow `pipeline-docs-apply-report`
+GitHub -> Actions -> workflow `pipeline-docs-apply-report`
 
 Como usar:
-Executar o workflow informando `report_path`
+Executar o workflow informando `report_path`.
 
 Resposta esperada:
-Alteração documental aplicada em branch própria com Pull Request para revisão humana
+Alteração documental aplicada em branch própria com Pull Request para revisão humana.
 
 Referências / dependências:
 README local: `automations/docs-apply-report/README.md`
@@ -257,19 +243,15 @@ Concluído como validação funcional em Agent Builder
 Acesso:
 Agent Builder (OpenAI)
 
-Onde acessar:
-URL do Builder: https://platform.openai.com/agent-builder/edit?workflow=wf_69b57fed963c8190b9da8e40797aa5820147027ff7bd60d7&version=3
-
 Como usar:
-Executar perguntas técnicas ou SQL dentro do escopo read-only validado
+Executar perguntas técnicas ou SQL dentro do escopo read-only validado.
 
 Resposta esperada:
-Resposta assistida para validação funcional (não usar como camada final de orquestração robusta)
+Resposta assistida para validação funcional. Não usar como camada final de orquestração robusta.
 
 Referências / dependências:
 docs/services.md — `1.1 LPF Supabase Inspect MCP`
 services/mcp-supabase-inspect/README.md
-Workflow ID: `wf_69b57fed963c8190b9da8e40797aa5820147027ff7bd60d7`
 Endpoint MCP: `https://lpf-10-services.vercel.app/api/mcp`
 
 3.3.1 Update — Agents SDK
@@ -277,48 +259,34 @@ Status:
 Planejado
 
 Objetivo:
-Migrar a validação do Builder para execução programática mais controlada
+Migrar a validação do Builder para execução programática mais controlada.
 
 3.3.2 Update — ChatGPT + MCP
 Status:
 Bloqueado
 
 Motivo:
-Incompatibilidade de autenticação no contrato atual da MCP
-
-Referências / dependências:
-docs/services.md — `1.1 LPF Supabase Inspect MCP`
-services/mcp-supabase-inspect/README.md
+Incompatibilidade de autenticação no contrato atual da MCP.
 
 3.4 Validador Final
 Objetivo:
-Validar ponta a ponta fluxos reais de autenticação do app por execução da Fase 2 determinística (criação de conta, confirmação por e-mail, login, forgot password, reset, login com nova senha e logout).
+Validar ponta a ponta fluxos reais de autenticação do app por execução da Fase 2 determinística: criação de conta, confirmação por e-mail, login, forgot password, reset, login com nova senha e logout.
 
 Status:
 Implementada e validada ponta a ponta na Fase 2 determinística.
 
 Acesso:
-GitHub → Actions → workflow `automation-validador-final`
+GitHub -> Actions -> workflow `automation-validador-final`
 
 Como usar:
 Executar o workflow informando apenas o input manual `app_url`.
 
 Como testar feature branch antes do merge:
-- quando a feature branch **não altera o pipeline**, executar o workflow a partir da branch `main`
-- nesse cenário, informar em `app_url` a URL de preview da feature branch que está sendo validada
-- este é o modo operacional recomendado para validação pré-merge
-
-Exceção: quando a própria feature altera o pipeline:
-- quando a feature branch altera arquivos do pipeline (`workflow`, `run.mjs`, `login-playwright.mjs` ou `mailbox-client.mjs`), executar o workflow a partir da própria feature branch
-- nesse cenário, informar em `app_url` a URL de preview da mesma feature branch
-- essa exceção garante que a validação use exatamente a versão de automação alterada pela feature
-
-Motivo operacional do padrão:
-- evita problemas de `sequence` e cache inconsistente em feature branches comuns
-- na prática, `workflow` da `main` + preview da feature virou o modo recomendado para validar features antes do merge
+- quando a feature branch não altera o pipeline, executar o workflow a partir da branch `main` e informar em `app_url` a URL de preview da feature branch;
+- quando a própria feature altera o pipeline, executar o workflow a partir da própria feature branch e informar em `app_url` a URL de preview da mesma feature branch.
 
 Contrato atual da Fase 2:
-- fluxo determinístico (sem briefing funcional JSON);
+- fluxo determinístico;
 - único input manual: `app_url`;
 - sem screenshot no contrato operacional;
 - estado local de 1 conta ativa persistido em `state/test-account.json`.
@@ -332,8 +300,39 @@ Workflow: `.github/workflows/automation-validador-final.yml`
 Runtime: `automations/validador-final/`
 Estado persistido: `automations/validador-final/state/test-account.json`
 
-3.5 Resolver IA de Nicho no pending_setup
+3.5 Niche Runtime Tests
+Objetivo:
+Validar em runtime real o fluxo de criação de conta e preenchimento de `pending_setup` com nichos informados pelo usuário, usando contas reais, confirmação por e-mail e evidência operacional em Job Summary/artifact.
 
+Status:
+Implementada como piloto operacional flexível.
+
+Acesso:
+GitHub -> Actions -> workflow `automation-niche-runtime-tests`
+
+Como usar:
+Executar o workflow informando:
+- `app_url`: URL do app ou preview;
+- `start_sequence`: número inicial para `alcinoafonso380+conviteXX@gmail.com`;
+- `niches`: lista livre separada por `;`, quando o objetivo for explorar nichos escolhidos manualmente;
+- `case_preset`: fallback versionado quando o objetivo for repetir uma suíte formal;
+- `verification_mode`: `setup_only` para validação funcional flexível ou modo versionado quando a etapa tiver expectativa rígida de banco.
+
+Resposta esperada:
+Contas criadas e confirmadas, `pending_setup` preenchido, subdomínios capturados, evidência no Job Summary e artifact `niche-runtime-results`.
+
+Regra operacional:
+A automação não deve ser engessada por verificação de banco genérica. O teste base é criar conta e preencher o pipeline. Verificações no Supabase só devem entrar como presets versionados, porque a expectativa de tabelas como `account_niche_resolutions` e `account_taxonomy` muda conforme a etapa funcional.
+
+Referências / dependências:
+README local: `automations/niche-runtime-tests/README.md`
+Workflow: `.github/workflows/automation-niche-runtime-tests.yml`
+Runtime: `automations/niche-runtime-tests/`
+Casos versionados: `automations/niche-runtime-tests/cases/`
+Reuso de mailbox: `automations/validador-final/`
+Verificação opcional de banco: `automations/supabase-inspect/verify-niche-runtime.mjs`
+
+3.6 Resolver IA de Nicho no pending_setup
 Objetivo:
 Interpretar o nicho bruto informado pelo lead no `pending_setup`, sugerir o taxon/slug correspondente com saída estruturada, acionar microdiálogo quando necessário e registrar fallback/revisão sem bloquear o fluxo.
 
@@ -356,13 +355,12 @@ Lousa do Gestor de Automações — `7.6 Resolver IA de Nicho no pending_setup`.
 
 Observações:
 - não criar taxon automaticamente sem regra aprovada;
-- se a confiança for alta, o sistema pode sugerir ou vincular o taxon correspondente conforme regra futura;
+- se a confiança for alta, o sistema pode sugerir ou vincular o taxon correspondente conforme regra vigente;
 - se a confiança for média, pode haver microdiálogo de confirmação;
 - se a confiança for baixa, o fluxo deve salvar o valor bruto, usar fallback seguro e registrar revisão futura;
 - a automação não deve bloquear o avanço do lead.
 
-3.6 Apply automático de migrations no Supabase
-
+3.7 Apply automático de migrations no Supabase
 Objetivo:
 Manter o apply automático como fluxo preparado, mas bloqueado até a conclusão da baseline oficial de migrations e do alinhamento remoto.
 
@@ -376,8 +374,7 @@ Referências / dependências:
 `docs/lousa-automations3-6.md`
 `docs/lousa-automations3-6-1.md`
 
-3.6.1 Baseline de migrations no Supabase
-
+3.7.1 Baseline de migrations no Supabase
 Objetivo:
 Consolidar o baseline real do banco remoto atual como novo histórico oficial de migrations antes de liberar o apply automático.
 
@@ -396,19 +393,18 @@ Referências / dependências:
 Integração entre plataformas não garante utilidade real.
 Automações devem reduzir trabalho humano.
 Agentes úteis tendem a filtrar, resumir, priorizar ou alertar.
+Automações de runtime devem separar núcleo funcional estável de verificações rígidas que variam por etapa.
 
 4.2 Agent Builder
 Uso prático principal: validação funcional e prototipação operacional de fluxos.
 Para MVP e prova funcional, o Builder atende.
 Não deve ser tratado como camada final mais confiável para orquestração robusta, parsing determinístico, múltiplos SQLs no mesmo input e contrato final de saída estável.
 Builder e SDK não são dois agentes diferentes: o Builder é a camada visual; o SDK é a camada programática para execução, controle e orquestração fora da UI.
-O código exibido em Code → Agents SDK é exportação do workflow, não um arquivo vivo editável dentro do Builder.
 
 4.3 Integração versus utilidade
 Valor prático aparece quando o agente filtra informação, prioriza o que importa, resume conteúdo, reduz carga cognitiva e entrega ação útil.
 
 4.4 MCP e conectores externos
-
 MCP funciona como ponte entre o agente e sistemas externos.
 Para Supabase, a abordagem exige implementação própria.
 Na operação via ChatGPT, a compatibilidade de autenticação do app MCP deve ser validada antes de assumir reuso direto de um MCP já existente.
@@ -418,11 +414,10 @@ Bearer token estático no endpoint MCP não deve ser presumido como compatível 
 Começar por um agente com função concreta e ganho prático claro.
 
 4.6 Operação prática no Agent Builder
-- o caminho correto de teste operacional foi Preview, com apoio dos logs e das tool calls
-- teste operacional no Agent Builder deve usar a seta de execução, não `Evaluate`
-- `Evaluate` não substitui o teste operacional do fluxo
-- no caso `3.3`, o gargalo atual está na confiabilidade da camada final de orquestração, especialmente no encadeamento do output do workflow e no comportamento do End node
-- validação madura deve considerar também traces, critérios de avaliação e regressão quando o caso sair da fase experimental
+- o caminho correto de teste operacional foi Preview, com apoio dos logs e das tool calls;
+- teste operacional no Agent Builder deve usar a seta de execução, não `Evaluate`;
+- `Evaluate` não substitui o teste operacional do fluxo;
+- validação madura deve considerar traces, critérios de avaliação e regressão quando o caso sair da fase experimental.
 
 4.7 Experimento reclassificado como aprendizado
 Item de origem: antigo `3.7 Agente experimental de aprendizado`.
@@ -438,7 +433,6 @@ Dados sensíveis não devem ser expandidos no contrato nem nas tools além do ne
 Parâmetros e escopo expostos devem ser revisados conforme o caso evoluir.
 
 4.9 Consumo, projeto e bonificação
-
 Consumo OpenAI deve ser lido por projeto no Usage.
 API keys e service accounts pertencem ao projeto OpenAI em que foram criados.
 Agent Builder, ChatKit e Agents SDK consomem no projeto OpenAI em que a execução está vinculada.
@@ -447,29 +441,39 @@ Bonificação elegível deve ser interpretada como cota diária e não como sald
 Weekly evals e complimentary daily tokens são benefícios distintos.
 
 4.10 Validador Final (3.4)
-
 4.10.1 Fluxos de auth complexos devem ser estabilizados com execução real e logs fortes primeiro, e só depois simplificados.
 
 4.10.2 Em automações de auth com e-mail:
-- separar UI automation de mailbox helper reduziu acoplamento
-- leitura programática da caixa postal foi mais confiável do que depender de webmail
+- separar UI automation de mailbox helper reduziu acoplamento;
+- leitura programática da caixa postal foi mais confiável do que depender de webmail.
 
 4.10.3 Em fluxos determinísticos:
-- persistir `sequence` entre runs ajudou a evitar loops e colisões cegas
-- manter 1 conta ativa por vez simplificou o controle operacional
+- persistir `sequence` entre runs ajudou a evitar loops e colisões cegas;
+- manter 1 conta ativa por vez simplificou o controle operacional.
 
 4.10.4 Em callbacks de e-mail:
-- a seleção do link deve considerar a intenção do fluxo, não apenas host ou base URL
-- sanitização e observabilidade do link foram decisivas na estabilização
+- a seleção do link deve considerar a intenção do fluxo, não apenas host ou base URL;
+- sanitização e observabilidade do link foram decisivas na estabilização.
 
 4.10.5 Em reset de senha:
-- o fluxo mais simples foi aproveitar a sessão autenticada aberta pela própria app após o reset bem-sucedido, em vez de forçar logout intermediário antes do reset
+- o fluxo mais simples foi aproveitar a sessão autenticada aberta pela própria app após o reset bem-sucedido, em vez de forçar logout intermediário antes do reset.
 
 4.10.6 Após validação ponta a ponta:
-- primeiro consolidar o fluxo
-- depois refatorar e remover legado
-- e só por último reduzir observabilidade e logs
+- primeiro consolidar o fluxo;
+- depois refatorar e remover legado;
+- e só por último reduzir observabilidade e logs.
 
 4.10.7 Regra reutilizável pré-merge:
-- para feature branch sem alteração de pipeline, usar `workflow` da `main` + `app_url` da preview da feature
-- para feature branch com alteração de pipeline, usar `workflow` e `app_url` da própria feature branch
+- para feature branch sem alteração de pipeline, usar `workflow` da `main` + `app_url` da preview da feature;
+- para feature branch com alteração de pipeline, usar `workflow` e `app_url` da própria feature branch.
+
+4.11 Niche Runtime Tests (3.5)
+4.11.1 O núcleo estável da automação é criação de conta + confirmação + preenchimento de `pending_setup`. Isso já valida funcionamento real do fluxo.
+
+4.11.2 Nichos livres devem usar `verification_mode = setup_only`, porque a expectativa correta de banco depende da etapa funcional e não deve ser presumida.
+
+4.11.3 Presets versionados são o lugar correto para expectativa rígida de banco. Quando a regra muda, criar ou ajustar preset, em vez de engessar o workflow genérico.
+
+4.11.4 O uso de `start_sequence` e aliases `alcinoafonso380+conviteXX@gmail.com` permite criar múltiplas contas em uma mesma execução e reduz colisões previsíveis.
+
+4.11.5 Contas criadas por esse fluxo são evidência funcional temporária. Cleanup permanece manual até existir regra aprovada para remoção segura.
