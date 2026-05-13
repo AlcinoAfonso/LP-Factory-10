@@ -1,0 +1,26 @@
+{
+  "description": "Etapa 20.6 - resolucao de nicho: match forte, alias e sem candidato claro.",
+  "cases": [
+    {
+      "id": "strong_match",
+      "label": "Caso 1 - Match forte",
+      "sequenceOffset": 0,
+      "projectSuffix": "A",
+      "niche": "Harmonização Facial"
+    },
+    {
+      "id": "alias",
+      "label": "Caso 2 - Alias",
+      "sequenceOffset": 1,
+      "projectSuffix": "B",
+      "niche": "hof"
+    },
+    {
+      "id": "unclear",
+      "label": "Caso 3 - Sem candidato claro",
+      "sequenceOffset": 2,
+      "projectSuffix": "C",
+      "niche": "Beleza Facial"
+    }
+  ]
+}
