@@ -1,4 +1,4 @@
-import { appendFileSync, mkdirSync, writeFileSync } from "node:fs";
+import { appendFileSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import {
@@ -12,33 +12,11 @@ import { findLatestEmailLinkForAlias } from "./mailbox-client.mjs";
 const MAILBOX_POLL_TIMEOUT_MS = 120000;
 const MAILBOX_POLL_INTERVAL_MS = 5000;
 const DEFAULT_START_SEQUENCE = 100;
+const DEFAULT_CASE_PRESET = "niche-resolution-20-6";
 
 const scriptDir = dirname(fileURLToPath(import.meta.url));
 const defaultOutputPath = resolve(scriptDir, "../niche-runtime-results.json");
-
-const cases = [
-  {
-    id: "strong_match",
-    label: "Caso 1 - Match forte",
-    sequenceOffset: 0,
-    projectSuffix: "A",
-    niche: "Harmonização Facial",
-  },
-  {
-    id: "alias",
-    label: "Caso 2 - Alias",
-    sequenceOffset: 1,
-    projectSuffix: "B",
-    niche: "hof",
-  },
-  {
-    id: "unclear",
-    label: "Caso 3 - Sem candidato claro",
-    sequenceOffset: 2,
-    projectSuffix: "C",
-    niche: "Beleza Facial",
-  },
-];
+const casesDir = resolve(scriptDir, "../niche-runtime-tests/cases");
 
 function die(message) {
   console.error(message);
@@ -71,6 +49,70 @@ function readStartSequence() {
   return parsed;
 }
 
+function readCasePreset() {
+  const raw = process.env.NICHE_RUNTIME_CASE_PRESET;
+  const preset = typeof raw === "string" && raw.trim() !== "" ? raw.trim() : DEFAULT_CASE_PRESET;
+
+  if (!/^[a-zA-Z0-9._-]+$/.test(preset)) {
+    die(`NICHE_RUNTIME_CASE_PRESET invalido: ${preset}`);
+  }
+
+  return preset;
+}
+
+function defaultProjectSuffix(index) {
+  if (index >= 0 && index < 26) return String.fromCharCode(65 + index);
+  return String(index + 1);
+}
+
+function normalizeCase(rawCase, index, preset) {
+  if (!rawCase || typeof rawCase !== "object" || Array.isArray(rawCase)) {
+    die(`Caso ${index + 1} invalido no preset ${preset}.`);
+  }
+
+  const niche = typeof rawCase.niche === "string" ? rawCase.niche.trim() : "";
+  if (!niche) {
+    die(`Caso ${index + 1} do preset ${preset} sem niche.`);
+  }
+
+  const sequenceOffset =
+    rawCase.sequenceOffset === undefined ? index : Number.parseInt(String(rawCase.sequenceOffset), 10);
+
+  if (!Number.isInteger(sequenceOffset) || sequenceOffset < 0) {
+    die(`sequenceOffset invalido no caso ${index + 1} do preset ${preset}.`);
+  }
+
+  return {
+    id: typeof rawCase.id === "string" && rawCase.id.trim() !== "" ? rawCase.id.trim() : `case_${index + 1}`,
+    label:
+      typeof rawCase.label === "string" && rawCase.label.trim() !== ""
+        ? rawCase.label.trim()
+        : `Caso ${index + 1}`,
+    sequenceOffset,
+    projectSuffix:
+      typeof rawCase.projectSuffix === "string" && rawCase.projectSuffix.trim() !== ""
+        ? rawCase.projectSuffix.trim()
+        : defaultProjectSuffix(index),
+    projectNameTemplate:
+      typeof rawCase.projectNameTemplate === "string" && rawCase.projectNameTemplate.trim() !== ""
+        ? rawCase.projectNameTemplate.trim()
+        : null,
+    niche,
+  };
+}
+
+function readCases(casePreset) {
+  const presetPath = resolve(casesDir, `${casePreset}.json`);
+  const parsed = JSON.parse(readFileSync(presetPath, "utf-8"));
+  const rawCases = Array.isArray(parsed) ? parsed : parsed?.cases;
+
+  if (!Array.isArray(rawCases) || rawCases.length === 0) {
+    die(`Preset ${casePreset} sem cases.`);
+  }
+
+  return rawCases.map((rawCase, index) => normalizeCase(rawCase, index, casePreset));
+}
+
 function buildAlias(sequence) {
   return `alcinoafonso380+convite${sequence}@gmail.com`;
 }
@@ -80,6 +122,13 @@ function buildPassword(sequence) {
 }
 
 function buildProjectName(sequence, testCase) {
+  if (testCase.projectNameTemplate) {
+    return testCase.projectNameTemplate
+      .replaceAll("{sequence}", String(sequence))
+      .replaceAll("{suffix}", testCase.projectSuffix)
+      .replaceAll("{id}", testCase.id);
+  }
+
   return `Convite teste runtime ${sequence} ${testCase.projectSuffix}`;
 }
 
@@ -277,6 +326,8 @@ async function main() {
 
   const appOrigin = new URL(appUrl).origin;
   const startSequence = readStartSequence();
+  const casePreset = readCasePreset();
+  const cases = readCases(casePreset);
   const outputPath = resolve(process.env.NICHE_RUNTIME_OUTPUT_PATH || defaultOutputPath);
   const startedAt = new Date().toISOString();
   const results = [];
@@ -285,6 +336,7 @@ async function main() {
   writeSummary(`- started_at: \`${startedAt}\``);
   writeSummary(`- app_url: \`${appUrl}\``);
   writeSummary(`- start_sequence: \`${startSequence}\``);
+  writeSummary(`- case_preset: \`${casePreset}\``);
 
   for (const testCase of cases) {
     const sequence = startSequence + testCase.sequenceOffset;
@@ -304,6 +356,7 @@ async function main() {
     kind: "niche_runtime_setup_results",
     appUrl,
     appOrigin,
+    casePreset,
     startSequence,
     startedAt,
     completedAt: new Date().toISOString(),
