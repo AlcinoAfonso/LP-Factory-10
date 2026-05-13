@@ -12,9 +12,13 @@ on:
         required: true
         default: "100"
       case_preset:
-        description: "Arquivo em automations/niche-runtime-tests/cases sem .json"
-        required: true
+        description: "Fallback: arquivo em automations/niche-runtime-tests/cases sem .json"
+        required: false
         default: "niche-resolution-20-6"
+      niches:
+        description: "Opcional: nichos livres separados por ponto e virgula"
+        required: false
+        default: ""
       verification_mode:
         description: "Nivel de verificacao apos preencher o pending_setup"
         required: true
@@ -43,6 +47,7 @@ jobs:
         env:
           APP_URL_OVERRIDE: ${{ inputs.app_url }}
           CASE_PRESET: ${{ inputs.case_preset }}
+          NICHES: ${{ inputs.niches }}
           MAILBOX_EMAIL: ${{ secrets.MAILBOX_EMAIL }}
           MAILBOX_PASSWORD: ${{ secrets.MAILBOX_PASSWORD }}
           SUPABASE_DB_URL_READONLY: ${{ secrets.SUPABASE_DB_URL_READONLY }}
@@ -53,6 +58,7 @@ jobs:
           test -n "$MAILBOX_EMAIL" || (echo "Falta secret MAILBOX_EMAIL" && exit 1)
           test -n "$MAILBOX_PASSWORD" || (echo "Falta secret MAILBOX_PASSWORD" && exit 1)
           if [ "$VERIFICATION_MODE" != "setup_only" ]; then
+            test -z "$NICHES" || (echo "verification_mode com banco exige case_preset, nao niches livres" && exit 1)
             test -n "$SUPABASE_DB_URL_READONLY" || (echo "Falta secret SUPABASE_DB_URL_READONLY" && exit 1)
           fi
 
@@ -81,6 +87,7 @@ jobs:
           APP_URL_OVERRIDE: ${{ inputs.app_url }}
           NICHE_RUNTIME_START_SEQUENCE: ${{ inputs.start_sequence }}
           NICHE_RUNTIME_CASE_PRESET: ${{ inputs.case_preset }}
+          NICHE_RUNTIME_NICHES: ${{ inputs.niches }}
           NICHE_RUNTIME_OUTPUT_PATH: ../niche-runtime-results.json
           MAILBOX_EMAIL: ${{ secrets.MAILBOX_EMAIL }}
           MAILBOX_PASSWORD: ${{ secrets.MAILBOX_PASSWORD }}
