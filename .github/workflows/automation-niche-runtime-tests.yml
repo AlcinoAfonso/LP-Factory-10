@@ -1,0 +1,109 @@
+name: Automation Niche Runtime Tests
+
+on:
+  workflow_dispatch:
+    inputs:
+      app_url:
+        description: "URL manual do app/preview para testar o pending_setup"
+        required: true
+        default: ""
+      start_sequence:
+        description: "Numero inicial para alcinoafonso380+conviteXX@gmail.com"
+        required: true
+        default: "100"
+      verification_mode:
+        description: "Nivel de verificacao apos preencher o pending_setup"
+        required: true
+        default: "setup_only"
+        type: choice
+        options:
+          - setup_only
+          - niche_resolution_20_6
+
+permissions:
+  contents: read
+
+concurrency:
+  group: automation-niche-runtime-tests-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Validate required inputs and secrets
+        env:
+          APP_URL_OVERRIDE: ${{ inputs.app_url }}
+          MAILBOX_EMAIL: ${{ secrets.MAILBOX_EMAIL }}
+          MAILBOX_PASSWORD: ${{ secrets.MAILBOX_PASSWORD }}
+          SUPABASE_DB_URL_READONLY: ${{ secrets.SUPABASE_DB_URL_READONLY }}
+          VERIFICATION_MODE: ${{ inputs.verification_mode }}
+        run: |
+          test -n "$APP_URL_OVERRIDE" || (echo "Falta input app_url" && exit 1)
+          test -n "$MAILBOX_EMAIL" || (echo "Falta secret MAILBOX_EMAIL" && exit 1)
+          test -n "$MAILBOX_PASSWORD" || (echo "Falta secret MAILBOX_PASSWORD" && exit 1)
+          if [ "$VERIFICATION_MODE" != "setup_only" ]; then
+            test -n "$SUPABASE_DB_URL_READONLY" || (echo "Falta secret SUPABASE_DB_URL_READONLY" && exit 1)
+          fi
+
+      - name: Setup Node
+        uses: actions/setup-node@v5
+        with:
+          node-version: "22"
+
+      - name: Install validador deps
+        working-directory: automations/validador-final
+        run: npm ci
+
+      - name: Check validador scripts
+        working-directory: automations/validador-final
+        run: |
+          npm run check
+          node --check run-niche-setup.mjs
+
+      - name: Install Playwright Chromium
+        working-directory: automations/validador-final
+        run: npx playwright install --with-deps chromium
+
+      - name: Create accounts and submit pending_setup cases
+        working-directory: automations/validador-final
+        env:
+          APP_URL_OVERRIDE: ${{ inputs.app_url }}
+          NICHE_RUNTIME_START_SEQUENCE: ${{ inputs.start_sequence }}
+          NICHE_RUNTIME_OUTPUT_PATH: ../niche-runtime-results.json
+          MAILBOX_EMAIL: ${{ secrets.MAILBOX_EMAIL }}
+          MAILBOX_PASSWORD: ${{ secrets.MAILBOX_PASSWORD }}
+        run: node run-niche-setup.mjs
+
+      - name: Install Supabase inspect deps
+        if: ${{ inputs.verification_mode != 'setup_only' }}
+        working-directory: automations/supabase-inspect
+        run: npm ci
+
+      - name: Check Supabase verifier
+        if: ${{ inputs.verification_mode != 'setup_only' }}
+        working-directory: automations/supabase-inspect
+        run: |
+          npm run check
+          node --check verify-niche-runtime.mjs
+
+      - name: Verify database evidence
+        if: ${{ inputs.verification_mode != 'setup_only' }}
+        working-directory: automations/supabase-inspect
+        env:
+          NICHE_RUNTIME_INPUT_PATH: ../niche-runtime-results.json
+          NICHE_RUNTIME_VERIFICATION_MODE: ${{ inputs.verification_mode }}
+          SUPABASE_DB_URL_READONLY: ${{ secrets.SUPABASE_DB_URL_READONLY }}
+        run: node verify-niche-runtime.mjs
+
+      - name: Upload runtime evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: niche-runtime-results
+          path: automations/niche-runtime-results.json
+          if-no-files-found: ignore
