@@ -39,6 +39,29 @@ export type DeterministicMatchDecision = {
   reason: DeterministicMatchReason;
 };
 
+export type AiNicheResolutionUxMode =
+  | "none"
+  | "confirm_single"
+  | "choose_from_options"
+  | "fallback_review";
+
+export type AiNicheResolutionOutput = {
+  uxMode: AiNicheResolutionUxMode;
+  message: string;
+  options: Array<{
+    taxonId: string;
+    name: string;
+    slug: string;
+    confidence: DeterministicMatchConfidence;
+    reason: string;
+  }>;
+  needsAdminReview: boolean;
+  needsUserConfirmation: boolean;
+  shouldCreateOfficialLink: false;
+  suggestedNewTaxonLabel: string | null;
+  reason: string;
+};
+
 export type AccountNicheResolutionStatus =
   | "deterministic_high_confidence"
   | "review_required"
