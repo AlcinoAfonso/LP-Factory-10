@@ -18,17 +18,17 @@ import {
   mapDecisionToResolutionStatus,
   updateAccountNicheResolutionAiResult,
   upsertAccountNicheResolution,
-} from '@/lib/onboarding/niche-resolution/adapters/accountNicheResolutionAdapter';
+} from '../../../lib/onboarding/niche-resolution/adapters/accountNicheResolutionAdapter';
 import {
   linkAccountTaxonomyFromDeterministicDecision,
   shouldLinkAccountTaxonomyFromDecision,
-} from '@/lib/onboarding/niche-resolution/adapters/accountTaxonomyAdapter';
-import { matchBusinessTaxonsDeterministic } from '@/lib/onboarding/niche-resolution/adapters/taxonMatchAdapter';
+} from '../../../lib/onboarding/niche-resolution/adapters/accountTaxonomyAdapter';
+import { matchBusinessTaxonsDeterministic } from '../../../lib/onboarding/niche-resolution/adapters/taxonMatchAdapter';
 import {
   resolveNicheWithOpenAi,
   shouldResolveNicheWithAi,
-} from '@/lib/onboarding/niche-resolution/adapters/openAiResolver';
-import { evaluateDeterministicTaxonMatch } from '@/lib/onboarding/niche-resolution/deterministicConfidence';
+} from '../../../lib/onboarding/niche-resolution/adapters/openAiResolver';
+import { evaluateDeterministicTaxonMatch } from '../../../lib/onboarding/niche-resolution/deterministicConfidence';
 
 export type RenameAccountState = {
   ok: boolean;
