@@ -2,7 +2,7 @@
 
 0.1. Cabeçalho
 • Documento: Base Técnica LP Factory 10
-• Versão: v2.0.33
+• Versão: v2.0.34
 • Data: 11/05/2026
 
 0.2 Contrato do documento (consulta)
@@ -306,8 +306,14 @@
 • Regra: não embutir avaliação de confiança, thresholds ou reasons semânticos inline em UI, route ou server action; reutilizar helper + contrato.
 • `aiEscalationMode` é preparação contratual para evolução futura e não autoriza IA no runtime atual sem caso específico.
 • Resolução operacional: após avaliar o matching determinístico no pós-save do `pending_setup`, o runtime pode persistir a resolução atual da conta via adapter server-side canônico em `lib/onboarding/niche-resolution/adapters/accountNicheResolutionAdapter.ts`.
-• Regra: `account_niche_resolutions` registra a resolução operacional atual; `account_taxonomy` continua reservado para vínculo oficial futuro.
+• Regra: `account_niche_resolutions` registra a resolução operacional atual.
 • Regra: falha de matching ou persistência da resolução não pode bloquear o lead, `revalidatePath(route)` ou `redirect(route)`.
+• Vínculo oficial: após a resolução determinística, o runtime pode gravar vínculo oficial em `account_taxonomy` via adapter server-side canônico em `lib/onboarding/niche-resolution/adapters/accountTaxonomyAdapter.ts`.
+• Regra: gravar `account_taxonomy` somente quando a decisão determinística for de alta confiança, houver candidato oficial com `taxon_id` e não houver necessidade de revisão administrativa.
+• Regra: `account_niche_resolutions` permanece como registro operacional; `account_taxonomy` representa o vínculo oficial da conta com o taxon.
+• Regra: falha na gravação do vínculo oficial não pode bloquear o lead, setup, ativação da conta, `revalidatePath(route)` ou `redirect(route)`.
+• Regra MVP: se já houver vínculo primário ativo diferente, não substituir automaticamente; manter revisão humana para etapa futura.
+• Regra: IA, microdiálogo, criação automática de taxon/alias e alteração de UI ficam fora deste recorte.
 • Regra: logs do fluxo devem permanecer sem PII e não devem registrar `raw_input`, nicho bruto, query, aliases, candidatos completos ou dados de formulário.
 • Regra: timestamps da resolução operacional devem ser controlados pelo banco.
 
@@ -388,6 +394,7 @@
 • Regra (logs sem PII): não logar valores de formulário (ex.: name, whatsapp, site_url).
 • Onboarding pós-save (E10.4.6): revalidatePath(route) antes do redirect para evitar UI stale.
 • Matching de taxonomia: quando a RPC determinística for consumida em runtime, observability mínima deve registrar apenas metadados não sensíveis, como request_id, latency_ms, candidates_count, top_match_source e top_score; eventos canônicos: `setup_taxonomy_match_evaluated` e `setup_taxonomy_match_failed`; não logar nicho bruto, `p_query`, query, aliases digitados, dados de formulário ou valores identificáveis do usuário.
+• Vínculo oficial de taxonomia: logs devem registrar apenas sinais seguros de avaliação, gravação, skip ou falha do vínculo em `account_taxonomy`; não logar `niche`, `raw_input`, query, aliases, candidatos completos, `name`, `whatsapp` ou `site_url`.
 
 5.3.5 Signup
 • Entrada: /auth/sign-up (SignUpForm usa supabase.auth.signUp) (PATH: components/sign-up-form.tsx).
@@ -456,6 +463,8 @@ Fonte normativa da allowlist SULB para exceções de Auth. Qualquer novo arquivo
 • Tipos canônicos e adapters vNext: validar por 3.6 e 3.14.
 
 99. Changelog
+v2.0.34 — 11/05/2026 — Base técnica atualizada com contrato mínimo de runtime para gravação server-side do vínculo oficial em `account_taxonomy`, preservando `account_niche_resolutions` como registro operacional, regra de alta confiança, conflito de primário sem substituição automática, fluxo não bloqueante e logs sem PII.
+
 v2.0.33 — 11/05/2026 — Base técnica atualizada com contrato mínimo de runtime para persistência operacional de resolução em `account_niche_resolutions`, sem gravação de `account_taxonomy`, com fluxo não bloqueante e logs sem PII.
 
 v2.0.32 — 10/05/2026 — Base técnica atualizada com contrato runtime do matching determinístico de taxonomia no pós-save do `pending_setup`, regra não bloqueante e observability segura com eventos canônicos.
