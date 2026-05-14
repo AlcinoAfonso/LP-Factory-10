@@ -96,7 +96,7 @@ const AI_NICHE_RESOLUTION_SCHEMA = {
     },
     needsAdminReview: { type: "boolean" },
     needsUserConfirmation: { type: "boolean" },
-    shouldCreateOfficialLink: { type: "boolean" },
+    shouldCreateOfficialLink: { type: "boolean", enum: [false] },
     suggestedNewTaxonLabel: { type: ["string", "null"] },
     reason: { type: "string" },
   },
