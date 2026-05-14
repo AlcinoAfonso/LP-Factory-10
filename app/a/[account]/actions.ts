@@ -113,7 +113,7 @@ export async function renameAccountAction(
       })
     );
 
-    return { ok: false, error: 'Nao foi possivel renomear a conta. Tente novamente.' };
+    return { ok: false, error: 'Não foi possível renomear a conta. Tente novamente.' };
   } catch (err: unknown) {
     const latency = Date.now() - t0;
 
@@ -128,7 +128,7 @@ export async function renameAccountAction(
       })
     );
 
-    return { ok: false, error: 'Nao foi possivel renomear a conta. Tente novamente.' };
+    return { ok: false, error: 'Não foi possível renomear a conta. Tente novamente.' };
   }
 }
 
@@ -206,7 +206,7 @@ export async function saveSetupAndContinueAction(
     });
 
     if (!ctx || ctx.blocked) {
-      return { ok: false, formError: 'Nao foi possivel salvar agora. Tente novamente.' };
+      return { ok: false, formError: 'Não foi possível salvar agora. Tente novamente.' };
     }
 
     const accountId = (ctx.account?.id ?? ctx.account_id ?? null) as string | null;
@@ -215,7 +215,7 @@ export async function saveSetupAndContinueAction(
     if (!accountId) throw new Error('missing_account_id');
 
     if (memberRole !== 'owner' && memberRole !== 'admin') {
-      return { ok: false, formError: 'Voce nao tem permissao para salvar esta configuracao.' };
+      return { ok: false, formError: 'Você não tem permissão para salvar esta configuração.' };
     }
 
     console.log(
@@ -556,6 +556,6 @@ export async function saveSetupAndContinueAction(
       })
     );
 
-    return { ok: false, formError: 'Nao foi possivel salvar agora. Tente novamente.' };
+    return { ok: false, formError: 'Não foi possível salvar agora. Tente novamente.' };
   }
 }
