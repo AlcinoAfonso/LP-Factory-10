@@ -16,6 +16,7 @@ import { upsertAccountProfileV1 } from '@/lib/access/adapters/accountProfileAdap
 import { validateE10_4SetupForm } from '@/lib/onboarding/e10_4_setup_validation';
 import {
   mapDecisionToResolutionStatus,
+  updateAccountNicheResolutionAiResult,
   upsertAccountNicheResolution,
 } from '../../../lib/onboarding/niche-resolution/adapters/accountNicheResolutionAdapter';
 import {
@@ -23,11 +24,11 @@ import {
   shouldLinkAccountTaxonomyFromDecision,
 } from '../../../lib/onboarding/niche-resolution/adapters/accountTaxonomyAdapter';
 import { matchBusinessTaxonsDeterministic } from '../../../lib/onboarding/niche-resolution/adapters/taxonMatchAdapter';
-import { evaluateDeterministicTaxonMatch } from '../../../lib/onboarding/niche-resolution/deterministicConfidence';
 import {
   resolveNicheWithOpenAi,
   shouldResolveNicheWithAi,
-} from '../../../lib/onboarding/niche-resolution/openaiResolver';
+} from '../../../lib/onboarding/niche-resolution/adapters/openAiResolver';
+import { evaluateDeterministicTaxonMatch } from '../../../lib/onboarding/niche-resolution/deterministicConfidence';
 
 export type RenameAccountState = {
   ok: boolean;
@@ -112,7 +113,7 @@ export async function renameAccountAction(
       })
     );
 
-    return { ok: false, error: 'Não foi possível renomear a conta. Tente novamente.' };
+    return { ok: false, error: 'Nao foi possivel renomear a conta. Tente novamente.' };
   } catch (err: unknown) {
     const latency = Date.now() - t0;
 
@@ -127,7 +128,7 @@ export async function renameAccountAction(
       })
     );
 
-    return { ok: false, error: 'Não foi possível renomear a conta. Tente novamente.' };
+    return { ok: false, error: 'Nao foi possivel renomear a conta. Tente novamente.' };
   }
 }
 
@@ -205,7 +206,7 @@ export async function saveSetupAndContinueAction(
     });
 
     if (!ctx || ctx.blocked) {
-      return { ok: false, formError: 'Não foi possível salvar agora. Tente novamente.' };
+      return { ok: false, formError: 'Nao foi possivel salvar agora. Tente novamente.' };
     }
 
     const accountId = (ctx.account?.id ?? ctx.account_id ?? null) as string | null;
@@ -214,7 +215,7 @@ export async function saveSetupAndContinueAction(
     if (!accountId) throw new Error('missing_account_id');
 
     if (memberRole !== 'owner' && memberRole !== 'admin') {
-      return { ok: false, formError: 'Você não tem permissão para salvar esta configuração.' };
+      return { ok: false, formError: 'Voce nao tem permissao para salvar esta configuracao.' };
     }
 
     console.log(
@@ -373,6 +374,8 @@ export async function saveSetupAndContinueAction(
       let aiResolutionOptionsCount = 0;
       let aiResolutionNeedsAdminReview: boolean | null = null;
       let aiResolutionNeedsUserConfirmation: boolean | null = null;
+      let aiResolutionPersisted = false;
+      let aiResolutionErrorCode: string | null = null;
 
       if (aiEligible) {
         const aiResolutionStartedAt = Date.now();
@@ -389,6 +392,20 @@ export async function saveSetupAndContinueAction(
           aiResolutionOptionsCount = aiResult.output.options.length;
           aiResolutionNeedsAdminReview = aiResult.output.needsAdminReview;
           aiResolutionNeedsUserConfirmation = aiResult.output.needsUserConfirmation;
+          aiResolutionPersisted = await updateAccountNicheResolutionAiResult({
+            accountId,
+            status: 'resolved',
+            errorCode: null,
+            model: aiResult.model,
+            schemaVersion: aiResult.schemaVersion,
+            result: aiResult.output,
+            uxMode: aiResult.output.uxMode,
+            suggestedTaxonId: aiResult.output.options[0]?.taxonId ?? null,
+            suggestedNewTaxonLabel: aiResult.output.suggestedNewTaxonLabel,
+            needsUserConfirmation: aiResult.output.needsUserConfirmation,
+            needsAdminReview: aiResult.output.needsAdminReview,
+            reason: aiResult.output.reason,
+          });
 
           console.log(
             JSON.stringify({
@@ -400,7 +417,8 @@ export async function saveSetupAndContinueAction(
               needs_admin_review: aiResult.output.needsAdminReview,
               needs_user_confirmation: aiResult.output.needsUserConfirmation,
               should_create_official_link: aiResult.output.shouldCreateOfficialLink,
-              persistence_status: 'not_supported_by_current_schema',
+              persisted: aiResolutionPersisted,
+              schema_version: aiResult.schemaVersion,
               request_id: requestId,
               latency_ms: Date.now() - aiResolutionStartedAt,
               ts: new Date().toISOString(),
@@ -411,13 +429,31 @@ export async function saveSetupAndContinueAction(
             aiResult.status === 'skipped_missing_env'
               ? 'setup_taxonomy_ai_resolution_skipped'
               : 'setup_taxonomy_ai_resolution_failed';
+          const persistedStatus = aiResult.status === 'failed' ? 'failed' : 'skipped';
+          aiResolutionErrorCode = aiResult.reason;
+          aiResolutionPersisted = await updateAccountNicheResolutionAiResult({
+            accountId,
+            status: persistedStatus,
+            errorCode: aiResult.reason,
+            model: aiResult.model,
+            schemaVersion: aiResult.schemaVersion,
+            result: null,
+            uxMode: null,
+            suggestedTaxonId: null,
+            suggestedNewTaxonLabel: null,
+            needsUserConfirmation: false,
+            needsAdminReview: false,
+            reason: aiResult.reason,
+          });
 
           console.warn(
             JSON.stringify({
               scope: 'onboarding',
               event,
               status: aiResult.status,
-              error_type: aiResult.reason,
+              error_code: aiResolutionErrorCode,
+              persisted: aiResolutionPersisted,
+              schema_version: aiResult.schemaVersion,
               request_id: requestId,
               latency_ms: Date.now() - aiResolutionStartedAt,
               ts: new Date().toISOString(),
@@ -444,8 +480,8 @@ export async function saveSetupAndContinueAction(
           ai_resolution_options_count: aiResolutionOptionsCount,
           ai_resolution_needs_admin_review: aiResolutionNeedsAdminReview,
           ai_resolution_needs_user_confirmation: aiResolutionNeedsUserConfirmation,
-          ai_resolution_persisted: false,
-          ai_resolution_persistence_status: 'not_supported_by_current_schema',
+          ai_resolution_persisted: aiResolutionPersisted,
+          ai_resolution_error_code: aiResolutionErrorCode,
           top_match_source: topCandidate?.matchSource ?? null,
           top_score: topCandidate?.score ?? null,
           account_id: accountId,
@@ -520,6 +556,6 @@ export async function saveSetupAndContinueAction(
       })
     );
 
-    return { ok: false, formError: 'Não foi possível salvar agora. Tente novamente.' };
+    return { ok: false, formError: 'Nao foi possivel salvar agora. Tente novamente.' };
   }
 }
