@@ -2,7 +2,7 @@
 
 0.1 Cabeçalho
 • Data da última atualização: 11/05/2026
-• Documento: LP Factory 10 — Schema (DB Contract) v1.0.15
+• Documento: LP Factory 10 — Schema (DB Contract) v1.0.16
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -193,6 +193,7 @@
 • CHECK: account_taxonomy_source_type_chk (source_type IN ('manual', 'taxonomy_match'))
 • FK: account_id → accounts(id) ON UPDATE CASCADE ON DELETE CASCADE
 • FK: taxon_id → business_taxons(id) ON UPDATE CASCADE ON DELETE RESTRICT
+• Nota: não há constraint/índice garantindo apenas um `is_primary = true` por conta nesta etapa.
 
 1.12.2 Campos
 • account_id uuid not null
@@ -206,6 +207,8 @@
 1.12.3 Segurança
 • Trigger Hub: não
 • RLS: ativo (enable row level security)
+• service_role: SELECT, INSERT, UPDATE
+• anon/authenticated/public: sem acesso direto
 
 1.12.4 Policies
 • account_taxonomy_select_admin_only (SELECT to public): is_super_admin() OU is_platform_admin()
@@ -566,6 +569,11 @@
 • Rollback: não remove automaticamente a extensão, pois pode ser reutilizada por outros recursos
 
 99. Changelog
+v1.0.16 (11/05/2026) — E10.5.6: grants operacionais para account_taxonomy
+• Registrado `service_role` com SELECT, INSERT e UPDATE em `account_taxonomy`.
+• Registrado que `anon`, `authenticated` e `public` permanecem sem acesso direto.
+• Registrada ausência de constraint/índice para apenas um `is_primary = true` por conta nesta etapa.
+
 v1.0.15 (11/05/2026) — E10.5.6: account_niche_resolutions
 • Registrada a tabela `account_niche_resolutions` como persistência operacional da resolução atual da conta.
 • Registradas PK/FKs, constraints principais, RLS, policies admin-only e permissões operacionais de `service_role`.
