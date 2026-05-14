@@ -2,7 +2,7 @@
 
 0.1 Cabeçalho
 • Data: 11/05/2026
-• Versão: v1.5.51
+• Versão: v1.5.52
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -449,6 +449,26 @@
 • UX Partner Dashboard
 
 10.4 Primeiros passos (pending_setup — status-based)
+
+• Vínculo oficial de taxonomia no pós-save do `pending_setup` (11/05/2026): o fluxo passou a gravar vínculo oficial em `account_taxonomy` apenas quando a resolução determinística tem alta confiança.
+• Decisão: `account_niche_resolutions` permanece como registro operacional da resolução; `account_taxonomy` passa a representar o vínculo oficial da conta com o taxon.
+• Regra de gravação: gravar vínculo oficial somente quando houver `confidence=high`, uso determinístico aprovado, candidato selecionado com `taxon_id` e sem necessidade de revisão administrativa.
+• Regra de fluxo: falha na gravação do vínculo oficial não bloqueia a conclusão do setup nem o redirecionamento.
+• Regra de conflito: vínculo primário ativo diferente não é substituído automaticamente no MVP; fica para revisão futura.
+• Fora do escopo: IA, microdiálogo, criação automática de taxon ou alias e alteração de UI.
+• ARTEFATOS_REPO:
+• Criado: `lib/onboarding/niche-resolution/adapters/accountTaxonomyAdapter.ts`
+• Criado: `supabase/migrations/0012__e10_5_6_account_taxonomy_service_role_grants.sql`
+• Criado: `supabase/rollbacks/20260511__e10_5_6_account_taxonomy_service_role_grants.rollback.sql`
+• Ajustado: `app/a/[account]/actions.ts`
+• Checks/QA (reportado): `npm ci` ok; `npm run check` ok; runtime aprovado em high direto, high alias, low e medium/pg_trgm.
+• Status de entrega: PR da implementação 20.7 mergeado; 20.7 concluído.
+• Pendências futuras:
+• Criar fila/admin review para resoluções medium/low.
+• Decidir UI/Admin Dashboard para revisar pendências.
+• Decidir se haverá regra estrutural de apenas um primary ativo por conta.
+• Decidir fluxo para substituir taxon oficial com revisão humana.
+• Avaliar IA/microdiálogo em etapa futura.
 
 • Persistência da resolução operacional de nicho no pós-save do `pending_setup` (11/05/2026): após o matching determinístico, o fluxo passou a registrar a resolução atual da conta em `account_niche_resolutions`.
 • Decisão: `account_niche_resolutions` registra a resolução operacional atual; `account_taxonomy` permanece reservado para vínculo oficial futuro.
@@ -1057,6 +1077,8 @@
 • Definir o primeiro recorte funcional do LP Builder no roadmap
 
 99. Changelog
+v1.5.52 — 11/05/2026 — Roadmap atualizado com o estado final da implementação 20.7: vínculo oficial em `account_taxonomy` apenas para alta confiança, preservação de `account_niche_resolutions` como registro operacional, regra de conflito de primário, artefatos, QA runtime e pendências futuras.
+
 v1.5.51 — 11/05/2026 — Roadmap atualizado com o estado final da implementação 20.6: persistência da resolução operacional em `account_niche_resolutions`, decisão sobre `account_taxonomy`, artefatos, QA e pendências futuras.
 
 v1.5.50 — 10/05/2026 — Roadmap atualizado com o estado final da integração de matching determinístico de taxonomia no pós-save do `pending_setup`, incluindo artefato ajustado, regra não bloqueante, observability segura e pendências explícitas.
