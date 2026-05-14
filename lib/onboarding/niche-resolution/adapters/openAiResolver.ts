@@ -376,9 +376,9 @@ function normalizeMessage(value: unknown, uxMode: AiNicheResolutionUxMode): stri
   const text = normalizeShortText(value, "");
   if (text) return text;
 
-  if (uxMode === "confirm_single") return "Voce quis dizer este nicho?";
+  if (uxMode === "confirm_single") return "Você quis dizer este nicho?";
   if (uxMode === "choose_from_options") return "Encontramos algumas possibilidades para seu nicho.";
-  return "Vamos analisar melhor seu nicho para personalizar sua experiencia.";
+  return "Vamos analisar melhor seu nicho para personalizar sua experiência.";
 }
 
 function normalizeSuggestedLabel(value: unknown): string | null {
@@ -400,7 +400,7 @@ function normalizeShortText(value: unknown, fallback: string): string {
 function fallbackOutput(reason: string, suggestedNewTaxonLabel: string | null = null): AiNicheResolutionOutput {
   return {
     uxMode: "fallback_review",
-    message: "Vamos analisar melhor seu nicho para personalizar sua experiencia.",
+    message: "Vamos analisar melhor seu nicho para personalizar sua experiência.",
     options: [],
     needsAdminReview: true,
     needsUserConfirmation: false,
