@@ -24,6 +24,10 @@ import {
 } from '../../../lib/onboarding/niche-resolution/adapters/accountTaxonomyAdapter';
 import { matchBusinessTaxonsDeterministic } from '../../../lib/onboarding/niche-resolution/adapters/taxonMatchAdapter';
 import { evaluateDeterministicTaxonMatch } from '../../../lib/onboarding/niche-resolution/deterministicConfidence';
+import {
+  resolveNicheWithOpenAi,
+  shouldResolveNicheWithAi,
+} from '../../../lib/onboarding/niche-resolution/openaiResolver';
 
 export type RenameAccountState = {
   ok: boolean;
@@ -76,12 +80,10 @@ export async function renameAccountAction(
 
     if (!accountId) throw new Error('missing_account_id');
 
-    // Apenas renomeia (status inalterado)
     const ok = await renameAccountNoStatus(accountId, name, slug);
     const latency = Date.now() - t0;
 
     if (ok) {
-      // eslint-disable-next-line no-console
       console.error(
         JSON.stringify({
           event: 'account_renamed',
@@ -97,7 +99,6 @@ export async function renameAccountAction(
       redirect(`/a/${slug}`);
     }
 
-    // eslint-disable-next-line no-console
     console.error(
       JSON.stringify({
         event: 'account_rename_failed',
@@ -115,7 +116,6 @@ export async function renameAccountAction(
   } catch (err: unknown) {
     const latency = Date.now() - t0;
 
-    // eslint-disable-next-line no-console
     console.error(
       JSON.stringify({
         event: 'account_rename_failed',
@@ -135,10 +135,6 @@ function normalizeText(input: unknown): string {
   return (input ?? '').toString().trim();
 }
 
-/**
- * Extrai o subdomínio da conta a partir da URL de referência.
- * Espera um caminho do tipo /a/{subdominio}/... e retorna o segmento {subdominio}.
- */
 function extractAccountSubdomainFromReferer(referer: string | null): string | null {
   if (!referer) return null;
   try {
@@ -153,9 +149,6 @@ function extractAccountSubdomainFromReferer(referer: string | null): string | nu
   }
 }
 
-/**
- * Lê o cookie last_account_subdomain definido no layout da conta para fallback.
- */
 async function readLastAccountSubdomainCookie(): Promise<string | null> {
   try {
     const cookieStore = await cookies();
@@ -168,17 +161,6 @@ async function readLastAccountSubdomainCookie(): Promise<string | null> {
   }
 }
 
-// Validações do E10.4.7 ficam em módulo compartilhado (server+client) para evitar drift.
-
-/**
- * E10.4.6 — Handler do “Salvar e continuar” (E10.4)
- * - Guard: owner/admin (via Access Context)
- * - Persistência: account_profiles (niche/preferred_channel/whatsapp/site_url) + accounts.name (core)
- * - Status: pending_setup → active
- * - Observability mínima: logs canônicos sem PII
- * - Importante: revalidatePath(route) antes do redirect para evitar UI stale
- */
-
 export async function saveSetupAndContinueAction(
   _prevState: SetupSaveState | undefined,
   formData: FormData
@@ -189,7 +171,6 @@ export async function saveSetupAndContinueAction(
   const requestId =
     hdrs.get('x-vercel-id') ?? hdrs.get('x-request-id') ?? (globalThis.crypto?.randomUUID?.() ?? null);
 
-  // Resolver subdomínio sem depender só do hidden input
   const formSubdomain = normalizeText(formData.get('account_subdomain')).toLowerCase();
   const refererSubdomain = extractAccountSubdomainFromReferer(hdrs.get('referer'));
   const cookieSubdomain = await readLastAccountSubdomainCookie();
@@ -197,7 +178,6 @@ export async function saveSetupAndContinueAction(
   const route = accountSubdomain ? `/a/${accountSubdomain}` : '/a';
 
   if (!formSubdomain && (refererSubdomain || cookieSubdomain)) {
-    // eslint-disable-next-line no-console
     console.warn(
       JSON.stringify({
         scope: 'onboarding',
@@ -237,7 +217,6 @@ export async function saveSetupAndContinueAction(
       return { ok: false, formError: 'Você não tem permissão para salvar esta configuração.' };
     }
 
-    // eslint-disable-next-line no-console
     console.log(
       JSON.stringify({
         scope: 'onboarding',
@@ -262,7 +241,6 @@ export async function saveSetupAndContinueAction(
     if (!validated.ok) {
       const latency = Date.now() - t0;
 
-      // eslint-disable-next-line no-console
       console.warn(
         JSON.stringify({
           scope: 'onboarding',
@@ -291,7 +269,6 @@ export async function saveSetupAndContinueAction(
     const okName = await updateAccountNameCore(accountId, validated.values.name);
     if (!okName) throw new Error('account_name_update_failed');
 
-    // Status (fonte de verdade)
     const okStatus = await setAccountStatusActiveIfPending(accountId);
     if (!okStatus) throw new Error('status_update_failed');
 
@@ -390,6 +367,65 @@ export async function saveSetupAndContinueAction(
         }
       }
 
+      const aiEligible = shouldResolveNicheWithAi(decision);
+      let aiResolutionStatus = aiEligible ? 'not_attempted' : 'skipped_not_eligible';
+      let aiResolutionUxMode: string | null = null;
+      let aiResolutionOptionsCount = 0;
+      let aiResolutionNeedsAdminReview: boolean | null = null;
+      let aiResolutionNeedsUserConfirmation: boolean | null = null;
+
+      if (aiEligible) {
+        const aiResolutionStartedAt = Date.now();
+        const aiResult = await resolveNicheWithOpenAi({
+          rawInput: validated.values.niche,
+          decision,
+          candidates,
+        });
+
+        aiResolutionStatus = aiResult.status;
+
+        if (aiResult.ok) {
+          aiResolutionUxMode = aiResult.output.uxMode;
+          aiResolutionOptionsCount = aiResult.output.options.length;
+          aiResolutionNeedsAdminReview = aiResult.output.needsAdminReview;
+          aiResolutionNeedsUserConfirmation = aiResult.output.needsUserConfirmation;
+
+          console.log(
+            JSON.stringify({
+              scope: 'onboarding',
+              event: 'setup_taxonomy_ai_resolution_evaluated',
+              status: aiResult.status,
+              ux_mode: aiResult.output.uxMode,
+              options_count: aiResult.output.options.length,
+              needs_admin_review: aiResult.output.needsAdminReview,
+              needs_user_confirmation: aiResult.output.needsUserConfirmation,
+              should_create_official_link: aiResult.output.shouldCreateOfficialLink,
+              persistence_status: 'not_supported_by_current_schema',
+              request_id: requestId,
+              latency_ms: Date.now() - aiResolutionStartedAt,
+              ts: new Date().toISOString(),
+            })
+          );
+        } else {
+          const event =
+            aiResult.status === 'skipped_missing_env'
+              ? 'setup_taxonomy_ai_resolution_skipped'
+              : 'setup_taxonomy_ai_resolution_failed';
+
+          console.warn(
+            JSON.stringify({
+              scope: 'onboarding',
+              event,
+              status: aiResult.status,
+              error_type: aiResult.reason,
+              request_id: requestId,
+              latency_ms: Date.now() - aiResolutionStartedAt,
+              ts: new Date().toISOString(),
+            })
+          );
+        }
+      }
+
       console.log(
         JSON.stringify({
           scope: 'onboarding',
@@ -403,6 +439,13 @@ export async function saveSetupAndContinueAction(
           reason: decision.reason,
           resolution_saved: resolutionSaved,
           account_taxonomy_link_status: accountTaxonomyLinkStatus,
+          ai_resolution_status: aiResolutionStatus,
+          ai_resolution_ux_mode: aiResolutionUxMode,
+          ai_resolution_options_count: aiResolutionOptionsCount,
+          ai_resolution_needs_admin_review: aiResolutionNeedsAdminReview,
+          ai_resolution_needs_user_confirmation: aiResolutionNeedsUserConfirmation,
+          ai_resolution_persisted: false,
+          ai_resolution_persistence_status: 'not_supported_by_current_schema',
           top_match_source: topCandidate?.matchSource ?? null,
           top_score: topCandidate?.score ?? null,
           account_id: accountId,
@@ -427,7 +470,6 @@ export async function saveSetupAndContinueAction(
 
     const latency = Date.now() - t0;
 
-    // eslint-disable-next-line no-console
     console.log(
       JSON.stringify({
         scope: 'onboarding',
@@ -439,10 +481,8 @@ export async function saveSetupAndContinueAction(
       })
     );
 
-    // CRÍTICO: evita stale na volta para a mesma rota
     revalidatePath(route);
 
-    // eslint-disable-next-line no-console
     console.log(
       JSON.stringify({
         scope: 'onboarding',
@@ -468,7 +508,6 @@ export async function saveSetupAndContinueAction(
       throw err;
     }
 
-    // eslint-disable-next-line no-console
     console.error(
       JSON.stringify({
         scope: 'onboarding',
