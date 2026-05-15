@@ -1,25 +1,32 @@
-// app/a/[account]/page.tsx
-"use client";
-
-import { useMemo } from "react";
-import { useAccessContext } from "@/providers/AccessProvider";
+import { getAccessContext } from "@/lib/access/getAccessContext";
+import { getActionableNicheResolutionForAccount } from "../../../lib/onboarding/niche-resolution/adapters/accountNicheResolutionUserAdapter";
 import { PendingSetupFirstSteps } from "./_components/PendingSetupFirstSteps";
+import { NicheResolutionCard } from "./_components/NicheResolutionCard";
 
 type DashState = "auth" | "onboarding" | "public";
 
-export default function Page(props: any) {
-  const params = props.params as { account: string };
+type PageProps = {
+  params: Promise<{ account: string }> | { account: string };
+};
 
-  const ctx = useAccessContext() as any;
+export default async function Page({ params }: PageProps) {
+  const resolvedParams = await params;
+  const accountSubdomain = (resolvedParams.account ?? "").trim().toLowerCase();
 
-  const isHome = params.account === "home";
+  const isHome = accountSubdomain === "home";
+  const ctx = isHome
+    ? null
+    : await getAccessContext({
+        params: { account: accountSubdomain },
+        route: `/a/${accountSubdomain}`,
+      });
   const hasCtx = Boolean(ctx?.account || ctx?.member);
 
-  const state: DashState = useMemo(() => {
+  const state: DashState = (() => {
     if (isHome && !hasCtx) return "onboarding";
     if (hasCtx) return "auth";
     return "public";
-  }, [isHome, hasCtx]);
+  })();
 
   if (state === "auth") {
     const accountStatus = (ctx?.account?.status ?? null) as
@@ -30,11 +37,36 @@ export default function Page(props: any) {
       | null;
 
     if (accountStatus === "pending_setup") {
-      return <PendingSetupFirstSteps accountSubdomain={params.account} ctx={ctx} />;
+      return <PendingSetupFirstSteps accountSubdomain={accountSubdomain} ctx={ctx} />;
     }
 
-    // E10.5 (ainda sem UX): mantém o dashboard “limpo” para demais status/subestados
-    return <main className="mx-auto max-w-5xl px-6 py-10" />;
+    const accountId = (ctx?.account?.id ?? ctx?.account_id ?? null) as string | null;
+    const nicheResolution = accountId
+      ? await getActionableNicheResolutionForAccount({
+          accountId,
+          accountStatus,
+        })
+      : null;
+
+    return (
+      <main className="mx-auto max-w-5xl px-6 py-10">
+        <div className="space-y-6">
+          {nicheResolution ? (
+            <NicheResolutionCard
+              accountSubdomain={accountSubdomain}
+              resolution={nicheResolution}
+            />
+          ) : null}
+
+          <section className="rounded-xl border bg-white p-6 shadow-sm">
+            <h1 className="text-2xl font-semibold">Dashboard</h1>
+            <p className="mt-2 text-sm text-gray-600">
+              Sua conta está ativa. Novos recursos do dashboard aparecerão aqui conforme forem liberados.
+            </p>
+          </section>
+        </div>
+      </main>
+    );
   }
 
   if (state === "onboarding") {

@@ -3,15 +3,20 @@ import "server-only";
 import { createServiceClient } from "@/lib/supabase/service";
 import type { DeterministicMatchDecision } from "../contracts";
 
-const ACCOUNT_TAXONOMY_SOURCE_TYPE = "taxonomy_match" as const;
+const ACCOUNT_TAXONOMY_DETERMINISTIC_SOURCE_TYPE = "taxonomy_match" as const;
+const ACCOUNT_TAXONOMY_USER_CONFIRMED_AI_SOURCE_TYPE = "user_confirmed_ai" as const;
 const ACCOUNT_TAXONOMY_STATUS = "active" as const;
+
+type AccountTaxonomySourceType =
+  | typeof ACCOUNT_TAXONOMY_DETERMINISTIC_SOURCE_TYPE
+  | typeof ACCOUNT_TAXONOMY_USER_CONFIRMED_AI_SOURCE_TYPE;
 
 type AccountTaxonomyPrimaryLinkRow = {
   account_id: string;
   taxon_id: string;
   is_primary: boolean;
   status: typeof ACCOUNT_TAXONOMY_STATUS;
-  source_type: typeof ACCOUNT_TAXONOMY_SOURCE_TYPE;
+  source_type: AccountTaxonomySourceType;
 };
 
 export type AccountTaxonomyLinkResult =
@@ -45,12 +50,25 @@ export async function linkAccountTaxonomyFromDeterministicDecision(input: {
   return upsertPrimaryAccountTaxonomyLink({
     accountId: input.accountId,
     taxonId,
+    sourceType: ACCOUNT_TAXONOMY_DETERMINISTIC_SOURCE_TYPE,
+  });
+}
+
+export async function linkPrimaryAccountTaxonomyFromUserConfirmedAi(input: {
+  accountId: string;
+  taxonId: string;
+}): Promise<AccountTaxonomyLinkResult> {
+  return upsertPrimaryAccountTaxonomyLink({
+    accountId: input.accountId,
+    taxonId: input.taxonId,
+    sourceType: ACCOUNT_TAXONOMY_USER_CONFIRMED_AI_SOURCE_TYPE,
   });
 }
 
 async function upsertPrimaryAccountTaxonomyLink(input: {
   accountId: string;
   taxonId: string;
+  sourceType: AccountTaxonomySourceType;
 }): Promise<AccountTaxonomyLinkResult> {
   const supabase = createServiceClient();
 
@@ -75,6 +93,11 @@ async function upsertPrimaryAccountTaxonomyLink(input: {
     const existingPrimaryTaxonId = (existingPrimary as { taxon_id?: string } | null)?.taxon_id ?? null;
 
     if (existingPrimaryTaxonId && existingPrimaryTaxonId !== input.taxonId) {
+      console.warn("accountTaxonomyLink conflicting primary skipped:", {
+        accountId: input.accountId,
+        sourceType: input.sourceType,
+      });
+
       return {
         status: "skipped_conflicting_primary",
         taxonId: input.taxonId,
@@ -87,7 +110,7 @@ async function upsertPrimaryAccountTaxonomyLink(input: {
       taxon_id: input.taxonId,
       is_primary: true,
       status: ACCOUNT_TAXONOMY_STATUS,
-      source_type: ACCOUNT_TAXONOMY_SOURCE_TYPE,
+      source_type: input.sourceType,
     };
 
     const { data: existingLink, error: existingLinkError } = await supabase
