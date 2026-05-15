@@ -138,7 +138,6 @@ export async function rewriteAiNicheResolutionForAccount(input: {
       user_resolution_status: "rewritten",
       user_rewrite_input: rewriteInput,
       user_rejected_at: now,
-      updated_at: now,
     })
     .eq("account_id", input.accountId)
     .or("user_resolution_status.is.null,user_resolution_status.eq.pending_confirmation");
@@ -176,7 +175,6 @@ export async function dismissAiNicheResolutionForAccount(input: {
     .update({
       user_resolution_status: "dismissed",
       user_dismissed_at: now,
-      updated_at: now,
     })
     .eq("account_id", input.accountId)
     .or("user_resolution_status.is.null,user_resolution_status.eq.pending_confirmation");
@@ -223,7 +221,6 @@ async function confirmValidatedTaxon(
       user_resolution_status: "confirmed",
       user_selected_taxon_id: taxonId,
       user_confirmed_at: now,
-      updated_at: now,
     })
     .eq("account_id", accountId)
     .or("user_resolution_status.is.null,user_resolution_status.eq.pending_confirmation");
