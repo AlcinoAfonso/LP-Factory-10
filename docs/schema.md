@@ -1,8 +1,8 @@
 0. Introdução
 
 0.1 Cabeçalho
-• Data da última atualização: 11/05/2026
-• Documento: LP Factory 10 — Schema (DB Contract) v1.0.16
+• Data da última atualização: 14/05/2026
+• Documento: LP Factory 10 — Schema (DB Contract) v1.0.17
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -369,6 +369,10 @@
 1.18 account_niche_resolutions
 
 1.18.1 Chaves, constraints e relacionamentos
+• CHECK: account_niche_resolutions_ai_status_chk
+• CHECK: account_niche_resolutions_ai_result_json_chk
+• CHECK: account_niche_resolutions_ai_ux_mode_chk
+• FK: ai_suggested_taxon_id → business_taxons(id)
 • PK: account_id uuid
 • FK: account_id → accounts(id)
 • FK: selected_taxon_id → business_taxons(id)
@@ -380,6 +384,18 @@
 • CHECK: score entre 0 e 1 ou NULL
 
 1.18.2 Campos
+• ai_status text null
+• ai_error_code text null
+• ai_model text null
+• ai_schema_version text null
+• ai_result_json jsonb null
+• ai_ux_mode text null
+• ai_suggested_taxon_id uuid null
+• ai_suggested_new_taxon_label text null
+• ai_needs_user_confirmation boolean null
+• ai_needs_admin_review boolean null
+• ai_reason text null
+• ai_processed_at timestamptz null
 • account_id uuid not null
 • raw_input text not null
 • selected_taxon_id uuid null
@@ -402,6 +418,8 @@
 • Acesso direto removido de public, anon e authenticated
 • service_role: SELECT, INSERT e UPDATE
 
+1.18.4 Índices
+• account_niche_resolutions_ai_suggested_taxon_id_idx
 
 2. Views
 
@@ -569,6 +587,11 @@
 • Rollback: não remove automaticamente a extensão, pois pode ser reutilizada por outros recursos
 
 99. Changelog
+v1.0.17 (14/05/2026) — E10.5.6: IA Structured Outputs em account_niche_resolutions
+• Registradas colunas `ai_*` em `account_niche_resolutions` para persistência da saída estruturada da IA.
+• Registrados checks, FK e índice relacionados à resolução complementar com IA.
+• Registrado que a IA persiste apenas resolução operacional e não grava vínculo oficial em `account_taxonomy`.
+
 v1.0.16 (11/05/2026) — E10.5.6: grants operacionais para account_taxonomy
 • Registrado `service_role` com SELECT, INSERT e UPDATE em `account_taxonomy`.
 • Registrado que `anon`, `authenticated` e `public` permanecem sem acesso direto.
