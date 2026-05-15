@@ -2,8 +2,8 @@
 
 0.1. Cabeçalho
 • Documento: Base Técnica LP Factory 10
-• Versão: v2.0.34
-• Data: 11/05/2026
+• Versão: v2.0.35
+• Data: 14/05/2026
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -191,6 +191,7 @@
 • Contrato técnico detalhado do pipeline: automations/supabase-inspect/README.md.
 
 3.5 Secrets & Variáveis
+• Server-only OpenAI niche resolver: `OPENAI_API_KEY`, `OPENAI_NICHE_RESOLVER_MODEL`.
 • Server-only: SUPABASE_SECRET_KEY, STRIPE_SECRET_KEY (futuro)
 • CI/Automations (GitHub Actions secrets): OPENAI_API_KEY, SUPABASE_DB_URL_READONLY
 • Públicas: NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
@@ -292,6 +293,13 @@
 • Gate adapters: pode retornar null, mas logs devem diferenciar deny vs error.
 
 3.14.1 Matching de taxonomia via adapter server-side
+• IA complementar: quando o matching determinístico não resolver com segurança, o runtime pode usar resolver server-side com OpenAI Responses API e Structured Outputs.
+• Resolver canônico: PATH: `lib/onboarding/niche-resolution/adapters/openAiResolver.ts`.
+• Regra: IA não roda em `high`, não cria taxon, não cria alias, não grava em `account_taxonomy` e não substitui vínculo oficial.
+• Regra: IA atualiza somente a resolução operacional em `account_niche_resolutions`.
+• Regra: falha da IA não pode bloquear lead, setup, ativação da conta, `revalidatePath(route)` ou `redirect(route)`.
+• Regra: `shouldCreateOfficialLink` no Structured Output deve permanecer sempre `false` no schema atual.
+• Regra: prompt, payload bruto, aliases, candidatos completos e dados de formulário não devem ser persistidos.
 • No pós-save do `pending_setup`, a integração determinística deve ocorrer server-side em `saveSetupAndContinueAction`, depois de salvar perfil, atualizar nome e promover a conta para `active`.
 • Regra: `matchBusinessTaxonsDeterministic(validated.values.niche, 10)` pode ser chamado no fluxo server-side após validação do onboarding, mas falha no matching não pode bloquear o lead, `revalidatePath(route)` ou `redirect(route)`.
 • Regra: a decisão observável do matching determinístico deve usar `evaluateDeterministicTaxonMatch(candidates)` e registrar somente metadados seguros.
@@ -388,6 +396,7 @@
 • Reset: cooldown UI de 60s (contador), iniciado após uma solicitação bem-sucedida.
 • Limitação adicional (server-side) é responsabilidade do Supabase Auth.
 5.3.4 Observabilidade
+• IA de resolução de nicho: logs devem registrar apenas sinais seguros como status, modo UX, quantidade de opções, necessidade de revisão/confirmação, persistência e código de erro seguro; não logar prompt, payload bruto, `niche`, `raw_input`, query, aliases, candidatos completos, `name`, `whatsapp` ou `site_url`.
 • server-timing/proxy-status não observados nos requests testados via DevTools
 • Diretriz: se precisar medir, instrumentar via logs/Apm e/ou headers próprios no server
 • Server Actions críticas devem emitir logs estruturados (JSON) com request_id e latency_ms (padrão mínimo).
@@ -463,6 +472,8 @@ Fonte normativa da allowlist SULB para exceções de Auth. Qualquer novo arquivo
 • Tipos canônicos e adapters vNext: validar por 3.6 e 3.14.
 
 99. Changelog
+v2.0.35 — 14/05/2026 — Base técnica atualizada com contrato mínimo de runtime para IA complementar server-side com Structured Outputs, variáveis server-only, preservação de `account_taxonomy`, persistência apenas em `account_niche_resolutions`, fluxo degradável e logs sem PII.
+
 v2.0.34 — 11/05/2026 — Base técnica atualizada com contrato mínimo de runtime para gravação server-side do vínculo oficial em `account_taxonomy`, preservando `account_niche_resolutions` como registro operacional, regra de alta confiança, conflito de primário sem substituição automática, fluxo não bloqueante e logs sem PII.
 
 v2.0.33 — 11/05/2026 — Base técnica atualizada com contrato mínimo de runtime para persistência operacional de resolução em `account_niche_resolutions`, sem gravação de `account_taxonomy`, com fluxo não bloqueante e logs sem PII.

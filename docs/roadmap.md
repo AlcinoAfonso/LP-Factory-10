@@ -1,8 +1,8 @@
 0. Introdução
 
 0.1 Cabeçalho
-• Data: 11/05/2026
-• Versão: v1.5.52
+• Data: 14/05/2026
+• Versão: v1.5.53
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -449,6 +449,28 @@
 • UX Partner Dashboard
 
 10.4 Primeiros passos (pending_setup — status-based)
+
+• Resolução complementar de nicho com IA estruturada no pós-save do `pending_setup` (14/05/2026): o fluxo passou a usar IA server-side apenas quando o matching determinístico não resolve com segurança.
+• Decisão: IA não roda em alta confiança determinística; pode atuar em medium, low e casos sem candidato útil.
+• Decisão: IA atualiza apenas a resolução operacional em `account_niche_resolutions`; não grava em `account_taxonomy`, não substitui vínculo oficial, não cria taxon e não cria alias.
+• Regra de fluxo: falha da IA não bloqueia lead, setup, redirect ou ativação da conta.
+• Fora do escopo: UI, microdiálogo visual, ChatKit, orquestrador multiagente, criação automática de taxon/alias, gravação em `account_taxonomy` via IA, substituição de vínculo oficial e escolha final de template comercial.
+• ARTEFATOS_REPO:
+• Criado: `lib/onboarding/niche-resolution/adapters/openAiResolver.ts`
+• Criado: `supabase/migrations/0013__e10_5_6_ai_structured_outputs.sql`
+• Criado: `supabase/rollbacks/20260514__e10_5_6_ai_structured_outputs.rollback.sql`
+• Ajustado: `app/a/[account]/actions.ts`
+• Ajustado: `lib/onboarding/niche-resolution/contracts.ts`
+• Ajustado: `lib/onboarding/niche-resolution/adapters/accountNicheResolutionAdapter.ts`
+• Checks/QA (reportado): Vercel Preview READY; Vercel build aprovado; Security Checks aprovados; Automation Niche Runtime Tests executado; Supabase Inspect executado; runtime aprovado em high, medium, low e unknown limpo.
+• Status de entrega: PR #258 mergeado; branch `codex/e10-5-6-ai-structured-outputs`; commit validado `623ef55`; 20.8 concluído.
+• Pendências futuras:
+• Criar fila/admin review para `ai_needs_admin_review = true`.
+• Decidir UI de confirmação para `confirm_single`.
+• Decidir UI para `choose_from_options`.
+• Decidir processo administrativo para sugerir novo taxon ou alias.
+• Avaliar logs/observability de erro OpenAI em produção.
+• Avaliar teste dedicado de env ausente e erro OpenAI.
 
 • Vínculo oficial de taxonomia no pós-save do `pending_setup` (11/05/2026): o fluxo passou a gravar vínculo oficial em `account_taxonomy` apenas quando a resolução determinística tem alta confiança.
 • Decisão: `account_niche_resolutions` permanece como registro operacional da resolução; `account_taxonomy` passa a representar o vínculo oficial da conta com o taxon.
@@ -1077,6 +1099,8 @@
 • Definir o primeiro recorte funcional do LP Builder no roadmap
 
 99. Changelog
+v1.5.53 — 14/05/2026 — Roadmap atualizado com o estado final da implementação 20.8: IA estruturada server-side como complemento ao matching determinístico, persistência apenas em `account_niche_resolutions`, preservação de `account_taxonomy`, artefatos, validações, PR mergeado e pendências futuras.
+
 v1.5.52 — 11/05/2026 — Roadmap atualizado com o estado final da implementação 20.7: vínculo oficial em `account_taxonomy` apenas para alta confiança, preservação de `account_niche_resolutions` como registro operacional, regra de conflito de primário, artefatos, QA runtime e pendências futuras.
 
 v1.5.51 — 11/05/2026 — Roadmap atualizado com o estado final da implementação 20.6: persistência da resolução operacional em `account_niche_resolutions`, decisão sobre `account_taxonomy`, artefatos, QA e pendências futuras.
