@@ -100,3 +100,27 @@ export type UpsertAccountNicheResolutionInput = {
   matchSource: string | null;
   score: number | null;
 };
+
+export type UserNicheResolutionStatus =
+  | "pending_confirmation"
+  | "confirmed"
+  | "rejected"
+  | "rewritten"
+  | "dismissed";
+
+export type ActionableNicheResolutionOption = {
+  taxonId: string;
+  name: string;
+  slug: string;
+};
+
+export type ActionableNicheResolution = {
+  accountId: string;
+  uxMode: Extract<AiNicheResolutionUxMode, "confirm_single" | "choose_from_options" | "fallback_review">;
+  suggestedTaxon: ActionableNicheResolutionOption | null;
+  options: ActionableNicheResolutionOption[];
+};
+
+export type NicheResolutionUserActionResult =
+  | { ok: true; status: "confirmed" | "rewritten" | "dismissed" }
+  | { ok: false; reason: string };
