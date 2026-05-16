@@ -1,80 +1,128 @@
 # AGENTS.md
 
-## Sandbox checks (rotina padrão)
-Rodar, nesta ordem:
+## Referências
+
+- Para estruturar pedidos incompletos em padrão outcome-first, usar `docs/template-prompts.md`.
+- Para briefings gerais, usar `docs/template-briefing-codex.md`.
+- Para execução no Codex App, usar `docs/prompt-codex-app-executor.md`.
+- Para impacto visual/frontend, usar também `docs/template-briefing-codex-frontend.md`.
+
+## Modelo operacional Codex App
+
+O Codex App opera em dois modos: **simples** e **robusto**.
+
+Antes de executar, identificar:
+
+1. resultado esperado;
+2. contexto/fonte;
+3. critérios de sucesso;
+4. limites e regras de parada;
+5. validação esperada.
+
+### Modo simples
+
+Usar quando a tarefa for isolada e não exigir worktree próprio.
+
+Processo:
+
+1. Criar ou usar branch dedicada com prefixo `codex/`, salvo instrução explícita em contrário.
+2. Verificar branch ativa e `git status`.
+3. Parar se estiver na `main`, em branch de outro caso ou com mudanças locais não relacionadas.
+4. Editar somente o necessário.
+5. Publicar PR quando a alteração estiver pronta, salvo instrução explícita em contrário.
+
+### Modo robusto
+
+Usar quando a tarefa exigir isolamento, execução em etapas, validação local recorrente ou preview.
+
+Regra-base:
+
+```txt
+1 frente robusta = 1 worktree
+1 etapa = 1 branch
+1 branch = 1 PR
+```
+
+Processo:
+
+1. Abrir o Codex App no worktree da frente.
+2. Criar ou usar branch dedicada para a etapa.
+3. Verificar worktree, branch ativa e `git status`.
+4. Parar se estiver na `main`, em branch de outro caso ou com mudanças locais não relacionadas.
+5. Implementar somente a etapa atual.
+6. Validar localmente.
+7. Publicar PR da etapa quando estiver pronta.
+8. Após merge, iniciar a próxima etapa em nova branch baseada na `main` atualizada.
+
+## Git / limites operacionais
+
+- Nunca editar diretamente na `main`.
+- Nunca misturar tarefas ou etapas diferentes na mesma branch.
+- O merge final deve acontecer somente pelo GitHub Web.
+- GitHub Web é a fonte de verdade para PRs, Actions, preview remoto e merge.
+- GitHub Desktop é apoio/fallback, não etapa obrigatória.
+
+### Permitido localmente
+
+```txt
+git status
+git diff
+git branch --show-current
+git switch
+git checkout
+git add
+git commit
+```
+
+Commits locais só são permitidos em branch dedicada, nunca na `main`.
+
+### Proibido no sandbox do Codex App
+
+```txt
+git ls-remote
+git fetch
+git pull
+git push
+ssh -T git@github.com
+```
+
+Motivo: esses comandos foram instáveis no sandbox Windows/Git for Windows.
+
+### Operações remotas
+
+Para operações remotas, usar:
+
+- GitHub Connector do Codex, quando adequado;
+- GitHub Web;
+- GitHub Desktop ou PowerShell normal fora do sandbox, quando necessário.
+
+Operações remotas incluem publicar branch, abrir/atualizar PR, acompanhar checks e mergear.
+
+## Preview local
+
+Para impacto visual/frontend:
+
+1. Rodar `npm run dev`.
+2. Abrir a URL indicada pelo terminal.
+3. Validar tela, comportamento e ausência de erros visíveis.
+4. Se `localhost:3000` recusar conexão, verificar se o servidor dev está rodando ou se iniciou em outra porta.
+
+## Sandbox checks
+
+Para tarefas com impacto em código, rodar nesta ordem:
 
 1. `npm ci`
 2. `npm run check`
 
-## Observação
-- No sandbox do Codex, não incluir `npm run build` na rotina de `check`.
+No sandbox do Codex, não incluir `npm run build` na rotina de check.
 
-## Referências de briefing e execução
+Para alterações exclusivamente documentais ou de texto, `npm ci` e `npm run check` podem ser considerados não aplicáveis.
 
-- Para estruturar pedidos incompletos em padrão outcome-first, usar `docs/template-prompts.md`.
-- Para preparar briefings gerais para Codex, usar `docs/template-briefing-codex.md`.
-- Para execução de plano-base no Codex App, usar `docs/prompt-codex-app-executor.md`.
-- Para tarefas com impacto visual/frontend, usar também `docs/template-briefing-codex-frontend.md`.
+## Entrega
 
-## GitHub / fluxo remoto
+A resposta final deve informar:
 
-- Não usar Git remoto local dentro do sandbox do Codex:
-  - `git ls-remote`
-  - `git fetch`
-  - `git pull`
-  - `git push`
-  - `ssh -T git@github.com`
-
-- Para operações remotas, usar o conector GitHub do Codex:
-  - criar branch;
-  - criar/alterar/remover arquivos em branch de trabalho;
-  - criar commit/push via conector;
-  - abrir PR contra `main`;
-  - entregar link do PR.
-
-- Nunca aplicar alterações diretamente na `main`.
-
-### Fluxo operacional Codex / GitHub Desktop
-
-- Para alterações feitas pelo Codex, o fluxo padrão é remoto:
-  - criar branch via conector GitHub;
-  - criar/alterar/remover arquivos na branch remota;
-  - abrir PR contra `main`;
-  - validar via GitHub Actions;
-  - mergear pelo GitHub Web.
-
-- O workspace local e o GitHub Desktop devem ser tratados como espelho limpo da `main`:
-  - não criar commits locais pelo Codex;
-  - não publicar branches locais criadas incidentalmente;
-  - não levar alterações locais antigas para `main`;
-  - após merge de PR remoto, manter o Desktop em `main`, com `0 changed files`, usando apenas Fetch/Pull.
-
-- O Codex só deve editar arquivos diretamente no workspace local se o usuário pedir explicitamente um fluxo local.
-
-- Se houver mudanças locais no Desktop que já foram resolvidas por PR remoto mergeado, tratá-las como resíduo operacional e orientar descarte, sem commit e sem publish.
-
-### Gate pré-edição no Codex App
-
-Antes de editar arquivos no workspace local, verificar a branch ativa.
-
-- Se estiver em `main`, parar imediatamente.
-- Não editar arquivos diretamente na working tree da `main`.
-- Usar o conector GitHub para criar uma branch de trabalho e aplicar as alterações.
-- Se o conector GitHub não estiver disponível, reportar bloqueio antes de editar.
-
-- Se o conector GitHub não estiver disponível ou falhar, parar e informar o bloqueio. Não tentar substituir por Git remoto local dentro do sandbox.
-
-- Comandos Git locais continuam permitidos quando úteis:
-  - `git status`
-  - `git diff`
-  - inspeção de arquivos locais
-
-- Motivo: Git/SSH local pode falhar dentro do sandbox no Windows, enquanto o fluxo pelo conector GitHub foi validado e é o fluxo operacional desejado para branch, commit, push e PR.
-
-## Entrega / validação
-
-- A resposta final deve informar o status da validação:
-  - `npm ci`: executado, não executado ou não aplicável, com motivo quando não passar ou não for executado;
-  - `npm run check`: executado, não executado ou não aplicável, com motivo quando não passar ou não for executado.
-
-- Se a rotina padrão não for rodada, informar explicitamente na entrega final.
+- arquivos alterados;
+- PR criado, quando aplicável;
+- `npm ci`: executado, não executado ou não aplicável;
+- `npm run check`: executado, não executado ou não aplicável.
