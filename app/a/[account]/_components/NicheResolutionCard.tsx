@@ -74,6 +74,48 @@ export function NicheResolutionCard({
     );
   }
 
+  if (resolution.uxMode === "choose_from_options" && resolution.options.length === 1) {
+    const [singleOption] = resolution.options;
+
+    return (
+      <Card className="border-blue-200 bg-blue-50/50 shadow-sm">
+        <CardHeader>
+          <CardTitle>Confirma seu nicho?</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {formError ? <FeedbackMessage tone="error">{formError}</FeedbackMessage> : null}
+          <div className="rounded-lg border border-blue-100 bg-white px-4 py-3">
+            <p className="text-base font-semibold text-gray-950">{singleOption.name}</p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <form action={confirmOptionAction}>
+              <input type="hidden" name="account_subdomain" value={accountSubdomain} />
+              <input type="hidden" name="taxon_id" value={singleOption.taxonId} />
+              <Button type="submit" disabled={isPending}>
+                Sim, confirmar
+              </Button>
+            </form>
+            <Button
+              type="button"
+              className="bg-white text-gray-800 ring-1 ring-gray-300 hover:bg-gray-50"
+              disabled={isPending}
+              onClick={() => setShowRewrite(true)}
+            >
+              Outro
+            </Button>
+          </div>
+          {showRewrite ? (
+            <RewriteForm
+              accountSubdomain={accountSubdomain}
+              action={rewriteAction}
+              disabled={isPending}
+            />
+          ) : null}
+        </CardContent>
+      </Card>
+    );
+  }
+
   if (resolution.uxMode === "choose_from_options") {
     return (
       <Card className="border-blue-200 bg-blue-50/50 shadow-sm">

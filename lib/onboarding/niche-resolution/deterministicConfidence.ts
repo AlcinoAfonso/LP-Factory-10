@@ -6,6 +6,7 @@ import type {
 const HIGH_CONFIDENCE_SCORE = 0.92;
 const MIN_RELEVANT_SCORE = 0.7;
 const CLOSE_CANDIDATE_DELTA = 0.05;
+const SAFE_UNIQUE_TRGM_SCORE = 0.78;
 
 const STRONG_MATCH_SOURCES = new Set([
   "alias_exact",
@@ -26,6 +27,19 @@ function hasCloseSecondCandidate(
   second: TaxonMatchCandidate | undefined
 ): boolean {
   return second !== undefined && best.score - second.score <= CLOSE_CANDIDATE_DELTA;
+}
+
+function isSafeUniqueTrigramMatch(
+  best: TaxonMatchCandidate,
+  candidates: TaxonMatchCandidate[],
+): boolean {
+  return (
+    candidates.length === 1 &&
+    best.score >= SAFE_UNIQUE_TRGM_SCORE &&
+    best.matchSource
+      .split("+")
+      .some((source) => source.trim() === "trgm")
+  );
 }
 
 export function evaluateDeterministicTaxonMatch(
@@ -54,6 +68,18 @@ export function evaluateDeterministicTaxonMatch(
       aiEscalationMode: "rerank_candidates",
       needsAdminReview: true,
       reason: "low_confidence_insufficient_score",
+    };
+  }
+
+  if (isSafeUniqueTrigramMatch(best, candidates)) {
+    return {
+      confidence: "high",
+      selectedCandidate: best,
+      shouldUseDeterministicMatch: true,
+      shouldEscalateToAi: false,
+      aiEscalationMode: "none",
+      needsAdminReview: false,
+      reason: "high_confidence_strong_match",
     };
   }
 
