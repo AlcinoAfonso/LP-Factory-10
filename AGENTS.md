@@ -77,7 +77,7 @@ git add
 git commit
 ```
 
-Commits locais só são permitidos em branch dedicada, nunca na `main`. No modo robusto, commit local pode ser usado como checkpoint; publicação remota e PR continuam seguindo as regras de operações remotas.
+Commits locais só são permitidos em branch dedicada, nunca na `main`. No modo robusto, commit local é checkpoint opcional: se falhar ou exigir execução fora do sandbox, reportar o bloqueio e seguir pelas regras de operações remotas.
 
 ### Proibido no sandbox do Codex App
 
