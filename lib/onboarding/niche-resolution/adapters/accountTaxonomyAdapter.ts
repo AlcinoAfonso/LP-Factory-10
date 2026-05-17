@@ -19,6 +19,68 @@ type AccountTaxonomyPrimaryLinkRow = {
   source_type: AccountTaxonomySourceType;
 };
 
+
+export type ActivePrimaryAccountTaxon = {
+  taxonId: string;
+  name: string;
+  slug: string;
+};
+
+export async function getActivePrimaryAccountTaxon(input: {
+  accountId: string;
+}): Promise<ActivePrimaryAccountTaxon | null> {
+  const supabase = createServiceClient();
+
+  try {
+    const { data: primary, error: primaryError } = await supabase
+      .from("account_taxonomy")
+      .select("taxon_id")
+      .eq("account_id", input.accountId)
+      .eq("is_primary", true)
+      .eq("status", ACCOUNT_TAXONOMY_STATUS)
+      .limit(1)
+      .maybeSingle();
+
+    if (primaryError) {
+      console.error("getActivePrimaryAccountTaxon primary lookup failed:", {
+        code: (primaryError as any)?.code,
+        message: (primaryError as any)?.message ?? String(primaryError),
+      });
+      return null;
+    }
+
+    const taxonId = (primary as { taxon_id?: string | null } | null)?.taxon_id ?? null;
+    if (!taxonId) return null;
+
+    const { data: taxon, error: taxonError } = await supabase
+      .from("business_taxons")
+      .select("id,name,slug")
+      .eq("id", taxonId)
+      .eq("is_active", true)
+      .limit(1)
+      .maybeSingle();
+
+    if (taxonError) {
+      console.error("getActivePrimaryAccountTaxon taxon lookup failed:", {
+        code: (taxonError as any)?.code,
+        message: (taxonError as any)?.message ?? String(taxonError),
+      });
+      return null;
+    }
+
+    const row = taxon as { id?: string | null; name?: string | null; slug?: string | null } | null;
+    if (!row?.id || !row.name || !row.slug) return null;
+
+    return { taxonId: row.id, name: row.name, slug: row.slug };
+  } catch (error) {
+    console.error("getActivePrimaryAccountTaxon failed:", {
+      code: error instanceof Error ? error.name : undefined,
+      message: error instanceof Error ? error.message : String(error),
+    });
+    return null;
+  }
+}
+
 export type AccountTaxonomyLinkResult =
   | { status: "saved"; taxonId: string }
   | { status: "skipped_not_high_confidence"; taxonId: string | null }

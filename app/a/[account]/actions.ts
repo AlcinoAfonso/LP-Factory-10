@@ -400,7 +400,7 @@ export async function saveSetupAndContinueAction(
             schemaVersion: aiResult.schemaVersion,
             result: aiResult.output,
             uxMode: aiResult.output.uxMode,
-            suggestedTaxonId: aiResult.output.options[0]?.taxonId ?? null,
+            suggestedTaxonId: aiResult.output.options.find((option) => option.isOfficial)?.taxonId ?? null,
             suggestedNewTaxonLabel: aiResult.output.suggestedNewTaxonLabel,
             needsUserConfirmation: aiResult.output.needsUserConfirmation,
             needsAdminReview: aiResult.output.needsAdminReview,

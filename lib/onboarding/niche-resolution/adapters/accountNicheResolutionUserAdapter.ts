@@ -7,9 +7,14 @@ import type {
   AiNicheResolutionOutput,
   AiNicheResolutionUxMode,
   NicheResolutionUserActionResult,
+  TaxonMatchCandidate,
   UserNicheResolutionStatus,
 } from "../contracts";
+import { AI_NICHE_RESOLUTION_SCHEMA_VERSION } from "../contracts";
+import { evaluateDeterministicTaxonMatch } from "../deterministicConfidence";
 import { linkPrimaryAccountTaxonomyFromUserConfirmedAi } from "./accountTaxonomyAdapter";
+import { matchBusinessTaxonsDeterministic } from "./taxonMatchAdapter";
+import { resolveNicheWithOpenAi } from "./openAiResolver";
 
 const ACTIONABLE_UX_MODES = new Set<AiNicheResolutionUxMode>([
   "confirm_single",
@@ -31,6 +36,7 @@ type ResolutionRow = {
   ai_ux_mode: AiNicheResolutionUxMode | null;
   ai_suggested_taxon_id: string | null;
   user_resolution_status: UserNicheResolutionStatus | null;
+  user_rewrite_input: string | null;
 };
 
 type TaxonRow = {
@@ -92,7 +98,9 @@ export async function confirmAiOptionForAccount(input: {
   if (!validated.ok) return { ok: false, reason: validated.reason };
 
   const allowedTaxonIds = new Set(
-    validated.context.actionable.options.map((option) => option.taxonId),
+    validated.context.actionable.options
+      .filter((option) => option.isOfficial && option.taxonId)
+      .map((option) => option.taxonId),
   );
 
   if (!allowedTaxonIds.has(input.taxonId)) {
@@ -129,32 +137,32 @@ export async function rewriteAiNicheResolutionForAccount(input: {
     return { ok: false, reason: "rewrite_not_allowed" };
   }
 
-  const supabase = createServiceClient();
-  const now = new Date().toISOString();
-
-  let query: any = supabase
-    .from("account_niche_resolutions")
-    .update({
-      user_resolution_status: "rewritten",
-      user_rewrite_input: rewriteInput,
-      user_rejected_at: now,
-    })
-    .eq("account_id", input.accountId)
-    .or("user_resolution_status.is.null,user_resolution_status.eq.pending_confirmation");
-
-  if (typeof query?.maxAffected === "function") query = query.maxAffected(1);
-
-  const { error } = await query;
-
-  if (error) {
-    console.error("rewriteAiNicheResolutionForAccount failed:", {
-      code: (error as any)?.code,
-      message: (error as any)?.message ?? String(error),
+  if (validated.context.resolution.user_rewrite_input) {
+    const finalFallbackSaved = await persistRetryAiResolution({
+      accountId: input.accountId,
+      rewriteInput,
+      output: finalFallbackOutput("rewrite_retry_limit_reached"),
+      model: null,
+      reason: "rewrite_retry_limit_reached",
     });
-    return { ok: false, reason: "update_failed" };
+
+    return finalFallbackSaved
+      ? { ok: true, status: "rewritten" }
+      : { ok: false, reason: "update_failed" };
   }
 
-  return { ok: true, status: "rewritten" };
+  const retryOutput = await resolveRewriteInputOnce(rewriteInput);
+  const retrySaved = await persistRetryAiResolution({
+    accountId: input.accountId,
+    rewriteInput,
+    output: retryOutput.output,
+    model: retryOutput.model,
+    reason: retryOutput.reason,
+  });
+
+  return retrySaved
+    ? { ok: true, status: "rewritten" }
+    : { ok: false, reason: "update_failed" };
 }
 
 export async function dismissAiNicheResolutionForAccount(input: {
@@ -240,6 +248,151 @@ async function confirmValidatedTaxon(
   return { ok: true, status: "confirmed" };
 }
 
+
+type RetryAiResolution = {
+  output: AiNicheResolutionOutput;
+  model: string | null;
+  reason: string;
+};
+
+async function resolveRewriteInputOnce(rewriteInput: string): Promise<RetryAiResolution> {
+  const candidates = await matchBusinessTaxonsDeterministic(rewriteInput, 10);
+  const decision = evaluateDeterministicTaxonMatch(candidates);
+
+  if (decision.selectedCandidate && decision.confidence === "high") {
+    return {
+      output: officialCandidatesOutput([decision.selectedCandidate], "rewrite_high_confidence_candidate"),
+      model: null,
+      reason: "rewrite_high_confidence_candidate",
+    };
+  }
+
+  const aiResult = await resolveNicheWithOpenAi({
+    rawInput: rewriteInput,
+    decision,
+    candidates,
+  });
+
+  if (aiResult.ok && aiResult.output.options.length > 0) {
+    return {
+      output: aiResult.output,
+      model: aiResult.model,
+      reason: aiResult.output.reason,
+    };
+  }
+
+  if (candidates.length > 0) {
+    return {
+      output: officialCandidatesOutput(candidates.slice(0, 3), "rewrite_official_candidates_without_ai"),
+      model: aiResult.model,
+      reason: aiResult.ok ? aiResult.output.reason : aiResult.reason,
+    };
+  }
+
+  return {
+    output: finalFallbackOutput(aiResult.ok ? aiResult.output.reason : aiResult.reason),
+    model: aiResult.model,
+    reason: aiResult.ok ? aiResult.output.reason : aiResult.reason,
+  };
+}
+
+function officialCandidatesOutput(
+  candidates: TaxonMatchCandidate[],
+  reason: string,
+): AiNicheResolutionOutput {
+  const options = candidates.slice(0, 3).map((candidate) => ({
+    taxonId: candidate.taxonId,
+    name: candidate.name,
+    slug: candidate.slug,
+    confidence:
+      candidate.score >= 0.92 ? "high" as const : candidate.score >= 0.7 ? "medium" as const : "low" as const,
+    reason: "official_candidate_after_rewrite",
+    isOfficial: true,
+  }));
+
+  return {
+    uxMode: options.length === 1 ? "confirm_single" : "choose_from_options",
+    message: options.length === 1
+      ? "Você quis dizer este nicho?"
+      : "Encontramos algumas possibilidades para seu nicho.",
+    options,
+    needsAdminReview: false,
+    needsUserConfirmation: true,
+    shouldCreateOfficialLink: false,
+    suggestedNewTaxonLabel: null,
+    reason,
+  };
+}
+
+function finalFallbackOutput(reason: string): AiNicheResolutionOutput {
+  return {
+    uxMode: "fallback_review",
+    message: "Vamos revisar essa informação para personalizar melhor sua conta.",
+    options: [],
+    needsAdminReview: true,
+    needsUserConfirmation: false,
+    shouldCreateOfficialLink: false,
+    suggestedNewTaxonLabel: null,
+    reason,
+  };
+}
+
+async function persistRetryAiResolution(input: {
+  accountId: string;
+  rewriteInput: string;
+  output: AiNicheResolutionOutput;
+  model: string | null;
+  reason: string;
+}): Promise<boolean> {
+  const supabase = createServiceClient();
+  const now = new Date().toISOString();
+  const suggestedTaxonId = input.output.options.find((option) => option.isOfficial)?.taxonId ?? null;
+
+  try {
+    let query: any = supabase
+      .from("account_niche_resolutions")
+      .update({
+        ai_status: "resolved",
+        ai_error_code: null,
+        ai_model: input.model,
+        ai_schema_version: AI_NICHE_RESOLUTION_SCHEMA_VERSION,
+        ai_result_json: input.output,
+        ai_ux_mode: input.output.uxMode,
+        ai_suggested_taxon_id: suggestedTaxonId,
+        ai_suggested_new_taxon_label: input.output.suggestedNewTaxonLabel,
+        ai_needs_user_confirmation: input.output.needsUserConfirmation,
+        ai_needs_admin_review: input.output.needsAdminReview,
+        ai_reason: input.reason,
+        ai_processed_at: now,
+        user_resolution_status: "pending_confirmation",
+        user_rewrite_input: input.rewriteInput,
+        user_rejected_at: now,
+      })
+      .eq("account_id", input.accountId)
+      .or("user_resolution_status.is.null,user_resolution_status.eq.pending_confirmation");
+
+    if (typeof query?.maxAffected === "function") query = query.maxAffected(1);
+
+    const { error } = await query;
+
+    if (error) {
+      console.error("persistRetryAiResolution failed:", {
+        code: (error as any)?.code,
+        message: (error as any)?.message ?? String(error),
+      });
+      return false;
+    }
+
+    return true;
+  } catch (error) {
+    console.error("persistRetryAiResolution failed:", {
+      code: error instanceof Error ? error.name : undefined,
+      message: error instanceof Error ? error.message : String(error),
+    });
+    return false;
+  }
+}
+
 async function getValidatedActionContext(input: {
   accountId: string;
   requireUxMode: AiNicheResolutionUxMode | null;
@@ -252,7 +405,7 @@ async function getValidatedActionContext(input: {
   const { data: resolution, error: resolutionError } = await supabase
     .from("account_niche_resolutions")
     .select(
-      "account_id,ai_status,ai_result_json,ai_ux_mode,ai_suggested_taxon_id,user_resolution_status",
+      "account_id,ai_status,ai_result_json,ai_ux_mode,ai_suggested_taxon_id,user_resolution_status,user_rewrite_input",
     )
     .eq("account_id", input.accountId)
     .limit(1)
@@ -308,7 +461,10 @@ async function getValidatedActionContext(input: {
   const result = parseAiResult(row.ai_result_json);
   if (!result) return { ok: false, reason: "invalid_ai_result" };
 
-  const optionTaxonIds = result.options.map((option) => option.taxonId).filter(Boolean);
+  const optionTaxonIds = result.options
+    .filter((option) => option.isOfficial)
+    .map((option) => option.taxonId)
+    .filter(Boolean);
   const taxonIds = Array.from(
     new Set([row.ai_suggested_taxon_id, ...optionTaxonIds].filter((id): id is string => Boolean(id))),
   );
@@ -320,7 +476,18 @@ async function getValidatedActionContext(input: {
     ? taxonToOption(taxonMap.get(row.ai_suggested_taxon_id) ?? null)
     : null;
   const options = result.options
-    .map((option) => taxonToOption(taxonMap.get(option.taxonId) ?? null))
+    .map((option) => {
+      if (!option.isOfficial) {
+        return {
+          taxonId: null,
+          name: option.name,
+          slug: null,
+          isOfficial: false,
+        } satisfies ActionableNicheResolutionOption;
+      }
+
+      return taxonToOption(option.taxonId ? taxonMap.get(option.taxonId) ?? null : null);
+    })
     .filter((option): option is ActionableNicheResolutionOption => Boolean(option));
 
   if (row.ai_ux_mode === "confirm_single" && !suggestedTaxon) {
@@ -367,7 +534,7 @@ async function getActiveTaxonsByIds(ids: string[]): Promise<TaxonRow[]> {
 
 function taxonToOption(taxon: TaxonRow | null): ActionableNicheResolutionOption | null {
   if (!taxon?.id || !taxon.name || !taxon.slug) return null;
-  return { taxonId: taxon.id, name: taxon.name, slug: taxon.slug };
+  return { taxonId: taxon.id, name: taxon.name, slug: taxon.slug, isOfficial: true };
 }
 
 function parseAiResult(value: unknown): AiNicheResolutionOutput | null {
@@ -376,19 +543,34 @@ function parseAiResult(value: unknown): AiNicheResolutionOutput | null {
   const result = value as Partial<AiNicheResolutionOutput>;
   if (!Array.isArray(result.options)) return null;
 
-  const options = result.options.filter((option) => {
-    return (
-      option &&
-      typeof option === "object" &&
-      typeof option.taxonId === "string" &&
-      option.taxonId.trim().length > 0
-    );
-  });
+  const options = result.options
+    .map((option) => {
+      if (!option || typeof option !== "object" || typeof option.name !== "string") return null;
+
+      const name = option.name.trim();
+      if (!name) return null;
+
+      const hasOfficialTaxonId =
+        typeof option.taxonId === "string" && option.taxonId.trim().length > 0;
+      const isOfficial = option.isOfficial === true || (option.isOfficial !== false && hasOfficialTaxonId);
+
+      if (isOfficial && !hasOfficialTaxonId) return null;
+
+      return {
+        taxonId: isOfficial ? (option.taxonId as string).trim() : null,
+        name,
+        slug: isOfficial && typeof option.slug === "string" ? option.slug : null,
+        confidence: option.confidence ?? "low",
+        reason: option.reason ?? "ai_option",
+        isOfficial,
+      };
+    })
+    .filter((option): option is AiNicheResolutionOutput["options"][number] => Boolean(option));
 
   return {
     uxMode: result.uxMode ?? "none",
     message: typeof result.message === "string" ? result.message : "",
-    options: options as AiNicheResolutionOutput["options"],
+    options,
     needsAdminReview: result.needsAdminReview === true,
     needsUserConfirmation: result.needsUserConfirmation === true,
     shouldCreateOfficialLink: false,

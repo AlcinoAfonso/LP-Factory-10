@@ -49,11 +49,12 @@ export type AiNicheResolutionOutput = {
   uxMode: AiNicheResolutionUxMode;
   message: string;
   options: Array<{
-    taxonId: string;
+    taxonId: string | null;
     name: string;
-    slug: string;
+    slug: string | null;
     confidence: DeterministicMatchConfidence;
     reason: string;
+    isOfficial: boolean;
   }>;
   needsAdminReview: boolean;
   needsUserConfirmation: boolean;
@@ -109,9 +110,10 @@ export type UserNicheResolutionStatus =
   | "dismissed";
 
 export type ActionableNicheResolutionOption = {
-  taxonId: string;
+  taxonId: string | null;
   name: string;
-  slug: string;
+  slug: string | null;
+  isOfficial: boolean;
 };
 
 export type ActionableNicheResolution = {

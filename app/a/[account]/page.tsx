@@ -2,6 +2,7 @@ import { getAccessContext } from "@/lib/access/getAccessContext";
 import { getActionableNicheResolutionForAccount } from "../../../lib/onboarding/niche-resolution/adapters/accountNicheResolutionUserAdapter";
 import { PendingSetupFirstSteps } from "./_components/PendingSetupFirstSteps";
 import { NicheResolutionCard } from "./_components/NicheResolutionCard";
+import { getActivePrimaryAccountTaxon } from "../../../lib/onboarding/niche-resolution/adapters/accountTaxonomyAdapter";
 
 type DashState = "auth" | "onboarding" | "public";
 
@@ -41,12 +42,15 @@ export default async function Page({ params }: PageProps) {
     }
 
     const accountId = (ctx?.account?.id ?? ctx?.account_id ?? null) as string | null;
-    const nicheResolution = accountId
-      ? await getActionableNicheResolutionForAccount({
-          accountId,
-          accountStatus,
-        })
-      : null;
+    const [nicheResolution, primaryTaxon] = accountId
+      ? await Promise.all([
+          getActionableNicheResolutionForAccount({
+            accountId,
+            accountStatus,
+          }),
+          getActivePrimaryAccountTaxon({ accountId }),
+        ])
+      : [null, null];
 
     return (
       <main className="mx-auto max-w-5xl px-6 py-10">
@@ -60,9 +64,16 @@ export default async function Page({ params }: PageProps) {
 
           <section className="rounded-xl border bg-white p-6 shadow-sm">
             <h1 className="text-2xl font-semibold">Dashboard</h1>
-            <p className="mt-2 text-sm text-gray-600">
-              Sua conta está ativa. Novos recursos do dashboard aparecerão aqui conforme forem liberados.
-            </p>
+            {primaryTaxon ? (
+              <div className="mt-2 space-y-2 text-sm text-gray-600">
+                <p>Sua conta está ativa para o nicho {primaryTaxon.name}.</p>
+                <p>Estamos desenvolvendo recursos para este nicho e entraremos em contato.</p>
+              </div>
+            ) : (
+              <p className="mt-2 text-sm text-gray-600">
+                Sua conta está ativa. Novos recursos do dashboard aparecerão aqui conforme forem liberados.
+              </p>
+            )}
           </section>
         </div>
       </main>

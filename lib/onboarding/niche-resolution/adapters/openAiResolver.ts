@@ -84,13 +84,14 @@ const AI_NICHE_RESOLUTION_SCHEMA = {
       items: {
         type: "object",
         additionalProperties: false,
-        required: ["taxonId", "name", "slug", "confidence", "reason"],
+        required: ["taxonId", "name", "slug", "confidence", "reason", "isOfficial"],
         properties: {
-          taxonId: { type: "string" },
+          taxonId: { type: ["string", "null"] },
           name: { type: "string" },
-          slug: { type: "string" },
+          slug: { type: ["string", "null"] },
           confidence: { type: "string", enum: ["high", "medium", "low"] },
           reason: { type: "string" },
+          isOfficial: { type: "boolean" },
         },
       },
     },
@@ -104,12 +105,15 @@ const AI_NICHE_RESOLUTION_SCHEMA = {
 
 const SYSTEM_PROMPT = [
   "You resolve onboarding business niche ambiguity for LP Factory.",
-  "Use only the official candidate taxons provided by the server.",
+  "Prefer official candidate taxons provided by the server when they are useful.",
   "Never create, invent, or approve a taxon, alias, or official account link.",
   "shouldCreateOfficialLink must always be false.",
+  "For official options, set isOfficial true and use the official taxonId, name, and slug.",
+  "When no official candidate is safe, infer likely market meanings from raw_input and suggest 2 or 3 helpful market options with isOfficial false, taxonId null, and slug null before using fallback_review.",
+  "For ambiguous inputs like Corretor, suggest market options such as real estate broker, insurance broker, or commercial consultant if appropriate.",
   "For medium confidence, prepare one official option for a simple confirmation.",
-  "For low confidence with official candidates, prepare up to three official options.",
-  "For no useful official candidate, return fallback_review with no options.",
+  "For low confidence with official candidates, prepare up to three useful options.",
+  "Use fallback_review only when no useful official or semantic market option can be suggested.",
   "Keep messages short and suitable for future Portuguese UX.",
 ].join("\n");
 
@@ -310,10 +314,6 @@ function normalizeAiOutput(
         .slice(0, MAX_AI_OPTIONS)
     : [];
 
-  if (decision.reason === "no_candidates" || candidates.length === 0) {
-    return fallbackOutput("no_official_candidates", normalizeSuggestedLabel(raw.suggestedNewTaxonLabel));
-  }
-
   let uxMode = normalizeUxMode(raw.uxMode);
 
   if (decision.confidence === "medium" && options.length > 0) {
@@ -348,21 +348,38 @@ function normalizeOption(
   raw: unknown,
   candidateById: Map<string, TaxonMatchCandidate>,
 ): AiNicheResolutionOutput["options"][number] | null {
-  if (!isRecord(raw) || typeof raw.taxonId !== "string") return null;
-
-  const officialCandidate = candidateById.get(raw.taxonId);
-  if (!officialCandidate) return null;
+  if (!isRecord(raw)) return null;
 
   const confidence = OPTION_CONFIDENCES.has(raw.confidence as DeterministicMatchConfidence)
     ? (raw.confidence as DeterministicMatchConfidence)
     : "low";
 
+  if (raw.isOfficial === true) {
+    if (typeof raw.taxonId !== "string") return null;
+
+    const officialCandidate = candidateById.get(raw.taxonId);
+    if (!officialCandidate) return null;
+
+    return {
+      taxonId: officialCandidate.taxonId,
+      name: officialCandidate.name,
+      slug: officialCandidate.slug,
+      confidence,
+      reason: normalizeShortText(raw.reason, "official_candidate"),
+      isOfficial: true,
+    };
+  }
+
+  const name = normalizeShortText(raw.name, "").slice(0, 120);
+  if (!name) return null;
+
   return {
-    taxonId: officialCandidate.taxonId,
-    name: officialCandidate.name,
-    slug: officialCandidate.slug,
+    taxonId: null,
+    name,
+    slug: null,
     confidence,
-    reason: normalizeShortText(raw.reason, "official_candidate"),
+    reason: normalizeShortText(raw.reason, "semantic_market_option"),
+    isOfficial: false,
   };
 }
 

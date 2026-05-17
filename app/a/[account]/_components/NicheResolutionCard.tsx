@@ -57,8 +57,8 @@ export function NicheResolutionCard({
         <CardHeader>
           <CardTitle>Ainda estamos analisando seu nicho</CardTitle>
           <CardDescription>
-            Não encontramos uma categoria oficial segura para classificar automaticamente. Você pode
-            continuar usando a conta normalmente.
+            Vamos revisar essa informação para personalizar melhor sua conta. Você pode continuar
+            usando normalmente.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -88,13 +88,14 @@ export function NicheResolutionCard({
             <p className="text-base font-semibold text-gray-950">{singleOption.name}</p>
           </div>
           <div className="flex flex-wrap gap-2">
-            <form action={confirmOptionAction}>
-              <input type="hidden" name="account_subdomain" value={accountSubdomain} />
-              <input type="hidden" name="taxon_id" value={singleOption.taxonId} />
-              <Button type="submit" disabled={isPending}>
-                Sim, confirmar
-              </Button>
-            </form>
+            <OptionActionForm
+              option={singleOption}
+              accountSubdomain={accountSubdomain}
+              confirmAction={confirmOptionAction}
+              rewriteAction={rewriteAction}
+              disabled={isPending}
+              label="Sim, confirmar"
+            />
             <Button
               type="button"
               className="bg-white text-gray-800 ring-1 ring-gray-300 hover:bg-gray-50"
@@ -127,13 +128,15 @@ export function NicheResolutionCard({
           {formError ? <FeedbackMessage tone="error">{formError}</FeedbackMessage> : null}
           <div className="flex flex-wrap gap-2">
             {resolution.options.map((option) => (
-              <form key={option.taxonId} action={confirmOptionAction}>
-                <input type="hidden" name="account_subdomain" value={accountSubdomain} />
-                <input type="hidden" name="taxon_id" value={option.taxonId} />
-                <Button type="submit" disabled={isPending}>
-                  {option.name}
-                </Button>
-              </form>
+              <OptionActionForm
+                key={option.taxonId ?? option.name}
+                option={option}
+                accountSubdomain={accountSubdomain}
+                confirmAction={confirmOptionAction}
+                rewriteAction={rewriteAction}
+                disabled={isPending}
+                label={option.name}
+              />
             ))}
             <Button
               type="button"
@@ -198,6 +201,44 @@ export function NicheResolutionCard({
   );
 }
 
+function OptionActionForm({
+  option,
+  accountSubdomain,
+  confirmAction,
+  rewriteAction,
+  disabled,
+  label,
+}: {
+  option: ActionableNicheResolution["options"][number];
+  accountSubdomain: string;
+  confirmAction: (payload: FormData) => void;
+  rewriteAction: (payload: FormData) => void;
+  disabled: boolean;
+  label: string;
+}) {
+  if (option.isOfficial && option.taxonId) {
+    return (
+      <form action={confirmAction}>
+        <input type="hidden" name="account_subdomain" value={accountSubdomain} />
+        <input type="hidden" name="taxon_id" value={option.taxonId} />
+        <Button type="submit" disabled={disabled}>
+          {label}
+        </Button>
+      </form>
+    );
+  }
+
+  return (
+    <form action={rewriteAction}>
+      <input type="hidden" name="account_subdomain" value={accountSubdomain} />
+      <input type="hidden" name="rewrite_input" value={option.name} />
+      <Button type="submit" disabled={disabled}>
+        {label}
+      </Button>
+    </form>
+  );
+}
+
 function RewriteForm({
   accountSubdomain,
   action,
@@ -227,7 +268,7 @@ function RewriteForm({
           Enviar
         </Button>
       </div>
-      <p className="text-xs text-gray-500">Use até 120 caracteres. Não vamos chamar a IA novamente.</p>
+      <p className="text-xs text-gray-500">Use até 120 caracteres. Vamos tentar uma análise adicional uma única vez.</p>
     </form>
   );
 }
