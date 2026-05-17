@@ -54,6 +54,8 @@ Processo:
 7. Publicar PR da etapa quando estiver pronta.
 8. Após merge, iniciar a próxima etapa em nova branch baseada na `main` atualizada.
 
+No modo robusto, trabalhar localmente em worktree dedicado é intencional e permitido. O fluxo só é inválido se editar `main`, misturar tarefas/etapas ou depender de Git remoto local no sandbox.
+
 ## Git / limites operacionais
 
 - Nunca editar diretamente na `main`.
@@ -74,7 +76,7 @@ git add
 git commit
 ```
 
-Commits locais só são permitidos em branch dedicada, nunca na `main`.
+Commits locais só são permitidos em branch dedicada, nunca na `main`. No modo robusto, commit local pode ser usado como checkpoint; publicação remota e PR continuam seguindo as regras de operações remotas.
 
 ### Proibido no sandbox do Codex App
 
