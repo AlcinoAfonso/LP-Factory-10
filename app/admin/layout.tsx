@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation';
 import { requirePlatformAdmin } from '@/lib/access/guards';
 import { getUserEmail } from '@/lib/auth/authAdapter';
 import { AdminHeader } from '@/components/admin/AdminHeader';
+import { AdminSidebar } from '@/components/admin/AdminSidebar';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -24,9 +25,14 @@ export default async function AdminLayout({ children }: AdminLayoutProps) {
   const userEmail = await getUserEmail();
 
   return (
-    <>
+    <div className="min-h-screen bg-surface-app">
       <AdminHeader userEmail={userEmail} />
-      <main className="mx-auto max-w-6xl px-4 py-6">{children}</main>
-    </>
+      <div className="mx-auto flex max-w-7xl flex-col md:flex-row">
+        <AdminSidebar />
+        <main className="w-full min-w-0 px-4 py-6 md:px-6 lg:px-8">
+          {children}
+        </main>
+      </div>
+    </div>
   );
 }
