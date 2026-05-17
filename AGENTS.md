@@ -63,6 +63,7 @@ No modo robusto, trabalhar localmente em worktree dedicado é intencional e perm
 - O merge final deve acontecer somente pelo GitHub Web.
 - GitHub Web é a fonte de verdade para PRs, Actions, preview remoto e merge.
 - GitHub Desktop é apoio/fallback, não etapa obrigatória.
+- Se houver branch ou mudança local já resolvida por PR mergeado, tratar como resíduo operacional: não commitar, não publicar e orientar limpeza antes de nova tarefa.
 
 ### Permitido localmente
 
