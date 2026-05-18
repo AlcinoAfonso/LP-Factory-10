@@ -85,7 +85,8 @@ export default async function AdminAccountDetailPage({ params }: AdminAccountDet
             <div className="mt-4 overflow-x-auto">
               <table className="min-w-full divide-y divide-border text-sm">
                 <thead className="text-left text-xs font-medium uppercase text-muted-foreground">
-                  <tr>
+                <tr>
+                    <th className="py-2 pr-3">E-mail</th>
                     <th className="py-2 pr-3">Role</th>
                     <th className="px-3 py-2">Status</th>
                     <th className="py-2 pl-3">Criado em</th>
@@ -94,7 +95,8 @@ export default async function AdminAccountDetailPage({ params }: AdminAccountDet
                 <tbody className="divide-y divide-border">
                   {account.members.map((member) => (
                     <tr key={member.id}>
-                      <td className="py-2 pr-3">{member.role ?? "-"}</td>
+                      <td className="py-2 pr-3">{member.email ?? "E-mail nao disponivel"}</td>
+                      <td className="py-2 pr-3 text-muted-foreground">{member.role ?? "-"}</td>
                       <td className="px-3 py-2 text-muted-foreground">{member.status ?? "-"}</td>
                       <td className="py-2 pl-3 text-muted-foreground">{formatAdminDate(member.createdAt)}</td>
                     </tr>

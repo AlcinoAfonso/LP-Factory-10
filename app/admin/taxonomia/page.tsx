@@ -48,7 +48,7 @@ export default async function AdminTaxonomyPage({ searchParams }: AdminTaxonomyP
             <input
               className="h-10 w-full rounded-md border border-border bg-background px-3 text-sm outline-none ring-brand-600/20 transition focus:ring-4"
               name="q"
-              placeholder="Nome ou slug"
+              placeholder="Nome ou identificador"
               defaultValue={search}
             />
           </label>
@@ -121,7 +121,6 @@ export default async function AdminTaxonomyPage({ searchParams }: AdminTaxonomyP
                   <tr key={taxon.id} className="align-top">
                     <td className="px-4 py-3">
                       <div className="font-medium text-foreground">{taxon.name}</div>
-                      <div className="mt-1 text-xs text-muted-foreground">{taxon.slug}</div>
                     </td>
                     <td className="px-4 py-3 text-muted-foreground">{taxon.level}</td>
                     <td className="px-4 py-3 text-muted-foreground">{taxon.parentName ?? "-"}</td>
