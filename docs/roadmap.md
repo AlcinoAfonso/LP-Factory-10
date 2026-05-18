@@ -1,8 +1,8 @@
 0. Introdução
 
 0.1 Cabeçalho
-• Data: 14/05/2026
-• Versão: v1.5.53
+• Data: 18/05/2026
+• Versão: v1.5.54
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -868,9 +868,10 @@
 • Registrar o reinício do Admin Dashboard com foco exclusivo na base mínima de privilégio admin/shared access já existente no repositório.
 
 12.3 Escopo atual
-• O E12, neste momento, cobre a infraestrutura de autorização administrativa reutilizável e a primeira superfície protegida do Admin.
-• A superfície inicial de `/admin` foi entregue como base de acesso/UI do contexto administrativo.
-• Novos fluxos, módulos e superfícies operacionais mais densas entram no E12 somente quando houver recorte real aprovado e artefato versionado.
+• O E12 cobre a infraestrutura de autorização administrativa reutilizável e a superfície protegida do Admin Dashboard.
+• A superfície `/admin` evoluiu para um shell operacional protegido, com header próprio, navegação administrativa, sidebar desktop, menu mobile e rotas placeholder para áreas futuras.
+• A entrada `/admin` redireciona para `/admin/contas`, evitando uma visão geral sem função operacional real nesta etapa.
+• Funcionalidades read-only com dados reais entram em etapa posterior, com recorte próprio, branch própria e PR próprio.
 
 12.4 Base existente no repositório
 • `lib/admin/index.ts`
@@ -878,33 +879,58 @@
 • `lib/access/guards.ts`
 • `app/admin/layout.tsx`
 • `app/admin/page.tsx`
+• `app/admin/contas/page.tsx`
+• `app/admin/resolucoes-de-nicho/page.tsx`
+• `app/admin/taxonomia/page.tsx`
+• `app/admin/templates/page.tsx`
+• `app/admin/auditoria/page.tsx`
 • `components/admin/AdminHeader.tsx`
+• `components/admin/AdminMobileMenu.tsx`
+• `components/admin/AdminPlaceholderPage.tsx`
+• `components/admin/AdminSidebar.tsx`
 • `components/admin/AdminUserMenu.tsx`
-• Essa base já concentra checagens de privilégio admin, guards compartilhados e a primeira superfície administrativa ativa do projeto.
+• `components/admin/adminNavigation.ts`
+• Essa base concentra checagens de privilégio admin, guard protegido, header/menu próprios e o shell operacional inicial do Admin, sem dependência de contexto de conta.
 
-12.5 Acesso e superfície inicial do Admin
+12.5 Shell operacional do Admin
 12.5.1 Status
-• Concluído (exec) (18/04/2026)
+• Concluído (exec) (18/05/2026)
 
 12.5.2 Escopo
-• Entregue a primeira superfície real de `/admin` com gate administrativo SSR reaproveitando a infraestrutura admin existente.
-• Entregue header próprio do Admin com `LP Factory Administrativo`.
-• Entregue página inicial neutra do Admin.
-• Entregue menu próprio do Admin com avatar/logout, sem `UserMenu`, sem `AccountSwitcher` e sem dependência de contexto de conta.
-• Ajustado o fluxo de login para preservar o retorno para `/admin` no modelo atual.
+• Entregue shell operacional protegido do Admin Dashboard sobre o gate SSR existente em `app/admin/layout.tsx`.
+• Mantido `requirePlatformAdmin()` como regra de entrada da seção Admin.
+• Mantidos header e menu próprios do Admin, sem `Header`, sem `UserMenu`, sem `AccountSwitcher` e sem dependência de conta ativa.
+• Entregue navegação administrativa própria com as áreas: Contas, Resoluções de nicho, Taxonomia, Templates e Auditoria.
+• Entregue sidebar esquerda para desktop e menu hambúrguer no mobile.
+• Entregues páginas placeholder enxutas para áreas futuras, marcadas como em preparação e sem dados falsos.
+• `/admin` passa a redirecionar para `/admin/contas`.
+• Não houve queries novas, mutações, auth novo, SQL, migrations, RLS, billing ou funcionalidades read-only com dados reais.
 
 12.5.3 ARTEFATOS_REPO
 • Criados:
+• `app/admin/contas/page.tsx`
+• `app/admin/resolucoes-de-nicho/page.tsx`
+• `app/admin/taxonomia/page.tsx`
+• `app/admin/templates/page.tsx`
+• `app/admin/auditoria/page.tsx`
+• `components/admin/AdminMobileMenu.tsx`
+• `components/admin/AdminPlaceholderPage.tsx`
+• `components/admin/AdminSidebar.tsx`
+• `components/admin/adminNavigation.ts`
+• Ajustados:
 • `app/admin/layout.tsx`
 • `app/admin/page.tsx`
 • `components/admin/AdminHeader.tsx`
-• `components/admin/AdminUserMenu.tsx`
-• Ajustados:
-• `app/auth/login/page.tsx`
-• `components/login-form.tsx`
 
-12.5.4 Pendências
-• Avaliar reestruturação futura para `/admin` público com botão `Entrar` e área protegida separada.
+12.5.4 Validação
+• `npm ci` executado com sucesso.
+• `npm run check` executado com sucesso, sem erros.
+• Preview remoto validado visualmente em desktop e mobile.
+• Preview local não foi usado como validação final por atrito operacional do sandbox/servidor local.
+
+12.5.5 Pendências
+• Implementar etapa posterior de funcionalidades read-only com dados reais.
+• Validar, na etapa read-only, lista de contas, filtros, taxonomia, resoluções de nicho e detalhes.
 • Avaliar se o logout do contexto Admin deve voltar para uma página pública própria do Admin.
 
 13. E13 — Partner Dashboard
@@ -1099,6 +1125,8 @@
 • Definir o primeiro recorte funcional do LP Builder no roadmap
 
 99. Changelog
+v1.5.54 — 18/05/2026 — E12 atualizado com o estado final do shell operacional do Admin Dashboard: sidebar desktop, menu mobile, navegação própria, rotas placeholder para áreas administrativas, `/admin` redirecionando para `/admin/contas`, artefatos, validações e pendências da etapa read-only futura.
+
 v1.5.53 — 14/05/2026 — Roadmap atualizado com o estado final da implementação 20.8: IA estruturada server-side como complemento ao matching determinístico, persistência apenas em `account_niche_resolutions`, preservação de `account_taxonomy`, artefatos, validações, PR mergeado e pendências futuras.
 
 v1.5.52 — 11/05/2026 — Roadmap atualizado com o estado final da implementação 20.7: vínculo oficial em `account_taxonomy` apenas para alta confiança, preservação de `account_niche_resolutions` como registro operacional, regra de conflito de primário, artefatos, QA runtime e pendências futuras.
