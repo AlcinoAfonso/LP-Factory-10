@@ -12,8 +12,8 @@ export const adminAreas: AdminArea[] = [
   {
     title: 'Contas',
     href: '/admin/contas',
-    description: 'Area prevista para leitura e acompanhamento de contas.',
-    status: 'Em preparação',
+    description: 'Leitura e acompanhamento read-only de contas reais.',
+    status: 'Disponível',
     scope: [
       'Lista read-only de contas reais',
       'Filtros operacionais',
@@ -23,8 +23,8 @@ export const adminAreas: AdminArea[] = [
   {
     title: 'Resoluções de nicho',
     href: '/admin/resolucoes-de-nicho',
-    description: 'Área prevista para acompanhar resoluções de nicho.',
-    status: 'Em preparação',
+    description: 'Acompanhamento read-only das resoluções de nicho.',
+    status: 'Disponível',
     scope: [
       'Histórico read-only de resoluções',
       'Sinais de confiança',
@@ -34,8 +34,8 @@ export const adminAreas: AdminArea[] = [
   {
     title: 'Taxonomia',
     href: '/admin/taxonomia',
-    description: 'Área prevista para consultar a estrutura de taxons.',
-    status: 'Em preparação',
+    description: 'Consulta read-only da estrutura de taxons.',
+    status: 'Disponível',
     scope: [
       'Consulta read-only da taxonomia',
       'Navegação por hierarquia',
