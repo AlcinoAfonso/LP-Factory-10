@@ -38,7 +38,7 @@ export async function getAdminAccountDetail(accountId: string): Promise<AdminAcc
   const supabase = createServiceClient();
   const { data: accountRow, error: accountError } = await supabase
     .from("accounts")
-    .select("id,name,subdomain,domain,status,created_at,setup_completed_at")
+    .select("id,name,subdomain,domain,status,owner_user_id,created_at,setup_completed_at")
     .eq("id", accountId)
     .maybeSingle();
 
@@ -52,13 +52,16 @@ export async function getAdminAccountDetail(accountId: string): Promise<AdminAcc
   ]);
 
   const taxonIds = ((taxonomyRows as any[]) ?? []).map((row) => row.taxon_id).filter(Boolean);
+  const ownerUserId = (accountRow as any).owner_user_id ?? null;
   const [taxons, memberEmails] = await Promise.all([
     getAdminTaxonsByIds(taxonIds),
-    getMemberEmails(((memberRows as any[]) ?? []).map((row) => row.user_id).filter(Boolean)),
+    getMemberEmails([ownerUserId, ...((memberRows as any[]) ?? []).map((row) => row.user_id)].filter(Boolean)),
   ]);
 
   return {
     ...mapAdminAccount(accountRow),
+    ownerUserId,
+    ownerEmail: ownerUserId ? memberEmails.get(ownerUserId) ?? null : null,
     profile: profileRow
       ? {
           niche: (profileRow as any).niche ?? null,

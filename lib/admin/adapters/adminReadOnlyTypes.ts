@@ -11,6 +11,8 @@ export type AdminAccountListItem = {
 };
 
 export type AdminAccountDetail = AdminAccountListItem & {
+  ownerUserId: string | null;
+  ownerEmail: string | null;
   profile: {
     niche: string | null;
     preferredChannel: string | null;

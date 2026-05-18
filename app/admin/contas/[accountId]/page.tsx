@@ -40,6 +40,7 @@ export default async function AdminAccountDetailPage({ params }: AdminAccountDet
             <Detail label="Status">
               <AdminStatusBadge tone={accountStatusTone(account.status)}>{account.status}</AdminStatusBadge>
             </Detail>
+            <Detail label="E-mail do proprietario" value={account.ownerEmail ?? "E-mail nao disponivel"} />
             <Detail label="Subdominio" value={account.subdomain ?? "-"} />
             <Detail label="Dominio" value={account.domain ?? "-"} />
             <Detail label="Criada em" value={formatAdminDate(account.createdAt)} />
