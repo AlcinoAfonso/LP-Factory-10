@@ -10,17 +10,6 @@ export type AdminArea = {
 
 export const adminAreas: AdminArea[] = [
   {
-    title: 'Visao geral',
-    href: '/admin',
-    description: 'Entrada operacional do Admin Dashboard.',
-    status: 'Disponível',
-    scope: [
-      'Organizar as áreas administrativas previstas',
-      'Manter a separação do dashboard de contas',
-      'Preparar a leitura operacional da plataforma',
-    ],
-  },
-  {
     title: 'Contas',
     href: '/admin/contas',
     description: 'Area prevista para leitura e acompanhamento de contas.',
