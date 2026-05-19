@@ -1,0 +1,4 @@
+display_name: Investigador de Plataformas LPF
+short_description: Investiga plataformas do LP Factory com acesso supervisionado e sem expor secrets.
+default_prompt: Use o Investigador de Plataformas LPF para auditar uma plataforma indicada, acessando configuracoes autorizadas, preservando secrets e entregando relatorio de diagnostico, riscos e decisao operacional.
+
