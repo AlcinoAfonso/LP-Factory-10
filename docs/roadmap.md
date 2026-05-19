@@ -865,73 +865,54 @@
 • Em desenvolvimento
 
 12.2 Objetivo
-• Registrar o reinício do Admin Dashboard com foco exclusivo na base mínima de privilégio admin/shared access já existente no repositório.
+• Consolidar o Admin Dashboard como seção administrativa protegida, separada do Account Dashboard, com navegação própria e leitura operacional read-only.
 
 12.3 Escopo atual
-• O E12 cobre a infraestrutura de autorização administrativa reutilizável e a superfície protegida do Admin Dashboard.
-• A superfície `/admin` evoluiu para um shell operacional protegido, com header próprio, navegação administrativa, sidebar desktop, menu mobile e rotas placeholder para áreas futuras.
-• A entrada `/admin` redireciona para `/admin/contas`, evitando uma visão geral sem função operacional real nesta etapa.
-• Funcionalidades read-only com dados reais entram em etapa posterior, com recorte próprio, branch própria e PR próprio.
+• `/admin` protegido por gate SSR administrativo em `app/admin/layout.tsx`.
+• Header e menu próprios do Admin, sem `AccountSwitcher` e sem dependência de conta ativa.
+• Shell operacional com sidebar, navegação administrativa e responsividade básica.
+• Leitura read-only real para contas, resoluções de nicho e taxonomia.
+• Sem mutações administrativas, billing, migrations, SQL ou alterações de RLS nesta fase.
 
-12.4 Base existente no repositório
-• `lib/admin/index.ts`
-• `lib/admin/adapters/adminAdapter.ts`
-• `lib/access/guards.ts`
-• `app/admin/layout.tsx`
-• `app/admin/page.tsx`
+12.4 Áreas atuais
+• Contas
+• Resoluções de nicho
+• Taxonomia
+• Templates
+• Auditoria
+
+12.5 Artefatos principais
+
+Criados:
 • `app/admin/contas/page.tsx`
+• `app/admin/contas/[accountId]/page.tsx`
 • `app/admin/resolucoes-de-nicho/page.tsx`
+• `app/admin/resolucoes-de-nicho/[accountId]/page.tsx`
 • `app/admin/taxonomia/page.tsx`
-• `app/admin/templates/page.tsx`
-• `app/admin/auditoria/page.tsx`
-• `components/admin/AdminHeader.tsx`
-• `components/admin/AdminMobileMenu.tsx`
+• `app/admin/taxonomia/[taxonId]/page.tsx`
+• `components/admin/AdminPageHeader.tsx`
 • `components/admin/AdminPlaceholderPage.tsx`
 • `components/admin/AdminSidebar.tsx`
+• `components/admin/AdminStatusBadge.tsx`
+• `components/admin/adminNavigation.ts`
+• `lib/admin/adminFormat.ts`
+• `lib/admin/adapters/adminAccountsAdapter.ts`
+• `lib/admin/adapters/adminNicheResolutionsAdapter.ts`
+• `lib/admin/adapters/adminReadOnlyAdapter.ts`
+• `lib/admin/adapters/adminReadOnlyHelpers.ts`
+• `lib/admin/adapters/adminReadOnlyTypes.ts`
+• `lib/admin/adapters/adminTaxonomyAdapter.ts`
+
+Ajustados:
+• `app/admin/layout.tsx`
+• `app/admin/page.tsx`
+• `components/admin/AdminHeader.tsx`
 • `components/admin/AdminUserMenu.tsx`
-• `components/admin/adminNavigation.ts`
-• Essa base concentra checagens de privilégio admin, guard protegido, header/menu próprios e o shell operacional inicial do Admin, sem dependência de contexto de conta.
 
-12.5 Shell operacional do Admin
-12.5.1 Status
-• Concluído (exec) (18/05/2026)
-
-12.5.2 Escopo
-• Entregue shell operacional protegido do Admin Dashboard sobre o gate SSR existente em `app/admin/layout.tsx`.
-• Mantido `requirePlatformAdmin()` como regra de entrada da seção Admin.
-• Mantidos header e menu próprios do Admin, sem `Header`, sem `UserMenu`, sem `AccountSwitcher` e sem dependência de conta ativa.
-• Entregue navegação administrativa própria com as áreas: Contas, Resoluções de nicho, Taxonomia, Templates e Auditoria.
-• Entregue sidebar esquerda para desktop e menu hambúrguer no mobile.
-• Entregues páginas placeholder enxutas para áreas futuras, marcadas como em preparação e sem dados falsos.
-• `/admin` passa a redirecionar para `/admin/contas`.
-• Não houve queries novas, mutações, auth novo, SQL, migrations, RLS, billing ou funcionalidades read-only com dados reais.
-
-12.5.3 ARTEFATOS_REPO
-• Criados:
-• `app/admin/contas/page.tsx`
-• `app/admin/resolucoes-de-nicho/page.tsx`
-• `app/admin/taxonomia/page.tsx`
-• `app/admin/templates/page.tsx`
-• `app/admin/auditoria/page.tsx`
-• `components/admin/AdminMobileMenu.tsx`
-• `components/admin/AdminPlaceholderPage.tsx`
-• `components/admin/AdminSidebar.tsx`
-• `components/admin/adminNavigation.ts`
-• Ajustados:
-• `app/admin/layout.tsx`
-• `app/admin/page.tsx`
-• `components/admin/AdminHeader.tsx`
-
-12.5.4 Validação
-• `npm ci` executado com sucesso.
-• `npm run check` executado com sucesso, sem erros.
-• Preview remoto validado visualmente em desktop e mobile.
-• Preview local não foi usado como validação final por atrito operacional do sandbox/servidor local.
-
-12.5.5 Pendências
-• Implementar etapa posterior de funcionalidades read-only com dados reais.
-• Validar, na etapa read-only, lista de contas, filtros, taxonomia, resoluções de nicho e detalhes.
-• Avaliar se o logout do contexto Admin deve voltar para uma página pública própria do Admin.
+12.6 Pendências
+• Templates e Auditoria permanecem como áreas previstas.
+• Mutações administrativas ficam fora do escopo atual.
+• Billing e operações de suspensão/reativação dependem de recorte futuro.
 
 13. E13 — Partner Dashboard
 
@@ -1125,7 +1106,7 @@
 • Definir o primeiro recorte funcional do LP Builder no roadmap
 
 99. Changelog
-v1.5.54 — 18/05/2026 — E12 atualizado com o estado final do shell operacional do Admin Dashboard: sidebar desktop, menu mobile, navegação própria, rotas placeholder para áreas administrativas, `/admin` redirecionando para `/admin/contas`, artefatos, validações e pendências da etapa read-only futura.
+v1.5.54 — 19/05/2026 — E12 atualizado para refletir o estado atual do Admin Dashboard: shell operacional protegido, navegação própria, páginas read-only reais para contas, resoluções de nicho e taxonomia, artefatos criados/ajustados e limites explícitos sem mutações, SQL, migrations ou RLS.
 
 v1.5.53 — 14/05/2026 — Roadmap atualizado com o estado final da implementação 20.8: IA estruturada server-side como complemento ao matching determinístico, persistência apenas em `account_niche_resolutions`, preservação de `account_taxonomy`, artefatos, validações, PR mergeado e pendências futuras.
 
