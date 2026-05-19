@@ -6,7 +6,7 @@ ENTRADA
 
 * REPO (GitHub): LP-Factory-10
 * REF (GitHub): [main | branch | commit] (se não informado, main)
-* DOC_ALVO: [docs/base-tecnica.md | docs/schema.md | docs/roadmap.md]
+* DOC_ALVO: [docs/base-tecnica.md | docs/schema.md | docs/roadmap.md | docs/design-system.md]
 
 OBJETIVO
 Gerar o **ABC humano** para o DOC_ALVO.
@@ -16,12 +16,15 @@ VISÃO GERAL (RESIDÊNCIA DO CONTEÚDO)
 * `docs/schema.md` = contrato de banco (objetos e permissões de DB).
 * `docs/base-tecnica.md` = contrato técnico de runtime (regras de implementação segura).
 * `docs/roadmap.md` = estado final dos casos E* (status/escopo/dependências/artefatos).
+* `docs/design-system.md` = contrato visual atual do produto (padrões UI, componentes, superfícies visuais e regras de uso).
 
 REGRA GLOBAL (ANTI-INFLAÇÃO)
 
 * 1 assunto = 1 residência.
 * Não duplicar guardrails/listas já cobertos por contrato dedicado do repo; nos docs manter só: objetivo em 1 linha + paths + referência.
 * Tudo fora da residência do DOC_ALVO está fora de escopo.
+* Docs descrevem o estado atual do projeto; histórico de evolução fica apenas no changelog quando o documento tiver changelog.
+* Ao atualizar uma seção, substituir o estado antigo pelo estado atual consolidado, sem manter fases intermediárias já superadas.
 
 CRITÉRIO BASE TÉCNICA (RELEVÂNCIA PARA IA)
 
@@ -55,6 +58,17 @@ ALLOWLIST — `docs/roadmap.md` (CONTRATO_DE_CASOS)
 * Convenção: “E” só no título principal do caso; subitens sem repetir “E”.
 * PERMITIDO (DELTA): status com data, escopo final em bullets curtos, dependências entre casos E*, artefatos de repo, decisões explícitas do caso, pendências marcadas explicitamente no RELATÓRIO.
 * Fora do escopo: qualquer item fora dessa lista.
+* Em `docs/roadmap.md`, quando houver artefatos de repo, separar obrigatoriamente:
+  * Criados
+  * Ajustados
+  * Removidos
+* Se uma categoria não tiver itens, omitir a categoria.
+
+ALLOWLIST — `docs/design-system.md` (CONTRATO_VISUAL)
+
+* PERMITIDO (DELTA): padrões visuais atuais, componentes UI ativos, regras de uso, comportamento responsivo, superfícies visuais consolidadas.
+* Quando citar superfícies, descrever comportamento/padrão visual; evitar inventário de arquivos se isso já estiver no roadmap.
+* Fora do escopo: status de caso, lista detalhada de artefatos, contrato DB, regras runtime, histórico de implementação.
 
 REGRAS DE EXTRAÇÃO (RELATÓRIO → ESTADO FINAL)
 
@@ -131,7 +145,7 @@ CH1) (entrada nova)
 PAUSA OBRIGATÓRIA (1 DOC POR EXECUÇÃO)
 
 19. Executar o ciclo completo apenas para o DOC_ALVO atual.
-20. Depois de emitir a saída, parar e aguardar próximo `DOC_ALVO`.
-21. Não gerar ABC de outro documento na mesma execução.
+20. Depois de emitir a saída, parar e aguardar próximo `DOC_ALVO`, salvo quando o usuário pedir explicitamente ABCs de múltiplos documentos.
+21. Quando múltiplos DOC_ALVO forem solicitados na mesma execução, emitir um bloco ABC completo por documento, mantendo cada bloco independente e sem misturar operações.
 
 ---
