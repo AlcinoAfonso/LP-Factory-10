@@ -8,7 +8,7 @@ type AdminHeaderProps = {
 
 export function AdminHeader({ userEmail }: AdminHeaderProps) {
   return (
-    <header className="border-b border-border bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/85">
+    <header className="sticky top-0 z-40 border-b border-border bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/85">
       <div className="mx-auto flex h-14 max-w-7xl items-center justify-between gap-3 px-4">
         <div className="flex min-w-0 items-center gap-2">
           <AdminMobileMenu />
