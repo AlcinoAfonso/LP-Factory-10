@@ -1903,8 +1903,9 @@ Melhorias do Schema Visualiser para inspeção de modelagem (relações clicáve
 
 ### Status no Projeto
 
-- Status: Em implementação por casos de uso
-- Evidência: docs/base-tecnica.md (regra incorporada em 3.8.1.5; aplicação prática dependerá das próximas migrations com tabelas em `public`)
+- Status: Implementado globalmente no projeto
+- Evidência: docs/base-tecnica.md (regra incorporada em 3.8.1.5 para novas tabelas no schema public)
+- Observação: aplicação prática será validada nas próximas migrations; rollout/configuração Supabase pode depender da plataforma.
 
 ### Descrição
 
