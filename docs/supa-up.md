@@ -1903,8 +1903,9 @@ Melhorias do Schema Visualiser para inspeção de modelagem (relações clicáve
 
 ### Status no Projeto
 
-- Status: Não implementado
-- Evidência: update oficial Supabase May 2026; regra ainda não incorporada à Base Técnica nem validada em migrations do projeto.
+- Status: Implementado globalmente no projeto
+- Evidência: docs/base-tecnica.md (regra incorporada em 3.8.1.5 para novas tabelas no schema public)
+- Observação: aplicação prática será validada nas próximas migrations; rollout/configuração Supabase pode depender da plataforma.
 
 ### Descrição
 
@@ -1924,7 +1925,7 @@ A Supabase passou a mudar o comportamento de exposição automática de novas ta
 
 ### Ações Recomendadas
 
-1. Atualizar a Base Técnica para exigir decisão explícita de `GRANT` em migrations que criem tabelas no schema `public`.
+1. Aplicar a regra da Base Técnica em toda nova migration que criar tabela no schema `public`.
 2. Em toda tabela nova, separar claramente:
    - `GRANT`: define se a role pode acessar a tabela pela Data API.
    - RLS/policies: definem quais linhas podem ser acessadas.
