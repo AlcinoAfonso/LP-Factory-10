@@ -246,6 +246,11 @@
 • Se for exposta ao app, tenant, admin ou fluxo operacional, nasce com RLS e policies na mesma etapa
 • Se for interna, schema e modelo de acesso devem ser definidos explicitamente
 • Toda tabela deve decidir se entra em auditoria, Trigger Hub ou fica fora
+• Data API / GRANT explícito: toda tabela nova no schema `public` que precise ser acessada via Supabase Data API/PostgREST/GraphQL deve declarar explicitamente, na mesma migration, os `GRANTs` necessários para as roles aplicáveis.
+• `GRANT` não substitui RLS/policies.
+• RLS/policies não substituem `GRANT`.
+• Tabelas internas podem nascer sem `GRANT` para `anon`/`authenticated`, desde que o modelo de acesso esteja explícito.
+• Tabelas expostas ao app, admin, adapters ou fluxo operacional via Supabase API devem ter decisão explícita de grants junto com RLS e policies.
 
 3.9 Rate Limit administrativo (estado atual)
 • Não há rate limit ativo do fluxo legado de tokens no runtime atual.
