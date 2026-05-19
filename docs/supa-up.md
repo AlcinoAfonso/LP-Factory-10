@@ -1896,3 +1896,45 @@ Melhorias do Schema Visualiser para inspeção de modelagem (relações clicáve
 - Observação: recurso de apoio operacional de modelagem e inspeção visual; complementa `docs/schema.md`, sem substituí-lo.
 
 ---
+
+## 58 — Data API: exposição explícita por GRANT para novas tabelas *(🟦 Estável)*
+
+2026-05-19
+
+### Status no Projeto
+
+- Status: Não implementado
+- Evidência: update oficial Supabase May 2026; regra ainda não incorporada à Base Técnica nem validada em migrations do projeto.
+
+### Descrição
+
+A Supabase passou a mudar o comportamento de exposição automática de novas tabelas do schema `public` na Data API/PostgREST/GraphQL. Novas tabelas podem exigir `GRANT` explícito para ficarem acessíveis pela API, em vez de serem expostas automaticamente apenas por estarem no schema `public`.
+
+### Valor para o Projeto
+
+- Reduz risco de exposição acidental de tabelas novas.
+- Obriga migrations futuras a declarar explicitamente quais roles podem acessar cada tabela via Data API.
+- Evita drift entre tabela criada, RLS/policies configuradas e acesso real via `supabase-js`/PostgREST.
+- Impacta diretamente novas tabelas em E10.5, E12, E19, billing, analytics, CRM e futuras automações.
+
+### Valor para o Usuário
+
+- Mais segurança indireta sobre dados e superfícies expostas.
+- Menor risco de falhas silenciosas quando uma tabela existe no banco, mas não está acessível pela API por falta de grant explícito.
+
+### Ações Recomendadas
+
+1. Atualizar a Base Técnica para exigir decisão explícita de `GRANT` em migrations que criem tabelas no schema `public`.
+2. Em toda tabela nova, separar claramente:
+   - `GRANT`: define se a role pode acessar a tabela pela Data API.
+   - RLS/policies: definem quais linhas podem ser acessadas.
+3. Não conceder grants automaticamente para tabelas internas.
+4. Quando a tabela precisar ser acessada por app, admin, adapters ou fluxo operacional via Supabase API, declarar os grants necessários na mesma migration da criação da tabela.
+
+### Registro (Tipo C — Infra/Schema/Contrato)
+
+- Status: PENDENTE
+- Verificado em: —
+- Ambiente: Supabase Data API / PostgREST / GraphQL / schema public
+- Evidência: —
+- Observação: mudança nasce na plataforma, mas a absorção no projeto é regra de migration, grants e contrato técnico.
