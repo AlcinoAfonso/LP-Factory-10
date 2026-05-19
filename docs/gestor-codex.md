@@ -1,242 +1,234 @@
-# Recursos do Codex — LP Factory 10
+# Gestor Codex — LP Factory 10
 
 ## 1. Objetivo
 
-Este documento registra, de forma incremental e prática, os recursos do Codex aprendidos/testados no LP Factory 10.
+Este documento registra o estado atual de uso do Codex no LP Factory 10.
 
-Ele deve crescer conforme novos recursos forem avaliados, testados e compreendidos no contexto real do projeto.
+O foco é manter uma referência enxuta sobre:
+
+- recursos do Codex em uso ou avaliação;
+- configurações atuais;
+- limitações conhecidas;
+- decisões vigentes;
+- próximos testes.
 
 Este documento não substitui:
 
-- `AGENTS.md`;
-- briefings de tarefa;
-- lousas operacionais;
-- documentação oficial da OpenAI.
+- `AGENTS.md`, que concentra regras operacionais permanentes do repositório;
+- `docs/template-briefing-codex.md`, que concentra padrões de briefing;
+- documentação oficial da OpenAI;
+- revisão humana antes de merge.
 
-## 2. Como usar este documento
+## 2. Referências operacionais
 
-Use este documento para registrar:
+- Regras permanentes do Codex no repositório: `AGENTS.md`.
+- Briefings gerais para Codex: `docs/template-briefing-codex.md`.
+- Execução no Codex App: `docs/prompt-codex-app-executor.md`.
+- Briefings com impacto visual/frontend: `docs/template-briefing-codex-frontend.md`.
+- Template geral de prompts: `docs/template-prompts.md`.
 
-- o que o recurso faz;
-- onde ele aparece;
-- quando usar;
-- quando evitar;
-- status no LP Factory 10;
-- evidência ou teste realizado;
-- observações práticas aprendidas.
+Este documento deve evitar duplicar essas fontes.
 
-Não use este documento para definir regras obrigatórias permanentes do repositório. Regras permanentes devem ficar no `AGENTS.md`.
+## 3. Superfícies de uso
 
-## 3. Critério para registrar um recurso
+### 3.1 Codex Web
 
-Registre um recurso apenas quando houver pelo menos uma destas condições:
+- Melhor para tarefas paralelas, PRs diretos e alterações que não exigem preview local.
+- Reduz atrito com clone local, GitHub Desktop e worktrees.
+- Status: `validado`.
 
-- foi visto no Codex App, Codex Web/Cloud ou documentação oficial;
-- foi testado no LP Factory 10;
-- tem potencial claro de uso no projeto;
-- gerou dúvida operacional relevante;
-- precisa ser acompanhado antes de adoção.
+### 3.2 Codex App
 
-## 4. Status possíveis
+- Melhor para modo robusto, preview local, validação local recorrente e uso de worktrees quando necessário.
+- Ainda não fecha sozinho o ciclo remoto completo dentro do sandbox.
+- Status: `em teste`.
 
-Use um dos status abaixo:
+### 3.3 GitHub Web
 
-- `validado`: testado e útil no fluxo atual;
-- `em teste`: ainda em avaliação;
-- `disponível`: conhecido, mas ainda não testado;
-- `não adotado`: conhecido, mas não recomendado agora;
-- `bloqueado`: depende de correção, acesso ou condição externa.
+- Fonte de verdade para PRs, Actions, Preview remoto e merge.
+- Status: `adotado`.
 
-## 5. Recursos validados
+### 3.4 GitHub Desktop
 
-### 5.1 GitHub Connector
+- Painel local para modo robusto quando necessário.
+- Usado para confirmar estado local, revisar diff, publicar branch dedicada e limpar resíduo operacional.
+- Não deve implementar, decidir escopo ou virar rotina para separar mudanças misturadas.
+- Status: `apoio/fallback`.
 
-- O que é:
-  - Conector usado pelo Codex para operar no GitHub sem depender de Git remoto local dentro do sandbox.
-- Onde fica:
-  - Codex / ChatGPT Connectors.
-- Como usamos:
-  - criar branch;
-  - criar/alterar/remover arquivos em branch de trabalho;
-  - criar commit/push via conector;
-  - abrir PR contra `main`.
-- Quando usar:
-  - tarefas que precisam gerar PR;
-  - alterações documentais;
-  - alterações controladas em arquivos do repositório.
-- Quando evitar:
-  - alterações sem briefing claro;
-  - alterações diretas na `main`;
-  - ações sensíveis fora do escopo autorizado.
-- Status:
-  - `validado`.
-- Evidência/teste feito:
-  - PR temporário criado via conector com branch, arquivo, commit/push e PR.
-- Observações:
-  - regras permanentes do fluxo remoto estão em `AGENTS.md`.
+## 4. Configurações atuais
 
-## 6. Recursos em teste
+### 4.1 GitHub Connector
 
-### 6.1 Codex App
+- Usado para operações remotas quando adequado.
+- Preferido quando não há necessidade de execução local.
+- Status: `validado`.
 
-- O que é:
-  - Aplicativo local do Codex para trabalhar com repositório, agentes, execução supervisionada e tarefas locais.
-- Onde fica:
-  - Codex App no ambiente local.
-- Como usamos:
-  - análise técnica;
-  - edição controlada;
-  - checks locais;
-  - execução supervisionada;
-  - testes multiagente.
-- Quando usar:
-  - tarefas que se beneficiam de inspeção local;
-  - execução com acompanhamento;
-  - avaliação de recursos novos do Codex.
-- Quando evitar:
-  - quando o fluxo via Codex Web/Cloud for mais simples;
-  - quando a tarefa puder ser resolvida com PR rápido via conector;
-  - quando exigir Git remoto local dentro do sandbox.
-- Status:
-  - `em teste`.
-- Evidência/teste feito:
-  - ambiente local configurado e checks locais validados.
-- Observações:
-  - fluxo remoto GitHub segue `AGENTS.md`.
+### 4.2 Revisões de código
 
-### 6.2 Worktrees
+- Revisão automática: ligada.
+- Acionador: ao abrir PR.
+- Revisão exaustiva: desligada.
+- Uso de créditos: desligado.
+- Uso atual: camada extra de análise, sem substituir Actions, Preview ou revisão humana.
+- Status: `validado como configuração inicial`.
 
-- O que é:
-  - Recurso de isolamento local para permitir que diferentes tarefas trabalhem em áreas de trabalho separadas dentro do Codex App.
-  - Worktree não é a multitarefa em si; é o mecanismo que torna a multitarefa local mais segura.
-- Onde fica:
-  - Codex App / execução local com múltiplos agentes ou tarefas paralelas.
-- Como usamos:
-  - ainda em avaliação no LP Factory 10;
-  - deve ser usado apenas quando cada tarefa tiver área isolada, branch própria e PR próprio;
-  - o objetivo é evitar que alterações de tarefas diferentes apareçam misturadas no mesmo clone local ou no GitHub Desktop.
-- Diferença entre worktree, branch e PR:
-  - branch: linha de trabalho/versionamento no Git;
-  - PR: revisão e validação no GitHub Web antes do merge;
-  - worktree: área local isolada associada a uma tarefa/branch para evitar mistura de arquivos antes do PR.
-- Exemplo prático:
-  - Opção A para E10.5 → worktree A → branch A → PR A;
-  - Opção B para E10.5 → worktree B → branch B → PR B;
-  - Opção C para E10.5 → worktree C → branch C → PR C.
-- Quando usar:
-  - quando houver duas ou mais tarefas paralelas no Codex App;
-  - quando quisermos comparar alternativas para o mesmo caso de uso;
-  - quando uma tarefa local não deve contaminar outra;
-  - quando cada alternativa precisa gerar seu próprio diff e PR.
-- Quando evitar:
-  - quando houver apenas uma tarefa simples;
-  - quando branch + PR via Codex Web/Cloud ou conector GitHub já resolver com menos risco;
-  - quando o Codex App não conseguir garantir isolamento real;
-  - quando o processo exigir separação manual de arquivos pelo GitHub Desktop.
-- Status:
-  - `em teste`.
-- Evidência/teste feito:
-  - duas tarefas locais no Codex App geraram alterações que apareceram juntas no GitHub Desktop;
-  - o problema foi corrigido manualmente separando os arquivos em PRs diferentes;
-  - isso mostrou a necessidade de validar worktrees isoladas antes de adotar multitarefa local como padrão.
-- Observações:
-  - para o LP Factory 10, multitarefa paralela no Codex App só será considerada segura quando cada tarefa gerar branch e PR próprios sem depender do GitHub Desktop para separar arquivos;
-  - GitHub Desktop pode ser usado para inspeção ou fallback, mas não deve ser etapa normal para separar alterações misturadas;
-  - regras obrigatórias de branch, PR e gate pré-edição continuam centralizadas em `AGENTS.md`.
+### 4.3 Chrome Plugin / Browser Use
 
-## 7. Recursos disponíveis, mas ainda não adotados
+- Instalado e parcialmente funcional no Windows.
+- Uso experimental apenas em páginas públicas ou previews simples.
+- Não usar com login, credenciais, dados reais ou ações sensíveis.
+- Não substitui QA visual completo.
+- Status: `em teste`.
 
-### 7.1 Revisão automática de PR
+### 4.4 Full access
 
-- O que é:
-  - Recurso de revisão automática de código em PRs.
-- Onde fica:
-  - Configurações do Codex Web/Cloud.
-- Como usamos:
-  - ainda não adotado como padrão.
-- Quando usar:
-  - PRs sensíveis;
-  - mudanças com risco maior;
-  - segunda camada de revisão antes da revisão humana.
-- Quando evitar:
-  - PRs simples;
-  - alterações documentais pequenas;
-  - quando gerar ruído maior que benefício.
-- Status:
-  - `disponível`.
-- Evidência/teste feito:
-  - recurso identificado, mas não ativado como padrão.
-- Observações:
-  - uso recomendado como experimento seletivo.
+- Não adotado por padrão.
+- Avaliar apenas com necessidade explícita e risco controlado.
+- Status: `não adotado agora`.
 
-### 7.2 Browser Use
+## 5. Recursos do Codex
 
-- O que é:
-  - Recurso do Codex/App para uso de navegador em tarefas específicas.
-- Onde fica:
-  - Configurações/execução do Codex App.
-- Como usamos:
-  - manter com aprovação.
-- Quando usar:
-  - apenas quando a tarefa exigir navegação.
-- Quando evitar:
-  - quando o repositório ou documentação local forem suficientes.
-- Status:
-  - `disponível`.
-- Evidência/teste feito:
-  - recurso identificado nas configurações.
-- Observações:
-  - manter aprovação humana.
+### 5.1 Worktrees
 
-## 8. Recursos conhecidos, mas não adotados agora
+- Worktree é isolamento local para frentes paralelas no Codex App.
+- Não é a multitarefa em si; é o mecanismo que torna a multitarefa local mais segura.
+- Relação prática:
+  - worktree = área local isolada;
+  - branch = linha de trabalho;
+  - PR = unidade de revisão, validação e merge.
+- Usar quando houver frentes robustas simultâneas ou comparação de alternativas.
+- Evitar quando um PR direto via Codex Web/Connector resolver com menos atrito.
+- Status: `em teste`.
 
-### 8.1 Full access
+### 5.2 Plugins
 
-- O que é:
-  - Modo de acesso mais amplo no Codex App.
-- Onde fica:
-  - Configurações operacionais do Codex App.
-- Como usamos:
-  - não adotado no fluxo atual.
-- Quando usar:
-  - apenas se houver necessidade explícita e risco controlado.
-- Quando evitar:
-  - por padrão;
-  - tarefas documentais;
-  - alterações simples;
-  - qualquer tarefa sem justificativa técnica clara.
-- Status:
-  - `não adotado`.
-- Evidência/teste feito:
-  - decisão operacional atual é manter desativado.
-- Observações:
-  - avaliar caso a caso.
+- Conectam o Codex a ferramentas externas ou capacidades adicionais.
+- Exemplos relevantes hoje: GitHub Connector e Chrome Plugin.
+- Devem começar com escopo claro, supervisão humana e baixo risco.
+- Status: `em avaliação`.
 
-## 9. Modelo para novo registro
+### 5.3 Skills
 
-Use este modelo ao adicionar novo recurso:
+- Procedimentos reutilizáveis para tarefas recorrentes.
+- Não substituem `AGENTS.md` nem briefings específicos.
+- Candidatos futuros:
+  - avaliar entrega do Codex;
+  - revisar PR;
+  - montar checklist de QA;
+  - preparar briefing a partir de intenção inicial.
+- Status: `disponível / ainda não adotado`.
+
+### 5.4 Automações
+
+- Execuções recorrentes ou condicionais.
+- Ainda não adotadas como fluxo principal.
+- Só considerar após estabilizar o processo manual e reduzir risco operacional.
+- Status: `não adotado agora`.
+
+## 6. Limitações conhecidas
+
+### 6.1 Git remoto no sandbox do Codex App
+
+- Não usar `git fetch`, `git pull`, `git push`, `git ls-remote` ou SSH remoto dentro do sandbox.
+- Contorno atual: GitHub Connector, GitHub Web, GitHub Desktop ou PowerShell normal fora do sandbox, conforme o caso.
+
+### 6.2 Mistura de alterações locais
+
+- Risco principal do Codex App quando várias tarefas usam o mesmo workspace sem isolamento.
+- Prevenção principal: seguir `AGENTS.md`, usar branch dedicada e worktree quando houver frentes paralelas reais.
+
+### 6.3 Resíduo pós-merge
+
+- Branch ou mudança local já resolvida por PR mergeado deve ser tratada como resíduo operacional.
+- Não commitar nem publicar; limpar antes de nova tarefa.
+
+### 6.4 Commit local no modo robusto
+
+- Commit local é checkpoint opcional, não requisito obrigatório.
+- PR é a unidade real de publicação e validação.
+
+## 7. Decisões vigentes
+
+### 7.1 Adotado
+
+- GitHub Web como fonte de verdade para merge.
+- PR como unidade de validação.
+- Codex Web para tarefas paralelas simples.
+- Codex App para modo robusto quando houver ganho real.
+- Revisão automática ao abrir PR.
+
+### 7.2 Em teste
+
+- Worktrees no Codex App.
+- Chrome Plugin / Browser Use.
+- GitHub Desktop como painel local no modo robusto.
+- Skills para procedimentos recorrentes.
+
+### 7.3 Não adotado agora
+
+- Full access por padrão.
+- Revisão exaustiva por padrão.
+- Uso de créditos extras por padrão.
+- Automações como fluxo principal.
+
+## 8. Matriz de uso recomendada
+
+### 8.1 Usar Codex Web quando
+
+- houver várias tarefas paralelas;
+- a tarefa puder virar PR direto;
+- não houver dependência de preview local.
+
+### 8.2 Usar Codex App quando
+
+- precisar validar localmente;
+- precisar de preview local;
+- precisar de modo robusto;
+- worktree trouxer ganho real de isolamento.
+
+### 8.3 Usar GitHub Desktop quando
+
+- precisar confirmar estado local;
+- precisar revisar diff local;
+- precisar publicar branch dedicada no modo robusto;
+- precisar limpar resíduo operacional.
+
+### 8.4 Usar Worktree quando
+
+- houver duas ou mais frentes robustas simultâneas;
+- for necessário comparar alternativas;
+- uma tarefa não puder contaminar outra.
+
+### 8.5 Evitar automação quando
+
+- o fluxo ainda exige julgamento humano;
+- há risco de alterar produção;
+- há credenciais ou dados sensíveis;
+- o processo ainda não foi testado manualmente.
+
+## 9. Pendências e próximos testes
+
+- Validar fluxo robusto com GitHub Desktop como painel local.
+- Validar worktree em duas frentes reais sem mistura de arquivos.
+- Testar revisão automática em PR sensível.
+- Reavaliar Chrome Plugin após novos testes de estabilidade.
+- Avaliar Skills antes de Automações.
+
+## 10. Modelo para novo registro
 
 ```md
-### X.X Nome do recurso
+### Nome do recurso
 
 - O que é:
   - 
-- Onde fica:
-  - 
-- Como usamos:
+- Uso atual:
   - 
 - Quando usar:
   - 
 - Quando evitar:
   - 
 - Status:
-  - 
-- Evidência/teste feito:
   - 
 - Observações:
   - 
 ```
-
-## 10. Changelog de aprendizagem
-
-- 06/05/2026 — Criação do documento inicial de recursos do Codex.
