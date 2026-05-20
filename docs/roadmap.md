@@ -2,7 +2,7 @@
 
 0.1 Cabeçalho
 • Data: 20/05/2026
-• Versão: v1.5.55
+• Versão: v1.5.56
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -523,35 +523,23 @@
 • Fora de escopo: mudanças de BD, tracking interno e alteração do escopo de campos.
 
 10.5 Pós-setup persuasivo sem entitlements (active — conversão)
+
 • Status: Em evolução
-• Escopo: UX/CTAs para conta em `accounts.status=active` quando **não há plano/trial (sem entitlements)**, imediatamente após o E10.4 (pós-setup). Deve orientar próximos passos e conversão **sem retornar** ao fluxo de “Primeiros passos”.
-• DoD mínimo (MVP):
-• Renderizar uma tela pós-setup (não pode ficar “em branco”) com:
-  • 1 CTA primário para “adquirir plano / iniciar trial” (texto a definir).
-  • 1 CTA secundário para “agendar consultoria / conta consultiva”.
-  • Alternativa clara para continuar explorando limitado (ex.: “ver demo” / “continuar limitado”) — sem prometer recursos produtivos.
-  • Mensagem curta explicando: conta está ativa, mas criar/publicar LP depende de entitlements.
-• Regras de gating:
-• “Primeiros passos” renderiza **somente** se `accounts.status=pending_setup`.
-• Conta `active` **não** implica permissão de criar LP; liberar “Criar LP” apenas com trial/plano (entitlement).
-• Nota: não usa `setup_completed_at` nem `account_setup_completed_at` (não usar em lugar nenhum; manter no DB apenas por segurança).
-• Dependências: E10.4.6 (setup status-based + pós-save com redirect/refresh), E9.8.1 (trial/entitlements), E10.5.1 (enforcement server-side; hardening), E10.5.2 (base estrutural admin/interna de taxonomia, templates e guides).
+• Escopo atual: separar o estado `active` do fluxo `pending_setup` e preparar a camada pós-setup do dashboard da conta.
+• Estado atual do runtime: `app/a/[account]/page.tsx` renderiza “Primeiros passos” somente para `accounts.status=pending_setup`; para conta autenticada fora desse estado, a rota ainda não entrega UX específica do E10.5.
+• Base já implementada no repo: estrutura de taxonomia/templates/guides no BD e pipeline operacional de resolução de nicho no pós-save do onboarding.
+• Dependências: E9.8.1, E10.4.6, E10.5.1, E10.5.2, E10.5.6.
+• Nota: `setup_completed_at/account_setup_completed_at` não devem ser usados no runtime, no gating, no fluxo nem nos logs; ficam mantidos no DB apenas por segurança.
 
 10.5.1 Matriz “preparação vs produtivo” + enforcement (SSR + actions)
 • Status: Briefing
-• Objetivo: fechar lista de ações/rotas “produtivas” vs “preparação” e definir onde bloquear no servidor (SSR + server actions) para não depender só de UI.
-10.5.1.1 Escopo
-• Definir matriz (rotas + ações) com status/entitlements mínimos exigidos.
-• Aplicar enforcement no SSR e nas ações críticas (ex.: “Criar LP”, “Publicar”, “Domínio”, “Tracking” e integrações) conforme matriz.
-• Garantir mensagens/CTAs coerentes no bloqueio (“iniciar trial/plano”, “agendar consultoria”, alternativas).
-10.5.1.2 Sinal canônico (mínimo)
-• Declarar 1 fonte canônica de entitlements/limites efetivos (view/RPC) conforme docs/schema.md.
-• Declarar 1 booleano operacional derivado dessa fonte (nome final; ex.: can_create_lp ou is_productive).
-10.5.1.3 Saída esperada
-• Matriz fechada + pontos de enforcement + QA mínimo (não-regressão).
-10.5.1.4 Dependências
-• E9.8.1 (trial/entitlements).
-• E10.5 (UX pós-setup para reutilizar CTAs/mensagens).
+• Objetivo: definir a matriz de ações/rotas “produtivas” vs “preparação” e aplicar enforcement server-side sem depender só de UI.
+• Escopo:
+• fechar status/entitlements mínimos por rota/ação
+• declarar o sinal canônico de entitlement/limite efetivo
+• definir mensagens e CTAs de bloqueio coerentes com o E10.5
+• Dependências: E9.8.1, E10.5.
+• Fora de escopo: implementação da UX principal do E10.5 nesta etapa.
 
 10.5.2 Base do BD do E10.5
 • Status: Concluído (26/04/2026)
@@ -561,10 +549,12 @@
 • ajuste estrutural de `taxon_market_research_items`
 • Estado final:
 • `taxon_market_research`: `id`, `taxon_id`, `research_block`, `audience_scope`, `version`, `status`, `created_at`, `updated_at`
-• `taxon_market_research`: unicidade por (`taxon_id`, `research_block`, `audience_scope`, `version`) e no máximo 1 versão `active` por (`taxon_id`, `research_block`, `audience_scope`)
+• unicidade por (`taxon_id`, `research_block`, `audience_scope`, `version`) e no máximo 1 versão `active` por (`taxon_id`, `research_block`, `audience_scope`)
 • `taxon_market_research_items`: `id`, `research_id`, `item_key`, `item_text`, `priority`, `sort_order`, `is_active`, `notes`, `created_at`, `updated_at`
-• `taxon_market_research_items`: herda `audience_scope` pelo `research_id`; sem UNIQUE extra nesta etapa; `sort_order` como `NOT NULL DEFAULT 999`
-• Artefatos:
+• `taxon_market_research_items`: herda `audience_scope` por `research_id`; sem UNIQUE extra nesta etapa; `sort_order` como `NOT NULL DEFAULT 999`
+• `taxon_message_guides`: base de guides por contexto vinculada à pesquisa-pai
+• ARTEFATOS_REPO:
+• Criados:
 • `supabase/migrations/0006__e10_5_2_taxonomy_content_base.sql`
 • `supabase/migrations/0007__e10_5_2_1_group_c_research_adjust.sql`
 • `supabase/migrations/0008__e10_5_2_1_research_audience_scope_parent.sql`
@@ -572,87 +562,70 @@
 10.5.3 Kit operacional de expansão do Grupo A
 • Status: Concluído (exec) (15/04/2026)
 • Objetivo: padronizar a expansão de `business_taxons` e `business_taxon_aliases` com investigação, proposta, aprovação, carga e validação sem drift entre chats.
-• Implementado (estado final):
+• Implementado:
 • guia operacional do Grupo A versionado em `docs/`
 • snippets SQL operacionais do Grupo A versionados em `supabase/snippets/`
-• leitura pragmática desta rodada fechada como: investigar o que já existe, evitar duplicidade evidente, propor o que falta, aprovar, carregar e validar
-• investigação operacional consolidada em 2 snippets, utilizáveis tanto no momento pré-carga quanto no pós-carga
-• snippet de carga ajustado para refletir a flexibilidade real de `business_taxons`
+• investigação prévia, proposta, aprovação, carga e validação consolidadas como fluxo operacional
 • `parent_slug` nulo aceito para `niche` e `ultra_niche`
 • `parent_slug` preenchido e inexistente aborta explicitamente a carga
-• carga prática reportada como concluída para o ultra_niche `implante-dentario`, com pai `odontologia`, e alias `implantodontia`
+• carga prática reportada para `implante-dentario` com pai `odontologia` e alias `implantodontia`
 • ARTEFATOS_REPO:
 • Criados:
 • `docs/e10-5-3-grupo-a-investigacao.md`
 • `supabase/snippets/e10_5_3_grupo_a_carga.sql`
 • `supabase/snippets/e10_5_3_grupo_a_investigacao_taxons.sql`
 • `supabase/snippets/e10_5_3_grupo_a_investigacao_aliases.sql`
-• QA/Smoke:
-• QA feito
-• Smoke feito
-• Caso de uso funcionando
-• Evidência funcional reportada
-• Pendências:
-• Nenhuma pendência obrigatória aberta neste recorte
-
 
 10.5.3.1 Curadoria operacional de aliases enxutos vs microvariações textuais
 • Status: Briefing
-• Objetivo: definir o critério operacional de curadoria de aliases no Grupo A, separando o que deve ser cadastrado manualmente como alias do que deve ficar para matching textual leve futuro.
-• Escopo:
-• definir critérios para priorizar aliases de sentido, comerciais e realmente relevantes de mercado
-• definir critérios para não cadastrar exaustivamente microvariações leves de grafia
-• explicitar a fronteira entre a curadoria manual do Grupo A e o papel futuro do `supa#51` no E10.5.6
-• Dependências:
-• E10.5.3
-• E10.5.6
+• Objetivo: definir o critério operacional de curadoria de aliases no Grupo A, separando o que deve ser cadastrado manualmente do que deve ficar para matching textual leve futuro.
+• Dependências: E10.5.3, E10.5.6.
 
 10.5.4 Helper puro de confiança determinística para taxon match
 • Status: Concluído (exec) (10/05/2026)
-• Natureza: repo-only (sem Supabase, sem logs, sem side effects, sem onboarding e sem mutation).
-• Objetivo: preparar a avaliação determinística de candidatos de taxonomia para evolução futura do E10.5, sem implementar IA nesta etapa.
-• Implementado/Definido:
-• criado helper puro `evaluateDeterministicTaxonMatch` para avaliar candidatos de taxonomia
-• adicionado contrato tipado para decisão de confiança determinística
-• adicionado `aiEscalationMode` para preparar evolução futura de IA sem implementar IA agora
-• corrigido reason semântico para fonte forte abaixo do threshold: `medium_confidence_below_high_threshold`
-• ARTEFATOS_REPO:
-• Criados: `lib/onboarding/niche-resolution/deterministicConfidence.ts`
-• Ajustados: `lib/onboarding/niche-resolution/contracts.ts`
-• Checks/QA (reportado): QA feito; smoke feito com `npm ci` e `npm run check` aprovados pelo Codex; evidência funcional por código + checks.
-• Pendências:
-• branch ainda não foi mergeada
-• helper ainda não está integrado ao pós-save do `pending_setup`
-• sem teste runtime porque ainda não há consumo em fluxo real
-• sem persistência em `account_taxonomy`
-• sem IA, microdiálogo, fallback final ou escolha de template comercial
-
-
-10.5.6 Classificação da conta e resolução do template
-• Status: Parcialmente concluído (BD determinístico inicial + adapter server-side) (09/05/2026)
-• Escopo implementado: camada determinística inicial de matching de taxonomia para resolver texto livre de nicho contra taxons oficiais, com adapter server-side tipado para consumo futuro pelo resolvedor de nicho.
+• Natureza: repo-only.
+• Objetivo: avaliar candidatos de taxonomia e produzir decisão determinística tipada para consumo pelo fluxo de resolução de nicho.
 • Implementado:
-• `pg_trgm` habilitado no schema `extensions`.
-• Função `public.normalize_taxon_match_text(text)` criada para normalização textual.
-• RPC read-only `public.match_business_taxons_deterministic(text, integer)` criada para retornar candidatos oficiais com `taxon_id`, `name`, `slug`, `level`, `parent_id`, `parent_name`, `matched_aliases`, `match_source` e `score`.
-• Índices criados para match exato/normalizado, FTS e trigram em `business_taxons` e `business_taxon_aliases`.
-• Adapter server-side `matchBusinessTaxonsDeterministic(query, limit)` criado para consumir a RPC via `createServiceClient()`.
-• Contrato TypeScript criado para retorno em camelCase com `taxonId`, `name`, `slug`, `level`, `parentId`, `parentName`, `matchedAliases`, `matchSource` e `score`.
-• Estratégia determinística coberta: `alias_exact`, `alias_normalized`, `taxon_name_exact`, `taxon_name_normalized`, `taxon_slug_normalized`, `fts`, `trgm`.
-• Segurança: funções sem `SECURITY DEFINER`; grants restritos a `service_role`; consumo previsto via camada server/adapter, sem consumo direto pelo client nesta etapa.
+• helper puro `evaluateDeterministicTaxonMatch`
+• contrato tipado de decisão determinística
+• `aiEscalationMode` para preparar escalonamento IA
 • ARTEFATOS_REPO:
-• Criado: `supabase/migrations/0009__e10_5_6_deterministic_taxon_matching.sql`
-• Criado: `supabase/rollbacks/20260509__e10_5_6_deterministic_taxon_matching.rollback.sql`
-• Criado: `lib/onboarding/niche-resolution/contracts.ts`
-• Criado: `lib/onboarding/niche-resolution/adapters/taxonMatchAdapter.ts`
-• Validação: SQL aplicado no Supabase; `pg_trgm`, 8 índices e 2 funções confirmados; testes de nome exato, nome normalizado, alias, trigram, FTS e input vazio aprovados; `npm ci` e `npm run check` aprovados na criação do adapter.
-• Fora do escopo mantido: IA, fallback final, `account_taxonomy`, `account_niche_resolutions`, microdiálogo, escolha de template e alteração no onboarding.
-• Pendências:
-• Integrar a resolução determinística ao fluxo pós-save do `pending_setup`.
-• Definir regra de confiança mínima e etapa posterior de resolvedor IA/fallback.
-• Definir persistência futura em `account_taxonomy`.
-• Executar teste runtime contra a RPC real quando o adapter for integrado ao fluxo.
+• Criados:
+• `lib/onboarding/niche-resolution/deterministicConfidence.ts`
+• Ajustados:
+• `lib/onboarding/niche-resolution/contracts.ts`
 
+10.5.6 Classificação da conta e resolução do nicho
+• Status: Parcialmente concluído (runtime integrado + persistência operacional + IA estruturada) (14/05/2026)
+• Escopo implementado: pipeline server-side de resolução de nicho no pós-save do `pending_setup`, com matching determinístico, persistência operacional, vínculo oficial sob alta confiança e escalonamento IA estruturado quando necessário.
+• Implementado:
+• RPC read-only de matching determinístico consumida por adapter server-side
+• avaliação determinística via `evaluateDeterministicTaxonMatch`
+• persistência operacional em `account_niche_resolutions`
+• vínculo em `account_taxonomy` apenas quando a decisão determinística é de alta confiança e sem necessidade de review
+• resolver IA server-side via `resolveNicheWithOpenAi`
+• persistência do resultado IA estruturado em `account_niche_resolutions`
+• integração da cadeia de resolução dentro de `saveSetupAndContinueAction` após salvar perfil e promover `pending_setup → active`
+• ARTEFATOS_REPO:
+• Criados:
+• `supabase/migrations/0009__e10_5_6_deterministic_taxon_matching.sql`
+• `supabase/migrations/0011__e10_5_6_account_niche_resolutions.sql`
+• `supabase/migrations/0012__e10_5_6_account_taxonomy_service_role_grants.sql`
+• `supabase/migrations/0013__e10_5_6_ai_structured_outputs.sql`
+• `supabase/rollbacks/20260509__e10_5_6_deterministic_taxon_matching.rollback.sql`
+• `supabase/rollbacks/20260511__e10_5_6_account_niche_resolutions.rollback.sql`
+• `supabase/rollbacks/20260511__e10_5_6_account_taxonomy_service_role_grants.rollback.sql`
+• `supabase/rollbacks/20260514__e10_5_6_ai_structured_outputs.rollback.sql`
+• `lib/onboarding/niche-resolution/adapters/taxonMatchAdapter.ts`
+• `lib/onboarding/niche-resolution/adapters/accountNicheResolutionAdapter.ts`
+• `lib/onboarding/niche-resolution/adapters/accountTaxonomyAdapter.ts`
+• `lib/onboarding/niche-resolution/adapters/openAiResolver.ts`
+• Ajustados:
+• `app/a/[account]/actions.ts`
+• Pendências:
+• a UX principal do E10.5 para conta `active` sem entitlements ainda não está implementada na rota `/a/[account]`
+• o resultado operacional da resolução de nicho ainda não está exposto em UX final do dashboard da conta
+• escolha/orientação comercial final de template continua como evolução posterior
 
 11. E11 — Gestão de Usuários e Convites
 
@@ -915,6 +888,8 @@ Ajustados:
 • Definir o primeiro recorte funcional do LP Builder no roadmap
 
 99. Changelog
+v1.5.56 (20/05/2026)
+• E10.5 atualizado para refletir somente o estado real do repositório: bloco 10.5 substituído integralmente, removendo promessas de UX pós-setup ainda não implementadas no runtime e consolidando os subcasos 10.5.1/10.5.2/10.5.3/10.5.3.1/10.5.4/10.5.6 com artefatos e pendências alinhados.
 v1.5.55 (20/05/2026) — E10.4 enxugado e consolidado no estado final: bloco substituído para remover histórico intermediário e duplicações internas, absorvendo 10.4.2/10.4.3 e mantendo 10.5+ intacto.
 
 v1.5.54 — 19/05/2026 — E12 atualizado para refletir o estado atual do Admin Dashboard: shell operacional protegido, navegação própria, páginas read-only reais para contas, resoluções de nicho e taxonomia, artefatos criados/ajustados e limites explícitos sem mutações, SQL, migrations ou RLS.
