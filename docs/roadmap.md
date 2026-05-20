@@ -657,7 +657,7 @@
 • `lib/onboarding/niche-resolution/contracts.ts`
 • `app/a/[account]/actions.ts`
 
-• Pendências gerais do E10.5:
+• Pendências gerais do E10.5.6:
 • a UX principal do E10.5 para conta `active` sem entitlements ainda não está implementada na rota `/a/[account]`
 • o resultado operacional da resolução de nicho ainda não está exposto em UX final do dashboard da conta
 
