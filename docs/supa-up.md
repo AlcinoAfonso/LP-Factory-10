@@ -182,6 +182,7 @@ Painel de logs unificado com suporte a depuração via IA.
 
 - Status: Não implementado
 - Evidência: docs/roadmap.md (sem adoção definida no escopo atual)
+- Observação: Supabase Update May 2026 informa Branching without Git como default; manter sem adoção no MVP até existir baseline/staging claro.
 
 
 ### Descrição  
@@ -979,6 +980,7 @@ Resumo das mudanças de segurança do Supabase em 2025 e das direções previst
 
 - Status: Não implementado
 - Evidência: docs/roadmap.md (sem adoção definida no escopo atual)
+- Observação: Supabase Update May 2026 informa que o Stripe Sync Engine passou a ser mantido pela Stripe e que o app Supabase no Stripe Marketplace está GA; manter sem adoção no E9 neste momento.
 
 
 ### Descrição  
@@ -1939,3 +1941,120 @@ A Supabase passou a mudar o comportamento de exposição automática de novas ta
 - Ambiente: Supabase Data API / PostgREST / GraphQL / schema public
 - Evidência: —
 - Observação: mudança nasce na plataforma, mas a absorção no projeto é regra de migration, grants e contrato técnico.
+
+---
+
+## 59 — Supabase Agent Skills *(🟦 Estável)*
+
+2026-05-19
+
+### Status no Projeto
+
+- Status: Não implementado
+- Evidência: Supabase Update May 2026; sem adoção formal no fluxo Codex/AGENTS/template do projeto.
+
+### Descrição
+
+Conjunto open source de instruções da Supabase para orientar agentes de IA a construir corretamente com Supabase.
+
+### Valor para o Projeto
+
+- Pode reduzir erros de agentes em migrations, RLS, policies, grants e uso de recursos Supabase.
+- Pode melhorar briefings para Codex e rotinas de revisão técnica.
+- Não substitui `docs/base-tecnica.md`, `docs/schema.md` ou validação humana.
+
+### Valor para o Usuário
+
+- Indireto: menos risco de erro técnico em entregas que dependem de Supabase.
+
+### Ações Recomendadas
+
+1. Avaliar uso como referência auxiliar para briefings do Codex.
+2. Não tratar Agent Skills como fonte canônica do projeto.
+3. Manter Base Técnica e Schema como fontes obrigatórias em implementações.
+
+### Registro (Tipo B — Tooling/Infra)
+
+- Status: PENDENTE
+- Verificado em: —
+- Ambiente: Supabase Agent Skills / agentes de IA
+- Evidência: —
+- Observação: recurso de apoio a agentes; adoção depende de validação no fluxo Codex do projeto.
+
+---
+
+## 60 — Supabase Changelog com RSS, tags e feed Markdown *(🟦 Estável)*
+
+2026-05-19
+
+### Status no Projeto
+
+- Status: Não implementado
+- Evidência: Supabase Update May 2026; ainda sem rotina formal do Gestor de Updates baseada nesses feeds.
+
+### Descrição
+
+Melhorias no changelog da Supabase com RSS feeds, filtros por tag, feed `.md` e links para copiar entradas como Markdown ou perguntar ao ChatGPT/Claude.
+
+### Valor para o Projeto
+
+- Facilita monitoramento recorrente de updates Supabase.
+- Reduz dependência de email manual.
+- Pode apoiar o Gestor de Updates e futuras automações leves de acompanhamento.
+
+### Valor para o Usuário
+
+- Indireto: melhora governança técnica e reduz risco de perder mudanças relevantes da plataforma.
+
+### Ações Recomendadas
+
+1. Avaliar uso como fonte recorrente do Gestor de Updates.
+2. Não automatizar decisões; usar como entrada de triagem.
+3. Registrar updates relevantes no `docs/supa-up.md` apenas após avaliação humana.
+
+### Registro (Tipo B — Tooling/Infra)
+
+- Status: PENDENTE
+- Verificado em: —
+- Ambiente: Supabase Changelog / RSS / Markdown feed
+- Evidência: —
+- Observação: recurso para governança de updates, não feature do produto.
+
+---
+
+## 61 — Custom OAuth/OIDC providers for Auth *(🟦 Estável)*
+
+2026-05-19
+
+### Status no Projeto
+
+- Status: Não implementado
+- Evidência: docs/roadmap.md (sem caso de uso enterprise/IdP próprio no escopo atual)
+
+### Descrição
+
+Recurso de Auth para conectar provedores OAuth2 ou OpenID Connect próprios ao projeto Supabase, incluindo IdPs corporativos ou regionais compatíveis.
+
+### Valor para o Projeto
+
+- Pode apoiar cenários futuros enterprise, white-label ou clientes com IdP próprio.
+- Não altera o fluxo MVP atual de login por email/senha.
+- Não deve ser adotado sem caso comercial claro.
+
+### Valor para o Usuário
+
+- Futuro: permite login corporativo em clientes com infraestrutura própria de identidade.
+
+### Ações Recomendadas
+
+1. Não adotar no MVP.
+2. Reavaliar apenas se surgir cliente com requisito formal de SSO/OIDC.
+3. Se adotado no futuro, documentar impacto em Auth, RLS, roles e onboarding.
+
+### Registro (Tipo A — Plataforma)
+
+- Status: PENDENTE
+- Verificado em: —
+- Ambiente: Supabase Auth / OAuth / OIDC
+- Evidência: —
+- Observação: capacidade futura para cenários enterprise; sem prioridade no MVP.
