@@ -9,7 +9,6 @@ import type { ActionableNicheResolution } from "../../../../lib/onboarding/niche
 import {
   confirmOptionNicheResolutionAction,
   confirmSuggestedNicheResolutionAction,
-  dismissNicheResolutionAction,
   rewriteNicheResolutionAction,
   type NicheResolutionActionState,
 } from "../niche-resolution-actions";
@@ -38,37 +37,28 @@ export function NicheResolutionCard({
     rewriteNicheResolutionAction,
     INITIAL_STATE,
   );
-  const [dismissState, dismissAction, isDismissing] = useActionState(
-    dismissNicheResolutionAction,
-    INITIAL_STATE,
-  );
 
   const formError =
     confirmSuggestedState.formError ??
     confirmOptionState.formError ??
     rewriteState.formError ??
-    dismissState.formError ??
     null;
-  const isPending = isConfirmingSuggested || isConfirmingOption || isRewriting || isDismissing;
+  const isPending = isConfirmingSuggested || isConfirmingOption || isRewriting;
 
   if (resolution.uxMode === "fallback_review") {
     return (
       <Card className="border-amber-200 bg-amber-50/60 shadow-sm">
         <CardHeader>
-          <CardTitle>Ainda estamos analisando seu nicho</CardTitle>
-          <CardDescription>
-            Vamos revisar essa informação para personalizar melhor sua conta. Você pode continuar
-            usando normalmente.
-          </CardDescription>
+          <CardTitle>Informe seu nicho</CardTitle>
+          <CardDescription>Nao encontramos uma opcao segura. Salve o texto que melhor descreve sua conta.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           {formError ? <FeedbackMessage tone="error">{formError}</FeedbackMessage> : null}
-          <form action={dismissAction}>
-            <input type="hidden" name="account_subdomain" value={accountSubdomain} />
-            <Button type="submit" disabled={isPending}>
-              Entendi
-            </Button>
-          </form>
+          <RewriteForm
+            accountSubdomain={accountSubdomain}
+            action={rewriteAction}
+            disabled={isPending}
+          />
         </CardContent>
       </Card>
     );
@@ -92,7 +82,6 @@ export function NicheResolutionCard({
               option={singleOption}
               accountSubdomain={accountSubdomain}
               confirmAction={confirmOptionAction}
-              rewriteAction={rewriteAction}
               disabled={isPending}
               label="Sim, confirmar"
             />
@@ -121,8 +110,8 @@ export function NicheResolutionCard({
     return (
       <Card className="border-blue-200 bg-blue-50/50 shadow-sm">
         <CardHeader>
-          <CardTitle>Escolha o nicho mais próximo</CardTitle>
-          <CardDescription>Encontramos algumas opções possíveis para personalizar melhor seu dashboard.</CardDescription>
+          <CardTitle>Escolha o nicho mais proximo</CardTitle>
+          <CardDescription>Encontramos algumas opcoes possiveis para personalizar melhor seu dashboard.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           {formError ? <FeedbackMessage tone="error">{formError}</FeedbackMessage> : null}
@@ -133,7 +122,6 @@ export function NicheResolutionCard({
                 option={option}
                 accountSubdomain={accountSubdomain}
                 confirmAction={confirmOptionAction}
-                rewriteAction={rewriteAction}
                 disabled={isPending}
                 label={option.name}
               />
@@ -170,7 +158,7 @@ export function NicheResolutionCard({
       <CardContent className="space-y-4">
         {formError ? <FeedbackMessage tone="error">{formError}</FeedbackMessage> : null}
         <div className="rounded-lg border border-blue-100 bg-white px-4 py-3">
-          <p className="text-sm text-gray-600">Identificamos que seu nicho provavelmente é:</p>
+          <p className="text-sm text-gray-600">Identificamos que seu nicho provavelmente e:</p>
           <p className="mt-1 text-base font-semibold text-gray-950">{suggestedName}</p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -186,7 +174,7 @@ export function NicheResolutionCard({
             disabled={isPending}
             onClick={() => setShowRewrite(true)}
           >
-            Não é isso
+            Outro
           </Button>
         </div>
         {showRewrite ? (
@@ -205,14 +193,12 @@ function OptionActionForm({
   option,
   accountSubdomain,
   confirmAction,
-  rewriteAction,
   disabled,
   label,
 }: {
   option: ActionableNicheResolution["options"][number];
   accountSubdomain: string;
   confirmAction: (payload: FormData) => void;
-  rewriteAction: (payload: FormData) => void;
   disabled: boolean;
   label: string;
 }) {
@@ -229,9 +215,9 @@ function OptionActionForm({
   }
 
   return (
-    <form action={rewriteAction}>
+    <form action={confirmAction}>
       <input type="hidden" name="account_subdomain" value={accountSubdomain} />
-      <input type="hidden" name="rewrite_input" value={option.name} />
+      <input type="hidden" name="option_name" value={option.name} />
       <Button type="submit" disabled={disabled}>
         {label}
       </Button>
@@ -261,14 +247,14 @@ function RewriteForm({
           maxLength={120}
           required
           disabled={disabled}
-          placeholder="Ex.: Clínica de estética para noivas"
+          placeholder="Ex.: Clinica de estetica para noivas"
           autoComplete="off"
         />
         <Button type="submit" disabled={disabled}>
-          Enviar
+          Salvar
         </Button>
       </div>
-      <p className="text-xs text-gray-500">Use até 120 caracteres. Vamos tentar uma análise adicional uma única vez.</p>
+      <p className="text-xs text-gray-500">Use ate 120 caracteres. Essa escolha encerra a confirmacao.</p>
     </form>
   );
 }

@@ -1,5 +1,8 @@
 import { getAccessContext } from "@/lib/access/getAccessContext";
-import { getActionableNicheResolutionForAccount } from "../../../lib/onboarding/niche-resolution/adapters/accountNicheResolutionUserAdapter";
+import {
+  getActionableNicheResolutionForAccount,
+  getConfirmedOperationalNicheResolutionLabel,
+} from "../../../lib/onboarding/niche-resolution/adapters/accountNicheResolutionUserAdapter";
 import { PendingSetupFirstSteps } from "./_components/PendingSetupFirstSteps";
 import { NicheResolutionCard } from "./_components/NicheResolutionCard";
 import { getActivePrimaryAccountTaxon } from "../../../lib/onboarding/niche-resolution/adapters/accountTaxonomyAdapter";
@@ -51,6 +54,10 @@ export default async function Page({ params }: PageProps) {
           getActivePrimaryAccountTaxon({ accountId }),
         ])
       : [null, null];
+    const operationalNicheLabel = accountId && !primaryTaxon
+      ? await getConfirmedOperationalNicheResolutionLabel({ accountId })
+      : null;
+    const resolvedNicheLabel = primaryTaxon?.name ?? operationalNicheLabel;
 
     return (
       <main className="mx-auto max-w-5xl px-6 py-10">
@@ -64,14 +71,14 @@ export default async function Page({ params }: PageProps) {
 
           <section className="rounded-xl border bg-white p-6 shadow-sm">
             <h1 className="text-2xl font-semibold">Dashboard</h1>
-            {primaryTaxon ? (
+            {resolvedNicheLabel ? (
               <div className="mt-2 space-y-2 text-sm text-gray-600">
-                <p>Sua conta está ativa para o nicho {primaryTaxon.name}.</p>
+                <p>Sua conta esta ativa para o nicho {resolvedNicheLabel}.</p>
                 <p>Estamos desenvolvendo recursos para este nicho e entraremos em contato.</p>
               </div>
             ) : (
               <p className="mt-2 text-sm text-gray-600">
-                Sua conta está ativa. Novos recursos do dashboard aparecerão aqui conforme forem liberados.
+                Sua conta esta ativa. Novos recursos do dashboard aparecerao aqui conforme forem liberados.
               </p>
             )}
           </section>
@@ -92,7 +99,7 @@ function DashboardOnboarding() {
     <main className="mx-auto max-w-5xl px-6 py-10">
       <div className="space-y-2">
         <h1 className="text-2xl font-semibold">Onboarding</h1>
-        <p className="text-sm text-gray-600">Faça login ou crie sua conta para continuar.</p>
+        <p className="text-sm text-gray-600">Faca login ou crie sua conta para continuar.</p>
       </div>
     </main>
   );
@@ -103,7 +110,7 @@ function DashboardPublic() {
     <main className="mx-auto max-w-5xl px-6 py-10">
       <div className="space-y-2">
         <h1 className="text-2xl font-semibold">LP Factory</h1>
-        <p className="text-sm text-gray-600">Acesse sua conta ou visite a home pública.</p>
+        <p className="text-sm text-gray-600">Acesse sua conta ou visite a home publica.</p>
       </div>
     </main>
   );

@@ -7,14 +7,9 @@ import type {
   AiNicheResolutionOutput,
   AiNicheResolutionUxMode,
   NicheResolutionUserActionResult,
-  TaxonMatchCandidate,
   UserNicheResolutionStatus,
 } from "../contracts";
-import { AI_NICHE_RESOLUTION_SCHEMA_VERSION } from "../contracts";
-import { evaluateDeterministicTaxonMatch } from "../deterministicConfidence";
 import { linkPrimaryAccountTaxonomyFromUserConfirmedAi } from "./accountTaxonomyAdapter";
-import { matchBusinessTaxonsDeterministic } from "./taxonMatchAdapter";
-import { resolveNicheWithOpenAi } from "./openAiResolver";
 
 const ACTIONABLE_UX_MODES = new Set<AiNicheResolutionUxMode>([
   "confirm_single",
@@ -66,6 +61,35 @@ export async function getActionableNicheResolutionForAccount(input: {
   return validated.context.actionable;
 }
 
+export async function getConfirmedOperationalNicheResolutionLabel(input: {
+  accountId: string;
+}): Promise<string | null> {
+  const supabase = createServiceClient();
+
+  const { data, error } = await supabase
+    .from("account_niche_resolutions")
+    .select("user_rewrite_input,user_resolution_status,user_selected_taxon_id")
+    .eq("account_id", input.accountId)
+    .eq("user_resolution_status", "confirmed")
+    .is("user_selected_taxon_id", null)
+    .limit(1)
+    .maybeSingle();
+
+  if (error) {
+    console.error("getConfirmedOperationalNicheResolutionLabel failed:", {
+      code: (error as any)?.code,
+      message: (error as any)?.message ?? String(error),
+    });
+    return null;
+  }
+
+  const label = normalizeOperationalLabel(
+    (data as { user_rewrite_input?: string | null } | null)?.user_rewrite_input,
+  );
+
+  return label || null;
+}
+
 export async function confirmAiSuggestedTaxonForAccount(input: {
   accountId: string;
 }): Promise<NicheResolutionUserActionResult> {
@@ -88,7 +112,8 @@ export async function confirmAiSuggestedTaxonForAccount(input: {
 
 export async function confirmAiOptionForAccount(input: {
   accountId: string;
-  taxonId: string;
+  taxonId: string | null;
+  optionName: string | null;
 }): Promise<NicheResolutionUserActionResult> {
   const validated = await getValidatedActionContext({
     accountId: input.accountId,
@@ -97,28 +122,32 @@ export async function confirmAiOptionForAccount(input: {
 
   if (!validated.ok) return { ok: false, reason: validated.reason };
 
-  const allowedTaxonIds = new Set(
-    validated.context.actionable.options
-      .filter((option) => option.isOfficial && option.taxonId)
-      .map((option) => option.taxonId),
+  const option = findSelectedOption(
+    validated.context.actionable.options,
+    input.taxonId,
+    input.optionName,
   );
 
-  if (!allowedTaxonIds.has(input.taxonId)) {
-    console.warn("nicheResolution arbitrary taxon rejected:", {
+  if (!option) {
+    console.warn("nicheResolution arbitrary option rejected:", {
       accountId: input.accountId,
       uxMode: validated.context.actionable.uxMode,
     });
-    return { ok: false, reason: "invalid_option_taxon" };
+    return { ok: false, reason: "invalid_option" };
   }
 
-  return confirmValidatedTaxon(input.accountId, input.taxonId);
+  if (option.isOfficial && option.taxonId) {
+    return confirmValidatedTaxon(input.accountId, option.taxonId);
+  }
+
+  return confirmOperationalChoice(input.accountId, option.name);
 }
 
 export async function rewriteAiNicheResolutionForAccount(input: {
   accountId: string;
   rewriteInput: string;
 }): Promise<NicheResolutionUserActionResult> {
-  const rewriteInput = input.rewriteInput.replace(/\s+/g, " ").trim();
+  const rewriteInput = normalizeOperationalLabel(input.rewriteInput);
 
   if (!rewriteInput) return { ok: false, reason: "empty_rewrite" };
   if (rewriteInput.length > REWRITE_LIMIT) return { ok: false, reason: "rewrite_too_long" };
@@ -130,39 +159,7 @@ export async function rewriteAiNicheResolutionForAccount(input: {
 
   if (!validated.ok) return { ok: false, reason: validated.reason };
 
-  if (
-    validated.context.actionable.uxMode !== "confirm_single" &&
-    validated.context.actionable.uxMode !== "choose_from_options"
-  ) {
-    return { ok: false, reason: "rewrite_not_allowed" };
-  }
-
-  if (validated.context.resolution.user_rewrite_input) {
-    const finalFallbackSaved = await persistRetryAiResolution({
-      accountId: input.accountId,
-      rewriteInput,
-      output: finalFallbackOutput("rewrite_retry_limit_reached"),
-      model: null,
-      reason: "rewrite_retry_limit_reached",
-    });
-
-    return finalFallbackSaved
-      ? { ok: true, status: "rewritten" }
-      : { ok: false, reason: "update_failed" };
-  }
-
-  const retryOutput = await resolveRewriteInputOnce(rewriteInput);
-  const retrySaved = await persistRetryAiResolution({
-    accountId: input.accountId,
-    rewriteInput,
-    output: retryOutput.output,
-    model: retryOutput.model,
-    reason: retryOutput.reason,
-  });
-
-  return retrySaved
-    ? { ok: true, status: "rewritten" }
-    : { ok: false, reason: "update_failed" };
+  return confirmOperationalChoice(input.accountId, rewriteInput);
 }
 
 export async function dismissAiNicheResolutionForAccount(input: {
@@ -228,6 +225,7 @@ async function confirmValidatedTaxon(
     .update({
       user_resolution_status: "confirmed",
       user_selected_taxon_id: taxonId,
+      user_rewrite_input: null,
       user_confirmed_at: now,
     })
     .eq("account_id", accountId)
@@ -248,127 +246,27 @@ async function confirmValidatedTaxon(
   return { ok: true, status: "confirmed" };
 }
 
-
-type RetryAiResolution = {
-  output: AiNicheResolutionOutput;
-  model: string | null;
-  reason: string;
-};
-
-async function resolveRewriteInputOnce(rewriteInput: string): Promise<RetryAiResolution> {
-  const candidates = await matchBusinessTaxonsDeterministic(rewriteInput, 10);
-  const decision = evaluateDeterministicTaxonMatch(candidates);
-
-  if (decision.selectedCandidate && decision.confidence === "high") {
-    return {
-      output: officialCandidatesOutput([decision.selectedCandidate], "rewrite_high_confidence_candidate"),
-      model: null,
-      reason: "rewrite_high_confidence_candidate",
-    };
-  }
-
-  const aiResult = await resolveNicheWithOpenAi({
-    rawInput: rewriteInput,
-    decision,
-    candidates,
-  });
-
-  if (aiResult.ok && aiResult.output.options.length > 0) {
-    return {
-      output: aiResult.output,
-      model: aiResult.model,
-      reason: aiResult.output.reason,
-    };
-  }
-
-  if (candidates.length > 0) {
-    return {
-      output: officialCandidatesOutput(candidates.slice(0, 3), "rewrite_official_candidates_without_ai"),
-      model: aiResult.model,
-      reason: aiResult.ok ? aiResult.output.reason : aiResult.reason,
-    };
-  }
-
-  return {
-    output: finalFallbackOutput(aiResult.ok ? aiResult.output.reason : aiResult.reason),
-    model: aiResult.model,
-    reason: aiResult.ok ? aiResult.output.reason : aiResult.reason,
-  };
-}
-
-function officialCandidatesOutput(
-  candidates: TaxonMatchCandidate[],
-  reason: string,
-): AiNicheResolutionOutput {
-  const options = candidates.slice(0, 3).map((candidate) => ({
-    taxonId: candidate.taxonId,
-    name: candidate.name,
-    slug: candidate.slug,
-    confidence:
-      candidate.score >= 0.92 ? "high" as const : candidate.score >= 0.7 ? "medium" as const : "low" as const,
-    reason: "official_candidate_after_rewrite",
-    isOfficial: true,
-  }));
-
-  return {
-    uxMode: options.length === 1 ? "confirm_single" : "choose_from_options",
-    message: options.length === 1
-      ? "Você quis dizer este nicho?"
-      : "Encontramos algumas possibilidades para seu nicho.",
-    options,
-    needsAdminReview: false,
-    needsUserConfirmation: true,
-    shouldCreateOfficialLink: false,
-    suggestedNewTaxonLabel: null,
-    reason,
-  };
-}
-
-function finalFallbackOutput(reason: string): AiNicheResolutionOutput {
-  return {
-    uxMode: "fallback_review",
-    message: "Vamos revisar essa informação para personalizar melhor sua conta.",
-    options: [],
-    needsAdminReview: true,
-    needsUserConfirmation: false,
-    shouldCreateOfficialLink: false,
-    suggestedNewTaxonLabel: null,
-    reason,
-  };
-}
-
-async function persistRetryAiResolution(input: {
-  accountId: string;
-  rewriteInput: string;
-  output: AiNicheResolutionOutput;
-  model: string | null;
-  reason: string;
-}): Promise<boolean> {
+async function confirmOperationalChoice(
+  accountId: string,
+  label: string,
+): Promise<NicheResolutionUserActionResult> {
   const supabase = createServiceClient();
   const now = new Date().toISOString();
-  const suggestedTaxonId = input.output.options.find((option) => option.isOfficial)?.taxonId ?? null;
+  const normalizedLabel = normalizeOperationalLabel(label);
+
+  if (!normalizedLabel) return { ok: false, reason: "empty_rewrite" };
+  if (normalizedLabel.length > REWRITE_LIMIT) return { ok: false, reason: "rewrite_too_long" };
 
   try {
     let query: any = supabase
       .from("account_niche_resolutions")
       .update({
-        ai_status: "resolved",
-        ai_error_code: null,
-        ai_model: input.model,
-        ai_schema_version: AI_NICHE_RESOLUTION_SCHEMA_VERSION,
-        ai_result_json: input.output,
-        ai_ux_mode: input.output.uxMode,
-        ai_suggested_taxon_id: suggestedTaxonId,
-        ai_suggested_new_taxon_label: input.output.suggestedNewTaxonLabel,
-        ai_needs_user_confirmation: input.output.needsUserConfirmation,
-        ai_needs_admin_review: input.output.needsAdminReview,
-        ai_reason: input.reason,
-        ai_processed_at: now,
-        user_resolution_status: "pending_confirmation",
-        user_rewrite_input: input.rewriteInput,
-        user_rejected_at: now,
+        user_resolution_status: "confirmed",
+        user_selected_taxon_id: null,
+        user_rewrite_input: normalizedLabel,
+        user_confirmed_at: now,
       })
-      .eq("account_id", input.accountId)
+      .eq("account_id", accountId)
       .or("user_resolution_status.is.null,user_resolution_status.eq.pending_confirmation");
 
     if (typeof query?.maxAffected === "function") query = query.maxAffected(1);
@@ -376,20 +274,20 @@ async function persistRetryAiResolution(input: {
     const { error } = await query;
 
     if (error) {
-      console.error("persistRetryAiResolution failed:", {
+      console.error("confirmOperationalChoice failed:", {
         code: (error as any)?.code,
         message: (error as any)?.message ?? String(error),
       });
-      return false;
+      return { ok: false, reason: "update_failed" };
     }
 
-    return true;
+    return { ok: true, status: "confirmed" };
   } catch (error) {
-    console.error("persistRetryAiResolution failed:", {
+    console.error("confirmOperationalChoice failed:", {
       code: error instanceof Error ? error.name : undefined,
       message: error instanceof Error ? error.message : String(error),
     });
-    return false;
+    return { ok: false, reason: "update_failed" };
   }
 }
 
@@ -537,6 +435,29 @@ function taxonToOption(taxon: TaxonRow | null): ActionableNicheResolutionOption 
   return { taxonId: taxon.id, name: taxon.name, slug: taxon.slug, isOfficial: true };
 }
 
+function findSelectedOption(
+  options: ActionableNicheResolutionOption[],
+  taxonId: string | null,
+  optionName: string | null,
+): ActionableNicheResolutionOption | null {
+  const normalizedTaxonId = normalizeOperationalLabel(taxonId);
+  const normalizedName = normalizeOperationalLabel(optionName).toLowerCase();
+
+  if (normalizedTaxonId) {
+    return options.find((option) => option.isOfficial && option.taxonId === normalizedTaxonId) ?? null;
+  }
+
+  if (!normalizedName) return null;
+
+  return (
+    options.find(
+      (option) =>
+        !option.isOfficial &&
+        normalizeOperationalLabel(option.name).toLowerCase() === normalizedName,
+    ) ?? null
+  );
+}
+
 function parseAiResult(value: unknown): AiNicheResolutionOutput | null {
   if (!value || typeof value !== "object" || Array.isArray(value)) return null;
 
@@ -578,4 +499,8 @@ function parseAiResult(value: unknown): AiNicheResolutionOutput | null {
       typeof result.suggestedNewTaxonLabel === "string" ? result.suggestedNewTaxonLabel : null,
     reason: typeof result.reason === "string" ? result.reason : "",
   };
+}
+
+function normalizeOperationalLabel(value: unknown): string {
+  return String(value ?? "").replace(/\s+/g, " ").trim();
 }

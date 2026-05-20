@@ -61,9 +61,14 @@ export async function confirmOptionNicheResolutionAction(
   if (!ctx.ok || !ctx.accountId) return { ok: false, formError: GENERIC_ERROR };
 
   const taxonId = String(formData.get("taxon_id") ?? "").trim();
-  if (!taxonId) return { ok: false, formError: GENERIC_ERROR };
+  const optionName = String(formData.get("option_name") ?? "").trim();
+  if (!taxonId && !optionName) return { ok: false, formError: GENERIC_ERROR };
 
-  const result = await confirmAiOptionForAccount({ accountId: ctx.accountId, taxonId });
+  const result = await confirmAiOptionForAccount({
+    accountId: ctx.accountId,
+    taxonId: taxonId || null,
+    optionName: optionName || null,
+  });
   revalidatePath(ctx.route);
 
   if (!result.ok) return { ok: false, formError: GENERIC_ERROR };

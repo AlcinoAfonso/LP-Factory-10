@@ -111,7 +111,7 @@ const SYSTEM_PROMPT = [
   "For official options, set isOfficial true and use the official taxonId, name, and slug.",
   "When no official candidate is safe, infer likely market meanings from raw_input and suggest 2 or 3 helpful market options with isOfficial false, taxonId null, and slug null before using fallback_review.",
   "For ambiguous inputs like Corretor, suggest market options such as real estate broker, insurance broker, or commercial consultant if appropriate.",
-  "For medium confidence, prepare one official option for a simple confirmation.",
+  "For medium confidence, return useful official options first, then semantic market options when helpful.",
   "For low confidence with official candidates, prepare up to three useful options.",
   "Use fallback_review only when no useful official or semantic market option can be suggested.",
   "Keep messages short and suitable for future Portuguese UX.",
@@ -316,9 +316,12 @@ function normalizeAiOutput(
 
   let uxMode = normalizeUxMode(raw.uxMode);
 
-  if (decision.confidence === "medium" && options.length > 0) {
+  if (decision.confidence === "medium" && options.length === 1 && options[0]?.isOfficial) {
     uxMode = "confirm_single";
-    options = options.slice(0, 1);
+  } else if (decision.confidence === "medium" && options.length > 1) {
+    uxMode = "choose_from_options";
+  } else if (decision.confidence === "medium" && options.length === 1) {
+    uxMode = "choose_from_options";
   } else if (decision.confidence === "low" && options.length > 0) {
     uxMode = "choose_from_options";
   }

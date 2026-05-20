@@ -4,7 +4,7 @@ import { createServiceClient } from "@/lib/supabase/service";
 import type { DeterministicMatchDecision } from "../contracts";
 
 const ACCOUNT_TAXONOMY_DETERMINISTIC_SOURCE_TYPE = "taxonomy_match" as const;
-const ACCOUNT_TAXONOMY_USER_CONFIRMED_AI_SOURCE_TYPE = "user_confirmed_ai" as const;
+const ACCOUNT_TAXONOMY_USER_CONFIRMED_AI_SOURCE_TYPE = "manual" as const;
 const ACCOUNT_TAXONOMY_STATUS = "active" as const;
 
 type AccountTaxonomySourceType =
