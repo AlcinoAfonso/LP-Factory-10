@@ -2,7 +2,7 @@
 
 0.1 Cabeçalho
 • Data: 20/05/2026
-• Versão: v1.5.56
+• Versão: v1.5.57
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -596,16 +596,48 @@
 • `lib/onboarding/niche-resolution/contracts.ts`
 
 10.5.6 Classificação da conta e resolução do nicho
-• Status: Parcialmente concluído (runtime integrado + persistência operacional + IA estruturada) (14/05/2026)
-• Escopo implementado: pipeline server-side de resolução de nicho no pós-save do `pending_setup`, com matching determinístico, persistência operacional, vínculo oficial sob alta confiança e escalonamento IA estruturado quando necessário.
-• Implementado:
-• RPC read-only de matching determinístico consumida por adapter server-side
-• avaliação determinística via `evaluateDeterministicTaxonMatch`
-• persistência operacional em `account_niche_resolutions`
-• vínculo em `account_taxonomy` apenas quando a decisão determinística é de alta confiança e sem necessidade de review
-• resolver IA server-side via `resolveNicheWithOpenAi`
-• persistência do resultado IA estruturado em `account_niche_resolutions`
-• integração da cadeia de resolução dentro de `saveSetupAndContinueAction` após salvar perfil e promover `pending_setup → active`
+• Status: Parcialmente concluído (14/05/2026)
+• Escopo atual: pipeline server-side no pós-save do `pending_setup`, com matching determinístico, decisão de confiança, persistência operacional, vínculo oficial sob alta confiança e escalonamento IA estruturado.
+
+10.5.6.1 Matching determinístico e adapter server-side
+• Status: Concluído
+• Matching determinístico por RPC read-only com normalização textual, FTS/`pg_trgm`, `match_source` e `score`.
+• Adapter server-side tipado para consumo no fluxo de resolução.
+
+10.5.6.2 Regra de confiança determinística
+• Status: Concluído
+• Avaliação de candidatos via `evaluateDeterministicTaxonMatch` com saída tipada de decisão.
+• Separação entre alta confiança, ambiguidade e escalonamento IA.
+• Match `pg_trgm` com candidato único forte segue sem fricção para decisão determinística.
+
+10.5.6.3 Persistência operacional em `account_niche_resolutions`
+• Status: Concluído
+• Camada operacional da resolução de nicho.
+• Não é vínculo oficial.
+• Base para decisão determinística, IA, fallback e revisão.
+
+10.5.6.4 Vínculo oficial em `account_taxonomy`
+• Status: Concluído
+• `account_taxonomy` é o vínculo oficial da conta com taxon aprovado.
+• Gravação automática apenas em alta confiança determinística.
+• Não substitui automaticamente vínculo primário diferente.
+
+10.5.6.5 IA estruturada e persistência `ai_*`
+• Status: Concluído
+• Resolver IA server-side com Structured Outputs quando o determinístico não resolve com segurança.
+• IA não cria taxon, não cria alias e não grava `account_taxonomy`.
+• Resultado IA persistido em `account_niche_resolutions`.
+
+10.5.6.6 Microdiálogo visual e fallback final
+• Status: Em andamento
+• Direção: card inline no E10.5, não bloqueante, sem modal/chatbot, com confirmação/escolha do usuário.
+• Fallback elegante sem rechamar IA em loop.
+
+10.5.6.7 Resolução do template comercial
+• Status: Pendente
+• Escolha server-side de template comercial via taxon, segmento ou fallback.
+• Integração prevista com a renderização futura do E10.5 `active`.
+
 • ARTEFATOS_REPO:
 • Criados:
 • `supabase/migrations/0009__e10_5_6_deterministic_taxon_matching.sql`
@@ -620,12 +652,14 @@
 • `lib/onboarding/niche-resolution/adapters/accountNicheResolutionAdapter.ts`
 • `lib/onboarding/niche-resolution/adapters/accountTaxonomyAdapter.ts`
 • `lib/onboarding/niche-resolution/adapters/openAiResolver.ts`
+• `lib/onboarding/niche-resolution/deterministicConfidence.ts`
 • Ajustados:
+• `lib/onboarding/niche-resolution/contracts.ts`
 • `app/a/[account]/actions.ts`
-• Pendências:
+
+• Pendências gerais do E10.5:
 • a UX principal do E10.5 para conta `active` sem entitlements ainda não está implementada na rota `/a/[account]`
 • o resultado operacional da resolução de nicho ainda não está exposto em UX final do dashboard da conta
-• escolha/orientação comercial final de template continua como evolução posterior
 
 11. E11 — Gestão de Usuários e Convites
 
@@ -888,6 +922,8 @@ Ajustados:
 • Definir o primeiro recorte funcional do LP Builder no roadmap
 
 99. Changelog
+v1.5.57 (20/05/2026)
+• E10.5.6 reorganizado em subitens estáveis (10.5.6.1–10.5.6.7), mantendo estado final enxuto, separação de pendências reais e artefatos consolidados sem misturar escopo do E10.4.
 v1.5.56 (20/05/2026)
 • E10.5 atualizado para refletir somente o estado real do repositório: bloco 10.5 substituído integralmente, removendo promessas de UX pós-setup ainda não implementadas no runtime e consolidando os subcasos 10.5.1/10.5.2/10.5.3/10.5.3.1/10.5.4/10.5.6 com artefatos e pendências alinhados.
 v1.5.55 (20/05/2026) — E10.4 enxugado e consolidado no estado final: bloco substituído para remover histórico intermediário e duplicações internas, absorvendo 10.4.2/10.4.3 e mantendo 10.5+ intacto.
