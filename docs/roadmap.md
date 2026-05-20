@@ -1,8 +1,8 @@
 0. Introdução
 
 0.1 Cabeçalho
-• Data: 18/05/2026
-• Versão: v1.5.54
+• Data: 20/05/2026
+• Versão: v1.5.55
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -450,268 +450,77 @@
 
 10.4 Primeiros passos (pending_setup — status-based)
 
-• Resolução complementar de nicho com IA estruturada no pós-save do `pending_setup` (14/05/2026): o fluxo passou a usar IA server-side apenas quando o matching determinístico não resolve com segurança.
-• Decisão: IA não roda em alta confiança determinística; pode atuar em medium, low e casos sem candidato útil.
-• Decisão: IA atualiza apenas a resolução operacional em `account_niche_resolutions`; não grava em `account_taxonomy`, não substitui vínculo oficial, não cria taxon e não cria alias.
-• Regra de fluxo: falha da IA não bloqueia lead, setup, redirect ou ativação da conta.
-• Fora do escopo: UI, microdiálogo visual, ChatKit, orquestrador multiagente, criação automática de taxon/alias, gravação em `account_taxonomy` via IA, substituição de vínculo oficial e escolha final de template comercial.
-• ARTEFATOS_REPO:
-• Criado: `lib/onboarding/niche-resolution/adapters/openAiResolver.ts`
-• Criado: `supabase/migrations/0013__e10_5_6_ai_structured_outputs.sql`
-• Criado: `supabase/rollbacks/20260514__e10_5_6_ai_structured_outputs.rollback.sql`
-• Ajustado: `app/a/[account]/actions.ts`
-• Ajustado: `lib/onboarding/niche-resolution/contracts.ts`
-• Ajustado: `lib/onboarding/niche-resolution/adapters/accountNicheResolutionAdapter.ts`
-• Checks/QA (reportado): Vercel Preview READY; Vercel build aprovado; Security Checks aprovados; Automation Niche Runtime Tests executado; Supabase Inspect executado; runtime aprovado em high, medium, low e unknown limpo.
-• Status de entrega: PR #258 mergeado; branch `codex/e10-5-6-ai-structured-outputs`; commit validado `623ef55`; 20.8 concluído.
-• Pendências futuras:
-• Criar fila/admin review para `ai_needs_admin_review = true`.
-• Decidir UI de confirmação para `confirm_single`.
-• Decidir UI para `choose_from_options`.
-• Decidir processo administrativo para sugerir novo taxon ou alias.
-• Avaliar logs/observability de erro OpenAI em produção.
-• Avaliar teste dedicado de env ausente e erro OpenAI.
-
-• Vínculo oficial de taxonomia no pós-save do `pending_setup` (11/05/2026): o fluxo passou a gravar vínculo oficial em `account_taxonomy` apenas quando a resolução determinística tem alta confiança.
-• Decisão: `account_niche_resolutions` permanece como registro operacional da resolução; `account_taxonomy` passa a representar o vínculo oficial da conta com o taxon.
-• Regra de gravação: gravar vínculo oficial somente quando houver `confidence=high`, uso determinístico aprovado, candidato selecionado com `taxon_id` e sem necessidade de revisão administrativa.
-• Regra de fluxo: falha na gravação do vínculo oficial não bloqueia a conclusão do setup nem o redirecionamento.
-• Regra de conflito: vínculo primário ativo diferente não é substituído automaticamente no MVP; fica para revisão futura.
-• Fora do escopo: IA, microdiálogo, criação automática de taxon ou alias e alteração de UI.
-• ARTEFATOS_REPO:
-• Criado: `lib/onboarding/niche-resolution/adapters/accountTaxonomyAdapter.ts`
-• Criado: `supabase/migrations/0012__e10_5_6_account_taxonomy_service_role_grants.sql`
-• Criado: `supabase/rollbacks/20260511__e10_5_6_account_taxonomy_service_role_grants.rollback.sql`
-• Ajustado: `app/a/[account]/actions.ts`
-• Checks/QA (reportado): `npm ci` ok; `npm run check` ok; runtime aprovado em high direto, high alias, low e medium/pg_trgm.
-• Status de entrega: PR da implementação 20.7 mergeado; 20.7 concluído.
-• Pendências futuras:
-• Criar fila/admin review para resoluções medium/low.
-• Decidir UI/Admin Dashboard para revisar pendências.
-• Decidir se haverá regra estrutural de apenas um primary ativo por conta.
-• Decidir fluxo para substituir taxon oficial com revisão humana.
-• Avaliar IA/microdiálogo em etapa futura.
-
-• Persistência da resolução operacional de nicho no pós-save do `pending_setup` (11/05/2026): após o matching determinístico, o fluxo passou a registrar a resolução atual da conta em `account_niche_resolutions`.
-• Decisão: `account_niche_resolutions` registra a resolução operacional atual; `account_taxonomy` permanece reservado para vínculo oficial futuro.
-• Regra de fluxo: falhas de matching ou persistência não bloqueiam a conclusão do setup nem o redirecionamento.
-• Fora do escopo: IA, microdiálogo, fallback final, vínculo oficial em `account_taxonomy` e escolha de template comercial.
-• ARTEFATOS_REPO:
-• Criado: `lib/onboarding/niche-resolution/adapters/accountNicheResolutionAdapter.ts`
-• Criado: `supabase/migrations/0011__e10_5_6_account_niche_resolutions.sql`
-• Criado: `supabase/rollbacks/20260511__e10_5_6_account_niche_resolutions.rollback.sql`
-• Ajustado: `lib/onboarding/niche-resolution/contracts.ts`
-• Ajustado: `app/a/[account]/actions.ts`
-• Checks/QA (reportado): `npm ci` ok; `npm run check` ok; runtime validado em deployment correto com caso forte, caso alias e caso sem candidato claro.
-• Status de entrega: PR da implementação 20.6 mergeado; 20.6 concluído.
-• Pendências futuras:
-• Definir quando `account_taxonomy` será gravado como vínculo oficial.
-• Decidir se haverá histórico/versionamento de resoluções.
-• Implementar IA/microdiálogo apenas em recorte futuro.
-
-• Integração de matching determinístico de taxonomia no pós-save do `pending_setup` (10/05/2026): após salvar perfil, atualizar nome e promover a conta para `active`, `saveSetupAndContinueAction` chama `matchBusinessTaxonsDeterministic(validated.values.niche, 10)` server-side e avalia os candidatos com `evaluateDeterministicTaxonMatch(candidates)` para log seguro de decisão.
-• Regra de fluxo: falha no matching não bloqueia o lead nem impede `revalidatePath(route)` e `redirect(route)`.
-• Observability mínima: logs seguros `setup_taxonomy_match_evaluated` e `setup_taxonomy_match_failed`, sem nicho bruto, query, aliases ou dados de formulário.
-• ARTEFATOS_REPO:
-• Ajustado: `app/a/[account]/actions.ts`
-• Checks/QA (reportado): QA feito; smoke feito; caso de uso funcionando; evidência funcional apresentada.
-• Pendências:
-• Branch ainda não mergeada.
-• Logs runtime da Vercel não apresentados no chat; observability validada por código, não por captura de log.
-• Adapter ainda trata falha da RPC como lista vazia; melhoria futura pode diferenciar “sem candidatos” de “falha técnica da RPC”.
-• Ainda não há persistência em `account_taxonomy`.
-• Ainda não há IA, microdiálogo, fallback final ou escolha de template comercial.
-
-• Atualização de obrigatoriedade do nicho no `pending_setup` (08/05/2026): `niche` passou a ser obrigatório no formulário “Primeiros passos”, com validação client-side e server-side, `trim` e erro `Informe o nicho do projeto.` para valor vazio ou apenas espaços.
-• ARTEFATOS_REPO:
-• Ajustados: `lib/onboarding/e10_4_setup_validation.ts`
-• Ajustados: `app/a/[account]/_components/PendingSetupFirstSteps.tsx`
-• Ajustados: `app/a/[account]/actions.ts`
-• Checks/QA (reportado): Codex reportou `npm ci` ok e `npm run check` ok; QA manual em Preview Vercel confirmou bloqueio de `niche` vazio, erro para `niche` apenas com espaços, regressão aprovada dos demais campos e ativação `pending_setup → active` após salvar com `niche` preenchido.
-• Pendência: log independente de `npm ci` e `npm run check` não anexado; execução foi informada no summary do Codex.
-
-• Refinamento técnico pós-PR #226: a mutação `pending_setup → active` passou a residir em `lib/access/adapters/accountAdapter.ts`; `app/a/[account]/actions.ts` permanece como orquestrador do fluxo.
-• ARTEFATOS_REPO:
-• Ajustados: `app/a/[account]/actions.ts`
-• Ajustados: `lib/access/adapters/accountAdapter.ts`
-• Checks/QA (reportado): Preview Vercel Ready e acessível; Validador Final passou; QA manual confirmou ativação `pending_setup → active`.
-
-• Arquitetura runtime atual: `app/a/[account]/page.tsx` atua como orquestrador da rota; o formulário `PendingSetupFirstSteps` reside em `app/a/[account]/_components/PendingSetupFirstSteps.tsx` como componente route-local.
-• ARTEFATOS_REPO:
-• Criado: `app/a/[account]/_components/PendingSetupFirstSteps.tsx`
-• Ajustado: `app/a/[account]/page.tsx`
-• Checks/QA (reportado): `npm ci` ok; `npm run check` ok; Security Checks ok; Preview Vercel Ready; Validador Final passou; QA manual confirmou `pending_setup → active`.
-
 • Status: Concluído (exec) (13/02/2026)
-• Escopo: Entregar o fluxo ponta a ponta de “Primeiros passos” no dashboard da conta (/a/[account]) quando `accounts.status=pending_setup`: exibir formulário inline, validar campos (incl. regras condicionais), salvar com estados/erros (loading, validação inline, erro sistêmico com retry), persistir perfil v1, promover status (`pending_setup → active`) e redirecionar para o fluxo pós-setup.
-• Dependências: E10.4.1 (infra do marcador `setup_completed_at` — deprecated; sem uso), E10.4.2 (setter idempotente do marcador — deprecated; sem uso), E10.4.3 (política do marcador — deprecated; sem uso), E10.4.4 (campos + validações), E10.4.5 (decisão + contrato de persistência dos dados do onboarding), E10.4.6 (exec de persistência conforme E10.4.5 + status-based), E9.8.1 (trial/entitlements — apenas CTA/roteamento).
-• Nota (estado atual): setup concluído no MVP = `accounts.status=active` (status-based). `setup_completed_at/account_setup_completed_at` não devem ser usados em lugar nenhum (nem gating, nem fluxo, nem logs); ficam mantidos no DB apenas por segurança.
+• Escopo final: entregar o fluxo ponta a ponta de “Primeiros passos” em `/a/[account]` quando `accounts.status=pending_setup`, com formulário inline, validação, persistência do perfil v1, promoção `pending_setup → active` e redirecionamento para o pós-setup.
+• Estado atual: onboarding v1 inline em `pending_setup`, com `name` obrigatório, `niche` obrigatório, `preferred_channel` opcional com default `email`, `whatsapp` obrigatório somente quando `preferred_channel=whatsapp` e `site_url` opcional com normalização para URL válida.
+• Dependências: E9.8.1.
+• Nota: `setup_completed_at/account_setup_completed_at` não devem ser usados no runtime, no gating, no fluxo nem nos logs; ficam mantidos no DB apenas por segurança.
 
-10.4.1 Indicador de setup concluído (infra)
-• Status: Concluído (30/01/2026)
-• Estado atual: deprecated (manter no DB por segurança; não usar/consumir em runtime/gating/fluxos/logs).
-• Implementado:
-• Marcador por conta accounts.setup_completed_at (timestamptz, NULL)
-• Exposição no Access Context: account_setup_completed_at
-• Ajuste não-regressão no Access Context: hardening de allow (boolean, nunca NULL) e remoção de trial do allowlist
-• Migração: supabase/migrations/0003__accounts_setup_completed_at.sql
-• Hardening da view (security_invoker=true) aplicado; ver schema” — útil só como “sinal” de execução, sem detalhar DB.
+10.4.1 Marcador legado de setup (deprecated)
+• Status: Concluído (deprecated) (06/02/2026)
+• Estado atual: a estratégia anterior baseada em `setup_completed_at/account_setup_completed_at` foi superada pelo modelo status-based em E10.4.6.
+• Regra atual: manter os campos legados no DB por segurança, sem uso no runtime, no gating, no fluxo ou nos logs.
 
-10.4.2 Setup concluído (MVP v0 — Exec)
-• Status: Concluído (31/01/2026)
-• Estado atual: deprecated (substituído por status-based em E10.4.6; não usar/consumir em runtime/gating/fluxos/logs).
-• Regra v0 (deprecated): setup concluído v0 = “Salvar/Confirmar” + accounts.name não vazio + accounts.name ≠ 'Conta ' || subdomain.
-• Set do marcador (infra; deprecated): chamar setSetupCompletedAtIfNull(accountId) somente no evento, se regra ok.
-• QA mínimo (histórico): incompleto (não seta) / completo (pode setar) / reentrada (idempotente).
-• Assunção a validar (histórico): padrão provisório do nome da conta ('Conta ' || subdomain) é o padrão real de criação.
+10.4.4 Onboarding: dados mínimos v1
+• Status: Concluído (definição consolidada)
+• Campos e regras atuais:
+• `name` obrigatório
+• `niche` obrigatório
+• `preferred_channel` opcional com default `email`
+• `whatsapp` obrigatório somente quando `preferred_channel=whatsapp`
+• `site_url` opcional
+• Validações consolidadas:
+• `name` e `niche` com `trim` e obrigatoriedade
+• `whatsapp` somente dígitos; 10–15 dígitos quando exigido
+• `site_url` aceita domínio sem esquema e normaliza para `https://` quando necessário
 
-10.4.3 Política do marcador de setup (MVP)
-• Status: Concluído (06/02/2026)
-• Estado atual: deprecated (substituído por status-based; não usar/consumir em runtime/gating/fluxos/logs).
-• Objetivo (histórico): definir política operacional do marcador de setup no MVP como infra write-once, sem alterar lifecycle e sem alterar regras de acesso.
-• Decisão (histórico/MVP): once set, never unset
-• Permitido: NULL → timestamp
-• Permitido: chamadas repetidas (idempotente; não sobrescreve)
-• Proibido no MVP: overwrite/re-set, backfill/correção, reset/unset
-• Evolução (histórico): correção/backfill/reset/unset somente via novo caso E10.4.x
-
-10.4.4 Onboarding: dados mínimos v1 (nicho/WhatsApp e outros)
-• Status: Concluído (definição) (06/02/2026)
-• Estado atual dos campos do onboarding v1: `name` obrigatório; `niche` obrigatório; `preferred_channel` opcional com default `email`; `whatsapp` obrigatório somente quando `preferred_channel=whatsapp`; `site_url` opcional.
-• Campos v1 (Primeiros passos / inline):
-• name (obrigatório)
-• niche (opcional)
-• preferred_channel (opcional; default = email; domínio: email | whatsapp)
-• whatsapp (opcional; obrigatório se preferred_channel = whatsapp)
-• site_url (opcional; link da LP/site)
-• Nome padrão (regra simples): name não pode ser igual ao placeholder/default do input (string a confirmar no UI)
-• Validações v1 (critérios mínimos):
-• name: trim; obrigatório; erro inline se vazio ou se igual ao placeholder/default
-• whatsapp (quando exigido): somente dígitos; 10–15 dígitos; erro inline se ausente/fora do critério
-• site_url (se preenchido): URL web sem espaços iniciando com http:// ou https://; erro inline se inválido
-• Microcopy (guia por intenção):
-• name.required_or_default
-• whatsapp.required_when_channel
-• whatsapp.invalid
-• site_url.invalid
-• Nota: persistência/schema dos campos segue para E10.4.5 (decisão) e E10.4.6 (exec).
-
-10.4.5 Onboarding: persistência dos dados mínimos v1 (perfil 1:1)
+10.4.5 Onboarding: persistência dos dados mínimos v1
 • Status: Concluído (definição) (07/02/2026)
-• Decisão: persistir dados do onboarding/perfil em tabela dedicada 1:1 (account_profiles), não em novas colunas em accounts.
-• Manter accounts.name no core (consumido pelas views/UX atuais).
-• account_profiles (contrato mínimo v1):
-• niche
-• preferred_channel (default email, valores esperados email|whatsapp)
-• whatsapp
-• site_url (link)
-• Evolução (fora do escopo): reservar billing/legal para futura 1:1 separada (ex.: account_billing_profiles).
+• Decisão: persistir o perfil do onboarding em `account_profiles` (1:1), mantendo `accounts.name` no core.
+• Referência: os campos persistidos seguem o contrato funcional definido em 10.4.4.
 
 10.4.6 Exec: persistência do perfil v1 + setup status-based
 • Status: Concluído (13/02/2026)
-• Setup concluído (fonte de verdade): `accounts.status=active` (promoção `pending_setup → active` com update condicional/idempotente no pós-save).
-• “Primeiros passos” (Salvar e continuar): persiste `account_profiles` (v1), atualiza `accounts.name`, promove status e redireciona para a rota correta da conta (sem exigir logout/login).
-• Access Context: v_access_context_v2 endurecido (seleção de conta/tenant mais robusta, fallback para “primeira conta” quando necessário e tratamento de conta/membro bloqueado/inativo).
-• DB (exec): `account_profiles` criado com RLS/policies reais (ver docs/schema.md). `setup_completed_at/account_setup_completed_at` mantidos no DB apenas por segurança e não devem ser usados (nem runtime, nem gating, nem fluxo, nem logs).
-• Observability mínima: logs canônicos `setup_*` com `request_id` no server action; regra “logs sem PII”; uso de revalidação de cache no pós-save antes do redirect.
-• Supabase Auth (fora do repo): Redirect URLs do Preview ajustados (wildcard) e Email Templates de signup/reset ajustados para usar RedirectTo.
-• ARTEFATOS_REPO (paths):
-• Ajustados:
-• app/a/[account]/actions.ts
-• app/a/[account]/page.tsx
-• lib/access/getAccessContext.ts
-• lib/access/adapters/accessContextAdapter.ts
-• lib/access/adapters/accountAdapter.ts
+• Implementado:
+• persistência de `account_profiles` (v1)
+• atualização de `accounts.name`
+• promoção `pending_setup → active` com update condicional/idempotente
+• redirecionamento para a rota correta da conta após salvar
+• endurecimento do Access Context para seleção de conta e tratamento de bloqueios
+• ARTEFATOS_REPO:
 • Criados:
-• lib/access/adapters/accountProfileAdapter.ts
-• supabase/migrations/0004__account_profiles.sql
-
-10.4.7 Refinar UX (pós-implementação E10.4)
-• Status: Concluído (exec) (21/02/2026)
-• Objetivo: corrigir fricções e inconsistências de UX identificadas após a execução do E10.4, sem alterar o objetivo do fluxo (concluir setup e seguir para E10.5).
-• Escopo: ajustes de formulário, validação e microinterações na tela “Primeiros passos” (formulário inline).
-• Dependências: E10.4.6 (exec do runtime do E10.4)
-• ARTEFATOS_REPO (paths):
-• Criados:
-• lib/onboarding/e10_4_setup_validation.ts
+• `lib/access/adapters/accountProfileAdapter.ts`
+• `supabase/migrations/0004__account_profiles.sql`
 • Ajustados:
-• app/a/[account]/page.tsx
-• app/a/[account]/actions.ts
+• `app/a/[account]/actions.ts`
+• `app/a/[account]/page.tsx`
+• `lib/access/getAccessContext.ts`
+• `lib/access/adapters/accessContextAdapter.ts`
+• `lib/access/adapters/accountAdapter.ts`
 
-10.4.7.1 Preservar dados do formulário em erro (não resetar campos corretos)
+10.4.7 Refinamentos de UX pós-implementação
 • Status: Concluído (exec) (21/02/2026)
-• Regra de UX: em erro de validação/submissão, manter todos os valores já preenchidos e destacar apenas o(s) campo(s) inválido(s) com erro inline.
-
-10.4.7.2 Campo “site” aceitar domínio sem https:// (normalização)
-• Status: Concluído (exec) (21/02/2026)
-• Regra de UX: aceitar formatos simples (ex.: unicodigital.com.br, [www.unicodigital.com.br](http://www.unicodigital.com.br), unicodigital.com) e também URL completa.
-• Regra de normalização: se o usuário não informar esquema (http:// ou https://), o sistema deve prefixar https:// internamente (armazenamento/uso).
-
-10.4.7.3 Indicar campo obrigatório com asterisco em “Nome do projeto”
-• Status: Briefing
-• Problema: falta de sinalização clara do campo obrigatório aumenta tentativa/erro no submit.
-• Regra de UX: label “Nome do projeto*” (asterisco) + erro inline quando vazio.
-• Saída esperada: obrigatoriedade explícita no primeiro contato, reduzindo falhas.
-
-10.4.7.4 Ajustes finos de microcopy e labels (se necessário)
-• Status: Briefing
-• Escopo: microcopy curta acima do formulário e labels/ajudas dos campos (sem aumentar fricção).
-• Saída esperada: texto mais claro e objetivo, sem “marketing longo”, mantendo o padrão de empty state acionável.
-
-10.4.7.5 Nome do projeto (placeholder + CTA gated + erro não “grudado”)
-• Status: Concluído (exec) (21/02/2026)
-• Regra de UX: campo inicia vazio com placeholder (ex.: “Ex.: Unico Digital”).
-• Regra de UX: botão “Salvar e continuar” desabilitado até nome válido.
-• Regra de UX: após correção, erros não ficam “grudados”.
-
-10.4.7.6 Teclado/Enter + foco (desktop e mobile)
-• Status: Concluído (exec) (21/02/2026)
-• Regra de UX: Enter só submete quando válido.
-• Regra de UX: se inválido, não submete, mostra erro e foca no primeiro inválido.
-• Regra de UX (mobile): fluxo sem botões “Next”.
-
-10.4.7.7 Mobile progressive disclosure (sequência de campos)
-• Status: Concluído (exec) (21/02/2026)
-• Regra de UX (mobile): exibir campos em sequência (Nome+Nicho → Canal → WhatsApp condicional → Site por último), bloqueando avanço quando há erro.
-10.4.7.1 Preservar dados do formulário em erro (não resetar campos corretos)
-• Status: Briefing
-• Problema: ao ocorrer erro de validação em um campo, os demais campos preenchidos corretamente perdem os valores e o usuário precisa digitar tudo novamente.
-• Regra de UX: em erro de validação, manter todos os valores já preenchidos e destacar apenas o(s) campo(s) inválido(s) com erro inline.
-• Saída esperada: submit com erro mantém state do formulário; apenas mensagens/estados de erro são atualizados.
-10.4.7.2 Campo “site” aceitar domínio sem https:// (normalização)
-• Status: Briefing
-• Problema: exigir que o lead digite https:// aumenta fricção e gera erro desnecessário.
-• Regra de UX: aceitar formatos simples (ex.: unicodigital.com.br, www.unicodigital.com.br, unicodigital.com) e também URL completa.
-• Regra de normalização: se o usuário não informar esquema (http:// ou https://), o sistema deve prefixar https:// internamente (armazenamento/uso).
-• Saída esperada: validação tolerante + normalização consistente para URL final.
-10.4.7.3 Indicar campo obrigatório com asterisco em “Nome do projeto”
-• Status: Briefing
-• Problema: falta de sinalização clara do campo obrigatório aumenta tentativa/erro no submit.
-• Regra de UX: label “Nome do projeto*” (asterisco) + erro inline quando vazio.
-• Saída esperada: obrigatoriedade explícita no primeiro contato, reduzindo falhas.
-10.4.7.4 Ajustes finos de microcopy e labels (se necessário)
-• Status: Briefing
-• Escopo: microcopy curta acima do formulário e labels/ajudas dos campos (sem aumentar fricção).
-• Saída esperada: texto mais claro e objetivo, sem “marketing longo”, mantendo o padrão de empty state acionável.
+• Implementado/Definido:
+• preservação dos valores válidos do formulário em erro
+• `site_url` aceita domínio sem esquema e normaliza para `https://`
+• botão “Salvar e continuar” gated por nome válido
+• Enter com foco no primeiro inválido
+• progressive disclosure mobile
+• ARTEFATOS_REPO:
+• Criados:
+• `lib/onboarding/e10_4_setup_validation.ts`
+• `app/a/[account]/_components/PendingSetupFirstSteps.tsx`
+• Ajustados:
+• `app/a/[account]/actions.ts`
+• `app/a/[account]/page.tsx`
+• `app/a/[account]/_components/PendingSetupFirstSteps.tsx`
+• `lib/access/adapters/accountAdapter.ts`
 
 10.4.8 Anti-drift: validação compartilhada UI/server (opcional)
-
 • Status: Briefing (opcional)
-• Objetivo: reduzir drift entre validações do E10.4 feitas na UI e no server (SSR/actions), garantindo consistência de erros e preparando base para tracking interno (ex.: e10_4_error_field) sem inconsistência.
-
-10.4.8.1 Escopo
-• Consolidar regras de validação do onboarding mínimo em um único módulo compartilhado (UI + server), com outputs padronizados de erro (campo + tipo).
-• Garantir que a UI use o mesmo contrato de validação que o server actions/submit.
-
-10.4.8.2 Dependências
-• E10.4.6 (fluxo de persistência/submit do onboarding).
-• E10.4.7 (UX refinado do formulário).
-• E12.8.1 / Tracking interno (se implementado) para consumir erros consistentes.
-
-10.4.8.3 Fora de escopo
-• Mudanças de BD.
-• Implementar tracking interno (fica em E12.8.1 / E12.x).
-• Alterar escopo de campos do onboarding (somente consistência de validação).
+• Objetivo: consolidar as regras de validação do onboarding mínimo em módulo compartilhado entre UI e server, com outputs padronizados de erro.
+• Dependências: E10.4.6, E10.4.7, E12.8.1.
+• Fora de escopo: mudanças de BD, tracking interno e alteração do escopo de campos.
 
 10.5 Pós-setup persuasivo sem entitlements (active — conversão)
 • Status: Em evolução
