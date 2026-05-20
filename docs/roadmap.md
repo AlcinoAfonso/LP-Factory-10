@@ -915,6 +915,8 @@ Ajustados:
 • Definir o primeiro recorte funcional do LP Builder no roadmap
 
 99. Changelog
+v1.5.55 (20/05/2026) — E10.4 enxugado e consolidado no estado final: bloco substituído para remover histórico intermediário e duplicações internas, absorvendo 10.4.2/10.4.3 e mantendo 10.5+ intacto.
+
 v1.5.54 — 19/05/2026 — E12 atualizado para refletir o estado atual do Admin Dashboard: shell operacional protegido, navegação própria, páginas read-only reais para contas, resoluções de nicho e taxonomia, artefatos criados/ajustados e limites explícitos sem mutações, SQL, migrations ou RLS.
 
 v1.5.53 — 14/05/2026 — Roadmap atualizado com o estado final da implementação 20.8: IA estruturada server-side como complemento ao matching determinístico, persistência apenas em `account_niche_resolutions`, preservação de `account_taxonomy`, artefatos, validações, PR mergeado e pendências futuras.
