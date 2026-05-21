@@ -435,6 +435,30 @@ Casos versionados: `automations/niche-runtime-tests/cases/`
 Reuso de mailbox: `automations/validador-final/`
 Verificação opcional de banco: `automations/supabase-inspect/verify-niche-runtime.mjs`
 
+3.8 Agente Investigativo Universal
+
+Objetivo:
+Investigar, sob escopo sob demanda, plataformas, configuracoes, chaves, variaveis, deploys, logs, banco, automacoes, integracoes e readiness operacional do ecossistema LP Factory 10, sem expor segredos e sem executar mutacoes sem autorizacao explicita.
+
+Status:
+Especificacao / Fase 1
+
+Acesso esperado:
+Codex App via plugin/conector acionavel por mencao `@`, apos empacotamento e instalacao.
+
+Como usar:
+Informar o escopo da investigacao, incluindo alvos, plataformas, ambiente, fluxo funcional, variaveis ou estruturas a validar e formato de saida esperado.
+
+Resposta esperada:
+Relatorio no chat com status geral, evidencias por plataforma, lacunas, riscos, acoes recomendadas e decisao objetiva sobre prosseguir ou bloquear.
+
+Regra operacional:
+O agente deve operar com leitura por padrao. Secrets podem ser verificados por presenca, ambiente, sensibilidade e formato, mas nunca devem ter valores revelados.
+
+Referencias / dependencias:
+README local: `automations/agente-investigativo-universal/README.md`
+Plataformas: GitHub, Vercel, OpenAI Platform / OpenAI Developers, Supabase, App preview/producao e GitHub Actions quando disponiveis.
+
 4. Aprendizados operacionais
 4.1 Princípios identificados
 Integração entre plataformas não garante utilidade real.
