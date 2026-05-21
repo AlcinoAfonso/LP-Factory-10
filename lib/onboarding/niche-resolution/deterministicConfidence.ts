@@ -6,7 +6,9 @@ import type {
 const HIGH_CONFIDENCE_SCORE = 0.92;
 const MIN_RELEVANT_SCORE = 0.7;
 const CLOSE_CANDIDATE_DELTA = 0.05;
-const SAFE_UNIQUE_TRGM_SCORE = 0.78;
+// RPC trgm scores are weighted as 0.50 + similarity * 0.30, so 0.72 is
+// already a strong fuzzy match while still rejecting single-token overlaps.
+const SAFE_UNIQUE_TRGM_SCORE = 0.72;
 
 const STRONG_MATCH_SOURCES = new Set([
   "alias_exact",
