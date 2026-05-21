@@ -64,6 +64,8 @@ No modo robusto, trabalhar localmente em worktree dedicado é intencional e perm
 - GitHub Web é a fonte de verdade para PRs, Actions, preview remoto e merge.
 - GitHub Desktop é apoio/fallback, não etapa obrigatória.
 - Se houver branch ou mudança local já resolvida por PR mergeado, tratar como resíduo operacional: não commitar, não publicar e orientar limpeza antes de nova tarefa.
+- Gate operacional (GitHub Desktop) antes de novo escopo: voltar para `main`, executar Fetch/Pull, confirmar `0 changed files` e criar nova branch pelo Desktop a partir da `main`.
+- Gate pré-PR: antes de publicar/abrir PR, validar que `main..HEAD` contém apenas commits do escopo atual e que `main...HEAD` contém apenas arquivos do escopo atual.
 
 ### Permitido localmente
 
