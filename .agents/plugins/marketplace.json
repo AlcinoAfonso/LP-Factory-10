@@ -1,0 +1,20 @@
+{
+  "name": "lp-factory-10-local",
+  "interface": {
+    "displayName": "LP Factory 10 Local"
+  },
+  "plugins": [
+    {
+      "name": "lp-factory-investigator",
+      "source": {
+        "source": "local",
+        "path": "./plugins/lp-factory-investigator"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Productivity"
+    }
+  ]
+}

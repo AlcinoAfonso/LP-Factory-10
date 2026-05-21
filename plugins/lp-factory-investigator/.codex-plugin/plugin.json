@@ -1,0 +1,41 @@
+{
+  "name": "lp-factory-investigator",
+  "version": "0.1.0",
+  "description": "Plugin local para acionar o Agente Investigativo Universal do LP Factory 10 no Codex App.",
+  "author": {
+    "name": "LP Factory 10",
+    "email": "noreply@example.com",
+    "url": "https://github.com/AlcinoAfonso/LP-Factory-10"
+  },
+  "homepage": "https://github.com/AlcinoAfonso/LP-Factory-10/tree/main/automations/agente-investigativo-universal",
+  "repository": "https://github.com/AlcinoAfonso/LP-Factory-10",
+  "license": "UNLICENSED",
+  "keywords": [
+    "lp-factory",
+    "readiness",
+    "investigation",
+    "codex"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "LP Factory Investigator",
+    "shortDescription": "Investiga readiness operacional do LP Factory 10.",
+    "longDescription": "Aciona uma skill de investigacao operacional para validar GitHub, Vercel, OpenAI Platform, Supabase, previews, automacoes, configuracoes, chaves, variaveis e logs conforme o escopo informado.",
+    "developerName": "LP Factory 10",
+    "category": "Productivity",
+    "capabilities": [
+      "Interactive",
+      "Read",
+      "Analyze"
+    ],
+    "websiteURL": "https://github.com/AlcinoAfonso/LP-Factory-10",
+    "privacyPolicyURL": "https://github.com/AlcinoAfonso/LP-Factory-10",
+    "termsOfServiceURL": "https://github.com/AlcinoAfonso/LP-Factory-10",
+    "defaultPrompt": [
+      "Investigue readiness deste PR.",
+      "Valide env vars e deploy do preview.",
+      "Cheque Supabase e OpenAI sem expor secrets."
+    ],
+    "brandColor": "#2563EB"
+  }
+}
