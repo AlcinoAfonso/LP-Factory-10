@@ -49,11 +49,12 @@ export type AiNicheResolutionOutput = {
   uxMode: AiNicheResolutionUxMode;
   message: string;
   options: Array<{
-    taxonId: string;
+    taxonId: string | null;
     name: string;
-    slug: string;
+    slug: string | null;
     confidence: DeterministicMatchConfidence;
     reason: string;
+    isOfficial: boolean;
   }>;
   needsAdminReview: boolean;
   needsUserConfirmation: boolean;
@@ -100,3 +101,28 @@ export type UpsertAccountNicheResolutionInput = {
   matchSource: string | null;
   score: number | null;
 };
+
+export type UserNicheResolutionStatus =
+  | "pending_confirmation"
+  | "confirmed"
+  | "rejected"
+  | "rewritten"
+  | "dismissed";
+
+export type ActionableNicheResolutionOption = {
+  taxonId: string | null;
+  name: string;
+  slug: string | null;
+  isOfficial: boolean;
+};
+
+export type ActionableNicheResolution = {
+  accountId: string;
+  uxMode: Extract<AiNicheResolutionUxMode, "confirm_single" | "choose_from_options" | "fallback_review">;
+  suggestedTaxon: ActionableNicheResolutionOption | null;
+  options: ActionableNicheResolutionOption[];
+};
+
+export type NicheResolutionUserActionResult =
+  | { ok: true; status: "confirmed" | "rewritten" | "dismissed" }
+  | { ok: false; reason: string };

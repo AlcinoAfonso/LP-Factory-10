@@ -25,6 +25,12 @@ import {
 } from '../../../lib/onboarding/niche-resolution/adapters/accountTaxonomyAdapter';
 import { matchBusinessTaxonsDeterministic } from '../../../lib/onboarding/niche-resolution/adapters/taxonMatchAdapter';
 import {
+  AI_NICHE_RESOLUTION_SCHEMA_VERSION,
+  type AiNicheResolutionOutput,
+  type DeterministicMatchDecision,
+  type TaxonMatchCandidate,
+} from '../../../lib/onboarding/niche-resolution/contracts';
+import {
   resolveNicheWithOpenAi,
   shouldResolveNicheWithAi,
 } from '../../../lib/onboarding/niche-resolution/adapters/openAiResolver';
@@ -134,6 +140,50 @@ export async function renameAccountAction(
 
 function normalizeText(input: unknown): string {
   return (input ?? '').toString().trim();
+}
+
+function shouldConfirmDeterministicAlias(decision: DeterministicMatchDecision): boolean {
+  const matchSources = decision.selectedCandidate?.matchSource
+    .split("+")
+    .map((source) => source.trim()) ?? [];
+
+  return (
+    decision.confidence === 'high' &&
+    decision.shouldUseDeterministicMatch === false &&
+    decision.shouldEscalateToAi === false &&
+    decision.selectedCandidate !== null &&
+    Boolean(decision.selectedCandidate.taxonId) &&
+    matchSources.some((source) => source === 'alias_exact' || source === 'alias_normalized') &&
+    !matchSources.some((source) =>
+      source === 'taxon_name_exact' ||
+      source === 'taxon_name_normalized' ||
+      source === 'taxon_slug_normalized'
+    )
+  );
+}
+
+function buildDeterministicAliasConfirmationOutput(
+  candidate: TaxonMatchCandidate,
+): AiNicheResolutionOutput {
+  return {
+    uxMode: 'confirm_single',
+    message: 'Confirme se este termo tecnico corresponde ao seu nicho.',
+    options: [
+      {
+        taxonId: candidate.taxonId,
+        name: candidate.name,
+        slug: candidate.slug,
+        confidence: 'high',
+        reason: 'official_alias_confirmation',
+        isOfficial: true,
+      },
+    ],
+    needsAdminReview: false,
+    needsUserConfirmation: true,
+    shouldCreateOfficialLink: false,
+    suggestedNewTaxonLabel: null,
+    reason: 'deterministic_alias_confirmation_required',
+  };
 }
 
 function extractAccountSubdomainFromReferer(referer: string | null): string | null {
@@ -307,10 +357,13 @@ export async function saveSetupAndContinueAction(
         );
       }
 
+      const shouldPrepareAliasConfirmation = shouldConfirmDeterministicAlias(decision);
       const shouldLinkAccountTaxonomy = shouldLinkAccountTaxonomyFromDecision(decision);
       let accountTaxonomyLinkStatus: string = shouldLinkAccountTaxonomy
         ? 'not_attempted'
-        : 'skipped_not_high_confidence';
+        : shouldPrepareAliasConfirmation
+          ? 'skipped_alias_confirmation_required'
+          : 'skipped_not_high_confidence';
 
       console.log(
         JSON.stringify({
@@ -368,8 +421,12 @@ export async function saveSetupAndContinueAction(
         }
       }
 
-      const aiEligible = shouldResolveNicheWithAi(decision);
-      let aiResolutionStatus = aiEligible ? 'not_attempted' : 'skipped_not_eligible';
+      const aiEligible = !shouldPrepareAliasConfirmation && shouldResolveNicheWithAi(decision);
+      let aiResolutionStatus = shouldPrepareAliasConfirmation
+        ? 'not_attempted_alias_confirmation'
+        : aiEligible
+          ? 'not_attempted'
+          : 'skipped_not_eligible';
       let aiResolutionUxMode: string | null = null;
       let aiResolutionOptionsCount = 0;
       let aiResolutionNeedsAdminReview: boolean | null = null;
@@ -377,7 +434,42 @@ export async function saveSetupAndContinueAction(
       let aiResolutionPersisted = false;
       let aiResolutionErrorCode: string | null = null;
 
-      if (aiEligible) {
+      if (shouldPrepareAliasConfirmation && topCandidate) {
+        const aliasConfirmationOutput = buildDeterministicAliasConfirmationOutput(topCandidate);
+        aiResolutionStatus = 'resolved';
+        aiResolutionUxMode = aliasConfirmationOutput.uxMode;
+        aiResolutionOptionsCount = aliasConfirmationOutput.options.length;
+        aiResolutionNeedsAdminReview = aliasConfirmationOutput.needsAdminReview;
+        aiResolutionNeedsUserConfirmation = aliasConfirmationOutput.needsUserConfirmation;
+        aiResolutionPersisted = await updateAccountNicheResolutionAiResult({
+          accountId,
+          status: 'resolved',
+          errorCode: null,
+          model: null,
+          schemaVersion: AI_NICHE_RESOLUTION_SCHEMA_VERSION,
+          result: aliasConfirmationOutput,
+          uxMode: aliasConfirmationOutput.uxMode,
+          suggestedTaxonId: topCandidate.taxonId,
+          suggestedNewTaxonLabel: null,
+          needsUserConfirmation: true,
+          needsAdminReview: false,
+          reason: aliasConfirmationOutput.reason,
+        });
+
+        console.log(
+          JSON.stringify({
+            scope: 'onboarding',
+            event: 'setup_taxonomy_alias_confirmation_prepared',
+            status: aiResolutionStatus,
+            ux_mode: aiResolutionUxMode,
+            options_count: aiResolutionOptionsCount,
+            persisted: aiResolutionPersisted,
+            request_id: requestId,
+            latency_ms: Date.now() - taxonomyMatchStartedAt,
+            ts: new Date().toISOString(),
+          })
+        );
+      } else if (aiEligible) {
         const aiResolutionStartedAt = Date.now();
         const aiResult = await resolveNicheWithOpenAi({
           rawInput: validated.values.niche,
@@ -400,7 +492,7 @@ export async function saveSetupAndContinueAction(
             schemaVersion: aiResult.schemaVersion,
             result: aiResult.output,
             uxMode: aiResult.output.uxMode,
-            suggestedTaxonId: aiResult.output.options[0]?.taxonId ?? null,
+            suggestedTaxonId: aiResult.output.options.find((option) => option.isOfficial)?.taxonId ?? null,
             suggestedNewTaxonLabel: aiResult.output.suggestedNewTaxonLabel,
             needsUserConfirmation: aiResult.output.needsUserConfirmation,
             needsAdminReview: aiResult.output.needsAdminReview,

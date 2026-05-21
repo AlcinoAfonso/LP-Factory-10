@@ -101,11 +101,12 @@ function HeaderAccount({
   userEmail,
   role,
 }: {
-  account: { name?: string | null; subdomain?: string | null; status?: string | null };
+  account: { name?: string | null; subdomain?: string | null; status?: string | null; primaryTaxonName?: string | null };
   userEmail?: string;
   role?: string;
 }) {
   const accountLabel = account?.name ?? account?.subdomain ?? 'Minha conta';
+  const primaryTaxonName = account?.primaryTaxonName?.trim();
 
   return (
     <header className="border-b border-border bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/85">
@@ -116,7 +117,10 @@ function HeaderAccount({
 
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-2">
-            <span className="text-sm text-foreground">{accountLabel}</span>
+            <span className="text-sm text-foreground">
+              {accountLabel}
+              {primaryTaxonName ? <span className="text-muted-foreground"> · {primaryTaxonName}</span> : null}
+            </span>
             <StatusChip status={account?.status} />
           </div>
           <UserMenu userEmail={userEmail} userRole={role} />
