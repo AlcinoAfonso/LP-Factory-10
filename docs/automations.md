@@ -441,10 +441,10 @@ Objetivo:
 Investigar, sob escopo sob demanda, plataformas, configuracoes, chaves, variaveis, deploys, logs, banco, automacoes, integracoes e readiness operacional do ecossistema LP Factory 10, sem expor segredos e sem executar mutacoes sem autorizacao explicita.
 
 Status:
-Especificacao / Fase 1
+Empacotamento Codex / Fase 2
 
 Acesso esperado:
-Codex App via plugin/conector acionavel por mencao `@`, apos empacotamento e instalacao.
+Codex App via plugin local `lp-factory-investigator`, apos instalacao no ambiente Codex.
 
 Como usar:
 Informar o escopo da investigacao, incluindo alvos, plataformas, ambiente, fluxo funcional, variaveis ou estruturas a validar e formato de saida esperado.
@@ -457,6 +457,8 @@ O agente deve operar com leitura por padrao. Secrets podem ser verificados por p
 
 Referencias / dependencias:
 README local: `automations/agente-investigativo-universal/README.md`
+Plugin local: `plugins/lp-factory-investigator/`
+Skill: `plugins/lp-factory-investigator/skills/investigador-operacional/SKILL.md`
 Plataformas: GitHub, Vercel, OpenAI Platform / OpenAI Developers, Supabase, App preview/producao e GitHub Actions quando disponiveis.
 
 4. Aprendizados operacionais

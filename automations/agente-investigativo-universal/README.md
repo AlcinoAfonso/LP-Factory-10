@@ -259,6 +259,16 @@ Definir contrato, guardrails, entrada, saida, plataformas e criterios de pronto.
 
 Criar plugin/conector ou skill instalavel para que o agente possa ser chamado pelo menu `@` no Codex App.
 
+Status: entregue como plugin local repo-scoped em `plugins/lp-factory-investigator/`.
+
+Artefatos:
+
+- Manifest: `plugins/lp-factory-investigator/.codex-plugin/plugin.json`
+- Skill: `plugins/lp-factory-investigator/skills/investigador-operacional/SKILL.md`
+- Marketplace local: `.agents/plugins/marketplace.json`
+
+Observacao: o plugin empacota a instrucao operacional e a skill do agente. O acesso real a GitHub, Vercel, OpenAI Platform, Supabase e browser continua dependente dos conectores, apps, tokens ou credenciais autorizadas na sessao.
+
 ### Fase 3: ferramentas reais
 
 Integrar GitHub, Vercel, OpenAI Platform, Supabase read-only, browser e HTTP probes.
