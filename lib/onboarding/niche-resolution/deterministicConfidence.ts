@@ -10,18 +10,23 @@ const CLOSE_CANDIDATE_DELTA = 0.05;
 // already a strong fuzzy match while still rejecting single-token overlaps.
 const SAFE_UNIQUE_TRGM_SCORE = 0.72;
 
-const STRONG_MATCH_SOURCES = new Set([
-  "alias_exact",
-  "alias_normalized",
+const CANONICAL_STRONG_MATCH_SOURCES = new Set([
   "taxon_name_exact",
   "taxon_name_normalized",
   "taxon_slug_normalized",
 ]);
+const ALIAS_CONFIRMATION_SOURCES = new Set(["alias_exact", "alias_normalized"]);
 
-function hasStrongMatchSource(matchSource: string): boolean {
+function hasCanonicalStrongMatchSource(matchSource: string): boolean {
   return matchSource
     .split("+")
-    .some((source) => STRONG_MATCH_SOURCES.has(source.trim()));
+    .some((source) => CANONICAL_STRONG_MATCH_SOURCES.has(source.trim()));
+}
+
+function hasAliasConfirmationSource(matchSource: string): boolean {
+  return matchSource
+    .split("+")
+    .some((source) => ALIAS_CONFIRMATION_SOURCES.has(source.trim()));
 }
 
 function hasCloseSecondCandidate(
@@ -60,6 +65,8 @@ export function evaluateDeterministicTaxonMatch(
   }
 
   const [best, second] = [...candidates].sort((a, b) => b.score - a.score);
+  const aliasConfirmationSource = hasAliasConfirmationSource(best.matchSource);
+  const canonicalStrongMatchSource = hasCanonicalStrongMatchSource(best.matchSource);
 
   if (best.score < MIN_RELEVANT_SCORE) {
     return {
@@ -70,6 +77,18 @@ export function evaluateDeterministicTaxonMatch(
       aiEscalationMode: "rerank_candidates",
       needsAdminReview: true,
       reason: "low_confidence_insufficient_score",
+    };
+  }
+
+  if (aliasConfirmationSource && !canonicalStrongMatchSource) {
+    return {
+      confidence: "high",
+      selectedCandidate: best,
+      shouldUseDeterministicMatch: false,
+      shouldEscalateToAi: false,
+      aiEscalationMode: "none",
+      needsAdminReview: false,
+      reason: "high_confidence_strong_match",
     };
   }
 
@@ -99,9 +118,7 @@ export function evaluateDeterministicTaxonMatch(
     };
   }
 
-  const strongMatchSource = hasStrongMatchSource(best.matchSource);
-
-  if (best.score >= HIGH_CONFIDENCE_SCORE && strongMatchSource) {
+  if (best.score >= HIGH_CONFIDENCE_SCORE && canonicalStrongMatchSource) {
     return {
       confidence: "high",
       selectedCandidate: best,
@@ -113,7 +130,7 @@ export function evaluateDeterministicTaxonMatch(
     };
   }
 
-  if (strongMatchSource) {
+  if (canonicalStrongMatchSource) {
     return {
       confidence: "medium",
       selectedCandidate: best,
