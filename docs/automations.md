@@ -219,32 +219,11 @@ Estado persistido: `automations/validador-final/state/test-account.json`
 
 3.5 Resolver IA de Nicho no pending_setup
 
-Objetivo:
-Interpretar o nicho bruto informado pelo lead no `pending_setup`, sugerir o taxon/slug correspondente com saída estruturada, acionar microdiálogo quando necessário e registrar fallback/revisão sem bloquear o fluxo.
+Referência:
+`docs/roadmap.md` — E10.5.6.
 
-Status:
-Proposto
-
-Acesso:
-Produto LP Factory 10 — fluxo `pending_setup` / onboarding inicial.
-
-Como usar:
-A automação deve ser acionada quando o lead informar o nicho bruto do negócio e o sistema precisar resolver esse valor contra a taxonomia existente.
-
-Resposta esperada:
-Saída estruturada com sugestão de taxon/slug, nível de confiança, justificativa curta, indicação de necessidade de revisão e fallback seguro quando não houver confiança suficiente.
-
-Referências / dependências:
-`docs/auto-agentes-up.md` — GPT-5.5 / latest-model, Responses API e Structured Outputs.
-`docs/schema.md` — taxonomia, aliases, vínculo de conta com taxon e demais estruturas de DB aplicáveis.
-Lousa do Gestor de Automações — `7.6 Resolver IA de Nicho no pending_setup`.
-
-Observações:
-- não criar taxon automaticamente sem regra aprovada;
-- se a confiança for alta, o sistema pode sugerir ou vincular o taxon correspondente conforme regra futura;
-- se a confiança for média, pode haver microdiálogo de confirmação;
-- se a confiança for baixa, o fluxo deve salvar o valor bruto, usar fallback seguro e registrar revisão futura;
-- a automação não deve bloquear o avanço do lead.
+Observação:
+O contrato funcional, status, escopo, critérios e artefatos do caso ficam no roadmap para evitar duplicação neste catálogo.
 
 3.6 Apply automático de migrations no Supabase
 
