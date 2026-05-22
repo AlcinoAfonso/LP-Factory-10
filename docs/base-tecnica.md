@@ -2,8 +2,8 @@
 
 0.1. Cabeçalho
 • Documento: Base Técnica LP Factory 10
-• Versão: v2.0.35
-• Data: 14/05/2026
+• Versão: v2.0.36
+• Data: 21/05/2026
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -191,7 +191,11 @@
 • Contrato técnico detalhado do pipeline: automations/supabase-inspect/README.md.
 
 3.5 Secrets & Variáveis
-• Server-only OpenAI niche resolver: `OPENAI_API_KEY`, `OPENAI_NICHE_RESOLVER_MODEL`.
+• Server-only OpenAI niche resolver:
+• `OPENAI_API_KEY`: chave server-side da OpenAI; deve conter a key `sk-...`; configurar na Vercel como Sensitive em Production and Preview.
+• `OPENAI_NICHE_RESOLVER_MODEL`: modelo do resolvedor de nicho; valor atual de referência: `gpt-5.4-mini`; configurar na Vercel em Production and Preview.
+• Regra: `OPENAI_NICHE_RESOLVER_MODEL` deve conter apenas o ID do modelo; nunca inserir `OPENAI_API_KEY` nessa variável.
+• Regra: alteração de env na Vercel só entra no runtime após redeploy do deployment alvo; testar primeiro em Preview da feature branch antes de Production.
 • Server-only: SUPABASE_SECRET_KEY, STRIPE_SECRET_KEY (futuro)
 • CI/Automations (GitHub Actions secrets): OPENAI_API_KEY, SUPABASE_DB_URL_READONLY
 • Públicas: NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
@@ -298,6 +302,10 @@
 • Gate adapters: pode retornar null, mas logs devem diferenciar deny vs error.
 
 3.14.1 Matching de taxonomia via adapter server-side
+• Provider/API do resolvedor IA: OpenAI Responses API com Structured Outputs, sempre server-side.
+• Modelo do resolvedor IA: configurável por `OPENAI_NICHE_RESOLVER_MODEL`; valor atual de referência: `gpt-5.4-mini`.
+• Local operacional de ajuste do modelo: Vercel → Project `lp-factory-10` → Settings → Environment Variables → `OPENAI_NICHE_RESOLVER_MODEL`.
+• Após alterar `OPENAI_NICHE_RESOLVER_MODEL`, executar redeploy do ambiente correspondente; em validação de feature, redeploy somente do Preview da branch.
 • IA complementar: quando o matching determinístico não resolver com segurança, o runtime pode usar resolver server-side com OpenAI Responses API e Structured Outputs.
 • Resolver canônico: PATH: `lib/onboarding/niche-resolution/adapters/openAiResolver.ts`.
 • Regra: IA não roda em `high`, não cria taxon, não cria alias, não grava em `account_taxonomy` e não substitui vínculo oficial.
@@ -477,6 +485,8 @@ Fonte normativa da allowlist SULB para exceções de Auth. Qualquer novo arquivo
 • Tipos canônicos e adapters vNext: validar por 3.6 e 3.14.
 
 99. Changelog
+v2.0.36 — 21/05/2026 — Base técnica atualizada com contrato mínimo de configuração do resolvedor IA de nicho: `OPENAI_API_KEY`, `OPENAI_NICHE_RESOLVER_MODEL`, modelo de referência `gpt-5.4-mini`, ajuste via Vercel Environment Variables e necessidade de redeploy por ambiente.
+
 v2.0.35 — 14/05/2026 — Base técnica atualizada com contrato mínimo de runtime para IA complementar server-side com Structured Outputs, variáveis server-only, preservação de `account_taxonomy`, persistência apenas em `account_niche_resolutions`, fluxo degradável e logs sem PII.
 
 v2.0.34 — 11/05/2026 — Base técnica atualizada com contrato mínimo de runtime para gravação server-side do vínculo oficial em `account_taxonomy`, preservando `account_niche_resolutions` como registro operacional, regra de alta confiança, conflito de primário sem substituição automática, fluxo não bloqueante e logs sem PII.
