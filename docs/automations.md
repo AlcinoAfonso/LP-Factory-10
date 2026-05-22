@@ -26,180 +26,54 @@ docs/roadmap.md: evolução funcional.
 - `pipelines/validador-final/`, `pipelines/supabase-inspect/` e `pipelines/docs-apply-report/` deixaram de ser paths oficiais.
 
 1. Objetivo e escopo
-1.1 Objetivo
-Registrar plataformas usadas na camada de automação, integrações, automações operacionais, agentes e workflows consumidores do projeto.
-Consolidar conhecimento operacional.
-Preservar decisões e aprendizados de implementação.
-Registrar governança operacional mínima dos fluxos relevantes.
+Registrar a camada de automações operacionais do LP Factory 10: plataformas usadas, credenciais registradas sem valores secretos, catálogo de automações, componentes consumidores e aprendizados operacionais.
 
-1.2 Inclui
-Plataformas usadas na camada de automação.
-Credenciais registradas sem valores secretos.
-Catálogo de automações operacionais.
-Componentes consumidores da camada de automações.
-Aprendizados operacionais relevantes.
+Este documento não substitui:
+- `docs/services.md`, para services, MCPs, endpoints e infraestrutura reutilizável;
+- `docs/base-tecnica.md`, para guardrails, checks, segurança e regras estruturais;
+- `docs/schema.md`, para banco, tabelas, views, policies e functions;
+- `docs/roadmap.md`, para evolução funcional.
 
-1.3 Não inclui
-Valores brutos de chaves ou tokens.
-Detalhamento completo de banco fora de docs/schema.md.
-Services implantáveis, MCPs, endpoints e infraestrutura reutilizável fora de docs/services.md.
-Regras estruturais gerais, guardrails e workflows técnicos de manutenção fora de docs/base-tecnica.md.
-Roadmap funcional fora de docs/roadmap.md.
-
-1.4 Regra de segurança
-Nunca registrar segredos brutos.
-Registrar apenas nome da credencial, plataforma, ambiente, localização, finalidade e escopo.
-
-1.5 Origem da informação
-1.5.1 Base repositório
-Arquivos versionados, workflows, scripts, pipelines, migrations e docs técnicas.
-
-1.5.2 Observação operacional
-Informações observadas em execução real ou nos painéis das plataformas.
+Regra de segurança:
+Nunca registrar segredos brutos. Registrar apenas nome da credencial, plataforma, ambiente, localização, finalidade e escopo.
 
 2. Plataformas e configuração global
 2.1 OpenAI
-
-2.1.1 Papel na automação
-
-- execução de modelos
-- Agent Builder
-- Agents SDK
-- integração com pipelines e agentes
-
-2.1.2 Ambientes
-
-- `LPF10-DEV`
-- `LPF10-PROD`
-
-2.1.3 Credencial registrada
-
-- `OPENAI_API_KEY`
-  - ambiente operacional prioritário: DEV
-  - armazenamento atualmente documentado: GitHub Secrets
-  - uso atual documentado: automações e pipelines que chamam modelos
-  - vínculo operacional por projeto:
-    - `LPF10-DEV` → `key_Vt1m7APFfxGpfeHU`
-    - `LPF10-PROD` → `key_OZ1nUMe8O75FGBaM`
-
-2.1.4 Integrações atuais
-
-- GitHub Actions (`supabase-inspect`)
-- Agent Builder
-
-2.1.5 Diretrizes operacionais
-
-- durante o desenvolvimento, usar preferencialmente o contexto e a credencial do projeto DEV
-- ao analisar consumo, validar por projeto antes de concluir onde houve gasto
-- preferir modelos mais baratos quando a tarefa permitir
-- usar modelos mais caros ou mais recentes apenas quando houver necessidade real
-
-2.1.6 Observações
-
-- há registro operacional de uso de Agent Builder no projeto
-- os projetos `LPF10-DEV` e `LPF10-PROD` permanecem como referência operacional
-- detalhes de billing, usage e templates nativos do Builder não precisam ficar expandidos nesta seção
-
-2.1.7 Projeto, consumo e tokens bonificados
-
-- consumo OpenAI deve ser analisado por projeto
-- `LPF10-DEV` e `LPF10-PROD` permanecem como referências operacionais de ambiente e consumo
-- API keys e service accounts da OpenAI são vinculados ao projeto em que foram criados
-- o ambiente operacional prioritário para desenvolvimento permanece DEV
-- o projeto DEV possui bonificação ativa de `complimentary daily tokens` para compartilhamento elegível
-- o projeto DEV possui `complimentary weekly evals` como benefício separado
-- a bonificação de tokens é diária e não acumulada
-- `gpt-4.1` permanece no grupo operacional de até 250k tokens/dia dentro da bonificação elegível
-- cobertura de `tool use` deve ser tratada com cautela e validada conforme a política vigente da OpenAI
+- Papel na automação: execução de modelos, Agent Builder/SDK e integração com pipelines/agentes.
+- Ambientes operacionais: `LPF10-DEV` e `LPF10-PROD`.
+- Credencial registrada: `OPENAI_API_KEY` (armazenada em GitHub Secrets).
+- Regra operacional: desenvolvimento prioriza DEV; análise de consumo deve ser feita por projeto.
+- Governança de consumo: API keys e service accounts ficam vinculados ao projeto onde foram criados.
+- Benefícios e custo: DEV possui `complimentary daily tokens` (diário, não acumulado) e `complimentary weekly evals`.
+- Qualidade/custo: escolher modelo conforme necessidade real; cobertura de `tool use` deve ser validada com cautela conforme política vigente.
 
 2.2 GitHub
-2.2.1 Uso atual
-Repositório principal, GitHub Actions, execução de pipelines e armazenamento de secrets.
-
-2.2.2 Credenciais registradas
-OPENAI_API_KEY
-Uso: pipelines com chamadas de modelo
-SUPABASE_DB_URL_READONLY
-Uso: inspeção read-only
-MAILBOX_EMAIL
-Uso: automações de runtime que precisam confirmar e-mails reais.
-MAILBOX_PASSWORD
-Uso: senha de app da mailbox para leitura programática por POP3.
-
-2.2.3 Integrações existentes
-OpenAI:
-supabase-inspect
-Supabase:
-supabase-inspect
-niche-runtime-tests quando o modo de verificação consulta banco
-Documentação:
-pipeline-docs-apply-report
-Mailbox:
-validador-final
-niche-runtime-tests
-
-2.2.4 Estrutura operacional
-Workflows em .github/workflows.
-Automações canônicas em automations/.
-Workflows identificados:
-.github/workflows/pipeline-supabase-inspect.yml
-.github/workflows/pipeline-docs-apply-report.yml
-.github/workflows/automation-validador-final.yml
-.github/workflows/automation-niche-runtime-tests.yml
-.github/workflows/security.yml
-.github/workflows/upgrade-next-16-1-1.yml
+- Papel: repositório principal, GitHub Actions, pipelines, PRs e secrets.
+- Credenciais registradas: `OPENAI_API_KEY`, `SUPABASE_DB_URL_READONLY`, `MAILBOX_EMAIL`, `MAILBOX_PASSWORD`.
+- Estrutura operacional: raiz canônica de automações em `automations/`; orquestração em `.github/workflows/`.
+- Workflows ativos identificados:
+  - `.github/workflows/pipeline-supabase-inspect.yml`
+  - `.github/workflows/pipeline-docs-apply-report.yml`
+  - `.github/workflows/automation-validador-final.yml`
+  - `.github/workflows/automation-niche-runtime-tests.yml`
+  - `.github/workflows/security.yml`
+  - `.github/workflows/upgrade-next-16-1-1.yml`
 
 2.3 Supabase
-2.3.1 Uso atual
-Banco de dados, Auth e fonte de dados para inspeções automatizadas read-only.
-
-2.3.2 Credencial registrada
-SUPABASE_DB_URL_READONLY
-Armazenamento: GitHub Secrets
-Finalidade: inspeção read-only no pipeline supabase-inspect e em verificações opcionais de runtime quando aplicável
-Escopo: role/usuário read-only
-
-2.3.3 Estrutura atual
-Role ai_readonly com login permitido, statement_timeout de 5s, USAGE no schema public, GRANT SELECT nas tabelas existentes em public e default privileges para novas tabelas em public.
-Migration relacionada: supabase/migrations/0005__ai_readonly.sql
-
-Durante o MVP, a migration supabase/migrations/0010__ai_readonly_mvp_inspect_relaxation.sql amplia temporariamente o role ai_readonly para acelerar inspeções do Supabase Inspect: SELECT em tabelas public, EXECUTE em funções public, USAGE no schema extensions, EXECUTE em funções extensions para auxiliares como similarity() do pg_trgm, BYPASSRLS e statement_timeout de 5s. A decisão não usa service_role, não concede escrita direta e não libera grants amplos em auth. Deve ser revisada antes de ampliar acesso do workflow para equipe/funcionários.
-
-2.3.4 Observações
-O pipeline atual executa apenas SQL read-only.
-Verificações de runtime que consultam banco devem ser tratadas como presets versionados, não como expectativa genérica para qualquer teste.
-Discovery pode usar information_schema e pg_catalog.
+- Papel: banco, Auth e fonte para inspeções/verificações read-only.
+- Credencial registrada: `SUPABASE_DB_URL_READONLY` (GitHub Secrets), com escopo read-only para inspeções e verificações quando aplicável.
+- Estrutura de acesso: role `ai_readonly` para consultas e inspeções.
+- Exceção MVP: houve relaxamento temporário para acelerar o Supabase Inspect, sem service_role e sem escrita direta; revisar permissões antes de ampliar o acesso operacional.
+- Observação operacional: verificações de runtime que consultam banco devem ser tratadas como presets versionados quando aplicável.
 
 2.4 Vercel
-2.4.1 Papel na automação
-Hospedagem do app principal e de serviços dedicados.
-
-2.4.2 Uso atual
-Projeto `lp-factory-10` hospeda o Core SaaS.
-Projeto `lpf-10-services` hospeda services dedicados da camada `services`, incluindo a MCP documentada em `docs/services.md`.
-
-2.4.3 Variáveis operacionais registradas
-Variáveis específicas de services dedicados não devem ser expandidas nesta seção.
-Consultar `docs/services.md` e o README local de cada service quando houver necessidade.
-
-2.4.4 Ambientes
-Preview
-Production
-
-2.4.5 Observações
-Endpoint canônico MCP: https://lpf-10-services.vercel.app/api/mcp
-Os valores secretos não devem ser registrados neste arquivo.
-Detalhes de services dedicados devem ser consultados em `docs/services.md` e no README local de cada service.
+- Papel: hospedagem do Core SaaS e de services dedicados.
+- Projetos: `lp-factory-10` e `lpf-10-services`.
+- Detalhes operacionais de services e variáveis devem ser consultados em `docs/services.md`.
 
 2.5 Resend
-2.5.1 Papel no ecossistema
-Plataforma relacionada ao ecossistema do projeto.
-
-2.5.2 Estado atual neste documento
-Não há automação operacional de Resend formalizada neste arquivo até esta versão.
-
-2.5.3 Regra de documentação
-Novos registros sobre Resend só devem entrar neste documento quando houver caso de automação formalizado.
+- Papel no ecossistema: plataforma relacionada ao projeto.
+- Estado atual: não há automação operacional formalizada de Resend neste documento.
 
 3. Catálogo de automações operacionais
 
@@ -346,31 +220,13 @@ Estado persistido: `automations/validador-final/state/test-account.json`
 3.5 Resolver IA de Nicho no pending_setup
 
 Objetivo:
-Interpretar o nicho bruto informado pelo lead no `pending_setup`, sugerir o taxon/slug correspondente com saída estruturada, acionar microdiálogo quando necessário e registrar fallback/revisão sem bloquear o fluxo.
+Interpretar o nicho bruto informado pelo lead no `pending_setup` e encaminhar a resolução do taxon/slug conforme o contrato funcional do E10.5.6, sem duplicar neste catálogo o detalhamento do caso.
 
-Status:
-Proposto
+Referência:
+`docs/roadmap.md` — E10.5.6.
 
-Acesso:
-Produto LP Factory 10 — fluxo `pending_setup` / onboarding inicial.
-
-Como usar:
-A automação deve ser acionada quando o lead informar o nicho bruto do negócio e o sistema precisar resolver esse valor contra a taxonomia existente.
-
-Resposta esperada:
-Saída estruturada com sugestão de taxon/slug, nível de confiança, justificativa curta, indicação de necessidade de revisão e fallback seguro quando não houver confiança suficiente.
-
-Referências / dependências:
-`docs/auto-agentes-up.md` — GPT-5.5 / latest-model, Responses API e Structured Outputs.
-`docs/schema.md` — taxonomia, aliases, vínculo de conta com taxon e demais estruturas de DB aplicáveis.
-Lousa do Gestor de Automações — `7.6 Resolver IA de Nicho no pending_setup`.
-
-Observações:
-- não criar taxon automaticamente sem regra aprovada;
-- se a confiança for alta, o sistema pode sugerir ou vincular o taxon correspondente conforme regra futura;
-- se a confiança for média, pode haver microdiálogo de confirmação;
-- se a confiança for baixa, o fluxo deve salvar o valor bruto, usar fallback seguro e registrar revisão futura;
-- a automação não deve bloquear o avanço do lead.
+Observação:
+O contrato funcional, status, escopo, critérios e artefatos do caso ficam no roadmap para evitar duplicação neste catálogo.
 
 3.6 Apply automático de migrations no Supabase
 
