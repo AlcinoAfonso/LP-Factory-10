@@ -28,7 +28,7 @@ Aceite apenas `research_blocks` da lista acima.
 
 Use o snippet:
 
-`supabase/snippets/e10_5_4_nicho_identificacao_taxon_lookup.sql`
+`supabase/snippets/e10_5_5_nicho_identificacao_taxon_lookup.sql`
 
 Peça ao humano para executar o SQL no Supabase com o nome informado e colar o resultado no chat.
 
