@@ -1,4 +1,4 @@
--- e10_5_4_nicho_identificacao_taxon_lookup.sql
+-- e10_5_5_nicho_identificacao_taxon_lookup.sql
 -- Objetivo: localizar taxon cadastrado por nome, slug ou alias.
 -- Uso: substituir o valor de input.q pelo nome informado pelo humano.
 -- Tipo: read-only.
