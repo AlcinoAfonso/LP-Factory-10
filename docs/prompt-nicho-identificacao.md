@@ -79,15 +79,13 @@ Não refaça a identificação do taxon.
 
 Pesquise os `research_blocks` na ordem definida em `research_blocks_order`.
 
-Pesquise apenas um `research_block` por vez.
+Pesquise apenas o primeiro `research_block` pendente da ordem definida.
 
-Após entregar cada bloco, pare e aguarde comando humano para continuar.
+Não pesquise mais de um `research_block` na mesma execução.
 
-Após todos os blocos serem pesquisados, aguarde comando humano para consolidar.
+Após entregar o bloco pesquisado, pare e aguarde comando humano para continuar.
 
-Após a consolidação, aguarde comando humano para gerar SQL de carregamento.
-
-Após o carregamento, gere SQL de verificação.
+Quando o humano mandar continuar, execute apenas o próximo `research_block` pendente da ordem definida.
 ```
 
 ## Parada
