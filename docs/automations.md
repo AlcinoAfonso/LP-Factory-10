@@ -219,6 +219,9 @@ Estado persistido: `automations/validador-final/state/test-account.json`
 
 3.5 Resolver IA de Nicho no pending_setup
 
+Objetivo:
+Interpretar o nicho bruto informado pelo lead no `pending_setup` e encaminhar a resolução do taxon/slug conforme o contrato funcional do E10.5.6, sem duplicar neste catálogo o detalhamento do caso.
+
 Referência:
 `docs/roadmap.md` — E10.5.6.
 
