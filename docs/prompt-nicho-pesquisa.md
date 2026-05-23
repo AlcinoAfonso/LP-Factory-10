@@ -90,7 +90,7 @@ Preencha: `narrative_arc`, `visual_tone`, `color_direction`, `page_length`, `ima
 
 Definições:
 
-- `narrative_arc`: estrutura narrativa predominante observada, como problema → solução, jornada de transformação, comparação técnica, autoridade + prova ou case/depoimento como espinha dorsal.
+- `narrative_arc`: sequência estrutural predominante observada na LP, orientada à organização dos blocos da página e não à mensagem persuasiva do público.
 - `visual_tone`: tom visual dominante, como premium/sofisticado, acolhedor/humano, clínico/profissional, técnico/científico ou lifestyle/aspiracional.
 - `color_direction`: direção de paleta observada, como neutros + acento, escuro + dourado, claro/clean, terrosos ou monocromático + cor de destaque.
 - `page_length`: extensão típica da página, sendo short = 1-2 viewports, medium = 3-5, long = 6+ e very long = 10+ viewports.
@@ -99,11 +99,19 @@ Definições:
 - `typography_direction`: direção tipográfica, como serif clássica, sans serif moderna, mix serif + sans ou display único de marca.
 - `mobile_priority`: peso presumido da experiência mobile no nicho, inferido por responsividade, estrutura acima da dobra, CTAs fixos, formulários e padrão de consumo observado.
 
-Para cada `item_key`, entregue até 3 achados relevantes quando houver variação real no mercado. 3 é teto, não meta; não complete volume artificialmente. Quando o padrão for claramente dominante e sem alternativa relevante observada, entregar apenas 1 achado é correto.
+Para `lp_overview`, entregue apenas 1 achado dominante por `item_key`.
+
+Não entregue até 3 variações por `item_key` neste bloco.
+
+Quando houver alternativas relevantes no mercado, registre essas alternativas em `notes`, sem criar linhas extras.
+
+`narrative_arc` deve descrever a sequência estrutural predominante da LP, como: hero com promessa segura + autoridade profissional → explicação do procedimento → indicações/cuidados → provas permitidas → FAQ → CTA de avaliação.
+
+`narrative_arc` não deve repetir desejo, crença, dor ou posicionamento estratégico do `strategic_core`; deve funcionar como insumo de estrutura da página.
 
 Use exatamente estas colunas, nesta ordem: `item_key | item_text | priority | sort_order | notes | evidência`.
 
-Atenção: em `priority`, número maior = maior força; em `sort_order`, número menor = posição mais alta.
+Atenção: em `priority`, número maior = maior força; em `sort_order`, número menor = posição mais alta. Em `lp_overview`, como há 1 linha por `item_key`, `sort_order` deve permanecer `1` em cada item.
 
 Para cada linha: `item_key` = um dos itens acima; `item_text` = padrão observado descrito de forma específica, não apenas o rótulo; `priority` = quão dominante o padrão é no mercado observado (`3` = padrão majoritário, `2` = padrão alternativo relevante, `1` = padrão minoritário ou de nicho específico); `sort_order` = ordem de relevância dentro do mesmo `item_key` e reinicia em cada `item_key`; `notes` = contexto, restrições do nicho, quando esse padrão se aplica vs alternativas; `evidência` = referência às LPs analisadas, URLs, número de exemplos observados ou descrição do padrão agregado.
 

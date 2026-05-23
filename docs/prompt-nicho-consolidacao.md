@@ -62,3 +62,6 @@ status: draft
 | item_key | item_text | priority | sort_order | notes |
 |---|---|---:|---:|---|
 |  |  |  |  |  |
+```
+
+Pesquisa consolidada pronta para carregamento. Aguarde comando humano para gerar SQL.
