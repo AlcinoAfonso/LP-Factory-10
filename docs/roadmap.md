@@ -595,6 +595,52 @@
 • Ajustados:
 • `lib/onboarding/niche-resolution/contracts.ts`
 
+10.5.5 Fluxo operacional de pesquisa por taxon
+
+10.5.5.1 Objetivo
+
+• estruturar o fluxo operacional de pesquisa por taxon em etapas separadas de identificação, pesquisa profunda, consolidação, carregamento e verificação
+• garantir compatibilidade com `taxon_market_research` e `taxon_market_research_items`
+
+10.5.5.2 Artefatos na ordem de uso
+
+• A. Identificação do taxon
+• `docs/prompt-nicho-identificacao.md`
+  • identifica o taxon correto antes da pesquisa
+  • chama `supabase/snippets/e10_5_5_nicho_identificacao_taxon_lookup.sql`
+  • gera o relatório-instrução que será usado na pesquisa profunda
+• `supabase/snippets/e10_5_5_nicho_identificacao_taxon_lookup.sql`
+  • localiza taxons cadastrados por nome, slug ou alias
+  • deve ser usado na etapa de identificação do taxon
+
+• B. Pesquisa profunda
+• `docs/prompt-nicho-pesquisa.md`
+  • executa a pesquisa profunda por taxon
+  • pesquisa um `research_block` por vez
+  • entrega os blocos no formato esperado para consolidação posterior
+
+• C. Consolidação
+• `docs/prompt-nicho-consolidacao.md`
+  • consolida os blocos pesquisados e aprovados
+  • prepara a saída para futura carga nas tabelas de pesquisa
+
+• D. Carregamento
+• `docs/prompt-nicho-carregamento.md` — não implementado
+  • etapa prevista para orientar a geração do SQL de carregamento
+  • deve transformar a pesquisa consolidada em carga compatível com `taxon_market_research` e `taxon_market_research_items`
+• `supabase/snippets/e10_5_5_nicho_carregamento.sql` — não implementado
+  • snippet previsto para carregar a pesquisa consolidada
+  • deve inserir ou atualizar o registro-pai em `taxon_market_research`
+  • deve inserir os itens em `taxon_market_research_items`
+
+• E. Verificação
+• `docs/prompt-nicho-verificacao.md` — não implementado
+  • etapa prevista para orientar a verificação após o carregamento
+  • deve confirmar se o registro-pai e os itens foram gravados corretamente
+• `supabase/snippets/e10_5_5_nicho_verificacao.sql` — não implementado
+  • snippet previsto para verificar o carregamento da pesquisa
+  • deve listar o registro-pai e os itens carregados para conferência humana
+
 10.5.6 Classificação da conta e resolução do nicho
 • Status: Parcialmente concluído (14/05/2026)
 • Escopo atual: pipeline server-side no pós-save do `pending_setup`, com matching determinístico, decisão de confiança, persistência operacional, vínculo oficial sob alta confiança e escalonamento IA estruturado.
