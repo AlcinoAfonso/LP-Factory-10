@@ -205,12 +205,6 @@ Critérios de sucesso:
 - priorizar buscas comerciais e dúvidas úteis para conversão;
 - marcar inferência em `evidência` quando não houver fonte direta.
 
-Fontes específicas para `seo`:
-
-- SERP brasileira do nicho;
-- páginas reais de concorrentes;
-- perguntas frequentes observadas em páginas comerciais;
-- padrões já observados em `lp_overview` e `lp_sections`, quando disponíveis.
 
 Limites:
 
