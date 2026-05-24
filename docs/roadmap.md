@@ -625,19 +625,19 @@
   • prepara a saída para futura carga nas tabelas de pesquisa
 
 • D. Carregamento
-• `docs/prompt-nicho-carregamento.md` — não implementado
+• `docs/prompt-nicho-carregamento.md`
   • etapa prevista para orientar a geração do SQL de carregamento
   • deve transformar a pesquisa consolidada em carga compatível com `taxon_market_research` e `taxon_market_research_items`
-• `supabase/snippets/e10_5_5_nicho_carregamento.sql` — não implementado
+• `supabase/snippets/e10_5_5_nicho_carregamento.sql`
   • snippet previsto para carregar a pesquisa consolidada
   • deve inserir ou atualizar o registro-pai em `taxon_market_research`
   • deve inserir os itens em `taxon_market_research_items`
 
 • E. Verificação
-• `docs/prompt-nicho-verificacao.md` — não implementado
+• `docs/prompt-nicho-verificacao.md`
   • etapa prevista para orientar a verificação após o carregamento
   • deve confirmar se o registro-pai e os itens foram gravados corretamente
-• `supabase/snippets/e10_5_5_nicho_verificacao.sql` — não implementado
+• `supabase/snippets/e10_5_5_nicho_verificacao.sql`
   • snippet previsto para verificar o carregamento da pesquisa
   • deve listar o registro-pai e os itens carregados para conferência humana
 
