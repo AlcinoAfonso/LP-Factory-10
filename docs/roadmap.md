@@ -634,10 +634,10 @@
   • deve inserir os itens em `taxon_market_research_items`
 
 • E. Verificação
-• `docs/prompt-nicho-verificacao.md`
+• `docs/prompt-nicho-verificacao.md` — não implementado
   • etapa prevista para orientar a verificação após o carregamento
   • deve confirmar se o registro-pai e os itens foram gravados corretamente
-• `supabase/snippets/e10_5_5_nicho_verificacao.sql`
+• `supabase/snippets/e10_5_5_nicho_verificacao.sql` — não implementado
   • snippet previsto para verificar o carregamento da pesquisa
   • deve listar o registro-pai e os itens carregados para conferência humana
 
