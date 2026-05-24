@@ -124,3 +124,56 @@ Fontes específicas para `lp_overview`:
 - inferência marcada em `evidência` quando o padrão for inferido sem amostra suficiente
 
 Limites: não incluir dados locais de cliente, não escrever copy final, usar apenas o audience_scope recebido na entrada confirmada, não criar `item_key` fora da lista acima, não pesquisar `funnel_stage`/`conversion_action`/`offer_model` e não inventar quando faltar fonte.
+
+## 8. lp_sections
+
+Entregue uma tabela com a arquitetura recomendada de seções para landing pages do taxon confirmado, considerando o `audience_scope` recebido.
+
+O objetivo deste bloco é transformar a pesquisa do nicho em uma lista prática de seções reutilizáveis para montagem futura de LPs.
+
+Diferente de `lp_overview`, que observa padrões gerais de páginas do mercado, `lp_sections` deve dizer quais seções a LP deve ter e em que ordem elas tendem a funcionar melhor.
+
+Use exatamente estas colunas, nesta ordem:
+
+`item_key | item_text | priority | sort_order | notes | evidência`
+
+Definições:
+
+- `item_key`: chave curta da seção em snake_case, como `hero`, `authority`, `procedure_explanation`, `benefits`, `proof`, `faq`, `cta`, `form`, `location`, `safety`, `offer`.
+- `item_text`: nome funcional da seção e o papel dela na LP, sem escrever copy final.
+- `priority`: importância da seção para o taxon:
+  - `3` = essencial
+  - `2` = recomendada
+  - `1` = opcional ou condicional
+- `sort_order`: ordem sugerida da seção na LP.
+- `notes`: quando usar, variações possíveis, limites, cuidados e indicação de uso em LP curta, média ou longa.
+- `evidência`: páginas analisadas, padrão observado ou inferência marcada.
+
+Critérios de sucesso:
+
+- Entregar uma arquitetura clara de LP, não uma análise genérica.
+- Priorizar seções realmente úteis para montar uma landing page.
+- Manter volume enxuto: normalmente entre 6 e 10 seções.
+- Usar `priority` para permitir montagem posterior de tiers:
+  - `priority 3` tende a alimentar LP Light.
+  - `priority 3 + 2` tende a alimentar LP Pro.
+  - `priority 3 + 2 + opcionais relevantes` tende a alimentar LP Ultra.
+- Não criar seções artificiais para preencher volume.
+- Não escrever títulos finais, subtítulos finais, textos de seção ou CTAs finais.
+- Não definir tiers comerciais dentro da pesquisa.
+- Quando uma seção for útil apenas em LP mais longa, marcar isso em `notes`.
+
+Fontes específicas para `lp_sections`:
+
+- páginas reais de concorrentes brasileiros do nicho
+- LPs e páginas comerciais de clínicas, profissionais, redes ou prestadores do nicho
+- padrões observados no `lp_overview`, quando esse bloco já tiver sido pesquisado
+- inferência marcada em `evidência` quando não houver amostra suficiente
+
+Limites:
+
+- Não alterar o `audience_scope` recebido.
+- Não criar `item_key` fora do contexto de seções de landing page.
+- Não escrever copy final.
+- Não transformar este bloco em briefing de design completo.
+- Não montar Light, Pro ou Ultra dentro da pesquisa.
