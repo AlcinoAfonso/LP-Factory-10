@@ -136,3 +136,60 @@ order by
   research_block,
   check_type desc,
   check_status;
+
+with input as (
+  select
+    '00000000-0000-0000-0000-000000000000'::uuid as taxon_id,
+    'business_buyer'::text as audience_scope,
+    1::integer as version,
+    *
+  from (
+    values
+      ('strategic_core'::text),
+      ('lp_overview'::text),
+      ('lp_sections'::text),
+      ('seo'::text)
+  ) as blocks(research_block)
+),
+
+parents as (
+  select
+    input.research_block,
+    research.id as research_id
+  from input
+  left join public.taxon_market_research research
+    on research.taxon_id = input.taxon_id
+   and research.research_block = input.research_block
+   and research.audience_scope = input.audience_scope
+   and research.version = input.version
+),
+
+items as (
+  select
+    parents.research_block,
+    research_items.id as item_id,
+    research_items.item_key,
+    research_items.item_text,
+    research_items.priority,
+    research_items.sort_order,
+    research_items.is_active,
+    research_items.notes
+  from parents
+  left join public.taxon_market_research_items research_items
+    on research_items.research_id = parents.research_id
+)
+
+select
+  items.research_block,
+  items.item_key,
+  items.item_text,
+  items.priority,
+  items.sort_order,
+  items.is_active,
+  items.notes
+from items
+where items.item_id is not null
+order by
+  items.research_block,
+  items.sort_order,
+  items.item_key;
