@@ -177,3 +177,37 @@ Limites:
 - Não escrever copy final.
 - Não transformar este bloco em briefing de design completo.
 - Não montar Light, Pro ou Ultra dentro da pesquisa.
+
+## 9. seo
+
+Entregue uma tabela com os principais insumos de SEO para landing pages do taxon confirmado, considerando o `audience_scope` recebido.
+
+O objetivo deste bloco é identificar intenções de busca, termos comerciais e perguntas úteis para orientar futuras LPs do nicho.
+
+Use exatamente estas colunas, nesta ordem:
+
+`item_key | item_text | priority | sort_order | notes | evidência`
+
+Use `item_key` simples, como:
+
+- `search_intent`
+- `commercial_keywords`
+- `support_keywords`
+- `local_terms`
+- `faq_questions`
+- `seo_requirements`
+
+Critérios de sucesso:
+
+- entregar insumos práticos para uma landing page;
+- manter volume enxuto;
+- agrupar termos relacionados no `item_text`;
+- priorizar buscas comerciais e dúvidas úteis para conversão;
+- marcar inferência em `evidência` quando não houver fonte direta.
+
+
+Limites:
+
+- não escrever copy final;
+- não inventar volume de busca, CPC ou dificuldade;
+- não transformar este bloco em calendário editorial.
