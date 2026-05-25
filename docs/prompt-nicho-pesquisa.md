@@ -33,8 +33,6 @@ A entrada confirmada deve conter:
 * `audience_scope`
 * `research_blocks_order`
 
-Use pesquisa web quando necessário.
-
 As fontes devem ser escolhidas conforme o taxon pesquisado.
 
 ## 4. Critérios de sucesso
