@@ -1,20 +1,20 @@
-# Prompt — Consolidação de pesquisa por nicho/taxon
+# Prompt — Estruturação de itens da pesquisa por nicho/taxon
 
 ## 1. Objetivo
 
-Consolidar, no mesmo chat da pesquisa profunda, os `research_blocks` já pesquisados e aprovados em formato pronto para o prompt de carregamento.
+Transformar a pesquisa bruta, no mesmo chat da pesquisa profunda, em itens estruturados da pesquisa prontos para `taxon_market_research_items`.
 
 ## 2. Contexto disponível
 
 Use como fonte de verdade:
 
 - a entrada confirmada gerada por `docs/prompt-nicho-identificacao.md`
-- os resultados dos `research_blocks` já pesquisados neste chat
+- os resultados da pesquisa bruta já pesquisada neste chat
 - as aprovações ou ajustes informados pelo humano durante a pesquisa
 
 ## 3. Critérios de sucesso
 
-A consolidação deve:
+A estruturação deve:
 
 - manter o mesmo `taxon_id`, `taxon_name`, `taxon_level` e `audience_scope`
 - separar os dados por `research_block`
@@ -34,7 +34,7 @@ Não altere taxon, público, ordem ou nome dos `research_blocks`.
 
 Não gere SQL.
 
-Não mantenha `evidência` ou `evidence` como campo final da consolidação.
+Não mantenha `evidência` ou `evidence` como campo final dos itens estruturados.
 
 Quando houver fonte, evidência, inferência, limite ou cuidado relevante, resuma dentro de `notes`.
 
@@ -45,7 +45,7 @@ Entregue uma seção para cada `research_block` consolidado.
 Use este formato:
 
 ```md
-# Pesquisa consolidada
+# Itens estruturados da pesquisa
 
 ## Registro-pai
 
@@ -57,11 +57,11 @@ audience_scope:
 version: 1
 status: draft
 
-## Itens consolidados
+## Itens estruturados
 
 | item_key | item_text | priority | sort_order | notes |
 |---|---|---:|---:|---|
 |  |  |  |  |  |
 ```
 
-Pesquisa consolidada pronta para carregamento. Aguarde comando humano para gerar SQL.
+Itens estruturados prontos para carregamento em `taxon_market_research_items`. Aguarde comando humano para gerar SQL.
