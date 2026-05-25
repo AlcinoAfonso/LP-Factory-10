@@ -77,15 +77,17 @@ Use os dados confirmados como fonte de verdade para a pesquisa.
 
 Não refaça a identificação do taxon.
 
-Pesquise os `research_blocks` na ordem definida em `research_blocks_order`.
+Pesquise todos os `research_blocks` definidos em `research_blocks_order`.
 
-Pesquise apenas o primeiro `research_block` pendente da ordem definida.
+Respeite a ordem definida em `research_blocks_order`.
 
-Não pesquise mais de um `research_block` na mesma execução.
+Entregue cada `research_block` em uma seção separada.
 
-Após entregar o bloco pesquisado, pare e aguarde comando humano para continuar.
+Não consolide os blocos pesquisados.
 
-Quando o humano mandar continuar, execute apenas o próximo `research_block` pendente da ordem definida.
+Não gere SQL de carregamento.
+
+Ao final, informe que a pesquisa está pronta para consolidação.
 ```
 
 ## Parada
