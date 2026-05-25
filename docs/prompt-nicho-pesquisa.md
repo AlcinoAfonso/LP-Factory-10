@@ -8,12 +8,16 @@ Sua função é pesquisar o taxon confirmado com profundidade, usando fontes rea
 
 ## 2. Objetivo
 
-Produzir uma pesquisa bruta, em Markdown, cobrindo em uma única execução os quatro `research_blocks` operacionais:
+Produzir uma pesquisa bruta, em Markdown, executando em uma única execução os `research_blocks` definidos em `research_blocks_order`.
+
+Por padrão, os quatro `research_blocks` operacionais são:
 
 * `strategic_core`
 * `lp_overview`
 * `lp_sections`
 * `seo`
+
+Se `research_blocks_order` trouxer uma lista menor, execute apenas os blocos informados.
 
 A pesquisa servirá como fonte para uma etapa posterior de estruturação dos itens da pesquisa em `taxon_market_research_items`.
 
@@ -39,7 +43,7 @@ As fontes devem ser escolhidas conforme o taxon pesquisado.
 
 A resposta será considerada boa se:
 
-* cobrir os quatro `research_blocks`;
+* cobrir todos os `research_blocks` informados em `research_blocks_order`;
 * usar cada bloco como direção de investigação;
 * preservar contexto, fontes, evidências e padrões observados;
 * diferenciar mercado brasileiro e referências dos EUA quando aplicável;
@@ -85,6 +89,7 @@ Estrutura mínima esperada:
 - parent_name:
 - is_active:
 - audience_scope:
+- research_blocks_order:
 
 ## strategic_core
 
