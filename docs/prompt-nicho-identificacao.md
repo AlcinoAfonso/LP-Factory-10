@@ -60,10 +60,7 @@ is_active:
 audience_scope:
 
 research_blocks_order:
-1.
-2.
-3.
-4.
+- listar apenas os blocos solicitados, na ordem definida pelo humano
 
 ## 2. Instrução para a IA de pesquisa
 
@@ -77,9 +74,11 @@ Use os dados confirmados como fonte de verdade para a pesquisa.
 
 Não refaça a identificação do taxon.
 
-Pesquise todos os `research_blocks` definidos em `research_blocks_order`.
+Pesquise apenas os `research_blocks` informados em `research_blocks_order`.
 
-Respeite a ordem definida em `research_blocks_order`.
+Respeite exatamente a ordem definida em `research_blocks_order`.
+
+Se `research_blocks_order` tiver menos de quatro blocos, execute somente os blocos informados.
 
 Entregue cada `research_block` em uma seção separada.
 
