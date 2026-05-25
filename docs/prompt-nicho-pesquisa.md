@@ -1,194 +1,191 @@
-# Pesquisa completa por nicho/taxon — LP Factory 10
+# Pesquisa bruta por nicho/taxon — LP Factory 10
 
-## 1. Objetivo
+## 1. Papel / função
 
-Pesquisar o taxon confirmado recebido no relatório-instrução de `docs/prompt-nicho-identificacao.md`, um `research_block` por vez.
+Atue como pesquisador de nicho para o LP Factory 10.
 
-## 2. Papel / função
+Sua função é pesquisar o taxon confirmado com profundidade, usando fontes reais, padrões observados e evidências verificáveis.
 
-Atuar como pesquisador de nicho orientado por execução em blocos, com saída estritamente no formato do `research_block` solicitado.
+## 2. Objetivo
 
-## 3. Entrada obrigatória
+Produzir uma pesquisa bruta, em Markdown, cobrindo em uma única execução os quatro `research_blocks` operacionais:
 
-Receba o relatório-instrução gerado por `docs/prompt-nicho-identificacao.md`.
+* `strategic_core`
+* `lp_overview`
+* `lp_sections`
+* `seo`
 
-Use a entrada confirmada como fonte de verdade para:
+A pesquisa servirá como fonte para uma etapa posterior de estruturação dos itens da pesquisa em `taxon_market_research_items`.
 
-- `taxon_id`
-- `taxon_name`
-- `taxon_slug`
-- `taxon_level`
-- `parent_id`
-- `parent_name`
-- `is_active`
-- `audience_scope`
-- `research_blocks_order`
+## 3. Fontes / contexto disponível
 
-## 4. Regras de execução
+Use como fonte de verdade o relatório-instrução gerado por `docs/prompt-nicho-identificacao.md`.
 
-- Pesquise apenas o próximo `research_block` da ordem definida.
-- Entregue o resultado desse bloco separadamente.
-- Depois de entregar o bloco, pare e aguarde comando humano para continuar.
-- Quando o humano mandar continuar, pesquise o próximo `research_block` pendente.
-- Quando todos os blocos forem pesquisados, informe que a pesquisa foi concluída e aguarde comando humano para consolidar.
+A entrada confirmada deve conter:
 
-## 4.1 Critérios de sucesso
+* `taxon_id`
+* `taxon_name`
+* `taxon_slug`
+* `taxon_level`
+* `parent_id`
+* `parent_name`
+* `is_active`
+* `audience_scope`
+* `research_blocks_order`
 
-- Executar somente o próximo `research_block` pendente.
-- Seguir estritamente o formato definido para o `research_block` executado.
-- Não entregar overview de nicho, definição introdutória ou texto educativo fora do formato do `research_block`.
-- Encerrar a resposta imediatamente após a entrega do bloco.
+Use pesquisa web quando necessário.
+
+As fontes devem ser escolhidas conforme o taxon pesquisado.
+
+## 4. Critérios de sucesso
+
+A resposta será considerada boa se:
+
+* cobrir os quatro `research_blocks`;
+* usar cada bloco como direção de investigação;
+* preservar contexto, fontes, evidências e padrões observados;
+* diferenciar mercado brasileiro e referências dos EUA quando aplicável;
+* declarar limitações quando não houver evidência suficiente;
+* entregar material suficiente para posterior estruturação dos itens da pesquisa.
 
 ## 5. Limites
 
-- Use a entrada confirmada como fonte de verdade.
-- Mantenha o `audience_scope` recebido.
-- Mantenha a ordem dos `research_blocks`.
-- Faça apenas pesquisa, sem SQL de carga.
-- Faça consolidação final somente com comando humano.
-- Não entregar overview genérico do nicho, definição introdutória ou explicação educativa fora do formato do `research_block`.
+Não invente:
 
-## 6. strategic_core
+* dados de cliente;
+* fontes;
+* provas;
+* certificações;
+* garantias;
+* resultados;
+* volume de busca;
+* CPC;
+* dificuldade de palavra-chave.
 
-Entregue uma tabela sobre o núcleo estratégico do taxon confirmado para o audience_scope recebido na entrada confirmada.
+Não complete lacunas com suposição.
 
-Preencha: `pain`, `objection`, `desire`, `hidden_desire`, `belief`, `fear`, `awareness_level`, `vocabulary`, `trigger`, `proof_type`, `trend`, `positioning_opportunity`.
+Quando faltar evidência, declare a limitação.
 
-Observação: `hidden_desire` significa motivação profunda ligada a identidade, autoimagem, status, pertencimento, autoconfiança ou reconhecimento; não é o desejo declarado.
+Não transforme hipótese em achado da pesquisa.
 
-Observação: `trigger` significa gatilho de ativação real do mercado, não gatilho mental genérico.
+## 6. Entrega esperada
 
-Para `hidden_desire`, não use clichê genérico; ancore o achado em evidência, linguagem recorrente ou inferência marcada em `notes`/`evidência`.
+Entregue em Markdown, organizando a resposta da forma mais útil para a pesquisa.
 
-Para cada `item_key`, entregue até 3 achados relevantes quando houver variação real. 3 é teto, não meta; não complete volume artificialmente. Para `vocabulary`, cada achado pode reunir de 3 a 8 termos relacionados no `item_text`, separados por ponto e vírgula.
+Estrutura mínima esperada:
 
-Use exatamente estas colunas, nesta ordem: `item_key | item_text | priority | sort_order | notes | evidência`.
+```md
+# Pesquisa bruta — [taxon_name]
 
-Atenção: em `priority`, número maior = maior força; em `sort_order`, número menor = posição mais alta.
+## Entrada confirmada
 
-Para cada linha: `item_key` = um dos itens acima; `item_text` = achado específico e útil; `priority` = força do achado (`3` forte, `2` relevante, `1` secundário/condicional); `sort_order` = ordem de relevância dentro do mesmo `item_key` e reinicia em cada `item_key`; `notes` = contexto, nuance, limite ou cuidado; `evidência` = fonte, padrão observado ou inferência marcada.
+- taxon_id:
+- taxon_name:
+- taxon_slug:
+- taxon_level:
+- parent_id:
+- parent_name:
+- is_active:
+- audience_scope:
 
-Fontes específicas para `strategic_core`:
-- reviews públicas, como Google, Doctoralia e Reclame Aqui
-- comunidades, fóruns e perguntas reais do nicho
-- conteúdo de mercado, como páginas de clínicas, profissionais, prestadores ou infoprodutores
-- fontes oficiais ou regulatórias quando houver risco, segurança, regra profissional ou alegação técnica
-- inferência marcada em `evidência` quando não houver fonte direta
-- referências dos EUA aceitas apenas para `trend`, quando indicarem tendência macro do nicho; marcar em `evidência`. Demais `item_key` devem priorizar o mercado brasileiro.
+## strategic_core
 
-Limites: não incluir dados locais de cliente, não escrever copy final, usar apenas o audience_scope recebido na entrada confirmada, não criar `item_key` fora da lista acima e não inventar quando faltar fonte.
+Pesquise o núcleo estratégico do taxon para o `audience_scope` recebido.
 
-## 7. lp_overview
+Cubra, quando houver evidência suficiente:
 
-Entregue uma tabela sobre as convenções de LP que predominam no mercado do taxon confirmado, para o audience_scope recebido na entrada confirmada.
+- `pain`
+- `objection`
+- `desire`
+- `hidden_desire`
+- `belief`
+- `fear`
+- `awareness_level`
+- `vocabulary`
+- `trigger`
+- `proof_type`
+- `trend`
+- `positioning_opportunity`
 
-Diferente de `strategic_core`, que pesquisa o público, `lp_overview` pesquisa convenções observáveis de design e estrutura nas LPs reais que circulam no mercado do nicho — arco narrativo, tom visual, paleta, extensão, estilo de imagem, densidade, tipografia e prioridade mobile.
+Observações:
 
-Observação: pesquise apenas convenções observáveis no mercado, não decisões do cliente. `funnel_stage`, `conversion_action` e `offer_model` ficam para o brief de cada LP, não fazem parte desta pesquisa.
+- `hidden_desire` significa motivação profunda ligada a identidade, autoimagem, status, pertencimento, autoconfiança ou reconhecimento.
+- `trigger` significa gatilho real de ativação do mercado, não gatilho mental genérico.
+- Para `hidden_desire`, use apenas evidência, linguagem recorrente ou padrão observado. Se não houver base suficiente, declare a limitação.
 
-Preencha: `narrative_arc`, `visual_tone`, `color_direction`, `page_length`, `image_style`, `visual_density`, `typography_direction`, `mobile_priority`.
+Fontes recomendadas:
 
-Definições:
+- reviews públicas;
+- perguntas reais do público;
+- comunidades, fóruns e redes;
+- páginas comerciais reais do nicho e players relevantes do mercado, conforme o taxon pesquisado;
+- fontes oficiais ou regulatórias quando houver risco, segurança, regra profissional ou alegação técnica.
 
-- `narrative_arc`: sequência estrutural predominante observada na LP, orientada à organização dos blocos da página e não à mensagem persuasiva do público.
-- `visual_tone`: tom visual dominante, como premium/sofisticado, acolhedor/humano, clínico/profissional, técnico/científico ou lifestyle/aspiracional.
-- `color_direction`: direção de paleta observada, como neutros + acento, escuro + dourado, claro/clean, terrosos ou monocromático + cor de destaque.
-- `page_length`: extensão típica da página, sendo short = 1-2 viewports, medium = 3-5, long = 6+ e very long = 10+ viewports.
-- `image_style`: estilo de imagem dominante, como fotos reais autorizadas, antes/depois, banco de imagem genérico, ilustração vetorial, render 3D ou cinematográfico/lifestyle.
-- `visual_density`: densidade visual da página, sendo minimalista = muito whitespace, balanceada = espaço e conteúdo distribuídos, densa = informação concentrada.
-- `typography_direction`: direção tipográfica, como serif clássica, sans serif moderna, mix serif + sans ou display único de marca.
-- `mobile_priority`: peso presumido da experiência mobile no nicho, inferido por responsividade, estrutura acima da dobra, CTAs fixos, formulários e padrão de consumo observado.
+Priorize mercado brasileiro.
 
-Para `lp_overview`, entregue apenas 1 achado dominante por `item_key`.
+Use referências dos EUA apenas para tendências macro, quando relevante, deixando isso claro.
 
-Não entregue até 3 variações por `item_key` neste bloco.
+## lp_overview
 
-Quando houver alternativas relevantes no mercado, registre essas alternativas em `notes`, sem criar linhas extras.
+Pesquise convenções observáveis de landing pages e páginas comerciais do taxon no Brasil e nos EUA.
 
-`narrative_arc` deve descrever a sequência estrutural predominante da LP, como: hero com promessa segura + autoridade profissional → explicação do procedimento → indicações/cuidados → provas permitidas → FAQ → CTA de avaliação.
+Cubra, quando houver evidência suficiente:
 
-`narrative_arc` não deve repetir desejo, crença, dor ou posicionamento estratégico do `strategic_core`; deve funcionar como insumo de estrutura da página.
+- `narrative_arc`
+- `visual_tone`
+- `color_direction`
+- `page_length`
+- `image_style`
+- `visual_density`
+- `typography_direction`
+- `mobile_priority`
 
-Use exatamente estas colunas, nesta ordem: `item_key | item_text | priority | sort_order | notes | evidência`.
+A pesquisa deve comparar:
 
-Atenção: em `priority`, número maior = maior força; em `sort_order`, número menor = posição mais alta. Em `lp_overview`, como há 1 linha por `item_key`, `sort_order` deve permanecer `1` em cada item.
+- padrões brasileiros;
+- padrões dos EUA;
+- padrões comuns aos dois mercados;
+- tendências dos EUA que poderiam inspirar diferenciação no Brasil;
+- padrões dos EUA que não parecem adequados ao Brasil.
 
-Para cada linha: `item_key` = um dos itens acima; `item_text` = padrão observado descrito de forma específica, não apenas o rótulo; `priority` = quão dominante o padrão é no mercado observado (`3` = padrão majoritário, `2` = padrão alternativo relevante, `1` = padrão minoritário ou de nicho específico); `sort_order` = ordem de relevância dentro do mesmo `item_key` e reinicia em cada `item_key`; `notes` = contexto, restrições do nicho, quando esse padrão se aplica vs alternativas; `evidência` = referência às LPs analisadas, URLs, número de exemplos observados ou descrição do padrão agregado.
+Fontes recomendadas:
 
-Fontes específicas para `lp_overview`:
-- páginas reais de concorrentes brasileiros do nicho como referência primária
-- anúncios públicos observáveis do nicho no Brasil, como Meta Ads Library e resultados patrocinados visíveis na SERP
-- top resultados do SERP brasileiro para queries comerciais do nicho
-- LPs dos EUA quando representarem tendência visual ou estrutural ainda não consolidada no Brasil; marcar em `evidência` como tendência emergente no Brasil e consolidada nos EUA
-- observação direta de pelo menos 3 LPs por achado significativo, quando houver amostra pública suficiente
-- inferência marcada em `evidência` quando o padrão for inferido sem amostra suficiente
+- páginas comerciais reais do nicho e players relevantes do mercado, conforme o taxon pesquisado;
+- LPs e páginas comerciais do nicho;
+- resultados patrocinados visíveis;
+- Meta Ads Library, quando aplicável;
+- SERP brasileira e americana para buscas comerciais do nicho.
 
-Limites: não incluir dados locais de cliente, não escrever copy final, usar apenas o audience_scope recebido na entrada confirmada, não criar `item_key` fora da lista acima, não pesquisar `funnel_stage`/`conversion_action`/`offer_model` e não inventar quando faltar fonte.
+Observações:
 
-## 8. lp_sections
+- `narrative_arc` deve descrever a sequência estrutural predominante da LP.
+- `narrative_arc` não deve repetir dor, desejo, crença ou posicionamento do `strategic_core`.
+- Não pesquisar `funnel_stage`, `conversion_action` ou `offer_model` como decisão de cliente.
 
-Entregue uma tabela com a arquitetura recomendada de seções para landing pages do taxon confirmado, considerando o `audience_scope` recebido.
+## lp_sections
 
-O objetivo deste bloco é transformar a pesquisa do nicho em uma lista prática de seções reutilizáveis para montagem futura de LPs.
+Pesquise a arquitetura de seções observada ou recomendável para landing pages do taxon.
 
-Diferente de `lp_overview`, que observa padrões gerais de páginas do mercado, `lp_sections` deve dizer quais seções a LP deve ter e em que ordem elas tendem a funcionar melhor.
+A pesquisa deve observar:
 
-Use exatamente estas colunas, nesta ordem:
+- quais tipos de seções aparecem com frequência;
+- quais seções parecem essenciais;
+- quais seções parecem recomendadas;
+- quais seções parecem opcionais ou condicionais;
+- ordem provável das seções;
+- papel de cada seção na conversão;
+- uso em LP curta, média ou longa;
+- relação futura com tiers comerciais futuros.
 
-`item_key | item_text | priority | sort_order | notes | evidência`
+Não monte tiers nesta etapa.
 
-Definições:
+Não escreva títulos finais, subtítulos finais, textos de seção ou CTAs finais.
 
-- `item_key`: chave curta da seção em snake_case, como `hero`, `authority`, `procedure_explanation`, `benefits`, `proof`, `faq`, `cta`, `form`, `location`, `safety`, `offer`.
-- `item_text`: nome funcional da seção e o papel dela na LP, sem escrever copy final.
-- `priority`: importância da seção para o taxon:
-  - `3` = essencial
-  - `2` = recomendada
-  - `1` = opcional ou condicional
-- `sort_order`: ordem sugerida da seção na LP.
-- `notes`: quando usar, variações possíveis, limites, cuidados e indicação de uso em LP curta, média ou longa.
-- `evidência`: páginas analisadas, padrão observado ou inferência marcada.
+## seo
 
-Critérios de sucesso:
+Pesquise insumos de SEO para landing pages do taxon.
 
-- Entregar uma arquitetura clara de LP, não uma análise genérica.
-- Priorizar seções realmente úteis para montar uma landing page.
-- Manter volume enxuto: normalmente entre 6 e 10 seções.
-- Usar `priority` para permitir montagem posterior de tiers:
-  - `priority 3` tende a alimentar LP Light.
-  - `priority 3 + 2` tende a alimentar LP Pro.
-  - `priority 3 + 2 + opcionais relevantes` tende a alimentar LP Ultra.
-- Não criar seções artificiais para preencher volume.
-- Não escrever títulos finais, subtítulos finais, textos de seção ou CTAs finais.
-- Não definir tiers comerciais dentro da pesquisa.
-- Quando uma seção for útil apenas em LP mais longa, marcar isso em `notes`.
-
-Fontes específicas para `lp_sections`:
-
-- páginas reais de concorrentes brasileiros do nicho
-- LPs e páginas comerciais de clínicas, profissionais, redes ou prestadores do nicho
-- padrões observados no `lp_overview`, quando esse bloco já tiver sido pesquisado
-- inferência marcada em `evidência` quando não houver amostra suficiente
-
-Limites:
-
-- Não alterar o `audience_scope` recebido.
-- Não criar `item_key` fora do contexto de seções de landing page.
-- Não escrever copy final.
-- Não transformar este bloco em briefing de design completo.
-- Não montar Light, Pro ou Ultra dentro da pesquisa.
-
-## 9. seo
-
-Entregue uma tabela com os principais insumos de SEO para landing pages do taxon confirmado, considerando o `audience_scope` recebido.
-
-O objetivo deste bloco é identificar intenções de busca, termos comerciais e perguntas úteis para orientar futuras LPs do nicho.
-
-Use exatamente estas colunas, nesta ordem:
-
-`item_key | item_text | priority | sort_order | notes | evidência`
-
-Use `item_key` simples, como:
+Cubra, quando houver evidência suficiente:
 
 - `search_intent`
 - `commercial_keywords`
@@ -197,17 +194,67 @@ Use `item_key` simples, como:
 - `faq_questions`
 - `seo_requirements`
 
-Critérios de sucesso:
+Priorize:
 
-- entregar insumos práticos para uma landing page;
-- manter volume enxuto;
-- agrupar termos relacionados no `item_text`;
-- priorizar buscas comerciais e dúvidas úteis para conversão;
-- marcar inferência em `evidência` quando não houver fonte direta.
+- intenções de busca com potencial comercial;
+- termos úteis para conversão;
+- dúvidas frequentes;
+- objeções pesquisadas;
+- termos locais, quando aplicável;
+- perguntas úteis para FAQ.
 
+Não invente volume de busca, CPC ou dificuldade.
 
-Limites:
+Não transforme este bloco em calendário editorial.
 
-- não escrever copy final;
-- não inventar volume de busca, CPC ou dificuldade;
-- não transformar este bloco em calendário editorial.
+## Observações gerais
+
+Registre:
+
+- padrões fortes encontrados;
+- diferenças relevantes entre Brasil e EUA;
+- oportunidades para futuras LPs;
+- riscos de generalização;
+- lacunas de evidência;
+- pontos que devem ser validados antes da estruturação dos itens.
+
+## Limitações da pesquisa
+
+Liste claramente:
+
+- fontes que não foram encontradas;
+- pontos com baixa evidência;
+- limitações por mercado, idioma, amostra ou disponibilidade pública.
+```
+
+## 7. Regras de parada
+
+Pare e peça exatamente o dado faltante se:
+
+* o relatório-instrução não trouxer `taxon_id`;
+* o taxon não estiver confirmado;
+* o `audience_scope` não estiver definido.
+
+## 8. Evidência / validação
+
+Sempre diferencie:
+
+* evidência observada;
+* padrão recorrente;
+* referência comparativa;
+* ausência de evidência suficiente.
+
+Quando citar padrões dos EUA, indique se são:
+
+* aplicáveis ao Brasil;
+* apenas inspiração;
+* tendência ainda não consolidada;
+* inadequados para adaptação direta.
+
+## 9. Regra de concisão
+
+Seja direto.
+
+Evite excesso de processo.
+
+Entregue pesquisa rica, mas sem transformar a resposta em manual ou briefing de implementação.
