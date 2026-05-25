@@ -89,9 +89,15 @@ Regras:
 
 - `item_key`: obrigatório e compatível com o bloco;
 - `item_text`: conteúdo objetivo e acionável;
-- `priority`: use `high`, `medium` ou `low`;
-- `sort_order`: inteiro positivo, iniciando em `1` por bloco, sem lacunas;
+- `priority`: use prioridade numérica `3`, `2` ou `1`;
+- `sort_order`: inteiro positivo com regra específica por bloco (detalhada abaixo);
 - `notes`: resumo curto de evidências, limites e inferências quando necessário.
+
+Escala obrigatória de `priority`:
+
+- `3` = forte, essencial ou dominante;
+- `2` = relevante, recomendado ou alternativo importante;
+- `1` = secundário, opcional ou condicional.
 
 ### 6.2 strategic_core
 
@@ -115,7 +121,8 @@ Regras específicas:
 - preserve distinção entre desejo declarado (`desire`) e motivação profunda (`hidden_desire`);
 - `trigger` deve refletir gatilho real de ativação de mercado;
 - em `vocabulary`, agrupe termos recorrentes de forma legível, separados por `;` quando útil;
-- se um achado estiver fraco, mantenha somente se houver utilidade e sinalize limite em `notes`.
+- se um achado estiver fraco, mantenha somente se houver utilidade e sinalize limite em `notes`;
+- em `strategic_core`, o `sort_order` reinicia por `item_key` (cada `item_key` começa em `1`).
 
 ### 6.3 lp_overview
 
@@ -134,7 +141,8 @@ Regras específicas:
 
 - manter diferenciação Brasil vs EUA quando existir no material bruto;
 - em `narrative_arc`, descrever sequência estrutural da LP, sem repetir conteúdo estratégico do `strategic_core`;
-- quando houver padrão apenas inspiracional dos EUA, registrar isso em `notes`.
+- quando houver padrão apenas inspiracional dos EUA, registrar isso em `notes`;
+- deve haver 1 item dominante por `item_key` (use `priority = 3` para o dominante).
 
 ### 6.4 lp_sections
 
@@ -146,9 +154,13 @@ Estruture itens sobre arquitetura de seções com foco em:
 - papel de conversão;
 - adequação por LP curta, média ou longa.
 
-Use `item_key` descritivo e consistente dentro do bloco, sem criar campos fora do padrão de colunas.
+Use preferencialmente estes `item_key` para seções: `hero`, `authority`, `procedure_explanation`, `benefits`, `proof`, `faq`, `cta`, `form`, `location`, `safety`, `offer`.
+
+Se precisar complementar, mantenha consistência com a arquitetura do bloco e sem criar campos fora do padrão de colunas.
 
 Não escrever copy final (títulos finais, subtítulos finais, textos finais ou CTAs finais).
+
+Em `lp_sections`, o `sort_order` deve seguir a ordem prática/relevância dos itens no bloco.
 
 ### 6.5 seo
 
@@ -166,7 +178,8 @@ Regras específicas:
 - priorizar intenções e termos com potencial comercial;
 - manter dúvidas e objeções pesquisadas úteis para conversão;
 - não incluir volume, CPC ou dificuldade;
-- não converter este bloco em calendário editorial.
+- não converter este bloco em calendário editorial;
+- em `seo`, o `sort_order` deve seguir a ordem prática/relevância dos itens no bloco.
 
 ## 7. Entrega esperada
 
@@ -204,7 +217,7 @@ Formato:
 
 | item_key | item_text | priority | sort_order | notes |
 |---|---|---|---:|---|
-|  |  |  | 1 |  |
+|  |  | 3 | 1 |  |
 ```
 
 Ao final, informe: itens estruturados prontos para carregamento em `taxon_market_research_items`.

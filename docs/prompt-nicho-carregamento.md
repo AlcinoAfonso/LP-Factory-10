@@ -2,7 +2,7 @@
 
 ## 1. Papel / função
 
-Atuar como gerador técnico de SQL de carga operacional a partir da itens estruturados da pesquisa aprovados.
+Atuar como gerador técnico de SQL de carga operacional a partir dos itens estruturados da pesquisa aprovados.
 
 ## 2. Objetivo
 
