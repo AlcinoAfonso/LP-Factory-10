@@ -258,9 +258,7 @@
 
 3.14.1 Matching de taxonomia via adapter server-side
 • Provider/API do resolvedor IA: OpenAI Responses API com Structured Outputs, sempre server-side.
-• Modelo do resolvedor IA: configurável por `OPENAI_NICHE_RESOLVER_MODEL`; valor atual de referência: `gpt-5.4-mini`.
-• Local operacional de ajuste do modelo: Vercel → Project `lp-factory-10` → Settings → Environment Variables → `OPENAI_NICHE_RESOLVER_MODEL`.
-• Após alterar `OPENAI_NICHE_RESOLVER_MODEL`, executar redeploy do ambiente correspondente; em validação de feature, redeploy somente do Preview da branch.
+• Configuração operacional do modelo IA, envs e redeploy: ver `docs/platform-config.md`.
 • IA complementar: quando o matching determinístico não resolver com segurança, o runtime pode usar resolver server-side com OpenAI Responses API e Structured Outputs.
 • Resolver canônico: PATH: `lib/onboarding/niche-resolution/adapters/openAiResolver.ts`.
 • Regra: IA não roda em `high`, não cria taxon, não cria alias, não grava em `account_taxonomy` e não substitui vínculo oficial.
