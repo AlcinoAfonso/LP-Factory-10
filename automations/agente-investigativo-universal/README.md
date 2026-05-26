@@ -273,6 +273,15 @@ Observacao: o plugin empacota a instrucao operacional e a skill do agente. O ace
 
 Integrar GitHub, Vercel, OpenAI Platform, Supabase read-only, browser e HTTP probes.
 
+Status: entregue como contrato operacional de ferramentas reais e preflight local no plugin.
+
+Artefatos:
+
+- Matriz de ferramentas: `plugins/lp-factory-investigator/tools/README.md`
+- Preflight local: `plugins/lp-factory-investigator/scripts/tool-readiness.mjs`
+
+Observacao: a Fase 3 nao cria credenciais nem concede acesso. Ela define como o agente detecta ferramentas reais disponiveis, classifica bloqueios e executa verificacoes nao destrutivas sem expor secrets.
+
 ### Fase 4: presets de investigacao
 
 Criar presets reutilizaveis, por exemplo:

@@ -1,7 +1,7 @@
 {
   "name": "lp-factory-investigator",
-  "version": "0.1.0",
-  "description": "Plugin local para acionar o Agente Investigativo Universal do LP Factory 10 no Codex App.",
+  "version": "0.2.0",
+  "description": "Plugin local para acionar e validar o Agente Investigativo Universal do LP Factory 10 no Codex App.",
   "author": {
     "name": "LP Factory 10",
     "email": "noreply@example.com",
@@ -20,7 +20,7 @@
   "interface": {
     "displayName": "LP Factory Investigator",
     "shortDescription": "Investiga readiness operacional do LP Factory 10.",
-    "longDescription": "Aciona uma skill de investigacao operacional para validar GitHub, Vercel, OpenAI Platform, Supabase, previews, automacoes, configuracoes, chaves, variaveis e logs conforme o escopo informado.",
+    "longDescription": "Aciona uma skill de investigacao operacional para validar GitHub, Vercel, OpenAI Platform, Supabase, previews, automacoes, configuracoes, chaves, variaveis e logs conforme o escopo informado. Inclui contrato de ferramentas reais e preflight local sem exposicao de secrets.",
     "developerName": "LP Factory 10",
     "category": "Productivity",
     "capabilities": [
