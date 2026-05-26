@@ -142,7 +142,9 @@ Regras específicas:
 - manter diferenciação Brasil vs EUA quando existir no material bruto;
 - em `narrative_arc`, descrever sequência estrutural da LP, sem repetir conteúdo estratégico do `strategic_core`;
 - quando houver padrão apenas inspiracional dos EUA, registrar isso em `notes`;
-- deve haver 1 item dominante por `item_key` (use `priority = 3` para o dominante).
+- quando Brasil e EUA forem semelhantes, manter 1 item por `item_key`;
+- quando houver diferença relevante entre Brasil e EUA, permitir até 2 itens por `item_key`;
+- nesse caso, usar `sort_order = 1` para o padrão mais aplicável ao Brasil e `sort_order = 2` para referência/tendência/contraste dos EUA.
 
 ### 6.4 lp_sections
 
@@ -154,9 +156,9 @@ Estruture itens sobre arquitetura de seções com foco em:
 - papel de conversão;
 - adequação por LP curta, média ou longa.
 
-Use preferencialmente estes `item_key` para seções: `hero`, `authority`, `procedure_explanation`, `benefits`, `proof`, `faq`, `cta`, `form`, `location`, `safety`, `offer`.
+Crie os `item_key` em `snake_case` a partir das seções realmente identificadas na pesquisa bruta.
 
-Se precisar complementar, mantenha consistência com a arquitetura do bloco e sem criar campos fora do padrão de colunas.
+Não use lista fixa de nomes de seção e não engesse nomenclatura quando o material bruto indicar outra arquitetura.
 
 Não escrever copy final (títulos finais, subtítulos finais, textos finais ou CTAs finais).
 
