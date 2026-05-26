@@ -1,0 +1,24 @@
+{
+  "id": "supabase-schema-rpc",
+  "title": "Validacao Supabase Schema/RPC",
+  "goal": "Validar tabelas, colunas, RPCs, grants e dados minimos com leitura read-only.",
+  "platforms": ["Supabase", "Workspace local"],
+  "requiredInputs": ["tables", "columns", "rpcs"],
+  "checks": [
+    "Confirmar conexao read-only ou declarar bloqueio.",
+    "Validar existencia de tabelas e colunas.",
+    "Validar existencia de RPCs/funcoes.",
+    "Checar grants/policies relevantes quando aplicavel.",
+    "Comparar schema remoto com migrations/docs locais.",
+    "Consultar dados minimos apenas por SELECT quando autorizado."
+  ],
+  "allowedProbes": ["SQL SELECT", "information_schema", "pg_catalog", "leitura de migrations"],
+  "blockedActions": ["INSERT", "UPDATE", "DELETE", "DDL", "alterar grants", "criar taxon ou alias"],
+  "readyCriteria": [
+    "Schema critico confirmado.",
+    "RPCs criticas confirmadas.",
+    "Dados minimos verificados ou lacuna declarada.",
+    "Nenhuma escrita executada."
+  ],
+  "reportSections": ["Supabase", "Workspace local", "Lacunas", "Riscos", "Acoes recomendadas", "Pode prosseguir"]
+}

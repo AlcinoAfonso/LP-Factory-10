@@ -1,0 +1,24 @@
+{
+  "id": "readiness-preview-vercel",
+  "title": "Readiness de Preview Vercel",
+  "goal": "Validar se um preview Vercel esta atualizado, saudavel e configurado para testes.",
+  "platforms": ["Vercel", "GitHub", "App preview"],
+  "requiredInputs": ["project", "previewUrl", "branch"],
+  "checks": [
+    "Confirmar projeto Vercel correto.",
+    "Confirmar preview associado a branch esperada.",
+    "Validar status do ultimo deploy.",
+    "Verificar se env vars relevantes foram alteradas apos o deploy.",
+    "Ler logs de build/runtime quando disponiveis.",
+    "Executar probe HTTP nao destrutivo no preview quando autorizado."
+  ],
+  "allowedProbes": ["Leitura de deployments", "Leitura de env vars por status", "Leitura de logs", "HTTP GET/HEAD"],
+  "blockedActions": ["redeploy", "alteracao de env var", "alteracao de dominio"],
+  "readyCriteria": [
+    "Preview corresponde a branch informada.",
+    "Deploy saudavel.",
+    "Sem logs criticos relevantes.",
+    "Redeploy necessario classificado como sim ou nao."
+  ],
+  "reportSections": ["Vercel", "GitHub", "App", "Riscos", "Acoes recomendadas", "Pode prosseguir"]
+}

@@ -1,0 +1,24 @@
+{
+  "id": "audit-env-vars",
+  "title": "Auditoria de Env Vars",
+  "goal": "Auditar variaveis e secrets criticos por presenca, ambiente, sensibilidade e formato sem expor valores.",
+  "platforms": ["Vercel", "GitHub Actions", "Workspace local"],
+  "requiredInputs": ["variables", "environment"],
+  "checks": [
+    "Confirmar variaveis esperadas.",
+    "Classificar presenca ou ausencia.",
+    "Classificar ambiente correto.",
+    "Classificar sensibilidade correta quando a plataforma expuser esse dado.",
+    "Validar formato sem imprimir valor.",
+    "Identificar necessidade de redeploy apos alteracao."
+  ],
+  "allowedProbes": ["Leitura de nomes de env vars", "Leitura de metadados", "Validacao de formato em memoria"],
+  "blockedActions": ["imprimir secret", "alterar env var", "criar secret", "rotacionar key"],
+  "readyCriteria": [
+    "Todas variaveis criticas classificadas.",
+    "Nenhum valor sensivel exposto.",
+    "Ambientes Preview/Production avaliados quando aplicavel.",
+    "Risco de redeploy declarado."
+  ],
+  "reportSections": ["Vercel", "GitHub Actions", "Lacunas", "Riscos", "Acoes recomendadas", "Pode prosseguir"]
+}
