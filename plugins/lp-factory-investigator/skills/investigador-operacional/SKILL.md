@@ -16,6 +16,7 @@ Receba um escopo sob demanda, identifique as plataformas envolvidas, colete evid
 - `automations/agente-investigativo-universal/README.md`
 - `docs/automations.md`
 - `AGENTS.md`
+- `plugins/lp-factory-investigator/tools/README.md`
 - Arquivos locais, conectores e plataformas mencionadas no escopo da investigacao.
 
 ## Plataformas
@@ -42,11 +43,27 @@ Investigue conforme o escopo e a disponibilidade de ferramentas:
 
 1. Declare o escopo entendido e plataformas afetadas.
 2. Verifique branch/status local quando o workspace fizer parte da investigacao.
-3. Consulte fontes remotas com conectores oficiais quando disponiveis.
-4. Compare evidencia remota com contratos locais quando relevante.
-5. Execute probes nao destrutivos somente quando necessarios ao criterio de pronto.
-6. Separe fato verificado, inferencia e lacuna.
-7. Entregue status final: `pronto`, `depende ajuste`, `bloqueado` ou `nao verificavel`.
+3. Classifique ferramentas disponiveis: conectores, browser, HTTP, CLIs, env vars e credenciais read-only.
+4. Quando aplicavel, rode `node plugins/lp-factory-investigator/scripts/tool-readiness.mjs` para preflight local sem expor secrets.
+5. Consulte fontes remotas com conectores oficiais quando disponiveis.
+6. Compare evidencia remota com contratos locais quando relevante.
+7. Execute probes nao destrutivos somente quando necessarios ao criterio de pronto.
+8. Separe fato verificado, inferencia e lacuna.
+9. Entregue status final: `pronto`, `depende ajuste`, `bloqueado` ou `nao verificavel`.
+
+## Ferramentas reais
+
+Use a matriz de `plugins/lp-factory-investigator/tools/README.md` para escolher a ferramenta de menor risco disponivel na sessao.
+
+Classifique cada alvo como:
+
+- `verificado`: evidencia direta foi coletada.
+- `nao verificavel`: a sessao nao tem ferramenta ou acesso suficiente.
+- `bloqueado por ferramenta`: a ferramenta necessaria nao esta instalada ou habilitada.
+- `bloqueado por credencial`: a credencial necessaria esta ausente, invalida ou sem permissao.
+- `depende autorizacao`: a proxima acao seria mutacao ou acesso sensivel.
+
+Nao trate preflight local como prova remota. Ele apenas indica se a sessao tem condicoes minimas para investigar.
 
 ## Relatorio
 
