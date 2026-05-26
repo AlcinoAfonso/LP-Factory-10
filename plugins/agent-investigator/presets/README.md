@@ -1,18 +1,18 @@
-# Presets do LP Factory Investigator
+# Presets do Investigator
 
 Presets sao contratos reutilizaveis para investigacoes recorrentes. Eles nao executam a investigacao sozinhos; orientam o agente sobre alvo, plataformas, evidencias esperadas, probes permitidos e criterios de pronto.
 
 Uso recomendado:
 
 ```text
-@LP Factory Investigator
+@Investigator
 Use o preset readiness-pr para investigar o PR #263.
 ```
 
 Listar presets locais:
 
 ```bash
-node plugins/lp-factory-investigator/scripts/list-presets.mjs
+node plugins/agent-investigator/scripts/list-presets.mjs
 ```
 
 ## Presets disponiveis

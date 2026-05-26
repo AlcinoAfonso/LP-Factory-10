@@ -5,10 +5,10 @@
   },
   "plugins": [
     {
-      "name": "lp-factory-investigator",
+      "name": "agent-investigator",
       "source": {
         "source": "local",
-        "path": "./plugins/lp-factory-investigator"
+        "path": "./plugins/agent-investigator"
       },
       "policy": {
         "installation": "AVAILABLE",
