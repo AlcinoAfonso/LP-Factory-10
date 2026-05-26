@@ -49,11 +49,13 @@
 • Definir regra de “o que é uma LP entregue”, com checklist.
 
 7. Referências oficiais
-• docs/base-tecnica.md
-• docs/schema.md
-• docs/roadmap.md
-• docs/services.md
-• docs/fluxos2.md
-• docs/repo-inv.md — descontinuado; usar o repositório real para localizar arquivos/paths e os documentos canônicos para regras e contratos
+• docs/base-tecnica.md — regras técnicas de runtime, implementação segura, arquitetura, adapters, imports, SSR, observability e anti-regressão.
+• docs/platform-config.md — configurações operacionais de plataformas, variáveis, secrets por nome, endpoints, URLs, redirects, SMTP, DNS e regras de redeploy.
+• docs/schema.md — contrato de banco: tabelas, colunas, constraints, views, RPCs/functions, triggers, RLS, policies e grants.
+• docs/roadmap.md — estado final dos casos E*, status, escopo, dependências, artefatos e pendências do produto.
+• docs/design-system.md — padrões visuais, componentes UI, tokens, superfícies visuais e regras de uso do design system.
+• docs/services.md — catálogo humano dos services implantáveis, MCPs, endpoints e infraestrutura reutilizável com identidade própria.
+• docs/fluxos2.md — fluxos principais do produto do ponto de vista do usuário: entrada, cenários, telas, decisões e próximos passos.
+• docs/repo-inv.md — descontinuado; usar o repositório real para localizar arquivos/paths e os documentos canônicos para regras e contratos.
 
 
