@@ -1,0 +1,24 @@
+{
+  "id": "pre-merge-operacional",
+  "title": "Pre-Merge Operacional",
+  "goal": "Consolidar riscos operacionais antes de decisao humana de merge.",
+  "platforms": ["GitHub", "Vercel", "OpenAI", "Supabase", "App preview", "GitHub Actions"],
+  "requiredInputs": ["pr", "branch"],
+  "checks": [
+    "Confirmar PR e branch.",
+    "Confirmar checks finais.",
+    "Confirmar preview ou producao impactada.",
+    "Revisar logs/deploys relevantes.",
+    "Confirmar variaveis e dependencias criticas quando aplicavel.",
+    "Declarar riscos residuais e rollback operacional."
+  ],
+  "allowedProbes": ["Leituras remotas", "HTTP GET/HEAD", "SQL read-only", "consulta de logs"],
+  "blockedActions": ["merge", "approve", "deploy/redeploy", "alterar configuracao"],
+  "readyCriteria": [
+    "Sem bloqueio critico conhecido.",
+    "Riscos residuais explicitados.",
+    "Checks e deploys avaliados.",
+    "Decisao final mantida humana."
+  ],
+  "reportSections": ["GitHub", "Vercel", "OpenAI", "Supabase", "App", "Automacoes", "Riscos", "Acoes recomendadas", "Pode prosseguir"]
+}

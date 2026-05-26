@@ -17,6 +17,7 @@ Receba um escopo sob demanda, identifique as plataformas envolvidas, colete evid
 - `docs/automations.md`
 - `AGENTS.md`
 - `plugins/lp-factory-investigator/tools/README.md`
+- `plugins/lp-factory-investigator/presets/README.md`
 - Arquivos locais, conectores e plataformas mencionadas no escopo da investigacao.
 
 ## Plataformas
@@ -45,11 +46,12 @@ Investigue conforme o escopo e a disponibilidade de ferramentas:
 2. Verifique branch/status local quando o workspace fizer parte da investigacao.
 3. Classifique ferramentas disponiveis: conectores, browser, HTTP, CLIs, env vars e credenciais read-only.
 4. Quando aplicavel, rode `node plugins/lp-factory-investigator/scripts/tool-readiness.mjs` para preflight local sem expor secrets.
-5. Consulte fontes remotas com conectores oficiais quando disponiveis.
-6. Compare evidencia remota com contratos locais quando relevante.
-7. Execute probes nao destrutivos somente quando necessarios ao criterio de pronto.
-8. Separe fato verificado, inferencia e lacuna.
-9. Entregue status final: `pronto`, `depende ajuste`, `bloqueado` ou `nao verificavel`.
+5. Se o usuario citar um preset, carregue o JSON correspondente em `plugins/lp-factory-investigator/presets/`.
+6. Consulte fontes remotas com conectores oficiais quando disponiveis.
+7. Compare evidencia remota com contratos locais quando relevante.
+8. Execute probes nao destrutivos somente quando necessarios ao criterio de pronto.
+9. Separe fato verificado, inferencia e lacuna.
+10. Entregue status final: `pronto`, `depende ajuste`, `bloqueado` ou `nao verificavel`.
 
 ## Ferramentas reais
 
@@ -64,6 +66,22 @@ Classifique cada alvo como:
 - `depende autorizacao`: a proxima acao seria mutacao ou acesso sensivel.
 
 Nao trate preflight local como prova remota. Ele apenas indica se a sessao tem condicoes minimas para investigar.
+
+## Presets
+
+Quando o usuario pedir ou quando o escopo combinar claramente com um preset, use os contratos versionados em `plugins/lp-factory-investigator/presets/`.
+
+Presets disponiveis:
+
+- `readiness-pr`
+- `readiness-preview-vercel`
+- `audit-env-vars`
+- `openai-key-model`
+- `supabase-schema-rpc`
+- `pre-smoke-funcional`
+- `pre-merge-operacional`
+
+Use `node plugins/lp-factory-investigator/scripts/list-presets.mjs` para listar os presets locais quando necessario. Se o preset nao cobrir o escopo, adapte sem extrapolar permissao ou evidencia.
 
 ## Relatorio
 

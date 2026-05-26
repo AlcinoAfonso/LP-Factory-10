@@ -294,6 +294,16 @@ Criar presets reutilizaveis, por exemplo:
 - pre-smoke funcional;
 - pre-merge operacional.
 
+Status: entregue como presets versionados no plugin.
+
+Artefatos:
+
+- Catalogo de presets: `plugins/lp-factory-investigator/presets/README.md`
+- Presets JSON: `plugins/lp-factory-investigator/presets/*.json`
+- Listagem local: `plugins/lp-factory-investigator/scripts/list-presets.mjs`
+
+Observacao: presets orientam a investigacao, mas nao executam mutacoes nem substituem evidencias coletadas por ferramentas reais.
+
 ### Fase 5: validacao operacional
 
 Rodar investigacoes reais com escopos conhecidos e comparar o relatorio com evidencias manuais.
