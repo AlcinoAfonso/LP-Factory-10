@@ -55,7 +55,6 @@
 • docs/roadmap.md — estado final dos casos E*, status, escopo, dependências, artefatos e pendências do produto.
 • docs/design-system.md — padrões visuais, componentes UI, tokens, superfícies visuais e regras de uso do design system.
 • docs/services.md — catálogo humano dos services implantáveis, MCPs, endpoints e infraestrutura reutilizável com identidade própria.
-• docs/fluxos2.md — fluxos principais do produto do ponto de vista do usuário: entrada, cenários, telas, decisões e próximos passos.
-• docs/repo-inv.md — descontinuado; usar o repositório real para localizar arquivos/paths e os documentos canônicos para regras e contratos.
+• docs/automations.md — camada de automações operacionais, integrações, componentes consumidores, credenciais por nome e aprendizados operacionais sem expor segredos.
 
 
