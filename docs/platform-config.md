@@ -5,43 +5,18 @@
 • Versão: v0.1.0
 • Data: 15/05/2026
 
-0.2 Contrato do documento (consulta)
-• Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
-
-0.2.1 TIPO_DO_DOCUMENTO
-• TIPO_DO_DOCUMENTO: prescritivo
-
-0.2.2 GUIA_DE_CONSULTA
-• O QUE É: a fonte única de configurações operacionais de plataformas externas usadas pelo LP Factory 10.
-• POR QUE CONSULTAR: para configurar, revisar ou validar ambientes, variáveis, secrets, endpoints, domínios, redirects e integrações externas sem inflar a Base Técnica.
-• COMO USAR: consultar este documento antes de pedir ajustes em Vercel, Supabase, Resend, OpenAI Platform, GitHub Actions, DNS/domínio ou variáveis de ambiente.
-• QUANDO CONSULTAR: plataformas, projetos externos, ambientes, URLs, endpoints, variáveis públicas, secrets por nome, SMTP, DNS, Redirect URLs, webhooks, CI/secrets e regras operacionais de redeploy.
-• QUANDO NÃO CONSULTAR:
-• regras de implementação/runtime (usar `docs/base-tecnica.md`)
-• objetos de banco, RLS, policies, RPCs, triggers e grants (usar `docs/schema.md`)
-• status/escopo de casos E* (usar `docs/roadmap.md`)
-• padrões visuais/componentes UI (usar `docs/design-system.md`)
-• NOTA: este documento não deve conter valores reais de secrets. Para secrets, registrar apenas nome, finalidade, plataforma e escopo de ambiente.
-
-0.3 Regras globais de segurança
-• Nunca versionar valores reais de secrets.
-• Nunca colar valores reais de secrets em prompts, logs, comentários de PR ou documentação.
-• Para secrets, registrar apenas:
-• nome da variável
-• finalidade
-• plataforma onde deve existir
-• ambiente/escopo
-• Se algum secret for exposto, revogar imediatamente e substituir por novo valor.
-• Valores públicos podem ser documentados quando forem necessários para operação, mas devem ser tratados com mínimo necessário.
+0.2 Contrato do documento
+• O QUE É: fonte única de configurações operacionais de plataformas externas do LP Factory 10.
+• USAR PARA: variáveis, secrets por nome, endpoints, URLs, redirects, SMTP, DNS, projetos externos, ambientes e regras de redeploy.
+• NÃO USAR PARA: regras de runtime/código, contrato de DB, status de casos E* ou padrões visuais.
+• REGRA: nunca registrar valores reais de secrets; registrar apenas nome, finalidade, plataforma e escopo.
 
 1. Visão geral de plataformas
-
-1.1 Plataformas em uso
-• GitHub: repositório, branch/PR, GitHub Actions e secrets de automações.
-• Vercel: deploy do app Core, deploy de serviços e variáveis de ambiente.
-• Supabase: PostgreSQL, Auth, Storage, RLS, SMTP de Auth, Redirect URLs e infraestrutura do backend.
-• Resend: envio transacional via SMTP para Supabase Auth.
-• OpenAI Platform: API/Projects/Service Accounts para automações e resolvedor IA.
+• GitHub: repositório, PRs, Actions e secrets de automações.
+• Vercel: deploy do Core, serviços e variáveis de ambiente.
+• Supabase: backend, Auth, Storage, Redirect URLs, SMTP Auth e infraestrutura.
+• Resend: envio transacional via SMTP.
+• OpenAI Platform: Projects, Service Accounts, API e modelo do resolvedor IA.
 • Registro.com: domínio e DNS.
 • Zoho Mail: e-mail humano/corporativo quando aplicável.
 
