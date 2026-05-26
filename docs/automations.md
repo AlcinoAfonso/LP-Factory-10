@@ -291,7 +291,7 @@ Casos versionados: `automations/niche-runtime-tests/cases/`
 Reuso de mailbox: `automations/validador-final/`
 Verificação opcional de banco: `automations/supabase-inspect/verify-niche-runtime.mjs`
 
-3.8 Agente Investigativo Universal
+3.8 Agent Investigator
 
 Objetivo:
 Investigar, sob escopo sob demanda, plataformas, configuracoes, chaves, variaveis, deploys, logs, banco, automacoes, integracoes e readiness operacional do ecossistema LP Factory 10, sem expor segredos e sem executar mutacoes sem autorizacao explicita.
@@ -300,7 +300,7 @@ Status:
 Presets de investigacao / Fase 4
 
 Acesso esperado:
-Codex App via plugin local `lp-factory-investigator`, apos instalacao no ambiente Codex.
+Codex App via plugin local `agent-investigator`, apos instalacao no ambiente Codex.
 
 Como usar:
 Informar o escopo da investigacao, incluindo alvos, plataformas, ambiente, fluxo funcional, variaveis ou estruturas a validar e formato de saida esperado.
@@ -312,12 +312,12 @@ Regra operacional:
 O agente deve operar com leitura por padrao. Secrets podem ser verificados por presenca, ambiente, sensibilidade e formato, mas nunca devem ter valores revelados.
 
 Referencias / dependencias:
-README local: `automations/agente-investigativo-universal/README.md`
-Plugin local: `plugins/lp-factory-investigator/`
-Skill: `plugins/lp-factory-investigator/skills/investigador-operacional/SKILL.md`
-Ferramentas reais: `plugins/lp-factory-investigator/tools/README.md`
-Preflight local: `plugins/lp-factory-investigator/scripts/tool-readiness.mjs`
-Presets: `plugins/lp-factory-investigator/presets/`
+README local: `automations/agent-investigator/README.md`
+Plugin local: `plugins/agent-investigator/`
+Skill: `plugins/agent-investigator/skills/investigator-operational/SKILL.md`
+Ferramentas reais: `plugins/agent-investigator/tools/README.md`
+Preflight local: `plugins/agent-investigator/scripts/tool-readiness.mjs`
+Presets: `plugins/agent-investigator/presets/`
 Plataformas: GitHub, Vercel, OpenAI Platform / OpenAI Developers, Supabase, App preview/producao e GitHub Actions quando disponiveis.
 
 4. Aprendizados operacionais

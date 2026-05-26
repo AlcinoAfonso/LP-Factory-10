@@ -1,4 +1,4 @@
-# Ferramentas reais do LP Factory Investigator
+# Ferramentas reais do Investigator
 
 Este diretorio registra o contrato operacional da Fase 3: o agente deve usar ferramentas reais quando elas estiverem disponiveis na sessao, mas nunca deve inventar evidencia quando uma ferramenta, conector ou credencial estiver ausente.
 
@@ -7,7 +7,7 @@ Este diretorio registra o contrato operacional da Fase 3: o agente deve usar fer
 Executar:
 
 ```bash
-node plugins/lp-factory-investigator/scripts/tool-readiness.mjs
+node plugins/agent-investigator/scripts/tool-readiness.mjs
 ```
 
 O script verifica apenas disponibilidade e formato. Ele nao chama APIs remotas, nao imprime secrets e nao altera estado.

@@ -1,4 +1,4 @@
-# Agente Investigativo Universal LP Factory 10
+# Agent Investigator
 
 ## 1. Objetivo
 
@@ -29,7 +29,7 @@ O agente deve ser preparado para investigar, quando houver ferramenta ou credenc
 No estado final, o agente deve ser acessivel em qualquer chat do Codex App por mencao de plugin/conector, por exemplo:
 
 ```text
-@LP Factory Investigator
+@Investigator
 Investigue o PR #263, branch codex/exemplo, preview Vercel X, env vars Y e readiness do fluxo Z.
 ```
 
@@ -259,12 +259,12 @@ Definir contrato, guardrails, entrada, saida, plataformas e criterios de pronto.
 
 Criar plugin/conector ou skill instalavel para que o agente possa ser chamado pelo menu `@` no Codex App.
 
-Status: entregue como plugin local repo-scoped em `plugins/lp-factory-investigator/`.
+Status: entregue como plugin local repo-scoped em `plugins/agent-investigator/`.
 
 Artefatos:
 
-- Manifest: `plugins/lp-factory-investigator/.codex-plugin/plugin.json`
-- Skill: `plugins/lp-factory-investigator/skills/investigador-operacional/SKILL.md`
+- Manifest: `plugins/agent-investigator/.codex-plugin/plugin.json`
+- Skill: `plugins/agent-investigator/skills/investigator-operational/SKILL.md`
 - Marketplace local: `.agents/plugins/marketplace.json`
 
 Observacao: o plugin empacota a instrucao operacional e a skill do agente. O acesso real a GitHub, Vercel, OpenAI Platform, Supabase e browser continua dependente dos conectores, apps, tokens ou credenciais autorizadas na sessao.
@@ -277,8 +277,8 @@ Status: entregue como contrato operacional de ferramentas reais e preflight loca
 
 Artefatos:
 
-- Matriz de ferramentas: `plugins/lp-factory-investigator/tools/README.md`
-- Preflight local: `plugins/lp-factory-investigator/scripts/tool-readiness.mjs`
+- Matriz de ferramentas: `plugins/agent-investigator/tools/README.md`
+- Preflight local: `plugins/agent-investigator/scripts/tool-readiness.mjs`
 
 Observacao: a Fase 3 nao cria credenciais nem concede acesso. Ela define como o agente detecta ferramentas reais disponiveis, classifica bloqueios e executa verificacoes nao destrutivas sem expor secrets.
 
@@ -298,9 +298,9 @@ Status: entregue como presets versionados no plugin.
 
 Artefatos:
 
-- Catalogo de presets: `plugins/lp-factory-investigator/presets/README.md`
-- Presets JSON: `plugins/lp-factory-investigator/presets/*.json`
-- Listagem local: `plugins/lp-factory-investigator/scripts/list-presets.mjs`
+- Catalogo de presets: `plugins/agent-investigator/presets/README.md`
+- Presets JSON: `plugins/agent-investigator/presets/*.json`
+- Listagem local: `plugins/agent-investigator/scripts/list-presets.mjs`
 
 Observacao: presets orientam a investigacao, mas nao executam mutacoes nem substituem evidencias coletadas por ferramentas reais.
 
