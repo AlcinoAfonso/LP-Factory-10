@@ -326,7 +326,7 @@ export async function saveSetupAndContinueAction(
     try {
       const taxonomyMatchStartedAt = Date.now();
       const candidates = await matchBusinessTaxonsDeterministic(validated.values.niche, 10);
-      const decision = evaluateDeterministicTaxonMatch(candidates);
+      const decision = evaluateDeterministicTaxonMatch(candidates, validated.values.niche);
       const topCandidate = decision.selectedCandidate;
 
       const resolutionSaved = await upsertAccountNicheResolution({

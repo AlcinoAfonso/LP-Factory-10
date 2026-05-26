@@ -16,6 +16,7 @@ const CANONICAL_STRONG_MATCH_SOURCES = new Set([
   "taxon_slug_normalized",
 ]);
 const ALIAS_CONFIRMATION_SOURCES = new Set(["alias_exact", "alias_normalized"]);
+const GENERIC_MATCH_SOURCES = new Set(["fts", "trgm"]);
 
 function hasCanonicalStrongMatchSource(matchSource: string): boolean {
   return matchSource
@@ -27,6 +28,38 @@ function hasAliasConfirmationSource(matchSource: string): boolean {
   return matchSource
     .split("+")
     .some((source) => ALIAS_CONFIRMATION_SOURCES.has(source.trim()));
+}
+
+function hasGenericMatchSource(matchSource: string): boolean {
+  return matchSource
+    .split("+")
+    .some((source) => GENERIC_MATCH_SOURCES.has(source.trim()));
+}
+
+function normalizeTokenText(input: string): string[] {
+  return input
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .split(/[^a-z0-9]+/)
+    .map((token) => token.trim())
+    .filter(Boolean);
+}
+
+function isGenericSingleTokenForCompositeTaxon(
+  rawInput: string,
+  candidate: TaxonMatchCandidate,
+): boolean {
+  const rawTokens = normalizeTokenText(rawInput);
+  const candidateTokens = normalizeTokenText(candidate.name);
+
+  return (
+    rawTokens.length === 1 &&
+    candidateTokens.length > 1 &&
+    candidateTokens.includes(rawTokens[0]) &&
+    hasGenericMatchSource(candidate.matchSource) &&
+    !hasCanonicalStrongMatchSource(candidate.matchSource)
+  );
 }
 
 function hasCloseSecondCandidate(
@@ -50,7 +83,8 @@ function isSafeUniqueTrigramMatch(
 }
 
 export function evaluateDeterministicTaxonMatch(
-  candidates: TaxonMatchCandidate[]
+  candidates: TaxonMatchCandidate[],
+  rawInput = "",
 ): DeterministicMatchDecision {
   if (candidates.length === 0) {
     return {
@@ -89,6 +123,18 @@ export function evaluateDeterministicTaxonMatch(
       aiEscalationMode: "none",
       needsAdminReview: false,
       reason: "high_confidence_strong_match",
+    };
+  }
+
+  if (isGenericSingleTokenForCompositeTaxon(rawInput, best)) {
+    return {
+      confidence: "medium",
+      selectedCandidate: best,
+      shouldUseDeterministicMatch: false,
+      shouldEscalateToAi: true,
+      aiEscalationMode: "rerank_candidates",
+      needsAdminReview: true,
+      reason: "medium_confidence_weak_match_source",
     };
   }
 
