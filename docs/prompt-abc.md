@@ -6,7 +6,7 @@ ENTRADA
 
 * REPO (GitHub): LP-Factory-10
 * REF (GitHub): [main | branch | commit] (se não informado, main)
-* DOC_ALVO: [docs/base-tecnica.md | docs/schema.md | docs/roadmap.md | docs/design-system.md]
+* DOC_ALVO: [docs/base-tecnica.md | docs/schema.md | docs/roadmap.md | docs/design-system.md | docs/platform-config.md]
 
 OBJETIVO
 Gerar o **ABC humano** para o DOC_ALVO.
@@ -17,6 +17,7 @@ VISÃO GERAL (RESIDÊNCIA DO CONTEÚDO)
 * `docs/base-tecnica.md` = contrato técnico de runtime (regras de implementação segura).
 * `docs/roadmap.md` = estado final dos casos E* (status/escopo/dependências/artefatos).
 * `docs/design-system.md` = contrato visual atual do produto (padrões UI, componentes, superfícies visuais e regras de uso).
+* `docs/platform-config.md` = contrato operacional de plataformas, variáveis, secrets, URLs, endpoints, redirects, DNS e configurações externas.
 
 REGRA GLOBAL (ANTI-INFLAÇÃO)
 
@@ -25,6 +26,7 @@ REGRA GLOBAL (ANTI-INFLAÇÃO)
 * Tudo fora da residência do DOC_ALVO está fora de escopo.
 * Docs descrevem o estado atual do projeto; histórico de evolução fica apenas no changelog quando o documento tiver changelog.
 * Ao atualizar uma seção, substituir o estado antigo pelo estado atual consolidado, sem manter fases intermediárias já superadas.
+* Configurações de plataforma, envs, secrets, endpoints, URLs oficiais, redirects, DNS e parâmetros externos ficam em `docs/platform-config.md`; `docs/base-tecnica.md` deve manter apenas a regra técnica de implementação e uma referência curta quando necessário.
 
 CRITÉRIO BASE TÉCNICA (RELEVÂNCIA PARA IA)
 
@@ -33,6 +35,7 @@ CRITÉRIO BASE TÉCNICA (RELEVÂNCIA PARA IA)
   * como a IA deve montar plano de execução seguro/determinístico.
 * Novidade sem impacto de implementação não entra.
 * Quando entrar, registrar só regra/contrato/parâmetro estável (sem narrativa de console e sem voláteis).
+* Não gerar DELTA em `docs/base-tecnica.md` apenas para registrar URL, env, secret, endpoint, projeto externo, configuração de painel ou DNS; isso pertence a `docs/platform-config.md`, salvo quando a informação for indispensável como regra técnica de implementação.
 
 REGRAS DE LEITURA
 
@@ -69,6 +72,14 @@ ALLOWLIST — `docs/design-system.md` (CONTRATO_VISUAL)
 * PERMITIDO (DELTA): padrões visuais atuais, componentes UI ativos, regras de uso, comportamento responsivo, superfícies visuais consolidadas.
 * Quando citar superfícies, descrever comportamento/padrão visual; evitar inventário de arquivos se isso já estiver no roadmap.
 * Fora do escopo: status de caso, lista detalhada de artefatos, contrato DB, regras runtime, histórico de implementação.
+
+ALLOWLIST — `docs/platform-config.md` (CONTRATO_OPERACIONAL_DE_PLATAFORMAS)
+
+* PERMITIDO (DELTA): plataformas usadas pelo projeto, projetos/ambientes externos, variáveis públicas, secrets server-side por nome, flags, endpoints oficiais, URLs de produção/preview, redirects, SMTP, DNS/domínio, GitHub Actions secrets, regras operacionais de configuração e redeploy.
+* Nunca incluir valores reais de secrets em operações ABC.
+* Quando necessário, registrar apenas o nome da variável e a plataforma onde ela deve existir.
+* Para secrets, registrar apenas o nome da variável, finalidade, plataforma onde deve ser configurada e escopo de ambiente.
+* Fora do escopo: regras de runtime/código que pertencem à Base Técnica, objetos de DB que pertencem ao Schema, status/escopo de casos E* que pertencem ao Roadmap, e padrões visuais que pertencem ao Design System.
 
 REGRAS DE EXTRAÇÃO (RELATÓRIO → ESTADO FINAL)
 
