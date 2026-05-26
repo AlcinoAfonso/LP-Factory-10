@@ -50,6 +50,16 @@ export type AdminTaxonListItem = {
   aliasCount: number;
 };
 
+export type AdminTaxonLevel = "segment" | "niche" | "ultra_niche";
+
+export type AdminTaxonParentOption = {
+  id: string;
+  name: string;
+  slug: string;
+  level: AdminTaxonLevel;
+  parentName: string | null;
+};
+
 export type AdminTaxonDetail = AdminTaxonListItem & {
   aliases: Array<{
     id: string;
