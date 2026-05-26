@@ -12,46 +12,21 @@
 • TIPO_DO_DOCUMENTO: prescritivo
 
 0.2.2 GUIA_DE_CONSULTA
-• O QUE É: a fonte única de regras técnicas e contratos operacionais do produto (Next.js + Supabase + Vercel + integrações).
-• POR QUE CONSULTAR: para evitar implementação errada, manter consistência técnica e reduzir risco (segurança, acesso, observabilidade, convenções).
-• COMO USAR: ao gerar plano / macro-roteiro / código / ajustes de código, consultar primeiro este documento e seguir suas regras como contrato.
-• QUANDO CONSULTAR: decisões de runtime (rotas/gating/estados), segurança (PII/secrets/keys), padrões mínimos de logs/observability, integrações e convenções de repo.
+• O QUE É: a fonte única de regras técnicas de runtime e implementação segura do produto.
+• POR QUE CONSULTAR: para evitar implementação errada, manter consistência técnica e reduzir risco em código, acesso, SSR, adapters, segurança e observability.
+• COMO USAR: ao gerar plano, macro-roteiro, código ou ajuste de código, consultar este documento como contrato técnico.
+• QUANDO CONSULTAR: decisões de runtime, rotas/gating/estados, segurança de implementação, padrões mínimos de logs, adapters, imports, camadas e convenções de código.
 • QUANDO NÃO CONSULTAR:
-• detalhes/inventário de DB (usar docs/schema.md)
-• status/escopo/histórico de casos E* (usar docs/roadmap.md)
+• configurações de plataformas, envs, secrets, endpoints, URLs, DNS, SMTP e redirects (usar `docs/platform-config.md`)
+• detalhes/inventário de DB (usar `docs/schema.md`)
+• status/escopo/histórico de casos E* (usar `docs/roadmap.md`)
+• padrões visuais/componentes UI (usar `docs/design-system.md`)
 
 1. Identificação do Projeto
 • Nome: LP Factory 10
-• Repositório: https://github.com/AlcinoAfonso/LP-Factory-10
-• Controle de versão: GitHub Web (edição e commit pelo navegador; consultar o repositório real via GitHub/conectores/fontes acessíveis quando necessário; quando o contexto local não estiver verificado, não assumir repo local, terminal, git cli ou paths não verificados)
-• Deploy: Vercel (preview + produção)
-• Projeto Vercel do app (Core): `lp-factory-10`
-• Projeto Vercel de serviços: `lpf-10-services`
-• Nota operacional (services): deploy isolado no projeto `lpf-10-services` com `Root Directory = services/mcp-supabase-inspect`, `Include files outside the root directory in the Build Step = OFF` e `Ignored Build Step` customizado para reduzir builds desnecessários fora do escopo do service
-• Domínio oficial do app (produção): https://lp-factory-10.vercel.app
-• Base URL das API routes do app: https://lp-factory-10.vercel.app/api
-• Endpoint canônico da MCP Supabase Inspect (serviço dedicado): https://lpf-10-services.vercel.app/api/mcp
-
-1.1 Backend: Supabase — projeto lp-factory-10
-• Nota operacional: não existe ambiente Supabase STAGING ativo neste momento; os previews voltaram a usar o projeto principal. Se houver novo staging no futuro, não manter sem controles mínimos de segurança.
-
-1.1.1 Segredos e flags de execução (server-side)
-• SUPABASE_SECRET_KEY
-• ACCESS_CONTEXT_ENFORCED=true
-• ACCESS_CTX_USE_V2=true
-1.1.2 Variáveis Públicas
-
-• NEXT_PUBLIC_SUPABASE_URL=https://dpikmjgiteuafsbaubue.supabase.co
-• NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=sb_publishable_DiHMVvkSiFqmn1hP0hc9Xg_sVmRaLdb
-1.1.3 Convenções
-• TypeScript: camelCase
-• SQL/Postgres: snake_case
-• Pipeline: GitHub Web → Vercel
-• Regra: não usar SUPABASE_SERVICE_ROLE_KEY (usar apenas SUPABASE_SECRET_KEY)
-
-1.1.4 Runtime & Toolchain
-• Node.js: 22.x (Vercel > Settings > Build and Deployment > Node.js Version)
-• TypeScript: 5.5.4 (repo; versão do compilador)
+• Repositório canônico: `AlcinoAfonso/LP-Factory-10`
+• Regra: consultar o repositório real via GitHub/conectores/fontes acessíveis antes de assumir paths, branches, arquivos ou estrutura.
+• Configurações operacionais de plataformas, URLs, endpoints, projetos externos, envs e secrets: ver `docs/platform-config.md`.
 
 2. Stack & Dependências
 
@@ -65,12 +40,12 @@
 • Next 16.x prioriza Turbopack; evitar customizações via webpack() no next.config quando possível (preferir alias via tsconfig.json > paths)
 
 2.2 Backend
-• Supabase (PostgreSQL 17.6.1.063, Auth, Storage, RLS)
-• Regra: versões devem refletir Settings > Infrastructure (Supabase)
-• PostgREST (Supabase Data API) 14.1
+• Supabase (PostgreSQL, Auth, Storage, RLS)
+• PostgREST/Data API em uso no runtime.
 • @supabase/supabase-js ≥ 2.56.0
-• .maxAffected(1) em mutações 1-a-1
-• JWT Signing Keys ativo: Current ECC (P-256); Previous Legacy HS256 (não revogar por padrão); integrações futuras (se houver) devem validar JWT via JWKS + kid
+• .maxAffected(1) obrigatório em mutações 1-a-1.
+• Integrações que validam JWT devem usar JWKS + kid.
+• Configurações operacionais do Supabase: ver `docs/platform-config.md`.
 
 2.3 UI
 • Design System (identidade visual — E6.4–E6.6): referência oficial em docs/design-system.md (documento consolidado do ciclo E6.4–E6.6; API mínima, regras de uso e superfícies cobertas).
@@ -86,17 +61,9 @@
 • Alterações no SULB: somente quando necessário e sempre respeitando a allowlist 6.4.
 • shadcn/ui: base provisória.
 
-2.4. Supabase Auth URL allowlist (Redirect URLs)
-• Local: Supabase Dashboard → Authentication → URL Configuration → Redirect URLs
-• Regra: permitir somente domínios/paths necessários (produção + localhost).
-• Regra (Preview Vercel): quando for necessário habilitar preview, usar wildcard com “/**” para cobrir paths profundos (ex.: https://*-<slug>.vercel.app/**).
-• Regra: não usar curingas amplos fora de preview (evitar allowlist que aceite domínios externos).
-
-2.4.1 Supabase Auth — E-mail transacional (SMTP via Resend)
-• Auth transacional via Resend SMTP para signup confirm e reset password.
-• Sender (Supabase): `no-reply@lpfactory.com.br`; SMTP `smtp.resend.com:587`; Username `resend`; Password: secret configurado no Supabase (não versionar).
-• DNS: manter SPF/DKIM compatíveis com Resend.
-• Validação: signup e forgot password testados, entrega confirmada, links funcionais e sem erro de envio.
+2.4 Configurações operacionais de Auth
+• Redirect URLs, SMTP Auth, sender, DNS e demais configurações operacionais do Supabase Auth ficam em `docs/platform-config.md`.
+• Configuração SMTP/Resend do Supabase Auth: ver `docs/platform-config.md`.
 
 2.5 Regras de Import (canônica)
 • @supabase/* somente em adapters do domínio, em lib/supabase/* e na allowlist SULB autorizada em 6.4.
@@ -191,23 +158,11 @@
 • Contrato técnico detalhado do pipeline: automations/supabase-inspect/README.md.
 
 3.5 Secrets & Variáveis
-• Server-only OpenAI niche resolver:
-• `OPENAI_API_KEY`: chave server-side da OpenAI; deve conter a key `sk-...`; configurar na Vercel como Sensitive em Production and Preview.
-• `OPENAI_NICHE_RESOLVER_MODEL`: modelo do resolvedor de nicho; valor atual de referência: `gpt-5.4-mini`; configurar na Vercel em Production and Preview.
-• Regra: `OPENAI_NICHE_RESOLVER_MODEL` deve conter apenas o ID do modelo; nunca inserir `OPENAI_API_KEY` nessa variável.
-• Regra: alteração de env na Vercel só entra no runtime após redeploy do deployment alvo; testar primeiro em Preview da feature branch antes de Production.
-• Server-only: SUPABASE_SECRET_KEY, STRIPE_SECRET_KEY (futuro)
-• CI/Automations (GitHub Actions secrets): OPENAI_API_KEY, SUPABASE_DB_URL_READONLY
-• Públicas: NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
-• Flags obrigatórias: ACCESS_CONTEXT_ENFORCED=true; ACCESS_CTX_USE_V2=true.
-• Regra (keys): nunca expor keys em chat/logs; se vazar, revogar imediatamente e substituir por nova key.
-• Regra (read-only DB): SUPABASE_DB_URL_READONLY deve autenticar com role/usuário read-only e usar preferencialmente session pooler.
-
-3.5.1 OpenAI Platform — Projects e governança mínima (DEV/PROD)
-• Projects: LPF10-DEV e LPF10-PROD.
-• Sharing: “Enabled for selected projects” com apenas LPF10-DEV selecionado (DEV compartilha; Default e PROD não).
-• Service Account: criada no LPF10-DEV com key gerada (uso em DEV).
-• Hygiene: manter apenas keys necessárias ativas; revogar imediatamente keys expostas/indevidas; estado final reportado = 1 key ativa no LPF10-DEV.
+• Código client nunca deve acessar secrets server-side.
+• Código server-side deve ler variáveis apenas pelos nomes definidos em `docs/platform-config.md`.
+• Nunca expor keys em chat, logs, prints, client bundle ou documentação.
+• Se uma key vazar, revogar imediatamente e substituir por nova key.
+• Variáveis, flags, endpoints, projetos externos e escopos de ambiente: ver `docs/platform-config.md`.
 
 3.6 Tipos TypeScript
 • Fonte única: lib/types/status.ts
