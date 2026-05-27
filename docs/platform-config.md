@@ -34,6 +34,9 @@
 • `SUPABASE_DB_URL_READONLY`: conexão read-only para inspeções/automação de banco.
 • `MAILBOX_EMAIL`: e-mail usado por automações de autenticação/mailbox.
 • `MAILBOX_PASSWORD`: senha/app password da mailbox usada por automações de autenticação/mailbox.
+• `SUPABASE_ACCESS_TOKEN`: token usado pelo workflow de apply de migrations Supabase.
+• `SUPABASE_DB_PASSWORD`: senha do banco usada pelo workflow de apply de migrations Supabase.
+• `SUPABASE_APPLY_MIGRATIONS_ENABLED`: variável/gate operacional para habilitar ou bloquear o apply automático de migrations.
 • Regra: valores reais de secrets não devem ser versionados.
 • Regra: secrets de mailbox devem existir apenas nos escopos necessários dos workflows que os consomem.
 • Regra: `SUPABASE_DB_URL_READONLY` deve autenticar com role/usuário read-only e usar preferencialmente session pooler.
@@ -45,6 +48,7 @@
 • `.github/workflows/pipeline-docs-apply-report.yml`: aplicação automatizada de reports em documentos Markdown.
 • `.github/workflows/automation-validador-final.yml`: validação ponta a ponta de fluxos reais de autenticação.
 • `.github/workflows/automation-niche-runtime-tests.yml`: testes runtime de criação de conta e preenchimento de `pending_setup`.
+• `.github/workflows/pipeline-supabase-apply-migrations.yml`: apply controlado de migrations Supabase em `main` quando há mudanças em `supabase/migrations/**`, com `workflow_dispatch` e gate por `SUPABASE_APPLY_MIGRATIONS_ENABLED`.
 • `.github/workflows/upgrade-next-16-1-1.yml`: manutenção de Next.js + lockfile.
 
 3. Vercel
