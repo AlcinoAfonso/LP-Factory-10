@@ -1,7 +1,7 @@
 0.1 Cabeçalho
-Data: 18/03/2026
-Versão: v1.7
-Status: Estrutura ajustada para automações, agentes e MCP
+Data: 26/05/2026
+Versão: v1.8
+Status: Alinhado ao Platform Config
 
 0.2 Função do documento
 Registrar a camada de automações operacionais do LP Factory 10 como referência operacional para plataformas usadas nessa camada, integrações, automações operacionais, componentes consumidores e aprendizados operacionais, sem expor segredos.
@@ -11,6 +11,7 @@ docs/services.md: services implantáveis, MCPs, endpoints e infraestrutura reuti
 docs/base-tecnica.md: regras estruturais gerais, guardrails, checks e workflows técnicos de manutenção.
 docs/schema.md: banco, tabelas, views, policies e functions.
 docs/roadmap.md: evolução funcional.
+docs/platform-config.md: configurações operacionais de plataformas, secrets por nome, workflows, ambientes, endpoints e regras de plataforma usados por automações.
 
 0.4 Atualização estrutural — 26/03/2026
 - `automations/` passa a ser a raiz canônica para novas automações.
@@ -26,7 +27,9 @@ docs/roadmap.md: evolução funcional.
 - `pipelines/validador-final/`, `pipelines/supabase-inspect/` e `pipelines/docs-apply-report/` deixaram de ser paths oficiais.
 
 1. Objetivo e escopo
-Registrar a camada de automações operacionais do LP Factory 10: plataformas usadas, credenciais registradas sem valores secretos, catálogo de automações, componentes consumidores e aprendizados operacionais.
+Registrar a camada de automações operacionais do LP Factory 10: catálogo de automações, status, como usar, componentes consumidores, dependências e aprendizados operacionais.
+
+Configurações de plataformas, secrets por nome, ambientes, endpoints e lista consolidada de workflows devem ficar em `docs/platform-config.md`.
 
 Este documento não substitui:
 - `docs/services.md`, para services, MCPs, endpoints e infraestrutura reutilizável;
@@ -38,41 +41,29 @@ Regra de segurança:
 Nunca registrar segredos brutos. Registrar apenas nome da credencial, plataforma, ambiente, localização, finalidade e escopo.
 
 2. Plataformas e configuração global
+Configurações operacionais de plataformas, secrets por nome, ambientes, endpoints e lista consolidada de workflows ficam em `docs/platform-config.md`.
+
+Esta seção mantém apenas o contexto de uso das plataformas pela camada de automações.
+
 2.1 OpenAI
 - Papel na automação: execução de modelos, Agent Builder/SDK e integração com pipelines/agentes.
 - Ambientes operacionais: `LPF10-DEV` e `LPF10-PROD`.
-- Credencial registrada: `OPENAI_API_KEY` (armazenada em GitHub Secrets).
 - Regra operacional: desenvolvimento prioriza DEV; análise de consumo deve ser feita por projeto.
-- Governança de consumo: API keys e service accounts ficam vinculados ao projeto onde foram criados.
-- Benefícios e custo: DEV possui `complimentary daily tokens` (diário, não acumulado) e `complimentary weekly evals`.
-- Qualidade/custo: escolher modelo conforme necessidade real; cobertura de `tool use` deve ser validada com cautela conforme política vigente.
 
 2.2 GitHub
 - Papel: repositório principal, GitHub Actions, pipelines, PRs e secrets.
-- Credenciais registradas: `OPENAI_API_KEY`, `SUPABASE_DB_URL_READONLY`, `MAILBOX_EMAIL`, `MAILBOX_PASSWORD`.
-- Estrutura operacional: raiz canônica de automações em `automations/`; orquestração em `.github/workflows/`.
-- Workflows ativos identificados:
-  - `.github/workflows/pipeline-supabase-inspect.yml`
-  - `.github/workflows/pipeline-docs-apply-report.yml`
-  - `.github/workflows/automation-validador-final.yml`
-  - `.github/workflows/automation-niche-runtime-tests.yml`
-  - `.github/workflows/security.yml`
-  - `.github/workflows/upgrade-next-16-1-1.yml`
+- Contexto de uso: orquestração dos workflows e execução das automações em `automations/`.
 
 2.3 Supabase
 - Papel: banco, Auth e fonte para inspeções/verificações read-only.
-- Credencial registrada: `SUPABASE_DB_URL_READONLY` (GitHub Secrets), com escopo read-only para inspeções e verificações quando aplicável.
-- Estrutura de acesso: role `ai_readonly` para consultas e inspeções.
-- Exceção MVP: houve relaxamento temporário para acelerar o Supabase Inspect, sem service_role e sem escrita direta; revisar permissões antes de ampliar o acesso operacional.
-- Observação operacional: verificações de runtime que consultam banco devem ser tratadas como presets versionados quando aplicável.
+- Contexto de uso: automações podem consumir acesso read-only quando aplicável, sem mutações.
 
 2.4 Vercel
-- Papel: hospedagem do Core SaaS e de services dedicados.
-- Projetos: `lp-factory-10` e `lpf-10-services`.
-- Detalhes operacionais de services e variáveis devem ser consultados em `docs/services.md`.
+- Papel: hospedagem do Core SaaS e de services dedicados consumidos por automações.
+- Contexto de uso: previews e produção podem ser usados como alvo de execução dos workflows.
 
 2.5 Resend
-- Papel no ecossistema: plataforma relacionada ao projeto.
+- Papel no ecossistema: plataforma relacionada ao projeto para fluxos de e-mail transacional.
 - Estado atual: não há automação operacional formalizada de Resend neste documento.
 
 3. Catálogo de automações operacionais
