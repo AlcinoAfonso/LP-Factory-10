@@ -2,8 +2,8 @@
 
 0.1 Cabeçalho
 • Documento: LP Factory 10 — Platform Config
-• Versão: v0.1.0
-• Data: 15/05/2026
+• Versão: v0.1.1
+• Data: 26/05/2026
 
 0.2 Contrato do documento
 • O QUE É: fonte única de configurações operacionais de plataformas externas do LP Factory 10.
@@ -32,12 +32,19 @@
 • Secrets conhecidos:
 • `OPENAI_API_KEY`: usado por automações/CI que chamam OpenAI.
 • `SUPABASE_DB_URL_READONLY`: conexão read-only para inspeções/automação de banco.
+• `MAILBOX_EMAIL`: e-mail usado por automações de autenticação/mailbox.
+• `MAILBOX_PASSWORD`: senha/app password da mailbox usada por automações de autenticação/mailbox.
+• Regra: valores reais de secrets não devem ser versionados.
+• Regra: secrets de mailbox devem existir apenas nos escopos necessários dos workflows que os consomem.
 • Regra: `SUPABASE_DB_URL_READONLY` deve autenticar com role/usuário read-only e usar preferencialmente session pooler.
 • Regra: workflows que acessam banco para inspeção devem ser read-only, salvo caso explicitamente aprovado.
 
 2.3 Workflows conhecidos
 • `.github/workflows/security.yml`: checks de segurança.
 • `.github/workflows/pipeline-supabase-inspect.yml`: pipeline de inspeção Supabase.
+• `.github/workflows/pipeline-docs-apply-report.yml`: aplicação automatizada de reports em documentos Markdown.
+• `.github/workflows/automation-validador-final.yml`: validação ponta a ponta de fluxos reais de autenticação.
+• `.github/workflows/automation-niche-runtime-tests.yml`: testes runtime de criação de conta e preenchimento de `pending_setup`.
 • `.github/workflows/upgrade-next-16-1-1.yml`: manutenção de Next.js + lockfile.
 
 3. Vercel
@@ -146,6 +153,14 @@
 • Regra: manter SPF/DKIM compatíveis com Resend.
 • Validação atual conhecida: signup e forgot password testados, entrega confirmada, links funcionais e sem erro de envio.
 
+
+4.6 Acesso operacional read-only para automações
+• Role operacional read-only: `ai_readonly`.
+• Secret relacionado: `SUPABASE_DB_URL_READONLY`.
+• Uso: inspeções e verificações read-only em automações.
+• Regra: não usar esse acesso para mutações.
+• Regra: revisar permissões antes de ampliar o escopo operacional.
+
 5. Resend
 
 5.1 Uso
@@ -187,6 +202,14 @@
 • Plataforma: Vercel.
 • Finalidade: selecionar modelo do resolvedor IA de nicho.
 • Valor atual de referência: `gpt-5.4-mini`
+
+
+6.4 Agent Builder — Supabase Inspect
+• Ativo operacional: Supabase Inspect Agente.
+• Workflow ID: `wf_69b57fed963c8190b9da8e40797aa5820147027ff7bd60d7`.
+• Uso: validação operacional do Supabase Inspect via Agent Builder.
+• Regra: não tratar como camada final robusta de orquestração.
+• Dependência: MCP Supabase Inspect em `https://lpf-10-services.vercel.app/api/mcp`.
 
 7. Domínios e DNS
 
@@ -250,7 +273,19 @@
 9.4 Design System
 • `docs/design-system.md` permanece como fonte única para padrões visuais, componentes UI e regras de uso visual.
 
+
+9.5 Automations
+• `docs/automations.md` permanece como fonte para catálogo, uso, status, dependências e aprendizados das automações.
+• Configurações de plataformas, secrets por nome, workflows, ambientes e endpoints usados por automações devem ser registrados neste documento.
+
 99. Changelog
+v0.1.1 (26/05/2026) — Alinhamento com Automations
+• Registrados secrets de mailbox usados por automações.
+• Complementada a lista de workflows operacionais conhecidos.
+• Registrado acesso operacional read-only `ai_readonly`/`SUPABASE_DB_URL_READONLY`.
+• Registrado ativo Agent Builder — Supabase Inspect.
+• Definida relação entre Platform Config e Automations.
+
 v0.1.0 (15/05/2026) — Criação do Platform Config
 • Criado documento inicial para centralizar configurações operacionais de plataformas.
 • Registradas plataformas em uso: GitHub, Vercel, Supabase, Resend, OpenAI Platform, Registro.com e Zoho Mail.
