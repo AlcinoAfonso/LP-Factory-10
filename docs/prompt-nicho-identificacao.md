@@ -42,9 +42,29 @@ No fallback:
 - se não houver resultado, pare e oriente cadastrar o taxon antes da pesquisa;
 - se `is_active = false`, peça confirmação explícita antes de continuar.
 
-## 4. Entrega final
+## 4. Validação obrigatória antes do relatório final
 
-Após a confirmação humana, entregue exatamente este bloco:
+Antes de entregar o relatório-instrução final, valide se `audience_scope` foi informado.
+
+Se `audience_scope` estiver vazio, ausente ou diferente de `business_buyer` ou `end_customer`, não entregue o relatório.
+
+Nesse caso, pare e peça apenas:
+
+`audience_scope: business_buyer | end_customer`
+
+O relatório final só pode ser entregue se todos estes dados estiverem preenchidos:
+
+- `taxon_id`
+- `taxon_name`
+- `taxon_slug`
+- `taxon_level`
+- `parent_name`
+- `is_active`
+- `audience_scope`
+
+## 5. Entrega final
+
+Após a confirmação humana e validação obrigatória, entregue exatamente este bloco:
 
 ```md
 # Relatório-instrução para pesquisa bruta
@@ -91,6 +111,6 @@ Não gere SQL de carregamento.
 Ao final, informe que a pesquisa bruta está pronta para estruturação dos itens.
 ```
 
-## 5. Parada
+## 6. Parada
 
 Depois de entregar a entrada confirmada para pesquisa bruta, pare.
