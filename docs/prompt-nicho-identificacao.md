@@ -4,48 +4,50 @@
 
 ## 1. Objetivo
 
-Executar o fluxo de identificação de nicho/taxon para preparar a entrada da pesquisa profunda.
+Executar o fluxo de identificação de nicho/taxon para preparar a entrada confirmada da pesquisa bruta.
 
-A partir do nicho informado pelo humano, localizar o taxon cadastrado no banco, confirmar o taxon correto, receber `audience_scope` e `research_blocks_order`, e entregar o relatório-instrução para uso com `docs/prompt-nicho-pesquisa.md`.
+A identificação pode partir de taxon já confirmado no Admin Dashboard ou de nome de nicho/taxon informado pelo humano.
 
-## Entrada
+## 2. Entrada
 
-Peça ao humano:
+Priorize entrada vinda do Admin Dashboard.
 
-- Nome do nicho/taxon:
-- Público da pesquisa: `business_buyer` ou `end_customer`
-- `research_blocks` e ordem:
-  - `strategic_core`
-  - `lp_overview`
-  - `lp_sections`
-  - `seo`
+Considere suficientes os seguintes dados do taxon:
 
-Aceite apenas um público por pesquisa.
+- `taxon_id`
+- `taxon_name`
+- `taxon_slug`
+- `taxon_level`
+- `parent_name`
+- `is_active`
 
-Aceite apenas `research_blocks` da lista acima.
+Se faltar, peça apenas:
 
-## Ação
+- `audience_scope`: `business_buyer` ou `end_customer`
 
-Use o snippet:
+## 3. Fallback de lookup
+
+Use lookup por snippet **somente como fallback** quando o humano informar apenas o nome do nicho/taxon sem `taxon_id`.
+
+Snippet de fallback:
 
 `supabase/snippets/e10_5_5_nicho_identificacao_taxon_lookup.sql`
 
-Peça ao humano para executar o SQL no Supabase com o nome informado e colar o resultado no chat.
+No fallback:
 
-Ao receber o resultado:
+- peça ao humano para executar o SQL no Supabase e colar o resultado no chat;
+- apresente os taxons encontrados;
+- peça confirmação do taxon correto;
+- se houver mais de um resultado possível, peça ao humano para escolher;
+- se não houver resultado, pare e oriente cadastrar o taxon antes da pesquisa;
+- se `is_active = false`, peça confirmação explícita antes de continuar.
 
-- apresente os taxons encontrados
-- peça confirmação do taxon correto
-- se houver mais de um resultado possível, peça ao humano para escolher
-- se não houver resultado, pare e oriente cadastrar o taxon antes da pesquisa
-- se `is_active = false`, peça confirmação explícita antes de continuar
-
-## Entrega final
+## 4. Entrega final
 
 Após a confirmação humana, entregue exatamente este bloco:
 
 ```md
-# Relatório-instrução para pesquisa profunda
+# Relatório-instrução para pesquisa bruta
 
 ## 1. Entrada confirmada
 
@@ -53,14 +55,16 @@ taxon_id:
 taxon_name:
 taxon_slug:
 taxon_level:
-parent_id:
 parent_name:
 is_active:
 
 audience_scope:
 
 research_blocks_order:
-- listar apenas os blocos solicitados, na ordem definida pelo humano
+1. strategic_core
+2. lp_overview
+3. lp_sections
+4. seo
 
 ## 2. Instrução para a IA de pesquisa
 
@@ -74,21 +78,19 @@ Use os dados confirmados como fonte de verdade para a pesquisa.
 
 Não refaça a identificação do taxon.
 
-Pesquise apenas os `research_blocks` informados em `research_blocks_order`.
+Pesquise apenas os `research_blocks` definidos em `research_blocks_order`.
 
 Respeite exatamente a ordem definida em `research_blocks_order`.
 
-Se `research_blocks_order` tiver menos de quatro blocos, execute somente os blocos informados.
-
 Entregue cada `research_block` em uma seção separada.
 
-Não consolide os blocos pesquisados.
+Não gere itens estruturados.
 
 Não gere SQL de carregamento.
 
-Ao final, informe que a pesquisa está pronta para consolidação.
+Ao final, informe que a pesquisa bruta está pronta para estruturação dos itens.
 ```
 
-## Parada
+## 5. Parada
 
-Depois de entregar a entrada confirmada para pesquisa profunda, pare.
+Depois de entregar a entrada confirmada para pesquisa bruta, pare.
