@@ -1,70 +1,63 @@
 # Prompt — Identificação de nicho/taxon
 
-## Objetivo
+## 1. Papel / função
 
-## 1. Objetivo
+Atue como identificador de nicho/taxon para preparar a entrada confirmada da pesquisa bruta.
 
-Executar o fluxo de identificação de nicho/taxon para preparar a entrada confirmada da pesquisa bruta.
+## 2. Objetivo
 
-A identificação pode partir de taxon já confirmado no Admin Dashboard ou de nome de nicho/taxon informado pelo humano.
+Confirmar o taxon/nicho e o `audience_scope` antes de executar `docs/prompt-nicho-pesquisa.md`.
 
-## 2. Entrada
+## 3. Entrada obrigatória
 
-Priorize entrada vinda do Admin Dashboard.
+Sempre confirme se o humano informou:
 
-Considere suficientes os seguintes dados do taxon:
-
-- `taxon_id`
-- `taxon_name`
-- `taxon_slug`
-- `taxon_level`
-- `parent_name`
-- `is_active`
-
-Se faltar, peça apenas:
-
+- taxon, nome do nicho ou dados confirmados do taxon
 - `audience_scope`: `business_buyer` ou `end_customer`
 
-## 3. Fallback de lookup
+Se faltar qualquer um dos dois, peça apenas:
 
-Use lookup por snippet **somente como fallback** quando o humano informar apenas o nome do nicho/taxon sem `taxon_id`.
+```md
+taxon ou nome do nicho:
+audience_scope: business_buyer | end_customer
+```
 
-Snippet de fallback:
+Se faltar apenas `audience_scope`, peça apenas:
+
+```md
+audience_scope: business_buyer | end_customer
+```
+
+## 4. Identificação
+
+Se o humano informou dados confirmados do taxon, valide:
+
+* `taxon_id`
+* `taxon_name`
+* `taxon_slug`
+* `taxon_level`
+* `parent_name`
+* `is_active`
+
+Se informou apenas nome do nicho/taxon, use como fallback:
 
 `supabase/snippets/e10_5_5_nicho_identificacao_taxon_lookup.sql`
 
-No fallback:
-
-- peça ao humano para executar o SQL no Supabase e colar o resultado no chat;
-- apresente os taxons encontrados;
-- peça confirmação do taxon correto;
-- se houver mais de um resultado possível, peça ao humano para escolher;
-- se não houver resultado, pare e oriente cadastrar o taxon antes da pesquisa;
-- se `is_active = false`, peça confirmação explícita antes de continuar.
-
-## 4. Validação obrigatória antes do relatório final
-
-Antes de entregar o relatório-instrução final, valide se `audience_scope` foi informado.
-
-Se `audience_scope` estiver vazio, ausente ou diferente de `business_buyer` ou `end_customer`, não entregue o relatório.
-
-Nesse caso, pare e peça apenas:
-
-`audience_scope: business_buyer | end_customer`
-
-O relatório final só pode ser entregue se todos estes dados estiverem preenchidos:
-
-- `taxon_id`
-- `taxon_name`
-- `taxon_slug`
-- `taxon_level`
-- `parent_name`
-- `is_active`
-- `audience_scope`
+No fallback, peça ao humano para executar o SQL no Supabase e colar o resultado no chat. Depois, peça confirmação do taxon correto.
 
 ## 5. Entrega final
 
-Após a confirmação humana e validação obrigatória, entregue exatamente este bloco:
+Só entregue o relatório final quando estiverem confirmados:
+
+* `taxon_id`
+* `taxon_name`
+* `taxon_slug`
+* `taxon_level`
+* `parent_name`
+* `is_active`
+* `audience_scope`
+
+Entregue exatamente:
 
 ```md
 # Relatório-instrução para pesquisa bruta
@@ -88,29 +81,17 @@ research_blocks_order:
 
 ## 2. Instrução para a IA de pesquisa
 
-Acesse no repositório o arquivo:
+Acesse `docs/prompt-nicho-pesquisa.md` e execute o prompt usando a entrada confirmada acima.
 
-`docs/prompt-nicho-pesquisa.md`
-
-Execute esse prompt usando a entrada confirmada acima como contexto obrigatório.
-
-Use os dados confirmados como fonte de verdade para a pesquisa.
+Use os dados confirmados como fonte de verdade.
 
 Não refaça a identificação do taxon.
 
 Pesquise apenas os `research_blocks` definidos em `research_blocks_order`.
-
-Respeite exatamente a ordem definida em `research_blocks_order`.
-
-Entregue cada `research_block` em uma seção separada.
-
-Não gere itens estruturados.
-
-Não gere SQL de carregamento.
 
 Ao final, informe que a pesquisa bruta está pronta para estruturação dos itens.
 ```
 
 ## 6. Parada
 
-Depois de entregar a entrada confirmada para pesquisa bruta, pare.
+Depois de entregar o relatório-instrução, pare.
