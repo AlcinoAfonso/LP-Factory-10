@@ -31,7 +31,6 @@ A entrada confirmada deve conter:
 * `taxon_name`
 * `taxon_slug`
 * `taxon_level`
-* `parent_id`
 * `parent_name`
 * `is_active`
 * `audience_scope`
@@ -85,7 +84,6 @@ Estrutura mínima esperada:
 - taxon_name:
 - taxon_slug:
 - taxon_level:
-- parent_id:
 - parent_name:
 - is_active:
 - audience_scope:
