@@ -2,14 +2,16 @@
 
 0.1 Cabeçalho
 • Documento: LP Factory 10 — Platform Config
-• Versão: v0.1.1
-• Data: 26/05/2026
+• Versão: v0.1.2
+• Data: 27/05/2026
 
 0.2 Contrato do documento
-• O QUE É: fonte única de configurações operacionais de plataformas externas do LP Factory 10.
+• O QUE É: snapshot operacional e fonte única das configurações de plataformas externas do LP Factory 10, refletindo o estado conhecido/cadastrado nas plataformas conforme indicado.
 • USAR PARA: variáveis, secrets por nome, endpoints, URLs, redirects, SMTP, DNS, projetos externos, ambientes e regras de redeploy.
 • NÃO USAR PARA: regras de runtime/código, contrato de DB, status de casos E* ou padrões visuais.
 • REGRA: nunca registrar valores reais de secrets; registrar apenas nome, finalidade, plataforma e escopo.
+• LEITURA OPERACIONAL: secrets, variáveis, workflows, endpoints e conectores listados aqui devem ser tratados como disponíveis no ambiente/plataforma indicada, salvo marcação explícita de futuro, pendente, bloqueado ou não validado.
+• LIMITE: este documento não versiona valores reais de secrets e não garante que o chat tenha acesso direto a eles; quando o uso exigir segredo, a execução deve ocorrer na plataforma autorizada, por exemplo GitHub Actions, Vercel ou Supabase.
 
 1. Visão geral de plataformas
 • GitHub: repositório, PRs, Actions e secrets de automações.
@@ -283,6 +285,11 @@
 • Configurações de plataformas, secrets por nome, workflows, ambientes e endpoints usados por automações devem ser registrados neste documento.
 
 99. Changelog
+v0.1.2 (27/05/2026) — Clarificação de snapshot operacional
+• Clarificado que o Platform Config reflete o estado conhecido/cadastrado nas plataformas.
+• Definida a leitura operacional para secrets, variáveis, workflows, endpoints e conectores listados.
+• Reforçado que valores reais de secrets não são versionados e devem ser consumidos apenas por plataformas autorizadas.
+
 v0.1.1 (26/05/2026) — Alinhamento com Automations
 • Registrados secrets de mailbox usados por automações.
 • Complementada a lista de workflows operacionais conhecidos.
