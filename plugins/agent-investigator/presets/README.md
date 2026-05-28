@@ -15,6 +15,12 @@ Listar presets locais:
 node plugins/agent-investigator/scripts/list-presets.mjs
 ```
 
+Validar pacote e presets:
+
+```bash
+node plugins/agent-investigator/scripts/validate-operational.mjs
+```
+
 ## Presets disponiveis
 
 | Preset | Quando usar |

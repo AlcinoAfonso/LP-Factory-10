@@ -288,7 +288,7 @@ Objetivo:
 Investigar, sob escopo sob demanda, plataformas, configuracoes, chaves, variaveis, deploys, logs, banco, automacoes, integracoes e readiness operacional do ecossistema LP Factory 10, sem expor segredos e sem executar mutacoes sem autorizacao explicita.
 
 Status:
-Presets de investigacao / Fase 4
+Validacao operacional / Fase 5
 
 Acesso esperado:
 Codex App via plugin local `agent-investigator`, apos instalacao no ambiente Codex.
@@ -309,6 +309,8 @@ Skill: `plugins/agent-investigator/skills/investigator-operational/SKILL.md`
 Ferramentas reais: `plugins/agent-investigator/tools/README.md`
 Preflight local: `plugins/agent-investigator/scripts/tool-readiness.mjs`
 Presets: `plugins/agent-investigator/presets/`
+Validacao operacional: `plugins/agent-investigator/scripts/validate-operational.mjs`
+Escopos conhecidos: `plugins/agent-investigator/validation/scopes/`
 Plataformas: GitHub, Vercel, OpenAI Platform / OpenAI Developers, Supabase, App preview/producao e GitHub Actions quando disponiveis.
 
 4. Aprendizados operacionais

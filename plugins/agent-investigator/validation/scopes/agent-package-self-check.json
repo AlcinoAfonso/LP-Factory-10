@@ -1,0 +1,24 @@
+{
+  "id": "agent-package-self-check",
+  "title": "Autovalidacao do pacote agent-investigator",
+  "mode": "read-only",
+  "presetIds": ["pre-merge-operacional"],
+  "scope": {
+    "repo": "AlcinoAfonso/LP-Factory-10",
+    "target": "plugins/agent-investigator",
+    "goal": "Confirmar se manifest, skill, presets, ferramentas e documentacao do agente estao coerentes."
+  },
+  "expectedEvidence": [
+    "Manifest JSON valido.",
+    "Marketplace aponta para plugins/agent-investigator.",
+    "Skill investigator-operational presente.",
+    "Presets listaveis e validos.",
+    "Preflight local executa sem expor secrets."
+  ],
+  "blockedActions": ["push", "merge", "deploy", "alterar configuracao", "expor secrets"],
+  "successCriteria": [
+    "Validador operacional retorna zero falhas.",
+    "Nomes canonicos usam agent-investigator e Investigator.",
+    "Nenhum path legado permanece em arquivos canonicos."
+  ]
+}
