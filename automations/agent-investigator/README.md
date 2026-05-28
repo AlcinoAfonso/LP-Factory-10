@@ -307,3 +307,13 @@ Observacao: presets orientam a investigacao, mas nao executam mutacoes nem subst
 ### Fase 5: validacao operacional
 
 Rodar investigacoes reais com escopos conhecidos e comparar o relatorio com evidencias manuais.
+
+Status: entregue como validador operacional local e fixtures de escopos conhecidos.
+
+Artefatos:
+
+- Validador operacional: `plugins/agent-investigator/scripts/validate-operational.mjs`
+- Escopos conhecidos: `plugins/agent-investigator/validation/scopes/*.json`
+- Guia de validacao: `plugins/agent-investigator/validation/README.md`
+
+Observacao: a validacao local confirma coerencia do pacote, manifest, marketplace, skill, presets, preflight e escopos conhecidos. Evidencias remotas continuam dependendo dos conectores, tokens e acessos autorizados em cada sessao.

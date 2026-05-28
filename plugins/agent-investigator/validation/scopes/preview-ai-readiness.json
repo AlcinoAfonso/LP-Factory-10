@@ -1,0 +1,24 @@
+{
+  "id": "preview-ai-readiness",
+  "title": "Readiness de preview com IA e Supabase",
+  "mode": "read-only",
+  "presetIds": ["readiness-preview-vercel", "audit-env-vars", "openai-key-model", "supabase-schema-rpc"],
+  "scope": {
+    "vercelProject": "lp-factory-10",
+    "supabaseProject": "lp-factory-10",
+    "openaiModelEnv": "OPENAI_NICHE_RESOLVER_MODEL",
+    "goal": "Validar env vars, modelo OpenAI, schema/RPC Supabase e logs do preview antes de smoke funcional."
+  },
+  "expectedEvidence": [
+    "Env vars criticas classificadas por status sem revelar valores.",
+    "Modelo configurado e disponibilidade classificados quando verificaveis.",
+    "Schema e RPCs Supabase checados por leitura/read-only quando houver credencial.",
+    "Logs de deploy/runtime revisados quando houver ferramenta."
+  ],
+  "blockedActions": ["redeploy", "alterar env var", "rotacionar key", "SQL de escrita", "expor secrets"],
+  "successCriteria": [
+    "Sem erro critico de env/model/key/schema/log conhecido.",
+    "Toda falta de ferramenta ou credencial e declarada.",
+    "Smoke funcional so e liberado se nao houver bloqueio critico."
+  ]
+}

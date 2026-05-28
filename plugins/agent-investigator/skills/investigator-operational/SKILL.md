@@ -46,12 +46,13 @@ Investigue conforme o escopo e a disponibilidade de ferramentas:
 2. Verifique branch/status local quando o workspace fizer parte da investigacao.
 3. Classifique ferramentas disponiveis: conectores, browser, HTTP, CLIs, env vars e credenciais read-only.
 4. Quando aplicavel, rode `node plugins/agent-investigator/scripts/tool-readiness.mjs` para preflight local sem expor secrets.
-5. Se o usuario citar um preset, carregue o JSON correspondente em `plugins/agent-investigator/presets/`.
-6. Consulte fontes remotas com conectores oficiais quando disponiveis.
-7. Compare evidencia remota com contratos locais quando relevante.
-8. Execute probes nao destrutivos somente quando necessarios ao criterio de pronto.
-9. Separe fato verificado, inferencia e lacuna.
-10. Entregue status final: `pronto`, `depende ajuste`, `bloqueado` ou `nao verificavel`.
+5. Quando o escopo envolver o proprio pacote do agente, rode `node plugins/agent-investigator/scripts/validate-operational.mjs`.
+6. Se o usuario citar um preset, carregue o JSON correspondente em `plugins/agent-investigator/presets/`.
+7. Consulte fontes remotas com conectores oficiais quando disponiveis.
+8. Compare evidencia remota com contratos locais quando relevante.
+9. Execute probes nao destrutivos somente quando necessarios ao criterio de pronto.
+10. Separe fato verificado, inferencia e lacuna.
+11. Entregue status final: `pronto`, `depende ajuste`, `bloqueado` ou `nao verificavel`.
 
 ## Ferramentas reais
 
