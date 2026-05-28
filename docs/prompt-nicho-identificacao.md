@@ -1,51 +1,66 @@
 # Prompt — Identificação de nicho/taxon
 
-## Objetivo
+## 1. Papel / função
 
-## 1. Objetivo
+Atue como identificador de nicho/taxon para preparar a entrada confirmada da pesquisa bruta.
 
-Executar o fluxo de identificação de nicho/taxon para preparar a entrada da pesquisa profunda.
+## 2. Objetivo
 
-A partir do nicho informado pelo humano, localizar o taxon cadastrado no banco, confirmar o taxon correto, receber `audience_scope` e `research_blocks_order`, e entregar o relatório-instrução para uso com `docs/prompt-nicho-pesquisa.md`.
+Confirmar o taxon/nicho e o `audience_scope` antes de executar `docs/prompt-nicho-pesquisa.md`.
 
-## Entrada
+## 3. Entrada obrigatória
 
-Peça ao humano:
+Sempre confirme se o humano informou:
 
-- Nome do nicho/taxon:
-- Público da pesquisa: `business_buyer` ou `end_customer`
-- `research_blocks` e ordem:
-  - `strategic_core`
-  - `lp_overview`
-  - `lp_sections`
-  - `seo`
+- taxon, nome do nicho ou dados confirmados do taxon
+- `audience_scope`: `business_buyer` ou `end_customer`
 
-Aceite apenas um público por pesquisa.
+Se faltar qualquer um dos dois, peça apenas:
 
-Aceite apenas `research_blocks` da lista acima.
+```md
+taxon ou nome do nicho:
+audience_scope: business_buyer | end_customer
+```
 
-## Ação
+Se faltar apenas `audience_scope`, peça apenas:
 
-Use o snippet:
+```md
+audience_scope: business_buyer | end_customer
+```
+
+## 4. Identificação
+
+Se o humano informou dados confirmados do taxon, valide:
+
+* `taxon_id`
+* `taxon_name`
+* `taxon_slug`
+* `taxon_level`
+* `parent_name`
+* `is_active`
+
+Se informou apenas nome do nicho/taxon, use como fallback:
 
 `supabase/snippets/e10_5_5_nicho_identificacao_taxon_lookup.sql`
 
-Peça ao humano para executar o SQL no Supabase com o nome informado e colar o resultado no chat.
+No fallback, peça ao humano para executar o SQL no Supabase e colar o resultado no chat. Depois, peça confirmação do taxon correto.
 
-Ao receber o resultado:
+## 5. Entrega final
 
-- apresente os taxons encontrados
-- peça confirmação do taxon correto
-- se houver mais de um resultado possível, peça ao humano para escolher
-- se não houver resultado, pare e oriente cadastrar o taxon antes da pesquisa
-- se `is_active = false`, peça confirmação explícita antes de continuar
+Só entregue o relatório final quando estiverem confirmados:
 
-## Entrega final
+* `taxon_id`
+* `taxon_name`
+* `taxon_slug`
+* `taxon_level`
+* `parent_name`
+* `is_active`
+* `audience_scope`
 
-Após a confirmação humana, entregue exatamente este bloco:
+Entregue exatamente:
 
 ```md
-# Relatório-instrução para pesquisa profunda
+# Relatório-instrução para pesquisa bruta
 
 ## 1. Entrada confirmada
 
@@ -53,41 +68,30 @@ taxon_id:
 taxon_name:
 taxon_slug:
 taxon_level:
-parent_id:
 parent_name:
 is_active:
 
 audience_scope:
 
 research_blocks_order:
-1.
-2.
-3.
-4.
+1. strategic_core
+2. lp_overview
+3. lp_sections
+4. seo
 
 ## 2. Instrução para a IA de pesquisa
 
-Acesse no repositório o arquivo:
+Acesse `docs/prompt-nicho-pesquisa.md` e execute o prompt usando a entrada confirmada acima.
 
-`docs/prompt-nicho-pesquisa.md`
-
-Execute esse prompt usando a entrada confirmada acima como contexto obrigatório.
-
-Use os dados confirmados como fonte de verdade para a pesquisa.
+Use os dados confirmados como fonte de verdade.
 
 Não refaça a identificação do taxon.
 
-Pesquise os `research_blocks` na ordem definida em `research_blocks_order`.
+Pesquise apenas os `research_blocks` definidos em `research_blocks_order`.
 
-Pesquise apenas o primeiro `research_block` pendente da ordem definida.
-
-Não pesquise mais de um `research_block` na mesma execução.
-
-Após entregar o bloco pesquisado, pare e aguarde comando humano para continuar.
-
-Quando o humano mandar continuar, execute apenas o próximo `research_block` pendente da ordem definida.
+Ao final, informe que a pesquisa bruta está pronta para estruturação dos itens.
 ```
 
-## Parada
+## 6. Parada
 
-Depois de entregar a entrada confirmada para pesquisa profunda, pare.
+Depois de entregar o relatório-instrução, pare.
