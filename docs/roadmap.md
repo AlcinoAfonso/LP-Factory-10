@@ -620,7 +620,7 @@
   • entrega os blocos no formato esperado para consolidação posterior
 
 • C. Consolidação
-• `docs/prompt-nicho-itens-estruturados.md`
+• `docs/prompt-nicho-consolidacao.md`
   • consolida os blocos pesquisados e aprovados
   • prepara a saída para futura carga nas tabelas de pesquisa
 
