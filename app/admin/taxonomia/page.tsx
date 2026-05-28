@@ -35,11 +35,19 @@ export default async function AdminTaxonomyPage({ searchParams }: AdminTaxonomyP
 
   return (
     <div className="space-y-6">
-      <AdminPageHeader
-        title="Taxonomia"
-        description="Consulta read-only da estrutura de taxons usada para classificar contas, resolucoes de nicho e templates."
-        meta={`${result.total} taxon${result.total === 1 ? "" : "s"}`}
-      />
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+        <AdminPageHeader
+          title="Taxonomia"
+          description="Consulta e cadastro da estrutura de taxons usada para classificar contas, resolucoes de nicho e templates."
+          meta={`${result.total} taxon${result.total === 1 ? "" : "s"}`}
+        />
+        <Link
+          className="inline-flex h-10 w-fit items-center justify-center rounded-md bg-brand-600 px-4 text-sm font-medium text-white transition hover:bg-brand-700"
+          href="/admin/taxonomia/novo"
+        >
+          Novo taxon
+        </Link>
+      </div>
 
       <form className="rounded-lg border border-border bg-card p-4 shadow-card" action="/admin/taxonomia">
         <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_160px_140px_auto]">
