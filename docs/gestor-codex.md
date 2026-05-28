@@ -129,8 +129,23 @@ Este documento deve evitar duplicar essas fontes.
 
 ### 6.1 Git remoto no sandbox do Codex App
 
-- Não usar `git fetch`, `git pull`, `git push`, `git ls-remote` ou SSH remoto dentro do sandbox.
-- Contorno atual: GitHub Connector, GitHub Web, GitHub Desktop ou PowerShell normal fora do sandbox, conforme o caso.
+A limitação atual não é acesso geral ao computador. O Codex App consegue editar e validar arquivos no workspace local.
+
+O problema está nas operações Git remotas locais dentro do sandbox, como:
+
+- `git fetch`
+- `git pull`
+- `git push`
+- `git ls-remote`
+- `ssh -T git@github.com`
+
+Mesmo com rede habilitada, essas operações podem exigir escrita em áreas internas do Git, como `.git`, `FETCH_HEAD`, refs remotas e arquivos de lock. Por isso, o Codex App ainda não fecha sozinho o ciclo remoto completo de atualizar base, publicar branch e abrir fluxo de PR sem apoio externo.
+
+Decisão vigente:
+
+- não usar Git remoto local dentro do sandbox;
+- usar GitHub Connector, GitHub Web, GitHub Desktop ou PowerShell normal fora do sandbox, conforme o caso;
+- investigar se existe configuração oficial segura para permitir Git remoto local completo sem usar modo inseguro/full access.
 
 ### 6.2 Mistura de alterações locais
 
