@@ -204,14 +204,29 @@ Formato:
 - audience_scope:
 - research_blocks_order:
 
-## Registro-pai
+Gerar um Registro-pai para cada `research_block` estruturado.
+
+Formato esperado:
+
+## Registro-pai — [research_block]
 
 - taxon_id:
 - taxon_name:
 - taxon_level:
+- research_block:
 - audience_scope:
 - version: 1
 - status: draft
+
+Regras:
+
+- `research_block` é obrigatório.
+- Criar um Registro-pai separado para cada bloco estruturado.
+- Os itens de cada seção devem pertencer ao respectivo `research_block`.
+- Não gerar SQL.
+- Não fazer nova pesquisa.
+- Consolidar duplicidades e priorizar os itens mais fortes.
+- Evitar transcrever listas extensas da pesquisa bruta sem síntese.
 
 ## [research_block]
 

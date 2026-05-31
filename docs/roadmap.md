@@ -634,10 +634,10 @@
   • entrega material para estruturação posterior dos itens da pesquisa
 
 • C. Estruturação dos itens da pesquisa
-• `docs/prompt-nicho-consolidacao.md`
+• `docs/prompt-nicho-itens-estruturados.md`
   • transforma a pesquisa bruta aprovada em itens estruturados por `research_block`
   • prepara a saída compatível com `taxon_market_research_items`
-  • pendente de revisão para refletir o novo modelo de pesquisa bruta
+  • gera um Registro-pai por `research_block` para orientar a carga em `taxon_market_research`
 
 • D. Carregamento
 • `docs/prompt-nicho-carregamento.md`
@@ -674,7 +674,6 @@
 
 10.5.5.4 Pendências atuais
 • Testar o fluxo real usando os prompts da `main`, após merge da feature branch.
-• Revisar `docs/prompt-nicho-consolidacao.md` para transformar pesquisa bruta em itens estruturados da pesquisa.
 • Decidir onde a pesquisa bruta será arquivada: repo, banco ou ambos.
 • Se a decisão for arquivamento no banco, avaliar ajuste de schema em `taxon_market_research`.
 • Revisar carregamento e verificação após a definição de arquivamento da pesquisa bruta.
@@ -685,7 +684,6 @@
 
 • A revisar:
   • `docs/prompt-nicho-identificacao.md`
-  • `docs/prompt-nicho-consolidacao.md`
   • `docs/prompt-nicho-carregamento.md`
   • `docs/prompt-nicho-verificacao.md`
   • `supabase/snippets/e10_5_5_nicho_carregamento.sql`
