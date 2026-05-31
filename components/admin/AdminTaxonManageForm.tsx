@@ -38,6 +38,7 @@ export function AdminTaxonManageForm({
   const [slug, setSlug] = useState(taxon.slug);
   const [slugEdited, setSlugEdited] = useState(false);
   const [confirmSlug, setConfirmSlug] = useState("");
+  const [aliasToConfirm, setAliasToConfirm] = useState<string | null>(null);
 
   useEffect(() => {
     if (!slugEdited) setSlug(slugify(name));
@@ -56,7 +57,7 @@ export function AdminTaxonManageForm({
             className="inline-flex h-10 items-center justify-center rounded-md bg-brand-600 px-4 text-sm font-medium text-white transition hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-60"
             disabled={updatePending}
           >
-            {updatePending ? "Salvando..." : "Salvar"}
+            {updatePending ? "Salvando..." : "Salvar dados do taxon"}
           </button>
         </div>
 
@@ -128,20 +129,44 @@ export function AdminTaxonManageForm({
           </p>
         ) : (
           <div className="mt-4 flex flex-wrap gap-2">
-            {taxon.aliases.map((alias) => (
-              <form action={deleteAliasFormAction} key={alias.id}>
-                <input type="hidden" name="taxonId" value={taxon.id} />
-                <input type="hidden" name="aliasId" value={alias.id} />
-                <button
-                  className="inline-flex items-center gap-2 rounded-md border border-border bg-muted px-2.5 py-1 text-xs text-muted-foreground transition hover:border-red-300 hover:bg-red-50 hover:text-red-700 disabled:cursor-not-allowed disabled:opacity-60"
-                  disabled={deleteAliasPending}
-                  title="Remover alias"
-                >
-                  {alias.aliasText}
-                  <span aria-hidden="true">x</span>
-                </button>
-              </form>
-            ))}
+            {taxon.aliases.map((alias) => {
+              const isConfirmingAlias = aliasToConfirm === alias.id;
+
+              return (
+                <form action={deleteAliasFormAction} className="inline-flex items-center gap-1" key={alias.id}>
+                  <input type="hidden" name="taxonId" value={taxon.id} />
+                  <input type="hidden" name="aliasId" value={alias.id} />
+                  {isConfirmingAlias ? (
+                    <>
+                      <button
+                        className="inline-flex items-center rounded-md border border-red-300 bg-red-50 px-2.5 py-1 text-xs font-medium text-red-700 transition hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-60"
+                        disabled={deleteAliasPending}
+                      >
+                        Confirmar remocao de {alias.aliasText}
+                      </button>
+                      <button
+                        className="inline-flex items-center rounded-md border border-border bg-background px-2.5 py-1 text-xs text-muted-foreground transition hover:bg-muted"
+                        onClick={() => setAliasToConfirm(null)}
+                        type="button"
+                      >
+                        Cancelar
+                      </button>
+                    </>
+                  ) : (
+                    <button
+                      className="inline-flex items-center gap-2 rounded-md border border-border bg-muted px-2.5 py-1 text-xs text-muted-foreground transition hover:border-red-300 hover:bg-red-50 hover:text-red-700 disabled:cursor-not-allowed disabled:opacity-60"
+                      disabled={deleteAliasPending}
+                      onClick={() => setAliasToConfirm(alias.id)}
+                      title="Remover alias"
+                      type="button"
+                    >
+                      {alias.aliasText}
+                      <span aria-hidden="true">x</span>
+                    </button>
+                  )}
+                </form>
+              );
+            })}
           </div>
         )}
       </section>
@@ -166,7 +191,7 @@ export function AdminTaxonManageForm({
               className="inline-flex h-10 items-center justify-center rounded-md bg-red-600 px-4 text-sm font-medium text-white transition hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-60"
               disabled={deletePending || confirmSlug !== taxon.slug}
             >
-              {deletePending ? "Excluindo..." : "Excluir taxon"}
+              {deletePending ? "Excluindo..." : "Excluir taxon definitivamente"}
             </button>
           </form>
         ) : (
