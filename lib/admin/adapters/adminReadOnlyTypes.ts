@@ -60,6 +60,14 @@ export type AdminTaxonParentOption = {
   parentName: string | null;
 };
 
+export type AdminTaxonUsage = {
+  accountLinks: number;
+  selectedResolutions: number;
+  aiSuggestedResolutions: number;
+  contentTemplateLinks: number;
+  marketResearch: number;
+};
+
 export type AdminTaxonDetail = AdminTaxonListItem & {
   aliases: Array<{
     id: string;
@@ -67,6 +75,9 @@ export type AdminTaxonDetail = AdminTaxonListItem & {
     isActive: boolean;
   }>;
   children: AdminTaxonListItem[];
+  usage: AdminTaxonUsage;
+  deleteBlockers: string[];
+  canDelete: boolean;
 };
 
 export type AdminNicheResolutionListItem = {

@@ -4,8 +4,15 @@ import type { ReactNode } from "react";
 
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { AdminStatusBadge } from "@/components/admin/AdminStatusBadge";
+import { AdminTaxonManageForm } from "@/components/admin/AdminTaxonManageForm";
 import { EmptyState } from "@/components/ui/empty-state";
 import { getAdminTaxonDetail } from "@/lib/admin/adapters/adminReadOnlyAdapter";
+import {
+  addTaxonAliasAction,
+  deleteTaxonAction,
+  deleteTaxonAliasAction,
+  updateTaxonAction,
+} from "../actions";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -28,11 +35,11 @@ export default async function AdminTaxonDetailPage({ params }: AdminTaxonDetailP
 
       <AdminPageHeader
         title={taxon.name}
-        description="Detalhe read-only do taxon, incluindo hierarquia imediata e aliases cadastrados."
+        description="Gestao controlada do taxon, com edicao basica, aliases e exclusao segura."
         meta={taxon.id}
       />
 
-      <section className="grid gap-4 lg:grid-cols-3">
+      <section className="grid gap-4 lg:grid-cols-2">
         <div className="rounded-lg border border-border bg-card p-5 shadow-card">
           <h2 className="text-sm font-semibold text-card-foreground">Taxon</h2>
           <dl className="mt-4 space-y-3 text-sm">
@@ -48,24 +55,26 @@ export default async function AdminTaxonDetailPage({ params }: AdminTaxonDetailP
           </dl>
         </div>
 
-        <div className="rounded-lg border border-border bg-card p-5 shadow-card lg:col-span-2">
-          <h2 className="text-sm font-semibold text-card-foreground">Aliases</h2>
-          {taxon.aliases.length === 0 ? (
-            <EmptyState className="mt-4 text-left" title="Nenhum alias cadastrado" />
-          ) : (
-            <div className="mt-4 flex flex-wrap gap-2">
-              {taxon.aliases.map((alias) => (
-                <span
-                  className="inline-flex rounded-md border border-border bg-muted px-2.5 py-1 text-xs text-muted-foreground"
-                  key={alias.id}
-                >
-                  {alias.aliasText}
-                </span>
-              ))}
-            </div>
-          )}
+        <div className="rounded-lg border border-border bg-card p-5 shadow-card">
+          <h2 className="text-sm font-semibold text-card-foreground">Uso operacional</h2>
+          <dl className="mt-4 grid gap-3 text-sm sm:grid-cols-2">
+            <Detail label="Contas" value={String(taxon.usage.accountLinks)} />
+            <Detail label="Resolucao selecionada" value={String(taxon.usage.selectedResolutions)} />
+            <Detail label="Sugestao IA" value={String(taxon.usage.aiSuggestedResolutions)} />
+            <Detail label="Templates" value={String(taxon.usage.contentTemplateLinks)} />
+            <Detail label="Pesquisas" value={String(taxon.usage.marketResearch)} />
+            <Detail label="Filhos diretos" value={String(taxon.children.length)} />
+          </dl>
         </div>
       </section>
+
+      <AdminTaxonManageForm
+        taxon={taxon}
+        updateAction={updateTaxonAction}
+        addAliasAction={addTaxonAliasAction}
+        deleteAliasAction={deleteTaxonAliasAction}
+        deleteAction={deleteTaxonAction}
+      />
 
       <section className="rounded-lg border border-border bg-card p-5 shadow-card">
         <h2 className="text-sm font-semibold text-card-foreground">Filhos diretos</h2>

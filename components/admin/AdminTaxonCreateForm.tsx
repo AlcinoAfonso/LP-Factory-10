@@ -55,6 +55,21 @@ export function AdminTaxonCreateForm({ action, parentOptions }: AdminTaxonCreate
         </div>
       ) : null}
 
+      <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+        <Link
+          className="inline-flex h-10 items-center justify-center rounded-md border border-border px-4 text-sm font-medium text-muted-foreground transition hover:bg-muted"
+          href="/admin/taxonomia"
+        >
+          Cancelar
+        </Link>
+        <button
+          className="inline-flex h-10 items-center justify-center rounded-md bg-brand-600 px-4 text-sm font-medium text-white transition hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-60"
+          disabled={pending}
+        >
+          {pending ? "Criando..." : "Criar taxon"}
+        </button>
+      </div>
+
       <section className="rounded-lg border border-border bg-card p-5 shadow-card">
         <div className="grid gap-4 lg:grid-cols-2">
           <label className="space-y-1">
@@ -162,21 +177,6 @@ export function AdminTaxonCreateForm({ action, parentOptions }: AdminTaxonCreate
           </div>
         </div>
       </section>
-
-      <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
-        <Link
-          className="inline-flex h-10 items-center justify-center rounded-md border border-border px-4 text-sm font-medium text-muted-foreground transition hover:bg-muted"
-          href="/admin/taxonomia"
-        >
-          Cancelar
-        </Link>
-        <button
-          className="inline-flex h-10 items-center justify-center rounded-md bg-brand-600 px-4 text-sm font-medium text-white transition hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-60"
-          disabled={pending}
-        >
-          {pending ? "Criando..." : "Criar taxon"}
-        </button>
-      </div>
     </form>
   );
 }
