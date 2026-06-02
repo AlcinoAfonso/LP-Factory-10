@@ -30,14 +30,23 @@ Este repositório pode ser usado por Codex App local e Codex Web/Cloud.
 
 ## Regras operacionais
 
-* Não editar diretamente na `main`.
+* Não editar nem commitar na `main`. Se estiver na `main` limpa, criar branch dedicada antes de alterar arquivos.
 * Usar branch dedicada por tarefa, preferencialmente com prefixo `codex/`.
 * Antes de alterar, confirmar branch atual, `git status` e remote correto.
-* Não editar nem commitar na `main`. Se estiver na `main` limpa, criar branch dedicada antes de alterar arquivos. Parar se estiver em branch de outro caso ou com mudanças locais não relacionadas.
 * Não misturar tarefas ou etapas diferentes na mesma branch.
 * Não fazer merge local; o merge final deve acontecer somente pelo GitHub Web.
 * GitHub Web é a fonte de verdade para PRs, Actions, preview remoto e merge.
 * Se houver branch ou mudança local já resolvida por PR mergeado, tratar como resíduo operacional: não commitar, não publicar e orientar limpeza antes de continuar.
+
+## Publicação no Codex App local
+
+* No Codex App local com Acesso completo ativado, a publicação esperada é `git push`.
+* Antes do push, confirmar que `core.sshCommand` está configurado no clone/worktree.
+* Se `core.sshCommand` não estiver configurado, parar e reportar.
+* Não recriar `known_hosts` em cada tarefa.
+* Não mexer em `C:\Users\alcin\.ssh`.
+* Não usar GitHub Desktop nem GitHub Connector para publicar, salvo pedido explícito.
+* Se GitHub CLI estiver indisponível, entregar link de PR/compare.
 
 ## Modo simples
 
@@ -49,7 +58,7 @@ Processo:
 2. Criar ou usar branch dedicada a partir da base correta.
 3. Editar somente o necessário.
 4. Rodar validações aplicáveis.
-5. Fazer `git add`, `commit` e publicação conforme o ambiente.
+5. Fazer `git add`, `commit` e publicar conforme o ambiente; no Codex App local, usar `git push`.
 6. Entregar PR ou link de PR/compare, quando aplicável.
 
 ## Modo robusto
@@ -71,7 +80,7 @@ Processo:
 3. Criar branch dedicada para a etapa.
 4. Implementar somente a etapa atual.
 5. Validar localmente.
-6. Fazer `git add`, `commit` e publicação conforme o ambiente.
+6. Fazer `git add`, `commit` e publicar conforme o ambiente; no Codex App local, usar `git push`.
 7. Entregar PR ou link de PR/compare, quando aplicável.
 8. Após merge, atualizar a base antes da próxima branch.
 
