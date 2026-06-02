@@ -2,248 +2,95 @@
 
 ## 1. Objetivo
 
-Este documento registra o estado atual de uso do Codex no LP Factory 10.
+Este documento registra o estado de gestão do uso do Codex no LP Factory 10: decisões vigentes, recursos em acompanhamento e próximos testes.
 
-O foco é manter uma referência enxuta sobre:
-
-- recursos do Codex em uso ou avaliação;
-- configurações atuais;
-- limitações conhecidas;
-- decisões vigentes;
-- próximos testes.
-
-Este documento não substitui:
-
-- `AGENTS.md`, que concentra regras operacionais permanentes do repositório;
-- `docs/template-briefing-codex.md`, que concentra padrões de briefing;
-- documentação oficial da OpenAI;
-- revisão humana antes de merge.
+Ele não substitui `AGENTS.md`, que é a fonte das regras operacionais do repositório.
 
 ## 2. Referências operacionais
 
-- Regras permanentes do Codex no repositório: `AGENTS.md`.
-- Briefings gerais para Codex: `docs/template-briefing-codex.md`.
-- Execução no Codex App: `docs/prompt-codex-app-executor.md`.
-- Briefings com impacto visual/frontend: `docs/template-briefing-codex-frontend.md`.
-- Template geral de prompts: `docs/template-prompts.md`.
-
-Este documento deve evitar duplicar essas fontes.
+* Regras operacionais do Codex no repositório: `AGENTS.md`.
+* Briefings gerais para Codex: `docs/template-briefing-codex.md`.
+* Execução no Codex App: `docs/prompt-codex-app-executor.md`.
+* Briefings com impacto visual/frontend: `docs/template-briefing-codex-frontend.md`.
+* Template geral de prompts: `docs/template-prompts.md`.
 
 ## 3. Superfícies de uso
 
-### 3.1 Codex Web
+### Codex App local
 
-- Melhor para tarefas paralelas, PRs diretos e alterações que não exigem preview local.
-- Reduz atrito com clone local, GitHub Desktop e worktrees.
-- Status: `validado`.
+* Uso validado no Windows com Acesso completo ativado e `core.sshCommand` configurado.
+* Git remoto local funciona dentro do Fluxo Codex App Local.
+* Fluxo principal para tarefas que exigem execução local, preview, validação recorrente ou trabalho em worktree.
 
-### 3.2 Codex App
+### Codex Web/Cloud
 
-- Melhor para modo robusto, preview local, validação local recorrente e uso de worktrees quando necessário.
-- Ainda não fecha sozinho o ciclo remoto completo dentro do sandbox.
-- Status: `em teste`.
+* Indicado para tarefas remotas e PRs diretos que não dependem do ambiente local.
+* Deve seguir o fluxo remoto próprio, separado do Fluxo Codex App Local.
 
-### 3.3 GitHub Web
+### GitHub Web
 
-- Fonte de verdade para PRs, Actions, Preview remoto e merge.
-- Status: `adotado`.
+* Fonte de verdade para PRs, Actions, preview remoto e merge.
+* O humano continua responsável por revisar e fazer merge.
 
-### 3.4 GitHub Desktop
+### GitHub Desktop e GitHub Connector
 
-- Painel local para modo robusto quando necessário.
-- Usado para confirmar estado local, revisar diff, publicar branch dedicada e limpar resíduo operacional.
-- Não deve implementar, decidir escopo ou virar rotina para separar mudanças misturadas.
-- Status: `apoio/fallback`.
+* Fallbacks, não fluxo principal do Codex App local.
+* Usar quando houver bloqueio no fluxo local, necessidade específica ou pedido explícito.
 
 ## 4. Configurações atuais
 
-### 4.1 GitHub Connector
+* Full access: adotado para Codex App local neste repositório, com escopo controlado.
+* `core.sshCommand`: validado como configuração local necessária para o fluxo do Codex App local.
+* GitHub CLI: indisponível; quando necessário, o Codex entrega link de PR/compare.
+* Publicação local: segue as regras operacionais de `AGENTS.md`.
 
-- Usado para operações remotas quando adequado.
-- Preferido quando não há necessidade de execução local.
-- Status: `validado`.
+## 5. Recursos em acompanhamento
 
-### 4.2 Revisões de código
+* Worktrees: em acompanhamento para frentes paralelas ou duradouras.
+* Revisões de código: acompanhamento como camada adicional de análise, sem substituir revisão humana.
+* Chrome Plugin / Browser Use: acompanhamento para validações visuais simples e controladas.
+* Skills: acompanhamento para procedimentos recorrentes e padronizáveis.
+* Automações: acompanhamento futuro, após estabilização dos fluxos manuais.
 
-- Revisão automática: ligada.
-- Acionador: ao abrir PR.
-- Revisão exaustiva: desligada.
-- Uso de créditos: desligado.
-- Uso atual: camada extra de análise, sem substituir Actions, Preview ou revisão humana.
-- Status: `validado como configuração inicial`.
+## 6. Limitações e decisões vigentes
 
-### 4.3 Chrome Plugin / Browser Use
+* O Fluxo Codex App Local é o fluxo principal para execução local neste repositório.
+* Git remoto local no Codex App está validado dentro desse fluxo.
+* GitHub Desktop e GitHub Connector permanecem como fallback para publicação local, não como caminho principal.
+* Operações sensíveis, merges e decisões finais continuam sob responsabilidade humana.
+* Regras detalhadas de segurança e publicação ficam concentradas em `AGENTS.md`.
 
-- Instalado e parcialmente funcional no Windows.
-- Uso experimental apenas em páginas públicas ou previews simples.
-- Não usar com login, credenciais, dados reais ou ações sensíveis.
-- Não substitui QA visual completo.
-- Status: `em teste`.
+## 7. Matriz de uso recomendada
 
-### 4.4 Full access
+| Situação | Superfície recomendada |
+| --- | --- |
+| Tarefa simples com execução local | Codex App local no clone principal |
+| Frente paralela ou duradoura | Codex App local em worktree dedicada |
+| Tarefa remota sem dependência local | Codex Web/Cloud |
+| Revisão, Actions, preview remoto e merge | GitHub Web |
+| Bloqueio ou pedido explícito de fallback | GitHub Desktop ou GitHub Connector |
 
-- Não adotado por padrão.
-- Avaliar apenas com necessidade explícita e risco controlado.
-- Status: `não adotado agora`.
+## 8. Pendências e próximos testes
 
-## 5. Recursos do Codex
+* Validar uso de worktrees em frentes paralelas reais.
+* Acompanhar qualidade das revisões de código em PRs relevantes.
+* Reavaliar Chrome Plugin / Browser Use em cenários visuais simples.
+* Identificar candidatos práticos para Skills.
+* Avaliar Automações apenas após estabilização dos fluxos atuais.
+* Validar criação automática de PR no Codex App local.
+  - Caminho preferencial: GitHub CLI (`gh pr create`), se estiver instalado e autenticado.
+  - Plano B: GitHub Connector para criação de PR após `git push`.
+  - Plano futuro: GitHub Actions/workflow para abertura ou atualização automática de PR em automações recorrentes.
+  - Estado atual: `git push` + link de PR/compare atende ao fluxo manual, mas não fecha automações end-to-end.
 
-### 5.1 Worktrees
-
-- Worktree é isolamento local para frentes paralelas no Codex App.
-- Não é a multitarefa em si; é o mecanismo que torna a multitarefa local mais segura.
-- Relação prática:
-  - worktree = área local isolada;
-  - branch = linha de trabalho;
-  - PR = unidade de revisão, validação e merge.
-- Usar quando houver frentes robustas simultâneas ou comparação de alternativas.
-- Evitar quando um PR direto via Codex Web/Connector resolver com menos atrito.
-- Status: `em teste`.
-
-### 5.2 Plugins
-
-- Conectam o Codex a ferramentas externas ou capacidades adicionais.
-- Exemplos relevantes hoje: GitHub Connector e Chrome Plugin.
-- Devem começar com escopo claro, supervisão humana e baixo risco.
-- Status: `em avaliação`.
-
-### 5.3 Skills
-
-- Procedimentos reutilizáveis para tarefas recorrentes.
-- Não substituem `AGENTS.md` nem briefings específicos.
-- Candidatos futuros:
-  - avaliar entrega do Codex;
-  - revisar PR;
-  - montar checklist de QA;
-  - preparar briefing a partir de intenção inicial.
-- Status: `disponível / ainda não adotado`.
-
-### 5.4 Automações
-
-- Execuções recorrentes ou condicionais.
-- Ainda não adotadas como fluxo principal.
-- Só considerar após estabilizar o processo manual e reduzir risco operacional.
-- Status: `não adotado agora`.
-
-## 6. Limitações conhecidas
-
-### 6.1 Git remoto no sandbox do Codex App
-
-A limitação atual não é acesso geral ao computador. O Codex App consegue editar e validar arquivos no workspace local.
-
-O problema está nas operações Git remotas locais dentro do sandbox, como:
-
-- `git fetch`
-- `git pull`
-- `git push`
-- `git ls-remote`
-- `ssh -T git@github.com`
-
-Mesmo com rede habilitada, essas operações podem exigir escrita em áreas internas do Git, como `.git`, `FETCH_HEAD`, refs remotas e arquivos de lock. Por isso, o Codex App ainda não fecha sozinho o ciclo remoto completo de atualizar base, publicar branch e abrir fluxo de PR sem apoio externo.
-
-Decisão vigente:
-
-- não usar Git remoto local dentro do sandbox;
-- usar GitHub Connector, GitHub Web, GitHub Desktop ou PowerShell normal fora do sandbox, conforme o caso;
-- investigar se existe configuração oficial segura para permitir Git remoto local completo sem usar modo inseguro/full access.
-
-### 6.2 Mistura de alterações locais
-
-- Risco principal do Codex App quando várias tarefas usam o mesmo workspace sem isolamento.
-- Prevenção principal: seguir `AGENTS.md`, usar branch dedicada e worktree quando houver frentes paralelas reais.
-
-### 6.3 Resíduo pós-merge
-
-- Branch ou mudança local já resolvida por PR mergeado deve ser tratada como resíduo operacional.
-- Não commitar nem publicar; limpar antes de nova tarefa.
-
-### 6.4 Commit local no modo robusto
-
-- Commit local é checkpoint opcional, não requisito obrigatório.
-- PR é a unidade real de publicação e validação.
-
-## 7. Decisões vigentes
-
-### 7.1 Adotado
-
-- GitHub Web como fonte de verdade para merge.
-- PR como unidade de validação.
-- Codex Web para tarefas paralelas simples.
-- Codex App para modo robusto quando houver ganho real.
-- Revisão automática ao abrir PR.
-
-### 7.2 Em teste
-
-- Worktrees no Codex App.
-- Chrome Plugin / Browser Use.
-- GitHub Desktop como painel local no modo robusto.
-- Skills para procedimentos recorrentes.
-
-### 7.3 Não adotado agora
-
-- Full access por padrão.
-- Revisão exaustiva por padrão.
-- Uso de créditos extras por padrão.
-- Automações como fluxo principal.
-
-## 8. Matriz de uso recomendada
-
-### 8.1 Usar Codex Web quando
-
-- houver várias tarefas paralelas;
-- a tarefa puder virar PR direto;
-- não houver dependência de preview local.
-
-### 8.2 Usar Codex App quando
-
-- precisar validar localmente;
-- precisar de preview local;
-- precisar de modo robusto;
-- worktree trouxer ganho real de isolamento.
-
-### 8.3 Usar GitHub Desktop quando
-
-- precisar confirmar estado local;
-- precisar revisar diff local;
-- precisar publicar branch dedicada no modo robusto;
-- precisar limpar resíduo operacional.
-
-### 8.4 Usar Worktree quando
-
-- houver duas ou mais frentes robustas simultâneas;
-- for necessário comparar alternativas;
-- uma tarefa não puder contaminar outra.
-
-### 8.5 Evitar automação quando
-
-- o fluxo ainda exige julgamento humano;
-- há risco de alterar produção;
-- há credenciais ou dados sensíveis;
-- o processo ainda não foi testado manualmente.
-
-## 9. Pendências e próximos testes
-
-- Validar fluxo robusto com GitHub Desktop como painel local.
-- Validar worktree em duas frentes reais sem mistura de arquivos.
-- Testar revisão automática em PR sensível.
-- Reavaliar Chrome Plugin após novos testes de estabilidade.
-- Avaliar Skills antes de Automações.
-
-## 10. Modelo para novo registro
+## 9. Modelo para novo registro
 
 ```md
-### Nome do recurso
+### Nome do recurso ou decisão
 
-- O que é:
-  - 
-- Uso atual:
-  - 
-- Quando usar:
-  - 
-- Quando evitar:
-  - 
-- Status:
-  - 
-- Observações:
-  - 
+* Estado atual:
+* Quando usar:
+* Quando evitar:
+* Próximo teste:
+* Observações:
 ```

@@ -2,14 +2,13 @@
 
 ## Referências
 
-- Para estruturar pedidos incompletos em padrão outcome-first, usar `docs/template-prompts.md`.
-- Para briefings gerais, usar `docs/template-briefing-codex.md`.
-- Para execução no Codex App, usar `docs/prompt-codex-app-executor.md`.
-- Para impacto visual/frontend, usar também `docs/template-briefing-codex-frontend.md`.
+* Para estruturar pedidos incompletos em padrão outcome-first, usar `docs/template-prompts.md`.
+* Para briefings gerais, usar `docs/template-briefing-codex.md`.
+* Para execução no Codex App, usar `docs/prompt-codex-app-executor.md`.
+* Para impacto visual/frontend, usar também `docs/template-briefing-codex-frontend.md`.
+* Para estado, decisões e aprendizados sobre Codex, usar `docs/gestor-codex.md`.
 
-## Modelo operacional Codex App
-
-O Codex App opera em dois modos: **simples** e **robusto**.
+## Regra geral de execução
 
 Antes de executar, identificar:
 
@@ -19,89 +18,82 @@ Antes de executar, identificar:
 4. limites e regras de parada;
 5. validação esperada.
 
-### Modo simples
+Não completar lacunas críticas por suposição. Se faltar fonte, arquivo, rota, schema, regra ou contexto necessário para executar com segurança, parar e pedir exatamente o que falta.
+
+## Ambientes Codex
+
+Este repositório pode ser usado por Codex App local e Codex Web/Cloud.
+
+* Codex App local no Windows pode usar o Fluxo Codex App Local descrito em `docs/gestor-codex.md`.
+* Codex Web/Cloud não deve usar o Fluxo Codex App Local; deve trabalhar pelo fluxo remoto próprio, PRs e ferramentas disponíveis no ambiente remoto.
+* Se o ambiente não estiver claro, perguntar antes de executar operações Git de publicação.
+
+## Regras operacionais
+
+* Não editar nem commitar na `main`. Se estiver na `main` limpa, criar branch dedicada antes de alterar arquivos.
+* Usar branch dedicada por tarefa, preferencialmente com prefixo `codex/`.
+* Antes de alterar, confirmar branch atual, `git status` e remote correto.
+* Não misturar tarefas ou etapas diferentes na mesma branch.
+* Não fazer merge local; o merge final deve acontecer somente pelo GitHub Web.
+* GitHub Web é a fonte de verdade para PRs, Actions, preview remoto e merge.
+* Se houver branch ou mudança local já resolvida por PR mergeado, tratar como resíduo operacional: não commitar, não publicar e orientar limpeza antes de continuar.
+
+## Publicação no Codex App local
+
+* No Codex App local com Acesso completo ativado, a publicação esperada é `git push`.
+* Antes do push, confirmar que `core.sshCommand` está configurado no clone/worktree.
+* Se `core.sshCommand` não estiver configurado, parar e reportar.
+* Não recriar `known_hosts` em cada tarefa.
+* Não mexer em `C:\Users\alcin\.ssh`.
+* Não usar `StrictHostKeyChecking=no`.
+* Não usar GitHub Desktop nem GitHub Connector para publicar, salvo pedido explícito.
+* Se GitHub CLI estiver indisponível, entregar link de PR/compare.
+
+## Modo simples
 
 Usar quando a tarefa for isolada e não exigir worktree próprio.
 
 Processo:
 
-1. Criar ou usar branch dedicada com prefixo `codex/`, salvo instrução explícita em contrário.
-2. Verificar branch ativa e `git status`.
-3. Parar se estiver na `main`, em branch de outro caso ou com mudanças locais não relacionadas.
-4. Editar somente o necessário.
-5. Publicar PR quando a alteração estiver pronta, salvo instrução explícita em contrário.
+1. Verificar branch ativa, `git status` e remote.
+2. Criar ou usar branch dedicada a partir da base correta.
+3. Editar somente o necessário.
+4. Rodar validações aplicáveis.
+5. Fazer `git add`, `commit` e publicar conforme o ambiente; no Codex App local, usar `git push`.
+6. Entregar PR ou link de PR/compare, quando aplicável.
 
-### Modo robusto
+## Modo robusto
 
-Usar quando a tarefa exigir isolamento, execução em etapas, validação local recorrente ou preview.
+Usar quando a tarefa exigir isolamento, execução em etapas, validação local recorrente, preview ou frente paralela.
 
 Regra-base:
 
 ```txt
-1 frente robusta = 1 worktree
-1 etapa = 1 branch
+1 frente robusta = 1 worktree local
+1 etapa = 1 branch ativa
 1 branch = 1 PR
 ```
 
 Processo:
 
-1. Abrir o Codex App no worktree da frente.
-2. Criar ou usar branch dedicada para a etapa.
-3. Verificar worktree, branch ativa e `git status`.
-4. Parar se estiver na `main`, em branch de outro caso ou com mudanças locais não relacionadas.
-5. Implementar somente a etapa atual.
-6. Validar localmente.
-7. Publicar PR da etapa quando estiver pronta.
-8. Após merge, iniciar a próxima etapa em nova branch baseada na `main` atualizada.
+1. Abrir no worktree correto.
+2. Confirmar worktree, branch ativa, `git status` e remote.
+3. Criar branch dedicada para a etapa.
+4. Implementar somente a etapa atual.
+5. Validar localmente.
+6. Fazer `git add`, `commit` e publicar conforme o ambiente; no Codex App local, usar `git push`.
+7. Entregar PR ou link de PR/compare, quando aplicável.
+8. Após merge, atualizar a base antes da próxima branch.
 
-No modo robusto, trabalhar localmente em worktree dedicado é intencional e permitido. O fluxo só é inválido se editar `main`, misturar tarefas/etapas ou depender de Git remoto local no sandbox.
+## Gate pré-PR
 
-## Git / limites operacionais
+Antes de publicar ou abrir PR, validar que:
 
-- Nunca editar diretamente na `main`.
-- Nunca misturar tarefas ou etapas diferentes na mesma branch.
-- O merge final deve acontecer somente pelo GitHub Web.
-- GitHub Web é a fonte de verdade para PRs, Actions, preview remoto e merge.
-- GitHub Desktop é apoio/fallback, não etapa obrigatória.
-- Se houver branch ou mudança local já resolvida por PR mergeado, tratar como resíduo operacional: não commitar, não publicar e orientar limpeza antes de nova tarefa.
-- Gate operacional (GitHub Desktop) antes de novo escopo: voltar para `main`, executar Fetch/Pull, confirmar `0 changed files` e criar nova branch pelo Desktop a partir da `main`.
-- Gate pré-PR: antes de publicar/abrir PR, validar que `main..HEAD` contém apenas commits do escopo atual e que `main...HEAD` contém apenas arquivos do escopo atual.
-
-### Permitido localmente
-
-```txt
-git status
-git diff
-git branch --show-current
-git switch
-git checkout
-git add
-git commit
-```
-
-Commits locais só são permitidos em branch dedicada, nunca na `main`. No modo robusto, commit local é checkpoint opcional: se falhar ou exigir execução fora do sandbox, reportar o bloqueio e seguir pelas regras de operações remotas.
-
-### Proibido no sandbox do Codex App
-
-```txt
-git ls-remote
-git fetch
-git pull
-git push
-ssh -T git@github.com
-```
-
-Motivo: esses comandos foram instáveis no sandbox Windows/Git for Windows.
-
-### Operações remotas
-
-Para operações remotas, usar:
-
-- GitHub Connector do Codex, quando adequado;
-- GitHub Web;
-- GitHub Desktop ou PowerShell normal fora do sandbox, quando necessário.
-
-Operações remotas incluem publicar branch, abrir/atualizar PR, acompanhar checks e mergear.
+* a branch contém apenas commits do escopo atual;
+* o diff contém apenas arquivos do escopo atual;
+* não há alterações acidentais em `.env`, secrets, banco, workflows ou arquivos fora do pedido;
+* validações aplicáveis foram executadas ou marcadas como não aplicáveis;
+* quando a base local permitir, validar `main..HEAD` para commits e `main...HEAD` para arquivos.
 
 ## Preview local
 
@@ -127,7 +119,9 @@ Para alterações exclusivamente documentais ou de texto, `npm ci` e `npm run ch
 
 A resposta final deve informar:
 
-- arquivos alterados;
-- PR criado, quando aplicável;
-- `npm ci`: executado, não executado ou não aplicável;
-- `npm run check`: executado, não executado ou não aplicável.
+* arquivos alterados;
+* branch usada;
+* PR ou link de PR/compare, quando aplicável;
+* `npm ci`: executado, não executado ou não aplicável;
+* `npm run check`: executado, não executado ou não aplicável;
+* observações de bloqueio, fallback ou risco, quando houver.
