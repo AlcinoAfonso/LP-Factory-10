@@ -77,6 +77,11 @@ Ele não substitui `AGENTS.md`, que é a fonte das regras operacionais do reposi
 * Reavaliar Chrome Plugin / Browser Use em cenários visuais simples.
 * Identificar candidatos práticos para Skills.
 * Avaliar Automações apenas após estabilização dos fluxos atuais.
+* Validar criação automática de PR no Codex App local.
+  - Caminho preferencial: GitHub CLI (`gh pr create`), se estiver instalado e autenticado.
+  - Plano B: GitHub Connector para criação de PR após `git push`.
+  - Plano futuro: GitHub Actions/workflow para abertura ou atualização automática de PR em automações recorrentes.
+  - Estado atual: `git push` + link de PR/compare atende ao fluxo manual, mas não fecha automações end-to-end.
 
 ## 9. Modelo para novo registro
 
