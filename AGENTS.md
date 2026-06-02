@@ -18,7 +18,7 @@ Antes de executar, identificar:
 4. limites e regras de parada;
 5. validação esperada.
 
-Nunca completar lacunas técnicas por suposição. Se faltar fonte, arquivo, trecho, rota, schema, regra ou contexto necessário, parar e pedir exatamente o que falta.
+Não completar lacunas críticas por suposição. Se faltar fonte, arquivo, rota, schema, regra ou contexto necessário para executar com segurança, parar e pedir exatamente o que falta.
 
 ## Ambientes Codex
 
@@ -33,7 +33,7 @@ Este repositório pode ser usado por Codex App local e Codex Web/Cloud.
 * Não editar diretamente na `main`.
 * Usar branch dedicada por tarefa, preferencialmente com prefixo `codex/`.
 * Antes de alterar, confirmar branch atual, `git status` e remote correto.
-* Parar se estiver na `main`, em branch de outro caso ou com mudanças locais não relacionadas.
+* Não editar nem commitar na `main`. Se estiver na `main` limpa, criar branch dedicada antes de alterar arquivos. Parar se estiver em branch de outro caso ou com mudanças locais não relacionadas.
 * Não misturar tarefas ou etapas diferentes na mesma branch.
 * Não fazer merge local; o merge final deve acontecer somente pelo GitHub Web.
 * GitHub Web é a fonte de verdade para PRs, Actions, preview remoto e merge.
@@ -82,7 +82,8 @@ Antes de publicar ou abrir PR, validar que:
 * a branch contém apenas commits do escopo atual;
 * o diff contém apenas arquivos do escopo atual;
 * não há alterações acidentais em `.env`, secrets, banco, workflows ou arquivos fora do pedido;
-* validações aplicáveis foram executadas ou marcadas como não aplicáveis.
+* validações aplicáveis foram executadas ou marcadas como não aplicáveis;
+* quando a base local permitir, validar `main..HEAD` para commits e `main...HEAD` para arquivos.
 
 ## Preview local
 

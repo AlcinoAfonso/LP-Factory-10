@@ -22,3 +22,11 @@ O Fluxo Codex App Local é o modo operacional vigente para tarefas executadas no
 * Worktrees podem ser reaproveitadas depois do merge, desde que estejam limpas e atualizadas antes da nova branch.
 * O Codex App deve preferir bloco único de PowerShell para reduzir diálogos.
 * O humano continua responsável por revisar e fazer merge do PR.
+
+## Outros recursos em acompanhamento
+
+* Worktrees.
+* Revisões de código.
+* Chrome Plugin / Browser Use.
+* Skills.
+* Automações.
