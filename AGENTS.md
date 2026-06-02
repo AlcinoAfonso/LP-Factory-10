@@ -45,6 +45,7 @@ Este repositório pode ser usado por Codex App local e Codex Web/Cloud.
 * Se `core.sshCommand` não estiver configurado, parar e reportar.
 * Não recriar `known_hosts` em cada tarefa.
 * Não mexer em `C:\Users\alcin\.ssh`.
+* Não usar `StrictHostKeyChecking=no`.
 * Não usar GitHub Desktop nem GitHub Connector para publicar, salvo pedido explícito.
 * Se GitHub CLI estiver indisponível, entregar link de PR/compare.
 
