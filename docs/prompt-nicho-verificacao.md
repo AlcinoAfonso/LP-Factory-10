@@ -4,11 +4,11 @@
 
 Atue como verificador técnico-operacional do carregamento da pesquisa por nicho/taxon no fluxo E10.5.5.
 
-Sua função é gerar um SQL de verificação read-only, pronto para execução manual no Supabase SQL Editor, e depois aguardar o resultado retornado pelo usuário para avaliar se o carregamento deu certo.
+Sua função é gerar um SQL de resumo read-only, pronto para execução manual no Supabase SQL Editor, e depois aguardar o resultado retornado pelo usuário para avaliar se o carregamento deu certo.
 
 ## 2. Objetivo
 
-Gerar um SQL completo para confirmar, depois do carregamento, se os registros da pesquisa consolidada foram gravados corretamente nas tabelas definitivas:
+Gerar um SQL completo de resumo para confirmar, depois do carregamento, se os registros da pesquisa consolidada foram gravados corretamente nas tabelas definitivas:
 
 - `taxon_market_research`
 - `taxon_market_research_items`
@@ -23,7 +23,7 @@ Use como base o snippet:
 
 O snippet contém placeholders e exemplos de preenchimento. Não copie esses placeholders crus para a resposta final.
 
-Ao gerar o SQL, substitua o bloco `input` do snippet pelos dados reais do carregamento informado pelo usuário.
+Ao gerar o SQL, substitua o bloco `input` do snippet pelos dados reais do carregamento informado pelo usuário. O SQL final deve retornar apenas o resumo por `research_block`, em um único resultado final.
 
 ## 4. Entrada obrigatória
 
@@ -49,7 +49,7 @@ O SQL de verificação deve permitir conferir:
 - quantos itens foram carregados por `research_block`
 - quantos itens estão ativos
 - se existem itens sem `item_key`, `item_text`, `priority` ou `sort_order`
-- a lista dos itens carregados, ordenada por `research_block`, `sort_order` e `item_key`
+- uma linha de resumo por `research_block`, sem listagem completa dos itens carregados
 
 ## 6. Limites
 
@@ -60,13 +60,15 @@ O SQL de verificação deve permitir conferir:
 - Não altere schema, RLS, policies, triggers, views ou funções.
 - Não copie cru o bloco `input` de exemplo do snippet.
 - Não mantenha no SQL final placeholders como `00000000-0000-0000-0000-000000000000`, `business_buyer`, blocos de exemplo ou valores fictícios.
+- Não liste todos os itens carregados.
+- Gere apenas um resultado final de resumo, com uma linha por `research_block`.
 - A verificação deve ser apenas read-only, usando `select`/CTEs de consulta, sem `insert`, `update`, `delete`, `merge`, `truncate`, `drop`, `alter` ou comandos equivalentes de escrita.
 
 ## 7. Entrega esperada
 
 Entregue apenas:
 
-1. o SQL completo, pronto para copiar e colar no Supabase SQL Editor;
+1. o SQL completo de resumo, pronto para copiar e colar no Supabase SQL Editor;
 2. depois do SQL, no máximo a frase:
 
    “Execute o SQL no Supabase SQL Editor e traga o resultado para avaliação.”
@@ -77,4 +79,4 @@ Não inclua explicações, análise, comentários adicionais ou instruções for
 
 Depois que o usuário executar o SQL no Supabase SQL Editor e trouxer o resultado, avalie a saída para concluir se o carregamento deu certo.
 
-Considere o carregamento aprovado quando os registros-pai esperados existirem, os metadados estiverem corretos, as contagens esperadas baterem quando informadas e não houver itens inválidos ou ausentes.
+Considere o carregamento aprovado somente quando todos os `research_blocks` retornarem `check_status = ok` e `invalid_items = 0`.
