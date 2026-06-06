@@ -40,10 +40,9 @@ Este repositório pode ser usado por Codex App local e Codex Web/Cloud.
 
 ## Publicação no Codex App local
 
-* No Codex App local com Acesso completo ativado, a publicação esperada é `git push`.
-* Antes do push, confirmar que `core.sshCommand` está configurado no clone/worktree.
-* Se `core.sshCommand` não estiver configurado, parar e reportar.
-* Não recriar `known_hosts` em cada tarefa.
+* No Codex App local, usar Personalizado (`config.toml`) como modo preferido para tarefas com Git.
+* A publicação esperada é `git push`.
+* Não configurar `core.sshCommand` durante a tarefa; se o push falhar por SSH, parar e reportar o erro exato.
 * Não mexer em `C:\Users\alcin\.ssh`.
 * Não usar `StrictHostKeyChecking=no`.
 * Não usar GitHub Desktop nem GitHub Connector para publicar, salvo pedido explícito.
