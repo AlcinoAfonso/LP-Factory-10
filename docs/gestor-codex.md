@@ -4,7 +4,7 @@
 
 Este documento registra o estado de gestão do uso do Codex no LP Factory 10: decisões vigentes, recursos em acompanhamento e próximos testes.
 
-Ele não substitui `AGENTS.md`, que é a fonte das regras operacionais do repositório.
+Ele não substitui `AGENTS.md`, que é a fonte oficial das regras operacionais do Codex no repositório.
 
 ## 2. Referências operacionais
 
@@ -18,8 +18,9 @@ Ele não substitui `AGENTS.md`, que é a fonte das regras operacionais do reposi
 
 ### Codex App local
 
-* Uso validado no Windows com Acesso completo ativado e `core.sshCommand` configurado.
-* Git remoto local funciona dentro do Fluxo Codex App Local.
+* Modo Personalizado (`config.toml`) validado para trabalho Git no Windows.
+* Fluxo local com `git push` validado com sucesso.
+* Validação completa executada com branch, alteração documental controlada, `npm ci`, `npm run check`, commit, push e link de PR/compare.
 * Fluxo principal para tarefas que exigem execução local, preview, validação recorrente ou trabalho em worktree.
 
 ### Codex Web/Cloud
@@ -34,14 +35,14 @@ Ele não substitui `AGENTS.md`, que é a fonte das regras operacionais do reposi
 
 ### GitHub Desktop e GitHub Connector
 
-* Fallbacks, não fluxo principal do Codex App local.
+* GitHub Connector permanece como fallback, não como fluxo principal de publicação do Codex App local.
+* GitHub Desktop também não integra o fluxo principal.
 * Usar quando houver bloqueio no fluxo local, necessidade específica ou pedido explícito.
 
 ## 4. Configurações atuais
 
-* Full access: adotado para Codex App local neste repositório, com escopo controlado.
-* `core.sshCommand`: validado como configuração local necessária para o fluxo do Codex App local.
-* GitHub CLI: indisponível; quando necessário, o Codex entrega link de PR/compare.
+* Modo Personalizado (`config.toml`): adotado para tarefas Git no Codex App local.
+* GitHub CLI: indisponível ou pendente de adoção.
 * Publicação local: segue as regras operacionais de `AGENTS.md`.
 
 ## 5. Recursos em acompanhamento
@@ -49,23 +50,24 @@ Ele não substitui `AGENTS.md`, que é a fonte das regras operacionais do reposi
 * Worktrees: em acompanhamento para frentes paralelas ou duradouras.
 * Revisões de código: acompanhamento como camada adicional de análise, sem substituir revisão humana.
 * Chrome Plugin / Browser Use: acompanhamento para validações visuais simples e controladas.
+* Computer Use: em avaliação e teste, ainda não aprovado para o fluxo principal.
 * Skills: acompanhamento para procedimentos recorrentes e padronizáveis.
-* Automações: acompanhamento futuro, após estabilização dos fluxos manuais.
+* Configurações e Automações: continuam em teste na lousa e ainda não devem ser tratadas como regra definitiva.
 
 ## 6. Limitações e decisões vigentes
 
-* O Fluxo Codex App Local é o fluxo principal para execução local neste repositório.
-* Git remoto local no Codex App está validado dentro desse fluxo.
-* GitHub Desktop e GitHub Connector permanecem como fallback para publicação local, não como caminho principal.
+* O Fluxo Codex App Local em modo Personalizado é o fluxo validado para trabalho Git local neste repositório.
+* Git remoto local por `git push` está validado dentro desse fluxo.
+* GitHub Connector permanece como fallback para publicação local, não como caminho principal.
 * Operações sensíveis, merges e decisões finais continuam sob responsabilidade humana.
-* Regras detalhadas de segurança e publicação ficam concentradas em `AGENTS.md`.
+* Regras operacionais obrigatórias ficam concentradas exclusivamente em `AGENTS.md`.
 
 ## 7. Matriz de uso recomendada
 
 | Situação | Superfície recomendada |
 | --- | --- |
-| Tarefa simples com execução local | Codex App local no clone principal |
-| Frente paralela ou duradoura | Codex App local em worktree dedicada |
+| Tarefa simples com execução local | Codex App local em modo Personalizado no clone principal |
+| Frente paralela ou duradoura | Codex App local em modo Personalizado e worktree dedicada |
 | Tarefa remota sem dependência local | Codex Web/Cloud |
 | Revisão, Actions, preview remoto e merge | GitHub Web |
 | Bloqueio ou pedido explícito de fallback | GitHub Desktop ou GitHub Connector |
@@ -75,13 +77,10 @@ Ele não substitui `AGENTS.md`, que é a fonte das regras operacionais do reposi
 * Validar uso de worktrees em frentes paralelas reais.
 * Acompanhar qualidade das revisões de código em PRs relevantes.
 * Reavaliar Chrome Plugin / Browser Use em cenários visuais simples.
+* Continuar a avaliação do Computer Use antes de qualquer adoção no fluxo principal.
 * Identificar candidatos práticos para Skills.
-* Avaliar Automações apenas após estabilização dos fluxos atuais.
-* Validar criação automática de PR no Codex App local.
-  - Caminho preferencial: GitHub CLI (`gh pr create`), se estiver instalado e autenticado.
-  - Plano B: GitHub Connector para criação de PR após `git push`.
-  - Plano futuro: GitHub Actions/workflow para abertura ou atualização automática de PR em automações recorrentes.
-  - Estado atual: `git push` + link de PR/compare atende ao fluxo manual, mas não fecha automações end-to-end.
+* Manter Configurações e Automações na lousa até que os testes sustentem uma decisão definitiva.
+* Avaliar futura adoção do GitHub CLI para criação de PR.
 
 ## 9. Modelo para novo registro
 
