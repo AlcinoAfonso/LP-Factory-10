@@ -43,6 +43,20 @@ parents as (
    and research.version = input.version
 ),
 
+unexpected_versions as (
+  select
+    input.research_block,
+    count(research.id) as unexpected_versions
+  from input
+  left join public.taxon_market_research research
+    on research.taxon_id = input.taxon_id
+   and research.research_block = input.research_block
+   and research.audience_scope = input.audience_scope
+   and research.version <> input.version
+  group by
+    input.research_block
+),
+
 items as (
   select
     parents.research_block,
@@ -64,6 +78,7 @@ select
     when parents.research_id is null then 'missing_parent'
     when parents.expected_status is not null
       and parents.status is distinct from parents.expected_status then 'status_mismatch'
+    when unexpected_versions.unexpected_versions > 0 then 'unexpected_versions'
     when parents.expected_items is not null
       and count(items.item_id) <> parents.expected_items then 'item_count_mismatch'
     when count(items.item_id) filter (
@@ -95,9 +110,12 @@ select
         or items.priority is null
         or items.sort_order is null)
   ) as invalid_items,
+  unexpected_versions.unexpected_versions,
   parents.created_at,
   parents.updated_at
 from parents
+join unexpected_versions
+  on unexpected_versions.research_block = parents.research_block
 left join items
   on items.research_id = parents.research_id
 group by
@@ -107,6 +125,7 @@ group by
   parents.expected_audience_scope,
   parents.expected_version,
   parents.expected_status,
+  unexpected_versions.unexpected_versions,
   parents.research_id,
   parents.taxon_id,
   parents.audience_scope,
