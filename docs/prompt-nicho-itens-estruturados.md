@@ -180,7 +180,7 @@ Regras específicas:
 - manter dúvidas e objeções pesquisadas úteis para conversão;
 - não incluir volume, CPC ou dificuldade;
 - não converter este bloco em calendário editorial;
-- em `seo`, o `sort_order` deve seguir a ordem prática/relevância dos itens no bloco.
+- em `seo`, o `sort_order` deve seguir a ordem prática/relevância dos itens no bloco, em sequência única crescente, sem reiniciar por `item_key`.
 
 ## 7. Entrega esperada
 
