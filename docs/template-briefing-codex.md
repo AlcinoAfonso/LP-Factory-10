@@ -1,58 +1,40 @@
 # Template de briefing para Codex
 
-## A) Estrutura mínima do briefing
+Use este template para descrever o resultado esperado. As regras operacionais, de Git e de publicação devem seguir o `AGENTS.md` vigente.
 
-Todo briefing deve ser outcome-first e informar, de forma objetiva:
+## Contexto
 
-- objetivo final;
-- fontes obrigatórias;
-- escopo permitido;
-- limites do que não pode ser alterado;
-- validação obrigatória;
-- formato do relatório final.
+- Fonte ou estado atual:
+- Problema ou necessidade:
 
-## B) Regras por tipo de entrega
+## Objetivo
 
-### Checklist pré-edição
+- Resultado esperado:
+- Critérios de sucesso:
 
-Antes de editar arquivos no Codex App:
+## Arquivos alvo
 
-- verificar a branch ativa;
-- se estiver em `main`, parar e não editar a working tree local;
-- usar o conector GitHub para criar branch de trabalho e aplicar alterações;
-- se o conector GitHub não estiver disponível, reportar bloqueio antes de editar.
+- Criar ou alterar:
+- Não alterar:
 
-### Código
+## Limites
 
-- seguir a rotina padrão de checks definida no `AGENTS.md`;
-- entregar arquivos novos com conteúdo completo;
-- em arquivos existentes, orientar alteração mínima dentro do escopo definido;
-- evitar reestruturação ampla sem pedido explícito.
+- Fazer apenas o necessário para o objetivo.
+- Não ampliar o escopo nem completar lacunas críticas por suposição.
+- Se faltar fonte, permissão ou contexto necessário, parar e reportar o bloqueio exato.
 
-### Documentos
+## Validação
 
-- em alteração local e determinística, fornecer texto exato;
-- quando exigir ajuste interno, instruir localização e edição apenas no escopo definido;
-- em documentos versionados, ler o estado atual antes de propor mudanças em version, date e changelog;
-- não fixar version, date ou changelog sem instrução explícita.
+- Executar `npm ci` e `npm run check` quando aplicáveis.
+- Para alteração apenas documental ou textual, essas validações podem ser dispensadas, com justificativa na entrega.
+- Validações adicionais:
 
-## C) Gate extra para código sensível
+## Entrega final
 
-Aplicar gate quando envolver `package.json`/lockfile, middleware, rotas API/server actions, integrações OpenAI/Supabase/Vercel, ou env/runtime/build.
+Informar:
 
-Nesses casos, exigir no briefing:
-
-- build e/ou validação de deploy conforme o caso;
-- evidência do resultado (logs e resumo de sucesso/erro);
-- regra explícita de que a entrega não está pronta para merge se o gate falhar.
-
-## D) Relatório final
-
-Ao final, informar apenas itens aplicáveis:
-
-- objetivo executado;
-- arquivos criados/ajustados;
-- resumo das mudanças;
-- validação executada;
-- pendências e risco residual, se houver;
-- status final: `pronto`, `bloqueado` ou `depende validação`.
+- arquivos alterados;
+- resumo do ajuste;
+- validações executadas e resultados, ou justificativa de não aplicação;
+- bloqueios, fallback ou risco residual;
+- branch, commit e PR ou link de compare, quando aplicáveis.
