@@ -163,10 +163,21 @@ CH1) (entrada nova)
    * Em operações de TRECHO, fornecer somente o trecho mínimo estável e explícito.
    * Em operações de SEÇÃO, começar pela linha do heading numerado da seção e preservar quebras/bullets.
 
+TRIAGEM PRÉVIA PARA MÚLTIPLOS DOCUMENTOS
+
+Quando o RELATÓRIO não trouxer DOC_ALVO definido, primeiro avaliar todos os DOC_ALVO permitidos e listar:
+* documentos com ABC necessário;
+* motivo curto do delta;
+* documentos sem ABC necessário, com motivo curto.
+
+Depois gerar ABC apenas para documentos com DELTA permitido.
+
+Se houver múltiplos documentos com DELTA, emitir um bloco ABC completo e independente por documento, sem misturar operações, versões ou changelogs.
+
 PAUSA OBRIGATÓRIA (1 DOC POR EXECUÇÃO)
 
-19. Executar o ciclo completo apenas para o DOC_ALVO atual.
-20. Depois de emitir a saída, parar e aguardar próximo `DOC_ALVO`, salvo quando o usuário pedir explicitamente ABCs de múltiplos documentos.
-21. Quando múltiplos DOC_ALVO forem solicitados na mesma execução, emitir um bloco ABC completo por documento, mantendo cada bloco independente e sem misturar operações.
+19. Executar o ciclo completo apenas para o DOC_ALVO atual, salvo quando o fluxo começar pela triagem prévia ou o usuário pedir explicitamente ABCs de múltiplos documentos.
+20. Depois de emitir a saída, parar e aguardar próximo `DOC_ALVO`, exceto quando a triagem prévia identificar múltiplos documentos com DELTA permitido ou o usuário pedir explicitamente múltiplos documentos.
+21. Nesses casos de múltiplos DOC_ALVO, emitir um bloco ABC completo por documento, mantendo cada bloco independente e sem misturar operações, versões ou changelogs.
 
 ---
