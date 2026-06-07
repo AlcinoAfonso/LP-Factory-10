@@ -1,4 +1,4 @@
-# docs/prompt-abc.md vs3
+# docs/prompt-abc.md vs4
 
 PROMPT ABC
 
@@ -44,80 +44,52 @@ CRITÉRIO BASE TÉCNICA (RELEVÂNCIA PARA IA)
 REGRAS DE LEITURA
 
 1. Abrir o DOC_ALVO na fonte indicada.
-2. Ler no DOC_ALVO:
-   * `0.2.1 TIPO_DO_DOCUMENTO`
-   * `0.2.2 GUIA_DE_CONSULTA`
+2. Identificar no DOC_ALVO:
+   * função do documento
+   * relação com outros documentos
+   * seções existentes
+   * padrão de estrutura
+   * versão/data, quando houver
+   * changelog, quando houver
+3. Se o DOC_ALVO não tiver seção explícita de função ou relação documental, usar a VISÃO GERAL e a ALLOWLIST deste prompt como fonte de residência documental.
 
-ALLOWLIST — `docs/base-tecnica.md` (CONTRATO_TÉCNICO)
+ALLOWLISTS POR DOC_ALVO
 
-* PERMITIDO (DELTA): runtime, segurança (PII/secrets/permissão mínima), observability mínima estável, integrações com parâmetros fixos, convenções obrigatórias de repo, decisões arquiteturais estáveis.
-* Fora do escopo: qualquer item fora dessa lista.
+`docs/base-tecnica.md` — CONTRATO_TÉCNICO
+* ENTRA: runtime, segurança (PII/secrets/permissão mínima), observability mínima estável, integrações com parâmetros fixos, convenções obrigatórias de repo e decisões arquiteturais estáveis.
+* NÃO ENTRA: itens pertencentes a DB/schema, roadmap/casos, design system, platform config, services ou automations.
 
-ALLOWLIST — `docs/schema.md` (CONTRATO_DB)
+`docs/schema.md` — CONTRATO_DB
+* ENTRA: tabelas, colunas, constraints, enums, relacionamentos, views, RPCs/functions, triggers, RLS/policies, grants e notas mínimas de validação no Supabase.
+* GATE: o RELATÓRIO precisa trazer evidência de DB executado/observável: migration aplicada, SQL que altere schema ou confirmação no Supabase.
+* TBD: só para detalhe faltante de objeto já existente no Supabase, com caminho de validação.
+* NÃO ENTRA: itens pertencentes a runtime/base técnica, roadmap/casos, design system, platform config, services ou automations.
 
-* PERMITIDO (DELTA): tabelas/colunas/constraints/enums/relacionamentos, views, RPCs/functions, triggers, RLS/policies, notas mínimas de validação no Supabase.
-* GATE obrigatório: o RELATÓRIO precisa trazer evidência de DB executado/observável (migration aplicada, SQL que altere schema, ou confirmação no Supabase).
-* TBD só para detalhe faltante de objeto já existente no Supabase, com caminho de validação.
-* Fora do escopo: qualquer item fora dessa lista.
+`docs/roadmap.md` — CONTRATO_DE_CASOS
+* ENTRA: status com data, escopo final em bullets curtos, dependências entre casos E*, artefatos de repo, decisões explícitas do caso e pendências marcadas explicitamente no RELATÓRIO.
+* REGRA: “E” só no título principal do caso; subitens sem repetir “E”.
+* ARTEFATOS: separar em Criados, Ajustados e Removidos; omitir categorias vazias.
+* NÃO ENTRA: itens pertencentes a DB/schema, runtime/base técnica, design system, platform config, services ou automations.
 
-ALLOWLIST — `docs/roadmap.md` (CONTRATO_DE_CASOS)
+`docs/design-system.md` — CONTRATO_VISUAL
+* ENTRA: padrões visuais atuais, componentes UI ativos, regras de uso, comportamento responsivo, superfícies visuais consolidadas.
+* REGRA: ao citar superfícies, descrever comportamento/padrão visual; evitar inventário de arquivos se isso já estiver no roadmap.
+* NÃO ENTRA: itens pertencentes a roadmap/casos, DB/schema, runtime/base técnica, platform config, services ou automations.
 
-* Convenção: “E” só no título principal do caso; subitens sem repetir “E”.
-* PERMITIDO (DELTA): status com data, escopo final em bullets curtos, dependências entre casos E*, artefatos de repo, decisões explícitas do caso, pendências marcadas explicitamente no RELATÓRIO.
-* Fora do escopo: qualquer item fora dessa lista.
-* Em `docs/roadmap.md`, quando houver artefatos de repo, separar obrigatoriamente:
-  * Criados
-  * Ajustados
-  * Removidos
-* Se uma categoria não tiver itens, omitir a categoria.
+`docs/platform-config.md` — CONTRATO_OPERACIONAL_DE_PLATAFORMAS
+* ENTRA: plataformas usadas pelo projeto, projetos/ambientes externos, variáveis públicas, secrets server-side por nome, flags, endpoints oficiais, URLs de produção/preview, redirects, SMTP, DNS/domínio, GitHub Actions secrets, regras operacionais de configuração e redeploy.
+* SECRETS: nunca incluir valores reais; registrar só nome da variável, finalidade, plataforma e escopo de ambiente.
+* NÃO ENTRA: itens pertencentes a runtime/base técnica, DB/schema, roadmap/casos, design system, services ou automations.
 
-ALLOWLIST — `docs/design-system.md` (CONTRATO_VISUAL)
+`docs/services.md` — CONTRATO_DE_SERVICES
+* ENTRA: services implantáveis, MCPs, endpoints de services, objetivo do service, implementação canônica, README técnico local, boundary operacional de deploy, consumidores principais, dependências diretas, status operacional e pendências operacionais vinculadas ao próprio service.
+* REGRA: endpoint/projeto só como identificação do service; inventário operacional consolidado fica em `docs/platform-config.md`.
+* NÃO ENTRA: automações consumidoras, configs gerais de plataforma/secrets/envs, regras técnicas de runtime, objetos de DB, status de casos E* ou padrões visuais.
 
-* PERMITIDO (DELTA): padrões visuais atuais, componentes UI ativos, regras de uso, comportamento responsivo, superfícies visuais consolidadas.
-* Quando citar superfícies, descrever comportamento/padrão visual; evitar inventário de arquivos se isso já estiver no roadmap.
-* Fora do escopo: status de caso, lista detalhada de artefatos, contrato DB, regras runtime, histórico de implementação.
-
-ALLOWLIST — `docs/platform-config.md` (CONTRATO_OPERACIONAL_DE_PLATAFORMAS)
-
-* PERMITIDO (DELTA): plataformas usadas pelo projeto, projetos/ambientes externos, variáveis públicas, secrets server-side por nome, flags, endpoints oficiais, URLs de produção/preview, redirects, SMTP, DNS/domínio, GitHub Actions secrets, regras operacionais de configuração e redeploy.
-* Nunca incluir valores reais de secrets em operações ABC.
-* Quando necessário, registrar apenas o nome da variável e a plataforma onde ela deve existir.
-* Para secrets, registrar apenas o nome da variável, finalidade, plataforma onde deve ser configurada e escopo de ambiente.
-* Fora do escopo: regras de runtime/código que pertencem à Base Técnica, objetos de DB que pertencem ao Schema, status/escopo de casos E* que pertencem ao Roadmap, e padrões visuais que pertencem ao Design System.
-
-ALLOWLIST — `docs/services.md` (CONTRATO_DE_SERVICES)
-
-* PERMITIDO (DELTA): services implantáveis, MCPs, endpoints de services, objetivo do service, implementação canônica, README técnico local, projeto/ambiente de deploy quando o service tiver deploy independente, boundary operacional de deploy, consumidores principais, dependências diretas, status operacional do service e pendências operacionais vinculadas ao próprio service.
-* Para cada service, manter preferencialmente:
-  * nome do service
-  * objetivo
-  * implementação canônica
-  * README técnico local
-  * endpoint canônico, quando houver
-  * boundary operacional de deploy, quando houver deploy independente
-  * consumidor atual ou consumidores principais
-  * status
-  * pendências operacionais vinculadas ao próprio service
-* Fora do escopo: catálogo e uso de automações que pertencem a `docs/automations.md`, configurações gerais de plataforma/secrets/envs que pertencem a `docs/platform-config.md`, regras técnicas de runtime/código que pertencem à Base Técnica, objetos de DB que pertencem ao Schema, status/escopo de casos E* que pertencem ao Roadmap e padrões visuais que pertencem ao Design System.
-
-ALLOWLIST — `docs/automations.md` (CONTRATO_DE_AUTOMACOES)
-
-* PERMITIDO (DELTA): automações operacionais, catálogo de automações, objetivo da automação, status, acesso humano, como usar, inputs operacionais, resposta esperada, runtime/local da automação, README local, workflow consumidor, componentes consumidores, dependências diretas, regras operacionais de uso, padrões de execução pré-merge, aprendizados operacionais e pendências vinculadas à automação.
-* Para cada automação, manter preferencialmente:
-  * nome da automação
-  * objetivo
-  * status
-  * acesso
-  * como usar
-  * inputs operacionais, quando aplicável
-  * resposta esperada
-  * runtime/local
-  * README local
-  * workflow relacionado, quando aplicável
-  * dependências diretas
-  * regras operacionais específicas
-  * aprendizados reutilizáveis
-* Fora do escopo: configurações de plataformas, secrets por nome, envs, endpoints canônicos e lista consolidada de workflows que pertencem a `docs/platform-config.md`; services implantáveis, MCPs e infraestrutura reutilizável com identidade própria que pertencem a `docs/services.md`; regras técnicas de runtime/código que pertencem à Base Técnica; objetos de DB que pertencem ao Schema; status/escopo de casos E* que pertencem ao Roadmap; padrões visuais que pertencem ao Design System.
+`docs/automations.md` — CONTRATO_DE_AUTOMACOES
+* ENTRA: automações operacionais, catálogo, objetivo, status, acesso humano, como usar, inputs operacionais, resposta esperada, runtime/local, README local, workflow consumidor, componentes consumidores, dependências diretas, regras operacionais, padrões de execução pré-merge, aprendizados e pendências vinculadas à automação.
+* REGRA: secrets/envs/endpoints/workflows podem aparecer só como dependência curta; inventário consolidado fica em `docs/platform-config.md`.
+* NÃO ENTRA: configs de plataformas, secrets por nome, envs, endpoints canônicos e lista consolidada de workflows; services/MCPs reutilizáveis; regras técnicas de runtime; objetos de DB; status de casos E*; padrões visuais.
 
 REGRAS DE EXTRAÇÃO (RELATÓRIO → ESTADO FINAL)
 
@@ -191,10 +163,21 @@ CH1) (entrada nova)
    * Em operações de TRECHO, fornecer somente o trecho mínimo estável e explícito.
    * Em operações de SEÇÃO, começar pela linha do heading numerado da seção e preservar quebras/bullets.
 
+TRIAGEM PRÉVIA PARA MÚLTIPLOS DOCUMENTOS
+
+Quando o RELATÓRIO não trouxer DOC_ALVO definido, primeiro avaliar todos os DOC_ALVO permitidos e listar:
+* documentos com ABC necessário;
+* motivo curto do delta;
+* documentos sem ABC necessário, com motivo curto.
+
+Depois gerar ABC apenas para documentos com DELTA permitido.
+
+Se houver múltiplos documentos com DELTA, emitir um bloco ABC completo e independente por documento, sem misturar operações, versões ou changelogs.
+
 PAUSA OBRIGATÓRIA (1 DOC POR EXECUÇÃO)
 
-19. Executar o ciclo completo apenas para o DOC_ALVO atual.
-20. Depois de emitir a saída, parar e aguardar próximo `DOC_ALVO`, salvo quando o usuário pedir explicitamente ABCs de múltiplos documentos.
-21. Quando múltiplos DOC_ALVO forem solicitados na mesma execução, emitir um bloco ABC completo por documento, mantendo cada bloco independente e sem misturar operações.
+19. Executar o ciclo completo apenas para o DOC_ALVO atual, salvo quando o fluxo começar pela triagem prévia ou o usuário pedir explicitamente ABCs de múltiplos documentos.
+20. Depois de emitir a saída, parar e aguardar próximo `DOC_ALVO`, exceto quando a triagem prévia identificar múltiplos documentos com DELTA permitido ou o usuário pedir explicitamente múltiplos documentos.
+21. Nesses casos de múltiplos DOC_ALVO, emitir um bloco ABC completo por documento, mantendo cada bloco independente e sem misturar operações, versões ou changelogs.
 
 ---
