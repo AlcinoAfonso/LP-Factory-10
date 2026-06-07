@@ -49,6 +49,7 @@ O SQL de verificação deve permitir conferir:
 - quantos itens foram carregados por `research_block`
 - quantos itens estão ativos
 - se existem itens sem `item_key`, `item_text`, `priority` ou `sort_order`
+- quantas outras versões existem para o mesmo `taxon_id + research_block + audience_scope`, além da `version` esperada, retornando `other_versions` como coluna informativa
 - uma linha de resumo por `research_block`, sem listagem completa dos itens carregados
 
 ## 6. Limites
@@ -66,17 +67,18 @@ O SQL de verificação deve permitir conferir:
 
 ## 7. Entrega esperada
 
-Entregue apenas:
+Entregue apenas SQL puro, completo e pronto para copiar e colar no Supabase SQL Editor.
 
-1. o SQL completo de resumo, pronto para copiar e colar no Supabase SQL Editor;
-2. depois do SQL, no máximo a frase:
-
-   “Execute o SQL no Supabase SQL Editor e traga o resultado para avaliação.”
-
-Não inclua explicações, análise, comentários adicionais ou instruções fora do SQL e da frase permitida.
+- Sem Markdown.
+- Sem comentários antes ou depois do SQL.
+- Sem explicação.
+- Sem frase final.
+- Sem qualquer texto fora do SQL.
 
 ## 8. Avaliação posterior
 
 Depois que o usuário executar o SQL no Supabase SQL Editor e trouxer o resultado, avalie a saída para concluir se o carregamento deu certo.
 
 Considere o carregamento aprovado somente quando todos os `research_blocks` retornarem `check_status = ok` e `invalid_items = 0`.
+
+A coluna `other_versions` é apenas informativa e não deve reprovar automaticamente o carregamento, porque versões paralelas ou históricas podem existir legitimamente.

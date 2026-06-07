@@ -39,6 +39,8 @@ O SQL gerado deve:
 - preservar `item_key`, `item_text`, `priority`, `sort_order` e `notes`
 - manter `status = draft`, salvo se outro status vier explicitamente na estruturação
 - ser seguro para reexecução com os mesmos dados
+- usar CTEs diretas nomeadas `research_input`, `items_input`, `upserted_research`, `deleted_items` e `inserted_items`
+- retornar um `SELECT` final com `loaded_items` por `research_block`
 
 ## 5. Limites
 
@@ -49,10 +51,19 @@ O SQL gerado deve:
 - Não ative versão automaticamente.
 - Não invente `taxon_id`, `research_block`, `audience_scope`, `version` ou itens ausentes.
 - Se faltarem os itens estruturados completos, pare e peça o conteúdo faltante.
+- Não use `temp table`.
+- Não use `on commit drop`.
+- Não use `DO block`, salvo necessidade técnica excepcional justificada no próprio código SQL.
 
 ## 6. Entrega esperada
 
-Entregue apenas o SQL completo para execução no Supabase SQL Editor.
+Entregue apenas SQL puro, completo e pronto para copiar e colar no Supabase SQL Editor.
+
+- Sem Markdown.
+- Sem comentários antes ou depois do SQL.
+- Sem explicação.
+- Sem frase final.
+- Sem qualquer texto fora do SQL.
 
 Use como base o snippet:
 

@@ -43,6 +43,20 @@ parents as (
    and research.version = input.version
 ),
 
+other_versions as (
+  select
+    input.research_block,
+    count(research.id) as other_versions
+  from input
+  left join public.taxon_market_research research
+    on research.taxon_id = input.taxon_id
+   and research.research_block = input.research_block
+   and research.audience_scope = input.audience_scope
+   and research.version <> input.version
+  group by
+    input.research_block
+),
+
 items as (
   select
     parents.research_block,
@@ -95,9 +109,12 @@ select
         or items.priority is null
         or items.sort_order is null)
   ) as invalid_items,
+  other_versions.other_versions,
   parents.created_at,
   parents.updated_at
 from parents
+join other_versions
+  on other_versions.research_block = parents.research_block
 left join items
   on items.research_id = parents.research_id
 group by
@@ -107,6 +124,7 @@ group by
   parents.expected_audience_scope,
   parents.expected_version,
   parents.expected_status,
+  other_versions.other_versions,
   parents.research_id,
   parents.taxon_id,
   parents.audience_scope,
