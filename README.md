@@ -7,13 +7,14 @@
 1. O que é
 1.1. Classificação do negócio
 • Segmento: Marketing digital.
-• Nicho: SaaS de landing pages e conversão.
+• Nicho: plataforma SaaS de comunicação comercial por nicho.
 • Ultranicho: não usar agora.
 
 1.2. Descrição
-• LP Factory 10 é uma plataforma SaaS de landing pages por nicho, com dashboards de análise para acompanhar e otimizar a performance.
+• LP Factory 10 é uma plataforma SaaS de comunicação comercial por nicho, com landing pages como um dos canais principais de aquisição e conversão.
+• O produto combina páginas, dashboards, dados estruturados, automações e recursos operacionais para apoiar a criação, execução e melhoria contínua da comunicação com leads e clientes.
 • O foco atual é validar a oferta, o processo e a repetibilidade antes de escalar.
-• O produto foi pensado para atender múltiplos nichos, com priorização orientada pela demanda captada no uso real.
+• A aplicação de IA diretamente no produto para o cliente está em estudo, especialmente para apoiar geração, personalização e melhoria de mensagens, páginas e canais de comunicação.
 
 2. Estratégia (atual e evolutiva)
 2.1. Go-to-market inicial
