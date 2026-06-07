@@ -37,6 +37,18 @@ Se houver impacto visual/frontend, usar tambem `docs/template-briefing-codex-fro
 
 Quando houver BD, usar `docs/schema.md` como fonte inicial e investigar o BD real somente se os documentos canonicos forem insuficientes. Se a inspecao depender do Gestor, entregar SQL read-only pronto para execucao, limitado ao objetivo do caso.
 
+### Formato dos SQLs de inspecao
+
+Quando entregar SQLs de inspecao para Supabase Inspect:
+
+- entregar bloco pronto para colar no input `briefing` do workflow;
+- usar apenas `SELECT` ou `WITH` read-only;
+- cada query deve ter `LIMIT` obrigatorio de ate 50;
+- nao usar ponto e virgula ao final das queries;
+- separar queries com `---`, preferencialmente em linha propria;
+- usar no maximo 20 queries por execucao;
+- em funcoes, views e retornos compostos, evitar `SELECT *`; preferir colunas explicitas quando o objetivo for validar retorno.
+
 Se faltarem informacoes essenciais ou houver conflito, drift ou dependencia nao resolvida, pedir ajuda humana e bloquear a execucao.
 
 ## 4. Etapa 2 - Plano de implementacao
@@ -108,9 +120,7 @@ Registrar apenas o que efetivamente ocorreu, usando N/A quando nao se aplicar.
 
 ### Execucao
 
-- Modo: Codex App local | bloqueado | fallback solicitado | N/A
-- Fallback/bloqueio de publicacao, incluindo GitHub Connector se utilizado: [resumo] | N/A
-- Branch e PR/compare: [nome e link] | N/A
+- Modo de execucao, branch, PR, publicacao e fallback: conforme `AGENTS.md` - [resumo] | N/A
 
 ### BD e artefatos
 
