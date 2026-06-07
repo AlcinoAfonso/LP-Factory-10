@@ -1,4 +1,4 @@
-# docs/prompt-abc.md vs2
+# docs/prompt-abc.md vs3
 
 PROMPT ABC
 
@@ -6,7 +6,7 @@ ENTRADA
 
 * REPO (GitHub): LP-Factory-10
 * REF (GitHub): [main | branch | commit] (se não informado, main)
-* DOC_ALVO: [docs/base-tecnica.md | docs/schema.md | docs/roadmap.md | docs/design-system.md | docs/platform-config.md]
+* DOC_ALVO: [docs/base-tecnica.md | docs/schema.md | docs/roadmap.md | docs/design-system.md | docs/platform-config.md | docs/services.md | docs/automations.md]
 
 OBJETIVO
 Gerar o **ABC humano** para o DOC_ALVO.
@@ -18,6 +18,8 @@ VISÃO GERAL (RESIDÊNCIA DO CONTEÚDO)
 * `docs/roadmap.md` = estado final dos casos E* (status/escopo/dependências/artefatos).
 * `docs/design-system.md` = contrato visual atual do produto (padrões UI, componentes, superfícies visuais e regras de uso).
 * `docs/platform-config.md` = contrato operacional de plataformas, variáveis, secrets, URLs, endpoints, redirects, DNS e configurações externas.
+* `docs/services.md` = catálogo humano dos services implantáveis, MCPs, endpoints de services, infraestrutura reutilizável com identidade própria, boundaries de deploy e consumidores principais.
+* `docs/automations.md` = catálogo das automações operacionais, uso humano, status, dependências, componentes consumidores, regras operacionais e aprendizados de automação.
 
 REGRA GLOBAL (ANTI-INFLAÇÃO)
 
@@ -27,6 +29,8 @@ REGRA GLOBAL (ANTI-INFLAÇÃO)
 * Docs descrevem o estado atual do projeto; histórico de evolução fica apenas no changelog quando o documento tiver changelog.
 * Ao atualizar uma seção, substituir o estado antigo pelo estado atual consolidado, sem manter fases intermediárias já superadas.
 * Configurações de plataforma, envs, secrets, endpoints, URLs oficiais, redirects, DNS e parâmetros externos ficam em `docs/platform-config.md`; `docs/base-tecnica.md` deve manter apenas a regra técnica de implementação e uma referência curta quando necessário.
+* Services implantáveis, MCPs e infraestrutura reutilizável com identidade própria ficam em `docs/services.md`; automações consumidoras ficam em `docs/automations.md`; configurações operacionais de plataformas ficam em `docs/platform-config.md`.
+* Automações operacionais, seus usos, status, inputs, respostas esperadas, dependências, regras de execução e aprendizados ficam em `docs/automations.md`; configs de plataforma ficam em `docs/platform-config.md`; services/MCPs reutilizáveis ficam em `docs/services.md`.
 
 CRITÉRIO BASE TÉCNICA (RELEVÂNCIA PARA IA)
 
@@ -80,6 +84,40 @@ ALLOWLIST — `docs/platform-config.md` (CONTRATO_OPERACIONAL_DE_PLATAFORMAS)
 * Quando necessário, registrar apenas o nome da variável e a plataforma onde ela deve existir.
 * Para secrets, registrar apenas o nome da variável, finalidade, plataforma onde deve ser configurada e escopo de ambiente.
 * Fora do escopo: regras de runtime/código que pertencem à Base Técnica, objetos de DB que pertencem ao Schema, status/escopo de casos E* que pertencem ao Roadmap, e padrões visuais que pertencem ao Design System.
+
+ALLOWLIST — `docs/services.md` (CONTRATO_DE_SERVICES)
+
+* PERMITIDO (DELTA): services implantáveis, MCPs, endpoints de services, objetivo do service, implementação canônica, README técnico local, projeto/ambiente de deploy quando o service tiver deploy independente, boundary operacional de deploy, consumidores principais, dependências diretas, status operacional do service e pendências operacionais vinculadas ao próprio service.
+* Para cada service, manter preferencialmente:
+  * nome do service
+  * objetivo
+  * implementação canônica
+  * README técnico local
+  * endpoint canônico, quando houver
+  * boundary operacional de deploy, quando houver deploy independente
+  * consumidor atual ou consumidores principais
+  * status
+  * pendências operacionais vinculadas ao próprio service
+* Fora do escopo: catálogo e uso de automações que pertencem a `docs/automations.md`, configurações gerais de plataforma/secrets/envs que pertencem a `docs/platform-config.md`, regras técnicas de runtime/código que pertencem à Base Técnica, objetos de DB que pertencem ao Schema, status/escopo de casos E* que pertencem ao Roadmap e padrões visuais que pertencem ao Design System.
+
+ALLOWLIST — `docs/automations.md` (CONTRATO_DE_AUTOMACOES)
+
+* PERMITIDO (DELTA): automações operacionais, catálogo de automações, objetivo da automação, status, acesso humano, como usar, inputs operacionais, resposta esperada, runtime/local da automação, README local, workflow consumidor, componentes consumidores, dependências diretas, regras operacionais de uso, padrões de execução pré-merge, aprendizados operacionais e pendências vinculadas à automação.
+* Para cada automação, manter preferencialmente:
+  * nome da automação
+  * objetivo
+  * status
+  * acesso
+  * como usar
+  * inputs operacionais, quando aplicável
+  * resposta esperada
+  * runtime/local
+  * README local
+  * workflow relacionado, quando aplicável
+  * dependências diretas
+  * regras operacionais específicas
+  * aprendizados reutilizáveis
+* Fora do escopo: configurações de plataformas, secrets por nome, envs, endpoints canônicos e lista consolidada de workflows que pertencem a `docs/platform-config.md`; services implantáveis, MCPs e infraestrutura reutilizável com identidade própria que pertencem a `docs/services.md`; regras técnicas de runtime/código que pertencem à Base Técnica; objetos de DB que pertencem ao Schema; status/escopo de casos E* que pertencem ao Roadmap; padrões visuais que pertencem ao Design System.
 
 REGRAS DE EXTRAÇÃO (RELATÓRIO → ESTADO FINAL)
 
