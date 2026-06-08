@@ -95,7 +95,7 @@
 • Nova seção, domínio transversal ou path canônico exige definição prévia de classificação, boundary e path.
 • Ordem: camada → seção ou domínio → boundary → path canônico → shared real ou falso shared.
 • Não inventar paths: confirmar no repositório. Artefato novo nasce no path canônico; exceção existente não vira padrão.
-• Dependências da rota ficam em `app/.../_components`; promoção a `components/features` exige boundary compartilhada real.
+• Componentes específicos de rota que dependem de Server Action, estado ou boundary da própria rota devem nascer como route-local em `app/.../_components`; não promover para `components/features` sem boundary compartilhada real.
 • Partner Dashboard não ganha boundary antecipada. LP Builder é seção própria, fora do Account Dashboard.
 
 3.3.3 Family `conversion-content`
@@ -399,7 +399,7 @@
 
 6.2 Arquivos críticos por fluxo (fonte única)
 • Localização atual de arquivos críticos (Acesso, Onboarding, Multi-conta, Supabase núcleo, SULB, Admin): consultar o repositório real.
-• Regra: se um arquivo crítico mudar de path, atualizar esta Base Técnica somente quando a mudança afetar regra, boundary, allowlist ou contrato técnico (ver 3.3.2 e 3.3.3).
+• Regra: se um arquivo crítico mudar de path, atualizar esta Base Técnica somente quando a mudança afetar regra, boundary, allowlist ou contrato técnico (ver 3.3.2).
 
 6.3 Tipos e contratos críticos (mínimo normativo)
 • Fonte única de tipos canônicos: PATH: lib/types/status.ts
