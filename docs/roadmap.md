@@ -596,98 +596,31 @@
 • `lib/onboarding/niche-resolution/contracts.ts`
 
 10.5.5 Fluxo operacional de pesquisa por taxon
-• Status: Em ajuste/teste na feature branch `codex/substituir-conteudo-de-prompt-nicho-pesquisa.md`
-• Objetivo: organizar o fluxo de pesquisa por taxon em etapas separadas de identificação, pesquisa bruta, estruturação dos itens da pesquisa, carregamento e verificação.
-• Decisão atual: manter cada `research_block` como unidade operacional própria, sem criar `strategic_synthesis`, nova tabela, nova camada ou bloco agregado.
+• Status: Implementado e validado na `main`.
+• Objetivo: operar a pesquisa por taxon em etapas separadas de identificação, pesquisa bruta, estruturação dos itens, carregamento e verificação.
 • Modelo operacional:
-  • `taxon_market_research` = registro-pai/metadados do `research_block`.
-  • `taxon_market_research_items` = itens estruturados da pesquisa.
-• Pesquisa bruta:
-  • passa a ser produzida por `docs/prompt-nicho-pesquisa.md`.
-  • executa os `research_blocks` definidos em `research_blocks_order`.
-  • os quatro blocos operacionais padrão são `strategic_core`, `lp_overview`, `lp_sections` e `seo`.
-  • a pesquisa bruta serve como fonte para estruturação posterior dos itens da pesquisa.
-• Decisão pendente:
-  • definir, após testes, se a pesquisa bruta será arquivada no repo, no banco ou em ambos.
-  • se o arquivamento oficial for no banco, avaliar ajuste de schema em `taxon_market_research` para guardar o conteúdo bruto do bloco.
+  • cada `research_block` é uma unidade operacional própria;
+  • não há `strategic_synthesis` nem nova tabela de síntese;
+  • `taxon_market_research` guarda o registro-pai e os metadados de cada bloco;
+  • `taxon_market_research_items` guarda os itens estruturados e é a fonte principal para templates futuros.
 
-10.5.5.1 Objetivo
-• estruturar o fluxo operacional de pesquisa por taxon em etapas separadas de identificação, pesquisa bruta, estruturação dos itens da pesquisa, carregamento e verificação
-• garantir compatibilidade com `taxon_market_research` e `taxon_market_research_items`
-• manter cada `research_block` como unidade operacional própria
-• evitar criação de bloco agregado, nova tabela ou nova camada conceitual para síntese
+10.5.5.1 Artefatos na ordem de uso
+• `docs/prompt-nicho-identificacao.md` — identifica o taxon, o `audience_scope` e os blocos da pesquisa.
+• `docs/prompt-nicho-pesquisa.md` — produz a pesquisa bruta por `research_block`.
+• `docs/prompt-nicho-itens-estruturados.md` — transforma a pesquisa aprovada em itens estruturados.
+• `docs/prompt-nicho-carregamento.md` — orienta a geração do SQL de carregamento.
+• `supabase/snippets/e10_5_5_nicho_carregamento.sql` — carrega registros-pai e itens com CTEs diretas.
+• `docs/prompt-nicho-verificacao.md` — orienta a conferência após o carregamento.
+• `supabase/snippets/e10_5_5_nicho_verificacao.sql` — retorna um resumo read-only da carga.
 
-10.5.5.2 Artefatos na ordem de uso
-• A. Identificação do taxon
-• `docs/prompt-nicho-identificacao.md`
-  • confirma o taxon correto, o `audience_scope` e os `research_blocks` que serão usados na pesquisa
-  • gera o relatório-instrução que será usado na pesquisa bruta
-• `supabase/snippets/e10_5_5_nicho_identificacao_taxon_lookup.sql`
-  • localiza taxons cadastrados por nome, slug ou alias
-  • deve ser usado como apoio à identificação quando o humano informar apenas o nome do nicho/taxon
+10.5.5.2 Validação concluída
+• Fluxo validado na `main` para o taxon `Corretor de imóveis de médio padrão`, com `audience_scope = end_customer`, `version = 1`, `status = draft` e os blocos `strategic_core`, `lp_overview`, `lp_sections` e `seo`.
+• Foram carregados 74 itens; a verificação retornou `check_status = ok`, `invalid_items = 0` e `other_versions = 0` em todos os blocos.
 
-• B. Pesquisa bruta
-• `docs/prompt-nicho-pesquisa.md`
-  • produz a pesquisa bruta por nicho/taxon
-  • executa os `research_blocks` definidos em `research_blocks_order`
-  • usa cada `research_block` como direção de investigação
-  • entrega material para estruturação posterior dos itens da pesquisa
-
-• C. Estruturação dos itens da pesquisa
-• `docs/prompt-nicho-itens-estruturados.md`
-  • transforma a pesquisa bruta aprovada em itens estruturados por `research_block`
-  • prepara a saída compatível com `taxon_market_research_items`
-  • gera um Registro-pai por `research_block` para orientar a carga em `taxon_market_research`
-
-• D. Carregamento
-• `docs/prompt-nicho-carregamento.md`
-  • orienta a geração do SQL de carregamento
-  • deve transformar os itens estruturados em carga compatível com `taxon_market_research` e `taxon_market_research_items`
-• `supabase/snippets/e10_5_5_nicho_carregamento.sql`
-  • carrega a pesquisa estruturada
-  • insere ou atualiza o registro-pai em `taxon_market_research`
-  • insere os itens estruturados em `taxon_market_research_items`
-
-• E. Verificação
-• `docs/prompt-nicho-verificacao.md`
-  • orienta a conferência após o carregamento
-  • deve confirmar se o registro-pai e os itens estruturados foram gravados corretamente
-• `supabase/snippets/e10_5_5_nicho_verificacao.sql`
-  • verifica o carregamento da pesquisa
-  • lista o registro-pai e os itens estruturados carregados para conferência humana
-
-10.5.5.3 Modelo operacional dos dados
-• Não criar `research_block = strategic_synthesis`.
-• Não criar nova tabela para síntese.
-• Não criar nova camada operacional.
-• Manter cada bloco operacional como unidade própria:
-  • `strategic_core`
-  • `lp_overview`
-  • `lp_sections`
-  • `seo`
-  • outros blocos futuros, se necessários
-• Para cada `research_block`:
-  • `taxon_market_research` guarda o registro-pai e os metadados do bloco.
-  • `taxon_market_research_items` guarda os itens estruturados da pesquisa.
-• Templates futuros devem usar `taxon_market_research_items` como fonte principal.
-• A pesquisa bruta, se arquivada, servirá como apoio, auditoria, revisão e reprocessamento.
-
-10.5.5.4 Pendências atuais
-• Testar o fluxo real usando os prompts da `main`, após merge da feature branch.
-• Decidir onde a pesquisa bruta será arquivada: repo, banco ou ambos.
-• Se a decisão for arquivamento no banco, avaliar ajuste de schema em `taxon_market_research`.
-• Revisar carregamento e verificação após a definição de arquivamento da pesquisa bruta.
-
-10.5.5.5 Artefatos de repo
-• Ajustados:
-  • `docs/prompt-nicho-pesquisa.md`
-
-• A revisar:
-  • `docs/prompt-nicho-identificacao.md`
-  • `docs/prompt-nicho-carregamento.md`
-  • `docs/prompt-nicho-verificacao.md`
-  • `supabase/snippets/e10_5_5_nicho_carregamento.sql`
-  • `supabase/snippets/e10_5_5_nicho_verificacao.sql`
+10.5.5.3 Pendências
+• Decidir se a pesquisa bruta será arquivada no repo, no banco ou em ambos.
+• Se o arquivamento for no banco, avaliar o ajuste de schema necessário.
+• Usar os dados carregados como base para o template comercial do Account Dashboard, vinculado ao E10.5 e à resolução de template comercial em 10.5.6.7.
 
 10.5.6 Classificação da conta e resolução do nicho
 • Status: Parcialmente concluído (14/05/2026)
