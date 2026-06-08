@@ -210,10 +210,6 @@
 • Regra: não alterar SPF raiz sem avaliar impacto em e-mails humanos/corporativos.
 • Regra: Resend permanece para envio transacional, não para mailbox humano.
 
-5.3 Evolução futura
-• Quando houver escala, avaliar subdomínio dedicado, por exemplo `mail.lpfactory.com.br`, para isolar reputação.
-• Essa evolução pode exigir plano pago e novos registros DNS.
-
 6. OpenAI Platform
 
 6.1 Projects
