@@ -29,6 +29,7 @@
 • URL: `https://github.com/AlcinoAfonso/LP-Factory-10`
 • Fluxo operacional: GitHub Web → PR/merge → Vercel
 • Regra: consultar o repositório real antes de assumir paths, branches, arquivos ou estrutura.
+• Regra: investigações operacionais podem usar GitHub Connector, GitHub Web ou `gh` autenticado no ambiente autorizado; não há secret nomeado `GH_TOKEN` registrado para essa finalidade neste documento.
 
 2.2 GitHub Actions
 • Secrets conhecidos:
@@ -146,6 +147,14 @@
 • Regra: não usar para mutações.
 • Valor real: não versionar.
 
+3.6 Acesso operacional Vercel para investigações
+• `VERCEL_TOKEN`
+• Finalidade: token operacional opcional para leitura via API/CLI Vercel em investigações do Agent Investigator quando conector ou sessão autenticada não estiverem disponíveis.
+• Uso atual conhecido: preflight local em `plugins/agent-investigator/scripts/tool-readiness.mjs`, apenas para verificar presença/formato.
+• Escopo: ambiente autorizado de investigação; não é variável de runtime do Core nem do service MCP.
+• Regra: não usar para deploy, redeploy, alteração de env var ou mutação sem autorização explícita.
+• Valor real: não versionar.
+
 4. Supabase
 
 4.1 Projeto
@@ -235,6 +244,12 @@
 • Finalidade: selecionar modelo do resolvedor IA de nicho.
 • Valor atual de referência: `gpt-5.4-mini`
 
+6.3.1 Endpoint externo atual
+• Endpoint OpenAI Responses API: `https://api.openai.com/v1/responses`
+• Consumidores atuais conhecidos:
+• `lib/onboarding/niche-resolution/adapters/openAiResolver.ts`
+• `automations/supabase-inspect/run.mjs`
+• Regra: novas APIs ou endpoints OpenAI devem ser registrados aqui quando virarem dependência operacional.
 
 6.4 Agent Builder — Supabase Inspect
 • Ativo operacional: Supabase Inspect Agente.
