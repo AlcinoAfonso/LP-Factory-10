@@ -32,10 +32,10 @@
 
 2.2 GitHub Actions
 • Secrets conhecidos:
-• `OPENAI_API_KEY`: usado por automações/CI que chamam OpenAI.
-• `SUPABASE_DB_URL_READONLY`: conexão read-only para inspeções/automação de banco.
-• `MAILBOX_EMAIL`: e-mail usado por automações de autenticação/mailbox.
-• `MAILBOX_PASSWORD`: senha/app password da mailbox usada por automações de autenticação/mailbox.
+• `OPENAI_API_KEY`: usado por automações/CI que chamam OpenAI. Consumidor atual: `pipeline-supabase-inspect`.
+• `SUPABASE_DB_URL_READONLY`: conexão read-only para inspeções/automação de banco. Consumidores atuais: `pipeline-supabase-inspect`, `automation-niche-runtime-tests` quando houver verificação de banco e MCP Supabase Inspect no projeto Vercel `lpf-10-services`.
+• `MAILBOX_EMAIL`: e-mail usado por automações de autenticação/mailbox. Consumidores atuais: `automation-validador-final` e `automation-niche-runtime-tests`.
+• `MAILBOX_PASSWORD`: senha/app password da mailbox usada por automações de autenticação/mailbox. Consumidores atuais: `automation-validador-final` e `automation-niche-runtime-tests`.
 • `SUPABASE_ACCESS_TOKEN`: token usado pelo workflow de apply de migrations Supabase.
 • `SUPABASE_DB_PASSWORD`: senha do banco usada pelo workflow de apply de migrations Supabase.
 • `SUPABASE_APPLY_MIGRATIONS_ENABLED`: variável/gate operacional para habilitar ou bloquear o apply automático de migrations.
@@ -46,12 +46,27 @@
 
 2.3 Workflows conhecidos
 • `.github/workflows/security.yml`: checks de segurança.
-• `.github/workflows/pipeline-supabase-inspect.yml`: pipeline de inspeção Supabase.
-• `.github/workflows/pipeline-docs-apply-report.yml`: aplicação automatizada de reports em documentos Markdown.
-• `.github/workflows/automation-validador-final.yml`: validação ponta a ponta de fluxos reais de autenticação.
-• `.github/workflows/automation-niche-runtime-tests.yml`: testes runtime de criação de conta e preenchimento de `pending_setup`.
+• `.github/workflows/pipeline-supabase-inspect.yml`: pipeline de inspeção Supabase read-only, com uso de `OPENAI_API_KEY` e `SUPABASE_DB_URL_READONLY`.
+• `.github/workflows/pipeline-docs-apply-report.yml`: aplicação automatizada de reports em documentos Markdown e criação de Pull Request automático.
+• `.github/workflows/automation-validador-final.yml`: validação ponta a ponta de fluxos reais de autenticação, com mailbox operacional via `MAILBOX_EMAIL` e `MAILBOX_PASSWORD`.
+• `.github/workflows/automation-niche-runtime-tests.yml`: testes runtime de criação de conta e preenchimento de `pending_setup`, com mailbox operacional e uso opcional de `SUPABASE_DB_URL_READONLY` conforme modo de verificação.
 • `.github/workflows/pipeline-supabase-apply-migrations.yml`: apply controlado de migrations Supabase em `main` quando há mudanças em `supabase/migrations/**`, com `workflow_dispatch` e gate por `SUPABASE_APPLY_MIGRATIONS_ENABLED`.
 • `.github/workflows/upgrade-next-16-1-1.yml`: manutenção de Next.js + lockfile.
+
+2.4 Mailbox operacional para automações
+• Provedor atual: Gmail via POP3.
+• Host/porta: `pop.gmail.com:995`.
+• Uso: leitura programática de e-mails de confirmação e reset nas automações.
+• Secrets relacionados:
+• `MAILBOX_EMAIL`
+• `MAILBOX_PASSWORD`
+• Consumidores:
+• `.github/workflows/automation-validador-final.yml`
+• `.github/workflows/automation-niche-runtime-tests.yml`
+• `automations/validador-final/mailbox-client.mjs`
+• Regra: usar conta dedicada de teste, nunca e-mail humano principal.
+• Regra: não registrar valores reais.
+• Regra: se a senha/app password vazar, revogar imediatamente e substituir.
 
 3. Vercel
 
@@ -69,6 +84,9 @@
 • Root Directory: `services/mcp-supabase-inspect`
 • Include files outside the root directory in the Build Step: `OFF`
 • Ignored Build Step: customizado para reduzir builds desnecessários fora do escopo do serviço.
+• Endpoint público na Vercel protegido por `Authorization: Bearer <LPF_MCP_SECRET>`.
+• Banco acessado via `SUPABASE_DB_URL_READONLY`.
+• Valores reais de secrets não devem ser documentados.
 
 3.3 Runtime e build
 • Node.js: `22.x`
@@ -114,9 +132,18 @@
 • Valor atual de referência: `gpt-5.4-mini`
 • Regra: deve conter apenas o ID do modelo; nunca inserir `OPENAI_API_KEY` nessa variável.
 
-• `STRIPE_SECRET_KEY`
-• Finalidade: secret futuro para integração Stripe.
-• Status: futuro.
+• `LPF_MCP_SECRET`
+• Finalidade: secret Bearer usado para autenticar chamadas ao MCP Supabase Inspect.
+• Projeto Vercel: `lpf-10-services`.
+• Consumidor: `services/mcp-supabase-inspect/api/mcp.js`.
+• Escopo: Production e Preview, conforme deploy do service.
+• Valor real: não versionar.
+
+• `SUPABASE_DB_URL_READONLY`
+• Finalidade: conexão read-only do MCP Supabase Inspect com o banco.
+• Projeto Vercel consumidor: `lpf-10-services`.
+• Consumidor: `services/mcp-supabase-inspect/api/mcp.js`.
+• Regra: não usar para mutações.
 • Valor real: não versionar.
 
 4. Supabase
@@ -174,6 +201,9 @@
 • Domínio verificado: `lpfactory.com.br`
 • Plano atual conhecido: Free.
 • Sender usado: `no-reply@lpfactory.com.br`
+• Uso atual: indireto via Supabase Auth SMTP.
+• O app Core não chama a API Resend diretamente no runtime.
+• Não há SDK Resend versionado no repositório no estado atual.
 
 5.2 DNS relacionado
 • SPF/DKIM devem permanecer compatíveis com Resend.
