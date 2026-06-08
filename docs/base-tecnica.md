@@ -2,8 +2,8 @@
 
 0.1. Cabeçalho
 • Documento: Base Técnica LP Factory 10
-• Versão: v2.0.36
-• Data: 21/05/2026
+• Versão: v2.0.37
+• Data: 08/06/2026
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -67,10 +67,8 @@
 
 2.5 Regras de Import (canônica)
 • @supabase/* somente em adapters do domínio, em lib/supabase/* e na allowlist SULB autorizada em 6.4.
-• Regra canônica para código novo: adapters devem nascer em paths canônicos na raiz do repositório (ver 3.3.1 e 3.3.2).
-• Exceção de compatibilidade: arquivos já existentes fora dos paths canônicos podem permanecer sem ampliação de escopo (ver 3.3.2).
 • UI e componentes client não acessam Supabase para dados de domínio; exceções de Auth/SULB devem usar wrappers em lib/supabase/*, salvo imports diretos explicitamente autorizados na allowlist 6.4.
-• Esta é a regra normativa principal para imports/adapters; seções 3.2, 6.4 e 7 apenas referenciam este bloco.
+• Esta é a regra normativa principal para imports; seções 3.2, 6.4 e 7 apenas referenciam este bloco.
 
 3. Regras Técnicas Globais
 
@@ -80,42 +78,30 @@
 • Cookie last_account_subdomain só pode ser definido/lido no SSR (HttpOnly, Secure, SameSite=Lax).
 • Nenhum dado sensível pode ser acessível no client.
 
-3.2 Estrutura de Camadas
-• Fluxo obrigatório: UI → Providers → Adapters → DB.
-• Imports Supabase em UI/rotas/adapters seguem a regra canônica da seção 2.5 (fonte única).
+3.2 Fluxo de acesso a dados
+• Fluxo: UI → Providers → Adapters → DB; imports Supabase seguem 2.5.
 
-3.3 Estrutura de Arquivos
-• Padrão por domínio: adapters/ (DB); contracts.ts (interface pública); index.ts (re-exports).
-• Regra: nenhum módulo acessa DB fora de adapters.
-• Tipos canônicos só em lib/types/status.ts.
+3.3 Estrutura canônica
+• Por domínio: adapters/ (DB), contracts.ts (interface pública) e index.ts (re-exports). DB somente via adapters; tipos canônicos somente em lib/types/status.ts.
 
-3.3.1 Topologia canônica do repositório
-• Camadas vigentes: Core, automations, services  
-• Root: runtime canônico do Core  
-• `automations/`: raiz canônica da camada de automações  
-• `services/`: raiz canônica da camada de serviços implantáveis  
-• Leitura do Core: por seção  
-• Seções do Core: Account Dashboard, Admin Dashboard, Partner Dashboard, LP Builder  
+3.3.1 Vocabulário e topologia
+• Camada: recorte de primeiro nível: Core (runtime no root), `automations/` (automações) ou `services/` (serviços com deploy independente). `.github/workflows/` apenas orquestra.
+• Seção do Core: recorte de produto: Account Dashboard, Admin Dashboard, Partner Dashboard ou LP Builder.
+• Domínio transversal do Core: capacidade entre seções. `access` concentra acesso; `conversion-content`, conteúdo universal de conversão reutilizável entre canais.
+• Boundary: fronteira entre recortes reais, criada somente com responsabilidade e massa de código próprias.
+• Path canônico: localização física obrigatória para artefatos novos.
 
-3.3.2 Paths canônicos e anti-drift de localização
+3.3.2 Classificação, boundaries e paths
+• Nova seção, domínio transversal ou path canônico exige definição prévia de classificação, boundary e path.
+• Ordem: camada → seção ou domínio → boundary → path canônico → shared real ou falso shared.
+• Não inventar paths: confirmar no repositório. Artefato novo nasce no path canônico; exceção existente não vira padrão.
+• Dependências da rota ficam em `app/.../_components`; promoção a `components/features` exige boundary compartilhada real.
+• Partner Dashboard não ganha boundary antecipada. LP Builder é seção própria, fora do Account Dashboard.
 
-• Regra: componentes específicos de rota que dependem de Server Action, estado ou boundary da própria rota devem nascer como route-local em `app/.../_components`; não promover para `components/features` sem boundary compartilhada real.
-• Regra: path é contrato operacional  
-• Regra: não inventar path nem assumir localização por padrão genérico  
-• Regra: em dúvida, confirmar no repositório real (GitHub/conectores/fontes acessíveis)  
-• Regra: código novo nasce no path canônico correto  
-• Regra: exceção existente não vira padrão novo  
-• Risco de erro de path: churn, retrabalho, regressão  
-
-3.3.3 Separação estrutural entre Core, automations e services
-• Core: runtime principal do produto  
-• `automations/`: automações operacionais  
-• `services/`: serviços com deploy independente  
-• `.github/workflows/`: orquestração  
-• Ordem de classificação: camada, seção, boundary, path canônico, shared real ou shared falso  
-• Regra: boundary nova só com massa real de código  
-• Partner Dashboard: sem boundary por antecipação  
-• LP Builder: seção própria do Core, não dentro de Account Dashboard  
+3.3.3 Family `conversion-content`
+• Paths: `docs/conversion-content.md` (documentação inicial), `docs/conversion-content/` (eventual expansão) e `lib/conversion-content/templates/` (runtime compartilhado).
+• Templates universais são a fonte; produtos finais são consumers/outputs em boundaries e paths próprios.
+• Landing pages pertencem ao LP Builder e podem consumir templates universais, sem compartilhar seu path.
 
 3.4 CI/Lint (Bloqueios)
 • Validação por PR + preview de deploy (Vercel)
@@ -438,6 +424,8 @@ Fonte normativa da allowlist SULB para exceções de Auth. Qualquer novo arquivo
 • Tipos canônicos e adapters vNext: validar por 3.6 e 3.14.
 
 99. Changelog
+v2.0.37 — 08/06/2026 — Consolidadas em 3.3 as regras estruturais e registrada a family `conversion-content`.
+
 v2.0.36 — 21/05/2026 — Base técnica atualizada com contrato mínimo de configuração do resolvedor IA de nicho: `OPENAI_API_KEY`, `OPENAI_NICHE_RESOLVER_MODEL`, modelo de referência `gpt-5.4-mini`, ajuste via Vercel Environment Variables e necessidade de redeploy por ambiente.
 
 v2.0.35 — 14/05/2026 — Base técnica atualizada com contrato mínimo de runtime para IA complementar server-side com Structured Outputs, variáveis server-only, preservação de `account_taxonomy`, persistência apenas em `account_niche_resolutions`, fluxo degradável e logs sem PII.
