@@ -46,9 +46,9 @@ Configurações operacionais de plataformas, secrets por nome, ambientes, endpoi
 Esta seção mantém apenas o contexto de uso das plataformas pela camada de automações.
 
 2.1 OpenAI
-- Papel na automação: execução de modelos, Agent Builder/SDK e integração com pipelines/agentes.
-- Ambientes operacionais: `LPF10-DEV` e `LPF10-PROD`.
-- Regra operacional: desenvolvimento prioriza DEV; análise de consumo deve ser feita por projeto.
+- Papel na automação: execução de modelos e integração com pipelines/agentes.
+- Caminhos futuros: Agents SDK para fluxos programáticos; Workspace Agents em ChatGPT para agentes definidos por prompting/linguagem natural.
+- Ambientes operacionais: `LPF10-DEV` e `LPF10-PROD`; desenvolvimento prioriza DEV e a análise de consumo deve ser feita por projeto.
 
 2.2 GitHub
 - Papel: repositório principal, GitHub Actions, pipelines, PRs e secrets.
@@ -125,35 +125,25 @@ Runtime: `automations/docs-apply-report/`
 
 3.3 Supabase Inspect Agente
 Objetivo:
-Validar o uso operacional do Supabase Inspect no Agent Builder por meio da MCP base documentada em `docs/services.md`, sem acesso direto ao banco.
+Registrar a validação funcional histórica do Supabase Inspect no Agent Builder por meio da MCP base documentada em `docs/services.md`, sem acesso direto ao banco.
 
 Status:
-Concluído como validação funcional em Agent Builder
+Concluído como validação funcional histórica
 
-Acesso:
-Agent Builder (OpenAI)
-
-Onde acessar:
-URL do Builder: https://platform.openai.com/agent-builder/edit?workflow=wf_69b57fed963c8190b9da8e40797aa5820147027ff7bd60d7&version=3
-
-Como usar:
-Executar perguntas técnicas ou SQL dentro do escopo read-only validado
-
-Resposta esperada:
-Resposta assistida para validação funcional (não usar como camada final de orquestração robusta)
+Nota de legado:
+O Agent Builder deixará de receber novos recursos e será descontinuado na plataforma OpenAI até 30/11/2026; esta integração não deve ser expandida.
 
 Referências / dependências:
 docs/services.md — `1.1 LPF Supabase Inspect MCP`
 services/mcp-supabase-inspect/README.md
 Workflow ID: `wf_69b57fed963c8190b9da8e40797aa5820147027ff7bd60d7`
-Endpoint MCP: `https://lpf-10-services.vercel.app/api/mcp`
 
 3.3.1 Update — Agents SDK
 Status:
-Planejado
+Prioritário / pendente de migração
 
 Objetivo:
-Migrar a validação do Builder para execução programática mais controlada
+Migrar ou substituir o uso validado no Agent Builder por um fluxo programático mantido no Agents SDK.
 
 3.3.2 Update — ChatGPT + MCP
 Status:
