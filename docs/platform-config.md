@@ -33,7 +33,7 @@
 2.2 GitHub Actions
 • Secrets conhecidos:
 • `OPENAI_API_KEY`: usado por automações/CI que chamam OpenAI. Consumidor atual: `pipeline-supabase-inspect`.
-• `SUPABASE_DB_URL_READONLY`: conexão read-only para inspeções/automação de banco. Consumidores atuais: `pipeline-supabase-inspect`, `automation-niche-runtime-tests` quando houver verificação de banco e MCP Supabase Inspect no projeto Vercel `lpf-10-services`.
+• `SUPABASE_DB_URL_READONLY`: conexão read-only para inspeções/automação de banco. Consumidores atuais: `pipeline-supabase-inspect` e `automation-niche-runtime-tests` quando houver verificação de banco.
 • `MAILBOX_EMAIL`: e-mail usado por automações de autenticação/mailbox. Consumidores atuais: `automation-validador-final` e `automation-niche-runtime-tests`.
 • `MAILBOX_PASSWORD`: senha/app password da mailbox usada por automações de autenticação/mailbox. Consumidores atuais: `automation-validador-final` e `automation-niche-runtime-tests`.
 • `SUPABASE_ACCESS_TOKEN`: token usado pelo workflow de apply de migrations Supabase.
