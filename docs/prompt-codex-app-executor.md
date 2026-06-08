@@ -35,7 +35,12 @@ Examinar, conforme aplicavel:
 
 Se houver impacto visual/frontend, usar tambem `docs/template-briefing-codex-frontend.md`.
 
-Quando houver BD, usar `docs/schema.md` como fonte inicial e investigar o BD real somente se os documentos canonicos forem insuficientes. Se a inspecao depender do Gestor, entregar SQL read-only pronto para execucao, limitado ao objetivo do caso.
+Quando houver BD, usar `docs/schema.md` como fonte inicial e investigar o BD real somente se os documentos canonicos forem insuficientes.
+
+- quando o Codex App tiver o Supabase Plugin disponivel, usa-lo como caminho preferencial em teste para investigacao read-only de BD;
+- limitar a investigacao aos metadados necessarios ao caso: schema, tabelas, colunas, PKs, FKs, RLS/policies, views, functions, indices, extensoes e migrations;
+- nao usar o plugin para SQL de escrita, DDL/DML, migrations, deploy de Edge Functions, operacoes de branches Supabase, pause/restore, acesso a secrets ou objetos sensiveis;
+- se o plugin nao estiver disponivel, for insuficiente ou houver necessidade de artefato auditavel, manter o fluxo de SQLs read-only para Supabase Inspect, pronto para execucao e limitado ao objetivo do caso.
 
 ### Formato dos SQLs de inspecao
 
