@@ -688,6 +688,16 @@
 • a UX principal do E10.5 para conta `active` sem entitlements ainda não está implementada na rota `/a/[account]`
 • o resultado operacional da resolução de nicho ainda não está exposto em UX final do dashboard da conta
 
+10.6 Página comercial do Account Dashboard
+• Status: Planejado
+• Objetivo: apresentar a vitrine persuasiva para contas `active` sem entitlements, com cards comerciais para compra, solicitação ou ativação da primeira entrega.
+• Escopo inicial:
+• renderizar a experiência comercial pós-setup dentro do Account Dashboard
+• usar o taxon resolvido e os dados de pesquisa estruturada quando disponíveis
+• apresentar cards comerciais claros e preparar a passagem para compra, solicitação, briefing ou ativação
+• consumir os templates definidos na E18 quando aplicável
+• Fora de escopo: LP Builder, templates universais, automação completa do Admin Dashboard e alterações em billing, entitlements, schema, migrations, RLS ou policies.
+
 11. E11 — Gestão de Usuários e Convites
 
 11.1 Status
@@ -894,26 +904,26 @@ Ajustados:
 • Situação atual: não existe STAGING ativo no Supabase; os previews permanecem no projeto principal.
 • Status: Descontinuado.
 
-18 E18 - IA (fase IA-ready)
+18. E18 — Templates universais de conversão
 
 18.1 Status
 • Planejado
 
 18.2 Objetivo
-• Estabelecer o ponto de ativação dos recursos de IA do LP Factory 10 (fase IA-ready).
+• Centralizar templates reutilizáveis por canal e contexto para a página comercial do Account Dashboard, landing pages, WhatsApp, e-mail, Instagram, TikTok e canais futuros.
 
-18.3 Arquitetura (referência de plataforma)
-• Padrão de integração de IA: **Vercel AI Gateway**.
-• Referência técnica: `docs/vercel-up.md` — Item 1 (Vercel AI Cloud / Experimental).
+18.3 Escopo inicial
+• definir a estrutura e os contratos dos templates
+• organizar templates por canal e objetivo
+• usar `taxon_market_research_items` como fonte principal quando houver pesquisa por taxon
+• permitir fallback genérico quando não houver pesquisa ou taxon suficiente
+• alimentar E10.6, landing pages e canais comerciais futuros
 
-18.4 Escopo inicial (alto nível)
-• geração assistida de landing pages
-• automações internas
-• agentes operacionais
-
-18.5 Condição de ativação
-• início da fase de geração de LPs
-• após estabilização do sistema de acesso e onboarding
+18.4 Fora de escopo
+• LP Builder e automações completas
+• nova tabela sem decisão estrutural posterior
+• responsabilidades de E10, E12 ou E19
+• detalhamento dos prompts finais de cada canal
 
 19. E19 — LP Builder
 
@@ -935,9 +945,9 @@ Ajustados:
 • E19 é uma seção própria, separada de Account Dashboard, Admin Dashboard e Partner Dashboard
 • Boundaries físicas internas devem nascer conforme houver massa real de código
 
-19.4.1 Fronteira com E10 / E12
-• E19 não inclui, nesta fase, a camada persuasiva pós-setup do Account Dashboard (E10.5).
-• E19 também não inclui o template de ativação comercial, que pertence ao fluxo de ativação/comercial da conta.
+19.4.1 Fronteira com E10 / E12 / E18
+• E19 não inclui, nesta fase, a camada persuasiva pós-setup do Account Dashboard (E10.5 e E10.6).
+• E19 não concentra os templates universais de conversão da E18, embora possa consumi-los quando aplicável.
 • O E19 só deve avançar para implementação quando houver recorte funcional real do LP Builder, evitando antecipação estrutural sem massa de código.
 
 19.5 Dependências / referências
