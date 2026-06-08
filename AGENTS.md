@@ -33,6 +33,7 @@ Este repositório pode ser usado por Codex App local e Codex Web/Cloud.
 * Não editar nem commitar na `main`. Se estiver na `main` limpa, criar branch dedicada antes de alterar arquivos.
 * Usar branch dedicada por tarefa, preferencialmente com prefixo `codex/`.
 * Antes de alterar, confirmar branch atual, `git status` e remote correto.
+* Quando a `main` local for usada como fonte/base, executar `git pull --ff-only` antes de leitura, comparação ou criação de branch; se houver mudanças locais que impeçam a atualização segura, parar e reportar.
 * Não misturar tarefas ou etapas diferentes na mesma branch.
 * Não fazer merge local; o merge final deve acontecer somente pelo GitHub Web.
 * GitHub Web é a fonte de verdade para PRs, Actions, preview remoto e merge.
