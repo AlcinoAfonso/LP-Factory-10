@@ -2,94 +2,89 @@
 
 ## 1. Objetivo
 
-Este documento registra o estado de gestão do uso do Codex no LP Factory 10: decisões vigentes, recursos em acompanhamento e próximos testes.
+Este painel resume os recursos do Codex App relevantes para o LP Factory 10, sem repetir as regras operacionais do repositório.
 
-Ele não substitui `AGENTS.md`, que é a fonte oficial das regras operacionais do Codex no repositório.
+## 2. Referências
 
-## 2. Referências operacionais
+Estas fontes concentram regras, execução e detalhes que não precisam ser duplicados aqui.
 
-* Regras operacionais do Codex no repositório: `AGENTS.md`.
-* Briefings gerais para Codex: `docs/template-briefing-codex.md`.
-* Execução no Codex App: `docs/prompt-codex-app-executor.md`.
-* Briefings com impacto visual/frontend: `docs/template-briefing-codex-frontend.md`.
-* Template geral de prompts: `docs/template-prompts.md`.
+* `AGENTS.md` — regras operacionais.
+* `docs/prompt-codex-app-executor.md` — execução no Codex App.
+* `docs/automations.md` — automações.
+* `docs/platform-config.md` — configuração da plataforma.
 
-## 3. Superfícies de uso
+## 3. Configurações
 
-### Codex App local
+Configurações sustentam o fluxo local adotado para editar, validar e publicar trabalho.
 
-* Modo Personalizado (`config.toml`) validado para trabalho Git no Windows.
-* Fluxo local com `git push` validado com sucesso.
-* Validação completa executada com branch, alteração documental controlada, `npm ci`, `npm run check`, commit, push e link de PR/compare.
-* Fluxo principal para tarefas que exigem execução local, preview, validação recorrente ou trabalho em worktree.
+### Modo Personalizado (`config.toml`)
 
-### Codex Web/Cloud
+**Aptidão:** trabalho Git local.
+**Estado:** adotado.
+**Valor:** oferece ambiente controlado para execução e validação.
+**Limite:** não substitui `AGENTS.md`.
 
-* Indicado para tarefas remotas e PRs diretos que não dependem do ambiente local.
-* Deve seguir o fluxo remoto próprio, separado do Fluxo Codex App Local.
+### Git local e `git push`
 
-### GitHub Web
+**Aptidão:** versionar e publicar branches.
+**Estado:** validado.
+**Valor:** conclui o fluxo local sem interface gráfica.
+**Limite:** requer remote e autenticação válidos.
 
-* Fonte de verdade para PRs, Actions, preview remoto e merge.
-* O humano continua responsável por revisar e fazer merge.
+**Outras configurações:** GitHub Web é a fonte de verdade para PRs, Actions, preview e merge; GitHub Desktop está fora do fluxo principal; não há hooks, conexões ou worktrees ativos.
 
-### GitHub Desktop e GitHub Connector
+## 4. Plugins
 
-* GitHub Connector permanece como fallback, não como fluxo principal de publicação do Codex App local.
-* GitHub Desktop também não integra o fluxo principal.
-* Usar quando houver bloqueio no fluxo local, necessidade específica ou pedido explícito.
+Plugins aproximam serviços externos das tarefas de investigação e execução.
 
-## 4. Configurações atuais
+### Supabase Plugin
 
-* Modo Personalizado (`config.toml`): adotado para tarefas Git no Codex App local.
-* GitHub CLI: indisponível ou pendente de adoção.
-* Publicação local: segue as regras operacionais de `AGENTS.md`.
+**Aptidão:** leitura e escrita no Supabase.
+**Estado:** em teste; leitura aprovada.
+**Valor:** acelera a investigação de schema, tabelas, RLS, policies, views, functions, índices, extensões e migrations.
+**Limite:** escrita não testada nem aprovada.
 
-## 5. Recursos em acompanhamento
+**Disponíveis não adotados:** GitHub Plugin e Slack.
 
-* Worktrees: em acompanhamento para frentes paralelas ou duradouras.
-* Revisões de código: acompanhamento como camada adicional de análise, sem substituir revisão humana.
-* Chrome Plugin / Browser Use: acompanhamento para validações visuais simples e controladas.
-* Computer Use: em avaliação e teste, ainda não aprovado para o fluxo principal.
-* Skills: acompanhamento para procedimentos recorrentes e padronizáveis.
-* Configurações e Automações: continuam em teste na lousa e ainda não devem ser tratadas como regra definitiva.
+## 5. Skills
 
-## 6. Limitações e decisões vigentes
+Skills podem transformar procedimentos recorrentes em capacidades reutilizáveis.
 
-* O Fluxo Codex App Local em modo Personalizado é o fluxo validado para trabalho Git local neste repositório.
-* Git remoto local por `git push` está validado dentro desse fluxo.
-* GitHub Connector permanece como fallback para publicação local, não como caminho principal.
-* Operações sensíveis, merges e decisões finais continuam sob responsabilidade humana.
-* Regras operacionais obrigatórias ficam concentradas exclusivamente em `AGENTS.md`.
+Nenhuma skill foi adotada formalmente após a reinstalação. Skills do Supabase permanecem no registro do Supabase Plugin para evitar duplicação.
 
-## 7. Matriz de uso recomendada
+**Disponíveis não adotadas:** Spreadsheets e Presentations.
 
-| Situação | Superfície recomendada |
-| --- | --- |
-| Tarefa simples com execução local | Codex App local em modo Personalizado no clone principal |
-| Frente paralela ou duradoura | Codex App local em modo Personalizado e worktree dedicada |
-| Tarefa remota sem dependência local | Codex Web/Cloud |
-| Revisão, Actions, preview remoto e merge | GitHub Web |
-| Bloqueio ou pedido explícito de fallback | GitHub Desktop ou GitHub Connector |
+## 6. Automações
 
-## 8. Pendências e próximos testes
+Automações podem reduzir o acionamento manual de rotinas recorrentes.
 
-* Validar uso de worktrees em frentes paralelas reais.
-* Acompanhar qualidade das revisões de código em PRs relevantes.
-* Reavaliar Chrome Plugin / Browser Use em cenários visuais simples.
-* Continuar a avaliação do Computer Use antes de qualquer adoção no fluxo principal.
-* Identificar candidatos práticos para Skills.
-* Manter Configurações e Automações na lousa até que os testes sustentem uma decisão definitiva.
-* Avaliar futura adoção do GitHub CLI para criação de PR.
+Nenhuma automação do Codex App foi criada; novos casos devem seguir `docs/automations.md`.
 
-## 9. Modelo para novo registro
+## 7. Uso do computador e navegador
 
-```md
-### Nome do recurso ou decisão
+Esses recursos podem ampliar validações visuais e interações fora do terminal.
 
-* Estado atual:
-* Quando usar:
-* Quando evitar:
-* Próximo teste:
-* Observações:
-```
+**Disponíveis não adotados:** Computer Use e Chrome. O navegador integrado está disponível, mas ainda não tem adoção final.
+
+## 8. Agents SDK / Workspace Agents
+
+Agentes podem coordenar fluxos especializados quando a complexidade justificar essa camada.
+
+### Agents SDK / Workspace Agents
+
+**Aptidão:** desenvolver e organizar agentes especializados.
+**Estado:** pendentes de avaliação.
+**Valor:** poderão coordenar responsabilidades e fluxos complexos.
+**Limite:** ainda não há caso de uso aprovado.
+
+**Legado:** Agent Builder; manter apenas como referência e não expandir.
+
+## 9. Próximos testes
+
+Os testes devem gerar evidência suficiente para adotar, limitar ou descartar recursos.
+
+1. Validar uma worktree em uma frente paralela real.
+2. Ampliar testes de leitura do Supabase Plugin, sem escrita.
+3. Selecionar um procedimento candidato a skill ou automação.
+4. Comparar Chrome e navegador integrado em uma validação visual.
+5. Avaliar um caso concreto para Agents SDK ou Workspace Agents.
