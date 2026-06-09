@@ -2,8 +2,8 @@
 
 0.1. Cabeçalho
 • Documento: Base Técnica LP Factory 10
-• Versão: v2.0.37
-• Data: 08/06/2026
+• Versão: v2.0.38
+• Data: 09/06/2026
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -102,6 +102,14 @@
 • Paths: `docs/conversion-content.md` (documentação inicial), `docs/conversion-content/` (eventual expansão) e `lib/conversion-content/templates/` (runtime compartilhado).
 • Templates universais são a fonte; produtos finais são consumers/outputs em boundaries e paths próprios.
 • Landing pages pertencem ao LP Builder e podem consumir templates universais, sem compartilhar seu path.
+• Contrato público do runtime: `lib/conversion-content/index.ts`.
+• Template inicial: `lib/conversion-content/templates/accountDashboardCommercialPage.ts`.
+• Resolução pura: `lib/conversion-content/commercialTemplateResolution.ts`.
+• Adapter server-only: `lib/conversion-content/adapters/commercialTemplateResolver.ts`.
+• A resolução comercial usa a conta existente apenas para localizar taxon primário opcional; ausência de taxon, pesquisa completa ou leitura externa retorna o mesmo template com fallback genérico.
+• Pesquisa nichada: somente registros `active` com `audience_scope = business_buyer`; base suficiente exige itens ativos em `strategic_core`, `lp_overview`, `lp_sections` e `seo`.
+• Fallback: taxon resolvido → pai → ancestral disponível → genérico.
+• O adapter usa `service_role` exclusivamente no servidor e requer SELECT em `taxon_market_research` e `taxon_market_research_items`.
 
 3.4 CI/Lint (Bloqueios)
 • Validação por PR + preview de deploy (Vercel)
@@ -424,6 +432,8 @@ Fonte normativa da allowlist SULB para exceções de Auth. Qualquer novo arquivo
 • Tipos canônicos e adapters vNext: validar por 3.6 e 3.14.
 
 99. Changelog
+v2.0.38 — 09/06/2026 — Registrado o runtime inicial de `conversion-content`, com template comercial universal, resolução pura, adapter server-only, fallback hierárquico/genérico e grants read-only para pesquisa comercial.
+
 v2.0.37 — 08/06/2026 — Consolidadas em 3.3 as regras estruturais e registrada a family `conversion-content`.
 
 v2.0.36 — 21/05/2026 — Base técnica atualizada com contrato mínimo de configuração do resolvedor IA de nicho: `OPENAI_API_KEY`, `OPENAI_NICHE_RESOLVER_MODEL`, modelo de referência `gpt-5.4-mini`, ajuste via Vercel Environment Variables e necessidade de redeploy por ambiente.

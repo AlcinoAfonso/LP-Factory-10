@@ -305,6 +305,7 @@
 1.15.4 Segurança
 • Trigger Hub: não
 • RLS: ativo (enable row level security)
+• service_role: SELECT
 
 1.15.5 Policies
 • taxon_market_research_select_admin_only (SELECT to public): is_super_admin() OU is_platform_admin()
@@ -333,6 +334,7 @@
 1.16.3 Segurança
 • Trigger Hub: não
 • RLS: ativo (enable row level security)
+• service_role: SELECT
 
 1.16.4 Policies
 • taxon_market_research_items_select_admin_only (SELECT to public): is_super_admin() OU is_platform_admin()
@@ -587,6 +589,9 @@
 • Rollback: não remove automaticamente a extensão, pois pode ser reutilizada por outros recursos
 
 99. Changelog
+v1.0.18 (09/06/2026) — E10.5.6.7: grants de leitura server-side para pesquisa comercial
+• Registrado `service_role` com SELECT em `taxon_market_research` e `taxon_market_research_items`, limitado ao consumo server-side da resolução do template comercial.
+
 v1.0.17 (14/05/2026) — E10.5.6: IA Structured Outputs em account_niche_resolutions
 • Registradas colunas `ai_*` em `account_niche_resolutions` para persistência da saída estruturada da IA.
 • Registrados checks, FK e índice relacionados à resolução complementar com IA.

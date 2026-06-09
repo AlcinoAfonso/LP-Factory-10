@@ -2,7 +2,7 @@
 
 0.1 Cabeçalho
 • Data: 09/06/2026
-• Versão: v1.5.59
+• Versão: v1.5.60
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -661,8 +661,8 @@
 • Fallback elegante sem rechamar IA em loop.
 
 10.5.6.7 Resolução do template comercial
-• Status: Pendente
-• Escolha server-side do template comercial para a E10.6.
+• Status: Concluído (exec) (09/06/2026)
+• Implementado: escolha server-side do template comercial para a E10.6.
 • Template inicial: Account Dashboard — Página comercial.
 • Contexto de entrada: conta existente no Account Dashboard.
 • O taxon da conta é opcional e serve apenas para personalização; sua ausência não bloqueia a resolução.
@@ -671,9 +671,18 @@
 • Resolução por fallback: taxon resolvido → taxon pai → ancestral disponível → fallback genérico.
 • O fallback genérico usa o mesmo template universal, sem criar template paralelo.
 • Fora de escopo: renderização da página, LP Builder, criação de motor universal e persistência de briefings.
+• Validação: núcleo puro aprovado para taxon direto, pai, ancestral, ausência de taxon e pesquisa ausente/incompleta; grants de leitura do `service_role` confirmados no Supabase; integração Next do adapter fica para o consumo real na E10.6.
 
 • ARTEFATOS_REPO:
 • Criados:
+• `lib/conversion-content/contracts.ts`
+• `lib/conversion-content/index.ts`
+• `lib/conversion-content/commercialTemplateResolution.ts`
+• `lib/conversion-content/templates/accountDashboardCommercialPage.ts`
+• `lib/conversion-content/adapters/commercialTemplateResolver.ts`
+• `supabase/snippets/e10_5_6_7_commercial_template_service_role_grants.sql`
+• `supabase/migrations/0014__e10_5_6_7_commercial_template_service_role_grants.sql`
+• `supabase/rollbacks/20260609__e10_5_6_7_commercial_template_service_role_grants.rollback.sql`
 • `supabase/migrations/0009__e10_5_6_deterministic_taxon_matching.sql`
 • `supabase/migrations/0011__e10_5_6_account_niche_resolutions.sql`
 • `supabase/migrations/0012__e10_5_6_account_taxonomy_service_role_grants.sql`
@@ -972,6 +981,7 @@ Ajustados:
 • Definir o primeiro recorte funcional do LP Builder no roadmap
 
 99. Changelog
+v1.5.60 — 09/06/2026 — E10.5.6.7 concluído com template comercial universal, contrato e exports da family `conversion-content`, resolução pura, adapter server-only, fallback taxon/pai/ancestral/genérico e grants read-only validados para pesquisa `business_buyer`.
 v1.5.59 — 09/06/2026 — E10.5.6.7 e E10.6 alinhados para explicitar que a página comercial é interna ao Account Dashboard e possui conta existente, mas não depende de taxon nem de dados comerciais ricos; o taxon é opcional para personalização e o fallback genérico usa o mesmo template universal.
 v1.5.58 — 28/05/2026 — Roadmap atualizado em E10.5.5 para refletir o novo modelo de pesquisa bruta por taxon, mantendo `taxon_market_research` como registro-pai e `taxon_market_research_items` como itens estruturados da pesquisa, sem criação de bloco agregado, nova tabela ou nova camada.
 v1.5.57 (20/05/2026)

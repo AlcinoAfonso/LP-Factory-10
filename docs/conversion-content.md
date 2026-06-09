@@ -168,15 +168,15 @@ O taxon também é opcional e serve apenas para personalização. Sua ausência 
 - blocos de prova ou benefício;
 - alertas de dados faltantes, quando aplicável.
 
-Esta saída é somente um contrato documental. Não há geração real, escolha server-side ou renderização implementada nesta fase.
+O contrato de saída possui resolução server-side implementada na E10.5.6.7. A geração do conteúdo final e a renderização permanecem fora desta fase.
 
 ### 9.5 Sequência de implementação
 
 1. A E18 define o contrato universal e o template `Account Dashboard — Página comercial`.
-2. A E10.5.6.7 deverá implementar a resolução server-side do template comercial para uma conta existente, usando seu taxon apenas quando disponível e aplicando o fallback genérico sem bloquear a saída.
+2. A E10.5.6.7 implementa a resolução server-side do template comercial para uma conta existente, usando seu taxon apenas quando disponível e aplicando o fallback genérico sem bloquear a saída.
 3. A E10.6 deverá consumir essa resolução e renderizar a página comercial no Account Dashboard.
 
-A E10.5.6.7 permanece pendente. Este documento não altera seu status nem antecipa sua implementação.
+A resolução não gera texto final nem renderiza a página. Ela retorna o template, a inteligência estruturada aplicável, a origem do fallback e alertas de dados faltantes.
 
 ## 10. Persistência futura
 
@@ -200,18 +200,16 @@ Até que exista esse caso real, os contratos permanecem documentais e nenhuma ta
 
 - **E18:** define os templates universais de conversão e seus contratos.
 - **E10.5.5:** cobre a pesquisa por taxon; não concentra produtos finais.
-- **E10.5.6.7:** deverá resolver server-side o template comercial para a conta existente, usando taxon opcional e fallback genérico para consumo da E10.6.
+- **E10.5.6.7:** resolve server-side o template comercial para a conta existente, usando taxon opcional e fallback genérico para consumo da E10.6.
 - **E10.6:** consumirá o template resolvido e será responsável pela página comercial interna do Account Dashboard, sem exigir dados comerciais ricos da conta.
 - **E19:** permanece responsável pelo LP Builder; pode consumir templates universais quando aplicável, sem concentrá-los.
 
 Ficam fora desta fase:
 
-- runtime em `lib/conversion-content/templates/`;
 - motor universal de geração;
-- implementação da E10.5.6.7;
 - implementação da E10.6;
 - LP Builder;
-- tabelas, migrations, rollbacks, SQL, RLS, policies, triggers, views ou functions;
+- novas tabelas, persistência de briefings ou alterações em schema, RLS, policies, triggers, views ou functions;
 - detalhamento dos prompts finais por canal;
 - adoção de provider ou gateway de IA.
 
@@ -219,7 +217,6 @@ Ficam fora desta fase:
 
 1. Validar este contrato documental.
 2. Testar conceitualmente o template `Account Dashboard — Página comercial`.
-3. Preparar um briefing separado para a resolução server-side da E10.5.6.7.
-4. Preparar, após a resolução, um briefing separado para a implementação consumidora da E10.6.
-5. Criar runtime em `lib/conversion-content/templates/` somente quando houver consumo real no app.
-6. Avaliar tabelas somente quando houver necessidade real de persistência.
+3. Validar a integração consumidora da resolução na E10.6.
+4. Preparar um briefing separado para a implementação consumidora da E10.6.
+5. Avaliar tabelas somente quando houver necessidade real de persistência.

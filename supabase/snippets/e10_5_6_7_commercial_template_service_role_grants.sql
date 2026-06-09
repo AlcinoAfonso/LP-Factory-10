@@ -1,5 +1,5 @@
 -- E10.5.6.7 - leitura server-side da pesquisa usada na resolucao comercial.
--- Aplicacao operacional pelo Gestor; a migration historica sera criada apos validacao.
+-- SQL operacional validado; historico em migration 0014 e rollback correspondente.
 
 begin;
 
