@@ -37,7 +37,7 @@ O SQL gerado deve:
 - carregar os itens em `taxon_market_research_items`
 - substituir os itens existentes daquele `research_id` antes de reinserir os itens estruturados
 - preservar `item_key`, `item_text`, `priority`, `sort_order` e `notes`
-- manter `status = draft`, salvo se outro status vier explicitamente na estruturação
+- manter `status = active`, salvo se outro status vier explicitamente na estruturação
 - ser seguro para reexecução com os mesmos dados
 - usar CTEs diretas nomeadas `research_input`, `items_input`, `upserted_research`, `deleted_items` e `inserted_items`
 - retornar um `SELECT` final com `loaded_items` por `research_block`
@@ -48,7 +48,6 @@ O SQL gerado deve:
 - Não altere o conteúdo estruturado.
 - Não gere migration.
 - Não altere schema, RLS, policies, triggers, views ou funções.
-- Não ative versão automaticamente.
 - Não invente `taxon_id`, `research_block`, `audience_scope`, `version` ou itens ausentes.
 - Se faltarem os itens estruturados completos, pare e peça o conteúdo faltante.
 - Não use `temp table`.
