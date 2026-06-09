@@ -2,7 +2,7 @@
 -- Objetivo: carregar pesquisa consolidada por taxon em taxon_market_research e taxon_market_research_items.
 -- Uso: substituir os exemplos das CTEs research_input e items_input pelos dados aprovados.
 -- Tipo: operacional / execução manual no Supabase SQL Editor.
--- Observação: por padrão, usar status = 'draft'. Não ativar versão automaticamente.
+-- Observação: por padrão, usar status = 'active'.
 
 begin;
 
@@ -20,7 +20,7 @@ research_input (
       'strategic_core'::text,
       'business_buyer'::text,
       1::integer,
-      'draft'::text
+      'active'::text
     )
 ),
 items_input (

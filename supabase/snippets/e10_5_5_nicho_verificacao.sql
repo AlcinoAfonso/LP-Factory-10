@@ -9,7 +9,7 @@ with input as (
     '00000000-0000-0000-0000-000000000000'::uuid as taxon_id,
     'business_buyer'::text as audience_scope,
     1::integer as version,
-    'draft'::text as expected_status,
+    'active'::text as expected_status,
     *
   from (
     values
