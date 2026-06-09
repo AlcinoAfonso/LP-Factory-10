@@ -1,0 +1,222 @@
+# Templates universais de conversão
+
+## 1. Objetivo
+
+Este documento define a base dos templates universais de conversão da LP Factory.
+
+Ele estabelece o contrato conceitual para estruturas reutilizáveis por canal e objetivo, sem implementar runtime, geração de conteúdo ou persistência. Os templates universais pertencem à E18 e podem ser consumidos por produtos finais em outras seções do Core.
+
+## 2. Conceito
+
+Template universal é uma estrutura reutilizável de conteúdo e montagem definida por canal e objetivo.
+
+O template não deve ser específico por nicho como regra. A especialização ocorre pela combinação do template com a inteligência disponível para o taxon e com dados reais do cliente, quando existirem.
+
+Templates universais são fontes compartilhadas. Páginas, mensagens e demais produtos finais são consumidores ou saídas, mantidos nas fronteiras responsáveis por sua experiência.
+
+## 3. Fórmula do sistema
+
+```txt
+produto final = template universal + itens estruturados da pesquisa + dados do cliente
+```
+
+- **Template universal:** lógica de montagem, estrutura esperada e contrato de saída para um canal e objetivo.
+- **Itens estruturados da pesquisa:** inteligência do nicho obtida pela pesquisa associada ao taxon.
+- **Dados do cliente:** realidade comercial, oferta, diferenciais, provas, restrições e demais entradas específicas disponíveis.
+- **Produto final:** entrega personalizada conforme canal, objetivo e contexto.
+
+A ausência de pesquisa ou de dados do cliente não cria outro template. O consumidor deve aplicar o fallback definido e sinalizar dados faltantes quando isso for relevante para a saída.
+
+## 4. Classificação dos templates
+
+### 4.1 Primeiro nível: canal
+
+Exemplos:
+
+- Account Dashboard
+- Landing page
+- WhatsApp
+- E-mail
+- Instagram
+- TikTok
+
+### 4.2 Segundo nível: objetivo
+
+Exemplos:
+
+- Account Dashboard — Página comercial
+- Landing page — Agendamento
+- Landing page — Captação de leads
+- WhatsApp — Primeiro contato
+- WhatsApp — Follow-up
+- E-mail — Oferta
+- Instagram — Carrossel de objeção
+
+Canal e objetivo identificam o template. Variações contextuais devem ser tratadas como parâmetros internos, e não como novos templates sem necessidade estrutural comprovada.
+
+## 5. Parâmetros internos
+
+Parâmetros internos ajustam a resolução ou a aplicação de um template universal:
+
+- `funnel_stage`
+- `tier`
+- `audience_scope`
+- `subobjective`
+- `conversion_goal`
+- `taxon_id`
+- `client_inputs`
+- `output_format`
+
+Exemplo: usar `Landing page — Agendamento` com `tier = Pro`.
+
+Não criar `Landing page — Agendamento — Pro` como template paralelo apenas por causa do tier. A mesma regra vale para nicho, estágio do funil, público e demais parâmetros.
+
+## 6. Contrato universal
+
+### 6.1 Entrada
+
+O contrato de entrada pode conter:
+
+- `channel`: canal consumidor;
+- `objective`: objetivo da entrega;
+- parâmetros internos aplicáveis;
+- taxon resolvido, quando existir;
+- itens estruturados disponíveis para o taxon e o `audience_scope` requerido;
+- dados do cliente, quando existirem;
+- contexto e restrições do consumidor;
+- indicação do fallback utilizado.
+
+Campos obrigatórios e opcionais devem ser definidos por template quando houver consumo real. Este documento não define schema de banco nem contrato de runtime.
+
+### 6.2 Saída
+
+O contrato de saída deve:
+
+- seguir a estrutura definida pelo template;
+- distinguir conteúdo resolvido de alertas ou lacunas;
+- preservar o canal, o objetivo e o contexto usados;
+- permitir que o consumidor renderize ou transforme o resultado sem assumir dados inexistentes;
+- registrar conceitualmente a origem aplicada: taxon resolvido, ancestral ou fallback genérico.
+
+O formato técnico final da saída será definido quando houver implementação real.
+
+## 7. Relação com a pesquisa por taxon
+
+`taxon_market_research` é o registro-pai da pesquisa. `taxon_market_research_items` contém os itens estruturados e é a fonte principal da inteligência por nicho para os templates universais.
+
+Os itens herdam o `audience_scope` do registro-pai por `research_id`.
+
+Mapeamento conceitual dos blocos:
+
+- `strategic_core`: dores, desejos, objeções, provas, medos, linguagem e posicionamento;
+- `lp_overview`: narrativa, tom visual, densidade, imagem e direção visual;
+- `lp_sections`: estrutura, prioridade e ordem das seções;
+- `seo`: intenção de busca, termos, FAQ e requisitos de SEO.
+
+O uso de cada bloco depende do canal e do objetivo. O template não deve copiar todos os itens indiscriminadamente nem transformar blocos de pesquisa em templates paralelos.
+
+## 8. Fallback por taxon
+
+A resolução conceitual da inteligência deve seguir esta ordem:
+
+1. taxon resolvido com o `audience_scope` necessário;
+2. taxon pai com o mesmo `audience_scope`;
+3. próximo ancestral disponível com o mesmo `audience_scope`;
+4. fallback genérico da LP Factory.
+
+O fallback deve permitir uma saída válida sem inventar pesquisa ou dados do cliente. Quando a ausência de dados limitar a personalização, a saída pode incluir alertas de dados faltantes.
+
+Para `Account Dashboard — Página comercial`, o `audience_scope` preferencial é `business_buyer`.
+
+## 9. Primeiro template
+
+### 9.1 Identificação
+
+- **Canal:** `account_dashboard`
+- **Objetivo:** `commercial_page`
+- **Nome:** Account Dashboard — Página comercial
+- **Caso consumidor:** E10.6
+
+### 9.2 Objetivo
+
+Apresentar uma vitrine persuasiva interna para contas `active` sem entitlements, com experiência semelhante a uma landing page interna e cards comerciais para compra, solicitação, briefing ou ativação da primeira entrega.
+
+### 9.3 Entradas
+
+- `channel = account_dashboard`
+- `objective = commercial_page`
+- `audience_scope = business_buyer`
+- taxon resolvido, se existir;
+- itens estruturados disponíveis;
+- dados do cliente disponíveis, se existirem;
+- fallback hierárquico aplicável;
+- fallback genérico.
+
+Nesta primeira fase, o template não depende de dados reais da conta para que seu contrato seja definido.
+
+### 9.4 Saída esperada
+
+- headline;
+- promessa principal;
+- texto curto de contexto;
+- cards comerciais;
+- CTA principal;
+- CTA secundário;
+- blocos de prova ou benefício;
+- alertas de dados faltantes, quando aplicável.
+
+Esta saída é somente um contrato documental. Não há geração real, escolha server-side ou renderização implementada nesta fase.
+
+### 9.5 Sequência de implementação
+
+1. A E18 define o contrato universal e o template `Account Dashboard — Página comercial`.
+2. A E10.5.6.7 deverá implementar a resolução server-side do template comercial e de seu fallback.
+3. A E10.6 deverá consumir essa resolução e renderizar a página comercial no Account Dashboard.
+
+A E10.5.6.7 permanece pendente. Este documento não altera seu status nem antecipa sua implementação.
+
+## 10. Persistência futura
+
+Tabelas só devem ser avaliadas quando houver necessidade real de salvar dados operacionais, como:
+
+- canal escolhido;
+- objetivo;
+- estágio do funil;
+- comprador, vendedor ou outro subobjetivo;
+- dados do cliente;
+- template usado;
+- saída gerada;
+- versões;
+- aprovações;
+- histórico;
+- status como `draft`, `approved` ou `published`.
+
+Até que exista esse caso real, os contratos permanecem documentais e nenhuma tabela deve ser criada.
+
+## 11. Fronteiras
+
+- **E18:** define os templates universais de conversão e seus contratos.
+- **E10.5.5:** cobre a pesquisa por taxon; não concentra produtos finais.
+- **E10.5.6.7:** deverá resolver server-side o template comercial e o fallback para consumo da E10.6.
+- **E10.6:** consumirá o template resolvido e será responsável pela página comercial do Account Dashboard.
+- **E19:** permanece responsável pelo LP Builder; pode consumir templates universais quando aplicável, sem concentrá-los.
+
+Ficam fora desta fase:
+
+- runtime em `lib/conversion-content/templates/`;
+- motor universal de geração;
+- implementação da E10.5.6.7;
+- implementação da E10.6;
+- LP Builder;
+- tabelas, migrations, rollbacks, SQL, RLS, policies, triggers, views ou functions;
+- detalhamento dos prompts finais por canal;
+- adoção de provider ou gateway de IA.
+
+## 12. Próximos passos
+
+1. Validar este contrato documental.
+2. Testar conceitualmente o template `Account Dashboard — Página comercial`.
+3. Preparar um briefing separado para a resolução server-side da E10.5.6.7.
+4. Preparar, após a resolução, um briefing separado para a implementação consumidora da E10.6.
+5. Criar runtime em `lib/conversion-content/templates/` somente quando houver consumo real no app.
+6. Avaliar tabelas somente quando houver necessidade real de persistência.
