@@ -38,6 +38,8 @@ Use como fonte de verdade para montar o bloco `input`:
 - `expected_items` por `research_block`, quando disponível
 - `expected_status`, quando disponível
 
+Se `expected_status` não vier explicitamente informado, use `active` como padrão do fluxo E10.5.5.
+
 Se faltar `taxon_id`, `research_block`/`research_blocks`, `audience_scope` ou `version`, pare e peça exatamente o dado faltante. Não gere SQL enquanto algum desses dados obrigatórios estiver ausente.
 
 ## 5. Critérios de sucesso

@@ -216,7 +216,7 @@ Formato esperado:
 - research_block:
 - audience_scope:
 - version: 1
-- status: draft
+- status: active
 
 Regras:
 
