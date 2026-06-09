@@ -1,8 +1,8 @@
 0. Introdução
 
 0.1 Cabeçalho
-• Data: 28/05/2026
-• Versão: v1.5.58
+• Data: 09/06/2026
+• Versão: v1.5.59
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -664,8 +664,12 @@
 • Status: Pendente
 • Escolha server-side do template comercial para a E10.6.
 • Template inicial: Account Dashboard — Página comercial.
+• Contexto de entrada: conta existente no Account Dashboard.
+• O taxon da conta é opcional e serve apenas para personalização; sua ausência não bloqueia a resolução.
+• Dados comerciais ricos da conta, como oferta, provas, diferenciais, imagens e CTA específico, não são obrigatórios nesta fase.
 • audience_scope preferencial: business_buyer.
 • Resolução por fallback: taxon resolvido → taxon pai → ancestral disponível → fallback genérico.
+• O fallback genérico usa o mesmo template universal, sem criar template paralelo.
 • Fora de escopo: renderização da página, LP Builder, criação de motor universal e persistência de briefings.
 
 • ARTEFATOS_REPO:
@@ -694,10 +698,12 @@
 10.6 Página comercial do Account Dashboard
 • Status: Planejado
 • Objetivo: apresentar uma vitrine persuasiva para contas active sem entitlements, com experiência semelhante a uma LP interna e cards comerciais para compra, solicitação, briefing ou ativação da primeira entrega.
+• Contexto: página interna do Account Dashboard para uma conta existente.
+• Não depende, nesta fase, de dados comerciais ricos da conta; oferta, provas, diferenciais, imagens e CTA específico podem estar ausentes.
 • Primeira aplicação prática dos templates universais da E18.
 • Consome a resolução do template comercial definida em 10.5.6.7.
-• Pode usar itens estruturados por taxon com audience_scope = business_buyer quando disponíveis.
-• Deve funcionar com fallback genérico quando não houver pesquisa/taxon suficiente.
+• Usa o taxon resolvido da conta apenas para personalização, quando existir, com itens estruturados de audience_scope = business_buyer.
+• Deve funcionar com o mesmo template universal e fallback genérico quando não houver taxon, pesquisa suficiente ou dados comerciais do cliente.
 • Fora de escopo: LP Builder, templates universais completos, automação completa do Admin Dashboard, tabelas de briefing e alterações em billing, entitlements, schema, migrations, RLS ou policies.
 
 11. E11 — Gestão de Usuários e Convites
@@ -966,6 +972,7 @@ Ajustados:
 • Definir o primeiro recorte funcional do LP Builder no roadmap
 
 99. Changelog
+v1.5.59 — 09/06/2026 — E10.5.6.7 e E10.6 alinhados para explicitar que a página comercial é interna ao Account Dashboard e possui conta existente, mas não depende de taxon nem de dados comerciais ricos; o taxon é opcional para personalização e o fallback genérico usa o mesmo template universal.
 v1.5.58 — 28/05/2026 — Roadmap atualizado em E10.5.5 para refletir o novo modelo de pesquisa bruta por taxon, mantendo `taxon_market_research` como registro-pai e `taxon_market_research_items` como itens estruturados da pesquisa, sem criação de bloco agregado, nova tabela ou nova camada.
 v1.5.57 (20/05/2026)
 • E10.5.6 reorganizado em subitens estáveis (10.5.6.1–10.5.6.7), mantendo estado final enxuto, separação de pendências reais e artefatos consolidados sem misturar escopo do E10.4.
