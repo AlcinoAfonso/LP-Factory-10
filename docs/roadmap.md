@@ -662,8 +662,11 @@
 
 10.5.6.7 Resolução do template comercial
 • Status: Pendente
-• Escolha server-side de template comercial via taxon, segmento ou fallback.
-• Integração prevista com a renderização futura do E10.5 `active`.
+• Escolha server-side do template comercial para a E10.6.
+• Template inicial: Account Dashboard — Página comercial.
+• audience_scope preferencial: business_buyer.
+• Resolução por fallback: taxon resolvido → taxon pai → ancestral disponível → fallback genérico.
+• Fora de escopo: renderização da página, LP Builder, criação de motor universal e persistência de briefings.
 
 • ARTEFATOS_REPO:
 • Criados:
@@ -690,13 +693,12 @@
 
 10.6 Página comercial do Account Dashboard
 • Status: Planejado
-• Objetivo: apresentar a vitrine persuasiva para contas `active` sem entitlements, com cards comerciais para compra, solicitação ou ativação da primeira entrega.
-• Escopo inicial:
-• renderizar a experiência comercial pós-setup dentro do Account Dashboard
-• usar o taxon resolvido e os dados de pesquisa estruturada quando disponíveis
-• apresentar cards comerciais claros e preparar a passagem para compra, solicitação, briefing ou ativação
-• consumir os templates definidos na E18 quando aplicável
-• Fora de escopo: LP Builder, templates universais, automação completa do Admin Dashboard e alterações em billing, entitlements, schema, migrations, RLS ou policies.
+• Objetivo: apresentar uma vitrine persuasiva para contas active sem entitlements, com experiência semelhante a uma LP interna e cards comerciais para compra, solicitação, briefing ou ativação da primeira entrega.
+• Primeira aplicação prática dos templates universais da E18.
+• Consome a resolução do template comercial definida em 10.5.6.7.
+• Pode usar itens estruturados por taxon com audience_scope = business_buyer quando disponíveis.
+• Deve funcionar com fallback genérico quando não houver pesquisa/taxon suficiente.
+• Fora de escopo: LP Builder, templates universais completos, automação completa do Admin Dashboard, tabelas de briefing e alterações em billing, entitlements, schema, migrations, RLS ou policies.
 
 11. E11 — Gestão de Usuários e Convites
 
@@ -912,12 +914,17 @@ Ajustados:
 18.2 Objetivo
 • Centralizar templates reutilizáveis por canal e contexto para a página comercial do Account Dashboard, landing pages, WhatsApp, e-mail, Instagram, TikTok e canais futuros.
 
-18.3 Escopo inicial
-• definir a estrutura e os contratos dos templates
-• organizar templates por canal e objetivo
-• usar `taxon_market_research_items` como fonte principal quando houver pesquisa por taxon
-• permitir fallback genérico quando não houver pesquisa ou taxon suficiente
-• alimentar E10.6, landing pages e canais comerciais futuros
+18.3 Visão de projeto
+• Templates universais são estruturas reutilizáveis por canal e objetivo.
+• Não devem ser criados por nicho como regra.
+• Produto final = template universal + itens estruturados da pesquisa + dados do cliente.
+• Primeiro nível de classificação: canal.
+• Segundo nível de classificação: objetivo dentro do canal.
+• Parâmetros internos não viram templates paralelos: funil, tier, taxon, audience_scope, comprador/vendedor, objetivo de conversão e dados do cliente.
+• taxon_market_research_items é a fonte principal da inteligência por nicho quando houver pesquisa disponível.
+• O sistema deve evitar explosão de templates por nicho, tier ou funil.
+• Persistência em tabela deve ser avaliada somente quando houver necessidade real de salvar briefings, escolhas, respostas, gerações, aprovações ou histórico.
+• Primeira aplicação prática: E10.6 Página comercial do Account Dashboard.
 
 18.4 Fora de escopo
 • LP Builder e automações completas
