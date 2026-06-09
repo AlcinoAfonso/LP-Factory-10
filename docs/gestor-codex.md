@@ -2,11 +2,11 @@
 
 ## 1. Objetivo
 
-Este painel resume o valor, o estado e os limites dos recursos do Codex App avaliados para o LP Factory 10, sem repetir regras operacionais.
+Este painel resume os recursos do Codex App relevantes para o LP Factory 10, sem repetir as regras operacionais do repositório.
 
 ## 2. Referências
 
-Estas fontes concentram regras, execução, automações e configuração fora deste painel.
+Estas fontes concentram regras, execução e detalhes que não precisam ser duplicados aqui.
 
 * `AGENTS.md` — regras operacionais.
 * `docs/prompt-codex-app-executor.md` — execução no Codex App.
@@ -15,131 +15,76 @@ Estas fontes concentram regras, execução, automações e configuração fora d
 
 ## 3. Configurações
 
-Configurações sustentam a execução local e a publicação do trabalho.
+Configurações sustentam o fluxo local adotado para editar, validar e publicar trabalho.
 
 ### Modo Personalizado (`config.toml`)
+
 **Aptidão:** trabalho Git local.
 **Estado:** adotado.
-**Valor:** ambiente controlado para editar e validar.
+**Valor:** oferece ambiente controlado para execução e validação.
 **Limite:** não substitui `AGENTS.md`.
 
 ### Git local e `git push`
+
 **Aptidão:** versionar e publicar branches.
 **Estado:** validado.
-**Valor:** conclui o fluxo sem interface gráfica.
+**Valor:** conclui o fluxo local sem interface gráfica.
 **Limite:** requer remote e autenticação válidos.
 
-### GitHub Web
-**Aptidão:** PRs, Actions, preview e merge.
-**Estado:** fonte de verdade.
-**Valor:** centraliza revisão e decisão de merge.
-**Limite:** não substitui validações locais.
-
-### GitHub Desktop
-**Aptidão:** operações Git por interface gráfica.
-**Estado:** fora do fluxo principal.
-**Valor:** alternativa para uso humano.
-**Limite:** não publica pelo fluxo padrão do Codex App.
-
-### Hooks
-**Aptidão:** reagir automaticamente a eventos.
-**Estado:** nenhum.
-**Valor:** poderá padronizar verificações.
-**Limite:** sem caso aprovado.
-
-### Conexões
-**Aptidão:** integrar serviços externos.
-**Estado:** nenhuma ativa.
-**Valor:** poderá reduzir trocas entre ferramentas.
-**Limite:** acesso e necessidade não avaliados.
-
-### Árvores de trabalho
-**Aptidão:** isolar frentes paralelas.
-**Estado:** nenhuma criada.
-**Valor:** evita misturar branches e contextos.
-**Limite:** ainda sem teste real.
+**Outras configurações:** GitHub Web é a fonte de verdade para PRs, Actions, preview e merge; GitHub Desktop está fora do fluxo principal; não há hooks, conexões ou worktrees ativos.
 
 ## 4. Plugins
 
-Plugins aproximam serviços externos da investigação e execução.
+Plugins aproximam serviços externos das tarefas de investigação e execução.
 
 ### Supabase Plugin
+
 **Aptidão:** leitura e escrita no Supabase.
 **Estado:** em teste; leitura aprovada.
-**Valor:** investiga schema, tabelas, RLS, policies, views, functions, índices, extensões e migrations.
+**Valor:** acelera a investigação de schema, tabelas, RLS, policies, views, functions, índices, extensões e migrations.
 **Limite:** escrita não testada nem aprovada.
+
+**Disponíveis não adotados:** GitHub Plugin e Slack.
 
 ## 5. Skills
 
-Skills tornam procedimentos recorrentes reutilizáveis e consistentes.
+Skills podem transformar procedimentos recorrentes em capacidades reutilizáveis.
 
-### Skills adotadas
-**Aptidão:** padronizar tarefas especializadas.
-**Estado:** nenhuma após a reinstalação.
-**Valor:** poderão reduzir repetição.
-**Limite:** skills do Supabase ficam no registro do plugin.
+Nenhuma skill foi adotada formalmente após a reinstalação. Skills do Supabase permanecem no registro do Supabase Plugin para evitar duplicação.
+
+**Disponíveis não adotadas:** Spreadsheets e Presentations.
 
 ## 6. Automações
 
 Automações podem reduzir o acionamento manual de rotinas recorrentes.
 
-### Automações do Codex App
-**Aptidão:** executar tarefas recorrentes.
-**Estado:** nenhuma criada.
-**Valor:** poderá reduzir trabalho operacional.
-**Limite:** sem caso de uso e supervisão definidos.
+Nenhuma automação do Codex App foi criada; novos casos devem seguir `docs/automations.md`.
 
 ## 7. Uso do computador e navegador
 
 Esses recursos podem ampliar validações visuais e interações fora do terminal.
 
-### Computer Use
-**Aptidão:** interagir com interfaces gráficas.
-**Estado:** disponível para instalar; não adotado.
-**Valor:** poderá cobrir tarefas sem interface por código.
-**Limite:** controle e segurança não avaliados.
-
-### Chrome
-**Aptidão:** interagir e verificar páginas web.
-**Estado:** disponível para instalar; não adotado.
-**Valor:** poderá validar navegação e comportamento.
-**Limite:** ainda não testado no projeto.
-
-### Navegador integrado
-**Aptidão:** consultar e interagir com a web.
-**Estado:** disponível; sem adoção final.
-**Valor:** reduz trocas de contexto.
-**Limite:** faltam critérios de uso e confiabilidade.
+**Disponíveis não adotados:** Computer Use e Chrome. O navegador integrado está disponível, mas ainda não tem adoção final.
 
 ## 8. Agents SDK / Workspace Agents
 
-Agentes podem coordenar fluxos especializados quando houver complexidade suficiente.
+Agentes podem coordenar fluxos especializados quando a complexidade justificar essa camada.
 
-### Agent Builder
-**Aptidão:** montar fluxos visualmente.
-**Estado:** legado.
-**Valor:** referência para fluxos existentes.
-**Limite:** não expandir.
+### Agents SDK / Workspace Agents
 
-### Agents SDK
-**Aptidão:** desenvolver agentes por código.
-**Estado:** pendente de avaliação.
-**Valor:** poderá oferecer orquestração controlada.
-**Limite:** sem caso aprovado.
+**Aptidão:** desenvolver e organizar agentes especializados.
+**Estado:** pendentes de avaliação.
+**Valor:** poderão coordenar responsabilidades e fluxos complexos.
+**Limite:** ainda não há caso de uso aprovado.
 
-### Workspace Agents
-**Aptidão:** organizar agentes especializados.
-**Estado:** pendente de avaliação.
-**Valor:** poderá distribuir responsabilidades complexas.
-**Limite:** custo e benefício não validados.
+**Legado:** Agent Builder; manter apenas como referência e não expandir.
 
 ## 9. Próximos testes
 
-Os testes devem gerar evidência para adotar, limitar ou descartar recursos.
+Os testes devem gerar evidência suficiente para adotar, limitar ou descartar recursos.
 
-1. Validar uma worktree em frente paralela real.
+1. Validar uma worktree em uma frente paralela real.
 2. Ampliar testes de leitura do Supabase Plugin, sem escrita.
-3. Selecionar um procedimento candidato a skill.
-4. Definir uma automação pequena e supervisionada.
-5. Comparar Chrome e navegador integrado em validação visual.
-6. Avaliar caso concreto para Agents SDK ou Workspace Agents.
+3. Selecionar um procedimento candidato a skill ou automação.
+4. Comparar Chrome e navegador integrado em uma validação visual.
+5. Avaliar um caso concreto para Agents SDK ou Workspace Agents.
