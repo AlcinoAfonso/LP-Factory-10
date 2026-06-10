@@ -978,7 +978,7 @@ Ajustados:
 • Taxons sem pesquisa estruturada suficiente devem usar fallback genérico válido.
 • Implementado: template versionado, proveniência por bloco de pesquisa com versão e `updated_at`, contrato camelCase dos campos finais, identidade inicial do artefato, validação estrutural pura com erros preservados e copy genérica determinística.
 • Artefatos: `lib/conversion-content/contracts.ts`, `lib/conversion-content/generatedCommercialContent.ts`, `lib/conversion-content/commercialTemplateResolution.ts`, `lib/conversion-content/templates/accountDashboardCommercialPage.ts` e `lib/conversion-content/adapters/commercialTemplateResolver.ts`.
-• Pendência: definir a etapa técnica responsável por runtime de geração, persistência dos artefatos, schema, validação estrutural, versionamento, invalidação e regras de consumo antes da integração da E10.6 com artefatos gerados.
+• Pendência: definir a etapa técnica responsável por runtime e validação da geração/provider, persistência dos artefatos, schema, versionamento, ativação, arquivamento, invalidação e regras de consumo antes da integração da E10.6 com artefatos gerados.
 • Fora de escopo desta etapa: provider de IA, gateway, tabelas, migrations, runtime de geração, UI administrativa e renderização da E10.6.
 
 19. E19 — LP Builder
