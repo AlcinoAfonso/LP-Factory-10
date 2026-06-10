@@ -1,10 +1,11 @@
 0. Introdução
 0.1. Cabeçalho
 • Documento: README — LP Factory 10 (MVP)
-• Data: 24/03/2026
-• Escopo: visão geral do produto + estratégia empresarial (alto nível) + referências oficiais do projeto
+• Versão: 0.2 — 10/06/2026
+• Data: 10/06/2026
+• Escopo: visão geral do produto + documentos de referência + pendências estratégicas
 
-1. O que é
+1. Visão geral do produto
 1.1. Classificação do negócio
 • Segmento: Marketing digital.
 • Nicho: plataforma SaaS de comunicação comercial por nicho.
@@ -15,33 +16,26 @@
 • O produto entrega canais de comunicação como landing pages, Instagram, WhatsApp e e-mail.
 • O dashboard deve priorizar automações internas com IA para reduzir operação, validar processos e identificar quais automações podem virar funcionalidades de produto para venda ou retenção.
 
-2. Proposta de valor
-• Oferecer landing pages por nicho com acompanhamento contínuo de performance.
-• Reduzir esforço, tempo e dependência para criar, medir, ajustar e otimizar LPs.
+1.3. Proposta de valor
+• Oferecer canais de comunicação comercial por nicho com acompanhamento contínuo de performance.
+• Reduzir esforço, tempo e dependência para criar, medir, ajustar e otimizar a comunicação comercial.
 • Transformar dados de uso e conversão em leitura prática para orientar melhorias.
-• Ajudar o cliente a evoluir a landing page com mais clareza, autonomia e direção.
+• Ajudar o cliente a evoluir sua comunicação comercial com mais clareza, autonomia e direção.
 
-3. Produto (alto nível)
-3.1. Prático
+1.4. Produto
+1.4.1. Prático
 • Templates por nicho e criação fácil.
 
-3.2. Inteligente
+1.4.2. Inteligente
 • Recursos orientados por dados (tracking/coleta e recomendações).
 
-3.3. Dashboard
+1.4.3. Dashboard
 • Suporte para ajustes e testes guiados por dados.
 
-4. Modelo de oferta
+1.5. Modelo de oferta
 • Planos em camadas (Starter → Lite → Pro → Ultra), com capacidades escalando ao longo do tempo.
 
-5. Pendências estratégicas (em aberto)
-5.1. Definições do MVP
-• Starter mínimo • Tracking mínimo • Atendimento no MVP • Primeira recomendação concreta da IA
-
-5.2. Padrões de entrega
-• Definir regra de “o que é uma LP entregue”, com checklist.
-
-6. Referências oficiais
+2. Documentos de referência
 • docs/base-tecnica.md — regras técnicas de runtime, implementação segura, arquitetura, adapters, imports, SSR, observability e anti-regressão.
 • docs/platform-config.md — configurações operacionais de plataformas, variáveis, secrets por nome, endpoints, URLs, redirects, SMTP, DNS e regras de redeploy.
 • docs/schema.md — contrato de banco: tabelas, colunas, constraints, views, RPCs/functions, triggers, RLS, policies e grants.
@@ -50,4 +44,9 @@
 • docs/services.md — catálogo humano dos services implantáveis, MCPs, endpoints e infraestrutura reutilizável com identidade própria.
 • docs/automations.md — camada de automações operacionais, integrações, componentes consumidores, credenciais por nome e aprendizados operacionais sem expor segredos.
 
+3. Pendências estratégicas (em aberto)
+3.1. Definições do MVP
+• Starter mínimo • Tracking mínimo • Atendimento no MVP • Primeira recomendação concreta da IA
 
+3.2. Padrões de entrega
+• Definir regra de “o que é uma LP entregue”, com checklist.
