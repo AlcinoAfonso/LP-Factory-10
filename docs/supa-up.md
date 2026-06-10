@@ -1976,7 +1976,7 @@ Integração do Supabase com agentes por meio do plugin MCP e das Agent Skills, 
 
 ### Registro (Tipo B — Tooling/Infra)
 
-- Status: EM IMPLEMENTAÇÃO
+- Status: PENDENTE
 - Verificado em: —
 - Ambiente: Supabase Plugin MCP / Agent Skills / agentes de IA
 - Evidência: `docs/gestor-codex.md` §§4–5.
