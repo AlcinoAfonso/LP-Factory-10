@@ -2,8 +2,11 @@
   "name": "mcp-supabase-inspect",
   "version": "0.1.0",
   "private": true,
+  "engines": {
+    "node": "22.x"
+  },
   "scripts": {
-    "check": "node --check api/mcp.js"
+    "check": "node --check api/mcp.js && node --test test/*.test.js"
   },
   "dependencies": {
     "pg": "^8.16.0"
