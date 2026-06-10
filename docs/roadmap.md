@@ -671,6 +671,7 @@
 • Resolução por fallback: taxon resolvido → taxon pai → ancestral disponível → fallback genérico.
 • O fallback genérico usa o mesmo template universal, sem criar template paralelo.
 • Fora de escopo: renderização da página, LP Builder, criação de motor universal e persistência de briefings.
+• Observação: esta etapa resolve template, taxon, pesquisa e fallback; não gera nem persiste a copy final.
 • Validação: núcleo puro aprovado para taxon direto, pai, ancestral, ausência de taxon e pesquisa ausente/incompleta; grants de leitura do `service_role` confirmados no Supabase; integração Next do adapter fica para o consumo real na E10.6.
 
 • ARTEFATOS_REPO:
@@ -707,13 +708,16 @@
 10.6 Página comercial do Account Dashboard
 • Status: Planejado
 • Objetivo: apresentar uma vitrine persuasiva para contas active sem entitlements, com experiência semelhante a uma LP interna e cards comerciais para compra, solicitação, briefing ou ativação da primeira entrega.
-• Contexto: página interna do Account Dashboard para uma conta existente.
+• Contexto: página interna do Account Dashboard para uma conta existente e primeiro laboratório controlado da futura geração automatizada de páginas por nicho.
 • Não depende, nesta fase, de dados comerciais ricos da conta; oferta, provas, diferenciais, imagens e CTA específico podem estar ausentes.
 • Primeira aplicação prática dos templates universais da E18.
 • Consome a resolução do template comercial definida em 10.5.6.7.
+• Deve consumir a página comercial gerada e arquivada para o taxon aplicável da conta, quando houver artefato específico válido.
 • Usa o taxon resolvido da conta apenas para personalização, quando existir, com itens estruturados de audience_scope = business_buyer.
-• Deve funcionar com o mesmo template universal e fallback genérico quando não houver taxon, pesquisa suficiente ou dados comerciais do cliente.
-• Fora de escopo: LP Builder, templates universais completos, automação completa do Admin Dashboard, tabelas de briefing e alterações em billing, entitlements, schema, migrations, RLS ou policies.
+• Se não houver artefato específico válido, deve usar o mesmo template universal com fallback genérico determinístico.
+• A página não chama IA ou API durante a renderização; apenas exibe campos finais já gerados ou o fallback determinístico.
+• A geração e a regeneração pertencem ao fluxo administrativo futuro previsto em 12.7.
+• Fora de escopo: LP Builder, criação de motor universal completo, automação completa do Admin Dashboard, tabelas de briefing e alterações em billing, entitlements, schema, migrations, RLS ou policies.
 
 11. E11 — Gestão de Usuários e Convites
 
@@ -783,6 +787,16 @@ Ajustados:
 • Templates e Auditoria permanecem como áreas previstas.
 • Mutações administrativas ficam fora do escopo atual.
 • Billing e operações de suspensão/reativação dependem de recorte futuro.
+
+12.7 Geração administrativa de página comercial por taxon
+• Status: Planejado
+• Objetivo: permitir que o Admin Dashboard gere, valide, aprove, arquive e regenere artefatos de página comercial por template/taxon.
+• A operação administrativa deve usar taxons com pesquisa estruturada suficiente e audience_scope adequado.
+• Primeiro caso previsto: Account Dashboard — Página comercial com audience_scope = business_buyer.
+• A geração deve produzir campos finais compatíveis com o contrato do template.
+• A versão gerada deve poder ser marcada como ativa e substituir a versão anterior, arquivando a versão substituída.
+• Falhas de geração devem ser tratadas como execução e auditoria, não como conteúdo consumível.
+• O Admin Dashboard continua sem mutações na fase atual; este subitem registra apenas o recorte futuro.
 
 13. E13 — Partner Dashboard
 
@@ -947,6 +961,22 @@ Ajustados:
 • responsabilidades de E10, E12 ou E19
 • detalhamento dos prompts finais de cada canal
 
+18.5 Geração automatizada sobre templates universais
+• Status: Planejado
+• Objetivo: definir a futura camada de geração automatizada de conteúdo sobre templates universais, usando a página comercial do Account Dashboard como primeiro laboratório controlado.
+• A geração deve transformar templates universais, itens estruturados da pesquisa, contexto do canal e dados opcionais do cliente em campos finais de comunicação comercial.
+• A estrutura continua definida pelo template universal; o mecanismo de geração apenas preenche, adapta, revisa ou varia os campos dentro do contrato do template.
+• Os campos finais podem incluir headline, promessa, contexto, cards comerciais, CTAs e blocos de benefício ou prova exigidos pelo template.
+• Primeira aplicação prevista: Account Dashboard — Página comercial.
+• O primeiro recorte deve ser compartilhado por taxon, sem dados específicos da conta.
+• A chave conceitual do artefato deve considerar template_key, versão do template, researchTaxon efetivamente usado, audience_scope, versão da pesquisa, versão do prompt/schema de saída, locale e modo genérico ou específico por taxon.
+• Se dados específicos do cliente forem usados em etapa futura, a saída deixa de ser compartilhada por nicho e passa a exigir identidade por conta e fingerprint/versionamento dessas entradas.
+• Quando houver necessidade de reutilização, versionamento, aprovação ou histórico, as saídas devem ser tratadas como artefatos persistidos, não como cache simples.
+• O sistema deve evitar chamada repetida de IA/API para a mesma combinação válida de template, taxon, audience_scope e versão de pesquisa.
+• Nova geração só deve ocorrer quando não existir artefato válido ou quando houver solicitação administrativa de regeneração.
+• Taxons sem pesquisa estruturada suficiente devem usar fallback genérico válido.
+• Fora de escopo desta etapa: provider de IA, gateway, tabelas, migrations, runtime de geração, UI administrativa e renderização da E10.6.
+
 19. E19 — LP Builder
 
 19.1 Status
@@ -981,6 +1011,7 @@ Ajustados:
 • Definir o primeiro recorte funcional do LP Builder no roadmap
 
 99. Changelog
+v1.5.61 — 10/06/2026 — Roadmap registra a página comercial da E10.6 como primeiro laboratório controlado da geração automatizada por taxon, com visão planejada na E18.5, futura operação administrativa na E12.7 e consumo de artefato pronto ou fallback sem IA em renderização.
 v1.5.60 — 09/06/2026 — E10.5.6.7 concluído com template comercial universal, contrato e exports da family `conversion-content`, resolução pura, adapter server-only, fallback taxon/pai/ancestral/genérico e grants read-only validados para pesquisa `business_buyer`.
 v1.5.59 — 09/06/2026 — E10.5.6.7 e E10.6 alinhados para explicitar que a página comercial é interna ao Account Dashboard e possui conta existente, mas não depende de taxon nem de dados comerciais ricos; o taxon é opcional para personalização e o fallback genérico usa o mesmo template universal.
 v1.5.58 — 28/05/2026 — Roadmap atualizado em E10.5.5 para refletir o novo modelo de pesquisa bruta por taxon, mantendo `taxon_market_research` como registro-pai e `taxon_market_research_items` como itens estruturados da pesquisa, sem criação de bloco agregado, nova tabela ou nova camada.
