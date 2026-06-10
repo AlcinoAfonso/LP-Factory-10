@@ -14,7 +14,7 @@
 1.2. Descrição
 • LP Factory 10 é uma plataforma SaaS de comunicação comercial para aquisição, venda e nutrição de leads.
 • O produto entrega canais de comunicação como landing pages, Instagram, WhatsApp e e-mail.
-• O dashboard deve priorizar automações internas com IA para reduzir operação, validar processos e identificar quais automações podem virar funcionalidades de produto para venda ou retenção.
+• O dashboard prioriza automações internas com IA para reduzir operação, validar processos e identificar quais automações podem virar funcionalidades de produto para venda ou retenção.
 
 1.3. Proposta de valor
 • Oferecer canais de comunicação comercial por nicho com acompanhamento contínuo de performance.
@@ -27,7 +27,7 @@
 • Templates por nicho e criação fácil.
 
 1.4.2. Inteligente
-• Recursos orientados por dados (tracking/coleta e recomendações).
+• Recursos orientados por dados (tracking/coleta e recomendações) e automações internas com IA.
 
 1.4.3. Dashboard
 • Suporte para ajustes e testes guiados por dados.
@@ -46,7 +46,7 @@
 
 3. Pendências estratégicas (em aberto)
 3.1. Definições do MVP
-• Starter mínimo • Tracking mínimo • Atendimento no MVP • Primeira recomendação concreta da IA
+• Starter mínimo • Tracking mínimo • Atendimento no MVP
 
 3.2. Padrões de entrega
 • Definir regra de “o que é uma LP entregue”, com checklist.
