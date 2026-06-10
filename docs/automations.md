@@ -272,36 +272,8 @@ Casos versionados: `automations/niche-runtime-tests/cases/`
 Reuso de mailbox: `automations/validador-final/`
 Verificação opcional de banco: `automations/supabase-inspect/verify-niche-runtime.mjs`
 
-3.8 Agent Investigator
-
-Objetivo:
-Investigar, sob escopo sob demanda, plataformas, configuracoes, chaves, variaveis, deploys, logs, banco, automacoes, integracoes e readiness operacional do ecossistema LP Factory 10, sem expor segredos e sem executar mutacoes sem autorizacao explicita.
-
-Status:
-Validacao operacional / Fase 5
-
-Acesso esperado:
-Codex App via plugin local `agent-investigator`, apos instalacao no ambiente Codex.
-
-Como usar:
-Informar o escopo da investigacao, incluindo alvos, plataformas, ambiente, fluxo funcional, variaveis ou estruturas a validar e formato de saida esperado.
-
-Resposta esperada:
-Relatorio no chat com status geral, evidencias por plataforma, lacunas, riscos, acoes recomendadas e decisao objetiva sobre prosseguir ou bloquear.
-
-Regra operacional:
-O agente deve operar com leitura por padrao. Secrets podem ser verificados por presenca, ambiente, sensibilidade e formato, mas nunca devem ter valores revelados.
-
-Referencias / dependencias:
-README local: `automations/agent-investigator/README.md`
-Plugin local: `plugins/agent-investigator/`
-Skill: `plugins/agent-investigator/skills/investigator-operational/SKILL.md`
-Ferramentas reais: `plugins/agent-investigator/tools/README.md`
-Preflight local: `plugins/agent-investigator/scripts/tool-readiness.mjs`
-Presets: `plugins/agent-investigator/presets/`
-Validacao operacional: `plugins/agent-investigator/scripts/validate-operational.mjs`
-Escopos conhecidos: `plugins/agent-investigator/validation/scopes/`
-Plataformas: GitHub, Vercel, OpenAI Platform / OpenAI Developers, Supabase, App preview/producao e GitHub Actions quando disponiveis.
+Nota de descontinuação:
+O experimento Agent Investigator foi descontinuado porque as capacidades necessárias passaram a ser atendidas pelos plugins oficiais do Codex App.
 
 4. Aprendizados operacionais
 4.1 Princípios identificados
