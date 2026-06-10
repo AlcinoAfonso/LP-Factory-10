@@ -1945,42 +1945,42 @@ A Supabase passou a mudar o comportamento de exposição automática de novas ta
 
 ---
 
-## 59 — Supabase Agent Skills *(🟦 Estável)*
+## 59 — Supabase Plugin para agentes (MCP + Agent Skills) *(🟦 Estável)*
 
 2026-05-19
 
 ### Status no Projeto
 
-- Status: Não implementado
-- Evidência: Supabase Update May 2026; sem adoção formal no fluxo Codex/AGENTS/template do projeto.
+- Status: Em implementação por casos de uso
+- Evidência: `docs/gestor-codex.md` §§4–5: plugin em teste, leitura aprovada e escrita não aprovada.
 
 ### Descrição
 
-Conjunto open source de instruções da Supabase para orientar agentes de IA a construir corretamente com Supabase.
+Integração do Supabase com agentes por meio do plugin MCP e das Agent Skills, adotada gradualmente conforme casos de uso validados no projeto.
 
 ### Valor para o Projeto
 
-- Pode reduzir erros de agentes em migrations, RLS, policies, grants e uso de recursos Supabase.
-- Pode melhorar briefings para Codex e rotinas de revisão técnica.
-- Não substitui `docs/base-tecnica.md`, `docs/schema.md` ou validação humana.
+- Pode acelerar investigações técnicas no Supabase e orientar agentes em tarefas relacionadas à plataforma.
+- Permite avaliar a integração de forma incremental, sem antecipar adoção ampla.
+- Mantém `docs/gestor-codex.md` como fonte dos detalhes operacionais, limites e estado dos testes.
 
 ### Valor para o Usuário
 
-- Indireto: menos risco de erro técnico em entregas que dependem de Supabase.
+- Indireto: reduz atrito e risco técnico em entregas que dependem de Supabase.
 
 ### Ações Recomendadas
 
-1. Avaliar uso como referência auxiliar para briefings do Codex.
-2. Não tratar Agent Skills como fonte canônica do projeto.
-3. Manter Base Técnica e Schema como fontes obrigatórias em implementações.
+1. Adotar o plugin e as Agent Skills somente em casos de uso previamente delimitados.
+2. Consultar `docs/gestor-codex.md` para regras operacionais, limites e estado de aprovação.
+3. Não duplicar neste registro os detalhes operacionais mantidos no Gestor Codex.
 
 ### Registro (Tipo B — Tooling/Infra)
 
-- Status: PENDENTE
+- Status: EM IMPLEMENTAÇÃO
 - Verificado em: —
-- Ambiente: Supabase Agent Skills / agentes de IA
-- Evidência: —
-- Observação: recurso de apoio a agentes; adoção depende de validação no fluxo Codex do projeto.
+- Ambiente: Supabase Plugin MCP / Agent Skills / agentes de IA
+- Evidência: `docs/gestor-codex.md` §§4–5.
+- Observação: adoção gradual por casos de uso; governança operacional centralizada no Gestor Codex.
 
 ---
 
@@ -2059,3 +2059,42 @@ Recurso de Auth para conectar provedores OAuth2 ou OpenID Connect próprios ao p
 - Ambiente: Supabase Auth / OAuth / OIDC
 - Evidência: —
 - Observação: capacidade futura para cenários enterprise; sem prioridade no MVP.
+
+---
+
+## 62 — Supabase official ChatGPT app *(🟦 Estável)*
+
+2026-06-10
+
+### Status no Projeto
+
+- Status: Não implementado
+- Evidência: Supabase Update June 2026; sem adoção registrada no projeto.
+
+### Descrição
+
+Aplicativo oficial da Supabase para uso no ChatGPT, tratado como uma integração própria e separada do Codex Plugin.
+
+### Valor para o Projeto
+
+- Pode apoiar consultas e fluxos futuros da Supabase dentro do ChatGPT.
+- Sua eventual adoção deve ser avaliada como integração independente.
+- Não altera o estado, os limites ou as regras registrados em `docs/gestor-codex.md`.
+
+### Valor para o Usuário
+
+- Potencial futuro: acesso assistido a recursos da Supabase por meio do ChatGPT.
+
+### Ações Recomendadas
+
+1. Não implementar sem caso de uso aprovado.
+2. Avaliar separadamente do Codex Plugin, sem transferir permissões ou decisões entre as integrações.
+3. Se adotado, documentar escopo, permissões, riscos e validações em registro próprio, sem alterar `docs/gestor-codex.md` por consequência automática.
+
+### Registro (Tipo B — Integração)
+
+- Status: PENDENTE
+- Verificado em: —
+- Ambiente: Supabase official ChatGPT app
+- Evidência: Supabase Update June 2026; sem adoção registrada no projeto.
+- Observação: integração separada do Codex Plugin; não altera `docs/gestor-codex.md`.
