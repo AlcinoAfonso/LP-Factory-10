@@ -51,6 +51,13 @@ Plugins aproximam serviços externos das tarefas de investigação e execução.
 **Valor:** permite investigar branches/PRs e falhas de CI diretamente no GitHub remoto, inclusive quando a branch não está disponível no clone local.
 **Limite:** não substitui o fluxo Git local para implementar código nem o GitHub Web como referência final para PR, Actions, preview e merge.
 
+### Vercel Plugin
+
+**Aptidão:** leitura e possível operação/configuração na Vercel.
+**Estado:** em teste; leitura aprovada.
+**Valor:** acelera diagnóstico de deploys, previews, build logs, runtime, endpoints e configurações Vercel.
+**Limite:** escrita, deploy manual, variáveis de ambiente, domínios, settings e ações em produção não testados nem aprovados.
+
 **Disponíveis não adotados:** Slack.
 
 ## 5. Skills
