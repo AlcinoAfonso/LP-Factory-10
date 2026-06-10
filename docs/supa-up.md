@@ -1616,9 +1616,9 @@ As Read Replicas passam a ser gerenciadas pela página oficial de Database Repli
 
 ### Status no Projeto
 
-- Status: Não implementado
-- Evidência: `docs/base-tecnica.md` registra FTS nativo e compatibilidade PostgREST/PG; não há adoção explícita de `pg_trgm` no projeto.
-- Observação: candidato forte para matching textual leve sem IA no caso de taxonomia.
+- Status: Em implementação por casos de uso
+- Evidência: E10.5.6.1–E10.5.6.2 e `supabase/migrations/0009__e10_5_6_deterministic_taxon_matching.sql`.
+- Observação: a migration cria a extensão `pg_trgm`, índices GIN de trigramas e usa similaridade textual no matching determinístico da taxonomia.
 
 ### Descrição
 

@@ -2,7 +2,7 @@
 
 0.1 Cabeçalho
 • Data: 10/06/2026
-• Versão: v1.5.62
+• Versão: v1.5.63
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -717,6 +717,8 @@
 • Se não houver artefato específico válido, deve usar o mesmo template universal com fallback genérico determinístico.
 • A página não chama IA ou API durante a renderização; apenas exibe campos finais já gerados ou o fallback determinístico.
 • A geração e a regeneração pertencem ao fluxo administrativo futuro previsto em 12.7.
+• Observabilidade futura: a integração com o artefato ativo ou fallback deve usar logs estruturados correlacionáveis por `request_id`, registrando template, versão, origem taxon/pai/ancestral/genérico, artefato utilizado e motivo do fallback, sem PII ou copy integral. Referência: supa#5.
+• A primeira entrega da E10.6 não exige nova infraestrutura da Vercel.
 • Fora de escopo: LP Builder, criação de motor universal completo, automação completa do Admin Dashboard, tabelas de briefing e alterações em billing, entitlements, schema, migrations, RLS ou policies.
 
 11. E11 — Gestão de Usuários e Convites
@@ -979,6 +981,15 @@ Ajustados:
 • Implementado: template versionado, proveniência por bloco de pesquisa com versão e `updated_at`, contrato camelCase dos campos finais, identidade inicial do artefato, validação estrutural pura com erros preservados e copy genérica determinística.
 • Artefatos: `lib/conversion-content/contracts.ts`, `lib/conversion-content/generatedCommercialContent.ts`, `lib/conversion-content/commercialTemplateResolution.ts`, `lib/conversion-content/templates/accountDashboardCommercialPage.ts` e `lib/conversion-content/adapters/commercialTemplateResolver.ts`.
 • Pendência: definir a etapa técnica responsável por runtime e validação da geração/provider, persistência dos artefatos, schema, versionamento, ativação, arquivamento, invalidação e regras de consumo antes da integração da E10.6 com artefatos gerados.
+• Updates previstos para a etapa técnica futura:
+• supa#40: criar snippets versionados de verificação após a definição do schema e da persistência dos artefatos.
+• supa#5: registrar geração, regeneração, falhas, duração, provider/modelo, versão das entradas e `request_id`, sem PII ou conteúdo integral.
+• supa#58: aplicar a regra global de GRANT explícito se forem criadas tabelas `public` acessadas pela Data API; não conceder grants automaticamente a tabelas internas.
+• vercel#1: avaliar AI Gateway quando provider e runtime de geração forem definidos.
+• vercel#8: usar `revalidateTag`/`updateTag` somente se a solução adotar cache real.
+• supa#53: avaliar apenas se houver necessidade comprovada de fila, retry ou processamento assíncrono.
+• tracking: definir uma única estratégia após a primeira entrega da E10.6, evitando duplicidade entre tracking interno e Vercel.
+• Não adotar neste recorte: supa#52, supa#54 e vercel#3.
 • Fora de escopo desta etapa: provider de IA, gateway, tabelas, migrations, runtime de geração, UI administrativa e renderização da E10.6.
 
 19. E19 — LP Builder
@@ -1015,6 +1026,7 @@ Ajustados:
 • Definir o primeiro recorte funcional do LP Builder no roadmap
 
 99. Changelog
+v1.5.63 — 10/06/2026 — E10.6 e E18.5 registram observabilidade futura, ausência de nova infraestrutura Vercel na primeira entrega e condições de adoção para updates Supabase, Vercel, cache, fila e tracking, sem implementar essas capacidades nesta etapa.
 v1.5.62 — 10/06/2026 — E18.5 iniciada com contrato técnico dos campos finais da página comercial, template versionado, proveniência das pesquisas, identidade inicial do artefato, validação estrutural pura e fallback determinístico, sem provider, persistência ou UI.
 v1.5.61 — 10/06/2026 — Roadmap registra a página comercial da E10.6 como primeiro laboratório controlado da geração automatizada por taxon, com visão planejada na E18.5, futura operação administrativa na E12.7, consumo da versão ativa e válida ou fallback sem IA em renderização e pendência da etapa técnica responsável pelos artefatos.
 v1.5.60 — 09/06/2026 — E10.5.6.7 concluído com template comercial universal, contrato e exports da family `conversion-content`, resolução pura, adapter server-only, fallback taxon/pai/ancestral/genérico e grants read-only validados para pesquisa `business_buyer`.
