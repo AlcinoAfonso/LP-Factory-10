@@ -1907,7 +1907,7 @@ Melhorias do Schema Visualiser para inspeção de modelagem (relações clicáve
 
 - Status: Implementado globalmente no projeto
 - Evidência: docs/base-tecnica.md (regra incorporada em 3.8.1.5 para novas tabelas no schema public); e-mail da Supabase indica 1 projeto afetável por uso de Data API, sem indicação de erro atual.
-- Observação: tabelas existentes mantêm grants atuais; o risco concentra-se em novas tabelas em `public` sem `GRANT` explícito; erro esperado na ausência de grant: `42501`.
+- Observação: novos projetos adotam o comportamento em 30/05/2026; no projeto existente, novas tabelas passam a exigir `GRANT` explícito em 30/10/2026; tabelas existentes mantêm os grants atuais.
 
 ### Descrição
 
@@ -1932,7 +1932,8 @@ A Supabase passou a mudar o comportamento de exposição automática de novas ta
    - `GRANT`: define se a role pode acessar a tabela pela Data API.
    - RLS/policies: definem quais linhas podem ser acessadas.
 3. Não conceder grants automaticamente para tabelas internas.
-4. Quando a tabela precisar ser acessada por app, admin, adapters ou fluxo operacional via Supabase API, declarar os grants necessários na mesma migration da criação da tabela.
+4. Antes de 30/10/2026, usar o Security Advisor para revisar quais tabelas estão expostas à Data API.
+5. Quando a tabela precisar ser acessada por app, admin, adapters ou fluxo operacional via Supabase API, declarar os grants necessários na mesma migration da criação da tabela.
 
 ### Registro (Tipo C — Infra/Schema/Contrato)
 
