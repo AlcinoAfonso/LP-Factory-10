@@ -11,45 +11,37 @@
 • Ultranicho: não usar agora.
 
 1.2. Descrição
-• LP Factory 10 é uma plataforma SaaS de comunicação comercial por nicho, com landing pages como um dos canais principais de aquisição e conversão.
-• O produto combina páginas, dashboards, dados estruturados, automações e recursos operacionais para apoiar a criação, execução e melhoria contínua da comunicação com leads e clientes.
-• O foco atual é validar a oferta, o processo e a repetibilidade antes de escalar.
-• A aplicação de IA diretamente no produto para o cliente está em estudo, especialmente para apoiar geração, personalização e melhoria de mensagens, páginas e canais de comunicação.
+• LP Factory 10 é uma plataforma SaaS de comunicação comercial para aquisição, venda e nutrição de leads.
+• O produto entrega canais de comunicação como landing pages, Instagram, WhatsApp e e-mail.
+• O dashboard deve priorizar automações internas com IA para reduzir operação, validar processos e identificar quais automações podem virar funcionalidades de produto para venda ou retenção.
 
-2. Estratégia (atual e evolutiva)
-2.1. Go-to-market inicial
-• Início por conta consultiva (caso a caso) para vender, testar e validar saindo do zero.
-
-2.2. Direção do produto
-• Evoluir para SaaS self-serve quando houver sinais claros de repetibilidade e demanda.
-
-3. Proposta de valor
+2. Proposta de valor
 • Oferecer landing pages por nicho com acompanhamento contínuo de performance.
 • Reduzir esforço, tempo e dependência para criar, medir, ajustar e otimizar LPs.
 • Transformar dados de uso e conversão em leitura prática para orientar melhorias.
 • Ajudar o cliente a evoluir a landing page com mais clareza, autonomia e direção.
 
-4. Produto (alto nível)
-4.1. Prático
+3. Produto (alto nível)
+3.1. Prático
 • Templates por nicho e criação fácil.
 
-4.2. Inteligente
+3.2. Inteligente
 • Recursos orientados por dados (tracking/coleta e recomendações).
 
-4.3. Dashboard
+3.3. Dashboard
 • Suporte para ajustes e testes guiados por dados.
 
-5. Modelo de oferta
+4. Modelo de oferta
 • Planos em camadas (Starter → Lite → Pro → Ultra), com capacidades escalando ao longo do tempo.
 
-6. Pendências estratégicas (em aberto)
-6.1. Definições do MVP
+5. Pendências estratégicas (em aberto)
+5.1. Definições do MVP
 • Starter mínimo • Tracking mínimo • Atendimento no MVP • Primeira recomendação concreta da IA
 
-6.2. Padrões de entrega
+5.2. Padrões de entrega
 • Definir regra de “o que é uma LP entregue”, com checklist.
 
-7. Referências oficiais
+6. Referências oficiais
 • docs/base-tecnica.md — regras técnicas de runtime, implementação segura, arquitetura, adapters, imports, SSR, observability e anti-regressão.
 • docs/platform-config.md — configurações operacionais de plataformas, variáveis, secrets por nome, endpoints, URLs, redirects, SMTP, DNS e regras de redeploy.
 • docs/schema.md — contrato de banco: tabelas, colunas, constraints, views, RPCs/functions, triggers, RLS, policies e grants.
