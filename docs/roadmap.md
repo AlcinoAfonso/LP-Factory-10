@@ -976,7 +976,7 @@ Ajustados:
 • O sistema deve evitar chamada repetida de IA/API para a mesma combinação válida de template, taxon, audience_scope e versão de pesquisa.
 • Nova geração só deve ocorrer quando não existir artefato válido ou quando houver solicitação administrativa de regeneração.
 • Taxons sem pesquisa estruturada suficiente devem usar fallback genérico válido.
-• Implementado: template versionado, proveniência por bloco de pesquisa, contrato dos campos finais, identidade inicial do artefato, validação estrutural pura e copy genérica determinística.
+• Implementado: template versionado, proveniência por bloco de pesquisa com versão e `updated_at`, contrato camelCase dos campos finais, identidade inicial do artefato, validação estrutural pura com erros preservados e copy genérica determinística.
 • Artefatos: `lib/conversion-content/contracts.ts`, `lib/conversion-content/generatedCommercialContent.ts`, `lib/conversion-content/commercialTemplateResolution.ts`, `lib/conversion-content/templates/accountDashboardCommercialPage.ts` e `lib/conversion-content/adapters/commercialTemplateResolver.ts`.
 • Pendência: definir a etapa técnica responsável por runtime de geração, persistência dos artefatos, schema, validação estrutural, versionamento, invalidação e regras de consumo antes da integração da E10.6 com artefatos gerados.
 • Fora de escopo desta etapa: provider de IA, gateway, tabelas, migrations, runtime de geração, UI administrativa e renderização da E10.6.

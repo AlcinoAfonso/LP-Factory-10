@@ -13,13 +13,13 @@ export const ACCOUNT_DASHBOARD_COMMERCIAL_PAGE_TEMPLATE = {
   audienceScope: "business_buyer",
   outputFields: [
     "headline",
-    "primary_promise",
+    "primaryPromise",
     "context",
-    "commercial_cards",
-    "primary_cta",
-    "secondary_cta",
-    "proof_or_benefit_blocks",
-    "missing_data_alerts",
+    "commercialCards",
+    "primaryCta",
+    "secondaryCta",
+    "proofOrBenefitBlocks",
+    "missingDataAlerts",
   ],
 } as const satisfies CommercialTemplateDefinition;
 

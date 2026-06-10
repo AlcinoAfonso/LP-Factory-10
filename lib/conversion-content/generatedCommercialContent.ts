@@ -3,7 +3,7 @@ import type {
   CommercialContentBlock,
   CommercialContentCard,
   CommercialContentValidationResult,
-  CommercialGeneratedArtifactDraft,
+  CommercialGeneratedArtifactDraftResult,
   CommercialGeneratedArtifactIdentity,
   CommercialGeneratedContent,
   CommercialTemplateResolution,
@@ -16,18 +16,21 @@ export function createCommercialGeneratedArtifactDraft(input: {
   resolution: CommercialTemplateResolution;
   locale?: string;
   content: unknown;
-}): CommercialGeneratedArtifactDraft | null {
+}): CommercialGeneratedArtifactDraftResult {
   const validation = validateCommercialGeneratedContent(input.content);
 
-  if (!validation.ok) return null;
+  if (!validation.ok) return validation;
 
   return {
-    identity: createCommercialGeneratedArtifactIdentity({
-      resolution: input.resolution,
-      locale: input.locale,
-    }),
-    contentSchemaVersion: COMMERCIAL_CONTENT_SCHEMA_VERSION,
-    content: validation.content,
+    ok: true,
+    artifact: {
+      identity: createCommercialGeneratedArtifactIdentity({
+        resolution: input.resolution,
+        locale: input.locale,
+      }),
+      contentSchemaVersion: COMMERCIAL_CONTENT_SCHEMA_VERSION,
+      content: validation.content,
+    },
   };
 }
 

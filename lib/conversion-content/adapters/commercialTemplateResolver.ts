@@ -37,6 +37,7 @@ type ResearchRow = {
   taxon_id: string;
   research_block: string;
   version: number;
+  updated_at: string;
 };
 
 type ResearchItemRow = {
@@ -148,7 +149,7 @@ async function getCompleteBusinessBuyerResearch(
   const taxonIds = hierarchy.map((taxon) => taxon.taxonId);
   const { data: researchData, error: researchError } = await supabase
     .from("taxon_market_research")
-    .select("id,taxon_id,research_block,version")
+    .select("id,taxon_id,research_block,version,updated_at")
     .in("taxon_id", taxonIds)
     .eq(
       "audience_scope",
@@ -235,6 +236,7 @@ function groupCompleteResearchByTaxon(
         taxonId: research.taxon_id,
         block: research.research_block,
         version: research.version,
+        updatedAt: research.updated_at,
       });
       sourcesByTaxon.set(research.taxon_id, sources);
     }

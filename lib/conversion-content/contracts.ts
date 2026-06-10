@@ -24,6 +24,18 @@ export type CommercialResearchSource = {
   taxonId: string;
   block: CommercialResearchBlock;
   version: number;
+  updatedAt: string;
+};
+
+export type CommercialGeneratedContent = {
+  headline: string;
+  primaryPromise: string;
+  context: string;
+  commercialCards: CommercialContentCard[];
+  primaryCta: CommercialContentAction;
+  secondaryCta: CommercialContentAction;
+  proofOrBenefitBlocks: CommercialContentBlock[];
+  missingDataAlerts: string[];
 };
 
 export type CommercialTemplateDefinition = {
@@ -35,13 +47,13 @@ export type CommercialTemplateDefinition = {
   audienceScope: "business_buyer";
   outputFields: readonly [
     "headline",
-    "primary_promise",
+    "primaryPromise",
     "context",
-    "commercial_cards",
-    "primary_cta",
-    "secondary_cta",
-    "proof_or_benefit_blocks",
-    "missing_data_alerts",
+    "commercialCards",
+    "primaryCta",
+    "secondaryCta",
+    "proofOrBenefitBlocks",
+    "missingDataAlerts",
   ];
 };
 
@@ -93,17 +105,6 @@ export type CommercialContentBlock = {
   body: string;
 };
 
-export type CommercialGeneratedContent = {
-  headline: string;
-  primaryPromise: string;
-  context: string;
-  commercialCards: CommercialContentCard[];
-  primaryCta: CommercialContentAction;
-  secondaryCta: CommercialContentAction;
-  proofOrBenefitBlocks: CommercialContentBlock[];
-  missingDataAlerts: string[];
-};
-
 export type CommercialGeneratedArtifactIdentity = {
   templateKey: CommercialTemplateDefinition["key"];
   templateVersion: CommercialTemplateDefinition["version"];
@@ -124,6 +125,16 @@ export type CommercialContentValidationResult =
   | {
       ok: true;
       content: CommercialGeneratedContent;
+    }
+  | {
+      ok: false;
+      errors: string[];
+    };
+
+export type CommercialGeneratedArtifactDraftResult =
+  | {
+      ok: true;
+      artifact: CommercialGeneratedArtifactDraft;
     }
   | {
       ok: false;

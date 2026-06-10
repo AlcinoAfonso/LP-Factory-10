@@ -183,7 +183,7 @@ O mesmo template possui uma copy final genérica e determinística para uso quan
 5. A E12.7 operará geração e regeneração administrativas.
 6. A E10.6 consumirá o artefato ativo ou o fallback determinístico e renderizará a página comercial no Account Dashboard.
 
-A resolução não gera texto final nem renderiza a página. Ela retorna o template versionado, a inteligência estruturada aplicável, a proveniência das pesquisas, a origem do fallback e alertas de dados faltantes.
+A resolução não gera texto final nem renderiza a página. Ela retorna o template versionado, a inteligência estruturada aplicável, a proveniência das pesquisas com `research_id`, versão e `updated_at`, a origem do fallback e alertas de dados faltantes.
 
 ## 10. Persistência futura
 
