@@ -49,6 +49,34 @@ export function createCommercialGeneratedArtifactIdentity(input: {
   };
 }
 
+export function createCommercialGeneratedArtifactIdentityKey(
+  identity: CommercialGeneratedArtifactIdentity,
+): string {
+  const researchSources = [...identity.researchSources]
+    .sort((left, right) => {
+      const byBlock = left.block.localeCompare(right.block);
+      if (byBlock !== 0) return byBlock;
+      return left.researchId.localeCompare(right.researchId);
+    })
+    .map((source) => ({
+      researchId: source.researchId,
+      taxonId: source.taxonId,
+      block: source.block,
+      version: source.version,
+      updatedAt: source.updatedAt,
+    }));
+
+  return JSON.stringify({
+    templateKey: identity.templateKey,
+    templateVersion: identity.templateVersion,
+    audienceScope: identity.audienceScope,
+    locale: identity.locale,
+    mode: identity.source === "generic" ? "generic" : "taxon_specific",
+    researchTaxonId: identity.researchTaxonId,
+    researchSources,
+  });
+}
+
 export function validateCommercialGeneratedContent(
   value: unknown,
 ): CommercialContentValidationResult {

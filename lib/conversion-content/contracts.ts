@@ -140,3 +140,44 @@ export type CommercialGeneratedArtifactDraftResult =
       ok: false;
       errors: string[];
     };
+
+export type CommercialGeneratedArtifactStatus =
+  | "draft"
+  | "active"
+  | "archived";
+
+export type CommercialGeneratedArtifactRecord = {
+  id: string;
+  identityKey: string;
+  artifactVersion: number;
+  status: CommercialGeneratedArtifactStatus;
+  identity: CommercialGeneratedArtifactIdentity;
+  contentSchemaVersion: CommercialGeneratedArtifactDraft["contentSchemaVersion"];
+  content: CommercialGeneratedContent;
+  createdAt: string;
+  updatedAt: string;
+  activatedAt: string | null;
+  archivedAt: string | null;
+};
+
+export type CreateCommercialGeneratedArtifactResult =
+  | {
+      status: "created";
+      artifactId: string;
+      artifactVersion: number;
+    }
+  | {
+      status: "failed";
+      errorCode: string;
+    };
+
+export type ActivateCommercialGeneratedArtifactResult =
+  | {
+      status: "activated";
+      artifactId: string;
+    }
+  | {
+      status: "not_activatable" | "failed";
+      artifactId: string;
+      errorCode?: string;
+    };

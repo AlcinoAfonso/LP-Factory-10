@@ -2,7 +2,7 @@
 
 0.1 Cabeçalho
 • Data: 10/06/2026
-• Versão: v1.5.63
+• Versão: v1.5.64
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -979,8 +979,11 @@ Ajustados:
 • Nova geração só deve ocorrer quando não existir artefato válido ou quando houver solicitação administrativa de regeneração.
 • Taxons sem pesquisa estruturada suficiente devem usar fallback genérico válido.
 • Implementado: template versionado, proveniência por bloco de pesquisa com versão e `updated_at`, contrato camelCase dos campos finais, identidade inicial do artefato, validação estrutural pura com erros preservados e copy genérica determinística.
-• Artefatos: `lib/conversion-content/contracts.ts`, `lib/conversion-content/generatedCommercialContent.ts`, `lib/conversion-content/commercialTemplateResolution.ts`, `lib/conversion-content/templates/accountDashboardCommercialPage.ts` e `lib/conversion-content/adapters/commercialTemplateResolver.ts`.
-• Pendência: definir a etapa técnica responsável por runtime e validação da geração/provider, persistência dos artefatos, schema, versionamento, ativação, arquivamento, invalidação e regras de consumo antes da integração da E10.6 com artefatos gerados.
+• Preparado: identidade canônica, adapter server-side para criar draft, ativar versão e recuperar artefato ativo, SQL operacional versionado, verificação read-only e rollback.
+• Artefatos: `lib/conversion-content/contracts.ts`, `lib/conversion-content/generatedCommercialContent.ts`, `lib/conversion-content/commercialTemplateResolution.ts`, `lib/conversion-content/templates/accountDashboardCommercialPage.ts`, `lib/conversion-content/adapters/commercialTemplateResolver.ts`, `lib/conversion-content/adapters/commercialGeneratedArtifactAdapter.ts`, `supabase/snippets/e18_5_commercial_generated_artifacts.sql`, `supabase/snippets/e18_5_commercial_generated_artifacts_verification.sql` e `supabase/rollbacks/20260610__e18_5_commercial_generated_artifacts.rollback.sql`.
+• Persistência proposta: tabela `commercial_generated_artifacts`, estados `draft | active | archived`, versões sequenciais por identidade, no máximo uma versão ativa e acesso exclusivo de `service_role`.
+• Pendência operacional: aplicar e validar o SQL no Supabase; somente depois criar a migration histórica e atualizar o contrato de schema.
+• Pendência de produto: definir runtime e validação da geração/provider e regras de consumo antes da integração da E10.6 com artefatos gerados.
 • Updates previstos para a etapa técnica futura:
 • supa#40: criar snippets versionados de verificação após a definição do schema e da persistência dos artefatos.
 • supa#5: registrar geração, regeneração, falhas, duração, provider/modelo, versão das entradas e `request_id`, sem PII ou conteúdo integral.
@@ -1026,6 +1029,7 @@ Ajustados:
 • Definir o primeiro recorte funcional do LP Builder no roadmap
 
 99. Changelog
+v1.5.64 — 10/06/2026 — E18.5 prepara runtime e persistência versionada dos artefatos comerciais, com adapter server-side, estados draft/active/archived, ativação transacional, SQL operacional, verificação e rollback, mantendo aplicação no Supabase e migration histórica pendentes.
 v1.5.63 — 10/06/2026 — E10.6 e E18.5 registram observabilidade futura, ausência de nova infraestrutura Vercel na primeira entrega e condições de adoção para updates Supabase, Vercel, cache, fila e tracking, sem implementar essas capacidades nesta etapa.
 v1.5.62 — 10/06/2026 — E18.5 iniciada com contrato técnico dos campos finais da página comercial, template versionado, proveniência das pesquisas, identidade inicial do artefato, validação estrutural pura e fallback determinístico, sem provider, persistência ou UI.
 v1.5.61 — 10/06/2026 — Roadmap registra a página comercial da E10.6 como primeiro laboratório controlado da geração automatizada por taxon, com visão planejada na E18.5, futura operação administrativa na E12.7, consumo da versão ativa e válida ou fallback sem IA em renderização e pendência da etapa técnica responsável pelos artefatos.

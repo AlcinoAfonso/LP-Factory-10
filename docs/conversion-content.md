@@ -170,7 +170,7 @@ O taxon também é opcional e serve apenas para personalização. Sua ausência 
 - blocos de prova ou benefício;
 - alertas de dados faltantes, quando aplicável.
 
-O contrato de saída possui resolução server-side implementada na E10.5.6.7 e validação estrutural inicial na E18.5. A geração por provider, a persistência e a renderização permanecem fora desta fase.
+O contrato de saída possui resolução server-side implementada na E10.5.6.7 e validação estrutural inicial na E18.5. O runtime de persistência está preparado para criar drafts, ativar uma versão e recuperar o artefato ativo. A geração por provider e a renderização permanecem fora desta fase.
 
 O mesmo template possui uma copy final genérica e determinística para uso quando não houver artefato específico válido. Esse fallback não depende de chamada de IA ou API durante a renderização.
 
@@ -179,7 +179,7 @@ O mesmo template possui uma copy final genérica e determinística para uso quan
 1. A E18 define o contrato universal e o template `Account Dashboard — Página comercial`.
 2. A E10.5.6.7 implementa a resolução server-side do template comercial para uma conta existente, usando seu taxon apenas quando disponível e aplicando o fallback genérico sem bloquear a saída.
 3. A E18.5 define o contrato dos campos finais, a identidade inicial do artefato, a proveniência da pesquisa e a validação estrutural pura.
-4. A etapa técnica seguinte implementará geração e persistência dos artefatos.
+4. A E18.5 prepara a persistência versionada dos artefatos, com estados `draft`, `active` e `archived`, ativação transacional e acesso server-side.
 5. A E12.7 operará geração e regeneração administrativas.
 6. A E10.6 consumirá o artefato ativo ou o fallback determinístico e renderizará a página comercial no Account Dashboard.
 
@@ -201,14 +201,14 @@ Tabelas só devem ser avaliadas quando houver necessidade real de salvar dados o
 - histórico;
 - status como `draft`, `approved` ou `published`.
 
-O caso real de reutilização foi definido pela E18.5, mas a estrutura de persistência ainda depende de etapa técnica própria. Nenhuma tabela nova foi criada nesta fase.
+O caso real de reutilização foi definido pela E18.5. A estrutura proposta usa `commercial_generated_artifacts`, com uma sequência de versões por identidade e no máximo uma versão ativa. A identidade diferencia fallback genérico de conteúdo específico por `researchTaxon`, mas não cria artefatos diferentes apenas porque a pesquisa foi alcançada como taxon direto, pai ou ancestral. O SQL operacional e a verificação estão em `supabase/snippets/`; a tabela ainda depende de aplicação e validação no Supabase.
 
 ## 11. Fronteiras
 
 - **E18:** define os templates universais de conversão e seus contratos.
 - **E10.5.5:** cobre a pesquisa por taxon; não concentra produtos finais.
 - **E10.5.6.7:** resolve server-side o template comercial para a conta existente, usando taxon opcional e fallback genérico para consumo da E10.6.
-- **E18.5:** define contratos de conteúdo gerado, identidade inicial, proveniência e validação estrutural, sem provider ou persistência.
+- **E18.5:** define contratos de conteúdo gerado, identidade, proveniência, validação estrutural e runtime server-side de persistência, sem provider.
 - **E12.7:** operará futuramente a geração e regeneração administrativas.
 - **E10.6:** consumirá artefato ativo ou fallback determinístico e será responsável pela página comercial interna do Account Dashboard.
 - **E19:** permanece responsável pelo LP Builder; pode consumir templates universais quando aplicável, sem concentrá-los.
@@ -218,13 +218,14 @@ Ficam fora desta fase:
 - provider ou runtime de geração;
 - implementação da E10.6;
 - LP Builder;
-- novas tabelas, persistência de artefatos ou alterações em schema, RLS, policies, triggers, views ou functions;
+- aplicação de SQL no Supabase sem autorização e validação operacional;
 - detalhamento dos prompts finais por canal;
 - adoção de provider ou gateway de IA.
 
 ## 12. Próximos passos
 
-1. Definir e implementar o runtime de geração dos campos finais.
-2. Definir a persistência, o versionamento, a ativação e a invalidação dos artefatos.
-3. Implementar a operação administrativa da E12.7.
-4. Integrar a E10.6 ao artefato ativo e ao fallback determinístico.
+1. Aplicar e validar o SQL operacional de persistência no Supabase.
+2. Criar migration histórica após a validação operacional.
+3. Definir e implementar o runtime de geração dos campos finais.
+4. Implementar a operação administrativa da E12.7.
+5. Integrar a E10.6 ao artefato ativo e ao fallback determinístico.
