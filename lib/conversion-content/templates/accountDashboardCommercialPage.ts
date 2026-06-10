@@ -1,10 +1,12 @@
 import type {
+  CommercialGeneratedContent,
   CommercialResearch,
   CommercialTemplateDefinition,
 } from "../contracts";
 
 export const ACCOUNT_DASHBOARD_COMMERCIAL_PAGE_TEMPLATE = {
   key: "account_dashboard.commercial_page",
+  version: 1,
   name: "Account Dashboard - Pagina comercial",
   channel: "account_dashboard",
   objective: "commercial_page",
@@ -20,6 +22,52 @@ export const ACCOUNT_DASHBOARD_COMMERCIAL_PAGE_TEMPLATE = {
     "missing_data_alerts",
   ],
 } as const satisfies CommercialTemplateDefinition;
+
+export const ACCOUNT_DASHBOARD_COMMERCIAL_PAGE_FALLBACK_CONTENT = {
+  headline: "Transforme sua comunicacao em uma entrega pronta para avancar",
+  primaryPromise:
+    "Organize sua mensagem comercial com clareza, foco e proximos passos objetivos.",
+  context:
+    "A LP Factory combina estrutura, orientacao comercial e execucao para ajudar sua empresa a apresentar melhor sua oferta.",
+  commercialCards: [
+    {
+      key: "landing_page",
+      title: "Landing page comercial",
+      body: "Estruture uma pagina focada em apresentar sua oferta e conduzir o visitante para a proxima acao.",
+    },
+    {
+      key: "commercial_guidance",
+      title: "Orientacao de comunicacao",
+      body: "Organize promessa, beneficios e chamadas para acao antes de publicar ou investir em trafego.",
+    },
+    {
+      key: "first_delivery",
+      title: "Primeira entrega",
+      body: "Avance com um briefing objetivo para transformar sua necessidade em uma entrega comercial.",
+    },
+  ],
+  primaryCta: {
+    label: "Solicitar primeira entrega",
+    supportingText: "Inicie o briefing da sua primeira comunicacao comercial.",
+  },
+  secondaryCta: {
+    label: "Falar com atendimento",
+    supportingText: "Tire duvidas antes de escolher o melhor proximo passo.",
+  },
+  proofOrBenefitBlocks: [
+    {
+      key: "clarity",
+      title: "Mais clareza",
+      body: "Uma estrutura objetiva reduz duvidas sobre o que comunicar e como apresentar a oferta.",
+    },
+    {
+      key: "speed",
+      title: "Mais velocidade",
+      body: "Comece com uma base comercial pronta para ser adaptada, validada e evoluida.",
+    },
+  ],
+  missingDataAlerts: ["generic_commercial_content_used"],
+} satisfies CommercialGeneratedContent;
 
 export const ACCOUNT_DASHBOARD_COMMERCIAL_PAGE_GENERIC_RESEARCH = {
   strategic_core: [

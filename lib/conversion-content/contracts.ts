@@ -19,8 +19,16 @@ export type CommercialResearch = Record<
   CommercialResearchItem[]
 >;
 
+export type CommercialResearchSource = {
+  researchId: string;
+  taxonId: string;
+  block: CommercialResearchBlock;
+  version: number;
+};
+
 export type CommercialTemplateDefinition = {
   key: "account_dashboard.commercial_page";
+  version: 1;
   name: "Account Dashboard - Pagina comercial";
   channel: "account_dashboard";
   objective: "commercial_page";
@@ -48,6 +56,7 @@ export type CommercialTaxon = {
 export type CommercialResearchCandidate = {
   taxonId: string;
   research: CommercialResearch;
+  researchSources: CommercialResearchSource[];
 };
 
 export type CommercialTemplateResolutionSource =
@@ -62,6 +71,61 @@ export type CommercialTemplateResolution = {
   source: CommercialTemplateResolutionSource;
   accountTaxon: CommercialTaxon | null;
   researchTaxon: CommercialTaxon | null;
+  researchSources: CommercialResearchSource[];
   fallbackDepth: number | null;
   missingDataAlerts: string[];
 };
+
+export type CommercialContentCard = {
+  key: string;
+  title: string;
+  body: string;
+};
+
+export type CommercialContentAction = {
+  label: string;
+  supportingText: string;
+};
+
+export type CommercialContentBlock = {
+  key: string;
+  title: string;
+  body: string;
+};
+
+export type CommercialGeneratedContent = {
+  headline: string;
+  primaryPromise: string;
+  context: string;
+  commercialCards: CommercialContentCard[];
+  primaryCta: CommercialContentAction;
+  secondaryCta: CommercialContentAction;
+  proofOrBenefitBlocks: CommercialContentBlock[];
+  missingDataAlerts: string[];
+};
+
+export type CommercialGeneratedArtifactIdentity = {
+  templateKey: CommercialTemplateDefinition["key"];
+  templateVersion: CommercialTemplateDefinition["version"];
+  audienceScope: CommercialTemplateDefinition["audienceScope"];
+  locale: string;
+  source: CommercialTemplateResolutionSource;
+  researchTaxonId: string | null;
+  researchSources: CommercialResearchSource[];
+};
+
+export type CommercialGeneratedArtifactDraft = {
+  identity: CommercialGeneratedArtifactIdentity;
+  contentSchemaVersion: "account_dashboard.commercial_page.v1";
+  content: CommercialGeneratedContent;
+};
+
+export type CommercialContentValidationResult =
+  | {
+      ok: true;
+      content: CommercialGeneratedContent;
+    }
+  | {
+      ok: false;
+      errors: string[];
+    };

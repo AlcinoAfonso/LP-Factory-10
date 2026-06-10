@@ -1,8 +1,8 @@
 0. Introdução
 
 0.1 Cabeçalho
-• Data: 09/06/2026
-• Versão: v1.5.60
+• Data: 10/06/2026
+• Versão: v1.5.62
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -962,7 +962,7 @@ Ajustados:
 • detalhamento dos prompts finais de cada canal
 
 18.5 Geração automatizada sobre templates universais
-• Status: Planejado
+• Status: Em andamento (contrato técnico inicial concluído)
 • Objetivo: definir a futura camada de geração automatizada de conteúdo sobre templates universais, usando a página comercial do Account Dashboard como primeiro laboratório controlado.
 • A geração deve transformar templates universais, itens estruturados da pesquisa, contexto do canal e dados opcionais do cliente em campos finais de comunicação comercial.
 • A estrutura continua definida pelo template universal; o mecanismo de geração apenas preenche, adapta, revisa ou varia os campos dentro do contrato do template.
@@ -976,6 +976,8 @@ Ajustados:
 • O sistema deve evitar chamada repetida de IA/API para a mesma combinação válida de template, taxon, audience_scope e versão de pesquisa.
 • Nova geração só deve ocorrer quando não existir artefato válido ou quando houver solicitação administrativa de regeneração.
 • Taxons sem pesquisa estruturada suficiente devem usar fallback genérico válido.
+• Implementado: template versionado, proveniência por bloco de pesquisa, contrato dos campos finais, identidade inicial do artefato, validação estrutural pura e copy genérica determinística.
+• Artefatos: `lib/conversion-content/contracts.ts`, `lib/conversion-content/generatedCommercialContent.ts`, `lib/conversion-content/commercialTemplateResolution.ts`, `lib/conversion-content/templates/accountDashboardCommercialPage.ts` e `lib/conversion-content/adapters/commercialTemplateResolver.ts`.
 • Pendência: definir a etapa técnica responsável por runtime de geração, persistência dos artefatos, schema, validação estrutural, versionamento, invalidação e regras de consumo antes da integração da E10.6 com artefatos gerados.
 • Fora de escopo desta etapa: provider de IA, gateway, tabelas, migrations, runtime de geração, UI administrativa e renderização da E10.6.
 
@@ -1013,6 +1015,7 @@ Ajustados:
 • Definir o primeiro recorte funcional do LP Builder no roadmap
 
 99. Changelog
+v1.5.62 — 10/06/2026 — E18.5 iniciada com contrato técnico dos campos finais da página comercial, template versionado, proveniência das pesquisas, identidade inicial do artefato, validação estrutural pura e fallback determinístico, sem provider, persistência ou UI.
 v1.5.61 — 10/06/2026 — Roadmap registra a página comercial da E10.6 como primeiro laboratório controlado da geração automatizada por taxon, com visão planejada na E18.5, futura operação administrativa na E12.7, consumo da versão ativa e válida ou fallback sem IA em renderização e pendência da etapa técnica responsável pelos artefatos.
 v1.5.60 — 09/06/2026 — E10.5.6.7 concluído com template comercial universal, contrato e exports da family `conversion-content`, resolução pura, adapter server-only, fallback taxon/pai/ancestral/genérico e grants read-only validados para pesquisa `business_buyer`.
 v1.5.59 — 09/06/2026 — E10.5.6.7 e E10.6 alinhados para explicitar que a página comercial é interna ao Account Dashboard e possui conta existente, mas não depende de taxon nem de dados comerciais ricos; o taxon é opcional para personalização e o fallback genérico usa o mesmo template universal.

@@ -7,6 +7,7 @@ import {
   type CommercialResearchBlock,
   type CommercialResearchCandidate,
   type CommercialResearchItem,
+  type CommercialResearchSource,
   type CommercialTaxon,
   type CommercialTemplateResolution,
 } from "../contracts";
@@ -207,6 +208,7 @@ function groupCompleteResearchByTaxon(
     string,
     Partial<Record<CommercialResearchBlock, CommercialResearchItem[]>>
   >();
+  const sourcesByTaxon = new Map<string, CommercialResearchSource[]>();
 
   for (const item of itemRows) {
     const research = researchById.get(item.research_id);
@@ -225,6 +227,17 @@ function groupCompleteResearchByTaxon(
     });
     partial[research.research_block] = blockItems;
     partialByTaxon.set(research.taxon_id, partial);
+
+    const sources = sourcesByTaxon.get(research.taxon_id) ?? [];
+    if (!sources.some((source) => source.researchId === research.id)) {
+      sources.push({
+        researchId: research.id,
+        taxonId: research.taxon_id,
+        block: research.research_block,
+        version: research.version,
+      });
+      sourcesByTaxon.set(research.taxon_id, sources);
+    }
   }
 
   const candidates: CommercialResearchCandidate[] = [];
@@ -240,6 +253,11 @@ function groupCompleteResearchByTaxon(
 
     candidates.push({
       taxonId,
+      researchSources: (sourcesByTaxon.get(taxonId) ?? []).sort(
+        (left, right) =>
+          COMMERCIAL_RESEARCH_BLOCKS.indexOf(left.block) -
+          COMMERCIAL_RESEARCH_BLOCKS.indexOf(right.block),
+      ),
       research: {
         strategic_core: partial.strategic_core ?? [],
         lp_overview: partial.lp_overview ?? [],
