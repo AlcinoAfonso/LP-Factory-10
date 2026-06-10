@@ -976,7 +976,7 @@ Ajustados:
 • O sistema deve evitar chamada repetida de IA/API para a mesma combinação válida de template, taxon, audience_scope e versão de pesquisa.
 • Nova geração só deve ocorrer quando não existir artefato válido ou quando houver solicitação administrativa de regeneração.
 • Taxons sem pesquisa estruturada suficiente devem usar fallback genérico válido.
-• Pendência: definir a etapa técnica responsável por runtime de geração, persistência dos artefatos, schema, validação estrutural, versionamento, invalidação e regras de consumo antes da implementação consumidora da E10.6.
+• Pendência: definir a etapa técnica responsável por runtime de geração, persistência dos artefatos, schema, validação estrutural, versionamento, invalidação e regras de consumo antes da integração da E10.6 com artefatos gerados.
 • Fora de escopo desta etapa: provider de IA, gateway, tabelas, migrations, runtime de geração, UI administrativa e renderização da E10.6.
 
 19. E19 — LP Builder
