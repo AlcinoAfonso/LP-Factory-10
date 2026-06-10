@@ -44,7 +44,14 @@ Plugins aproximam serviços externos das tarefas de investigação e execução.
 **Valor:** acelera a investigação de schema, tabelas, RLS, policies, views, functions, índices, extensões e migrations.
 **Limite:** escrita não testada nem aprovada.
 
-**Disponíveis não adotados:** GitHub Plugin e Slack.
+### GitHub Plugin
+
+**Aptidão:** acessar repositórios, branches remotas, PRs, issues, checks e Actions no GitHub.
+**Estado:** em teste.
+**Valor:** permite investigar branches/PRs e falhas de CI diretamente no GitHub remoto, inclusive quando a branch não está disponível no clone local.
+**Limite:** não substitui o fluxo Git local para implementar código nem o GitHub Web como referência final para PR, Actions, preview e merge.
+
+**Disponíveis não adotados:** Slack.
 
 ## 5. Skills
 
