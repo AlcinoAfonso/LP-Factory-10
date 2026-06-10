@@ -4,7 +4,7 @@
 
 Este documento define a base dos templates universais de conversão da LP Factory.
 
-Ele estabelece o contrato conceitual para estruturas reutilizáveis por canal e objetivo, sem implementar runtime, geração de conteúdo ou persistência. Os templates universais pertencem à E18 e podem ser consumidos por produtos finais em outras seções do Core.
+Ele estabelece o contrato para estruturas reutilizáveis por canal e objetivo e para os artefatos de conteúdo gerados sobre essas estruturas. Os templates universais pertencem à E18 e podem ser consumidos por produtos finais em outras seções do Core.
 
 ## 2. Conceito
 
@@ -98,7 +98,9 @@ O contrato de saída deve:
 - permitir que o consumidor renderize ou transforme o resultado sem assumir dados inexistentes;
 - registrar conceitualmente a origem aplicada: taxon resolvido, ancestral ou fallback genérico.
 
-O formato técnico final da saída será definido quando houver implementação real.
+O primeiro formato técnico da saída está definido em `lib/conversion-content/contracts.ts`. Ele separa headline, promessa, contexto, cards comerciais, CTAs, blocos de prova ou benefício e alertas de dados faltantes.
+
+A validação estrutural pura fica em `lib/conversion-content/generatedCommercialContent.ts`. URLs, rotas e efeitos dos CTAs pertencem ao consumidor e não devem ser gerados como copy.
 
 ## 7. Relação com a pesquisa por taxon
 
@@ -168,15 +170,20 @@ O taxon também é opcional e serve apenas para personalização. Sua ausência 
 - blocos de prova ou benefício;
 - alertas de dados faltantes, quando aplicável.
 
-O contrato de saída possui resolução server-side implementada na E10.5.6.7. A geração do conteúdo final e a renderização permanecem fora desta fase.
+O contrato de saída possui resolução server-side implementada na E10.5.6.7 e validação estrutural inicial na E18.5. A geração por provider, a persistência e a renderização permanecem fora desta fase.
+
+O mesmo template possui uma copy final genérica e determinística para uso quando não houver artefato específico válido. Esse fallback não depende de chamada de IA ou API durante a renderização.
 
 ### 9.5 Sequência de implementação
 
 1. A E18 define o contrato universal e o template `Account Dashboard — Página comercial`.
 2. A E10.5.6.7 implementa a resolução server-side do template comercial para uma conta existente, usando seu taxon apenas quando disponível e aplicando o fallback genérico sem bloquear a saída.
-3. A E10.6 deverá consumir essa resolução e renderizar a página comercial no Account Dashboard.
+3. A E18.5 define o contrato dos campos finais, a identidade inicial do artefato, a proveniência da pesquisa e a validação estrutural pura.
+4. A etapa técnica seguinte implementará geração e persistência dos artefatos.
+5. A E12.7 operará geração e regeneração administrativas.
+6. A E10.6 consumirá o artefato ativo ou o fallback determinístico e renderizará a página comercial no Account Dashboard.
 
-A resolução não gera texto final nem renderiza a página. Ela retorna o template, a inteligência estruturada aplicável, a origem do fallback e alertas de dados faltantes.
+A resolução não gera texto final nem renderiza a página. Ela retorna o template versionado, a inteligência estruturada aplicável, a proveniência das pesquisas com `research_id`, versão e `updated_at`, a origem do fallback e alertas de dados faltantes.
 
 ## 10. Persistência futura
 
@@ -194,29 +201,30 @@ Tabelas só devem ser avaliadas quando houver necessidade real de salvar dados o
 - histórico;
 - status como `draft`, `approved` ou `published`.
 
-Até que exista esse caso real, os contratos permanecem documentais e nenhuma tabela deve ser criada.
+O caso real de reutilização foi definido pela E18.5, mas a estrutura de persistência ainda depende de etapa técnica própria. Nenhuma tabela nova foi criada nesta fase.
 
 ## 11. Fronteiras
 
 - **E18:** define os templates universais de conversão e seus contratos.
 - **E10.5.5:** cobre a pesquisa por taxon; não concentra produtos finais.
 - **E10.5.6.7:** resolve server-side o template comercial para a conta existente, usando taxon opcional e fallback genérico para consumo da E10.6.
-- **E10.6:** consumirá o template resolvido e será responsável pela página comercial interna do Account Dashboard, sem exigir dados comerciais ricos da conta.
+- **E18.5:** define contratos de conteúdo gerado, identidade inicial, proveniência e validação estrutural, sem provider ou persistência.
+- **E12.7:** operará futuramente a geração e regeneração administrativas.
+- **E10.6:** consumirá artefato ativo ou fallback determinístico e será responsável pela página comercial interna do Account Dashboard.
 - **E19:** permanece responsável pelo LP Builder; pode consumir templates universais quando aplicável, sem concentrá-los.
 
 Ficam fora desta fase:
 
-- motor universal de geração;
+- provider ou runtime de geração;
 - implementação da E10.6;
 - LP Builder;
-- novas tabelas, persistência de briefings ou alterações em schema, RLS, policies, triggers, views ou functions;
+- novas tabelas, persistência de artefatos ou alterações em schema, RLS, policies, triggers, views ou functions;
 - detalhamento dos prompts finais por canal;
 - adoção de provider ou gateway de IA.
 
 ## 12. Próximos passos
 
-1. Validar este contrato documental.
-2. Testar conceitualmente o template `Account Dashboard — Página comercial`.
-3. Validar a integração consumidora da resolução na E10.6.
-4. Preparar um briefing separado para a implementação consumidora da E10.6.
-5. Avaliar tabelas somente quando houver necessidade real de persistência.
+1. Definir e implementar o runtime de geração dos campos finais.
+2. Definir a persistência, o versionamento, a ativação e a invalidação dos artefatos.
+3. Implementar a operação administrativa da E12.7.
+4. Integrar a E10.6 ao artefato ativo e ao fallback determinístico.

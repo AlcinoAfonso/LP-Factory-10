@@ -14,14 +14,14 @@ export function resolveCommercialTemplateFromCandidates(input: {
   researchCandidates: CommercialResearchCandidate[];
 }): CommercialTemplateResolution {
   const accountTaxon = input.taxonHierarchy[0] ?? null;
-  const researchByTaxon = new Map(
+  const candidateByTaxon = new Map(
     input.researchCandidates.map((candidate) => [
       candidate.taxonId,
-      candidate.research,
+      candidate,
     ]),
   );
   const selectedIndex = input.taxonHierarchy.findIndex((taxon) =>
-    researchByTaxon.has(taxon.taxonId),
+    candidateByTaxon.has(taxon.taxonId),
   );
 
   if (selectedIndex < 0) {
@@ -36,9 +36,9 @@ export function resolveCommercialTemplateFromCandidates(input: {
   }
 
   const researchTaxon = input.taxonHierarchy[selectedIndex];
-  const research = researchByTaxon.get(researchTaxon.taxonId);
+  const candidate = candidateByTaxon.get(researchTaxon.taxonId);
 
-  if (!research) {
+  if (!candidate) {
     return createGenericCommercialTemplateResolution({
       accountTaxon,
       alerts: ["complete_business_buyer_research_not_found"],
@@ -47,10 +47,11 @@ export function resolveCommercialTemplateFromCandidates(input: {
 
   return {
     template: ACCOUNT_DASHBOARD_COMMERCIAL_PAGE_TEMPLATE,
-    research,
+    research: candidate.research,
     source: getResolutionSource(selectedIndex),
     accountTaxon,
     researchTaxon,
+    researchSources: candidate.researchSources,
     fallbackDepth: selectedIndex,
     missingDataAlerts: [],
   };
@@ -66,6 +67,7 @@ export function createGenericCommercialTemplateResolution(input?: {
     source: "generic",
     accountTaxon: input?.accountTaxon ?? null,
     researchTaxon: null,
+    researchSources: [],
     fallbackDepth: null,
     missingDataAlerts: input?.alerts ?? [],
   };
