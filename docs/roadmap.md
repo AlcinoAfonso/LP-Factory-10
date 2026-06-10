@@ -712,7 +712,7 @@
 • Não depende, nesta fase, de dados comerciais ricos da conta; oferta, provas, diferenciais, imagens e CTA específico podem estar ausentes.
 • Primeira aplicação prática dos templates universais da E18.
 • Consome a resolução do template comercial definida em 10.5.6.7.
-• Deve consumir a página comercial gerada e arquivada para o taxon aplicável da conta, quando houver artefato específico válido.
+• Deve consumir a versão ativa e válida da página comercial gerada para o taxon aplicável da conta, quando houver artefato específico válido.
 • Usa o taxon resolvido da conta apenas para personalização, quando existir, com itens estruturados de audience_scope = business_buyer.
 • Se não houver artefato específico válido, deve usar o mesmo template universal com fallback genérico determinístico.
 • A página não chama IA ou API durante a renderização; apenas exibe campos finais já gerados ou o fallback determinístico.
@@ -969,12 +969,14 @@ Ajustados:
 • Os campos finais podem incluir headline, promessa, contexto, cards comerciais, CTAs e blocos de benefício ou prova exigidos pelo template.
 • Primeira aplicação prevista: Account Dashboard — Página comercial.
 • O primeiro recorte deve ser compartilhado por taxon, sem dados específicos da conta.
-• A chave conceitual do artefato deve considerar template_key, versão do template, researchTaxon efetivamente usado, audience_scope, versão da pesquisa, versão do prompt/schema de saída, locale e modo genérico ou específico por taxon.
+• O artefato deve possuir identidade suficiente para detectar equivalência, versão, origem da pesquisa utilizada e necessidade de regeneração.
+• A composição técnica da chave será definida na etapa futura de contrato, persistência e validação dos artefatos gerados.
 • Se dados específicos do cliente forem usados em etapa futura, a saída deixa de ser compartilhada por nicho e passa a exigir identidade por conta e fingerprint/versionamento dessas entradas.
 • Quando houver necessidade de reutilização, versionamento, aprovação ou histórico, as saídas devem ser tratadas como artefatos persistidos, não como cache simples.
 • O sistema deve evitar chamada repetida de IA/API para a mesma combinação válida de template, taxon, audience_scope e versão de pesquisa.
 • Nova geração só deve ocorrer quando não existir artefato válido ou quando houver solicitação administrativa de regeneração.
 • Taxons sem pesquisa estruturada suficiente devem usar fallback genérico válido.
+• Pendência: definir a etapa técnica responsável por runtime de geração, persistência dos artefatos, schema, validação estrutural, versionamento, invalidação e regras de consumo antes da implementação consumidora da E10.6.
 • Fora de escopo desta etapa: provider de IA, gateway, tabelas, migrations, runtime de geração, UI administrativa e renderização da E10.6.
 
 19. E19 — LP Builder
@@ -1011,7 +1013,7 @@ Ajustados:
 • Definir o primeiro recorte funcional do LP Builder no roadmap
 
 99. Changelog
-v1.5.61 — 10/06/2026 — Roadmap registra a página comercial da E10.6 como primeiro laboratório controlado da geração automatizada por taxon, com visão planejada na E18.5, futura operação administrativa na E12.7 e consumo de artefato pronto ou fallback sem IA em renderização.
+v1.5.61 — 10/06/2026 — Roadmap registra a página comercial da E10.6 como primeiro laboratório controlado da geração automatizada por taxon, com visão planejada na E18.5, futura operação administrativa na E12.7, consumo da versão ativa e válida ou fallback sem IA em renderização e pendência da etapa técnica responsável pelos artefatos.
 v1.5.60 — 09/06/2026 — E10.5.6.7 concluído com template comercial universal, contrato e exports da family `conversion-content`, resolução pura, adapter server-only, fallback taxon/pai/ancestral/genérico e grants read-only validados para pesquisa `business_buyer`.
 v1.5.59 — 09/06/2026 — E10.5.6.7 e E10.6 alinhados para explicitar que a página comercial é interna ao Account Dashboard e possui conta existente, mas não depende de taxon nem de dados comerciais ricos; o taxon é opcional para personalização e o fallback genérico usa o mesmo template universal.
 v1.5.58 — 28/05/2026 — Roadmap atualizado em E10.5.5 para refletir o novo modelo de pesquisa bruta por taxon, mantendo `taxon_market_research` como registro-pai e `taxon_market_research_items` como itens estruturados da pesquisa, sem criação de bloco agregado, nova tabela ou nova camada.
