@@ -53,10 +53,13 @@ No estado atual do subprojeto:
 ```json
 {
   "scripts": {
-    "check": "node --check api/mcp.js"
+    "check": "node --check api/mcp.js && node --test test/*.test.js"
   }
 }
 ```
+
+O projeto força o Framework Preset `Other` e Node.js `22.x` por configuração
+versionada, evitando herdar o preset Next.js ou a versão de Node do dashboard.
 
 ## Status
 
