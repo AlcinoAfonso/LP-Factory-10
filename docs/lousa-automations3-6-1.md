@@ -91,18 +91,18 @@ A baseline só pode ser tratada como concluída quando os itens abaixo estiverem
 ## 8) Status atual
 
 * risco imediato de apply automático: mitigado pelo bloqueio no workflow atual
-* baseline oficial: pendente
-* extração real do baseline: pendente
+* baseline oficial: proposta local criada e aguardando aprovação para adoção remota
+* extração real do baseline: concluída para o schema `public`
 * histórico remoto alinhado: pendente
-* legado removido do fluxo oficial: pendente
+* legado removido do diretório ativo: concluído localmente
 * workflow de apply: preparado, mas bloqueado por padrão e não liberado como fluxo confiável
-* A3.6.1: frente estrutural futura, sem execução urgente neste momento
-* bloqueio central atual: baseline
+* validação isolada: concluída
+* bloqueio central atual: autorização para alinhamento do histórico remoto
 
 ## 9) Execução segura no repositório
 
 * O baseline real não deve ser improvisado no repositório.
-* `supabase/migrations/` continua como legado transitório até a extração externa devolver o baseline bruto.
+* `supabase/migrations/` contém somente a baseline proposta; o legado foi preservado em `supabase/legacy-migrations/`.
 * O workflow de apply não deve ser tratado como fluxo liberado antes da baseline oficial.
 * Como o apply automático está bloqueado no workflow atual, a baseline segue pendente sem exigir execução urgente de A3.6.1 neste momento.
 * A liberação futura do workflow só pode acontecer depois de:
@@ -117,10 +117,101 @@ A baseline só pode ser tratada como concluída quando os itens abaixo estiverem
 * `0001__baseline_e7.sql` não deve ser tratado como baseline real do banco.
 * Os arquivos legados atuais em `supabase/migrations/` representam apenas parte do histórico do banco remoto.
 * Arquivos fora do padrão esperado do Supabase CLI devem ser tratados como apoio legado, não como histórico oficial novo.
-* A ausência de `supabase/config.toml` continua como observação operacional.
-* O destino técnico do legado é sair do fluxo ativo quando o baseline oficial entrar, permanecendo apenas como apoio transitório até a transição segura.
+* `supabase/config.toml` foi criado por `supabase init` sem `--force`.
+* O legado saiu do fluxo ativo local e permanece preservado em `supabase/legacy-migrations/`.
 
 ## 11) Ações externas necessárias
 
 * A extração do baseline e o alinhamento do histórico remoto dependem de execução externa.
 * Se for necessário detalhar o passo a passo externo, isso deve ser pedido em execução separada.
+
+## 12) Execução limitada de 11/06/2026
+
+### 12.1 Base e ferramentas
+
+* base Git: `origin/main` em `a8ef6894011b13758cc9383ea9c2ffd8653b71ef`
+* branch: `codex/supabase-migrations-baseline`
+* Supabase CLI: `2.106.0`, binário standalone oficial com checksum validado
+* PostgreSQL client: `17.10`, arquivo oficial de binários EDB fora do repositório
+* `supabase init`: executado sem `--force`; criou `supabase/config.toml` e `supabase/.gitignore`
+* autenticação: fluxo interativo da CLI; nenhuma credencial foi registrada
+* `supabase link`: conexão remota com escrita auxiliar somente em `supabase/.temp/`, diretório ignorado
+
+### 12.2 Medição com o legado intacto
+
+* `supabase migration list --linked`: exit code `0`
+* migrations reconhecidas como locais e ausentes no remoto: `0001` a `0014`
+* migration ignorada por nome inválido: `accounts_name_gin_idx.sql`
+* `supabase db push --linked --dry-run`: exit code `0`
+* resultado: as 14 migrations numeradas seriam aplicadas
+* efeito local do dry-run: nenhum arquivo criado ou alterado
+
+### 12.3 Inventário remoto
+
+* a relação `supabase_migrations.schema_migrations` não existe (`42P01`)
+* inventário de `public`: 16 tabelas, 5 views, 39 functions, 13 triggers, 56 policies, 75 constraints e 57 índices
+* inventários estruturais sanitizados: `supabase/baseline/inventory/`
+* inventários de roles, grants e default privileges: preservados somente como evidência local temporária
+* dump schema-only remoto: não versionado; SHA-256 `1848538E440E9FA4F1511FCFA6AFF8A5BEA1C654EC9047EC33830C36B13AD451`
+* dados de negócio, secrets e connection strings não foram extraídos
+
+### 12.4 Escopo da baseline proposta
+
+* migration: `supabase/migrations/20260611172930_remote_public_baseline.sql`
+* inclui objetos próprios do schema `public`
+* inclui `pg_trgm` no schema `extensions` e `USAGE` para `service_role`
+* exclui `auth`, `storage`, `realtime`, `graphql`, `vault` e demais schemas gerenciados
+* exclui dados, buckets, objetos, Vault, secrets e configurações de plataforma
+* exclui criação e ACLs do role operacional `ai_readonly`
+* `ai_readonly` permanece configuração operacional separada nesta proposta; não foi criado `roles.sql` nem adotado `--include-roles`
+* ACLs operacionais excluídas: 1 grant de schema, 39 grants de functions, 21 grants de tabelas/views e 2 default privileges
+* demais grants de `public` permanecem na migration; `service_role` mantém `USAGE` em `extensions` para uso de `pg_trgm`
+
+### 12.5 Tratamento do legado
+
+* os 15 arquivos foram preservados em `supabase/legacy-migrations/`
+* nenhum conteúdo legado foi apagado
+* `supabase/legacy-migrations/README.md` registra origem e proibição de uso no fluxo ativo
+* `supabase/migrations/` contém somente a baseline proposta
+
+### 12.6 Validação isolada
+
+* ambiente: PostgreSQL 17.10 temporário, sem dados remotos
+* dependências gerenciadas representadas por stubs mínimos de roles e `auth`
+* aplicação da baseline: exit code `0`
+* redump local não versionado: SHA-256 `10BD2AFC160BAB812624FB9736AB6855E762C9F0DCEE3310145862818A9CF397`
+* comparação semântica remoto versus local, excluindo somente ACLs de `ai_readonly`: sem diferenças
+* diferenças físicas restantes: somente 89 linhas em branco; nenhuma linha SQL não vazia
+* cluster temporário removido e processos encerrados após a validação
+
+### 12.7 Medição após a reorganização
+
+* `supabase migration list --linked`: exit code `0`; somente `20260611172930` aparece como local
+* `supabase db push --linked --dry-run`: exit code `0`; somente a baseline seria aplicada
+* efeito local dos dois comandos: nenhum arquivo criado ou alterado
+
+### 12.8 Drifts confirmados
+
+* o legado não contém a estrutura inicial completa de `accounts`, `account_users`, `plans`, `partners`, `partner_accounts` e `audit_logs`
+* o remoto contém 39 functions e 13 triggers, muito além dos objetos recriados pelo legado
+* `account_taxonomy.source_type` remoto aceita `user_confirmed_ai`, ausente no legado e corrigido em `docs/schema.md`
+* `account_niche_resolutions` remoto contém seis campos `user_*`, duas checks e uma FK ausentes do legado e corrigidos em `docs/schema.md`
+
+### 12.9 Estado e próxima autorização
+
+* baseline proposta e validada localmente
+* histórico remoto ainda não alinhado
+* nenhuma escrita remota executada
+* gate de apply permanece desabilitado
+* próximos comandos remotos de escrita continuam bloqueados: `migration repair`, `db push` real, migration de smoke e workflow de apply
+* próxima decisão humana: revisar a baseline, o recorte de `ai_readonly` e autorizar ou rejeitar o alinhamento do histórico remoto
+
+### 12.10 Classificação dos próximos comandos
+
+* leitura remota autorizada: `supabase migration list --linked`
+* dry-run autorizado: `supabase db push --linked --dry-run`
+* escrita local reversível: revisão da migration, documentação e artefatos sanitizados
+* escrita remota não autorizada: `supabase migration repair 20260611172930 --status applied`
+* escrita remota não autorizada: `supabase db push --linked`
+* escrita remota não autorizada: alteração de `SUPABASE_APPLY_MIGRATIONS_ENABLED`
+* escrita remota não autorizada: execução do workflow de apply ou criação de branch Supabase

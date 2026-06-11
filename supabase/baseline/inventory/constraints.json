@@ -1,0 +1,527 @@
+[
+    {
+        "constraint_name":  "account_niche_resolutions_account_id_fkey",
+        "constraint_type":  "f",
+        "definition":  "FOREIGN KEY (account_id) REFERENCES accounts(id) ON UPDATE CASCADE ON DELETE CASCADE",
+        "schema_name":  "public",
+        "table_name":  "account_niche_resolutions"
+    },
+    {
+        "constraint_name":  "account_niche_resolutions_ai_escalation_mode_chk",
+        "constraint_type":  "c",
+        "definition":  "CHECK (ai_escalation_mode = ANY (ARRAY[\u0027none\u0027::text, \u0027rerank_candidates\u0027::text, \u0027infer_existing_segment\u0027::text, \u0027suggest_alias_for_review\u0027::text, \u0027suggest_new_taxon_for_review\u0027::text]))",
+        "schema_name":  "public",
+        "table_name":  "account_niche_resolutions"
+    },
+    {
+        "constraint_name":  "account_niche_resolutions_ai_result_json_chk",
+        "constraint_type":  "c",
+        "definition":  "CHECK (ai_result_json IS NULL OR jsonb_typeof(ai_result_json) = \u0027object\u0027::text)",
+        "schema_name":  "public",
+        "table_name":  "account_niche_resolutions"
+    },
+    {
+        "constraint_name":  "account_niche_resolutions_ai_status_chk",
+        "constraint_type":  "c",
+        "definition":  "CHECK (ai_status IS NULL OR (ai_status = ANY (ARRAY[\u0027skipped\u0027::text, \u0027resolved\u0027::text, \u0027failed\u0027::text])))",
+        "schema_name":  "public",
+        "table_name":  "account_niche_resolutions"
+    },
+    {
+        "constraint_name":  "account_niche_resolutions_ai_suggested_taxon_id_fkey",
+        "constraint_type":  "f",
+        "definition":  "FOREIGN KEY (ai_suggested_taxon_id) REFERENCES business_taxons(id) ON UPDATE CASCADE ON DELETE SET NULL",
+        "schema_name":  "public",
+        "table_name":  "account_niche_resolutions"
+    },
+    {
+        "constraint_name":  "account_niche_resolutions_ai_ux_mode_chk",
+        "constraint_type":  "c",
+        "definition":  "CHECK (ai_ux_mode IS NULL OR (ai_ux_mode = ANY (ARRAY[\u0027none\u0027::text, \u0027confirm_single\u0027::text, \u0027choose_from_options\u0027::text, \u0027fallback_review\u0027::text])))",
+        "schema_name":  "public",
+        "table_name":  "account_niche_resolutions"
+    },
+    {
+        "constraint_name":  "account_niche_resolutions_confidence_chk",
+        "constraint_type":  "c",
+        "definition":  "CHECK (confidence = ANY (ARRAY[\u0027high\u0027::text, \u0027medium\u0027::text, \u0027low\u0027::text]))",
+        "schema_name":  "public",
+        "table_name":  "account_niche_resolutions"
+    },
+    {
+        "constraint_name":  "account_niche_resolutions_pkey",
+        "constraint_type":  "p",
+        "definition":  "PRIMARY KEY (account_id)",
+        "schema_name":  "public",
+        "table_name":  "account_niche_resolutions"
+    },
+    {
+        "constraint_name":  "account_niche_resolutions_raw_input_chk",
+        "constraint_type":  "c",
+        "definition":  "CHECK (btrim(raw_input) \u003c\u003e \u0027\u0027::text)",
+        "schema_name":  "public",
+        "table_name":  "account_niche_resolutions"
+    },
+    {
+        "constraint_name":  "account_niche_resolutions_reason_chk",
+        "constraint_type":  "c",
+        "definition":  "CHECK (reason = ANY (ARRAY[\u0027no_candidates\u0027::text, \u0027high_confidence_strong_match\u0027::text, \u0027medium_confidence_close_candidates\u0027::text, \u0027medium_confidence_below_high_threshold\u0027::text, \u0027medium_confidence_weak_match_source\u0027::text, \u0027low_confidence_insufficient_score\u0027::text]))",
+        "schema_name":  "public",
+        "table_name":  "account_niche_resolutions"
+    },
+    {
+        "constraint_name":  "account_niche_resolutions_resolution_status_chk",
+        "constraint_type":  "c",
+        "definition":  "CHECK (resolution_status = ANY (ARRAY[\u0027deterministic_high_confidence\u0027::text, \u0027review_required\u0027::text, \u0027unclassified\u0027::text]))",
+        "schema_name":  "public",
+        "table_name":  "account_niche_resolutions"
+    },
+    {
+        "constraint_name":  "account_niche_resolutions_score_chk",
+        "constraint_type":  "c",
+        "definition":  "CHECK (score IS NULL OR score \u003e= 0::numeric AND score \u003c= 1::numeric)",
+        "schema_name":  "public",
+        "table_name":  "account_niche_resolutions"
+    },
+    {
+        "constraint_name":  "account_niche_resolutions_selected_taxon_id_fkey",
+        "constraint_type":  "f",
+        "definition":  "FOREIGN KEY (selected_taxon_id) REFERENCES business_taxons(id) ON UPDATE CASCADE ON DELETE SET NULL",
+        "schema_name":  "public",
+        "table_name":  "account_niche_resolutions"
+    },
+    {
+        "constraint_name":  "account_niche_resolutions_user_resolution_status_chk",
+        "constraint_type":  "c",
+        "definition":  "CHECK (user_resolution_status IS NULL OR (user_resolution_status = ANY (ARRAY[\u0027pending_confirmation\u0027::text, \u0027confirmed\u0027::text, \u0027rejected\u0027::text, \u0027rewritten\u0027::text, \u0027dismissed\u0027::text])))",
+        "schema_name":  "public",
+        "table_name":  "account_niche_resolutions"
+    },
+    {
+        "constraint_name":  "account_niche_resolutions_user_rewrite_input_chk",
+        "constraint_type":  "c",
+        "definition":  "CHECK (user_rewrite_input IS NULL OR btrim(user_rewrite_input) \u003c\u003e \u0027\u0027::text)",
+        "schema_name":  "public",
+        "table_name":  "account_niche_resolutions"
+    },
+    {
+        "constraint_name":  "account_niche_resolutions_user_selected_taxon_id_fkey",
+        "constraint_type":  "f",
+        "definition":  "FOREIGN KEY (user_selected_taxon_id) REFERENCES business_taxons(id) ON UPDATE CASCADE ON DELETE SET NULL",
+        "schema_name":  "public",
+        "table_name":  "account_niche_resolutions"
+    },
+    {
+        "constraint_name":  "account_profiles_account_id_fkey",
+        "constraint_type":  "f",
+        "definition":  "FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE",
+        "schema_name":  "public",
+        "table_name":  "account_profiles"
+    },
+    {
+        "constraint_name":  "account_profiles_pkey",
+        "constraint_type":  "p",
+        "definition":  "PRIMARY KEY (account_id)",
+        "schema_name":  "public",
+        "table_name":  "account_profiles"
+    },
+    {
+        "constraint_name":  "account_profiles_preferred_channel_chk",
+        "constraint_type":  "c",
+        "definition":  "CHECK (preferred_channel = ANY (ARRAY[\u0027email\u0027::text, \u0027whatsapp\u0027::text]))",
+        "schema_name":  "public",
+        "table_name":  "account_profiles"
+    },
+    {
+        "constraint_name":  "account_taxonomy_account_id_fkey",
+        "constraint_type":  "f",
+        "definition":  "FOREIGN KEY (account_id) REFERENCES accounts(id) ON UPDATE CASCADE ON DELETE CASCADE",
+        "schema_name":  "public",
+        "table_name":  "account_taxonomy"
+    },
+    {
+        "constraint_name":  "account_taxonomy_pkey",
+        "constraint_type":  "p",
+        "definition":  "PRIMARY KEY (id)",
+        "schema_name":  "public",
+        "table_name":  "account_taxonomy"
+    },
+    {
+        "constraint_name":  "account_taxonomy_source_type_chk",
+        "constraint_type":  "c",
+        "definition":  "CHECK (source_type = ANY (ARRAY[\u0027manual\u0027::text, \u0027taxonomy_match\u0027::text, \u0027user_confirmed_ai\u0027::text]))",
+        "schema_name":  "public",
+        "table_name":  "account_taxonomy"
+    },
+    {
+        "constraint_name":  "account_taxonomy_status_chk",
+        "constraint_type":  "c",
+        "definition":  "CHECK (status = ANY (ARRAY[\u0027active\u0027::text, \u0027inactive\u0027::text]))",
+        "schema_name":  "public",
+        "table_name":  "account_taxonomy"
+    },
+    {
+        "constraint_name":  "account_taxonomy_taxon_id_fkey",
+        "constraint_type":  "f",
+        "definition":  "FOREIGN KEY (taxon_id) REFERENCES business_taxons(id) ON UPDATE CASCADE ON DELETE RESTRICT",
+        "schema_name":  "public",
+        "table_name":  "account_taxonomy"
+    },
+    {
+        "constraint_name":  "account_users_account_id_fkey",
+        "constraint_type":  "f",
+        "definition":  "FOREIGN KEY (account_id) REFERENCES accounts(id)",
+        "schema_name":  "public",
+        "table_name":  "account_users"
+    },
+    {
+        "constraint_name":  "account_users_account_user_unique",
+        "constraint_type":  "u",
+        "definition":  "UNIQUE (account_id, user_id)",
+        "schema_name":  "public",
+        "table_name":  "account_users"
+    },
+    {
+        "constraint_name":  "account_users_invited_by_fkey",
+        "constraint_type":  "f",
+        "definition":  "FOREIGN KEY (invited_by) REFERENCES auth.users(id)",
+        "schema_name":  "public",
+        "table_name":  "account_users"
+    },
+    {
+        "constraint_name":  "account_users_pkey",
+        "constraint_type":  "p",
+        "definition":  "PRIMARY KEY (id)",
+        "schema_name":  "public",
+        "table_name":  "account_users"
+    },
+    {
+        "constraint_name":  "account_users_role_check",
+        "constraint_type":  "c",
+        "definition":  "CHECK (role = ANY (ARRAY[\u0027owner\u0027::text, \u0027admin\u0027::text, \u0027editor\u0027::text, \u0027viewer\u0027::text]))",
+        "schema_name":  "public",
+        "table_name":  "account_users"
+    },
+    {
+        "constraint_name":  "account_users_status_check",
+        "constraint_type":  "c",
+        "definition":  "CHECK (status = ANY (ARRAY[\u0027pending\u0027::text, \u0027active\u0027::text, \u0027inactive\u0027::text, \u0027revoked\u0027::text]))",
+        "schema_name":  "public",
+        "table_name":  "account_users"
+    },
+    {
+        "constraint_name":  "account_users_user_id_fkey",
+        "constraint_type":  "f",
+        "definition":  "FOREIGN KEY (user_id) REFERENCES auth.users(id)",
+        "schema_name":  "public",
+        "table_name":  "account_users"
+    },
+    {
+        "constraint_name":  "accounts_domain_no_vercel_preview",
+        "constraint_type":  "c",
+        "definition":  "CHECK (domain IS NULL OR domain !~* \u0027\\.vercel\\.app$\u0027::text)",
+        "schema_name":  "public",
+        "table_name":  "accounts"
+    },
+    {
+        "constraint_name":  "accounts_domain_unique",
+        "constraint_type":  "u",
+        "definition":  "UNIQUE (domain)",
+        "schema_name":  "public",
+        "table_name":  "accounts"
+    },
+    {
+        "constraint_name":  "accounts_owner_user_id_fkey",
+        "constraint_type":  "f",
+        "definition":  "FOREIGN KEY (owner_user_id) REFERENCES auth.users(id)",
+        "schema_name":  "public",
+        "table_name":  "accounts"
+    },
+    {
+        "constraint_name":  "accounts_pkey",
+        "constraint_type":  "p",
+        "definition":  "PRIMARY KEY (id)",
+        "schema_name":  "public",
+        "table_name":  "accounts"
+    },
+    {
+        "constraint_name":  "accounts_plan_id_fkey",
+        "constraint_type":  "f",
+        "definition":  "FOREIGN KEY (plan_id) REFERENCES plans(id)",
+        "schema_name":  "public",
+        "table_name":  "accounts"
+    },
+    {
+        "constraint_name":  "accounts_status_chk",
+        "constraint_type":  "c",
+        "definition":  "CHECK (status = ANY (ARRAY[\u0027active\u0027::text, \u0027inactive\u0027::text, \u0027suspended\u0027::text, \u0027pending_setup\u0027::text]))",
+        "schema_name":  "public",
+        "table_name":  "accounts"
+    },
+    {
+        "constraint_name":  "accounts_subdomain_format_chk",
+        "constraint_type":  "c",
+        "definition":  "CHECK (subdomain ~ \u0027^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$\u0027::text)",
+        "schema_name":  "public",
+        "table_name":  "accounts"
+    },
+    {
+        "constraint_name":  "accounts_subdomain_lower_chk",
+        "constraint_type":  "c",
+        "definition":  "CHECK (subdomain = lower(subdomain))",
+        "schema_name":  "public",
+        "table_name":  "accounts"
+    },
+    {
+        "constraint_name":  "accounts_subdomain_unique",
+        "constraint_type":  "u",
+        "definition":  "UNIQUE (subdomain)",
+        "schema_name":  "public",
+        "table_name":  "accounts"
+    },
+    {
+        "constraint_name":  "audit_logs_action_check",
+        "constraint_type":  "c",
+        "definition":  "CHECK (action::text = ANY (ARRAY[\u0027insert\u0027::character varying::text, \u0027update\u0027::character varying::text, \u0027delete\u0027::character varying::text]))",
+        "schema_name":  "public",
+        "table_name":  "audit_logs"
+    },
+    {
+        "constraint_name":  "audit_logs_pkey",
+        "constraint_type":  "p",
+        "definition":  "PRIMARY KEY (id)",
+        "schema_name":  "public",
+        "table_name":  "audit_logs"
+    },
+    {
+        "constraint_name":  "audit_logs_user_id_fkey",
+        "constraint_type":  "f",
+        "definition":  "FOREIGN KEY (user_id) REFERENCES auth.users(id)",
+        "schema_name":  "public",
+        "table_name":  "audit_logs"
+    },
+    {
+        "constraint_name":  "business_taxon_aliases_pkey",
+        "constraint_type":  "p",
+        "definition":  "PRIMARY KEY (id)",
+        "schema_name":  "public",
+        "table_name":  "business_taxon_aliases"
+    },
+    {
+        "constraint_name":  "business_taxon_aliases_taxon_id_fkey",
+        "constraint_type":  "f",
+        "definition":  "FOREIGN KEY (taxon_id) REFERENCES business_taxons(id) ON UPDATE CASCADE ON DELETE RESTRICT",
+        "schema_name":  "public",
+        "table_name":  "business_taxon_aliases"
+    },
+    {
+        "constraint_name":  "business_taxons_level_chk",
+        "constraint_type":  "c",
+        "definition":  "CHECK (level = ANY (ARRAY[\u0027segment\u0027::text, \u0027niche\u0027::text, \u0027ultra_niche\u0027::text]))",
+        "schema_name":  "public",
+        "table_name":  "business_taxons"
+    },
+    {
+        "constraint_name":  "business_taxons_parent_id_fkey",
+        "constraint_type":  "f",
+        "definition":  "FOREIGN KEY (parent_id) REFERENCES business_taxons(id) ON UPDATE CASCADE ON DELETE SET NULL",
+        "schema_name":  "public",
+        "table_name":  "business_taxons"
+    },
+    {
+        "constraint_name":  "business_taxons_pkey",
+        "constraint_type":  "p",
+        "definition":  "PRIMARY KEY (id)",
+        "schema_name":  "public",
+        "table_name":  "business_taxons"
+    },
+    {
+        "constraint_name":  "content_template_taxons_pkey",
+        "constraint_type":  "p",
+        "definition":  "PRIMARY KEY (id)",
+        "schema_name":  "public",
+        "table_name":  "content_template_taxons"
+    },
+    {
+        "constraint_name":  "content_template_taxons_resolution_level_chk",
+        "constraint_type":  "c",
+        "definition":  "CHECK (resolution_level = ANY (ARRAY[\u0027generic\u0027::text, \u0027segment\u0027::text, \u0027niche\u0027::text, \u0027ultra_niche\u0027::text]))",
+        "schema_name":  "public",
+        "table_name":  "content_template_taxons"
+    },
+    {
+        "constraint_name":  "content_template_taxons_taxon_id_fkey",
+        "constraint_type":  "f",
+        "definition":  "FOREIGN KEY (taxon_id) REFERENCES business_taxons(id) ON UPDATE CASCADE ON DELETE RESTRICT",
+        "schema_name":  "public",
+        "table_name":  "content_template_taxons"
+    },
+    {
+        "constraint_name":  "content_template_taxons_template_id_fkey",
+        "constraint_type":  "f",
+        "definition":  "FOREIGN KEY (template_id) REFERENCES content_templates(id) ON UPDATE CASCADE ON DELETE CASCADE",
+        "schema_name":  "public",
+        "table_name":  "content_template_taxons"
+    },
+    {
+        "constraint_name":  "content_templates_pkey",
+        "constraint_type":  "p",
+        "definition":  "PRIMARY KEY (id)",
+        "schema_name":  "public",
+        "table_name":  "content_templates"
+    },
+    {
+        "constraint_name":  "content_templates_status_chk",
+        "constraint_type":  "c",
+        "definition":  "CHECK (status = ANY (ARRAY[\u0027draft\u0027::text, \u0027active\u0027::text, \u0027archived\u0027::text]))",
+        "schema_name":  "public",
+        "table_name":  "content_templates"
+    },
+    {
+        "constraint_name":  "content_templates_template_family_chk",
+        "constraint_type":  "c",
+        "definition":  "CHECK (template_family = ANY (ARRAY[\u0027commercial_activation\u0027::text, \u0027landing_page\u0027::text]))",
+        "schema_name":  "public",
+        "table_name":  "content_templates"
+    },
+    {
+        "constraint_name":  "content_templates_template_scope_chk",
+        "constraint_type":  "c",
+        "definition":  "CHECK (template_scope = ANY (ARRAY[\u0027page\u0027::text, \u0027section\u0027::text]))",
+        "schema_name":  "public",
+        "table_name":  "content_templates"
+    },
+    {
+        "constraint_name":  "check_partner_accounts_role",
+        "constraint_type":  "c",
+        "definition":  "CHECK (role = ANY (ARRAY[\u0027client\u0027::text, \u0027reseller\u0027::text, \u0027affiliate\u0027::text]))",
+        "schema_name":  "public",
+        "table_name":  "partner_accounts"
+    },
+    {
+        "constraint_name":  "partner_accounts_account_id_fkey",
+        "constraint_type":  "f",
+        "definition":  "FOREIGN KEY (account_id) REFERENCES accounts(id)",
+        "schema_name":  "public",
+        "table_name":  "partner_accounts"
+    },
+    {
+        "constraint_name":  "partner_accounts_partner_id_fkey",
+        "constraint_type":  "f",
+        "definition":  "FOREIGN KEY (partner_id) REFERENCES partners(id)",
+        "schema_name":  "public",
+        "table_name":  "partner_accounts"
+    },
+    {
+        "constraint_name":  "partner_accounts_pkey",
+        "constraint_type":  "p",
+        "definition":  "PRIMARY KEY (partner_id, account_id)",
+        "schema_name":  "public",
+        "table_name":  "partner_accounts"
+    },
+    {
+        "constraint_name":  "check_partners_status",
+        "constraint_type":  "c",
+        "definition":  "CHECK (status = ANY (ARRAY[\u0027active\u0027::text, \u0027inactive\u0027::text, \u0027suspended\u0027::text]))",
+        "schema_name":  "public",
+        "table_name":  "partners"
+    },
+    {
+        "constraint_name":  "check_partners_type",
+        "constraint_type":  "c",
+        "definition":  "CHECK (type = ANY (ARRAY[\u0027agency\u0027::text, \u0027reseller\u0027::text, \u0027affiliate\u0027::text]))",
+        "schema_name":  "public",
+        "table_name":  "partners"
+    },
+    {
+        "constraint_name":  "partners_parent_id_fkey",
+        "constraint_type":  "f",
+        "definition":  "FOREIGN KEY (parent_id) REFERENCES partners(id)",
+        "schema_name":  "public",
+        "table_name":  "partners"
+    },
+    {
+        "constraint_name":  "partners_pkey",
+        "constraint_type":  "p",
+        "definition":  "PRIMARY KEY (id)",
+        "schema_name":  "public",
+        "table_name":  "partners"
+    },
+    {
+        "constraint_name":  "plans_pkey",
+        "constraint_type":  "p",
+        "definition":  "PRIMARY KEY (id)",
+        "schema_name":  "public",
+        "table_name":  "plans"
+    },
+    {
+        "constraint_name":  "unique_plans_name",
+        "constraint_type":  "u",
+        "definition":  "UNIQUE (name)",
+        "schema_name":  "public",
+        "table_name":  "plans"
+    },
+    {
+        "constraint_name":  "taxon_market_research_audience_scope_chk",
+        "constraint_type":  "c",
+        "definition":  "CHECK (audience_scope = ANY (ARRAY[\u0027end_customer\u0027::text, \u0027business_buyer\u0027::text]))",
+        "schema_name":  "public",
+        "table_name":  "taxon_market_research"
+    },
+    {
+        "constraint_name":  "taxon_market_research_pkey",
+        "constraint_type":  "p",
+        "definition":  "PRIMARY KEY (id)",
+        "schema_name":  "public",
+        "table_name":  "taxon_market_research"
+    },
+    {
+        "constraint_name":  "taxon_market_research_status_chk",
+        "constraint_type":  "c",
+        "definition":  "CHECK (status = ANY (ARRAY[\u0027draft\u0027::text, \u0027active\u0027::text, \u0027archived\u0027::text]))",
+        "schema_name":  "public",
+        "table_name":  "taxon_market_research"
+    },
+    {
+        "constraint_name":  "taxon_market_research_taxon_id_fkey",
+        "constraint_type":  "f",
+        "definition":  "FOREIGN KEY (taxon_id) REFERENCES business_taxons(id) ON UPDATE CASCADE ON DELETE RESTRICT",
+        "schema_name":  "public",
+        "table_name":  "taxon_market_research"
+    },
+    {
+        "constraint_name":  "taxon_market_research_items_pkey",
+        "constraint_type":  "p",
+        "definition":  "PRIMARY KEY (id)",
+        "schema_name":  "public",
+        "table_name":  "taxon_market_research_items"
+    },
+    {
+        "constraint_name":  "taxon_market_research_items_research_id_fkey",
+        "constraint_type":  "f",
+        "definition":  "FOREIGN KEY (research_id) REFERENCES taxon_market_research(id) ON UPDATE CASCADE ON DELETE CASCADE",
+        "schema_name":  "public",
+        "table_name":  "taxon_market_research_items"
+    },
+    {
+        "constraint_name":  "taxon_message_guides_context_type_chk",
+        "constraint_type":  "c",
+        "definition":  "CHECK (context_type = ANY (ARRAY[\u0027e10_5\u0027::text, \u0027landing_page\u0027::text, \u0027email\u0027::text, \u0027whatsapp\u0027::text]))",
+        "schema_name":  "public",
+        "table_name":  "taxon_message_guides"
+    },
+    {
+        "constraint_name":  "taxon_message_guides_pkey",
+        "constraint_type":  "p",
+        "definition":  "PRIMARY KEY (id)",
+        "schema_name":  "public",
+        "table_name":  "taxon_message_guides"
+    },
+    {
+        "constraint_name":  "taxon_message_guides_research_id_fkey",
+        "constraint_type":  "f",
+        "definition":  "FOREIGN KEY (research_id) REFERENCES taxon_market_research(id) ON UPDATE CASCADE ON DELETE CASCADE",
+        "schema_name":  "public",
+        "table_name":  "taxon_message_guides"
+    }
+]

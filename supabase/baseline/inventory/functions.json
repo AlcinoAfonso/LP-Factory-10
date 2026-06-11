@@ -1,0 +1,431 @@
+[
+    {
+        "definition":  "CREATE OR REPLACE FUNCTION public._gen_provisional_slug()\n RETURNS text\n LANGUAGE sql\n SET search_path TO \u0027public\u0027, \u0027extensions\u0027\nAS $function$\r\n  select \u0027acc-\u0027 || substring(replace(gen_random_uuid()::text, \u0027-\u0027, \u0027\u0027), 1, 8)\r\n$function$\n",
+        "function_name":  "_gen_provisional_slug",
+        "identity_arguments":  "",
+        "schema_name":  "public",
+        "security_definer":  false,
+        "settings":  [
+                         "search_path=public, extensions"
+                     ],
+        "volatility":  "v"
+    },
+    {
+        "definition":  "CREATE OR REPLACE FUNCTION public.accept_account_invite(p_account_id uuid, p_ttl_days integer DEFAULT 7)\n RETURNS boolean\n LANGUAGE plpgsql\n SET search_path TO \u0027public\u0027, \u0027extensions\u0027\nAS $function$\r\ndeclare\r\n  v_row public.account_users%rowtype;\r\nbegin\r\n  select * into v_row\r\n  from public.account_users\r\n  where account_id = p_account_id\r\n    and user_id    = auth.uid()\r\n  for update;\r\n\r\n  if not found then\r\n    raise exception \u0027Convite não encontrado para este usuário/conta.\u0027;\r\n  end if;\r\n\r\n  if v_row.status \u003c\u003e \u0027pending\u0027 then\r\n    raise exception \u0027Convite não está pendente.\u0027;\r\n  end if;\r\n\r\n  if public.invitation_is_expired(v_row.id, p_ttl_days) then\r\n    -- marca como \u0027revoked\u0027 por expiração\r\n    update public.account_users\r\n       set status = \u0027revoked\u0027\r\n     where id = v_row.id;\r\n    raise exception \u0027Convite expirado. Solicite um novo convite.\u0027;\r\n  end if;\r\n\r\n  -- Transição para \u0027active\u0027\r\n  update public.account_users\r\n     set status = \u0027active\u0027\r\n   where id = v_row.id;\r\n\r\n  return true;\r\nend;\r\n$function$\n",
+        "function_name":  "accept_account_invite",
+        "identity_arguments":  "p_account_id uuid, p_ttl_days integer",
+        "schema_name":  "public",
+        "security_definer":  false,
+        "settings":  [
+                         "search_path=public, extensions"
+                     ],
+        "volatility":  "v"
+    },
+    {
+        "definition":  "CREATE OR REPLACE FUNCTION public.activate_user_from_auth_hook(event jsonb)\n RETURNS jsonb\n LANGUAGE plpgsql\n SET search_path TO \u0027public\u0027, \u0027extensions\u0027\nAS $function$\r\nDECLARE\r\n  v_user_id uuid := (event-\u003e\u003e\u0027user_id\u0027)::uuid;\r\nBEGIN\r\n  IF v_user_id IS NULL THEN\r\n    RETURN jsonb_build_object(\u0027error\u0027, jsonb_build_object(\u0027http_code\u0027, 400, \u0027message\u0027, \u0027user_id ausente no evento\u0027));\r\n  END IF;\r\n\r\n  -- Idempotente: só altera se estiver pending\r\n  UPDATE public.account_users\r\n     SET status = \u0027active\u0027\r\n   WHERE user_id = v_user_id\r\n     AND status = \u0027pending\u0027;\r\n\r\n  -- Retorna o event (sem modificar claims)\r\n  RETURN event;\r\nEND;\r\n$function$\n",
+        "function_name":  "activate_user_from_auth_hook",
+        "identity_arguments":  "event jsonb",
+        "schema_name":  "public",
+        "security_definer":  false,
+        "settings":  [
+                         "search_path=public, extensions"
+                     ],
+        "volatility":  "v"
+    },
+    {
+        "definition":  "CREATE OR REPLACE FUNCTION public.audit_account_users()\n RETURNS trigger\n LANGUAGE plpgsql\n SET search_path TO \u0027public\u0027, \u0027extensions\u0027\nAS $function$\r\nDECLARE\r\n  v_ip inet := inet_client_addr();\r\n  v_diff jsonb; v_entity text := \u0027account_users\u0027; v_entity_id uuid; v_account_id uuid;\r\n  v_subject_user uuid; v_actor uuid; v_action text := lower(TG_OP);\r\nBEGIN\r\n  IF TG_OP=\u0027INSERT\u0027 THEN v_diff:=jsonb_build_object(\u0027new\u0027,to_jsonb(NEW)); v_entity_id:=NEW.id; v_account_id:=NEW.account_id; v_subject_user:=NEW.user_id;\r\n  ELSIF TG_OP=\u0027DELETE\u0027 THEN v_diff:=jsonb_build_object(\u0027old\u0027,to_jsonb(OLD)); v_entity_id:=OLD.id; v_account_id:=OLD.account_id; v_subject_user:=OLD.user_id;\r\n  ELSE v_diff:=public.jsonb_diff_val(to_jsonb(OLD),to_jsonb(NEW)); v_entity_id:=NEW.id; v_account_id:=NEW.account_id; v_subject_user:=NEW.user_id;\r\n  END IF;\r\n  v_actor := COALESCE(auth.uid(), v_subject_user);\r\n  INSERT INTO public.audit_logs(table_name,record_id,action,user_id,actor_user_id,changes_json,ip_address,created_at,account_id)\r\n  VALUES (v_entity,v_entity_id,v_action,v_subject_user,v_actor,v_diff,v_ip,now(),v_account_id);\r\n  RETURN NULL;\r\nEND $function$\n",
+        "function_name":  "audit_account_users",
+        "identity_arguments":  "",
+        "schema_name":  "public",
+        "security_definer":  false,
+        "settings":  [
+                         "search_path=public, extensions"
+                     ],
+        "volatility":  "v"
+    },
+    {
+        "definition":  "CREATE OR REPLACE FUNCTION public.audit_accounts()\n RETURNS trigger\n LANGUAGE plpgsql\n SET search_path TO \u0027public\u0027, \u0027extensions\u0027\nAS $function$\r\nDECLARE\r\n  v_ip inet := inet_client_addr();\r\n  v_diff jsonb; v_entity text := \u0027accounts\u0027; v_entity_id uuid; v_account_id uuid;\r\n  v_subject_user uuid; v_actor uuid; v_action text := lower(TG_OP);\r\nBEGIN\r\n  IF TG_OP=\u0027INSERT\u0027 THEN v_diff:=jsonb_build_object(\u0027new\u0027,to_jsonb(NEW)); v_entity_id:=NEW.id; v_account_id:=NEW.id; v_subject_user:=NEW.owner_user_id;\r\n  ELSIF TG_OP=\u0027DELETE\u0027 THEN v_diff:=jsonb_build_object(\u0027old\u0027,to_jsonb(OLD)); v_entity_id:=OLD.id; v_account_id:=OLD.id; v_subject_user:=OLD.owner_user_id;\r\n  ELSE v_diff:=public.jsonb_diff_val(to_jsonb(OLD),to_jsonb(NEW)); v_entity_id:=NEW.id; v_account_id:=NEW.id; v_subject_user:=NEW.owner_user_id;\r\n  END IF;\r\n  v_actor := COALESCE(auth.uid(), v_subject_user);\r\n  INSERT INTO public.audit_logs(table_name,record_id,action,user_id,actor_user_id,changes_json,ip_address,created_at,account_id)\r\n  VALUES (v_entity,v_entity_id,v_action,v_subject_user,v_actor,v_diff,v_ip,now(),v_account_id);\r\n  RETURN NULL;\r\nEND $function$\n",
+        "function_name":  "audit_accounts",
+        "identity_arguments":  "",
+        "schema_name":  "public",
+        "security_definer":  false,
+        "settings":  [
+                         "search_path=public, extensions"
+                     ],
+        "volatility":  "v"
+    },
+    {
+        "definition":  "CREATE OR REPLACE FUNCTION public.audit_context_event(p_event text, p_entity text, p_entity_id uuid, p_diff jsonb, p_account_id uuid)\n RETURNS void\n LANGUAGE plpgsql\n SET search_path TO \u0027public\u0027, \u0027extensions\u0027\nAS $function$\r\nDECLARE v_ip inet := inet_client_addr(); v_event text := lower(p_event);\r\nBEGIN\r\n  INSERT INTO public.audit_logs(table_name,record_id,action,user_id,actor_user_id,changes_json,ip_address,created_at,account_id)\r\n  VALUES (p_entity,COALESCE(p_entity_id,gen_random_uuid()),v_event,COALESCE(auth.uid(),NULL),COALESCE(auth.uid(),NULL),\r\n          COALESCE(p_diff,\u0027{}\u0027::jsonb),v_ip,now(),p_account_id);\r\nEND $function$\n",
+        "function_name":  "audit_context_event",
+        "identity_arguments":  "p_event text, p_entity text, p_entity_id uuid, p_diff jsonb, p_account_id uuid",
+        "schema_name":  "public",
+        "security_definer":  false,
+        "settings":  [
+                         "search_path=public, extensions"
+                     ],
+        "volatility":  "v"
+    },
+    {
+        "definition":  "CREATE OR REPLACE FUNCTION public.audit_partner_accounts()\n RETURNS trigger\n LANGUAGE plpgsql\n SET search_path TO \u0027public\u0027, \u0027extensions\u0027\nAS $function$\r\nDECLARE\r\n  v_ip inet := inet_client_addr();\r\n  v_diff jsonb; v_entity text := \u0027partner_accounts\u0027; v_entity_id uuid := gen_random_uuid();\r\n  v_account_id uuid; v_subject_user uuid; v_actor uuid; v_action text := lower(TG_OP);\r\nBEGIN\r\n  IF TG_OP=\u0027INSERT\u0027 THEN v_diff:=jsonb_build_object(\u0027new\u0027,to_jsonb(NEW)); v_account_id:=NEW.account_id;\r\n  ELSIF TG_OP=\u0027DELETE\u0027 THEN v_diff:=jsonb_build_object(\u0027old\u0027,to_jsonb(OLD)); v_account_id:=OLD.account_id;\r\n  ELSE v_diff:=public.jsonb_diff_val(to_jsonb(OLD),to_jsonb(NEW)); v_account_id:=NEW.account_id;\r\n  END IF;\r\n  SELECT owner_user_id INTO v_subject_user FROM public.accounts WHERE id=v_account_id LIMIT 1;\r\n  v_actor := COALESCE(auth.uid(), v_subject_user);\r\n  INSERT INTO public.audit_logs(table_name,record_id,action,user_id,actor_user_id,changes_json,ip_address,created_at,account_id)\r\n  VALUES (v_entity,v_entity_id,v_action,v_subject_user,v_actor,v_diff,v_ip,now(),v_account_id);\r\n  RETURN NULL;\r\nEND $function$\n",
+        "function_name":  "audit_partner_accounts",
+        "identity_arguments":  "",
+        "schema_name":  "public",
+        "security_definer":  false,
+        "settings":  [
+                         "search_path=public, extensions"
+                     ],
+        "volatility":  "v"
+    },
+    {
+        "definition":  "CREATE OR REPLACE FUNCTION public.ensure_first_account_for_current_user()\n RETURNS TABLE(account_id uuid, account_key text)\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO \u0027public\u0027, \u0027extensions\u0027\nAS $function$\r\ndeclare\r\n  v_uid uuid := auth.uid();\r\n  v_account_id uuid;\r\n  v_account_key text;\r\n  v_attempt int;\r\nbegin\r\n  if v_uid is null then\r\n    raise exception using message = \u0027auth_required\u0027, errcode = \u0027P0001\u0027;\r\n  end if;\r\n\r\n  -- trava por usuário (evita duplicidade em concorrência: abas/reloads)\r\n  perform pg_advisory_xact_lock(hashtextextended(\u0027f2.ensure_first_account:\u0027 || v_uid::text, 0));\r\n\r\n  -- se já existe qualquer vínculo, retorna a primeira conta (no-op)\r\n  select a.id, a.subdomain\r\n    into v_account_id, v_account_key\r\n  from public.account_users au\r\n  join public.accounts a on a.id = au.account_id\r\n  where au.user_id = v_uid\r\n  order by au.created_at asc, a.created_at asc\r\n  limit 1;\r\n\r\n  if found then\r\n    account_id := v_account_id;\r\n    account_key := v_account_key;\r\n    return next;\r\n    return;\r\n  end if;\r\n\r\n  -- criar conta + vínculo (com tentativas para evitar colisão de subdomain)\r\n  for v_attempt in 1..5 loop\r\n    begin\r\n      v_account_key := public._gen_provisional_slug();\r\n\r\n      insert into public.accounts (name, subdomain, status, owner_user_id)\r\n      values (\u0027Conta \u0027 || v_account_key, v_account_key, \u0027pending_setup\u0027, v_uid)\r\n      returning id into v_account_id;\r\n\r\n      insert into public.account_users (account_id, user_id, role, status)\r\n      values (v_account_id, v_uid, \u0027owner\u0027, \u0027active\u0027);\r\n\r\n      account_id := v_account_id;\r\n      account_key := v_account_key;\r\n      return next;\r\n      return;\r\n\r\n    exception\r\n      when unique_violation then\r\n        -- colisão rara em subdomain/slug → tenta novamente\r\n        null;\r\n    end;\r\n  end loop;\r\n\r\n  raise exception using message = \u0027ensure_first_account_failed\u0027, errcode = \u0027P0001\u0027;\r\nend;\r\n$function$\n",
+        "function_name":  "ensure_first_account_for_current_user",
+        "identity_arguments":  "",
+        "schema_name":  "public",
+        "security_definer":  true,
+        "settings":  [
+                         "search_path=public, extensions"
+                     ],
+        "volatility":  "v"
+    },
+    {
+        "definition":  "CREATE OR REPLACE FUNCTION public.fn_audit_dispatch(p_table text, p_kind text, p_payload jsonb)\n RETURNS void\n LANGUAGE plpgsql\n SET search_path TO \u0027public, auth, pg_catalog\u0027\nAS $function$DECLARE\r\n  v_ip inet := inet_client_addr();\r\n  v_actor uuid := auth.uid();\r\n  v_record uuid := COALESCE(\r\n    (p_payload-\u003e\u003e\u0027id\u0027)::uuid,\r\n    (p_payload-\u003e\u0027new\u0027-\u003e\u003e\u0027id\u0027)::uuid,\r\n    (p_payload-\u003e\u0027old\u0027-\u003e\u003e\u0027id\u0027)::uuid,\r\n    gen_random_uuid()\r\n  );\r\n  v_acc uuid := COALESCE(\r\n    (p_payload-\u003e\u003e\u0027account_id\u0027)::uuid,\r\n    (p_payload-\u003e\u0027new\u0027-\u003e\u003e\u0027account_id\u0027)::uuid,\r\n    (p_payload-\u003e\u0027old\u0027-\u003e\u003e\u0027account_id\u0027)::uuid,\r\n    CASE WHEN p_table=\u0027accounts\u0027 THEN v_record END\r\n  );\r\n  v_subject uuid := COALESCE(\r\n    (p_payload-\u003e\u003e\u0027user_id\u0027)::uuid,\r\n    (p_payload-\u003e\u0027new\u0027-\u003e\u003e\u0027user_id\u0027)::uuid,\r\n    (p_payload-\u003e\u0027old\u0027-\u003e\u003e\u0027user_id\u0027)::uuid\r\n  );\r\n  v_payload jsonb := CASE\r\n    WHEN p_payload IS NULL OR p_payload IN (\u0027{}\u0027,\u0027[]\u0027::jsonb,\u0027null\u0027::jsonb) THEN jsonb_build_object(\u0027no_diff\u0027,true)\r\n    ELSE p_payload\r\n  END;\r\nBEGIN\r\n\r\n    PERFORM set_config(\u0027search_path\u0027, \u0027public, auth, pg_catalog\u0027, false);\r\n  INSERT INTO public.audit_logs(table_name,record_id,action,user_id,actor_user_id,changes_json,ip_address,created_at,account_id,event)\r\n  VALUES (p_table, v_record, lower(p_kind), v_subject, v_actor, v_payload, v_ip, now(), v_acc, \u0027hub_dispatch\u0027);\r\nEND$function$\n",
+        "function_name":  "fn_audit_dispatch",
+        "identity_arguments":  "p_table text, p_kind text, p_payload jsonb",
+        "schema_name":  "public",
+        "security_definer":  false,
+        "settings":  [
+                         "search_path=\"public, auth, pg_catalog\""
+                     ],
+        "volatility":  "v"
+    },
+    {
+        "definition":  "CREATE OR REPLACE FUNCTION public.fn_guard_last_owner(p_kind text, p_new jsonb, p_old jsonb)\n RETURNS void\n LANGUAGE plpgsql\n SET search_path TO \u0027public, auth, pg_catalog\u0027\nAS $function$\r\nDECLARE\r\n  v_acc uuid := COALESCE((p_old-\u003e\u003e\u0027account_id\u0027)::uuid,(p_new-\u003e\u003e\u0027account_id\u0027)::uuid);\r\n  v_user uuid := (p_old-\u003e\u003e\u0027user_id\u0027)::uuid;\r\n  v_old_role text := lower(COALESCE(p_old-\u003e\u003e\u0027role\u0027,\u0027\u0027));\r\n  v_old_status text := COALESCE(p_old-\u003e\u003e\u0027status\u0027,\u0027\u0027);\r\n  v_new_role text := lower(COALESCE(p_new-\u003e\u003e\u0027role\u0027,\u0027\u0027));\r\n  v_new_status text := COALESCE(p_new-\u003e\u003e\u0027status\u0027,\u0027\u0027);\r\n  v_count int;\r\nBEGIN\r\n  IF p_kind=\u0027DELETE\u0027 AND v_old_role=\u0027owner\u0027 AND v_old_status=\u0027active\u0027 THEN\r\n    SELECT COUNT(*) INTO v_count FROM public.account_users\r\n    WHERE account_id=v_acc AND user_id\u003c\u003ev_user AND status=\u0027active\u0027 AND lower(role)=\u0027owner\u0027;\r\n    IF v_count=0 THEN RAISE EXCEPTION \u0027Não é permitido remover o último owner ativo.\u0027; END IF;\r\n  ELSIF p_kind=\u0027UPDATE\u0027\r\n    AND v_old_role=\u0027owner\u0027 AND v_old_status=\u0027active\u0027\r\n    AND (v_new_role\u003c\u003e\u0027owner\u0027 OR v_new_status\u003c\u003e\u0027active\u0027) THEN\r\n    SELECT COUNT(*) INTO v_count FROM public.account_users\r\n    WHERE account_id=v_acc AND user_id\u003c\u003ev_user AND status=\u0027active\u0027 AND lower(role)=\u0027owner\u0027;\r\n    IF v_count=0 THEN RAISE EXCEPTION \u0027Não é permitido remover/downgradear o último owner ativo.\u0027; END IF;\r\n  END IF;\r\nEND $function$\n",
+        "function_name":  "fn_guard_last_owner",
+        "identity_arguments":  "p_kind text, p_new jsonb, p_old jsonb",
+        "schema_name":  "public",
+        "security_definer":  false,
+        "settings":  [
+                         "search_path=\"public, auth, pg_catalog\""
+                     ],
+        "volatility":  "v"
+    },
+    {
+        "definition":  "CREATE OR REPLACE FUNCTION public.fn_owner_transfer_rules(p_kind text, p_new jsonb, p_old jsonb)\n RETURNS void\n LANGUAGE plpgsql\n SET search_path TO \u0027public, auth, pg_catalog\u0027\nAS $function$\r\nDECLARE\r\n  v_prev uuid := (p_old-\u003e\u003e\u0027owner_user_id\u0027)::uuid;\r\n  v_next uuid := (p_new-\u003e\u003e\u0027owner_user_id\u0027)::uuid;\r\n  v_acc  uuid := COALESCE((p_new-\u003e\u003e\u0027id\u0027)::uuid,(p_old-\u003e\u003e\u0027id\u0027)::uuid);\r\n  ok boolean;\r\nBEGIN\r\n  IF p_kind=\u0027UPDATE\u0027 AND v_next IS DISTINCT FROM v_prev THEN\r\n    IF v_next IS NULL THEN RAISE EXCEPTION \u0027owner_user_id não pode ser nulo.\u0027; END IF;\r\n    SELECT EXISTS (\r\n      SELECT 1 FROM public.account_users au\r\n      WHERE au.account_id=v_acc AND au.user_id=v_next\r\n        AND au.status=\u0027active\u0027 AND lower(au.role)=\u0027owner\u0027\r\n    ) INTO ok;\r\n    IF NOT ok THEN\r\n      RAISE EXCEPTION \u0027Transferência inválida: novo owner deve estar como owner ativo em account_users.\u0027;\r\n    END IF;\r\n  END IF;\r\nEND $function$\n",
+        "function_name":  "fn_owner_transfer_rules",
+        "identity_arguments":  "p_kind text, p_new jsonb, p_old jsonb",
+        "schema_name":  "public",
+        "security_definer":  false,
+        "settings":  [
+                         "search_path=\"public, auth, pg_catalog\""
+                     ],
+        "volatility":  "v"
+    },
+    {
+        "definition":  "CREATE OR REPLACE FUNCTION public.fn_write_audit_log(p_table_name text, p_record_id uuid, p_action text, p_account_id uuid, p_changes jsonb)\n RETURNS void\n LANGUAGE plpgsql\n SET search_path TO \u0027public\u0027, \u0027extensions\u0027\nAS $function$\r\nBEGIN\r\n  INSERT INTO public.audit_logs (id, table_name, record_id, action, user_id, actor_user_id, account_id, changes_json, created_at)\r\n  VALUES (gen_random_uuid(), p_table_name, p_record_id, p_action, auth.uid(), auth.uid(), p_account_id, p_changes, now());\r\nEND;\r\n$function$\n",
+        "function_name":  "fn_write_audit_log",
+        "identity_arguments":  "p_table_name text, p_record_id uuid, p_action text, p_account_id uuid, p_changes jsonb",
+        "schema_name":  "public",
+        "security_definer":  false,
+        "settings":  [
+                         "search_path=public, extensions"
+                     ],
+        "volatility":  "v"
+    },
+    {
+        "definition":  "CREATE OR REPLACE FUNCTION public.get_account_effective_limits(p_account_id uuid)\n RETURNS TABLE(account_id uuid, account_name text, account_status text, subdomain text, domain text, plan_id uuid, plan_name text, price_monthly numeric, plan_features jsonb, max_lps integer, max_conversions integer, max_lps_unlimited boolean, max_lps_effective bigint, max_conversions_unlimited boolean, max_conversions_effective bigint, created_at timestamp with time zone, updated_at timestamp with time zone)\n LANGUAGE sql\n STABLE\n SET search_path TO \u0027public\u0027, \u0027extensions\u0027\nAS $function$\r\n  SELECT\r\n    v.account_id,\r\n    v.account_name,\r\n    v.account_status,\r\n    v.subdomain,\r\n    v.domain,\r\n    v.plan_id,\r\n    v.plan_name,\r\n    v.price_monthly,\r\n    v.plan_features,\r\n    v.max_lps,\r\n    v.max_conversions,\r\n    v.max_lps_unlimited,\r\n    v.max_lps_effective,\r\n    v.max_conversions_unlimited,\r\n    v.max_conversions_effective,\r\n    v.created_at,\r\n    v.updated_at\r\n  FROM public.v_account_effective_limits v\r\n  WHERE v.account_id = p_account_id\r\n    AND (\r\n      public.is_platform_admin()\r\n      OR public.is_member_active(v.account_id, auth.uid())\r\n    )\r\n  LIMIT 1;\r\n$function$\n",
+        "function_name":  "get_account_effective_limits",
+        "identity_arguments":  "p_account_id uuid",
+        "schema_name":  "public",
+        "security_definer":  false,
+        "settings":  [
+                         "search_path=public, extensions"
+                     ],
+        "volatility":  "s"
+    },
+    {
+        "definition":  "CREATE OR REPLACE FUNCTION public.has_account_min_role(p_account_id uuid, p_min_role text)\n RETURNS boolean\n LANGUAGE sql\n STABLE\n SET search_path TO \u0027public\u0027, \u0027extensions\u0027\nAS $function$\r\n  select exists (\r\n    select 1\r\n    from public.account_users au\r\n    where au.account_id = p_account_id\r\n      and au.user_id    = auth.uid()\r\n      and au.status     = \u0027active\u0027\r\n      and public.role_rank(au.role) \u003e= public.role_rank(p_min_role)\r\n  );\r\n$function$\n",
+        "function_name":  "has_account_min_role",
+        "identity_arguments":  "p_account_id uuid, p_min_role text",
+        "schema_name":  "public",
+        "security_definer":  false,
+        "settings":  [
+                         "search_path=public, extensions"
+                     ],
+        "volatility":  "s"
+    },
+    {
+        "definition":  "CREATE OR REPLACE FUNCTION public.hub_router()\n RETURNS trigger\n LANGUAGE plpgsql\n SET search_path TO \u0027public, auth, pg_catalog\u0027\nAS $function$\r\nDECLARE\r\n  v_kind text := TG_OP;\r\n  j_old jsonb := to_jsonb(OLD);\r\n  j_new jsonb := to_jsonb(NEW);\r\n  j_payload jsonb;\r\nBEGIN\r\n  IF TG_TABLE_NAME=\u0027accounts\u0027 AND v_kind=\u0027UPDATE\u0027 THEN\r\n    NEW.updated_at := now(); j_new := to_jsonb(NEW);\r\n  ELSIF TG_TABLE_NAME=\u0027account_users\u0027 AND v_kind IN (\u0027INSERT\u0027,\u0027UPDATE\u0027) THEN\r\n    IF NEW.role IS NOT NULL THEN NEW.role := lower(NEW.role); IF NEW.role=\u0027member\u0027 THEN NEW.role := \u0027viewer\u0027; END IF; END IF;\r\n    IF NEW.status IS NOT NULL THEN NEW.status := lower(NEW.status); END IF;\r\n    j_new := to_jsonb(NEW);\r\n  END IF;\r\n\r\n  j_payload := CASE v_kind\r\n    WHEN \u0027INSERT\u0027 THEN jsonb_build_object(\u0027new\u0027,j_new)||j_new\r\n    WHEN \u0027DELETE\u0027 THEN jsonb_build_object(\u0027old\u0027,j_old)||j_old\r\n    ELSE COALESCE(public.jsonb_diff_val(j_old,j_new),\u0027{}\u0027::jsonb)\r\n         || jsonb_build_object(\u0027id\u0027,COALESCE((j_new-\u003e\u003e\u0027id\u0027)::uuid,(j_old-\u003e\u003e\u0027id\u0027)::uuid))\r\n  END;\r\n\r\n  PERFORM public.fn_audit_dispatch(TG_TABLE_NAME, v_kind, j_payload);\r\n\r\n  IF TG_TABLE_NAME=\u0027account_users\u0027 THEN\r\n    PERFORM public.fn_guard_last_owner(v_kind, j_new, j_old);\r\n  ELSIF TG_TABLE_NAME=\u0027accounts\u0027 THEN\r\n    PERFORM public.fn_owner_transfer_rules(v_kind, j_new, j_old);\r\n  END IF;\r\n\r\n  RETURN CASE WHEN v_kind=\u0027DELETE\u0027 THEN OLD ELSE NEW END;\r\nEND $function$\n",
+        "function_name":  "hub_router",
+        "identity_arguments":  "",
+        "schema_name":  "public",
+        "security_definer":  false,
+        "settings":  [
+                         "search_path=\"public, auth, pg_catalog\""
+                     ],
+        "volatility":  "v"
+    },
+    {
+        "definition":  "CREATE OR REPLACE FUNCTION public.invitation_expires_at(p_account_user_id uuid, p_ttl_days integer DEFAULT 7)\n RETURNS timestamp with time zone\n LANGUAGE sql\n STABLE\n SET search_path TO \u0027public\u0027, \u0027extensions\u0027\nAS $function$\r\n  select au.created_at + make_interval(days =\u003e p_ttl_days)\r\n  from public.account_users au\r\n  where au.id = p_account_user_id\r\n$function$\n",
+        "function_name":  "invitation_expires_at",
+        "identity_arguments":  "p_account_user_id uuid, p_ttl_days integer",
+        "schema_name":  "public",
+        "security_definer":  false,
+        "settings":  [
+                         "search_path=public, extensions"
+                     ],
+        "volatility":  "s"
+    },
+    {
+        "definition":  "CREATE OR REPLACE FUNCTION public.invitation_is_expired(p_account_user_id uuid, p_ttl_days integer DEFAULT 7)\n RETURNS boolean\n LANGUAGE sql\n STABLE\n SET search_path TO \u0027public\u0027, \u0027extensions\u0027\nAS $function$\r\n  select coalesce( now() \u003e public.invitation_expires_at(p_account_user_id, p_ttl_days), true )\r\n$function$\n",
+        "function_name":  "invitation_is_expired",
+        "identity_arguments":  "p_account_user_id uuid, p_ttl_days integer",
+        "schema_name":  "public",
+        "security_definer":  false,
+        "settings":  [
+                         "search_path=public, extensions"
+                     ],
+        "volatility":  "s"
+    },
+    {
+        "definition":  "CREATE OR REPLACE FUNCTION public.is_admin_active(p_account_id uuid, p_user_id uuid)\n RETURNS boolean\n LANGUAGE sql\n STABLE\n SET search_path TO \u0027public\u0027\nAS $function$\r\n  SELECT EXISTS (\r\n    SELECT 1\r\n    FROM public.account_users au\r\n    WHERE au.account_id = p_account_id\r\n      AND au.user_id    = p_user_id\r\n      AND au.role       IN (\u0027owner\u0027, \u0027admin\u0027)\r\n      AND au.status     = \u0027active\u0027\r\n  );\r\n$function$\n",
+        "function_name":  "is_admin_active",
+        "identity_arguments":  "p_account_id uuid, p_user_id uuid",
+        "schema_name":  "public",
+        "security_definer":  false,
+        "settings":  [
+                         "search_path=public"
+                     ],
+        "volatility":  "s"
+    },
+    {
+        "definition":  "CREATE OR REPLACE FUNCTION public.is_member_active(p_account_id uuid, p_user_id uuid)\n RETURNS boolean\n LANGUAGE sql\n STABLE\n SET search_path TO \u0027public\u0027\nAS $function$\r\n  SELECT EXISTS (\r\n    SELECT 1\r\n    FROM public.account_users au\r\n    WHERE au.account_id = p_account_id\r\n      AND au.user_id    = p_user_id\r\n      AND au.status     = \u0027active\u0027\r\n  );\r\n$function$\n",
+        "function_name":  "is_member_active",
+        "identity_arguments":  "p_account_id uuid, p_user_id uuid",
+        "schema_name":  "public",
+        "security_definer":  false,
+        "settings":  [
+                         "search_path=public"
+                     ],
+        "volatility":  "s"
+    },
+    {
+        "definition":  "CREATE OR REPLACE FUNCTION public.is_platform_admin()\n RETURNS boolean\n LANGUAGE sql\n STABLE\n SET search_path TO \u0027public\u0027\nAS $function$\r\n  SELECT (\r\n    COALESCE((auth.jwt()-\u003e\u003e\u0027platform_admin\u0027)::boolean, false)\r\n    OR auth.uid() = \u0027ce899cd2-5360-478e-817e-ee3690aabecd\u0027::uuid\r\n    OR is_super_admin()\r\n  );\r\n$function$\n",
+        "function_name":  "is_platform_admin",
+        "identity_arguments":  "",
+        "schema_name":  "public",
+        "security_definer":  false,
+        "settings":  [
+                         "search_path=public"
+                     ],
+        "volatility":  "s"
+    },
+    {
+        "definition":  "CREATE OR REPLACE FUNCTION public.is_service_role()\n RETURNS boolean\n LANGUAGE sql\n STABLE\n SET search_path TO \u0027public\u0027, \u0027extensions\u0027\nAS $function$\r\n  select coalesce((current_setting(\u0027request.jwt.claims\u0027, true)::json-\u003e\u003e\u0027role\u0027) = \u0027service_role\u0027, false)\r\n$function$\n",
+        "function_name":  "is_service_role",
+        "identity_arguments":  "",
+        "schema_name":  "public",
+        "security_definer":  false,
+        "settings":  [
+                         "search_path=public, extensions"
+                     ],
+        "volatility":  "s"
+    },
+    {
+        "definition":  "CREATE OR REPLACE FUNCTION public.is_super_admin()\n RETURNS boolean\n LANGUAGE sql\n STABLE\n SET search_path TO \u0027public\u0027, \u0027extensions\u0027\nAS $function$\r\n  with claims as (select current_setting(\u0027request.jwt.claims\u0027, true)::json j)\r\n  select  lower(coalesce(j-\u003e\u003e\u0027role\u0027,\u0027\u0027)) = \u0027super_admin\u0027\r\n     or  exists (select 1\r\n                   from json_array_elements(coalesce(j-\u003e\u0027app_metadata\u0027-\u003e\u0027roles\u0027,\u0027[]\u0027::json)) x\r\n                  where lower(coalesce(x::text,\u0027\u0027)) in (\u0027\"super_admin\"\u0027,\u0027super_admin\u0027))\r\n  from claims\r\n$function$\n",
+        "function_name":  "is_super_admin",
+        "identity_arguments":  "",
+        "schema_name":  "public",
+        "security_definer":  false,
+        "settings":  [
+                         "search_path=public, extensions"
+                     ],
+        "volatility":  "s"
+    },
+    {
+        "definition":  "CREATE OR REPLACE FUNCTION public.jsonb_diff_val(j_old jsonb, j_new jsonb)\n RETURNS jsonb\n LANGUAGE plpgsql\n SET search_path TO \u0027public\u0027, \u0027extensions\u0027\nAS $function$\r\ndeclare\r\n  v_k text;\r\n  v_out jsonb := \u0027[]\u0027::jsonb;\r\nbegin\r\n  for v_k in\r\n    with all_keys as (\r\n      select jsonb_object_keys(coalesce(j_old, \u0027{}\u0027::jsonb)) as k\r\n      union\r\n      select jsonb_object_keys(coalesce(j_new, \u0027{}\u0027::jsonb)) as k\r\n    )\r\n    select k from all_keys\r\n  loop\r\n    if j_old-\u003e\u003ev_k is distinct from j_new-\u003e\u003ev_k then\r\n      v_out := v_out || jsonb_build_object(\r\n        v_k, jsonb_build_object(\u0027old\u0027, j_old-\u003e\u003ev_k, \u0027new\u0027, j_new-\u003e\u003ev_k)\r\n      );\r\n    end if;\r\n  end loop;\r\n  return v_out;\r\nend\r\n$function$\n",
+        "function_name":  "jsonb_diff_val",
+        "identity_arguments":  "j_old jsonb, j_new jsonb",
+        "schema_name":  "public",
+        "security_definer":  false,
+        "settings":  [
+                         "search_path=public, extensions"
+                     ],
+        "volatility":  "v"
+    },
+    {
+        "definition":  "CREATE OR REPLACE FUNCTION public.log_audit(p_account_id uuid, p_table_name text, p_record_id uuid, p_action text, p_user_id uuid, p_changes_json jsonb)\n RETURNS void\n LANGUAGE plpgsql\n SET search_path TO \u0027public\u0027, \u0027extensions\u0027\nAS $function$\r\nbegin\r\n  insert into public.audit_logs (\r\n    account_id, table_name, record_id, action,\r\n    user_id, actor_user_id, changes_json, ip_address, created_at\r\n  )\r\n  values (\r\n    p_account_id,\r\n    p_table_name,\r\n    p_record_id,\r\n    p_action,\r\n    p_user_id,\r\n    auth.uid(),\r\n    p_changes_json,\r\n    inet_client_addr(),\r\n    now()\r\n  );\r\nexception when others then\r\n  -- Não quebra a transação do app se a auditoria falhar\r\n  raise notice \u0027audit log skipped: %\u0027, sqlerrm;\r\nend;\r\n$function$\n",
+        "function_name":  "log_audit",
+        "identity_arguments":  "p_account_id uuid, p_table_name text, p_record_id uuid, p_action text, p_user_id uuid, p_changes_json jsonb",
+        "schema_name":  "public",
+        "security_definer":  false,
+        "settings":  [
+                         "search_path=public, extensions"
+                     ],
+        "volatility":  "v"
+    },
+    {
+        "definition":  "CREATE OR REPLACE FUNCTION public.match_business_taxons_deterministic(p_query text, p_limit integer DEFAULT 10)\n RETURNS TABLE(taxon_id uuid, name text, slug text, level text, parent_id uuid, parent_name text, matched_aliases text[], match_source text, score numeric)\n LANGUAGE sql\n STABLE PARALLEL SAFE\n SET search_path TO \u0027public\u0027, \u0027extensions\u0027\nAS $function$\r\n  with params as (\r\n    select\r\n      p_query as q,\r\n      public.normalize_taxon_match_text(p_query) as q_norm,\r\n      greatest(1, least(coalesce(p_limit, 10), 50)) as limit_n\r\n    where public.normalize_taxon_match_text(p_query) is not null\r\n      and public.normalize_taxon_match_text(p_query) \u003c\u003e \u0027\u0027\r\n  ),\r\n\r\n  query_terms as (\r\n    select\r\n      q,\r\n      q_norm,\r\n      limit_n,\r\n      websearch_to_tsquery(\u0027portuguese\u0027::regconfig, q_norm) as tsq\r\n    from params\r\n  ),\r\n\r\n  taxons as (\r\n    select\r\n      bt.id as taxon_id,\r\n      bt.name,\r\n      bt.slug,\r\n      bt.level,\r\n      bt.parent_id,\r\n      parent.name as parent_name,\r\n      public.normalize_taxon_match_text(bt.name) as name_norm,\r\n      public.normalize_taxon_match_text(replace(bt.slug, \u0027-\u0027, \u0027 \u0027)) as slug_norm,\r\n      to_tsvector(\r\n        \u0027portuguese\u0027::regconfig,\r\n        public.normalize_taxon_match_text(bt.name) || \u0027 \u0027 || public.normalize_taxon_match_text(replace(bt.slug, \u0027-\u0027, \u0027 \u0027))\r\n      ) as search_vector\r\n    from public.business_taxons bt\r\n    left join public.business_taxons parent\r\n      on parent.id = bt.parent_id\r\n    where bt.is_active = true\r\n  ),\r\n\r\n  aliases as (\r\n    select\r\n      bta.id as alias_id,\r\n      bta.taxon_id,\r\n      bta.alias_text,\r\n      bta.alias_text_normalized,\r\n      to_tsvector(\u0027portuguese\u0027::regconfig, bta.alias_text_normalized) as search_vector\r\n    from public.business_taxon_aliases bta\r\n    join public.business_taxons bt\r\n      on bt.id = bta.taxon_id\r\n    where bta.is_active = true\r\n      and bt.is_active = true\r\n  ),\r\n\r\n  matches as (\r\n    select\r\n      a.taxon_id,\r\n      \u0027alias_exact\u0027::text as match_source,\r\n      1.00::numeric as score,\r\n      10::integer as priority,\r\n      a.alias_text as matched_alias\r\n    from query_terms q\r\n    join aliases a\r\n      on btrim(a.alias_text) = btrim(q.q)\r\n\r\n    union all\r\n\r\n    select\r\n      a.taxon_id,\r\n      \u0027alias_normalized\u0027::text as match_source,\r\n      0.98::numeric as score,\r\n      20::integer as priority,\r\n      a.alias_text as matched_alias\r\n    from query_terms q\r\n    join aliases a\r\n      on a.alias_text_normalized = q.q_norm\r\n\r\n    union all\r\n\r\n    select\r\n      t.taxon_id,\r\n      \u0027taxon_name_exact\u0027::text as match_source,\r\n      0.96::numeric as score,\r\n      30::integer as priority,\r\n      null::text as matched_alias\r\n    from query_terms q\r\n    join taxons t\r\n      on btrim(t.name) = btrim(q.q)\r\n\r\n    union all\r\n\r\n    select\r\n      t.taxon_id,\r\n      \u0027taxon_name_normalized\u0027::text as match_source,\r\n      0.94::numeric as score,\r\n      40::integer as priority,\r\n      null::text as matched_alias\r\n    from query_terms q\r\n    join taxons t\r\n      on t.name_norm = q.q_norm\r\n\r\n    union all\r\n\r\n    select\r\n      t.taxon_id,\r\n      \u0027taxon_slug_normalized\u0027::text as match_source,\r\n      0.92::numeric as score,\r\n      50::integer as priority,\r\n      null::text as matched_alias\r\n    from query_terms q\r\n    join taxons t\r\n      on t.slug_norm = q.q_norm\r\n\r\n    union all\r\n\r\n    select\r\n      t.taxon_id,\r\n      \u0027fts\u0027::text as match_source,\r\n      round((0.70 + least(ts_rank_cd(t.search_vector, q.tsq)::numeric, 0.20))::numeric, 4) as score,\r\n      60::integer as priority,\r\n      null::text as matched_alias\r\n    from query_terms q\r\n    join taxons t\r\n      on t.search_vector @@ q.tsq\r\n\r\n    union all\r\n\r\n    select\r\n      a.taxon_id,\r\n      \u0027fts\u0027::text as match_source,\r\n      round((0.70 + least(ts_rank_cd(a.search_vector, q.tsq)::numeric, 0.20))::numeric, 4) as score,\r\n      60::integer as priority,\r\n      a.alias_text as matched_alias\r\n    from query_terms q\r\n    join aliases a\r\n      on a.search_vector @@ q.tsq\r\n\r\n    union all\r\n\r\n    select\r\n      t.taxon_id,\r\n      \u0027trgm\u0027::text as match_source,\r\n      round(\r\n        (\r\n          0.50 + (\r\n            greatest(\r\n              similarity(t.name_norm, q.q_norm),\r\n              similarity(t.slug_norm, q.q_norm)\r\n            )::numeric * 0.30\r\n          )\r\n        )::numeric,\r\n        4\r\n      ) as score,\r\n      70::integer as priority,\r\n      null::text as matched_alias\r\n    from query_terms q\r\n    join taxons t\r\n      on greatest(\r\n        similarity(t.name_norm, q.q_norm),\r\n        similarity(t.slug_norm, q.q_norm)\r\n      ) \u003e= 0.35\r\n\r\n    union all\r\n\r\n    select\r\n      a.taxon_id,\r\n      \u0027trgm\u0027::text as match_source,\r\n      round((0.50 + (similarity(a.alias_text_normalized, q.q_norm)::numeric * 0.30))::numeric, 4) as score,\r\n      70::integer as priority,\r\n      a.alias_text as matched_alias\r\n    from query_terms q\r\n    join aliases a\r\n      on similarity(a.alias_text_normalized, q.q_norm) \u003e= 0.35\r\n  ),\r\n\r\n  candidate_scores as (\r\n    select\r\n      taxon_id,\r\n      max(score) as score,\r\n      min(priority) as best_priority,\r\n      coalesce(\r\n        array_remove(array_agg(distinct matched_alias), null),\r\n        array[]::text[]\r\n      ) as matched_aliases\r\n    from matches\r\n    group by taxon_id\r\n  ),\r\n\r\n  candidate_sources as (\r\n    select\r\n      taxon_id,\r\n      string_agg(match_source, \u0027+\u0027 order by priority) as match_source\r\n    from (\r\n      select\r\n        taxon_id,\r\n        match_source,\r\n        min(priority) as priority\r\n      from matches\r\n      group by taxon_id, match_source\r\n    ) s\r\n    group by taxon_id\r\n  )\r\n\r\n  select\r\n    t.taxon_id,\r\n    t.name,\r\n    t.slug,\r\n    t.level,\r\n    t.parent_id,\r\n    t.parent_name,\r\n    cs.matched_aliases,\r\n    src.match_source,\r\n    cs.score\r\n  from candidate_scores cs\r\n  join taxons t\r\n    on t.taxon_id = cs.taxon_id\r\n  join candidate_sources src\r\n    on src.taxon_id = cs.taxon_id\r\n  order by\r\n    cs.best_priority asc,\r\n    cs.score desc,\r\n    case t.level\r\n      when \u0027ultra_niche\u0027 then 1\r\n      when \u0027niche\u0027 then 2\r\n      when \u0027segment\u0027 then 3\r\n      else 9\r\n    end,\r\n    t.name asc\r\n  limit (select coalesce(max(limit_n), 0) from params);\r\n$function$\n",
+        "function_name":  "match_business_taxons_deterministic",
+        "identity_arguments":  "p_query text, p_limit integer",
+        "schema_name":  "public",
+        "security_definer":  false,
+        "settings":  [
+                         "search_path=public, extensions"
+                     ],
+        "volatility":  "s"
+    },
+    {
+        "definition":  "CREATE OR REPLACE FUNCTION public.normalize_taxon_match_text(input text)\n RETURNS text\n LANGUAGE sql\n IMMUTABLE PARALLEL SAFE STRICT\n SET search_path TO \u0027public\u0027, \u0027extensions\u0027\nAS $function$\r\n  select btrim(\r\n    regexp_replace(\r\n      translate(\r\n        lower(input),\r\n        \u0027áàãâäéèêëíìîïóòõôöúùûüçñ\u0027,\r\n        \u0027aaaaaeeeeiiiiooooouuuucn\u0027\r\n      ),\r\n      \u0027\\s+\u0027,\r\n      \u0027 \u0027,\r\n      \u0027g\u0027\r\n    )\r\n  );\r\n$function$\n",
+        "function_name":  "normalize_taxon_match_text",
+        "identity_arguments":  "input text",
+        "schema_name":  "public",
+        "security_definer":  false,
+        "settings":  [
+                         "search_path=public, extensions"
+                     ],
+        "volatility":  "i"
+    },
+    {
+        "definition":  "CREATE OR REPLACE FUNCTION public.plan_limit_is_unlimited(p_value integer)\n RETURNS boolean\n LANGUAGE sql\n IMMUTABLE\n SET search_path TO \u0027public\u0027, \u0027extensions\u0027\nAS $function$\r\n  select coalesce(p_value = -1, false)\r\n$function$\n",
+        "function_name":  "plan_limit_is_unlimited",
+        "identity_arguments":  "p_value integer",
+        "schema_name":  "public",
+        "security_definer":  false,
+        "settings":  [
+                         "search_path=public, extensions"
+                     ],
+        "volatility":  "i"
+    },
+    {
+        "definition":  "CREATE OR REPLACE FUNCTION public.plan_limit_value(p_value integer)\n RETURNS bigint\n LANGUAGE sql\n IMMUTABLE\n SET search_path TO \u0027public\u0027, \u0027extensions\u0027\nAS $function$\r\n  -- retorna um número alto quando for ilimitado (-1), senão o próprio valor\r\n  select case when p_value = -1 then 9223372036854775807 else p_value end\r\n$function$\n",
+        "function_name":  "plan_limit_value",
+        "identity_arguments":  "p_value integer",
+        "schema_name":  "public",
+        "security_definer":  false,
+        "settings":  [
+                         "search_path=public, extensions"
+                     ],
+        "volatility":  "i"
+    },
+    {
+        "definition":  "CREATE OR REPLACE FUNCTION public.protect_last_owner()\n RETURNS trigger\n LANGUAGE plpgsql\n SET search_path TO \u0027public\u0027, \u0027extensions\u0027\nAS $function$\r\nDECLARE\r\n  v_count int;\r\n  v_account uuid;\r\nBEGIN\r\n  IF TG_OP = \u0027DELETE\u0027 THEN\r\n    IF OLD.role = \u0027owner\u0027 AND OLD.status = \u0027active\u0027 THEN\r\n      v_account := OLD.account_id;\r\n      SELECT COUNT(*) INTO v_count\r\n      FROM public.account_users\r\n      WHERE account_id = v_account\r\n        AND user_id \u003c\u003e OLD.user_id\r\n        AND role = \u0027owner\u0027\r\n        AND status = \u0027active\u0027;\r\n      IF v_count = 0 THEN\r\n        RAISE EXCEPTION \u0027Operation blocked: cannot remove the last active owner of this account.\u0027;\r\n      END IF;\r\n    END IF;\r\n    RETURN OLD;\r\n  ELSIF TG_OP = \u0027UPDATE\u0027 THEN\r\n    v_account := OLD.account_id;\r\n    -- Vai deixar de ser owner ativo?\r\n    IF (OLD.role = \u0027owner\u0027 AND OLD.status = \u0027active\u0027) AND\r\n       (NEW.role IS DISTINCT FROM OLD.role AND NEW.role \u003c\u003e \u0027owner\u0027\r\n        OR NEW.status IS DISTINCT FROM OLD.status AND NEW.status \u003c\u003e \u0027active\u0027) THEN\r\n      SELECT COUNT(*) INTO v_count\r\n      FROM public.account_users\r\n      WHERE account_id = v_account\r\n        AND user_id \u003c\u003e OLD.user_id\r\n        AND role = \u0027owner\u0027\r\n        AND status = \u0027active\u0027;\r\n      IF v_count = 0 THEN\r\n        RAISE EXCEPTION \u0027Operation blocked: cannot demote or deactivate the last active owner of this account.\u0027;\r\n      END IF;\r\n    END IF;\r\n    RETURN NEW;\r\n  END IF;\r\n  RETURN NULL;\r\nEND\r\n$function$\n",
+        "function_name":  "protect_last_owner",
+        "identity_arguments":  "",
+        "schema_name":  "public",
+        "security_definer":  false,
+        "settings":  [
+                         "search_path=public, extensions"
+                     ],
+        "volatility":  "v"
+    },
+    {
+        "definition":  "CREATE OR REPLACE FUNCTION public.revoke_account_invite(p_account_id uuid, p_user_id uuid)\n RETURNS boolean\n LANGUAGE plpgsql\n SET search_path TO \u0027public\u0027, \u0027extensions\u0027\nAS $function$\r\ndeclare\r\n  v_can boolean;\r\n  v_row public.account_users%rowtype;\r\nbegin\r\n  -- Autorização: admin/owner da account OU super_admin\r\n  v_can := public.is_platform_admin() or public.has_account_min_role(p_account_id, \u0027admin\u0027);\r\n  if not v_can then\r\n    raise exception \u0027Sem permissão para revogar convites nesta conta.\u0027;\r\n  end if;\r\n\r\n  select * into v_row\r\n  from public.account_users\r\n  where account_id = p_account_id\r\n    and user_id    = p_user_id\r\n  for update;\r\n\r\n  if not found then\r\n    raise exception \u0027Vínculo/convite não encontrado.\u0027;\r\n  end if;\r\n\r\n  -- Se estava pendente, marca como \u0027revoked\u0027; se ativo, marca como \u0027inactive\u0027\r\n  update public.account_users\r\n     set status = case when v_row.status = \u0027pending\u0027 then \u0027revoked\u0027 else \u0027inactive\u0027 end\r\n   where id = v_row.id;\r\n\r\n  return true;\r\nend;\r\n$function$\n",
+        "function_name":  "revoke_account_invite",
+        "identity_arguments":  "p_account_id uuid, p_user_id uuid",
+        "schema_name":  "public",
+        "security_definer":  false,
+        "settings":  [
+                         "search_path=public, extensions"
+                     ],
+        "volatility":  "v"
+    },
+    {
+        "definition":  "CREATE OR REPLACE FUNCTION public.role_rank(p_role text)\n RETURNS integer\n LANGUAGE sql\n IMMUTABLE\n SET search_path TO \u0027public\u0027, \u0027extensions\u0027\nAS $function$\r\n  select case lower(trim(p_role))\r\n           when \u0027owner\u0027  then 4\r\n           when \u0027admin\u0027  then 3\r\n           when \u0027editor\u0027 then 2\r\n           when \u0027viewer\u0027 then 1\r\n           else 0\r\n         end;\r\n$function$\n",
+        "function_name":  "role_rank",
+        "identity_arguments":  "p_role text",
+        "schema_name":  "public",
+        "security_definer":  false,
+        "settings":  [
+                         "search_path=public, extensions"
+                     ],
+        "volatility":  "i"
+    },
+    {
+        "definition":  "CREATE OR REPLACE FUNCTION public.tg_account_users_normalize_role()\n RETURNS trigger\n LANGUAGE plpgsql\n SET search_path TO \u0027public\u0027, \u0027extensions\u0027\nAS $function$\r\nbegin\r\n  if new.role is not null then\r\n    new.role := lower(new.role);\r\n    if new.role = \u0027member\u0027 then\r\n      new.role := \u0027viewer\u0027;\r\n    end if;\r\n  end if;\r\n  if new.status is not null then\r\n    new.status := lower(new.status);\r\n  end if;\r\n  return new;\r\nend;\r\n$function$\n",
+        "function_name":  "tg_account_users_normalize_role",
+        "identity_arguments":  "",
+        "schema_name":  "public",
+        "security_definer":  false,
+        "settings":  [
+                         "search_path=public, extensions"
+                     ],
+        "volatility":  "v"
+    },
+    {
+        "definition":  "CREATE OR REPLACE FUNCTION public.tg_guard_accounts_transfer_owner()\n RETURNS trigger\n LANGUAGE plpgsql\n SET search_path TO \u0027public\u0027, \u0027extensions\u0027\nAS $function$\r\ndeclare\r\n  ok boolean;\r\nbegin\r\n  if (tg_op = \u0027UPDATE\u0027) then\r\n    if new.owner_user_id is distinct from old.owner_user_id then\r\n      if new.owner_user_id is null then\r\n        raise exception \u0027owner_user_id não pode ser nulo.\u0027;\r\n      end if;\r\n\r\n      -- O novo owner precisa já ser owner ativo na account (fluxo explícito)\r\n      select exists (\r\n        select 1\r\n        from public.account_users au\r\n        where au.account_id = new.id\r\n          and au.user_id    = new.owner_user_id\r\n          and au.status     = \u0027active\u0027\r\n          and lower(au.role)= \u0027owner\u0027\r\n      ) into ok;\r\n\r\n      if not ok then\r\n        raise exception \u0027Transferência inválida: o novo owner precisa estar como owner ativo em account_users.\u0027;\r\n      end if;\r\n    end if;\r\n  end if;\r\n\r\n  return new;\r\nend;\r\n$function$\n",
+        "function_name":  "tg_guard_accounts_transfer_owner",
+        "identity_arguments":  "",
+        "schema_name":  "public",
+        "security_definer":  false,
+        "settings":  [
+                         "search_path=public, extensions"
+                     ],
+        "volatility":  "v"
+    },
+    {
+        "definition":  "CREATE OR REPLACE FUNCTION public.tg_guard_last_owner()\n RETURNS trigger\n LANGUAGE plpgsql\n SET search_path TO \u0027public\u0027, \u0027extensions\u0027\nAS $function$\r\ndeclare\r\n  other_owners int;\r\nbegin\r\n  -- Caso DELETE de um vínculo owner ativo\r\n  if (tg_op = \u0027DELETE\u0027) then\r\n    if lower(coalesce(old.role,\u0027\u0027)) = \u0027owner\u0027 and coalesce(old.status,\u0027\u0027) = \u0027active\u0027 then\r\n      select count(*) into other_owners\r\n      from public.account_users au\r\n      where au.account_id = old.account_id\r\n        and au.user_id   \u003c\u003e old.user_id\r\n        and au.status     = \u0027active\u0027\r\n        and lower(au.role)= \u0027owner\u0027;\r\n\r\n      if other_owners = 0 then\r\n        raise exception \u0027Não é permitido remover o último owner ativo. Transfira a propriedade antes.\u0027;\r\n      end if;\r\n    end if;\r\n    return old;\r\n  end if;\r\n\r\n  -- Caso UPDATE que remova condição de owner ativo\r\n  if (tg_op = \u0027UPDATE\u0027) then\r\n    if lower(coalesce(old.role,\u0027\u0027)) = \u0027owner\u0027 and coalesce(old.status,\u0027\u0027) = \u0027active\u0027\r\n       and (\r\n         lower(coalesce(new.role,\u0027\u0027)) \u003c\u003e \u0027owner\u0027\r\n         or coalesce(new.status,\u0027\u0027)   \u003c\u003e \u0027active\u0027\r\n       )\r\n    then\r\n      select count(*) into other_owners\r\n      from public.account_users au\r\n      where au.account_id = old.account_id\r\n        and au.user_id   \u003c\u003e old.user_id\r\n        and au.status     = \u0027active\u0027\r\n        and lower(au.role)= \u0027owner\u0027;\r\n\r\n      if other_owners = 0 then\r\n        raise exception \u0027Não é permitido remover/downgradear o último owner ativo. Transfira a propriedade antes.\u0027;\r\n      end if;\r\n    end if;\r\n    return new;\r\n  end if;\r\n\r\n  return new;\r\nend;\r\n$function$\n",
+        "function_name":  "tg_guard_last_owner",
+        "identity_arguments":  "",
+        "schema_name":  "public",
+        "security_definer":  false,
+        "settings":  [
+                         "search_path=public, extensions"
+                     ],
+        "volatility":  "v"
+    },
+    {
+        "definition":  "CREATE OR REPLACE FUNCTION public.tg_partner_accounts_audit()\n RETURNS trigger\n LANGUAGE plpgsql\n SET search_path TO \u0027public\u0027, \u0027extensions\u0027\nAS $function$\r\nbegin\r\n  if (tg_op = \u0027INSERT\u0027) then\r\n    perform public.log_audit(\r\n      new.account_id, \u0027partner_accounts\u0027, new.account_id, \u0027link_partner\u0027, null,\r\n      jsonb_build_object(\u0027new\u0027, to_jsonb(new))\r\n    );\r\n    return new;\r\n  elsif (tg_op = \u0027UPDATE\u0027) then\r\n    perform public.log_audit(\r\n      new.account_id, \u0027partner_accounts\u0027, new.account_id, \u0027update_link\u0027, null,\r\n      jsonb_build_object(\u0027old\u0027, to_jsonb(old), \u0027new\u0027, to_jsonb(new))\r\n    );\r\n    return new;\r\n  elsif (tg_op = \u0027DELETE\u0027) then\r\n    perform public.log_audit(\r\n      old.account_id, \u0027partner_accounts\u0027, old.account_id, \u0027unlink_partner\u0027, null,\r\n      jsonb_build_object(\u0027old\u0027, to_jsonb(old))\r\n    );\r\n    return old;\r\n  end if;\r\n  return null;\r\nend;\r\n$function$\n",
+        "function_name":  "tg_partner_accounts_audit",
+        "identity_arguments":  "",
+        "schema_name":  "public",
+        "security_definer":  false,
+        "settings":  [
+                         "search_path=public, extensions"
+                     ],
+        "volatility":  "v"
+    },
+    {
+        "definition":  "CREATE OR REPLACE FUNCTION public.tg_set_updated_at()\n RETURNS trigger\n LANGUAGE plpgsql\n SET search_path TO \u0027public\u0027, \u0027extensions\u0027\nAS $function$\r\nbegin\r\n  new.updated_at := now();\r\n  return new;\r\nend;\r\n$function$\n",
+        "function_name":  "tg_set_updated_at",
+        "identity_arguments":  "",
+        "schema_name":  "public",
+        "security_definer":  false,
+        "settings":  [
+                         "search_path=public, extensions"
+                     ],
+        "volatility":  "v"
+    },
+    {
+        "definition":  "CREATE OR REPLACE FUNCTION public.trg_log_account_users()\n RETURNS trigger\n LANGUAGE plpgsql\n SET search_path TO \u0027public\u0027, \u0027extensions\u0027\nAS $function$\r\nDECLARE\r\n  v_action text;\r\n  v_new jsonb := to_jsonb(NEW);\r\n  v_old jsonb := to_jsonb(OLD);\r\nBEGIN\r\n  IF TG_OP = \u0027INSERT\u0027 THEN v_action := \u0027insert\u0027;\r\n  ELSIF TG_OP = \u0027UPDATE\u0027 THEN v_action := \u0027update\u0027;\r\n  ELSIF TG_OP = \u0027DELETE\u0027 THEN v_action := \u0027delete\u0027;\r\n  END IF;\r\n\r\n  PERFORM public.fn_write_audit_log(\r\n    \u0027account_users\u0027,\r\n    COALESCE(NEW.id, OLD.id),\r\n    v_action,\r\n    COALESCE(NEW.account_id, OLD.account_id),\r\n    jsonb_build_object(\u0027new\u0027, v_new, \u0027old\u0027, v_old)\r\n  );\r\n  RETURN COALESCE(NEW, OLD);\r\nEND;\r\n$function$\n",
+        "function_name":  "trg_log_account_users",
+        "identity_arguments":  "",
+        "schema_name":  "public",
+        "security_definer":  false,
+        "settings":  [
+                         "search_path=public, extensions"
+                     ],
+        "volatility":  "v"
+    },
+    {
+        "definition":  "CREATE OR REPLACE FUNCTION public.trg_log_accounts()\n RETURNS trigger\n LANGUAGE plpgsql\n SET search_path TO \u0027public\u0027, \u0027extensions\u0027\nAS $function$\r\nDECLARE\r\n  v_action text;\r\n  v_new jsonb := to_jsonb(NEW);\r\n  v_old jsonb := to_jsonb(OLD);\r\nBEGIN\r\n  IF TG_OP = \u0027INSERT\u0027 THEN v_action := \u0027insert\u0027;\r\n  ELSIF TG_OP = \u0027UPDATE\u0027 THEN v_action := \u0027update\u0027;\r\n  ELSIF TG_OP = \u0027DELETE\u0027 THEN v_action := \u0027delete\u0027;\r\n  END IF;\r\n\r\n  PERFORM public.fn_write_audit_log(\r\n    \u0027accounts\u0027,\r\n    COALESCE(NEW.id, OLD.id),\r\n    v_action,\r\n    COALESCE(NEW.id, OLD.id),\r\n    jsonb_build_object(\u0027new\u0027, v_new, \u0027old\u0027, v_old)\r\n  );\r\n  RETURN COALESCE(NEW, OLD);\r\nEND;\r\n$function$\n",
+        "function_name":  "trg_log_accounts",
+        "identity_arguments":  "",
+        "schema_name":  "public",
+        "security_definer":  false,
+        "settings":  [
+                         "search_path=public, extensions"
+                     ],
+        "volatility":  "v"
+    },
+    {
+        "definition":  "CREATE OR REPLACE FUNCTION public.trg_log_partner_accounts()\n RETURNS trigger\n LANGUAGE plpgsql\n SET search_path TO \u0027public\u0027, \u0027extensions\u0027\nAS $function$\r\nDECLARE\r\n  v_action text;\r\n  v_new jsonb := to_jsonb(NEW);\r\n  v_old jsonb := to_jsonb(OLD);\r\nBEGIN\r\n  IF TG_OP = \u0027INSERT\u0027 THEN v_action := \u0027insert\u0027;\r\n  ELSIF TG_OP = \u0027UPDATE\u0027 THEN v_action := \u0027update\u0027;\r\n  ELSIF TG_OP = \u0027DELETE\u0027 THEN v_action := \u0027delete\u0027;\r\n  END IF;\r\n\r\n  PERFORM public.fn_write_audit_log(\r\n    \u0027partner_accounts\u0027,\r\n    COALESCE(NEW.partner_id, OLD.partner_id),  -- PK composta; registramos o partner_id como referência principal\r\n    v_action,\r\n    COALESCE(NEW.account_id, OLD.account_id),\r\n    jsonb_build_object(\u0027new\u0027, v_new, \u0027old\u0027, v_old)\r\n  );\r\n  RETURN COALESCE(NEW, OLD);\r\nEND;\r\n$function$\n",
+        "function_name":  "trg_log_partner_accounts",
+        "identity_arguments":  "",
+        "schema_name":  "public",
+        "security_definer":  false,
+        "settings":  [
+                         "search_path=public, extensions"
+                     ],
+        "volatility":  "v"
+    }
+]
