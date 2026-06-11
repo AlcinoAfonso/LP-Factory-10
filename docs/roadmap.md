@@ -985,7 +985,7 @@ Ajustados:
 • Pendência operacional: aplicar e validar o SQL no Supabase; somente depois criar a migration histórica e atualizar o contrato de schema.
 • Pendência de produto: definir runtime e validação da geração/provider e regras de consumo antes da integração da E10.6 com artefatos gerados.
 • Updates previstos para a etapa técnica futura:
-• supa#40: criar snippets versionados de verificação após a definição do schema e da persistência dos artefatos.
+• supa#40: snippets operacional e de verificação preparados; aplicação e validação no Supabase pendentes.
 • supa#5: registrar geração, regeneração, falhas, duração, provider/modelo, versão das entradas e `request_id`, sem PII ou conteúdo integral.
 • supa#58: aplicar a regra global de GRANT explícito se forem criadas tabelas `public` acessadas pela Data API; não conceder grants automaticamente a tabelas internas.
 • vercel#1: avaliar AI Gateway quando provider e runtime de geração forem definidos.
