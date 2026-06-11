@@ -58,14 +58,14 @@ export default async function Page({ params }: PageProps) {
 
     return (
       <main className="bg-surface-app pb-12">
-        <div className="mx-auto max-w-6xl px-6 py-8">
-          {nicheResolution ? (
+        {nicheResolution ? (
+          <div className="mx-auto max-w-6xl px-6 py-8">
             <NicheResolutionCard
               accountSubdomain={accountSubdomain}
               resolution={nicheResolution}
             />
-          ) : null}
-        </div>
+          </div>
+        ) : null}
         {commercialPage ? (
           <CommercialPage accountName={accountName} page={commercialPage} />
         ) : null}

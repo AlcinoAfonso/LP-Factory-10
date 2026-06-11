@@ -15,7 +15,7 @@ export function CommercialPage({ accountName, page }: CommercialPageProps) {
   const nicheName = page.accountTaxonName ?? page.researchTaxonName;
   const contextLabel = nicheName
     ? `Nicho identificado: ${nicheName}`
-    : "Conteudo comercial geral";
+    : "Conteúdo comercial geral";
 
   return (
     <div className="overflow-hidden border-y border-surface-border bg-surface-base">
@@ -44,7 +44,7 @@ export function CommercialPage({ accountName, page }: CommercialPageProps) {
 
           <aside className="border-l-2 border-brand-500 pl-5">
             <p className="text-xs font-semibold uppercase text-graytech-600">
-              Proximo passo
+              Próximo passo
             </p>
             <p className="mt-2 text-base font-semibold text-ink-900">
               {accountName}
@@ -87,7 +87,7 @@ export function CommercialPage({ accountName, page }: CommercialPageProps) {
       <section className="border-y border-surface-border bg-ink-900 text-white">
         <div className="mx-auto grid max-w-6xl gap-8 px-6 py-12 md:grid-cols-[0.75fr_1.25fr] md:items-start">
           <div>
-            <p className="text-sm font-semibold text-brand-500">O que voce ganha</p>
+            <p className="text-sm font-semibold text-brand-500">O que você ganha</p>
             <h2 className="mt-2 text-2xl font-semibold leading-tight">
               Decisoes mais claras antes de publicar
             </h2>

@@ -7,7 +7,7 @@ import type {
 export const ACCOUNT_DASHBOARD_COMMERCIAL_PAGE_TEMPLATE = {
   key: "account_dashboard.commercial_page",
   version: 1,
-  name: "Account Dashboard - Pagina comercial",
+  name: "Account Dashboard - Página comercial",
   channel: "account_dashboard",
   objective: "commercial_page",
   audienceScope: "business_buyer",
@@ -24,21 +24,21 @@ export const ACCOUNT_DASHBOARD_COMMERCIAL_PAGE_TEMPLATE = {
 } as const satisfies CommercialTemplateDefinition;
 
 export const ACCOUNT_DASHBOARD_COMMERCIAL_PAGE_FALLBACK_CONTENT = {
-  headline: "Transforme sua comunicacao em uma entrega pronta para avancar",
+  headline: "Transforme sua comunicação em uma entrega pronta para avançar",
   primaryPromise:
-    "Organize sua mensagem comercial com clareza, foco e proximos passos objetivos.",
+    "Organize sua mensagem comercial com clareza, foco e próximos passos objetivos.",
   context:
-    "A LP Factory combina estrutura, orientacao comercial e execucao para ajudar sua empresa a apresentar melhor sua oferta.",
+    "A LP Factory combina estrutura, orientação comercial e execução para ajudar sua empresa a apresentar melhor sua oferta.",
   commercialCards: [
     {
       key: "landing_page",
       title: "Landing page comercial",
-      body: "Estruture uma pagina focada em apresentar sua oferta e conduzir o visitante para a proxima acao.",
+      body: "Estruture uma página focada em apresentar sua oferta e conduzir o visitante para a próxima ação.",
     },
     {
       key: "commercial_guidance",
-      title: "Orientacao de comunicacao",
-      body: "Organize promessa, beneficios e chamadas para acao antes de publicar ou investir em trafego.",
+      title: "Orientação de comunicação",
+      body: "Organize promessa, benefícios e chamadas para ação antes de publicar ou investir em tráfego.",
     },
     {
       key: "first_delivery",
@@ -48,17 +48,17 @@ export const ACCOUNT_DASHBOARD_COMMERCIAL_PAGE_FALLBACK_CONTENT = {
   ],
   primaryCta: {
     label: "Solicitar primeira entrega",
-    supportingText: "Inicie o briefing da sua primeira comunicacao comercial.",
+    supportingText: "Inicie o briefing da sua primeira comunicação comercial.",
   },
   secondaryCta: {
     label: "Falar com atendimento",
-    supportingText: "Tire duvidas antes de escolher o melhor proximo passo.",
+    supportingText: "Tire dúvidas antes de escolher o melhor próximo passo.",
   },
   proofOrBenefitBlocks: [
     {
       key: "clarity",
       title: "Mais clareza",
-      body: "Uma estrutura objetiva reduz duvidas sobre o que comunicar e como apresentar a oferta.",
+      body: "Uma estrutura objetiva reduz dúvidas sobre o que comunicar e como apresentar a oferta.",
     },
     {
       key: "speed",
@@ -73,13 +73,13 @@ export const ACCOUNT_DASHBOARD_COMMERCIAL_PAGE_GENERIC_RESEARCH = {
   strategic_core: [
     {
       key: "generic_positioning",
-      text: "Apresente a LP Factory como apoio para transformar uma oferta em uma entrega comercial clara e pronta para avancar.",
+      text: "Apresente a LP Factory como apoio para transformar uma oferta em uma entrega comercial clara e pronta para avançar.",
       priority: 100,
       sortOrder: 10,
     },
     {
       key: "generic_primary_promise",
-      text: "Destaque clareza, velocidade de preparacao e orientacao para conversao sem prometer resultados garantidos.",
+      text: "Destaque clareza, velocidade de preparação e orientação para conversão sem prometer resultados garantidos.",
       priority: 90,
       sortOrder: 20,
     },
@@ -87,7 +87,7 @@ export const ACCOUNT_DASHBOARD_COMMERCIAL_PAGE_GENERIC_RESEARCH = {
   lp_overview: [
     {
       key: "generic_narrative",
-      text: "Use narrativa direta, profissional e consultiva, com pouco jargao e foco no proximo passo comercial.",
+      text: "Use narrativa direta, profissional e consultiva, com pouco jargão e foco no próximo passo comercial.",
       priority: 100,
       sortOrder: 10,
     },
@@ -95,7 +95,7 @@ export const ACCOUNT_DASHBOARD_COMMERCIAL_PAGE_GENERIC_RESEARCH = {
   lp_sections: [
     {
       key: "generic_section_order",
-      text: "Organize a pagina em promessa, contexto, opcoes comerciais, beneficios ou provas e chamadas para acao.",
+      text: "Organize a página em promessa, contexto, opções comerciais, benefícios ou provas e chamadas para ação.",
       priority: 100,
       sortOrder: 10,
     },
@@ -103,7 +103,7 @@ export const ACCOUNT_DASHBOARD_COMMERCIAL_PAGE_GENERIC_RESEARCH = {
   seo: [
     {
       key: "generic_seo_scope",
-      text: "SEO nao e requisito da pagina interna; preserve apenas linguagem clara e termos compreensiveis para o comprador.",
+      text: "SEO não é requisito da página interna; preserve apenas linguagem clara e termos compreensíveis para o comprador.",
       priority: 50,
       sortOrder: 10,
     },
