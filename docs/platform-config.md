@@ -2,8 +2,8 @@
 
 0.1 Cabeçalho
 • Documento: LP Factory 10 — Platform Config
-• Versão: v0.1.2
-• Data: 27/05/2026
+• Versão: v0.1.3
+• Data: 11/06/2026
 
 0.2 Contrato do documento
 • O QUE É: snapshot operacional e fonte única das configurações de plataformas externas do LP Factory 10, refletindo o estado conhecido/cadastrado nas plataformas conforme indicado.
@@ -32,14 +32,14 @@
 • Regra: investigações operacionais podem usar GitHub Connector, GitHub Web ou `gh` autenticado no ambiente autorizado; não há secret nomeado `GH_TOKEN` registrado para essa finalidade neste documento.
 
 2.2 GitHub Actions
-• Secrets conhecidos:
+• Secrets e variáveis conhecidos:
 • `OPENAI_API_KEY`: usado por automações/CI que chamam OpenAI. Consumidor atual: `pipeline-supabase-inspect`.
 • `SUPABASE_DB_URL_READONLY`: conexão read-only para inspeções/automação de banco. Consumidores atuais: `pipeline-supabase-inspect` e `automation-niche-runtime-tests` quando houver verificação de banco.
 • `MAILBOX_EMAIL`: e-mail usado por automações de autenticação/mailbox. Consumidores atuais: `automation-validador-final` e `automation-niche-runtime-tests`.
 • `MAILBOX_PASSWORD`: senha/app password da mailbox usada por automações de autenticação/mailbox. Consumidores atuais: `automation-validador-final` e `automation-niche-runtime-tests`.
 • `SUPABASE_ACCESS_TOKEN`: token usado pelo workflow de apply de migrations Supabase.
 • `SUPABASE_DB_PASSWORD`: senha do banco usada pelo workflow de apply de migrations Supabase.
-• `SUPABASE_APPLY_MIGRATIONS_ENABLED`: variável/gate operacional para habilitar ou bloquear o apply automático de migrations.
+• `SUPABASE_APPLY_MIGRATIONS_ENABLED`: variável de repositório usada como gate operacional; o apply permanece bloqueado quando seu valor é diferente de `true`.
 • Regra: valores reais de secrets não devem ser versionados.
 • Regra: secrets de mailbox devem existir apenas nos escopos necessários dos workflows que os consomem.
 • Regra: `SUPABASE_DB_URL_READONLY` deve autenticar com role/usuário read-only e usar preferencialmente session pooler.
@@ -51,7 +51,16 @@
 • `.github/workflows/pipeline-docs-apply-report.yml`: aplicação automatizada de reports em documentos Markdown e criação de Pull Request automático.
 • `.github/workflows/automation-validador-final.yml`: validação ponta a ponta de fluxos reais de autenticação, com mailbox operacional via `MAILBOX_EMAIL` e `MAILBOX_PASSWORD`.
 • `.github/workflows/automation-niche-runtime-tests.yml`: testes runtime de criação de conta e preenchimento de `pending_setup`, com mailbox operacional e uso opcional de `SUPABASE_DB_URL_READONLY` conforme modo de verificação.
-• `.github/workflows/pipeline-supabase-apply-migrations.yml`: apply controlado de migrations Supabase em `main` quando há mudanças em `supabase/migrations/**`, com `workflow_dispatch` e gate por `SUPABASE_APPLY_MIGRATIONS_ENABLED`.
+• `.github/workflows/pipeline-supabase-apply-migrations.yml`: workflow preparado, mas não liberado, para apply controlado de migrations Supabase.
+• Gatilhos: push em `main` com mudanças em `supabase/migrations/**` e execução manual por `workflow_dispatch`.
+• Setup: `supabase/setup-cli` v2.1.1 fixada pelo SHA completo `3c2f5e2ae34c34e428e8e206e2c4d21fa2d20fbf`, com Supabase CLI `2.106.0`.
+• Motivo do pin por SHA: reprodutibilidade e proteção contra alteração futura da referência móvel `@v2`.
+• Gate: `SUPABASE_APPLY_MIGRATIONS_ENABLED` deve permanecer diferente de `true` até autorização operacional específica.
+• Com o gate fechado, um passo separado sem secrets registra `skipped`; a CLI não é instalada e `supabase link` e `supabase db push` não são executados.
+• `Setup Supabase CLI` e `Apply migrations` possuem condição explícita de gate aberto.
+• Secrets exigidos somente para apply autorizado com gate aberto: `SUPABASE_ACCESS_TOKEN` e `SUPABASE_DB_PASSWORD`, disponíveis apenas no passo `Apply migrations`.
+• Projeto alvo: definido no workflow por `SUPABASE_PROJECT_REF`; o valor não é credencial, mas deve apontar somente para o projeto aprovado.
+• A execução manual do workflow, mesmo com resultado esperado `skipped`, exige autorização explícita enquanto o fluxo não estiver liberado.
 • `.github/workflows/upgrade-next-16-1-1.yml`: manutenção de Next.js + lockfile.
 
 2.4 Mailbox operacional para automações
@@ -318,6 +327,12 @@
 • Configurações de plataformas, secrets por nome, workflows, ambientes e endpoints usados por automações devem ser registrados neste documento.
 
 99. Changelog
+v0.1.3 (11/06/2026) — Workflow de migrations Supabase reproduzível e mantido bloqueado
+• Registrados `supabase/setup-cli` v2.1.1 fixada por SHA completo, Supabase CLI `2.106.0`, gatilhos, secrets e variável de gate do workflow.
+• Documentado que gate fechado usa passo separado sem secrets, sem instalar a CLI nem executar `supabase link` ou `supabase db push`.
+• Restringidos os secrets de apply ao passo condicionado ao gate aberto.
+• Reforçado que o workflow e o apply automático ainda não estão liberados.
+
 v0.1.2 (27/05/2026) — Clarificação de snapshot operacional
 • Clarificado que o Platform Config reflete o estado conhecido/cadastrado nas plataformas.
 • Definida a leitura operacional para secrets, variáveis, workflows, endpoints e conectores listados.

@@ -2,8 +2,8 @@
 
 0.1. Cabeçalho
 • Documento: Base Técnica LP Factory 10
-• Versão: v2.0.38
-• Data: 09/06/2026
+• Versão: v2.0.39
+• Data: 11/06/2026
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -150,6 +150,20 @@
 • Secrets (job): OPENAI_API_KEY e SUPABASE_DB_URL_READONLY.
 • Detalhamento operacional, evolução funcional e posicionamento na camada de automações: consultar docs/automacoes.md.
 • Contrato técnico detalhado do pipeline: automations/supabase-inspect/README.md.
+
+3.4.4 Migrations Supabase versionadas
+• Fonte canônica: `supabase/migrations/`, com arquivos no padrão `<timestamp>_<nome>.sql`.
+• A baseline oficial é o ponto inicial do histórico versionado; alterações posteriores de schema devem entrar como migrations incrementais novas.
+• Migrations legadas preservadas fora de `supabase/migrations/` são somente evidência histórica e não integram o fluxo ativo da CLI.
+• Toda baseline ou migration incremental deve ser reconstruída e validada em ambiente isolado antes de qualquer apply remoto.
+• Antes de apply remoto, executar `supabase migration list --linked` e `supabase db push --linked --dry-run` e revisar exatamente as migrations pendentes.
+• O workflow `.github/workflows/pipeline-supabase-apply-migrations.yml` usa `supabase/setup-cli` v2.1.1 fixada pelo SHA completo `3c2f5e2ae34c34e428e8e206e2c4d21fa2d20fbf`, com Supabase CLI `2.106.0`.
+• A Action é fixada por SHA imutável para garantir reprodutibilidade e impedir mudança silenciosa da referência móvel `@v2`.
+• O workflow permanece bloqueado enquanto `SUPABASE_APPLY_MIGRATIONS_ENABLED` for diferente de `true`; gate fechado não autoriza apply automático.
+• Os secrets de apply ficam disponíveis somente no passo `Apply migrations`, condicionado explicitamente ao gate aberto.
+• Com gate fechado, um passo separado sem secrets registra o bloqueio e não instala a CLI nem executa `supabase link` ou `supabase db push`.
+• Alterar a versão da CLI, liberar o gate ou executar apply remoto exige revisão e autorização operacional próprias.
+• Configuração de gatilhos, secrets e variável do gate: ver `docs/platform-config.md`.
 
 3.5 Secrets & Variáveis
 • Código client nunca deve acessar secrets server-side.
@@ -432,6 +446,8 @@ Fonte normativa da allowlist SULB para exceções de Auth. Qualquer novo arquivo
 • Tipos canônicos e adapters vNext: validar por 3.6 e 3.14.
 
 99. Changelog
+v2.0.39 — 11/06/2026 — Registrado o fluxo canônico de migrations Supabase versionadas, com baseline, incrementais, validação isolada, dry-run obrigatório e workflow mantido sob gate fechado; `supabase/setup-cli` v2.1.1 fixada por SHA completo e CLI `2.106.0`.
+
 v2.0.38 — 09/06/2026 — Registrado o runtime inicial de `conversion-content`, com template comercial universal, resolução pura, adapter server-only, fallback hierárquico/genérico e grants read-only para pesquisa comercial.
 
 v2.0.37 — 08/06/2026 — Consolidadas em 3.3 as regras estruturais e registrada a family `conversion-content`.
