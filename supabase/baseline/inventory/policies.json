@@ -1,0 +1,562 @@
+[
+    {
+        "cmd":  "DELETE",
+        "permissive":  "PERMISSIVE",
+        "policyname":  "account_niche_resolutions_delete_admin_only",
+        "qual":  "(is_super_admin() OR is_platform_admin())",
+        "roles":  "{public}",
+        "schemaname":  "public",
+        "tablename":  "account_niche_resolutions",
+        "with_check":  null
+    },
+    {
+        "cmd":  "INSERT",
+        "permissive":  "PERMISSIVE",
+        "policyname":  "account_niche_resolutions_insert_admin_only",
+        "qual":  null,
+        "roles":  "{public}",
+        "schemaname":  "public",
+        "tablename":  "account_niche_resolutions",
+        "with_check":  "(is_super_admin() OR is_platform_admin())"
+    },
+    {
+        "cmd":  "SELECT",
+        "permissive":  "PERMISSIVE",
+        "policyname":  "account_niche_resolutions_select_admin_only",
+        "qual":  "(is_super_admin() OR is_platform_admin())",
+        "roles":  "{public}",
+        "schemaname":  "public",
+        "tablename":  "account_niche_resolutions",
+        "with_check":  null
+    },
+    {
+        "cmd":  "UPDATE",
+        "permissive":  "PERMISSIVE",
+        "policyname":  "account_niche_resolutions_update_admin_only",
+        "qual":  "(is_super_admin() OR is_platform_admin())",
+        "roles":  "{public}",
+        "schemaname":  "public",
+        "tablename":  "account_niche_resolutions",
+        "with_check":  "(is_super_admin() OR is_platform_admin())"
+    },
+    {
+        "cmd":  "INSERT",
+        "permissive":  "PERMISSIVE",
+        "policyname":  "account_profiles_insert_owner_admin_or_platform",
+        "qual":  null,
+        "roles":  "{public}",
+        "schemaname":  "public",
+        "tablename":  "account_profiles",
+        "with_check":  "(COALESCE(is_platform_admin(), false) OR (EXISTS ( SELECT 1\n   FROM account_users au\n  WHERE ((au.account_id = account_profiles.account_id) AND (au.user_id = auth.uid()) AND (au.status = \u0027active\u0027::text) AND (au.role = ANY (ARRAY[\u0027owner\u0027::text, \u0027admin\u0027::text]))))))"
+    },
+    {
+        "cmd":  "SELECT",
+        "permissive":  "PERMISSIVE",
+        "policyname":  "account_profiles_select_member_or_platform",
+        "qual":  "(COALESCE(is_platform_admin(), false) OR (EXISTS ( SELECT 1\n   FROM account_users au\n  WHERE ((au.account_id = account_profiles.account_id) AND (au.user_id = auth.uid()) AND (au.status = \u0027active\u0027::text)))))",
+        "roles":  "{public}",
+        "schemaname":  "public",
+        "tablename":  "account_profiles",
+        "with_check":  null
+    },
+    {
+        "cmd":  "UPDATE",
+        "permissive":  "PERMISSIVE",
+        "policyname":  "account_profiles_update_owner_admin_or_platform",
+        "qual":  "(COALESCE(is_platform_admin(), false) OR (EXISTS ( SELECT 1\n   FROM account_users au\n  WHERE ((au.account_id = account_profiles.account_id) AND (au.user_id = auth.uid()) AND (au.status = \u0027active\u0027::text) AND (au.role = ANY (ARRAY[\u0027owner\u0027::text, \u0027admin\u0027::text]))))))",
+        "roles":  "{public}",
+        "schemaname":  "public",
+        "tablename":  "account_profiles",
+        "with_check":  "(COALESCE(is_platform_admin(), false) OR (EXISTS ( SELECT 1\n   FROM account_users au\n  WHERE ((au.account_id = account_profiles.account_id) AND (au.user_id = auth.uid()) AND (au.status = \u0027active\u0027::text) AND (au.role = ANY (ARRAY[\u0027owner\u0027::text, \u0027admin\u0027::text]))))))"
+    },
+    {
+        "cmd":  "DELETE",
+        "permissive":  "PERMISSIVE",
+        "policyname":  "account_taxonomy_delete_admin_only",
+        "qual":  "(is_super_admin() OR is_platform_admin())",
+        "roles":  "{public}",
+        "schemaname":  "public",
+        "tablename":  "account_taxonomy",
+        "with_check":  null
+    },
+    {
+        "cmd":  "INSERT",
+        "permissive":  "PERMISSIVE",
+        "policyname":  "account_taxonomy_insert_admin_only",
+        "qual":  null,
+        "roles":  "{public}",
+        "schemaname":  "public",
+        "tablename":  "account_taxonomy",
+        "with_check":  "(is_super_admin() OR is_platform_admin())"
+    },
+    {
+        "cmd":  "SELECT",
+        "permissive":  "PERMISSIVE",
+        "policyname":  "account_taxonomy_select_admin_only",
+        "qual":  "(is_super_admin() OR is_platform_admin())",
+        "roles":  "{public}",
+        "schemaname":  "public",
+        "tablename":  "account_taxonomy",
+        "with_check":  null
+    },
+    {
+        "cmd":  "UPDATE",
+        "permissive":  "PERMISSIVE",
+        "policyname":  "account_taxonomy_update_admin_only",
+        "qual":  "(is_super_admin() OR is_platform_admin())",
+        "roles":  "{public}",
+        "schemaname":  "public",
+        "tablename":  "account_taxonomy",
+        "with_check":  "(is_super_admin() OR is_platform_admin())"
+    },
+    {
+        "cmd":  "DELETE",
+        "permissive":  "PERMISSIVE",
+        "policyname":  "account_users_delete_by_admins",
+        "qual":  "(is_admin_active(account_id, auth.uid()) OR is_platform_admin())",
+        "roles":  "{public}",
+        "schemaname":  "public",
+        "tablename":  "account_users",
+        "with_check":  null
+    },
+    {
+        "cmd":  "INSERT",
+        "permissive":  "PERMISSIVE",
+        "policyname":  "account_users_insert_by_admins",
+        "qual":  null,
+        "roles":  "{public}",
+        "schemaname":  "public",
+        "tablename":  "account_users",
+        "with_check":  "(is_admin_active(account_id, auth.uid()) OR is_platform_admin())"
+    },
+    {
+        "cmd":  "SELECT",
+        "permissive":  "PERMISSIVE",
+        "policyname":  "account_users_select_self_or_admin",
+        "qual":  "((user_id = auth.uid()) OR is_admin_active(account_id, auth.uid()) OR is_platform_admin())",
+        "roles":  "{public}",
+        "schemaname":  "public",
+        "tablename":  "account_users",
+        "with_check":  null
+    },
+    {
+        "cmd":  "UPDATE",
+        "permissive":  "PERMISSIVE",
+        "policyname":  "account_users_update_by_admins",
+        "qual":  "(is_admin_active(account_id, auth.uid()) OR is_platform_admin())",
+        "roles":  "{public}",
+        "schemaname":  "public",
+        "tablename":  "account_users",
+        "with_check":  "(is_admin_active(account_id, auth.uid()) OR is_platform_admin())"
+    },
+    {
+        "cmd":  "DELETE",
+        "permissive":  "PERMISSIVE",
+        "policyname":  "accounts_delete_by_admins",
+        "qual":  "(is_admin_active(id, auth.uid()) OR is_platform_admin())",
+        "roles":  "{public}",
+        "schemaname":  "public",
+        "tablename":  "accounts",
+        "with_check":  null
+    },
+    {
+        "cmd":  "INSERT",
+        "permissive":  "PERMISSIVE",
+        "policyname":  "accounts_insert_owner_only",
+        "qual":  null,
+        "roles":  "{public}",
+        "schemaname":  "public",
+        "tablename":  "accounts",
+        "with_check":  "((owner_user_id = auth.uid()) OR is_platform_admin())"
+    },
+    {
+        "cmd":  "SELECT",
+        "permissive":  "PERMISSIVE",
+        "policyname":  "accounts_select_active_members",
+        "qual":  "(is_member_active(id, auth.uid()) OR is_platform_admin())",
+        "roles":  "{public}",
+        "schemaname":  "public",
+        "tablename":  "accounts",
+        "with_check":  null
+    },
+    {
+        "cmd":  "UPDATE",
+        "permissive":  "PERMISSIVE",
+        "policyname":  "accounts_update_by_admins",
+        "qual":  "(is_admin_active(id, auth.uid()) OR is_platform_admin())",
+        "roles":  "{public}",
+        "schemaname":  "public",
+        "tablename":  "accounts",
+        "with_check":  "(is_admin_active(id, auth.uid()) OR is_platform_admin())"
+    },
+    {
+        "cmd":  "SELECT",
+        "permissive":  "PERMISSIVE",
+        "policyname":  "read_own_account_or_platform_admin",
+        "qual":  "(is_platform_admin() OR (account_id IN ( SELECT account_users.account_id\n   FROM account_users\n  WHERE ((account_users.user_id = auth.uid()) AND (account_users.status = \u0027active\u0027::text)))))",
+        "roles":  "{public}",
+        "schemaname":  "public",
+        "tablename":  "audit_logs",
+        "with_check":  null
+    },
+    {
+        "cmd":  "DELETE",
+        "permissive":  "PERMISSIVE",
+        "policyname":  "business_taxon_aliases_delete_admin_only",
+        "qual":  "(is_super_admin() OR is_platform_admin())",
+        "roles":  "{public}",
+        "schemaname":  "public",
+        "tablename":  "business_taxon_aliases",
+        "with_check":  null
+    },
+    {
+        "cmd":  "INSERT",
+        "permissive":  "PERMISSIVE",
+        "policyname":  "business_taxon_aliases_insert_admin_only",
+        "qual":  null,
+        "roles":  "{public}",
+        "schemaname":  "public",
+        "tablename":  "business_taxon_aliases",
+        "with_check":  "(is_super_admin() OR is_platform_admin())"
+    },
+    {
+        "cmd":  "SELECT",
+        "permissive":  "PERMISSIVE",
+        "policyname":  "business_taxon_aliases_select_admin_only",
+        "qual":  "(is_super_admin() OR is_platform_admin())",
+        "roles":  "{public}",
+        "schemaname":  "public",
+        "tablename":  "business_taxon_aliases",
+        "with_check":  null
+    },
+    {
+        "cmd":  "UPDATE",
+        "permissive":  "PERMISSIVE",
+        "policyname":  "business_taxon_aliases_update_admin_only",
+        "qual":  "(is_super_admin() OR is_platform_admin())",
+        "roles":  "{public}",
+        "schemaname":  "public",
+        "tablename":  "business_taxon_aliases",
+        "with_check":  "(is_super_admin() OR is_platform_admin())"
+    },
+    {
+        "cmd":  "DELETE",
+        "permissive":  "PERMISSIVE",
+        "policyname":  "business_taxons_delete_admin_only",
+        "qual":  "(is_super_admin() OR is_platform_admin())",
+        "roles":  "{public}",
+        "schemaname":  "public",
+        "tablename":  "business_taxons",
+        "with_check":  null
+    },
+    {
+        "cmd":  "INSERT",
+        "permissive":  "PERMISSIVE",
+        "policyname":  "business_taxons_insert_admin_only",
+        "qual":  null,
+        "roles":  "{public}",
+        "schemaname":  "public",
+        "tablename":  "business_taxons",
+        "with_check":  "(is_super_admin() OR is_platform_admin())"
+    },
+    {
+        "cmd":  "SELECT",
+        "permissive":  "PERMISSIVE",
+        "policyname":  "business_taxons_select_admin_only",
+        "qual":  "(is_super_admin() OR is_platform_admin())",
+        "roles":  "{public}",
+        "schemaname":  "public",
+        "tablename":  "business_taxons",
+        "with_check":  null
+    },
+    {
+        "cmd":  "UPDATE",
+        "permissive":  "PERMISSIVE",
+        "policyname":  "business_taxons_update_admin_only",
+        "qual":  "(is_super_admin() OR is_platform_admin())",
+        "roles":  "{public}",
+        "schemaname":  "public",
+        "tablename":  "business_taxons",
+        "with_check":  "(is_super_admin() OR is_platform_admin())"
+    },
+    {
+        "cmd":  "DELETE",
+        "permissive":  "PERMISSIVE",
+        "policyname":  "content_template_taxons_delete_admin_only",
+        "qual":  "(is_super_admin() OR is_platform_admin())",
+        "roles":  "{public}",
+        "schemaname":  "public",
+        "tablename":  "content_template_taxons",
+        "with_check":  null
+    },
+    {
+        "cmd":  "INSERT",
+        "permissive":  "PERMISSIVE",
+        "policyname":  "content_template_taxons_insert_admin_only",
+        "qual":  null,
+        "roles":  "{public}",
+        "schemaname":  "public",
+        "tablename":  "content_template_taxons",
+        "with_check":  "(is_super_admin() OR is_platform_admin())"
+    },
+    {
+        "cmd":  "SELECT",
+        "permissive":  "PERMISSIVE",
+        "policyname":  "content_template_taxons_select_admin_only",
+        "qual":  "(is_super_admin() OR is_platform_admin())",
+        "roles":  "{public}",
+        "schemaname":  "public",
+        "tablename":  "content_template_taxons",
+        "with_check":  null
+    },
+    {
+        "cmd":  "UPDATE",
+        "permissive":  "PERMISSIVE",
+        "policyname":  "content_template_taxons_update_admin_only",
+        "qual":  "(is_super_admin() OR is_platform_admin())",
+        "roles":  "{public}",
+        "schemaname":  "public",
+        "tablename":  "content_template_taxons",
+        "with_check":  "(is_super_admin() OR is_platform_admin())"
+    },
+    {
+        "cmd":  "DELETE",
+        "permissive":  "PERMISSIVE",
+        "policyname":  "content_templates_delete_admin_only",
+        "qual":  "(is_super_admin() OR is_platform_admin())",
+        "roles":  "{public}",
+        "schemaname":  "public",
+        "tablename":  "content_templates",
+        "with_check":  null
+    },
+    {
+        "cmd":  "INSERT",
+        "permissive":  "PERMISSIVE",
+        "policyname":  "content_templates_insert_admin_only",
+        "qual":  null,
+        "roles":  "{public}",
+        "schemaname":  "public",
+        "tablename":  "content_templates",
+        "with_check":  "(is_super_admin() OR is_platform_admin())"
+    },
+    {
+        "cmd":  "SELECT",
+        "permissive":  "PERMISSIVE",
+        "policyname":  "content_templates_select_admin_only",
+        "qual":  "(is_super_admin() OR is_platform_admin())",
+        "roles":  "{public}",
+        "schemaname":  "public",
+        "tablename":  "content_templates",
+        "with_check":  null
+    },
+    {
+        "cmd":  "UPDATE",
+        "permissive":  "PERMISSIVE",
+        "policyname":  "content_templates_update_admin_only",
+        "qual":  "(is_super_admin() OR is_platform_admin())",
+        "roles":  "{public}",
+        "schemaname":  "public",
+        "tablename":  "content_templates",
+        "with_check":  "(is_super_admin() OR is_platform_admin())"
+    },
+    {
+        "cmd":  "DELETE",
+        "permissive":  "PERMISSIVE",
+        "policyname":  "pa_delete_admin_or_platform",
+        "qual":  "(is_admin_active(account_id, auth.uid()) OR is_platform_admin())",
+        "roles":  "{public}",
+        "schemaname":  "public",
+        "tablename":  "partner_accounts",
+        "with_check":  null
+    },
+    {
+        "cmd":  "INSERT",
+        "permissive":  "PERMISSIVE",
+        "policyname":  "pa_insert_admin_or_platform",
+        "qual":  null,
+        "roles":  "{public}",
+        "schemaname":  "public",
+        "tablename":  "partner_accounts",
+        "with_check":  "(is_admin_active(account_id, auth.uid()) OR is_platform_admin())"
+    },
+    {
+        "cmd":  "SELECT",
+        "permissive":  "PERMISSIVE",
+        "policyname":  "pa_select_admin_or_platform",
+        "qual":  "(is_admin_active(account_id, auth.uid()) OR is_platform_admin())",
+        "roles":  "{public}",
+        "schemaname":  "public",
+        "tablename":  "partner_accounts",
+        "with_check":  null
+    },
+    {
+        "cmd":  "UPDATE",
+        "permissive":  "PERMISSIVE",
+        "policyname":  "pa_update_admin_or_platform",
+        "qual":  "(is_admin_active(account_id, auth.uid()) OR is_platform_admin())",
+        "roles":  "{public}",
+        "schemaname":  "public",
+        "tablename":  "partner_accounts",
+        "with_check":  "(is_admin_active(account_id, auth.uid()) OR is_platform_admin())"
+    },
+    {
+        "cmd":  "SELECT",
+        "permissive":  "PERMISSIVE",
+        "policyname":  "partners: readable by linked accounts",
+        "qual":  "(EXISTS ( SELECT 1\n   FROM (partner_accounts pa\n     JOIN account_users au ON ((pa.account_id = au.account_id)))\n  WHERE ((pa.partner_id = partners.id) AND (au.user_id = auth.uid()))))",
+        "roles":  "{public}",
+        "schemaname":  "public",
+        "tablename":  "partners",
+        "with_check":  null
+    },
+    {
+        "cmd":  "ALL",
+        "permissive":  "PERMISSIVE",
+        "policyname":  "partners_modify_super_admin_only",
+        "qual":  "is_platform_admin()",
+        "roles":  "{public}",
+        "schemaname":  "public",
+        "tablename":  "partners",
+        "with_check":  "is_platform_admin()"
+    },
+    {
+        "cmd":  "SELECT",
+        "permissive":  "PERMISSIVE",
+        "policyname":  "partners_select_super_admin_only",
+        "qual":  "is_platform_admin()",
+        "roles":  "{public}",
+        "schemaname":  "public",
+        "tablename":  "partners",
+        "with_check":  null
+    },
+    {
+        "cmd":  "SELECT",
+        "permissive":  "PERMISSIVE",
+        "policyname":  "plans_select_auth",
+        "qual":  "((auth.role() = \u0027authenticated\u0027::text) OR is_platform_admin())",
+        "roles":  "{public}",
+        "schemaname":  "public",
+        "tablename":  "plans",
+        "with_check":  null
+    },
+    {
+        "cmd":  "DELETE",
+        "permissive":  "PERMISSIVE",
+        "policyname":  "taxon_market_research_delete_admin_only",
+        "qual":  "(is_super_admin() OR is_platform_admin())",
+        "roles":  "{public}",
+        "schemaname":  "public",
+        "tablename":  "taxon_market_research",
+        "with_check":  null
+    },
+    {
+        "cmd":  "INSERT",
+        "permissive":  "PERMISSIVE",
+        "policyname":  "taxon_market_research_insert_admin_only",
+        "qual":  null,
+        "roles":  "{public}",
+        "schemaname":  "public",
+        "tablename":  "taxon_market_research",
+        "with_check":  "(is_super_admin() OR is_platform_admin())"
+    },
+    {
+        "cmd":  "SELECT",
+        "permissive":  "PERMISSIVE",
+        "policyname":  "taxon_market_research_select_admin_only",
+        "qual":  "(is_super_admin() OR is_platform_admin())",
+        "roles":  "{public}",
+        "schemaname":  "public",
+        "tablename":  "taxon_market_research",
+        "with_check":  null
+    },
+    {
+        "cmd":  "UPDATE",
+        "permissive":  "PERMISSIVE",
+        "policyname":  "taxon_market_research_update_admin_only",
+        "qual":  "(is_super_admin() OR is_platform_admin())",
+        "roles":  "{public}",
+        "schemaname":  "public",
+        "tablename":  "taxon_market_research",
+        "with_check":  "(is_super_admin() OR is_platform_admin())"
+    },
+    {
+        "cmd":  "DELETE",
+        "permissive":  "PERMISSIVE",
+        "policyname":  "taxon_market_research_items_delete_admin_only",
+        "qual":  "(is_super_admin() OR is_platform_admin())",
+        "roles":  "{public}",
+        "schemaname":  "public",
+        "tablename":  "taxon_market_research_items",
+        "with_check":  null
+    },
+    {
+        "cmd":  "INSERT",
+        "permissive":  "PERMISSIVE",
+        "policyname":  "taxon_market_research_items_insert_admin_only",
+        "qual":  null,
+        "roles":  "{public}",
+        "schemaname":  "public",
+        "tablename":  "taxon_market_research_items",
+        "with_check":  "(is_super_admin() OR is_platform_admin())"
+    },
+    {
+        "cmd":  "SELECT",
+        "permissive":  "PERMISSIVE",
+        "policyname":  "taxon_market_research_items_select_admin_only",
+        "qual":  "(is_super_admin() OR is_platform_admin())",
+        "roles":  "{public}",
+        "schemaname":  "public",
+        "tablename":  "taxon_market_research_items",
+        "with_check":  null
+    },
+    {
+        "cmd":  "UPDATE",
+        "permissive":  "PERMISSIVE",
+        "policyname":  "taxon_market_research_items_update_admin_only",
+        "qual":  "(is_super_admin() OR is_platform_admin())",
+        "roles":  "{public}",
+        "schemaname":  "public",
+        "tablename":  "taxon_market_research_items",
+        "with_check":  "(is_super_admin() OR is_platform_admin())"
+    },
+    {
+        "cmd":  "DELETE",
+        "permissive":  "PERMISSIVE",
+        "policyname":  "taxon_message_guides_delete_admin_only",
+        "qual":  "(is_super_admin() OR is_platform_admin())",
+        "roles":  "{public}",
+        "schemaname":  "public",
+        "tablename":  "taxon_message_guides",
+        "with_check":  null
+    },
+    {
+        "cmd":  "INSERT",
+        "permissive":  "PERMISSIVE",
+        "policyname":  "taxon_message_guides_insert_admin_only",
+        "qual":  null,
+        "roles":  "{public}",
+        "schemaname":  "public",
+        "tablename":  "taxon_message_guides",
+        "with_check":  "(is_super_admin() OR is_platform_admin())"
+    },
+    {
+        "cmd":  "SELECT",
+        "permissive":  "PERMISSIVE",
+        "policyname":  "taxon_message_guides_select_admin_only",
+        "qual":  "(is_super_admin() OR is_platform_admin())",
+        "roles":  "{public}",
+        "schemaname":  "public",
+        "tablename":  "taxon_message_guides",
+        "with_check":  null
+    },
+    {
+        "cmd":  "UPDATE",
+        "permissive":  "PERMISSIVE",
+        "policyname":  "taxon_message_guides_update_admin_only",
+        "qual":  "(is_super_admin() OR is_platform_admin())",
+        "roles":  "{public}",
+        "schemaname":  "public",
+        "tablename":  "taxon_message_guides",
+        "with_check":  "(is_super_admin() OR is_platform_admin())"
+    }
+]

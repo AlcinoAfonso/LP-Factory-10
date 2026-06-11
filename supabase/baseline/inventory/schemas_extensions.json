@@ -1,0 +1,62 @@
+[
+    {
+        "extension_name":  null,
+        "extension_version":  null,
+        "schema_name":  "auth"
+    },
+    {
+        "extension_name":  "pg_stat_statements",
+        "extension_version":  "1.11",
+        "schema_name":  "extensions"
+    },
+    {
+        "extension_name":  "pg_trgm",
+        "extension_version":  "1.6",
+        "schema_name":  "extensions"
+    },
+    {
+        "extension_name":  "pgcrypto",
+        "extension_version":  "1.3",
+        "schema_name":  "extensions"
+    },
+    {
+        "extension_name":  "uuid-ossp",
+        "extension_version":  "1.1",
+        "schema_name":  "extensions"
+    },
+    {
+        "extension_name":  "pg_graphql",
+        "extension_version":  "1.5.11",
+        "schema_name":  "graphql"
+    },
+    {
+        "extension_name":  null,
+        "extension_version":  null,
+        "schema_name":  "graphql_public"
+    },
+    {
+        "extension_name":  null,
+        "extension_version":  null,
+        "schema_name":  "internal"
+    },
+    {
+        "extension_name":  null,
+        "extension_version":  null,
+        "schema_name":  "public"
+    },
+    {
+        "extension_name":  null,
+        "extension_version":  null,
+        "schema_name":  "realtime"
+    },
+    {
+        "extension_name":  null,
+        "extension_version":  null,
+        "schema_name":  "storage"
+    },
+    {
+        "extension_name":  "supabase_vault",
+        "extension_version":  "0.3.1",
+        "schema_name":  "vault"
+    }
+]

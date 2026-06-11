@@ -1,0 +1,47 @@
+[
+    {
+        "definition":  " SELECT a.id AS account_id,\n    a.subdomain AS account_key,\n    a.status AS account_status,\n    au.user_id,\n    au.role AS member_role,\n    au.status AS member_status,\n    COALESCE((a.status = ANY (ARRAY[\u0027active\u0027::text, \u0027pending_setup\u0027::text])) AND au.status = \u0027active\u0027::text, false) AS allow,\n        CASE\n            WHEN NOT (a.status = ANY (ARRAY[\u0027active\u0027::text, \u0027pending_setup\u0027::text])) THEN \u0027account_blocked\u0027::text\n            WHEN au.user_id IS NULL THEN \u0027no_membership\u0027::text\n            WHEN au.status \u003c\u003e \u0027active\u0027::text THEN \u0027member_inactive\u0027::text\n            ELSE NULL::text\n        END AS reason,\n    a.name AS account_name,\n    a.setup_completed_at AS account_setup_completed_at\n   FROM accounts a\n     LEFT JOIN account_users au ON au.account_id = a.id AND au.user_id = auth.uid();",
+        "relkind":  "v",
+        "reloptions":  [
+                           "security_invoker=true"
+                       ],
+        "schema_name":  "public",
+        "view_name":  "v_access_context_v2"
+    },
+    {
+        "definition":  " SELECT a.id AS account_id,\n    a.name AS account_name,\n    a.status AS account_status,\n    a.subdomain,\n    a.domain,\n    a.plan_id,\n    p.name AS plan_name,\n    p.price_monthly,\n    p.features AS plan_features,\n    p.max_lps,\n    p.max_conversions,\n    plan_limit_is_unlimited(p.max_lps) AS max_lps_unlimited,\n    plan_limit_value(p.max_lps) AS max_lps_effective,\n    plan_limit_is_unlimited(p.max_conversions) AS max_conversions_unlimited,\n    plan_limit_value(p.max_conversions) AS max_conversions_effective,\n    a.created_at,\n    a.updated_at\n   FROM accounts a\n     JOIN plans p ON p.id = a.plan_id;",
+        "relkind":  "v",
+        "reloptions":  [
+                           "security_invoker=true"
+                       ],
+        "schema_name":  "public",
+        "view_name":  "v_account_effective_limits"
+    },
+    {
+        "definition":  " SELECT account_id,\n    account_name,\n    account_status,\n    subdomain,\n    domain,\n    plan_id,\n    plan_name,\n    price_monthly,\n    plan_features,\n    max_lps,\n    max_conversions,\n    max_lps_unlimited,\n    max_lps_effective,\n    max_conversions_unlimited,\n    max_conversions_effective,\n    created_at,\n    updated_at\n   FROM v_account_effective_limits v\n  WHERE is_platform_admin() OR is_member_active(account_id, auth.uid());",
+        "relkind":  "v",
+        "reloptions":  [
+                           "security_invoker=true"
+                       ],
+        "schema_name":  "public",
+        "view_name":  "v_account_effective_limits_secure"
+    },
+    {
+        "definition":  " SELECT id,\n    table_name AS entity,\n    record_id AS entity_id,\n    action,\n    changes_json AS diff,\n    account_id,\n    actor_user_id,\n    ip_address,\n    created_at\n   FROM audit_logs al;",
+        "relkind":  "v",
+        "reloptions":  [
+                           "security_invoker=true"
+                       ],
+        "schema_name":  "public",
+        "view_name":  "v_audit_logs_norm"
+    },
+    {
+        "definition":  " SELECT v.account_id,\n    v.account_name,\n    v.account_key AS account_subdomain,\n    v.account_status,\n    v.member_role,\n    v.member_status,\n    a.created_at\n   FROM v_access_context_v2 v\n     JOIN accounts a ON a.id = v.account_id\n  WHERE v.allow = true AND v.user_id = auth.uid();",
+        "relkind":  "v",
+        "reloptions":  [
+                           "security_invoker=true"
+                       ],
+        "schema_name":  "public",
+        "view_name":  "v_user_accounts_list"
+    }
+]

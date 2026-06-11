@@ -1,0 +1,93 @@
+[
+    {
+        "definition":  "CREATE TRIGGER account_niche_resolutions_set_updated_at BEFORE UPDATE ON account_niche_resolutions FOR EACH ROW EXECUTE FUNCTION tg_set_updated_at()",
+        "schema_name":  "public",
+        "table_name":  "account_niche_resolutions",
+        "tgenabled":  "O",
+        "trigger_name":  "account_niche_resolutions_set_updated_at"
+    },
+    {
+        "definition":  "CREATE TRIGGER tg_account_users_hub BEFORE INSERT OR DELETE OR UPDATE ON account_users FOR EACH ROW EXECUTE FUNCTION hub_router()",
+        "schema_name":  "public",
+        "table_name":  "account_users",
+        "tgenabled":  "O",
+        "trigger_name":  "tg_account_users_hub"
+    },
+    {
+        "definition":  "CREATE TRIGGER trg_account_users_guard_last_owner BEFORE DELETE OR UPDATE ON account_users FOR EACH ROW EXECUTE FUNCTION tg_guard_last_owner()",
+        "schema_name":  "public",
+        "table_name":  "account_users",
+        "tgenabled":  "D",
+        "trigger_name":  "trg_account_users_guard_last_owner"
+    },
+    {
+        "definition":  "CREATE TRIGGER trg_account_users_normalize_role BEFORE INSERT OR UPDATE ON account_users FOR EACH ROW EXECUTE FUNCTION tg_account_users_normalize_role()",
+        "schema_name":  "public",
+        "table_name":  "account_users",
+        "tgenabled":  "D",
+        "trigger_name":  "trg_account_users_normalize_role"
+    },
+    {
+        "definition":  "CREATE TRIGGER trg_audit_account_users AFTER INSERT OR DELETE OR UPDATE ON account_users FOR EACH ROW EXECUTE FUNCTION audit_account_users()",
+        "schema_name":  "public",
+        "table_name":  "account_users",
+        "tgenabled":  "D",
+        "trigger_name":  "trg_audit_account_users"
+    },
+    {
+        "definition":  "CREATE TRIGGER trg_protect_last_owner BEFORE DELETE OR UPDATE ON account_users FOR EACH ROW EXECUTE FUNCTION protect_last_owner()",
+        "schema_name":  "public",
+        "table_name":  "account_users",
+        "tgenabled":  "D",
+        "trigger_name":  "trg_protect_last_owner"
+    },
+    {
+        "definition":  "CREATE TRIGGER tg_accounts_hub BEFORE INSERT OR DELETE OR UPDATE ON accounts FOR EACH ROW EXECUTE FUNCTION hub_router()",
+        "schema_name":  "public",
+        "table_name":  "accounts",
+        "tgenabled":  "O",
+        "trigger_name":  "tg_accounts_hub"
+    },
+    {
+        "definition":  "CREATE TRIGGER trg_accounts_guard_transfer_owner BEFORE UPDATE ON accounts FOR EACH ROW EXECUTE FUNCTION tg_guard_accounts_transfer_owner()",
+        "schema_name":  "public",
+        "table_name":  "accounts",
+        "tgenabled":  "D",
+        "trigger_name":  "trg_accounts_guard_transfer_owner"
+    },
+    {
+        "definition":  "CREATE TRIGGER trg_accounts_set_updated_at BEFORE UPDATE ON accounts FOR EACH ROW EXECUTE FUNCTION tg_set_updated_at()",
+        "schema_name":  "public",
+        "table_name":  "accounts",
+        "tgenabled":  "D",
+        "trigger_name":  "trg_accounts_set_updated_at"
+    },
+    {
+        "definition":  "CREATE TRIGGER trg_audit_accounts AFTER INSERT OR DELETE OR UPDATE ON accounts FOR EACH ROW EXECUTE FUNCTION audit_accounts()",
+        "schema_name":  "public",
+        "table_name":  "accounts",
+        "tgenabled":  "D",
+        "trigger_name":  "trg_audit_accounts"
+    },
+    {
+        "definition":  "CREATE TRIGGER tg_partner_accounts_hub BEFORE INSERT OR DELETE OR UPDATE ON partner_accounts FOR EACH ROW EXECUTE FUNCTION hub_router()",
+        "schema_name":  "public",
+        "table_name":  "partner_accounts",
+        "tgenabled":  "O",
+        "trigger_name":  "tg_partner_accounts_hub"
+    },
+    {
+        "definition":  "CREATE TRIGGER trg_audit_partner_accounts AFTER INSERT OR DELETE OR UPDATE ON partner_accounts FOR EACH ROW EXECUTE FUNCTION audit_partner_accounts()",
+        "schema_name":  "public",
+        "table_name":  "partner_accounts",
+        "tgenabled":  "D",
+        "trigger_name":  "trg_audit_partner_accounts"
+    },
+    {
+        "definition":  "CREATE TRIGGER trg_partner_accounts_audit AFTER INSERT OR DELETE OR UPDATE ON partner_accounts FOR EACH ROW EXECUTE FUNCTION tg_partner_accounts_audit()",
+        "schema_name":  "public",
+        "table_name":  "partner_accounts",
+        "tgenabled":  "D",
+        "trigger_name":  "trg_partner_accounts_audit"
+    }
+]

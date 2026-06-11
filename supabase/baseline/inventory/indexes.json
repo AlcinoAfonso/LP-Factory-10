@@ -1,0 +1,344 @@
+[
+    {
+        "indexdef":  "CREATE INDEX account_niche_resolutions_ai_suggested_taxon_id_idx ON public.account_niche_resolutions USING btree (ai_suggested_taxon_id)",
+        "indexname":  "account_niche_resolutions_ai_suggested_taxon_id_idx",
+        "schemaname":  "public",
+        "tablename":  "account_niche_resolutions"
+    },
+    {
+        "indexdef":  "CREATE UNIQUE INDEX account_niche_resolutions_pkey ON public.account_niche_resolutions USING btree (account_id)",
+        "indexname":  "account_niche_resolutions_pkey",
+        "schemaname":  "public",
+        "tablename":  "account_niche_resolutions"
+    },
+    {
+        "indexdef":  "CREATE INDEX account_niche_resolutions_selected_taxon_id_idx ON public.account_niche_resolutions USING btree (selected_taxon_id)",
+        "indexname":  "account_niche_resolutions_selected_taxon_id_idx",
+        "schemaname":  "public",
+        "tablename":  "account_niche_resolutions"
+    },
+    {
+        "indexdef":  "CREATE INDEX account_niche_resolutions_user_selected_taxon_id_idx ON public.account_niche_resolutions USING btree (user_selected_taxon_id)",
+        "indexname":  "account_niche_resolutions_user_selected_taxon_id_idx",
+        "schemaname":  "public",
+        "tablename":  "account_niche_resolutions"
+    },
+    {
+        "indexdef":  "CREATE UNIQUE INDEX account_profiles_pkey ON public.account_profiles USING btree (account_id)",
+        "indexname":  "account_profiles_pkey",
+        "schemaname":  "public",
+        "tablename":  "account_profiles"
+    },
+    {
+        "indexdef":  "CREATE INDEX account_taxonomy_account_id_idx ON public.account_taxonomy USING btree (account_id)",
+        "indexname":  "account_taxonomy_account_id_idx",
+        "schemaname":  "public",
+        "tablename":  "account_taxonomy"
+    },
+    {
+        "indexdef":  "CREATE UNIQUE INDEX account_taxonomy_account_taxon_uidx ON public.account_taxonomy USING btree (account_id, taxon_id)",
+        "indexname":  "account_taxonomy_account_taxon_uidx",
+        "schemaname":  "public",
+        "tablename":  "account_taxonomy"
+    },
+    {
+        "indexdef":  "CREATE UNIQUE INDEX account_taxonomy_pkey ON public.account_taxonomy USING btree (id)",
+        "indexname":  "account_taxonomy_pkey",
+        "schemaname":  "public",
+        "tablename":  "account_taxonomy"
+    },
+    {
+        "indexdef":  "CREATE INDEX account_taxonomy_taxon_id_idx ON public.account_taxonomy USING btree (taxon_id)",
+        "indexname":  "account_taxonomy_taxon_id_idx",
+        "schemaname":  "public",
+        "tablename":  "account_taxonomy"
+    },
+    {
+        "indexdef":  "CREATE UNIQUE INDEX account_users_account_user_unique ON public.account_users USING btree (account_id, user_id)",
+        "indexname":  "account_users_account_user_unique",
+        "schemaname":  "public",
+        "tablename":  "account_users"
+    },
+    {
+        "indexdef":  "CREATE UNIQUE INDEX account_users_pkey ON public.account_users USING btree (id)",
+        "indexname":  "account_users_pkey",
+        "schemaname":  "public",
+        "tablename":  "account_users"
+    },
+    {
+        "indexdef":  "CREATE INDEX idx_account_users_active_user_account ON public.account_users USING btree (user_id, account_id) WHERE (status = \u0027active\u0027::text)",
+        "indexname":  "idx_account_users_active_user_account",
+        "schemaname":  "public",
+        "tablename":  "account_users"
+    },
+    {
+        "indexdef":  "CREATE UNIQUE INDEX idx_one_owner_per_account ON public.account_users USING btree (account_id) WHERE ((lower(role) = \u0027owner\u0027::text) AND (status = \u0027active\u0027::text))",
+        "indexname":  "idx_one_owner_per_account",
+        "schemaname":  "public",
+        "tablename":  "account_users"
+    },
+    {
+        "indexdef":  "CREATE UNIQUE INDEX accounts_domain_unique ON public.accounts USING btree (domain)",
+        "indexname":  "accounts_domain_unique",
+        "schemaname":  "public",
+        "tablename":  "accounts"
+    },
+    {
+        "indexdef":  "CREATE INDEX accounts_name_gin_idx ON public.accounts USING gin (to_tsvector(\u0027portuguese\u0027::regconfig, name))",
+        "indexname":  "accounts_name_gin_idx",
+        "schemaname":  "public",
+        "tablename":  "accounts"
+    },
+    {
+        "indexdef":  "CREATE UNIQUE INDEX accounts_pkey ON public.accounts USING btree (id)",
+        "indexname":  "accounts_pkey",
+        "schemaname":  "public",
+        "tablename":  "accounts"
+    },
+    {
+        "indexdef":  "CREATE UNIQUE INDEX accounts_subdomain_unique ON public.accounts USING btree (subdomain)",
+        "indexname":  "accounts_subdomain_unique",
+        "schemaname":  "public",
+        "tablename":  "accounts"
+    },
+    {
+        "indexdef":  "CREATE INDEX idx_accounts_plan_id ON public.accounts USING btree (plan_id)",
+        "indexname":  "idx_accounts_plan_id",
+        "schemaname":  "public",
+        "tablename":  "accounts"
+    },
+    {
+        "indexdef":  "CREATE INDEX idx_accounts_status ON public.accounts USING btree (status)",
+        "indexname":  "idx_accounts_status",
+        "schemaname":  "public",
+        "tablename":  "accounts"
+    },
+    {
+        "indexdef":  "CREATE UNIQUE INDEX uq_accounts_slug_ci ON public.accounts USING btree (lower(slug)) WHERE (slug IS NOT NULL)",
+        "indexname":  "uq_accounts_slug_ci",
+        "schemaname":  "public",
+        "tablename":  "accounts"
+    },
+    {
+        "indexdef":  "CREATE UNIQUE INDEX audit_logs_pkey ON public.audit_logs USING btree (id)",
+        "indexname":  "audit_logs_pkey",
+        "schemaname":  "public",
+        "tablename":  "audit_logs"
+    },
+    {
+        "indexdef":  "CREATE INDEX idx_audit_logs_account_created ON public.audit_logs USING btree (account_id, created_at DESC)",
+        "indexname":  "idx_audit_logs_account_created",
+        "schemaname":  "public",
+        "tablename":  "audit_logs"
+    },
+    {
+        "indexdef":  "CREATE INDEX business_taxon_aliases_alias_text_normalized_fts_gin_idx ON public.business_taxon_aliases USING gin (to_tsvector(\u0027portuguese\u0027::regconfig, alias_text_normalized))",
+        "indexname":  "business_taxon_aliases_alias_text_normalized_fts_gin_idx",
+        "schemaname":  "public",
+        "tablename":  "business_taxon_aliases"
+    },
+    {
+        "indexdef":  "CREATE INDEX business_taxon_aliases_alias_text_normalized_idx ON public.business_taxon_aliases USING btree (alias_text_normalized)",
+        "indexname":  "business_taxon_aliases_alias_text_normalized_idx",
+        "schemaname":  "public",
+        "tablename":  "business_taxon_aliases"
+    },
+    {
+        "indexdef":  "CREATE INDEX business_taxon_aliases_alias_text_normalized_trgm_gin_idx ON public.business_taxon_aliases USING gin (alias_text_normalized gin_trgm_ops)",
+        "indexname":  "business_taxon_aliases_alias_text_normalized_trgm_gin_idx",
+        "schemaname":  "public",
+        "tablename":  "business_taxon_aliases"
+    },
+    {
+        "indexdef":  "CREATE UNIQUE INDEX business_taxon_aliases_pkey ON public.business_taxon_aliases USING btree (id)",
+        "indexname":  "business_taxon_aliases_pkey",
+        "schemaname":  "public",
+        "tablename":  "business_taxon_aliases"
+    },
+    {
+        "indexdef":  "CREATE UNIQUE INDEX business_taxon_aliases_taxon_alias_norm_uidx ON public.business_taxon_aliases USING btree (taxon_id, alias_text_normalized)",
+        "indexname":  "business_taxon_aliases_taxon_alias_norm_uidx",
+        "schemaname":  "public",
+        "tablename":  "business_taxon_aliases"
+    },
+    {
+        "indexdef":  "CREATE INDEX business_taxon_aliases_taxon_id_idx ON public.business_taxon_aliases USING btree (taxon_id)",
+        "indexname":  "business_taxon_aliases_taxon_id_idx",
+        "schemaname":  "public",
+        "tablename":  "business_taxon_aliases"
+    },
+    {
+        "indexdef":  "CREATE INDEX business_taxons_level_idx ON public.business_taxons USING btree (level)",
+        "indexname":  "business_taxons_level_idx",
+        "schemaname":  "public",
+        "tablename":  "business_taxons"
+    },
+    {
+        "indexdef":  "CREATE INDEX business_taxons_name_normalized_idx ON public.business_taxons USING btree (normalize_taxon_match_text(name))",
+        "indexname":  "business_taxons_name_normalized_idx",
+        "schemaname":  "public",
+        "tablename":  "business_taxons"
+    },
+    {
+        "indexdef":  "CREATE INDEX business_taxons_name_normalized_trgm_gin_idx ON public.business_taxons USING gin (normalize_taxon_match_text(name) gin_trgm_ops)",
+        "indexname":  "business_taxons_name_normalized_trgm_gin_idx",
+        "schemaname":  "public",
+        "tablename":  "business_taxons"
+    },
+    {
+        "indexdef":  "CREATE INDEX business_taxons_name_slug_fts_gin_idx ON public.business_taxons USING gin (to_tsvector(\u0027portuguese\u0027::regconfig, ((normalize_taxon_match_text(name) || \u0027 \u0027::text) || normalize_taxon_match_text(replace(slug, \u0027-\u0027::text, \u0027 \u0027::text)))))",
+        "indexname":  "business_taxons_name_slug_fts_gin_idx",
+        "schemaname":  "public",
+        "tablename":  "business_taxons"
+    },
+    {
+        "indexdef":  "CREATE INDEX business_taxons_parent_id_idx ON public.business_taxons USING btree (parent_id)",
+        "indexname":  "business_taxons_parent_id_idx",
+        "schemaname":  "public",
+        "tablename":  "business_taxons"
+    },
+    {
+        "indexdef":  "CREATE UNIQUE INDEX business_taxons_pkey ON public.business_taxons USING btree (id)",
+        "indexname":  "business_taxons_pkey",
+        "schemaname":  "public",
+        "tablename":  "business_taxons"
+    },
+    {
+        "indexdef":  "CREATE INDEX business_taxons_slug_normalized_idx ON public.business_taxons USING btree (normalize_taxon_match_text(replace(slug, \u0027-\u0027::text, \u0027 \u0027::text)))",
+        "indexname":  "business_taxons_slug_normalized_idx",
+        "schemaname":  "public",
+        "tablename":  "business_taxons"
+    },
+    {
+        "indexdef":  "CREATE INDEX business_taxons_slug_normalized_trgm_gin_idx ON public.business_taxons USING gin (normalize_taxon_match_text(replace(slug, \u0027-\u0027::text, \u0027 \u0027::text)) gin_trgm_ops)",
+        "indexname":  "business_taxons_slug_normalized_trgm_gin_idx",
+        "schemaname":  "public",
+        "tablename":  "business_taxons"
+    },
+    {
+        "indexdef":  "CREATE UNIQUE INDEX business_taxons_slug_uidx ON public.business_taxons USING btree (slug)",
+        "indexname":  "business_taxons_slug_uidx",
+        "schemaname":  "public",
+        "tablename":  "business_taxons"
+    },
+    {
+        "indexdef":  "CREATE UNIQUE INDEX content_template_taxons_pkey ON public.content_template_taxons USING btree (id)",
+        "indexname":  "content_template_taxons_pkey",
+        "schemaname":  "public",
+        "tablename":  "content_template_taxons"
+    },
+    {
+        "indexdef":  "CREATE INDEX content_template_taxons_taxon_id_idx ON public.content_template_taxons USING btree (taxon_id)",
+        "indexname":  "content_template_taxons_taxon_id_idx",
+        "schemaname":  "public",
+        "tablename":  "content_template_taxons"
+    },
+    {
+        "indexdef":  "CREATE INDEX content_template_taxons_template_id_idx ON public.content_template_taxons USING btree (template_id)",
+        "indexname":  "content_template_taxons_template_id_idx",
+        "schemaname":  "public",
+        "tablename":  "content_template_taxons"
+    },
+    {
+        "indexdef":  "CREATE UNIQUE INDEX content_templates_pkey ON public.content_templates USING btree (id)",
+        "indexname":  "content_templates_pkey",
+        "schemaname":  "public",
+        "tablename":  "content_templates"
+    },
+    {
+        "indexdef":  "CREATE UNIQUE INDEX content_templates_slug_uidx ON public.content_templates USING btree (slug)",
+        "indexname":  "content_templates_slug_uidx",
+        "schemaname":  "public",
+        "tablename":  "content_templates"
+    },
+    {
+        "indexdef":  "CREATE UNIQUE INDEX content_templates_template_key_uidx ON public.content_templates USING btree (template_key)",
+        "indexname":  "content_templates_template_key_uidx",
+        "schemaname":  "public",
+        "tablename":  "content_templates"
+    },
+    {
+        "indexdef":  "CREATE INDEX idx_partner_accounts_account_partner ON public.partner_accounts USING btree (account_id, partner_id)",
+        "indexname":  "idx_partner_accounts_account_partner",
+        "schemaname":  "public",
+        "tablename":  "partner_accounts"
+    },
+    {
+        "indexdef":  "CREATE UNIQUE INDEX idx_partner_accounts_account_partner_unique ON public.partner_accounts USING btree (account_id, partner_id)",
+        "indexname":  "idx_partner_accounts_account_partner_unique",
+        "schemaname":  "public",
+        "tablename":  "partner_accounts"
+    },
+    {
+        "indexdef":  "CREATE UNIQUE INDEX partner_accounts_pkey ON public.partner_accounts USING btree (partner_id, account_id)",
+        "indexname":  "partner_accounts_pkey",
+        "schemaname":  "public",
+        "tablename":  "partner_accounts"
+    },
+    {
+        "indexdef":  "CREATE UNIQUE INDEX partners_pkey ON public.partners USING btree (id)",
+        "indexname":  "partners_pkey",
+        "schemaname":  "public",
+        "tablename":  "partners"
+    },
+    {
+        "indexdef":  "CREATE UNIQUE INDEX plans_pkey ON public.plans USING btree (id)",
+        "indexname":  "plans_pkey",
+        "schemaname":  "public",
+        "tablename":  "plans"
+    },
+    {
+        "indexdef":  "CREATE UNIQUE INDEX unique_plans_name ON public.plans USING btree (name)",
+        "indexname":  "unique_plans_name",
+        "schemaname":  "public",
+        "tablename":  "plans"
+    },
+    {
+        "indexdef":  "CREATE UNIQUE INDEX taxon_market_research_one_active_per_block_audience_uidx ON public.taxon_market_research USING btree (taxon_id, research_block, audience_scope) WHERE (status = \u0027active\u0027::text)",
+        "indexname":  "taxon_market_research_one_active_per_block_audience_uidx",
+        "schemaname":  "public",
+        "tablename":  "taxon_market_research"
+    },
+    {
+        "indexdef":  "CREATE UNIQUE INDEX taxon_market_research_pkey ON public.taxon_market_research USING btree (id)",
+        "indexname":  "taxon_market_research_pkey",
+        "schemaname":  "public",
+        "tablename":  "taxon_market_research"
+    },
+    {
+        "indexdef":  "CREATE UNIQUE INDEX taxon_market_research_taxon_block_audience_version_uidx ON public.taxon_market_research USING btree (taxon_id, research_block, audience_scope, version)",
+        "indexname":  "taxon_market_research_taxon_block_audience_version_uidx",
+        "schemaname":  "public",
+        "tablename":  "taxon_market_research"
+    },
+    {
+        "indexdef":  "CREATE INDEX taxon_market_research_taxon_id_idx ON public.taxon_market_research USING btree (taxon_id)",
+        "indexname":  "taxon_market_research_taxon_id_idx",
+        "schemaname":  "public",
+        "tablename":  "taxon_market_research"
+    },
+    {
+        "indexdef":  "CREATE UNIQUE INDEX taxon_market_research_items_pkey ON public.taxon_market_research_items USING btree (id)",
+        "indexname":  "taxon_market_research_items_pkey",
+        "schemaname":  "public",
+        "tablename":  "taxon_market_research_items"
+    },
+    {
+        "indexdef":  "CREATE INDEX taxon_market_research_items_research_id_idx ON public.taxon_market_research_items USING btree (research_id)",
+        "indexname":  "taxon_market_research_items_research_id_idx",
+        "schemaname":  "public",
+        "tablename":  "taxon_market_research_items"
+    },
+    {
+        "indexdef":  "CREATE UNIQUE INDEX taxon_message_guides_pkey ON public.taxon_message_guides USING btree (id)",
+        "indexname":  "taxon_message_guides_pkey",
+        "schemaname":  "public",
+        "tablename":  "taxon_message_guides"
+    },
+    {
+        "indexdef":  "CREATE INDEX taxon_message_guides_research_id_idx ON public.taxon_message_guides USING btree (research_id)",
+        "indexname":  "taxon_message_guides_research_id_idx",
+        "schemaname":  "public",
+        "tablename":  "taxon_message_guides"
+    }
+]

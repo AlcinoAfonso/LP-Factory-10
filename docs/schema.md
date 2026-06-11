@@ -190,7 +190,7 @@
 • PK: id uuid
 • UNIQUE: (account_id, taxon_id)
 • CHECK: account_taxonomy_status_chk (status IN ('active', 'inactive'))
-• CHECK: account_taxonomy_source_type_chk (source_type IN ('manual', 'taxonomy_match'))
+• CHECK: account_taxonomy_source_type_chk (source_type IN ('manual', 'taxonomy_match', 'user_confirmed_ai'))
 • FK: account_id → accounts(id) ON UPDATE CASCADE ON DELETE CASCADE
 • FK: taxon_id → business_taxons(id) ON UPDATE CASCADE ON DELETE RESTRICT
 • Nota: não há constraint/índice garantindo apenas um `is_primary = true` por conta nesta etapa.
@@ -374,7 +374,10 @@
 • CHECK: account_niche_resolutions_ai_status_chk
 • CHECK: account_niche_resolutions_ai_result_json_chk
 • CHECK: account_niche_resolutions_ai_ux_mode_chk
+• CHECK: account_niche_resolutions_user_resolution_status_chk
+• CHECK: account_niche_resolutions_user_rewrite_input_chk
 • FK: ai_suggested_taxon_id → business_taxons(id)
+• FK: user_selected_taxon_id → business_taxons(id) ON UPDATE CASCADE ON DELETE SET NULL
 • PK: account_id uuid
 • FK: account_id → accounts(id)
 • FK: selected_taxon_id → business_taxons(id)
@@ -398,6 +401,12 @@
 • ai_needs_admin_review boolean null
 • ai_reason text null
 • ai_processed_at timestamptz null
+• user_resolution_status text null
+• user_selected_taxon_id uuid null
+• user_confirmed_at timestamptz null
+• user_rejected_at timestamptz null
+• user_rewrite_input text null
+• user_dismissed_at timestamptz null
 • account_id uuid not null
 • raw_input text not null
 • selected_taxon_id uuid null
@@ -589,6 +598,10 @@
 • Rollback: não remove automaticamente a extensão, pois pode ser reutilizada por outros recursos
 
 99. Changelog
+v1.0.19 (11/06/2026) — Drift confirmado durante a extração da baseline
+• Atualizado `account_taxonomy_source_type_chk` com `user_confirmed_ai`, conforme estado remoto.
+• Registrados os campos `user_*`, checks e FK de confirmação do usuário em `account_niche_resolutions`.
+
 v1.0.18 (09/06/2026) — E10.5.6.7: grants de leitura server-side para pesquisa comercial
 • Registrado `service_role` com SELECT em `taxon_market_research` e `taxon_market_research_items`, limitado ao consumo server-side da resolução do template comercial.
 
