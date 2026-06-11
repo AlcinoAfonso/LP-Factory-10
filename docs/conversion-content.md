@@ -181,7 +181,7 @@ O mesmo template possui uma copy final genérica e determinística para uso quan
 3. A E18.5 define o contrato dos campos finais, a identidade inicial do artefato, a proveniência da pesquisa e a validação estrutural pura.
 4. A E18.5 prepara a persistência versionada dos artefatos, com estados `draft`, `active` e `archived`, ativação transacional e acesso server-side.
 5. A E12.7 operará geração e regeneração administrativas.
-6. A E10.6 consumirá o artefato ativo ou o fallback determinístico e renderizará a página comercial no Account Dashboard.
+6. A primeira entrega da E10.6 renderiza a página comercial no Account Dashboard com o fallback determinístico; a leitura do artefato ativo permanece desativada até a persistência ser aplicada e validada.
 
 A resolução não gera texto final nem renderiza a página. Ela retorna o template versionado, a inteligência estruturada aplicável, a proveniência das pesquisas com `research_id`, versão e `updated_at`, a origem do fallback e alertas de dados faltantes.
 
@@ -216,7 +216,7 @@ O caso real de reutilização foi definido pela E18.5. A estrutura transversal p
 Ficam fora desta fase:
 
 - provider ou runtime de geração;
-- implementação da E10.6;
+- leitura do artefato persistido pela E10.6;
 - LP Builder;
 - aplicação de SQL no Supabase sem autorização e validação operacional;
 - detalhamento dos prompts finais por canal;
@@ -228,4 +228,4 @@ Ficam fora desta fase:
 2. Criar migration histórica após a validação operacional.
 3. Definir e implementar o runtime de geração dos campos finais.
 4. Implementar a operação administrativa da E12.7.
-5. Integrar a E10.6 ao artefato ativo e ao fallback determinístico.
+5. Integrar a E10.6 ao artefato ativo, preservando o fallback determinístico já implementado.

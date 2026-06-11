@@ -2,7 +2,7 @@
 
 0.1 Cabeçalho
 • Data: 11/06/2026
-• Versão: v1.5.65
+• Versão: v1.5.66
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -706,7 +706,7 @@
 • o resultado operacional da resolução de nicho ainda não está exposto em UX final do dashboard da conta
 
 10.6 Página comercial do Account Dashboard
-• Status: Planejado
+• Status: Em andamento — primeira entrega com fallback concluída (exec) (11/06/2026)
 • Objetivo: apresentar uma vitrine persuasiva para contas active sem entitlements, com experiência semelhante a uma LP interna e cards comerciais para compra, solicitação, briefing ou ativação da primeira entrega.
 • Contexto: página interna do Account Dashboard para uma conta existente e primeiro laboratório controlado da futura geração automatizada de páginas por nicho.
 • Não depende, nesta fase, de dados comerciais ricos da conta; oferta, provas, diferenciais, imagens e CTA específico podem estar ausentes.
@@ -717,6 +717,11 @@
 • Se não houver artefato específico válido, deve usar o mesmo template universal com fallback genérico determinístico.
 • A página não chama IA ou API durante a renderização; apenas exibe campos finais já gerados ou o fallback determinístico.
 • A geração e a regeneração pertencem ao fluxo administrativo futuro previsto em 12.7.
+• Implementado: consumo server-side do resolver existente da E10.5.6.7 por `resolveCommercialPageContent()`, em modo interno `fallback_only`, sem consultar `generated_content_artifacts`.
+• Implementado: página responsiva na rota `/a/[account]` com headline, promessa, contexto, cards comerciais, benefícios, CTAs funcionais por e-mail e estado informativo para nicho identificado ou conteúdo geral.
+• Implementado: fallback determinístico permanece disponível para ausência de taxon, pesquisa incompleta, artefato ausente ou fingerprint desatualizado.
+• Validação: `npm run check` aprovado; inspeção visual em 1440 px e 390 px sem overflow ou sobreposição.
+• Pendência: habilitar a leitura do artefato ativo e válido somente após a estratégia de baseline e a aplicação controlada da persistência.
 • Observabilidade futura: a integração com o artefato ativo ou fallback deve usar logs estruturados correlacionáveis por `request_id`, registrando template, versão, origem taxon/pai/ancestral/genérico, artefato utilizado e motivo do fallback, sem PII ou copy integral. Referência: supa#5.
 • A primeira entrega da E10.6 não exige nova infraestrutura da Vercel.
 • Fora de escopo: LP Builder, criação de motor universal completo, automação completa do Admin Dashboard, tabelas de briefing e alterações em billing, entitlements, schema, migrations, RLS ou policies.
@@ -1030,6 +1035,7 @@ Ajustados:
 • Definir o primeiro recorte funcional do LP Builder no roadmap
 
 99. Changelog
+v1.5.66 — 11/06/2026 — E10.6 recebe a primeira página comercial funcional e responsiva no Account Dashboard, consumindo o resolver existente e o fallback determinístico sem consultar a persistência ainda não aplicada.
 v1.5.65 — 11/06/2026 — E18.5 separa escopo estável de fingerprint das entradas, preserva o histórico entre mudanças de pesquisa/template/schema e generaliza apenas a persistência ainda não aplicada para `generated_content_artifacts`.
 v1.5.64 — 10/06/2026 — E18.5 prepara runtime e persistência versionada dos artefatos comerciais, com adapter server-side, estados draft/active/archived, ativação transacional, SQL operacional, verificação e rollback, mantendo aplicação no Supabase e migration histórica pendentes.
 v1.5.63 — 10/06/2026 — E10.6 e E18.5 registram observabilidade futura, ausência de nova infraestrutura Vercel na primeira entrega e condições de adoção para updates Supabase, Vercel, cache, fila e tracking, sem implementar essas capacidades nesta etapa.
