@@ -147,14 +147,6 @@
 • Regra: não usar para mutações.
 • Valor real: não versionar.
 
-3.6 Acesso operacional Vercel para investigações
-• `VERCEL_TOKEN`
-• Finalidade: token operacional opcional para leitura via API/CLI Vercel em investigações do Agent Investigator quando conector ou sessão autenticada não estiverem disponíveis.
-• Uso atual conhecido: preflight local em `plugins/agent-investigator/scripts/tool-readiness.mjs`, apenas para verificar presença/formato.
-• Escopo: ambiente autorizado de investigação; não é variável de runtime do Core nem do service MCP.
-• Regra: não usar para deploy, redeploy, alteração de env var ou mutação sem autorização explícita.
-• Valor real: não versionar.
-
 4. Supabase
 
 4.1 Projeto
