@@ -19,8 +19,6 @@ jobs:
   apply:
     runs-on: ubuntu-latest
     env:
-      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
-      SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
       SUPABASE_PROJECT_REF: dpikmjgiteuafsbaubue
       SUPABASE_MIGRATIONS_DIR: supabase/migrations
       SUPABASE_APPLY_MIGRATIONS_ENABLED: ${{ vars.SUPABASE_APPLY_MIGRATIONS_ENABLED }}
@@ -30,13 +28,37 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Report disabled migration gate
+        if: ${{ vars.SUPABASE_APPLY_MIGRATIONS_ENABLED != 'true' }}
+        shell: bash
+        run: |
+          {
+            echo "## Pipeline Supabase — Apply Migrations"
+            echo ""
+            echo "- branch: \`${GITHUB_REF_NAME}\`"
+            echo "- commit: \`${GITHUB_SHA}\`"
+            echo "- evento: \`${GITHUB_EVENT_NAME}\`"
+            echo "- apply habilitado: \`false\`"
+            echo "- status final: \`skipped\`"
+            echo ""
+            echo "### Gate de migrations"
+            echo ""
+            echo "- Apply nao executado porque \`SUPABASE_APPLY_MIGRATIONS_ENABLED\` nao esta definido como \`true\`."
+            echo "- Supabase CLI, \`supabase link\` e \`supabase db push\` nao foram executados."
+          } >> "$GITHUB_STEP_SUMMARY"
+
       - name: Setup Supabase CLI
-        uses: supabase/setup-cli@v1
+        if: ${{ vars.SUPABASE_APPLY_MIGRATIONS_ENABLED == 'true' }}
+        uses: supabase/setup-cli@3c2f5e2ae34c34e428e8e206e2c4d21fa2d20fbf # v2.1.1
         with:
-          version: latest
+          version: 2.106.0
 
       - name: Apply migrations
+        if: ${{ vars.SUPABASE_APPLY_MIGRATIONS_ENABLED == 'true' }}
         shell: bash
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
         run: |
           set -uo pipefail
 
@@ -46,7 +68,7 @@ jobs:
           apply_enabled="${SUPABASE_APPLY_MIGRATIONS_ENABLED:-false}"
 
           if [ "$apply_enabled" != "true" ]; then
-            status="skipped"
+            status="failure"
             failure_step="baseline gate disabled"
           fi
 
@@ -106,16 +128,6 @@ jobs:
             printf '%s\n' "$changed_migrations"
             echo '```'
           } >> "$GITHUB_STEP_SUMMARY"
-
-          if [ "$status" = "skipped" ]; then
-            {
-              echo ""
-              echo "### Gate de baseline"
-              echo ""
-              echo "- Apply nao executado porque \`SUPABASE_APPLY_MIGRATIONS_ENABLED\` nao esta definido como \`true\`."
-            } >> "$GITHUB_STEP_SUMMARY"
-            exit 0
-          fi
 
           if [ "$status" != "success" ]; then
             {
