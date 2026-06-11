@@ -2,7 +2,7 @@
 
 0.1 Cabeçalho
 • Data: 11/06/2026
-• Versão: v1.5.67
+• Versão: v1.5.68
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -721,6 +721,9 @@
 • Implementado: página responsiva na rota `/a/[account]` com headline, promessa, contexto, cards comerciais, benefícios, CTAs funcionais por e-mail e estado informativo para nicho identificado ou conteúdo geral.
 • Implementado: fallback determinístico permanece disponível para ausência de taxon, pesquisa incompleta, artefato ausente ou fingerprint desatualizado.
 • Validação: `npm run check` aprovado; inspeção visual em 1440 px e 390 px sem overflow ou sobreposição.
+• Backlog versionado: uma evolução futura do template comercial deve acrescentar seções de recursos, diferenciais, provas, FAQ e CTA final mais completo, além de expandir os blocos de benefícios já existentes.
+• Essa evolução deve nascer como `version: 2` do template comercial e atualizar de forma coordenada contrato, fallback, validação, geração e renderização, preservando o contrato `version: 1` já implementado.
+• As novas seções não devem ser antecipadas apenas com copy genérica; o recorte deve avançar quando houver definição de conteúdo real por taxon ou outra necessidade de produto validada.
 • Pendência: habilitar a leitura do artefato ativo e válido somente após a estratégia de baseline e a aplicação controlada da persistência.
 • Observabilidade futura: a integração com o artefato ativo ou fallback deve usar logs estruturados correlacionáveis por `request_id`, registrando template, versão, origem taxon/pai/ancestral/genérico, artefato utilizado e motivo do fallback, sem PII ou copy integral. Referência: supa#5.
 • A primeira entrega da E10.6 não exige nova infraestrutura da Vercel.
@@ -985,6 +988,8 @@ Ajustados:
 • Nova geração só deve ocorrer quando não existir artefato válido ou quando houver solicitação administrativa de regeneração.
 • Taxons sem pesquisa estruturada suficiente devem usar fallback genérico válido.
 • Implementado: template versionado, proveniência por bloco de pesquisa com versão e `updated_at`, contrato camelCase dos campos finais, identidade inicial do artefato, validação estrutural pura com erros preservados e copy genérica determinística.
+• Evolução planejada do primeiro template: a `version: 2` da página comercial poderá incluir recursos, diferenciais, provas, FAQ, CTA final ampliado e blocos adicionais de benefícios.
+• Cada nova seção deverá integrar o contrato versionado, o fallback determinístico, a validação estrutural e a saída gerada antes de ser consumida pela E10.6; a `version: 1` permanece válida e não deve ser alterada retroativamente.
 • Preparado: `scope_key` e `input_fingerprint` SHA-256 canônicos, adapter server-side para criar draft, ativar versão e recuperar somente artefato ativo com fingerprint esperado, SQL operacional versionado, verificação read-only e rollback.
 • Artefatos: `lib/conversion-content/contracts.ts`, `lib/conversion-content/generatedCommercialContent.ts`, `lib/conversion-content/commercialTemplateResolution.ts`, `lib/conversion-content/templates/accountDashboardCommercialPage.ts`, `lib/conversion-content/adapters/commercialTemplateResolver.ts`, `lib/conversion-content/adapters/commercialGeneratedArtifactAdapter.ts`, `supabase/snippets/e18_5_generated_content_artifacts.sql`, `supabase/snippets/e18_5_generated_content_artifacts_verification.sql` e `supabase/rollbacks/20260611__e18_5_generated_content_artifacts.rollback.sql`.
 • Persistência proposta: tabela transversal `generated_content_artifacts`, estados `draft | active | archived`, versões sequenciais e ativo único por `scope_key`, proveniência em `provenance_json`, RLS sem policies de usuário e acesso exclusivo de `service_role`.
@@ -1035,6 +1040,7 @@ Ajustados:
 • Definir o primeiro recorte funcional do LP Builder no roadmap
 
 99. Changelog
+v1.5.68 — 11/06/2026 — E10.6 e E18.5 registram o backlog da página comercial `version: 2`, com recursos, diferenciais, provas, FAQ, CTA final ampliado e evolução coordenada de contrato, fallback, validação, geração e renderização, preservando a `version: 1`.
 v1.5.67 — 11/06/2026 — E10.6 corrige a acentuação da copy fallback e remove o espaço reservado acima da página comercial quando não há card de resolução de nicho.
 v1.5.66 — 11/06/2026 — E10.6 recebe a primeira página comercial funcional e responsiva no Account Dashboard, consumindo o resolver existente e o fallback determinístico sem consultar a persistência ainda não aplicada.
 v1.5.65 — 11/06/2026 — E18.5 separa escopo estável de fingerprint das entradas, preserva o histórico entre mudanças de pesquisa/template/schema e generaliza apenas a persistência ainda não aplicada para `generated_content_artifacts`.
