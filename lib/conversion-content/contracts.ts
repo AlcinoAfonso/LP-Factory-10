@@ -41,7 +41,7 @@ export type CommercialGeneratedContent = {
 export type CommercialTemplateDefinition = {
   key: "account_dashboard.commercial_page";
   version: 1;
-  name: "Account Dashboard - Pagina comercial";
+  name: "Account Dashboard - Página comercial";
   channel: "account_dashboard";
   objective: "commercial_page";
   audienceScope: "business_buyer";

@@ -2,7 +2,7 @@
 
 0.1 Cabeçalho
 • Data: 11/06/2026
-• Versão: v1.5.66
+• Versão: v1.5.67
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -1035,6 +1035,7 @@ Ajustados:
 • Definir o primeiro recorte funcional do LP Builder no roadmap
 
 99. Changelog
+v1.5.67 — 11/06/2026 — E10.6 corrige a acentuação da copy fallback e remove o espaço reservado acima da página comercial quando não há card de resolução de nicho.
 v1.5.66 — 11/06/2026 — E10.6 recebe a primeira página comercial funcional e responsiva no Account Dashboard, consumindo o resolver existente e o fallback determinístico sem consultar a persistência ainda não aplicada.
 v1.5.65 — 11/06/2026 — E18.5 separa escopo estável de fingerprint das entradas, preserva o histórico entre mudanças de pesquisa/template/schema e generaliza apenas a persistência ainda não aplicada para `generated_content_artifacts`.
 v1.5.64 — 10/06/2026 — E18.5 prepara runtime e persistência versionada dos artefatos comerciais, com adapter server-side, estados draft/active/archived, ativação transacional, SQL operacional, verificação e rollback, mantendo aplicação no Supabase e migration histórica pendentes.
