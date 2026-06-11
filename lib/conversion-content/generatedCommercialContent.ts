@@ -1,3 +1,5 @@
+import { createHash } from "node:crypto";
+
 import type {
   CommercialContentAction,
   CommercialContentBlock,
@@ -49,31 +51,47 @@ export function createCommercialGeneratedArtifactIdentity(input: {
   };
 }
 
-export function createCommercialGeneratedArtifactIdentityKey(
+export function createCommercialGeneratedArtifactScopeKey(
   identity: CommercialGeneratedArtifactIdentity,
 ): string {
-  const researchSources = [...identity.researchSources]
-    .sort((left, right) => {
-      const byBlock = left.block.localeCompare(right.block);
-      if (byBlock !== 0) return byBlock;
-      return left.researchId.localeCompare(right.researchId);
-    })
-    .map((source) => ({
-      researchId: source.researchId,
-      taxonId: source.taxonId,
-      block: source.block,
-      version: source.version,
-      updatedAt: source.updatedAt,
-    }));
+  return sha256({
+    templateKey: normalizeValue(identity.templateKey),
+    audienceScope: normalizeValue(identity.audienceScope),
+    locale: normalizeValue(identity.locale),
+    scopeType: identity.source === "generic" ? "generic" : "taxon",
+    researchTaxonId:
+      identity.source === "generic"
+        ? null
+        : normalizeNullableValue(identity.researchTaxonId),
+  });
+}
 
-  return JSON.stringify({
-    templateKey: identity.templateKey,
-    templateVersion: identity.templateVersion,
-    audienceScope: identity.audienceScope,
-    locale: identity.locale,
-    mode: identity.source === "generic" ? "generic" : "taxon_specific",
-    researchTaxonId: identity.researchTaxonId,
-    researchSources,
+export function createCommercialGeneratedArtifactInputFingerprint(input: {
+  identity: CommercialGeneratedArtifactIdentity;
+  contentSchemaVersion: string;
+}): string {
+  return sha256({
+    templateVersion: input.identity.templateVersion,
+    contentSchemaVersion: normalizeValue(input.contentSchemaVersion),
+    researchSources: [...input.identity.researchSources]
+      .map((source) => ({
+        researchId: normalizeValue(source.researchId),
+        taxonId: normalizeValue(source.taxonId),
+        block: source.block,
+        version: source.version,
+        updatedAt: normalizeTimestamp(source.updatedAt),
+      }))
+      .sort((left, right) => {
+        const byBlock = left.block.localeCompare(right.block);
+        if (byBlock !== 0) return byBlock;
+        const byTaxon = left.taxonId.localeCompare(right.taxonId);
+        if (byTaxon !== 0) return byTaxon;
+        const byResearch = left.researchId.localeCompare(right.researchId);
+        if (byResearch !== 0) return byResearch;
+        const byVersion = left.version - right.version;
+        if (byVersion !== 0) return byVersion;
+        return left.updatedAt.localeCompare(right.updatedAt);
+      }),
   });
 }
 
@@ -256,6 +274,26 @@ function validateUniqueKeys(
 function normalizeLocale(locale?: string): string {
   const normalized = locale?.trim();
   return normalized || "pt-BR";
+}
+
+function normalizeValue(value: string): string {
+  return value.trim().toLowerCase();
+}
+
+function normalizeNullableValue(value: string | null): string | null {
+  return value ? normalizeValue(value) : null;
+}
+
+function normalizeTimestamp(value: string): string {
+  const normalized = value.trim();
+  const timestamp = Date.parse(normalized);
+  return Number.isNaN(timestamp)
+    ? normalized
+    : new Date(timestamp).toISOString();
+}
+
+function sha256(value: unknown): string {
+  return createHash("sha256").update(JSON.stringify(value)).digest("hex");
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

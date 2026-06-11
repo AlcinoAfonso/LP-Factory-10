@@ -9,21 +9,24 @@ import type {
   ActivateCommercialGeneratedArtifactResult,
   CommercialGeneratedArtifactDraft,
   CommercialGeneratedArtifactIdentity,
+  CommercialGeneratedArtifactProvenance,
   CommercialGeneratedArtifactRecord,
   CommercialGeneratedArtifactStatus,
   CreateCommercialGeneratedArtifactResult,
 } from "../contracts";
 import {
-  createCommercialGeneratedArtifactIdentityKey,
+  createCommercialGeneratedArtifactInputFingerprint,
+  createCommercialGeneratedArtifactScopeKey,
   validateCommercialGeneratedContent,
 } from "../generatedCommercialContent";
 
 type ArtifactRow = {
   id: string;
-  identity_key: string;
+  scope_key: string;
+  input_fingerprint: string;
   artifact_version: number;
   status: string;
-  identity_json: unknown;
+  provenance_json: unknown;
   content_schema_version: string;
   content_json: unknown;
   created_at: string;
@@ -39,7 +42,7 @@ type CreateDraftRpcRow = {
 };
 
 const ARTIFACT_SELECT =
-  "id,identity_key,artifact_version,status,identity_json,content_schema_version,content_json,created_at,updated_at,activated_at,archived_at";
+  "id,scope_key,input_fingerprint,artifact_version,status,provenance_json,content_schema_version,content_json,created_at,updated_at,activated_at,archived_at";
 
 export async function createCommercialGeneratedArtifactDraftRecord(input: {
   artifact: CommercialGeneratedArtifactDraft;
@@ -50,24 +53,32 @@ export async function createCommercialGeneratedArtifactDraftRecord(input: {
     return { status: "failed", errorCode: "invalid_artifact_content" };
   }
 
-  const identityKey = createCommercialGeneratedArtifactIdentityKey(
+  const scopeKey = createCommercialGeneratedArtifactScopeKey(
     input.artifact.identity,
   );
+  const inputFingerprint = createCommercialGeneratedArtifactInputFingerprint({
+    identity: input.artifact.identity,
+    contentSchemaVersion: input.artifact.contentSchemaVersion,
+  });
 
   try {
     const { data, error } = await supabase.rpc(
-      "create_commercial_generated_artifact_draft",
+      "create_generated_content_artifact_draft",
       {
-        p_identity_key: identityKey,
+        p_scope_key: scopeKey,
+        p_input_fingerprint: inputFingerprint,
         p_template_key: input.artifact.identity.templateKey,
         p_template_version: input.artifact.identity.templateVersion,
         p_content_schema_version: input.artifact.contentSchemaVersion,
         p_audience_scope: input.artifact.identity.audienceScope,
         p_locale: input.artifact.identity.locale,
-        p_resolution_source: input.artifact.identity.source,
+        p_scope_type:
+          input.artifact.identity.source === "generic" ? "generic" : "taxon",
         p_research_taxon_id: input.artifact.identity.researchTaxonId,
-        p_identity_json: input.artifact.identity,
-        p_research_sources_json: input.artifact.identity.researchSources,
+        p_provenance_json: {
+          identity: input.artifact.identity,
+          contentSchemaVersion: input.artifact.contentSchemaVersion,
+        },
         p_content_json: content.content,
       },
     );
@@ -104,7 +115,7 @@ export async function activateCommercialGeneratedArtifact(input: {
 
   try {
     const { data, error } = await supabase.rpc(
-      "activate_commercial_generated_artifact",
+      "activate_generated_content_artifact",
       { p_artifact_id: input.artifactId },
     );
 
@@ -137,17 +148,23 @@ export async function activateCommercialGeneratedArtifact(input: {
 
 export async function getActiveCommercialGeneratedArtifact(input: {
   identity: CommercialGeneratedArtifactIdentity;
+  contentSchemaVersion: CommercialGeneratedArtifactDraft["contentSchemaVersion"];
 }): Promise<CommercialGeneratedArtifactRecord | null> {
   const supabase = createServiceClient();
-  const identityKey = createCommercialGeneratedArtifactIdentityKey(
+  const scopeKey = createCommercialGeneratedArtifactScopeKey(
     input.identity,
   );
+  const inputFingerprint = createCommercialGeneratedArtifactInputFingerprint({
+    identity: input.identity,
+    contentSchemaVersion: input.contentSchemaVersion,
+  });
 
   try {
     const { data, error } = await supabase
-      .from("commercial_generated_artifacts")
+      .from("generated_content_artifacts")
       .select(ARTIFACT_SELECT)
-      .eq("identity_key", identityKey)
+      .eq("scope_key", scopeKey)
+      .eq("input_fingerprint", inputFingerprint)
       .eq("status", "active")
       .limit(1)
       .maybeSingle();
@@ -157,7 +174,8 @@ export async function getActiveCommercialGeneratedArtifact(input: {
       return null;
     }
 
-    return mapArtifactRow(data as ArtifactRow | null);
+    const artifact = mapArtifactRow(data as ArtifactRow | null);
+    return artifact?.inputFingerprint === inputFingerprint ? artifact : null;
   } catch (error) {
     logArtifactError("get active", error);
     return null;
@@ -169,11 +187,12 @@ function mapArtifactRow(
 ): CommercialGeneratedArtifactRecord | null {
   if (
     !row?.id ||
-    !row.identity_key ||
+    !isSha256(row.scope_key) ||
+    !isSha256(row.input_fingerprint) ||
     !Number.isInteger(row.artifact_version) ||
     !isArtifactStatus(row.status) ||
-    !isArtifactIdentity(row.identity_json) ||
-    row.content_schema_version !== "account_dashboard.commercial_page.v1"
+    !isArtifactProvenance(row.provenance_json) ||
+    row.content_schema_version !== row.provenance_json.contentSchemaVersion
   ) {
     return null;
   }
@@ -183,10 +202,11 @@ function mapArtifactRow(
 
   return {
     id: row.id,
-    identityKey: row.identity_key,
+    scopeKey: row.scope_key,
+    inputFingerprint: row.input_fingerprint,
     artifactVersion: row.artifact_version,
     status: row.status,
-    identity: row.identity_json,
+    identity: row.provenance_json.identity,
     contentSchemaVersion: row.content_schema_version,
     content: content.content,
     createdAt: row.created_at,
@@ -194,6 +214,10 @@ function mapArtifactRow(
     activatedAt: row.activated_at,
     archivedAt: row.archived_at,
   };
+}
+
+function isSha256(value: string): boolean {
+  return /^[a-f0-9]{64}$/.test(value);
 }
 
 function firstRow<T>(value: unknown): T | null {
@@ -204,6 +228,16 @@ function firstRow<T>(value: unknown): T | null {
 
 function isArtifactStatus(value: string): value is CommercialGeneratedArtifactStatus {
   return value === "draft" || value === "active" || value === "archived";
+}
+
+function isArtifactProvenance(
+  value: unknown,
+): value is CommercialGeneratedArtifactProvenance {
+  return (
+    isRecord(value) &&
+    value.contentSchemaVersion === "account_dashboard.commercial_page.v1" &&
+    isArtifactIdentity(value.identity)
+  );
 }
 
 function isArtifactIdentity(

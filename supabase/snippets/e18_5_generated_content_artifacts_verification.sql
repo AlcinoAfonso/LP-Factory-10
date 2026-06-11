@@ -4,70 +4,65 @@
 -- smoke transacional integrado, executado somente apos autorizacao.
 
 with
-expected_policies(policy_name, policy_command) as (
-  values
-    ('commercial_generated_artifacts_select_admin_only', 'SELECT'),
-    ('commercial_generated_artifacts_insert_admin_only', 'INSERT'),
-    ('commercial_generated_artifacts_update_admin_only', 'UPDATE')
-),
 expected_constraints(constraint_name) as (
   values
-    ('commercial_generated_artifacts_pkey'),
-    ('commercial_generated_artifacts_identity_key_chk'),
-    ('commercial_generated_artifacts_artifact_version_chk'),
-    ('commercial_generated_artifacts_status_chk'),
-    ('commercial_generated_artifacts_template_version_chk'),
-    ('commercial_generated_artifacts_resolution_source_chk'),
-    ('commercial_generated_artifacts_identity_json_chk'),
-    ('commercial_generated_artifacts_research_sources_json_chk'),
-    ('commercial_generated_artifacts_content_json_chk'),
-    ('commercial_generated_artifacts_identity_version_uidx'),
-    ('commercial_generated_artifacts_research_taxon_id_fkey')
+    ('generated_content_artifacts_pkey'),
+    ('generated_content_artifacts_scope_key_chk'),
+    ('generated_content_artifacts_input_fingerprint_chk'),
+    ('generated_content_artifacts_artifact_version_chk'),
+    ('generated_content_artifacts_status_chk'),
+    ('generated_content_artifacts_template_version_chk'),
+    ('generated_content_artifacts_scope_type_chk'),
+    ('generated_content_artifacts_scope_taxon_chk'),
+    ('generated_content_artifacts_provenance_json_chk'),
+    ('generated_content_artifacts_content_json_chk'),
+    ('generated_content_artifacts_scope_version_uidx'),
+    ('generated_content_artifacts_research_taxon_id_fkey')
 ),
 expected_indexes(index_name) as (
   values
-    ('commercial_generated_artifacts_pkey'),
-    ('commercial_generated_artifacts_identity_version_uidx'),
-    ('commercial_generated_artifacts_one_active_uidx'),
-    ('commercial_generated_artifacts_template_lookup_idx'),
-    ('commercial_generated_artifacts_research_taxon_id_idx')
+    ('generated_content_artifacts_pkey'),
+    ('generated_content_artifacts_scope_version_uidx'),
+    ('generated_content_artifacts_one_active_uidx'),
+    ('generated_content_artifacts_template_lookup_idx'),
+    ('generated_content_artifacts_research_taxon_id_idx')
 ),
 table_access as (
   select
     role_name,
     has_table_privilege(
       role_name,
-      'public.commercial_generated_artifacts',
+      'public.generated_content_artifacts',
       'SELECT'
     ) as can_select,
     has_table_privilege(
       role_name,
-      'public.commercial_generated_artifacts',
+      'public.generated_content_artifacts',
       'INSERT'
     ) as can_insert,
     has_table_privilege(
       role_name,
-      'public.commercial_generated_artifacts',
+      'public.generated_content_artifacts',
       'UPDATE'
     ) as can_update,
     has_table_privilege(
       role_name,
-      'public.commercial_generated_artifacts',
+      'public.generated_content_artifacts',
       'DELETE'
     ) as can_delete,
     has_table_privilege(
       role_name,
-      'public.commercial_generated_artifacts',
+      'public.generated_content_artifacts',
       'TRUNCATE'
     ) as can_truncate,
     has_table_privilege(
       role_name,
-      'public.commercial_generated_artifacts',
+      'public.generated_content_artifacts',
       'REFERENCES'
     ) as can_reference,
     has_table_privilege(
       role_name,
-      'public.commercial_generated_artifacts',
+      'public.generated_content_artifacts',
       'TRIGGER'
     ) as can_trigger
   from (
@@ -92,35 +87,24 @@ checks as (
   from pg_class c
   join pg_namespace n on n.oid = c.relnamespace
   where n.nspname = 'public'
-    and c.relname = 'commercial_generated_artifacts'
+    and c.relname = 'generated_content_artifacts'
     and c.relkind = 'r'
 
   union all
 
   select
-    'policies',
-    case
-      when count(p.policyname) = (select count(*) from expected_policies)
-        and count(p.policyname) filter (
-          where p.policyname is null
-        ) = 0
-      then 'pass'
-      else 'fail'
-    end,
+    'user_policies_absent',
+    case when count(*) = 0 then 'pass' else 'fail' end,
     jsonb_build_object(
-      'expected', (select jsonb_agg(policy_name order by policy_name) from expected_policies),
-      'found', coalesce(
-        jsonb_agg(p.policyname order by p.policyname)
-          filter (where p.policyname is not null),
+      'policy_count', count(*),
+      'policies', coalesce(
+        jsonb_agg(policyname order by policyname),
         '[]'::jsonb
       )
     )::text
-  from expected_policies e
-  left join pg_policies p
-   on p.schemaname = 'public'
-   and p.tablename = 'commercial_generated_artifacts'
-   and p.policyname = e.policy_name
-   and p.cmd = e.policy_command
+  from pg_policies
+  where schemaname = 'public'
+    and tablename = 'generated_content_artifacts'
 
   union all
 
@@ -204,8 +188,8 @@ checks as (
   join pg_namespace n on n.oid = p.pronamespace
   where n.nspname = 'public'
     and p.proname in (
-      'create_commercial_generated_artifact_draft',
-      'activate_commercial_generated_artifact'
+      'create_generated_content_artifact_draft',
+      'activate_generated_content_artifact'
     )
 
   union all
@@ -228,7 +212,7 @@ checks as (
   from expected_constraints e
   left join pg_constraint c
     on c.conname = e.constraint_name
-   and c.conrelid = 'public.commercial_generated_artifacts'::regclass
+   and c.conrelid = to_regclass('public.generated_content_artifacts')
 
   union all
 
@@ -237,7 +221,7 @@ checks as (
     case
       when count(i.indexname) = (select count(*) from expected_indexes)
         and bool_or(
-          i.indexname = 'commercial_generated_artifacts_one_active_uidx'
+          i.indexname = 'generated_content_artifacts_one_active_uidx'
           and i.indexdef ilike '%where%status%active%'
         )
       then 'pass'
@@ -254,26 +238,26 @@ checks as (
   from expected_indexes e
   left join pg_indexes i
     on i.schemaname = 'public'
-   and i.tablename = 'commercial_generated_artifacts'
+   and i.tablename = 'generated_content_artifacts'
    and i.indexname = e.index_name
 
   union all
 
   select
-    'active_identity_duplicates',
+    'active_scope_duplicates',
     case when count(*) = 0 then 'pass' else 'fail' end,
     jsonb_build_object(
-      'duplicate_identity_count', count(*),
-      'duplicate_identity_keys', coalesce(
-        jsonb_agg(identity_key order by identity_key),
+      'duplicate_scope_count', count(*),
+      'duplicate_scope_keys', coalesce(
+        jsonb_agg(scope_key order by scope_key),
         '[]'::jsonb
       )
     )::text
   from (
-    select identity_key
-    from public.commercial_generated_artifacts
+    select scope_key
+    from public.generated_content_artifacts
     where status = 'active'
-    group by identity_key
+    group by scope_key
     having count(*) > 1
   ) duplicates
 )

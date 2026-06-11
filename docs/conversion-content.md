@@ -201,7 +201,7 @@ Tabelas só devem ser avaliadas quando houver necessidade real de salvar dados o
 - histórico;
 - status como `draft`, `approved` ou `published`.
 
-O caso real de reutilização foi definido pela E18.5. A estrutura proposta usa `commercial_generated_artifacts`, com uma sequência de versões por identidade e no máximo uma versão ativa. A identidade diferencia fallback genérico de conteúdo específico por `researchTaxon`, mas não cria artefatos diferentes apenas porque a pesquisa foi alcançada como taxon direto, pai ou ancestral. O SQL operacional e a verificação estão em `supabase/snippets/`; a tabela ainda depende de aplicação e validação no Supabase.
+O caso real de reutilização foi definido pela E18.5. A estrutura transversal proposta usa `generated_content_artifacts`, com uma sequência de versões por `scope_key` estável e no máximo uma versão ativa por escopo. O `scope_key` separa o fallback genérico do conteúdo por `researchTaxon`, sem fragmentar o histórico quando template, schema ou pesquisa mudarem. O `input_fingerprint` registra essas entradas mutáveis e permite rejeitar um ativo desatualizado até sua regeneração. A proveniência completa fica em `provenance_json`; a forma como uma conta alcançou a pesquisa não participa do escopo persistido. O SQL operacional e a verificação estão em `supabase/snippets/`; a tabela ainda depende de aplicação e validação no Supabase.
 
 ## 11. Fronteiras
 

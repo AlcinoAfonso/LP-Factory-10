@@ -121,6 +121,11 @@ export type CommercialGeneratedArtifactDraft = {
   content: CommercialGeneratedContent;
 };
 
+export type CommercialGeneratedArtifactProvenance = {
+  identity: CommercialGeneratedArtifactIdentity;
+  contentSchemaVersion: CommercialGeneratedArtifactDraft["contentSchemaVersion"];
+};
+
 export type CommercialContentValidationResult =
   | {
       ok: true;
@@ -148,7 +153,8 @@ export type CommercialGeneratedArtifactStatus =
 
 export type CommercialGeneratedArtifactRecord = {
   id: string;
-  identityKey: string;
+  scopeKey: string;
+  inputFingerprint: string;
   artifactVersion: number;
   status: CommercialGeneratedArtifactStatus;
   identity: CommercialGeneratedArtifactIdentity;

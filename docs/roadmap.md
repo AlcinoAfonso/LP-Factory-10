@@ -2,7 +2,7 @@
 
 0.1 Cabeçalho
 • Data: 10/06/2026
-• Versão: v1.5.64
+• Versão: v1.5.65
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -971,17 +971,18 @@ Ajustados:
 • Os campos finais podem incluir headline, promessa, contexto, cards comerciais, CTAs e blocos de benefício ou prova exigidos pelo template.
 • Primeira aplicação prevista: Account Dashboard — Página comercial.
 • O primeiro recorte deve ser compartilhado por taxon, sem dados específicos da conta.
-• O artefato deve possuir identidade suficiente para detectar equivalência, versão, origem da pesquisa utilizada e necessidade de regeneração.
-• Identidade canônica inicial implementada; sua composição poderá evoluir conforme novos canais e dados de conta forem incorporados.
+• O artefato usa `scope_key` estável para o histórico permanente do conteúdo e `input_fingerprint` para detectar alterações nas entradas e necessidade de regeneração.
+• O `scope_key` inicial considera template, audience_scope, locale, escopo genérico ou por taxon e `researchTaxonId`; template version, schema e fontes da pesquisa pertencem ao fingerprint.
+• A composição canônica inicial está implementada e poderá evoluir conforme novos canais e dados de conta forem incorporados.
 • Se dados específicos do cliente forem usados em etapa futura, a saída deixa de ser compartilhada por nicho e passa a exigir identidade por conta e fingerprint/versionamento dessas entradas.
 • Quando houver necessidade de reutilização, versionamento, aprovação ou histórico, as saídas devem ser tratadas como artefatos persistidos, não como cache simples.
 • O sistema deve evitar chamada repetida de IA/API para a mesma combinação válida de template, taxon, audience_scope e versão de pesquisa.
 • Nova geração só deve ocorrer quando não existir artefato válido ou quando houver solicitação administrativa de regeneração.
 • Taxons sem pesquisa estruturada suficiente devem usar fallback genérico válido.
 • Implementado: template versionado, proveniência por bloco de pesquisa com versão e `updated_at`, contrato camelCase dos campos finais, identidade inicial do artefato, validação estrutural pura com erros preservados e copy genérica determinística.
-• Preparado: identidade canônica, adapter server-side para criar draft, ativar versão e recuperar artefato ativo, SQL operacional versionado, verificação read-only e rollback.
-• Artefatos: `lib/conversion-content/contracts.ts`, `lib/conversion-content/generatedCommercialContent.ts`, `lib/conversion-content/commercialTemplateResolution.ts`, `lib/conversion-content/templates/accountDashboardCommercialPage.ts`, `lib/conversion-content/adapters/commercialTemplateResolver.ts`, `lib/conversion-content/adapters/commercialGeneratedArtifactAdapter.ts`, `supabase/snippets/e18_5_commercial_generated_artifacts.sql`, `supabase/snippets/e18_5_commercial_generated_artifacts_verification.sql` e `supabase/rollbacks/20260610__e18_5_commercial_generated_artifacts.rollback.sql`.
-• Persistência proposta: tabela `commercial_generated_artifacts`, estados `draft | active | archived`, versões sequenciais por identidade, no máximo uma versão ativa e acesso exclusivo de `service_role`.
+• Preparado: `scope_key` e `input_fingerprint` SHA-256 canônicos, adapter server-side para criar draft, ativar versão e recuperar somente artefato ativo com fingerprint esperado, SQL operacional versionado, verificação read-only e rollback.
+• Artefatos: `lib/conversion-content/contracts.ts`, `lib/conversion-content/generatedCommercialContent.ts`, `lib/conversion-content/commercialTemplateResolution.ts`, `lib/conversion-content/templates/accountDashboardCommercialPage.ts`, `lib/conversion-content/adapters/commercialTemplateResolver.ts`, `lib/conversion-content/adapters/commercialGeneratedArtifactAdapter.ts`, `supabase/snippets/e18_5_generated_content_artifacts.sql`, `supabase/snippets/e18_5_generated_content_artifacts_verification.sql` e `supabase/rollbacks/20260611__e18_5_generated_content_artifacts.rollback.sql`.
+• Persistência proposta: tabela transversal `generated_content_artifacts`, estados `draft | active | archived`, versões sequenciais e ativo único por `scope_key`, proveniência em `provenance_json`, RLS sem policies de usuário e acesso exclusivo de `service_role`.
 • Pendência operacional: aplicar e validar o SQL no Supabase; somente depois criar a migration histórica e atualizar o contrato de schema.
 • Pendência de produto: definir runtime e validação da geração/provider e regras de consumo antes da integração da E10.6 com artefatos gerados.
 • Updates previstos para a etapa técnica futura:
@@ -1029,6 +1030,7 @@ Ajustados:
 • Definir o primeiro recorte funcional do LP Builder no roadmap
 
 99. Changelog
+v1.5.65 — 11/06/2026 — E18.5 separa escopo estável de fingerprint das entradas, preserva o histórico entre mudanças de pesquisa/template/schema e generaliza apenas a persistência ainda não aplicada para `generated_content_artifacts`.
 v1.5.64 — 10/06/2026 — E18.5 prepara runtime e persistência versionada dos artefatos comerciais, com adapter server-side, estados draft/active/archived, ativação transacional, SQL operacional, verificação e rollback, mantendo aplicação no Supabase e migration histórica pendentes.
 v1.5.63 — 10/06/2026 — E10.6 e E18.5 registram observabilidade futura, ausência de nova infraestrutura Vercel na primeira entrega e condições de adoção para updates Supabase, Vercel, cache, fila e tracking, sem implementar essas capacidades nesta etapa.
 v1.5.62 — 10/06/2026 — E18.5 iniciada com contrato técnico dos campos finais da página comercial, template versionado, proveniência das pesquisas, identidade inicial do artefato, validação estrutural pura e fallback determinístico, sem provider, persistência ou UI.
