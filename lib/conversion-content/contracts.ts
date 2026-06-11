@@ -121,6 +121,11 @@ export type CommercialGeneratedArtifactDraft = {
   content: CommercialGeneratedContent;
 };
 
+export type CommercialGeneratedArtifactProvenance = {
+  identity: CommercialGeneratedArtifactIdentity;
+  contentSchemaVersion: CommercialGeneratedArtifactDraft["contentSchemaVersion"];
+};
+
 export type CommercialContentValidationResult =
   | {
       ok: true;
@@ -139,4 +144,46 @@ export type CommercialGeneratedArtifactDraftResult =
   | {
       ok: false;
       errors: string[];
+    };
+
+export type CommercialGeneratedArtifactStatus =
+  | "draft"
+  | "active"
+  | "archived";
+
+export type CommercialGeneratedArtifactRecord = {
+  id: string;
+  scopeKey: string;
+  inputFingerprint: string;
+  artifactVersion: number;
+  status: CommercialGeneratedArtifactStatus;
+  identity: CommercialGeneratedArtifactIdentity;
+  contentSchemaVersion: CommercialGeneratedArtifactDraft["contentSchemaVersion"];
+  content: CommercialGeneratedContent;
+  createdAt: string;
+  updatedAt: string;
+  activatedAt: string | null;
+  archivedAt: string | null;
+};
+
+export type CreateCommercialGeneratedArtifactResult =
+  | {
+      status: "created";
+      artifactId: string;
+      artifactVersion: number;
+    }
+  | {
+      status: "failed";
+      errorCode: string;
+    };
+
+export type ActivateCommercialGeneratedArtifactResult =
+  | {
+      status: "activated";
+      artifactId: string;
+    }
+  | {
+      status: "not_activatable" | "failed";
+      artifactId: string;
+      errorCode?: string;
     };
