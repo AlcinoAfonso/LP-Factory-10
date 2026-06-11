@@ -89,7 +89,7 @@ export function CommercialPage({ accountName, page }: CommercialPageProps) {
           <div>
             <p className="text-sm font-semibold text-brand-500">O que você ganha</p>
             <h2 className="mt-2 text-2xl font-semibold leading-tight">
-              Decisoes mais claras antes de publicar
+              Decisões mais claras antes de publicar
             </h2>
           </div>
           <div className="grid gap-6 sm:grid-cols-2">
