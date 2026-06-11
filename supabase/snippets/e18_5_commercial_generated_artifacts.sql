@@ -275,6 +275,19 @@ revoke all on function public.create_commercial_generated_artifact_draft(
   jsonb,
   jsonb
 ) from authenticated;
+revoke all on function public.create_commercial_generated_artifact_draft(
+  text,
+  text,
+  integer,
+  text,
+  text,
+  text,
+  text,
+  uuid,
+  jsonb,
+  jsonb,
+  jsonb
+) from ai_readonly;
 grant execute on function public.create_commercial_generated_artifact_draft(
   text,
   text,
@@ -295,6 +308,8 @@ revoke all on function public.activate_commercial_generated_artifact(uuid)
   from anon;
 revoke all on function public.activate_commercial_generated_artifact(uuid)
   from authenticated;
+revoke all on function public.activate_commercial_generated_artifact(uuid)
+  from ai_readonly;
 grant execute on function public.activate_commercial_generated_artifact(uuid)
   to service_role;
 

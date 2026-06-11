@@ -972,7 +972,7 @@ Ajustados:
 • Primeira aplicação prevista: Account Dashboard — Página comercial.
 • O primeiro recorte deve ser compartilhado por taxon, sem dados específicos da conta.
 • O artefato deve possuir identidade suficiente para detectar equivalência, versão, origem da pesquisa utilizada e necessidade de regeneração.
-• A composição técnica da chave será definida na etapa futura de contrato, persistência e validação dos artefatos gerados.
+• Identidade canônica inicial implementada; sua composição poderá evoluir conforme novos canais e dados de conta forem incorporados.
 • Se dados específicos do cliente forem usados em etapa futura, a saída deixa de ser compartilhada por nicho e passa a exigir identidade por conta e fingerprint/versionamento dessas entradas.
 • Quando houver necessidade de reutilização, versionamento, aprovação ou histórico, as saídas devem ser tratadas como artefatos persistidos, não como cache simples.
 • O sistema deve evitar chamada repetida de IA/API para a mesma combinação válida de template, taxon, audience_scope e versão de pesquisa.
@@ -993,7 +993,7 @@ Ajustados:
 • supa#53: avaliar apenas se houver necessidade comprovada de fila, retry ou processamento assíncrono.
 • tracking: definir uma única estratégia após a primeira entrega da E10.6, evitando duplicidade entre tracking interno e Vercel.
 • Não adotar neste recorte: supa#52, supa#54 e vercel#3.
-• Fora de escopo desta etapa: provider de IA, gateway, tabelas, migrations, runtime de geração, UI administrativa e renderização da E10.6.
+• Fora de escopo desta etapa: aplicação do SQL no Supabase, migration histórica a ser criada somente após a validação operacional, provider de IA, gateway, runtime de geração, UI administrativa e renderização da E10.6.
 
 19. E19 — LP Builder
 
