@@ -122,9 +122,97 @@ table_access as (
     values
       ('service_role'),
       ('anon'),
-      ('authenticated'),
-      ('ai_readonly')
+      ('authenticated')
   ) roles(role_name)
+),
+ai_readonly_access as (
+  select
+    exists (
+      select 1
+      from pg_roles
+      where rolname = 'ai_readonly'
+    ) as role_exists,
+    coalesce((
+      select has_table_privilege(
+        r.oid,
+        'public.generated_content_artifacts',
+        'SELECT'
+      )
+      from pg_roles r
+      where r.rolname = 'ai_readonly'
+    ), false) as can_select,
+    coalesce((
+      select has_table_privilege(
+        r.oid,
+        'public.generated_content_artifacts',
+        'INSERT'
+      )
+      from pg_roles r
+      where r.rolname = 'ai_readonly'
+    ), false) as can_insert,
+    coalesce((
+      select has_table_privilege(
+        r.oid,
+        'public.generated_content_artifacts',
+        'UPDATE'
+      )
+      from pg_roles r
+      where r.rolname = 'ai_readonly'
+    ), false) as can_update,
+    coalesce((
+      select has_table_privilege(
+        r.oid,
+        'public.generated_content_artifacts',
+        'DELETE'
+      )
+      from pg_roles r
+      where r.rolname = 'ai_readonly'
+    ), false) as can_delete,
+    coalesce((
+      select has_table_privilege(
+        r.oid,
+        'public.generated_content_artifacts',
+        'TRUNCATE'
+      )
+      from pg_roles r
+      where r.rolname = 'ai_readonly'
+    ), false) as can_truncate,
+    coalesce((
+      select has_table_privilege(
+        r.oid,
+        'public.generated_content_artifacts',
+        'REFERENCES'
+      )
+      from pg_roles r
+      where r.rolname = 'ai_readonly'
+    ), false) as can_reference,
+    coalesce((
+      select has_table_privilege(
+        r.oid,
+        'public.generated_content_artifacts',
+        'TRIGGER'
+      )
+      from pg_roles r
+      where r.rolname = 'ai_readonly'
+    ), false) as can_trigger,
+    coalesce((
+      select has_function_privilege(
+        r.oid,
+        'public.create_generated_content_artifact_draft(text,text,text,integer,text,text,text,text,uuid,jsonb,jsonb)',
+        'EXECUTE'
+      )
+      from pg_roles r
+      where r.rolname = 'ai_readonly'
+    ), false) as can_execute_create,
+    coalesce((
+      select has_function_privilege(
+        r.oid,
+        'public.activate_generated_content_artifact(uuid)',
+        'EXECUTE'
+      )
+      from pg_roles r
+      where r.rolname = 'ai_readonly'
+    ), false) as can_execute_activate
 ),
 checks as (
   select
@@ -244,6 +332,58 @@ checks as (
   union all
 
   select
+    'ai_readonly_access',
+    case
+      when not role_exists then 'pass'
+      when not (
+        can_select
+        or can_insert
+        or can_update
+        or can_delete
+        or can_truncate
+        or can_reference
+        or can_trigger
+        or can_execute_create
+        or can_execute_activate
+      ) then 'pass'
+      else 'fail'
+    end,
+    jsonb_build_object(
+      'role_exists', role_exists,
+      'role_status', case
+        when not role_exists then 'role_absent'
+        when not (
+          can_select
+          or can_insert
+          or can_update
+          or can_delete
+          or can_truncate
+          or can_reference
+          or can_trigger
+          or can_execute_create
+          or can_execute_activate
+        ) then 'role_present_without_privileges'
+        else 'role_present_with_privileges'
+      end,
+      'table_privileges', jsonb_build_object(
+        'select', can_select,
+        'insert', can_insert,
+        'update', can_update,
+        'delete', can_delete,
+        'truncate', can_truncate,
+        'references', can_reference,
+        'trigger', can_trigger
+      ),
+      'function_execute', jsonb_build_object(
+        'create_generated_content_artifact_draft', can_execute_create,
+        'activate_generated_content_artifact', can_execute_activate
+      )
+    )::text
+  from ai_readonly_access
+
+  union all
+
+  select
     'function_security_and_grants',
     case
       when count(*) = 2
@@ -251,7 +391,6 @@ checks as (
         and bool_and(has_function_privilege('service_role', p.oid, 'EXECUTE'))
         and bool_and(not has_function_privilege('anon', p.oid, 'EXECUTE'))
         and bool_and(not has_function_privilege('authenticated', p.oid, 'EXECUTE'))
-        and bool_and(not has_function_privilege('ai_readonly', p.oid, 'EXECUTE'))
       then 'pass'
       else 'fail'
     end,
@@ -268,10 +407,6 @@ checks as (
       ),
       'authenticated_execute', coalesce(
         bool_or(has_function_privilege('authenticated', p.oid, 'EXECUTE')),
-        false
-      ),
-      'ai_readonly_execute', coalesce(
-        bool_or(has_function_privilege('ai_readonly', p.oid, 'EXECUTE')),
         false
       )
     )::text

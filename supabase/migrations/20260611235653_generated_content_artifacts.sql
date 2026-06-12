@@ -198,7 +198,6 @@ $$;
 revoke all on table public.generated_content_artifacts from public;
 revoke all on table public.generated_content_artifacts from anon;
 revoke all on table public.generated_content_artifacts from authenticated;
-revoke all on table public.generated_content_artifacts from ai_readonly;
 
 grant usage on schema public to service_role;
 grant select, insert, update
@@ -244,19 +243,6 @@ revoke all on function public.create_generated_content_artifact_draft(
   jsonb,
   jsonb
 ) from authenticated;
-revoke all on function public.create_generated_content_artifact_draft(
-  text,
-  text,
-  text,
-  integer,
-  text,
-  text,
-  text,
-  text,
-  uuid,
-  jsonb,
-  jsonb
-) from ai_readonly;
 grant execute on function public.create_generated_content_artifact_draft(
   text,
   text,
@@ -277,9 +263,39 @@ revoke all on function public.activate_generated_content_artifact(uuid)
   from anon;
 revoke all on function public.activate_generated_content_artifact(uuid)
   from authenticated;
-revoke all on function public.activate_generated_content_artifact(uuid)
-  from ai_readonly;
 grant execute on function public.activate_generated_content_artifact(uuid)
   to service_role;
+
+do $$
+begin
+  if exists (
+    select 1
+    from pg_roles
+    where rolname = 'ai_readonly'
+  ) then
+    execute
+      'revoke all on table public.generated_content_artifacts from ai_readonly';
+
+    execute
+      'revoke all on function public.create_generated_content_artifact_draft(
+        text,
+        text,
+        text,
+        integer,
+        text,
+        text,
+        text,
+        text,
+        uuid,
+        jsonb,
+        jsonb
+      ) from ai_readonly';
+
+    execute
+      'revoke all on function public.activate_generated_content_artifact(uuid)
+       from ai_readonly';
+  end if;
+end
+$$;
 
 commit;
