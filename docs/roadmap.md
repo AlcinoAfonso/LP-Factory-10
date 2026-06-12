@@ -2,7 +2,7 @@
 
 0.1 Cabeçalho
 • Data: 11/06/2026
-• Versão: v1.5.68
+• Versão: v1.5.69
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -990,13 +990,14 @@ Ajustados:
 • Implementado: template versionado, proveniência por bloco de pesquisa com versão e `updated_at`, contrato camelCase dos campos finais, identidade inicial do artefato, validação estrutural pura com erros preservados e copy genérica determinística.
 • Evolução planejada do primeiro template: a `version: 2` da página comercial poderá incluir recursos, diferenciais, provas, FAQ, CTA final ampliado e blocos adicionais de benefícios.
 • Cada nova seção deverá integrar o contrato versionado, o fallback determinístico, a validação estrutural e a saída gerada antes de ser consumida pela E10.6; a `version: 1` permanece válida e não deve ser alterada retroativamente.
-• Preparado: `scope_key` e `input_fingerprint` SHA-256 canônicos, adapter server-side para criar draft, ativar versão e recuperar somente artefato ativo com fingerprint esperado, SQL operacional versionado, verificação read-only e rollback.
-• Artefatos: `lib/conversion-content/contracts.ts`, `lib/conversion-content/generatedCommercialContent.ts`, `lib/conversion-content/commercialTemplateResolution.ts`, `lib/conversion-content/templates/accountDashboardCommercialPage.ts`, `lib/conversion-content/adapters/commercialTemplateResolver.ts`, `lib/conversion-content/adapters/commercialGeneratedArtifactAdapter.ts`, `supabase/snippets/e18_5_generated_content_artifacts.sql`, `supabase/snippets/e18_5_generated_content_artifacts_verification.sql` e `supabase/rollbacks/20260611__e18_5_generated_content_artifacts.rollback.sql`.
-• Persistência proposta: tabela transversal `generated_content_artifacts`, estados `draft | active | archived`, versões sequenciais e ativo único por `scope_key`, proveniência em `provenance_json`, RLS sem policies de usuário e acesso exclusivo de `service_role`.
-• Pendência operacional: aplicar e validar o SQL no Supabase; somente depois criar a migration histórica e atualizar o contrato de schema.
+• Preparado: `scope_key` e `input_fingerprint` SHA-256 canônicos, adapter server-side para criar draft, ativar versão e recuperar somente artefato ativo com fingerprint esperado, migration incremental canônica, verificação read-only e rollback isolado.
+• Artefatos: `lib/conversion-content/contracts.ts`, `lib/conversion-content/generatedCommercialContent.ts`, `lib/conversion-content/commercialTemplateResolution.ts`, `lib/conversion-content/templates/accountDashboardCommercialPage.ts`, `lib/conversion-content/adapters/commercialTemplateResolver.ts`, `lib/conversion-content/adapters/commercialGeneratedArtifactAdapter.ts`, `supabase/migrations/20260611235653_generated_content_artifacts.sql`, `supabase/snippets/e18_5_generated_content_artifacts_verification.sql` e `supabase/rollbacks/20260611__e18_5_generated_content_artifacts.rollback.sql`.
+• Persistência versionada: tabela transversal `generated_content_artifacts`, estados `draft | active | archived`, versões sequenciais e ativo único por `scope_key`, proveniência em `provenance_json`, RLS sem policies de usuário e acesso exclusivo de `service_role`.
+• Validação isolada: baseline + migration aplicadas em PostgreSQL 17.10 descartável, verificação estrutural consolidada aprovada, smoke de criação/ativação/arquivamento aprovado, rollback comprovado e reconstrução posterior aprovada.
+• Pendência operacional: revisar e fazer merge da migration; a aplicação remota depende de autorização separada pelo fluxo incremental e deve ser seguida pela atualização do contrato de schema.
 • Pendência de produto: definir runtime e validação da geração/provider e regras de consumo antes da integração da E10.6 com artefatos gerados.
 • Updates previstos para a etapa técnica futura:
-• supa#40: snippets operacional e de verificação preparados; aplicação e validação no Supabase pendentes.
+• supa#40: migration canônica e snippet de verificação read-only preparados; aplicação e verificação remotas pendentes.
 • supa#5: registrar geração, regeneração, falhas, duração, provider/modelo, versão das entradas e `request_id`, sem PII ou conteúdo integral.
 • supa#58: aplicar a regra global de GRANT explícito se forem criadas tabelas `public` acessadas pela Data API; não conceder grants automaticamente a tabelas internas.
 • vercel#1: avaliar AI Gateway quando provider e runtime de geração forem definidos.
@@ -1004,7 +1005,7 @@ Ajustados:
 • supa#53: avaliar apenas se houver necessidade comprovada de fila, retry ou processamento assíncrono.
 • tracking: definir uma única estratégia após a primeira entrega da E10.6, evitando duplicidade entre tracking interno e Vercel.
 • Não adotar neste recorte: supa#52, supa#54 e vercel#3.
-• Fora de escopo desta etapa: aplicação do SQL no Supabase, migration histórica a ser criada somente após a validação operacional, provider de IA, gateway, runtime de geração, UI administrativa e renderização da E10.6.
+• Fora de escopo desta etapa: aplicação remota da migration, provider de IA, gateway, runtime de geração, UI administrativa e habilitação da leitura persistida na E10.6.
 
 19. E19 — LP Builder
 
@@ -1040,6 +1041,7 @@ Ajustados:
 • Definir o primeiro recorte funcional do LP Builder no roadmap
 
 99. Changelog
+v1.5.69 — 11/06/2026 — E18.5 adota o primeiro fluxo incremental pós-baseline: migration canônica estrita de `generated_content_artifacts`, verificação read-only ampliada, validação isolada com smoke, rollback e reconstrução, mantendo aplicação remota e runtime consumidor bloqueados.
 v1.5.68 — 11/06/2026 — E10.6 e E18.5 registram o backlog da página comercial `version: 2`, com recursos, diferenciais, provas, FAQ, CTA final ampliado e evolução coordenada de contrato, fallback, validação, geração e renderização, preservando a `version: 1`.
 v1.5.67 — 11/06/2026 — E10.6 corrige a acentuação da copy fallback e remove o espaço reservado acima da página comercial quando não há card de resolução de nicho.
 v1.5.66 — 11/06/2026 — E10.6 recebe a primeira página comercial funcional e responsiva no Account Dashboard, consumindo o resolver existente e o fallback determinístico sem consultar a persistência ainda não aplicada.

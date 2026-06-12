@@ -1,10 +1,9 @@
--- E18.5 - persistencia transversal de artefatos de conteudo gerado
--- Tipo: operacional / execucao manual controlada
--- Nao executar sem autorizacao explicita.
+-- E18.5 - persisted generated content artifacts.
+-- Canonical incremental migration. Apply only through the approved migration flow.
 
 begin;
 
-create table if not exists public.generated_content_artifacts (
+create table public.generated_content_artifacts (
   id uuid primary key default gen_random_uuid(),
   scope_key text not null,
   input_fingerprint text not null,
@@ -53,11 +52,11 @@ create table if not exists public.generated_content_artifacts (
     on delete restrict
 );
 
-create unique index if not exists generated_content_artifacts_one_active_uidx
+create unique index generated_content_artifacts_one_active_uidx
   on public.generated_content_artifacts (scope_key)
   where status = 'active';
 
-create index if not exists generated_content_artifacts_template_lookup_idx
+create index generated_content_artifacts_template_lookup_idx
   on public.generated_content_artifacts (
     template_key,
     audience_scope,
@@ -66,20 +65,17 @@ create index if not exists generated_content_artifacts_template_lookup_idx
     status
   );
 
-create index if not exists generated_content_artifacts_research_taxon_id_idx
+create index generated_content_artifacts_research_taxon_id_idx
   on public.generated_content_artifacts (research_taxon_id);
 
 alter table public.generated_content_artifacts enable row level security;
-
-drop trigger if exists generated_content_artifacts_set_updated_at
-  on public.generated_content_artifacts;
 
 create trigger generated_content_artifacts_set_updated_at
   before update on public.generated_content_artifacts
   for each row
   execute function public.tg_set_updated_at();
 
-create or replace function public.create_generated_content_artifact_draft(
+create function public.create_generated_content_artifact_draft(
   p_scope_key text,
   p_input_fingerprint text,
   p_template_key text,
@@ -148,7 +144,7 @@ begin
 end;
 $$;
 
-create or replace function public.activate_generated_content_artifact(
+create function public.activate_generated_content_artifact(
   p_artifact_id uuid
 )
 returns boolean
