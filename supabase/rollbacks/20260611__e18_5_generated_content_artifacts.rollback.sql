@@ -43,7 +43,6 @@ revoke all on table public.generated_content_artifacts from service_role;
 revoke all on table public.generated_content_artifacts from public;
 revoke all on table public.generated_content_artifacts from anon;
 revoke all on table public.generated_content_artifacts from authenticated;
-revoke all on table public.generated_content_artifacts from ai_readonly;
 
 drop index if exists public.generated_content_artifacts_research_taxon_id_idx;
 drop index if exists public.generated_content_artifacts_template_lookup_idx;

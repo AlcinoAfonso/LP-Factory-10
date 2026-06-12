@@ -201,7 +201,9 @@ Tabelas só devem ser avaliadas quando houver necessidade real de salvar dados o
 - histórico;
 - status como `draft`, `approved` ou `published`.
 
-O caso real de reutilização foi definido pela E18.5. A estrutura transversal proposta usa `generated_content_artifacts`, com uma sequência de versões por `scope_key` estável e no máximo uma versão ativa por escopo. O `scope_key` separa o fallback genérico do conteúdo por `researchTaxon`, sem fragmentar o histórico quando template, schema ou pesquisa mudarem. O `input_fingerprint` registra essas entradas mutáveis e permite rejeitar um ativo desatualizado até sua regeneração. A proveniência completa fica em `provenance_json`; a forma como uma conta alcançou a pesquisa não participa do escopo persistido. O SQL operacional e a verificação estão em `supabase/snippets/`; a tabela ainda depende de aplicação e validação no Supabase.
+O caso real de reutilização foi definido pela E18.5. A estrutura transversal usa `generated_content_artifacts`, com uma sequência de versões por `scope_key` estável e no máximo uma versão ativa por escopo. O `scope_key` separa o fallback genérico do conteúdo por `researchTaxon`, sem fragmentar o histórico quando template, schema ou pesquisa mudarem. O `input_fingerprint` registra essas entradas mutáveis e permite rejeitar um ativo desatualizado até sua regeneração. A proveniência completa fica em `provenance_json`; a forma como uma conta alcançou a pesquisa não participa do escopo persistido.
+
+A criação dos objetos tem como fonte canônica a migration incremental `supabase/migrations/20260611235653_generated_content_artifacts.sql`. A migration foi preparada para falhar diante de colisões inesperadas e validada em PostgreSQL 17.10 descartável sobre a baseline oficial, incluindo verificação estrutural, smoke funcional, rollback e reconstrução. O snippet `supabase/snippets/e18_5_generated_content_artifacts_verification.sql` permanece somente para verificação read-only; a aplicação remota depende de autorização separada.
 
 ## 11. Fronteiras
 
@@ -224,8 +226,9 @@ Ficam fora desta fase:
 
 ## 12. Próximos passos
 
-1. Aplicar e validar o SQL operacional de persistência no Supabase.
-2. Criar migration histórica após a validação operacional.
-3. Definir e implementar o runtime de geração dos campos finais.
-4. Implementar a operação administrativa da E12.7.
-5. Integrar a E10.6 ao artefato ativo, preservando o fallback determinístico já implementado.
+1. Revisar e fazer merge da migration incremental validada da E18.5.
+2. Autorizar separadamente a aplicação remota pelo fluxo de migrations.
+3. Verificar os objetos no ambiente remoto após a aplicação autorizada.
+4. Definir e implementar o runtime de geração dos campos finais.
+5. Implementar a operação administrativa da E12.7.
+6. Integrar a E10.6 ao artefato ativo, preservando o fallback determinístico já implementado.
