@@ -1,8 +1,8 @@
 0. Introdução
 
 0.1 Cabeçalho
-• Data: 11/06/2026
-• Versão: v1.5.69
+• Data: 12/06/2026
+• Versão: v1.5.70
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -661,26 +661,12 @@
 • Fallback elegante sem rechamar IA em loop.
 
 10.5.6.7 Resolução do template comercial
-• Status: Concluído (exec) (09/06/2026)
-• Implementado: escolha server-side do template comercial para a E10.6.
-• Template inicial: Account Dashboard — Página comercial.
-• Contexto de entrada: conta existente no Account Dashboard.
-• O taxon da conta é opcional e serve apenas para personalização; sua ausência não bloqueia a resolução.
-• Dados comerciais ricos da conta, como oferta, provas, diferenciais, imagens e CTA específico, não são obrigatórios nesta fase.
-• audience_scope preferencial: business_buyer.
-• Resolução por fallback: taxon resolvido → taxon pai → ancestral disponível → fallback genérico.
-• O fallback genérico usa o mesmo template universal, sem criar template paralelo.
-• Fora de escopo: renderização da página, LP Builder, criação de motor universal e persistência de briefings.
-• Observação: esta etapa resolve template, taxon, pesquisa e fallback; não gera nem persiste a copy final.
-• Validação: núcleo puro aprovado para taxon direto, pai, ancestral, ausência de taxon e pesquisa ausente/incompleta; grants de leitura do `service_role` confirmados no Supabase; integração Next do adapter fica para o consumo real na E10.6.
+• Status: Retirado do recorte atual (12/06/2026)
+• A resolução antecipada de template comercial foi removida junto com a implementação anterior da E10.6.
+• A nova E10.6 deverá resolver o taxon da conta e consultar diretamente as pesquisas e os itens estruturados necessários para a página comercial.
+• Não existe, no estado atual, contrato universal, resolver de template ou fallback compartilhado para canais.
 
-• ARTEFATOS_REPO:
-• Criados:
-• `lib/conversion-content/contracts.ts`
-• `lib/conversion-content/index.ts`
-• `lib/conversion-content/commercialTemplateResolution.ts`
-• `lib/conversion-content/templates/accountDashboardCommercialPage.ts`
-• `lib/conversion-content/adapters/commercialTemplateResolver.ts`
+• ARTEFATOS_REPO preservados do E10.5.6:
 • `supabase/snippets/e10_5_6_7_commercial_template_service_role_grants.sql`
 • `supabase/migrations/0014__e10_5_6_7_commercial_template_service_role_grants.sql`
 • `supabase/rollbacks/20260609__e10_5_6_7_commercial_template_service_role_grants.rollback.sql`
@@ -706,28 +692,15 @@
 • o resultado operacional da resolução de nicho ainda não está exposto em UX final do dashboard da conta
 
 10.6 Página comercial do Account Dashboard
-• Status: Em andamento — primeira entrega com fallback concluída (exec) (11/06/2026)
+• Status: Reiniciado — implementação anterior removida (12/06/2026)
 • Objetivo: apresentar uma vitrine persuasiva para contas active sem entitlements, com experiência semelhante a uma LP interna e cards comerciais para compra, solicitação, briefing ou ativação da primeira entrega.
-• Contexto: página interna do Account Dashboard para uma conta existente e primeiro laboratório controlado da futura geração automatizada de páginas por nicho.
-• Não depende, nesta fase, de dados comerciais ricos da conta; oferta, provas, diferenciais, imagens e CTA específico podem estar ausentes.
-• Primeira aplicação prática dos templates universais da E18.
-• Consome a resolução do template comercial definida em 10.5.6.7.
-• Deve consumir a versão ativa e válida da página comercial gerada para o taxon aplicável da conta, quando houver artefato específico válido.
-• Usa o taxon resolvido da conta apenas para personalização, quando existir, com itens estruturados de audience_scope = business_buyer.
-• Se não houver artefato específico válido, deve usar o mesmo template universal com fallback genérico determinístico.
-• A página não chama IA ou API durante a renderização; apenas exibe campos finais já gerados ou o fallback determinístico.
-• A geração e a regeneração pertencem ao fluxo administrativo futuro previsto em 12.7.
-• Implementado: consumo server-side do resolver existente da E10.5.6.7 por `resolveCommercialPageContent()`, em modo interno `fallback_only`, sem consultar `generated_content_artifacts`.
-• Implementado: página responsiva na rota `/a/[account]` com headline, promessa, contexto, cards comerciais, benefícios, CTAs funcionais por e-mail e estado informativo para nicho identificado ou conteúdo geral.
-• Implementado: fallback determinístico permanece disponível para ausência de taxon, pesquisa incompleta, artefato ausente ou fingerprint desatualizado.
-• Validação: `npm run check` aprovado; inspeção visual em 1440 px e 390 px sem overflow ou sobreposição.
-• Backlog versionado: uma evolução futura do template comercial deve acrescentar seções de recursos, diferenciais, provas, FAQ e CTA final mais completo, além de expandir os blocos de benefícios já existentes.
-• Essa evolução deve nascer como `version: 2` do template comercial e atualizar de forma coordenada contrato, fallback, validação, geração e renderização, preservando o contrato `version: 1` já implementado.
-• As novas seções não devem ser antecipadas apenas com copy genérica; o recorte deve avançar quando houver definição de conteúdo real por taxon ou outra necessidade de produto validada.
-• Pendência: habilitar a leitura do artefato ativo e válido somente após a estratégia de baseline e a aplicação controlada da persistência.
-• Observabilidade futura: a integração com o artefato ativo ou fallback deve usar logs estruturados correlacionáveis por `request_id`, registrando template, versão, origem taxon/pai/ancestral/genérico, artefato utilizado e motivo do fallback, sem PII ou copy integral. Referência: supa#5.
-• A primeira entrega da E10.6 não exige nova infraestrutura da Vercel.
-• Fora de escopo: LP Builder, criação de motor universal completo, automação completa do Admin Dashboard, tabelas de briefing e alterações em billing, entitlements, schema, migrations, RLS ou policies.
+• A implementação anterior e sua página visual foram retiradas; o Account Dashboard voltou temporariamente ao estado simples anterior.
+• Próximo recorte: implementação específica da página comercial, sem antecipar arquitetura compartilhada.
+• A página deverá usar o taxon resolvido da conta e consultar diretamente `taxon_market_research` e `taxon_market_research_items`.
+• O view model, as seções e o fallback serão específicos da página comercial e usarão somente os blocos necessários.
+• Não haverá nesta etapa template universal, persistência de artefatos, geração multicanal ou infraestrutura para LP, Instagram, e-mail e WhatsApp.
+• A primeira LP será avaliada somente depois de a nova página comercial estar implementada, testada e aprovada.
+• Fora de escopo: E18, provider de IA, geração administrativa, tabela de artefatos, LP Builder e alterações em billing ou entitlements.
 
 11. E11 — Gestão de Usuários e Convites
 
@@ -799,14 +772,9 @@ Ajustados:
 • Billing e operações de suspensão/reativação dependem de recorte futuro.
 
 12.7 Geração administrativa de página comercial por taxon
-• Status: Planejado
-• Objetivo: permitir que o Admin Dashboard gere, valide, aprove, arquive e regenere artefatos de página comercial por template/taxon.
-• A operação administrativa deve usar taxons com pesquisa estruturada suficiente e audience_scope adequado.
-• Primeiro caso previsto: Account Dashboard — Página comercial com audience_scope = business_buyer.
-• A geração deve produzir campos finais compatíveis com o contrato do template.
-• A versão gerada deve poder ser marcada como ativa e substituir a versão anterior, arquivando a versão substituída.
-• Falhas de geração devem ser tratadas como execução e auditoria, não como conteúdo consumível.
-• O Admin Dashboard continua sem mutações na fase atual; este subitem registra apenas o recorte futuro.
+• Status: Retirado do recorte atual (12/06/2026)
+• A operação administrativa antecipada para geração da página comercial foi removida da estratégia atual.
+• Qualquer necessidade administrativa será definida somente após a nova E10.6 e a primeira LP produzirem casos reais aprovados.
 
 13. E13 — Partner Dashboard
 
@@ -948,64 +916,29 @@ Ajustados:
 18. E18 — Templates universais de conversão
 
 18.1 Status
-• Planejado
+• Reavaliação futura após dois casos reais aprovados
 
 18.2 Objetivo
-• Centralizar templates reutilizáveis por canal e contexto para a página comercial do Account Dashboard, landing pages, WhatsApp, e-mail, Instagram, TikTok e canais futuros.
+• Avaliar estruturas compartilhadas somente depois de a página comercial e a primeira LP estarem implementadas, testadas e aprovadas.
 
 18.3 Visão de projeto
-• Templates universais são estruturas reutilizáveis por canal e objetivo.
-• Não devem ser criados por nicho como regra.
-• Produto final = template universal + itens estruturados da pesquisa + dados do cliente.
-• Primeiro nível de classificação: canal.
-• Segundo nível de classificação: objetivo dentro do canal.
-• Parâmetros internos não viram templates paralelos: funil, tier, taxon, audience_scope, comprador/vendedor, objetivo de conversão e dados do cliente.
-• taxon_market_research_items é a fonte principal da inteligência por nicho quando houver pesquisa disponível.
-• O sistema deve evitar explosão de templates por nicho, tier ou funil.
-• Persistência em tabela deve ser avaliada somente quando houver necessidade real de salvar briefings, escolhas, respostas, gerações, aprovações ou histórico.
-• Primeira aplicação prática: E10.6 Página comercial do Account Dashboard.
+• Não existe implementação compartilhada ativa para templates ou conteúdo de conversão.
+• A nova E10.6 será específica da página comercial e consumirá diretamente os taxons e itens estruturados existentes.
+• A primeira LP será o segundo caso real usado para comparar necessidades, repetições e boundaries.
+• Somente depois desses dois casos será decidido se existe abstração compartilhada útil e qual deve ser seu formato.
 
 18.4 Fora de escopo
-• LP Builder e automações completas
-• nova tabela sem decisão estrutural posterior
-• responsabilidades de E10, E12 ou E19
-• detalhamento dos prompts finais de cada canal
+• implementação antecipada de templates universais
+• persistência compartilhada de conteúdo gerado
+• geração multicanal
+• infraestrutura para Instagram, e-mail, WhatsApp ou canais futuros
 
 18.5 Geração automatizada sobre templates universais
-• Status: Em andamento (contrato técnico inicial concluído)
-• Objetivo: definir a futura camada de geração automatizada de conteúdo sobre templates universais, usando a página comercial do Account Dashboard como primeiro laboratório controlado.
-• A geração deve transformar templates universais, itens estruturados da pesquisa, contexto do canal e dados opcionais do cliente em campos finais de comunicação comercial.
-• A estrutura continua definida pelo template universal; o mecanismo de geração apenas preenche, adapta, revisa ou varia os campos dentro do contrato do template.
-• Os campos finais podem incluir headline, promessa, contexto, cards comerciais, CTAs e blocos de benefício ou prova exigidos pelo template.
-• Primeira aplicação prevista: Account Dashboard — Página comercial.
-• O primeiro recorte deve ser compartilhado por taxon, sem dados específicos da conta.
-• O artefato usa `scope_key` estável para o histórico permanente do conteúdo e `input_fingerprint` para detectar alterações nas entradas e necessidade de regeneração.
-• O `scope_key` inicial considera template, audience_scope, locale, escopo genérico ou por taxon e `researchTaxonId`; template version, schema e fontes da pesquisa pertencem ao fingerprint.
-• A composição canônica inicial está implementada e poderá evoluir conforme novos canais e dados de conta forem incorporados.
-• Se dados específicos do cliente forem usados em etapa futura, a saída deixa de ser compartilhada por nicho e passa a exigir identidade por conta e fingerprint/versionamento dessas entradas.
-• Quando houver necessidade de reutilização, versionamento, aprovação ou histórico, as saídas devem ser tratadas como artefatos persistidos, não como cache simples.
-• O sistema deve evitar chamada repetida de IA/API para a mesma combinação válida de template, taxon, audience_scope e versão de pesquisa.
-• Nova geração só deve ocorrer quando não existir artefato válido ou quando houver solicitação administrativa de regeneração.
-• Taxons sem pesquisa estruturada suficiente devem usar fallback genérico válido.
-• Implementado: template versionado, proveniência por bloco de pesquisa com versão e `updated_at`, contrato camelCase dos campos finais, identidade inicial do artefato, validação estrutural pura com erros preservados e copy genérica determinística.
-• Evolução planejada do primeiro template: a `version: 2` da página comercial poderá incluir recursos, diferenciais, provas, FAQ, CTA final ampliado e blocos adicionais de benefícios.
-• Cada nova seção deverá integrar o contrato versionado, o fallback determinístico, a validação estrutural e a saída gerada antes de ser consumida pela E10.6; a `version: 1` permanece válida e não deve ser alterada retroativamente.
-• Preparado: `scope_key` e `input_fingerprint` SHA-256 canônicos, adapter server-side para criar draft, ativar versão e recuperar somente artefato ativo com fingerprint esperado, migration incremental canônica, verificação read-only e rollback isolado.
-• Artefatos: `lib/conversion-content/contracts.ts`, `lib/conversion-content/generatedCommercialContent.ts`, `lib/conversion-content/commercialTemplateResolution.ts`, `lib/conversion-content/templates/accountDashboardCommercialPage.ts`, `lib/conversion-content/adapters/commercialTemplateResolver.ts`, `lib/conversion-content/adapters/commercialGeneratedArtifactAdapter.ts`, `supabase/migrations/20260611235653_generated_content_artifacts.sql`, `supabase/snippets/e18_5_generated_content_artifacts_verification.sql` e `supabase/rollbacks/20260611__e18_5_generated_content_artifacts.rollback.sql`.
-• Persistência versionada: tabela transversal `generated_content_artifacts`, estados `draft | active | archived`, versões sequenciais e ativo único por `scope_key`, proveniência em `provenance_json`, RLS sem policies de usuário e acesso exclusivo de `service_role`.
-• Validação isolada: baseline + migration aplicadas em PostgreSQL 17.10 descartável, verificação estrutural consolidada aprovada, smoke de criação/ativação/arquivamento aprovado, rollback comprovado e reconstrução posterior aprovada.
-• Pendência operacional: revisar e fazer merge da migration; a aplicação remota depende de autorização separada pelo fluxo incremental e deve ser seguida pela atualização do contrato de schema.
-• Pendência de produto: definir runtime e validação da geração/provider e regras de consumo antes da integração da E10.6 com artefatos gerados.
-• Updates previstos para a etapa técnica futura:
-• supa#40: migration canônica e snippet de verificação read-only preparados; aplicação e verificação remotas pendentes.
-• supa#5: registrar geração, regeneração, falhas, duração, provider/modelo, versão das entradas e `request_id`, sem PII ou conteúdo integral.
-• supa#58: aplicar a regra global de GRANT explícito se forem criadas tabelas `public` acessadas pela Data API; não conceder grants automaticamente a tabelas internas.
-• vercel#1: avaliar AI Gateway quando provider e runtime de geração forem definidos.
-• vercel#8: usar `revalidateTag`/`updateTag` somente se a solução adotar cache real.
-• supa#53: avaliar apenas se houver necessidade comprovada de fila, retry ou processamento assíncrono.
-• tracking: definir uma única estratégia após a primeira entrega da E10.6, evitando duplicidade entre tracking interno e Vercel.
-• Não adotar neste recorte: supa#52, supa#54 e vercel#3.
-• Fora de escopo desta etapa: aplicação remota da migration, provider de IA, gateway, runtime de geração, UI administrativa e habilitação da leitura persistida na E10.6.
+• Status: Implementação retirada do recorte atual (12/06/2026)
+• A arquitetura antecipada de geração, artefatos, identidade, versionamento e persistência foi removida do código e das migrations ativas.
+• Não há tabela ou runtime remoto a desfazer, pois a migration retirada não havia sido aplicada ao Supabase.
+• A necessidade de geração automatizada e persistência será reavaliada somente após dois casos reais aprovados: a nova página comercial e a primeira LP.
+• Até essa avaliação, cada caso deve permanecer específico e sem infraestrutura compartilhada entre canais.
 
 19. E19 — LP Builder
 
@@ -1029,7 +962,7 @@ Ajustados:
 
 19.4.1 Fronteira com E10 / E12 / E18
 • E19 não inclui, nesta fase, a camada persuasiva pós-setup do Account Dashboard (E10.5 e E10.6).
-• E19 não concentra os templates universais de conversão da E18, embora possa consumi-los quando aplicável.
+• A primeira LP será um caso real próprio do E19 e ajudará a avaliar, junto com a nova E10.6, se existe necessidade de estrutura compartilhada futura.
 • O E19 só deve avançar para implementação quando houver recorte funcional real do LP Builder, evitando antecipação estrutural sem massa de código.
 
 19.5 Dependências / referências
@@ -1041,6 +974,7 @@ Ajustados:
 • Definir o primeiro recorte funcional do LP Builder no roadmap
 
 99. Changelog
+v1.5.70 — 12/06/2026 — Retirada a implementação antecipada da E18/E18.5 e a primeira E10.6; removidos templates universais, artefatos e persistência não aplicada, restaurado o Account Dashboard simples e reiniciada a página comercial como caso específico antes de qualquer abstração compartilhada.
 v1.5.69 — 11/06/2026 — E18.5 adota o primeiro fluxo incremental pós-baseline: migration canônica estrita de `generated_content_artifacts`, verificação read-only ampliada, validação isolada com smoke, rollback e reconstrução, mantendo aplicação remota e runtime consumidor bloqueados.
 v1.5.68 — 11/06/2026 — E10.6 e E18.5 registram o backlog da página comercial `version: 2`, com recursos, diferenciais, provas, FAQ, CTA final ampliado e evolução coordenada de contrato, fallback, validação, geração e renderização, preservando a `version: 1`.
 v1.5.67 — 11/06/2026 — E10.6 corrige a acentuação da copy fallback e remove o espaço reservado acima da página comercial quando não há card de resolução de nicho.

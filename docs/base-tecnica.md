@@ -2,8 +2,8 @@
 
 0.1. Cabeçalho
 • Documento: Base Técnica LP Factory 10
-• Versão: v2.0.39
-• Data: 11/06/2026
+• Versão: v2.0.40
+• Data: 12/06/2026
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -87,7 +87,7 @@
 3.3.1 Vocabulário e topologia
 • Camada: recorte de primeiro nível: Core (runtime no root), `automations/` (automações) ou `services/` (serviços com deploy independente). `.github/workflows/` apenas orquestra.
 • Seção do Core: recorte de produto: Account Dashboard, Admin Dashboard, Partner Dashboard ou LP Builder.
-• Domínio transversal do Core: capacidade entre seções. `access` concentra acesso; `conversion-content`, conteúdo universal de conversão reutilizável entre canais.
+• Domínio transversal do Core: capacidade entre seções. `access` concentra acesso compartilhado entre as áreas do produto.
 • Boundary: fronteira entre recortes reais, criada somente com responsabilidade e massa de código próprias.
 • Path canônico: localização física obrigatória para artefatos novos.
 
@@ -97,19 +97,6 @@
 • Não inventar paths: confirmar no repositório. Artefato novo nasce no path canônico; exceção existente não vira padrão.
 • Componentes específicos de rota que dependem de Server Action, estado ou boundary da própria rota devem nascer como route-local em `app/.../_components`; não promover para `components/features` sem boundary compartilhada real.
 • Partner Dashboard não ganha boundary antecipada. LP Builder é seção própria, fora do Account Dashboard.
-
-3.3.3 Family `conversion-content`
-• Paths: `docs/conversion-content.md` (documentação inicial), `docs/conversion-content/` (eventual expansão) e `lib/conversion-content/templates/` (runtime compartilhado).
-• Templates universais são a fonte; produtos finais são consumers/outputs em boundaries e paths próprios.
-• Landing pages pertencem ao LP Builder e podem consumir templates universais, sem compartilhar seu path.
-• Contrato público do runtime: `lib/conversion-content/index.ts`.
-• Template inicial: `lib/conversion-content/templates/accountDashboardCommercialPage.ts`.
-• Resolução pura: `lib/conversion-content/commercialTemplateResolution.ts`.
-• Adapter server-only: `lib/conversion-content/adapters/commercialTemplateResolver.ts`.
-• A resolução comercial usa a conta existente apenas para localizar taxon primário opcional; ausência de taxon, pesquisa completa ou leitura externa retorna o mesmo template com fallback genérico.
-• Pesquisa nichada: somente registros `active` com `audience_scope = business_buyer`; base suficiente exige itens ativos em `strategic_core`, `lp_overview`, `lp_sections` e `seo`.
-• Fallback: taxon resolvido → pai → ancestral disponível → genérico.
-• O adapter usa `service_role` exclusivamente no servidor e requer SELECT em `taxon_market_research` e `taxon_market_research_items`.
 
 3.4 CI/Lint (Bloqueios)
 • Validação por PR + preview de deploy (Vercel)
@@ -446,6 +433,8 @@ Fonte normativa da allowlist SULB para exceções de Auth. Qualquer novo arquivo
 • Tipos canônicos e adapters vNext: validar por 3.6 e 3.14.
 
 99. Changelog
+v2.0.40 — 12/06/2026 — Retirada a family antecipada `conversion-content` do estado técnico atual; estruturas compartilhadas de conteúdo serão reavaliadas somente após dois casos reais aprovados.
+
 v2.0.39 — 11/06/2026 — Registrado o fluxo canônico de migrations Supabase versionadas, com baseline, incrementais, validação isolada, dry-run obrigatório e workflow mantido sob gate fechado; `supabase/setup-cli` v2.1.1 fixada por SHA completo e CLI `2.106.0`.
 
 v2.0.38 — 09/06/2026 — Registrado o runtime inicial de `conversion-content`, com template comercial universal, resolução pura, adapter server-only, fallback hierárquico/genérico e grants read-only para pesquisa comercial.

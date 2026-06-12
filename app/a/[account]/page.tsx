@@ -1,9 +1,11 @@
 import { getAccessContext } from "@/lib/access/getAccessContext";
-import { getActionableNicheResolutionForAccount } from "../../../lib/onboarding/niche-resolution/adapters/accountNicheResolutionUserAdapter";
+import {
+  getActionableNicheResolutionForAccount,
+  getConfirmedOperationalNicheResolutionLabel,
+} from "../../../lib/onboarding/niche-resolution/adapters/accountNicheResolutionUserAdapter";
 import { PendingSetupFirstSteps } from "./_components/PendingSetupFirstSteps";
 import { NicheResolutionCard } from "./_components/NicheResolutionCard";
-import { resolveCommercialPageContent } from "../../../lib/conversion-content/commercialPageContent";
-import { CommercialPage } from "./_components/CommercialPage";
+import { getActivePrimaryAccountTaxon } from "../../../lib/onboarding/niche-resolution/adapters/accountTaxonomyAdapter";
 
 type DashState = "auth" | "onboarding" | "public";
 
@@ -43,32 +45,44 @@ export default async function Page({ params }: PageProps) {
     }
 
     const accountId = (ctx?.account?.id ?? ctx?.account_id ?? null) as string | null;
-    const [nicheResolution, commercialPage] = accountId
+    const [nicheResolution, primaryTaxon] = accountId
       ? await Promise.all([
           getActionableNicheResolutionForAccount({
             accountId,
             accountStatus,
           }),
-          resolveCommercialPageContent({ accountId }),
+          getActivePrimaryAccountTaxon({ accountId }),
         ])
       : [null, null];
-    const accountName =
-      ((ctx?.account?.name ?? ctx?.account?.subdomain ?? "Sua conta") as string).trim() ||
-      "Sua conta";
+    const operationalNicheLabel = accountId && !primaryTaxon
+      ? await getConfirmedOperationalNicheResolutionLabel({ accountId })
+      : null;
+    const resolvedNicheLabel = primaryTaxon?.name ?? operationalNicheLabel;
 
     return (
-      <main className="bg-surface-app pb-12">
-        {nicheResolution ? (
-          <div className="mx-auto max-w-6xl px-6 py-8">
+      <main className="mx-auto max-w-5xl px-6 py-10">
+        <div className="space-y-6">
+          {nicheResolution ? (
             <NicheResolutionCard
               accountSubdomain={accountSubdomain}
               resolution={nicheResolution}
             />
-          </div>
-        ) : null}
-        {commercialPage ? (
-          <CommercialPage accountName={accountName} page={commercialPage} />
-        ) : null}
+          ) : null}
+
+          <section className="rounded-xl border bg-white p-6 shadow-sm">
+            <h1 className="text-2xl font-semibold">Dashboard</h1>
+            {resolvedNicheLabel ? (
+              <div className="mt-2 space-y-2 text-sm text-gray-600">
+                <p>Sua conta esta ativa para o nicho {resolvedNicheLabel}.</p>
+                <p>Estamos desenvolvendo recursos para este nicho e entraremos em contato.</p>
+              </div>
+            ) : (
+              <p className="mt-2 text-sm text-gray-600">
+                Sua conta esta ativa. Novos recursos do dashboard aparecerao aqui conforme forem liberados.
+              </p>
+            )}
+          </section>
+        </div>
       </main>
     );
   }
