@@ -620,7 +620,7 @@
 10.5.5.3 Pendências
 • Decidir se a pesquisa bruta será arquivada no repo, no banco ou em ambos.
 • Se o arquivamento for no banco, avaliar o ajuste de schema necessário.
-• Usar os dados carregados como base para o template comercial do Account Dashboard, vinculado ao E10.5 e à resolução de template comercial em 10.5.6.7.
+• Usar os dados carregados futuramente na E10.7, para páginas comerciais personalizadas por nicho, sem vincular esse consumo à página genérica da E10.6.
 
 10.5.6 Classificação da conta e resolução do nicho
 • Status: Parcialmente concluído (14/05/2026)
@@ -663,8 +663,9 @@
 10.5.6.7 Resolução do template comercial
 • Status: Retirado do recorte atual (12/06/2026)
 • A resolução antecipada de template comercial foi removida junto com a implementação anterior da E10.6.
-• A nova E10.6 deverá resolver o taxon da conta e consultar diretamente as pesquisas e os itens estruturados necessários para a página comercial.
-• Não existe, no estado atual, contrato universal, resolver de template ou fallback compartilhado para canais.
+• A E10.6 será genérica, independente de taxon e sem consulta a pesquisas ou itens estruturados.
+• A E10.7 será responsável futuramente pela personalização da página comercial por nicho.
+• Não existe, no estado atual, arquitetura universal ou multicanal, contrato universal, resolver de template ou fallback compartilhado para canais.
 
 • ARTEFATOS_REPO preservados do E10.5.6:
 • `supabase/snippets/e10_5_6_7_commercial_template_service_role_grants.sql`
@@ -691,16 +692,60 @@
 • a UX principal do E10.5 para conta `active` sem entitlements ainda não está implementada na rota `/a/[account]`
 • o resultado operacional da resolução de nicho ainda não está exposto em UX final do dashboard da conta
 
-10.6 Página comercial do Account Dashboard
+10.6 Página comercial genérica do Account Dashboard
 • Status: Reiniciado — implementação anterior removida (12/06/2026)
-• Objetivo: apresentar uma vitrine persuasiva para contas active sem entitlements, com experiência semelhante a uma LP interna e cards comerciais para compra, solicitação, briefing ou ativação da primeira entrega.
+• Objetivo: criar e validar uma página comercial genérica, semelhante a uma landing page interna, para apresentar e vender os serviços da LP Factory.
 • A implementação anterior e sua página visual foram retiradas; o Account Dashboard voltou temporariamente ao estado simples anterior.
-• Próximo recorte: implementação específica da página comercial, sem antecipar arquitetura compartilhada.
-• A página deverá usar o taxon resolvido da conta e consultar diretamente `taxon_market_research` e `taxon_market_research_items`.
-• O view model, as seções e o fallback serão específicos da página comercial e usarão somente os blocos necessários.
-• Não haverá nesta etapa template universal, persistência de artefatos, geração multicanal ou infraestrutura para LP, Instagram, e-mail e WhatsApp.
-• A primeira LP será avaliada somente depois de a nova página comercial estar implementada, testada e aprovada.
-• Fora de escopo: E18, provider de IA, geração administrativa, tabela de artefatos, LP Builder e alterações em billing ou entitlements.
+• Exibição inicial: contas `active`.
+
+10.6.1 Primeira entrega
+• Conteúdo fixo e genérico.
+• Hero.
+• Benefícios.
+• Serviços.
+• Cards de venda.
+• Diferenciais, quando necessários.
+• Seção “como funciona”.
+• CTAs.
+• FAQ.
+• CTA final.
+• Responsividade desktop e mobile.
+
+10.6.2 Validação prioritária
+• UI e design.
+• Estrutura das seções e hierarquia visual.
+• Clareza da oferta.
+• Comportamento dos CTAs.
+
+10.6.3 Regras e limites
+• Não usar `limits.max_lps` ou outro entitlement ainda não integrado ao runtime.
+• Não resolver taxon nem consultar pesquisas ou itens estruturados por taxon.
+• Não criar tabelas.
+• Não usar IA.
+• Não persistir conteúdo.
+• Não antecipar arquitetura compartilhada.
+• Não implementar duas versões A/B na primeira entrega.
+• Possíveis testes A/B permanecem como evolução futura da própria E10.6, somente após a aprovação da primeira versão.
+
+10.7 Páginas comerciais personalizadas por nicho
+• Status: Planejado — iniciar somente após a aprovação da E10.6.
+• Objetivo: criar páginas comerciais personalizadas conforme o taxon da conta, usando pesquisas com `audience_scope = business_buyer`.
+
+10.7.1 Direção futura
+• Resolver o taxon da conta.
+• Localizar pesquisas estruturadas aplicáveis.
+• Usar itens de `taxon_market_research_items`.
+• Gerar ou montar o conteúdo específico do nicho.
+• Persistir cada página em banco.
+• Permitir edição administrativa.
+• Controlar status e publicação.
+• Exibir a página nichada quando disponível.
+• Usar a página genérica da E10.6 como fallback.
+
+10.7.2 Regras e limites
+• A modelagem das tabelas, geração, edição, versionamento e publicação será definida somente quando a E10.7 for iniciada.
+• A E10.7 não faz parte da implementação da primeira entrega da E10.6.
+• Não antecipar nesta etapa tabelas, contratos ou arquitetura compartilhada para a E10.7.
 
 11. E11 — Gestão de Usuários e Convites
 
@@ -923,7 +968,7 @@ Ajustados:
 
 18.3 Visão de projeto
 • Não existe implementação compartilhada ativa para templates ou conteúdo de conversão.
-• A nova E10.6 será específica da página comercial e consumirá diretamente os taxons e itens estruturados existentes.
+• A E10.6 será a página comercial genérica, independente de taxon; a personalização com taxons e itens estruturados existentes ficará para a futura E10.7.
 • A primeira LP será o segundo caso real usado para comparar necessidades, repetições e boundaries.
 • Somente depois desses dois casos será decidido se existe abstração compartilhada útil e qual deve ser seu formato.
 
@@ -974,6 +1019,7 @@ Ajustados:
 • Definir o primeiro recorte funcional do LP Builder no roadmap
 
 99. Changelog
+v1.5.71 — 12/06/2026 — Separadas a E10.6, agora dedicada à primeira página comercial genérica sem banco novo, pesquisa ou IA, e a futura E10.7, responsável por páginas comerciais personalizadas por nicho após a aprovação da E10.6; referências ao consumo direto de pesquisas pela E10.6 foram corrigidas.
 v1.5.70 — 12/06/2026 — Retirada a implementação antecipada da E18/E18.5 e a primeira E10.6; removidos templates universais, artefatos e persistência não aplicada, restaurado o Account Dashboard simples e reiniciada a página comercial como caso específico antes de qualquer abstração compartilhada.
 v1.5.69 — 11/06/2026 — E18.5 adota o primeiro fluxo incremental pós-baseline: migration canônica estrita de `generated_content_artifacts`, verificação read-only ampliada, validação isolada com smoke, rollback e reconstrução, mantendo aplicação remota e runtime consumidor bloqueados.
 v1.5.68 — 11/06/2026 — E10.6 e E18.5 registram o backlog da página comercial `version: 2`, com recursos, diferenciais, provas, FAQ, CTA final ampliado e evolução coordenada de contrato, fallback, validação, geração e renderização, preservando a `version: 1`.
