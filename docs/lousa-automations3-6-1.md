@@ -1,5 +1,7 @@
 # Lousa — 3.6.1 Baseline de migrations no Supabase
 
+> Status final: concluído em 12/06/2026. As seções 1 a 12 preservam o registro histórico da preparação e validação; a seção 13 contém o encerramento definitivo e prevalece sobre estados intermediários.
+
 ## 1) Objetivo da fase baseline
 
 * Extrair o baseline real do banco remoto atual.
@@ -215,3 +217,40 @@ A baseline só pode ser tratada como concluída quando os itens abaixo estiverem
 * escrita remota não autorizada: `supabase db push --linked`
 * escrita remota não autorizada: alteração de `SUPABASE_APPLY_MIGRATIONS_ENABLED`
 * escrita remota não autorizada: execução do workflow de apply ou criação de branch Supabase
+
+## 13) Encerramento definitivo de 12/06/2026
+
+### 13.1 Evidências finais
+
+* `main` confirmada no SHA `9098c1f38b6a6eccf9dab753f9ba55db68f61d2e`
+* migrations ativas e registradas local e remotamente:
+  * `20260611172930_remote_public_baseline.sql`
+  * `20260612143820_migration_workflow_smoke_create.sql`
+  * `20260612221253_migration_workflow_smoke_drop.sql`
+* `supabase migration list --linked`: os três timestamps estão alinhados entre local e remoto
+* `supabase db push --linked --dry-run`: `Remote database is up to date.`
+* `public.migration_workflow_smoke`: ausente após a migration de remoção
+* migration de criação: aplicada automaticamente após merge na `main`
+* migration de remoção: aplicada automaticamente após merge na `main`
+* `SUPABASE_APPLY_MIGRATIONS_ENABLED`: variável de repositório confirmada com valor `true`
+* nenhuma credencial, connection string ou valor de secret foi registrado nesta lousa
+
+### 13.2 Fluxo definitivo
+
+* criar migrations em `supabase/migrations/<timestamp>_<nome>.sql`
+* validar a migration e revisar `migration list --linked` e `db push --linked --dry-run`
+* abrir PR exclusivo e aguardar merge humano na `main`
+* o merge na `main` dispara o apply automático pelo workflow
+* manter `SUPABASE_APPLY_MIGRATIONS_ENABLED = true` no fluxo normal
+* não usar SQL Editor para alterações de schema no fluxo normal
+* não editar, apagar, renomear ou substituir migration já aplicada
+* fazer correções e reversões por nova migration incremental
+
+### 13.3 Conclusão
+
+* baseline oficial: ativa
+* histórico remoto: alinhado
+* legado: preservado fora do fluxo ativo
+* workflow de apply: operacional
+* smoke de criação e remoção: concluído
+* pendências da fase baseline: nenhuma
