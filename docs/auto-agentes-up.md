@@ -1,18 +1,61 @@
 # LP Factory 10 — Agentes e Orquestração (Updates)
 
-Este doc deve conter apenas updates do universo de agentes, tools, padrões de uso e orquestração que possam potencializar automações do projeto.
+## Objetivo e escopo
 
-Isso inclui:
-- recursos e padrões da OpenAI ligados a agentes
-- handoffs, tool use, guardrails e arquitetura de agentes
-- workflows, pipelines e orquestrações quando forem relevantes para automações assistidas por agentes ou para fluxos híbridos humano + agente + automação
+Este documento registra updates do universo de agentes, tools, SDKs, guardrails, handoffs, padrões de uso e orquestração que possam potencializar automações assistidas do LP Factory 10.
 
-Não inclui:
-- CI, build, deploy e workflows técnicos gerais sem relação com agentes ou automações assistidas
-- detalhes de infra de Supabase ou Vercel
-- documentação operacional de automações em si, que deve ficar em `docs/automacoes.md`
+Só devem entrar recursos relacionados a:
 
-Qualquer coisa de Supabase ou Vercel (infra, deploy, logs, MCP via Edge Functions etc.) fica nos respectivos docs e só referencia aqui se for governança de agentes, padrão de uso por agentes ou potencialização direta de automações assistidas.
+* construção e operação de agentes;
+* Responses API, Agents SDK e tools;
+* handoffs e coordenação entre agentes;
+* guardrails, avaliações e observabilidade de agentes;
+* conectores, MCPs e acesso controlado a ferramentas;
+* workflows e pipelines híbridos entre humano, agente e automação;
+* interfaces e experiências baseadas em agentes quando o foco principal for sua arquitetura ou operação.
+
+Não registrar novidades genéricas sem impacto concreto, caso de uso ou decisão aplicável ao projeto.
+
+## Fontes prioritárias
+
+A pesquisa deve usar prioritariamente documentação oficial de:
+
+* OpenAI, para Responses API, Agents SDK, tools, AgentKit, avaliações, guardrails e produtos de agentes;
+* provedores oficiais de MCPs, conectores e ferramentas, quando o recurso for específico de outra plataforma;
+* documentação oficial de padrões e SDKs diretamente envolvidos no recurso.
+
+Fontes secundárias podem apoiar a análise, mas não devem substituir documentação oficial.
+
+## Fronteiras documentais
+
+* `docs/auto-agentes-up.md` é o documento principal para arquitetura, ferramentas, SDKs, handoffs, guardrails e orquestração de agentes.
+* `docs/prod-up.md` registra apenas o impacto de produto, UX, conversão ou experiência do usuário; deve referenciar `agent#n` sem duplicar a descrição técnica.
+* Recursos específicos de Supabase, Vercel ou GitHub devem permanecer nos respectivos catálogos; este documento só deve referenciá-los quando houver impacto direto na governança ou operação de agentes.
+* Automações operacionais já implementadas, rotinas, schedules e procedimentos pertencem a `docs/automacoes.md`, não a este catálogo.
+* Cada recurso deve possuir um único documento principal; os demais usam referência curta.
+
+## Convenção de leitura
+
+* O heading/badge de cada item representa a maturidade ou estado do recurso no mercado/plataforma.
+* O estado no LP Factory 10 deve ser registrado separadamente como:
+
+  * `Não implementado`;
+  * `Em implementação por casos de uso`;
+  * `Implementado globalmente no projeto`.
+* Quando necessário, podem ser usadas observações curtas como:
+
+  * `Superado por item mais novo`;
+  * `Duplicado`;
+  * `Deferido`;
+  * `Não apto no plano atual`.
+
+Não adicionar retroativamente blocos de status aos itens existentes neste pacote; apenas definir a convenção para futuras atualizações.
+
+## Convenção de referência
+
+O identificador canônico dos itens deste catálogo é `agent#n`.
+
+Esse identificador deve ser usado no roadmap, Base Técnica, briefings, relatórios e referências cruzadas. A numeração não deve ser reutilizada após remoção, depreciação ou substituição de um item.
 
 ---
 
