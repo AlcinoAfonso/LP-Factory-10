@@ -23,20 +23,23 @@
 - Observação: monitoramento de mercado; disponibilidade varia por recurso/plano.
 
 ### Descrição
-Conjunto de capacidades de IA na Vercel com disponibilidade por recurso/plano, incluindo AI Gateway, Fluid Compute com Active CPU pricing, Rolling Releases e BotID.
+Conjunto de capacidades de plataforma com disponibilidade e cobrança próprias por recurso/plano:
+- **AI Gateway:** endpoint unificado para acessar múltiplos modelos, acompanhar uso e orçamento, aplicar balanceamento e fallbacks.
+- **Fluid Compute:** execução de Functions otimizada para concorrência e workloads com espera de I/O, com cobrança que distingue CPU ativa do tempo de espera/memória.
+- **Sandbox:** ambientes Linux efêmeros e isolados para executar código não confiável, scripts gerados por agentes, testes e servidores temporários.
+- **BotID:** proteção invisível contra bots para rotas sensíveis, com validação client-side e verificação server-side.
 
 ### Valor para o Projeto
-- Pode reduzir custo em workloads intermitentes.
-- Pode ampliar segurança/controle de rollout em ciclos de deploy.
-- Cria base para iniciativas IA-ready quando houver caso de uso aprovado.
+- Pode apoiar workloads de IA, execução isolada e proteção de endpoints quando existir um caso de uso aprovado.
+- Permite avaliar custo, segurança e operação por capacidade, sem tratar “AI Cloud” como adoção única ou automática.
 
 ### Valor para o Usuário
-- Potencial de desempenho mais previsível em cargas variáveis.
-- Maior resiliência em mudanças progressivas de release.
+- Benefícios potenciais de resiliência, segurança e desempenho dependem de uma aplicação concreta e validada.
 
 ### Ações Recomendadas
-1. Acompanhar maturidade e requisitos de plano de AI Gateway, Fluid Compute, Rolling Releases e BotID.
-2. Só planejar adoção quando houver caso de uso priorizado no roadmap.
+1. Manter AI Gateway, Fluid Compute, Sandbox e BotID sem adoção no LP Factory 10 enquanto não houver caso aprovado.
+2. Avaliar separadamente requisitos de plano, custos, dados e segurança antes de qualquer implementação.
+3. Não transformar essas capacidades em requisito da primeira entrega da E10.6.
 
 ---
 
@@ -136,10 +139,11 @@ Capacidades de navegação e roteamento do framework evoluídas no ciclo atual d
 - Evidência: inexistência de configuração/adoção explícita no repositório atual (sem registro de uso operacional no roadmap/base técnica).
 
 ### Descrição
-Integração MCP do ecossistema Next.js 16+ para suporte a inspeção e depuração assistida em desenvolvimento.
+Integração MCP do Next.js para conectar agentes ao servidor de desenvolvimento e permitir acesso a erros de build, runtime e tipos, logs do navegador/servidor, metadados de projeto e páginas, rotas, componentes, Server Actions e informações de runtime em tempo real.
 
 ### Valor para o Projeto
-- Pode acelerar diagnóstico técnico quando incorporado ao fluxo de desenvolvimento.
+- Pode acelerar diagnóstico técnico e dar mais contexto aos agentes durante o desenvolvimento.
+- É uma avaliação futura de produtividade técnica, não uma feature de produto.
 
 ### Valor para o Usuário
 - Indiretamente reduz tempo de resolução de incidentes.
@@ -180,17 +184,18 @@ Versão estável do React já usada no stack atual do LP Factory 10.
 - Evidência: não há integração explícita no projeto para fluxo com `updateTag()`/`revalidateTag()` como padrão operacional.
 
 ### Descrição
-APIs do framework para invalidação de cache mais precisa, incluindo `revalidateTag()` e `updateTag()` em cenários específicos.
+APIs do framework para invalidação de cache por tag. `revalidateTag()` deve receber um profile como `"max"` ou `"stale"`, conforme a política desejada; a chamada sem segundo argumento usa o comportamento legado de expiração imediata e está deprecada. `updateTag()` invalida imediatamente para cenários de read-your-own-writes e só pode ser usado em Server Actions.
 
 ### Valor para o Projeto
-- Possibilita atualização pontual de dados sem estratégia global de rebuild.
+- Possibilita atualização pontual de dados sem estratégia global de rebuild, desde que exista cache real e uma política de consistência definida.
 
 ### Valor para o Usuário
 - Pode melhorar frescor de dados em áreas com atualização frequente.
 
 ### Ações Recomendadas
-1. Mapear casos reais que se beneficiem de invalidação por tag.
-2. Adotar apenas com critérios de consistência e observabilidade definidos.
+1. Manter sem adoção no projeto até existir cache real que justifique invalidação por tag.
+2. Ao adotar, escolher explicitamente o profile de `revalidateTag()` e reservar `updateTag()` a Server Actions que exijam atualização imediata.
+3. Não introduzir cache dinâmico na primeira entrega da E10.6.
 
 ---
 
@@ -225,7 +230,7 @@ No ciclo atual do Next.js, `middleware.ts` foi substituído/deprecado em favor d
 - Observação: visibilidade disponível para clientes; profundidade de métricas pode variar conforme plano/Observability Plus.
 
 ### Descrição
-Painel de Observability da Vercel com visibilidade de tráfego, incluindo rotas com redirects/rewrites.
+Painel de Observability da Vercel com métricas básicas de redirects e rewrites disponíveis nos planos da plataforma. Em Pro/Enterprise, o Observability Plus acrescenta métricas avançadas, como latência de conexão, recortes por origem/destino e rotas de destino do redirect. Logs de runtime estão disponíveis no dashboard; exportação por Drains, inclusive de redirects e rewrites, é um recurso de Pro/Enterprise e pode ter cobrança própria.
 
 ### Valor para o Projeto
 - Diagnóstico mais rápido de comportamento de rotas e latência.
@@ -234,8 +239,8 @@ Painel de Observability da Vercel com visibilidade de tráfego, incluindo rotas 
 - Maior consistência de navegação com monitoramento contínuo.
 
 ### Ações Recomendadas
-1. Manter validações periódicas em smoke de preview para rotas críticas.
-2. Evoluir alertas de latência conforme maturidade de observabilidade do time.
+1. Manter validações periódicas em smoke de Preview para rotas críticas usando as métricas básicas já disponíveis.
+2. Avaliar Observability Plus, logs e Drains apenas se a necessidade operacional justificar plano, retenção e custo adicionais.
 
 ### Registro (Tipo A — Plataforma)
 - Status: OK
@@ -252,10 +257,10 @@ Painel de Observability da Vercel com visibilidade de tráfego, incluindo rotas 
 ### Status no Projeto
 - Status: Não implementado
 - Evidência: roadmap/base técnica registram tracking interno em planejamento, sem adoção explícita de `@vercel/analytics/server` no projeto.
-- Observação: custom events server-side dependem de disponibilidade/plano (tipicamente Pro/Enterprise).
+- Observação: custom events server-side estão disponíveis em planos Pro/Enterprise.
 
 ### Descrição
-Capacidade de envio de eventos customizados server-side via stack de analytics da Vercel, sem depender apenas de eventos client-side.
+Capacidade de envio de eventos customizados server-side via `@vercel/analytics/server`, sem depender apenas de eventos client-side. Requer `@vercel/analytics >= 1.1.0`; em deploy protegido, a requisição de tracking pode exigir `VERCEL_AUTOMATION_BYPASS_SECRET` ou configuração equivalente de bypass para alcançar o endpoint de coleta.
 
 ### Valor para o Projeto
 - Pode melhorar confiabilidade de telemetria em fluxos sensíveis.
@@ -264,8 +269,9 @@ Capacidade de envio de eventos customizados server-side via stack de analytics d
 - Melhora indireta na qualidade de produto por decisões guiadas por eventos mais consistentes.
 
 ### Ações Recomendadas
-1. Avaliar desenho de eventos server-side alinhado ao modelo de observabilidade interno.
-2. Evitar pressupor integração nativa pronta com APIs de Ads sem fonte oficial específica.
+1. Não adotar na primeira entrega da E10.6.
+2. Antes de implementar, confirmar plano Pro/Enterprise, versão do pacote, proteção do deploy e estratégia única de tracking.
+3. Evitar pressupor integração nativa pronta com APIs de Ads sem fonte oficial específica.
 
 ---
 
@@ -278,7 +284,7 @@ Capacidade de envio de eventos customizados server-side via stack de analytics d
 - Observação: Duplicado / Superado por item mais novo (manter referência no `#1`).
 
 ### Descrição
-Duplicado do item 1.
+Item deprecado por ser duplicado e ter sido superado pelo detalhamento consolidado no `vercel#1`.
 
 ---
 
@@ -343,5 +349,137 @@ Configuração opcional da Vercel para permitir uso de código e chats de agente
 - Ambiente: Vercel Team/Project Settings / Data Preferences
 - Evidência: —
 - Observação: tratar como decisão consciente de governança; não como feature de produto.
+
+---
+
+## 15 — Vercel Toolbar *(🟩 Disponível na plataforma)*
+2026-06-12
+
+### Status no Projeto
+- Status: Não implementado
+- Evidência: não há configuração ou registro local que comprove adoção operacional no LP Factory 10.
+- Observação: avaliar como hub técnico/operacional de Preview, sem tratá-lo como feature do produto.
+
+### Descrição
+Hub de inspeção e colaboração em deployments que centraliza Comments, Accessibility Audit Tool, Interaction Timing Tool, Layout Shift Tool, Flags Explorer e outras ferramentas de navegação e revisão.
+
+### Valor para o Projeto
+- Reúne validações de Preview no contexto da página e reduz a dispersão entre feedback, inspeção e dashboard.
+
+### Valor para o Usuário
+- Contribui indiretamente para páginas mais claras, acessíveis, estáveis e responsivas antes da publicação.
+
+### Ações Recomendadas
+1. Avaliar após existir o primeiro Preview funcional da E10.6.
+2. Usar como prática operacional, sem criar nova infraestrutura.
+
+---
+
+## 16 — Vercel Comments *(🟩 Disponível na plataforma)*
+2026-06-12
+
+### Status no Projeto
+- Status: Não implementado
+- Evidência: não há registro local de Comments habilitado ou adotado no fluxo de aprovação.
+
+### Descrição
+Feedback localizado diretamente em deployments de Preview, associado ao ponto visual revisado e compartilhável com o time.
+
+### Valor para o Projeto
+- Facilita revisão visual e alinhamento de design/copy sem depender de prints soltos.
+
+### Valor para o Usuário
+- Reduz ambiguidades e retrabalho na correção de conteúdo e interface antes da publicação.
+
+### Ações Recomendadas
+1. Avaliar para validação operacional do Preview da E10.6, sem torná-lo bloqueio da primeira entrega.
+
+---
+
+## 17 — Accessibility Audit Tool *(🟩 Disponível na plataforma)*
+2026-06-12
+
+### Status no Projeto
+- Status: Não implementado
+- Evidência: não há registro local de uso da ferramenta no fluxo de QA.
+
+### Descrição
+Ferramenta da Vercel Toolbar para checar regras de acessibilidade, incluindo WCAG, contraste, semântica e estados de foco no contexto da página.
+
+### Valor para o Projeto
+- Apoia QA de páginas antes da aprovação e ajuda a localizar problemas diretamente no Preview.
+
+### Valor para o Usuário
+- Melhora legibilidade, navegação por teclado e compreensão da interface.
+
+### Ações Recomendadas
+1. Usar como apoio à revisão da E10.6 quando disponível no ambiente/plano.
+2. Não substituir validação manual de teclado, foco, conteúdo e tecnologias assistivas.
+
+---
+
+## 18 — Interaction Timing Tool *(🟩 Disponível na plataforma)*
+2026-06-12
+
+### Status no Projeto
+- Status: Não implementado
+- Evidência: não há registro local de uso da ferramenta no fluxo de QA.
+
+### Descrição
+Ferramenta da Vercel Toolbar para inspecionar a latência de cada interação da sessão e apoiar a análise de INP.
+
+### Valor para o Projeto
+- Ajuda a revisar CTAs, FAQ, cards e outros componentes interativos no Preview.
+
+### Valor para o Usuário
+- Favorece respostas mais rápidas e previsíveis após cliques, toques e comandos de teclado.
+
+### Ações Recomendadas
+1. Aplicar como diagnóstico no Preview funcional, sem converter analytics em requisito da primeira entrega da E10.6.
+
+---
+
+## 19 — Layout Shift Tool *(🟩 Disponível na plataforma)*
+2026-06-12
+
+### Status no Projeto
+- Status: Não implementado
+- Evidência: não há registro local de uso da ferramenta no fluxo de QA.
+
+### Descrição
+Ferramenta da Vercel Toolbar para identificar visualmente elementos que causam CLS e deslocamentos de layout durante a sessão.
+
+### Valor para o Projeto
+- Apoia a revisão de hero, imagens, fontes, cards, FAQ e responsividade.
+
+### Valor para o Usuário
+- Reduz mudanças inesperadas de posição que prejudicam leitura e interação.
+
+### Ações Recomendadas
+1. Usar no QA do Preview quando disponível, mantendo inspeção manual em diferentes larguras de tela.
+
+---
+
+## 20 — Vercel Flags / Flags SDK / Flags Explorer *(🟨 Avaliação futura)*
+2026-06-12
+
+### Status no Projeto
+- Status: Não implementado
+- Evidência: não há flags, SDK, provider ou configuração do Flags Explorer registrados como adoção no LP Factory 10.
+- Observação: recurso futuro; não recomenda A/B ativo na primeira entrega da E10.6.
+
+### Descrição
+Conjunto para definir e avaliar flags em código, aplicar targeting, segmentos e splits, controlar rollouts e testar overrides no navegador pelo Flags Explorer. O Explorer está disponível nos planos da plataforma, mas o uso sem assinatura adicional é limitado a 150 aplicações de overrides por mês; overrides ilimitados custam US$ 250/mês em Pro/Enterprise. O Vercel Flags possui cobrança e limites próprios por requisições, flags e segmentos.
+
+### Valor para o Projeto
+- Pode apoiar rollouts controlados, inspeção de estados e experimentos futuros quando houver hipótese, governança e medição aprovadas.
+
+### Valor para o Usuário
+- Pode reduzir risco de lançamentos futuros ao permitir exposição gradual e segmentada.
+
+### Ações Recomendadas
+1. Manter como avaliação futura e separar decisão de provider, SDK, Flags Explorer e experimentação.
+2. Antes de adotar, validar limites, custos, targeting, privacidade, estratégia de medição e processo de remoção de flags.
+3. Não implementar A/B, splits ou infraestrutura de flags na primeira entrega da E10.6.
 
 ---
