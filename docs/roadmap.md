@@ -657,7 +657,15 @@
 
 10.5.6.6 Microdiálogo visual e fallback final
 • Status: Em andamento
-• Direção: card inline no E10.5, não bloqueante, sem modal/chatbot, com confirmação/escolha do usuário.
+• Componente atual: `app/a/[account]/_components/NicheResolutionCard.tsx`.
+• O `NicheResolutionCard` é um componente da E10.5 para confirmação do nicho da conta; não é parte do conteúdo comercial da E10.6.
+• O card pode:
+• confirmar um único nicho sugerido;
+• permitir escolha entre opções;
+• solicitar que o usuário informe manualmente seu nicho quando não houver resultado seguro.
+• O card é exibido somente para conta `active`, sem taxon primário e com resolução acionável ainda não finalizada.
+• Quando necessário, deve permanecer acima da página comercial genérica da E10.6.
+• A E10.6 não deve redesenhar, remover nem alterar o comportamento funcional desse card.
 • Fallback elegante sem rechamar IA em loop.
 
 10.5.6.7 Resolução do template comercial
@@ -693,45 +701,169 @@
 • o resultado operacional da resolução de nicho ainda não está exposto em UX final do dashboard da conta
 
 10.6 Página comercial genérica do Account Dashboard
-• Status: Reiniciado — implementação anterior removida (12/06/2026)
+• Status: Planejado — objetivo e primeira entrega definidos (13/06/2026)
 • Objetivo: criar e validar uma página comercial genérica, semelhante a uma landing page interna, para apresentar e vender os serviços da LP Factory.
-• A implementação anterior e sua página visual foram retiradas; o Account Dashboard voltou temporariamente ao estado simples anterior.
+• URL canônica: `/a/[account]`.
 • Exibição inicial: contas `active`.
+• A mesma URL deverá ser preservada em futuras variantes ou testes A/B.
+• A primeira entrega valida conteúdo, UI, design, hierarquia visual, responsividade e conversão.
+• O conteúdo será fixo no repositório e não será editável pelo Admin Dashboard nesta primeira etapa.
 
-10.6.1 Primeira entrega
-• Conteúdo fixo e genérico.
-• Hero.
+10.6.1 Organização inicial no repositório
+• Componente visual previsto:
+• `app/a/[account]/_components/commercial-page/GenericCommercialPage.tsx`
+• Conteúdo genérico previsto:
+• `app/a/[account]/_content/commercial-page/generic-v1.ts`
+• O componente será responsável pelo layout e pela renderização.
+• O arquivo `generic-v1.ts` concentrará textos, benefícios, serviços, planos, FAQ e CTAs.
+• Uma futura variante poderá usar `generic-v2.ts`, preservando a mesma URL.
+• Não implementar mecanismo A/B na primeira entrega.
+• A estrutura proposta é específica da E10.6 e não constitui template universal ou arquitetura multicanal.
+
+10.6.2 Seções da primeira entrega
+• Hero com proposta principal e CTA evidente.
 • Benefícios.
 • Serviços.
-• Cards de venda.
-• Diferenciais, quando necessários.
+• Planos e cards de venda.
+• Diferenciais.
 • Seção “como funciona”.
-• CTAs.
 • FAQ.
 • CTA final.
 • Responsividade desktop e mobile.
+• Aviso visível de que preços e serviços são ilustrativos durante a validação visual.
 
-10.6.2 Validação prioritária
-• UI e design.
-• Estrutura das seções e hierarquia visual.
-• Clareza da oferta.
-• Comportamento dos CTAs.
+10.6.3 Planos ilustrativos
+• Os nomes canônicos são Starter, Lite, Pro e Ultra.
+• Os preços e limites abaixo são provisórios e não constituem oferta comercial definitiva.
 
-10.6.3 Regras e limites
+• Starter — R$ 50/mês:
+• 1 landing page;
+• layout responsivo;
+• CTA principal;
+• publicação assistida.
+
+• Lite — R$ 100/mês:
+• até 2 landing pages;
+• personalização de marca;
+• formulário ou WhatsApp;
+• ajustes básicos.
+
+• Pro — R$ 200/mês:
+• até 5 landing pages;
+• adaptação de copy;
+• seções de conversão;
+• tracking essencial.
+
+• Ultra — R$ 300/mês:
+• até 10 landing pages;
+• prioridade de atendimento;
+• revisões periódicas;
+• otimização orientada por dados.
+
+• Esses valores e serviços servem somente para testar:
+• comparação entre planos;
+• largura e altura dos cards;
+• listas de recursos;
+• destaque de plano recomendado;
+• CTAs;
+• comportamento responsivo.
+
+10.6.4 Tracking mínimo
+• Tracking é requisito do MVP e deve integrar a E10.6.
+• Eventos mínimos:
+• `commercial_page_view`;
+• `commercial_primary_cta_click`;
+• `commercial_plan_cta_click`.
+• Propriedades mínimas:
+• `page_variant = generic-v1`;
+• `plan_key`, quando aplicável;
+• `cta_location`, como `hero`, `plan_card` ou `final`.
+• Não registrar nome, e-mail, copy integral ou outra PII.
+• O mecanismo canônico de envio e armazenamento dos eventos deve ser definido no briefing técnico antes da implementação.
+• Não usar `console.log` como substituto de tracking.
+• Tracking de scroll, abertura de FAQ e outros microeventos fica fora da primeira entrega.
+• Pendência documental relacionada: registrar no `README.md` que tracking mínimo é requisito do MVP.
+
+10.6.5 Critérios de UX e QA
+• QA significa garantia de qualidade da entrega.
+• A primeira dobra deve permitir reconhecer rapidamente:
+• o que está sendo oferecido;
+• o principal benefício;
+• a ação principal;
+• o próximo passo.
+• CTAs devem ser visíveis, compreensíveis e navegáveis por teclado.
+• Cards devem permitir comparação clara entre os planos.
+• FAQ deve ter leitura e interação simples.
+• Validar:
+• desktop;
+• mobile;
+• contraste;
+• foco;
+• hover;
+• ausência de texto cortado;
+• ausência de overflow;
+• ausência de sobreposição;
+• ausência de deslocamento visual perceptível.
+• A validação deve usar o Preview correspondente ao commit mais recente da branch.
+• O `NicheResolutionCard`, quando acionável, deve continuar funcionando acima da página.
+
+10.6.6 Updates aplicáveis
+• Adotar na primeira entrega:
+• `prod#14` — priorizar reconhecimento e clareza nos testes iniciais;
+• `prod#5` — usar somente os checks existentes do projeto;
+• `prod#16` — QA visual e validação de UX em Preview;
+• `vercel#13` — confirmar que o Preview corresponde ao commit mais recente.
+• Usar no QA somente quando disponíveis, sem bloquear a entrega:
+• `vercel#15` — Vercel Toolbar;
+• `vercel#16` — Vercel Comments;
+• `vercel#17` — Accessibility Audit Tool;
+• `vercel#18` — Interaction Timing Tool;
+• `vercel#19` — Layout Shift Tool.
+• Avaliar depois da primeira versão funcional:
+• `prod#3` — Speed Insights;
+• `vercel#10` — observabilidade de redirects, somente se houver problema real;
+• `vercel#11` — eventos customizados e tracking server-side;
+• `vercel#20` — variantes, flags e testes A/B;
+• `vercel#8` — cache e revalidação, somente se o conteúdo passar a vir do banco;
+• `prod#15` — automação de microeventos.
+• Não aplicar nesta etapa:
+• `vercel#1` — Vercel AI Cloud.
+
+10.6.7 Regras e limites
 • Não usar `limits.max_lps` ou outro entitlement ainda não integrado ao runtime.
-• Não resolver taxon nem consultar pesquisas ou itens estruturados por taxon.
-• Não criar tabelas.
+• Não consultar taxons, pesquisas ou itens estruturados.
+• Não criar ou alterar tabela, migration, RLS ou policy.
 • Não usar IA.
-• Não persistir conteúdo.
-• Não antecipar arquitetura compartilhada.
-• Não implementar duas versões A/B na primeira entrega.
-• Possíveis testes A/B permanecem como evolução futura da própria E10.6, somente após a aprovação da primeira versão.
+• Não persistir o conteúdo comercial em banco.
+• Não criar edição pelo Admin Dashboard.
+• Não implementar teste A/B ativo.
+• Não criar cache dinâmico.
+• Não criar nova infraestrutura ou suíte extensa de testes.
+• Não antecipar E10.7, E18 ou arquitetura compartilhada.
+• Manter os fluxos atuais de acesso, onboarding e resolução de nicho.
 
 10.7 Páginas comerciais personalizadas por nicho
 • Status: Planejado — iniciar somente após a aprovação da E10.6.
 • Objetivo: criar páginas comerciais personalizadas conforme o taxon da conta, usando pesquisas com `audience_scope = business_buyer`.
+• A página genérica da E10.6 será usada como fallback quando não houver página nichada publicada.
 
-10.7.1 Direção futura
+10.7.1 Caso piloto validado
+• Taxon: `Corretor de imóveis de médio padrão`.
+• Slug: `corretor-de-imoveis-de-medio-padrao`.
+• `audience_scope = business_buyer`.
+• Status da pesquisa: `active`.
+• Versão: `1`.
+• Blocos completos:
+• `strategic_core`;
+• `lp_overview`;
+• `lp_sections`;
+• `seo`.
+• Itens ativos: `49`.
+• Blocos ausentes: nenhum.
+• Resultado da verificação: `ready`.
+• Esse taxon será o primeiro candidato para validação da E10.7.
+
+10.7.2 Direção futura
 • Resolver o taxon da conta.
 • Localizar pesquisas estruturadas aplicáveis.
 • Usar itens de `taxon_market_research_items`.
@@ -742,10 +874,11 @@
 • Exibir a página nichada quando disponível.
 • Usar a página genérica da E10.6 como fallback.
 
-10.7.2 Regras e limites
-• A modelagem das tabelas, geração, edição, versionamento e publicação será definida somente quando a E10.7 for iniciada.
-• A E10.7 não faz parte da implementação da primeira entrega da E10.6.
-• Não antecipar nesta etapa tabelas, contratos ou arquitetura compartilhada para a E10.7.
+10.7.3 Regras e limites
+• A modelagem de tabelas, geração, edição, versionamento e publicação será definida somente quando a E10.7 for iniciada.
+• A E10.7 não faz parte da primeira entrega da E10.6.
+• Não antecipar tabelas, contratos ou arquitetura compartilhada neste momento.
+• Não generalizar a implementação antes de comparar a página genérica aprovada com o primeiro caso nichado real.
 
 11. E11 — Gestão de Usuários e Convites
 
