@@ -48,6 +48,7 @@ export const genericCommercialPageContent = {
         "CTA principal",
         "Publicação assistida",
       ],
+      highlighted: false,
     },
     {
       key: "lite" as CommercialPlanKey,
@@ -61,6 +62,7 @@ export const genericCommercialPageContent = {
         "Formulário ou WhatsApp",
         "Ajustes básicos",
       ],
+      highlighted: false,
     },
     {
       key: "pro" as CommercialPlanKey,
@@ -88,6 +90,7 @@ export const genericCommercialPageContent = {
         "Revisões periódicas",
         "Otimização orientada por dados",
       ],
+      highlighted: false,
     },
   ],
   plansDisclaimer:
