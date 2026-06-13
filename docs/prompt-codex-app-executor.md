@@ -31,7 +31,7 @@ Examinar, conforme aplicavel:
 - `docs/schema.md`, quando houver impacto ou dependencia de BD;
 - documentos citados no plano-base;
 - arquivos, rotas, componentes, servicos, testes, contratos e padroes relacionados;
-- riscos de regressao, migrations e rollbacks relacionados.
+- riscos de regressao, migrations e correcoes incrementais relacionadas.
 
 Se houver impacto visual/frontend, usar tambem `docs/template-briefing-codex-frontend.md`.
 
@@ -77,13 +77,15 @@ Evitar refatoracao ampla, alteracoes nao relacionadas ou remocao de comportament
 
 ## 6. Etapa 4 - Supabase e migrations
 
-Quando houver alteracao de BD:
+Quando houver alteracao de schema:
 
-- entregar SQL de implementacao quando a execucao depender do Gestor/Supabase;
-- criar migration historica e rollback quando o caso exigir alteracao versionada;
-- seguir os padroes vigentes em `supabase/migrations/` e `supabase/rollbacks/`;
-- nao tratar SQL avulso como substituto da migration historica final;
-- considerar a migration pronta somente apos validacao suficiente ou confirmacao humana, quando depender de ambiente externo.
+- criar diretamente a migration canonica em `supabase/migrations/<timestamp>_<nome>.sql`, seguindo `docs/base-tecnica.md` e `docs/platform-config.md`;
+- usar SQL avulso somente para inspecao, verificacao read-only ou excecao expressamente autorizada; nao usar o SQL Editor como fluxo normal;
+- nao tratar `supabase/rollbacks/` como entrega obrigatoria;
+- nao executar `supabase db push` real manualmente fora do workflow;
+- antes do PR, quando aplicavel e autorizado, registrar `supabase migration list --linked` e `supabase db push --linked --dry-run`;
+- manter migration aplicada imutavel e fazer correcao ou reversao por nova migration incremental;
+- entregar a migration em PR exclusivo para merge humano na `main`, que dispara o apply automatico pelo workflow.
 
 ## 7. Etapa 5 - Observability
 
@@ -131,7 +133,8 @@ Registrar apenas o que efetivamente ocorreu, usando N/A quando nao se aplicar.
 
 - Estruturas de BD: [resumo] | N/A
 - Arquivos criados/ajustados: [paths] | N/A
-- SQL, migration e rollback: [paths/resumo] | N/A
+- SQL de inspecao ou excecao autorizada: [resumo] | N/A
+- Migration, validacao e evidencia: [path/resumo] | N/A
 
 ### Validacao
 
