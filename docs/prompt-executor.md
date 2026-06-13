@@ -32,13 +32,13 @@ Consolidar, com base no plano-base e nas investigações:
 Em conflito aparente entre investigação e plano-base, preservar o objetivo explícito do plano-base, salvo evidência concreta em contrário.
 
 ## Etapa 3 — Entregas de implementação
-Entregar apenas o artefato aplicável, limpo para copiar e colar, sem introdução, explicações, observações ou pergunta para continuar.
+Entregar somente os artefatos exigidos pelo caso, prontos para uso, sem introdução, explicações, observações ou pergunta para continuar.
 
 ### Briefing para Codex
 Usar `docs/template-briefing-codex.md` com base no plano de implementação. Quando houver impacto visual, UI, rota, tela, componente, responsividade ou design system, usar também `docs/template-briefing-codex-frontend.md`. Não duplicar regras do `AGENTS.md`.
 
 ### Implementação no Supabase
-Quando houver alteração de BD, entregar apenas os SQLs de implementação. Esse SQL não substitui a migration histórica final nem o rollback da Etapa 6.
+Quando houver alteração de banco, a implementação deve ser feita diretamente por migration versionada em `supabase/migrations/<timestamp>_<nome>.sql`. SQL avulso só pode ser usado para inspeção, verificação read-only ou exceção expressamente autorizada; o SQL Editor não faz parte do fluxo normal.
 
 ## Etapa 4 — Observability
 Registrar a observability mínima compatível com o caso, quando aplicável.
@@ -46,13 +46,8 @@ Registrar a observability mínima compatível com o caso, quando aplicável.
 ## Etapa 5 — Testes
 Definir QA, smoke e a evidência funcional esperada. A execução deve ser iniciada por humanos; analisar os resultados retornados e só marcar o caso funcionando com confirmação humana ou evidência objetiva.
 
-## Etapa 6 — Migration
-Quando houver alteração de BD, gerar migration e rollback após a validação dos testes e antes do relatório final. Inspecionar antes `supabase/migrations/` e `supabase/rollbacks/` para seguir o padrão vigente de naming, cabeçalho, estrutura e idempotência.
-
-Entregar migration e rollback juntos, com path completo, nome e conteúdo. O rollback é um artefato e não deve ser orientado para execução sem pedido explícito.
-
-## Etapa 7 — Relatório final
-Registrar apenas o que ocorreu, manter os rótulos abaixo e marcar `N/A` quando não se aplicar. Em “Arquivos ajustados”, listar somente arquivos preexistentes; arquivos criados pertencem apenas a “Arquivos criados”. Em alteração de BD, entregar o relatório somente após a Etapa 6 e registrar migration e rollback.
+## Etapa 6 — Relatório final
+Registrar apenas o que ocorreu, manter os rótulos abaixo e marcar `N/A` quando não se aplicar. Em “Arquivos ajustados”, listar somente arquivos preexistentes; arquivos criados pertencem apenas a “Arquivos criados”. Em alteração de banco, registrar a migration, a validação e a evidência, sem tratar SQL manual como fluxo normal.
 
 ### Implementado / Definido
 - [1–5 bullets]
@@ -75,9 +70,9 @@ Registrar apenas o que ocorreu, manter os rótulos abaixo e marcar `N/A` quando 
 ### Artefatos
 - Arquivos criados: [paths] | N/A
 - Arquivos ajustados: [paths] | N/A
-- SQL de implementação: sim | não | N/A
+- SQL de inspeção ou exceção autorizada: [resumo] | N/A
 - Migration: [path] | N/A
-- Rollback: [path] | N/A
+- Validação e evidência da migration: [resumo] | N/A
 ### Pendências
 - [bullets] | N/A
 ### Sugestões de novos casos

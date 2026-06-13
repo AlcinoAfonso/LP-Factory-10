@@ -31,16 +31,17 @@ Examinar, conforme aplicavel:
 - `docs/schema.md`, quando houver impacto ou dependencia de BD;
 - documentos citados no plano-base;
 - arquivos, rotas, componentes, servicos, testes, contratos e padroes relacionados;
-- riscos de regressao, migrations e rollbacks relacionados.
+- riscos de regressao, migrations e correcoes incrementais relacionadas.
 
 Se houver impacto visual/frontend, usar tambem `docs/template-briefing-codex-frontend.md`.
 
-Quando houver BD, usar `docs/schema.md` como fonte inicial e investigar o BD real somente se os documentos canonicos forem insuficientes.
+Quando houver BD:
 
-- quando o Codex App tiver o Supabase Plugin disponivel, usa-lo como caminho preferencial em teste para investigacao read-only de BD;
-- limitar a investigacao aos metadados necessarios ao caso: schema, tabelas, colunas, PKs, FKs, RLS/policies, views, functions, indices, extensoes e migrations;
-- nao usar o plugin para SQL de escrita, DDL/DML, migrations, deploy de Edge Functions, operacoes de branches Supabase, pause/restore, acesso a secrets ou objetos sensiveis;
-- se o plugin nao estiver disponivel, for insuficiente ou houver necessidade de artefato auditavel, manter o fluxo de SQLs read-only para Supabase Inspect, pronto para execucao e limitado ao objetivo do caso.
+* usar primeiro o Supabase Plugin para investigação read-only do estado real;
+* consultar `docs/schema.md` como referência canônica e verificar divergências relevantes;
+* limitar a investigação ao necessário para o caso;
+* não usar o plugin para escrita, migrations, secrets ou operações administrativas;
+* se o plugin estiver indisponível, falhar ou for insuficiente, entregar SQLs read-only para execução pelo Supabase Inspect.
 
 ### Formato dos SQLs de inspecao
 
@@ -77,13 +78,15 @@ Evitar refatoracao ampla, alteracoes nao relacionadas ou remocao de comportament
 
 ## 6. Etapa 4 - Supabase e migrations
 
-Quando houver alteracao de BD:
+Quando houver alteracao de schema:
 
-- entregar SQL de implementacao quando a execucao depender do Gestor/Supabase;
-- criar migration historica e rollback quando o caso exigir alteracao versionada;
-- seguir os padroes vigentes em `supabase/migrations/` e `supabase/rollbacks/`;
-- nao tratar SQL avulso como substituto da migration historica final;
-- considerar a migration pronta somente apos validacao suficiente ou confirmacao humana, quando depender de ambiente externo.
+- criar diretamente a migration canonica em `supabase/migrations/<timestamp>_<nome>.sql`, seguindo `docs/base-tecnica.md` e `docs/platform-config.md`;
+- usar SQL avulso somente para inspecao, verificacao read-only ou excecao expressamente autorizada; nao usar o SQL Editor como fluxo normal;
+- nao tratar `supabase/rollbacks/` como entrega obrigatoria;
+- nao executar `supabase db push` real manualmente fora do workflow;
+- antes do PR, quando aplicavel e autorizado, registrar `supabase migration list --linked` e `supabase db push --linked --dry-run`;
+- manter migration aplicada imutavel e fazer correcao ou reversao por nova migration incremental;
+- entregar a migration em PR exclusivo para merge humano na `main`, que dispara o apply automatico pelo workflow.
 
 ## 7. Etapa 5 - Observability
 
@@ -131,7 +134,7 @@ Registrar apenas o que efetivamente ocorreu, usando N/A quando nao se aplicar.
 
 - Estruturas de BD: [resumo] | N/A
 - Arquivos criados/ajustados: [paths] | N/A
-- SQL, migration e rollback: [paths/resumo] | N/A
+- SQL de inspecao, migration, validacao e evidencia: [paths/resumo] | N/A
 
 ### Validacao
 
