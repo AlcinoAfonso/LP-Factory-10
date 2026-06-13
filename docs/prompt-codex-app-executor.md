@@ -133,8 +133,7 @@ Registrar apenas o que efetivamente ocorreu, usando N/A quando nao se aplicar.
 
 - Estruturas de BD: [resumo] | N/A
 - Arquivos criados/ajustados: [paths] | N/A
-- SQL de inspecao ou excecao autorizada: [resumo] | N/A
-- Migration, validacao e evidencia: [path/resumo] | N/A
+- SQL de inspecao, migration, validacao e evidencia: [paths/resumo] | N/A
 
 ### Validacao
 

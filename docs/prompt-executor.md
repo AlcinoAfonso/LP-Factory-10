@@ -46,13 +46,8 @@ Registrar a observability mínima compatível com o caso, quando aplicável.
 ## Etapa 5 — Testes
 Definir QA, smoke e a evidência funcional esperada. A execução deve ser iniciada por humanos; analisar os resultados retornados e só marcar o caso funcionando com confirmação humana ou evidência objetiva.
 
-## Etapa 6 — Migration
-Quando houver alteração de schema, criar a migration canônica em `supabase/migrations/<timestamp>_<nome>.sql`, seguindo `docs/base-tecnica.md`, `docs/platform-config.md` e o padrão vigente do diretório. A entrega deve seguir em PR exclusivo para merge humano na `main`; o apply remoto ocorre automaticamente pelo workflow.
-
-Migration aplicada é imutável. Correção ou reversão deve ser feita por nova migration incremental, sem rollback obrigatório ou `db push` real executado manualmente pelo Executor fora do workflow.
-
-## Etapa 7 — Relatório final
-Registrar apenas o que ocorreu, manter os rótulos abaixo e marcar `N/A` quando não se aplicar. Em “Arquivos ajustados”, listar somente arquivos preexistentes; arquivos criados pertencem apenas a “Arquivos criados”. Em alteração de schema, entregar o relatório somente após a Etapa 6 e registrar a migration, a validação e a evidência, sem tratar SQL manual como fluxo normal.
+## Etapa 6 — Relatório final
+Registrar apenas o que ocorreu, manter os rótulos abaixo e marcar `N/A` quando não se aplicar. Em “Arquivos ajustados”, listar somente arquivos preexistentes; arquivos criados pertencem apenas a “Arquivos criados”. Em alteração de schema, registrar a migration, a validação e a evidência, sem tratar SQL manual como fluxo normal.
 
 ### Implementado / Definido
 - [1–5 bullets]
