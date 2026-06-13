@@ -97,8 +97,8 @@ Secret scanning identifica credenciais expostas no repositório, enquanto push p
 
 ### Ações Recomendadas
 
-1. Avaliar a disponibilidade no plano e no tipo de repositório atuais.
-2. Habilitar secret scanning e push protection quando aplicável.
+1. Manter `Secret Protection` e `Push protection` habilitados.
+2. Revisar alertas de secrets e eventuais bypasses quando ocorrerem.
 
 ### Fonte Oficial
 
