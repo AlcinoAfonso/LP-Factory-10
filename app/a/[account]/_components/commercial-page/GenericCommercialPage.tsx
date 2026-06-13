@@ -1,0 +1,1 @@
+export { GenericCommercialPage } from "./GenericCommercialPageWhatsApp";
