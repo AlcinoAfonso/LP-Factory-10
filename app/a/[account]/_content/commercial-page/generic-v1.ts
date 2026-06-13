@@ -161,6 +161,6 @@ export const genericCommercialPageContent = {
     description:
       "Envie uma mensagem para a equipe da LP Factory e informe qual plano ilustrativo mais se aproxima da sua necessidade.",
     label: "Falar com a LP Factory",
-    href: "mailto:suporte@lpfactory.com.br?subject=LP%20Factory%20-%20Interesse%20em%20landing%20page",
+    href: "https://wa.me/5521979658483?text=Ol%C3%A1%2C%20tenho%20interesse%20em%20uma%20landing%20page%20da%20LP%20Factory.",
   },
 } as const;
