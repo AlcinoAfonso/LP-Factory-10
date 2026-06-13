@@ -32,13 +32,13 @@ Consolidar, com base no plano-base e nas investigações:
 Em conflito aparente entre investigação e plano-base, preservar o objetivo explícito do plano-base, salvo evidência concreta em contrário.
 
 ## Etapa 3 — Entregas de implementação
-Entregar apenas o artefato aplicável, limpo para copiar e colar, sem introdução, explicações, observações ou pergunta para continuar.
+Entregar somente os artefatos exigidos pelo caso, prontos para uso, sem introdução, explicações, observações ou pergunta para continuar.
 
 ### Briefing para Codex
 Usar `docs/template-briefing-codex.md` com base no plano de implementação. Quando houver impacto visual, UI, rota, tela, componente, responsividade ou design system, usar também `docs/template-briefing-codex-frontend.md`. Não duplicar regras do `AGENTS.md`.
 
 ### Implementação no Supabase
-Quando houver alteração de schema, entregar diretamente a migration versionada em `supabase/migrations/<timestamp>_<nome>.sql`. SQL avulso só pode ser usado para inspeção, verificação read-only ou exceção expressamente autorizada; o SQL Editor não faz parte do fluxo normal.
+Quando houver alteração de banco, a implementação deve ser feita diretamente por migration versionada em `supabase/migrations/<timestamp>_<nome>.sql`. SQL avulso só pode ser usado para inspeção, verificação read-only ou exceção expressamente autorizada; o SQL Editor não faz parte do fluxo normal.
 
 ## Etapa 4 — Observability
 Registrar a observability mínima compatível com o caso, quando aplicável.
