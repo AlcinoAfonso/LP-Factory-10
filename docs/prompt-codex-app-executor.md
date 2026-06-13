@@ -117,7 +117,7 @@ Nao marcar o caso como funcionando nem pronto para merge se a validacao tecnica 
 Ao fim de cada branch, avaliar somente se o diff implementado e validado exige atualizacao dos documentos cobertos pelo `DOC_ALVO`, usando `docs/prompt-abc.md` para residencia, escopo e conteudo permitido.
 
 - nao produzir relatorio final extenso;
-- registrar apenas quais documentos exigem ajuste ou que nao ha alteracoes documentais necessarias, com motivo curto;
+- atualizar na propria branch os documentos necessarios; quando nao houver delta documental, informar isso brevemente na entrega final;
 - em `docs/roadmap.md`, preservar planejamento, decisoes provisorias, trabalho em execucao, faltas e proximos passos enquanto o caso estiver parcial;
 - durante estado parcial, nao alterar cabecalho, versao ou changelog do roadmap e nao marcar o caso como implementado ou concluido;
 - aplicar a consolidacao final de `docs/prompt-abc.md` somente quando o caso completo ou um recorte autonomo estiver totalmente implementado e validado;
