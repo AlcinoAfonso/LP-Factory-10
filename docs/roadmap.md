@@ -771,9 +771,9 @@
 • `commercial_primary_cta_click`;
 • `commercial_plan_cta_click`.
 • Propriedades mínimas:
-• `page_variant = generic-v1`;
-• `plan_key`;
-• `cta_location`.
+• `page_variant = generic-v1`, obrigatório em todos os eventos;
+• `plan_key`, somente quando aplicável;
+• `cta_location`, somente quando aplicável.
 • Não registrar PII, nome, e-mail ou copy integral.
 • O mecanismo canônico de envio e armazenamento dos eventos deverá ser confirmado pelo Executor durante a investigação.
 • Não usar `console.log` como tracking definitivo.
@@ -804,9 +804,9 @@
 • A validação deve usar o Preview correspondente ao commit mais recente da branch.
 
 10.6.6 Relação com o `NicheResolutionCard`
-• O `NicheResolutionCard` pertence à E10.5 e não é um card comercial da E10.6.
-• Quando houver confirmação de nicho pendente, o card deve continuar aparecendo acima da página comercial genérica.
-• A E10.6 não deve remover, redesenhar nem alterar o comportamento funcional desse card.
+• Preservar o `NicheResolutionCard` conforme 10.5.6.6.
+• Quando acionável, ele deve permanecer acima da página comercial genérica.
+• A E10.6 não deve alterar seu comportamento funcional.
 
 10.6.7 Updates aplicáveis
 • Aplicar agora:
