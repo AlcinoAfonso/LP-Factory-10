@@ -7,6 +7,7 @@
 * Para execução no Codex App, usar `docs/prompt-codex-app-executor.md`.
 * Para impacto visual/frontend, usar também `docs/template-briefing-codex-frontend.md`.
 * Para estado, decisões e aprendizados sobre Codex, usar `docs/gestor-codex.md`.
+* Ao criar ou ajustar documentos cobertos pelo `DOC_ALVO`, usar obrigatoriamente `docs/prompt-abc.md` para definir residência, escopo e conteúdo permitido.
 
 ## Regra geral de execução
 
