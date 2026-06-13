@@ -5,7 +5,7 @@ import 'server-only';
 import { headers } from 'next/headers';
 
 import { getAccessContext } from '@/lib/access/getAccessContext';
-import { createClient } from '@/supabase/server';
+import { createServiceClient } from '@/lib/supabase/service';
 import {
   GENERIC_COMMERCIAL_PAGE_VARIANT,
   type CommercialPlanKey,
@@ -78,7 +78,7 @@ export async function trackCommercialEvent(
     properties.cta_location = input.ctaLocation;
   }
 
-  const supabase = await createClient();
+  const supabase = createServiceClient();
   const { error } = await supabase.rpc('audit_context_event', {
     p_event: input.event,
     p_entity: 'commercial_page',
