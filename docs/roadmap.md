@@ -125,7 +125,7 @@
 • Implementado (estado final): fluxo sign-up → envio do e-mail de confirmação → clique no link → /auth/confirm → redirect para /a/home executado (happy path).
 • emailRedirectTo: configurado para apontar para /auth/confirm com next=/a/home e rid para correlação (não-PII).
 • UX mínima: página /auth/sign-up-success orientando “cadastro iniciado / confirme no e-mail”.
-• Observability mínima: logs estruturados no client para eventos de signup/resend sem PII, com rid (SUPA-05) e sinal mínimo via logs no runtime do front em produção (VERC).
+• Observability mínima: logs estruturados no client para eventos de signup/resend sem PII, com rid (supa#5) e sinal mínimo via logs no runtime do front em produção (Vercel).
 • ARTEFATOS_REPO:
 • Ajustados: components/sign-up-form.tsx
 
@@ -133,7 +133,7 @@
 • Garantir fluxo estável de sign-up/confirm no mobile (happy path) com redirect correto para /a/home.
 • Incluir correlação por rid (não-PII) no redirect para rastrear signup → confirm → redirect.
 • Entregar UX mínima de “cadastro iniciado / confirme no e-mail” em /auth/sign-up-success.
-• Emitir logs estruturados (SUPA-05) sem PII com rid e sinal mínimo no runtime Vercel.
+• Emitir logs estruturados (supa#5) sem PII com rid e sinal mínimo no runtime Vercel.
 
 5.4.2 Dependências
 • Fluxos Sistema de Acesso 2.0 (signup/confirm/resend).
@@ -146,7 +146,7 @@
 5.5 E-mail já cadastrado (estado dedicado + cooldown)
 • Status: Briefing
 • Objetivo: reduzir fricção no sign-up quando o e-mail já foi usado (confirmado ou não), com estado dedicado + Reenviar confirmação + Fazer login + cooldown com contador e feedback.
-• Escopo (MVP): detectar duplicidade (erro exists/already registered ou ok com identities_count==0), ocultar senha/submit, auth.resend({ type: 'signup' }), cooldown ~60s, logs SUPA-05 sem PII (incl. resend).
+• Escopo (MVP): detectar duplicidade (erro exists/already registered ou ok com identities_count==0), ocultar senha/submit, auth.resend({ type: 'signup' }), cooldown ~60s, logs supa#5 sem PII (incl. resend).
 • Fora de escopo: diferenciar Caso 2 vs 3, mudanças de infra/SMTP/Resend, BD.
 
 5.6 Infra Auth — E-mail transacional (Supabase Auth via Resend SMTP)
@@ -1119,7 +1119,7 @@ v1.5.24 (02/03/2026)
 v1.5.23 (01/03/2026)
 • E5.6 concluído (exec): e-mail transacional do Supabase Auth estabilizado via Resend SMTP com sender `no-reply@lpfactory.com.br` (domínio raiz), com decisão registrada e condição de migração futura para subdomínio dedicado quando houver escala.
 v1.5.22 (24/02/2026)
-• E5.4 concluído (exec): fluxo signup → e-mail → /auth/confirm → redirect /a/home (happy path), com emailRedirectTo incluindo next=/a/home e rid (não-PII), /auth/sign-up-success (UX mínima) e logs estruturados no client (SUPA-05) com sinal mínimo no runtime Vercel (VERC).
+• E5.4 concluído (exec): fluxo signup → e-mail → /auth/confirm → redirect /a/home (happy path), com emailRedirectTo incluindo next=/a/home e rid (não-PII), /auth/sign-up-success (UX mínima) e logs estruturados no client (supa#5) com sinal mínimo no runtime Vercel (Vercel).
 v1.5.21 (21/02/2026)
 • E10.4.7 concluído (exec): refinamentos de UX no “Primeiros passos” (sem reset de campos em erro; nome com placeholder + CTA gated; Enter com foco no primeiro inválido; progressive disclosure no mobile; site_url aceita domínio sem esquema e normaliza para https://), com ARTEFATOS_REPO (criados/ajustados) registrados.
 • E6 atualizado (exec): tipografia Inter aplicada globalmente e tokens Tailwind LP Factory adicionados de forma aditiva (preservando shadcn), incluindo expansão do content para js/jsx/mdx.
