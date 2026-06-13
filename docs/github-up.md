@@ -21,4 +21,111 @@ Antes de registrar um item, confirmar fonte oficial, valor para o projeto, plano
 
 ## Updates registrados
 
-Nenhum update registrado nesta criação inicial.
+## github#1 — Permissões mínimas em workflows *(🟩 Estável)*
+
+2026-06-13
+
+### Status no Projeto
+
+- Status: Implementado globalmente no projeto.
+- Evidência: `.github/workflows/*` e `.github/workflows/security.yml`.
+
+### Descrição
+
+Permissões explícitas limitam o acesso do `GITHUB_TOKEN` ao necessário em cada workflow.
+
+### Valor para o Projeto
+
+- Reduz a superfície de acesso das automações e aplica o princípio do menor privilégio.
+
+### Ações Recomendadas
+
+1. Manter permissões explícitas nos workflows.
+2. Evitar `write-all`.
+
+### Fonte Oficial
+
+- [Workflow syntax for GitHub Actions — `permissions`](https://docs.github.com/actions/using-workflows/workflow-syntax-for-github-actions#permissions)
+
+---
+
+## github#2 — Grupos de concorrência em GitHub Actions *(🟩 Estável)*
+
+2026-06-13
+
+### Status no Projeto
+
+- Status: Implementado globalmente no projeto.
+- Evidência: workflows que usam `concurrency` e `cancel-in-progress`.
+
+### Descrição
+
+Grupos de concorrência controlam execuções simultâneas de workflows e permitem cancelar execuções anteriores ainda em andamento.
+
+### Valor para o Projeto
+
+- Evita execuções simultâneas conflitantes e reduz consumo desnecessário.
+
+### Ações Recomendadas
+
+1. Manter `concurrency` e `cancel-in-progress` nos workflows aplicáveis.
+2. Avaliar `queue: max` somente quando houver necessidade real de preservar execuções sequenciais.
+
+### Fonte Oficial
+
+- [Control the concurrency of workflows and jobs](https://docs.github.com/actions/writing-workflows/choosing-what-your-workflow-does/control-the-concurrency-of-workflows-and-jobs)
+
+---
+
+## github#3 — Secret scanning e push protection *(🟨 Estável — disponibilidade por plano e tipo de repositório)*
+
+2026-06-13
+
+### Status no Projeto
+
+- Status: Não implementado.
+- Observação: não há evidência local suficiente; confirmar habilitação no GitHub Settings antes de mudar o status.
+
+### Descrição
+
+Secret scanning identifica credenciais expostas no repositório, enquanto push protection pode bloquear o envio de secrets compatíveis antes que sejam incorporados.
+
+### Valor para o Projeto
+
+- Ajuda a impedir commits com secrets de Supabase, Vercel, OpenAI e outros provedores.
+
+### Ações Recomendadas
+
+1. Avaliar a disponibilidade no plano e no tipo de repositório atuais.
+2. Habilitar secret scanning e push protection quando aplicável.
+
+### Fonte Oficial
+
+- [Secret scanning](https://docs.github.com/code-security/secret-scanning/about-secret-scanning)
+- [Push protection](https://docs.github.com/code-security/concepts/secret-security/push-protection)
+
+---
+
+## github#4 — Workflows em PRs criados por bots após aprovação *(🟩 Estável)*
+
+2026-06-13
+
+### Status no Projeto
+
+- Status: Não implementado.
+
+### Descrição
+
+PRs criados por `github-actions[bot]` podem gerar workflows em estado de aprovação pendente, liberados por usuário com permissão de escrita.
+
+### Valor para o Projeto
+
+- Permite que PRs criados pelo bot executem workflows após revisão e aprovação humana.
+
+### Ações Recomendadas
+
+1. Avaliar somente quando automações do projeto criarem PRs pelo bot.
+
+### Fonte Oficial
+
+- [Triggering a workflow](https://docs.github.com/actions/using-workflows/triggering-a-workflow#triggering-a-workflow-from-a-workflow)
