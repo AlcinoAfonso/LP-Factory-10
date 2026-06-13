@@ -376,7 +376,7 @@
 • Regra: signUp deve usar emailRedirectTo apontando para /auth/confirm?next=/a/home (somente path interno).
 • Regra (correlação ponta a ponta): gerar rid no client (não-PII) e anexar no emailRedirectTo como querystring (ex.: &rid=<rid>) para rastrear submit → e-mail → confirm → redirect.
 • Regra (supa#5 no client — Auth/signup): emitir logs estruturados para eventos de signup/resend com rid e sem PII (não logar email/senha nem valores sensíveis).
-• Regra (VERC mínimo): logs no runtime do front em produção devem permitir diagnóstico rápido do fluxo por rid (submit/resultado).
+• Regra (observabilidade mínima na Vercel): logs no runtime do front em produção devem permitir diagnóstico rápido do fluxo por rid (submit/resultado).
 • Regra (template Supabase — Confirm sign up): usar {{ .RedirectTo }} (não {{ .SiteURL }}); quando RedirectTo já contém querystring (ex.: ?next=/a/home&rid=...), anexar &token_hash={{ .TokenHash }}&type=signup.
 • Confirmação: /auth/confirm (GET) exibe interstitial “Continuar” e consome token apenas no POST (anti-scanner).
 • Pós-confirmação: /auth/confirm (POST) cria sessão e redireciona para next=/a/home.
