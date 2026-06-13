@@ -1,6 +1,6 @@
 0.1 Cabeçalho
-Data: 26/05/2026
-Versão: v1.8
+Data: 12/06/2026
+Versão: v1.9
 Status: Alinhado ao Platform Config
 
 0.2 Função do documento
@@ -212,32 +212,24 @@ O contrato funcional, status, escopo, critérios e artefatos do caso ficam no ro
 3.6 Apply automático de migrations no Supabase
 
 Objetivo:
-Manter o apply automático como fluxo preparado, mas bloqueado até a conclusão da baseline oficial de migrations e do alinhamento remoto.
+Aplicar migrations versionadas do Supabase automaticamente após merge humano na `main`, substituindo o uso manual do SQL Editor para alterações de schema.
 
 Status:
-Proposto / bloqueado por baseline oficial
+Implementada e validada
+
+Acesso:
+GitHub → Actions → workflow `pipeline-supabase-apply-migrations`
+
+Como usar:
+Criar migration em `supabase/migrations/<timestamp>_<nome>.sql`, validar em PR exclusivo e fazer merge humano na `main`. O push na `main` dispara o apply automático.
 
 Resumo de controle:
-O workflow de apply não deve ser tratado como liberado enquanto a baseline A3.6.1 estiver pendente. A orientação operacional detalhada fica centralizada nas lousas de referência, sem duplicação neste índice.
+A baseline oficial foi concluída, o histórico remoto foi alinhado e o smoke de criação/remoção foi validado. O gate `SUPABASE_APPLY_MIGRATIONS_ENABLED` permanece `true` no fluxo normal. O SQL Editor não faz parte do fluxo normal. Migration já aplicada não deve ser editada, apagada ou substituída; correções e reversões devem ser feitas por nova migration incremental.
 
 Referências / dependências:
-`docs/lousa-automations3-6.md`
-`docs/lousa-automations3-6-1.md`
-
-3.6.1 Baseline de migrations no Supabase
-
-Objetivo:
-Consolidar o baseline real do banco remoto atual como novo histórico oficial de migrations antes de liberar o apply automático.
-
-Status:
-Proposto / pendente
-
-Resumo de controle:
-A lousa operacional principal da baseline é `docs/lousa-automations3-6-1.md`. O contexto de controle do apply automático permanece em `docs/lousa-automations3-6.md`.
-
-Referências / dependências:
-`docs/lousa-automations3-6.md`
-`docs/lousa-automations3-6-1.md`
+`docs/base-tecnica.md`
+`docs/platform-config.md`
+`docs/lousa-automations3-6-1.md` — registro histórico da baseline concluída.
 
 3.7 Niche Runtime Tests
 
