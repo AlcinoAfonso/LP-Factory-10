@@ -36,17 +36,18 @@ Admins e desenvolvedores podem criar tokens temporários (30/90 dias) no Dashboa
 2025-06-01  
 
 ### Descrição  
-Monitoramento contínuo de Core Web Vitals (LCP, CLS, FID) com dados reais de usuários.  
+Monitoramento de experiência real com LCP, CLS e INP, além de métricas complementares como FCP, TBT e TTFB. O painel consolida os dados no Real Experience Score e permite filtrar resultados por desktop/mobile e por ambiente, incluindo Preview e produção. A disponibilidade, a janela de retenção, o volume de data points e os custos variam conforme o plano Vercel.
 
 ### Valor para o Projeto  
-- Integra métricas da Vercel para diagnósticos de UX.  
+- Integra métricas da Vercel para diagnósticos de UX com recortes por dispositivo e ambiente.
+- Permite comparar o primeiro Preview funcional com produção sem transformar analytics em requisito de entrega.
 
 ### Valor para o Usuário  
-- Experiência mais fluida e responsiva.  
+- Experiência mais fluida, responsiva e visualmente estável.
 
 ### Registro (Tipo A — Plataforma)  
 - Status: DEFERIDO  
-- Observação: não bloquear E10.4.6; ativar após estabilizar onboarding v0/v1. Primeira rota-alvo: E10.4.  
+- Observação: reavaliar na E10.6 após o primeiro Preview funcional; não bloquear a primeira entrega.
 
 ---
 
@@ -76,6 +77,9 @@ Implementa validações automáticas de segurança e governança (CI + Lint) com
 
 ### Valor para o Usuário  
 - Mais estabilidade e confiança no produto.  
+
+### Ações Recomendadas
+1. Na E10.6, usar os checks existentes; não criar nova suíte neste pacote.
 
 ---
 
@@ -246,10 +250,11 @@ Estabelecer diretrizes de UX e roteiros de teste que privilegiem **ações visí
 2. Padronizar layouts iniciais com CTAs claros e seções prioritárias sempre visíveis na primeira dobra.  
 3. Incluir métricas de sucesso específicas em testes (tempo até a primeira ação, ações descobertas sem ajuda, abandono).  
 4. Incorporar essas diretrizes no checklist de UX dos próximos releases (E10, E12, novos dashboards).
+5. Aplicar diretamente na E10.6 à revisão do hero, primeira dobra, cards e CTAs.
 
-   ---
+---
 
-   ## 15 — Automação de Microeventos em LPs *(🧪 Experimental)*
+## 15 — Automação de Microeventos em LPs *(🧪 Experimental)*
 2025-11-17
 
 ### Descrição
@@ -266,11 +271,33 @@ Implementar um fluxo de marketing que detecta microeventos da Landing Page (ex.:
 - Permite otimizar criativos e mensagens por contexto (interesse em preços, FAQ, scroll avançado).
 
 ### Ações Recomendadas
-1. Definir a taxonomia de microeventos (`scroll_25/50/75`, `cta_click`, `faq_open`, `pricing_view`, `form_submit`) e padrão de nomes (`lp.{slug}.{evento}`).
-2. Registrar esses eventos no `events_analytics` e expor função server‑side para enviá‑los a RD Station e Meta (via Camada de Remarketing).
-3. Configurar tags e fluxos no RD: sequências específicas para quem visualizou preços sem converter, abriu FAQ sem clicar, enviou formulário etc.
-4. Criar públicos de remarketing e lookalike em Meta Ads com base nas tags (`pricing_view`, `scroll_75`, `form_submit`), com criativos adaptados.
-5. Medir KPIs essenciais: tempo até primeiro contato, taxa de qualificação (MQL), CPL/CPA por microevento e redução no ciclo de vendas.
+1. Antes de depender de eventos server-side, verificar o plano Vercel/Analytics e definir uma estratégia única de tracking.
+2. Não aplicar esta automação à primeira entrega genérica da E10.6.
+3. Definir a taxonomia de microeventos (`scroll_25/50/75`, `cta_click`, `faq_open`, `pricing_view`, `form_submit`) e padrão de nomes (`lp.{slug}.{evento}`).
+4. Registrar esses eventos no `events_analytics` e expor função server‑side para enviá‑los a RD Station e Meta (via Camada de Remarketing).
+5. Configurar tags e fluxos no RD: sequências específicas para quem visualizou preços sem converter, abriu FAQ sem clicar, enviou formulário etc.
+6. Criar públicos de remarketing e lookalike em Meta Ads com base nas tags (`pricing_view`, `scroll_75`, `form_submit`), com criativos adaptados.
+7. Medir KPIs essenciais: tempo até primeiro contato, taxa de qualificação (MQL), CPL/CPA por microevento e redução no ciclo de vendas.
+
+---
+
+## 16 — QA visual e validação de UX em Preview *(🟩 Prática de validação)*
+2026-06-12
+
+### Descrição
+Prática de produto para revisar páginas em Preview antes da aprovação, usando comentários localizados e inspeções de acessibilidade, foco, timing de interação e layout shift. Os recursos técnicos — Vercel Toolbar, Comments, Accessibility Audit Tool, Interaction Timing Tool e Layout Shift Tool — estão detalhados no `docs/vercel-up.md`.
+
+### Valor para o Projeto
+- Estrutura a revisão da E10.6 em hero, benefícios, serviços, cards, FAQ, CTAs e responsividade.
+- Centraliza feedback visual e de copy no contexto da página, reduzindo prints soltos e retrabalho.
+
+### Valor para o Usuário
+- Aumenta clareza, acessibilidade, estabilidade visual e resposta percebida antes da publicação.
+
+### Ações Recomendadas
+1. Aplicar como prática de validação no Preview da E10.6 após existir uma página funcional.
+2. Usar os recursos disponíveis no ambiente/plano sem criar nova infraestrutura, banco, IA ou experimento A/B.
+3. Manter validação manual de conteúdo, navegação, foco e responsividade como parte da aprovação.
 
 ---
 
