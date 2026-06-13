@@ -43,6 +43,12 @@ Antes de registrar ou atualizar um item:
 4. definir se o recurso deve ser adotado, avaliado depois ou descartado;
 5. confirmar no roadmap e no repositório se já existe implementação.
 
+## Convenção de referência
+
+O identificador canônico dos itens deste catálogo é `prod#n`.
+
+Esse identificador deve ser usado no roadmap, Base Técnica, briefings, relatórios e referências cruzadas. A numeração não deve ser reutilizada após remoção, depreciação ou substituição de um item.
+
 ## 1 — SSO Self-Service *(🟩 Estável)*  
 2025-05-11  
 
