@@ -2,6 +2,47 @@
 
 ---
 
+## Objetivo e escopo
+
+Este documento registra práticas, capacidades e tendências externas que possam gerar valor concreto para o produto LP Factory 10.
+
+Só devem entrar updates relacionados a:
+
+* UX e acessibilidade;
+* aquisição, conversão e retenção;
+* onboarding e experiência do usuário;
+* monetização, billing e pricing;
+* analytics de produto;
+* performance percebida;
+* automação comercial;
+* experiências de produto assistidas por IA.
+
+Não registrar novidades genéricas sem caso de uso, impacto ou decisão aplicável ao projeto.
+
+## Fontes prioritárias
+
+A pesquisa deve usar prioritariamente documentação oficial de:
+
+* OpenAI, para IA, agentes e experiências assistidas;
+* Google Search Central e web.dev, para SEO, performance e experiência web;
+* Meta e Google Ads, para aquisição, conversão e tracking;
+* Stripe, para billing, checkout, pricing e monetização;
+* W3C/WAI, para acessibilidade e WCAG.
+
+Vercel, Supabase e GitHub entram apenas quando o recurso tiver impacto direto em produto ou experiência. A descrição técnica completa deve permanecer nos respectivos catálogos, com referência curta neste documento para evitar duplicação.
+
+Fontes secundárias podem apoiar a análise, mas não devem substituir documentação oficial.
+
+## Critério de validação
+
+Antes de registrar ou atualizar um item:
+
+1. confirmar o estado atual na fonte oficial;
+2. identificar valor concreto para o LP Factory 10;
+3. verificar custo, plano, maturidade e dependências;
+4. definir se o recurso deve ser adotado, avaliado depois ou descartado;
+5. confirmar no roadmap e no repositório se já existe implementação.
+
 ## 1 — SSO Self-Service *(🟩 Estável)*  
 2025-05-11  
 
