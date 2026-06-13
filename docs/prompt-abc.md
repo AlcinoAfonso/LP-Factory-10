@@ -1,4 +1,4 @@
-# docs/prompt-abc.md vs4
+# docs/prompt-abc.md vs5
 
 PROMPT ABC
 
@@ -15,7 +15,7 @@ VISÃO GERAL (RESIDÊNCIA DO CONTEÚDO)
 
 * `docs/schema.md` = contrato de banco (objetos e permissões de DB).
 * `docs/base-tecnica.md` = contrato técnico de runtime (regras de implementação segura).
-* `docs/roadmap.md` = estado final dos casos E* (status/escopo/dependências/artefatos).
+* `docs/roadmap.md` = estado final dos casos E* (status, escopo, dependências, decisões, pendências e estruturas/artefatos vinculados ao caso).
 * `docs/design-system.md` = contrato visual atual do produto (padrões UI, componentes, superfícies visuais e regras de uso).
 * `docs/platform-config.md` = contrato operacional de plataformas, variáveis, secrets, URLs, endpoints, redirects, DNS e configurações externas.
 * `docs/services.md` = catálogo humano dos services implantáveis, MCPs, endpoints de services, infraestrutura reutilizável com identidade própria, boundaries de deploy e consumidores principais.
@@ -66,10 +66,16 @@ ALLOWLISTS POR DOC_ALVO
 * NÃO ENTRA: itens pertencentes a runtime/base técnica, roadmap/casos, design system, platform config, services ou automations.
 
 `docs/roadmap.md` — CONTRATO_DE_CASOS
-* ENTRA: status com data, escopo final em bullets curtos, dependências entre casos E*, artefatos de repo, decisões explícitas do caso e pendências marcadas explicitamente no RELATÓRIO.
+* ENTRA: status com data, escopo final em bullets curtos, dependências entre casos E*, decisões explícitas, pendências marcadas no RELATÓRIO e estruturas/artefatos vinculados ao estado final do caso.
 * REGRA: “E” só no título principal do caso; subitens sem repetir “E”.
-* ARTEFATOS: separar em Criados, Ajustados e Removidos; omitir categorias vazias.
-* NÃO ENTRA: itens pertencentes a DB/schema, runtime/base técnica, design system, platform config, services ou automations.
+* ESTRUTURAS E ARTEFATOS: em cada caso implementado, registrar quando aplicável somente os nomes dos objetos de banco e os paths dos arquivos de repositório criados, ajustados ou removidos.
+* CATEGORIAS:
+  * Banco — Criados, Ajustados e Removidos
+  * Repositório — Criados, Ajustados e Removidos
+* CONCISÃO: registrar somente nomes ou paths, sem descrever colunas, policies, lógica interna, conteúdo dos arquivos ou narrativa de implementação.
+* OMISSÃO: omitir categorias vazias e não criar a seção quando o RELATÓRIO não trouxer estruturas ou artefatos aplicáveis.
+* RESIDÊNCIA: detalhes de objetos e permissões de banco pertencem a `docs/schema.md`; regras técnicas de implementação pertencem a `docs/base-tecnica.md`.
+* NÃO ENTRA: inventário detalhado de DB, regras de runtime, configurações de plataforma, catálogo de services, catálogo de automações ou padrões visuais.
 
 `docs/design-system.md` — CONTRATO_VISUAL
 * ENTRA: padrões visuais atuais, componentes UI ativos, regras de uso, comportamento responsivo, superfícies visuais consolidadas.
