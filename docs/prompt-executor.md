@@ -47,7 +47,7 @@ Registrar a observability mínima compatível com o caso, quando aplicável.
 Definir QA, smoke e a evidência funcional esperada. A execução deve ser iniciada por humanos; analisar os resultados retornados e só marcar o caso funcionando com confirmação humana ou evidência objetiva.
 
 ## Etapa 6 — Relatório final
-Registrar apenas o que ocorreu, manter os rótulos abaixo e marcar `N/A` quando não se aplicar. Em “Arquivos ajustados”, listar somente arquivos preexistentes; arquivos criados pertencem apenas a “Arquivos criados”. Em alteração de schema, registrar a migration, a validação e a evidência, sem tratar SQL manual como fluxo normal.
+Registrar apenas o que ocorreu, manter os rótulos abaixo e marcar `N/A` quando não se aplicar. Em “Arquivos ajustados”, listar somente arquivos preexistentes; arquivos criados pertencem apenas a “Arquivos criados”. Em alteração de banco, registrar a migration, a validação e a evidência, sem tratar SQL manual como fluxo normal.
 
 ### Implementado / Definido
 - [1–5 bullets]
