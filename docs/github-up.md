@@ -83,8 +83,9 @@ Grupos de concorrência controlam execuções simultâneas de workflows e permit
 
 ### Status no Projeto
 
-- Status: Não implementado.
-- Observação: não há evidência local suficiente; confirmar habilitação no GitHub Settings antes de mudar o status.
+- Status: Implementado globalmente no projeto.
+- Evidência: no repositório público `AlcinoAfonso/LP-Factory-10`, em `Settings > Advanced Security`, `Secret Protection` e `Push protection` estão habilitados, conforme indicado pelos respectivos botões `Disable`.
+- Disponibilidade: ativa para o tipo e configuração atuais do repositório público; o plano nominal não foi identificado.
 
 ### Descrição
 
@@ -116,7 +117,7 @@ Secret scanning identifica credenciais expostas no repositório, enquanto push p
 
 ### Descrição
 
-PRs criados por `github-actions[bot]` podem gerar workflows em estado de aprovação pendente, liberados por usuário com permissão de escrita.
+PRs criados por `github-actions[bot]` agora podem executar workflows de CI/CD após aprovação de um usuário com permissão de escrita no repositório.
 
 ### Valor para o Projeto
 
@@ -128,4 +129,4 @@ PRs criados por `github-actions[bot]` podem gerar workflows em estado de aprova�
 
 ### Fonte Oficial
 
-- [Triggering a workflow](https://docs.github.com/actions/using-workflows/triggering-a-workflow#triggering-a-workflow-from-a-workflow)
+- [Bot-created pull requests can run workflows if approved](https://github.blog/changelog/2026-06-11-bot-created-pull-requests-can-run-workflows-if-approved/)
