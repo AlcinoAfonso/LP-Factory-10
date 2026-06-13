@@ -14,6 +14,12 @@
 
 ---
 
+## Convenção de referência
+
+O identificador canônico dos itens deste catálogo é `vercel#n`.
+
+Esse identificador deve ser usado no roadmap, Base Técnica, briefings, relatórios e referências cruzadas. A numeração não deve ser reutilizada após remoção, depreciação ou substituição de um item.
+
 ## 1 — Vercel AI Cloud *(🟨 Disponibilidade por recurso/plano)*
 2025-06-30
 

@@ -11,6 +11,12 @@
 
 ---
 
+## Convenção de referência
+
+O identificador canônico dos itens deste catálogo é `supa#n`.
+
+Esse identificador deve ser usado no roadmap, Base Técnica, briefings, relatórios e referências cruzadas. A numeração não deve ser reutilizada após remoção, depreciação ou substituição de um item.
+
 ## 1 — JWT Signing Keys *(🟦 Estável)*  
 
 2025-08-01  
