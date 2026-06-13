@@ -7,7 +7,8 @@
 * Para execução no Codex App, usar `docs/prompt-codex-app-executor.md`.
 * Para impacto visual/frontend, usar também `docs/template-briefing-codex-frontend.md`.
 * Para estado, decisões e aprendizados sobre Codex, usar `docs/gestor-codex.md`.
-* Ao consolidar o estado final ou ajustar conteúdo canônico dos documentos cobertos pelo `DOC_ALVO`, usar obrigatoriamente `docs/prompt-abc.md` para definir residência, escopo e conteúdo permitido. No `docs/roadmap.md`, casos em planejamento ou andamento podem manter debates, alternativas, planejamento, trabalho em execução, faltas e próximos passos; ao serem implementados ou concluídos, devem ser consolidados conforme o prompt ABC.
+* Ao consolidar conteúdo canônico dos documentos cobertos pelo `DOC_ALVO`, usar `docs/prompt-abc.md` para definir residência, escopo e conteúdo permitido.
+* Em `docs/roadmap.md`, casos em planejamento ou andamento podem manter planejamento, decisões provisórias, trabalho em execução, faltas e próximos passos. Nessa fase, não alterar cabeçalho, versão ou changelog e não marcar como implementado ou concluído. Ao concluir ou incorporar a implementação à `main`, consolidar o caso conforme `docs/prompt-abc.md`.
 
 ## Regra geral de execução
 
