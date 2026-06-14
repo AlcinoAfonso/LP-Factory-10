@@ -851,6 +851,28 @@
 • A página genérica da E10.6 servirá futuramente como fallback quando não houver página nichada publicada.
 • A modelagem de persistência e edição da E10.7 não deve ser antecipada na E10.6.
 
+10.6.8 Personalização por histórico da conta
+• Status: Futuro — avaliar após validação da primeira versão.
+• Objetivo: usar o histórico de eventos da conta para adaptar mensagens e CTAs em novos acessos.
+• Possíveis sinais:
+  • conta recorrente;
+  • último plano clicado;
+  • quantidade de visitas;
+  • último acesso;
+  • CTA já utilizado.
+• Primeira evolução recomendada:
+  • reconhecer retorno da conta;
+  • destacar o último plano clicado;
+  • adaptar headline, mensagem de retorno ou CTA.
+• Não exige CRM completo na primeira etapa.
+• Pode futuramente alimentar módulo comercial ou integração com CRM.
+• Regras:
+  • usar account_id;
+  • não exigir identificação individual do usuário;
+  • manter a página genérica como fallback;
+  • não implementar antes da aprovação da E10.6 atual;
+  • definir privacidade, retenção e limites antes de ampliar o tracking.
+
 10.7 Páginas comerciais personalizadas por nicho
 • Status: Planejado — iniciar somente após a aprovação da E10.6.
 • Objetivo: criar páginas comerciais personalizadas conforme o taxon da conta, usando pesquisas com `audience_scope = business_buyer`.

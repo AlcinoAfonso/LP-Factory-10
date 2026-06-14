@@ -139,6 +139,10 @@
 • Contrato técnico detalhado do pipeline: automations/supabase-inspect/README.md.
 
 3.4.4 Migrations Supabase versionadas
+• Runtime não pode depender de objeto ou comportamento de banco ainda não aplicado e validado no ambiente alvo.
+• Snippet operacional ou SQL avulso não equivale a migration histórica nem substitui migration versionada.
+• SQL avulso é permitido apenas para inspeção, verificação read-only ou exceção expressamente autorizada.
+• Avaliação de banco exige migration, validação e evidência aplicável ao ambiente alvo.
 • Fonte canônica: `supabase/migrations/<timestamp>_<nome>.sql`.
 • A baseline oficial é o ponto inicial do histórico versionado; alterações posteriores de schema devem entrar como migrations incrementais novas.
 • Migrations legadas preservadas fora de `supabase/migrations/` são somente evidência histórica e não integram o fluxo ativo da CLI.
