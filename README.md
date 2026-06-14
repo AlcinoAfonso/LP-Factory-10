@@ -32,6 +32,10 @@
 1.4.3. Dashboard
 • Suporte para ajustes e testes guiados por dados.
 
+1.4.4. Princípios de implementação
+• O MVP prioriza simplicidade, não fragilidade.
+• Runtime não pode depender de objetos ou comportamentos de banco ainda não aplicados e validados no ambiente alvo.
+
 1.5. Modelo de oferta
 • Planos em camadas (Starter → Lite → Pro → Ultra), com capacidades escalando ao longo do tempo.
 

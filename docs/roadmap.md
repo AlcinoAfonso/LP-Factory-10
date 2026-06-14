@@ -851,6 +851,23 @@
 • A página genérica da E10.6 servirá futuramente como fallback quando não houver página nichada publicada.
 • A modelagem de persistência e edição da E10.7 não deve ser antecipada na E10.6.
 
+10.6.10 Personalização por histórico da conta
+
+• Status: Futuro — avaliar após validação da primeira versão.
+• Usar eventos vinculados ao `account_id` para reconhecer contas recorrentes.
+• Considerar último acesso, quantidade de visitas, plano clicado e CTAs utilizados.
+• Futuramente adaptar mensagem, plano destacado e CTA.
+• Manter a página genérica como fallback.
+• Não exigir identificação individual do usuário nem CRM completo.
+
+10.6.11 Evoluções futuras de UX dos CTAs
+
+• Status: Futuro — avaliar após validação da primeira versão.
+• Avaliar `web.whatsapp.com/send` no desktop para reduzir a tela intermediária.
+• Manter `wa.me` no celular e como fallback geral.
+• Não realizar envio automático sem confirmação do usuário.
+• Implementar detecção por ambiente somente se o ganho de UX justificar a complexidade.
+
 10.7 Páginas comerciais personalizadas por nicho
 • Status: Planejado — iniciar somente após a aprovação da E10.6.
 • Objetivo: criar páginas comerciais personalizadas conforme o taxon da conta, usando pesquisas com `audience_scope = business_buyer`.
