@@ -1,11 +1,8 @@
 import { getAccessContext } from "@/lib/access/getAccessContext";
-import {
-  getActionableNicheResolutionForAccount,
-  getConfirmedOperationalNicheResolutionLabel,
-} from "../../../lib/onboarding/niche-resolution/adapters/accountNicheResolutionUserAdapter";
+import { getActionableNicheResolutionForAccount } from "../../../lib/onboarding/niche-resolution/adapters/accountNicheResolutionUserAdapter";
 import { PendingSetupFirstSteps } from "./_components/PendingSetupFirstSteps";
 import { NicheResolutionCard } from "./_components/NicheResolutionCard";
-import { getActivePrimaryAccountTaxon } from "../../../lib/onboarding/niche-resolution/adapters/accountTaxonomyAdapter";
+import { GenericCommercialPage } from "./_components/commercial-page/GenericCommercialPage";
 
 type DashState = "auth" | "onboarding" | "public";
 
@@ -44,23 +41,29 @@ export default async function Page({ params }: PageProps) {
       return <PendingSetupFirstSteps accountSubdomain={accountSubdomain} ctx={ctx} />;
     }
 
+    if (accountStatus !== "active") {
+      return (
+        <main className="mx-auto max-w-5xl px-6 py-10">
+          <section className="rounded-xl border bg-white p-6 shadow-sm">
+            <h1 className="text-2xl font-semibold">Dashboard</h1>
+            <p className="mt-2 text-sm text-gray-600">
+              Esta conta não está disponível para exibir a página comercial.
+            </p>
+          </section>
+        </main>
+      );
+    }
+
     const accountId = (ctx?.account?.id ?? ctx?.account_id ?? null) as string | null;
-    const [nicheResolution, primaryTaxon] = accountId
-      ? await Promise.all([
-          getActionableNicheResolutionForAccount({
-            accountId,
-            accountStatus,
-          }),
-          getActivePrimaryAccountTaxon({ accountId }),
-        ])
-      : [null, null];
-    const operationalNicheLabel = accountId && !primaryTaxon
-      ? await getConfirmedOperationalNicheResolutionLabel({ accountId })
+    const nicheResolution = accountId
+      ? await getActionableNicheResolutionForAccount({
+          accountId,
+          accountStatus,
+        })
       : null;
-    const resolvedNicheLabel = primaryTaxon?.name ?? operationalNicheLabel;
 
     return (
-      <main className="mx-auto max-w-5xl px-6 py-10">
+      <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-10">
         <div className="space-y-6">
           {nicheResolution ? (
             <NicheResolutionCard
@@ -69,19 +72,7 @@ export default async function Page({ params }: PageProps) {
             />
           ) : null}
 
-          <section className="rounded-xl border bg-white p-6 shadow-sm">
-            <h1 className="text-2xl font-semibold">Dashboard</h1>
-            {resolvedNicheLabel ? (
-              <div className="mt-2 space-y-2 text-sm text-gray-600">
-                <p>Sua conta esta ativa para o nicho {resolvedNicheLabel}.</p>
-                <p>Estamos desenvolvendo recursos para este nicho e entraremos em contato.</p>
-              </div>
-            ) : (
-              <p className="mt-2 text-sm text-gray-600">
-                Sua conta esta ativa. Novos recursos do dashboard aparecerao aqui conforme forem liberados.
-              </p>
-            )}
-          </section>
+          <GenericCommercialPage accountSubdomain={accountSubdomain} />
         </div>
       </main>
     );
