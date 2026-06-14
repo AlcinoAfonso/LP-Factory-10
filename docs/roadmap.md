@@ -851,7 +851,7 @@
 • A página genérica da E10.6 servirá futuramente como fallback quando não houver página nichada publicada.
 • A modelagem de persistência e edição da E10.7 não deve ser antecipada na E10.6.
 
-10.6.8 Personalização por histórico da conta
+10.6.10 Personalização por histórico da conta
 
 • Status: Futuro — avaliar após validação da primeira versão.
 • Usar eventos vinculados ao `account_id` para reconhecer contas recorrentes.
@@ -860,7 +860,7 @@
 • Manter a página genérica como fallback.
 • Não exigir identificação individual do usuário nem CRM completo.
 
-10.6.9 Evoluções futuras de UX dos CTAs
+10.6.11 Evoluções futuras de UX dos CTAs
 
 • Status: Futuro — avaliar após validação da primeira versão.
 • Avaliar `web.whatsapp.com/send` no desktop para reduzir a tela intermediária.
