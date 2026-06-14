@@ -852,26 +852,21 @@
 • A modelagem de persistência e edição da E10.7 não deve ser antecipada na E10.6.
 
 10.6.8 Personalização por histórico da conta
+
 • Status: Futuro — avaliar após validação da primeira versão.
-• Objetivo: usar o histórico de eventos da conta para adaptar mensagens e CTAs em novos acessos.
-• Possíveis sinais:
-  • conta recorrente;
-  • último plano clicado;
-  • quantidade de visitas;
-  • último acesso;
-  • CTA já utilizado.
-• Primeira evolução recomendada:
-  • reconhecer retorno da conta;
-  • destacar o último plano clicado;
-  • adaptar headline, mensagem de retorno ou CTA.
-• Não exige CRM completo na primeira etapa.
-• Pode futuramente alimentar módulo comercial ou integração com CRM.
-• Regras:
-  • usar account_id;
-  • não exigir identificação individual do usuário;
-  • manter a página genérica como fallback;
-  • não implementar antes da aprovação da E10.6 atual;
-  • definir privacidade, retenção e limites antes de ampliar o tracking.
+• Usar eventos vinculados ao `account_id` para reconhecer contas recorrentes.
+• Considerar último acesso, quantidade de visitas, plano clicado e CTAs utilizados.
+• Futuramente adaptar mensagem, plano destacado e CTA.
+• Manter a página genérica como fallback.
+• Não exigir identificação individual do usuário nem CRM completo.
+
+10.6.9 Evoluções futuras de UX dos CTAs
+
+• Status: Futuro — avaliar após validação da primeira versão.
+• Avaliar `web.whatsapp.com/send` no desktop para reduzir a tela intermediária.
+• Manter `wa.me` no celular e como fallback geral.
+• Não realizar envio automático sem confirmação do usuário.
+• Implementar detecção por ambiente somente se o ganho de UX justificar a complexidade.
 
 10.7 Páginas comerciais personalizadas por nicho
 • Status: Planejado — iniciar somente após a aprovação da E10.6.
