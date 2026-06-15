@@ -1131,6 +1131,30 @@ Ajustados:
 • Definir contratos de leitura e validação.
 • Investigar como `content_templates` e `content_template_taxons` podem ser aproveitadas ou precisam evoluir antes de propor novos objetos.
 
+18.10.1 Recorte autônomo preparado
+• Status: implementação no repositório concluída; aplicação remota da migration e dados do primeiro consumidor pendentes.
+• `content_templates` permanece responsável por templates e módulos/seções, com histórico por versão.
+• A composição foi separada e versionada por template + taxon.
+• O artefato publicado foi separado da composição e mantém rastreabilidade de template, composição, taxon e pesquisas.
+• O runtime mínimo realiza apenas leitura e validação server-side; não produz conteúdo nem integra a página da E10.7.
+
+Banco — Criados
+• `content_template_compositions`
+• `content_template_composition_items`
+• `content_artifacts`
+• `content_artifact_research_sources`
+
+Banco — Ajustados
+• `content_templates`
+• `taxon_market_research`
+
+Repositório — Criados
+• `lib/conversion-content/contracts.ts`
+• `lib/conversion-content/validation.ts`
+• `lib/conversion-content/adapters/commercialActivationAdapter.ts`
+• `lib/conversion-content/index.ts`
+• `supabase/migrations/20260615190000_e18_commercial_activation_minimum.sql`
+
 18.11 Dependência e validação
 • E18 — base transversal mínima → dependência estrutural da E10.7.
 • E10.7 — primeiro consumidor real → valida e ajusta a base da E18.
