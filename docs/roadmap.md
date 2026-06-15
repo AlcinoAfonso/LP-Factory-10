@@ -1064,7 +1064,7 @@ Ajustados:
 18. E18 — Base transversal de templates, módulos, composições e artefatos
 
 18.1 Status
-• Planejado — base transversal mínima necessária antes da implementação da E10.7.
+• Planejado — base transversal mínima necessária para sustentar a implementação da E10.7.
 • Não há implementação compartilhada ativa para módulos, composições ou artefatos finais.
 • `content_templates` e `content_template_taxons` existem no schema atual, mas não possuem registros; seu aproveitamento e eventuais ajustes ainda precisam ser investigados.
 
