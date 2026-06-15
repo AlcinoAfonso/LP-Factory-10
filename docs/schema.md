@@ -1,8 +1,8 @@
 0. Introdução
 
 0.1 Cabeçalho
-• Data da última atualização: 14/05/2026
-• Documento: LP Factory 10 — Schema (DB Contract) v1.0.17
+• Data da última atualização: 15/06/2026
+• Documento: LP Factory 10 — Schema (DB Contract) v1.0.20
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -56,7 +56,10 @@
 1.3 audit_logs
 1.3.1 Chaves e campos-chave
 • PK: id uuid
-• Campos-chave: user_id, table_name, record_id, changes_json, account_id, created_at
+• Campos-chave: user_id, actor_user_id, table_name, record_id, action, event, changes_json, account_id, ip_address, created_at
+• `action`: operação de auditoria; valores permitidos `insert`, `update` e `delete`
+• `event`: nome normalizado do evento de contexto
+• `changes_json`: propriedades adicionais do evento ou diff auditado
 1.3.2 Segurança
 • Trigger: sem trigger próprio (sink)
 • RLS: recomendado/obrigatório conforme exposição
@@ -542,6 +545,21 @@
 • fn_event_bus_publish(table text, kind text, payload jsonb)
 • jsonb_diff_val(old jsonb, new jsonb) → jsonb
 
+3.5.1 audit_context_event
+• Assinatura: audit_context_event(p_event text, p_entity text, p_entity_id uuid, p_diff jsonb, p_account_id uuid) → void
+• Segurança: invoker; SECURITY DEFINER = false
+• search_path: public, extensions
+• Grants de EXECUTE: authenticated e service_role.
+• Efeito: insere evento em `public.audit_logs`
+• `table_name = p_entity`
+• `record_id = coalesce(p_entity_id, gen_random_uuid())`
+• `action = 'insert'`
+• `event = lower(p_event)`
+• `changes_json = coalesce(p_diff, '{}'::jsonb)`
+• `account_id = p_account_id`
+• `user_id` e `actor_user_id`: `auth.uid()` quando disponível
+• Migration corretiva: `supabase/migrations/20260614124000_fix_audit_context_event_event_column.sql`
+
 
 3.6 Matching determinístico de taxonomia
 3.6.1 normalize_taxon_match_text(input text) → text
@@ -598,6 +616,11 @@
 • Rollback: não remove automaticamente a extensão, pois pode ser reutilizada por outros recursos
 
 99. Changelog
+v1.0.20 (15/06/2026) — E10.6: correção da auditoria de eventos comerciais
+• Atualizados os campos relevantes de `audit_logs`, distinguindo `action`, `event` e `changes_json`.
+• Registrada a assinatura e o comportamento de `public.audit_context_event`.
+• Registrado que eventos de contexto usam `action = 'insert'` e armazenam o nome normalizado em `event`.
+• Registrada a migration `20260614124000_fix_audit_context_event_event_column.sql`, aplicada e validada no Supabase.
 v1.0.19 (11/06/2026) — Drift confirmado durante a extração da baseline
 • Atualizado `account_taxonomy_source_type_chk` com `user_confirmed_ai`, conforme estado remoto.
 • Registrados os campos `user_*`, checks e FK de confirmação do usuário em `account_niche_resolutions`.
