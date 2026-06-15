@@ -61,13 +61,14 @@ ALLOWLISTS POR DOC_ALVO
 
 `docs/schema.md` — CONTRATO_DB
 * ENTRA: tabelas, colunas, constraints, enums, relacionamentos, views, RPCs/functions, triggers, RLS/policies, grants e notas mínimas de validação no Supabase.
+* RPCs/FUNCTIONS: quando confirmados, registrar assinatura, segurança, `search_path`, grants e comportamento estável.
 * GATE: o RELATÓRIO precisa trazer evidência de DB executado/observável: migration aplicada, SQL que altere schema ou confirmação no Supabase.
 * TBD: só para detalhe faltante de objeto já existente no Supabase, com caminho de validação.
 * NÃO ENTRA: itens pertencentes a runtime/base técnica, roadmap/casos, design system, platform config, services ou automations.
 
 `docs/roadmap.md` — CONTRATO_DE_CASOS
 * ENTRA: status com data, escopo final em bullets curtos, dependências entre casos E*, decisões explícitas, pendências marcadas no RELATÓRIO e estruturas/artefatos vinculados ao estado final do caso.
-* REGRA DE ATUALIZAÇÃO: como exceção às regras de consolidação de estado final deste prompt, casos em planejamento, andamento ou implementação parcial devem preservar debates, planos, decisões provisórias, trabalho em execução, faltas e próximos passos. Nessa fase, não alterar cabeçalho, versão ou changelog nem marcar o caso como implementado ou concluído. Somente quando o caso completo ou um recorte autônomo estiver totalmente implementado e validado, remover o conteúdo provisório superado pelo escopo concluído e consolidar apenas o estado final permitido por esta allowlist.
+* REGRA DE ATUALIZAÇÃO: como exceção às regras de consolidação de estado final deste prompt, casos em planejamento, andamento ou implementação parcial devem preservar debates, planos, decisões provisórias, trabalho em execução, faltas e próximos passos. Nessa fase, não alterar cabeçalho, versão ou changelog nem marcar o caso como implementado ou concluído. Somente quando o caso completo ou um recorte autônomo estiver totalmente implementado e validado, remover debates encerrados, planos operacionais consumidos, hipóteses não aprovadas e conteúdo provisório superado; preservar decisões futuras aprovadas, pendências vigentes, limites permanentes e evoluções já classificadas.
 * REGRA: “E” só no título principal do caso; subitens sem repetir “E”.
 * ESTRUTURAS E ARTEFATOS: em cada caso implementado, registrar quando aplicável somente os nomes dos objetos de banco e os paths dos arquivos de repositório criados, ajustados ou removidos.
 * CATEGORIAS:
@@ -101,7 +102,12 @@ ALLOWLISTS POR DOC_ALVO
 REGRAS DE EXTRAÇÃO (RELATÓRIO → ESTADO FINAL)
 
 3. Extrair apenas o que estiver claramente como **ESTADO FINAL** (IMPLEMENTADO/DEFINIDO).
-4. Ignorar propostas, hipóteses, assunções a validar e “próximo passo”.
+4. Tratar conteúdo futuro conforme sua condição:
+   * proposta não aprovada → ignorar;
+   * decisão futura aprovada → preservar;
+   * próximo passo operacional superado → remover;
+   * evolução futura vigente → preservar.
+   Hipóteses e assunções a validar continuam fora do estado final.
 
 COMPARAÇÃO (ESTADO FINAL vs DOC_ALVO)
 
@@ -121,6 +127,7 @@ GERAÇÃO DO ABC (DELTA-ONLY)
 9. Regra de uso:
    * Preferir TRECHO (linha, bullet, parágrafo curto ou bloco pequeno estável).
    * Usar SEÇÃO inteira somente quando a estrutura da seção precisar ser refeita.
+   * Antes de `SUBSTITUIR_SECAO` em `docs/roadmap.md`, verificar que a substituição não elimina decisões futuras aprovadas, pendências vigentes ou limites ainda válidos.
 10. Regra de âncora:
    * Em operações de TRECHO, usar a seção em que o trecho entra/sai.
    * Em `ADICIONAR_SECAO`, usar a seção imediatamente anterior (mesmo nível), quando existir.
