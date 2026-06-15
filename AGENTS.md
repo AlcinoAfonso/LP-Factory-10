@@ -8,7 +8,7 @@
 * Para impacto visual/frontend, usar também `docs/template-briefing-codex-frontend.md`.
 * Para estado, decisões e aprendizados sobre Codex, usar `docs/gestor-codex.md`.
 * Ao consolidar conteúdo canônico dos documentos cobertos pelo `DOC_ALVO`, usar `docs/prompt-abc.md` para definir residência, escopo e conteúdo permitido.
-* Em `docs/roadmap.md`, casos em planejamento, andamento ou implementação parcial devem preservar planejamento, decisões provisórias, trabalho em execução, faltas e próximos passos. Nessa fase, não alterar cabeçalho, versão ou changelog e não marcar como implementado ou concluído. Aplicar a consolidação final de `docs/prompt-abc.md` somente quando o caso completo ou um recorte autônomo estiver totalmente implementado e validado; então remover apenas o conteúdo provisório superado pelo escopo concluído e consolidar seu estado final conforme a allowlist.
+* Para atualizar casos em `docs/roadmap.md`, aplicar a regra de atualização do roadmap definida em `docs/prompt-abc.md`.
 
 ## Regra geral de execução
 
