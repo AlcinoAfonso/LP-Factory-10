@@ -732,11 +732,27 @@ Repositório — Ajustados
 • Avaliar personalização por histórico da conta sem exigir CRM ou identificação individual.
 • Avaliar experiência específica do WhatsApp por dispositivo somente se o ganho justificar a complexidade.
 • Tracking de scroll, FAQ e “Como funciona” permanece fora desta versão.
+• Updates futuros já aprovados relacionados: `prod#3`, `vercel#8`, `vercel#10`, `vercel#11`, `vercel#20` e `prod#15`.
 
 10.6.3 Relação com a E10.7
 • A E10.7 permanece separada e será responsável pelas páginas comerciais personalizadas por nicho.
 • A página genérica da E10.6 permanece como fallback quando não houver página nichada publicada.
 • Persistência, edição, geração e publicação da E10.7 serão definidas no planejamento desse caso.
+
+10.6.4 Personalização por histórico da conta
+• Status: Futuro.
+• Usar eventos vinculados ao `account_id` para reconhecer contas recorrentes.
+• Considerar último acesso, quantidade de visitas, último plano clicado e CTAs utilizados.
+• Adaptar futuramente mensagem, plano destacado ou CTA.
+• Manter a página genérica como fallback.
+• Não exigir identificação individual nem CRM completo.
+
+10.6.5 Evoluções futuras de UX dos CTAs
+• Status: Futuro.
+• Avaliar `web.whatsapp.com/send` no desktop.
+• Manter `wa.me` no celular e como fallback.
+• Não realizar envio automático.
+• Implementar detecção por ambiente somente se o ganho justificar a complexidade.
 
 10.7 Páginas comerciais personalizadas por nicho
 • Status: Planejado — iniciar somente após a aprovação da E10.6.

@@ -549,6 +549,7 @@
 • Assinatura: audit_context_event(p_event text, p_entity text, p_entity_id uuid, p_diff jsonb, p_account_id uuid) → void
 • Segurança: invoker; SECURITY DEFINER = false
 • search_path: public, extensions
+• Grants de EXECUTE: authenticated e service_role.
 • Efeito: insere evento em `public.audit_logs`
 • `table_name = p_entity`
 • `record_id = coalesce(p_entity_id, gen_random_uuid())`
