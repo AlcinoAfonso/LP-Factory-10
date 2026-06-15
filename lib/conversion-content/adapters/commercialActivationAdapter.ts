@@ -23,18 +23,39 @@ export async function getCommercialActivationBundle(input: {
   const supabase = createServiceClient();
 
   try {
-    const { data: compositionRow, error: compositionError } = await supabase
-      .from("content_template_compositions")
+    const { data: templateLinkRow, error: templateLinkError } = await supabase
+      .from("content_template_taxons")
       .select(
-        `id,template_id,taxon_id,version,status,template:content_templates!content_template_compositions_template_id_fkey!inner(${TEMPLATE_COLUMNS})`,
+        `id,template_id,taxon_id,is_primary,priority,created_at,template:content_templates!content_template_taxons_template_id_fkey!inner(${TEMPLATE_COLUMNS})`,
       )
       .eq("taxon_id", taxonId)
-      .eq("status", "active")
+      .eq("is_active", true)
       .eq("template.template_family", COMMERCIAL_ACTIVATION_TEMPLATE_FAMILY)
       .eq("template.template_scope", "page")
       .eq("template.status", "active")
       .eq("template.is_active", true)
+      .order("is_primary", { ascending: false })
+      .order("priority", { ascending: false })
+      .order("created_at", { ascending: true })
+      .order("id", { ascending: true })
       .limit(1)
+      .maybeSingle();
+
+    if (templateLinkError) throw templateLinkError;
+    if (!templateLinkRow) return { status: "composition_not_found" };
+
+    const templateLinkData = templateLinkRow as Record<string, unknown>;
+    const templateId = templateLinkData.template_id;
+    if (typeof templateId !== "string" || !templateId) {
+      return { status: "composition_not_found" };
+    }
+
+    const { data: compositionRow, error: compositionError } = await supabase
+      .from("content_template_compositions")
+      .select("id,template_id,taxon_id,version,status")
+      .eq("template_id", templateId)
+      .eq("taxon_id", taxonId)
+      .eq("status", "active")
       .maybeSingle();
 
     if (compositionError) throw compositionError;
@@ -57,7 +78,7 @@ export async function getCommercialActivationBundle(input: {
 
     const composition = mapContentComposition({
       composition: compositionData,
-      template: compositionData.template,
+      template: templateLinkData.template,
       items: (itemRows ?? []) as unknown[],
     });
     if (!composition) return { status: "composition_invalid" };

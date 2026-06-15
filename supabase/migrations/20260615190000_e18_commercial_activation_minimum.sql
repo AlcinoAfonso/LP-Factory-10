@@ -237,6 +237,7 @@ revoke all on table public.content_artifacts from public, anon, authenticated;
 revoke all on table public.content_artifact_research_sources from public, anon, authenticated;
 
 grant select on table public.content_templates to service_role;
+grant select on table public.content_template_taxons to service_role;
 grant select on table public.content_template_compositions to service_role;
 grant select on table public.content_template_composition_items to service_role;
 grant select on table public.content_artifacts to service_role;

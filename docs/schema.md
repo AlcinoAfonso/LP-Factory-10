@@ -277,6 +277,7 @@
 1.14.3 Segurança
 • Trigger Hub: não
 • RLS: ativo (enable row level security)
+• service_role: SELECT
 
 1.14.4 Policies
 • content_template_taxons_select_admin_only (SELECT to public): is_super_admin() OU is_platform_admin()
@@ -734,6 +735,7 @@
 99. Changelog
 v1.0.21 (15/06/2026) — E18: base mínima de `commercial_activation`
 • `content_templates`: versionamento por chave/slug + versão e leitura server-side.
+• `content_template_taxons`: leitura server-side para resolução determinística do vínculo template + taxon.
 • Adicionadas composições versionadas por template + taxon, itens ordenados, artefatos publicados e vínculo rastreável às pesquisas.
 • Novos objetos com RLS ativo, sem acesso público e com SELECT restrito ao `service_role`.
 
