@@ -778,8 +778,8 @@ Repositório — Ajustados
 • Localizar pesquisas por `taxon_id`, `audience_scope = business_buyer`, `status = active` e versão válida.
 • Consumir os blocos `strategic_core`, `lp_overview`, `lp_sections` e `seo`.
 • Consumir os itens ativos relacionados em `taxon_market_research_items`.
-• Não misturar blocos de versões diferentes na mesma página.
-• Pesquisa ausente, incompleta ou inconsistente invalida a página nichada e aciona o fallback da E10.6.
+• Os blocos obrigatórios devem compartilhar a mesma versão; não misturar blocos de versões diferentes na mesma página.
+• Sem uma versão comum, completa e válida para todos os blocos obrigatórios, usar o fallback da E10.6.
 
 10.7.4 Composição e produção
 • Consumir a composição comercial definida sobre a base da E18.
@@ -1080,17 +1080,16 @@ Ajustados:
 • Cada canal terá módulos próprios e sua própria família de renderer, mesmo quando compartilhar contratos transversais.
 
 18.4 Famílias e templates versionados
-• Confrontar a modelagem planejada com `content_templates.template_family`.
+• Investigar os objetos existentes `content_templates` e `content_template_taxons` com referência ao contrato atual em `docs/schema.md`.
 • Valores atuais permitidos: `commercial_activation` e `landing_page`.
 • Não alterar esses valores no recorte documental ou na primeira investigação.
-• `content_templates` já oferece identidade, família, escopo `page | section`, status, versão e `payload_json`, mas ainda não comprova sozinho o contrato completo de módulos, composição e artefato final.
-• `content_template_taxons` já relaciona template e taxon com nível de resolução, prioridade e marcações de ativação, mas não deve ser tratado como composição completa sem validação.
+• Não tratar esses objetos como composição ou artefato publicado antes da investigação e validação estrutural.
 
 18.5 Módulos, seções e variantes
 • A base transversal será formada por módulos de conteúdo; em canais de página, esses módulos assumem a forma de seções.
 • Catálogo inicial candidato para a E10.7: `hero`, `problem`, `benefits`, `services`, `use_cases`, `plans`, `differentials`, `how_it_works`, `comparison`, `integrations`, `proof`, `credentials`, `faq` e `final_cta`.
 • Incluir no primeiro recorte somente as seções realmente necessárias para a E10.7.
-• Cada módulo ou seção poderá ter variantes reutilizáveis com identificadores descritivos, como `hero.default`, `hero.real_estate`, `hero.local_service`, `proof.testimonials`, `proof.credentials` e `proof.operational_demo`.
+• Cada módulo ou seção poderá ter variantes estruturais ou funcionais reutilizáveis com identificadores descritivos, como `hero.default`, `hero.centered`, `hero.split`, `hero.with_proof`, `hero.with_form`, `proof.testimonials`, `proof.credentials` e `proof.operational_demo`.
 • Não usar identificadores numéricos como `hero.1` ou `hero.2`.
 
 18.6 Contrato entre código e banco
@@ -1139,19 +1138,12 @@ Ajustados:
 • A E10.6 permanece fora dessa infraestrutura e continua como fallback genérico concluído.
 
 18.12 Ordem de execução planejada
-1. Atualizar E18 no roadmap.
-2. Atualizar E10.7 e sua dependência da E18.
-3. Investigar schema e estruturas atuais aproveitáveis.
-4. Definir o recorte mínimo da E18.
-5. Implementar a base mínima para `commercial_activation`.
-6. Validar contratos e persistência.
-7. Voltar à E10.7.
-8. Criar a composição do taxon piloto.
-9. Produzir e persistir a primeira página nichada.
-10. Integrar à rota com fallback.
-11. Validar produção, tracking, desktop e mobile.
-12. Testar com um segundo taxon.
-13. Ajustar a base transversal somente com evidência real.
+1. Investigar schema, runtime e acesso server-side.
+2. Definir o mínimo da E18 exigido pelo piloto.
+3. Implementar esse mínimo junto à E10.7.
+4. Publicar e validar o piloto.
+5. Testar um segundo taxon.
+6. Ajustar a E18 com a evidência obtida.
 
 18.13 Fora do primeiro recorte
 • implementação de e-mail, WhatsApp, Instagram ou TikTok
