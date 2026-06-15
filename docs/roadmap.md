@@ -1,8 +1,8 @@
 0. Introdução
 
 0.1 Cabeçalho
-• Data: 12/06/2026
-• Versão: v1.5.70
+• Data: 15/06/2026
+• Versão: v1.5.72
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -701,172 +701,42 @@
 • o resultado operacional da resolução de nicho ainda não está exposto em UX final do dashboard da conta
 
 10.6 Página comercial genérica do Account Dashboard
-• Status: Planejado — objetivo e primeira entrega definidos (13/06/2026)
-• Esta seção é o plano-base canônico da E10.6; não deve existir documento paralelo de plano-base para este caso.
-• O Executor futuro deverá usar esta seção como plano-base e `docs/prompt-executor.md` como processo de execução.
-• Objetivo: criar uma página comercial genérica, semelhante a uma landing page interna, para apresentar e vender os serviços da LP Factory e validar a base visual antes das páginas nichadas da E10.7.
-• URL canônica: `/a/[account]`.
-• Exibição inicial: contas `active`.
-• A mesma URL deverá ser preservada em futuras variantes ou testes A/B.
-• Não implementar mecanismo A/B na primeira entrega.
-• A primeira entrega valida conteúdo comercial genérico, UI, design, organização das seções, responsividade, cards de planos, CTAs, tracking mínimo e QA visual.
-• O conteúdo será fixo no repositório e não será editável pelo Admin Dashboard nesta primeira etapa.
+• Status: Concluído (15/06/2026)
+• Objetivo: disponibilizar em `/a/[account]` uma página comercial genérica para contas `active`, antes da personalização por nicho da E10.7.
+• Implementado:
+• página responsiva com hero, benefícios, serviços, planos, diferenciais, funcionamento, FAQ e CTA final;
+• conteúdo fixo `generic-v1` mantido localmente na rota;
+• planos ilustrativos Starter, Lite, Pro e Ultra, com aviso de que não constituem oferta definitiva;
+• CTAs gerais e por plano direcionados ao WhatsApp;
+• `NicheResolutionCard` preservado acima da página quando aplicável;
+• tracking server-side vinculado ao `account_id`, sem PII, com os eventos `commercial_page_view`, `commercial_primary_cta_click` e `commercial_plan_cta_click`;
+• eventos armazenados em `audit_logs.event`, propriedades em `changes_json` e `action = insert`;
+• Preview, produção, WhatsApp e tracking validados.
 
-10.6.1 Organização inicial no repositório
-• Componente visual previsto:
+10.6.1 Estruturas e artefatos
+
+Banco — Ajustados
+• `public.audit_context_event`
+
+Repositório — Criados
 • `app/a/[account]/_components/commercial-page/GenericCommercialPage.tsx`
-• Conteúdo genérico previsto:
+• `app/a/[account]/_components/commercial-page/actions.ts`
 • `app/a/[account]/_content/commercial-page/generic-v1.ts`
-• O componente será responsável pelo layout e pela renderização.
-• O arquivo `generic-v1.ts` concentrará textos, benefícios, serviços, planos, FAQ e CTAs.
-• Uma futura variante poderá usar `generic-v2.ts`, preservando a mesma URL.
-• Esses paths são orientações do plano-base e devem ser confirmados pelo Executor no repositório antes da implementação.
-• A estrutura proposta é específica da E10.6 e não constitui template universal ou arquitetura multicanal.
+• `supabase/migrations/20260614124000_fix_audit_context_event_event_column.sql`
 
-10.6.2 Seções da primeira entrega
-• Hero.
-• Benefícios.
-• Serviços.
-• Planos e cards de venda.
-• Diferenciais.
-• Como funciona.
-• FAQ.
-• CTA final.
-• Responsividade desktop e mobile.
+Repositório — Ajustados
+• `app/a/[account]/page.tsx`
 
-10.6.3 Planos ilustrativos
-• Os planos e seus conteúdos servem somente para teste visual.
-• Os nomes canônicos são Starter, Lite, Pro e Ultra.
+10.6.2 Pendências
+• Aprovar ou refinar a página como referência visual para as futuras páginas nichadas.
+• Avaliar personalização por histórico da conta sem exigir CRM ou identificação individual.
+• Avaliar experiência específica do WhatsApp por dispositivo somente se o ganho justificar a complexidade.
+• Tracking de scroll, FAQ e “Como funciona” permanece fora desta versão.
 
-• Starter — R$ 50/mês:
-• 1 landing page;
-• layout responsivo;
-• CTA principal;
-• publicação assistida.
-
-• Lite — R$ 100/mês:
-• até 2 landing pages;
-• personalização de marca;
-• formulário ou WhatsApp;
-• ajustes básicos.
-
-• Pro — R$ 200/mês:
-• até 5 landing pages;
-• adaptação de copy;
-• seções de conversão;
-• tracking essencial.
-
-• Ultra — R$ 300/mês:
-• até 10 landing pages;
-• prioridade de atendimento;
-• revisões periódicas;
-• otimização orientada por dados.
-
-• Aviso visível obrigatório: Valores e serviços ilustrativos para validação visual. Não constituem oferta comercial definitiva.
-
-10.6.4 Tracking mínimo
-• Tracking é requisito do MVP da E10.6.
-• Eventos mínimos previstos:
-• `commercial_page_view`;
-• `commercial_primary_cta_click`;
-• `commercial_plan_cta_click`.
-• Propriedades mínimas:
-• `page_variant = generic-v1`, obrigatório em todos os eventos;
-• `plan_key`, somente quando aplicável;
-• `cta_location`, somente quando aplicável.
-• Não registrar PII, nome, e-mail ou copy integral.
-• O mecanismo canônico de envio e armazenamento dos eventos deverá ser confirmado pelo Executor durante a investigação.
-• Não usar `console.log` como tracking definitivo.
-• Tracking de scroll, abertura de FAQ e outros microeventos fica fora da primeira entrega.
-
-10.6.5 Critérios de UX e QA
-• QA significa garantia de qualidade da entrega.
-• A primeira dobra deve permitir reconhecer rapidamente:
-• a oferta;
-• o benefício principal;
-• o CTA;
-• o próximo passo.
-• CTAs devem ser visíveis, compreensíveis e navegáveis por teclado.
-• Cards devem permitir comparação clara entre os planos.
-• FAQ deve ter leitura e interação simples.
-• Validar:
-• desktop;
-• mobile;
-• contraste;
-• foco por teclado;
-• hover;
-• legibilidade;
-• comparação dos planos;
-• ausência de texto cortado;
-• ausência de overflow;
-• ausência de sobreposição;
-• ausência de deslocamento visual perceptível.
-• A validação deve usar o Preview correspondente ao commit mais recente da branch.
-
-10.6.6 Relação com o `NicheResolutionCard`
-• Preservar o `NicheResolutionCard` conforme 10.5.6.6.
-• Quando acionável, ele deve permanecer acima da página comercial genérica.
-• A E10.6 não deve alterar seu comportamento funcional.
-
-10.6.7 Updates aplicáveis
-• Aplicar agora:
-• `prod#14` — priorizar reconhecimento e clareza nos testes iniciais;
-• `prod#5` — usar somente os checks existentes do projeto;
-• `prod#16` — QA visual e validação de UX em Preview;
-• `vercel#13` — confirmar que o Preview corresponde ao commit mais recente.
-• Usar como apoio opcional de QA, sem bloquear a entrega:
-• `vercel#15` — Vercel Toolbar;
-• `vercel#16` — Vercel Comments;
-• `vercel#17` — Accessibility Audit Tool;
-• `vercel#18` — Interaction Timing Tool;
-• `vercel#19` — Layout Shift Tool.
-• Avaliar futuramente:
-• `prod#3` — Speed Insights;
-• `vercel#10` — observabilidade de redirects, somente se houver problema real;
-• `vercel#11` — eventos customizados e tracking server-side;
-• `vercel#20` — variantes, flags e testes A/B;
-• `vercel#8` — cache e revalidação, somente se o conteúdo passar a vir do banco;
-• `prod#15` — automação de microeventos.
-• Manter fora desta etapa:
-• `vercel#1` — Vercel AI Cloud.
-
-10.6.8 Regras e limites
-• Não consultar taxons ou pesquisas.
-• Não usar `taxon_market_research`.
-• Não usar `taxon_market_research_items`.
-• Não criar tabela ou migration.
-• Não usar IA.
-• Não criar edição pelo Admin Dashboard.
-• Não persistir o conteúdo comercial em banco.
-• Não implementar teste A/B ativo.
-• Não criar cache dinâmico.
-• Não antecipar a E10.7.
-• Não recriar a E18.
-• Não criar arquitetura universal ou multicanal.
-• Não alterar os fluxos atuais de acesso, onboarding e resolução de nicho.
-• Não usar `limits.max_lps` como gating enquanto o entitlement real não estiver integrado.
-
-10.6.9 Relação com a E10.7
-• A E10.6 é genérica; a E10.7 será nichada e usará pesquisas com `audience_scope = business_buyer`.
-• A página genérica da E10.6 servirá futuramente como fallback quando não houver página nichada publicada.
-• A modelagem de persistência e edição da E10.7 não deve ser antecipada na E10.6.
-
-10.6.10 Personalização por histórico da conta
-
-• Status: Futuro — avaliar após validação da primeira versão.
-• Usar eventos vinculados ao `account_id` para reconhecer contas recorrentes.
-• Considerar último acesso, quantidade de visitas, plano clicado e CTAs utilizados.
-• Futuramente adaptar mensagem, plano destacado e CTA.
-• Manter a página genérica como fallback.
-• Não exigir identificação individual do usuário nem CRM completo.
-
-10.6.11 Evoluções futuras de UX dos CTAs
-
-• Status: Futuro — avaliar após validação da primeira versão.
-• Avaliar `web.whatsapp.com/send` no desktop para reduzir a tela intermediária.
-• Manter `wa.me` no celular e como fallback geral.
-• Não realizar envio automático sem confirmação do usuário.
-• Implementar detecção por ambiente somente se o ganho de UX justificar a complexidade.
+10.6.3 Relação com a E10.7
+• A E10.7 permanece separada e será responsável pelas páginas comerciais personalizadas por nicho.
+• A página genérica da E10.6 permanece como fallback quando não houver página nichada publicada.
+• Persistência, edição, geração e publicação da E10.7 serão definidas no planejamento desse caso.
 
 10.7 Páginas comerciais personalizadas por nicho
 • Status: Planejado — iniciar somente após a aprovação da E10.6.
@@ -1178,6 +1048,7 @@ Ajustados:
 • Definir o primeiro recorte funcional do LP Builder no roadmap
 
 99. Changelog
+v1.5.72 — 15/06/2026 — E10.6 concluída com página comercial genérica responsiva em `/a/[account]`, planos e CTAs ilustrativos, tracking server-side validado, correção de `public.audit_context_event` e registro dos artefatos finais; personalização por nicho permanece na E10.7.
 v1.5.71 — 12/06/2026 — Separadas a E10.6, agora dedicada à primeira página comercial genérica sem banco novo, pesquisa ou IA, e a futura E10.7, responsável por páginas comerciais personalizadas por nicho após a aprovação da E10.6; referências ao consumo direto de pesquisas pela E10.6 foram corrigidas.
 v1.5.70 — 12/06/2026 — Retirada a implementação antecipada da E18/E18.5 e a primeira E10.6; removidos templates universais, artefatos e persistência não aplicada, restaurado o Account Dashboard simples e reiniciada a página comercial como caso específico antes de qualquer abstração compartilhada.
 v1.5.69 — 11/06/2026 — E18.5 adota o primeiro fluxo incremental pós-baseline: migration canônica estrita de `generated_content_artifacts`, verificação read-only ampliada, validação isolada com smoke, rollback e reconstrução, mantendo aplicação remota e runtime consumidor bloqueados.
