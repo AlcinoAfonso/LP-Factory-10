@@ -2,7 +2,7 @@
 
 0.1 Cabeçalho
 • Data da última atualização: 15/06/2026
-• Documento: LP Factory 10 — Schema (DB Contract) v1.0.20
+• Documento: LP Factory 10 — Schema (DB Contract) v1.0.21
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -223,8 +223,10 @@
 
 1.13.1 Chaves, constraints e relacionamentos
 • PK: id uuid
-• UNIQUE: template_key
-• UNIQUE: slug
+• UNIQUE: (template_key, version)
+• UNIQUE: (slug, version)
+• UNIQUE auxiliar: (id, version)
+• UNIQUE parcial: no máximo um template `active` e `is_active = true` por família com escopo `page`
 • CHECK: content_templates_template_family_chk (template_family IN ('commercial_activation', 'landing_page'))
 • CHECK: content_templates_template_scope_chk (template_scope IN ('page', 'section'))
 • CHECK: content_templates_status_chk (status IN ('draft', 'active', 'archived'))
@@ -246,6 +248,7 @@
 1.13.3 Segurança
 • Trigger Hub: não
 • RLS: ativo (enable row level security)
+• service_role: SELECT
 
 1.13.4 Policies
 • content_templates_select_admin_only (SELECT to public): is_super_admin() OU is_platform_admin()
@@ -274,6 +277,7 @@
 1.14.3 Segurança
 • Trigger Hub: não
 • RLS: ativo (enable row level security)
+• service_role: SELECT
 
 1.14.4 Policies
 • content_template_taxons_select_admin_only (SELECT to public): is_super_admin() OU is_platform_admin()
@@ -286,6 +290,7 @@
 1.15.1 Chaves, constraints e relacionamentos
 • PK: id uuid
 • UNIQUE: (taxon_id, research_block, audience_scope, version)
+• UNIQUE auxiliar: (id, taxon_id, audience_scope, version)
 • CHECK: taxon_market_research_status_chk (status IN ('draft', 'active', 'archived'))
 • CHECK: taxon_market_research_audience_scope_chk (audience_scope IN ('end_customer', 'business_buyer'))
 • FK: taxon_id → business_taxons(id) ON UPDATE CASCADE ON DELETE RESTRICT
@@ -434,6 +439,118 @@
 
 1.18.4 Índices
 • account_niche_resolutions_ai_suggested_taxon_id_idx
+
+1.19 content_template_compositions
+
+1.19.1 Chaves, constraints e relacionamentos
+• PK: id uuid
+• UNIQUE: (template_id, taxon_id, version)
+• UNIQUE auxiliar: (id, template_id, taxon_id, version)
+• UNIQUE parcial: no máximo uma composição `active` por (template_id, taxon_id)
+• CHECK: version > 0
+• CHECK: status IN ('draft', 'active', 'archived')
+• FK: template_id → content_templates(id) ON UPDATE CASCADE ON DELETE RESTRICT
+• FK: taxon_id → business_taxons(id) ON UPDATE CASCADE ON DELETE RESTRICT
+
+1.19.2 Campos
+• template_id uuid not null
+• taxon_id uuid not null
+• version integer not null default 1
+• status text not null default 'draft'
+• created_at timestamptz not null default now()
+• updated_at timestamptz not null default now()
+
+1.19.3 Segurança
+• Trigger Hub: não
+• RLS: ativo
+• anon/authenticated/public: sem acesso
+• service_role: SELECT
+
+1.20 content_template_composition_items
+
+1.20.1 Chaves, constraints e relacionamentos
+• PK: id uuid
+• UNIQUE: (composition_id, sort_order)
+• CHECK: variant_key descritivo no formato `modulo.variante`
+• CHECK: sort_order >= 0
+• CHECK: config_json é objeto JSON
+• FK: composition_id → content_template_compositions(id) ON UPDATE CASCADE ON DELETE CASCADE
+• FK: module_template_id → content_templates(id) ON UPDATE CASCADE ON DELETE RESTRICT
+
+1.20.2 Campos
+• composition_id uuid not null
+• module_template_id uuid not null
+• variant_key text not null
+• sort_order integer not null
+• is_required boolean not null default true
+• config_json jsonb not null default '{}'
+• created_at timestamptz not null default now()
+• updated_at timestamptz not null default now()
+
+1.20.3 Segurança
+• Trigger Hub: não
+• RLS: ativo
+• anon/authenticated/public: sem acesso
+• service_role: SELECT
+
+1.21 content_artifacts
+
+1.21.1 Chaves, constraints e relacionamentos
+• PK: id uuid
+• UNIQUE: (template_id, composition_id, taxon_id, audience_scope, research_version, artifact_version)
+• UNIQUE parcial: no máximo um artefato `published` por (template_id, taxon_id, audience_scope)
+• CHECK: audience_scope IN ('end_customer', 'business_buyer')
+• CHECK: versões de template, composição, pesquisa e artefato > 0
+• CHECK: status IN ('draft', 'published', 'archived')
+• CHECK: ciclo de vida coerente com published_at e archived_at
+• CHECK: content_json e provenance_json são objetos JSON
+• FK composta: (template_id, template_version) → content_templates(id, version)
+• FK composta: (composition_id, template_id, taxon_id, composition_version) → content_template_compositions(id, template_id, taxon_id, version)
+• FK: taxon_id → business_taxons(id) ON UPDATE CASCADE ON DELETE RESTRICT
+
+1.21.2 Campos
+• template_id uuid not null
+• composition_id uuid not null
+• taxon_id uuid not null
+• audience_scope text not null
+• template_version integer not null
+• composition_version integer not null
+• research_version integer not null
+• artifact_version integer not null default 1
+• status text not null default 'draft'
+• content_json jsonb not null
+• provenance_json jsonb not null
+• created_at timestamptz not null default now()
+• updated_at timestamptz not null default now()
+• published_at timestamptz null
+• archived_at timestamptz null
+
+1.21.3 Segurança
+• Trigger Hub: não
+• RLS: ativo
+• anon/authenticated/public: sem acesso
+• service_role: SELECT
+
+1.22 content_artifact_research_sources
+
+1.22.1 Chaves, constraints e relacionamentos
+• PK: (artifact_id, research_id)
+• FK composta: (artifact_id, taxon_id, audience_scope, research_version) → content_artifacts(id, taxon_id, audience_scope, research_version)
+• FK composta: (research_id, taxon_id, audience_scope, research_version) → taxon_market_research(id, taxon_id, audience_scope, version)
+
+1.22.2 Campos
+• artifact_id uuid not null
+• research_id uuid not null
+• taxon_id uuid not null
+• audience_scope text not null
+• research_version integer not null
+• created_at timestamptz not null default now()
+
+1.22.3 Segurança
+• Trigger Hub: não
+• RLS: ativo
+• anon/authenticated/public: sem acesso
+• service_role: SELECT
 
 2. Views
 
@@ -616,6 +733,12 @@
 • Rollback: não remove automaticamente a extensão, pois pode ser reutilizada por outros recursos
 
 99. Changelog
+v1.0.21 (15/06/2026) — E18: base mínima de `commercial_activation`
+• `content_templates`: versionamento por chave/slug + versão e leitura server-side.
+• `content_template_taxons`: leitura server-side para resolução determinística do vínculo template + taxon.
+• Adicionadas composições versionadas por template + taxon, itens ordenados, artefatos publicados e vínculo rastreável às pesquisas.
+• Novos objetos com RLS ativo, sem acesso público e com SELECT restrito ao `service_role`.
+
 v1.0.20 (15/06/2026) — E10.6: correção da auditoria de eventos comerciais
 • Atualizados os campos relevantes de `audit_logs`, distinguindo `action`, `event` e `changes_json`.
 • Registrada a assinatura e o comportamento de `public.audit_context_event`.

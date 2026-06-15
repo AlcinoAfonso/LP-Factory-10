@@ -1131,6 +1131,27 @@ Ajustados:
 • Definir contratos de leitura e validação.
 • Investigar como `content_templates` e `content_template_taxons` podem ser aproveitadas ou precisam evoluir antes de propor novos objetos.
 
+18.10.1 Recorte de banco preparado
+• Status: migration e documentação de banco preparadas no repositório; aplicação remota da migration, confirmação no banco, runtime consumidor e dados do primeiro consumidor pendentes.
+• `content_templates` permanece responsável por templates e módulos/seções, com histórico por versão.
+• A composição foi separada e versionada por template + taxon.
+• O artefato publicado foi separado da composição e mantém rastreabilidade de template, composição, taxon e pesquisas.
+
+Banco — Criados
+• `content_template_compositions`
+• `content_template_composition_items`
+• `content_artifacts`
+• `content_artifact_research_sources`
+
+Banco — Ajustados
+• `content_templates`
+• `content_template_taxons`
+• `taxon_market_research`
+
+Repositório — Criados
+• `supabase/migrations/20260615190000_e18_commercial_activation_minimum.sql`
+• `supabase/snippets/e18_commercial_activation_minimum_verify.sql`
+
 18.11 Dependência e validação
 • E18 — base transversal mínima → dependência estrutural da E10.7.
 • E10.7 — primeiro consumidor real → valida e ajusta a base da E18.
