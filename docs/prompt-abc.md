@@ -67,6 +67,7 @@ ALLOWLISTS POR DOC_ALVO
 
 `docs/roadmap.md` — CONTRATO_DE_CASOS
 * ENTRA: status com data, escopo final em bullets curtos, dependências entre casos E*, decisões explícitas, pendências marcadas no RELATÓRIO e estruturas/artefatos vinculados ao estado final do caso.
+* REGRA DE ATUALIZAÇÃO: como exceção às regras de consolidação de estado final deste prompt, casos em planejamento, andamento ou implementação parcial devem preservar debates, planos, decisões provisórias, trabalho em execução, faltas e próximos passos. Nessa fase, não alterar cabeçalho, versão ou changelog nem marcar o caso como implementado ou concluído. Somente quando o caso completo ou um recorte autônomo estiver totalmente implementado e validado, remover o conteúdo provisório superado pelo escopo concluído e consolidar apenas o estado final permitido por esta allowlist.
 * REGRA: “E” só no título principal do caso; subitens sem repetir “E”.
 * ESTRUTURAS E ARTEFATOS: em cada caso implementado, registrar quando aplicável somente os nomes dos objetos de banco e os paths dos arquivos de repositório criados, ajustados ou removidos.
 * CATEGORIAS:
