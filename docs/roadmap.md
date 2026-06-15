@@ -755,42 +755,100 @@ Repositório — Ajustados
 • Implementar detecção por ambiente somente se o ganho justificar a complexidade.
 
 10.7 Páginas comerciais personalizadas por nicho
-• Status: Planejado — iniciar somente após a aprovação da E10.6.
-• Objetivo: criar páginas comerciais personalizadas conforme o taxon da conta, usando pesquisas com `audience_scope = business_buyer`.
-• A página genérica da E10.6 será usada como fallback quando não houver página nichada publicada.
+• Status: Planejado — primeiro consumidor real da base transversal mínima da E18.
+• Objetivo: criar páginas comerciais personalizadas por taxon, prontas para exibição em `/a/[account]`, usando a família `commercial_activation`, composição compatível e pesquisa ativa com `audience_scope = business_buyer`.
+• Dependência estrutural: a E18 define os contratos reutilizáveis mínimos; a E10.7 aplica, valida e ajusta esses contratos no caso comercial concreto.
+• A página genérica `generic-v1` da E10.6 permanece concluída e será o fallback obrigatório.
 
-10.7.1 Caso piloto validado
+10.7.1 Decisões aprovadas
+• O conteúdo da página comercial é global por taxon e reutilizado por contas que resolvam a mesma página publicada.
+• A exibição ocorre no contexto da conta e o tracking permanece vinculado ao `account_id`.
+• A E10.7 não definirá isoladamente a infraestrutura transversal de templates, módulos, composições e artefatos.
+• A primeira montagem poderá ser determinística e não exigirá IA em runtime.
+• O taxon piloto valida o mecanismo, mas não limita a implementação ao seu slug.
+
+10.7.2 Resolução do taxon
+• Usar `account_taxonomy` como fonte canônica atual, filtrando `account_id`, `is_primary = true` e `status = active`.
+• Resolver o vínculo em `business_taxons` com `is_active = true`.
+• Reutilizar o helper server-side `getActivePrimaryAccountTaxon`.
+• Não criar condicionais exclusivas para `corretor-de-imoveis-de-medio-padrao`.
+• O mecanismo deve aceitar outros taxons que tenham pesquisa compatível, composição válida e página comercial publicada.
+
+10.7.3 Pesquisa comercial
+• Localizar pesquisas por `taxon_id`, `audience_scope = business_buyer`, `status = active` e versão válida.
+• Consumir os blocos `strategic_core`, `lp_overview`, `lp_sections` e `seo`.
+• Consumir os itens ativos relacionados em `taxon_market_research_items`.
+• Os blocos obrigatórios devem compartilhar a mesma versão; não misturar blocos de versões diferentes na mesma página.
+• Sem uma versão comum, completa e válida para todos os blocos obrigatórios, usar o fallback da E10.6.
+
+10.7.4 Composição e produção
+• Consumir a composição comercial definida sobre a base da E18.
+• A composição determina seções, variantes, ordem, obrigatoriedade e regras específicas do contexto comercial.
+• Fluxo planejado: template `commercial_activation` + composição do taxon + pesquisa `business_buyer` → conteúdo comercial nichado → página publicada.
+• Adaptar hero, benefícios, serviços, diferenciais, funcionamento, FAQ e CTAs.
+• Permitir seções ou variantes adicionais somente quando exigidas pela composição.
+
+10.7.5 Persistência e identidade
+• Persistir o resultado como artefato final global por taxon, separado do template, da composição e das pesquisas de origem.
+• Identidade conceitual mínima: `taxon_id`, `audience_scope`, `research_version`, `template_version`, `composition_version` e `status`.
+• Os nomes finais de objetos, campos e relacionamentos serão definidos após investigação de `docs/schema.md` e das estruturas existentes.
+• Não adotar nomes definitivos de novas tabelas antes dessa validação estrutural.
+• `content_templates` e `content_template_taxons` existem no contrato atual, mas não possuem registros e ainda não representam composição ou artefato publicado prontos para consumo.
+
+10.7.6 Exibição e fallbacks
+• Fluxo em `/a/[account]`: conta `active` → resolver `account_id` → resolver taxon primário → procurar página comercial publicada compatível → exibir página nichada ou `generic-v1`.
+• Preservar `NicheResolutionCard` acima da página quando aplicável.
+• Conta sem taxon → página genérica E10.6.
+• Taxon inativo ou inválido → página genérica E10.6.
+• Taxon sem pesquisa `business_buyer` ativa → página genérica E10.6.
+• Pesquisa incompleta → página genérica E10.6.
+• Composição ausente ou inválida → página genérica E10.6.
+• Página não publicada → página genérica E10.6.
+• Erro de leitura → página genérica E10.6 e log seguro.
+• Página publicada válida → página nichada E10.7.
+• A E10.7 não pode bloquear o acesso à página comercial.
+
+10.7.7 Tracking
+• Reutilizar `commercial_page_view`, `commercial_primary_cta_click` e `commercial_plan_cta_click`.
+• Prever `page_variant`, `taxon_slug`, `research_version`, `template_version` e `composition_version` nas propriedades.
+• Registrar somente identificadores seguros, sem PII.
+• Não criar novos eventos antes de necessidade comprovada.
+
+10.7.8 Caso piloto validado
 • Taxon: `Corretor de imóveis de médio padrão`.
 • Slug: `corretor-de-imoveis-de-medio-padrao`.
+• Taxon ativo: sim.
 • `audience_scope = business_buyer`.
 • Status da pesquisa: `active`.
 • Versão: `1`.
-• Blocos completos:
-• `strategic_core`;
-• `lp_overview`;
-• `lp_sections`;
-• `seo`.
+• Blocos completos: `strategic_core`, `lp_overview`, `lp_sections` e `seo`.
 • Itens ativos: `49`.
 • Blocos ausentes: nenhum.
 • Resultado da verificação: `ready`.
-• Esse taxon será o primeiro candidato para validação da E10.7.
+• O piloto será o primeiro caso de validação, sem condicional exclusiva por slug.
 
-10.7.2 Direção futura
-• Resolver o taxon da conta.
-• Localizar pesquisas estruturadas aplicáveis.
-• Usar itens de `taxon_market_research_items`.
-• Gerar ou montar o conteúdo específico do nicho.
-• Persistir cada página em banco.
-• Permitir edição administrativa.
-• Controlar status e publicação.
-• Exibir a página nichada quando disponível.
-• Usar a página genérica da E10.6 como fallback.
+10.7.9 Critérios mínimos da primeira entrega
+• Usar o taxon real da conta e pesquisa `business_buyer` ativa.
+• Usar template, módulos e composição definidos pela E18.
+• Persistir página pronta por taxon.
+• Manter a rota `/a/[account]`, o `NicheResolutionCard` e a E10.6 como fallback.
+• Reutilizar o tracking atual sem PII.
+• Funcionar em desktop e mobile.
+• Não alterar outros fluxos do Account Dashboard.
+• Validar o mecanismo com um segundo taxon após o piloto.
 
-10.7.3 Regras e limites
-• A modelagem de tabelas, geração, edição, versionamento e publicação será definida somente quando a E10.7 for iniciada.
-• A E10.7 não faz parte da primeira entrega da E10.6.
-• Não antecipar tabelas, contratos ou arquitetura compartilhada neste momento.
-• Não generalizar a implementação antes de comparar a página genérica aprovada com o primeiro caso nichado real.
+10.7.10 Fora do primeiro recorte
+• editor visual
+• Admin Dashboard completo
+• testes A/B
+• CRM
+• geração multicanal
+• landing pages públicas de clientes
+• IA em runtime
+• publicação automática para outros canais
+• herança complexa entre taxon, pai e ancestral
+• múltiplas ofertas ou objetivos comerciais no mesmo taxon
+• cache avançado
 
 11. E11 — Gestão de Usuários e Convites
 
@@ -1003,32 +1061,99 @@ Ajustados:
 • Situação atual: não existe STAGING ativo no Supabase; os previews permanecem no projeto principal.
 • Status: Descontinuado.
 
-18. E18 — Templates universais de conversão
+18. E18 — Base transversal de templates, módulos, composições e artefatos
 
 18.1 Status
-• Reavaliação futura após dois casos reais aprovados
+• Planejado — base transversal mínima necessária para sustentar a implementação da E10.7.
+• Não há implementação compartilhada ativa para módulos, composições ou artefatos finais.
+• `content_templates` e `content_template_taxons` existem no schema atual, mas não possuem registros; seu aproveitamento e eventuais ajustes ainda precisam ser investigados.
 
 18.2 Objetivo
-• Avaliar estruturas compartilhadas somente depois de a página comercial e a primeira LP estarem implementadas, testadas e aprovadas.
+• Definir infraestrutura e contratos reutilizáveis para famílias de templates por canal, templates versionados, módulos de conteúdo, seções de página, variantes, composições e artefatos finais persistidos.
+• Sustentar primeiro a E10.7 sem produzir diretamente a página comercial de um taxon.
+• Permitir consumidores futuros somente como visão de evolução, sem antecipar sua implementação.
 
-18.3 Visão de projeto
-• Não existe implementação compartilhada ativa para templates ou conteúdo de conversão.
-• A E10.6 será a página comercial genérica, independente de taxon; a personalização com taxons e itens estruturados existentes ficará para a futura E10.7.
-• A primeira LP será o segundo caso real usado para comparar necessidades, repetições e boundaries.
-• Somente depois desses dois casos será decidido se existe abstração compartilhada útil e qual deve ser seu formato.
+18.3 Decisão estrutural aprovada
+• Separação conceitual: canal → família de renderer → template-base versionado → módulos/seções compatíveis → composição por contexto → artefato final.
+• Regra inicial: 1 canal → 1 família de renderer → 1 versão-base inicial → versões ou variantes futuras quando necessárias.
+• A regra não limita definitivamente cada canal a um único template.
+• Cada canal terá módulos próprios e sua própria família de renderer, mesmo quando compartilhar contratos transversais.
 
-18.4 Fora de escopo
-• implementação antecipada de templates universais
-• persistência compartilhada de conteúdo gerado
+18.4 Famílias e templates versionados
+• Investigar os objetos existentes `content_templates` e `content_template_taxons` com referência ao contrato atual em `docs/schema.md`.
+• Valores atuais permitidos: `commercial_activation` e `landing_page`.
+• Não alterar esses valores no recorte documental ou na primeira investigação.
+• Não tratar esses objetos como composição ou artefato publicado antes da investigação e validação estrutural.
+
+18.5 Módulos, seções e variantes
+• A base transversal será formada por módulos de conteúdo; em canais de página, esses módulos assumem a forma de seções.
+• Catálogo inicial candidato para a E10.7: `hero`, `problem`, `benefits`, `services`, `use_cases`, `plans`, `differentials`, `how_it_works`, `comparison`, `integrations`, `proof`, `credentials`, `faq` e `final_cta`.
+• Incluir no primeiro recorte somente as seções realmente necessárias para a E10.7.
+• Cada módulo ou seção poderá ter variantes estruturais ou funcionais reutilizáveis com identificadores descritivos, como `hero.default`, `hero.centered`, `hero.split`, `hero.with_proof`, `hero.with_form`, `proof.testimonials`, `proof.credentials` e `proof.operational_demo`.
+• Não usar identificadores numéricos como `hero.1` ou `hero.2`.
+
+18.6 Contrato entre código e banco
+• Código: contrato, validação, componente visual e comportamento responsivo.
+• Banco: identificação, variante, composição, ordem e conteúdo concreto.
+• Adicionar uma definição no banco não cria automaticamente um componente visual.
+• Novos tipos ou variantes estruturais continuam exigindo implementação no repositório.
+• Os nomes finais de objetos e campos serão definidos somente após confrontar `docs/schema.md` e as estruturas existentes.
+
+18.7 Composição reutilizável
+• Composição: canal + template + taxon ou contexto → módulos + variantes + ordem + obrigatoriedade.
+• Um taxon pode usar vários módulos e um módulo pode atender vários taxons.
+• A composição não é o artefato final publicado.
+• A composição comercial da E10.7 deverá definir seções, variantes, ordem, obrigatoriedade e regras específicas do contexto comercial.
+
+18.8 Artefato final
+• Separar explicitamente template, composição, conteúdo e artefato publicado.
+• Escopo global por taxon: página comercial da E10.7.
+• Escopo específico por conta: futura landing page de cliente.
+• Escopo específico por campanha ou canal: evolução futura.
+• A estrutura persistida deve preservar identidade e versões suficientes para rastrear pesquisa, template e composição usados.
+• Não adotar nome definitivo de tabela de artefatos antes da investigação estrutural.
+
+18.9 Transversalidade futura
+• Páginas → seções.
+• E-mail → blocos de mensagem.
+• WhatsApp → mensagens ou etapas.
+• Instagram → hook, slides, legenda e CTA.
+• TikTok → hook, cenas, prova e CTA.
+• Esses consumidores representam visão futura e não fazem parte do primeiro recorte.
+
+18.10 Primeiro recorte planejado
+• Atender somente `template_family = commercial_activation`.
+• Definir contrato da família comercial.
+• Definir catálogo mínimo de seções necessário para a E10.7.
+• Definir somente variantes comprovadamente necessárias.
+• Definir composição por taxon.
+• Definir estrutura do artefato final.
+• Definir contratos de leitura e validação.
+• Investigar como `content_templates` e `content_template_taxons` podem ser aproveitadas ou precisam evoluir antes de propor novos objetos.
+
+18.11 Dependência e validação
+• E18 — base transversal mínima → dependência estrutural da E10.7.
+• E10.7 — primeiro consumidor real → valida e ajusta a base da E18.
+• A abstração transversal deve evoluir somente com evidência obtida no piloto e em um segundo taxon.
+• A E10.6 permanece fora dessa infraestrutura e continua como fallback genérico concluído.
+
+18.12 Ordem de execução planejada
+1. Investigar schema, runtime e acesso server-side.
+2. Definir o mínimo da E18 exigido pelo piloto.
+3. Implementar esse mínimo junto à E10.7.
+4. Publicar e validar o piloto.
+5. Testar um segundo taxon.
+6. Ajustar a E18 com a evidência obtida.
+
+18.13 Fora do primeiro recorte
+• implementação de e-mail, WhatsApp, Instagram ou TikTok
+• editor visual
+• criação dinâmica de componentes pelo banco
+• testes A/B
+• múltiplos templates ativos sem caso real
 • geração multicanal
-• infraestrutura para Instagram, e-mail, WhatsApp ou canais futuros
-
-18.5 Geração automatizada sobre templates universais
-• Status: Implementação retirada do recorte atual (12/06/2026)
-• A arquitetura antecipada de geração, artefatos, identidade, versionamento e persistência foi removida do código e das migrations ativas.
-• Não há tabela ou runtime remoto a desfazer, pois a migration retirada não havia sido aplicada ao Supabase.
-• A necessidade de geração automatizada e persistência será reavaliada somente após dois casos reais aprovados: a nova página comercial e a primeira LP.
-• Até essa avaliação, cada caso deve permanecer específico e sem infraestrutura compartilhada entre canais.
+• arquitetura completa para todos os canais
+• catálogo extenso sem uso comprovado
 
 19. E19 — LP Builder
 
