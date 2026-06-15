@@ -1132,7 +1132,7 @@ Ajustados:
 • Investigar como `content_templates` e `content_template_taxons` podem ser aproveitadas ou precisam evoluir antes de propor novos objetos.
 
 18.10.1 Recorte de banco preparado
-• Status: migration e documentação de banco preparadas no repositório; aplicação remota da migration, confirmação no banco, runtime consumidor e dados do primeiro consumidor pendentes.
+• Status: migration aplicada e confirmada no banco; runtime consumidor preparado separadamente; dados do primeiro consumidor pendentes.
 • `content_templates` permanece responsável por templates e módulos/seções, com histórico por versão.
 • A composição foi separada e versionada por template + taxon.
 • O artefato publicado foi separado da composição e mantém rastreabilidade de template, composição, taxon e pesquisas.
@@ -1151,6 +1151,18 @@ Banco — Ajustados
 Repositório — Criados
 • `supabase/migrations/20260615190000_e18_commercial_activation_minimum.sql`
 • `supabase/snippets/e18_commercial_activation_minimum_verify.sql`
+
+18.10.2 Runtime mínimo preparado
+• Status: runtime mínimo server-side preparado no repositório; dados do primeiro consumidor e integração com a página E10.7 pendentes.
+• O adapter lê primeiro o vínculo em `content_template_taxons`, resolve o template ativo de página por taxon e somente depois consulta a composição ativa por `template_id + taxon_id`.
+• Sem vínculo elegível ou sem composição ativa, o retorno é `composition_not_found`, sem fallback implícito.
+• O runtime valida composição, artefato publicado e fontes de pesquisa antes de retornar o bundle pronto.
+
+Repositório — Criados
+• `lib/conversion-content/contracts.ts`
+• `lib/conversion-content/validation.ts`
+• `lib/conversion-content/adapters/commercialActivationAdapter.ts`
+• `lib/conversion-content/index.ts`
 
 18.11 Dependência e validação
 • E18 — base transversal mínima → dependência estrutural da E10.7.
