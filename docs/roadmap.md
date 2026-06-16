@@ -755,7 +755,8 @@ Repositório — Ajustados
 • Implementar detecção por ambiente somente se o ganho justificar a complexidade.
 
 10.7 Páginas comerciais personalizadas por nicho
-• Status: Planejado — primeiro consumidor real da base transversal mínima da E18.
+• Status: Planejado — E18 concluída, E10.7 desbloqueada como primeiro consumidor real da base transversal mínima.
+• Próxima execução: Fase 1 — resolução hierárquica e seleção segura do bundle.
 • Objetivo: criar páginas comerciais personalizadas por taxon, prontas para exibição em `/a/[account]`, usando a família `commercial_activation`, composição compatível e pesquisa ativa com `audience_scope = business_buyer`.
 • Dependência estrutural: a E18 define os contratos reutilizáveis mínimos; a E10.7 aplica, valida e ajusta esses contratos no caso comercial concreto.
 • A página genérica `generic-v1` da E10.6 permanece concluída e será o fallback obrigatório.
@@ -771,6 +772,14 @@ Repositório — Ajustados
 • Usar `account_taxonomy` como fonte canônica atual, filtrando `account_id`, `is_primary = true` e `status = active`.
 • Resolver o vínculo em `business_taxons` com `is_active = true`.
 • Reutilizar o helper server-side `getActivePrimaryAccountTaxon`.
+• Fluxo de resolução: taxon primário original → tentar bundle comercial do próprio taxon → subir para o pai → continuar pelos ancestrais até a raiz → selecionar o primeiro bundle com status `ready` → retornar fallback quando nenhum for utilizável.
+• Preservar `original_taxon_id` em todos os resultados do resolver.
+• Preencher `resolved_content_taxon_id` somente quando um bundle for encontrado.
+• `original_taxon_id` e `resolved_content_taxon_id` são metadados do resultado do resolver, não novas colunas obrigatórias.
+• Respeitar a ordem do taxon mais específico para o mais amplo.
+• Não combinar conteúdos de dois níveis.
+• Impedir ciclos e repetição de taxons durante a caminhada.
+• Considerar somente taxons ativos.
 • Não criar condicionais exclusivas para `corretor-de-imoveis-de-medio-padrao`.
 • O mecanismo deve aceitar outros taxons que tenham pesquisa compatível, composição válida e página comercial publicada.
 
@@ -791,9 +800,10 @@ Repositório — Ajustados
 10.7.5 Persistência e identidade
 • Persistir o resultado como artefato final global por taxon, separado do template, da composição e das pesquisas de origem.
 • Identidade conceitual mínima: `taxon_id`, `audience_scope`, `research_version`, `template_version`, `composition_version` e `status`.
-• Os nomes finais de objetos, campos e relacionamentos serão definidos após investigação de `docs/schema.md` e das estruturas existentes.
-• Não adotar nomes definitivos de novas tabelas antes dessa validação estrutural.
-• `content_templates` e `content_template_taxons` existem no contrato atual, mas não possuem registros e ainda não representam composição ou artefato publicado prontos para consumo.
+• Já existem um template-base `commercial_activation` e oito módulos de seção aprovados pela E18.
+• Permanecem pendentes os vínculos por taxon, composição, itens da composição, artefato publicado e fontes de pesquisa.
+• Reutilizar `content_template_taxons`, `content_template_compositions`, `content_template_composition_items`, `content_artifacts` e `content_artifact_research_sources`.
+• Não criar nova tabela sem impedimento real comprovado.
 
 10.7.6 Exibição e fallbacks
 • Fluxo em `/a/[account]`: conta `active` → resolver `account_id` → resolver taxon primário → procurar página comercial publicada compatível → exibir página nichada ou `generic-v1`.
@@ -846,9 +856,44 @@ Repositório — Ajustados
 • landing pages públicas de clientes
 • IA em runtime
 • publicação automática para outros canais
-• herança complexa entre taxon, pai e ancestral
+• fusão, combinação ou herança complexa de conteúdos e composições entre diferentes níveis da taxonomia
 • múltiplas ofertas ou objetivos comerciais no mesmo taxon
 • cache avançado
+
+10.7.11 Fase 1 — Resolução hierárquica e seleção do bundle
+• Implementar a cadeia taxon original → ancestrais.
+• Reutilizar a leitura server-side existente para testar cada candidato.
+• Selecionar o primeiro bundle com status `ready`.
+• Retornar `original_taxon_id`, `resolved_content_taxon_id` e estado seguro.
+• Validar com dados sintéticos os casos exato, pai, ancestral, nenhum resultado, erro e ciclo.
+• Sem migration, registros reais, conteúdo comercial, alteração da rota, renderer visual ou tracking.
+• Critério de passagem: resolução determinística aprovada e mergeada antes da Fase 2.
+
+10.7.12 Fase 2 — Dados e artefato do primeiro consumidor
+• Criar vínculo do template-base com o taxon piloto.
+• Criar composição e itens da composição usando os módulos aprovados na E18.
+• Produzir conteúdo real a partir da pesquisa `business_buyer` ativa e compatível.
+• Validar o `content_json` pelos schemas da E18.
+• Persistir artefato publicado e fontes de pesquisa.
+• Usar migration de dados e snippet read-only próprios.
+• Sem alteração da rota, tracking ou renderer.
+• Critério de passagem: registros aplicados e confirmados no Supabase real antes da Fase 3.
+
+10.7.13 Fase 3 — Integração com `/a/[account]`
+• Resolver o taxon primário da conta.
+• Executar a resolução hierárquica da Fase 1.
+• Consumir o artefato publicado.
+• Renderizar com `CommercialActivationRenderer`.
+• Preservar `NicheResolutionCard`.
+• Usar integralmente a E10.6 quando o resultado não for `ready`.
+• Reutilizar os eventos atuais com as propriedades aprovadas.
+• Validar desktop, mobile, Preview e produção.
+• Critério de conclusão: página nichada válida sem bloquear o fallback ou outros fluxos do Account Dashboard.
+
+10.7.14 Validação com segundo taxon
+• Repetir o fluxo com outro taxon real.
+• Confirmar reutilização de template, módulos, resolver e renderer.
+• Ampliar seções, variantes ou contratos da E18 somente mediante necessidade comprovada.
 
 11. E11 — Gestão de Usuários e Convites
 
