@@ -1156,7 +1156,7 @@ Repositório — Criados
 
 18.12 Fase 1 — Contratos e renderer de `commercial_activation`
 
-• Status: Em PR — implementação da Fase 1 preparada no repositório, pendente de revisão e merge.
+• Status: Concluída e mergeada no PR #392.
 • Execução exclusiva no repositório, sem migration ou alteração no Supabase.
 • Objetivo: validar e renderizar composições da família `commercial_activation` com dados sintéticos.
 
@@ -1227,7 +1227,7 @@ Repositório — Ajustados
 
 18.13 Fase 2 — Registros-base de `commercial_activation`
 
-• Status: Planejado.
+• Status: Em PR — migration e snippet preparados, aguardando merge e aplicação no Supabase real.
 • Execução restrita ao provisionamento de banco e aos artefatos de verificação correspondentes.
 • Depende da Fase 1 aprovada e mergeada.
 • Objetivo: provisionar os registros transversais correspondentes ao código aprovado.
@@ -1251,6 +1251,11 @@ Escopo:
 • manter identificadores e versões iguais aos contratos da Fase 1;
 • manter `payload_json` mínimo, declarativo e sem função operacional no renderer;
 • criar snippet read-only de verificação.
+
+Artefatos preparados:
+
+• `supabase/migrations/20260616142000_e18_commercial_activation_base_records.sql`
+• `supabase/snippets/e18_commercial_activation_base_records_verify.sql`
 
 Limites:
 
