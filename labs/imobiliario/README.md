@@ -206,3 +206,7 @@ Para qualquer entrada no core da LP Factory, exigir:
 • Avaliação estratégica.
 • Criação de caso E* específico.
 • Atualização aprovada do roadmap.
+
+11. Documentos operacionais do laboratório
+
+• `labs/imobiliario/diretrizes-conteudo.md` — posicionamento, princípios editoriais, regras de transparência e limites para conteúdos imobiliários.
