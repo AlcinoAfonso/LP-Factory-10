@@ -2,8 +2,8 @@
 
 0.1. Cabeçalho
 • Documento: Base Técnica LP Factory 10
-• Versão: v2.0.41
-• Data: 12/06/2026
+• Versão: v2.0.42
+• Data: 16/06/2026
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -34,6 +34,7 @@
 • Next.js 16.1.1 (App Router, SSR, Server Components)
 • React 19.2.x + React DOM 19.2.x
 • TypeScript 5.5.4 (strict)
+• Zod 4.2.1 para contratos tipados e validação runtime de conteúdo persistido.
 • Node.js 22.x
 • Package manager: npm
 • Lockfile canônico: package-lock.json (deve ficar commitado e alinhado ao package.json)
@@ -294,6 +295,20 @@
 • Regra: logs do fluxo devem permanecer sem PII e não devem registrar `raw_input`, nicho bruto, query, aliases, candidatos completos ou dados de formulário.
 • Regra: timestamps da resolução operacional devem ser controlados pelo banco.
 
+3.15 Conteúdo composicional de `commercial_activation`
+• Path canônico: `lib/conversion-content/commercial-activation/`.
+• `content_json` v1 usa `schema_version = 1` e `sections` com `composition_item_id` e `content`.
+• Módulo, variante, ordem e obrigatoriedade pertencem ao item da composição e não devem ser duplicados no artefato.
+• O registry fechado é a fonte canônica de `variantKey → moduleKey → schema Zod → componente`.
+• Envelope, seções e objetos internos devem usar validação estrita, rejeitando campos desconhecidos.
+• Seção obrigatória ausente ou inválida invalida o artefato.
+• Seção opcional ausente é omitida; seção opcional inválida é omitida com log seguro.
+• IDs duplicados ou desconhecidos e combinações de módulo/variante não registradas invalidam o artefato.
+• Conteúdo persistido deve ser estruturado; não aceitar HTML bruto, scripts, CSS, Tailwind ou nomes livres de componentes.
+• CTAs v1 aceitam somente URL HTTPS válida ou caminho interno iniciado por uma única `/`; rejeitar `//`, âncoras e protocolos não aprovados.
+• A validação deve ocorrer no servidor antes da renderização.
+• Casos executáveis: `npm run validate:commercial-activation`.
+
 4. DB Contract - Fonte única: PATH: docs/schema.md
 • Este documento não lista mais tabelas/views/functions/triggers/policies; isso está em PATH: docs/schema.md.
 • Trigger Hub é regra do contrato de DB (governança/auditoria). Fonte única e detalhes: PATH: docs/schema.md (seções 3.5 e 4.1).
@@ -441,6 +456,8 @@ Fonte normativa da allowlist SULB para exceções de Auth. Qualquer novo arquivo
 • Tipos canônicos e adapters vNext: validar por 3.6 e 3.14.
 
 99. Changelog
+v2.0.42 — 16/06/2026 — Registrado o contrato técnico do renderer composicional de `commercial_activation`, com `content_json` v1, validação Zod estrita, registry fechado, regras de falha e conteúdo estruturado seguro.
+
 v2.0.41 — 12/06/2026 — Concluído o fluxo universal de migrations Supabase: merge na `main` aplica migrations automaticamente com gate `true`; SQL Editor excluído do fluxo normal e histórico definido como forward-only, com reversões por nova migration.
 
 v2.0.40 — 12/06/2026 — Retirada a family antecipada `conversion-content` do estado técnico atual; estruturas compartilhadas de conteúdo serão reavaliadas somente após dois casos reais aprovados.

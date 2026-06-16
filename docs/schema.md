@@ -1,8 +1,8 @@
 0. Introdução
 
 0.1 Cabeçalho
-• Data da última atualização: 15/06/2026
-• Documento: LP Factory 10 — Schema (DB Contract) v1.0.22
+• Data da última atualização: 16/06/2026
+• Documento: LP Factory 10 — Schema (DB Contract) v1.0.23
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -255,6 +255,16 @@
 • content_templates_insert_admin_only (INSERT to public): is_super_admin() OU is_platform_admin()
 • content_templates_update_admin_only (UPDATE to public): is_super_admin() OU is_platform_admin() (USING + WITH CHECK)
 • content_templates_delete_admin_only (DELETE to public): is_super_admin() OU is_platform_admin()
+
+1.13.5 Registros-base de `commercial_activation`
+• Template de página: `commercial_activation_page`, slug `commercial-activation-page`, escopo `page`.
+• Módulos de seção: `hero`, `benefits`, `services`, `plans`, `differentials`, `how_it_works`, `faq` e `final_cta`.
+• Slugs especiais: `how-it-works` e `final-cta`; os demais coincidem com `template_key`.
+• Todos pertencem à família `commercial_activation`, versão 1, status `active`, `is_active = true` e `payload_json = {}`.
+• IDs físicos são UUIDs gerados pelo banco; a identidade funcional é protegida por `template_key + version` e `slug + version`.
+• O provisionamento inicial cria nove registros-base e não cria vínculos em `content_template_taxons`; esses vínculos pertencem aos consumidores por taxon.
+• Migration: `supabase/migrations/20260616142000_e18_commercial_activation_base_records.sql`.
+• Verificação: `supabase/snippets/e18_commercial_activation_base_records_verify.sql`.
 
 1.14 content_template_taxons
 
@@ -757,6 +767,11 @@
 • Rollback: não remove automaticamente a extensão, pois pode ser reutilizada por outros recursos
 
 99. Changelog
+v1.0.23 (16/06/2026) — E18: registros-base de `commercial_activation`
+• Registrados o template-base de página e os oito módulos de seção da versão 1.
+• Confirmados nove registros ativos, identidade funcional por chave/slug + versão e ausência de vínculos com taxons.
+• RLS e grants preservados: `service_role` com SELECT; `anon` e `authenticated` sem SELECT.
+
 v1.0.22 (15/06/2026) — E18: índices e triggers complementares
 • Registrados os índices auxiliares das composições, itens, artefatos e fontes de pesquisa.
 • Registrados os triggers de atualização automática de `updated_at` das composições, itens e artefatos.

@@ -1,8 +1,8 @@
 0. Introdução
 
 0.1 Cabeçalho
-• Data: 15/06/2026
-• Versão: v1.5.73
+• Data: 16/06/2026
+• Versão: v1.5.74
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -1064,9 +1064,9 @@ Ajustados:
 18. E18 — Base transversal de templates, módulos, composições e artefatos
 
 18.1 Status
-• Em andamento — primeiro recorte autônomo da base transversal mínima implementado e validado em 15/06/2026.
-• Banco aplicado e confirmado no Supabase real.
-• Runtime server-side mergeado; dados do primeiro consumidor e integração com a E10.7 permanecem pendentes.
+• Base transversal mínima de `commercial_activation` concluída e validada em 16/06/2026.
+• Primeiro recorte de banco/runtime e segundo recorte de contratos, renderer e registros-base aplicados.
+• E10.7 desbloqueada como primeiro consumidor real; composição, conteúdo por taxon, integração, fallback e tracking permanecem sob responsabilidade da E10.7.
 
 18.2 Objetivo
 • Definir infraestrutura e contratos reutilizáveis para famílias de templates por canal, templates versionados, módulos de conteúdo, seções de página, variantes, composições e artefatos finais persistidos.
@@ -1086,11 +1086,17 @@ Ajustados:
 • O contrato detalhado dos objetos e permissões está em `docs/schema.md`.
 
 18.5 Módulos, seções e variantes
-• A base transversal será formada por módulos de conteúdo; em canais de página, esses módulos assumem a forma de seções.
-• Catálogo inicial candidato para a E10.7: `hero`, `problem`, `benefits`, `services`, `use_cases`, `plans`, `differentials`, `how_it_works`, `comparison`, `integrations`, `proof`, `credentials`, `faq` e `final_cta`.
-• Incluir no primeiro recorte somente as seções realmente necessárias para a E10.7.
-• Cada módulo ou seção poderá ter variantes estruturais ou funcionais reutilizáveis com identificadores descritivos, como `hero.default`, `hero.centered`, `hero.split`, `hero.with_proof`, `hero.with_form`, `proof.testimonials`, `proof.credentials` e `proof.operational_demo`.
-• Não usar identificadores numéricos como `hero.1` ou `hero.2`.
+• Catálogo inicial v1 da família `commercial_activation`:
+• `hero.default`
+• `benefits.cards`
+• `services.list`
+• `plans.cards`
+• `differentials.cards`
+• `how_it_works.steps`
+• `faq.accordion`
+• `final_cta.simple`
+• As variantes descrevem comportamento estrutural ou funcional e não podem representar nichos.
+• A ampliação do catálogo depende de necessidade comprovada por consumidores reais.
 
 18.6 Contrato entre código e banco
 • Código: contrato, validação, componente visual e comportamento responsivo.
@@ -1155,61 +1161,10 @@ Repositório — Criados
 • A E10.6 permanece fora dessa infraestrutura e continua como fallback genérico concluído.
 
 18.12 Fase 1 — Contratos e renderer de `commercial_activation`
-
-• Status: Concluída e mergeada no PR #392.
-• Execução exclusiva no repositório, sem migration ou alteração no Supabase.
-• Objetivo: validar e renderizar composições da família `commercial_activation` com dados sintéticos.
-
-Escopo:
-
-• adicionar Zod como dependência direta;
-• definir `content_json` v1 com `schema_version = 1`;
-• associar cada conteúdo ao respectivo `composition_item_id`;
-• implementar o catálogo inicial:
-• `hero.default`;
-• `benefits.cards`;
-• `services.list`;
-• `plans.cards`;
-• `differentials.cards`;
-• `how_it_works.steps`;
-• `faq.accordion`;
-• `final_cta.simple`;
-• criar schemas, tipos e limites editoriais iniciais;
-• criar componentes reutilizáveis;
-• criar registry fechado de seção + variante;
-• criar `CommercialActivationRenderer`;
-• validar composição e conteúdo no servidor;
-• usar fixture sintética completa, sem consulta ao Supabase.
-
-Regras principais:
-
-• item obrigatório ausente ou inválido invalida o artefato;
-• item opcional ausente pode ser omitido;
-• item opcional inválido deve ser omitido com log seguro;
-• ID inexistente, duplicado, módulo desconhecido ou variante desconhecida invalida o artefato;
-• o banco não fornecerá HTML bruto, scripts, CSS, Tailwind ou nomes livres de componentes.
-
-Validação:
-
-• `npm ci`;
-• `npm run check`;
-• `npm run build`;
-• `git diff --check`;
-• teste manual desktop e mobile;
-• validação dos limites e estados de falha.
-
-Limites:
-
-• sem migration;
-• sem registros reais;
-• sem taxon ou pesquisa real;
-• sem composição ou artefato de nicho;
-• sem integração com `/a/[account]`;
-• sem tracking da E10.7.
-
-Critério de passagem:
-
-• a Fase 2 só começa após aprovação e merge da Fase 1.
+• Status: Concluída e mergeada no PR #392 em 16/06/2026.
+• Implementados `content_json` v1, validação Zod server-side, registry fechado, resolver e `CommercialActivationRenderer`.
+• Catálogo inicial com oito variantes transversais.
+• Fixture sintética, casos executáveis de validação e testes manuais desktop/mobile aprovados.
 
 Repositório — Criados
 • `lib/conversion-content/commercial-activation/fixture.ts`
@@ -1226,57 +1181,18 @@ Repositório — Ajustados
 • `package-lock.json`
 
 18.13 Fase 2 — Registros-base de `commercial_activation`
+• Status: Concluída e mergeada no PR #393 em 16/06/2026.
+• Migration aplicada e confirmada no Supabase real.
+• Registrados um template-base de página e oito módulos de seção, todos na versão 1, ativos e com `payload_json = {}`.
+• Confirmados nove registros, unicidade funcional, zero vínculos com taxons e RLS ativa.
+• Grants confirmados: `service_role` com `SELECT`; `anon` e `authenticated` sem `SELECT`.
 
-• Status: Em PR — migration e snippet preparados, aguardando merge e aplicação no Supabase real.
-• Execução restrita ao provisionamento de banco e aos artefatos de verificação correspondentes.
-• Depende da Fase 1 aprovada e mergeada.
-• Objetivo: provisionar os registros transversais correspondentes ao código aprovado.
+Banco — Ajustados
+• `content_templates`
 
-Escopo:
-
-• criar migration de dados versionada e exclusiva;
-• Template-base:
-• `template_family = commercial_activation`;
-• `template_scope = page`;
-• `version = 1`;
-• `status = active`;
-• `is_active = true`.
-• Oito módulos:
-• `template_family = commercial_activation`;
-• `template_scope = section`;
-• `version = 1`;
-• `status = active`;
-• `is_active = true`;
-• `payload_json = {}`.
-• manter identificadores e versões iguais aos contratos da Fase 1;
-• manter `payload_json` mínimo, declarativo e sem função operacional no renderer;
-• criar snippet read-only de verificação.
-
-Artefatos preparados:
-
+Repositório — Criados
 • `supabase/migrations/20260616142000_e18_commercial_activation_base_records.sql`
 • `supabase/snippets/e18_commercial_activation_base_records_verify.sql`
-
-Limites:
-
-• sem alterações em componentes ou renderer;
-• sem `content_template_taxons`;
-• sem composição ou itens de composição por taxon;
-• sem artefato publicado;
-• sem pesquisa ou conteúdo de nicho;
-• sem integração com a E10.7.
-
-Regra de parada:
-
-• se os registros não forem compatíveis com a Fase 1, interromper;
-• não corrigir runtime no PR de banco.
-
-Critério de conclusão:
-
-• migration mergeada e aplicada;
-• nove registros confirmados no Supabase real;
-• snippet aprovado;
-• documentação do banco atualizada após confirmação do estado real.
 
 18.14 Fora do segundo recorte
 • implementação de e-mail, WhatsApp, Instagram ou TikTok
@@ -1329,6 +1245,8 @@ Critério de conclusão:
 • Definir o primeiro recorte funcional do LP Builder no roadmap
 
 99. Changelog
+v1.5.74 — 16/06/2026 — E18 conclui o segundo recorte da base transversal de `commercial_activation`: contrato `content_json` v1, validação Zod, registry, renderer, catálogo inicial de oito seções e nove registros-base aplicados e confirmados no Supabase; a E10.7 fica desbloqueada como primeiro consumidor real.
+
 v1.5.73 — 15/06/2026 — E18 consolida o primeiro recorte autônomo implementado e validado: banco de composições e artefatos aplicado no Supabase, runtime server-side mergeado e seleção determinística de template por taxon; dados do primeiro consumidor e integração com a E10.7 permanecem pendentes.
 v1.5.72 — 15/06/2026 — E10.6 concluída com página comercial genérica responsiva em `/a/[account]`, planos e CTAs ilustrativos, tracking server-side validado, correção de `public.audit_context_event` e registro dos artefatos finais; personalização por nicho permanece na E10.7.
 v1.5.71 — 12/06/2026 — Separadas a E10.6, agora dedicada à primeira página comercial genérica sem banco novo, pesquisa ou IA, e a futura E10.7, responsável por páginas comerciais personalizadas por nicho após a aprovação da E10.6; referências ao consumo direto de pesquisas pela E10.6 foram corrigidas.
