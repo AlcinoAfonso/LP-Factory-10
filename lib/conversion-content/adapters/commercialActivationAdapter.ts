@@ -5,11 +5,14 @@ import {
   COMMERCIAL_ACTIVATION_AUDIENCE_SCOPE,
   COMMERCIAL_ACTIVATION_TEMPLATE_FAMILY,
   type CommercialActivationBundleResult,
+  type CommercialActivationContentTaxon,
+  type CommercialActivationHierarchicalResolutionResult,
 } from "../contracts";
 import {
   mapContentComposition,
   mapPublishedContentArtifact,
 } from "../validation";
+import { resolveCommercialActivationHierarchicalBundle } from "../commercial-activation/hierarchical-resolve";
 
 const TEMPLATE_COLUMNS =
   "id,template_key,name,slug,template_family,template_scope,status,version,is_active,payload_json";
@@ -133,4 +136,40 @@ export async function getCommercialActivationBundle(input: {
     });
     return { status: "read_failed" };
   }
+}
+
+export async function getCommercialActivationHierarchicalBundle(input: {
+  taxonId: string;
+}): Promise<CommercialActivationHierarchicalResolutionResult> {
+  return resolveCommercialActivationHierarchicalBundle({
+    taxonId: input.taxonId,
+    readTaxon: getCommercialActivationTaxon,
+    readBundle: getCommercialActivationBundle,
+  });
+}
+
+async function getCommercialActivationTaxon(
+  taxonId: string,
+): Promise<CommercialActivationContentTaxon | null> {
+  const normalizedTaxonId = taxonId.trim();
+  if (!normalizedTaxonId) return null;
+
+  const supabase = createServiceClient();
+
+  const { data, error } = await supabase
+    .from("business_taxons")
+    .select("id,parent_id,is_active")
+    .eq("id", normalizedTaxonId)
+    .maybeSingle();
+
+  if (error) throw error;
+
+  const row = data as Record<string, unknown> | null;
+  if (!row || typeof row.id !== "string") return null;
+
+  return {
+    id: row.id,
+    parentId: typeof row.parent_id === "string" ? row.parent_id : null,
+    isActive: row.is_active === true,
+  };
 }

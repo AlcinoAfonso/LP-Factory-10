@@ -82,3 +82,24 @@ export type CommercialActivationBundleResult =
         | "artifact_invalid"
         | "read_failed";
     };
+
+export type CommercialActivationContentTaxon = {
+  id: string;
+  parentId: string | null;
+  isActive: boolean;
+};
+
+export type CommercialActivationHierarchicalResolutionState =
+  | "ready"
+  | "fallback_taxon_not_found"
+  | "fallback_taxon_inactive"
+  | "fallback_no_ready_bundle"
+  | "fallback_cycle_detected"
+  | "fallback_read_failed";
+
+export type CommercialActivationHierarchicalResolutionResult = {
+  status: CommercialActivationHierarchicalResolutionState;
+  original_taxon_id: string;
+  resolved_content_taxon_id: string | null;
+  bundle: CommercialActivationBundle | null;
+};
