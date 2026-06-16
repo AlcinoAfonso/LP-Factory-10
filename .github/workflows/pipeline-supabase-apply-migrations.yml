@@ -39,12 +39,15 @@ jobs:
             echo "- commit: \`${GITHUB_SHA}\`"
             echo "- evento: \`${GITHUB_EVENT_NAME}\`"
             echo "- apply habilitado: \`false\`"
+            echo "- resultado do migration list: \`not-run\`"
+            echo "- resultado do dry-run: \`not-run\`"
+            echo "- resultado do apply: \`not-run\`"
             echo "- status final: \`skipped\`"
             echo ""
             echo "### Gate de migrations"
             echo ""
             echo "- Apply nao executado porque \`SUPABASE_APPLY_MIGRATIONS_ENABLED\` nao esta definido como \`true\`."
-            echo "- Supabase CLI, \`supabase link\` e \`supabase db push\` nao foram executados."
+            echo "- Supabase CLI, \`supabase link\`, \`supabase migration list\` e \`supabase db push\` nao foram executados."
           } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Setup Supabase CLI
@@ -65,6 +68,9 @@ jobs:
           status="success"
           failure_step=""
           changed_migrations=""
+          migration_list_result="not-run"
+          dry_run_result="not-run"
+          apply_result="not-run"
           apply_enabled="${SUPABASE_APPLY_MIGRATIONS_ENABLED:-false}"
 
           if [ "$apply_enabled" != "true" ]; then
@@ -105,10 +111,39 @@ jobs:
           fi
 
           if [ "$status" = "success" ]; then
+            migration_list_result="running"
+            supabase migration list --linked || {
+              status="failure"
+              failure_step="supabase migration list"
+              migration_list_result="failure"
+            }
+            if [ "$status" = "success" ]; then
+              migration_list_result="success"
+            fi
+          fi
+
+          if [ "$status" = "success" ]; then
+            dry_run_result="running"
+            supabase db push --linked --dry-run || {
+              status="failure"
+              failure_step="supabase db push dry-run"
+              dry_run_result="failure"
+            }
+            if [ "$status" = "success" ]; then
+              dry_run_result="success"
+            fi
+          fi
+
+          if [ "$status" = "success" ]; then
+            apply_result="running"
             supabase db push --linked || {
               status="failure"
               failure_step="supabase db push"
+              apply_result="failure"
             }
+            if [ "$status" = "success" ]; then
+              apply_result="success"
+            fi
           fi
 
           {
@@ -120,6 +155,9 @@ jobs:
             echo "- diretório de migrations: \`${SUPABASE_MIGRATIONS_DIR}\`"
             echo "- evento: \`${GITHUB_EVENT_NAME}\`"
             echo "- apply habilitado: \`${apply_enabled}\`"
+            echo "- resultado do migration list: \`${migration_list_result}\`"
+            echo "- resultado do dry-run: \`${dry_run_result}\`"
+            echo "- resultado do apply: \`${apply_result}\`"
             echo "- status final: \`${status}\`"
             echo ""
             echo "### Migrations alteradas"
