@@ -1156,7 +1156,7 @@ Repositório — Criados
 
 18.12 Fase 1 — Contratos e renderer de `commercial_activation`
 
-• Status: Planejado.
+• Status: Em PR — implementação da Fase 1 preparada no repositório, pendente de revisão e merge.
 • Execução exclusiva no repositório, sem migration ou alteração no Supabase.
 • Objetivo: validar e renderizar composições da família `commercial_activation` com dados sintéticos.
 
@@ -1210,6 +1210,19 @@ Limites:
 Critério de passagem:
 
 • a Fase 2 só começa após aprovação e merge da Fase 1.
+
+Repositório — Criados
+• `lib/conversion-content/commercial-activation/fixture.ts`
+• `lib/conversion-content/commercial-activation/index.ts`
+• `lib/conversion-content/commercial-activation/registry.ts`
+• `lib/conversion-content/commercial-activation/renderer.tsx`
+• `lib/conversion-content/commercial-activation/resolve.ts`
+• `lib/conversion-content/commercial-activation/schemas.ts`
+
+Repositório — Ajustados
+• `lib/conversion-content/index.ts`
+• `package.json`
+• `package-lock.json`
 
 18.13 Fase 2 — Registros-base de `commercial_activation`
 
