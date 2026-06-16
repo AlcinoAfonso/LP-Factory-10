@@ -1156,7 +1156,7 @@ Repositório — Criados
 
 18.12 Fase 1 — Contratos e renderer de `commercial_activation`
 
-• Status: Em PR — implementação da Fase 1 preparada no repositório, pendente de revisão e merge.
+• Status: Concluída e mergeada no PR #392.
 • Execução exclusiva no repositório, sem migration ou alteração no Supabase.
 • Objetivo: validar e renderizar composições da família `commercial_activation` com dados sintéticos.
 

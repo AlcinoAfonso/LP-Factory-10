@@ -1,169 +1,172 @@
 -- e18_commercial_activation_base_records_verify.sql
 -- Objetivo: verificar os 9 registros-base da E18 Fase 2 para commercial_activation.
 -- Tipo: read-only / execucao manual no Supabase SQL Editor.
--- Escopo: registros em content_templates, unicidade, status, familia, escopo, RLS e grants.
+-- Escopo: registros em content_templates, unicidade, status, familia, escopo, payload, RLS, grants e ausencia de vinculos em content_template_taxons.
 
 with expected_records as (
   select *
   from (
     values
       (
-        '11111111-1111-4111-8111-111111111111'::uuid,
         'commercial_activation_page'::text,
         'commercial-activation-page'::text,
         'Commercial activation page'::text,
         'commercial_activation'::text,
         'page'::text,
         1::integer,
-        true::boolean
+        '{}'::jsonb
       ),
       (
-        'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbb1'::uuid,
         'hero'::text,
         'hero'::text,
         'Hero'::text,
         'commercial_activation'::text,
         'section'::text,
         1::integer,
-        true::boolean
+        '{}'::jsonb
       ),
       (
-        'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbb2'::uuid,
         'benefits'::text,
         'benefits'::text,
         'Benefits'::text,
         'commercial_activation'::text,
         'section'::text,
         1::integer,
-        true::boolean
+        '{}'::jsonb
       ),
       (
-        'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbb3'::uuid,
         'services'::text,
         'services'::text,
         'Services'::text,
         'commercial_activation'::text,
         'section'::text,
         1::integer,
-        true::boolean
+        '{}'::jsonb
       ),
       (
-        'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbb4'::uuid,
         'plans'::text,
         'plans'::text,
         'Plans'::text,
         'commercial_activation'::text,
         'section'::text,
         1::integer,
-        true::boolean
+        '{}'::jsonb
       ),
       (
-        'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbb5'::uuid,
         'differentials'::text,
         'differentials'::text,
         'Differentials'::text,
         'commercial_activation'::text,
         'section'::text,
         1::integer,
-        true::boolean
+        '{}'::jsonb
       ),
       (
-        'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbb6'::uuid,
         'how_it_works'::text,
         'how-it-works'::text,
         'How it works'::text,
         'commercial_activation'::text,
         'section'::text,
         1::integer,
-        true::boolean
+        '{}'::jsonb
       ),
       (
-        'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbb7'::uuid,
         'faq'::text,
         'faq'::text,
         'FAQ'::text,
         'commercial_activation'::text,
         'section'::text,
         1::integer,
-        true::boolean
+        '{}'::jsonb
       ),
       (
-        'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbb8'::uuid,
         'final_cta'::text,
         'final-cta'::text,
         'Final CTA'::text,
         'commercial_activation'::text,
         'section'::text,
         1::integer,
-        true::boolean
+        '{}'::jsonb
       )
   ) as records(
-    id,
     template_key,
     slug,
     name,
     template_family,
     template_scope,
     version,
-    expect_empty_payload
+    payload_json
   )
+),
+
+matched_templates as (
+  select
+    expected_records.template_key,
+    expected_records.slug,
+    expected_records.name,
+    expected_records.template_family,
+    expected_records.template_scope,
+    expected_records.version,
+    expected_records.payload_json,
+    content_templates.id,
+    content_templates.slug as actual_slug,
+    content_templates.name as actual_name,
+    content_templates.template_family as actual_template_family,
+    content_templates.template_scope as actual_template_scope,
+    content_templates.status as actual_status,
+    content_templates.is_active as actual_is_active,
+    content_templates.payload_json as actual_payload_json
+  from expected_records
+  left join public.content_templates
+    on content_templates.template_key = expected_records.template_key
+   and content_templates.version = expected_records.version
 ),
 
 record_status as (
   select
     'record'::text as check_group,
-    expected_records.template_key as object_name,
+    matched_templates.template_key as object_name,
     case
-      when content_templates.id is null then 'missing'
-      when content_templates.id <> expected_records.id then 'id_mismatch'
-      when content_templates.slug <> expected_records.slug then 'slug_mismatch'
-      when content_templates.name <> expected_records.name then 'name_mismatch'
-      when content_templates.template_family <> expected_records.template_family then 'family_mismatch'
-      when content_templates.template_scope <> expected_records.template_scope then 'scope_mismatch'
-      when content_templates.version <> expected_records.version then 'version_mismatch'
-      when content_templates.status <> 'active' then 'status_mismatch'
-      when content_templates.is_active is not true then 'inactive'
-      when expected_records.expect_empty_payload
-        and content_templates.payload_json <> '{}'::jsonb then 'payload_not_empty'
-      when jsonb_typeof(content_templates.payload_json) <> 'object' then 'payload_not_object'
+      when matched_templates.id is null then 'missing'
+      when matched_templates.actual_slug <> matched_templates.slug then 'slug_mismatch'
+      when matched_templates.actual_name <> matched_templates.name then 'name_mismatch'
+      when matched_templates.actual_template_family <> matched_templates.template_family then 'family_mismatch'
+      when matched_templates.actual_template_scope <> matched_templates.template_scope then 'scope_mismatch'
+      when matched_templates.actual_status <> 'active' then 'status_mismatch'
+      when matched_templates.actual_is_active is not true then 'inactive'
+      when matched_templates.actual_payload_json <> matched_templates.payload_json then 'payload_mismatch'
       else 'ok'
     end as check_status,
     jsonb_build_object(
       'id',
-      content_templates.id,
+      matched_templates.id,
       'template_key',
-      content_templates.template_key,
+      matched_templates.template_key,
       'slug',
-      content_templates.slug,
+      matched_templates.actual_slug,
       'template_family',
-      content_templates.template_family,
+      matched_templates.actual_template_family,
       'template_scope',
-      content_templates.template_scope,
+      matched_templates.actual_template_scope,
       'version',
-      content_templates.version,
+      matched_templates.version,
       'status',
-      content_templates.status,
+      matched_templates.actual_status,
       'is_active',
-      content_templates.is_active,
+      matched_templates.actual_is_active,
       'payload_json',
-      content_templates.payload_json
+      matched_templates.actual_payload_json
     ) as details
-  from expected_records
-  left join public.content_templates
-    on content_templates.template_key = expected_records.template_key
-   and content_templates.version = expected_records.version
+  from matched_templates
 ),
 
 count_status as (
   select
     'count'::text as check_group,
     'expected_base_records'::text as object_name,
-    case when count(content_templates.id) = 9 then 'ok' else 'count_mismatch' end as check_status,
-    jsonb_build_object('count', count(content_templates.id)) as details
-  from expected_records
-  left join public.content_templates
-    on content_templates.template_key = expected_records.template_key
-   and content_templates.version = expected_records.version
+    case when count(matched_templates.id) = 9 then 'ok' else 'count_mismatch' end as check_status,
+    jsonb_build_object('count', count(matched_templates.id)) as details
+  from matched_templates
 ),
 
 duplicate_status as (
@@ -193,6 +196,18 @@ duplicate_status as (
     )
     group by content_templates.slug, content_templates.version
   ) duplicates
+),
+
+taxon_link_status as (
+  select
+    'taxon_links'::text as check_group,
+    matched_templates.template_key as object_name,
+    case when count(content_template_taxons.id) = 0 then 'ok' else 'unexpected_taxon_link' end as check_status,
+    jsonb_build_object('count', count(content_template_taxons.id)) as details
+  from matched_templates
+  left join public.content_template_taxons
+    on content_template_taxons.template_id = matched_templates.id
+  group by matched_templates.template_key
 ),
 
 rls_status as (
@@ -234,6 +249,9 @@ from count_status
 union all
 select *
 from duplicate_status
+union all
+select *
+from taxon_link_status
 union all
 select *
 from rls_status
