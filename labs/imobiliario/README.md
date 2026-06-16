@@ -141,10 +141,10 @@ Nenhuma oportunidade, hipótese, template, automação ou funcionalidade identif
 
 7. Limites
 
-• Sem nova tabela central.
-• Sem migration.
+• Persistência experimental mínima aprovada apenas nas tabelas `real_estate_lab_contents` e `real_estate_lab_items`.
+• Sem tabela central adicional, CRM, leads, imóveis ou empreendimentos.
 • Sem novo sistema de autenticação.
-• Sem rota de runtime nesta etapa.
+• Rota runtime aprovada apenas em `app/a/[account]/labs/imobiliario/`, protegida por conta dedicada e membership ativo.
 • Sem inclusão no menu.
 • Sem criação de CRM completo.
 • Sem automação antes de validação manual.
@@ -157,7 +157,7 @@ O laboratório não constitui nova vertical oficial, funcionalidade comercial, C
 
 8. Dashboard futuro
 
-O dashboard é apenas uma possibilidade futura. O dashboard não faz parte desta execução.
+O dashboard V0 foi aprovado para consulta e edição operacional mínima dos registros experimentais, sem transformar o laboratório em core comercial oficial.
 
 Path técnico aprovado:
 

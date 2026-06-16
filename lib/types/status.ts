@@ -23,3 +23,20 @@ export type MemberRole =
   | 'admin'
   | 'editor'
   | 'viewer';
+
+
+// real_estate_lab_contents.real_estate_lab_contents_status_chk
+export type RealEstateLabContentStatus =
+  | 'idea'
+  | 'draft'
+  | 'review'
+  | 'approved'
+  | 'published'
+  | 'archived';
+
+// real_estate_lab_items.real_estate_lab_items_status_chk
+export type RealEstateLabItemStatus =
+  | 'open'
+  | 'in_progress'
+  | 'done'
+  | 'discarded';
