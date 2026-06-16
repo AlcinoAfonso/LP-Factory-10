@@ -1214,19 +1214,26 @@ Critério de passagem:
 18.13 Fase 2 — Registros-base de `commercial_activation`
 
 • Status: Planejado.
-• Execução exclusiva de banco.
+• Execução restrita ao provisionamento de banco e aos artefatos de verificação correspondentes.
 • Depende da Fase 1 aprovada e mergeada.
 • Objetivo: provisionar os registros transversais correspondentes ao código aprovado.
 
 Escopo:
 
 • criar migration de dados versionada e exclusiva;
-• registrar um template-base:
+• Template-base:
 • `template_family = commercial_activation`;
 • `template_scope = page`;
-• versão inicial;
-• status ativo;
-• registrar os oito módulos com `template_scope = section`;
+• `version = 1`;
+• `status = active`;
+• `is_active = true`.
+• Oito módulos:
+• `template_family = commercial_activation`;
+• `template_scope = section`;
+• `version = 1`;
+• `status = active`;
+• `is_active = true`;
+• `payload_json = {}`.
 • manter identificadores e versões iguais aos contratos da Fase 1;
 • manter `payload_json` mínimo, declarativo e sem função operacional no renderer;
 • criar snippet read-only de verificação.
