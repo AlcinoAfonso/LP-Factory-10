@@ -262,7 +262,7 @@
 • Slugs especiais: `how-it-works` e `final-cta`; os demais coincidem com `template_key`.
 • Todos pertencem à família `commercial_activation`, versão 1, status `active`, `is_active = true` e `payload_json = {}`.
 • IDs físicos são UUIDs gerados pelo banco; a identidade funcional é protegida por `template_key + version` e `slug + version`.
-• Estado confirmado: nove registros e zero vínculos correspondentes em `content_template_taxons`.
+• O provisionamento inicial cria nove registros-base e não cria vínculos em `content_template_taxons`; esses vínculos pertencem aos consumidores por taxon.
 • Migration: `supabase/migrations/20260616142000_e18_commercial_activation_base_records.sql`.
 • Verificação: `supabase/snippets/e18_commercial_activation_base_records_verify.sql`.
 

@@ -1184,7 +1184,8 @@ Repositório — Ajustados
 • Status: Concluída e mergeada no PR #393 em 16/06/2026.
 • Migration aplicada e confirmada no Supabase real.
 • Registrados um template-base de página e oito módulos de seção, todos na versão 1, ativos e com `payload_json = {}`.
-• Confirmados nove registros, unicidade funcional, zero vínculos com taxons, RLS ativa e leitura exclusiva por `service_role`.
+• Confirmados nove registros, unicidade funcional, zero vínculos com taxons e RLS ativa.
+• Grants confirmados: `service_role` com `SELECT`; `anon` e `authenticated` sem `SELECT`.
 
 Banco — Ajustados
 • `content_templates`
