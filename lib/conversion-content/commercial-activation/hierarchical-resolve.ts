@@ -46,9 +46,12 @@ export async function resolveCommercialActivationHierarchicalBundle(input: {
     }
 
     if (!taxon.isActive) {
-      return currentTaxonId === originalTaxonId
-        ? fallback("fallback_taxon_inactive", originalTaxonId)
-        : fallback("fallback_no_ready_bundle", originalTaxonId);
+      if (currentTaxonId === originalTaxonId) {
+        return fallback("fallback_taxon_inactive", originalTaxonId);
+      }
+
+      currentTaxonId = taxon.parentId;
+      continue;
     }
 
     let bundleResult: CommercialActivationBundleResult;

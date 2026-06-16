@@ -143,12 +143,12 @@ export async function getCommercialActivationHierarchicalBundle(input: {
 }): Promise<CommercialActivationHierarchicalResolutionResult> {
   return resolveCommercialActivationHierarchicalBundle({
     taxonId: input.taxonId,
-    readTaxon: getActiveCommercialActivationTaxon,
+    readTaxon: getCommercialActivationTaxon,
     readBundle: getCommercialActivationBundle,
   });
 }
 
-async function getActiveCommercialActivationTaxon(
+async function getCommercialActivationTaxon(
   taxonId: string,
 ): Promise<CommercialActivationContentTaxon | null> {
   const normalizedTaxonId = taxonId.trim();

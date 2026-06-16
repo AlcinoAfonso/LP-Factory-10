@@ -265,6 +265,47 @@ const cases: Case[] = [
     },
   },
   {
+    name: "hierarchical resolver skips inactive parent and selects active ancestor",
+    run: async () => {
+      const inactiveParentTaxons = new Map<string, CommercialActivationContentTaxon>([
+        [
+          taxonIds.original,
+          { id: taxonIds.original, parentId: taxonIds.parent, isActive: true },
+        ],
+        [
+          taxonIds.parent,
+          { id: taxonIds.parent, parentId: taxonIds.ancestor, isActive: false },
+        ],
+        [
+          taxonIds.ancestor,
+          { id: taxonIds.ancestor, parentId: null, isActive: true },
+        ],
+      ]);
+      const queriedBundleTaxonIds: string[] = [];
+
+      const result = await resolveCommercialActivationHierarchicalBundle({
+        taxonId: taxonIds.original,
+        readTaxon: async (taxonId) => inactiveParentTaxons.get(taxonId) ?? null,
+        readBundle: async ({ taxonId }): Promise<CommercialActivationBundleResult> => {
+          queriedBundleTaxonIds.push(taxonId);
+          return taxonId === taxonIds.ancestor
+            ? { status: "ready", bundle: makeBundle(taxonId) }
+            : { status: "composition_not_found" };
+        },
+      });
+
+      assert.equal(result.status, "ready");
+      assert.equal(result.original_taxon_id, taxonIds.original);
+      assert.equal(result.resolved_content_taxon_id, taxonIds.ancestor);
+      assert.equal(result.bundle?.composition.taxonId, taxonIds.ancestor);
+      assert.equal(result.bundle?.artifact.taxonId, taxonIds.ancestor);
+      assert.deepEqual(queriedBundleTaxonIds, [
+        taxonIds.original,
+        taxonIds.ancestor,
+      ]);
+    },
+  },
+  {
     name: "hierarchical resolver returns safe fallback when no bundle is ready",
     run: async () => {
       const result = await runHierarchicalCase({
