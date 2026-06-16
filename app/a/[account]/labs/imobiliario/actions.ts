@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getAccessContext } from "@/lib/access/getAccessContext";
-import { realEstateLabContentAdapter, realEstateLabItemAdapter } from "@/lib/real-estate-lab";
+import { realEstateLabContentAdapter, realEstateLabItemAdapter } from "@/lib/real-estate-lab/server";
 
 export type LabActionState = { ok?: boolean; message?: string; error?: string };
 const uuidRe = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;

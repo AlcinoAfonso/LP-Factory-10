@@ -3,7 +3,7 @@ import path from "node:path";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getAccessContext } from "@/lib/access/getAccessContext";
-import { realEstateLabContentAdapter, realEstateLabItemAdapter } from "@/lib/real-estate-lab";
+import { realEstateLabContentAdapter, realEstateLabItemAdapter } from "@/lib/real-estate-lab/server";
 import { LabOverview } from "./_components/LabOverview";
 import { DocumentViewer } from "./_components/DocumentViewer";
 import { Filters } from "./_components/Filters";
