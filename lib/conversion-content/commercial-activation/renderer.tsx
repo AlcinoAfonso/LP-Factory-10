@@ -120,34 +120,10 @@ export function CommercialActivationSections({
 }
 
 function SectionRenderer({ section }: { section: CommercialActivationRenderSection }) {
-  switch (section.variantKey) {
-    case "hero.default":
-      return <HeroDefault section={narrowSection(section, "hero.default")} />;
-    case "benefits.cards":
-      return <BenefitsCards section={narrowSection(section, "benefits.cards")} />;
-    case "services.list":
-      return <ServicesList section={narrowSection(section, "services.list")} />;
-    case "plans.cards":
-      return <PlansCards section={narrowSection(section, "plans.cards")} />;
-    case "differentials.cards":
-      return (
-        <DifferentialsCards
-          section={narrowSection(section, "differentials.cards")}
-        />
-      );
-    case "how_it_works.steps":
-      return (
-        <HowItWorksSteps
-          section={narrowSection(section, "how_it_works.steps")}
-        />
-      );
-    case "faq.accordion":
-      return <FaqAccordion section={narrowSection(section, "faq.accordion")} />;
-    case "final_cta.simple":
-      return (
-        <FinalCtaSimple section={narrowSection(section, "final_cta.simple")} />
-      );
-  }
+  const Component = commercialActivationRendererRegistry[section.variantKey]
+    .component as ComponentType<{ section: CommercialActivationRenderSection }>;
+
+  return <Component section={section} />;
 }
 
 function HeroDefault({
@@ -435,16 +411,4 @@ function InfoCard({
       </p>
     </div>
   );
-}
-
-function narrowSection<Variant extends CommercialActivationSectionVariant>(
-  section: CommercialActivationRenderSection,
-  variantKey: Variant,
-) {
-  return {
-    ...section,
-    variantKey,
-    content:
-      section.content as CommercialActivationSectionContentByVariant[Variant],
-  };
 }
