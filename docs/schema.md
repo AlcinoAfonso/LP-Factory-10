@@ -2,7 +2,7 @@
 
 0.1 Cabeçalho
 • Data da última atualização: 15/06/2026
-• Documento: LP Factory 10 — Schema (DB Contract) v1.0.21
+• Documento: LP Factory 10 — Schema (DB Contract) v1.0.22
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -466,6 +466,13 @@
 • anon/authenticated/public: sem acesso
 • service_role: SELECT
 
+1.19.4 Índices
+• `content_template_compositions_one_active_uidx`: UNIQUE parcial em (`template_id`, `taxon_id`) para `status = 'active'`.
+• `content_template_compositions_taxon_id_idx`: btree em `taxon_id`.
+
+1.19.5 Triggers
+• `content_template_compositions_set_updated_at`: executa `public.tg_set_updated_at()` antes de UPDATE.
+
 1.20 content_template_composition_items
 
 1.20.1 Chaves, constraints e relacionamentos
@@ -492,6 +499,12 @@
 • RLS: ativo
 • anon/authenticated/public: sem acesso
 • service_role: SELECT
+
+1.20.4 Índices
+• `content_template_composition_items_module_template_id_idx`: btree em `module_template_id`.
+
+1.20.5 Triggers
+• `content_template_composition_items_set_updated_at`: executa `public.tg_set_updated_at()` antes de UPDATE.
 
 1.21 content_artifacts
 
@@ -531,6 +544,14 @@
 • anon/authenticated/public: sem acesso
 • service_role: SELECT
 
+1.21.4 Índices
+• `content_artifacts_one_published_uidx`: UNIQUE parcial em (`template_id`, `taxon_id`, `audience_scope`) para `status = 'published'`.
+• `content_artifacts_composition_id_idx`: btree em `composition_id`.
+• `content_artifacts_taxon_id_idx`: btree em `taxon_id`.
+
+1.21.5 Triggers
+• `content_artifacts_set_updated_at`: executa `public.tg_set_updated_at()` antes de UPDATE.
+
 1.22 content_artifact_research_sources
 
 1.22.1 Chaves, constraints e relacionamentos
@@ -551,6 +572,9 @@
 • RLS: ativo
 • anon/authenticated/public: sem acesso
 • service_role: SELECT
+
+1.22.4 Índices
+• `content_artifact_research_sources_research_id_idx`: btree em `research_id`.
 
 2. Views
 
@@ -733,6 +757,10 @@
 • Rollback: não remove automaticamente a extensão, pois pode ser reutilizada por outros recursos
 
 99. Changelog
+v1.0.22 (15/06/2026) — E18: índices e triggers complementares
+• Registrados os índices auxiliares das composições, itens, artefatos e fontes de pesquisa.
+• Registrados os triggers de atualização automática de `updated_at` das composições, itens e artefatos.
+
 v1.0.21 (15/06/2026) — E18: base mínima de `commercial_activation`
 • `content_templates`: versionamento por chave/slug + versão e leitura server-side.
 • `content_template_taxons`: leitura server-side para resolução determinística do vínculo template + taxon.
