@@ -38,6 +38,12 @@
       ],
       "@/lib/types/status": [
         "lib/types/status"
+      ],
+      "@/lib/real-estate-lab": [
+        "lib/real-estate-lab"
+      ],
+      "@/lib/real-estate-lab/*": [
+        "lib/real-estate-lab/*"
       ]
     },
     "target": "ES2022",
