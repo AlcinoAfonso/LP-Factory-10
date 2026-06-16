@@ -1218,6 +1218,7 @@ Repositório — Criados
 • `lib/conversion-content/commercial-activation/renderer.tsx`
 • `lib/conversion-content/commercial-activation/resolve.ts`
 • `lib/conversion-content/commercial-activation/schemas.ts`
+• `lib/conversion-content/commercial-activation/validation-cases.ts`
 
 Repositório — Ajustados
 • `lib/conversion-content/index.ts`

@@ -1,20 +1,83 @@
+import type { ComponentType } from "react";
+
 import { cn } from "@/lib/utils";
 import type { ContentComposition } from "../contracts";
+import { commercialActivationSectionRegistry } from "./registry";
 import {
   resolveCommercialActivationRenderModel,
   type CommercialActivationRenderModel,
+  type CommercialActivationRenderSection,
 } from "./resolve";
-import type { CommercialActivationSectionContent } from "./schemas";
+import type {
+  BenefitsCardsContent,
+  CommercialActivationSectionContentByVariant,
+  CommercialActivationSectionVariant,
+  DifferentialsCardsContent,
+  FaqAccordionContent,
+  FinalCtaSimpleContent,
+  HeroDefaultContent,
+  HowItWorksStepsContent,
+  PlansCardsContent,
+  ServicesListContent,
+} from "./schemas";
 
 type RendererProps = {
   composition: ContentComposition;
   contentJson: unknown;
 };
 
+type SectionComponentProps<Variant extends CommercialActivationSectionVariant> = {
+  section: CommercialActivationRenderSection & {
+    variantKey: Variant;
+    content: CommercialActivationSectionContentByVariant[Variant];
+  };
+};
+
+type RendererRegistry = {
+  [Variant in CommercialActivationSectionVariant]: (typeof commercialActivationSectionRegistry)[Variant] & {
+    component: ComponentType<SectionComponentProps<Variant>>;
+  };
+};
+
 const primaryButton =
   "inline-flex min-h-11 items-center justify-center rounded-md bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground shadow-sm transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2";
 const secondaryButton =
   "inline-flex min-h-11 items-center justify-center rounded-md border border-graytech-300 bg-white px-5 py-3 text-sm font-semibold text-ink-900 shadow-sm transition-colors hover:bg-surface-app focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2";
+
+export const commercialActivationRendererRegistry = {
+  "hero.default": {
+    ...commercialActivationSectionRegistry["hero.default"],
+    component: HeroDefault,
+  },
+  "benefits.cards": {
+    ...commercialActivationSectionRegistry["benefits.cards"],
+    component: BenefitsCards,
+  },
+  "services.list": {
+    ...commercialActivationSectionRegistry["services.list"],
+    component: ServicesList,
+  },
+  "plans.cards": {
+    ...commercialActivationSectionRegistry["plans.cards"],
+    component: PlansCards,
+  },
+  "differentials.cards": {
+    ...commercialActivationSectionRegistry["differentials.cards"],
+    component: DifferentialsCards,
+  },
+  "how_it_works.steps": {
+    ...commercialActivationSectionRegistry["how_it_works.steps"],
+    component: HowItWorksSteps,
+  },
+  "faq.accordion": {
+    ...commercialActivationSectionRegistry["faq.accordion"],
+    component: FaqAccordion,
+  },
+  "final_cta.simple": {
+    ...commercialActivationSectionRegistry["final_cta.simple"],
+    component: FinalCtaSimple,
+  },
+} satisfies RendererRegistry;
 
 export function CommercialActivationRenderer({
   composition,
@@ -50,45 +113,47 @@ export function CommercialActivationSections({
       data-content-schema-version={model.schemaVersion}
     >
       {model.sections.map((section) => (
-        <SectionRenderer
-          key={section.compositionItemId}
-          content={section.content}
-        />
+        <SectionRenderer key={section.compositionItemId} section={section} />
       ))}
     </article>
   );
 }
 
-function SectionRenderer({
-  content,
-}: {
-  content: CommercialActivationSectionContent;
-}) {
-  switch (content.variant_key) {
+function SectionRenderer({ section }: { section: CommercialActivationRenderSection }) {
+  switch (section.variantKey) {
     case "hero.default":
-      return <HeroDefault content={content} />;
+      return <HeroDefault section={narrowSection(section, "hero.default")} />;
     case "benefits.cards":
-      return <CardsSection content={content} muted={false} />;
+      return <BenefitsCards section={narrowSection(section, "benefits.cards")} />;
     case "services.list":
-      return <ServicesList content={content} />;
+      return <ServicesList section={narrowSection(section, "services.list")} />;
     case "plans.cards":
-      return <PlansCards content={content} />;
+      return <PlansCards section={narrowSection(section, "plans.cards")} />;
     case "differentials.cards":
-      return <CardsSection content={content} muted />;
+      return (
+        <DifferentialsCards
+          section={narrowSection(section, "differentials.cards")}
+        />
+      );
     case "how_it_works.steps":
-      return <HowItWorksSteps content={content} />;
+      return (
+        <HowItWorksSteps
+          section={narrowSection(section, "how_it_works.steps")}
+        />
+      );
     case "faq.accordion":
-      return <FaqAccordion content={content} />;
+      return <FaqAccordion section={narrowSection(section, "faq.accordion")} />;
     case "final_cta.simple":
-      return <FinalCtaSimple content={content} />;
+      return (
+        <FinalCtaSimple section={narrowSection(section, "final_cta.simple")} />
+      );
   }
 }
 
 function HeroDefault({
-  content,
-}: {
-  content: Extract<CommercialActivationSectionContent, { variant_key: "hero.default" }>;
-}) {
+  section,
+}: SectionComponentProps<"hero.default">) {
+  const content = section.content;
   return (
     <section className="bg-gradient-to-br from-brand-dark-900 via-brand-dark-800 to-brand-700 px-6 py-14 text-white sm:px-10 sm:py-16 lg:px-14 lg:py-20">
       <div className="max-w-3xl">
@@ -122,14 +187,23 @@ function HeroDefault({
   );
 }
 
+function BenefitsCards({
+  section,
+}: SectionComponentProps<"benefits.cards">) {
+  return <CardsSection content={section.content} muted={false} />;
+}
+
+function DifferentialsCards({
+  section,
+}: SectionComponentProps<"differentials.cards">) {
+  return <CardsSection content={section.content} muted />;
+}
+
 function CardsSection({
   content,
   muted,
 }: {
-  content: Extract<
-    CommercialActivationSectionContent,
-    { variant_key: "benefits.cards" | "differentials.cards" }
-  >;
+  content: BenefitsCardsContent | DifferentialsCardsContent;
   muted: boolean;
 }) {
   return (
@@ -148,10 +222,9 @@ function CardsSection({
 }
 
 function ServicesList({
-  content,
-}: {
-  content: Extract<CommercialActivationSectionContent, { variant_key: "services.list" }>;
-}) {
+  section,
+}: SectionComponentProps<"services.list">) {
+  const content: ServicesListContent = section.content;
   return (
     <PageSection eyebrow={content.eyebrow} title={content.title} muted>
       <ul className="grid gap-3 sm:grid-cols-2">
@@ -160,9 +233,10 @@ function ServicesList({
             key={service}
             className="flex items-start gap-3 rounded-xl border border-surface-border bg-white p-4 text-sm font-medium leading-6 text-ink-800 shadow-card"
           >
-            <span aria-hidden="true" className="font-bold text-state-success">
-              {"OK"}
-            </span>
+            <span
+              aria-hidden="true"
+              className="mt-2 size-2 rounded-full bg-state-success"
+            />
             {service}
           </li>
         ))}
@@ -172,10 +246,9 @@ function ServicesList({
 }
 
 function PlansCards({
-  content,
-}: {
-  content: Extract<CommercialActivationSectionContent, { variant_key: "plans.cards" }>;
-}) {
+  section,
+}: SectionComponentProps<"plans.cards">) {
+  const content: PlansCardsContent = section.content;
   return (
     <PageSection eyebrow={content.eyebrow} title={content.title} centered>
       <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
@@ -187,11 +260,6 @@ function PlansCards({
               plan.highlighted && "border-brand-500 ring-2 ring-brand-500/20",
             )}
           >
-            {plan.highlighted ? (
-              <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-brand-600 px-3 py-1 text-xs font-semibold text-white">
-                Highlight
-              </span>
-            ) : null}
             <h3 className="text-xl font-semibold text-ink-900">{plan.name}</h3>
             <p className="mt-2 min-h-10 text-sm leading-5 text-graytech-600">
               {plan.description}
@@ -208,9 +276,10 @@ function PlansCards({
                   key={feature}
                   className="flex items-start gap-2 text-sm text-graytech-600"
                 >
-                  <span aria-hidden="true" className="font-bold text-state-success">
-                    {"OK"}
-                  </span>
+                  <span
+                    aria-hidden="true"
+                    className="mt-2 size-2 rounded-full bg-state-success"
+                  />
                   {feature}
                 </li>
               ))}
@@ -237,13 +306,9 @@ function PlansCards({
 }
 
 function HowItWorksSteps({
-  content,
-}: {
-  content: Extract<
-    CommercialActivationSectionContent,
-    { variant_key: "how_it_works.steps" }
-  >;
-}) {
+  section,
+}: SectionComponentProps<"how_it_works.steps">) {
+  const content: HowItWorksStepsContent = section.content;
   return (
     <PageSection eyebrow={content.eyebrow} title={content.title} centered>
       <ol className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
@@ -269,10 +334,9 @@ function HowItWorksSteps({
 }
 
 function FaqAccordion({
-  content,
-}: {
-  content: Extract<CommercialActivationSectionContent, { variant_key: "faq.accordion" }>;
-}) {
+  section,
+}: SectionComponentProps<"faq.accordion">) {
+  const content: FaqAccordionContent = section.content;
   return (
     <PageSection eyebrow={content.eyebrow} title={content.title} muted>
       <div className="space-y-3">
@@ -303,10 +367,9 @@ function FaqAccordion({
 }
 
 function FinalCtaSimple({
-  content,
-}: {
-  content: Extract<CommercialActivationSectionContent, { variant_key: "final_cta.simple" }>;
-}) {
+  section,
+}: SectionComponentProps<"final_cta.simple">) {
+  const content: FinalCtaSimpleContent = section.content;
   return (
     <section className="bg-brand-50 px-6 py-12 text-center sm:px-10 lg:px-14">
       <h2 className="text-2xl font-bold tracking-tight text-brand-dark-900 sm:text-3xl">
@@ -372,4 +435,16 @@ function InfoCard({
       </p>
     </div>
   );
+}
+
+function narrowSection<Variant extends CommercialActivationSectionVariant>(
+  section: CommercialActivationRenderSection,
+  variantKey: Variant,
+) {
+  return {
+    ...section,
+    variantKey,
+    content:
+      section.content as CommercialActivationSectionContentByVariant[Variant],
+  };
 }

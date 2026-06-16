@@ -1,8 +1,10 @@
 import type { ContentComposition } from "../contracts";
-import { commercialActivationSectionRegistry } from "./registry";
+import {
+  commercialActivationSectionRegistry,
+  isCommercialActivationSectionVariant,
+} from "./registry";
 import {
   commercialActivationContentV1Schema,
-  commercialActivationSectionSchemas,
   type CommercialActivationSectionContent,
   type CommercialActivationSectionVariant,
 } from "./schemas";
@@ -47,7 +49,10 @@ export function resolveCommercialActivationRenderModel(input: {
   const compositionItems = new Map(
     input.composition.items.map((item) => [item.id, item]),
   );
-  const contentItems = new Map<string, CommercialActivationSectionContent>();
+  const contentItems = new Map<
+    string,
+    (typeof parsedContent.data.sections)[number]
+  >();
 
   for (const section of parsedContent.data.sections) {
     if (contentItems.has(section.composition_item_id)) {
@@ -62,32 +67,26 @@ export function resolveCommercialActivationRenderModel(input: {
   const sections: CommercialActivationRenderSection[] = [];
 
   for (const item of input.composition.items) {
-    if (!isRegisteredVariant(item.variantKey)) {
+    if (!isCommercialActivationSectionVariant(item.variantKey)) {
       return { status: "invalid", reason: "section_registry_invalid" };
     }
 
     const registryEntry = commercialActivationSectionRegistry[item.variantKey];
-    const isRequired = item.isRequired || registryEntry.required;
     if (item.module.key !== registryEntry.moduleKey) {
       return { status: "invalid", reason: "section_registry_invalid" };
     }
 
     const section = contentItems.get(item.id);
     if (!section) {
-      if (isRequired) {
+      if (item.isRequired) {
         return { status: "invalid", reason: "composition_item_missing" };
       }
       continue;
     }
 
-    if (section.variant_key !== item.variantKey) {
-      return { status: "invalid", reason: "section_content_invalid" };
-    }
-
-    const schema = commercialActivationSectionSchemas[item.variantKey];
-    const parsedSection = schema.safeParse(section);
+    const parsedSection = registryEntry.schema.safeParse(section.content);
     if (!parsedSection.success) {
-      if (isRequired) {
+      if (item.isRequired) {
         return { status: "invalid", reason: "section_content_invalid" };
       }
       input.logSafeWarning?.("optional commercial activation section omitted", {
@@ -113,10 +112,4 @@ export function resolveCommercialActivationRenderModel(input: {
       sections: sections.sort((left, right) => left.sortOrder - right.sortOrder),
     },
   };
-}
-
-function isRegisteredVariant(
-  value: string,
-): value is CommercialActivationSectionVariant {
-  return value in commercialActivationSectionRegistry;
 }
