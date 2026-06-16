@@ -1154,14 +1154,105 @@ Repositório — Criados
 • A abstração transversal deve evoluir somente com evidência obtida no piloto e em um segundo taxon.
 • A E10.6 permanece fora dessa infraestrutura e continua como fallback genérico concluído.
 
-18.12 Próximos passos
+18.12 Fase 1 — Contratos e renderer de `commercial_activation`
 
-1. Criar os dados do primeiro consumidor e a composição do taxon piloto na E10.7.
-2. Produzir, publicar e validar a primeira página comercial nichada.
-3. Testar o mecanismo com um segundo taxon.
-4. Ajustar a base transversal somente com evidência dos casos reais.
+• Status: Planejado.
+• Execução exclusiva no repositório, sem migration ou alteração no Supabase.
+• Objetivo: validar e renderizar composições da família `commercial_activation` com dados sintéticos.
 
-18.13 Fora do primeiro recorte
+Escopo:
+
+• adicionar Zod como dependência direta;
+• definir `content_json` v1 com `schema_version = 1`;
+• associar cada conteúdo ao respectivo `composition_item_id`;
+• implementar o catálogo inicial:
+• `hero.default`;
+• `benefits.cards`;
+• `services.list`;
+• `plans.cards`;
+• `differentials.cards`;
+• `how_it_works.steps`;
+• `faq.accordion`;
+• `final_cta.simple`;
+• criar schemas, tipos e limites editoriais iniciais;
+• criar componentes reutilizáveis;
+• criar registry fechado de seção + variante;
+• criar `CommercialActivationRenderer`;
+• validar composição e conteúdo no servidor;
+• usar fixture sintética completa, sem consulta ao Supabase.
+
+Regras principais:
+
+• item obrigatório ausente ou inválido invalida o artefato;
+• item opcional ausente pode ser omitido;
+• item opcional inválido deve ser omitido com log seguro;
+• ID inexistente, duplicado, módulo desconhecido ou variante desconhecida invalida o artefato;
+• o banco não fornecerá HTML bruto, scripts, CSS, Tailwind ou nomes livres de componentes.
+
+Validação:
+
+• `npm ci`;
+• `npm run check`;
+• `npm run build`;
+• `git diff --check`;
+• teste manual desktop e mobile;
+• validação dos limites e estados de falha.
+
+Limites:
+
+• sem migration;
+• sem registros reais;
+• sem taxon ou pesquisa real;
+• sem composição ou artefato de nicho;
+• sem integração com `/a/[account]`;
+• sem tracking da E10.7.
+
+Critério de passagem:
+
+• a Fase 2 só começa após aprovação e merge da Fase 1.
+
+18.13 Fase 2 — Registros-base de `commercial_activation`
+
+• Status: Planejado.
+• Execução exclusiva de banco.
+• Depende da Fase 1 aprovada e mergeada.
+• Objetivo: provisionar os registros transversais correspondentes ao código aprovado.
+
+Escopo:
+
+• criar migration de dados versionada e exclusiva;
+• registrar um template-base:
+• `template_family = commercial_activation`;
+• `template_scope = page`;
+• versão inicial;
+• status ativo;
+• registrar os oito módulos com `template_scope = section`;
+• manter identificadores e versões iguais aos contratos da Fase 1;
+• manter `payload_json` mínimo, declarativo e sem função operacional no renderer;
+• criar snippet read-only de verificação.
+
+Limites:
+
+• sem alterações em componentes ou renderer;
+• sem `content_template_taxons`;
+• sem composição ou itens de composição por taxon;
+• sem artefato publicado;
+• sem pesquisa ou conteúdo de nicho;
+• sem integração com a E10.7.
+
+Regra de parada:
+
+• se os registros não forem compatíveis com a Fase 1, interromper;
+• não corrigir runtime no PR de banco.
+
+Critério de conclusão:
+
+• migration mergeada e aplicada;
+• nove registros confirmados no Supabase real;
+• snippet aprovado;
+• documentação do banco atualizada após confirmação do estado real.
+
+18.14 Fora do segundo recorte
 • implementação de e-mail, WhatsApp, Instagram ou TikTok
 • editor visual
 • criação dinâmica de componentes pelo banco
@@ -1170,6 +1261,13 @@ Repositório — Criados
 • geração multicanal
 • arquitetura completa para todos os canais
 • catálogo extenso sem uso comprovado
+• vínculo entre template e taxon;
+• composição específica por taxon;
+• pesquisas e itens estruturados;
+• conteúdo e artefato comercial por taxon;
+• resolução hierárquica;
+• integração com `/a/[account]`;
+• fallback e tracking da E10.7.
 
 19. E19 — LP Builder
 
