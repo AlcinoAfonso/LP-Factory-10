@@ -2,7 +2,7 @@
 
 0.1 Cabeçalho
 • Data: 15/06/2026
-• Versão: v1.5.72
+• Versão: v1.5.73
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -1064,9 +1064,9 @@ Ajustados:
 18. E18 — Base transversal de templates, módulos, composições e artefatos
 
 18.1 Status
-• Planejado — base transversal mínima necessária para sustentar a implementação da E10.7.
-• Não há implementação compartilhada ativa para módulos, composições ou artefatos finais.
-• `content_templates` e `content_template_taxons` existem no schema atual, mas não possuem registros; seu aproveitamento e eventuais ajustes ainda precisam ser investigados.
+• Em andamento — primeiro recorte autônomo da base transversal mínima implementado e validado em 15/06/2026.
+• Banco aplicado e confirmado no Supabase real.
+• Runtime server-side mergeado; dados do primeiro consumidor e integração com a E10.7 permanecem pendentes.
 
 18.2 Objetivo
 • Definir infraestrutura e contratos reutilizáveis para famílias de templates por canal, templates versionados, módulos de conteúdo, seções de página, variantes, composições e artefatos finais persistidos.
@@ -1080,10 +1080,10 @@ Ajustados:
 • Cada canal terá módulos próprios e sua própria família de renderer, mesmo quando compartilhar contratos transversais.
 
 18.4 Famílias e templates versionados
-• Investigar os objetos existentes `content_templates` e `content_template_taxons` com referência ao contrato atual em `docs/schema.md`.
-• Valores atuais permitidos: `commercial_activation` e `landing_page`.
-• Não alterar esses valores no recorte documental ou na primeira investigação.
-• Não tratar esses objetos como composição ou artefato publicado antes da investigação e validação estrutural.
+• `content_templates` foi mantida para templates e módulos/seções versionados.
+• `content_template_taxons` foi mantida para elegibilidade, prioridade e seleção do template por taxon.
+• Os valores de `template_family` permanecem `commercial_activation` e `landing_page`.
+• O contrato detalhado dos objetos e permissões está em `docs/schema.md`.
 
 18.5 Módulos, seções e variantes
 • A base transversal será formada por módulos de conteúdo; em canais de página, esses módulos assumem a forma de seções.
@@ -1097,7 +1097,6 @@ Ajustados:
 • Banco: identificação, variante, composição, ordem e conteúdo concreto.
 • Adicionar uma definição no banco não cria automaticamente um componente visual.
 • Novos tipos ou variantes estruturais continuam exigindo implementação no repositório.
-• Os nomes finais de objetos e campos serão definidos somente após confrontar `docs/schema.md` e as estruturas existentes.
 
 18.7 Composição reutilizável
 • Composição: canal + template + taxon ou contexto → módulos + variantes + ordem + obrigatoriedade.
@@ -1111,7 +1110,6 @@ Ajustados:
 • Escopo específico por conta: futura landing page de cliente.
 • Escopo específico por campanha ou canal: evolução futura.
 • A estrutura persistida deve preservar identidade e versões suficientes para rastrear pesquisa, template e composição usados.
-• Não adotar nome definitivo de tabela de artefatos antes da investigação estrutural.
 
 18.9 Transversalidade futura
 • Páginas → seções.
@@ -1121,21 +1119,15 @@ Ajustados:
 • TikTok → hook, cenas, prova e CTA.
 • Esses consumidores representam visão futura e não fazem parte do primeiro recorte.
 
-18.10 Primeiro recorte planejado
-• Atender somente `template_family = commercial_activation`.
-• Definir contrato da família comercial.
-• Definir catálogo mínimo de seções necessário para a E10.7.
-• Definir somente variantes comprovadamente necessárias.
-• Definir composição por taxon.
-• Definir estrutura do artefato final.
-• Definir contratos de leitura e validação.
-• Investigar como `content_templates` e `content_template_taxons` podem ser aproveitadas ou precisam evoluir antes de propor novos objetos.
-
-18.10.1 Recorte de banco preparado
-• Status: migration aplicada e confirmada no banco; runtime consumidor preparado separadamente; dados do primeiro consumidor pendentes.
-• `content_templates` permanece responsável por templates e módulos/seções, com histórico por versão.
-• A composição foi separada e versionada por template + taxon.
-• O artefato publicado foi separado da composição e mantém rastreabilidade de template, composição, taxon e pesquisas.
+18.10 Primeiro recorte implementado — 15/06/2026
+• Recorte limitado a `template_family = commercial_activation`.
+• Composição versionada separada por template + taxon.
+• Artefato publicado separado da composição, com rastreabilidade de template, composição, taxon e pesquisas.
+• Seleção do template iniciada em `content_template_taxons`.
+• Runtime server-side valida composição, artefato publicado e fontes de pesquisa antes de retornar o bundle.
+• Sem vínculo elegível ou composição ativa, o runtime retorna `composition_not_found`, sem fallback implícito.
+• Migration aplicada e verificada no Supabase real.
+• Runtime validado com `npm ci`, `npm run check` e previews aprovados.
 
 Banco — Criados
 • `content_template_compositions`
@@ -1151,14 +1143,6 @@ Banco — Ajustados
 Repositório — Criados
 • `supabase/migrations/20260615190000_e18_commercial_activation_minimum.sql`
 • `supabase/snippets/e18_commercial_activation_minimum_verify.sql`
-
-18.10.2 Runtime mínimo preparado
-• Status: runtime mínimo server-side preparado no repositório; dados do primeiro consumidor e integração com a página E10.7 pendentes.
-• O adapter lê primeiro o vínculo em `content_template_taxons`, resolve o template ativo de página por taxon e somente depois consulta a composição ativa por `template_id + taxon_id`.
-• Sem vínculo elegível ou sem composição ativa, o retorno é `composition_not_found`, sem fallback implícito.
-• O runtime valida composição, artefato publicado e fontes de pesquisa antes de retornar o bundle pronto.
-
-Repositório — Criados
 • `lib/conversion-content/contracts.ts`
 • `lib/conversion-content/validation.ts`
 • `lib/conversion-content/adapters/commercialActivationAdapter.ts`
@@ -1170,13 +1154,12 @@ Repositório — Criados
 • A abstração transversal deve evoluir somente com evidência obtida no piloto e em um segundo taxon.
 • A E10.6 permanece fora dessa infraestrutura e continua como fallback genérico concluído.
 
-18.12 Ordem de execução planejada
-1. Investigar schema, runtime e acesso server-side.
-2. Definir o mínimo da E18 exigido pelo piloto.
-3. Implementar esse mínimo junto à E10.7.
-4. Publicar e validar o piloto.
-5. Testar um segundo taxon.
-6. Ajustar a E18 com a evidência obtida.
+18.12 Próximos passos
+
+1. Criar os dados do primeiro consumidor e a composição do taxon piloto na E10.7.
+2. Produzir, publicar e validar a primeira página comercial nichada.
+3. Testar o mecanismo com um segundo taxon.
+4. Ajustar a base transversal somente com evidência dos casos reais.
 
 18.13 Fora do primeiro recorte
 • implementação de e-mail, WhatsApp, Instagram ou TikTok
@@ -1222,6 +1205,7 @@ Repositório — Criados
 • Definir o primeiro recorte funcional do LP Builder no roadmap
 
 99. Changelog
+v1.5.73 — 15/06/2026 — E18 consolida o primeiro recorte autônomo implementado e validado: banco de composições e artefatos aplicado no Supabase, runtime server-side mergeado e seleção determinística de template por taxon; dados do primeiro consumidor e integração com a E10.7 permanecem pendentes.
 v1.5.72 — 15/06/2026 — E10.6 concluída com página comercial genérica responsiva em `/a/[account]`, planos e CTAs ilustrativos, tracking server-side validado, correção de `public.audit_context_event` e registro dos artefatos finais; personalização por nicho permanece na E10.7.
 v1.5.71 — 12/06/2026 — Separadas a E10.6, agora dedicada à primeira página comercial genérica sem banco novo, pesquisa ou IA, e a futura E10.7, responsável por páginas comerciais personalizadas por nicho após a aprovação da E10.6; referências ao consumo direto de pesquisas pela E10.6 foram corrigidas.
 v1.5.70 — 12/06/2026 — Retirada a implementação antecipada da E18/E18.5 e a primeira E10.6; removidos templates universais, artefatos e persistência não aplicada, restaurado o Account Dashboard simples e reiniciada a página comercial como caso específico antes de qualquer abstração compartilhada.
