@@ -35,7 +35,7 @@ Em conflito aparente entre investigação e plano-base, preservar o objetivo exp
 Entregar somente os artefatos exigidos pelo caso, prontos para uso, sem introdução, explicações, observações ou pergunta para continuar.
 
 ### Briefing para Codex
-Usar `docs/template-briefing-codex.md` com base no plano de implementação. Quando houver impacto visual, UI, rota, tela, componente, responsividade ou design system, usar também `docs/template-briefing-codex-frontend.md`. Não duplicar regras do `AGENTS.md`.
+Usar `docs/template-briefing-codex.md` com base no plano de implementação. Quando houver impacto visual, UI, rota, tela, componente, responsividade ou design system, preencher a seção opcional correspondente no mesmo template. Não duplicar regras do `AGENTS.md`.
 
 ### Implementação no Supabase
 Quando houver alteração de banco, a implementação deve ser feita diretamente por migration versionada em `supabase/migrations/<timestamp>_<nome>.sql`. SQL avulso só pode ser usado para inspeção, verificação read-only ou exceção expressamente autorizada; o SQL Editor não faz parte do fluxo normal.

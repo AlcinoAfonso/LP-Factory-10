@@ -33,7 +33,7 @@ Examinar, conforme aplicavel:
 - arquivos, rotas, componentes, servicos, testes, contratos e padroes relacionados;
 - riscos de regressao, migrations e correcoes incrementais relacionadas.
 
-Se houver impacto visual/frontend, usar tambem `docs/template-briefing-codex-frontend.md`.
+Se houver impacto visual/frontend, preencher a seção opcional correspondente em `docs/template-briefing-codex.md`.
 
 Quando houver BD:
 
