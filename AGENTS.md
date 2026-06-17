@@ -2,10 +2,7 @@
 
 ## Referências
 
-* Para estruturar pedidos incompletos em padrão outcome-first, usar `docs/template-prompts.md`.
-* Para briefings gerais, usar `docs/template-briefing-codex.md`.
 * Para execução no Codex App, usar `docs/prompt-codex-app-executor.md`.
-* Para impacto visual/frontend, usar também `docs/template-briefing-codex-frontend.md`.
 * Para estado, decisões e aprendizados sobre Codex, usar `docs/gestor-codex.md`.
 * Ao consolidar conteúdo canônico dos documentos cobertos pelo `DOC_ALVO`, usar `docs/prompt-abc.md` para definir residência, escopo e conteúdo permitido.
 * Para atualizar casos em `docs/roadmap.md`, aplicar a regra de atualização do roadmap definida em `docs/prompt-abc.md`.
