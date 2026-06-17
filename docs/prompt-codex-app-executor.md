@@ -33,8 +33,6 @@ Examinar, conforme aplicavel:
 - arquivos, rotas, componentes, servicos, testes, contratos e padroes relacionados;
 - riscos de regressao, migrations e correcoes incrementais relacionadas.
 
-Se houver impacto visual/frontend, usar tambem `docs/template-briefing-codex-frontend.md`.
-
 Quando houver BD:
 
 * usar primeiro o Supabase Plugin para investigação read-only do estado real;

@@ -17,6 +17,16 @@ Use este template para descrever o resultado esperado. As regras operacionais, d
 - Criar ou alterar:
 - Não alterar:
 
+## Impacto visual/frontend — preencher somente quando aplicável
+
+* Tela, rota ou componente:
+* Estado atual:
+* Estado desejado:
+* Restrições de UI/UX e design system:
+* Critérios de aceite visual:
+* Viewports ou estados obrigatórios:
+* Evidência visual esperada:
+
 ## Limites
 
 - Fazer apenas o necessário para o objetivo.
