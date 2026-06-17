@@ -152,12 +152,6 @@
 • Escopo: Production e Preview, conforme deploy do service.
 • Valor real: não versionar.
 
-• `REAL_ESTATE_LAB_ACCOUNT_ID`
-• Finalidade: habilitar server-side a rota experimental `/a/[account]/labs/imobiliario` para uma única conta dedicada.
-• Escopo: Vercel Production e Preview quando o laboratório estiver habilitado.
-• Valor real: UUID de conta; não versionar em documentação.
-• Comportamento: variável ausente ou inválida resulta em falha segura e rota indisponível.
-
 • `SUPABASE_DB_URL_READONLY`
 • Finalidade: conexão read-only do MCP Supabase Inspect com o banco.
 • Projeto Vercel consumidor: `lpf-10-services`.
