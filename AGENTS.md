@@ -2,106 +2,65 @@
 
 ## Referências
 
-* Para execução no Codex App, usar `docs/prompt-codex-app-executor.md`.
-* Para estado, decisões e aprendizados sobre Codex, usar `docs/gestor-codex.md`.
-* Ao consolidar conteúdo canônico dos documentos cobertos pelo `DOC_ALVO`, usar `docs/prompt-abc.md` para definir residência, escopo e conteúdo permitido.
+* `docs/prompt-codex-app-executor.md`.
+* `docs/gestor-codex.md`.
+* `docs/prompt-abc.md`.
 * Para atualizar casos em `docs/roadmap.md`, aplicar a regra de atualização do roadmap definida em `docs/prompt-abc.md`.
 
 ## Regra geral de execução
 
-Antes de executar, identificar:
+Antes de executar, confirmar objetivo, fontes, limites e validação esperada.
 
-1. resultado esperado;
-2. contexto/fonte;
-3. critérios de sucesso;
-4. limites e regras de parada;
-5. validação esperada.
-
-Não completar lacunas críticas por suposição. Se faltar fonte, arquivo, rota, schema, regra ou contexto necessário para executar com segurança, parar e pedir exatamente o que falta.
-
-## Ambientes Codex
-
-Este repositório pode ser usado por Codex App local e Codex Web/Cloud.
-
-* Codex App local no Windows pode usar o Fluxo Codex App Local descrito em `docs/gestor-codex.md`.
-* Codex Web/Cloud não deve usar o Fluxo Codex App Local; deve trabalhar pelo fluxo remoto próprio, PRs e ferramentas disponíveis no ambiente remoto.
-* Se o ambiente não estiver claro, perguntar antes de executar operações Git de publicação.
+Não completar lacunas críticas por suposição; se faltar informação necessária para executar com segurança, parar e pedir exatamente o que falta.
 
 ## Regras operacionais
 
-* Não editar nem commitar na `main`. Se estiver na `main` limpa, criar branch dedicada antes de alterar arquivos.
-* Usar branch dedicada por tarefa, preferencialmente com prefixo `codex/`.
-* Antes de alterar, confirmar branch atual, `git status` e remote correto.
-* Quando a `main` local for usada como fonte/base, executar `git pull --ff-only` antes de leitura, comparação ou criação de branch; se houver mudanças locais que impeçam a atualização segura, parar e reportar.
-* Não misturar tarefas ou etapas diferentes na mesma branch.
-* Não fazer merge local; o merge final deve acontecer somente pelo GitHub Web.
-* GitHub Web é a fonte de verdade para PRs, Actions, preview remoto e merge.
-* Se houver branch ou mudança local já resolvida por PR mergeado, tratar como resíduo operacional: não commitar, não publicar e orientar limpeza antes de continuar.
+Não editar nem commitar na `main`; usar branch dedicada por tarefa ou etapa. Ao usar a `main` local como base, atualizar com `git pull --ff-only`. O merge final deve ocorrer somente pelo GitHub Web. Se o ambiente não estiver claro, perguntar antes de publicar.
 
 ## Publicação no Codex App local
 
-* No Codex App local, usar Personalizado (`config.toml`) como modo preferido para tarefas com Git.
-* A publicação esperada é `git push`.
-* Não configurar `core.sshCommand` durante a tarefa; se o push falhar por SSH, parar e reportar o erro exato.
-* Não mexer em `C:\Users\alcin\.ssh`.
-* Não usar `StrictHostKeyChecking=no`.
-* Não usar GitHub Desktop nem GitHub Connector para publicar, salvo pedido explícito.
-* Se GitHub CLI estiver indisponível, entregar link de PR/compare.
+Publicar com `git push`. Não alterar configurações SSH durante a tarefa; se o push falhar, parar e informar o erro exato. Se a GitHub CLI estiver indisponível, entregar o link de criação do PR.
 
 ## Modo simples
 
-Usar quando a tarefa for isolada e não exigir worktree próprio.
+Usar por padrão quando não houver necessidade real de worktree.
 
 Processo:
 
-1. Verificar branch ativa, `git status` e remote.
-2. Criar ou usar branch dedicada a partir da base correta.
-3. Editar somente o necessário.
-4. Rodar validações aplicáveis.
-5. Fazer `git add`, `commit` e publicar conforme o ambiente; no Codex App local, usar `git push`.
-6. Entregar PR ou link de PR/compare, quando aplicável.
+1. Confirmar branch, `git status` e remote.
+2. Atualizar a base e criar branch dedicada.
+3. Implementar somente o escopo atual.
+4. Executar as validações aplicáveis.
+5. Revisar o diff, fazer commit e publicar.
+6. Entregar PR ou link de criação do PR.
 
 ## Modo robusto
 
-Usar quando a tarefa exigir isolamento, execução em etapas, validação local recorrente, preview ou frente paralela.
+Usar somente quando houver frente paralela ou necessidade real de isolamento.
 
 Regra-base:
 
 ```txt
-1 frente robusta = 1 worktree local
-1 etapa = 1 branch ativa
+1 frente = 1 worktree
+1 etapa = 1 branch
 1 branch = 1 PR
 ```
 
-Processo:
-
-1. Abrir no worktree correto.
-2. Confirmar worktree, branch ativa, `git status` e remote.
-3. Criar branch dedicada para a etapa.
-4. Implementar somente a etapa atual.
-5. Validar localmente.
-6. Fazer `git add`, `commit` e publicar conforme o ambiente; no Codex App local, usar `git push`.
-7. Entregar PR ou link de PR/compare, quando aplicável.
-8. Após merge, atualizar a base antes da próxima branch.
+Após o merge, atualizar a base e criar nova branch na mesma worktree. Não criar outra worktree para continuar a mesma frente.
 
 ## Gate pré-PR
 
-Antes de publicar ou abrir PR, validar que:
+Antes de publicar:
 
-* a branch contém apenas commits do escopo atual;
-* o diff contém apenas arquivos do escopo atual;
-* não há alterações acidentais em `.env`, secrets, banco, workflows ou arquivos fora do pedido;
-* validações aplicáveis foram executadas ou marcadas como não aplicáveis;
-* quando a base local permitir, validar `main..HEAD` para commits e `main...HEAD` para arquivos.
+* confirmar que commits e arquivos pertencem somente ao escopo atual;
+* verificar alterações acidentais, secrets, `.env`, banco e workflows;
+* executar ou justificar as validações aplicáveis;
+* avaliar e aplicar o impacto documental da branch;
+* revisar `main..HEAD` e `main...HEAD`, quando disponíveis.
 
 ## Preview local
 
-Para impacto visual/frontend:
-
-1. Rodar `npm run dev`.
-2. Abrir a URL indicada pelo terminal.
-3. Validar tela, comportamento e ausência de erros visíveis.
-4. Se `localhost:3000` recusar conexão, verificar se o servidor dev está rodando ou se iniciou em outra porta.
+Em alterações visuais/frontend, executar `npm run dev`, abrir a URL indicada e validar tela, comportamento e erros visíveis. Se a conexão falhar, confirmar se o servidor iniciou e em qual porta.
 
 ## Sandbox checks
 
