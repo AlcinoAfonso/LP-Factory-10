@@ -1,12 +1,5 @@
 # AGENTS.md
 
-## Referências
-
-* `docs/prompt-codex-app-executor.md`.
-* `docs/gestor-codex.md`.
-* `docs/prompt-abc.md`.
-* Para atualizar casos em `docs/roadmap.md`, aplicar a regra de atualização do roadmap definida em `docs/prompt-abc.md`.
-
 ## Regra geral de execução
 
 Antes de executar, confirmar objetivo, fontes, limites e validação esperada.
@@ -55,7 +48,6 @@ Antes de publicar:
 * confirmar que commits e arquivos pertencem somente ao escopo atual;
 * verificar alterações acidentais, secrets, `.env`, banco e workflows;
 * executar ou justificar as validações aplicáveis;
-* avaliar e aplicar o impacto documental da branch;
 * revisar `main..HEAD` e `main...HEAD`, quando disponíveis.
 
 ## Preview local
