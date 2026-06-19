@@ -2,9 +2,9 @@
 
 ## 1. Objetivo
 
-Este documento governa propostas, pesquisas, avaliações, testes e decisões sobre automações e agentes antes da aprovação formal e antes da entrada no catálogo operacional em `docs/automations.md`.
+Este documento governa propostas, pesquisas, avaliações, testes e decisões sobre automações, agentes e capacidades operacionais até a decisão formal. Após aprovação, o resultado deve ser encaminhado para `docs/services.md`, quando for uma capacidade reutilizável com identidade própria, ou para `docs/automations.md`, quando for uma automação, agente ou componente operacional.
 
-O objetivo é manter um registro enxuto de oportunidades em análise, hipóteses, provas de conceito, riscos, custos, limites e decisões. Este documento não é o catálogo de automações operacionais nem substitui a documentação técnica ou de produto do LP Factory 10.
+O objetivo é manter um registro enxuto de oportunidades em análise, hipóteses, provas de conceito, riscos, custos, limites e decisões. Este documento mantém o histórico das avaliações e decisões, mas não é o catálogo de services, não é o catálogo de automações operacionais nem substitui a documentação técnica ou de produto do LP Factory 10.
 
 ## 2. Responsabilidade do Gestor de Automações
 
@@ -17,15 +17,19 @@ O Gestor de Automações deve:
 * analisar custo, risco e manutenção esperada;
 * definir quando há necessidade de aprovação humana;
 * validar se existe observabilidade suficiente para operar e diagnosticar o fluxo;
+* classificar se o resultado aprovado pertence à camada de services, automações ou a ambas;
+* definir o documento operacional de destino;
+* impedir duplicação integral entre documentos;
 * recomendar adoção, teste, rejeição ou encaminhamento para outro documento ou responsável.
 
 ## 3. Fronteiras documentais
 
 A fronteira entre documentos deve ser mantida antes de registrar qualquer item.
 
+* `docs/services.md`: documento-alvo operacional para services implantáveis, MCPs, endpoints e infraestrutura reutilizável com identidade própria. Um service é uma capacidade reutilizável por múltiplos consumidores, possui identidade técnica própria, pode ter deploy, endpoint, MCP ou runtime independente, mantém referência amigável para humano em `docs/services.md` e deixa detalhes técnicos no README local do service.
+* `docs/automations.md`: documento-alvo operacional para automações operacionais, agentes, workflows, jobs, GitHub Actions e componentes consumidores. Uma automação executa ou coordena um processo operacional, possui gatilho, workflow, runtime, entrada e saída, pode consumir um service e mantém referência operacional em `docs/automations.md`.
 * `docs/gestor-codex.md`: recursos que melhoram o ambiente ou o trabalho direto do Codex, como plugins, configurações, skills e capacidades do Codex App.
-* `docs/gestor-automations.md`: propostas, pesquisas, avaliações, testes e decisões sobre automações ou agentes ainda não formalizados como operação.
-* `docs/automations.md`: automações ou agentes aprovados, em implementação formal ou já operacionais, com catálogo, status, dependências e instruções operacionais.
+* `docs/gestor-automations.md`: propostas, pesquisas, avaliações, testes e decisões sobre automações, agentes ou services ainda não formalizados como operação.
 * Gestor de produto ou roadmap: funcionalidades visíveis ao cliente, mudanças de produto, UX, escopo funcional ou evolução de casos do roadmap.
 
 Se um item misturar mais de uma fronteira, cada parte deve ser registrada no documento adequado, com referência cruzada e sem duplicação integral.
@@ -57,9 +61,10 @@ rejeitada → suspensa → arquivada
 
 Regras do ciclo:
 
-* itens nos estados `identificada`, `em avaliação`, `em teste` e `aprovada` permanecem neste documento;
-* itens aprovados para implementação formal devem ser registrados em `docs/automations.md` quando forem encaminhados ao catálogo operacional;
+* itens nos estados `identificada`, `em avaliação`, `em teste` e `aprovada` permanecem com seu histórico neste documento;
+* após aprovação formal, o item deve ser encaminhado para `docs/services.md`, `docs/automations.md` ou ambos, conforme sua classificação;
 * aprovação não significa implementação concluída;
+* o destino documental deve ser registrado na decisão formal;
 * itens rejeitados, suspensos ou arquivados devem manter justificativa suficiente para evitar reavaliação sem fato novo;
 * itens encaminhados para produto, roadmap ou Gestor Codex devem indicar o destino correto.
 
@@ -84,7 +89,7 @@ Cada proposta deve ser avaliada com critérios objetivos:
 
 ## 7. Gate de aprovação
 
-Uma automação ou agente só pode ser encaminhado para `docs/automations.md` quando houver:
+Uma proposta só pode ser encaminhada aos documentos operacionais de destino quando cumprir o gate de aprovação e houver:
 
 * caso de uso definido;
 * responsável definido;
@@ -95,6 +100,8 @@ Uma automação ou agente só pode ser encaminhado para `docs/automations.md` qu
 * aprovação humana definida;
 * observabilidade mínima definida;
 * critério de sucesso definido;
+* classificação do destino documental definida;
+* separação entre service base e componente consumidor definida, quando aplicável;
 * decisão formal registrada.
 
 Sem esses elementos, o item deve permanecer em avaliação, ser suspenso, ser rejeitado ou ser encaminhado ao documento correto.
@@ -104,8 +111,10 @@ Sem esses elementos, o item deve permanecer em avaliação, ser suspenso, ser re
 Casos que envolvem Codex e automação devem respeitar a separação documental:
 
 * o recurso técnico que melhora o ambiente ou trabalho direto do Codex permanece documentado em `docs/gestor-codex.md`;
-* o processo automatizado, hipótese de automação, agente ou prova de conceito é governado em `docs/gestor-automations.md`;
-* após aprovação formal, a implementação operacional entra em `docs/automations.md`;
+* a proposta, avaliação, hipótese de automação, agente, service ou prova de conceito é governada em `docs/gestor-automations.md`;
+* service, MCP, endpoint ou infraestrutura reutilizável aprovado entra em `docs/services.md`;
+* automação, agente ou workflow operacional aprovado entra em `docs/automations.md`;
+* casos que contenham service base e automação consumidora devem gerar registros separados e relacionados;
 * referências cruzadas devem ser usadas para conectar os documentos, evitando duplicação integral de conteúdo.
 
 Exemplo de fronteira: uma capacidade do Codex App pode ser registrada no Gestor Codex, enquanto a proposta de transformar um procedimento recorrente do projeto em automação deve ser avaliada neste documento.
@@ -122,6 +131,7 @@ Usar o modelo compacto abaixo para futuras oportunidades. Não registrar oportun
 * Problema:
 * Proposta:
 * Tipo:
+* Destino documental provável:
 * Sistemas envolvidos:
 * Benefício esperado:
 * Frequência:
@@ -137,7 +147,7 @@ Usar o modelo compacto abaixo para futuras oportunidades. Não registrar oportun
 
 ## 10. Registro de decisões
 
-Usar o modelo abaixo para decisões formais sobre itens avaliados.
+Usar o modelo abaixo para decisões formais sobre itens avaliados. O campo `Destino` pode indicar `docs/services.md`, `docs/automations.md`, ambos, `docs/gestor-codex.md`, produto ou roadmap, rejeitado ou arquivado.
 
 ```md
 ### DEC-AAAA-MM-DD-001 — Item avaliado
@@ -172,4 +182,4 @@ Próximos passos para iniciar o uso deste documento:
 * avaliar se automação é necessária;
 * comparar solução determinística, agente e processo manual;
 * executar prova de conceito apenas se houver benefício justificável;
-* encaminhar para aprovação formal antes da implementação operacional.
+* encaminhar o item aprovado para `docs/services.md`, `docs/automations.md` ou ambos, conforme a classificação formal.
