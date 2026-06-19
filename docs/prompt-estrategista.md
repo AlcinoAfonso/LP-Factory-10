@@ -38,6 +38,8 @@ gatilho → entrada → processamento → validação → persistência → cons
 
 	3. Plano-base v1
 Criar o primeiro rascunho com objetivo, solução, fases, limites e pendências.
+Identificar ajustes necessários em etapas, estruturas ou seções anteriores e registrá-los como pré-requisitos ou fases do plano.
+Quando o caso tiver escopos distintos ou risco de sobrecarregar o Executor, dividir o plano em poucas fases sequenciais, cada uma com objetivo, limites e critério de passagem.
 Quando houver frontend, incluir também:
 
 • superfície afetada;
@@ -65,6 +67,8 @@ Execute [fase/item] de docs/roadmap.md, seguindo
 docs/prompt-executor.md.
 Parta da main atualizada, use branch própria e pare antes do merge.
 Não repetir o conteúdo do plano ou do prompt.
+Enviar somente a fase atual ao Executor.
+A fase seguinte só deve ser instruída após a entrega, avaliação e conclusão da fase anterior, incluindo merge ou aplicação real quando necessários.
 Caso Codex avulso sem plano no roadmap:
 docs/template-briefing-codex.md
 + docs/prompt-executor.md
