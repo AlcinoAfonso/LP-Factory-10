@@ -5,6 +5,7 @@
 Este painel acompanha tecnologias, recursos, automações, agentes e services relevantes para o LP Factory 10.
 Ele ajuda a avaliar aplicações possíveis antes de aprovar implementação operacional.
 O foco é identificar oportunidades de reduzir custo, melhorar desempenho, UX, segurança, produtividade e confiabilidade.
+Também acompanha tecnologias adjacentes com impacto operacional, mesmo quando não forem automações.
 Decisões aprovadas devem ser encaminhadas ao documento operacional correto, sem duplicar catálogos.
 
 ## 2. Objetivos de melhoria no LP Factory 10
@@ -65,7 +66,7 @@ Exemplos: logs, tracing, métricas, alertas, auditoria, aprovação humana, roll
 
 **Agents SDK:** camada para construir e coordenar agentes, ferramentas, handoffs, guardrails, sessões e tracing. Categoria: agentes e orquestração.
 
-**Workspace Agents:** recurso de ChatGPT Business e Enterprise para criar, usar, compartilhar e gerenciar agentes no ChatGPT e no Slack, conforme disponibilidade e controles do workspace. Categoria: agentes e orquestração.
+**Workspace Agents:** categoria de agentes gerenciados em ambiente de workspace, pendente de confirmação sobre disponibilidade, planos, integrações e aplicação no projeto. Categoria: agentes e orquestração.
 
 **Server Actions:** funções executadas no servidor dentro da aplicação Next.js, normalmente usadas para mutações e ações iniciadas pela interface. Categoria: recursos de aplicação Next.js. Não são automaticamente automações operacionais.
 
@@ -83,15 +84,15 @@ Exemplos: logs, tracing, métricas, alertas, auditoria, aprovação humana, roll
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | Responses API | APIs e capacidades de IA | API para modelos, ferramentas, respostas estruturadas e streaming | Fluxos atuais e futuros de IA | Menos integrações paralelas e respostas mais controladas | Custo de tokens e desenho incorreto de prompts | pesquisar | `docs/automations.md` se virar fluxo operacional; roadmap se for funcionalidade de produto |
 | Agents SDK | Agentes e orquestração | SDK para agentes, ferramentas, handoffs, guardrails, sessões e tracing | Casos com decisão adaptativa real | Coordenação mais clara de tarefas complexas | Overengineering e custo de operação | avaliar | `docs/automations.md` |
-| Workspace Agents | Agentes e orquestração | Agentes de workspace no ChatGPT/Slack, sujeitos a disponibilidade e controles | Tarefas recorrentes internas, se o workspace permitir | Execução assistida sem criar runtime próprio | Dependência de plano, permissões e governança | avaliar | `docs/gestor-codex.md` ou `docs/automations.md`, conforme uso |
-| MCP | Services e integrações reutilizáveis | Interface padronizada para ferramentas e fontes externas | Reuso do Supabase Inspect e futuras integrações read-only | Menos integrações específicas por consumidor | Autenticação, permissões e segurança de ferramentas | aprovado | `docs/services.md`; consumidor em `docs/automations.md` |
-| GitHub Actions | Automações e execução operacional | Workflows por evento, agenda ou ação manual | Pipelines, validações e tarefas operacionais | Padroniza execução e evidências | Segredos, permissões e tempo de runner | aprovado | `docs/automations.md` |
+| Workspace Agents | Agentes e orquestração | Agentes gerenciados em ambiente de workspace | Tarefas internas, se houver disponibilidade e caso real | Execução assistida sem criar runtime próprio | Disponibilidade, planos, integrações e governança | monitorar | a definir após caso concreto |
+| MCP | Services e integrações reutilizáveis | Interface padronizada para ferramentas e fontes externas | Reuso do Supabase Inspect e futuras integrações read-only | Menos integrações específicas por consumidor | Autenticação, permissões e segurança de ferramentas | em uso no projeto | `docs/services.md`; consumidor em `docs/automations.md` |
+| GitHub Actions | Automações e execução operacional | Workflows por evento, agenda ou ação manual | Pipelines, validações e tarefas operacionais | Padroniza execução e evidências | Segredos, permissões e tempo de runner | em uso no projeto | `docs/automations.md` |
 | Server Actions | Recursos de aplicação Next.js | Funções server-side para mutações iniciadas pela UI | Formulários e ações simples do app | Menos endpoints manuais para mutações | Acoplamento à UI e regras de segurança | avaliar | roadmap se for produto; não vira automação por padrão |
-| Route Handlers | Recursos de aplicação Next.js | Endpoints HTTP no app Next.js | Webhooks, integrações simples e callbacks | Entrada HTTP controlada no app | Exposição pública e validação de payload | avaliar | roadmap, `docs/services.md` ou `docs/automations.md`, conforme natureza |
-| Streaming | APIs de IA / Next.js | Entrega progressiva de resposta ou interface | Respostas de IA e telas com espera perceptível | Melhor percepção de velocidade | Complexidade de estado e fallback | pesquisar | documento do fluxo aprovado |
+| Route Handlers | Recursos de aplicação Next.js | Endpoints HTTP no app Next.js | Webhooks, integrações simples e callbacks | Entrada HTTP controlada no app | Exposição pública e validação de payload | avaliar | a definir após caso concreto |
+| Streaming | APIs de IA / Next.js | Entrega progressiva de resposta ou interface | Respostas de IA e telas com espera perceptível | Melhor percepção de velocidade | Complexidade de estado e fallback | pesquisar | a definir após caso concreto |
 | Jobs agendados | Automações e execução operacional | Execuções recorrentes por agenda | Rotinas periódicas reais | Reduz tarefas manuais repetitivas | Execução desnecessária e custo recorrente | monitorar | `docs/automations.md` |
 | Webhooks | Automações / Dados | Acionamento por evento externo ou de banco | Integrações entre GitHub, Supabase e app | Reação rápida a eventos | Segurança, idempotência e retries | monitorar | `docs/automations.md` ou `docs/services.md` |
-| Tracing | Observabilidade e controle | Registro da execução para diagnóstico | Depurar agentes, pipelines e chamadas de IA | Aumenta auditabilidade | Volume de dados e exposição indevida | pesquisar | documento do recurso monitorado |
+| Tracing | Observabilidade e controle | Registro da execução para diagnóstico | Depurar agentes, pipelines e chamadas de IA | Aumenta auditabilidade | Volume de dados e exposição indevida | pesquisar | a definir após caso concreto |
 | Human-in-the-loop | Observabilidade e controle | Aprovação humana em pontos críticos | Publicação, mutação de dados ou custo relevante | Reduz risco operacional | Aumenta tempo de execução | avaliar | `docs/automations.md` |
 
 ## 6. Regras de destino documental
@@ -116,23 +117,15 @@ Antes de aprovar, verificar:
 * aprovação humana;
 * adequação ao MVP.
 
-## 8. Itens atuais
+## 8. Estado atual
 
-* Agents SDK: pendente de avaliação por caso concreto.
-* Workspace Agents: pendente de avaliação por caso concreto.
-* Responses API: registrar para pesquisa e avaliação de aplicação.
-* Server Actions: recurso de aplicação Next.js a avaliar conforme casos reais.
-* MCP: já existe aplicação por meio do service Supabase Inspect; referência operacional em `docs/services.md`.
-* GitHub Actions: já utilizado como camada de execução operacional; referência operacional em `docs/automations.md`.
-
-Este painel não duplica os catálogos de `docs/services.md` ou `docs/automations.md`.
+* MCP e GitHub Actions já estão em uso no projeto.
+* Os demais recursos permanecem em pesquisa, avaliação ou monitoramento conforme o catálogo.
+* Este painel não duplica os catálogos de `docs/services.md` ou `docs/automations.md`.
 
 ## 9. Próximas pesquisas
 
 1. Avaliar Responses API para fluxos atuais e futuros de IA.
-2. Avaliar Agents SDK apenas para casos que realmente exijam decisões adaptativas.
-3. Avaliar Server Actions para mutações simples iniciadas pela UI.
-4. Avaliar streaming para reduzir percepção de espera.
-5. Avaliar cache e revalidação para acelerar carregamento e reduzir chamadas.
-6. Avaliar observabilidade e controle de custos de APIs.
-7. Avaliar jobs, webhooks ou filas apenas quando houver demanda operacional real.
+2. Avaliar Agents SDK somente para casos com decisão adaptativa real.
+3. Avaliar Server Actions e streaming em casos concretos de UI, mutação e percepção de espera.
+4. Avaliar observabilidade e controle de custos de APIs e automações.
