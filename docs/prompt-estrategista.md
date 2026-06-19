@@ -15,7 +15,8 @@ Aplicação:
 • opção 2 → usar `docs/template-briefing-codex.md` e depois `docs/prompt-executor.md`;
 • opção 3 → usar `docs/template-prompts.md`.
 
-Após identificar a opção, iniciar pela primeira etapa correspondente, sem apresentar o fluxo completo nem antecipar entregas posteriores.
+Após identificar a opção, adotar o fluxo correspondente como regra ativa durante todo este chat, avançando etapa por etapa, sem pular, antecipar ou repetir etapas, salvo orientação expressa do humano.
+Na opção 1, manter controle da etapa atual e iniciar a próxima somente após a conclusão ou aprovação da etapa anterior.
 
 Primeira entrega por opção:
 1. Opção 1 — Caso estratégico
