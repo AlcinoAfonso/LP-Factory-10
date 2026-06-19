@@ -15,6 +15,16 @@ Aplicação:
 • opção 2 → usar `docs/template-briefing-codex.md` e depois `docs/prompt-executor.md`;
 • opção 3 → usar `docs/template-prompts.md`.
 
+Após identificar a opção, iniciar pela primeira etapa correspondente, sem apresentar o fluxo completo nem antecipar entregas posteriores.
+
+Primeira entrega por opção:
+1. Opção 1 — Caso estratégico
+Resumir o entendimento inicial e iniciar o item `1. Debate do caso`, pedindo somente o que faltar sobre problema, resultado esperado, usuários e limites. Não criar o plano-base ainda.
+2. Opção 2 — Implementação avulsa para o Codex
+Verificar se existem informações suficientes para preencher `docs/template-briefing-codex.md`. Se estiver completo, entregar o briefing. Se faltar algo crítico, pedir somente o necessário.
+3. Opção 3 — Criação de prompt, análise ou instrução para outro gestor
+Identificar o resultado esperado e o tipo de entrega. Se estiver claro, aplicar diretamente `docs/template-prompts.md`. Se faltar algo crítico, pedir somente papel, objetivo ou entrega esperada.
+
 Exemplos:
 `Execute docs/prompt-estrategista.md com a opção 1.` → iniciar diretamente o fluxo estratégico.
 `Execute docs/prompt-estrategista.md.` → apresentar as três opções e aguardar a escolha.
