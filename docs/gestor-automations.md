@@ -2,184 +2,137 @@
 
 ## 1. Objetivo
 
-Este documento governa propostas, pesquisas, avaliações, testes e decisões sobre automações, agentes e capacidades operacionais até a decisão formal. Após aprovação, o resultado deve ser encaminhado para `docs/services.md`, quando for uma capacidade reutilizável com identidade própria, ou para `docs/automations.md`, quando for uma automação, agente ou componente operacional.
+Este painel acompanha tecnologias, recursos, automações, agentes e services relevantes para o LP Factory 10.
+Ele ajuda a avaliar aplicações possíveis antes de aprovar implementação operacional.
+O foco é identificar oportunidades de reduzir custo, melhorar desempenho, UX, segurança, produtividade e confiabilidade.
+Decisões aprovadas devem ser encaminhadas ao documento operacional correto, sem duplicar catálogos.
 
-O objetivo é manter um registro enxuto de oportunidades em análise, hipóteses, provas de conceito, riscos, custos, limites e decisões. Este documento mantém o histórico das avaliações e decisões, mas não é o catálogo de services, não é o catálogo de automações operacionais nem substitui a documentação técnica ou de produto do LP Factory 10.
+## 2. Objetivos de melhoria no LP Factory 10
 
-## 2. Responsabilidade do Gestor de Automações
+A avaliação deve priorizar recursos que ajudem a:
+* reduzir custos de infraestrutura e consumo de APIs;
+* acelerar carregamento e processamento;
+* melhorar UI e UX;
+* reduzir trabalho manual;
+* reduzir erros operacionais;
+* melhorar segurança;
+* melhorar observabilidade;
+* simplificar manutenção;
+* acelerar validação e entrega do MVP;
+* aumentar confiabilidade;
+* evitar overengineering.
 
-O Gestor de Automações deve:
+## 3. Mapa de categorias
 
-* identificar oportunidades reais de automação;
-* avaliar a utilidade prática para o projeto;
-* comparar alternativas determinísticas, agentes, integrações e processo manual;
-* evitar overengineering e adoção de agentes sem necessidade concreta;
-* analisar custo, risco e manutenção esperada;
-* definir quando há necessidade de aprovação humana;
-* validar se existe observabilidade suficiente para operar e diagnosticar o fluxo;
-* classificar se o resultado aprovado pertence à camada de services, automações ou a ambas;
-* definir o documento operacional de destino;
-* impedir duplicação integral entre documentos;
-* recomendar adoção, teste, rejeição ou encaminhamento para outro documento ou responsável.
+### 3.1 APIs e capacidades de IA
 
-## 3. Fronteiras documentais
+Recursos para acessar modelos, ferramentas e capacidades de inteligência artificial.
+Exemplos: Responses API, Realtime API, Structured Outputs, streaming, ferramentas hospedadas e modelos.
 
-A fronteira entre documentos deve ser mantida antes de registrar qualquer item.
+### 3.2 Agentes e orquestração
 
-* `docs/services.md`: documento-alvo operacional para services implantáveis, MCPs, endpoints e infraestrutura reutilizável com identidade própria. Um service é uma capacidade reutilizável por múltiplos consumidores, possui identidade técnica própria, pode ter deploy, endpoint, MCP ou runtime independente, mantém referência amigável para humano em `docs/services.md` e deixa detalhes técnicos no README local do service.
-* `docs/automations.md`: documento-alvo operacional para automações operacionais, agentes, workflows, jobs, GitHub Actions e componentes consumidores. Uma automação executa ou coordena um processo operacional, possui gatilho, workflow, runtime, entrada e saída, pode consumir um service e mantém referência operacional em `docs/automations.md`.
-* `docs/gestor-codex.md`: recursos que melhoram o ambiente ou o trabalho direto do Codex, como plugins, configurações, skills e capacidades do Codex App.
-* `docs/gestor-automations.md`: propostas, pesquisas, avaliações, testes e decisões sobre automações, agentes ou services ainda não formalizados como operação.
-* Gestor de produto ou roadmap: funcionalidades visíveis ao cliente, mudanças de produto, UX, escopo funcional ou evolução de casos do roadmap.
+Recursos para criar agentes que interpretam contexto, usam ferramentas e coordenam tarefas.
+Exemplos: Agents SDK, agentes especializados, handoffs, guardrails, sessões, tracing, human-in-the-loop e Workspace Agents, quando aplicável.
 
-Se um item misturar mais de uma fronteira, cada parte deve ser registrada no documento adequado, com referência cruzada e sem duplicação integral.
+### 3.3 Automações e execução operacional
 
-## 4. Tipos de item governado
+Processos determinísticos, recorrentes ou acionados por eventos.
+Exemplos: GitHub Actions, jobs agendados, cron, webhooks, filas, pipelines, processos assíncronos e workflows determinísticos.
 
-* Automação determinística: fluxo previsível, com entradas, saídas e regras fixas, adequado quando não há necessidade de raciocínio adaptativo.
-* Agente: componente com capacidade de decidir passos intermediários, consultar ferramentas ou adaptar a execução dentro de limites definidos.
-* Workflow híbrido: combinação de etapas determinísticas, revisão humana e possível uso de agente em pontos específicos.
-* Integração: conexão entre sistemas como GitHub, Supabase, Vercel, OpenAI ou outros serviços relevantes ao projeto.
-* Job agendado: execução recorrente em horário, intervalo ou gatilho temporal ainda em avaliação.
-* GitHub Action: workflow do GitHub Actions ainda em proposta, validação ou prova de conceito.
-* Prova de conceito: teste limitado para validar viabilidade, custo, risco ou benefício antes de aprovar implementação formal.
-* Recurso externo em monitoramento: lançamento, ferramenta ou capacidade de plataforma acompanhada por possível impacto futuro no LP Factory 10.
+### 3.4 Services e integrações reutilizáveis
 
-## 5. Ciclo de avaliação
+Capacidades técnicas com identidade própria, consumidas por mais de um processo.
+Exemplos: MCP, APIs próprias, endpoints, workers, adaptadores, services compartilhados e infraestrutura reutilizável.
 
-Fluxo principal:
+### 3.5 Recursos de aplicação Next.js
 
-```txt
-identificada → em avaliação → em teste → aprovada → encaminhada
-```
+Recursos da aplicação que podem melhorar desempenho, interação, carregamento ou arquitetura.
+Exemplos: Server Actions, Route Handlers, Server Components, Client Components, streaming, cache, revalidação e middleware.
 
-Fluxos alternativos permitidos:
+### 3.6 Dados e banco
 
-```txt
-rejeitada → suspensa → arquivada
-```
+Recursos ligados a Supabase, persistência, busca e processamento de dados.
+Exemplos: Edge Functions, triggers, database functions, webhooks, cron, views, filas quando aplicável, acesso read-only e processamento assíncrono.
 
-Regras do ciclo:
+### 3.7 Observabilidade, segurança e controle
 
-* itens nos estados `identificada`, `em avaliação`, `em teste` e `aprovada` permanecem com seu histórico neste documento;
-* após aprovação formal, o item deve ser encaminhado para `docs/services.md`, `docs/automations.md` ou ambos, conforme sua classificação;
-* aprovação não significa implementação concluída;
-* o destino documental deve ser registrado na decisão formal;
-* itens rejeitados, suspensos ou arquivados devem manter justificativa suficiente para evitar reavaliação sem fato novo;
-* itens encaminhados para produto, roadmap ou Gestor Codex devem indicar o destino correto.
+Recursos para acompanhar, proteger e controlar operações.
+Exemplos: logs, tracing, métricas, alertas, auditoria, aprovação humana, rollback, controle de custos, gestão de permissões e rate limiting.
 
-## 6. Critérios de avaliação
+## 4. Definições essenciais
 
-Cada proposta deve ser avaliada com critérios objetivos:
+**Responses API:** API da OpenAI para enviar entradas a modelos, usar ferramentas e receber respostas estruturadas ou em streaming. Categoria: APIs e capacidades de IA.
 
-* problema resolvido: qual dor operacional concreta o item resolve;
-* benefício esperado: ganho de tempo, redução de erro, melhoria de controle ou aumento de previsibilidade;
-* frequência de uso: recorrência real ou estimada do problema;
-* impacto operacional: efeito em desenvolvimento, validação, publicação, suporte ou manutenção;
-* complexidade: esforço de implementação, operação, entendimento e diagnóstico;
-* custo: consumo de plataforma, execução, modelo, storage, manutenção e tempo humano;
-* dependências: sistemas, credenciais, APIs, permissões, serviços e artefatos necessários;
-* risco: chance de falha, impacto de falha, efeito em dados, publicação, segurança ou reputação;
-* segurança: acesso a dados, segredos, permissões, escopo de leitura/escrita e exposição de informações;
-* necessidade de aprovação humana: pontos que exigem revisão antes de publicar, excluir, alterar dados, gerar custo ou acionar terceiros;
-* observabilidade: logs, summaries, artifacts, métricas, alertas ou evidências mínimas para auditoria e troubleshooting;
-* capacidade de rollback: forma de interromper, desfazer, reverter ou neutralizar efeitos;
-* manutenção: responsável, frequência de revisão, dependência de APIs instáveis e custo de atualização;
-* adequação ao MVP: alinhamento com necessidades atuais, evitando automação prematura ou solução maior que o problema.
+**Agents SDK:** camada para construir e coordenar agentes, ferramentas, handoffs, guardrails, sessões e tracing. Categoria: agentes e orquestração.
 
-## 7. Gate de aprovação
+**Workspace Agents:** recurso de ChatGPT Business e Enterprise para criar, usar, compartilhar e gerenciar agentes no ChatGPT e no Slack, conforme disponibilidade e controles do workspace. Categoria: agentes e orquestração.
 
-Uma proposta só pode ser encaminhada aos documentos operacionais de destino quando cumprir o gate de aprovação e houver:
+**Server Actions:** funções executadas no servidor dentro da aplicação Next.js, normalmente usadas para mutações e ações iniciadas pela interface. Categoria: recursos de aplicação Next.js. Não são automaticamente automações operacionais.
 
-* caso de uso definido;
-* responsável definido;
-* entrada e saída definidas;
-* dependências identificadas;
-* riscos avaliados;
-* custo minimamente estimado;
-* aprovação humana definida;
-* observabilidade mínima definida;
-* critério de sucesso definido;
-* classificação do destino documental definida;
-* separação entre service base e componente consumidor definida, quando aplicável;
-* decisão formal registrada.
+**MCP:** protocolo para permitir que agentes ou aplicações acessem ferramentas e fontes externas por uma interface padronizada. Categoria: services e integrações reutilizáveis.
 
-Sem esses elementos, o item deve permanecer em avaliação, ser suspenso, ser rejeitado ou ser encaminhado ao documento correto.
+**GitHub Actions:** camada de execução de workflows acionados por eventos, agenda ou ação manual no GitHub. Categoria: automações e execução operacional.
 
-## 8. Casos híbridos com Codex
+**Route Handlers:** endpoints HTTP definidos na aplicação Next.js. Categoria: recursos de aplicação Next.js.
 
-Casos que envolvem Codex e automação devem respeitar a separação documental:
+**Streaming:** entrega partes da resposta ou interface progressivamente, reduzindo a percepção de espera. Categorias possíveis: APIs e capacidades de IA; recursos de aplicação Next.js.
 
-* o recurso técnico que melhora o ambiente ou trabalho direto do Codex permanece documentado em `docs/gestor-codex.md`;
-* a proposta, avaliação, hipótese de automação, agente, service ou prova de conceito é governada em `docs/gestor-automations.md`;
-* service, MCP, endpoint ou infraestrutura reutilizável aprovado entra em `docs/services.md`;
-* automação, agente ou workflow operacional aprovado entra em `docs/automations.md`;
-* casos que contenham service base e automação consumidora devem gerar registros separados e relacionados;
-* referências cruzadas devem ser usadas para conectar os documentos, evitando duplicação integral de conteúdo.
+## 5. Catálogo compacto de recursos
 
-Exemplo de fronteira: uma capacidade do Codex App pode ser registrada no Gestor Codex, enquanto a proposta de transformar um procedimento recorrente do projeto em automação deve ser avaliada neste documento.
+| Recurso | Categoria | O que é | Aplicação possível no LP Factory | Benefício esperado | Custo ou risco principal | Status | Destino após aprovação |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| Responses API | APIs e capacidades de IA | API para modelos, ferramentas, respostas estruturadas e streaming | Fluxos atuais e futuros de IA | Menos integrações paralelas e respostas mais controladas | Custo de tokens e desenho incorreto de prompts | pesquisar | `docs/automations.md` se virar fluxo operacional; roadmap se for funcionalidade de produto |
+| Agents SDK | Agentes e orquestração | SDK para agentes, ferramentas, handoffs, guardrails, sessões e tracing | Casos com decisão adaptativa real | Coordenação mais clara de tarefas complexas | Overengineering e custo de operação | avaliar | `docs/automations.md` |
+| Workspace Agents | Agentes e orquestração | Agentes de workspace no ChatGPT/Slack, sujeitos a disponibilidade e controles | Tarefas recorrentes internas, se o workspace permitir | Execução assistida sem criar runtime próprio | Dependência de plano, permissões e governança | avaliar | `docs/gestor-codex.md` ou `docs/automations.md`, conforme uso |
+| MCP | Services e integrações reutilizáveis | Interface padronizada para ferramentas e fontes externas | Reuso do Supabase Inspect e futuras integrações read-only | Menos integrações específicas por consumidor | Autenticação, permissões e segurança de ferramentas | aprovado | `docs/services.md`; consumidor em `docs/automations.md` |
+| GitHub Actions | Automações e execução operacional | Workflows por evento, agenda ou ação manual | Pipelines, validações e tarefas operacionais | Padroniza execução e evidências | Segredos, permissões e tempo de runner | aprovado | `docs/automations.md` |
+| Server Actions | Recursos de aplicação Next.js | Funções server-side para mutações iniciadas pela UI | Formulários e ações simples do app | Menos endpoints manuais para mutações | Acoplamento à UI e regras de segurança | avaliar | roadmap se for produto; não vira automação por padrão |
+| Route Handlers | Recursos de aplicação Next.js | Endpoints HTTP no app Next.js | Webhooks, integrações simples e callbacks | Entrada HTTP controlada no app | Exposição pública e validação de payload | avaliar | roadmap, `docs/services.md` ou `docs/automations.md`, conforme natureza |
+| Streaming | APIs de IA / Next.js | Entrega progressiva de resposta ou interface | Respostas de IA e telas com espera perceptível | Melhor percepção de velocidade | Complexidade de estado e fallback | pesquisar | documento do fluxo aprovado |
+| Jobs agendados | Automações e execução operacional | Execuções recorrentes por agenda | Rotinas periódicas reais | Reduz tarefas manuais repetitivas | Execução desnecessária e custo recorrente | monitorar | `docs/automations.md` |
+| Webhooks | Automações / Dados | Acionamento por evento externo ou de banco | Integrações entre GitHub, Supabase e app | Reação rápida a eventos | Segurança, idempotência e retries | monitorar | `docs/automations.md` ou `docs/services.md` |
+| Tracing | Observabilidade e controle | Registro da execução para diagnóstico | Depurar agentes, pipelines e chamadas de IA | Aumenta auditabilidade | Volume de dados e exposição indevida | pesquisar | documento do recurso monitorado |
+| Human-in-the-loop | Observabilidade e controle | Aprovação humana em pontos críticos | Publicação, mutação de dados ou custo relevante | Reduz risco operacional | Aumenta tempo de execução | avaliar | `docs/automations.md` |
 
-## 9. Registro de oportunidades
+## 6. Regras de destino documental
 
-Usar o modelo compacto abaixo para futuras oportunidades. Não registrar oportunidades fictícias.
+* Service, MCP, endpoint ou infraestrutura reutilizável aprovada → `docs/services.md`.
+* Automação, agente, workflow, job ou componente operacional aprovado → `docs/automations.md`.
+* Recurso técnico do ambiente Codex → `docs/gestor-codex.md`.
+* Funcionalidade visível ao cliente → gestor de produto ou roadmap.
+* Caso híbrido → registrar cada parte no documento correspondente, com referências cruzadas.
 
-```md
-### OP-AAAA-MM-DD-001 — Nome da oportunidade
+## 7. Critérios mínimos de decisão
 
-* Identificação: OP-AAAA-MM-DD-001
-* Nome:
-* Problema:
-* Proposta:
-* Tipo:
-* Destino documental provável:
-* Sistemas envolvidos:
-* Benefício esperado:
-* Frequência:
-* Risco:
-* Custo:
-* Aprovação humana:
-* Observabilidade:
-* Status:
-* Decisão:
-* Próximo passo:
-* Documentos relacionados:
-```
+Antes de aprovar, verificar:
+* problema real;
+* benefício esperado;
+* custo;
+* complexidade;
+* risco;
+* segurança;
+* manutenção;
+* observabilidade;
+* aprovação humana;
+* adequação ao MVP.
 
-## 10. Registro de decisões
+## 8. Itens atuais
 
-Usar o modelo abaixo para decisões formais sobre itens avaliados. O campo `Destino` pode indicar `docs/services.md`, `docs/automations.md`, ambos, `docs/gestor-codex.md`, produto ou roadmap, rejeitado ou arquivado.
+* Agents SDK: pendente de avaliação por caso concreto.
+* Workspace Agents: pendente de avaliação por caso concreto.
+* Responses API: registrar para pesquisa e avaliação de aplicação.
+* Server Actions: recurso de aplicação Next.js a avaliar conforme casos reais.
+* MCP: já existe aplicação por meio do service Supabase Inspect; referência operacional em `docs/services.md`.
+* GitHub Actions: já utilizado como camada de execução operacional; referência operacional em `docs/automations.md`.
 
-```md
-### DEC-AAAA-MM-DD-001 — Item avaliado
+Este painel não duplica os catálogos de `docs/services.md` ou `docs/automations.md`.
 
-* Data:
-* Item:
-* Decisão:
-* Justificativa:
-* Responsável:
-* Impacto:
-* Destino:
-* Condição para revisão:
-```
+## 9. Próximas pesquisas
 
-## 11. Itens atuais
-
-Estado inicial conhecido:
-
-* não há automação ou agente novo aprovado por este documento;
-* Agents SDK permanece pendente de avaliação por caso concreto;
-* Workspace Agents permanece pendente de avaliação por caso concreto;
-* novos casos devem ser registrados quando houver problema real e proposta concreta.
-
-Este registro não inventa testes, custos, decisões ou implementações.
-
-## 12. Próximos passos
-
-Próximos passos para iniciar o uso deste documento:
-
-* selecionar um procedimento recorrente real do projeto;
-* documentar o problema e a frequência;
-* avaliar se automação é necessária;
-* comparar solução determinística, agente e processo manual;
-* executar prova de conceito apenas se houver benefício justificável;
-* encaminhar o item aprovado para `docs/services.md`, `docs/automations.md` ou ambos, conforme a classificação formal.
+1. Avaliar Responses API para fluxos atuais e futuros de IA.
+2. Avaliar Agents SDK apenas para casos que realmente exijam decisões adaptativas.
+3. Avaliar Server Actions para mutações simples iniciadas pela UI.
+4. Avaliar streaming para reduzir percepção de espera.
+5. Avaliar cache e revalidação para acelerar carregamento e reduzir chamadas.
+6. Avaliar observabilidade e controle de custos de APIs.
+7. Avaliar jobs, webhooks ou filas apenas quando houver demanda operacional real.
