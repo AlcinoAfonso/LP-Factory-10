@@ -1,5 +1,5 @@
 18/06/2026 — Fluxo ajustado do Estrategista
-Fontes: chat, docs/prompt-codex-app-executor.md, docs/template-briefing-codex.md, docs/template-prompts.md
+Fontes: chat, docs/prompt-executor.md, docs/template-briefing-codex.md, docs/template-prompts.md
 	1. Debate do caso
 Definir problema, resultado esperado, usuários e limites.
 	2. Fluxo operacional
@@ -32,12 +32,12 @@ Registrar objetivo, escopo, fases, critérios de passagem e limites.
 	9. Instrução ao Executor
 Para caso no roadmap:
 Execute [fase/item] de docs/roadmap.md, seguindo
-docs/prompt-codex-app-executor.md.
+docs/prompt-executor.md.
 Parta da main atualizada, use branch própria e pare antes do merge.
 Não repetir o conteúdo do plano ou do prompt.
 Caso Codex avulso sem plano no roadmap:
 docs/template-briefing-codex.md
-+ docs/prompt-codex-app-executor.md
++ docs/prompt-executor.md
 docs/template-prompts.md fica para prompts gerais de análises, gestores e outras funções.
 	10. Implementação com ponto de retorno
 Diante de decisão ausente, conflito ou ampliação de escopo, o Executor para e devolve o caso.

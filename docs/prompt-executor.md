@@ -1,7 +1,7 @@
 # Prompt para o Executor
 
 Status: vigente.
-Referencia no repositorio: `docs/prompt-codex-app-executor.md`.
+Referencia no repositorio: `docs/prompt-executor.md`.
 
 ## 1. Papel
 

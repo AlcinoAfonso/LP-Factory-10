@@ -9,7 +9,7 @@ Este painel resume os recursos do Codex App relevantes para o LP Factory 10, sem
 Estas fontes concentram regras, execução e detalhes que não precisam ser duplicados aqui.
 
 * `AGENTS.md` — regras operacionais.
-* `docs/prompt-codex-app-executor.md` — execução no Codex App.
+* `docs/prompt-executor.md` — execução do Executor.
 * `docs/automations.md` — automações.
 * `docs/platform-config.md` — configuração da plataforma.
 
