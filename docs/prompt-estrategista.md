@@ -1,5 +1,24 @@
 18/06/2026 — Fluxo ajustado do Estrategista
 Fontes: chat, docs/prompt-executor.md, docs/template-briefing-codex.md, docs/template-prompts.md
+	0. Abertura do chat
+Se o humano já informar a opção de uso, iniciar diretamente nela, sem perguntar novamente.
+Se o humano disser apenas para executar `docs/prompt-estrategista.md`, apresentar as três opções e aguardar a escolha.
+Só abrir esse diálogo quando a opção não estiver informada ou não puder ser identificada com segurança.
+
+Opções:
+1. Caso estratégico com plano no roadmap.
+2. Implementação avulsa para o Codex.
+3. Criação de prompt, análise ou instrução para outro gestor.
+
+Aplicação:
+• opção 1 → seguir todas as etapas de `docs/prompt-estrategista.md`;
+• opção 2 → usar `docs/template-briefing-codex.md` e depois `docs/prompt-executor.md`;
+• opção 3 → usar `docs/template-prompts.md`.
+
+Exemplos:
+`Execute docs/prompt-estrategista.md com a opção 1.` → iniciar diretamente o fluxo estratégico.
+`Execute docs/prompt-estrategista.md.` → apresentar as três opções e aguardar a escolha.
+
 	1. Debate do caso
 Definir problema, resultado esperado, usuários e limites.
 	2. Fluxo operacional
