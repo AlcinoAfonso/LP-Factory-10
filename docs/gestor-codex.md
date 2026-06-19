@@ -10,7 +10,6 @@ Estas fontes concentram regras, execução e detalhes que não precisam ser dupl
 
 * `AGENTS.md` — regras operacionais.
 * `docs/prompt-executor.md` — execução do Executor.
-* `docs/automations.md` — automações.
 * `docs/platform-config.md` — configuração da plataforma.
 
 ## 3. Configurações
@@ -68,37 +67,17 @@ Nenhuma skill foi adotada formalmente após a reinstalação. Skills do Supabase
 
 **Disponíveis não adotadas:** Spreadsheets e Presentations.
 
-## 6. Automações
-
-Automações podem reduzir o acionamento manual de rotinas recorrentes.
-
-Nenhuma automação do Codex App foi criada; novos casos devem seguir `docs/automations.md`.
-
-## 7. Uso do computador e navegador
+## 6. Uso do computador e navegador
 
 Esses recursos podem ampliar validações visuais e interações fora do terminal.
 
 **Disponíveis não adotados:** Computer Use e Chrome. O navegador integrado está disponível, mas ainda não tem adoção final.
 
-## 8. Agents SDK / Workspace Agents
-
-Agentes podem coordenar fluxos especializados quando a complexidade justificar essa camada.
-
-### Agents SDK / Workspace Agents
-
-**Aptidão:** desenvolver e organizar agentes especializados.
-**Estado:** pendentes de avaliação.
-**Valor:** poderão coordenar responsabilidades e fluxos complexos.
-**Limite:** ainda não há caso de uso aprovado.
-
-**Legado:** Agent Builder; manter apenas como referência e não expandir.
-
-## 9. Próximos testes
+## 7. Próximos testes
 
 Os testes devem gerar evidência suficiente para adotar, limitar ou descartar recursos.
 
 1. Validar uma worktree em uma frente paralela real.
 2. Ampliar testes de leitura do Supabase Plugin, sem escrita.
-3. Selecionar um procedimento candidato a skill ou automação.
+3. Selecionar um procedimento candidato a skill.
 4. Comparar Chrome e navegador integrado em uma validação visual.
-5. Avaliar um caso concreto para Agents SDK ou Workspace Agents.
