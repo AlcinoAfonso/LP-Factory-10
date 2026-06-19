@@ -8,6 +8,13 @@ gatilho → entrada → processamento → validação → persistência → cons
 
 	3. Plano-base v1
 Criar o primeiro rascunho com objetivo, solução, fases, limites e pendências.
+Quando houver frontend, incluir também:
+
+• superfície afetada;
+• estado atual e desejado;
+• critérios visuais;
+• viewports;
+• evidência esperada.
 	4. Avaliação do Analista — v1
 Identificar lacunas, contradições e riscos.
 	5. Avaliações especializadas
