@@ -85,7 +85,7 @@ expected_policies as (
       ('content_artifacts'::text, 'content_artifacts_insert_admin_draft_only'::text),
       ('content_artifacts'::text, 'content_artifacts_update_admin_draft_content_only'::text),
       ('content_artifact_research_sources'::text, 'content_artifact_research_sources_select_admin_only'::text),
-      ('content_artifact_research_sources'::text, 'content_artifact_research_sources_insert_admin_business_buyer_only'::text)
+      ('content_artifact_research_sources'::text, 'cars_insert_admin_business_buyer_only'::text)
   ) as policies(table_name, policy_name)
 ),
 
