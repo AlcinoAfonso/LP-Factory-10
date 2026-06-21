@@ -1,8 +1,8 @@
 0. Introdução
 
 0.1 Cabeçalho
-• Data: 19/06/2026
-• Versão: v1.5.75
+• Data: 21/06/2026
+• Versão: v1.5.76
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -762,8 +762,8 @@ Repositório — Ajustados
 • Implementar detecção por ambiente somente se o ganho justificar a complexidade.
 
 10.7 Páginas comerciais personalizadas por nicho
-• Status: Planejado — plano aprovado registrado no roadmap em 19/06/2026; execução faseada.
-• Próxima execução: Fase 1 — ajuste documental e patch estrutural mínimo, sem geração de conteúdo, sem consumo no Account Dashboard e sem obrigação de implementar E19.
+• Status: Em execução faseada — Fase 1 concluída e validada em 21/06/2026.
+• Próxima execução: Fase 2 — geração IA com `version = 1` e quatro blocos fixos.
 • Objetivo: gerar, revisar, publicar e consumir páginas comerciais por taxon; a IA roda apenas em operação administrativa; `/a/[account]` consome artefato publicado e validado; ausência de conteúdo nichado não pode quebrar `/a/[account]`.
 • Dependência estrutural: a E18 define os contratos reutilizáveis mínimos; a E10.7 aplica, valida e ajusta esses contratos no caso comercial concreto.
 • A página genérica `generic-v1` da E10.6 permanece concluída e será o fallback obrigatório.
@@ -780,10 +780,15 @@ Repositório — Ajustados
 • O taxon piloto valida o mecanismo, mas não limita a implementação ao seu slug.
 
 10.7.2 Fase 1 — Ajuste documental e patch estrutural mínimo
-• Escopo: registrar o recorte simplificado no roadmap, o uso de `version = 1`, os quatro blocos fixos por `audience_scope`, `business_buyer` como artefato publicado, `end_customer` apenas no `provenance_json`, a hierarquia dos taxons inalterada, mutações administrativas mínimas em `/admin/templates` e patch estrutural mínimo quando necessário para escrita administrativa controlada.
-• A escrita administrativa controlada precisa estar viabilizada antes da persistência do draft.
-• Fora do escopo: nova tabela, constraint nova de hierarquia, alteração de `research_version`, versões independentes por bloco, LP Builder, liberação de LPs, continuidade de contas e bloqueio de novas ativações.
-• Critério de passagem: roadmap coerente, fases distribuídas nas seções corretas, escrita administrativa controlada viabilizada antes da persistência do draft, publicação transacional especificada, nenhum conflito com schema atual e próxima fase apta a receber instrução de geração sem dúvida de escopo.
+• Status: Concluída e validada em 21/06/2026.
+• Resultado: escrita administrativa controlada viabilizada antes da persistência do draft; publicação transacional disponível no banco; detalhes de DB permanecem em `docs/schema.md`.
+• Fora do escopo preservado: geração IA, Account Dashboard, LP Builder, nova tabela, hierarquia de taxons e alteração de `research_version`.
+• Critério de passagem: cumprido; migration aplicada no Supabase real e snippet de validação retornou `check_status = ok` em todas as linhas.
+• Estruturas e artefatos:
+  • Banco — Ajustados: `content_artifacts`; `content_artifact_research_sources`
+  • Banco — Criados: `publish_content_artifact_draft(uuid)`
+  • Repositório — Criados: `supabase/migrations/20260621162400_e10_7_admin_artifact_write_publish.sql`; `supabase/migrations/20260621181742_e10_7_fix_research_sources_policy_name.sql`; `supabase/snippets/e10_7_admin_artifact_write_publish_verify.sql`
+  • Repositório — Ajustados: `docs/schema.md`
 
 10.7.3 Fase 2 — Geração IA com version 1 e quatro blocos fixos
 • Escopo: gerar conteúdo da página comercial do taxon piloto usando IA server-side/Admin.
@@ -1236,6 +1241,7 @@ Repositório — Criados
 • Esta referência não cria obrigação de implementar E19 agora.
 
 99. Changelog
+v1.5.76 — 21/06/2026 — E10.7 Fase 1 concluída e validada: escrita administrativa controlada, publicação transacional e verificação read-only aplicadas no Supabase real; próxima execução passa a ser Fase 2.
 v1.5.75 — 19/06/2026 — Roadmap registra o plano aprovado da E10.7 distribuído em E10.5.5, E18, E12, E10.7 e E19: pesquisas `active version 1`, quatro blocos fixos por `audience_scope`, `business_buyer` como artefato publicado, `end_customer` apenas em `provenance_json`, operação administrativa mínima em `/admin/templates`, patch estrutural mínimo para escrita administrativa controlada e referência futura ao E19 sem obrigação de implementação agora.
 v1.5.74 — 16/06/2026 — E18 conclui o segundo recorte da base transversal de `commercial_activation`: contrato `content_json` v1, validação Zod, registry, renderer, catálogo inicial de oito seções e nove registros-base aplicados e confirmados no Supabase; a E10.7 fica desbloqueada como primeiro consumidor real.
 
