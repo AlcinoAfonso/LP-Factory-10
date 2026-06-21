@@ -1,8 +1,8 @@
 0. Introdução
 
 0.1 Cabeçalho
-• Data da última atualização: 16/06/2026
-• Documento: LP Factory 10 — Schema (DB Contract) v1.0.23
+• Data da última atualização: 21/06/2026
+• Documento: LP Factory 10 — Schema (DB Contract) v1.0.24
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -551,8 +551,13 @@
 1.21.3 Segurança
 • Trigger Hub: não
 • RLS: ativo
-• anon/authenticated/public: sem acesso
-• service_role: SELECT
+• public/anon: sem acesso
+• authenticated: SELECT, INSERT e UPDATE restrito às colunas `content_json` e `provenance_json` somente em artefatos `draft`
+• service_role: SELECT, INSERT, UPDATE
+• Policies:
+  • content_artifacts_select_admin_only (SELECT to authenticated): is_super_admin() OU is_platform_admin()
+  • content_artifacts_insert_admin_draft_only (INSERT to authenticated): is_super_admin() OU is_platform_admin(); somente `status = 'draft'`, `published_at IS NULL` e `archived_at IS NULL`
+  • content_artifacts_update_admin_draft_content_only (UPDATE to authenticated): is_super_admin() OU is_platform_admin(); somente `status = 'draft'`, `published_at IS NULL` e `archived_at IS NULL` (USING + WITH CHECK)
 
 1.21.4 Índices
 • `content_artifacts_one_published_uidx`: UNIQUE parcial em (`template_id`, `taxon_id`, `audience_scope`) para `status = 'published'`.
@@ -580,8 +585,12 @@
 1.22.3 Segurança
 • Trigger Hub: não
 • RLS: ativo
-• anon/authenticated/public: sem acesso
-• service_role: SELECT
+• public/anon: sem acesso
+• authenticated: SELECT, INSERT
+• service_role: SELECT, INSERT
+• Policies:
+  • content_artifact_research_sources_select_admin_only (SELECT to authenticated): is_super_admin() OU is_platform_admin()
+  • content_artifact_research_sources_insert_admin_business_buyer_only (INSERT to authenticated): is_super_admin() OU is_platform_admin(); somente `audience_scope = 'business_buyer'`
 
 1.22.4 Índices
 • `content_artifact_research_sources_research_id_idx`: btree em `research_id`.
@@ -681,6 +690,16 @@
 3.3.3 SECURITY DEFINER allowlist
 • has_account_min_role (motivo: helper RLS; limites: somente leitura; sem writes)
 • ensure_first_account_for_current_user (motivo: F2 auto 1ª conta; limites: idempotente; cria 1ª conta + owner/active)
+• publish_content_artifact_draft (motivo: publicação transacional E10.7; limites: publica um draft por `id`, arquiva o published anterior do mesmo template/taxon/audience_scope e exige is_super_admin() OU is_platform_admin())
+
+3.3.4 publish_content_artifact_draft(p_artifact_id uuid) → content_artifacts
+• Segurança: SECURITY DEFINER (aprovado; escrita transacional controlada)
+• search_path: public, pg_temp
+• Grants de EXECUTE: authenticated
+• Sem EXECUTE para public/anon
+• Efeito: bloqueia o draft alvo, valida `status = 'draft'`, bloqueia o `published` anterior do mesmo template/taxon/audience_scope, arquiva o anterior e publica o draft na mesma transação.
+• Garantia complementar: `content_artifacts_one_published_uidx` mantém no máximo um `published` por (`template_id`, `taxon_id`, `audience_scope`).
+• Risco residual aceito para Fase 2: geração segura da próxima `artifact_version`; a UNIQUE `(template_id, composition_id, taxon_id, audience_scope, research_version, artifact_version)` protege colisão, mas o fluxo de geração ainda deve calcular ou tentar inserir a próxima versão de forma segura.
 
 3.4 Convites de Conta
 • accept_account_invite(account_id uuid, ttl_days int) → boolean
@@ -767,6 +786,11 @@
 • Rollback: não remove automaticamente a extensão, pois pode ser reutilizada por outros recursos
 
 99. Changelog
+v1.0.24 (21/06/2026) — E10.7 Fase 1: escrita administrativa e publicação transacional de artefatos
+• Registrados grants e policies admin-only para criação de drafts em `content_artifacts` e registro de fontes `business_buyer` em `content_artifact_research_sources`.
+• Registrado UPDATE direto de `authenticated` restrito às colunas `content_json` e `provenance_json` somente para artefatos `draft`.
+• Registrada a RPC `publish_content_artifact_draft(uuid)` para arquivar o `published` anterior e publicar o novo `draft` na mesma transação.
+
 v1.0.23 (16/06/2026) — E18: registros-base de `commercial_activation`
 • Registrados o template-base de página e os oito módulos de seção da versão 1.
 • Confirmados nove registros ativos, identidade funcional por chave/slug + versão e ausência de vínculos com taxons.
