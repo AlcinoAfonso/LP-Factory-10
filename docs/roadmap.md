@@ -883,13 +883,13 @@ Ajustados:
 
 12.6 Pendências
 • Templates e Auditoria permanecem como áreas previstas.
-• Mutações administrativas ficam fora do escopo atual.
+• Mutações administrativas gerais permanecem fora do escopo atual, exceto as mutações mínimas aprovadas para a E10.7 em `/admin/templates`, descritas em 12.8.
 • Billing e operações de suspensão/reativação dependem de recorte futuro.
 
 12.7 Geração administrativa de página comercial por taxon
-• Status: Retirado do recorte atual (12/06/2026)
-• A operação administrativa antecipada para geração da página comercial foi removida da estratégia atual.
-• Qualquer necessidade administrativa será definida somente após a nova E10.6 e a primeira LP produzirem casos reais aprovados.
+• Status: Reintroduzido em recorte mínimo pela E10.7 em 19/06/2026.
+• A operação administrativa não será um editor visual nem LP Builder.
+• O recorte autorizado limita-se a gerar draft, regenerar draft, visualizar, publicar e arquivar `published` anterior, conforme 12.8.
 
 12.8 Superfície inicial da operação administrativa mínima da E10.7
 • `/admin/templates` será a superfície inicial da operação administrativa mínima da E10.7.
