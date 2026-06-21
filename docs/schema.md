@@ -552,12 +552,12 @@
 • Trigger Hub: não
 • RLS: ativo
 • public/anon: sem acesso
-• authenticated: SELECT, INSERT e UPDATE restrito às colunas `content_json` e `provenance_json`
+• authenticated: SELECT, INSERT e UPDATE restrito às colunas `content_json` e `provenance_json` somente em artefatos `draft`
 • service_role: SELECT, INSERT, UPDATE
 • Policies:
   • content_artifacts_select_admin_only (SELECT to authenticated): is_super_admin() OU is_platform_admin()
   • content_artifacts_insert_admin_draft_only (INSERT to authenticated): is_super_admin() OU is_platform_admin(); somente `status = 'draft'`, `published_at IS NULL` e `archived_at IS NULL`
-  • content_artifacts_update_admin_only (UPDATE to authenticated): is_super_admin() OU is_platform_admin() (USING + WITH CHECK)
+  • content_artifacts_update_admin_draft_content_only (UPDATE to authenticated): is_super_admin() OU is_platform_admin(); somente `status = 'draft'`, `published_at IS NULL` e `archived_at IS NULL` (USING + WITH CHECK)
 
 1.21.4 Índices
 • `content_artifacts_one_published_uidx`: UNIQUE parcial em (`template_id`, `taxon_id`, `audience_scope`) para `status = 'published'`.
@@ -699,6 +699,7 @@
 • Sem EXECUTE para public/anon
 • Efeito: bloqueia o draft alvo, valida `status = 'draft'`, bloqueia o `published` anterior do mesmo template/taxon/audience_scope, arquiva o anterior e publica o draft na mesma transação.
 • Garantia complementar: `content_artifacts_one_published_uidx` mantém no máximo um `published` por (`template_id`, `taxon_id`, `audience_scope`).
+• Risco residual aceito para Fase 2: geração segura da próxima `artifact_version`; a UNIQUE `(template_id, composition_id, taxon_id, audience_scope, research_version, artifact_version)` protege colisão, mas o fluxo de geração ainda deve calcular ou tentar inserir a próxima versão de forma segura.
 
 3.4 Convites de Conta
 • accept_account_invite(account_id uuid, ttl_days int) → boolean
@@ -787,7 +788,7 @@
 99. Changelog
 v1.0.24 (21/06/2026) — E10.7 Fase 1: escrita administrativa e publicação transacional de artefatos
 • Registrados grants e policies admin-only para criação de drafts em `content_artifacts` e registro de fontes `business_buyer` em `content_artifact_research_sources`.
-• Registrado UPDATE direto de `authenticated` restrito às colunas `content_json` e `provenance_json`.
+• Registrado UPDATE direto de `authenticated` restrito às colunas `content_json` e `provenance_json` somente para artefatos `draft`.
 • Registrada a RPC `publish_content_artifact_draft(uuid)` para arquivar o `published` anterior e publicar o novo `draft` na mesma transação.
 
 v1.0.23 (16/06/2026) — E18: registros-base de `commercial_activation`

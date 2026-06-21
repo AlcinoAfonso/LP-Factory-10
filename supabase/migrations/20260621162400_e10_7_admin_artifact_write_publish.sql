@@ -27,12 +27,21 @@ create policy "content_artifacts_insert_admin_draft_only"
   );
 
 drop policy if exists "content_artifacts_update_admin_only" on public.content_artifacts;
-create policy "content_artifacts_update_admin_only"
+drop policy if exists "content_artifacts_update_admin_draft_content_only" on public.content_artifacts;
+create policy "content_artifacts_update_admin_draft_content_only"
   on public.content_artifacts
   for update
   to authenticated
-  using (public.is_super_admin() or public.is_platform_admin())
-  with check (public.is_super_admin() or public.is_platform_admin());
+  using (
+    (public.is_super_admin() or public.is_platform_admin())
+    and status = 'draft'
+  )
+  with check (
+    (public.is_super_admin() or public.is_platform_admin())
+    and status = 'draft'
+    and published_at is null
+    and archived_at is null
+  );
 
 drop policy if exists "content_artifact_research_sources_select_admin_only"
   on public.content_artifact_research_sources;
