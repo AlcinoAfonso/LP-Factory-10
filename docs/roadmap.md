@@ -1,8 +1,8 @@
 0. Introdução
 
 0.1 Cabeçalho
-• Data: 16/06/2026
-• Versão: v1.5.74
+• Data: 19/06/2026
+• Versão: v1.5.75
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -617,9 +617,16 @@
 • Fluxo validado na `main` para o taxon `Corretor de imóveis de médio padrão`, com `audience_scope = end_customer`, `version = 1`, `status = draft` e os blocos `strategic_core`, `lp_overview`, `lp_sections` e `seo`.
 • Foram carregados 74 itens; a verificação retornou `check_status = ok`, `invalid_items = 0` e `other_versions = 0` em todos os blocos.
 
-10.5.5.3 Pendências
+10.5.5.3 Recorte aprovado para consumo pela E10.7
+• Para a E10.7, a pesquisa completa do taxon deve entregar `version = 1`, `status = active` e dois `audience_scope`: `business_buyer` e `end_customer`.
+• Cada `audience_scope` deve conter quatro blocos fixos: `strategic_core`, `lp_overview`, `lp_sections` e `seo`.
+• O recorte não resolve versões independentes por bloco nesta etapa: a E10.7 usa pesquisas `active version 1` completas.
+• O recorte não altera schema, não cria nova tabela e não muda a hierarquia dos taxons.
+• Novos blocos futuros ficam fora do recorte atual e dependem de planejamento próprio.
+
+10.5.5.4 Pendências
 • Decidir se a pesquisa bruta será arquivada no repo, no banco ou em ambos.
-• Se o arquivamento for no banco, avaliar o ajuste de schema necessário.
+• Se o arquivamento for no banco, avaliar o ajuste de schema necessário em etapa futura própria.
 • Usar os dados carregados futuramente na E10.7, para páginas comerciais personalizadas por nicho, sem vincular esse consumo à página genérica da E10.6.
 
 10.5.6 Classificação da conta e resolução do nicho
@@ -755,145 +762,60 @@ Repositório — Ajustados
 • Implementar detecção por ambiente somente se o ganho justificar a complexidade.
 
 10.7 Páginas comerciais personalizadas por nicho
-• Status: Planejado — E18 concluída, E10.7 desbloqueada como primeiro consumidor real da base transversal mínima.
-• Próxima execução: Fase 1 — resolução hierárquica e seleção segura do bundle.
-• Objetivo: criar páginas comerciais personalizadas por taxon, prontas para exibição em `/a/[account]`, usando a família `commercial_activation`, composição compatível e pesquisa ativa com `audience_scope = business_buyer`.
+• Status: Planejado — plano aprovado registrado no roadmap em 19/06/2026; execução faseada.
+• Próxima execução: Fase 1 — ajuste documental e patch estrutural mínimo, sem geração de conteúdo, sem consumo no Account Dashboard e sem obrigação de implementar E19.
+• Objetivo: gerar, revisar, publicar e consumir páginas comerciais por taxon; a IA roda apenas em operação administrativa; `/a/[account]` consome artefato publicado e validado; ausência de conteúdo nichado não pode quebrar `/a/[account]`.
 • Dependência estrutural: a E18 define os contratos reutilizáveis mínimos; a E10.7 aplica, valida e ajusta esses contratos no caso comercial concreto.
 • A página genérica `generic-v1` da E10.6 permanece concluída e será o fallback obrigatório.
 
 10.7.1 Decisões aprovadas
-• O conteúdo da página comercial é global por taxon e reutilizado por contas que resolvam a mesma página publicada.
-• A exibição ocorre no contexto da conta e o tracking permanece vinculado ao `account_id`.
-• A E10.7 não definirá isoladamente a infraestrutura transversal de templates, módulos, composições e artefatos.
-• A primeira montagem poderá ser determinística e não exigirá IA em runtime.
+• Usar `version = 1` nas pesquisas consumidas pela E10.7.
+• Exigir quatro blocos fixos por `audience_scope`: `strategic_core`, `lp_overview`, `lp_sections` e `seo`.
+• Publicar o artefato com `audience_scope = business_buyer`.
+• Registrar `end_customer` apenas como contexto no `provenance_json`.
+• Não alterar a hierarquia dos taxons nesta etapa.
+• Não resolver versões independentes por bloco nesta etapa.
+• Não implementar LP Builder, liberação de LPs, continuidade de contas, bloqueio de novas ativações nem IA em runtime da página.
+• O conteúdo da página comercial é global por taxon e reutilizado por contas que resolvam a mesma página publicada; a exibição ocorre no contexto da conta e o tracking permanece vinculado ao `account_id`.
 • O taxon piloto valida o mecanismo, mas não limita a implementação ao seu slug.
 
-10.7.2 Resolução do taxon
-• Usar `account_taxonomy` como fonte canônica atual, filtrando `account_id`, `is_primary = true` e `status = active`.
-• Resolver o vínculo em `business_taxons` com `is_active = true`.
-• Reutilizar o helper server-side `getActivePrimaryAccountTaxon`.
-• Fluxo de resolução: taxon primário original → tentar bundle comercial do próprio taxon → subir para o pai → continuar pelos ancestrais até a raiz → selecionar o primeiro bundle com status `ready` → retornar fallback quando nenhum for utilizável.
-• Preservar `original_taxon_id` em todos os resultados do resolver.
-• Preencher `resolved_content_taxon_id` somente quando um bundle for encontrado.
-• `original_taxon_id` e `resolved_content_taxon_id` são metadados do resultado do resolver, não novas colunas obrigatórias.
-• Respeitar a ordem do taxon mais específico para o mais amplo.
-• Não combinar conteúdos de dois níveis.
-• Impedir ciclos e repetição de taxons durante a caminhada.
-• Considerar somente taxons ativos.
-• Não criar condicionais exclusivas para `corretor-de-imoveis-de-medio-padrao`.
-• O mecanismo deve aceitar outros taxons que tenham pesquisa compatível, composição válida e página comercial publicada.
+10.7.2 Fase 1 — Ajuste documental e patch estrutural mínimo
+• Escopo: registrar o recorte simplificado no roadmap, o uso de `version = 1`, os quatro blocos fixos por `audience_scope`, `business_buyer` como artefato publicado, `end_customer` apenas no `provenance_json`, a hierarquia dos taxons inalterada, mutações administrativas mínimas em `/admin/templates` e patch estrutural mínimo quando necessário para escrita administrativa controlada.
+• A escrita administrativa controlada precisa estar viabilizada antes da persistência do draft.
+• Fora do escopo: nova tabela, constraint nova de hierarquia, alteração de `research_version`, versões independentes por bloco, LP Builder, liberação de LPs, continuidade de contas e bloqueio de novas ativações.
+• Critério de passagem: roadmap coerente, fases distribuídas nas seções corretas, escrita administrativa controlada viabilizada antes da persistência do draft, publicação transacional especificada, nenhum conflito com schema atual e próxima fase apta a receber instrução de geração sem dúvida de escopo.
 
-10.7.3 Pesquisa comercial
-• Localizar pesquisas por `taxon_id`, `audience_scope = business_buyer`, `status = active` e versão válida.
-• Consumir os blocos `strategic_core`, `lp_overview`, `lp_sections` e `seo`.
-• Consumir os itens ativos relacionados em `taxon_market_research_items`.
-• Os blocos obrigatórios devem compartilhar a mesma versão; não misturar blocos de versões diferentes na mesma página.
-• Sem uma versão comum, completa e válida para todos os blocos obrigatórios, usar o fallback da E10.6.
+10.7.3 Fase 2 — Geração IA com version 1 e quatro blocos fixos
+• Escopo: gerar conteúdo da página comercial do taxon piloto usando IA server-side/Admin.
+• Entrada obrigatória: taxon ativo; template `commercial_activation`; composição ativa `version = 1`; itens da composição; 8 pesquisas `active version 1`; itens estruturados ativos; dados comerciais oficiais da LP Factory; schema esperado do `content_json`; regras editoriais.
+• A IA só pode gerar JSON compatível com `CommercialActivationContentV1`; não pode gerar HTML, JSX, CSS, Tailwind, scripts, módulos livres, variantes livres ou ordem das seções.
+• A IA não pode inventar planos, preços, garantias, condições, URLs ou promessas.
+• A fonte canônica dos dados comerciais oficiais precisa existir antes da geração; sem fonte canônica suficiente, a geração deve omitir o item permitido pelo schema ou falhar de forma segura.
+• Persistência esperada: `audience_scope = business_buyer`, `template_version = 1`, `composition_version = 1`, `research_version = 1`, `status = draft`, `artifact_version = próxima versão disponível`, primeira geração podendo usar `artifact_version = 1`, regenerações incrementando `artifact_version`, `content_json` validado, `provenance_json` com `business_buyer` e `end_customer`, e `content_artifact_research_sources` somente com fontes `business_buyer`.
+• Critério de passagem: draft gerado, JSON validado, `artifact_version` correto, dados comerciais não inventados, `provenance_json` completo, `end_customer` fora de `content_artifact_research_sources`, falha da IA sem alterar `published` vigente e sem consumo no Account Dashboard ainda.
 
-10.7.4 Composição e produção
-• Consumir a composição comercial definida sobre a base da E18.
-• A composição determina seções, variantes, ordem, obrigatoriedade e regras específicas do contexto comercial.
-• Fluxo planejado: template `commercial_activation` + composição do taxon + pesquisa `business_buyer` → conteúdo comercial nichado → página publicada.
-• Adaptar hero, benefícios, serviços, diferenciais, funcionamento, FAQ e CTAs.
-• Permitir seções ou variantes adicionais somente quando exigidas pela composição.
+10.7.4 Fase 3 — Operação administrativa mínima
+• Escopo: implementar operação mínima em `/admin/templates`, permitindo gerar, regenerar, visualizar e publicar.
+• Estados persistidos: `draft`, `published` e `archived`.
+• Estado visual: “em revisão” = `draft` existente ainda não publicado.
+• Publicação: publicar exige operação segura; arquivar `published` anterior e publicar novo `draft` na mesma operação transacional; não pode deixar dois `published`; não pode deixar o taxon sem `published` por falha intermediária; se a transação falhar, o estado anterior deve permanecer válido; caminho preferencial é RPC/função transacional ou mecanismo equivalente no banco.
+• Critério de passagem: admin gera draft, visualiza draft e publica draft; `published` anterior vira `archived` na mesma operação; fluxo exige permissão administrativa e funciona sem sobrescrita destrutiva.
 
-10.7.5 Persistência e identidade
-• Persistir o resultado como artefato final global por taxon, separado do template, da composição e das pesquisas de origem.
-• Identidade conceitual mínima: `taxon_id`, `audience_scope`, `research_version`, `template_version`, `composition_version` e `status`.
-• Já existem um template-base `commercial_activation` e oito módulos de seção aprovados pela E18.
-• Permanecem pendentes os vínculos por taxon, composição, itens da composição, artefato publicado e fontes de pesquisa.
-• Reutilizar `content_template_taxons`, `content_template_compositions`, `content_template_composition_items`, `content_artifacts` e `content_artifact_research_sources`.
-• Não criar nova tabela sem impedimento real comprovado.
+10.7.5 Fase 4 — Consumo no Account Dashboard
+• Escopo: renderizar página publicada sem IA em runtime; identificar taxon original da conta; consultar bundle próprio; se não houver, tentar ancestral quando existir; se não houver, usar `generic-v1`; renderizar com `CommercialActivationRenderer`; preservar `NicheResolutionCard`; preservar tracking existente.
+• Critério de passagem: taxon piloto exibe página própria; taxon sem página própria usa ancestral quando possível; taxon sem ancestral válido usa `generic-v1`; ausência de conteúdo nichado não quebra `/a/[account]`; sem IA em runtime.
 
-10.7.6 Exibição e fallbacks
+10.7.6 Fase 5 — Validação com segundo taxon
+• Escopo: confirmar que a solução não depende do taxon piloto.
+• Validar: 8 pesquisas `active version 1`; composição ativa; geração IA; draft; publicação; renderização própria; fallback por ancestral quando aplicável; `generic-v1` quando necessário; ausência de regra específica por slug.
+• Critério de conclusão: segundo taxon validado, fluxo reutilizável, E10.7 operacional e sem mudança estrutural desnecessária.
+
+10.7.7 Exibição, fallbacks e tracking
 • Fluxo em `/a/[account]`: conta `active` → resolver `account_id` → resolver taxon primário → procurar página comercial publicada compatível → exibir página nichada ou `generic-v1`.
 • Preservar `NicheResolutionCard` acima da página quando aplicável.
-• Conta sem taxon → página genérica E10.6.
-• Taxon inativo ou inválido → página genérica E10.6.
-• Taxon sem pesquisa `business_buyer` ativa → página genérica E10.6.
-• Pesquisa incompleta → página genérica E10.6.
-• Composição ausente ou inválida → página genérica E10.6.
-• Página não publicada → página genérica E10.6.
-• Erro de leitura → página genérica E10.6 e log seguro.
-• Página publicada válida → página nichada E10.7.
+• Conta sem taxon, taxon inativo ou inválido, pesquisa incompleta, composição ausente ou inválida, página não publicada ou erro de leitura usam a página genérica E10.6 como fallback seguro.
+• Reutilizar `commercial_page_view`, `commercial_primary_cta_click` e `commercial_plan_cta_click`, com identificadores seguros e sem PII.
 • A E10.7 não pode bloquear o acesso à página comercial.
-
-10.7.7 Tracking
-• Reutilizar `commercial_page_view`, `commercial_primary_cta_click` e `commercial_plan_cta_click`.
-• Prever `page_variant`, `taxon_slug`, `research_version`, `template_version` e `composition_version` nas propriedades.
-• Registrar somente identificadores seguros, sem PII.
-• Não criar novos eventos antes de necessidade comprovada.
-
-10.7.8 Caso piloto validado
-• Taxon: `Corretor de imóveis de médio padrão`.
-• Slug: `corretor-de-imoveis-de-medio-padrao`.
-• Taxon ativo: sim.
-• `audience_scope = business_buyer`.
-• Status da pesquisa: `active`.
-• Versão: `1`.
-• Blocos completos: `strategic_core`, `lp_overview`, `lp_sections` e `seo`.
-• Itens ativos: `49`.
-• Blocos ausentes: nenhum.
-• Resultado da verificação: `ready`.
-• O piloto será o primeiro caso de validação, sem condicional exclusiva por slug.
-
-10.7.9 Critérios mínimos da primeira entrega
-• Usar o taxon real da conta e pesquisa `business_buyer` ativa.
-• Usar template, módulos e composição definidos pela E18.
-• Persistir página pronta por taxon.
-• Manter a rota `/a/[account]`, o `NicheResolutionCard` e a E10.6 como fallback.
-• Reutilizar o tracking atual sem PII.
-• Funcionar em desktop e mobile.
-• Não alterar outros fluxos do Account Dashboard.
-• Validar o mecanismo com um segundo taxon após o piloto.
-
-10.7.10 Fora do primeiro recorte
-• editor visual
-• Admin Dashboard completo
-• testes A/B
-• CRM
-• geração multicanal
-• landing pages públicas de clientes
-• IA em runtime
-• publicação automática para outros canais
-• fusão, combinação ou herança complexa de conteúdos e composições entre diferentes níveis da taxonomia
-• múltiplas ofertas ou objetivos comerciais no mesmo taxon
-• cache avançado
-
-10.7.11 Fase 1 — Resolução hierárquica e seleção do bundle
-• Implementar a cadeia taxon original → ancestrais.
-• Reutilizar a leitura server-side existente para testar cada candidato.
-• Selecionar o primeiro bundle com status `ready`.
-• Retornar `original_taxon_id`, `resolved_content_taxon_id` e estado seguro.
-• Validar com dados sintéticos os casos exato, pai, ancestral, nenhum resultado, erro e ciclo.
-• Sem migration, registros reais, conteúdo comercial, alteração da rota, renderer visual ou tracking.
-• Critério de passagem: resolução determinística aprovada e mergeada antes da Fase 2.
-
-10.7.12 Fase 2 — Dados e artefato do primeiro consumidor
-• Criar vínculo do template-base com o taxon piloto.
-• Criar composição e itens da composição usando os módulos aprovados na E18.
-• Produzir conteúdo real a partir da pesquisa `business_buyer` ativa e compatível.
-• Validar o `content_json` pelos schemas da E18.
-• Persistir artefato publicado e fontes de pesquisa.
-• Usar migration de dados e snippet read-only próprios.
-• Sem alteração da rota, tracking ou renderer.
-• Critério de passagem: registros aplicados e confirmados no Supabase real antes da Fase 3.
-
-10.7.13 Fase 3 — Integração com `/a/[account]`
-• Resolver o taxon primário da conta.
-• Executar a resolução hierárquica da Fase 1.
-• Consumir o artefato publicado.
-• Renderizar com `CommercialActivationRenderer`.
-• Preservar `NicheResolutionCard`.
-• Usar integralmente a E10.6 quando o resultado não for `ready`.
-• Reutilizar os eventos atuais com as propriedades aprovadas.
-• Validar desktop, mobile, Preview e produção.
-• Critério de conclusão: página nichada válida sem bloquear o fallback ou outros fluxos do Account Dashboard.
-
-10.7.14 Validação com segundo taxon
-• Repetir o fluxo com outro taxon real.
-• Confirmar reutilização de template, módulos, resolver e renderer.
-• Ampliar seções, variantes ou contratos da E18 somente mediante necessidade comprovada.
 
 11. E11 — Gestão de Usuários e Convites
 
@@ -968,6 +890,12 @@ Ajustados:
 • Status: Retirado do recorte atual (12/06/2026)
 • A operação administrativa antecipada para geração da página comercial foi removida da estratégia atual.
 • Qualquer necessidade administrativa será definida somente após a nova E10.6 e a primeira LP produzirem casos reais aprovados.
+
+12.8 Superfície inicial da operação administrativa mínima da E10.7
+• `/admin/templates` será a superfície inicial da operação administrativa mínima da E10.7.
+• Operações permitidas: listar taxons elegíveis, mostrar checklist simples, indicar pesquisas presentes ou ausentes, indicar composição disponível, gerar draft, regenerar draft, visualizar draft com `CommercialActivationRenderer`, publicar draft e arquivar `published` anterior se existir.
+• Limites: sem editor visual, sem múltiplos aprovadores, sem gestão de clientes, sem bloqueio de ativações, sem permissão de criar LPs e sem LP Builder.
+• Esta tela passará a ter mutações administrativas controladas para a E10.7, respeitando permissões administrativas e operação transacional de publicação.
 
 13. E13 — Partner Dashboard
 
@@ -1098,6 +1026,7 @@ Ajustados:
 
 17.5 Referência documental
 • Automações operacionais de produto, componentes consumidores, MCPs e evoluções dessa camada passam a ser documentados em `docs/automacoes.md`.
+
 
 17.6 Supabase STAGING (espelho operacional para validação de casos de uso) — descontinuado
 
@@ -1256,6 +1185,15 @@ Repositório — Criados
 • integração com `/a/[account]`;
 • fallback e tracking da E10.7.
 
+18.15 Recorte aprovado para consumo pela E10.7
+• A E10.7 reutilizará a base transversal já concluída: template `commercial_activation`, módulos existentes, composição ativa, renderer existente, `content_artifacts` e `content_artifact_research_sources`.
+• Manter `research_version = 1` e `business_buyer` como `audience_scope` do artefato publicado.
+• Registrar em `content_artifact_research_sources` somente fontes compatíveis com `business_buyer`; pesquisas `end_customer` entram apenas no `provenance_json`.
+• Não alterar a FK composta de `content_artifact_research_sources` nesta etapa, não criar nova tabela e não resolver versões independentes por bloco agora.
+• A E10.7 pode exigir migration técnica mínima limitada a viabilizar escrita administrativa controlada. Possíveis alvos: grants, policies, adapter/RPC e função transacional de publicação.
+• A publicação deve arquivar o `published` anterior e publicar o novo `draft` na mesma operação segura.
+• A escrita administrativa precisa estar viabilizada antes da persistência do draft.
+
 19. E19 — LP Builder
 
 19.1 Status
@@ -1289,7 +1227,16 @@ Repositório — Criados
 19.6 Próximo passo
 • Definir o primeiro recorte funcional do LP Builder no roadmap
 
+19.7 Referência futura a páginas comerciais por taxon
+• E19 poderá futuramente consumir a existência de página comercial publicada por taxon.
+• E10.7 não implementa LP Builder.
+• E10.7 não implementa regra de liberação para criação de LPs.
+• E10.7 não implementa continuidade de contas.
+• E10.7 não implementa bloqueio de novas ativações.
+• Esta referência não cria obrigação de implementar E19 agora.
+
 99. Changelog
+v1.5.75 — 19/06/2026 — Roadmap registra o plano aprovado da E10.7 distribuído em E10.5.5, E18, E12, E10.7 e E19: pesquisas `active version 1`, quatro blocos fixos por `audience_scope`, `business_buyer` como artefato publicado, `end_customer` apenas em `provenance_json`, operação administrativa mínima em `/admin/templates`, patch estrutural mínimo para escrita administrativa controlada e referência futura ao E19 sem obrigação de implementação agora.
 v1.5.74 — 16/06/2026 — E18 conclui o segundo recorte da base transversal de `commercial_activation`: contrato `content_json` v1, validação Zod, registry, renderer, catálogo inicial de oito seções e nove registros-base aplicados e confirmados no Supabase; a E10.7 fica desbloqueada como primeiro consumidor real.
 
 v1.5.73 — 15/06/2026 — E18 consolida o primeiro recorte autônomo implementado e validado: banco de composições e artefatos aplicado no Supabase, runtime server-side mergeado e seleção determinística de template por taxon; dados do primeiro consumidor e integração com a E10.7 permanecem pendentes.
