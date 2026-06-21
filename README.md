@@ -1,8 +1,8 @@
 0. Introdução
 0.1. Cabeçalho
 • Documento: README — LP Factory 10 (MVP)
-• Versão: 3 — 10/06/2026
-• Data: 10/06/2026
+• Versão: 4 — 21/06/2026
+• Data: 21/06/2026
 • Escopo: visão geral do produto + documentos de referência + pendências estratégicas
 
 1. Visão geral do produto
@@ -12,22 +12,26 @@
 • Ultranicho: não usar agora.
 
 1.2. Descrição
-• LP Factory 10 é uma plataforma SaaS de comunicação comercial para aquisição, venda e nutrição de leads.
+• LP Factory 10 é um hub de comunicação comercial por nicho, com IA, automações e agentes controlados para aquisição, venda e nutrição de leads.
+• O produto ajuda empresas a transformar pesquisa, dados e canais comerciais em comunicação pronta para venda.
 • O produto entrega canais de comunicação como landing pages, Instagram, WhatsApp e e-mail.
-• O dashboard prioriza automações internas com IA para reduzir operação, validar processos e identificar quais automações podem virar funcionalidades de produto para venda ou retenção.
+• O dashboard prioriza automações internas, recursos de IA e agentes controlados para reduzir operação, validar processos e acelerar melhorias com revisão humana quando necessário.
 
 1.3. Proposta de valor
-• Oferecer canais de comunicação comercial por nicho com acompanhamento contínuo de performance.
-• Reduzir esforço, tempo e dependência para criar, medir, ajustar e otimizar a comunicação comercial.
-• Transformar dados de uso e conversão em leitura prática para orientar melhorias.
-• Ajudar o cliente a evoluir sua comunicação comercial com mais clareza, autonomia e direção.
+• Oferecer comunicação comercial por nicho, com canais prontos para uso e acompanhamento contínuo de performance.
+• Reduzir esforço, tempo e dependência para criar, medir, ajustar e otimizar comunicação comercial.
+• Transformar pesquisa, dados de uso e conversão em ações práticas para venda e nutrição de leads.
+• Ajudar o cliente a evoluir sua comunicação comercial com mais clareza, automação e direção.
 
 1.4. Produto
 1.4.1. Prático
 • Templates por nicho e criação fácil.
 
 1.4.2. Inteligente
-• Recursos orientados por dados (tracking/coleta e recomendações) e automações internas com IA.
+• Recursos orientados por dados, tracking, recomendações e automações internas com IA, em fluxos simples, seguros e mensuráveis.
+• Responses API para fluxos lineares de geração, revisão ou adaptação de conteúdo.
+• Agents SDK TypeScript quando houver orquestração real e controlada com tools, decisões intermediárias, estado, aprovações ou handoffs.
+• Sandbox Agent como camada de laboratório técnico para tarefas com arquivos, repositório, worktree, branch experimental, testes isolados ou geração de artefatos.
 
 1.4.3. Dashboard
 • Suporte para ajustes e testes guiados por dados.
@@ -35,6 +39,8 @@
 1.4.4. Princípios de implementação
 • O MVP prioriza simplicidade, não fragilidade.
 • Runtime não pode depender de objetos ou comportamentos de banco ainda não aplicados e validados no ambiente alvo.
+• A stack base do MVP permanece Next.js, Supabase e TypeScript.
+• Automações e agentes devem ser introduzidos de forma incremental, começando por fluxos simples, seguros e mensuráveis.
 
 1.5. Modelo de oferta
 • Planos em camadas (Starter → Lite → Pro → Ultra), com capacidades escalando ao longo do tempo.
