@@ -33,7 +33,7 @@ Exemplos: Responses API, Realtime API, Structured Outputs, streaming, ferramenta
 ### 3.2 Agentes e orquestração
 
 Recursos para criar agentes que interpretam contexto, usam ferramentas e coordenam tarefas.
-Exemplos: Agents SDK, agentes especializados, handoffs, guardrails, sessões, tracing, human-in-the-loop e Workspace Agents, quando aplicável.
+Exemplos: Agents SDK, Sandbox Agents, agentes especializados, handoffs, guardrails, sessões, tracing, human-in-the-loop e Workspace Agents, quando aplicável.
 
 ### 3.3 Automações e execução operacional
 
@@ -62,9 +62,13 @@ Exemplos: logs, tracing, métricas, alertas, auditoria, aprovação humana, roll
 
 ## 4. Definições essenciais
 
+**Automação simples:** fluxo linear ou determinístico, com passos conhecidos, entrada e saída previsíveis e pouca necessidade de decisão adaptativa. Pode usar Responses API em uma etapa específica, mas não exige agente completo.
+
 **Responses API:** API da OpenAI para enviar entradas a modelos, usar ferramentas e receber respostas estruturadas ou em streaming. Categoria: APIs e capacidades de IA.
 
 **Agents SDK:** camada para construir e coordenar agentes, ferramentas, handoffs, guardrails, sessões e tracing. Categoria: agentes e orquestração.
+
+**Sandbox Agents:** recurso em beta do OpenAI Agents SDK para agentes com workspace, arquivos, comandos, estado e artefatos. No LP Factory, deve ser tratado como laboratório técnico controlado, não como base do MVP. Categoria: agentes e orquestração.
 
 **Workspace Agents:** categoria de agentes gerenciados em ambiente de workspace, pendente de confirmação sobre disponibilidade, planos, integrações e aplicação no projeto. Categoria: agentes e orquestração.
 
@@ -84,6 +88,7 @@ Exemplos: logs, tracing, métricas, alertas, auditoria, aprovação humana, roll
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | Responses API | APIs e capacidades de IA | API para modelos, ferramentas, respostas estruturadas e streaming | Fluxos atuais e futuros de IA | Menos integrações paralelas e respostas mais controladas | Custo de tokens e desenho incorreto de prompts | pesquisar | `docs/automations.md` se virar fluxo operacional; roadmap se for funcionalidade de produto |
 | Agents SDK | Agentes e orquestração | SDK para agentes, ferramentas, handoffs, guardrails, sessões e tracing | Casos com decisão adaptativa real | Coordenação mais clara de tarefas complexas | Overengineering e custo de operação | avaliar | `docs/automations.md` |
+| Sandbox Agents | Agentes e orquestração | Recurso beta do Agents SDK para workspace, arquivos, comandos, estado e artefatos | Laboratório técnico para repositório, worktree, branch experimental, testes isolados, build, patches e artefatos | Permite testar tarefas técnicas com isolamento e estado persistente | Beta, complexidade, segurança, custo e risco de overengineering | pesquisar | `docs/gestor-codex.md` se for recurso técnico do ambiente; `docs/automations.md` se virar automação operacional |
 | Workspace Agents | Agentes e orquestração | Agentes gerenciados em ambiente de workspace | Tarefas internas, se houver disponibilidade e caso real | Execução assistida sem criar runtime próprio | Disponibilidade, planos, integrações e governança | monitorar | a definir após caso concreto |
 | MCP | Services e integrações reutilizáveis | Interface padronizada para ferramentas e fontes externas | Reuso do Supabase Inspect e futuras integrações read-only | Menos integrações específicas por consumidor | Autenticação, permissões e segurança de ferramentas | em uso no projeto | `docs/services.md`; consumidor em `docs/automations.md` |
 | GitHub Actions | Automações e execução operacional | Workflows por evento, agenda ou ação manual | Pipelines, validações e tarefas operacionais | Padroniza execução e evidências | Segredos, permissões e tempo de runner | em uso no projeto | `docs/automations.md` |
@@ -103,7 +108,18 @@ Exemplos: logs, tracing, métricas, alertas, auditoria, aprovação humana, roll
 * Funcionalidade visível ao cliente → gestor de produto ou roadmap.
 * Caso híbrido → registrar cada parte no documento correspondente, com referências cruzadas.
 
-## 7. Critérios mínimos de decisão
+## 7. Como decidir
+
+* Começar por automação simples sempre que o fluxo for linear, previsível e com passos conhecidos.
+* Usar Responses API quando a IA precisar gerar, classificar, resumir ou estruturar resposta dentro de um fluxo controlado.
+* Avaliar Agents SDK apenas quando houver decisão adaptativa real, uso coordenado de tools, lacunas, revisão, handoffs, sessões ou tracing.
+* Tratar Sandbox Agents como laboratório técnico em beta para arquivos, comandos, workspace, testes, patches e artefatos.
+* Manter aprovação humana quando houver publicação, custo relevante, alteração de dados, exclusão, envio externo ou conteúdo comercial público.
+* Conteúdo comercial público, como LP, e-mail, WhatsApp, oferta, preço, promessa e CTA, deve passar por revisão ou aprovação humana antes de publicação ou envio externo.
+* Automação simples também tem custo de execução, manutenção, logs e revisão, mas tende a ser menos complexa que um agente com tools, estado, handoffs e tracing.
+* Transformar automações internas em funcionalidades vendáveis somente depois de validar valor real.
+
+## 8. Critérios mínimos de decisão
 
 Antes de aprovar, verificar:
 * problema real;
@@ -117,13 +133,13 @@ Antes de aprovar, verificar:
 * aprovação humana;
 * adequação ao MVP.
 
-## 8. Estado atual
+## 9. Estado atual
 
 * MCP e GitHub Actions já estão em uso no projeto.
 * Os demais recursos permanecem em pesquisa, avaliação ou monitoramento conforme o catálogo.
 * Este painel não duplica os catálogos de `docs/services.md` ou `docs/automations.md`.
 
-## 9. Próximas pesquisas
+## 10. Próximas pesquisas
 
 1. Avaliar Responses API para fluxos atuais e futuros de IA.
 2. Avaliar Agents SDK somente para casos com decisão adaptativa real.
