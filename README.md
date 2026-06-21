@@ -12,10 +12,10 @@
 • Ultranicho: não usar agora.
 
 1.2. Descrição
-• LP Factory 10 é um hub de comunicação comercial automatizada por IA para aquisição, venda e nutrição de leads.
+• LP Factory 10 é um hub de comunicação comercial por nicho, com IA, automações e agentes controlados para aquisição, venda e nutrição de leads.
 • O produto ajuda empresas a transformar pesquisa, dados e canais comerciais em comunicação pronta para venda.
 • O produto entrega canais de comunicação como landing pages, Instagram, WhatsApp e e-mail.
-• O dashboard prioriza automações internas, recursos de IA e agentes para reduzir operação, validar processos e acelerar melhorias.
+• O dashboard prioriza automações internas, recursos de IA e agentes controlados para reduzir operação, validar processos e acelerar melhorias com revisão humana quando necessário.
 
 1.3. Proposta de valor
 • Oferecer comunicação comercial por nicho, com canais prontos para uso e acompanhamento contínuo de performance.
@@ -28,9 +28,9 @@
 • Templates por nicho e criação fácil.
 
 1.4.2. Inteligente
-• Recursos orientados por dados, tracking, recomendações e automações internas com IA.
+• Recursos orientados por dados, tracking, recomendações e automações internas com IA, em fluxos simples, seguros e mensuráveis.
 • Responses API para fluxos lineares de geração, revisão ou adaptação de conteúdo.
-• Agents SDK TypeScript quando houver orquestração real com tools, decisões intermediárias, estado, aprovações ou handoffs.
+• Agents SDK TypeScript quando houver orquestração real e controlada com tools, decisões intermediárias, estado, aprovações ou handoffs.
 • Sandbox Agent como camada de laboratório técnico para tarefas com arquivos, repositório, worktree, branch experimental, testes isolados ou geração de artefatos.
 
 1.4.3. Dashboard
