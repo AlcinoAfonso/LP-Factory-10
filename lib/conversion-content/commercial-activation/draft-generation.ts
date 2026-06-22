@@ -22,7 +22,8 @@ import {
 } from "./schemas";
 
 const OPENAI_RESPONSES_ENDPOINT = "https://api.openai.com/v1/responses";
-const PILOT_TAXON_SLUG = "corretor-de-imoveis-de-medio-padrao";
+export const COMMERCIAL_ACTIVATION_PILOT_TAXON_SLUG =
+  "corretor-de-imoveis-de-medio-padrao";
 const RESEARCH_VERSION = 1;
 const TEMPLATE_VERSION = 1;
 const COMPOSITION_VERSION = 1;
@@ -302,7 +303,8 @@ export async function generateCommercialActivationDraftForTaxon(input: {
   requestId?: string;
 } = {}): Promise<GenerateCommercialActivationDraftResult> {
   const requestId = input.requestId ?? crypto.randomUUID();
-  const taxonSlug = input.taxonSlug?.trim() || PILOT_TAXON_SLUG;
+  const taxonSlug =
+    input.taxonSlug?.trim() || COMMERCIAL_ACTIVATION_PILOT_TAXON_SLUG;
   const model = process.env[MODEL_ENV_NAME]?.trim() ?? "";
   const apiKey = process.env.OPENAI_API_KEY?.trim() ?? "";
 

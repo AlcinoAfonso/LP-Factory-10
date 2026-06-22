@@ -45,12 +45,12 @@ export const adminAreas: AdminArea[] = [
   {
     title: 'Templates',
     href: '/admin/templates',
-    description: 'Área prevista para consultar templates internos.',
-    status: 'Em preparação',
+    description: 'Operação administrativa mínima de drafts comerciais.',
+    status: 'Disponível',
     scope: [
-      'Catálogo read-only de templates',
-      'Relação com nichos e taxons',
-      'Estado de preparação por template',
+      'Geração e regeneração de drafts comerciais',
+      'Preview administrativo com renderer existente',
+      'Publicação transacional via RPC',
     ],
   },
   {
