@@ -1,6 +1,22 @@
 /** @type {import('next').NextConfig} */
 
 const nextConfig = {
+  outputFileTracingIncludes: {
+    '/admin/documentacao': [
+      './docs/roadmap.md',
+      './docs/base-tecnica.md',
+      './docs/schema.md',
+      './docs/design-system.md',
+      './docs/gestor-codex.md',
+      './docs/gestor-automations.md',
+      './docs/automations.md',
+      './docs/prompt-estrategista.md',
+      './docs/prompt-executor.md',
+      './docs/template-briefing-codex.md',
+      './docs/template-prompts.md',
+    ],
+  },
+
   // 6.3.1 — validação do `next` em /auth/confirm (somente caminhos internos)
   async rewrites() {
     return [
