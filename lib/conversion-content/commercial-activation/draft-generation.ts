@@ -798,7 +798,18 @@ async function persistDraft(input: {
       .insert(sourceRows);
 
     if (sourceError) {
-      throw new Error("artifact_sources_insert_failed");
+      const compensated = await archiveIncompleteDraft({
+        artifactId: artifactRow.id,
+        requestId: input.requestId,
+        taxonId: input.context.taxon.id,
+        artifactVersion,
+      });
+
+      if (!compensated) {
+        throw new Error("artifact_sources_insert_failed_compensation_failed");
+      }
+
+      throw new Error("artifact_sources_insert_failed_compensated");
     }
 
     return {
@@ -811,6 +822,59 @@ async function persistDraft(input: {
   }
 
   throw new Error("artifact_version_conflict");
+}
+
+async function archiveIncompleteDraft(input: {
+  artifactId: string;
+  requestId: string;
+  taxonId: string;
+  artifactVersion: number;
+}): Promise<boolean> {
+  const supabase = createServiceClient();
+  const archivedAt = new Date().toISOString();
+
+  const { data, error } = await supabase
+    .from("content_artifacts")
+    .update({
+      status: "archived",
+      archived_at: archivedAt,
+      provenance_json: {
+        generator: "e10_7_phase_2_admin_ai_draft",
+        request_id: input.requestId,
+        taxon_id: input.taxonId,
+        audience_scope: COMMERCIAL_ACTIVATION_AUDIENCE_SCOPE,
+        research_version: RESEARCH_VERSION,
+        invalidated_at: archivedAt,
+        invalidation_reason: "artifact_sources_insert_failed",
+        artifact_version: input.artifactVersion,
+      },
+    })
+    .eq("id", input.artifactId)
+    .eq("status", "draft")
+    .is("published_at", null)
+    .is("archived_at", null)
+    .select("id")
+    .single();
+
+  if (error || !data) {
+    logDraftEvent("commercial_activation_draft_compensation_failed", {
+      requestId: input.requestId,
+      taxonId: input.taxonId,
+      status: "failed",
+      artifactVersion: input.artifactVersion,
+      reason: "artifact_archive_failed",
+    });
+    return false;
+  }
+
+  logDraftEvent("commercial_activation_draft_compensated", {
+    requestId: input.requestId,
+    taxonId: input.taxonId,
+    status: "archived",
+    artifactVersion: input.artifactVersion,
+    reason: "artifact_sources_insert_failed",
+  });
+  return true;
 }
 
 async function getNextArtifactVersion(context: DraftContext): Promise<number> {
