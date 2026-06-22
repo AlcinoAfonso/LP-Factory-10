@@ -1,6 +1,6 @@
 0.1 Cabeçalho
-Data: 12/06/2026
-Versão: v1.9
+Data: 22/06/2026
+Versão: v1.10
 Status: Alinhado ao Platform Config
 
 0.2 Função do documento
@@ -263,6 +263,38 @@ Runtime: `automations/niche-runtime-tests/`
 Casos versionados: `automations/niche-runtime-tests/cases/`
 Reuso de mailbox: `automations/validador-final/`
 Verificação opcional de banco: `automations/supabase-inspect/verify-niche-runtime.mjs`
+
+3.8 E10.7 Fase 2 — geração administrativa de draft comercial por taxon
+
+Objetivo:
+Gerar draft comercial `commercial_activation` por taxon em fluxo assistido por IA, server-side/Admin, sem publicação automática.
+
+Status:
+Implementada e validada como automação operacional administrativa.
+
+Acesso:
+Action administrativa protegida por permissão administrativa.
+
+Como funciona:
+- Usa OpenAI Responses API com Structured Outputs.
+- Gera e valida `content_json` antes da persistência.
+- Persiste somente `status = draft` em `content_artifacts`.
+- Registra fontes relacionais apenas `business_buyer`.
+- Mantém contexto `end_customer` apenas em `provenance_json`.
+- Usa CTA seguro definido server-side.
+- Em falha após criação do artifact e antes do registro completo das fontes, invalida/arquiva o draft parcial e retorna erro seguro.
+
+Limites:
+- Não publica.
+- Não altera `published`.
+- Não roda em runtime público.
+- Não é agente.
+- Não usa Agents SDK, Sandbox Agents, job, fila nem execução recorrente.
+
+Referências / dependências:
+Regra técnica: `docs/base-tecnica.md`
+Status funcional: `docs/roadmap.md`
+Configuração de modelo: `docs/platform-config.md`
 
 Nota de descontinuação:
 O experimento Agent Investigator foi descontinuado porque as capacidades necessárias passaram a ser atendidas pelos plugins oficiais do Codex App.
