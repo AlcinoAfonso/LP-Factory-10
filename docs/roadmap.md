@@ -807,6 +807,7 @@ Repositório — Ajustados
 • Estado visual: “em revisão” = `draft` existente ainda não publicado.
 • Publicação: publicar exige operação segura; arquivar `published` anterior e publicar novo `draft` na mesma operação transacional; não pode deixar dois `published`; não pode deixar o taxon sem `published` por falha intermediária; se a transação falhar, o estado anterior deve permanecer válido; caminho preferencial é RPC/função transacional ou mecanismo equivalente no banco.
 • Critério de passagem: admin gera draft, visualiza draft e publica draft; `published` anterior vira `archived` na mesma operação; fluxo exige permissão administrativa e funciona sem sobrescrita destrutiva.
+• Pendência/melhoria futura não bloqueante: avaliar mapa editorial mínimo por seção para orientar a IA e reduzir interpretação livre na geração de drafts comerciais — hero: dor principal + transformação desejada + nicho; benefícios: dores e ganhos do `business_buyer`; serviços: necessidades operacionais do taxon; planos: `public.plans` somente; FAQ: objeções e dúvidas recorrentes; CTA: ação genérica segura, sem promessa ou checkout.
 
 10.7.5 Fase 4 — Consumo no Account Dashboard
 • Escopo: renderizar página publicada sem IA em runtime; identificar taxon original da conta; consultar bundle próprio; se não houver, tentar ancestral quando existir; se não houver, usar `generic-v1`; renderizar com `CommercialActivationRenderer`; preservar `NicheResolutionCard`; preservar tracking existente.
