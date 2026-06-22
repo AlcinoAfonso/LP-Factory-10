@@ -253,8 +253,14 @@
 • Finalidade: selecionar modelo do resolvedor IA de nicho.
 • Valor atual de referência: `gpt-5.4-mini`
 
+• `OPENAI_COMMERCIAL_ACTIVATION_MODEL`
+• Plataforma: Vercel.
+• Finalidade: selecionar o modelo usado pela geração administrativa server-side de drafts `commercial_activation`.
+• Valor real: não versionar.
+
 6.3.1 Endpoint externo atual
 • Endpoint OpenAI Responses API: `https://api.openai.com/v1/responses`
+• Consumidor: `lib/conversion-content/commercial-activation/draft-generation.ts`
 • Consumidores atuais conhecidos:
 • `lib/onboarding/niche-resolution/adapters/openAiResolver.ts`
 • `automations/supabase-inspect/run.mjs`
