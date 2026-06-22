@@ -15,7 +15,7 @@ export default function AdminPage() {
 
           <nav className="flex flex-wrap items-center gap-3">
             <Link
-              href="/auth/login"
+              href="/auth/login?next=%2Fadmin%2Fcontas"
               className="rounded-md border border-border bg-white px-3 py-1.5 text-sm text-foreground transition-colors hover:bg-accent"
             >
               Entrar
