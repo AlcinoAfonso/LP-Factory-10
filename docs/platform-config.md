@@ -260,8 +260,8 @@
 
 6.3.1 Endpoint externo atual
 • Endpoint OpenAI Responses API: `https://api.openai.com/v1/responses`
-• Consumidor: `lib/conversion-content/commercial-activation/draft-generation.ts`
 • Consumidores atuais conhecidos:
+• `lib/conversion-content/commercial-activation/draft-generation.ts`
 • `lib/onboarding/niche-resolution/adapters/openAiResolver.ts`
 • `automations/supabase-inspect/run.mjs`
 • Regra: novas APIs ou endpoints OpenAI devem ser registrados aqui quando virarem dependência operacional.
