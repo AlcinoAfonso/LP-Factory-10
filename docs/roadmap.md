@@ -845,11 +845,19 @@ Repositório — Ajustados
 • Consolidar o Admin Dashboard como seção administrativa protegida, separada do Account Dashboard, com navegação própria e leitura operacional read-only.
 
 12.3 Escopo atual
-• `/admin` protegido por gate SSR administrativo em `app/admin/layout.tsx`.
+• `/admin` é uma página pública de entrada do Admin Dashboard.
+• Subrotas internas permanecem protegidas por gate SSR administrativo em `app/admin/(protected)/layout.tsx`.
+• `/admin/contas` continua sendo o destino pós-login do admin.
 • Header e menu próprios do Admin, sem `AccountSwitcher` e sem dependência de conta ativa.
 • Shell operacional com sidebar, navegação administrativa e responsividade básica.
 • Leitura read-only real para contas, resoluções de nicho e taxonomia.
 • Sem mutações administrativas, billing, migrations, SQL ou alterações de RLS nesta fase.
+
+12.3.1 Entrada pública do Admin Dashboard
+• `/admin` agora abre uma página pública de entrada do Admin Dashboard, com apresentação simples e botão de acesso.
+• O botão de entrada aponta para `/auth/login?next=%2Fadmin%2Fcontas`.
+• As subrotas internas continuam protegidas pelo gate administrativo deslocado para `app/admin/(protected)/layout.tsx`.
+• `/admin/contas` permanece como destino pós-login do admin.
 
 12.4 Áreas atuais
 • Contas
@@ -861,12 +869,13 @@ Repositório — Ajustados
 12.5 Artefatos principais
 
 Criados:
-• `app/admin/contas/page.tsx`
-• `app/admin/contas/[accountId]/page.tsx`
-• `app/admin/resolucoes-de-nicho/page.tsx`
-• `app/admin/resolucoes-de-nicho/[accountId]/page.tsx`
-• `app/admin/taxonomia/page.tsx`
-• `app/admin/taxonomia/[taxonId]/page.tsx`
+• `app/admin/(protected)/contas/page.tsx`
+• `app/admin/(protected)/contas/[accountId]/page.tsx`
+• `app/admin/(protected)/resolucoes-de-nicho/page.tsx`
+• `app/admin/(protected)/resolucoes-de-nicho/[accountId]/page.tsx`
+• `app/admin/(protected)/taxonomia/page.tsx`
+• `app/admin/(protected)/taxonomia/[taxonId]/page.tsx`
+• `app/admin/(protected)/layout.tsx`
 • `components/admin/AdminPageHeader.tsx`
 • `components/admin/AdminPlaceholderPage.tsx`
 • `components/admin/AdminSidebar.tsx`
