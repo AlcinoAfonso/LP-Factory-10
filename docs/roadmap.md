@@ -2,7 +2,7 @@
 
 0.1 Cabeçalho
 • Data: 21/06/2026
-• Versão: v1.5.76
+• Versão: v1.5.77
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -791,12 +791,19 @@ Repositório — Ajustados
   • Repositório — Ajustados: `docs/schema.md`
 
 10.7.3 Fase 2 — Geração IA com version 1 e quatro blocos fixos
-• Escopo: gerar conteúdo da página comercial do taxon piloto usando IA server-side/Admin.
+• Escopo: gerar conteúdo da página comercial do taxon piloto usando IA server-side/Admin; sem publicação, sem consumo em `/a/[account]`, sem Account Dashboard, sem UI completa em `/admin/templates`, sem LP Builder e sem IA em runtime público.
+• Recurso de IA aprovado: fluxo server-side/Admin com Responses API ou padrão equivalente já existente, structured output e validação; não usar Agents SDK, Sandbox Agents, job, fila ou agente nesta fase.
 • Entrada obrigatória: taxon ativo; template `commercial_activation`; composição ativa `version = 1`; itens da composição; 8 pesquisas `active version 1`; itens estruturados ativos; dados comerciais oficiais da LP Factory; schema esperado do `content_json`; regras editoriais.
+• Leituras server-side via Supabase Data API/PostgREST devem seguir o padrão técnico vigente do projeto quando aplicável; `public.plans` é fonte canônica parcial para dados comerciais oficiais.
 • A IA só pode gerar JSON compatível com `CommercialActivationContentV1`; não pode gerar HTML, JSX, CSS, Tailwind, scripts, módulos livres, variantes livres ou ordem das seções.
 • A IA não pode inventar planos, preços, garantias, condições, URLs ou promessas.
+• CTAs não podem inventar checkout nem URL comercial: usar apenas `href` interno seguro já existente ou permitido pelo template/composição; sem `href` aprovado, bloquear antes de persistir.
+• Validação obrigatória em duas camadas: envelope `CommercialActivationContentV1` e `section.content` contra o schema da `variant_key` correspondente no registry, respeitando os `composition_items` permitidos.
 • A fonte canônica dos dados comerciais oficiais precisa existir antes da geração; sem fonte canônica suficiente, a geração deve omitir o item permitido pelo schema ou falhar de forma segura.
 • Persistência esperada: `audience_scope = business_buyer`, `template_version = 1`, `composition_version = 1`, `research_version = 1`, `status = draft`, `artifact_version = próxima versão disponível`, primeira geração podendo usar `artifact_version = 1`, regenerações incrementando `artifact_version`, `content_json` validado, `provenance_json` com `business_buyer` e `end_customer`, e `content_artifact_research_sources` somente com fontes `business_buyer`.
+• Consultas novas de validação devem ser versionadas como snippets read-only em `supabase/snippets/*` quando aplicável.
+• Logs seguros: registrar evento, `request_id`, `taxon_id`, `status`, `artifact_version` e erro seguro; não registrar prompt completo, pesquisas brutas, payload sensível ou resposta integral da IA.
+• Limite estrutural: sem nova tabela, view, função, grants, mudança de acesso, alteração da hierarquia de taxons ou alteração de `research_version`; se a Fase 2 exigir qualquer item estrutural, parar e devolver ao Estrategista antes de implementar.
 • Critério de passagem: draft gerado, JSON validado, `artifact_version` correto, dados comerciais não inventados, `provenance_json` completo, `end_customer` fora de `content_artifact_research_sources`, falha da IA sem alterar `published` vigente e sem consumo no Account Dashboard ainda.
 
 10.7.4 Fase 3 — Operação administrativa mínima
@@ -1250,6 +1257,11 @@ Repositório — Criados
 • Esta referência não cria obrigação de implementar E19 agora.
 
 99. Changelog
+v1.5.77 — 21/06/2026 — E10.7 Fase 2: critérios de IA, validação e logs.
+• Incorporados pareceres de Updates e Automations para a Fase 2.
+• Registrado uso de fluxo IA server-side/Admin com structured output, sem Agents SDK/job/fila/agente.
+• Registrada validação em duas camadas, regra segura para `cta.href`, snippets read-only quando aplicável e logs seguros.
+
 v1.5.76 — 21/06/2026 — E10.7 Fase 1 concluída e validada: escrita administrativa controlada, publicação transacional e verificação read-only aplicadas no Supabase real; próxima execução passa a ser Fase 2.
 v1.5.75 — 19/06/2026 — Roadmap registra o plano aprovado da E10.7 distribuído em E10.5.5, E18, E12, E10.7 e E19: pesquisas `active version 1`, quatro blocos fixos por `audience_scope`, `business_buyer` como artefato publicado, `end_customer` apenas em `provenance_json`, operação administrativa mínima em `/admin/templates`, patch estrutural mínimo para escrita administrativa controlada e referência futura ao E19 sem obrigação de implementação agora.
 v1.5.74 — 16/06/2026 — E18 conclui o segundo recorte da base transversal de `commercial_activation`: contrato `content_json` v1, validação Zod, registry, renderer, catálogo inicial de oito seções e nove registros-base aplicados e confirmados no Supabase; a E10.7 fica desbloqueada como primeiro consumidor real.
