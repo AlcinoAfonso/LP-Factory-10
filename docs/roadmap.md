@@ -2,7 +2,7 @@
 
 0.1 Cabeçalho
 • Data: 22/06/2026
-• Versão: v1.5.80
+• Versão: v1.5.81
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -864,10 +864,12 @@ Repositório — Ajustados
 • `/admin/contas` permanece como destino pós-login do admin.
 
 12.3.2 Leitor read-only de documentação do repositório no Admin Dashboard
-• Status: Em implementação.
+• Status: Concluído e validado em testes humanos (22/06/2026).
 • `/admin/documentacao` é uma área protegida pelo gate administrativo existente.
 • A página lista uma whitelist fixa de documentos de `docs/` e permite leitura read-only do conteúdo.
 • A leitura usa filesystem server-side do repositório, com inclusão explícita dos arquivos permitidos no tracing da rota.
+• UI final: filtro superior, dropdown alfabético, conteúdo abaixo, sem lista intermediária e responsiva em desktop/mobile.
+• Markdown é exibido como texto bruto; renderer Markdown fica como oportunidade futura por exigir dependência não instalada.
 • Não usa Supabase, migrations, GitHub API em runtime, edição, salvamento, publicação ou mutações.
 
 12.4 Áreas atuais
@@ -1267,6 +1269,8 @@ Repositório — Criados
 • Esta referência não cria obrigação de implementar E19 agora.
 
 99. Changelog
+v1.5.81 — 22/06/2026 — E12.3.2 concluído e validado: `/admin/documentacao` passa a leitor read-only protegido de documentos whitelist de `docs/`, com leitura server-side por filesystem, tracing explícito dos arquivos permitidos, UI responsiva com filtro/dropdown e sem Supabase, migrations, GitHub API em runtime, edição ou mutações.
+
 v1.5.80 — 22/06/2026 — E10.7 Fase 2 concluída e validada: geração administrativa server-side de draft comercial por IA, draft real criado como `status = draft` para o taxon piloto, validação em duas camadas, fontes `business_buyer` registradas, `end_customer` apenas em `provenance_json`, falha segura por arquivamento/invalidação de draft parcial e sem publicação, `published`, Account Dashboard ou `/a/[account]`.
 
 v1.5.79 — 22/06/2026 — E12 registra o refinamento 12.3.2 em implementação: `/admin/documentacao` como leitor read-only protegido para whitelist de documentos de `docs/`, sem Supabase, migrations, GitHub API em runtime, edição ou mutações.
