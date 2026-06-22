@@ -112,6 +112,7 @@ Exemplos: logs, tracing, métricas, alertas, auditoria, aprovação humana, roll
 
 * Começar por automação simples sempre que o fluxo for linear, previsível e com passos conhecidos.
 * Usar Responses API quando a IA precisar gerar, classificar, resumir ou estruturar resposta dentro de um fluxo controlado.
+* A E10.7 Fase 2 confirma que geração administrativa linear de draft comercial deve começar por Responses API com Structured Outputs, sem Agents SDK, Sandbox Agents, job, fila ou agente enquanto não houver decisão adaptativa real.
 * Modelo de IA deve ser configurável por env var e avaliado por caso de uso: fluxo linear ou administrativo começa por modelo mini/custo-benefício; agente real de dashboard, com múltiplas etapas, tools, decisões, validação e rastreabilidade, pode avaliar GPT-5.2, GPT-5.5 ou superior após teste de custo, qualidade e segurança; nenhum modelo vira padrão único do projeto sem validação prática.
 * Avaliar Agents SDK apenas quando houver decisão adaptativa real, uso coordenado de tools, lacunas, revisão, handoffs, sessões ou tracing.
 * Tratar Sandbox Agents como laboratório técnico em beta para arquivos, comandos, workspace, testes, patches e artefatos.

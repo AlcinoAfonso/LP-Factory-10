@@ -2,7 +2,7 @@
 
 0.1 Cabeçalho
 • Data: 22/06/2026
-• Versão: v1.5.79
+• Versão: v1.5.80
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -762,8 +762,8 @@ Repositório — Ajustados
 • Implementar detecção por ambiente somente se o ganho justificar a complexidade.
 
 10.7 Páginas comerciais personalizadas por nicho
-• Status: Em execução faseada — Fase 1 concluída e validada em 21/06/2026.
-• Próxima execução: Fase 2 — geração IA com `version = 1` e quatro blocos fixos.
+• Status: Em execução faseada — Fase 2 concluída e validada em 22/06/2026.
+• Próxima execução: Fase 3 — operação administrativa mínima em `/admin/templates`.
 • Objetivo: gerar, revisar, publicar e consumir páginas comerciais por taxon; a IA roda apenas em operação administrativa; `/a/[account]` consome artefato publicado e validado; ausência de conteúdo nichado não pode quebrar `/a/[account]`.
 • Dependência estrutural: a E18 define os contratos reutilizáveis mínimos; a E10.7 aplica, valida e ajusta esses contratos no caso comercial concreto.
 • A página genérica `generic-v1` da E10.6 permanece concluída e será o fallback obrigatório.
@@ -790,21 +790,16 @@ Repositório — Ajustados
   • Repositório — Criados: `supabase/migrations/20260621162400_e10_7_admin_artifact_write_publish.sql`; `supabase/migrations/20260621181742_e10_7_fix_research_sources_policy_name.sql`; `supabase/snippets/e10_7_admin_artifact_write_publish_verify.sql`
   • Repositório — Ajustados: `docs/schema.md`
 
-10.7.3 Fase 2 — Geração IA com version 1 e quatro blocos fixos
-• Escopo: gerar conteúdo da página comercial do taxon piloto usando IA server-side/Admin; sem publicação, sem consumo em `/a/[account]`, sem Account Dashboard, sem UI completa em `/admin/templates`, sem LP Builder e sem IA em runtime público.
-• Recurso de IA aprovado: fluxo server-side/Admin com Responses API ou padrão equivalente já existente, structured output e validação; não usar Agents SDK, Sandbox Agents, job, fila ou agente nesta fase.
-• Entrada obrigatória: taxon ativo; template `commercial_activation`; composição ativa `version = 1`; itens da composição; 8 pesquisas `active version 1`; itens estruturados ativos; dados comerciais oficiais da LP Factory; schema esperado do `content_json`; regras editoriais.
-• Leituras server-side via Supabase Data API/PostgREST devem seguir o padrão técnico vigente do projeto quando aplicável; `public.plans` é fonte canônica parcial para dados comerciais oficiais.
-• A IA só pode gerar JSON compatível com `CommercialActivationContentV1`; não pode gerar HTML, JSX, CSS, Tailwind, scripts, módulos livres, variantes livres ou ordem das seções.
-• A IA não pode inventar planos, preços, garantias, condições, URLs ou promessas.
-• CTAs não podem inventar checkout nem URL comercial: usar apenas `href` interno seguro já existente ou permitido pelo template/composição; sem `href` aprovado, bloquear antes de persistir.
-• Validação obrigatória em duas camadas: envelope `CommercialActivationContentV1` e `section.content` contra o schema da `variant_key` correspondente no registry, respeitando os `composition_items` permitidos.
-• A fonte canônica dos dados comerciais oficiais precisa existir antes da geração; sem fonte canônica suficiente, a geração deve omitir o item permitido pelo schema ou falhar de forma segura.
-• Persistência esperada: `audience_scope = business_buyer`, `template_version = 1`, `composition_version = 1`, `research_version = 1`, `status = draft`, `artifact_version = próxima versão disponível`, primeira geração podendo usar `artifact_version = 1`, regenerações incrementando `artifact_version`, `content_json` validado, `provenance_json` com `business_buyer` e `end_customer`, e `content_artifact_research_sources` somente com fontes `business_buyer`.
-• Consultas novas de validação devem ser versionadas como snippets read-only em `supabase/snippets/*` quando aplicável.
-• Logs seguros: registrar evento, `request_id`, `taxon_id`, `status`, `artifact_version` e erro seguro; não registrar prompt completo, pesquisas brutas, payload sensível ou resposta integral da IA.
-• Limite estrutural: sem nova tabela, view, função, grants, mudança de acesso, alteração da hierarquia de taxons ou alteração de `research_version`; se a Fase 2 exigir qualquer item estrutural, parar e devolver ao Estrategista antes de implementar.
-• Critério de passagem: draft gerado, JSON validado, `artifact_version` correto, dados comerciais não inventados, `provenance_json` completo, `end_customer` fora de `content_artifact_research_sources`, falha da IA sem alterar `published` vigente e sem consumo no Account Dashboard ainda.
+10.7.3 Fase 2 — Geração IA administrativa de draft comercial
+• Status: Concluída e validada em 22/06/2026.
+• Resultado: geração server-side/Admin de draft comercial por taxon concluída para o taxon piloto; draft real criado em `content_artifacts` com `status = draft`, sem publicação e sem consumo em `/a/[account]`.
+• Evidência validada: artifact `c95e52ea-b4b3-44af-b5a5-aedd48a1ba0f`, `artifact_version = 1`, `audience_scope = business_buyer`, `research_version = 1`, `content_json` com 8 seções e `validation_status = ready`.
+• Persistência e proveniência: `content_artifact_research_sources` recebeu somente 4 fontes `business_buyer`; `end_customer` permanece apenas em `provenance_json`; `public.plans` foi usado como fonte parcial de planos.
+• Falha segura: se o insert das fontes falhar após criar o artifact, o draft recém-criado é arquivado/invalidado e o fluxo retorna erro seguro.
+• Fora do escopo preservado: publicação, alteração em `published`, Account Dashboard, `/a/[account]`, UI completa em `/admin/templates`, LP Builder, Agents SDK, Sandbox Agents, job, fila, agente, IA em runtime público, nova tabela, view, função, grant, policy, migration, hierarquia de taxons e `research_version`.
+• Critério de passagem: cumprido; snippet `supabase/snippets/e10_7_phase_2_draft_verify.sql` retornou todas as linhas com `check_status = ok`, `published_count = 0` e nenhum draft válido sem fontes relacionais.
+• Estruturas e artefatos:
+  • Repositório — Criados: `app/admin/(protected)/templates/actions.ts`; `lib/conversion-content/commercial-activation/draft-generation.ts`; `supabase/snippets/e10_7_phase_2_draft_verify.sql`
 
 10.7.4 Fase 3 — Operação administrativa mínima
 • Escopo: implementar operação mínima em `/admin/templates`, permitindo gerar, regenerar, visualizar e publicar.
@@ -1271,6 +1266,8 @@ Repositório — Criados
 • Esta referência não cria obrigação de implementar E19 agora.
 
 99. Changelog
+v1.5.80 — 22/06/2026 — E10.7 Fase 2 concluída e validada: geração administrativa server-side de draft comercial por IA, draft real criado como `status = draft` para o taxon piloto, validação em duas camadas, fontes `business_buyer` registradas, `end_customer` apenas em `provenance_json`, falha segura por arquivamento/invalidação de draft parcial e sem publicação, `published`, Account Dashboard ou `/a/[account]`.
+
 v1.5.79 — 22/06/2026 — E12 registra o refinamento 12.3.2 em implementação: `/admin/documentacao` como leitor read-only protegido para whitelist de documentos de `docs/`, sem Supabase, migrations, GitHub API em runtime, edição ou mutações.
 v1.5.78 — 22/06/2026 — E12 registra o refinamento 12.3.1 concluído e validado: `/admin` passa a entrada pública do Admin Dashboard, subrotas internas seguem protegidas por `app/admin/(protected)/layout.tsx`.
 v1.5.77 — 21/06/2026 — E10.7 Fase 2: critérios de IA, validação e logs.
