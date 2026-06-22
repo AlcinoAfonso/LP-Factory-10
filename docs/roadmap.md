@@ -2,7 +2,7 @@
 
 0.1 Cabeçalho
 • Data: 22/06/2026
-• Versão: v1.5.80
+• Versão: v1.5.79
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -1272,8 +1272,6 @@ Repositório — Criados
 • Esta referência não cria obrigação de implementar E19 agora.
 
 99. Changelog
-v1.5.80 — 22/06/2026 — E10.7: melhoria futura de mapa editorial por seção.
-• Registrada pendência/melhoria futura para avaliar mapa editorial mínimo por seção na geração IA de drafts comerciais.
 v1.5.79 — 22/06/2026 — E12 registra o refinamento 12.3.2 em implementação: `/admin/documentacao` como leitor read-only protegido para whitelist de documentos de `docs/`, sem Supabase, migrations, GitHub API em runtime, edição ou mutações.
 v1.5.78 — 22/06/2026 — E12 registra o refinamento 12.3.1 concluído e validado: `/admin` passa a entrada pública do Admin Dashboard, subrotas internas seguem protegidas por `app/admin/(protected)/layout.tsx`.
 v1.5.77 — 21/06/2026 — E10.7 Fase 2: critérios de IA, validação e logs.
