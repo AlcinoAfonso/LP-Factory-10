@@ -1,4 +1,3 @@
-import { AdminPageHeader } from '@/components/admin/AdminPageHeader';
 import { adminDocsCatalog } from '@/lib/admin/docsCatalog';
 import { readRepoDoc } from '@/lib/admin/readRepoDoc';
 
@@ -24,24 +23,26 @@ export default async function AdminDocumentationPage({
     ? result.doc.id
     : selectedId;
   const normalizedQuery = query.toLowerCase();
-  const selectableDocs = normalizedQuery
+  const matchingDocs = normalizedQuery
     ? adminDocsCatalog.filter((doc) => {
         const searchable = `${doc.title} ${doc.path} ${doc.description}`.toLowerCase();
 
         return searchable.includes(normalizedQuery);
       })
     : adminDocsCatalog;
+  const selectableDocs = [...matchingDocs].sort((a, b) => a.title.localeCompare(b.title, 'pt-BR'));
 
   return (
-    <div className="space-y-6">
-      <AdminPageHeader
-        title="Documentacao"
-        description="Leitura read-only dos documentos operacionais do projeto."
-        meta={`${adminDocsCatalog.length} documentos`}
-      />
+    <div className="space-y-4">
+      <section className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <h1 className="text-2xl font-semibold tracking-tight text-foreground">Documentação</h1>
+        <span className="inline-flex w-fit shrink-0 whitespace-nowrap rounded-md border border-border bg-card px-2.5 py-1 text-xs font-medium text-muted-foreground">
+          {adminDocsCatalog.length} documentos
+        </span>
+      </section>
 
       <section className="rounded-lg border border-border bg-card shadow-card">
-        <div className="px-4 py-4">
+        <div className="px-4 py-3">
           <form action="/admin/documentacao" className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_320px_auto]">
             <label className="space-y-1">
               <span className="text-xs font-medium text-muted-foreground">Filtrar documentos</span>
@@ -75,12 +76,6 @@ export default async function AdminDocumentationPage({
               </button>
             </div>
           </form>
-
-          <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-            <span>{selectableDocs.length} de {adminDocsCatalog.length} documentos na whitelist.</span>
-            <span aria-hidden="true">-</span>
-            <span>Sem edicao, salvamento, publicacao, banco ou GitHub API.</span>
-          </div>
         </div>
       </section>
 
@@ -88,14 +83,12 @@ export default async function AdminDocumentationPage({
         <div className="border-b border-border px-4 py-4">
           {result.status === 'ok' || result.status === 'error' ? (
             <>
-              <p className="text-xs font-medium uppercase text-muted-foreground">Documento aberto</p>
-              <h2 className="mt-1 text-xl font-semibold tracking-tight text-foreground">{result.doc.title}</h2>
+              <h2 className="text-xl font-semibold tracking-tight text-foreground">{result.doc.title}</h2>
               <p className="mt-2 break-all font-mono text-xs text-muted-foreground">{result.doc.path}</p>
             </>
           ) : (
             <>
-              <p className="text-xs font-medium uppercase text-muted-foreground">Documento bloqueado</p>
-              <h2 className="mt-1 text-xl font-semibold tracking-tight text-foreground">Leitura nao autorizada</h2>
+              <h2 className="text-xl font-semibold tracking-tight text-foreground">Leitura nao autorizada</h2>
               <p className="mt-2 break-all font-mono text-xs text-muted-foreground">
                 {result.requestedId || 'sem identificador'}
               </p>
