@@ -64,6 +64,17 @@ export const adminAreas: AdminArea[] = [
       'Rastreamento operacional sem mutações',
     ],
   },
+  {
+    title: 'Documentação',
+    href: '/admin/documentacao',
+    description: 'Leitura read-only dos documentos operacionais do projeto.',
+    status: 'Disponível',
+    scope: [
+      'Lista de documentos permitidos por whitelist',
+      'Leitura read-only do conteúdo',
+      'Sem edição, banco ou integração com GitHub API',
+    ],
+  },
 ];
 
 export function getAdminArea(href: string) {

@@ -2,7 +2,7 @@
 
 0.1 Cabeçalho
 • Data: 22/06/2026
-• Versão: v1.5.78
+• Versão: v1.5.79
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -867,16 +867,25 @@ Repositório — Ajustados
 • As subrotas internas continuam protegidas pelo gate administrativo deslocado para `app/admin/(protected)/layout.tsx`.
 • `/admin/contas` permanece como destino pós-login do admin.
 
+12.3.2 Leitor read-only de documentação do repositório no Admin Dashboard
+• Status: Em implementação.
+• `/admin/documentacao` é uma área protegida pelo gate administrativo existente.
+• A página lista uma whitelist fixa de documentos de `docs/` e permite leitura read-only do conteúdo.
+• A leitura usa filesystem server-side do repositório, com inclusão explícita dos arquivos permitidos no tracing da rota.
+• Não usa Supabase, migrations, GitHub API em runtime, edição, salvamento, publicação ou mutações.
+
 12.4 Áreas atuais
 • Contas
 • Resoluções de nicho
 • Taxonomia
 • Templates
+• Documentação
 • Auditoria
 
 12.5 Artefatos principais
 
 Criados:
+• `app/admin/(protected)/documentacao/page.tsx`
 • `app/admin/(protected)/contas/page.tsx`
 • `app/admin/(protected)/contas/[accountId]/page.tsx`
 • `app/admin/(protected)/resolucoes-de-nicho/page.tsx`
@@ -896,12 +905,16 @@ Criados:
 • `lib/admin/adapters/adminReadOnlyHelpers.ts`
 • `lib/admin/adapters/adminReadOnlyTypes.ts`
 • `lib/admin/adapters/adminTaxonomyAdapter.ts`
+• `lib/admin/docsCatalog.ts`
+• `lib/admin/readRepoDoc.ts`
 
 Ajustados:
 • `app/admin/layout.tsx`
 • `app/admin/page.tsx`
 • `components/admin/AdminHeader.tsx`
 • `components/admin/AdminUserMenu.tsx`
+• `components/admin/adminNavigation.ts`
+• `next.config.js`
 
 12.6 Pendências
 • Templates e Auditoria permanecem como áreas previstas.
@@ -1258,6 +1271,7 @@ Repositório — Criados
 • Esta referência não cria obrigação de implementar E19 agora.
 
 99. Changelog
+v1.5.79 — 22/06/2026 — E12 registra o refinamento 12.3.2 em implementação: `/admin/documentacao` como leitor read-only protegido para whitelist de documentos de `docs/`, sem Supabase, migrations, GitHub API em runtime, edição ou mutações.
 v1.5.78 — 22/06/2026 — E12 registra o refinamento 12.3.1 concluído e validado: `/admin` passa a entrada pública do Admin Dashboard, subrotas internas seguem protegidas por `app/admin/(protected)/layout.tsx`.
 v1.5.77 — 21/06/2026 — E10.7 Fase 2: critérios de IA, validação e logs.
 • Incorporados pareceres de Updates e Automations para a Fase 2.
