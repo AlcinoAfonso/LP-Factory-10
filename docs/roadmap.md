@@ -2,7 +2,7 @@
 
 0.1 Cabeçalho
 • Data: 22/06/2026
-• Versão: v1.5.79
+• Versão: v1.5.80
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -812,6 +812,7 @@ Repositório — Ajustados
 • Estado visual: “em revisão” = `draft` existente ainda não publicado.
 • Publicação: publicar exige operação segura; arquivar `published` anterior e publicar novo `draft` na mesma operação transacional; não pode deixar dois `published`; não pode deixar o taxon sem `published` por falha intermediária; se a transação falhar, o estado anterior deve permanecer válido; caminho preferencial é RPC/função transacional ou mecanismo equivalente no banco.
 • Critério de passagem: admin gera draft, visualiza draft e publica draft; `published` anterior vira `archived` na mesma operação; fluxo exige permissão administrativa e funciona sem sobrescrita destrutiva.
+• Pendência/melhoria futura não bloqueante: avaliar mapa editorial mínimo por seção para orientar a IA e reduzir interpretação livre na geração de drafts comerciais — hero: dor principal + transformação desejada + nicho; benefícios: dores e ganhos do `business_buyer`; serviços: necessidades operacionais do taxon; planos: `public.plans` somente; FAQ: objeções e dúvidas recorrentes; CTA: ação genérica segura, sem promessa ou checkout.
 
 10.7.5 Fase 4 — Consumo no Account Dashboard
 • Escopo: renderizar página publicada sem IA em runtime; identificar taxon original da conta; consultar bundle próprio; se não houver, tentar ancestral quando existir; se não houver, usar `generic-v1`; renderizar com `CommercialActivationRenderer`; preservar `NicheResolutionCard`; preservar tracking existente.
@@ -1271,6 +1272,8 @@ Repositório — Criados
 • Esta referência não cria obrigação de implementar E19 agora.
 
 99. Changelog
+v1.5.80 — 22/06/2026 — E10.7: melhoria futura de mapa editorial por seção.
+• Registrada pendência/melhoria futura para avaliar mapa editorial mínimo por seção na geração IA de drafts comerciais.
 v1.5.79 — 22/06/2026 — E12 registra o refinamento 12.3.2 em implementação: `/admin/documentacao` como leitor read-only protegido para whitelist de documentos de `docs/`, sem Supabase, migrations, GitHub API em runtime, edição ou mutações.
 v1.5.78 — 22/06/2026 — E12 registra o refinamento 12.3.1 concluído e validado: `/admin` passa a entrada pública do Admin Dashboard, subrotas internas seguem protegidas por `app/admin/(protected)/layout.tsx`.
 v1.5.77 — 21/06/2026 — E10.7 Fase 2: critérios de IA, validação e logs.
