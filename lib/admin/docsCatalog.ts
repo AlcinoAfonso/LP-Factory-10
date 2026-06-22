@@ -37,6 +37,12 @@ export const adminDocsCatalog: AdminDocCatalogItem[] = [
     description: 'Estado de adocao, decisoes praticas e recursos aprovados.',
   },
   {
+    id: 'gestor-automations',
+    title: 'Gestor Automations',
+    path: 'docs/gestor-automations.md',
+    description: 'Painel de avaliação de automações, agentes, services e tecnologias adjacentes.',
+  },
+  {
     id: 'automations',
     title: 'Automations',
     path: 'docs/automations.md',
