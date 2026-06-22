@@ -2,8 +2,8 @@
 
 0.1. Cabeçalho
 • Documento: Base Técnica LP Factory 10
-• Versão: v2.0.42
-• Data: 16/06/2026
+• Versão: v2.0.43
+• Data: 22/06/2026
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -309,6 +309,21 @@
 • A validação deve ocorrer no servidor antes da renderização.
 • Casos executáveis: `npm run validate:commercial-activation`.
 
+3.15.1 Geração administrativa de draft de `commercial_activation`
+• Path canônico do adapter de geração: `lib/conversion-content/commercial-activation/draft-generation.ts`.
+• Entrada administrativa canônica: `app/admin/(protected)/templates/actions.ts`, protegida por `requirePlatformAdmin()`.
+• A geração deve ser server-side/Admin, usando `createServiceClient()` para leituras e persistência permitidas pelo contrato de banco.
+• Recurso de IA aprovado para fluxo linear de draft: OpenAI Responses API com Structured Outputs; o modelo deve ser configurado por `OPENAI_COMMERCIAL_ACTIVATION_MODEL`.
+• O fluxo não deve depender de Agents SDK, Sandbox Agents, job, fila, agente ou IA em runtime público.
+• Fontes de entrada permitidas: taxon, pesquisa ativa `business_buyer`, contexto `end_customer` apenas para proveniência, composição/variantes de `commercial_activation` e `public.plans` como fonte parcial de planos.
+• `public.plans` só é fonte canônica parcial para `name`, `price_monthly`, `max_lps`, `max_conversions` e `features`; não é fonte para garantias, condições comerciais, checkout, promessas, descontos ou promoções.
+• Antes da persistência, validar em duas camadas: envelope `CommercialActivationContentV1` e cada `section.content` contra o schema registrado para a `variant_key` permitida pela composição.
+• Persistir apenas `status = draft`; publicação e alteração de `published` pertencem a fluxo transacional próprio.
+• `content_artifact_research_sources` deve receber somente fontes relacionais `business_buyer`; contexto `end_customer` permanece apenas em `provenance_json`.
+• CTA gerado deve usar `href` interno seguro aprovado pelo servidor; sem `href` seguro, bloquear antes de persistir.
+• Se o insert das fontes relacionais falhar após criar o artifact, o draft recém-criado deve ser arquivado/invalidado e o fluxo deve retornar erro seguro, sem parecer concluído.
+• Logs devem registrar somente metadados operacionais seguros; não registrar prompt completo, pesquisa bruta, payload sensível ou resposta integral da IA.
+
 4. DB Contract - Fonte única: PATH: docs/schema.md
 • Este documento não lista mais tabelas/views/functions/triggers/policies; isso está em PATH: docs/schema.md.
 • Trigger Hub é regra do contrato de DB (governança/auditoria). Fonte única e detalhes: PATH: docs/schema.md (seções 3.5 e 4.1).
@@ -456,6 +471,8 @@ Fonte normativa da allowlist SULB para exceções de Auth. Qualquer novo arquivo
 • Tipos canônicos e adapters vNext: validar por 3.6 e 3.14.
 
 99. Changelog
+v2.0.43 — 22/06/2026 — Registrado o contrato técnico da geração administrativa de draft `commercial_activation`: fluxo server-side/Admin com Responses API e Structured Outputs, modelo por env var, validação em duas camadas, persistência somente como `draft`, fontes relacionais `business_buyer`, `end_customer` apenas em `provenance_json` e compensação segura em falha parcial.
+
 v2.0.42 — 16/06/2026 — Registrado o contrato técnico do renderer composicional de `commercial_activation`, com `content_json` v1, validação Zod estrita, registry fechado, regras de falha e conteúdo estruturado seguro.
 
 v2.0.41 — 12/06/2026 — Concluído o fluxo universal de migrations Supabase: merge na `main` aplica migrations automaticamente com gate `true`; SQL Editor excluído do fluxo normal e histórico definido como forward-only, com reversões por nova migration.

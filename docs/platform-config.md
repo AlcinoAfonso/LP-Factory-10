@@ -2,8 +2,8 @@
 
 0.1 Cabeçalho
 • Documento: LP Factory 10 — Platform Config
-• Versão: v0.1.4
-• Data: 12/06/2026
+• Versão: v0.1.5
+• Data: 22/06/2026
 
 0.2 Contrato do documento
 • O QUE É: snapshot operacional e fonte única das configurações de plataformas externas do LP Factory 10, refletindo o estado conhecido/cadastrado nas plataformas conforme indicado.
@@ -145,6 +145,11 @@
 • Valor atual de referência: `gpt-5.4-mini`
 • Regra: deve conter apenas o ID do modelo; nunca inserir `OPENAI_API_KEY` nessa variável.
 
+• `OPENAI_COMMERCIAL_ACTIVATION_MODEL`
+• Finalidade: modelo usado pela geração administrativa server-side de drafts `commercial_activation` da E10.7.
+• Escopo: Vercel Preview/Production, conforme necessidade do recurso.
+• Valor real: não versionar.
+
 • `LPF_MCP_SECRET`
 • Finalidade: secret Bearer usado para autenticar chamadas ao MCP Supabase Inspect.
 • Projeto Vercel: `lpf-10-services`.
@@ -248,9 +253,15 @@
 • Finalidade: selecionar modelo do resolvedor IA de nicho.
 • Valor atual de referência: `gpt-5.4-mini`
 
+• `OPENAI_COMMERCIAL_ACTIVATION_MODEL`
+• Plataforma: Vercel.
+• Finalidade: selecionar o modelo usado pela geração administrativa server-side de drafts `commercial_activation`.
+• Valor real: não versionar.
+
 6.3.1 Endpoint externo atual
 • Endpoint OpenAI Responses API: `https://api.openai.com/v1/responses`
 • Consumidores atuais conhecidos:
+• `lib/conversion-content/commercial-activation/draft-generation.ts`
 • `lib/onboarding/niche-resolution/adapters/openAiResolver.ts`
 • `automations/supabase-inspect/run.mjs`
 • Regra: novas APIs ou endpoints OpenAI devem ser registrados aqui quando virarem dependência operacional.
@@ -330,6 +341,8 @@
 • Configurações de plataformas, secrets por nome, workflows, ambientes e endpoints usados por automações devem ser registrados neste documento.
 
 99. Changelog
+v0.1.5 (22/06/2026) — Registrada a variável `OPENAI_COMMERCIAL_ACTIVATION_MODEL` como configuração server-side da geração administrativa de drafts `commercial_activation`, sem versionar valor real nem modelo padrão definitivo.
+
 v0.1.4 (12/06/2026) — Apply automático de migrations Supabase liberado
 • Registrado `SUPABASE_APPLY_MIGRATIONS_ENABLED = true` como estado operacional normal.
 • Consolidado o fluxo PR, merge na `main` e apply automático.
