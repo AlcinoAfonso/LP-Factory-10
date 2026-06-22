@@ -295,9 +295,9 @@ Referências / dependências:
 Regra técnica: `docs/base-tecnica.md`
 Status funcional: `docs/roadmap.md`
 Configuração de modelo: `docs/platform-config.md`
-
-Nota de descontinuação:
-O experimento Agent Investigator foi descontinuado porque as capacidades necessárias passaram a ser atendidas pelos plugins oficiais do Codex App.
+Action administrativa: `app/admin/(protected)/templates/actions.ts`
+Adapter de geração: `lib/conversion-content/commercial-activation/draft-generation.ts`
+Snippet de validação: `supabase/snippets/e10_7_phase_2_draft_verify.sql`
 
 4. Aprendizados operacionais
 4.1 Princípios identificados
