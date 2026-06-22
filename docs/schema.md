@@ -2,7 +2,7 @@
 
 0.1 Cabeçalho
 • Data da última atualização: 21/06/2026
-• Documento: LP Factory 10 — Schema (DB Contract) v1.0.26
+• Documento: LP Factory 10 — Schema (DB Contract) v1.0.27
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -80,6 +80,7 @@
 1.4.2 Segurança
 • Trigger Hub: não
 • RLS: conforme uso (geralmente read-only)
+• Grants: `authenticated` com SELECT; `service_role` com SELECT para leitura server-side administrativa da E10.7.
 1.4.3 Policies (TBD: preencher nomes reais no Supabase)
 • Select: público autenticado (se aplicável) ou somente admins
 
@@ -792,6 +793,9 @@
 • Rollback: não remove automaticamente a extensão, pois pode ser reutilizada por outros recursos
 
 99. Changelog
+v1.0.27 (22/06/2026) — E10.7 Fase 1D: leitura server-side de `plans`
+• Registrado grant mínimo de SELECT em `public.plans` para `service_role`, viabilizando leitura server-side administrativa da fonte canônica parcial de planos.
+
 v1.0.26 (21/06/2026) — E10.7 Fase 1B: plans como fonte canônica parcial
 • Registrados `price_monthly` e `features` na tabela `plans`.
 • Registrado que `plans` é fonte canônica parcial para name, price_monthly, max_lps, max_conversions e features; demais condições comerciais permanecem fora desta fonte.
