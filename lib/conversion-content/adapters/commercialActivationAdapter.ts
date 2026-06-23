@@ -13,6 +13,7 @@ import {
   mapPublishedContentArtifact,
 } from "../validation";
 import { resolveCommercialActivationHierarchicalBundle } from "../commercial-activation/hierarchical-resolve";
+import { resolveCommercialActivationRenderModel } from "../commercial-activation/resolve";
 
 const TEMPLATE_COLUMNS =
   "id,template_key,name,slug,template_family,template_scope,status,version,is_active,payload_json";
@@ -122,6 +123,24 @@ export async function getCommercialActivationBundle(input: {
       artifact.templateVersion !== composition.template.version ||
       artifact.compositionVersion !== composition.version
     ) {
+      return { status: "artifact_invalid" };
+    }
+
+    const renderModel = resolveCommercialActivationRenderModel({
+      composition,
+      contentJson: artifact.content,
+      logSafeWarning: (_message, details) => {
+        console.warn("commercial activation optional section omitted", details);
+      },
+    });
+
+    if (renderModel.status !== "ready") {
+      console.warn("commercial activation published artifact invalid", {
+        reason: renderModel.reason,
+        artifactId: artifact.id,
+        taxonId,
+      });
+
       return { status: "artifact_invalid" };
     }
 

@@ -355,6 +355,26 @@ const cases: Case[] = [
     },
   },
   {
+    name: "hierarchical resolver falls back when published artifact is invalid",
+    run: async () => {
+      const result = await resolveCommercialActivationHierarchicalBundle({
+        taxonId: taxonIds.original,
+        readTaxon: async (taxonId) => taxonHierarchy.get(taxonId) ?? null,
+        readBundle: async ({ taxonId }): Promise<CommercialActivationBundleResult> =>
+          taxonId === taxonIds.original
+            ? { status: "artifact_invalid" }
+            : { status: "composition_not_found" },
+      });
+
+      assert.deepEqual(result, {
+        status: "fallback_no_ready_bundle",
+        original_taxon_id: taxonIds.original,
+        resolved_content_taxon_id: null,
+        bundle: null,
+      });
+    },
+  },
+  {
     name: "hierarchical resolver returns safe fallback on read error",
     run: async () => {
       const result = await resolveCommercialActivationHierarchicalBundle({
