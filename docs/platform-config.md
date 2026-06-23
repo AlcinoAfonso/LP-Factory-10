@@ -2,8 +2,8 @@
 
 0.1 Cabeçalho
 • Documento: LP Factory 10 — Platform Config
-• Versão: v0.1.5
-• Data: 22/06/2026
+• Versão: v0.1.6
+• Data: 23/06/2026
 
 0.2 Contrato do documento
 • O QUE É: snapshot operacional e fonte única das configurações de plataformas externas do LP Factory 10, refletindo o estado conhecido/cadastrado nas plataformas conforme indicado.
@@ -147,8 +147,11 @@
 
 • `OPENAI_COMMERCIAL_ACTIVATION_MODEL`
 • Finalidade: modelo usado pela geração administrativa server-side de drafts `commercial_activation` da E10.7.
-• Escopo: Vercel Preview/Production, conforme necessidade do recurso.
-• Valor real: não versionar.
+• Escopo validado: Preview.
+• Valor atual de referência em Preview: `gpt-5.4-mini`
+• Production: pendente de decisão operacional antes de configurar.
+• Valor real de secret: não versionar.
+• Regra: deve conter apenas o ID do modelo; nunca inserir `OPENAI_API_KEY` nessa variável.
 
 • `LPF_MCP_SECRET`
 • Finalidade: secret Bearer usado para autenticar chamadas ao MCP Supabase Inspect.
@@ -341,6 +344,8 @@
 • Configurações de plataformas, secrets por nome, workflows, ambientes e endpoints usados por automações devem ser registrados neste documento.
 
 99. Changelog
+v0.1.6 — 23/06/2026 — Registrado o estado operacional de `OPENAI_COMMERCIAL_ACTIVATION_MODEL` para E10.7 Fase 3: configurada e validada em Vercel Preview com modelo de referência, Production pendente de decisão operacional e sem exposição de secrets.
+
 v0.1.5 (22/06/2026) — Registrada a variável `OPENAI_COMMERCIAL_ACTIVATION_MODEL` como configuração server-side da geração administrativa de drafts `commercial_activation`, sem versionar valor real nem modelo padrão definitivo.
 
 v0.1.4 (12/06/2026) — Apply automático de migrations Supabase liberado
