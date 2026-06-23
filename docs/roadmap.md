@@ -1,8 +1,8 @@
 0. Introdução
 
 0.1 Cabeçalho
-• Data: 22/06/2026
-• Versão: v1.5.81
+• Data: 23/06/2026
+• Versão: v1.5.82
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -762,8 +762,8 @@ Repositório — Ajustados
 • Implementar detecção por ambiente somente se o ganho justificar a complexidade.
 
 10.7 Páginas comerciais personalizadas por nicho
-• Status: Em execução faseada — Fase 2 concluída e validada em 22/06/2026.
-• Próxima execução: Fase 3 — operação administrativa mínima em `/admin/templates`.
+• Status: Em execução faseada — Fase 3 concluída, validada e mergeada em 23/06/2026.
+• Próxima execução: Fase 4 — consumo no Account Dashboard.
 • Objetivo: gerar, revisar, publicar e consumir páginas comerciais por taxon; a IA roda apenas em operação administrativa; `/a/[account]` consome artefato publicado e validado; ausência de conteúdo nichado não pode quebrar `/a/[account]`.
 • Dependência estrutural: a E18 define os contratos reutilizáveis mínimos; a E10.7 aplica, valida e ajusta esses contratos no caso comercial concreto.
 • A página genérica `generic-v1` da E10.6 permanece concluída e será o fallback obrigatório.
@@ -801,13 +801,35 @@ Repositório — Ajustados
 • Estruturas e artefatos:
   • Repositório — Criados: `app/admin/(protected)/templates/actions.ts`; `lib/conversion-content/commercial-activation/draft-generation.ts`; `supabase/snippets/e10_7_phase_2_draft_verify.sql`
 
-10.7.4 Fase 3 — Operação administrativa mínima
-• Escopo: implementar operação mínima em `/admin/templates`, permitindo gerar, regenerar, visualizar e publicar.
-• Estados persistidos: `draft`, `published` e `archived`.
-• Estado visual: “em revisão” = `draft` existente ainda não publicado.
-• Publicação: publicar exige operação segura; arquivar `published` anterior e publicar novo `draft` na mesma operação transacional; não pode deixar dois `published`; não pode deixar o taxon sem `published` por falha intermediária; se a transação falhar, o estado anterior deve permanecer válido; caminho preferencial é RPC/função transacional ou mecanismo equivalente no banco.
-• Critério de passagem: admin gera draft, visualiza draft e publica draft; `published` anterior vira `archived` na mesma operação; fluxo exige permissão administrativa e funciona sem sobrescrita destrutiva.
-• Pendência/melhoria futura não bloqueante: avaliar mapa editorial mínimo por seção para orientar a IA e reduzir interpretação livre na geração de drafts comerciais — hero: dor principal + transformação desejada + nicho; benefícios: dores e ganhos do `business_buyer`; serviços: necessidades operacionais do taxon; planos: `public.plans` somente; FAQ: objeções e dúvidas recorrentes; CTA: ação genérica segura, sem promessa ou checkout.
+10.7.4 Fase 3 — Operação administrativa mínima em `/admin/templates`
+• Status: Concluída, validada e mergeada em 23/06/2026.
+• Resultado: operação administrativa mínima validada no Preview para gerar, regenerar, visualizar e publicar drafts comerciais `commercial_activation`.
+• Implementado:
+• tela administrativa em `/admin/templates` com taxon piloto, estado de draft, published atual, cards de estado, preview e histórico de artefatos;
+• gerar/regenerar draft usando o gerador da Fase 2;
+• publicação via `publish_content_artifact_draft(uuid)`;
+• validação server-side de que o artifact recebido é o draft publicável do bundle esperado;
+• resolução compartilhada de composição por `content_template_taxons`;
+• preview administrativo usando renderer existente;
+• navegação Admin atualizada para disponibilizar Templates.
+• Estado real validado no Supabase:
+• `v3` published;
+• `v2` draft histórico não publicável;
+• `v1` archived.
+• Fora do escopo preservado: `/a/[account]`, Account Dashboard, consumo público da página nichada, fallback por ancestral, segundo taxon, LP Builder, edição visual avançada, Agents SDK, Sandbox Agents, job, fila, agente, IA em runtime público, nova tabela, nova migration, nova função, novo grant, nova policy, alteração de `research_version`, liberação de LPs, continuidade de contas e bloqueio de ativações.
+• Próxima fase: E10.7 Fase 4 — consumo no Account Dashboard, usando apenas artifact `published` e nunca `draft`.
+
+10.7.4.1 Estruturas e artefatos
+
+Repositório — Criados
+• `lib/admin/adapters/adminCommercialActivationTemplatesAdapter.ts`
+• `lib/conversion-content/commercial-activation/composition.ts`
+
+Repositório — Ajustados
+• `app/admin/(protected)/templates/page.tsx`
+• `app/admin/(protected)/templates/actions.ts`
+• `components/admin/adminNavigation.ts`
+• `lib/conversion-content/commercial-activation/draft-generation.ts`
 
 10.7.5 Fase 4 — Consumo no Account Dashboard
 • Escopo: renderizar página publicada sem IA em runtime; identificar taxon original da conta; consultar bundle próprio; se não houver, tentar ancestral quando existir; se não houver, usar `generic-v1`; renderizar com `CommercialActivationRenderer`; preservar `NicheResolutionCard`; preservar tracking existente.
@@ -1269,6 +1291,8 @@ Repositório — Criados
 • Esta referência não cria obrigação de implementar E19 agora.
 
 99. Changelog
+v1.5.82 — 23/06/2026 — E10.7 Fase 3 concluída com operação administrativa mínima em `/admin/templates`: geração/regeneração de draft, preview administrativo, publicação via RPC existente, validação server-side do draft publicável, resolução compartilhada por `content_template_taxons` e estado real validado com `v3` published, `v2` draft histórico e `v1` archived.
+
 v1.5.81 — 22/06/2026 — E12.3.2 concluído e validado: `/admin/documentacao` passa a leitor read-only protegido de documentos whitelist de `docs/`, com leitura server-side por filesystem, tracing explícito dos arquivos permitidos, UI responsiva com filtro/dropdown e sem Supabase, migrations, GitHub API em runtime, edição ou mutações.
 
 v1.5.80 — 22/06/2026 — E10.7 Fase 2 concluída e validada: geração administrativa server-side de draft comercial por IA, draft real criado como `status = draft` para o taxon piloto, validação em duas camadas, fontes `business_buyer` registradas, `end_customer` apenas em `provenance_json`, falha segura por arquivamento/invalidação de draft parcial e sem publicação, `published`, Account Dashboard ou `/a/[account]`.
