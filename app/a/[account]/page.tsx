@@ -1,8 +1,11 @@
 import { getAccessContext } from "@/lib/access/getAccessContext";
+import { getCommercialActivationHierarchicalBundle } from "@/conversion-content";
 import { getActionableNicheResolutionForAccount } from "../../../lib/onboarding/niche-resolution/adapters/accountNicheResolutionUserAdapter";
+import { getActivePrimaryAccountTaxon } from "../../../lib/onboarding/niche-resolution/adapters/accountTaxonomyAdapter";
 import { PendingSetupFirstSteps } from "./_components/PendingSetupFirstSteps";
 import { NicheResolutionCard } from "./_components/NicheResolutionCard";
 import { GenericCommercialPage } from "./_components/commercial-page/GenericCommercialPage";
+import { PublishedCommercialActivationPage } from "./_components/commercial-page/PublishedCommercialActivationPage";
 
 type DashState = "auth" | "onboarding" | "public";
 
@@ -61,6 +64,23 @@ export default async function Page({ params }: PageProps) {
           accountStatus,
         })
       : null;
+    const primaryTaxon = accountId
+      ? await getActivePrimaryAccountTaxon({ accountId })
+      : null;
+    const commercialActivation = primaryTaxon
+      ? await getCommercialActivationHierarchicalBundle({
+          taxonId: primaryTaxon.taxonId,
+        })
+      : null;
+    const commercialPage =
+      commercialActivation?.status === "ready" && commercialActivation.bundle ? (
+        <PublishedCommercialActivationPage
+          accountSubdomain={accountSubdomain}
+          bundle={commercialActivation.bundle}
+        />
+      ) : (
+        <GenericCommercialPage accountSubdomain={accountSubdomain} />
+      );
 
     return (
       <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-10">
@@ -72,7 +92,7 @@ export default async function Page({ params }: PageProps) {
             />
           ) : null}
 
-          <GenericCommercialPage accountSubdomain={accountSubdomain} />
+          {commercialPage}
         </div>
       </main>
     );

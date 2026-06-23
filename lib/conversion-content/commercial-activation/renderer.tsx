@@ -145,6 +145,7 @@ function HeroDefault({
         <div className="mt-8 flex flex-col gap-3 sm:flex-row">
           <a
             href={content.primary_cta.href}
+            data-commercial-cta="hero"
             className="inline-flex min-h-11 items-center justify-center rounded-md bg-white px-5 py-3 text-sm font-semibold text-brand-dark-900 shadow-sm hover:bg-brand-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-brand-dark-900"
           >
             {content.primary_cta.label}
@@ -262,6 +263,8 @@ function PlansCards({
             </ul>
             <a
               href={plan.cta.href}
+              data-commercial-cta="plan_card"
+              data-commercial-plan-key={plan.key}
               className={cn(
                 "mt-6 w-full",
                 plan.highlighted ? primaryButton : secondaryButton,
@@ -354,7 +357,11 @@ function FinalCtaSimple({
       <p className="mx-auto mt-4 max-w-2xl text-sm leading-6 text-graytech-600 sm:text-base">
         {content.description}
       </p>
-      <a href={content.cta.href} className={cn(primaryButton, "mt-7")}>
+      <a
+        href={content.cta.href}
+        data-commercial-cta="final"
+        className={cn(primaryButton, "mt-7")}
+      >
         {content.cta.label}
       </a>
     </section>

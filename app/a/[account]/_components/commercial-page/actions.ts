@@ -23,8 +23,9 @@ type CommercialCtaLocation = 'hero' | 'plan_card' | 'final';
 type TrackCommercialEventInput = {
   accountSubdomain: string;
   event: CommercialEventName;
-  planKey?: CommercialPlanKey;
+  planKey?: CommercialPlanKey | string;
   ctaLocation?: CommercialCtaLocation;
+  pageVariant?: 'generic-v1' | 'commercial_activation_published';
 };
 
 const planKeys = new Set<CommercialPlanKey>(['starter', 'lite', 'pro', 'ultra']);
@@ -54,11 +55,14 @@ export async function trackCommercialEvent(
 
   const accountId = ctx.account.id;
   const properties: Record<string, string> = {
-    page_variant: GENERIC_COMMERCIAL_PAGE_VARIANT,
+    page_variant:
+      input.pageVariant === 'commercial_activation_published'
+        ? 'commercial_activation_published'
+        : GENERIC_COMMERCIAL_PAGE_VARIANT,
   };
 
   if (input.event === 'commercial_plan_cta_click') {
-    if (!input.planKey || !planKeys.has(input.planKey)) {
+    if (!input.planKey || !planKeys.has(input.planKey as CommercialPlanKey)) {
       return { ok: false };
     }
 

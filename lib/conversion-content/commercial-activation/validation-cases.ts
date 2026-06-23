@@ -8,11 +8,17 @@ import { resolveCommercialActivationHierarchicalBundle } from "./hierarchical-re
 import { resolveCommercialActivationRenderModel } from "./resolve";
 import type { CommercialActivationContentV1 } from "./schemas";
 import type {
+  CommercialActivationResearchBlock,
   CommercialActivationBundle,
   CommercialActivationBundleResult,
   CommercialActivationContentTaxon,
   ContentComposition,
+  ContentArtifactStatus,
 } from "../contracts";
+import {
+  COMMERCIAL_ACTIVATION_RESEARCH_BLOCKS,
+} from "../contracts";
+import { mapPublishedContentArtifact } from "../validation";
 
 type Case = {
   name: string;
@@ -217,6 +223,33 @@ const cases: Case[] = [
         status: "invalid",
         reason: "section_content_invalid",
       });
+    },
+  },
+  {
+    name: "artifact mapper accepts only published artifacts",
+    run: () => {
+      const artifact = makeArtifactRow("published");
+
+      const result = mapPublishedContentArtifact({
+        artifact,
+        researchSources: makeResearchSourceRows(),
+      });
+
+      assert.ok(result);
+      assert.equal(result.id, artifact.id);
+    },
+  },
+  {
+    name: "artifact mapper rejects draft and archived artifacts",
+    run: () => {
+      for (const status of ["draft", "archived"] as const) {
+        const result = mapPublishedContentArtifact({
+          artifact: makeArtifactRow(status),
+          researchSources: makeResearchSourceRows(),
+        });
+
+        assert.equal(result, null);
+      }
     },
   },
   {
@@ -451,4 +484,34 @@ function makeBundle(taxonId: string): CommercialActivationBundle {
       publishedAt: "2026-06-16T12:00:00.000Z",
     },
   };
+}
+
+function makeArtifactRow(status: ContentArtifactStatus) {
+  return {
+    id: "77777777-7777-4777-8777-777777777777",
+    template_id: commercialActivationFixtureComposition.template.id,
+    composition_id: commercialActivationFixtureComposition.id,
+    taxon_id: taxonIds.original,
+    audience_scope: "business_buyer",
+    template_version: commercialActivationFixtureComposition.template.version,
+    composition_version: commercialActivationFixtureComposition.version,
+    research_version: 1,
+    artifact_version: 1,
+    status,
+    content_json: clone(commercialActivationFixtureContent),
+    provenance_json: {},
+    published_at: status === "published" ? "2026-06-16T12:00:00.000Z" : null,
+  };
+}
+
+function makeResearchSourceRows() {
+  return COMMERCIAL_ACTIVATION_RESEARCH_BLOCKS.map(
+    (block: CommercialActivationResearchBlock, index) => ({
+      research_id: `88888888-8888-4888-8888-88888888888${index}`,
+      research: {
+        research_block: block,
+        version: 1,
+      },
+    }),
+  );
 }
