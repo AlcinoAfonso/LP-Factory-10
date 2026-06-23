@@ -6,12 +6,12 @@ import { createServiceClient } from "@/lib/supabase/service";
 import {
   COMMERCIAL_ACTIVATION_AUDIENCE_SCOPE,
   COMMERCIAL_ACTIVATION_RESEARCH_BLOCKS,
-  COMMERCIAL_ACTIVATION_TEMPLATE_FAMILY,
   type CommercialActivationResearchBlock,
   type ContentComposition,
   type ContentCompositionItem,
 } from "../contracts";
-import { mapContentComposition, isRecord } from "../validation";
+import { isRecord } from "../validation";
+import { resolveCommercialActivationCompositionForTaxon } from "./composition";
 import { commercialActivationSectionRegistry } from "./registry";
 import { resolveCommercialActivationRenderModel } from "./resolve";
 import {
@@ -25,14 +25,9 @@ const OPENAI_RESPONSES_ENDPOINT = "https://api.openai.com/v1/responses";
 export const COMMERCIAL_ACTIVATION_PILOT_TAXON_SLUG =
   "corretor-de-imoveis-de-medio-padrao";
 const RESEARCH_VERSION = 1;
-const TEMPLATE_VERSION = 1;
-const COMPOSITION_VERSION = 1;
 const SAFE_CTA_HREF = "/auth/sign-up";
 const MODEL_ENV_NAME = "OPENAI_COMMERCIAL_ACTIVATION_MODEL";
 const MAX_GENERATION_ATTEMPTS = 2;
-
-const TEMPLATE_COLUMNS =
-  "id,template_key,name,slug,template_family,template_scope,status,version,is_active,payload_json";
 
 const generatedCtaSchema = z
   .object({
@@ -403,9 +398,12 @@ async function readDraftContext(input: { taxonSlug: string }): Promise<DraftCont
     throw new Error("pilot_taxon_missing");
   }
 
-  const composition = await readComposition({
+  const compositionResult = await resolveCommercialActivationCompositionForTaxon({
     taxonId: taxonRow.id,
   });
+  if (compositionResult.status !== "ready") {
+    throw new Error(compositionResult.status);
+  }
 
   const research = await readResearchSources({
     taxonId: taxonRow.id,
@@ -419,7 +417,7 @@ async function readDraftContext(input: { taxonSlug: string }): Promise<DraftCont
       name: String(taxonRow.name),
       slug: String(taxonRow.slug),
     },
-    composition,
+    composition: compositionResult.composition,
     businessBuyerResearch: research.filter(
       (source) => source.audienceScope === "business_buyer",
     ),
@@ -428,64 +426,6 @@ async function readDraftContext(input: { taxonSlug: string }): Promise<DraftCont
     ),
     plans,
   };
-}
-
-async function readComposition(input: {
-  taxonId: string;
-}): Promise<ContentComposition> {
-  const supabase = createServiceClient();
-
-  const { data: templateRow, error: templateError } = await supabase
-    .from("content_templates")
-    .select(TEMPLATE_COLUMNS)
-    .eq("template_key", "commercial_activation_page")
-    .eq("template_family", COMMERCIAL_ACTIVATION_TEMPLATE_FAMILY)
-    .eq("template_scope", "page")
-    .eq("version", TEMPLATE_VERSION)
-    .eq("status", "active")
-    .eq("is_active", true)
-    .maybeSingle();
-
-  if (templateError) throw new Error("template_read_failed");
-  if (!templateRow) throw new Error("template_missing");
-
-  const { data: compositionRow, error: compositionError } = await supabase
-    .from("content_template_compositions")
-    .select("id,template_id,taxon_id,version,status")
-    .eq("template_id", (templateRow as Record<string, unknown>).id as string)
-    .eq("taxon_id", input.taxonId)
-    .eq("version", COMPOSITION_VERSION)
-    .eq("status", "active")
-    .maybeSingle();
-
-  if (compositionError) throw new Error("composition_read_failed");
-  if (!compositionRow) throw new Error("composition_missing");
-
-  const { data: itemRows, error: itemsError } = await supabase
-    .from("content_template_composition_items")
-    .select(
-      `id,composition_id,module_template_id,variant_key,sort_order,is_required,config_json,module:content_templates!content_template_composition_items_module_template_id_fkey!inner(${TEMPLATE_COLUMNS})`,
-    )
-    .eq("composition_id", (compositionRow as Record<string, unknown>).id as string)
-    .eq("module.template_family", COMMERCIAL_ACTIVATION_TEMPLATE_FAMILY)
-    .eq("module.template_scope", "section")
-    .eq("module.status", "active")
-    .eq("module.is_active", true)
-    .order("sort_order", { ascending: true });
-
-  if (itemsError) throw new Error("composition_items_read_failed");
-
-  const composition = mapContentComposition({
-    composition: compositionRow,
-    template: templateRow,
-    items: (itemRows ?? []) as unknown[],
-  });
-
-  if (!composition || composition.items.length !== 8) {
-    throw new Error("composition_invalid");
-  }
-
-  return composition;
 }
 
 async function readResearchSources(input: {

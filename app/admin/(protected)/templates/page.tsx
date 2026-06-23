@@ -46,7 +46,8 @@ export default async function AdminTemplatesPage({
     );
   }
 
-  const previewArtifact = state.latestDraft ?? state.published;
+  const reviewDraft = state.publishableDraft;
+  const previewArtifact = reviewDraft ?? state.published ?? state.latestDraft;
 
   return (
     <div className="space-y-6">
@@ -79,8 +80,8 @@ export default async function AdminTemplatesPage({
             </div>
 
             <div className="flex flex-wrap gap-2">
-              <AdminStatusBadge tone={state.latestDraft ? "warning" : "neutral"}>
-                {state.latestDraft ? "Em revisao" : "Sem draft"}
+              <AdminStatusBadge tone={reviewDraft ? "warning" : "neutral"}>
+                {reviewDraft ? "Em revisao" : "Sem draft em revisao"}
               </AdminStatusBadge>
               <AdminStatusBadge tone={state.published ? "success" : "neutral"}>
                 {state.published ? "Publicado" : "Sem published"}
@@ -91,7 +92,7 @@ export default async function AdminTemplatesPage({
           <div className="flex flex-col gap-2 sm:flex-row">
             <form action={generateOrRegeneratePilotCommercialActivationDraftAction}>
               <button className="inline-flex h-10 w-full items-center justify-center rounded-md bg-brand-600 px-4 text-sm font-medium text-white transition hover:bg-brand-700 sm:w-auto">
-                {state.latestDraft ? "Regenerar draft" : "Gerar draft"}
+                {reviewDraft ? "Regenerar draft" : "Gerar draft"}
               </button>
             </form>
 
@@ -99,11 +100,11 @@ export default async function AdminTemplatesPage({
               <input
                 name="artifactId"
                 type="hidden"
-                value={state.latestDraft?.id ?? ""}
+                value={reviewDraft?.id ?? ""}
               />
               <button
                 className="inline-flex h-10 w-full items-center justify-center rounded-md border border-border px-4 text-sm font-medium text-muted-foreground transition hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
-                disabled={!state.latestDraft}
+                disabled={!reviewDraft}
               >
                 Publicar draft
               </button>
@@ -116,14 +117,16 @@ export default async function AdminTemplatesPage({
         <StatusCard
           label="Draft atual"
           value={
-            state.latestDraft
-              ? `v${state.latestDraft.artifactVersion}`
+            reviewDraft
+              ? `v${reviewDraft.artifactVersion}`
               : "Nenhum"
           }
           detail={
-            state.latestDraft
-              ? `${state.latestDraft.sourceCount} fontes business_buyer`
-              : "Gere um draft para revisar"
+            reviewDraft
+              ? `${reviewDraft.sourceCount} fontes business_buyer`
+              : state.latestDraft
+                ? "Draft antigo mantido apenas no historico"
+                : "Gere um draft para revisar"
           }
         />
         <StatusCard

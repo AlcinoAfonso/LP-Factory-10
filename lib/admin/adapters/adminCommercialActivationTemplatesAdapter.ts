@@ -3,21 +3,20 @@ import "server-only";
 import { createServiceClient } from "@/lib/supabase/service";
 import {
   COMMERCIAL_ACTIVATION_AUDIENCE_SCOPE,
-  COMMERCIAL_ACTIVATION_TEMPLATE_FAMILY,
   type ContentArtifactStatus,
   type ContentComposition,
 } from "@/conversion-content/contracts";
-import {
-  mapContentComposition,
-  isRecord,
-} from "@/conversion-content/validation";
+import { isRecord } from "@/conversion-content/validation";
 import { COMMERCIAL_ACTIVATION_PILOT_TAXON_SLUG } from "@/conversion-content/commercial-activation/draft-generation";
-
-const TEMPLATE_COLUMNS =
-  "id,template_key,name,slug,template_family,template_scope,status,version,is_active,payload_json";
+import { resolveCommercialActivationCompositionForTaxon } from "@/conversion-content/commercial-activation/composition";
+import { resolveCommercialActivationRenderModel } from "@/conversion-content/commercial-activation/resolve";
 
 export type AdminCommercialActivationArtifact = {
   id: string;
+  templateId: string;
+  compositionId: string;
+  taxonId: string;
+  audienceScope: string;
   status: ContentArtifactStatus;
   artifactVersion: number;
   templateVersion: number;
@@ -42,6 +41,7 @@ export type AdminCommercialActivationState =
       };
       composition: ContentComposition;
       latestDraft: AdminCommercialActivationArtifact | null;
+      publishableDraft: AdminCommercialActivationArtifact | null;
       published: AdminCommercialActivationArtifact | null;
       artifacts: AdminCommercialActivationArtifact[];
     }
@@ -66,7 +66,16 @@ export type PublishContext =
       };
       previousPublishedId: string | null;
     }
-  | { ok: false; reason: "artifact_not_found" | "artifact_not_draft" | "read_failed" };
+  | {
+      ok: false;
+      reason:
+        | "artifact_not_found"
+        | "artifact_not_draft"
+        | "artifact_not_current_review"
+        | "artifact_bundle_mismatch"
+        | "artifact_content_invalid"
+        | "read_failed";
+    };
 
 export type PublishValidation =
   | {
@@ -103,7 +112,7 @@ export async function readAdminCommercialActivationState(
       return { ok: false, reason: "taxon_not_found" };
     }
 
-    const composition = await readCommercialActivationComposition({
+    const composition = await resolveCommercialActivationCompositionForTaxon({
       taxonId: taxonRow.id,
     });
 
@@ -121,6 +130,7 @@ export async function readAdminCommercialActivationState(
       artifacts.find((artifact) => artifact.status === "draft") ?? null;
     const published =
       artifacts.find((artifact) => artifact.status === "published") ?? null;
+    const publishableDraft = getPublishableDraft({ artifacts, published });
 
     return {
       ok: true,
@@ -131,6 +141,7 @@ export async function readAdminCommercialActivationState(
       },
       composition: composition.composition,
       latestDraft,
+      publishableDraft,
       published,
       artifacts,
     };
@@ -145,56 +156,56 @@ export async function readAdminCommercialActivationState(
 export async function readPublishContext(
   artifactId: string,
 ): Promise<PublishContext> {
-  const supabase = createServiceClient();
-
   try {
-    const { data: targetRow, error: targetError } = await supabase
-      .from("content_artifacts")
-      .select("id,template_id,taxon_id,audience_scope,status")
-      .eq("id", artifactId)
-      .maybeSingle();
+    const state = await readAdminCommercialActivationState();
+    if (!state.ok) return { ok: false, reason: "read_failed" };
 
-    if (targetError) throw targetError;
-    if (!isRecord(targetRow) || !isString(targetRow.id)) {
-      return { ok: false, reason: "artifact_not_found" };
+    if (!state.publishableDraft || state.publishableDraft.id !== artifactId) {
+      const requested = state.artifacts.find(
+        (artifact) => artifact.id === artifactId,
+      );
+      if (!requested) return { ok: false, reason: "artifact_not_found" };
+      if (requested.status !== "draft") {
+        return { ok: false, reason: "artifact_not_draft" };
+      }
+      return { ok: false, reason: "artifact_not_current_review" };
     }
 
-    const target = {
-      id: targetRow.id,
-      templateId: isString(targetRow.template_id) ? targetRow.template_id : "",
-      taxonId: isString(targetRow.taxon_id) ? targetRow.taxon_id : "",
-      audienceScope: isString(targetRow.audience_scope)
-        ? targetRow.audience_scope
-        : "",
-      status: targetRow.status as ContentArtifactStatus,
-    };
+    const target = state.publishableDraft;
+    const contentValidation = resolveCommercialActivationRenderModel({
+      composition: state.composition,
+      contentJson: target.contentJson,
+    });
+
+    if (contentValidation.status !== "ready") {
+      return { ok: false, reason: "artifact_content_invalid" };
+    }
 
     if (
       target.status !== "draft" ||
-      !target.templateId ||
-      !target.taxonId ||
+      target.sourceCount !== 4 ||
+      target.templateId !== state.composition.template.id ||
+      target.compositionId !== state.composition.id ||
+      target.taxonId !== state.taxon.id ||
       target.audienceScope !== COMMERCIAL_ACTIVATION_AUDIENCE_SCOPE
     ) {
-      return { ok: false, reason: "artifact_not_draft" };
+      return { ok: false, reason: "artifact_bundle_mismatch" };
     }
 
-    const { data: previousRow, error: previousError } = await supabase
-      .from("content_artifacts")
-      .select("id")
-      .eq("template_id", target.templateId)
-      .eq("taxon_id", target.taxonId)
-      .eq("audience_scope", target.audienceScope)
-      .eq("status", "published")
-      .neq("id", target.id)
-      .maybeSingle();
-
-    if (previousError) throw previousError;
+    if (!isString(target.id)) {
+      return { ok: false, reason: "artifact_not_found" };
+    }
 
     return {
       ok: true,
-      target,
-      previousPublishedId:
-        isRecord(previousRow) && isString(previousRow.id) ? previousRow.id : null,
+      target: {
+        id: target.id,
+        templateId: target.templateId,
+        taxonId: target.taxonId,
+        audienceScope: target.audienceScope,
+        status: target.status,
+      },
+      previousPublishedId: state.published?.id ?? null,
     };
   } catch (error) {
     console.error("readPublishContext failed", {
@@ -275,72 +286,6 @@ export async function validatePublicationResult(input: {
   }
 }
 
-async function readCommercialActivationComposition(input: {
-  taxonId: string;
-}): Promise<
-  | { status: "ready"; composition: ContentComposition }
-  | { status: "composition_not_found" | "composition_invalid" }
-> {
-  const supabase = createServiceClient();
-  const { data: templateLinkRow, error: templateLinkError } = await supabase
-    .from("content_template_taxons")
-    .select(
-      `id,template_id,taxon_id,is_primary,priority,created_at,template:content_templates!content_template_taxons_template_id_fkey!inner(${TEMPLATE_COLUMNS})`,
-    )
-    .eq("taxon_id", input.taxonId)
-    .eq("is_active", true)
-    .eq("template.template_family", COMMERCIAL_ACTIVATION_TEMPLATE_FAMILY)
-    .eq("template.template_scope", "page")
-    .eq("template.status", "active")
-    .eq("template.is_active", true)
-    .order("is_primary", { ascending: false })
-    .order("priority", { ascending: false })
-    .order("created_at", { ascending: true })
-    .order("id", { ascending: true })
-    .limit(1)
-    .maybeSingle();
-
-  if (templateLinkError) throw templateLinkError;
-  if (!isRecord(templateLinkRow) || !isString(templateLinkRow.template_id)) {
-    return { status: "composition_not_found" };
-  }
-
-  const { data: compositionRow, error: compositionError } = await supabase
-    .from("content_template_compositions")
-    .select("id,template_id,taxon_id,version,status")
-    .eq("template_id", templateLinkRow.template_id)
-    .eq("taxon_id", input.taxonId)
-    .eq("status", "active")
-    .maybeSingle();
-
-  if (compositionError) throw compositionError;
-  if (!compositionRow) return { status: "composition_not_found" };
-
-  const { data: itemRows, error: itemsError } = await supabase
-    .from("content_template_composition_items")
-    .select(
-      `id,composition_id,module_template_id,variant_key,sort_order,is_required,config_json,module:content_templates!content_template_composition_items_module_template_id_fkey!inner(${TEMPLATE_COLUMNS})`,
-    )
-    .eq("composition_id", (compositionRow as Record<string, unknown>).id as string)
-    .eq("module.template_family", COMMERCIAL_ACTIVATION_TEMPLATE_FAMILY)
-    .eq("module.template_scope", "section")
-    .eq("module.status", "active")
-    .eq("module.is_active", true)
-    .order("sort_order", { ascending: true });
-
-  if (itemsError) throw itemsError;
-
-  const composition = mapContentComposition({
-    composition: compositionRow,
-    template: templateLinkRow.template,
-    items: (itemRows ?? []) as unknown[],
-  });
-
-  return composition
-    ? { status: "ready", composition }
-    : { status: "composition_invalid" };
-}
-
 async function readCommercialActivationArtifacts(input: {
   templateId: string;
   compositionId: string;
@@ -351,7 +296,7 @@ async function readCommercialActivationArtifacts(input: {
   const { data: artifactRows, error: artifactsError } = await supabase
     .from("content_artifacts")
     .select(
-      "id,template_version,composition_version,research_version,artifact_version,status,content_json,provenance_json,created_at,updated_at,published_at,archived_at",
+      "id,template_id,composition_id,taxon_id,audience_scope,template_version,composition_version,research_version,artifact_version,status,content_json,provenance_json,created_at,updated_at,published_at,archived_at",
     )
     .eq("template_id", input.templateId)
     .eq("composition_id", input.compositionId)
@@ -392,6 +337,24 @@ async function readCommercialActivationArtifacts(input: {
     );
 }
 
+function getPublishableDraft(input: {
+  artifacts: AdminCommercialActivationArtifact[];
+  published: AdminCommercialActivationArtifact | null;
+}) {
+  const latestDraft =
+    input.artifacts.find((artifact) => artifact.status === "draft") ?? null;
+
+  if (!latestDraft) return null;
+  if (
+    input.published &&
+    input.published.artifactVersion >= latestDraft.artifactVersion
+  ) {
+    return null;
+  }
+
+  return latestDraft;
+}
+
 function mapAdminArtifact(
   value: unknown,
   sourceCounts: Map<string, number>,
@@ -399,6 +362,10 @@ function mapAdminArtifact(
   if (!isRecord(value)) return null;
   if (
     !isString(value.id) ||
+    !isString(value.template_id) ||
+    !isString(value.composition_id) ||
+    !isString(value.taxon_id) ||
+    !isString(value.audience_scope) ||
     !isPositiveInteger(value.template_version) ||
     !isPositiveInteger(value.composition_version) ||
     !isPositiveInteger(value.research_version) ||
@@ -414,6 +381,10 @@ function mapAdminArtifact(
 
   return {
     id: value.id,
+    templateId: value.template_id,
+    compositionId: value.composition_id,
+    taxonId: value.taxon_id,
+    audienceScope: value.audience_scope,
     status: value.status,
     artifactVersion: value.artifact_version,
     templateVersion: value.template_version,
