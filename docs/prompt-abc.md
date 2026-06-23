@@ -56,8 +56,11 @@ REGRAS DE LEITURA
 ALLOWLISTS POR DOC_ALVO
 
 `docs/base-tecnica.md` — CONTRATO_TÉCNICO
-* ENTRA: runtime, segurança (PII/secrets/permissão mínima), observability mínima estável, integrações com parâmetros fixos, convenções obrigatórias de repo e decisões arquiteturais estáveis.
-* NÃO ENTRA: itens pertencentes a DB/schema, roadmap/casos, design system, platform config, services ou automations.
+* ENTRA: regras técnicas permanentes do produto; padrões de implementação segura; runtime; segurança (PII/secrets/permissão mínima); SSR; adapters; imports; camadas e boundaries; validação; logs seguros; observability mínima estável; integrações com parâmetros fixos; convenções obrigatórias de repo; e decisões arquiteturais estáveis, normativas, reutilizáveis e aplicáveis a futuras implementações além do caso imediato.
+* NÃO ENTRA: status de caso E*, fase, PR, branch, merge, evidência de validação, prints, estado de artifacts, taxon piloto, contagens de registros, próximo passo, fora de escopo de fase, pendências de produto, decisões que só explicam uma entrega específica ou itens pertencentes a DB/schema, roadmap/casos, design system, platform config, services ou automations.
+* REGRA ANTI-ROADMAP: se a informação responde “o que este caso/fase entregou, validou, decidiu ou deixou para depois”, ela pertence a `docs/roadmap.md`.
+* REGRA DE PROMOÇÃO: uma decisão de caso só entra em `docs/base-tecnica.md` quando virar padrão técnico durável para implementações futuras.
+* RESIDÊNCIA: objetos/permissões de banco ficam em `docs/schema.md`; plataformas/env/secrets ficam em `docs/platform-config.md`; automações e fluxos operacionais ficam em `docs/automations.md`; status, escopo, decisões e fases de casos E* ficam em `docs/roadmap.md`.
 
 `docs/schema.md` — CONTRATO_DB
 * ENTRA: tabelas, colunas, constraints, enums, relacionamentos, views, RPCs/functions, triggers, RLS/policies, grants e notas mínimas de validação no Supabase.
