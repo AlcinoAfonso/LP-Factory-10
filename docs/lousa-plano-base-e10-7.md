@@ -21,7 +21,7 @@ Fontes: chat, PR #435, docs/roadmap.md, docs/base-tecnica.md, docs/schema.md, do
 * Validação de render model antes de ready implementada.
 * Relatório da Fase 4 enviado ao Gestor de Docs.
 * ABC documental da Fase 4 pendente de confirmação final.
-* Fase 5 pendente.
+* Fase 5 pendente de briefing.
 
 3. Caso de uso
 
