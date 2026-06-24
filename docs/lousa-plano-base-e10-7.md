@@ -265,6 +265,76 @@ Fase 4 não alterou schema.
 * Não é objetivo: exigir composição manual por taxon.
 * Não é objetivo: criar migration sem blocker real.
 
+11.5.1 Updates aplicáveis à Fase 5
+
+Objetivo da Fase 5:
+
+* Listar taxons elegíveis por pesquisa estruturada completa.
+* Corrigir a dependência indevida do taxon piloto.
+* Não criar processo manual.
+* Não gerar draft automaticamente.
+* Não antecipar migration.
+* Usar os updates abaixo apenas como referência técnica, validação ou trava.
+
+supa#36 — Data API / PostgREST 14.1
+
+* Referência técnica para leituras server-side no Supabase usando Data API/PostgREST.
+* Aplicar nas leituras server-side que montam a lista de taxons elegíveis.
+* Aplicar ao buscar taxons ativos, pesquisas estruturadas completas, artifacts existentes, published/draft quando necessário para estado da lista e composição técnica relacionada ao canal commercial_activation.
+* Resolver a listagem no servidor, seguindo os contratos da Base Técnica, sem criar endpoint público novo e sem expor dados sensíveis.
+
+supa#5 — Logs seguros
+
+* Usar para falhas, fallback e diagnóstico técnico sem vazar conteúdo sensível.
+* Aplicar em erro de leitura, taxon que deveria ser elegível mas não aparece, falha ao resolver composição técnica, fallback interno ou inconsistência entre pesquisa, artifact e estado exibido.
+* Pode logar status técnico, motivo resumido da falha, request/rid quando disponível e identificador técnico permitido de account/taxon.
+* Não pode logar content_json, payload completo de pesquisa, texto gerado por IA, dados pessoais ou conteúdo bruto de blocos estruturados.
+
+supa#40 — SQL snippets locais
+
+* Aplicar somente se for necessário validar elegibilidade ou composição fora da UI.
+* Exemplos: conferir business_buyer completo, end_customer completo, 4 blocos exigidos, artifact draft/published ou composição técnica prendendo fluxo ao piloto.
+* Se houver SQL de validação, versionar em supabase/snippets.
+* Não deixar query solta no chat ou no Studio.
+
+supa#58 — GRANT explícito para novos objetos
+
+* Usar como trava de segurança se surgir necessidade de nova tabela, view, função, RPC, grant, policy ou migration.
+* Fase 5 deve tentar resolver com schema atual.
+* Se surgir mudança de banco, Executor deve parar e devolver ao Estrategista.
+* Não aplicar supa#58 como tarefa inicial; usar como trava para impedir mudança de banco sem decisão explícita.
+
+revalidatePath
+
+* Usar somente se houver mutação administrativa que altere o estado exibido na tela.
+* Exemplos: gerar draft, regenerar draft, publicar, arquivar ou atualizar estado administrativo que afete a lista.
+* Na listagem simples, sem mutação, não aplicar.
+* Não usar como arquitetura antecipada.
+
+Recursos que não cabem na Fase 5
+
+* Não usar Responses API.
+* Não usar Agents SDK.
+* Não usar Sandbox Agents.
+* Não usar plugin Supabase como dependência operacional.
+* Não usar filas.
+* Não usar jobs.
+* Não usar automação operacional.
+* Não usar IA em runtime público.
+* Não usar pgvector.
+* Não usar pg_trgm.
+* Não usar busca avançada.
+* Não criar migration sem blocker real.
+
+Conclusão:
+
+* Aplicar supa#36 nas leituras server-side.
+* Aplicar supa#5 nos logs seguros.
+* Aplicar supa#40 se houver validação SQL read-only.
+* Aplicar supa#58 como trava se surgir mudança de banco.
+* Usar revalidatePath somente se houver mutação administrativa.
+* Não aplicar agentes, IA em runtime público, filas, jobs ou nova infraestrutura.
+
 12. E18 e papéis dos templates
 
 12.1 E18
