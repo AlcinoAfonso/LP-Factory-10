@@ -762,9 +762,9 @@ Repositório — Ajustados
 • Implementar detecção por ambiente somente se o ganho justificar a complexidade.
 
 10.7 Páginas comerciais personalizadas por nicho
-• Status: Em execução faseada — Fase 4 concluída e mergeada em 23/06/2026.
+• Status: Em execução faseada — Fase 4 concluída em 23/06/2026.
 • Próxima execução: Fase 5 — validação com segundo taxon.
-• Objetivo: gerar, revisar, publicar e consumir páginas comerciais por taxon; a IA roda apenas em operação administrativa; `/a/[account]` consome somente artefato publicado e validado; ausência de conteúdo nichado não pode quebrar `/a/[account]`.
+• Objetivo: gerar, revisar, publicar e consumir páginas comerciais por taxon; a IA roda apenas em operação administrativa/server-side; `/a/[account]` consome somente artefato publicado e validado; ausência de conteúdo nichado não pode quebrar `/a/[account]`.
 • Dependência estrutural: a E18 define os contratos reutilizáveis mínimos; a E10.7 aplica, valida e ajusta esses contratos no caso comercial concreto.
 • A página genérica `generic-v1` da E10.6 permanece concluída e será o fallback obrigatório.
 
@@ -802,21 +802,12 @@ Repositório — Ajustados
   • Repositório — Criados: `app/admin/(protected)/templates/actions.ts`; `lib/conversion-content/commercial-activation/draft-generation.ts`; `supabase/snippets/e10_7_phase_2_draft_verify.sql`
 
 10.7.4 Fase 3 — Operação administrativa mínima em `/admin/templates`
-• Status: Concluída, validada e mergeada em 23/06/2026.
-• Resultado: operação administrativa mínima validada no Preview para gerar, regenerar, visualizar e publicar drafts comerciais `commercial_activation`.
-• Implementado:
-• tela administrativa em `/admin/templates` com taxon piloto, estado de draft, published atual, cards de estado, preview e histórico de artefatos;
-• gerar/regenerar draft usando o gerador da Fase 2;
-• publicação via `publish_content_artifact_draft(uuid)`;
-• validação server-side de que o artifact recebido é o draft publicável do bundle esperado;
-• resolução compartilhada de composição por `content_template_taxons`;
-• preview administrativo usando renderer existente;
-• navegação Admin atualizada para disponibilizar Templates.
-• Estado real validado no Supabase:
-• `v3` published;
-• `v2` draft histórico não publicável;
-• `v1` archived.
-• Fora do escopo preservado: `/a/[account]`, Account Dashboard, consumo público da página nichada, fallback por ancestral, segundo taxon, LP Builder, edição visual avançada, Agents SDK, Sandbox Agents, job, fila, agente, IA em runtime público, nova tabela, nova migration, nova função, novo grant, nova policy, alteração de `research_version`, liberação de LPs, continuidade de contas e bloqueio de ativações.
+• Status: Concluída em 23/06/2026.
+• Estado atual: `/admin/templates` oferece operação administrativa mínima para gerar, regenerar, revisar e publicar drafts comerciais `commercial_activation`.
+• IA: restrita ao fluxo administrativo/server-side, sem IA em runtime público.
+• Publicação: usa `publish_content_artifact_draft(uuid)` e valida server-side o draft publicável do bundle esperado.
+• Estado funcional: preview administrativo usa renderer existente; composição é resolvida por `content_template_taxons`; Templates está disponível na navegação Admin.
+• Limites: não inclui `/a/[account]`, Account Dashboard, consumo público, fallback por ancestral, segundo taxon, LP Builder, edição visual avançada, Agents SDK, Sandbox Agents, job, fila, agente, nova tabela, nova migration, nova função, novo grant, nova policy, alteração de `research_version`, liberação de LPs, continuidade de contas ou bloqueio de ativações.
 
 10.7.4.1 Estruturas e artefatos
 
@@ -831,22 +822,12 @@ Repositório — Ajustados
 • `lib/conversion-content/commercial-activation/draft-generation.ts`
 
 10.7.5 Fase 4 — Consumo no Account Dashboard
-• Status: Concluída e mergeada em 23/06/2026.
-• Resultado: `/a/[account]` passou a consumir página comercial personalizada por taxon usando somente bundle `commercial_activation` publicado e pronto para renderização.
-• Implementado:
-• preservação do fluxo atual de acesso/conta, `PendingSetupFirstSteps`, bloqueio para conta não active e `NicheResolutionCard`;
-• resolução do taxon primário ativo da conta;
-• consulta do bundle via `getCommercialActivationHierarchicalBundle`;
-• renderização de `PublishedCommercialActivationPage` quando houver bundle `ready`;
-• fallback para `GenericCommercialPage`/`generic-v1` quando não houver bundle `ready`;
-• tracking comercial preservado com `commercial_page_view`, `commercial_primary_cta_click` e `commercial_plan_cta_click`;
-• marcações de CTA no renderer para captura por wrapper sem acoplar lógica de conta ao renderer;
-• validação do render model antes de retornar bundle `ready`.
-• Regra de consumo: nunca consumir `draft`, nunca consumir `archived`, nunca chamar IA em runtime público e nunca renderizar artifact publicado inválido como página vazia.
-• Correção aplicada: artifact `published` com `content_json` inválido retorna `artifact_invalid` e cai em `generic-v1`.
-• Validações reportadas: `npm ci`, `npm run check`, `npm run validate:commercial-activation`, busca textual sem OpenAI em `app/a` e Supabase read-only sem `published` duplicado.
-• Pendência operacional: validar visualmente em ambiente real/Preview com variáveis públicas disponíveis a página nichada do taxon piloto, fallback `generic-v1`, `NicheResolutionCard` e tracking.
-• Fora do escopo preservado: Admin Dashboard, geração/regeneração/publicação de draft, LP Builder, edição visual, segundo taxon, Fase 5, nova tabela, nova migration, nova RPC, novo grant, nova policy, alteração de `research_version`, IA em runtime público, Responses API, Agents SDK, Sandbox Agents, job, fila, agente, cache avançado e revalidação como requisito novo.
+• Status: Concluída em 23/06/2026.
+• Estado atual: `/a/[account]` consome página comercial nichada quando existir bundle `commercial_activation` publicado e validado.
+• Fallback: ausência, erro, artefato inválido ou conteúdo não consumível retorna para `generic-v1`.
+• Limites: não consome `draft`, não consome `archived` e não usa IA em runtime público.
+• Tracking: mantém eventos comerciais vinculados ao `account_id`, sem PII.
+• Pendências: validação visual em ambiente real/Preview e Fase 5 com segundo taxon.
 
 10.7.5.1 Estruturas e artefatos
 
