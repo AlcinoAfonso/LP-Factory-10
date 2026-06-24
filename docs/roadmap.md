@@ -2,7 +2,7 @@
 
 0.1 Cabeçalho
 • Data: 23/06/2026
-• Versão: v1.5.82
+• Versão: v1.5.83
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -762,9 +762,9 @@ Repositório — Ajustados
 • Implementar detecção por ambiente somente se o ganho justificar a complexidade.
 
 10.7 Páginas comerciais personalizadas por nicho
-• Status: Em execução faseada — Fase 3 concluída, validada e mergeada em 23/06/2026.
-• Próxima execução: Fase 4 — consumo no Account Dashboard.
-• Objetivo: gerar, revisar, publicar e consumir páginas comerciais por taxon; a IA roda apenas em operação administrativa; `/a/[account]` consome artefato publicado e validado; ausência de conteúdo nichado não pode quebrar `/a/[account]`.
+• Status: Em execução faseada — Fase 4 concluída e mergeada em 23/06/2026.
+• Próxima execução: Fase 5 — validação com segundo taxon.
+• Objetivo: gerar, revisar, publicar e consumir páginas comerciais por taxon; a IA roda apenas em operação administrativa; `/a/[account]` consome somente artefato publicado e validado; ausência de conteúdo nichado não pode quebrar `/a/[account]`.
 • Dependência estrutural: a E18 define os contratos reutilizáveis mínimos; a E10.7 aplica, valida e ajusta esses contratos no caso comercial concreto.
 • A página genérica `generic-v1` da E10.6 permanece concluída e será o fallback obrigatório.
 
@@ -817,7 +817,6 @@ Repositório — Ajustados
 • `v2` draft histórico não publicável;
 • `v1` archived.
 • Fora do escopo preservado: `/a/[account]`, Account Dashboard, consumo público da página nichada, fallback por ancestral, segundo taxon, LP Builder, edição visual avançada, Agents SDK, Sandbox Agents, job, fila, agente, IA em runtime público, nova tabela, nova migration, nova função, novo grant, nova policy, alteração de `research_version`, liberação de LPs, continuidade de contas e bloqueio de ativações.
-• Próxima fase: E10.7 Fase 4 — consumo no Account Dashboard, usando apenas artifact `published` e nunca `draft`.
 
 10.7.4.1 Estruturas e artefatos
 
@@ -832,8 +831,35 @@ Repositório — Ajustados
 • `lib/conversion-content/commercial-activation/draft-generation.ts`
 
 10.7.5 Fase 4 — Consumo no Account Dashboard
-• Escopo: renderizar página publicada sem IA em runtime; identificar taxon original da conta; consultar bundle próprio; se não houver, tentar ancestral quando existir; se não houver, usar `generic-v1`; renderizar com `CommercialActivationRenderer`; preservar `NicheResolutionCard`; preservar tracking existente.
-• Critério de passagem: taxon piloto exibe página própria; taxon sem página própria usa ancestral quando possível; taxon sem ancestral válido usa `generic-v1`; ausência de conteúdo nichado não quebra `/a/[account]`; sem IA em runtime.
+• Status: Concluída e mergeada em 23/06/2026.
+• Resultado: `/a/[account]` passou a consumir página comercial personalizada por taxon usando somente bundle `commercial_activation` publicado e pronto para renderização.
+• Implementado:
+• preservação do fluxo atual de acesso/conta, `PendingSetupFirstSteps`, bloqueio para conta não active e `NicheResolutionCard`;
+• resolução do taxon primário ativo da conta;
+• consulta do bundle via `getCommercialActivationHierarchicalBundle`;
+• renderização de `PublishedCommercialActivationPage` quando houver bundle `ready`;
+• fallback para `GenericCommercialPage`/`generic-v1` quando não houver bundle `ready`;
+• tracking comercial preservado com `commercial_page_view`, `commercial_primary_cta_click` e `commercial_plan_cta_click`;
+• marcações de CTA no renderer para captura por wrapper sem acoplar lógica de conta ao renderer;
+• validação do render model antes de retornar bundle `ready`.
+• Regra de consumo: nunca consumir `draft`, nunca consumir `archived`, nunca chamar IA em runtime público e nunca renderizar artifact publicado inválido como página vazia.
+• Correção aplicada: artifact `published` com `content_json` inválido retorna `artifact_invalid` e cai em `generic-v1`.
+• Validações reportadas: `npm ci`, `npm run check`, `npm run validate:commercial-activation`, busca textual sem OpenAI em `app/a` e Supabase read-only sem `published` duplicado.
+• Pendência operacional: validar visualmente em ambiente real/Preview com variáveis públicas disponíveis a página nichada do taxon piloto, fallback `generic-v1`, `NicheResolutionCard` e tracking.
+• Fora do escopo preservado: Admin Dashboard, geração/regeneração/publicação de draft, LP Builder, edição visual, segundo taxon, Fase 5, nova tabela, nova migration, nova RPC, novo grant, nova policy, alteração de `research_version`, IA em runtime público, Responses API, Agents SDK, Sandbox Agents, job, fila, agente, cache avançado e revalidação como requisito novo.
+
+10.7.5.1 Estruturas e artefatos
+
+Repositório — Criados
+• `app/a/[account]/_components/commercial-page/CommercialActivationTrackingScope.tsx`
+• `app/a/[account]/_components/commercial-page/PublishedCommercialActivationPage.tsx`
+
+Repositório — Ajustados
+• `app/a/[account]/_components/commercial-page/actions.ts`
+• `app/a/[account]/page.tsx`
+• `lib/conversion-content/adapters/commercialActivationAdapter.ts`
+• `lib/conversion-content/commercial-activation/renderer.tsx`
+• `lib/conversion-content/commercial-activation/validation-cases.ts`
 
 10.7.6 Fase 5 — Validação com segundo taxon
 • Escopo: confirmar que a solução não depende do taxon piloto.
@@ -841,11 +867,12 @@ Repositório — Ajustados
 • Critério de conclusão: segundo taxon validado, fluxo reutilizável, E10.7 operacional e sem mudança estrutural desnecessária.
 
 10.7.7 Exibição, fallbacks e tracking
-• Fluxo em `/a/[account]`: conta `active` → resolver `account_id` → resolver taxon primário → procurar página comercial publicada compatível → exibir página nichada ou `generic-v1`.
+• Fluxo em `/a/[account]`: conta `active` → resolver `account_id` → resolver taxon primário ativo → procurar bundle `commercial_activation` publicado → renderizar página nichada somente quando o bundle estiver `ready` → usar `generic-v1` quando não houver bundle consumível.
 • Preservar `NicheResolutionCard` acima da página quando aplicável.
-• Conta sem taxon, taxon inativo ou inválido, pesquisa incompleta, composição ausente ou inválida, página não publicada ou erro de leitura usam a página genérica E10.6 como fallback seguro.
+• Conta sem taxon, taxon inativo ou inválido, pesquisa incompleta, composição ausente ou inválida, página não publicada, artifact inválido, erro de leitura ou render model não `ready` usam a página genérica E10.6 como fallback seguro.
 • Reutilizar `commercial_page_view`, `commercial_primary_cta_click` e `commercial_plan_cta_click`, com identificadores seguros e sem PII.
 • A E10.7 não pode bloquear o acesso à página comercial.
+• O runtime público não pode consumir `draft`, `archived` nem chamar IA para renderizar a página comercial.
 
 11. E11 — Gestão de Usuários e Convites
 
@@ -1291,6 +1318,8 @@ Repositório — Criados
 • Esta referência não cria obrigação de implementar E19 agora.
 
 99. Changelog
+v1.5.83 — 23/06/2026 — E10.7 Fase 4 concluída com consumo no Account Dashboard: `/a/[account]` renderiza bundle `commercial_activation` publicado e `ready`, mantém fallback `generic-v1`, preserva `NicheResolutionCard` e tracking comercial, rejeita draft/archived/artifact inválido e mantém IA fora do runtime público.
+
 v1.5.82 — 23/06/2026 — E10.7 Fase 3 concluída com operação administrativa mínima em `/admin/templates`: geração/regeneração de draft, preview administrativo, publicação via RPC existente, validação server-side do draft publicável, resolução compartilhada por `content_template_taxons` e estado real validado com `v3` published, `v2` draft histórico e `v1` archived.
 
 v1.5.81 — 22/06/2026 — E12.3.2 concluído e validado: `/admin/documentacao` passa a leitor read-only protegido de documentos whitelist de `docs/`, com leitura server-side por filesystem, tracing explícito dos arquivos permitidos, UI responsiva com filtro/dropdown e sem Supabase, migrations, GitHub API em runtime, edição ou mutações.
