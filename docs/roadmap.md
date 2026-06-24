@@ -817,7 +817,6 @@ Repositório — Ajustados
 • `v2` draft histórico não publicável;
 • `v1` archived.
 • Fora do escopo preservado: `/a/[account]`, Account Dashboard, consumo público da página nichada, fallback por ancestral, segundo taxon, LP Builder, edição visual avançada, Agents SDK, Sandbox Agents, job, fila, agente, IA em runtime público, nova tabela, nova migration, nova função, novo grant, nova policy, alteração de `research_version`, liberação de LPs, continuidade de contas e bloqueio de ativações.
-• Próxima fase: E10.7 Fase 4 — consumo no Account Dashboard, usando apenas artifact `published` e nunca `draft`.
 
 10.7.4.1 Estruturas e artefatos
 
