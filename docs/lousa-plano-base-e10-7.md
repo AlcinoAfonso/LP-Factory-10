@@ -86,17 +86,16 @@ docs/lousa-plano-base-e10-7.md
 
 5. Critérios de elegibilidade
 
-5.1 Regra
+5.1 Regra visível para o operador
 docs/lousa-plano-base-e10-7.md
 
 * Taxon ativo.
 * business_buyer active v1 com 4 blocos.
 * end_customer active v1 com 4 blocos.
 * Itens estruturados suficientes.
-* Template de canal commercial_activation disponível.
-* Estrutura/composição resolvível pelo contrato atual.
 * Sem exigir novo template por taxon.
-* Sem exigir geração automática de draft.
+* Sem exigir composição manual por taxon.
+* Sem gerar draft automaticamente.
 
 5.2 Blocos exigidos
 docs/lousa-plano-base-e10-7.md
@@ -106,13 +105,24 @@ docs/lousa-plano-base-e10-7.md
 * lp_sections.
 * seo.
 
-5.3 Status
+5.3 Responsabilidade interna do sistema
+docs/lousa-plano-base-e10-7.md
+
+* Template de canal commercial_activation deve estar disponível.
+* Renderer deve validar o contrato da página.
+* Geração deve conseguir usar a infraestrutura técnica existente.
+* Composição técnica não é etapa do operador.
+* Composição técnica não deve virar critério manual de elegibilidade.
+* Se o sistema não conseguir gerar para taxon elegível por falta de composição técnica, isso é ajuste técnico interno da E10.7.
+
+5.4 Status
 docs/lousa-plano-base-e10-7.md
 
 * Critério de pesquisa validado no piloto.
 * Critério de pesquisa validado em Corretor Imóveis.
 * Listagem flexível por elegibilidade ainda pendente.
 * Resolver/estrutura ainda precisa evitar dependência indevida do taxon piloto.
+* A lista deve tratar taxon elegível por pesquisa como elegível para o operador.
 
 6. Estados operacionais da lista admin
 
@@ -253,22 +263,23 @@ docs/lousa-plano-base-e10-7.md
 * Implementado: validação de render model antes de ready.
 * Implementado: sem IA em runtime público.
 
-11.5 Fase 5 — Lista flexível de taxons elegíveis e ajuste de papéis
+11.5 Fase 5 — Lista flexível de taxons elegíveis e ajuste interno do canal comercial
 docs/lousa-plano-base-e10-7.md
 
 * Status implementação: pendente.
 * Status documentação: esta lousa define a base do briefing.
-* Objetivo: separar template de canal, composição técnica e estrutura estratégica de seções.
-* Objetivo: listar taxons elegíveis por critérios de pesquisa estruturada.
-* Objetivo: permitir que qualquer taxon elegível apareça para geração de draft quando operador quiser.
+* Objetivo: listar taxons elegíveis por pesquisa estruturada completa.
+* Objetivo: permitir que qualquer taxon elegível apareça para geração de draft quando o operador quiser.
 * Objetivo: não gerar draft automaticamente durante a listagem.
+* Objetivo: resolver internamente a dependência indevida de composição do piloto.
+* Objetivo: separar template de canal, composição técnica, estrutura de seções e artifact.
 * Objetivo: validar pelo menos dois estados reais: taxon publicado e taxon elegível sem página gerada.
-* Objetivo: reduzir dependência operacional do taxon piloto.
+* Não é objetivo: criar procedimento manual para tornar taxon elegível.
 * Não é objetivo: gerar draft automaticamente para segundo taxon.
 * Não é objetivo: publicar automaticamente segundo taxon.
 * Não é objetivo: limitar solução ao taxon Corretor Imóveis.
 * Não é objetivo: duplicar template por taxon.
-* Não é objetivo: criar composição por taxon apenas por cópia manual sem necessidade clara.
+* Não é objetivo: exigir composição manual por taxon.
 * Não é objetivo: criar migration sem blocker real.
 
 12. E18 e papéis dos templates
@@ -337,9 +348,13 @@ corretor-imoveis
 * Decisão estratégica: template universal por canal comercial.
 * Implementação atual: composição técnica ainda resolvida por taxon_id.
 * Risco: confundir composição técnica com template universal.
+* Risco: transformar amarra técnica em etapa operacional do usuário.
+* Risco: criar burocracia para cada taxon novo.
 * Risco: forçar migration prematura.
 * Risco: criar cópia manual por taxon sem necessidade operacional clara.
-* Decisão: Fase 5 deve separar os papéis e validar elegibilidade flexível.
+* Decisão: elegibilidade é definida pela pesquisa estruturada completa.
+* Decisão: composição/template/renderer são responsabilidade interna do sistema.
+* Decisão: Fase 5 deve corrigir a dependência do piloto sem criar novo procedimento para o operador.
 * Decisão: geração de draft deve ser ação do operador.
 * Decisão: não criar migration se houver solução simples com contrato atual.
 
@@ -368,8 +383,10 @@ corretor-imoveis
 * Verificar fallback generic-v1.
 * Verificar se o caso não ficou hardcoded no piloto.
 * Verificar se taxons elegíveis aparecem sem novo template por taxon.
+* Verificar se taxons elegíveis aparecem sem composição manual por taxon.
 * Verificar se listagem não gera draft automaticamente.
 * Verificar se composição técnica não foi tratada como decisão estratégica universal sem cuidado com schema atual.
+* Verificar se eventual falha técnica de composição não foi transformada em tarefa do operador.
 
 17. Regra de atualização documental
     docs/lousa-plano-base-e10-7.md
