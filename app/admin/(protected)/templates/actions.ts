@@ -18,14 +18,23 @@ export type GenerateCommercialActivationDraftActionState = {
   requestId?: string;
 };
 
-export async function generatePilotCommercialActivationDraftAction(): Promise<GenerateCommercialActivationDraftActionState> {
+export async function generateCommercialActivationDraftAction(input: {
+  taxonSlug: string;
+}): Promise<GenerateCommercialActivationDraftActionState> {
   const gate = await requirePlatformAdmin();
 
   if (!gate.allowed) {
     return { error: "Acesso administrativo nao autorizado." };
   }
 
-  const result = await generateCommercialActivationDraftForTaxon();
+  const taxonSlug = input.taxonSlug.trim();
+  if (!isSafeSlug(taxonSlug)) {
+    return { error: "invalid_taxon_slug" };
+  }
+
+  const result = await generateCommercialActivationDraftForTaxon({
+    taxonSlug,
+  });
 
   if (!result.ok) {
     return {
@@ -42,21 +51,25 @@ export async function generatePilotCommercialActivationDraftAction(): Promise<Ge
   };
 }
 
-export async function generateOrRegeneratePilotCommercialActivationDraftAction() {
-  const result = await generatePilotCommercialActivationDraftAction();
+export async function generateOrRegenerateCommercialActivationDraftAction(
+  formData: FormData,
+) {
+  const taxonSlug = String(formData.get("taxonSlug") ?? "").trim();
+  const result = await generateCommercialActivationDraftAction({ taxonSlug });
+  const taxonQuery = encodeURIComponent(taxonSlug);
 
   revalidatePath("/admin/templates");
 
   if (result.error) {
     redirect(
-      `/admin/templates?event=generation_failed&reason=${encodeURIComponent(
+      `/admin/templates?taxon=${taxonQuery}&event=generation_failed&reason=${encodeURIComponent(
         result.error,
       )}&requestId=${encodeURIComponent(result.requestId ?? "")}`,
     );
   }
 
   redirect(
-    `/admin/templates?event=draft_generated&artifactId=${encodeURIComponent(
+    `/admin/templates?taxon=${taxonQuery}&event=draft_generated&artifactId=${encodeURIComponent(
       result.artifactId ?? "",
     )}&artifactVersion=${encodeURIComponent(String(result.artifactVersion ?? ""))}`,
   );
@@ -121,7 +134,11 @@ export async function publishCommercialActivationDraftAction(formData: FormData)
 }
 
 function isUuid(value: string) {
-  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{12}$/i.test(
     value,
   );
+}
+
+function isSafeSlug(value: string) {
+  return /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(value);
 }
