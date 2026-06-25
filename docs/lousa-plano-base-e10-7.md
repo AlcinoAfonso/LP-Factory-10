@@ -335,6 +335,22 @@ Conclusão:
 * Usar revalidatePath somente se houver mutação administrativa.
 * Não aplicar agentes, IA em runtime público, filas, jobs ou nova infraestrutura.
 
+11.5.2 Blocker estrutural e decisão de desbloqueio
+
+* Blocker confirmado em 24/06/2026.
+* `content_artifacts` exige FK composta com `composition_id`, `template_id`, `taxon_id` e `composition_version`.
+* Taxon elegível sem composição ativa não consegue gerar draft válido no fluxo atual.
+* Corretor Imóveis é caso de validação, não solução pontual.
+* Decisão: criar mecanismo interno e genérico para garantir/materializar composição técnica `commercial_activation` quando operador acionar geração de draft para qualquer taxon elegível.
+* A listagem não materializa composição.
+* A listagem não gera draft.
+* O operador não prepara composição.
+* Template continua universal por canal.
+* Composição técnica pode continuar fisicamente por taxon no schema atual.
+* Materialização técnica não pode duplicar template de canal.
+* Materialização técnica não pode depender de slug ou nome de taxon.
+* Migration, grant, função ou RPC ficam limitados ao desbloqueio estrutural mínimo aprovado nesta fase.
+
 12. E18 e papéis dos templates
 
 12.1 E18

@@ -14,6 +14,16 @@ export type CommercialActivationCompositionResolution =
   | { status: "ready"; composition: ContentComposition }
   | { status: "composition_not_found" | "composition_invalid" };
 
+export type CommercialActivationCompositionEnsureResult =
+  | { status: "ready"; composition: ContentComposition; createdOrExisting: true }
+  | {
+      status:
+        | "composition_not_found"
+        | "composition_invalid"
+        | "taxon_not_eligible"
+        | "materialization_failed";
+    };
+
 export async function resolveCommercialActivationCompositionForTaxon(input: {
   taxonId: string;
 }): Promise<CommercialActivationCompositionResolution> {
@@ -80,6 +90,63 @@ export async function resolveCommercialActivationCompositionForTaxon(input: {
   return composition
     ? { status: "ready", composition }
     : { status: "composition_invalid" };
+}
+
+export async function ensureCommercialActivationCompositionForTaxon(input: {
+  taxonId: string;
+}): Promise<CommercialActivationCompositionEnsureResult> {
+  const taxonId = input.taxonId.trim();
+  if (!taxonId) return { status: "composition_not_found" };
+
+  const existing = await resolveCommercialActivationCompositionForTaxon({
+    taxonId,
+  });
+  if (existing.status === "ready") {
+    return {
+      status: "ready",
+      composition: existing.composition,
+      createdOrExisting: true,
+    };
+  }
+
+  const supabase = createServiceClient();
+  const { error } = await supabase.rpc(
+    "ensure_commercial_activation_composition",
+    {
+      p_taxon_id: taxonId,
+    },
+  );
+
+  if (error) {
+    console.error("ensureCommercialActivationCompositionForTaxon failed", {
+      code: error.code ?? "rpc_failed",
+      message: error.message,
+      taxonId,
+    });
+
+    if (
+      error.message.includes("commercial_activation_taxon_not_active") ||
+      error.message.includes("commercial_activation_research_incomplete")
+    ) {
+      return { status: "taxon_not_eligible" };
+    }
+
+    return { status: "materialization_failed" };
+  }
+
+  const ensured = await resolveCommercialActivationCompositionForTaxon({
+    taxonId,
+  });
+
+  if (ensured.status !== "ready") {
+    return { status: ensured.status };
+  }
+
+  return {
+    status: "ready",
+    composition: ensured.composition,
+    createdOrExisting: true,
+  };
 }
 
 function isString(value: unknown): value is string {

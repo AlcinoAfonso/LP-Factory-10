@@ -698,6 +698,7 @@
 • has_account_min_role (motivo: helper RLS; limites: somente leitura; sem writes)
 • ensure_first_account_for_current_user (motivo: F2 auto 1ª conta; limites: idempotente; cria 1ª conta + owner/active)
 • publish_content_artifact_draft (motivo: publicação transacional E10.7; limites: publica um draft por `id`, arquiva o published anterior do mesmo template/taxon/audience_scope e exige is_super_admin() OU is_platform_admin())
+• ensure_commercial_activation_composition (motivo: materialização técnica genérica E10.7 Fase 5; limites: somente `commercial_activation`, taxon ativo e elegível por pesquisa completa v1; cria/atualiza vínculo, composição e itens técnicos mínimos sem duplicar template de canal)
 
 3.3.4 publish_content_artifact_draft(p_artifact_id uuid) → content_artifacts
 • Segurança: SECURITY DEFINER (aprovado; escrita transacional controlada)
@@ -707,6 +708,14 @@
 • Efeito: bloqueia o draft alvo, valida `status = 'draft'`, bloqueia o `published` anterior do mesmo template/taxon/audience_scope, arquiva o anterior e publica o draft na mesma transação.
 • Garantia complementar: `content_artifacts_one_published_uidx` mantém no máximo um `published` por (`template_id`, `taxon_id`, `audience_scope`).
 • Risco residual aceito para Fase 2: geração segura da próxima `artifact_version`; a UNIQUE `(template_id, composition_id, taxon_id, audience_scope, research_version, artifact_version)` protege colisão, mas o fluxo de geração ainda deve calcular ou tentar inserir a próxima versão de forma segura.
+
+3.3.5 ensure_commercial_activation_composition(p_taxon_id uuid) → content_template_compositions
+• Segurança: SECURITY DEFINER (aprovado; materialização técnica controlada para E10.7 Fase 5)
+• search_path: public, pg_temp
+• Grants de EXECUTE: service_role
+• Sem EXECUTE para public, anon ou authenticated
+• Efeito: valida taxon ativo e pesquisa completa `active version 1` para `business_buyer` e `end_customer` nos blocos `strategic_core`, `lp_overview`, `lp_sections` e `seo`; retorna composição ativa existente ou materializa vínculo `content_template_taxons`, composição v1 ativa e oito itens técnicos `commercial_activation`.
+• Limites: não cria template, não duplica template por taxon, não gera draft, não publica, não roda na listagem e não depende de slug/nome de taxon.
 
 3.4 Convites de Conta
 • accept_account_invite(account_id uuid, ttl_days int) → boolean
@@ -793,6 +802,10 @@
 • Rollback: não remove automaticamente a extensão, pois pode ser reutilizada por outros recursos
 
 99. Changelog
+v1.0.28 (24/06/2026) — E10.7 Fase 5: composição técnica genérica
+• Registrada a RPC `ensure_commercial_activation_composition(uuid)` para materialização técnica controlada de composição `commercial_activation` por taxon elegível.
+• Registrados limites: execução apenas via `service_role`, sem acesso público/authenticated direto, sem criação de template, sem geração de draft e sem execução na listagem administrativa.
+
 v1.0.27 (22/06/2026) — E10.7 Fase 1D: leitura server-side de `plans`
 • Registrado grant mínimo de SELECT em `public.plans` para `service_role`, viabilizando leitura server-side administrativa da fonte canônica parcial de planos.
 

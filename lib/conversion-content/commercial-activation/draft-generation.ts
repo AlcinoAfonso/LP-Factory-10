@@ -11,7 +11,7 @@ import {
   type ContentCompositionItem,
 } from "../contracts";
 import { isRecord } from "../validation";
-import { resolveCommercialActivationCompositionForTaxon } from "./composition";
+import { ensureCommercialActivationCompositionForTaxon } from "./composition";
 import { commercialActivationSectionRegistry } from "./registry";
 import { resolveCommercialActivationRenderModel } from "./resolve";
 import {
@@ -22,8 +22,6 @@ import {
 } from "./schemas";
 
 const OPENAI_RESPONSES_ENDPOINT = "https://api.openai.com/v1/responses";
-export const COMMERCIAL_ACTIVATION_PILOT_TAXON_SLUG =
-  "corretor-de-imoveis-de-medio-padrao";
 const RESEARCH_VERSION = 1;
 const SAFE_CTA_HREF = "/auth/sign-up";
 const MODEL_ENV_NAME = "OPENAI_COMMERCIAL_ACTIVATION_MODEL";
@@ -298,10 +296,25 @@ export async function generateCommercialActivationDraftForTaxon(input: {
   requestId?: string;
 } = {}): Promise<GenerateCommercialActivationDraftResult> {
   const requestId = input.requestId ?? crypto.randomUUID();
-  const taxonSlug =
-    input.taxonSlug?.trim() || COMMERCIAL_ACTIVATION_PILOT_TAXON_SLUG;
+  const taxonSlug = input.taxonSlug?.trim() ?? "";
   const model = process.env[MODEL_ENV_NAME]?.trim() ?? "";
   const apiKey = process.env.OPENAI_API_KEY?.trim() ?? "";
+
+  if (!taxonSlug) {
+    logDraftEvent("commercial_activation_draft_generation_blocked", {
+      requestId,
+      taxonId: null,
+      status: "blocked",
+      reason: "missing_taxon_slug",
+    });
+    return {
+      ok: false,
+      requestId,
+      status: "blocked",
+      stage: "preconditions",
+      reason: "missing_taxon_slug",
+    };
+  }
 
   if (!apiKey || !model) {
     logDraftEvent("commercial_activation_draft_generation_blocked", {
@@ -395,19 +408,19 @@ async function readDraftContext(input: { taxonSlug: string }): Promise<DraftCont
 
   if (taxonError) throw new Error("taxon_read_failed");
   if (!isRecord(taxonRow) || typeof taxonRow.id !== "string") {
-    throw new Error("pilot_taxon_missing");
-  }
-
-  const compositionResult = await resolveCommercialActivationCompositionForTaxon({
-    taxonId: taxonRow.id,
-  });
-  if (compositionResult.status !== "ready") {
-    throw new Error(compositionResult.status);
+    throw new Error("taxon_missing");
   }
 
   const research = await readResearchSources({
     taxonId: taxonRow.id,
   });
+
+  const compositionResult = await ensureCommercialActivationCompositionForTaxon({
+    taxonId: taxonRow.id,
+  });
+  if (compositionResult.status !== "ready") {
+    throw new Error(compositionResult.status);
+  }
 
   const plans = await readPlans();
 

@@ -6,10 +6,44 @@ import {
   type ContentArtifactStatus,
   type ContentComposition,
 } from "@/conversion-content/contracts";
-import { isRecord } from "@/conversion-content/validation";
-import { COMMERCIAL_ACTIVATION_PILOT_TAXON_SLUG } from "@/conversion-content/commercial-activation/draft-generation";
 import { resolveCommercialActivationCompositionForTaxon } from "@/conversion-content/commercial-activation/composition";
 import { resolveCommercialActivationRenderModel } from "@/conversion-content/commercial-activation/resolve";
+import { isRecord } from "@/conversion-content/validation";
+
+const RESEARCH_VERSION = 1;
+const REQUIRED_RESEARCH_BLOCKS = [
+  "strategic_core",
+  "lp_overview",
+  "lp_sections",
+  "seo",
+] as const;
+const REQUIRED_AUDIENCES = ["business_buyer", "end_customer"] as const;
+
+type RequiredAudience = (typeof REQUIRED_AUDIENCES)[number];
+type RequiredResearchBlock = (typeof REQUIRED_RESEARCH_BLOCKS)[number];
+
+type AdminCommercialActivationTaxon = {
+  id: string;
+  name: string;
+  slug: string;
+};
+
+type AdminCommercialActivationResearchSummary = {
+  businessBuyerBlocks: number;
+  businessBuyerItems: number;
+  endCustomerBlocks: number;
+  endCustomerItems: number;
+};
+
+export type AdminCommercialActivationListItem = {
+  taxon: AdminCommercialActivationTaxon;
+  state: "published" | "review" | "eligible";
+  stateLabel: "Publicado" | "Em revisao" | "Elegivel para gerar";
+  research: AdminCommercialActivationResearchSummary;
+  hasActiveComposition: boolean;
+  latestDraftVersion: number | null;
+  publishedVersion: number | null;
+};
 
 export type AdminCommercialActivationArtifact = {
   id: string;
@@ -31,15 +65,22 @@ export type AdminCommercialActivationArtifact = {
   sourceCount: number;
 };
 
+export type AdminCommercialActivationOverview =
+  | {
+      ok: true;
+      items: AdminCommercialActivationListItem[];
+      selected: AdminCommercialActivationState | null;
+    }
+  | {
+      ok: false;
+      reason: "template_not_found" | "eligible_taxons_read_failed";
+    };
+
 export type AdminCommercialActivationState =
   | {
       ok: true;
-      taxon: {
-        id: string;
-        name: string;
-        slug: string;
-      };
-      composition: ContentComposition;
+      taxon: AdminCommercialActivationTaxon;
+      composition: ContentComposition | null;
       latestDraft: AdminCommercialActivationArtifact | null;
       publishableDraft: AdminCommercialActivationArtifact | null;
       published: AdminCommercialActivationArtifact | null;
@@ -49,7 +90,6 @@ export type AdminCommercialActivationState =
       ok: false;
       reason:
         | "taxon_not_found"
-        | "composition_not_found"
         | "composition_invalid"
         | "artifacts_read_failed";
     };
@@ -94,35 +134,77 @@ export type PublishValidation =
       publishedCount?: number;
     };
 
-export async function readAdminCommercialActivationState(
-  taxonSlug = COMMERCIAL_ACTIVATION_PILOT_TAXON_SLUG,
-): Promise<AdminCommercialActivationState> {
+export async function readAdminCommercialActivationOverview(input: {
+  selectedTaxonSlug?: string;
+} = {}): Promise<AdminCommercialActivationOverview> {
+  try {
+    const templateId = await readCommercialActivationPageTemplateId();
+    if (!templateId) return { ok: false, reason: "template_not_found" };
+
+    const items = await readEligibleCommercialActivationTaxons({ templateId });
+    const selectedSlug = input.selectedTaxonSlug?.trim();
+    const selectedItem =
+      (selectedSlug
+        ? items.find((item) => item.taxon.slug === selectedSlug)
+        : null) ?? items[0] ?? null;
+    const selected = selectedItem
+      ? await readAdminCommercialActivationState({
+          taxonId: selectedItem.taxon.id,
+          templateId,
+        })
+      : null;
+
+    return { ok: true, items, selected };
+  } catch (error) {
+    console.error("readAdminCommercialActivationOverview failed", {
+      message: error instanceof Error ? error.message : String(error),
+    });
+    return { ok: false, reason: "eligible_taxons_read_failed" };
+  }
+}
+
+export async function readAdminCommercialActivationState(input: {
+  taxonSlug?: string;
+  taxonId?: string;
+  templateId?: string;
+} = {}): Promise<AdminCommercialActivationState> {
   const supabase = createServiceClient();
 
   try {
-    const { data: taxonRow, error: taxonError } = await supabase
+    const templateId =
+      input.templateId ?? (await readCommercialActivationPageTemplateId());
+    if (!templateId) return { ok: false, reason: "artifacts_read_failed" };
+
+    let query = supabase
       .from("business_taxons")
       .select("id,name,slug")
-      .eq("slug", taxonSlug)
       .eq("is_active", true)
-      .maybeSingle();
+      .limit(1);
+
+    if (input.taxonId) {
+      query = query.eq("id", input.taxonId.trim());
+    } else if (input.taxonSlug) {
+      query = query.eq("slug", input.taxonSlug.trim());
+    } else {
+      return { ok: false, reason: "taxon_not_found" };
+    }
+
+    const { data: taxonRow, error: taxonError } = await query.maybeSingle();
 
     if (taxonError) throw taxonError;
     if (!isRecord(taxonRow) || !isString(taxonRow.id)) {
       return { ok: false, reason: "taxon_not_found" };
     }
 
-    const composition = await resolveCommercialActivationCompositionForTaxon({
+    const compositionResult = await resolveCommercialActivationCompositionForTaxon({
       taxonId: taxonRow.id,
     });
-
-    if (composition.status !== "ready") {
-      return { ok: false, reason: composition.status };
+    if (compositionResult.status === "composition_invalid") {
+      return { ok: false, reason: "composition_invalid" };
     }
 
     const artifacts = await readCommercialActivationArtifacts({
-      templateId: composition.composition.template.id,
-      compositionId: composition.composition.id,
+      templateId,
       taxonId: taxonRow.id,
     });
 
@@ -136,10 +218,13 @@ export async function readAdminCommercialActivationState(
       ok: true,
       taxon: {
         id: taxonRow.id,
-        name: isString(taxonRow.name) ? taxonRow.name : taxonSlug,
-        slug: isString(taxonRow.slug) ? taxonRow.slug : taxonSlug,
+        name: isString(taxonRow.name) ? taxonRow.name : "",
+        slug: isString(taxonRow.slug) ? taxonRow.slug : "",
       },
-      composition: composition.composition,
+      composition:
+        compositionResult.status === "ready"
+          ? compositionResult.composition
+          : null,
       latestDraft,
       publishableDraft,
       published,
@@ -156,9 +241,26 @@ export async function readAdminCommercialActivationState(
 export async function readPublishContext(
   artifactId: string,
 ): Promise<PublishContext> {
+  const supabase = createServiceClient();
+
   try {
-    const state = await readAdminCommercialActivationState();
-    if (!state.ok) return { ok: false, reason: "read_failed" };
+    const { data: targetRow, error: targetError } = await supabase
+      .from("content_artifacts")
+      .select("id,taxon_id,status")
+      .eq("id", artifactId)
+      .maybeSingle();
+
+    if (targetError) throw targetError;
+    if (!isRecord(targetRow) || !isString(targetRow.taxon_id)) {
+      return { ok: false, reason: "artifact_not_found" };
+    }
+
+    const state = await readAdminCommercialActivationState({
+      taxonId: targetRow.taxon_id,
+    });
+    if (!state.ok || !state.composition) {
+      return { ok: false, reason: "read_failed" };
+    }
 
     if (!state.publishableDraft || state.publishableDraft.id !== artifactId) {
       const requested = state.artifacts.find(
@@ -190,10 +292,6 @@ export async function readPublishContext(
       target.audienceScope !== COMMERCIAL_ACTIVATION_AUDIENCE_SCOPE
     ) {
       return { ok: false, reason: "artifact_bundle_mismatch" };
-    }
-
-    if (!isString(target.id)) {
-      return { ok: false, reason: "artifact_not_found" };
     }
 
     return {
@@ -286,9 +384,240 @@ export async function validatePublicationResult(input: {
   }
 }
 
+async function readCommercialActivationPageTemplateId() {
+  const supabase = createServiceClient();
+  const { data, error } = await supabase
+    .from("content_templates")
+    .select("id")
+    .eq("template_key", "commercial_activation_page")
+    .eq("template_family", "commercial_activation")
+    .eq("template_scope", "page")
+    .eq("version", 1)
+    .eq("status", "active")
+    .eq("is_active", true)
+    .limit(1)
+    .maybeSingle();
+
+  if (error) throw error;
+  return isRecord(data) && isString(data.id) ? data.id : null;
+}
+
+async function readEligibleCommercialActivationTaxons(input: {
+  templateId: string;
+}): Promise<AdminCommercialActivationListItem[]> {
+  const supabase = createServiceClient();
+  const { data: taxonRows, error: taxonError } = await supabase
+    .from("business_taxons")
+    .select("id,name,slug")
+    .eq("is_active", true)
+    .order("name", { ascending: true })
+    .order("slug", { ascending: true })
+    .limit(500);
+
+  if (taxonError) throw taxonError;
+
+  const taxons = (taxonRows ?? [])
+    .map(mapTaxon)
+    .filter((taxon): taxon is AdminCommercialActivationTaxon => taxon !== null);
+  if (taxons.length === 0) return [];
+
+  const taxonIds = taxons.map((taxon) => taxon.id);
+  const research = await readResearchEligibility(taxonIds);
+  const compositionTaxonIds = await readActiveCompositionTaxonIds({
+    templateId: input.templateId,
+    taxonIds,
+  });
+  const artifactsByTaxon = await readArtifactSummaries({
+    templateId: input.templateId,
+    taxonIds,
+  });
+
+  return taxons
+    .map((taxon) => {
+      const researchSummary = research.get(taxon.id);
+      if (!researchSummary) return null;
+
+      const artifactSummary = artifactsByTaxon.get(taxon.id) ?? {
+        latestDraftVersion: null,
+        publishedVersion: null,
+      };
+      const state = resolveListState(artifactSummary);
+
+      return {
+        taxon,
+        state,
+        stateLabel:
+          state === "published"
+            ? "Publicado"
+            : state === "review"
+              ? "Em revisao"
+              : "Elegivel para gerar",
+        research: researchSummary,
+        hasActiveComposition: compositionTaxonIds.has(taxon.id),
+        latestDraftVersion: artifactSummary.latestDraftVersion,
+        publishedVersion: artifactSummary.publishedVersion,
+      };
+    })
+    .filter((item): item is AdminCommercialActivationListItem => item !== null);
+}
+
+async function readResearchEligibility(taxonIds: string[]) {
+  const supabase = createServiceClient();
+  const { data: researchRows, error: researchError } = await supabase
+    .from("taxon_market_research")
+    .select("id,taxon_id,audience_scope,research_block")
+    .in("taxon_id", taxonIds)
+    .eq("version", RESEARCH_VERSION)
+    .eq("status", "active")
+    .in("audience_scope", [...REQUIRED_AUDIENCES])
+    .in("research_block", [...REQUIRED_RESEARCH_BLOCKS])
+    .order("taxon_id", { ascending: true })
+    .order("audience_scope", { ascending: true })
+    .order("research_block", { ascending: true });
+
+  if (researchError) throw researchError;
+
+  const researchIds = (researchRows ?? [])
+    .map((row) => (isRecord(row) && isString(row.id) ? row.id : null))
+    .filter((id): id is string => Boolean(id));
+  const itemCounts = new Map<string, number>();
+
+  if (researchIds.length > 0) {
+    const { data: itemRows, error: itemError } = await supabase
+      .from("taxon_market_research_items")
+      .select("research_id")
+      .in("research_id", researchIds)
+      .eq("is_active", true)
+      .order("research_id", { ascending: true });
+
+    if (itemError) throw itemError;
+
+    for (const row of itemRows ?? []) {
+      if (!isRecord(row) || !isString(row.research_id)) continue;
+      itemCounts.set(row.research_id, (itemCounts.get(row.research_id) ?? 0) + 1);
+    }
+  }
+
+  const coverage = new Map<
+    string,
+    Map<RequiredAudience, Map<RequiredResearchBlock, number>>
+  >();
+
+  for (const row of researchRows ?? []) {
+    if (!isRecord(row)) continue;
+    if (
+      !isString(row.id) ||
+      !isString(row.taxon_id) ||
+      !isRequiredAudience(row.audience_scope) ||
+      !isRequiredResearchBlock(row.research_block)
+    ) {
+      continue;
+    }
+
+    const taxonCoverage = coverage.get(row.taxon_id) ?? new Map();
+    const audienceCoverage =
+      taxonCoverage.get(row.audience_scope) ?? new Map();
+    audienceCoverage.set(row.research_block, itemCounts.get(row.id) ?? 0);
+    taxonCoverage.set(row.audience_scope, audienceCoverage);
+    coverage.set(row.taxon_id, taxonCoverage);
+  }
+
+  const eligible = new Map<string, AdminCommercialActivationResearchSummary>();
+  for (const [taxonId, taxonCoverage] of coverage.entries()) {
+    const businessBuyer = taxonCoverage.get("business_buyer") ?? new Map();
+    const endCustomer = taxonCoverage.get("end_customer") ?? new Map();
+    const businessBuyerReady = [...REQUIRED_RESEARCH_BLOCKS].every(
+      (block) => (businessBuyer.get(block) ?? 0) > 0,
+    );
+    const endCustomerReady = [...REQUIRED_RESEARCH_BLOCKS].every(
+      (block) => (endCustomer.get(block) ?? 0) > 0,
+    );
+
+    if (!businessBuyerReady || !endCustomerReady) continue;
+
+    eligible.set(taxonId, {
+      businessBuyerBlocks: businessBuyer.size,
+      businessBuyerItems: sumCounts(businessBuyer),
+      endCustomerBlocks: endCustomer.size,
+      endCustomerItems: sumCounts(endCustomer),
+    });
+  }
+
+  return eligible;
+}
+
+async function readActiveCompositionTaxonIds(input: {
+  templateId: string;
+  taxonIds: string[];
+}) {
+  const supabase = createServiceClient();
+  const { data, error } = await supabase
+    .from("content_template_compositions")
+    .select("taxon_id")
+    .eq("template_id", input.templateId)
+    .in("taxon_id", input.taxonIds)
+    .eq("status", "active")
+    .order("taxon_id", { ascending: true });
+
+  if (error) throw error;
+
+  return new Set(
+    (data ?? [])
+      .map((row) => (isRecord(row) && isString(row.taxon_id) ? row.taxon_id : null))
+      .filter((taxonId): taxonId is string => Boolean(taxonId)),
+  );
+}
+
+async function readArtifactSummaries(input: {
+  templateId: string;
+  taxonIds: string[];
+}) {
+  const supabase = createServiceClient();
+  const { data, error } = await supabase
+    .from("content_artifacts")
+    .select("taxon_id,status,artifact_version")
+    .eq("template_id", input.templateId)
+    .in("taxon_id", input.taxonIds)
+    .eq("audience_scope", COMMERCIAL_ACTIVATION_AUDIENCE_SCOPE)
+    .order("taxon_id", { ascending: true })
+    .order("artifact_version", { ascending: false });
+
+  if (error) throw error;
+
+  const summaries = new Map<
+    string,
+    { latestDraftVersion: number | null; publishedVersion: number | null }
+  >();
+
+  for (const row of data ?? []) {
+    if (!isRecord(row) || !isString(row.taxon_id)) continue;
+    const current = summaries.get(row.taxon_id) ?? {
+      latestDraftVersion: null,
+      publishedVersion: null,
+    };
+
+    if (row.status === "draft" && isPositiveInteger(row.artifact_version)) {
+      current.latestDraftVersion = Math.max(
+        current.latestDraftVersion ?? 0,
+        row.artifact_version,
+      );
+    }
+
+    if (row.status === "published" && isPositiveInteger(row.artifact_version)) {
+      current.publishedVersion = Math.max(
+        current.publishedVersion ?? 0,
+        row.artifact_version,
+      );
+    }
+
+    summaries.set(row.taxon_id, current);
+  }
+
+  return summaries;
+}
+
 async function readCommercialActivationArtifacts(input: {
   templateId: string;
-  compositionId: string;
   taxonId: string;
 }): Promise<AdminCommercialActivationArtifact[]> {
   const supabase = createServiceClient();
@@ -299,7 +628,6 @@ async function readCommercialActivationArtifacts(input: {
       "id,template_id,composition_id,taxon_id,audience_scope,template_version,composition_version,research_version,artifact_version,status,content_json,provenance_json,created_at,updated_at,published_at,archived_at",
     )
     .eq("template_id", input.templateId)
-    .eq("composition_id", input.compositionId)
     .eq("taxon_id", input.taxonId)
     .eq("audience_scope", COMMERCIAL_ACTIVATION_AUDIENCE_SCOPE)
     .order("artifact_version", { ascending: false })
@@ -317,7 +645,8 @@ async function readCommercialActivationArtifacts(input: {
     const { data: sourceRows, error: sourcesError } = await supabase
       .from("content_artifact_research_sources")
       .select("artifact_id")
-      .in("artifact_id", artifactIds);
+      .in("artifact_id", artifactIds)
+      .order("artifact_id", { ascending: true });
 
     if (sourcesError) throw sourcesError;
 
@@ -335,6 +664,21 @@ async function readCommercialActivationArtifacts(input: {
     .filter((artifact): artifact is AdminCommercialActivationArtifact =>
       Boolean(artifact),
     );
+}
+
+function resolveListState(input: {
+  latestDraftVersion: number | null;
+  publishedVersion: number | null;
+}): AdminCommercialActivationListItem["state"] {
+  if (
+    input.latestDraftVersion &&
+    (!input.publishedVersion || input.latestDraftVersion > input.publishedVersion)
+  ) {
+    return "review";
+  }
+
+  if (input.publishedVersion) return "published";
+  return "eligible";
 }
 
 function getPublishableDraft(input: {
@@ -400,8 +744,28 @@ function mapAdminArtifact(
   };
 }
 
+function mapTaxon(value: unknown): AdminCommercialActivationTaxon | null {
+  if (!isRecord(value)) return null;
+  if (!isString(value.id) || !isString(value.name) || !isString(value.slug)) {
+    return null;
+  }
+  return {
+    id: value.id,
+    name: value.name,
+    slug: value.slug,
+  };
+}
+
 function isArtifactStatus(value: unknown): value is ContentArtifactStatus {
   return value === "draft" || value === "published" || value === "archived";
+}
+
+function isRequiredAudience(value: unknown): value is RequiredAudience {
+  return value === "business_buyer" || value === "end_customer";
+}
+
+function isRequiredResearchBlock(value: unknown): value is RequiredResearchBlock {
+  return REQUIRED_RESEARCH_BLOCKS.includes(value as RequiredResearchBlock);
 }
 
 function isString(value: unknown): value is string {
@@ -410,4 +774,8 @@ function isString(value: unknown): value is string {
 
 function isPositiveInteger(value: unknown): value is number {
   return typeof value === "number" && Number.isInteger(value) && value > 0;
+}
+
+function sumCounts(value: Map<RequiredResearchBlock, number>) {
+  return [...value.values()].reduce((sum, count) => sum + count, 0);
 }
