@@ -143,10 +143,9 @@ export async function readAdminCommercialActivationOverview(input: {
 
     const items = await readEligibleCommercialActivationTaxons({ templateId });
     const selectedSlug = input.selectedTaxonSlug?.trim();
-    const selectedItem =
-      (selectedSlug
-        ? items.find((item) => item.taxon.slug === selectedSlug)
-        : null) ?? items[0] ?? null;
+    const selectedItem = selectedSlug
+      ? items.find((item) => item.taxon.slug === selectedSlug)
+      : null;
     const selected = selectedItem
       ? await readAdminCommercialActivationState({
           taxonId: selectedItem.taxon.id,
