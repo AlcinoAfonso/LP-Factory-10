@@ -147,9 +147,8 @@
 
 • `OPENAI_COMMERCIAL_ACTIVATION_MODEL`
 • Finalidade: modelo usado pela geração administrativa server-side de drafts `commercial_activation` da E10.7.
-• Escopo validado: Preview.
+• Escopo validado em 25/06/2026: Production e Preview, sem branch customizada na Vercel.
 • Valor atual de referência em Preview: `gpt-5.4-mini`
-• Production: pendente de decisão operacional antes de configurar.
 • Valor real de secret: não versionar.
 • Regra: deve conter apenas o ID do modelo; nunca inserir `OPENAI_API_KEY` nessa variável.
 
