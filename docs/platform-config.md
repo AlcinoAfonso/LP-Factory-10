@@ -2,8 +2,8 @@
 
 0.1 Cabeçalho
 • Documento: LP Factory 10 — Platform Config
-• Versão: v0.1.6
-• Data: 23/06/2026
+• Versão: v0.1.7
+• Data: 25/06/2026
 
 0.2 Contrato do documento
 • O QUE É: snapshot operacional e fonte única das configurações de plataformas externas do LP Factory 10, refletindo o estado conhecido/cadastrado nas plataformas conforme indicado.
@@ -147,11 +147,11 @@
 
 • `OPENAI_COMMERCIAL_ACTIVATION_MODEL`
 • Finalidade: modelo usado pela geração administrativa server-side de drafts `commercial_activation` da E10.7.
-• Escopo validado: Preview.
-• Valor atual de referência em Preview: `gpt-5.4-mini`
-• Production: pendente de decisão operacional antes de configurar.
+• Escopo: Production e Preview.
+• Valor atual de referência: `gpt-5.4-mini`.
 • Valor real de secret: não versionar.
 • Regra: deve conter apenas o ID do modelo; nunca inserir `OPENAI_API_KEY` nessa variável.
+• Regra operacional: usar escopo geral Production e Preview no MVP; evitar configuração presa a branch específica salvo necessidade futura comprovada.
 
 • `LPF_MCP_SECRET`
 • Finalidade: secret Bearer usado para autenticar chamadas ao MCP Supabase Inspect.
@@ -259,7 +259,10 @@
 • `OPENAI_COMMERCIAL_ACTIVATION_MODEL`
 • Plataforma: Vercel.
 • Finalidade: selecionar o modelo usado pela geração administrativa server-side de drafts `commercial_activation`.
+• Escopo: Production e Preview.
+• Valor atual de referência: `gpt-5.4-mini`.
 • Valor real: não versionar.
+• Regra: deve conter apenas o ID do modelo; nunca inserir `OPENAI_API_KEY` nessa variável.
 
 6.3.1 Endpoint externo atual
 • Endpoint OpenAI Responses API: `https://api.openai.com/v1/responses`
@@ -344,6 +347,8 @@
 • Configurações de plataformas, secrets por nome, workflows, ambientes e endpoints usados por automações devem ser registrados neste documento.
 
 99. Changelog
+v0.1.7 — 25/06/2026 — Atualizado `OPENAI_COMMERCIAL_ACTIVATION_MODEL` para escopo Production e Preview, com referência `gpt-5.4-mini` e regra operacional de não prender configuração a branch no MVP.
+
 v0.1.6 — 23/06/2026 — Registrado o estado operacional de `OPENAI_COMMERCIAL_ACTIVATION_MODEL` para E10.7 Fase 3: configurada e validada em Vercel Preview com modelo de referência, Production pendente de decisão operacional e sem exposição de secrets.
 
 v0.1.5 (22/06/2026) — Registrada a variável `OPENAI_COMMERCIAL_ACTIVATION_MODEL` como configuração server-side da geração administrativa de drafts `commercial_activation`, sem versionar valor real nem modelo padrão definitivo.

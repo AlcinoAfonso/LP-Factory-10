@@ -1,8 +1,8 @@
 0. Introdução
 
 0.1 Cabeçalho
-• Data da última atualização: 21/06/2026
-• Documento: LP Factory 10 — Schema (DB Contract) v1.0.27
+• Data da última atualização: 25/06/2026
+• Documento: LP Factory 10 — Schema (DB Contract) v1.0.29
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -709,13 +709,20 @@
 • Garantia complementar: `content_artifacts_one_published_uidx` mantém no máximo um `published` por (`template_id`, `taxon_id`, `audience_scope`).
 • Risco residual aceito para Fase 2: geração segura da próxima `artifact_version`; a UNIQUE `(template_id, composition_id, taxon_id, audience_scope, research_version, artifact_version)` protege colisão, mas o fluxo de geração ainda deve calcular ou tentar inserir a próxima versão de forma segura.
 
-3.3.5 ensure_commercial_activation_composition(p_taxon_id uuid) → content_template_compositions
-• Segurança: SECURITY DEFINER (aprovado; materialização técnica controlada para E10.7 Fase 5)
-• search_path: public, pg_temp
-• Grants de EXECUTE: service_role
-• Sem EXECUTE para public, anon ou authenticated
-• Efeito: valida taxon ativo e pesquisa completa `active version 1` para `business_buyer` e `end_customer` nos blocos `strategic_core`, `lp_overview`, `lp_sections` e `seo`; retorna composição ativa existente ou materializa vínculo `content_template_taxons`, composição v1 ativa e oito itens técnicos `commercial_activation`.
-• Limites: não cria template, não duplica template por taxon, não gera draft, não publica, não roda na listagem e não depende de slug/nome de taxon.
+3.3.5 public.ensure_commercial_activation_composition(p_taxon_id uuid) → content_template_compositions
+• Finalidade: garantir composição técnica `commercial_activation` para taxon elegível.
+• Entrada: `p_taxon_id uuid`.
+• Comportamento: retorna composição existente quando houver composição ativa; materializa composição técnica quando o taxon elegível ainda não tiver composição ativa.
+• Valida taxon ativo.
+• Valida pesquisa estruturada completa.
+• Usa template existente `commercial_activation_page`.
+• Não cria novo template por taxon.
+• Não depende de slug, nome de taxon ou taxon piloto.
+• Segurança: SECURITY DEFINER.
+• search_path: public, pg_temp.
+• EXECUTE: somente `service_role`.
+• `public`, `anon` e `authenticated`: sem `EXECUTE`.
+• Migration relacionada: `supabase/migrations/20260624203000_e10_7_phase_5_ensure_commercial_activation_composition.sql`.
 
 3.4 Convites de Conta
 • accept_account_invite(account_id uuid, ttl_days int) → boolean
@@ -802,6 +809,9 @@
 • Rollback: não remove automaticamente a extensão, pois pode ser reutilizada por outros recursos
 
 99. Changelog
+v1.0.29 (25/06/2026) — E10.7 Fase 5: contrato consolidado da RPC de composição técnica genérica
+• Atualizado o contrato da RPC `public.ensure_commercial_activation_composition(p_taxon_id uuid)` com finalidade, entrada, comportamento, validações, grants e migration relacionada.
+
 v1.0.28 (24/06/2026) — E10.7 Fase 5: composição técnica genérica
 • Registrada a RPC `ensure_commercial_activation_composition(uuid)` para materialização técnica controlada de composição `commercial_activation` por taxon elegível.
 • Registrados limites: execução apenas via `service_role`, sem acesso público/authenticated direto, sem criação de template, sem geração de draft e sem execução na listagem administrativa.

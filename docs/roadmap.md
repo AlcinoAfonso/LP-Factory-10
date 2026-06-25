@@ -1,8 +1,8 @@
 0. Introdução
 
 0.1 Cabeçalho
-• Data: 23/06/2026
-• Versão: v1.5.83
+• Data: 25/06/2026
+• Versão: v1.5.84
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -762,8 +762,8 @@ Repositório — Ajustados
 • Implementar detecção por ambiente somente se o ganho justificar a complexidade.
 
 10.7 Páginas comerciais personalizadas por nicho
-• Status: Em execução faseada — Fase 4 concluída em 23/06/2026.
-• Próxima execução: Fase 5 — validação com segundo taxon.
+• Status: Em execução faseada — Fase 5 concluída em 25/06/2026.
+• Próxima execução: Fase 6 — Admin comercial enxuto e contrato fixo da página comercial.
 • Objetivo: gerar, revisar, publicar e consumir páginas comerciais por taxon; a IA roda apenas em operação administrativa/server-side; `/a/[account]` consome somente artefato publicado e validado; ausência de conteúdo nichado não pode quebrar `/a/[account]`.
 • Dependência estrutural: a E18 define os contratos reutilizáveis mínimos; a E10.7 aplica, valida e ajusta esses contratos no caso comercial concreto.
 • A página genérica `generic-v1` da E10.6 permanece concluída e será o fallback obrigatório.
@@ -778,6 +778,12 @@ Repositório — Ajustados
 • Não implementar LP Builder, liberação de LPs, continuidade de contas, bloqueio de novas ativações nem IA em runtime da página.
 • O conteúdo da página comercial é global por taxon e reutilizado por contas que resolvam a mesma página publicada; a exibição ocorre no contexto da conta e o tracking permanece vinculado ao `account_id`.
 • O taxon piloto valida o mecanismo, mas não limita a implementação ao seu slug.
+• Taxon elegível é definido por pesquisa estruturada completa.
+• Para `commercial_activation`, o template é universal por canal e não deve ser duplicado por taxon.
+• A estrutura da página comercial é fixa no MVP: Hero, Benefícios, Serviços, Planos, Diferenciais, Como funciona, FAQ e CTA final.
+• A IA gera copy dentro da estrutura definida; não decide seções nem ordem.
+• As cores permanecem universais do template comercial no MVP.
+• A composição por taxon é materialização técnica no schema atual, não composição estratégica nem tarefa manual do operador.
 
 10.7.2 Fase 1 — Ajuste documental e patch estrutural mínimo
 • Status: Concluída e validada em 21/06/2026.
@@ -842,12 +848,45 @@ Repositório — Ajustados
 • `lib/conversion-content/commercial-activation/renderer.tsx`
 • `lib/conversion-content/commercial-activation/validation-cases.ts`
 
-10.7.6 Fase 5 — Validação com segundo taxon
-• Escopo: confirmar que a solução não depende do taxon piloto.
-• Validar: 8 pesquisas `active version 1`; composição ativa; geração IA; draft; publicação; renderização própria; fallback por ancestral quando aplicável; `generic-v1` quando necessário; ausência de regra específica por slug.
-• Critério de conclusão: segundo taxon validado, fluxo reutilizável, E10.7 operacional e sem mudança estrutural desnecessária.
+10.7.6 Fase 5 — Validação com segundo taxon e composição genérica
+• Status: Concluída em 25/06/2026.
+• Estado atual: `/admin/templates` lista taxons elegíveis por pesquisa estruturada completa e permite gerar/publicar página `commercial_activation` para qualquer taxon elegível.
+• Geração: exige `taxonSlug`; o fallback implícito para o taxon piloto foi removido.
+• Composição: `ensureCommercialActivationCompositionForTaxon(taxonId)` materializa composição técnica sob demanda quando o taxon elegível ainda não tem composição ativa.
+• Publicação: continua usando `publish_content_artifact_draft(uuid)`.
+• Consumo: `/a/[account]` permanece consumindo somente página publicada e validada.
+• Limites: não cria template por taxon, não leva IA para runtime público, não cria procedimento manual de composição por taxon e não altera a hierarquia dos taxons.
+• Pendência vigente: trocar erro técnico `missing_openai_env` por mensagem amigável quando aplicável.
+• Updates Supabase aplicados: `#Supa36`, `#Supa05`, `#Supa40` e `#Supa58`.
 
-10.7.7 Exibição, fallbacks e tracking
+10.7.6.1 Estruturas e artefatos
+
+Banco — Criados
+• `ensure_commercial_activation_composition(p_taxon_id uuid)`
+
+Repositório — Criados
+• `supabase/migrations/20260624203000_e10_7_phase_5_ensure_commercial_activation_composition.sql`
+• `supabase/snippets/e10_7_phase_5_eligible_taxons_verify.sql`
+
+Repositório — Ajustados
+• `app/admin/(protected)/templates/page.tsx`
+• `app/admin/(protected)/templates/actions.ts`
+• `lib/admin/adapters/adminCommercialActivationTemplatesAdapter.ts`
+• `lib/conversion-content/commercial-activation/draft-generation.ts`
+• `lib/conversion-content/commercial-activation/composition.ts`
+• `docs/lousa-plano-base-e10-7.md`
+• `docs/schema.md`
+• `docs/platform-config.md`
+
+10.7.7 Fase 6 — Admin comercial enxuto e contrato fixo da página comercial
+• Status: Planejada.
+• Escopo: transformar `/admin/templates` em lista limpa e mover operação detalhada para página própria por taxon.
+• Rota prevista: `/admin/templates/commercial-activation/[taxonSlug]`.
+• Incluir na página específica: status do taxon, gerar/regenerar draft, publicar draft, preview, histórico e diagnóstico técnico secundário.
+• Aplicar loading/disable nos botões no local definitivo.
+• Pendências futuras: edição manual simples do draft e avaliação de uso do latest published como base para novas regenerações.
+
+10.7.8 Exibição, fallbacks e tracking
 • Fluxo em `/a/[account]`: conta `active` → resolver `account_id` → resolver taxon primário ativo → procurar bundle `commercial_activation` publicado → renderizar página nichada somente quando o bundle estiver `ready` → usar `generic-v1` quando não houver bundle consumível.
 • Preservar `NicheResolutionCard` acima da página quando aplicável.
 • Conta sem taxon, taxon inativo ou inválido, pesquisa incompleta, composição ausente ou inválida, página não publicada, artifact inválido, erro de leitura ou render model não `ready` usam a página genérica E10.6 como fallback seguro.
@@ -1299,6 +1338,8 @@ Repositório — Criados
 • Esta referência não cria obrigação de implementar E19 agora.
 
 99. Changelog
+v1.5.84 — 25/06/2026 — E10.7 Fase 5 concluída com taxons elegíveis por pesquisa estruturada completa, composição técnica genérica sob demanda, geração/publicação `commercial_activation` por `taxonSlug` e próxima Fase 6 planejada para Admin comercial enxuto.
+
 v1.5.83 — 23/06/2026 — E10.7 Fase 4 concluída com consumo no Account Dashboard: `/a/[account]` renderiza bundle `commercial_activation` publicado e `ready`, mantém fallback `generic-v1`, preserva `NicheResolutionCard` e tracking comercial, rejeita draft/archived/artifact inválido e mantém IA fora do runtime público.
 
 v1.5.82 — 23/06/2026 — E10.7 Fase 3 concluída com operação administrativa mínima em `/admin/templates`: geração/regeneração de draft, preview administrativo, publicação via RPC existente, validação server-side do draft publicável, resolução compartilhada por `content_template_taxons` e estado real validado com `v3` published, `v2` draft histórico e `v1` archived.
