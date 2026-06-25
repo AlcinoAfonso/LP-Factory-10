@@ -20,7 +20,8 @@ Fontes: chat, PR #435, PR #440, docs/roadmap.md, docs/base-tecnica.md, docs/sche
 * IA fora do runtime público.
 * Fallback generic-v1 preservado.
 * Tracking comercial preservado.
-* Próximo trabalho: Fase 6.
+* Próximo trabalho imediato: Fase 6.
+* Próximo incremento funcional planejado: Fase 7.
 
 3. Caso de uso
 E10.7 — Páginas comerciais personalizadas por taxon
@@ -94,16 +95,19 @@ Status:
 * Taxon tem artifact published válido.
 * Pode ser consumido em /a/[account].
 * Pode receber nova geração/regeneração se operador decidir.
+
 6.2 Em revisão
 * Taxon tem draft criado.
 * Ainda não foi publicado.
 * Pode ser visualizado, regenerado ou publicado.
+
 6.3 Elegível para gerar
 * Taxon tem pesquisa estruturada completa.
 * Ainda não precisa ter draft.
 * Ainda não precisa ter published.
 * Aparece para o operador iniciar geração.
 * A listagem não gera draft automaticamente.
+
 6.4 Incompleto
 * Não aparece na lista principal do MVP.
 * Diagnóstico de incompletos fica fora do escopo inicial, salvo pedido explícito.
@@ -173,6 +177,7 @@ Não fazer dentro da E10.7 sem decisão explícita:
 * Schema atual ainda possui composição vinculada a taxon_id.
 * Fase 5 teve blocker real e aprovou RPC/migration mínima.
 * Fase 6 não deve alterar schema sem novo blocker.
+* Fase 7 deve evitar schema novo; se published oficial exigir RPC atômica, tratar como blocker específico.
 
 11. Fases
 11.1 Fase 1 — Base técnica
@@ -274,7 +279,7 @@ Não fazer dentro da E10.7 sem decisão explícita:
 * Objetivo: mover gerar, regenerar, publicar, preview e histórico para a página específica.
 * Objetivo: aplicar loading/disable nos botões no local definitivo.
 * Objetivo: consolidar contrato fixo da página commercial_activation.
-* Objetivo: registrar edição manual de draft como pendência futura.
+* Objetivo: registrar edição manual de draft como escopo da Fase 7.
 * Rota sugerida: app/admin/(protected)/templates/commercial-activation/[taxonSlug].
 * Rota equivalente pode ser usada se a estrutura real do Next.js indicar path melhor.
 Regras:
@@ -295,19 +300,67 @@ Regras:
 * Não alterar runtime público.
 * Não alterar schema sem novo blocker.
 
-12. Lacuna confirmada — próximos drafts
+11.7 Fase 7 — Edição manual de copy e gestão simples de versões
+* Status implementação: planejada.
+* Objetivo: permitir ajuste humano do conteúdo antes da publicação.
+* Objetivo: permitir troca da versão publicada oficial sem duplicar versões.
+* Objetivo: preservar estrutura fixa, cores universais e contrato do renderer.
+* Objetivo: manter geração por fontes estruturadas como padrão do MVP.
+Escopo:
+* editar copy de draft por taxon;
+* salvar draft editado;
+* revalidar render model antes de publicar;
+* publicar draft editado pelo fluxo existente;
+* listar versões do histórico com status claro;
+* permitir tornar uma versão existente a publicada oficial;
+* manter apenas uma versão published oficial por taxon/contexto;
+* arquivar as demais versões do mesmo contexto na troca oficial;
+* não duplicar versão antiga para restaurar;
+* não criar nova artifact_version quando apenas trocar a published oficial.
+Regras de edição:
+* edição humana deve ser apenas de conteúdo/copy;
+* pode editar títulos, subtítulos, descrições, bullets, benefícios, serviços, FAQ, textos de CTA e microcopy;
+* não editar ordem de seções;
+* não editar tipo de seção;
+* não editar layout;
+* não editar cores;
+* não editar componentes;
+* não editar CTA técnico sem decisão específica;
+* não editar estrutura do render model fora do formulário permitido.
+Regras de versão oficial:
+* Published direto não deve ser editado em produção.
+* Published pode virar referência visual/histórica para revisão humana.
+* Ação sugerida: Tornar publicada.
+* A ação deve valer para versão existente válida do mesmo taxon/contexto.
+* A troca deve ser atômica: versão escolhida vira published e demais viram archived.
+* Draft continua sendo publicado pelo botão Publicar draft.
+* Não permitir múltiplos published oficiais simultâneos.
+* Não criar ponteiro paralelo sem blocker real.
+* Não criar nova tabela apenas para official_artifact_id sem decisão explícita.
+Fora do escopo:
+* IA assistida para edição;
+* regenerar usando latest published como base editorial;
+* editor visual;
+* edição por bloco independente;
+* múltiplas versões published ativas;
+* duplicação de conteúdo para restaurar versão antiga;
+* alteração do runtime público;
+* alteração de template, composição, layout ou cores.
+
+12. Próximos drafts e base editorial
 * Confirmado em 25/06/2026: novo draft não usa a página publicada mais recente como base editorial.
 * Geração atual usa taxon ativo, pesquisa estruturada v1, composição técnica e planos.
 * Prompt atual não inclui published, content_json anterior, artifact_id publicado ou texto da página publicada.
 * artifact_version apenas incrementa versão; não serve como base editorial.
 * Diagnóstico: nova versão é gerada a partir das fontes estruturadas atuais.
 * Decisão MVP: manter modo atual funcionando.
-* Pendência futura: edição manual simples do draft antes de publicar.
-* Pendência posterior: regenerar draft usando latest published como referência.
-Modos possíveis para futuro:
+* Fase 7 prioriza edição manual de copy e gestão simples de versões.
+* Regenerar com base em latest published fica para depois, se houver caso real.
+Modos possíveis:
 * Gerar do zero: fontes estruturadas.
 * Editar manualmente: humano ajusta draft antes de publicar.
-* Regenerar com base: usar latest published como referência editorial.
+* Tornar publicada: versão existente válida vira a published oficial.
+* Regenerar com base: usar latest published como referência editorial apenas em fase futura.
 
 13. E18 e papéis dos templates
 13.1 E18
@@ -351,10 +404,9 @@ corretor-imoveis
 * Draft só foi gerado por ação do operador.
 
 15. Pendências futuras
-* Edição manual simples do draft antes de publicar.
-* Regeneração usando latest published como referência editorial.
 * Mensagem amigável para missing_openai_env.
 * IA assistida para edição somente depois.
+* Regeneração usando latest published como referência editorial somente depois.
 * Temas visuais avançados somente depois, se necessário.
 
 16. Regra de briefing
@@ -382,6 +434,8 @@ corretor-imoveis
 * Verificar se listagem não gera draft automaticamente.
 * Verificar se eventual falha técnica de composição não foi transformada em tarefa do operador.
 * Verificar se composição técnica não foi tratada como decisão estratégica universal sem cuidado com schema atual.
+* Verificar se Fase 7 não duplica versões ao trocar published oficial.
+* Verificar se Fase 7 mantém apenas uma published oficial por taxon/contexto.
 
 18. Regra de atualização documental
 * Após fase mergeada, gerar relatório de encerramento.
