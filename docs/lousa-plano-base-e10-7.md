@@ -1,6 +1,6 @@
 23/06/2026 — Lousa base flexível E10.7
 docs/lousa-plano-base-e10-7.md
-Fontes: chat, PR #435, PR #440, docs/roadmap.md, docs/base-tecnica.md, docs/schema.md, docs/platform-config.md, docs/automations.md, docs/supa-up.md
+Fontes: chat, PR #435, PR #440, docs/roadmap.md, docs/base-tecnica.md, docs/schema.md, docs/platform-config.md, docs/automations.md, docs/supa-up.md, docs/prod-up.md, docs/vercel-up.md
 
 1. Objetivo
 * Manter o plano vivo da E10.7 sem inflar o roadmap.
@@ -300,6 +300,35 @@ Regras:
 * Não alterar runtime público.
 * Não alterar schema sem novo blocker.
 
+11.6.1 Updates e validação da Fase 6
+Updates aplicáveis:
+* prod#14 — Priorizar Reconhecimento nos Testes Iniciais.
+* prod#16 — QA visual e validação de UX em Preview.
+Aplicação de prod#14:
+* Status, ação principal e próximo passo devem ficar evidentes.
+* Lista limpa deve favorecer reconhecimento rápido do estado do taxon.
+* Página operacional deve agrupar gerar, regenerar, publicar, preview e histórico.
+* Evitar ações misturadas na lista geral.
+Aplicação de prod#16:
+* Validar lista limpa em Preview.
+* Validar página operacional por taxon em Preview.
+* Conferir responsividade, clareza de estados, CTAs, foco e loading/disable.
+Apoio opcional de validação, se disponível no ambiente/plano:
+* vercel#15 — Vercel Toolbar.
+* vercel#16 — Vercel Comments.
+* vercel#17 — Accessibility Audit Tool.
+* vercel#18 — Interaction Timing Tool.
+* vercel#19 — Layout Shift Tool.
+Regra:
+* vercel#15 a vercel#19 só devem ser marcados como aplicados se usados de fato no QA da PR.
+Não aplicar nesta fase:
+* vercel#20 — Flags / Flags SDK / Flags Explorer.
+* vercel#8 — APIs de Cache refinadas.
+* vercel#11 — Server-side Tracking API.
+* prod#12 — Navegação multi-contas e LPs.
+Motivo:
+* Fase 6 não cria rollout, A/B, cache, tracking novo ou navegação global.
+
 11.7 Fase 7 — Edição manual de copy e gestão simples de versões
 * Status implementação: planejada.
 * Objetivo: permitir ajuste humano do conteúdo antes da publicação.
@@ -434,6 +463,9 @@ corretor-imoveis
 * Verificar se listagem não gera draft automaticamente.
 * Verificar se eventual falha técnica de composição não foi transformada em tarefa do operador.
 * Verificar se composição técnica não foi tratada como decisão estratégica universal sem cuidado com schema atual.
+* Verificar se Fase 6 aplicou prod#14 e prod#16 sem virar nova arquitetura.
+* Verificar se vercel#15 a vercel#19 só foram registrados como aplicados se usados no QA.
+* Verificar se Fase 6 não adotou flags, cache, tracking novo ou navegação global.
 * Verificar se Fase 7 não duplica versões ao trocar published oficial.
 * Verificar se Fase 7 mantém apenas uma published oficial por taxon/contexto.
 
