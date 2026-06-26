@@ -2,477 +2,115 @@
 docs/lousa-plano-base-e10-7.md
 Fontes: chat, PR #435, PR #440, docs/roadmap.md, docs/base-tecnica.md, docs/schema.md, docs/platform-config.md, docs/automations.md, docs/supa-up.md, docs/prod-up.md, docs/vercel-up.md
 
-1. Objetivo
-* Manter o plano vivo da E10.7 sem inflar o roadmap.
-* Registrar decisões, invariantes, status, fases e ajustes do caso.
-* Servir como fonte obrigatória antes de briefing, implementação, review e merge.
-* Roadmap e docs oficiais só são atualizados após fase implementada e mergeada.
-* Não substituir docs oficiais nem virar relatório histórico longo.
-
-2. Status atual
-* Fases 1 a 5 implementadas.
-* Fase 4 mergeada pela PR #435.
-* Fase 5 mergeada pela PR #440.
-* Fase 5 validada em Production.
-* Fluxo mínimo E10.7 validado: elegível → draft → published → consumo público.
-* /a/[account] consome artifact published válido.
-* Draft e archived fora do consumo público.
+1. Estado atual
+* Fases 1 a 6 implementadas.
+* Fase 6 validada em Preview e mergeada.
+* Fluxo mínimo validado: elegível → draft → published → consumo público.
+* /admin/templates agora é lista limpa.
+* Página operacional por taxon criada.
+* /a/[account] consome apenas published válido.
+* Draft e archived fora do runtime público.
 * IA fora do runtime público.
-* Fallback generic-v1 preservado.
-* Tracking comercial preservado.
-* Próximo trabalho imediato: Fase 6.
-* Próximo incremento funcional planejado: Fase 7.
+* Próxima ação: consolidar contrato commercial_activation antes da edição manual.
 
-3. Caso de uso
-E10.7 — Páginas comerciais personalizadas por taxon
-* Gerar, revisar, publicar e consumir páginas comerciais por taxon a partir de pesquisa estruturada.
-* Validar primeiro com taxon piloto e depois com taxons elegíveis.
-* Evitar regra hardcoded do taxon piloto.
-* Permitir que qualquer taxon elegível apareça para o operador gerar draft quando desejar.
-
-4. Papéis e decisões fixas
-4.1 Template de canal
-* commercial_activation usa template universal por canal.
-* Página comercial tem estrutura fixa no MVP.
-* IA gera copy dentro da estrutura.
-* IA não escolhe seções nem ordem.
-* Cores são universais do template comercial no MVP.
-* IA não escolhe cores livres.
-* Template não é exclusivo de um taxon.
-* Template não deve ser duplicado por taxon.
-
-4.2 Estrutura fixa da página comercial
-* Hero.
-* Benefícios.
-* Serviços.
-* Planos.
-* Diferenciais.
-* Como funciona.
-* FAQ.
-* CTA final.
-
-4.3 Composição técnica
-* É arranjo técnico resolvido para renderizar a entrega.
-* Pode estar materializada com taxon_id no schema atual.
-* Composição física por taxon é materialização técnica do schema atual.
-* Composição física por taxon não é composição estratégica.
-* Não deve ser confundida com template universal do canal.
-* Não deve virar tarefa do operador.
+2. Decisões fixas
+* commercial_activation é template universal por canal.
+* Template não é duplicado por taxon.
+* Taxon define artifact e consumo final.
+* Operador decide gerar draft.
+* Draft não é gerado automaticamente.
 * Operador não prepara composição.
-
-4.4 Taxon e artifact
-* Taxon define pesquisa, conteúdo, página gerada, artifact e consumo final.
-* Taxon elegível aparece na lista mesmo sem draft.
-* Operador decide gerar draft para taxon elegível.
-* Artifact é sempre por taxon.
-* Draft, published e archived são por taxon.
+* Composição técnica não é composição estratégica.
+* IA gera copy apenas dentro do contrato aprovado.
+* IA não escolhe seções, ordem, layout ou cores.
 * Published só é consumido se validar o contrato do renderer.
+* Fallback generic-v1 preservado.
 
-5. Elegibilidade
-Taxon aparece como elegível para geração quando possui:
-* taxon ativo;
-* business_buyer active v1 com 4 blocos;
-* end_customer active v1 com 4 blocos;
-* itens estruturados suficientes.
-Blocos exigidos:
-* strategic_core;
-* lp_overview;
-* lp_sections;
-* seo.
-Regras:
-* não exigir novo template por taxon;
-* não exigir composição manual por taxon;
-* não gerar draft automaticamente;
-* template, composição técnica, renderer e geração são responsabilidade interna do sistema.
-Status:
-* critério validado no piloto;
-* critério validado em Corretor Imóveis;
-* listagem flexível implementada na Fase 5;
-* dependência indevida do taxon piloto removida.
+3. Contrato commercial_activation
+* Página comercial tem estrutura fixa no MVP.
+* Estrutura atual registrada:
+  * Hero.
+  * Benefícios.
+  * Serviços.
+  * Planos.
+  * Diferenciais.
+  * Como funciona.
+  * FAQ.
+  * CTA final.
+* Contrato precisa ser auditado antes da edição manual.
+* Auditoria deve verificar template, composição, prompt, content_json, renderer, preview/admin e /a/[account].
+* Objetivo da auditoria: garantir que todos obedecem à mesma estrutura fixa.
+* Não decidir nesta PR se as 8 seções serão reduzidas.
+* Não alterar template, prompt, renderer ou schema nesta PR.
+* Consolidação do contrato vem antes da edição manual.
 
-6. Estados da lista admin
-6.1 Publicado
-* Taxon tem artifact published válido.
-* Pode ser consumido em /a/[account].
-* Pode receber nova geração/regeneração se operador decidir.
+4. Fases
+4.1 Fase 1 — Base técnica
+* Status: implementada.
+* Resultado: base inicial de templates, composições, artifacts e contratos mínimos.
+4.2 Fase 2 — Geração administrativa de draft
+* Status: implementada.
+* Resultado: draft commercial_activation gerado no admin/server-side.
+4.3 Fase 3 — Operação administrativa mínima
+* Status: implementada.
+* Resultado: gerar, regenerar, visualizar e publicar.
+4.4 Fase 4 — Consumo em /a/[account]
+* Status: implementada.
+* Resultado: published válido consumido no runtime público com fallback generic-v1.
+4.5 Fase 5 — Lista flexível de taxons elegíveis
+* Status: implementada e validada em Production.
+* Resultado: taxons elegíveis aparecem sem hardcode do piloto e draft só é gerado por ação do operador.
+4.6 Fase 6 — Admin comercial enxuto
+* Status: implementada, validada em Preview e mergeada.
+* Resultado: /admin/templates virou lista limpa e operação foi movida para página por taxon.
+4.7 Fase 7 — Auditoria e consolidação do contrato commercial_activation
+* Status: planejada.
+* Objetivo: garantir contrato fixo entre template, composição, prompt, content_json, renderer, preview/admin e /a/[account].
+* Observação: deve vir antes da edição manual.
+4.8 Fase 8 — Edição manual de copy e gestão simples de versões
+* Status: planejada.
+* Objetivo: permitir ajuste humano de copy e gestão simples de versões depois do contrato fixo auditado.
 
-6.2 Em revisão
-* Taxon tem draft criado.
-* Ainda não foi publicado.
-* Pode ser visualizado, regenerado ou publicado.
+5. Escopo negativo
+* LP Builder.
+* editor visual.
+* edição manual antes da auditoria do contrato.
+* IA assistida para edição.
+* IA em runtime público.
+* draft/archived no runtime público.
+* geração automática de draft.
+* hardcode por taxon, slug ou nome.
+* duplicação de template por taxon.
+* composição manual pelo operador.
+* nova tabela sem decisão explícita.
+* nova RPC sem blocker real.
+* nova migration sem blocker real.
+* novo grant/policy sem blocker real.
+* flags.
+* A/B test.
+* cache novo.
+* server-side tracking novo.
+* navegação global multi-contas.
+* reestruturação ampla de taxonomia.
+* versões independentes por bloco.
 
-6.3 Elegível para gerar
-* Taxon tem pesquisa estruturada completa.
-* Ainda não precisa ter draft.
-* Ainda não precisa ter published.
-* Aparece para o operador iniciar geração.
-* A listagem não gera draft automaticamente.
-
-6.4 Incompleto
-* Não aparece na lista principal do MVP.
-* Diagnóstico de incompletos fica fora do escopo inicial, salvo pedido explícito.
-
-7. Runtime público
-/a/[account]
-* Não usa OpenAI.
-* Não usa Responses API.
-* Não usa OPENAI_API_KEY.
-* Não usa OPENAI_COMMERCIAL_ACTIVATION_MODEL.
-* Não importa draft-generation.
-* Não usa Agents SDK.
-* Não usa jobs, filas ou automações.
-* Consome apenas artifact published válido.
-* Nunca consome draft.
-* Nunca consome archived.
-* Se houver erro, cai em generic-v1.
-* Se published for inválido, cai em generic-v1.
-* Se não houver bundle ready, cai em generic-v1.
-* Preserva NicheResolutionCard quando aplicável.
-* Preserva tracking comercial existente.
-Status: implementado na Fase 4 e preservado na Fase 5.
-
-8. Tracking comercial
-Eventos:
-* commercial_page_view;
-* commercial_primary_cta_click;
-* commercial_plan_cta_click.
-Regras:
-* vinculados ao account_id;
-* sem PII;
-* sem content_json;
-* sem payload de pesquisa;
-* falha de tracking não quebra página pública.
-Status: implementado/preservado desde a Fase 4.
-
-9. Escopo negativo permanente
-Não fazer dentro da E10.7 sem decisão explícita:
-* LP Builder;
-* editor visual;
-* liberação de LPs;
-* continuidade de contas;
-* bloqueio de ativação;
-* novo produto;
-* nova camada de automação;
-* Agents SDK;
-* Sandbox Agents;
-* filas;
-* jobs;
-* IA em runtime público;
-* migration sem blocker real;
-* nova tabela sem decisão explícita;
-* nova RPC sem decisão explícita;
-* novo grant sem decisão explícita;
-* nova policy sem decisão explícita;
-* reestruturação ampla de taxonomia;
-* versões independentes por bloco;
-* geração automática de draft sem ação do operador;
-* duplicação de template de canal por taxon;
-* procedimento manual para tornar taxon elegível.
-
-10. Banco e schema
-* Não alterar schema sem blocker real.
-* Se fase exigir schema, migration, policy, grant, RPC ou tabela, Executor deve parar e devolver ao Estrategista.
-* Supabase pode ser usado em leitura server-side e tracking existente.
-* Mutação de banco só por fluxo aprovado da aplicação ou migration explicitamente aprovada.
-* Schema atual ainda possui composição vinculada a taxon_id.
-* Fase 5 teve blocker real e aprovou RPC/migration mínima.
-* Fase 6 não deve alterar schema sem novo blocker.
-* Fase 7 deve evitar schema novo; se published oficial exigir RPC atômica, tratar como blocker específico.
-
-11. Fases
-11.1 Fase 1 — Base técnica
-* Status implementação: implementada.
-* Status documentação: registrada nas fontes do projeto.
-* Objetivo: preparar base de templates, composições, artifacts e contratos mínimos.
-* Resultado: estrutura inicial validada com taxon piloto.
-
-11.2 Fase 2 — Geração administrativa de draft
-* Status implementação: implementada.
-* Status documentação: registrada em relatórios/docs do caso.
-* Objetivo: gerar draft commercial_activation com IA apenas no admin/server-side.
-* Resultado: draft persistido por taxon no piloto.
-
-11.3 Fase 3 — Operação administrativa mínima
-* Status implementação: implementada.
-* Status documentação: relatório anterior gerado.
-* Objetivo: gerar, regenerar, visualizar e publicar.
-* Resultado: publicação arquiva published anterior; draft/archived fora do consumo público.
-
-11.4 Fase 4 — Consumo em /a/[account]
-* Status implementação: implementada e mergeada pela PR #435.
-* Status documentação: relatório enviado ao Gestor de Docs; ABC final pendente de confirmação.
-* Implementado: published válido em /a/[account].
-* Implementado: fallback generic-v1.
-* Implementado: NicheResolutionCard preservado.
-* Implementado: tracking preservado.
-* Implementado: validação de render model antes de ready.
-* Implementado: sem IA em runtime público.
-
-11.5 Fase 5 — Lista flexível de taxons elegíveis e ajuste interno do canal comercial
-* Status implementação: concluída.
-* Status validação: validada em Production.
-* PR: #440.
-* Resultado: fluxo mínimo validado.
-* Confirmou lista de taxons elegíveis por pesquisa estruturada completa.
-* Confirmou Corretor Imóveis como caso de validação, não solução pontual.
-* Confirmou materialização técnica genérica de composição commercial_activation.
-* Confirmou geração de draft por ação do operador.
-* Confirmou publicação do draft.
-* Confirmou versionamento publicado.
-* Confirmou consumo de published em /a/[account].
-* Confirmou runtime público sem IA, sem draft e sem archived.
-
-11.5.1 Implementação da Fase 5
-* /admin/templates lista taxons elegíveis.
-* A lista não cria composição.
-* A lista não gera draft.
-* Geração exige ação do operador.
-* taxonSlug passou a ser obrigatório.
-* Removido fallback implícito para taxon piloto.
-* Criado ensureCommercialActivationCompositionForTaxon.
-* Criada RPC ensure_commercial_activation_composition(p_taxon_id uuid).
-* RPC valida taxon ativo e pesquisa completa.
-* RPC materializa composição técnica quando necessário.
-* RPC retorna composição existente quando já houver.
-* RPC não depende de slug, nome do taxon, Corretor Imóveis ou piloto.
-* Publicação continua via publish_content_artifact_draft.
-* Corrigido isUuid para UUID canônico 8-4-4-12.
-
-11.5.2 Validação em Production
-* OPENAI_API_KEY validada em Production and Preview.
-* OPENAI_COMMERCIAL_ACTIVATION_MODEL validada em Production and Preview.
-* Redeploy Production executado.
-* Migration 20260624203000 aplicada.
-* RPC ensure_commercial_activation_composition existente no Supabase real.
-* service_role pode executar a RPC.
-* anon e authenticated não executam.
-* Corretor Imóveis: Elegível para gerar → Em revisão → Publicado.
-* Corretor de imóveis de médio padrão: nova versão gerada e publicada; published atual v5.
-* /a/acc-f855e6ef abriu LP publicada corretamente.
-* Fluxo mínimo da E10.7 validado em Production.
-
-11.5.3 Updates aplicados na Fase 5
-#Supa36 — Data API / PostgREST 14.1
-* Aplicado nas leituras server-side da listagem admin.
-* Usado para taxons, pesquisas, compositions e artifacts.
-* Mantidas colunas explícitas, ordenação determinística e sem endpoint público novo.
-#Supa05 — Logs seguros
-* Aplicado em falhas de geração, materialização e leitura admin.
-* Não logar content_json, payload completo, texto gerado por IA, PII ou blocos brutos.
-* Pendente UX: trocar missing_openai_env por mensagem amigável quando aplicável.
-#Supa40 — SQL snippets locais
-* Aplicado com snippet read-only.
-* Arquivo: supabase/snippets/e10_7_phase_5_eligible_taxons_verify.sql.
-* Usado para validar elegibilidade, composição e artifacts.
-#Supa58 — GRANT explícito para novos objetos
-* Aplicado como trava e checklist de governança.
-* Blocker real justificou migration/RPC.
-* RPC criada com SECURITY DEFINER.
-* EXECUTE apenas para service_role.
-* EXECUTE revogado de public, anon e authenticated.
-* Sem nova tabela, sem nova view e sem refatoração ampla de schema.
-
-11.6 Fase 6 — Admin comercial enxuto e contrato fixo da página comercial
-* Status implementação: planejada.
-* Objetivo: transformar /admin/templates em lista limpa.
-* Objetivo: criar página operacional específica por taxon.
-* Objetivo: mover gerar, regenerar, publicar, preview e histórico para a página específica.
-* Objetivo: aplicar loading/disable nos botões no local definitivo.
-* Objetivo: consolidar contrato fixo da página commercial_activation.
-* Objetivo: registrar edição manual de draft como escopo da Fase 7.
-* Rota sugerida: app/admin/(protected)/templates/commercial-activation/[taxonSlug].
-* Rota equivalente pode ser usada se a estrutura real do Next.js indicar path melhor.
-Regras:
-* /admin/templates deve ficar apenas como lista limpa.
-* Selecionar deve navegar para a página operacional do taxon.
-* Lista não deve mostrar preview.
-* Lista não deve mostrar histórico.
-* Lista não deve publicar.
-* Lista não deve materializar composição.
-* Lista não deve gerar draft.
-* Página do taxon deve conter status, gerar/regenerar, publicar, preview, histórico e diagnóstico técnico mínimo.
-* Botão Gerar draft deve usar loading/disable com Gerando...
-* Botão Regenerar draft deve usar loading/disable com Regenerando...
-* Botão Publicar draft deve usar loading/disable com Publicando...
-* Não incluir edição manual de draft nesta fase.
-* Não incluir IA assistida para edição.
-* Não incluir regeneração baseada em latest published nesta fase.
-* Não alterar runtime público.
-* Não alterar schema sem novo blocker.
-
-11.6.1 Updates e validação da Fase 6
-Updates aplicáveis:
-* prod#14 — Priorizar Reconhecimento nos Testes Iniciais.
-* prod#16 — QA visual e validação de UX em Preview.
-Aplicação de prod#14:
-* Status, ação principal e próximo passo devem ficar evidentes.
-* Lista limpa deve favorecer reconhecimento rápido do estado do taxon.
-* Página operacional deve agrupar gerar, regenerar, publicar, preview e histórico.
-* Evitar ações misturadas na lista geral.
-Aplicação de prod#16:
-* Validar lista limpa em Preview.
-* Validar página operacional por taxon em Preview.
-* Conferir responsividade, clareza de estados, CTAs, foco e loading/disable.
-Apoio opcional de validação, se disponível no ambiente/plano:
-* vercel#15 — Vercel Toolbar.
-* vercel#16 — Vercel Comments.
-* vercel#17 — Accessibility Audit Tool.
-* vercel#18 — Interaction Timing Tool.
-* vercel#19 — Layout Shift Tool.
-Regra:
-* vercel#15 a vercel#19 só devem ser marcados como aplicados se usados de fato no QA da PR.
-Não aplicar nesta fase:
-* vercel#20 — Flags / Flags SDK / Flags Explorer.
-* vercel#8 — APIs de Cache refinadas.
-* vercel#11 — Server-side Tracking API.
-* prod#12 — Navegação multi-contas e LPs.
-Motivo:
-* Fase 6 não cria rollout, A/B, cache, tracking novo ou navegação global.
-
-11.7 Fase 7 — Edição manual de copy e gestão simples de versões
-* Status implementação: planejada.
-* Objetivo: permitir ajuste humano do conteúdo antes da publicação.
-* Objetivo: permitir troca da versão publicada oficial sem duplicar versões.
-* Objetivo: preservar estrutura fixa, cores universais e contrato do renderer.
-* Objetivo: manter geração por fontes estruturadas como padrão do MVP.
-Escopo:
-* editar copy de draft por taxon;
-* salvar draft editado;
-* revalidar render model antes de publicar;
-* publicar draft editado pelo fluxo existente;
-* listar versões do histórico com status claro;
-* permitir tornar uma versão existente a publicada oficial;
-* manter apenas uma versão published oficial por taxon/contexto;
-* arquivar as demais versões do mesmo contexto na troca oficial;
-* não duplicar versão antiga para restaurar;
-* não criar nova artifact_version quando apenas trocar a published oficial.
-Regras de edição:
-* edição humana deve ser apenas de conteúdo/copy;
-* pode editar títulos, subtítulos, descrições, bullets, benefícios, serviços, FAQ, textos de CTA e microcopy;
-* não editar ordem de seções;
-* não editar tipo de seção;
-* não editar layout;
-* não editar cores;
-* não editar componentes;
-* não editar CTA técnico sem decisão específica;
-* não editar estrutura do render model fora do formulário permitido.
-Regras de versão oficial:
-* Published direto não deve ser editado em produção.
-* Published pode virar referência visual/histórica para revisão humana.
-* Ação sugerida: Tornar publicada.
-* A ação deve valer para versão existente válida do mesmo taxon/contexto.
-* A troca deve ser atômica: versão escolhida vira published e demais viram archived.
-* Draft continua sendo publicado pelo botão Publicar draft.
-* Não permitir múltiplos published oficiais simultâneos.
-* Não criar ponteiro paralelo sem blocker real.
-* Não criar nova tabela apenas para official_artifact_id sem decisão explícita.
-Fora do escopo:
-* IA assistida para edição;
-* regenerar usando latest published como base editorial;
-* editor visual;
-* edição por bloco independente;
-* múltiplas versões published ativas;
-* duplicação de conteúdo para restaurar versão antiga;
-* alteração do runtime público;
-* alteração de template, composição, layout ou cores.
-
-12. Próximos drafts e base editorial
-* Confirmado em 25/06/2026: novo draft não usa a página publicada mais recente como base editorial.
-* Geração atual usa taxon ativo, pesquisa estruturada v1, composição técnica e planos.
-* Prompt atual não inclui published, content_json anterior, artifact_id publicado ou texto da página publicada.
-* artifact_version apenas incrementa versão; não serve como base editorial.
-* Diagnóstico: nova versão é gerada a partir das fontes estruturadas atuais.
-* Decisão MVP: manter modo atual funcionando.
-* Fase 7 prioriza edição manual de copy e gestão simples de versões.
-* Regenerar com base em latest published fica para depois, se houver caso real.
-Modos possíveis:
-* Gerar do zero: fontes estruturadas.
-* Editar manualmente: humano ajusta draft antes de publicar.
-* Tornar publicada: versão existente válida vira a published oficial.
-* Regenerar com base: usar latest published como referência editorial apenas em fase futura.
-
-13. E18 e papéis dos templates
-13.1 E18
-* E18 criou/organiza os templates do canal.
-* commercial_activation é o canal/família usado pela E10.7.
-* O template de página commercial_activation_page define a entrega de página comercial.
-* Os templates de section definem módulos disponíveis do canal.
-13.2 Template
-* Define canal, contrato e capacidades.
-* Não define sozinho a estratégia de conteúdo do taxon.
-* Não deve ser duplicado para cada taxon.
-13.3 Composição técnica
-* Resolve arranjo técnico de módulos.
-* Pode estar materializada com taxon_id no schema atual.
-* Não deve ser confundida com template universal do canal.
-* Não é etapa do operador.
-13.4 Estrutura de seções
-* Define contrato fixo da página comercial no MVP.
-* Pode evoluir depois sem transformar IA em dona da ordem das seções.
-
-14. Taxons conhecidos
-14.1 Taxon piloto
-Corretor de imóveis de médio padrão
-corretor-de-imoveis-de-medio-padrao
-* Pesquisa completa.
-* Draft criado.
-* Published v3 validado na Fase 4.
-* Nova versão gerada e publicada na Fase 5.
-* Published atual v5 em Production.
-* Consumo em /a/[account] implementado.
-* Usado para validar fases 1 a 5.
-14.2 Taxon elegível validado
-Corretor Imóveis
-corretor-imoveis
-* business_buyer completo.
-* end_customer completo.
-* Validado na Fase 5 como elegível sem solução pontual.
-* Passou por Elegível para gerar → Em revisão → Publicado.
-* Não exigiu novo template de canal.
-* Não exigiu composição manual por taxon.
-* Draft só foi gerado por ação do operador.
-
-15. Pendências futuras
-* Mensagem amigável para missing_openai_env.
-* IA assistida para edição somente depois.
-* Regeneração usando latest published como referência editorial somente depois.
-* Temas visuais avançados somente depois, se necessário.
-
-16. Regra de briefing
-* Citar esta lousa.
-* Declarar fase alvo.
-* Declarar escopo positivo.
-* Declarar escopo negativo.
-* Declarar docs de referência.
-* Declarar status atual implementado/documentado.
-* Declarar critérios de parada.
-* Declarar validações obrigatórias.
-* Declarar que draft só é gerado por ação do operador.
-* Declarar separação entre template de canal, composição técnica, estrutura de seções e artifact.
-
-17. Regra de review
-* Comparar implementação com esta lousa.
-* Verificar se decisões fixas foram preservadas.
-* Verificar se não houve expansão indevida.
-* Verificar se não houve IA em runtime público.
-* Verificar se draft/archived não são consumidos.
-* Verificar fallback generic-v1.
-* Verificar se o caso não ficou hardcoded no piloto.
-* Verificar se taxons elegíveis aparecem sem novo template por taxon.
-* Verificar se taxons elegíveis aparecem sem composição manual por taxon.
-* Verificar se listagem não gera draft automaticamente.
-* Verificar se eventual falha técnica de composição não foi transformada em tarefa do operador.
-* Verificar se composição técnica não foi tratada como decisão estratégica universal sem cuidado com schema atual.
-* Verificar se Fase 6 aplicou prod#14 e prod#16 sem virar nova arquitetura.
-* Verificar se vercel#15 a vercel#19 só foram registrados como aplicados se usados no QA.
-* Verificar se Fase 6 não adotou flags, cache, tracking novo ou navegação global.
-* Verificar se Fase 7 não duplica versões ao trocar published oficial.
-* Verificar se Fase 7 mantém apenas uma published oficial por taxon/contexto.
-
-18. Regra de atualização documental
-* Após fase mergeada, gerar relatório de encerramento.
-* Enviar relatório ao Gestor de Docs.
-* Aplicar prompt-abc.
-* Atualizar roadmap e docs oficiais apenas quando necessário.
-* Atualizar esta lousa quando houver decisão operacional do caso.
-* Não transformar esta lousa em relatório histórico longo.
+6. Pendências/critério de próxima ação
+* Pendência principal: executar Fase 7 — auditoria e consolidação do contrato commercial_activation.
+* Critérios de entrada da próxima fase:
+  * lousa simplificada;
+  * contrato atual entendido;
+  * arquivos reais identificados;
+  * sem decisão de edição manual antes da auditoria.
+* Critérios de parada:
+  * se for necessário alterar schema;
+  * se for necessário criar RPC;
+  * se for necessário mudar runtime público;
+  * se a auditoria mostrar divergência entre template, composição, prompt, content_json ou renderer;
+  * se a redução de seções da página comercial exigir decisão estratégica.
+* Critérios de review:
+  * verificar se a lousa ficou com apenas 6 seções principais;
+  * verificar se não virou relatório histórico;
+  * verificar se Fase 7 agora é contrato commercial_activation;
+  * verificar se edição manual ficou depois, como Fase 8;
+  * verificar se nenhuma decisão técnica nova foi implementada indevidamente;
+  * verificar se a ordem das próximas ações ficou clara.
