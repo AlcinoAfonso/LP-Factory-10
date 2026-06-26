@@ -1,8 +1,8 @@
 0. Introdução
 
 0.1 Cabeçalho
-• Data: 25/06/2026
-• Versão: v1.5.84
+• Data: 26/06/2026
+• Versão: v1.5.85
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -762,8 +762,8 @@ Repositório — Ajustados
 • Implementar detecção por ambiente somente se o ganho justificar a complexidade.
 
 10.7 Páginas comerciais personalizadas por nicho
-• Status: Em execução faseada — Fase 5 concluída em 25/06/2026.
-• Próxima execução: Fase 6 — Admin comercial enxuto e contrato fixo da página comercial.
+• Status: Em execução faseada — Fase 6 concluída em 26/06/2026.
+• Próxima execução: Fase 7 — edição manual de copy e gestão simples de versões.
 • Objetivo: gerar, revisar, publicar e consumir páginas comerciais por taxon; a IA roda apenas em operação administrativa/server-side; `/a/[account]` consome somente artefato publicado e validado; ausência de conteúdo nichado não pode quebrar `/a/[account]`.
 • Dependência estrutural: a E18 define os contratos reutilizáveis mínimos; a E10.7 aplica, valida e ajusta esses contratos no caso comercial concreto.
 • A página genérica `generic-v1` da E10.6 permanece concluída e será o fallback obrigatório.
@@ -789,7 +789,6 @@ Repositório — Ajustados
 • Status: Concluída e validada em 21/06/2026.
 • Resultado: escrita administrativa controlada viabilizada antes da persistência do draft; publicação transacional disponível no banco; detalhes de DB permanecem em `docs/schema.md`.
 • Fora do escopo preservado: geração IA, Account Dashboard, LP Builder, nova tabela, hierarquia de taxons e alteração de `research_version`.
-• Critério de passagem: cumprido; migration aplicada no Supabase real e snippet de validação retornou `check_status = ok` em todas as linhas.
 • Estruturas e artefatos:
   • Banco — Ajustados: `content_artifacts`; `content_artifact_research_sources`
   • Banco — Criados: `publish_content_artifact_draft(uuid)`
@@ -797,13 +796,11 @@ Repositório — Ajustados
   • Repositório — Ajustados: `docs/schema.md`
 
 10.7.3 Fase 2 — Geração IA administrativa de draft comercial
-• Status: Concluída e validada em 22/06/2026.
-• Resultado: geração server-side/Admin de draft comercial por taxon concluída para o taxon piloto; draft real criado em `content_artifacts` com `status = draft`, sem publicação e sem consumo em `/a/[account]`.
-• Evidência validada: artifact `c95e52ea-b4b3-44af-b5a5-aedd48a1ba0f`, `artifact_version = 1`, `audience_scope = business_buyer`, `research_version = 1`, `content_json` com 8 seções e `validation_status = ready`.
-• Persistência e proveniência: `content_artifact_research_sources` recebeu somente 4 fontes `business_buyer`; `end_customer` permanece apenas em `provenance_json`; `public.plans` foi usado como fonte parcial de planos.
-• Falha segura: se o insert das fontes falhar após criar o artifact, o draft recém-criado é arquivado/invalidado e o fluxo retorna erro seguro.
-• Fora do escopo preservado: publicação, alteração em `published`, Account Dashboard, `/a/[account]`, UI completa em `/admin/templates`, LP Builder, Agents SDK, Sandbox Agents, job, fila, agente, IA em runtime público, nova tabela, view, função, grant, policy, migration, hierarquia de taxons e `research_version`.
-• Critério de passagem: cumprido; snippet `supabase/snippets/e10_7_phase_2_draft_verify.sql` retornou todas as linhas com `check_status = ok`, `published_count = 0` e nenhum draft válido sem fontes relacionais.
+• Status: Concluída em 22/06/2026.
+• Estado atual: geração server-side/Admin de draft comercial por taxon disponível, criando artifact `draft` validável antes de publicação.
+• Persistência e proveniência: fontes de pesquisa são vinculadas ao artifact e contexto complementar permanece no `provenance_json`.
+• Falha segura: inconsistência na persistência de fontes invalida/arquiva o draft recém-criado.
+• Limites: sem publicação automática, sem consumo em `/a/[account]`, sem IA em runtime público, sem LP Builder, sem job, fila ou agente, sem nova tabela, view, função, grant, policy, migration ou alteração de hierarquia dos taxons.
 • Estruturas e artefatos:
   • Repositório — Criados: `app/admin/(protected)/templates/actions.ts`; `lib/conversion-content/commercial-activation/draft-generation.ts`; `supabase/snippets/e10_7_phase_2_draft_verify.sql`
 
@@ -833,7 +830,7 @@ Repositório — Ajustados
 • Fallback: ausência, erro, artefato inválido ou conteúdo não consumível retorna para `generic-v1`.
 • Limites: não consome `draft`, não consome `archived` e não usa IA em runtime público.
 • Tracking: mantém eventos comerciais vinculados ao `account_id`, sem PII.
-• Pendências: validação visual em ambiente real/Preview e Fase 5 com segundo taxon.
+• Pendências: nenhuma vigente neste recorte.
 
 10.7.5.1 Estruturas e artefatos
 
@@ -879,14 +876,33 @@ Repositório — Ajustados
 • `docs/platform-config.md`
 
 10.7.7 Fase 6 — Admin comercial enxuto e contrato fixo da página comercial
-• Status: Planejada.
-• Escopo: transformar `/admin/templates` em lista limpa e mover operação detalhada para página própria por taxon.
-• Rota prevista: `/admin/templates/commercial-activation/[taxonSlug]`.
-• Incluir na página específica: status do taxon, gerar/regenerar draft, publicar draft, preview, histórico e diagnóstico técnico secundário.
-• Aplicar loading/disable nos botões no local definitivo.
-• Pendências futuras: edição manual simples do draft e avaliação de uso do latest published como base para novas regenerações.
+• Status: Concluída em 26/06/2026.
+• Estado atual: `/admin/templates` funciona como lista limpa de taxons comerciais, sem preview, histórico completo, geração, publicação ou operação detalhada na lista.
+• Lista: exibe taxon, estado, pesquisa, composição, artefatos e ação Selecionar.
+• Página operacional: `/admin/templates/commercial-activation/[taxonSlug]` concentra status do taxon, gerar/regenerar draft, publicar draft, cards de estado, diagnóstico técnico mínimo, preview e histórico.
+• Botões: Gerar draft, Regenerar draft e Publicar draft usam loading/disable durante submissão.
+• Regra de ação: quando houver draft publicável, o próximo passo é Publicar draft; quando houver draft em revisão ou published sem draft ativo, a ação de geração aparece como Regenerar draft; quando não houver draft nem published, aparece como Gerar draft.
+• Mensagem de publicação: informa sucesso e, quando aplicável, arquivamento da versão anterior publicada.
+• Limites: não inclui edição manual de draft, IA assistida, regeneração baseada em latest published, seleção de published oficial, editor visual, alteração do layout público, alteração de cores, alteração do runtime público `/a/[account]`, nova migration, nova tabela, nova RPC, novo grant, nova policy, flags, A/B test, cache novo, server-side tracking novo ou navegação global multi-contas.
+• Updates aplicados: `prod#14` e `prod#16`.
 
-10.7.8 Exibição, fallbacks e tracking
+10.7.7.1 Estruturas e artefatos
+
+Repositório — Criados
+• `app/admin/(protected)/templates/_components/PendingSubmitButton.tsx`
+• `app/admin/(protected)/templates/commercial-activation/[taxonSlug]/page.tsx`
+
+Repositório — Ajustados
+• `app/admin/(protected)/templates/page.tsx`
+• `app/admin/(protected)/templates/actions.ts`
+• `lib/admin/adapters/adminCommercialActivationTemplatesAdapter.ts`
+
+10.7.8 Fase 7 — Edição manual de copy e gestão simples de versões
+• Status: Planejada.
+• Escopo: permitir ajuste humano de copy antes da publicação e gestão simples de versões, preservando estrutura fixa, cores universais e contrato do renderer.
+• Limites: não incluir IA assistida para edição, editor visual, edição por bloco independente, múltiplas versões `published` ativas, alteração do runtime público, alteração de template, composição, layout ou cores.
+
+10.7.9 Exibição, fallbacks e tracking
 • Fluxo em `/a/[account]`: conta `active` → resolver `account_id` → resolver taxon primário ativo → procurar bundle `commercial_activation` publicado → renderizar página nichada somente quando o bundle estiver `ready` → usar `generic-v1` quando não houver bundle consumível.
 • Preservar `NicheResolutionCard` acima da página quando aplicável.
 • Conta sem taxon, taxon inativo ou inválido, pesquisa incompleta, composição ausente ou inválida, página não publicada, artifact inválido, erro de leitura ou render model não `ready` usam a página genérica E10.6 como fallback seguro.
@@ -1338,6 +1354,8 @@ Repositório — Criados
 • Esta referência não cria obrigação de implementar E19 agora.
 
 99. Changelog
+v1.5.85 — 26/06/2026 — E10.7 Fase 6 concluída; próxima fase: Fase 7 — edição manual de copy e gestão simples de versões.
+
 v1.5.84 — 25/06/2026 — E10.7 Fase 5 concluída com taxons elegíveis por pesquisa estruturada completa, composição técnica genérica sob demanda, geração/publicação `commercial_activation` por `taxonSlug` e próxima Fase 6 planejada para Admin comercial enxuto.
 
 v1.5.83 — 23/06/2026 — E10.7 Fase 4 concluída com consumo no Account Dashboard: `/a/[account]` renderiza bundle `commercial_activation` publicado e `ready`, mantém fallback `generic-v1`, preserva `NicheResolutionCard` e tracking comercial, rejeita draft/archived/artifact inválido e mantém IA fora do runtime público.
