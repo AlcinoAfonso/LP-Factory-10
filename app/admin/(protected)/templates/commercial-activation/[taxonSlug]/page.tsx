@@ -55,11 +55,12 @@ export default async function AdminCommercialActivationTaxonPage({
 
   const reviewDraft = state.publishableDraft;
   const previewArtifact = reviewDraft ?? state.published ?? state.latestDraft;
-  const primaryAction = reviewDraft
-    ? "Publicar draft"
-    : state.published
-      ? "Regenerar draft"
-      : "Gerar draft";
+  const shouldRegenerate = Boolean(reviewDraft || state.published);
+  const generationLabel = shouldRegenerate ? "Regenerar draft" : "Gerar draft";
+  const generationPendingLabel = shouldRegenerate
+    ? "Regenerando..."
+    : "Gerando...";
+  const primaryAction = reviewDraft ? "Publicar draft" : generationLabel;
 
   return (
     <div className="space-y-6">
@@ -109,10 +110,8 @@ export default async function AdminCommercialActivationTaxonPage({
           <div className="flex flex-col gap-2 sm:flex-row">
             <form action={generateOrRegenerateCommercialActivationDraftAction}>
               <input name="taxonSlug" type="hidden" value={state.taxon.slug} />
-              <PendingSubmitButton
-                pendingLabel={reviewDraft ? "Regenerando..." : "Gerando..."}
-              >
-                {reviewDraft ? "Regenerar draft" : "Gerar draft"}
+              <PendingSubmitButton pendingLabel={generationPendingLabel}>
+                {generationLabel}
               </PendingSubmitButton>
             </form>
 
@@ -364,7 +363,10 @@ function getActionMessage(params: Record<string, string | string[] | undefined>)
   if (event === "published") {
     return {
       title: "Draft publicado",
-      description: `Validacao pos-publicacao concluida: published_count=${publishedCount ?? "1"}, previous_archived=${previousArchived ?? "null"}.`,
+      description:
+        previousArchived === "true"
+          ? "Draft publicado com sucesso. A versao anterior publicada foi arquivada."
+          : `Draft publicado com sucesso. Published ativo: ${publishedCount ?? "1"}.`,
       className:
         "rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-green-800",
     };
