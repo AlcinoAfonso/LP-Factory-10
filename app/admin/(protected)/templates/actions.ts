@@ -56,20 +56,23 @@ export async function generateOrRegenerateCommercialActivationDraftAction(
 ) {
   const taxonSlug = String(formData.get("taxonSlug") ?? "").trim();
   const result = await generateCommercialActivationDraftAction({ taxonSlug });
-  const taxonQuery = encodeURIComponent(taxonSlug);
+  const taxonPath = isSafeSlug(taxonSlug)
+    ? getOperationalTaxonPath(taxonSlug)
+    : "/admin/templates";
 
   revalidatePath("/admin/templates");
+  revalidatePath(taxonPath);
 
   if (result.error) {
     redirect(
-      `/admin/templates?taxon=${taxonQuery}&event=generation_failed&reason=${encodeURIComponent(
+      `${taxonPath}?event=generation_failed&reason=${encodeURIComponent(
         result.error,
       )}&requestId=${encodeURIComponent(result.requestId ?? "")}`,
     );
   }
 
   redirect(
-    `/admin/templates?taxon=${taxonQuery}&event=draft_generated&artifactId=${encodeURIComponent(
+    `${taxonPath}?event=draft_generated&artifactId=${encodeURIComponent(
       result.artifactId ?? "",
     )}&artifactVersion=${encodeURIComponent(String(result.artifactVersion ?? ""))}`,
   );
@@ -83,14 +86,18 @@ export async function publishCommercialActivationDraftAction(formData: FormData)
   }
 
   const artifactId = String(formData.get("artifactId") ?? "").trim();
+  const taxonSlug = String(formData.get("taxonSlug") ?? "").trim();
+  const failurePath = isSafeSlug(taxonSlug)
+    ? getOperationalTaxonPath(taxonSlug)
+    : "/admin/templates";
   if (!isUuid(artifactId)) {
-    redirect("/admin/templates?event=publish_failed&reason=invalid_artifact");
+    redirect(`${failurePath}?event=publish_failed&reason=invalid_artifact`);
   }
 
   const context = await readPublishContext(artifactId);
   if (!context.ok) {
     redirect(
-      `/admin/templates?event=publish_failed&reason=${encodeURIComponent(
+      `${failurePath}?event=publish_failed&reason=${encodeURIComponent(
         context.reason,
       )}`,
     );
@@ -106,7 +113,7 @@ export async function publishCommercialActivationDraftAction(formData: FormData)
       code: error.code,
       message: error.message,
     });
-    redirect("/admin/templates?event=publish_failed&reason=rpc_failed");
+    redirect(`${failurePath}?event=publish_failed&reason=rpc_failed`);
   }
 
   const validation = await validatePublicationResult({
@@ -115,17 +122,18 @@ export async function publishCommercialActivationDraftAction(formData: FormData)
   });
 
   revalidatePath("/admin/templates");
+  revalidatePath(failurePath);
 
   if (!validation.ok) {
     redirect(
-      `/admin/templates?event=publish_failed&reason=${encodeURIComponent(
+      `${failurePath}?event=publish_failed&reason=${encodeURIComponent(
         validation.reason,
       )}`,
     );
   }
 
   redirect(
-    `/admin/templates?event=published&artifactId=${encodeURIComponent(
+    `${failurePath}?event=published&artifactId=${encodeURIComponent(
       artifactId,
     )}&publishedCount=${validation.publishedCount}&previousArchived=${String(
       validation.previousArchived,
@@ -141,4 +149,8 @@ function isUuid(value: string) {
 
 function isSafeSlug(value: string) {
   return /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(value);
+}
+
+function getOperationalTaxonPath(taxonSlug: string) {
+  return `/admin/templates/commercial-activation/${encodeURIComponent(taxonSlug)}`;
 }
