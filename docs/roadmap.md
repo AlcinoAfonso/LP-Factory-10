@@ -298,115 +298,41 @@
 • Bloqueios por status da conta seguem UX dedicada (ver E16)
 • Redirect seguro e anti-loop (ver E4.2
 
-9. E9 — Billing Engine & Stripe Sync
+9. E9 — Billing, trial e entitlements
 
 9.1 Status
-• Em desenvolvimento
+• Parcialmente concluído em definições de produto/runtime.
+• Sem Billing Engine completo implementado nesta fase.
 
-9.2 Objetivo
-• Unificar cobrança (manual, híbrida e automatizada) e controle de recursos (grants)
-• Permitir modelo único de billing com snapshot por conta
+9.2 Objetivo atual
+• Separar condição comercial da conta do lifecycle da conta.
+• Definir que trial, plano e assinatura controlam permissões, não accounts.status.
+• Preparar a base para decisões futuras de contratação, trial e liberação de recursos produtivos.
 
-9.3 Escopo geral
-• Definir modelo técnico de planos, recursos e billing snapshot
-• Implementar motor de grants (model_grants + get_feature())
-• Integrar Stripe como modalidade opcional (billing_mode = stripe)
-• Garantir compatibilidade com Conta Consultiva (E7)
+9.3 Decisões consolidadas
 
-9.4 Grants e Features
-9.4.1 Status
-• Em evolução
-9.4.2 Escopo
-• Criar tabela model_grants para controlar recursos e limites por conta
-• Implementar get_feature(account_id, feature_key, lp_id?, section_id?) com fallback section > lp > account > plan > default
-• Adicionar colunas origin_plan_id, origin_plan_version, locked e limit_json
-9.4.3 Critérios de Aceite
-• Cada conta tem grants independente do plano
-• Mudanças em planos não alteram contas existentes automaticamente (snapshot)
-• Sincronização com plano atual apenas via ação explícita
-9.4.4 Integrações
-• Conta Consultiva Update (E7.5)
-• Admin Dashboard (E12)
-
-9.5 Billing Snapshot e Ciclos
-9.5.1 Status
-• Em planejamento
-9.5.2 Escopo
-• Adicionar billing_mode (stripe, manual, hybrid)
-• Adicionar plan_price_snapshot e billing_recurring_snapshot
-• Adicionar billing_cycle_start, billing_cycle_end e next_adjustment_at
-• Aplicar grandfathering (contas antigas mantêm preço e recursos)
-• Snapshot de preço e recursos no momento da criação da conta
-9.5.3 Critérios de Aceite
-• Contas consultivas e SaaS usam a mesma estrutura
-• Snapshots sempre específicos por conta
-• Histórico auditável de alterações de preço e ciclo
-9.5.4 Integrações
-• Conta Consultiva (E7)
-• Admin Dashboard (E12)
-
-9.6 Stripe Sync (Automação SaaS)
-9.6.1 Status
-• Planejado
-9.6.2 Escopo
-• Webhooks checkout.session.completed e subscription.updated
-• Sincronizar billing_status, subscription_id e subscription_current_period_end
-• Atualizar plan_price_map com planos e valores atuais
-• Suportar upgrade/downgrade automático para planos SaaS
-9.6.3 Pós-venda
+9.3.1 Trial como entitlement
 • Status: Concluído (definição)
-• Escopo: eventos/estados de pós-venda e billing (ex.: trial iniciado, trial expirado, assinatura ativa, cancelamento, inadimplência).
-• Importante: “status” aqui se refere a billing/subscription, e não a accounts.status.
-• Regra: billing/subscription controla entitlements/permissões; accounts.status permanece como lifecycle do setup (ver E10.4.6/E10.4.2).
+• Trial/plano controla permissões e limites de uso.
+• Trial/plano não define accounts.status.
+• Conta com setup concluído permanece accounts.status='active', mesmo sem plano ou após expiração de trial nesta fase.
+• Expiração de trial/plano deve afetar permissões, não o lifecycle da conta.
 
-9.7 Auditoria e Drift
-9.7.1 Status
-• Planejado
-9.7.2 Escopo
-• Relatório comparativo entre grants/preços da conta e plano original
-• Detectar divergências (drift) e registrar em audit_logs
-• Expor métricas de billing e recursos (limites, upgrades, consumo)
-9.7.3 Critérios de Aceite
-• Logs automáticos para toda atualização de plano/grant/ciclo
-• Painel de auditoria integrado ao Admin Dashboard
-• Exportação CSV/JSON
+9.3.2 Lifecycle da conta separado de billing
+• Status: Concluído (definição)
+• accounts.status representa lifecycle da conta/setup.
+• Billing, trial, plano e assinatura representam condição comercial.
+• inactive/suspended não são disparados automaticamente por expiração de trial/plano nesta fase.
 
-9.8 Compatibilidade
-• Billing Engine é o núcleo técnico que garante coerência entre Conta Consultiva (E7), Admin (E12) e Account Dashboard (E10)
-9.8.1 Trial como entitlement (trial não é status)
-• Status: Concluído (definição)
-• Regra (fonte de verdade): trial/plano controla apenas entitlements/permissões (ex.: “pode criar LPs”).
-• Importante: trial/plano não define accounts.status.
-• Pré-condição (pós-setup): conta já passou por setup concluído (ver E10.4.6/E10.4.2: setup concluído = accounts.status='active').
-• Pós-expiração do trial (sem plano):
-• Manter accounts.status='active' (nesta fase).
-• Remover/zerar entitlements do trial (feature gating).
-• UX esperada: “active persuasiva sem plano/trial” (ver E10.5).
-• Nota (lifecycle futuro): transições para inactive/suspended ficam para um ciclo posterior, quando houver regra de churn/inadimplência/banimento formalizada.
-• Dependência operacional: se exigir rotina/job para expiração, registrar em E12.x (sem implementar aqui)
-9.8.2 Motivos de inactive (definição; não aplicado no runtime ainda)
-• Status: Concluído (definição)
-• Objetivo: catalogar motivos de “inactive” para futura ativação do lifecycle (ex.: churn, inadimplência, fraude, banimento, etc.).
-• Estado atual (desde E10.4.6): inactive/suspended não são disparados por expiração de trial/plano nesta fase.
-• Regra atual: expiração de trial/plano afeta entitlements, não accounts.status.
-• Nota: quando o lifecycle for ativado, esta seção passará a ter enforcement no runtime (fora do escopo atual).
-9.8.3 Exec: Remover drift trial do runtime + docs
+9.3.3 Remoção de trial como status no runtime
 • Status: Concluído (04/02/2026)
-• Objetivo: remover trial como status (drift) do runtime e alinhar docs; trial permanece apenas como commercial.kind='trial' (E9.8.1).
-• Implementado (runtime): removido trial de tipos/allowlists/condicionais/UI onde aparecia como status.
-9.8.4 Persistência/consulta de commercial.inactive_reason (CRM/relatórios)
-• Status: Pendente
-• Objetivo: decidir se/como o motivo precisa ser persistido/consultável (BD/pipeline/CRM) e impactos (migrations/rollback se aplicável).
-• Dependências: E9.8.2, E9.8.1
-9.8.5 Persistência do sinal comercial (trial/entitlements) — expires_at
-• Status: Briefing
-• Objetivo: decidir onde persiste o sinal comercial (trial/plano), em especial commercial.expires_at, e definir o destino de accounts.trial_ends_at.
-• Decisão esperada (fechada):
-• Opção A: reaproveitar accounts.trial_ends_at como commercial.expires_at (formalizar contrato e evitar drift).
-• Opção B: criar outra persistência para o comercial e então deprecar/remover accounts.trial_ends_at com migration + rollback.
-• Regra de agora (legado): manter accounts.trial_ends_at como legado por enquanto (não mexer neste momento).
-• Dependências: E9.8.1 (contrato do sinal comercial); E9.8.3 (remoção do drift trial no runtime/docs).
-• Fora de escopo: billing/checkout; alterar accounts.status; mexer em accounts.trial_ends_at neste momento.
+• Trial foi removido de tipos, allowlists, condicionais e UI onde aparecia como status.
+• Trial permanece apenas como sinal comercial/permissão.
+
+9.4 Pendências vigentes
+• Definir onde registrar o sinal comercial de trial/plano.
+• Decidir o uso futuro de accounts.trial_ends_at.
+• Definir o recorte mínimo para contratação manual, concessão de trial e elegibilidade futura para criação de LP.
 
 10. E10 — Account Dashboard (UX)
 
