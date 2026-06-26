@@ -30,8 +30,8 @@ Fontes: chat, PR #435, PR #440, docs/roadmap.md, docs/base-tecnica.md, docs/sche
 * Auditoria deve verificar template, composição, prompt, content_json, renderer, preview/admin e /a/[account].
 * Objetivo da auditoria: garantir que todos obedecem à mesma estrutura fixa.
 * Redução das 8 seções da página comercial exige decisão estratégica própria.
-* Não decidir redução de seções nesta PR.
-* Não alterar template, prompt, renderer, schema ou runtime público nesta PR.
+* Não decidir redução de seções na Fase 7 sem decisão explícita.
+* Não alterar template, prompt, renderer, schema ou runtime público na Fase 7 sem decisão explícita.
 
 3. Fases e próxima ação
 3.1 Fase 1 — Base técnica
@@ -66,4 +66,4 @@ Fontes: chat, PR #435, PR #440, docs/roadmap.md, docs/base-tecnica.md, docs/sche
 * Parar se a próxima fase exigir schema, RPC, mudança no runtime público ou alteração de contrato fora da auditoria.
 * Parar se template, composição, prompt, content_json, renderer, preview/admin ou /a/[account] divergirem entre si.
 * Parar se a redução de seções da página comercial exigir decisão estratégica.
-* Review deve confirmar: 4 seções principais, sem histórico longo, Fase 7 como auditoria do contrato e Fase 8 como edição manual.
+* Review deve confirmar: lousa compacta com 4 seções principais, sem histórico longo, Fase 7 como auditoria do contrato e Fase 8 como edição manual.
