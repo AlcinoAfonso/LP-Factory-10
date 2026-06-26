@@ -1,8 +1,8 @@
 0. Introdução
 
 0.1 Cabeçalho
-• Data: 25/06/2026
-• Versão: v1.5.84
+• Data: 26/06/2026
+• Versão: v1.5.85
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -762,8 +762,8 @@ Repositório — Ajustados
 • Implementar detecção por ambiente somente se o ganho justificar a complexidade.
 
 10.7 Páginas comerciais personalizadas por nicho
-• Status: Em execução faseada — Fase 5 concluída em 25/06/2026.
-• Próxima execução: Fase 6 — Admin comercial enxuto e contrato fixo da página comercial.
+• Status: Em execução faseada — Fase 6 concluída em 26/06/2026.
+• Próxima execução: Fase 7 — edição manual de copy e gestão simples de versões.
 • Objetivo: gerar, revisar, publicar e consumir páginas comerciais por taxon; a IA roda apenas em operação administrativa/server-side; `/a/[account]` consome somente artefato publicado e validado; ausência de conteúdo nichado não pode quebrar `/a/[account]`.
 • Dependência estrutural: a E18 define os contratos reutilizáveis mínimos; a E10.7 aplica, valida e ajusta esses contratos no caso comercial concreto.
 • A página genérica `generic-v1` da E10.6 permanece concluída e será o fallback obrigatório.
@@ -879,14 +879,33 @@ Repositório — Ajustados
 • `docs/platform-config.md`
 
 10.7.7 Fase 6 — Admin comercial enxuto e contrato fixo da página comercial
-• Status: Planejada.
-• Escopo: transformar `/admin/templates` em lista limpa e mover operação detalhada para página própria por taxon.
-• Rota prevista: `/admin/templates/commercial-activation/[taxonSlug]`.
-• Incluir na página específica: status do taxon, gerar/regenerar draft, publicar draft, preview, histórico e diagnóstico técnico secundário.
-• Aplicar loading/disable nos botões no local definitivo.
-• Pendências futuras: edição manual simples do draft e avaliação de uso do latest published como base para novas regenerações.
+• Status: Concluída em 26/06/2026.
+• Estado atual: `/admin/templates` funciona como lista limpa de taxons comerciais, sem preview, histórico completo, geração, publicação ou operação detalhada na lista.
+• Lista: exibe taxon, estado, pesquisa, composição, artefatos e ação Selecionar.
+• Página operacional: `/admin/templates/commercial-activation/[taxonSlug]` concentra status do taxon, gerar/regenerar draft, publicar draft, cards de estado, diagnóstico técnico mínimo, preview e histórico.
+• Botões: Gerar draft, Regenerar draft e Publicar draft usam loading/disable durante submissão.
+• Regra de ação: quando houver draft publicável, o próximo passo é Publicar draft; quando houver draft em revisão ou published sem draft ativo, a ação de geração aparece como Regenerar draft; quando não houver draft nem published, aparece como Gerar draft.
+• Mensagem de publicação: informa sucesso e, quando aplicável, arquivamento da versão anterior publicada.
+• Limites: não inclui edição manual de draft, IA assistida, regeneração baseada em latest published, seleção de published oficial, editor visual, alteração do layout público, alteração de cores, alteração do runtime público `/a/[account]`, nova migration, nova tabela, nova RPC, novo grant, nova policy, flags, A/B test, cache novo, server-side tracking novo ou navegação global multi-contas.
+• Updates aplicados: `prod#14` e `prod#16`.
 
-10.7.8 Exibição, fallbacks e tracking
+10.7.7.1 Estruturas e artefatos
+
+Repositório — Criados
+• `app/admin/(protected)/templates/_components/PendingSubmitButton.tsx`
+• `app/admin/(protected)/templates/commercial-activation/[taxonSlug]/page.tsx`
+
+Repositório — Ajustados
+• `app/admin/(protected)/templates/page.tsx`
+• `app/admin/(protected)/templates/actions.ts`
+• `lib/admin/adapters/adminCommercialActivationTemplatesAdapter.ts`
+
+10.7.8 Fase 7 — Edição manual de copy e gestão simples de versões
+• Status: Planejada.
+• Escopo: permitir ajuste humano de copy antes da publicação e gestão simples de versões, preservando estrutura fixa, cores universais e contrato do renderer.
+• Limites: não incluir IA assistida para edição, editor visual, edição por bloco independente, múltiplas versões `published` ativas, alteração do runtime público, alteração de template, composição, layout ou cores.
+
+10.7.9 Exibição, fallbacks e tracking
 • Fluxo em `/a/[account]`: conta `active` → resolver `account_id` → resolver taxon primário ativo → procurar bundle `commercial_activation` publicado → renderizar página nichada somente quando o bundle estiver `ready` → usar `generic-v1` quando não houver bundle consumível.
 • Preservar `NicheResolutionCard` acima da página quando aplicável.
 • Conta sem taxon, taxon inativo ou inválido, pesquisa incompleta, composição ausente ou inválida, página não publicada, artifact inválido, erro de leitura ou render model não `ready` usam a página genérica E10.6 como fallback seguro.
@@ -1338,6 +1357,8 @@ Repositório — Criados
 • Esta referência não cria obrigação de implementar E19 agora.
 
 99. Changelog
+v1.5.85 — 26/06/2026 — E10.7 Fase 6 concluída; próxima fase: Fase 7 — edição manual de copy e gestão simples de versões.
+
 v1.5.84 — 25/06/2026 — E10.7 Fase 5 concluída com taxons elegíveis por pesquisa estruturada completa, composição técnica genérica sob demanda, geração/publicação `commercial_activation` por `taxonSlug` e próxima Fase 6 planejada para Admin comercial enxuto.
 
 v1.5.83 — 23/06/2026 — E10.7 Fase 4 concluída com consumo no Account Dashboard: `/a/[account]` renderiza bundle `commercial_activation` publicado e `ready`, mantém fallback `generic-v1`, preserva `NicheResolutionCard` e tracking comercial, rejeita draft/archived/artifact inválido e mantém IA fora do runtime público.
