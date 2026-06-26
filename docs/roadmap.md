@@ -689,7 +689,7 @@ Repositório — Ajustados
 
 10.7 Páginas comerciais personalizadas por nicho
 • Status: Em execução faseada — Fase 6 concluída em 26/06/2026.
-• Próxima execução: Fase 7 — edição manual de copy e gestão simples de versões.
+• Próxima execução: Fase 7 — auditoria e consolidação do contrato commercial_activation.
 • Objetivo: gerar, revisar, publicar e consumir páginas comerciais por taxon; a IA roda apenas em operação administrativa/server-side; `/a/[account]` consome somente artefato publicado e validado; ausência de conteúdo nichado não pode quebrar `/a/[account]`.
 • Dependência estrutural: a E18 define os contratos reutilizáveis mínimos; a E10.7 aplica, valida e ajusta esses contratos no caso comercial concreto.
 • A página genérica `generic-v1` da E10.6 permanece concluída e será o fallback obrigatório.
@@ -823,12 +823,21 @@ Repositório — Ajustados
 • `app/admin/(protected)/templates/actions.ts`
 • `lib/admin/adapters/adminCommercialActivationTemplatesAdapter.ts`
 
-10.7.8 Fase 7 — Edição manual de copy e gestão simples de versões
+10.7.8 Fase 7 — Auditoria e consolidação do contrato commercial_activation
 • Status: Planejada.
-• Escopo: permitir ajuste humano de copy antes da publicação e gestão simples de versões, preservando estrutura fixa, cores universais e contrato do renderer.
-• Limites: não incluir IA assistida para edição, editor visual, edição por bloco independente, múltiplas versões `published` ativas, alteração do runtime público, alteração de template, composição, layout ou cores.
+• Objetivo: garantir que template, composição, prompt, `content_json`, renderer, preview/admin e `/a/[account]` obedeçam ao mesmo contrato fixo da página comercial.
+• Escopo: auditar o contrato `commercial_activation` antes da edição manual de copy.
+• Estrutura atual a preservar no MVP: Hero, Benefícios, Serviços, Planos, Diferenciais, Como funciona, FAQ e CTA final.
+• Critérios de parada: parar se template, composição, prompt, `content_json`, renderer, preview/admin ou `/a/[account]` divergirem entre si.
+• Limites: não alterar schema, RPC, migration, grant, policy, runtime público, layout, cores, template, IA assistida, edição manual ou gestão de versões nesta fase.
+• Decisão pendente: qualquer redução de seções da página comercial exige decisão estratégica própria.
 
-10.7.9 Exibição, fallbacks e tracking
+10.7.9 Fase 8 — Edição manual de copy e gestão simples de versões
+• Status: Planejada.
+• Objetivo: permitir ajuste humano de copy e gestão simples de versões depois do contrato fixo auditado.
+• Limites: não incluir IA assistida, editor visual, edição por bloco independente, múltiplas versões `published` ativas, alteração do runtime público, alteração de template, composição, layout ou cores.
+
+10.7.10 Exibição, fallbacks e tracking
 • Fluxo em `/a/[account]`: conta `active` → resolver `account_id` → resolver taxon primário ativo → procurar bundle `commercial_activation` publicado → renderizar página nichada somente quando o bundle estiver `ready` → usar `generic-v1` quando não houver bundle consumível.
 • Preservar `NicheResolutionCard` acima da página quando aplicável.
 • Conta sem taxon, taxon inativo ou inválido, pesquisa incompleta, composição ausente ou inválida, página não publicada, artifact inválido, erro de leitura ou render model não `ready` usam a página genérica E10.6 como fallback seguro.
