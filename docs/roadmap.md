@@ -789,7 +789,6 @@ Repositório — Ajustados
 • Status: Concluída e validada em 21/06/2026.
 • Resultado: escrita administrativa controlada viabilizada antes da persistência do draft; publicação transacional disponível no banco; detalhes de DB permanecem em `docs/schema.md`.
 • Fora do escopo preservado: geração IA, Account Dashboard, LP Builder, nova tabela, hierarquia de taxons e alteração de `research_version`.
-• Critério de passagem: cumprido; migration aplicada no Supabase real e snippet de validação retornou `check_status = ok` em todas as linhas.
 • Estruturas e artefatos:
   • Banco — Ajustados: `content_artifacts`; `content_artifact_research_sources`
   • Banco — Criados: `publish_content_artifact_draft(uuid)`
@@ -797,13 +796,11 @@ Repositório — Ajustados
   • Repositório — Ajustados: `docs/schema.md`
 
 10.7.3 Fase 2 — Geração IA administrativa de draft comercial
-• Status: Concluída e validada em 22/06/2026.
-• Resultado: geração server-side/Admin de draft comercial por taxon concluída para o taxon piloto; draft real criado em `content_artifacts` com `status = draft`, sem publicação e sem consumo em `/a/[account]`.
-• Evidência validada: artifact `c95e52ea-b4b3-44af-b5a5-aedd48a1ba0f`, `artifact_version = 1`, `audience_scope = business_buyer`, `research_version = 1`, `content_json` com 8 seções e `validation_status = ready`.
-• Persistência e proveniência: `content_artifact_research_sources` recebeu somente 4 fontes `business_buyer`; `end_customer` permanece apenas em `provenance_json`; `public.plans` foi usado como fonte parcial de planos.
-• Falha segura: se o insert das fontes falhar após criar o artifact, o draft recém-criado é arquivado/invalidado e o fluxo retorna erro seguro.
-• Fora do escopo preservado: publicação, alteração em `published`, Account Dashboard, `/a/[account]`, UI completa em `/admin/templates`, LP Builder, Agents SDK, Sandbox Agents, job, fila, agente, IA em runtime público, nova tabela, view, função, grant, policy, migration, hierarquia de taxons e `research_version`.
-• Critério de passagem: cumprido; snippet `supabase/snippets/e10_7_phase_2_draft_verify.sql` retornou todas as linhas com `check_status = ok`, `published_count = 0` e nenhum draft válido sem fontes relacionais.
+• Status: Concluída em 22/06/2026.
+• Estado atual: geração server-side/Admin de draft comercial por taxon disponível, criando artifact `draft` validável antes de publicação.
+• Persistência e proveniência: fontes de pesquisa são vinculadas ao artifact e contexto complementar permanece no `provenance_json`.
+• Falha segura: inconsistência na persistência de fontes invalida/arquiva o draft recém-criado.
+• Limites: sem publicação automática, sem consumo em `/a/[account]`, sem IA em runtime público, sem LP Builder, sem job, fila ou agente, sem nova tabela, view, função, grant, policy, migration ou alteração de hierarquia dos taxons.
 • Estruturas e artefatos:
   • Repositório — Criados: `app/admin/(protected)/templates/actions.ts`; `lib/conversion-content/commercial-activation/draft-generation.ts`; `supabase/snippets/e10_7_phase_2_draft_verify.sql`
 
@@ -833,7 +830,7 @@ Repositório — Ajustados
 • Fallback: ausência, erro, artefato inválido ou conteúdo não consumível retorna para `generic-v1`.
 • Limites: não consome `draft`, não consome `archived` e não usa IA em runtime público.
 • Tracking: mantém eventos comerciais vinculados ao `account_id`, sem PII.
-• Pendências: validação visual em ambiente real/Preview e Fase 5 com segundo taxon.
+• Pendências: nenhuma vigente neste recorte.
 
 10.7.5.1 Estruturas e artefatos
 
