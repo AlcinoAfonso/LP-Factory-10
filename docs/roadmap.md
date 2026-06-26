@@ -379,7 +379,7 @@
 • Status: Concluído (exec) (13/02/2026)
 • Escopo final: entregar o fluxo ponta a ponta de “Primeiros passos” em `/a/[account]` quando `accounts.status=pending_setup`, com formulário inline, validação, persistência do perfil v1, promoção `pending_setup → active` e redirecionamento para o pós-setup.
 • Estado atual: onboarding v1 inline em `pending_setup`, com `name` obrigatório, `niche` obrigatório, `preferred_channel` opcional com default `email`, `whatsapp` obrigatório somente quando `preferred_channel=whatsapp` e `site_url` opcional com normalização para URL válida.
-• Dependências: E9.8.1.
+• Dependências: E9.3.1.
 • Nota: `setup_completed_at/account_setup_completed_at` não devem ser usados no runtime, no gating, no fluxo nem nos logs; ficam mantidos no DB apenas por segurança.
 
 10.4.1 Marcador legado de setup (deprecated)
@@ -454,7 +454,7 @@
 • Escopo atual: separar o estado `active` do fluxo `pending_setup` e preparar a camada pós-setup do dashboard da conta.
 • Estado atual do runtime: `app/a/[account]/page.tsx` renderiza “Primeiros passos” somente para `accounts.status=pending_setup`; para conta autenticada fora desse estado, a rota ainda não entrega UX específica do E10.5.
 • Base já implementada no repo: estrutura de taxonomia/templates/guides no BD e pipeline operacional de resolução de nicho no pós-save do onboarding.
-• Dependências: E9.8.1, E10.4.6, E10.5.1, E10.5.2, E10.5.6.
+• Dependências: E9.3.1, E10.4.6, E10.5.1, E10.5.2, E10.5.6.
 • Nota: `setup_completed_at/account_setup_completed_at` não devem ser usados no runtime, no gating, no fluxo nem nos logs; ficam mantidos no DB apenas por segurança.
 
 10.5.1 Matriz “preparação vs produtivo” + enforcement (SSR + actions)
@@ -464,7 +464,7 @@
 • fechar status/entitlements mínimos por rota/ação
 • declarar o sinal canônico de entitlement/limite efetivo
 • definir mensagens e CTAs de bloqueio coerentes com o E10.5
-• Dependências: E9.8.1, E10.5.
+• Dependências: E9.3.1, E10.5.
 • Fora de escopo: implementação da UX principal do E10.5 nesta etapa.
 
 10.5.2 Base do BD do E10.5
@@ -1430,9 +1430,9 @@ v1.5.12 (01/02/2026)
 • Atualizado 10.4 para focar em UX/CTAs do subestado “setup incompleto” e registrar a transição para 10.5 ao setar setup_completed_at (sem mudar accounts.status).
 • Registrados 10.4.1 e 10.4.2 como Concluídos (infra do marcador + regra v0 executável de setup concluído), com dependências e pendência explícita de dados mínimos v1.
 • Mantidos como Briefing: 10.4.3 (política do marcador), 10.4.4 (dados mínimos v1: nicho/WhatsApp/outros) e criado 10.5.1 (matriz “preparação vs produtivo” + enforcement servidor).
-• Ajustadas dependências de 10.4 e 10.5 para incluir E9.8.1 apenas como referência de CTA/roteamento (sem implementar entitlements aqui).
+• Ajustadas dependências de 10.4 e 10.5 para incluir E9.3.1 apenas como referência de CTA/roteamento (sem implementar entitlements aqui).
 v1.5.11 (31/01/2026)
-• Atualizado 9.8.1 com definição do trial como entitlement (início pós-setup; expiração `active → inactive`) e contrato mínimo do sinal comercial consumido por SSR/gate/UX.
+• Atualizado 9.3.1 com definição do trial como entitlement (início pós-setup; expiração `active → inactive`) e contrato mínimo do sinal comercial consumido por SSR/gate/UX.
 • Adicionado 9.8.2 (Briefing) para motivos de `inactive` (trial_expired vs churn) para segmentação de marketing.
 • Adicionado 9.8.3 (Briefing) para execução: remoção do drift `trial` no runtime + alinhamento de docs ao estado final.
 v1.5.10 (31/01/2026)
@@ -1442,8 +1442,8 @@ v1.5.10 (31/01/2026)
 • Adicionado E10.4.5 (Briefing) para dados mínimos v1 (nicho/WhatsApp/outros) com contrato de armazenamento/validações.
 v1.5.9 (30/01/2026)
 • Adicionado E10.4.1 (infra do marcador setup_completed_at) como pré-requisito para diferenciar subestados de pending_setup.
-• Ajustado 9.8.1 para manter foco em entitlements; remoção do hardcode/allowlist de trial no Access Context foi concluída em E10.4.1.
-• Adicionado placeholder do E10.4 (Briefing) com dependências (E10.4.1, E9.8.1).
+• Ajustado 9.3.1 para manter foco em entitlements; remoção do hardcode/allowlist de trial no Access Context foi concluída em E10.4.1.
+• Adicionado placeholder do E10.4 (Briefing) com dependências (E10.4.1, E9.3.1).
 v1.5.8 (27/01/2026)
 • Adicionado E16 (Accounts) para consolidar lifecycle de accounts.status (definições, transições e UX/CTAs), com referências para docs/base-tecnica.md e docs/schema.md (anti-drift).
 • Ajustado E4.2 para remover redundâncias e focar no fluxo/UX do gateway e roteamentos, adicionando subitem de referências numerado.
