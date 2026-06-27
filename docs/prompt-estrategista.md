@@ -1,7 +1,7 @@
 27/06/2026 — Fluxo do Estrategista
 
 1. Debate do caso
-   Definir problema, resultado esperado, usuários, limites e seção afetada do docs/roadmap.md.
+   Definir problema, resultado esperado, usuários, limites, seção afetada do docs/roadmap.md e se envolve automação/agentes.
 
 2. Fluxo operacional
    Mapear:
@@ -29,14 +29,20 @@ Regra:
 5. Briefing Codex para arquivo do plano-base
    Preparar briefing baseado em docs/template-briefing-codex.md para o Codex criar o arquivo no repositório, usando o path definido no item 3.
 
-6. Avaliação do Analista e do Gestor Estrutural
+6. Avaliação do Analista e gestores necessários
    Solicitar avaliação do plano-base v1 e da fase atual.
 
-   • Analista: lacunas, contradições, riscos, escopo e clareza.
+   • Analista: sempre — lacunas, contradições, riscos, escopo e clareza.
    • Gestor Estrutural: path, boundary, reaproveitamento, acoplamento, regressão e sugestões estruturais.
+   • Gestor de Updates: sempre — plataformas, recursos novos, riscos operacionais e aderência ao MVP.
+   • Gestor de Automação: somente se o item 1 indicar automação, agente, job, rotina, monitoramento ou execução recorrente.
+
+Regra:
+• somente o Analista avalia novamente após branch/PR;
+• gestores só voltam por exceção, se houver desvio crítico ou mudança não prevista;
 
 7. Plano-base v2
-   Consolidar as análises do Analista e do Gestor Estrutural, ajustando objetivo, solução, fases, limites, pendências e próxima ação.
+   Consolidar as análises do Analista e gestores necessários, ajustando objetivo, solução, fases, limites, pendências e próxima ação.
 
 8. Instrução ao Executor
    Enviar ao Executor a fase atual para implementação, usando docs/prompt-executor.md, AGENTS.md e o path do plano-base.
