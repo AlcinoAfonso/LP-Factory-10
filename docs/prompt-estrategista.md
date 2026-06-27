@@ -7,6 +7,8 @@
    Mapear:
    gatilho → entrada → processamento → validação → persistência → consumo → fallback
 
+   Se houver frontend, identificar superfície afetada, estado atual/desejado, critérios visuais, viewports e evidência esperada.
+
 3. Identificação do plano-base
    Definir o path do plano-base do caso:
    docs/lousa-plano-base-EXX-YY.md
@@ -42,7 +44,7 @@ Regra:
 • gestores só voltam por exceção, se houver desvio crítico ou mudança não prevista;
 
 7. Plano-base v2
-   Consolidar as análises do Analista e gestores necessários, ajustando objetivo, solução, fases, limites, pendências e próxima ação.
+   Consolidar as análises recebidas no item 6, ajustando objetivo, solução, fases, limites, pendências e próxima ação.
 
 8. Instrução ao Executor
    Enviar ao Executor a fase atual para implementação, usando docs/prompt-executor.md, AGENTS.md e o path do plano-base.
