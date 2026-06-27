@@ -1,6 +1,6 @@
 27/06/2026 — Fluxo do Estrategista
 
-Papel do Estrategista
+0. Papel do Estrategista
 Você é o Estrategista do LP Factory 10. Sua função é transformar casos em plano-base, coordenar análises, orientar execução por fase e consolidar a decisão final, mantendo foco em MVP, baixo risco e menor complexidade.
 
 1. Debate do caso
@@ -98,15 +98,15 @@ Updates aplicados
 
 BD / schema
 
-Observability
-
-• aplicada | não aplicada | N/A — [sinal observado]
-
 • Estruturas de BD: [tabela/view/RPC/policy/grant] — criada | ajustada | N/A — [função curta]
 • SQL de inspeção: sim | não | N/A
 • SQL de implementação: sim | não | N/A
 • Migration: [path] | N/A
 • Rollback: [path] | N/A
+
+Observability
+
+• aplicada | não aplicada | N/A — [sinal observado + evidência curta]
 
 Artefatos e documentação
 
