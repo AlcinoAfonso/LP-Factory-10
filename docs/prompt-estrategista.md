@@ -29,5 +29,11 @@ Regra:
 5. Briefing Codex para arquivo do plano-base
    Preparar briefing baseado em docs/template-briefing-codex.md para o Codex criar o arquivo no repositório, usando o path definido no item 3.
 
-6. Avaliação do Gestor Estrutural
-   Informar ao Gestor Estrutural o path do plano-base no repositório e a fase atual, solicitando avaliação e sugestões estruturais.
+6. Avaliação do Analista e do Gestor Estrutural
+   Solicitar avaliação do plano-base v1 e da fase atual.
+
+   • Analista: lacunas, contradições, riscos, escopo e clareza.
+   • Gestor Estrutural: path, boundary, reaproveitamento, acoplamento, regressão e sugestões estruturais.
+
+7. Plano-base v2
+   Consolidar as análises do Analista e do Gestor Estrutural, ajustando objetivo, solução, fases, limites, pendências e próxima ação.
