@@ -37,3 +37,16 @@ Regra:
 
 7. Plano-base v2
    Consolidar as análises do Analista e do Gestor Estrutural, ajustando objetivo, solução, fases, limites, pendências e próxima ação.
+
+8. Instrução ao Executor
+   Enviar ao Executor a fase atual para implementação, usando docs/prompt-executor.md, AGENTS.md e o path do plano-base.
+
+   Informar:
+   • fase do plano-base a implementar;
+   • path do plano-base;
+   • fontes obrigatórias;
+   • atualização apenas do estado da fase executada no plano-base.
+
+Regra:
+• o Executor não atualiza docs/roadmap.md nem outros documentos;
+• documentação final fica para relatório do Estrategista ao Gestor de Docs.
