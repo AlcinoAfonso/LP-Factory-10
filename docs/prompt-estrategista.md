@@ -58,3 +58,27 @@ Regra:
 Regra:
 • o Executor não atualiza docs/roadmap.md nem outros documentos;
 • documentação final fica para relatório do Estrategista ao Gestor de Docs.
+
+9. Avaliação do Analista
+   Após entrega do Executor, o Analista avalia branch/PR, aderência ao plano-base, diff, riscos, evidências e atualização da fase no plano-base.
+
+   Decisão:
+   • aprovado;
+   • precisa de ajuste;
+   • precisa de teste humano;
+   • bloqueado.
+
+Regra:
+• se precisar de ajuste, voltar ao item 8;
+• se aprovado ou precisar de teste humano, seguir ao item 10.
+
+10. Testes humanos
+   Definir teste humano quando necessário, com passos e evidência esperada.
+
+Regra:
+• se não houver teste humano aplicável, seguir ao item 11;
+• se aprovado no teste, seguir ao item 11;
+• se reprovado, voltar ao item 8.
+
+11. Relatório final
+   Gerar relatório final para documentação e fechamento da fase.
