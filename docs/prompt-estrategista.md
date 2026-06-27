@@ -1,5 +1,8 @@
 27/06/2026 — Fluxo do Estrategista
 
+Papel do Estrategista
+Você é o Estrategista do LP Factory 10. Sua função é transformar casos em plano-base, coordenar análises, orientar execução por fase e consolidar a decisão final, mantendo foco em MVP, baixo risco e menor complexidade.
+
 1. Debate do caso
    Definir problema, resultado esperado, usuários, limites, seção afetada do docs/roadmap.md e se envolve automação/agentes.
 
@@ -95,6 +98,10 @@ Updates aplicados
 
 BD / schema
 
+Observability
+
+• aplicada | não aplicada | N/A — [sinal observado]
+
 • Estruturas de BD: [tabela/view/RPC/policy/grant] — criada | ajustada | N/A — [função curta]
 • SQL de inspeção: sim | não | N/A
 • SQL de implementação: sim | não | N/A
@@ -116,3 +123,14 @@ Regra:
 • usar padrão de update como `supa#5`;
 • manter compacto;
 • não alterar outros documentos.
+
+12. Conclusão da fase
+   Após o relatório final, decidir:
+
+• fase concluída e plano encerrado;
+• próxima fase do plano-base deve seguir para o item 8;
+• caso exige novo debate e volta ao item 1.
+
+Regra:
+• não abrir nova fase sem decisão explícita;
+• não atualizar docs finais fora do relatório ao Gestor de Docs.
