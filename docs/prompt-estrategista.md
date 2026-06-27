@@ -81,4 +81,38 @@ Regra:
 • se reprovado, voltar ao item 8.
 
 11. Relatório final
-   Gerar relatório final para documentação e fechamento da fase.
+   Registrar apenas o que ocorreu, manter os rótulos abaixo e marcar N/A quando não se aplicar.
+
+Plano-base recebe só decisão viva e próxima ação.
+
+Implementado / definido
+
+• [1–5 bullets]
+
+Updates aplicados
+
+• [tag, ex.: supa#5] — aplicado | avaliado | N/A — [efeito curto]
+
+BD / schema
+
+• Estruturas de BD: [tabela/view/RPC/policy/grant] — criada | ajustada | N/A — [função curta]
+• SQL de inspeção: sim | não | N/A
+• SQL de implementação: sim | não | N/A
+• Migration: [path] | N/A
+• Rollback: [path] | N/A
+
+Artefatos e documentação
+
+• Arquivos criados: [paths] | N/A
+• Arquivos ajustados: [paths preexistentes] | N/A
+• Documentos atualizados: [paths] | N/A
+• Documentos que não devem ser alterados: [paths] | N/A
+
+Pendências
+
+• [bullets] | N/A
+
+Regra:
+• usar padrão de update como `supa#5`;
+• manter compacto;
+• não alterar outros documentos.
