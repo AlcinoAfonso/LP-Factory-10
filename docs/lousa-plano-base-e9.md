@@ -323,6 +323,50 @@ Limites da Fase 3:
 * Fallback: sem entitlement efetivo, retornar não elegível e manter experiência comercial/persuasiva.
 * Próxima ação: submeter Fase 4 à avaliação do Analista, Gestor Estrutural e Gestor de Updates antes do Executor.
 
+3.5.1 Resultado da Fase 4 — consumo server-side mínimo
+
+Arquivos consultados:
+
+* `AGENTS.md`
+* `docs/prompt-executor.md`
+* `docs/lousa-plano-base-e9.md`
+* `docs/roadmap.md`
+* `docs/schema.md`
+* `docs/base-tecnica.md`
+* `supabase/migrations/20260628184945_e9_commercial_entitlements.sql`
+* `lib/access/getAccessContext.ts`
+* `lib/access/adapters/accessContextAdapter.ts`
+* `lib/conversion-content/adapters/commercialActivationAdapter.ts`
+* `app/a/[account]/page.tsx`
+
+Entregas:
+
+* Boundary criado: `lib/commercial-entitlements/`.
+* Contrato público: `CommercialEntitlementSignal` com `isCommerciallyEligible`, `effectiveStatus` e `planKey`.
+* Adapter server-only: `getCommercialEntitlementSignal({ accountId })`.
+* Consulta centralizada na view `v_account_commercial_entitlement_effective`, filtrada por `account_id`, sem query espalhada na página.
+* Account Dashboard carrega o sinal server-side após resolver `accountId` pelo Access Context, sem alterar layout, copy, cards E10.7 ou comportamento visual.
+
+Decisões técnicas:
+
+* O boundary usa client SSR autenticado, preservando RLS e a premissa de que o `accountId` já foi validado pelo Access Context.
+* A ausência de linha ou erro é tratada como não elegível, sem lançar exceção para a UI.
+* A fase não aplica gate produtivo nem usa o sinal para bloquear/liberar criação de LP.
+* A fase não consulta `accounts.status`, `account_users.status`, `accounts.plan_id`, `public.plans` ou `v_account_effective_limits` como prova comercial.
+
+Riscos e lacunas:
+
+* A Fase 4 depende da migration/view da Fase 3 estar aplicada no ambiente alvo.
+* O sinal ainda não governa criação produtiva de LP; o gate operacional deve ser definido em fase futura.
+* Não houve checkout, webhook, provider adapter, admin, LP Builder, trial operacional, liberação manual operacional ou automação.
+
+Governança da Fase 4:
+
+* Analista: avaliar aderência do fallback fail-closed e ausência de mudança visual.
+* Gestor Estrutural: avaliar boundary, adapter server-only e acoplamento com Account Dashboard.
+* Gestor de Updates: avaliar aderência a Supabase Data API/RLS e consumo server-side.
+* Gestor de Automação: N/A neste recorte, porque não há webhook, job, rotina, monitoramento ou execução recorrente.
+
 3.6 Fase 5 — Gate produtivo de criação de LP
 
 * Objetivo: aplicar a regra conta `active` + membership ativo + entitlement comercial válido no ponto server-side de criação produtiva de LP.
