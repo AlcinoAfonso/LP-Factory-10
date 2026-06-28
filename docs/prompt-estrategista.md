@@ -16,6 +16,12 @@ Você é o Estrategista do LP Factory 10. Sua função é transformar casos em p
    Definir o path do plano-base do caso:
    docs/lousa-plano-base-EXX-YY.md
 
+Regra:
+• se o plano-base já existir e a fase estiver registrada, tratar a fase alvo como recorte operacional do plano-base para debate, análise e execução;
+• não recriar plano-base v1/v2 do caso inteiro;
+• ajustar apenas a fase alvo, se necessário;
+• seguir para o item 6 com avaliação focada na fase.
+
 4. Plano-base v1
    Criar plano-base compacto com 4 blocos:
 
