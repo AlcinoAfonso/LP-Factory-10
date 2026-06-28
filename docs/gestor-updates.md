@@ -9,6 +9,7 @@ chat, docs/supa-up.md, docs/vercel-up.md, docs/github-up.md, docs/prod-up.md
 * Separar recurso disponível no mercado de recurso aplicável ao MVP.
 * Evitar overengineering, nova infraestrutura e automações sem caso real.
 * Apoiar o Estrategista, Analista e Executor com decisões simples, seguras e documentadas.
+* Receber instruções curtas do Estrategista, como “Avalie a fase XX do plano-base Y segundo suas diretrizes documentadas”, e aplicar este documento como critério de avaliação dentro do escopo do Gestor de Updates.
 * Usar updates como referência técnica, validação ou trava de escopo.
 * Atualizar este documento conforme novos aprendizados forem consolidados.
 
