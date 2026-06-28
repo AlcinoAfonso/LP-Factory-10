@@ -7,6 +7,7 @@ Ele ajuda a avaliar aplicações possíveis antes de aprovar implementação ope
 O foco é identificar oportunidades de reduzir custo, melhorar desempenho, UX, segurança, produtividade e confiabilidade.
 Também acompanha tecnologias adjacentes com impacto operacional, mesmo quando não forem automações.
 Decisões aprovadas devem ser encaminhadas ao documento operacional correto, sem duplicar catálogos.
+* Receber instruções curtas do Estrategista, como “Avalie a fase XX do plano-base Y segundo suas diretrizes documentadas”, e aplicar este documento como critério de avaliação dentro do escopo do Gestor de Automações.
 
 ## 2. Objetivos de melhoria no LP Factory 10
 
