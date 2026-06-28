@@ -1,8 +1,8 @@
 0. Introdução
 
 0.1 Cabeçalho
-• Data da última atualização: 25/06/2026
-• Documento: LP Factory 10 — Schema (DB Contract) v1.0.29
+• Data da última atualização: 28/06/2026
+• Documento: LP Factory 10 — Schema (DB Contract) v1.0.30
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -84,21 +84,68 @@
 1.4.3 Policies (TBD: preencher nomes reais no Supabase)
 • Select: público autenticado (se aplicável) ou somente admins
 
-1.5 partners
+1.5 account_commercial_entitlements
+1.5.1 Chaves, constraints e relacionamentos
+• PK: id uuid
+• FK: account_id → accounts(id) ON DELETE CASCADE (constraint account_commercial_entitlements_account_id_fkey)
+• CHECK: account_commercial_entitlements_plan_key_chk (plan_key IN ('starter', 'lite', 'pro', 'ultra'))
+• CHECK: account_commercial_entitlements_origin_chk (origin IN ('plano_pago_confirmado', 'trial', 'liberacao_manual'))
+• CHECK: account_commercial_entitlements_status_chk (status IN ('pendente_confirmacao', 'ativo', 'expirado', 'cancelado'))
+• CHECK: account_commercial_entitlements_metadata_json_object_chk (metadata_json deve ser objeto JSON)
+• CHECK: account_commercial_entitlements_vigencia_chk (expires_at deve ser maior que starts_at quando ambos existirem)
+• CHECK: canceled_at só é permitido quando status='cancelado'
+1.5.2 Campos
+• id uuid not null default gen_random_uuid()
+• account_id uuid not null
+• plan_key text not null
+• plan_name_snapshot text not null
+• origin text not null
+• status text not null
+• starts_at timestamptz null
+• confirmed_at timestamptz null
+• expires_at timestamptz null
+• canceled_at timestamptz null
+• external_provider text null
+• external_reference text null
+• idempotency_key text null
+• metadata_json jsonb not null default '{}'::jsonb
+• created_at timestamptz not null default now()
+• updated_at timestamptz not null default now()
+1.5.3 Índices
+• account_commercial_entitlements_account_id_idx (account_id)
+• account_commercial_entitlements_status_idx (status)
+• account_commercial_entitlements_expires_at_idx (expires_at)
+• account_commercial_entitlements_effective_lookup_idx (account_id, status, starts_at, expires_at) WHERE status='ativo'
+• account_commercial_entitlements_idempotency_key_uidx UNIQUE parcial em idempotency_key WHERE idempotency_key IS NOT NULL
+1.5.4 Segurança
+• Trigger: account_commercial_entitlements_set_updated_at usa public.tg_set_updated_at()
+• RLS: ativo (enable row level security)
+• Grants: authenticated com SELECT; service_role com SELECT, INSERT, UPDATE e DELETE
+• INSERT/UPDATE/DELETE sem acesso direto amplo para authenticated; mutação operacional futura deve ocorrer por service_role, RPC ou webhook em fase própria.
+1.5.5 Policies
+• account_commercial_entitlements_select_member_or_platform (SELECT to authenticated): is_platform_admin() OU membro ativo da conta (account_users.account_id = account_commercial_entitlements.account_id; account_users.user_id = auth.uid(); account_users.status='active')
+1.5.6 Observações
+• `sem_entitlement` e `bloqueado_operacionalmente` são resultados derivados de consulta, não status persistidos.
+• Provedor, checkout, webhook, assinatura, invoice e evento externo são referências/mecanismos, não origem comercial.
+• Não há payload bruto, dado de cartão, secret ou e-mail como chave de idempotência.
+• `public.plans` continua fonte parcial de metadados de plano e não prova entitlement comercial.
+• Account Dashboard consumirá a leitura efetiva apenas em fase futura; esta etapa não altera runtime.
+
+1.6 partners
 • PK: id uuid
 • Campos: name, type (agency | reseller | affiliate), status (active | inactive | suspended)
 • Trigger Hub: não
 • RLS: conforme uso
 • Policies (TBD)
 
-1.6 partner_accounts
-1.6.1 Chaves e relacionamentos
+1.7 partner_accounts
+1.7.1 Chaves e relacionamentos
 • PK composto: (partner_id, account_id)
 • FK: partner_id → partners; account_id → accounts
-1.6.2 Segurança
+1.7.2 Segurança
 • Trigger Hub: sim
 • RLS: obrigatório
-1.6.3 Policies (TBD: preencher nomes reais no Supabase)
+1.7.3 Policies (TBD: preencher nomes reais no Supabase)
 • Select: platform_admin/partner autorizado
 • Insert/Update/Delete: governado via hub/regras administrativas
 
@@ -656,6 +703,28 @@
 2.4.4 Consumidores
 • APIs e dashboards com detalhes de plano
 
+2.5 v_account_commercial_entitlement_effective
+2.5.1 Objetivo
+• Leitura efetiva read-only do entitlement comercial por conta.
+2.5.2 Colunas garantidas
+• id, account_id, plan_key, plan_name_snapshot, origin
+• persisted_status, effective_status
+• starts_at, confirmed_at, expires_at, canceled_at
+• is_commercially_eligible
+• created_at, updated_at
+2.5.3 Regras efetivas
+• Retorna no máximo um entitlement por account_id.
+• Prioriza entitlement comercial elegível; em seguida usa confirmed_at, created_at e id para desempate.
+• is_commercially_eligible=true somente quando status persistido é `ativo`, canceled_at é NULL, starts_at é NULL ou passado, e expires_at é NULL ou futuro.
+• effective_status deriva `cancelado`, `expirado` e `pendente_confirmacao` quando a vigência contradiz o status persistido `ativo`.
+• Ausência de linha para uma conta deve ser tratada pelo consumidor futuro como `sem_entitlement`.
+2.5.4 Segurança
+• security_invoker = true
+• RLS da tabela account_commercial_entitlements governa a leitura.
+• Grants: authenticated e service_role com SELECT.
+2.5.5 Consumidores
+• Account Dashboard server-side em fase futura; sem consumo de runtime nesta etapa.
+
 2.6 v_audit_logs_norm
 • Objetivo: leitura simplificada de audit_logs
 • Colunas garantidas: id, entity, entity_id, action, diff, account_id, actor_user_id, ip_address, created_at
@@ -791,6 +860,7 @@
 4.2 Fora do Hub
 • plans: sem trigger
 • partners: sem trigger hub
+• account_commercial_entitlements_set_updated_at: trigger de atualização de updated_at em account_commercial_entitlements
 • account_niche_resolutions_set_updated_at: trigger de atualização de updated_at em account_niche_resolutions
 
 5. Tipos canônicos
@@ -809,6 +879,12 @@
 • Rollback: não remove automaticamente a extensão, pois pode ser reutilizada por outros recursos
 
 99. Changelog
+v1.0.30 (28/06/2026) — E9 Fase 3: schema mínimo de entitlement comercial
+• Registrada a tabela `account_commercial_entitlements` como fonte mínima de entitlement comercial por conta.
+• Registrados campos, checks, índices, RLS, policy de SELECT para membro ativo/platform_admin, grants e trigger de updated_at.
+• Registrada a view `v_account_commercial_entitlement_effective` com `security_invoker = true` para leitura efetiva read-only.
+• Registrado que `public.plans` continua fonte parcial e não prova entitlement comercial; Account Dashboard consumirá a leitura apenas em fase futura.
+
 v1.0.29 (25/06/2026) — E10.7 Fase 5: contrato consolidado da RPC de composição técnica genérica
 • Atualizado o contrato da RPC `public.ensure_commercial_activation_composition(p_taxon_id uuid)` com finalidade, entrada, comportamento, validações, grants e migration relacionada.
 
