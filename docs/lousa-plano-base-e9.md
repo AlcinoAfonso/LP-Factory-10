@@ -133,7 +133,60 @@ Riscos, lacunas e conflitos:
 * Modelo mínimo de persistência a definir para fase futura: `account_id`, plano canônico, origem comercial, status, vigência, referência externa futura, chave de idempotência futura e trilha operacional sem PII sensível.
 * Consumo: Account Dashboard deve consultar server-side o sinal de entitlement antes de liberar gate de criação de LP.
 * Fallback: sem entitlement válido, conta permanece sem elegibilidade produtiva e continua na experiência comercial/persuasiva.
-* Próxima ação: preparar briefing ao Executor para definição contratual da Fase 2, sem implementação de banco/runtime.
+* Próxima ação: usar o contrato técnico abaixo como base para uma fase futura de schema/runtime, sem implementar banco/runtime nesta fase.
+
+3.2.1 Resultado da Fase 2 — contrato técnico mínimo
+
+Arquivos consultados:
+
+* `AGENTS.md`
+* `docs/prompt-executor.md`
+* `docs/lousa-plano-base-e9.md`
+* `docs/roadmap.md`
+* `docs/schema.md`
+* `docs/base-tecnica.md`
+* `lib/types/status.ts`
+* `lib/access/getAccessContext.ts`
+* `lib/access/adapters/accessContextAdapter.ts`
+* `lib/access/plan.ts`
+* `app/a/[account]/page.tsx`
+* `app/a/[account]/_components/commercial-page/actions.ts`
+
+Decisões recomendadas:
+
+* Camada: domínio transversal do Core, consumido inicialmente pelo Account Dashboard server-side.
+* Boundary: entitlement comercial deve ser domínio próprio. Não é extensão de `lib/access`, porque `access` decide acesso operacional user-conta; não é extensão de `lib/access/plan.ts` ou `public.plans`, porque `plans` é fonte parcial de metadados e não prova condição comercial.
+* Path canônico provável para fase futura: `lib/commercial-entitlements/`. O path ainda não existe; ele é preferível para não misturar elegibilidade comercial com `lib/access/` nem com `lib/conversion-content/commercial-activation/`, que trata conteúdo comercial publicado/renderizado.
+* Consumidor inicial: rota server-side do Account Dashboard, depois de `getAccessContext` confirmar conta `active` e membership ativo, antes de liberar gate produtivo de criação de LP.
+* Objeto de banco futuro: combinação mínima de tabela fonte de verdade + consulta server-side efetiva. A tabela guarda o histórico/estado do entitlement por conta; uma view ou RPC de leitura calcula o entitlement efetivo para consumo do Account Dashboard.
+
+Objeto conceitual mínimo futuro:
+
+* Fonte de verdade provável: tabela `commercial_entitlements` ou `account_commercial_entitlements`, a nomear em fase de schema.
+* Leitura efetiva provável: view ou RPC server-side como `get_account_commercial_entitlement(account_id)` ou equivalente, a definir em fase de schema.
+* Campos mínimos: `account_id`, `plan_key`, `plan_name_snapshot`, `origin`, `status`, `starts_at`, `confirmed_at`, `expires_at`, `canceled_at`, `external_provider`, `external_reference`, `idempotency_key`, `created_at`, `updated_at`.
+* `plan_key` deve usar a nomenclatura canônica `starter`, `lite`, `pro` e `ultra`; `plan_name_snapshot` preserva o nome exibido no momento da confirmação.
+* `origin` deve representar a origem comercial: `plano_pago_confirmado` no recorte inicial; `trial` e `liberacao_manual` como origens futuras.
+* Provedor, checkout, webhook, assinatura, invoice e evento externo devem entrar como mecanismo/referência de confirmação e persistência, não como origem comercial.
+* `status` deve representar apenas o estado comercial do entitlement: `pendente_confirmacao`, `ativo`, `expirado` e `cancelado`. `sem_entitlement` e `bloqueado_operacionalmente` devem ser resultados derivados de consulta, não necessariamente linhas persistidas.
+* Vigência deve ser calculada a partir de `starts_at`, `confirmed_at`, `expires_at` e `canceled_at`; entitlement efetivo exige status `ativo` e vigência válida.
+* Idempotência deve ser representada por chave estável de confirmação, preferencialmente única por provedor/evento/conta quando houver provedor.
+
+Regras de consulta propostas:
+
+* Pré-condição operacional: `accounts.status = active` e `account_users.status = active`, confirmadas pelo fluxo de access existente.
+* Consulta comercial: buscar entitlement efetivo da conta em leitura server-side.
+* Resultado `elegível`: conta operacionalmente permitida, membership ativo, entitlement `ativo`, vigência válida e plano canônico reconhecido.
+* Resultado `não elegível`: ausência de entitlement, status não ativo, vigência encerrada, cancelamento, plano não canônico ou bloqueio operacional externo.
+* `accounts.status`, `account_users.status`, `accounts.plan_id`, `public.plans` e `v_account_effective_limits` não devem isoladamente liberar criação produtiva de LP.
+
+Riscos e lacunas:
+
+* A fase de schema deve decidir nomes finais de tabela, view/RPC, constraints, índices, RLS, grants e política de unicidade/idempotência.
+* A fase de runtime deve decidir se o consumo expõe boolean simples, objeto detalhado ou ambos para o Account Dashboard.
+* A relação com o item antigo de grants E9 em `docs/base-tecnica.md` precisa ser revisada antes de reutilizar `get_feature(account_id, feature_key)`, porque o contrato atual da Fase 2 separa entitlement comercial de liberação genérica de feature.
+* `lib/access/plan.ts` ainda contém `PlanId = "free" | "light" | "pro" | "ultra"` e placeholders de Stripe; isso deve ser revisado ou aposentado antes de qualquer checkout.
+* Não houve decisão de provedor, webhook, trial operacional, liberação manual operacional, schema ou runtime nesta fase.
 
 Governança da Fase 2:
 
