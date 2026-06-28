@@ -27,6 +27,21 @@ Fontes: chat, docs/roadmap.md, docs/prompt-estrategista.md
 3. Fases e próxima ação
 
 * Fase 1 — Contrato interno de elegibilidade: definir origem comercial, status, consumo pelo Account Dashboard e necessidade estrutural mínima de persistência.
+
+3.1 Detalhamento da Fase 1 — Contrato interno de elegibilidade
+
+* Objetivo: definir o contrato mínimo que decide quando uma conta pode acessar o gate comercial de criação de LPs.
+* Resultado esperado: contrato conceitual aprovado, sem checkout, sem webhook, sem migration e sem alteração de runtime.
+* Investigar: lógica atual de conta ativa, membership, Account Dashboard, plans, trial, permissões e bloqueios existentes.
+* Definir: origens comerciais válidas, status conceituais, bloqueios independentes, consumo pelo Account Dashboard e dados mínimos necessários para fases futuras.
+* Regra central: conta precisa estar em estado operacional permitido, membership precisa permitir acesso e entitlement comercial precisa estar válido.
+* Origem inicial: plano pago confirmado.
+* Origens futuras: trial, liberação manual, provedor de checkout e webhook.
+* Status conceituais esperados: sem_entitlement, pendente_confirmacao, ativo, expirado, cancelado e bloqueado_operacionalmente.
+* Os nomes são conceituais; antes da implementação, verificar se já existe nomenclatura canônica no projeto.
+* Não implementar checkout, provedor, webhook, migration, tabela, RPC, policy, grant, constraint, Account Dashboard, cards, LP Builder ou tela admin.
+* Parar se a investigação exigir mudança de banco, runtime, arquitetura, cards da E10.7 ou mutação administrativa da E12 antes de nova decisão estratégica.
+* Entrega esperada da Fase 1: investigação resumida, arquivos consultados, contrato interno proposto, riscos, lacunas e validação documental.
 * E9.xx futuro — Provedor de checkout: escolher e integrar primeiro provedor para cards pagos.
 * E9.xx futuro — Webhook e persistência: validar confirmação, idempotência e registro de entitlement comercial.
 * E9.xx futuro — Consumo da elegibilidade: liberar gate comercial para criação de LPs após persistência validada.
