@@ -64,6 +64,7 @@ Fontes: chat, PR #435, PR #440, docs/roadmap.md, docs/base-tecnica.md, docs/sche
 * Contratos internos transversais de módulos/seções pertencem à E18, se houver caso próprio futuro.
 * Regra: deve vir antes da edição manual.
 * Resultado: auditoria confirmou coerência entre prompt/output estruturado, composição técnica, registry/validação, resolver, renderer, preview/admin e consumo de published válido em /a/[account].
+* Evidência objetiva: `draft-generation.ts`, `schemas.ts`, `registry.ts`, `resolve.ts`, `renderer.tsx`, `commercialActivationAdapter.ts`, `adminCommercialActivationTemplatesAdapter.ts`, `/admin/templates/commercial-activation/[taxonSlug]`, `/a/[account]` e migrations/snippets E10.7 convergem para as 8 seções fixas.
 * Verificação recorrente: `supabase/snippets/e10_7_phase_7_commercial_activation_contract_verify.sql`.
 3.8 Fase 8 — Edição manual de copy e gestão simples de versões
 * Status: planejada.

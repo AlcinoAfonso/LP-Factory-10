@@ -105,12 +105,97 @@ published_artifacts as (
     and artifacts.audience_scope = 'business_buyer'
 ),
 
-published_content_failures as (
-  select published_artifacts.id
+published_content_sections as (
+  select
+    published_artifacts.id as artifact_id,
+    published_artifacts.composition_id,
+    section.value as section_json,
+    section.ordinality
   from published_artifacts
-  where published_artifacts.content_json ->> 'schema_version' <> '1'
-     or jsonb_typeof(published_artifacts.content_json -> 'sections') <> 'array'
-     or jsonb_array_length(published_artifacts.content_json -> 'sections') <> 8
+  cross join lateral jsonb_array_elements(
+    case
+      when jsonb_typeof(published_artifacts.content_json -> 'sections') = 'array'
+      then published_artifacts.content_json -> 'sections'
+      else '[]'::jsonb
+    end
+  ) with ordinality as section(value, ordinality)
+),
+
+published_content_failures as (
+  select
+    published_artifacts.id,
+    case
+      when published_artifacts.content_json ->> 'schema_version' <> '1'
+        then 'invalid_schema_version'
+      when jsonb_typeof(published_artifacts.content_json -> 'sections') <> 'array'
+        then 'sections_not_array'
+      when count(published_content_sections.section_json) <> 8
+        then 'unexpected_section_count'
+      when count(distinct published_content_sections.section_json ->> 'composition_item_id') <> 8
+        then 'duplicate_or_missing_composition_item_id'
+      when count(*) filter (
+        where jsonb_typeof(published_content_sections.section_json -> 'content') is distinct from 'object'
+      ) > 0
+        then 'section_content_not_object'
+      when count(*) filter (
+        where composition_items.composition_item_id is null
+      ) > 0
+        then 'unknown_composition_item_id'
+      when (
+        select count(*)
+        from composition_items required_items
+        left join published_content_sections required_sections
+          on required_sections.composition_id = required_items.composition_id
+         and required_sections.artifact_id = published_artifacts.id
+         and required_sections.section_json ->> 'composition_item_id' = required_items.composition_item_id::text
+        where required_items.composition_id = published_artifacts.composition_id
+          and required_items.is_required = true
+          and required_sections.artifact_id is null
+      ) > 0
+        then 'required_composition_item_missing'
+      else null
+    end as failure_reason
+  from published_artifacts
+  left join published_content_sections
+    on published_content_sections.artifact_id = published_artifacts.id
+  left join composition_items
+    on composition_items.composition_id = published_artifacts.composition_id
+   and composition_items.composition_item_id::text = published_content_sections.section_json ->> 'composition_item_id'
+  group by
+    published_artifacts.id,
+    published_artifacts.composition_id,
+    published_artifacts.content_json
+  having case
+      when published_artifacts.content_json ->> 'schema_version' <> '1'
+        then 'invalid_schema_version'
+      when jsonb_typeof(published_artifacts.content_json -> 'sections') <> 'array'
+        then 'sections_not_array'
+      when count(published_content_sections.section_json) <> 8
+        then 'unexpected_section_count'
+      when count(distinct published_content_sections.section_json ->> 'composition_item_id') <> 8
+        then 'duplicate_or_missing_composition_item_id'
+      when count(*) filter (
+        where jsonb_typeof(published_content_sections.section_json -> 'content') is distinct from 'object'
+      ) > 0
+        then 'section_content_not_object'
+      when count(*) filter (
+        where composition_items.composition_item_id is null
+      ) > 0
+        then 'unknown_composition_item_id'
+      when (
+        select count(*)
+        from composition_items required_items
+        left join published_content_sections required_sections
+          on required_sections.composition_id = required_items.composition_id
+         and required_sections.artifact_id = published_artifacts.id
+         and required_sections.section_json ->> 'composition_item_id' = required_items.composition_item_id::text
+        where required_items.composition_id = published_artifacts.composition_id
+          and required_items.is_required = true
+          and required_sections.artifact_id is null
+      ) > 0
+        then 'required_composition_item_missing'
+      else null
+    end is not null
 ),
 
 published_source_counts as (
@@ -129,70 +214,78 @@ published_source_failures as (
   from published_source_counts
   where business_buyer_sources <> 4
      or other_sources <> 0
+),
+
+final_results as (
+  select
+    'template'::text as check_group,
+    'commercial_activation_page_active_v1'::text as object_name,
+    case when count(*) = 1 then 'ok' else 'unexpected_count' end as check_status,
+    jsonb_build_object('active_template_count', count(*)) as details
+  from page_template
+
+  union all
+
+  select
+    'template_sections'::text,
+    'eight_active_section_modules_v1'::text,
+    case
+      when count(*) = 8 and count(template_id) = 8 then 'ok'
+      else 'missing_or_unexpected_sections'
+    end,
+    jsonb_build_object(
+      'expected_count', 8,
+      'resolved_count', count(template_id)
+    )
+  from section_templates
+
+  union all
+
+  select
+    'composition'::text,
+    'active_compositions_have_fixed_required_eight_section_order'::text,
+    case when count(*) = 0 then 'ok' else 'invalid_compositions' end,
+    jsonb_build_object('invalid_composition_count', count(*))
+  from composition_failures
+
+  union all
+
+  select
+    'published'::text,
+    'one_published_per_template_taxon_audience'::text,
+    case
+      when count(*) filter (where published_count > 1) = 0 then 'ok'
+      else 'multiple_published'
+    end,
+    jsonb_build_object(
+      'published_groups', count(*),
+      'violating_groups', count(*) filter (where published_count > 1)
+    )
+  from published_groups
+
+  union all
+
+  select
+    'published_content'::text,
+    'published_content_json_matches_required_composition_items'::text,
+    case when count(*) = 0 then 'ok' else 'invalid_published_content' end,
+    jsonb_build_object(
+      'invalid_artifact_count', count(*),
+      'failure_reasons', coalesce(jsonb_agg(distinct failure_reason) filter (where failure_reason is not null), '[]'::jsonb)
+    )
+  from published_content_failures
+
+  union all
+
+  select
+    'published_sources'::text,
+    'published_sources_are_four_business_buyer_only'::text,
+    case when count(*) = 0 then 'ok' else 'invalid_published_sources' end,
+    jsonb_build_object('invalid_artifact_count', count(*))
+  from published_source_failures
 )
 
-select
-  'template'::text as check_group,
-  'commercial_activation_page_active_v1'::text as object_name,
-  case when count(*) = 1 then 'ok' else 'unexpected_count' end as check_status,
-  jsonb_build_object('active_template_count', count(*)) as details
-from page_template
-
-union all
-
-select
-  'template_sections'::text,
-  'eight_active_section_modules_v1'::text,
-  case
-    when count(*) = 8 and count(template_id) = 8 then 'ok'
-    else 'missing_or_unexpected_sections'
-  end,
-  jsonb_build_object(
-    'expected_count', 8,
-    'resolved_count', count(template_id)
-  )
-from section_templates
-
-union all
-
-select
-  'composition'::text,
-  'active_compositions_have_fixed_required_eight_section_order'::text,
-  case when count(*) = 0 then 'ok' else 'invalid_compositions' end,
-  jsonb_build_object('invalid_composition_count', count(*))
-from composition_failures
-
-union all
-
-select
-  'published'::text,
-  'one_published_per_template_taxon_audience'::text,
-  case
-    when count(*) filter (where published_count > 1) = 0 then 'ok'
-    else 'multiple_published'
-  end,
-  jsonb_build_object(
-    'published_groups', count(*),
-    'violating_groups', count(*) filter (where published_count > 1)
-  )
-from published_groups
-
-union all
-
-select
-  'published_content'::text,
-  'published_content_json_has_eight_sections_v1'::text,
-  case when count(*) = 0 then 'ok' else 'invalid_published_content' end,
-  jsonb_build_object('invalid_artifact_count', count(*))
-from published_content_failures
-
-union all
-
-select
-  'published_sources'::text,
-  'published_sources_are_four_business_buyer_only'::text,
-  case when count(*) = 0 then 'ok' else 'invalid_published_sources' end,
-  jsonb_build_object('invalid_artifact_count', count(*))
-from published_source_failures
-
+select *
+from final_results
 order by check_group, object_name
+limit 50
