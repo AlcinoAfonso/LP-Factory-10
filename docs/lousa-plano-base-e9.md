@@ -133,7 +133,7 @@ Riscos, lacunas e conflitos:
 * Modelo mínimo de persistência a definir para fase futura: `account_id`, plano canônico, origem comercial, status, vigência, referência externa futura, chave de idempotência futura e trilha operacional sem PII sensível.
 * Consumo: Account Dashboard deve consultar server-side o sinal de entitlement antes de liberar gate de criação de LP.
 * Fallback: sem entitlement válido, conta permanece sem elegibilidade produtiva e continua na experiência comercial/persuasiva.
-* Próxima ação: aplicar patch documental da Fase 2 e depois preparar briefing ao Executor para definição contratual, sem implementação de banco/runtime.
+* Próxima ação: preparar briefing ao Executor para definição contratual da Fase 2, sem implementação de banco/runtime.
 
 Governança da Fase 2:
 
