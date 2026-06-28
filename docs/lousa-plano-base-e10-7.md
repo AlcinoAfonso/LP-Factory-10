@@ -55,6 +55,7 @@ Fontes: chat, PR #435, PR #440, docs/roadmap.md, docs/base-tecnica.md, docs/sche
 3.7 Fase 7 — Consolidação determinística do template comercial
 * Status: planejada.
 * Objetivo: garantir que o commercial_activation use sempre a mesma estrutura comercial fixa, com seções, ordem, obrigatoriedade e limites de geração definidos, para qualquer nicho elegível.
+* Primeira entrega da Fase 7 deve ser auditoria determinística do contrato atual; qualquer patch em template, prompt, renderer, schema ou runtime público exige diagnóstico separado e decisão explícita.
 * Estrutura fixa do MVP: Hero, Benefícios, Serviços, Planos, Diferenciais, Como funciona, FAQ e CTA final.
 * Ordem fixa e seções obrigatórias no template comercial do MVP.
 * IA não decide seções, ordem, layout ou cores; apenas preenche copy dentro da estrutura definida.
