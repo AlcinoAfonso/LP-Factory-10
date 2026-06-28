@@ -125,14 +125,15 @@ Riscos, lacunas e conflitos:
 3.2 Fase 2 — Modelo mínimo de entitlement comercial
 
 * Objetivo: definir o contrato mínimo de persistência e consulta do entitlement comercial.
+* Resultado esperado: contrato técnico mínimo aprovado para persistência e consulta futura do entitlement comercial, sem implementação de banco, runtime ou dashboard nesta fase.
 * Gatilho: conta `active` com membership ativo chega ao futuro gate de criação de LP.
 * Entrada: conta, membership, plano canônico, origem comercial, status conceitual, vigência e referência de confirmação futura.
 * Processamento: resolver se existe entitlement comercial válido para a conta.
 * Validação: conta `active`, membership `active`, origem comercial aceita, status válido, vigência válida, plano canônico e ausência de bloqueio operacional.
-* Persistência mínima a definir: `account_id`, plano canônico, origem comercial, status, vigência, referência externa futura, chave de idempotência futura e trilha operacional sem PII sensível.
+* Modelo mínimo de persistência a definir para fase futura: `account_id`, plano canônico, origem comercial, status, vigência, referência externa futura, chave de idempotência futura e trilha operacional sem PII sensível.
 * Consumo: Account Dashboard deve consultar server-side o sinal de entitlement antes de liberar gate de criação de LP.
 * Fallback: sem entitlement válido, conta permanece sem elegibilidade produtiva e continua na experiência comercial/persuasiva.
-* Próxima ação: submeter Fase 2 à avaliação do Analista, Gestor Estrutural e Gestor de Updates.
+* Próxima ação: preparar briefing ao Executor para definição contratual da Fase 2, sem implementação de banco/runtime.
 
 Governança da Fase 2:
 
