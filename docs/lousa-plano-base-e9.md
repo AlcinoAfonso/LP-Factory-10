@@ -42,6 +42,9 @@ Fontes: chat, docs/roadmap.md, docs/prompt-estrategista.md
 * Não implementar checkout, provedor, webhook, migration, tabela, RPC, policy, grant, constraint, Account Dashboard, cards, LP Builder ou tela admin.
 * Parar se a investigação exigir mudança de banco, runtime, arquitetura, cards da E10.7 ou mutação administrativa da E12 antes de nova decisão estratégica.
 * Entrega esperada da Fase 1: investigação resumida, arquivos consultados, contrato interno proposto, riscos, lacunas e validação documental.
+
+3.2 Fases futuras e próxima ação
+
 * E9.xx futuro — Provedor de checkout: escolher e integrar primeiro provedor para cards pagos.
 * E9.xx futuro — Webhook e persistência: validar confirmação, idempotência e registro de entitlement comercial.
 * E9.xx futuro — Consumo da elegibilidade: liberar gate comercial para criação de LPs após persistência validada.
