@@ -301,9 +301,10 @@
 9. E9 — Billing, trial e entitlements
 
 9.1 Status
-• Em execução faseada — Fase 2 concluída em 28/06/2026.
+• Em execução faseada — Fase 3 concluída em 28/06/2026.
+• Schema mínimo de entitlement comercial versionado.
 • Sem Billing Engine completo implementado nesta fase.
-• Próxima execução recomendada: criar o recorte de schema mínimo de entitlement comercial antes de provedor de checkout/webhook.
+• Próxima execução recomendada: E9 Fase 4 — consumo server-side da elegibilidade comercial no Account Dashboard.
 
 9.2 Objetivo atual
 • Separar condição comercial da conta do lifecycle operacional da conta.
@@ -346,44 +347,50 @@
 • O legado `PlanId = "free" | "light" | "pro" | "ultra"` deve ser revisado ou aposentado antes do checkout.
 
 9.3.6 Modelo mínimo de entitlement comercial
-• Status: Fase 2 concluída em 28/06/2026.
-• Entitlement comercial deve ser domínio próprio, não extensão de `lib/access`, `public.plans` ou `lib/access/plan.ts`.
-• Path provável futuro: `lib/commercial-entitlements/`, sem criação de arquivo nesta fase.
-• Consumidor inicial: Account Dashboard server-side, após `getAccessContext` confirmar conta `active` e membership ativo.
-• Objeto futuro provável: tabela fonte de verdade + view ou RPC de leitura efetiva.
-• Campos mínimos futuros: `account_id`, `plan_key`, `plan_name_snapshot`, `origin`, `status`, vigência, referência externa, idempotência e timestamps.
-• A leitura efetiva deve retornar elegibilidade comercial sem usar `accounts.status`, `account_users.status`, `accounts.plan_id`, `public.plans` ou `v_account_effective_limits` isoladamente como prova de criação produtiva de LP.
+• Status: Fase 3 concluída em 28/06/2026.
+• Entitlement comercial é domínio próprio e não extensão de `lib/access`, `public.plans` ou `lib/access/plan.ts`.
+• Fonte de verdade criada: `public.account_commercial_entitlements`.
+• Leitura efetiva criada: `public.v_account_commercial_entitlement_effective`.
+• Elegibilidade comercial efetiva exige entitlement `ativo`, vigência válida, ausência de cancelamento e plano canônico.
+• Account Dashboard permanece fora desta fase; consumo runtime fica para fase posterior.
+• Checkout, webhook, provedor, admin, trial operacional, liberação manual operacional e Billing Engine completo permanecem fora do recorte.
 
 9.3.7 Updates avaliados
 • `supa#5`, `supa#36`, `supa#40`, `supa#58` e `prod#13`.
 
 9.4 Pendências vigentes
-• Criar próximo recorte E9.xx — Schema mínimo de entitlement comercial.
-• Decidir nome final da tabela: `commercial_entitlements`, `account_commercial_entitlements` ou outro nome justificado.
-• Definir view/RPC de leitura efetiva.
-• Definir constraints, índices, RLS, grants e política de unicidade/idempotência.
+• Aplicar a migration a partir da `main`, se isso não for automático no ambiente.
+• Implementar E9 Fase 4 — consumo server-side da elegibilidade comercial no Account Dashboard.
+• Usar `public.v_account_commercial_entitlement_effective` no consumo futuro.
 • Revisar ou aposentar o legado `PlanId = "free" | "light" | "pro" | "ultra"` antes de qualquer checkout.
 • Decidir em fase própria como papéis afetam criação, edição e publicação de LPs.
-• Definir provider/checkout e webhook apenas depois do schema mínimo de entitlement comercial.
+• Definir provider/checkout e webhook apenas depois do consumo server-side validado.
 
 9.5 Estruturas e artefatos
 
+Banco — Criados
+• `public.account_commercial_entitlements`
+• `public.v_account_commercial_entitlement_effective`
+
+Repositório — Criados
+• `supabase/migrations/20260628184945_e9_commercial_entitlements.sql`
+• `supabase/snippets/e9_phase_3_entitlements_verify.sql`
+
 Repositório — Ajustados
+• `docs/schema.md`
 • `docs/lousa-plano-base-e9.md`
 
-9.6 Fora do escopo da Fase 2
+9.6 Fora do escopo da Fase 3
+• Consumo pelo Account Dashboard.
 • Checkout.
 • Webhook.
 • Provedor de pagamento.
+• Admin comercial.
 • Trial operacional.
 • Liberação manual operacional.
-• Persistência real.
-• Runtime.
-• Account Dashboard.
-• Cards E10.7.
-• LP Builder.
-• Tela administrativa.
-• Arquivo em `lib/commercial-entitlements/`.
+• Billing Engine completo.
+• Alteração de layout, copy ou cards da E10.7.
+• Logs, eventos, job ou monitoramento de runtime.
 
 10. E10 — Account Dashboard (UX)
 
