@@ -1,5 +1,6 @@
 import { getAccessContext } from "@/lib/access/getAccessContext";
 import { getCommercialActivationHierarchicalBundle } from "@/conversion-content";
+import { getCommercialEntitlementSignal } from "../../../lib/commercial-entitlements";
 import { getActionableNicheResolutionForAccount } from "../../../lib/onboarding/niche-resolution/adapters/accountNicheResolutionUserAdapter";
 import { getActivePrimaryAccountTaxon } from "../../../lib/onboarding/niche-resolution/adapters/accountTaxonomyAdapter";
 import { PendingSetupFirstSteps } from "./_components/PendingSetupFirstSteps";
@@ -58,6 +59,11 @@ export default async function Page({ params }: PageProps) {
     }
 
     const accountId = (ctx?.account?.id ?? ctx?.account_id ?? null) as string | null;
+    const commercialEntitlement = accountId
+      ? await getCommercialEntitlementSignal({ accountId })
+      : null;
+    void commercialEntitlement;
+
     const nicheResolution = accountId
       ? await getActionableNicheResolutionForAccount({
           accountId,
