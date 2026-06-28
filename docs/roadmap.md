@@ -301,38 +301,75 @@
 9. E9 — Billing, trial e entitlements
 
 9.1 Status
-• Parcialmente concluído em definições de produto/runtime.
+• Em execução faseada — Fase 1 concluída em 28/06/2026.
 • Sem Billing Engine completo implementado nesta fase.
+• Próxima execução recomendada: definir o modelo mínimo de entitlement comercial antes de provedor de checkout/webhook.
 
 9.2 Objetivo atual
-• Separar condição comercial da conta do lifecycle da conta.
-• Definir que trial, plano e assinatura controlam permissões, não accounts.status.
-• Preparar a base para decisões futuras de contratação, trial e liberação de recursos produtivos.
+• Separar condição comercial da conta do lifecycle operacional da conta.
+• Definir elegibilidade comercial para criação de LPs como sinal derivado de conta operacionalmente permitida, membership ativo e entitlement comercial válido.
+• Preparar o gate comercial sem implementar LP Builder, checkout, webhook ou fluxo visual de criação de LPs.
 
 9.3 Decisões consolidadas
 
-9.3.1 Trial como entitlement
+9.3.1 Trial/plano como entitlement
 • Status: Concluído (definição)
-• Trial/plano controla permissões e limites de uso.
-• Trial/plano não define accounts.status.
-• Conta com setup concluído permanece accounts.status='active', mesmo sem plano ou após expiração de trial nesta fase.
-• Expiração de trial/plano deve afetar permissões, não o lifecycle da conta.
+• Trial, plano e assinatura controlam permissões e limites de uso.
+• Trial, plano e assinatura não definem `accounts.status`.
+• Expiração de trial/plano deve afetar permissões comerciais, não o lifecycle da conta.
 
 9.3.2 Lifecycle da conta separado de billing
 • Status: Concluído (definição)
-• accounts.status representa lifecycle da conta/setup.
-• Billing, trial, plano e assinatura representam condição comercial.
-• inactive/suspended não são disparados automaticamente por expiração de trial/plano nesta fase.
+• `accounts.status` representa lifecycle operacional da conta/setup.
+• `account_users.status` representa vínculo operacional do usuário com a conta.
+• Billing, trial, plano, assinatura e entitlement comercial representam condição comercial separada.
 
-9.3.3 Remoção de trial como status no runtime
-• Status: Concluído (04/02/2026)
-• Trial foi removido de tipos, allowlists, condicionais e UI onde aparecia como status.
-• Trial permanece apenas como sinal comercial/permissão.
+9.3.3 Elegibilidade comercial para criação de LPs
+• Status: Fase 1 concluída em 28/06/2026.
+• Regra mínima: conta operacionalmente permitida + membership ativo + entitlement comercial válido.
+• Para gate de criação de LP, conta operacionalmente permitida significa `accounts.status = active`.
+• Membership ativo significa `account_users.status = active`.
+• Conta `active` não fica elegível para criação produtiva apenas por estar ativa.
+• E9 libera apenas gate/elegibilidade comercial; não implementa LP Builder nem fluxo visual de criação de LPs.
+
+9.3.4 Origem comercial e confirmação
+• Status: Fase 1 concluída em 28/06/2026.
+• Origem inicial válida: plano pago confirmado.
+• Origens futuras possíveis: trial e liberação manual.
+• Provedor de checkout e webhook são mecanismos de confirmação/persistência, não origem comercial.
+• Entitlement comercial válido, no recorte inicial, nasce de plano pago confirmado e idempotentemente persistido em fase futura.
+
+9.3.5 Planos comerciais canônicos
+• Status: Fase 1 concluída em 28/06/2026.
+• Cards comerciais canônicos: Starter, Lite, Pro e Ultra.
+• Chaves esperadas: `starter`, `lite`, `pro` e `ultra`.
+• O legado `PlanId = "free" | "light" | "pro" | "ultra"` deve ser revisado ou aposentado antes do checkout.
+
+9.3.6 Updates avaliados
+• `supa#5`, `supa#36`, `supa#40`, `supa#58` e `prod#13`.
 
 9.4 Pendências vigentes
-• Definir onde registrar o sinal comercial de trial/plano.
-• Decidir o uso futuro de accounts.trial_ends_at.
-• Definir o recorte mínimo para contratação manual, concessão de trial e elegibilidade futura para criação de LP.
+• Definir próximo recorte E9.xx.
+• Definir modelo mínimo de persistência do entitlement comercial.
+• Revisar ou aposentar o legado `PlanId = "free" | "light" | "pro" | "ultra"` antes do checkout.
+• Decidir em fase própria como papéis afetam criação, edição e publicação de LPs.
+• Definir se o status comercial será persistido em tabela, view, RPC ou outro contrato.
+• Definir provider/checkout e webhook apenas depois do contrato mínimo de entitlement comercial.
+
+9.5 Estruturas e artefatos
+
+Repositório — Ajustados
+• `docs/lousa-plano-base-e9.md`
+
+9.6 Fora do escopo da Fase 1
+• Checkout.
+• Webhook.
+• Persistência de entitlement.
+• Runtime.
+• LP Builder.
+• Fluxo visual de criação de LPs.
+• Tela administrativa.
+• Alteração de cards comerciais.
 
 10. E10 — Account Dashboard (UX)
 
