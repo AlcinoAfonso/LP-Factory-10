@@ -52,9 +52,15 @@ Fontes: chat, PR #435, PR #440, docs/roadmap.md, docs/base-tecnica.md, docs/sche
 3.6 Fase 6 — Admin comercial enxuto
 * Status: implementada, validada em Preview e mergeada.
 * Resultado: /admin/templates virou lista limpa e operação foi movida para página por taxon.
-3.7 Fase 7 — Auditoria e consolidação do contrato commercial_activation
+3.7 Fase 7 — Consolidação determinística do template comercial
 * Status: planejada.
-* Objetivo: garantir contrato fixo entre template, composição, prompt, content_json, renderer, preview/admin e /a/[account].
+* Objetivo: garantir que o commercial_activation use sempre a mesma estrutura comercial fixa, com seções, ordem, obrigatoriedade e limites de geração definidos, para qualquer nicho elegível.
+* Estrutura fixa do MVP: Hero, Benefícios, Serviços, Planos, Diferenciais, Como funciona, FAQ e CTA final.
+* Ordem fixa e seções obrigatórias no template comercial do MVP.
+* IA não decide seções, ordem, layout ou cores; apenas preenche copy dentro da estrutura definida.
+* Prompt, content_json, renderer, preview/admin e /a/[account] devem obedecer ao mesmo contrato comercial.
+* Divergência entre essas partes é critério de parada.
+* Contratos internos transversais de módulos/seções pertencem à E18, se houver caso próprio futuro.
 * Regra: deve vir antes da edição manual.
 3.8 Fase 8 — Edição manual de copy e gestão simples de versões
 * Status: planejada.
@@ -66,4 +72,4 @@ Fontes: chat, PR #435, PR #440, docs/roadmap.md, docs/base-tecnica.md, docs/sche
 * Parar se a próxima fase exigir schema, RPC, mudança no runtime público ou alteração de contrato fora da auditoria.
 * Parar se template, composição, prompt, content_json, renderer, preview/admin ou /a/[account] divergirem entre si.
 * Parar se a redução de seções da página comercial exigir decisão estratégica.
-* Review deve confirmar: lousa compacta com 4 seções principais, sem histórico longo, Fase 7 como auditoria do contrato e Fase 8 como edição manual.
+* Review deve confirmar: lousa compacta com 4 seções principais, sem histórico longo, Fase 7 como consolidação determinística do template comercial e Fase 8 como edição manual.
