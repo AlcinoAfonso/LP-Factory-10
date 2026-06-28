@@ -49,11 +49,9 @@ Regra:
    • Gestor de Automação: somente se o item 1 indicar automação, agente, job, rotina, monitoramento ou execução recorrente.
 
 Regra:
-• para acionar especialista, usar: “Avalie a fase XX do plano-base Y segundo suas diretrizes documentadas.”
-• para plano inteiro, usar: “Avalie o plano-base Y segundo suas diretrizes documentadas.”
-• cada especialista deve avaliar apenas dentro do próprio escopo.
-• somente o Analista avalia novamente após branch/PR;
-• gestores só voltam por exceção, se houver desvio crítico ou mudança não prevista;
+• ao acionar especialista, enviar somente 1–2 linhas, sem briefing adicional;
+• fase: “Avalie a fase XX do plano-base Y segundo suas diretrizes documentadas.”
+• plano: “Avalie o plano-base Y segundo suas diretrizes documentadas.”
 
 7. Consolidação
    Consolidar as análises recebidas no item 6, ajustando plano-base ou fase alvo conforme o caso, com objetivo, solução, fases, limites, pendências e próxima ação.
