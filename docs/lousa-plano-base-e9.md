@@ -222,6 +222,53 @@ Limites da Fase 2:
 * Webhook de confirmação, quando implementado, deve ser catalogado em docs/automations.md como automação operacional, com recurso utilizado, categoria e classificação.
 * Updates aplicáveis: supa#5 para logs seguros, supa#36 para leituras server-side, supa#40 para validação SQL read-only, supa#58 como trava de schema/grants/policies e prod#13 apenas como referência futura, sem bundles/grants no recorte inicial.
 
+3.4 Fase 3 — Schema mínimo de entitlement comercial
+
+* Objetivo: implementar o schema mínimo para persistir e consultar entitlement comercial da conta.
+* Resultado esperado: migration canônica, documentação de schema atualizada e validação SQL read-only.
+* Gatilho: contrato técnico da Fase 2 aprovado.
+* Entrada: modelo conceitual da Fase 2, schema atual, padrões de migrations, RLS, grants e validação do projeto.
+* Processamento: definir nome final da tabela, campos, constraints, índices, idempotência e leitura efetiva.
+* Persistência: criar fonte de verdade para entitlement comercial e mecanismo mínimo de leitura efetiva.
+* Consumo futuro: Account Dashboard server-side usará leitura efetiva em fase posterior.
+* Fallback: sem entitlement efetivo, conta segue sem elegibilidade produtiva.
+* Próxima ação: submeter Fase 3 à avaliação do Analista, Gestor Estrutural e Gestor de Updates antes do Executor.
+
+Decisões herdadas da Fase 2:
+
+* Domínio provável: commercial entitlements como domínio próprio.
+* Path futuro provável: `lib/commercial-entitlements/`.
+* Fonte de verdade provável: tabela `commercial_entitlements` ou `account_commercial_entitlements`, nome final a decidir.
+* Leitura efetiva provável: view ou RPC server-side.
+* Plano canônico: `starter`, `lite`, `pro`, `ultra`.
+* Origem comercial inicial: `plano_pago_confirmado`.
+* Origens futuras: `trial` e `liberacao_manual`.
+* Status persistidos prováveis: `pendente_confirmacao`, `ativo`, `expirado`, `cancelado`.
+* `sem_entitlement` e `bloqueado_operacionalmente` devem ser derivados de consulta, não necessariamente linhas persistidas.
+* Provedor, checkout, webhook, assinatura, invoice e evento externo são mecanismos/referências, não origem comercial.
+
+Governança da Fase 3:
+
+* Analista: avaliar lacunas, contradições, riscos, escopo e clareza.
+* Gestor Estrutural: obrigatório, porque há schema, migration, RLS, grants, constraints, índices e boundary.
+* Gestor de Updates: obrigatório, especialmente supa#58, supa#40, supa#36 e supa#5.
+* Gestor de Automação: N/A neste recorte, porque ainda não há webhook, job, rotina, monitoramento ou execução recorrente.
+
+Limites da Fase 3:
+
+* Não escolher provedor de checkout.
+* Não implementar checkout.
+* Não criar webhook.
+* Não alterar Account Dashboard.
+* Não alterar cards da E10.7.
+* Não criar LP Builder.
+* Não criar tela admin E12.
+* Não implementar trial operacional.
+* Não implementar liberação manual operacional.
+* Não transformar E9 em Billing Engine completo.
+* Não criar múltiplos provedores.
+* Não mexer em valores dos planos.
+
 4. Escopo negativo e critérios de parada
 
 * Não criar fluxo manual de pagamento, comprovante por WhatsApp ou liberação sem confirmação comercial.
