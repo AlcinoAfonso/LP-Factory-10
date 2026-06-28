@@ -739,8 +739,8 @@ Repositório — Ajustados
 • Implementar detecção por ambiente somente se o ganho justificar a complexidade.
 
 10.7 Páginas comerciais personalizadas por nicho
-• Status: Em execução faseada — Fase 6 concluída em 26/06/2026.
-• Próxima execução: Fase 7 — auditoria e consolidação do contrato commercial_activation.
+• Status: Em execução faseada — Fase 7 concluída em 28/06/2026.
+• Próxima execução: Fase 8 — edição manual de copy e gestão simples de versões.
 • Objetivo: gerar, revisar, publicar e consumir páginas comerciais por taxon; a IA roda apenas em operação administrativa/server-side; `/a/[account]` consome somente artefato publicado e validado; ausência de conteúdo nichado não pode quebrar `/a/[account]`.
 • Dependência estrutural: a E18 define os contratos reutilizáveis mínimos; a E10.7 aplica, valida e ajusta esses contratos no caso comercial concreto.
 • A página genérica `generic-v1` da E10.6 permanece concluída e será o fallback obrigatório.
@@ -875,13 +875,22 @@ Repositório — Ajustados
 • `lib/admin/adapters/adminCommercialActivationTemplatesAdapter.ts`
 
 10.7.8 Fase 7 — Auditoria e consolidação do contrato commercial_activation
-• Status: Planejada.
-• Objetivo: garantir que template, composição, prompt, `content_json`, renderer, preview/admin e `/a/[account]` obedeçam ao mesmo contrato fixo da página comercial.
-• Escopo: auditar o contrato `commercial_activation` antes da edição manual de copy.
-• Estrutura atual a preservar no MVP: Hero, Benefícios, Serviços, Planos, Diferenciais, Como funciona, FAQ e CTA final.
-• Critérios de parada: parar se template, composição, prompt, `content_json`, renderer, preview/admin ou `/a/[account]` divergirem entre si.
-• Limites: não alterar schema, RPC, migration, grant, policy, runtime público, layout, cores, template, IA assistida, edição manual ou gestão de versões nesta fase.
-• Decisão pendente: qualquer redução de seções da página comercial exige decisão estratégica própria.
+• Status: Concluída em 28/06/2026.
+• Resultado: auditoria determinística do contrato `commercial_activation` concluída, com verificação read-only versionada para template, composição, published, `content_json` e fontes.
+• Estrutura fixa confirmada no MVP: Hero, Benefícios, Serviços, Planos, Diferenciais, Como funciona, FAQ e CTA final.
+• Limite confirmado: IA preenche copy dentro da estrutura aprovada, mas não decide seções, ordem, layout ou cores.
+• Runtime público preservado: sem alteração em `/a/[account]`, sem IA em runtime público e sem novo consumo de `draft` ou `archived`.
+• Banco preservado: nenhuma tabela, view, RPC, policy, grant, constraint, trigger ou migration criada/alterada.
+• Updates relacionados: `supa#40`, `supa#58` e `prod#16`.
+• Pendência vigente: executar o snippet read-only no Supabase Inspect/SQL Editor quando for necessária evidência operacional do estado real do banco.
+
+10.7.8.1 Estruturas e artefatos
+
+Repositório — Criados
+• `supabase/snippets/e10_7_phase_7_commercial_activation_contract_verify.sql`
+
+Repositório — Ajustados
+• `docs/lousa-plano-base-e10-7.md`
 
 10.7.9 Fase 8 — Edição manual de copy e gestão simples de versões
 • Status: Planejada.
