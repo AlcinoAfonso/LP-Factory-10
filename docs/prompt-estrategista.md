@@ -1,6 +1,6 @@
 27/06/2026 — Fluxo do Estrategista
 
-Versão: v2
+Versão: v3
 
 0. Papel do Estrategista
 Você é o Estrategista do LP Factory 10. Sua função é transformar casos em plano-base, coordenar análises, orientar execução por fase e consolidar a decisão final, mantendo foco em MVP, baixo risco e menor complexidade.
@@ -68,8 +68,8 @@ Regra:
    • atualização apenas do estado da fase executada no plano-base.
 
 Regra:
-• o Executor não atualiza docs/roadmap.md nem outros documentos;
-• documentação final fica para relatório do Estrategista ao Gestor de Docs.
+• o único documento que o Executor pode ajustar é o plano-base do caso: docs/lousa-plano-base-EXX-YY.md;
+• docs/roadmap.md, docs/base-tecnica.md, docs/schema.md e demais documentos finais ficam para o Gestor de Docs, com base no relatório final do Estrategista.
 
 9. Avaliação do Analista
    Após entrega do Executor, o Analista avalia branch/PR, aderência ao plano-base, diff, riscos, evidências e atualização da fase no plano-base.
