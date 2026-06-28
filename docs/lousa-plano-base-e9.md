@@ -4,9 +4,12 @@ Fontes: chat, docs/roadmap.md, docs/prompt-estrategista.md
 1. Estado e decisões fixas
 
 * E9 define elegibilidade comercial para criar LPs.
+* E9 libera apenas o gate/elegibilidade comercial; não implementa LP Builder nem fluxo visual de criação de LPs.
 * Conta active não fica elegível apenas por estar ativa.
+* Entitlement comercial não substitui bloqueios de conta, membership ou status operacional.
 * Elegibilidade nasce de origem comercial válida: plano pago confirmado ou, futuramente, trial concedido.
 * Recorte inicial: cards pagos Start, Lite, Pro e Ultra + checkout confirmado.
+* Usar a nomenclatura canônica dos planos vigente no projeto; se houver diferença entre Start e Starter, resolver antes da implementação do checkout.
 * Provedor de checkout entra como subseção futura E9.xx.
 * Trial automático/manual entra como subseção futura E9.xx.
 * Ajuste de valores pertence a E12.xx, por ser operação administrativa no Admin Dashboard.
@@ -23,13 +26,17 @@ Fontes: chat, docs/roadmap.md, docs/prompt-estrategista.md
 
 3. Fases e próxima ação
 
-* Fase 1 — Contrato interno de elegibilidade: definir origem comercial, status e consumo pelo Account Dashboard.
-* Fase 2 — Provedor de checkout: escolher e integrar primeiro provedor para cards pagos.
-* Fase 3 — Webhook e persistência: validar confirmação e registrar entitlement.
-* Fase 4 — Consumo da elegibilidade: liberar criação de LPs para conta elegível.
-* Fase futura — Trial E9.xx: trial automático/manual como outra origem de entitlement.
-* Fase futura — Valores E12.xx: ajuste administrativo de valores, planos ativos e vínculo com provedor.
-* Próxima ação: solicitar avaliação do plano-base por Analista, Gestor Estrutural, Gestor de Updates e Gestor de Automação.
+* Fase 1 — Contrato interno de elegibilidade: definir origem comercial, status, consumo pelo Account Dashboard e necessidade estrutural mínima de persistência.
+* E9.xx futuro — Provedor de checkout: escolher e integrar primeiro provedor para cards pagos.
+* E9.xx futuro — Webhook e persistência: validar confirmação, idempotência e registro de entitlement comercial.
+* E9.xx futuro — Consumo da elegibilidade: liberar gate comercial para criação de LPs após persistência validada.
+* E9.xx futuro — Trial: trial automático/manual como outra origem de entitlement.
+* E9.xx futuro — Liberação manual: contratação manual ou concessão administrativa como origem comercial válida, sem comprovante informal por WhatsApp.
+* E12.xx futuro — Valores: ajuste administrativo de valores, planos ativos e vínculo com provedor.
+* Próxima ação: seguir para consolidação do Estrategista e só depois abrir recorte de execução aprovado.
+* Estrutura de persistência será definida em fase própria antes da implementação.
+* Webhook de confirmação, quando implementado, deve ser catalogado em docs/automations.md como automação operacional, com recurso utilizado, categoria e classificação.
+* Updates aplicáveis: supa#5 para logs seguros, supa#36 para leituras server-side, supa#40 para validação SQL read-only, supa#58 como trava de schema/grants/policies e prod#13 apenas como referência futura, sem bundles/grants no recorte inicial.
 
 4. Escopo negativo e critérios de parada
 
@@ -40,4 +47,7 @@ Fontes: chat, docs/roadmap.md, docs/prompt-estrategista.md
 * Não criar tela administrativa de valores dentro do E9.
 * Não transformar E9 em Billing Engine completo.
 * Não usar agente de IA.
+* Não implementar LP Builder nem fluxo visual de criação de LPs no E9; E9 libera apenas o gate/elegibilidade comercial.
+* Parar se a fase exigir tabela, RPC, policy, grant ou migration antes de definir contrato de entitlement, idempotência e consumo no Account Dashboard.
+* Não assumir public.plans como fonte suficiente para checkout, descontos, garantias, regras promocionais ou URLs oficiais sem decisão específica.
 * Parar se o recorte exigir mudança visual da E10.7, mutação administrativa ampla da E12, ou definição de trial antes do checkout pago mínimo.
