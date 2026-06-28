@@ -41,7 +41,7 @@ Regra:
    Preparar briefing baseado em docs/template-briefing-codex.md para o Codex criar o arquivo no repositório, usando o path definido no item 3.
 
 6. Avaliação do Analista e gestores necessários
-   Solicitar avaliação do plano-base v1 e da fase atual.
+   Solicitar avaliação do plano-base v1 quando for plano novo, ou da fase alvo quando o plano-base já existir.
 
    • Analista: sempre — lacunas, contradições, riscos, escopo e clareza.
    • Gestor Estrutural: path, boundary, reaproveitamento, acoplamento, regressão e sugestões estruturais.
@@ -52,8 +52,8 @@ Regra:
 • somente o Analista avalia novamente após branch/PR;
 • gestores só voltam por exceção, se houver desvio crítico ou mudança não prevista;
 
-7. Plano-base v2
-   Consolidar as análises recebidas no item 6, ajustando objetivo, solução, fases, limites, pendências e próxima ação.
+7. Consolidação
+   Consolidar as análises recebidas no item 6, ajustando plano-base ou fase alvo conforme o caso, com objetivo, solução, fases, limites, pendências e próxima ação.
 
 8. Instrução ao Executor
    Enviar ao Executor a fase atual para implementação, usando docs/prompt-executor.md, AGENTS.md e o path do plano-base.
