@@ -346,11 +346,7 @@
 • O legado `PlanId = "free" | "light" | "pro" | "ultra"` deve ser revisado ou aposentado antes do checkout.
 
 9.3.6 Updates avaliados
-• `supa#5`: logs seguros devem ser aplicados em fases futuras com webhook/checkout.
-• `supa#36`: consumo da elegibilidade deve ser server-side no Account Dashboard.
-• `supa#40`: validação SQL read-only será útil nas fases futuras de persistência.
-• `supa#58`: qualquer tabela, RPC, policy, grant ou migration exige contrato e trava de schema.
-• `prod#13`: referência futura; não implementar bundles/grants no recorte inicial.
+• `supa#5`, `supa#36`, `supa#40`, `supa#58` e `prod#13`.
 
 9.4 Pendências vigentes
 • Definir próximo recorte E9.xx.
@@ -365,19 +361,11 @@
 Repositório — Ajustados
 • `docs/lousa-plano-base-e9.md`
 
-Banco
-• N/A — nenhuma tabela, view, RPC, policy, grant ou migration criada.
-
 9.6 Fora do escopo da Fase 1
 • Checkout.
 • Webhook.
 • Persistência de entitlement.
-• Migration.
-• SQL de implementação.
-• SQL de inspeção.
 • Runtime.
-• Observability.
-• Logs/eventos reais.
 • LP Builder.
 • Fluxo visual de criação de LPs.
 • Tela administrativa.
