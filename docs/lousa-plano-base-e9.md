@@ -280,8 +280,8 @@ Decisões herdadas da Fase 2:
 
 * Domínio provável: commercial entitlements como domínio próprio.
 * Path futuro provável: `lib/commercial-entitlements/`.
-* Fonte de verdade provável: tabela `commercial_entitlements` ou `account_commercial_entitlements`, nome final a decidir.
-* Leitura efetiva provável: view ou RPC server-side.
+* Fonte de verdade definida na Fase 3: tabela `account_commercial_entitlements`.
+* Leitura efetiva definida na Fase 3: view read-only `v_account_commercial_entitlement_effective`.
 * Plano canônico: `starter`, `lite`, `pro`, `ultra`.
 * Origem comercial inicial: `plano_pago_confirmado`.
 * Origens futuras: `trial` e `liberacao_manual`.
