@@ -8,7 +8,7 @@ Fontes: chat, docs/roadmap.md, docs/prompt-estrategista.md
 * Conta active não fica elegível apenas por estar ativa.
 * Entitlement comercial não substitui bloqueios de conta, membership ou status operacional.
 * Elegibilidade nasce de origem comercial válida: plano pago confirmado ou, futuramente, trial concedido.
-* Recorte inicial: cards pagos Start, Lite, Pro e Ultra + checkout confirmado.
+* Recorte inicial: cards pagos Starter, Lite, Pro e Ultra + checkout confirmado.
 * Usar a nomenclatura canônica dos planos vigente no projeto; se houver diferença entre Start e Starter, resolver antes da implementação do checkout.
 * Provedor de checkout entra como subseção futura E9.xx.
 * Trial automático/manual entra como subseção futura E9.xx.
@@ -16,7 +16,7 @@ Fontes: chat, docs/roadmap.md, docs/prompt-estrategista.md
 
 2. Contrato do caso
 
-* Usuário clica em Start, Lite, Pro ou Ultra.
+* Usuário clica em Starter, Lite, Pro ou Ultra.
 * Sistema inicia checkout no provedor escolhido.
 * Provedor confirma pagamento/assinatura por webhook.
 * Sistema valida evento, conta, plano, status e idempotência.
@@ -36,7 +36,7 @@ Fontes: chat, docs/roadmap.md, docs/prompt-estrategista.md
 * Definir: origens comerciais válidas, status conceituais, bloqueios independentes, consumo pelo Account Dashboard e dados mínimos necessários para fases futuras.
 * Regra central: conta precisa estar em estado operacional permitido, membership precisa permitir acesso e entitlement comercial precisa estar válido.
 * Origem inicial: plano pago confirmado.
-* Origens futuras: trial, liberação manual, provedor de checkout e webhook.
+* Origens futuras: trial e liberação manual; provedor de checkout e webhook ficam como mecanismos futuros de confirmação e persistência.
 * Status conceituais esperados: sem_entitlement, pendente_confirmacao, ativo, expirado, cancelado e bloqueado_operacionalmente.
 * Os nomes são conceituais; antes da implementação, verificar se já existe nomenclatura canônica no projeto.
 * Não implementar checkout, provedor, webhook, migration, tabela, RPC, policy, grant, constraint, Account Dashboard, cards, LP Builder ou tela admin.
