@@ -301,9 +301,9 @@
 9. E9 — Billing, trial e entitlements
 
 9.1 Status
-• Em execução faseada — Fase 1 concluída em 28/06/2026.
+• Em execução faseada — Fase 2 concluída em 28/06/2026.
 • Sem Billing Engine completo implementado nesta fase.
-• Próxima execução recomendada: definir o modelo mínimo de entitlement comercial antes de provedor de checkout/webhook.
+• Próxima execução recomendada: criar o recorte de schema mínimo de entitlement comercial antes de provedor de checkout/webhook.
 
 9.2 Objetivo atual
 • Separar condição comercial da conta do lifecycle operacional da conta.
@@ -345,31 +345,45 @@
 • Chaves esperadas: `starter`, `lite`, `pro` e `ultra`.
 • O legado `PlanId = "free" | "light" | "pro" | "ultra"` deve ser revisado ou aposentado antes do checkout.
 
-9.3.6 Updates avaliados
+9.3.6 Modelo mínimo de entitlement comercial
+• Status: Fase 2 concluída em 28/06/2026.
+• Entitlement comercial deve ser domínio próprio, não extensão de `lib/access`, `public.plans` ou `lib/access/plan.ts`.
+• Path provável futuro: `lib/commercial-entitlements/`, sem criação de arquivo nesta fase.
+• Consumidor inicial: Account Dashboard server-side, após `getAccessContext` confirmar conta `active` e membership ativo.
+• Objeto futuro provável: tabela fonte de verdade + view ou RPC de leitura efetiva.
+• Campos mínimos futuros: `account_id`, `plan_key`, `plan_name_snapshot`, `origin`, `status`, vigência, referência externa, idempotência e timestamps.
+• A leitura efetiva deve retornar elegibilidade comercial sem usar `accounts.status`, `account_users.status`, `accounts.plan_id`, `public.plans` ou `v_account_effective_limits` isoladamente como prova de criação produtiva de LP.
+
+9.3.7 Updates avaliados
 • `supa#5`, `supa#36`, `supa#40`, `supa#58` e `prod#13`.
 
 9.4 Pendências vigentes
-• Definir próximo recorte E9.xx.
-• Definir modelo mínimo de persistência do entitlement comercial.
-• Revisar ou aposentar o legado `PlanId = "free" | "light" | "pro" | "ultra"` antes do checkout.
+• Criar próximo recorte E9.xx — Schema mínimo de entitlement comercial.
+• Decidir nome final da tabela: `commercial_entitlements`, `account_commercial_entitlements` ou outro nome justificado.
+• Definir view/RPC de leitura efetiva.
+• Definir constraints, índices, RLS, grants e política de unicidade/idempotência.
+• Revisar ou aposentar o legado `PlanId = "free" | "light" | "pro" | "ultra"` antes de qualquer checkout.
 • Decidir em fase própria como papéis afetam criação, edição e publicação de LPs.
-• Definir se o status comercial será persistido em tabela, view, RPC ou outro contrato.
-• Definir provider/checkout e webhook apenas depois do contrato mínimo de entitlement comercial.
+• Definir provider/checkout e webhook apenas depois do schema mínimo de entitlement comercial.
 
 9.5 Estruturas e artefatos
 
 Repositório — Ajustados
 • `docs/lousa-plano-base-e9.md`
 
-9.6 Fora do escopo da Fase 1
+9.6 Fora do escopo da Fase 2
 • Checkout.
 • Webhook.
-• Persistência de entitlement.
+• Provedor de pagamento.
+• Trial operacional.
+• Liberação manual operacional.
+• Persistência real.
 • Runtime.
+• Account Dashboard.
+• Cards E10.7.
 • LP Builder.
-• Fluxo visual de criação de LPs.
 • Tela administrativa.
-• Alteração de cards comerciais.
+• Arquivo em `lib/commercial-entitlements/`.
 
 10. E10 — Account Dashboard (UX)
 
