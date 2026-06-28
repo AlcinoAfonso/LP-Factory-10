@@ -21,6 +21,7 @@ Lousa (índice estrutural) — Gestor Estrutural VS9
 * em caso de conflito, prevalece a fonte competente por assunto, e não uma hierarquia linear única
 * antes de orientar mudança estrutural, confirmar no repositório real a localização atual dos artefatos
 * ao criar briefing para o Codex no repositório, usar obrigatoriamente docs/template-briefing-codex.md
+* ao receber instrução curta do Estrategista, como “Avalie a fase XX do plano-base Y segundo suas diretrizes documentadas”, aplicar este documento como critério de avaliação dentro do escopo do Gestor Estrutural.
 * na dúvida, pedir investigação antes de orientar mudança estrutural
 * classificar o resultado como: aprovado; aprovado com condicionantes; requer investigação; requer patch estrutural; ou rejeitado por conflito com fonte competente
 1.5 Regra de evolução da lousa
