@@ -122,7 +122,41 @@ Riscos, lacunas e conflitos:
 * Não usar `accounts.plan_id` nem `public.plans` isoladamente como prova de elegibilidade comercial.
 * Não alterar E10.7, Account Dashboard, cards, schema ou runtime nesta fase.
 
-3.2 Fases futuras e próxima ação
+3.2 Fase 2 — Modelo mínimo de entitlement comercial
+
+* Objetivo: definir o contrato mínimo de persistência e consulta do entitlement comercial.
+* Gatilho: conta `active` com membership ativo chega ao futuro gate de criação de LP.
+* Entrada: conta, membership, plano canônico, origem comercial, status conceitual, vigência e referência de confirmação futura.
+* Processamento: resolver se existe entitlement comercial válido para a conta.
+* Validação: conta `active`, membership `active`, origem comercial aceita, status válido, vigência válida, plano canônico e ausência de bloqueio operacional.
+* Persistência mínima a definir: `account_id`, plano canônico, origem comercial, status, vigência, referência externa futura, chave de idempotência futura e trilha operacional sem PII sensível.
+* Consumo: Account Dashboard deve consultar server-side o sinal de entitlement antes de liberar gate de criação de LP.
+* Fallback: sem entitlement válido, conta permanece sem elegibilidade produtiva e continua na experiência comercial/persuasiva.
+* Próxima ação: submeter Fase 2 à avaliação do Analista, Gestor Estrutural e Gestor de Updates.
+
+Governança da Fase 2:
+
+* Analista: avaliar lacunas, contradições, riscos, escopo e clareza.
+* Gestor Estrutural: avaliar boundary, persistência, schema, acoplamento, regressão e consumo server-side.
+* Gestor de Updates: avaliar aderência a updates aplicáveis, especialmente supa#5, supa#36, supa#40 e supa#58.
+* Gestor de Automação: N/A neste recorte, porque ainda não há webhook, job, rotina, monitoramento ou execução recorrente.
+
+Limites da Fase 2:
+
+* Não escolher provedor de checkout.
+* Não implementar checkout.
+* Não criar webhook.
+* Não criar migration.
+* Não criar tabela, view, RPC, policy, grant, constraint ou trigger.
+* Não alterar Account Dashboard.
+* Não alterar cards da E10.7.
+* Não criar LP Builder.
+* Não criar tela admin.
+* Não implementar trial operacional.
+* Não implementar liberação manual operacional.
+* Não transformar E9 em Billing Engine completo.
+
+3.3 Fases futuras e próxima ação
 
 * E9.xx futuro — Provedor de checkout: escolher e integrar primeiro provedor para cards pagos.
 * E9.xx futuro — Webhook e persistência: validar confirmação, idempotência e registro de entitlement comercial.
@@ -130,7 +164,6 @@ Riscos, lacunas e conflitos:
 * E9.xx futuro — Trial: trial automático/manual como outra origem de entitlement.
 * E9.xx futuro — Liberação manual: contratação manual ou concessão administrativa como origem comercial válida, sem comprovante informal por WhatsApp.
 * E12.xx futuro — Valores: ajuste administrativo de valores, planos ativos e vínculo com provedor.
-* Próxima ação: seguir para consolidação do Estrategista e só depois abrir recorte de execução aprovado.
 * Estrutura de persistência será definida em fase própria antes da implementação.
 * Webhook de confirmação, quando implementado, deve ser catalogado em docs/automations.md como automação operacional, com recurso utilizado, categoria e classificação.
 * Updates aplicáveis: supa#5 para logs seguros, supa#36 para leituras server-side, supa#40 para validação SQL read-only, supa#58 como trava de schema/grants/policies e prod#13 apenas como referência futura, sem bundles/grants no recorte inicial.
