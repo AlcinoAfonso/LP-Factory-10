@@ -272,6 +272,20 @@ Gerar draft comercial `commercial_activation` por taxon em fluxo assistido por I
 Status:
 Implementada e validada como automação operacional administrativa.
 
+Recurso utilizado:
+- Responses API
+- Structured Outputs
+- Server Action administrativa protegida
+
+Categoria segundo `docs/gestor-automations.md`:
+- APIs e capacidades de IA
+- Automação simples / fluxo controlado
+- Recursos de aplicação Next.js
+
+Classificação:
+- Automação operacional administrativa assistida por IA
+- Não é agente
+
 Acesso:
 Action administrativa protegida por permissão administrativa.
 
