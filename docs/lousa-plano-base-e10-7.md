@@ -8,7 +8,7 @@ Fontes: chat, PR #435, PR #440, docs/roadmap.md, docs/base-tecnica.md, docs/sche
 * Fluxo mínimo validado: elegível → draft → published → consumo público.
 * /admin/templates é lista limpa.
 * Página operacional por taxon criada.
-* Próxima ação: auditar contrato commercial_activation antes da edição manual.
+* Próxima ação: Fase 8 — edição manual de copy e gestão simples de versões.
 * commercial_activation é template universal por canal.
 * Template não é duplicado por taxon.
 * Taxon define artifact e consumo final.
@@ -53,7 +53,7 @@ Fontes: chat, PR #435, PR #440, docs/roadmap.md, docs/base-tecnica.md, docs/sche
 * Status: implementada, validada em Preview e mergeada.
 * Resultado: /admin/templates virou lista limpa e operação foi movida para página por taxon.
 3.7 Fase 7 — Consolidação determinística do template comercial
-* Status: planejada.
+* Status: concluída como auditoria determinística.
 * Objetivo: garantir que o commercial_activation use sempre a mesma estrutura comercial fixa, com seções, ordem, obrigatoriedade e limites de geração definidos, para qualquer nicho elegível.
 * Primeira entrega da Fase 7 deve ser auditoria determinística do contrato atual; qualquer patch em template, prompt, renderer, schema ou runtime público exige diagnóstico separado e decisão explícita.
 * Estrutura fixa do MVP: Hero, Benefícios, Serviços, Planos, Diferenciais, Como funciona, FAQ e CTA final.
@@ -63,6 +63,8 @@ Fontes: chat, PR #435, PR #440, docs/roadmap.md, docs/base-tecnica.md, docs/sche
 * Divergência entre essas partes é critério de parada.
 * Contratos internos transversais de módulos/seções pertencem à E18, se houver caso próprio futuro.
 * Regra: deve vir antes da edição manual.
+* Resultado: auditoria confirmou coerência entre prompt/output estruturado, composição técnica, registry/validação, resolver, renderer, preview/admin e consumo de published válido em /a/[account].
+* Verificação recorrente: `supabase/snippets/e10_7_phase_7_commercial_activation_contract_verify.sql`.
 3.8 Fase 8 — Edição manual de copy e gestão simples de versões
 * Status: planejada.
 * Objetivo: permitir ajuste humano de copy e gestão simples de versões depois do contrato fixo auditado.
