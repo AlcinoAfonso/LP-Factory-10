@@ -89,8 +89,8 @@ Contrato interno proposto:
 Origens comerciais:
 
 * Origem inicial válida: `plano_pago_confirmado`.
-* Origens futuras possíveis: `trial`, `liberacao_manual` e confirmação por provedor/webhook.
-* Provedor de checkout e webhook são mecanismos de confirmação, não substituem o conceito de origem comercial.
+* Origens futuras possíveis: `trial` e `liberacao_manual`.
+* Confirmação por provedor/webhook é mecanismo de confirmação e persistência, não origem comercial.
 
 Status conceituais:
 
@@ -114,7 +114,7 @@ Dados mínimos para fases futuras:
 
 Riscos, lacunas e conflitos:
 
-* Resolver `Start` versus `Starter` antes da fase de checkout; a evidência atual favorece `Starter`/`starter`, mas o plano-base ainda usa `Start`.
+* Manter `Starter`/`starter` como nomenclatura canônica antes da fase de checkout.
 * Revisar ou aposentar o `PlanId` legado `light` antes de qualquer integração de checkout, porque ele conflita com `Lite`/`lite`.
 * Definir em fase própria se o status conceitual será persistido em tabela nova, view, RPC ou outro contrato; esta Fase 1 não cria banco.
 * Definir em fase própria como papéis (`owner`, `admin`, `editor`, `viewer`) afetam criação, edição e publicação de LPs.
