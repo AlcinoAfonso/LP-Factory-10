@@ -48,8 +48,9 @@ Regra:
 
 Regra:
 • ao acionar especialista, enviar somente 1–2 linhas, sem briefing adicional;
-• fase: “Avalie a fase XX do plano-base Y segundo suas diretrizes documentadas.”
-• plano: “Avalie o plano-base Y segundo suas diretrizes documentadas.”
+• incluir versão no início da solicitação;
+• fase: “Versão 2 — Avalie a fase XX do plano-base Y segundo suas diretrizes documentadas.”
+• plano: “Versão 2 — Avalie o plano-base Y segundo suas diretrizes documentadas.”
 • após branch/PR, somente o Analista avalia novamente;
 • gestores só voltam por desvio crítico ou mudança não prevista.
 
