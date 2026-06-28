@@ -164,7 +164,6 @@ Limites da Fase 2:
 * E9.xx futuro — Trial: trial automático/manual como outra origem de entitlement.
 * E9.xx futuro — Liberação manual: contratação manual ou concessão administrativa como origem comercial válida, sem comprovante informal por WhatsApp.
 * E12.xx futuro — Valores: ajuste administrativo de valores, planos ativos e vínculo com provedor.
-* Próxima ação: seguir para consolidação do Estrategista e só depois abrir recorte de execução aprovado.
 * Estrutura de persistência será definida em fase própria antes da implementação.
 * Webhook de confirmação, quando implementado, deve ser catalogado em docs/automations.md como automação operacional, com recurso utilizado, categoria e classificação.
 * Updates aplicáveis: supa#5 para logs seguros, supa#36 para leituras server-side, supa#40 para validação SQL read-only, supa#58 como trava de schema/grants/policies e prod#13 apenas como referência futura, sem bundles/grants no recorte inicial.
