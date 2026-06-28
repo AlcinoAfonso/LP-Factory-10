@@ -201,8 +201,8 @@ published_content_failures as (
 published_source_counts as (
   select
     published_artifacts.id as artifact_id,
-    count(sources.id) filter (where sources.audience_scope = 'business_buyer') as business_buyer_sources,
-    count(sources.id) filter (where sources.audience_scope <> 'business_buyer') as other_sources
+    count(sources.research_id) filter (where sources.audience_scope = 'business_buyer') as business_buyer_sources,
+    count(sources.research_id) filter (where sources.audience_scope <> 'business_buyer') as other_sources
   from published_artifacts
   left join public.content_artifact_research_sources sources
     on sources.artifact_id = published_artifacts.id
