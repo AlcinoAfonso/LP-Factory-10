@@ -232,14 +232,56 @@ Limites da Fase 2:
 * Persistência: criar fonte de verdade para entitlement comercial e mecanismo mínimo de leitura efetiva.
 * Consumo futuro: Account Dashboard server-side usará leitura efetiva em fase posterior.
 * Fallback: sem entitlement efetivo, conta segue sem elegibilidade produtiva.
-* Próxima ação: submeter Fase 3 à avaliação do Analista, Gestor Estrutural e Gestor de Updates antes do Executor.
+* Próxima ação: submeter PR da Fase 3 para revisão e merge humano; consumo runtime fica para fase posterior.
+
+3.4.1 Resultado da Fase 3 — schema mínimo implementado
+
+Arquivos consultados:
+
+* `AGENTS.md`
+* `docs/prompt-executor.md`
+* `docs/lousa-plano-base-e9.md`
+* `docs/roadmap.md`
+* `docs/schema.md`
+* `docs/base-tecnica.md`
+* `supabase/migrations/20260615190000_e18_commercial_activation_minimum.sql`
+* `supabase/migrations/20260616142100_real_estate_lab_v0.sql`
+* `supabase/migrations/20260621162400_e10_7_admin_artifact_write_publish.sql`
+* `supabase/snippets/e10_7_phase_7_commercial_activation_contract_verify.sql`
+
+Entregas:
+
+* Migration canônica: `supabase/migrations/20260628184945_e9_commercial_entitlements.sql`.
+* Tabela: `public.account_commercial_entitlements`.
+* Leitura efetiva: view read-only `public.v_account_commercial_entitlement_effective` com `security_invoker = true`.
+* Snippet read-only de validação: `supabase/snippets/e9_phase_3_entitlements_verify.sql`.
+* Documentação atualizada: `docs/schema.md`.
+
+Schema entregue:
+
+* Campos mínimos: `id`, `account_id`, `plan_key`, `plan_name_snapshot`, `origin`, `status`, `starts_at`, `confirmed_at`, `expires_at`, `canceled_at`, `external_provider`, `external_reference`, `idempotency_key`, `metadata_json`, `created_at`, `updated_at`.
+* Checks: planos canônicos `starter`, `lite`, `pro`, `ultra`; origens `plano_pago_confirmado`, `trial`, `liberacao_manual`; status `pendente_confirmacao`, `ativo`, `expirado`, `cancelado`; `metadata_json` como objeto; vigência coerente.
+* Índices: `account_id`, `status`, `expires_at`, lookup efetivo por `account_id/status/vigência` e UNIQUE parcial de `idempotency_key` quando não nulo.
+* Segurança: RLS ativo; SELECT para membro ativo da conta ou platform_admin; authenticated sem INSERT/UPDATE/DELETE; service_role com mutação explícita para fase operacional futura.
+* View efetiva: retorna no máximo um entitlement por conta e expõe `is_commercially_eligible` sem payload bruto, dados de cartão, secrets ou PII sensível.
+
+Validação planejada:
+
+* `supabase/snippets/e9_phase_3_entitlements_verify.sql` valida tabela, view, checks, RLS, grants, índices, unique parcial, regra efetiva sintética e ausência de dependência de checkout/webhook/provedor específico.
+* `npm ci` e `npm run check`: N/A, pois não houve alteração em código JS/TS/package.
+
+Riscos e lacunas:
+
+* Migration deve ser aplicada pelo fluxo normal de merge na `main`.
+* Account Dashboard ainda não consome a view; isso fica para fase futura.
+* Não houve checkout, webhook, provedor, runtime, admin, trial operacional, liberação manual operacional ou Billing Engine completo.
 
 Decisões herdadas da Fase 2:
 
 * Domínio provável: commercial entitlements como domínio próprio.
 * Path futuro provável: `lib/commercial-entitlements/`.
-* Fonte de verdade provável: tabela `commercial_entitlements` ou `account_commercial_entitlements`, nome final a decidir.
-* Leitura efetiva provável: view ou RPC server-side.
+* Fonte de verdade definida na Fase 3: tabela `account_commercial_entitlements`.
+* Leitura efetiva definida na Fase 3: view read-only `v_account_commercial_entitlement_effective`.
 * Plano canônico: `starter`, `lite`, `pro`, `ultra`.
 * Origem comercial inicial: `plano_pago_confirmado`.
 * Origens futuras: `trial` e `liberacao_manual`.
