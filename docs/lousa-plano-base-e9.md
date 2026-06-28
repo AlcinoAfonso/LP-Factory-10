@@ -311,6 +311,36 @@ Limites da Fase 3:
 * Não criar múltiplos provedores.
 * Não mexer em valores dos planos.
 
+3.5 Fase 4 — Consumo server-side da elegibilidade comercial
+
+* Objetivo: consumir a view `v_account_commercial_entitlement_effective` no servidor para expor a elegibilidade comercial da conta.
+* Resultado esperado: camada server-side mínima retorna se a conta possui entitlement comercial válido, sem alterar layout, copy ou cards.
+* Gatilho: schema mínimo da Fase 3 concluído.
+* Entrada: account context validado, conta `active`, membership ativo e leitura efetiva de entitlement comercial.
+* Processamento: consultar a view por `account_id` e derivar `isCommerciallyEligible`.
+* Validação: não liberar elegibilidade apenas por `accounts.status`, `account_users.status`, `accounts.plan_id`, `public.plans` ou `v_account_effective_limits`.
+* Consumo: Account Dashboard passa a ter dado server-side de elegibilidade comercial para fase posterior de gate produtivo.
+* Fallback: sem entitlement efetivo, retornar não elegível e manter experiência comercial/persuasiva.
+* Próxima ação: submeter Fase 4 à avaliação do Analista, Gestor Estrutural e Gestor de Updates antes do Executor.
+
+3.6 Fase 5 — Gate produtivo de criação de LP
+
+* Objetivo: aplicar a regra conta `active` + membership ativo + entitlement comercial válido no ponto server-side de criação produtiva de LP.
+* Resultado esperado: criação produtiva bloqueada quando não houver entitlement comercial válido.
+* Limite: não alterar layout/copy/cards da E10.7 e não implementar checkout.
+
+3.7 Fase 6 — Provedor de checkout mínimo
+
+* Objetivo: escolher e integrar o primeiro provedor de checkout para confirmação comercial mínima.
+* Resultado esperado: plano pago gera referência externa para posterior persistência do entitlement.
+* Limite: não criar múltiplos provedores nem Billing Engine completo.
+
+3.8 Fase 7 — Webhook e persistência do entitlement
+
+* Objetivo: persistir ou atualizar `account_commercial_entitlements` após confirmação comercial.
+* Resultado esperado: webhook idempotente registra entitlement ativo, origem comercial, vigência e referência externa.
+* Observação: esta fase aciona Gestor de Automação, porque webhook é automação operacional.
+
 4. Escopo negativo e critérios de parada
 
 * Não criar fluxo manual de pagamento, comprovante por WhatsApp ou liberação sem confirmação comercial.
