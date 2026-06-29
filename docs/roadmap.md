@@ -1347,12 +1347,14 @@ Repositório — Criados
 • O E19 só deve avançar para implementação quando houver recorte funcional real do LP Builder, evitando antecipação estrutural sem massa de código.
 
 19.5 Dependências / referências
+• E9 — Billing, trial e entitlements
 • E10 — Account Dashboard
 • E12 — Admin Dashboard
 • E13 — Partner Dashboard
+• E18 — Base transversal de templates, módulos, composições e artefatos
 
 19.6 Próximo passo
-• Definir o primeiro recorte funcional do LP Builder no roadmap
+• Definir o primeiro recorte funcional do LP Builder no roadmap, incluindo o ponto server-side de criação produtiva de LP por conta, a persistência mínima da LP e a aplicação do gate comercial da E9 nesse ponto real.
 
 19.7 Referência futura a páginas comerciais por taxon
 • E19 poderá futuramente consumir a existência de página comercial publicada por taxon.
