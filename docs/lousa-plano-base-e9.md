@@ -369,9 +369,13 @@ Governança da Fase 4:
 
 3.6 Fase 5 — Gate produtivo de criação de LP
 
-* Objetivo: aplicar a regra conta `active` + membership ativo + entitlement comercial válido no ponto server-side de criação produtiva de LP.
-* Resultado esperado: criação produtiva bloqueada quando não houver entitlement comercial válido.
-* Limite: não alterar layout/copy/cards da E10.7 e não implementar checkout.
+* Status: aprovada conceitualmente, mas bloqueada/adiada.
+* Objetivo conceitual aprovado: aplicar a regra conta `active` + membership ativo + entitlement comercial válido no ponto server-side de criação produtiva de LP.
+* Resultado esperado futuro: criação produtiva bloqueada quando não houver entitlement comercial válido.
+* Motivo do bloqueio: ainda não existe no repositório um ponto server-side real de criação produtiva de LP por conta onde aplicar o gate.
+* Limite atual: não criar endpoint, fluxo, LP Builder, rota nova, arquitetura nova ou qualquer substituto artificial apenas para acomodar a Fase 5.
+* Próxima ação: retomar a Fase 5 somente quando existir a mutação produtiva real de criação de LP; até lá, seguir o E9 para o próximo recorte.
+* Limite permanente da fase: não alterar layout/copy/cards da E10.7 e não implementar checkout.
 
 3.7 Fase 6 — Provedor de checkout mínimo
 
