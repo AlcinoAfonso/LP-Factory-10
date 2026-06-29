@@ -379,17 +379,21 @@ Governança da Fase 4:
 
 3.7 Fase 6 — Provedor de checkout mínimo
 
+* Status: aprovada como desenho/contrato técnico, mas bloqueada para implementação até resolver o `PlanId` legado e fechar o contrato interno de plano/assinatura/checkout.
 * Objetivo: escolher 1 provedor inicial de checkout para confirmação comercial mínima.
-* Provedor inicial recomendado: Stripe, usando Stripe Checkout em modo `subscription`, no ambiente de teste, com recorrência mensal/anual conforme contrato comercial aprovado.
+* Provedor inicial: Stripe, usando Stripe Checkout em modo `subscription`, no ambiente de teste, com recorrência mensal/anual conforme contrato comercial aprovado.
+* PlanKey oficial: `starter`, `lite`, `pro` e `ultra`; qualquer mapeamento de produto/preço do provedor deve convergir para essas chaves antes de persistir ou consumir entitlement.
 * Reserva operacional: Asaas fica como provedor reserva para avaliação posterior, sem implementação no recorte inicial.
 * Adiado: Mercado Pago fica explicitamente adiado, sem adapter, SDK, webhook, configuração ou dependência nesta fase.
-* Boundary obrigatório: implementar a integração dentro de `lib/billing-checkout/`, com contrato neutro para o app e adapter mínimo/substituível do provedor escolhido.
+* Boundary futuro obrigatório: `lib/billing-checkout/`, com contrato neutro para o app e adapter mínimo/substituível do provedor escolhido.
+* Contrato mínimo de checkout: entrada com `account_id`, `plan_key`, período/recorrência aprovada, URLs de retorno e contexto operacional não sensível; saída com provedor, identificador da sessão/checkout, URL de checkout e referências externas necessárias para correlação futura.
 * Recorte técnico do checkout: criação de sessão do Stripe Checkout em modo `subscription`, ambiente teste, referência de conta/plano e retorno de identificadores externos necessários para fase posterior de persistência.
 * Resultado esperado: plano pago gera referência externa para posterior persistência do entitlement, sem acoplar o app ao SDK, API, nomenclatura ou eventos internos do provedor.
+* Contrato futuro de webhook normalizado: evento externo validado deve ser convertido para contrato interno com provedor, tipo de confirmação, `account_id`, `plan_key`, assinatura/checkout/invoice/evento externo, status comercial normalizado, vigência, `idempotency_key` e metadados operacionais mínimos sem payload bruto sensível.
 * Referência operacional do plugin: manter qualquer orientação operacional específica de plugin apenas em `docs/gestor-codex.md`; este plano-base deve registrar somente o recorte estratégico/técnico da fase.
-* Limite: não criar múltiplos provedores, roteamento multi-provider, Billing Engine completo ou abstração prematura além do boundary neutro necessário.
-* Limite de acoplamento: não espalhar SDK/API do provedor por páginas, actions, Account Dashboard, domínio de entitlement ou outros módulos fora do adapter.
-* Pendências obrigatórias antes de qualquer implementação: fechar contrato interno plano/assinatura; definir mapeamento Stripe Product/Price → `plan_key`; decidir tratamento do `PlanId` legado; desenhar fluxo de checkout em ambiente teste; definir contrato de webhook normalizado → `account_commercial_entitlements`.
+* Limite: não criar código, schema, migration, webhook, rota, action, admin, Billing Engine, multi-provider engine, múltiplos provedores, roteamento multi-provider ou abstração prematura além do boundary neutro desenhado.
+* Limite de acoplamento: não espalhar SDK/API do provedor por páginas, actions, Account Dashboard, domínio de entitlement ou outros módulos fora do adapter futuro.
+* Pendências obrigatórias antes de qualquer implementação: resolver ou aposentar o `PlanId` legado; fechar contrato interno plano/assinatura/checkout; definir mapeamento Stripe Product/Price → `plan_key`; desenhar fluxo de checkout em ambiente teste; definir contrato de webhook normalizado → `account_commercial_entitlements`.
 
 3.8 Fase 7 — Webhook e persistência do entitlement
 
