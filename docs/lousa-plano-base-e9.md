@@ -406,6 +406,41 @@ Governança da Fase 4:
 * Bloqueio de placeholders Stripe: os placeholders atuais de Stripe Price ID em `lib/access/plan.ts` estão proibidos para o novo checkout; a Fase 6 deve produzir mapeamento real Stripe Product/Price → `plan_key` antes de criar sessão de checkout.
 * Limite: não criar código, schema, migration, rota, action, checkout, webhook, admin, Billing Engine, multi-provider engine ou alteração fora desta lousa.
 
+3.7.2 Resultado da Fase 6 — boundary mínimo de billing checkout
+
+Arquivos consultados:
+
+* `AGENTS.md`
+* `docs/prompt-executor.md`
+* `docs/lousa-plano-base-e9.md`
+* `docs/base-tecnica.md`
+* `lib/access/plan.ts`
+* `app/a/[account]/_content/commercial-page/generic-v1.ts`
+* `package.json`
+
+Entregas:
+
+* Boundary criado: `lib/billing-checkout/`.
+* Contrato canônico criado com `plan_key` oficial `starter`, `lite`, `pro` e `ultra`.
+* Provider inicial limitado a `stripe`.
+* Modo canônico limitado a `subscription`.
+* Recorrências aprovadas no contrato: `monthly` e `annual`.
+* Saída normalizada com `provider`, `mode`, `plan_key`, `recurrence`, `checkoutSessionId`, `checkoutUrl` e referências externas.
+* Adapter inicial `normalizeStripeCheckoutDraft` criado apenas para normalização de contrato, sem criar sessão real de checkout.
+
+Decisões técnicas:
+
+* O novo boundary não usa `PlanId` legado como contrato de negócio.
+* O novo boundary não usa `free`/`light`/`pro`/`ultra` como fonte canônica; `light` só é aceito como compatibilidade de entrada e normalizado para `lite`; `free` retorna plano inválido.
+* O novo boundary não reutiliza `PLAN_PRICE_MAP`, `mapPlanIdToStripePrice` nem placeholders de Stripe Price ID de `lib/access/plan.ts`.
+* Não houve instalação ou import de SDK Stripe.
+* Não houve rota, action, webhook, schema, migration, admin, Billing Engine, multi-provider engine ou persistência em `account_commercial_entitlements`.
+
+Riscos e lacunas:
+
+* Ainda falta mapear Stripe Product/Price reais para `plan_key` oficial antes de criar checkout real.
+* Ainda falta definir o fluxo operacional de criação de sessão e o contrato normalizado de webhook em fases futuras.
+
 3.8 Fase 7 — Webhook e persistência do entitlement
 
 * Objetivo: persistir ou atualizar `account_commercial_entitlements` após confirmação comercial.
