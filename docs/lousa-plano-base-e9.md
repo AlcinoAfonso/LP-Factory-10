@@ -379,14 +379,20 @@ Governança da Fase 4:
 
 3.7 Fase 6 — Provedor de checkout mínimo
 
-* Objetivo: escolher e integrar o primeiro provedor de checkout para confirmação comercial mínima.
-* Resultado esperado: plano pago gera referência externa para posterior persistência do entitlement.
-* Limite: não criar múltiplos provedores nem Billing Engine completo.
+* Objetivo: escolher 1 provedor inicial de checkout para confirmação comercial mínima.
+* Boundary obrigatório: implementar a integração dentro de `lib/billing-checkout/`, com contrato neutro para o app e adapter mínimo/substituível do provedor escolhido.
+* Resultado esperado: plano pago gera referência externa para posterior persistência do entitlement, sem acoplar o app ao SDK, API, nomenclatura ou eventos internos do provedor.
+* Limite: não criar múltiplos provedores, roteamento multi-provider, Billing Engine completo ou abstração prematura além do boundary neutro necessário.
+* Limite de acoplamento: não espalhar SDK/API do provedor por páginas, actions, Account Dashboard, domínio de entitlement ou outros módulos fora do adapter.
 
 3.8 Fase 7 — Webhook e persistência do entitlement
 
 * Objetivo: persistir ou atualizar `account_commercial_entitlements` após confirmação comercial.
-* Resultado esperado: webhook idempotente registra entitlement ativo, origem comercial, vigência e referência externa.
+* Boundary obrigatório: webhook deve normalizar o evento externo para um contrato interno antes de executar regra de persistência do entitlement.
+* Resultado esperado: webhook idempotente registra entitlement ativo, origem comercial, vigência e referência externa, preenchendo `external_provider`, `external_reference` e `idempotency_key`.
+* Persistência: atualizar `account_commercial_entitlements` a partir do contrato interno normalizado, sem tratar o payload/evento bruto do provedor como regra de produto.
+* Segurança: não salvar payload bruto sensível, dados de cartão, secrets, PII desnecessária ou campos do provedor que não sejam necessários para auditoria operacional mínima.
+* Limite de acoplamento: eventos, status e nomenclaturas do provedor não devem virar regra canônica do produto; o produto consome o contrato interno e a tabela de entitlement.
 * Observação: esta fase aciona Gestor de Automação, porque webhook é automação operacional.
 
 4. Escopo negativo e critérios de parada
