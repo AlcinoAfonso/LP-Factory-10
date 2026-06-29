@@ -395,6 +395,17 @@ Governança da Fase 4:
 * Limite de acoplamento: não espalhar SDK/API do provedor por páginas, actions, Account Dashboard, domínio de entitlement ou outros módulos fora do adapter futuro.
 * Pendências obrigatórias antes de qualquer implementação: resolver ou aposentar o `PlanId` legado; fechar contrato interno plano/assinatura/checkout; definir mapeamento Stripe Product/Price → `plan_key`; desenhar fluxo de checkout em ambiente teste; definir contrato de webhook normalizado → `account_commercial_entitlements`.
 
+3.7.1 Fase 6.1 — Contrato interno de planos e PlanId legado
+
+* Status: recorte obrigatório de decisão e contrato, sem implementação técnica.
+* Objetivo: destravar a Fase 6 antes de qualquer checkout, resolvendo a divergência entre o `PlanId` legado e o contrato oficial de planos.
+* Decisão pendente: definir o destino do `PlanId` legado `free`/`light`/`pro`/`ultra`, escolhendo entre aposentadoria, camada temporária de compatibilidade ou mapeamento explícito antes de qualquer uso em checkout.
+* Contrato oficial: confirmar `plan_key` como `starter`, `lite`, `pro` e `ultra` para persistência, entitlement, checkout e consumo interno.
+* Regra de segurança comercial: `free` não vira plano pago Stripe, Product, Price, assinatura ou entitlement comercial pago sem decisão explícita registrada em fase própria.
+* Normalização obrigatória: alinhar a divergência `light` vs `lite`; `light` não deve escapar para contrato novo, Product/Price, entitlement ou UI operacional sem mapeamento deliberado.
+* Preparação Stripe: produzir o mapeamento Stripe Product/Price → `plan_key` antes da criação de sessão de checkout, preservando o provedor como detalhe externo e mantendo `plan_key` como chave canônica interna.
+* Limite: não criar código, schema, migration, rota, action, checkout, webhook, admin, Billing Engine, multi-provider engine ou alteração fora desta lousa.
+
 3.8 Fase 7 — Webhook e persistência do entitlement
 
 * Objetivo: persistir ou atualizar `account_commercial_entitlements` após confirmação comercial.
