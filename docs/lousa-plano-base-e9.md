@@ -380,10 +380,16 @@ Governança da Fase 4:
 3.7 Fase 6 — Provedor de checkout mínimo
 
 * Objetivo: escolher 1 provedor inicial de checkout para confirmação comercial mínima.
+* Provedor inicial recomendado: Stripe, usando Stripe Checkout em modo `subscription`, no ambiente de teste, com recorrência mensal/anual conforme contrato comercial aprovado.
+* Reserva operacional: Asaas fica como provedor reserva para avaliação posterior, sem implementação no recorte inicial.
+* Adiado: Mercado Pago fica explicitamente adiado, sem adapter, SDK, webhook, configuração ou dependência nesta fase.
 * Boundary obrigatório: implementar a integração dentro de `lib/billing-checkout/`, com contrato neutro para o app e adapter mínimo/substituível do provedor escolhido.
+* Recorte técnico do checkout: criação de sessão do Stripe Checkout em modo `subscription`, ambiente teste, referência de conta/plano e retorno de identificadores externos necessários para fase posterior de persistência.
 * Resultado esperado: plano pago gera referência externa para posterior persistência do entitlement, sem acoplar o app ao SDK, API, nomenclatura ou eventos internos do provedor.
+* Referência operacional do plugin: manter qualquer orientação operacional específica de plugin apenas em `docs/gestor-codex.md`; este plano-base deve registrar somente o recorte estratégico/técnico da fase.
 * Limite: não criar múltiplos provedores, roteamento multi-provider, Billing Engine completo ou abstração prematura além do boundary neutro necessário.
 * Limite de acoplamento: não espalhar SDK/API do provedor por páginas, actions, Account Dashboard, domínio de entitlement ou outros módulos fora do adapter.
+* Pendências obrigatórias antes de qualquer implementação: fechar contrato interno plano/assinatura; definir mapeamento Stripe Product/Price → `plan_key`; decidir tratamento do `PlanId` legado; desenhar fluxo de checkout em ambiente teste; definir contrato de webhook normalizado → `account_commercial_entitlements`.
 
 3.8 Fase 7 — Webhook e persistência do entitlement
 
