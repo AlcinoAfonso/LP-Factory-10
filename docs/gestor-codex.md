@@ -61,7 +61,7 @@ Plugins aproximam serviços externos das tarefas de investigação e execução.
 
 **Aptidão:** apoio consultivo/read-only para boas práticas de billing, trial e entitlements da futura E9.
 **Estado:** em teste.
-**Conta Stripe:** LP Factory; e-mail da conta: `[INFORMAR_EMAIL_DA_CONTA_STRIPE]`.
+**Conta Stripe:** LP Factory; e-mail não informado neste ajuste.
 **Ambiente:** modo teste / área restrita.
 **Chave restrita criada:** `codex-test-lpfactory`; tipo agente; permissões selecionadas somente leitura.
 **Recursos com leitura selecionada:** Customers, Products, Prices, Subscriptions, Invoices e Checkout Sessions.
