@@ -301,10 +301,11 @@
 9. E9 — Billing, trial e entitlements
 
 9.1 Status
-• Em execução faseada — Fase 3 concluída em 28/06/2026.
+• Em execução faseada — Fase 4 concluída em 28/06/2026.
 • Schema mínimo de entitlement comercial versionado.
+• Consumo server-side mínimo da elegibilidade comercial disponível.
 • Sem Billing Engine completo implementado nesta fase.
-• Próxima execução recomendada: E9 Fase 4 — consumo server-side da elegibilidade comercial no Account Dashboard.
+• Próxima execução recomendada: E9 Fase 5 — Gate produtivo de criação de LP.
 
 9.2 Objetivo atual
 • Separar condição comercial da conta do lifecycle operacional da conta.
@@ -347,24 +348,26 @@
 • O legado `PlanId = "free" | "light" | "pro" | "ultra"` deve ser revisado ou aposentado antes do checkout.
 
 9.3.6 Modelo mínimo de entitlement comercial
-• Status: Fase 3 concluída em 28/06/2026.
+• Status: Fase 4 concluída em 28/06/2026.
 • Entitlement comercial é domínio próprio e não extensão de `lib/access`, `public.plans` ou `lib/access/plan.ts`.
-• Fonte de verdade criada: `public.account_commercial_entitlements`.
-• Leitura efetiva criada: `public.v_account_commercial_entitlement_effective`.
-• Elegibilidade comercial efetiva exige entitlement `ativo`, vigência válida, ausência de cancelamento e plano canônico.
-• Account Dashboard permanece fora desta fase; consumo runtime fica para fase posterior.
-• Checkout, webhook, provedor, admin, trial operacional, liberação manual operacional e Billing Engine completo permanecem fora do recorte.
+• Fonte de verdade: `public.account_commercial_entitlements`.
+• Leitura efetiva: `public.v_account_commercial_entitlement_effective`.
+• Boundary server-side criado: `lib/commercial-entitlements/`.
+• Contrato mínimo criado: `CommercialEntitlementSignal`.
+• Adapter criado: `getCommercialEntitlementSignal({ accountId })`.
+• Fallback fail-closed: `accountId` vazio, erro, exceção ou ausência de linha retornam não elegível.
+• Account Dashboard carrega o sinal server-side, mas ainda não aplica bloqueio produtivo.
+• Checkout, webhook, provedor, admin, trial operacional, liberação manual operacional, LP Builder e Billing Engine completo permanecem fora do recorte.
 
 9.3.7 Updates avaliados
-• `supa#5`, `supa#36`, `supa#40`, `supa#58` e `prod#13`.
+• `supa#5`, `supa#36`, `supa#40`, `supa#58`.
 
 9.4 Pendências vigentes
-• Aplicar a migration a partir da `main`, se isso não for automático no ambiente.
-• Implementar E9 Fase 4 — consumo server-side da elegibilidade comercial no Account Dashboard.
-• Usar `public.v_account_commercial_entitlement_effective` no consumo futuro.
+• Implementar E9 Fase 5 — Gate produtivo de criação de LP.
+• Aplicar server-side a regra: conta `active` + membership ativo + entitlement comercial válido.
+• Decidir onde o gate produtivo bloqueia criação de LP sem entitlement válido.
 • Revisar ou aposentar o legado `PlanId = "free" | "light" | "pro" | "ultra"` antes de qualquer checkout.
-• Decidir em fase própria como papéis afetam criação, edição e publicação de LPs.
-• Definir provider/checkout e webhook apenas depois do consumo server-side validado.
+• Definir provider/checkout e webhook apenas depois do gate produtivo validado.
 
 9.5 Estruturas e artefatos
 
@@ -375,13 +378,17 @@ Banco — Criados
 Repositório — Criados
 • `supabase/migrations/20260628184945_e9_commercial_entitlements.sql`
 • `supabase/snippets/e9_phase_3_entitlements_verify.sql`
+• `lib/commercial-entitlements/contracts.ts`
+• `lib/commercial-entitlements/adapters/commercialEntitlementAdapter.ts`
+• `lib/commercial-entitlements/index.ts`
 
 Repositório — Ajustados
+• `app/a/[account]/page.tsx`
 • `docs/schema.md`
 • `docs/lousa-plano-base-e9.md`
 
-9.6 Fora do escopo da Fase 3
-• Consumo pelo Account Dashboard.
+9.6 Fora do escopo da Fase 4
+• Bloqueio produtivo de criação de LP.
 • Checkout.
 • Webhook.
 • Provedor de pagamento.
@@ -390,7 +397,7 @@ Repositório — Ajustados
 • Liberação manual operacional.
 • Billing Engine completo.
 • Alteração de layout, copy ou cards da E10.7.
-• Logs, eventos, job ou monitoramento de runtime.
+• Logs sensíveis, eventos, job, rotina, monitoramento ou automação.
 
 10. E10 — Account Dashboard (UX)
 
