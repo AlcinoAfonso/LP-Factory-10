@@ -26,14 +26,13 @@ Regra:
 
 4. Plano-base mínimo ou ajuste da fase + handoff Codex
    Criar em uma única entrega:
-   • plano-base novo no template mínimo de 4 seções:
-
-   1. Estado e decisões fixas
-   2. Contrato do caso
-   3. Fases e próxima ação
-   4. Escopo negativo e critérios de parada
-      • ou ajuste apenas da fase alvo, se o plano-base já existir;
-      • briefing Codex para criar/atualizar o arquivo no path definido no item 3.
+   • plano-base novo no template mínimo de 4 seções, nesta ordem:
+     1. Estado e decisões fixas
+     2. Contrato do caso
+     3. Fases e próxima ação
+     4. Escopo negativo e critérios de parada
+   • ou ajuste apenas da fase alvo, se o plano-base já existir;
+   • briefing Codex para criar/atualizar o arquivo no path definido no item 3.
 
 Regra:
 • não alterar, expandir, renomear ou substituir o template mínimo do plano-base;
