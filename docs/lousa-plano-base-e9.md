@@ -397,13 +397,13 @@ Governança da Fase 4:
 
 3.7.1 Fase 6.1 — Contrato interno de planos e PlanId legado
 
-* Status: recorte obrigatório de decisão e contrato, sem implementação técnica.
+* Status: decisão fechada como contrato interno de planos, sem implementação técnica.
 * Objetivo: destravar a Fase 6 antes de qualquer checkout, resolvendo a divergência entre o `PlanId` legado e o contrato oficial de planos.
-* Decisão pendente: definir o destino do `PlanId` legado `free`/`light`/`pro`/`ultra`, escolhendo entre aposentadoria, camada temporária de compatibilidade ou mapeamento explícito antes de qualquer uso em checkout.
-* Contrato oficial: confirmar `plan_key` como `starter`, `lite`, `pro` e `ultra` para persistência, entitlement, checkout e consumo interno.
-* Regra de segurança comercial: `free` não vira plano pago Stripe, Product, Price, assinatura ou entitlement comercial pago sem decisão explícita registrada em fase própria.
-* Normalização obrigatória: alinhar a divergência `light` vs `lite`; `light` não deve escapar para contrato novo, Product/Price, entitlement ou UI operacional sem mapeamento deliberado.
-* Preparação Stripe: produzir o mapeamento Stripe Product/Price → `plan_key` antes da criação de sessão de checkout, preservando o provedor como detalhe externo e mantendo `plan_key` como chave canônica interna.
+* Decisão fechada: o `plan_key` oficial é `starter`, `lite`, `pro` e `ultra` para persistência, entitlement, checkout e consumo interno.
+* Aposentadoria do legado: o `PlanId` legado `free`/`light`/`pro`/`ultra` fica aposentado como contrato de negócio e não deve ser usado como fonte canônica para checkout novo, assinatura, entitlement ou UI operacional.
+* Regra para gratuidade: `free` fica fora de checkout pago, Stripe Product/Price, subscription e entitlement `plano_pago_confirmado`; a gratuidade deve ser tratada por trial, não por plano pago gratuito.
+* Regra para `light`: `light` só pode existir como valor legado traduzido para `lite`; ele não deve escapar para contrato novo, Stripe Product/Price, entitlement, checkout ou UI operacional.
+* Bloqueio de placeholders Stripe: os placeholders atuais de Stripe Price ID em `lib/access/plan.ts` estão proibidos para o novo checkout; a Fase 6 deve produzir mapeamento real Stripe Product/Price → `plan_key` antes de criar sessão de checkout.
 * Limite: não criar código, schema, migration, rota, action, checkout, webhook, admin, Billing Engine, multi-provider engine ou alteração fora desta lousa.
 
 3.8 Fase 7 — Webhook e persistência do entitlement
