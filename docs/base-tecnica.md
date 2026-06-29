@@ -260,6 +260,15 @@
 • Enums: proibido fallback silencioso.
 • Gate adapters: pode retornar null, mas logs devem diferenciar deny vs error.
 
+Commercial entitlements
+• Path canônico: `lib/commercial-entitlements/`.
+• Uso: domínio server-side para leitura do sinal de elegibilidade comercial da conta.
+• Contrato público mínimo: `CommercialEntitlementSignal`.
+• Adapter inicial: `getCommercialEntitlementSignal({ accountId })`.
+• Fonte de leitura: `public.v_account_commercial_entitlement_effective`.
+• Regra de segurança: fail-closed; erro, exceção, `accountId` vazio ou ausência de linha retornam não elegível.
+• Limite: UI/client não acessa Supabase para entitlement comercial; consumo deve passar pelo boundary server-side.
+
 3.14.1 Matching de taxonomia via adapter server-side
 • Provider/API do resolvedor IA: OpenAI Responses API com Structured Outputs, sempre server-side.
 • Configuração operacional do modelo IA, envs e redeploy: ver `docs/platform-config.md`.
