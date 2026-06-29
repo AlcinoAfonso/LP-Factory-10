@@ -57,6 +57,18 @@ Plugins aproximam serviços externos das tarefas de investigação e execução.
 **Valor:** acelera diagnóstico de deploys, previews, build logs, runtime, endpoints e configurações Vercel.
 **Limite:** escrita, deploy manual, variáveis de ambiente, domínios, settings e ações em produção não testados nem aprovados.
 
+### Stripe Plugin
+
+**Aptidão:** apoio consultivo/read-only para boas práticas de billing, trial e entitlements da futura E9.
+**Estado:** em teste.
+**Conta Stripe:** LP Factory; e-mail não informado neste ajuste.
+**Ambiente:** modo teste / área restrita.
+**Chave restrita criada:** `codex-test-lpfactory`; tipo agente; permissões selecionadas somente leitura.
+**Recursos com leitura selecionada:** Customers, Products, Prices, Subscriptions, Invoices e Checkout Sessions.
+**Valor:** agregou valor como consultor de boas práticas para E9; a avaliação conceitual confirmou que billing/assinatura devem ficar fora de `accounts.status`; Stripe deve alimentar/confirmar o entitlement, mas a decisão local deve continuar server-side e fail-closed; checkout de assinatura deve usar Stripe Billing/Checkout Session em modo `subscription`; webhooks, assinatura do evento e idempotência são obrigatórios antes de liberar entitlement.
+**Limite:** uso aprovado por enquanto somente consultivo/read-only; escrita/gravação não aprovada; produção não ativada; conta de produção não criada/ativada nesta etapa; não usar para criar, alterar ou excluir dados; não usar em produção; não registrar chaves Stripe no repositório; não depender do plugin como bloqueador da E9; se o plugin pedir permissões adicionais, registrar a necessidade antes de ampliar o acesso.
+**Pendência:** leitura operacional da conta Stripe ainda não validada no Codex App local; a leitura/listagem operacional de dados Stripe não funcionou na sessão testada, pois nenhuma ferramenta MCP de listagem foi exposta ao Codex App local.
+
 **Disponíveis não adotados:** Slack.
 
 ## 5. Skills
