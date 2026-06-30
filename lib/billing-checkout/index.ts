@@ -19,10 +19,14 @@ export type {
   StripePriceLookupResult,
   StripePriceMapConfig,
   StripePriceMapEntry,
+  StripePlanPriceResolution,
+  StripePlanPriceResolutionInput,
+  StripePlanPriceResolutionResult,
 } from "./adapters/stripePriceMap";
 export {
   STRIPE_TEST_PRICE_ENV_KEYS,
   buildStripeTestPriceMapFromEnv,
+  resolveStripeTestPlanPrice,
   resolveStripeTestPriceMapping,
 } from "./adapters/stripePriceMap";
 export { normalizeStripeCheckoutDraft } from "./adapters/stripeCheckoutAdapter";

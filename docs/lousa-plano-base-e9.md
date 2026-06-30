@@ -476,6 +476,39 @@ Riscos e lacunas:
 * Os IDs reais de teste ainda precisam ser configurados fora do código usando os nomes de env definidos.
 * O fluxo que consumirá esse mapeamento para criar sessão real continua para fase futura.
 
+3.7.4 Resultado da Fase 6.3 — resolução interna de Product/Price Stripe
+
+Arquivos consultados:
+
+* `AGENTS.md`
+* `docs/prompt-executor.md`
+* `docs/lousa-plano-base-e9.md`
+* `lib/billing-checkout/contracts.ts`
+* `lib/billing-checkout/adapters/stripePriceMap.ts`
+* `lib/billing-checkout/index.ts`
+
+Entregas:
+
+* Função `resolveStripeTestPlanPrice` criada em `lib/billing-checkout/adapters/stripePriceMap.ts`.
+* Resolução interna por `plan_key + recurrence` para Stripe em ambiente teste.
+* Reuso de `STRIPE_TEST_PRICE_ENV_KEYS` e `buildStripeTestPriceMapFromEnv`.
+* Retorno normalizado com `provider`, `environment`, `plan_key`, `recurrence`, `providerProductId` e `providerPriceId`.
+* Export do contrato e da função pelo `lib/billing-checkout/index.ts`.
+
+Validação fail-closed:
+
+* `missing_env` quando o ambiente/configuração não é fornecido.
+* `invalid_plan_key` para plano inválido, incluindo `free` e `light`.
+* `invalid_recurrence` para recorrência inválida.
+* `missing_product_id` quando faltar Product ID.
+* `missing_price_id` quando faltar Price ID.
+* `mapping_incomplete` quando a configuração não montar um mapeamento completo coerente.
+
+Decisões técnicas:
+
+* A Fase 6.3 não usa `lib/access/plan.ts`, `PLAN_PRICE_MAP`, `mapPlanIdToStripePrice` ou placeholders legados.
+* A Fase 6.3 não criou Checkout Session real, webhook, schema, migration, rota, action, admin, Billing Engine, multi-provider engine, SDK Stripe ou persistência em `account_commercial_entitlements`.
+
 3.8 Fase 7 — Webhook e persistência do entitlement
 
 * Objetivo: persistir ou atualizar `account_commercial_entitlements` após confirmação comercial.
