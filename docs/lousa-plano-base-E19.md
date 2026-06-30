@@ -78,7 +78,7 @@ E19 — LP Builder MVP
   * Pendência: executar validação Supabase linked/dry-run em ambiente vinculado antes do merge/aplicação.
 * Avaliações necessárias:
 
-  * Analista: avaliar Fase 2 após registro.
+  * Analista: avaliar Fase 3 / PR 499.
   * Gestor Estrutural: já avaliou a proposta prévia; retorna se houver mudança estrutural.
   * Gestor de Updates: avaliar Fase 2 após registro.
   * Gestor de Automação: N/A.
