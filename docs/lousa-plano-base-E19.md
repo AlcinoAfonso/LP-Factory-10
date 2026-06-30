@@ -57,12 +57,28 @@ E19 — LP Builder MVP
   * Próxima ação: instruir o Executor para implementar a Fase 3 — Implementação do primeiro recorte.
 * Fase 3 — Implementação do primeiro recorte
 
-  * Status: próxima.
+  * Status: implementada em PR; depende validação humana de Supabase linked/dry-run no ambiente vinculado.
   * Objetivo: implementar criação produtiva mínima de LP por conta.
   * Condição de entrada: Fase 2 consolidada e instrução ao Executor emitida.
+  * Arquivos criados:
+    * `supabase/migrations/20260630210213_e19_account_landing_pages.sql`
+    * `supabase/snippets/e19_account_landing_pages_verify.sql`
+    * `lib/lp-builder/contracts.ts`
+    * `lib/lp-builder/adapters/landingPagesAdapter.ts`
+    * `lib/lp-builder/index.ts`
+    * `app/lp-builder/actions.ts`
+  * Recorte implementado: tabela mínima `public.account_landing_pages`, RLS, grants explícitos, snippet read-only, boundary E19, action server-side canônica fora de `app/a/[account]` e gate E9 antes da persistência via `lib/commercial-entitlements/`.
+  * Ajuste PR 499: removido INSERT direto de `authenticated`; criação restrita ao fluxo server-side; insert executado com `service_role` após gate E9; bypass de `platform_admin` removido da criação, exigindo membership ativa owner/admin também neste recorte.
+  * Validação do ajuste PR 499: `npm ci` e `npm run check` reexecutados; Supabase linked/dry-run permanece pendente por ausência de project ref na worktree.
+  * Validações executadas:
+    * `npm ci`: executado.
+    * `npm run check`: executado com sucesso; lint sem erros e typecheck concluído.
+    * `supabase migration list --linked`: não executado com sucesso; bloqueado por worktree sem project ref.
+    * `supabase db push --linked --dry-run`: não executado com sucesso; bloqueado por worktree sem project ref.
+  * Pendência: executar validação Supabase linked/dry-run em ambiente vinculado antes do merge/aplicação.
 * Avaliações necessárias:
 
-  * Analista: avaliar Fase 2 após registro.
+  * Analista: avaliar Fase 3 / PR 499.
   * Gestor Estrutural: já avaliou a proposta prévia; retorna se houver mudança estrutural.
   * Gestor de Updates: avaliar Fase 2 após registro.
   * Gestor de Automação: N/A.
