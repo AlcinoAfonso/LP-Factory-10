@@ -640,6 +640,7 @@ docs/lousa-plano-base-e9.md
 
 * Status: recorte de decisão técnica, sem implementação.
 * Objetivo: definir contrato normalizado do webhook Stripe antes de persistir entitlement.
+* Automação: sim.
 * Evento de ativação recomendado: `invoice.paid`, validado com assinatura Stripe, assinatura `active`, metadata coerente e Product/Price compatíveis com `plan_key`.
 * Evento auxiliar: `checkout.session.completed`, sem liberar entitlement.
 * Eventos futuros/controlados: `customer.subscription.deleted` e `invoice.payment_failed`.
@@ -648,8 +649,7 @@ docs/lousa-plano-base-e9.md
 * Limite: redirect de sucesso não confirma pagamento nem libera entitlement.
 * Limite: não criar webhook real, schema, migration, Billing Engine, multi-provider, admin ou liberação por redirect nesta fase.
 * Segurança: não salvar payload bruto, cartão, secret, e-mail como idempotência ou PII desnecessária.
-* Avaliação obrigatória antes do Executor: Analista, Gestor Estrutural, Gestor de Segurança e Gestor de Automação.
-* Avaliação condicional: Gestor de Updates para validar documentação Stripe atual, se houver dúvida técnica sobre eventos ou webhook.
+* Avaliação antes do Executor: Gestor Estrutural, Gestor de Updates e Gestor de Automação.
 * Próximo passo: especialistas avaliam se a implementação da Fase 7.2 precisa de migration, tabela de eventos webhook ou pode usar apenas `account_commercial_entitlements`.
 
 4. Escopo negativo e critérios de parada
