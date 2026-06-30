@@ -59,15 +59,18 @@ Plugins aproximam serviços externos das tarefas de investigação e execução.
 
 ### Stripe Plugin
 
-**Aptidão:** apoio consultivo/read-only para boas práticas de billing, trial e entitlements da futura E9.
-**Estado:** em teste.
+**Aptidão:** apoio consultivo e operacional em modo teste para boas práticas de billing, trial e entitlements da futura E9.
+**Estado:** em teste; MCP autorizado na área restrita.
 **Conta Stripe:** LP Factory; e-mail não informado neste ajuste.
-**Ambiente:** modo teste / área restrita.
-**Chave restrita criada:** `codex-test-lpfactory`; tipo agente; permissões selecionadas somente leitura.
-**Recursos com leitura selecionada:** Customers, Products, Prices, Subscriptions, Invoices e Checkout Sessions.
-**Valor:** agregou valor como consultor de boas práticas para E9; a avaliação conceitual confirmou que billing/assinatura devem ficar fora de `accounts.status`; Stripe deve alimentar/confirmar o entitlement, mas a decisão local deve continuar server-side e fail-closed; checkout de assinatura deve usar Stripe Billing/Checkout Session em modo `subscription`; webhooks, assinatura do evento e idempotência são obrigatórios antes de liberar entitlement.
-**Limite:** uso aprovado por enquanto somente consultivo/read-only; escrita/gravação não aprovada; produção não ativada; conta de produção não criada/ativada nesta etapa; não usar para criar, alterar ou excluir dados; não usar em produção; não registrar chaves Stripe no repositório; não depender do plugin como bloqueador da E9; se o plugin pedir permissões adicionais, registrar a necessidade antes de ampliar o acesso.
-**Pendência:** leitura operacional da conta Stripe ainda não validada no Codex App local; a leitura/listagem operacional de dados Stripe não funcionou na sessão testada, pois nenhuma ferramenta MCP de listagem foi exposta ao Codex App local.
+**Ambiente:** modo teste / área restrita; produção não ativada.
+**Configuração:** após refresh/reinstalação, a sessão passou a expor `_stripe_api_search`, `_stripe_api_details`, `_stripe_api_write`, `_get_stripe_account_info` e `_search_stripe_documentation`.
+**Operações confirmadas:** `GetProducts`, `GetPrices`, `PostProducts` e `PostPrices` disponíveis para listar/criar Products e Prices.
+**Permissões de escrita aprovadas em teste:** Customers, Products, Prices, Subscriptions e Payment Links.
+**Permissões de leitura aprovadas:** Accounts, Balance, Charges and Refunds, Invoices, Personally Identifiable Information, Payment Intents, Payment Method Configurations e Payout Settings.
+**Sem autorização:** produção, Branding Settings, Coupons, Payment Disputes, Promotion Codes, refunds, payouts, impostos, contas bancárias, transferências e webhooks.
+**Valor:** o plugin deve simplificar a E9 usando recursos nativos do Stripe para Products, Prices, Customers, Subscriptions e Payment Links, evitando implementação manual paralela de billing quando o Stripe já resolve o fluxo comercial.
+**Limite:** qualquer escrita exige autorização humana explícita por ação; não registrar chaves Stripe no repositório; não usar produção; não criar, alterar ou excluir objetos fora do escopo aprovado da E9.
+**Pendência:** antes de criar a matriz Product/Price, confirmar no próprio Codex/Stripe que a operação está em modo teste e aprovar os valores dos 8 Prices.
 
 **Disponíveis não adotados:** Slack.
 
