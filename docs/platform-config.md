@@ -19,6 +19,7 @@
 • Supabase: backend, Auth, Storage, Redirect URLs, SMTP Auth e infraestrutura.
 • Resend: envio transacional via SMTP.
 • OpenAI Platform: Projects, Service Accounts, API e modelo do resolvedor IA.
+• Stripe: provedor inicial de checkout em modo teste para assinatura.
 • Registro.com: domínio e DNS.
 • Zoho Mail: e-mail humano/corporativo quando aplicável.
 
@@ -279,9 +280,61 @@
 • Regra: não tratar como camada final robusta de orquestração.
 • Dependência: MCP Supabase Inspect em `https://lpf-10-services.vercel.app/api/mcp`.
 
-7. Domínios e DNS
+7. Stripe
 
-7.1 Domínios conhecidos
+7.1 Uso
+• Finalidade: provedor inicial de checkout do E9.
+• Ambiente atual validado: teste.
+• Modo: `subscription`.
+• O app cria Checkout Session server-side.
+• Stripe Dashboard/Plugin pode apoiar criação, validação e consulta de Product/Price e Checkout Sessions.
+• Stripe Plugin não substitui o fluxo server-side do LP Factory.
+• Webhook e persistência de entitlement ficam para fase própria.
+
+7.2 Endpoint usado pelo app
+• Checkout Sessions API: `https://api.stripe.com/v1/checkout/sessions`
+• Regra: chamada somente server-side.
+• Regra: não expor secret Stripe no client.
+
+7.3 Vercel — secrets e variáveis Stripe
+• `STRIPE_SECRET_KEY`
+• Finalidade: secret server-side Stripe para criar Checkout Sessions.
+• Plataforma: Vercel.
+• Escopo conhecido: Production validado; Preview quando necessário para testes.
+• Valor real: não versionar.
+
+Products/Prices de teste
+• `STRIPE_TEST_STARTER_MONTHLY_PRODUCT_ID`
+• `STRIPE_TEST_STARTER_MONTHLY_PRICE_ID`
+• `STRIPE_TEST_STARTER_ANNUAL_PRODUCT_ID`
+• `STRIPE_TEST_STARTER_ANNUAL_PRICE_ID`
+• `STRIPE_TEST_LITE_MONTHLY_PRODUCT_ID`
+• `STRIPE_TEST_LITE_MONTHLY_PRICE_ID`
+• `STRIPE_TEST_LITE_ANNUAL_PRODUCT_ID`
+• `STRIPE_TEST_LITE_ANNUAL_PRICE_ID`
+• `STRIPE_TEST_PRO_MONTHLY_PRODUCT_ID`
+• `STRIPE_TEST_PRO_MONTHLY_PRICE_ID`
+• `STRIPE_TEST_PRO_ANNUAL_PRODUCT_ID`
+• `STRIPE_TEST_PRO_ANNUAL_PRICE_ID`
+• `STRIPE_TEST_ULTRA_MONTHLY_PRODUCT_ID`
+• `STRIPE_TEST_ULTRA_MONTHLY_PRICE_ID`
+• `STRIPE_TEST_ULTRA_ANNUAL_PRODUCT_ID`
+• `STRIPE_TEST_ULTRA_ANNUAL_PRICE_ID`
+
+Regra:
+• Registrar apenas nomes e finalidade das envs.
+• Nunca versionar Product IDs, Price IDs, secret key, session ID, customer ID ou subscription ID reais.
+• Alteração de env Stripe na Vercel exige redeploy do deployment alvo.
+
+7.4 Redirects de checkout
+• Success URL: gerada server-side a partir do origin da requisição.
+• Cancel URL: gerada server-side a partir do origin da requisição.
+• Redirect de sucesso não confirma pagamento e não libera entitlement.
+• Confirmação de pagamento/assinatura deve ocorrer por webhook em fase própria.
+
+8. Domínios e DNS
+
+8.1 Domínios conhecidos
 • `lpfactory.com.br`
 • Uso: domínio da marca/projeto LP Factory.
 • Status conhecido: registrado e publicado.
@@ -289,60 +342,60 @@
 • `unicodigital.com.br`
 • Uso: domínio relacionado à Unico Digital e e-mail corporativo existente.
 
-7.2 Registro.com
+8.2 Registro.com
 • Uso: registrar e gerenciar DNS/domínios quando aplicável.
 • Regra: alterações DNS devem ser feitas com cuidado, preservando e-mail humano/corporativo e entregabilidade transacional.
 
-7.3 E-mail humano/corporativo
+8.3 E-mail humano/corporativo
 • Provedor conhecido: Zoho Mail para `unicodigital.com.br`.
 • Direção operacional: e-mails humanos da LP Factory devem usar provedor humano/corporativo, como Zoho/M365/Workspace, não Resend.
 • Resend deve permanecer como transacional.
 
-8. Regras operacionais de mudança
+9. Regras operacionais de mudança
 
-8.1 Alteração de env na Vercel
+9.1 Alteração de env na Vercel
 • Alterar variável no ambiente correto: Preview, Production ou ambos.
 • Executar redeploy após alteração.
 • Validar primeiro em Preview quando for alteração de feature ou risco operacional.
 • Só promover para Production após validação mínima.
 
-8.2 Alteração de SMTP/Auth
+9.2 Alteração de SMTP/Auth
 • Validar signup confirm.
 • Validar forgot password.
 • Confirmar que links funcionam.
 • Confirmar que não houve erro de envio.
 • Não expor senha SMTP em prints, logs ou chat.
 
-8.3 Alteração de DNS
+9.3 Alteração de DNS
 • Identificar o registro atual antes de alterar.
 • Avaliar impacto em site, e-mail humano e e-mail transacional.
 • Não substituir SPF/DKIM/DMARC sem mapear dependências.
 • Registrar mudança em relatório operacional quando houver impacto.
 
-8.4 Alteração de GitHub Actions secrets
+9.4 Alteração de GitHub Actions secrets
 • Não registrar valor real.
 • Confirmar qual workflow consome o secret.
 • Confirmar ambiente/escopo.
 • Reexecutar workflow necessário após alteração.
 
-9. Relação com outros documentos
+10. Relação com outros documentos
 
-9.1 Base Técnica
+10.1 Base Técnica
 • `docs/base-tecnica.md` deve manter regras de implementação, runtime, segurança, adapters e observability.
 • Configurações de plataforma devem morar neste documento.
 • Quando a Base Técnica depender de uma configuração, deve referenciar este documento de forma curta.
 
-9.2 Schema
+10.2 Schema
 • `docs/schema.md` permanece como fonte única para objetos de banco, RLS, policies, RPCs, triggers, constraints, grants e permissões de DB.
 
-9.3 Roadmap
+10.3 Roadmap
 • `docs/roadmap.md` permanece como fonte única para estado final dos casos E*, escopo, artefatos, status e pendências.
 
-9.4 Design System
+10.4 Design System
 • `docs/design-system.md` permanece como fonte única para padrões visuais, componentes UI e regras de uso visual.
 
 
-9.5 Automations
+10.5 Automations
 • `docs/automations.md` permanece como fonte para catálogo, uso, status, dependências e aprendizados das automações.
 • Configurações de plataformas, secrets por nome, workflows, ambientes e endpoints usados por automações devem ser registrados neste documento.
 
