@@ -53,7 +53,7 @@ Regra:
 • gestores não avaliam plano-base inteiro.
 
 Mensagem:
-Avalie o plano-base docs/lousa-plano-base-EXX-YY.md segundo suas diretrizes documentadas.
+Avalie o plano-base docs/lousa-plano-base-EXX-YY.md quanto a lacunas, contradições, riscos, escopo e clareza, com base no debate do caso.
 
 6. Avaliação da fase por gestores
    Solicitar avaliação da fase alvo aos gestores necessários.
@@ -151,7 +151,6 @@ Regra:
 12. Conclusão da fase
    Após o relatório final da fase:
 
-• entregar relatório final da fase ao Gestor de Docs;
 • registrar decisão viva e próxima ação no plano-base;
 • decidir se o plano encerrou, se vai para próxima fase ou se precisa ajustar fases/subfases.
 
