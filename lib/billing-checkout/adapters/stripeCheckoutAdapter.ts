@@ -59,6 +59,7 @@ function normalizeExternalReferences(
 ): BillingCheckoutExternalReferences {
   return {
     providerCustomerId: normalizeOptionalString(references.providerCustomerId),
+    providerProductId: normalizeOptionalString(references.providerProductId),
     providerPriceId: normalizeOptionalString(references.providerPriceId),
     providerSubscriptionId: normalizeOptionalString(
       references.providerSubscriptionId,
