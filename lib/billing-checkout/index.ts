@@ -29,4 +29,12 @@ export {
   resolveStripeTestPlanPrice,
   resolveStripeTestPriceMapping,
 } from "./adapters/stripePriceMap";
-export { normalizeStripeCheckoutDraft } from "./adapters/stripeCheckoutAdapter";
+export type {
+  StripeCheckoutSessionCreateContract,
+  StripeCheckoutSessionReadinessInput,
+  StripeCheckoutSessionReadinessResult,
+} from "./adapters/stripeCheckoutAdapter";
+export {
+  normalizeStripeCheckoutDraft,
+  validateStripeCheckoutSessionReadiness,
+} from "./adapters/stripeCheckoutAdapter";

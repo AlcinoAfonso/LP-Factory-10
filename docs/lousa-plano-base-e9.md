@@ -509,6 +509,44 @@ Decisões técnicas:
 * A Fase 6.3 não usa `lib/access/plan.ts`, `PLAN_PRICE_MAP`, `mapPlanIdToStripePrice` ou placeholders legados.
 * A Fase 6.3 não criou Checkout Session real, webhook, schema, migration, rota, action, admin, Billing Engine, multi-provider engine, SDK Stripe ou persistência em `account_commercial_entitlements`.
 
+3.7.5 Resultado da Fase 6.4 — gate de prontidão e contrato de Checkout Session
+
+Arquivos consultados:
+
+* `AGENTS.md`
+* `docs/prompt-executor.md`
+* `docs/lousa-plano-base-e9.md`
+* `lib/billing-checkout/contracts.ts`
+* `lib/billing-checkout/adapters/stripeCheckoutAdapter.ts`
+* `lib/billing-checkout/adapters/stripePriceMap.ts`
+* `lib/billing-checkout/index.ts`
+
+Entregas:
+
+* Contrato `StripeCheckoutSessionCreateContract` criado para futura criação de Checkout Session Stripe em ambiente teste.
+* Gate `validateStripeCheckoutSessionReadiness` criado no adapter Stripe para validar prontidão sem criar sessão real.
+* Entrada do gate restrita a `account_id`, `plan_key`, `recurrence`, `successUrl`, `cancelUrl` e configuração/env.
+* Saída normalizada com `provider = stripe`, `environment = test`, `mode = subscription`, `plan_key`, `recurrence`, `providerProductId`, `providerPriceId`, referência ao env `STRIPE_SECRET_KEY` e referências externas mínimas.
+* Export do contrato e do gate pelo `lib/billing-checkout/index.ts`.
+
+Validação fail-closed:
+
+* `missing_env` quando o ambiente/configuração não é fornecido.
+* `missing_secret_key` quando faltar `STRIPE_SECRET_KEY`.
+* `invalid_secret_key` quando `STRIPE_SECRET_KEY` não for chave de teste `sk_test_`.
+* `missing_account_id` quando faltar conta.
+* `invalid_plan_key` para plano inválido, incluindo `free` e `light`.
+* `invalid_recurrence` para recorrência inválida.
+* `missing_success_url` ou `invalid_success_url` quando a URL de sucesso faltar ou for inválida.
+* `missing_cancel_url` ou `invalid_cancel_url` quando a URL de cancelamento faltar ou for inválida.
+* `missing_product_id`, `missing_price_id` e `mapping_incomplete` herdados da resolução Product/Price da Fase 6.3.
+
+Decisões técnicas:
+
+* A Fase 6.4 reutiliza `resolveStripeTestPlanPrice`, `STRIPE_TEST_PRICE_ENV_KEYS` e `buildStripeTestPriceMapFromEnv` como fonte do mapeamento de teste.
+* A Fase 6.4 não aceita `PlanId` legado, `free`, `light`, `PLAN_PRICE_MAP`, `mapPlanIdToStripePrice` ou placeholders de `lib/access/plan.ts` como contrato novo.
+* A Fase 6.4 não criou Checkout Session real, rota, action, webhook, schema, migration, admin, Billing Engine, multi-provider engine, SDK Stripe ou persistência em `account_commercial_entitlements`.
+
 3.8 Fase 7 — Webhook e persistência do entitlement
 
 * Objetivo: persistir ou atualizar `account_commercial_entitlements` após confirmação comercial.
