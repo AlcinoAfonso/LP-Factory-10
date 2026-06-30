@@ -99,6 +99,23 @@
 • Componentes específicos de rota que dependem de Server Action, estado ou boundary da própria rota devem nascer como route-local em `app/.../_components`; não promover para `components/features` sem boundary compartilhada real.
 • Partner Dashboard não ganha boundary antecipada. LP Builder é seção própria, fora do Account Dashboard.
 
+3.3.3 Billing checkout
+• Path canônico: `lib/billing-checkout/`.
+• Uso: domínio server-side para criação de Checkout Session de provedor externo.
+• Provedor inicial: Stripe.
+• Ambiente inicial: teste.
+• Modo: `subscription`.
+• Contrato de planos pagos: `starter`, `lite`, `pro` e `ultra`.
+• Recorrências permitidas: `monthly` e `annual`.
+• `free`, `light` e `PlanId` legado não são contrato de negócio do checkout novo.
+• Adapter inicial: `createStripeTestCheckoutSession`.
+• Mapeamento Stripe teste: Product/Price por env, sem valores versionados.
+• Integração Stripe: chamada server-side via `fetch`, sem SDK Stripe no MVP.
+• Regra: UI/client não acessa `STRIPE_SECRET_KEY` nem cria sessão diretamente.
+• Regra: redirect de sucesso/cancelamento não confirma pagamento e não libera entitlement.
+• Regra: Stripe não substitui `public.account_commercial_entitlements`.
+• Webhook, assinatura, idempotência e persistência de entitlement pertencem à fase seguinte.
+
 3.4 CI/Lint (Bloqueios)
 • Validação por PR + preview de deploy (Vercel)
 • PATH: .github/workflows/security.yml

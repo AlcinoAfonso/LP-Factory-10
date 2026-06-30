@@ -301,11 +301,13 @@
 9. E9 — Billing, trial e entitlements
 
 9.1 Status
-• Em execução faseada — Fase 4 concluída em 28/06/2026.
+• Em execução faseada — Fase 6 concluída em 30/06/2026.
 • Schema mínimo de entitlement comercial versionado.
 • Consumo server-side mínimo da elegibilidade comercial disponível.
+• Stripe Checkout em teste disponível no app.
+• Assinatura teste criada sem entitlement local automático.
 • Sem Billing Engine completo implementado nesta fase.
-• Próxima execução recomendada: E9 Fase 5 — Gate produtivo de criação de LP.
+• Próxima execução recomendada: E9 Fase 7.1 — contrato do webhook Stripe e persistência de entitlement.
 
 9.2 Objetivo atual
 • Separar condição comercial da conta do lifecycle operacional da conta.
@@ -359,15 +361,34 @@
 • Account Dashboard carrega o sinal server-side, mas ainda não aplica bloqueio produtivo.
 • Checkout, webhook, provedor, admin, trial operacional, liberação manual operacional, LP Builder e Billing Engine completo permanecem fora do recorte.
 
-9.3.7 Updates avaliados
+9.3.7 Provedor de checkout mínimo
+• Status: Fase 6 concluída em 30/06/2026.
+• Provedor inicial: Stripe.
+• Ambiente inicial: teste.
+• Modo de Checkout: `subscription`.
+• Boundary criado: `lib/billing-checkout/`.
+• App cria Checkout Session server-side.
+• Stripe não substitui o entitlement local.
+• Redirect de sucesso não confirma pagamento nem libera entitlement.
+• `free` não vira plano pago.
+• `light` não entra no contrato novo.
+• `PlanId` legado não é contrato de negócio.
+• Webhook, assinatura do webhook, idempotência e persistência em `account_commercial_entitlements` ficam para a Fase 7.
+
+9.3.8 Updates avaliados
 • `supa#5`, `supa#36`, `supa#40`, `supa#58`.
 
 9.4 Pendências vigentes
-• Implementar E9 Fase 5 — Gate produtivo de criação de LP.
-• Aplicar server-side a regra: conta `active` + membership ativo + entitlement comercial válido.
-• Decidir onde o gate produtivo bloqueia criação de LP sem entitlement válido.
-• Revisar ou aposentar o legado `PlanId = "free" | "light" | "pro" | "ultra"` antes de qualquer checkout.
-• Definir provider/checkout e webhook apenas depois do gate produtivo validado.
+• Implementar E9 Fase 7.1 — contrato do webhook Stripe e persistência de entitlement.
+• Definir contrato do webhook Stripe.
+• Validar assinatura do webhook.
+• Definir evento normalizado.
+• Definir idempotência.
+• Mapear status Stripe para status comercial interno.
+• Persistir ou atualizar `public.account_commercial_entitlements`.
+• Garantir que redirect de sucesso continue sem liberar entitlement.
+• Auditar logs detalhados quando a ferramenta permitir.
+• Não persistir payload bruto, cartão, secret ou PII sensível em logs ou banco.
 
 9.5 Estruturas e artefatos
 
@@ -381,23 +402,29 @@ Repositório — Criados
 • `lib/commercial-entitlements/contracts.ts`
 • `lib/commercial-entitlements/adapters/commercialEntitlementAdapter.ts`
 • `lib/commercial-entitlements/index.ts`
+• `lib/billing-checkout/contracts.ts`
+• `lib/billing-checkout/adapters/stripePriceMap.ts`
+• `lib/billing-checkout/adapters/stripeCheckoutAdapter.ts`
+• `lib/billing-checkout/index.ts`
+• `app/a/[account]/_components/commercial-page/checkout-actions.ts`
 
 Repositório — Ajustados
 • `app/a/[account]/page.tsx`
+• `app/a/[account]/_components/commercial-page/GenericCommercialPage.tsx`
 • `docs/schema.md`
 • `docs/lousa-plano-base-e9.md`
 
-9.6 Fora do escopo da Fase 4
-• Bloqueio produtivo de criação de LP.
-• Checkout.
-• Webhook.
-• Provedor de pagamento.
+9.6 Fora do escopo da Fase 6
+• Webhook Stripe.
+• Validação de assinatura do webhook.
+• Persistência de entitlement local.
+• Billing Engine completo.
 • Admin comercial.
 • Trial operacional.
 • Liberação manual operacional.
-• Billing Engine completo.
+• LP Builder.
 • Alteração de layout, copy ou cards da E10.7.
-• Logs sensíveis, eventos, job, rotina, monitoramento ou automação.
+• Logs sensíveis, eventos persistidos, job, rotina, monitoramento ou automação.
 
 10. E10 — Account Dashboard (UX)
 
