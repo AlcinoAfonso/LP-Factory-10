@@ -8,21 +8,17 @@ import {
   type CommercialPlanKey,
 } from '../../_content/commercial-page/generic-v1';
 import { trackCommercialEvent } from './actions';
+import { startStripeCheckoutAction } from './checkout-actions';
 
 type Props = { accountSubdomain: string };
 type PrimaryCtaLocation = 'hero' | 'final';
 
-const WHATSAPP_BASE_URL = 'https://wa.me/5521979658483';
 const TRACKING_TIMEOUT_MS = 350;
 
 const primaryButton =
   'inline-flex min-h-11 items-center justify-center rounded-md bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground shadow-sm transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2';
 const secondaryButton =
   'inline-flex min-h-11 items-center justify-center rounded-md border border-graytech-300 bg-white px-5 py-3 text-sm font-semibold text-ink-900 shadow-sm transition-colors hover:bg-surface-app focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2';
-
-function buildWhatsAppUrl(message: string) {
-  return `${WHATSAPP_BASE_URL}?text=${encodeURIComponent(message)}`;
-}
 
 async function waitForTracking(promise: Promise<{ ok: boolean }>) {
   await Promise.race([
@@ -59,9 +55,8 @@ export function GenericCommercialPage({ accountSubdomain }: Props) {
   };
 
   const handlePlanCtaClick = async (
-    event: MouseEvent<HTMLAnchorElement>,
+    event: MouseEvent<HTMLButtonElement>,
     planKey: CommercialPlanKey,
-    href: string,
   ) => {
     event.preventDefault();
     await waitForTracking(
@@ -72,7 +67,15 @@ export function GenericCommercialPage({ accountSubdomain }: Props) {
         ctaLocation: 'plan_card',
       }),
     );
-    window.location.assign(href);
+    const result = await startStripeCheckoutAction({
+      accountSubdomain,
+      plan_key: planKey,
+      recurrence: 'monthly',
+    });
+
+    if (result?.ok === false) {
+      window.location.assign(`/a/${accountSubdomain}?checkout=unavailable`);
+    }
   };
 
   return (
@@ -150,12 +153,7 @@ export function GenericCommercialPage({ accountSubdomain }: Props) {
         centered
       >
         <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
-          {content.plans.map((plan) => {
-            const whatsappHref = buildWhatsAppUrl(
-              `Olá, tenho interesse no plano ilustrativo ${plan.name} da LP Factory.`,
-            );
-
-            return (
+          {content.plans.map((plan) => (
               <div
                 key={plan.key}
                 className={cn(
@@ -181,16 +179,15 @@ export function GenericCommercialPage({ accountSubdomain }: Props) {
                     </li>
                   ))}
                 </ul>
-                <a
-                  href={whatsappHref}
-                  onClick={(event) => handlePlanCtaClick(event, plan.key, whatsappHref)}
+                <button
+                  type="button"
+                  onClick={(event) => handlePlanCtaClick(event, plan.key)}
                   className={cn('mt-6 w-full', plan.highlighted ? primaryButton : secondaryButton)}
                 >
                   Tenho interesse
-                </a>
+                </button>
               </div>
-            );
-          })}
+          ))}
         </div>
         <p className="rounded-lg border border-state-warning/30 bg-amber-50 px-4 py-3 text-center text-sm font-medium leading-6 text-amber-900">
           {content.plansDisclaimer}

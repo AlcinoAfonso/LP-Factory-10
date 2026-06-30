@@ -547,6 +547,50 @@ Decisões técnicas:
 * A Fase 6.4 não aceita `PlanId` legado, `free`, `light`, `PLAN_PRICE_MAP`, `mapPlanIdToStripePrice` ou placeholders de `lib/access/plan.ts` como contrato novo.
 * A Fase 6.4 não criou Checkout Session real, rota, action, webhook, schema, migration, admin, Billing Engine, multi-provider engine, SDK Stripe ou persistência em `account_commercial_entitlements`.
 
+3.7.6 Resultado da Fase 6.5 — criação real de Checkout Session Stripe em teste
+
+Arquivos consultados:
+
+* `AGENTS.md`
+* `docs/prompt-executor.md`
+* `docs/lousa-plano-base-e9.md`
+* `docs/base-tecnica.md`
+* `docs/roadmap.md`
+* `docs/schema.md`
+* `app/a/[account]/page.tsx`
+* `app/a/[account]/_components/commercial-page/GenericCommercialPage.tsx`
+* `app/a/[account]/_components/commercial-page/actions.ts`
+* `app/a/[account]/_content/commercial-page/generic-v1.ts`
+* `lib/access/getAccessContext.ts`
+* `lib/billing-checkout/contracts.ts`
+* `lib/billing-checkout/adapters/stripeCheckoutAdapter.ts`
+* `lib/billing-checkout/adapters/stripePriceMap.ts`
+* `lib/billing-checkout/index.ts`
+
+Entregas:
+
+* Server Action `startStripeCheckoutAction` criada em `app/a/[account]/_components/commercial-page/checkout-actions.ts`.
+* A action resolve `accountSubdomain` via `getAccessContext`, exige conta `active`, obtém `account_id`, valida `plan_key` oficial e valida `recurrence`.
+* `successUrl` e `cancelUrl` são montadas server-side a partir do origin da requisição; URLs livres do cliente não são aceitas.
+* CTAs dos cards da página comercial genérica passam a iniciar Checkout Session mensal em ambiente teste, mantendo texto e classes visuais dos cards.
+* Função `createStripeTestCheckoutSession` criada no boundary `lib/billing-checkout/`, usando `validateStripeCheckoutSessionReadiness`, Product/Price resolvidos por env e `STRIPE_SECRET_KEY`.
+* Integração Stripe isolada no boundary via `fetch` para `https://api.stripe.com/v1/checkout/sessions`, sem instalar SDK.
+* Retorno Stripe normalizado para `BillingCheckoutSession` com `checkoutSessionId`, `checkoutUrl` e referências externas mínimas.
+
+Decisões técnicas:
+
+* A criação usa Stripe Checkout em `mode = subscription` e Price ID já resolvido pelo mapeamento de teste.
+* `successUrl`: `{origin}/a/{account}?checkout=success&session_id={CHECKOUT_SESSION_ID}`.
+* `cancelUrl`: `{origin}/a/{account}?checkout=cancel`.
+* O redirect de sucesso do checkout não confirma entitlement comercial e não libera acesso produtivo.
+* A Fase 6.5 não usa `lib/access/plan.ts`, `PLAN_PRICE_MAP`, `mapPlanIdToStripePrice`, `free`, `light` ou placeholders legados.
+* A Fase 6.5 não criou webhook, schema, migration, admin, Billing Engine, multi-provider engine ou persistência em `account_commercial_entitlements`.
+
+Riscos e lacunas:
+
+* A sessão real depende dos envs Stripe de teste configurados no runtime.
+* Confirmação comercial, webhook e persistência do entitlement ficam para a Fase 7.
+
 3.8 Fase 7 — Webhook e persistência do entitlement
 
 * Objetivo: persistir ou atualizar `account_commercial_entitlements` após confirmação comercial.
