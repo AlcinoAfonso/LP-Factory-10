@@ -68,6 +68,8 @@ E19 — LP Builder MVP
     * `lib/lp-builder/index.ts`
     * `app/lp-builder/actions.ts`
   * Recorte implementado: tabela mínima `public.account_landing_pages`, RLS, grants explícitos, snippet read-only, boundary E19, action server-side canônica fora de `app/a/[account]` e gate E9 antes da persistência via `lib/commercial-entitlements/`.
+  * Ajuste PR 499: removido INSERT direto de `authenticated`; criação restrita ao fluxo server-side; insert executado com `service_role` após gate E9; bypass de `platform_admin` removido da criação, exigindo membership ativa owner/admin também neste recorte.
+  * Validação do ajuste PR 499: `npm ci` e `npm run check` reexecutados; Supabase linked/dry-run permanece pendente por ausência de project ref na worktree.
   * Validações executadas:
     * `npm ci`: executado.
     * `npm run check`: executado com sucesso; lint sem erros e typecheck concluído.

@@ -57,10 +57,13 @@ with checks as (
     case
       when count(*) filter (
         where policyname in (
-          'account_landing_pages_select_member_or_platform',
-          'account_landing_pages_insert_owner_admin_or_platform'
+          'account_landing_pages_select_member_or_platform'
         )
-      ) = 2 then 'ok'
+      ) = 1
+      and count(*) filter (
+        where cmd = 'INSERT'
+          and 'authenticated' = any(roles)
+      ) = 0 then 'ok'
       else 'missing'
     end,
     jsonb_agg(
@@ -80,8 +83,12 @@ with checks as (
     case
       when count(*) filter (
         where grantee = 'authenticated'
-          and privilege_type in ('SELECT', 'INSERT')
-      ) = 2
+          and privilege_type = 'SELECT'
+      ) = 1
+      and count(*) filter (
+        where grantee = 'authenticated'
+          and privilege_type = 'INSERT'
+      ) = 0
       and count(*) filter (
         where grantee = 'service_role'
           and privilege_type in ('SELECT', 'INSERT', 'UPDATE', 'DELETE')

@@ -86,46 +86,30 @@ async function createAccountLandingPageUnchecked(
     return { ok: false, error: "account_not_active" };
   }
 
-  const { data: isPlatformAdmin, error: platformAdminError } =
-    await userClient.rpc("is_platform_admin");
+  const { data: membership, error: membershipError } = await serviceClient
+    .from("account_users")
+    .select("role,status")
+    .eq("account_id", accountId)
+    .eq("user_id", user.id)
+    .maybeSingle();
 
-  if (platformAdminError) {
-    console.error("[lp-builder] platform admin gate failed", {
-      code: platformAdminError.code,
-      message: platformAdminError.message,
+  if (membershipError) {
+    console.error("[lp-builder] membership gate failed", {
+      code: membershipError.code,
+      message: membershipError.message,
       account_id: accountId,
       user_id: user.id,
     });
+    return { ok: false, error: "membership_inactive" };
   }
 
-  const platformAdmin = isPlatformAdmin === true;
-
-  if (!platformAdmin) {
-    const { data: membership, error: membershipError } = await serviceClient
-      .from("account_users")
-      .select("role,status")
-      .eq("account_id", accountId)
-      .eq("user_id", user.id)
-      .maybeSingle();
-
-    if (membershipError) {
-      console.error("[lp-builder] membership gate failed", {
-        code: membershipError.code,
-        message: membershipError.message,
-        account_id: accountId,
-        user_id: user.id,
-      });
-      return { ok: false, error: "membership_inactive" };
-    }
-
-    const membershipRow = membership as MembershipGateRow | null;
-    if (
-      !membershipRow ||
-      membershipRow.status !== "active" ||
-      !["owner", "admin"].includes(membershipRow.role ?? "")
-    ) {
-      return { ok: false, error: "membership_inactive" };
-    }
+  const membershipRow = membership as MembershipGateRow | null;
+  if (
+    !membershipRow ||
+    membershipRow.status !== "active" ||
+    !["owner", "admin"].includes(membershipRow.role ?? "")
+  ) {
+    return { ok: false, error: "membership_inactive" };
   }
 
   const entitlement = await getCommercialEntitlementSignal({ accountId });
@@ -133,7 +117,7 @@ async function createAccountLandingPageUnchecked(
     return { ok: false, error: "commercial_entitlement_required" };
   }
 
-  const { data: inserted, error: insertError } = await userClient
+  const { data: inserted, error: insertError } = await serviceClient
     .from("account_landing_pages")
     .insert({
       account_id: accountId,
