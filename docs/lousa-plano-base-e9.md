@@ -591,6 +591,39 @@ Riscos e lacunas:
 * A sessão real depende dos envs Stripe de teste configurados no runtime.
 * Confirmação comercial, webhook e persistência do entitlement ficam para a Fase 7.
 
+3.7.7 Resultado da Fase 6.6 — validação operacional pós-checkout Stripe em teste
+
+Status:
+
+* Operacionalmente concluída com ressalva não bloqueante de auditoria detalhada de logs.
+
+Validação operacional:
+
+* Deployment testado: Production / main / `lp-factory-10.vercel.app`, com Stripe em modo teste.
+* Redeploy realizado após criação das envs Stripe.
+* Conta usada: `alcinoafonso380+convite50@gmail.com`.
+* Plano testado: LP Factory Lite mensal.
+* Envs conferidas: `STRIPE_SECRET_KEY` e 16 envs `STRIPE_TEST_*` de Product/Price.
+* Redirect Stripe: OK; clique no Lite mensal abriu `checkout.stripe.com`.
+* Cancelamento: OK; retorno para `/a/acc-0857ca43?checkout=cancel`.
+* Sucesso: OK; retorno para `/a/acc-0857ca43?checkout=success&session_id=...`.
+* Stripe: OK; assinatura teste ativa criada para LP Factory Lite, R$ 99,00/mês.
+* Entitlement: OK; `account_commercial_entitlements = 0 registros`.
+* Logs: Vercel runtime errors consultado sem erro encontrado; auditoria detalhada linha a linha bloqueada pela ferramenta.
+
+Bloqueio restante:
+
+* Apenas auditoria detalhada de logs.
+
+Decisão:
+
+* Fase 6.6 concluída; checkout Stripe em teste funcionando; sem entitlement criado.
+
+Limite registrado:
+
+* Sucesso de redirect não confirma pagamento nem libera entitlement.
+* Confirmação comercial, webhook, idempotência e persistência ficam para a Fase 7.
+
 3.8 Fase 7 — Webhook e persistência do entitlement
 
 * Objetivo: persistir ou atualizar `account_commercial_entitlements` após confirmação comercial.
