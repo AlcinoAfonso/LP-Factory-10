@@ -56,6 +56,12 @@ Mensagem:
 Avalie o plano-base docs/lousa-plano-base-EXX-YY.md quanto a lacunas, contradições, riscos, escopo e clareza, com base no debate do caso.
 
 6. Avaliação da fase por gestores
+   Antes de acionar gestores, verificar se a fase alvo precisa de debate com Analista e humano.
+
+   Se precisar de debate, preparar briefing Codex para ajustar a fase no plano-base antes da avaliação dos gestores.
+
+   Se não precisar de debate, seguir para avaliação dos gestores.
+
    Solicitar avaliação da fase alvo aos gestores necessários.
 
 6.1 Destinatários
