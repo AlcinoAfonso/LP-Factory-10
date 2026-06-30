@@ -39,20 +39,27 @@ E19 — LP Builder MVP
   * Resultado: aprovado com condicionantes por Analista, Gestor Estrutural e Gestor de Updates.
 * Fase 2 — Desenho técnico mínimo da criação produtiva de LP por conta
 
-  * Status: proposta para consolidação.
+  * Status: consolidada.
   * Objetivo: definir estrutura mínima para criação produtiva de LP por conta, sem implementação, fechando persistência, contrato, boundary, path canônico e ponto de aplicação do gate E9.
-  * Hipótese principal: avaliar tabela própria mínima para LP por conta, com account_id, name, slug, status, created_by, created_at e updated_at.
-  * Status inicial sugerido: draft.
-  * Gate obrigatório: bloquear server-side antes da persistência quando não houver conta active, membership active e entitlement comercial válido.
-  * Boundary técnico esperado: lib/lp-builder/.
-  * Superfície de entrada: ainda a definir; app/a/[account] pode ser entrada contextual futura, mas não path canônico da mutação E19 sem nova decisão.
-  * E18: referência futura para templates, módulos, composições e artefatos; não usar content_artifacts diretamente como LP produtiva por conta neste primeiro recorte sem nova validação.
-  * Próxima ação: consolidar schema mínimo, path real da mutação e contrato de criação antes de qualquer Executor.
+  * Decisões consolidadas:
+    * LP produtiva mínima: registro real de landing page pertencente a uma conta, criada com status draft.
+    * Criar LP não significa publicar LP.
+    * Persistência mínima proposta: tabela account_landing_pages.
+    * Campos mínimos: id, account_id, name, slug, status, created_by, created_at e updated_at.
+    * Restrição mínima: slug único por account_id.
+    * Status inicial: draft.
+    * Boundary técnico: lib/lp-builder/.
+    * Mutação server-side: path canônico a definir na implementação, fora de app/a/[account] como path canônico.
+    * app/a/[account] pode ser superfície contextual futura, mas não mutação canônica da E19.
+    * Gate E9: bloquear server-side antes da persistência quando não houver conta active, membership active e entitlement comercial válido.
+    * E18: referência futura para templates, módulos, composições e artefatos.
+    * content_artifacts não deve ser usado diretamente como LP produtiva por conta neste primeiro recorte.
+  * Próxima ação: instruir o Executor para implementar a Fase 3 — Implementação do primeiro recorte.
 * Fase 3 — Implementação do primeiro recorte
 
-  * Status: futura.
+  * Status: próxima.
   * Objetivo: implementar criação produtiva mínima de LP por conta.
-  * Condição de entrada: Fase 2 aprovada e instrução ao Executor emitida.
+  * Condição de entrada: Fase 2 consolidada e instrução ao Executor emitida.
 * Avaliações necessárias:
 
   * Analista: avaliar Fase 2 após registro.
