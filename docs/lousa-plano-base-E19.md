@@ -33,21 +33,31 @@ E19 — LP Builder MVP
 3. Fases e próxima ação
 
 * Fase 1 — Definição da criação produtiva mínima de LP por conta
-  * Status: em definição.
+
+  * Status: consolidada.
   * Objetivo: validar recorte, persistência mínima, boundary, relação com E9, E18 e E10.7.
-  * Próxima ação: solicitar avaliação do Analista, Gestor Estrutural e Gestor de Updates.
-* Fase 2 — Desenho técnico mínimo
-  * Status: futura.
-  * Objetivo: definir estrutura de persistência, contrato de criação, path canônico e ponto exato de aplicação do gate E9.
-  * Condição de entrada: Fase 1 aprovada e consolidada.
+  * Resultado: aprovado com condicionantes por Analista, Gestor Estrutural e Gestor de Updates.
+* Fase 2 — Desenho técnico mínimo da criação produtiva de LP por conta
+
+  * Status: proposta para consolidação.
+  * Objetivo: definir estrutura mínima para criação produtiva de LP por conta, sem implementação, fechando persistência, contrato, boundary, path canônico e ponto de aplicação do gate E9.
+  * Hipótese principal: avaliar tabela própria mínima para LP por conta, com account_id, name, slug, status, created_by, created_at e updated_at.
+  * Status inicial sugerido: draft.
+  * Gate obrigatório: bloquear server-side antes da persistência quando não houver conta active, membership active e entitlement comercial válido.
+  * Boundary técnico esperado: lib/lp-builder/.
+  * Superfície de entrada: ainda a definir; app/a/[account] pode ser entrada contextual futura, mas não path canônico da mutação E19 sem nova decisão.
+  * E18: referência futura para templates, módulos, composições e artefatos; não usar content_artifacts diretamente como LP produtiva por conta neste primeiro recorte sem nova validação.
+  * Próxima ação: consolidar schema mínimo, path real da mutação e contrato de criação antes de qualquer Executor.
 * Fase 3 — Implementação do primeiro recorte
+
   * Status: futura.
   * Objetivo: implementar criação produtiva mínima de LP por conta.
   * Condição de entrada: Fase 2 aprovada e instrução ao Executor emitida.
-* Avaliações necessárias após criar o plano:
-  * Analista: avaliar lacunas, contradições, riscos, escopo e clareza.
-  * Gestor Estrutural: avaliar path, boundary, reaproveitamento, acoplamento e regressão.
-  * Gestor de Updates: avaliar plataformas, recursos novos, riscos operacionais e aderência ao MVP.
+* Avaliações necessárias:
+
+  * Analista: avaliar Fase 2 após registro.
+  * Gestor Estrutural: já avaliou a proposta prévia; retorna se houver mudança estrutural.
+  * Gestor de Updates: avaliar Fase 2 após registro.
   * Gestor de Automação: N/A.
 
 4. Escopo negativo e critérios de parada
