@@ -13,4 +13,16 @@ export {
   isBillingCheckoutPlanKey,
   normalizeBillingCheckoutPlanKey,
 } from "./contracts";
+export type {
+  StripeCheckoutEnvironment,
+  StripePriceLookupInput,
+  StripePriceLookupResult,
+  StripePriceMapConfig,
+  StripePriceMapEntry,
+} from "./adapters/stripePriceMap";
+export {
+  STRIPE_TEST_PRICE_ENV_KEYS,
+  buildStripeTestPriceMapFromEnv,
+  resolveStripeTestPriceMapping,
+} from "./adapters/stripePriceMap";
 export { normalizeStripeCheckoutDraft } from "./adapters/stripeCheckoutAdapter";

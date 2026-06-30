@@ -441,6 +441,41 @@ Riscos e lacunas:
 * Ainda falta mapear Stripe Product/Price reais para `plan_key` oficial antes de criar checkout real.
 * Ainda falta definir o fluxo operacional de criação de sessão e o contrato normalizado de webhook em fases futuras.
 
+3.7.3 Resultado da Fase 6.2 — mapeamento Stripe Product/Price para `plan_key`
+
+Arquivos consultados:
+
+* `AGENTS.md`
+* `docs/prompt-executor.md`
+* `docs/lousa-plano-base-e9.md`
+* `lib/billing-checkout/contracts.ts`
+* `lib/billing-checkout/adapters/stripeCheckoutAdapter.ts`
+* `lib/billing-checkout/index.ts`
+* `lib/access/plan.ts`
+* `package.json`
+
+Entregas:
+
+* Módulo de mapeamento criado em `lib/billing-checkout/adapters/stripePriceMap.ts`.
+* Contrato de mapeamento em ambiente teste com `environment: "test"`.
+* Chaves oficiais aceitas: `starter`, `lite`, `pro` e `ultra`.
+* Recorrências aceitas: `monthly` e `annual`.
+* Nomes de configuração/env definidos para Product/Price de teste por plano e recorrência, sem valores falsos ou placeholders.
+* Resolução de `stripePriceId` e `stripeProductId` externos para contrato interno com `plan_key` e `recurrence`.
+* `providerProductId` adicionado às referências externas normalizadas do boundary.
+
+Decisões técnicas:
+
+* O mapeamento não usa `PlanId` legado como contrato de negócio.
+* O mapeamento não aceita `free`/`light` como contrato novo.
+* O mapeamento não reutiliza `PLAN_PRICE_MAP`, `mapPlanIdToStripePrice` nem placeholders de Stripe Price ID de `lib/access/plan.ts`.
+* Não houve criação de Checkout Session real, rota, action, webhook, schema, migration, admin, Billing Engine, multi-provider engine ou persistência em `account_commercial_entitlements`.
+
+Riscos e lacunas:
+
+* Os IDs reais de teste ainda precisam ser configurados fora do código usando os nomes de env definidos.
+* O fluxo que consumirá esse mapeamento para criar sessão real continua para fase futura.
+
 3.8 Fase 7 — Webhook e persistência do entitlement
 
 * Objetivo: persistir ou atualizar `account_commercial_entitlements` após confirmação comercial.

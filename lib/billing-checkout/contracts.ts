@@ -15,6 +15,7 @@ export type BillingCheckoutRecurrence = "monthly" | "annual";
 
 export type BillingCheckoutExternalReferences = {
   providerCustomerId?: string | null;
+  providerProductId?: string | null;
   providerPriceId?: string | null;
   providerSubscriptionId?: string | null;
   providerCheckoutSessionId?: string | null;
