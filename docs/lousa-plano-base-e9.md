@@ -634,6 +634,24 @@ Limite registrado:
 * Limite de acoplamento: eventos, status e nomenclaturas do provedor não devem virar regra canônica do produto; o produto consome o contrato interno e a tabela de entitlement.
 * Observação: esta fase aciona Gestor de Automação, porque webhook é automação operacional.
 
+3.8.1 Fase 7.1 — Contrato do webhook Stripe e persistência de entitlement
+
+docs/lousa-plano-base-e9.md
+
+* Status: recorte de decisão técnica, sem implementação.
+* Objetivo: definir contrato normalizado do webhook Stripe antes de persistir entitlement.
+* Evento de ativação recomendado: `invoice.paid`, validado com assinatura Stripe, assinatura `active`, metadata coerente e Product/Price compatíveis com `plan_key`.
+* Evento auxiliar: `checkout.session.completed`, sem liberar entitlement.
+* Eventos futuros/controlados: `customer.subscription.deleted` e `invoice.payment_failed`.
+* Idempotência: usar Stripe `event.id` como chave inicial; avaliar se `account_commercial_entitlements.idempotency_key` basta ou se será necessária tabela mínima de eventos webhook.
+* Persistência: gravar ou atualizar `account_commercial_entitlements` com `origin = plano_pago_confirmado`, `status = ativo`, `external_provider = stripe`, referência externa da assinatura e metadata mínima.
+* Limite: redirect de sucesso não confirma pagamento nem libera entitlement.
+* Limite: não criar webhook real, schema, migration, Billing Engine, multi-provider, admin ou liberação por redirect nesta fase.
+* Segurança: não salvar payload bruto, cartão, secret, e-mail como idempotência ou PII desnecessária.
+* Avaliação obrigatória antes do Executor: Analista, Gestor Estrutural, Gestor de Segurança e Gestor de Automação.
+* Avaliação condicional: Gestor de Updates para validar documentação Stripe atual, se houver dúvida técnica sobre eventos ou webhook.
+* Próximo passo: especialistas avaliam se a implementação da Fase 7.2 precisa de migration, tabela de eventos webhook ou pode usar apenas `account_commercial_entitlements`.
+
 4. Escopo negativo e critérios de parada
 
 * Não criar fluxo manual de pagamento, comprovante por WhatsApp ou liberação sem confirmação comercial.
