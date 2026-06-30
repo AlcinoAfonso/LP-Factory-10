@@ -30,11 +30,14 @@ export {
   resolveStripeTestPriceMapping,
 } from "./adapters/stripePriceMap";
 export type {
+  StripeCheckoutSessionCreationInput,
+  StripeCheckoutSessionCreationResult,
   StripeCheckoutSessionCreateContract,
   StripeCheckoutSessionReadinessInput,
   StripeCheckoutSessionReadinessResult,
 } from "./adapters/stripeCheckoutAdapter";
 export {
+  createStripeTestCheckoutSession,
   normalizeStripeCheckoutDraft,
   validateStripeCheckoutSessionReadiness,
 } from "./adapters/stripeCheckoutAdapter";

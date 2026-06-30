@@ -3,6 +3,7 @@ import "server-only";
 import {
   type BillingCheckoutExternalReferences,
   type BillingCheckoutNormalizationResult,
+  type BillingCheckoutSession,
   type BillingCheckoutPlanKey,
   type BillingCheckoutRecurrence,
   isBillingCheckoutPlanKey,
@@ -66,6 +67,36 @@ export type StripeCheckoutSessionReadinessResult =
         | "mapping_incomplete";
     };
 
+export type StripeCheckoutSessionCreationInput =
+  StripeCheckoutSessionReadinessInput;
+
+export type StripeCheckoutSessionCreationResult =
+  | {
+      ok: true;
+      checkout: BillingCheckoutSession;
+    }
+  | {
+      ok: false;
+      reason:
+        | StripeCheckoutSessionReadinessResultFailureReason
+        | "stripe_request_failed"
+        | "stripe_invalid_response"
+        | "missing_checkout_url"
+        | "invalid_checkout_url"
+        | "invalid_checkout_session_id";
+      status?: number;
+    };
+
+type StripeCheckoutSessionReadinessResultFailureReason = Extract<
+  StripeCheckoutSessionReadinessResult,
+  { ok: false }
+>["reason"];
+
+const STRIPE_CHECKOUT_SESSIONS_URL =
+  "https://api.stripe.com/v1/checkout/sessions";
+
+const STRIPE_API_VERSION = "2026-02-25.clover";
+
 const recurrences: ReadonlySet<BillingCheckoutRecurrence> = new Set([
   "monthly",
   "annual",
@@ -102,6 +133,96 @@ export function normalizeStripeCheckoutDraft(
       }),
     },
   };
+}
+
+export async function createStripeTestCheckoutSession(
+  input: StripeCheckoutSessionCreationInput,
+): Promise<StripeCheckoutSessionCreationResult> {
+  const readiness = validateStripeCheckoutSessionReadiness(input);
+  if (!readiness.ok) return readiness;
+
+  const secretKey = normalizeOptionalString(input.env?.STRIPE_SECRET_KEY);
+  if (!secretKey) return { ok: false, reason: "missing_secret_key" };
+
+  const contract = readiness.value;
+  const body = new URLSearchParams();
+  body.set("mode", contract.mode);
+  body.set("success_url", contract.successUrl);
+  body.set("cancel_url", contract.cancelUrl);
+  body.set("client_reference_id", contract.account_id);
+  body.set("line_items[0][price]", contract.providerPriceId);
+  body.set("line_items[0][quantity]", "1");
+  body.set("metadata[account_id]", contract.account_id);
+  body.set("metadata[plan_key]", contract.plan_key);
+  body.set("metadata[recurrence]", contract.recurrence);
+  body.set("metadata[environment]", contract.environment);
+  body.set("subscription_data[metadata][account_id]", contract.account_id);
+  body.set("subscription_data[metadata][plan_key]", contract.plan_key);
+  body.set("subscription_data[metadata][recurrence]", contract.recurrence);
+
+  let response: Response;
+  try {
+    response = await fetch(STRIPE_CHECKOUT_SESSIONS_URL, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${secretKey}`,
+        "Content-Type": "application/x-www-form-urlencoded",
+        "Stripe-Version": STRIPE_API_VERSION,
+      },
+      body,
+      cache: "no-store",
+    });
+  } catch {
+    return { ok: false, reason: "stripe_request_failed" };
+  }
+
+  if (!response.ok) {
+    return {
+      ok: false,
+      reason: "stripe_request_failed",
+      status: response.status,
+    };
+  }
+
+  let payload: unknown;
+  try {
+    payload = await response.json();
+  } catch {
+    return { ok: false, reason: "stripe_invalid_response" };
+  }
+
+  const checkoutSessionId = readStringProperty(payload, "id");
+  if (!checkoutSessionId) {
+    return { ok: false, reason: "invalid_checkout_session_id" };
+  }
+
+  if (!checkoutSessionId.startsWith("cs_test_")) {
+    return { ok: false, reason: "invalid_checkout_session_id" };
+  }
+
+  const checkoutUrl = readStringProperty(payload, "url");
+  if (!checkoutUrl) return { ok: false, reason: "missing_checkout_url" };
+  if (!isValidHttpsUrl(checkoutUrl)) {
+    return { ok: false, reason: "invalid_checkout_url" };
+  }
+
+  const normalized = normalizeStripeCheckoutDraft({
+    account_id: contract.account_id,
+    plan_key: contract.plan_key,
+    recurrence: contract.recurrence,
+    checkoutSessionId,
+    checkoutUrl,
+    externalReferences: {
+      ...contract.externalReferences,
+      providerCheckoutSessionId: checkoutSessionId,
+    },
+  });
+
+  if (!normalized.ok) {
+    return { ok: false, reason: "stripe_invalid_response" };
+  }
+
+  return { ok: true, checkout: normalized.checkout };
 }
 
 export function validateStripeCheckoutSessionReadiness(
@@ -216,5 +337,22 @@ function normalizeRequiredUrl(value: unknown): string | null {
     return url.toString();
   } catch {
     return null;
+  }
+}
+
+function readStringProperty(payload: unknown, property: string): string | null {
+  if (!payload || typeof payload !== "object") return null;
+  const value = (payload as Record<string, unknown>)[property];
+  if (typeof value !== "string") return null;
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? trimmed : null;
+}
+
+function isValidHttpsUrl(value: string): boolean {
+  try {
+    const url = new URL(value);
+    return url.protocol === "https:";
+  } catch {
+    return false;
   }
 }
