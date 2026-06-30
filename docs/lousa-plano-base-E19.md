@@ -32,7 +32,7 @@ E19 — LP Builder MVP
 
 3. Fases e próxima ação
 
-* Fase 1 — Criação produtiva mínima de LP por conta
+* Fase 1 — Definição da criação produtiva mínima de LP por conta
   * Status: em definição.
   * Objetivo: validar recorte, persistência mínima, boundary, relação com E9, E18 e E10.7.
   * Próxima ação: solicitar avaliação do Analista, Gestor Estrutural e Gestor de Updates.
