@@ -52,6 +52,8 @@ type MarkStripeWebhookEventResult =
       reason: string;
     };
 
+const STALE_PROCESSING_RETRY_AFTER_MS = 10 * 60 * 1000;
+
 export async function POST(request: Request) {
   const rawBody = await request.text();
   const signatureHeader = request.headers.get("stripe-signature");
@@ -311,7 +313,7 @@ async function resolveExistingStripeWebhookEvent(
 ): Promise<StripeWebhookEventRecord> {
   const { data, error } = await supabase
     .from("stripe_webhook_events")
-    .select("id, processing_status")
+    .select("id, processing_status, updated_at, received_at")
     .eq("event_id", stripeEvent.id)
     .single();
 
@@ -328,6 +330,7 @@ async function resolveExistingStripeWebhookEvent(
     typeof data?.processing_status === "string"
       ? data.processing_status
       : null;
+  const lastTouchedAt = normalizeTimestamp(data?.updated_at ?? data?.received_at);
 
   if (!id || !processingStatus) {
     return { ok: false, reason: "event_record_incomplete", status: 500 };
@@ -346,6 +349,7 @@ async function resolveExistingStripeWebhookEvent(
     const reset = await resetFailedStripeWebhookEventForRetry(supabase, {
       id,
       stripeEvent,
+      retryReason: "previous_failed",
     });
     if (!reset.ok) {
       return { ok: false, reason: reset.reason, status: 500 };
@@ -354,6 +358,18 @@ async function resolveExistingStripeWebhookEvent(
   }
 
   if (processingStatus === "processing") {
+    if (isStaleProcessingEvent(lastTouchedAt)) {
+      const reset = await resetFailedStripeWebhookEventForRetry(supabase, {
+        id,
+        stripeEvent,
+        retryReason: "stale_processing",
+      });
+      if (!reset.ok) {
+        return { ok: false, reason: reset.reason, status: 500 };
+      }
+      return { ok: true, action: "process", duplicate: false, id };
+    }
+
     return {
       ok: false,
       reason: "event_processing_in_progress",
@@ -369,6 +385,7 @@ async function resetFailedStripeWebhookEventForRetry(
   input: {
     id: string;
     stripeEvent: StripeWebhookEvent;
+    retryReason: "previous_failed" | "stale_processing";
   },
 ): Promise<MarkStripeWebhookEventResult> {
   const { data, error } = await supabase
@@ -381,12 +398,12 @@ async function resetFailedStripeWebhookEventForRetry(
       error_code: null,
       metadata_json: {
         ...buildStripeWebhookEventMetadata(input.stripeEvent),
-        retry_reason: "previous_failed",
+        retry_reason: input.retryReason,
       },
       processed_at: null,
     })
     .eq("id", input.id)
-    .eq("processing_status", "failed")
+    .in("processing_status", ["failed", "processing"])
     .select("id")
     .single();
 
@@ -397,6 +414,17 @@ async function resetFailedStripeWebhookEventForRetry(
   return typeof data?.id === "string"
     ? { ok: true }
     : { ok: false, reason: "event_retry_reset_missing_id" };
+}
+
+function normalizeTimestamp(value: unknown): number | null {
+  if (typeof value !== "string") return null;
+  const timestamp = Date.parse(value);
+  return Number.isFinite(timestamp) ? timestamp : null;
+}
+
+function isStaleProcessingEvent(lastTouchedAt: number | null): boolean {
+  if (lastTouchedAt === null) return false;
+  return Date.now() - lastTouchedAt > STALE_PROCESSING_RETRY_AFTER_MS;
 }
 
 async function markStripeWebhookEvent(
