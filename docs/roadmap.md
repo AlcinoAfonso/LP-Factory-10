@@ -1,8 +1,8 @@
 0. Introdução
 
 0.1 Cabeçalho
-• Data: 26/06/2026
-• Versão: v1.5.85
+• Data: 30/06/2026
+• Versão: v1.5.86
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -1351,47 +1351,80 @@ Repositório — Criados
 19. E19 — LP Builder
 
 19.1 Status
-• Planejado
+• Em execução faseada — Fase 3 concluída em 30/06/2026.
+• Criação produtiva mínima de LP por conta implementada.
+• Persistência mínima em `public.account_landing_pages` criada.
+• Boundary próprio do LP Builder criado em `lib/lp-builder/`.
+• Gate E9 aplicado antes da persistência.
+• Editor visual, publicação, render público, domínio customizado, analytics, A/B, IA runtime e automações permanecem fora do recorte.
 
-19.2 Objetivo
-• Consolidar a seção do Core responsável pela criação, edição e organização de landing pages, seções de LP e templates reutilizáveis.
+19.2 Objetivo atual
+• Consolidar a seção do Core responsável pela criação, edição e organização de landing pages.
+• No recorte atual, limitar E19 à criação mínima de LP por conta com status inicial `draft`.
 
-19.3 Escopo
-• Criação de landing pages
-• Criação de seções de LP
-• Templates de landing pages
-• Templates de seções
-• Organização estrutural do builder dentro do Core
+19.3 Decisões consolidadas
 
-19.4 Regra estrutural
-• E19 pertence à camada Core
-• E19 é uma seção própria, separada de Account Dashboard, Admin Dashboard e Partner Dashboard
-• Boundaries físicas internas devem nascer conforme houver massa real de código
+19.3.1 Boundary do LP Builder
+• E19 pertence à camada Core.
+• E19 é seção própria, separada de Account Dashboard, Admin Dashboard e Partner Dashboard.
+• Boundary criado: `lib/lp-builder/`.
+• Action server-side canônica criada: `app/lp-builder/actions.ts`.
 
-19.4.1 Fronteira com E10 / E12 / E18
-• E19 não inclui, nesta fase, a camada persuasiva pós-setup do Account Dashboard (E10.5 e E10.6).
-• A primeira LP será um caso real próprio do E19 e ajudará a avaliar, junto com a nova E10.6, se existe necessidade de estrutura compartilhada futura.
-• O E19 só deve avançar para implementação quando houver recorte funcional real do LP Builder, evitando antecipação estrutural sem massa de código.
+19.3.2 Criação produtiva mínima
+• LP nasce com status inicial `draft`.
+• Persistência mínima ocorre em `public.account_landing_pages`.
+• Slug é único por conta.
+• Nome não pode ser vazio.
+• Slug deve seguir formato seguro.
 
-19.5 Dependências / referências
-• E9 — Billing, trial e entitlements
-• E10 — Account Dashboard
-• E12 — Admin Dashboard
-• E13 — Partner Dashboard
-• E18 — Base transversal de templates, módulos, composições e artefatos
+19.3.3 Gate comercial e operacional
+• Criação de LP exige conta `active`.
+• Criação de LP exige membership `active` com role `owner` ou `admin`.
+• Criação de LP exige entitlement comercial válido via E9.
+• Gate é aplicado server-side antes do insert.
 
-19.6 Próximo passo
-• Definir o primeiro recorte funcional do LP Builder no roadmap, incluindo o ponto server-side de criação produtiva de LP por conta, a persistência mínima da LP e a aplicação do gate comercial da E9 nesse ponto real.
+19.3.4 Updates avaliados
+• `github#499`, `supa#20260630210213`, `e9#gate`, `automation#E19`.
 
-19.7 Referência futura a páginas comerciais por taxon
-• E19 poderá futuramente consumir a existência de página comercial publicada por taxon.
-• E10.7 não implementa LP Builder.
-• E10.7 não implementa regra de liberação para criação de LPs.
-• E10.7 não implementa continuidade de contas.
-• E10.7 não implementa bloqueio de novas ativações.
-• Esta referência não cria obrigação de implementar E19 agora.
+19.4 Estruturas e artefatos
+
+Banco — Criados
+• `public.account_landing_pages`
+• `account_landing_pages_select_member_or_platform`
+• `account_landing_pages_set_updated_at`
+
+Repositório — Criados
+• `app/lp-builder/actions.ts`
+• `lib/lp-builder/contracts.ts`
+• `lib/lp-builder/adapters/landingPagesAdapter.ts`
+• `lib/lp-builder/index.ts`
+• `supabase/migrations/20260630210213_e19_account_landing_pages.sql`
+• `supabase/snippets/e19_account_landing_pages_verify.sql`
+
+
+19.5 Fora do escopo da Fase 3
+• Editor visual.
+• Publicação.
+• Render público.
+• Domínio customizado.
+• Analytics.
+• Teste A/B.
+• IA runtime.
+• Automações.
+• Agentes.
+• Jobs.
+• Rotinas recorrentes.
+
+19.6 Dependências / referências
+• E9 — Billing, trial e entitlements.
+• E10 — Account Dashboard.
+• E12 — Admin Dashboard.
+• E13 — Partner Dashboard.
+• E18 — Base transversal de templates, módulos, composições e artefatos.
 
 99. Changelog
+v1.5.86 — 30/06/2026 — E19 Fase 3 concluída com criação produtiva mínima de LP por conta, persistência em public.account_landing_pages, boundary lib/lp-builder/ e gate E9 antes do insert.
+
 v1.5.85 — 26/06/2026 — E10.7 Fase 6 concluída; próxima fase: Fase 7 — edição manual de copy e gestão simples de versões.
 
 v1.5.84 — 25/06/2026 — E10.7 Fase 5 concluída com taxons elegíveis por pesquisa estruturada completa, composição técnica genérica sob demanda, geração/publicação `commercial_activation` por `taxonSlug` e próxima Fase 6 planejada para Admin comercial enxuto.
