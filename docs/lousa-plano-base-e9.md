@@ -652,6 +652,46 @@ docs/lousa-plano-base-e9.md
 * Avaliação antes do Executor: Gestor Estrutural, Gestor de Updates e Gestor de Automação.
 * Próximo passo: especialistas avaliam se a implementação da Fase 7.2 precisa de migration, tabela de eventos webhook ou pode usar apenas `account_commercial_entitlements`.
 
+3.8.2 Resultado da Fase 7.2 — webhook Stripe mínimo com idempotência e persistência
+
+Arquivos consultados:
+
+* `AGENTS.md`
+* `docs/prompt-executor.md`
+* `docs/lousa-plano-base-e9.md`
+* `docs/schema.md`
+* `app/api/user/accounts/route.ts`
+* `lib/billing-checkout/`
+* `supabase/migrations/20260628184945_e9_commercial_entitlements.sql`
+* Documentação Stripe de webhook, assinatura e eventos de subscription.
+* Supabase Plugin read-only para confirmar `account_commercial_entitlements`, RLS e ausência prévia de `stripe_webhook_events`.
+
+Entregas:
+
+* Route handler `POST /api/stripe/webhook` criado em `app/api/stripe/webhook/route.ts`.
+* Assinatura Stripe validada com raw body, header `stripe-signature` e `STRIPE_WEBHOOK_SECRET`; payload bruto é usado apenas para verificação e parse local.
+* Adapter `lib/billing-checkout/adapters/stripeWebhookAdapter.ts` criado para isolar assinatura, normalização de eventos, busca server-side de subscription Stripe e validação Product/Price.
+* `invoice.paid` validado como único evento que pode ativar/renovar entitlement.
+* `checkout.session.completed`, `customer.subscription.deleted` e `invoice.payment_failed` são registrados e ignorados com status seguro para fase futura.
+* Tabela mínima `public.stripe_webhook_events` criada por migration para idempotência/auditoria usando `event_id` único.
+* Persistência em `account_commercial_entitlements` criada/atualizada com `origin = plano_pago_confirmado`, `status = ativo`, `external_provider = stripe`, `external_reference = subscriptionId`, `idempotency_key = Stripe event.id`, vigência quando disponível e `metadata_json` mínimo.
+* Snippet read-only `supabase/snippets/e9_phase_7_2_stripe_webhook_verify.sql` criado para validação pós-apply.
+
+Segurança e limites:
+
+* Não salva `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, payload bruto Stripe, dados de cartão, e-mail como idempotência ou PII desnecessária.
+* Logs ficam resumidos a evento, provider, event ID, account_id interno quando disponível, status normalizado, resultado de idempotência/processamento e erro técnico curto.
+* Tabela de eventos tem RLS ativo, grants restritos a `service_role` e nenhum grant para `anon` ou `authenticated`.
+* Não houve Billing Engine, multi-provider engine, Stripe Sync Engine, admin, régua de cobrança, fila/job/cron, analytics, BotID, liberação por redirect ou persistência de payload bruto.
+* `checkout.session.completed` e redirect de sucesso continuam sem criar entitlement comercial.
+* Ajuste pré-merge do PR #509: colisão `23505` em `stripe_webhook_events.event_id` agora consulta o registro existente e decide por `processing_status`; `processed`/`ignored` retornam duplicado final seguro, `failed` permite reprocessamento controlado, `processing` recente retorna erro controlado e `processing` antigo é resetado para reprocessamento com `retry_reason = stale_processing`.
+* Ajuste pré-merge do PR #509: falha ao marcar evento como `processed`, `ignored` ou `failed` impede resposta de sucesso do webhook.
+
+Riscos e lacunas:
+
+* A validação funcional ponta a ponta depende de `STRIPE_WEBHOOK_SECRET`, `STRIPE_SECRET_KEY`, Product/Price de teste e delivery real pelo Stripe CLI/Dashboard.
+* Cancelamento, falha de pagamento, cobrança recorrente avançada e reconciliação continuam fora deste recorte.
+
 4. Escopo negativo e critérios de parada
 
 * Não criar fluxo manual de pagamento, comprovante por WhatsApp ou liberação sem confirmação comercial.
