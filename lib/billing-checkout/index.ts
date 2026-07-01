@@ -41,3 +41,16 @@ export {
   normalizeStripeCheckoutDraft,
   validateStripeCheckoutSessionReadiness,
 } from "./adapters/stripeCheckoutAdapter";
+export type {
+  StripeInvoicePaidEntitlement,
+  StripeInvoicePaidEntitlementResult,
+  StripeVerifiedWebhookEventResult,
+  StripeWebhookEvent,
+  StripeWebhookEventType,
+} from "./adapters/stripeWebhookAdapter";
+export {
+  STRIPE_WEBHOOK_EVENT_TYPES,
+  isSupportedStripeWebhookEventType,
+  normalizeStripeInvoicePaidEntitlement,
+  verifyStripeWebhookEvent,
+} from "./adapters/stripeWebhookAdapter";
