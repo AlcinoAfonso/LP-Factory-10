@@ -1422,6 +1422,14 @@ Repositório — Criados
 • E13 — Partner Dashboard.
 • E18 — Base transversal de templates, módulos, composições e artefatos.
 
+19.7 Fronteiras futuras preservadas
+• E19 pode futuramente consumir página comercial publicada por taxon.
+• E10.7 não implementa LP Builder.
+• E10.7 não implementa regra de liberação para criação de LPs.
+• E10.7 não implementa continuidade de contas.
+• E10.7 não implementa bloqueio de novas ativações.
+• Esta referência não cria obrigação de nova implementação agora.
+
 99. Changelog
 v1.5.86 — 30/06/2026 — E19 Fase 3 concluída com criação produtiva mínima de LP por conta, persistência em public.account_landing_pages, boundary lib/lp-builder/ e gate E9 antes do insert.
 

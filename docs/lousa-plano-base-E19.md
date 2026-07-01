@@ -57,7 +57,7 @@ E19 — LP Builder MVP
   * Próxima ação: instruir o Executor para implementar a Fase 3 — Implementação do primeiro recorte.
 * Fase 3 — Implementação do primeiro recorte
 
-  * Status: implementada em PR; depende validação humana de Supabase linked/dry-run no ambiente vinculado.
+  * Status: concluída.
   * Objetivo: implementar criação produtiva mínima de LP por conta.
   * Condição de entrada: Fase 2 consolidada e instrução ao Executor emitida.
   * Arquivos criados:
@@ -69,18 +69,17 @@ E19 — LP Builder MVP
     * `app/lp-builder/actions.ts`
   * Recorte implementado: tabela mínima `public.account_landing_pages`, RLS, grants explícitos, snippet read-only, boundary E19, action server-side canônica fora de `app/a/[account]` e gate E9 antes da persistência via `lib/commercial-entitlements/`.
   * Ajuste PR 499: removido INSERT direto de `authenticated`; criação restrita ao fluxo server-side; insert executado com `service_role` após gate E9; bypass de `platform_admin` removido da criação, exigindo membership ativa owner/admin também neste recorte.
-  * Validação do ajuste PR 499: `npm ci` e `npm run check` reexecutados; Supabase linked/dry-run permanece pendente por ausência de project ref na worktree.
-  * Validações executadas:
-    * `npm ci`: executado.
-    * `npm run check`: executado com sucesso; lint sem erros e typecheck concluído.
-    * `supabase migration list --linked`: não executado com sucesso; bloqueado por worktree sem project ref.
-    * `supabase db push --linked --dry-run`: não executado com sucesso; bloqueado por worktree sem project ref.
-  * Pendência: executar validação Supabase linked/dry-run em ambiente vinculado antes do merge/aplicação.
+  * Registro final:
+    * PR 499 mergeado.
+    * Migration `20260630210213_e19_account_landing_pages` aplicada no Supabase.
+    * Verificação pós-merge confirmou tabela, colunas, constraints, índices, RLS, policies, grants e trigger com status ok.
+    * Pendência: N/A para a Fase 3.
+    * Próxima ação: plano E19 encerrado no recorte da Fase 3; não abrir nova fase sem decisão explícita.
 * Avaliações necessárias:
 
-  * Analista: avaliar Fase 3 / PR 499.
-  * Gestor Estrutural: já avaliou a proposta prévia; retorna se houver mudança estrutural.
-  * Gestor de Updates: avaliar Fase 2 após registro.
+  * Analista: Fase 3 encerrada no recorte atual.
+  * Gestor Estrutural: Fase 3 encerrada no recorte atual.
+  * Gestor de Updates: Fase 3 encerrada no recorte atual.
   * Gestor de Automação: N/A.
 
 4. Escopo negativo e critérios de parada
