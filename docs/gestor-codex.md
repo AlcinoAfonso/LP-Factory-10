@@ -23,6 +23,13 @@ Configurações sustentam o fluxo local adotado para editar, validar e publicar 
 **Valor:** oferece ambiente controlado para execução e validação.
 **Limite:** não substitui `AGENTS.md`.
 
+### Personalizar o Codex
+
+**Aptidão:** usar arquivos do projeto e apps conectados para sugerir próximos passos no Codex App.
+**Estado:** aprovado como recurso auxiliar.
+**Valor:** reduz perda de contexto entre chats e ajuda a lembrar frentes pendentes, arquivos relacionados e continuidade de E9, E10.7, E19 e demais recortes.
+**Limite:** sugestões do Codex não viram decisão automaticamente; execução continua seguindo `AGENTS.md`; alterações no repositório devem seguir branch + PR; ações em Vercel, Stripe, Supabase ou GitHub exigem prompt explícito por tarefa.
+
 ### Git local e `git push`
 
 **Aptidão:** versionar e publicar branches.
