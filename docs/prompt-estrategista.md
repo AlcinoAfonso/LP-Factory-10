@@ -53,7 +53,7 @@ Regra:
 • gestores não avaliam plano-base inteiro.
 
 Mensagem:
-Avalie o plano-base docs/lousa-plano-base-EXX-YY.md quanto a lacunas, contradições, riscos, escopo e clareza, com base no debate do caso.
+Avalie o plano-base docs/lousa-plano-base-EXX-YY.md quanto a lacunas, contradições, riscos, escopo e clareza, com base no debate do caso, docs/roadmap.md e docs/base-tecnica.md.
 
 6. Avaliação da fase por gestores
    Antes de acionar gestores, verificar se a fase alvo precisa de debate com Analista e humano.
