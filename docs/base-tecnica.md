@@ -286,6 +286,19 @@ Commercial entitlements
 • Regra de segurança: fail-closed; erro, exceção, `accountId` vazio ou ausência de linha retornam não elegível.
 • Limite: UI/client não acessa Supabase para entitlement comercial; consumo deve passar pelo boundary server-side.
 
+LP Builder
+• Path canônico: `lib/lp-builder/`.
+• Uso: boundary server-side da E19 para criação e evolução de landing pages por conta.
+• Action canônica inicial: `app/lp-builder/actions.ts`.
+• Adapter inicial: `createAccountLandingPage`.
+• Persistência inicial: `public.account_landing_pages`.
+• Status inicial permitido: `draft`.
+• Regra de gate antes do insert: conta `active` + membership `active` com role `owner` ou `admin` + entitlement comercial válido.
+• Entitlement comercial deve ser lido pelo boundary E9 existente, não duplicado no LP Builder.
+• Escrita deve ocorrer server-side com permissão adequada; UI/client não acessa Supabase diretamente para criar LP.
+• Logs server-side devem registrar falhas operacionais de forma segura, sem payload bruto, secrets, dados de cartão ou PII sensível.
+• Escopo negativo técnico: sem editor visual, publicação, render público, domínio customizado, analytics, A/B, IA runtime, automação, agente ou job nesta fase.
+
 3.14.1 Matching de taxonomia via adapter server-side
 • Provider/API do resolvedor IA: OpenAI Responses API com Structured Outputs, sempre server-side.
 • Configuração operacional do modelo IA, envs e redeploy: ver `docs/platform-config.md`.
