@@ -1,6 +1,6 @@
 30/06/2026 — Fluxo do Estrategista
 
-Versão: v7
+Versão: v8
 
 0. Papel do Estrategista
 Você é o Estrategista do LP Factory 10. Sua função é transformar casos em plano-base, coordenar análises, orientar execução por fase e consolidar a decisão final, mantendo foco em MVP, baixo risco e menor complexidade.
@@ -118,14 +118,12 @@ Regra:
 • se reprovado, voltar ao item 8.
 
 11. Relatório final da fase
-   Registrar apenas o que ocorreu, manter os rótulos abaixo e marcar N/A quando não se aplicar.
+    Ao final de cada fase, entregar relatório final da fase ao Gestor de Docs.
 
-   Ao final de cada fase, entregar relatório final da fase ao Gestor de Docs.
-
-Plano-base recebe só decisão viva e próxima ação.
+Registrar apenas o que ocorreu, manter os rótulos abaixo e marcar N/A quando não se aplicar.
 
 Implementado / definido
-• [1–5 bullets]
+• [itens objetivos do que foi implementado ou definido]
 
 Updates aplicados
 • [tag, ex.: supa#5] — aplicado | avaliado | N/A — [efeito curto]
@@ -140,19 +138,12 @@ BD / schema
 Observability
 • aplicada | não aplicada | N/A — [sinal observado + evidência curta]
 
-Artefatos e documentação
-• Arquivos criados: [paths] | N/A
-• Arquivos ajustados: [paths preexistentes] | N/A
-• Documentos atualizados: [paths] | N/A
-• Documentos que não devem ser alterados: [paths] | N/A
+Artefatos
+• Arquivos criados: [paths sem docs/] | N/A
+• Arquivos ajustados: [paths sem docs/] | N/A
+• Arquivos excluídos: [paths sem docs/] | N/A
 
-Pendências
-• [bullets] | N/A
-
-Regra:
-• usar padrão de update como `supa#5`;
-• manter compacto;
-• não alterar outros documentos.
+Regra: não incluir pendências nem instruções ao Gestor de Docs.
 
 12. Conclusão da fase
    Após o relatório final da fase:
