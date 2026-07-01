@@ -432,3 +432,83 @@ Não decidir schema novo ainda.
 Usar esta lousa para consolidar entendimento antes de criar plano-base.
 
 A próxima etapa deve ser continuar debatendo a formação das landing pages e só depois transformar em plano técnico.
+
+19. Módulos, variantes e seções
+
+Entendimento aprovado nesta etapa:
+
+A solução recomendada para variações como Hero com imagem, Hero com formulário ou Hero centralizada é usar módulo semântico + variante + slots/configuração.
+
+Não criar uma família para cada módulo neste momento.
+
+Não tratar variações como herança rígida pai/filho.
+
+O módulo define a função semântica da seção.
+
+Exemplos:
+
+* hero
+* benefits
+* faq
+* final_cta
+
+A variante define a forma estrutural do módulo.
+
+Exemplos:
+
+* hero.with_image
+* hero.with_form
+* hero.centered
+* hero.with_video
+
+Slots/configuração completam a seção.
+
+Exemplo conceitual de hero.with_image:
+
+* title
+* subtitle
+* proof_line
+* primary_cta
+* secondary_cta
+* image
+
+Exemplo conceitual de hero.with_form:
+
+* title
+* subtitle
+* proof_line
+* form
+* privacy_note
+* submit_label
+
+A composição escolhe qual variante será usada em cada nicho ou contexto.
+
+Exemplo:
+
+* harmonização facial pode usar hero.with_image
+* captação direta de orçamento pode usar hero.with_form
+* página institucional simples pode usar hero.centered
+
+Essa lógica já é compatível com a estrutura atual do projeto, porque content_template_composition_items já possui:
+
+* module_template_id
+* variant_key
+* sort_order
+* is_required
+* config_json
+
+Leitura prática:
+
+* module_template_id identifica o módulo usado
+* variant_key identifica a variante escolhida
+* sort_order define a posição da seção
+* is_required define obrigatoriedade
+* config_json permite ajustes controlados
+
+Portanto, para landing pages, a direção provisória é:
+
+módulo base → variante → slots/configuração → composição → seção final
+
+Essa decisão não exige criar schema novo agora.
+
+A próxima dúvida a resolver é onde ficam os contratos de slots, regras editoriais e critérios de compatibilidade entre nicho, módulo e variante.
