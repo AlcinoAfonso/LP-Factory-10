@@ -31,6 +31,12 @@ export const adminDocsCatalog: AdminDocCatalogItem[] = [
     description: 'Contrato visual atual do produto.',
   },
   {
+    id: 'lousa-debate-landing-pages',
+    title: 'Lousa debate landing pages',
+    path: 'docs/lousa-debate-landing-pages.md',
+    description: 'Lousa de debate sobre a formacao estrategica das landing pages.',
+  },
+  {
     id: 'gestor-codex',
     title: 'Gestor Codex',
     path: 'docs/gestor-codex.md',
