@@ -1,8 +1,8 @@
 0. Introdução
 
 0.1 Cabeçalho
-• Data: 26/06/2026
-• Versão: v1.5.85
+• Data: 30/06/2026
+• Versão: v1.5.86
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -1401,8 +1401,6 @@ Repositório — Criados
 • `supabase/migrations/20260630210213_e19_account_landing_pages.sql`
 • `supabase/snippets/e19_account_landing_pages_verify.sql`
 
-Repositório — Ajustados
-• `docs/lousa-plano-base-E19.md`
 
 19.5 Fora do escopo da Fase 3
 • Editor visual.
@@ -1425,6 +1423,8 @@ Repositório — Ajustados
 • E18 — Base transversal de templates, módulos, composições e artefatos.
 
 99. Changelog
+v1.5.86 — 30/06/2026 — E19 Fase 3 concluída com criação produtiva mínima de LP por conta, persistência em public.account_landing_pages, boundary lib/lp-builder/ e gate E9 antes do insert.
+
 v1.5.85 — 26/06/2026 — E10.7 Fase 6 concluída; próxima fase: Fase 7 — edição manual de copy e gestão simples de versões.
 
 v1.5.84 — 25/06/2026 — E10.7 Fase 5 concluída com taxons elegíveis por pesquisa estruturada completa, composição técnica genérica sob demanda, geração/publicação `commercial_activation` por `taxonSlug` e próxima Fase 6 planejada para Admin comercial enxuto.

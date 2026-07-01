@@ -1,8 +1,8 @@
 0. Introdução
 
 0.1 Cabeçalho
-• Data da última atualização: 28/06/2026
-• Documento: LP Factory 10 — Schema (DB Contract) v1.0.30
+• Data da última atualização: 30/06/2026
+• Documento: LP Factory 10 — Schema (DB Contract) v1.0.31
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
