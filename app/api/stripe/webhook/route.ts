@@ -17,22 +17,35 @@ type ServiceClient = ReturnType<typeof createServiceClient>;
 type StripeWebhookEventRecord =
   | {
       ok: true;
+      action: "process";
       id: string;
       duplicate: false;
     }
   | {
       ok: true;
+      action: "duplicate_final";
       duplicate: true;
+      processingStatus: "processed" | "ignored";
     }
   | {
       ok: false;
       reason: string;
+      status: number;
     };
 
 type EntitlementWriteResult =
   | {
       ok: true;
       entitlementId: string;
+    }
+  | {
+      ok: false;
+      reason: string;
+    };
+
+type MarkStripeWebhookEventResult =
+  | {
+      ok: true;
     }
   | {
       ok: false;
@@ -85,23 +98,27 @@ export async function POST(request: Request) {
       reason: registered.reason,
     });
 
-    return stripeWebhookResponse({ ok: false, error: "event_registration_failed" }, 500);
+    return stripeWebhookResponse(
+      { ok: false, error: registered.reason },
+      registered.status,
+    );
   }
 
-  if (registered.duplicate) {
+  if (registered.action === "duplicate_final") {
     logStripeWebhook("info", {
       event: "stripe_webhook_duplicated",
       provider: "stripe",
       stripe_event_id: stripeEvent.id,
       stripe_event_type: stripeEvent.type,
-      result: "already_registered",
+      processing_status: registered.processingStatus,
+      result: "already_final",
     });
 
     return stripeWebhookResponse({ ok: true, duplicate: true }, 200);
   }
 
   if (stripeEvent.type !== "invoice.paid") {
-    await markStripeWebhookEvent(supabase, {
+    const markedIgnored = await markStripeWebhookEvent(supabase, {
       id: registered.id,
       processingStatus: "ignored",
       metadataJson: {
@@ -109,6 +126,19 @@ export async function POST(request: Request) {
         ignored_reason: "future_scope",
       },
     });
+
+    if (!markedIgnored.ok) {
+      logStripeWebhook("error", {
+        event: "stripe_webhook_failed",
+        provider: "stripe",
+        stripe_event_id: stripeEvent.id,
+        stripe_event_type: stripeEvent.type,
+        result: "event_mark_ignored_failed",
+        reason: markedIgnored.reason,
+      });
+
+      return stripeWebhookResponse({ ok: false, error: "event_mark_failed" }, 500);
+    }
 
     logStripeWebhook("info", {
       event: "stripe_webhook_ignored",
@@ -127,12 +157,25 @@ export async function POST(request: Request) {
   });
 
   if (!normalized.ok) {
-    await markStripeWebhookEvent(supabase, {
+    const markedFailed = await markStripeWebhookEvent(supabase, {
       id: registered.id,
       processingStatus: "failed",
       errorCode: normalized.reason,
       metadataJson: buildStripeWebhookEventMetadata(stripeEvent),
     });
+
+    if (!markedFailed.ok) {
+      logStripeWebhook("error", {
+        event: "stripe_webhook_failed",
+        provider: "stripe",
+        stripe_event_id: stripeEvent.id,
+        stripe_event_type: stripeEvent.type,
+        result: "event_mark_failed_failed",
+        reason: markedFailed.reason,
+      });
+
+      return stripeWebhookResponse({ ok: false, error: "event_mark_failed" }, 500);
+    }
 
     logStripeWebhook("warn", {
       event: "stripe_webhook_failed",
@@ -156,7 +199,7 @@ export async function POST(request: Request) {
   });
 
   if (!entitlementWrite.ok) {
-    await markStripeWebhookEvent(supabase, {
+    const markedFailed = await markStripeWebhookEvent(supabase, {
       id: registered.id,
       processingStatus: "failed",
       accountId: normalized.entitlement.accountId,
@@ -164,6 +207,21 @@ export async function POST(request: Request) {
       errorCode: entitlementWrite.reason,
       metadataJson: normalized.entitlement.metadataJson,
     });
+
+    if (!markedFailed.ok) {
+      logStripeWebhook("error", {
+        event: "stripe_webhook_failed",
+        provider: "stripe",
+        stripe_event_id: stripeEvent.id,
+        stripe_event_type: stripeEvent.type,
+        account_id: normalized.entitlement.accountId,
+        status: "ativo",
+        result: "event_mark_failed_failed",
+        reason: markedFailed.reason,
+      });
+
+      return stripeWebhookResponse({ ok: false, error: "event_mark_failed" }, 500);
+    }
 
     logStripeWebhook("error", {
       event: "stripe_webhook_failed",
@@ -179,7 +237,7 @@ export async function POST(request: Request) {
     return stripeWebhookResponse({ ok: false, error: "entitlement_write_failed" }, 500);
   }
 
-  await markStripeWebhookEvent(supabase, {
+  const markedProcessed = await markStripeWebhookEvent(supabase, {
     id: registered.id,
     processingStatus: "processed",
     accountId: normalized.entitlement.accountId,
@@ -187,6 +245,21 @@ export async function POST(request: Request) {
     externalReference: normalized.entitlement.subscriptionId,
     metadataJson: normalized.entitlement.metadataJson,
   });
+
+  if (!markedProcessed.ok) {
+    logStripeWebhook("error", {
+      event: "stripe_webhook_failed",
+      provider: "stripe",
+      stripe_event_id: stripeEvent.id,
+      stripe_event_type: stripeEvent.type,
+      account_id: normalized.entitlement.accountId,
+      status: "ativo",
+      result: "event_mark_processed_failed",
+      reason: markedProcessed.reason,
+    });
+
+    return stripeWebhookResponse({ ok: false, error: "event_mark_failed" }, 500);
+  }
 
   logStripeWebhook("info", {
     event: "stripe_webhook_processed",
@@ -219,15 +292,111 @@ async function registerStripeWebhookEvent(
 
   if (error) {
     if (error.code === "23505") {
-      return { ok: true, duplicate: true };
+      return resolveExistingStripeWebhookEvent(supabase, stripeEvent);
     }
-    return { ok: false, reason: error.code ?? "insert_failed" };
+    return { ok: false, reason: error.code ?? "insert_failed", status: 500 };
   }
 
   const id = typeof data?.id === "string" ? data.id : null;
-  if (!id) return { ok: false, reason: "missing_event_record_id" };
+  if (!id) {
+    return { ok: false, reason: "missing_event_record_id", status: 500 };
+  }
 
-  return { ok: true, duplicate: false, id };
+  return { ok: true, action: "process", duplicate: false, id };
+}
+
+async function resolveExistingStripeWebhookEvent(
+  supabase: ServiceClient,
+  stripeEvent: StripeWebhookEvent,
+): Promise<StripeWebhookEventRecord> {
+  const { data, error } = await supabase
+    .from("stripe_webhook_events")
+    .select("id, processing_status")
+    .eq("event_id", stripeEvent.id)
+    .single();
+
+  if (error) {
+    return {
+      ok: false,
+      reason: error.code ?? "event_lookup_failed",
+      status: 500,
+    };
+  }
+
+  const id = typeof data?.id === "string" ? data.id : null;
+  const processingStatus =
+    typeof data?.processing_status === "string"
+      ? data.processing_status
+      : null;
+
+  if (!id || !processingStatus) {
+    return { ok: false, reason: "event_record_incomplete", status: 500 };
+  }
+
+  if (processingStatus === "processed" || processingStatus === "ignored") {
+    return {
+      ok: true,
+      action: "duplicate_final",
+      duplicate: true,
+      processingStatus,
+    };
+  }
+
+  if (processingStatus === "failed") {
+    const reset = await resetFailedStripeWebhookEventForRetry(supabase, {
+      id,
+      stripeEvent,
+    });
+    if (!reset.ok) {
+      return { ok: false, reason: reset.reason, status: 500 };
+    }
+    return { ok: true, action: "process", duplicate: false, id };
+  }
+
+  if (processingStatus === "processing") {
+    return {
+      ok: false,
+      reason: "event_processing_in_progress",
+      status: 409,
+    };
+  }
+
+  return { ok: false, reason: "event_status_unknown", status: 500 };
+}
+
+async function resetFailedStripeWebhookEventForRetry(
+  supabase: ServiceClient,
+  input: {
+    id: string;
+    stripeEvent: StripeWebhookEvent;
+  },
+): Promise<MarkStripeWebhookEventResult> {
+  const { data, error } = await supabase
+    .from("stripe_webhook_events")
+    .update({
+      processing_status: "processing",
+      account_id: null,
+      entitlement_id: null,
+      external_reference: null,
+      error_code: null,
+      metadata_json: {
+        ...buildStripeWebhookEventMetadata(input.stripeEvent),
+        retry_reason: "previous_failed",
+      },
+      processed_at: null,
+    })
+    .eq("id", input.id)
+    .eq("processing_status", "failed")
+    .select("id")
+    .single();
+
+  if (error) {
+    return { ok: false, reason: error.code ?? "event_retry_reset_failed" };
+  }
+
+  return typeof data?.id === "string"
+    ? { ok: true }
+    : { ok: false, reason: "event_retry_reset_missing_id" };
 }
 
 async function markStripeWebhookEvent(
@@ -241,8 +410,8 @@ async function markStripeWebhookEvent(
     errorCode?: string | null;
     metadataJson: Record<string, string | boolean | null>;
   },
-) {
-  await supabase
+): Promise<MarkStripeWebhookEventResult> {
+  const { data, error } = await supabase
     .from("stripe_webhook_events")
     .update({
       processing_status: input.processingStatus,
@@ -253,7 +422,17 @@ async function markStripeWebhookEvent(
       metadata_json: input.metadataJson,
       processed_at: new Date().toISOString(),
     })
-    .eq("id", input.id);
+    .eq("id", input.id)
+    .select("id")
+    .single();
+
+  if (error) {
+    return { ok: false, reason: error.code ?? "event_mark_failed" };
+  }
+
+  return typeof data?.id === "string"
+    ? { ok: true }
+    : { ok: false, reason: "event_mark_missing_id" };
 }
 
 async function upsertStripeEntitlement(

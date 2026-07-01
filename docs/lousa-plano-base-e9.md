@@ -684,6 +684,8 @@ Segurança e limites:
 * Tabela de eventos tem RLS ativo, grants restritos a `service_role` e nenhum grant para `anon` ou `authenticated`.
 * Não houve Billing Engine, multi-provider engine, Stripe Sync Engine, admin, régua de cobrança, fila/job/cron, analytics, BotID, liberação por redirect ou persistência de payload bruto.
 * `checkout.session.completed` e redirect de sucesso continuam sem criar entitlement comercial.
+* Ajuste pré-merge do PR #509: colisão `23505` em `stripe_webhook_events.event_id` agora consulta o registro existente e decide por `processing_status`; `processed`/`ignored` retornam duplicado final seguro, `failed` permite reprocessamento controlado e `processing` retorna erro controlado para evitar perder retry.
+* Ajuste pré-merge do PR #509: falha ao marcar evento como `processed`, `ignored` ou `failed` impede resposta de sucesso do webhook.
 
 Riscos e lacunas:
 
