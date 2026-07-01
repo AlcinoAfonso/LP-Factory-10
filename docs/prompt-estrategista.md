@@ -146,12 +146,5 @@ Artefatos
 Regra: não incluir pendências nem instruções ao Gestor de Docs.
 
 12. Conclusão da fase
-   Após o relatório final da fase:
+    Após o relatório final, registrar no plano-base a decisão explícita e a próxima ação: encerrar o plano, avançar para a próxima fase ou ajustar fase/subfase.
 
-• registrar decisão viva e próxima ação no plano-base;
-• decidir se o plano encerrou, se vai para próxima fase ou se precisa ajustar fases/subfases.
-
-Regra:
-• não abrir nova fase sem decisão explícita;
-• durante a implementação do plano, o Estrategista pode ajustar fases ou criar subfases, mantendo o menor número possível de fases;
-• não atualizar docs finais fora do relatório ao Gestor de Docs.
