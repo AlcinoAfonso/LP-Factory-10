@@ -37,6 +37,7 @@ Regra:
 • não alterar, expandir, renomear ou substituir o template mínimo do plano-base;
 • não adicionar novas seções principais ao plano-base;
 • no item “Fases e próxima ação”, definir poucas fases de implementação desde o início;
+• fases previstas são hipóteses operacionais e podem ser ajustadas com aprendizado real, sem abrir novo escopo sem decisão explícita.
 • se houver apenas uma fase, registrar como Fase única;
 • indicar em cada fase se o Gestor de Automação deve avaliar: Automação: sim | não;
 • não separar plano, ajuste e briefing em etapas diferentes;
