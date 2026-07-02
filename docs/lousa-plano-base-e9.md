@@ -369,12 +369,16 @@ Governança da Fase 4:
 
 3.6 Fase 5 — Gate produtivo de criação de LP
 
-* Status: aprovada conceitualmente, mas bloqueada/adiada.
-* Objetivo conceitual aprovado: aplicar a regra conta `active` + membership ativo + entitlement comercial válido no ponto server-side de criação produtiva de LP.
-* Resultado esperado futuro: criação produtiva bloqueada quando não houver entitlement comercial válido.
-* Motivo do bloqueio: ainda não existe no repositório um ponto server-side real de criação produtiva de LP por conta onde aplicar o gate.
-* Limite atual: não criar endpoint, fluxo, LP Builder, rota nova, arquitetura nova ou qualquer substituto artificial apenas para acomodar a Fase 5.
-* Próxima ação: retomar a Fase 5 somente quando existir a mutação produtiva real de criação de LP; até lá, seguir o E9 para o próximo recorte.
+* Status: concluída após retomada com o ponto real entregue pela E19.
+* Objetivo: validar que a criação produtiva mínima de LP consome o entitlement comercial E9 antes da persistência.
+* Ponto real identificado: action canônica `app/lp-builder/actions.ts`, boundary `lib/lp-builder/`, tabela `public.account_landing_pages`, criação inicial como `draft`.
+* Gate confirmado em `createAccountLandingPage`: usuário autenticado, `accounts.status = active`, membership em `account_users.status = active`, papel `owner`/`admin`, `getCommercialEntitlementSignal({ accountId })` e `isCommerciallyEligible = true`.
+* Fail-closed confirmado: sem entitlement comercial válido, o fluxo retorna `commercial_entitlement_required` antes do insert em `account_landing_pages`.
+* Fonte comercial confirmada: o LP Builder não consulta Stripe, não usa redirect de checkout como liberação e não usa apenas `accounts.status` como prova comercial; consome server-side o sinal de `lib/commercial-entitlements/`.
+* Banco confirmado: `account_landing_pages` existe, RLS ativo, `authenticated` sem INSERT direto, mutação por `service_role`, unique `(account_id, slug)` e status limitado a `draft`.
+* Validação operacional direta da action: N/A neste recorte, porque não há superfície aprovada para disparar a action real sem criar rota ou UI artificial; validação realizada por inspeção de código e Supabase read-only.
+* Decisão: Fase 5 fechada; o gate produtivo mínimo de criação de LP está aplicado antes da persistência.
+* Próxima ação: seguir para avaliação estratégica do próximo recorte sem voltar para Fase 5, salvo se surgir nova superfície produtiva ou mudança no contrato de entitlement.
 * Limite permanente da fase: não alterar layout/copy/cards da E10.7 e não implementar checkout.
 
 3.7 Fase 6 — Provedor de checkout mínimo
