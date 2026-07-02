@@ -2,8 +2,8 @@
 
 0.1 Cabeçalho
 • Documento: LP Factory 10 — Platform Config
-• Versão: v0.1.7
-• Data: 25/06/2026
+• Versão: v0.1.8
+• Data: 02/07/2026
 
 0.2 Contrato do documento
 • O QUE É: snapshot operacional e fonte única das configurações de plataformas externas do LP Factory 10, refletindo o estado conhecido/cadastrado nas plataformas conforme indicado.
@@ -283,24 +283,34 @@
 7. Stripe
 
 7.1 Uso
-• Finalidade: provedor inicial de checkout do E9.
+• Finalidade: provedor inicial de checkout e webhook do E9.
 • Ambiente atual validado: teste.
 • Modo: `subscription`.
 • O app cria Checkout Session server-side.
-• Stripe Dashboard/Plugin pode apoiar criação, validação e consulta de Product/Price e Checkout Sessions.
-• Stripe Plugin não substitui o fluxo server-side do LP Factory.
-• Webhook e persistência de entitlement ficam para fase própria.
+• Webhook mínimo produtivo validado em `POST /api/stripe/webhook`.
+• `invoice.paid` ativa/renova entitlement local.
+• Redirect de sucesso não confirma pagamento e não libera entitlement.
 
 7.2 Endpoint usado pelo app
 • Checkout Sessions API: `https://api.stripe.com/v1/checkout/sessions`
 • Regra: chamada somente server-side.
 • Regra: não expor secret Stripe no client.
+• Webhook Stripe: `POST /api/stripe/webhook`
+• Endpoint externo usado para subscription lookup: `https://api.stripe.com/v1/subscriptions`
+• Regra: webhook exige assinatura Stripe válida.
+• Regra: payload bruto Stripe não deve ser persistido.
 
 7.3 Vercel — secrets e variáveis Stripe
 • `STRIPE_SECRET_KEY`
 • Finalidade: secret server-side Stripe para criar Checkout Sessions.
 • Plataforma: Vercel.
 • Escopo conhecido: Production validado; Preview quando necessário para testes.
+• Valor real: não versionar.
+
+• `STRIPE_WEBHOOK_SECRET`
+• Finalidade: secret server-side para validação da assinatura do webhook Stripe.
+• Plataforma: Vercel.
+• Escopo conhecido: Production validado.
 • Valor real: não versionar.
 
 Products/Prices de teste
@@ -400,6 +410,8 @@ Regra:
 • Configurações de plataformas, secrets por nome, workflows, ambientes e endpoints usados por automações devem ser registrados neste documento.
 
 99. Changelog
+v0.1.8 — 02/07/2026 — Configuração Stripe atualizada com uso de webhook produtivo, endpoint `/api/stripe/webhook`, lookup de subscriptions e secret `STRIPE_WEBHOOK_SECRET`.
+
 v0.1.7 — 25/06/2026 — Atualizado `OPENAI_COMMERCIAL_ACTIVATION_MODEL` para escopo Production e Preview, com referência `gpt-5.4-mini` e regra operacional de não prender configuração a branch no MVP.
 
 v0.1.6 — 23/06/2026 — Registrado o estado operacional de `OPENAI_COMMERCIAL_ACTIVATION_MODEL` para E10.7 Fase 3: configurada e validada em Vercel Preview com modelo de referência, Production pendente de decisão operacional e sem exposição de secrets.
