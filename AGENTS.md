@@ -6,6 +6,9 @@ Antes de executar, confirmar objetivo, fontes, limites e validação esperada.
 
 Não completar lacunas críticas por suposição; se faltar informação necessária para executar com segurança, parar e pedir exatamente o que falta.
 
+Antes de executar briefing recebido por chat, confirmar se ele pertence ao caso, fase, branch e arquivos-alvo da tarefa atual.
+Se houver divergência ou dúvida, parar e reportar a incompatibilidade; não adaptar briefing de outro caso por inferência.
+
 ## Regras operacionais
 
 Não editar nem commitar na `main`; usar branch dedicada por tarefa ou etapa. Ao usar a `main` local como base, atualizar com `git pull --ff-only`. O merge final deve ocorrer somente pelo GitHub Web. Se o ambiente não estiver claro, perguntar antes de publicar.
