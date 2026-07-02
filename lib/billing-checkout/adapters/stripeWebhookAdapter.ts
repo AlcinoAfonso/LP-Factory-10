@@ -62,6 +62,16 @@ export type StripeInvoicePaidEntitlement = {
   metadataJson: Record<string, string | boolean | null>;
 };
 
+type StripeEntitlementPeriod = {
+  startsAt: string | null;
+  expiresAt: string | null;
+};
+
+type StripePeriodCandidate = {
+  start: number | null;
+  end: number | null;
+};
+
 export type StripeInvoicePaidEntitlementResult =
   | {
       ok: true;
@@ -227,6 +237,8 @@ export async function normalizeStripeInvoicePaidEntitlement(input: {
     return { ok: false, reason: "invalid_recurrence" };
   }
 
+  const period = resolveStripeEntitlementPeriod({ subscription, invoice });
+
   return {
     ok: true,
     entitlement: {
@@ -238,15 +250,11 @@ export async function normalizeStripeInvoicePaidEntitlement(input: {
       invoiceId,
       providerProductId: price.productId,
       providerPriceId: price.priceId,
-      startsAt:
-        unixSecondsToIsoString(readNumber(subscription, "current_period_start")) ??
-        unixSecondsToIsoString(readNumber(invoice, "period_start")),
+      startsAt: period.startsAt,
       confirmedAt:
         unixSecondsToIsoString(readInvoicePaidAt(invoice)) ??
         unixSecondsToIsoString(input.event.created),
-      expiresAt:
-        unixSecondsToIsoString(readNumber(subscription, "current_period_end")) ??
-        unixSecondsToIsoString(readNumber(invoice, "period_end")),
+      expiresAt: period.expiresAt,
       metadataJson: {
         stripe_event_id: input.event.id,
         stripe_event_type: input.event.type,
@@ -259,6 +267,96 @@ export async function normalizeStripeInvoicePaidEntitlement(input: {
       },
     },
   };
+}
+
+function resolveStripeEntitlementPeriod(input: {
+  subscription: Record<string, unknown>;
+  invoice: Record<string, unknown>;
+}): StripeEntitlementPeriod {
+  const candidates = [
+    readPeriodCandidate(input.subscription, {
+      startProperty: "current_period_start",
+      endProperty: "current_period_end",
+    }),
+    readFirstSubscriptionItemPeriod(input.subscription),
+    readFirstInvoiceLinePeriod(input.invoice),
+    readPeriodCandidate(input.invoice, {
+      startProperty: "period_start",
+      endProperty: "period_end",
+    }),
+  ];
+
+  for (const candidate of candidates) {
+    const period = normalizeValidPeriodPair(candidate);
+    if (period) return period;
+  }
+
+  const startsAt = candidates
+    .map((candidate) => unixSecondsToIsoString(candidate.start))
+    .find((value): value is string => value !== null);
+
+  return {
+    startsAt: startsAt ?? null,
+    expiresAt: null,
+  };
+}
+
+function normalizeValidPeriodPair(
+  candidate: StripePeriodCandidate,
+): StripeEntitlementPeriod | null {
+  if (
+    candidate.start === null ||
+    candidate.end === null ||
+    candidate.start >= candidate.end
+  ) {
+    return null;
+  }
+
+  const startsAt = unixSecondsToIsoString(candidate.start);
+  const expiresAt = unixSecondsToIsoString(candidate.end);
+  if (!startsAt || !expiresAt) return null;
+
+  return {
+    startsAt,
+    expiresAt,
+  };
+}
+
+function readPeriodCandidate(
+  source: Record<string, unknown>,
+  properties: { startProperty: string; endProperty: string },
+): StripePeriodCandidate {
+  return {
+    start: readNumber(source, properties.startProperty),
+    end: readNumber(source, properties.endProperty),
+  };
+}
+
+function readFirstSubscriptionItemPeriod(
+  subscription: Record<string, unknown>,
+): StripePeriodCandidate {
+  const item = readFirstSubscriptionItem(subscription);
+  if (!item) return { start: null, end: null };
+
+  return readPeriodCandidate(item, {
+    startProperty: "current_period_start",
+    endProperty: "current_period_end",
+  });
+}
+
+function readFirstInvoiceLinePeriod(
+  invoice: Record<string, unknown>,
+): StripePeriodCandidate {
+  const lines = normalizeRecord(invoice.lines);
+  const data = Array.isArray(lines?.data) ? lines.data : [];
+  const firstLine = normalizeRecord(data[0]);
+  const period = normalizeRecord(firstLine?.period);
+  if (!period) return { start: null, end: null };
+
+  return readPeriodCandidate(period, {
+    startProperty: "start",
+    endProperty: "end",
+  });
 }
 
 function parseStripeSignatureHeader(
@@ -389,9 +487,7 @@ function readFirstSubscriptionPrice(subscription: Record<string, unknown>): {
   priceId: string | null;
   productId: string | null;
 } {
-  const items = normalizeRecord(subscription.items);
-  const data = Array.isArray(items?.data) ? items.data : [];
-  const firstItem = normalizeRecord(data[0]);
+  const firstItem = readFirstSubscriptionItem(subscription);
   const price = normalizeRecord(firstItem?.price);
   if (!price) return { priceId: null, productId: null };
 
@@ -403,6 +499,14 @@ function readFirstSubscriptionPrice(subscription: Record<string, unknown>): {
         ? normalizeRequiredString(product)
         : readString(normalizeRecord(product) ?? {}, "id"),
   };
+}
+
+function readFirstSubscriptionItem(
+  subscription: Record<string, unknown>,
+): Record<string, unknown> | null {
+  const items = normalizeRecord(subscription.items);
+  const data = Array.isArray(items?.data) ? items.data : [];
+  return normalizeRecord(data[0]);
 }
 
 function readInvoicePaidAt(invoice: Record<string, unknown>): number | null {
