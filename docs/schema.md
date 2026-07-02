@@ -1,8 +1,8 @@
 0. Introdução
 
 0.1 Cabeçalho
-• Data da última atualização: 30/06/2026
-• Documento: LP Factory 10 — Schema (DB Contract) v1.0.31
+• Data da última atualização: 02/07/2026
+• Documento: LP Factory 10 — Schema (DB Contract) v1.0.32
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -130,6 +130,51 @@
 • Não há payload bruto, dado de cartão, secret ou e-mail como chave de idempotência.
 • `public.plans` continua fonte parcial de metadados de plano e não prova entitlement comercial.
 • Account Dashboard consumirá a leitura efetiva apenas em fase futura; esta etapa não altera runtime.
+
+1.5.7 stripe_webhook_events
+1.5.7.1 Função
+• Idempotência e auditoria operacional mínima de eventos Stripe.
+• Não armazena payload bruto, secrets, dados de cartão ou PII.
+
+1.5.7.2 Colunas
+• id uuid primary key default gen_random_uuid()
+• event_id text not null
+• event_type text not null
+• provider text not null default 'stripe'
+• processing_status text not null
+• account_id uuid null
+• entitlement_id uuid null
+• external_reference text null
+• error_code text null
+• metadata_json jsonb not null default '{}'::jsonb
+• received_at timestamptz not null default now()
+• processed_at timestamptz null
+• created_at timestamptz not null default now()
+• updated_at timestamptz not null default now()
+
+1.5.7.3 Constraints e relacionamentos
+• UNIQUE: event_id
+• CHECK: provider = 'stripe'
+• CHECK: processing_status IN ('processing', 'processed', 'ignored', 'failed')
+• CHECK: event_id não vazio
+• CHECK: event_type não vazio
+• CHECK: external_reference não vazio quando existir
+• CHECK: error_code não vazio quando existir
+• CHECK: metadata_json deve ser objeto JSON
+• FK: account_id → accounts(id) ON UPDATE CASCADE ON DELETE SET NULL
+• FK: entitlement_id → account_commercial_entitlements(id) ON UPDATE CASCADE ON DELETE SET NULL
+
+1.5.7.4 Índices
+• stripe_webhook_events_event_type_idx
+• stripe_webhook_events_processing_status_idx
+• stripe_webhook_events_account_id_idx
+• stripe_webhook_events_external_reference_idx parcial quando external_reference IS NOT NULL
+
+1.5.7.5 Segurança
+• Trigger: stripe_webhook_events_set_updated_at usa public.tg_set_updated_at()
+• RLS: ativo
+• Grants: service_role com SELECT, INSERT e UPDATE
+• public, anon e authenticated sem grants
 
 1.6 partners
 • PK: id uuid

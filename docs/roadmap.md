@@ -1,8 +1,8 @@
 0. Introdução
 
 0.1 Cabeçalho
-• Data: 30/06/2026
-• Versão: v1.5.86
+• Data: 02/07/2026
+• Versão: v1.5.87
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -375,56 +375,62 @@
 • `PlanId` legado não é contrato de negócio.
 • Webhook, assinatura do webhook, idempotência e persistência em `account_commercial_entitlements` ficam para a Fase 7.
 
-9.3.8 Updates avaliados
+9.3.8 Webhook Stripe mínimo
+• Status: Fase 7.2 concluída em 02/07/2026.
+• Endpoint produtivo: `POST /api/stripe/webhook`.
+• Evento que ativa/renova entitlement: `invoice.paid`.
+• `checkout.session.completed` é evento auxiliar/ignorado e não libera entitlement.
+• `customer.subscription.deleted` e `invoice.payment_failed` ficam registrados como controlados/ignorados neste recorte.
+• Idempotência operacional: `stripe_webhook_events.event_id`.
+• Retry validado para evento `failed` e para `processing` antigo com `retry_reason = stale_processing`.
+• Persistência local validada em `public.account_commercial_entitlements`.
+• Redirect de sucesso continua sem liberar entitlement.
+• Payload bruto, secret, cartão e PII sensível não são persistidos.
+
+9.3.9 Updates avaliados
 • `supa#5`, `supa#36`, `supa#40`, `supa#58`.
+• Stripe webhook, Vercel Production, Stripe test mode e Supabase/Postgres aplicados na Fase 7.2.
 
 9.4 Pendências vigentes
-• Implementar E9 Fase 7.1 — contrato do webhook Stripe e persistência de entitlement.
-• Definir contrato do webhook Stripe.
-• Validar assinatura do webhook.
-• Definir evento normalizado.
-• Definir idempotência.
-• Mapear status Stripe para status comercial interno.
-• Persistir ou atualizar `public.account_commercial_entitlements`.
-• Garantir que redirect de sucesso continue sem liberar entitlement.
-• Auditar logs detalhados quando a ferramenta permitir.
-• Não persistir payload bruto, cartão, secret ou PII sensível em logs ou banco.
+• N/A para o recorte concluído da Fase 7.2.
 
 9.5 Estruturas e artefatos
 
 Banco — Criados
 • `public.account_commercial_entitlements`
 • `public.v_account_commercial_entitlement_effective`
+• `public.stripe_webhook_events`
 
 Repositório — Criados
 • `supabase/migrations/20260628184945_e9_commercial_entitlements.sql`
 • `supabase/snippets/e9_phase_3_entitlements_verify.sql`
+• `supabase/migrations/20260701202632_e9_stripe_webhook_events.sql`
+• `supabase/snippets/e9_phase_7_2_stripe_webhook_verify.sql`
 • `lib/commercial-entitlements/contracts.ts`
 • `lib/commercial-entitlements/adapters/commercialEntitlementAdapter.ts`
 • `lib/commercial-entitlements/index.ts`
 • `lib/billing-checkout/contracts.ts`
 • `lib/billing-checkout/adapters/stripePriceMap.ts`
 • `lib/billing-checkout/adapters/stripeCheckoutAdapter.ts`
+• `lib/billing-checkout/adapters/stripeWebhookAdapter.ts`
 • `lib/billing-checkout/index.ts`
 • `app/a/[account]/_components/commercial-page/checkout-actions.ts`
+• `app/api/stripe/webhook/route.ts`
 
 Repositório — Ajustados
 • `app/a/[account]/page.tsx`
 • `app/a/[account]/_components/commercial-page/GenericCommercialPage.tsx`
-• `docs/schema.md`
-• `docs/lousa-plano-base-e9.md`
+• `lib/billing-checkout/index.ts`
 
-9.6 Fora do escopo da Fase 6
-• Webhook Stripe.
-• Validação de assinatura do webhook.
-• Persistência de entitlement local.
+9.6 Fora do escopo da Fase 7.2
 • Billing Engine completo.
 • Admin comercial.
 • Trial operacional.
 • Liberação manual operacional.
 • LP Builder.
 • Alteração de layout, copy ou cards da E10.7.
-• Logs sensíveis, eventos persistidos, job, rotina, monitoramento ou automação.
+• Processamento de cancelamento e falha de pagamento fora do registro controlado/ignorado.
+• Job, rotina, monitoramento ou automação.
 
 10. E10 — Account Dashboard (UX)
 
@@ -1431,6 +1437,8 @@ Repositório — Criados
 • Esta referência não cria obrigação de nova implementação agora.
 
 99. Changelog
+v1.5.87 — 02/07/2026 — E9 Fase 7.2 concluída com webhook Stripe mínimo em produção, `invoice.paid` ativando entitlement local, idempotência em `stripe_webhook_events`, retry operacional e persistência validada em `account_commercial_entitlements`.
+
 v1.5.86 — 30/06/2026 — E19 Fase 3 concluída com criação produtiva mínima de LP por conta, persistência em public.account_landing_pages, boundary lib/lp-builder/ e gate E9 antes do insert.
 
 v1.5.85 — 26/06/2026 — E10.7 Fase 6 concluída; próxima fase: Fase 7 — edição manual de copy e gestão simples de versões.
