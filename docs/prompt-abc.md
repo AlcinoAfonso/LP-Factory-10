@@ -1,4 +1,4 @@
-# docs/prompt-abc.md vs5
+# docs/prompt-abc.md vs6
 
 PROMPT ABC
 
@@ -73,7 +73,7 @@ ALLOWLISTS POR DOC_ALVO
 * ENTRA: status com data, escopo final em bullets curtos, dependências entre casos E*, decisões explícitas, pendências marcadas no RELATÓRIO e estruturas/artefatos vinculados ao estado final do caso.
 * REGRA DE ATUALIZAÇÃO: como exceção às regras de consolidação de estado final deste prompt, casos em planejamento, andamento ou implementação parcial devem preservar debates, planos, decisões provisórias, trabalho em execução, faltas e próximos passos. Nessa fase, não alterar cabeçalho, versão ou changelog nem marcar o caso como implementado ou concluído. Somente quando o caso completo ou um recorte autônomo estiver totalmente implementado e validado, remover debates encerrados, planos operacionais consumidos, hipóteses não aprovadas e conteúdo provisório superado; preservar decisões futuras aprovadas, pendências vigentes, limites permanentes e evoluções já classificadas. Para caso, fase ou recorte autônomo já implementado, o corpo do roadmap deve ser snapshot do estado atual, não narrativa de execução: não copiar PR, branch, merge commit, comandos, prints, bugs intermediários ou validações transitórias, salvo quando virarem pendência vigente, limite permanente ou requisito atual.
 * REGRA: “E” só no título principal do caso; subitens sem repetir “E”.
-* ESTRUTURAS E ARTEFATOS: em cada caso implementado, registrar quando aplicável somente os nomes dos objetos de banco e os paths dos arquivos de repositório criados, ajustados ou removidos.
+* ESTRUTURAS E ARTEFATOS: registrar somente objetos de banco e artefatos funcionais do repositório criados, ajustados ou removidos; não registrar docs/**, pois docs são DOC_ALVO, fonte ou patch documental.
 * CATEGORIAS:
   * Banco — Criados, Ajustados e Removidos
   * Repositório — Criados, Ajustados e Removidos
@@ -136,6 +136,7 @@ GERAÇÃO DO ABC (DELTA-ONLY)
    * Em operações de TRECHO, usar a seção em que o trecho entra/sai.
    * Em `ADICIONAR_SECAO`, usar a seção imediatamente anterior (mesmo nível), quando existir.
    * Se a âncora não estiver clara no DOC_ALVO, não gerar operação de ADIÇÃO.
+10.1. O briefing deve conter só deltas executáveis: ADICIONAR, SUBSTITUIR ou REMOVER, com trecho-alvo mínimo. Não incluir relatório, justificativas longas, listas de não levar ou contexto já conhecido.
 
 REGRAS DE VERSIONAMENTO/CHANGELOG
 
