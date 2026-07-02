@@ -64,6 +64,13 @@ Plugins aproximam serviços externos das tarefas de investigação e execução.
 **Valor:** acelera diagnóstico de deploys, previews, build logs, runtime, endpoints e configurações Vercel.
 **Limite:** escrita, deploy manual, variáveis de ambiente, domínios, settings e ações em produção não testados nem aprovados.
 
+### OpenAI Developers Plugin
+
+**Aptidão:** apoiar desenvolvimento com OpenAI API, configuração segura de API key, avaliação de Responses API, Agents SDK, ChatGPT Apps SDK e troubleshooting de chamadas OpenAI.
+**Estado:** em teste; uso aprovado apenas como apoio técnico e consultivo.
+**Valor:** ajuda a reduzir risco na configuração de `OPENAI_API_KEY`, orientar uso correto das APIs OpenAI e avaliar protótipos controlados de agentes ou apps antes de qualquer adoção.
+**Limite:** não implementar agente, automação, ChatGPT App, SDK ou chamada OpenAI em runtime sem caso real aprovado; não expor secrets; não criar nova arquitetura para o MVP; seguir `docs/gestor-automations.md` para decidir entre Responses API, automação simples, Agents SDK ou Sandbox Agents.
+
 ### Stripe Plugin
 
 **Aptidão:** apoio consultivo e operacional em modo teste para boas práticas de billing, trial e entitlements da futura E9.
