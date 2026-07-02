@@ -131,12 +131,12 @@
 • `public.plans` continua fonte parcial de metadados de plano e não prova entitlement comercial.
 • Account Dashboard consumirá a leitura efetiva apenas em fase futura; esta etapa não altera runtime.
 
-1.6 stripe_webhook_events
-1.6.1 Função
+1.5.7 stripe_webhook_events
+1.5.7.1 Função
 • Idempotência e auditoria operacional mínima de eventos Stripe.
 • Não armazena payload bruto, secrets, dados de cartão ou PII.
 
-1.6.2 Colunas
+1.5.7.2 Colunas
 • id uuid primary key default gen_random_uuid()
 • event_id text not null
 • event_type text not null
@@ -152,7 +152,7 @@
 • created_at timestamptz not null default now()
 • updated_at timestamptz not null default now()
 
-1.6.3 Constraints e relacionamentos
+1.5.7.3 Constraints e relacionamentos
 • UNIQUE: event_id
 • CHECK: provider = 'stripe'
 • CHECK: processing_status IN ('processing', 'processed', 'ignored', 'failed')
@@ -164,62 +164,62 @@
 • FK: account_id → accounts(id) ON UPDATE CASCADE ON DELETE SET NULL
 • FK: entitlement_id → account_commercial_entitlements(id) ON UPDATE CASCADE ON DELETE SET NULL
 
-1.6.4 Índices
+1.5.7.4 Índices
 • stripe_webhook_events_event_type_idx
 • stripe_webhook_events_processing_status_idx
 • stripe_webhook_events_account_id_idx
 • stripe_webhook_events_external_reference_idx parcial quando external_reference IS NOT NULL
 
-1.6.5 Segurança
+1.5.7.5 Segurança
 • Trigger: stripe_webhook_events_set_updated_at usa public.tg_set_updated_at()
 • RLS: ativo
 • Grants: service_role com SELECT, INSERT e UPDATE
 • public, anon e authenticated sem grants
 
-1.7 partners
+1.6 partners
 • PK: id uuid
 • Campos: name, type (agency | reseller | affiliate), status (active | inactive | suspended)
 • Trigger Hub: não
 • RLS: conforme uso
 • Policies (TBD)
 
-1.8 partner_accounts
-1.8.1 Chaves e relacionamentos
+1.7 partner_accounts
+1.7.1 Chaves e relacionamentos
 • PK composto: (partner_id, account_id)
 • FK: partner_id → partners; account_id → accounts
-1.8.2 Segurança
+1.7.2 Segurança
 • Trigger Hub: sim
 • RLS: obrigatório
-1.8.3 Policies (TBD: preencher nomes reais no Supabase)
+1.7.3 Policies (TBD: preencher nomes reais no Supabase)
 • Select: platform_admin/partner autorizado
 • Insert/Update/Delete: governado via hub/regras administrativas
 
-1.9 account_profiles
-1.9.1 Chaves, constraints e relacionamentos
+1.8 account_profiles
+1.8.1 Chaves, constraints e relacionamentos
 • PK: account_id uuid (constraint account_profiles_pkey)
 • FK: account_id → accounts(id) ON DELETE CASCADE (constraint account_profiles_account_id_fkey)
 • CHECK: account_profiles_preferred_channel_chk (preferred_channel IN ('email', 'whatsapp'))
-1.9.2 Campos
+1.8.2 Campos
 • niche text null
 • preferred_channel text not null default 'email'
 • whatsapp text null
 • site_url text null
 • created_at timestamptz not null default now()
 • updated_at timestamptz not null default now()
-1.9.3 Segurança
+1.8.3 Segurança
 • Trigger Hub: não (sem triggers)
 • RLS: ativo (enable row level security)
-1.9.4 Policies
+1.8.4 Policies
 • account_profiles_select_member_or_platform (SELECT to public): is_platform_admin() OU membro ativo do tenant (account_users.account_id = account_profiles.account_id; account_users.user_id = auth.uid(); account_users.status='active')
 • account_profiles_insert_owner_admin_or_platform (INSERT to public): is_platform_admin() OU owner/admin ativo do tenant (account_users.role IN ('owner','admin'); status='active')
 • account_profiles_update_owner_admin_or_platform (UPDATE to public): is_platform_admin() OU owner/admin ativo do tenant (USING + WITH CHECK)
 
-1.10 account_landing_pages
-1.10.1 Função
+1.9 account_landing_pages
+1.9.1 Função
 • Persistência mínima de landing pages produtivas por conta na E19.
 • Criação inicial limitada a status `draft`.
 
-1.10.2 Colunas
+1.9.2 Colunas
 • id uuid primary key default gen_random_uuid()
 • account_id uuid not null
 • name text not null
@@ -229,58 +229,90 @@
 • created_at timestamptz not null default now()
 • updated_at timestamptz not null default now()
 
-1.10.3 Relacionamentos
+1.9.3 Relacionamentos
 • account_id referencia public.accounts(id) com ON UPDATE CASCADE e ON DELETE CASCADE.
 • created_by referencia auth.users(id) com ON UPDATE CASCADE e ON DELETE RESTRICT.
 
-1.10.4 Constraints
+1.9.4 Constraints
 • account_landing_pages_status_chk: status in ('draft').
 • account_landing_pages_slug_chk: slug no padrão seguro `^[a-z0-9]+(-[a-z0-9]+)*$`.
 • account_landing_pages_name_chk: nome não vazio após trim.
 • account_landing_pages_account_slug_uidx: UNIQUE (account_id, slug).
 
-1.10.5 Índices
+1.9.5 Índices
 • account_landing_pages_account_id_idx em account_id.
 • account_landing_pages_created_by_idx em created_by.
 • account_landing_pages_status_idx em status.
 
-1.10.6 Trigger
+1.9.6 Trigger
 • account_landing_pages_set_updated_at: executa public.tg_set_updated_at() antes de update.
 
-1.10.7 RLS / policies / grants
+1.9.7 RLS / policies / grants
 • RLS habilitado.
 • Policy account_landing_pages_select_member_or_platform: permite SELECT para platform admin ou membro ativo da conta.
 • authenticated: SELECT.
 • service_role: SELECT, INSERT, UPDATE, DELETE.
 • public e anon: sem grants.
 
-1.10.8 Observações de escopo
+1.9.8 Observações de escopo
 • Escrita deve ocorrer por fluxo server-side autorizado.
 • Criação inicial é apenas `draft`.
 • Publicação, render público, domínio customizado, analytics, A/B e IA runtime não fazem parte deste schema inicial.
 
-1.11 ai_readonly (role)
-1.11.1 Segurança (parâmetros)
+1.10 ai_readonly (role)
+1.10.1 Segurança (parâmetros)
 • LOGIN: sim
 • statement_timeout: 5s
-1.11.2 Escopo e grants (schema public)
+1.10.2 Escopo e grants (schema public)
 • Schema: public (USAGE)
 • Tabelas existentes em public: GRANT SELECT
 • Novas tabelas em public: default privileges com GRANT SELECT
 
-1.12 business_taxons
+1.11 business_taxons
 
-1.12.1 Chaves, constraints e relacionamentos
+1.11.1 Chaves, constraints e relacionamentos
 • PK: id uuid
 • UNIQUE: slug
 • CHECK: business_taxons_level_chk (level IN ('segment', 'niche', 'ultra_niche'))
 • FK: parent_id → business_taxons(id) ON UPDATE CASCADE ON DELETE SET NULL
 
-1.12.2 Campos
+1.11.2 Campos
 • parent_id uuid null
 • level text not null
 • name text not null
 • slug text not null
+• is_active boolean not null default true
+
+1.11.3 Segurança
+• Trigger Hub: não
+• RLS: ativo (enable row level security)
+• service_role: SELECT
+
+1.11.4 Policies
+• business_taxons_select_admin_only (SELECT to public): is_super_admin() OU is_platform_admin()
+• business_taxons_insert_admin_only (INSERT to public): is_super_admin() OU is_platform_admin()
+• business_taxons_update_admin_only (UPDATE to public): is_super_admin() OU is_platform_admin() (USING + WITH CHECK)
+• business_taxons_delete_admin_only (DELETE to public): is_super_admin() OU is_platform_admin()
+
+1.11.5 Índices
+• business_taxons_name_normalized_idx (btree em normalize_taxon_match_text(name))
+• business_taxons_slug_normalized_idx (btree em normalize_taxon_match_text(replace(slug, '-', ' ')))
+• business_taxons_name_slug_fts_gin_idx (GIN em to_tsvector('portuguese', normalize_taxon_match_text(name) + slug normalizado))
+• business_taxons_name_normalized_trgm_gin_idx (GIN trigram em normalize_taxon_match_text(name))
+• business_taxons_slug_normalized_trgm_gin_idx (GIN trigram em slug normalizado)
+
+1.12 business_taxon_aliases
+
+1.12.1 Chaves, constraints e relacionamentos
+• PK: id uuid
+• UNIQUE: (taxon_id, alias_text_normalized)
+• FK: taxon_id → business_taxons(id) ON UPDATE CASCADE ON DELETE RESTRICT
+• Generated column: alias_text_normalized (normalização derivada de alias_text)
+
+1.12.2 Campos
+• taxon_id uuid not null
+• alias_text text not null
+• alias_text_normalized text generated always as stored
 • is_active boolean not null default true
 
 1.12.3 Segurança
@@ -289,51 +321,19 @@
 • service_role: SELECT
 
 1.12.4 Policies
-• business_taxons_select_admin_only (SELECT to public): is_super_admin() OU is_platform_admin()
-• business_taxons_insert_admin_only (INSERT to public): is_super_admin() OU is_platform_admin()
-• business_taxons_update_admin_only (UPDATE to public): is_super_admin() OU is_platform_admin() (USING + WITH CHECK)
-• business_taxons_delete_admin_only (DELETE to public): is_super_admin() OU is_platform_admin()
-
-1.12.5 Índices
-• business_taxons_name_normalized_idx (btree em normalize_taxon_match_text(name))
-• business_taxons_slug_normalized_idx (btree em normalize_taxon_match_text(replace(slug, '-', ' ')))
-• business_taxons_name_slug_fts_gin_idx (GIN em to_tsvector('portuguese', normalize_taxon_match_text(name) + slug normalizado))
-• business_taxons_name_normalized_trgm_gin_idx (GIN trigram em normalize_taxon_match_text(name))
-• business_taxons_slug_normalized_trgm_gin_idx (GIN trigram em slug normalizado)
-
-1.13 business_taxon_aliases
-
-1.13.1 Chaves, constraints e relacionamentos
-• PK: id uuid
-• UNIQUE: (taxon_id, alias_text_normalized)
-• FK: taxon_id → business_taxons(id) ON UPDATE CASCADE ON DELETE RESTRICT
-• Generated column: alias_text_normalized (normalização derivada de alias_text)
-
-1.13.2 Campos
-• taxon_id uuid not null
-• alias_text text not null
-• alias_text_normalized text generated always as stored
-• is_active boolean not null default true
-
-1.13.3 Segurança
-• Trigger Hub: não
-• RLS: ativo (enable row level security)
-• service_role: SELECT
-
-1.13.4 Policies
 • business_taxon_aliases_select_admin_only (SELECT to public): is_super_admin() OU is_platform_admin()
 • business_taxon_aliases_insert_admin_only (INSERT to public): is_super_admin() OU is_platform_admin()
 • business_taxon_aliases_update_admin_only (UPDATE to public): is_super_admin() OU is_platform_admin() (USING + WITH CHECK)
 • business_taxon_aliases_delete_admin_only (DELETE to public): is_super_admin() OU is_platform_admin()
 
-1.13.5 Índices
+1.12.5 Índices
 • business_taxon_aliases_alias_text_normalized_idx (btree em alias_text_normalized)
 • business_taxon_aliases_alias_text_normalized_fts_gin_idx (GIN em to_tsvector('portuguese', alias_text_normalized))
 • business_taxon_aliases_alias_text_normalized_trgm_gin_idx (GIN trigram em alias_text_normalized)
 
-1.14 account_taxonomy
+1.13 account_taxonomy
 
-1.14.1 Chaves, constraints e relacionamentos
+1.13.1 Chaves, constraints e relacionamentos
 • PK: id uuid
 • UNIQUE: (account_id, taxon_id)
 • CHECK: account_taxonomy_status_chk (status IN ('active', 'inactive'))
@@ -342,7 +342,7 @@
 • FK: taxon_id → business_taxons(id) ON UPDATE CASCADE ON DELETE RESTRICT
 • Nota: não há constraint/índice garantindo apenas um `is_primary = true` por conta nesta etapa.
 
-1.14.2 Campos
+1.13.2 Campos
 • account_id uuid not null
 • taxon_id uuid not null
 • is_primary boolean not null default false
@@ -351,21 +351,21 @@
 • created_at timestamptz not null default now()
 • updated_at timestamptz not null default now()
 
-1.14.3 Segurança
+1.13.3 Segurança
 • Trigger Hub: não
 • RLS: ativo (enable row level security)
 • service_role: SELECT, INSERT, UPDATE
 • anon/authenticated/public: sem acesso direto
 
-1.14.4 Policies
+1.13.4 Policies
 • account_taxonomy_select_admin_only (SELECT to public): is_super_admin() OU is_platform_admin()
 • account_taxonomy_insert_admin_only (INSERT to public): is_super_admin() OU is_platform_admin()
 • account_taxonomy_update_admin_only (UPDATE to public): is_super_admin() OU is_platform_admin() (USING + WITH CHECK)
 • account_taxonomy_delete_admin_only (DELETE to public): is_super_admin() OU is_platform_admin()
 
-1.15 content_templates
+1.14 content_templates
 
-1.15.1 Chaves, constraints e relacionamentos
+1.14.1 Chaves, constraints e relacionamentos
 • PK: id uuid
 • UNIQUE: (template_key, version)
 • UNIQUE: (slug, version)
@@ -375,7 +375,7 @@
 • CHECK: content_templates_template_scope_chk (template_scope IN ('page', 'section'))
 • CHECK: content_templates_status_chk (status IN ('draft', 'active', 'archived'))
 
-1.15.2 Campos
+1.14.2 Campos
 • template_key text not null
 • name text not null
 • slug text not null
@@ -389,18 +389,18 @@
 • created_at timestamptz not null default now()
 • updated_at timestamptz not null default now()
 
-1.15.3 Segurança
+1.14.3 Segurança
 • Trigger Hub: não
 • RLS: ativo (enable row level security)
 • service_role: SELECT
 
-1.15.4 Policies
+1.14.4 Policies
 • content_templates_select_admin_only (SELECT to public): is_super_admin() OU is_platform_admin()
 • content_templates_insert_admin_only (INSERT to public): is_super_admin() OU is_platform_admin()
 • content_templates_update_admin_only (UPDATE to public): is_super_admin() OU is_platform_admin() (USING + WITH CHECK)
 • content_templates_delete_admin_only (DELETE to public): is_super_admin() OU is_platform_admin()
 
-1.15.5 Registros-base de `commercial_activation`
+1.14.5 Registros-base de `commercial_activation`
 • Template de página: `commercial_activation_page`, slug `commercial-activation-page`, escopo `page`.
 • Módulos de seção: `hero`, `benefits`, `services`, `plans`, `differentials`, `how_it_works`, `faq` e `final_cta`.
 • Slugs especiais: `how-it-works` e `final-cta`; os demais coincidem com `template_key`.
@@ -410,15 +410,15 @@
 • Migration: `supabase/migrations/20260616142000_e18_commercial_activation_base_records.sql`.
 • Verificação: `supabase/snippets/e18_commercial_activation_base_records_verify.sql`.
 
-1.16 content_template_taxons
+1.15 content_template_taxons
 
-1.16.1 Chaves, constraints e relacionamentos
+1.15.1 Chaves, constraints e relacionamentos
 • PK: id uuid
 • CHECK: content_template_taxons_resolution_level_chk (resolution_level IN ('generic', 'segment', 'niche', 'ultra_niche'))
 • FK: template_id → content_templates(id) ON UPDATE CASCADE ON DELETE CASCADE
 • FK: taxon_id → business_taxons(id) ON UPDATE CASCADE ON DELETE RESTRICT
 
-1.16.2 Campos
+1.15.2 Campos
 • template_id uuid not null
 • taxon_id uuid not null
 • resolution_level text not null
@@ -428,20 +428,20 @@
 • created_at timestamptz not null default now()
 • updated_at timestamptz not null default now()
 
-1.16.3 Segurança
+1.15.3 Segurança
 • Trigger Hub: não
 • RLS: ativo (enable row level security)
 • service_role: SELECT
 
-1.16.4 Policies
+1.15.4 Policies
 • content_template_taxons_select_admin_only (SELECT to public): is_super_admin() OU is_platform_admin()
 • content_template_taxons_insert_admin_only (INSERT to public): is_super_admin() OU is_platform_admin()
 • content_template_taxons_update_admin_only (UPDATE to public): is_super_admin() OU is_platform_admin() (USING + WITH CHECK)
 • content_template_taxons_delete_admin_only (DELETE to public): is_super_admin() OU is_platform_admin()
 
-1.17 taxon_market_research
+1.16 taxon_market_research
 
-1.17.1 Chaves, constraints e relacionamentos
+1.16.1 Chaves, constraints e relacionamentos
 • PK: id uuid
 • UNIQUE: (taxon_id, research_block, audience_scope, version)
 • UNIQUE auxiliar: (id, taxon_id, audience_scope, version)
@@ -449,7 +449,7 @@
 • CHECK: taxon_market_research_audience_scope_chk (audience_scope IN ('end_customer', 'business_buyer'))
 • FK: taxon_id → business_taxons(id) ON UPDATE CASCADE ON DELETE RESTRICT
 
-1.17.2 Campos
+1.16.2 Campos
 • taxon_id uuid not null
 • research_block text not null
 • Regra: texto governado por processo operacional; sem CHECK fechado nesta etapa
@@ -460,29 +460,29 @@
 • created_at timestamptz not null default now()
 • updated_at timestamptz not null default now()
 
-1.17.3 Índices
+1.16.3 Índices
 • taxon_market_research_taxon_block_audience_version_uidx (UNIQUE em taxon_id, research_block, audience_scope, version)
 • taxon_market_research_one_active_per_block_audience_uidx (UNIQUE parcial em taxon_id, research_block, audience_scope WHERE status = 'active')
 
-1.17.4 Segurança
+1.16.4 Segurança
 • Trigger Hub: não
 • RLS: ativo (enable row level security)
 • service_role: SELECT
 
-1.17.5 Policies
+1.16.5 Policies
 • taxon_market_research_select_admin_only (SELECT to public): is_super_admin() OU is_platform_admin()
 • taxon_market_research_insert_admin_only (INSERT to public): is_super_admin() OU is_platform_admin()
 • taxon_market_research_update_admin_only (UPDATE to public): is_super_admin() OU is_platform_admin() (USING + WITH CHECK)
 • taxon_market_research_delete_admin_only (DELETE to public): is_super_admin() OU is_platform_admin()
 
-1.18 taxon_market_research_items
+1.17 taxon_market_research_items
 
-1.18.1 Chaves, constraints e relacionamentos
+1.17.1 Chaves, constraints e relacionamentos
 • PK: id uuid
 • FK: research_id → taxon_market_research(id) ON UPDATE CASCADE ON DELETE CASCADE
 • UNIQUE adicional: nenhuma nesta etapa
 
-1.18.2 Campos
+1.17.2 Campos
 • research_id uuid not null
 • item_key text not null
 • item_text text not null
@@ -493,25 +493,25 @@
 • created_at timestamptz not null default now()
 • updated_at timestamptz not null default now()
 
-1.18.3 Segurança
+1.17.3 Segurança
 • Trigger Hub: não
 • RLS: ativo (enable row level security)
 • service_role: SELECT
 
-1.18.4 Policies
+1.17.4 Policies
 • taxon_market_research_items_select_admin_only (SELECT to public): is_super_admin() OU is_platform_admin()
 • taxon_market_research_items_insert_admin_only (INSERT to public): is_super_admin() OU is_platform_admin()
 • taxon_market_research_items_update_admin_only (UPDATE to public): is_super_admin() OU is_platform_admin() (USING + WITH CHECK)
 • taxon_market_research_items_delete_admin_only (DELETE to public): is_super_admin() OU is_platform_admin()
 
-1.19 taxon_message_guides
+1.18 taxon_message_guides
 
-1.19.1 Chaves, constraints e relacionamentos
+1.18.1 Chaves, constraints e relacionamentos
 • PK: id uuid
 • CHECK: taxon_message_guides_context_type_chk (context_type IN ('e10_5', 'landing_page', 'email', 'whatsapp'))
 • FK: research_id → taxon_market_research(id) ON UPDATE CASCADE ON DELETE CASCADE
 
-1.19.2 Campos
+1.18.2 Campos
 • research_id uuid not null
 • context_type text not null
 • guide_payload_json jsonb not null
@@ -520,19 +520,19 @@
 • created_at timestamptz not null default now()
 • updated_at timestamptz not null default now()
 
-1.19.3 Segurança
+1.18.3 Segurança
 • Trigger Hub: não
 • RLS: ativo (enable row level security)
 
-1.19.4 Policies
+1.18.4 Policies
 • taxon_message_guides_select_admin_only (SELECT to public): is_super_admin() OU is_platform_admin()
 • taxon_message_guides_insert_admin_only (INSERT to public): is_super_admin() OU is_platform_admin()
 • taxon_message_guides_update_admin_only (UPDATE to public): is_super_admin() OU is_platform_admin() (USING + WITH CHECK)
 • taxon_message_guides_delete_admin_only (DELETE to public): is_super_admin() OU is_platform_admin()
 
-1.20 account_niche_resolutions
+1.19 account_niche_resolutions
 
-1.20.1 Chaves, constraints e relacionamentos
+1.19.1 Chaves, constraints e relacionamentos
 • CHECK: account_niche_resolutions_ai_status_chk
 • CHECK: account_niche_resolutions_ai_result_json_chk
 • CHECK: account_niche_resolutions_ai_ux_mode_chk
@@ -550,7 +550,7 @@
 • CHECK: resolution_status
 • CHECK: score entre 0 e 1 ou NULL
 
-1.20.2 Campos
+1.19.2 Campos
 • ai_status text null
 • ai_error_code text null
 • ai_model text null
@@ -584,19 +584,19 @@
 • created_at timestamptz not null default now()
 • updated_at timestamptz not null default now()
 
-1.20.3 Segurança
+1.19.3 Segurança
 • Trigger Hub: não
 • RLS: ativo
 • Policies: admin-only
 • Acesso direto removido de public, anon e authenticated
 • service_role: SELECT, INSERT e UPDATE
 
-1.20.4 Índices
+1.19.4 Índices
 • account_niche_resolutions_ai_suggested_taxon_id_idx
 
-1.21 content_template_compositions
+1.20 content_template_compositions
 
-1.21.1 Chaves, constraints e relacionamentos
+1.20.1 Chaves, constraints e relacionamentos
 • PK: id uuid
 • UNIQUE: (template_id, taxon_id, version)
 • UNIQUE auxiliar: (id, template_id, taxon_id, version)
@@ -606,11 +606,45 @@
 • FK: template_id → content_templates(id) ON UPDATE CASCADE ON DELETE RESTRICT
 • FK: taxon_id → business_taxons(id) ON UPDATE CASCADE ON DELETE RESTRICT
 
-1.21.2 Campos
+1.20.2 Campos
 • template_id uuid not null
 • taxon_id uuid not null
 • version integer not null default 1
 • status text not null default 'draft'
+• created_at timestamptz not null default now()
+• updated_at timestamptz not null default now()
+
+1.20.3 Segurança
+• Trigger Hub: não
+• RLS: ativo
+• anon/authenticated/public: sem acesso
+• service_role: SELECT
+
+1.20.4 Índices
+• `content_template_compositions_one_active_uidx`: UNIQUE parcial em (`template_id`, `taxon_id`) para `status = 'active'`.
+• `content_template_compositions_taxon_id_idx`: btree em `taxon_id`.
+
+1.20.5 Triggers
+• `content_template_compositions_set_updated_at`: executa `public.tg_set_updated_at()` antes de UPDATE.
+
+1.21 content_template_composition_items
+
+1.21.1 Chaves, constraints e relacionamentos
+• PK: id uuid
+• UNIQUE: (composition_id, sort_order)
+• CHECK: variant_key descritivo no formato `modulo.variante`
+• CHECK: sort_order >= 0
+• CHECK: config_json é objeto JSON
+• FK: composition_id → content_template_compositions(id) ON UPDATE CASCADE ON DELETE CASCADE
+• FK: module_template_id → content_templates(id) ON UPDATE CASCADE ON DELETE RESTRICT
+
+1.21.2 Campos
+• composition_id uuid not null
+• module_template_id uuid not null
+• variant_key text not null
+• sort_order integer not null
+• is_required boolean not null default true
+• config_json jsonb not null default '{}'
 • created_at timestamptz not null default now()
 • updated_at timestamptz not null default now()
 
@@ -621,48 +655,14 @@
 • service_role: SELECT
 
 1.21.4 Índices
-• `content_template_compositions_one_active_uidx`: UNIQUE parcial em (`template_id`, `taxon_id`) para `status = 'active'`.
-• `content_template_compositions_taxon_id_idx`: btree em `taxon_id`.
-
-1.21.5 Triggers
-• `content_template_compositions_set_updated_at`: executa `public.tg_set_updated_at()` antes de UPDATE.
-
-1.22 content_template_composition_items
-
-1.22.1 Chaves, constraints e relacionamentos
-• PK: id uuid
-• UNIQUE: (composition_id, sort_order)
-• CHECK: variant_key descritivo no formato `modulo.variante`
-• CHECK: sort_order >= 0
-• CHECK: config_json é objeto JSON
-• FK: composition_id → content_template_compositions(id) ON UPDATE CASCADE ON DELETE CASCADE
-• FK: module_template_id → content_templates(id) ON UPDATE CASCADE ON DELETE RESTRICT
-
-1.22.2 Campos
-• composition_id uuid not null
-• module_template_id uuid not null
-• variant_key text not null
-• sort_order integer not null
-• is_required boolean not null default true
-• config_json jsonb not null default '{}'
-• created_at timestamptz not null default now()
-• updated_at timestamptz not null default now()
-
-1.22.3 Segurança
-• Trigger Hub: não
-• RLS: ativo
-• anon/authenticated/public: sem acesso
-• service_role: SELECT
-
-1.22.4 Índices
 • `content_template_composition_items_module_template_id_idx`: btree em `module_template_id`.
 
-1.22.5 Triggers
+1.21.5 Triggers
 • `content_template_composition_items_set_updated_at`: executa `public.tg_set_updated_at()` antes de UPDATE.
 
-1.23 content_artifacts
+1.22 content_artifacts
 
-1.23.1 Chaves, constraints e relacionamentos
+1.22.1 Chaves, constraints e relacionamentos
 • PK: id uuid
 • UNIQUE: (template_id, composition_id, taxon_id, audience_scope, research_version, artifact_version)
 • UNIQUE parcial: no máximo um artefato `published` por (template_id, taxon_id, audience_scope)
@@ -675,7 +675,7 @@
 • FK composta: (composition_id, template_id, taxon_id, composition_version) → content_template_compositions(id, template_id, taxon_id, version)
 • FK: taxon_id → business_taxons(id) ON UPDATE CASCADE ON DELETE RESTRICT
 
-1.23.2 Campos
+1.22.2 Campos
 • template_id uuid not null
 • composition_id uuid not null
 • taxon_id uuid not null
@@ -692,7 +692,7 @@
 • published_at timestamptz null
 • archived_at timestamptz null
 
-1.23.3 Segurança
+1.22.3 Segurança
 • Trigger Hub: não
 • RLS: ativo
 • public/anon: sem acesso
@@ -703,22 +703,22 @@
   • content_artifacts_insert_admin_draft_only (INSERT to authenticated): is_super_admin() OU is_platform_admin(); somente `status = 'draft'`, `published_at IS NULL` e `archived_at IS NULL`
   • content_artifacts_update_admin_draft_content_only (UPDATE to authenticated): is_super_admin() OU is_platform_admin(); somente `status = 'draft'`, `published_at IS NULL` e `archived_at IS NULL` (USING + WITH CHECK)
 
-1.23.4 Índices
+1.22.4 Índices
 • `content_artifacts_one_published_uidx`: UNIQUE parcial em (`template_id`, `taxon_id`, `audience_scope`) para `status = 'published'`.
 • `content_artifacts_composition_id_idx`: btree em `composition_id`.
 • `content_artifacts_taxon_id_idx`: btree em `taxon_id`.
 
-1.23.5 Triggers
+1.22.5 Triggers
 • `content_artifacts_set_updated_at`: executa `public.tg_set_updated_at()` antes de UPDATE.
 
-1.24 content_artifact_research_sources
+1.23 content_artifact_research_sources
 
-1.24.1 Chaves, constraints e relacionamentos
+1.23.1 Chaves, constraints e relacionamentos
 • PK: (artifact_id, research_id)
 • FK composta: (artifact_id, taxon_id, audience_scope, research_version) → content_artifacts(id, taxon_id, audience_scope, research_version)
 • FK composta: (research_id, taxon_id, audience_scope, research_version) → taxon_market_research(id, taxon_id, audience_scope, version)
 
-1.24.2 Campos
+1.23.2 Campos
 • artifact_id uuid not null
 • research_id uuid not null
 • taxon_id uuid not null
@@ -726,7 +726,7 @@
 • research_version integer not null
 • created_at timestamptz not null default now()
 
-1.24.3 Segurança
+1.23.3 Segurança
 • Trigger Hub: não
 • RLS: ativo
 • public/anon: sem acesso
@@ -736,7 +736,7 @@
   • content_artifact_research_sources_select_admin_only (SELECT to authenticated): is_super_admin() OU is_platform_admin()
   • cars_insert_admin_business_buyer_only (INSERT to authenticated): is_super_admin() OU is_platform_admin(); somente `audience_scope = 'business_buyer'`
 
-1.24.4 Índices
+1.23.4 Índices
 • `content_artifact_research_sources_research_id_idx`: btree em `research_id`.
 
 2. Views
