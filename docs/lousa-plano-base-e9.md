@@ -686,6 +686,7 @@ Segurança e limites:
 * `checkout.session.completed` e redirect de sucesso continuam sem criar entitlement comercial.
 * Ajuste pré-merge do PR #509: colisão `23505` em `stripe_webhook_events.event_id` agora consulta o registro existente e decide por `processing_status`; `processed`/`ignored` retornam duplicado final seguro, `failed` permite reprocessamento controlado, `processing` recente retorna erro controlado e `processing` antigo é resetado para reprocessamento com `retry_reason = stale_processing`.
 * Ajuste pré-merge do PR #509: falha ao marcar evento como `processed`, `ignored` ou `failed` impede resposta de sucesso do webhook.
+* Ajuste pós-teste operacional: `normalizeStripeInvoicePaidEntitlement` passou a escolher a vigência em pares válidos (`start < end`) a partir de subscription, subscription item, linha da invoice ou invoice, evitando gravação inválida contra `account_commercial_entitlements_vigencia_chk`.
 
 Riscos e lacunas:
 
