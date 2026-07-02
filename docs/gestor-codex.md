@@ -23,6 +23,13 @@ Configurações sustentam o fluxo local adotado para editar, validar e publicar 
 **Valor:** oferece ambiente controlado para execução e validação.
 **Limite:** não substitui `AGENTS.md`.
 
+### Personalizar o Codex
+
+**Aptidão:** usar arquivos do projeto e apps conectados para sugerir próximos passos no Codex App.
+**Estado:** aprovado como recurso auxiliar.
+**Valor:** reduz perda de contexto entre chats e ajuda a lembrar frentes pendentes, arquivos relacionados e continuidade de E9, E10.7, E19 e demais recortes.
+**Limite:** sugestões do Codex não viram decisão automaticamente; execução continua seguindo `AGENTS.md`; alterações no repositório devem seguir branch + PR; ações em Vercel, Stripe, Supabase ou GitHub exigem prompt explícito por tarefa.
+
 ### Git local e `git push`
 
 **Aptidão:** versionar e publicar branches.
@@ -56,6 +63,13 @@ Plugins aproximam serviços externos das tarefas de investigação e execução.
 **Estado:** em teste; leitura aprovada.
 **Valor:** acelera diagnóstico de deploys, previews, build logs, runtime, endpoints e configurações Vercel.
 **Limite:** escrita, deploy manual, variáveis de ambiente, domínios, settings e ações em produção não testados nem aprovados.
+
+### OpenAI Developers Plugin
+
+**Aptidão:** apoiar desenvolvimento com OpenAI API, configuração segura de API key, avaliação de Responses API, Agents SDK, ChatGPT Apps SDK e troubleshooting de chamadas OpenAI.
+**Estado:** em teste; uso aprovado apenas como apoio técnico e consultivo.
+**Valor:** ajuda a reduzir risco na configuração de `OPENAI_API_KEY`, orientar uso correto das APIs OpenAI e avaliar protótipos controlados de agentes ou apps antes de qualquer adoção.
+**Limite:** não implementar agente, automação, ChatGPT App, SDK ou chamada OpenAI em runtime sem caso real aprovado; não expor secrets; não criar nova arquitetura para o MVP; seguir `docs/gestor-automations.md` para decidir entre Responses API, automação simples, Agents SDK ou Sandbox Agents.
 
 ### Stripe Plugin
 
