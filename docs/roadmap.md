@@ -301,18 +301,19 @@
 9. E9 — Billing, trial e entitlements
 
 9.1 Status
-• Em execução faseada — Fase 6 concluída em 30/06/2026.
+• Em execução faseada — Fases 5 e 7.2 concluídas em 02/07/2026.
 • Schema mínimo de entitlement comercial versionado.
 • Consumo server-side mínimo da elegibilidade comercial disponível.
+• Gate produtivo mínimo validado no ponto real entregue pela E19.
 • Stripe Checkout em teste disponível no app.
-• Assinatura teste criada sem entitlement local automático.
+• Webhook Stripe mínimo em produção validado para `invoice.paid`.
 • Sem Billing Engine completo implementado nesta fase.
-• Próxima execução recomendada: E9 Fase 7.1 — contrato do webhook Stripe e persistência de entitlement.
 
 9.2 Objetivo atual
 • Separar condição comercial da conta do lifecycle operacional da conta.
 • Definir elegibilidade comercial para criação de LPs como sinal derivado de conta operacionalmente permitida, membership ativo e entitlement comercial válido.
-• Preparar o gate comercial sem implementar LP Builder, checkout, webhook ou fluxo visual de criação de LPs.
+• Garantir que a criação produtiva mínima de LP consuma o entitlement comercial antes da persistência.
+• Manter Stripe, checkout e webhook como mecanismos de confirmação/persistência, não como prova direta de liberação no LP Builder.
 
 9.3 Decisões consolidadas
 
@@ -329,12 +330,16 @@
 • Billing, trial, plano, assinatura e entitlement comercial representam condição comercial separada.
 
 9.3.3 Elegibilidade comercial para criação de LPs
-• Status: Fase 1 concluída em 28/06/2026.
-• Regra mínima: conta operacionalmente permitida + membership ativo + entitlement comercial válido.
+• Status: Fases 1 e 5 concluídas.
+• Regra mínima: usuário autenticado + conta `active` + membership `active` + papel `owner`/`admin` + entitlement comercial válido.
 • Para gate de criação de LP, conta operacionalmente permitida significa `accounts.status = active`.
 • Membership ativo significa `account_users.status = active`.
 • Conta `active` não fica elegível para criação produtiva apenas por estar ativa.
-• E9 libera apenas gate/elegibilidade comercial; não implementa LP Builder nem fluxo visual de criação de LPs.
+• Gate produtivo confirmado no ponto real entregue pela E19: `app/lp-builder/actions.ts`, `lib/lp-builder/` e `public.account_landing_pages`.
+• O LP Builder consome `getCommercialEntitlementSignal({ accountId })` antes da persistência.
+• Sem entitlement comercial válido, o fluxo retorna `commercial_entitlement_required` antes do insert.
+• O LP Builder não consulta Stripe diretamente, não usa redirect de checkout como liberação e não usa apenas `accounts.status` como prova comercial.
+• A validação operacional direta da action é N/A neste recorte, pois não há superfície aprovada para disparo sem criar rota ou UI artificial.
 
 9.3.4 Origem comercial e confirmação
 • Status: Fase 1 concluída em 28/06/2026.
@@ -1437,6 +1442,8 @@ Repositório — Criados
 • Esta referência não cria obrigação de nova implementação agora.
 
 99. Changelog
+v1.5.88 — 02/07/2026 — E9 Fase 5 fechada documentalmente após a E19 entregar o ponto produtivo real de criação mínima de LP; gate comercial confirmado antes do insert em `public.account_landing_pages`, com fail-closed por entitlement ausente.
+
 v1.5.87 — 02/07/2026 — E9 Fase 7.2 concluída com webhook Stripe mínimo em produção, `invoice.paid` ativando entitlement local, idempotência em `stripe_webhook_events`, retry operacional e persistência validada em `account_commercial_entitlements`.
 
 v1.5.86 — 30/06/2026 — E19 Fase 3 concluída com criação produtiva mínima de LP por conta, persistência em public.account_landing_pages, boundary lib/lp-builder/ e gate E9 antes do insert.
