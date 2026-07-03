@@ -759,3 +759,83 @@ A direção atual da lousa é:
 Próximo ponto relevante do debate:
 
 Definir como deveria ser a parametrização editorial de uma seção concreta, começando pela Hero.
+
+27. Parametrização técnica e editorial por seção/campo
+
+A diferença principal é:
+
+Parametrização técnica responde se o conteúdo pode ser salvo, validado e renderizado sem quebrar.
+
+Parametrização editorial responde se o campo foi escrito com a estratégia correta para aquela seção.
+
+Parametrização técnica define:
+
+* formato dos dados
+* campos obrigatórios
+* campos opcionais
+* tipos aceitos
+* limites mínimos e máximos
+* URL ou CTA seguro
+* arrays mínimos e máximos
+* variante conhecida
+* compatibilidade de renderização
+
+Exemplo na Hero:
+
+* title existe e está dentro do limite
+* description existe e está dentro do limite
+* primary_cta tem label e href válido
+* objeto não traz campos inesperados
+* variant_key é conhecido
+
+No projeto, essa camada está principalmente nos schemas Zod, registry, resolver, renderer e validações server-side.
+
+Parametrização editorial define:
+
+* quais itens estruturais cada campo deve consultar
+* quais blocos de pesquisa são fonte principal ou secundária
+* quais item_key são permitidos ou evitados
+* qual tom usar
+* qual tipo de promessa é aceitável
+* qual relação o campo deve ter com dor, desejo, benefício, mecanismo, objeção ou prova
+* quais exageros evitar
+* quais critérios tornam a copy forte o suficiente
+
+Exemplo na Hero title:
+
+* pode usar dor principal
+* pode usar desejo principal
+* pode usar desejo oculto
+* pode usar transformação central
+* pode consultar strategic_core e lp_sections
+* não deve depender de SEO como fonte principal
+* não deve transformar medo em promessa exagerada
+
+Exemplo na Hero subtitle:
+
+* deve complementar o title
+* pode explicar mecanismo
+* pode contextualizar público
+* pode reduzir objeção principal
+* deve dar clareza para decisão
+
+Leitura prática:
+
+* técnico = a seção está válida?
+* editorial = a seção está boa?
+* técnico evita quebra
+* editorial evita copy genérica ou fraca
+
+A qualidade das páginas comerciais depende especialmente da parametrização editorial por seção/campo.
+
+Essa camada deve conectar os itens estruturais existentes no Supabase à geração de copy pela IA.
+
+Direção provisória:
+
+* manter validação técnica no repo
+* começar parametrização editorial no repo
+* só mover parte da parametrização editorial para banco/Admin quando houver preview, validação, versionamento, rollback e ROI comprovado
+
+Próximo ponto relevante do debate:
+
+Parametrizar editorialmente a Hero.
