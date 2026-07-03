@@ -30,7 +30,7 @@ Regra:
      2. Contrato do caso
      3. Fases e próxima ação
      4. Escopo negativo e critérios de parada
-   • poucas fases previstas desde o início, suficientes para orientar o recorte;
+   • todas as fases previstas desde o início;
    • briefing Codex para criar/atualizar o arquivo no path definido no item 3.
 
 Regra:
@@ -152,7 +152,7 @@ Observability
 Artefatos
 • Arquivos criados: [paths sem docs/] | N/A
 • Arquivos ajustados: [paths sem docs/] | N/A
-• Arquivos excluídos: [paths sem docs/] | N/A
+• Arquivos excluídos: N/A
 
 Regra: não incluir pendências nem instruções ao Gestor de Docs.
 
