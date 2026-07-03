@@ -1,4 +1,4 @@
-Lousa (índice estrutural) — Gestor Estrutural VS10
+Lousa (índice estrutural) — Gestor Estrutural VS11
 1. Objetivo
 1.1 Papel da lousa
 * Índice estrutural focado apenas nas funções do Gestor Estrutural.
@@ -17,6 +17,11 @@ Lousa (índice estrutural) — Gestor Estrutural VS10
 * impacto em repo e/ou BD
 * aderência ao fluxo canônico de banco: migration versionada como padrão; SQL avulso apenas para inspeção, verificação read-only ou exceção expressamente autorizada
 * risco de runtime depender de objeto de banco ainda não aplicado e validado no ambiente alvo
+* em Supabase / Postgres, criação ou alteração de tabela, view, RPC, policy ou migration deve validar, quando aplicável: RLS, policies, security_invoker, GRANTs explícitos para Data API/PostgREST/GraphQL, exposição por roles, aderência ao docs/schema.md e aderência ao docs/base-tecnica.md
+* tabela nova no schema public acessada via Supabase Data API/PostgREST/GraphQL não deve ser aprovada sem decisão explícita de GRANT, RLS e policies na mesma etapa
+* GRANT não substitui RLS/policies
+* RLS/policies não substituem GRANT
+* se plano, fase ou PR tocar banco exposto por Data API/PostgREST/GraphQL e não mencionar grants quando aplicável, classificar como aprovado com condicionantes ou requer patch estrutural
 1.4 Regra de consulta e validação estrutural
 * em caso de conflito, prevalece a fonte competente por assunto, e não uma hierarquia linear única
 * antes de orientar mudança estrutural, confirmar no repositório real a localização atual dos artefatos
@@ -33,10 +38,3 @@ Lousa (índice estrutural) — Gestor Estrutural VS10
 * ferramentas operacionais, como GitHub e Vercel, servem para confirmar estado real quando necessário, sem substituir as fontes competentes
 * updates vigentes relevantes = complemento contextual, sem substituir fonte canônica
 * esta lousa = índice estrutural, não fonte primária
-3. Notas permanentes para avaliação estrutural
-* chamar de OpenAI Project
-* compatibilidades oficiais não substituem a confirmação do repositório real nem as fontes canônicas do projeto
-* em Supabase / Postgres, tratar RLS como ponto estrutural relevante para objetos expostos
-* views podem obedecer RLS com security_invoker = true
-* views são security definer por padrão e exigem cautela
-* regra editorial: último nível das subseções deve usar bullets, e não numeração
