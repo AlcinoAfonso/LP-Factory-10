@@ -21,7 +21,8 @@ Lousa (índice estrutural) — Gestor Estrutural VS11
 * tabela nova no schema public acessada via Supabase Data API/PostgREST/GraphQL não deve ser aprovada sem decisão explícita de GRANT, RLS e policies na mesma etapa
 * GRANT não substitui RLS/policies
 * RLS/policies não substituem GRANT
-* se plano, fase ou PR tocar banco exposto por Data API/PostgREST/GraphQL e não mencionar grants quando aplicável, classificar como aprovado com condicionantes ou requer patch estrutural
+* se plano ou fase tocar banco exposto por Data API/PostgREST/GraphQL e não mencionar grants quando aplicável, classificar como aprovado com condicionantes
+* se PR ou entrega executável tocar banco exposto por Data API/PostgREST/GraphQL e não implementar ou validar grants quando aplicável, classificar como requer patch estrutural
 1.4 Regra de consulta e validação estrutural
 * em caso de conflito, prevalece a fonte competente por assunto, e não uma hierarquia linear única
 * antes de orientar mudança estrutural, confirmar no repositório real a localização atual dos artefatos
