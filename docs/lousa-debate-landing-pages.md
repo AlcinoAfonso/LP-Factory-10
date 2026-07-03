@@ -1,5 +1,5 @@
 01/07/2026 — Lousa debate landing pages
-Fontes: chat, docs/roadmap.md, docs/schema.md, Supabase real
+Fontes: chat, docs/roadmap.md, docs/schema.md, Supabase real, GitHub
 
 1. Objetivo da lousa
 
@@ -512,3 +512,250 @@ módulo base → variante → slots/configuração → composição → seção 
 Essa decisão não exige criar schema novo agora.
 
 A próxima dúvida a resolver é onde ficam os contratos de slots, regras editoriais e critérios de compatibilidade entre nicho, módulo e variante.
+
+20. Zod e contrato executável
+
+O Zod já existe no projeto no recorte commercial_activation.
+
+Ele aparece como validação server-side de conteúdo, schemas por variante e registry que liga variant_key a moduleKey e schema correspondente.
+
+O Zod entra na camada técnica do debate:
+
+módulo → variante → slots/conteúdo → validação → renderização segura
+
+O Zod agrega:
+
+* validação antes de publicar
+* bloqueio de conteúdo malformado
+* limites de caracteres por campo
+* campos obrigatórios e opcionais
+* formatos seguros de CTA, listas, cards e URLs
+* objetos estritos
+* tipos TypeScript derivados do schema
+* validação de saída gerada por IA
+* validação do content_json antes de renderizar
+
+O Zod não decide estratégia.
+
+Ele não escolhe:
+
+* qual variante usar por nicho
+* quais seções entram na página
+* se a copy é persuasiva
+* se o argumento comercial é bom
+* se o design combina com o mercado
+
+Conclusão provisória:
+
+Zod é contrato executável de segurança, formato e consistência.
+
+Zod não substitui parametrização editorial, composição, pesquisa estruturada nem revisão estratégica.
+
+21. Parametrização de módulos e variantes
+
+Termo adotado nesta lousa:
+
+Parametrização = definição prática dos limites e regras de um módulo ou variante.
+
+Parametrizar um módulo/variante significa definir:
+
+* campos aceitos
+* campos obrigatórios
+* limites de caracteres
+* quantidade mínima e máxima de itens
+* tipos de CTA permitidos
+* imagem, vídeo ou formulário permitido
+* regras editoriais
+* critérios de validação
+* critérios mínimos para publicação
+
+Na prática, a parametrização de qualidade precisa ser feita por variante relevante.
+
+Mas isso não significa começar do zero em todas.
+
+Direção provisória:
+
+* criar defaults por tipo de campo
+* especializar por variante
+* ajustar por evidência real
+
+Exemplos de defaults:
+
+* título curto
+* subtítulo
+* descrição
+* CTA
+* card
+* pergunta e resposta
+* lista de benefícios
+
+Exemplos de especialização:
+
+* hero.with_image usa título, subtítulo, CTA e imagem
+* hero.with_form usa título, subtítulo, formulário e nota de privacidade
+* faq.accordion usa perguntas e respostas
+* benefits.cards usa cards curtos
+
+A baixa qualidade observada nas páginas comerciais indica provável falta de parametrização editorial por seção/campo.
+
+O problema não parece ser apenas ausência de validação técnica.
+
+Validação técnica evita conteúdo quebrado.
+
+Parametrização editorial orienta qualidade, foco, tom, promessa, limite e utilidade da copy.
+
+22. Local da parametrização
+
+Estado atual entendido:
+
+A parametrização técnica crítica está principalmente no código do repositório.
+
+Exemplos:
+
+* schemas Zod em commercial_activation
+* registry de variantes
+* resolver
+* renderer
+* validações server-side
+
+Não tratar como já existente uma parametrização editorial editável no Admin Dashboard.
+
+Para o MVP, a direção mais segura é manter parametrizações críticas no repo.
+
+Admin Dashboard pode expor ajustes simples no futuro, desde que haja:
+
+* preview seguro
+* validação clara
+* rollback ou recuperação
+* limites de permissão
+* baixo risco de quebrar renderização
+
+Evitar, neste momento, transformar o Admin em editor livre de contratos de módulo, variantes ou schemas.
+
+Isso aumentaria muito a superfície do MVP.
+
+23. Reuso de módulos entre canais
+
+A preocupação com retrabalho é válida.
+
+Se cada canal redesenhar do zero todos os módulos, variantes, slots, limites e validações, o trabalho aumenta muito.
+
+Mas também não é seguro criar um módulo universal que sirva automaticamente para todos os canais.
+
+Canais diferentes têm restrições diferentes.
+
+Exemplos:
+
+* landing page usa layout, imagem, formulário, CTA e responsividade
+* página comercial usa estrutura web próxima de landing page, mas vende o próprio LP Factory
+* e-mail usa assunto, preheader, corpo textual e CTA simples
+* WhatsApp usa sequência conversacional, mensagem curta e CTA textual
+* Instagram/TikTok usam formatos próprios de hook, cena, legenda, slide ou roteiro
+
+Direção provisória:
+
+Não criar catálogo universal prematuro.
+
+Não duplicar tudo sem necessidade comprovada.
+
+Manter módulos por família/canal no MVP, com reuso conceitual e eventual reaproveitamento de código quando houver compatibilidade real.
+
+Página comercial e landing page são canais próximos e podem compartilhar ideias, componentes ou padrões web quando fizer sentido.
+
+Mas não assumir que commercial_activation.hero.default serve automaticamente para landing_page.
+
+E-mail e WhatsApp podem reaproveitar lógica estratégica, mas provavelmente exigem contratos e renderização próprios.
+
+24. Camada intermediária e ROI
+
+Foi discutida a possibilidade de uma camada intermediária baseada em conceito-base de módulo.
+
+Exemplo:
+
+* Hero como conceito-base
+* Hero web
+* Hero e-mail
+* abertura de WhatsApp inspirada no Hero
+
+Essa camada poderia reduzir duplicação no futuro.
+
+Mas ela não está explicitamente consolidada hoje no projeto como arquitetura formal.
+
+Criá-la agora provavelmente significaria nova arquitetura ou retrabalho.
+
+Avaliação provisória de ROI para o MVP:
+
+Baixo neste momento.
+
+Motivos:
+
+* a qualidade da página comercial ainda precisa ser estabilizada
+* landing_page ainda não foi trabalhada como consumidor real
+* adaptação entre canais exige IA ou regras editoriais fortes
+* Admin editável para parametrização aumentaria complexidade
+* o ganho de reuso ainda é hipotético
+
+Melhor momento para reavaliar:
+
+* após página comercial funcionando bem
+* após primeira LP real do produto
+* após segundo nicho validado
+* quando houver duplicação real comprovada
+
+Conclusão provisória:
+
+Não criar camada intermediária agora.
+
+Registrar como possibilidade futura condicionada a ROI real.
+
+25. Dogfooding, páginas comerciais e LPs próprias
+
+Termo correto em inglês:
+
+eat your own dog food
+
+Termo curto comum:
+
+dogfooding
+
+Uso nesta lousa:
+
+usar o próprio SaaS para construir nossas próprias landing pages.
+
+Estratégicamente, páginas comerciais por nicho poderiam se aproximar de LPs próprias do LP Factory, principalmente quando usam audience_scope business_buyer e itens estruturais para vender o próprio produto.
+
+Mas o projeto atual separa E10.7 e E19.
+
+E10.7 cuida de páginas comerciais personalizadas por nicho.
+
+E19 é o LP Builder planejado.
+
+Converter agora páginas comerciais em LPs reais do Builder não está previsto no recorte atual.
+
+Isso provavelmente geraria retrabalho para o MVP.
+
+Direção provisória:
+
+Não mexer nisso agora.
+
+Manter páginas comerciais e LP Builder separados no MVP.
+
+Usar o aprendizado das páginas comerciais para informar a futura LP real, sem fundir os recortes antes de decisão humana.
+
+26. Síntese provisória pós-debate
+
+A direção atual da lousa é:
+
+* manter módulos por família/canal no MVP
+* usar variantes por módulo
+* usar parametrização por variante
+* manter parametrização técnica crítica no repo
+* usar Zod como contrato executável de validação
+* não abrir Admin editável para contratos complexos neste momento
+* não criar camada intermediária transversal agora
+* não transformar páginas comerciais em LPs do Builder agora
+* reavaliar reuso mais amplo somente com evidência de ROI
+
+Próximo ponto relevante do debate:
+
+Definir como deveria ser a parametrização editorial de uma seção concreta, começando pela Hero.
