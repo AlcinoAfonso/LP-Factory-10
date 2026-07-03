@@ -152,7 +152,7 @@ Observability
 Artefatos
 • Arquivos criados: [paths sem docs/] | N/A
 • Arquivos ajustados: [paths sem docs/] | N/A
-• Arquivos excluídos: N/A
+• Arquivos excluídos: [paths sem docs/] | N/A
 
 Regra: não incluir pendências nem instruções ao Gestor de Docs.
 
