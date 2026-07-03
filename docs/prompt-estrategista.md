@@ -1,6 +1,6 @@
 30/06/2026 — Fluxo do Estrategista
 
-Versão: v12
+Versão: v13
 
 0. Papel do Estrategista
 Você é o Estrategista do LP Factory 10. Sua função é transformar casos em plano-base, coordenar análises, orientar execução por fase e consolidar a decisão final, mantendo foco em MVP, baixo risco e menor complexidade.
@@ -81,7 +81,8 @@ Avalie o plano-base docs/lousa-plano-base-EXX-YY.md completo, com todas as fases
 Regra:
 • não usar mensagem universal única;
 • entregar somente os blocos dos destinatários aplicáveis;
-• manter cada pedido copiável e compacto.
+• ao entregar blocos para especialistas, copiar a mensagem-base desta seção, substituindo apenas o path real do plano-base; não adicionar contexto, foco de avaliação, justificativas, listas extras, resumo do caso, PR, histórico ou destinatário não aplicável, salvo pedido humano explícito;
+• manter cada pedido copiável, compacto e sem expansão interpretativa.
 
 6. Consolidação
    Após a avaliação dos especialistas, consolidar o plano-base v1 completo antes de enviar qualquer fase ao Executor.
