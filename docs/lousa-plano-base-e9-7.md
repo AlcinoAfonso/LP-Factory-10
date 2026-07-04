@@ -103,7 +103,7 @@ Fontes: chat, `AGENTS.md`, `docs/prompt-estrategista.md`, `docs/roadmap.md`, `do
   * `supa#40` pode apoiar validação read-only.
 * Saída: evidência objetiva de que a liberação manual ativa elegibilidade sem alterar o gate produtivo.
 
-Próxima ação: após merge/consolidação deste PR, enviar ao Executor somente a Fase 1, não a Fase 2.
+Próxima ação: após merge/consolidação deste PR, enviar ao Executor a Fase 2 — Mecanismo mínimo de concessão, limitada estritamente ao contrato operacional fechado na Fase 1.
 
 4. Escopo negativo e critérios de parada
 
