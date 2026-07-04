@@ -4,10 +4,10 @@
 
 ## Convenção de status deste documento  
 
-- O badge/título de cada item continua representando a maturidade/estado do recurso na plataforma Supabase (mercado), quando aplicável.  
-- Cada item ativo passa a ter também a seção **Status no Projeto** para representar exclusivamente o estado no LP Factory 10.  
-- Valores aceitos em **Status no Projeto**: `Não implementado`, `Em implementação por casos de uso`, `Implementado globalmente no projeto`.  
-- Observações operacionais curtas permitidas quando necessário: `Superado por item mais novo`, `Duplicado`, `Deferido`, `Não apto no plano atual`.  
+- O badge/título de cada item representa a maturidade/estado do recurso na plataforma Supabase, quando aplicável.
+- Este documento não é histórico completo de updates da Supabase.
+- O catálogo deve manter apenas recursos ainda aproveitáveis pelo LP Factory 10.
+- Itens removidos por estarem globais, absorvidos, duplicados, deprecados ou superados não têm seus IDs reutilizados.
 
 ---
 
@@ -17,60 +17,15 @@ O identificador canônico dos itens deste catálogo é `supa#n`.
 
 Esse identificador deve ser usado no roadmap, Base Técnica, briefings, relatórios e referências cruzadas. A numeração não deve ser reutilizada após remoção, depreciação ou substituição de um item.
 
-## Regra de uso na primeira varredura
+## Critério do catálogo ativo
 
-Na primeira varredura do Gestor de Updates, cada item deste catálogo deve ser filtrado antes de ser sugerido ao Estrategista.
+Este documento deve manter apenas recursos Supabase que ainda possam ser aproveitados pelo Gestor de Updates em algum caso atual, futuro ou condicional.
 
-Classificação operacional:
+Itens já implementados globalmente, absorvidos pela Base Técnica, superados, duplicados ou deprecados não permanecem no catálogo ativo.
 
-- **Fora da primeira varredura**: item já implementado globalmente no projeto ou já absorvido pela Base Técnica, schema, roadmap ou configuração operacional.
-- **Elegível por caso**: item ainda não global, mas aplicável ao escopo específico da fase avaliada.
-- **Rejeitar no MVP**: item pago, experimental, amplo demais, enterprise, sem caso real ou indutor de nova infra.
-- **Não apto no plano atual**: item relevante, mas indisponível no plano Free/atual.
-- **Monitorar**: item útil como radar técnico, sem recomendação de adoção.
-- **Diferencial estratégico futuro**: item com valor comercial, técnico ou competitivo futuro, mas sem adoção no MVP.
-- **Consolidado/deprecado**: item mantido apenas por histórico; não deve ser sugerido em avaliações novas.
+Recursos pagos, enterprise ou futuros podem permanecer quando ainda tiverem aproveitamento possível em algum caso específico.
 
-Regra:
-Itens com `Status no Projeto: Implementado globalmente no projeto` não devem ser listados como recursos preliminarmente elegíveis. Eles só devem aparecer no relatório quando forem necessários como regra normativa, evidência técnica ou trava de validação.
-
-## 1 — JWT Signing Keys *(🟦 Estável)*  
-
-2025-08-01  
-
-### Status no Projeto
-
-- Status: Implementado globalmente no projeto
-- Evidência: docs/base-tecnica.md (JWT Signing Keys ativo; estado consolidado no ambiente)
-
-
-### Filtro na primeira varredura
-
-- Fora da primeira varredura como recurso candidato.
-- Usar apenas como referência em casos de Auth, JWT, JWKS ou validação de tokens.
-
-
-### Descrição  
-
-Novo sistema de chaves assimétricas substitui o JWT Secret, garantindo rotação segura e menor latência sem desconectar usuários.  
-
-### Valor para o Projeto  
-
-- Melhora segurança e estabilidade da autenticação.  
-
-- Compatível com PostgREST 13 e Supabase-js 2.56+.  
-
-### Valor para o Usuário  
-
-- Sessões mais seguras e contínuas.  
-
-### Ações Recomendadas  
-
-1. Validar chave no painel Supabase.  
-
-2. Testar integração com SDK atualizado.  
-
----
+A rejeição ou adoção de cada recurso deve ser decidida caso a caso pelo Gestor de Updates, conforme o plano-base avaliado.
 
 ## 2 — Security Controls Dashboard *(🟦 Estável)*  
 
@@ -112,14 +67,6 @@ Novo painel de governança e permissões dentro do Supabase.
 
 - Status: Não implementado
 - Evidência: docs/roadmap.md (sem caso/plano de adoção explícito no LP Factory 10)
-- Observação: Diferencial estratégico futuro; não implementar no MVP.
-
-
-### Filtro na primeira varredura
-
-- Diferencial estratégico futuro.
-- Rejeitar no MVP.
-- Elegível apenas se o caso envolver analytics avançado, BI, histórico de eventos, data lake ou cliente enterprise.
 
 
 ### Descrição  
@@ -148,15 +95,6 @@ Suporte a dados frios com formato Iceberg, ideal para análises históricas.
 
 - Status: Não implementado
 - Evidência: docs/roadmap.md (sem caso/plano de adoção explícito no LP Factory 10)
-- Observação: Diferencial estratégico futuro com sensibilidade de segurança; não implementar no MVP.
-
-
-### Filtro na primeira varredura
-
-- Diferencial estratégico futuro.
-- Rejeitar no MVP.
-- Elegível apenas com caso concreto de integração externa de dados, BI ou analytics.
-- Se adotado no futuro, exigir schema privado, controle de exposição, revisão de RLS e função segura quando aplicável.
 
 
 ### Descrição  
@@ -185,7 +123,6 @@ Permite consultas diretas a fontes externas (Data Lakes e BIs).
 
 - Status: Em implementação por casos de uso
 - Evidência: docs/roadmap.md (E5.4, E10.4.6) + docs/base-tecnica.md (logs estruturados com request_id/rid)
-
 
 
 ### Descrição  
@@ -363,42 +300,6 @@ Novo kit oficial de componentes UI (Auth, Logs, Storage).
 
 ---
 
-## 11 — Stripe Sync Engine v2 *(🟧 Parcial)*  
-
-2025-09-20  
-
-### Status no Projeto
-
-- Status: Não implementado
-- Evidência: docs/roadmap.md (billing E9 não depende deste update específico)
-- Observação: Superado por `supa#32`; manter apenas como histórico.
-
-
-### Filtro na primeira varredura
-
-- Consolidado/deprecado.
-- Não sugerir em avaliações novas.
-- Usar `supa#32` como item principal.
-
-
-### Descrição  
-
-Integração nativa entre Stripe e Postgres, automatizando planos e webhooks.  
-
-### Valor para o Projeto  
-
-- Simplifica Billing Engine (E9).  
-
-### Valor para o Usuário  
-
-- Atualizações de plano automáticas.  
-
-### Ações Recomendadas  
-
-1. Testar integração com Light/Pro.  
-
----
-
 ## 12 — Algolia Connector *(🟦 Estável)*  
 
 2025-09-25  
@@ -427,82 +328,6 @@ Conector para indexação full-text e busca inteligente.
 
 ---
 
-22/12/2025 15:07 — Item 13 (PostgREST 13) no formato do print
-
-## 13 — PostgREST 13 *(🟦 Estável)*
-
-2025-12-22
-
-> Item histórico de referência; o estado atual do projeto está consolidado no item #36 (PostgREST 14.1).
-
-### Status no Projeto
-
-- Status: Não implementado
-- Evidência: docs/base-tecnica.md (ambiente atual em PostgREST 14.1)
-- Observação: Superado pelo item #36; ambiente atual do projeto em PostgREST 14.1.
-
-
-### Descrição
-
-Upgrade do PostgREST para v13 (Supabase Data API). Release incremental com ganhos concretos em consultas, segurança e observabilidade, sem mudar o modelo “Database as API”.
-
-**Ganhos reais (v12.0.2 → v13.0.0):**
-
-* **Spread `...` em relações to-many**: JSON mais simples, com arrays “flat” correlacionados no objeto pai.
-
-* **FTS nativo em `text/json`**: filtros `fts/plfts/phfts/wfts` direto na coluna, com conversão automática para `tsvector`.
-
-* **Modificadores `any/all`** em alguns operadores (ex.: `like(any)` / `like(all)`), reduzindo repetição de coluna em filtros.
-
-* **JWT mais estrito**: se o JWT vier com `kid`, precisa existir chave correspondente no JWKS (senão 401).
-
-* **Observabilidade melhor**: `Server-Timing` (quando habilitado), `Proxy-Status` em erros e logs mais ricos.
-
-* **Erros mais explícitos**: `HTTP 416 / PGRST103` para range/paginação inválida; novos códigos PGRST em casos específicos.
-
-**O que NÃO é ganho garantido do v13:**
-
-* “Performance superior”/“menor latência” como regra geral.
-
-* Mudança no modelo de RLS/multi-tenant (continua 100% Postgres/RLS).
-
-* Mudança em CRUD/RPC básico (upgrade é transparente; novos recursos são opt-in).
-
-### Valor para o Projeto
-
-* Dashboards com relações (accounts → LPs → sections) ficam mais fáceis de montar com **spread `...`**, reduzindo transformação no frontend.
-
-* Busca global/textual fica mais simples com **FTS direto em `text/json`**, sem exigir colunas/views `tsvector` dedicadas.
-
-* Segurança mais robusta por padrão em cenários com JWT customizado (`kid`/JWKS).
-
-* Debug mais rápido com headers/erros mais informativos (ex.: 416/PGRST103, Proxy-Status).
-
-### Valor para o Usuário
-
-* Listas/tabelas com dados relacionados mais consistentes e menos “quebras” de payload.
-
-* Busca textual mais simples de evoluir e manter.
-
-* Erros de paginação/consulta mais claros, reduzindo comportamentos silenciosos.
-
-### Ações Recomendadas
-
-1. Registrar evidência: confirmar no painel `Settings > Infrastructure` (PostgREST 13.x ativo).
-
-2. Manter clientes atualizados: `supabase-js` ≥ 2.56 (e libs relacionadas).
-
-3. Se usa JWT customizado/JWKS: validar chaves quando houver `kid` (sem chave correspondente deve falhar 401).
-
-4. Adotar **spread `...`** nas listagens com relações to-many (usar alias para evitar chaves duplicadas).
-
-5. Para busca: usar `fts/plfts/phfts/wfts` em colunas `text/json` quando fizer sentido; otimizar com índices no Postgres conforme necessidade.
-
-6. Tratar `HTTP 416 / PGRST103` no frontend para UX amigável (quando offset/range for inválido).
-
-7. (Opcional) Se disponível no ambiente: usar `Server-Timing`/`Proxy-Status` para diagnóstico de latência/erros em produção.
-
----
 
 ## 14 — Edge Functions Cache Layer *(🟣 Previsto)*  
 
@@ -588,34 +413,6 @@ Conecta agentes IA (Claude, GPT) ao Supabase via servidor MCP remoto HTTP.
 
 ---
 
-## 17 — Login com Solana e Ethereum *(🟦 Estável)*  
-
-2025-10-12  
-
-### Status no Projeto
-
-- Status: Não implementado
-- Evidência: docs/roadmap.md (sem adoção definida no escopo atual)
-
-
-### Descrição  
-
-Autenticação Web3 nativa para Supabase Auth.  
-
-### Valor para o Projeto  
-
-- Expande público enterprise e white-label.  
-
-### Valor para o Usuário  
-
-- Alternativas modernas de login.  
-
-### Ações Recomendadas  
-
-1. Validar para clientes enterprise.  
-
----
-
 ## 18 — AI Reasoning no Dashboard *(🟣 Previsto)*  
 
 2025-10-14  
@@ -685,7 +482,6 @@ Sistema de tracking nativo de eventos, medindo comportamento e conversão com se
 
 
 
-
 ### Descrição  
 
 Modelo de controle dinâmico de recursos e permissões por plano, utilizando bundles configuráveis armazenados em `model_grants`.  
@@ -707,109 +503,6 @@ Modelo de controle dinâmico de recursos e permissões por plano, utilizando bun
 1. Criar tabela `model_grants` e função `get_feature()`.  
 
 2. Integrar ao Admin Dashboard e Account Setup.  
-
----
-
-## 21 — Ajuste `security_invoker` nas Views *(🟩 Estável)*  
-
-2025-11-12  
-
-### Status no Projeto
-
-- Status: Implementado globalmente no projeto
-- Evidência: docs/base-tecnica.md + docs/schema.md (views com security_invoker = true); sem seção E específica suficiente no roadmap para atribuição única.
-
-
-
-### Filtro na primeira varredura
-
-- Fora da primeira varredura como recurso candidato.
-- Usar apenas como regra normativa quando a fase criar ou alterar views.
-- Se o caso tocar views expostas, validar `security_invoker = true` conforme Base Técnica e schema.
-
-
-### Descrição  
-
-Padronização das views do Supabase para uso de `security_invoker = true`, garantindo compatibilidade com PostgREST 13.  
-
-### Valor para o Projeto  
-
-- Reforça segurança e evita falhas de permissão.  
-
-- Simplifica manutenção com controle centralizado.  
-
-### Valor para o Usuário  
-
-- Maior estabilidade e confiança no sistema.  
-
-### Ações Recomendadas  
-
-1. Atualizar views críticas (`v_user_accounts_list`, `v_access_context_v2`).  
-
-2. Validar execução em ambiente staging antes do rollout.  
-
----
-
-## 22 — Remote MCP Server *(DEPRECADO — duplicado)*  
-
-Duplicado do item #16. Manter apenas #16 como fonte neste documento.
-
-### Filtro na primeira varredura
-
-- Consolidado/deprecado.
-- Não sugerir em avaliações novas.
-
----
-
-## 23 — AI Reasoning no Dashboard *(DEPRECADO — duplicado)*  
-
-Duplicado do item #18. Manter apenas #18 como fonte neste documento.
-
-### Filtro na primeira varredura
-
-- Consolidado/deprecado.
-- Não sugerir em avaliações novas.
-
----
-
-## 24 — Tracking Interno de Eventos *(DEPRECADO — duplicado)*  
-
-Duplicado do item #19. Manter apenas #19 como fonte neste documento.
-
-### Filtro na primeira varredura
-
-- Consolidado/deprecado.
-- Não sugerir em avaliações novas.
-
----
-
-## 25  — Política de Dados: TTL Graduado (LGPD + Remarketing) 🟩 Estável)*
-
-2025-11-12
-
-### Status no Projeto
-
-- Status: Não implementado
-- Evidência: docs/roadmap.md (sem adoção definida no escopo atual)
-
-
-### Descrição
-
-Retenção por camadas: PII (30–90 dias), eventos brutos (180 dias) e agregados anônimos (18–24 meses), com salting rotativo e RLS.
-
-### Valor para o Projeto
-
-- Equilibra compliance e visão de longo prazo.
-
-### Valor para o Usuário / Negócio
-
-- Proteção de dados pessoais e métricas confiáveis.
-
-### Ações Recomendadas
-
-1. Criar/ajustar `visitor_identifiers`, `events_raw`, `metrics_daily`.
-
-2. Configurar jobs de TTL e rotação de salts.
 
 ---
 
@@ -987,7 +680,6 @@ Define um padrão unificado para rastrear mudanças em triggers, policies e fun�
 - Evidência: docs/roadmap.md (E5.4, E5.6) + docs/base-tecnica.md (templates de Auth e SMTP via Resend)
 
 
-
 ### Descrição  
 
 Permite editar, no Supabase Dashboard, os templates de emails transacionais do Auth (ex.: invite, reset password, confirmação de cadastro e alertas de segurança), usando variáveis padrão do Supabase para links e contexto.
@@ -1018,36 +710,6 @@ Permite editar, no Supabase Dashboard, os templates de emails transacionais do A
 
 ---
 
-## 31 — Security progress + roadmap 2026 *(🗾 Estável)*
-
-2026-01-07
-
-### Status no Projeto
-
-- Status: Em implementação por casos de uso
-- Evidência: docs/base-tecnica.md (guardrails de segurança já incorporados parcialmente; sem fechamento global)
-
-
-### Descrição  
-
-Resumo das mudanças de segurança do Supabase em 2025 e das direções previstas para 2026 (algumas delas podem ser *breaking* dependendo do uso). O post oficial apresenta o retrospecto de segurança de 2025 e as metas para endurecer a plataforma em 2026.
-
-### Valor para o Projeto  
-
-- Reduz risco de drift: mudanças de segurança podem impactar Auth, Data API, chaves e secrets.  
-
-### Valor para o Usuário  
-
-- Menos instabilidade e menos retrabalho em hardening.
-
-### Ações Recomendadas  
-
-1. Ler o post de retro/roadmap e extrair itens que afetem Auth, API Keys, PostgREST/Data API, Vault/Secrets e padrões de segurança.  
-
-2. Se houver item com potencial de quebra: abrir um caso dedicado (E16.xx/E9.xx conforme escopo).
-
----
-
 ## 32 — Stripe Sync Engine no Dashboard (1‑click) *(🗾 Estável)*
 
 2025-12-19
@@ -1057,13 +719,6 @@ Resumo das mudanças de segurança do Supabase em 2025 e das direções previst
 - Status: Não implementado
 - Evidência: docs/roadmap.md (sem adoção definida no escopo atual)
 - Observação: Supabase Update May 2026 informa que o Stripe Sync Engine passou a ser mantido pela Stripe e que o app Supabase no Stripe Marketplace está GA; manter sem adoção no E9 neste momento.
-
-
-### Filtro na primeira varredura
-
-- Rejeitar no MVP/E9 atual.
-- Reavaliar apenas se houver decisão explícita de Billing Engine ou mudança formal do modelo de billing.
-- Não substituir `public.account_commercial_entitlements` nem o fluxo de webhook/entitlements sem decisão humana.
 
 
 ### Descrição  
@@ -1176,44 +831,6 @@ Recurso/integração do **index_advisor** para ajudar a identificar índices fal
 
 ---
 
-## 36 — Data API: PostgREST v14 *(🟦 Estável)*
-
-2025-12-11
-
-### Status no Projeto
-
-- Status: Implementado globalmente no projeto
-- Evidência: docs/base-tecnica.md (ambiente atual PostgREST 14.1); docs/roadmap.md (E3.4 como update externo a considerar)
-- Observação: uso específico de FTS no E10.5 ainda está previsto em docs/lousa-estrategista-E10-5.md (E10.5.6), não implementado.
-
-
-
-### Filtro na primeira varredura
-
-- Fora da primeira varredura como recurso candidato.
-- Usar apenas como referência técnica quando o caso tocar Data API, paginação, FTS, alias/spread ou interpretação de erros PostgREST.
-
-
-### Descrição  
-
-O Supabase Data API está em PostgREST **14.1** no ambiente do LP Factory 10 (registrado na Base Técnica).  
-
-### Valor para o Projeto  
-
-- Regras e compatibilidades já normatizadas na Base Técnica (3.12), incluindo: spread/alias em relações *to‑many*, FTS e interpretação de **HTTP 416 / PGRST103** como “fim da lista” (não erro).  
-
-### Valor para o Usuário  
-
-- Menos “engasgos” em endpoints REST/queries em momentos de pico.
-
-### Ações Recomendadas  
-
-1. Tratar a Base Técnica **3.12** como fonte de verdade operacional para PostgREST 14.1 (paginação, alias, FTS, índices).  
-
-2. Remover a ideia de “rollout pendente” deste item (porque o ambiente atual já está em 14.1).  
-
----
-
 ## 37 — Geração de tipos Python via Supabase CLI *(🗾 Estável)*
 
 2026-01-08
@@ -1242,34 +859,6 @@ Guia oficial para gerar **tipos Python** via CLI (`supabase gen types --lang=
 
 ---
 
-## 38 — Quick announcements (Jan/2026) *(🗾 Estável)*
-
-2026-01-08
-
-### Status no Projeto
-
-- Status: Não implementado
-- Evidência: docs/roadmap.md (registro informativo; sem adoção no escopo atual)
-
-
-### Descrição  
-
-Pacote de anúncios rápidos do mês: quickstarts (Expo React Native, TanStack Start e Flask) e “Explain/Analyze diagrams” no Dashboard, entre outros.
-
-### Valor para o Projeto  
-
-- Referência rápida para não perder novidades menores que podem virar atalhos no futuro.  
-
-### Valor para o Usuário  
-
-- Evolução incremental sem surpresas.
-
-### Ações Recomendadas  
-
-1. Manter como log de rastreabilidade (sem obrigação de adoção imediata).
-
----
-
 ## 39 — pg_graphql desativado por padrão *(🗾 Estável)*
 
 2026-02-15
@@ -1278,13 +867,6 @@ Pacote de anúncios rápidos do mês: quickstarts (Expo React Native, TanStack
 
 - Status: Não implementado
 - Evidência: docs/roadmap.md (sem caso de uso ativo para adoção no produto)
-
-
-### Filtro na primeira varredura
-
-- Rejeitar na primeira varredura salvo caso explícito de GraphQL.
-- Se o caso não usar GraphQL, registrar apenas como trava de escopo: GraphQL não utilizado.
-- Não sugerir como recurso novo.
 
 
 ### Descrição
@@ -1325,7 +907,6 @@ A extensão **pg_graphql** passa a vir **desativada por padrão** em novos proje
 
 - Status: Em implementação por casos de uso
 - Evidência: docs/lousa-estrategista-E10-5.md (E10.5.3 implementado com snippets do Grupo A; E10.5.4 planejado com snippets do Grupo C)
-
 
 
 ### Descrição
@@ -1433,15 +1014,7 @@ As Supabase Edge Functions passam a suportar **upload por drag-and-drop de arqui
 
 - Status: Não implementado
 - Evidência: docs/roadmap.md (sem requisito formal de rede privada no plano atual)
-- Observação: Diferencial estratégico futuro para enterprise/compliance; não implementar no MVP.
-
-
-### Filtro na primeira varredura
-
-- Diferencial estratégico futuro.
-- Rejeitar no MVP.
-- Elegível apenas com requisito formal de cliente enterprise, compliance ou rede privada.
-- Não usar como propaganda principal para PME/MVP.
+- Observação: Deferido.
 
 
 ### Descrição
@@ -1468,40 +1041,6 @@ Permite conectar o banco Supabase a recursos na AWS por rede privada (sem exposi
 * Ambiente: —
 * Evidência: —
 * Observação: avaliar elegibilidade de plano/necessidade quando houver demanda.
-
----
-
-## 44 — Query Ethereum directly from Postgres *(🗾 Estável)*
-
-2026-02-05
-
-### Status no Projeto
-
-- Status: Não implementado
-- Evidência: docs/roadmap.md (sem caso de uso ativo no produto)
-
-
-### Descrição
-Nova capacidade oficial para consultar dados Ethereum em tempo real diretamente do Postgres, via wrapper/integração suportada pela Supabase.
-
-### Valor para o Projeto
-- Amplia possibilidades de integração analítica e consultas externas.
-- Mostra evolução da plataforma em wrappers e acesso a fontes especializadas.
-
-### Valor para o Usuário
-- Indireto no LP Factory 10; pode servir como referência de capacidade técnica da stack.
-
-### Ações Recomendadas
-1. Registrar como capacidade opcional da stack.
-2. Não adotar agora no MVP.
-3. Reavaliar apenas se surgir caso de uso real.
-
-### Registro (Tipo B — Stack/Integração)
-- Status: PENDENTE
-- Verificado em: —
-- Ambiente: Supabase / wrappers
-- Evidência: —
-- Observação: update oficial, mas sem prioridade prática imediata para o projeto.
 
 ---
 
@@ -1549,13 +1088,6 @@ A Supabase passou a oferecer integração oficial com o Claude, permitindo conec
 - Status: Não implementado
 - Evidência: docs/base-tecnica.md + docs/roadmap.md (observabilidade atual coberta por logs estruturados; sem upgrade de plano)
 - Observação: Não apto no plano atual.
-
-
-### Filtro na primeira varredura
-
-- Não apto no plano atual.
-- Rejeitar no MVP enquanto o projeto estiver no plano Free.
-- Reavaliar apenas com upgrade de plano e necessidade real de observabilidade externa.
 
 
 ### Descrição
@@ -1696,14 +1228,6 @@ O Table Editor do Supabase passa a aceitar descrições em linguagem natural par
 
 - Status: Não implementado
 - Evidência: docs/roadmap.md (sem adoção definida no escopo atual)
-- Observação: Diferencial estratégico futuro de escala/performance; não implementar sem volume real.
-
-
-### Filtro na primeira varredura
-
-- Diferencial estratégico futuro.
-- Rejeitar no MVP.
-- Elegível apenas com tráfego real, dashboards pesados, latência global, carga de leitura relevante ou analytics em escala.
 
 
 ### Descrição
@@ -1893,58 +1417,6 @@ Generated columns do PostgreSQL permitem manter **colunas derivadas automaticame
 
 ---
 
-## 55 — GitHub Integration (Schema CI/CD) *(🟦 Estável)*  
-
-2026-04-20  
-
-### Status no Projeto
-
-- Status: Implementado globalmente no projeto
-- Evidência: fluxo próprio via `.github/workflows/pipeline-supabase-apply-migrations.yml` + `docs/base-tecnica.md` (migrations versionadas, Supabase CLI, `supabase link`, `supabase db push --linked` e gate operacional).
-- Observação: a GitHub Integration nativa da Supabase não precisa ser adotada agora, pois o projeto já possui fluxo próprio de migrations versionadas com GitHub Actions + Supabase CLI.
-
-
-### Filtro na primeira varredura
-
-- Fora da primeira varredura como recurso candidato.
-- Usar apenas como evidência de fluxo já existente quando o caso tocar migrations, baseline, CI/CD Supabase ou governança de schema.
-- Não propor adoção da integração nativa da Supabase enquanto o fluxo atual atender ao MVP.
-
-
-### Descrição  
-
-Integração de governança e CI/CD de schema com GitHub no Supabase, permitindo sincronizar branches e aplicar migrations versionadas de `supabase/migrations`, além de apoiar deploy declarativo de recursos do projeto.  
-
-### Valor para o Projeto  
-
-- Reduz drift entre repositório e banco em fluxos com migrations versionadas.  
-
-- Fortalece governança de mudanças de schema com checks de integração antes de merge.  
-
-- Não resolve baseline sozinho; depende da organização prévia do diretório `supabase/`.  
-
-### Valor para o Usuário  
-
-- Menor risco de regressões silenciosas por divergência de schema em produção.  
-
-### Ações Recomendadas  
-
-1. Consolidar baseline do diretório `supabase/` (migrations, config e convenções).  
-
-2. Conectar repositório ao projeto Supabase e configurar required checks no GitHub.  
-
-3. Validar pipeline em branch de preview antes de ativação em produção.  
-
-### Registro (Tipo A — Plataforma)
-
-- Status: PENDENTE
-- Verificado em: —
-- Ambiente: Supabase Dashboard / GitHub Integration / Branching
-- Evidência: —
-- Observação: recurso de governança e CI/CD de schema; depende de baseline consolidado no diretório `supabase/` antes de adoção prática no projeto.
-
----
-
 ## 56 — Push Protection para `supabase_secret_key` *(🟦 Estável)*  
 
 2026-04-20  
@@ -1953,13 +1425,6 @@ Integração de governança e CI/CD de schema com GitHub no Supabase, permitindo
 
 - Status: Não implementado
 - Evidência: não há registro no repositório de política operacional formalizada de push protection específica para `supabase_secret_key`
-
-
-### Filtro na primeira varredura
-
-- Elegível por caso apenas quando a fase tocar secrets, envs, service role, `supabase_secret_key`, webhooks ou automações com credenciais.
-- Não duplicar governança de GitHub; referenciar `docs/github-up.md`.
-- Se for confirmado que `github#3` cobre este caso de forma global, reclassificar em PR futuro como fora da primeira varredura.
 
 
 ### Descrição  
@@ -2031,59 +1496,6 @@ Melhorias do Schema Visualiser para inspeção de modelagem (relações clicáve
 - Ambiente: Supabase Studio / Schema Visualiser
 - Evidência: —
 - Observação: recurso de apoio operacional de modelagem e inspeção visual; complementa `docs/schema.md`, sem substituí-lo.
-
----
-
-## 58 — Data API: exposição explícita por GRANT para novas tabelas *(🟦 Estável)*
-
-2026-05-19
-
-### Status no Projeto
-
-- Status: Implementado globalmente no projeto
-- Evidência: docs/base-tecnica.md (regra incorporada em 3.8.1.5 para novas tabelas no schema public); e-mail da Supabase indica 1 projeto afetável por uso de Data API, sem indicação de erro atual.
-- Observação: novos projetos adotam o comportamento em 30/05/2026; no projeto existente, novas tabelas passam a exigir `GRANT` explícito em 30/10/2026; tabelas existentes mantêm os grants atuais.
-
-### Filtro na primeira varredura
-
-- Fora da primeira varredura como recurso candidato.
-- Usar apenas como regra normativa obrigatória quando a fase criar ou alterar tabela, view, RPC, policy ou migration exposta via Supabase Data API/PostgREST/GraphQL.
-- Se houver nova tabela pública acessada pelo app, admin, adapters ou fluxo operacional, a avaliação deve exigir decisão explícita de GRANT, RLS e policies na mesma etapa.
-
-
-### Descrição
-
-A Supabase passou a mudar o comportamento de exposição automática de novas tabelas do schema `public` na Data API/PostgREST/GraphQL. Novas tabelas podem exigir `GRANT` explícito para ficarem acessíveis pela API, em vez de serem expostas automaticamente apenas por estarem no schema `public`.
-
-### Valor para o Projeto
-
-- Reduz risco de exposição acidental de tabelas novas.
-- Obriga migrations futuras a declarar explicitamente quais roles podem acessar cada tabela via Data API.
-- Evita drift entre tabela criada, RLS/policies configuradas e acesso real via `supabase-js`/PostgREST.
-- Impacta diretamente novas tabelas em E10.5, E12, E19, billing, analytics, CRM e futuras automações.
-
-### Valor para o Usuário
-
-- Mais segurança indireta sobre dados e superfícies expostas.
-- Menor risco de falhas silenciosas quando uma tabela existe no banco, mas não está acessível pela API por falta de grant explícito.
-
-### Ações Recomendadas
-
-1. Aplicar a regra da Base Técnica em toda nova migration que criar tabela no schema `public`.
-2. Em toda tabela nova, separar claramente:
-   - `GRANT`: define se a role pode acessar a tabela pela Data API.
-   - RLS/policies: definem quais linhas podem ser acessadas.
-3. Não conceder grants automaticamente para tabelas internas.
-4. Antes de 30/10/2026, usar o Security Advisor para revisar quais tabelas estão expostas à Data API.
-5. Quando a tabela precisar ser acessada por app, admin, adapters ou fluxo operacional via Supabase API, declarar os grants necessários na mesma migration da criação da tabela.
-
-### Registro (Tipo C — Infra/Schema/Contrato)
-
-- Status: ABSORVIDO NA BASE TÉCNICA
-- Verificado em: —
-- Ambiente: Supabase Data API / PostgREST / GraphQL / schema public
-- Evidência: —
-- Observação: mudança nasce na plataforma, mas a absorção no projeto é regra de migration, grants e contrato técnico.
 
 ---
 
