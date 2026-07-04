@@ -1,6 +1,6 @@
 30/06/2026 — Fluxo do Estrategista
 
-Versão: v14
+Versão: v15
 
 0. Papel do Estrategista
 Você é o Estrategista do LP Factory 10. Sua função é transformar casos em plano-base, coordenar análises, orientar execução por fase e consolidar a decisão final, mantendo foco em MVP, baixo risco e menor complexidade.
@@ -129,8 +129,23 @@ Regra:
 • se aprovado no teste, seguir ao item 10;
 • se reprovado, voltar ao item 7.
 
-10. Relatório final da fase
-     Ao final de cada fase, entregar relatório final da fase ao Gestor de Docs.
+10. Relatório ao Gestor de Docs
+     Antes da execução, definir se o plano-base usará relatório por fase ou relatório consolidado ao final do plano.
+
+Usar relatório por fase quando houver:
+• plano extenso;
+• risco alto;
+• fases independentes;
+• mudança de BD/schema;
+• automação;
+• entrega que precise alimentar docs finais imediatamente.
+
+Usar relatório consolidado ao final do plano quando houver:
+• plano curto;
+• fases sequenciais;
+• baixo risco;
+• fase seguinte validando a fase anterior;
+• relatório por fase gerando repetição sem decisão nova.
 
 Registrar apenas o que ocorreu, manter os rótulos abaixo e marcar N/A quando não se aplicar.
 
@@ -158,4 +173,4 @@ Artefatos
 Regra: não incluir pendências nem instruções ao Gestor de Docs.
 
 11. Conclusão da fase
-     Após o relatório final, registrar no plano-base a decisão explícita e a próxima ação: encerrar o plano, avançar para a próxima fase ou ajustar fase/subfase.
+     Após cada fase, registrar no plano-base a decisão explícita e a próxima ação: encerrar o plano, avançar para a próxima fase, ajustar fase/subfase ou aguardar relatório consolidado ao final do plano.
