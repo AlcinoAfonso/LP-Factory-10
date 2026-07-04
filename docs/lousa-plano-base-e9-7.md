@@ -38,6 +38,7 @@ Fontes: chat, `AGENTS.md`, `docs/prompt-estrategista.md`, `docs/roadmap.md`, `do
 
 * Automação: não.
 * Objetivo: fechar o contrato operacional da liberação manual antes de implementar.
+* Status: concluída em 04/07/2026.
 * Definir:
   * ator autorizado;
   * superfície administrativa;
@@ -50,7 +51,23 @@ Fontes: chat, `AGENTS.md`, `docs/prompt-estrategista.md`, `docs/roadmap.md`, `do
   * regra de criar, atualizar, cancelar ou bloquear duplicidade;
   * se encerramento/cancelamento manual entra no E9.7 ou fica fora.
 * Saída: contrato operacional suficiente para liberar ou bloquear a Fase 2.
-* Critério de parada: parar se faltar ator autorizado, superfície, path, boundary, mecanismo, vigência ou auditoria mínima.
+* Resultado da investigação:
+  * Ator autorizado: `platform_admin`, incluindo `super_admin` pelo guard existente `requirePlatformAdmin`.
+  * Superfície administrativa: detalhe read-only de conta em `app/admin/(protected)/contas/[accountId]/page.tsx`, com mutação mínima futura acoplada a essa superfície; não criar dashboard/admin amplo.
+  * Path canônico da mutação para a Fase 2: `app/admin/(protected)/contas/[accountId]/actions.ts`.
+  * Boundary de escrita para a Fase 2: `lib/admin/adapters/adminCommercialEntitlementsAdapter.ts`, em domínio Admin, server-only.
+  * Mecanismo de escrita: Server Action protegida por `requirePlatformAdmin`, chamando adapter Admin server-only que usa `createServiceClient()`; sem client Supabase, sem Stripe, sem checkout, sem webhook e sem RPC nova.
+  * Entitlement alvo: somente `public.account_commercial_entitlements` com `origin = liberacao_manual`.
+  * Status permitido para concessão manual: `ativo`. `pendente_confirmacao` fica fora do MVP manual; `expirado` continua resultado de vigência e `cancelado` entra apenas para encerramento manual mínimo.
+  * Vigência: `confirmed_at = now`, `starts_at = now` no ato da concessão e `expires_at` opcional; se informado, precisa ser futuro e maior que `starts_at`. Agendamento futuro por `starts_at > now` fica fora do E9.7.
+  * Auditoria mínima: `metadata_json` obrigatório com `manual_reason`, `granted_by_user_id`, `granted_at`, `source_surface = admin_account_detail` e `operation = grant_manual_entitlement`. `audit_logs`/`audit_context_event` não são obrigatórios para liberar a Fase 2.
+  * Criar: permitido quando a conta existe, está `active`, o plano é canônico e não há entitlement comercial efetivo conflitante.
+  * Atualizar: permitido apenas sobre entitlement manual `ativo` existente da mesma conta, para ajustar plano, vigência ou justificativa, preservando `origin = liberacao_manual`.
+  * Bloquear duplicidade: se já houver entitlement efetivo de outra origem (`plano_pago_confirmado` ou `trial`), a concessão manual deve falhar fechado com conflito operacional; se houver entitlement manual `ativo`, atualizar em vez de criar nova linha.
+  * Encerramento/cancelamento manual: entra no E9.7 somente como revogação manual mínima de entitlement `origin = liberacao_manual`, gravando `status = cancelado`, `canceled_at = now` e metadata de cancelamento; não representa churn, inadimplência, Billing Engine ou cancelamento Stripe.
+  * Fallback: qualquer conta inexistente, conta não `active`, plano inválido, vigência inválida, operador não autorizado ou conflito de origem falha fechado e não altera LP Builder.
+* Decisão da Fase 1: Fase 2 liberada para implementar apenas o mecanismo mínimo acima.
+* Critério de parada: resolvido para a Fase 1; reabrir ao Estrategista se a Fase 2 exigir nova tabela, migration, RPC, policy, grant, trigger, dashboard amplo ou alteração do gate do LP Builder.
 
 3.2 Fase 2 — Mecanismo mínimo de concessão
 
@@ -86,7 +103,7 @@ Fontes: chat, `AGENTS.md`, `docs/prompt-estrategista.md`, `docs/roadmap.md`, `do
   * `supa#40` pode apoiar validação read-only.
 * Saída: evidência objetiva de que a liberação manual ativa elegibilidade sem alterar o gate produtivo.
 
-Próxima ação: após merge/consolidação deste PR, enviar ao Executor somente a Fase 1, não a Fase 2.
+Próxima ação: após merge/consolidação deste PR, enviar ao Executor a Fase 2 — Mecanismo mínimo de concessão, limitada estritamente ao contrato operacional fechado na Fase 1.
 
 4. Escopo negativo e critérios de parada
 
