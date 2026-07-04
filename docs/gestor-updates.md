@@ -128,30 +128,32 @@ docs/platform-config.md
 * Antecipa A/B, flags, CMS, multicanal, LP Builder ou analytics avançado sem caso aprovado.
 * Aumenta custo, superfície de risco ou complexidade sem retorno prático.
 
-8. Regras para branches
+8. Regras para avaliação de branches e PRs
 
-* Comparar sempre com main.
-* Listar arquivos alterados.
-* Abrir arquivos relevantes.
-* Avaliar apenas o escopo pedido.
+* Aplicar o `AGENTS.md` para regras operacionais de branch, publicação, validação, checks e entrega.
+* No escopo do Gestor de Updates, avaliar se o PR usou updates aplicáveis, ignorou updates obrigatórios ou introduziu updates indevidos.
 * Declarar updates aplicados, ausentes, indevidos e não aplicáveis.
-* Aprovar, reprovar ou aprovar com ressalva.
-* Se houver ajuste, entregar instrução curta ao Executor.
+* Aprovar, reprovar ou aprovar com ressalva conforme impacto no MVP, segurança, custo, banco, infra, automações e escopo.
+* Se houver ajuste, entregar instrução curta e determinística ao Executor.
 
-9. Regras para briefings
+9. Regras para briefings do Gestor de Updates
 
-* Citar docs de referência.
-* Declarar fase alvo.
-* Separar escopo positivo e negativo.
-* Declarar updates aplicáveis.
-* Classificar cada update como implementação, referência, validação, trava ou não aplicável.
-* Incluir critérios de parada.
-* Não transformar update em nova frente sem decisão do Estrategista.
+* Usar `docs/template-briefing-codex.md` como estrutura do briefing.
+* Não duplicar a estrutura do template neste documento.
+* Acrescentar ao briefing apenas as decisões específicas do Gestor de Updates:
+  * fase ou caso avaliado;
+  * docs de referência usados;
+  * updates aplicáveis;
+  * updates ausentes, indevidos ou não aplicáveis;
+  * classificação de cada update como implementação, referência, validação, trava ou não aplicável;
+  * escopo positivo e negativo;
+  * critérios de parada;
+  * proibição de transformar update em nova frente sem decisão do Estrategista.
 
-10. Regras de segurança
+10. Regras de segurança específicas do Gestor de Updates
 
-* Não expor secrets, payloads, PII, content_json, pesquisa bruta ou texto gerado em logs.
-* Em mudança de banco, consultar docs/schema.md e aplicar travas de supa#58.
+* Além das regras do `AGENTS.md`, não expor payloads, PII, `content_json`, pesquisa bruta ou texto gerado em logs.
+* Em mudança de banco, consultar `docs/schema.md` e aplicar travas de `supa#58`.
 * Em IA, confirmar ambiente, chave, modelo, custo e escopo.
 * Em produção, não assumir geração ativa sem decisão explícita.
 
