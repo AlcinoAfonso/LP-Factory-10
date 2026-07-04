@@ -2,15 +2,12 @@
 
 ---
 
-## Convenção de leitura (mercado x projeto)
+## Convenção de leitura do catálogo ativo
 
-- O heading/badge de cada item representa o estado do recurso no mercado/plataforma (Vercel/Next.js/React).
-- Cada item ativo possui um bloco `### Status no Projeto` para separar o estado de implementação no LP Factory 10.
-- Valores aceitos em `Status no Projeto`:
-  - `Não implementado`
-  - `Em implementação por casos de uso`
-  - `Implementado globalmente no projeto`
-- Quando necessário, incluir observação curta complementar (ex.: `Duplicado`, `Superado por item mais novo`, `Deferido`, `Não apto no plano atual`).
+- O heading/badge de cada item representa o estado do recurso no mercado/plataforma Vercel, Next.js ou React, quando aplicável.
+- Este documento não é histórico completo de updates da Vercel, Next.js ou React.
+- O catálogo deve manter apenas recursos ainda aproveitáveis pelo LP Factory 10.
+- Itens removidos por estarem globais, absorvidos, duplicados, deprecados, superados ou redundantes não têm seus IDs reutilizados.
 
 ---
 
@@ -19,6 +16,16 @@
 O identificador canônico dos itens deste catálogo é `vercel#n`.
 
 Esse identificador deve ser usado no roadmap, Base Técnica, briefings, relatórios e referências cruzadas. A numeração não deve ser reutilizada após remoção, depreciação ou substituição de um item.
+
+## Critério do catálogo ativo
+
+Este documento deve manter apenas recursos Vercel, Next.js ou React que ainda possam ser aproveitados pelo Gestor de Updates em algum caso atual, futuro ou condicional.
+
+Itens já implementados globalmente, absorvidos pela Base Técnica, superados, duplicados, deprecados ou redundantes não permanecem no catálogo ativo.
+
+Recursos pagos, enterprise ou futuros podem permanecer quando ainda tiverem aproveitamento possível em algum caso específico.
+
+A rejeição ou adoção de cada recurso deve ser decidida caso a caso pelo Gestor de Updates, conforme o plano-base avaliado.
 
 ## 1 — Vercel AI Cloud *(🟨 Disponibilidade por recurso/plano)*
 2025-06-30
@@ -46,29 +53,6 @@ Conjunto de capacidades de plataforma com disponibilidade e cobrança próprias 
 1. Manter AI Gateway, Fluid Compute, Sandbox e BotID sem adoção no LP Factory 10 enquanto não houver caso aprovado.
 2. Avaliar separadamente requisitos de plano, custos, dados e segurança antes de qualquer implementação.
 3. Não transformar essas capacidades em requisito da primeira entrega da E10.6.
-
----
-
-## 2 — Next.js 16 *(🟩 Estável)*
-2025-10-22
-
-### Status no Projeto
-- Status: Implementado globalmente no projeto
-- Evidência: `docs/base-tecnica.md` define Next.js 16.1.1 como base; `package.json` mantém `next` em `^16.1.1`.
-
-### Descrição
-Linha estável do Next.js adotada no projeto, com App Router e alinhamento ao stack atual.
-
-### Valor para o Projeto
-- Base técnica atual padronizada e documentada.
-- Compatibilidade com práticas de manutenção contínua do repo.
-
-### Valor para o Usuário
-- Navegação e carregamento consistentes com o baseline atual da aplicação.
-
-### Ações Recomendadas
-1. Manter rotina contínua de validação de upgrades de patch.
-2. Acompanhar breaking changes e notas de segurança/upgrade do ecossistema Next.
 
 ---
 
@@ -116,27 +100,6 @@ Bundler oficial do ecossistema Next.js 16 para desenvolvimento/build, com foco e
 
 ---
 
-## 5 — Routing e Navegação Aprimorados *(🟩 Estável)*
-2025-10-22
-
-### Status no Projeto
-- Status: Não implementado
-- Evidência: não há adoção explícita registrada no roadmap para este pacote de capacidades como iniciativa dedicada.
-
-### Descrição
-Capacidades de navegação e roteamento do framework evoluídas no ciclo atual do Next.js.
-
-### Valor para o Projeto
-- Base para simplificar padrões de navegação quando houver demanda de produto.
-
-### Valor para o Usuário
-- Potencial de navegação mais fluida em fluxos críticos.
-
-### Ações Recomendadas
-1. Avaliar adoção incremental por necessidade funcional comprovada.
-
----
-
 ## 6 — DevTools MCP *(🟩 Disponível no ecossistema Next.js 16+)*
 2025-10-22
 
@@ -157,28 +120,6 @@ Integração MCP do Next.js para conectar agentes ao servidor de desenvolvimento
 ### Ações Recomendadas
 1. Avaliar adoção somente quando houver demanda clara de produtividade de engenharia.
 2. Formalizar padrão de uso no projeto antes de habilitar em rotina.
-
----
-
-## 7 — React 19.2 *(🟩 Estável)*
-2025-10-22
-
-### Status no Projeto
-- Status: Implementado globalmente no projeto
-- Evidência: `docs/base-tecnica.md` define React 19.2.x; `package.json` fixa `react`/`react-dom` em `19.2.1`.
-
-### Descrição
-Versão estável do React já usada no stack atual do LP Factory 10.
-
-### Valor para o Projeto
-- Base moderna e suportada para evolução do App Router e Server Components.
-
-### Valor para o Usuário
-- Comportamento de UI consistente com runtime atualizado.
-
-### Ações Recomendadas
-1. Manter acompanhamento de patches e notas de compatibilidade.
-2. Tratar recursos opcionais (ex.: View Transitions) como adoção conservadora e orientada a caso de uso.
 
 ---
 
@@ -227,36 +168,6 @@ No ciclo atual do Next.js, `middleware.ts` foi substituído/deprecado em favor d
 
 ---
 
-## 10 — Observability Redirects *(🟩 Estável)*
-2025-11-05
-
-### Status no Projeto
-- Status: Implementado globalmente no projeto
-- Evidência: registro operacional Tipo A já validado neste documento para o projeto `lp-factory-10` no dashboard Vercel.
-- Observação: visibilidade disponível para clientes; profundidade de métricas pode variar conforme plano/Observability Plus.
-
-### Descrição
-Painel de Observability da Vercel com métricas básicas de redirects e rewrites disponíveis nos planos da plataforma. Em Pro/Enterprise, o Observability Plus acrescenta métricas avançadas, como latência de conexão, recortes por origem/destino e rotas de destino do redirect. Logs de runtime estão disponíveis no dashboard; exportação por Drains, inclusive de redirects e rewrites, é um recurso de Pro/Enterprise e pode ter cobrança própria.
-
-### Valor para o Projeto
-- Diagnóstico mais rápido de comportamento de rotas e latência.
-
-### Valor para o Usuário
-- Maior consistência de navegação com monitoramento contínuo.
-
-### Ações Recomendadas
-1. Manter validações periódicas em smoke de Preview para rotas críticas usando as métricas básicas já disponíveis.
-2. Avaliar Observability Plus, logs e Drains apenas se a necessidade operacional justificar plano, retenção e custo adicionais.
-
-### Registro (Tipo A — Plataforma)
-- Status: OK
-- Verificado em: 08/02/2026
-- Ambiente: Vercel Dashboard (projeto `lp-factory-10`) → Observability → Edge Requests
-- Evidência: gráficos + tabela de rotas acessíveis; busca/filtro de rotas (ex.: `/a/home`) disponível.
-- Observação: no smoke do preview `e10.4.6`, validar também `/a/[account]` e sequência E10.4 → E10.5 (redirect/latência).
-
----
-
 ## 11 — Server-side Tracking API (`@vercel/analytics/server`) *(🟩 Estável no ecossistema Vercel)*
 2025-10-30
 
@@ -281,83 +192,6 @@ Capacidade de envio de eventos customizados server-side via `@vercel/analytics/s
 
 ---
 
-## 12 — Vercel AI Cloud + Gateway *(DEPRECADO — duplicado)*
-2025-11-12
-
-### Status no Projeto
-- Status: Não implementado
-- Evidência: item duplicado do `#1`, sem implementação dedicada no projeto.
-- Observação: Duplicado / Superado por item mais novo (manter referência no `#1`).
-
-### Descrição
-Item deprecado por ser duplicado e ter sido superado pelo detalhamento consolidado no `vercel#1`.
-
----
-
-## 13 — Auto Job Cancellation (deploys em fila no mesmo branch) *(🟩 Estável)*
-2025-12-05
-
-### Status no Projeto
-- Status: Implementado globalmente no projeto
-- Evidência: comportamento default de integração Git ↔ Vercel já tratado como capacidade ativa neste documento.
-
-### Descrição
-Quando há vários pushes no mesmo branch/PR enquanto um build está em execução, a Vercel prioriza o commit mais recente e cancela jobs intermediários enfileirados, mantendo o Preview alinhado ao último estado do branch.
-
-### Valor para o Projeto
-- Reduz desperdício de builds em branches com commits rápidos (menos fila e menos ruído operacional).
-- Diminui risco de QA abrir Preview antigo quando há muitas iterações na mesma branch.
-- Acelera ciclos de correção durante execuções (ex.: branches de features como `e10.4.6`).
-
-### Valor para o Usuário
-- Correções e melhorias chegam mais rápido ao Preview/produção (menos tempo de espera por deploys).
-- Menor chance de validação em estado desatualizado quando houver aprovação por Preview.
-
-### Ações Recomendadas
-1. Tratar como comportamento padrão do Vercel ↔ GitHub e manter registro operacional.
-2. Só avaliar opt-out via `vercel.json` em caso específico que exija build de todos os commits.
-
-### Registro (Tipo A — Plataforma)
-- Status: N/A (default ON)
-- Ação necessária: nenhuma
-- Observação: somente criar `vercel.json` se optar por desabilitar o cancelamento automático.
-
----
-
-## 14 — Optional AI model training / “Improve models with my data” *(🟩 Estável)*  
-2026-03-17
-
-### Status no Projeto
-- Status: Não implementado
-- Evidência: configuração sensível de plataforma sem registro de adoção deliberada no LP Factory 10.
-- Observação: governança de dados; avaliar explicitamente antes de manter ativo.
-
-### Descrição
-Configuração opcional da Vercel para permitir uso de código e chats de agentes da Vercel em melhoria/treino de modelos, com possibilidade de compartilhamento com provedores de modelos para essa finalidade.
-
-### Valor para o Projeto
-- Registra uma decisão sensível de governança de dados da plataforma.
-- Ajuda a evitar ativação por inércia em ambiente de projeto real.
-- Cria referência documental para revisão futura de compliance e segurança.
-
-### Valor para o Usuário
-- Não há ganho direto de produto para o usuário final.
-- O valor é indireto, na governança e no controle consciente da configuração.
-
-### Ações Recomendadas
-1. Registrar a configuração como sensível no contexto Vercel do projeto.
-2. Manter desativado por padrão, salvo justificativa explícita.
-3. Reavaliar somente se houver benefício claro e documentado para o projeto.
-
-### Registro (Tipo A — Plataforma)
-- Status: PENDENTE
-- Verificado em: —
-- Ambiente: Vercel Team/Project Settings / Data Preferences
-- Evidência: —
-- Observação: tratar como decisão consciente de governança; não como feature de produto.
-
----
-
 ## 15 — Vercel Toolbar *(🟩 Disponível na plataforma)*
 2026-06-12
 
@@ -378,91 +212,6 @@ Hub de inspeção e colaboração em deployments que centraliza Comments, Access
 ### Ações Recomendadas
 1. Avaliar após existir o primeiro Preview funcional da E10.6.
 2. Usar como prática operacional, sem criar nova infraestrutura.
-
----
-
-## 16 — Vercel Comments *(🟩 Disponível na plataforma)*
-2026-06-12
-
-### Status no Projeto
-- Status: Não implementado
-- Evidência: não há registro local de Comments habilitado ou adotado no fluxo de aprovação.
-
-### Descrição
-Feedback localizado diretamente em deployments de Preview, associado ao ponto visual revisado e compartilhável com o time.
-
-### Valor para o Projeto
-- Facilita revisão visual e alinhamento de design/copy sem depender de prints soltos.
-
-### Valor para o Usuário
-- Reduz ambiguidades e retrabalho na correção de conteúdo e interface antes da publicação.
-
-### Ações Recomendadas
-1. Avaliar para validação operacional do Preview da E10.6, sem torná-lo bloqueio da primeira entrega.
-
----
-
-## 17 — Accessibility Audit Tool *(🟩 Disponível na plataforma)*
-2026-06-12
-
-### Status no Projeto
-- Status: Não implementado
-- Evidência: não há registro local de uso da ferramenta no fluxo de QA.
-
-### Descrição
-Ferramenta da Vercel Toolbar para checar regras de acessibilidade, incluindo WCAG, contraste, semântica e estados de foco no contexto da página.
-
-### Valor para o Projeto
-- Apoia QA de páginas antes da aprovação e ajuda a localizar problemas diretamente no Preview.
-
-### Valor para o Usuário
-- Melhora legibilidade, navegação por teclado e compreensão da interface.
-
-### Ações Recomendadas
-1. Usar como apoio à revisão da E10.6 quando disponível no ambiente/plano.
-2. Não substituir validação manual de teclado, foco, conteúdo e tecnologias assistivas.
-
----
-
-## 18 — Interaction Timing Tool *(🟩 Disponível na plataforma)*
-2026-06-12
-
-### Status no Projeto
-- Status: Não implementado
-- Evidência: não há registro local de uso da ferramenta no fluxo de QA.
-
-### Descrição
-Ferramenta da Vercel Toolbar para inspecionar a latência de cada interação da sessão e apoiar a análise de INP.
-
-### Valor para o Projeto
-- Ajuda a revisar CTAs, FAQ, cards e outros componentes interativos no Preview.
-
-### Valor para o Usuário
-- Favorece respostas mais rápidas e previsíveis após cliques, toques e comandos de teclado.
-
-### Ações Recomendadas
-1. Aplicar como diagnóstico no Preview funcional, sem converter analytics em requisito da primeira entrega da E10.6.
-
----
-
-## 19 — Layout Shift Tool *(🟩 Disponível na plataforma)*
-2026-06-12
-
-### Status no Projeto
-- Status: Não implementado
-- Evidência: não há registro local de uso da ferramenta no fluxo de QA.
-
-### Descrição
-Ferramenta da Vercel Toolbar para identificar visualmente elementos que causam CLS e deslocamentos de layout durante a sessão.
-
-### Valor para o Projeto
-- Apoia a revisão de hero, imagens, fontes, cards, FAQ e responsividade.
-
-### Valor para o Usuário
-- Reduz mudanças inesperadas de posição que prejudicam leitura e interação.
-
-### Ações Recomendadas
-1. Usar no QA do Preview quando disponível, mantendo inspeção manual em diferentes larguras de tela.
 
 ---
 
