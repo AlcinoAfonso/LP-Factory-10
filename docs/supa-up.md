@@ -506,6 +506,36 @@ Modelo de controle dinâmico de recursos e permissões por plano, utilizando bun
 
 ---
 
+## 25  — Política de Dados: TTL Graduado (LGPD + Remarketing) 🟩 Estável)*
+
+2025-11-12
+
+### Status no Projeto
+
+- Status: Não implementado
+- Evidência: docs/roadmap.md (sem adoção definida no escopo atual)
+
+
+### Descrição
+
+Retenção por camadas: PII (30–90 dias), eventos brutos (180 dias) e agregados anônimos (18–24 meses), com salting rotativo e RLS.
+
+### Valor para o Projeto
+
+- Equilibra compliance e visão de longo prazo.
+
+### Valor para o Usuário / Negócio
+
+- Proteção de dados pessoais e métricas confiáveis.
+
+### Ações Recomendadas
+
+1. Criar/ajustar `visitor_identifiers`, `events_raw`, `metrics_daily`.
+
+2. Configurar jobs de TTL e rotação de salts.
+
+---
+
 ## 26 — Realtime Replay (Alpha) *(🧪 Experimental)*
 
 2025-11-09  
