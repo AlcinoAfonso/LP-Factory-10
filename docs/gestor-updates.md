@@ -149,12 +149,12 @@ docs/platform-config.md
   * critérios de parada;
   * proibição de transformar update em nova frente sem decisão do Estrategista.
 
-10. Regras de segurança específicas do Gestor de Updates
+10. Segurança específica do Gestor de Updates
 
-* Além das regras do `AGENTS.md`, não expor payloads, PII, `content_json`, pesquisa bruta ou texto gerado em logs.
-* Em mudança de banco, consultar `docs/schema.md` e aplicar as travas vigentes do catálogo Supabase ativo.
+* Em banco, consultar `docs/schema.md`, `docs/base-tecnica.md` e o catálogo Supabase vigente.
 * Em IA, confirmar ambiente, chave, modelo, custo e escopo.
 * Em produção, não assumir geração ativa sem decisão explícita.
+* Não transformar update de segurança em nova infraestrutura sem caso real aprovado.
 
 11. Forma de conclusão
 
@@ -249,15 +249,11 @@ Manter no catálogo ativo itens que sejam:
 * Informar itens avaliados e não adicionados quando houver varredura oficial.
 * Proibir alteração de arquivos fora do alvo e criação de banco, rota, job, agente, automação, engine, workflow ou infraestrutura sem decisão humana explícita.
 
-12.9. Revisão do PR
+12.9. Conferência do catálogo
 
-* Conferir se apenas o arquivo-alvo foi alterado.
 * Conferir se itens removidos saíram integralmente.
 * Conferir se itens mantidos não foram renumerados.
 * Conferir se lacunas numéricas foram preservadas.
 * Conferir se novos IDs seguem o próximo número livre.
 * Conferir se itens novos têm fonte oficial e aproveitamento real ou condicional.
 * Conferir se recurso futuro, pago, enterprise ou experimental não virou adoção automática.
-* Conferir se não houve alteração de código, workflow, banco, rota, job, agente, automação, engine ou infraestrutura.
-* Não bloquear merge por descrição de PR desatualizada quando o arquivo final estiver correto e não houver risco real.
-* Pedir ajuste quando houver renumeração, alteração fora de escopo, item novo sem fonte oficial, reutilização de ID removido ou adoção automática de recurso condicional.
