@@ -104,7 +104,7 @@ Fontes: chat, `AGENTS.md`, `docs/prompt-estrategista.md`, `docs/roadmap.md`, `do
 * Automação: não.
 * Justificativa da fase própria: billing, dados, RLS e gate produtivo têm risco técnico suficiente para validação isolada.
 * Objetivo: validar que a liberação manual funciona pelo fluxo existente.
-* Status: bloqueada parcialmente em 04/07/2026; validação estática e read-only concluída, validação operacional positiva depende de concessão manual real via sessão `platform_admin`.
+* Status: concluída em 04/07/2026 com ressalva operacional; concessão manual real, persistência, view efetiva, signal por contrato e ausência de bypass foram validados, mas criação real de draft pelo LP Builder não foi executada porque não há superfície operacional navegável aprovada para disparar a Server Action sem implementar rota/UI nova.
 * Validar:
   * linha em `account_commercial_entitlements`;
   * leitura por `v_account_commercial_entitlement_effective`;
@@ -114,18 +114,25 @@ Fontes: chat, `AGENTS.md`, `docs/prompt-estrategista.md`, `docs/roadmap.md`, `do
   * `supa#40` pode apoiar validação read-only.
 * Saída: evidência objetiva de que a liberação manual ativa elegibilidade sem alterar o gate produtivo.
 * Resultado da validação:
-  * Ambiente usado: worktree local `C:\Dev\GitHub\LP-Factory-10-e9`, branch `codex/e9-7-fase-3-validacao-gate`, base `origin/main` em `1528458`, com Supabase produção `LP-Factory-10` consultado somente em modo read-only.
+  * Ambiente usado: produção, sessão administrativa confirmada e banco consultado em modo read-only para evidências.
   * Banco: `public.account_commercial_entitlements`, `public.v_account_commercial_entitlement_effective` e `public.account_landing_pages` existem no ambiente consultado.
   * Conta sem entitlement válido: consulta read-only encontrou contas `active` sem entitlement efetivo e sem registros em `account_landing_pages`; no código, `getCommercialEntitlementSignal({ accountId })` falha fechado quando não há linha na view e o LP Builder retorna `commercial_entitlement_required` antes do insert.
-  * Liberação manual válida: não havia linhas `origin = liberacao_manual` no ambiente consultado; por isso não foi possível comprovar, sem mutação operacional, a linha manual, a leitura efetiva da view, o signal elegível e a passagem real pelo gate.
-  * Signal: `lib/commercial-entitlements/adapters/commercialEntitlementAdapter.ts` consulta somente `v_account_commercial_entitlement_effective` filtrada por `account_id` e retorna `NO_COMMERCIAL_ENTITLEMENT_SIGNAL` na ausência de linha ou erro.
+  * Sessão administrativa: confirmada na superfície Admin.
+  * Conta teste autorizada: conta ativa, membership da sessão `owner/active` confirmado e identificadores registrados apenas de forma sanitizada fora deste documento.
+  * Estado anterior da conta teste: sem entitlement efetivo e com `account_landing_pages = 0`.
+  * Liberação manual válida: a conta teste recebeu concessão real via Admin, com retorno visual de criação e card Admin exibindo plano `Lite` e status `ativo`.
+  * Persistência: `public.account_commercial_entitlements` confirmou `origin = liberacao_manual`, `status = ativo`, `plan_key = lite`, `plan_name_snapshot = Lite`, vigência válida, `metadata_json` mínimo presente e ausência de referência externa de provedor.
+  * View efetiva: `public.v_account_commercial_entitlement_effective` retornou `origin = liberacao_manual`, `persisted_status = ativo`, `effective_status = ativo`, `is_commercially_eligible = true`, `plan_key = lite` e vigência válida.
+  * Signal: `lib/commercial-entitlements/adapters/commercialEntitlementAdapter.ts` consulta a view efetiva filtrada por `account_id`; como a view retornou elegibilidade, status efetivo ativo e plano canônico para a conta teste, o signal esperado pelo contrato é elegível.
+  * Account Dashboard: abriu após a concessão manual.
   * Gate do LP Builder: `lib/lp-builder/adapters/landingPagesAdapter.ts` valida usuário autenticado, `accounts.status = active`, membership `active` com role `owner`/`admin` e `getCommercialEntitlementSignal({ accountId })` antes do insert em `account_landing_pages`.
+  * Criação real de draft pelo LP Builder: não executada, porque `/lp-builder` retorna 404 e o repositório expõe apenas `app/lp-builder/actions.ts`; não há superfície operacional aprovada para criar draft real sem chamada artificial de Server Action ou implementação de UI/rota.
   * Ausência de bypass/Stripe: os paths `app/lp-builder/`, `lib/lp-builder/`, `lib/commercial-entitlements/`, `app/admin/(protected)/contas/[accountId]/` e `lib/admin/adapters/adminCommercialEntitlementsAdapter.ts` não consultam Stripe, checkout ou webhook para liberar o gate.
-  * Cenários de conflito e falha: confirmados por leitura do contrato de Fase 2 no adapter Admin; não executados operacionalmente por falta de sessão `platform_admin` e de conta de teste com fluxo Admin autorizado nesta fase.
-* Bloqueio: falta uma execução operacional autenticada como `platform_admin` no Admin de conta para criar/atualizar uma concessão manual real e, em seguida, validar a view, o signal e a criação draft pelo LP Builder sem usar SQL de escrita.
-* Próxima ação objetiva: fornecer ou executar uma sessão operacional `platform_admin` em conta teste autorizada para concluir a validação positiva da Fase 3; se a validação indicar necessidade de schema, LP Builder ou gate, parar e devolver ao Estrategista.
+  * Cenários de conflito e falha: confirmados por leitura do contrato de Fase 2 no adapter Admin; não executados operacionalmente por risco de ampliar escopo sem necessidade.
+* Decisão da Fase 3: aceita como concluída com ressalva operacional; não criar Fase 4, rota, UI, chamada artificial, migration, schema, RPC, policy, grant, trigger ou alteração no LP Builder apenas para validar a criação de draft.
+* Próxima ação objetiva: encerrar o E9.7 e entregar relatório final consolidado ao Gestor de Docs; validar criação real de draft no futuro somente quando houver superfície LP Builder aprovada por outro plano.
 
-Próxima ação: concluir a validação operacional positiva da Fase 3 com uma concessão manual real via Admin autorizado; não iniciar Fase 4.
+Próxima ação: encerrar o E9.7 com relatório final consolidado; não iniciar Fase 4.
 
 4. Escopo negativo e critérios de parada
 
