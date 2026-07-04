@@ -128,13 +128,12 @@ docs/platform-config.md
 * Antecipa A/B, flags, CMS, multicanal, LP Builder ou analytics avançado sem caso aprovado.
 * Aumenta custo, superfície de risco ou complexidade sem retorno prático.
 
-8. Regras para avaliação de branches e PRs
+8. Avaliação de updates em entregas
 
-* Aplicar o `AGENTS.md` para regras operacionais de branch, publicação, validação, checks e entrega.
-* No escopo do Gestor de Updates, avaliar se o PR usou updates aplicáveis, ignorou updates obrigatórios ou introduziu updates indevidos.
-* Declarar updates aplicados, ausentes, indevidos e não aplicáveis.
-* Aprovar, reprovar ou aprovar com ressalva conforme impacto no MVP, segurança, custo, banco, infra, automações e escopo.
-* Se houver ajuste, entregar instrução curta e determinística ao Executor.
+* Verificar se a entrega aplicou updates pertinentes ao caso.
+* Indicar updates obrigatórios ausentes, updates usados indevidamente e updates não aplicáveis.
+* Avaliar impacto no MVP, segurança, custo, banco, infraestrutura, automações e escopo.
+* Quando houver ajuste, entregar instrução curta e determinística ao Executor.
 
 9. Regras para briefings do Gestor de Updates
 
