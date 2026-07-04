@@ -43,7 +43,8 @@ type AdminCommercialEntitlementFailureReason =
   | "entitlement_insert_failed"
   | "entitlement_update_failed"
   | "missing_entitlement_id"
-  | "manual_entitlement_not_found";
+  | "manual_entitlement_not_found"
+  | "duplicate_manual_entitlement";
 
 export type AdminManualCommercialEntitlementState = {
   id: string;
@@ -102,8 +103,8 @@ export async function grantAdminManualCommercialEntitlement(
   const now = new Date();
   const startsAt = now.toISOString();
   const confirmedAt = startsAt;
-  const expiresAt = normalizeExpiresAt(input.expiresAt, now);
-  if (expiresAt === "invalid") return { ok: false, reason: "invalid_expires_at" };
+  const expiresAtInput = normalizeExpiresAt(input.expiresAt, now);
+  if (expiresAtInput === "invalid") return { ok: false, reason: "invalid_expires_at" };
 
   const supabase = createServiceClient();
   const accountState = await readAccountState(supabase, accountId);
@@ -117,6 +118,8 @@ export async function grantAdminManualCommercialEntitlement(
 
   const existingManual = await readActiveManualEntitlement(supabase, accountId);
   if (!existingManual.ok) return { ok: false, reason: existingManual.reason };
+
+  const expiresAt = expiresAtInput ?? existingManual.expiresAt ?? null;
 
   const payload = {
     account_id: accountId,
@@ -141,12 +144,17 @@ export async function grantAdminManualCommercialEntitlement(
   };
 
   if (existingManual.entitlementId) {
-    const { data, error } = await supabase
+    let updateQuery: any = supabase
       .from("account_commercial_entitlements")
       .update(payload)
       .eq("id", existingManual.entitlementId)
-      .select("id")
-      .single();
+      .select("id");
+
+    if (typeof updateQuery?.maxAffected === "function") {
+      updateQuery = updateQuery.maxAffected(1);
+    }
+
+    const { data, error } = await updateQuery.single();
 
     if (error) return { ok: false, reason: "entitlement_update_failed" };
     return typeof data?.id === "string"
@@ -161,9 +169,32 @@ export async function grantAdminManualCommercialEntitlement(
     .single();
 
   if (error) return { ok: false, reason: "entitlement_insert_failed" };
-  return typeof data?.id === "string"
-    ? { ok: true, entitlementId: data.id, operation: "created" }
-    : { ok: false, reason: "missing_entitlement_id" };
+  if (typeof data?.id !== "string") return { ok: false, reason: "missing_entitlement_id" };
+
+  const postInsertManual = await readActiveManualEntitlement(supabase, accountId);
+  if (!postInsertManual.ok) {
+    if (postInsertManual.reason === "duplicate_manual_entitlement") {
+      await cancelManualEntitlementById({
+        supabase,
+        entitlementId: data.id,
+        operatorUserId: input.operatorUserId,
+        manualReason: "duplicate_manual_entitlement_detected",
+      });
+    }
+
+    return { ok: false, reason: postInsertManual.reason };
+  }
+  if (postInsertManual.entitlementId !== data.id) {
+    await cancelManualEntitlementById({
+      supabase,
+      entitlementId: data.id,
+      operatorUserId: input.operatorUserId,
+      manualReason: "duplicate_manual_entitlement_detected",
+    });
+    return { ok: false, reason: "duplicate_manual_entitlement" };
+  }
+
+  return { ok: true, entitlementId: data.id, operation: "created" };
 }
 
 export async function cancelAdminManualCommercialEntitlement(
@@ -186,7 +217,7 @@ export async function cancelAdminManualCommercialEntitlement(
   }
 
   const canceledAt = new Date().toISOString();
-  const { data, error } = await supabase
+  let updateQuery: any = supabase
     .from("account_commercial_entitlements")
     .update({
       status: "cancelado",
@@ -200,13 +231,47 @@ export async function cancelAdminManualCommercialEntitlement(
       },
     })
     .eq("id", existingManual.entitlementId)
-    .select("id")
-    .single();
+    .select("id");
+
+  if (typeof updateQuery?.maxAffected === "function") {
+    updateQuery = updateQuery.maxAffected(1);
+  }
+
+  const { data, error } = await updateQuery.single();
 
   if (error) return { ok: false, reason: "entitlement_update_failed" };
   return typeof data?.id === "string"
     ? { ok: true, entitlementId: data.id, operation: "canceled" }
     : { ok: false, reason: "missing_entitlement_id" };
+}
+
+async function cancelManualEntitlementById(input: {
+  supabase: ReturnType<typeof createServiceClient>;
+  entitlementId: string;
+  operatorUserId: string;
+  manualReason: string;
+}) {
+  const canceledAt = new Date().toISOString();
+  let updateQuery: any = input.supabase
+    .from("account_commercial_entitlements")
+    .update({
+      status: "cancelado",
+      canceled_at: canceledAt,
+      metadata_json: {
+        manual_reason: input.manualReason,
+        canceled_by_user_id: input.operatorUserId,
+        canceled_at: canceledAt,
+        source_surface: MANUAL_SOURCE_SURFACE,
+        operation: "cancel_manual_entitlement",
+      },
+    })
+    .eq("id", input.entitlementId);
+
+  if (typeof updateQuery?.maxAffected === "function") {
+    updateQuery = updateQuery.maxAffected(1);
+  }
+
+  await updateQuery;
 }
 
 function normalizePlanKey(value: string): ManualPlanKey | null {
@@ -275,21 +340,34 @@ async function readActiveManualEntitlement(
   supabase: ReturnType<typeof createServiceClient>,
   accountId: string,
 ): Promise<
-  | { ok: true; entitlementId: string | null }
-  | { ok: false; reason: Extract<AdminCommercialEntitlementFailureReason, "entitlement_lookup_failed"> }
+  | { ok: true; entitlementId: string | null; expiresAt: string | null }
+  | {
+      ok: false;
+      reason: Extract<
+        AdminCommercialEntitlementFailureReason,
+        "entitlement_lookup_failed" | "duplicate_manual_entitlement"
+      >;
+    }
 > {
   const { data, error } = await supabase
     .from("account_commercial_entitlements")
-    .select("id")
+    .select("id,expires_at")
     .eq("account_id", accountId)
     .eq("origin", "liberacao_manual")
     .eq("status", "ativo")
     .order("updated_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
+    .limit(2);
 
   if (error) return { ok: false, reason: "entitlement_lookup_failed" };
-  return { ok: true, entitlementId: typeof data?.id === "string" ? data.id : null };
+  const rows = Array.isArray(data) ? data : [];
+  if (rows.length > 1) return { ok: false, reason: "duplicate_manual_entitlement" };
+
+  const row = rows[0];
+  return {
+    ok: true,
+    entitlementId: typeof row?.id === "string" ? row.id : null,
+    expiresAt: typeof row?.expires_at === "string" ? row.expires_at : null,
+  };
 }
 
 function isUuid(value: string) {

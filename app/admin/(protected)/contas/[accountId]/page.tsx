@@ -194,6 +194,7 @@ export default async function AdminAccountDetailPage({ params, searchParams }: A
               className="h-10 w-full rounded-md border border-border bg-background px-3 text-sm outline-none ring-brand-600/20 transition focus:ring-4"
               name="expiresAt"
               placeholder="2026-12-31T23:59:59Z"
+              defaultValue={manualEntitlement?.expiresAt ?? ""}
             />
           </label>
           <div className="flex items-end">
