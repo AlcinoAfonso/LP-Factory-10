@@ -104,6 +104,7 @@ Fontes: chat, `AGENTS.md`, `docs/prompt-estrategista.md`, `docs/roadmap.md`, `do
 * Automação: não.
 * Justificativa da fase própria: billing, dados, RLS e gate produtivo têm risco técnico suficiente para validação isolada.
 * Objetivo: validar que a liberação manual funciona pelo fluxo existente.
+* Status: bloqueada parcialmente em 04/07/2026; validação estática e read-only concluída, validação operacional positiva depende de concessão manual real via sessão `platform_admin`.
 * Validar:
   * linha em `account_commercial_entitlements`;
   * leitura por `v_account_commercial_entitlement_effective`;
@@ -112,8 +113,19 @@ Fontes: chat, `AGENTS.md`, `docs/prompt-estrategista.md`, `docs/roadmap.md`, `do
   * nenhuma consulta direta ao Stripe;
   * `supa#40` pode apoiar validação read-only.
 * Saída: evidência objetiva de que a liberação manual ativa elegibilidade sem alterar o gate produtivo.
+* Resultado da validação:
+  * Ambiente usado: worktree local `C:\Dev\GitHub\LP-Factory-10-e9`, branch `codex/e9-7-fase-3-validacao-gate`, base `origin/main` em `1528458`, com Supabase produção `LP-Factory-10` consultado somente em modo read-only.
+  * Banco: `public.account_commercial_entitlements`, `public.v_account_commercial_entitlement_effective` e `public.account_landing_pages` existem no ambiente consultado.
+  * Conta sem entitlement válido: consulta read-only encontrou contas `active` sem entitlement efetivo e sem registros em `account_landing_pages`; no código, `getCommercialEntitlementSignal({ accountId })` falha fechado quando não há linha na view e o LP Builder retorna `commercial_entitlement_required` antes do insert.
+  * Liberação manual válida: não havia linhas `origin = liberacao_manual` no ambiente consultado; por isso não foi possível comprovar, sem mutação operacional, a linha manual, a leitura efetiva da view, o signal elegível e a passagem real pelo gate.
+  * Signal: `lib/commercial-entitlements/adapters/commercialEntitlementAdapter.ts` consulta somente `v_account_commercial_entitlement_effective` filtrada por `account_id` e retorna `NO_COMMERCIAL_ENTITLEMENT_SIGNAL` na ausência de linha ou erro.
+  * Gate do LP Builder: `lib/lp-builder/adapters/landingPagesAdapter.ts` valida usuário autenticado, `accounts.status = active`, membership `active` com role `owner`/`admin` e `getCommercialEntitlementSignal({ accountId })` antes do insert em `account_landing_pages`.
+  * Ausência de bypass/Stripe: os paths `app/lp-builder/`, `lib/lp-builder/`, `lib/commercial-entitlements/`, `app/admin/(protected)/contas/[accountId]/` e `lib/admin/adapters/adminCommercialEntitlementsAdapter.ts` não consultam Stripe, checkout ou webhook para liberar o gate.
+  * Cenários de conflito e falha: confirmados por leitura do contrato de Fase 2 no adapter Admin; não executados operacionalmente por falta de sessão `platform_admin` e de conta de teste com fluxo Admin autorizado nesta fase.
+* Bloqueio: falta uma execução operacional autenticada como `platform_admin` no Admin de conta para criar/atualizar uma concessão manual real e, em seguida, validar a view, o signal e a criação draft pelo LP Builder sem usar SQL de escrita.
+* Próxima ação objetiva: fornecer ou executar uma sessão operacional `platform_admin` em conta teste autorizada para concluir a validação positiva da Fase 3; se a validação indicar necessidade de schema, LP Builder ou gate, parar e devolver ao Estrategista.
 
-Próxima ação: após merge/consolidação deste PR, enviar ao Executor a Fase 3 — Validação de entitlement e gate.
+Próxima ação: concluir a validação operacional positiva da Fase 3 com uma concessão manual real via Admin autorizado; não iniciar Fase 4.
 
 4. Escopo negativo e critérios de parada
 
