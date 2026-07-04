@@ -73,6 +73,7 @@ Fontes: chat, `AGENTS.md`, `docs/prompt-estrategista.md`, `docs/roadmap.md`, `do
 
 * Automação: não.
 * Objetivo: implementar o menor mecanismo aprovado na Fase 1 para registrar `origin = liberacao_manual`.
+* Status: concluída em 04/07/2026.
 * Direção:
   * reaproveitar schema existente;
   * evitar UI ampla;
@@ -88,6 +89,15 @@ Fontes: chat, `AGENTS.md`, `docs/prompt-estrategista.md`, `docs/roadmap.md`, `do
   * não há consulta Stripe;
   * não há bypass do signal comercial.
 * Condição: esta fase não pode ser enviada ao Executor antes da conclusão da Fase 1.
+* Resultado da execução:
+  * Criado o boundary Admin server-only `lib/admin/adapters/adminCommercialEntitlementsAdapter.ts`.
+  * Criado o path de mutação `app/admin/(protected)/contas/[accountId]/actions.ts`, protegido por `requirePlatformAdmin`.
+  * A superfície `app/admin/(protected)/contas/[accountId]/page.tsx` recebeu mecanismo mínimo para conceder/atualizar e cancelar entitlement manual, sem criar dashboard/admin amplo.
+  * A escrita usa `createServiceClient()` e persiste somente em `public.account_commercial_entitlements`.
+  * Concessão manual grava `origin = liberacao_manual`, `status = ativo`, plano canônico, vigência validada e `metadata_json` mínimo.
+  * Conflito com entitlement efetivo `plano_pago_confirmado` ou `trial` falha fechado.
+  * Entitlement manual `ativo` existente é atualizado em vez de criar duplicidade.
+  * Não houve Stripe, checkout, webhook, migration, tabela, RPC, policy, grant, trigger, LP Builder, job, agente ou automação.
 
 3.3 Fase 3 — Validação de entitlement e gate
 
@@ -103,7 +113,7 @@ Fontes: chat, `AGENTS.md`, `docs/prompt-estrategista.md`, `docs/roadmap.md`, `do
   * `supa#40` pode apoiar validação read-only.
 * Saída: evidência objetiva de que a liberação manual ativa elegibilidade sem alterar o gate produtivo.
 
-Próxima ação: após merge/consolidação deste PR, enviar ao Executor a Fase 2 — Mecanismo mínimo de concessão, limitada estritamente ao contrato operacional fechado na Fase 1.
+Próxima ação: após merge/consolidação deste PR, enviar ao Executor a Fase 3 — Validação de entitlement e gate.
 
 4. Escopo negativo e critérios de parada
 

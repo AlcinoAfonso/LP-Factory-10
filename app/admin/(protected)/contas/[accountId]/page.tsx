@@ -6,20 +6,32 @@ import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { AdminStatusBadge, accountStatusTone } from "@/components/admin/AdminStatusBadge";
 import { EmptyState } from "@/components/ui/empty-state";
 import { formatAdminDate, formatPercent } from "@/lib/admin/adminFormat";
+import { getAdminManualCommercialEntitlementState } from "@/lib/admin/adapters/adminCommercialEntitlementsAdapter";
 import { getAdminAccountDetail } from "@/lib/admin/adapters/adminReadOnlyAdapter";
+import {
+  cancelManualCommercialEntitlementAction,
+  grantManualCommercialEntitlementAction,
+} from "./actions";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 type AdminAccountDetailPageProps = {
   params: Promise<{ accountId: string }>;
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
 };
 
-export default async function AdminAccountDetailPage({ params }: AdminAccountDetailPageProps) {
+export default async function AdminAccountDetailPage({ params, searchParams }: AdminAccountDetailPageProps) {
   const { accountId } = await params;
-  const account = await getAdminAccountDetail(accountId);
+  const paramsValue = (await searchParams) ?? {};
+  const [account, manualEntitlement] = await Promise.all([
+    getAdminAccountDetail(accountId),
+    getAdminManualCommercialEntitlementState(accountId),
+  ]);
 
   if (!account) notFound();
+
+  const event = getParam(paramsValue.manual_entitlement);
 
   return (
     <div className="space-y-6">
@@ -132,6 +144,85 @@ export default async function AdminAccountDetailPage({ params }: AdminAccountDet
           )}
         </div>
       </section>
+
+      <section className="rounded-lg border border-border bg-card p-5 shadow-card">
+        <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+          <div>
+            <h2 className="text-sm font-semibold text-card-foreground">Entitlement manual</h2>
+            {manualEntitlement ? (
+              <dl className="mt-4 grid gap-3 text-sm md:grid-cols-3">
+                <Detail label="Plano" value={manualEntitlement.planNameSnapshot} />
+                <Detail label="Status" value={manualEntitlement.status} />
+                <Detail label="Expira em" value={formatAdminDate(manualEntitlement.expiresAt)} />
+              </dl>
+            ) : (
+              <p className="mt-3 text-sm text-muted-foreground">Nenhuma liberacao manual registrada.</p>
+            )}
+          </div>
+          {event ? (
+            <AdminStatusBadge tone={eventTone(event)}>{event}</AdminStatusBadge>
+          ) : null}
+        </div>
+
+        <form action={grantManualCommercialEntitlementAction} className="mt-5 grid gap-3 md:grid-cols-[160px_minmax(0,1fr)_220px_auto]">
+          <input name="accountId" type="hidden" value={account.id} />
+          <label className="space-y-1">
+            <span className="text-xs font-medium text-muted-foreground">Plano</span>
+            <select
+              className="h-10 w-full rounded-md border border-border bg-background px-3 text-sm outline-none ring-brand-600/20 transition focus:ring-4"
+              name="planKey"
+              defaultValue={manualEntitlement?.planKey ?? "lite"}
+            >
+              <option value="starter">Starter</option>
+              <option value="lite">Lite</option>
+              <option value="pro">Pro</option>
+              <option value="ultra">Ultra</option>
+            </select>
+          </label>
+          <label className="space-y-1">
+            <span className="text-xs font-medium text-muted-foreground">Justificativa</span>
+            <input
+              className="h-10 w-full rounded-md border border-border bg-background px-3 text-sm outline-none ring-brand-600/20 transition focus:ring-4"
+              name="manualReason"
+              placeholder="Piloto, venda assistida ou excecao controlada"
+              required
+            />
+          </label>
+          <label className="space-y-1">
+            <span className="text-xs font-medium text-muted-foreground">Expira em</span>
+            <input
+              className="h-10 w-full rounded-md border border-border bg-background px-3 text-sm outline-none ring-brand-600/20 transition focus:ring-4"
+              name="expiresAt"
+              placeholder="2026-12-31T23:59:59Z"
+              defaultValue={manualEntitlement?.expiresAt ?? ""}
+            />
+          </label>
+          <div className="flex items-end">
+            <button className="h-10 rounded-md bg-brand-600 px-4 text-sm font-medium text-white transition hover:bg-brand-700">
+              Salvar
+            </button>
+          </div>
+        </form>
+
+        {manualEntitlement?.status === "ativo" ? (
+          <form action={cancelManualCommercialEntitlementAction} className="mt-4 grid gap-3 md:grid-cols-[minmax(0,1fr)_auto]">
+            <input name="accountId" type="hidden" value={account.id} />
+            <label className="space-y-1">
+              <span className="text-xs font-medium text-muted-foreground">Motivo do cancelamento</span>
+              <input
+                className="h-10 w-full rounded-md border border-border bg-background px-3 text-sm outline-none ring-brand-600/20 transition focus:ring-4"
+                name="cancelReason"
+                required
+              />
+            </label>
+            <div className="flex items-end">
+              <button className="h-10 rounded-md border border-border px-4 text-sm font-medium text-muted-foreground transition hover:bg-muted">
+                Cancelar manual
+              </button>
+            </div>
+          </form>
+        ) : null}
+      </section>
     </div>
   );
 }
@@ -143,4 +234,14 @@ function Detail({ label, value, children }: { label: string; value?: string; chi
       <dd className="break-words text-foreground">{children ?? value}</dd>
     </div>
   );
+}
+
+function getParam(value: string | string[] | undefined) {
+  return Array.isArray(value) ? value[0] ?? null : value ?? null;
+}
+
+function eventTone(event: string) {
+  return event === "created" || event === "updated" || event === "canceled"
+    ? "success"
+    : "warning";
 }
