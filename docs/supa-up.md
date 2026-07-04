@@ -17,6 +17,23 @@ O identificador canônico dos itens deste catálogo é `supa#n`.
 
 Esse identificador deve ser usado no roadmap, Base Técnica, briefings, relatórios e referências cruzadas. A numeração não deve ser reutilizada após remoção, depreciação ou substituição de um item.
 
+## Regra de uso na primeira varredura
+
+Na primeira varredura do Gestor de Updates, cada item deste catálogo deve ser filtrado antes de ser sugerido ao Estrategista.
+
+Classificação operacional:
+
+- **Fora da primeira varredura**: item já implementado globalmente no projeto ou já absorvido pela Base Técnica, schema, roadmap ou configuração operacional.
+- **Elegível por caso**: item ainda não global, mas aplicável ao escopo específico da fase avaliada.
+- **Rejeitar no MVP**: item pago, experimental, amplo demais, enterprise, sem caso real ou indutor de nova infra.
+- **Não apto no plano atual**: item relevante, mas indisponível no plano Free/atual.
+- **Monitorar**: item útil como radar técnico, sem recomendação de adoção.
+- **Diferencial estratégico futuro**: item com valor comercial, técnico ou competitivo futuro, mas sem adoção no MVP.
+- **Consolidado/deprecado**: item mantido apenas por histórico; não deve ser sugerido em avaliações novas.
+
+Regra:
+Itens com `Status no Projeto: Implementado globalmente no projeto` não devem ser listados como recursos preliminarmente elegíveis. Eles só devem aparecer no relatório quando forem necessários como regra normativa, evidência técnica ou trava de validação.
+
 ## 1 — JWT Signing Keys *(🟦 Estável)*  
 
 2025-08-01  
@@ -25,6 +42,12 @@ Esse identificador deve ser usado no roadmap, Base Técnica, briefings, relatór
 
 - Status: Implementado globalmente no projeto
 - Evidência: docs/base-tecnica.md (JWT Signing Keys ativo; estado consolidado no ambiente)
+
+
+### Filtro na primeira varredura
+
+- Fora da primeira varredura como recurso candidato.
+- Usar apenas como referência em casos de Auth, JWT, JWKS ou validação de tokens.
 
 
 ### Descrição  
@@ -89,6 +112,14 @@ Novo painel de governança e permissões dentro do Supabase.
 
 - Status: Não implementado
 - Evidência: docs/roadmap.md (sem caso/plano de adoção explícito no LP Factory 10)
+- Observação: Diferencial estratégico futuro; não implementar no MVP.
+
+
+### Filtro na primeira varredura
+
+- Diferencial estratégico futuro.
+- Rejeitar no MVP.
+- Elegível apenas se o caso envolver analytics avançado, BI, histórico de eventos, data lake ou cliente enterprise.
 
 
 ### Descrição  
@@ -117,6 +148,15 @@ Suporte a dados frios com formato Iceberg, ideal para análises históricas.
 
 - Status: Não implementado
 - Evidência: docs/roadmap.md (sem caso/plano de adoção explícito no LP Factory 10)
+- Observação: Diferencial estratégico futuro com sensibilidade de segurança; não implementar no MVP.
+
+
+### Filtro na primeira varredura
+
+- Diferencial estratégico futuro.
+- Rejeitar no MVP.
+- Elegível apenas com caso concreto de integração externa de dados, BI ou analytics.
+- Se adotado no futuro, exigir schema privado, controle de exposição, revisão de RLS e função segura quando aplicável.
 
 
 ### Descrição  
@@ -331,6 +371,14 @@ Novo kit oficial de componentes UI (Auth, Logs, Storage).
 
 - Status: Não implementado
 - Evidência: docs/roadmap.md (billing E9 não depende deste update específico)
+- Observação: Superado por `supa#32`; manter apenas como histórico.
+
+
+### Filtro na primeira varredura
+
+- Consolidado/deprecado.
+- Não sugerir em avaliações novas.
+- Usar `supa#32` como item principal.
 
 
 ### Descrição  
@@ -673,6 +721,13 @@ Modelo de controle dinâmico de recursos e permissões por plano, utilizando bun
 
 
 
+### Filtro na primeira varredura
+
+- Fora da primeira varredura como recurso candidato.
+- Usar apenas como regra normativa quando a fase criar ou alterar views.
+- Se o caso tocar views expostas, validar `security_invoker = true` conforme Base Técnica e schema.
+
+
 ### Descrição  
 
 Padronização das views do Supabase para uso de `security_invoker = true`, garantindo compatibilidade com PostgREST 13.  
@@ -699,17 +754,32 @@ Padronização das views do Supabase para uso de `security_invoker = true`, gara
 
 Duplicado do item #16. Manter apenas #16 como fonte neste documento.
 
+### Filtro na primeira varredura
+
+- Consolidado/deprecado.
+- Não sugerir em avaliações novas.
+
 ---
 
 ## 23 — AI Reasoning no Dashboard *(DEPRECADO — duplicado)*  
 
 Duplicado do item #18. Manter apenas #18 como fonte neste documento.
 
+### Filtro na primeira varredura
+
+- Consolidado/deprecado.
+- Não sugerir em avaliações novas.
+
 ---
 
 ## 24 — Tracking Interno de Eventos *(DEPRECADO — duplicado)*  
 
 Duplicado do item #19. Manter apenas #19 como fonte neste documento.
+
+### Filtro na primeira varredura
+
+- Consolidado/deprecado.
+- Não sugerir em avaliações novas.
 
 ---
 
@@ -989,6 +1059,13 @@ Resumo das mudanças de segurança do Supabase em 2025 e das direções previst
 - Observação: Supabase Update May 2026 informa que o Stripe Sync Engine passou a ser mantido pela Stripe e que o app Supabase no Stripe Marketplace está GA; manter sem adoção no E9 neste momento.
 
 
+### Filtro na primeira varredura
+
+- Rejeitar no MVP/E9 atual.
+- Reavaliar apenas se houver decisão explícita de Billing Engine ou mudança formal do modelo de billing.
+- Não substituir `public.account_commercial_entitlements` nem o fluxo de webhook/entitlements sem decisão humana.
+
+
 ### Descrição  
 
 Integração do Stripe Sync Engine diretamente no Supabase Dashboard (setup em um clique). Permite consultar **customers**, **subscriptions**, **invoices** e **payments** via SQL.
@@ -1111,6 +1188,12 @@ Recurso/integração do **index_advisor** para ajudar a identificar índices fal
 
 
 
+### Filtro na primeira varredura
+
+- Fora da primeira varredura como recurso candidato.
+- Usar apenas como referência técnica quando o caso tocar Data API, paginação, FTS, alias/spread ou interpretação de erros PostgREST.
+
+
 ### Descrição  
 
 O Supabase Data API está em PostgREST **14.1** no ambiente do LP Factory 10 (registrado na Base Técnica).  
@@ -1195,6 +1278,13 @@ Pacote de anúncios rápidos do mês: quickstarts (Expo React Native, TanStack
 
 - Status: Não implementado
 - Evidência: docs/roadmap.md (sem caso de uso ativo para adoção no produto)
+
+
+### Filtro na primeira varredura
+
+- Rejeitar na primeira varredura salvo caso explícito de GraphQL.
+- Se o caso não usar GraphQL, registrar apenas como trava de escopo: GraphQL não utilizado.
+- Não sugerir como recurso novo.
 
 
 ### Descrição
@@ -1343,7 +1433,15 @@ As Supabase Edge Functions passam a suportar **upload por drag-and-drop de arqui
 
 - Status: Não implementado
 - Evidência: docs/roadmap.md (sem requisito formal de rede privada no plano atual)
-- Observação: Deferido.
+- Observação: Diferencial estratégico futuro para enterprise/compliance; não implementar no MVP.
+
+
+### Filtro na primeira varredura
+
+- Diferencial estratégico futuro.
+- Rejeitar no MVP.
+- Elegível apenas com requisito formal de cliente enterprise, compliance ou rede privada.
+- Não usar como propaganda principal para PME/MVP.
 
 
 ### Descrição
@@ -1451,6 +1549,13 @@ A Supabase passou a oferecer integração oficial com o Claude, permitindo conec
 - Status: Não implementado
 - Evidência: docs/base-tecnica.md + docs/roadmap.md (observabilidade atual coberta por logs estruturados; sem upgrade de plano)
 - Observação: Não apto no plano atual.
+
+
+### Filtro na primeira varredura
+
+- Não apto no plano atual.
+- Rejeitar no MVP enquanto o projeto estiver no plano Free.
+- Reavaliar apenas com upgrade de plano e necessidade real de observabilidade externa.
 
 
 ### Descrição
@@ -1591,6 +1696,15 @@ O Table Editor do Supabase passa a aceitar descrições em linguagem natural par
 
 - Status: Não implementado
 - Evidência: docs/roadmap.md (sem adoção definida no escopo atual)
+- Observação: Diferencial estratégico futuro de escala/performance; não implementar sem volume real.
+
+
+### Filtro na primeira varredura
+
+- Diferencial estratégico futuro.
+- Rejeitar no MVP.
+- Elegível apenas com tráfego real, dashboards pesados, latência global, carga de leitura relevante ou analytics em escala.
+
 
 ### Descrição
 As Read Replicas passam a ser gerenciadas pela página oficial de Database Replication no dashboard do Supabase.
@@ -1785,8 +1899,16 @@ Generated columns do PostgreSQL permitem manter **colunas derivadas automaticame
 
 ### Status no Projeto
 
-- Status: Não implementado
-- Evidência: diretório `supabase/` ainda sem baseline consolidado para adoção do fluxo completo de migrations + preview/produção no projeto
+- Status: Implementado globalmente no projeto
+- Evidência: fluxo próprio via `.github/workflows/pipeline-supabase-apply-migrations.yml` + `docs/base-tecnica.md` (migrations versionadas, Supabase CLI, `supabase link`, `supabase db push --linked` e gate operacional).
+- Observação: a GitHub Integration nativa da Supabase não precisa ser adotada agora, pois o projeto já possui fluxo próprio de migrations versionadas com GitHub Actions + Supabase CLI.
+
+
+### Filtro na primeira varredura
+
+- Fora da primeira varredura como recurso candidato.
+- Usar apenas como evidência de fluxo já existente quando o caso tocar migrations, baseline, CI/CD Supabase ou governança de schema.
+- Não propor adoção da integração nativa da Supabase enquanto o fluxo atual atender ao MVP.
 
 
 ### Descrição  
@@ -1831,6 +1953,13 @@ Integração de governança e CI/CD de schema com GitHub no Supabase, permitindo
 
 - Status: Não implementado
 - Evidência: não há registro no repositório de política operacional formalizada de push protection específica para `supabase_secret_key`
+
+
+### Filtro na primeira varredura
+
+- Elegível por caso apenas quando a fase tocar secrets, envs, service role, `supabase_secret_key`, webhooks ou automações com credenciais.
+- Não duplicar governança de GitHub; referenciar `docs/github-up.md`.
+- Se for confirmado que `github#3` cobre este caso de forma global, reclassificar em PR futuro como fora da primeira varredura.
 
 
 ### Descrição  
@@ -1915,6 +2044,13 @@ Melhorias do Schema Visualiser para inspeção de modelagem (relações clicáve
 - Evidência: docs/base-tecnica.md (regra incorporada em 3.8.1.5 para novas tabelas no schema public); e-mail da Supabase indica 1 projeto afetável por uso de Data API, sem indicação de erro atual.
 - Observação: novos projetos adotam o comportamento em 30/05/2026; no projeto existente, novas tabelas passam a exigir `GRANT` explícito em 30/10/2026; tabelas existentes mantêm os grants atuais.
 
+### Filtro na primeira varredura
+
+- Fora da primeira varredura como recurso candidato.
+- Usar apenas como regra normativa obrigatória quando a fase criar ou alterar tabela, view, RPC, policy ou migration exposta via Supabase Data API/PostgREST/GraphQL.
+- Se houver nova tabela pública acessada pelo app, admin, adapters ou fluxo operacional, a avaliação deve exigir decisão explícita de GRANT, RLS e policies na mesma etapa.
+
+
 ### Descrição
 
 A Supabase passou a mudar o comportamento de exposição automática de novas tabelas do schema `public` na Data API/PostgREST/GraphQL. Novas tabelas podem exigir `GRANT` explícito para ficarem acessíveis pela API, em vez de serem expostas automaticamente apenas por estarem no schema `public`.
@@ -1943,7 +2079,7 @@ A Supabase passou a mudar o comportamento de exposição automática de novas ta
 
 ### Registro (Tipo C — Infra/Schema/Contrato)
 
-- Status: PENDENTE
+- Status: ABSORVIDO NA BASE TÉCNICA
 - Verificado em: —
 - Ambiente: Supabase Data API / PostgREST / GraphQL / schema public
 - Evidência: —
