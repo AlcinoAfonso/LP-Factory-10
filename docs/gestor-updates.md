@@ -219,29 +219,39 @@ prod#16
 
 * Manter os catálogos de updates como catálogos ativos, não históricos completos.
 * Remover itens sem decisão futura útil.
-* Preservar rastreabilidade dos IDs.
+* Preservar rastreabilidade dos IDs canônicos.
 * Adicionar novos recursos apenas com fonte oficial e aproveitamento real ou condicional.
+* Evitar que releases, anúncios ou recursos de plataforma virem escopo de implementação sem decisão humana.
 
-13.2. Catálogos-alvo
+13.2. Catálogos da rodada
 
-* `docs/supa-up.md`
-* `docs/vercel-up.md`
-* `docs/github-up.md`
-* `docs/prod-up.md`
+* `docs/supa-up.md` — Supabase, banco, Auth, RLS, Data API, logs, migrations, snippets, grants, extensões e integrações Supabase.
+* `docs/vercel-up.md` — Vercel, Next.js, React, runtime, deploy, Preview, cache, observabilidade, Toolbar, Comments, Flags, AI Cloud e framework.
+* `docs/github-up.md` — GitHub, Actions, workflows, PRs, reviews, branches, releases, secret scanning, code scanning, Dependabot, bots e permissões.
+* `docs/prod-up.md` — produto, UX, acessibilidade, aquisição, conversão, onboarding, monetização, analytics, performance percebida, automação comercial e experiências assistidas por IA.
 
-13.3. Ordem obrigatória da rodada
+13.3. Fontes de apoio da rodada
+
+* `README.md` para escopo, MVP e princípios do produto.
+* `docs/base-tecnica.md` quando o update tocar stack, runtime, segurança, imports, CI, logs, adapters ou implementação.
+* `docs/schema.md` quando o update tocar banco, RLS, grants, policies, migrations, views, RPCs ou funções.
+* `docs/platform-config.md` quando o update tocar plataforma, envs, secrets, endpoints, redirects, SMTP, DNS ou configuração operacional.
+* `docs/roadmap.md` quando o update tocar fase, escopo, prioridade, pendência ou decisão de produto.
+* Fonte oficial externa quando o catálogo depender de updates de plataforma ou produto.
+
+13.4. Ordem da análise
 
 * Ler o catálogo-alvo em `main`.
-* Consultar `docs/gestor-updates.md`.
-* Consultar `README.md` para escopo, MVP e princípios.
-* Consultar `docs/base-tecnica.md`, `docs/schema.md`, `docs/platform-config.md` ou `docs/roadmap.md` quando o update tocar stack, banco, plataforma, roadmap ou decisão já consolidada.
+* Identificar o maior ID já usado no catálogo.
 * Classificar itens existentes antes de propor novos itens.
-* Fazer varredura em fonte oficial externa quando o catálogo depender de updates de plataforma/produto.
-* Entregar análise ao usuário antes do briefing para Codex.
-* Só depois gerar briefing determinístico para Codex.
+* Verificar se itens existentes já foram implementados globalmente, absorvidos, duplicados, superados ou perderam aproveitamento.
+* Fazer varredura em fonte oficial externa quando houver necessidade de atualizar ou adicionar recursos.
+* Separar itens a remover, manter, atualizar, adicionar e não adicionar.
+* Entregar a análise ao usuário antes do briefing para Codex.
+* Gerar briefing determinístico para Codex.
 * Revisar o PR antes do merge.
 
-13.4. Regra de catálogo ativo
+13.5. Regra de catálogo ativo
 
 Remover do catálogo ativo itens que estejam:
 
@@ -258,7 +268,7 @@ Manter no catálogo ativo itens que sejam:
 * pagos, enterprise ou futuros, desde que tenham aplicação plausível;
 * travas, referências ou validações úteis para decisões futuras.
 
-13.5. Regra de IDs canônicos e lacunas
+13.6. Regra de IDs canônicos e lacunas
 
 * IDs `supa#n`, `vercel#n`, `github#n` e `prod#n` são canônicos.
 * Não renumerar IDs.
@@ -269,26 +279,6 @@ Manter no catálogo ativo itens que sejam:
 * Novos itens usam o próximo ID livre após o maior ID já usado no catálogo.
 * Exemplo: se `github#1`, `github#2` e `github#3` forem removidos, `github#4` continua sendo `github#4`; o próximo item novo é `github#5`.
 
-13.6. Briefing determinístico para Codex
-
-O briefing para Codex não deve pedir apenas para “revisar”, “melhorar” ou “atualizar” o catálogo.
-
-O briefing deve declarar objetivamente:
-
-* arquivo único a alterar;
-* arquivos proibidos de alterar;
-* IDs a remover;
-* IDs a manter;
-* IDs a atualizar;
-* novos IDs a criar;
-* texto ou estrutura esperada para novos blocos;
-* itens avaliados e não adicionados;
-* regra de não renumerar IDs;
-* regra de não reutilizar IDs removidos;
-* regra de manter lacunas numéricas;
-* validações textuais obrigatórias;
-* dispensa justificada de `npm ci` e `npm run check` quando for alteração apenas documental.
-
 13.7. Regras para novos itens
 
 * Só adicionar item novo com fonte oficial.
@@ -296,24 +286,27 @@ O briefing deve declarar objetivamente:
 * Não criar item novo para recurso já melhor coberto por outro catálogo.
 * Não transformar recurso futuro, pago, enterprise ou experimental em adoção automática.
 * Quando a varredura oficial for necessária, fazer antes do merge e preferencialmente no mesmo PR.
+* Registrar itens avaliados e não adicionados quando isso ajudar a evitar reabertura futura da mesma discussão.
 
-13.8. Revisão do PR
+13.8. Briefing determinístico para Codex
 
-Antes de aprovar merge, conferir:
+* Usar `docs/template-briefing-codex.md`.
+* Não pedir apenas para “revisar”, “melhorar” ou “atualizar” o catálogo.
+* Declarar objetivamente o arquivo alvo, arquivos proibidos, IDs a remover, IDs a manter, IDs a atualizar e novos IDs a criar.
+* Incluir texto exato ou estrutura esperada para novos blocos quando houver criação de itens.
+* Repetir no briefing as regras de não renumerar IDs, não reutilizar IDs removidos e preservar lacunas numéricas.
+* Informar itens avaliados e não adicionados quando houver varredura oficial.
+* Proibir alteração de arquivos fora do alvo e criação de banco, rota, job, agente, automação, engine, workflow ou infraestrutura sem decisão humana explícita.
 
-* PR aberto, mergeable e não draft;
-* apenas o arquivo-alvo alterado;
-* itens removidos saíram integralmente;
-* itens mantidos não foram renumerados;
-* lacunas numéricas foram preservadas;
-* novos IDs seguem o próximo número livre;
-* não há `### Filtro na primeira varredura`;
-* não há tabela-resumo nova sem pedido;
-* não houve alteração de código, workflow, banco, rota, job, agente, automação, engine ou infraestrutura;
-* checks foram executados ou dispensados com justificativa documental.
+13.9. Revisão do PR
 
-13.9. Decisão final
-
-* Aprovar merge quando o arquivo estiver correto, o escopo preservado e os IDs íntegros.
+* Conferir se apenas o arquivo-alvo foi alterado.
+* Conferir se itens removidos saíram integralmente.
+* Conferir se itens mantidos não foram renumerados.
+* Conferir se lacunas numéricas foram preservadas.
+* Conferir se novos IDs seguem o próximo número livre.
+* Conferir se itens novos têm fonte oficial e aproveitamento real ou condicional.
+* Conferir se recurso futuro, pago, enterprise ou experimental não virou adoção automática.
+* Conferir se não houve alteração de código, workflow, banco, rota, job, agente, automação, engine ou infraestrutura.
 * Não bloquear merge por descrição de PR desatualizada quando o arquivo final estiver correto e não houver risco real.
 * Pedir ajuste quando houver renumeração, alteração fora de escopo, item novo sem fonte oficial, reutilização de ID removido ou adoção automática de recurso condicional.
