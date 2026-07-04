@@ -42,6 +42,8 @@ Conjunto de capacidades de plataforma com disponibilidade e cobrança próprias 
 - **Sandbox:** ambientes Linux efêmeros e isolados para executar código não confiável, scripts gerados por agentes, testes e servidores temporários.
 - **BotID:** proteção invisível contra bots para rotas sensíveis, com validação client-side e verificação server-side.
 
+Observação de varredura oficial: AI Gateway routing rules permitem controlar rewrite/deny de modelos no gateway; Sandbox possui suporte a FUSE-based filesystems e Custom Images em public beta. Esses subrecursos permanecem como avaliação por caso, sem adoção automática no LP Factory 10.
+
 ### Valor para o Projeto
 - Pode apoiar workloads de IA, execução isolada e proteção de endpoints quando existir um caso de uso aprovado.
 - Permite avaliar custo, segurança e operação por capacidade, sem tratar “AI Cloud” como adoção única ou automática.
@@ -226,6 +228,8 @@ Hub de inspeção e colaboração em deployments que centraliza Comments, Access
 ### Descrição
 Conjunto para definir e avaliar flags em código, aplicar targeting, segmentos e splits, controlar rollouts e testar overrides no navegador pelo Flags Explorer. O Explorer está disponível nos planos da plataforma, mas o uso sem assinatura adicional é limitado a 150 aplicações de overrides por mês; overrides ilimitados custam US$ 250/mês em Pro/Enterprise. O Vercel Flags e o Flags Explorer possuem limites e custos que devem ser confirmados na documentação oficial e no plano vigente antes de adoção.
 
+Observação de varredura oficial: Vercel Flags segments podem ser gerenciados pela Vercel CLI via `vercel flags segments`, o que pode apoiar pipelines, CI, workflows locais ou agent-driven pipelines quando houver governança real de flags.
+
 ### Valor para o Projeto
 - Pode apoiar rollouts controlados, inspeção de estados e experimentos futuros quando houver hipótese, governança e medição aprovadas.
 
@@ -236,5 +240,160 @@ Conjunto para definir e avaliar flags em código, aplicar targeting, segmentos e
 1. Manter como avaliação futura e separar decisão de provider, SDK, Flags Explorer e experimentação.
 2. Antes de adotar, validar limites, custos, targeting, privacidade, estratégia de medição e processo de remoção de flags.
 3. Não implementar A/B, splits ou infraestrutura de flags na primeira entrega da E10.6.
+
+---
+
+## 21 — Vercel Private Blob *(🟩 GA)*
+
+2026-06-30
+
+### Status no Projeto
+
+- Status: Não implementado
+- Evidência: sem adoção registrada no stack atual; recurso identificado em varredura web oficial da Vercel.
+
+### Descrição
+
+Storage privado da Vercel para arquivos sensíveis, com controle de acesso, Signed URLs e autenticação OIDC.
+
+### Valor para o Projeto
+
+- Pode ser aproveitado em casos futuros de arquivos privados, exportações, relatórios, anexos, documentos internos, invoices ou memória de agentes.
+- Pode reduzir necessidade de expor arquivos sensíveis por URLs públicas.
+- OIDC reduz dependência de tokens estáticos em alguns fluxos.
+
+### Valor para o Usuário
+
+- Acesso mais seguro a arquivos privados quando houver necessidade real no produto.
+
+### Ações Recomendadas
+
+1. Manter como recurso aproveitável por caso.
+2. Não adotar no MVP sem caso concreto de arquivo privado.
+3. Antes de adotar, comparar com Supabase Storage e com a estratégia de dados já aprovada.
+
+---
+
+## 22 — Vercel CLI Dry-run Deployments *(🟩 Disponível via CLI)*
+
+2026-07-01
+
+### Status no Projeto
+
+- Status: Não implementado
+- Evidência: sem adoção registrada em workflow ou Base Técnica; recurso identificado em varredura web oficial da Vercel.
+
+### Descrição
+
+Comando de dry-run no Vercel CLI para pré-visualizar preset de framework, arquivos incluídos/ignorados, tamanhos e manifesto JSON antes de criar um deployment.
+
+### Valor para o Projeto
+
+- Pode apoiar QA técnico antes de deploy.
+- Pode ajudar Codex/agentes a identificar arquivos inesperados, assets grandes, problemas de `.vercelignore` ou configuração incorreta.
+- Pode reduzir risco de deploy com pacote errado sem criar nova infraestrutura.
+
+### Valor para o Usuário
+
+- Reduz risco indireto de falhas em preview ou produção causadas por deploy mal empacotado.
+
+### Ações Recomendadas
+
+1. Avaliar como check manual ou auxiliar em casos de deploy suspeito.
+2. Não transformar em job obrigatório sem decisão humana.
+3. Se adotado futuramente, registrar na Base Técnica ou workflow correspondente.
+
+---
+
+## 23 — Service Bindings *(🟩 Disponível na plataforma)*
+
+2026-07-01
+
+### Status no Projeto
+
+- Status: Não implementado
+- Evidência: o LP Factory 10 não possui arquitetura multi-service aprovada no escopo atual.
+
+### Descrição
+
+Recurso para comunicação segura entre serviços dentro do mesmo deployment Vercel, com variável de ambiente injetada e roteamento interno gerenciado pela plataforma.
+
+### Valor para o Projeto
+
+- Pode ser útil apenas se o projeto evoluir para arquitetura com mais de um serviço Vercel, por exemplo frontend Next.js e backend separado.
+- Mantém isolamento entre serviços e reduz configuração manual de roteamento interno.
+- Não justifica criar novo serviço no MVP.
+
+### Valor para o Usuário
+
+- Pode melhorar segurança e previsibilidade em arquitetura multi-service futura.
+
+### Ações Recomendadas
+
+1. Manter como recurso condicional futuro.
+2. Não propor backend separado, serviço novo ou arquitetura multi-service apenas por causa deste recurso.
+3. Considerar somente se uma fase aprovada já exigir múltiplos serviços.
+
+---
+
+## 24 — Vercel Security Dashboard *(🧪 Private beta)*
+
+2026-07-01
+
+### Status no Projeto
+
+- Status: Não implementado
+- Evidência: recurso em private beta; sem adoção registrada no projeto.
+
+### Descrição
+
+Dashboard de segurança da Vercel para agregar postura de segurança por conta e projeto, incluindo achados como ausência de 2FA, previews públicos e credenciais long-lived.
+
+### Valor para o Projeto
+
+- Pode apoiar governança futura de segurança da plataforma.
+- Útil para auditoria operacional quando estiver disponível ao projeto.
+- Não é feature de produto.
+
+### Valor para o Usuário
+
+- Benefício indireto por redução de risco operacional e segurança de plataforma.
+
+### Ações Recomendadas
+
+1. Manter como monitoramento.
+2. Não bloquear entregas por este recurso enquanto estiver em private beta.
+3. Avaliar adoção quando houver disponibilidade real na conta/projeto.
+
+---
+
+## 25 — Vercel Agent *(🧪 Public beta)*
+
+2026-06-30
+
+### Status no Projeto
+
+- Status: Não implementado
+- Evidência: sem adoção operacional registrada no LP Factory 10.
+
+### Descrição
+
+Agente da Vercel no dashboard para responder perguntas sobre projetos, investigar falhas de produção, analisar deploys/logs/métricas/configurações e executar ações aprovadas, como abrir PR, rollback ou ajuste de configuração.
+
+### Valor para o Projeto
+
+- Pode apoiar diagnóstico operacional futuro em Vercel.
+- Pode reduzir tempo de investigação em falhas de deploy, runtime ou custo.
+- Não substitui Codex, GitHub, Gestor Estrutural nem regras do repositório.
+
+### Valor para o Usuário
+
+- Benefício indireto por menor tempo de diagnóstico e correção de incidentes.
+
+### Ações Recomendadas
+
+1. Manter como avaliação futura.
+2. Não habilitar ações aprovadas ou automações sem decisão humana explícita.
+3. Não transformar em agente operacional do LP Factory 10 sem plano próprio e fonte real do projeto.
 
 ---
