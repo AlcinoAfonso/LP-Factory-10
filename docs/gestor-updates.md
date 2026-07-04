@@ -153,61 +153,11 @@ docs/platform-config.md
 10. Regras de segurança específicas do Gestor de Updates
 
 * Além das regras do `AGENTS.md`, não expor payloads, PII, `content_json`, pesquisa bruta ou texto gerado em logs.
-* Em mudança de banco, consultar `docs/schema.md` e aplicar travas de `supa#58`.
+* Em mudança de banco, consultar `docs/schema.md` e aplicar as travas vigentes do catálogo Supabase ativo.
 * Em IA, confirmar ambiente, chave, modelo, custo e escopo.
 * Em produção, não assumir geração ativa sem decisão explícita.
 
-11. Updates recorrentes já consolidados
-
-supa#5
-
-* Logs seguros e diagnóstico técnico.
-
-supa#36
-
-* Leituras server-side via Data API/PostgREST.
-
-supa#40
-
-* Snippets SQL read-only versionados em supabase/snippets.
-
-supa#58
-
-* Trava para nova tabela, função, RPC, grant, policy ou migration.
-
-supa#59
-
-* Plugin Supabase como apoio, nunca dependência operacional.
-
-vercel#10
-
-* Observabilidade de rotas e redirects.
-
-vercel#13
-
-* Cancelamento automático de builds antigos no mesmo branch.
-
-github#1
-
-* Permissões mínimas em workflows.
-
-github#2
-
-* Concurrency e cancel-in-progress em Actions.
-
-github#3
-
-* Secret scanning e push protection.
-
-prod#14
-
-* Priorizar reconhecimento em UX inicial.
-
-prod#16
-
-* QA visual e validação de UX em Preview.
-
-12. Forma de conclusão
+11. Forma de conclusão
 
 * Dizer o que está confirmado.
 * Dizer o que ainda não foi validado.
@@ -215,9 +165,9 @@ prod#16
 * Dizer quais updates não cabem.
 * Dizer o próximo passo mínimo e seguro.
 
-13. Protocolo para rodada de atualização dos catálogos
+12. Protocolo para rodada de atualização dos catálogos
 
-13.1. Objetivo
+12.1. Objetivo
 
 * Manter os catálogos de updates como catálogos ativos, não históricos completos.
 * Remover itens sem decisão futura útil.
@@ -225,14 +175,14 @@ prod#16
 * Adicionar novos recursos apenas com fonte oficial e aproveitamento real ou condicional.
 * Evitar que releases, anúncios ou recursos de plataforma virem escopo de implementação sem decisão humana.
 
-13.2. Catálogos da rodada
+12.2. Catálogos da rodada
 
 * `docs/supa-up.md` — Supabase, banco, Auth, RLS, Data API, logs, migrations, snippets, grants, extensões e integrações Supabase.
 * `docs/vercel-up.md` — Vercel, Next.js, React, runtime, deploy, Preview, cache, observabilidade, Toolbar, Comments, Flags, AI Cloud e framework.
 * `docs/github-up.md` — GitHub, Actions, workflows, PRs, reviews, branches, releases, secret scanning, code scanning, Dependabot, bots e permissões.
 * `docs/prod-up.md` — produto, UX, acessibilidade, aquisição, conversão, onboarding, monetização, analytics, performance percebida, automação comercial e experiências assistidas por IA.
 
-13.3. Fontes de apoio da rodada
+12.3. Fontes de apoio da rodada
 
 * `README.md` para escopo, MVP e princípios do produto.
 * `docs/base-tecnica.md` quando o update tocar stack, runtime, segurança, imports, CI, logs, adapters ou implementação.
@@ -241,7 +191,7 @@ prod#16
 * `docs/roadmap.md` quando o update tocar fase, escopo, prioridade, pendência ou decisão de produto.
 * Fonte oficial externa quando o catálogo depender de updates de plataforma ou produto.
 
-13.4. Ordem da análise
+12.4. Ordem da análise
 
 * Ler o catálogo-alvo em `main`.
 * Identificar o maior ID já usado no catálogo.
@@ -253,7 +203,7 @@ prod#16
 * Gerar briefing determinístico para Codex.
 * Revisar o PR antes do merge.
 
-13.5. Regra de catálogo ativo
+12.5. Regra de catálogo ativo
 
 Remover do catálogo ativo itens que estejam:
 
@@ -270,7 +220,7 @@ Manter no catálogo ativo itens que sejam:
 * pagos, enterprise ou futuros, desde que tenham aplicação plausível;
 * travas, referências ou validações úteis para decisões futuras.
 
-13.6. Regra de IDs canônicos e lacunas
+12.6. Regra de IDs canônicos e lacunas
 
 * IDs `supa#n`, `vercel#n`, `github#n` e `prod#n` são canônicos.
 * Não renumerar IDs.
@@ -279,9 +229,9 @@ Manter no catálogo ativo itens que sejam:
 * IDs removidos ficam aposentados/reservados.
 * Lacunas numéricas são corretas.
 * Novos itens usam o próximo ID livre após o maior ID já usado no catálogo.
-* Exemplo: se `github#1`, `github#2` e `github#3` forem removidos, `github#4` continua sendo `github#4`; o próximo item novo é `github#5`.
+* Exemplo: se IDs intermediários forem removidos, os IDs seguintes continuam inalterados; o próximo item novo usa o número livre após o maior ID já usado no catálogo.
 
-13.7. Regras para novos itens
+12.7. Regras para novos itens
 
 * Só adicionar item novo com fonte oficial.
 * Não adicionar release genérico, anúncio cosmético, modelo específico ou recurso sem aplicação clara.
@@ -290,7 +240,7 @@ Manter no catálogo ativo itens que sejam:
 * Quando a varredura oficial for necessária, fazer antes do merge e preferencialmente no mesmo PR.
 * Registrar itens avaliados e não adicionados quando isso ajudar a evitar reabertura futura da mesma discussão.
 
-13.8. Briefing determinístico para Codex
+12.8. Briefing determinístico para Codex
 
 * Usar `docs/template-briefing-codex.md`.
 * Não pedir apenas para “revisar”, “melhorar” ou “atualizar” o catálogo.
@@ -300,7 +250,7 @@ Manter no catálogo ativo itens que sejam:
 * Informar itens avaliados e não adicionados quando houver varredura oficial.
 * Proibir alteração de arquivos fora do alvo e criação de banco, rota, job, agente, automação, engine, workflow ou infraestrutura sem decisão humana explícita.
 
-13.9. Revisão do PR
+12.9. Revisão do PR
 
 * Conferir se apenas o arquivo-alvo foi alterado.
 * Conferir se itens removidos saíram integralmente.
