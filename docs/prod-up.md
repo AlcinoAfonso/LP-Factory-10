@@ -49,6 +49,16 @@ O identificador canônico dos itens deste catálogo é `prod#n`.
 
 Esse identificador deve ser usado no roadmap, Base Técnica, briefings, relatórios e referências cruzadas. A numeração não deve ser reutilizada após remoção, depreciação ou substituição de um item.
 
+## Critério do catálogo ativo
+
+Este documento deve manter apenas práticas, capacidades e tendências de produto que ainda possam ser aproveitadas pelo Gestor de Updates em algum caso atual, futuro ou condicional.
+
+Itens já absorvidos pela Base Técnica, duplicados em catálogos técnicos, genéricos demais ou sem aproveitamento concreto não permanecem no catálogo ativo.
+
+Recursos pagos, enterprise ou futuros podem permanecer quando ainda tiverem aproveitamento possível em algum caso específico.
+
+A rejeição ou adoção de cada item deve ser decidida caso a caso pelo Gestor de Updates, conforme o plano-base avaliado.
+
 ## 1 — SSO Self-Service *(🟩 Estável)*  
 2025-05-11  
 
@@ -64,21 +74,6 @@ Permite configuração autônoma de logins corporativos (Google Workspace, Azure
 
 ---
 
-## 2 — Tokens Pessoais com Expiração *(🟩 Estável)*  
-2025-05-18  
-
-### Descrição  
-Admins e desenvolvedores podem criar tokens temporários (30/90 dias) no Dashboard para integrações seguras.  
-
-### Valor para o Projeto  
-- Melhora governança e segurança.  
-- Facilita automações entre parceiros.  
-
-### Valor para o Usuário  
-- Garante controle e rastreabilidade de acessos.  
-
----
-
 ## 3 — Speed Insights *(🟩 Estável)*  
 2025-06-01  
 
@@ -91,6 +86,12 @@ Monitoramento de experiência real com LCP, CLS e INP, além de métricas comple
 
 ### Valor para o Usuário  
 - Experiência mais fluida, responsiva e visualmente estável.
+
+### Observação de fonte oficial
+
+- INP é métrica estável de Core Web Vitals para avaliar responsividade de interações ao longo da vida da página.
+- INP sucede FID por medir mais do que apenas a primeira interação.
+- Usar essa referência para QA de performance percebida, sem transformar analytics em bloqueio da primeira entrega.
 
 ### Registro (Tipo A — Plataforma)  
 - Status: DEFERIDO  
@@ -109,24 +110,6 @@ Estruturar o produto para ser “compreendido” por agentes de IA via endpoints
 
 ### Valor para o Usuário  
 - Experiências inteligentes e adaptativas.  
-
----
-
-## 5 — Checklist + CI/ESLint *(🟩 Estável)*  
-2025-08-01  
-
-### Descrição  
-Implementa validações automáticas de segurança e governança (CI + Lint) com base no MRVG.  
-
-### Valor para o Projeto  
-- Reduz regressões e falhas manuais.  
-- Garante conformidade com a Base Técnica.  
-
-### Valor para o Usuário  
-- Mais estabilidade e confiança no produto.  
-
-### Ações Recomendadas
-1. Na E10.6, usar os checks existentes; não criar nova suíte neste pacote.
 
 ---
 
@@ -188,48 +171,6 @@ Permite definir regras de redação e tom de marca para anúncios IA (Text Custo
 
 ---
 
-## 10 — Estratégias Futuras (2025-2026) *(🟣 Ideias Iniciais)*  
-2025-11-12  
-
-### Descrição  
-Conjunto de iniciativas em estudo, priorizando expansão e automação:  
-- Simplificação de UX no Dashboard  
-- Teste de Verticais mensais  
-- Modelo Light de LPs  
-- Ajuste entre Setup e Mensalidade  
-- Pricing por Ação/Consumo  
-
-### Valor para o Projeto  
-- Garante escalabilidade controlada.  
-- Direciona roadmap de inovação.  
-
-### Valor para o Usuário  
-- Experiência mais simples, previsível e sob demanda.  
-
----
-
-## 11 — Casos 2025 — Automações de Vendas *(🟩 Estável)*  
-2025-11-12  
-
-### Descrição  
-Iniciativa estratégica baseada em estudos de caso reais (FUNNYFUZZY e Sandler) para estruturar automações de qualificação e scoring de leads.  
-
-### Valor para o Projeto  
-- Cria sinergia entre Supabase e Vercel Edge Tracking.  
-- Oferece modelo prático de retroalimentação de campanhas e dados de conversão.  
-- Fundamenta a camada de automação de marketing consultivo.  
-
-### Valor para o Usuário  
-- Leads mais qualificados e custos de mídia reduzidos.  
-- Campanhas com aprendizado automático e foco em resultado.  
-
-### Ações Recomendadas  
-1. Mapear fluxos de automação por vertical.  
-2. Integrar métricas de scoring ao dashboard de contas.  
-
----
-
----
 ## 12 — Navegação Multi-contas e LPs (UX mínima viável) *(🟣 Ideia Inicial)*  
 2025-11-20  
 
@@ -253,29 +194,7 @@ Definir uma navegação hierárquica clara — **Parceiro → Conta → LP → S
 4. Integrar telemetria de navegação (aberturas, trocas, favoritos) ao dashboard de contas.  
 
 ---
-## 13 — Planos como Rótulos → Bundles de Grants *(🟣 Ideia Inicial)*  
-2025-11-20  
 
-### Descrição  
-Desacoplar os planos comerciais (Light/Pro/Ultra/Consultivo) das features codificadas, tratando cada plano como um **rótulo** que aponta para um **bundle de grants** (permissões e limites) configurável por conta.
-
-### Valor para o Projeto  
-- Permite alterar o que cada plano inclui **sem migração de schema**.  
-- Unifica a lógica de planos entre SaaS e contas consultivas (modelo híbrido).  
-- Reduz risco de regressão ao lançar novas features ou limites.  
-
-### Valor para o Usuário  
-- Facilita upgrades/downgrades e ofertas personalizadas por conta.  
-- Habilita modelos de teste (trial, beta fechado) sem “quebrar” contratos atuais.  
-- Garante maior previsibilidade: o cliente sabe o que está ativo na própria conta.  
-
-### Ações Recomendadas  
-1. Definir taxonomia de **grants** (ex.: `lp.create`, `lp.analytics.view`, `section.ab_test.run`).  
-2. Mapear bundles padrão por plano (`plan.light`, `plan.pro`, `plan.ultra`, `plan.consultivo`).  
-3. Implementar resolução de acesso via grants (fallback: seção → LP → conta → plano → default).  
-4. Documentar estratégia de snapshot por conta para preservar histórico de recursos.  
-
----
 ## 14 — Priorizar Reconhecimento nos Testes Iniciais *(🟣 Ideia Inicial)*  
 2025-11-20  
 
@@ -308,13 +227,13 @@ Estabelecer diretrizes de UX e roteiros de teste que privilegiem **ações visí
 Implementar um fluxo de marketing que detecta microeventos da Landing Page (ex.: scroll 25/50/75%, visualização de preços, clique em CTA, envio de formulário) para taguear dinamicamente os leads (e.g. `interesse_preço`, `scroll_75`, `form_enviado`) e disparar ações em RD Station e Meta Ads. As tags alimentam segmentações de remarketing e fluxos de follow‑up (e‑mail/WhatsApp), encurtando o ciclo de vendas e aumentando o ROI.
 
 ### Valor para o Projeto
-- Conecta a camada de tracking interno e a camada de remarketing em um modelo de automação reutilizável:contentReference[oaicite:4]{index=4}.
+- Conecta a camada de tracking interno e a camada de remarketing em um modelo de automação reutilizável.
 - Aproveita integrações existentes (events_analytics, RD, Meta) para oferecer uma solução pronta de “microeventos → tags → fluxos”.
 - Testa, em ambiente controlado, a eficácia de eventos contextuais antes de escalar para outras verticais.
 
 ### Valor para o Usuário
-- Aumenta a relevância dos contatos ao reagir em minutos ao comportamento real do visitante:contentReference[oaicite:5]{index=5}.
-- Diminui o custo de aquisição reaproveitando o tráfego da própria LP com remarketing segmentado:contentReference[oaicite:6]{index=6}.
+- Aumenta a relevância dos contatos ao reagir em minutos ao comportamento real do visitante.
+- Diminui o custo de aquisição reaproveitando o tráfego da própria LP com remarketing segmentado.
 - Permite otimizar criativos e mensagens por contexto (interesse em preços, FAQ, scroll avançado).
 
 ### Ações Recomendadas
@@ -348,4 +267,80 @@ Prática de produto para revisar páginas em Preview antes da aprovação, usand
 
 ---
 
+## 17 — WCAG 2.2 como baseline de acessibilidade *(🟩 Recomendação W3C)*
 
+2026-07-04
+
+### Descrição
+
+Usar WCAG 2.2 como referência de produto para acessibilidade em LPs, dashboards e fluxos de onboarding, especialmente em contraste, foco, navegação por teclado, rótulos, mensagens de erro, alvo de toque e autenticação acessível.
+
+### Valor para o Projeto
+
+- Cria um baseline claro para QA de UX e acessibilidade.
+- Ajuda a evitar decisões subjetivas em revisões visuais.
+- Complementa o uso de ferramentas de Preview sem substituir validação manual.
+
+### Valor para o Usuário
+
+- Melhora legibilidade, navegação, compreensão e uso por pessoas com diferentes necessidades de acesso.
+
+### Ações Recomendadas
+
+1. Usar como referência de checklist em revisões de UX.
+2. Não transformar em auditoria completa de conformidade no MVP.
+3. Priorizar critérios aplicáveis a LPs, auth, onboarding e dashboards reais.
+
+---
+
+## 18 — OpenAI Apps SDK / ChatGPT Apps *(🟨 Avaliação futura)*
+
+2026-07-04
+
+### Descrição
+
+Framework da OpenAI para criar apps que estendem o ChatGPT com servidor MCP, UI própria, autenticação, estado, monetização, deploy, conexão e submissão para distribuição.
+
+### Valor para o Projeto
+
+- Pode virar canal futuro para experiências assistidas por IA ligadas ao LP Factory 10.
+- Pode apoiar casos como diagnóstico de LP, orientação comercial, briefing assistido, análise de campanhas ou consulta de relatórios.
+- Não substitui o produto web nem deve entrar no MVP sem caso aprovado.
+
+### Valor para o Usuário
+
+- Pode permitir interação assistida por IA em um ambiente já usado pelo cliente, com fluxos mais guiados e contextuais.
+
+### Ações Recomendadas
+
+1. Manter como avaliação futura.
+2. Não criar app ChatGPT sem plano próprio.
+3. Só considerar quando houver caso real, política de dados, UX e critério de distribuição aprovados.
+
+---
+
+## 19 — Stripe Entitlements como referência de feature access *(🟩 Estável)*
+
+2026-07-04
+
+### Descrição
+
+Referência externa da Stripe para concessão e revogação de acesso a features de produto conforme assinatura, plano ou entitlement.
+
+### Valor para o Projeto
+
+- Serve como benchmark de produto para mapear acesso por plano, feature e conta.
+- Pode apoiar a evolução conceitual de billing, upgrades, trials e permissões comerciais.
+- Não substitui o modelo interno do LP Factory 10 nem `public.account_commercial_entitlements`.
+
+### Valor para o Usuário
+
+- Pode contribuir para upgrades, downgrades e liberações de recursos mais previsíveis.
+
+### Ações Recomendadas
+
+1. Manter como referência de produto.
+2. Não substituir o modelo interno de grants/entitlements já definido no projeto.
+3. Avaliar apenas em conjunto com E9, Base Técnica e schema vigente.
+
+---
