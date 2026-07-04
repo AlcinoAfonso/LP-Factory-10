@@ -839,3 +839,68 @@ Direção provisória:
 Próximo ponto relevante do debate:
 
 Parametrizar editorialmente a Hero.
+
+28. Curadoria no Admin antes de liberar nicho para LPs
+
+Decisão de direção após debate:
+
+A composição de landing pages reais de clientes não deve seguir o modelo rígido de commercial_activation.
+
+A página comercial atual pode permanecer determinística, mas landing_page precisa de composição flexível por nicho, orientada por itens estruturais e validada contra o catálogo real de módulos e variantes.
+
+Caminho selecionado para sair do debate e seguir para plano-base:
+
+Curadoria no Admin antes de liberar o nicho.
+
+Fluxo conceitual aprovado:
+
+* taxon definido
+* itens estruturais completos
+* Admin aciona IA para sugerir composição do nicho
+* IA sugere seções, ordem, variantes, obrigatoriedade e possíveis lacunas
+* sistema confronta a sugestão com módulos, variantes, schemas e renderers disponíveis
+* humano decide o que aprovar, remover, adiar, parametrizar ou implementar
+* composição aprovada vira default oficial do nicho
+* LP teste é gerada com conta teste
+* nicho só é liberado para clientes depois de validação mínima
+
+Papel da IA:
+
+* sugerir composição com base nos itens estruturais do nicho
+* justificar seções sugeridas
+* apontar módulos faltantes ou parametrizações fracas
+* apoiar geração posterior de copy
+
+Papel do sistema:
+
+* validar se módulos e variantes existem
+* validar se há contrato técnico e renderer compatível
+* impedir persistência de composição inválida
+* gravar somente composição aprovada
+* manter rastreabilidade de template, composição, taxon e versões
+
+Papel humano:
+
+* aprovar ou ajustar a composição sugerida
+* decidir se módulo faltante tem ROI
+* decidir se uma sugestão da IA deve virar implementação
+* validar LP teste antes de liberar o nicho
+
+Modelo de planos-base aprovado para próxima etapa:
+
+* Plano-base 1: base de composição landing_page, principalmente ligado à E18
+* Plano-base 2: curadoria de composição no Admin, principalmente ligada à E12 com dependência da E18
+* Plano-base 3: LP teste e liberação do nicho, principalmente ligada à E19 com dependências de E18 e E12
+
+Direções aceitas:
+
+* usar mais de um plano-base
+* começar com esses três planos-base
+* não enquadrar tudo em E10.7, porque E10.7 é página comercial
+* começar a factibilidade pelo Admin Dashboard apoiando o fluxo
+* manter fases objetivas para implementação e detalhadas o suficiente para avaliação dos especialistas
+* se a execução revelar nova fase necessária, seguir o fluxo do prompt-estrategista para ajuste controlado
+
+Próxima ação:
+
+Sair do debate para planos-base separados, delegando dois planos-base a outros chats e assumindo o primeiro neste chat, quando houver comando humano explícito.
