@@ -62,7 +62,7 @@ Fontes: chat, `AGENTS.md`, `docs/prompt-estrategista.md`, `docs/roadmap.md`, `do
   * evitar nova tabela;
   * evitar alteração no LP Builder;
   * manter fail-closed.
-* Saída: entitlement manual persistido e consumível pela view efetiva.
+* Saída: entitlement manual persistido conforme contrato, pronto para validação pela view efetiva e pelo signal na Fase 3.
 * Critério de aceite:
   * conta válida pode receber entitlement manual;
   * plano inválido falha;
@@ -86,7 +86,7 @@ Fontes: chat, `AGENTS.md`, `docs/prompt-estrategista.md`, `docs/roadmap.md`, `do
   * `supa#40` pode apoiar validação read-only.
 * Saída: evidência objetiva de que a liberação manual ativa elegibilidade sem alterar o gate produtivo.
 
-Próxima ação: atualizar este plano-base para v2 em novo PR. Depois, enviar ao Executor somente a Fase 1, não a Fase 2.
+Próxima ação: após merge/consolidação deste PR, enviar ao Executor somente a Fase 1, não a Fase 2.
 
 4. Escopo negativo e critérios de parada
 
