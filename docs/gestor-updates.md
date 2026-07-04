@@ -128,87 +128,132 @@ docs/platform-config.md
 * Antecipa A/B, flags, CMS, multicanal, LP Builder ou analytics avançado sem caso aprovado.
 * Aumenta custo, superfície de risco ou complexidade sem retorno prático.
 
-8. Regras para branches
+8. Avaliação de updates em entregas
 
-* Comparar sempre com main.
-* Listar arquivos alterados.
-* Abrir arquivos relevantes.
-* Avaliar apenas o escopo pedido.
-* Declarar updates aplicados, ausentes, indevidos e não aplicáveis.
-* Aprovar, reprovar ou aprovar com ressalva.
-* Se houver ajuste, entregar instrução curta ao Executor.
+* Verificar se a entrega aplicou updates pertinentes ao caso.
+* Indicar updates obrigatórios ausentes, updates usados indevidamente e updates não aplicáveis.
+* Avaliar impacto no MVP, segurança, custo, banco, infraestrutura, automações e escopo.
+* Quando houver ajuste, entregar instrução curta e determinística ao Executor.
 
-9. Regras para briefings
+9. Regras para briefings do Gestor de Updates
 
-* Citar docs de referência.
-* Declarar fase alvo.
-* Separar escopo positivo e negativo.
-* Declarar updates aplicáveis.
-* Classificar cada update como implementação, referência, validação, trava ou não aplicável.
-* Incluir critérios de parada.
-* Não transformar update em nova frente sem decisão do Estrategista.
+* Usar `docs/template-briefing-codex.md` como estrutura do briefing.
+* Não duplicar a estrutura do template neste documento.
+* Acrescentar ao briefing apenas as decisões específicas do Gestor de Updates:
+  * fase ou caso avaliado;
+  * docs de referência usados;
+  * updates aplicáveis;
+  * updates ausentes, indevidos ou não aplicáveis;
+  * classificação de cada update como implementação, referência, validação, trava ou não aplicável;
+  * escopo positivo e negativo;
+  * critérios de parada;
+  * proibição de transformar update em nova frente sem decisão do Estrategista.
 
-10. Regras de segurança
+10. Segurança específica do Gestor de Updates
 
-* Não expor secrets, payloads, PII, content_json, pesquisa bruta ou texto gerado em logs.
-* Em mudança de banco, consultar docs/schema.md e aplicar travas de supa#58.
+* Em banco, consultar `docs/schema.md`, `docs/base-tecnica.md` e o catálogo Supabase vigente.
 * Em IA, confirmar ambiente, chave, modelo, custo e escopo.
 * Em produção, não assumir geração ativa sem decisão explícita.
+* Não transformar update de segurança em nova infraestrutura sem caso real aprovado.
 
-11. Updates recorrentes já consolidados
-
-supa#5
-
-* Logs seguros e diagnóstico técnico.
-
-supa#36
-
-* Leituras server-side via Data API/PostgREST.
-
-supa#40
-
-* Snippets SQL read-only versionados em supabase/snippets.
-
-supa#58
-
-* Trava para nova tabela, função, RPC, grant, policy ou migration.
-
-supa#59
-
-* Plugin Supabase como apoio, nunca dependência operacional.
-
-vercel#10
-
-* Observabilidade de rotas e redirects.
-
-vercel#13
-
-* Cancelamento automático de builds antigos no mesmo branch.
-
-github#1
-
-* Permissões mínimas em workflows.
-
-github#2
-
-* Concurrency e cancel-in-progress em Actions.
-
-github#3
-
-* Secret scanning e push protection.
-
-prod#14
-
-* Priorizar reconhecimento em UX inicial.
-
-prod#16
-
-* QA visual e validação de UX em Preview.
-
-12. Forma de conclusão
+11. Forma de conclusão
 
 * Dizer o que está confirmado.
 * Dizer o que ainda não foi validado.
 * Dizer quais updates ajudam no diagnóstico.
 * Dizer quais updates não cabem.
 * Dizer o próximo passo mínimo e seguro.
+
+12. Protocolo para rodada de atualização dos catálogos
+
+12.1. Objetivo
+
+* Manter os catálogos de updates como catálogos ativos, não históricos completos.
+* Remover itens sem decisão futura útil.
+* Preservar rastreabilidade dos IDs canônicos.
+* Adicionar novos recursos apenas com fonte oficial e aproveitamento real ou condicional.
+* Evitar que releases, anúncios ou recursos de plataforma virem escopo de implementação sem decisão humana.
+
+12.2. Catálogos da rodada
+
+* `docs/supa-up.md` — Supabase, banco, Auth, RLS, Data API, logs, migrations, snippets, grants, extensões e integrações Supabase.
+* `docs/vercel-up.md` — Vercel, Next.js, React, runtime, deploy, Preview, cache, observabilidade, Toolbar, Comments, Flags, AI Cloud e framework.
+* `docs/github-up.md` — GitHub, Actions, workflows, PRs, reviews, branches, releases, secret scanning, code scanning, Dependabot, bots e permissões.
+* `docs/prod-up.md` — produto, UX, acessibilidade, aquisição, conversão, onboarding, monetização, analytics, performance percebida, automação comercial e experiências assistidas por IA.
+
+12.3. Fontes de apoio da rodada
+
+* `README.md` para escopo, MVP e princípios do produto.
+* `docs/base-tecnica.md` quando o update tocar stack, runtime, segurança, imports, CI, logs, adapters ou implementação.
+* `docs/schema.md` quando o update tocar banco, RLS, grants, policies, migrations, views, RPCs ou funções.
+* `docs/platform-config.md` quando o update tocar plataforma, envs, secrets, endpoints, redirects, SMTP, DNS ou configuração operacional.
+* `docs/roadmap.md` quando o update tocar fase, escopo, prioridade, pendência ou decisão de produto.
+* Fonte oficial externa quando o catálogo depender de updates de plataforma ou produto.
+
+12.4. Ordem da análise
+
+* Ler o catálogo-alvo em `main`.
+* Identificar o maior ID já usado no catálogo.
+* Classificar itens existentes antes de propor novos itens.
+* Verificar se itens existentes já foram implementados globalmente, absorvidos, duplicados, superados ou perderam aproveitamento.
+* Fazer varredura em fonte oficial externa quando houver necessidade de atualizar ou adicionar recursos.
+* Separar itens a remover, manter, atualizar, adicionar e não adicionar.
+* Entregar a análise ao usuário antes do briefing para Codex.
+* Gerar briefing determinístico para Codex.
+* Revisar o PR antes do merge.
+
+12.5. Regra de catálogo ativo
+
+Remover do catálogo ativo itens que estejam:
+
+* implementados globalmente;
+* absorvidos por Base Técnica, schema, roadmap ou outro documento normativo;
+* duplicados em outro catálogo;
+* deprecados, superados ou sem aproveitamento concreto;
+* genéricos demais para orientar decisão futura.
+
+Manter no catálogo ativo itens que sejam:
+
+* ainda não implementados;
+* úteis por caso;
+* pagos, enterprise ou futuros, desde que tenham aplicação plausível;
+* travas, referências ou validações úteis para decisões futuras.
+
+12.6. Regra de IDs canônicos e lacunas
+
+* IDs `supa#n`, `vercel#n`, `github#n` e `prod#n` são canônicos.
+* Não renumerar IDs.
+* Não preencher lacunas.
+* Não reutilizar IDs removidos.
+* IDs removidos ficam aposentados/reservados.
+* Lacunas numéricas são corretas.
+* Novos itens usam o próximo ID livre após o maior ID já usado no catálogo.
+* Exemplo: se IDs intermediários forem removidos, os IDs seguintes continuam inalterados; o próximo item novo usa o número livre após o maior ID já usado no catálogo.
+
+12.7. Regras para novos itens
+
+* Só adicionar item novo com fonte oficial.
+* Não adicionar release genérico, anúncio cosmético, modelo específico ou recurso sem aplicação clara.
+* Não criar item novo para recurso já melhor coberto por outro catálogo.
+* Não transformar recurso futuro, pago, enterprise ou experimental em adoção automática.
+* Quando a varredura oficial for necessária, fazer antes do merge e preferencialmente no mesmo PR.
+* Registrar itens avaliados e não adicionados quando isso ajudar a evitar reabertura futura da mesma discussão.
+
+12.8. Briefing determinístico para Codex
+
+* Usar `docs/template-briefing-codex.md`.
+* Não pedir apenas para “revisar”, “melhorar” ou “atualizar” o catálogo.
+* Declarar objetivamente o arquivo alvo, arquivos proibidos, IDs a remover, IDs a manter, IDs a atualizar e novos IDs a criar.
+* Incluir texto exato ou estrutura esperada para novos blocos quando houver criação de itens.
+* Repetir no briefing as regras de não renumerar IDs, não reutilizar IDs removidos e preservar lacunas numéricas.
+* Informar itens avaliados e não adicionados quando houver varredura oficial.
+* Proibir alteração de arquivos fora do alvo e criação de banco, rota, job, agente, automação, engine, workflow ou infraestrutura sem decisão humana explícita.
+
+12.9. Conferência do catálogo
+
+* Conferir se itens removidos saíram integralmente.
+* Conferir se itens mantidos não foram renumerados.
+* Conferir se lacunas numéricas foram preservadas.
+* Conferir se novos IDs seguem o próximo número livre.
+* Conferir se itens novos têm fonte oficial e aproveitamento real ou condicional.
+* Conferir se recurso futuro, pago, enterprise ou experimental não virou adoção automática.
