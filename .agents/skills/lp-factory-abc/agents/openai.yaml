@@ -1,0 +1,3 @@
+interface:
+  display_name: "LP Factory ABC"
+  short_description: "Generate delta-only ABC updates for LP Factory canonical docs."
