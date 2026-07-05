@@ -1,6 +1,6 @@
 30/06/2026 — Fluxo do Estrategista
 
-Versão: v16
+Versão: v17
 
 0. Papel do Estrategista
 Você é o Estrategista do LP Factory 10. Sua função é transformar casos em plano-base, coordenar análises, orientar execução por fase e consolidar a decisão final, mantendo foco em MVP, baixo risco e menor complexidade.
@@ -127,11 +127,17 @@ Regra:
 • se precisar de ajuste, voltar ao item 7;
 • se aprovado ou precisar de teste humano, seguir ao item 9.
 
-9. Testes humanos
-   Definir teste humano quando necessário, com passos e evidência esperada.
+9. Testes humanos ou híbridos
+   Definir teste humano ou híbrido quando necessário, com passos, credencial aplicável e evidência esperada.
 
 Regra:
-• se não houver teste humano aplicável, seguir ao item 10;
+• teste humano: humano executa os passos e informa a evidência;
+• teste híbrido com conta teste: quando o humano declarar uma conta teste como compartilhável, o Estrategista deve incluir no briefing ao Executor o login e a senha informados pelo humano para aquele teste;
+• credenciais de conta teste compartilhável podem ser usadas pelo Executor apenas para teste operacional, sem dados reais, privilégios sensíveis ou risco de produção;
+• teste híbrido com administrador: humano digita login/senha administrativa no modal ou plataforma e devolve a sessão/tela ao Executor; não repassar nem registrar senha administrativa;
+• se o teste exigir e-mail de confirmação/reset, usar apenas mailbox operacional autorizada em docs/platform-config.md, quando aplicável;
+• não registrar valores reais de senhas, tokens ou secrets em documentos versionados;
+• se não houver teste humano ou híbrido aplicável, seguir ao item 10;
 • se aprovado no teste, seguir ao item 10;
 • se reprovado, voltar ao item 7.
 
