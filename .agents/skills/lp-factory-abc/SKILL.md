@@ -23,9 +23,38 @@ The output is delta-only. It must identify only the changes needed to reflect co
   - `docs/platform-config.md`
   - `docs/services.md`
   - `docs/automations.md`
-- Source material: final report, implementation result, PR summary, branch diff, human briefing, or other explicit source.
+- Source material: final report, implementation result, implementation history, plan-base execution context, PR summary, branch diff, human briefing, or other explicit source.
 
-If the source material is missing, stop and ask for it. If `DOC_ALVO` is missing, run the multi-document triage first.
+If the source material is missing and cannot be reconstructed from the current thread and repository evidence, stop and ask for it. If `DOC_ALVO` is missing, run the multi-document triage first.
+
+## Source Modes
+
+Use one of two source modes.
+
+### Report Mode
+
+Use Report Mode when the user provides a final report, PR summary, handoff, explicit implementation result, or other consolidated source.
+
+Treat the provided source as the main evidence, then compare it against the requested `DOC_ALVO` and the current repo state.
+
+### Implementation Mode
+
+Use Implementation Mode when the user asks for an ABC based on "this implementation", "this branch", "this plan-base execution", "what was implemented", or similar wording without providing a formal final report.
+
+In Implementation Mode, reconstruct the source material from the current thread and repository evidence:
+
+- plan-base path and phase discussed in the thread, when available;
+- current branch and commit range;
+- files changed in `main...HEAD`;
+- relevant git diff for changed files;
+- commits created for the implementation;
+- validations executed and their results;
+- implementation decisions explicitly made in the thread;
+- current known blockers, skipped validations, fallbacks, and residual risks.
+
+Use this reconstructed evidence only to identify confirmed final state. Do not treat attempts, intermediate errors, provisional ideas, or unvalidated assumptions as implemented or defined.
+
+If the current thread and repo evidence are insufficient to identify the implemented/defined final state, stop and ask for the exact missing evidence instead of generating a weak ABC.
 
 ## Content Residency
 
