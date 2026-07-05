@@ -1,8 +1,8 @@
 0. Introdução
 
 0.1 Cabeçalho
-• Data: 02/07/2026
-• Versão: v1.5.87
+• Data: 04/07/2026
+• Versão: v1.5.89
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -418,7 +418,7 @@
 • Decisão final: não criar Fase 4, rota, UI, chamada artificial, migration, schema, RPC, policy, grant, trigger ou alteração no LP Builder apenas para validar criação de draft.
 
 9.4 Pendências vigentes
-• N/A para o recorte concluído da Fase 7.2.
+• N/A para o recorte consolidado atual do E9.
 
 9.5 Estruturas e artefatos
 
