@@ -2,8 +2,8 @@
 
 0.1. Cabeçalho
 • Documento: Base Técnica LP Factory 10
-• Versão: v2.0.45
-• Data: 02/07/2026
+• Versão: v2.0.46
+• Data: 04/07/2026
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -286,6 +286,21 @@ Commercial entitlements
 • Regra de segurança: fail-closed; erro, exceção, `accountId` vazio ou ausência de linha retornam não elegível.
 • Limite: UI/client não acessa Supabase para entitlement comercial; consumo deve passar pelo boundary server-side.
 
+Admin commercial entitlements
+• Superfície administrativa mínima: `app/admin/(protected)/contas/[accountId]/page.tsx`.
+• Path canônico de mutação: `app/admin/(protected)/contas/[accountId]/actions.ts`.
+• Boundary server-only: `lib/admin/adapters/adminCommercialEntitlementsAdapter.ts`.
+• Guard obrigatório: `requirePlatformAdmin`.
+• Ator autorizado: `platform_admin`, incluindo `super_admin` pelo guard existente.
+• Escrita: server-side via `createServiceClient()`.
+• Persistência exclusiva: `public.account_commercial_entitlements`.
+• Origem manual: `origin = liberacao_manual`.
+• Operações mínimas autorizadas: concessão, atualização e cancelamento manual de entitlement.
+• Regra de conflito: entitlement efetivo de `plano_pago_confirmado` ou `trial` deve falhar fechado.
+• Entitlement manual `ativo` existente deve ser atualizado, não duplicado intencionalmente.
+• Stripe, checkout e webhook não podem ser usados como bypass da liberação manual.
+• Não criar rota, UI artificial, migration, schema, RPC, policy, grant, trigger, job ou automação para validar esse recorte.
+
 Stripe webhook
 • Endpoint canônico: `app/api/stripe/webhook/route.ts`.
 • Runtime: Node.js, dinâmico, server-side.
@@ -524,6 +539,7 @@ Fonte normativa da allowlist SULB para exceções de Auth. Qualquer novo arquivo
 • Tipos canônicos e adapters vNext: validar por 3.6 e 3.14.
 
 99. Changelog
+v2.0.46 — 04/07/2026 — Registrado contrato técnico da liberação manual administrativa mínima de entitlement comercial, com Server Action protegida por `requirePlatformAdmin`, boundary Admin server-only e persistência exclusiva em `public.account_commercial_entitlements`.
 v2.0.45 (02/07/2026) — Registrado webhook Stripe mínimo do E9, com endpoint canônico, boundary, assinatura obrigatória, evento `invoice.paid`, idempotência e persistência segura de entitlement.
 v2.0.43 — 22/06/2026 — Registrado o contrato técnico da geração administrativa de draft `commercial_activation`: fluxo server-side/Admin com Responses API e Structured Outputs, modelo por env var, validação em duas camadas, persistência somente como `draft`, fontes relacionais `business_buyer`, `end_customer` apenas em `provenance_json` e compensação segura em falha parcial.
 

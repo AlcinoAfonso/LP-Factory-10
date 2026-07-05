@@ -1,8 +1,8 @@
 0. Introdução
 
 0.1 Cabeçalho
-• Data: 02/07/2026
-• Versão: v1.5.87
+• Data: 04/07/2026
+• Versão: v1.5.89
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -301,18 +301,20 @@
 9. E9 — Billing, trial e entitlements
 
 9.1 Status
-• Em execução faseada — Fases 5 e 7.2 concluídas em 02/07/2026.
+• Em execução faseada — Fases 5, 7.2 e E9.7 concluídas.
 • Schema mínimo de entitlement comercial versionado.
 • Consumo server-side mínimo da elegibilidade comercial disponível.
 • Gate produtivo mínimo validado no ponto real entregue pela E19.
 • Stripe Checkout em teste disponível no app.
 • Webhook Stripe mínimo em produção validado para `invoice.paid`.
+• Liberação manual administrativa mínima implementada via Admin.
 • Sem Billing Engine completo implementado nesta fase.
 
 9.2 Objetivo atual
 • Separar condição comercial da conta do lifecycle operacional da conta.
 • Definir elegibilidade comercial para criação de LPs como sinal derivado de conta operacionalmente permitida, membership ativo e entitlement comercial válido.
 • Garantir que a criação produtiva mínima de LP consuma o entitlement comercial antes da persistência.
+• Permitir concessão, atualização e cancelamento manual mínimo de entitlement por `platform_admin`.
 • Manter Stripe, checkout e webhook como mecanismos de confirmação/persistência, não como prova direta de liberação no LP Builder.
 
 9.3 Decisões consolidadas
@@ -395,9 +397,28 @@
 9.3.9 Updates avaliados
 • `supa#5`, `supa#36`, `supa#40`, `supa#58`.
 • Stripe webhook, Vercel Production, Stripe test mode e Supabase/Postgres aplicados na Fase 7.2.
+• E9.7: `supa#40` aplicado; `prod#19` aplicado; `supa#2` avaliado; `supa#56` avaliado.
+
+9.3.10 Liberação manual administrativa mínima
+• Status: E9.7 concluída em 04/07/2026.
+• Ator autorizado: `platform_admin`, incluindo `super_admin` pelo guard existente `requirePlatformAdmin`.
+• Superfície administrativa: `app/admin/(protected)/contas/[accountId]/page.tsx`.
+• Path canônico de mutação: `app/admin/(protected)/contas/[accountId]/actions.ts`.
+• Boundary de escrita: `lib/admin/adapters/adminCommercialEntitlementsAdapter.ts`.
+• Mecanismo mínimo: Server Action protegida por `requirePlatformAdmin`, chamando adapter Admin server-only com `createServiceClient()`.
+• Persistência exclusiva: `public.account_commercial_entitlements`.
+• Origem comercial usada: `liberacao_manual`.
+• Concessão manual validada com `status = ativo`, plano canônico, vigência válida e `metadata_json` mínimo.
+• Conflito com entitlement efetivo de `plano_pago_confirmado` ou `trial` falha fechado.
+• Entitlement manual `ativo` existente é atualizado, sem duplicidade intencional.
+• View efetiva validada com elegibilidade comercial positiva.
+• Signal validado por contrato view → adapter.
+• Sem bypass por Stripe, checkout ou webhook nos paths avaliados.
+• Criação real de draft pelo LP Builder não foi executada porque não há superfície operacional navegável aprovada para disparar a Server Action sem implementar rota ou UI nova.
+• Decisão final: não criar Fase 4, rota, UI, chamada artificial, migration, schema, RPC, policy, grant, trigger ou alteração no LP Builder apenas para validar criação de draft.
 
 9.4 Pendências vigentes
-• N/A para o recorte concluído da Fase 7.2.
+• N/A para o recorte consolidado atual do E9.
 
 9.5 Estruturas e artefatos
 
@@ -405,6 +426,11 @@ Banco — Criados
 • `public.account_commercial_entitlements`
 • `public.v_account_commercial_entitlement_effective`
 • `public.stripe_webhook_events`
+
+Banco — Reaproveitados
+• `public.account_commercial_entitlements`
+• `public.v_account_commercial_entitlement_effective`
+• `public.account_landing_pages`
 
 Repositório — Criados
 • `supabase/migrations/20260628184945_e9_commercial_entitlements.sql`
@@ -421,19 +447,23 @@ Repositório — Criados
 • `lib/billing-checkout/index.ts`
 • `app/a/[account]/_components/commercial-page/checkout-actions.ts`
 • `app/api/stripe/webhook/route.ts`
+• `lib/admin/adapters/adminCommercialEntitlementsAdapter.ts`
+• `app/admin/(protected)/contas/[accountId]/actions.ts`
 
 Repositório — Ajustados
 • `app/a/[account]/page.tsx`
 • `app/a/[account]/_components/commercial-page/GenericCommercialPage.tsx`
 • `lib/billing-checkout/index.ts`
+• `app/admin/(protected)/contas/[accountId]/page.tsx`
 
-9.6 Fora do escopo da Fase 7.2
+9.6 Fora do escopo
 • Billing Engine completo.
-• Admin comercial.
+• Admin comercial completo.
 • Trial operacional.
-• Liberação manual operacional.
-• LP Builder.
-• Alteração de layout, copy ou cards da E10.7.
+• Automação de liberação manual.
+• Alteração de schema, migration, RPC, policy, grant ou trigger para E9.7.
+• Alteração no LP Builder apenas para teste.
+• Rota, UI ou chamada artificial para disparar Server Action.
 • Processamento de cancelamento e falha de pagamento fora do registro controlado/ignorado.
 • Job, rotina, monitoramento ou automação.
 
@@ -1442,6 +1472,8 @@ Repositório — Criados
 • Esta referência não cria obrigação de nova implementação agora.
 
 99. Changelog
+v1.5.89 — 04/07/2026 — E9.7 concluída com liberação manual administrativa mínima por `platform_admin`, persistência em `public.account_commercial_entitlements`, concessão/atualização/cancelamento manual, view efetiva validada e decisão de não criar superfície artificial para testar LP Builder.
+
 v1.5.88 — 02/07/2026 — E9 Fase 5 fechada documentalmente após a E19 entregar o ponto produtivo real de criação mínima de LP; gate comercial confirmado antes do insert em `public.account_landing_pages`, com fail-closed por entitlement ausente.
 
 v1.5.87 — 02/07/2026 — E9 Fase 7.2 concluída com webhook Stripe mínimo em produção, `invoice.paid` ativando entitlement local, idempotência em `stripe_webhook_events`, retry operacional e persistência validada em `account_commercial_entitlements`.
