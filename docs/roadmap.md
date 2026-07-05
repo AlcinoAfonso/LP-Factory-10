@@ -334,11 +334,7 @@
 • Admin comercial completo.
 • Trial operacional.
 • Automação de liberação manual.
-• Alteração de schema, migration, RPC, policy, grant ou trigger para E9.7.
-• Alteração no LP Builder apenas para teste.
-• Rota, UI ou chamada artificial para disparar Server Action.
-• Processamento de cancelamento e falha de pagamento fora do registro controlado/ignorado.
-• Job, rotina, monitoramento ou automação.
+• Novos providers, rotas, schema/migrations, jobs, automações, alterações no LP Builder e processamento completo de cancelamento/falha de pagamento.
 
 9.1.6 Observações
 • Este E9 registra o contrato macro consolidado de billing, trial e entitlements sem substituir `docs/base-tecnica.md` para runtime nem `docs/schema.md` para contrato de banco.
@@ -350,7 +346,6 @@
 • Status: Fases 1, 4, 5 e E9.7 concluídas.
 • Trial, plano, assinatura e liberação manual controlam permissões e limites de uso quando materializados como entitlement comercial válido.
 • Trial, plano, assinatura e liberação manual não definem `accounts.status`.
-• Expiração de trial/plano deve afetar permissões comerciais, não o lifecycle da conta.
 • Entitlement comercial é domínio próprio e não extensão de `lib/access`, `public.plans` ou `lib/access/plan.ts`.
 
 9.2.2 Separação entre lifecycle operacional e condição comercial
@@ -377,7 +372,6 @@
 • Status: Fase 4 concluída em 28/06/2026.
 • Fonte de verdade: `public.account_commercial_entitlements`.
 • Contrato mínimo criado: `CommercialEntitlementSignal`.
-• Fallback fail-closed: `accountId` vazio, erro, exceção ou ausência de linha retornam não elegível.
 • Account Dashboard carrega o sinal server-side, mas ainda não aplica bloqueio produtivo.
 • Checkout, webhook, provedor, admin, trial operacional, liberação manual operacional, LP Builder e Billing Engine completo permanecem fora do recorte da Fase 4.
 
@@ -414,14 +408,10 @@
 • Concessão manual validada com `status = ativo`, plano canônico, vigência válida e `metadata_json` mínimo.
 • Conflito com entitlement efetivo de `plano_pago_confirmado` ou `trial` falha fechado.
 • Entitlement manual `ativo` existente é atualizado, sem duplicidade intencional.
-• Sem bypass por Stripe, checkout ou webhook nos paths avaliados.
 • Criação real de draft pelo LP Builder não foi executada porque não há superfície operacional navegável aprovada para disparar a Server Action sem implementar rota ou UI nova.
-• Decisão final: não criar Fase 4, rota, UI, chamada artificial, migration, schema, RPC, policy, grant, trigger ou alteração no LP Builder apenas para validar criação de draft.
 
 9.2.10 Fail-closed, limites e ressalvas
 • Fallback fail-closed: `accountId` vazio, erro, exceção ou ausência de linha retornam não elegível.
-• Stripe não substitui o entitlement local.
-• Redirect de sucesso não confirma pagamento nem libera entitlement.
 • Sem entitlement comercial válido, a criação produtiva mínima de LP permanece bloqueada.
 
 9.3 Trial
@@ -430,7 +420,6 @@
 • Status: previsto / não implementado operacionalmente no recorte consolidado atual.
 • Trial deve controlar permissões e limites de uso quando materializado como entitlement comercial válido.
 • Trial não define `accounts.status`.
-• Expiração de trial deve afetar permissões comerciais, não o lifecycle da conta.
 
 9.3.2 Trial como origem futura de entitlement
 • Trial permanece como origem futura possível de entitlement comercial.
@@ -438,8 +427,7 @@
 • Trial não deve ser confundido com liberação manual administrativa mínima.
 
 9.3.3 Vigência, expiração e limites a definir
-• Vigência, expiração e limites operacionais do trial ainda precisam ser definidos antes de implementação.
-• Expiração de trial/plano deve afetar permissões comerciais, não `accounts.status`.
+• Vigência, expiração, limites e efeitos comerciais do trial ainda precisam ser definidos antes de implementação.
 
 9.3.4 Pendências para implementação operacional
 • Definir contrato operacional do trial.
@@ -482,33 +470,29 @@
 9.4.6 Limites: Stripe não substitui entitlement local
 • Stripe não substitui o entitlement local.
 • Redirect de sucesso não confirma pagamento nem libera entitlement.
-• Sem bypass por Stripe, checkout ou webhook nos paths avaliados.
+• Redirect, checkout e webhook não liberam o LP Builder sem entitlement local efetivo.
 
 9.5 Mercado Pago
 
 9.5.1 Status: previsto / não implementado
-• Mercado Pago está previsto apenas como hipótese futura de provedor.
-• Nenhuma implementação de Mercado Pago está consolidada no E9 atual.
+• Mercado Pago está previsto apenas como hipótese futura; nenhuma implementação está consolidada no E9 atual.
 
 9.5.2 Critérios para abertura futura
-• Abrir somente por recorte futuro aprovado.
-• Manter provedor como mecanismo de confirmação/persistência, sem substituir entitlement local.
+• Abrir somente por recorte futuro aprovado, seguindo o contrato universal do 9.2.
 
 9.5.3 Fora do escopo atual
-• Criar integração, rota, webhook, adapter, job, automação, schema, migration, policy, grant, trigger ou checkout Mercado Pago.
+• Permanece fora do escopo atual.
 
 9.6 Asaas
 
 9.6.1 Status: previsto / não implementado
-• Asaas está previsto apenas como hipótese futura de provedor.
-• Nenhuma implementação de Asaas está consolidada no E9 atual.
+• Asaas está previsto apenas como hipótese futura; nenhuma implementação está consolidada no E9 atual.
 
 9.6.2 Critérios para abertura futura
-• Abrir somente por recorte futuro aprovado.
-• Manter provedor como mecanismo de confirmação/persistência, sem substituir entitlement local.
+• Abrir somente por recorte futuro aprovado, seguindo o contrato universal do 9.2.
 
 9.6.3 Fora do escopo atual
-• Criar integração, rota, webhook, adapter, job, automação, schema, migration, policy, grant, trigger ou checkout Asaas.
+• Permanece fora do escopo atual.
 
 9.7 Updates avaliados
 
