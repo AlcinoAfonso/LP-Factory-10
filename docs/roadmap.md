@@ -1611,86 +1611,153 @@ Repositório — Ajustados
   - A escrita administrativa precisa estar viabilizada antes da persistência do draft.
 
 19. E19 — LP Builder
+- Objetivo: Consolidar a seção do Core responsável pela criação, edição e organização de landing pages. No recorte atual, limitar E19 à criação mínima de LP por conta com status inicial `draft`.
+- Status: Em execução faseada — Fase 3 concluída em 30/06/2026. Criação produtiva mínima de LP por conta implementada; persistência mínima em `public.account_landing_pages` criada; boundary próprio do LP Builder criado em `lib/lp-builder/`; gate E9 aplicado antes da persistência. Editor visual, publicação, render público, domínio customizado, analytics, A/B, IA runtime e automações permanecem fora do recorte.
 
-19.1 Status
-• Em execução faseada — Fase 3 concluída em 30/06/2026.
-• Criação produtiva mínima de LP por conta implementada.
-• Persistência mínima em `public.account_landing_pages` criada.
-• Boundary próprio do LP Builder criado em `lib/lp-builder/`.
-• Gate E9 aplicado antes da persistência.
-• Editor visual, publicação, render público, domínio customizado, analytics, A/B, IA runtime e automações permanecem fora do recorte.
+19.1 Contrato do LP Builder
 
-19.2 Objetivo atual
-• Consolidar a seção do Core responsável pela criação, edição e organização de landing pages.
-• No recorte atual, limitar E19 à criação mínima de LP por conta com status inicial `draft`.
+19.1.1 Objetivo e status
+- Objetivo: Consolidar a identidade da E19 como seção Core própria para criação, edição e organização de landing pages, separada dos dashboards.
+- Status: Contrato consolidado para o recorte atual, com fronteiras futuras preservadas sem obrigação de nova implementação agora.
 
-19.3 Decisões consolidadas
+19.1.2 Registros do recorte
+- Banco:
+  - Criados: N/A.
+  - Ajustados: N/A.
+- Repositório:
+  - Criados: N/A.
+  - Ajustados: N/A.
+  - Excluídos: N/A.
+- Updates:
+  - Aplicados: N/A.
 
-19.3.1 Boundary do LP Builder
-• E19 pertence à camada Core.
-• E19 é seção própria, separada de Account Dashboard, Admin Dashboard e Partner Dashboard.
-• Boundary criado: `lib/lp-builder/`.
-• Action server-side canônica criada: `app/lp-builder/actions.ts`.
+19.1.3 Boundary do LP Builder
+- Status: Criado.
+- Conteúdo:
+  - E19 pertence à camada Core.
+  - E19 é seção própria, separada de Account Dashboard, Admin Dashboard e Partner Dashboard.
+  - Boundary criado: `lib/lp-builder/`.
+  - Action server-side canônica criada: `app/lp-builder/actions.ts`.
 
-19.3.2 Criação produtiva mínima
-• LP nasce com status inicial `draft`.
-• Persistência mínima ocorre em `public.account_landing_pages`.
-• Slug é único por conta.
-• Nome não pode ser vazio.
-• Slug deve seguir formato seguro.
+19.1.4 Relação com dashboards
+- Status: Separação consolidada.
+- Conteúdo:
+  - E19 não pertence ao Account Dashboard.
+  - E19 não pertence ao Admin Dashboard.
+  - E19 não pertence ao Partner Dashboard.
+  - E19 é seção Core própria.
 
-19.3.3 Gate comercial e operacional
-• Criação de LP exige conta `active`.
-• Criação de LP exige membership `active` com role `owner` ou `admin`.
-• Criação de LP exige entitlement comercial válido via E9.
-• Gate é aplicado server-side antes do insert.
+19.1.5 Fronteiras preservadas
+- Status: Preservadas como evolução futura, sem implementação no recorte atual.
+- Conteúdo:
+  - E19 pode futuramente consumir página comercial publicada por taxon.
+  - E10.7 não implementa LP Builder.
+  - E10.7 não implementa regra de liberação para criação de LPs.
+  - E10.7 não implementa continuidade de contas.
+  - E10.7 não implementa bloqueio de novas ativações.
+  - Esta referência não cria obrigação de nova implementação agora.
 
-19.3.4 Updates avaliados
-• `github#499`, `supa#20260630210213`, `e9#gate`, `automation#E19`.
+19.2 Criação produtiva mínima de LP por conta
 
-19.4 Estruturas e artefatos
+19.2.1 Objetivo e status
+- Objetivo: Consolidar o recorte efetivamente implementado e validado na Fase 3 para criação mínima de LP por conta.
+- Status: Implementado. LPs são criadas com status inicial `draft`, persistidas em `public.account_landing_pages` e protegidas por gate comercial e operacional antes do insert.
 
-Banco — Criados
-• `public.account_landing_pages`
-• `account_landing_pages_select_member_or_platform`
-• `account_landing_pages_set_updated_at`
+19.2.2 Registros do recorte
+- Banco:
+  - Criados:
+    - `public.account_landing_pages`
+    - `account_landing_pages_select_member_or_platform`
+    - `account_landing_pages_set_updated_at`
+  - Ajustados: N/A.
+- Repositório:
+  - Criados:
+    - `app/lp-builder/actions.ts`
+    - `lib/lp-builder/contracts.ts`
+    - `lib/lp-builder/adapters/landingPagesAdapter.ts`
+    - `lib/lp-builder/index.ts`
+    - `supabase/migrations/20260630210213_e19_account_landing_pages.sql`
+    - `supabase/snippets/e19_account_landing_pages_verify.sql`
+  - Ajustados: N/A.
+  - Excluídos: N/A.
+- Updates:
+  - Aplicados: N/A.
 
-Repositório — Criados
-• `app/lp-builder/actions.ts`
-• `lib/lp-builder/contracts.ts`
-• `lib/lp-builder/adapters/landingPagesAdapter.ts`
-• `lib/lp-builder/index.ts`
-• `supabase/migrations/20260630210213_e19_account_landing_pages.sql`
-• `supabase/snippets/e19_account_landing_pages_verify.sql`
+19.2.3 Criação mínima
+- Status: Implementada.
+- Conteúdo:
+  - LP nasce com status inicial `draft`.
+  - Persistência mínima ocorre em `public.account_landing_pages`.
+  - Slug é único por conta.
+  - Nome não pode ser vazio.
+  - Slug deve seguir formato seguro.
 
+19.2.4 Gate comercial e operacional
+- Status: Implementado server-side antes da persistência.
+- Conteúdo:
+  - Criação de LP exige conta `active`.
+  - Criação de LP exige membership `active` com role `owner` ou `admin`.
+  - Criação de LP exige entitlement comercial válido via E9.
+  - Gate é aplicado server-side antes do insert.
 
-19.5 Fora do escopo da Fase 3
-• Editor visual.
-• Publicação.
-• Render público.
-• Domínio customizado.
-• Analytics.
-• Teste A/B.
-• IA runtime.
-• Automações.
-• Agentes.
-• Jobs.
-• Rotinas recorrentes.
+19.2.5 Updates avaliados no recorte
+- Status: Avaliados; não registrados como updates aplicados.
+- Conteúdo:
+  - `github#499`
+  - `supa#20260630210213`
+  - `e9#gate`
+  - `automation#E19`
 
-19.6 Dependências / referências
-• E9 — Billing, trial e entitlements.
-• E10 — Account Dashboard.
-• E12 — Admin Dashboard.
-• E13 — Partner Dashboard.
-• E18 — Base transversal de templates, módulos, composições e artefatos.
+19.3 Limites, dependências e evolução futura
 
-19.7 Fronteiras futuras preservadas
-• E19 pode futuramente consumir página comercial publicada por taxon.
-• E10.7 não implementa LP Builder.
-• E10.7 não implementa regra de liberação para criação de LPs.
-• E10.7 não implementa continuidade de contas.
-• E10.7 não implementa bloqueio de novas ativações.
-• Esta referência não cria obrigação de nova implementação agora.
+19.3.1 Objetivo e status
+- Objetivo: Consolidar limites do recorte atual, dependências e fronteiras futuras da E19 sem antecipar implementação.
+- Status: Limites e dependências preservados. Evoluções futuras permanecem fora da Fase 3 e não criam obrigação de implementação agora.
+
+19.3.2 Registros do recorte
+- Banco:
+  - Criados: N/A.
+  - Ajustados: N/A.
+- Repositório:
+  - Criados: N/A.
+  - Ajustados: N/A.
+  - Excluídos: N/A.
+- Updates:
+  - Aplicados: N/A.
+
+19.3.3 Fora do escopo da Fase 3
+- Status: Fora do recorte atual.
+- Conteúdo:
+  - Editor visual.
+  - Publicação.
+  - Render público.
+  - Domínio customizado.
+  - Analytics.
+  - Teste A/B.
+  - IA runtime.
+  - Automações.
+  - Agentes.
+  - Jobs.
+  - Rotinas recorrentes.
+
+19.3.4 Dependências e referências
+- Status: Preservadas.
+- Conteúdo:
+  - E9 — Billing, trial e entitlements.
+  - E10 — Account Dashboard.
+  - E12 — Admin Dashboard.
+  - E13 — Partner Dashboard.
+  - E18 — Base transversal de templates, módulos, composições e artefatos.
+
+19.3.5 Fronteiras futuras preservadas
+- Status: Preservadas como evolução futura, sem implementação no recorte atual.
+- Conteúdo:
+  - E19 pode futuramente consumir página comercial publicada por taxon.
+  - E10.7 não implementa LP Builder.
+  - E10.7 não implementa regra de liberação para criação de LPs.
+  - E10.7 não implementa continuidade de contas.
+  - E10.7 não implementa bloqueio de novas ativações.
+  - Esta referência não cria obrigação de nova implementação agora.
 
 99. Changelog
 v1.5.89 — 04/07/2026 — E9.7 concluída com liberação manual administrativa mínima por `platform_admin`, persistência em `public.account_commercial_entitlements`, concessão/atualização/cancelamento manual, view efetiva validada e decisão de não criar superfície artificial para testar LP Builder.
