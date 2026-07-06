@@ -14,7 +14,7 @@ The output is delta-only. It must identify only the changes needed to reflect co
 ## Required Inputs
 
 - Repository: `LP-Factory-10`.
-- Reference: `main`, branch, commit, or the current checkout. If not provided, use the current requested repo state and say what was used.
+- Reference: `main`, branch, commit, or the current checkout. If not provided, use the current requested repo state.
 - `DOC_ALVO`: one of:
   - `docs/base-tecnica.md`
   - `docs/schema.md`
@@ -23,9 +23,38 @@ The output is delta-only. It must identify only the changes needed to reflect co
   - `docs/platform-config.md`
   - `docs/services.md`
   - `docs/automations.md`
-- Source material: final report, implementation result, PR summary, branch diff, human briefing, or other explicit source.
+- Source material: final report, implementation result, implementation history, plan-base execution context, PR summary, branch diff, human briefing, or other explicit source.
 
-If the source material is missing, stop and ask for it. If `DOC_ALVO` is missing, run the multi-document triage first.
+If the source material is missing and cannot be reconstructed from the current thread and repository evidence, stop and ask for it. If `DOC_ALVO` is missing, run the multi-document triage first.
+
+## Source Modes
+
+Use one of two source modes.
+
+### Report Mode
+
+Use Report Mode when the user provides a final report, PR summary, handoff, explicit implementation result, or other consolidated source.
+
+Treat the provided source as the main evidence, then compare it against the requested `DOC_ALVO` and the current repo state.
+
+### Implementation Mode
+
+Use Implementation Mode when the user asks for an ABC based on "this implementation", "this branch", "this plan-base execution", "what was implemented", or similar wording without providing a formal final report.
+
+In Implementation Mode, reconstruct the source material from the current thread and repository evidence:
+
+- plan-base path and phase discussed in the thread, when available;
+- current branch and commit range;
+- files changed in `main...HEAD`;
+- relevant git diff for changed files;
+- commits created for the implementation;
+- validations executed and their results;
+- implementation decisions explicitly made in the thread;
+- current known blockers, skipped validations, fallbacks, and residual risks.
+
+Use this reconstructed evidence only to identify confirmed final state. Do not treat attempts, intermediate errors, provisional ideas, or unvalidated assumptions as implemented or defined.
+
+If the current thread and repo evidence are insufficient to identify the implemented/defined final state, stop and ask for the exact missing evidence instead of generating a weak ABC.
 
 ## Content Residency
 
@@ -70,6 +99,7 @@ Do not generate a `docs/base-tecnica.md` delta only to record a URL, env, secret
    - version/date, when present;
    - changelog, when present.
 3. If `DOC_ALVO` does not have an explicit function or document-relation section, use this skill's content residency and allowlists as the source of documentary residency.
+4. When `DOC_ALVO` is `docs/roadmap.md`, read `docs/template-roadmap.md` from the same requested ref before comparing or generating deltas. Use it as the structural authority for roadmap hierarchy, recorte layout, registros do recorte, artifact/update registration, and anti-inflation rules. Do not copy the template into the ABC output; use it only to shape valid operations.
 
 ## Allowlists By DOC_ALVO
 
@@ -157,6 +187,7 @@ Rules:
 - Concision: record only names or paths, without describing columns, policies, internal logic, file contents, or implementation narrative.
 - Omit empty categories and do not create the section when the report has no applicable structures or artifacts.
 - DB object and permission details belong in `docs/schema.md`; technical implementation rules belong in `docs/base-tecnica.md`.
+- When shaping roadmap deltas, apply `docs/template-roadmap.md` for hierarchy, recorte structure, registros placement, and anti-inflation constraints.
 
 NAO ENTRA:
 
