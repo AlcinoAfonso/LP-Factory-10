@@ -28,6 +28,8 @@ Recorte previsto do roadmap: `18.4 — Base de composição landing_page`.
 * No schema atual, módulos/seções são registrados em `content_templates` com `template_scope = 'section'`.
 * Variantes descrevem forma estrutural ou funcional do módulo, não nichos.
 * A parametrização técnica crítica deve começar no repositório, não em editor livre no Admin.
+* Os módulos de `landing_page` devem ser desenhados com visão transversal, para reduzir retrabalho futuro em `commercial_activation` e outros canais.
+* Transversalidade não significa liberar uso automático em todos os canais sem contrato; significa projetar módulo, variante, schema, renderer e parametrização para reaproveitamento controlado.
 * O Admin de curadoria pertence ao Plano-base 2, não a este recorte.
 * LP teste e liberação de nicho pertencem ao Plano-base 3, não a este recorte.
 
@@ -51,6 +53,16 @@ Recorte previsto do roadmap: `18.4 — Base de composição landing_page`.
   * `18.4.5 Contratos técnicos, registry, schemas e renderer`.
   * `18.4.6 Resolver, validação de composição e limites de config_json`.
 
+1.5. Direção de transversalidade dos módulos
+
+* O objetivo de E18.4 não é criar módulos descartáveis ou exclusivos de `landing_page`.
+* O catálogo mínimo deve ser desenhado como base reaproveitável para canais futuros e para eventual evolução de `commercial_activation`.
+* O primeiro uso formal neste plano continua sendo `landing_page`.
+* O reuso por outro canal exige compatibilidade explícita de contrato, schema, registry, renderer e validação.
+* Um módulo pode ter núcleo conceitual transversal e ainda assim exigir adaptação por família/canal.
+* A implementação deve evitar duplicar futuramente, para `commercial_activation`, o mesmo trabalho estrutural feito neste recorte.
+* A decisão sobre criar camada compartilhada, catálogo transversal explícito ou apenas componentes/helpers reutilizáveis permanece aberta para debate técnico.
+
 2. Contrato do caso
 
 2.1. Problema
@@ -63,6 +75,7 @@ Recorte previsto do roadmap: `18.4 — Base de composição landing_page`.
   * `config_json = {}` sem uso real;
   * IA apenas preenchendo copy dentro de estrutura rígida.
 * Esse modelo serve para `commercial_activation`, mas não serve como regra para landing pages reais de clientes.
+* Outro risco é criar módulos bons para `landing_page`, mas tão específicos que gerem retrabalho para evoluir `commercial_activation` ou outros canais.
 
 2.2. Resultado esperado
 
@@ -77,6 +90,8 @@ Recorte previsto do roadmap: `18.4 — Base de composição landing_page`.
 * Validar `content_template_composition_items` para `landing_page`.
 * Definir se o schema atual será mantido ou se precisa ser endurecido por migration própria.
 * Definir uso inicial de `config_json` como vazio ou override controlado, sem editor livre.
+* Definir até que ponto os módulos de `landing_page` devem nascer como núcleo transversal reaproveitável.
+* Definir se a transversalidade será resolvida por camada compartilhada, por helpers/componentes reutilizáveis ou por contratos por família com adaptação controlada.
 * Preparar a base para que o Plano-base 2 consiga sugerir, validar e persistir composição aprovada por nicho.
 
 2.3. Usuários envolvidos
@@ -98,7 +113,7 @@ Recorte previsto do roadmap: `18.4 — Base de composição landing_page`.
 * Relações secundárias:
   * E12 — consumidor futuro para curadoria no Admin;
   * E19 — consumidor futuro para LP teste e liberação de nicho;
-  * E10.7 — referência comparativa, sem governar `landing_page`.
+  * E10.7 — referência comparativa e possível consumidor futuro de módulos melhorados, sem ser governada automaticamente por `landing_page`.
 
 2.5. Fluxo operacional previsto
 
@@ -113,6 +128,7 @@ Recorte previsto do roadmap: `18.4 — Base de composição landing_page`.
   * avaliar necessidade ou não de hardening de banco;
   * definir template-base `landing_page`;
   * definir catálogo mínimo de módulos;
+  * avaliar quais módulos devem ser tratados como núcleo potencialmente transversal;
   * definir variantes mínimas;
   * criar ou ajustar contratos técnicos;
   * criar registry fechado;
@@ -126,6 +142,7 @@ Recorte previsto do roadmap: `18.4 — Base de composição landing_page`.
   * bloquear variante incompatível com módulo;
   * bloquear `config_json` fora do permitido;
   * validar ordem, obrigatoriedade e composição mínima;
+  * validar se a modelagem escolhida preserva potencial de reuso transversal sem liberar uso indevido;
   * executar checks aplicáveis do repositório.
 * Persistência:
   * registrar apenas a base mínima necessária;
@@ -133,7 +150,8 @@ Recorte previsto do roadmap: `18.4 — Base de composição landing_page`.
   * não persistir composição aprovada por nicho neste plano, salvo composição técnica mínima exigida pela base e explicitamente aprovada.
 * Consumo:
   * Plano-base 2 consumirá a base para curadoria no Admin;
-  * Plano-base 3 consumirá composição aprovada para LP teste.
+  * Plano-base 3 consumirá composição aprovada para LP teste;
+  * `commercial_activation` poderá consumir aprendizados, núcleo visual ou contratos reaproveitáveis apenas após decisão própria.
 * Fallback:
   * composição inválida deve ser bloqueada;
   * módulo ausente deve virar lacuna objetiva;
@@ -155,6 +173,7 @@ Recorte previsto do roadmap: `18.4 — Base de composição landing_page`.
 * Não criar marketplace de templates.
 * Não criar múltiplos templates ativos por família sem caso real.
 * Não criar editor livre de schema, renderer, Zod ou parametrização crítica.
+* Não implementar consumo por `commercial_activation` neste plano, salvo decisão explícita posterior.
 * Não criar automações, jobs, agentes ou rotinas recorrentes sem necessidade comprovada.
 
 2.7. Riscos principais
@@ -162,6 +181,8 @@ Recorte previsto do roadmap: `18.4 — Base de composição landing_page`.
 * Criar complexidade prematura de engine de módulos.
 * Criar catálogo extenso sem evidência real.
 * Reaproveitar `commercial_activation` de forma indevida para `landing_page`.
+* Criar módulos `landing_page` específicos demais e gerar retrabalho para `commercial_activation`.
+* Confundir transversalidade com liberação automática de módulo para qualquer canal.
 * Colocar no banco uma parametrização que ainda exige contrato, renderer e validação no código.
 * Deixar o banco aceitar composição estruturalmente inválida pelo fluxo oficial.
 * Usar `config_json` como editor livre e quebrar renderização.
@@ -190,17 +211,21 @@ Recorte previsto do roadmap: `18.4 — Base de composição landing_page`.
   * Automação: não.
 * `18.4.4 Catálogo mínimo landing_page`:
   * definir template-base e módulos/seções iniciais mínimos para o MVP;
+  * avaliar potencial transversal dos módulos antes de fechar o catálogo;
   * Automação: não.
 * `18.4.5 Contratos técnicos, registry, schemas e renderer`:
   * criar ou ajustar contratos de código, registry fechado, schemas/Zod e renderização mínima;
+  * definir se haverá núcleo compartilhável ou contratos separados por família;
   * Automação: não.
 * `18.4.6 Resolver, validação de composição e limites de config_json`:
   * validar composição `landing_page`, composition items, variantes e overrides controlados;
+  * validar compatibilidade de reuso sem liberar uso automático indevido;
   * Automação: não.
 
 3.3. Próxima ação do debate
 
 * Continuar avaliando se `18.4.3` exige mudança real de banco ou apenas validação executável no repositório.
+* Continuar avaliando se a transversalidade deve gerar camada compartilhada, helpers/componentes reutilizáveis ou apenas contratos por família.
 * Depois consolidar as fases finais do plano-base v1.
 * Só após fechamento do plano-base v1 completo, preparar handoff Codex conforme `docs/template-briefing-codex.md`.
 
@@ -221,6 +246,7 @@ Recorte previsto do roadmap: `18.4 — Base de composição landing_page`.
 * Editor livre de schema, renderer ou Zod.
 * Marketplace de templates.
 * Múltiplos templates ativos por família sem caso real.
+* Consumo automático por `commercial_activation` sem contrato próprio.
 * Testes A/B.
 * Analytics.
 * Domínio customizado.
@@ -232,5 +258,6 @@ Recorte previsto do roadmap: `18.4 — Base de composição landing_page`.
 * Parar se a estrutura atual permitir composição inválida sem ponto seguro de bloqueio.
 * Parar se um módulo proposto não tiver schema, registry e renderer compatíveis.
 * Parar se `config_json` começar a funcionar como editor livre.
+* Parar se a busca por transversalidade virar engine multicanal ampla sem necessidade real.
 * Parar se o plano começar a invadir E12 ou E19.
 * Parar se faltar fonte real para decidir banco, rota, renderer, schema ou contrato técnico.
