@@ -1329,163 +1329,215 @@ Ajustados:
 • Status: Descontinuado.
 
 18. E18 — Base transversal de templates, módulos, composições e artefatos
+- Objetivo: Definir infraestrutura e contratos reutilizáveis para famílias de templates por canal, templates versionados, módulos de conteúdo, seções de página, variantes, composições e artefatos finais persistidos; sustentar primeiro a E10.7 sem produzir diretamente a página comercial de um taxon; e permitir consumidores futuros somente como visão de evolução, sem antecipar sua implementação.
+- Status: Base transversal mínima de `commercial_activation` concluída e validada em 16/06/2026; primeiro recorte de banco/runtime e segundo recorte de contratos, renderer e registros-base aplicados; E10.7 desbloqueada como primeiro consumidor real; consumidores futuros permanecem como visão de evolução.
 
-18.1 Status
-• Base transversal mínima de `commercial_activation` concluída e validada em 16/06/2026.
-• Primeiro recorte de banco/runtime e segundo recorte de contratos, renderer e registros-base aplicados.
-• E10.7 desbloqueada como primeiro consumidor real; composição, conteúdo por taxon, integração, fallback e tracking permanecem sob responsabilidade da E10.7.
+18.1 Contrato transversal de templates, módulos, composições e artefatos
 
-18.2 Objetivo
-• Definir infraestrutura e contratos reutilizáveis para famílias de templates por canal, templates versionados, módulos de conteúdo, seções de página, variantes, composições e artefatos finais persistidos.
-• Sustentar primeiro a E10.7 sem produzir diretamente a página comercial de um taxon.
-• Permitir consumidores futuros somente como visão de evolução, sem antecipar sua implementação.
+18.1.1 Objetivo e status
+- Objetivo: Consolidar o contrato conceitual permanente da E18 para famílias de templates por canal, templates versionados, módulos, seções, variantes, composições reutilizáveis e artefatos finais.
+- Status: Aprovado como base transversal; materialização inicial concentrada na base mínima de `commercial_activation` do recorte 18.2.
 
-18.3 Decisão estrutural aprovada
-• Separação conceitual: canal → família de renderer → template-base versionado → módulos/seções compatíveis → composição por contexto → artefato final.
-• Regra inicial: 1 canal → 1 família de renderer → 1 versão-base inicial → versões ou variantes futuras quando necessárias.
-• A regra não limita definitivamente cada canal a um único template.
-• Cada canal terá módulos próprios e sua própria família de renderer, mesmo quando compartilhar contratos transversais.
+18.1.2 Registros do recorte
+- Banco:
+  - Criados: N/A; registros materiais consolidados no recorte 18.2.
+  - Ajustados: N/A; registros materiais consolidados no recorte 18.2.
+- Repositório:
+  - Criados: N/A; registros materiais consolidados no recorte 18.2.
+  - Ajustados: N/A; registros materiais consolidados no recorte 18.2.
+  - Excluídos: N/A.
+- Updates:
+  - Aplicados: N/A.
 
-18.4 Famílias e templates versionados
-• `content_templates` foi mantida para templates e módulos/seções versionados.
-• `content_template_taxons` foi mantida para elegibilidade, prioridade e seleção do template por taxon.
-• Os valores de `template_family` permanecem `commercial_activation` e `landing_page`.
-• O contrato detalhado dos objetos e permissões está em `docs/schema.md`.
+18.1.3 Decisão estrutural aprovada
+- Status: Aprovada.
+- Conteúdo:
+  - Separação conceitual: canal → família de renderer → template-base versionado → módulos/seções compatíveis → composição por contexto → artefato final.
+  - Regra inicial: 1 canal → 1 família de renderer → 1 versão-base inicial → versões ou variantes futuras quando necessárias.
+  - A regra não limita definitivamente cada canal a um único template.
+  - Cada canal terá módulos próprios e sua própria família de renderer, mesmo quando compartilhar contratos transversais.
 
-18.5 Módulos, seções e variantes
-• Catálogo inicial v1 da família `commercial_activation`:
-• `hero.default`
-• `benefits.cards`
-• `services.list`
-• `plans.cards`
-• `differentials.cards`
-• `how_it_works.steps`
-• `faq.accordion`
-• `final_cta.simple`
-• As variantes descrevem comportamento estrutural ou funcional e não podem representar nichos.
-• A ampliação do catálogo depende de necessidade comprovada por consumidores reais.
+18.1.4 Famílias e templates versionados
+- Status: Definido como contrato transversal.
+- Conteúdo:
+  - `content_templates` foi mantida para templates e módulos/seções versionados.
+  - `content_template_taxons` foi mantida para elegibilidade, prioridade e seleção do template por taxon.
+  - Os valores de `template_family` permanecem `commercial_activation` e `landing_page`.
+  - O contrato detalhado dos objetos e permissões está em `docs/schema.md`.
 
-18.6 Contrato entre código e banco
-• Código: contrato, validação, componente visual e comportamento responsivo.
-• Banco: identificação, variante, composição, ordem e conteúdo concreto.
-• Adicionar uma definição no banco não cria automaticamente um componente visual.
-• Novos tipos ou variantes estruturais continuam exigindo implementação no repositório.
+18.1.5 Módulos, seções e variantes
+- Status: Catálogo inicial definido para `commercial_activation`; ampliação condicionada a necessidade real.
+- Conteúdo:
+  - Catálogo inicial v1 da família `commercial_activation`:
+    - `hero.default`
+    - `benefits.cards`
+    - `services.list`
+    - `plans.cards`
+    - `differentials.cards`
+    - `how_it_works.steps`
+    - `faq.accordion`
+    - `final_cta.simple`
+  - As variantes descrevem comportamento estrutural ou funcional e não podem representar nichos.
+  - A ampliação do catálogo depende de necessidade comprovada por consumidores reais.
 
-18.7 Composição reutilizável
-• Composição: canal + template + taxon ou contexto → módulos + variantes + ordem + obrigatoriedade.
-• Um taxon pode usar vários módulos e um módulo pode atender vários taxons.
-• A composição não é o artefato final publicado.
-• A composição comercial da E10.7 deverá definir seções, variantes, ordem, obrigatoriedade e regras específicas do contexto comercial.
+18.1.6 Contrato entre código e banco
+- Status: Definido como separação de responsabilidades.
+- Conteúdo:
+  - Código: contrato, validação, componente visual e comportamento responsivo.
+  - Banco: identificação, variante, composição, ordem e conteúdo concreto.
+  - Adicionar uma definição no banco não cria automaticamente um componente visual.
+  - Novos tipos ou variantes estruturais continuam exigindo implementação no repositório.
 
-18.8 Artefato final
-• Separar explicitamente template, composição, conteúdo e artefato publicado.
-• Escopo global por taxon: página comercial da E10.7.
-• Escopo específico por conta: futura landing page de cliente.
-• Escopo específico por campanha ou canal: evolução futura.
-• A estrutura persistida deve preservar identidade e versões suficientes para rastrear pesquisa, template e composição usados.
+18.1.7 Composição reutilizável
+- Status: Definida como camada intermediária entre template, contexto e artefato final.
+- Conteúdo:
+  - Composição: canal + template + taxon ou contexto → módulos + variantes + ordem + obrigatoriedade.
+  - Um taxon pode usar vários módulos e um módulo pode atender vários taxons.
+  - A composição não é o artefato final publicado.
+  - A composição comercial da E10.7 deverá definir seções, variantes, ordem, obrigatoriedade e regras específicas do contexto comercial.
 
-18.9 Transversalidade futura
-• Páginas → seções.
-• E-mail → blocos de mensagem.
-• WhatsApp → mensagens ou etapas.
-• Instagram → hook, slides, legenda e CTA.
-• TikTok → hook, cenas, prova e CTA.
-• Esses consumidores representam visão futura e não fazem parte do primeiro recorte.
+18.1.8 Artefato final
+- Status: Definido como entidade separada de template, composição e conteúdo.
+- Conteúdo:
+  - Separar explicitamente template, composição, conteúdo e artefato publicado.
+  - Escopo global por taxon: página comercial da E10.7.
+  - Escopo específico por conta: futura landing page de cliente.
+  - Escopo específico por campanha ou canal: evolução futura.
+  - A estrutura persistida deve preservar identidade e versões suficientes para rastrear pesquisa, template e composição usados.
 
-18.10 Primeiro recorte implementado — 15/06/2026
-• Recorte limitado a `template_family = commercial_activation`.
-• Composição versionada separada por template + taxon.
-• Artefato publicado separado da composição, com rastreabilidade de template, composição, taxon e pesquisas.
-• Seleção do template iniciada em `content_template_taxons`.
-• Runtime server-side valida composição, artefato publicado e fontes de pesquisa antes de retornar o bundle.
-• Sem vínculo elegível ou composição ativa, o runtime retorna `composition_not_found`, sem fallback implícito.
-• Migration aplicada e verificada no Supabase real.
-• Runtime validado com `npm ci`, `npm run check` e previews aprovados.
+18.1.9 Transversalidade futura
+- Status: Visão futura, fora do primeiro recorte implementado.
+- Conteúdo:
+  - Páginas → seções.
+  - E-mail → blocos de mensagem.
+  - WhatsApp → mensagens ou etapas.
+  - Instagram → hook, slides, legenda e CTA.
+  - TikTok → hook, cenas, prova e CTA.
+  - Esses consumidores representam visão futura e não fazem parte do primeiro recorte.
 
-Banco — Criados
-• `content_template_compositions`
-• `content_template_composition_items`
-• `content_artifacts`
-• `content_artifact_research_sources`
+18.2 Base mínima `commercial_activation`
 
-Banco — Ajustados
-• `content_templates`
-• `content_template_taxons`
-• `taxon_market_research`
+18.2.1 Objetivo e status
+- Objetivo: Consolidar a implementação mínima de `commercial_activation` como primeira materialização da base transversal da E18, cobrindo banco/runtime, contratos, renderer e registros-base.
+- Status: Concluída e validada em 16/06/2026; primeiro recorte implementado em 15/06/2026; Fase 1 mergeada no PR #392 em 16/06/2026; Fase 2 mergeada no PR #393 em 16/06/2026.
 
-Repositório — Criados
-• `supabase/migrations/20260615190000_e18_commercial_activation_minimum.sql`
-• `supabase/snippets/e18_commercial_activation_minimum_verify.sql`
-• `lib/conversion-content/contracts.ts`
-• `lib/conversion-content/validation.ts`
-• `lib/conversion-content/adapters/commercialActivationAdapter.ts`
-• `lib/conversion-content/index.ts`
+18.2.2 Registros do recorte
+- Banco:
+  - Criados:
+    - `content_template_compositions`
+    - `content_template_composition_items`
+    - `content_artifacts`
+    - `content_artifact_research_sources`
+  - Ajustados:
+    - `content_templates`
+    - `content_template_taxons`
+    - `taxon_market_research`
+- Repositório:
+  - Criados:
+    - `supabase/migrations/20260615190000_e18_commercial_activation_minimum.sql`
+    - `supabase/snippets/e18_commercial_activation_minimum_verify.sql`
+    - `lib/conversion-content/contracts.ts`
+    - `lib/conversion-content/validation.ts`
+    - `lib/conversion-content/adapters/commercialActivationAdapter.ts`
+    - `lib/conversion-content/index.ts`
+    - `lib/conversion-content/commercial-activation/fixture.ts`
+    - `lib/conversion-content/commercial-activation/index.ts`
+    - `lib/conversion-content/commercial-activation/registry.ts`
+    - `lib/conversion-content/commercial-activation/renderer.tsx`
+    - `lib/conversion-content/commercial-activation/resolve.ts`
+    - `lib/conversion-content/commercial-activation/schemas.ts`
+    - `lib/conversion-content/commercial-activation/validation-cases.ts`
+    - `supabase/migrations/20260616142000_e18_commercial_activation_base_records.sql`
+    - `supabase/snippets/e18_commercial_activation_base_records_verify.sql`
+  - Ajustados:
+    - `lib/conversion-content/index.ts`
+    - `package.json`
+    - `package-lock.json`
+  - Excluídos: N/A.
+- Updates:
+  - Aplicados: N/A.
 
-18.11 Dependência e validação
-• E18 — base transversal mínima → dependência estrutural da E10.7.
-• E10.7 — primeiro consumidor real → valida e ajusta a base da E18.
-• A abstração transversal deve evoluir somente com evidência obtida no piloto e em um segundo taxon.
-• A E10.6 permanece fora dessa infraestrutura e continua como fallback genérico concluído.
+18.2.3 Primeiro recorte implementado
+- Status: Implementado em 15/06/2026.
+- Conteúdo:
+  - Recorte limitado a `template_family = commercial_activation`.
+  - Composição versionada separada por template + taxon.
+  - Artefato publicado separado da composição, com rastreabilidade de template, composição, taxon e pesquisas.
+  - Seleção do template iniciada em `content_template_taxons`.
+  - Runtime server-side valida composição, artefato publicado e fontes de pesquisa antes de retornar o bundle.
+  - Sem vínculo elegível ou composição ativa, o runtime retorna `composition_not_found`, sem fallback implícito.
+  - Migration aplicada e verificada no Supabase real.
+  - Runtime validado com `npm ci`, `npm run check` e previews aprovados.
 
-18.12 Fase 1 — Contratos e renderer de `commercial_activation`
-• Status: Concluída e mergeada no PR #392 em 16/06/2026.
-• Implementados `content_json` v1, validação Zod server-side, registry fechado, resolver e `CommercialActivationRenderer`.
-• Catálogo inicial com oito variantes transversais.
-• Fixture sintética, casos executáveis de validação e testes manuais desktop/mobile aprovados.
+18.2.4 Contratos e renderer de `commercial_activation`
+- Status: Fase 1 concluída e mergeada no PR #392 em 16/06/2026.
+- Conteúdo:
+  - Implementados `content_json` v1, validação Zod server-side, registry fechado, resolver e `CommercialActivationRenderer`.
+  - Catálogo inicial com oito variantes transversais.
+  - Fixture sintética, casos executáveis de validação e testes manuais desktop/mobile aprovados.
 
-Repositório — Criados
-• `lib/conversion-content/commercial-activation/fixture.ts`
-• `lib/conversion-content/commercial-activation/index.ts`
-• `lib/conversion-content/commercial-activation/registry.ts`
-• `lib/conversion-content/commercial-activation/renderer.tsx`
-• `lib/conversion-content/commercial-activation/resolve.ts`
-• `lib/conversion-content/commercial-activation/schemas.ts`
-• `lib/conversion-content/commercial-activation/validation-cases.ts`
+18.2.5 Registros-base de `commercial_activation`
+- Status: Fase 2 concluída e mergeada no PR #393 em 16/06/2026.
+- Conteúdo:
+  - Migration aplicada e confirmada no Supabase real.
+  - Registrados um template-base de página e oito módulos de seção, todos na versão 1, ativos e com `payload_json = {}`.
+  - Confirmados nove registros, unicidade funcional, zero vínculos com taxons e RLS ativa.
+  - Grants confirmados: `service_role` com `SELECT`; `anon` e `authenticated` sem `SELECT`.
 
-Repositório — Ajustados
-• `lib/conversion-content/index.ts`
-• `package.json`
-• `package-lock.json`
+18.3 Consumo pela E10.7 e limites do recorte comercial
 
-18.13 Fase 2 — Registros-base de `commercial_activation`
-• Status: Concluída e mergeada no PR #393 em 16/06/2026.
-• Migration aplicada e confirmada no Supabase real.
-• Registrados um template-base de página e oito módulos de seção, todos na versão 1, ativos e com `payload_json = {}`.
-• Confirmados nove registros, unicidade funcional, zero vínculos com taxons e RLS ativa.
-• Grants confirmados: `service_role` com `SELECT`; `anon` e `authenticated` sem `SELECT`.
+18.3.1 Objetivo e status
+- Objetivo: Explicitar a dependência entre a base transversal mínima da E18 e o consumo real pela E10.7, preservando os limites do recorte comercial e mantendo LP Builder separado na E19.
+- Status: E10.7 aprovada como primeiro consumidor real da base E18; composição, conteúdo por taxon, integração, fallback e tracking permanecem sob responsabilidade da E10.7; LP Builder permanece separado na E19.
 
-Banco — Ajustados
-• `content_templates`
+18.3.2 Registros do recorte
+- Banco:
+  - Criados: N/A.
+  - Ajustados: N/A.
+- Repositório:
+  - Criados: N/A.
+  - Ajustados: N/A.
+  - Excluídos: N/A.
+- Updates:
+  - Aplicados: N/A.
 
-Repositório — Criados
-• `supabase/migrations/20260616142000_e18_commercial_activation_base_records.sql`
-• `supabase/snippets/e18_commercial_activation_base_records_verify.sql`
+18.3.3 Dependência e validação
+- Status: Dependência estrutural definida e validação atribuída ao consumidor real.
+- Conteúdo:
+  - E18 — base transversal mínima → dependência estrutural da E10.7.
+  - E10.7 — primeiro consumidor real → valida e ajusta a base da E18.
+  - A abstração transversal deve evoluir somente com evidência obtida no piloto e em um segundo taxon.
+  - A E10.6 permanece fora dessa infraestrutura e continua como fallback genérico concluído.
 
-18.14 Fora do segundo recorte
-• implementação de e-mail, WhatsApp, Instagram ou TikTok
-• editor visual
-• criação dinâmica de componentes pelo banco
-• testes A/B
-• múltiplos templates ativos sem caso real
-• geração multicanal
-• arquitetura completa para todos os canais
-• catálogo extenso sem uso comprovado
-• vínculo entre template e taxon;
-• composição específica por taxon;
-• pesquisas e itens estruturados;
-• conteúdo e artefato comercial por taxon;
-• resolução hierárquica;
-• integração com `/a/[account]`;
-• fallback e tracking da E10.7.
+18.3.4 Fora do recorte comercial
+- Status: Fora do segundo recorte.
+- Conteúdo:
+  - implementação de e-mail, WhatsApp, Instagram ou TikTok
+  - editor visual
+  - criação dinâmica de componentes pelo banco
+  - testes A/B
+  - múltiplos templates ativos sem caso real
+  - geração multicanal
+  - arquitetura completa para todos os canais
+  - catálogo extenso sem uso comprovado
+  - vínculo entre template e taxon;
+  - composição específica por taxon;
+  - pesquisas e itens estruturados;
+  - conteúdo e artefato comercial por taxon;
+  - resolução hierárquica;
+  - integração com `/a/[account]`;
+  - fallback e tracking da E10.7.
 
-18.15 Recorte aprovado para consumo pela E10.7
-• A E10.7 reutilizará a base transversal já concluída: template `commercial_activation`, módulos existentes, composição ativa, renderer existente, `content_artifacts` e `content_artifact_research_sources`.
-• Manter `research_version = 1` e `business_buyer` como `audience_scope` do artefato publicado.
-• Registrar em `content_artifact_research_sources` somente fontes compatíveis com `business_buyer`; pesquisas `end_customer` entram apenas no `provenance_json`.
-• Não alterar a FK composta de `content_artifact_research_sources` nesta etapa, não criar nova tabela e não resolver versões independentes por bloco agora.
-• A E10.7 pode exigir migration técnica mínima limitada a viabilizar escrita administrativa controlada. Possíveis alvos: grants, policies, adapter/RPC e função transacional de publicação.
-• A publicação deve arquivar o `published` anterior e publicar o novo `draft` na mesma operação segura.
-• A escrita administrativa precisa estar viabilizada antes da persistência do draft.
+18.3.5 Recorte aprovado para consumo pela E10.7
+- Status: Aprovado para consumo pela E10.7.
+- Conteúdo:
+  - A E10.7 reutilizará a base transversal já concluída: template `commercial_activation`, módulos existentes, composição ativa, renderer existente, `content_artifacts` e `content_artifact_research_sources`.
+  - Manter `research_version = 1` e `business_buyer` como `audience_scope` do artefato publicado.
+  - Registrar em `content_artifact_research_sources` somente fontes compatíveis com `business_buyer`; pesquisas `end_customer` entram apenas no `provenance_json`.
+  - Não alterar a FK composta de `content_artifact_research_sources` nesta etapa, não criar nova tabela e não resolver versões independentes por bloco agora.
+  - A E10.7 pode exigir migration técnica mínima limitada a viabilizar escrita administrativa controlada. Possíveis alvos: grants, policies, adapter/RPC e função transacional de publicação.
+  - A publicação deve arquivar o `published` anterior e publicar o novo `draft` na mesma operação segura.
+  - A escrita administrativa precisa estar viabilizada antes da persistência do draft.
 
 19. E19 — LP Builder
 
