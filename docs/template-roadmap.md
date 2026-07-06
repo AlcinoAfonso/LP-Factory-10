@@ -40,7 +40,10 @@ X.1.n [Implementação, definição, contrato, previsão, critério ou limite]
 - Consumo, leitura, citação, dependência ou reaproveitamento sem alteração material não entram em registros.
 - Update apenas avaliado, rejeitado ou monitorado não entra em registros do roadmap.
 - Se a avaliação gerar decisão permanente, registrar no conteúdo específico do recorte, não em `Updates`.
+- `X.Y.2 Registros do recorte` deve ser usado quando houver implementação material ou registros reais.
+- Recortes previstos, conceituais ou não implementados podem omitir `Registros do recorte`.
 
 5. Regras anti-inflação
 - Não criar seção de notas por padrão, observações gerais em `Objetivo e status`, registros fora de `X.Y.2` ou subseções vazias.
+- Não criar blocos vazios de Banco, Repositório ou Updates apenas para preservar simetria.
 - Não transformar previsão futura em implementação.
