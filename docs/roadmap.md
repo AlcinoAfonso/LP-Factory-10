@@ -359,7 +359,7 @@
 
 9.1.7 View efetiva
 • Leitura efetiva: `public.v_account_commercial_entitlement_effective`.
-• View efetiva validada com elegibilidade comercial positiva no recorte 9.2.
+• View efetiva validada com elegibilidade comercial positiva no recorte de liberação manual administrativa mínima (9.2).
 
 9.1.8 Signal server-side
 • Boundary server-side criado: `lib/commercial-entitlements/`.
@@ -610,7 +610,7 @@
 • Status: Concluído (exec) (13/02/2026)
 • Escopo final: entregar o fluxo ponta a ponta de “Primeiros passos” em `/a/[account]` quando `accounts.status=pending_setup`, com formulário inline, validação, persistência do perfil v1, promoção `pending_setup → active` e redirecionamento para o pós-setup.
 • Estado atual: onboarding v1 inline em `pending_setup`, com `name` obrigatório, `niche` obrigatório, `preferred_channel` opcional com default `email`, `whatsapp` obrigatório somente quando `preferred_channel=whatsapp` e `site_url` opcional com normalização para URL válida.
-• Dependências: E9.1.2.
+• Dependências: E9.1.
 • Nota: `setup_completed_at/account_setup_completed_at` não devem ser usados no runtime, no gating, no fluxo nem nos logs; ficam mantidos no DB apenas por segurança.
 
 10.4.1 Marcador legado de setup (deprecated)
@@ -685,7 +685,7 @@
 • Escopo atual: separar o estado `active` do fluxo `pending_setup` e preparar a camada pós-setup do dashboard da conta.
 • Estado atual do runtime: `app/a/[account]/page.tsx` renderiza “Primeiros passos” somente para `accounts.status=pending_setup`; para conta autenticada fora desse estado, a rota ainda não entrega UX específica do E10.5.
 • Base já implementada no repo: estrutura de taxonomia/templates/guides no BD e pipeline operacional de resolução de nicho no pós-save do onboarding.
-• Dependências: E9.1.2, E10.4.6, E10.5.1, E10.5.2, E10.5.6.
+• Dependências: E9.1, E10.4.6, E10.5.1, E10.5.2, E10.5.6.
 • Nota: `setup_completed_at/account_setup_completed_at` não devem ser usados no runtime, no gating, no fluxo nem nos logs; ficam mantidos no DB apenas por segurança.
 
 10.5.1 Matriz “preparação vs produtivo” + enforcement (SSR + actions)
@@ -695,7 +695,7 @@
 • fechar status/entitlements mínimos por rota/ação
 • declarar o sinal canônico de entitlement/limite efetivo
 • definir mensagens e CTAs de bloqueio coerentes com o E10.5
-• Dependências: E9.1.2, E10.5.
+• Dependências: E9.1, E10.5.
 • Fora de escopo: implementação da UX principal do E10.5 nesta etapa.
 
 10.5.2 Base do BD do E10.5
