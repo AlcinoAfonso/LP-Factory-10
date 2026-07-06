@@ -306,10 +306,8 @@
 9.1 Base universal de entitlement comercial
 
 9.1.1 Objetivo e status
+• Objetivo: definir a base universal de entitlement comercial.
 • Status: Fases 1, 4 e 5 concluídas.
-• Trial, plano, assinatura e liberação manual controlam permissões e limites de uso quando materializados como entitlement comercial válido.
-• Trial, plano, assinatura e liberação manual não definem `accounts.status`.
-• Entitlement comercial é domínio próprio e não extensão de `lib/access`, `public.plans` ou `lib/access/plan.ts`.
 
 9.1.2 Registros do recorte
 - Banco:
@@ -324,9 +322,12 @@
 
 9.1.3 Separação entre lifecycle operacional e condição comercial
 • Status: Concluído (definição)
+• Trial, plano, assinatura e liberação manual controlam permissões e limites de uso quando materializados como entitlement comercial válido.
+• Trial, plano, assinatura e liberação manual não definem `accounts.status`.
 • `accounts.status` representa lifecycle operacional da conta/setup.
 • `account_users.status` representa vínculo operacional do usuário com a conta.
 • Billing, trial, plano, assinatura e entitlement comercial representam condição comercial separada.
+• Entitlement comercial é domínio próprio e não extensão de `lib/access`, `public.plans` ou `lib/access/plan.ts`.
 
 9.1.4 Origem comercial e confirmação
 • Status: Fase 1 concluída em 28/06/2026.
@@ -377,9 +378,8 @@
 9.2 Liberação manual administrativa mínima
 
 9.2.1 Objetivo e status
-• Status: E9.7 concluída em 04/07/2026.
 • Objetivo: permitir concessão, atualização e cancelamento manual mínimo de entitlement por `platform_admin`.
-• Liberação manual administrativa mínima é origem comercial independente de provedor de pagamento e de trial operacional.
+• Status: E9.7 concluída em 04/07/2026.
 
 9.2.2 Registros do recorte
 - Banco:
@@ -393,6 +393,7 @@
   - Aplicados:
 
 9.2.3 Contrato operacional mínimo
+• Liberação manual administrativa mínima é origem comercial independente de provedor de pagamento e de trial operacional.
 • Ator autorizado: `platform_admin`, incluindo `super_admin` pelo guard existente `requirePlatformAdmin`.
 • Superfície administrativa: `app/admin/(protected)/contas/[accountId]/page.tsx`.
 • Path canônico de mutação: `app/admin/(protected)/contas/[accountId]/actions.ts`.
@@ -408,9 +409,8 @@
 9.3 Trial
 
 9.3.1 Objetivo e status
+• Objetivo: definir trial como origem futura de entitlement comercial.
 • Status: previsto / não implementado operacionalmente no recorte consolidado atual.
-• Trial deve controlar permissões e limites de uso quando materializado como entitlement comercial válido.
-• Trial não define `accounts.status`.
 
 9.3.2 Registros do recorte
 - Banco:
@@ -424,6 +424,8 @@
   - Aplicados:
 
 9.3.3 Trial como origem futura de entitlement
+• Trial deve controlar permissões e limites de uso quando materializado como entitlement comercial válido.
+• Trial não define `accounts.status`.
 • Trial permanece como origem futura possível de entitlement comercial.
 • Trial deve usar a cadeia universal de entitlement local efetivo antes de liberar criação produtiva.
 • Trial não deve ser confundido com liberação manual administrativa mínima.
@@ -439,10 +441,8 @@
 9.4 Stripe
 
 9.4.1 Objetivo e status
+• Objetivo: documentar o recorte mínimo de Stripe Checkout e webhook.
 • Status: Checkout mínimo concluído na Fase 6; webhook mínimo concluído na Fase 7.2.
-• Provedor inicial: Stripe.
-• Ambiente inicial: teste.
-• Stripe é mecanismo de checkout/confirmação/persistência, não origem comercial autônoma no gate.
 
 9.4.2 Registros do recorte
 - Banco:
@@ -457,6 +457,9 @@
 
 9.4.3 Checkout mínimo
 • Status: Fase 6 concluída em 30/06/2026.
+• Provedor inicial: Stripe.
+• Ambiente inicial: teste.
+• Stripe é mecanismo de checkout/confirmação/persistência, não origem comercial autônoma no gate.
 • Modo de Checkout: `subscription`.
 • Boundary criado: `lib/billing-checkout/`.
 • App cria Checkout Session server-side.
@@ -488,8 +491,8 @@
 9.5 Mercado Pago
 
 9.5.1 Objetivo e status
+• Objetivo: registrar Mercado Pago como provedor futuro possível.
 • Status: previsto / não implementado.
-• Mercado Pago está previsto apenas como hipótese futura; nenhuma implementação está consolidada no E9 atual.
 
 9.5.2 Registros do recorte
 - Banco:
@@ -503,6 +506,7 @@
   - Aplicados:
 
 9.5.3 Critérios para abertura futura
+• Mercado Pago está previsto apenas como hipótese futura; nenhuma implementação está consolidada no E9 atual.
 • Abrir somente por recorte futuro aprovado, seguindo o contrato universal do 9.1.
 
 9.5.4 Fora do escopo atual
@@ -511,8 +515,8 @@
 9.6 Asaas
 
 9.6.1 Objetivo e status
+• Objetivo: registrar Asaas como provedor futuro possível.
 • Status: previsto / não implementado.
-• Asaas está previsto apenas como hipótese futura; nenhuma implementação está consolidada no E9 atual.
 
 9.6.2 Registros do recorte
 - Banco:
@@ -526,6 +530,7 @@
   - Aplicados:
 
 9.6.3 Critérios para abertura futura
+• Asaas está previsto apenas como hipótese futura; nenhuma implementação está consolidada no E9 atual.
 • Abrir somente por recorte futuro aprovado, seguindo o contrato universal do 9.1.
 
 9.6.4 Fora do escopo atual
