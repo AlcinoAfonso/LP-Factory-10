@@ -1100,95 +1100,166 @@ Repositório — Ajustados
 • Admin pode convidar e revogar
 
 12. E12 — Admin Dashboard
+- Objetivo: Consolidar o Admin Dashboard como seção administrativa protegida, separada do Account Dashboard, com navegação própria e leitura operacional read-only.
+- Status: Em desenvolvimento.
 
-12.1 Status
-• Em desenvolvimento
+12.1 Contrato administrativo base
 
-12.2 Objetivo
-• Consolidar o Admin Dashboard como seção administrativa protegida, separada do Account Dashboard, com navegação própria e leitura operacional read-only.
+12.1.1 Objetivo e status
+- Objetivo: Definir o contrato administrativo base da E12, incluindo escopo geral, áreas atuais, limites e pendências gerais do Admin Dashboard.
+- Status: Em desenvolvimento.
 
-12.3 Escopo atual
-• `/admin` é uma página pública de entrada do Admin Dashboard.
-• Subrotas internas permanecem protegidas por gate SSR administrativo em `app/admin/(protected)/layout.tsx`.
-• `/admin/contas` continua sendo o destino pós-login do admin.
-• Header e menu próprios do Admin, sem `AccountSwitcher` e sem dependência de conta ativa.
-• Shell operacional com sidebar, navegação administrativa e responsividade básica.
-• Leitura read-only real para contas, resoluções de nicho e taxonomia.
-• Sem mutações administrativas, billing, migrations, SQL ou alterações de RLS nesta fase.
+12.1.2 Registros do recorte
+- Banco:
+  - Criados: N/A.
+  - Ajustados: N/A.
+- Repositório:
+  - Criados: N/A.
+  - Ajustados: N/A.
+  - Excluídos: N/A.
+- Updates:
+  - Aplicados: N/A.
 
-12.3.1 Entrada pública do Admin Dashboard
-• Status: Concluído e validado em testes humanos (22/06/2026).
-• `/admin` agora abre uma página pública de entrada do Admin Dashboard, com apresentação simples e botão de acesso.
-• O botão de entrada aponta para `/auth/login?next=%2Fadmin%2Fcontas`.
-• As subrotas internas continuam protegidas pelo gate administrativo deslocado para `app/admin/(protected)/layout.tsx`.
-• `/admin/contas` permanece como destino pós-login do admin.
+12.1.3 Escopo atual
+- Status: Consolidado como contrato vigente da E12.
+- Conteúdo:
+  - `/admin` é uma página pública de entrada do Admin Dashboard.
+  - Subrotas internas permanecem protegidas por gate SSR administrativo em `app/admin/(protected)/layout.tsx`.
+  - `/admin/contas` continua sendo o destino pós-login do admin.
+  - Header e menu próprios do Admin, sem `AccountSwitcher` e sem dependência de conta ativa.
+  - Shell operacional com sidebar, navegação administrativa e responsividade básica.
+  - Leitura read-only real para contas, resoluções de nicho e taxonomia.
+  - Sem billing, migrations, SQL ou alterações de RLS nesta fase; mutações administrativas gerais permanecem fora do escopo atual, exceto as mutações mínimas aprovadas para a E10.7 em `/admin/templates`.
 
-12.3.2 Leitor read-only de documentação do repositório no Admin Dashboard
-• Status: Concluído e validado em testes humanos (22/06/2026).
-• `/admin/documentacao` é uma área protegida pelo gate administrativo existente.
-• A página lista uma whitelist fixa de documentos de `docs/` e permite leitura read-only do conteúdo.
-• A leitura usa filesystem server-side do repositório, com inclusão explícita dos arquivos permitidos no tracing da rota.
-• UI final: filtro superior, dropdown alfabético, conteúdo abaixo, sem lista intermediária e responsiva em desktop/mobile.
-• Markdown é exibido como texto bruto; renderer Markdown fica como oportunidade futura por exigir dependência não instalada.
-• Não usa Supabase, migrations, GitHub API em runtime, edição, salvamento, publicação ou mutações.
+12.1.4 Áreas atuais
+- Status: Áreas administrativas atuais e previstas do contrato base.
+- Conteúdo:
+  - Contas.
+  - Resoluções de nicho.
+  - Taxonomia.
+  - Templates.
+  - Documentação.
+  - Auditoria.
 
-12.4 Áreas atuais
-• Contas
-• Resoluções de nicho
-• Taxonomia
-• Templates
-• Documentação
-• Auditoria
+12.1.5 Pendências e limites gerais
+- Status: Pendências mantidas para recortes futuros ou para a operação mínima já aprovada na E10.7.
+- Conteúdo:
+  - Templates e Auditoria permanecem como áreas previstas.
+  - Mutações administrativas gerais permanecem fora do escopo atual, exceto as mutações mínimas aprovadas para a E10.7 em `/admin/templates`, descritas em 12.3.
+  - Billing e operações de suspensão/reativação dependem de recorte futuro.
+  - Não há editor visual, LP Builder, curadoria de composição de nicho, LP teste ou liberação de nicho para clientes neste ajuste da E12.
 
-12.5 Artefatos principais
+12.2 Base implementada do Admin Dashboard
 
-Criados:
-• `app/admin/(protected)/documentacao/page.tsx`
-• `app/admin/(protected)/contas/page.tsx`
-• `app/admin/(protected)/contas/[accountId]/page.tsx`
-• `app/admin/(protected)/resolucoes-de-nicho/page.tsx`
-• `app/admin/(protected)/resolucoes-de-nicho/[accountId]/page.tsx`
-• `app/admin/(protected)/taxonomia/page.tsx`
-• `app/admin/(protected)/taxonomia/[taxonId]/page.tsx`
-• `app/admin/(protected)/layout.tsx`
-• `components/admin/AdminPageHeader.tsx`
-• `components/admin/AdminPlaceholderPage.tsx`
-• `components/admin/AdminSidebar.tsx`
-• `components/admin/AdminStatusBadge.tsx`
-• `components/admin/adminNavigation.ts`
-• `lib/admin/adminFormat.ts`
-• `lib/admin/adapters/adminAccountsAdapter.ts`
-• `lib/admin/adapters/adminNicheResolutionsAdapter.ts`
-• `lib/admin/adapters/adminReadOnlyAdapter.ts`
-• `lib/admin/adapters/adminReadOnlyHelpers.ts`
-• `lib/admin/adapters/adminReadOnlyTypes.ts`
-• `lib/admin/adapters/adminTaxonomyAdapter.ts`
-• `lib/admin/docsCatalog.ts`
-• `lib/admin/readRepoDoc.ts`
+12.2.1 Objetivo e status
+- Objetivo: Consolidar o que já foi implementado e validado na base do Admin Dashboard, incluindo entrada pública, leitor read-only de documentação, shell administrativo e leitura operacional read-only.
+- Status: Concluído e validado nos recortes descritos abaixo.
 
-Ajustados:
-• `app/admin/layout.tsx`
-• `app/admin/page.tsx`
-• `components/admin/AdminHeader.tsx`
-• `components/admin/AdminUserMenu.tsx`
-• `components/admin/adminNavigation.ts`
-• `next.config.js`
+12.2.2 Registros do recorte
+- Banco:
+  - Criados: N/A.
+  - Ajustados: N/A.
+- Repositório:
+  - Criados:
+    - `app/admin/(protected)/documentacao/page.tsx`
+    - `app/admin/(protected)/contas/page.tsx`
+    - `app/admin/(protected)/contas/[accountId]/page.tsx`
+    - `app/admin/(protected)/resolucoes-de-nicho/page.tsx`
+    - `app/admin/(protected)/resolucoes-de-nicho/[accountId]/page.tsx`
+    - `app/admin/(protected)/taxonomia/page.tsx`
+    - `app/admin/(protected)/taxonomia/[taxonId]/page.tsx`
+    - `app/admin/(protected)/layout.tsx`
+    - `components/admin/AdminPageHeader.tsx`
+    - `components/admin/AdminPlaceholderPage.tsx`
+    - `components/admin/AdminSidebar.tsx`
+    - `components/admin/AdminStatusBadge.tsx`
+    - `components/admin/adminNavigation.ts`
+    - `lib/admin/adminFormat.ts`
+    - `lib/admin/adapters/adminAccountsAdapter.ts`
+    - `lib/admin/adapters/adminNicheResolutionsAdapter.ts`
+    - `lib/admin/adapters/adminReadOnlyAdapter.ts`
+    - `lib/admin/adapters/adminReadOnlyHelpers.ts`
+    - `lib/admin/adapters/adminReadOnlyTypes.ts`
+    - `lib/admin/adapters/adminTaxonomyAdapter.ts`
+    - `lib/admin/docsCatalog.ts`
+    - `lib/admin/readRepoDoc.ts`
+  - Ajustados:
+    - `app/admin/layout.tsx`
+    - `app/admin/page.tsx`
+    - `components/admin/AdminHeader.tsx`
+    - `components/admin/AdminUserMenu.tsx`
+    - `components/admin/adminNavigation.ts`
+    - `next.config.js`
+  - Excluídos: N/A.
+- Updates:
+  - Aplicados: N/A.
 
-12.6 Pendências
-• Templates e Auditoria permanecem como áreas previstas.
-• Mutações administrativas gerais permanecem fora do escopo atual, exceto as mutações mínimas aprovadas para a E10.7 em `/admin/templates`, descritas em 12.8.
-• Billing e operações de suspensão/reativação dependem de recorte futuro.
+12.2.3 Entrada pública do Admin Dashboard
+- Status: Concluído e validado em testes humanos (22/06/2026).
+- Conteúdo:
+  - `/admin` agora abre uma página pública de entrada do Admin Dashboard, com apresentação simples e botão de acesso.
+  - O botão de entrada aponta para `/auth/login?next=%2Fadmin%2Fcontas`.
+  - As subrotas internas continuam protegidas pelo gate administrativo deslocado para `app/admin/(protected)/layout.tsx`.
+  - `/admin/contas` permanece como destino pós-login do admin.
 
-12.7 Geração administrativa de página comercial por taxon
-• Status: Reintroduzido em recorte mínimo pela E10.7 em 19/06/2026.
-• A operação administrativa não será um editor visual nem LP Builder.
-• O recorte autorizado limita-se a gerar draft, regenerar draft, visualizar, publicar e arquivar `published` anterior, conforme 12.8.
+12.2.4 Leitor read-only de documentação
+- Status: Concluído e validado em testes humanos (22/06/2026).
+- Conteúdo:
+  - `/admin/documentacao` é uma área protegida pelo gate administrativo existente.
+  - A página lista uma whitelist fixa de documentos de `docs/` e permite leitura read-only do conteúdo.
+  - A leitura usa filesystem server-side do repositório, com inclusão explícita dos arquivos permitidos no tracing da rota.
+  - UI final: filtro superior, dropdown alfabético, conteúdo abaixo, sem lista intermediária e responsiva em desktop/mobile.
+  - Markdown é exibido como texto bruto; renderer Markdown fica como oportunidade futura por exigir dependência não instalada.
+  - Não usa Supabase, migrations, GitHub API em runtime, edição, salvamento, publicação ou mutações.
 
-12.8 Superfície inicial da operação administrativa mínima da E10.7
-• `/admin/templates` será a superfície inicial da operação administrativa mínima da E10.7.
-• Operações permitidas: listar taxons elegíveis, mostrar checklist simples, indicar pesquisas presentes ou ausentes, indicar composição disponível, gerar draft, regenerar draft, visualizar draft com `CommercialActivationRenderer`, publicar draft e arquivar `published` anterior se existir.
-• Limites: sem editor visual, sem múltiplos aprovadores, sem gestão de clientes, sem bloqueio de ativações, sem permissão de criar LPs e sem LP Builder.
-• Esta tela passará a ter mutações administrativas controladas para a E10.7, respeitando permissões administrativas e operação transacional de publicação.
+12.2.5 Shell e leitura operacional read-only
+- Status: Implementado como base operacional read-only da E12.
+- Conteúdo:
+  - Shell operacional com sidebar.
+  - Navegação administrativa.
+  - Responsividade básica.
+  - Leitura read-only real para contas, resoluções de nicho e taxonomia.
+
+12.3 Operação administrativa mínima da E10.7
+
+12.3.1 Objetivo e status
+- Objetivo: Isolar a operação administrativa mínima de páginas comerciais por taxon aprovada pela E10.7 dentro da superfície administrativa da E12.
+- Status: Reintroduzido em recorte mínimo pela E10.7 em 19/06/2026.
+
+12.3.2 Registros do recorte
+- Banco:
+  - Criados: N/A.
+  - Ajustados: N/A.
+- Repositório:
+  - Criados: N/A.
+  - Ajustados: N/A.
+  - Excluídos: N/A.
+- Updates:
+  - Aplicados: N/A.
+
+12.3.3 Geração administrativa de página comercial por taxon
+- Status: Reintroduzido em recorte mínimo pela E10.7 em 19/06/2026.
+- Conteúdo:
+  - A operação administrativa não será um editor visual nem LP Builder.
+  - O recorte autorizado limita-se a gerar draft, regenerar draft, visualizar, publicar e arquivar `published` anterior, conforme 12.3.4.
+
+12.3.4 Superfície inicial em `/admin/templates`
+- Status: Superfície inicial prevista para a operação administrativa mínima da E10.7.
+- Conteúdo:
+  - `/admin/templates` será a superfície inicial da operação administrativa mínima da E10.7.
+  - Operações permitidas: listar taxons elegíveis, mostrar checklist simples, indicar pesquisas presentes ou ausentes, indicar composição disponível, gerar draft, regenerar draft, visualizar draft com `CommercialActivationRenderer`, publicar draft e arquivar `published` anterior se existir.
+  - Esta tela passará a ter mutações administrativas controladas para a E10.7, respeitando permissões administrativas e operação transacional de publicação.
+
+12.3.5 Limites da operação administrativa da E10.7
+- Status: Limites mantidos como restrições do recorte mínimo aprovado.
+- Conteúdo:
+  - Sem editor visual.
+  - Sem múltiplos aprovadores.
+  - Sem gestão de clientes.
+  - Sem bloqueio de ativações.
+  - Sem permissão de criar LPs.
+  - Sem LP Builder.
+  - Sem curadoria de composição de nicho, LP teste ou liberação de nicho registrada como implementação da E12.
 
 13. E13 — Partner Dashboard
 
