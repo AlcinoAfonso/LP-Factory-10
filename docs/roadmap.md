@@ -312,9 +312,16 @@
 9.1.2 Registros do recorte
 - Banco:
   - Criados:
+    - `public.account_commercial_entitlements`
+    - `public.v_account_commercial_entitlement_effective`
   - Ajustados:
 - Repositório:
   - Criados:
+    - `supabase/migrations/20260628184945_e9_commercial_entitlements.sql`
+    - `supabase/snippets/e9_phase_3_entitlements_verify.sql`
+    - `lib/commercial-entitlements/contracts.ts`
+    - `lib/commercial-entitlements/adapters/commercialEntitlementAdapter.ts`
+    - `lib/commercial-entitlements/index.ts`
   - Ajustados:
   - Excluídos:
 - Updates:
@@ -352,7 +359,7 @@
 
 9.1.7 View efetiva
 • Leitura efetiva: `public.v_account_commercial_entitlement_effective`.
-• View efetiva validada com elegibilidade comercial positiva no recorte E9.7.
+• View efetiva validada com elegibilidade comercial positiva no recorte 9.2.
 
 9.1.8 Signal server-side
 • Boundary server-side criado: `lib/commercial-entitlements/`.
@@ -379,7 +386,7 @@
 
 9.2.1 Objetivo e status
 • Objetivo: permitir concessão, atualização e cancelamento manual mínimo de entitlement por `platform_admin`.
-• Status: E9.7 concluída em 04/07/2026.
+• Status: concluída em 04/07/2026.
 
 9.2.2 Registros do recorte
 - Banco:
@@ -387,10 +394,15 @@
   - Ajustados:
 - Repositório:
   - Criados:
+    - `lib/admin/adapters/adminCommercialEntitlementsAdapter.ts`
+    - `app/admin/(protected)/contas/[accountId]/actions.ts`
   - Ajustados:
+    - `app/admin/(protected)/contas/[accountId]/page.tsx`
   - Excluídos:
 - Updates:
   - Aplicados:
+    - `supa#40`
+    - `prod#19`
 
 9.2.3 Contrato operacional mínimo
 • Liberação manual administrativa mínima é origem comercial independente de provedor de pagamento e de trial operacional.
@@ -447,13 +459,30 @@
 9.4.2 Registros do recorte
 - Banco:
   - Criados:
+    - `public.stripe_webhook_events`
   - Ajustados:
 - Repositório:
   - Criados:
+    - `supabase/migrations/20260701202632_e9_stripe_webhook_events.sql`
+    - `supabase/snippets/e9_phase_7_2_stripe_webhook_verify.sql`
+    - `lib/billing-checkout/contracts.ts`
+    - `lib/billing-checkout/adapters/stripePriceMap.ts`
+    - `lib/billing-checkout/adapters/stripeCheckoutAdapter.ts`
+    - `lib/billing-checkout/adapters/stripeWebhookAdapter.ts`
+    - `lib/billing-checkout/index.ts`
+    - `app/a/[account]/_components/commercial-page/checkout-actions.ts`
+    - `app/api/stripe/webhook/route.ts`
   - Ajustados:
+    - `app/a/[account]/page.tsx`
+    - `app/a/[account]/_components/commercial-page/GenericCommercialPage.tsx`
+    - `lib/billing-checkout/index.ts`
   - Excluídos:
 - Updates:
   - Aplicados:
+    - Stripe webhook
+    - Stripe test mode
+    - Supabase/Postgres aplicado na Fase 7.2
+    - Vercel Production aplicado na Fase 7.2
 
 9.4.3 Checkout mínimo
 • Status: Fase 6 concluída em 30/06/2026.
@@ -536,59 +565,6 @@
 9.6.4 Fora do escopo atual
 • Permanece fora do escopo atual.
 
-9.7 Updates avaliados
-
-9.7.1 Supabase
-• `supa#5`, `supa#36`, `supa#40`, `supa#58`.
-• Supabase/Postgres aplicado na Fase 7.2.
-• E9.7: `supa#40` aplicado; `supa#2` avaliado; `supa#56` avaliado.
-
-9.7.2 Stripe / Produto
-• Stripe webhook, Stripe test mode e produto aplicados na Fase 7.2.
-• E9.7: `prod#19` aplicado.
-
-9.7.3 Vercel / GitHub
-• Vercel Production aplicado na Fase 7.2.
-
-9.7.4 Updates rejeitados ou apenas monitorados
-• Sem adoção de Stripe Sync Engine, Vercel Flags, Vercel Agent, AI Cloud, Private Blob, observabilidade nova ou GitHub/Copilot tooling no E9.7.
-
-9.8 Estruturas e artefatos
-
-9.8.1 Banco — criados
-• `public.account_commercial_entitlements`
-• `public.v_account_commercial_entitlement_effective`
-• `public.stripe_webhook_events`
-
-9.8.2 Banco — reaproveitados
-• `public.account_commercial_entitlements`
-• `public.v_account_commercial_entitlement_effective`
-• `public.account_landing_pages`
-
-9.8.3 Repositório — criados
-• `supabase/migrations/20260628184945_e9_commercial_entitlements.sql`
-• `supabase/snippets/e9_phase_3_entitlements_verify.sql`
-• `supabase/migrations/20260701202632_e9_stripe_webhook_events.sql`
-• `supabase/snippets/e9_phase_7_2_stripe_webhook_verify.sql`
-• `lib/commercial-entitlements/contracts.ts`
-• `lib/commercial-entitlements/adapters/commercialEntitlementAdapter.ts`
-• `lib/commercial-entitlements/index.ts`
-• `lib/billing-checkout/contracts.ts`
-• `lib/billing-checkout/adapters/stripePriceMap.ts`
-• `lib/billing-checkout/adapters/stripeCheckoutAdapter.ts`
-• `lib/billing-checkout/adapters/stripeWebhookAdapter.ts`
-• `lib/billing-checkout/index.ts`
-• `app/a/[account]/_components/commercial-page/checkout-actions.ts`
-• `app/api/stripe/webhook/route.ts`
-• `lib/admin/adapters/adminCommercialEntitlementsAdapter.ts`
-• `app/admin/(protected)/contas/[accountId]/actions.ts`
-
-9.8.4 Repositório — ajustados
-• `app/a/[account]/page.tsx`
-• `app/a/[account]/_components/commercial-page/GenericCommercialPage.tsx`
-• `lib/billing-checkout/index.ts`
-• `app/admin/(protected)/contas/[accountId]/page.tsx`
-
 10. E10 — Account Dashboard (UX)
 
 10.1 Status
@@ -634,7 +610,7 @@
 • Status: Concluído (exec) (13/02/2026)
 • Escopo final: entregar o fluxo ponta a ponta de “Primeiros passos” em `/a/[account]` quando `accounts.status=pending_setup`, com formulário inline, validação, persistência do perfil v1, promoção `pending_setup → active` e redirecionamento para o pós-setup.
 • Estado atual: onboarding v1 inline em `pending_setup`, com `name` obrigatório, `niche` obrigatório, `preferred_channel` opcional com default `email`, `whatsapp` obrigatório somente quando `preferred_channel=whatsapp` e `site_url` opcional com normalização para URL válida.
-• Dependências: E9.1.1.
+• Dependências: E9.1.2.
 • Nota: `setup_completed_at/account_setup_completed_at` não devem ser usados no runtime, no gating, no fluxo nem nos logs; ficam mantidos no DB apenas por segurança.
 
 10.4.1 Marcador legado de setup (deprecated)
@@ -709,7 +685,7 @@
 • Escopo atual: separar o estado `active` do fluxo `pending_setup` e preparar a camada pós-setup do dashboard da conta.
 • Estado atual do runtime: `app/a/[account]/page.tsx` renderiza “Primeiros passos” somente para `accounts.status=pending_setup`; para conta autenticada fora desse estado, a rota ainda não entrega UX específica do E10.5.
 • Base já implementada no repo: estrutura de taxonomia/templates/guides no BD e pipeline operacional de resolução de nicho no pós-save do onboarding.
-• Dependências: E9.1.1, E10.4.6, E10.5.1, E10.5.2, E10.5.6.
+• Dependências: E9.1.2, E10.4.6, E10.5.1, E10.5.2, E10.5.6.
 • Nota: `setup_completed_at/account_setup_completed_at` não devem ser usados no runtime, no gating, no fluxo nem nos logs; ficam mantidos no DB apenas por segurança.
 
 10.5.1 Matriz “preparação vs produtivo” + enforcement (SSR + actions)
@@ -719,7 +695,7 @@
 • fechar status/entitlements mínimos por rota/ação
 • declarar o sinal canônico de entitlement/limite efetivo
 • definir mensagens e CTAs de bloqueio coerentes com o E10.5
-• Dependências: E9.1.1, E10.5.
+• Dependências: E9.1.2, E10.5.
 • Fora de escopo: implementação da UX principal do E10.5 nesta etapa.
 
 10.5.2 Base do BD do E10.5
