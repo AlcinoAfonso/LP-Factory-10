@@ -300,61 +300,35 @@
 
 9. E9 — Billing, trial e entitlements
 
-9.1 Visão geral, objetivo e status
+- Objetivo: Separar condição comercial da conta do lifecycle operacional da conta; definir elegibilidade comercial para criação de LPs por entitlement local efetivo; manter provedores de pagamento como mecanismos de confirmação/persistência, não como prova direta de liberação no LP Builder.
+- Status: Em execução faseada — base universal, Stripe mínimo, webhook mínimo, gate produtivo mínimo e liberação manual administrativa mínima concluídos; trial, Mercado Pago, Asaas e Billing Engine completo permanecem previstos/não implementados.
 
-9.1.1 Status geral
-• Em execução faseada — Fases 5, 7.2 e E9.7 concluídas.
-• Schema mínimo de entitlement comercial versionado.
-• Consumo server-side mínimo da elegibilidade comercial disponível.
-• Gate produtivo mínimo validado no ponto real entregue pela E19.
-• Stripe Checkout em teste disponível no app.
-• Webhook Stripe mínimo em produção validado para `invoice.paid`.
-• Liberação manual administrativa mínima implementada via Admin.
-• Sem Billing Engine completo implementado nesta fase.
+9.1 Base universal de entitlement comercial
 
-9.1.2 Objetivo
-• Separar condição comercial da conta do lifecycle operacional da conta.
-• Definir elegibilidade comercial para criação de LPs como sinal derivado de conta operacionalmente permitida, membership ativo e entitlement comercial válido.
-• Garantir que a criação produtiva mínima de LP consuma o entitlement comercial antes da persistência.
-• Permitir concessão, atualização e cancelamento manual mínimo de entitlement por `platform_admin`.
-• Manter Stripe, checkout e webhook como mecanismos de confirmação/persistência, não como prova direta de liberação no LP Builder.
-
-9.1.3 Escopo atual
-• Base universal de entitlement comercial.
-• Stripe Checkout mínimo em teste.
-• Webhook Stripe mínimo para confirmação/persistência local.
-• Liberação manual administrativa mínima como origem comercial independente de provedor.
-• Gate produtivo mínimo do LP Builder consumindo signal server-side.
-
-9.1.4 Pendências vigentes
-• N/A para o recorte consolidado atual do E9.
-
-9.1.5 Fora do escopo
-• Billing Engine completo.
-• Admin comercial completo.
-• Trial operacional.
-• Automação de liberação manual.
-• Novos providers, rotas, schema/migrations, jobs, automações, alterações no LP Builder e processamento completo de cancelamento/falha de pagamento.
-
-9.1.6 Observações
-• Este E9 registra o contrato macro consolidado de billing, trial e entitlements sem substituir `docs/base-tecnica.md` para runtime nem `docs/schema.md` para contrato de banco.
-• Provedores de checkout e webhooks são mecanismos de confirmação/persistência; a liberação produtiva é decidida pelo entitlement local efetivo.
-
-9.2 Base universal de entitlement comercial
-
-9.2.1 Objetivo, status e contrato
-• Status: Fases 1, 4, 5 e E9.7 concluídas.
+9.1.1 Objetivo e status
+• Status: Fases 1, 4 e 5 concluídas.
 • Trial, plano, assinatura e liberação manual controlam permissões e limites de uso quando materializados como entitlement comercial válido.
 • Trial, plano, assinatura e liberação manual não definem `accounts.status`.
 • Entitlement comercial é domínio próprio e não extensão de `lib/access`, `public.plans` ou `lib/access/plan.ts`.
 
-9.2.2 Separação entre lifecycle operacional e condição comercial
+9.1.2 Registros do recorte
+- Banco:
+  - Criados:
+  - Ajustados:
+- Repositório:
+  - Criados:
+  - Ajustados:
+  - Excluídos:
+- Updates:
+  - Aplicados:
+
+9.1.3 Separação entre lifecycle operacional e condição comercial
 • Status: Concluído (definição)
 • `accounts.status` representa lifecycle operacional da conta/setup.
 • `account_users.status` representa vínculo operacional do usuário com a conta.
 • Billing, trial, plano, assinatura e entitlement comercial representam condição comercial separada.
 
-9.2.3 Origem comercial e confirmação
+9.1.4 Origem comercial e confirmação
 • Status: Fase 1 concluída em 28/06/2026.
 • Origem inicial válida: plano pago confirmado.
 • Origens futuras possíveis: trial.
@@ -362,29 +336,29 @@
 • Provedor de checkout e webhook são mecanismos de confirmação/persistência, não origem comercial.
 • Entitlement comercial válido nasce de origem comercial válida e persistência local idempotente quando aplicável.
 
-9.2.4 Planos comerciais canônicos
+9.1.5 Planos comerciais canônicos
 • Status: Fase 1 concluída em 28/06/2026.
 • Cards comerciais canônicos: Starter, Lite, Pro e Ultra.
 • Chaves esperadas: `starter`, `lite`, `pro` e `ultra`.
 • O legado `PlanId = "free" | "light" | "pro" | "ultra"` deve ser revisado ou aposentado antes do checkout.
 
-9.2.5 Modelo mínimo de entitlement comercial
+9.1.6 Modelo mínimo de entitlement comercial
 • Status: Fase 4 concluída em 28/06/2026.
 • Fonte de verdade: `public.account_commercial_entitlements`.
 • Contrato mínimo criado: `CommercialEntitlementSignal`.
 • Account Dashboard carrega o sinal server-side, mas ainda não aplica bloqueio produtivo.
 • Checkout, webhook, provedor, admin, trial operacional, liberação manual operacional, LP Builder e Billing Engine completo permanecem fora do recorte da Fase 4.
 
-9.2.6 View efetiva
+9.1.7 View efetiva
 • Leitura efetiva: `public.v_account_commercial_entitlement_effective`.
 • View efetiva validada com elegibilidade comercial positiva no recorte E9.7.
 
-9.2.7 Signal server-side
+9.1.8 Signal server-side
 • Boundary server-side criado: `lib/commercial-entitlements/`.
 • Adapter criado: `getCommercialEntitlementSignal({ accountId })`.
 • Signal validado por contrato view → adapter.
 
-9.2.8 Gate do LP Builder
+9.1.9 Gate do LP Builder
 • Status: Fases 1 e 5 concluídas.
 • Regra mínima: usuário autenticado + conta `active` + membership `active` + papel `owner`/`admin` + entitlement comercial válido.
 • Para gate de criação de LP, conta operacionalmente permitida significa `accounts.status = active`.
@@ -396,8 +370,29 @@
 • O LP Builder não consulta Stripe diretamente, não usa redirect de checkout como liberação e não usa apenas `accounts.status` como prova comercial.
 • A validação operacional direta da action é N/A neste recorte, pois não há superfície aprovada para disparo sem criar rota ou UI artificial.
 
-9.2.9 Liberação manual administrativa mínima
+9.1.10 Fail-closed, limites e ressalvas
+• Fallback fail-closed: `accountId` vazio, erro, exceção ou ausência de linha retornam não elegível.
+• Sem entitlement comercial válido, a criação produtiva mínima de LP permanece bloqueada.
+
+9.2 Liberação manual administrativa mínima
+
+9.2.1 Objetivo e status
 • Status: E9.7 concluída em 04/07/2026.
+• Objetivo: permitir concessão, atualização e cancelamento manual mínimo de entitlement por `platform_admin`.
+• Liberação manual administrativa mínima é origem comercial independente de provedor de pagamento e de trial operacional.
+
+9.2.2 Registros do recorte
+- Banco:
+  - Criados:
+  - Ajustados:
+- Repositório:
+  - Criados:
+  - Ajustados:
+  - Excluídos:
+- Updates:
+  - Aplicados:
+
+9.2.3 Contrato operacional mínimo
 • Ator autorizado: `platform_admin`, incluindo `super_admin` pelo guard existente `requirePlatformAdmin`.
 • Superfície administrativa: `app/admin/(protected)/contas/[accountId]/page.tsx`.
 • Path canônico de mutação: `app/admin/(protected)/contas/[accountId]/actions.ts`.
@@ -410,39 +405,57 @@
 • Entitlement manual `ativo` existente é atualizado, sem duplicidade intencional.
 • Criação real de draft pelo LP Builder não foi executada porque não há superfície operacional navegável aprovada para disparar a Server Action sem implementar rota ou UI nova.
 
-9.2.10 Fail-closed, limites e ressalvas
-• Fallback fail-closed: `accountId` vazio, erro, exceção ou ausência de linha retornam não elegível.
-• Sem entitlement comercial válido, a criação produtiva mínima de LP permanece bloqueada.
-
 9.3 Trial
 
-9.3.1 Status, objetivo e contrato futuro
+9.3.1 Objetivo e status
 • Status: previsto / não implementado operacionalmente no recorte consolidado atual.
 • Trial deve controlar permissões e limites de uso quando materializado como entitlement comercial válido.
 • Trial não define `accounts.status`.
 
-9.3.2 Trial como origem futura de entitlement
+9.3.2 Registros do recorte
+- Banco:
+  - Criados:
+  - Ajustados:
+- Repositório:
+  - Criados:
+  - Ajustados:
+  - Excluídos:
+- Updates:
+  - Aplicados:
+
+9.3.3 Trial como origem futura de entitlement
 • Trial permanece como origem futura possível de entitlement comercial.
 • Trial deve usar a cadeia universal de entitlement local efetivo antes de liberar criação produtiva.
 • Trial não deve ser confundido com liberação manual administrativa mínima.
 
-9.3.3 Vigência, expiração e limites a definir
+9.3.4 Vigência, expiração e limites a definir
 • Vigência, expiração, limites e efeitos comerciais do trial ainda precisam ser definidos antes de implementação.
 
-9.3.4 Pendências para implementação operacional
+9.3.5 Pendências para implementação operacional
 • Definir contrato operacional do trial.
 • Definir origem, vigência, limites, expiração e auditoria do trial.
 • Implementar trial apenas por recorte futuro aprovado, sem inferir implementação a partir da liberação manual.
 
 9.4 Stripe
 
-9.4.1 Objetivo, status e contrato
+9.4.1 Objetivo e status
 • Status: Checkout mínimo concluído na Fase 6; webhook mínimo concluído na Fase 7.2.
 • Provedor inicial: Stripe.
 • Ambiente inicial: teste.
 • Stripe é mecanismo de checkout/confirmação/persistência, não origem comercial autônoma no gate.
 
-9.4.2 Checkout mínimo
+9.4.2 Registros do recorte
+- Banco:
+  - Criados:
+  - Ajustados:
+- Repositório:
+  - Criados:
+  - Ajustados:
+  - Excluídos:
+- Updates:
+  - Aplicados:
+
+9.4.3 Checkout mínimo
 • Status: Fase 6 concluída em 30/06/2026.
 • Modo de Checkout: `subscription`.
 • Boundary criado: `lib/billing-checkout/`.
@@ -451,47 +464,71 @@
 • `light` não entra no contrato novo.
 • `PlanId` legado não é contrato de negócio.
 
-9.4.3 Webhook mínimo
+9.4.4 Webhook mínimo
 • Status: Fase 7.2 concluída em 02/07/2026.
 • Endpoint produtivo: `POST /api/stripe/webhook`.
 • Persistência local validada em `public.account_commercial_entitlements`.
 • Payload bruto, secret, cartão e PII sensível não são persistidos.
 
-9.4.4 Eventos aceitos, auxiliares e ignorados
+9.4.5 Eventos aceitos, auxiliares e ignorados
 • Evento que ativa/renova entitlement: `invoice.paid`.
 • `checkout.session.completed` é evento auxiliar/ignorado e não libera entitlement.
 • `customer.subscription.deleted` e `invoice.payment_failed` ficam registrados como controlados/ignorados neste recorte.
 
-9.4.5 Idempotência e persistência
+9.4.6 Idempotência e persistência
 • Idempotência operacional: `stripe_webhook_events.event_id`.
 • Retry validado para evento `failed` e para `processing` antigo com `retry_reason = stale_processing`.
 • Webhook, assinatura do webhook, idempotência e persistência em `account_commercial_entitlements` foram tratados na Fase 7.
 
-9.4.6 Limites: Stripe não substitui entitlement local
+9.4.7 Limites: Stripe não substitui entitlement local
 • Stripe não substitui o entitlement local.
 • Redirect de sucesso não confirma pagamento nem libera entitlement.
 • Redirect, checkout e webhook não liberam o LP Builder sem entitlement local efetivo.
 
 9.5 Mercado Pago
 
-9.5.1 Status: previsto / não implementado
+9.5.1 Objetivo e status
+• Status: previsto / não implementado.
 • Mercado Pago está previsto apenas como hipótese futura; nenhuma implementação está consolidada no E9 atual.
 
-9.5.2 Critérios para abertura futura
-• Abrir somente por recorte futuro aprovado, seguindo o contrato universal do 9.2.
+9.5.2 Registros do recorte
+- Banco:
+  - Criados:
+  - Ajustados:
+- Repositório:
+  - Criados:
+  - Ajustados:
+  - Excluídos:
+- Updates:
+  - Aplicados:
 
-9.5.3 Fora do escopo atual
+9.5.3 Critérios para abertura futura
+• Abrir somente por recorte futuro aprovado, seguindo o contrato universal do 9.1.
+
+9.5.4 Fora do escopo atual
 • Permanece fora do escopo atual.
 
 9.6 Asaas
 
-9.6.1 Status: previsto / não implementado
+9.6.1 Objetivo e status
+• Status: previsto / não implementado.
 • Asaas está previsto apenas como hipótese futura; nenhuma implementação está consolidada no E9 atual.
 
-9.6.2 Critérios para abertura futura
-• Abrir somente por recorte futuro aprovado, seguindo o contrato universal do 9.2.
+9.6.2 Registros do recorte
+- Banco:
+  - Criados:
+  - Ajustados:
+- Repositório:
+  - Criados:
+  - Ajustados:
+  - Excluídos:
+- Updates:
+  - Aplicados:
 
-9.6.3 Fora do escopo atual
+9.6.3 Critérios para abertura futura
+• Abrir somente por recorte futuro aprovado, seguindo o contrato universal do 9.1.
+
+9.6.4 Fora do escopo atual
 • Permanece fora do escopo atual.
 
 9.7 Updates avaliados
@@ -592,7 +629,7 @@
 • Status: Concluído (exec) (13/02/2026)
 • Escopo final: entregar o fluxo ponta a ponta de “Primeiros passos” em `/a/[account]` quando `accounts.status=pending_setup`, com formulário inline, validação, persistência do perfil v1, promoção `pending_setup → active` e redirecionamento para o pós-setup.
 • Estado atual: onboarding v1 inline em `pending_setup`, com `name` obrigatório, `niche` obrigatório, `preferred_channel` opcional com default `email`, `whatsapp` obrigatório somente quando `preferred_channel=whatsapp` e `site_url` opcional com normalização para URL válida.
-• Dependências: E9.2.1.
+• Dependências: E9.1.1.
 • Nota: `setup_completed_at/account_setup_completed_at` não devem ser usados no runtime, no gating, no fluxo nem nos logs; ficam mantidos no DB apenas por segurança.
 
 10.4.1 Marcador legado de setup (deprecated)
@@ -667,7 +704,7 @@
 • Escopo atual: separar o estado `active` do fluxo `pending_setup` e preparar a camada pós-setup do dashboard da conta.
 • Estado atual do runtime: `app/a/[account]/page.tsx` renderiza “Primeiros passos” somente para `accounts.status=pending_setup`; para conta autenticada fora desse estado, a rota ainda não entrega UX específica do E10.5.
 • Base já implementada no repo: estrutura de taxonomia/templates/guides no BD e pipeline operacional de resolução de nicho no pós-save do onboarding.
-• Dependências: E9.2.1, E10.4.6, E10.5.1, E10.5.2, E10.5.6.
+• Dependências: E9.1.1, E10.4.6, E10.5.1, E10.5.2, E10.5.6.
 • Nota: `setup_completed_at/account_setup_completed_at` não devem ser usados no runtime, no gating, no fluxo nem nos logs; ficam mantidos no DB apenas por segurança.
 
 10.5.1 Matriz “preparação vs produtivo” + enforcement (SSR + actions)
@@ -677,7 +714,7 @@
 • fechar status/entitlements mínimos por rota/ação
 • declarar o sinal canônico de entitlement/limite efetivo
 • definir mensagens e CTAs de bloqueio coerentes com o E10.5
-• Dependências: E9.2.1, E10.5.
+• Dependências: E9.1.1, E10.5.
 • Fora de escopo: implementação da UX principal do E10.5 nesta etapa.
 
 10.5.2 Base do BD do E10.5
