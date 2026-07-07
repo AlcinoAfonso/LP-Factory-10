@@ -1,0 +1,363 @@
+06/07/2026 — Plano-base E18.4 — Base de composição `landing_page`
+Fontes: chat, `README.md`, `AGENTS.md`, `docs/prompt-estrategista.md`, `docs/template-roadmap.md`, `docs/template-briefing-codex.md`, `docs/prompt-executor.md`, `docs/roadmap.md`, `docs/base-tecnica.md`, `docs/schema.md`, `docs/lousa-debate-landing-pages.md`, `docs/supa-up.md`, `docs/vercel-up.md`, `docs/github-up.md`, `docs/prod-up.md`, avaliações dos especialistas
+
+Status: plano-base v2 consolidado após avaliação dos especialistas.
+Path: `docs/lousa-plano-base-e18-4.md`.
+Recorte previsto do roadmap: `18.4 — Base de composição landing_page`.
+
+1. Estado e decisões fixas
+
+1.1. Estado do caso
+
+* O projeto decidiu separar três planos-base relacionados para landing pages reais de clientes.
+* Este documento assume apenas o Plano-base 1: base de composição `landing_page`.
+* A ligação principal é E18 — Base transversal de templates, módulos, composições e artefatos.
+* E12 e E19 são consumidores futuros deste recorte, não escopo de implementação deste plano.
+* O arquivo foi criado antes da conclusão do plano-base v1 completo para registrar decisões do debate sem perder contexto.
+
+1.2. Decisões já definidas no debate
+
+* A composição de `landing_page` não deve repetir a rigidez de `commercial_activation`.
+* Páginas comerciais podem permanecer determinísticas no MVP.
+* Landing pages reais de clientes precisam de composição flexível por nicho.
+* Template e composition devem permanecer separados.
+* Não criar um template por nicho como regra do MVP.
+* O template-base define a estrutura técnica permitida da família/canal.
+* A composition define a montagem concreta por nicho/contexto.
+* Módulos se relacionam operacionalmente com compositions por meio de `content_template_composition_items`.
+* No schema atual, módulos/seções são registrados em `content_templates` com `template_scope = 'section'`.
+* Variantes descrevem forma estrutural ou funcional do módulo, não nichos.
+* A parametrização técnica crítica deve começar no repositório, não em editor livre no Admin.
+* A transversalidade dos módulos é decisão conceitual aprovada no debate.
+* Módulos devem ser tratados como catálogo transversal controlado.
+* Um módulo pode nascer motivado por um canal inicial, mas não deve ficar preso definitivamente a esse canal.
+* O uso produtivo de um módulo em cada canal depende de compatibilidade explícita de contrato, schema, registry, renderer e validação.
+* `template_family = shared/transversal` é hipótese de solução técnica, não decisão fechada.
+* O Admin de curadoria pertence ao Plano-base 2, não a este recorte.
+* LP teste e liberação de nicho pertencem ao Plano-base 3, não a este recorte.
+
+1.3. Decisão em aberto sobre banco de dados
+
+* O debate ainda não fechou se haverá ou não mudança de schema.
+* A decisão não deve partir da premissa de evitar migration a qualquer custo.
+* Se o debate ou a investigação técnica mostrar necessidade real de melhorar o schema agora, o plano deve prever essa mudança.
+* Se a estrutura atual for suficiente, o plano deve registrar a decisão de manter o schema e endurecer as regras por validação executável no repositório.
+* O `18.4.3` deve avaliar se o catálogo transversal controlado exige hardening do schema, nova família, camada de compatibilidade ou outro ajuste de banco.
+* O `18.4.3` também deve avaliar se a transversalidade pode ser garantida inicialmente por contrato, registry e validação executável no repositório.
+* `template_family = shared/transversal` deve ser tratado apenas como hipótese entre alternativas, não como decisão obrigatória.
+* Não deixar dívida técnica conhecida para o futuro apenas para acelerar a etapa atual.
+* Não criar nova tabela, constraint, RPC, trigger ou policy sem necessidade demonstrada no debate e na investigação técnica.
+
+1.4. Estrutura de roadmap prevista
+
+* `18.4.1 Objetivo e status` deve existir no roadmap por padrão.
+* `18.4.2 Registros do recorte` deve existir no roadmap por padrão quando houver implementação material.
+* As seções implementáveis ou decisórias devem começar em `18.4.3`.
+* Previsão inicial sujeita a debate:
+  * `18.4.3 Contrato transversal de módulos e avaliação de hardening do schema`.
+  * `18.4.4 Catálogo mínimo transversal para primeiro uso em landing_page`.
+  * `18.4.5 Contratos técnicos, registry, schemas e renderer por canal`.
+  * `18.4.6 Resolver, validação de composição e limites de config_json`.
+
+1.5. Direção de catálogo transversal controlado
+
+* O objetivo de E18.4 não é criar módulos descartáveis ou exclusivos de `landing_page`.
+* O recorte E18.4 usa `landing_page` como primeiro caso de desenho dos módulos, mas os módulos devem nascer como catálogo transversal controlado.
+* O catálogo mínimo deve ser desenhado como base reaproveitável para canais futuros e para eventual evolução de `commercial_activation`.
+* O primeiro uso formal neste plano continua sendo `landing_page`.
+* O reuso por outro canal exige compatibilidade explícita de contrato, schema, registry, renderer e validação.
+* Um módulo pode ter núcleo conceitual transversal e ainda assim exigir adaptação por família/canal.
+* A implementação deve evitar duplicar futuramente, para `commercial_activation`, o mesmo trabalho estrutural feito neste recorte.
+* A decisão sobre criar camada compartilhada, catálogo transversal explícito, camada de compatibilidade no banco ou apenas componentes/helpers reutilizáveis permanece aberta para debate técnico.
+
+1.6. Consolidação das avaliações dos especialistas
+
+* Analista:
+  * aprovado como plano-base v1 para avaliação dos demais especialistas;
+  * a ressalva sobre a expressão “família `landing_page`” em `2.2` foi considerada aceitável, porque o restante do documento deixa claro que o catálogo é transversal.
+* Gestor Estrutural:
+  * aprovado com condicionantes operacionais;
+  * as condicionantes não bloqueiam o plano documental;
+  * o ponto sobre atualização do roadmap fica fora deste plano, pois o roadmap será tratado após a implementação;
+  * não liberar execução material de `18.4.4`, `18.4.5` ou `18.4.6` antes da decisão técnica de `18.4.3`.
+* Gestor de Updates:
+  * aprovado com ajuste documental;
+  * não há update que obrigue nova infra, banco, job, agente, automação ou runtime neste recorte;
+  * as decisões de updates aplicáveis foram incorporadas em `2.9`.
+* Decisões aceitas:
+  * manter `template_family = shared/transversal` apenas como hipótese técnica;
+  * manter decisão de schema aberta até a investigação de `18.4.3`;
+  * reforçar que `18.4.3` é fase decisória/investigativa antes das fases seguintes;
+  * incorporar uso limitado de updates como apoio, sem ampliar escopo.
+* Decisões rejeitadas:
+  * não ajustar `2.2` apenas por linguagem, pois não há contradição material;
+  * não tratar atualização do roadmap dentro deste plano;
+  * não incorporar lista longa de updates preliminares ao plano-base;
+  * não liberar implementação de catálogo, registry, renderer, resolver ou schema antes da fase `18.4.3`.
+* Decisões pendentes:
+  * decidir, em `18.4.3`, se o schema atual sustenta o contrato transversal ou exige hardening;
+  * definir paths técnicos canônicos para registry, schemas, renderer, resolver e validações;
+  * definir catálogo mínimo apenas após a decisão técnica de `18.4.3`;
+  * definir critérios finais de compatibilidade entre módulo, variante, canal, schema, renderer e composition.
+
+2. Contrato do caso
+
+2.1. Problema
+
+* A família `landing_page` ainda não deve ser considerada resolvida.
+* O risco é repetir, para LPs reais de clientes, a rigidez de página comercial:
+  * seções fixas;
+  * ordem fixa;
+  * variantes fixas;
+  * `config_json = {}` sem uso real;
+  * IA apenas preenchendo copy dentro de estrutura rígida.
+* Esse modelo serve para `commercial_activation`, mas não serve como regra para landing pages reais de clientes.
+* Outro risco é criar módulos bons para `landing_page`, mas tão específicos que gerem retrabalho para evoluir `commercial_activation` ou outros canais.
+
+2.2. Resultado esperado
+
+* Preparar a fundação técnica e estrutural da família `landing_page`.
+* Definir template-base inicial `landing_page`.
+* Definir catálogo inicial pequeno e transversal controlado de módulos/seções para primeiro uso em `landing_page`.
+* Definir variantes mínimas por módulo.
+* Definir parametrizações técnicas críticas no repositório.
+* Definir registry fechado de variantes.
+* Definir schemas/Zod mínimos por variante e por canal quando necessário.
+* Definir resolver/validador de composição `landing_page`.
+* Validar `content_template_composition_items` para `landing_page`.
+* Definir o contrato de catálogo transversal controlado de módulos.
+* Avaliar se a representação técnica da transversalidade exige mudança de schema ou se pode ser inicialmente garantida no repositório.
+* Definir se o schema atual será mantido ou se precisa ser endurecido por migration própria.
+* Definir uso inicial de `config_json` como vazio ou override controlado, sem editor livre.
+* Definir se a transversalidade será resolvida por camada compartilhada, por camada de compatibilidade no banco, por helpers/componentes reutilizáveis ou por contratos por família com adaptação controlada.
+* Preparar a base para que o Plano-base 2 consiga sugerir, validar e persistir composição aprovada por nicho.
+
+2.3. Usuários envolvidos
+
+* Usuários diretos:
+  * sistema;
+  * Admin futuro da curadoria;
+  * Executor;
+  * especialistas que avaliaram o plano-base.
+* Usuário indireto:
+  * cliente final, ainda sem interação neste plano.
+
+2.4. Roadmap afetado
+
+* Seção principal:
+  * E18 — Base transversal de templates, módulos, composições e artefatos.
+* Recorte previsto:
+  * `18.4 — Base de composição landing_page`.
+* Relações secundárias:
+  * E12 — consumidor futuro para curadoria no Admin;
+  * E19 — consumidor futuro para LP teste e liberação de nicho;
+  * E10.7 — referência comparativa e possível consumidor futuro de módulos melhorados, sem ser governada automaticamente por `landing_page`.
+
+2.5. Fluxo operacional consolidado
+
+* Gatilho:
+  * humano aprova iniciar o recorte `18.4 — Base de composição landing_page`;
+  * o recorte parte da decisão conceitual de catálogo transversal controlado de módulos.
+* Entrada:
+  * documentos obrigatórios do projeto;
+  * schema atual de `content_templates`, `content_template_compositions` e `content_template_composition_items`;
+  * lousa de debate de landing pages;
+  * aprendizado técnico de `commercial_activation`;
+  * decisão conceitual de que módulos são catálogo transversal controlado;
+  * definição de que `landing_page` é o primeiro consumidor formal neste recorte;
+  * definição de que `template_family = shared/transversal` é hipótese técnica, não decisão fechada.
+* Processamento:
+  * definir o contrato de catálogo transversal controlado dos módulos;
+  * avaliar como cada canal habilita uso produtivo por contrato, schema, registry, renderer e validação;
+  * avaliar se o schema atual sustenta esse contrato ou se precisa de hardening;
+  * decidir se a transversalidade será garantida por schema, registry, validação no repositório ou combinação dessas opções;
+  * definir template-base `landing_page`;
+  * definir catálogo mínimo transversal para primeiro uso em `landing_page`;
+  * diferenciar módulo transversal, variante específica por canal e renderer específico por canal;
+  * definir variantes mínimas;
+  * criar ou ajustar contratos técnicos;
+  * criar registry fechado;
+  * criar schemas/Zod por variante e por canal quando necessário;
+  * criar renderer mínimo para uso inicial em `landing_page`;
+  * criar resolver/validador de composição;
+  * definir uso seguro de `config_json`.
+* Validação:
+  * bloquear composição inválida;
+  * bloquear template incompatível;
+  * bloquear módulo sem contrato compatível;
+  * bloquear módulo incompatível;
+  * bloquear variante inexistente;
+  * bloquear variante incompatível com módulo;
+  * bloquear canal sem schema, registry, renderer e validação compatíveis;
+  * bloquear `config_json` fora do permitido;
+  * validar ordem, obrigatoriedade e composição mínima;
+  * validar se a modelagem escolhida preserva potencial de reuso transversal sem liberar uso indevido;
+  * garantir que `config_json` seja override controlado, não editor livre;
+  * executar checks aplicáveis do repositório.
+* Persistência:
+  * registrar apenas a base mínima necessária;
+  * persistir registros-base somente se aprovados no plano;
+  * não persistir composição aprovada por nicho neste plano, salvo composição técnica mínima exigida pela base e explicitamente aprovada;
+  * não alterar `commercial_activation` neste recorte.
+* Consumo:
+  * Plano-base 2 consumirá a base para curadoria no Admin;
+  * Plano-base 3 consumirá composição aprovada para LP teste;
+  * `commercial_activation` poderá consumir aprendizados, núcleo visual ou contratos reaproveitáveis apenas após decisão própria e fora deste recorte.
+* Fallback:
+  * composição inválida deve ser bloqueada;
+  * módulo ausente deve virar lacuna objetiva;
+  * variante ausente deve virar lacuna objetiva;
+  * ausência de renderer, schema, registry ou validação deve impedir uso produtivo do módulo no canal;
+  * se o schema atual não sustentar a regra transversal, parar e decidir hardening antes de avançar;
+  * se a transversalidade virar engine ampla multicanal, parar;
+  * se o plano invadir E12 ou E19, parar;
+  * nenhuma composição inválida deve ser marcada como pronta.
+
+2.6. Limites atuais do recorte
+
+* Não criar Admin Dashboard de curadoria.
+* Não criar tela de aprovação humana.
+* Não gerar LP teste.
+* Não liberar nicho para clientes.
+* Não criar LP Builder visual.
+* Não publicar LP pública.
+* Não colocar IA em runtime público.
+* Não permitir criação automática de módulos pela IA.
+* Não permitir geração automática de composição sem revisão humana.
+* Não criar marketplace de templates.
+* Não criar múltiplos templates ativos por família sem caso real.
+* Não criar editor livre de schema, renderer, Zod ou parametrização crítica.
+* Não implementar consumo por `commercial_activation` neste plano, salvo decisão explícita posterior.
+* Não criar automações, jobs, agentes ou rotinas recorrentes sem necessidade comprovada.
+
+2.7. Riscos principais
+
+* Criar complexidade prematura de engine de módulos.
+* Criar catálogo extenso sem evidência real.
+* Reaproveitar `commercial_activation` de forma indevida para `landing_page`.
+* Criar módulos `landing_page` específicos demais e gerar retrabalho para `commercial_activation`.
+* Confundir transversalidade com liberação automática de módulo para qualquer canal.
+* Assumir prematuramente que a solução correta é `template_family = shared/transversal`.
+* Permitir uso produtivo de módulo em canal sem renderer, schema, registry e validação compatíveis.
+* Colocar no banco uma parametrização que ainda exige contrato, renderer e validação no código.
+* Deixar o banco aceitar composição estruturalmente inválida pelo fluxo oficial.
+* Usar `config_json` como editor livre e quebrar renderização.
+* Adiar correção de schema necessária e gerar retrabalho futuro.
+* Fazer migration sem necessidade real e inflar o MVP.
+
+2.8. Automação/agentes
+
+* Automação: não.
+* Justificativa:
+  * este plano prepara contrato, base técnica e validação;
+  * não há necessidade comprovada de job, agente, automação recorrente ou workflow autônomo.
+
+2.9. Decisões de updates aplicáveis
+
+* Updates aceitos como apoio limitado:
+  * `supa#40` pode apoiar validações read-only de schema e composição quando aplicável, sem substituir migration versionada nem criar mutation SQL avulsa;
+  * `supa#57` pode apoiar visualmente a decisão de schema em `18.4.3`, sem substituir `docs/schema.md`;
+  * `vercel#4` orienta compatibilidade com Next.js 16/Turbopack, sem customização de bundler sem blocker real;
+  * `prod#17` orienta baseline leve de acessibilidade em contratos e renderers, sem auditoria completa WCAG neste recorte.
+* Updates rejeitados neste recorte:
+  * IA, agentes, automações, workflows autônomos e criação automática de módulos;
+  * A/B test, analytics, tracking, remarketing e flags de experimento;
+  * storage, arquivos privados, Blob, nova infra ou multi-service;
+  * filas, CRM, webhooks, cron e PRs de bot;
+  * busca semântica, matching sofisticado, `pg_trgm`, `pgvector` e Algolia;
+  * SSO, billing, Stripe, entitlements e onboarding enterprise.
+
+3. Fases e próxima ação
+
+3.1. Estado desta seção
+
+* Esta seção está consolidada como base v2 após avaliação dos especialistas.
+* As fases abaixo representam a previsão operacional do recorte.
+* Ajustes ainda podem ocorrer por decisão humana explícita ou aprendizado real da fase `18.4.3`.
+
+3.2. Previsão inicial de fases ou seções implementáveis
+
+* `18.4.3 Contrato transversal de módulos e avaliação de hardening do schema`:
+  * definir módulos como catálogo transversal controlado;
+  * registrar que módulos podem nascer motivados por um canal inicial, mas não devem ficar presos definitivamente a esse canal;
+  * diferenciar módulo conceitual, variante, schema, renderer, registry, composition e artefato final;
+  * definir que o uso produtivo em cada canal depende de compatibilidade explícita;
+  * comparar o contrato desejado com o schema real de `content_templates`, `content_template_compositions` e `content_template_composition_items`;
+  * avaliar se essa regra exige hardening do schema ou se pode ser garantida inicialmente por validação executável no repositório;
+  * se houver alteração de banco, prever migration versionada, RLS, policies, GRANTs quando aplicável e atualização de `docs/schema.md`;
+  * se não houver alteração de banco, registrar que a garantia inicial ficará no repositório por contratos, registry, schemas e validação executável;
+  * tratar `template_family = shared/transversal` apenas como hipótese de solução, não como decisão fechada;
+  * usar `supa#40` e `supa#57` apenas como apoio read-only/manual quando aplicável;
+  * Automação: não.
+* `18.4.4 Catálogo mínimo transversal para primeiro uso em landing_page`:
+  * definir módulos/seções iniciais mínimos para o MVP;
+  * usar `landing_page` como primeiro caso de uso formal;
+  * não prender os módulos definitivamente à família `landing_page`;
+  * classificar cada módulo por função conceitual;
+  * indicar variantes mínimas necessárias para o primeiro uso;
+  * separar o que é módulo transversal do que é variante específica de canal;
+  * não criar catálogo extenso, módulo universal automático ou registro-base antes da decisão de `18.4.3`;
+  * não reaproveitar `commercial_activation` como compatível automaticamente com `landing_page`;
+  * Automação: não.
+* `18.4.5 Contratos técnicos, registry, schemas e renderer por canal`:
+  * definir contratos técnicos dos módulos do catálogo transversal;
+  * definir registry de compatibilidade entre módulo, variante e canal;
+  * definir schemas/Zod por variante e por canal quando necessário;
+  * definir renderer mínimo para uso inicial em `landing_page`;
+  * não exigir renderer para todos os canais neste recorte;
+  * impedir uso produtivo de módulo em canal sem renderer/schema/registry compatível;
+  * manter compatibilidade com Next.js 16/Turbopack, sem workaround de bundler sem blocker real;
+  * usar baseline leve de acessibilidade para contratos e renderers, sem auditoria completa;
+  * não criar editor livre de contratos;
+  * Automação: não.
+* `18.4.6 Resolver, validação de composição e limites de config_json`:
+  * validar composição do primeiro uso `landing_page`;
+  * validar `content_template_composition_items`, módulos, variantes, ordem, obrigatoriedade e `config_json`;
+  * validar compatibilidade explícita entre canal, módulo, variante, schema e renderer;
+  * bloquear uso produtivo de módulo sem contrato completo para o canal;
+  * garantir que `config_json` seja override controlado, não editor livre;
+  * definir casos de validação para composição válida e inválida;
+  * usar validações read-only de banco somente quando aplicável e sem substituir migration versionada;
+  * Automação: não.
+
+3.3. Próxima ação
+
+* Próxima fase recomendada:
+  * `18.4.3 Contrato transversal de módulos e avaliação de hardening do schema`.
+* Travas antes de avançar:
+  * não iniciar `18.4.4`, `18.4.5` ou `18.4.6` antes da conclusão técnica de `18.4.3`;
+  * não criar catálogo, renderer, resolver, schema ou registros-base antes da decisão técnica de `18.4.3`;
+  * não transformar catálogo transversal controlado em engine multicanal ampla.
+
+4. Escopo negativo e critérios de parada
+
+4.1. Escopo negativo consolidado
+
+* Admin Dashboard de curadoria.
+* Tela de aprovação humana.
+* LP teste.
+* Liberação de nicho para clientes.
+* LP Builder visual.
+* Publicação pública de LP.
+* IA em runtime público.
+* Criação automática de módulos pela IA.
+* Geração automática de composição sem revisão humana.
+* Nova arquitetura multicanal ampla.
+* Editor livre de schema, renderer ou Zod.
+* Marketplace de templates.
+* Múltiplos templates ativos por família sem caso real.
+* Consumo automático por `commercial_activation` sem contrato próprio.
+* Testes A/B.
+* Analytics.
+* Domínio customizado.
+* Automações, jobs, agentes ou rotinas recorrentes sem necessidade comprovada.
+
+4.2. Critérios de parada
+
+* Parar se a investigação mostrar necessidade de mudança de schema não prevista no debate.
+* Parar se a estrutura atual permitir composição inválida sem ponto seguro de bloqueio.
+* Parar se um módulo proposto não tiver schema, registry e renderer compatíveis.
+* Parar se `config_json` começar a funcionar como editor livre.
+* Parar se a busca por transversalidade virar engine multicanal ampla sem necessidade real.
+* Parar se o plano começar a invadir E12 ou E19.
+* Parar se faltar fonte real para decidir banco, rota, renderer, schema ou contrato técnico.
