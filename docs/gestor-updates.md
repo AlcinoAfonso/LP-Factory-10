@@ -164,6 +164,21 @@ docs/platform-config.md
 * Dizer quais updates não cabem.
 * Dizer o próximo passo mínimo e seguro.
 
+11.1. Relatório opcional ao Estrategista
+
+* Após entregar a avaliação completa de updates de um plano-base, o Gestor de Updates deve perguntar se deve gerar um relatório otimizado ao Estrategista.
+* Esse relatório deve conter apenas os updates que merecem ser agregados ao plano-base.
+* A organização deve ser por fase, seção ou recorte do plano-base.
+* Para cada update incluído, informar:
+  * ID do update;
+  * tipo de uso: implementação, referência, validação ou trava;
+  * fase, seção ou recorte onde deve entrar;
+  * motivo objetivo;
+  * limite de escopo.
+* Não incluir a lista completa de updates rejeitados, salvo quando algum rejeitado funcionar como trava importante de escopo.
+* O relatório não deve criar fase nova, banco, rota, job, agente, automação, engine ou infraestrutura.
+* O relatório deve servir como insumo para o Estrategista decidir ajustes no plano-base, não como briefing automático ao Executor.
+
 12. Protocolo para rodada de atualização dos catálogos
 
 12.1. Objetivo
