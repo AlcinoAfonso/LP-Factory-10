@@ -323,10 +323,12 @@ Recorte previsto do roadmap: `18.4 — Base de composição landing_page`.
 3.3. Próxima ação
 
 * Fase `18.4.3` concluída como decisão técnica investigativa.
+* Fase `18.4.4` concluída como definição documental do catálogo mínimo transversal para primeiro uso em `landing_page`.
 * Próxima fase liberada:
-  * `18.4.4 Catálogo mínimo transversal para primeiro uso em landing_page`.
+  * `18.4.5 Contratos técnicos, registry, schemas e renderer por canal`.
 * Travas mantidas:
-  * não criar renderer, resolver, schema técnico ou registros-base antes das fases correspondentes;
+  * não criar resolver, registros-base de banco ou LP teste antes das fases correspondentes;
+  * não criar migration, alterar `docs/schema.md`, RLS, policies ou GRANTs sem necessidade demonstrada;
   * não transformar catálogo transversal controlado em engine multicanal ampla;
   * não reabrir hardening sem necessidade demonstrada.
 
@@ -361,7 +363,48 @@ Recorte previsto do roadmap: `18.4 — Base de composição landing_page`.
 * Critério para reabrir hardening:
   * reavaliar migration apenas se uma fase futura exigir que o próprio banco bloqueie compatibilidade módulo-canal-variante, múltiplas famílias compartilhando o mesmo módulo físico, writer administrativo direto, ou uso produtivo fora do fluxo server-side validado;
   * nesse caso, a decisão deverá prever migration versionada, revisão de RLS/policies/GRANTs e atualização de `docs/schema.md` antes de avançar consumo produtivo.
-* Próxima fase liberada: `18.4.4 Catálogo mínimo transversal para primeiro uso em landing_page`, respeitando que ainda não há catálogo, renderer, resolver, registros-base ou LP teste criados por `18.4.3`.
+* Fase liberada por `18.4.3`: `18.4.4 Catálogo mínimo transversal para primeiro uso em landing_page`, respeitando que ainda não havia catálogo, renderer, resolver, registros-base ou LP teste criados por `18.4.3`.
+
+3.5. Resultado técnico de `18.4.4`
+
+* Status da fase: concluída como definição documental do catálogo mínimo transversal para primeiro uso em `landing_page`.
+* Decisão: o primeiro uso de `landing_page` terá catálogo mínimo próprio, conceitualmente transversal e tecnicamente controlado no repositório.
+* Referência comparativa: `commercial_activation` possui oito módulos ativos (`hero`, `benefits`, `services`, `plans`, `differentials`, `how_it_works`, `faq`, `final_cta`), mas nenhum deles fica automaticamente compatível com `landing_page`.
+* Catálogo mínimo proposto para primeiro uso em `landing_page`:
+  * `hero`: função conceitual de abertura, promessa principal e ação primária; incluído porque toda LP precisa apresentar rapidamente oferta, público e próximo passo.
+  * `benefits`: função conceitual de benefícios/resultados; incluído para traduzir valor em motivos concretos de continuidade.
+  * `offer`: função conceitual de oferta, serviço, produto ou pacote principal; incluído para explicitar o que será entregue sem depender de tabela de planos.
+  * `social_proof`: função conceitual de evidência, confiança e prova; incluído porque LP real de cliente precisa reduzir risco percebido antes da conversão.
+  * `how_it_works`: função conceitual de processo, passos ou funcionamento; incluído como módulo opcional/reordenável para nichos em que clareza operacional aumenta conversão.
+  * `faq`: função conceitual de objeções frequentes; incluído como módulo opcional para tratar dúvidas recorrentes sem criar conteúdo livre.
+  * `final_cta`: função conceitual de fechamento e chamada final; incluído para garantir saída de conversão ao fim da composição.
+* Variantes mínimas conceituais, sem contrato técnico ainda:
+  * `hero.lead_capture`: abertura com CTA/formulário conceitual para captura ou contato.
+  * `benefits.cards`: lista curta de benefícios em cards.
+  * `offer.summary`: resumo da oferta principal, sem pricing obrigatório.
+  * `social_proof.simple`: evidência textual curta, sem integração externa.
+  * `how_it_works.steps`: passos simples do processo.
+  * `faq.accordion`: perguntas e respostas.
+  * `final_cta.simple`: chamada final direta.
+* Separação de responsabilidades:
+  * módulo transversal é a função conceitual reutilizável, como `hero`, `benefits` ou `faq`;
+  * variante específica de canal é a forma estrutural escolhida para `landing_page`, como `hero.lead_capture` ou `offer.summary`;
+  * adaptação futura por renderer/schema pertence a `18.4.5` e `18.4.6`, quando cada variante deverá ganhar compatibilidade explícita de schema, registry, renderer e validação.
+* Módulos deixados fora do primeiro uso:
+  * `plans`: fora porque pricing/planos pode confundir LP de captura, serviço ou produto sem oferta tabelada; poderá voltar quando houver contrato específico.
+  * `services`: fora como módulo separado porque o primeiro uso concentra a oferta em `offer`; pode voltar se uma composição precisar listar múltiplos serviços.
+  * `differentials`: fora porque tende a sobrepor `benefits` e `social_proof` no MVP; pode voltar como módulo próprio após evidência real.
+  * módulos de galeria, equipe, mapa/localização, comparativo, depoimentos ricos, mídia avançada, analytics, A/B ou integrações externas: fora por ampliarem o catálogo ou exigirem renderer/schema/infra fora deste recorte.
+* Não realizado nesta fase:
+  * não foi criado renderer;
+  * não foi criado resolver;
+  * não foi criado registry técnico;
+  * não foram criados schemas/Zod;
+  * não foram criados registros-base de banco;
+  * não foi criada migration;
+  * `docs/schema.md`, RLS, policies e GRANTs não foram alterados;
+  * não foi criada LP teste, Admin, LP Builder, automação, job, agente ou workflow.
+* Próxima fase liberada: `18.4.5 Contratos técnicos, registry, schemas e renderer por canal`, limitada a transformar este catálogo conceitual em contratos técnicos executáveis sem assumir compatibilidade automática com `commercial_activation`.
 
 4. Escopo negativo e critérios de parada
 
