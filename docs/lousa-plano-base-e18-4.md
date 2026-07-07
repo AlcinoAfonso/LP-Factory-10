@@ -48,7 +48,7 @@ Recorte previsto do roadmap: `18.4 — Base de composição landing_page`.
 * `18.4.2 Registros do recorte` deve existir no roadmap por padrão quando houver implementação material.
 * As seções implementáveis ou decisórias devem começar em `18.4.3`.
 * Previsão inicial sujeita a debate:
-  * `18.4.3 Avaliação de hardening de banco e limite de schema`.
+  * `18.4.3 Contrato transversal de módulos e avaliação de hardening do schema`.
   * `18.4.4 Catálogo mínimo landing_page`.
   * `18.4.5 Contratos técnicos, registry, schemas e renderer`.
   * `18.4.6 Resolver, validação de composição e limites de config_json`.
@@ -125,7 +125,8 @@ Recorte previsto do roadmap: `18.4 — Base de composição landing_page`.
   * lousa de debate de landing pages;
   * aprendizado técnico de `commercial_activation`.
 * Processamento:
-  * avaliar necessidade ou não de hardening de banco;
+  * definir o contrato transversal dos módulos;
+  * avaliar se o schema atual sustenta esse contrato ou se precisa de hardening;
   * definir template-base `landing_page`;
   * definir catálogo mínimo de módulos;
   * avaliar quais módulos devem ser tratados como núcleo potencialmente transversal;
@@ -206,8 +207,10 @@ Recorte previsto do roadmap: `18.4 — Base de composição landing_page`.
 
 3.2. Previsão inicial de fases ou seções implementáveis
 
-* `18.4.3 Avaliação de hardening de banco e limite de schema`:
-  * decidir se o schema atual é suficiente ou se precisa de migration/RPC/constraint/policy para impedir inconsistência estrutural;
+* `18.4.3 Contrato transversal de módulos e avaliação de hardening do schema`:
+  * definir o que é módulo transversal no LP Factory 10;
+  * diferenciar módulo conceitual, variante, renderer e parametrização;
+  * decidir se o schema atual sustenta esse contrato ou se precisa de migration/RPC/constraint/policy para impedir inconsistência estrutural;
   * Automação: não.
 * `18.4.4 Catálogo mínimo landing_page`:
   * definir template-base e módulos/seções iniciais mínimos para o MVP;
@@ -224,7 +227,8 @@ Recorte previsto do roadmap: `18.4 — Base de composição landing_page`.
 
 3.3. Próxima ação do debate
 
-* Continuar avaliando se `18.4.3` exige mudança real de banco ou apenas validação executável no repositório.
+* Continuar definindo o contrato transversal dos módulos em `18.4.3`.
+* Continuar avaliando se esse contrato exige mudança real de banco ou apenas validação executável no repositório.
 * Continuar avaliando se a transversalidade deve gerar camada compartilhada, helpers/componentes reutilizáveis ou apenas contratos por família.
 * Depois consolidar as fases finais do plano-base v1.
 * Só após fechamento do plano-base v1 completo, preparar handoff Codex conforme `docs/template-briefing-codex.md`.
