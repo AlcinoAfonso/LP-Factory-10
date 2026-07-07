@@ -9,7 +9,8 @@
     "lint": "eslint .",
     "check": "npm run lint && npm run typecheck",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "validate:commercial-activation": "tsx lib/conversion-content/commercial-activation/validation-cases.ts"
+    "validate:commercial-activation": "tsx lib/conversion-content/commercial-activation/validation-cases.ts",
+    "validate:landing-page": "tsx lib/conversion-content/landing-page/validation-cases.ts"
   },
   "dependencies": {
     "@radix-ui/react-dialog": "1.1.7",
