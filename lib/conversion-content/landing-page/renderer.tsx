@@ -123,8 +123,12 @@ function HeroLeadCapture({
 
   return (
     <section
+      id={section.config.anchor_id}
       aria-labelledby={titleId}
-      className="bg-surface-app px-6 py-16 sm:px-10 lg:px-14"
+      className={cn(
+        "bg-surface-app px-6 sm:px-10 lg:px-14",
+        getVerticalSpacingClass(section.config.spacing, "hero"),
+      )}
     >
       <div className="mx-auto grid max-w-6xl gap-10 lg:grid-cols-[1.2fr_0.8fr] lg:items-center">
         <div>
@@ -174,6 +178,7 @@ function BenefitsCards({ section }: SectionComponentProps<"benefits.cards">) {
   return (
     <PageSection
       compositionItemId={section.compositionItemId}
+      config={section.config}
       eyebrow={content.eyebrow}
       title={content.title}
     >
@@ -195,6 +200,7 @@ function OfferSummary({ section }: SectionComponentProps<"offer.summary">) {
   return (
     <PageSection
       compositionItemId={section.compositionItemId}
+      config={section.config}
       eyebrow={content.eyebrow}
       title={content.title}
       muted
@@ -233,6 +239,7 @@ function SocialProofSimple({
   return (
     <PageSection
       compositionItemId={section.compositionItemId}
+      config={section.config}
       eyebrow={content.eyebrow}
       title={content.title}
     >
@@ -256,6 +263,7 @@ function HowItWorksSteps({
   return (
     <PageSection
       compositionItemId={section.compositionItemId}
+      config={section.config}
       eyebrow={content.eyebrow}
       title={content.title}
       muted
@@ -287,6 +295,7 @@ function FaqAccordion({ section }: SectionComponentProps<"faq.accordion">) {
   return (
     <PageSection
       compositionItemId={section.compositionItemId}
+      config={section.config}
       eyebrow={content.eyebrow}
       title={content.title}
     >
@@ -325,8 +334,12 @@ function FinalCtaSimple({
 
   return (
     <section
+      id={section.config.anchor_id}
       aria-labelledby={titleId}
-      className="bg-brand-50 px-6 py-14 text-center sm:px-10 lg:px-14"
+      className={cn(
+        "bg-brand-50 px-6 text-center sm:px-10 lg:px-14",
+        getVerticalSpacingClass(section.config.spacing, "final"),
+      )}
     >
       <h2
         id={titleId}
@@ -346,12 +359,14 @@ function FinalCtaSimple({
 
 function PageSection({
   compositionItemId,
+  config,
   eyebrow,
   title,
   muted,
   children,
 }: {
   compositionItemId: string;
+  config: LandingPageRenderSection["config"];
   eyebrow?: string;
   title: string;
   muted?: boolean;
@@ -361,9 +376,11 @@ function PageSection({
 
   return (
     <section
+      id={config.anchor_id}
       aria-labelledby={titleId}
       className={cn(
-        "px-6 py-12 sm:px-10 lg:px-14",
+        "px-6 sm:px-10 lg:px-14",
+        getVerticalSpacingClass(config.spacing, "section"),
         muted && "border-y border-surface-border bg-surface-app",
       )}
     >
@@ -383,6 +400,35 @@ function PageSection({
       <div className="mt-8">{children}</div>
     </section>
   );
+}
+
+function getVerticalSpacingClass(
+  spacing: LandingPageRenderSection["config"]["spacing"],
+  scale: "hero" | "section" | "final",
+) {
+  const resolvedSpacing = spacing ?? "default";
+
+  if (scale === "hero") {
+    return {
+      compact: "py-12",
+      default: "py-16",
+      spacious: "py-20",
+    }[resolvedSpacing];
+  }
+
+  if (scale === "final") {
+    return {
+      compact: "py-12",
+      default: "py-14",
+      spacious: "py-16",
+    }[resolvedSpacing];
+  }
+
+  return {
+    compact: "py-10",
+    default: "py-12",
+    spacious: "py-16",
+  }[resolvedSpacing];
 }
 
 function InfoBlock({

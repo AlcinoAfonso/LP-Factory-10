@@ -1,3 +1,4 @@
+export * from "./composition-validator";
 export * from "./contracts";
 export * from "./fixture";
 export * from "./registry";

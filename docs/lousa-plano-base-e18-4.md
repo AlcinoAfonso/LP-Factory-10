@@ -325,12 +325,14 @@ Recorte previsto do roadmap: `18.4 — Base de composição landing_page`.
 * Fase `18.4.3` concluída como decisão técnica investigativa.
 * Fase `18.4.4` concluída como definição documental do catálogo mínimo transversal para primeiro uso em `landing_page`.
 * Fase `18.4.5` concluída com contratos técnicos executáveis, registry, schemas/Zod e renderer mínimo de `landing_page` no repositório.
+* Fase `18.4.6` concluída com resolver/validador final de composição `landing_page` e limites técnicos de `config_json`.
 * Próxima fase liberada:
-  * `18.4.6 Resolver, validação de composição e limites de config_json`.
+  * definição estratégica da próxima etapa de consumo, sem criar registros-base, LP teste, Admin ou LP Builder automaticamente.
 * Travas mantidas:
   * não criar registros-base de banco ou LP teste antes das fases correspondentes;
   * não criar migration, alterar `docs/schema.md`, RLS, policies ou GRANTs sem necessidade demonstrada;
   * não transformar catálogo transversal controlado em engine multicanal ampla;
+  * não abrir editor livre de `config_json`;
   * não reabrir hardening sem necessidade demonstrada.
 
 3.4. Resultado técnico de `18.4.3`
@@ -445,6 +447,54 @@ Recorte previsto do roadmap: `18.4 — Base de composição landing_page`.
   * não foram criados registros-base no banco;
   * não foi criada LP teste, Admin, LP Builder, automação, job, agente ou workflow.
 * Próxima fase liberada: `18.4.6 Resolver, validação de composição e limites de config_json`, limitada a resolver e validar composição sem abrir editor livre nem alterar banco sem necessidade demonstrada.
+
+3.7. Resultado técnico de `18.4.6`
+
+* Status da fase: concluída com implementação técnica no repositório.
+* Decisão: o primeiro uso de `landing_page` passa a ter resolver/validador final de composição antes do render model, com falha fechada para composições inválidas.
+* Arquivos técnicos criados:
+  * `lib/conversion-content/landing-page/composition-validator.ts`.
+* Arquivos técnicos ajustados:
+  * `lib/conversion-content/landing-page/render-model.ts`;
+  * `lib/conversion-content/landing-page/renderer.tsx`;
+  * `lib/conversion-content/landing-page/fixture.ts`;
+  * `lib/conversion-content/landing-page/validation-cases.ts`;
+  * `lib/conversion-content/landing-page/index.ts`.
+* Resolver/validador de composição:
+  * valida item duplicado na composição antes de montar o mapa de itens;
+  * valida `sortOrder` inteiro, não negativo, estritamente crescente e sem duplicidade;
+  * valida variante existente no registry fechado de `landing_page`;
+  * valida compatibilidade explícita entre módulo e variante;
+  * normaliza itens resolvidos para o render model somente depois de validar registry e `config_json`;
+  * mantém `commercial_activation` apenas como referência comparativa, sem compatibilidade automática.
+* Limites técnicos de `config_json`:
+  * `config_json` é override controlado por seção;
+  * chaves permitidas nesta fase: `anchor_id` e `spacing`;
+  * `anchor_id` deve seguir padrão seguro de âncora curta: letra minúscula inicial, letras minúsculas, números ou hífen, até 64 caracteres;
+  * `spacing` aceita somente `compact`, `default` ou `spacious`;
+  * objetos com chaves livres como renderer, schema, style, HTML, script ou props arbitrárias são rejeitados;
+  * o renderer mínimo consome apenas esses overrides permitidos para `id` de seção e espaçamento vertical.
+* Casos de validação cobertos por `validate:landing-page`:
+  * composição válida;
+  * item duplicado na composição;
+  * item duplicado no conteúdo;
+  * item desconhecido no conteúdo;
+  * variante inexistente;
+  * incompatibilidade módulo/variante;
+  * ordem inválida;
+  * `config_json` inválido;
+  * item obrigatório ausente;
+  * item opcional ausente;
+  * schema de conteúdo inválido;
+  * canal inválido;
+  * rejeição de variante de `commercial_activation` como compatível automaticamente.
+* Não realizado nesta fase:
+  * não foi criada migration;
+  * `docs/schema.md` não foi alterado;
+  * RLS, policies e GRANTs não foram alterados;
+  * não foram criados registros-base no banco;
+  * não foi criada LP teste, rota pública, Admin, LP Builder, automação, job, agente ou workflow.
+* Próxima etapa: depende de definição estratégica posterior; esta fase não libera, por si só, criação de registros-base, LP teste, Admin ou LP Builder.
 
 4. Escopo negativo e critérios de parada
 
