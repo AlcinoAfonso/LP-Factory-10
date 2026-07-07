@@ -1,7 +1,7 @@
 06/07/2026 — Plano-base E18.4 — Base de composição `landing_page`
 Fontes: chat, `README.md`, `AGENTS.md`, `docs/prompt-estrategista.md`, `docs/template-roadmap.md`, `docs/template-briefing-codex.md`, `docs/prompt-executor.md`, `docs/roadmap.md`, `docs/base-tecnica.md`, `docs/schema.md`, `docs/lousa-debate-landing-pages.md`
 
-Status: rascunho em debate.
+Status: plano-base v1 em consolidação para avaliação dos especialistas.
 Path: `docs/lousa-plano-base-e18-4.md`.
 Recorte previsto do roadmap: `18.4 — Base de composição landing_page`.
 
@@ -226,9 +226,9 @@ Recorte previsto do roadmap: `18.4 — Base de composição landing_page`.
 
 3.1. Estado desta seção
 
-* Esta seção ainda está em debate.
-* As fases finais não estão consolidadas.
-* A previsão abaixo serve apenas para orientar o debate e pode ser ajustada antes do plano-base v1 completo.
+* Esta seção está consolidada como base v1 para avaliação.
+* As fases abaixo representam a previsão operacional do recorte.
+* Ajustes ainda podem ocorrer após avaliação dos especialistas ou decisão humana explícita.
 
 3.2. Previsão inicial de fases ou seções implementáveis
 
@@ -270,7 +270,7 @@ Recorte previsto do roadmap: `18.4 — Base de composição landing_page`.
 * Fechar o texto de `18.4.3` com a tese do catálogo transversal controlado.
 * Avaliar as alternativas técnicas de schema, registry e validação.
 * Só depois avançar para `18.4.4 Catálogo mínimo transversal para primeiro uso em landing_page`.
-* Após consolidar `18.4.3` a `18.4.6`, preparar handoff Codex conforme `docs/template-briefing-codex.md`.
+* Após consolidar `18.4.3` a `18.4.6`, seguir para avaliação única dos especialistas.
 
 4. Escopo negativo e critérios de parada
 
