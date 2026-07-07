@@ -109,6 +109,9 @@ Regra:
 Regra:
 • a execução só começa após o plano-base consolidado v2 estar registrado no arquivo do caso;
 • consolidar somente decisões aceitas, rejeitadas ou pendentes das avaliações;
+• consolidar todos os retornos dos especialistas em uma única análise antes de alterar o plano-base;
+• classificar cada ponto como aceito, rejeitado, pendente ou já coberto pelo plano-base;
+• não aplicar ajustes isolados por especialista, salvo erro crítico ou decisão humana explícita;
 • ajustar o próprio arquivo do plano-base no mesmo PR inicial, mantendo o mesmo path: docs/lousa-plano-base-EXX-YY.md;
 • preservar o template mínimo de 4 seções do plano-base;
 • não gerar handoff Codex para atualizar o plano-base de v1 para v2;
