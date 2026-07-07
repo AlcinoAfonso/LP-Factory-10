@@ -267,11 +267,10 @@ Recorte previsto do roadmap: `18.4 — Base de composição landing_page`.
 
 3.3. Próxima ação do debate
 
-* Com o fluxo operacional consolidado, avançar para fechamento das fases `18.4.3` a `18.4.6` como plano-base v1.
-* Depois avaliar as alternativas técnicas de schema, registry e validação.
-* Só então avançar para `18.4.4 Catálogo mínimo transversal para primeiro uso em landing_page`.
-* Depois consolidar as fases finais do plano-base v1.
-* Só após fechamento do plano-base v1 completo, preparar handoff Codex conforme `docs/template-briefing-codex.md`.
+* Fechar o texto de `18.4.3` com a tese do catálogo transversal controlado.
+* Avaliar as alternativas técnicas de schema, registry e validação.
+* Só depois avançar para `18.4.4 Catálogo mínimo transversal para primeiro uso em landing_page`.
+* Após consolidar `18.4.3` a `18.4.6`, preparar handoff Codex conforme `docs/template-briefing-codex.md`.
 
 4. Escopo negativo e critérios de parada
 
