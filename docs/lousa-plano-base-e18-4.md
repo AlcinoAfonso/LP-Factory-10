@@ -329,6 +329,39 @@ Recorte previsto do roadmap: `18.4 — Base de composição landing_page`.
   * não criar catálogo, renderer, resolver, schema ou registros-base antes da decisão técnica de `18.4.3`;
   * não transformar catálogo transversal controlado em engine multicanal ampla.
 
+3.4. Resultado técnico de `18.4.3`
+
+* Status da fase: concluída como decisão técnica investigativa.
+* Decisão: schema atual suficiente para o início controlado de `landing_page`; não há hardening de schema necessário nesta fase.
+* Migration: não criar migration em `18.4.3`.
+* Atualização de `docs/schema.md`: não aplicável nesta fase, pois não há alteração de banco.
+* RLS, policies e GRANTs: sem alteração nesta fase.
+* Apoio Supabase read-only: inspeção do projeto `lp-factory-10` confirmou que o estado real mantém `content_templates`, `content_template_compositions` e `content_template_composition_items` compatíveis com `docs/schema.md`.
+* Estado real observado:
+  * `content_templates` aceita `template_family IN ('commercial_activation', 'landing_page')`, `template_scope IN ('page', 'section')` e status `draft | active | archived`;
+  * há registros ativos apenas para `commercial_activation`: um template de página e oito módulos de seção;
+  * não há registros `landing_page` em `content_templates` no estado consultado;
+  * `content_template_compositions` versiona composição por `template_id` e `taxon_id`, com no máximo uma composição ativa por par;
+  * `content_template_composition_items` vincula cada composição a módulos em `content_templates`, guarda `variant_key`, `sort_order`, `is_required` e `config_json` objeto;
+  * o banco garante forma mínima, FKs, versionamento, unicidade de ordem, padrão de `variant_key` e `config_json` como objeto;
+  * o banco não garante, sozinho, que o módulo é conceitualmente transversal, que a variante pertence ao módulo, que há renderer/schema para o canal, nem que `config_json` segue contrato específico.
+* Comparação com o contrato desejado:
+  * a hipótese `template_family = shared/transversal` não deve ser adotada agora, porque exigiria fechar uma modelagem ainda explicitamente aberta e ampliaria o recorte além do necessário;
+  * usar `template_family = landing_page` para o primeiro consumidor formal é suficiente para criar registros futuros de página/seção sem alterar o check atual;
+  * a transversalidade deve ser tratada como contrato conceitual e técnico do repositório, não como liberação automática no banco;
+  * `commercial_activation` permanece referência comparativa, mas seus módulos, variantes, schemas e renderer não são compatíveis automaticamente com `landing_page`.
+* Garantia inicial aprovada para as próximas fases:
+  * contratos TypeScript devem diferenciar módulo conceitual, variante, schema, renderer, registry, composition e artefato final;
+  * registry fechado deve mapear compatibilidade entre canal, módulo, variante, schema e renderer;
+  * schemas/Zod devem validar payload por variante e por canal quando necessário;
+  * validação executável deve bloquear módulo sem contrato compatível, variante inexistente, variante incompatível com módulo, item obrigatório ausente, item desconhecido, ordem inválida e `config_json` fora do permitido;
+  * `config_json` deve continuar override controlado, não editor livre;
+  * registros de banco futuros devem ser criados somente depois de `18.4.4`/`18.4.5` definirem catálogo e contratos, e depois de `18.4.6` definir resolver/validador.
+* Critério para reabrir hardening:
+  * reavaliar migration apenas se uma fase futura exigir que o próprio banco bloqueie compatibilidade módulo-canal-variante, múltiplas famílias compartilhando o mesmo módulo físico, writer administrativo direto, ou uso produtivo fora do fluxo server-side validado;
+  * nesse caso, a decisão deverá prever migration versionada, revisão de RLS/policies/GRANTs e atualização de `docs/schema.md` antes de avançar consumo produtivo.
+* Próxima fase liberada: `18.4.4 Catálogo mínimo transversal para primeiro uso em landing_page`, respeitando que ainda não há catálogo, renderer, resolver, registros-base ou LP teste criados por `18.4.3`.
+
 4. Escopo negativo e critérios de parada
 
 4.1. Escopo negativo consolidado
