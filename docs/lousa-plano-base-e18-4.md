@@ -1,7 +1,7 @@
 06/07/2026 — Plano-base E18.4 — Base de composição `landing_page`
-Fontes: chat, `README.md`, `AGENTS.md`, `docs/prompt-estrategista.md`, `docs/template-roadmap.md`, `docs/template-briefing-codex.md`, `docs/prompt-executor.md`, `docs/roadmap.md`, `docs/base-tecnica.md`, `docs/schema.md`, `docs/lousa-debate-landing-pages.md`
+Fontes: chat, `README.md`, `AGENTS.md`, `docs/prompt-estrategista.md`, `docs/template-roadmap.md`, `docs/template-briefing-codex.md`, `docs/prompt-executor.md`, `docs/roadmap.md`, `docs/base-tecnica.md`, `docs/schema.md`, `docs/lousa-debate-landing-pages.md`, `docs/supa-up.md`, `docs/vercel-up.md`, `docs/github-up.md`, `docs/prod-up.md`, avaliações dos especialistas
 
-Status: plano-base v1 em consolidação para avaliação dos especialistas.
+Status: plano-base v2 consolidado após avaliação dos especialistas.
 Path: `docs/lousa-plano-base-e18-4.md`.
 Recorte previsto do roadmap: `18.4 — Base de composição landing_page`.
 
@@ -70,6 +70,36 @@ Recorte previsto do roadmap: `18.4 — Base de composição landing_page`.
 * A implementação deve evitar duplicar futuramente, para `commercial_activation`, o mesmo trabalho estrutural feito neste recorte.
 * A decisão sobre criar camada compartilhada, catálogo transversal explícito, camada de compatibilidade no banco ou apenas componentes/helpers reutilizáveis permanece aberta para debate técnico.
 
+1.6. Consolidação das avaliações dos especialistas
+
+* Analista:
+  * aprovado como plano-base v1 para avaliação dos demais especialistas;
+  * a ressalva sobre a expressão “família `landing_page`” em `2.2` foi considerada aceitável, porque o restante do documento deixa claro que o catálogo é transversal.
+* Gestor Estrutural:
+  * aprovado com condicionantes operacionais;
+  * as condicionantes não bloqueiam o plano documental;
+  * o ponto sobre atualização do roadmap fica fora deste plano, pois o roadmap será tratado após a implementação;
+  * não liberar execução material de `18.4.4`, `18.4.5` ou `18.4.6` antes da decisão técnica de `18.4.3`.
+* Gestor de Updates:
+  * aprovado com ajuste documental;
+  * não há update que obrigue nova infra, banco, job, agente, automação ou runtime neste recorte;
+  * as decisões de updates aplicáveis foram incorporadas em `2.9`.
+* Decisões aceitas:
+  * manter `template_family = shared/transversal` apenas como hipótese técnica;
+  * manter decisão de schema aberta até a investigação de `18.4.3`;
+  * reforçar que `18.4.3` é fase decisória/investigativa antes das fases seguintes;
+  * incorporar uso limitado de updates como apoio, sem ampliar escopo.
+* Decisões rejeitadas:
+  * não ajustar `2.2` apenas por linguagem, pois não há contradição material;
+  * não tratar atualização do roadmap dentro deste plano;
+  * não incorporar lista longa de updates preliminares ao plano-base;
+  * não liberar implementação de catálogo, registry, renderer, resolver ou schema antes da fase `18.4.3`.
+* Decisões pendentes:
+  * decidir, em `18.4.3`, se o schema atual sustenta o contrato transversal ou exige hardening;
+  * definir paths técnicos canônicos para registry, schemas, renderer, resolver e validações;
+  * definir catálogo mínimo apenas após a decisão técnica de `18.4.3`;
+  * definir critérios finais de compatibilidade entre módulo, variante, canal, schema, renderer e composition.
+
 2. Contrato do caso
 
 2.1. Problema
@@ -107,8 +137,8 @@ Recorte previsto do roadmap: `18.4 — Base de composição landing_page`.
 * Usuários diretos:
   * sistema;
   * Admin futuro da curadoria;
-  * Executor/Codex;
-  * especialistas que avaliarão o plano-base.
+  * Executor;
+  * especialistas que avaliaram o plano-base.
 * Usuário indireto:
   * cliente final, ainda sem interação neste plano.
 
@@ -222,13 +252,28 @@ Recorte previsto do roadmap: `18.4 — Base de composição landing_page`.
   * este plano prepara contrato, base técnica e validação;
   * não há necessidade comprovada de job, agente, automação recorrente ou workflow autônomo.
 
+2.9. Decisões de updates aplicáveis
+
+* Updates aceitos como apoio limitado:
+  * `supa#40` pode apoiar validações read-only de schema e composição quando aplicável, sem substituir migration versionada nem criar mutation SQL avulsa;
+  * `supa#57` pode apoiar visualmente a decisão de schema em `18.4.3`, sem substituir `docs/schema.md`;
+  * `vercel#4` orienta compatibilidade com Next.js 16/Turbopack, sem customização de bundler sem blocker real;
+  * `prod#17` orienta baseline leve de acessibilidade em contratos e renderers, sem auditoria completa WCAG neste recorte.
+* Updates rejeitados neste recorte:
+  * IA, agentes, automações, workflows autônomos e criação automática de módulos;
+  * A/B test, analytics, tracking, remarketing e flags de experimento;
+  * storage, arquivos privados, Blob, nova infra ou multi-service;
+  * filas, CRM, webhooks, cron e PRs de bot;
+  * busca semântica, matching sofisticado, `pg_trgm`, `pgvector` e Algolia;
+  * SSO, billing, Stripe, entitlements e onboarding enterprise.
+
 3. Fases e próxima ação
 
 3.1. Estado desta seção
 
-* Esta seção está consolidada como base v1 para avaliação.
+* Esta seção está consolidada como base v2 após avaliação dos especialistas.
 * As fases abaixo representam a previsão operacional do recorte.
-* Ajustes ainda podem ocorrer após avaliação dos especialistas ou decisão humana explícita.
+* Ajustes ainda podem ocorrer por decisão humana explícita ou aprendizado real da fase `18.4.3`.
 
 3.2. Previsão inicial de fases ou seções implementáveis
 
@@ -237,8 +282,12 @@ Recorte previsto do roadmap: `18.4 — Base de composição landing_page`.
   * registrar que módulos podem nascer motivados por um canal inicial, mas não devem ficar presos definitivamente a esse canal;
   * diferenciar módulo conceitual, variante, schema, renderer, registry, composition e artefato final;
   * definir que o uso produtivo em cada canal depende de compatibilidade explícita;
+  * comparar o contrato desejado com o schema real de `content_templates`, `content_template_compositions` e `content_template_composition_items`;
   * avaliar se essa regra exige hardening do schema ou se pode ser garantida inicialmente por validação executável no repositório;
+  * se houver alteração de banco, prever migration versionada, RLS, policies, GRANTs quando aplicável e atualização de `docs/schema.md`;
+  * se não houver alteração de banco, registrar que a garantia inicial ficará no repositório por contratos, registry, schemas e validação executável;
   * tratar `template_family = shared/transversal` apenas como hipótese de solução, não como decisão fechada;
+  * usar `supa#40` e `supa#57` apenas como apoio read-only/manual quando aplicável;
   * Automação: não.
 * `18.4.4 Catálogo mínimo transversal para primeiro uso em landing_page`:
   * definir módulos/seções iniciais mínimos para o MVP;
@@ -247,6 +296,8 @@ Recorte previsto do roadmap: `18.4 — Base de composição landing_page`.
   * classificar cada módulo por função conceitual;
   * indicar variantes mínimas necessárias para o primeiro uso;
   * separar o que é módulo transversal do que é variante específica de canal;
+  * não criar catálogo extenso, módulo universal automático ou registro-base antes da decisão de `18.4.3`;
+  * não reaproveitar `commercial_activation` como compatível automaticamente com `landing_page`;
   * Automação: não.
 * `18.4.5 Contratos técnicos, registry, schemas e renderer por canal`:
   * definir contratos técnicos dos módulos do catálogo transversal;
@@ -255,6 +306,9 @@ Recorte previsto do roadmap: `18.4 — Base de composição landing_page`.
   * definir renderer mínimo para uso inicial em `landing_page`;
   * não exigir renderer para todos os canais neste recorte;
   * impedir uso produtivo de módulo em canal sem renderer/schema/registry compatível;
+  * manter compatibilidade com Next.js 16/Turbopack, sem workaround de bundler sem blocker real;
+  * usar baseline leve de acessibilidade para contratos e renderers, sem auditoria completa;
+  * não criar editor livre de contratos;
   * Automação: não.
 * `18.4.6 Resolver, validação de composição e limites de config_json`:
   * validar composição do primeiro uso `landing_page`;
@@ -263,14 +317,17 @@ Recorte previsto do roadmap: `18.4 — Base de composição landing_page`.
   * bloquear uso produtivo de módulo sem contrato completo para o canal;
   * garantir que `config_json` seja override controlado, não editor livre;
   * definir casos de validação para composição válida e inválida;
+  * usar validações read-only de banco somente quando aplicável e sem substituir migration versionada;
   * Automação: não.
 
-3.3. Próxima ação do debate
+3.3. Próxima ação
 
-* Fechar o texto de `18.4.3` com a tese do catálogo transversal controlado.
-* Avaliar as alternativas técnicas de schema, registry e validação.
-* Só depois avançar para `18.4.4 Catálogo mínimo transversal para primeiro uso em landing_page`.
-* Após consolidar `18.4.3` a `18.4.6`, seguir para avaliação única dos especialistas.
+* Próxima fase recomendada:
+  * `18.4.3 Contrato transversal de módulos e avaliação de hardening do schema`.
+* Travas antes de avançar:
+  * não iniciar `18.4.4`, `18.4.5` ou `18.4.6` antes da conclusão técnica de `18.4.3`;
+  * não criar catálogo, renderer, resolver, schema ou registros-base antes da decisão técnica de `18.4.3`;
+  * não transformar catálogo transversal controlado em engine multicanal ampla.
 
 4. Escopo negativo e critérios de parada
 
