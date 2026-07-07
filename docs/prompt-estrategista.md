@@ -29,8 +29,10 @@ Regra:
 
    Se houver frontend, identificar superfície afetada, estado atual/desejado, critérios visuais, viewports e evidência esperada.
 
-4. Checklist final do plano-base v1
-   Antes de enviar o plano-base aos especialistas, verificar se o arquivo do caso consolidado no debate contém:
+4. PR vivo e checklist final do plano-base v1
+   Se ainda não houver PR vivo para o plano-base, criar branch específica e PR inicial contendo o arquivo do caso no path definido no item 2, sem escrever na main e sem alterar arquivos fora do escopo.
+
+   Depois, antes de enviar o plano-base aos especialistas, verificar se o arquivo do caso consolidado no debate contém:
    • template mínimo de 4 seções, nesta ordem:
      1. Estado e decisões fixas
      2. Contrato do caso
@@ -58,7 +60,8 @@ Regra:
 • fases previstas são hipóteses operacionais e podem ser ajustadas com aprendizado real, sem abrir novo escopo sem decisão explícita;
 • se houver apenas uma fase sem identificador de roadmap aplicável, registrar como Fase única;
 • indicar em cada fase se o Gestor de Automação deve avaliar: Automação: sim | não;
-• não criar handoff Codex para criação ou atualização normal do plano-base;
+• o PR inicial do plano-base é o espaço vivo de debate, ajustes incrementais e consolidação antes da avaliação dos especialistas;
+• não criar handoff Codex separado para criação ou atualização normal do plano-base quando o Estrategista puder produzir o PR vivo diretamente;
 • ajustes do plano-base devem ocorrer no próprio arquivo do caso durante o debate, em PR vivo quando aplicável.
 
 5. Avaliação única do plano-base v1 por especialistas no PR
