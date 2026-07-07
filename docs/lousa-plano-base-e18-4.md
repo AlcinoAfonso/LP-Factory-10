@@ -322,12 +322,13 @@ Recorte previsto do roadmap: `18.4 — Base de composição landing_page`.
 
 3.3. Próxima ação
 
-* Próxima fase recomendada:
-  * `18.4.3 Contrato transversal de módulos e avaliação de hardening do schema`.
-* Travas antes de avançar:
-  * não iniciar `18.4.4`, `18.4.5` ou `18.4.6` antes da conclusão técnica de `18.4.3`;
-  * não criar catálogo, renderer, resolver, schema ou registros-base antes da decisão técnica de `18.4.3`;
-  * não transformar catálogo transversal controlado em engine multicanal ampla.
+* Fase `18.4.3` concluída como decisão técnica investigativa.
+* Próxima fase liberada:
+  * `18.4.4 Catálogo mínimo transversal para primeiro uso em landing_page`.
+* Travas mantidas:
+  * não criar renderer, resolver, schema técnico ou registros-base antes das fases correspondentes;
+  * não transformar catálogo transversal controlado em engine multicanal ampla;
+  * não reabrir hardening sem necessidade demonstrada.
 
 3.4. Resultado técnico de `18.4.3`
 
