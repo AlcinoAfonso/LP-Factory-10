@@ -324,10 +324,11 @@ Recorte previsto do roadmap: `18.4 — Base de composição landing_page`.
 
 * Fase `18.4.3` concluída como decisão técnica investigativa.
 * Fase `18.4.4` concluída como definição documental do catálogo mínimo transversal para primeiro uso em `landing_page`.
+* Fase `18.4.5` concluída com contratos técnicos executáveis, registry, schemas/Zod e renderer mínimo de `landing_page` no repositório.
 * Próxima fase liberada:
-  * `18.4.5 Contratos técnicos, registry, schemas e renderer por canal`.
+  * `18.4.6 Resolver, validação de composição e limites de config_json`.
 * Travas mantidas:
-  * não criar resolver, registros-base de banco ou LP teste antes das fases correspondentes;
+  * não criar registros-base de banco ou LP teste antes das fases correspondentes;
   * não criar migration, alterar `docs/schema.md`, RLS, policies ou GRANTs sem necessidade demonstrada;
   * não transformar catálogo transversal controlado em engine multicanal ampla;
   * não reabrir hardening sem necessidade demonstrada.
@@ -405,6 +406,45 @@ Recorte previsto do roadmap: `18.4 — Base de composição landing_page`.
   * `docs/schema.md`, RLS, policies e GRANTs não foram alterados;
   * não foi criada LP teste, Admin, LP Builder, automação, job, agente ou workflow.
 * Próxima fase liberada: `18.4.5 Contratos técnicos, registry, schemas e renderer por canal`, limitada a transformar este catálogo conceitual em contratos técnicos executáveis sem assumir compatibilidade automática com `commercial_activation`.
+
+3.6. Resultado técnico de `18.4.5`
+
+* Status da fase: concluída com implementação técnica mínima no repositório.
+* Decisão: o catálogo conceitual de `landing_page` passou a ter contrato executável próprio, separado de `commercial_activation`.
+* Arquivos técnicos criados:
+  * `lib/conversion-content/landing-page/contracts.ts`;
+  * `lib/conversion-content/landing-page/schemas.ts`;
+  * `lib/conversion-content/landing-page/registry.ts`;
+  * `lib/conversion-content/landing-page/render-model.ts`;
+  * `lib/conversion-content/landing-page/renderer.tsx`;
+  * `lib/conversion-content/landing-page/fixture.ts`;
+  * `lib/conversion-content/landing-page/validation-cases.ts`;
+  * `lib/conversion-content/landing-page/index.ts`.
+* Arquivos técnicos ajustados:
+  * `lib/conversion-content/index.ts`;
+  * `package.json`.
+* Contrato técnico criado:
+  * canal fechado em `landing_page`;
+  * módulos permitidos: `hero`, `benefits`, `offer`, `social_proof`, `how_it_works`, `faq` e `final_cta`;
+  * variantes permitidas: `hero.lead_capture`, `benefits.cards`, `offer.summary`, `social_proof.simple`, `how_it_works.steps`, `faq.accordion` e `final_cta.simple`;
+  * registry técnico liga canal, módulo, variante, schema Zod e renderer;
+  * `buildLandingPageRenderModel` valida envelope, canal, item duplicado, item desconhecido, item obrigatório ausente, variante inexistente, incompatibilidade módulo/variante e conteúdo por schema;
+  * renderer mínimo usa somente o registry próprio de `landing_page`, com seções semânticas, headings associados por `aria-labelledby`, CTAs como links e estados inválidos fail-closed com retorno nulo.
+* Validação executável criada:
+  * script `validate:landing-page`;
+  * fixture sintética local, sem leitura de Supabase, sem criação de LP real e sem registros de banco.
+* Compatibilidade e limites:
+  * não há compatibilidade automática com `commercial_activation`;
+  * o renderer comercial existente permanece apenas como referência comparativa;
+  * não foi criado resolver final de composição nem integração com banco;
+  * `config_json` permanece sem semântica técnica final nesta fase e deverá ser limitado em `18.4.6`.
+* Não realizado nesta fase:
+  * não foi criada migration;
+  * `docs/schema.md` não foi alterado;
+  * RLS, policies e GRANTs não foram alterados;
+  * não foram criados registros-base no banco;
+  * não foi criada LP teste, Admin, LP Builder, automação, job, agente ou workflow.
+* Próxima fase liberada: `18.4.6 Resolver, validação de composição e limites de config_json`, limitada a resolver e validar composição sem abrir editor livre nem alterar banco sem necessidade demonstrada.
 
 4. Escopo negativo e critérios de parada
 
