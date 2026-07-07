@@ -55,8 +55,8 @@ Recorte previsto do roadmap: `18.4 — Base de composição landing_page`.
 * As seções implementáveis ou decisórias devem começar em `18.4.3`.
 * Previsão inicial sujeita a debate:
   * `18.4.3 Contrato transversal de módulos e avaliação de hardening do schema`.
-  * `18.4.4 Catálogo mínimo landing_page`.
-  * `18.4.5 Contratos técnicos, registry, schemas e renderer`.
+  * `18.4.4 Catálogo mínimo transversal para primeiro uso em landing_page`.
+  * `18.4.5 Contratos técnicos, registry, schemas e renderer por canal`.
   * `18.4.6 Resolver, validação de composição e limites de config_json`.
 
 1.5. Direção de catálogo transversal controlado
@@ -88,11 +88,11 @@ Recorte previsto do roadmap: `18.4 — Base de composição landing_page`.
 
 * Preparar a fundação técnica e estrutural da família `landing_page`.
 * Definir template-base inicial `landing_page`.
-* Definir catálogo inicial pequeno de módulos/seções.
+* Definir catálogo inicial pequeno e transversal controlado de módulos/seções para primeiro uso em `landing_page`.
 * Definir variantes mínimas por módulo.
 * Definir parametrizações técnicas críticas no repositório.
 * Definir registry fechado de variantes.
-* Definir schemas/Zod mínimos por variante.
+* Definir schemas/Zod mínimos por variante e por canal quando necessário.
 * Definir resolver/validador de composição `landing_page`.
 * Validar `content_template_composition_items` para `landing_page`.
 * Definir o contrato de catálogo transversal controlado de módulos.
@@ -137,11 +137,13 @@ Recorte previsto do roadmap: `18.4 — Base de composição landing_page`.
   * avaliar como cada canal habilita uso produtivo por contrato, schema, registry, renderer e validação;
   * avaliar se o schema atual sustenta esse contrato ou se precisa de hardening;
   * definir template-base `landing_page`;
-  * definir catálogo mínimo de módulos;
+  * definir catálogo mínimo transversal para primeiro uso em `landing_page`;
+  * diferenciar módulo transversal, variante específica por canal e renderer específico por canal;
   * definir variantes mínimas;
   * criar ou ajustar contratos técnicos;
   * criar registry fechado;
-  * criar schemas/Zod;
+  * criar schemas/Zod por variante e por canal quando necessário;
+  * criar renderer mínimo para uso inicial em `landing_page`;
   * criar resolver/validador de composição;
   * definir uso seguro de `config_json`.
 * Validação:
@@ -149,6 +151,7 @@ Recorte previsto do roadmap: `18.4 — Base de composição landing_page`.
   * bloquear módulo incompatível;
   * bloquear variante inexistente;
   * bloquear variante incompatível com módulo;
+  * bloquear canal sem schema, registry, renderer e validação compatíveis;
   * bloquear `config_json` fora do permitido;
   * validar ordem, obrigatoriedade e composição mínima;
   * validar se a modelagem escolhida preserva potencial de reuso transversal sem liberar uso indevido;
@@ -225,24 +228,36 @@ Recorte previsto do roadmap: `18.4 — Base de composição landing_page`.
   * avaliar se essa regra exige hardening do schema ou se pode ser garantida inicialmente por validação executável no repositório;
   * tratar `template_family = shared/transversal` apenas como hipótese de solução, não como decisão fechada;
   * Automação: não.
-* `18.4.4 Catálogo mínimo landing_page`:
-  * definir template-base e módulos/seções iniciais mínimos para o MVP;
-  * avaliar potencial transversal dos módulos antes de fechar o catálogo;
+* `18.4.4 Catálogo mínimo transversal para primeiro uso em landing_page`:
+  * definir módulos/seções iniciais mínimos para o MVP;
+  * usar `landing_page` como primeiro caso de uso formal;
+  * não prender os módulos definitivamente à família `landing_page`;
+  * classificar cada módulo por função conceitual;
+  * indicar variantes mínimas necessárias para o primeiro uso;
+  * separar o que é módulo transversal do que é variante específica de canal;
   * Automação: não.
-* `18.4.5 Contratos técnicos, registry, schemas e renderer`:
-  * criar ou ajustar contratos de código, registry fechado, schemas/Zod e renderização mínima;
-  * definir se haverá núcleo compartilhável ou contratos separados por família;
+* `18.4.5 Contratos técnicos, registry, schemas e renderer por canal`:
+  * definir contratos técnicos dos módulos do catálogo transversal;
+  * definir registry de compatibilidade entre módulo, variante e canal;
+  * definir schemas/Zod por variante e por canal quando necessário;
+  * definir renderer mínimo para uso inicial em `landing_page`;
+  * não exigir renderer para todos os canais neste recorte;
+  * impedir uso produtivo de módulo em canal sem renderer/schema/registry compatível;
   * Automação: não.
 * `18.4.6 Resolver, validação de composição e limites de config_json`:
-  * validar composição `landing_page`, composition items, variantes e overrides controlados;
-  * validar compatibilidade de reuso sem liberar uso automático indevido;
+  * validar composição do primeiro uso `landing_page`;
+  * validar `content_template_composition_items`, módulos, variantes, ordem, obrigatoriedade e `config_json`;
+  * validar compatibilidade explícita entre canal, módulo, variante, schema e renderer;
+  * bloquear uso produtivo de módulo sem contrato completo para o canal;
+  * garantir que `config_json` seja override controlado, não editor livre;
+  * definir casos de validação para composição válida e inválida;
   * Automação: não.
 
 3.3. Próxima ação do debate
 
 * Fechar o texto de `18.4.3` com a tese do catálogo transversal controlado.
 * Depois avaliar as alternativas técnicas de schema, registry e validação.
-* Só então avançar para `18.4.4 Catálogo mínimo landing_page`.
+* Só então avançar para `18.4.4 Catálogo mínimo transversal para primeiro uso em landing_page`.
 * Depois consolidar as fases finais do plano-base v1.
 * Só após fechamento do plano-base v1 completo, preparar handoff Codex conforme `docs/template-briefing-codex.md`.
 
