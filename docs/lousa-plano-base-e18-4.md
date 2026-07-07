@@ -28,8 +28,11 @@ Recorte previsto do roadmap: `18.4 — Base de composição landing_page`.
 * No schema atual, módulos/seções são registrados em `content_templates` com `template_scope = 'section'`.
 * Variantes descrevem forma estrutural ou funcional do módulo, não nichos.
 * A parametrização técnica crítica deve começar no repositório, não em editor livre no Admin.
-* Os módulos de `landing_page` devem ser desenhados com visão transversal, para reduzir retrabalho futuro em `commercial_activation` e outros canais.
-* Transversalidade não significa liberar uso automático em todos os canais sem contrato; significa projetar módulo, variante, schema, renderer e parametrização para reaproveitamento controlado.
+* A transversalidade dos módulos é decisão conceitual aprovada no debate.
+* Módulos devem ser tratados como catálogo transversal controlado.
+* Um módulo pode nascer motivado por um canal inicial, mas não deve ficar preso definitivamente a esse canal.
+* O uso produtivo de um módulo em cada canal depende de compatibilidade explícita de contrato, schema, registry, renderer e validação.
+* `template_family = shared/transversal` é hipótese de solução técnica, não decisão fechada.
 * O Admin de curadoria pertence ao Plano-base 2, não a este recorte.
 * LP teste e liberação de nicho pertencem ao Plano-base 3, não a este recorte.
 
@@ -39,6 +42,9 @@ Recorte previsto do roadmap: `18.4 — Base de composição landing_page`.
 * A decisão não deve partir da premissa de evitar migration a qualquer custo.
 * Se o debate ou a investigação técnica mostrar necessidade real de melhorar o schema agora, o plano deve prever essa mudança.
 * Se a estrutura atual for suficiente, o plano deve registrar a decisão de manter o schema e endurecer as regras por validação executável no repositório.
+* O `18.4.3` deve avaliar se o catálogo transversal controlado exige hardening do schema, nova família, camada de compatibilidade ou outro ajuste de banco.
+* O `18.4.3` também deve avaliar se a transversalidade pode ser garantida inicialmente por contrato, registry e validação executável no repositório.
+* `template_family = shared/transversal` deve ser tratado apenas como hipótese entre alternativas, não como decisão obrigatória.
 * Não deixar dívida técnica conhecida para o futuro apenas para acelerar a etapa atual.
 * Não criar nova tabela, constraint, RPC, trigger ou policy sem necessidade demonstrada no debate e na investigação técnica.
 
@@ -53,15 +59,16 @@ Recorte previsto do roadmap: `18.4 — Base de composição landing_page`.
   * `18.4.5 Contratos técnicos, registry, schemas e renderer`.
   * `18.4.6 Resolver, validação de composição e limites de config_json`.
 
-1.5. Direção de transversalidade dos módulos
+1.5. Direção de catálogo transversal controlado
 
 * O objetivo de E18.4 não é criar módulos descartáveis ou exclusivos de `landing_page`.
+* O recorte E18.4 usa `landing_page` como primeiro caso de desenho dos módulos, mas os módulos devem nascer como catálogo transversal controlado.
 * O catálogo mínimo deve ser desenhado como base reaproveitável para canais futuros e para eventual evolução de `commercial_activation`.
 * O primeiro uso formal neste plano continua sendo `landing_page`.
 * O reuso por outro canal exige compatibilidade explícita de contrato, schema, registry, renderer e validação.
 * Um módulo pode ter núcleo conceitual transversal e ainda assim exigir adaptação por família/canal.
 * A implementação deve evitar duplicar futuramente, para `commercial_activation`, o mesmo trabalho estrutural feito neste recorte.
-* A decisão sobre criar camada compartilhada, catálogo transversal explícito ou apenas componentes/helpers reutilizáveis permanece aberta para debate técnico.
+* A decisão sobre criar camada compartilhada, catálogo transversal explícito, camada de compatibilidade no banco ou apenas componentes/helpers reutilizáveis permanece aberta para debate técnico.
 
 2. Contrato do caso
 
@@ -88,10 +95,11 @@ Recorte previsto do roadmap: `18.4 — Base de composição landing_page`.
 * Definir schemas/Zod mínimos por variante.
 * Definir resolver/validador de composição `landing_page`.
 * Validar `content_template_composition_items` para `landing_page`.
+* Definir o contrato de catálogo transversal controlado de módulos.
+* Avaliar se a representação técnica da transversalidade exige mudança de schema ou se pode ser inicialmente garantida no repositório.
 * Definir se o schema atual será mantido ou se precisa ser endurecido por migration própria.
 * Definir uso inicial de `config_json` como vazio ou override controlado, sem editor livre.
-* Definir até que ponto os módulos de `landing_page` devem nascer como núcleo transversal reaproveitável.
-* Definir se a transversalidade será resolvida por camada compartilhada, por helpers/componentes reutilizáveis ou por contratos por família com adaptação controlada.
+* Definir se a transversalidade será resolvida por camada compartilhada, por camada de compatibilidade no banco, por helpers/componentes reutilizáveis ou por contratos por família com adaptação controlada.
 * Preparar a base para que o Plano-base 2 consiga sugerir, validar e persistir composição aprovada por nicho.
 
 2.3. Usuários envolvidos
@@ -125,11 +133,11 @@ Recorte previsto do roadmap: `18.4 — Base de composição landing_page`.
   * lousa de debate de landing pages;
   * aprendizado técnico de `commercial_activation`.
 * Processamento:
-  * definir o contrato transversal dos módulos;
+  * definir o contrato de catálogo transversal controlado dos módulos;
+  * avaliar como cada canal habilita uso produtivo por contrato, schema, registry, renderer e validação;
   * avaliar se o schema atual sustenta esse contrato ou se precisa de hardening;
   * definir template-base `landing_page`;
   * definir catálogo mínimo de módulos;
-  * avaliar quais módulos devem ser tratados como núcleo potencialmente transversal;
   * definir variantes mínimas;
   * criar ou ajustar contratos técnicos;
   * criar registry fechado;
@@ -184,6 +192,8 @@ Recorte previsto do roadmap: `18.4 — Base de composição landing_page`.
 * Reaproveitar `commercial_activation` de forma indevida para `landing_page`.
 * Criar módulos `landing_page` específicos demais e gerar retrabalho para `commercial_activation`.
 * Confundir transversalidade com liberação automática de módulo para qualquer canal.
+* Assumir prematuramente que a solução correta é `template_family = shared/transversal`.
+* Permitir uso produtivo de módulo em canal sem renderer, schema, registry e validação compatíveis.
 * Colocar no banco uma parametrização que ainda exige contrato, renderer e validação no código.
 * Deixar o banco aceitar composição estruturalmente inválida pelo fluxo oficial.
 * Usar `config_json` como editor livre e quebrar renderização.
@@ -208,9 +218,12 @@ Recorte previsto do roadmap: `18.4 — Base de composição landing_page`.
 3.2. Previsão inicial de fases ou seções implementáveis
 
 * `18.4.3 Contrato transversal de módulos e avaliação de hardening do schema`:
-  * definir o que é módulo transversal no LP Factory 10;
-  * diferenciar módulo conceitual, variante, renderer e parametrização;
-  * decidir se o schema atual sustenta esse contrato ou se precisa de migration/RPC/constraint/policy para impedir inconsistência estrutural;
+  * definir módulos como catálogo transversal controlado;
+  * registrar que módulos podem nascer motivados por um canal inicial, mas não devem ficar presos definitivamente a esse canal;
+  * diferenciar módulo conceitual, variante, schema, renderer, registry, composition e artefato final;
+  * definir que o uso produtivo em cada canal depende de compatibilidade explícita;
+  * avaliar se essa regra exige hardening do schema ou se pode ser garantida inicialmente por validação executável no repositório;
+  * tratar `template_family = shared/transversal` apenas como hipótese de solução, não como decisão fechada;
   * Automação: não.
 * `18.4.4 Catálogo mínimo landing_page`:
   * definir template-base e módulos/seções iniciais mínimos para o MVP;
@@ -227,9 +240,9 @@ Recorte previsto do roadmap: `18.4 — Base de composição landing_page`.
 
 3.3. Próxima ação do debate
 
-* Continuar definindo o contrato transversal dos módulos em `18.4.3`.
-* Continuar avaliando se esse contrato exige mudança real de banco ou apenas validação executável no repositório.
-* Continuar avaliando se a transversalidade deve gerar camada compartilhada, helpers/componentes reutilizáveis ou apenas contratos por família.
+* Fechar o texto de `18.4.3` com a tese do catálogo transversal controlado.
+* Depois avaliar as alternativas técnicas de schema, registry e validação.
+* Só então avançar para `18.4.4 Catálogo mínimo landing_page`.
 * Depois consolidar as fases finais do plano-base v1.
 * Só após fechamento do plano-base v1 completo, preparar handoff Codex conforme `docs/template-briefing-codex.md`.
 
