@@ -123,19 +123,24 @@ Recorte previsto do roadmap: `18.4 — Base de composição landing_page`.
   * E19 — consumidor futuro para LP teste e liberação de nicho;
   * E10.7 — referência comparativa e possível consumidor futuro de módulos melhorados, sem ser governada automaticamente por `landing_page`.
 
-2.5. Fluxo operacional previsto
+2.5. Fluxo operacional consolidado
 
 * Gatilho:
-  * humano aprova iniciar o recorte E18.4 para base de composição `landing_page`.
+  * humano aprova iniciar o recorte `18.4 — Base de composição landing_page`;
+  * o recorte parte da decisão conceitual de catálogo transversal controlado de módulos.
 * Entrada:
   * documentos obrigatórios do projeto;
-  * schema atual de templates, compositions, composition items e artifacts;
+  * schema atual de `content_templates`, `content_template_compositions` e `content_template_composition_items`;
   * lousa de debate de landing pages;
-  * aprendizado técnico de `commercial_activation`.
+  * aprendizado técnico de `commercial_activation`;
+  * decisão conceitual de que módulos são catálogo transversal controlado;
+  * definição de que `landing_page` é o primeiro consumidor formal neste recorte;
+  * definição de que `template_family = shared/transversal` é hipótese técnica, não decisão fechada.
 * Processamento:
   * definir o contrato de catálogo transversal controlado dos módulos;
   * avaliar como cada canal habilita uso produtivo por contrato, schema, registry, renderer e validação;
   * avaliar se o schema atual sustenta esse contrato ou se precisa de hardening;
+  * decidir se a transversalidade será garantida por schema, registry, validação no repositório ou combinação dessas opções;
   * definir template-base `landing_page`;
   * definir catálogo mínimo transversal para primeiro uso em `landing_page`;
   * diferenciar módulo transversal, variante específica por canal e renderer específico por canal;
@@ -147,7 +152,9 @@ Recorte previsto do roadmap: `18.4 — Base de composição landing_page`.
   * criar resolver/validador de composição;
   * definir uso seguro de `config_json`.
 * Validação:
+  * bloquear composição inválida;
   * bloquear template incompatível;
+  * bloquear módulo sem contrato compatível;
   * bloquear módulo incompatível;
   * bloquear variante inexistente;
   * bloquear variante incompatível com módulo;
@@ -155,20 +162,25 @@ Recorte previsto do roadmap: `18.4 — Base de composição landing_page`.
   * bloquear `config_json` fora do permitido;
   * validar ordem, obrigatoriedade e composição mínima;
   * validar se a modelagem escolhida preserva potencial de reuso transversal sem liberar uso indevido;
+  * garantir que `config_json` seja override controlado, não editor livre;
   * executar checks aplicáveis do repositório.
 * Persistência:
   * registrar apenas a base mínima necessária;
   * persistir registros-base somente se aprovados no plano;
-  * não persistir composição aprovada por nicho neste plano, salvo composição técnica mínima exigida pela base e explicitamente aprovada.
+  * não persistir composição aprovada por nicho neste plano, salvo composição técnica mínima exigida pela base e explicitamente aprovada;
+  * não alterar `commercial_activation` neste recorte.
 * Consumo:
   * Plano-base 2 consumirá a base para curadoria no Admin;
   * Plano-base 3 consumirá composição aprovada para LP teste;
-  * `commercial_activation` poderá consumir aprendizados, núcleo visual ou contratos reaproveitáveis apenas após decisão própria.
+  * `commercial_activation` poderá consumir aprendizados, núcleo visual ou contratos reaproveitáveis apenas após decisão própria e fora deste recorte.
 * Fallback:
   * composição inválida deve ser bloqueada;
   * módulo ausente deve virar lacuna objetiva;
   * variante ausente deve virar lacuna objetiva;
-  * ausência de renderer/schema deve impedir validação positiva;
+  * ausência de renderer, schema, registry ou validação deve impedir uso produtivo do módulo no canal;
+  * se o schema atual não sustentar a regra transversal, parar e decidir hardening antes de avançar;
+  * se a transversalidade virar engine ampla multicanal, parar;
+  * se o plano invadir E12 ou E19, parar;
   * nenhuma composição inválida deve ser marcada como pronta.
 
 2.6. Limites atuais do recorte
@@ -255,7 +267,7 @@ Recorte previsto do roadmap: `18.4 — Base de composição landing_page`.
 
 3.3. Próxima ação do debate
 
-* Fechar o texto de `18.4.3` com a tese do catálogo transversal controlado.
+* Com o fluxo operacional consolidado, avançar para fechamento das fases `18.4.3` a `18.4.6` como plano-base v1.
 * Depois avaliar as alternativas técnicas de schema, registry e validação.
 * Só então avançar para `18.4.4 Catálogo mínimo transversal para primeiro uso em landing_page`.
 * Depois consolidar as fases finais do plano-base v1.
