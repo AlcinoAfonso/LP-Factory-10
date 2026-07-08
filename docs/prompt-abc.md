@@ -1,4 +1,4 @@
-# docs/prompt-abc.md vs6
+# docs/prompt-abc.md vs7
 
 PROMPT ABC
 
@@ -70,7 +70,8 @@ ALLOWLISTS POR DOC_ALVO
 * NÃO ENTRA: itens pertencentes a runtime/base técnica, roadmap/casos, design system, platform config, services ou automations.
 
 `docs/roadmap.md` — CONTRATO_DE_CASOS
-* ENTRA: status com data, escopo final em bullets curtos, dependências entre casos E*, decisões explícitas, pendências marcadas no RELATÓRIO e estruturas/artefatos vinculados ao estado final do caso.
+* ENTRA: status com data, seção/subseções de roadmap explicitamente indicadas no RELATÓRIO, escopo final em bullets curtos, dependências entre casos E*, decisões explícitas, pendências marcadas no RELATÓRIO e estruturas/artefatos vinculados ao estado final do caso.
+* SUBSEÇÕES: quando o RELATÓRIO trouxer seção afetada, subseções a criar/atualizar ou subseções vedadas, usar isso como limite documental; não criar subseção diferente sem necessidade clara no DOC_ALVO.
 * REGRA DE ATUALIZAÇÃO: como exceção às regras de consolidação de estado final deste prompt, casos em planejamento, andamento ou implementação parcial devem preservar debates, planos, decisões provisórias, trabalho em execução, faltas e próximos passos. Nessa fase, não alterar cabeçalho, versão ou changelog nem marcar o caso como implementado ou concluído. Somente quando o caso completo ou um recorte autônomo estiver totalmente implementado e validado, remover debates encerrados, planos operacionais consumidos, hipóteses não aprovadas e conteúdo provisório superado; preservar decisões futuras aprovadas, pendências vigentes, limites permanentes e evoluções já classificadas. Para caso, fase ou recorte autônomo já implementado, o corpo do roadmap deve ser snapshot do estado atual, não narrativa de execução: não copiar PR, branch, merge commit, comandos, prints, bugs intermediários ou validações transitórias, salvo quando virarem pendência vigente, limite permanente ou requisito atual.
 * REGRA: “E” só no título principal do caso; subitens sem repetir “E”.
 * ESTRUTURAS E ARTEFATOS: registrar somente objetos de banco e artefatos funcionais do repositório criados, ajustados ou removidos; não registrar docs/**, pois docs são DOC_ALVO, fonte ou patch documental.
