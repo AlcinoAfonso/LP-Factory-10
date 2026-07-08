@@ -1,8 +1,8 @@
 0. Introdução
 
 0.1 Cabeçalho
-• Data: 04/07/2026
-• Versão: v1.5.89
+• Data: 07/07/2026
+• Versão: v1.5.90
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -1401,7 +1401,7 @@ Repositório — Ajustados
 
 18. E18 — Base transversal de templates, módulos, composições e artefatos
 - Objetivo: Definir infraestrutura e contratos reutilizáveis para famílias de templates por canal, templates versionados, módulos de conteúdo, seções de página, variantes, composições e artefatos finais persistidos; sustentar primeiro a E10.7 sem produzir diretamente a página comercial de um taxon; e permitir consumidores futuros somente como visão de evolução, sem antecipar sua implementação.
-- Status: Base transversal mínima de `commercial_activation` concluída e validada em 16/06/2026; primeiro recorte de banco/runtime e segundo recorte de contratos, renderer e registros-base aplicados; E10.7 desbloqueada como primeiro consumidor real; consumidores futuros permanecem como visão de evolução.
+- Status: Base transversal mínima de `commercial_activation` concluída e validada em 16/06/2026; base técnica repo-only de composição `landing_page` concluída em 07/07/2026; E10.7 desbloqueada como primeiro consumidor real; consumidores futuros permanecem como visão de evolução.
 
 18.1 Contrato transversal de templates, módulos, composições e artefatos
 
@@ -1610,6 +1610,96 @@ Repositório — Ajustados
   - A publicação deve arquivar o `published` anterior e publicar o novo `draft` na mesma operação segura.
   - A escrita administrativa precisa estar viabilizada antes da persistência do draft.
 
+18.4 Base de composição landing_page
+
+18.4.1 Objetivo e status
+- Objetivo: Consolidar `landing_page` como família técnica própria dentro da base transversal da E18, separada de `commercial_activation`, com catálogo, contratos executáveis, validação fail-closed e renderer próprio antes de qualquer consumo real.
+- Status: Concluída como base técnica interna repo-only.
+- Limite: não libera automaticamente registros-base, LP teste, rota pública, Admin, LP Builder, automação, job ou agente; próximo consumo depende de definição estratégica posterior.
+
+18.4.2 Registros do recorte
+- Banco:
+  - Criados: N/A.
+  - Ajustados: N/A.
+- Repositório:
+  - Criados:
+    - `lib/conversion-content/landing-page/contracts.ts`
+    - `lib/conversion-content/landing-page/schemas.ts`
+    - `lib/conversion-content/landing-page/registry.ts`
+    - `lib/conversion-content/landing-page/render-model.ts`
+    - `lib/conversion-content/landing-page/renderer.tsx`
+    - `lib/conversion-content/landing-page/fixture.ts`
+    - `lib/conversion-content/landing-page/validation-cases.ts`
+    - `lib/conversion-content/landing-page/composition-validator.ts`
+    - `lib/conversion-content/landing-page/index.ts`
+  - Ajustados:
+    - `lib/conversion-content/index.ts`
+    - `package.json`
+    - `package-lock.json`
+  - Excluídos: N/A.
+- Updates:
+  - Aplicados: N/A.
+
+18.4.3 Decisão de schema e banco
+- Status: N/A para implementação de banco/schema.
+- Decisão: o schema atual é suficiente para o início controlado de `landing_page`; a base foi tratada como contrato técnico repo-only.
+- Limite: registros-base futuros de `landing_page` dependem de decisão posterior.
+
+18.4.4 Catálogo mínimo landing_page
+- Decisão: `landing_page` passa a ter catálogo mínimo próprio, controlado no repositório.
+- Módulos permitidos no primeiro uso:
+  - `hero`
+  - `benefits`
+  - `offer`
+  - `social_proof`
+  - `how_it_works`
+  - `faq`
+  - `final_cta`
+- Variantes permitidas:
+  - `hero.lead_capture`
+  - `benefits.cards`
+  - `offer.summary`
+  - `social_proof.simple`
+  - `how_it_works.steps`
+  - `faq.accordion`
+  - `final_cta.simple`
+- Limite: `commercial_activation` permanece apenas como referência comparativa; não há compatibilidade automática entre `commercial_activation` e `landing_page`.
+
+18.4.5 Contratos técnicos, registry, schemas e renderer
+- Implementado:
+  - contratos TypeScript próprios;
+  - schemas Zod por conteúdo de seção;
+  - registry fechado;
+  - render model próprio;
+  - renderer mínimo;
+  - fixture sintética;
+  - casos executáveis de validação.
+- Decisão: o registry próprio de `landing_page` vincula canal, módulo, variante, schema e renderer, sem herdar compatibilidade de `commercial_activation`.
+- Validação: `npm run validate:landing-page`.
+
+18.4.6 Resolver, validação e limites de config_json
+- Implementado:
+  - resolver/validador final de composição antes do render model;
+  - normalização da composição válida antes do renderer;
+  - exposição de `config` normalizado para o renderer mínimo.
+- Validador de composição:
+  - rejeita item duplicado;
+  - rejeita `sortOrder` não inteiro, negativo ou duplicado;
+  - normaliza itens por `sortOrder`;
+  - rejeita variante inexistente;
+  - rejeita incompatibilidade entre módulo e variante;
+  - rejeita `config_json` fora do contrato.
+- Limites de `config_json`:
+  - `config_json` é override controlado por seção;
+  - chaves permitidas: `anchor_id` e `spacing`;
+  - `anchor_id` é opcional, seguro, curto e único quando informado;
+  - `spacing` aceita somente `compact`, `default` ou `spacious`;
+  - chaves livres como `renderer`, `schema`, `style`, HTML, script ou props arbitrárias são rejeitadas.
+- Consumo pelo renderer:
+  - `anchor_id` é usado como `id` de seção;
+  - `spacing` controla espaçamento vertical;
+  - nenhum outro override é aceito.
+
 19. E19 — LP Builder
 - Objetivo: Consolidar a seção do Core responsável pela criação, edição e organização de landing pages. No recorte atual, limitar E19 à criação mínima de LP por conta com status inicial `draft`.
 - Status: Em execução faseada — Fase 3 concluída em 30/06/2026. Criação produtiva mínima de LP por conta implementada; persistência mínima em `public.account_landing_pages` criada; boundary próprio do LP Builder criado em `lib/lp-builder/`; gate E9 aplicado antes da persistência. Editor visual, publicação, render público, domínio customizado, analytics, A/B, IA runtime e automações permanecem fora do recorte.
@@ -1760,6 +1850,8 @@ Repositório — Ajustados
   - Esta referência não cria obrigação de nova implementação agora.
 
 99. Changelog
+v1.5.90 — 07/07/2026 — E18.4 concluída como base técnica repo-only de composição `landing_page`, com catálogo mínimo, contratos técnicos, registry, schemas, renderer mínimo, resolver/validador e limites de `config_json`, sem liberação automática de registros-base, LP teste, rota pública, Admin, LP Builder, automação, job ou agente.
+
 v1.5.89 — 04/07/2026 — E9.7 concluída com liberação manual administrativa mínima por `platform_admin`, persistência em `public.account_commercial_entitlements`, concessão/atualização/cancelamento manual, view efetiva validada e decisão de não criar superfície artificial para testar LP Builder.
 
 v1.5.88 — 02/07/2026 — E9 Fase 5 fechada documentalmente após a E19 entregar o ponto produtivo real de criação mínima de LP; gate comercial confirmado antes do insert em `public.account_landing_pages`, com fail-closed por entitlement ausente.
