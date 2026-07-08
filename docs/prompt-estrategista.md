@@ -169,10 +169,12 @@ Usar relatório consolidado ao final do plano quando houver:
 • fase seguinte validando a fase anterior;
 • relatório por fase gerando repetição sem decisão nova.
 
-Registrar apenas o que ocorreu, manter os rótulos abaixo e marcar N/A quando não se aplicar.
+Registrar apenas o que ocorreu, informar a decisão documental do roadmap e marcar N/A quando não se aplicar.
 
-Implementado / definido
-• [itens objetivos do que foi implementado ou definido]
+Roadmap / decisão documental
+• Seção afetada: [E[n].[x] — nome]
+• Subseções a criar ou atualizar: [lista exata] | N/A
+• Não criar fora das subseções listadas sem decisão humana explícita.
 
 Updates aplicados
 • [tag, ex.: supa#5] — aplicado | avaliado | N/A — [efeito curto]
