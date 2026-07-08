@@ -1,5 +1,5 @@
 01/07/2026 — Lousa debate landing pages
-Fontes: chat, docs/roadmap.md, docs/schema.md, Supabase real, GitHub
+Fontes: chat, docs/roadmap.md, docs/schema.md, docs/prompt-nicho-itens-estruturados.md, Supabase real, GitHub
 
 1. Objetivo
 
@@ -30,12 +30,22 @@ Esta lousa não substitui o roadmap, não implementa nada e não autoriza nova i
 * Composição = módulos + ordem + obrigatoriedade + variante + contexto/nicho.
 * A composição é a camada correta para definir o que entra em cada landing page.
 
-2.4. Itens estruturais e copy
+2.4. Itens estruturais
 
-* Itens estruturais alimentam copy, argumento, seção e possivelmente design.
-* Exemplos: dores, desejos, desejos ocultos, objeções, riscos, provas, diferenciais, critérios de decisão, FAQ e linguagem do público.
-* A copy não deve nascer de prompt genérico nem de todos os dados disponíveis ao mesmo tempo.
-* Cada campo relevante deve ter regra editorial própria.
+Os itens estruturados já possuem papel arquitetural.
+
+Blocos atuais relevantes:
+
+* `strategic_core`: dores, desejos, objeções, provas, crenças, linguagem e oportunidades.
+* `lp_overview`: arco narrativo, tom visual, densidade, prioridade mobile e direção geral da página.
+* `lp_sections`: seções prováveis, ordem, papel de conversão, prioridade e adequação por LP curta, média ou longa.
+* `seo`: intenções, palavras comerciais, termos de apoio e perguntas.
+
+Decisão atual:
+
+* manter `lp_overview` e `lp_sections` nos itens estruturados por enquanto;
+* não mover essa responsabilidade para o Blueprint sem decisão humana posterior;
+* usar o Blueprint para auditar, comparar e acelerar parametrização, não para duplicar a estruturação já existente.
 
 2.5. Parametrização técnica e editorial
 
@@ -97,22 +107,129 @@ E18.4 não criou:
 * Chaves aceitas no recorte: `anchor_id` e `spacing`.
 * Chaves livres como renderer, schema, style, HTML, script ou props arbitrárias são rejeitadas.
 
-4. Pendências essenciais
+4. Papel do Blueprint
 
-4.1. Composição por nicho
+4.1. Função
 
-Ainda falta definir como o sistema vai transformar itens estruturais em composição por nicho.
+O Blueprint não é o criador primário da arquitetura da LP.
 
-Pontos abertos:
+Função correta no fluxo atual:
 
-* IA sugere seções, ordem, variantes, obrigatoriedade e lacunas;
-* sistema classifica sugestão como disponível, faltante ou inválida;
-* humano aprova, ajusta, adia ou decide implementar módulo faltante;
-* somente composição aprovada vira default oficial do nicho.
+* ler taxon, pesquisa bruta, itens estruturados e catálogo técnico disponível;
+* comparar `lp_sections` com a necessidade percebida pelo próprio Blueprint;
+* apontar convergências, divergências e lacunas;
+* acelerar parametrização de módulos e variantes;
+* gerar proposta de evolução do catálogo, não implementação automática.
 
-4.2. Parametrização editorial
+4.2. Entregas do Blueprint
 
-Ainda falta mapear regras por seção/campo.
+O Blueprint pode entregar:
+
+* auditoria de `lp_sections` e `lp_overview`;
+* comparação entre seções sugeridas pelos itens estruturados e seções sugeridas pelo Blueprint;
+* diagnóstico de cobertura do catálogo: disponível, parcial, faltante ou inválido;
+* proposta de novo módulo ou variante quando houver lacuna real;
+* proposta de ajuste controlado quando o módulo existir parcialmente;
+* parametrização editorial, visual e de conversão para módulos faltantes ou frágeis;
+* justificativa de ROI antes de qualquer evolução do catálogo.
+
+4.3. Limite
+
+* Blueprint não cria módulo diretamente em produção.
+* Blueprint não grava composição sozinho.
+* Blueprint não altera contratos, schemas, registry ou renderer.
+* Blueprint gera proposta para aprovação humana e implementação controlada no repo.
+
+5. Fluxo recomendado atualizado
+
+5.1. Entrada
+
+* Taxon definido.
+* Pesquisa bruta aprovada.
+* Itens estruturados carregados para `end_customer` e `business_buyer` quando aplicável.
+* Blocos úteis: `strategic_core`, `lp_overview`, `lp_sections` e `seo`.
+
+5.2. Composition draft
+
+A primeira proposta de composition deve nascer principalmente de `lp_sections`.
+
+O sistema compara `lp_sections` com o catálogo técnico `landing_page`.
+
+Resultado esperado:
+
+* seções disponíveis;
+* seções disponíveis parcialmente;
+* seções faltantes;
+* seções inválidas ou fora do catálogo;
+* ordem sugerida;
+* obrigatoriedade sugerida;
+* variante provável.
+
+5.3. Blueprint
+
+O Blueprint entra depois da leitura inicial da composition.
+
+Ele serve para:
+
+* validar se `lp_sections` faz sentido;
+* sugerir seções ausentes;
+* questionar ordem ou prioridade quando houver motivo;
+* parametrizar módulos faltantes ou parciais;
+* propor evolução do catálogo.
+
+5.4. Decisão humana
+
+Humano decide:
+
+* aceitar composition sugerida;
+* ajustar ordem ou módulos;
+* adiar seção faltante;
+* parametrizar módulo existente;
+* criar novo módulo/variante;
+* rejeitar sugestão por baixo ROI.
+
+5.5. Implementação e validação
+
+Quando houver novo módulo ou variante:
+
+* implementar no repo;
+* criar schema;
+* registrar no registry;
+* criar renderer ou ajuste visual;
+* criar fixture;
+* criar caso de validação;
+* rodar validação.
+
+5.6. LP teste e liberação
+
+* Composition aprovada vira default oficial do nicho.
+* LP teste é gerada em conta teste.
+* Validar técnica, responsividade, velocidade, visual, copy e conversão.
+* Nicho só é liberado após validação mínima.
+
+6. Uso da mesma LP em canais
+
+6.1. Google Ads
+
+* A mesma LP pode ser usada como página de destino em campanhas.
+* Para Google Ads, relevância e utilidade da landing page importam para diagnóstico de qualidade.
+* A LP precisa estar alinhada à intenção, anúncio, palavra-chave, velocidade, mobile e clareza de conversão.
+
+6.2. Instagram
+
+* A mesma LP pode ser usada como destino de tráfego vindo do Instagram.
+* Não precisa criar outra LP por padrão.
+* Pode exigir adaptação de headline, prova, imagem, CTA ou ângulo quando o tráfego social tiver intenção diferente do tráfego de busca.
+
+6.3. Regra prática
+
+* LP base do nicho pode ser comum.
+* Variações por canal devem ser tratadas depois, quando houver evidência.
+* No MVP, registrar origem por UTM/tracking e validar desempenho por canal antes de criar variações.
+
+7. Pendências essenciais
+
+7.1. Parametrização editorial
 
 Primeiro foco recomendado:
 
@@ -123,7 +240,7 @@ Primeiro foco recomendado:
 * FAQ;
 * CTA final.
 
-4.3. Catálogo insuficiente para alguns nichos
+7.2. Catálogo insuficiente para alguns nichos
 
 Avaliar, com caso real, se faltam módulos como:
 
@@ -137,7 +254,7 @@ Avaliar, com caso real, se faltam módulos como:
 * procedimentos;
 * planos.
 
-4.4. `hero.lead_capture`
+7.3. `hero.lead_capture`
 
 Antes de consumo real, verificar se `hero.lead_capture` cobre captura completa ou apenas uma variação técnica inicial.
 
@@ -149,33 +266,22 @@ Checar especialmente:
 * CTA alternativo;
 * validação de campos.
 
-5. Direção aprovada
-
-5.1. Fluxo desejado
-
-* Taxon definido.
-* Itens estruturais completos.
-* Admin aciona IA para sugerir composição.
-* Sistema confronta com catálogo, schemas, variantes e renderers existentes.
-* Humano aprova ou ajusta.
-* Composição aprovada vira default oficial do nicho.
-* LP teste é gerada em conta teste.
-* Nicho só é liberado após validação mínima.
-
-5.2. Separação dos planos-base
+8. Separação dos planos-base
 
 * Plano-base 1 — Base de composição `landing_page`: E18; já teve avanço técnico em E18.4.
-* Plano-base 2 — Curadoria de composição no Admin: E12; próximo recorte natural.
+* Plano-base 2 — Curadoria de composition e Blueprint no Admin: E12; próximo recorte natural.
 * Plano-base 3 — LP teste e liberação do nicho: E19; depende de E18 e E12.
 
-6. Regra de cuidado
+9. Regra de cuidado
 
 A base técnica repo-only de `landing_page` não deve ser tratada como produto final liberado para clientes.
 
 A próxima evolução deve preservar:
 
+* `lp_sections` já sugere arquitetura inicial;
+* Blueprint audita e parametriza, não substitui tudo;
 * catálogo técnico não é composição fixa;
-* IA não grava composição sozinha;
+* IA não grava composition sozinha;
 * banco não cria componente visual automaticamente;
 * Admin não edita contratos livres;
 * LP Builder não entra na E18;
