@@ -51,7 +51,8 @@ export function validateLandingPageComposition(
   composition: LandingPageComposition,
 ): LandingPageCompositionValidationResult {
   const itemIds = new Set<string>();
-  let previousSortOrder = Number.NEGATIVE_INFINITY;
+  const sortOrders = new Set<number>();
+  const anchorIds = new Set<string>();
   const items: LandingPageResolvedCompositionItem[] = [];
 
   for (const item of composition.items) {
@@ -63,11 +64,11 @@ export function validateLandingPageComposition(
     if (
       !Number.isInteger(item.sortOrder) ||
       item.sortOrder < 0 ||
-      item.sortOrder <= previousSortOrder
+      sortOrders.has(item.sortOrder)
     ) {
       return { status: "invalid", reason: "composition_order_invalid" };
     }
-    previousSortOrder = item.sortOrder;
+    sortOrders.add(item.sortOrder);
 
     if (!isLandingPageSectionVariant(item.variantKey)) {
       return { status: "invalid", reason: "section_registry_invalid" };
@@ -82,6 +83,12 @@ export function validateLandingPageComposition(
     if (!parsedConfig.success) {
       return { status: "invalid", reason: "config_json_invalid" };
     }
+    if (parsedConfig.data.anchor_id) {
+      if (anchorIds.has(parsedConfig.data.anchor_id)) {
+        return { status: "invalid", reason: "config_json_invalid" };
+      }
+      anchorIds.add(parsedConfig.data.anchor_id);
+    }
 
     items.push({
       ...item,
@@ -90,5 +97,8 @@ export function validateLandingPageComposition(
     });
   }
 
-  return { status: "valid", items };
+  return {
+    status: "valid",
+    items: items.sort((left, right) => left.sortOrder - right.sortOrder),
+  };
 }

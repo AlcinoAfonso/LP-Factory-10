@@ -462,7 +462,8 @@ Recorte previsto do roadmap: `18.4 — Base de composição landing_page`.
   * `lib/conversion-content/landing-page/index.ts`.
 * Resolver/validador de composição:
   * valida item duplicado na composição antes de montar o mapa de itens;
-  * valida `sortOrder` inteiro, não negativo, estritamente crescente e sem duplicidade;
+  * valida `sortOrder` inteiro, não negativo e sem duplicidade;
+  * não exige que o array de entrada esteja ordenado e normaliza os itens por `sortOrder` antes do render model;
   * valida variante existente no registry fechado de `landing_page`;
   * valida compatibilidade explícita entre módulo e variante;
   * normaliza itens resolvidos para o render model somente depois de validar registry e `config_json`;
@@ -471,6 +472,7 @@ Recorte previsto do roadmap: `18.4 — Base de composição landing_page`.
   * `config_json` é override controlado por seção;
   * chaves permitidas nesta fase: `anchor_id` e `spacing`;
   * `anchor_id` deve seguir padrão seguro de âncora curta: letra minúscula inicial, letras minúsculas, números ou hífen, até 64 caracteres;
+  * `anchor_id` permanece opcional, mas deve ser único quando informado em mais de uma seção;
   * `spacing` aceita somente `compact`, `default` ou `spacious`;
   * objetos com chaves livres como renderer, schema, style, HTML, script ou props arbitrárias são rejeitados;
   * o renderer mínimo consome apenas esses overrides permitidos para `id` de seção e espaçamento vertical.

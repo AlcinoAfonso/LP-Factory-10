@@ -120,7 +120,22 @@ const cases: Case[] = [
     },
   },
   {
-    name: "invalid composition order invalidates composition",
+    name: "unordered composition resolves by sortOrder",
+    run: () => {
+      const composition = clone(landingPageFixtureComposition);
+      composition.items.reverse();
+
+      const result = buildLandingPageRenderModel({
+        composition,
+        contentJson: clone(landingPageFixtureContent),
+      });
+
+      assert.equal(result.status, "ready");
+      assert.equal(result.model.sections[0].compositionItemId, requiredHeroId);
+    },
+  },
+  {
+    name: "duplicate sortOrder invalidates composition",
     run: () => {
       const composition = clone(landingPageFixtureComposition);
       composition.items[1].sortOrder = composition.items[0].sortOrder;
@@ -133,6 +148,23 @@ const cases: Case[] = [
       assert.deepEqual(result, {
         status: "invalid",
         reason: "composition_order_invalid",
+      });
+    },
+  },
+  {
+    name: "duplicate anchor_id invalidates config_json",
+    run: () => {
+      const composition = clone(landingPageFixtureComposition);
+      composition.items[1].config = { anchor_id: "inicio" };
+
+      const result = buildLandingPageRenderModel({
+        composition,
+        contentJson: clone(landingPageFixtureContent),
+      });
+
+      assert.deepEqual(result, {
+        status: "invalid",
+        reason: "config_json_invalid",
       });
     },
   },
