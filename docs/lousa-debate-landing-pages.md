@@ -1,966 +1,182 @@
 01/07/2026 — Lousa debate landing pages
 Fontes: chat, docs/roadmap.md, docs/schema.md, Supabase real, GitHub
 
-1. Objetivo da lousa
+1. Objetivo
 
-Registrar o entendimento gradual sobre como landing pages devem ser formadas no LP Factory 10.
+Registrar apenas as decisões úteis sobre formação de landing pages no LP Factory 10.
 
-A lousa serve para separar conceitos antes de decidir implementação:
+Esta lousa não substitui o roadmap, não implementa nada e não autoriza nova infra.
 
-* template
-* família de template
-* módulos/seções
-* composição
-* itens estruturais
-* regras por seção
-* design
-* artefato final
-* futura edição pelo cliente/admin
+2. Decisões fixas
 
-Esta lousa não implementa nada e não altera o roadmap.
+2.1. Template
 
-2. Premissa inicial
+* Template não é landing page pronta.
+* Template define base técnica: família, renderer, contratos, módulos compatíveis, validações, responsividade e versionamento.
+* Template não decide sozinho quantidade, ordem, obrigatoriedade, copy ou removibilidade das seções por nicho.
 
-A landing page é o core do produto.
+2.2. Família `landing_page`
 
-A estrutura precisa permitir variação real entre nichos, sem criar um template novo para cada nicho.
+* `landing_page` é família própria e não deve herdar automaticamente o modelo rígido de `commercial_activation`.
+* `commercial_activation` pode continuar determinístico.
+* Landing pages reais precisam de composição flexível por nicho.
+* Não criar template novo para cada nicho por padrão.
 
-Exemplo:
+2.3. Módulos, variantes e composição
 
-* alguns nichos podem precisar de 8 seções
-* outros nichos podem precisar de 10 ou mais seções
-* alguns nichos podem exigir seções específicas
-* outros nichos podem dispensar essas seções
+* Módulo = peça reutilizável disponível no sistema.
+* Seção = uso concreto de um módulo em uma página.
+* Variante = forma estrutural de um módulo.
+* Composição = módulos + ordem + obrigatoriedade + variante + contexto/nicho.
+* A composição é a camada correta para definir o que entra em cada landing page.
 
-Portanto, não é correto tratar o template de landing page como uma página fixa com quantidade e ordem imutável de seções.
+2.4. Itens estruturais e copy
 
-3. Papel do template
+* Itens estruturais alimentam copy, argumento, seção e possivelmente design.
+* Exemplos: dores, desejos, desejos ocultos, objeções, riscos, provas, diferenciais, critérios de decisão, FAQ e linguagem do público.
+* A copy não deve nascer de prompt genérico nem de todos os dados disponíveis ao mesmo tempo.
+* Cada campo relevante deve ter regra editorial própria.
 
-Template não é a landing page pronta.
+2.5. Parametrização técnica e editorial
 
-Template também não deve ser reduzido apenas a espaçamento, largura ou tracking.
+* Parametrização técnica valida formato, campos, limites, CTA seguro, variante, compatibilidade e renderização.
+* Parametrização editorial orienta fonte estratégica, tom, promessa, prova, objeção, foco e qualidade da copy.
+* Zod, registry, resolver e renderer resolvem segurança técnica, não estratégia.
+* Parametrização crítica deve começar no repo.
+* Admin editável para contratos complexos fica fora do MVP atual.
 
-O papel do template é definir a base técnica e estrutural permitida para um tipo de entrega.
+3. Estado atual após E18.4
 
-O template pode definir:
+3.1. O que já foi feito
 
-* família/canal atendido
-* renderer ou motor visual compatível
-* contrato técnico da página
-* módulos compatíveis
-* limites visuais e responsivos
-* versionamento da estrutura
-* validações mínimas de publicação
-* rastreabilidade da estrutura usada
+E18.4 consolidou uma base técnica repo-only para `landing_page`.
 
-O template não deve decidir sozinho:
+Foi feito:
 
-* quantas seções cada nicho terá
-* qual ordem final das seções
-* quais seções serão obrigatórias em cada nicho
-* qual copy será usada em cada seção
-* quais seções o cliente poderá remover ou adicionar
+* contratos TypeScript próprios;
+* schemas Zod por seção;
+* registry fechado próprio;
+* render model próprio;
+* renderer mínimo;
+* fixture sintética;
+* casos executáveis de validação;
+* validador de composição;
+* validação dedicada por `npm run validate:landing-page`.
 
-4. Famílias de template
+3.2. Catálogo técnico inicial
 
-Família de template agrupa templates do mesmo tipo de entrega ou canal.
+Catálogo mínimo registrado para primeiro uso técnico:
 
-Famílias atuais/possíveis:
+* `hero.lead_capture`;
+* `benefits.cards`;
+* `offer.summary`;
+* `social_proof.simple`;
+* `how_it_works.steps`;
+* `faq.accordion`;
+* `final_cta.simple`.
 
-* commercial_activation
-* landing_page
-* email
-* whatsapp
-* instagram
-* tiktok
+Esse catálogo é disponibilidade técnica, não composição obrigatória para todos os nichos.
 
-Para o MVP, pode existir uma base inicial por família.
+3.3. Limites preservados
 
-A arquitetura conceitual não deve afirmar que cada família terá para sempre apenas um template.
+E18.4 não criou:
 
-Uma família pode evoluir para vários templates quando houver necessidade real.
+* registros-base de banco para `landing_page`;
+* Admin de curadoria;
+* LP Builder;
+* LP teste;
+* rota pública;
+* publicação;
+* automação;
+* job;
+* agente.
 
-Exemplo futuro em landing_page:
+3.4. `config_json`
 
-* landing_page_default
-* landing_page_bofu
-* landing_page_lead_capture
-* landing_page_service
-* landing_page_product
-* landing_page_event
+* `config_json` ficou restrito a override controlado por seção.
+* Chaves aceitas no recorte: `anchor_id` e `spacing`.
+* Chaves livres como renderer, schema, style, HTML, script ou props arbitrárias são rejeitadas.
 
-5. Situação atual do banco
+4. Pendências essenciais
 
-No banco atual, content_templates guarda tanto templates de página quanto módulos/seções.
+4.1. Composição por nicho
 
-content_templates usa:
+Ainda falta definir como o sistema vai transformar itens estruturais em composição por nicho.
 
-* template_family
-* template_scope
-* template_key
-* version
-* status
-* is_active
-* payload_json
+Pontos abertos:
 
-No estado atual, há registros da família commercial_activation:
+* IA sugere seções, ordem, variantes, obrigatoriedade e lacunas;
+* sistema classifica sugestão como disponível, faltante ou inválida;
+* humano aprova, ajusta, adia ou decide implementar módulo faltante;
+* somente composição aprovada vira default oficial do nicho.
 
-* 1 template de página
-* 8 módulos/seções
+4.2. Parametrização editorial
 
-Os módulos/seções atuais de commercial_activation são:
+Ainda falta mapear regras por seção/campo.
 
-* hero
-* benefits
-* services
-* plans
-* differentials
-* how_it_works
-* faq
-* final_cta
+Primeiro foco recomendado:
 
-A família landing_page ainda não deve ser considerada resolvida por esse recorte.
+* Hero title;
+* Hero subtitle;
+* CTA principal;
+* prova curta;
+* FAQ;
+* CTA final.
 
-6. Módulos e seções
+4.3. Catálogo insuficiente para alguns nichos
 
-Para entendimento estratégico, módulo e seção podem ser tratados como conceitos próximos.
+Avaliar, com caso real, se faltam módulos como:
 
-A distinção útil é:
+* problema;
+* autoridade;
+* segurança;
+* localização;
+* formulário;
+* antes/depois;
+* serviços;
+* procedimentos;
+* planos.
 
-* módulo = peça reutilizável disponível no sistema
-* seção = uso concreto desse módulo dentro de uma página
+4.4. `hero.lead_capture`
 
-Exemplo:
+Antes de consumo real, verificar se `hero.lead_capture` cobre captura completa ou apenas uma variação técnica inicial.
 
-* hero é um módulo disponível
-* a Hero da LP de harmonização facial é uma seção concreta
+Checar especialmente:
 
-Módulos/seções são as peças usadas para montar landing pages.
+* formulário;
+* nota de privacidade;
+* submit label;
+* CTA alternativo;
+* validação de campos.
 
-Exemplos possíveis:
+5. Direção aprovada
 
-* Hero
-* Problema
-* Benefícios
-* Procedimentos
-* Serviços
-* Oferta
-* Planos
-* Prova social
-* Antes e depois
-* Autoridade
-* Segurança
-* Processo
-* FAQ
-* CTA final
-* Localização
-* Formulário
+5.1. Fluxo desejado
 
-7. Composição
+* Taxon definido.
+* Itens estruturais completos.
+* Admin aciona IA para sugerir composição.
+* Sistema confronta com catálogo, schemas, variantes e renderers existentes.
+* Humano aprova ou ajusta.
+* Composição aprovada vira default oficial do nicho.
+* LP teste é gerada em conta teste.
+* Nicho só é liberado após validação mínima.
 
-Composição é a camada que organiza a página concreta.
+5.2. Separação dos planos-base
 
-Ela deve definir:
+* Plano-base 1 — Base de composição `landing_page`: E18; já teve avanço técnico em E18.4.
+* Plano-base 2 — Curadoria de composição no Admin: E12; próximo recorte natural.
+* Plano-base 3 — LP teste e liberação do nicho: E19; depende de E18 e E12.
 
-* quais módulos entram
-* em qual ordem
-* quais são obrigatórios
-* quais são opcionais
-* qual variante de cada módulo será usada
-* qual contexto ou nicho está sendo atendido
+6. Regra de cuidado
 
-No banco atual, isso corresponde principalmente a:
+A base técnica repo-only de `landing_page` não deve ser tratada como produto final liberado para clientes.
 
-* content_template_compositions
-* content_template_composition_items
+A próxima evolução deve preservar:
 
-A composição é o lugar mais adequado para responder perguntas como:
-
-* quais seções entram na LP de harmonização facial?
-* em que ordem elas aparecem?
-* quais seções são obrigatórias?
-* quais seções podem ser removidas?
-* qual variante de Hero será usada?
-* qual variante de prova social será usada?
-
-8. Exemplo conceitual de composição por nicho
-
-Harmonização facial poderia ter uma composição inicial com:
-
-* Hero
-* Problema/desejo
-* Benefícios
-* Procedimentos
-* Antes e depois
-* Segurança
-* Prova social
-* FAQ
-* CTA WhatsApp
-
-Advogado trabalhista poderia ter outra composição inicial com:
-
-* Hero
-* Situações atendidas
-* Direitos do trabalhador
-* Como funciona
-* Autoridade
-* FAQ
-* CTA
-
-Isso mostra que o template não deve impor a mesma sequência para todos os nichos.
-
-O template permite possibilidades controladas.
-
-A composição escolhe a montagem concreta.
-
-9. Itens estruturais
-
-Itens estruturais são a base estratégica usada para definir copy, argumento, seção e possivelmente design.
-
-Exemplos de itens estruturais:
-
-* dores
-* desejos
-* desejos ocultos
-* objeções
-* riscos percebidos
-* mecanismos de solução
-* provas disponíveis
-* diferenciais
-* critérios de decisão
-* urgências
-* perguntas frequentes
-* barreiras de conversão
-* linguagem do público
-* nível de consciência
-* sofisticação do mercado
-
-Esses itens devem alimentar a geração e revisão das seções.
-
-10. Regras por seção
-
-Cada seção deve ter regras próprias sobre quais itens estruturais pode ou deve usar.
-
-Exemplo conceitual:
-
-Hero title pode usar:
-
-* dor principal
-* desejo principal
-* desejo oculto
-* transformação central
-
-Hero subtitle pode usar:
-
-* título
-* público
-* mecanismo
-* objeção principal
-* contexto de decisão
-
-FAQ pode usar:
-
-* objeções
-* riscos percebidos
-* dúvidas práticas
-* barreiras de compra
-
-Prova social pode usar:
-
-* provas disponíveis
-* autoridade
-* diferenciais verificáveis
-* redução de risco
-
-CTA final pode usar:
-
-* desejo principal
-* urgência legítima
-* próximo passo claro
-* canal de conversão
-
-Essa camada ainda precisa ser melhor definida antes de virar implementação.
-
-11. Qualidade da copy
-
-A qualidade da copy não deve depender apenas de um prompt genérico.
-
-O sistema precisa saber:
-
-* qual seção está sendo escrita
-* qual campo está sendo escrito
-* quais itens estruturais alimentam esse campo
-* quais limites editoriais aplicar
-* quais exageros evitar
-* quais critérios tornam a copy publicável
-
-Exemplo:
-
-O título da Hero não deve nascer de todos os dados disponíveis.
-
-Ele deve nascer de um subconjunto estratégico adequado ao campo.
-
-12. Limites editoriais
-
-Limites editoriais devem ser avaliados antes de virar regra definitiva.
-
-Hipótese inicial:
-
-* Hero title: curto, direto e assertivo
-* Hero subtitle: complementar ao título
-* títulos de seção: objetivos e escaneáveis
-* cards: título curto e descrição clara
-* FAQ: pergunta direta e resposta curta
-
-Não definir ainda limites universais fechados.
-
-Possíveis parâmetros futuros:
-
-* mínimo e máximo de caracteres
-* quantidade máxima de linhas
-* tom permitido
-* nível de promessa
-* palavras proibidas
-* exigência de prova
-* clareza do CTA
-* aderência ao público
-
-Esses parâmetros podem precisar ser configuráveis no Admin Dashboard.
-
-13. Design da landing page
-
-O design não deve ser definido apenas pelo template.
-
-O design deve nascer da combinação de:
-
-* design system global
-* template de página
-* variante do módulo
-* composição
-* características do nicho
-* itens estruturais
-* configuração visual permitida
-
-Exemplo:
-
-Harmonização facial pode exigir uma apresentação mais visual, leve, estética e premium.
-
-Advogado trabalhista pode exigir uma apresentação mais sóbria, direta e baseada em confiança.
-
-Isso não obriga um template novo por nicho.
-
-Pode ser:
-
-* mesmo template-base
-* composição diferente
-* variantes diferentes
-* configuração visual diferente
-* conteúdo diferente
-
-14. Cliente/admin alterando a página
-
-A ideia futura é que o sistema gere uma composição default por nicho/contexto.
-
-Depois, cliente ou admin poderia ajustar dentro de limites seguros:
-
-* remover seção
-* adicionar seção compatível
-* alterar ordem
-* trocar variante
-* editar copy
-* ajustar configuração visual permitida
-
-Isso se aproxima do LP Builder e não deve ser antecipado dentro da E18 sem recorte próprio.
-
-15. Artefato final
-
-Artefato final é a landing page gerada, revisada ou publicada.
-
-Ele deve preservar:
-
-* template usado
-* composição usada
-* taxon/nicho
-* conteúdo final
-* versão do template
-* versão da composição
-* versão da pesquisa
-* fontes estruturais usadas
-* status do conteúdo
-
-No banco atual, essa camada corresponde principalmente a:
-
-* content_artifacts
-* content_artifact_research_sources
-
-16. Lógica resumida
-
-Template = base técnica e possibilidades controladas.
-
-Módulos/seções = peças disponíveis.
-
-Composição = montagem concreta por nicho/contexto.
-
-Itens estruturais = inteligência estratégica que alimenta copy, argumentos e design.
-
-Regras por seção = contrato que diz como cada seção deve usar os itens estruturais.
-
-Artefato final = landing page pronta/publicada com conteúdo, versões e fontes.
-
-17. Ponto ainda não resolvido
-
-Ainda falta definir uma camada clara para governança editorial e estratégica por seção.
-
-Perguntas abertas:
-
-* onde ficam as regras por seção?
-* essas regras pertencem ao template, à composição, a uma tabela própria ou a configuração administrativa?
-* como mapear itens estruturais para cada campo?
-* como validar copy antes de publicar?
-* quais parâmetros o Admin Dashboard poderá alterar?
-* como evitar que isso vire overengineering?
-* em que momento isso se conecta ao LP Builder?
-
-18. Direção provisória
-
-Não transformar E18 em arquitetura multicanal completa.
-
-Não puxar LP Builder para dentro da E18.
-
-Não decidir schema novo ainda.
-
-Usar esta lousa para consolidar entendimento antes de criar plano-base.
-
-A próxima etapa deve ser continuar debatendo a formação das landing pages e só depois transformar em plano técnico.
-
-19. Módulos, variantes e seções
-
-Entendimento aprovado nesta etapa:
-
-A solução recomendada para variações como Hero com imagem, Hero com formulário ou Hero centralizada é usar módulo semântico + variante + slots/configuração.
-
-Não criar uma família para cada módulo neste momento.
-
-Não tratar variações como herança rígida pai/filho.
-
-O módulo define a função semântica da seção.
-
-Exemplos:
-
-* hero
-* benefits
-* faq
-* final_cta
-
-A variante define a forma estrutural do módulo.
-
-Exemplos:
-
-* hero.with_image
-* hero.with_form
-* hero.centered
-* hero.with_video
-
-Slots/configuração completam a seção.
-
-Exemplo conceitual de hero.with_image:
-
-* title
-* subtitle
-* proof_line
-* primary_cta
-* secondary_cta
-* image
-
-Exemplo conceitual de hero.with_form:
-
-* title
-* subtitle
-* proof_line
-* form
-* privacy_note
-* submit_label
-
-A composição escolhe qual variante será usada em cada nicho ou contexto.
-
-Exemplo:
-
-* harmonização facial pode usar hero.with_image
-* captação direta de orçamento pode usar hero.with_form
-* página institucional simples pode usar hero.centered
-
-Essa lógica já é compatível com a estrutura atual do projeto, porque content_template_composition_items já possui:
-
-* module_template_id
-* variant_key
-* sort_order
-* is_required
-* config_json
-
-Leitura prática:
-
-* module_template_id identifica o módulo usado
-* variant_key identifica a variante escolhida
-* sort_order define a posição da seção
-* is_required define obrigatoriedade
-* config_json permite ajustes controlados
-
-Portanto, para landing pages, a direção provisória é:
-
-módulo base → variante → slots/configuração → composição → seção final
-
-Essa decisão não exige criar schema novo agora.
-
-A próxima dúvida a resolver é onde ficam os contratos de slots, regras editoriais e critérios de compatibilidade entre nicho, módulo e variante.
-
-20. Zod e contrato executável
-
-O Zod já existe no projeto no recorte commercial_activation.
-
-Ele aparece como validação server-side de conteúdo, schemas por variante e registry que liga variant_key a moduleKey e schema correspondente.
-
-O Zod entra na camada técnica do debate:
-
-módulo → variante → slots/conteúdo → validação → renderização segura
-
-O Zod agrega:
-
-* validação antes de publicar
-* bloqueio de conteúdo malformado
-* limites de caracteres por campo
-* campos obrigatórios e opcionais
-* formatos seguros de CTA, listas, cards e URLs
-* objetos estritos
-* tipos TypeScript derivados do schema
-* validação de saída gerada por IA
-* validação do content_json antes de renderizar
-
-O Zod não decide estratégia.
-
-Ele não escolhe:
-
-* qual variante usar por nicho
-* quais seções entram na página
-* se a copy é persuasiva
-* se o argumento comercial é bom
-* se o design combina com o mercado
-
-Conclusão provisória:
-
-Zod é contrato executável de segurança, formato e consistência.
-
-Zod não substitui parametrização editorial, composição, pesquisa estruturada nem revisão estratégica.
-
-21. Parametrização de módulos e variantes
-
-Termo adotado nesta lousa:
-
-Parametrização = definição prática dos limites e regras de um módulo ou variante.
-
-Parametrizar um módulo/variante significa definir:
-
-* campos aceitos
-* campos obrigatórios
-* limites de caracteres
-* quantidade mínima e máxima de itens
-* tipos de CTA permitidos
-* imagem, vídeo ou formulário permitido
-* regras editoriais
-* critérios de validação
-* critérios mínimos para publicação
-
-Na prática, a parametrização de qualidade precisa ser feita por variante relevante.
-
-Mas isso não significa começar do zero em todas.
-
-Direção provisória:
-
-* criar defaults por tipo de campo
-* especializar por variante
-* ajustar por evidência real
-
-Exemplos de defaults:
-
-* título curto
-* subtítulo
-* descrição
-* CTA
-* card
-* pergunta e resposta
-* lista de benefícios
-
-Exemplos de especialização:
-
-* hero.with_image usa título, subtítulo, CTA e imagem
-* hero.with_form usa título, subtítulo, formulário e nota de privacidade
-* faq.accordion usa perguntas e respostas
-* benefits.cards usa cards curtos
-
-A baixa qualidade observada nas páginas comerciais indica provável falta de parametrização editorial por seção/campo.
-
-O problema não parece ser apenas ausência de validação técnica.
-
-Validação técnica evita conteúdo quebrado.
-
-Parametrização editorial orienta qualidade, foco, tom, promessa, limite e utilidade da copy.
-
-22. Local da parametrização
-
-Estado atual entendido:
-
-A parametrização técnica crítica está principalmente no código do repositório.
-
-Exemplos:
-
-* schemas Zod em commercial_activation
-* registry de variantes
-* resolver
-* renderer
-* validações server-side
-
-Não tratar como já existente uma parametrização editorial editável no Admin Dashboard.
-
-Para o MVP, a direção mais segura é manter parametrizações críticas no repo.
-
-Admin Dashboard pode expor ajustes simples no futuro, desde que haja:
-
-* preview seguro
-* validação clara
-* rollback ou recuperação
-* limites de permissão
-* baixo risco de quebrar renderização
-
-Evitar, neste momento, transformar o Admin em editor livre de contratos de módulo, variantes ou schemas.
-
-Isso aumentaria muito a superfície do MVP.
-
-23. Reuso de módulos entre canais
-
-A preocupação com retrabalho é válida.
-
-Se cada canal redesenhar do zero todos os módulos, variantes, slots, limites e validações, o trabalho aumenta muito.
-
-Mas também não é seguro criar um módulo universal que sirva automaticamente para todos os canais.
-
-Canais diferentes têm restrições diferentes.
-
-Exemplos:
-
-* landing page usa layout, imagem, formulário, CTA e responsividade
-* página comercial usa estrutura web próxima de landing page, mas vende o próprio LP Factory
-* e-mail usa assunto, preheader, corpo textual e CTA simples
-* WhatsApp usa sequência conversacional, mensagem curta e CTA textual
-* Instagram/TikTok usam formatos próprios de hook, cena, legenda, slide ou roteiro
-
-Direção provisória:
-
-Não criar catálogo universal prematuro.
-
-Não duplicar tudo sem necessidade comprovada.
-
-Manter módulos por família/canal no MVP, com reuso conceitual e eventual reaproveitamento de código quando houver compatibilidade real.
-
-Página comercial e landing page são canais próximos e podem compartilhar ideias, componentes ou padrões web quando fizer sentido.
-
-Mas não assumir que commercial_activation.hero.default serve automaticamente para landing_page.
-
-E-mail e WhatsApp podem reaproveitar lógica estratégica, mas provavelmente exigem contratos e renderização próprios.
-
-24. Camada intermediária e ROI
-
-Foi discutida a possibilidade de uma camada intermediária baseada em conceito-base de módulo.
-
-Exemplo:
-
-* Hero como conceito-base
-* Hero web
-* Hero e-mail
-* abertura de WhatsApp inspirada no Hero
-
-Essa camada poderia reduzir duplicação no futuro.
-
-Mas ela não está explicitamente consolidada hoje no projeto como arquitetura formal.
-
-Criá-la agora provavelmente significaria nova arquitetura ou retrabalho.
-
-Avaliação provisória de ROI para o MVP:
-
-Baixo neste momento.
-
-Motivos:
-
-* a qualidade da página comercial ainda precisa ser estabilizada
-* landing_page ainda não foi trabalhada como consumidor real
-* adaptação entre canais exige IA ou regras editoriais fortes
-* Admin editável para parametrização aumentaria complexidade
-* o ganho de reuso ainda é hipotético
-
-Melhor momento para reavaliar:
-
-* após página comercial funcionando bem
-* após primeira LP real do produto
-* após segundo nicho validado
-* quando houver duplicação real comprovada
-
-Conclusão provisória:
-
-Não criar camada intermediária agora.
-
-Registrar como possibilidade futura condicionada a ROI real.
-
-25. Dogfooding, páginas comerciais e LPs próprias
-
-Termo correto em inglês:
-
-eat your own dog food
-
-Termo curto comum:
-
-dogfooding
-
-Uso nesta lousa:
-
-usar o próprio SaaS para construir nossas próprias landing pages.
-
-Estratégicamente, páginas comerciais por nicho poderiam se aproximar de LPs próprias do LP Factory, principalmente quando usam audience_scope business_buyer e itens estruturais para vender o próprio produto.
-
-Mas o projeto atual separa E10.7 e E19.
-
-E10.7 cuida de páginas comerciais personalizadas por nicho.
-
-E19 é o LP Builder planejado.
-
-Converter agora páginas comerciais em LPs reais do Builder não está previsto no recorte atual.
-
-Isso provavelmente geraria retrabalho para o MVP.
-
-Direção provisória:
-
-Não mexer nisso agora.
-
-Manter páginas comerciais e LP Builder separados no MVP.
-
-Usar o aprendizado das páginas comerciais para informar a futura LP real, sem fundir os recortes antes de decisão humana.
-
-26. Síntese provisória pós-debate
-
-A direção atual da lousa é:
-
-* manter módulos por família/canal no MVP
-* usar variantes por módulo
-* usar parametrização por variante
-* manter parametrização técnica crítica no repo
-* usar Zod como contrato executável de validação
-* não abrir Admin editável para contratos complexos neste momento
-* não criar camada intermediária transversal agora
-* não transformar páginas comerciais em LPs do Builder agora
-* reavaliar reuso mais amplo somente com evidência de ROI
-
-Próximo ponto relevante do debate:
-
-Definir como deveria ser a parametrização editorial de uma seção concreta, começando pela Hero.
-
-27. Parametrização técnica e editorial por seção/campo
-
-A diferença principal é:
-
-Parametrização técnica responde se o conteúdo pode ser salvo, validado e renderizado sem quebrar.
-
-Parametrização editorial responde se o campo foi escrito com a estratégia correta para aquela seção.
-
-Parametrização técnica define:
-
-* formato dos dados
-* campos obrigatórios
-* campos opcionais
-* tipos aceitos
-* limites mínimos e máximos
-* URL ou CTA seguro
-* arrays mínimos e máximos
-* variante conhecida
-* compatibilidade de renderização
-
-Exemplo na Hero:
-
-* title existe e está dentro do limite
-* description existe e está dentro do limite
-* primary_cta tem label e href válido
-* objeto não traz campos inesperados
-* variant_key é conhecido
-
-No projeto, essa camada está principalmente nos schemas Zod, registry, resolver, renderer e validações server-side.
-
-Parametrização editorial define:
-
-* quais itens estruturais cada campo deve consultar
-* quais blocos de pesquisa são fonte principal ou secundária
-* quais item_key são permitidos ou evitados
-* qual tom usar
-* qual tipo de promessa é aceitável
-* qual relação o campo deve ter com dor, desejo, benefício, mecanismo, objeção ou prova
-* quais exageros evitar
-* quais critérios tornam a copy forte o suficiente
-
-Exemplo na Hero title:
-
-* pode usar dor principal
-* pode usar desejo principal
-* pode usar desejo oculto
-* pode usar transformação central
-* pode consultar strategic_core e lp_sections
-* não deve depender de SEO como fonte principal
-* não deve transformar medo em promessa exagerada
-
-Exemplo na Hero subtitle:
-
-* deve complementar o title
-* pode explicar mecanismo
-* pode contextualizar público
-* pode reduzir objeção principal
-* deve dar clareza para decisão
-
-Leitura prática:
-
-* técnico = a seção está válida?
-* editorial = a seção está boa?
-* técnico evita quebra
-* editorial evita copy genérica ou fraca
-
-A qualidade das páginas comerciais depende especialmente da parametrização editorial por seção/campo.
-
-Essa camada deve conectar os itens estruturais existentes no Supabase à geração de copy pela IA.
-
-Direção provisória:
-
-* manter validação técnica no repo
-* começar parametrização editorial no repo
-* só mover parte da parametrização editorial para banco/Admin quando houver preview, validação, versionamento, rollback e ROI comprovado
-
-Próximo ponto relevante do debate:
-
-Parametrizar editorialmente a Hero.
-
-28. Curadoria no Admin antes de liberar nicho para LPs
-
-Decisão de direção após debate:
-
-A composição de landing pages reais de clientes não deve seguir o modelo rígido de commercial_activation.
-
-A página comercial atual pode permanecer determinística, mas landing_page precisa de composição flexível por nicho, orientada por itens estruturais e validada contra o catálogo real de módulos e variantes.
-
-Caminho selecionado para sair do debate e seguir para plano-base:
-
-Curadoria no Admin antes de liberar o nicho.
-
-Fluxo conceitual aprovado:
-
-* taxon definido
-* itens estruturais completos
-* Admin aciona IA para sugerir composição do nicho
-* IA sugere seções, ordem, variantes, obrigatoriedade e possíveis lacunas
-* sistema confronta a sugestão com módulos, variantes, schemas e renderers disponíveis
-* humano decide o que aprovar, remover, adiar, parametrizar ou implementar
-* composição aprovada vira default oficial do nicho
-* LP teste é gerada com conta teste
-* nicho só é liberado para clientes depois de validação mínima
-
-Papel da IA:
-
-* sugerir composição com base nos itens estruturais do nicho
-* justificar seções sugeridas
-* apontar módulos faltantes ou parametrizações fracas
-* apoiar geração posterior de copy
-
-Papel do sistema:
-
-* validar se módulos e variantes existem
-* validar se há contrato técnico e renderer compatível
-* impedir persistência de composição inválida
-* gravar somente composição aprovada
-* manter rastreabilidade de template, composição, taxon e versões
-
-Papel humano:
-
-* aprovar ou ajustar a composição sugerida
-* decidir se módulo faltante tem ROI
-* decidir se uma sugestão da IA deve virar implementação
-* validar LP teste antes de liberar o nicho
-
-Modelo de planos-base aprovado para próxima etapa:
-
-* Plano-base 1: base de composição landing_page, principalmente ligado à E18
-* Plano-base 2: curadoria de composição no Admin, principalmente ligada à E12 com dependência da E18
-* Plano-base 3: LP teste e liberação do nicho, principalmente ligada à E19 com dependências de E18 e E12
-
-Direções aceitas:
-
-* usar mais de um plano-base
-* começar com esses três planos-base
-* não enquadrar tudo em E10.7, porque E10.7 é página comercial
-* começar a factibilidade pelo Admin Dashboard apoiando o fluxo
-* manter fases objetivas para implementação e detalhadas o suficiente para avaliação dos especialistas
-* se a execução revelar nova fase necessária, seguir o fluxo do prompt-estrategista para ajuste controlado
-
-Próxima ação:
-
-Sair do debate para planos-base separados, delegando dois planos-base a outros chats e assumindo o primeiro neste chat, quando houver comando humano explícito.
-
-29. Registro pós-E18.4 — base técnica repo-only de landing_page
-
-A E18.4 do `docs/roadmap.md` já registra uma evolução concreta do debate: `landing_page` passou a ter base técnica interna repo-only dentro da E18.
-
-O que foi feito em E18.4:
-
-* `landing_page` foi separada tecnicamente de `commercial_activation`
-* foram criados contratos TypeScript próprios
-* foram criados schemas Zod por conteúdo de seção
-* foi criado registry fechado próprio
-* foi criado render model próprio
-* foi criado renderer mínimo
-* foi criada fixture sintética
-* foram criados casos executáveis de validação
-* foi criado validador de composição
-* foi adicionada validação dedicada por `npm run validate:landing-page`
-* não foram criados registros-base de banco para `landing_page`
-* não foram criados Admin, LP Builder, LP teste, rota pública, automação, job ou agente
-
-O que ficou de acordo com o debate:
-
-* `landing_page` não herdou automaticamente o modelo rígido de `commercial_activation`
-* `commercial_activation` permanece apenas como referência comparativa
-* a parametrização técnica crítica ficou no repositório
-* o uso de Zod, registry, resolver, renderer e validação fail-closed ficou alinhado à direção aprovada
-* `config_json` foi tratado como override controlado por seção, não como editor livre
-* a E18 não puxou curadoria Admin, LP Builder, LP teste ou liberação de nicho para dentro do seu recorte
-
-O que evoluiu em relação à lousa:
-
-* a família `landing_page` deixou de ser apenas conceito em debate e passou a ter base técnica mínima no repo
-* o catálogo mínimo inicial passou a existir como disponibilidade técnica controlada
-* a validação de composição ficou concreta, incluindo duplicidade, `sortOrder`, variante inexistente, incompatibilidade módulo-variante e `config_json` fora do contrato
-* o limite de `config_json` ficou mais seguro do que a hipótese inicial, aceitando apenas `anchor_id` e `spacing`
-
-O que ainda pode melhorar:
-
-* reforçar que catálogo mínimo não é composição obrigatória nem sequência fixa para todos os nichos
-* avaliar se o catálogo inicial é suficiente para nichos reais ou se faltam módulos como problema, autoridade, segurança, localização, formulário, antes/depois, serviços, procedimentos ou planos
-* verificar antes do consumo real se `hero.lead_capture` representa captura completa com formulário e nota de privacidade ou apenas uma variação técnica inicial
-* definir parametrização editorial por seção/campo, começando pela Hero
-* mapear quais itens estruturais alimentam cada campo de cada seção
-* definir como a IA vai sugerir composição e como o sistema classificará cada sugestão como disponível, faltante ou inválida
-* definir como uma composição aprovada no Admin será persistida depois, sem permitir gravação automática de sugestão da IA
-* decidir posteriormente se e quando registros-base de `landing_page` entram em `content_templates`
-
-Leitura atualizada:
-
-* E18.4 resolveu a base técnica inicial de `landing_page`
-* E18.4 não resolveu composição estratégica por nicho
-* E18.4 não resolveu parametrização editorial
-* E18.4 não resolveu curadoria Admin
-* E18.4 não resolveu LP teste nem liberação de nicho
-
-Próxima ação recomendada:
-
-* usar a E18.4 como insumo técnico para o Plano-base 2 — Curadoria de composição no Admin
-* manter a lousa como registro de riscos e melhorias antes de transformar catálogo técnico em operação de nicho
-* não tratar a base repo-only de `landing_page` como produto final liberado para clientes
+* catálogo técnico não é composição fixa;
+* IA não grava composição sozinha;
+* banco não cria componente visual automaticamente;
+* Admin não edita contratos livres;
+* LP Builder não entra na E18;
+* liberação de nicho depende de validação humana e LP teste.
