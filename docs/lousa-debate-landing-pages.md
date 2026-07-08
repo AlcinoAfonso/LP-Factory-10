@@ -44,7 +44,7 @@ Decisão atual:
 
 * manter `lp_overview` e `lp_sections` nos itens estruturados por enquanto;
 * não mover essa responsabilidade para o Blueprint sem decisão humana posterior;
-* usar o Blueprint para auditar, comparar e acelerar parametrização, não para duplicar a estruturação já existente.
+* usar o Blueprint para parametrizar, auditar e comparar, não para duplicar a estruturação já existente.
 
 2.5. Parametrização técnica e editorial
 
@@ -100,29 +100,47 @@ E18.4 não criou:
 
 4. Papel do Blueprint
 
-4.1. Função
+4.1. Função principal
 
-O Blueprint não é o criador primário da arquitetura da LP.
+O Blueprint deve acelerar a evolução do catálogo de módulos e variantes de `landing_page` a partir de nichos reais.
 
-Função correta:
+Função principal:
 
 * ler taxon, pesquisa bruta, itens estruturados e catálogo técnico disponível;
-* comparar `lp_sections` com a necessidade percebida pelo próprio Blueprint;
-* apontar convergências, divergências e lacunas;
-* acelerar parametrização de módulos e variantes;
-* gerar proposta de evolução do catálogo, não implementação automática.
+* identificar exigências editoriais, visuais e de conversão;
+* parametrizar módulos e variantes existentes;
+* propor novo módulo ou variante quando houver lacuna real;
+* justificar ROI antes de qualquer evolução do catálogo;
+* gerar proposta, não implementação automática.
 
-4.2. Entregas possíveis
+4.2. Dois momentos do Blueprint
 
+O Blueprint atua em dois momentos:
+
+* antes da composition draft: parametriza e propõe evolução do catálogo;
+* depois da composition draft: audita lacunas, conflitos, ordem e adequação.
+
+Essa separação evita tratar o Blueprint apenas como auditor da composition.
+
+4.3. Entregas possíveis
+
+* parametrização editorial, visual e de conversão por módulo/variante;
+* mapeamento de campos para `strategic_core`, `lp_overview`, `lp_sections` e `seo`;
+* critérios para criar nova variante ou novo módulo;
+* diagnóstico de cobertura do catálogo: disponível, parcial, faltante ou inválido;
 * auditoria de `lp_sections` e `lp_overview`;
 * comparação entre seções sugeridas pelos itens estruturados e seções sugeridas pelo Blueprint;
-* diagnóstico de cobertura do catálogo: disponível, parcial, faltante ou inválido;
-* proposta de novo módulo ou variante quando houver lacuna real;
-* proposta de ajuste controlado quando o módulo existir parcialmente;
-* parametrização editorial, visual e de conversão para módulos faltantes ou frágeis;
-* justificativa de ROI antes de qualquer evolução do catálogo.
+* proposta de ajuste controlado quando o módulo existir parcialmente.
 
-4.3. Limite
+4.4. Exemplos iniciais de parametrização
+
+* `hero.title`: dor principal, desejo principal, transformação, linguagem do público e limite de promessa.
+* `hero.subtitle`: mecanismo, contexto de decisão, objeção principal e clareza do próximo passo.
+* `primary_cta`: intenção do usuário, ação esperada e canal de conversão.
+* `proof_line`: prova disponível, autoridade, redução de risco e verificação mínima.
+* `faq.accordion`: objeções, riscos percebidos, dúvidas práticas e barreiras de compra.
+
+4.5. Limite
 
 * Blueprint não cria módulo diretamente em produção.
 * Blueprint não grava composition sozinho.
@@ -138,9 +156,38 @@ Função correta:
 * Itens estruturados carregados para `end_customer` e `business_buyer` quando aplicável.
 * Blocos úteis: `strategic_core`, `lp_overview`, `lp_sections` e `seo`.
 
-5.2. Composition draft
+5.2. Blueprint de Parametrização do Catálogo
 
-A primeira proposta de composition deve nascer principalmente de `lp_sections`.
+Antes da composition draft, o Blueprint compara necessidades do nicho com o catálogo técnico existente.
+
+Resultado esperado:
+
+* módulos e variantes suficientes;
+* módulos e variantes parciais;
+* módulos e variantes faltantes;
+* regras editoriais por campo;
+* regras visuais e responsivas relevantes;
+* critérios de conversão por módulo;
+* proposta de evolução do catálogo.
+
+Se houver lacuna real, o Blueprint não implementa. Ele gera proposta para decisão humana.
+
+5.3. Decisão humana sobre catálogo
+
+Humano decide:
+
+* usar o catálogo atual;
+* parametrizar módulo existente;
+* criar nova variante;
+* criar novo módulo;
+* adiar lacuna;
+* rejeitar sugestão por baixo ROI.
+
+Quando aprovado, a implementação segue no repo com schema, registry, renderer, fixture e validação.
+
+5.4. Composition draft
+
+A primeira proposta de composition deve nascer principalmente de `lp_sections`, já considerando o catálogo parametrizado aprovado.
 
 O sistema compara `lp_sections` com o catálogo técnico `landing_page`.
 
@@ -154,42 +201,29 @@ Resultado esperado:
 * obrigatoriedade sugerida;
 * variante provável.
 
-5.3. Auditoria Blueprint
+5.5. Auditoria Blueprint da composition
 
-O Blueprint entra depois da leitura inicial da composition.
+Depois da composition draft, o Blueprint audita a montagem proposta.
 
 Ele serve para:
 
 * validar se `lp_sections` faz sentido;
 * sugerir seções ausentes;
 * questionar ordem ou prioridade quando houver motivo;
-* parametrizar módulos faltantes ou parciais;
-* propor evolução do catálogo.
+* apontar uso forçado de módulo inadequado;
+* apontar lacuna moderna, visual, editorial ou de conversão.
 
-5.4. Decisão humana
+5.6. Decisão humana sobre composition
 
 Humano decide:
 
 * aceitar composition sugerida;
 * ajustar ordem ou módulos;
 * adiar seção faltante;
-* parametrizar módulo existente;
-* criar novo módulo/variante;
+* revisar parametrização;
 * rejeitar sugestão por baixo ROI.
 
-5.5. Implementação e validação
-
-Quando houver novo módulo ou variante aprovado:
-
-* implementar no repo;
-* criar schema;
-* registrar no registry;
-* criar renderer ou ajuste visual;
-* criar fixture;
-* criar caso de validação;
-* rodar validação.
-
-5.6. LP teste e liberação
+5.7. LP teste e liberação
 
 * Composition aprovada vira default oficial do nicho.
 * LP teste é gerada em conta teste.
@@ -281,7 +315,7 @@ Checar especialmente:
 8. Separação dos planos-base
 
 * Plano-base 1 — Base de composition `landing_page`: E18; já teve avanço técnico em E18.4.
-* Plano-base 2 — Curadoria de composition e Blueprint no Admin: E12; próximo recorte natural.
+* Plano-base 2 — Curadoria de Blueprint, catálogo e composition no Admin: E12; próximo recorte natural.
 * Plano-base 3 — LP teste e liberação do nicho: E19; depende de E18 e E12.
 
 9. Regra de cuidado
@@ -290,8 +324,8 @@ A base técnica repo-only de `landing_page` não deve ser tratada como produto f
 
 A próxima evolução deve preservar:
 
+* Blueprint parametriza catálogo antes de auditar composition;
 * `lp_sections` já sugere arquitetura inicial;
-* Blueprint audita e parametriza, não substitui tudo;
 * catálogo técnico não é composition fixa;
 * origem de tráfego não muda o canal da LP;
 * IA não grava composition sozinha;
