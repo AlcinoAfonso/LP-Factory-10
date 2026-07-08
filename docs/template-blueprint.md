@@ -6,6 +6,7 @@ Analise o nicho abaixo e gere um Blueprint independente para orientar a criacao 
 
 Nao crie uma landing page final.
 Nao use dados internos, itens estruturados ou composicao previa do nosso sistema.
+Nao classifique uma LP como alta conversao sem dado publico de conversao. Quando nao houver dado confiavel, use o termo referencia de mercado observada.
 O objetivo e extrair padroes de mercado, CRO, UX, copy, prova, oferta e estrutura que possam virar modulos ou variantes reutilizaveis em qualquer nicho.
 
 ## Nicho
@@ -42,6 +43,10 @@ Pesquise e sintetize:
 8. Modulos/secoes que aparecem como necessarios ou altamente recomendados.
 9. Variacoes de modulos que poderiam ser universais.
 10. Parametrizacoes recomendadas por modulo e campo.
+
+Regra obrigatoria:
+
+Toda recomendacao de modulo, variante ou parametro deve citar a fonte usada. Quando nao houver fonte suficiente, marque como hipotese e envie para decisao humana.
 
 ## Saida esperada
 
@@ -171,7 +176,17 @@ Para cada fonte, informe:
 - por que e relevante;
 - grau de confianca: alto, medio ou baixo.
 
-### 10. Decisoes recomendadas
+### 10. Mapa secao -> modulo/variante -> parametros
+
+Para cada secao recomendada, informe:
+
+- secao;
+- modulo ou variante sugerida;
+- parametros principais;
+- fonte usada;
+- status: aprovado, hipotese ou decisao humana pendente.
+
+### 11. Decisoes recomendadas
 
 Finalize com:
 
