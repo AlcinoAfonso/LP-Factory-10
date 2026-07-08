@@ -27,6 +27,27 @@ const cases: Case[] = [
       assert.equal(result.status, "ready");
       assert.equal(result.model.channel, "landing_page");
       assert.equal(result.model.sections.length, 7);
+      assert.deepEqual(result.model.sections[0].config, {
+        anchor_id: "inicio",
+        spacing: "spacious",
+      });
+    },
+  },
+  {
+    name: "duplicate composition item invalidates composition",
+    run: () => {
+      const composition = clone(landingPageFixtureComposition);
+      composition.items[1].id = requiredHeroId;
+
+      const result = buildLandingPageRenderModel({
+        composition,
+        contentJson: clone(landingPageFixtureContent),
+      });
+
+      assert.deepEqual(result, {
+        status: "invalid",
+        reason: "composition_item_duplicate",
+      });
     },
   },
   {
@@ -65,6 +86,23 @@ const cases: Case[] = [
     },
   },
   {
+    name: "nonexistent variant invalidates composition",
+    run: () => {
+      const composition = clone(landingPageFixtureComposition);
+      composition.items[0].variantKey = "hero.unknown";
+
+      const result = buildLandingPageRenderModel({
+        composition,
+        contentJson: clone(landingPageFixtureContent),
+      });
+
+      assert.deepEqual(result, {
+        status: "invalid",
+        reason: "section_registry_invalid",
+      });
+    },
+  },
+  {
     name: "module and variant mismatch invalidates content",
     run: () => {
       const composition = clone(landingPageFixtureComposition);
@@ -78,6 +116,72 @@ const cases: Case[] = [
       assert.deepEqual(result, {
         status: "invalid",
         reason: "section_registry_invalid",
+      });
+    },
+  },
+  {
+    name: "unordered composition resolves by sortOrder",
+    run: () => {
+      const composition = clone(landingPageFixtureComposition);
+      composition.items.reverse();
+
+      const result = buildLandingPageRenderModel({
+        composition,
+        contentJson: clone(landingPageFixtureContent),
+      });
+
+      assert.equal(result.status, "ready");
+      assert.equal(result.model.sections[0].compositionItemId, requiredHeroId);
+    },
+  },
+  {
+    name: "duplicate sortOrder invalidates composition",
+    run: () => {
+      const composition = clone(landingPageFixtureComposition);
+      composition.items[1].sortOrder = composition.items[0].sortOrder;
+
+      const result = buildLandingPageRenderModel({
+        composition,
+        contentJson: clone(landingPageFixtureContent),
+      });
+
+      assert.deepEqual(result, {
+        status: "invalid",
+        reason: "composition_order_invalid",
+      });
+    },
+  },
+  {
+    name: "duplicate anchor_id invalidates config_json",
+    run: () => {
+      const composition = clone(landingPageFixtureComposition);
+      composition.items[1].config = { anchor_id: "inicio" };
+
+      const result = buildLandingPageRenderModel({
+        composition,
+        contentJson: clone(landingPageFixtureContent),
+      });
+
+      assert.deepEqual(result, {
+        status: "invalid",
+        reason: "config_json_invalid",
+      });
+    },
+  },
+  {
+    name: "invalid config_json invalidates composition",
+    run: () => {
+      const composition = clone(landingPageFixtureComposition);
+      composition.items[0].config = { renderer: "CommercialActivationHero" };
+
+      const result = buildLandingPageRenderModel({
+        composition,
+        contentJson: clone(landingPageFixtureContent),
+      });
+
+      assert.deepEqual(result, {
+        status: "invalid",
+        reason: "config_json_invalid",
       });
     },
   },
@@ -134,6 +238,23 @@ const cases: Case[] = [
       assert.deepEqual(result, {
         status: "invalid",
         reason: "section_content_invalid",
+      });
+    },
+  },
+  {
+    name: "commercial_activation variant is not auto-compatible",
+    run: () => {
+      const composition = clone(landingPageFixtureComposition);
+      composition.items[0].variantKey = "hero.default";
+
+      const result = buildLandingPageRenderModel({
+        composition,
+        contentJson: clone(landingPageFixtureContent),
+      });
+
+      assert.deepEqual(result, {
+        status: "invalid",
+        reason: "section_registry_invalid",
       });
     },
   },

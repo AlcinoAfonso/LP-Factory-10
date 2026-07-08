@@ -1,8 +1,10 @@
 import type { LandingPageComposition } from "./contracts";
 import {
-  isLandingPageSectionVariant,
-  landingPageSectionRegistry,
-} from "./registry";
+  validateLandingPageComposition,
+  type LandingPageCompositionValidationReason,
+  type LandingPageSectionConfig,
+} from "./composition-validator";
+import { landingPageSectionRegistry } from "./registry";
 import {
   landingPageContentV1Schema,
   type LandingPageSectionContent,
@@ -14,6 +16,7 @@ export type LandingPageRenderSection = {
   sortOrder: number;
   moduleKey: string;
   variantKey: LandingPageSectionVariant;
+  config: LandingPageSectionConfig;
   content: LandingPageSectionContent;
 };
 
@@ -32,6 +35,8 @@ export type LandingPageRenderModelResult =
         | "composition_item_duplicate"
         | "composition_item_unknown"
         | "composition_item_missing"
+        | "composition_order_invalid"
+        | "config_json_invalid"
         | "section_registry_invalid"
         | "section_content_invalid";
     };
@@ -41,13 +46,21 @@ export function buildLandingPageRenderModel(input: {
   contentJson: unknown;
   logSafeWarning?: (message: string, details: Record<string, unknown>) => void;
 }): LandingPageRenderModelResult {
+  const parsedComposition = validateLandingPageComposition(input.composition);
+  if (parsedComposition.status !== "valid") {
+    return {
+      status: "invalid",
+      reason: parsedComposition.reason,
+    };
+  }
+
   const parsedContent = landingPageContentV1Schema.safeParse(input.contentJson);
   if (!parsedContent.success) {
     return { status: "invalid", reason: "content_schema_invalid" };
   }
 
   const compositionItems = new Map(
-    input.composition.items.map((item) => [item.id, item]),
+    parsedComposition.items.map((item) => [item.id, item]),
   );
   const contentItems = new Map<
     string,
@@ -66,16 +79,8 @@ export function buildLandingPageRenderModel(input: {
 
   const sections: LandingPageRenderSection[] = [];
 
-  for (const item of input.composition.items) {
-    if (!isLandingPageSectionVariant(item.variantKey)) {
-      return { status: "invalid", reason: "section_registry_invalid" };
-    }
-
+  for (const item of parsedComposition.items) {
     const registryEntry = landingPageSectionRegistry[item.variantKey];
-    if (item.moduleKey !== registryEntry.moduleKey) {
-      return { status: "invalid", reason: "section_registry_invalid" };
-    }
-
     const section = contentItems.get(item.id);
     if (!section) {
       if (item.isRequired) {
@@ -101,6 +106,7 @@ export function buildLandingPageRenderModel(input: {
       sortOrder: item.sortOrder,
       moduleKey: item.moduleKey,
       variantKey: item.variantKey,
+      config: item.config,
       content: parsedSection.data,
     });
   }
@@ -114,3 +120,5 @@ export function buildLandingPageRenderModel(input: {
     },
   };
 }
+
+export type { LandingPageCompositionValidationReason };

@@ -10,7 +10,7 @@ export const landingPageFixtureComposition: LandingPageComposition = {
       variantKey: "hero.lead_capture",
       sortOrder: 10,
       isRequired: true,
-      config: {},
+      config: { anchor_id: "inicio", spacing: "spacious" },
     },
     {
       id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaab102",
@@ -50,7 +50,7 @@ export const landingPageFixtureComposition: LandingPageComposition = {
       variantKey: "faq.accordion",
       sortOrder: 60,
       isRequired: false,
-      config: {},
+      config: { anchor_id: "duvidas", spacing: "compact" },
     },
     {
       id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaab107",
@@ -58,7 +58,7 @@ export const landingPageFixtureComposition: LandingPageComposition = {
       variantKey: "final_cta.simple",
       sortOrder: 70,
       isRequired: true,
-      config: {},
+      config: { anchor_id: "contato-final" },
     },
   ],
 };
