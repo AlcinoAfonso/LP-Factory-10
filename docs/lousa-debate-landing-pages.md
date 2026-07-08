@@ -3,7 +3,7 @@ Fontes: chat, docs/roadmap.md, docs/schema.md, docs/prompt-nicho-itens-estrutura
 
 1. Objetivo
 
-Registrar apenas as decisões úteis sobre formação de landing pages no LP Factory 10.
+Registrar decisões úteis sobre formação de landing pages no LP Factory 10.
 
 Esta lousa não substitui o roadmap, não implementa nada e não autoriza nova infra.
 
@@ -17,22 +17,21 @@ Esta lousa não substitui o roadmap, não implementa nada e não autoriza nova i
 
 2.2. Família `landing_page`
 
-* `landing_page` é família própria e não deve herdar automaticamente o modelo rígido de `commercial_activation`.
+* `landing_page` é família própria.
+* `landing_page` não deve herdar automaticamente o modelo rígido de `commercial_activation`.
 * `commercial_activation` pode continuar determinístico.
-* Landing pages reais precisam de composição flexível por nicho.
+* Landing pages reais precisam de composition flexível por nicho.
 * Não criar template novo para cada nicho por padrão.
 
-2.3. Módulos, variantes e composição
+2.3. Módulos, variantes e composition
 
 * Módulo = peça reutilizável disponível no sistema.
 * Seção = uso concreto de um módulo em uma página.
 * Variante = forma estrutural de um módulo.
-* Composição = módulos + ordem + obrigatoriedade + variante + contexto/nicho.
-* A composição é a camada correta para definir o que entra em cada landing page.
+* Composition = módulos + ordem + obrigatoriedade + variante + contexto/nicho.
+* Composition é a camada correta para definir o que entra em cada landing page.
 
 2.4. Itens estruturais
-
-Os itens estruturados já possuem papel arquitetural.
 
 Blocos atuais relevantes:
 
@@ -57,11 +56,9 @@ Decisão atual:
 
 3. Estado atual após E18.4
 
-3.1. O que já foi feito
+3.1. Base técnica criada
 
-E18.4 consolidou uma base técnica repo-only para `landing_page`.
-
-Foi feito:
+E18.4 consolidou uma base técnica repo-only para `landing_page`:
 
 * contratos TypeScript próprios;
 * schemas Zod por seção;
@@ -70,7 +67,7 @@ Foi feito:
 * renderer mínimo;
 * fixture sintética;
 * casos executáveis de validação;
-* validador de composição;
+* validador de composition;
 * validação dedicada por `npm run validate:landing-page`.
 
 3.2. Catálogo técnico inicial
@@ -85,7 +82,7 @@ Catálogo mínimo registrado para primeiro uso técnico:
 * `faq.accordion`;
 * `final_cta.simple`.
 
-Esse catálogo é disponibilidade técnica, não composição obrigatória para todos os nichos.
+Esse catálogo é disponibilidade técnica, não composition obrigatória para todos os nichos.
 
 3.3. Limites preservados
 
@@ -101,19 +98,13 @@ E18.4 não criou:
 * job;
 * agente.
 
-3.4. `config_json`
-
-* `config_json` ficou restrito a override controlado por seção.
-* Chaves aceitas no recorte: `anchor_id` e `spacing`.
-* Chaves livres como renderer, schema, style, HTML, script ou props arbitrárias são rejeitadas.
-
 4. Papel do Blueprint
 
 4.1. Função
 
 O Blueprint não é o criador primário da arquitetura da LP.
 
-Função correta no fluxo atual:
+Função correta:
 
 * ler taxon, pesquisa bruta, itens estruturados e catálogo técnico disponível;
 * comparar `lp_sections` com a necessidade percebida pelo próprio Blueprint;
@@ -121,9 +112,7 @@ Função correta no fluxo atual:
 * acelerar parametrização de módulos e variantes;
 * gerar proposta de evolução do catálogo, não implementação automática.
 
-4.2. Entregas do Blueprint
-
-O Blueprint pode entregar:
+4.2. Entregas possíveis
 
 * auditoria de `lp_sections` e `lp_overview`;
 * comparação entre seções sugeridas pelos itens estruturados e seções sugeridas pelo Blueprint;
@@ -136,11 +125,11 @@ O Blueprint pode entregar:
 4.3. Limite
 
 * Blueprint não cria módulo diretamente em produção.
-* Blueprint não grava composição sozinho.
+* Blueprint não grava composition sozinho.
 * Blueprint não altera contratos, schemas, registry ou renderer.
 * Blueprint gera proposta para aprovação humana e implementação controlada no repo.
 
-5. Fluxo recomendado atualizado
+5. Fluxo recomendado
 
 5.1. Entrada
 
@@ -158,14 +147,14 @@ O sistema compara `lp_sections` com o catálogo técnico `landing_page`.
 Resultado esperado:
 
 * seções disponíveis;
-* seções disponíveis parcialmente;
+* seções parcialmente disponíveis;
 * seções faltantes;
 * seções inválidas ou fora do catálogo;
 * ordem sugerida;
 * obrigatoriedade sugerida;
 * variante provável.
 
-5.3. Blueprint
+5.3. Auditoria Blueprint
 
 O Blueprint entra depois da leitura inicial da composition.
 
@@ -190,7 +179,7 @@ Humano decide:
 
 5.5. Implementação e validação
 
-Quando houver novo módulo ou variante:
+Quando houver novo módulo ou variante aprovado:
 
 * implementar no repo;
 * criar schema;
@@ -207,25 +196,48 @@ Quando houver novo módulo ou variante:
 * Validar técnica, responsividade, velocidade, visual, copy e conversão.
 * Nicho só é liberado após validação mínima.
 
-6. Uso da mesma LP em canais
+6. Canal, origem de tráfego e distribuição
 
-6.1. Google Ads
+6.1. Canal
 
-* A mesma LP pode ser usada como página de destino em campanhas.
-* Para Google Ads, relevância e utilidade da landing page importam para diagnóstico de qualidade.
-* A LP precisa estar alinhada à intenção, anúncio, palavra-chave, velocidade, mobile e clareza de conversão.
+No contexto de templates e artefatos, canal é o tipo de entrega.
 
-6.2. Instagram
+Exemplos:
 
-* A mesma LP pode ser usada como destino de tráfego vindo do Instagram.
-* Não precisa criar outra LP por padrão.
-* Pode exigir adaptação de headline, prova, imagem, CTA ou ângulo quando o tráfego social tiver intenção diferente do tráfego de busca.
+* `landing_page`;
+* `instagram`;
+* `email`;
+* `whatsapp`.
+
+Decisão:
+
+* uma LP é sempre canal `landing_page`;
+* Reel, post ou carrossel são canal `instagram`;
+* mensagem ou sequência é canal `whatsapp`;
+* e-mail é canal `email`.
+
+6.2. Origem de tráfego ou distribuição
+
+Google Ads, Instagram Ads, link na bio, grupos de WhatsApp, tráfego orgânico ou QR Code não são o canal da LP.
+
+Eles são origens de tráfego, distribuição ou contexto de uso da mesma landing page.
+
+A mesma LP do canal `landing_page` pode ser usada em:
+
+* Google Ads;
+* Instagram Ads;
+* link na bio;
+* grupos de WhatsApp;
+* tráfego orgânico;
+* QR Code.
 
 6.3. Regra prática
 
-* LP base do nicho pode ser comum.
-* Variações por canal devem ser tratadas depois, quando houver evidência.
-* No MVP, registrar origem por UTM/tracking e validar desempenho por canal antes de criar variações.
+* Não criar família de template diferente porque a LP será divulgada no Google Ads ou Instagram.
+* A LP base do nicho pode ser comum para várias origens de tráfego.
+* Variações por origem só devem ser criadas com evidência real.
+* No MVP, usar UTM/tracking para medir origem antes de criar variações.
+* Se a origem exigir ajuste, tratar como variação da LP, não como outro canal.
 
 7. Pendências essenciais
 
@@ -268,7 +280,7 @@ Checar especialmente:
 
 8. Separação dos planos-base
 
-* Plano-base 1 — Base de composição `landing_page`: E18; já teve avanço técnico em E18.4.
+* Plano-base 1 — Base de composition `landing_page`: E18; já teve avanço técnico em E18.4.
 * Plano-base 2 — Curadoria de composition e Blueprint no Admin: E12; próximo recorte natural.
 * Plano-base 3 — LP teste e liberação do nicho: E19; depende de E18 e E12.
 
@@ -280,7 +292,8 @@ A próxima evolução deve preservar:
 
 * `lp_sections` já sugere arquitetura inicial;
 * Blueprint audita e parametriza, não substitui tudo;
-* catálogo técnico não é composição fixa;
+* catálogo técnico não é composition fixa;
+* origem de tráfego não muda o canal da LP;
 * IA não grava composition sozinha;
 * banco não cria componente visual automaticamente;
 * Admin não edita contratos livres;
