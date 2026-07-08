@@ -98,7 +98,7 @@ E18.4 não criou:
 * job;
 * agente.
 
-4. Papel do Blueprint
+4. Blueprint
 
 4.1. Função principal
 
@@ -113,7 +113,50 @@ Função principal:
 * justificar ROI antes de qualquer evolução do catálogo;
 * gerar proposta, não implementação automática.
 
-4.2. Dois momentos do Blueprint
+4.2. Como o Blueprint é criado
+
+O Blueprint nasce como uma rodada assistida de análise, não como módulo, template, component ou registro automático de banco.
+
+Pré-condições:
+
+* taxon definido;
+* pesquisa bruta aprovada;
+* itens estruturados ativos;
+* audience_scope definido: `end_customer`, `business_buyer` ou ambos;
+* catálogo técnico `landing_page` disponível;
+* limites do repo conhecidos: schemas, registry, renderer e validações existentes.
+
+Entrada usada para criar o Blueprint:
+
+* dados do taxon;
+* `strategic_core`;
+* `lp_overview`;
+* `lp_sections`;
+* `seo`;
+* catálogo atual de módulos e variantes;
+* decisões humanas já aprovadas;
+* critérios mínimos de conversão, responsividade, velocidade e clareza.
+
+Processamento:
+
+* o sistema monta um briefing do nicho com itens estruturados e catálogo atual;
+* a IA gera um Blueprint draft;
+* o sistema classifica as recomendações como existente, parcial, faltante, inválida ou adiada;
+* o humano revisa antes de qualquer efeito no catálogo ou na composition.
+
+Saída mínima do Blueprint draft:
+
+* lacunas do catálogo para aquele nicho;
+* módulos e variantes suficientes;
+* módulos e variantes parciais;
+* novos módulos ou variantes sugeridos;
+* regras editoriais por campo;
+* regras visuais e responsivas relevantes;
+* critérios de conversão por módulo;
+* impacto provável na composition;
+* recomendação de decisão humana.
+
+4.3. Dois momentos do Blueprint
 
 O Blueprint atua em dois momentos:
 
@@ -122,7 +165,7 @@ O Blueprint atua em dois momentos:
 
 Essa separação evita tratar o Blueprint apenas como auditor da composition.
 
-4.3. Entregas possíveis
+4.4. Entregas possíveis
 
 * parametrização editorial, visual e de conversão por módulo/variante;
 * mapeamento de campos para `strategic_core`, `lp_overview`, `lp_sections` e `seo`;
@@ -132,7 +175,7 @@ Essa separação evita tratar o Blueprint apenas como auditor da composition.
 * comparação entre seções sugeridas pelos itens estruturados e seções sugeridas pelo Blueprint;
 * proposta de ajuste controlado quando o módulo existir parcialmente.
 
-4.4. Exemplos iniciais de parametrização
+4.5. Exemplos iniciais de parametrização
 
 * `hero.title`: dor principal, desejo principal, transformação, linguagem do público e limite de promessa.
 * `hero.subtitle`: mecanismo, contexto de decisão, objeção principal e clareza do próximo passo.
@@ -140,11 +183,12 @@ Essa separação evita tratar o Blueprint apenas como auditor da composition.
 * `proof_line`: prova disponível, autoridade, redução de risco e verificação mínima.
 * `faq.accordion`: objeções, riscos percebidos, dúvidas práticas e barreiras de compra.
 
-4.5. Limite
+4.6. Limite
 
 * Blueprint não cria módulo diretamente em produção.
 * Blueprint não grava composition sozinho.
 * Blueprint não altera contratos, schemas, registry ou renderer.
+* Blueprint não cria tabela, job, agente, rota ou automação por si só.
 * Blueprint gera proposta para aprovação humana e implementação controlada no repo.
 
 5. Fluxo recomendado
@@ -156,7 +200,15 @@ Essa separação evita tratar o Blueprint apenas como auditor da composition.
 * Itens estruturados carregados para `end_customer` e `business_buyer` quando aplicável.
 * Blocos úteis: `strategic_core`, `lp_overview`, `lp_sections` e `seo`.
 
-5.2. Blueprint de Parametrização do Catálogo
+5.2. Criação do Blueprint draft
+
+O sistema cria um briefing do nicho com itens estruturados, catálogo técnico e limites existentes.
+
+A IA gera um Blueprint draft com lacunas, parametrizações e propostas de evolução.
+
+Nenhuma proposta altera catálogo, banco ou composition antes da revisão humana.
+
+5.3. Blueprint de Parametrização do Catálogo
 
 Antes da composition draft, o Blueprint compara necessidades do nicho com o catálogo técnico existente.
 
@@ -172,7 +224,7 @@ Resultado esperado:
 
 Se houver lacuna real, o Blueprint não implementa. Ele gera proposta para decisão humana.
 
-5.3. Decisão humana sobre catálogo
+5.4. Decisão humana sobre catálogo
 
 Humano decide:
 
@@ -185,7 +237,7 @@ Humano decide:
 
 Quando aprovado, a implementação segue no repo com schema, registry, renderer, fixture e validação.
 
-5.4. Composition draft
+5.5. Composition draft
 
 A primeira proposta de composition deve nascer principalmente de `lp_sections`, já considerando o catálogo parametrizado aprovado.
 
@@ -201,7 +253,7 @@ Resultado esperado:
 * obrigatoriedade sugerida;
 * variante provável.
 
-5.5. Auditoria Blueprint da composition
+5.6. Auditoria Blueprint da composition
 
 Depois da composition draft, o Blueprint audita a montagem proposta.
 
@@ -213,7 +265,7 @@ Ele serve para:
 * apontar uso forçado de módulo inadequado;
 * apontar lacuna moderna, visual, editorial ou de conversão.
 
-5.6. Decisão humana sobre composition
+5.7. Decisão humana sobre composition
 
 Humano decide:
 
@@ -223,7 +275,7 @@ Humano decide:
 * revisar parametrização;
 * rejeitar sugestão por baixo ROI.
 
-5.7. LP teste e liberação
+5.8. LP teste e liberação
 
 * Composition aprovada vira default oficial do nicho.
 * LP teste é gerada em conta teste.
@@ -324,6 +376,7 @@ A base técnica repo-only de `landing_page` não deve ser tratada como produto f
 
 A próxima evolução deve preservar:
 
+* Blueprint nasce como draft/proposta, não como alteração automática;
 * Blueprint parametriza catálogo antes de auditar composition;
 * `lp_sections` já sugere arquitetura inicial;
 * catálogo técnico não é composition fixa;
