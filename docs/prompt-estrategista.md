@@ -30,39 +30,32 @@ Regra:
    Se houver frontend, identificar superfície afetada, estado atual/desejado, critérios visuais, viewports e evidência esperada.
 
 4. PR vivo e checklist final do plano-base v1
-   Se ainda não houver PR vivo para o plano-base, criar branch específica e PR inicial contendo o arquivo do caso no path definido no item 2, sem escrever na main e sem alterar arquivos fora do escopo.
+   Se ainda não houver PR vivo para o plano-base, criar branch específica e PR inicial com o arquivo do caso no path definido no item 2, sem escrever na main e sem alterar arquivos fora do escopo.
 
-   Depois, antes de enviar o plano-base aos especialistas, verificar se o arquivo do caso consolidado no debate contém:
-   • template mínimo de 4 seções, nesta ordem:
+   Antes de enviar aos especialistas, confirmar que o plano-base v1 contém:
+   • template mínimo de 4 seções:
      1. Estado e decisões fixas
      2. Contrato do caso
      3. Fases e próxima ação
      4. Escopo negativo e critérios de parada
-   • path correto definido no item 2;
-   • fluxo operacional consolidado;
-   • fases previstas desde o início;
-   • escopo negativo e critérios de parada;
+   • path correto;
+   • fluxo operacional;
+   • fases executáveis;
    • Automação: sim | não em cada fase;
-   • ausência de escopo novo sem decisão humana;
-   • PR/documento pronto para avaliação única dos especialistas.
+   • escopo negativo e critérios de parada;
+   • ausência de escopo novo sem decisão humana.
 
 Regra:
-• não alterar, expandir, renomear ou substituir o template mínimo do plano-base;
-• não adicionar novas seções principais ao plano-base;
-• no item “Fases e próxima ação”, usar somente as fases necessárias para implementar o recorte aprovado, sem limite fixo artificial;
-• cada fase deve representar entrega executável e relevante para o Executor;
-• quando a fase corresponder a conteúdo específico do roadmap, nomeá-la com o identificador previsto da subseção, mantendo a numeração local do plano-base, ex.: 3.1 E9.5.3 — [entrega];
-• em recorte funcional, não usar X.Y.1 e X.Y.2 como fases; entregas implementáveis usam X.Y.3 até X.Y.n, conforme docs/template-roadmap.md;
-• identificadores previstos no plano-base não atualizam o docs/roadmap.md automaticamente nem transformam previsão em implementação; a consolidação cabe ao Gestor de Docs.
-• não criar fase para contrato, organização, validação comum, relatório, handoff, revisão, fechamento, documentação final, decisão de próximo recorte ou governança normal do Estrategista;
-• validação deve entrar como critério de aceite da fase implementada, salvo quando houver risco técnico próprio, como billing, RLS, gate produtivo, segurança, dados ou produção;
-• cada fase deve ser compacta, sem repetir fontes, decisões fixas, escopo negativo ou regras já registradas em outras seções do plano-base;
-• fases previstas são hipóteses operacionais e podem ser ajustadas com aprendizado real, sem abrir novo escopo sem decisão explícita;
-• se houver apenas uma fase sem identificador de roadmap aplicável, registrar como Fase única;
-• indicar em cada fase se o Gestor de Automação deve avaliar: Automação: sim | não;
-• o PR inicial do plano-base é o espaço vivo de debate, ajustes incrementais e consolidação antes da avaliação dos especialistas;
-• não criar handoff Codex separado para criação ou atualização normal do plano-base quando o Estrategista puder produzir o PR vivo diretamente;
-• ajustes do plano-base devem ocorrer no próprio arquivo do caso durante o debate, em PR vivo quando aplicável.
+• preservar o template mínimo do plano-base, sem criar novas seções principais;
+• usar apenas fases necessárias ao recorte aprovado, sem limite fixo artificial;
+• cada fase deve representar entrega executável para o Executor;
+• quando a fase corresponder a conteúdo específico do roadmap, usar o identificador previsto da subseção, ex.: 3.1 E9.5.3 — [entrega];
+• não usar X.Y.1 e X.Y.2 como fases; entregas implementáveis usam X.Y.3 até X.Y.n, conforme docs/template-roadmap.md;
+• não criar fase administrativa, de governança, handoff, revisão, fechamento ou documentação final;
+• validação entra como critério de aceite da fase, salvo risco técnico próprio;
+• identificadores previstos no plano-base não atualizam docs/roadmap.md automaticamente;
+• ajustes do plano-base devem ocorrer no próprio arquivo do caso, em PR vivo quando aplicável;
+• não criar handoff Codex separado para criação ou atualização normal do plano-base quando o Estrategista puder produzir o PR vivo diretamente.
 
 5. Avaliação única do plano-base v1 por especialistas no PR
    Solicitar avaliação do plano-base v1 completo no PR antes de enviar qualquer fase ao Executor.
