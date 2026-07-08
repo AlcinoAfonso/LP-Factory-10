@@ -904,3 +904,63 @@ Direções aceitas:
 Próxima ação:
 
 Sair do debate para planos-base separados, delegando dois planos-base a outros chats e assumindo o primeiro neste chat, quando houver comando humano explícito.
+
+29. Registro pós-E18.4 — base técnica repo-only de landing_page
+
+A E18.4 do `docs/roadmap.md` já registra uma evolução concreta do debate: `landing_page` passou a ter base técnica interna repo-only dentro da E18.
+
+O que foi feito em E18.4:
+
+* `landing_page` foi separada tecnicamente de `commercial_activation`
+* foram criados contratos TypeScript próprios
+* foram criados schemas Zod por conteúdo de seção
+* foi criado registry fechado próprio
+* foi criado render model próprio
+* foi criado renderer mínimo
+* foi criada fixture sintética
+* foram criados casos executáveis de validação
+* foi criado validador de composição
+* foi adicionada validação dedicada por `npm run validate:landing-page`
+* não foram criados registros-base de banco para `landing_page`
+* não foram criados Admin, LP Builder, LP teste, rota pública, automação, job ou agente
+
+O que ficou de acordo com o debate:
+
+* `landing_page` não herdou automaticamente o modelo rígido de `commercial_activation`
+* `commercial_activation` permanece apenas como referência comparativa
+* a parametrização técnica crítica ficou no repositório
+* o uso de Zod, registry, resolver, renderer e validação fail-closed ficou alinhado à direção aprovada
+* `config_json` foi tratado como override controlado por seção, não como editor livre
+* a E18 não puxou curadoria Admin, LP Builder, LP teste ou liberação de nicho para dentro do seu recorte
+
+O que evoluiu em relação à lousa:
+
+* a família `landing_page` deixou de ser apenas conceito em debate e passou a ter base técnica mínima no repo
+* o catálogo mínimo inicial passou a existir como disponibilidade técnica controlada
+* a validação de composição ficou concreta, incluindo duplicidade, `sortOrder`, variante inexistente, incompatibilidade módulo-variante e `config_json` fora do contrato
+* o limite de `config_json` ficou mais seguro do que a hipótese inicial, aceitando apenas `anchor_id` e `spacing`
+
+O que ainda pode melhorar:
+
+* reforçar que catálogo mínimo não é composição obrigatória nem sequência fixa para todos os nichos
+* avaliar se o catálogo inicial é suficiente para nichos reais ou se faltam módulos como problema, autoridade, segurança, localização, formulário, antes/depois, serviços, procedimentos ou planos
+* verificar antes do consumo real se `hero.lead_capture` representa captura completa com formulário e nota de privacidade ou apenas uma variação técnica inicial
+* definir parametrização editorial por seção/campo, começando pela Hero
+* mapear quais itens estruturais alimentam cada campo de cada seção
+* definir como a IA vai sugerir composição e como o sistema classificará cada sugestão como disponível, faltante ou inválida
+* definir como uma composição aprovada no Admin será persistida depois, sem permitir gravação automática de sugestão da IA
+* decidir posteriormente se e quando registros-base de `landing_page` entram em `content_templates`
+
+Leitura atualizada:
+
+* E18.4 resolveu a base técnica inicial de `landing_page`
+* E18.4 não resolveu composição estratégica por nicho
+* E18.4 não resolveu parametrização editorial
+* E18.4 não resolveu curadoria Admin
+* E18.4 não resolveu LP teste nem liberação de nicho
+
+Próxima ação recomendada:
+
+* usar a E18.4 como insumo técnico para o Plano-base 2 — Curadoria de composição no Admin
+* manter a lousa como registro de riscos e melhorias antes de transformar catálogo técnico em operação de nicho
+* não tratar a base repo-only de `landing_page` como produto final liberado para clientes
