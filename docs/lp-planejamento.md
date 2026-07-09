@@ -37,7 +37,9 @@ Fontes de referência: `README.md`, `docs/prompt-nicho-itens-estruturados.md`, `
 
 ### 1.5. Parametrização
 
-- A base inicial de parametrização deve ser universal por template/variante.
+- A base inicial de parametrização deve ser universal por canal/template e por variante.
+- A fonte canônica da base universal deve ser versionada no repositório, porque impacta renderer, contratos, testes e design system.
+- O banco pode ter espelho, referência de versão ou payload operacional para leitura do Admin e da IA, mas não deve ser a única fonte canônica da base universal.
 - Parâmetro por campo significa regra para H1, H2, H3, parágrafo, CTA, eyebrow, nota de privacidade, FAQ, cards, benefícios e passos.
 - Presets iniciais: `compact`, `default`, `premium`.
 - A base universal deve resolver a maioria dos nichos.
@@ -75,6 +77,8 @@ Fontes de referência: `README.md`, `docs/prompt-nicho-itens-estruturados.md`, `
 
 ### 2.4. Base universal de parametrização
 
+- Criar base universal versionada no repositório para o canal/template `landing_page`.
+- Definir se o banco terá espelho, referência de versão ou payload operacional da base universal para Admin e IA.
 - Definir parâmetros universais por campo no template de LP.
 - Definir limites editoriais iniciais para H1, H2, H3, parágrafo, CTA, FAQ, cards, benefícios, passos e nota de privacidade.
 - Definir escala tipográfica inicial para `compact`, `default` e `premium`.
@@ -100,3 +104,11 @@ Fontes de referência: `README.md`, `docs/prompt-nicho-itens-estruturados.md`, `
 - Avaliar contratos, banco, renderer e Admin contra este plano.
 - Ajustar o projeto somente após decisão registrada neste documento.
 - Não criar nova tabela, campo, rota, job, automação ou agente sem plano-base ou briefing próprio.
+
+## 3. Ambiguidades e decisões em aberto
+
+- Definir se a base universal ficará apenas no repositório ou também terá espelho/payload no banco.
+- Definir onde persistir a config global da composição do nicho.
+- Definir os valores exatos dos parâmetros universais por campo e preset.
+- Definir se o Blueprint é obrigatório no critério 3, validação da LP teste ou ambos.
+- Definir se, após resolver base universal, config global e config por item, o critério 3 pode ser considerado concluído.
