@@ -409,7 +409,7 @@ Perguntas:
 
 ### 11.2. Pendências de parametrização
 
-- Definir se a composição precisa de configuração global por nicho para preset tipográfico, densidade, tom visual, funil/origem e prioridade mobile.
+- Definir config global da composição, alimentada por `lp_overview`, para preset tipográfico, densidade, tom visual, funil/origem, mobile e extensão da página.
 - Definir presets visuais iniciais.
 - Definir escala tipográfica inicial.
 - Definir limites editoriais por campo.
