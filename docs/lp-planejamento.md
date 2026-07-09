@@ -127,16 +127,15 @@ Devem ajudar a decidir:
 
 ### 5.2. Blueprint do nicho
 
-O Blueprint é a pesquisa externa de mercado usada para confrontar os itens estruturados.
+O Blueprint é a pesquisa externa usada para agregar evidências que os itens estruturados não entregam com segurança.
 
 Deve ajudar a validar:
 
 - Padrões reais observados em LPs, sites e funis.
 - Módulos e variantes recorrentes.
-- Provas usadas no mercado.
+- Parâmetros editoriais por campo.
 - Padrões de CRO, UX e copy.
 - Lacunas prováveis do catálogo.
-- Parametrizações por campo.
 - Riscos e hipóteses.
 
 ### 5.3. Confronto entre itens estruturados e Blueprint
@@ -146,7 +145,7 @@ A composição do nicho não deve sair apenas do Blueprint nem apenas dos itens 
 A regra de trabalho deve ser:
 
 - Itens estruturados indicam a leitura interna do nicho.
-- Blueprint traz evidência externa de mercado.
+- Blueprint agrega evidência externa onde os itens estruturados não chegam.
 - O confronto dos dois gera decisão de composição e parametrização.
 - Divergências relevantes viram decisão humana.
 
@@ -214,7 +213,9 @@ Deve apoiar decisões sobre:
 
 ### 7.1. Primeira camada universal
 
-A primeira camada de parametrização pode ser universal e simples.
+A primeira camada de parametrização deve ser universal por template/variante e simples.
+
+Parâmetro por campo significa regra aplicada a unidades editáveis da LP.
 
 Ela deve cobrir inicialmente:
 
@@ -226,6 +227,7 @@ Ela deve cobrir inicialmente:
 - CTA.
 - Eyebrow ou linha curta de contexto.
 - Nota de privacidade ou confiança.
+- Quantidade de itens em FAQ, benefícios, cards e passos.
 
 ### 7.2. Presets iniciais
 
@@ -269,6 +271,10 @@ Evitar:
 - Ajuste visual livre por IA.
 - Parametrização sem teste visual.
 
+### 7.6. Regra provisória de exceções
+
+Se um nicho exigir campo fora da base universal, resolver por variante reutilizável e hierarquicamente superior, não por ajuste solto de nicho.
+
 ## 8. Papel da LP teste por nicho
 
 ### 8.1. Função
@@ -300,16 +306,16 @@ A LP teste deve gerar uma decisão:
 
 ### 9.1. Necessidade
 
-O Blueprint é necessário quando os itens estruturados não bastam para decidir com segurança a composição e a parametrização.
+O papel do Blueprint no critério 3 ainda está em decisão; a avaliação deve medir o que ele agrega além dos itens estruturados.
 
-Ele é especialmente útil para:
+Ele é especialmente útil para avaliar:
 
-- Evitar achismo.
-- Validar padrões reais de mercado.
-- Identificar módulos recorrentes.
-- Confirmar provas e objeções.
-- Comparar variações por origem de tráfego.
-- Apoiar decisões de parametrização por campo.
+- Limites editoriais por campo.
+- Boas práticas externas de UX e CRO.
+- Padrões reais de módulos e variantes.
+- Riscos e hipóteses.
+- Lacunas prováveis do catálogo.
+- Benchmark contra a LP teste.
 
 ### 9.2. Arquivamento
 
@@ -325,7 +331,7 @@ Exemplo já usado no debate:
 
 ### 9.3. Limite
 
-O Blueprint não deve substituir a composição do nicho.
+O Blueprint não deve substituir a composição do nicho nem competir com os itens estruturados.
 
 Ele deve alimentar:
 
@@ -343,8 +349,8 @@ Ele deve alimentar:
 1. Definir o que é uma LP entregue.
 2. Definir quais LPs precisam existir por nicho.
 3. Definir insumos mínimos para gerar uma LP.
-4. Definir composição do nicho.
-5. Confrontar itens estruturados com Blueprint.
+4. Definir composição parametrizada do nicho.
+5. Avaliar contribuição do Blueprint para parametrização e lacunas.
 6. Parametrizar módulos e variantes.
 7. Gerar LP teste por nicho.
 8. Avaliar LP teste.
@@ -380,10 +386,10 @@ A terceira frente deve avaliar o Blueprint.
 
 Perguntas:
 
-- O Blueprint é sempre obrigatório ou só para nichos novos/complexos?
+- O Blueprint é obrigatório para o critério 3, validação da LP teste ou ambos?
 - O Blueprint deve ser arquivado sempre em `docs/blueprint-[nicho]-[audience_scope].md`?
 - O Blueprint deve ser gerado antes ou depois dos itens estruturados?
-- Como registrar divergência entre Blueprint e itens estruturados?
+- O que o Blueprint agrega que os itens estruturados não agregam?
 
 ### 10.5. Quarta frente de debate
 
@@ -410,12 +416,16 @@ Perguntas:
 ### 11.2. Pendências de parametrização
 
 - Definir config global da composição, alimentada por `lp_overview`, para preset tipográfico, densidade, tom visual, funil/origem, mobile e extensão da página.
+- Definir base universal de parâmetros por campo no template de LP: H1, H2, H3, parágrafo, CTA, FAQ, cards, passos e nota de privacidade.
+- Definir regra de exceção por variante reutilizável quando um nicho exigir parâmetros fora da base universal.
 - Definir presets visuais iniciais.
 - Definir escala tipográfica inicial.
 - Definir limites editoriais por campo.
 - Definir quais decisões vêm de `lp_overview`.
 - Definir quais decisões vêm de `lp_sections`.
 - Definir como o Blueprint confronta os itens estruturados.
+- Avaliar o que o Blueprint agrega além dos itens estruturados: limites editoriais, UX, riscos, lacunas de catálogo e parâmetros de variantes.
+- Definir se o Blueprint será fonte obrigatória do critério 3 ou instrumento de validação/benchmark da LP teste.
 
 ### 11.3. Pendências de liberação de nicho
 
