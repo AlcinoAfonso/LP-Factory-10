@@ -416,7 +416,15 @@ Perguntas:
 - Definir quais decisões vêm de `lp_sections`.
 - Definir como o Blueprint confronta os itens estruturados.
 
-### 11.3. Pendências técnicas futuras
+### 11.3. Pendências de liberação de nicho
+
+- Avaliar se, para liberar um nicho filho para criação de LP, os itens estruturados de `end_customer` devem ser obrigatórios no próprio nicho filho.
+- Avaliar se, para o mesmo nicho filho, os itens estruturados de `business_buyer` podem ser herdados do nicho pai quando já existirem e fizerem sentido para o recorte comercial.
+- Exemplo: para `corretor de imóveis de médio padrão`, exigir `end_customer` no nicho filho, mas permitir `business_buyer` herdado do nicho pai `corretor de imóveis`.
+- Registrar critérios para decidir quando a herança de `business_buyer` é segura e quando o nicho filho exige pesquisa própria.
+- Tratar esta regra como pendência de validação, não como regra implementada.
+
+### 11.4. Pendências técnicas futuras
 
 - Avaliar renderer atual antes de qualquer alteração.
 - Avaliar contratos atuais antes de qualquer alteração.
