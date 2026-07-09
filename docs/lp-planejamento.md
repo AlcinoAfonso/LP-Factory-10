@@ -1,454 +1,102 @@
 # Planejamento de LPs — LP Factory 10
 
-## 1. Objetivo
+Fonte objetiva de decisão para liberar nichos e orientar ajustes do projeto até a criação de LPs.
 
-Este documento organiza o debate sobre entregas, insumos, camadas de decisão e dependências necessárias para transformar pesquisa por nicho, itens estruturados, Blueprint e dados do cliente em landing pages testáveis no LP Factory 10.
+Fontes de referência: `README.md`, `docs/prompt-nicho-itens-estruturados.md`, `docs/template-blueprint.md`, `docs/schema.md`, `lib/conversion-content/landing-page/contracts.ts`, `lib/conversion-content/contracts.ts` e debate em chat.
 
-O objetivo imediato não é implementar código, banco, rotas, automações, agentes ou nova infraestrutura. O objetivo é consolidar um plano de raciocínio para chegar depois a um roteiro de implementação seguro.
+## 1. O que estamos definindo
 
-## 2. Fontes e limites
+### 1.1. Entrega final esperada
 
-### 2.1. Fontes usadas
+- A entrega final é criar LPs testáveis e publicáveis por nicho.
+- Tipos de LP: BOFU, MOFU e TOFU.
+- LP teste por nicho é validação prática antes da liberação plena.
 
-- `README.md` — visão geral do produto, proposta de valor, stack base e princípios do MVP.
-- `AGENTS.md` — regras operacionais para alteração em branch dedicada e escopo controlado.
-- `docs/template-blueprint.md` — estrutura de pesquisa independente para Blueprint.
-- `docs/prompt-nicho-itens-estruturados.md` — blocos estruturados `strategic_core`, `lp_overview`, `lp_sections` e `seo`.
-- `lib/conversion-content/contracts.ts` — referência técnica de composição, item de composição, variante e artefato publicado.
-- Debate em chat sobre LPs, Blueprint, itens estruturados, composição e parametrização.
+### 1.2. Critérios de liberação de nicho
 
-### 2.2. Limites deste documento
+- Critério 1: taxon ativo e corretamente posicionado na taxonomia.
+- Critério 2: itens estruturados completos para `end_customer` no nicho filho e `business_buyer` próprio ou herdado do nicho pai com critério.
+- Critério 3: composição parametrizada da LP criada para o nicho, com página, módulos, variantes, ordem, obrigatoriedade, config global e config por item.
+- Critério 4: a definir após concluir o critério 3.
 
-- Não define implementação.
-- Não cria nova tabela, rota, job, agente, automação, engine ou infraestrutura.
-- Não substitui plano-base futuro.
-- Não substitui o Blueprint de nicho.
-- Não substitui os itens estruturados.
-- Não define ainda checklist final de aceite de LP.
+### 1.3. Papel dos itens estruturados
 
-## 3. Entregas esperadas de LP
+- `strategic_core`: mensagem, promessa, objeções, provas, vocabulário e CTA.
+- `lp_overview`: config global da composição, incluindo tom visual, densidade, tipografia, mobile, extensão e estilo de imagem.
+- `lp_sections`: seções, ordem, função no funil e composição conceitual.
+- `seo`: intenção, vocabulário, termos, FAQ e requisitos básicos de busca.
+- Os itens estruturados não precisam entregar limites de caracteres, escala tipográfica, tamanho de fonte ou parametrização técnica por campo.
 
-### 3.1. Entregas principais
+### 1.4. Composição e variantes
 
-- LP BOFU — voltada para conversão direta, como WhatsApp, formulário, orçamento, simulação ou agendamento.
-- LP MOFU — voltada para consideração, educação, comparação, prova, objeções e avanço para contato.
-- LP TOFU — voltada para descoberta, intenção inicial, conteúdo útil, SEO ou tráfego frio.
+- A estrutura padrão permanece módulo + variante.
+- Módulo define a função estrutural.
+- Variante define a execução específica daquela função.
+- Parametrização define como a variante se comporta no tipo de LP, nicho e origem/funil.
+- Exceções por nicho devem virar variantes reutilizáveis e hierarquicamente superiores, não ajustes soltos.
 
-### 3.2. Entregas complementares
+### 1.5. Parametrização
 
-- LP teste por nicho — primeira página gerada para validar composição, parametrização, copy, visual, responsividade e clareza.
-- Variação por origem de tráfego — ajuste de ângulo para Google, Instagram, SEO, WhatsApp, QR code ou tráfego orgânico.
+- A base inicial de parametrização deve ser universal por template/variante.
+- Parâmetro por campo significa regra para H1, H2, H3, parágrafo, CTA, eyebrow, nota de privacidade, FAQ, cards, benefícios e passos.
+- Presets iniciais: `compact`, `default`, `premium`.
+- A base universal deve resolver a maioria dos nichos.
+- Nichos que exigirem parâmetros fora da base universal devem usar variante própria reutilizável.
 
-### 3.3. Observação sobre origem de tráfego
+### 1.6. Blueprint
 
-- Origem de tráfego não deve ser tratada automaticamente como novo canal de conteúdo.
-- A LP continua sendo landing page.
-- Google, Instagram, WhatsApp, SEO ou QR code funcionam como origem/distribuição e podem influenciar hero, CTA, densidade, formulário e prova.
+- O Blueprint não substitui nem compete com os itens estruturados.
+- O Blueprint deve ser avaliado pelo que agrega além dos itens estruturados.
+- Possíveis agregações: limites editoriais, UX/CRO, padrões externos de módulos e variantes, riscos, lacunas de catálogo e benchmark da LP teste.
+- Ainda não está decidido se o Blueprint é obrigatório no critério 3, se será usado na validação da LP teste, ou ambos.
 
-## 4. Camadas necessárias para entregar uma LP
+## 2. O que precisa ser ajustado ou implementado no projeto
 
-### 4.1. Composição do nicho
+### 2.1. Critério 1 — Taxon
 
-A composição do nicho define quais módulos entram, em qual ordem, com qual variante, obrigatoriedade e configuração inicial.
+- Confirmar regra operacional de taxon liberável.
+- Garantir leitura clara de taxon pai e filho para herança quando aplicável.
 
-Deve responder:
+### 2.2. Critério 2 — Itens estruturados
 
-- Quais seções são essenciais.
-- Quais seções são recomendadas.
-- Quais seções são opcionais ou condicionais.
-- Qual ordem tende a fazer sentido.
-- Qual papel de conversão cada seção cumpre.
+- Adequar a regra para aceitar `end_customer` no nicho filho e `business_buyer` próprio ou herdado do nicho pai.
+- Registrar critério de segurança para herança de `business_buyer`.
+- Bloquear liberação quando faltar bloco obrigatório.
 
-### 4.2. Dados do cliente
+### 2.3. Critério 3 — Composição parametrizada
 
-Os dados do cliente alimentam a LP concreta de uma conta ou oferta.
+- Criar ou ajustar fluxo Admin de curadoria da composição.
+- Permitir que a IA proponha config global com base em `lp_overview`.
+- Permitir que a IA proponha módulos, variantes, ordem, obrigatoriedade e config por item com base em `lp_sections`, `strategic_core` e `seo`.
+- Resolver onde a config global da composição será persistida.
+- Manter `content_template_composition_items` como relação 1:N de módulos/variantes.
+- Registrar gaps de catálogo quando módulo ou variante essencial não existir.
+- Impedir liberação plena até gap essencial ser criado e parametrizado.
 
-Devem incluir, quando aplicável:
+### 2.4. Base universal de parametrização
 
-- Nome do cliente ou marca.
-- Nicho e recorte comercial.
-- Oferta principal.
-- Público-alvo.
-- Região de atuação.
-- Provas reais.
-- Imagens e ativos visuais.
-- CTA principal.
-- WhatsApp, formulário ou destino de conversão.
-- Restrições legais ou regulatórias.
-- Política de privacidade ou texto de confiança.
+- Definir parâmetros universais por campo no template de LP.
+- Definir limites editoriais iniciais para H1, H2, H3, parágrafo, CTA, FAQ, cards, benefícios, passos e nota de privacidade.
+- Definir escala tipográfica inicial para `compact`, `default` e `premium`.
+- Definir quantidades padrão, como FAQ, benefícios/cards e passos.
+- Definir quando uma exceção exige nova variante reutilizável.
 
-### 4.3. Conteúdo da LP
+### 2.5. Variantes
 
-O conteúdo da LP é a copy final que preenche os campos dos módulos escolhidos.
+- Confirmar catálogo inicial de módulos e variantes de LP.
+- Criar variantes quando a necessidade não couber na base universal.
+- Garantir que variantes sejam reutilizáveis em outros nichos sempre que possível.
+- Definir hierarquia de variante universal, variante por tipo de LP e variante por nicho quando necessário.
 
-Deve respeitar:
+### 2.6. Blueprint
 
-- Parametrização editorial por campo.
-- Limites de caracteres.
-- Tom definido para o nicho.
-- Promessas permitidas.
-- Provas disponíveis.
-- Vocabulário do público.
-- Restrições de segurança, compliance e privacidade.
+- Avaliar se o Blueprint deve ser obrigatório no critério 3.
+- Avaliar se o Blueprint deve ser usado como benchmark contra a LP teste.
+- Ajustar template do Blueprint se ele precisar entregar parâmetros de forma mais objetiva.
+- Registrar decisão final antes de avançar para critério 4.
 
-### 4.4. Renderização e teste
+### 2.7. Pendências técnicas
 
-A LP precisa ser renderizada e avaliada antes de ser considerada pronta para uso.
-
-A avaliação deve considerar:
-
-- Clareza da proposta.
-- Ordem das seções.
-- Responsividade mobile.
-- Densidade visual.
-- Leitura do H1, H2, H3, parágrafos e detalhes.
-- Funcionamento do CTA.
-- Coerência entre origem de tráfego e hero.
-- Existência de prova suficiente.
-- Ausência de promessa indevida.
-
-## 5. Camadas necessárias para entregar a composição do nicho
-
-### 5.1. Itens estruturados
-
-Os itens estruturados são a leitura interna do nicho dentro do LP Factory 10.
-
-Devem ajudar a decidir:
-
-- Estratégia de mensagem.
-- Arquitetura de seções.
-- Vocabulário.
-- Objeções.
-- Provas necessárias.
-- Tom visual.
-- Densidade.
-- Direção tipográfica.
-- Prioridade mobile.
-
-### 5.2. Blueprint do nicho
-
-O Blueprint é a pesquisa externa usada para agregar evidências que os itens estruturados não entregam com segurança.
-
-Deve ajudar a validar:
-
-- Padrões reais observados em LPs, sites e funis.
-- Módulos e variantes recorrentes.
-- Parâmetros editoriais por campo.
-- Padrões de CRO, UX e copy.
-- Lacunas prováveis do catálogo.
-- Riscos e hipóteses.
-
-### 5.3. Confronto entre itens estruturados e Blueprint
-
-A composição do nicho não deve sair apenas do Blueprint nem apenas dos itens estruturados.
-
-A regra de trabalho deve ser:
-
-- Itens estruturados indicam a leitura interna do nicho.
-- Blueprint agrega evidência externa onde os itens estruturados não chegam.
-- O confronto dos dois gera decisão de composição e parametrização.
-- Divergências relevantes viram decisão humana.
-
-## 6. Papel de cada bloco dos itens estruturados
-
-### 6.1. `strategic_core`
-
-Ajuda a parametrizar mensagem, promessa, objeções e provas.
-
-Deve apoiar decisões sobre:
-
-- Dor dominante.
-- Desejo principal.
-- Objeção principal.
-- Medo.
-- Crença.
-- Nível de consciência.
-- Vocabulário.
-- Gatilho de conversão.
-- Tipo de prova exigido.
-- Oportunidade de posicionamento.
-
-### 6.2. `lp_overview`
-
-Ajuda a parametrizar a camada visual e editorial ampla da LP.
-
-Deve apoiar decisões sobre:
-
-- Arco narrativo da página.
-- Tom visual.
-- Direção de cores.
-- Comprimento da página.
-- Estilo de imagem.
-- Densidade visual.
-- Direção tipográfica.
-- Prioridade mobile.
-
-### 6.3. `lp_sections`
-
-Ajuda a parametrizar composição, ordem e função das seções.
-
-Deve apoiar decisões sobre:
-
-- Seções essenciais.
-- Seções recomendadas.
-- Seções opcionais.
-- Ordem provável.
-- Papel de conversão.
-- Adequação por LP curta, média ou longa.
-
-### 6.4. `seo`
-
-Ajuda a parametrizar intenção, vocabulário, FAQ e alinhamento com busca.
-
-Deve apoiar decisões sobre:
-
-- Intenção de busca.
-- Palavras comerciais.
-- Palavras de apoio.
-- Termos locais.
-- Perguntas de FAQ.
-- Requisitos básicos de SEO.
-
-## 7. Parametrização de módulos e variantes
-
-### 7.1. Primeira camada universal
-
-A primeira camada de parametrização deve ser universal por template/variante e simples.
-
-Parâmetro por campo significa regra aplicada a unidades editáveis da LP.
-
-Ela deve cobrir inicialmente:
-
-- H1.
-- H2.
-- H3.
-- Parágrafo.
-- Texto pequeno ou detalhe.
-- CTA.
-- Eyebrow ou linha curta de contexto.
-- Nota de privacidade ou confiança.
-- Quantidade de itens em FAQ, benefícios, cards e passos.
-
-### 7.2. Presets iniciais
-
-Os presets iniciais devem ser poucos e reutilizáveis.
-
-Sugestão inicial:
-
-- `compact` — menor, direto, denso, útil para páginas objetivas, técnicas ou com muito conteúdo prático.
-- `default` — equilíbrio padrão entre clareza, leitura e impacto.
-- `premium` — maior, mais espaçoso, aspiracional, útil quando visual, marca e percepção de valor pesam mais.
-
-### 7.3. Exemplo de escala tipográfica inicial
-
-Exemplo para H1:
-
-- `compact` — `text-3xl / sm:text-4xl`.
-- `default` — `text-4xl / sm:text-5xl`.
-- `premium` — `text-5xl / sm:text-6xl`.
-
-Essa escala ainda é hipótese de planejamento. Precisa ser confrontada com design system, renderer atual, Blueprint, itens estruturados e teste visual.
-
-### 7.4. Ajuste por nicho
-
-A camada universal pode ser ajustada por nicho, mas esse ajuste deve ser limitado.
-
-Exemplos:
-
-- Corretor econômico ou financiamento-first tende a usar `default` ou `compact`.
-- Corretor alto padrão tende a usar `premium`.
-- Serviço técnico B2B tende a usar `compact` ou `default`.
-- Saúde regulada tende a usar `default`, com promessa controlada e prova forte.
-
-### 7.5. Regra de factibilidade
-
-A parametrização por nicho é factível se for feita por presets simples e não por desenho artesanal para cada nicho.
-
-Evitar:
-
-- Fonte diferente para cada nicho sem necessidade comprovada.
-- Escalas infinitas de tipografia.
-- Ajuste visual livre por IA.
-- Parametrização sem teste visual.
-
-### 7.6. Regra provisória de exceções
-
-Se um nicho exigir campo fora da base universal, resolver por variante reutilizável e hierarquicamente superior, não por ajuste solto de nicho.
-
-## 8. Papel da LP teste por nicho
-
-### 8.1. Função
-
-A LP teste por nicho é a primeira validação prática da composição e da parametrização.
-
-Ela deve testar:
-
-- Se a composição do nicho faz sentido.
-- Se os módulos escolhidos são suficientes.
-- Se há lacunas no catálogo.
-- Se a parametrização editorial funciona.
-- Se a escala visual funciona.
-- Se a página fica clara em mobile.
-- Se a copy respeita limites e promessas.
-
-### 8.2. Resultado esperado
-
-A LP teste deve gerar uma decisão:
-
-- Aprovar composição do nicho.
-- Ajustar ordem de seções.
-- Trocar variante.
-- Parametrizar módulo existente.
-- Criar hipótese de novo módulo ou variante para plano futuro.
-- Rejeitar elemento específico por baixo valor ou complexidade.
-
-## 9. Papel do Blueprint no fluxo
-
-### 9.1. Necessidade
-
-O papel do Blueprint no critério 3 ainda está em decisão; a avaliação deve medir o que ele agrega além dos itens estruturados.
-
-Ele é especialmente útil para avaliar:
-
-- Limites editoriais por campo.
-- Boas práticas externas de UX e CRO.
-- Padrões reais de módulos e variantes.
-- Riscos e hipóteses.
-- Lacunas prováveis do catálogo.
-- Benchmark contra a LP teste.
-
-### 9.2. Arquivamento
-
-A pesquisa de Blueprint deve ser arquivada como documento de apoio do nicho.
-
-Sugestão atual de padrão:
-
-- `docs/blueprint-[nicho]-[audience_scope].md`
-
-Exemplo já usado no debate:
-
-- `docs/blueprint-corretor-imoveis-end-customer.md`
-
-### 9.3. Limite
-
-O Blueprint não deve substituir a composição do nicho nem competir com os itens estruturados.
-
-Ele deve alimentar:
-
-- Decisão de módulos.
-- Decisão de variantes.
-- Parametrização editorial.
-- Parametrização visual.
-- Lacunas prováveis.
-- Perguntas para decisão humana.
-
-## 10. Sequência de trabalho proposta
-
-### 10.1. Sequência de trás para frente
-
-1. Definir o que é uma LP entregue.
-2. Definir quais LPs precisam existir por nicho.
-3. Definir insumos mínimos para gerar uma LP.
-4. Definir composição parametrizada do nicho.
-5. Avaliar contribuição do Blueprint para parametrização e lacunas.
-6. Parametrizar módulos e variantes.
-7. Gerar LP teste por nicho.
-8. Avaliar LP teste.
-9. Ajustar composição e parametrização.
-10. Só depois transformar em roteiro de implementação.
-
-### 10.2. Primeira frente de debate
-
-A primeira frente deve avaliar as entregas finais.
-
-Perguntas:
-
-- Quais tipos de LP o MVP precisa entregar primeiro?
-- BOFU, MOFU e TOFU são suficientes para o primeiro recorte?
-- LP teste por nicho deve ser obrigatória antes de liberar o nicho?
-- Variação por origem de tráfego entra no MVP ou fica como refinamento?
-
-### 10.3. Segunda frente de debate
-
-A segunda frente deve avaliar os itens estruturados.
-
-Perguntas:
-
-- `lp_overview` entrega o suficiente para decidir preset visual e tipográfico?
-- `lp_sections` entrega o suficiente para decidir composição?
-- `strategic_core` entrega o suficiente para decidir copy e prova?
-- `seo` entrega o suficiente para FAQ e vocabulário?
-- Algum bloco precisa entregar mais dados?
-
-### 10.4. Terceira frente de debate
-
-A terceira frente deve avaliar o Blueprint.
-
-Perguntas:
-
-- O Blueprint é obrigatório para o critério 3, validação da LP teste ou ambos?
-- O Blueprint deve ser arquivado sempre em `docs/blueprint-[nicho]-[audience_scope].md`?
-- O Blueprint deve ser gerado antes ou depois dos itens estruturados?
-- O que o Blueprint agrega que os itens estruturados não agregam?
-
-### 10.5. Quarta frente de debate
-
-A quarta frente deve avaliar parametrização.
-
-Perguntas:
-
-- Quais campos têm parametrização universal?
-- Quais campos dependem do nicho?
-- Quais presets visuais existem no MVP?
-- `compact`, `default` e `premium` são suficientes?
-- O que precisa ser decidido por teste visual?
-
-## 11. Pendências para virar roteiro de implementação
-
-### 11.1. Pendências conceituais
-
-- Definir checklist de LP entregue.
-- Definir relação final entre TOFU, MOFU, BOFU e origem de tráfego.
-- Definir se LP teste por nicho é gate obrigatório.
-- Definir quando Blueprint é obrigatório.
-- Definir onde registrar decisões finais de composição.
-
-### 11.2. Pendências de parametrização
-
-- Definir config global da composição, alimentada por `lp_overview`, para preset tipográfico, densidade, tom visual, funil/origem, mobile e extensão da página.
-- Definir base universal de parâmetros por campo no template de LP: H1, H2, H3, parágrafo, CTA, FAQ, cards, passos e nota de privacidade.
-- Definir regra de exceção por variante reutilizável quando um nicho exigir parâmetros fora da base universal.
-- Definir presets visuais iniciais.
-- Definir escala tipográfica inicial.
-- Definir limites editoriais por campo.
-- Definir quais decisões vêm de `lp_overview`.
-- Definir quais decisões vêm de `lp_sections`.
-- Definir como o Blueprint confronta os itens estruturados.
-- Avaliar o que o Blueprint agrega além dos itens estruturados: limites editoriais, UX, riscos, lacunas de catálogo e parâmetros de variantes.
-- Definir se o Blueprint será fonte obrigatória do critério 3 ou instrumento de validação/benchmark da LP teste.
-
-### 11.3. Pendências de liberação de nicho
-
-- Avaliar se, para liberar um nicho filho para criação de LP, os itens estruturados de `end_customer` devem ser obrigatórios no próprio nicho filho.
-- Avaliar se, para o mesmo nicho filho, os itens estruturados de `business_buyer` podem ser herdados do nicho pai quando já existirem e fizerem sentido para o recorte comercial.
-- Exemplo: para `corretor de imóveis de médio padrão`, exigir `end_customer` no nicho filho, mas permitir `business_buyer` herdado do nicho pai `corretor de imóveis`.
-- Registrar critérios para decidir quando a herança de `business_buyer` é segura e quando o nicho filho exige pesquisa própria.
-- Tratar esta regra como pendência de validação, não como regra implementada.
-
-### 11.4. Pendências técnicas futuras
-
-- Avaliar renderer atual antes de qualquer alteração.
-- Avaliar contratos atuais antes de qualquer alteração.
-- Avaliar se a parametrização cabe em configuração existente.
-- Evitar nova infraestrutura sem necessidade comprovada.
-- Transformar decisões aprovadas em plano-base separado antes de implementação.
-
-## 12. Regra provisória de decisão
-
-Enquanto este documento estiver em desenvolvimento, a regra provisória é:
-
-- Não implementar antes de fechar entregas esperadas.
-- Não parametrizar sem saber qual LP será testada.
-- Não aceitar Blueprint como verdade única.
-- Não aceitar itens estruturados como verdade única.
-- Confrontar itens estruturados, Blueprint e LP teste antes de fixar regra permanente.
+- Avaliar contratos, banco, renderer e Admin contra este plano.
+- Ajustar o projeto somente após decisão registrada neste documento.
+- Não criar nova tabela, campo, rota, job, automação ou agente sem plano-base ou briefing próprio.
