@@ -2,7 +2,7 @@
 
 Fonte objetiva de decisão para liberar nichos e orientar ajustes do projeto até a criação de LPs.
 
-Fontes de referência: `README.md`, `docs/prompt-nicho-itens-estruturados.md`, `docs/template-blueprint.md`, `docs/schema.md`, `lib/conversion-content/landing-page/contracts.ts`, `lib/conversion-content/contracts.ts` e debate em chat.
+Fontes de referência: `README.md`, `docs/prompt-nicho-itens-estruturados.md`, `docs/template-blueprint.md`, `docs/schema.md`, `lib/conversion-content/landing-page/contracts.ts`, `lib/conversion-content/contracts.ts`, web.dev Web Vitals e debate em chat.
 
 ## 1. O que estamos definindo
 
@@ -20,7 +20,7 @@ Fontes de referência: `README.md`, `docs/prompt-nicho-itens-estruturados.md`, `
 - Critério 1: taxon ativo e corretamente posicionado na taxonomia `segmento → nicho → ultranicho`.
 - Critério 2: itens estruturados completos para `end_customer` no taxon específico e `business_buyer` próprio ou herdado do taxon pai com critério.
 - Critério 3: composição base parametrizada própria do taxon ou composição herdável aprovada do nicho base, quando o taxon específico for um ultranicho.
-- Critério 4: a definir após concluir o critério 3.
+- Critério 4: LP teste ou conjunto de LPs teste validados por plano de liberação do nicho base, com liberação herdável para taxons que usam a mesma composição base, incluindo validação técnica, visual, editorial, conversão mínima e performance de carregamento.
 
 ### 1.3. Papel dos itens estruturados
 
@@ -79,6 +79,20 @@ Fontes de referência: `README.md`, `docs/prompt-nicho-itens-estruturados.md`, `
 - O Critério 3 fica fechado em planejamento com as regras deste documento.
 - A implementação técnica depende de plano-base próprio antes de qualquer alteração em banco, contratos, renderer, Admin, schema ou validações.
 - O fechamento conceitual não autoriza criação de tabela, campo, rota, job, automação, agente ou nova infraestrutura.
+
+### 1.9. Critério 4 — LP teste por plano de liberação
+
+- A validação deve ocorrer por plano de liberação: `starter`, `lite`, `pro` e `ultra`.
+- O Critério 4 não exige LP teste para cada ultranicho quando eles usam a mesma composição base herdável do nicho base.
+- Uma LP teste aprovada no nicho base libera o plano para seus ultranichos herdáveis.
+- Uma LP teste aprovada em um ultranicho que usa a composição herdável do nicho base também valida a composição para o nicho base e seus ultranichos irmãos herdáveis.
+- A liberação herdada não se aplica quando o ultranicho tiver composição própria, módulo/variante específica, restrição regulatória, falha técnica/editorial/visual, ou marcação de não herança.
+- `starter` exige pelo menos 1 LP teste validada, com intenção/funil definido e conteúdo específico do taxon testado.
+- `lite`, `pro` e `ultra` devem ter critérios proporcionais ao escopo real de cada plano, sem antecipar testes complexos sem fonte comercial ou plano-base próprio.
+- Performance de carregamento em ambiente de teste é requisito obrigatório da LP teste.
+- Performance real de campanha, tráfego real, conversão real e Core Web Vitals de campo não são requisitos do Critério 4.
+- A validação de performance deve prevenir regressões antes da liberação, com atenção a LCP, estabilidade visual, bloqueio de interação, peso de imagens, embeds, JavaScript excessivo, layout shift e fallback lento.
+- O Benchmark Blueprint pode ser usado para comparação de ROI, mas não é obrigatório para liberar o Critério 4.
 
 ## 2. O que precisa ser ajustado ou implementado no projeto
 
@@ -140,6 +154,18 @@ Fontes de referência: `README.md`, `docs/prompt-nicho-itens-estruturados.md`, `
 - Ajustar o projeto somente após decisão registrada neste documento.
 - Não criar nova tabela, campo, rota, job, automação ou agente sem plano-base ou briefing próprio.
 
+### 2.8. Critério 4 — LP teste por plano
+
+- Definir checklist da LP teste por plano.
+- Definir validação técnica da LP teste.
+- Definir validação visual, editorial e de conversão mínima.
+- Definir métrica mínima de carregamento em ambiente de teste.
+- Definir se a medição será por Lighthouse, PageSpeed, Playwright, ferramenta interna ou combinação.
+- Definir bloqueios para imagem pesada, embed pesado, JavaScript excessivo, layout shift e fallback lento.
+- Definir como registrar que a liberação de um plano no nicho base foi herdada pelos ultranichos.
+- Definir como registrar que uma LP teste aprovada em ultranicho herdado validou o nicho base e ultranichos irmãos que usam a mesma composição base.
+- Definir critérios específicos para `lite`, `pro` e `ultra` somente quando houver escopo real desses planos.
+
 ## 3. Pendências para plano-base técnico
 
 - Definir onde persistir a config global da composição base do taxon.
@@ -147,3 +173,5 @@ Fontes de referência: `README.md`, `docs/prompt-nicho-itens-estruturados.md`, `
 - Definir onde persistir a intenção/funil da LP gerada e quais adaptações a composição base pode permitir.
 - Definir os valores exatos dos parâmetros por campo e dos presets candidatos.
 - Definir se haverá espelho, referência de versão ou payload operacional da base reutilizável no banco.
+- Definir o mecanismo de registro da liberação por plano e da herança entre nicho base e ultranichos.
+- Definir a métrica mínima de performance de carregamento e a ferramenta de medição em ambiente de teste.
