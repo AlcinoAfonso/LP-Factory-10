@@ -44,7 +44,9 @@ Fontes de referência: `README.md`, `docs/prompt-nicho-itens-estruturados.md`, `
 - A fonte canônica da base reutilizável deve ser versionada no repositório, porque impacta renderer, contratos, testes e design system.
 - O banco pode ter espelho, referência de versão ou payload operacional para leitura do Admin e da IA, mas não deve ser a única fonte canônica da base reutilizável.
 - Parâmetro por campo significa regra para H1, H2, H3, parágrafo, CTA, eyebrow, nota de privacidade, FAQ, cards, benefícios e passos.
-- Presets iniciais: `compact`, `default`, `premium`.
+- Presets candidatos iniciais: `compact`, `default`, `premium`, sujeitos a validação no plano-base da base reutilizável de parametrização para `landing_page`.
+- Presets não substituem BOFU/MOFU/TOFU, módulos ou variantes.
+- Presets não autorizam override livre de design system, schema, renderer, segurança, performance ou acessibilidade.
 - A base reutilizável deve resolver a maioria dos nichos.
 - Nichos que exigirem parâmetros fora da base reutilizável devem usar variante própria reutilizável.
 
@@ -84,7 +86,7 @@ Fontes de referência: `README.md`, `docs/prompt-nicho-itens-estruturados.md`, `
 - Definir se o banco terá espelho, referência de versão ou payload operacional da base reutilizável para Admin e IA.
 - Definir parâmetros por campo para a família `landing_page`.
 - Definir limites editoriais iniciais para H1, H2, H3, parágrafo, CTA, FAQ, cards, benefícios, passos e nota de privacidade.
-- Definir escala tipográfica inicial para `compact`, `default` e `premium`.
+- Definir escala tipográfica inicial para presets candidatos, sem tratá-los como contrato final antes de validação.
 - Definir ajustes por tipo de LP: BOFU, MOFU e TOFU.
 - Definir quantidades padrão, como FAQ, benefícios/cards e passos.
 - Definir quando uma exceção exige nova variante reutilizável.
@@ -113,6 +115,6 @@ Fontes de referência: `README.md`, `docs/prompt-nicho-itens-estruturados.md`, `
 
 - Definir se a base reutilizável ficará apenas no repositório ou também terá espelho/payload no banco.
 - Definir onde persistir a config global da composição do nicho.
-- Definir os valores exatos dos parâmetros por campo e preset.
+- Definir os valores exatos dos parâmetros por campo e dos presets candidatos.
 - Definir se BOFU, MOFU e TOFU serão templates separados ou tipo/configuração dentro da composição.
 - Definir se, após resolver base reutilizável, config global e config por item, o critério 3 pode ser considerado concluído.
