@@ -21,6 +21,7 @@ Fontes de referência: `README.md`, `docs/prompt-nicho-itens-estruturados.md`, `
 - Critério 2: itens estruturados completos para `end_customer` no taxon específico e `business_buyer` próprio ou herdado do taxon pai com critério.
 - Critério 3: composição base parametrizada própria do taxon ou composição herdável aprovada do nicho base, quando o taxon específico for um ultranicho.
 - Critério 4: LP teste ou conjunto de LPs teste validados por plano de liberação do nicho base, com liberação herdável para taxons que usam a mesma composição base, incluindo validação técnica, visual, editorial, conversão mínima e performance de carregamento.
+- Item 5 opcional: Benchmark Blueprint complementar, sem bloqueio automático de liberação.
 
 ### 1.3. Papel dos itens estruturados
 
@@ -94,6 +95,17 @@ Fontes de referência: `README.md`, `docs/prompt-nicho-itens-estruturados.md`, `
 - A validação de performance deve prevenir regressões antes da liberação, com atenção a LCP, estabilidade visual, bloqueio de interação, peso de imagens, embeds, JavaScript excessivo, layout shift e fallback lento.
 - O Benchmark Blueprint pode ser usado para comparação de ROI, mas não é obrigatório para liberar o Critério 4.
 
+### 1.10. Item 5 — Benchmark Blueprint opcional
+
+- O Item 5 é complementar e opcional; não é critério de liberação.
+- Após a LP teste passar no Critério 4, o projeto pode gerar uma LP alternativa ou avaliação comparativa orientada por Blueprint.
+- O objetivo é comparar a LP teste do processo normal com uma proposta ou avaliação Blueprint.
+- A comparação deve avaliar clareza, estrutura, copy, adequação ao nicho ou ultranicho, visual, CTA, prova, conversão esperada, lacunas e riscos.
+- O Benchmark Blueprint não bloqueia liberação de nicho, ultranicho ou plano, salvo decisão humana explícita.
+- Se o Blueprint apresentar ganho relevante, a melhoria deve ser registrada como insumo para evolução da base reutilizável, composição, variantes, parametrização editorial ou critérios de UX/CRO.
+- O Blueprint não altera automaticamente banco, composição, renderer, schema, módulo, variante ou artefato final.
+- O Item 5 não autoriza criação de tabela, campo, rota, job, automação, agente ou nova infraestrutura.
+
 ## 2. O que precisa ser ajustado ou implementado no projeto
 
 ### 2.1. Critério 1 — Taxon
@@ -166,6 +178,14 @@ Fontes de referência: `README.md`, `docs/prompt-nicho-itens-estruturados.md`, `
 - Definir como registrar que uma LP teste aprovada em ultranicho herdado validou o nicho base e ultranichos irmãos que usam a mesma composição base.
 - Definir critérios específicos para `lite`, `pro` e `ultra` somente quando houver escopo real desses planos.
 
+### 2.9. Item 5 — Benchmark Blueprint opcional
+
+- Definir formato de comparação entre LP teste validada e proposta ou avaliação Blueprint.
+- Definir como registrar ganhos, lacunas e riscos encontrados pelo Benchmark Blueprint.
+- Definir como transformar ganhos relevantes em insumo para plano-base, base reutilizável, composição, variantes ou critérios editoriais.
+- Garantir que o Item 5 não bloqueie liberação sem decisão humana explícita.
+- Garantir que o Item 5 não altere automaticamente banco, composição, renderer, schema, módulo, variante ou artefato final.
+
 ## 3. Pendências para plano-base técnico
 
 - Definir onde persistir a config global da composição base do taxon.
@@ -175,3 +195,4 @@ Fontes de referência: `README.md`, `docs/prompt-nicho-itens-estruturados.md`, `
 - Definir se haverá espelho, referência de versão ou payload operacional da base reutilizável no banco.
 - Definir o mecanismo de registro da liberação por plano e da herança entre nicho base e ultranichos.
 - Definir a métrica mínima de performance de carregamento e a ferramenta de medição em ambiente de teste.
+- Definir o formato de registro do Benchmark Blueprint opcional quando ele for usado como insumo de evolução.
