@@ -20,7 +20,7 @@ Fontes de referência: `README.md`, `docs/prompt-nicho-itens-estruturados.md`, `
 - Critério 1: taxon ativo e corretamente posicionado na taxonomia `segmento → nicho → ultranicho`.
 - Critério 2: itens estruturados completos para `end_customer` no taxon específico e `business_buyer` próprio ou herdado do taxon pai com critério.
 - Critério 3: composição base parametrizada própria do taxon ou composição herdável aprovada do nicho base, quando o taxon específico for um ultranicho.
-- Critério 4: LP teste ou conjunto de LPs teste validados por plano de liberação do nicho base, com liberação herdável para taxons que usam a mesma composição base, incluindo validação técnica, visual, editorial, conversão mínima e performance de carregamento.
+- Critério 4: LP teste ou conjunto de LPs teste validados por plano de liberação do nicho base, com liberação herdável para ultranichos que usam a mesma composição base herdável, incluindo validação técnica, visual, editorial, conversão mínima e performance de carregamento.
 - Item 5 opcional: Benchmark Blueprint complementar, sem bloqueio automático de liberação.
 
 ### 1.3. Itens estruturados
