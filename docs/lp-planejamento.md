@@ -53,6 +53,12 @@ Fontes de referência: `README.md`, `docs/prompt-nicho-itens-estruturados.md`, `
 - A base inicial deve ser uma base reutilizável de parametrização para a família `landing_page`.
 - A base deve considerar a precedência: família `landing_page` → intenção/funil da LP gerada → módulo → variante → composição base do taxon → item da composição.
 - A fonte canônica da base reutilizável deve ser versionada no repositório, porque impacta renderer, contratos, testes e design system.
+- A base reutilizável deve definir, por módulo, um `copy_source_map` padrão para mapear campos de copy aos insumos estruturados permitidos.
+- O `copy_source_map` pode variar por intenção/funil da LP gerada: BOFU, MOFU e TOFU.
+- Cada campo de copy deve consultar no máximo 2 `item_key` principais e 1 `item_key` auxiliar, salvo decisão registrada no plano-base técnico.
+- Variante herda o `copy_source_map` do módulo e só pode sobrescrever quando houver mudança de comportamento comercial dentro da mesma função estrutural.
+- Se a mudança alterar a função estrutural, deve ser avaliada criação de novo módulo, não variante grande demais.
+- A composition escolhe módulos, variantes, ordem, obrigatoriedade, config global e config por item, mas não deve duplicar o mapa completo de insumos de copy.
 - Espelho, referência de versão ou payload operacional no banco só devem ser decididos no plano-base técnico, se houver necessidade operacional.
 - Parâmetro por campo significa regra para H1, H2, H3, parágrafo, CTA, eyebrow, nota de privacidade, FAQ, cards, benefícios e passos.
 - Presets candidatos iniciais: `compact`, `default`, `premium`, sujeitos a validação no plano-base da base reutilizável de parametrização para `landing_page`.
@@ -126,6 +132,10 @@ Fontes de referência: `README.md`, `docs/prompt-nicho-itens-estruturados.md`, `
 - Criar base reutilizável versionada no repositório para a família `landing_page`.
 - Avaliar no plano-base técnico se o banco terá espelho, referência de versão ou payload operacional da base reutilizável para Admin e IA.
 - Definir parâmetros por campo para a família `landing_page`.
+- Definir `copy_source_map` padrão por módulo, por campo de copy e por intenção/funil da LP gerada.
+- Definir quais `item_key` podem alimentar cada campo de copy, respeitando o limite de 2 principais e 1 auxiliar.
+- Definir quando uma variante pode herdar, restringir ou sobrescrever o `copy_source_map` do módulo.
+- Definir critério para distinguir mudança de comportamento comercial dentro do mesmo módulo de mudança estrutural que exige novo módulo.
 - Definir limites editoriais iniciais para H1, H2, H3, parágrafo, CTA, FAQ, cards, benefícios, passos e nota de privacidade.
 - Definir escala tipográfica inicial para presets candidatos, sem tratá-los como contrato final antes de validação.
 - Definir adaptações permitidas por intenção/funil da LP gerada: BOFU, MOFU e TOFU.
@@ -169,7 +179,7 @@ Fontes de referência: `README.md`, `docs/prompt-nicho-itens-estruturados.md`, `
 ## 3. Pendências para plano-base técnico
 
 - Detalhar no plano-base técnico a persistência da config global, a herança de composição e a intenção/funil da LP gerada.
-- Definir os valores exatos dos parâmetros por campo e dos presets candidatos.
+- Definir os valores exatos dos parâmetros por campo, do `copy_source_map` e dos presets candidatos.
 - Definir se haverá espelho, referência de versão ou payload operacional da base reutilizável no banco.
 - Detalhar no plano-base técnico as medições, registros, ferramentas e bloqueios do Critério 4.
 - Definir o formato de registro do Benchmark Blueprint opcional quando ele for usado como insumo de evolução.
