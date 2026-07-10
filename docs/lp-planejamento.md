@@ -23,7 +23,7 @@ Fontes de referência: `README.md`, `docs/prompt-nicho-itens-estruturados.md`, `
 - Critério 4: LP teste ou conjunto de LPs teste validados por plano de liberação do nicho base, com liberação herdável para taxons que usam a mesma composição base, incluindo validação técnica, visual, editorial, conversão mínima e performance de carregamento.
 - Item 5 opcional: Benchmark Blueprint complementar, sem bloqueio automático de liberação.
 
-### 1.3. Papel dos itens estruturados
+### 1.3. Itens estruturados
 
 - `strategic_core`: mensagem, promessa, objeções, provas, vocabulário e CTA.
 - `lp_overview`: config global da composição, incluindo tom visual, densidade, tipografia, mobile, extensão e estilo de imagem.
@@ -32,17 +32,19 @@ Fontes de referência: `README.md`, `docs/prompt-nicho-itens-estruturados.md`, `
 - Os itens estruturados não precisam entregar limites de caracteres, escala tipográfica, tamanho de fonte ou parametrização técnica por campo.
 - Quando houver herança de composição do nicho para ultranicho, conteúdo, copy, FAQ, provas, oferta e CTA devem continuar específicos do ultranicho.
 
-### 1.4. Composição e variantes
+### 1.4. Composição, herança e variantes
 
 - A estrutura padrão permanece módulo + variante.
 - Módulo define a função estrutural.
 - Variante define a execução específica daquela função.
-- Parametrização define como a variante se comporta no tipo de LP, nicho, ultranicho e origem/funil.
 - A composição base do taxon não é a LP final; ela é o ponto de partida governado para gerar LPs concretas.
 - A config global pertence à composição base.
 - Configs específicas pertencem aos itens da composição.
 - Composição aprovada de nicho é presumida herdável para ultranichos, salvo marcação contrária.
 - O ultranicho só herda composição do nicho base quando não houver composição própria aprovada.
+- Uma LP teste aprovada no nicho base libera o plano para seus ultranichos herdáveis.
+- Uma LP teste aprovada em um ultranicho que usa a composição herdável do nicho base também valida a composição para o nicho base e seus ultranichos irmãos herdáveis.
+- A liberação herdada não se aplica quando o ultranicho tiver composição própria, módulo/variante específica, restrição regulatória, falha técnica/editorial/visual ou marcação de não herança.
 - Criar composição própria do ultranicho apenas quando a composição do nicho não atender por estrutura, jornada, regulação, prova, oferta, formulário, qualificação ou resultado da LP teste.
 - Exceções por nicho ou ultranicho devem virar variantes reutilizáveis e hierarquicamente superiores, não ajustes soltos.
 
@@ -60,42 +62,28 @@ Fontes de referência: `README.md`, `docs/prompt-nicho-itens-estruturados.md`, `
 - Taxons que exigirem parâmetros fora da base reutilizável devem usar variante própria reutilizável.
 - Valores exatos de parâmetros e presets ficam para o plano-base técnico da base reutilizável.
 
-### 1.6. Blueprint
-
-- O Blueprint não substitui nem compete com os itens estruturados.
-- O Blueprint entra inicialmente como benchmark de ROI da LP teste, não como etapa obrigatória do critério 3.
-- A comparação deve avaliar qualidade, conversão esperada, estrutura, clareza, visual, adequação ao nicho, lacunas e riscos.
-- Se o Blueprint provar ganho claro, incorporar apenas a parte que gerou ganho: benchmark, lacunas, parametrização editorial, UX/CRO ou outra contribuição objetiva.
-
-### 1.7. Taxonomia de comunicação
+### 1.6. Taxonomia de comunicação
 
 - A comunicação do projeto deve seguir a taxonomia técnica existente: `segmento → nicho → ultranicho`.
 - Não adotar nomenclatura paralela `setor → segmento → nicho`, para evitar retrabalho e conflito entre sistema, documentação, Admin e comunicação.
-- Exemplo: `saúde` como segmento, `odontologia` como nicho e `implante dentário` como ultranicho.
 - Exemplo: `imobiliário` como segmento, `corretor de imóveis` como nicho e `corretor de imóveis de médio padrão` como ultranicho.
-- Para o critério de composição, o nicho pode ter composição base herdável que atende seus ultranichos.
 
-### 1.8. Fechamento conceitual do Critério 3
+### 1.7. Critério 3 fechado
 
 - O Critério 3 fica fechado em planejamento com as regras deste documento.
 - A implementação técnica depende de plano-base próprio antes de qualquer alteração em banco, contratos, renderer, Admin, schema ou validações.
-- O fechamento conceitual não autoriza criação de tabela, campo, rota, job, automação, agente ou nova infraestrutura.
 
-### 1.9. Critério 4 — LP teste por plano de liberação
+### 1.8. Critério 4 — LP teste por plano de liberação
 
 - A validação deve ocorrer por plano de liberação: `starter`, `lite`, `pro` e `ultra`.
 - O Critério 4 não exige LP teste para cada ultranicho quando eles usam a mesma composição base herdável do nicho base.
-- Uma LP teste aprovada no nicho base libera o plano para seus ultranichos herdáveis.
-- Uma LP teste aprovada em um ultranicho que usa a composição herdável do nicho base também valida a composição para o nicho base e seus ultranichos irmãos herdáveis.
-- A liberação herdada não se aplica quando o ultranicho tiver composição própria, módulo/variante específica, restrição regulatória, falha técnica/editorial/visual, ou marcação de não herança.
 - `starter` exige pelo menos 1 LP teste validada, com intenção/funil definido e conteúdo específico do taxon testado.
 - `lite`, `pro` e `ultra` devem ter critérios proporcionais ao escopo real de cada plano, sem antecipar testes complexos sem fonte comercial ou plano-base próprio.
 - Performance de carregamento em ambiente de teste é requisito obrigatório da LP teste.
 - Performance real de campanha, tráfego real, conversão real e Core Web Vitals de campo não são requisitos do Critério 4.
 - A validação de performance deve prevenir regressões antes da liberação, com atenção a LCP, estabilidade visual, bloqueio de interação, peso de imagens, embeds, JavaScript excessivo, layout shift e fallback lento.
-- O Benchmark Blueprint pode ser usado para comparação de ROI, mas não é obrigatório para liberar o Critério 4.
 
-### 1.10. Item 5 — Benchmark Blueprint opcional
+### 1.9. Item 5 opcional — Benchmark Blueprint
 
 - O Item 5 é complementar e opcional; não é critério de liberação.
 - Após a LP teste passar no Critério 4, o projeto pode gerar uma LP alternativa ou avaliação comparativa orientada por Blueprint.
@@ -104,7 +92,6 @@ Fontes de referência: `README.md`, `docs/prompt-nicho-itens-estruturados.md`, `
 - O Benchmark Blueprint não bloqueia liberação de nicho, ultranicho ou plano, salvo decisão humana explícita.
 - Se o Blueprint apresentar ganho relevante, a melhoria deve ser registrada como insumo para evolução da base reutilizável, composição, variantes, parametrização editorial ou critérios de UX/CRO.
 - O Blueprint não altera automaticamente banco, composição, renderer, schema, módulo, variante ou artefato final.
-- O Item 5 não autoriza criação de tabela, campo, rota, job, automação, agente ou nova infraestrutura.
 
 ## 2. O que precisa ser ajustado ou implementado no projeto
 
@@ -153,20 +140,7 @@ Fontes de referência: `README.md`, `docs/prompt-nicho-itens-estruturados.md`, `
 - Definir hierarquia de variante universal, variante por intenção de LP e variante por nicho quando necessário.
 - Evitar ajuste solto por nicho ou ultranicho; primeiro avaliar variante existente, depois nova variante reutilizável e só por último exceção específica de baixo reaproveitamento.
 
-### 2.6. Blueprint
-
-- Implementar ou simular comparação de ROI entre LP teste do processo normal e benchmark orientado por Blueprint.
-- Avaliar se o Blueprint melhora parametrização editorial, UX/CRO, lacunas, riscos ou qualidade da LP teste.
-- Ajustar template do Blueprint se ele precisar entregar parâmetros de forma mais objetiva.
-- Não tornar Blueprint obrigatório sem evidência de ganho.
-
-### 2.7. Pendências técnicas
-
-- Avaliar contratos, banco, renderer e Admin contra este plano.
-- Ajustar o projeto somente após decisão registrada neste documento.
-- Não criar nova tabela, campo, rota, job, automação ou agente sem plano-base ou briefing próprio.
-
-### 2.8. Critério 4 — LP teste por plano
+### 2.6. Critério 4 — LP teste por plano
 
 - Definir checklist da LP teste por plano.
 - Definir validação técnica da LP teste.
@@ -178,7 +152,7 @@ Fontes de referência: `README.md`, `docs/prompt-nicho-itens-estruturados.md`, `
 - Definir como registrar que uma LP teste aprovada em ultranicho herdado validou o nicho base e ultranichos irmãos que usam a mesma composição base.
 - Definir critérios específicos para `lite`, `pro` e `ultra` somente quando houver escopo real desses planos.
 
-### 2.9. Item 5 — Benchmark Blueprint opcional
+### 2.7. Item 5 — Benchmark Blueprint opcional
 
 - Definir formato de comparação entre LP teste validada e proposta ou avaliação Blueprint.
 - Definir como registrar ganhos, lacunas e riscos encontrados pelo Benchmark Blueprint.
@@ -186,13 +160,16 @@ Fontes de referência: `README.md`, `docs/prompt-nicho-itens-estruturados.md`, `
 - Garantir que o Item 5 não bloqueie liberação sem decisão humana explícita.
 - Garantir que o Item 5 não altere automaticamente banco, composição, renderer, schema, módulo, variante ou artefato final.
 
+### 2.8. Limites técnicos gerais
+
+- Avaliar contratos, banco, renderer e Admin contra este plano.
+- Ajustar o projeto somente após decisão registrada neste documento e plano-base próprio quando houver impacto técnico.
+- Não criar nova tabela, campo, rota, job, automação, agente ou nova infraestrutura sem plano-base ou briefing próprio.
+
 ## 3. Pendências para plano-base técnico
 
-- Definir onde persistir a config global da composição base do taxon.
-- Definir como marcar composição de nicho restrita, quando ela não puder ser herdada por ultranichos.
-- Definir onde persistir a intenção/funil da LP gerada e quais adaptações a composição base pode permitir.
+- Detalhar no plano-base técnico a persistência da config global, a herança de composição e a intenção/funil da LP gerada.
 - Definir os valores exatos dos parâmetros por campo e dos presets candidatos.
 - Definir se haverá espelho, referência de versão ou payload operacional da base reutilizável no banco.
-- Definir o mecanismo de registro da liberação por plano e da herança entre nicho base e ultranichos.
-- Definir a métrica mínima de performance de carregamento e a ferramenta de medição em ambiente de teste.
+- Detalhar no plano-base técnico as medições, registros, ferramentas e bloqueios do Critério 4.
 - Definir o formato de registro do Benchmark Blueprint opcional quando ele for usado como insumo de evolução.
