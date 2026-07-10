@@ -8,18 +8,18 @@ Fontes de referência: `README.md`, `docs/prompt-nicho-itens-estruturados.md`, `
 
 ### 1.1. Entrega final esperada
 
-- A entrega final é criar LPs testáveis e publicáveis por nicho.
+- A entrega final é criar LPs testáveis e publicáveis por nicho ou ultranicho.
 - Tipos/intenção de LP: BOFU, MOFU e TOFU.
 - BOFU, MOFU e TOFU não são canais; o canal é `landing_page`.
 - Origem de tráfego é separada do tipo da LP: Google Ads, Instagram Ads, WhatsApp, QR Code, orgânico ou outra origem.
 - BOFU, MOFU e TOFU entram na geração da LP final a partir da intenção informada pelo cliente, sem exigir três composições oficiais por taxon no MVP.
-- LP teste por nicho é validação prática antes da liberação plena.
+- LP teste por nicho ou ultranicho é validação prática antes da liberação plena.
 
-### 1.2. Critérios de liberação de nicho
+### 1.2. Critérios de liberação de nicho ou ultranicho
 
-- Critério 1: taxon ativo e corretamente posicionado na taxonomia.
-- Critério 2: itens estruturados completos para `end_customer` no nicho filho e `business_buyer` próprio ou herdado do nicho pai com critério.
-- Critério 3: composição base parametrizada do taxon, capaz de servir como ponto de partida para LPs de diferentes intenções de funil no momento da geração pelo cliente.
+- Critério 1: taxon ativo e corretamente posicionado na taxonomia `segmento → nicho → ultranicho`.
+- Critério 2: itens estruturados completos para `end_customer` no taxon específico e `business_buyer` próprio ou herdado do taxon pai com critério.
+- Critério 3: composição base parametrizada própria do taxon ou herdável do nicho pai, quando o taxon específico for um ultranicho.
 - Critério 4: a definir após concluir o critério 3.
 
 ### 1.3. Papel dos itens estruturados
@@ -29,15 +29,18 @@ Fontes de referência: `README.md`, `docs/prompt-nicho-itens-estruturados.md`, `
 - `lp_sections`: seções, ordem, função no funil e composição conceitual.
 - `seo`: intenção, vocabulário, termos, FAQ e requisitos básicos de busca.
 - Os itens estruturados não precisam entregar limites de caracteres, escala tipográfica, tamanho de fonte ou parametrização técnica por campo.
+- Quando houver herança de composição do nicho para ultranicho, conteúdo, copy, FAQ, provas, oferta e CTA devem continuar específicos do ultranicho.
 
 ### 1.4. Composição e variantes
 
 - A estrutura padrão permanece módulo + variante.
 - Módulo define a função estrutural.
 - Variante define a execução específica daquela função.
-- Parametrização define como a variante se comporta no tipo de LP, nicho e origem/funil.
+- Parametrização define como a variante se comporta no tipo de LP, nicho, ultranicho e origem/funil.
 - A composição base do taxon não é a LP final; ela é o ponto de partida governado para gerar LPs concretas.
-- Exceções por nicho devem virar variantes reutilizáveis e hierarquicamente superiores, não ajustes soltos.
+- Uma composição base aprovada no nicho pode atender seus ultranichos quando for marcada ou tratada como herdável.
+- Criar composição própria do ultranicho apenas quando a composição do nicho não atender por estrutura, jornada, regulação, prova, oferta, formulário, qualificação ou resultado da LP teste.
+- Exceções por nicho ou ultranicho devem virar variantes reutilizáveis e hierarquicamente superiores, não ajustes soltos.
 
 ### 1.5. Parametrização
 
@@ -49,8 +52,8 @@ Fontes de referência: `README.md`, `docs/prompt-nicho-itens-estruturados.md`, `
 - Presets candidatos iniciais: `compact`, `default`, `premium`, sujeitos a validação no plano-base da base reutilizável de parametrização para `landing_page`.
 - Presets não substituem BOFU/MOFU/TOFU, módulos ou variantes.
 - Presets não autorizam override livre de design system, schema, renderer, segurança, performance ou acessibilidade.
-- A base reutilizável deve resolver a maioria dos nichos.
-- Nichos que exigirem parâmetros fora da base reutilizável devem usar variante própria reutilizável.
+- A base reutilizável deve resolver a maioria dos nichos e ultranichos.
+- Taxons que exigirem parâmetros fora da base reutilizável devem usar variante própria reutilizável.
 
 ### 1.6. Blueprint
 
@@ -59,16 +62,25 @@ Fontes de referência: `README.md`, `docs/prompt-nicho-itens-estruturados.md`, `
 - A comparação deve avaliar qualidade, conversão esperada, estrutura, clareza, visual, adequação ao nicho, lacunas e riscos.
 - Se o Blueprint provar ganho claro, incorporar apenas a parte que gerou ganho: benchmark, lacunas, parametrização editorial, UX/CRO ou outra contribuição objetiva.
 
+### 1.7. Taxonomia de comunicação
+
+- A comunicação do projeto deve seguir a taxonomia técnica existente: `segmento → nicho → ultranicho`.
+- Não adotar nomenclatura paralela `setor → segmento → nicho`, para evitar retrabalho e conflito entre sistema, documentação, Admin e comunicação.
+- Exemplo: `saúde` como segmento, `odontologia` como nicho e `implante dentário` como ultranicho.
+- Exemplo: `imobiliário` como segmento, `corretor de imóveis` como nicho e `corretor de imóveis de médio padrão` como ultranicho.
+- Para o critério de composição, o nicho pode ter composição base herdável que atende seus ultranichos.
+
 ## 2. O que precisa ser ajustado ou implementado no projeto
 
 ### 2.1. Critério 1 — Taxon
 
-- Confirmar regra operacional de taxon liberável.
+- Confirmar regra operacional de taxon liberável usando a taxonomia `segmento → nicho → ultranicho`.
 - Garantir leitura clara de taxon pai e filho para herança quando aplicável.
+- Evitar nomenclatura paralela entre sistema, documentação, Admin e comunicação.
 
 ### 2.2. Critério 2 — Itens estruturados
 
-- Adequar a regra para aceitar `end_customer` no nicho filho e `business_buyer` próprio ou herdado do nicho pai.
+- Adequar a regra para aceitar `end_customer` no taxon específico e `business_buyer` próprio ou herdado do taxon pai.
 - Registrar critério de segurança para herança de `business_buyer`.
 - Bloquear liberação quando faltar bloco obrigatório.
 
@@ -82,6 +94,8 @@ Fontes de referência: `README.md`, `docs/prompt-nicho-itens-estruturados.md`, `
 - Registrar gaps de catálogo quando módulo ou variante essencial não existir.
 - Impedir liberação plena até gap essencial ser criado e parametrizado.
 - Permitir que a LP final adapte copy, CTA, prova, FAQ, formulário, densidade e ordem permitida conforme a intenção do cliente.
+- Permitir que ultranicho use composição base aprovada e herdável do nicho pai quando não houver necessidade comprovada de composição própria.
+- Bloquear liberação se não houver composição própria aprovada nem composição herdável aprovada do nicho pai.
 
 ### 2.4. Base reutilizável de parametrização
 
@@ -100,7 +114,7 @@ Fontes de referência: `README.md`, `docs/prompt-nicho-itens-estruturados.md`, `
 - Criar variantes quando a necessidade não couber na base reutilizável.
 - Garantir que variantes sejam reutilizáveis em outros nichos sempre que possível.
 - Definir hierarquia de variante universal, variante por intenção de LP e variante por nicho quando necessário.
-- Evitar ajuste solto por nicho; primeiro avaliar variante existente, depois nova variante reutilizável e só por último exceção específica de baixo reaproveitamento.
+- Evitar ajuste solto por nicho ou ultranicho; primeiro avaliar variante existente, depois nova variante reutilizável e só por último exceção específica de baixo reaproveitamento.
 
 ### 2.6. Blueprint
 
@@ -119,6 +133,7 @@ Fontes de referência: `README.md`, `docs/prompt-nicho-itens-estruturados.md`, `
 
 - Definir se a base reutilizável ficará apenas no repositório ou também terá espelho/payload no banco.
 - Definir onde persistir a config global da composição base do taxon.
+- Definir como marcar ou resolver que uma composição de nicho é herdável por ultranichos.
 - Definir onde persistir a intenção/funil da LP gerada e quais adaptações a composição base pode permitir.
 - Definir os valores exatos dos parâmetros por campo e dos presets candidatos.
-- Definir se, após resolver base reutilizável, config global, config por item e intenção da LP gerada, o critério 3 pode ser considerado concluído.
+- Definir se, após resolver base reutilizável, config global, config por item, herança de composição e intenção da LP gerada, o critério 3 pode ser considerado concluído.
