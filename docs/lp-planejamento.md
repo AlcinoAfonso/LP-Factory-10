@@ -12,13 +12,14 @@ Fontes de referência: `README.md`, `docs/prompt-nicho-itens-estruturados.md`, `
 - Tipos/intenção de LP: BOFU, MOFU e TOFU.
 - BOFU, MOFU e TOFU não são canais; o canal é `landing_page`.
 - Origem de tráfego é separada do tipo da LP: Google Ads, Instagram Ads, WhatsApp, QR Code, orgânico ou outra origem.
+- BOFU, MOFU e TOFU entram na geração da LP final a partir da intenção informada pelo cliente, sem exigir três composições oficiais por taxon no MVP.
 - LP teste por nicho é validação prática antes da liberação plena.
 
 ### 1.2. Critérios de liberação de nicho
 
 - Critério 1: taxon ativo e corretamente posicionado na taxonomia.
 - Critério 2: itens estruturados completos para `end_customer` no nicho filho e `business_buyer` próprio ou herdado do nicho pai com critério.
-- Critério 3: composição parametrizada da LP criada para o nicho, com página, módulos, variantes, ordem, obrigatoriedade, config global e config por item.
+- Critério 3: composição base parametrizada do taxon, capaz de servir como ponto de partida para LPs de diferentes intenções de funil no momento da geração pelo cliente.
 - Critério 4: a definir após concluir o critério 3.
 
 ### 1.3. Papel dos itens estruturados
@@ -35,12 +36,13 @@ Fontes de referência: `README.md`, `docs/prompt-nicho-itens-estruturados.md`, `
 - Módulo define a função estrutural.
 - Variante define a execução específica daquela função.
 - Parametrização define como a variante se comporta no tipo de LP, nicho e origem/funil.
+- A composição base do taxon não é a LP final; ela é o ponto de partida governado para gerar LPs concretas.
 - Exceções por nicho devem virar variantes reutilizáveis e hierarquicamente superiores, não ajustes soltos.
 
 ### 1.5. Parametrização
 
 - A base inicial deve ser uma base reutilizável de parametrização para a família `landing_page`.
-- A base deve considerar a precedência: família `landing_page` → tipo BOFU/MOFU/TOFU → módulo → variante → composição do nicho → item da composição.
+- A base deve considerar a precedência: família `landing_page` → intenção/funil da LP gerada → módulo → variante → composição base do taxon → item da composição.
 - A fonte canônica da base reutilizável deve ser versionada no repositório, porque impacta renderer, contratos, testes e design system.
 - O banco pode ter espelho, referência de versão ou payload operacional para leitura do Admin e da IA, mas não deve ser a única fonte canônica da base reutilizável.
 - Parâmetro por campo significa regra para H1, H2, H3, parágrafo, CTA, eyebrow, nota de privacidade, FAQ, cards, benefícios e passos.
@@ -70,15 +72,16 @@ Fontes de referência: `README.md`, `docs/prompt-nicho-itens-estruturados.md`, `
 - Registrar critério de segurança para herança de `business_buyer`.
 - Bloquear liberação quando faltar bloco obrigatório.
 
-### 2.3. Critério 3 — Composição parametrizada
+### 2.3. Critério 3 — Composição base parametrizada
 
-- Criar ou ajustar fluxo Admin de curadoria da composição.
+- Criar ou ajustar fluxo Admin de curadoria da composição base do taxon.
 - Permitir que a IA proponha config global com base em `lp_overview`.
 - Permitir que a IA proponha módulos, variantes, ordem, obrigatoriedade e config por item com base em `lp_sections`, `strategic_core` e `seo`.
-- Resolver onde a config global da composição será persistida.
+- Resolver onde a config global da composição base será persistida.
 - Manter `content_template_composition_items` como relação 1:N de módulos/variantes.
 - Registrar gaps de catálogo quando módulo ou variante essencial não existir.
 - Impedir liberação plena até gap essencial ser criado e parametrizado.
+- Permitir que a LP final adapte copy, CTA, prova, FAQ, formulário, densidade e ordem permitida conforme a intenção do cliente.
 
 ### 2.4. Base reutilizável de parametrização
 
@@ -87,7 +90,7 @@ Fontes de referência: `README.md`, `docs/prompt-nicho-itens-estruturados.md`, `
 - Definir parâmetros por campo para a família `landing_page`.
 - Definir limites editoriais iniciais para H1, H2, H3, parágrafo, CTA, FAQ, cards, benefícios, passos e nota de privacidade.
 - Definir escala tipográfica inicial para presets candidatos, sem tratá-los como contrato final antes de validação.
-- Definir ajustes por tipo de LP: BOFU, MOFU e TOFU.
+- Definir adaptações permitidas por intenção/funil da LP gerada: BOFU, MOFU e TOFU.
 - Definir quantidades padrão, como FAQ, benefícios/cards e passos.
 - Definir quando uma exceção exige nova variante reutilizável.
 
@@ -96,7 +99,8 @@ Fontes de referência: `README.md`, `docs/prompt-nicho-itens-estruturados.md`, `
 - Confirmar catálogo inicial de módulos e variantes de LP.
 - Criar variantes quando a necessidade não couber na base reutilizável.
 - Garantir que variantes sejam reutilizáveis em outros nichos sempre que possível.
-- Definir hierarquia de variante universal, variante por tipo de LP e variante por nicho quando necessário.
+- Definir hierarquia de variante universal, variante por intenção de LP e variante por nicho quando necessário.
+- Evitar ajuste solto por nicho; primeiro avaliar variante existente, depois nova variante reutilizável e só por último exceção específica de baixo reaproveitamento.
 
 ### 2.6. Blueprint
 
@@ -114,7 +118,7 @@ Fontes de referência: `README.md`, `docs/prompt-nicho-itens-estruturados.md`, `
 ## 3. Ambiguidades e decisões em aberto
 
 - Definir se a base reutilizável ficará apenas no repositório ou também terá espelho/payload no banco.
-- Definir onde persistir a config global da composição do nicho.
+- Definir onde persistir a config global da composição base do taxon.
+- Definir onde persistir a intenção/funil da LP gerada e quais adaptações a composição base pode permitir.
 - Definir os valores exatos dos parâmetros por campo e dos presets candidatos.
-- Definir se BOFU, MOFU e TOFU serão templates separados ou tipo/configuração dentro da composição.
-- Definir se, após resolver base reutilizável, config global e config por item, o critério 3 pode ser considerado concluído.
+- Definir se, após resolver base reutilizável, config global, config por item e intenção da LP gerada, o critério 3 pode ser considerado concluído.
