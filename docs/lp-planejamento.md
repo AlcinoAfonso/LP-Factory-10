@@ -26,7 +26,7 @@ Fontes de referência: `README.md`, `docs/prompt-nicho-itens-estruturados.md`, `
 ### 1.3. Itens estruturados
 
 - `strategic_core`: mensagem, promessa, objeções, provas, vocabulário e CTA.
-- `lp_overview`: config global da composição, incluindo tom visual, densidade, tipografia, mobile, extensão e estilo de imagem.
+- `lp_overview`: diretrizes para a configuração geral da composição, incluindo tom visual, densidade, tipografia, prioridade mobile, extensão e estilo de imagem.
 - `lp_sections`: seções, ordem, função no funil e composição conceitual.
 - `seo`: intenção, vocabulário, termos, FAQ e requisitos básicos de busca.
 - Os itens estruturados não precisam entregar limites de caracteres, escala tipográfica, tamanho de fonte ou parametrização técnica por campo.
@@ -38,8 +38,8 @@ Fontes de referência: `README.md`, `docs/prompt-nicho-itens-estruturados.md`, `
 - Módulo define a função estrutural.
 - Variante define a execução específica daquela função.
 - A composição base do taxon não é a LP final; ela é o ponto de partida governado para gerar LPs concretas.
-- A config global pertence à composição base.
-- Configs específicas pertencem aos itens da composição.
+- A configuração geral pertence à composição base.
+- Configurações específicas pertencem aos itens da composição.
 - Composição aprovada de nicho é presumida herdável para ultranichos, salvo marcação contrária.
 - O ultranicho só herda composição do nicho base quando não houver composição própria aprovada.
 - Uma LP teste aprovada no nicho base libera o plano para seus ultranichos herdáveis.
@@ -58,6 +58,7 @@ Fontes de referência: `README.md`, `docs/prompt-nicho-itens-estruturados.md`, `
 - A base inicial deve ser uma base reutilizável de parametrização para a família `landing_page`.
 - A base deve considerar a precedência: família `landing_page` → intenção/funil da LP gerada → módulo → variante → composição base do taxon → item da composição.
 - A fonte canônica da base reutilizável deve ser versionada no repositório, porque impacta renderer, contratos, testes e design system.
+- A base de parametrização define regras, limites e opções permitidas; a configuração geral da composição e as configurações por item selecionam valores dentro dessa base.
 - Zod executa validações técnicas da base parametrizada, mas não decide estratégia, composição, qualidade editorial, escolha de módulos/variantes ou adequação comercial.
 - A base reutilizável deve separar `copy_source_map` e `funnel_copy_profile`.
 - O `copy_source_map` define quais `item_key` cada campo de copy consulta.
@@ -70,7 +71,7 @@ Fontes de referência: `README.md`, `docs/prompt-nicho-itens-estruturados.md`, `
 - Cada campo de copy deve consultar no máximo 2 `item_key` principais e 1 `item_key` auxiliar, salvo decisão registrada no plano-base técnico.
 - Variante herda o `copy_source_map` do módulo e só pode sobrescrever quando houver mudança de comportamento comercial dentro da mesma função estrutural.
 - Se a mudança alterar a função estrutural, deve ser avaliada criação de novo módulo, não variante grande demais.
-- A composition escolhe módulos, variantes, ordem, obrigatoriedade, config global e config por item, mas não deve duplicar o mapa completo de insumos de copy nem regras de copy por funil.
+- A composição escolhe módulos, variantes, ordem, obrigatoriedade, configuração geral e configuração por item, mas não deve duplicar o mapa completo de insumos de copy nem regras de copy por funil.
 - A LP gerada deve usar um `lp_generation_input_catalog` para separar catálogo declarativo, valores reais e snapshot da geração.
 - O `lp_generation_input_catalog` define campos disponíveis, obrigatórios e condicionantes, com herança `universal → segmento → nicho → ultranicho`.
 - A fonte canônica inicial do `lp_generation_input_catalog` deve ser versionada no repositório.
@@ -142,9 +143,9 @@ Fontes de referência: `README.md`, `docs/prompt-nicho-itens-estruturados.md`, `
 ### 2.3. Critério 3 — Composição base parametrizada
 
 - Avaliar em plano-base posterior se o Admin apoiará sugestão, validação e aprovação da composição base; o Admin não é requisito deste recorte conceitual.
-- Permitir que a IA proponha config global com base em `lp_overview`.
-- Permitir que a IA proponha módulos, variantes, ordem, obrigatoriedade e config por item com base em `lp_sections`, `strategic_core` e `seo`.
-- Resolver no plano-base técnico onde a config global da composição base será persistida.
+- Permitir que a IA proponha a configuração geral da composição com base em `lp_overview`.
+- Permitir que a IA proponha módulos, variantes, ordem, obrigatoriedade e configuração por item com base em `lp_sections`, `strategic_core` e `seo`.
+- Resolver no plano-base técnico onde a configuração geral da composição base será persistida.
 - Manter `content_template_composition_items` como relação 1:N de módulos/variantes.
 - Registrar gaps de catálogo quando módulo ou variante essencial não existir.
 - Impedir liberação plena até gap essencial ser criado e parametrizado.
@@ -221,7 +222,7 @@ Fontes de referência: `README.md`, `docs/prompt-nicho-itens-estruturados.md`, `
 
 ## 3. Pendências para plano-base técnico
 
-- Detalhar no plano-base técnico a persistência da config global, a herança de composição e a intenção/funil da LP gerada.
+- Detalhar no plano-base técnico a persistência da configuração geral da composição, a herança de composição e a intenção/funil da LP gerada.
 - Definir os valores exatos dos parâmetros por campo, do `copy_source_map`, do `funnel_copy_profile`, do `lp_generation_input_catalog`, do `paid_search_keyword_map` e dos presets candidatos.
 - Definir a modelagem exata dos valores reais persistidos no BD e do snapshot dos valores usados na geração, incluindo composição, variante e versão.
 - Definir ciclo de vida técnico de variantes e bloqueios para depreciação, retirada e compatibilidade com artefatos publicados.
