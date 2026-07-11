@@ -58,6 +58,8 @@ Fontes de referência: `README.md`, `docs/prompt-nicho-itens-estruturados.md`, `
 - A base inicial deve ser uma base reutilizável de parametrização para a família `landing_page`.
 - A base deve considerar a precedência: família `landing_page` → intenção/funil da LP gerada → módulo → variante → composição base do taxon → item da composição.
 - A fonte canônica da base reutilizável deve ser versionada no repositório, porque impacta renderer, contratos, testes e design system.
+- Zod pode funcionar como contrato executável de validação técnica da LP, incluindo formato, campos obrigatórios e opcionais, limites de caracteres, objetos estritos, CTA/URLs seguros, saída gerada por IA e renderização segura.
+- Zod não decide estratégia de copy, composição por nicho, qualidade editorial, escolha de módulos/variantes ou adequação comercial da LP.
 - A base reutilizável deve separar `copy_source_map` e `funnel_copy_profile`.
 - O `copy_source_map` define quais `item_key` cada campo de copy consulta.
 - O `funnel_copy_profile` define como os insumos podem ser transformados em copy conforme BOFU, MOFU ou TOFU, incluindo tratamentos permitidos, restritos e proibidos.
@@ -140,7 +142,9 @@ Fontes de referência: `README.md`, `docs/prompt-nicho-itens-estruturados.md`, `
 
 ### 2.3. Critério 3 — Composição base parametrizada
 
-- Criar ou ajustar fluxo Admin de curadoria da composição base do taxon.
+- Avaliar, em plano-base posterior, se o Admin deve apoiar a curadoria da composição base do taxon.
+- A curadoria futura no Admin pode apoiar sugestão de composição, validação de módulos e variantes existentes, identificação de gaps, aprovação humana e registro de composição default do nicho.
+- A curadoria no Admin não é requisito obrigatório deste recorte conceitual.
 - Permitir que a IA proponha config global com base em `lp_overview`.
 - Permitir que a IA proponha módulos, variantes, ordem, obrigatoriedade e config por item com base em `lp_sections`, `strategic_core` e `seo`.
 - Resolver no plano-base técnico onde a config global da composição base será persistida.
@@ -218,6 +222,10 @@ Fontes de referência: `README.md`, `docs/prompt-nicho-itens-estruturados.md`, `
 - Avaliar contratos, banco, renderer e Admin contra este plano.
 - Ajustar o projeto somente após decisão registrada neste documento e plano-base próprio quando houver impacto técnico.
 - Não criar nova tabela, campo, rota, job, automação, agente ou nova infraestrutura sem plano-base ou briefing próprio.
+- Não criar catálogo universal multicanal neste recorte; landing page, página comercial, e-mail, WhatsApp, Instagram e TikTok podem reaproveitar lógica estratégica, mas exigem contratos, formatos e renderizações próprios.
+- Reuso amplo entre canais deve ser reavaliado apenas com ROI real e evidência de duplicação prática.
+- O planejamento de LPs não funde automaticamente E10.7, páginas comerciais personalizadas por nicho, com E19, LP Builder.
+- Aprendizados de E10.7 podem informar LPs, mas não autorizam converter páginas comerciais em LPs do Builder sem plano-base próprio.
 
 ## 3. Pendências para plano-base técnico
 
