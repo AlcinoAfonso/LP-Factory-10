@@ -1,3 +1,13 @@
+## Nota de supersedência — 11/07/2026
+
+Este documento é histórico e registra o debate que originou o planejamento de LPs.
+
+As decisões conceituais consolidadas foram migradas para `docs/lp-planejamento.md`.
+
+Manter este arquivo apenas como rastreabilidade do raciocínio.
+
+Em caso de conflito, usar `docs/lp-planejamento.md` como referência conceitual mais atual.
+
 01/07/2026 — Lousa debate landing pages
 Fontes: chat, docs/roadmap.md, docs/schema.md, Supabase real, GitHub
 
