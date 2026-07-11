@@ -58,8 +58,7 @@ Fontes de referência: `README.md`, `docs/prompt-nicho-itens-estruturados.md`, `
 - A base inicial deve ser uma base reutilizável de parametrização para a família `landing_page`.
 - A base deve considerar a precedência: família `landing_page` → intenção/funil da LP gerada → módulo → variante → composição base do taxon → item da composição.
 - A fonte canônica da base reutilizável deve ser versionada no repositório, porque impacta renderer, contratos, testes e design system.
-- Zod pode funcionar como contrato executável de validação técnica da LP, incluindo formato, campos obrigatórios e opcionais, limites de caracteres, objetos estritos, CTA/URLs seguros, saída gerada por IA e renderização segura.
-- Zod não decide estratégia de copy, composição por nicho, qualidade editorial, escolha de módulos/variantes ou adequação comercial da LP.
+- Zod executa validações técnicas da base parametrizada, mas não decide estratégia, composição, qualidade editorial, escolha de módulos/variantes ou adequação comercial.
 - A base reutilizável deve separar `copy_source_map` e `funnel_copy_profile`.
 - O `copy_source_map` define quais `item_key` cada campo de copy consulta.
 - O `funnel_copy_profile` define como os insumos podem ser transformados em copy conforme BOFU, MOFU ou TOFU, incluindo tratamentos permitidos, restritos e proibidos.
@@ -142,9 +141,7 @@ Fontes de referência: `README.md`, `docs/prompt-nicho-itens-estruturados.md`, `
 
 ### 2.3. Critério 3 — Composição base parametrizada
 
-- Avaliar, em plano-base posterior, se o Admin deve apoiar a curadoria da composição base do taxon.
-- A curadoria futura no Admin pode apoiar sugestão de composição, validação de módulos e variantes existentes, identificação de gaps, aprovação humana e registro de composição default do nicho.
-- A curadoria no Admin não é requisito obrigatório deste recorte conceitual.
+- Avaliar em plano-base posterior se o Admin apoiará sugestão, validação e aprovação da composição base; o Admin não é requisito deste recorte conceitual.
 - Permitir que a IA proponha config global com base em `lp_overview`.
 - Permitir que a IA proponha módulos, variantes, ordem, obrigatoriedade e config por item com base em `lp_sections`, `strategic_core` e `seo`.
 - Resolver no plano-base técnico onde a config global da composição base será persistida.
@@ -158,9 +155,9 @@ Fontes de referência: `README.md`, `docs/prompt-nicho-itens-estruturados.md`, `
 
 ### 2.4. Base reutilizável de parametrização
 
-- Criar base reutilizável versionada no repositório para a família `landing_page`.
+- Antes de confirmar o catálogo inicial, definir a base mínima versionada de parametrização da família `landing_page`, incluindo papéis semânticos e parâmetros universais para H1, H2, H3, parágrafo, CTA, eyebrow, privacidade, FAQ, cards, benefícios e passos.
+- A base deve distinguir faixa editorial recomendada, limite técnico absoluto e critério visual/responsivo. Módulos herdam essa base; variantes registram apenas especializações justificadas. Os valores iniciais permanecem hipóteses até a validação da primeira LP.
 - Avaliar no plano-base técnico se o banco terá espelho, referência de versão ou payload operacional da base reutilizável para Admin e IA.
-- Definir parâmetros por campo para a família `landing_page`.
 - Definir `copy_source_map` padrão por módulo, por campo de copy e por intenção/funil da LP gerada.
 - Definir quais `item_key` podem alimentar cada campo de copy, respeitando o limite de 2 principais e 1 auxiliar.
 - Definir `funnel_copy_profile` padrão da família `landing_page` para BOFU, MOFU e TOFU.
@@ -177,15 +174,12 @@ Fontes de referência: `README.md`, `docs/prompt-nicho-itens-estruturados.md`, `
 - Definir regra de uso natural de palavras-chave, temas e variações por seção, sem keyword stuffing, repetição artificial, bloco de termos ou lista de localidades fora de contexto.
 - Definir como o `paid_search_keyword_map` respeita intenção/funil, módulos, variantes, insumos comerciais reais e trava editorial.
 - Definir critério para distinguir mudança de comportamento comercial dentro do mesmo módulo de mudança estrutural que exige novo módulo.
-- Definir limites editoriais iniciais para H1, H2, H3, parágrafo, CTA, FAQ, cards, benefícios, passos e nota de privacidade.
-- Definir escala tipográfica inicial para presets candidatos, sem tratá-los como contrato final antes de validação.
 - Definir adaptações permitidas por intenção/funil da LP gerada: BOFU, MOFU e TOFU.
-- Definir quantidades padrão, como FAQ, benefícios/cards e passos.
 - Definir quando uma exceção exige nova variante reutilizável.
 
 ### 2.5. Variantes
 
-- Confirmar catálogo inicial de módulos e variantes de LP.
+- Após a definição da base mínima de parametrização, confirmar o catálogo inicial de módulos e variantes de LP.
 - Criar variantes quando a necessidade não couber na base reutilizável.
 - Garantir que variantes sejam reutilizáveis em outros nichos sempre que possível.
 - Definir hierarquia de variante universal, variante por intenção de LP e variante por nicho quando necessário.
@@ -222,10 +216,8 @@ Fontes de referência: `README.md`, `docs/prompt-nicho-itens-estruturados.md`, `
 - Avaliar contratos, banco, renderer e Admin contra este plano.
 - Ajustar o projeto somente após decisão registrada neste documento e plano-base próprio quando houver impacto técnico.
 - Não criar nova tabela, campo, rota, job, automação, agente ou nova infraestrutura sem plano-base ou briefing próprio.
-- Não criar catálogo universal multicanal neste recorte; landing page, página comercial, e-mail, WhatsApp, Instagram e TikTok podem reaproveitar lógica estratégica, mas exigem contratos, formatos e renderizações próprios.
-- Reuso amplo entre canais deve ser reavaliado apenas com ROI real e evidência de duplicação prática.
-- O planejamento de LPs não funde automaticamente E10.7, páginas comerciais personalizadas por nicho, com E19, LP Builder.
-- Aprendizados de E10.7 podem informar LPs, mas não autorizam converter páginas comerciais em LPs do Builder sem plano-base próprio.
+- Não criar catálogo universal multicanal neste recorte; o reuso entre canais só deve avançar com evidência prática de duplicação e ROI.
+- E10.7 e E19 permanecem separados; aprendizados podem ser reaproveitados, mas não autorizam converter páginas comerciais em LPs do Builder sem plano-base próprio.
 
 ## 3. Pendências para plano-base técnico
 
