@@ -38,8 +38,7 @@ Fontes de referência: `README.md`, `docs/prompt-nicho-itens-estruturados.md`, `
 - Módulo define a função estrutural.
 - Variante define a execução específica daquela função.
 - A composição base do taxon não é a LP final; ela é o ponto de partida governado para gerar LPs concretas.
-- A configuração geral pertence à composição base.
-- Configurações específicas pertencem aos itens da composição.
+- A configuração geral pertence à composição base; as configurações por item pertencem às ocorrências concretas de módulos e variantes dentro da composição.
 - Composição aprovada de nicho é presumida herdável para ultranichos, salvo marcação contrária.
 - O ultranicho só herda composição do nicho base quando não houver composição própria aprovada.
 - Uma LP teste aprovada no nicho base libera o plano para seus ultranichos herdáveis.
@@ -59,7 +58,7 @@ Fontes de referência: `README.md`, `docs/prompt-nicho-itens-estruturados.md`, `
 - A base deve considerar a precedência: família `landing_page` → intenção/funil da LP gerada → módulo → variante → composição base do taxon → item da composição.
 - A fonte canônica da base reutilizável deve ser versionada no repositório, porque impacta renderer, contratos, testes e design system.
 - A base de parametrização define regras, limites e opções permitidas; a configuração geral da composição e as configurações por item selecionam valores dentro dessa base.
-- Zod executa validações técnicas da base parametrizada, mas não decide estratégia, composição, qualidade editorial, escolha de módulos/variantes ou adequação comercial.
+- Zod executa validações estruturais e limites técnicos compatíveis com schema; não decide estratégia, composição, qualidade editorial, critérios visuais ou adequação comercial.
 - A base reutilizável deve separar `copy_source_map` e `funnel_copy_profile`.
 - O `copy_source_map` define quais `item_key` cada campo de copy consulta.
 - O `funnel_copy_profile` define como os insumos podem ser transformados em copy conforme BOFU, MOFU ou TOFU, incluindo tratamentos permitidos, restritos e proibidos.
