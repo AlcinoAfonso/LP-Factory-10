@@ -65,6 +65,12 @@ Fontes de referência: `README.md`, `docs/prompt-nicho-itens-estruturados.md`, `
 - Variante herda o `copy_source_map` do módulo e só pode sobrescrever quando houver mudança de comportamento comercial dentro da mesma função estrutural.
 - Se a mudança alterar a função estrutural, deve ser avaliada criação de novo módulo, não variante grande demais.
 - A composition escolhe módulos, variantes, ordem, obrigatoriedade, config global e config por item, mas não deve duplicar o mapa completo de insumos de copy nem regras de copy por funil.
+- A LP gerada deve usar um `lp_generation_input_catalog` para separar catálogo declarativo, valores reais e snapshot da geração.
+- O `lp_generation_input_catalog` define campos disponíveis, obrigatórios e condicionantes, com herança `universal → segmento → nicho → ultranicho`.
+- A fonte canônica inicial do `lp_generation_input_catalog` deve ser versionada no repositório.
+- Os valores reais preenchidos pela conta, cliente ou LP devem ser persistidos no BD, mas o local e o formato da persistência dependem de plano-base técnico.
+- A LP gerada deve registrar snapshot dos valores usados na geração, sem substituir as seções, textos e campos editáveis da LP.
+- O snapshot serve para rastreabilidade, segurança editorial e consistência histórica da geração.
 - Escassez, garantia, prova, comparação, preço e promessa só podem ser usados quando houver insumo real que sustente esse tratamento.
 - Espelho, referência de versão ou payload operacional no banco só devem ser decididos no plano-base técnico, se houver necessidade operacional.
 - Parâmetro por campo significa regra para H1, H2, H3, parágrafo, CTA, eyebrow, nota de privacidade, FAQ, cards, benefícios e passos.
@@ -145,6 +151,10 @@ Fontes de referência: `README.md`, `docs/prompt-nicho-itens-estruturados.md`, `
 - Definir tratamentos permitidos, restritos e proibidos por funil, incluindo escassez, garantia, prova, comparação, preço e promessa.
 - Definir como módulos adaptam o `funnel_copy_profile` ao seu papel na LP.
 - Definir quando uma variante pode herdar, restringir ou sobrescrever o `copy_source_map` e o `funnel_copy_profile` do módulo.
+- Definir `lp_generation_input_catalog` com campos disponíveis, obrigatórios e condicionantes, herdáveis por `universal → segmento → nicho → ultranicho`.
+- Definir separação entre catálogo declarativo, valores reais persistidos no BD e snapshot da geração.
+- Definir onde e como os valores reais serão persistidos no BD, sem autorizar nova tabela, campo ou payload antes do plano-base técnico.
+- Definir como a LP gerada registrará snapshot dos valores usados na geração, sem substituir as seções, textos e campos editáveis da LP.
 - Definir critério para distinguir mudança de comportamento comercial dentro do mesmo módulo de mudança estrutural que exige novo módulo.
 - Definir limites editoriais iniciais para H1, H2, H3, parágrafo, CTA, FAQ, cards, benefícios, passos e nota de privacidade.
 - Definir escala tipográfica inicial para presets candidatos, sem tratá-los como contrato final antes de validação.
@@ -189,7 +199,8 @@ Fontes de referência: `README.md`, `docs/prompt-nicho-itens-estruturados.md`, `
 ## 3. Pendências para plano-base técnico
 
 - Detalhar no plano-base técnico a persistência da config global, a herança de composição e a intenção/funil da LP gerada.
-- Definir os valores exatos dos parâmetros por campo, do `copy_source_map`, do `funnel_copy_profile` e dos presets candidatos.
+- Definir os valores exatos dos parâmetros por campo, do `copy_source_map`, do `funnel_copy_profile`, do `lp_generation_input_catalog` e dos presets candidatos.
+- Definir a modelagem exata dos valores reais persistidos no BD e do snapshot dos valores usados na geração.
 - Definir se haverá espelho, referência de versão ou payload operacional da base reutilizável no banco.
 - Detalhar no plano-base técnico as medições, registros, ferramentas e bloqueios do Critério 4.
 - Definir o formato de registro do Benchmark Blueprint opcional quando ele for usado como insumo de evolução.
