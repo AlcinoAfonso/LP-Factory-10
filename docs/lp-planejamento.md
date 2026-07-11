@@ -47,6 +47,11 @@ Fontes de referência: `README.md`, `docs/prompt-nicho-itens-estruturados.md`, `
 - A liberação herdada não se aplica quando o ultranicho tiver composição própria, módulo/variante específica, restrição regulatória, falha técnica/editorial/visual ou marcação de não herança.
 - Criar composição própria do ultranicho apenas quando a composição do nicho não atender por estrutura, jornada, regulação, prova, oferta, formulário, qualificação ou resultado da LP teste.
 - Exceções por nicho ou ultranicho devem virar variantes reutilizáveis e hierarquicamente superiores, não ajustes soltos.
+- Variante nova deve começar como candidata ou experimental até aprovação por LP teste ou avaliação humana.
+- Variante ativa pode ser usada em novas gerações conforme compatibilidade de módulo, funil, taxon e plano.
+- Variante depreciada não deve entrar em novas gerações, mas LPs e artefatos existentes continuam renderizando com a variante e versão usadas.
+- Variante antiga só pode ser retirada quando não houver artefato publicado dependente ou quando houver plano de migração aprovado.
+- Snapshot da geração deve preservar composição, variante e versão usadas.
 
 ### 1.5. Parametrização
 
@@ -72,7 +77,9 @@ Fontes de referência: `README.md`, `docs/prompt-nicho-itens-estruturados.md`, `
 - A LP gerada deve registrar snapshot dos valores usados na geração, sem substituir as seções, textos e campos editáveis da LP.
 - O snapshot serve para rastreabilidade, segurança editorial e consistência histórica da geração.
 - Quando a LP for gerada para Google Ads ou outra mídia de busca paga, pode usar um `paid_search_keyword_map` como camada opcional de alinhamento entre busca, anúncio e LP.
-- O `paid_search_keyword_map` define palavra-chave principal, variações, intenção da busca, grupo de anúncio ou tema, etapa do funil e seções recomendadas para uso natural.
+- O `paid_search_keyword_map` define, quando disponível, palavra-chave principal e variações ou, alternativamente, tema/intenção de busca, grupo de anúncio ou tema, etapa do funil, contexto geográfico e seções recomendadas para uso natural.
+- O alinhamento entre busca, anúncio e LP deve considerar palavra-chave ou tema de busca, promessa, oferta, CTA, contexto geográfico e expectativa criada antes do clique.
+- O `paid_search_keyword_map` deve distinguir a origem dos dados: termos sugeridos pelos itens estruturados de `seo`, configuração informada da campanha e termos reais observados posteriormente, quando disponíveis.
 - O `paid_search_keyword_map` não substitui itens estruturados, `copy_source_map`, `funnel_copy_profile` ou insumos comerciais reais.
 - O `paid_search_keyword_map` não autoriza keyword stuffing, repetição artificial, bloco de termos, lista de localidades fora de contexto ou copy sem naturalidade.
 - O `paid_search_keyword_map` não bloqueia liberação da LP quando não houver campanha de busca paga associada.
@@ -160,8 +167,10 @@ Fontes de referência: `README.md`, `docs/prompt-nicho-itens-estruturados.md`, `
 - Definir separação entre catálogo declarativo, valores reais persistidos no BD e snapshot da geração.
 - Definir onde e como os valores reais serão persistidos no BD, sem autorizar nova tabela, campo ou payload antes do plano-base técnico.
 - Definir como a LP gerada registrará snapshot dos valores usados na geração, sem substituir as seções, textos e campos editáveis da LP.
-- Definir `paid_search_keyword_map` opcional para LPs destinadas a Google Ads ou outra mídia de busca paga.
-- Definir regra de uso natural de palavras-chave por seção, sem keyword stuffing, repetição artificial, bloco de termos ou lista de localidades fora de contexto.
+- Definir `paid_search_keyword_map` opcional para LPs destinadas a Google Ads ou outra mídia de busca paga, aceitando palavra-chave principal quando disponível ou tema/intenção de busca.
+- Definir regra de message match entre busca, anúncio e LP, incluindo promessa, oferta, CTA, contexto geográfico e expectativa criada antes do clique.
+- Definir origem dos dados do `paid_search_keyword_map`: itens estruturados de `seo`, configuração informada da campanha e termos reais observados posteriormente, quando disponíveis.
+- Definir regra de uso natural de palavras-chave, temas e variações por seção, sem keyword stuffing, repetição artificial, bloco de termos ou lista de localidades fora de contexto.
 - Definir como o `paid_search_keyword_map` respeita intenção/funil, módulos, variantes, insumos comerciais reais e trava editorial.
 - Definir critério para distinguir mudança de comportamento comercial dentro do mesmo módulo de mudança estrutural que exige novo módulo.
 - Definir limites editoriais iniciais para H1, H2, H3, parágrafo, CTA, FAQ, cards, benefícios, passos e nota de privacidade.
@@ -176,6 +185,12 @@ Fontes de referência: `README.md`, `docs/prompt-nicho-itens-estruturados.md`, `
 - Criar variantes quando a necessidade não couber na base reutilizável.
 - Garantir que variantes sejam reutilizáveis em outros nichos sempre que possível.
 - Definir hierarquia de variante universal, variante por intenção de LP e variante por nicho quando necessário.
+- Definir ciclo de vida das variantes: candidata ou experimental, ativa, depreciada e retirada ou arquivada.
+- Definir critério de aprovação para variante candidata ou experimental por LP teste ou avaliação humana.
+- Impedir que variante depreciada entre em novas gerações.
+- Garantir que LPs e artefatos existentes continuem renderizando com a variante e versão usadas.
+- Bloquear retirada de variante antiga enquanto houver artefato publicado dependente, salvo plano de migração aprovado.
+- Garantir que o snapshot preserve composição, variante e versão usadas na geração.
 - Evitar ajuste solto por nicho ou ultranicho; primeiro avaliar variante existente, depois nova variante reutilizável e só por último exceção específica de baixo reaproveitamento.
 
 ### 2.6. Critério 4 — LP teste por plano
@@ -208,7 +223,8 @@ Fontes de referência: `README.md`, `docs/prompt-nicho-itens-estruturados.md`, `
 
 - Detalhar no plano-base técnico a persistência da config global, a herança de composição e a intenção/funil da LP gerada.
 - Definir os valores exatos dos parâmetros por campo, do `copy_source_map`, do `funnel_copy_profile`, do `lp_generation_input_catalog`, do `paid_search_keyword_map` e dos presets candidatos.
-- Definir a modelagem exata dos valores reais persistidos no BD e do snapshot dos valores usados na geração.
+- Definir a modelagem exata dos valores reais persistidos no BD e do snapshot dos valores usados na geração, incluindo composição, variante e versão.
+- Definir ciclo de vida técnico de variantes e bloqueios para depreciação, retirada e compatibilidade com artefatos publicados.
 - Definir se haverá espelho, referência de versão ou payload operacional da base reutilizável no banco.
 - Detalhar no plano-base técnico as medições, registros, ferramentas e bloqueios do Critério 4.
 - Definir o formato de registro do Benchmark Blueprint opcional quando ele for usado como insumo de evolução.
