@@ -1,5 +1,5 @@
 06/07/2026 — Plano-base E18.4 — Base de composição `landing_page`
-Fontes: chat, `README.md`, `AGENTS.md`, `docs/prompt-estrategista.md`, `docs/template-roadmap.md`, `docs/template-briefing-codex.md`, `docs/prompt-executor.md`, `docs/roadmap.md`, `docs/base-tecnica.md`, `docs/schema.md`, debate histórico de landing pages posteriormente consolidado em `docs/lp-planejamento.md`, `docs/supa-up.md`, `docs/vercel-up.md`, `docs/github-up.md`, `docs/prod-up.md`, avaliações dos especialistas
+Fontes: chat, `README.md`, `AGENTS.md`, `docs/prompt-estrategista.md`, `docs/template-roadmap.md`, `docs/template-briefing-codex.md`, `docs/prompt-executor.md`, `docs/roadmap.md`, `docs/base-tecnica.md`, `docs/schema.md`, `docs/lousa-debate-landing-pages.md`, `docs/supa-up.md`, `docs/vercel-up.md`, `docs/github-up.md`, `docs/prod-up.md`, avaliações dos especialistas
 
 Status: plano-base v2 consolidado após avaliação dos especialistas.
 Path: `docs/lousa-plano-base-e18-4.md`.
@@ -161,7 +161,7 @@ Recorte previsto do roadmap: `18.4 — Base de composição landing_page`.
 * Entrada:
   * documentos obrigatórios do projeto;
   * schema atual de `content_templates`, `content_template_compositions` e `content_template_composition_items`;
-  * debate histórico de landing pages, posteriormente consolidado em `docs/lp-planejamento.md`;
+  * lousa de debate de landing pages;
   * aprendizado técnico de `commercial_activation`;
   * decisão conceitual de que módulos são catálogo transversal controlado;
   * definição de que `landing_page` é o primeiro consumidor formal neste recorte;
@@ -318,3 +318,215 @@ Recorte previsto do roadmap: `18.4 — Base de composição landing_page`.
   * garantir que `config_json` seja override controlado, não editor livre;
   * definir casos de validação para composição válida e inválida;
   * usar validações read-only de banco somente quando aplicável e sem substituir migration versionada;
+  * Automação: não.
+
+3.3. Próxima ação
+
+* Fase `18.4.3` concluída como decisão técnica investigativa.
+* Fase `18.4.4` concluída como definição documental do catálogo mínimo transversal para primeiro uso em `landing_page`.
+* Fase `18.4.5` concluída com contratos técnicos executáveis, registry, schemas/Zod e renderer mínimo de `landing_page` no repositório.
+* Fase `18.4.6` concluída com resolver/validador final de composição `landing_page` e limites técnicos de `config_json`.
+* Próxima fase liberada:
+  * definição estratégica da próxima etapa de consumo, sem criar registros-base, LP teste, Admin ou LP Builder automaticamente.
+* Travas mantidas:
+  * não criar registros-base de banco ou LP teste antes das fases correspondentes;
+  * não criar migration, alterar `docs/schema.md`, RLS, policies ou GRANTs sem necessidade demonstrada;
+  * não transformar catálogo transversal controlado em engine multicanal ampla;
+  * não abrir editor livre de `config_json`;
+  * não reabrir hardening sem necessidade demonstrada.
+
+3.4. Resultado técnico de `18.4.3`
+
+* Status da fase: concluída como decisão técnica investigativa.
+* Decisão: schema atual suficiente para o início controlado de `landing_page`; não há hardening de schema necessário nesta fase.
+* Migration: não criar migration em `18.4.3`.
+* Atualização de `docs/schema.md`: não aplicável nesta fase, pois não há alteração de banco.
+* RLS, policies e GRANTs: sem alteração nesta fase.
+* Apoio Supabase read-only: inspeção do projeto `lp-factory-10` confirmou que o estado real mantém `content_templates`, `content_template_compositions` e `content_template_composition_items` compatíveis com `docs/schema.md`.
+* Estado real observado:
+  * `content_templates` aceita `template_family IN ('commercial_activation', 'landing_page')`, `template_scope IN ('page', 'section')` e status `draft | active | archived`;
+  * há registros ativos apenas para `commercial_activation`: um template de página e oito módulos de seção;
+  * não há registros `landing_page` em `content_templates` no estado consultado;
+  * `content_template_compositions` versiona composição por `template_id` e `taxon_id`, com no máximo uma composição ativa por par;
+  * `content_template_composition_items` vincula cada composição a módulos em `content_templates`, guarda `variant_key`, `sort_order`, `is_required` e `config_json` objeto;
+  * o banco garante forma mínima, FKs, versionamento, unicidade de ordem, padrão de `variant_key` e `config_json` como objeto;
+  * o banco não garante, sozinho, que o módulo é conceitualmente transversal, que a variante pertence ao módulo, que há renderer/schema para o canal, nem que `config_json` segue contrato específico.
+* Comparação com o contrato desejado:
+  * a hipótese `template_family = shared/transversal` não deve ser adotada agora, porque exigiria fechar uma modelagem ainda explicitamente aberta e ampliaria o recorte além do necessário;
+  * usar `template_family = landing_page` para o primeiro consumidor formal é suficiente para criar registros futuros de página/seção sem alterar o check atual;
+  * a transversalidade deve ser tratada como contrato conceitual e técnico do repositório, não como liberação automática no banco;
+  * `commercial_activation` permanece referência comparativa, mas seus módulos, variantes, schemas e renderer não são compatíveis automaticamente com `landing_page`.
+* Garantia inicial aprovada para as próximas fases:
+  * contratos TypeScript devem diferenciar módulo conceitual, variante, schema, renderer, registry, composition e artefato final;
+  * registry fechado deve mapear compatibilidade entre canal, módulo, variante, schema e renderer;
+  * schemas/Zod devem validar payload por variante e por canal quando necessário;
+  * validação executável deve bloquear módulo sem contrato compatível, variante inexistente, variante incompatível com módulo, item obrigatório ausente, item desconhecido, ordem inválida e `config_json` fora do permitido;
+  * `config_json` deve continuar override controlado, não editor livre;
+  * registros de banco futuros devem ser criados somente depois de `18.4.4`/`18.4.5` definirem catálogo e contratos, e depois de `18.4.6` definir resolver/validador.
+* Critério para reabrir hardening:
+  * reavaliar migration apenas se uma fase futura exigir que o próprio banco bloqueie compatibilidade módulo-canal-variante, múltiplas famílias compartilhando o mesmo módulo físico, writer administrativo direto, ou uso produtivo fora do fluxo server-side validado;
+  * nesse caso, a decisão deverá prever migration versionada, revisão de RLS/policies/GRANTs e atualização de `docs/schema.md` antes de avançar consumo produtivo.
+* Fase liberada por `18.4.3`: `18.4.4 Catálogo mínimo transversal para primeiro uso em landing_page`, respeitando que ainda não havia catálogo, renderer, resolver, registros-base ou LP teste criados por `18.4.3`.
+
+3.5. Resultado técnico de `18.4.4`
+
+* Status da fase: concluída como definição documental do catálogo mínimo transversal para primeiro uso em `landing_page`.
+* Decisão: o primeiro uso de `landing_page` terá catálogo mínimo próprio, conceitualmente transversal e tecnicamente controlado no repositório.
+* Referência comparativa: `commercial_activation` possui oito módulos ativos (`hero`, `benefits`, `services`, `plans`, `differentials`, `how_it_works`, `faq`, `final_cta`), mas nenhum deles fica automaticamente compatível com `landing_page`.
+* Catálogo mínimo proposto para primeiro uso em `landing_page`:
+  * `hero`: função conceitual de abertura, promessa principal e ação primária; incluído porque toda LP precisa apresentar rapidamente oferta, público e próximo passo.
+  * `benefits`: função conceitual de benefícios/resultados; incluído para traduzir valor em motivos concretos de continuidade.
+  * `offer`: função conceitual de oferta, serviço, produto ou pacote principal; incluído para explicitar o que será entregue sem depender de tabela de planos.
+  * `social_proof`: função conceitual de evidência, confiança e prova; incluído porque LP real de cliente precisa reduzir risco percebido antes da conversão.
+  * `how_it_works`: função conceitual de processo, passos ou funcionamento; incluído como módulo opcional/reordenável para nichos em que clareza operacional aumenta conversão.
+  * `faq`: função conceitual de objeções frequentes; incluído como módulo opcional para tratar dúvidas recorrentes sem criar conteúdo livre.
+  * `final_cta`: função conceitual de fechamento e chamada final; incluído para garantir saída de conversão ao fim da composição.
+* Variantes mínimas conceituais, sem contrato técnico ainda:
+  * `hero.lead_capture`: abertura com CTA/formulário conceitual para captura ou contato.
+  * `benefits.cards`: lista curta de benefícios em cards.
+  * `offer.summary`: resumo da oferta principal, sem pricing obrigatório.
+  * `social_proof.simple`: evidência textual curta, sem integração externa.
+  * `how_it_works.steps`: passos simples do processo.
+  * `faq.accordion`: perguntas e respostas.
+  * `final_cta.simple`: chamada final direta.
+* Separação de responsabilidades:
+  * módulo transversal é a função conceitual reutilizável, como `hero`, `benefits` ou `faq`;
+  * variante específica de canal é a forma estrutural escolhida para `landing_page`, como `hero.lead_capture` ou `offer.summary`;
+  * adaptação futura por renderer/schema pertence a `18.4.5` e `18.4.6`, quando cada variante deverá ganhar compatibilidade explícita de schema, registry, renderer e validação.
+* Módulos deixados fora do primeiro uso:
+  * `plans`: fora porque pricing/planos pode confundir LP de captura, serviço ou produto sem oferta tabelada; poderá voltar quando houver contrato específico.
+  * `services`: fora como módulo separado porque o primeiro uso concentra a oferta em `offer`; pode voltar se uma composição precisar listar múltiplos serviços.
+  * `differentials`: fora porque tende a sobrepor `benefits` e `social_proof` no MVP; pode voltar como módulo próprio após evidência real.
+  * módulos de galeria, equipe, mapa/localização, comparativo, depoimentos ricos, mídia avançada, analytics, A/B ou integrações externas: fora por ampliarem o catálogo ou exigirem renderer/schema/infra fora deste recorte.
+* Não realizado nesta fase:
+  * não foi criado renderer;
+  * não foi criado resolver;
+  * não foi criado registry técnico;
+  * não foram criados schemas/Zod;
+  * não foram criados registros-base de banco;
+  * não foi criada migration;
+  * `docs/schema.md`, RLS, policies e GRANTs não foram alterados;
+  * não foi criada LP teste, Admin, LP Builder, automação, job, agente ou workflow.
+* Próxima fase liberada: `18.4.5 Contratos técnicos, registry, schemas e renderer por canal`, limitada a transformar este catálogo conceitual em contratos técnicos executáveis sem assumir compatibilidade automática com `commercial_activation`.
+
+3.6. Resultado técnico de `18.4.5`
+
+* Status da fase: concluída com implementação técnica mínima no repositório.
+* Decisão: o catálogo conceitual de `landing_page` passou a ter contrato executável próprio, separado de `commercial_activation`.
+* Arquivos técnicos criados:
+  * `lib/conversion-content/landing-page/contracts.ts`;
+  * `lib/conversion-content/landing-page/schemas.ts`;
+  * `lib/conversion-content/landing-page/registry.ts`;
+  * `lib/conversion-content/landing-page/render-model.ts`;
+  * `lib/conversion-content/landing-page/renderer.tsx`;
+  * `lib/conversion-content/landing-page/fixture.ts`;
+  * `lib/conversion-content/landing-page/validation-cases.ts`;
+  * `lib/conversion-content/landing-page/index.ts`.
+* Arquivos técnicos ajustados:
+  * `lib/conversion-content/index.ts`;
+  * `package.json`.
+* Contrato técnico criado:
+  * canal fechado em `landing_page`;
+  * módulos permitidos: `hero`, `benefits`, `offer`, `social_proof`, `how_it_works`, `faq` e `final_cta`;
+  * variantes permitidas: `hero.lead_capture`, `benefits.cards`, `offer.summary`, `social_proof.simple`, `how_it_works.steps`, `faq.accordion` e `final_cta.simple`;
+  * registry técnico liga canal, módulo, variante, schema Zod e renderer;
+  * `buildLandingPageRenderModel` valida envelope, canal, item duplicado, item desconhecido, item obrigatório ausente, variante inexistente, incompatibilidade módulo/variante e conteúdo por schema;
+  * renderer mínimo usa somente o registry próprio de `landing_page`, com seções semânticas, headings associados por `aria-labelledby`, CTAs como links e estados inválidos fail-closed com retorno nulo.
+* Validação executável criada:
+  * script `validate:landing-page`;
+  * fixture sintética local, sem leitura de Supabase, sem criação de LP real e sem registros de banco.
+* Compatibilidade e limites:
+  * não há compatibilidade automática com `commercial_activation`;
+  * o renderer comercial existente permanece apenas como referência comparativa;
+  * não foi criado resolver final de composição nem integração com banco;
+  * `config_json` permanece sem semântica técnica final nesta fase e deverá ser limitado em `18.4.6`.
+* Não realizado nesta fase:
+  * não foi criada migration;
+  * `docs/schema.md` não foi alterado;
+  * RLS, policies e GRANTs não foram alterados;
+  * não foram criados registros-base no banco;
+  * não foi criada LP teste, Admin, LP Builder, automação, job, agente ou workflow.
+* Próxima fase liberada: `18.4.6 Resolver, validação de composição e limites de config_json`, limitada a resolver e validar composição sem abrir editor livre nem alterar banco sem necessidade demonstrada.
+
+3.7. Resultado técnico de `18.4.6`
+
+* Status da fase: concluída com implementação técnica no repositório.
+* Decisão: o primeiro uso de `landing_page` passa a ter resolver/validador final de composição antes do render model, com falha fechada para composições inválidas.
+* Arquivos técnicos criados:
+  * `lib/conversion-content/landing-page/composition-validator.ts`.
+* Arquivos técnicos ajustados:
+  * `lib/conversion-content/landing-page/render-model.ts`;
+  * `lib/conversion-content/landing-page/renderer.tsx`;
+  * `lib/conversion-content/landing-page/fixture.ts`;
+  * `lib/conversion-content/landing-page/validation-cases.ts`;
+  * `lib/conversion-content/landing-page/index.ts`.
+* Resolver/validador de composição:
+  * valida item duplicado na composição antes de montar o mapa de itens;
+  * valida `sortOrder` inteiro, não negativo e sem duplicidade;
+  * não exige que o array de entrada esteja ordenado e normaliza os itens por `sortOrder` antes do render model;
+  * valida variante existente no registry fechado de `landing_page`;
+  * valida compatibilidade explícita entre módulo e variante;
+  * normaliza itens resolvidos para o render model somente depois de validar registry e `config_json`;
+  * mantém `commercial_activation` apenas como referência comparativa, sem compatibilidade automática.
+* Limites técnicos de `config_json`:
+  * `config_json` é override controlado por seção;
+  * chaves permitidas nesta fase: `anchor_id` e `spacing`;
+  * `anchor_id` deve seguir padrão seguro de âncora curta: letra minúscula inicial, letras minúsculas, números ou hífen, até 64 caracteres;
+  * `anchor_id` permanece opcional, mas deve ser único quando informado em mais de uma seção;
+  * `spacing` aceita somente `compact`, `default` ou `spacious`;
+  * objetos com chaves livres como renderer, schema, style, HTML, script ou props arbitrárias são rejeitados;
+  * o renderer mínimo consome apenas esses overrides permitidos para `id` de seção e espaçamento vertical.
+* Casos de validação cobertos por `validate:landing-page`:
+  * composição válida;
+  * item duplicado na composição;
+  * item duplicado no conteúdo;
+  * item desconhecido no conteúdo;
+  * variante inexistente;
+  * incompatibilidade módulo/variante;
+  * ordem inválida;
+  * `config_json` inválido;
+  * item obrigatório ausente;
+  * item opcional ausente;
+  * schema de conteúdo inválido;
+  * canal inválido;
+  * rejeição de variante de `commercial_activation` como compatível automaticamente.
+* Não realizado nesta fase:
+  * não foi criada migration;
+  * `docs/schema.md` não foi alterado;
+  * RLS, policies e GRANTs não foram alterados;
+  * não foram criados registros-base no banco;
+  * não foi criada LP teste, rota pública, Admin, LP Builder, automação, job, agente ou workflow.
+* Próxima etapa: depende de definição estratégica posterior; esta fase não libera, por si só, criação de registros-base, LP teste, Admin ou LP Builder.
+
+4. Escopo negativo e critérios de parada
+
+4.1. Escopo negativo consolidado
+
+* Admin Dashboard de curadoria.
+* Tela de aprovação humana.
+* LP teste.
+* Liberação de nicho para clientes.
+* LP Builder visual.
+* Publicação pública de LP.
+* IA em runtime público.
+* Criação automática de módulos pela IA.
+* Geração automática de composição sem revisão humana.
+* Nova arquitetura multicanal ampla.
+* Editor livre de schema, renderer ou Zod.
+* Marketplace de templates.
+* Múltiplos templates ativos por família sem caso real.
+* Consumo automático por `commercial_activation` sem contrato próprio.
+* Testes A/B.
+* Analytics.
+* Domínio customizado.
+* Automações, jobs, agentes ou rotinas recorrentes sem necessidade comprovada.
+
+4.2. Critérios de parada
+
+* Parar se a investigação mostrar necessidade de mudança de schema não prevista no debate.
+* Parar se a estrutura atual permitir composição inválida sem ponto seguro de bloqueio.
+* Parar se um módulo proposto não tiver schema, registry e renderer compatíveis.
+* Parar se `config_json` começar a funcionar como editor livre.
+* Parar se a busca por transversalidade virar engine multicanal ampla sem necessidade real.
+* Parar se o plano começar a invadir E12 ou E19.
+* Parar se faltar fonte real para decidir banco, rota, renderer, schema ou contrato técnico.
