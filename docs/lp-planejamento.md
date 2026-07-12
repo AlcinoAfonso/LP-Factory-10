@@ -205,3 +205,17 @@ Fontes de referência: `README.md`, `docs/prompt-nicho-itens-estruturados.md`, `
 - A parametrização raiz pertence a um novo recorte da E18; a E18.4 permanece concluída e não deve ser reaberta.
 - O identificador exato `E18.x`, as subseções previstas e o path devem ser definidos no debate do caso conforme `docs/prompt-estrategista.md`; não reutilizar automaticamente `E18.5`.
 - Cada plano-base deve decidir somente a persistência, versões, snapshots, medições e superfícies necessárias ao próprio recorte.
+
+## 4. Ajustes previstos no roadmap
+
+### 4.1. E10 — taxons e itens estruturados
+
+- Não criar nova subseção na E10 para esta jornada.
+- Ajustar `10.5.5.3`, renomeando-a de `Recorte aprovado para consumo pela E10.7` para `Recortes aprovados para consumo`.
+- Preservar em `10.5.5.3` o contrato já executado da E10.7, que exige pesquisas próprias `business_buyer` e `end_customer`, `active version 1`, com os quatro blocos fixos.
+- Acrescentar em `10.5.5.3` o recorte distinto de `landing_page`: `end_customer` ativo no taxon específico e `business_buyer` ativo próprio ou herdado do taxon pai conforme critério de elegibilidade.
+- Exigir nos insumos efetivamente resolvidos para `landing_page` os blocos `strategic_core`, `lp_overview`, `lp_sections` e `seo`, preservando a origem do taxon e da versão usados.
+- Ajustar `10.5.5.4` para remover a pendência já superada de uso futuro dos dados pela E10.7.
+- Registrar em `10.5.5.4` como pendência apenas a definição operacional da elegibilidade para `landing_page`, incluindo resolução e rastreabilidade do `business_buyer` herdado, no plano-base aplicável.
+- Não ajustar `10.5.6` nem a E10.7, pois resolução do nicho da conta e página `commercial_activation` permanecem contratos separados.
+- Esses ajustes não alteram schema, hierarquia dos taxons ou o histórico das implementações concluídas.
