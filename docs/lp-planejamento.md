@@ -39,9 +39,11 @@ Fontes de referência: `README.md`, `docs/prompt-nicho-itens-estruturados.md`, `
 - Variante define a execução específica daquela função.
 - A composição base do taxon não é a LP final; ela é o ponto de partida governado para gerar LPs concretas.
 - A composição base pode ser aprovada para segmento ou nicho. Composição própria de ultranicho deve ser excepcional e depender de decisão humana quando a composição herdável não atender.
-- A IA propõe a composição base a partir das parametrizações aprovadas e dos itens estruturados `lp_overview`, `lp_sections`, `strategic_core` e `seo`.
+- A IA propõe a composição base a partir da parametrização raiz, da parametrização de módulos e variantes e dos itens estruturados `lp_overview`, `lp_sections`, `strategic_core` e `seo`.
 - A composição registra módulos, variantes, ordem, obrigatoriedade e escolhas permitidas para o conjunto e para cada ocorrência; essas escolhas são resultado da composição, não novas parametrizações.
-- A LP final é gerada a partir da composição base aplicável, dos itens estruturados do taxon, dos dados reais preenchidos pelo cliente e da intenção/funil informada; o `paid_search_keyword_map` entra apenas quando houver contexto de busca paga aplicável.
+- A composição base seleciona somente opções permitidas pela resolução `parametrização raiz → especialização do módulo → especialização da variante`.
+- A LP final é gerada a partir da composição base aplicável, dos itens estruturados do taxon, dos valores reais fornecidos por meio do catálogo de dados de entrada e da intenção/funil informada; o `paid_search_keyword_map` entra apenas quando houver contexto de busca paga aplicável.
+- A geração final não pode alterar o contrato parametrizado ao aplicar dados reais, intenção/funil ou palavras-chave opcionais.
 - Composição aprovada no taxon pai é presumida herdável para taxons filhos, salvo marcação contrária.
 - O taxon filho só herda composição do taxon pai quando não houver composição própria aprovada.
 - Uma LP teste aprovada no nicho base libera o plano para seus ultranichos herdáveis.
@@ -55,50 +57,57 @@ Fontes de referência: `README.md`, `docs/prompt-nicho-itens-estruturados.md`, `
 - Variante antiga só pode ser retirada quando não houver artefato publicado dependente ou quando houver plano de migração aprovado.
 - Snapshot da geração deve preservar composição, variante e versão usadas.
 
-### 1.5. Parametrizações da LP
+### 1.5. Parametrizações e catálogo de dados da LP
 
-- A parametrização de LPs se organiza em três categorias: parametrização raiz, parametrização de módulos e variantes e dados que o cliente preenche.
-- Ordem, obrigatoriedade, escolha de módulos e variantes e ajustes permitidos por ocorrência são decisões registradas na composição base do taxon, não categorias de parametrização.
-- A fonte canônica das três categorias deve ser versionada no repositório, porque impacta renderer, contratos, testes e design system.
+- O planejamento separa duas parametrizações e um catálogo de dados: parametrização raiz da LP, parametrização de módulos e variantes e catálogo de dados de entrada do cliente.
+- A resolução das regras segue `parametrização raiz → especialização do módulo → especialização da variante`.
+- A composição base apenas seleciona opções permitidas por essa resolução; a geração final aplica valores reais e intenção/funil sem alterar o contrato parametrizado.
+- As fontes canônicas da parametrização raiz, das especializações de módulos e variantes e do catálogo de dados devem ser versionadas no repositório.
 - Zod executa validações estruturais e limites técnicos compatíveis com schema; não decide estratégia, composição, qualidade editorial, critérios visuais ou adequação comercial.
 
 #### 1.5.1. Parametrização raiz da LP
 
-- A parametrização raiz define papéis semânticos, regras, limites, critérios visuais e responsivos, presets e opções permitidas para toda a família `landing_page`.
-- A família `landing_page` define o `funnel_copy_profile` padrão para BOFU, MOFU e TOFU.
+- A parametrização raiz é a fonte da verdade inicial para papéis semânticos, regras, faixas editoriais recomendadas, limites técnicos absolutos, critérios visuais e responsivos e opções permitidas para toda a família `landing_page`.
 - Parâmetro por campo significa regra para H1, H2, H3, parágrafo, CTA, eyebrow, nota de privacidade, FAQ, cards, benefícios e passos.
-- Presets candidatos iniciais: `compact`, `default`, `premium`, sujeitos a validação no plano-base técnico.
-- Presets não substituem BOFU/MOFU/TOFU, módulos ou variantes.
-- Presets não autorizam override livre de design system, schema, renderer, segurança, performance ou acessibilidade.
-- A parametrização raiz deve resolver a maioria dos nichos e ultranichos.
-- Taxons que exigirem parâmetros fora da raiz devem usar variante própria reutilizável.
-- Valores exatos de parâmetros e presets ficam para o plano-base técnico.
+- A parametrização raiz versionada deve alimentar ou originar os limites usados pela geração, validação e renderização, evitando fontes independentes e valores hardcoded divergentes.
+- A fonte da verdade no repositório não exige configuração dinâmica em runtime; schemas, geração e renderer podem continuar estáticos quando derivarem do mesmo contrato versionado.
+- Preset de LP é uma configuração ampla do conjunto da página e não se confunde com escolhas limitadas por ocorrência de seção.
+- Os nomes e valores exatos dos presets ficam para o plano-base técnico.
+- A parametrização raiz deve resolver as necessidades comuns da maioria dos nichos e ultranichos.
+- Necessidade fora da raiz não implica automaticamente nova variante; deve ser classificada conforme módulo, composição, dados, conteúdo ou mudança estrutural.
+- Os valores exatos dos parâmetros permanecem hipóteses até validação pela primeira LP real.
 
 #### 1.5.2. Parametrização de módulos e variantes
 
 - A parametrização de módulos e variantes define campos, estruturas, limites, regras de copy e especializações permitidas sobre a raiz.
+- Módulos herdam a raiz e registram apenas especializações justificadas para sua função estrutural.
+- Variantes herdam o módulo e registram apenas especializações reutilizáveis de execução ou comportamento dentro da mesma função estrutural.
+- Nova variante só deve ser criada quando houver mudança reutilizável de comportamento ou execução; mudança da função estrutural deve ser avaliada como novo módulo.
+- Diferença de taxon, conteúdo, dado do cliente, escolha de composição ou ajuste já permitido não justifica isoladamente nova variante.
+- `spacing` é escolha limitada por ocorrência de seção, não preset de LP; o contrato atual da E18.4 aceita somente `compact`, `default` ou `spacious`.
 - A parametrização de módulos e variantes deve separar `copy_source_map` e `funnel_copy_profile`.
 - O `copy_source_map` define quais `item_key` cada campo de copy consulta.
 - O `funnel_copy_profile` define como os insumos podem ser transformados em copy conforme BOFU, MOFU ou TOFU, incluindo tratamentos permitidos, restritos e proibidos.
+- A família `landing_page` define o `funnel_copy_profile` padrão para BOFU, MOFU e TOFU em recorte técnico posterior à parametrização raiz.
 - Módulos adaptam o `funnel_copy_profile` ao papel da seção.
 - Variantes herdam o `funnel_copy_profile` do módulo e só podem restringir ou sobrescrever tratamentos quando houver mudança de comportamento comercial.
 - A parametrização de módulos deve definir um `copy_source_map` padrão para mapear campos de copy aos insumos estruturados permitidos.
 - O `copy_source_map` pode variar por intenção/funil da LP gerada: BOFU, MOFU e TOFU.
 - Cada campo de copy deve consultar no máximo 2 `item_key` principais e 1 `item_key` auxiliar, salvo decisão registrada no plano-base técnico.
 - Variante herda o `copy_source_map` do módulo e só pode sobrescrever quando houver mudança de comportamento comercial dentro da mesma função estrutural.
-- Se a mudança alterar a função estrutural, deve ser avaliada criação de novo módulo, não variante grande demais.
 - Escassez, garantia, prova, comparação, preço, promessa, credencial, autoridade, urgência e oferta só podem ser usados quando houver insumo real que sustente esse tratamento.
 - A composição base usa as parametrizações aprovadas para escolher módulos, variantes, ordem, obrigatoriedade e ajustes permitidos, sem duplicar o mapa completo de insumos de copy nem regras de copy por funil.
 
-#### 1.5.3. Dados que o cliente preenche
+#### 1.5.3. Catálogo de dados de entrada do cliente
 
-- Esta parametrização define quais campos serão apresentados ao cliente, sem se confundir com os valores reais preenchidos.
+- O catálogo não é uma parametrização de comportamento da LP; ele define quais campos poderão ser apresentados e utilizados na geração.
 - A camada geral reúne campos aplicáveis a clientes de todos os segmentos.
 - A camada específica reúne campos próprios de um segmento ou nicho, conforme o nível adequado de reutilização.
 - A camada de ultranicho só deve existir excepcionalmente e por decisão humana quando segmento e nicho não forem suficientes.
-- O `lp_generation_input_catalog` define campos disponíveis, obrigatórios e condicionantes, com herança `universal → segmento → nicho → ultranicho`.
+- O `lp_generation_input_catalog` define campos disponíveis, obrigatórios, opcionais e condicionantes, com herança `universal → segmento → nicho → ultranicho`.
+- O catálogo informa as entradas disponíveis para a geração da LP final, mas não determina automaticamente a estrutura da composição base do taxon.
 - A fonte canônica inicial do `lp_generation_input_catalog` deve ser versionada no repositório.
-- Os valores reais preenchidos pela conta, cliente ou LP devem ser persistidos no BD, mas o local e o formato da persistência dependem de plano-base técnico.
+- Os valores reais preenchidos pela conta, cliente ou LP são dados operacionais e devem ser persistidos no BD, mas o local e o formato dependem de plano-base técnico.
 - A LP gerada deve registrar snapshot dos valores usados na geração, sem substituir as seções, textos e campos editáveis da LP.
 - O snapshot serve para rastreabilidade, segurança editorial e consistência histórica da geração.
 
@@ -151,26 +160,27 @@ Fontes de referência: `README.md`, `docs/prompt-nicho-itens-estruturados.md`, `
 
 - Avaliar em plano-base posterior se o Admin apoiará sugestão, validação e aprovação da composição base; o Admin não é requisito deste recorte conceitual.
 - Permitir composição base aprovada para segmento ou nicho; composição própria de ultranicho somente de forma excepcional e por decisão humana.
-- Permitir que a IA proponha a composição base com base nas três categorias de parametrização e nos itens estruturados `lp_overview`, `lp_sections`, `strategic_core` e `seo`.
-- Permitir que a IA decida módulos, variantes, ordem, obrigatoriedade e ajustes permitidos por ocorrência dentro das opções parametrizadas.
+- Permitir que a IA proponha a composição base com base na parametrização raiz, na parametrização de módulos e variantes e nos itens estruturados `lp_overview`, `lp_sections`, `strategic_core` e `seo`.
+- Não usar o catálogo de dados ou valores particulares do cliente como decisão estrutural automática da composição base do taxon.
+- Permitir que a IA decida módulos, variantes, ordem, obrigatoriedade e ajustes permitidos por ocorrência dentro das opções resolvidas por `raiz → módulo → variante`.
 - Resolver no plano-base técnico onde a composição base e suas escolhas serão persistidas.
 - Manter `content_template_composition_items` como relação 1:N de módulos/variantes.
 - Registrar gaps de catálogo quando módulo ou variante essencial não existir.
 - Impedir liberação plena até gap essencial ser criado e parametrizado.
-- Gerar a LP final com a composição base aplicável, os itens estruturados do taxon, os dados reais preenchidos pelo cliente e a intenção/funil informada.
+- Gerar a LP final com a composição base aplicável, os itens estruturados do taxon, os valores reais fornecidos por meio do catálogo de dados e a intenção/funil informada.
 - Permitir que a LP final adapte copy, CTA, prova, FAQ, formulário, densidade e ordem permitida conforme a intenção do cliente.
 - Impedir que a intenção/funil altere livremente schema, renderer, módulo ou variante fora do catálogo aprovado.
 - Permitir que taxon filho use composição base aprovada e herdável do taxon pai quando não houver composição própria aprovada.
 - Bloquear liberação se não houver composição própria aprovada nem composição herdável aprovada do taxon pai.
 
-### 2.4. Três categorias de parametrização
+### 2.4. Parametrizações e catálogo de dados
 
-- Definir a parametrização raiz versionada da família `landing_page`, incluindo papéis semânticos e parâmetros universais para H1, H2, H3, parágrafo, CTA, eyebrow, privacidade, FAQ, cards, benefícios e passos.
-- A raiz deve distinguir faixa editorial recomendada, limite técnico absoluto e critério visual/responsivo; os valores iniciais permanecem hipóteses até a validação da primeira LP.
-- Definir a parametrização de módulos e variantes, com herança da raiz e apenas especializações justificadas.
-- Definir os dados que o cliente preenche em camada geral, camada específica de segmento ou nicho e camada excepcional de ultranicho.
+- Definir primeiro a parametrização raiz versionada da família `landing_page`, incluindo papéis semânticos, faixas editoriais recomendadas, limites técnicos absolutos e critérios visuais e responsivos.
+- Fazer a parametrização raiz alimentar ou originar os limites usados por schemas, geração e renderer, evitando fontes independentes e valores hardcoded divergentes sem exigir configuração dinâmica em runtime.
+- Definir posteriormente a parametrização de módulos e variantes, com herança da raiz e apenas especializações justificadas.
+- Definir separadamente o catálogo de dados de entrada do cliente em camada geral, camada específica de segmento ou nicho e camada excepcional de ultranicho.
 - Definir o `lp_generation_input_catalog` com campos universais e nichados, obrigatórios, opcionais e condicionais.
-- Avaliar no plano-base técnico se o banco terá espelho, referência de versão ou payload operacional das parametrizações para Admin e IA.
+- Avaliar nos planos-base aplicáveis se o banco terá espelho, referência de versão ou payload operacional das fontes versionadas para Admin e IA.
 - Definir `copy_source_map` padrão por módulo, por campo de copy e por intenção/funil da LP gerada.
 - Definir quais `item_key` podem alimentar cada campo de copy, respeitando o limite de 2 principais e 1 auxiliar.
 - Definir `funnel_copy_profile` padrão da família `landing_page` para BOFU, MOFU e TOFU.
@@ -191,8 +201,10 @@ Fontes de referência: `README.md`, `docs/prompt-nicho-itens-estruturados.md`, `
 
 ### 2.5. Variantes
 
-- Após a definição das três categorias de parametrização, confirmar o catálogo inicial de módulos e variantes de LP.
-- Criar variantes quando a necessidade não couber na parametrização raiz.
+- Após a definição da parametrização raiz, confirmar o catálogo inicial de módulos e variantes de LP antes do plano técnico de suas especializações.
+- Não criar variante apenas porque uma necessidade não está na raiz.
+- Avaliar primeiro se a necessidade é especialização do módulo, escolha da composição, dado do cliente, conteúdo do taxon ou ajuste já permitido.
+- Criar variante somente para mudança reutilizável de comportamento ou execução dentro da mesma função estrutural; mudança de função exige avaliação de novo módulo.
 - Garantir que variantes sejam reutilizáveis em outros nichos sempre que possível.
 - Definir hierarquia de variante universal, variante por intenção de LP e variante por nicho quando necessário.
 - Definir ciclo de vida das variantes: candidata ou experimental, ativa, depreciada e retirada ou arquivada.
@@ -200,8 +212,8 @@ Fontes de referência: `README.md`, `docs/prompt-nicho-itens-estruturados.md`, `
 - Impedir que variante depreciada entre em novas gerações.
 - Garantir que LPs e artefatos existentes continuem renderizando com a variante e versão usadas.
 - Bloquear retirada de variante antiga enquanto houver artefato publicado dependente, salvo plano de migração aprovado.
-- Garantir que o snapshot preserve composição, variante e versão usadas na geração.
-- Evitar ajuste solto por nicho ou ultranicho; primeiro avaliar variante existente, depois nova variante reutilizável e só por último exceção específica de baixo reaproveitamento.
+- Garantir que o snapshot preserve composição, variante e versão usadas.
+- Evitar ajuste solto por nicho ou ultranicho; primeiro avaliar módulo e variante existentes, depois nova variante reutilizável e só por último exceção específica de baixo reaproveitamento.
 
 ### 2.6. Critério 4 — LP teste por plano
 
@@ -231,12 +243,18 @@ Fontes de referência: `README.md`, `docs/prompt-nicho-itens-estruturados.md`, `
 - Não criar catálogo universal multicanal neste recorte; o reuso entre canais só deve avançar com evidência prática de duplicação e ROI.
 - E10.7 e E19 permanecem separados; aprendizados podem ser reaproveitados, mas não autorizam converter páginas comerciais em LPs do Builder sem plano-base próprio.
 
-## 3. Pendências para plano-base técnico
+## 3. Pendências e ordem dos planos-base técnicos
 
-- Detalhar no plano-base técnico a persistência da composição base do taxon, suas escolhas, sua herança e a intenção/funil da LP gerada.
-- Definir os valores exatos da parametrização raiz, da parametrização de módulos e variantes, dos dados que o cliente preenche, do `copy_source_map`, do `funnel_copy_profile`, do `lp_generation_input_catalog`, do `paid_search_keyword_map` e dos presets candidatos.
+- O primeiro plano-base técnico deve tratar somente da parametrização raiz da família `landing_page`.
+- Esse primeiro recorte deve cobrir contrato versionado da raiz, papéis semânticos, faixas editoriais recomendadas, limites técnicos absolutos, critérios visuais e responsivos, relação com o design system, integração com os schemas atuais, contrato de leitura para futura geração e casos de validação.
+- Permanecem fora do primeiro plano: composição por taxon, persistência e catálogo de dados do cliente, `lp_generation_input_catalog`, `copy_source_map`, `funnel_copy_profile`, `paid_search_keyword_map`, geração da LP, LP teste e Admin.
+- Depois da raiz, os recortes devem avançar em planos-base próprios para: parametrização de módulos e variantes; `copy_source_map` e `funnel_copy_profile`; catálogo de dados de entrada; composição base e herança; geração da primeira LP; LP teste Starter.
+- A parametrização raiz pertence a um novo recorte da E18; a E18.4 permanece concluída e não deve ser reaberta.
+- O identificador exato `E18.x`, as subseções previstas e o path do plano-base devem ser definidos no debate do caso conforme `docs/prompt-estrategista.md`; não reutilizar automaticamente `E18.5`.
+- Detalhar em planos posteriores a persistência da composição base do taxon, suas escolhas, sua herança e a intenção/funil da LP gerada.
+- Definir nos planos aplicáveis os valores exatos da parametrização raiz, das especializações de módulos e variantes, do catálogo de dados, do `copy_source_map`, do `funnel_copy_profile`, do `lp_generation_input_catalog`, do `paid_search_keyword_map` e dos presets.
 - Definir a modelagem exata dos valores reais persistidos no BD e do snapshot dos valores usados na geração, incluindo composição, variante e versão.
 - Definir ciclo de vida técnico de variantes e bloqueios para depreciação, retirada e compatibilidade com artefatos publicados.
-- Definir se haverá espelho, referência de versão ou payload operacional das parametrizações no banco.
-- Detalhar no plano-base técnico as medições, registros, ferramentas e bloqueios do Critério 4.
+- Definir se haverá espelho, referência de versão ou payload operacional das fontes versionadas no banco.
+- Detalhar nos planos aplicáveis as medições, registros, ferramentas e bloqueios do Critério 4.
 - Definir o formato de registro do Benchmark Blueprint opcional quando ele for usado como insumo de evolução.
