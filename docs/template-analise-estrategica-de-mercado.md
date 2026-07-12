@@ -1,6 +1,6 @@
 12/07/2026 — Template de análise estratégica de mercado
 
-Versão: v1
+Versão: v2
 
 0. Objetivo
 Orientar pesquisas recorrentes de mercado, comparar as evidências com o estado real do LP Factory 10 e produzir decisões práticas de posicionamento, produto e execução.
@@ -16,11 +16,10 @@ Orientar pesquisas recorrentes de mercado, comparar as evidências com o estado 
 • [agora | próximos 6 meses | próximos 12 meses]
 
 2. Fontes obrigatórias
-• README.md
-• docs/roadmap.md
-• docs/base-tecnica.md, quando houver impacto técnico
-• documentos específicos do recorte
-• fontes externas atuais, identificadas por nome e data
+• Documentação interna aplicável: README.md, docs/roadmap.md, docs/base-tecnica.md quando houver impacto técnico e documentos específicos do recorte.
+• GitHub: código, estrutura, convenções e estado implementado.
+• Mercado externo: fontes atuais, identificadas por nome e data.
+• Regra de leitura: interpretar as fontes sem reproduzi-las e separar maturidade técnica de valor e diferenciação de mercado.
 
 3. Evidências de mercado
 3.1 Movimento observado
@@ -38,7 +37,7 @@ Orientar pesquisas recorrentes de mercado, comparar as evidências com o estado 
 
 4. Comparação com o LP Factory 10
 4.1 Estado atual
-• [capacidade, decisão ou entrega existente]
+• [capacidade, decisão ou entrega existente] — [fonte ou path]
 
 4.2 Aderência ao mercado
 • [forte | parcial | fraca] — [justificativa curta]
