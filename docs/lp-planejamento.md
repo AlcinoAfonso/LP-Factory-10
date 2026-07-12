@@ -63,14 +63,15 @@ Fontes de referência: `README.md`, `docs/prompt-nicho-itens-estruturados.md`, `
 
 ### 1.5. Definir o catálogo de entradas para geração da LP
 
-- O catálogo não parametriza o comportamento da LP; ele define quais entradas da conta, oferta, campanha ou LP podem ser apresentadas e utilizadas na geração.
-- A camada geral reúne campos aplicáveis a clientes de todos os segmentos.
+- O catálogo não parametriza o comportamento da LP; ele define quais entradas da conta, negócio atendido, oferta, campanha ou LP podem ser apresentadas e utilizadas na geração.
+- A camada geral reúne entradas aplicáveis a todos os segmentos.
 - A camada específica reúne campos próprios de um segmento ou nicho, conforme o nível adequado de reutilização.
 - A camada de ultranicho só deve existir excepcionalmente e por decisão humana quando segmento e nicho não forem suficientes.
 - O `lp_generation_input_catalog` define campos disponíveis, obrigatórios, opcionais e condicionantes, com herança `universal → segmento → nicho → ultranicho`.
 - O catálogo informa as entradas disponíveis para a geração da LP final, mas não determina automaticamente a estrutura da composição base do taxon.
+- O `paid_search_keyword_map` é uma entrada opcional para alinhar busca paga, anúncio e LP quando aplicável; não substitui os itens estruturados nem autoriza alteração dos contratos parametrizados.
 - A fonte canônica inicial do catálogo deve ser versionada no repositório.
-- Os valores reais preenchidos pela conta, cliente ou LP são dados operacionais e devem ser persistidos no BD, mas o local e o formato dependem de plano-base técnico.
+- Os valores reais informados pela conta, negócio atendido, oferta, campanha ou LP são dados operacionais e devem ser persistidos no BD, mas o local e o formato dependem de plano-base técnico.
 
 ### 1.6. Criar e aprovar a composição base do taxon
 
@@ -81,7 +82,7 @@ Fontes de referência: `README.md`, `docs/prompt-nicho-itens-estruturados.md`, `
 - A composição registra módulos, variantes, ordem, obrigatoriedade e escolhas permitidas para o conjunto e para cada ocorrência.
 - Essas escolhas são resultado da composição, não novas parametrizações.
 - A composição seleciona somente opções permitidas pela resolução `parametrização raiz → módulo → variante`.
-- O catálogo de entradas e os valores particulares do cliente não determinam automaticamente sua estrutura.
+- O catálogo de entradas e as entradas particulares da conta, negócio atendido, oferta, campanha ou LP não determinam automaticamente sua estrutura.
 - Composição aprovada no taxon pai é presumida herdável para taxons filhos, salvo marcação contrária.
 - O taxon filho só herda a composição do taxon pai quando não houver composição própria aprovada.
 - A herança não se aplica quando houver composição própria, módulo ou variante específica, restrição regulatória, falha técnica, editorial ou visual, ou marcação de não herança.
@@ -91,10 +92,9 @@ Fontes de referência: `README.md`, `docs/prompt-nicho-itens-estruturados.md`, `
 
 ### 1.7. Gerar a primeira LP do taxon
 
-- A primeira LP usa a composição base aplicável, os itens estruturados do taxon, os dados definidos para o teste e a intenção/funil informada.
-- O `paid_search_keyword_map` entra apenas quando houver contexto de busca paga aplicável.
-- A geração pode adaptar copy, CTA, prova, FAQ, formulário, densidade e ordem permitida, sem alterar schema, renderer, módulo ou variante fora do catálogo aprovado.
-- A geração não pode alterar o contrato parametrizado ao aplicar dados, intenção/funil ou palavras-chave opcionais.
+- A primeira LP usa a composição base aplicável, os itens estruturados do taxon, as entradas definidas para o teste e a intenção/funil informada.
+- A geração pode adaptar copy, CTA, prova, FAQ, formulário, densidade e ordem permitida, sem alterar schema, renderer, módulos, variantes ou opções fora dos contratos aprovados.
+- A geração não pode alterar o contrato parametrizado ao aplicar entradas, intenção/funil ou palavras-chave opcionais.
 - O snapshot deve preservar os valores usados, a composição, as variantes e as versões da geração.
 - A primeira LP gerada segue para validação como LP teste do taxon e do plano aplicável.
 
@@ -112,7 +112,6 @@ Fontes de referência: `README.md`, `docs/prompt-nicho-itens-estruturados.md`, `
 ### 1.9. Gerar, revisar e publicar as LPs dos clientes
 
 - Depois da liberação, a LP do cliente usa a composição aprovada, os itens estruturados do taxon, os valores reais fornecidos nas entradas previstas pelo catálogo e a intenção/funil informada.
-- O `paid_search_keyword_map` permanece opcional e restrito a contexto de busca paga aplicável.
 - A geração mantém os mesmos limites de schema, renderer, módulos, variantes e tratamentos comerciais sustentados por dados reais.
 - Cada LP deve preservar snapshot dos valores, composição, variantes e versões usados.
 - O fluxo de revisão, edição e publicação das LPs dos clientes depende de plano-base próprio e não autoriza antecipação de Admin, editor visual ou nova infraestrutura neste documento.
@@ -144,7 +143,7 @@ Fontes de referência: `README.md`, `docs/prompt-nicho-itens-estruturados.md`, `
 
 ### 2.3. Parametrização de módulos e variantes
 
-- Confirmar o catálogo inicial de módulos e variantes antes de definir suas especializações.
+- Confirmar o conjunto inicial de módulos e variantes antes de definir suas especializações.
 - Definir `copy_source_map` por módulo, campo de copy e intenção/funil.
 - Definir `funnel_copy_profile` padrão para BOFU, MOFU e TOFU e como módulos e variantes o adaptam.
 - Definir tratamentos permitidos, restritos e proibidos por funil.
@@ -171,7 +170,7 @@ Fontes de referência: `README.md`, `docs/prompt-nicho-itens-estruturados.md`, `
 
 ### 2.6. Geração, validação e liberação da primeira LP teste
 
-- Gerar a LP com composição aplicável, itens estruturados, dados de teste e intenção/funil.
+- Gerar a LP com composição aplicável, itens estruturados, entradas de teste e intenção/funil.
 - Permitir adaptações somente dentro das opções parametrizadas e da composição aprovada.
 - Registrar snapshot dos valores, composição, variantes e versões usados.
 - Impedir alteração livre de schema, renderer, módulo ou variante durante a geração.
@@ -179,7 +178,6 @@ Fontes de referência: `README.md`, `docs/prompt-nicho-itens-estruturados.md`, `
 - Definir ferramenta ou combinação de ferramentas para medição em ambiente de teste.
 - Definir bloqueios para imagem pesada, embed pesado, JavaScript excessivo, layout shift e fallback lento.
 - Registrar a liberação herdável do plano e da composição quando aplicável.
-- Definir critérios de `lite`, `pro` e `ultra` somente quando houver escopo real.
 
 ### 2.7. LPs dos clientes
 
@@ -187,12 +185,10 @@ Fontes de referência: `README.md`, `docs/prompt-nicho-itens-estruturados.md`, `
 - Preservar composição, contratos parametrizados, rastreabilidade e snapshot de cada geração.
 - Não antecipar editor visual, Admin ou nova infraestrutura sem decisão e plano-base próprios.
 
-### 2.8. Evolução controlada e limites gerais
+### 2.8. Evolução controlada
 
 - Definir como aprendizados de LPs validadas e do Benchmark Blueprint alimentam planos-base posteriores.
 - Garantir que o Benchmark Blueprint permaneça opcional e sem alterações automáticas.
-- Avaliar contratos, banco, renderer e Admin somente nos planos aplicáveis.
-- Não criar nova tabela, campo, rota, job, automação, agente ou infraestrutura sem plano-base ou briefing próprio.
 - Não criar catálogo universal multicanal sem evidência prática de duplicação e ROI.
 - E10.7 e E19 permanecem separados; aprendizados podem ser reaproveitados, mas não autorizam converter páginas comerciais em LPs do Builder sem plano-base próprio.
 
