@@ -37,7 +37,7 @@ Fontes de referência: `README.md`, `docs/prompt-nicho-itens-estruturados.md`, `
 - Preset de LP é uma configuração ampla do conjunto da página e não se confunde com escolhas limitadas por ocorrência de seção.
 - Os nomes e valores exatos dos presets ficam para o plano-base técnico.
 - A parametrização raiz deve resolver as necessidades comuns da maioria dos nichos e ultranichos.
-- Necessidade fora da raiz não implica automaticamente nova variante; deve ser classificada conforme módulo, composição, dados, conteúdo ou mudança estrutural.
+- Necessidade fora da raiz não implica automaticamente nova variante; deve ser classificada conforme módulo, composição, entradas, conteúdo ou mudança estrutural.
 - Os valores exatos dos parâmetros permanecem hipóteses até validação pela primeira LP real.
 
 ### 1.4. Definir a parametrização de módulos e variantes
@@ -47,7 +47,7 @@ Fontes de referência: `README.md`, `docs/prompt-nicho-itens-estruturados.md`, `
 - Módulos herdam a raiz e registram apenas especializações justificadas para sua função estrutural.
 - Variantes herdam o módulo e registram apenas especializações reutilizáveis de execução ou comportamento dentro da mesma função estrutural.
 - Nova variante só deve ser criada quando houver mudança reutilizável de comportamento ou execução; mudança da função estrutural deve ser avaliada como novo módulo.
-- Diferença de taxon, conteúdo, dado do cliente, escolha de composição ou ajuste já permitido não justifica isoladamente nova variante.
+- Diferença de taxon, conteúdo, entrada da conta ou campanha, escolha de composição ou ajuste já permitido não justifica isoladamente nova variante.
 - `spacing` é escolha limitada por ocorrência de seção, não preset de LP; o contrato atual da E18.4 aceita somente `compact`, `default` ou `spacious`.
 - A parametrização deve separar `copy_source_map` e `funnel_copy_profile`.
 - O `copy_source_map` define quais `item_key` cada campo de copy consulta.
