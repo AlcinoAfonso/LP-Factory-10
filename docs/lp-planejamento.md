@@ -202,8 +202,10 @@ Fontes de referência: `README.md`, `docs/prompt-nicho-itens-estruturados.md`, `
 - 6º — geração, revisão e publicação das LPs dos clientes.
 - O primeiro plano-base cobre somente contrato versionado da raiz, papéis semânticos, faixas editoriais, limites técnicos, critérios visuais e responsivos, relação com o design system, aplicação aos schemas, fixture e renderer existentes, contrato de leitura e casos de validação.
 - Permanecem fora do primeiro plano todos os recortes posteriores listados acima, além de Admin e persistências ainda não decididas.
-- A parametrização raiz pertence a um novo recorte da E18; a E18.4 permanece concluída e não deve ser reaberta.
-- O identificador exato `E18.x`, as subseções previstas e o path devem ser definidos no debate do caso conforme `docs/prompt-estrategista.md`; não reutilizar automaticamente `E18.5`.
+- A E18.4 permanece concluída e não deve ser reaberta.
+- O primeiro plano pertence a `18.5 — Parametrização raiz da família landing_page`, com path previsto `docs/lousa-plano-base-e18-5.md`.
+- O segundo plano pertence a `18.6 — Parametrização de módulos e variantes landing_page`, com path previsto `docs/lousa-plano-base-e18-6.md`.
+- Os planos terceiro, quarto e quinto não pertencem automaticamente à E18 e serão distribuídos nos próximos blocos desta seção.
 - Cada plano-base deve decidir somente a persistência, versões, snapshots, medições e superfícies necessárias ao próprio recorte.
 
 ## 4. Onde cada ajuste entra no roadmap
@@ -230,7 +232,7 @@ Fontes de referência: `README.md`, `docs/prompt-nicho-itens-estruturados.md`, `
 - Tipo de intervenção: ajustar o contrato geral da E12 e criar um novo recorte funcional dentro da área existente de Templates.
 - Subseções afetadas: `12.1.3`, `12.1.5` e nova `12.4`; não ampliar `12.3`, que permanece exclusiva da operação administrativa da E10.7.
 - Ajustar `12.1.3` para manter as mutações administrativas gerais fora do escopo, exceto as operações mínimas aprovadas para a E10.7 e, quando implementadas, as operações específicas de landing pages definidas em `12.4`.
-- Ajustar `12.1.5` para registrar que curadoria e aprovação de composição, LP teste e liberação para clientes não pertencem à base geral nem à E10.7, mas poderão ser implementadas somente pelo novo recorte `12.4`.
+- Ajustar `12.1.5` para registrar que curadoria e aprovação de composição, LP teste e liberação do plano e da composição para consumo posterior não pertencem à base geral nem à E10.7, mas poderão ser implementadas somente pelo novo recorte `12.4`.
 - Preservar `12.2` como base administrativa e leitura operacional read-only e preservar integralmente `12.3` como registro da operação de `commercial_activation`.
 - Criar `12.4 — Operação administrativa de landing pages por taxon`, sem criar nova área na navegação, usando a área de Templates já prevista em `12.1.4`.
 - O novo recorte deve permitir ao humano, conforme os contratos e persistências definidos nos planos-base aplicáveis:
@@ -251,3 +253,33 @@ Fontes de referência: `README.md`, `docs/prompt-nicho-itens-estruturados.md`, `
 - Permanecem fora de `12.4`: gestão das LPs dos clientes, LP Builder, editor visual, aprovação automática, publicação automática e infraestrutura nova não decidida pelos planos-base.
 - Rota exata, actions, persistência, permissões, auditoria e evidências devem ser definidas somente nos planos-base que materializarem cada operação.
 - A criação de `12.4` no roadmap não exige sua implementação junto ao primeiro plano-base; a superfície administrativa entra apenas quando composição, geração, validação ou liberação precisarem de operação humana.
+
+### 4.3. E18 — Parametrização técnica da família `landing_page`
+
+- Tipo de intervenção: ajustar o contrato transversal existente e criar dois novos recortes técnicos, um para cada plano-base de parametrização.
+- Seções e subseções afetadas: objetivo e status da E18, `18.1.5`, nova `18.5` e nova `18.6`.
+- Ajustar o objetivo e o status da E18 para registrar que a família `landing_page` deixa de ser apenas visão de consumidor futuro e passa a evoluir de forma controlada pelos recortes `18.5` e `18.6`.
+- Ajustar `18.1.5` para reconhecer o catálogo mínimo próprio de `landing_page` já concluído em `18.4` e separar catálogo técnico de módulos e variantes das parametrizações que governam seus campos, limites e comportamentos.
+- Preservar integralmente `18.2` e `18.3`, que permanecem vinculadas a `commercial_activation`, e preservar `18.4` como base técnica repo-only concluída.
+- Criar `18.5 — Parametrização raiz da família landing_page`, responsável pela fonte versionada da verdade para papéis semânticos, faixas editoriais recomendadas, limites técnicos absolutos, critérios visuais e responsivos, presets, relação com o design system, contrato de leitura e aplicação aos schemas, fixture e renderer existentes.
+- Estrutura prevista para `18.5`:
+  - `18.5.1 — Objetivo e status`;
+  - `18.5.2 — Registros do recorte`, somente quando houver implementação material;
+  - `18.5.3 — Fonte versionada e resolução da parametrização raiz`;
+  - `18.5.4 — Papéis semânticos e faixas editoriais`;
+  - `18.5.5 — Limites técnicos, visuais e responsivos`;
+  - `18.5.6 — Aplicação aos schemas, fixture e renderer`;
+  - `18.5.7 — Validação e limites do recorte`.
+- O plano-base de `18.5` terá path previsto `docs/lousa-plano-base-e18-5.md`.
+- Criar `18.6 — Parametrização de módulos e variantes landing_page`, responsável pelas especializações permitidas sobre a raiz, incluindo campos, estruturas, limites, `copy_source_map`, `funnel_copy_profile`, tratamentos comerciais por intenção/funil e ciclo de vida das variantes.
+- Estrutura prevista para `18.6`:
+  - `18.6.1 — Objetivo e status`;
+  - `18.6.2 — Registros do recorte`, somente quando houver implementação material;
+  - `18.6.3 — Parametrização dos módulos`;
+  - `18.6.4 — Parametrização das variantes`;
+  - `18.6.5 — Mapa de fontes de copy`;
+  - `18.6.6 — Perfis de copy por intenção e funil`;
+  - `18.6.7 — Ciclo de vida, compatibilidade e validação`.
+- O plano-base de `18.6` terá path previsto `docs/lousa-plano-base-e18-6.md`.
+- Permanecem fora de `18.5` e `18.6`: elegibilidade do taxon, catálogo de entradas da geração, composição base por taxon, aprovação humana, geração da LP teste, liberação e ciclo das LPs vinculadas às contas.
+- Os novos recortes não exigem parametrização dinâmica em banco ou runtime; qualquer persistência só poderá ser decidida no plano-base correspondente se houver necessidade real.
