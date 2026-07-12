@@ -162,7 +162,7 @@ Fontes de referência: `README.md`, `docs/prompt-nicho-itens-estruturados.md`, `
 
 - Permitir composição aprovada para segmento ou nicho e composição própria de ultranicho somente de forma excepcional e por decisão humana.
 - Permitir que a IA proponha módulos, variantes, ordem, obrigatoriedade e ajustes por ocorrência dentro das opções parametrizadas.
-- Não usar o catálogo de entradas nem valores particulares do cliente como decisão estrutural automática.
+- Não usar o catálogo de entradas nem entradas particulares da conta, negócio atendido, oferta, campanha ou LP como decisão estrutural automática.
 - Resolver onde a composição e suas escolhas serão persistidas.
 - Manter `content_template_composition_items` como relação 1:N de módulos e variantes.
 - Registrar gaps essenciais e bloquear aprovação plena até sua resolução.
