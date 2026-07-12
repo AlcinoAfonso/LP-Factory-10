@@ -149,7 +149,7 @@ Fontes de referência: `README.md`, `docs/prompt-nicho-itens-estruturados.md`, `
 - Definir tratamentos permitidos, restritos e proibidos por funil.
 - Definir quando a necessidade é especialização do módulo, nova variante reutilizável ou novo módulo.
 - Definir ciclo de vida das variantes e compatibilidade com LPs existentes.
-- Impedir nova geração com variante depreciada e retirada enquanto houver artefato publicado dependente, salvo migração aprovada.
+- Impedir nova geração com variante depreciada e impedir sua retirada enquanto houver artefato publicado dependente, salvo migração aprovada.
 
 ### 2.4. Catálogo de dados de entrada do cliente
 
