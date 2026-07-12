@@ -206,11 +206,16 @@ Fontes de referência: `README.md`, `docs/prompt-nicho-itens-estruturados.md`, `
 - O identificador exato `E18.x`, as subseções previstas e o path devem ser definidos no debate do caso conforme `docs/prompt-estrategista.md`; não reutilizar automaticamente `E18.5`.
 - Cada plano-base deve decidir somente a persistência, versões, snapshots, medições e superfícies necessárias ao próprio recorte.
 
-## 4. Ajustes previstos no roadmap
+## 4. Onde cada ajuste entra no roadmap
 
-### 4.1. E10 — taxons e itens estruturados
+- Esta seção distribui tudo o que precisa ser ajustado ou implementado pelas seções e subseções correspondentes de `docs/roadmap.md`.
+- Devem ser priorizadas subseções já existentes; novas seções ou subseções só devem ser propostas quando não houver proprietário adequado no roadmap atual.
+- A distribuição registrada aqui orienta os planos-base, mas não altera automaticamente o roadmap.
 
-- Não criar nova subseção na E10 para esta jornada.
+### 4.1. E10 — Taxons e itens estruturados
+
+- Tipo de intervenção: ajustar subseções existentes; não criar nova subseção na E10 para esta jornada.
+- Subseções afetadas: `10.5.5.3` e `10.5.5.4`.
 - Ajustar `10.5.5.3`, renomeando-a de `Recorte aprovado para consumo pela E10.7` para `Recortes aprovados para consumo`.
 - Preservar em `10.5.5.3` o contrato já executado da E10.7, que exige pesquisas próprias `business_buyer` e `end_customer`, `active version 1`, com os quatro blocos fixos.
 - Acrescentar em `10.5.5.3` o recorte distinto de `landing_page`: `end_customer` ativo no taxon específico e `business_buyer` ativo próprio ou herdado do taxon pai conforme critério de elegibilidade.
