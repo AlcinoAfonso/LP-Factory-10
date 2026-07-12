@@ -87,6 +87,7 @@ Fontes de referência: `README.md`, `docs/prompt-nicho-itens-estruturados.md`, `
 - Cada campo de copy deve consultar no máximo 2 `item_key` principais e 1 `item_key` auxiliar, salvo decisão registrada no plano-base técnico.
 - Variante herda o `copy_source_map` do módulo e só pode sobrescrever quando houver mudança de comportamento comercial dentro da mesma função estrutural.
 - Se a mudança alterar a função estrutural, deve ser avaliada criação de novo módulo, não variante grande demais.
+- Escassez, garantia, prova, comparação, preço, promessa, credencial, autoridade, urgência e oferta só podem ser usados quando houver insumo real que sustente esse tratamento.
 - A composição base usa as parametrizações aprovadas para escolher módulos, variantes, ordem, obrigatoriedade e ajustes permitidos, sem duplicar o mapa completo de insumos de copy nem regras de copy por funil.
 
 #### 1.5.3. Dados que o cliente preenche
@@ -100,15 +101,6 @@ Fontes de referência: `README.md`, `docs/prompt-nicho-itens-estruturados.md`, `
 - Os valores reais preenchidos pela conta, cliente ou LP devem ser persistidos no BD, mas o local e o formato da persistência dependem de plano-base técnico.
 - A LP gerada deve registrar snapshot dos valores usados na geração, sem substituir as seções, textos e campos editáveis da LP.
 - O snapshot serve para rastreabilidade, segurança editorial e consistência histórica da geração.
-- Quando a LP for gerada para Google Ads ou outra mídia de busca paga, pode usar um `paid_search_keyword_map` como camada opcional de alinhamento entre busca, anúncio e LP.
-- O `paid_search_keyword_map` define, quando disponível, palavra-chave principal e variações ou, alternativamente, tema/intenção de busca, grupo de anúncio ou tema, etapa do funil, contexto geográfico e seções recomendadas para uso natural.
-- O alinhamento entre busca, anúncio e LP deve considerar palavra-chave ou tema de busca, promessa, oferta, CTA, contexto geográfico e expectativa criada antes do clique.
-- O `paid_search_keyword_map` deve distinguir a origem dos dados: termos sugeridos pelos itens estruturados de `seo`, configuração informada da campanha e termos reais observados posteriormente, quando disponíveis.
-- O `paid_search_keyword_map` não substitui itens estruturados, `copy_source_map`, `funnel_copy_profile` ou insumos comerciais reais.
-- O `paid_search_keyword_map` não autoriza keyword stuffing, repetição artificial, bloco de termos, lista de localidades fora de contexto ou copy sem naturalidade.
-- O `paid_search_keyword_map` não bloqueia liberação da LP quando não houver campanha de busca paga associada.
-- Escassez, garantia, prova, comparação, preço, promessa, credencial, autoridade, urgência e oferta só podem ser usados quando houver insumo real que sustente esse tratamento.
-- Espelho, referência de versão ou payload operacional no banco só devem ser decididos no plano-base técnico, se houver necessidade operacional.
 
 ### 1.6. Taxonomia de comunicação
 
