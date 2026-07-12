@@ -232,7 +232,7 @@ Fontes de referência: `README.md`, `docs/prompt-nicho-itens-estruturados.md`, `
 - Tipo de intervenção: ajustar o contrato geral da E12 e criar um novo recorte funcional dentro da área existente de Templates.
 - Subseções afetadas: `12.1.3`, `12.1.5` e nova `12.4`; não ampliar `12.3`, que permanece exclusiva da operação administrativa da E10.7.
 - Ajustar `12.1.3` para manter as mutações administrativas gerais fora do escopo, exceto as operações mínimas aprovadas para a E10.7 e, quando implementadas, as operações específicas de landing pages definidas em `12.4`.
-- Ajustar `12.1.5` para registrar que curadoria e aprovação de composição, LP teste e liberação do plano e da composição para consumo posterior não pertencem à base geral nem à E10.7, mas poderão ser implementadas somente pelo novo recorte `12.4`.
+- Ajustar `12.1.5` para registrar que curadoria e aprovação de composição, LP teste e liberação do plano e da composição para uso posterior nas LPs dos clientes não pertencem à base geral nem à E10.7, mas poderão ser implementadas somente pelo novo recorte `12.4`.
 - Preservar `12.2` como base administrativa e leitura operacional read-only e preservar integralmente `12.3` como registro da operação de `commercial_activation`.
 - Criar `12.4 — Operação administrativa de landing pages por taxon`, sem criar nova área na navegação, usando a área de Templates já prevista em `12.1.4`.
 - O novo recorte deve permitir ao humano, conforme os contratos e persistências definidos nos planos-base aplicáveis:
@@ -249,7 +249,6 @@ Fontes de referência: `README.md`, `docs/prompt-nicho-itens-estruturados.md`, `
   - `12.4.4 — Revisão da composição e da herança`;
   - `12.4.5 — Geração e visualização da LP teste`;
   - `12.4.6 — Validação e decisão de liberação`.
-- Enquanto `12.4` permanecer apenas conceitual, `12.4.2` pode ser omitida, sem reutilizar esse identificador para outro conteúdo.
 - Permanecem fora de `12.4`: gestão das LPs dos clientes, LP Builder, editor visual, aprovação automática, publicação automática e infraestrutura nova não decidida pelos planos-base.
 - Rota exata, actions, persistência, permissões, auditoria e evidências devem ser definidas somente nos planos-base que materializarem cada operação.
 - A criação de `12.4` no roadmap não exige sua implementação junto ao primeiro plano-base; a superfície administrativa entra apenas quando composição, geração, validação ou liberação precisarem de operação humana.
