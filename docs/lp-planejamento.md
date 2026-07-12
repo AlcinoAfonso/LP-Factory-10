@@ -50,7 +50,6 @@ Fontes de referência: `README.md`, `docs/prompt-nicho-itens-estruturados.md`, `
 - Uma LP teste aprovada em um ultranicho que usa a composição herdável do nicho base também valida a composição para o nicho base e seus ultranichos irmãos herdáveis.
 - A liberação herdada não se aplica quando o taxon filho tiver composição própria, módulo/variante específica, restrição regulatória, falha técnica/editorial/visual ou marcação de não herança.
 - Criar composição própria do ultranicho apenas quando a composição herdável não atender por estrutura, jornada, regulação, prova, oferta, formulário, qualificação ou resultado da LP teste.
-- Exceções por nicho ou ultranicho devem virar variantes reutilizáveis e hierarquicamente superiores, não ajustes soltos.
 - Variante nova deve começar como candidata ou experimental até aprovação por LP teste ou avaliação humana.
 - Variante ativa pode ser usada em novas gerações conforme compatibilidade de módulo, funil, taxon e plano.
 - Variante depreciada não deve entrar em novas gerações, mas LPs e artefatos existentes continuam renderizando com a variante e versão usadas.
