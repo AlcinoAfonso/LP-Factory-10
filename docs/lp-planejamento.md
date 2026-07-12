@@ -61,9 +61,9 @@ Fontes de referência: `README.md`, `docs/prompt-nicho-itens-estruturados.md`, `
 - Variante depreciada não deve entrar em novas gerações, mas LPs existentes continuam renderizando com a variante e versão usadas.
 - Variante antiga só pode ser retirada quando não houver artefato publicado dependente ou quando houver plano de migração aprovado.
 
-### 1.5. Definir o catálogo de dados de entrada do cliente
+### 1.5. Definir o catálogo de entradas para geração da LP
 
-- O catálogo não é uma parametrização de comportamento da LP; ele define quais campos poderão ser apresentados e utilizados na geração.
+- O catálogo não parametriza o comportamento da LP; ele define quais entradas da conta, oferta, campanha ou LP podem ser apresentadas e utilizadas na geração.
 - A camada geral reúne campos aplicáveis a clientes de todos os segmentos.
 - A camada específica reúne campos próprios de um segmento ou nicho, conforme o nível adequado de reutilização.
 - A camada de ultranicho só deve existir excepcionalmente e por decisão humana quando segmento e nicho não forem suficientes.
@@ -81,7 +81,7 @@ Fontes de referência: `README.md`, `docs/prompt-nicho-itens-estruturados.md`, `
 - A composição registra módulos, variantes, ordem, obrigatoriedade e escolhas permitidas para o conjunto e para cada ocorrência.
 - Essas escolhas são resultado da composição, não novas parametrizações.
 - A composição seleciona somente opções permitidas pela resolução `parametrização raiz → módulo → variante`.
-- O catálogo de dados e os valores particulares do cliente não determinam automaticamente sua estrutura.
+- O catálogo de entradas e os valores particulares do cliente não determinam automaticamente sua estrutura.
 - Composição aprovada no taxon pai é presumida herdável para taxons filhos, salvo marcação contrária.
 - O taxon filho só herda a composição do taxon pai quando não houver composição própria aprovada.
 - A herança não se aplica quando houver composição própria, módulo ou variante específica, restrição regulatória, falha técnica, editorial ou visual, ou marcação de não herança.
@@ -105,13 +105,13 @@ Fontes de referência: `README.md`, `docs/prompt-nicho-itens-estruturados.md`, `
 - A validação inclui critérios técnicos, visuais, editoriais, de conversão mínima e de performance de carregamento.
 - Performance real de campanha, tráfego real, conversão real e Core Web Vitals de campo não são requisitos desta etapa.
 - A validação de carregamento deve prevenir regressões em LCP, estabilidade visual, bloqueio de interação, peso de imagens, embeds, JavaScript excessivo, layout shift e fallback lento.
-- Uma LP teste aprovada no nicho base libera o plano para ultranichos que usam a mesma composição herdável.
-- Uma LP teste aprovada em ultranicho herdado também pode validar o nicho base e seus ultranichos irmãos que usem a mesma composição.
+- Uma LP teste aprovada no taxon proprietário da composição base pode liberar o plano para os taxons descendentes que usem a mesma composição herdável.
+- Uma LP teste aprovada em taxon descendente que use composição herdada também pode validar essa composição para o taxon proprietário e para os demais descendentes que usem a mesma versão.
 - `lite`, `pro` e `ultra` só devem receber critérios próprios quando houver escopo real desses planos.
 
 ### 1.9. Gerar, revisar e publicar as LPs dos clientes
 
-- Depois da liberação, a LP do cliente usa a composição aprovada, os itens estruturados do taxon, os valores reais fornecidos pelo catálogo e a intenção/funil informada.
+- Depois da liberação, a LP do cliente usa a composição aprovada, os itens estruturados do taxon, os valores reais fornecidos nas entradas previstas pelo catálogo e a intenção/funil informada.
 - O `paid_search_keyword_map` permanece opcional e restrito a contexto de busca paga aplicável.
 - A geração mantém os mesmos limites de schema, renderer, módulos, variantes e tratamentos comerciais sustentados por dados reais.
 - Cada LP deve preservar snapshot dos valores, composição, variantes e versões usados.
@@ -119,7 +119,7 @@ Fontes de referência: `README.md`, `docs/prompt-nicho-itens-estruturados.md`, `
 
 ### 1.10. Evoluir a base com as LPs validadas
 
-- LPs testadas e LPs reais podem revelar ajustes necessários na parametrização raiz, módulos, variantes, catálogo de dados, composição ou critérios editoriais.
+- LPs testadas e LPs reais podem revelar ajustes necessários na parametrização raiz, módulos, variantes, catálogo de entradas, composição ou critérios editoriais.
 - Mudanças devem ser reutilizáveis e passar por plano-base próprio; ajustes soltos por taxon devem ser evitados.
 - O Benchmark Blueprint é complementar e opcional após a LP teste, sem bloquear a liberação.
 - A comparação pode avaliar clareza, estrutura, copy, adequação ao taxon, visual, CTA, prova, conversão esperada, lacunas e riscos.
@@ -139,6 +139,7 @@ Fontes de referência: `README.md`, `docs/prompt-nicho-itens-estruturados.md`, `
 
 - Definir primeiro a fonte versionada da família `landing_page`, incluindo papéis semânticos, faixas editoriais recomendadas, limites técnicos absolutos e critérios visuais e responsivos.
 - Fazer a raiz alimentar ou originar os limites usados por schemas, geração e renderer, sem exigir configuração dinâmica em runtime.
+- Aplicar a parametrização raiz aos schemas, à fixture e ao renderer existentes da E18.4, validando limites técnicos e comportamento visual e responsivo sem criar novos módulos ou uma LP final.
 - Definir valores exatos, presets, relação com o design system, contrato de leitura e casos de validação em plano-base próprio.
 
 ### 2.3. Parametrização de módulos e variantes
@@ -151,7 +152,7 @@ Fontes de referência: `README.md`, `docs/prompt-nicho-itens-estruturados.md`, `
 - Definir ciclo de vida das variantes e compatibilidade com LPs existentes.
 - Impedir nova geração com variante depreciada e impedir sua retirada enquanto houver artefato publicado dependente, salvo migração aprovada.
 
-### 2.4. Catálogo de dados de entrada do cliente
+### 2.4. Catálogo de entradas para geração da LP
 
 - Definir o `lp_generation_input_catalog` com campos universais e nichados, obrigatórios, opcionais e condicionais.
 - Separar catálogo declarativo, valores reais persistidos no BD e snapshot da geração.
@@ -162,34 +163,31 @@ Fontes de referência: `README.md`, `docs/prompt-nicho-itens-estruturados.md`, `
 
 - Permitir composição aprovada para segmento ou nicho e composição própria de ultranicho somente de forma excepcional e por decisão humana.
 - Permitir que a IA proponha módulos, variantes, ordem, obrigatoriedade e ajustes por ocorrência dentro das opções parametrizadas.
-- Não usar catálogo ou valores particulares do cliente como decisão estrutural automática.
+- Não usar o catálogo de entradas nem valores particulares do cliente como decisão estrutural automática.
 - Resolver onde a composição e suas escolhas serão persistidas.
 - Manter `content_template_composition_items` como relação 1:N de módulos e variantes.
 - Registrar gaps essenciais e bloquear aprovação plena até sua resolução.
 - Permitir herança da composição aprovada do taxon pai quando não houver composição própria.
 
-### 2.6. Geração da primeira LP do taxon
+### 2.6. Geração, validação e liberação da primeira LP teste
 
 - Gerar a LP com composição aplicável, itens estruturados, dados de teste e intenção/funil.
 - Permitir adaptações somente dentro das opções parametrizadas e da composição aprovada.
 - Registrar snapshot dos valores, composição, variantes e versões usados.
 - Impedir alteração livre de schema, renderer, módulo ou variante durante a geração.
-
-### 2.7. Validação e liberação da LP teste
-
 - Definir checklist técnico, visual, editorial, responsivo, de conversão mínima e de carregamento.
 - Definir ferramenta ou combinação de ferramentas para medição em ambiente de teste.
 - Definir bloqueios para imagem pesada, embed pesado, JavaScript excessivo, layout shift e fallback lento.
 - Registrar a liberação herdável do plano e da composição quando aplicável.
 - Definir critérios de `lite`, `pro` e `ultra` somente quando houver escopo real.
 
-### 2.8. LPs dos clientes
+### 2.7. LPs dos clientes
 
 - Definir em plano-base próprio o fluxo de geração, revisão, edição e publicação com dados reais.
 - Preservar composição, contratos parametrizados, rastreabilidade e snapshot de cada geração.
 - Não antecipar editor visual, Admin ou nova infraestrutura sem decisão e plano-base próprios.
 
-### 2.9. Evolução controlada e limites gerais
+### 2.8. Evolução controlada e limites gerais
 
 - Definir como aprendizados de LPs validadas e do Benchmark Blueprint alimentam planos-base posteriores.
 - Garantir que o Benchmark Blueprint permaneça opcional e sem alterações automáticas.
@@ -202,12 +200,11 @@ Fontes de referência: `README.md`, `docs/prompt-nicho-itens-estruturados.md`, `
 
 - 1º — parametrização raiz da família `landing_page`.
 - 2º — parametrização de módulos e variantes, incluindo `copy_source_map` e `funnel_copy_profile`.
-- 3º — catálogo de dados de entrada do cliente.
+- 3º — catálogo de entradas para geração da LP.
 - 4º — composição base do taxon e herança.
-- 5º — geração da primeira LP do taxon.
-- 6º — validação e liberação da LP teste `starter`.
-- 7º — geração, revisão e publicação das LPs dos clientes.
-- O primeiro plano-base cobre somente contrato versionado da raiz, papéis semânticos, faixas editoriais, limites técnicos, critérios visuais e responsivos, relação com o design system, integração com schemas, contrato de leitura e casos de validação.
+- 5º — geração, validação e liberação da primeira LP teste `starter`.
+- 6º — geração, revisão e publicação das LPs dos clientes.
+- O primeiro plano-base cobre somente contrato versionado da raiz, papéis semânticos, faixas editoriais, limites técnicos, critérios visuais e responsivos, relação com o design system, aplicação aos schemas, fixture e renderer existentes, contrato de leitura e casos de validação.
 - Permanecem fora do primeiro plano todos os recortes posteriores listados acima, além de Admin e persistências ainda não decididas.
 - A parametrização raiz pertence a um novo recorte da E18; a E18.4 permanece concluída e não deve ser reaberta.
 - O identificador exato `E18.x`, as subseções previstas e o path devem ser definidos no debate do caso conforme `docs/prompt-estrategista.md`; não reutilizar automaticamente `E18.5`.
