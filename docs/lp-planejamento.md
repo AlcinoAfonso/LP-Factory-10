@@ -357,12 +357,11 @@ Fontes de referência: `README.md`, `docs/prompt-nicho-itens-estruturados.md`, `
 - Estrutura prevista para a nova seção no roadmap:
   - `20.1 — Contrato de preparação e liberação por taxon`;
   - `20.2 — Catálogo de entradas por taxon`;
-  - `20.3 — Composição base e herança`;
-  - `20.4 — Prontidão e autorização controlada para teste`;
-  - `20.5 — Liberação por evidência da LP real`.
+  - `20.3 — Composição, herança, prontidão e autorização controlada para teste`;
+  - `20.4 — Critérios de liberação por evidência da LP real`.
 - O terceiro plano-base pertence a `20.2`, com path previsto `docs/lousa-plano-base-e20-2.md`.
-- O quarto plano-base pertence a `20.3` e `20.4`, com path previsto `docs/lousa-plano-base-e20-3.md`.
-- O contrato de `20.5` deve ser materializado operacionalmente pelo sexto plano da E12, sem criar um terceiro plano-base da E20 nesta jornada.
+- O quarto plano-base pertence a `20.3`, com path previsto `docs/lousa-plano-base-e20-3.md`.
+- O contrato de `20.4` deve ser materializado operacionalmente pelo sexto plano da E12, sem criar um terceiro plano-base da E20 nesta jornada.
 - Persistência, estados, versões, regras de herança e vínculo com contas de teste só podem ser definidos pelos planos-base aplicáveis após avaliação do schema existente.
 - Permanecem fora da E20: trial, checkout, pagamento, entitlement, upgrade e downgrade da E9; cards e entrada comercial da E10; parametrizações da E18; geração e ciclo das LPs da E19; UI e operações humanas da E12; automação, agente, job ou infraestrutura não comprovada.
 
