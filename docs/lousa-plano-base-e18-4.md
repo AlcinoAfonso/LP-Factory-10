@@ -1,8 +1,8 @@
 13/07/2026 — Plano-base E18.4 — Parametrização raiz da família `landing_page`
 
-Fontes: chat, `README.md`, `AGENTS.md`, `docs/prompt-estrategista.md`, `docs/template-roadmap.md`, `docs/template-briefing-codex.md`, `docs/prompt-executor.md`, `docs/roadmap.md`, `docs/base-tecnica.md`, `docs/schema.md`, `docs/design-system.md`, `docs/lp-planejamento.md`, `docs/gestor-estrutural.md`, `docs/vercel-up.md`, `docs/prod-up.md`, conteúdo anterior deste path, `package.json`, `lib/conversion-content/index.ts`, `lib/conversion-content/landing-page/`, referências relacionadas na `main` após o merge do PR #559 e avaliações únicas do Analista, Gestor Estrutural e Gestor de Updates sobre o PR #563.
+Fontes: chat, `README.md`, `AGENTS.md`, `docs/prompt-estrategista.md`, `docs/template-roadmap.md`, `docs/template-briefing-codex.md`, `docs/prompt-executor.md`, `docs/roadmap.md`, `docs/base-tecnica.md`, `docs/schema.md`, `docs/design-system.md`, `docs/lp-planejamento.md`, `docs/gestor-estrutural.md`, `docs/vercel-up.md`, `docs/prod-up.md`, conteúdo anterior deste path, `package.json`, `lib/conversion-content/index.ts`, `lib/conversion-content/landing-page/`, referências relacionadas na `main` após o merge do PR #559 e avaliações do Analista, Gestor Estrutural e Gestor de Updates sobre o PR #563.
 
-Status: plano-base v2 consolidado no PR vivo e mantido em draft; implementação não autorizada até validação final deste v2.
+Status: plano-base v2 validado; PR #563 estritamente documental e pronto para merge. A implementação somente fica autorizada após o merge deste plano na `main`, atualização da base e criação de branch dedicada.
 
 Path: `docs/lousa-plano-base-e18-4.md`.
 
@@ -15,11 +15,12 @@ Recorte previsto do roadmap: `18.4 — Parametrização raiz da família landing
 * O PR #559 foi mergeado na `main` em 13/07/2026.
 * `docs/lp-planejamento.md` na `main` é a decisão conceitual obrigatória para este recorte.
 * O conteúdo anterior deste plano-base pertence ao desenho superado de `18.4 — Base de composição landing_page` e foi substituído no mesmo path.
-* O PR #563 permanece em draft e contém somente a substituição documental deste plano-base.
-* As avaliações únicas do Analista, Gestor Estrutural e Gestor de Updates foram recebidas e consolidadas neste v2.
+* O PR #563 contém somente a substituição documental deste plano-base e não pode receber implementação material.
+* As avaliações do Analista, Gestor Estrutural e Gestor de Updates foram recebidas e consolidadas.
+* A avaliação final da v2 aprovou o conteúdo técnico e exigiu a separação processual entre o merge do plano e o futuro PR de implementação.
 * O plano-base atual trata exclusivamente a parametrização raiz da família `landing_page`.
 * `docs/roadmap.md`, `docs/base-tecnica.md` e parte das referências normativas ainda descrevem a implementação anterior.
-* A implementação técnica pode ser concluída antes da correção documental, mas a E18.4 não pode ser formalmente encerrada enquanto o PR documental obrigatório definido em 1.4 não estiver mergeado.
+* A implementação técnica pode ser concluída antes da correção documental final, mas a E18.4 não pode ser formalmente encerrada enquanto o PR documental obrigatório definido em 1.4 não estiver mergeado.
 
 1.2. Decisões preservadas
 
@@ -40,6 +41,8 @@ Recorte previsto do roadmap: `18.4 — Parametrização raiz da família landing
 * Módulos e variantes serão definidos no recorte E18.5 e não podem ser antecipados neste plano.
 * Catálogo de entradas, composição por taxon, pesquisas estruturadas, autorização de contas, geração de LP, Admin e editor visual permanecem em seus recortes próprios.
 * A implementação material deve ocorrer como uma única substituição atômica; não é permitido remover a implementação anterior sem criar e validar a nova raiz no mesmo commit da fase.
+* O PR #563 deve ser mergeado antes da criação da branch material.
+* A implementação deve ocorrer em branch e PR próprios, criados a partir da `main` já atualizada com o plano mergeado.
 
 1.3. Estado técnico confirmado
 
@@ -93,20 +96,24 @@ Recorte previsto do roadmap: `18.4 — Parametrização raiz da família landing
 * O relatório ao Gestor de Docs é obrigatório, mas não satisfaz sozinho o gate.
 * O encerramento formal da E18.4 exige o merge do PR documental obrigatório.
 
-1.5. Destinatários da avaliação única
+1.5. Avaliações e autorização
 
-* Analista: avaliação recebida.
-* Gestor Estrutural: avaliação recebida.
-* Gestor de Updates: avaliação recebida.
+* Analista: avaliação recebida e condicionantes incorporadas.
+* Gestor Estrutural: avaliação recebida e condicionantes incorporadas.
+* Gestor de Updates: avaliação recebida e updates elegíveis incorporados.
 * Gestor de Automação: não aplicável, pois todas as fases estão marcadas como `Automação: não`.
 * A avaliação única foi concluída; não abrir nova rodada completa dos três especialistas sem mudança material de escopo.
-* Este v2 ainda exige validação final antes do envio ao Executor.
+* A avaliação final da v2 aprovou tecnicamente o plano e fechou a sequência processual obrigatória de merge, atualização da base, branch dedicada e PR material separado.
+* O plano-base v2 está validado.
+* O Executor permanece bloqueado enquanto o PR #563 não estiver mergeado e a branch material não tiver sido criada a partir da `main` atualizada.
 
 1.6. Consolidação das avaliações
 
 * Pontos aceitos:
   * transformar a correção normativa em gate real de encerramento;
-  * manter o PR em draft durante a consolidação;
+  * manter o PR #563 exclusivamente documental;
+  * mergear o plano antes de iniciar a implementação;
+  * criar branch e PR próprios para a fase material;
   * manter a execução como operação atômica;
   * repetir buscas de referências antes e depois da remoção;
   * criar registry explícito por versão como única fonte dos valores efetivos;
@@ -129,12 +136,16 @@ Recorte previsto do roadmap: `18.4 — Parametrização raiz da família landing
   * expor nomes concretos de tokens do design system no contrato raiz;
   * classificar a execução material como baixo risco;
   * permitir fallback silencioso para versão, preset ou contrato inválido;
-  * permitir alteração parcial que remova o código anterior antes da raiz validável.
+  * permitir alteração parcial que remova o código anterior antes da raiz validável;
+  * implementar na branch ou no PR documental #563;
+  * enviar briefing ao Executor antes do merge do plano na `main`.
 * Pontos pendentes:
-  * validação final deste plano-base v2;
-  * autorização explícita para envio da fase 3.1 ao Executor;
+  * merge do PR #563;
+  * atualização da `main` usada como base;
+  * criação da branch material dedicada;
+  * envio do briefing da fase 3.1 ao Executor;
   * implementação e validação técnica da fase;
-  * PR documental obrigatório e seu merge;
+  * PR documental obrigatório posterior e seu merge;
   * validação futura das hipóteses v1 por LP real.
 * Pontos já cobertos e preservados:
   * boundary canônico;
@@ -144,7 +155,7 @@ Recorte previsto do roadmap: `18.4 — Parametrização raiz da família landing
   * substituição do namespace e do script de validação;
   * checks `npm ci`, validação específica e `npm run check`;
   * proibição de `npm run build` no sandbox;
-  * uso do mesmo PR e do mesmo path.
+  * manutenção do mesmo path para o plano-base.
 
 2. Contrato do caso
 
@@ -470,7 +481,8 @@ Recorte previsto do roadmap: `18.4 — Parametrização raiz da família landing
   * `npm ci`;
   * `npm run validate:landing-page-root`;
   * `npm run check`;
-  * checks do PR aplicáveis em estado verde.
+  * checks do PR de implementação em estado verde.
+* Os checks acima pertencem ao PR material separado, não ao PR documental #563.
 * `npm run build` não deve ser executado no sandbox, conforme `AGENTS.md` e `docs/base-tecnica.md`.
 * Validação visual e auditoria WCAG não se aplicam neste recorte porque não haverá renderer ou superfície visual.
 
@@ -505,10 +517,13 @@ Recorte previsto do roadmap: `18.4 — Parametrização raiz da família landing
 2.13. Fluxo operacional
 
 * Gatilho:
-  * plano-base v2 validado e fase enviada pelo Estrategista ao Executor.
+  * PR #563 mergeado na `main`;
+  * `main` atualizada como base de trabalho;
+  * branch material dedicada criada;
+  * briefing da fase 3.1 enviado pelo Estrategista ao Executor.
 * Entrada:
   * decisões de `docs/lp-planejamento.md`;
-  * plano-base v2;
+  * plano-base v2 mergeado na `main`;
   * implementação anterior;
   * design system vigente;
   * regras técnicas e operacionais do repositório.
@@ -518,7 +533,8 @@ Recorte previsto do roadmap: `18.4 — Parametrização raiz da família landing
   * criar contratos públicos e registry versionado;
   * definir schema e resolver;
   * definir casos executáveis de validação;
-  * ajustar reexport e script.
+  * ajustar reexport e script;
+  * atualizar o status da fase neste plano no PR material separado.
 * Validação:
   * referências;
   * schema estrito;
@@ -527,7 +543,7 @@ Recorte previsto do roadmap: `18.4 — Parametrização raiz da família landing
   * `npm ci`;
   * `npm run validate:landing-page-root`;
   * `npm run check`;
-  * checks aplicáveis do PR.
+  * checks aplicáveis do PR material.
 * Persistência:
   * somente arquivos versionados no repositório;
   * sem banco, migration ou configuração dinâmica.
@@ -564,7 +580,7 @@ Recorte previsto do roadmap: `18.4 — Parametrização raiz da família landing
 
 3.1. E18.4.3–E18.4.8 — Substituição segura e parametrização raiz v1
 
-* Status: pendente; plano-base v2 consolidado, mas ainda não validado para envio ao Executor.
+* Status: pendente; plano-base v2 validado, mas implementação condicionada ao merge do PR #563 e à criação de branch material dedicada.
 * Automação: não.
 * Risco da execução: médio controlado.
 * Objetivo:
@@ -578,7 +594,7 @@ Recorte previsto do roadmap: `18.4 — Parametrização raiz da família landing
   * `lib/conversion-content/landing-page/root-resolver.ts`;
   * `lib/conversion-content/landing-page/root-validation-cases.ts`;
   * `lib/conversion-content/landing-page/index.ts`.
-* Arquivos a ajustar:
+* Arquivos a ajustar no PR material separado:
   * `lib/conversion-content/index.ts`;
   * `package.json`;
   * `docs/lousa-plano-base-e18-4.md`, somente para atualizar o estado da fase.
@@ -617,7 +633,7 @@ Recorte previsto do roadmap: `18.4 — Parametrização raiz da família landing
   * `npm ci` concluído;
   * `npm run validate:landing-page-root` concluído;
   * `npm run check` concluído;
-  * checks aplicáveis do PR em estado verde;
+  * checks do PR material em estado verde;
   * diff limitado ao escopo aprovado.
 * Critérios de parada:
   * interromper se surgir consumidor externo não mapeado;
@@ -627,17 +643,22 @@ Recorte previsto do roadmap: `18.4 — Parametrização raiz da família landing
   * interromper diante de erro de Turbopack ou bundler sem correção estritamente interna aos arquivos autorizados;
   * interromper se os checks aplicáveis falharem sem correção restrita ao escopo.
 
-3.2. Validação final e envio ao Executor
+3.2. Merge do plano e envio ao Executor
 
-* Este documento está consolidado como plano-base v2 no mesmo PR #563.
-* O PR deve permanecer em draft até a validação final deste v2.
-* Não iniciar nova rodada completa dos três especialistas, salvo mudança material de escopo ou contradição nova.
-* Após validação final:
+* Sequência obrigatória:
+  * validar definitivamente o plano-base v2;
+  * marcar o PR #563 como pronto para revisão;
+  * mergear o PR #563 na `main`;
+  * atualizar a `main` usada como base de trabalho;
+  * criar branch dedicada para a implementação da fase 3.1;
   * preparar briefing Codex baseado em `docs/template-briefing-codex.md`;
-  * enviar somente a fase 3.1 ao Executor;
-  * aplicar integralmente `docs/prompt-executor.md`;
-  * não enviar fase documental ou fase adicional em paralelo.
-* Sem validação final, o Executor permanece bloqueado.
+  * enviar somente a fase 3.1 ao Executor, aplicando integralmente `docs/prompt-executor.md`;
+  * abrir PR de implementação separado.
+* O PR #563 permanece estritamente documental e não pode receber arquivos materiais da fase 3.1.
+* “Checks aplicáveis do PR” significa checks do PR de implementação separado.
+* A atualização de status deste plano durante a execução deve ocorrer no PR material separado.
+* Não enviar fase documental ou fase adicional em paralelo.
+* O Executor permanece bloqueado até o merge do PR #563 e a criação da branch material dedicada.
 
 3.3. Encerramento documental obrigatório
 
@@ -685,6 +706,7 @@ Recorte previsto do roadmap: `18.4 — Parametrização raiz da família landing
 * Auditoria completa de acessibilidade.
 * Declaração de conformidade integral com WCAG.
 * Alteração de bundler ou infraestrutura de build.
+* Implementação material no PR #563.
 
 4.2. Critérios gerais de parada
 
@@ -696,10 +718,12 @@ Recorte previsto do roadmap: `18.4 — Parametrização raiz da família landing
 * Necessidade de definir módulo, variante, composição ou conteúdo concreto para completar a raiz.
 * Falha de validação que exija ampliação de escopo.
 * Necessidade de alterar bundler, `next.config`, loader, plugin ou dependência.
-* Pedido de implementação antes da validação final do v2.
+* Tentativa de implementar antes do merge do PR #563.
+* Tentativa de implementar na branch documental do PR #563.
 
 4.3. Encerramento do plano
 
+* O plano-base v2 está validado e pronto para merge no PR #563.
 * O plano material termina quando a fase 3.1 estiver implementada, validada e aprovada pelo Analista.
 * O caso E18.4 permanece em encerramento documental até o merge do PR obrigatório do Gestor de Docs.
 * Não existe fase administrativa, de automação ou de handoff.
