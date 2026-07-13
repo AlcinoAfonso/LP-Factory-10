@@ -13,7 +13,9 @@ Fontes de referência: `README.md`, `docs/prompt-nicho-itens-estruturados.md`, `
 - BOFU, MOFU e TOFU não são canais; o canal é `landing_page`.
 - Origem de tráfego é separada do tipo da LP: Google Ads, Instagram Ads, WhatsApp, QR Code, orgânico ou outra origem.
 - BOFU, MOFU e TOFU entram na geração da LP final a partir da intenção informada pelo cliente, sem exigir três composições oficiais por taxon no MVP.
-- LP teste por nicho ou ultranicho é validação prática antes da liberação plena.
+- A LP usada para validação deve ser uma LP real criada pela E19 dentro de uma conta de teste autorizada, usando o mesmo fluxo destinado aos clientes.
+- A conta de teste permite validar de forma integrada entrada comercial, trial ou plano, entitlement, geração, revisão, publicação, tracking e evolução entre planos quando esses recursos existirem.
+- Não deve existir um gerador administrativo paralelo de LP teste.
 
 ### 1.2. Preparar o taxon e os itens estruturados
 
@@ -49,7 +51,7 @@ Fontes de referência: `README.md`, `docs/prompt-nicho-itens-estruturados.md`, `
 - Variantes herdam o módulo e registram apenas especializações reutilizáveis de execução ou comportamento dentro da mesma função estrutural.
 - Nova variante só deve ser criada quando houver mudança reutilizável de comportamento ou execução; mudança da função estrutural deve ser avaliada como novo módulo.
 - Diferença de taxon, conteúdo, entrada da conta ou campanha, escolha de composição ou ajuste já permitido não justifica isoladamente nova variante.
-- `spacing` é escolha limitada por ocorrência de seção, não preset de LP; seus valores permitidos devem ser definidos pelos planos-base de parametrização.
+- `spacing` é escolha limitada por ocorrência de seção, não preset de LP; seus valores comuns permitidos pertencem à parametrização raiz, admitindo especialização por módulo ou variante somente quando explícita e justificada.
 - A parametrização deve separar `copy_source_map` e `funnel_copy_profile`.
 - O `copy_source_map` define quais `item_key` cada campo de copy consulta.
 - O `funnel_copy_profile` define como os insumos podem ser transformados em copy conforme BOFU, MOFU ou TOFU, incluindo tratamentos permitidos, restritos e proibidos.
@@ -58,7 +60,7 @@ Fontes de referência: `README.md`, `docs/prompt-nicho-itens-estruturados.md`, `
 - Variantes só podem restringir ou sobrescrever o perfil e o mapa quando houver mudança de comportamento comercial.
 - Cada campo de copy deve consultar no máximo 2 `item_key` principais e 1 `item_key` auxiliar, salvo decisão registrada no plano-base técnico.
 - Escassez, garantia, prova, comparação, preço, promessa, credencial, autoridade, urgência e oferta só podem ser usados quando houver insumo real que sustente esse tratamento.
-- Variante nova deve começar como candidata ou experimental até aprovação por LP teste ou avaliação humana.
+- Variante nova deve começar como candidata ou experimental até aprovação por LP real avaliada humanamente.
 - Variante depreciada não deve entrar em novas gerações, mas LPs existentes continuam renderizando com a variante e versão usadas.
 - Variante antiga só pode ser retirada quando não houver artefato publicado dependente ou quando houver plano de migração aprovado.
 
@@ -72,7 +74,9 @@ Fontes de referência: `README.md`, `docs/prompt-nicho-itens-estruturados.md`, `
 - O catálogo informa as entradas disponíveis para a geração da LP final, mas não determina automaticamente a estrutura da composição base do taxon.
 - O `paid_search_keyword_map` é uma entrada opcional para alinhar busca paga, anúncio e LP quando aplicável; não substitui os itens estruturados nem autoriza alteração dos contratos parametrizados.
 - A fonte canônica inicial do catálogo deve ser versionada no repositório.
-- Os valores reais informados pela conta, negócio atendido, oferta, campanha ou LP são dados operacionais e devem ser persistidos no BD, mas o local e o formato dependem de plano-base técnico.
+- O catálogo aplicável integra os critérios de prontidão para autorizar uma conta de teste a usar determinado taxon e plano.
+- A conta de teste deve fornecer valores reais ou controlados pelos mesmos campos que serão apresentados posteriormente aos clientes.
+- Os valores informados pela conta, negócio atendido, oferta, campanha ou LP são dados operacionais e devem ser persistidos no BD, mas o local e o formato dependem de plano-base técnico.
 
 ### 1.6. Criar e aprovar a composição base do taxon
 
@@ -87,43 +91,57 @@ Fontes de referência: `README.md`, `docs/prompt-nicho-itens-estruturados.md`, `
 - Composição aprovada no taxon pai é presumida herdável para taxons filhos, salvo marcação contrária.
 - O taxon filho só herda a composição do taxon pai quando não houver composição própria aprovada.
 - A herança não se aplica quando houver composição própria, módulo ou variante específica, restrição regulatória, falha técnica, editorial ou visual, ou marcação de não herança.
-- Composição própria de ultranicho só deve ser criada quando a composição herdável não atender por estrutura, jornada, regulação, prova, oferta, formulário, qualificação ou resultado da LP teste.
-- Gap essencial de módulo ou variante impede a aprovação plena até sua criação e parametrização.
+- Composição própria de ultranicho só deve ser criada quando a composição herdável não atender por estrutura, jornada, regulação, prova, oferta, formulário, qualificação ou resultado da validação real.
+- Gap essencial de módulo ou variante impede a aprovação para teste até sua criação e parametrização.
+- Taxon, itens estruturados, parametrizações, catálogo aplicável, composição candidata e regra de herança formam o checklist mínimo de prontidão para teste.
+- A aprovação da composição para teste não equivale à liberação geral do taxon e do plano para clientes.
 - Com essas regras, o Critério 3 fica fechado em planejamento; a implementação depende de plano-base próprio.
 
-### 1.7. Gerar a primeira LP do taxon
+### 1.7. Autorizar a conta de teste e gerar a primeira LP real
 
-- A primeira LP usa a composição base aplicável, os itens estruturados do taxon, as entradas definidas para o teste e a intenção/funil informada.
+- A autorização para teste é uma decisão humana anterior à geração e deve vincular a conta de teste ao taxon ou conjunto de taxons e ao plano autorizado.
+- A autorização só pode ocorrer após a confirmação do checklist de prontidão do taxon.
+- A conta de teste percorre o fluxo comercial real aplicável, por trial, contratação, upgrade ou liberação consultiva, conforme os recursos efetivamente existentes na E9 e na E10.
+- A E19 gera uma LP normal pertencente à conta de teste, sem entidade, persistência ou gerador administrativo paralelo.
+- A LP usa a composição base aplicável, os itens estruturados do taxon, os valores fornecidos pela conta e a intenção ou funil informado.
 - A geração pode adaptar copy, CTA, prova, FAQ, formulário, densidade e ordem permitida, sem alterar schema, renderer, módulos, variantes ou opções fora dos contratos aprovados.
-- A geração não pode alterar o contrato parametrizado ao aplicar entradas, intenção/funil ou palavras-chave opcionais.
-- O snapshot deve preservar os valores usados, a composição, as variantes e as versões da geração.
-- A primeira LP gerada segue para validação como LP teste do taxon e do plano aplicável.
+- A geração não pode alterar o contrato parametrizado ao aplicar entradas, intenção, funil ou palavras-chave opcionais.
+- A mesma LP deve seguir o fluxo real de revisão, edição controlada, publicação e tracking disponível para clientes.
+- O snapshot deve preservar valores, composição, variantes, parametrizações, plano e versões usados.
 
-### 1.8. Validar e liberar a LP teste
+### 1.8. Validar a LP real e liberar o taxon e o plano
 
 - A validação ocorre por plano de liberação: `starter`, `lite`, `pro` e `ultra`.
-- `starter` exige pelo menos 1 LP teste validada, com intenção/funil definido e conteúdo específico do taxon testado.
-- A validação inclui critérios técnicos, visuais, editoriais, de conversão mínima e de performance de carregamento.
-- Performance real de campanha, tráfego real, conversão real e Core Web Vitals de campo não são requisitos desta etapa.
+- `starter` exige pelo menos 1 LP real de conta de teste validada, com intenção ou funil definido e conteúdo específico do taxon testado.
+- A avaliação humana deve ocorrer no Admin Dashboard sobre a LP produzida pela E19, sem regeneração por fluxo administrativo próprio.
+- A validação inclui critérios técnicos, visuais, editoriais, responsivos, de conversão mínima, publicação, integridade do tracking aplicável e performance de carregamento.
+- Performance real de campanha, volume de tráfego, conversão real e Core Web Vitals de campo não são requisitos desta etapa.
 - A validação de carregamento deve prevenir regressões em LCP, estabilidade visual, bloqueio de interação, peso de imagens, embeds, JavaScript excessivo, layout shift e fallback lento.
-- Uma LP teste aprovada no taxon proprietário da composição base pode liberar o plano para os taxons descendentes que usem a mesma composição herdável.
-- Uma LP teste aprovada em taxon descendente que use composição herdada também pode validar essa composição para o taxon proprietário e para os demais descendentes que usem a mesma versão.
-- `lite`, `pro` e `ultra` só devem receber critérios próprios quando houver escopo real desses planos.
+- A decisão deve registrar taxon, plano, conta de teste, LP usada como evidência, composição, versões das parametrizações, responsável, momento e resultado.
+- Uma LP aprovada no taxon proprietário da composição base pode liberar o plano para os taxons descendentes que usem a mesma composição herdável.
+- Uma LP aprovada em taxon descendente que use composição herdada também pode validar essa composição para o taxon proprietário e para os demais descendentes que usem a mesma versão.
+- A aprovação para `starter` não libera automaticamente `lite`, `pro` ou `ultra`.
+- Mudança material em parametrização, módulo, variante, composição, catálogo ou capacidade do plano pode exigir nova validação humana.
 
-### 1.9. Gerar, revisar e publicar as LPs dos clientes
+### 1.9. Gerar, revisar e publicar as LPs das contas
 
-- Depois da liberação, a LP do cliente usa a composição aprovada, os itens estruturados do taxon, os valores reais fornecidos nas entradas previstas pelo catálogo e a intenção/funil informada.
+- Contas de teste, contas piloto, contas consultivas e clientes usam o mesmo fluxo da E19.
+- Antes da liberação geral, somente contas de teste autorizadas podem gerar LPs para o taxon e plano ainda em validação.
+- Depois da liberação, contas comuns elegíveis passam a usar a mesma composição, o mesmo catálogo e o mesmo fluxo produtivo.
+- A LP da conta usa a composição aprovada, os itens estruturados do taxon, os valores reais fornecidos nas entradas previstas pelo catálogo e a intenção ou funil informado.
 - A geração mantém os mesmos limites de schema, renderer, módulos, variantes e tratamentos comerciais sustentados por dados reais.
-- Cada LP deve preservar snapshot dos valores, composição, variantes e versões usados.
-- O fluxo de revisão, edição e publicação das LPs dos clientes depende de plano-base próprio e não autoriza antecipação de Admin, editor visual ou nova infraestrutura neste documento.
+- Cada LP deve preservar snapshot dos valores, composição, variantes, parametrizações, plano e versões usados.
+- O fluxo produtivo deve permitir revisão, edição controlada, publicação e tracking conforme os planos-base próprios, sem criar uma segunda implementação para clientes.
+- Editor visual e nova infraestrutura permanecem fora até decisão e plano-base próprios.
 
 ### 1.10. Evoluir a base com as LPs validadas
 
-- LPs testadas e LPs reais podem revelar ajustes necessários na parametrização raiz, módulos, variantes, catálogo de entradas, composição ou critérios editoriais.
+- LPs de contas de teste, pilotos e clientes podem revelar ajustes necessários na parametrização raiz, módulos, variantes, catálogo de entradas, composição ou critérios editoriais.
 - Mudanças devem ser reutilizáveis e passar por plano-base próprio; ajustes soltos por taxon devem ser evitados.
-- O Benchmark Blueprint é complementar e opcional após a LP teste, sem bloquear a liberação.
+- O Benchmark Blueprint é complementar e opcional após a validação da LP real, sem bloquear a liberação.
 - A comparação pode avaliar clareza, estrutura, copy, adequação ao taxon, visual, CTA, prova, conversão esperada, lacunas e riscos.
 - O Blueprint não altera automaticamente banco, composição, renderer, schema, módulo, variante ou artefato final.
+- Dados de contas de teste devem ser identificáveis para diagnóstico e não devem contaminar indicadores comerciais reais quando tracking e relatórios forem implementados.
 
 ## 2. O que precisa ser ajustado ou implementado no projeto
 
@@ -133,7 +151,7 @@ Fontes de referência: `README.md`, `docs/prompt-nicho-itens-estruturados.md`, `
 - Garantir leitura clara de taxon pai e filho para herança.
 - Adequar a regra para aceitar `end_customer` no taxon específico e `business_buyer` próprio ou herdado do taxon pai.
 - Registrar critério de segurança para herança de `business_buyer`.
-- Bloquear liberação quando faltar bloco obrigatório.
+- Bloquear prontidão para teste e liberação geral quando faltar bloco obrigatório.
 
 ### 2.2. Parametrização raiz da LP
 
@@ -145,8 +163,8 @@ Fontes de referência: `README.md`, `docs/prompt-nicho-itens-estruturados.md`, `
 ### 2.3. Parametrização de módulos e variantes
 
 - Confirmar o conjunto inicial de módulos e variantes antes de definir suas especializações.
-- Fazer os limites textuais comuns derivarem da raiz e admitir sobrescrita por módulo ou variante somente em caso excepcional e justificado.
-- Definir `copy_source_map` por módulo, campo de copy e intenção/funil.
+- Fazer os limites textuais e os valores comuns de `spacing` derivarem da raiz e admitir sobrescrita por módulo ou variante somente em caso excepcional e justificado.
+- Definir `copy_source_map` por módulo, campo de copy e intenção ou funil.
 - Definir `funnel_copy_profile` padrão para BOFU, MOFU e TOFU e como módulos e variantes o adaptam.
 - Definir tratamentos permitidos, restritos e proibidos por funil.
 - Definir quando a necessidade é especialização do módulo, nova variante reutilizável ou novo módulo.
@@ -156,36 +174,49 @@ Fontes de referência: `README.md`, `docs/prompt-nicho-itens-estruturados.md`, `
 ### 2.4. Catálogo de entradas para geração da LP
 
 - Definir o `lp_generation_input_catalog` com campos universais e nichados, obrigatórios, opcionais e condicionais.
+- Definir o catálogo aplicável como parte do checklist de prontidão do taxon para teste.
 - Separar catálogo declarativo, valores reais persistidos no BD e snapshot da geração.
+- Garantir que contas de teste e clientes usem os mesmos campos aplicáveis ao taxon e ao plano.
 - Definir onde e como os valores reais serão persistidos, sem autorizar nova tabela, campo ou payload antes do plano-base técnico.
 - Definir `paid_search_keyword_map` opcional, origem de seus dados e regras de message match e uso natural, sem keyword stuffing.
 
-### 2.5. Composição base do taxon
+### 2.5. Composição, prontidão e autorização para teste
 
 - Permitir composição aprovada para segmento ou nicho e composição própria de ultranicho somente de forma excepcional e por decisão humana.
 - Permitir que a IA proponha módulos, variantes, ordem, obrigatoriedade e ajustes por ocorrência dentro das opções parametrizadas.
 - Não usar o catálogo de entradas nem entradas particulares da conta, negócio atendido, oferta, campanha ou LP como decisão estrutural automática.
 - Resolver onde a composição e suas escolhas serão persistidas.
 - Manter `content_template_composition_items` como relação 1:N de módulos e variantes.
-- Registrar gaps essenciais e bloquear aprovação plena até sua resolução.
+- Registrar gaps essenciais e bloquear a autorização para teste até sua resolução.
 - Permitir herança da composição aprovada do taxon pai quando não houver composição própria.
+- Definir checklist de prontidão com taxon, itens estruturados, parametrizações, catálogo, composição e regra de herança.
+- Definir autorização humana vinculando conta de teste, taxon ou taxons e plano, sem presumir agora nova tabela, campo ou rota.
+- Separar aprovação para teste da liberação geral para clientes.
 
-### 2.6. Geração, validação e liberação da primeira LP teste
+### 2.6. Geração real, validação e liberação
 
-- Gerar a LP com composição aplicável, itens estruturados, entradas de teste e intenção/funil.
+- Usar a E19 como único fluxo de geração das LPs de contas de teste e clientes.
+- Fazer a conta de teste percorrer trial, contratação, upgrade ou liberação consultiva conforme os recursos reais da E9 e da E10.
+- Gerar a LP com composição aplicável, itens estruturados, valores fornecidos pela conta e intenção ou funil.
 - Permitir adaptações somente dentro das opções parametrizadas e da composição aprovada.
-- Registrar snapshot dos valores, composição, variantes e versões usados.
+- Registrar snapshot dos valores, composição, variantes, parametrizações, plano e versões usados.
 - Impedir alteração livre de schema, renderer, módulo ou variante durante a geração.
-- Definir checklist técnico, visual, editorial, responsivo, de conversão mínima e de carregamento.
-- Definir ferramenta ou combinação de ferramentas para medição em ambiente de teste.
+- Permitir revisão, edição controlada, publicação e tracking pelo mesmo fluxo produtivo destinado aos clientes.
+- Definir checklist técnico, visual, editorial, responsivo, de conversão mínima, publicação, tracking aplicável e carregamento.
+- Definir ferramenta ou combinação de ferramentas para medição no fluxo real.
 - Definir bloqueios para imagem pesada, embed pesado, JavaScript excessivo, layout shift e fallback lento.
+- Permitir avaliação humana no Admin Dashboard e registrar a decisão vinculada à LP real usada como evidência.
 - Registrar a liberação herdável do plano e da composição quando aplicável.
 
-### 2.7. LPs dos clientes
+### 2.7. Fluxo único de LPs por conta
 
-- Definir em plano-base próprio o fluxo de geração, revisão, edição e publicação com dados reais.
+- Preservar a criação mínima já implementada pela E19 e evoluí-la por novo plano-base, sem reabrir o plano anterior encerrado.
+- Usar o mesmo fluxo para conta de teste, conta piloto, conta consultiva e cliente.
+- Antes da liberação geral, restringir o taxon e o plano às contas de teste autorizadas.
+- Depois da liberação, permitir o uso pelas demais contas elegíveis sem criar novo gerador ou nova persistência de LP.
 - Preservar composição, contratos parametrizados, rastreabilidade e snapshot de cada geração.
-- Não antecipar editor visual, Admin ou nova infraestrutura sem decisão e plano-base próprios.
+- Permitir identificação das contas de teste para que seus eventos não contaminem métricas comerciais reais quando tracking e relatórios forem implementados.
+- Não antecipar editor visual ou nova infraestrutura sem decisão e plano-base próprios.
 
 ### 2.8. Evolução controlada
 
@@ -198,17 +229,20 @@ Fontes de referência: `README.md`, `docs/prompt-nicho-itens-estruturados.md`, `
 
 - 1º — parametrização raiz da família `landing_page`.
 - 2º — parametrização de módulos e variantes, incluindo `copy_source_map` e `funnel_copy_profile`.
-- 3º — catálogo de entradas para geração da LP.
-- 4º — composição base do taxon e herança.
-- 5º — geração, validação e liberação da primeira LP teste `starter`.
-- 6º — geração, revisão e publicação das LPs dos clientes.
+- 3º — catálogo de entradas por taxon e critérios correspondentes de prontidão.
+- 4º — composição base, herança, checklist de prontidão e autorização controlada de contas de teste.
+- 5º — geração, revisão, edição controlada, publicação e tracking da LP real por conta, usando a E19 para contas de teste e clientes.
+- 6º — avaliação humana da LP real e liberação do taxon, plano e composição para as demais contas.
+- Depois da liberação, a mesma implementação do quinto plano atende as contas comuns; não deve ser criado um segundo fluxo de geração para clientes.
 - O primeiro plano-base cobre somente contrato versionado da raiz, papéis semânticos, faixas editoriais, limites técnicos, critérios visuais e responsivos, relação com o design system, contrato de leitura, herança, precedência e casos de validação.
 - O primeiro plano-base também deve detalhar a substituição da antiga E18.4 e a remoção segura da implementação repo-only anterior, sem reconstruir módulos, variantes, schemas ou renderer antes das decisões conceituais correspondentes.
 - Permanecem fora do primeiro plano todos os recortes posteriores listados acima, além de Admin e persistências ainda não decididas.
 - O primeiro plano pertence a `18.4 — Parametrização raiz da família landing_page`, com path previsto `docs/lousa-plano-base-e18-4.md`, substituindo o plano-base atual desse path.
 - O segundo plano pertence a `18.5 — Parametrização de módulos e variantes landing_page`, com path previsto `docs/lousa-plano-base-e18-5.md`.
 - Não criar `18.6` para esses dois recortes.
-- Os planos terceiro, quarto e quinto não pertencem automaticamente à E18 e serão distribuídos nos próximos blocos desta seção.
+- O terceiro e o quarto planos pertencem conceitualmente à preparação e governança por taxon e devem ser distribuídos na nova E20 durante o fechamento da seção 4.
+- O quinto plano pertence a novo recorte da E19 e não reabre as fases encerradas de `docs/lousa-plano-base-E19.md`.
+- O sexto plano materializa a avaliação e a decisão humana no recorte administrativo da E12, operando os contratos da E20 sem gerar uma LP paralela.
 - A remoção do código e das referências da antiga E18.4 não ocorre neste planejamento; será decidida, detalhada e executada pelo plano-base próprio e por seu briefing para o Executor.
 - Cada plano-base deve decidir somente a persistência, versões, snapshots, medições e superfícies necessárias ao próprio recorte.
 
