@@ -1,532 +1,842 @@
-06/07/2026 — Plano-base E18.4 — Base de composição `landing_page`
-Fontes: chat, `README.md`, `AGENTS.md`, `docs/prompt-estrategista.md`, `docs/template-roadmap.md`, `docs/template-briefing-codex.md`, `docs/prompt-executor.md`, `docs/roadmap.md`, `docs/base-tecnica.md`, `docs/schema.md`, `docs/lousa-debate-landing-pages.md`, `docs/supa-up.md`, `docs/vercel-up.md`, `docs/github-up.md`, `docs/prod-up.md`, avaliações dos especialistas
+13/07/2026 — Plano-base E18.4 — Parametrização raiz da família `landing_page`
 
-Status: plano-base v2 consolidado após avaliação dos especialistas.
+Fontes: chat, `README.md`, `AGENTS.md`, `docs/prompt-estrategista.md`, `docs/template-roadmap.md`, `docs/prompt-executor.md`, `docs/roadmap.md`, `docs/base-tecnica.md`, `docs/schema.md`, `docs/design-system.md`, `docs/lp-planejamento.md`, `docs/template-blueprint.md`, `docs/blueprint-corretor-imoveis-end-customer.md`, `docs/gestor-estrutural.md`, `docs/vercel-up.md`, `docs/prod-up.md`, conteúdo anterior deste path, `package.json`, `lib/conversion-content/index.ts`, `lib/conversion-content/landing-page/`, referências relacionadas na `main` após o merge do PR #559, avaliações do Analista, Gestor Estrutural e Gestor de Updates sobre o PR #563 e decisões humanas de 13/07/2026.
+
+Status: plano-base v2 validado após encerramento do debate humano; PR #563 estritamente documental e pronto para revisão e merge; fase material bloqueada até merge do plano na `main`, atualização da base e criação de branch dedicada.
+
 Path: `docs/lousa-plano-base-e18-4.md`.
-Recorte previsto do roadmap: `18.4 — Base de composição landing_page`.
+
+Recorte previsto do roadmap: `18.4 — Parametrização raiz da família landing_page`.
 
 1. Estado e decisões fixas
 
 1.1. Estado do caso
 
-* O projeto decidiu separar três planos-base relacionados para landing pages reais de clientes.
-* Este documento assume apenas o Plano-base 1: base de composição `landing_page`.
-* A ligação principal é E18 — Base transversal de templates, módulos, composições e artefatos.
-* E12 e E19 são consumidores futuros deste recorte, não escopo de implementação deste plano.
-* O arquivo foi criado antes da conclusão do plano-base v1 completo para registrar decisões do debate sem perder contexto.
+* O PR #559 foi mergeado na `main` em 13/07/2026.
+* `docs/lp-planejamento.md` na `main` é a decisão conceitual obrigatória para este recorte.
+* O conteúdo anterior deste plano-base pertence ao desenho superado de `18.4 — Base de composição landing_page` e foi substituído no mesmo path.
+* O PR #563 é o PR vivo e exclusivamente documental deste plano-base.
+* As avaliações do Analista, Gestor Estrutural e Gestor de Updates foram recebidas e consolidadas.
+* O debate humano obrigatório foi encerrado em 13/07/2026.
+* A implementação antiga da E18.4 deve ser removida obrigatoriamente.
+* A existência de consumidores externos não muda essa decisão; determina somente se cada consumidor será removido, desacoplado ou redirecionado.
+* O uso do Codex Web foi eliminado como etapa intermediária.
+* O fluxo do Estrategista permanece obrigatório, inclusive a instrução de uma fase por vez ao Executor com base em `docs/prompt-executor.md`.
+* O plano-base atual trata exclusivamente a parametrização raiz da família `landing_page`.
+* `docs/roadmap.md`, `docs/base-tecnica.md` e parte das referências normativas ainda descrevem a implementação anterior.
+* A E18.4 não pode ser formalmente encerrada enquanto o PR documental obrigatório definido em 1.4 não estiver mergeado.
 
-1.2. Decisões já definidas no debate
+1.2. Decisões preservadas
 
-* A composição de `landing_page` não deve repetir a rigidez de `commercial_activation`.
-* Páginas comerciais podem permanecer determinísticas no MVP.
-* Landing pages reais de clientes precisam de composição flexível por nicho.
-* Template e composition devem permanecer separados.
-* Não criar um template por nicho como regra do MVP.
-* O template-base define a estrutura técnica permitida da família/canal.
-* A composition define a montagem concreta por nicho/contexto.
-* Módulos se relacionam operacionalmente com compositions por meio de `content_template_composition_items`.
-* No schema atual, módulos/seções são registrados em `content_templates` com `template_scope = 'section'`.
-* Variantes descrevem forma estrutural ou funcional do módulo, não nichos.
-* A parametrização técnica crítica deve começar no repositório, não em editor livre no Admin.
-* A transversalidade dos módulos é decisão conceitual aprovada no debate.
-* Módulos devem ser tratados como catálogo transversal controlado.
-* Um módulo pode nascer motivado por um canal inicial, mas não deve ficar preso definitivamente a esse canal.
-* O uso produtivo de um módulo em cada canal depende de compatibilidade explícita de contrato, schema, registry, renderer e validação.
-* `template_family = shared/transversal` é hipótese de solução técnica, não decisão fechada.
-* O Admin de curadoria pertence ao Plano-base 2, não a este recorte.
-* LP teste e liberação de nicho pertencem ao Plano-base 3, não a este recorte.
+* Preservar integralmente `commercial_activation`.
+* Preservar integralmente os recortes E18.2 e E18.3.
+* Preservar o histórico Git; não apagar ou reescrever commits anteriores.
+* Preservar a separação entre:
+  * parametrização raiz;
+  * módulos;
+  * variantes;
+  * composição;
+  * conteúdo;
+  * artefato final.
+* A parametrização raiz deve ser versionada no repositório.
+* A fonte versionada não exige configuração dinâmica em runtime.
+* Os valores iniciais são hipóteses editoriais e visuais até a validação da primeira LP real.
+* A parametrização raiz deve resolver apenas regras comuns da família `landing_page`.
+* Módulos e variantes serão definidos no recorte E18.5 e não podem ser antecipados neste plano.
+* Catálogo de entradas, composição por taxon, pesquisas estruturadas, autorização de contas, geração de LP, Admin e editor visual permanecem em seus recortes próprios.
+* A remoção da implementação antiga é obrigatória.
+* A substituição deve ser atômica: remover a implementação antiga, tratar seus consumidores e reconstruir a nova raiz no mesmo commit material.
+* A busca de consumidores serve para mapear o trabalho de remoção ou desacoplamento; não serve para decidir se a implementação antiga será mantida.
+* Consumidor que dependa de funcionalidade pertencente a recorte futuro deve ser desacoplado sem antecipar esse recorte.
+* Se o desacoplamento seguro exigir alteração material fora do escopo autorizado, a execução deve parar apenas para decisão humana sobre o método e a ampliação mínima necessária; manter a E18.4 antiga não é alternativa.
+* O PR #563 deve ser mergeado antes da criação da branch material.
+* A implementação deve ocorrer em branch e PR próprios, criados a partir da `main` atualizada.
+* Não criar briefing ou handoff para o Codex Web.
+* Antes da implementação, o Estrategista deve instruir somente a fase material vigente ao Executor, aplicando `docs/prompt-executor.md`.
 
-1.3. Decisão em aberto sobre banco de dados
+1.3. Estado técnico confirmado
 
-* O debate ainda não fechou se haverá ou não mudança de schema.
-* A decisão não deve partir da premissa de evitar migration a qualquer custo.
-* Se o debate ou a investigação técnica mostrar necessidade real de melhorar o schema agora, o plano deve prever essa mudança.
-* Se a estrutura atual for suficiente, o plano deve registrar a decisão de manter o schema e endurecer as regras por validação executável no repositório.
-* O `18.4.3` deve avaliar se o catálogo transversal controlado exige hardening do schema, nova família, camada de compatibilidade ou outro ajuste de banco.
-* O `18.4.3` também deve avaliar se a transversalidade pode ser garantida inicialmente por contrato, registry e validação executável no repositório.
-* `template_family = shared/transversal` deve ser tratado apenas como hipótese entre alternativas, não como decisão obrigatória.
-* Não deixar dívida técnica conhecida para o futuro apenas para acelerar a etapa atual.
-* Não criar nova tabela, constraint, RPC, trigger ou policy sem necessidade demonstrada no debate e na investigação técnica.
+* A implementação anterior está concentrada em `lib/conversion-content/landing-page/` e contém:
+  * contratos de composição;
+  * catálogo de módulos e variantes;
+  * schemas Zod por variante;
+  * registry;
+  * validador de composição;
+  * render model;
+  * renderer;
+  * fixture;
+  * casos de validação.
+* O índice `lib/conversion-content/index.ts` expõe a implementação anterior como namespace `landingPage`.
+* `package.json` expõe o script `validate:landing-page`.
+* As buscas realizadas até a consolidação não identificaram consumidores externos relevantes.
+* Essa constatação deve ser reconfirmada antes e depois da substituição, mas não condiciona a remoção.
+* Qualquer consumidor adicional encontrado deve ser removido, desacoplado ou redirecionado dentro da estratégia definida em 2.12.
+* O LP Builder atual cria apenas o registro mínimo de LP em `account_landing_pages` e não depende da implementação anterior da E18.4.
+* O schema atual possui `template_family = landing_page`, mas não possui registros-base nem persistência própria para a parametrização raiz.
+* Nenhuma mudança de banco é necessária para este recorte.
+* O projeto usa a configuração atual de Next.js 16; a fase não pode alterar bundler, `next.config`, loaders, plugins ou dependências.
 
-1.4. Estrutura de roadmap prevista
+1.4. Roadmap afetado e gate documental
 
-* `18.4.1 Objetivo e status` deve existir no roadmap por padrão.
-* `18.4.2 Registros do recorte` deve existir no roadmap por padrão quando houver implementação material.
-* As seções implementáveis ou decisórias devem começar em `18.4.3`.
-* Previsão inicial sujeita a debate:
-  * `18.4.3 Contrato transversal de módulos e avaliação de hardening do schema`.
-  * `18.4.4 Catálogo mínimo transversal para primeiro uso em landing_page`.
-  * `18.4.5 Contratos técnicos, registry, schemas e renderer por canal`.
-  * `18.4.6 Resolver, validação de composição e limites de config_json`.
+* Seção principal:
+  * E18 — Base transversal de templates, módulos, composições e artefatos.
+* Recorte substituído:
+  * `18.4 — Base de composição landing_page`.
+* Novo recorte:
+  * `18.4 — Parametrização raiz da família landing_page`.
+* Subseções previstas:
+  * `18.4.1 — Objetivo e status`;
+  * `18.4.2 — Registros do recorte`, quando houver implementação material;
+  * `18.4.3 — Fonte versionada e contrato de resolução`;
+  * `18.4.4 — Papéis semânticos e faixas editoriais`;
+  * `18.4.5 — Limites técnicos de conteúdo`;
+  * `18.4.6 — Critérios visuais e responsivos`;
+  * `18.4.7 — Presets e relação com o design system`;
+  * `18.4.8 — Herança, precedência e validação`;
+  * `18.4.9 — Limites do recorte`.
+* O Executor da fase material não deve alterar `docs/roadmap.md`, `docs/base-tecnica.md`, `docs/schema.md`, `docs/design-system.md` ou `docs/lp-planejamento.md`.
+* Após implementação, validação técnica e aprovação da fase, o Gestor de Docs deve abrir PR obrigatório para atualizar:
+  * objetivo e status gerais da E18 em `docs/roadmap.md`;
+  * `18.1.5` em `docs/roadmap.md`;
+  * substituição integral da antiga seção `18.4` pela nova E18.4;
+  * criação documental da futura `18.5 — Parametrização de módulos e variantes landing_page`;
+  * seção `3.15.2` de `docs/base-tecnica.md`;
+  * changelog de `docs/base-tecnica.md`;
+  * `docs/lp-planejamento.md`, para explicitar que faixas recomendadas podem ser especializadas dentro do limite absoluto e que limites absolutos somente mudam por nova versão da raiz;
+  * demais referências normativas comprovadamente vinculadas à implementação removida.
+* O relatório ao Gestor de Docs é obrigatório, mas não satisfaz sozinho o gate.
+* O encerramento formal da E18.4 exige o merge do PR documental obrigatório.
 
-1.5. Direção de catálogo transversal controlado
+1.5. Avaliações e autorização
 
-* O objetivo de E18.4 não é criar módulos descartáveis ou exclusivos de `landing_page`.
-* O recorte E18.4 usa `landing_page` como primeiro caso de desenho dos módulos, mas os módulos devem nascer como catálogo transversal controlado.
-* O catálogo mínimo deve ser desenhado como base reaproveitável para canais futuros e para eventual evolução de `commercial_activation`.
-* O primeiro uso formal neste plano continua sendo `landing_page`.
-* O reuso por outro canal exige compatibilidade explícita de contrato, schema, registry, renderer e validação.
-* Um módulo pode ter núcleo conceitual transversal e ainda assim exigir adaptação por família/canal.
-* A implementação deve evitar duplicar futuramente, para `commercial_activation`, o mesmo trabalho estrutural feito neste recorte.
-* A decisão sobre criar camada compartilhada, catálogo transversal explícito, camada de compatibilidade no banco ou apenas componentes/helpers reutilizáveis permanece aberta para debate técnico.
+* Analista: avaliação recebida e condicionantes incorporadas.
+* Gestor Estrutural: avaliação recebida e condicionantes incorporadas.
+* Gestor de Updates: avaliação recebida e updates elegíveis incorporados.
+* Gestor de Automação: não aplicável, pois todas as fases estão marcadas como `Automação: não`.
+* A rodada única dos especialistas foi concluída.
+* Não abrir nova rodada completa sem mudança material de escopo, nova estrutura, nova automação ou risco técnico novo.
+* O debate humano foi encerrado e a v2 foi validada.
+* O Executor permanece bloqueado até:
+  * merge do PR #563;
+  * atualização da `main`;
+  * criação da branch material dedicada;
+  * confirmação da branch e dos arquivos-alvo conforme `AGENTS.md`.
+* A instrução da fase 3.1 é preparada no item 7 do fluxo do Estrategista, mas não autoriza execução antes dos gates acima.
 
-1.6. Consolidação das avaliações dos especialistas
+1.6. Consolidação das avaliações e decisões humanas
 
-* Analista:
-  * aprovado como plano-base v1 para avaliação dos demais especialistas;
-  * a ressalva sobre a expressão “família `landing_page`” em `2.2` foi considerada aceitável, porque o restante do documento deixa claro que o catálogo é transversal.
-* Gestor Estrutural:
-  * aprovado com condicionantes operacionais;
-  * as condicionantes não bloqueiam o plano documental;
-  * o ponto sobre atualização do roadmap fica fora deste plano, pois o roadmap será tratado após a implementação;
-  * não liberar execução material de `18.4.4`, `18.4.5` ou `18.4.6` antes da decisão técnica de `18.4.3`.
-* Gestor de Updates:
-  * aprovado com ajuste documental;
-  * não há update que obrigue nova infra, banco, job, agente, automação ou runtime neste recorte;
-  * as decisões de updates aplicáveis foram incorporadas em `2.9`.
-* Decisões aceitas:
-  * manter `template_family = shared/transversal` apenas como hipótese técnica;
-  * manter decisão de schema aberta até a investigação de `18.4.3`;
-  * reforçar que `18.4.3` é fase decisória/investigativa antes das fases seguintes;
-  * incorporar uso limitado de updates como apoio, sem ampliar escopo.
-* Decisões rejeitadas:
-  * não ajustar `2.2` apenas por linguagem, pois não há contradição material;
-  * não tratar atualização do roadmap dentro deste plano;
-  * não incorporar lista longa de updates preliminares ao plano-base;
-  * não liberar implementação de catálogo, registry, renderer, resolver ou schema antes da fase `18.4.3`.
-* Decisões pendentes:
-  * decidir, em `18.4.3`, se o schema atual sustenta o contrato transversal ou exige hardening;
-  * definir paths técnicos canônicos para registry, schemas, renderer, resolver e validações;
-  * definir catálogo mínimo apenas após a decisão técnica de `18.4.3`;
-  * definir critérios finais de compatibilidade entre módulo, variante, canal, schema, renderer e composition.
+* Pontos aceitos:
+  * transformar a correção normativa em gate real de encerramento;
+  * manter o PR #563 exclusivamente documental;
+  * mergear o plano antes de iniciar a implementação;
+  * criar branch e PR próprios para a fase material;
+  * manter a execução como operação atômica;
+  * repetir buscas de referências antes e depois da remoção;
+  * tratar a remoção da implementação antiga como decisão obrigatória;
+  * tratar consumidores externos como trabalho de remoção, desacoplamento ou redirecionamento, e não como motivo para preservar a implementação antiga;
+  * criar registry explícito por versão como única fonte dos valores efetivos;
+  * resolver o preset padrão pela própria versão, sem hardcode no resolver;
+  * adicionar novas versões sem apagar ou alterar os parâmetros das versões anteriores;
+  * permitir especialização das faixas recomendadas para cima ou para baixo dentro do limite absoluto;
+  * proibir ampliação de limite absoluto sem nova versão da raiz;
+  * exigir imutabilidade profunda;
+  * usar `contracts.ts` como contrato público do boundary;
+  * substituir tokens concretos por papéis visuais abstratos e enumerados;
+  * definir erros tipados e resultado discriminado;
+  * definir contagem e normalização de texto;
+  * definir lifecycle de status;
+  * usar WCAG 2.2 como baseline de referência, sem declarar conformidade integral;
+  * tratar 44 × 44 px como padrão interno conservador;
+  * manter compatibilidade com a configuração atual de Next.js e Turbopack sem alterar bundler;
+  * classificar a execução como risco médio controlado;
+  * eliminar somente a etapa de Codex Web, preservando o fluxo Estrategista → Executor;
+  * usar `docs/blueprint-corretor-imoveis-end-customer.md` como fonte empírica parcial para papéis editoriais e critérios de UX reutilizáveis;
+  * não transformar um único nicho em fonte exclusiva da raiz global;
+  * manter como hipóteses v1 os números que não possuem sustentação direta suficiente.
+* Pontos rejeitados:
+  * considerar o simples envio de relatório ao Gestor de Docs suficiente para encerrar a E18.4;
+  * expor nomes concretos de tokens do design system no contrato raiz;
+  * classificar a execução material como baixo risco;
+  * permitir fallback silencioso para versão, preset ou contrato inválido;
+  * permitir alteração parcial que remova o código anterior antes da raiz validável;
+  * implementar na branch ou no PR documental #563;
+  * preservar a implementação antiga por existir consumidor externo;
+  * tratar consumidor externo desconhecido como motivo para cancelar a remoção;
+  * ignorar `docs/prompt-executor.md` ou executar antes da instrução formal da fase;
+  * criar handoff para Codex Web;
+  * tratar limites específicos do Hero imobiliário como prova definitiva de limites globais da família.
+* Pontos pendentes:
+  * merge do PR #563;
+  * atualização da `main` usada como base;
+  * criação da branch material dedicada;
+  * execução e validação técnica da fase 3.1;
+  * avaliação do resultado pelo Analista;
+  * PR documental obrigatório posterior e seu merge;
+  * validação futura das hipóteses v1 por LP real e por evidência de outros nichos.
+* Pontos já cobertos e preservados:
+  * boundary canônico;
+  * ausência de banco, Admin, rota, renderer, módulos e variantes;
+  * preservação de `commercial_activation`, E18.2 e E18.3;
+  * remoção dos nove arquivos antigos;
+  * substituição do namespace e do script de validação;
+  * checks `npm ci`, validação específica e `npm run check`;
+  * proibição de `npm run build` no sandbox;
+  * manutenção do mesmo path para o plano-base.
+
+1.7. Base de evidência das parametrizações v1
+
+* A raiz v1 combina quatro classes de fonte:
+  * decisões conceituais de `docs/lp-planejamento.md`;
+  * padrões técnicos globais de responsividade, legibilidade e acessibilidade;
+  * referências empíricas de blueprints e LPs reais;
+  * hipóteses iniciais que serão validadas por LP real.
+* `docs/blueprint-corretor-imoveis-end-customer.md` é aceito como primeira fonte empírica parcial porque:
+  * foi produzido conforme `docs/template-blueprint.md`;
+  * consultou LPs e funis reais;
+  * separou recomendações aprovadas de hipóteses operacionais;
+  * registrou fontes oficiais e critérios de confiança.
+* O blueprint imobiliário oferece referências úteis para:
+  * título de Hero: 45 a 80 caracteres, como hipótese operacional específica do módulo;
+  * subtítulo de Hero: 90 a 160 caracteres, como hipótese operacional específica do módulo;
+  * CTA principal: 14 a 28 caracteres;
+  * CTA secundário: 14 a 30 caracteres;
+  * prova curta: 40 a 90 caracteres;
+  * título de seção: 25 a 60 caracteres;
+  * descrição de card: 60 a 120 caracteres;
+  * pergunta de FAQ: 45 a 90 caracteres;
+  * resposta de FAQ: 90 a 220 caracteres;
+  * nota de privacidade: 80 a 180 caracteres.
+* A referência de Hero não é convertida diretamente em regra da raiz:
+  * Hero é módulo futuro da E18.5;
+  * a raiz parametriza papéis semânticos comuns, como `h1`, `paragraph` e `cta_label`;
+  * a E18.5 poderá especializar esses papéis para o Hero dentro dos limites absolutos da raiz.
+* O limite absoluto de 120 caracteres para `h1` não é comprovado diretamente pelo blueprint imobiliário.
+* Esse limite e os demais números não sustentados diretamente permanecem hipóteses técnicas v1, não benchmarks comprovados.
+* A primeira LP real e futuros blueprints de outros nichos devem gerar evidência para manter, restringir ou substituir esses parâmetros em nova `rootVersion`.
 
 2. Contrato do caso
 
 2.1. Problema
 
-* A família `landing_page` ainda não deve ser considerada resolvida.
-* O risco é repetir, para LPs reais de clientes, a rigidez de página comercial:
-  * seções fixas;
-  * ordem fixa;
-  * variantes fixas;
-  * `config_json = {}` sem uso real;
-  * IA apenas preenchendo copy dentro de estrutura rígida.
-* Esse modelo serve para `commercial_activation`, mas não serve como regra para landing pages reais de clientes.
-* Outro risco é criar módulos bons para `landing_page`, mas tão específicos que gerem retrabalho para evoluir `commercial_activation` ou outros canais.
+* A implementação anterior definiu módulos, variantes, schemas, composição e renderer antes de existir uma parametrização raiz aprovada.
+* Limites editoriais foram hardcoded em schemas independentes.
+* Valores visuais e responsivos foram hardcoded no renderer.
+* `spacing` foi tratado apenas como configuração por seção, sem uma fonte comum versionada.
+* Não existe contrato único para geração, validação e futura renderização derivarem os mesmos limites.
+* Manter a implementação anterior criaria uma falsa base aprovada e condicionaria prematuramente a E18.5, a E20 e a E19.
+* Por isso, a implementação anterior deve ser removida; a análise de consumidores define apenas como fazer essa remoção com segurança.
 
 2.2. Resultado esperado
 
-* Preparar a fundação técnica e estrutural da família `landing_page`.
-* Definir template-base inicial `landing_page`.
-* Definir catálogo inicial pequeno e transversal controlado de módulos/seções para primeiro uso em `landing_page`.
-* Definir variantes mínimas por módulo.
-* Definir parametrizações técnicas críticas no repositório.
-* Definir registry fechado de variantes.
-* Definir schemas/Zod mínimos por variante e por canal quando necessário.
-* Definir resolver/validador de composição `landing_page`.
-* Validar `content_template_composition_items` para `landing_page`.
-* Definir o contrato de catálogo transversal controlado de módulos.
-* Avaliar se a representação técnica da transversalidade exige mudança de schema ou se pode ser inicialmente garantida no repositório.
-* Definir se o schema atual será mantido ou se precisa ser endurecido por migration própria.
-* Definir uso inicial de `config_json` como vazio ou override controlado, sem editor livre.
-* Definir se a transversalidade será resolvida por camada compartilhada, por camada de compatibilidade no banco, por helpers/componentes reutilizáveis ou por contratos por família com adaptação controlada.
-* Preparar a base para que o Plano-base 2 consiga sugerir, validar e persistir composição aprovada por nicho.
+* Remover integralmente a implementação anterior da antiga E18.4.
+* Remover, desacoplar ou redirecionar qualquer consumidor dessa implementação.
+* Substituir a implementação anterior por uma fonte raiz versionada, pequena e executável.
+* Manter todos os valores efetivos em um único registry versionado.
+* Definir papéis semânticos comuns da família `landing_page`.
+* Definir faixas editoriais recomendadas.
+* Definir limites técnicos absolutos.
+* Definir critérios visuais e responsivos comuns.
+* Definir presets amplos da página sem confundi-los com escolhas por ocorrência de seção.
+* Definir relação explícita com o design system existente por papéis abstratos.
+* Definir contrato de leitura fail-closed.
+* Definir herança e precedência para consumidores posteriores.
+* Definir validações executáveis da raiz.
+* Não antecipar módulos, variantes, composição ou renderer.
 
-2.3. Usuários envolvidos
+2.3. Usuários e consumidores
 
 * Usuários diretos:
-  * sistema;
-  * Admin futuro da curadoria;
   * Executor;
-  * especialistas que avaliaram o plano-base.
-* Usuário indireto:
-  * cliente final, ainda sem interação neste plano.
+  * Estrategista;
+  * Analista;
+  * futuros implementadores da E18.5, E20 e E19.
+* Consumidores técnicos futuros:
+  * schemas de conteúdo;
+  * geração de copy;
+  * validação de conteúdo;
+  * renderer de `landing_page`;
+  * snapshots de geração.
+* O cliente final não interage diretamente com este recorte.
 
-2.4. Roadmap afetado
+2.4. Fonte versionada, boundary e imutabilidade
 
-* Seção principal:
-  * E18 — Base transversal de templates, módulos, composições e artefatos.
-* Recorte previsto:
-  * `18.4 — Base de composição landing_page`.
-* Relações secundárias:
-  * E12 — consumidor futuro para curadoria no Admin;
-  * E19 — consumidor futuro para LP teste e liberação de nicho;
-  * E10.7 — referência comparativa e possível consumidor futuro de módulos melhorados, sem ser governada automaticamente por `landing_page`.
+* Boundary canônico preservado:
+  * `lib/conversion-content/landing-page/`.
+* A implementação anterior deve ser removida integralmente e o mesmo boundary deve ser reconstruído no mesmo commit apenas com artefatos da parametrização raiz.
+* Não criar path paralelo para a nova E18.4.
+* Artefatos previstos:
+  * `lib/conversion-content/landing-page/contracts.ts`;
+  * `lib/conversion-content/landing-page/root-registry.ts`;
+  * `lib/conversion-content/landing-page/root-schema.ts`;
+  * `lib/conversion-content/landing-page/root-resolver.ts`;
+  * `lib/conversion-content/landing-page/root-validation-cases.ts`;
+  * `lib/conversion-content/landing-page/index.ts`.
+* Responsabilidades:
+  * `contracts.ts` expõe somente tipos públicos `readonly`, códigos de erro, resultado discriminado e contratos de leitura;
+  * `root-registry.ts` contém uma única ocorrência dos valores efetivos de cada versão;
+  * `root-schema.ts` valida estrutura e invariantes sem repetir números, presets ou valores efetivos do registry;
+  * `root-resolver.ts` consulta exclusivamente o registry e não possui valores próprios de fallback;
+  * `root-validation-cases.ts` prova casos positivos, negativos, versionamento e imutabilidade;
+  * `index.ts` expõe apenas a interface pública autorizada.
+* Identidade inicial da versão 1:
+  * `family = landing_page`;
+  * `rootVersion = 1`;
+  * `lifecycleStatus = hypothesis`;
+  * `defaultPreset = balanced`.
+* Registry obrigatório:
+  * mapa explícito `rootVersion → entrada imutável`;
+  * nova versão deve ser adicionada como nova entrada;
+  * parâmetros publicados de versão anterior não podem ser alterados ou apagados;
+  * não existe versão padrão implícita; `rootVersion` é sempre obrigatório no resolver.
+* Lifecycle permitido:
+  * `hypothesis`: parâmetros ainda não validados por LP real;
+  * `validated`: parâmetros mantidos após evidência real e decisão humana registrada;
+  * `deprecated`: versão preservada para reprodução histórica, mas não recomendada para novo uso.
+* O payload de parâmetros de uma versão é imutável após publicação.
+* Somente o metadata de lifecycle pode avançar sob decisão humana registrada, sem alterar os parâmetros da versão.
+* Imutabilidade obrigatória:
+  * tipos públicos profundamente `readonly`;
+  * congelamento recursivo do registry e do resultado resolvido, ou construção equivalente que não exponha referência mutável;
+  * nenhuma referência mutável compartilhada entre chamadas;
+  * testes de mutação em pelo menos um preset e um papel semântico aninhado.
+* O índice agregado deve remover o namespace antigo `landingPage` e, se o reexport agregado for mantido, usar identidade explícita `landingPageRoot`.
+* O script antigo `validate:landing-page` deve ser removido e substituído por `validate:landing-page-root`.
+* Não adicionar dependência npm.
+* Não alterar `package-lock.json` quando não houver mudança real de dependência.
 
-2.5. Fluxo operacional consolidado
+2.5. Papéis semânticos e faixas editoriais v1
+
+* `eyebrow`:
+  * faixa recomendada: 12 a 48 caracteres;
+  * limite técnico absoluto: 64 caracteres.
+* `h1`:
+  * faixa recomendada: 36 a 72 caracteres;
+  * limite técnico absoluto: 120 caracteres.
+* `h2`:
+  * faixa recomendada: 28 a 64 caracteres;
+  * limite técnico absoluto: 100 caracteres.
+* `h3`:
+  * faixa recomendada: 20 a 56 caracteres;
+  * limite técnico absoluto: 80 caracteres.
+* `paragraph`:
+  * faixa recomendada: 80 a 240 caracteres;
+  * limite técnico absoluto: 420 caracteres.
+* `cta_label`:
+  * faixa recomendada: 10 a 32 caracteres;
+  * limite técnico absoluto: 40 caracteres.
+* `privacy_note`:
+  * faixa recomendada: 40 a 180 caracteres;
+  * limite técnico absoluto: 280 caracteres.
+* `faq_question`:
+  * faixa recomendada: 32 a 96 caracteres;
+  * limite técnico absoluto: 140 caracteres.
+* `faq_answer`:
+  * faixa recomendada: 120 a 420 caracteres;
+  * limite técnico absoluto: 700 caracteres.
+* `card_title`:
+  * faixa recomendada: 18 a 56 caracteres;
+  * limite técnico absoluto: 80 caracteres.
+* `card_body`:
+  * faixa recomendada: 70 a 220 caracteres;
+  * limite técnico absoluto: 360 caracteres.
+* `benefit_item`:
+  * faixa recomendada: 24 a 96 caracteres;
+  * limite técnico absoluto: 140 caracteres.
+* `step_label`:
+  * faixa recomendada: 2 a 16 caracteres;
+  * limite técnico absoluto: 24 caracteres.
+* `step_title`:
+  * faixa recomendada: 18 a 56 caracteres;
+  * limite técnico absoluto: 80 caracteres.
+* `step_body`:
+  * faixa recomendada: 60 a 180 caracteres;
+  * limite técnico absoluto: 320 caracteres.
+* As faixas recomendadas orientam geração e revisão, mas não invalidam conteúdo por si mesmas.
+* Conteúdo fora da faixa recomendada e dentro do limite absoluto deve produzir aviso, não erro bloqueante.
+* Os limites absolutos devem falhar fechado.
+* Os valores são hipóteses v1 e somente mudam por nova versão após evidência de LP real e decisão humana.
+* O blueprint imobiliário é evidência parcial conforme 1.7; não converte valores específicos de Hero em regra global automática.
+
+2.6. Limites técnicos comuns e medição textual
+
+* Conteúdo textual deve ser normalizado antes da contagem:
+  * converter `CRLF` e `CR` para `LF`;
+  * aplicar `trim` nas extremidades;
+  * substituir sequências internas de espaço horizontal ou tabulação por um único espaço;
+  * preservar quebras de linha internas normalizadas;
+  * contar cada quebra de linha como um caractere.
+* Caractere significa ponto de código Unicode, não unidade UTF-16.
+* A contagem deve usar o texto normalizado e comportamento equivalente a `Array.from(textoNormalizado).length`.
+* Campo presente deve conter texto não vazio após normalização.
+* O contrato raiz aceita apenas texto simples para os papéis semânticos.
+* HTML, script, CSS, Tailwind, nomes de componentes, props arbitrárias e instruções de renderer são proibidos.
+* O contrato raiz não define quantidade de cards, benefícios, passos, FAQs ou seções; cardinalidades pertencem à E18.5.
+* O contrato raiz não define URLs, formulários, provas, oferta, preço, escassez, garantia ou tratamentos comerciais; essas regras pertencem aos recortes posteriores.
+* A raiz permite somente os valores comuns de espaçamento:
+  * `compact`;
+  * `default`;
+  * `spacious`.
+* `spacing` continua sendo escolha limitada por ocorrência de seção na composição futura; o preset define apenas o valor padrão da página.
+* Deve existir exatamente um papel `h1` na LP final, mas a aplicação estrutural dessa regra pertence ao consumidor que conhecer a composição.
+* A raiz deve registrar a regra de hierarquia semântica `h1 → h2 → h3`, sem criar módulos ou seções.
+
+2.7. Critérios visuais, responsivos e de acessibilidade
+
+* WCAG 2.2 é baseline de referência para decisões de acessibilidade deste contrato.
+* Este recorte não declara conformidade integral com WCAG, não executa auditoria e não cria superfície visual.
+* Abordagem mobile-first.
+* Suporte técnico mínimo a viewport de 320 px ou superior.
+* Viewports obrigatórios para futura evidência visual:
+  * 360 px;
+  * 768 px;
+  * 1280 px.
+* Nenhum texto pode depender de truncamento, corte, `line-clamp` ou overflow oculto para cumprir o contrato.
+* Não pode haver rolagem horizontal causada por conteúdo textual ou container da LP.
+* Texto de corpo deve permanecer em pelo menos `1rem`.
+* Nota de apoio ou privacidade deve permanecer em pelo menos `0.875rem`.
+* Alvo interativo deve possuir área mínima de 44 × 44 px como padrão interno conservador do LP Factory 10.
+* Largura de leitura deve permanecer entre 45 e 75 caracteres por linha, com alvo padrão de até 68 `ch`.
+* O `h1` deve permanecer legível e sem corte no mobile; alvo editorial de até quatro linhas em 360 px.
+* `h2` deve permanecer legível e sem corte; alvo editorial de até três linhas em 360 px.
+* Hierarquia visual deve acompanhar a hierarquia semântica.
+* Foco deve ser visível.
+* Contraste, legibilidade, navegação e estados interativos devem permanecer verificáveis pelos recortes que criarem componentes e renderer.
+* Esses critérios são contrato da raiz; componentes, auditoria e evidência visual executável pertencem a recortes posteriores.
+
+2.8. Presets v1 e relação com o design system
+
+* Preset `balanced`:
+  * preset padrão da versão 1;
+  * densidade geral: `default`;
+  * espaçamento padrão de seção: `default`;
+  * largura máxima de página: `72rem`;
+  * largura máxima de leitura: `68ch`;
+  * escala responsiva de `h1`: `2.25rem` a `3rem`;
+  * escala responsiva de `h2`: `1.5rem` a `1.875rem`;
+  * escala de `h3`: `1.125rem`;
+  * texto de corpo: `1rem`, admitindo `1.125rem` em destaque editorial;
+  * texto de apoio: `0.875rem`.
+* Preset `compact`:
+  * uso para LP curta ou mais direta;
+  * densidade geral: `compact`;
+  * espaçamento padrão de seção: `compact`;
+  * largura máxima de página: `68rem`;
+  * largura máxima de leitura: `64ch`;
+  * escala responsiva de `h1`: `2rem` a `2.5rem`;
+  * escala responsiva de `h2`: `1.375rem` a `1.75rem`;
+  * escala de `h3`: `1.0625rem` a `1.125rem`;
+  * texto de corpo: `1rem`;
+  * texto de apoio: `0.875rem`.
+* Preset é configuração ampla da página e não seleciona módulos, variantes, ordem, conteúdo ou taxon.
+* Preset não pode ampliar limites técnicos absolutos.
+* Papéis visuais abstratos permitidos no contrato raiz:
+  * `primary_action`;
+  * `focus_indicator`;
+  * `border`;
+  * `surface`;
+  * `text`;
+  * `state`.
+* Os papéis abstratos não carregam nome de classe, variável CSS ou token concreto.
+* O mapeamento dos papéis abstratos para tokens do design system pertence ao futuro renderer ou adapter visual.
+* Relação com o design system:
+  * usar Inter como fonte-base inicial enquanto não houver decisão específica de branding da LP;
+  * usar somente papéis visuais abstratos definidos neste contrato;
+  * não versionar classes Tailwind no contrato raiz;
+  * não transformar a identidade visual do dashboard em branding obrigatório da LP;
+  * não criar tokens novos neste recorte;
+  * branding por cliente permanece fora do escopo.
+
+2.9. Contrato de leitura e erros
+
+* Resolver público previsto:
+  * `resolveLandingPageRootParameters({ rootVersion, presetKey })`.
+* Entradas:
+  * `rootVersion` obrigatório;
+  * `presetKey` opcional.
+* Resolução de preset:
+  * quando `presetKey` estiver ausente, consultar `defaultPreset` da entrada de `rootVersion` no registry;
+  * o resolver não pode conter `balanced` ou qualquer outro preset hardcoded;
+  * não existe fallback entre versões.
+* Saída por união discriminada:
+  * sucesso: `{ ok: true, value }`;
+  * falha: `{ ok: false, error }`.
+* Códigos mínimos de erro:
+  * `UNKNOWN_ROOT_VERSION`;
+  * `UNKNOWN_PRESET`;
+  * `INVALID_ROOT_CONTRACT`.
+* A saída válida deve conter:
+  * família;
+  * versão da raiz;
+  * lifecycle status;
+  * preset resolvido;
+  * papéis semânticos;
+  * faixas recomendadas;
+  * limites absolutos;
+  * opções comuns;
+  * papéis visuais abstratos;
+  * critérios visuais, responsivos e de acessibilidade.
+* Versão desconhecida deve retornar `UNKNOWN_ROOT_VERSION` e falhar fechado.
+* Preset desconhecido deve retornar `UNKNOWN_PRESET` e falhar fechado.
+* Registry ou entrada inválida deve retornar `INVALID_ROOT_CONTRACT` e falhar fechado.
+* Versão `deprecated` somente pode ser resolvida quando solicitada explicitamente; o resolver não redireciona silenciosamente para outra versão.
+* O resolver não deve consultar banco, env, API, arquivo remoto ou configuração dinâmica.
+* O resultado resolvido deve ser profundamente somente leitura e não expor referência mutável.
+* Consumidores futuros devem importar o contrato resolvido, sem copiar valores para fontes independentes.
+* Consumidores que criarem persistência em recortes posteriores devem registrar a versão e o preset usados no próprio snapshot ou artefato, conforme o plano competente.
+
+2.10. Herança e precedência
+
+* Precedência futura obrigatória:
+  * parametrização raiz e preset selecionado;
+  * especialização do módulo;
+  * especialização da variante;
+  * escolha permitida por ocorrência da seção.
+* A raiz define os limites absolutos máximos da família.
+* Faixas recomendadas:
+  * módulo ou variante pode especializar mínimo e máximo para cima ou para baixo;
+  * a especialização deve ser explícita e justificada na E18.5;
+  * o mínimo especializado deve ser maior ou igual a 1;
+  * o mínimo especializado não pode superar o máximo especializado;
+  * o máximo especializado não pode superar o limite absoluto da raiz.
+* Limites técnicos absolutos:
+  * módulo ou variante pode impor limite mais restritivo;
+  * módulo ou variante não pode ampliar o limite absoluto da raiz;
+  * necessidade de ampliação exige nova `rootVersion`.
+* Opções comuns:
+  * módulo ou variante pode restringir opções permitidas;
+  * módulo ou variante não pode criar opção fora da enumeração da raiz.
+* Escolha por ocorrência não pode alterar papel semântico, limite absoluto, schema, renderer ou componente.
+* Taxon, catálogo, composição, entrada de conta, intenção, funil e conteúdo não podem sobrescrever a parametrização raiz.
+* Ausência de especialização deve herdar o valor da camada anterior.
+* Conflito ou valor desconhecido deve falhar fechado, sem fallback silencioso.
+
+2.11. Validações executáveis
+
+* O schema da raiz deve ser Zod estrito.
+* Casos mínimos de validação:
+  * registry v1 válido;
+  * resolução explícita da versão 1;
+  * versão desconhecida;
+  * preset desconhecido;
+  * preset ausente resolvido pelo `defaultPreset` do registry;
+  * preset padrão inexistente;
+  * contrato raiz estruturalmente inválido;
+  * lifecycle status desconhecido;
+  * papel semântico obrigatório ausente;
+  * papel semântico desconhecido;
+  * faixa recomendada invertida;
+  * faixa recomendada acima do limite absoluto;
+  * limite absoluto menor que 1;
+  * valor de `spacing` desconhecido;
+  * papel visual abstrato desconhecido;
+  * token concreto, classe Tailwind ou estilo livre inserido no contrato;
+  * normalização de `CRLF`, espaços repetidos e contagem Unicode conforme 2.6;
+  * mutação de preset aninhado impedida ou sem efeito;
+  * mutação de papel semântico aninhado impedida ou sem efeito;
+  * ausência de referência mutável compartilhada;
+  * inclusão de nova versão sem alterar ou apagar a versão 1;
+  * schema e resolver sem cópia dos números e presets do registry;
+  * ausência de módulos, variantes, composition e renderer no contrato raiz;
+  * ausência de imports, símbolos e scripts da implementação antiga após a substituição.
+* Validações da fase:
+  * busca de referências antes e depois da substituição;
+  * `npm ci`;
+  * `npm run validate:landing-page-root`;
+  * `npm run check`;
+  * checks do PR de implementação em estado verde.
+* Os checks acima pertencem ao PR material separado, não ao PR documental #563.
+* `npm run build` não deve ser executado no sandbox, conforme `AGENTS.md` e `docs/base-tecnica.md`.
+* Validação visual e auditoria WCAG não se aplicam neste recorte porque não haverá renderer ou superfície visual.
+
+2.12. Remoção obrigatória da implementação anterior
+
+* Esta é a primeira parte material da fase 3.1.
+* A decisão de remover a antiga E18.4 já está tomada e não depende do resultado da busca de consumidores.
+* Antes da remoção:
+  * buscar imports e usos de `LandingPageRenderer`, `buildLandingPageRenderModel`, `landingPageSectionRegistry`, `validateLandingPageComposition`, do namespace `landingPage` e dos paths antigos;
+  * listar cada consumidor encontrado;
+  * classificar cada consumidor como interno à implementação antiga, externo removível, externo redirecionável ou dependência que exige desacoplamento.
+* Tratamento obrigatório:
+  * consumidor interno à implementação antiga deve ser removido junto com ela;
+  * import externo sem necessidade válida no novo recorte deve ser removido;
+  * consumidor que precise apenas da parametrização raiz deve ser redirecionado para a nova interface pública;
+  * consumidor ligado a módulo, variante, composição ou renderer futuro deve ser desacoplado, sem antecipar a implementação futura;
+  * consumidor em área preservada deve ser separado da implementação antiga sem alterar o comportamento preservado.
+* Se a separação segura exigir escopo material não autorizado:
+  * interromper antes da alteração;
+  * informar exatamente o consumidor, o vínculo e o arquivo afetado;
+  * propor a menor separação possível;
+  * obter decisão humana;
+  * não propor a manutenção da implementação antiga como solução.
+* Remover os arquivos anteriores:
+  * `contracts.ts` anterior;
+  * `schemas.ts`;
+  * `registry.ts`;
+  * `composition-validator.ts`;
+  * `render-model.ts`;
+  * `renderer.tsx`;
+  * `fixture.ts`;
+  * `validation-cases.ts`;
+  * `index.ts` anterior.
+* Recriar `contracts.ts` no mesmo commit somente com o contrato público da parametrização raiz.
+* Remover o namespace antigo de `lib/conversion-content/index.ts`.
+* Remover o script antigo `validate:landing-page`.
+* Reconstruir o mesmo boundary somente com os artefatos raiz previstos em 2.4.
+* Depois da substituição:
+  * repetir a busca de referências;
+  * confirmar ausência de símbolos, imports, scripts e paths órfãos;
+  * confirmar que nenhum consumidor continua acoplado à implementação antiga;
+  * confirmar que `validate:commercial-activation` permanece inalterado;
+  * confirmar que o diff não altera E18.2, E18.3, migrations, schema, Admin, LP Builder ou runtime público, salvo separação mínima previamente autorizada.
+* O rollback técnico é o revert do commit ou do PR da fase; o histórico anterior permanece no Git.
+* Referências normativas antigas não serão corrigidas pelo Executor; serão tratadas pelo PR documental obrigatório definido em 1.4.
+
+2.13. Fluxo operacional
 
 * Gatilho:
-  * humano aprova iniciar o recorte `18.4 — Base de composição landing_page`;
-  * o recorte parte da decisão conceitual de catálogo transversal controlado de módulos.
+  * debate humano encerrado;
+  * plano-base v2 validado;
+  * PR #563 mergeado na `main`;
+  * `main` atualizada como base de trabalho;
+  * branch material dedicada criada;
+  * fase 3.1 instruída ao Executor conforme `docs/prompt-executor.md`.
 * Entrada:
-  * documentos obrigatórios do projeto;
-  * schema atual de `content_templates`, `content_template_compositions` e `content_template_composition_items`;
-  * lousa de debate de landing pages;
-  * aprendizado técnico de `commercial_activation`;
-  * decisão conceitual de que módulos são catálogo transversal controlado;
-  * definição de que `landing_page` é o primeiro consumidor formal neste recorte;
-  * definição de que `template_family = shared/transversal` é hipótese técnica, não decisão fechada.
+  * decisões de `docs/lp-planejamento.md`;
+  * plano-base v2 mergeado na `main`;
+  * implementação anterior;
+  * consumidores reais encontrados por busca;
+  * design system vigente;
+  * blueprint imobiliário como evidência parcial dos parâmetros;
+  * regras técnicas e operacionais do repositório.
 * Processamento:
-  * definir o contrato de catálogo transversal controlado dos módulos;
-  * avaliar como cada canal habilita uso produtivo por contrato, schema, registry, renderer e validação;
-  * avaliar se o schema atual sustenta esse contrato ou se precisa de hardening;
-  * decidir se a transversalidade será garantida por schema, registry, validação no repositório ou combinação dessas opções;
-  * definir template-base `landing_page`;
-  * definir catálogo mínimo transversal para primeiro uso em `landing_page`;
-  * diferenciar módulo transversal, variante específica por canal e renderer específico por canal;
-  * definir variantes mínimas;
-  * criar ou ajustar contratos técnicos;
-  * criar registry fechado;
-  * criar schemas/Zod por variante e por canal quando necessário;
-  * criar renderer mínimo para uso inicial em `landing_page`;
-  * criar resolver/validador de composição;
-  * definir uso seguro de `config_json`.
+  * mapear todos os consumidores;
+  * remover, desacoplar ou redirecionar cada consumidor;
+  * remover atomicamente a implementação anterior;
+  * criar contratos públicos e registry versionado;
+  * definir schema e resolver;
+  * definir casos executáveis de validação;
+  * ajustar reexport e script;
+  * atualizar somente o estado da fase neste plano no PR material.
 * Validação:
-  * bloquear composição inválida;
-  * bloquear template incompatível;
-  * bloquear módulo sem contrato compatível;
-  * bloquear módulo incompatível;
-  * bloquear variante inexistente;
-  * bloquear variante incompatível com módulo;
-  * bloquear canal sem schema, registry, renderer e validação compatíveis;
-  * bloquear `config_json` fora do permitido;
-  * validar ordem, obrigatoriedade e composição mínima;
-  * validar se a modelagem escolhida preserva potencial de reuso transversal sem liberar uso indevido;
-  * garantir que `config_json` seja override controlado, não editor livre;
-  * executar checks aplicáveis do repositório.
+  * referências antes e depois;
+  * ausência total da implementação antiga;
+  * schema estrito;
+  * casos positivos e negativos;
+  * imutabilidade profunda;
+  * `npm ci`;
+  * `npm run validate:landing-page-root`;
+  * `npm run check`;
+  * checks aplicáveis do PR material.
 * Persistência:
-  * registrar apenas a base mínima necessária;
-  * persistir registros-base somente se aprovados no plano;
-  * não persistir composição aprovada por nicho neste plano, salvo composição técnica mínima exigida pela base e explicitamente aprovada;
-  * não alterar `commercial_activation` neste recorte.
+  * somente arquivos versionados no repositório;
+  * sem banco, migration ou configuração dinâmica.
 * Consumo:
-  * Plano-base 2 consumirá a base para curadoria no Admin;
-  * Plano-base 3 consumirá composição aprovada para LP teste;
-  * `commercial_activation` poderá consumir aprendizados, núcleo visual ou contratos reaproveitáveis apenas após decisão própria e fora deste recorte.
+  * E18.5 e consumidores posteriores importam o contrato raiz resolvido.
 * Fallback:
-  * composição inválida deve ser bloqueada;
-  * módulo ausente deve virar lacuna objetiva;
-  * variante ausente deve virar lacuna objetiva;
-  * ausência de renderer, schema, registry ou validação deve impedir uso produtivo do módulo no canal;
-  * se o schema atual não sustentar a regra transversal, parar e decidir hardening antes de avançar;
-  * se a transversalidade virar engine ampla multicanal, parar;
-  * se o plano invadir E12 ou E19, parar;
-  * nenhuma composição inválida deve ser marcada como pronta.
+  * versão, preset ou contrato inválido falha fechado;
+  * consumidor inesperado deve ser tratado por remoção, desacoplamento ou redirecionamento;
+  * se a separação exigir escopo não autorizado, a fase pausa para decisão humana sobre o método;
+  * erro de bundler ou incompatibilidade com a configuração atual bloqueia a fase;
+  * necessidade de banco, rota, Admin ou nova infraestrutura bloqueia a fase e exige nova decisão humana;
+  * preservar a implementação antiga não é fallback permitido.
 
-2.6. Limites atuais do recorte
+2.14. Relatório documental
 
-* Não criar Admin Dashboard de curadoria.
-* Não criar tela de aprovação humana.
-* Não gerar LP teste.
-* Não liberar nicho para clientes.
-* Não criar LP Builder visual.
-* Não publicar LP pública.
-* Não colocar IA em runtime público.
-* Não permitir criação automática de módulos pela IA.
-* Não permitir geração automática de composição sem revisão humana.
-* Não criar marketplace de templates.
-* Não criar múltiplos templates ativos por família sem caso real.
-* Não criar editor livre de schema, renderer, Zod ou parametrização crítica.
-* Não implementar consumo por `commercial_activation` neste plano, salvo decisão explícita posterior.
-* Não criar automações, jobs, agentes ou rotinas recorrentes sem necessidade comprovada.
-
-2.7. Riscos principais
-
-* Criar complexidade prematura de engine de módulos.
-* Criar catálogo extenso sem evidência real.
-* Reaproveitar `commercial_activation` de forma indevida para `landing_page`.
-* Criar módulos `landing_page` específicos demais e gerar retrabalho para `commercial_activation`.
-* Confundir transversalidade com liberação automática de módulo para qualquer canal.
-* Assumir prematuramente que a solução correta é `template_family = shared/transversal`.
-* Permitir uso produtivo de módulo em canal sem renderer, schema, registry e validação compatíveis.
-* Colocar no banco uma parametrização que ainda exige contrato, renderer e validação no código.
-* Deixar o banco aceitar composição estruturalmente inválida pelo fluxo oficial.
-* Usar `config_json` como editor livre e quebrar renderização.
-* Adiar correção de schema necessária e gerar retrabalho futuro.
-* Fazer migration sem necessidade real e inflar o MVP.
-
-2.8. Automação/agentes
-
-* Automação: não.
+* Usar relatório consolidado ao final da fase material.
 * Justificativa:
-  * este plano prepara contrato, base técnica e validação;
-  * não há necessidade comprovada de job, agente, automação recorrente ou workflow autônomo.
-
-2.9. Decisões de updates aplicáveis
-
-* Updates aceitos como apoio limitado:
-  * `supa#40` pode apoiar validações read-only de schema e composição quando aplicável, sem substituir migration versionada nem criar mutation SQL avulsa;
-  * `supa#57` pode apoiar visualmente a decisão de schema em `18.4.3`, sem substituir `docs/schema.md`;
-  * `vercel#4` orienta compatibilidade com Next.js 16/Turbopack, sem customização de bundler sem blocker real;
-  * `prod#17` orienta baseline leve de acessibilidade em contratos e renderers, sem auditoria completa WCAG neste recorte.
-* Updates rejeitados neste recorte:
-  * IA, agentes, automações, workflows autônomos e criação automática de módulos;
-  * A/B test, analytics, tracking, remarketing e flags de experimento;
-  * storage, arquivos privados, Blob, nova infra ou multi-service;
-  * filas, CRM, webhooks, cron e PRs de bot;
-  * busca semântica, matching sofisticado, `pg_trgm`, `pgvector` e Algolia;
-  * SSO, billing, Stripe, entitlements e onboarding enterprise.
+  * plano curto;
+  * uma única fase material;
+  * sem banco;
+  * sem automação;
+  * atualização documental intermediária criaria repetição.
+* O relatório final deve indicar ao Gestor de Docs:
+  * substituição da antiga E18.4;
+  * arquivos criados, ajustados e excluídos;
+  * consumidores removidos, desacoplados ou redirecionados;
+  * remoção do contrato normativo antigo;
+  * nova fonte raiz versionada;
+  * ausência de alteração indevida em E18.2, E18.3 e `commercial_activation`;
+  * subseções exatas do roadmap previstas em 1.4;
+  * distinção consolidada entre faixas recomendadas e limites absolutos;
+  * fontes e hipóteses dos parâmetros v1;
+  * papéis visuais abstratos e ausência de tokens concretos no contrato raiz;
+  * checks executados e eventuais limitações.
+* O relatório deve resultar em PR documental obrigatório; não é suficiente como encerramento isolado.
 
 3. Fases e próxima ação
 
-3.1. Estado desta seção
+3.1. E18.4.3–E18.4.8 — Remoção obrigatória da implementação antiga e parametrização raiz v1
 
-* Esta seção está consolidada como base v2 após avaliação dos especialistas.
-* As fases abaixo representam a previsão operacional do recorte.
-* Ajustes ainda podem ocorrer por decisão humana explícita ou aprendizado real da fase `18.4.3`.
-
-3.2. Previsão inicial de fases ou seções implementáveis
-
-* `18.4.3 Contrato transversal de módulos e avaliação de hardening do schema`:
-  * definir módulos como catálogo transversal controlado;
-  * registrar que módulos podem nascer motivados por um canal inicial, mas não devem ficar presos definitivamente a esse canal;
-  * diferenciar módulo conceitual, variante, schema, renderer, registry, composition e artefato final;
-  * definir que o uso produtivo em cada canal depende de compatibilidade explícita;
-  * comparar o contrato desejado com o schema real de `content_templates`, `content_template_compositions` e `content_template_composition_items`;
-  * avaliar se essa regra exige hardening do schema ou se pode ser garantida inicialmente por validação executável no repositório;
-  * se houver alteração de banco, prever migration versionada, RLS, policies, GRANTs quando aplicável e atualização de `docs/schema.md`;
-  * se não houver alteração de banco, registrar que a garantia inicial ficará no repositório por contratos, registry, schemas e validação executável;
-  * tratar `template_family = shared/transversal` apenas como hipótese de solução, não como decisão fechada;
-  * usar `supa#40` e `supa#57` apenas como apoio read-only/manual quando aplicável;
-  * Automação: não.
-* `18.4.4 Catálogo mínimo transversal para primeiro uso em landing_page`:
-  * definir módulos/seções iniciais mínimos para o MVP;
-  * usar `landing_page` como primeiro caso de uso formal;
-  * não prender os módulos definitivamente à família `landing_page`;
-  * classificar cada módulo por função conceitual;
-  * indicar variantes mínimas necessárias para o primeiro uso;
-  * separar o que é módulo transversal do que é variante específica de canal;
-  * não criar catálogo extenso, módulo universal automático ou registro-base antes da decisão de `18.4.3`;
-  * não reaproveitar `commercial_activation` como compatível automaticamente com `landing_page`;
-  * Automação: não.
-* `18.4.5 Contratos técnicos, registry, schemas e renderer por canal`:
-  * definir contratos técnicos dos módulos do catálogo transversal;
-  * definir registry de compatibilidade entre módulo, variante e canal;
-  * definir schemas/Zod por variante e por canal quando necessário;
-  * definir renderer mínimo para uso inicial em `landing_page`;
-  * não exigir renderer para todos os canais neste recorte;
-  * impedir uso produtivo de módulo em canal sem renderer/schema/registry compatível;
-  * manter compatibilidade com Next.js 16/Turbopack, sem workaround de bundler sem blocker real;
-  * usar baseline leve de acessibilidade para contratos e renderers, sem auditoria completa;
-  * não criar editor livre de contratos;
-  * Automação: não.
-* `18.4.6 Resolver, validação de composição e limites de config_json`:
-  * validar composição do primeiro uso `landing_page`;
-  * validar `content_template_composition_items`, módulos, variantes, ordem, obrigatoriedade e `config_json`;
-  * validar compatibilidade explícita entre canal, módulo, variante, schema e renderer;
-  * bloquear uso produtivo de módulo sem contrato completo para o canal;
-  * garantir que `config_json` seja override controlado, não editor livre;
-  * definir casos de validação para composição válida e inválida;
-  * usar validações read-only de banco somente quando aplicável e sem substituir migration versionada;
-  * Automação: não.
-
-3.3. Próxima ação
-
-* Fase `18.4.3` concluída como decisão técnica investigativa.
-* Fase `18.4.4` concluída como definição documental do catálogo mínimo transversal para primeiro uso em `landing_page`.
-* Fase `18.4.5` concluída com contratos técnicos executáveis, registry, schemas/Zod e renderer mínimo de `landing_page` no repositório.
-* Fase `18.4.6` concluída com resolver/validador final de composição `landing_page` e limites técnicos de `config_json`.
-* Próxima fase liberada:
-  * definição estratégica da próxima etapa de consumo, sem criar registros-base, LP teste, Admin ou LP Builder automaticamente.
-* Travas mantidas:
-  * não criar registros-base de banco ou LP teste antes das fases correspondentes;
-  * não criar migration, alterar `docs/schema.md`, RLS, policies ou GRANTs sem necessidade demonstrada;
-  * não transformar catálogo transversal controlado em engine multicanal ampla;
-  * não abrir editor livre de `config_json`;
-  * não reabrir hardening sem necessidade demonstrada.
-
-3.4. Resultado técnico de `18.4.3`
-
-* Status da fase: concluída como decisão técnica investigativa.
-* Decisão: schema atual suficiente para o início controlado de `landing_page`; não há hardening de schema necessário nesta fase.
-* Migration: não criar migration em `18.4.3`.
-* Atualização de `docs/schema.md`: não aplicável nesta fase, pois não há alteração de banco.
-* RLS, policies e GRANTs: sem alteração nesta fase.
-* Apoio Supabase read-only: inspeção do projeto `lp-factory-10` confirmou que o estado real mantém `content_templates`, `content_template_compositions` e `content_template_composition_items` compatíveis com `docs/schema.md`.
-* Estado real observado:
-  * `content_templates` aceita `template_family IN ('commercial_activation', 'landing_page')`, `template_scope IN ('page', 'section')` e status `draft | active | archived`;
-  * há registros ativos apenas para `commercial_activation`: um template de página e oito módulos de seção;
-  * não há registros `landing_page` em `content_templates` no estado consultado;
-  * `content_template_compositions` versiona composição por `template_id` e `taxon_id`, com no máximo uma composição ativa por par;
-  * `content_template_composition_items` vincula cada composição a módulos em `content_templates`, guarda `variant_key`, `sort_order`, `is_required` e `config_json` objeto;
-  * o banco garante forma mínima, FKs, versionamento, unicidade de ordem, padrão de `variant_key` e `config_json` como objeto;
-  * o banco não garante, sozinho, que o módulo é conceitualmente transversal, que a variante pertence ao módulo, que há renderer/schema para o canal, nem que `config_json` segue contrato específico.
-* Comparação com o contrato desejado:
-  * a hipótese `template_family = shared/transversal` não deve ser adotada agora, porque exigiria fechar uma modelagem ainda explicitamente aberta e ampliaria o recorte além do necessário;
-  * usar `template_family = landing_page` para o primeiro consumidor formal é suficiente para criar registros futuros de página/seção sem alterar o check atual;
-  * a transversalidade deve ser tratada como contrato conceitual e técnico do repositório, não como liberação automática no banco;
-  * `commercial_activation` permanece referência comparativa, mas seus módulos, variantes, schemas e renderer não são compatíveis automaticamente com `landing_page`.
-* Garantia inicial aprovada para as próximas fases:
-  * contratos TypeScript devem diferenciar módulo conceitual, variante, schema, renderer, registry, composition e artefato final;
-  * registry fechado deve mapear compatibilidade entre canal, módulo, variante, schema e renderer;
-  * schemas/Zod devem validar payload por variante e por canal quando necessário;
-  * validação executável deve bloquear módulo sem contrato compatível, variante inexistente, variante incompatível com módulo, item obrigatório ausente, item desconhecido, ordem inválida e `config_json` fora do permitido;
-  * `config_json` deve continuar override controlado, não editor livre;
-  * registros de banco futuros devem ser criados somente depois de `18.4.4`/`18.4.5` definirem catálogo e contratos, e depois de `18.4.6` definir resolver/validador.
-* Critério para reabrir hardening:
-  * reavaliar migration apenas se uma fase futura exigir que o próprio banco bloqueie compatibilidade módulo-canal-variante, múltiplas famílias compartilhando o mesmo módulo físico, writer administrativo direto, ou uso produtivo fora do fluxo server-side validado;
-  * nesse caso, a decisão deverá prever migration versionada, revisão de RLS/policies/GRANTs e atualização de `docs/schema.md` antes de avançar consumo produtivo.
-* Fase liberada por `18.4.3`: `18.4.4 Catálogo mínimo transversal para primeiro uso em landing_page`, respeitando que ainda não havia catálogo, renderer, resolver, registros-base ou LP teste criados por `18.4.3`.
-
-3.5. Resultado técnico de `18.4.4`
-
-* Status da fase: concluída como definição documental do catálogo mínimo transversal para primeiro uso em `landing_page`.
-* Decisão: o primeiro uso de `landing_page` terá catálogo mínimo próprio, conceitualmente transversal e tecnicamente controlado no repositório.
-* Referência comparativa: `commercial_activation` possui oito módulos ativos (`hero`, `benefits`, `services`, `plans`, `differentials`, `how_it_works`, `faq`, `final_cta`), mas nenhum deles fica automaticamente compatível com `landing_page`.
-* Catálogo mínimo proposto para primeiro uso em `landing_page`:
-  * `hero`: função conceitual de abertura, promessa principal e ação primária; incluído porque toda LP precisa apresentar rapidamente oferta, público e próximo passo.
-  * `benefits`: função conceitual de benefícios/resultados; incluído para traduzir valor em motivos concretos de continuidade.
-  * `offer`: função conceitual de oferta, serviço, produto ou pacote principal; incluído para explicitar o que será entregue sem depender de tabela de planos.
-  * `social_proof`: função conceitual de evidência, confiança e prova; incluído porque LP real de cliente precisa reduzir risco percebido antes da conversão.
-  * `how_it_works`: função conceitual de processo, passos ou funcionamento; incluído como módulo opcional/reordenável para nichos em que clareza operacional aumenta conversão.
-  * `faq`: função conceitual de objeções frequentes; incluído como módulo opcional para tratar dúvidas recorrentes sem criar conteúdo livre.
-  * `final_cta`: função conceitual de fechamento e chamada final; incluído para garantir saída de conversão ao fim da composição.
-* Variantes mínimas conceituais, sem contrato técnico ainda:
-  * `hero.lead_capture`: abertura com CTA/formulário conceitual para captura ou contato.
-  * `benefits.cards`: lista curta de benefícios em cards.
-  * `offer.summary`: resumo da oferta principal, sem pricing obrigatório.
-  * `social_proof.simple`: evidência textual curta, sem integração externa.
-  * `how_it_works.steps`: passos simples do processo.
-  * `faq.accordion`: perguntas e respostas.
-  * `final_cta.simple`: chamada final direta.
-* Separação de responsabilidades:
-  * módulo transversal é a função conceitual reutilizável, como `hero`, `benefits` ou `faq`;
-  * variante específica de canal é a forma estrutural escolhida para `landing_page`, como `hero.lead_capture` ou `offer.summary`;
-  * adaptação futura por renderer/schema pertence a `18.4.5` e `18.4.6`, quando cada variante deverá ganhar compatibilidade explícita de schema, registry, renderer e validação.
-* Módulos deixados fora do primeiro uso:
-  * `plans`: fora porque pricing/planos pode confundir LP de captura, serviço ou produto sem oferta tabelada; poderá voltar quando houver contrato específico.
-  * `services`: fora como módulo separado porque o primeiro uso concentra a oferta em `offer`; pode voltar se uma composição precisar listar múltiplos serviços.
-  * `differentials`: fora porque tende a sobrepor `benefits` e `social_proof` no MVP; pode voltar como módulo próprio após evidência real.
-  * módulos de galeria, equipe, mapa/localização, comparativo, depoimentos ricos, mídia avançada, analytics, A/B ou integrações externas: fora por ampliarem o catálogo ou exigirem renderer/schema/infra fora deste recorte.
-* Não realizado nesta fase:
-  * não foi criado renderer;
-  * não foi criado resolver;
-  * não foi criado registry técnico;
-  * não foram criados schemas/Zod;
-  * não foram criados registros-base de banco;
-  * não foi criada migration;
-  * `docs/schema.md`, RLS, policies e GRANTs não foram alterados;
-  * não foi criada LP teste, Admin, LP Builder, automação, job, agente ou workflow.
-* Próxima fase liberada: `18.4.5 Contratos técnicos, registry, schemas e renderer por canal`, limitada a transformar este catálogo conceitual em contratos técnicos executáveis sem assumir compatibilidade automática com `commercial_activation`.
-
-3.6. Resultado técnico de `18.4.5`
-
-* Status da fase: concluída com implementação técnica mínima no repositório.
-* Decisão: o catálogo conceitual de `landing_page` passou a ter contrato executável próprio, separado de `commercial_activation`.
-* Arquivos técnicos criados:
+* Status: pendente; plano-base v2 validado e instrução ao Executor preparada; execução bloqueada até merge do PR #563 e criação de branch material dedicada.
+* Automação: não.
+* Risco da execução: médio controlado.
+* Objetivo:
+  * remover obrigatoriamente a implementação anterior e substituí-la atomicamente pela fonte versionada da parametrização raiz v1.
+* Ordem interna obrigatória:
+  * buscar e listar todos os consumidores da implementação antiga;
+  * classificar cada consumidor;
+  * remover, desacoplar ou redirecionar todos os consumidores;
+  * excluir os nove arquivos da implementação antiga;
+  * reconstruir o boundary com a nova raiz;
+  * ajustar o índice agregado e o script;
+  * executar as validações;
+  * atualizar somente o estado desta fase no plano-base.
+* Arquivos a excluir:
+  * os nove arquivos da implementação anterior listados em 2.12.
+* Arquivos a criar ou recriar:
   * `lib/conversion-content/landing-page/contracts.ts`;
-  * `lib/conversion-content/landing-page/schemas.ts`;
-  * `lib/conversion-content/landing-page/registry.ts`;
-  * `lib/conversion-content/landing-page/render-model.ts`;
-  * `lib/conversion-content/landing-page/renderer.tsx`;
-  * `lib/conversion-content/landing-page/fixture.ts`;
-  * `lib/conversion-content/landing-page/validation-cases.ts`;
+  * `lib/conversion-content/landing-page/root-registry.ts`;
+  * `lib/conversion-content/landing-page/root-schema.ts`;
+  * `lib/conversion-content/landing-page/root-resolver.ts`;
+  * `lib/conversion-content/landing-page/root-validation-cases.ts`;
   * `lib/conversion-content/landing-page/index.ts`.
-* Arquivos técnicos ajustados:
+* Arquivos a ajustar no PR material separado:
   * `lib/conversion-content/index.ts`;
-  * `package.json`.
-* Contrato técnico criado:
-  * canal fechado em `landing_page`;
-  * módulos permitidos: `hero`, `benefits`, `offer`, `social_proof`, `how_it_works`, `faq` e `final_cta`;
-  * variantes permitidas: `hero.lead_capture`, `benefits.cards`, `offer.summary`, `social_proof.simple`, `how_it_works.steps`, `faq.accordion` e `final_cta.simple`;
-  * registry técnico liga canal, módulo, variante, schema Zod e renderer;
-  * `buildLandingPageRenderModel` valida envelope, canal, item duplicado, item desconhecido, item obrigatório ausente, variante inexistente, incompatibilidade módulo/variante e conteúdo por schema;
-  * renderer mínimo usa somente o registry próprio de `landing_page`, com seções semânticas, headings associados por `aria-labelledby`, CTAs como links e estados inválidos fail-closed com retorno nulo.
-* Validação executável criada:
-  * script `validate:landing-page`;
-  * fixture sintética local, sem leitura de Supabase, sem criação de LP real e sem registros de banco.
-* Compatibilidade e limites:
-  * não há compatibilidade automática com `commercial_activation`;
-  * o renderer comercial existente permanece apenas como referência comparativa;
-  * não foi criado resolver final de composição nem integração com banco;
-  * `config_json` permanece sem semântica técnica final nesta fase e deverá ser limitado em `18.4.6`.
-* Não realizado nesta fase:
-  * não foi criada migration;
-  * `docs/schema.md` não foi alterado;
-  * RLS, policies e GRANTs não foram alterados;
-  * não foram criados registros-base no banco;
-  * não foi criada LP teste, Admin, LP Builder, automação, job, agente ou workflow.
-* Próxima fase liberada: `18.4.6 Resolver, validação de composição e limites de config_json`, limitada a resolver e validar composição sem abrir editor livre nem alterar banco sem necessidade demonstrada.
+  * `package.json`;
+  * consumidores reais identificados, somente para remoção, desacoplamento ou redirecionamento autorizados;
+  * `docs/lousa-plano-base-e18-4.md`, somente para atualizar o estado da fase.
+* Não alterar sem decisão humana adicional:
+  * comportamento de `lib/conversion-content/commercial-activation/`;
+  * adapters de `commercial_activation`;
+  * comportamento de `lib/lp-builder/`;
+  * migrations e snippets;
+  * `docs/roadmap.md`;
+  * `docs/base-tecnica.md`;
+  * `docs/schema.md`;
+  * `docs/design-system.md`;
+  * `docs/lp-planejamento.md`;
+  * `next.config`;
+  * configuração de bundler, loaders ou plugins;
+  * dependências npm.
+* Critérios de aceite:
+  * todos os consumidores da implementação antiga identificados;
+  * todos os consumidores removidos, desacoplados ou redirecionados;
+  * nenhuma referência à implementação antiga preservada;
+  * substituição concluída em uma única operação atômica;
+  * implementação anterior removida sem referência órfã;
+  * fonte raiz v1 criada no boundary canônico;
+  * registry por versão contém uma única ocorrência dos valores efetivos;
+  * schema e resolver não duplicam números, presets ou limites do registry;
+  * resolver usa o `defaultPreset` da versão resolvida;
+  * contrato público usa tipos profundamente `readonly`;
+  * resultado resolvido não expõe referência mutável;
+  * erros discriminados e fail-closed implementados;
+  * papéis, faixas, limites, critérios e presets correspondem ao contrato da seção 2;
+  * faixas recomendadas não bloqueiam conteúdo dentro do limite absoluto;
+  * limite absoluto inválido falha fechado;
+  * papéis visuais abstratos são estritos e não contêm tokens concretos;
+  * referência WCAG 2.2 e padrão interno de 44 × 44 px permanecem no contrato, sem declaração de conformidade integral;
+  * TypeScript simples e compatível com a configuração atual do projeto e Turbopack;
+  * nenhuma definição de módulo, variante, composition, content schema ou renderer;
+  * `commercial_activation` preservada;
+  * script antigo removido e script novo funcional;
+  * `npm ci` concluído;
+  * `npm run validate:landing-page-root` concluído;
+  * `npm run check` concluído;
+  * checks do PR material em estado verde;
+  * diff limitado ao escopo aprovado ou às separações adicionais autorizadas.
+* Critérios de parada:
+  * interromper antes de alterar área preservada quando o desacoplamento exigir escopo material ainda não autorizado;
+  * interromper se a separação exigir banco, rota, Admin, nova infraestrutura, bundler, loader, plugin ou dependência;
+  * interromper se o contrato raiz exigir conhecimento de módulo, variante, taxon, composição ou conteúdo concreto;
+  * interromper diante de erro de Turbopack ou bundler sem correção estritamente interna aos arquivos autorizados;
+  * interromper se os checks falharem sem correção restrita ao escopo;
+  * ao parar, informar o consumidor ou impedimento exato e propor a menor separação possível;
+  * não considerar a manutenção da implementação antiga como alternativa.
 
-3.7. Resultado técnico de `18.4.6`
+3.2. Item 7 — Instrução ao Executor
 
-* Status da fase: concluída com implementação técnica no repositório.
-* Decisão: o primeiro uso de `landing_page` passa a ter resolver/validador final de composição antes do render model, com falha fechada para composições inválidas.
-* Arquivos técnicos criados:
-  * `lib/conversion-content/landing-page/composition-validator.ts`.
-* Arquivos técnicos ajustados:
-  * `lib/conversion-content/landing-page/render-model.ts`;
-  * `lib/conversion-content/landing-page/renderer.tsx`;
-  * `lib/conversion-content/landing-page/fixture.ts`;
-  * `lib/conversion-content/landing-page/validation-cases.ts`;
-  * `lib/conversion-content/landing-page/index.ts`.
-* Resolver/validador de composição:
-  * valida item duplicado na composição antes de montar o mapa de itens;
-  * valida `sortOrder` inteiro, não negativo e sem duplicidade;
-  * não exige que o array de entrada esteja ordenado e normaliza os itens por `sortOrder` antes do render model;
-  * valida variante existente no registry fechado de `landing_page`;
-  * valida compatibilidade explícita entre módulo e variante;
-  * normaliza itens resolvidos para o render model somente depois de validar registry e `config_json`;
-  * mantém `commercial_activation` apenas como referência comparativa, sem compatibilidade automática.
-* Limites técnicos de `config_json`:
-  * `config_json` é override controlado por seção;
-  * chaves permitidas nesta fase: `anchor_id` e `spacing`;
-  * `anchor_id` deve seguir padrão seguro de âncora curta: letra minúscula inicial, letras minúsculas, números ou hífen, até 64 caracteres;
-  * `anchor_id` permanece opcional, mas deve ser único quando informado em mais de uma seção;
-  * `spacing` aceita somente `compact`, `default` ou `spacious`;
-  * objetos com chaves livres como renderer, schema, style, HTML, script ou props arbitrárias são rejeitados;
-  * o renderer mínimo consome apenas esses overrides permitidos para `id` de seção e espaçamento vertical.
-* Casos de validação cobertos por `validate:landing-page`:
-  * composição válida;
-  * item duplicado na composição;
-  * item duplicado no conteúdo;
-  * item desconhecido no conteúdo;
-  * variante inexistente;
-  * incompatibilidade módulo/variante;
-  * ordem inválida;
-  * `config_json` inválido;
-  * item obrigatório ausente;
-  * item opcional ausente;
-  * schema de conteúdo inválido;
-  * canal inválido;
-  * rejeição de variante de `commercial_activation` como compatível automaticamente.
-* Não realizado nesta fase:
-  * não foi criada migration;
-  * `docs/schema.md` não foi alterado;
-  * RLS, policies e GRANTs não foram alterados;
-  * não foram criados registros-base no banco;
-  * não foi criada LP teste, rota pública, Admin, LP Builder, automação, job, agente ou workflow.
-* Próxima etapa: depende de definição estratégica posterior; esta fase não libera, por si só, criação de registros-base, LP teste, Admin ou LP Builder.
+* Fase atual do fluxo do Estrategista:
+  * item 7 — instrução da fase 3.1 ao Executor.
+* A instrução deve informar:
+  * fase `3.1. E18.4.3–E18.4.8 — Remoção obrigatória da implementação antiga e parametrização raiz v1`;
+  * path `docs/lousa-plano-base-e18-4.md`;
+  * fontes obrigatórias `AGENTS.md`, `docs/prompt-executor.md`, este plano-base e documentos citados nele;
+  * atualização somente do estado da fase executada neste plano-base.
+* A instrução pode ser preparada antes do merge, mas a execução permanece bloqueada até:
+  * PR #563 mergeado na `main`;
+  * `main` atualizada;
+  * branch material dedicada criada a partir da `main` atualizada;
+  * branch, estado e arquivos-alvo confirmados pelo Executor.
+* Após esses gates:
+  * executar somente a fase 3.1;
+  * abrir PR de implementação separado.
+* Não criar briefing ou handoff para o Codex Web.
+* O PR #563 permanece estritamente documental e não pode receber arquivos materiais da fase 3.1.
+* “Checks aplicáveis do PR” significa checks do PR de implementação separado.
+* A atualização de status deste plano durante a execução deve ocorrer no PR material separado.
+* Não enviar fase documental ou fase adicional em paralelo.
+
+3.3. Encerramento documental obrigatório
+
+* Após implementação e checks da fase 3.1:
+  * o Analista deve avaliar o resultado material;
+  * o Estrategista deve consolidar o relatório final;
+  * o Gestor de Docs deve abrir o PR obrigatório definido em 1.4.
+* A conclusão técnica da fase 3.1 não encerra formalmente a E18.4.
+* A E18.4 somente pode receber status final de encerrada após:
+  * implementação material aprovada;
+  * checks aplicáveis verdes;
+  * PR documental obrigatório mergeado;
+  * ausência de drift normativo conhecido sobre a antiga E18.4.
 
 4. Escopo negativo e critérios de parada
 
-4.1. Escopo negativo consolidado
+4.1. Fora do escopo
 
-* Admin Dashboard de curadoria.
-* Tela de aprovação humana.
-* LP teste.
-* Liberação de nicho para clientes.
-* LP Builder visual.
-* Publicação pública de LP.
-* IA em runtime público.
-* Criação automática de módulos pela IA.
-* Geração automática de composição sem revisão humana.
-* Nova arquitetura multicanal ampla.
-* Editor livre de schema, renderer ou Zod.
-* Marketplace de templates.
-* Múltiplos templates ativos por família sem caso real.
-* Consumo automático por `commercial_activation` sem contrato próprio.
-* Testes A/B.
-* Analytics.
-* Domínio customizado.
-* Automações, jobs, agentes ou rotinas recorrentes sem necessidade comprovada.
+* Catálogo de entradas.
+* Composição por taxon.
+* Herança concreta de composição.
+* Pesquisas estruturadas e resolução por taxon.
+* `copy_source_map`.
+* `funnel_copy_profile`.
+* Módulos.
+* Variantes.
+* Cardinalidades de módulos ou campos.
+* Schemas de conteúdo por variante.
+* Renderer de LP.
+* Render model.
+* Fixture de LP completa.
+* Conta de teste.
+* Autorização de conta, taxon ou plano.
+* Entitlement.
+* Geração, revisão, edição, publicação ou tracking de LP.
+* Admin Dashboard.
+* Editor visual.
+* Banco, migration, RPC, policy, grant, trigger ou tabela.
+* Rota, API ou Server Action.
+* Configuração dinâmica em runtime.
+* Agente, automação, job, fila ou workflow novo.
+* Branding por cliente.
+* Alteração funcional de `commercial_activation`.
+* Alteração funcional de E18.2 ou E18.3.
+* Auditoria completa de acessibilidade.
+* Declaração de conformidade integral com WCAG.
+* Alteração de bundler ou infraestrutura de build.
+* Implementação material no PR #563.
+* Briefing, handoff ou execução pelo Codex Web.
 
-4.2. Critérios de parada
+4.2. Critérios gerais de parada
 
-* Parar se a investigação mostrar necessidade de mudança de schema não prevista no debate.
-* Parar se a estrutura atual permitir composição inválida sem ponto seguro de bloqueio.
-* Parar se um módulo proposto não tiver schema, registry e renderer compatíveis.
-* Parar se `config_json` começar a funcionar como editor livre.
-* Parar se a busca por transversalidade virar engine multicanal ampla sem necessidade real.
-* Parar se o plano começar a invadir E12 ou E19.
-* Parar se faltar fonte real para decidir banco, rota, renderer, schema ou contrato técnico.
+* Falta de fonte obrigatória para decisão material.
+* Contradição entre a `main` e este plano que altere escopo, risco ou arquitetura.
+* Necessidade comprovada de banco ou infraestrutura não autorizada.
+* Necessidade de alterar área preservada para desacoplar consumidor sem autorização humana específica.
+* Risco de regressão em `commercial_activation`.
+* Necessidade de definir módulo, variante, composição ou conteúdo concreto para completar a raiz.
+* Falha de validação que exija ampliação de escopo.
+* Necessidade de alterar bundler, `next.config`, loader, plugin ou dependência.
+* Tentativa de implementar antes do merge do PR #563.
+* Tentativa de implementar na branch documental do PR #563.
+* Ao ocorrer parada por consumidor externo, a decisão pendente deve ser somente sobre o método de separação; a remoção da implementação antiga permanece obrigatória.
+
+4.3. Encerramento do plano
+
+* O debate humano foi encerrado.
+* O plano-base v2 está validado e pronto para revisão e merge no PR #563.
+* O item 7 do fluxo do Estrategista foi iniciado com a preparação da instrução da fase 3.1 ao Executor.
+* A execução material somente começa após os gates definidos em 3.2.
+* O plano material termina quando a fase 3.1 estiver implementada, validada e aprovada pelo Analista.
+* O caso E18.4 permanece em encerramento documental até o merge do PR obrigatório do Gestor de Docs.
+* Não existe fase administrativa, de automação ou de handoff.
+* O Estrategista entrega relatório consolidado ao Gestor de Docs e acompanha o gate documental até o merge.
