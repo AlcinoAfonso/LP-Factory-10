@@ -934,7 +934,7 @@ Atualizado em 2026-07-13
 
 ### Status no Projeto
 
-- Status: Configuração pendente
+- Status: Avaliação final pendente
 - Evidência: inspeção read-only do projeto Supabase em 2026-07-13 encontrou `pg_graphql` 1.5.11 e a função `graphql_public.graphql`
 - Uso no levantamento: nenhum consumidor GraphQL identificado nas fontes consultadas nesta rodada; a confirmação definitiva depende de busca final no repositório
 - Observação: exige busca final no repositório antes da remoção
@@ -950,7 +950,7 @@ O projeto ainda está em `pg_graphql` 1.5.11; portanto, não deve assumir que o 
 
 ### Valor para o Projeto
 
-- Remove uma API sem uso e reduz superfície desnecessária.
+- Se a ausência de uso for confirmada, permite remover uma API desnecessária e reduzir a superfície exposta.
 - Evita dependência implícita e drift entre ambientes.
 - Impede que a atualização para 1.6.x seja confundida com adoção de GraphQL.
 
