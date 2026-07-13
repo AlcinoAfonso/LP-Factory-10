@@ -223,7 +223,7 @@ Fontes de referência: `README.md`, `docs/prompt-nicho-itens-estruturados.md`, `
 - Antes da liberação geral, restringir o taxon e o plano às contas de teste com autorização específica.
 - Depois da liberação, permitir o uso pelas demais contas elegíveis sem criar novo gerador ou nova persistência de LP.
 - Preservar composição, contratos parametrizados, rastreabilidade e snapshot de cada geração.
-- Permitir identificação das contas de teste para que seus eventos não contaminem métricas comerciais reais quando tracking e relatórios forem implementados.
+- Identificar as LPs e os eventos produzidos sob autorização específica de teste, permitindo separá-los dos indicadores comerciais reais sem classificar a conta como conta de teste.
 - Não antecipar editor visual ou nova infraestrutura sem decisão e plano-base próprios.
 
 ### 2.8. Evolução controlada
@@ -282,7 +282,7 @@ Fontes de referência: `README.md`, `docs/prompt-nicho-itens-estruturados.md`, `
 - Ajustar `12.1.3` para manter as mutações administrativas gerais fora do escopo, exceto as operações mínimas aprovadas para a E10.7 e, quando implementadas, as operações específicas de landing pages definidas em `12.4`.
 - Ajustar `12.1.5` para registrar que revisão da prontidão, autorização de contas de teste, avaliação da LP real e liberação do taxon, plano e composição não pertencem à base geral nem à E10.7, mas poderão ser implementadas somente pelo novo recorte `12.4`.
 - Preservar `12.2` como base administrativa e leitura operacional read-only e preservar integralmente `12.3` como registro da operação de `commercial_activation`.
-- Criar `12.4 — Validação e liberação administrativa de landing pages por taxon`, sem criar nova área na navegação, usando a área de Templates já prevista em `12.1.4`.
+- Criar `12.4 — Autorização, validação e liberação administrativa de landing pages por taxon`, sem criar nova área na navegação, usando a área de Templates já prevista em `12.1.4`.
 - O novo recorte deve permitir ao humano, conforme os contratos e persistências definidos nos planos-base aplicáveis:
   - verificar a elegibilidade do taxon, a origem dos itens estruturados e o checklist de prontidão definido pela E20;
   - revisar catálogo aplicável, composição base, versão e regra de herança;
@@ -311,7 +311,7 @@ Fontes de referência: `README.md`, `docs/prompt-nicho-itens-estruturados.md`, `
 - Tipo de intervenção: reorganizar a E18 para refletir integralmente o planejamento conceitual, substituindo a atual `18.4` e criando apenas o recorte seguinte necessário.
 - Seções e subseções afetadas: objetivo e status da E18, `18.1.5`, atual `18.4` e nova `18.5`.
 - Ajustar o objetivo e o status da E18 para registrar que `commercial_activation` permanece implementada e preservada, enquanto a evolução de `landing_page` passa a começar pela parametrização raiz e depois pela parametrização de módulos e variantes.
-- Ajustar `18.1.5` para preservar o catálogo implementado de `commercial_activation`, retirar o catálogo anterior de `landing_page` como contrato vigente e registrar que seu novo catálogo será definido em `18.5` após a parametrização raiz.
+- Ajustar `18.1.5` para preservar o catálogo implementado de `commercial_activation`, retirar o conjunto anterior de módulos e variantes de `landing_page` como contrato vigente e registrar que o novo conjunto será definido em `18.5` após a parametrização raiz.
 - Registrar em `18.1.5` que os limites textuais e os valores comuns de `spacing` pertencem à raiz e que módulos ou variantes só podem sobrescrevê-los excepcionalmente, seguindo `raiz → módulo → variante`.
 - Preservar `18.1.7` como contrato transversal geral até a materialização da composição pela E20 e preservar `18.1.8` como separação entre template, composição, conteúdo e artefato final.
 - Preservar integralmente `18.2` e `18.3`, que permanecem vinculadas a `commercial_activation` e ao consumo pela E10.7.
@@ -328,11 +328,11 @@ Fontes de referência: `README.md`, `docs/prompt-nicho-itens-estruturados.md`, `
   - `18.4.8 — Herança, precedência e validação`;
   - `18.4.9 — Limites do recorte`.
 - O plano-base da nova `18.4` terá path `docs/lousa-plano-base-e18-4.md`, substituindo o conteúdo do plano-base anterior.
-- Criar `18.5 — Parametrização de módulos e variantes landing_page`, responsável pelo catálogo inicial, funções estruturais, campos, cardinalidades, variantes, especializações excepcionais sobre a raiz, `copy_source_map`, `funnel_copy_profile`, tratamentos por intenção ou funil, ciclo de vida, compatibilidade, depreciação e remoção.
+- Criar `18.5 — Parametrização de módulos e variantes landing_page`, responsável pelo conjunto inicial de módulos e variantes, suas funções estruturais, campos, cardinalidades e especializações excepcionais sobre a raiz, `copy_source_map`, `funnel_copy_profile`, tratamentos por intenção ou funil, ciclo de vida, compatibilidade, depreciação e remoção.
 - Estrutura prevista para `18.5`:
   - `18.5.1 — Objetivo e status`;
   - `18.5.2 — Registros do recorte`, somente quando houver implementação material;
-  - `18.5.3 — Catálogo e função dos módulos`;
+  - `18.5.3 — Módulos e funções estruturais`;
   - `18.5.4 — Campos, estruturas e cardinalidades`;
   - `18.5.5 — Variantes e critérios de criação`;
   - `18.5.6 — Especializações sobre a parametrização raiz`;
@@ -396,7 +396,7 @@ Fontes de referência: `README.md`, `docs/prompt-nicho-itens-estruturados.md`, `
   - publicar e renderizar a LP conforme o recorte aprovado;
   - registrar tracking mínimo aplicável sem confundi-lo com analytics avançado;
   - preservar snapshot de valores, taxon, plano, composição, parametrizações, módulos, variantes e versões;
-  - identificar contas de teste para que seus eventos possam ser separados dos indicadores comerciais reais.
+  - identificar as LPs e os eventos produzidos sob autorização específica de teste, permitindo separá-los dos indicadores comerciais reais sem classificar a conta como conta de teste.
 - Estrutura prevista para o novo recorte no roadmap:
   - `19.4.1 — Objetivo e status`;
   - `19.4.2 — Registros do recorte`, somente quando houver implementação material;
