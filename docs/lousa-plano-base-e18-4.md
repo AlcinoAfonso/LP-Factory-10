@@ -15,7 +15,7 @@ Recorte previsto do roadmap: `18.4 — Parametrização raiz da família landing
 * O PR #559 foi mergeado na `main` em 13/07/2026.
 * `docs/lp-planejamento.md` na `main` é a decisão conceitual obrigatória para este recorte.
 * O conteúdo anterior deste plano-base pertence ao desenho superado de `18.4 — Base de composição landing_page` e foi substituído no mesmo path.
-* O PR #563 contém somente a substituição documental deste plano-base e não pode receber implementação material.
+* O PR #563 permanece estritamente documental e contém somente a substituição deste plano-base.
 * As avaliações do Analista, Gestor Estrutural e Gestor de Updates foram recebidas e consolidadas.
 * A avaliação final da v2 aprovou o conteúdo técnico e exigiu a separação processual entre o merge do plano e o futuro PR de implementação.
 * O plano-base atual trata exclusivamente a parametrização raiz da família `landing_page`.
