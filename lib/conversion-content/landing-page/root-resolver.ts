@@ -40,6 +40,13 @@ export function resolveLandingPageRootParametersFromRegistry(
   }
 
   const validEntry = parsedEntry.data as unknown as LandingPageRootRegistryEntry;
+  if (validEntry.rootVersion !== input.rootVersion) {
+    return invalid(
+      "INVALID_ROOT_CONTRACT",
+      `Invalid landing_page root contract for version ${input.rootVersion}`,
+    );
+  }
+
   const presetKey = input.presetKey ?? validEntry.defaultPreset;
   const preset = validEntry.presets[presetKey];
   if (!preset) {

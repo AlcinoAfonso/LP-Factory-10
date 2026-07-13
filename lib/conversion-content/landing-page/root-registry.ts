@@ -59,6 +59,11 @@ export const landingPageRootRegistry = deepFreeze({
       h2MobileLineTarget: 3,
       semanticHierarchy: ["h1", "h2", "h3"],
       visibleFocusRequired: true,
+      visualHierarchyFollowsSemantic: true,
+      contrastRequired: true,
+      legibilityRequired: true,
+      accessibleNavigationRequired: true,
+      interactiveStatesRequired: true,
     },
     presets: {
       balanced: {

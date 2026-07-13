@@ -667,7 +667,7 @@ Recorte previsto do roadmap: `18.4 — Parametrização raiz da família landing
 
 3.1. E18.4.3–E18.4.8 — Remoção obrigatória da implementação antiga e parametrização raiz v1
 
-* Status: implementada em PR material separado; execução desbloqueada após merge do PR #563 e criação de branch material dedicada.
+* Status: implementada em PR material separado; patch técnico solicitado pelo Analista aplicado; aguardando nova avaliação do Analista.
 * Automação: não.
 * Risco da execução: médio controlado.
 * Objetivo:

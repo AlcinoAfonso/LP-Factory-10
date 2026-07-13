@@ -1,56 +1,33 @@
-export const LANDING_PAGE_ROOT_FAMILY = "landing_page" as const;
-
-export const LANDING_PAGE_ROOT_VERSION_1 = 1 as const;
-
-export const LANDING_PAGE_ROOT_LIFECYCLE_STATUSES = [
-  "hypothesis",
-  "validated",
-  "deprecated",
-] as const;
-
-export const LANDING_PAGE_ROOT_SPACING_OPTIONS = [
-  "compact",
-  "default",
-  "spacious",
-] as const;
-
-export const LANDING_PAGE_ROOT_SEMANTIC_ROLE_KEYS = [
-  "eyebrow",
-  "h1",
-  "h2",
-  "h3",
-  "paragraph",
-  "cta_label",
-  "privacy_note",
-  "faq_question",
-  "faq_answer",
-  "card_title",
-  "card_body",
-  "benefit_item",
-  "step_label",
-  "step_title",
-  "step_body",
-] as const;
-
-export const LANDING_PAGE_ROOT_VISUAL_ROLE_KEYS = [
-  "primary_action",
-  "focus_indicator",
-  "border",
-  "surface",
-  "text",
-  "state",
-] as const;
-
-export type LandingPageRootFamily = typeof LANDING_PAGE_ROOT_FAMILY;
-export type LandingPageRootVersion = typeof LANDING_PAGE_ROOT_VERSION_1;
+export type LandingPageRootFamily = "landing_page";
+export type LandingPageRootVersion = number;
 export type LandingPageRootLifecycleStatus =
-  (typeof LANDING_PAGE_ROOT_LIFECYCLE_STATUSES)[number];
-export type LandingPageRootSpacing =
-  (typeof LANDING_PAGE_ROOT_SPACING_OPTIONS)[number];
+  | "hypothesis"
+  | "validated"
+  | "deprecated";
+export type LandingPageRootSpacing = "compact" | "default" | "spacious";
 export type LandingPageRootSemanticRoleKey =
-  (typeof LANDING_PAGE_ROOT_SEMANTIC_ROLE_KEYS)[number];
+  | "eyebrow"
+  | "h1"
+  | "h2"
+  | "h3"
+  | "paragraph"
+  | "cta_label"
+  | "privacy_note"
+  | "faq_question"
+  | "faq_answer"
+  | "card_title"
+  | "card_body"
+  | "benefit_item"
+  | "step_label"
+  | "step_title"
+  | "step_body";
 export type LandingPageRootVisualRoleKey =
-  (typeof LANDING_PAGE_ROOT_VISUAL_ROLE_KEYS)[number];
+  | "primary_action"
+  | "focus_indicator"
+  | "border"
+  | "surface"
+  | "text"
+  | "state";
 
 export type LandingPageRootErrorCode =
   | "UNKNOWN_ROOT_VERSION"
@@ -117,6 +94,11 @@ export type LandingPageRootVisualCriteria = Readonly<{
   h2MobileLineTarget: number;
   semanticHierarchy: readonly ["h1", "h2", "h3"];
   visibleFocusRequired: true;
+  visualHierarchyFollowsSemantic: true;
+  contrastRequired: true;
+  legibilityRequired: true;
+  accessibleNavigationRequired: true;
+  interactiveStatesRequired: true;
 }>;
 
 export type LandingPageRootRegistryEntry = Readonly<{

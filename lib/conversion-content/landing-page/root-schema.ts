@@ -1,20 +1,43 @@
 import { z } from "zod";
 
-import {
-  LANDING_PAGE_ROOT_FAMILY,
-  LANDING_PAGE_ROOT_LIFECYCLE_STATUSES,
-  LANDING_PAGE_ROOT_SEMANTIC_ROLE_KEYS,
-  LANDING_PAGE_ROOT_SPACING_OPTIONS,
-  LANDING_PAGE_ROOT_VERSION_1,
-  LANDING_PAGE_ROOT_VISUAL_ROLE_KEYS,
-} from "./contracts";
+const semanticRoleKeys = [
+  "eyebrow",
+  "h1",
+  "h2",
+  "h3",
+  "paragraph",
+  "cta_label",
+  "privacy_note",
+  "faq_question",
+  "faq_answer",
+  "card_title",
+  "card_body",
+  "benefit_item",
+  "step_label",
+  "step_title",
+  "step_body",
+] as const;
 
-const semanticRoleKeySet = new Set<string>(LANDING_PAGE_ROOT_SEMANTIC_ROLE_KEYS);
-const visualRoleKeySet = new Set<string>(LANDING_PAGE_ROOT_VISUAL_ROLE_KEYS);
-const spacingOptionSet = new Set<string>(LANDING_PAGE_ROOT_SPACING_OPTIONS);
-const lifecycleStatusSet = new Set<string>(
-  LANDING_PAGE_ROOT_LIFECYCLE_STATUSES,
-);
+const visualRoleKeys = [
+  "primary_action",
+  "focus_indicator",
+  "border",
+  "surface",
+  "text",
+  "state",
+] as const;
+
+const requiredVersionOneSpacingOptions = [
+  "compact",
+  "default",
+  "spacious",
+] as const;
+
+const lifecycleStatuses = ["hypothesis", "validated", "deprecated"] as const;
+
+const semanticRoleKeySet = new Set<string>(semanticRoleKeys);
+const visualRoleKeySet = new Set<string>(visualRoleKeys);
+const lifecycleStatusSet = new Set<string>(lifecycleStatuses);
 
 const nonEmptyPlainText = z
   .string()
@@ -95,23 +118,12 @@ const presetSchema = z
     maxReadingWidth: sizeValueSchema,
     typography: typographySchema,
   })
-  .strict()
-  .superRefine((preset, context) => {
-    for (const path of ["density", "defaultSectionSpacing"] as const) {
-      if (!spacingOptionSet.has(preset[path])) {
-        context.addIssue({
-          code: "custom",
-          path: [path],
-          message: "unknown spacing value",
-        });
-      }
-    }
-  });
+  .strict();
 
 export const landingPageRootRegistryEntrySchema = z
   .object({
-    family: z.literal(LANDING_PAGE_ROOT_FAMILY),
-    rootVersion: z.literal(LANDING_PAGE_ROOT_VERSION_1),
+    family: z.literal("landing_page"),
+    rootVersion: z.number().int().min(1),
     lifecycleStatus: z.string(),
     defaultPreset: z.string().trim().min(1),
     semanticRoles: z.record(z.string(), semanticRoleSchema),
@@ -153,6 +165,11 @@ export const landingPageRootRegistryEntrySchema = z
           z.literal("h3"),
         ]),
         visibleFocusRequired: z.literal(true),
+        visualHierarchyFollowsSemantic: z.literal(true),
+        contrastRequired: z.literal(true),
+        legibilityRequired: z.literal(true),
+        accessibleNavigationRequired: z.literal(true),
+        interactiveStatesRequired: z.literal(true),
       })
       .strict(),
     presets: z.record(z.string(), presetSchema),
@@ -216,8 +233,38 @@ export const landingPageRootRegistryEntrySchema = z
       }
     }
 
+    const declaredSpacingOptions = new Set(entry.commonOptions.spacing);
+    if (declaredSpacingOptions.size !== entry.commonOptions.spacing.length) {
+      context.addIssue({
+        code: "custom",
+        path: ["commonOptions", "spacing"],
+        message: "spacing options must be unique",
+      });
+    }
+
+    if (entry.rootVersion === 1) {
+      validateExactArrayValues({
+        context,
+        path: ["commonOptions", "spacing"],
+        actual: entry.commonOptions.spacing,
+        expected: requiredVersionOneSpacingOptions,
+      });
+    }
+
+    for (const [presetKey, preset] of Object.entries(entry.presets)) {
+      for (const path of ["density", "defaultSectionSpacing"] as const) {
+        if (!declaredSpacingOptions.has(preset[path])) {
+          context.addIssue({
+            code: "custom",
+            path: ["presets", presetKey, path],
+            message: "preset spacing must be declared by the version",
+          });
+        }
+      }
+    }
+
     for (const spacing of entry.commonOptions.spacing) {
-      if (!spacingOptionSet.has(spacing)) {
+      if (!requiredVersionOneSpacingOptions.includes(spacing as never)) {
         context.addIssue({
           code: "custom",
           path: ["commonOptions", "spacing"],
@@ -266,6 +313,32 @@ function validateExactRecordKeys(input: {
         code: "custom",
         path: [...input.path, key],
         message: "required key missing",
+      });
+    }
+  }
+}
+
+function validateExactArrayValues(input: {
+  context: z.RefinementCtx;
+  path: string[];
+  actual: readonly string[];
+  expected: readonly string[];
+}) {
+  for (const value of input.actual) {
+    if (!input.expected.includes(value)) {
+      input.context.addIssue({
+        code: "custom",
+        path: input.path,
+        message: "unknown required value",
+      });
+    }
+  }
+  for (const value of input.expected) {
+    if (!input.actual.includes(value)) {
+      input.context.addIssue({
+        code: "custom",
+        path: input.path,
+        message: "required value missing",
       });
     }
   }

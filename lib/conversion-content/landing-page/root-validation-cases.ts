@@ -42,6 +42,11 @@ const cases: Case[] = [
       assert.equal(result.value.rootVersion, 1);
       assert.equal(result.value.lifecycleStatus, "hypothesis");
       assert.equal(result.value.resolvedPresetKey, "compact");
+      assert.equal(result.value.visualCriteria.visualHierarchyFollowsSemantic, true);
+      assert.equal(result.value.visualCriteria.contrastRequired, true);
+      assert.equal(result.value.visualCriteria.legibilityRequired, true);
+      assert.equal(result.value.visualCriteria.accessibleNavigationRequired, true);
+      assert.equal(result.value.visualCriteria.interactiveStatesRequired, true);
     },
   },
   {
@@ -104,6 +109,21 @@ const cases: Case[] = [
 
       const result = resolveLandingPageRootParametersFromRegistry(
         { rootVersion: 1 },
+        registry,
+      );
+
+      assert.equal(result.ok, false);
+      assert.equal(result.error.code, "INVALID_ROOT_CONTRACT");
+    },
+  },
+  {
+    name: "registry key and rootVersion mismatch fails closed",
+    run: () => {
+      const entry = cloneRootEntry();
+      const registry = { 2: entry };
+
+      const result = resolveLandingPageRootParametersFromRegistry(
+        { rootVersion: 2 },
         registry,
       );
 
@@ -177,6 +197,58 @@ const cases: Case[] = [
           absoluteMax: number;
         }
       ).absoluteMax = 0;
+
+      assert.equal(landingPageRootRegistryEntrySchema.safeParse(entry).success, false);
+    },
+  },
+  {
+    name: "version 1 spacing options are valid",
+    run: () => {
+      const entry = cloneRootEntry();
+
+      assert.deepEqual(entry.commonOptions.spacing, [
+        "compact",
+        "default",
+        "spacious",
+      ]);
+      assert.equal(landingPageRootRegistryEntrySchema.safeParse(entry).success, true);
+    },
+  },
+  {
+    name: "duplicate spacing option fails schema",
+    run: () => {
+      const entry = cloneRootEntry();
+      (entry.commonOptions as unknown as { spacing: string[] }).spacing = [
+        "compact",
+        "default",
+        "default",
+        "spacious",
+      ];
+
+      assert.equal(landingPageRootRegistryEntrySchema.safeParse(entry).success, false);
+    },
+  },
+  {
+    name: "missing required v1 spacing option fails schema",
+    run: () => {
+      const entry = cloneRootEntry();
+      (entry.commonOptions as unknown as { spacing: string[] }).spacing = [
+        "compact",
+        "default",
+      ];
+
+      assert.equal(landingPageRootRegistryEntrySchema.safeParse(entry).success, false);
+    },
+  },
+  {
+    name: "preset spacing not declared by version fails schema",
+    run: () => {
+      const entry = cloneRootEntry();
+      (entry as unknown as { rootVersion: number }).rootVersion = 2;
+      (entry.commonOptions as unknown as { spacing: string[] }).spacing = [
+        "compact",
+        "spacious",
+      ];
 
       assert.equal(landingPageRootRegistryEntrySchema.safeParse(entry).success, false);
     },
@@ -260,14 +332,54 @@ const cases: Case[] = [
     },
   },
   {
-    name: "new version can be added without changing v1",
+    name: "new version can be added and resolved without changing v1",
     run: () => {
+      const versionOneSnapshot = cloneRootEntry();
+      const versionOne = cloneRootEntry();
+      const versionTwo = cloneRootEntry();
+      (versionTwo as unknown as { rootVersion: number }).rootVersion = 2;
+
       const registry = {
-        1: cloneRootEntry(),
-        2: { ...cloneRootEntry(), rootVersion: 2 },
+        1: versionOne,
+        2: versionTwo,
       };
 
-      assert.deepEqual(registry[1], cloneRootEntry());
+      assert.equal(registry[1].rootVersion, 1);
+      assert.equal(registry[2].rootVersion, 2);
+      assert.equal(
+        landingPageRootRegistryEntrySchema.safeParse(registry[1]).success,
+        true,
+      );
+      assert.equal(
+        landingPageRootRegistryEntrySchema.safeParse(registry[2]).success,
+        true,
+      );
+
+      const resolvedVersionOne = resolveLandingPageRootParametersFromRegistry(
+        { rootVersion: 1 },
+        registry,
+      );
+      const resolvedVersionTwo = resolveLandingPageRootParametersFromRegistry(
+        { rootVersion: 2 },
+        registry,
+      );
+
+      assert.equal(resolvedVersionOne.ok, true);
+      assert.equal(resolvedVersionTwo.ok, true);
+      assert.equal(resolvedVersionOne.value.rootVersion, 1);
+      assert.equal(resolvedVersionTwo.value.rootVersion, 2);
+      assert.deepEqual(registry[1], versionOneSnapshot);
+      assert.equal(Object.isFrozen(resolvedVersionOne.value), true);
+      assert.equal(Object.isFrozen(resolvedVersionTwo.value), true);
+
+      (registry[2] as unknown as { rootVersion: number }).rootVersion = 1;
+      const mismatchedVersion = resolveLandingPageRootParametersFromRegistry(
+        { rootVersion: 2 },
+        registry,
+      );
+
+      assert.equal(mismatchedVersion.ok, false);
+      assert.equal(mismatchedVersion.error.code, "INVALID_ROOT_CONTRACT");
     },
   },
   {
