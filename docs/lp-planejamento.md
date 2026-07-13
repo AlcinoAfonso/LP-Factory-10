@@ -251,6 +251,7 @@ Fontes de referência: `README.md`, `docs/prompt-nicho-itens-estruturados.md`, `
 - Esta seção distribui tudo o que precisa ser ajustado ou implementado pelas seções e subseções correspondentes de `docs/roadmap.md`.
 - Devem ser priorizadas subseções já existentes; novas seções ou subseções só devem ser propostas quando não houver proprietário adequado no roadmap atual.
 - A distribuição registrada aqui orienta os planos-base, mas não altera automaticamente o roadmap.
+- Os seis planos-base ficam distribuídos entre E18, E20, E19 e E12, sem criar fluxo administrativo paralelo de geração de LP.
 
 ### 4.1. E10 — Taxons e itens estruturados
 
@@ -265,31 +266,34 @@ Fontes de referência: `README.md`, `docs/prompt-nicho-itens-estruturados.md`, `
 - Não ajustar `10.5.6` nem a E10.7, pois resolução do nicho da conta e página `commercial_activation` permanecem contratos separados.
 - Esses ajustes não alteram schema, hierarquia dos taxons ou o histórico das implementações concluídas.
 
-### 4.2. E12 — Operação administrativa das landing pages
+### 4.2. E12 — Autorização, validação e liberação administrativa
 
 - Tipo de intervenção: ajustar o contrato geral da E12 e criar um novo recorte funcional dentro da área existente de Templates.
 - Subseções afetadas: `12.1.3`, `12.1.5` e nova `12.4`; não ampliar `12.3`, que permanece exclusiva da operação administrativa da E10.7.
 - Ajustar `12.1.3` para manter as mutações administrativas gerais fora do escopo, exceto as operações mínimas aprovadas para a E10.7 e, quando implementadas, as operações específicas de landing pages definidas em `12.4`.
-- Ajustar `12.1.5` para registrar que curadoria e aprovação de composição, LP teste e liberação do plano e da composição para uso posterior nas LPs dos clientes não pertencem à base geral nem à E10.7, mas poderão ser implementadas somente pelo novo recorte `12.4`.
+- Ajustar `12.1.5` para registrar que revisão da prontidão, autorização de contas de teste, avaliação da LP real e liberação do taxon, plano e composição não pertencem à base geral nem à E10.7, mas poderão ser implementadas somente pelo novo recorte `12.4`.
 - Preservar `12.2` como base administrativa e leitura operacional read-only e preservar integralmente `12.3` como registro da operação de `commercial_activation`.
-- Criar `12.4 — Operação administrativa de landing pages por taxon`, sem criar nova área na navegação, usando a área de Templates já prevista em `12.1.4`.
+- Criar `12.4 — Validação e liberação administrativa de landing pages por taxon`, sem criar nova área na navegação, usando a área de Templates já prevista em `12.1.4`.
 - O novo recorte deve permitir ao humano, conforme os contratos e persistências definidos nos planos-base aplicáveis:
-  - verificar a elegibilidade do taxon e a origem dos itens estruturados resolvidos;
-  - revisar, aprovar ou rejeitar a composição base e sua regra de herança;
-  - gerar ou regenerar a primeira LP teste `starter`;
-  - visualizar a LP teste com o renderer aplicável;
-  - registrar a validação e a decisão de liberação vinculadas ao taxon, ao plano, à versão da composição e à versão ou identificação da LP teste avaliadas, incluindo responsável e momento da decisão.
-- A E12 não será a fonte dos contratos de parametrização, módulos, variantes, catálogo de entradas ou composição; será a superfície responsável pelas operações humanas autorizadas sobre esses contratos.
+  - verificar a elegibilidade do taxon, a origem dos itens estruturados e o checklist de prontidão definido pela E20;
+  - revisar catálogo aplicável, composição base, versão e regra de herança;
+  - autorizar ou revogar contas de teste para um taxon ou conjunto de taxons e para um plano determinado;
+  - localizar e abrir a LP real criada pela E19 na conta de teste, sem gerar ou regenerar LP no Admin Dashboard;
+  - consultar snapshot, versões, estado de publicação, validações técnicas e integridade do tracking aplicável;
+  - registrar aprovação, rejeição ou necessidade de correções;
+  - registrar a decisão de liberação vinculada ao taxon, plano, conta de teste, LP usada como evidência, composição, versões, responsável e momento.
+- A E12 não será a fonte dos contratos de parametrização, módulos, variantes, catálogo, composição, prontidão ou liberação; será a superfície responsável pelas operações humanas autorizadas sobre os contratos da E20 e pelas evidências produzidas pela E19.
 - Estrutura prevista para o novo recorte no roadmap:
   - `12.4.1 — Objetivo e status`;
   - `12.4.2 — Registros do recorte`, somente quando houver implementação material;
-  - `12.4.3 — Elegibilidade e fontes resolvidas`;
-  - `12.4.4 — Revisão da composição e da herança`;
-  - `12.4.5 — Geração e visualização da LP teste`;
+  - `12.4.3 — Prontidão, fontes, catálogo e composição resolvidos`;
+  - `12.4.4 — Autorização de contas de teste`;
+  - `12.4.5 — Revisão da LP real e das evidências`;
   - `12.4.6 — Validação e decisão de liberação`.
-- Permanecem fora de `12.4`: gestão das LPs dos clientes, LP Builder, editor visual, aprovação automática, publicação automática e infraestrutura nova não decidida pelos planos-base.
-- Rota exata, actions, persistência, permissões, auditoria e evidências devem ser definidas somente nos planos-base que materializarem cada operação.
-- A criação de `12.4` no roadmap não exige sua implementação junto ao primeiro plano-base; a superfície administrativa entra apenas quando composição, geração, validação ou liberação precisarem de operação humana.
+- O sexto plano-base pertence à nova `12.4`, com path previsto `docs/lousa-plano-base-e12-4.md`.
+- Permanecem fora de `12.4`: geração ou regeneração de LP, gestão do ciclo das LPs das contas, LP Builder, editor visual, aprovação automática, publicação automática e infraestrutura nova não decidida pelos planos-base.
+- Rota exata, actions, persistência, permissões, auditoria e evidências devem ser definidas somente pelo plano-base que materializar o recorte.
+- A superfície administrativa entra somente depois de existirem os contratos da E20 e a LP real produzida pela E19 necessária à avaliação.
 
 ### 4.3. E18 — Parametrização técnica da família `landing_page`
 
@@ -297,8 +301,8 @@ Fontes de referência: `README.md`, `docs/prompt-nicho-itens-estruturados.md`, `
 - Seções e subseções afetadas: objetivo e status da E18, `18.1.5`, atual `18.4` e nova `18.5`.
 - Ajustar o objetivo e o status da E18 para registrar que `commercial_activation` permanece implementada e preservada, enquanto a evolução de `landing_page` passa a começar pela parametrização raiz e depois pela parametrização de módulos e variantes.
 - Ajustar `18.1.5` para preservar o catálogo implementado de `commercial_activation`, retirar o catálogo anterior de `landing_page` como contrato vigente e registrar que seu novo catálogo será definido em `18.5` após a parametrização raiz.
-- Registrar em `18.1.5` que os limites textuais comuns pertencem à raiz e que módulos ou variantes só podem sobrescrevê-los excepcionalmente, seguindo `raiz → módulo → variante`.
-- Preservar `18.1.7` como contrato transversal geral até a distribuição do plano-base de composição e preservar `18.1.8` como separação entre template, composição, conteúdo e artefato final.
+- Registrar em `18.1.5` que os limites textuais e os valores comuns de `spacing` pertencem à raiz e que módulos ou variantes só podem sobrescrevê-los excepcionalmente, seguindo `raiz → módulo → variante`.
+- Preservar `18.1.7` como contrato transversal geral até a materialização da composição pela E20 e preservar `18.1.8` como separação entre template, composição, conteúdo e artefato final.
 - Preservar integralmente `18.2` e `18.3`, que permanecem vinculadas a `commercial_activation` e ao consumo pela E10.7.
 - Substituir integralmente a atual `18.4 — Base de composição landing_page` por `18.4 — Parametrização raiz da família landing_page`.
 - A nova `18.4` será responsável pela fonte versionada da verdade para papéis semânticos, faixas editoriais recomendadas, limites técnicos absolutos, critérios visuais e responsivos, presets, relação com o design system, contrato de leitura, herança, precedência e validação.
@@ -313,7 +317,7 @@ Fontes de referência: `README.md`, `docs/prompt-nicho-itens-estruturados.md`, `
   - `18.4.8 — Herança, precedência e validação`;
   - `18.4.9 — Limites do recorte`.
 - O plano-base da nova `18.4` terá path `docs/lousa-plano-base-e18-4.md`, substituindo o conteúdo do plano-base anterior.
-- Criar `18.5 — Parametrização de módulos e variantes landing_page`, responsável pelo catálogo inicial, funções estruturais, campos, cardinalidades, variantes, especializações excepcionais sobre a raiz, `copy_source_map`, `funnel_copy_profile`, tratamentos por intenção/funil, ciclo de vida, compatibilidade, depreciação e remoção.
+- Criar `18.5 — Parametrização de módulos e variantes landing_page`, responsável pelo catálogo inicial, funções estruturais, campos, cardinalidades, variantes, especializações excepcionais sobre a raiz, `copy_source_map`, `funnel_copy_profile`, tratamentos por intenção ou funil, ciclo de vida, compatibilidade, depreciação e remoção.
 - Estrutura prevista para `18.5`:
   - `18.5.1 — Objetivo e status`;
   - `18.5.2 — Registros do recorte`, somente quando houver implementação material;
@@ -330,5 +334,68 @@ Fontes de referência: `README.md`, `docs/prompt-nicho-itens-estruturados.md`, `
 - A substituição da antiga `18.4` implica remover, pelo plano-base próprio e por seu Executor, a implementação repo-only criada antes do planejamento conceitual, incluindo o diretório `lib/conversion-content/landing-page/`, o export correspondente, o script `validate:landing-page` e as referências normativas anteriores, após verificação final de dependências e sem deixar artefatos órfãos.
 - A remoção não ocorre neste documento nem durante o fechamento da seção 4; o novo plano-base da `18.4` deve detalhar escopo, ordem, verificações e briefing para execução.
 - O histórico da implementação removida permanece preservado pelo Git e não deve determinar a estrutura futura do roadmap.
-- Permanecem fora da nova `18.4` e da `18.5`: elegibilidade do taxon, resolução dos itens estruturados, catálogo de entradas da geração, composição base por taxon, herança da composição, aprovação humana, geração da LP teste, liberação e ciclo das LPs vinculadas às contas.
+- Permanecem fora da nova `18.4` e da `18.5`: elegibilidade e itens estruturados, catálogo de entradas, composição por taxon, herança concreta, prontidão, autorização de contas de teste, geração e ciclo das LPs por conta, avaliação humana e liberação.
 - Os novos recortes não autorizam automaticamente banco, migration, rota, API, Admin, configuração dinâmica em runtime, agente, job ou automação; cada plano-base deve decidir apenas os artefatos necessários ao próprio recorte.
+
+### 4.4. E20 — Preparação e liberação de landing pages por taxon
+
+- Tipo de intervenção: criar uma nova seção funcional no roadmap para os contratos e registros que existem no nível do taxon antes da geração de qualquer LP específica de conta.
+- Objetivo: consolidar catálogo de entradas, composição base, herança, prontidão para teste e regras de liberação por taxon e plano, sem gerar landing pages e sem duplicar as responsabilidades da E10, E12, E18 ou E19.
+- A E20 recebe da E10 o taxon e os itens estruturados e recebe da E18 as parametrizações, módulos e variantes permitidos.
+- A E20 é responsável por:
+  - definir o catálogo aplicável ao taxon e sua herança;
+  - criar e versionar a composição base concreta do segmento ou nicho;
+  - admitir composição própria de ultranicho somente quando justificada e aprovada humanamente;
+  - registrar módulos, variantes, ordem, obrigatoriedade e escolhas permitidas;
+  - definir a regra de herança da composição;
+  - registrar gaps impeditivos;
+  - consolidar o checklist de prontidão para teste;
+  - definir as regras para autorização controlada de contas de teste por taxon e plano;
+  - definir os critérios funcionais para liberação geral com base em uma LP real produzida pela E19.
+- A E20 não será uma superfície administrativa: a revisão humana, autorização de contas de teste e decisão de liberação serão operadas pela E12.
+- A E20 não gera, revisa, edita, publica ou administra LPs das contas; essas responsabilidades pertencem à E19.
+- Estrutura prevista para a nova seção no roadmap:
+  - `20.1 — Contrato de preparação e liberação por taxon`;
+  - `20.2 — Catálogo de entradas por taxon`;
+  - `20.3 — Composição base e herança`;
+  - `20.4 — Prontidão e autorização controlada para teste`;
+  - `20.5 — Liberação por evidência da LP real`.
+- O terceiro plano-base pertence a `20.2`, com path previsto `docs/lousa-plano-base-e20-2.md`.
+- O quarto plano-base pertence a `20.3` e `20.4`, com path previsto `docs/lousa-plano-base-e20-3.md`.
+- O contrato de `20.5` deve ser materializado operacionalmente pelo sexto plano da E12, sem criar um terceiro plano-base da E20 nesta jornada.
+- Persistência, estados, versões, regras de herança e vínculo com contas de teste só podem ser definidos pelos planos-base aplicáveis após avaliação do schema existente.
+- Permanecem fora da E20: trial, checkout, pagamento, entitlement, upgrade e downgrade da E9; cards e entrada comercial da E10; parametrizações da E18; geração e ciclo das LPs da E19; UI e operações humanas da E12; automação, agente, job ou infraestrutura não comprovada.
+
+### 4.5. E19 — Fluxo único de landing pages por conta
+
+- Tipo de intervenção: preservar os recortes concluídos da E19 e criar um novo recorte funcional, sem reabrir as fases encerradas de `docs/lousa-plano-base-E19.md`.
+- Ajustar o objetivo e o status geral da E19 para registrar que a criação mínima por conta permanece implementada e que sua próxima evolução será o fluxo produtivo único usado por contas de teste, pilotos, contas consultivas e clientes.
+- Preservar `19.1`, `19.2` e `19.3` como contrato e histórico do recorte concluído da Fase 3; itens registrados como fora daquela fase não impedem sua entrada no novo recorte quando expressamente aprovada pelo novo plano-base.
+- Criar `19.4 — Geração e ciclo das landing pages por conta`.
+- O novo recorte deve:
+  - consumir a elegibilidade e os itens estruturados resolvidos da E10;
+  - consumir as parametrizações, módulos e variantes da E18;
+  - consumir o catálogo, a composição, a herança, a prontidão e a liberação aplicáveis da E20;
+  - consumir o entitlement da E9 sem duplicar trial, checkout, pagamento, upgrade ou downgrade;
+  - permitir o uso pré-liberação somente por contas de teste autorizadas;
+  - permitir o uso pós-liberação pelas demais contas elegíveis;
+  - apresentar e receber os valores previstos pelo catálogo;
+  - gerar a LP real pertencente à conta;
+  - permitir revisão e edição controladas dentro dos contratos aprovados;
+  - publicar e renderizar a LP conforme o recorte aprovado;
+  - registrar tracking mínimo aplicável sem confundi-lo com analytics avançado;
+  - preservar snapshot de valores, taxon, plano, composição, parametrizações, módulos, variantes e versões;
+  - identificar contas de teste para que seus eventos possam ser separados dos indicadores comerciais reais.
+- Estrutura prevista para o novo recorte no roadmap:
+  - `19.4.1 — Objetivo e status`;
+  - `19.4.2 — Registros do recorte`, somente quando houver implementação material;
+  - `19.4.3 — Elegibilidade e contratos resolvidos`;
+  - `19.4.4 — Coleta das entradas e geração`;
+  - `19.4.5 — Revisão e edição controladas`;
+  - `19.4.6 — Publicação, render público e tracking mínimo`;
+  - `19.4.7 — Snapshot, versões e rastreabilidade`;
+  - `19.4.8 — Limites do recorte`.
+- O quinto plano-base pertence a `19.4`, com path previsto `docs/lousa-plano-base-e19-4.md`.
+- A geração da LP usada como evidência de teste ocorre integralmente na E19; a E12 apenas localiza, avalia e registra a decisão humana.
+- Não criar entidade, tabela, renderer ou fluxo separado para LP teste.
+- Editor visual, drag and drop, analytics avançado, teste A/B, domínio customizado, automação, agente, job e demais capacidades ainda não aprovadas permanecem fora do novo recorte.
