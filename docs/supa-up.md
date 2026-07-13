@@ -87,31 +87,58 @@ Suporte a dados frios com formato Iceberg, ideal para análises históricas.
 
 ---
 
-## 4 — FDWs (DuckDB / Iceberg) *(🟦 Estável)*  
+
+## 4 — FDWs / Wrappers para fontes externas (DuckDB / Iceberg / MongoDB) *(🟦 Estável; adoção condicional)*
 
 2025-08-12  
+Atualizado em 2026-07-13
 
 ### Status no Projeto
 
-- Status: Não implementado
-- Evidência: docs/roadmap.md (sem caso/plano de adoção explícito no LP Factory 10)
+- Status: Não implementado — capacidade estratégica futura condicionada
+- Evidência: `docs/roadmap.md` não possui integração externa aprovada; rodada Supabase Update July 2026 reconhece potencial competitivo futuro sem adoção no MVP
+- Estado verificado: extensão `wrappers` não instalada no projeto Supabase
 
+### Descrição
 
-### Descrição  
+FDWs e Supabase Wrappers permitem consultar fontes externas a partir do Postgres sem exigir, em todos os casos, cópia integral ou sincronização permanente dos dados.
 
-Permite consultas diretas a fontes externas (Data Lakes e BIs).  
+O Wrappers v0.6.2 acrescentou suporte a MongoDB, permitindo consultar e combinar coleções MongoDB com tabelas Postgres. DuckDB, Iceberg e MongoDB representam fontes possíveis; não são dependências atuais do LP Factory 10.
 
-### Valor para o Projeto  
+### Valor para o Projeto
 
-- Expande integração analítica.  
+- Preserva uma possibilidade competitiva de integrar catálogos, produtos, preços, disponibilidade, CRMs, data lakes ou bases mantidas por clientes e parceiros.
+- Pode reduzir a necessidade de construir antecipadamente um pipeline ou conector completo para cada fonte.
+- Mantém Supabase/Postgres como camada central em casos futuros de federação de dados.
+- Pode acelerar onboarding e geração de LPs quando houver uma fonte externa real e recorrente.
 
-### Valor para o Usuário  
+### Valor para o Usuário
 
-- Relatórios conectados a múltiplas origens.  
+- Possibilidade futura de reutilizar dados já mantidos em outros sistemas.
+- Menor duplicação e menor retrabalho de atualização em integrações adequadas a FDW.
 
-### Ações Recomendadas  
+### Limites no MVP
 
-1. Mapear uso em Data Hub futuro.  
+- Não instalar `wrappers` agora.
+- Não contratar ou criar MongoDB, Data Lake ou Data Hub.
+- Não criar foreign server, foreign table, secret, rota, job ou sincronização.
+- Preferir API ou importação simples quando resolverem o caso com menor risco.
+- Não usar FDW sem avaliar latência, disponibilidade, credenciais, rede, backup e dependência do terceiro.
+
+### Gatilho futuro de avaliação
+
+Avaliar implementação somente quando existir:
+
+1. cliente ou caso aprovado com fonte externa real;
+2. dado recorrente necessário para gerar ou operar landing pages;
+3. vantagem comprovada sobre importação pontual ou API simples;
+4. requisitos de segurança, disponibilidade e custo definidos.
+
+### Ações Recomendadas
+
+1. Manter como capacidade estratégica futura, sem implementação no MVP.
+2. Reavaliar na primeira integração externa aprovada ou em eventual recorte de Data Hub.
+3. Pesquisar novamente o wrapper e sua maturidade no momento do caso real.
 
 ---
 
@@ -536,41 +563,51 @@ Retenção por camadas: PII (30–90 dias), eventos brutos (180 dias) e agregado
 
 ---
 
-## 26 — Realtime Replay (Alpha) *(🧪 Experimental)*
+
+## 26 — Realtime Replay (Alpha) + capacidades futuras de Broadcast *(🧪 Experimental / condicional)*
 
 2025-11-09  
+Atualizado em 2026-07-13
 
 ### Status no Projeto
 
-- Status: Não implementado
-- Evidência: docs/roadmap.md (sem adoção definida no escopo atual)
-
+- Status: Não implementado — capacidade futura condicionada a colaboração ou operação simultânea aprovada
+- Evidência: `docs/roadmap.md` não possui adoção Realtime definida no escopo atual
+- Estado verificado: publicação `supabase_realtime` existente, sem tabelas publicadas
 
 ### Descrição
 
-Permite que canais privados do Supabase Realtime recuperem mensagens anteriores, desde que tenham sido publicadas via *Broadcast From the Database*. Funciona como um histórico consultável de eventos Realtime.
+Realtime Replay permite que canais privados recuperem mensagens anteriores publicadas via *Broadcast From the Database*.
+
+Desde o Supabase Update July 2026, Realtime Broadcast também aceita payloads binários. Essa capacidade complementar pode reduzir overhead em cenários como screenshots, mídia temporária ou telemetria, mas não transforma o transporte binário em requisito do MVP.
 
 ### Valor para o Projeto
 
-- Base técnica para colaboração em tempo real.  
-
-- Possibilita recuperar logs temporários de ações no dashboard.  
-
-- Útil para prototipação de edição colaborativa de LPs no futuro.
+- Preserva opção futura para edição colaborativa, atualização simultânea de previews ou acompanhamento de operações.
+- Pode permitir recuperação de eventos após entrada tardia ou reconexão.
+- Payloads binários podem apoiar mídia ou previews visuais somente se esse caso surgir.
 
 ### Valor para o Usuário
 
-- Visualização de eventos anteriores mesmo entrando depois no sistema.  
+- Experiência futura mais contínua em funcionalidades colaborativas.
+- Possibilidade de acompanhar alterações feitas por outros operadores ou usuários.
 
-- Experiência contínua em funcionalidades colaborativas futuras.
+### Limites no MVP
+
+- Não habilitar tabelas, canais, políticas ou novas dependências Realtime agora.
+- Não criar histórico de eventos ou colaboração sem decisão de produto.
+- Usar JSON para os fluxos atuais; não criar protocolo binário.
+- Não tratar Replay como fila durável ou sistema de auditoria.
+
+### Gatilho futuro de avaliação
+
+Reavaliar apenas quando colaboração, preview simultâneo ou recuperação de eventos entrar formalmente no roadmap.
 
 ### Ações Recomendadas
 
-1. Aguardar estabilização do recurso (ainda em alpha).  
-
-2. Testar integração com dashboards internos.  
-
-3. Avaliar uso em módulos de logs e colaboração futura.
+1. Manter como capacidade futura, sem implementação.
+2. Aguardar maturidade do Replay.
+3. Quando houver caso aprovado, pesquisar novamente Replay, Broadcast binário, consumo de mensagens e alternativas de sincronização.
 
 ---
 
@@ -889,43 +926,53 @@ Guia oficial para gerar **tipos Python** via CLI (`supabase gen types --lang=
 
 ---
 
-## 39 — pg_graphql desativado por padrão *(🗾 Estável)*
 
-2026-02-15
+## 39 — pg_graphql sem uso: desativação pendente e introspecção off a partir da 1.6.0 *(🗾 Estável)*
+
+2026-02-15  
+Atualizado em 2026-07-13
 
 ### Status no Projeto
 
-- Status: Não implementado
-- Evidência: docs/roadmap.md (sem caso de uso ativo para adoção no produto)
-
+- Status: Configuração pendente
+- Evidência: inspeção read-only do projeto Supabase em 2026-07-13 encontrou `pg_graphql` 1.5.11 e a função `graphql_public.graphql`
+- Uso identificado: nenhum consumidor GraphQL localizado na stack, no `package.json`, na Base Técnica ou no Schema
+- Observação: exige busca final no repositório antes da remoção
 
 ### Descrição
-A extensão **pg_graphql** passa a vir **desativada por padrão** em novos projetos. Projetos existentes sem requisições GraphQL também podem ter a extensão desativada. Se você usa GraphQL, precisa **habilitar manualmente** a extensão no projeto.
+
+Existem duas mudanças diferentes:
+
+- a extensão `pg_graphql` pode ser desativada quando GraphQL não é utilizado;
+- a partir do `pg_graphql` 1.6.0, a introspecção do schema fica desativada por padrão e só deve ser habilitada por schema quando GraphiQL, Relay ou codegen realmente dependerem dela.
+
+O projeto ainda está em `pg_graphql` 1.5.11; portanto, não deve assumir que o novo padrão de introspecção já foi aplicado.
 
 ### Valor para o Projeto
 
-* Evita dependência implícita de GraphQL em ambientes novos.
-* Reduz risco de drift entre projetos (novos vs antigos).
-* Pode reduzir superfície de ataque quando GraphQL não é usado.
+- Remove uma API sem uso e reduz superfície desnecessária.
+- Evita dependência implícita e drift entre ambientes.
+- Impede que a atualização para 1.6.x seja confundida com adoção de GraphQL.
 
 ### Valor para o Usuário
 
-* Menos risco de instabilidade por features não utilizadas.
-* Experiência mais previsível em upgrades/criação de ambientes.
+- Menor superfície de exposição e operação mais previsível.
 
 ### Ações Recomendadas
 
-1. Verificar se o projeto usa GraphQL (requisições / dependências).
-2. Se usar: habilitar **pg_graphql** manualmente e registrar o motivo/escopo.
-3. Se não usar: registrar explicitamente “GraphQL não utilizado” (governança).
+1. Fazer busca final por `/graphql/v1`, `graphql_public`, `pg_graphql`, GraphiQL, Relay e clientes/codegen GraphQL.
+2. Confirmada a ausência de consumidor, remover `pg_graphql` por migration versionada, sem SQL Editor.
+3. Não habilitar introspecção.
+4. Avaliar retirada de `graphql_public` dos schemas expostos no `supabase/config.toml`.
+5. Após aplicar e documentar a configuração em `docs/schema.md` e `docs/platform-config.md`, retirar `supa#39` do catálogo ativo e aposentar o ID.
 
 ### Registro (Tipo A — Plataforma)
 
-* Status: PENDENTE
-* Verificado em: —
-* Ambiente: Supabase Dashboard (projeto LP-Factory-10)
-* Evidência: —
-* Observação: só é necessário habilitar se GraphQL for adotado.
+- Status: PENDENTE
+- Verificado em: 2026-07-13
+- Ambiente: Supabase Cloud / projeto LP-Factory-10
+- Evidência: `pg_graphql` 1.5.11; `graphql_public.graphql` presente
+- Observação: nenhuma alteração de banco foi executada nesta rodada documental.
 
 ---
 
@@ -1109,42 +1156,61 @@ A Supabase passou a oferecer integração oficial com o Claude, permitindo conec
 ---
 
 
-## 46 — Logs Drains *(🗾 Estável)*
 
-2026-03-05
+## 46 — Logs Drains + Audit Log Drains *(🗾 Estável)*
+
+2026-03-05  
+Atualizado em 2026-07-13
 
 ### Status no Projeto
 
-- Status: Não implementado
-- Evidência: docs/base-tecnica.md + docs/roadmap.md (observabilidade atual coberta por logs estruturados; sem upgrade de plano)
-- Observação: Não apto no plano atual.
-
+- Status: Não implementado — capacidade futura condicionada
+- Evidência: `docs/base-tecnica.md` + `docs/roadmap.md` (observabilidade atual coberta por logs estruturados; sem upgrade de plano)
+- Observação: não apto no plano atual
 
 ### Descrição
-A Supabase lançou **Logs Drains**, permitindo enviar logs de **Postgres, Auth, Storage, Edge Functions e Realtime** para destinos externos como **Datadog, Grafana Loki, Sentry, Axiom, S3** ou **endpoint próprio**.
+
+Logs Drains permitem enviar logs operacionais de Postgres, Auth, Storage, Edge Functions e Realtime para destinos externos.
+
+Audit Log Drains, anunciado no Supabase Update July 2026, permite encaminhar Platform Audit Logs, que registram ações administrativas de membros da organização, como alterações de projeto, convites e configurações.
+
+Logs operacionais e Platform Audit Logs são classes diferentes e não substituem os logs de negócio da aplicação.
 
 ### Valor para o Projeto
-- Centraliza observabilidade fora do dashboard do Supabase.
-- Facilita retenção, correlação e auditoria de incidentes.
+
+- Possibilita retenção externa, correlação e investigação de incidentes.
+- Preserva opção futura para compliance, equipes maiores e separação de responsabilidades.
+- Pode reduzir dependência do período de retenção do Dashboard quando houver necessidade comprovada.
 
 ### Valor para o Usuário
-- Indireto: melhora a confiabilidade operacional e reduz tempo de investigação de falhas.
 
-### Status no plano atual
-- **Plano atual (Free): NÃO APTO**
-- Motivo: este recurso foi lançado para **planos Pro**.
+- Indireto: maior rastreabilidade e confiabilidade operacional em estágios futuros.
+
+### Disponibilidade
+
+- Logs Drains operacionais: planos Pro, Team e Enterprise.
+- Platform Audit Logs / Audit Log Drains: planos Team e Enterprise.
+- Plano atual registrado do LP Factory 10: Free, não apto.
+
+### Limites no MVP
+
+- Não fazer upgrade de plano somente por esse recurso.
+- Não criar endpoint, bucket, Datadog, Loki, Sentry ou outro destino antecipadamente.
+- Não confundir auditoria da plataforma com auditoria das ações de negócio dos usuários.
 
 ### Ações Recomendadas
-1. Registrar como capacidade oficial da stack.
-2. Não adotar agora no LP Factory 10 enquanto o projeto estiver no plano Free.
-3. Reavaliar quando houver necessidade real de observabilidade centralizada e upgrade de plano.
+
+1. Manter como capacidade futura.
+2. Reavaliar quando houver upgrade de plano e necessidade real de retenção externa, compliance ou auditoria administrativa.
+3. Definir destino, custo, segurança e retenção somente no caso aprovado.
 
 ### Registro (Tipo A — Plataforma)
+
 - Status: NÃO APTO NO FREE
-- Verificado em: —
-- Ambiente: Supabase Dashboard / Logs Drains
-- Evidência: —
-- Observação: recurso oficial, mas indisponível no plano atual.
+- Verificado em: 2026-07-13
+- Ambiente: Supabase Dashboard / Logs Drains / Platform Audit Logs
+- Evidência: documentação oficial da Supabase
+- Observação: sem configuração imediata.
 
 ---
 
@@ -1682,3 +1748,84 @@ Aplicativo oficial da Supabase para uso no ChatGPT, tratado como uma integraçã
 - Ambiente: Supabase official ChatGPT app
 - Evidência: Supabase Update June 2026; sem adoção registrada no projeto.
 - Observação: integração separada do Codex Plugin; não altera `docs/gestor-codex.md`.
+
+---
+
+## 63 — rlsautotest: geração de testes pgTAP para políticas RLS *(🧪 Beta comunitário)*
+
+2026-07-09
+
+### Status no Projeto
+
+- Status: Não implementado — validação operacional futura
+- Evidência: LP Factory 10 possui arquitetura multi-tenant, RLS, migrations versionadas e políticas sensíveis; não há adoção aprovada da ferramenta
+- Estado verificado: extensão `pgtap` não instalada no projeto Supabase
+
+### Descrição
+
+`rlsautotest` é uma ferramenta comunitária destacada no Supabase Update July 2026. Ela inspeciona políticas RLS e gera dados seed, testes pgTAP e matrizes de acesso por tabela, comando e identidade.
+
+A ferramenta ajuda a verificar o comportamento das políticas declaradas, mas não conhece a intenção humana e não substitui revisão de segurança.
+
+### Valor para o Projeto
+
+- Pode apoiar regressão de isolamento entre contas, usuários e papéis.
+- Pode validar migrations que alterem tabelas ou policies sensíveis.
+- Complementa revisão manual, Security Advisor e testes SQL específicos.
+- Não altera o runtime do SaaS quando usada apenas em ambiente de teste.
+
+### Valor para o Usuário
+
+- Indireto: menor risco de exposição cruzada de dados em evoluções futuras.
+
+### Limites no MVP
+
+- Ferramenta comunitária, beta e versão 0.x.
+- Nunca executar em produção.
+- Usar somente banco local, temporário ou descartável.
+- Teste verde comprova comportamento observado, não intenção correta da policy.
+- Não instalar dependências Python no Core.
+- Não criar workflow ou automação sem fase/caso aprovado.
+
+### Ações Recomendadas
+
+1. Manter como opção de validação para uma futura rodada ampla de RLS.
+2. Se houver caso aprovado, executar primeiro uma prova isolada em banco descartável.
+3. Avaliar custo de manutenção frente a testes pgTAP ou SQL escritos diretamente.
+4. Não habilitar `pgtap` no projeto de produção apenas para experimentar a ferramenta.
+
+### Registro (Tipo B — Tooling/Validação)
+
+- Status: PENDENTE
+- Verificado em: 2026-07-13
+- Ambiente futuro: Supabase local ou banco descartável
+- Evidência: repositório oficial `unitautogen/rlsautotest` + Supabase Update July 2026
+- Observação: item comunitário; não representa suporte oficial da Supabase.
+
+---
+
+## Registro da rodada — Supabase Update July 2026
+
+### Updates incorporados ao catálogo ativo
+
+- MongoDB Foreign Data Wrapper: incorporado ao `supa#4`.
+- Realtime Broadcast com payload binário: incorporado como capacidade complementar do `supa#26`.
+- Audit Log Drains: incorporado ao `supa#46`.
+- `rlsautotest`: criado como `supa#63`.
+- `pg_graphql` com introspecção off por padrão: usado para corrigir e atualizar o `supa#39`.
+
+### Updates avaliados e não adicionados
+
+- OpenCode: já coberto pela governança de agentes do `supa#59`; nenhum cliente novo foi adotado.
+- TanStack DB: alpha/experimental e sem requisito atual de sincronização ou colaboração.
+- Multigres: infraestrutura distribuída incompatível com o escopo atual.
+- `log_connections` off por padrão: configuração operacional a ser tratada no Supabase e em `docs/platform-config.md`, não item permanente do catálogo.
+- Connect para `@supabase/server`: SDK não adotado; o projeto usa `@supabase/ssr`.
+- Docker self-hosted: projeto usa Supabase Cloud; configuração local já está em Postgres 17 e contempla `/auth/v1`.
+- Heym: workflow engine sem caso aprovado e com dependência/licenciamento próprios.
+
+### Limite da rodada
+
+- Nenhuma extensão, biblioteca, tabela, policy, rota, job, agente, automação ou infraestrutura foi criada.
+- Nenhuma configuração do projeto Supabase foi alterada.
+
