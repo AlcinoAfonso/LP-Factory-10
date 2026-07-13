@@ -1,8 +1,8 @@
 13/07/2026 — Plano-base E18.4 — Parametrização raiz da família `landing_page`
 
-Fontes: chat, `README.md`, `AGENTS.md`, `docs/prompt-estrategista.md`, `docs/template-roadmap.md`, `docs/roadmap.md`, `docs/base-tecnica.md`, `docs/schema.md`, `docs/design-system.md`, `docs/lp-planejamento.md`, `docs/gestor-estrutural.md`, `docs/vercel-up.md`, `docs/prod-up.md`, conteúdo anterior deste path, `package.json`, `lib/conversion-content/index.ts`, `lib/conversion-content/landing-page/`, referências relacionadas na `main` após o merge do PR #559, avaliações do Analista, Gestor Estrutural e Gestor de Updates sobre o PR #563 e decisão humana de 13/07/2026 sobre execução direta via plugin GitHub.
+Fontes: chat, `README.md`, `AGENTS.md`, `docs/prompt-estrategista.md`, `docs/template-roadmap.md`, `docs/prompt-executor.md`, `docs/roadmap.md`, `docs/base-tecnica.md`, `docs/schema.md`, `docs/design-system.md`, `docs/lp-planejamento.md`, `docs/gestor-estrutural.md`, `docs/vercel-up.md`, `docs/prod-up.md`, conteúdo anterior deste path, `package.json`, `lib/conversion-content/index.ts`, `lib/conversion-content/landing-page/`, referências relacionadas na `main` após o merge do PR #559, avaliações do Analista, Gestor Estrutural e Gestor de Updates sobre o PR #563 e decisões humanas de 13/07/2026.
 
-Status: plano-base v2 validado; PR #563 estritamente documental e pronto para merge. A implementação somente fica autorizada após o merge deste plano na `main`, atualização da base e criação de branch dedicada, com execução direta pelo Estrategista via plugin GitHub.
+Status: plano-base v2 em ajuste após reabertura do debate humano; PR #563 estritamente documental e em draft; implementação bloqueada até validação humana final, merge do plano na `main`, criação de branch material dedicada e instrução da fase ao Executor.
 
 Path: `docs/lousa-plano-base-e18-4.md`.
 
@@ -15,14 +15,16 @@ Recorte previsto do roadmap: `18.4 — Parametrização raiz da família landing
 * O PR #559 foi mergeado na `main` em 13/07/2026.
 * `docs/lp-planejamento.md` na `main` é a decisão conceitual obrigatória para este recorte.
 * O conteúdo anterior deste plano-base pertence ao desenho superado de `18.4 — Base de composição landing_page` e foi substituído no mesmo path.
-* O PR #563 está pronto para revisão, permanece estritamente documental e contém somente a substituição deste plano-base.
+* O PR #563 é o PR vivo e exclusivamente documental deste plano-base.
 * As avaliações do Analista, Gestor Estrutural e Gestor de Updates foram recebidas e consolidadas.
-* A avaliação final da v2 aprovou o conteúdo técnico e exigiu a separação processual entre o merge do plano e o futuro PR de implementação.
-* A decisão humana de 13/07/2026 eliminou a etapa de briefing para o Codex Web neste recorte.
-* O Estrategista possui acesso direto ao repositório pelo plugin GitHub e executará a fase material sem handoff intermediário ao Codex Web.
+* O debate humano obrigatório foi reaberto antes da validação final da v2.
+* A decisão humana confirmou que a implementação antiga da E18.4 deve ser removida obrigatoriamente.
+* A existência de consumidores externos não muda essa decisão; apenas determina se cada consumidor deve ser removido, desacoplado ou redirecionado de modo compatível com o novo boundary.
+* A decisão humana eliminou somente o uso do Codex Web como etapa intermediária.
+* O fluxo do Estrategista continua obrigatório, inclusive a instrução de uma fase por vez ao Executor com base em `docs/prompt-executor.md`.
 * O plano-base atual trata exclusivamente a parametrização raiz da família `landing_page`.
 * `docs/roadmap.md`, `docs/base-tecnica.md` e parte das referências normativas ainda descrevem a implementação anterior.
-* A implementação técnica pode ser concluída antes da correção documental final, mas a E18.4 não pode ser formalmente encerrada enquanto o PR documental obrigatório definido em 1.4 não estiver mergeado.
+* A E18.4 não pode ser formalmente encerrada enquanto o PR documental obrigatório definido em 1.4 não estiver mergeado.
 
 1.2. Decisões preservadas
 
@@ -42,10 +44,15 @@ Recorte previsto do roadmap: `18.4 — Parametrização raiz da família landing
 * A parametrização raiz deve resolver apenas regras comuns da família `landing_page`.
 * Módulos e variantes serão definidos no recorte E18.5 e não podem ser antecipados neste plano.
 * Catálogo de entradas, composição por taxon, pesquisas estruturadas, autorização de contas, geração de LP, Admin e editor visual permanecem em seus recortes próprios.
-* A implementação material deve ocorrer como uma única substituição atômica; não é permitido remover a implementação anterior sem criar e validar a nova raiz no mesmo commit da fase.
+* A remoção da implementação antiga é obrigatória.
+* A substituição deve ser atômica: remover a implementação antiga, tratar seus consumidores e reconstruir a nova raiz no mesmo commit material.
+* A busca de consumidores serve para mapear o trabalho de remoção ou desacoplamento; não serve para decidir se a implementação antiga será mantida.
+* Consumidor que dependa de funcionalidade pertencente a recorte futuro deve ser desacoplado sem antecipar esse recorte.
+* Se o desacoplamento seguro exigir alteração material fora do escopo autorizado, a execução deve parar apenas para decisão humana sobre o método e a ampliação mínima necessária; manter a E18.4 antiga não é alternativa.
 * O PR #563 deve ser mergeado antes da criação da branch material.
-* A implementação deve ocorrer em branch e PR próprios, criados a partir da `main` já atualizada com o plano mergeado.
-* Não preparar briefing nem criar etapa de envio ao Codex Web para executar este plano.
+* A implementação deve ocorrer em branch e PR próprios, criados a partir da `main` atualizada.
+* Não criar briefing ou handoff para o Codex Web.
+* Antes da implementação, o Estrategista deve instruir somente a fase material vigente ao Executor, aplicando `docs/prompt-executor.md`.
 
 1.3. Estado técnico confirmado
 
@@ -61,8 +68,9 @@ Recorte previsto do roadmap: `18.4 — Parametrização raiz da família landing
   * casos de validação.
 * O índice `lib/conversion-content/index.ts` expõe a implementação anterior como namespace `landingPage`.
 * `package.json` expõe o script `validate:landing-page`.
-* Não foram identificados consumidores externos do renderer, registry, schemas ou resolvedor anterior.
-* A ausência de consumidor externo é premissa a ser reconfirmada por busca antes e depois da substituição.
+* As buscas realizadas até a consolidação não identificaram consumidores externos relevantes.
+* Essa constatação deve ser reconfirmada antes e depois da substituição, mas não condiciona a remoção.
+* Qualquer consumidor adicional encontrado deve ser removido, desacoplado ou redirecionado dentro da estratégia definida em 2.12.
 * O LP Builder atual cria apenas o registro mínimo de LP em `account_landing_pages` e não depende da implementação anterior da E18.4.
 * O schema atual possui `template_family = landing_page`, mas não possui registros-base nem persistência própria para a parametrização raiz.
 * Nenhuma mudança de banco é necessária para este recorte.
@@ -86,7 +94,7 @@ Recorte previsto do roadmap: `18.4 — Parametrização raiz da família landing
   * `18.4.7 — Presets e relação com o design system`;
   * `18.4.8 — Herança, precedência e validação`;
   * `18.4.9 — Limites do recorte`.
-* A execução material não deve alterar `docs/roadmap.md`, `docs/base-tecnica.md`, `docs/schema.md`, `docs/design-system.md` ou `docs/lp-planejamento.md`.
+* O Executor da fase material não deve alterar `docs/roadmap.md`, `docs/base-tecnica.md`, `docs/schema.md`, `docs/design-system.md` ou `docs/lp-planejamento.md`.
 * Após implementação, validação técnica e aprovação da fase, o Gestor de Docs deve abrir PR obrigatório para atualizar:
   * objetivo e status gerais da E18 em `docs/roadmap.md`;
   * `18.1.5` em `docs/roadmap.md`;
@@ -95,8 +103,7 @@ Recorte previsto do roadmap: `18.4 — Parametrização raiz da família landing
   * seção `3.15.2` de `docs/base-tecnica.md`;
   * changelog de `docs/base-tecnica.md`;
   * `docs/lp-planejamento.md`, para explicitar que faixas recomendadas podem ser especializadas dentro do limite absoluto e que limites absolutos somente mudam por nova versão da raiz;
-  * `docs/prompt-estrategista.md`, para retirar a obrigatoriedade de briefing e envio ao Codex Web quando o Estrategista possuir acesso direto ao repositório por plugin;
-  * demais referências normativas comprovadamente vinculadas à implementação removida ou ao fluxo antigo do Codex Web.
+  * demais referências normativas comprovadamente vinculadas à implementação removida.
 * O relatório ao Gestor de Docs é obrigatório, mas não satisfaz sozinho o gate.
 * O encerramento formal da E18.4 exige o merge do PR documental obrigatório.
 
@@ -106,22 +113,27 @@ Recorte previsto do roadmap: `18.4 — Parametrização raiz da família landing
 * Gestor Estrutural: avaliação recebida e condicionantes incorporadas.
 * Gestor de Updates: avaliação recebida e updates elegíveis incorporados.
 * Gestor de Automação: não aplicável, pois todas as fases estão marcadas como `Automação: não`.
-* A avaliação única foi concluída; não abrir nova rodada completa dos três especialistas sem mudança material de escopo.
-* A avaliação final da v2 aprovou tecnicamente o plano e fechou a sequência processual obrigatória de merge, atualização da base, branch dedicada e PR material separado.
-* O plano-base v2 está validado.
-* A execução material permanece bloqueada enquanto o PR #563 não estiver mergeado e a branch material não tiver sido criada a partir da `main` atualizada.
-* Após esses gates, o Estrategista executará diretamente a fase 3.1 pelo plugin GitHub, sem briefing ou envio ao Codex Web.
+* A rodada única dos especialistas foi concluída.
+* Não abrir nova rodada completa sem mudança material de escopo, nova estrutura, nova automação ou risco técnico novo.
+* A validação final da v2 ainda depende do encerramento do debate humano.
+* O Executor permanece bloqueado até:
+  * validação humana final da v2;
+  * merge do PR #563;
+  * atualização da `main`;
+  * criação da branch material;
+  * instrução da fase conforme o item 7 de `docs/prompt-estrategista.md`.
 
-1.6. Consolidação das avaliações
+1.6. Consolidação das avaliações e decisões humanas
 
 * Pontos aceitos:
   * transformar a correção normativa em gate real de encerramento;
   * manter o PR #563 exclusivamente documental;
   * mergear o plano antes de iniciar a implementação;
   * criar branch e PR próprios para a fase material;
-  * executar diretamente pelo Estrategista via plugin GitHub após os gates;
   * manter a execução como operação atômica;
   * repetir buscas de referências antes e depois da remoção;
+  * tratar a remoção da implementação antiga como decisão obrigatória;
+  * tratar consumidores externos como trabalho de remoção, desacoplamento ou redirecionamento, e não como motivo para preservar a implementação antiga;
   * criar registry explícito por versão como única fonte dos valores efetivos;
   * resolver o preset padrão pela própria versão, sem hardcode no resolver;
   * adicionar novas versões sem apagar ou alterar os parâmetros das versões anteriores;
@@ -136,7 +148,8 @@ Recorte previsto do roadmap: `18.4 — Parametrização raiz da família landing
   * usar WCAG 2.2 como baseline de referência, sem declarar conformidade integral;
   * tratar 44 × 44 px como padrão interno conservador;
   * manter compatibilidade com a configuração atual de Next.js e Turbopack sem alterar bundler;
-  * classificar a execução como risco médio controlado.
+  * classificar a execução como risco médio controlado;
+  * eliminar somente a etapa de Codex Web, preservando o fluxo Estrategista → Executor.
 * Pontos rejeitados:
   * considerar o simples envio de relatório ao Gestor de Docs suficiente para encerrar a E18.4;
   * expor nomes concretos de tokens do design system no contrato raiz;
@@ -144,21 +157,27 @@ Recorte previsto do roadmap: `18.4 — Parametrização raiz da família landing
   * permitir fallback silencioso para versão, preset ou contrato inválido;
   * permitir alteração parcial que remova o código anterior antes da raiz validável;
   * implementar na branch ou no PR documental #563;
-  * preparar briefing ou delegar a execução ao Codex Web;
-  * tratar `docs/template-briefing-codex.md` ou `docs/prompt-executor.md` como gate desta execução direta.
+  * preservar a implementação antiga por existir consumidor externo;
+  * tratar consumidor externo desconhecido como motivo para cancelar a remoção;
+  * ignorar `docs/prompt-executor.md` ou executar antes da instrução formal da fase;
+  * criar handoff para Codex Web.
 * Pontos pendentes:
+  * conclusão do debate humano;
+  * consolidação final da v2;
+  * validação humana final da v2;
   * merge do PR #563;
   * atualização da `main` usada como base;
   * criação da branch material dedicada;
-  * execução e validação técnica da fase 3.1 pelo Estrategista;
-  * PR material separado e seu merge;
+  * instrução da fase 3.1 ao Executor;
+  * implementação e validação técnica da fase;
+  * avaliação do resultado pelo Analista;
   * PR documental obrigatório posterior e seu merge;
   * validação futura das hipóteses v1 por LP real.
 * Pontos já cobertos e preservados:
   * boundary canônico;
   * ausência de banco, Admin, rota, renderer, módulos e variantes;
   * preservação de `commercial_activation`, E18.2 e E18.3;
-  * remoção segura dos nove arquivos antigos;
+  * remoção dos nove arquivos antigos;
   * substituição do namespace e do script de validação;
   * checks `npm ci`, validação específica e `npm run check`;
   * proibição de `npm run build` no sandbox;
@@ -174,9 +193,12 @@ Recorte previsto do roadmap: `18.4 — Parametrização raiz da família landing
 * `spacing` foi tratado apenas como configuração por seção, sem uma fonte comum versionada.
 * Não existe contrato único para geração, validação e futura renderização derivarem os mesmos limites.
 * Manter a implementação anterior criaria uma falsa base aprovada e condicionaria prematuramente a E18.5, a E20 e a E19.
+* Por isso, a implementação anterior deve ser removida; a análise de consumidores define apenas como fazer essa remoção com segurança.
 
 2.2. Resultado esperado
 
+* Remover integralmente a implementação anterior da antiga E18.4.
+* Remover, desacoplar ou redirecionar qualquer consumidor dessa implementação.
 * Substituir a implementação anterior por uma fonte raiz versionada, pequena e executável.
 * Manter todos os valores efetivos em um único registry versionado.
 * Definir papéis semânticos comuns da família `landing_page`.
@@ -188,13 +210,14 @@ Recorte previsto do roadmap: `18.4 — Parametrização raiz da família landing
 * Definir contrato de leitura fail-closed.
 * Definir herança e precedência para consumidores posteriores.
 * Definir validações executáveis da raiz.
-* Remover com segurança os módulos, variantes, schemas e renderer prematuros.
+* Não antecipar módulos, variantes, composição ou renderer.
 
 2.3. Usuários e consumidores
 
 * Usuários diretos:
-  * Estrategista responsável pela execução via plugin GitHub;
-  * especialistas responsáveis pela avaliação;
+  * Executor;
+  * Estrategista;
+  * Analista;
   * futuros implementadores da E18.5, E20 e E19.
 * Consumidores técnicos futuros:
   * schemas de conteúdo;
@@ -481,7 +504,8 @@ Recorte previsto do roadmap: `18.4 — Parametrização raiz da família landing
   * ausência de referência mutável compartilhada;
   * inclusão de nova versão sem alterar ou apagar a versão 1;
   * schema e resolver sem cópia dos números e presets do registry;
-  * ausência de módulos, variantes, composition e renderer no contrato raiz.
+  * ausência de módulos, variantes, composition e renderer no contrato raiz;
+  * ausência de imports, símbolos e scripts da implementação antiga após a substituição.
 * Validações da fase:
   * busca de referências antes e depois da substituição;
   * `npm ci`;
@@ -492,12 +516,26 @@ Recorte previsto do roadmap: `18.4 — Parametrização raiz da família landing
 * `npm run build` não deve ser executado no sandbox, conforme `AGENTS.md` e `docs/base-tecnica.md`.
 * Validação visual e auditoria WCAG não se aplicam neste recorte porque não haverá renderer ou superfície visual.
 
-2.12. Remoção segura da implementação anterior
+2.12. Remoção obrigatória da implementação anterior
 
+* Esta é a primeira parte material da fase 3.1.
+* A decisão de remover a antiga E18.4 já está tomada e não depende do resultado da busca de consumidores.
 * Antes da remoção:
-  * buscar imports e usos externos de `LandingPageRenderer`, `buildLandingPageRenderModel`, `landingPageSectionRegistry`, `validateLandingPageComposition` e do namespace `landingPage`;
-  * confirmar que não existe consumidor fora do diretório antigo e das referências conhecidas;
-  * confirmar que `commercial_activation` não importa artefatos da implementação anterior.
+  * buscar imports e usos de `LandingPageRenderer`, `buildLandingPageRenderModel`, `landingPageSectionRegistry`, `validateLandingPageComposition`, do namespace `landingPage` e dos paths antigos;
+  * listar cada consumidor encontrado;
+  * classificar cada consumidor como interno à implementação antiga, externo removível, externo redirecionável ou dependência que exige desacoplamento.
+* Tratamento obrigatório:
+  * consumidor interno à implementação antiga deve ser removido junto com ela;
+  * import externo sem necessidade válida no novo recorte deve ser removido;
+  * consumidor que precise apenas da parametrização raiz deve ser redirecionado para a nova interface pública;
+  * consumidor ligado a módulo, variante, composição ou renderer futuro deve ser desacoplado, sem antecipar a implementação futura;
+  * consumidor em área preservada deve ser separado da implementação antiga sem alterar o comportamento preservado.
+* Se a separação segura exigir escopo material não autorizado:
+  * interromper antes da alteração;
+  * informar exatamente o consumidor, o vínculo e o arquivo afetado;
+  * propor a menor separação possível;
+  * obter decisão humana;
+  * não propor a manutenção da implementação antiga como solução.
 * Remover os arquivos anteriores:
   * `contracts.ts` anterior;
   * `schemas.ts`;
@@ -514,36 +552,41 @@ Recorte previsto do roadmap: `18.4 — Parametrização raiz da família landing
 * Reconstruir o mesmo boundary somente com os artefatos raiz previstos em 2.4.
 * Depois da substituição:
   * repetir a busca de referências;
-  * confirmar ausência de símbolos e paths órfãos;
+  * confirmar ausência de símbolos, imports, scripts e paths órfãos;
+  * confirmar que nenhum consumidor continua acoplado à implementação antiga;
   * confirmar que `validate:commercial-activation` permanece inalterado;
-  * confirmar que o diff não altera E18.2, E18.3, migrations, schema, Admin, LP Builder ou runtime público.
+  * confirmar que o diff não altera E18.2, E18.3, migrations, schema, Admin, LP Builder ou runtime público, salvo separação mínima previamente autorizada.
 * O rollback técnico é o revert do commit ou do PR da fase; o histórico anterior permanece no Git.
-* Referências normativas antigas não serão apagadas durante a execução material; serão corrigidas pelo PR documental obrigatório definido em 1.4.
+* Referências normativas antigas não serão corrigidas pelo Executor; serão tratadas pelo PR documental obrigatório definido em 1.4.
 
 2.13. Fluxo operacional
 
 * Gatilho:
+  * debate humano encerrado;
+  * plano-base v2 validado;
   * PR #563 mergeado na `main`;
   * `main` atualizada como base de trabalho;
   * branch material dedicada criada;
-  * autorização humana para iniciar a fase 3.1.
+  * fase 3.1 instruída ao Executor conforme `docs/prompt-executor.md`.
 * Entrada:
   * decisões de `docs/lp-planejamento.md`;
   * plano-base v2 mergeado na `main`;
   * implementação anterior;
+  * consumidores reais encontrados por busca;
   * design system vigente;
   * regras técnicas e operacionais do repositório.
 * Processamento:
-  * o Estrategista executa diretamente pelo plugin GitHub;
-  * verificar dependências;
+  * mapear todos os consumidores;
+  * remover, desacoplar ou redirecionar cada consumidor;
   * remover atomicamente a implementação anterior;
   * criar contratos públicos e registry versionado;
   * definir schema e resolver;
   * definir casos executáveis de validação;
   * ajustar reexport e script;
-  * atualizar o status da fase neste plano no PR material separado.
+  * atualizar somente o estado da fase neste plano no PR material.
 * Validação:
-  * referências;
+  * referências antes e depois;
+  * ausência total da implementação antiga;
   * schema estrito;
   * casos positivos e negativos;
   * imutabilidade profunda;
@@ -558,9 +601,11 @@ Recorte previsto do roadmap: `18.4 — Parametrização raiz da família landing
   * E18.5 e consumidores posteriores importam o contrato raiz resolvido.
 * Fallback:
   * versão, preset ou contrato inválido falha fechado;
-  * dependência externa inesperada bloqueia a fase e devolve o caso ao debate estratégico;
+  * consumidor inesperado deve ser tratado por remoção, desacoplamento ou redirecionamento;
+  * se a separação exigir escopo não autorizado, a fase pausa para decisão humana sobre o método;
   * erro de bundler ou incompatibilidade com a configuração atual bloqueia a fase;
-  * necessidade de banco, rota, Admin ou nova infraestrutura bloqueia a fase e exige nova decisão humana.
+  * necessidade de banco, rota, Admin ou nova infraestrutura bloqueia a fase e exige nova decisão humana;
+  * preservar a implementação antiga não é fallback permitido.
 
 2.14. Relatório documental
 
@@ -574,25 +619,34 @@ Recorte previsto do roadmap: `18.4 — Parametrização raiz da família landing
 * O relatório final deve indicar ao Gestor de Docs:
   * substituição da antiga E18.4;
   * arquivos criados, ajustados e excluídos;
+  * consumidores removidos, desacoplados ou redirecionados;
   * remoção do contrato normativo antigo;
   * nova fonte raiz versionada;
-  * ausência de alteração em E18.2, E18.3 e `commercial_activation`;
+  * ausência de alteração indevida em E18.2, E18.3 e `commercial_activation`;
   * subseções exatas do roadmap previstas em 1.4;
   * distinção consolidada entre faixas recomendadas e limites absolutos;
   * papéis visuais abstratos e ausência de tokens concretos no contrato raiz;
-  * atualização necessária de `docs/prompt-estrategista.md` para o fluxo com plugin GitHub;
   * checks executados e eventuais limitações.
 * O relatório deve resultar em PR documental obrigatório; não é suficiente como encerramento isolado.
 
 3. Fases e próxima ação
 
-3.1. E18.4.3–E18.4.8 — Substituição segura e parametrização raiz v1
+3.1. E18.4.3–E18.4.8 — Remoção obrigatória da implementação antiga e parametrização raiz v1
 
-* Status: pendente; plano-base v2 validado, mas implementação condicionada ao merge do PR #563, à criação de branch material dedicada e à autorização humana para início.
+* Status: pendente; debate humano em andamento e execução ainda não autorizada.
 * Automação: não.
 * Risco da execução: médio controlado.
 * Objetivo:
-  * substituir atomicamente a implementação anterior pela fonte versionada da parametrização raiz v1.
+  * remover obrigatoriamente a implementação anterior e substituí-la atomicamente pela fonte versionada da parametrização raiz v1.
+* Ordem interna obrigatória:
+  * buscar e listar todos os consumidores da implementação antiga;
+  * classificar cada consumidor;
+  * remover, desacoplar ou redirecionar todos os consumidores;
+  * excluir os nove arquivos da implementação antiga;
+  * reconstruir o boundary com a nova raiz;
+  * ajustar o índice agregado e o script;
+  * executar as validações;
+  * atualizar somente o estado desta fase no plano-base.
 * Arquivos a excluir:
   * os nove arquivos da implementação anterior listados em 2.12.
 * Arquivos a criar ou recriar:
@@ -605,11 +659,12 @@ Recorte previsto do roadmap: `18.4 — Parametrização raiz da família landing
 * Arquivos a ajustar no PR material separado:
   * `lib/conversion-content/index.ts`;
   * `package.json`;
+  * consumidores reais identificados, somente para remoção, desacoplamento ou redirecionamento autorizados;
   * `docs/lousa-plano-base-e18-4.md`, somente para atualizar o estado da fase.
-* Não alterar:
-  * `lib/conversion-content/commercial-activation/`;
+* Não alterar sem decisão humana adicional:
+  * comportamento de `lib/conversion-content/commercial-activation/`;
   * adapters de `commercial_activation`;
-  * `lib/lp-builder/`;
+  * comportamento de `lib/lp-builder/`;
   * migrations e snippets;
   * `docs/roadmap.md`;
   * `docs/base-tecnica.md`;
@@ -620,6 +675,9 @@ Recorte previsto do roadmap: `18.4 — Parametrização raiz da família landing
   * configuração de bundler, loaders ou plugins;
   * dependências npm.
 * Critérios de aceite:
+  * todos os consumidores da implementação antiga identificados;
+  * todos os consumidores removidos, desacoplados ou redirecionados;
+  * nenhuma referência à implementação antiga preservada;
   * substituição concluída em uma única operação atômica;
   * implementação anterior removida sem referência órfã;
   * fonte raiz v1 criada no boundary canônico;
@@ -642,33 +700,36 @@ Recorte previsto do roadmap: `18.4 — Parametrização raiz da família landing
   * `npm run validate:landing-page-root` concluído;
   * `npm run check` concluído;
   * checks do PR material em estado verde;
-  * diff limitado ao escopo aprovado.
+  * diff limitado ao escopo aprovado ou às separações adicionais autorizadas.
 * Critérios de parada:
-  * interromper se surgir consumidor externo não mapeado;
-  * interromper se a remoção exigir alterar `commercial_activation`, LP Builder, banco, rota ou Admin;
+  * interromper antes de alterar área preservada quando o desacoplamento exigir escopo material ainda não autorizado;
+  * interromper se a separação exigir banco, rota, Admin, nova infraestrutura, bundler, loader, plugin ou dependência;
   * interromper se o contrato raiz exigir conhecimento de módulo, variante, taxon, composição ou conteúdo concreto;
-  * interromper se surgir necessidade de alterar `next.config`, bundler, loader, plugin ou dependência;
   * interromper diante de erro de Turbopack ou bundler sem correção estritamente interna aos arquivos autorizados;
-  * interromper se os checks aplicáveis falharem sem correção restrita ao escopo.
+  * interromper se os checks falharem sem correção restrita ao escopo;
+  * ao parar, informar o consumidor ou impedimento exato e propor a menor separação possível;
+  * não considerar a manutenção da implementação antiga como alternativa.
 
-3.2. Merge do plano e execução direta pelo Estrategista
+3.2. Próxima ação do Estrategista
 
-* Sequência obrigatória:
+* Fase atual do fluxo do Estrategista:
+  * item 1 — debate do caso reaberto para participação humana.
+* Após o encerramento do debate:
+  * consolidar as decisões humanas finais neste mesmo arquivo;
   * validar definitivamente o plano-base v2;
+  * manter o mesmo path e o mesmo PR vivo;
   * marcar o PR #563 como pronto para revisão;
   * mergear o PR #563 na `main`;
   * atualizar a `main` usada como base de trabalho;
   * criar branch dedicada para a implementação da fase 3.1;
-  * receber autorização humana para iniciar a fase material;
-  * executar diretamente a fase 3.1 pelo plugin GitHub, usando este plano e `AGENTS.md` como fontes operacionais;
+  * instruir somente a fase 3.1 ao Executor, usando `docs/prompt-executor.md`, `AGENTS.md` e este plano-base;
   * abrir PR de implementação separado.
+* Não criar briefing ou handoff para o Codex Web.
 * O PR #563 permanece estritamente documental e não pode receber arquivos materiais da fase 3.1.
 * “Checks aplicáveis do PR” significa checks do PR de implementação separado.
 * A atualização de status deste plano durante a execução deve ocorrer no PR material separado.
-* Não preparar briefing para o Codex Web.
-* Não usar `docs/template-briefing-codex.md` nem `docs/prompt-executor.md` como gate desta execução direta.
 * Não enviar fase documental ou fase adicional em paralelo.
-* A execução permanece bloqueada até o merge do PR #563, a criação da branch material dedicada e a autorização humana para início.
+* O Executor permanece bloqueado até o encerramento do debate, validação final da v2, merge do PR #563 e criação da branch material.
 
 3.3. Encerramento documental obrigatório
 
@@ -711,8 +772,8 @@ Recorte previsto do roadmap: `18.4 — Parametrização raiz da família landing
 * Configuração dinâmica em runtime.
 * Agente, automação, job, fila ou workflow novo.
 * Branding por cliente.
-* Alteração de `commercial_activation`.
-* Alteração de E18.2 ou E18.3.
+* Alteração funcional de `commercial_activation`.
+* Alteração funcional de E18.2 ou E18.3.
 * Auditoria completa de acessibilidade.
 * Declaração de conformidade integral com WCAG.
 * Alteração de bundler ou infraestrutura de build.
@@ -724,17 +785,20 @@ Recorte previsto do roadmap: `18.4 — Parametrização raiz da família landing
 * Falta de fonte obrigatória para decisão material.
 * Contradição entre a `main` e este plano que altere escopo, risco ou arquitetura.
 * Necessidade comprovada de banco ou infraestrutura não autorizada.
-* Dependência externa real da implementação anterior que não possa ser removida dentro do recorte.
+* Necessidade de alterar área preservada para desacoplar consumidor sem autorização humana específica.
 * Risco de regressão em `commercial_activation`.
 * Necessidade de definir módulo, variante, composição ou conteúdo concreto para completar a raiz.
 * Falha de validação que exija ampliação de escopo.
 * Necessidade de alterar bundler, `next.config`, loader, plugin ou dependência.
+* Tentativa de implementar antes do encerramento do debate e da validação final da v2.
 * Tentativa de implementar antes do merge do PR #563.
 * Tentativa de implementar na branch documental do PR #563.
+* Ao ocorrer parada por consumidor externo, a decisão pendente deve ser somente sobre o método de separação; a remoção da implementação antiga permanece obrigatória.
 
 4.3. Encerramento do plano
 
-* O plano-base v2 está validado e pronto para merge no PR #563.
+* O plano-base v2 permanece em ajuste enquanto o debate humano estiver aberto.
+* Após validação humana final, o PR #563 poderá ser marcado como pronto para revisão e merge.
 * O plano material termina quando a fase 3.1 estiver implementada, validada e aprovada pelo Analista.
 * O caso E18.4 permanece em encerramento documental até o merge do PR obrigatório do Gestor de Docs.
 * Não existe fase administrativa, de automação ou de handoff.
