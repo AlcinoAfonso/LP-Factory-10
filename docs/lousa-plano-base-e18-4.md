@@ -1,8 +1,8 @@
 13/07/2026 — Plano-base E18.4 — Parametrização raiz da família `landing_page`
 
-Fontes: chat, `README.md`, `AGENTS.md`, `docs/prompt-estrategista.md`, `docs/template-roadmap.md`, `docs/template-briefing-codex.md`, `docs/prompt-executor.md`, `docs/roadmap.md`, `docs/base-tecnica.md`, `docs/schema.md`, `docs/design-system.md`, `docs/lp-planejamento.md`, `docs/gestor-estrutural.md`, `docs/vercel-up.md`, `docs/prod-up.md`, conteúdo anterior deste path, `package.json`, `lib/conversion-content/index.ts`, `lib/conversion-content/landing-page/`, referências relacionadas na `main` após o merge do PR #559 e avaliações do Analista, Gestor Estrutural e Gestor de Updates sobre o PR #563.
+Fontes: chat, `README.md`, `AGENTS.md`, `docs/prompt-estrategista.md`, `docs/template-roadmap.md`, `docs/roadmap.md`, `docs/base-tecnica.md`, `docs/schema.md`, `docs/design-system.md`, `docs/lp-planejamento.md`, `docs/gestor-estrutural.md`, `docs/vercel-up.md`, `docs/prod-up.md`, conteúdo anterior deste path, `package.json`, `lib/conversion-content/index.ts`, `lib/conversion-content/landing-page/`, referências relacionadas na `main` após o merge do PR #559, avaliações do Analista, Gestor Estrutural e Gestor de Updates sobre o PR #563 e decisão humana de 13/07/2026 sobre execução direta via plugin GitHub.
 
-Status: plano-base v2 validado; PR #563 estritamente documental e pronto para merge. A implementação somente fica autorizada após o merge deste plano na `main`, atualização da base e criação de branch dedicada.
+Status: plano-base v2 validado; PR #563 estritamente documental e pronto para merge. A implementação somente fica autorizada após o merge deste plano na `main`, atualização da base e criação de branch dedicada, com execução direta pelo Estrategista via plugin GitHub.
 
 Path: `docs/lousa-plano-base-e18-4.md`.
 
@@ -18,6 +18,8 @@ Recorte previsto do roadmap: `18.4 — Parametrização raiz da família landing
 * O PR #563 está pronto para revisão, permanece estritamente documental e contém somente a substituição deste plano-base.
 * As avaliações do Analista, Gestor Estrutural e Gestor de Updates foram recebidas e consolidadas.
 * A avaliação final da v2 aprovou o conteúdo técnico e exigiu a separação processual entre o merge do plano e o futuro PR de implementação.
+* A decisão humana de 13/07/2026 eliminou a etapa de briefing para o Codex Web neste recorte.
+* O Estrategista possui acesso direto ao repositório pelo plugin GitHub e executará a fase material sem handoff intermediário ao Codex Web.
 * O plano-base atual trata exclusivamente a parametrização raiz da família `landing_page`.
 * `docs/roadmap.md`, `docs/base-tecnica.md` e parte das referências normativas ainda descrevem a implementação anterior.
 * A implementação técnica pode ser concluída antes da correção documental final, mas a E18.4 não pode ser formalmente encerrada enquanto o PR documental obrigatório definido em 1.4 não estiver mergeado.
@@ -43,6 +45,7 @@ Recorte previsto do roadmap: `18.4 — Parametrização raiz da família landing
 * A implementação material deve ocorrer como uma única substituição atômica; não é permitido remover a implementação anterior sem criar e validar a nova raiz no mesmo commit da fase.
 * O PR #563 deve ser mergeado antes da criação da branch material.
 * A implementação deve ocorrer em branch e PR próprios, criados a partir da `main` já atualizada com o plano mergeado.
+* Não preparar briefing nem criar etapa de envio ao Codex Web para executar este plano.
 
 1.3. Estado técnico confirmado
 
@@ -83,7 +86,7 @@ Recorte previsto do roadmap: `18.4 — Parametrização raiz da família landing
   * `18.4.7 — Presets e relação com o design system`;
   * `18.4.8 — Herança, precedência e validação`;
   * `18.4.9 — Limites do recorte`.
-* O Executor da fase material não deve alterar `docs/roadmap.md`, `docs/base-tecnica.md`, `docs/schema.md`, `docs/design-system.md` ou `docs/lp-planejamento.md`.
+* A execução material não deve alterar `docs/roadmap.md`, `docs/base-tecnica.md`, `docs/schema.md`, `docs/design-system.md` ou `docs/lp-planejamento.md`.
 * Após implementação, validação técnica e aprovação da fase, o Gestor de Docs deve abrir PR obrigatório para atualizar:
   * objetivo e status gerais da E18 em `docs/roadmap.md`;
   * `18.1.5` em `docs/roadmap.md`;
@@ -92,7 +95,8 @@ Recorte previsto do roadmap: `18.4 — Parametrização raiz da família landing
   * seção `3.15.2` de `docs/base-tecnica.md`;
   * changelog de `docs/base-tecnica.md`;
   * `docs/lp-planejamento.md`, para explicitar que faixas recomendadas podem ser especializadas dentro do limite absoluto e que limites absolutos somente mudam por nova versão da raiz;
-  * demais referências normativas comprovadamente vinculadas à implementação removida.
+  * `docs/prompt-estrategista.md`, para retirar a obrigatoriedade de briefing e envio ao Codex Web quando o Estrategista possuir acesso direto ao repositório por plugin;
+  * demais referências normativas comprovadamente vinculadas à implementação removida ou ao fluxo antigo do Codex Web.
 * O relatório ao Gestor de Docs é obrigatório, mas não satisfaz sozinho o gate.
 * O encerramento formal da E18.4 exige o merge do PR documental obrigatório.
 
@@ -105,7 +109,8 @@ Recorte previsto do roadmap: `18.4 — Parametrização raiz da família landing
 * A avaliação única foi concluída; não abrir nova rodada completa dos três especialistas sem mudança material de escopo.
 * A avaliação final da v2 aprovou tecnicamente o plano e fechou a sequência processual obrigatória de merge, atualização da base, branch dedicada e PR material separado.
 * O plano-base v2 está validado.
-* O Executor permanece bloqueado enquanto o PR #563 não estiver mergeado e a branch material não tiver sido criada a partir da `main` atualizada.
+* A execução material permanece bloqueada enquanto o PR #563 não estiver mergeado e a branch material não tiver sido criada a partir da `main` atualizada.
+* Após esses gates, o Estrategista executará diretamente a fase 3.1 pelo plugin GitHub, sem briefing ou envio ao Codex Web.
 
 1.6. Consolidação das avaliações
 
@@ -114,6 +119,7 @@ Recorte previsto do roadmap: `18.4 — Parametrização raiz da família landing
   * manter o PR #563 exclusivamente documental;
   * mergear o plano antes de iniciar a implementação;
   * criar branch e PR próprios para a fase material;
+  * executar diretamente pelo Estrategista via plugin GitHub após os gates;
   * manter a execução como operação atômica;
   * repetir buscas de referências antes e depois da remoção;
   * criar registry explícito por versão como única fonte dos valores efetivos;
@@ -138,13 +144,14 @@ Recorte previsto do roadmap: `18.4 — Parametrização raiz da família landing
   * permitir fallback silencioso para versão, preset ou contrato inválido;
   * permitir alteração parcial que remova o código anterior antes da raiz validável;
   * implementar na branch ou no PR documental #563;
-  * enviar briefing ao Executor antes do merge do plano na `main`.
+  * preparar briefing ou delegar a execução ao Codex Web;
+  * tratar `docs/template-briefing-codex.md` ou `docs/prompt-executor.md` como gate desta execução direta.
 * Pontos pendentes:
   * merge do PR #563;
   * atualização da `main` usada como base;
   * criação da branch material dedicada;
-  * envio do briefing da fase 3.1 ao Executor;
-  * implementação e validação técnica da fase;
+  * execução e validação técnica da fase 3.1 pelo Estrategista;
+  * PR material separado e seu merge;
   * PR documental obrigatório posterior e seu merge;
   * validação futura das hipóteses v1 por LP real.
 * Pontos já cobertos e preservados:
@@ -186,8 +193,7 @@ Recorte previsto do roadmap: `18.4 — Parametrização raiz da família landing
 2.3. Usuários e consumidores
 
 * Usuários diretos:
-  * Executor;
-  * Estrategista;
+  * Estrategista responsável pela execução via plugin GitHub;
   * especialistas responsáveis pela avaliação;
   * futuros implementadores da E18.5, E20 e E19.
 * Consumidores técnicos futuros:
@@ -512,7 +518,7 @@ Recorte previsto do roadmap: `18.4 — Parametrização raiz da família landing
   * confirmar que `validate:commercial-activation` permanece inalterado;
   * confirmar que o diff não altera E18.2, E18.3, migrations, schema, Admin, LP Builder ou runtime público.
 * O rollback técnico é o revert do commit ou do PR da fase; o histórico anterior permanece no Git.
-* Referências normativas antigas não serão apagadas pelo Executor; serão corrigidas pelo PR documental obrigatório definido em 1.4.
+* Referências normativas antigas não serão apagadas durante a execução material; serão corrigidas pelo PR documental obrigatório definido em 1.4.
 
 2.13. Fluxo operacional
 
@@ -520,7 +526,7 @@ Recorte previsto do roadmap: `18.4 — Parametrização raiz da família landing
   * PR #563 mergeado na `main`;
   * `main` atualizada como base de trabalho;
   * branch material dedicada criada;
-  * briefing da fase 3.1 enviado pelo Estrategista ao Executor.
+  * autorização humana para iniciar a fase 3.1.
 * Entrada:
   * decisões de `docs/lp-planejamento.md`;
   * plano-base v2 mergeado na `main`;
@@ -528,6 +534,7 @@ Recorte previsto do roadmap: `18.4 — Parametrização raiz da família landing
   * design system vigente;
   * regras técnicas e operacionais do repositório.
 * Processamento:
+  * o Estrategista executa diretamente pelo plugin GitHub;
   * verificar dependências;
   * remover atomicamente a implementação anterior;
   * criar contratos públicos e registry versionado;
@@ -551,7 +558,7 @@ Recorte previsto do roadmap: `18.4 — Parametrização raiz da família landing
   * E18.5 e consumidores posteriores importam o contrato raiz resolvido.
 * Fallback:
   * versão, preset ou contrato inválido falha fechado;
-  * dependência externa inesperada bloqueia a fase e devolve o caso ao Estrategista;
+  * dependência externa inesperada bloqueia a fase e devolve o caso ao debate estratégico;
   * erro de bundler ou incompatibilidade com a configuração atual bloqueia a fase;
   * necessidade de banco, rota, Admin ou nova infraestrutura bloqueia a fase e exige nova decisão humana.
 
@@ -573,6 +580,7 @@ Recorte previsto do roadmap: `18.4 — Parametrização raiz da família landing
   * subseções exatas do roadmap previstas em 1.4;
   * distinção consolidada entre faixas recomendadas e limites absolutos;
   * papéis visuais abstratos e ausência de tokens concretos no contrato raiz;
+  * atualização necessária de `docs/prompt-estrategista.md` para o fluxo com plugin GitHub;
   * checks executados e eventuais limitações.
 * O relatório deve resultar em PR documental obrigatório; não é suficiente como encerramento isolado.
 
@@ -580,7 +588,7 @@ Recorte previsto do roadmap: `18.4 — Parametrização raiz da família landing
 
 3.1. E18.4.3–E18.4.8 — Substituição segura e parametrização raiz v1
 
-* Status: pendente; plano-base v2 validado, mas implementação condicionada ao merge do PR #563 e à criação de branch material dedicada.
+* Status: pendente; plano-base v2 validado, mas implementação condicionada ao merge do PR #563, à criação de branch material dedicada e à autorização humana para início.
 * Automação: não.
 * Risco da execução: médio controlado.
 * Objetivo:
@@ -643,7 +651,7 @@ Recorte previsto do roadmap: `18.4 — Parametrização raiz da família landing
   * interromper diante de erro de Turbopack ou bundler sem correção estritamente interna aos arquivos autorizados;
   * interromper se os checks aplicáveis falharem sem correção restrita ao escopo.
 
-3.2. Merge do plano e envio ao Executor
+3.2. Merge do plano e execução direta pelo Estrategista
 
 * Sequência obrigatória:
   * validar definitivamente o plano-base v2;
@@ -651,14 +659,16 @@ Recorte previsto do roadmap: `18.4 — Parametrização raiz da família landing
   * mergear o PR #563 na `main`;
   * atualizar a `main` usada como base de trabalho;
   * criar branch dedicada para a implementação da fase 3.1;
-  * preparar briefing Codex baseado em `docs/template-briefing-codex.md`;
-  * enviar somente a fase 3.1 ao Executor, aplicando integralmente `docs/prompt-executor.md`;
+  * receber autorização humana para iniciar a fase material;
+  * executar diretamente a fase 3.1 pelo plugin GitHub, usando este plano e `AGENTS.md` como fontes operacionais;
   * abrir PR de implementação separado.
 * O PR #563 permanece estritamente documental e não pode receber arquivos materiais da fase 3.1.
 * “Checks aplicáveis do PR” significa checks do PR de implementação separado.
 * A atualização de status deste plano durante a execução deve ocorrer no PR material separado.
+* Não preparar briefing para o Codex Web.
+* Não usar `docs/template-briefing-codex.md` nem `docs/prompt-executor.md` como gate desta execução direta.
 * Não enviar fase documental ou fase adicional em paralelo.
-* O Executor permanece bloqueado até o merge do PR #563 e a criação da branch material dedicada.
+* A execução permanece bloqueada até o merge do PR #563, a criação da branch material dedicada e a autorização humana para início.
 
 3.3. Encerramento documental obrigatório
 
@@ -707,6 +717,7 @@ Recorte previsto do roadmap: `18.4 — Parametrização raiz da família landing
 * Declaração de conformidade integral com WCAG.
 * Alteração de bundler ou infraestrutura de build.
 * Implementação material no PR #563.
+* Briefing, handoff ou execução pelo Codex Web.
 
 4.2. Critérios gerais de parada
 
