@@ -1,8 +1,8 @@
 13/07/2026 — Plano-base E18.4 — Parametrização raiz da família `landing_page`
 
-Fontes: chat, `README.md`, `AGENTS.md`, `docs/prompt-estrategista.md`, `docs/template-roadmap.md`, `docs/prompt-executor.md`, `docs/roadmap.md`, `docs/base-tecnica.md`, `docs/schema.md`, `docs/design-system.md`, `docs/lp-planejamento.md`, `docs/gestor-estrutural.md`, `docs/vercel-up.md`, `docs/prod-up.md`, conteúdo anterior deste path, `package.json`, `lib/conversion-content/index.ts`, `lib/conversion-content/landing-page/`, referências relacionadas na `main` após o merge do PR #559, avaliações do Analista, Gestor Estrutural e Gestor de Updates sobre o PR #563 e decisões humanas de 13/07/2026.
+Fontes: chat, `README.md`, `AGENTS.md`, `docs/prompt-estrategista.md`, `docs/template-roadmap.md`, `docs/prompt-executor.md`, `docs/roadmap.md`, `docs/base-tecnica.md`, `docs/schema.md`, `docs/design-system.md`, `docs/lp-planejamento.md`, `docs/template-blueprint.md`, `docs/blueprint-corretor-imoveis-end-customer.md`, `docs/gestor-estrutural.md`, `docs/vercel-up.md`, `docs/prod-up.md`, conteúdo anterior deste path, `package.json`, `lib/conversion-content/index.ts`, `lib/conversion-content/landing-page/`, referências relacionadas na `main` após o merge do PR #559, avaliações do Analista, Gestor Estrutural e Gestor de Updates sobre o PR #563 e decisões humanas de 13/07/2026.
 
-Status: plano-base v2 em ajuste após reabertura do debate humano; PR #563 estritamente documental e em draft; implementação bloqueada até validação humana final, merge do plano na `main`, criação de branch material dedicada e instrução da fase ao Executor.
+Status: plano-base v2 validado após encerramento do debate humano; PR #563 estritamente documental e pronto para revisão e merge; fase material bloqueada até merge do plano na `main`, atualização da base e criação de branch dedicada.
 
 Path: `docs/lousa-plano-base-e18-4.md`.
 
@@ -17,11 +17,11 @@ Recorte previsto do roadmap: `18.4 — Parametrização raiz da família landing
 * O conteúdo anterior deste plano-base pertence ao desenho superado de `18.4 — Base de composição landing_page` e foi substituído no mesmo path.
 * O PR #563 é o PR vivo e exclusivamente documental deste plano-base.
 * As avaliações do Analista, Gestor Estrutural e Gestor de Updates foram recebidas e consolidadas.
-* O debate humano obrigatório foi reaberto antes da validação final da v2.
-* A decisão humana confirmou que a implementação antiga da E18.4 deve ser removida obrigatoriamente.
-* A existência de consumidores externos não muda essa decisão; apenas determina se cada consumidor deve ser removido, desacoplado ou redirecionado de modo compatível com o novo boundary.
-* A decisão humana eliminou somente o uso do Codex Web como etapa intermediária.
-* O fluxo do Estrategista continua obrigatório, inclusive a instrução de uma fase por vez ao Executor com base em `docs/prompt-executor.md`.
+* O debate humano obrigatório foi encerrado em 13/07/2026.
+* A implementação antiga da E18.4 deve ser removida obrigatoriamente.
+* A existência de consumidores externos não muda essa decisão; determina somente se cada consumidor será removido, desacoplado ou redirecionado.
+* O uso do Codex Web foi eliminado como etapa intermediária.
+* O fluxo do Estrategista permanece obrigatório, inclusive a instrução de uma fase por vez ao Executor com base em `docs/prompt-executor.md`.
 * O plano-base atual trata exclusivamente a parametrização raiz da família `landing_page`.
 * `docs/roadmap.md`, `docs/base-tecnica.md` e parte das referências normativas ainda descrevem a implementação anterior.
 * A E18.4 não pode ser formalmente encerrada enquanto o PR documental obrigatório definido em 1.4 não estiver mergeado.
@@ -115,13 +115,13 @@ Recorte previsto do roadmap: `18.4 — Parametrização raiz da família landing
 * Gestor de Automação: não aplicável, pois todas as fases estão marcadas como `Automação: não`.
 * A rodada única dos especialistas foi concluída.
 * Não abrir nova rodada completa sem mudança material de escopo, nova estrutura, nova automação ou risco técnico novo.
-* A validação final da v2 ainda depende do encerramento do debate humano.
+* O debate humano foi encerrado e a v2 foi validada.
 * O Executor permanece bloqueado até:
-  * validação humana final da v2;
   * merge do PR #563;
   * atualização da `main`;
-  * criação da branch material;
-  * instrução da fase conforme o item 7 de `docs/prompt-estrategista.md`.
+  * criação da branch material dedicada;
+  * confirmação da branch e dos arquivos-alvo conforme `AGENTS.md`.
+* A instrução da fase 3.1 é preparada no item 7 do fluxo do Estrategista, mas não autoriza execução antes dos gates acima.
 
 1.6. Consolidação das avaliações e decisões humanas
 
@@ -149,7 +149,10 @@ Recorte previsto do roadmap: `18.4 — Parametrização raiz da família landing
   * tratar 44 × 44 px como padrão interno conservador;
   * manter compatibilidade com a configuração atual de Next.js e Turbopack sem alterar bundler;
   * classificar a execução como risco médio controlado;
-  * eliminar somente a etapa de Codex Web, preservando o fluxo Estrategista → Executor.
+  * eliminar somente a etapa de Codex Web, preservando o fluxo Estrategista → Executor;
+  * usar `docs/blueprint-corretor-imoveis-end-customer.md` como fonte empírica parcial para papéis editoriais e critérios de UX reutilizáveis;
+  * não transformar um único nicho em fonte exclusiva da raiz global;
+  * manter como hipóteses v1 os números que não possuem sustentação direta suficiente.
 * Pontos rejeitados:
   * considerar o simples envio de relatório ao Gestor de Docs suficiente para encerrar a E18.4;
   * expor nomes concretos de tokens do design system no contrato raiz;
@@ -160,19 +163,16 @@ Recorte previsto do roadmap: `18.4 — Parametrização raiz da família landing
   * preservar a implementação antiga por existir consumidor externo;
   * tratar consumidor externo desconhecido como motivo para cancelar a remoção;
   * ignorar `docs/prompt-executor.md` ou executar antes da instrução formal da fase;
-  * criar handoff para Codex Web.
+  * criar handoff para Codex Web;
+  * tratar limites específicos do Hero imobiliário como prova definitiva de limites globais da família.
 * Pontos pendentes:
-  * conclusão do debate humano;
-  * consolidação final da v2;
-  * validação humana final da v2;
   * merge do PR #563;
   * atualização da `main` usada como base;
   * criação da branch material dedicada;
-  * instrução da fase 3.1 ao Executor;
-  * implementação e validação técnica da fase;
+  * execução e validação técnica da fase 3.1;
   * avaliação do resultado pelo Analista;
   * PR documental obrigatório posterior e seu merge;
-  * validação futura das hipóteses v1 por LP real.
+  * validação futura das hipóteses v1 por LP real e por evidência de outros nichos.
 * Pontos já cobertos e preservados:
   * boundary canônico;
   * ausência de banco, Admin, rota, renderer, módulos e variantes;
@@ -182,6 +182,37 @@ Recorte previsto do roadmap: `18.4 — Parametrização raiz da família landing
   * checks `npm ci`, validação específica e `npm run check`;
   * proibição de `npm run build` no sandbox;
   * manutenção do mesmo path para o plano-base.
+
+1.7. Base de evidência das parametrizações v1
+
+* A raiz v1 combina quatro classes de fonte:
+  * decisões conceituais de `docs/lp-planejamento.md`;
+  * padrões técnicos globais de responsividade, legibilidade e acessibilidade;
+  * referências empíricas de blueprints e LPs reais;
+  * hipóteses iniciais que serão validadas por LP real.
+* `docs/blueprint-corretor-imoveis-end-customer.md` é aceito como primeira fonte empírica parcial porque:
+  * foi produzido conforme `docs/template-blueprint.md`;
+  * consultou LPs e funis reais;
+  * separou recomendações aprovadas de hipóteses operacionais;
+  * registrou fontes oficiais e critérios de confiança.
+* O blueprint imobiliário oferece referências úteis para:
+  * título de Hero: 45 a 80 caracteres, como hipótese operacional específica do módulo;
+  * subtítulo de Hero: 90 a 160 caracteres, como hipótese operacional específica do módulo;
+  * CTA principal: 14 a 28 caracteres;
+  * CTA secundário: 14 a 30 caracteres;
+  * prova curta: 40 a 90 caracteres;
+  * título de seção: 25 a 60 caracteres;
+  * descrição de card: 60 a 120 caracteres;
+  * pergunta de FAQ: 45 a 90 caracteres;
+  * resposta de FAQ: 90 a 220 caracteres;
+  * nota de privacidade: 80 a 180 caracteres.
+* A referência de Hero não é convertida diretamente em regra da raiz:
+  * Hero é módulo futuro da E18.5;
+  * a raiz parametriza papéis semânticos comuns, como `h1`, `paragraph` e `cta_label`;
+  * a E18.5 poderá especializar esses papéis para o Hero dentro dos limites absolutos da raiz.
+* O limite absoluto de 120 caracteres para `h1` não é comprovado diretamente pelo blueprint imobiliário.
+* Esse limite e os demais números não sustentados diretamente permanecem hipóteses técnicas v1, não benchmarks comprovados.
+* A primeira LP real e futuros blueprints de outros nichos devem gerar evidência para manter, restringir ou substituir esses parâmetros em nova `rootVersion`.
 
 2. Contrato do caso
 
@@ -245,7 +276,7 @@ Recorte previsto do roadmap: `18.4 — Parametrização raiz da família landing
   * `root-registry.ts` contém uma única ocorrência dos valores efetivos de cada versão;
   * `root-schema.ts` valida estrutura e invariantes sem repetir números, presets ou valores efetivos do registry;
   * `root-resolver.ts` consulta exclusivamente o registry e não possui valores próprios de fallback;
-  * `root-validation-cases.ts` prova os casos positivos, negativos, versionamento e imutabilidade;
+  * `root-validation-cases.ts` prova casos positivos, negativos, versionamento e imutabilidade;
   * `index.ts` expõe apenas a interface pública autorizada.
 * Identidade inicial da versão 1:
   * `family = landing_page`;
@@ -323,7 +354,8 @@ Recorte previsto do roadmap: `18.4 — Parametrização raiz da família landing
 * As faixas recomendadas orientam geração e revisão, mas não invalidam conteúdo por si mesmas.
 * Conteúdo fora da faixa recomendada e dentro do limite absoluto deve produzir aviso, não erro bloqueante.
 * Os limites absolutos devem falhar fechado.
-* Os valores são hipóteses v1 e somente mudam por nova versão após evidência de LP real.
+* Os valores são hipóteses v1 e somente mudam por nova versão após evidência de LP real e decisão humana.
+* O blueprint imobiliário é evidência parcial conforme 1.7; não converte valores específicos de Hero em regra global automática.
 
 2.6. Limites técnicos comuns e medição textual
 
@@ -574,6 +606,7 @@ Recorte previsto do roadmap: `18.4 — Parametrização raiz da família landing
   * implementação anterior;
   * consumidores reais encontrados por busca;
   * design system vigente;
+  * blueprint imobiliário como evidência parcial dos parâmetros;
   * regras técnicas e operacionais do repositório.
 * Processamento:
   * mapear todos os consumidores;
@@ -625,6 +658,7 @@ Recorte previsto do roadmap: `18.4 — Parametrização raiz da família landing
   * ausência de alteração indevida em E18.2, E18.3 e `commercial_activation`;
   * subseções exatas do roadmap previstas em 1.4;
   * distinção consolidada entre faixas recomendadas e limites absolutos;
+  * fontes e hipóteses dos parâmetros v1;
   * papéis visuais abstratos e ausência de tokens concretos no contrato raiz;
   * checks executados e eventuais limitações.
 * O relatório deve resultar em PR documental obrigatório; não é suficiente como encerramento isolado.
@@ -633,7 +667,7 @@ Recorte previsto do roadmap: `18.4 — Parametrização raiz da família landing
 
 3.1. E18.4.3–E18.4.8 — Remoção obrigatória da implementação antiga e parametrização raiz v1
 
-* Status: pendente; debate humano em andamento e execução ainda não autorizada.
+* Status: pendente; plano-base v2 validado e instrução ao Executor preparada; execução bloqueada até merge do PR #563 e criação de branch material dedicada.
 * Automação: não.
 * Risco da execução: médio controlado.
 * Objetivo:
@@ -710,26 +744,28 @@ Recorte previsto do roadmap: `18.4 — Parametrização raiz da família landing
   * ao parar, informar o consumidor ou impedimento exato e propor a menor separação possível;
   * não considerar a manutenção da implementação antiga como alternativa.
 
-3.2. Próxima ação do Estrategista
+3.2. Item 7 — Instrução ao Executor
 
 * Fase atual do fluxo do Estrategista:
-  * item 1 — debate do caso reaberto para participação humana.
-* Após o encerramento do debate:
-  * consolidar as decisões humanas finais neste mesmo arquivo;
-  * validar definitivamente o plano-base v2;
-  * manter o mesmo path e o mesmo PR vivo;
-  * marcar o PR #563 como pronto para revisão;
-  * mergear o PR #563 na `main`;
-  * atualizar a `main` usada como base de trabalho;
-  * criar branch dedicada para a implementação da fase 3.1;
-  * instruir somente a fase 3.1 ao Executor, usando `docs/prompt-executor.md`, `AGENTS.md` e este plano-base;
+  * item 7 — instrução da fase 3.1 ao Executor.
+* A instrução deve informar:
+  * fase `3.1. E18.4.3–E18.4.8 — Remoção obrigatória da implementação antiga e parametrização raiz v1`;
+  * path `docs/lousa-plano-base-e18-4.md`;
+  * fontes obrigatórias `AGENTS.md`, `docs/prompt-executor.md`, este plano-base e documentos citados nele;
+  * atualização somente do estado da fase executada neste plano-base.
+* A instrução pode ser preparada antes do merge, mas a execução permanece bloqueada até:
+  * PR #563 mergeado na `main`;
+  * `main` atualizada;
+  * branch material dedicada criada a partir da `main` atualizada;
+  * branch, estado e arquivos-alvo confirmados pelo Executor.
+* Após esses gates:
+  * executar somente a fase 3.1;
   * abrir PR de implementação separado.
 * Não criar briefing ou handoff para o Codex Web.
 * O PR #563 permanece estritamente documental e não pode receber arquivos materiais da fase 3.1.
 * “Checks aplicáveis do PR” significa checks do PR de implementação separado.
 * A atualização de status deste plano durante a execução deve ocorrer no PR material separado.
 * Não enviar fase documental ou fase adicional em paralelo.
-* O Executor permanece bloqueado até o encerramento do debate, validação final da v2, merge do PR #563 e criação da branch material.
 
 3.3. Encerramento documental obrigatório
 
@@ -790,15 +826,16 @@ Recorte previsto do roadmap: `18.4 — Parametrização raiz da família landing
 * Necessidade de definir módulo, variante, composição ou conteúdo concreto para completar a raiz.
 * Falha de validação que exija ampliação de escopo.
 * Necessidade de alterar bundler, `next.config`, loader, plugin ou dependência.
-* Tentativa de implementar antes do encerramento do debate e da validação final da v2.
 * Tentativa de implementar antes do merge do PR #563.
 * Tentativa de implementar na branch documental do PR #563.
 * Ao ocorrer parada por consumidor externo, a decisão pendente deve ser somente sobre o método de separação; a remoção da implementação antiga permanece obrigatória.
 
 4.3. Encerramento do plano
 
-* O plano-base v2 permanece em ajuste enquanto o debate humano estiver aberto.
-* Após validação humana final, o PR #563 poderá ser marcado como pronto para revisão e merge.
+* O debate humano foi encerrado.
+* O plano-base v2 está validado e pronto para revisão e merge no PR #563.
+* O item 7 do fluxo do Estrategista foi iniciado com a preparação da instrução da fase 3.1 ao Executor.
+* A execução material somente começa após os gates definidos em 3.2.
 * O plano material termina quando a fase 3.1 estiver implementada, validada e aprovada pelo Analista.
 * O caso E18.4 permanece em encerramento documental até o merge do PR obrigatório do Gestor de Docs.
 * Não existe fase administrativa, de automação ou de handoff.
