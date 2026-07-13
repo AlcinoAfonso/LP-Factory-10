@@ -42,13 +42,14 @@ Fontes de referência: `README.md`, `docs/prompt-nicho-itens-estruturados.md`, `
 
 ### 1.4. Definir a parametrização de módulos e variantes
 
-- A parametrização de módulos e variantes define campos, estruturas, limites, regras de copy e especializações permitidas sobre a raiz.
+- A parametrização de módulos e variantes define campos, estruturas, limites estruturais, regras de copy e especializações permitidas sobre a raiz.
+- Os limites textuais comuns pertencem à parametrização raiz; módulo ou variante só pode sobrescrevê-los em caso excepcional, explícito e justificado.
 - A resolução das regras segue `parametrização raiz → especialização do módulo → especialização da variante`.
 - Módulos herdam a raiz e registram apenas especializações justificadas para sua função estrutural.
 - Variantes herdam o módulo e registram apenas especializações reutilizáveis de execução ou comportamento dentro da mesma função estrutural.
 - Nova variante só deve ser criada quando houver mudança reutilizável de comportamento ou execução; mudança da função estrutural deve ser avaliada como novo módulo.
 - Diferença de taxon, conteúdo, entrada da conta ou campanha, escolha de composição ou ajuste já permitido não justifica isoladamente nova variante.
-- `spacing` é escolha limitada por ocorrência de seção, não preset de LP; o contrato atual da E18.4 aceita somente `compact`, `default` ou `spacious`.
+- `spacing` é escolha limitada por ocorrência de seção, não preset de LP; seus valores permitidos devem ser definidos pelos planos-base de parametrização.
 - A parametrização deve separar `copy_source_map` e `funnel_copy_profile`.
 - O `copy_source_map` define quais `item_key` cada campo de copy consulta.
 - O `funnel_copy_profile` define como os insumos podem ser transformados em copy conforme BOFU, MOFU ou TOFU, incluindo tratamentos permitidos, restritos e proibidos.
@@ -138,12 +139,13 @@ Fontes de referência: `README.md`, `docs/prompt-nicho-itens-estruturados.md`, `
 
 - Definir primeiro a fonte versionada da família `landing_page`, incluindo papéis semânticos, faixas editoriais recomendadas, limites técnicos absolutos e critérios visuais e responsivos.
 - Fazer a raiz alimentar ou originar os limites usados por schemas, geração e renderer, sem exigir configuração dinâmica em runtime.
-- Aplicar a parametrização raiz aos schemas, à fixture e ao renderer existentes da E18.4, validando limites técnicos e comportamento visual e responsivo sem criar novos módulos ou uma LP final.
 - Definir valores exatos, presets, relação com o design system, contrato de leitura e casos de validação em plano-base próprio.
+- Substituir a antiga implementação repo-only da E18.4, removendo os artefatos prematuros e reconstruindo somente o que for necessário após a aprovação da parametrização raiz.
 
 ### 2.3. Parametrização de módulos e variantes
 
 - Confirmar o conjunto inicial de módulos e variantes antes de definir suas especializações.
+- Fazer os limites textuais comuns derivarem da raiz e admitir sobrescrita por módulo ou variante somente em caso excepcional e justificado.
 - Definir `copy_source_map` por módulo, campo de copy e intenção/funil.
 - Definir `funnel_copy_profile` padrão para BOFU, MOFU e TOFU e como módulos e variantes o adaptam.
 - Definir tratamentos permitidos, restritos e proibidos por funil.
@@ -200,12 +202,14 @@ Fontes de referência: `README.md`, `docs/prompt-nicho-itens-estruturados.md`, `
 - 4º — composição base do taxon e herança.
 - 5º — geração, validação e liberação da primeira LP teste `starter`.
 - 6º — geração, revisão e publicação das LPs dos clientes.
-- O primeiro plano-base cobre somente contrato versionado da raiz, papéis semânticos, faixas editoriais, limites técnicos, critérios visuais e responsivos, relação com o design system, aplicação aos schemas, fixture e renderer existentes, contrato de leitura e casos de validação.
+- O primeiro plano-base cobre somente contrato versionado da raiz, papéis semânticos, faixas editoriais, limites técnicos, critérios visuais e responsivos, relação com o design system, contrato de leitura, herança, precedência e casos de validação.
+- O primeiro plano-base também deve detalhar a substituição da antiga E18.4 e a remoção segura da implementação repo-only anterior, sem reconstruir módulos, variantes, schemas ou renderer antes das decisões conceituais correspondentes.
 - Permanecem fora do primeiro plano todos os recortes posteriores listados acima, além de Admin e persistências ainda não decididas.
-- A E18.4 permanece concluída e não deve ser reaberta.
-- O primeiro plano pertence a `18.5 — Parametrização raiz da família landing_page`, com path previsto `docs/lousa-plano-base-e18-5.md`.
-- O segundo plano pertence a `18.6 — Parametrização de módulos e variantes landing_page`, com path previsto `docs/lousa-plano-base-e18-6.md`.
+- O primeiro plano pertence a `18.4 — Parametrização raiz da família landing_page`, com path previsto `docs/lousa-plano-base-e18-4.md`, substituindo o plano-base atual desse path.
+- O segundo plano pertence a `18.5 — Parametrização de módulos e variantes landing_page`, com path previsto `docs/lousa-plano-base-e18-5.md`.
+- Não criar `18.6` para esses dois recortes.
 - Os planos terceiro, quarto e quinto não pertencem automaticamente à E18 e serão distribuídos nos próximos blocos desta seção.
+- A remoção do código e das referências da antiga E18.4 não ocorre neste planejamento; será decidida, detalhada e executada pelo plano-base próprio e por seu briefing para o Executor.
 - Cada plano-base deve decidir somente a persistência, versões, snapshots, medições e superfícies necessárias ao próprio recorte.
 
 ## 4. Onde cada ajuste entra no roadmap
@@ -255,30 +259,42 @@ Fontes de referência: `README.md`, `docs/prompt-nicho-itens-estruturados.md`, `
 
 ### 4.3. E18 — Parametrização técnica da família `landing_page`
 
-- Tipo de intervenção: ajustar o contrato transversal existente e criar dois novos recortes técnicos, um para cada plano-base de parametrização.
-- Seções e subseções afetadas: objetivo e status da E18, `18.1.5`, nova `18.5` e nova `18.6`.
-- Ajustar o objetivo e o status da E18 para registrar que a família `landing_page` deixa de ser apenas visão de consumidor futuro e passa a evoluir de forma controlada pelos recortes `18.5` e `18.6`.
-- Ajustar `18.1.5` para reconhecer o catálogo mínimo próprio de `landing_page` já concluído em `18.4` e separar catálogo técnico de módulos e variantes das parametrizações que governam seus campos, limites e comportamentos.
-- Preservar integralmente `18.2` e `18.3`, que permanecem vinculadas a `commercial_activation`, e preservar `18.4` como base técnica repo-only concluída.
-- Criar `18.5 — Parametrização raiz da família landing_page`, responsável pela fonte versionada da verdade para papéis semânticos, faixas editoriais recomendadas, limites técnicos absolutos, critérios visuais e responsivos, presets, relação com o design system, contrato de leitura e aplicação aos schemas, fixture e renderer existentes.
+- Tipo de intervenção: reorganizar a E18 para refletir integralmente o planejamento conceitual, substituindo a atual `18.4` e criando apenas o recorte seguinte necessário.
+- Seções e subseções afetadas: objetivo e status da E18, `18.1.5`, atual `18.4` e nova `18.5`.
+- Ajustar o objetivo e o status da E18 para registrar que `commercial_activation` permanece implementada e preservada, enquanto a evolução de `landing_page` passa a começar pela parametrização raiz e depois pela parametrização de módulos e variantes.
+- Ajustar `18.1.5` para preservar o catálogo implementado de `commercial_activation`, retirar o catálogo anterior de `landing_page` como contrato vigente e registrar que seu novo catálogo será definido em `18.5` após a parametrização raiz.
+- Registrar em `18.1.5` que os limites textuais comuns pertencem à raiz e que módulos ou variantes só podem sobrescrevê-los excepcionalmente, seguindo `raiz → módulo → variante`.
+- Preservar `18.1.7` como contrato transversal geral até a distribuição do plano-base de composição e preservar `18.1.8` como separação entre template, composição, conteúdo e artefato final.
+- Preservar integralmente `18.2` e `18.3`, que permanecem vinculadas a `commercial_activation` e ao consumo pela E10.7.
+- Substituir integralmente a atual `18.4 — Base de composição landing_page` por `18.4 — Parametrização raiz da família landing_page`.
+- A nova `18.4` será responsável pela fonte versionada da verdade para papéis semânticos, faixas editoriais recomendadas, limites técnicos absolutos, critérios visuais e responsivos, presets, relação com o design system, contrato de leitura, herança, precedência e validação.
+- Estrutura prevista para a nova `18.4`:
+  - `18.4.1 — Objetivo e status`;
+  - `18.4.2 — Registros do recorte`, somente quando houver implementação material;
+  - `18.4.3 — Fonte versionada e contrato de resolução`;
+  - `18.4.4 — Papéis semânticos e faixas editoriais`;
+  - `18.4.5 — Limites técnicos de conteúdo`;
+  - `18.4.6 — Critérios visuais e responsivos`;
+  - `18.4.7 — Presets e relação com o design system`;
+  - `18.4.8 — Herança, precedência e validação`;
+  - `18.4.9 — Limites do recorte`.
+- O plano-base da nova `18.4` terá path `docs/lousa-plano-base-e18-4.md`, substituindo o conteúdo do plano-base anterior.
+- Criar `18.5 — Parametrização de módulos e variantes landing_page`, responsável pelo catálogo inicial, funções estruturais, campos, cardinalidades, variantes, especializações excepcionais sobre a raiz, `copy_source_map`, `funnel_copy_profile`, tratamentos por intenção/funil, ciclo de vida, compatibilidade, depreciação e remoção.
 - Estrutura prevista para `18.5`:
   - `18.5.1 — Objetivo e status`;
   - `18.5.2 — Registros do recorte`, somente quando houver implementação material;
-  - `18.5.3 — Fonte versionada e resolução da parametrização raiz`;
-  - `18.5.4 — Papéis semânticos e faixas editoriais`;
-  - `18.5.5 — Limites técnicos, visuais e responsivos`;
-  - `18.5.6 — Aplicação aos schemas, fixture e renderer`;
-  - `18.5.7 — Validação e limites do recorte`.
+  - `18.5.3 — Catálogo e função dos módulos`;
+  - `18.5.4 — Campos, estruturas e cardinalidades`;
+  - `18.5.5 — Variantes e critérios de criação`;
+  - `18.5.6 — Especializações sobre a parametrização raiz`;
+  - `18.5.7 — Mapa de fontes de copy`;
+  - `18.5.8 — Perfis de copy por intenção e funil`;
+  - `18.5.9 — Ciclo de vida, compatibilidade e validação`;
+  - `18.5.10 — Limites do recorte`.
 - O plano-base de `18.5` terá path previsto `docs/lousa-plano-base-e18-5.md`.
-- Criar `18.6 — Parametrização de módulos e variantes landing_page`, responsável pelas especializações permitidas sobre a raiz, incluindo campos, estruturas, limites, `copy_source_map`, `funnel_copy_profile`, tratamentos comerciais por intenção/funil e ciclo de vida das variantes.
-- Estrutura prevista para `18.6`:
-  - `18.6.1 — Objetivo e status`;
-  - `18.6.2 — Registros do recorte`, somente quando houver implementação material;
-  - `18.6.3 — Parametrização dos módulos`;
-  - `18.6.4 — Parametrização das variantes`;
-  - `18.6.5 — Mapa de fontes de copy`;
-  - `18.6.6 — Perfis de copy por intenção e funil`;
-  - `18.6.7 — Ciclo de vida, compatibilidade e validação`.
-- O plano-base de `18.6` terá path previsto `docs/lousa-plano-base-e18-6.md`.
-- Permanecem fora de `18.5` e `18.6`: elegibilidade do taxon, catálogo de entradas da geração, composição base por taxon, aprovação humana, geração da LP teste, liberação e ciclo das LPs vinculadas às contas.
-- Os novos recortes não exigem parametrização dinâmica em banco ou runtime; qualquer persistência só poderá ser decidida no plano-base correspondente se houver necessidade real.
+- Não criar `18.6` para esses recortes.
+- A substituição da antiga `18.4` implica remover, pelo plano-base próprio e por seu Executor, a implementação repo-only criada antes do planejamento conceitual, incluindo o diretório `lib/conversion-content/landing-page/`, o export correspondente, o script `validate:landing-page` e as referências normativas anteriores, após verificação final de dependências e sem deixar artefatos órfãos.
+- A remoção não ocorre neste documento nem durante o fechamento da seção 4; o novo plano-base da `18.4` deve detalhar escopo, ordem, verificações e briefing para execução.
+- O histórico da implementação removida permanece preservado pelo Git e não deve determinar a estrutura futura do roadmap.
+- Permanecem fora da nova `18.4` e da `18.5`: elegibilidade do taxon, resolução dos itens estruturados, catálogo de entradas da geração, composição base por taxon, herança da composição, aprovação humana, geração da LP teste, liberação e ciclo das LPs vinculadas às contas.
+- Os novos recortes não autorizam automaticamente banco, migration, rota, API, Admin, configuração dinâmica em runtime, agente, job ou automação; cada plano-base deve decidir apenas os artefatos necessários ao próprio recorte.
