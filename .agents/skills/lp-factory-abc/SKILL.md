@@ -1,6 +1,6 @@
 ---
 name: lp-factory-abc
-description: Generate ABC delta-only updates for LP-Factory-10 canonical documentation. Use when the user asks for an ABC, DOC_ALVO update, delta-only documentation patch, or conversion of a final report/implementation result into updates for docs/base-tecnica.md, docs/schema.md, docs/roadmap.md, docs/design-system.md, docs/platform-config.md, docs/services.md, or docs/automations.md. Also use when the user asks to triage which canonical docs need ABCs.
+description: Generate ABC delta-only updates for LP-Factory-10 canonical documentation. Use whenever the user asks to update, adjust, correct, or synchronize canonical documents based on a report, final report, implementation result, PR summary, handoff, assessment, or diagnosis, including requests in Portuguese such as "atualizar os documentos com base em um relatório" and questions about what process Codex would follow for this kind of update, even when the user does not mention ABC or DOC_ALVO. Also use for explicit ABC requests, DOC_ALVO updates, delta-only documentation patches, and triage of which canonical docs need updates among docs/base-tecnica.md, docs/schema.md, docs/roadmap.md, docs/design-system.md, docs/platform-config.md, docs/services.md, and docs/automations.md.
 ---
 
 # LP Factory ABC
