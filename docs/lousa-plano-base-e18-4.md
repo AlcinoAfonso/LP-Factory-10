@@ -667,20 +667,20 @@ Recorte previsto do roadmap: `18.4 — Parametrização raiz da família landing
 
 3.1. E18.4.3–E18.4.8 — Remoção obrigatória da implementação antiga e parametrização raiz v1
 
-* Status: pendente; plano-base v2 validado e instrução ao Executor preparada; execução bloqueada até merge do PR #563 e criação de branch material dedicada.
+* Status: implementada em PR material separado; execução desbloqueada após merge do PR #563 e criação de branch material dedicada.
 * Automação: não.
 * Risco da execução: médio controlado.
 * Objetivo:
   * remover obrigatoriamente a implementação anterior e substituí-la atomicamente pela fonte versionada da parametrização raiz v1.
 * Ordem interna obrigatória:
-  * buscar e listar todos os consumidores da implementação antiga;
-  * classificar cada consumidor;
-  * remover, desacoplar ou redirecionar todos os consumidores;
-  * excluir os nove arquivos da implementação antiga;
-  * reconstruir o boundary com a nova raiz;
-  * ajustar o índice agregado e o script;
-  * executar as validações;
-  * atualizar somente o estado desta fase no plano-base.
+  * buscar e listar todos os consumidores da implementação antiga: concluído;
+  * classificar cada consumidor: concluído;
+  * remover, desacoplar ou redirecionar todos os consumidores: concluído;
+  * excluir os nove arquivos da implementação antiga: concluído;
+  * reconstruir o boundary com a nova raiz: concluído;
+  * ajustar o índice agregado e o script: concluído;
+  * executar as validações: concluído no PR material;
+  * atualizar somente o estado desta fase no plano-base: concluído.
 * Arquivos a excluir:
   * os nove arquivos da implementação anterior listados em 2.12.
 * Arquivos a criar ou recriar:
