@@ -2,7 +2,7 @@
 
 - Versão: v2
 - Data: 14/07/2026
-- Status: plano-base v2 consolidado; Executor ainda não liberado
+- Status: fase executada e validada na branch; aguarda revisão humana e merge
 - Recorte previsto para roadmap: `10.8 — Resolução de pesquisas estruturadas para landing_page`
 - Path canônico: `docs/lousa-plano-base-e10-8.md`
 - Fontes obrigatórias: `README.md`, `AGENTS.md`, `docs/prompt-estrategista.md`, `docs/template-roadmap.md`, `docs/template-briefing-codex.md`, `docs/prompt-executor.md`, `docs/roadmap.md`, `docs/base-tecnica.md`, `docs/schema.md`, `docs/lp-planejamento.md`, `docs/supa-up.md`, `supabase/snippets/e10_5_5_nicho_carregamento.sql`, implementação e documentação atuais da E10.5.5, E10.5.6 e E10.7.
@@ -188,7 +188,7 @@
 
 ### 3.1. E10.8.3–10.8.5 — Resolver server-side completo para landing_page
 
-- Status: planejada.
+- Status: implementada e validada em 14/07/2026 na branch `feat/e10-8-research-resolution`; aguarda revisão humana e merge.
 - Objetivo: implementar o resolver compartilhado de elegibilidade, precedência, proveniência, falha fechada e consumo tipado definido na seção 2.
 - Automação: não.
 - Escopo executável:
@@ -222,7 +222,23 @@
   - nenhum registro de pesquisa existente é criado, editado, arquivado ou excluído;
   - nenhuma estrutura de banco, rota, UI, E10.7, E20 ou E19 é alterada;
   - diff limitado aos artefatos listados e a este plano-base.
-- Próxima ação após aprovação do plano-base v2: enviar o plano completo ao Executor, indicando esta fase como a única fase autorizada para execução.
+- Artefatos executados:
+  - `lib/conversion-content/landing-page/research-resolution/contracts.ts`;
+  - `lib/conversion-content/landing-page/research-resolution/resolver.ts`;
+  - `lib/conversion-content/landing-page/research-resolution/validation-cases.ts`;
+  - `lib/conversion-content/landing-page/research-resolution/index.ts`;
+  - `lib/conversion-content/adapters/landingPageResearchAdapter.ts`;
+  - exports separados em `lib/conversion-content/index.ts`;
+  - script `validate:landing-page-research` em `package.json`.
+- Evidências:
+  - `npm ci`: concluído;
+  - `npm run check`: aprovado com zero erros e 24 warnings preexistentes fora do diff;
+  - `npm run validate:landing-page-research`: 15 grupos de casos aprovados, cobrindo integralmente a matriz da seção 2.7, proveniência, ordenação e ausência de mistura parcial;
+  - inspeção read-only real no Supabase confirmou o taxon atendido ativo, o pai direto ativo, quatro blocos `business_buyer` próprios na versão 1 com 49 itens ativos e quatro blocos `business_buyer` no pai direto na versão 1 com 54 itens ativos, sem item ativo estruturalmente inválido;
+  - validação read-only real do DTO no resolver retornou `business_buyer.sourceRelation = own`, 49 itens próprios e 74 itens `end_customer` próprios, ambos na versão 1;
+  - nenhum registro, estrutura de banco, rota, UI, consumidor, parametrização raiz da E18.4 ou contrato da E10.7 foi alterado.
+- Decisão da fase: encerrar a única fase executável após revisão humana e merge do PR.
+- Próxima ação: revisar e fazer merge humano do PR; após o merge, habilitar o relatório final ao Gestor de Docs conforme `docs/prompt-estrategista.md`.
 
 ## 4. Escopo negativo e critérios de parada
 
