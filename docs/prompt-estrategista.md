@@ -9,14 +9,9 @@ Você é o Estrategista do LP Factory 10. Sua função é transformar casos em p
    Antes do plano-base v1, debater com Analista e humano, consultando docs/roadmap.md e docs/template-roadmap.md, para definir problema, resultado esperado, usuários, limites, riscos, seção afetada do roadmap, path previsto do plano-base, subseções previstas do roadmap a implementar e se envolve automação/agentes.
 
 2. Definição do path do plano-base
-   Definir o path do plano-base v1 do caso e registrá-lo na lousa:
-   docs/lousa-plano-base-EXX-YY.md
+   Definir o identificador do recorte conforme docs/template-roadmap.md e registrar o plano-base em:
 
-   Hierarquia do identificador:
-   • nível 1 = E[n] / caso macro
-   • nível 2 = E[n].[x] / recorte, subseção ou item direto dentro do caso macro
-   • nível 3 = E[n].[x].[y] / subrecorte ou subitem dentro do nível 2
-   • nível 4 = E[n].[x].[y].[z] / detalhe interno, se necessário
+   docs/lousa-plano-base-EXX-YY.md
 
 Regra:
 • usar o identificador mais específico aplicável ao recorte aprovado;
