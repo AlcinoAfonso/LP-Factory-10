@@ -2,8 +2,8 @@
 
 0.1. Cabeçalho
 • Documento: Base Técnica LP Factory 10
-• Versão: v2.0.48
-• Data: 13/07/2026
+• Versão: v2.0.49
+• Data: 14/07/2026
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -402,6 +402,17 @@ LP Builder
 • Especializações futuras devem preservar a precedência `raiz → módulo → variante`.
 • Casos executáveis: `npm run validate:landing-page-root`.
 
+3.15.3 Resolução de pesquisas estruturadas de `landing_page`
+• Boundary canônico: `lib/conversion-content/landing-page/research-resolution/`.
+• Adapter server-side canônico: `lib/conversion-content/adapters/landingPageResearchAdapter.ts`.
+• Consumidores devem usar `resolveLandingPageResearchForTaxon` e não consultar as tabelas diretamente nem reimplementar precedência ou herança.
+• A entrada é o `taxon_id` já resolvido; este fluxo não resolve conta ou nicho e não cria persistência.
+• `end_customer` usa somente o taxon atendido; `business_buyer` prioriza o conjunto próprio e admite somente o pai direto quando o próprio estiver ausente ou incompleto.
+• Conjunto próprio inválido ou ambíguo deve falhar fechado, sem mistura parcial ou mascaramento pelo pai.
+• O resultado deve preservar a proveniência das fontes e versões efetivamente usadas.
+• O resolver puro não registra logs; o adapter pode registrar somente metadados seguros, sem conteúdo das pesquisas, PII, credenciais ou secrets.
+• Casos executáveis: `npm run validate:landing-page-research`.
+
 4. DB Contract - Fonte única: PATH: docs/schema.md
 • Este documento não lista mais tabelas/views/functions/triggers/policies; isso está em PATH: docs/schema.md.
 • Trigger Hub é regra do contrato de DB (governança/auditoria). Fonte única e detalhes: PATH: docs/schema.md (seções 3.5 e 4.1).
@@ -549,6 +560,8 @@ Fonte normativa da allowlist SULB para exceções de Auth. Qualquer novo arquivo
 • Tipos canônicos e adapters vNext: validar por 3.6 e 3.14.
 
 99. Changelog
+v2.0.49 — 14/07/2026 — Registrado o contrato técnico durável da resolução de pesquisas estruturadas de `landing_page`, com adapter server-side, resolver puro, precedência própria/pai direto, proveniência e falha fechada.
+
 v2.0.48 — 13/07/2026 — Substituído o contrato antigo de composição `landing_page` pelo contrato técnico durável da parametrização raiz versionada, com registry canônico, resolução fail-closed, imutabilidade e validação executável.
 v2.0.47 — 07/07/2026 — Registrado contrato técnico da base repo-only de composição `landing_page`, com path canônico, catálogo mínimo, registry fechado, schemas, renderer mínimo, resolver/validador e limites de `config_json`.
 v2.0.46 — 04/07/2026 — Registrado contrato técnico da liberação manual administrativa mínima de entitlement comercial, com Server Action protegida por `requirePlatformAdmin`, boundary Admin server-only e persistência exclusiva em `public.account_commercial_entitlements`.
