@@ -84,7 +84,7 @@ Regra:
 • não abrir novo escopo sem decisão humana explícita.
 
 7. Instrução ao Executor
-   Enviar ao Executor o plano-base v2 completo, indicando a fase atual e as fontes obrigatórias.
+   Enviar ao Executor o plano-base v2 completo, indicando a fase atual e as fontes obrigatórias, conforme docs/prompt-executor.md e AGENTS.md.
 
 Regra:
 • executar uma fase por vez, na ordem do plano;
