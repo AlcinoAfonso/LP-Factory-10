@@ -3,7 +3,7 @@
 Fontes: chat, `README.md`, `AGENTS.md`, `docs/prompt-estrategista.md`, `docs/template-roadmap.md`, `docs/template-briefing-codex.md`, `docs/prompt-executor.md`, `docs/roadmap.md`, `docs/base-tecnica.md`, `docs/schema.md`, `docs/lp-planejamento.md`, `docs/lousa-plano-base-e10-8.md`, `docs/supa-up.md`, `docs/prod-up.md`, contratos atuais de planos, contas, taxons e landing pages, `Pesquisa bruta para corretor de imóveis de médio padrão.pdf`, `Projeto Piloto Imobiliário.pdf`, avaliações do Analista, do Gestor Estrutural e do Gestor de Updates e decisões humanas de 14/07/2026.
 
 - Versão: v2.
-- Status: plano-base v2 consolidado no PR #573; merge humano pendente; Executor não autorizado.
+- Status: plano-base v2 mergeado no PR #573; E20.2.3–E20.2.6 executada e validada na branch material `codex-app/e20-2-3-input-catalog-v1`, aguardando PR e merge humanos.
 - Recorte previsto para roadmap: `20.2 — Catálogo de entradas por taxon`.
 - Path canônico: `docs/lousa-plano-base-e20-2.md`.
 
@@ -698,7 +698,7 @@ O snippet não pode:
 
 ### 3.1. E20.2.3–E20.2.6 — Contrato, catálogo imobiliário v1 e resolver repo-only
 
-- Status: planejada; bloqueada até merge humano deste plano-base v2.
+- Status: implementada e validada; aguarda PR material e merge humanos.
 - Automação: não.
 - Fontes obrigatórias de execução:
   - `README.md`;
@@ -735,6 +735,16 @@ O snippet não pode:
   - ajustar `lib/conversion-content/index.ts`;
   - ajustar `package.json`;
   - ajustar somente este plano-base para registrar execução.
+- Evidências da execução em 14/07/2026:
+  - inspeção read-only no projeto Supabase `LP-Factory-10` confirmou a cadeia ativa `imobiliario` (`segment`) → `corretor-imoveis` (`niche`) → `corretor-de-imoveis-de-medio-padrao` (`ultra_niche`), com relações pai-filho coerentes;
+  - `supabase/snippets/e20_2_taxon_chain_verify.sql` foi criado e executado sem escrita;
+  - registry v1 implementado com 19 campos efetivos, sem camada própria para o ultranicho de médio padrão;
+  - `npm ci`: aprovado; o audit da árvore instalada reportou 13 vulnerabilidades preexistentes, sem mudança de dependências;
+  - `npm run check`: aprovado, com 24 warnings preexistentes e nenhum erro;
+  - `npm run validate:landing-page-input-catalog`: aprovado em 26 casos executáveis;
+  - `git diff --check`: aprovado.
+- Decisão da fase: avançar.
+- Próxima ação real: submeter o PR material contra `main`, aguardar merge humano e então encaminhar o estado final ao Gestor de Docs.
 - Critérios de aceite:
   - snippet confirma a cadeia real sem escrita;
   - matriz completa aprovada;
