@@ -1,8 +1,8 @@
 0. Introdução
 
 0.1 Cabeçalho
-• Data: 13/07/2026
-• Versão: v1.5.91
+• Data: 14/07/2026
+• Versão: v1.5.92
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -1085,6 +1085,68 @@ Repositório — Ajustados
 • A E10.7 não pode bloquear o acesso à página comercial.
 • O runtime público não pode consumir `draft`, `archived` nem chamar IA para renderizar a página comercial.
 
+10.8 Resolução de pesquisas estruturadas para `landing_page`
+
+10.8.1 Objetivo e status
+
+* Objetivo: Disponibilizar um conjunto único, completo, determinístico e rastreável de pesquisas estruturadas para futuros consumidores de `landing_page`.
+* Status: Concluída e validada em 14/07/2026.
+
+10.8.2 Registros do recorte
+
+* Repositório:
+
+  * Criados:
+
+    * `lib/conversion-content/landing-page/research-resolution/contracts.ts`
+    * `lib/conversion-content/landing-page/research-resolution/resolver.ts`
+    * `lib/conversion-content/landing-page/research-resolution/validation-cases.ts`
+    * `lib/conversion-content/landing-page/research-resolution/index.ts`
+    * `lib/conversion-content/adapters/landingPageResearchAdapter.ts`
+  * Ajustados:
+
+    * `lib/conversion-content/index.ts`
+    * `package.json`
+* Updates:
+
+  * Aplicados:
+
+    * `supa#40`
+    * `supa#5`
+
+10.8.3 Contrato de resolução e elegibilidade
+
+* Status: Implementado.
+* Conteúdo:
+
+  * Entrada por `taxon_id` do taxon atendido, já resolvido pelo fluxo responsável.
+  * Execução server-side e read-only, sem persistência nova.
+  * Cada público deve resultar em um único conjunto completo e elegível.
+  * Saída tipada e rastreável para consumo futuro pela E20 e pela E19.
+
+10.8.4 Precedência, proveniência e falha fechada
+
+* Status: Implementadas.
+* Conteúdo:
+
+  * `end_customer` é resolvido exclusivamente no taxon atendido.
+  * O conjunto próprio completo de `business_buyer` vence sempre.
+  * O pai direto só pode ser usado quando o conjunto próprio estiver ausente ou incompleto.
+  * Conjunto próprio inválido ou ambíguo falha fechado e não pode ser mascarado pelo pai.
+  * Não há mistura de blocos, fontes ou versões, nem consulta além do pai direto.
+  * O resultado preserva taxons, relação de origem, pesquisas, itens e versões usados.
+
+10.8.5 Validação e limites do recorte
+
+* Status: Validada.
+* Conteúdo:
+
+  * Matriz executável aprovada por `npm run validate:landing-page-research`.
+  * Evidência read-only real confirmou a precedência do conjunto próprio sobre o pai elegível.
+  * O adapter registra somente eventos estruturados e metadados seguros.
+  * Nenhuma estrutura ou dado de banco, rota, UI, cache ou persistência foi criado ou alterado.
+  * E10.7, E18.4, E19, E20, automações, agentes e jobs permaneceram fora do recorte.
+
 11. E11 — Gestão de Usuários e Convites
 
 11.1 Status
@@ -1862,6 +1924,8 @@ Repositório — Ajustados
   - Esta referência não cria obrigação de nova implementação agora.
 
 99. Changelog
+v1.5.92 — 14/07/2026 — E10.8 concluída com resolução server-side, read-only, tipada e fail-closed das pesquisas estruturadas de `landing_page`, preservando precedência, atomicidade e proveniência sem alteração de banco ou implementação dos consumidores futuros.
+
 v1.5.91 — 13/07/2026 — E18.4 consolidada como parametrização raiz versionada da família `landing_page`; removida a implementação anterior de composição e separado o recorte futuro 18.5 para módulos e variantes.
 
 v1.5.90 — 07/07/2026 — E18.4 concluída como base técnica repo-only de composição `landing_page`, com catálogo mínimo, contratos técnicos, registry, schemas, renderer mínimo, resolver/validador e limites de `config_json`, sem liberação automática de registros-base, LP teste, rota pública, Admin, LP Builder, automação, job ou agente.
