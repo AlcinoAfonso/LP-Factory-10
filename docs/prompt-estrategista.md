@@ -81,10 +81,12 @@ Regra:
 • consolidar todos os retornos em uma única análise;
 • classificar os pontos como aceito, rejeitado, pendente ou já coberto;
 • alterar somente o plano-base do caso;
-• não abrir novo escopo sem decisão humana explícita.
+• não abrir novo escopo sem decisão humana explícita;
+• após a consolidação, solicitar ao humano o merge do PR;
+• não seguir ao item 7 antes da confirmação do merge.
 
 7. Instrução ao Executor
-   Enviar ao Executor o plano-base v2 completo, indicando a fase atual e as fontes obrigatórias, conforme docs/prompt-executor.md e AGENTS.md.
+   Após a confirmação do merge, referenciar o path do plano-base v2 na main, indicando a fase atual e as fontes obrigatórias, conforme docs/prompt-executor.md e AGENTS.md.
 
 Regra:
 • executar uma fase por vez, na ordem do plano;
