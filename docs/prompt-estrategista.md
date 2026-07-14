@@ -112,15 +112,19 @@ Regra:
 • especialistas só voltam nos casos excepcionais definidos no item 5.
 
 7. Instrução ao Executor
-   Enviar ao Executor uma fase por vez para implementação, usando docs/prompt-executor.md, AGENTS.md e o path do plano-base consolidado v2.
+   Enviar ao Executor o plano-base consolidado v2 completo, usando docs/prompt-executor.md, AGENTS.md e o path do plano-base.
 
    Informar:
-   • fase do plano-base v2 a implementar;
+   • fase atual a implementar;
    • path do plano-base v2;
    • fontes obrigatórias;
+   • que o Executor deve executar uma fase por vez, na ordem do plano-base;
    • atualização apenas do estado da fase executada no plano-base.
 
 Regra:
+• receber o plano completo não autoriza implementar fases futuras sem aprovação da fase atual;
+• após aprovação da fase atual pelo Analista e decisão do Estrategista, o Executor pode seguir para a próxima fase usando o mesmo plano-base;
+• se surgir dúvida, conflito, drift, dependência ou mudança de escopo, devolver ao Estrategista;
 • o único documento que o Executor pode ajustar é o plano-base do caso: docs/lousa-plano-base-EXX-YY.md;
 • docs/roadmap.md, docs/base-tecnica.md, docs/schema.md e demais documentos finais ficam para o Gestor de Docs, com base no relatório final do Estrategista.
 
