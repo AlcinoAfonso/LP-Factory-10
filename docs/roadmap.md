@@ -1121,7 +1121,7 @@ Repositório — Ajustados
 
   * Entrada por `taxon_id` do taxon atendido, já resolvido pelo fluxo responsável.
   * Execução server-side e read-only, sem persistência nova.
-  * Cada conjunto exige `strategic_core`, `lp_overview`, `lp_sections` e `seo`, com pesquisas-pai ativas e uma versão comum aos quatro blocos.
+  * Cada `audience_scope` deve resultar em um único conjunto completo e elegível, formado por `strategic_core`, `lp_overview`, `lp_sections` e `seo`, com pesquisas-pai ativas e uma versão comum aos quatro blocos.
   * Saída tipada e rastreável para consumo futuro pela E20 e pela E19.
 
 10.8.4 Precedência, proveniência e falha fechada
@@ -1130,7 +1130,7 @@ Repositório — Ajustados
 * Conteúdo:
 
   * `end_customer` é resolvido exclusivamente no taxon atendido.
-  * O conjunto próprio completo de `business_buyer` vence sempre.
+  * O conjunto próprio completo e elegível de `business_buyer` vence sempre.
   * O pai direto só pode ser usado quando o conjunto próprio estiver ausente ou incompleto.
   * Conjunto próprio inválido ou ambíguo falha fechado e não pode ser mascarado pelo pai.
   * Cada `audience_scope` usa um conjunto atômico, sem mistura de blocos, taxons de origem ou versões dentro do próprio público; `end_customer` e `business_buyer` podem usar versões diferentes.
