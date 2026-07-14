@@ -214,28 +214,15 @@ function resolveAudience(input: {
     byBlock.set(block, research);
   }
 
-  if (LANDING_PAGE_RESEARCH_BLOCKS.some((block) => !byBlock.has(block))) {
-    return audienceFailure(
-      "RESEARCH_INCOMPLETE",
-      "The active research set does not contain every required block",
-      input,
-    );
-  }
-
   const seenItemIds = new Set<string>();
-  const resolvedResearches = [];
-  for (const block of LANDING_PAGE_RESEARCH_BLOCKS) {
-    const research = byBlock.get(block)!;
+  const activeItemsByResearchId = new Map<
+    string,
+    readonly LandingPageResearchItemDto[]
+  >();
+  for (const research of byBlock.values()) {
     const activeItems = input.items.filter(
       (item) => item.researchId === research.id && item.isActive,
     );
-    if (activeItems.length === 0) {
-      return audienceFailure(
-        "RESEARCH_INCOMPLETE",
-        "A required research block has no active items",
-        input,
-      );
-    }
     const activeItemIds = new Set(activeItems.map((item) => item.id));
     if (
       activeItems.some((item) => !isValidActiveItem(item, research.id)) ||
@@ -248,10 +235,32 @@ function resolveAudience(input: {
         input,
       );
     }
+    for (const item of activeItems) seenItemIds.add(item.id);
+    activeItemsByResearchId.set(research.id, activeItems);
+  }
+
+  if (LANDING_PAGE_RESEARCH_BLOCKS.some((block) => !byBlock.has(block))) {
+    return audienceFailure(
+      "RESEARCH_INCOMPLETE",
+      "The active research set does not contain every required block",
+      input,
+    );
+  }
+
+  const resolvedResearches = [];
+  for (const block of LANDING_PAGE_RESEARCH_BLOCKS) {
+    const research = byBlock.get(block)!;
+    const activeItems = activeItemsByResearchId.get(research.id) ?? [];
+    if (activeItems.length === 0) {
+      return audienceFailure(
+        "RESEARCH_INCOMPLETE",
+        "A required research block has no active items",
+        input,
+      );
+    }
 
     const items = activeItems
       .map((item) => {
-        seenItemIds.add(item.id);
         return {
           itemId: item.id,
           researchId: research.id,

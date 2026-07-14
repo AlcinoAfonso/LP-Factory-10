@@ -85,6 +85,60 @@ const cases: readonly ValidationCase[] = [
     },
   },
   {
+    name: "invalid active own item wins over a missing own block",
+    run: () => {
+      const source = completeSource();
+      removeBlock(source, SERVED_TAXON_ID, "business_buyer", "seo");
+      const invalidItem = findItem(
+        source,
+        SERVED_TAXON_ID,
+        "business_buyer",
+      );
+      replaceItem(source, invalidItem.id, { itemText: "" });
+
+      const result = resolve(SERVED_TAXON_ID, source);
+      assertAudienceFailure(
+        result,
+        "RESEARCH_INVALID",
+        "business_buyer",
+        "own",
+      );
+      if (result.ok) throw new Error("Expected audience failure");
+      assert.equal(result.error.sourceTaxonId, SERVED_TAXON_ID);
+    },
+  },
+  {
+    name: "invalid active own item wins over an empty own block",
+    run: () => {
+      const source = completeSource();
+      const emptyResearch = findResearch(
+        source,
+        SERVED_TAXON_ID,
+        "business_buyer",
+        "seo",
+      );
+      source.items = source.items.filter(
+        (item) => item.researchId !== emptyResearch.id,
+      );
+      const invalidItem = findItem(
+        source,
+        SERVED_TAXON_ID,
+        "business_buyer",
+      );
+      replaceItem(source, invalidItem.id, { itemText: "" });
+
+      const result = resolve(SERVED_TAXON_ID, source);
+      assertAudienceFailure(
+        result,
+        "RESEARCH_INVALID",
+        "business_buyer",
+        "own",
+      );
+      if (result.ok) throw new Error("Expected audience failure");
+      assert.equal(result.error.sourceTaxonId, SERVED_TAXON_ID);
+    },
+  },
+  {
     name: "complete own business_buyer ignores an incomplete parent",
     run: () => {
       const source = completeSource();

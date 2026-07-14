@@ -233,7 +233,7 @@
 - Evidências:
   - `npm ci`: concluído;
   - `npm run check`: aprovado com zero erros e 24 warnings preexistentes fora do diff;
-  - `npm run validate:landing-page-research`: 15 grupos de casos aprovados, cobrindo integralmente a matriz da seção 2.7, proveniência, ordenação e ausência de mistura parcial;
+  - `npm run validate:landing-page-research`: 17 grupos de casos aprovados, cobrindo integralmente a matriz da seção 2.7, proveniência, ordenação, ausência de mistura parcial e as regressões em que item ativo inválido impede fallback de conjunto próprio incompleto;
   - inspeção read-only real no Supabase confirmou o taxon atendido ativo, o pai direto ativo, quatro blocos `business_buyer` próprios na versão 1 com 49 itens ativos e quatro blocos `business_buyer` no pai direto na versão 1 com 54 itens ativos, sem item ativo estruturalmente inválido;
   - validação read-only real do DTO no resolver retornou `business_buyer.sourceRelation = own`, 49 itens próprios e 74 itens `end_customer` próprios, ambos na versão 1;
   - nenhum registro, estrutura de banco, rota, UI, consumidor, parametrização raiz da E18.4 ou contrato da E10.7 foi alterado.
