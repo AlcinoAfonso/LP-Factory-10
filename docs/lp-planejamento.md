@@ -49,7 +49,7 @@ Fontes de referência: `README.md`, `docs/roadmap.md`, `docs/prompt-estrategista
 
 - A parametrização de módulos e variantes define campos, estruturas, limites estruturais, regras de copy e especializações permitidas sobre a raiz.
 - As faixas editoriais recomendadas comuns pertencem à parametrização raiz e podem ser especializadas por módulo ou variante, para cima ou para baixo, somente de forma explícita e justificada.
-- Toda especialização de faixa deve manter mínimo maior ou igual a 1, mínimo menor ou igual ao máximo e máximo menor ou igual ao limite técnico absoluto herdado.
+- Toda especialização de faixa deve manter mínimo maior ou igual a 1, mínimo menor ou igual ao máximo e máximo menor ou igual ao limite técnico absoluto efetivo, calculado pelo menor valor entre o limite herdado e eventual limite mais restritivo definido no próprio nível.
 - Módulo ou variante pode impor limite técnico absoluto mais restritivo, mas não pode ampliá-lo; qualquer ampliação exige nova versão da parametrização raiz.
 - A resolução das regras segue `parametrização raiz → especialização do módulo → especialização da variante`.
 - Módulos herdam a raiz e registram apenas especializações justificadas para sua função estrutural.
@@ -179,7 +179,7 @@ Fontes de referência: `README.md`, `docs/roadmap.md`, `docs/prompt-estrategista
 
 - Confirmar o conjunto inicial de módulos e variantes antes de definir suas especializações.
 - Fazer as faixas editoriais recomendadas, os limites técnicos absolutos e os valores comuns de `spacing` derivarem da raiz.
-- Permitir especialização explícita e justificada das faixas recomendadas para cima ou para baixo, mantendo mínimo maior ou igual a 1, mínimo menor ou igual ao máximo e máximo menor ou igual ao limite absoluto herdado.
+- Permitir especialização explícita e justificada das faixas recomendadas para cima ou para baixo, mantendo mínimo maior ou igual a 1, mínimo menor ou igual ao máximo e máximo menor ou igual ao limite técnico absoluto efetivo, calculado pelo menor valor entre o limite herdado e eventual limite mais restritivo definido no próprio nível.
 - Permitir que módulo ou variante restrinja o limite técnico absoluto, mas impedir sua ampliação; necessidade de ampliação exige nova versão da parametrização raiz.
 - Definir `copy_source_map` por módulo, campo de copy e intenção ou funil.
 - Definir `funnel_copy_profile` padrão para BOFU, MOFU e TOFU e como módulos e variantes o adaptam.
@@ -342,7 +342,8 @@ Fontes de referência: `README.md`, `docs/roadmap.md`, `docs/prompt-estrategista
 - Ajustar o objetivo e o status da E18 para registrar que `commercial_activation` permanece implementada e preservada, enquanto a evolução de `landing_page` passa a começar pela parametrização raiz e depois pela parametrização de módulos e variantes.
 - Ajustar `18.1.5` para preservar o catálogo implementado de `commercial_activation`, retirar o conjunto anterior de módulos e variantes de `landing_page` como contrato vigente e registrar que o novo conjunto será definido em `18.5` após a parametrização raiz.
 - Registrar em `18.1.5` que as faixas editoriais recomendadas, os limites técnicos absolutos e os valores comuns de `spacing` pertencem à raiz, seguindo `raiz → módulo → variante`.
-- Registrar que módulos ou variantes podem especializar faixas recomendadas dentro do limite absoluto e impor limites absolutos mais restritivos, mas qualquer ampliação exige nova versão da raiz.
+- Registrar que módulos ou variantes podem especializar faixas recomendadas dentro do limite técnico absoluto efetivo, calculado pelo menor valor entre o limite herdado e eventual limite mais restritivo definido no próprio nível.
+- Registrar que módulos ou variantes podem impor limites absolutos mais restritivos, mas qualquer ampliação exige nova versão da raiz.
 - Preservar `18.1.7` como contrato transversal geral até a materialização da composição pela E20 e preservar `18.1.8` como separação entre template, composição, conteúdo e artefato final.
 - Preservar integralmente `18.2` e `18.3`, que permanecem vinculadas a `commercial_activation` e ao consumo pela E10.7.
 - Substituir integralmente a atual `18.4 — Base de composição landing_page` por `18.4 — Parametrização raiz da família landing_page`.
