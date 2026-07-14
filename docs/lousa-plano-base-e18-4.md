@@ -2,7 +2,7 @@
 
 Fontes: chat, `README.md`, `AGENTS.md`, `docs/prompt-estrategista.md`, `docs/template-roadmap.md`, `docs/prompt-executor.md`, `docs/roadmap.md`, `docs/base-tecnica.md`, `docs/schema.md`, `docs/design-system.md`, `docs/lp-planejamento.md`, `docs/template-blueprint.md`, `docs/blueprint-corretor-imoveis-end-customer.md`, `docs/gestor-estrutural.md`, `docs/vercel-up.md`, `docs/prod-up.md`, conteúdo anterior deste path, `package.json`, `lib/conversion-content/index.ts`, `lib/conversion-content/landing-page/`, PRs #559, #563, #564, #566 e #567, avaliações do Analista, Gestor Estrutural e Gestor de Updates e decisões humanas de 13 e 14/07/2026.
 
-Status: plano-base v2 concluído; fase material implementada, aprovada e mergeada no PR #564; documentação durável mergeada no PR #566; ajuste conceitual final registrado no PR #567; encerramento formal da E18.4 condicionado somente ao merge do PR #567.
+Status: plano-base v2 concluído; fase material implementada, aprovada e mergeada no PR #564; documentação durável mergeada no PR #566; ajuste conceitual final registrado no PR #567; E18.4 formalmente encerrada por este ajuste documental. Próxima ação: iniciar o plano-base da E18.5.
 
 Path: `docs/lousa-plano-base-e18-4.md`.
 
@@ -22,8 +22,8 @@ Recorte do roadmap: `18.4 — Parametrização raiz da família landing_page`.
 * A fonte raiz versionada está implementada em `lib/conversion-content/landing-page/`, com registry canônico, schema estrito, resolver fail-closed, saída imutável e validação executável.
 * `commercial_activation`, E18.2, E18.3 e o LP Builder foram preservados.
 * Não há novo escopo material pendente na E18.4.
-* O encerramento formal depende somente do merge do PR #567, sem necessidade de nova rodada dos especialistas.
-* A próxima ação após o merge é iniciar o plano-base da E18.5.
+* Este PR registra o encerramento formal da E18.4 no estado que ingressará na `main`, sem necessidade de nova rodada dos especialistas.
+* A próxima ação é iniciar o plano-base da E18.5.
 
 1.2. Decisões preservadas
 
@@ -92,7 +92,7 @@ Recorte do roadmap: `18.4 — Parametrização raiz da família landing_page`.
   * `18.4.9 — Limites do recorte`.
 * O PR #566 concluiu a atualização de `docs/roadmap.md` e `docs/base-tecnica.md`.
 * O PR #567 conclui a precisão conceitual pendente em `docs/lp-planejamento.md` e atualiza o estado deste plano-base.
-* Após o merge do PR #567, não permanecerá drift normativo conhecido sobre a antiga E18.4.
+* Com este ajuste, não permanece drift normativo conhecido sobre a antiga E18.4.
 
 1.5. Avaliações e autorização
 
@@ -138,9 +138,8 @@ Recorte do roadmap: `18.4 — Parametrização raiz da família landing_page`.
   * criar handoff para Codex Web;
   * antecipar módulo, variante, composição ou renderer;
   * tratar limites específicos do Hero imobiliário como prova definitiva de limites globais.
-* Pontos pendentes:
-  * merge do PR #567;
-  * validação futura das hipóteses v1 por LP real e por evidência de outros nichos.
+* Ponto futuro fora do encerramento da E18.4:
+  * validação das hipóteses v1 por LP real e por evidência de outros nichos.
 * Pontos concluídos:
   * PR #563 mergeado;
   * branch material dedicada criada;
@@ -243,7 +242,7 @@ Recorte do roadmap: `18.4 — Parametrização raiz da família landing_page`.
 * Responsabilidades:
   * `contracts.ts` expõe somente tipos públicos `readonly`, códigos de erro, resultado discriminado e contratos de leitura;
   * `root-registry.ts` contém uma única ocorrência dos valores efetivos de cada versão;
-  * `root-schema.ts` valida estrutura e invariantes sem repetir números, presets ou valores efetivos do registry;
+  * `root-schema.ts` valida estrutura e invariantes e pode manter allowlists estruturais necessárias, sem atuar como fonte dos valores resolvidos;
   * `root-resolver.ts` consulta exclusivamente o registry e não possui valores próprios de fallback;
   * `root-validation-cases.ts` prova casos positivos, negativos, versionamento e imutabilidade;
   * `index.ts` expõe apenas a interface pública autorizada.
@@ -471,7 +470,8 @@ Recorte do roadmap: `18.4 — Parametrização raiz da família landing_page`.
 * Limites técnicos absolutos:
   * módulo ou variante pode impor limite mais restritivo;
   * módulo ou variante não pode ampliar o limite absoluto herdado;
-  * necessidade de ampliação exige nova `rootVersion`.
+  * ampliação acima do limite da raiz vigente exige nova `rootVersion`;
+  * revisão futura de restrição própria de módulo ou variante, ainda dentro do teto da raiz, deve ser tratada pelo versionamento do respectivo contrato na E18.5.
 * Opções comuns:
   * módulo ou variante pode restringir opções permitidas;
   * módulo ou variante não pode criar opção fora da enumeração da raiz.
@@ -619,8 +619,8 @@ Recorte do roadmap: `18.4 — Parametrização raiz da família landing_page`.
   * estado da fase atualizado.
 * Critérios de aceite atendidos:
   * fonte raiz v1 criada no boundary canônico;
-  * registry como única fonte dos valores efetivos;
-  * schema e resolver sem duplicação de valores do registry;
+  * registry como única fonte dos valores efetivamente resolvidos;
+  * schema com allowlists e invariantes estruturais de validação, sem se tornar fonte dos valores resolvidos, e resolver sem valores próprios de fallback;
   * resolução pelo `defaultPreset` da versão;
   * contratos públicos profundamente `readonly`;
   * saída sem referência mutável;
@@ -646,8 +646,8 @@ Recorte do roadmap: `18.4 — Parametrização raiz da família landing_page`.
   * checks materiais concluídos;
   * atualização de `docs/roadmap.md` e `docs/base-tecnica.md` mergeada no PR #566;
   * precisão conceitual de `docs/lp-planejamento.md` e encerramento do plano-base incluídos no PR #567.
-* A E18.4 será formalmente encerrada com o merge do PR #567.
-* Após esse merge, a próxima ação é iniciar `docs/lousa-plano-base-e18-5.md`.
+* A E18.4 fica formalmente encerrada por este registro documental.
+* A próxima ação é iniciar `docs/lousa-plano-base-e18-5.md`.
 
 4. Escopo negativo e critérios de parada
 
@@ -703,5 +703,5 @@ Recorte do roadmap: `18.4 — Parametrização raiz da família landing_page`.
 * O PR documental obrigatório foi mergeado no PR #566.
 * O PR #567 registra o último alinhamento conceitual conhecido e atualiza este estado final.
 * O caso E18.4 não possui pendência material.
-* O encerramento formal depende somente do merge do PR #567.
-* Após o merge, a próxima ação é iniciar o plano-base da E18.5, sem reabrir a E18.4.
+* A E18.4 está formalmente encerrada por este ajuste documental.
+* A próxima ação é iniciar o plano-base da E18.5, sem reabrir a E18.4.
