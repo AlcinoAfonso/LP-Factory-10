@@ -1,32 +1,26 @@
-# docs/prompt-abc.md vs8
+# docs/prompt-abc.md vs9
 
 PROMPT ABC
+
+Antes de adicionar, avaliar nesta ordem: remover; ajustar; substituir; consolidar; adicionar somente quando necessário.
 
 ## 1. Entrada
 
 * REPO (GitHub): LP-Factory-10
 * REF (GitHub): [main | branch | commit] (se não informado, main)
 * DOC_ALVO: [docs/base-tecnica.md | docs/schema.md | docs/roadmap.md | docs/design-system.md | docs/platform-config.md | docs/services.md | docs/automations.md]
-* RELATÓRIO: fonte do estado final a refletir no DOC_ALVO.
+* RELATÓRIO: fonte do estado final.
 
 ## 2. Objetivo
 
-Gerar um ABC humano, delta-only e executável para o DOC_ALVO.
-
-Antes de adicionar, avaliar nesta ordem:
-
-1. remover;
-2. ajustar;
-3. substituir;
-4. consolidar;
-5. adicionar somente quando necessário.
+Gerar um ABC humano, curto, delta-only e executável para o DOC_ALVO.
 
 ## 3. Fontes obrigatórias
 
-* RELATÓRIO informado.
+* RELATÓRIO.
 * DOC_ALVO atual.
 * Fonte estrutural aplicável.
-* Para `docs/roadmap.md`, consultar obrigatoriamente `docs/template-roadmap.md`.
+* Para `docs/roadmap.md`: `docs/template-roadmap.md`.
 
 Fluxo mínimo:
 
@@ -43,9 +37,6 @@ Fluxo mínimo:
 * Não registrar histórico operacional no corpo dos documentos.
 * Emitir somente o menor delta executável.
 * Preferir remoção, ajuste, substituição ou consolidação antes de adição.
-* Tudo fora da residência do DOC_ALVO está fora de escopo.
-* Preservar decisões futuras aprovadas, pendências vigentes e limites permanentes.
-* Ignorar hipóteses, propostas não aprovadas e passos operacionais superados.
 
 ## 5. Residência documental
 
@@ -67,7 +58,6 @@ Fluxo mínimo:
 * Não criar blocos vazios.
 * Não listar ações que não ocorreram; usar `N/A` somente quando exigido pela estrutura.
 * Registros devem conter apenas nomes ou paths.
-* Em registros, não incluir `docs/**` como artefato.
 
 ### 6.2 Base Técnica
 
@@ -79,7 +69,6 @@ Fluxo mínimo:
 ### 6.3 Schema
 
 * Só gerar delta quando houver alteração real de banco com evidência.
-* Evidência aceita: migration aplicada, SQL de schema ou confirmação observável no Supabase.
 
 ## 7. Operações permitidas
 
@@ -90,29 +79,13 @@ Fluxo mínimo:
 * `REMOVER_TRECHO`
 * `REMOVER_SECAO`
 
-Regras:
-
-* Preferir TRECHO para linha, bullet, parágrafo curto ou bloco pequeno.
-* Usar SEÇÃO somente quando a estrutura precisar ser refeita.
-* Em TRECHO, indicar a seção em que o trecho entra ou sai.
-* Em `ADICIONAR_SECAO`, usar a seção anterior do mesmo nível como âncora.
-* Se a âncora não estiver clara, não gerar adição.
-* Não usar reticências em `CONTEUDO`.
-
 ## 8. Versionamento
 
 * Cabeçalho, versão, data e changelog só mudam se houver alteração real.
 * Alteração real exige pelo menos uma operação que não seja cabeçalho, versão, data ou changelog.
-* `99. Changelog` não entra em OPERAÇÕES.
 * Em changelog, incluir somente a nova entrada.
 
 ## 9. Formato da saída
-
-A resposta deve começar exatamente com:
-
-```txt
-DD/MM/YYYY HH:MM — ABC (DELTA-ONLY) para <DOC_ALVO>
-```
 
 Sem delta:
 
@@ -148,4 +121,3 @@ Para múltiplos documentos:
 
 * Emitir um ABC independente por documento.
 * Não misturar versões, operações ou changelogs.
-* Quando não houver DOC_ALVO definido, triar os documentos permitidos e gerar ABC somente onde houver delta.
