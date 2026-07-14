@@ -112,6 +112,8 @@ export function resolveLandingPageInputCatalogFromRegistry(
 
   const plan = input.plan as LandingPageInputCatalogPlan;
   const effectiveFields = fields.filter((field) => field.allowedPlans.includes(plan));
+  const effectiveConditionError = validateConditions(effectiveFields);
+  if (effectiveConditionError) return effectiveConditionError;
 
   const servedTaxon = input.taxonChain.ultraNiche ?? input.taxonChain.niche ?? input.taxonChain.segment;
   return {
@@ -231,6 +233,12 @@ function validateConditions(fields: readonly LandingPageInputFieldDefinition[]):
       const referenced = byKey.get(condition.fieldKey);
       if (!referenced || !conditionIsCompatible(referenced, condition)) {
         return invalid("INVALID_CONDITION", `Invalid condition on ${field.fieldKey}`);
+      }
+      if (field.allowedPlans.some((plan) => !referenced.allowedPlans.includes(plan))) {
+        return invalid(
+          "INVALID_CONDITION",
+          `Conditioned field plans must be a subset of referenced field plans: ${field.fieldKey}`,
+        );
       }
       edges.set(field.fieldKey, [...(edges.get(field.fieldKey) ?? []), condition.fieldKey]);
     }

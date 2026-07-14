@@ -247,14 +247,47 @@ const cases: Case[] = [
   {
     name: "plan subset is accepted and expansion fails",
     run: () => {
-      const reduced = withNicheSpecialization("traffic_source", { allowedPlans: ["starter", "lite"] });
+      const reduced = withNicheSpecialization("business_display_name", { allowedPlans: ["starter", "lite"] });
       assert.equal(resolveLandingPageInputCatalogFromRegistry(baseInput, reduced).ok, true);
       const inheritedSubset = cloneRegistry();
       mutableEntries(segmentLayer(inheritedSubset)).push(
+        specialization("business_display_name", { allowedPlans: ["starter", "lite"] }),
+      );
+      mutableEntries(nicheLayer(inheritedSubset)).push(specialization("business_display_name", { allowedPlans: ["starter", "lite", "pro"] }));
+      assertRegistryError(baseInput, inheritedSubset, "INVALID_SPECIALIZATION");
+    },
+  },
+  {
+    name: "conditioned field plans cannot exceed referenced field plans",
+    run: () => {
+      const registry = cloneRegistry();
+      mutableEntries(segmentLayer(registry)).push(
         specialization("traffic_source", { allowedPlans: ["starter", "lite"] }),
       );
-      mutableEntries(nicheLayer(inheritedSubset)).push(specialization("traffic_source", { allowedPlans: ["starter", "lite", "pro"] }));
-      assertRegistryError(baseInput, inheritedSubset, "INVALID_SPECIALIZATION");
+      assertRegistryError(baseInput, registry, "INVALID_CONDITION");
+    },
+  },
+  {
+    name: "joint plan restriction keeps or removes conditioned fields coherently",
+    run: () => {
+      const registry = cloneRegistry();
+      mutableEntries(segmentLayer(registry)).push(
+        specialization("traffic_source", { allowedPlans: ["starter", "lite"] }),
+        specialization("paid_search_keyword_map", { allowedPlans: ["starter", "lite"] }),
+      );
+
+      const starter = resolveLandingPageInputCatalogFromRegistry(baseInput, registry);
+      assert.equal(starter.ok, true);
+      assert.equal(starter.value.fields.some((field) => field.fieldKey === "traffic_source"), true);
+      assert.equal(starter.value.fields.some((field) => field.fieldKey === "paid_search_keyword_map"), true);
+
+      const pro = resolveLandingPageInputCatalogFromRegistry(
+        { ...baseInput, plan: "pro" },
+        registry,
+      );
+      assert.equal(pro.ok, true);
+      assert.equal(pro.value.fields.some((field) => field.fieldKey === "traffic_source"), false);
+      assert.equal(pro.value.fields.some((field) => field.fieldKey === "paid_search_keyword_map"), false);
     },
   },
   {

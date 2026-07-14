@@ -250,7 +250,9 @@ Condições v1:
 - o valor comparado deve ser compatível com o tipo do campo referenciado;
 - não haverá expressão livre, código executável, árvore arbitrária ou engine de regras;
 - condição não pode referenciar o próprio campo;
-- referências circulares, ausentes ou incompatíveis bloqueiam a resolução.
+- referências circulares, ausentes ou incompatíveis bloqueiam a resolução;
+- `allowed_plans` do campo condicionado deve ser subconjunto de `allowed_plans` do campo referenciado;
+- após o filtro pelo plano solicitado, as condições dos campos efetivos são validadas novamente e qualquer referência removida bloqueia a resolução.
 
 ### 2.5. Especialização entre camadas
 
@@ -687,12 +689,12 @@ O snippet não pode:
 - especialização textual, regex ou formato customizado: falhar;
 - referência de condição ausente ou incompatível: falhar;
 - condição circular: falhar;
-- cada destino de conversão deve aparecer somente no canal correspondente;
-- canal `form` exige `privacy_policy_url`;
-- `paid_search_keyword_map` ausente com busca paga: aceitar;
-- mapa presente sem busca paga: falhar;
-- mapa inválido: falhar;
-- mapa válido com busca paga: resolver;
+- planos do campo condicionado fora dos planos do campo referenciado: falhar;
+- após o filtro por plano, condição restante apontando para campo removido: falhar;
+- todos os destinos de conversão permanecem no catálogo com suas condições declarativas;
+- `privacy_policy_url` permanece no catálogo com condição declarativa de `form`;
+- `paid_search_keyword_map` permanece opcional com condição declarativa de `paid_search`;
+- avaliação concreta das condições de canal e origem de tráfego pertence à E19.4;
 - catálogo imobiliário nos quatro planos: resultado funcionalmente equivalente;
 - taxon de médio padrão: ausência de camada própria e herança integral;
 - saída: sem valores operacionais, entitlement ou snapshot;
@@ -746,7 +748,7 @@ O snippet não pode:
   - correção do PR #576 removeu contexto operacional do resolver, preservou as condições declarativas na saída completa e endureceu identidade de origem e precedência das especializações;
   - `npm ci`: aprovado; o audit da árvore instalada reportou 13 vulnerabilidades preexistentes, sem mudança de dependências;
   - `npm run check`: aprovado, com 24 warnings preexistentes e nenhum erro;
-  - `npm run validate:landing-page-input-catalog`: aprovado em 30 casos executáveis;
+  - `npm run validate:landing-page-input-catalog`: aprovado em 32 casos executáveis;
   - `git diff --check`: aprovado.
 - Decisão da fase: ajustar.
 - Próxima ação real: concluir a correção no PR #576, submetê-la à nova análise e aguardar merge humano.
