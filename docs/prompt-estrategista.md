@@ -155,23 +155,8 @@ Regra:
 • se aprovado no teste, seguir ao item 10;
 • se reprovado, voltar ao item 7.
 
-10. Relatório ao Gestor de Docs
-     Antes da execução, definir se o plano-base usará relatório por fase ou relatório consolidado ao final do plano.
-
-Usar relatório por fase quando houver:
-• plano extenso;
-• risco alto;
-• fases independentes;
-• mudança de BD/schema;
-• automação;
-• entrega que precise alimentar docs finais imediatamente.
-
-Usar relatório consolidado ao final do plano quando houver:
-• plano curto;
-• fases sequenciais;
-• baixo risco;
-• fase seguinte validando a fase anterior;
-• relatório por fase gerando repetição sem decisão nova.
+10. Relatório final ao Gestor de Docs
+      Emitir relatório ao Gestor de Docs apenas ao final do plano, após aprovação da última fase ou decisão explícita de encerramento.
 
 Registrar apenas o que ocorreu, informar a decisão documental do roadmap e marcar N/A quando não se aplicar.
 
