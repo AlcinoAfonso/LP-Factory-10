@@ -115,16 +115,21 @@ const cases: readonly ValidationCase[] = [
         source,
         SERVED_TAXON_ID,
         "business_buyer",
-        "seo",
+        "strategic_core",
       );
       source.items = source.items.filter(
-        (item) => item.researchId !== emptyResearch.id,
+        (item) => item.researchId !== emptyResearch.id || !item.isActive,
       );
-      const invalidItem = findItem(
+      const invalidResearch = findResearch(
         source,
         SERVED_TAXON_ID,
         "business_buyer",
+        "lp_overview",
       );
+      const invalidItem = source.items.find(
+        (item) => item.researchId === invalidResearch.id && item.isActive,
+      );
+      assert.ok(invalidItem);
       replaceItem(source, invalidItem.id, { itemText: "" });
 
       const result = resolve(SERVED_TAXON_ID, source);
