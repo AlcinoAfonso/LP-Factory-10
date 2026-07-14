@@ -1,8 +1,8 @@
 # Plano-base E10.8 — Resolução de pesquisas estruturadas para landing_page
 
-- Versão: v2
+- Versão: v3
 - Data: 14/07/2026
-- Status: fase executada e validada na branch; aguarda revisão humana e merge
+- Status: plano encerrado; fase concluída e mergeada pelo PR 571 em 14/07/2026.
 - Recorte previsto para roadmap: `10.8 — Resolução de pesquisas estruturadas para landing_page`
 - Path canônico: `docs/lousa-plano-base-e10-8.md`
 - Fontes obrigatórias: `README.md`, `AGENTS.md`, `docs/prompt-estrategista.md`, `docs/template-roadmap.md`, `docs/template-briefing-codex.md`, `docs/prompt-executor.md`, `docs/roadmap.md`, `docs/base-tecnica.md`, `docs/schema.md`, `docs/lp-planejamento.md`, `docs/supa-up.md`, `supabase/snippets/e10_5_5_nicho_carregamento.sql`, implementação e documentação atuais da E10.5.5, E10.5.6 e E10.7.
@@ -188,7 +188,7 @@
 
 ### 3.1. E10.8.3–10.8.5 — Resolver server-side completo para landing_page
 
-- Status: implementada e validada em 14/07/2026 na branch `feat/e10-8-research-resolution`; aguarda revisão humana e merge.
+- Status: concluída e mergeada em 14/07/2026 pelo PR 571, commit `2c577ee96569f27ae05ab88055e5f14d453cfc08`.
 - Objetivo: implementar o resolver compartilhado de elegibilidade, precedência, proveniência, falha fechada e consumo tipado definido na seção 2.
 - Automação: não.
 - Escopo executável:
@@ -237,8 +237,8 @@
   - inspeção read-only real no Supabase confirmou o taxon atendido ativo, o pai direto ativo, quatro blocos `business_buyer` próprios na versão 1 com 49 itens ativos e quatro blocos `business_buyer` no pai direto na versão 1 com 54 itens ativos, sem item ativo estruturalmente inválido;
   - validação read-only real do DTO no resolver retornou `business_buyer.sourceRelation = own`, 49 itens próprios e 74 itens `end_customer` próprios, ambos na versão 1;
   - nenhum registro, estrutura de banco, rota, UI, consumidor, parametrização raiz da E18.4 ou contrato da E10.7 foi alterado.
-- Decisão da fase: encerrar a única fase executável após revisão humana e merge do PR.
-- Próxima ação: revisar e fazer merge humano do PR; após o merge, habilitar o relatório final ao Gestor de Docs conforme `docs/prompt-estrategista.md`.
+- Decisão da fase: encerrar.
+- Próxima ação: N/A — plano encerrado.
 
 ## 4. Escopo negativo e critérios de parada
 
@@ -270,5 +270,6 @@
 
 ### 4.3. Decisão ao fim da fase
 
-- Registrar neste plano somente uma das decisões: avançar, ajustar, bloquear ou encerrar.
-- Como existe uma única fase executável, aprovação integral encerra o plano e habilita o relatório final ao Gestor de Docs conforme `docs/prompt-estrategista.md`.
+- Decisão: encerrar.
+- Resultado: fase concluída e mergeada pelo PR 571 em 14/07/2026.
+- Próxima ação: N/A — plano encerrado.
