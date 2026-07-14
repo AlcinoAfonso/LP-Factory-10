@@ -2,8 +2,8 @@
 
 0.1. Cabeçalho
 • Documento: Base Técnica LP Factory 10
-• Versão: v2.0.47
-• Data: 07/07/2026
+• Versão: v2.0.48
+• Data: 13/07/2026
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -392,20 +392,15 @@ LP Builder
 • Se o insert das fontes relacionais falhar após criar o artifact, o draft recém-criado deve ser arquivado/invalidado e o fluxo deve retornar erro seguro, sem parecer concluído.
 • Logs devem registrar somente metadados operacionais seguros; não registrar prompt completo, pesquisa bruta, payload sensível ou resposta integral da IA.
 
-3.15.2 Conteúdo composicional de `landing_page`
-• Path canônico: `lib/conversion-content/landing-page/`.
-• `landing_page` tem contratos próprios, schemas Zod próprios, registry fechado, render model próprio, renderer mínimo e validação executável.
-• Catálogo mínimo permitido: `hero.lead_capture`, `benefits.cards`, `offer.summary`, `social_proof.simple`, `how_it_works.steps`, `faq.accordion` e `final_cta.simple`.
-• `landing_page` não herda compatibilidade automática de `commercial_activation`.
-• O registry próprio é a fonte canônica de canal, módulo, variante, schema e renderer.
-• Variante fora do catálogo, incompatibilidade módulo/variante, item duplicado, item desconhecido, canal inválido ou conteúdo fora do schema devem falhar fechado.
-• O resolver/validador deve normalizar itens por `sortOrder` antes do renderer.
-• `sortOrder` deve ser inteiro, não negativo e único.
-• `config_json` aceita somente `anchor_id` e `spacing`.
-• `anchor_id` é opcional, deve seguir padrão seguro de âncora curta e ser único quando informado.
-• `spacing` aceita somente `compact`, `default` ou `spacious`.
-• Chaves livres como `renderer`, `schema`, `style`, HTML, script ou props arbitrárias devem ser rejeitadas.
-• Casos executáveis: `npm run validate:landing-page`.
+3.15.2 Parametrização raiz de `landing_page`
+• Boundary canônico: `lib/conversion-content/landing-page/`.
+• Fonte canônica dos parâmetros e versões: `root-registry.ts`; não duplicar seus valores ou listas em documentos ou contratos públicos.
+• Resolver versões e presets registrados por `root-resolver.ts`, com falha fechada e sem fallback implícito.
+• Validar o contrato raiz por `root-schema.ts`; a saída resolvida deve permanecer imutável.
+• Consumir o boundary pelo namespace `landingPageRoot` exportado em `lib/conversion-content/index.ts`.
+• Não reutilizar as APIs removidas de composição, módulos, variantes, renderer ou render model.
+• Especializações futuras devem preservar a precedência `raiz → módulo → variante`.
+• Casos executáveis: `npm run validate:landing-page-root`.
 
 4. DB Contract - Fonte única: PATH: docs/schema.md
 • Este documento não lista mais tabelas/views/functions/triggers/policies; isso está em PATH: docs/schema.md.
@@ -554,6 +549,7 @@ Fonte normativa da allowlist SULB para exceções de Auth. Qualquer novo arquivo
 • Tipos canônicos e adapters vNext: validar por 3.6 e 3.14.
 
 99. Changelog
+v2.0.48 — 13/07/2026 — Substituído o contrato antigo de composição `landing_page` pelo contrato técnico durável da parametrização raiz versionada, com registry canônico, resolução fail-closed, imutabilidade e validação executável.
 v2.0.47 — 07/07/2026 — Registrado contrato técnico da base repo-only de composição `landing_page`, com path canônico, catálogo mínimo, registry fechado, schemas, renderer mínimo, resolver/validador e limites de `config_json`.
 v2.0.46 — 04/07/2026 — Registrado contrato técnico da liberação manual administrativa mínima de entitlement comercial, com Server Action protegida por `requirePlatformAdmin`, boundary Admin server-only e persistência exclusiva em `public.account_commercial_entitlements`.
 v2.0.45 (02/07/2026) — Registrado webhook Stripe mínimo do E9, com endpoint canônico, boundary, assinatura obrigatória, evento `invoice.paid`, idempotência e persistência segura de entitlement.
