@@ -37,6 +37,14 @@ Configurações sustentam o fluxo local adotado para editar, validar e publicar 
 **Valor:** conclui o fluxo local sem interface gráfica.
 **Limite:** requer remote e autenticação válidos.
 
+### GitHub CLI (`gh`)
+
+**Aptidão:** criar PRs e consultar recursos do GitHub pelo terminal.
+**Estado:** não adotado; indisponível no teste de publicação que retornou `gh` não reconhecido.
+**Valor:** pode reduzir etapas manuais ao criar PRs, consultar PRs, checks e diffs depois do `git push`.
+**Limite:** não é dependência obrigatória do fluxo local; não instalar ferramenta nem alterar autenticação durante tarefas do Executor.
+**Fallback:** quando `gh` estiver indisponível, seguir `AGENTS.md`: concluir commit/push e entregar link de criação do PR.
+
 **Outras configurações:** GitHub Web é a fonte de verdade para PRs, Actions, preview e merge; GitHub Desktop está fora do fluxo principal; não há hooks, conexões ou worktrees ativos.
 
 ## 4. Plugins
