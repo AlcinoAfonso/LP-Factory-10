@@ -75,29 +75,64 @@ export type LandingPageInputValidation =
   | Readonly<{ kind: "https_url" }>
   | Readonly<{ kind: "keyword_map" }>;
 
+export type LandingPageInputTypeValidationContract =
+  | Readonly<{
+      valueType: "string" | "boolean";
+      validation: Extract<LandingPageInputValidation, { kind: "type_only" }>;
+    }>
+  | Readonly<{
+      valueType: "phone";
+      validation: Extract<LandingPageInputValidation, { kind: "e164" }>;
+    }>
+  | Readonly<{
+      valueType: "email";
+      validation: Extract<LandingPageInputValidation, { kind: "email" }>;
+    }>
+  | Readonly<{
+      valueType: "url";
+      validation: Extract<LandingPageInputValidation, { kind: "https_url" }>;
+    }>
+  | Readonly<{
+      valueType: "enum";
+      validation: Extract<LandingPageInputValidation, { kind: "enum" }>;
+    }>
+  | Readonly<{
+      valueType: "string_list";
+      validation: Extract<LandingPageInputValidation, { kind: "string_list" }>;
+    }>
+  | Readonly<{
+      valueType: "number_range";
+      validation: Extract<LandingPageInputValidation, { kind: "number_range" }>;
+    }>
+  | Readonly<{
+      valueType: "keyword_map";
+      validation: Extract<LandingPageInputValidation, { kind: "keyword_map" }>;
+    }>;
+
 export type LandingPageInputEvidence = Readonly<{
   summary: string;
   references: readonly LandingPageInputCatalogEvidenceReference[];
 }>;
 
-export type LandingPageInputFieldDefinition = Readonly<{
+type LandingPageInputFieldDefinitionBase = Readonly<{
   kind: "field";
   fieldKey: string;
   purpose: string;
   originLayer: LandingPageInputCatalogLayerLevel;
   originTaxon?: LandingPageInputCatalogTaxonIdentity;
-  valueType: LandingPageInputValueType;
   valueScope: LandingPageInputValueScope;
   expectedValueOrigin: LandingPageInputExpectedValueOrigin;
   obligation: LandingPageInputObligation;
   requiredWhen?: LandingPageInputCondition;
   applicableWhen?: LandingPageInputCondition;
-  validation: LandingPageInputValidation;
   allowedPlans: readonly LandingPageInputCatalogPlan[];
   snapshotPolicy: "include_if_used";
   evidence: LandingPageInputEvidence;
   createdInVersion: number;
 }>;
+
+export type LandingPageInputFieldDefinition =
+  LandingPageInputFieldDefinitionBase & LandingPageInputTypeValidationContract;
 
 export type LandingPageInputFieldSpecialization = Readonly<{
   kind: "specialization";
@@ -145,7 +180,6 @@ export type ResolveLandingPageInputCatalogInput = Readonly<{
   plan: LandingPageInputCatalogPlan | string;
   taxonChain: LandingPageInputCatalogTaxonChain;
   ultraNicheLayerAuthorized?: boolean;
-  applicabilityContext?: Readonly<Record<string, string | boolean>>;
 }>;
 
 export type LandingPageInputFieldProvenance = Readonly<{
@@ -200,7 +234,7 @@ export type LandingPageInputValueValidationResult =
   | Readonly<{
       ok: false;
       error: Readonly<{
-        code: "NOT_APPLICABLE" | "INVALID_VALUE";
+        code: "INVALID_VALUE";
         message: string;
       }>;
     }>;

@@ -15,7 +15,6 @@ import type {
 } from "./contracts";
 import { landingPageInputCatalogRegistry } from "./registry";
 import {
-  evaluateLandingPageInputCondition,
   landingPageInputCatalogLayerSchema,
   landingPageInputCatalogTaxonIdentitySchema,
   landingPageInputFieldDefinitionSchema,
@@ -82,6 +81,8 @@ export function resolveLandingPageInputCatalogFromRegistry(
   for (const layer of selectedLayers) {
     for (const layerEntry of layer.entries) {
       if (layerEntry.kind === "field") {
+        const originError = validateFieldOriginForLayer(layerEntry, layer);
+        if (originError) return originError;
         const fieldError = classifyFieldError(layerEntry);
         if (fieldError) return fieldError;
       }
@@ -110,12 +111,7 @@ export function resolveLandingPageInputCatalogFromRegistry(
   if (conditionError) return conditionError;
 
   const plan = input.plan as LandingPageInputCatalogPlan;
-  const effectiveFields = fields.filter((field) => {
-    if (!field.allowedPlans.includes(plan)) return false;
-    if (!field.applicableWhen) return true;
-    const context = input.applicabilityContext ?? {};
-    return !(field.applicableWhen.fieldKey in context) || evaluateLandingPageInputCondition(field.applicableWhen, context);
-  });
+  const effectiveFields = fields.filter((field) => field.allowedPlans.includes(plan));
 
   const servedTaxon = input.taxonChain.ultraNiche ?? input.taxonChain.niche ?? input.taxonChain.segment;
   return {
@@ -153,6 +149,16 @@ function applySpecialization(
   }
 
   const inherited = fields[index];
+  const latestAppliedLevel = inherited.provenance.reduce(
+    (latest, item) => Math.max(latest, layerRank(item.layer)),
+    -1,
+  );
+  if (layerRank(layer.level) <= latestAppliedLevel) {
+    return invalid(
+      "INVALID_SPECIALIZATION",
+      `Specialization must be in a strictly more specific layer: ${specialization.fieldKey}`,
+    );
+  }
   const provenanceItems = [...inherited.provenance];
   if (specialization.changes.obligation !== undefined) {
     const ranks = { optional: 0, conditional: 1, required: 2 } as const;
@@ -272,6 +278,24 @@ function classifyFieldError(field: LandingPageInputFieldDefinition): ResolveLand
   return invalid(validationIssue ? "INVALID_VALIDATION" : "INVALID_LAYER", `Invalid field contract: ${field.fieldKey}`);
 }
 
+function validateFieldOriginForLayer(
+  field: LandingPageInputFieldDefinition,
+  layer: LandingPageInputCatalogLayer,
+): ResolveLandingPageInputCatalogResult | null {
+  if (field.originLayer !== layer.level) {
+    return invalid("INVALID_LAYER", `Field origin layer mismatch: ${field.fieldKey}`);
+  }
+  if (layer.level === "universal") {
+    return field.originTaxon
+      ? invalid("INVALID_LAYER", `Universal field cannot declare origin taxon: ${field.fieldKey}`)
+      : null;
+  }
+  if (!layer.taxon || !sameTaxon(field.originTaxon, layer.taxon)) {
+    return invalid("INVALID_LAYER", `Field origin taxon mismatch: ${field.fieldKey}`);
+  }
+  return null;
+}
+
 function validateTaxonChain(chain: LandingPageInputCatalogTaxonChain): ResolveLandingPageInputCatalogResult | null {
   const taxons = [chain.segment, chain.niche, chain.ultraNiche].filter((taxon) => taxon !== undefined);
   if (chain.segment.level !== "segment" || chain.segment.parentId !== null || (chain.niche && chain.niche.level !== "niche") || (chain.ultraNiche && chain.ultraNiche.level !== "ultra_niche") || (chain.ultraNiche && !chain.niche)) {
@@ -297,7 +321,11 @@ function provenance(
 }
 
 function sameTaxon(left: LandingPageInputCatalogLayer["taxon"], right: NonNullable<LandingPageInputCatalogLayer["taxon"]>): boolean {
-  return !!left && left.id === right.id && left.slug === right.slug && left.level === right.level && left.parentId === right.parentId && left.isActive === right.isActive;
+  return !!left && left.id === right.id && left.name === right.name && left.slug === right.slug && left.level === right.level && left.parentId === right.parentId && left.isActive === right.isActive;
+}
+
+function layerRank(level: LandingPageInputCatalogLayerLevel): number {
+  return { universal: 0, segment: 1, niche: 2, ultra_niche: 3 }[level];
 }
 
 function specializedWithoutProvenance(field: ResolvedLandingPageInputField): LandingPageInputFieldDefinition {

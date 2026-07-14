@@ -4,7 +4,7 @@ import type {
   LandingPageInputCatalogTaxonIdentity,
   LandingPageInputEvidence,
   LandingPageInputFieldDefinition,
-  LandingPageInputValidation,
+  LandingPageInputTypeValidationContract,
 } from "./contracts";
 
 const allPlans = ["starter", "lite", "pro", "ultra"] as const;
@@ -278,10 +278,10 @@ export const landingPageInputCatalogRegistry = deepFreeze({
 } satisfies LandingPageInputCatalogRegistry);
 
 function field(
-  input: Omit<LandingPageInputFieldDefinition, "kind" | "originLayer" | "allowedPlans" | "snapshotPolicy" | "createdInVersion"> & {
+  input: Omit<LandingPageInputFieldDefinition, "kind" | "originLayer" | "allowedPlans" | "snapshotPolicy" | "createdInVersion" | "valueType" | "validation"> &
+    LandingPageInputTypeValidationContract & {
     originTaxon?: LandingPageInputCatalogTaxonIdentity;
     allowedPlans?: readonly LandingPageInputCatalogPlan[];
-    validation: LandingPageInputValidation;
   },
 ): LandingPageInputFieldDefinition {
   return {
@@ -291,7 +291,7 @@ function field(
     allowedPlans: input.allowedPlans ?? allPlans,
     snapshotPolicy: "include_if_used",
     createdInVersion: 1,
-  };
+  } as LandingPageInputFieldDefinition;
 }
 
 function evidence(

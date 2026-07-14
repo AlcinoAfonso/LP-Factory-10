@@ -3,7 +3,7 @@
 Fontes: chat, `README.md`, `AGENTS.md`, `docs/prompt-estrategista.md`, `docs/template-roadmap.md`, `docs/template-briefing-codex.md`, `docs/prompt-executor.md`, `docs/roadmap.md`, `docs/base-tecnica.md`, `docs/schema.md`, `docs/lp-planejamento.md`, `docs/lousa-plano-base-e10-8.md`, `docs/supa-up.md`, `docs/prod-up.md`, contratos atuais de planos, contas, taxons e landing pages, `Pesquisa bruta para corretor de imóveis de médio padrão.pdf`, `Projeto Piloto Imobiliário.pdf`, avaliações do Analista, do Gestor Estrutural e do Gestor de Updates e decisões humanas de 14/07/2026.
 
 - Versão: v2.
-- Status: plano-base v2 mergeado no PR #573; E20.2.3–E20.2.6 executada e validada na branch material `codex-app/e20-2-3-input-catalog-v1`, aguardando PR e merge humanos.
+- Status: plano-base v2 mergeado no PR #573; PR #576 aberto; correção da E20.2.3–E20.2.6 em andamento na branch material `codex-app/e20-2-3-input-catalog-v1`.
 - Recorte previsto para roadmap: `20.2 — Catálogo de entradas por taxon`.
 - Path canônico: `docs/lousa-plano-base-e20-2.md`.
 
@@ -214,7 +214,7 @@ Validações-base:
 
 - `string`:
   - texto normalizado, sem apenas espaços e com pelo menos um caractere;
-  - sem validação adicional quando o campo declarar `type_only`.
+  - usa `type_only` quando não houver validação adicional.
 - `phone`:
   - valor canônico em formato E.164, com `+` e de 8 a 15 dígitos;
   - não aceitar texto livre, ramal ou URL.
@@ -228,9 +228,11 @@ Validações-base:
   - valor pertencente ao conjunto fechado declarado pelo campo.
 - `string_list`:
   - lista de textos não vazios, normalizados e sem duplicidade após comparação case-insensitive;
-  - quando não houver limites adicionais, declarar `type_only`.
+  - sempre usa validação `kind: string_list`;
+  - ausência de limites adicionais exige ausência de `allowed_values`, `min_items` e `max_items`.
 - `boolean`:
-  - somente `true` ou `false`.
+  - somente `true` ou `false`;
+  - usa `type_only`.
 - `number_range`:
   - limite mínimo e máximo finitos e não negativos;
   - mínimo menor ou igual ao máximo;
@@ -350,6 +352,8 @@ O valor futuro se vinculará conceitualmente a:
 Limites:
 
 - a E20.2 não define tabela, coluna, JSON persistido, rota, action ou formulário;
+- o resolver retorna todos os campos permitidos pelo plano e preserva `required_when` e `applicable_when` sem receber nem avaliar valores operacionais;
+- aplicabilidade operacional e completude dos valores pertencem à E19.4;
 - a E19.4 decidirá a persistência operacional;
 - a E19.4 deverá preservar no snapshot a versão do catálogo e os valores efetivamente usados;
 - todos os campos v1 usam `include_if_used`;
@@ -391,7 +395,7 @@ Limites:
   - usam snapshot `include_if_used`;
   - possuem consumidor futuro E19.4;
   - não definem estrutura, copy ou composição.
-- Quando a validação declarar `type_only`, nenhuma regra adicional além da validação-base do tipo pode ser inventada.
+- `type_only` é permitido somente para `string` e `boolean`; `string_list` sempre declara `kind: string_list` e omite `allowed_values`, `min_items` e `max_items` quando não houver restrições adicionais.
 - As evidências abaixo são suficientes para implementação do registry; os PDFs permanecem fontes empíricas externas, não dependências de runtime.
 
 #### 2.10.2. Camada universal
@@ -698,7 +702,7 @@ O snippet não pode:
 
 ### 3.1. E20.2.3–E20.2.6 — Contrato, catálogo imobiliário v1 e resolver repo-only
 
-- Status: implementada e validada; aguarda PR material e merge humanos.
+- Status: PR #576 aberto; correção em andamento após parecer do Analista e decisão do Estrategista.
 - Automação: não.
 - Fontes obrigatórias de execução:
   - `README.md`;
@@ -739,12 +743,13 @@ O snippet não pode:
   - inspeção read-only no projeto Supabase `LP-Factory-10` confirmou a cadeia ativa `imobiliario` (`segment`) → `corretor-imoveis` (`niche`) → `corretor-de-imoveis-de-medio-padrao` (`ultra_niche`), com relações pai-filho coerentes;
   - `supabase/snippets/e20_2_taxon_chain_verify.sql` foi criado e executado sem escrita;
   - registry v1 implementado com 19 campos efetivos, sem camada própria para o ultranicho de médio padrão;
+  - correção do PR #576 removeu contexto operacional do resolver, preservou as condições declarativas na saída completa e endureceu identidade de origem e precedência das especializações;
   - `npm ci`: aprovado; o audit da árvore instalada reportou 13 vulnerabilidades preexistentes, sem mudança de dependências;
   - `npm run check`: aprovado, com 24 warnings preexistentes e nenhum erro;
-  - `npm run validate:landing-page-input-catalog`: aprovado em 26 casos executáveis;
+  - `npm run validate:landing-page-input-catalog`: aprovado em 30 casos executáveis;
   - `git diff --check`: aprovado.
-- Decisão da fase: avançar.
-- Próxima ação real: submeter o PR material contra `main`, aguardar merge humano e então encaminhar o estado final ao Gestor de Docs.
+- Decisão da fase: ajustar.
+- Próxima ação real: concluir a correção no PR #576, submetê-la à nova análise e aguardar merge humano.
 - Critérios de aceite:
   - snippet confirma a cadeia real sem escrita;
   - matriz completa aprovada;

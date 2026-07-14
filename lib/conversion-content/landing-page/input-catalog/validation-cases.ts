@@ -7,6 +7,7 @@ import type {
   LandingPageInputFieldDefinition,
   LandingPageInputFieldSpecialization,
   ResolveLandingPageInputCatalogInput,
+  ResolvedLandingPageInputField,
 } from "./contracts";
 import {
   landingPageInputCatalogRegistry,
@@ -37,7 +38,7 @@ const baseInput: ResolveLandingPageInputCatalogInput = {
 
 const cases: Case[] = [
   {
-    name: "registry v1 resolves the ordered real-estate catalog",
+    name: "registry v1 resolves all 19 ordered fields without operational context",
     run: () => {
       const result = resolveLandingPageInputCatalog(baseInput);
       assert.equal(result.ok, true);
@@ -77,6 +78,18 @@ const cases: Case[] = [
           niche: { ...realEstateBrokerNicheTaxon, parentId: mediumStandardRealEstateBrokerTaxon.id },
         },
       }, "INVALID_TAXON_CHAIN");
+    },
+  },
+  {
+    name: "taxon name mismatch between chain and registered layer fails closed",
+    run: () => {
+      assertError({
+        ...baseInput,
+        taxonChain: {
+          ...baseInput.taxonChain,
+          niche: { ...realEstateBrokerNicheTaxon, name: "Nome divergente" },
+        },
+      }, "INVALID_LAYER");
     },
   },
   {
@@ -135,6 +148,29 @@ const cases: Case[] = [
     },
   },
   {
+    name: "field origin layer must match its containing layer",
+    run: () => {
+      const registry = cloneRegistry();
+      mutableLayerField(segmentLayer(registry), "service_locations").originLayer = "niche";
+      assertRegistryError(baseInput, registry, "INVALID_LAYER");
+    },
+  },
+  {
+    name: "field origin taxon must exactly match its containing layer taxon",
+    run: () => {
+      const registry = cloneRegistry();
+      mutableLayerField(segmentLayer(registry), "service_locations").originTaxon = {
+        ...realEstateSegmentTaxon,
+        name: "Imobiliário divergente",
+      };
+      assertRegistryError(baseInput, registry, "INVALID_LAYER");
+
+      const universalRegistry = cloneRegistry();
+      mutableUniversalField(universalRegistry, "business_display_name").originTaxon = realEstateSegmentTaxon;
+      assertRegistryError(baseInput, universalRegistry, "INVALID_LAYER");
+    },
+  },
+  {
     name: "duplicate field without specialization fails closed",
     run: () => {
       const registry = cloneRegistry();
@@ -145,7 +181,7 @@ const cases: Case[] = [
     },
   },
   {
-    name: "valid specialization preserves position and inherited properties",
+    name: "valid specialization in a lower layer preserves position and inherited properties",
     run: () => {
       const registry = withNicheSpecialization("traffic_source", { obligation: "required" });
       const result = resolveLandingPageInputCatalogFromRegistry(baseInput, registry);
@@ -155,6 +191,29 @@ const cases: Case[] = [
       assert.equal(field.valueType, "enum");
       assert.equal(field.obligation, "required");
       assert.deepEqual(field.provenance.map((item) => item.property), ["definition", "obligation"]);
+    },
+  },
+  {
+    name: "field followed by specialization in the same layer fails closed",
+    run: () => {
+      const registry = cloneRegistry();
+      mutableEntries(segmentLayer(registry)).push(
+        specialization("service_locations", { obligation: "required" }),
+      );
+      assertRegistryError(baseInput, registry, "INVALID_SPECIALIZATION");
+    },
+  },
+  {
+    name: "two specializations of the same field in one layer fail closed",
+    run: () => {
+      const registry = cloneRegistry();
+      mutableEntries(segmentLayer(registry)).push(
+        specialization("traffic_source", { obligation: "required" }),
+        specialization("traffic_source", {
+          validation: { kind: "enum", allowedValues: ["paid_search", "organic"] },
+        }),
+      );
+      assertRegistryError(baseInput, registry, "INVALID_SPECIALIZATION");
     },
   },
   {
@@ -190,7 +249,10 @@ const cases: Case[] = [
     run: () => {
       const reduced = withNicheSpecialization("traffic_source", { allowedPlans: ["starter", "lite"] });
       assert.equal(resolveLandingPageInputCatalogFromRegistry(baseInput, reduced).ok, true);
-      const inheritedSubset = withNicheSpecialization("traffic_source", { allowedPlans: ["starter", "lite"] });
+      const inheritedSubset = cloneRegistry();
+      mutableEntries(segmentLayer(inheritedSubset)).push(
+        specialization("traffic_source", { allowedPlans: ["starter", "lite"] }),
+      );
       mutableEntries(nicheLayer(inheritedSubset)).push(specialization("traffic_source", { allowedPlans: ["starter", "lite", "pro"] }));
       assertRegistryError(baseInput, inheritedSubset, "INVALID_SPECIALIZATION");
     },
@@ -239,41 +301,43 @@ const cases: Case[] = [
     },
   },
   {
-    name: "conversion destinations appear only for the selected channel",
+    name: "conversion destination conditions remain declarative in the complete result",
     run: () => {
-      const destinations: Record<string, string> = {
-        whatsapp: "whatsapp_destination", phone: "phone_destination", email: "email_destination", external_url: "external_url_destination",
+      const result = resolveLandingPageInputCatalog(baseInput);
+      assert.equal(result.ok, true);
+      const conditions: Record<string, string> = {
+        whatsapp_destination: "whatsapp",
+        phone_destination: "phone",
+        email_destination: "email",
+        external_url_destination: "external_url",
       };
-      for (const [channel, expected] of Object.entries(destinations)) {
-        const result = resolveLandingPageInputCatalog({ ...baseInput, applicabilityContext: { primary_conversion_channel: channel } });
-        assert.equal(result.ok, true);
-        const present = result.value.fields.map((field) => field.fieldKey).filter((key) => key.endsWith("_destination"));
-        assert.deepEqual(present, [expected]);
+      for (const [fieldKey, channel] of Object.entries(conditions)) {
+        const resolvedField: ResolvedLandingPageInputField | undefined =
+          result.value.fields.find((candidate) => candidate.fieldKey === fieldKey);
+        assert.ok(resolvedField);
+        const expected = { fieldKey: "primary_conversion_channel", operator: "equals", value: channel };
+        assert.deepEqual(resolvedField.requiredWhen, expected);
+        assert.deepEqual(resolvedField.applicableWhen, expected);
       }
     },
   },
   {
-    name: "form channel exposes privacy policy and no channel destination",
+    name: "form and paid-search conditions remain declarative",
     run: () => {
-      const result = resolveLandingPageInputCatalog({ ...baseInput, applicabilityContext: { primary_conversion_channel: "form" } });
+      const result = resolveLandingPageInputCatalog(baseInput);
       assert.equal(result.ok, true);
-      assert.equal(result.value.fields.some((field) => field.fieldKey === "privacy_policy_url"), true);
-      assert.equal(result.value.fields.some((field) => field.fieldKey.endsWith("_destination")), false);
-    },
-  },
-  {
-    name: "paid-search keyword map is optional applicable and strictly validated",
-    run: () => {
-      const paid = resolveLandingPageInputCatalog({ ...baseInput, applicabilityContext: { traffic_source: "paid_search" } });
-      assert.equal(paid.ok, true);
-      const field = paid.value.fields.find((candidate) => candidate.fieldKey === "paid_search_keyword_map");
-      assert.ok(field);
-      assert.equal(validateLandingPageInputValue(field, [], { traffic_source: "paid_search" }).ok, false);
-      assert.equal(validateLandingPageInputValue(field, [{ keyword_or_cluster: "apartamento centro", message_anchor: "Atendimento na região" }], { traffic_source: "paid_search" }).ok, true);
-      assert.equal(validateLandingPageInputValue(field, [{ keyword_or_cluster: "apartamento", message_anchor: "A" }, { keyword_or_cluster: "APARTAMENTO", message_anchor: "B" }], { traffic_source: "paid_search" }).ok, false);
-      const notPaid = validateLandingPageInputValue(field, [{ keyword_or_cluster: "apartamento", message_anchor: "A" }], { traffic_source: "organic" });
-      assert.equal(notPaid.ok, false);
-      assert.equal(notPaid.error.code, "NOT_APPLICABLE");
+      const privacy = result.value.fields.find((field) => field.fieldKey === "privacy_policy_url");
+      const keywordMap = result.value.fields.find((field) => field.fieldKey === "paid_search_keyword_map");
+      assert.ok(privacy);
+      assert.ok(keywordMap);
+      const formCondition = { fieldKey: "primary_conversion_channel", operator: "equals", value: "form" };
+      assert.deepEqual(privacy.requiredWhen, formCondition);
+      assert.deepEqual(privacy.applicableWhen, formCondition);
+      assert.equal(keywordMap.obligation, "optional");
+      assert.deepEqual(keywordMap.applicableWhen, { fieldKey: "traffic_source", operator: "equals", value: "paid_search" });
+      assert.equal(validateLandingPageInputValue(keywordMap, []).ok, false);
+      assert.equal(validateLandingPageInputValue(keywordMap, [{ keyword_or_cluster: "apartamento centro", message_anchor: "Atendimento na região" }]).ok, true);
+      assert.equal(validateLandingPageInputValue(keywordMap, [{ keyword_or_cluster: "apartamento", message_anchor: "A" }, { keyword_or_cluster: "APARTAMENTO", message_anchor: "B" }]).ok, false);
     },
   },
   {
@@ -317,6 +381,8 @@ const cases: Case[] = [
     name: "invalid validation and missing evidence fail closed",
     run: () => {
       assert.equal(landingPageInputFieldDefinitionSchema.safeParse({ ...fixtureField("bad_validation"), valueType: "email", validation: { kind: "type_only" } }).success, false);
+      assert.equal(landingPageInputFieldDefinitionSchema.safeParse({ ...fixtureField("bad_string_list"), valueType: "string_list", validation: { kind: "type_only" } }).success, false);
+      assert.equal(landingPageInputFieldDefinitionSchema.safeParse({ ...fixtureField("undefined_string_list_limits"), valueType: "string_list", validation: { kind: "string_list", allowedValues: undefined } }).success, false);
       const missingEvidence = mutateUniversalField("business_display_name", (field) => {
         field.evidence = { summary: "", references: [] };
       });
@@ -367,7 +433,11 @@ function mutableEntries(layer: LandingPageInputCatalogLayer): LandingPageInputCa
 }
 
 function mutableUniversalField(registry: LandingPageInputCatalogRegistry, fieldKey: string): MutableField {
-  const field = registry[1].universal.entries.find((entry) => entry.fieldKey === fieldKey && entry.kind === "field");
+  return mutableLayerField(registry[1].universal, fieldKey);
+}
+
+function mutableLayerField(layer: LandingPageInputCatalogLayer, fieldKey: string): MutableField {
+  const field = layer.entries.find((entry) => entry.fieldKey === fieldKey && entry.kind === "field");
   assert.ok(field && field.kind === "field");
   return field as MutableField;
 }

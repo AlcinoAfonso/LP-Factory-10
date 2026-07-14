@@ -3,7 +3,6 @@ import { z } from "zod";
 import {
   landingPageInputCatalogEvidenceReferences,
   landingPageInputCatalogPlans,
-  type LandingPageInputCondition,
   type LandingPageInputFieldDefinition,
   type LandingPageInputValueValidationResult,
 } from "./contracts";
@@ -75,6 +74,15 @@ const validationSchema = z.discriminatedUnion("kind", [
     })
     .strict()
     .superRefine((validation, context) => {
+      for (const key of ["allowedValues", "minItems", "maxItems"] as const) {
+        if (Object.hasOwn(validation, key) && validation[key] === undefined) {
+          context.addIssue({
+            code: "custom",
+            path: [key],
+            message: "unset string-list constraints must be omitted",
+          });
+        }
+      }
       if (
         validation.minItems !== undefined &&
         validation.maxItems !== undefined &&
@@ -214,25 +222,10 @@ export const landingPageInputCatalogLayerSchema = z
     }
   });
 
-export function evaluateLandingPageInputCondition(
-  condition: LandingPageInputCondition,
-  context: Readonly<Record<string, unknown>>,
-): boolean {
-  const actual = context[condition.fieldKey];
-  return condition.operator === "equals"
-    ? actual === condition.value
-    : Array.isArray(condition.value) && condition.value.includes(actual as never);
-}
-
 export function validateLandingPageInputValue(
   field: LandingPageInputFieldDefinition,
   value: unknown,
-  context: Readonly<Record<string, unknown>> = {},
 ): LandingPageInputValueValidationResult {
-  if (field.applicableWhen && !evaluateLandingPageInputCondition(field.applicableWhen, context)) {
-    return { ok: false, error: { code: "NOT_APPLICABLE", message: `${field.fieldKey} is not applicable` } };
-  }
-
   const valid = validateValue(field, value);
   return valid
     ? { ok: true }
