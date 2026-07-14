@@ -1,30 +1,29 @@
-13/07/2026 — Plano-base E18.4 — Parametrização raiz da família `landing_page`
+14/07/2026 — Plano-base E18.4 — Parametrização raiz da família `landing_page`
 
-Fontes: chat, `README.md`, `AGENTS.md`, `docs/prompt-estrategista.md`, `docs/template-roadmap.md`, `docs/prompt-executor.md`, `docs/roadmap.md`, `docs/base-tecnica.md`, `docs/schema.md`, `docs/design-system.md`, `docs/lp-planejamento.md`, `docs/template-blueprint.md`, `docs/blueprint-corretor-imoveis-end-customer.md`, `docs/gestor-estrutural.md`, `docs/vercel-up.md`, `docs/prod-up.md`, conteúdo anterior deste path, `package.json`, `lib/conversion-content/index.ts`, `lib/conversion-content/landing-page/`, referências relacionadas na `main` após o merge do PR #559, avaliações do Analista, Gestor Estrutural e Gestor de Updates sobre o PR #563 e decisões humanas de 13/07/2026.
+Fontes: chat, `README.md`, `AGENTS.md`, `docs/prompt-estrategista.md`, `docs/template-roadmap.md`, `docs/prompt-executor.md`, `docs/roadmap.md`, `docs/base-tecnica.md`, `docs/schema.md`, `docs/design-system.md`, `docs/lp-planejamento.md`, `docs/template-blueprint.md`, `docs/blueprint-corretor-imoveis-end-customer.md`, `docs/gestor-estrutural.md`, `docs/vercel-up.md`, `docs/prod-up.md`, conteúdo anterior deste path, `package.json`, `lib/conversion-content/index.ts`, `lib/conversion-content/landing-page/`, PRs #559, #563, #564, #566 e #567, avaliações do Analista, Gestor Estrutural e Gestor de Updates e decisões humanas de 13 e 14/07/2026.
 
-Status: plano-base v2 validado após encerramento do debate humano; PR #563 estritamente documental e pronto para revisão e merge; fase material bloqueada até merge do plano na `main`, atualização da base e criação de branch dedicada.
+Status: plano-base v2 concluído; fase material implementada, aprovada e mergeada no PR #564; documentação durável mergeada no PR #566; ajuste conceitual final registrado no PR #567; E18.4 formalmente encerrada por este ajuste documental. Próxima ação: iniciar o plano-base da E18.5.
 
 Path: `docs/lousa-plano-base-e18-4.md`.
 
-Recorte previsto do roadmap: `18.4 — Parametrização raiz da família landing_page`.
+Recorte do roadmap: `18.4 — Parametrização raiz da família landing_page`.
 
 1. Estado e decisões fixas
 
 1.1. Estado do caso
 
-* O PR #559 foi mergeado na `main` em 13/07/2026.
-* `docs/lp-planejamento.md` na `main` é a decisão conceitual obrigatória para este recorte.
-* O conteúdo anterior deste plano-base pertence ao desenho superado de `18.4 — Base de composição landing_page` e foi substituído no mesmo path.
-* O PR #563 é o PR vivo e exclusivamente documental deste plano-base.
-* As avaliações do Analista, Gestor Estrutural e Gestor de Updates foram recebidas e consolidadas.
-* O debate humano obrigatório foi encerrado em 13/07/2026.
-* A implementação antiga da E18.4 deve ser removida obrigatoriamente.
-* A existência de consumidores externos não muda essa decisão; determina somente se cada consumidor será removido, desacoplado ou redirecionado.
-* O uso do Codex Web foi eliminado como etapa intermediária.
-* O fluxo do Estrategista permanece obrigatório, inclusive a instrução de uma fase por vez ao Executor com base em `docs/prompt-executor.md`.
-* O plano-base atual trata exclusivamente a parametrização raiz da família `landing_page`.
-* `docs/roadmap.md`, `docs/base-tecnica.md` e parte das referências normativas ainda descrevem a implementação anterior.
-* A E18.4 não pode ser formalmente encerrada enquanto o PR documental obrigatório definido em 1.4 não estiver mergeado.
+* O PR #559 foi mergeado na `main` em 13/07/2026 e `docs/lp-planejamento.md` permanece como decisão conceitual obrigatória da jornada de LPs.
+* O conteúdo anterior deste plano-base, referente a `18.4 — Base de composição landing_page`, foi substituído no mesmo path pelo recorte de parametrização raiz.
+* O PR #563 consolidou e mergeou o plano-base v2 antes da execução material.
+* O PR #564 removeu a implementação antiga, criou a parametrização raiz v1, recebeu o patch técnico solicitado pelo Analista e foi mergeado na `main` em 13/07/2026.
+* O PR #566 atualizou `docs/roadmap.md` e `docs/base-tecnica.md` e foi mergeado na `main`.
+* O PR #567 ajusta `docs/lp-planejamento.md`, esclarece o limite técnico absoluto efetivo e registra o encerramento deste plano-base.
+* A implementação antiga de composição, módulos, variantes, schemas por variante, renderer e render model foi removida.
+* A fonte raiz versionada está implementada em `lib/conversion-content/landing-page/`, com registry canônico, schema estrito, resolver fail-closed, saída imutável e validação executável.
+* `commercial_activation`, E18.2, E18.3 e o LP Builder foram preservados.
+* Não há novo escopo material pendente na E18.4.
+* Este PR registra o encerramento formal da E18.4 no estado que ingressará na `main`, sem necessidade de nova rodada dos especialistas.
+* A próxima ação é iniciar o plano-base da E18.5.
 
 1.2. Decisões preservadas
 
@@ -38,43 +37,40 @@ Recorte previsto do roadmap: `18.4 — Parametrização raiz da família landing
   * composição;
   * conteúdo;
   * artefato final.
-* A parametrização raiz deve ser versionada no repositório.
+* A parametrização raiz é versionada no repositório.
 * A fonte versionada não exige configuração dinâmica em runtime.
 * Os valores iniciais são hipóteses editoriais e visuais até a validação da primeira LP real.
-* A parametrização raiz deve resolver apenas regras comuns da família `landing_page`.
-* Módulos e variantes serão definidos no recorte E18.5 e não podem ser antecipados neste plano.
+* A parametrização raiz resolve apenas regras comuns da família `landing_page`.
+* Módulos e variantes pertencem ao recorte E18.5 e não foram antecipados.
 * Catálogo de entradas, composição por taxon, pesquisas estruturadas, autorização de contas, geração de LP, Admin e editor visual permanecem em seus recortes próprios.
-* A remoção da implementação antiga é obrigatória.
-* A substituição deve ser atômica: remover a implementação antiga, tratar seus consumidores e reconstruir a nova raiz no mesmo commit material.
-* A busca de consumidores serve para mapear o trabalho de remoção ou desacoplamento; não serve para decidir se a implementação antiga será mantida.
-* Consumidor que dependa de funcionalidade pertencente a recorte futuro deve ser desacoplado sem antecipar esse recorte.
-* Se o desacoplamento seguro exigir alteração material fora do escopo autorizado, a execução deve parar apenas para decisão humana sobre o método e a ampliação mínima necessária; manter a E18.4 antiga não é alternativa.
-* O PR #563 deve ser mergeado antes da criação da branch material.
-* A implementação deve ocorrer em branch e PR próprios, criados a partir da `main` atualizada.
-* Não criar briefing ou handoff para o Codex Web.
-* Antes da implementação, o Estrategista deve instruir somente a fase material vigente ao Executor, aplicando `docs/prompt-executor.md`.
+* O registry explícito por versão é a única fonte dos valores efetivos.
+* Versão, preset ou contrato inválido falha fechado, sem fallback silencioso.
+* As versões anteriores permanecem imutáveis; ampliação de limite técnico absoluto exige nova `rootVersion`.
+* Faixas editoriais recomendadas podem ser especializadas para cima ou para baixo na E18.5, desde que respeitem o limite técnico absoluto efetivo.
+* Módulo ou variante pode impor limite absoluto mais restritivo, mas não pode ampliá-lo.
 
 1.3. Estado técnico confirmado
 
-* A implementação anterior está concentrada em `lib/conversion-content/landing-page/` e contém:
-  * contratos de composição;
-  * catálogo de módulos e variantes;
-  * schemas Zod por variante;
-  * registry;
-  * validador de composição;
-  * render model;
-  * renderer;
-  * fixture;
-  * casos de validação.
-* O índice `lib/conversion-content/index.ts` expõe a implementação anterior como namespace `landingPage`.
-* `package.json` expõe o script `validate:landing-page`.
-* As buscas realizadas até a consolidação não identificaram consumidores externos relevantes.
-* Essa constatação deve ser reconfirmada antes e depois da substituição, mas não condiciona a remoção.
-* Qualquer consumidor adicional encontrado deve ser removido, desacoplado ou redirecionado dentro da estratégia definida em 2.12.
-* O LP Builder atual cria apenas o registro mínimo de LP em `account_landing_pages` e não depende da implementação anterior da E18.4.
-* O schema atual possui `template_family = landing_page`, mas não possui registros-base nem persistência própria para a parametrização raiz.
-* Nenhuma mudança de banco é necessária para este recorte.
-* O projeto usa a configuração atual de Next.js 16; a fase não pode alterar bundler, `next.config`, loaders, plugins ou dependências.
+* Boundary canônico: `lib/conversion-content/landing-page/`.
+* Artefatos atuais:
+  * `contracts.ts`;
+  * `root-registry.ts`;
+  * `root-schema.ts`;
+  * `root-resolver.ts`;
+  * `root-validation-cases.ts`;
+  * `index.ts`.
+* O índice `lib/conversion-content/index.ts` expõe o namespace `landingPageRoot`.
+* `package.json` expõe o script `validate:landing-page-root` e não expõe mais `validate:landing-page`.
+* A implementação não possui módulos, variantes, composição, renderer, render model ou schemas de conteúdo por variante.
+* O schema atual possui `template_family = landing_page`, mas a parametrização raiz permanece repo-only e não exige persistência própria.
+* Nenhuma mudança de banco foi realizada.
+* A implementação permanece compatível com a configuração vigente de Next.js 16 e Turbopack, sem alteração de bundler, `next.config`, loaders, plugins ou dependências.
+* Validações materiais registradas no PR #564:
+  * `npm ci` concluído;
+  * `npm run validate:landing-page-root` concluído;
+  * `npm run validate:commercial-activation` concluído;
+  * `npm run check` concluído com zero erros;
+  * buscas pós-substituição sem referências órfãs à implementação antiga.
 
 1.4. Roadmap afetado e gate documental
 
@@ -82,62 +78,45 @@ Recorte previsto do roadmap: `18.4 — Parametrização raiz da família landing
   * E18 — Base transversal de templates, módulos, composições e artefatos.
 * Recorte substituído:
   * `18.4 — Base de composição landing_page`.
-* Novo recorte:
+* Recorte implementado:
   * `18.4 — Parametrização raiz da família landing_page`.
-* Subseções previstas:
+* Subseções registradas no roadmap:
   * `18.4.1 — Objetivo e status`;
-  * `18.4.2 — Registros do recorte`, quando houver implementação material;
-  * `18.4.3 — Fonte versionada e contrato de resolução`;
-  * `18.4.4 — Papéis semânticos e faixas editoriais`;
-  * `18.4.5 — Limites técnicos de conteúdo`;
+  * `18.4.2 — Registros do recorte`;
+  * `18.4.3 — Fonte canônica e versionamento`;
+  * `18.4.4 — Parâmetros semânticos e editoriais`;
+  * `18.4.5 — Limites e evolução`;
   * `18.4.6 — Critérios visuais e responsivos`;
-  * `18.4.7 — Presets e relação com o design system`;
-  * `18.4.8 — Herança, precedência e validação`;
+  * `18.4.7 — Presets e espaçamento`;
+  * `18.4.8 — Resolver e validação`;
   * `18.4.9 — Limites do recorte`.
-* O Executor da fase material não deve alterar `docs/roadmap.md`, `docs/base-tecnica.md`, `docs/schema.md`, `docs/design-system.md` ou `docs/lp-planejamento.md`.
-* Após implementação, validação técnica e aprovação da fase, o Gestor de Docs deve abrir PR obrigatório para atualizar:
-  * objetivo e status gerais da E18 em `docs/roadmap.md`;
-  * `18.1.5` em `docs/roadmap.md`;
-  * substituição integral da antiga seção `18.4` pela nova E18.4;
-  * criação documental da futura `18.5 — Parametrização de módulos e variantes landing_page`;
-  * seção `3.15.2` de `docs/base-tecnica.md`;
-  * changelog de `docs/base-tecnica.md`;
-  * `docs/lp-planejamento.md`, para explicitar que faixas recomendadas podem ser especializadas dentro do limite absoluto e que limites absolutos somente mudam por nova versão da raiz;
-  * demais referências normativas comprovadamente vinculadas à implementação removida.
-* O relatório ao Gestor de Docs é obrigatório, mas não satisfaz sozinho o gate.
-* O encerramento formal da E18.4 exige o merge do PR documental obrigatório.
+* O PR #566 concluiu a atualização de `docs/roadmap.md` e `docs/base-tecnica.md`.
+* O PR #567 conclui a precisão conceitual pendente em `docs/lp-planejamento.md` e atualiza o estado deste plano-base.
+* Com este ajuste, não permanece drift normativo conhecido sobre a antiga E18.4.
 
 1.5. Avaliações e autorização
 
-* Analista: avaliação recebida e condicionantes incorporadas.
-* Gestor Estrutural: avaliação recebida e condicionantes incorporadas.
-* Gestor de Updates: avaliação recebida e updates elegíveis incorporados.
-* Gestor de Automação: não aplicável, pois todas as fases estão marcadas como `Automação: não`.
+* Analista: avaliação material concluída; patch técnico incorporado no PR #564.
+* Gestor Estrutural: avaliação do plano-base concluída e condicionantes incorporadas.
+* Gestor de Updates: avaliação concluída e updates elegíveis incorporados.
+* Gestor de Automação: não aplicável, pois todas as fases foram marcadas como `Automação: não`.
 * A rodada única dos especialistas foi concluída.
-* Não abrir nova rodada completa sem mudança material de escopo, nova estrutura, nova automação ou risco técnico novo.
 * O debate humano foi encerrado e a v2 foi validada.
-* O Executor permanece bloqueado até:
-  * merge do PR #563;
-  * atualização da `main`;
-  * criação da branch material dedicada;
-  * confirmação da branch e dos arquivos-alvo conforme `AGENTS.md`.
-* A instrução da fase 3.1 é preparada no item 7 do fluxo do Estrategista, mas não autoriza execução antes dos gates acima.
+* O Executor concluiu a única fase material prevista.
+* Não abrir nova rodada completa sem mudança relevante de escopo, nova estrutura, nova automação ou risco técnico novo.
 
 1.6. Consolidação das avaliações e decisões humanas
 
-* Pontos aceitos:
+* Pontos aceitos e materializados:
   * transformar a correção normativa em gate real de encerramento;
-  * manter o PR #563 exclusivamente documental;
-  * mergear o plano antes de iniciar a implementação;
-  * criar branch e PR próprios para a fase material;
-  * manter a execução como operação atômica;
-  * repetir buscas de referências antes e depois da remoção;
-  * tratar a remoção da implementação antiga como decisão obrigatória;
-  * tratar consumidores externos como trabalho de remoção, desacoplamento ou redirecionamento, e não como motivo para preservar a implementação antiga;
+  * mergear o plano antes da implementação;
+  * executar a fase material em branch e PR próprios;
+  * remover atomicamente a implementação antiga;
+  * preservar `commercial_activation`, E18.2 e E18.3;
   * criar registry explícito por versão como única fonte dos valores efetivos;
   * resolver o preset padrão pela própria versão, sem hardcode no resolver;
-  * adicionar novas versões sem apagar ou alterar os parâmetros das versões anteriores;
-  * permitir especialização das faixas recomendadas para cima ou para baixo dentro do limite absoluto;
+  * adicionar novas versões sem apagar ou alterar parâmetros anteriores;
+  * permitir especialização das faixas recomendadas para cima ou para baixo dentro do limite técnico absoluto efetivo;
   * proibir ampliação de limite absoluto sem nova versão da raiz;
   * exigir imutabilidade profunda;
   * usar `contracts.ts` como contrato público do boundary;
@@ -147,41 +126,30 @@ Recorte previsto do roadmap: `18.4 — Parametrização raiz da família landing
   * definir lifecycle de status;
   * usar WCAG 2.2 como baseline de referência, sem declarar conformidade integral;
   * tratar 44 × 44 px como padrão interno conservador;
-  * manter compatibilidade com a configuração atual de Next.js e Turbopack sem alterar bundler;
-  * classificar a execução como risco médio controlado;
-  * eliminar somente a etapa de Codex Web, preservando o fluxo Estrategista → Executor;
-  * usar `docs/blueprint-corretor-imoveis-end-customer.md` como fonte empírica parcial para papéis editoriais e critérios de UX reutilizáveis;
-  * não transformar um único nicho em fonte exclusiva da raiz global;
-  * manter como hipóteses v1 os números que não possuem sustentação direta suficiente.
+  * manter compatibilidade com Next.js e Turbopack sem alterar bundler;
+  * usar `docs/blueprint-corretor-imoveis-end-customer.md` como fonte empírica parcial;
+  * manter como hipóteses v1 os números sem sustentação direta suficiente.
 * Pontos rejeitados:
-  * considerar o simples envio de relatório ao Gestor de Docs suficiente para encerrar a E18.4;
-  * expor nomes concretos de tokens do design system no contrato raiz;
-  * classificar a execução material como baixo risco;
-  * permitir fallback silencioso para versão, preset ou contrato inválido;
-  * permitir alteração parcial que remova o código anterior antes da raiz validável;
-  * implementar na branch ou no PR documental #563;
-  * preservar a implementação antiga por existir consumidor externo;
-  * tratar consumidor externo desconhecido como motivo para cancelar a remoção;
-  * ignorar `docs/prompt-executor.md` ou executar antes da instrução formal da fase;
+  * encerrar a E18.4 apenas com relatório sem atualização documental;
+  * expor tokens concretos do design system no contrato raiz;
+  * permitir fallback silencioso;
+  * executar remoção parcial antes de existir raiz validável;
+  * preservar a implementação antiga por consumidor externo;
   * criar handoff para Codex Web;
-  * tratar limites específicos do Hero imobiliário como prova definitiva de limites globais da família.
-* Pontos pendentes:
-  * merge do PR #563;
-  * atualização da `main` usada como base;
-  * criação da branch material dedicada;
-  * execução e validação técnica da fase 3.1;
-  * avaliação do resultado pelo Analista;
-  * PR documental obrigatório posterior e seu merge;
-  * validação futura das hipóteses v1 por LP real e por evidência de outros nichos.
-* Pontos já cobertos e preservados:
-  * boundary canônico;
-  * ausência de banco, Admin, rota, renderer, módulos e variantes;
-  * preservação de `commercial_activation`, E18.2 e E18.3;
-  * remoção dos nove arquivos antigos;
-  * substituição do namespace e do script de validação;
-  * checks `npm ci`, validação específica e `npm run check`;
-  * proibição de `npm run build` no sandbox;
-  * manutenção do mesmo path para o plano-base.
+  * antecipar módulo, variante, composição ou renderer;
+  * tratar limites específicos do Hero imobiliário como prova definitiva de limites globais.
+* Ponto futuro fora do encerramento da E18.4:
+  * validação das hipóteses v1 por LP real e por evidência de outros nichos.
+* Pontos concluídos:
+  * PR #563 mergeado;
+  * branch material dedicada criada;
+  * fase 3.1 executada e validada;
+  * PR #564 aprovado e mergeado;
+  * relatório documental consolidado;
+  * PR #566 mergeado;
+  * código antigo removido;
+  * namespace e script substituídos;
+  * checks materiais concluídos.
 
 1.7. Base de evidência das parametrizações v1
 
@@ -222,9 +190,9 @@ Recorte previsto do roadmap: `18.4 — Parametrização raiz da família landing
 * Limites editoriais foram hardcoded em schemas independentes.
 * Valores visuais e responsivos foram hardcoded no renderer.
 * `spacing` foi tratado apenas como configuração por seção, sem uma fonte comum versionada.
-* Não existe contrato único para geração, validação e futura renderização derivarem os mesmos limites.
+* Não existia contrato único para geração, validação e futura renderização derivarem os mesmos limites.
 * Manter a implementação anterior criaria uma falsa base aprovada e condicionaria prematuramente a E18.5, a E20 e a E19.
-* Por isso, a implementação anterior deve ser removida; a análise de consumidores define apenas como fazer essa remoção com segurança.
+* Por isso, a implementação anterior foi removida e substituída pela parametrização raiz versionada.
 
 2.2. Resultado esperado
 
@@ -262,9 +230,9 @@ Recorte previsto do roadmap: `18.4 — Parametrização raiz da família landing
 
 * Boundary canônico preservado:
   * `lib/conversion-content/landing-page/`.
-* A implementação anterior deve ser removida integralmente e o mesmo boundary deve ser reconstruído no mesmo commit apenas com artefatos da parametrização raiz.
-* Não criar path paralelo para a nova E18.4.
-* Artefatos previstos:
+* A implementação anterior foi removida integralmente e o mesmo boundary foi reconstruído no PR #564 apenas com artefatos da parametrização raiz.
+* Não criar path paralelo para a E18.4.
+* Artefatos implementados:
   * `lib/conversion-content/landing-page/contracts.ts`;
   * `lib/conversion-content/landing-page/root-registry.ts`;
   * `lib/conversion-content/landing-page/root-schema.ts`;
@@ -274,7 +242,7 @@ Recorte previsto do roadmap: `18.4 — Parametrização raiz da família landing
 * Responsabilidades:
   * `contracts.ts` expõe somente tipos públicos `readonly`, códigos de erro, resultado discriminado e contratos de leitura;
   * `root-registry.ts` contém uma única ocorrência dos valores efetivos de cada versão;
-  * `root-schema.ts` valida estrutura e invariantes sem repetir números, presets ou valores efetivos do registry;
+  * `root-schema.ts` valida estrutura e invariantes e pode manter allowlists estruturais necessárias, sem atuar como fonte dos valores resolvidos;
   * `root-resolver.ts` consulta exclusivamente o registry e não possui valores próprios de fallback;
   * `root-validation-cases.ts` prova casos positivos, negativos, versionamento e imutabilidade;
   * `index.ts` expõe apenas a interface pública autorizada.
@@ -299,8 +267,8 @@ Recorte previsto do roadmap: `18.4 — Parametrização raiz da família landing
   * congelamento recursivo do registry e do resultado resolvido, ou construção equivalente que não exponha referência mutável;
   * nenhuma referência mutável compartilhada entre chamadas;
   * testes de mutação em pelo menos um preset e um papel semântico aninhado.
-* O índice agregado deve remover o namespace antigo `landingPage` e, se o reexport agregado for mantido, usar identidade explícita `landingPageRoot`.
-* O script antigo `validate:landing-page` deve ser removido e substituído por `validate:landing-page-root`.
+* O índice agregado removeu o namespace antigo `landingPage` e passou a usar a identidade explícita `landingPageRoot`.
+* O script antigo `validate:landing-page` foi removido e substituído por `validate:landing-page-root`.
 * Não adicionar dependência npm.
 * Não alterar `package-lock.json` quando não houver mudança real de dependência.
 
@@ -378,7 +346,7 @@ Recorte previsto do roadmap: `18.4 — Parametrização raiz da família landing
   * `spacious`.
 * `spacing` continua sendo escolha limitada por ocorrência de seção na composição futura; o preset define apenas o valor padrão da página.
 * Deve existir exatamente um papel `h1` na LP final, mas a aplicação estrutural dessa regra pertence ao consumidor que conhecer a composição.
-* A raiz deve registrar a regra de hierarquia semântica `h1 → h2 → h3`, sem criar módulos ou seções.
+* A raiz registra a regra de hierarquia semântica `h1 → h2 → h3`, sem criar módulos ou seções.
 
 2.7. Critérios visuais, responsivos e de acessibilidade
 
@@ -448,7 +416,7 @@ Recorte previsto do roadmap: `18.4 — Parametrização raiz da família landing
 
 2.9. Contrato de leitura e erros
 
-* Resolver público previsto:
+* Resolver público:
   * `resolveLandingPageRootParameters({ rootVersion, presetKey })`.
 * Entradas:
   * `rootVersion` obrigatório;
@@ -479,8 +447,8 @@ Recorte previsto do roadmap: `18.4 — Parametrização raiz da família landing
 * Preset desconhecido deve retornar `UNKNOWN_PRESET` e falhar fechado.
 * Registry ou entrada inválida deve retornar `INVALID_ROOT_CONTRACT` e falhar fechado.
 * Versão `deprecated` somente pode ser resolvida quando solicitada explicitamente; o resolver não redireciona silenciosamente para outra versão.
-* O resolver não deve consultar banco, env, API, arquivo remoto ou configuração dinâmica.
-* O resultado resolvido deve ser profundamente somente leitura e não expor referência mutável.
+* O resolver não consulta banco, env, API, arquivo remoto ou configuração dinâmica.
+* O resultado resolvido é profundamente somente leitura e não expõe referência mutável.
 * Consumidores futuros devem importar o contrato resolvido, sem copiar valores para fontes independentes.
 * Consumidores que criarem persistência em recortes posteriores devem registrar a versão e o preset usados no próprio snapshot ou artefato, conforme o plano competente.
 
@@ -492,16 +460,18 @@ Recorte previsto do roadmap: `18.4 — Parametrização raiz da família landing
   * especialização da variante;
   * escolha permitida por ocorrência da seção.
 * A raiz define os limites absolutos máximos da família.
+* Em cada camada, o limite técnico absoluto efetivo é o menor valor entre o limite herdado e eventual limite mais restritivo definido no próprio nível.
 * Faixas recomendadas:
   * módulo ou variante pode especializar mínimo e máximo para cima ou para baixo;
   * a especialização deve ser explícita e justificada na E18.5;
   * o mínimo especializado deve ser maior ou igual a 1;
   * o mínimo especializado não pode superar o máximo especializado;
-  * o máximo especializado não pode superar o limite absoluto da raiz.
+  * o máximo especializado não pode superar o limite técnico absoluto efetivo da própria camada.
 * Limites técnicos absolutos:
   * módulo ou variante pode impor limite mais restritivo;
-  * módulo ou variante não pode ampliar o limite absoluto da raiz;
-  * necessidade de ampliação exige nova `rootVersion`.
+  * módulo ou variante não pode ampliar o limite absoluto herdado;
+  * ampliação acima do limite da raiz vigente exige nova `rootVersion`;
+  * revisão futura de restrição própria de módulo ou variante, ainda dentro do teto da raiz, deve ser tratada pelo versionamento do respectivo contrato na E18.5.
 * Opções comuns:
   * módulo ou variante pode restringir opções permitidas;
   * módulo ou variante não pode criar opção fora da enumeração da raiz.
@@ -512,7 +482,7 @@ Recorte previsto do roadmap: `18.4 — Parametrização raiz da família landing
 
 2.11. Validações executáveis
 
-* O schema da raiz deve ser Zod estrito.
+* O schema da raiz é Zod estrito.
 * Casos mínimos de validação:
   * registry v1 válido;
   * resolução explícita da versão 1;
@@ -538,38 +508,23 @@ Recorte previsto do roadmap: `18.4 — Parametrização raiz da família landing
   * schema e resolver sem cópia dos números e presets do registry;
   * ausência de módulos, variantes, composition e renderer no contrato raiz;
   * ausência de imports, símbolos e scripts da implementação antiga após a substituição.
-* Validações da fase:
+* Validações concluídas na fase:
   * busca de referências antes e depois da substituição;
   * `npm ci`;
   * `npm run validate:landing-page-root`;
+  * `npm run validate:commercial-activation`;
   * `npm run check`;
-  * checks do PR de implementação em estado verde.
-* Os checks acima pertencem ao PR material separado, não ao PR documental #563.
-* `npm run build` não deve ser executado no sandbox, conforme `AGENTS.md` e `docs/base-tecnica.md`.
-* Validação visual e auditoria WCAG não se aplicam neste recorte porque não haverá renderer ou superfície visual.
+  * checks do PR material em estado verde.
+* `npm run build` não foi executado no sandbox, conforme `AGENTS.md` e `docs/base-tecnica.md`.
+* Validação visual e auditoria WCAG não se aplicaram porque o recorte não criou renderer ou superfície visual.
 
-2.12. Remoção obrigatória da implementação anterior
+2.12. Remoção da implementação anterior
 
-* Esta é a primeira parte material da fase 3.1.
-* A decisão de remover a antiga E18.4 já está tomada e não depende do resultado da busca de consumidores.
-* Antes da remoção:
-  * buscar imports e usos de `LandingPageRenderer`, `buildLandingPageRenderModel`, `landingPageSectionRegistry`, `validateLandingPageComposition`, do namespace `landingPage` e dos paths antigos;
-  * listar cada consumidor encontrado;
-  * classificar cada consumidor como interno à implementação antiga, externo removível, externo redirecionável ou dependência que exige desacoplamento.
-* Tratamento obrigatório:
-  * consumidor interno à implementação antiga deve ser removido junto com ela;
-  * import externo sem necessidade válida no novo recorte deve ser removido;
-  * consumidor que precise apenas da parametrização raiz deve ser redirecionado para a nova interface pública;
-  * consumidor ligado a módulo, variante, composição ou renderer futuro deve ser desacoplado, sem antecipar a implementação futura;
-  * consumidor em área preservada deve ser separado da implementação antiga sem alterar o comportamento preservado.
-* Se a separação segura exigir escopo material não autorizado:
-  * interromper antes da alteração;
-  * informar exatamente o consumidor, o vínculo e o arquivo afetado;
-  * propor a menor separação possível;
-  * obter decisão humana;
-  * não propor a manutenção da implementação antiga como solução.
-* Remover os arquivos anteriores:
-  * `contracts.ts` anterior;
+* A decisão de remover a antiga E18.4 foi concluída no PR #564.
+* Foram buscados imports e usos de `LandingPageRenderer`, `buildLandingPageRenderModel`, `landingPageSectionRegistry`, `validateLandingPageComposition`, do namespace `landingPage` e dos paths antigos.
+* Consumidores internos foram removidos junto com a implementação antiga.
+* Não foram preservados consumidores externos acoplados a módulo, variante, composição ou renderer futuro.
+* Foram removidos os arquivos anteriores:
   * `schemas.ts`;
   * `registry.ts`;
   * `composition-validator.ts`;
@@ -577,54 +532,46 @@ Recorte previsto do roadmap: `18.4 — Parametrização raiz da família landing
   * `renderer.tsx`;
   * `fixture.ts`;
   * `validation-cases.ts`;
-  * `index.ts` anterior.
-* Recriar `contracts.ts` no mesmo commit somente com o contrato público da parametrização raiz.
-* Remover o namespace antigo de `lib/conversion-content/index.ts`.
-* Remover o script antigo `validate:landing-page`.
-* Reconstruir o mesmo boundary somente com os artefatos raiz previstos em 2.4.
-* Depois da substituição:
-  * repetir a busca de referências;
-  * confirmar ausência de símbolos, imports, scripts e paths órfãos;
-  * confirmar que nenhum consumidor continua acoplado à implementação antiga;
-  * confirmar que `validate:commercial-activation` permanece inalterado;
-  * confirmar que o diff não altera E18.2, E18.3, migrations, schema, Admin, LP Builder ou runtime público, salvo separação mínima previamente autorizada.
-* O rollback técnico é o revert do commit ou do PR da fase; o histórico anterior permanece no Git.
-* Referências normativas antigas não serão corrigidas pelo Executor; serão tratadas pelo PR documental obrigatório definido em 1.4.
+  * contratos e índice anteriores foram substituídos pelos contratos raiz.
+* O namespace antigo foi removido de `lib/conversion-content/index.ts`.
+* O script antigo `validate:landing-page` foi removido.
+* O boundary foi reconstruído somente com os artefatos raiz previstos em 2.4.
+* Buscas pós-substituição confirmaram ausência dos símbolos antigos em consumidores reais.
+* `validate:commercial-activation` permaneceu funcional.
+* O rollback técnico permanece o revert do commit ou do PR material; o histórico anterior está preservado no Git.
 
 2.13. Fluxo operacional
 
 * Gatilho:
   * debate humano encerrado;
-  * plano-base v2 validado;
-  * PR #563 mergeado na `main`;
-  * `main` atualizada como base de trabalho;
-  * branch material dedicada criada;
+  * plano-base v2 validado e mergeado;
   * fase 3.1 instruída ao Executor conforme `docs/prompt-executor.md`.
 * Entrada:
   * decisões de `docs/lp-planejamento.md`;
-  * plano-base v2 mergeado na `main`;
+  * plano-base v2;
   * implementação anterior;
   * consumidores reais encontrados por busca;
   * design system vigente;
-  * blueprint imobiliário como evidência parcial dos parâmetros;
+  * blueprint imobiliário como evidência parcial;
   * regras técnicas e operacionais do repositório.
-* Processamento:
-  * mapear todos os consumidores;
-  * remover, desacoplar ou redirecionar cada consumidor;
+* Processamento concluído:
+  * mapear consumidores;
+  * remover, desacoplar ou redirecionar consumidores;
   * remover atomicamente a implementação anterior;
   * criar contratos públicos e registry versionado;
   * definir schema e resolver;
   * definir casos executáveis de validação;
   * ajustar reexport e script;
-  * atualizar somente o estado da fase neste plano no PR material.
-* Validação:
+  * atualizar o estado da fase no plano-base.
+* Validação concluída:
   * referências antes e depois;
-  * ausência total da implementação antiga;
+  * ausência da implementação antiga;
   * schema estrito;
   * casos positivos e negativos;
   * imutabilidade profunda;
   * `npm ci`;
   * `npm run validate:landing-page-root`;
+  * `npm run validate:commercial-activation`;
   * `npm run check`;
   * checks aplicáveis do PR material.
 * Persistência:
@@ -634,151 +581,73 @@ Recorte previsto do roadmap: `18.4 — Parametrização raiz da família landing
   * E18.5 e consumidores posteriores importam o contrato raiz resolvido.
 * Fallback:
   * versão, preset ou contrato inválido falha fechado;
-  * consumidor inesperado deve ser tratado por remoção, desacoplamento ou redirecionamento;
-  * se a separação exigir escopo não autorizado, a fase pausa para decisão humana sobre o método;
-  * erro de bundler ou incompatibilidade com a configuração atual bloqueia a fase;
-  * necessidade de banco, rota, Admin ou nova infraestrutura bloqueia a fase e exige nova decisão humana;
-  * preservar a implementação antiga não é fallback permitido.
+  * necessidade futura de banco, rota, Admin ou infraestrutura depende de plano próprio;
+  * a implementação antiga não é fallback permitido.
 
 2.14. Relatório documental
 
-* Usar relatório consolidado ao final da fase material.
-* Justificativa:
-  * plano curto;
-  * uma única fase material;
-  * sem banco;
-  * sem automação;
-  * atualização documental intermediária criaria repetição.
-* O relatório final deve indicar ao Gestor de Docs:
+* Foi usado relatório consolidado ao final da fase material porque o plano possuía uma única fase, sem banco e sem automação.
+* O relatório registrou:
   * substituição da antiga E18.4;
   * arquivos criados, ajustados e excluídos;
   * consumidores removidos, desacoplados ou redirecionados;
   * remoção do contrato normativo antigo;
   * nova fonte raiz versionada;
-  * ausência de alteração indevida em E18.2, E18.3 e `commercial_activation`;
-  * subseções exatas do roadmap previstas em 1.4;
-  * distinção consolidada entre faixas recomendadas e limites absolutos;
+  * preservação de E18.2, E18.3 e `commercial_activation`;
+  * distinção entre faixas recomendadas e limites absolutos;
   * fontes e hipóteses dos parâmetros v1;
-  * papéis visuais abstratos e ausência de tokens concretos no contrato raiz;
-  * checks executados e eventuais limitações.
-* O relatório deve resultar em PR documental obrigatório; não é suficiente como encerramento isolado.
+  * papéis visuais abstratos;
+  * checks executados.
+* O PR #566 materializou a atualização durável de `docs/roadmap.md` e `docs/base-tecnica.md`.
+* O PR #567 conclui o alinhamento de `docs/lp-planejamento.md` e deste plano-base.
 
 3. Fases e próxima ação
 
 3.1. E18.4.3–E18.4.8 — Remoção obrigatória da implementação antiga e parametrização raiz v1
 
-* Status: implementada em PR material separado; patch técnico solicitado pelo Analista aplicado; aguardando nova avaliação do Analista.
+* Status: concluída, aprovada e mergeada no PR #564 em 13/07/2026.
 * Automação: não.
 * Risco da execução: médio controlado.
-* Objetivo:
-  * remover obrigatoriamente a implementação anterior e substituí-la atomicamente pela fonte versionada da parametrização raiz v1.
-* Ordem interna obrigatória:
-  * buscar e listar todos os consumidores da implementação antiga: concluído;
-  * classificar cada consumidor: concluído;
-  * remover, desacoplar ou redirecionar todos os consumidores: concluído;
-  * excluir os nove arquivos da implementação antiga: concluído;
-  * reconstruir o boundary com a nova raiz: concluído;
-  * ajustar o índice agregado e o script: concluído;
-  * executar as validações: concluído no PR material;
-  * atualizar somente o estado desta fase no plano-base: concluído.
-* Arquivos a excluir:
-  * os nove arquivos da implementação anterior listados em 2.12.
-* Arquivos a criar ou recriar:
-  * `lib/conversion-content/landing-page/contracts.ts`;
-  * `lib/conversion-content/landing-page/root-registry.ts`;
-  * `lib/conversion-content/landing-page/root-schema.ts`;
-  * `lib/conversion-content/landing-page/root-resolver.ts`;
-  * `lib/conversion-content/landing-page/root-validation-cases.ts`;
-  * `lib/conversion-content/landing-page/index.ts`.
-* Arquivos a ajustar no PR material separado:
-  * `lib/conversion-content/index.ts`;
-  * `package.json`;
-  * consumidores reais identificados, somente para remoção, desacoplamento ou redirecionamento autorizados;
-  * `docs/lousa-plano-base-e18-4.md`, somente para atualizar o estado da fase.
-* Não alterar sem decisão humana adicional:
-  * comportamento de `lib/conversion-content/commercial-activation/`;
-  * adapters de `commercial_activation`;
-  * comportamento de `lib/lp-builder/`;
-  * migrations e snippets;
-  * `docs/roadmap.md`;
-  * `docs/base-tecnica.md`;
-  * `docs/schema.md`;
-  * `docs/design-system.md`;
-  * `docs/lp-planejamento.md`;
-  * `next.config`;
-  * configuração de bundler, loaders ou plugins;
-  * dependências npm.
-* Critérios de aceite:
-  * todos os consumidores da implementação antiga identificados;
-  * todos os consumidores removidos, desacoplados ou redirecionados;
-  * nenhuma referência à implementação antiga preservada;
-  * substituição concluída em uma única operação atômica;
-  * implementação anterior removida sem referência órfã;
+* Entrega concluída:
+  * consumidores identificados e classificados;
+  * consumidores removidos, desacoplados ou redirecionados;
+  * implementação antiga excluída;
+  * boundary reconstruído com a raiz versionada;
+  * índice agregado e script ajustados;
+  * patch técnico do Analista incorporado;
+  * validações concluídas;
+  * estado da fase atualizado.
+* Critérios de aceite atendidos:
   * fonte raiz v1 criada no boundary canônico;
-  * registry por versão contém uma única ocorrência dos valores efetivos;
-  * schema e resolver não duplicam números, presets ou limites do registry;
-  * resolver usa o `defaultPreset` da versão resolvida;
-  * contrato público usa tipos profundamente `readonly`;
-  * resultado resolvido não expõe referência mutável;
-  * erros discriminados e fail-closed implementados;
-  * papéis, faixas, limites, critérios e presets correspondem ao contrato da seção 2;
-  * faixas recomendadas não bloqueiam conteúdo dentro do limite absoluto;
-  * limite absoluto inválido falha fechado;
-  * papéis visuais abstratos são estritos e não contêm tokens concretos;
-  * referência WCAG 2.2 e padrão interno de 44 × 44 px permanecem no contrato, sem declaração de conformidade integral;
-  * TypeScript simples e compatível com a configuração atual do projeto e Turbopack;
-  * nenhuma definição de módulo, variante, composition, content schema ou renderer;
+  * registry como única fonte dos valores efetivamente resolvidos;
+  * schema com allowlists e invariantes estruturais de validação, sem se tornar fonte dos valores resolvidos, e resolver sem valores próprios de fallback;
+  * resolução pelo `defaultPreset` da versão;
+  * contratos públicos profundamente `readonly`;
+  * saída sem referência mutável;
+  * erros discriminados e fail-closed;
+  * papéis, faixas, limites, critérios e presets materializados;
+  * ausência de módulos, variantes, composition, content schema e renderer;
   * `commercial_activation` preservada;
   * script antigo removido e script novo funcional;
-  * `npm ci` concluído;
-  * `npm run validate:landing-page-root` concluído;
-  * `npm run check` concluído;
-  * checks do PR material em estado verde;
-  * diff limitado ao escopo aprovado ou às separações adicionais autorizadas.
-* Critérios de parada:
-  * interromper antes de alterar área preservada quando o desacoplamento exigir escopo material ainda não autorizado;
-  * interromper se a separação exigir banco, rota, Admin, nova infraestrutura, bundler, loader, plugin ou dependência;
-  * interromper se o contrato raiz exigir conhecimento de módulo, variante, taxon, composição ou conteúdo concreto;
-  * interromper diante de erro de Turbopack ou bundler sem correção estritamente interna aos arquivos autorizados;
-  * interromper se os checks falharem sem correção restrita ao escopo;
-  * ao parar, informar o consumidor ou impedimento exato e propor a menor separação possível;
-  * não considerar a manutenção da implementação antiga como alternativa.
+  * checks concluídos com zero erros.
 
 3.2. Item 7 — Instrução ao Executor
 
-* Fase atual do fluxo do Estrategista:
-  * item 7 — instrução da fase 3.1 ao Executor.
-* A instrução deve informar:
-  * fase `3.1. E18.4.3–E18.4.8 — Remoção obrigatória da implementação antiga e parametrização raiz v1`;
-  * path `docs/lousa-plano-base-e18-4.md`;
-  * fontes obrigatórias `AGENTS.md`, `docs/prompt-executor.md`, este plano-base e documentos citados nele;
-  * atualização somente do estado da fase executada neste plano-base.
-* A instrução pode ser preparada antes do merge, mas a execução permanece bloqueada até:
-  * PR #563 mergeado na `main`;
-  * `main` atualizada;
-  * branch material dedicada criada a partir da `main` atualizada;
-  * branch, estado e arquivos-alvo confirmados pelo Executor.
-* Após esses gates:
-  * executar somente a fase 3.1;
-  * abrir PR de implementação separado.
-* Não criar briefing ou handoff para o Codex Web.
-* O PR #563 permanece estritamente documental e não pode receber arquivos materiais da fase 3.1.
-* “Checks aplicáveis do PR” significa checks do PR de implementação separado.
-* A atualização de status deste plano durante a execução deve ocorrer no PR material separado.
-* Não enviar fase documental ou fase adicional em paralelo.
+* Status: concluído.
+* A fase 3.1 foi enviada ao Executor após o merge do PR #563 e a criação de branch material dedicada.
+* O Executor executou somente a fase autorizada e atualizou apenas o estado do plano-base durante a implementação.
+* Não foi criado briefing ou handoff para Codex Web.
+* Não existe nova fase material a enviar ao Executor na E18.4.
 
 3.3. Encerramento documental obrigatório
 
-* Após implementação e checks da fase 3.1:
-  * o Analista deve avaliar o resultado material;
-  * o Estrategista deve consolidar o relatório final;
-  * o Gestor de Docs deve abrir o PR obrigatório definido em 1.4.
-* A conclusão técnica da fase 3.1 não encerra formalmente a E18.4.
-* A E18.4 somente pode receber status final de encerrada após:
-  * implementação material aprovada;
-  * checks aplicáveis verdes;
-  * PR documental obrigatório mergeado;
-  * ausência de drift normativo conhecido sobre a antiga E18.4.
+* Status:
+  * implementação material aprovada e mergeada no PR #564;
+  * checks materiais concluídos;
+  * atualização de `docs/roadmap.md` e `docs/base-tecnica.md` mergeada no PR #566;
+  * precisão conceitual de `docs/lp-planejamento.md` e encerramento do plano-base incluídos no PR #567.
+* A E18.4 fica formalmente encerrada por este registro documental.
+* A próxima ação é iniciar `docs/lousa-plano-base-e18-5.md`.
 
 4. Escopo negativo e critérios de parada
 
@@ -813,30 +682,26 @@ Recorte previsto do roadmap: `18.4 — Parametrização raiz da família landing
 * Auditoria completa de acessibilidade.
 * Declaração de conformidade integral com WCAG.
 * Alteração de bundler ou infraestrutura de build.
-* Implementação material no PR #563.
 * Briefing, handoff ou execução pelo Codex Web.
 
 4.2. Critérios gerais de parada
 
-* Falta de fonte obrigatória para decisão material.
+* Falta de fonte obrigatória para decisão material futura.
 * Contradição entre a `main` e este plano que altere escopo, risco ou arquitetura.
 * Necessidade comprovada de banco ou infraestrutura não autorizada.
-* Necessidade de alterar área preservada para desacoplar consumidor sem autorização humana específica.
 * Risco de regressão em `commercial_activation`.
-* Necessidade de definir módulo, variante, composição ou conteúdo concreto para completar a raiz.
-* Falha de validação que exija ampliação de escopo.
+* Necessidade de definir módulo, variante, composição ou conteúdo concreto dentro da E18.4.
+* Falha de validação que exija ampliação do recorte encerrado.
 * Necessidade de alterar bundler, `next.config`, loader, plugin ou dependência.
-* Tentativa de implementar antes do merge do PR #563.
-* Tentativa de implementar na branch documental do PR #563.
-* Ao ocorrer parada por consumidor externo, a decisão pendente deve ser somente sobre o método de separação; a remoção da implementação antiga permanece obrigatória.
+* Qualquer necessidade futura desses itens deve ser tratada no plano-base competente, sem reabrir a E18.4 por conveniência.
 
 4.3. Encerramento do plano
 
 * O debate humano foi encerrado.
-* O plano-base v2 está validado e pronto para revisão e merge no PR #563.
-* O item 7 do fluxo do Estrategista foi iniciado com a preparação da instrução da fase 3.1 ao Executor.
-* A execução material somente começa após os gates definidos em 3.2.
-* O plano material termina quando a fase 3.1 estiver implementada, validada e aprovada pelo Analista.
-* O caso E18.4 permanece em encerramento documental até o merge do PR obrigatório do Gestor de Docs.
-* Não existe fase administrativa, de automação ou de handoff.
-* O Estrategista entrega relatório consolidado ao Gestor de Docs e acompanha o gate documental até o merge.
+* O plano-base v2 foi validado e mergeado no PR #563.
+* A fase material foi concluída, aprovada e mergeada no PR #564.
+* O PR documental obrigatório foi mergeado no PR #566.
+* O PR #567 registra o último alinhamento conceitual conhecido e atualiza este estado final.
+* O caso E18.4 não possui pendência material.
+* A E18.4 está formalmente encerrada por este ajuste documental.
+* A próxima ação é iniciar o plano-base da E18.5, sem reabrir a E18.4.

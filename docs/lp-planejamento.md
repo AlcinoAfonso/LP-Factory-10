@@ -48,7 +48,10 @@ Fontes de referência: `README.md`, `docs/roadmap.md`, `docs/prompt-estrategista
 ### 1.4. Definir a parametrização de módulos e variantes
 
 - A parametrização de módulos e variantes define campos, estruturas, limites estruturais, regras de copy e especializações permitidas sobre a raiz.
-- Os limites textuais comuns pertencem à parametrização raiz; módulo ou variante só pode sobrescrevê-los em caso excepcional, explícito e justificado.
+- As faixas editoriais recomendadas comuns pertencem à parametrização raiz e podem ser especializadas por módulo ou variante, para cima ou para baixo, somente de forma explícita e justificada.
+- Toda especialização de faixa deve manter mínimo maior ou igual a 1, mínimo menor ou igual ao máximo e máximo menor ou igual ao limite técnico absoluto efetivo, calculado pelo menor valor entre o limite herdado e eventual limite mais restritivo definido no próprio nível.
+- Módulo ou variante pode impor limite técnico absoluto mais restritivo, mas não pode ultrapassar o limite absoluto herdado na mesma cadeia.
+- Ampliação acima do limite da raiz vigente exige nova versão da parametrização raiz; a revisão futura de uma restrição própria de módulo ou variante, ainda dentro desse teto, deve ser tratada pelo versionamento do respectivo contrato na E18.5.
 - A resolução das regras segue `parametrização raiz → especialização do módulo → especialização da variante`.
 - Módulos herdam a raiz e registram apenas especializações justificadas para sua função estrutural.
 - Variantes herdam o módulo e registram apenas especializações reutilizáveis de execução ou comportamento dentro da mesma função estrutural.
@@ -176,7 +179,10 @@ Fontes de referência: `README.md`, `docs/roadmap.md`, `docs/prompt-estrategista
 ### 2.3. Parametrização de módulos e variantes
 
 - Confirmar o conjunto inicial de módulos e variantes antes de definir suas especializações.
-- Fazer os limites textuais e os valores comuns de `spacing` derivarem da raiz e admitir sobrescrita por módulo ou variante somente em caso excepcional e justificado.
+- Fazer as faixas editoriais recomendadas, os limites técnicos absolutos e os valores comuns de `spacing` derivarem da raiz.
+- Permitir especialização explícita e justificada das faixas recomendadas para cima ou para baixo, mantendo mínimo maior ou igual a 1, mínimo menor ou igual ao máximo e máximo menor ou igual ao limite técnico absoluto efetivo, calculado pelo menor valor entre o limite herdado e eventual limite mais restritivo definido no próprio nível.
+- Permitir que módulo ou variante restrinja o limite técnico absoluto, sem ultrapassar o limite herdado na mesma cadeia.
+- Tratar ampliação acima do limite da raiz vigente por nova versão da parametrização raiz; revisão futura de restrição própria de módulo ou variante, ainda dentro desse teto, pertence ao versionamento do respectivo contrato na E18.5.
 - Definir `copy_source_map` por módulo, campo de copy e intenção ou funil.
 - Definir `funnel_copy_profile` padrão para BOFU, MOFU e TOFU e como módulos e variantes o adaptam.
 - Definir tratamentos permitidos, restritos e proibidos por funil.
@@ -337,7 +343,10 @@ Fontes de referência: `README.md`, `docs/roadmap.md`, `docs/prompt-estrategista
 - Seções e subseções afetadas: objetivo e status da E18, `18.1.5`, atual `18.4` e nova `18.5`.
 - Ajustar o objetivo e o status da E18 para registrar que `commercial_activation` permanece implementada e preservada, enquanto a evolução de `landing_page` passa a começar pela parametrização raiz e depois pela parametrização de módulos e variantes.
 - Ajustar `18.1.5` para preservar o catálogo implementado de `commercial_activation`, retirar o conjunto anterior de módulos e variantes de `landing_page` como contrato vigente e registrar que o novo conjunto será definido em `18.5` após a parametrização raiz.
-- Registrar em `18.1.5` que os limites textuais e os valores comuns de `spacing` pertencem à raiz e que módulos ou variantes só podem sobrescrevê-los excepcionalmente, seguindo `raiz → módulo → variante`.
+- Registrar em `18.1.5` que as faixas editoriais recomendadas, os limites técnicos absolutos e os valores comuns de `spacing` pertencem à raiz, seguindo `raiz → módulo → variante`.
+- Registrar que módulos ou variantes podem especializar faixas recomendadas dentro do limite técnico absoluto efetivo, calculado pelo menor valor entre o limite herdado e eventual limite mais restritivo definido no próprio nível.
+- Registrar que módulos ou variantes podem impor limites absolutos mais restritivos, sem ultrapassar o limite herdado na mesma cadeia.
+- Registrar que ampliação acima do limite da raiz vigente exige nova versão da raiz, enquanto a revisão futura de restrição própria de módulo ou variante dentro desse teto pertence ao versionamento do respectivo contrato na E18.5.
 - Preservar `18.1.7` como contrato transversal geral até a materialização da composição pela E20 e preservar `18.1.8` como separação entre template, composição, conteúdo e artefato final.
 - Preservar integralmente `18.2` e `18.3`, que permanecem vinculadas a `commercial_activation` e ao consumo pela E10.7.
 - Substituir integralmente a atual `18.4 — Base de composição landing_page` por `18.4 — Parametrização raiz da família landing_page`.
