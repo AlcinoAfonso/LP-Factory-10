@@ -1,203 +1,148 @@
-# docs/prompt-abc.md vs7
+# docs/prompt-abc.md vs10
 
 PROMPT ABC
 
-ENTRADA
+Antes de adicionar, avaliar nesta ordem: remover; ajustar; substituir; consolidar; adicionar somente quando necessário.
 
-* REPO (GitHub): LP-Factory-10
-* REF (GitHub): [main | branch | commit] (se não informado, main)
-* DOC_ALVO: [docs/base-tecnica.md | docs/schema.md | docs/roadmap.md | docs/design-system.md | docs/platform-config.md | docs/services.md | docs/automations.md]
+## 1. Entrada
 
-OBJETIVO
-Gerar o **ABC humano** para o DOC_ALVO.
+* REPO: `AlcinoAfonso/LP-Factory-10`.
+* REF: `main`, branch ou commit; padrão: `main`.
+* DOC_ALVO: documento a atualizar, quando informado.
+* RELATÓRIO: fonte do estado final.
 
-VISÃO GERAL (RESIDÊNCIA DO CONTEÚDO)
+## 2. Objetivo
 
-* `docs/schema.md` = contrato de banco (objetos e permissões de DB).
-* `docs/base-tecnica.md` = contrato técnico de runtime (regras de implementação segura).
-* `docs/roadmap.md` = estado final dos casos E* (status, escopo, dependências, decisões, pendências e estruturas/artefatos vinculados ao caso).
-* `docs/design-system.md` = contrato visual atual do produto (padrões UI, componentes, superfícies visuais e regras de uso).
-* `docs/platform-config.md` = contrato operacional de plataformas, variáveis, secrets, URLs, endpoints, redirects, DNS e configurações externas.
-* `docs/services.md` = catálogo humano dos services implantáveis, MCPs, endpoints de services, infraestrutura reutilizável com identidade própria, boundaries de deploy e consumidores principais.
-* `docs/automations.md` = catálogo das automações operacionais, uso humano, status, dependências, componentes consumidores, regras operacionais e aprendizados de automação.
+Gerar um ABC humano, curto, delta-only e executável.
 
-REGRA GLOBAL (ANTI-INFLAÇÃO)
+## 3. Fontes obrigatórias
 
-* 1 assunto = 1 residência.
-* Não duplicar guardrails/listas já cobertos por contrato dedicado do repo; nos docs manter só: objetivo em 1 linha + paths + referência.
-* Tudo fora da residência do DOC_ALVO está fora de escopo.
-* Docs descrevem o estado atual do projeto; histórico de evolução fica apenas no changelog quando o documento tiver changelog.
-* Ao atualizar uma seção, substituir o estado antigo pelo estado atual consolidado, sem manter fases intermediárias já superadas.
-* Configurações de plataforma, envs, secrets, endpoints, URLs oficiais, redirects, DNS e parâmetros externos ficam em `docs/platform-config.md`; `docs/base-tecnica.md` deve manter apenas a regra técnica de implementação e uma referência curta quando necessário.
-* Services implantáveis, MCPs e infraestrutura reutilizável com identidade própria ficam em `docs/services.md`; automações consumidoras ficam em `docs/automations.md`; configurações operacionais de plataformas ficam em `docs/platform-config.md`.
-* Automações operacionais, seus usos, status, inputs, respostas esperadas, dependências, regras de execução e aprendizados ficam em `docs/automations.md`; configs de plataforma ficam em `docs/platform-config.md`; services/MCPs reutilizáveis ficam em `docs/services.md`.
+* RELATÓRIO.
+* DOC_ALVO atual.
+* Fonte estrutural aplicável.
 
-CRITÉRIO BASE TÉCNICA (RELEVÂNCIA PARA IA)
+## 4. Fluxo
 
-* Só gerar DELTA em `docs/base-tecnica.md` se mudar:
-  * como a IA deve gerar código correto, ou
-  * como a IA deve montar plano de execução seguro/determinístico.
-* Novidade sem impacto de implementação não entra.
-* Quando entrar, registrar só regra/contrato/parâmetro estável (sem narrativa de console e sem voláteis).
-* Não gerar DELTA em `docs/base-tecnica.md` apenas para registrar URL, env, secret, endpoint, projeto externo, configuração de painel ou DNS; isso pertence a `docs/platform-config.md`, salvo quando a informação for indispensável como regra técnica de implementação.
+1. Ler as fontes obrigatórias.
+2. Extrair somente:
+   * implementado;
+   * definido;
+   * decisão futura aprovada;
+   * pendência vigente;
+   * limite permanente.
+3. Ignorar:
+   * hipótese;
+   * proposta não aprovada;
+   * histórico operacional;
+   * passo superado.
+4. Comparar com o documento atual.
+5. Emitir somente o menor delta necessário.
 
-REGRAS DE LEITURA
+## 5. Residência documental
 
-1. Abrir o DOC_ALVO na fonte indicada.
-2. Identificar no DOC_ALVO:
-   * função do documento
-   * relação com outros documentos
-   * seções existentes
-   * padrão de estrutura
-   * versão/data, quando houver
-   * changelog, quando houver
-3. Se o DOC_ALVO não tiver seção explícita de função ou relação documental, usar a VISÃO GERAL e a ALLOWLIST deste prompt como fonte de residência documental.
+* `docs/roadmap.md`: casos, estado, decisões, pendências e artefatos.
+* `docs/base-tecnica.md`: regras técnicas duráveis para implementações futuras.
+* `docs/schema.md`: contrato real de banco.
+* `docs/design-system.md`: contrato visual.
+* `docs/platform-config.md`: configurações externas.
+* `docs/services.md`: services implantáveis.
+* `docs/automations.md`: automações operacionais.
 
-ALLOWLISTS POR DOC_ALVO
+Um assunto deve ter uma única residência. Não duplicar fonte canônica.
 
-`docs/base-tecnica.md` — CONTRATO_TÉCNICO
-* ENTRA: regras técnicas permanentes do produto; padrões de implementação segura; runtime; segurança (PII/secrets/permissão mínima); SSR; adapters; imports; camadas e boundaries; validação; logs seguros; observability mínima estável; integrações com parâmetros fixos; convenções obrigatórias de repo; e decisões arquiteturais estáveis, normativas, reutilizáveis e aplicáveis a futuras implementações além do caso imediato.
-* NÃO ENTRA: status de caso E*, fase, PR, branch, merge, evidência de validação, prints, estado de artifacts, taxon piloto, contagens de registros, próximo passo, fora de escopo de fase, pendências de produto, decisões que só explicam uma entrega específica ou itens pertencentes a DB/schema, roadmap/casos, design system, platform config, services ou automations.
-* REGRA ANTI-ROADMAP: se a informação responde “o que este caso/fase entregou, validou, decidiu ou deixou para depois”, ela pertence a `docs/roadmap.md`.
-* REGRA DE PROMOÇÃO: uma decisão de caso só entra em `docs/base-tecnica.md` quando virar padrão técnico durável para implementações futuras.
-* RESIDÊNCIA: objetos/permissões de banco ficam em `docs/schema.md`; plataformas/env/secrets ficam em `docs/platform-config.md`; automações e fluxos operacionais ficam em `docs/automations.md`; status, escopo, decisões e fases de casos E* ficam em `docs/roadmap.md`.
+## 6. Gates específicos
 
-`docs/schema.md` — CONTRATO_DB
-* ENTRA: tabelas, colunas, constraints, enums, relacionamentos, views, RPCs/functions, triggers, RLS/policies, grants e notas mínimas de validação no Supabase.
-* RPCs/FUNCTIONS: quando confirmados, registrar assinatura, segurança, `search_path`, grants e comportamento estável.
-* GATE: o RELATÓRIO precisa trazer evidência de DB executado/observável: migration aplicada, SQL que altere schema ou confirmação no Supabase.
-* TBD: só para detalhe faltante de objeto já existente no Supabase, com caminho de validação.
-* NÃO ENTRA: itens pertencentes a runtime/base técnica, roadmap/casos, design system, platform config, services ou automations.
+### 6.1 Roadmap
 
-`docs/roadmap.md` — CONTRATO_DE_CASOS
-* ENTRA: status com data, seção/subseções de roadmap explicitamente indicadas no RELATÓRIO, escopo final em bullets curtos, dependências entre casos E*, decisões explícitas, pendências marcadas no RELATÓRIO e estruturas/artefatos vinculados ao estado final do caso.
-* SUBSEÇÕES: quando o RELATÓRIO trouxer seção afetada, subseções a criar/atualizar ou subseções vedadas, usar isso como limite documental; não criar subseção diferente sem necessidade clara no DOC_ALVO.
-* REGRA DE ATUALIZAÇÃO: como exceção às regras de consolidação de estado final deste prompt, casos em planejamento, andamento ou implementação parcial devem preservar debates, planos, decisões provisórias, trabalho em execução, faltas e próximos passos. Nessa fase, não alterar cabeçalho, versão ou changelog nem marcar o caso como implementado ou concluído. Somente quando o caso completo ou um recorte autônomo estiver totalmente implementado e validado, remover debates encerrados, planos operacionais consumidos, hipóteses não aprovadas e conteúdo provisório superado; preservar decisões futuras aprovadas, pendências vigentes, limites permanentes e evoluções já classificadas. Para caso, fase ou recorte autônomo já implementado, o corpo do roadmap deve ser snapshot do estado atual, não narrativa de execução: não copiar PR, branch, merge commit, comandos, prints, bugs intermediários ou validações transitórias, salvo quando virarem pendência vigente, limite permanente ou requisito atual.
-* REGRA: “E” só no título principal do caso; subitens sem repetir “E”.
-* ESTRUTURAS E ARTEFATOS: registrar somente objetos de banco e artefatos funcionais do repositório criados, ajustados ou removidos; não registrar docs/**, pois docs são DOC_ALVO, fonte ou patch documental.
-* CATEGORIAS:
-  * Banco — Criados, Ajustados e Removidos
-  * Repositório — Criados, Ajustados e Removidos
-* UPDATES: quando o RELATÓRIO trouxer updates aplicados, aprovados ou relacionados em padrão já identificado do projeto, registrar apenas a referência curta por ID, mantendo o formato existente no roadmap, por exemplo: "Updates futuros já aprovados relacionados: prod#3, vercel#8". Não converter esses updates em categorias livres de plataforma, não narrar execução operacional e não inventar IDs ausentes no RELATÓRIO.
-* CONCISÃO: registrar somente nomes ou paths, sem descrever colunas, policies, lógica interna, conteúdo dos arquivos ou narrativa de implementação.
-* OMISSÃO: omitir categorias vazias e não criar a seção quando o RELATÓRIO não trouxer estruturas ou artefatos aplicáveis.
-* RESIDÊNCIA: detalhes de objetos e permissões de banco pertencem a `docs/schema.md`; regras técnicas de implementação pertencem a `docs/base-tecnica.md`.
-* NÃO ENTRA: inventário detalhado de DB, regras de runtime, configurações de plataforma, catálogo de services, catálogo de automações ou padrões visuais.
+* Consultar `docs/template-roadmap.md`.
+* Respeitar as subseções indicadas no relatório.
+* Não criar blocos vazios.
+* Não listar ações que não ocorreram.
+* Usar `N/A` somente quando o template exigir.
+* Em registros, usar somente nomes ou paths.
+* Não registrar `docs/**` como artefato.
 
-`docs/design-system.md` — CONTRATO_VISUAL
-* ENTRA: padrões visuais atuais, componentes UI ativos, regras de uso, comportamento responsivo, superfícies visuais consolidadas.
-* REGRA: ao citar superfícies, descrever comportamento/padrão visual; evitar inventário de arquivos se isso já estiver no roadmap.
-* NÃO ENTRA: itens pertencentes a roadmap/casos, DB/schema, runtime/base técnica, platform config, services ou automations.
+### 6.2 Base Técnica
 
-`docs/platform-config.md` — CONTRATO_OPERACIONAL_DE_PLATAFORMAS
-* ENTRA: plataformas usadas pelo projeto, projetos/ambientes externos, variáveis públicas, secrets server-side por nome, flags, endpoints oficiais, URLs de produção/preview, redirects, SMTP, DNS/domínio, GitHub Actions secrets, regras operacionais de configuração e redeploy.
-* SECRETS: nunca incluir valores reais; registrar só nome da variável, finalidade, plataforma e escopo de ambiente.
-* NÃO ENTRA: itens pertencentes a runtime/base técnica, DB/schema, roadmap/casos, design system, services ou automations.
+* Só gerar delta para regra técnica durável e reutilizável além do caso imediato.
+* Não registrar detalhes de fase ou caso.
+* Não copiar valores ou listas definidos em código, registry, schema ou configuração versionada.
+* Registrar somente a regra permanente e, quando necessário, o path da fonte canônica.
 
-`docs/services.md` — CONTRATO_DE_SERVICES
-* ENTRA: services implantáveis, MCPs, endpoints de services, objetivo do service, implementação canônica, README técnico local, boundary operacional de deploy, consumidores principais, dependências diretas, status operacional e pendências operacionais vinculadas ao próprio service.
-* REGRA: endpoint/projeto só como identificação do service; inventário operacional consolidado fica em `docs/platform-config.md`.
-* NÃO ENTRA: automações consumidoras, configs gerais de plataforma/secrets/envs, regras técnicas de runtime, objetos de DB, status de casos E* ou padrões visuais.
+### 6.3 Schema
 
-`docs/automations.md` — CONTRATO_DE_AUTOMACOES
-* ENTRA: automações operacionais, catálogo, objetivo, status, acesso humano, como usar, inputs operacionais, resposta esperada, runtime/local, README local, workflow consumidor, componentes consumidores, dependências diretas, regras operacionais, padrões de execução pré-merge, aprendizados e pendências vinculadas à automação.
-* REGRA: secrets/envs/endpoints/workflows podem aparecer só como dependência curta; inventário consolidado fica em `docs/platform-config.md`.
-* NÃO ENTRA: configs de plataformas, secrets por nome, envs, endpoints canônicos e lista consolidada de workflows; services/MCPs reutilizáveis; regras técnicas de runtime; objetos de DB; status de casos E*; padrões visuais.
+* Só gerar delta com alteração real de banco e evidência.
 
-REGRAS DE EXTRAÇÃO (RELATÓRIO → ESTADO FINAL)
+## 7. Operações permitidas
 
-3. Extrair apenas o que estiver claramente como **ESTADO FINAL** (IMPLEMENTADO/DEFINIDO).
-4. Tratar conteúdo futuro conforme sua condição:
-   * proposta não aprovada → ignorar;
-   * decisão futura aprovada → preservar;
-   * próximo passo operacional superado → remover;
-   * evolução futura vigente → preservar.
-   Hipóteses e assunções a validar continuam fora do estado final.
+* `SUBSTITUIR_TRECHO`
+* `SUBSTITUIR_SECAO`
+* `ADICIONAR_TRECHO`
+* `ADICIONAR_SECAO`
+* `REMOVER_TRECHO`
+* `REMOVER_SECAO`
 
-COMPARAÇÃO (ESTADO FINAL vs DOC_ALVO)
+Regras:
 
-5. Identificar apenas DELTAS que sejam necessários para refletir o estado final e permitidos pela allowlist do DOC_ALVO.
-6. Se não houver DELTA permitido: saída **SEM ALTERAÇÕES NECESSÁRIAS**.
+* Preferir TRECHO.
+* Usar SEÇÃO somente para mudança estrutural.
+* Adição exige âncora clara.
+* `CONTEUDO` deve ser literal e sem reticências.
 
-GERAÇÃO DO ABC (DELTA-ONLY)
+## 8. Versionamento
 
-7. Classificar cada DELTA pelo **menor bloco estável possível**.
-8. Tipos permitidos de operação:
-   * `SUBSTITUIR_TRECHO` (`replace_snippet`)
-   * `SUBSTITUIR_SECAO` (`replace_section`)
-   * `ADICIONAR_TRECHO` (`insert_snippet_after_anchor`)
-   * `ADICIONAR_SECAO` (`insert_after_section`)
-   * `REMOVER_TRECHO` (`remove_snippet`)
-   * `REMOVER_SECAO` (`remove_section`)
-9. Regra de uso:
-   * Preferir TRECHO (linha, bullet, parágrafo curto ou bloco pequeno estável).
-   * Usar SEÇÃO inteira somente quando a estrutura da seção precisar ser refeita.
-   * Antes de `SUBSTITUIR_SECAO` em `docs/roadmap.md`, verificar que a substituição não elimina decisões futuras aprovadas, pendências vigentes ou limites ainda válidos.
-10. Regra de âncora:
-   * Em operações de TRECHO, usar a seção em que o trecho entra/sai.
-   * Em `ADICIONAR_SECAO`, usar a seção imediatamente anterior (mesmo nível), quando existir.
-   * Se a âncora não estiver clara no DOC_ALVO, não gerar operação de ADIÇÃO.
-10.1. O briefing deve conter só deltas executáveis: ADICIONAR, SUBSTITUIR ou REMOVER, com trecho-alvo mínimo. Não incluir relatório, justificativas longas, listas de não levar ou contexto já conhecido.
+* Versão, data e changelog só mudam com delta real.
+* Changelog recebe somente a nova entrada.
+* Changelog não entra em OPERAÇÕES.
 
-REGRAS DE VERSIONAMENTO/CHANGELOG
+## 9. Formato da saída
 
-11. “99. Changelog” não entra em OPERAÇÕES.
-12. Cabeçalho (data/versão) e CHANGELOG só mudam se houver alteração real no documento.
-13. Alteração real = existe pelo menos uma OPERAÇÃO que não seja cabeçalho/versionamento nem seção 99.
-14. Em CHANGELOG, incluir somente a nova entrada.
+Com DOC_ALVO:
 
-FORMATO DA SAÍDA (OBRIGATÓRIO; SEM TEXTO EXTRA)
-
-15. A resposta deve começar exatamente com:
-
+```txt
 DD/MM/YYYY HH:MM — ABC (DELTA-ONLY) para <DOC_ALVO>
+DOC_ALVO: <DOC_ALVO>
+```
 
-16. Sem DELTAS permitidos:
+Sem delta:
 
+```txt
 DD/MM/YYYY HH:MM — ABC (DELTA-ONLY) para <DOC_ALVO>
 DOC_ALVO: <DOC_ALVO>
 SEM ALTERAÇÕES NECESSÁRIAS
+```
 
-17. Com DELTAS permitidos:
+Com delta:
 
+```txt
 DD/MM/YYYY HH:MM — ABC (DELTA-ONLY) para <DOC_ALVO>
 DOC_ALVO: <DOC_ALVO>
 VERSAO_NOVA: <vX.Y.Z>
 DATA_NOVA: <DD/MM/YYYY>
 
-OPERAÇÕES (emitir apenas as necessárias)
+OPERAÇÕES
 
 OP1)
-TIPO: <um dos tipos permitidos no item 8>
-ALVO: <seção/título/identificador do alvo>
-ANCORA: <seção âncora> (somente quando aplicável)
+TIPO: <operação>
+ALVO: <alvo>
+ANCORA: <âncora, somente quando aplicável>
 CONTEUDO:
-<bloco literal correspondente à operação>
+<conteúdo literal>
 
-CHANGELOG (somente se houver alteração real)
-CH1) (entrada nova)
-<bloco literal da entrada nova do changelog>
+CHANGELOG
 
-18. Regras de bloco:
-   * Não usar reticências (“...”/“…”) em `CONTEUDO`.
-   * Em operações de TRECHO, fornecer somente o trecho mínimo estável e explícito.
-   * Em operações de SEÇÃO, começar pela linha do heading numerado da seção e preservar quebras/bullets.
+CH1)
+<nova entrada>
+```
 
-TRIAGEM PRÉVIA PARA MÚLTIPLOS DOCUMENTOS
+Sem DOC_ALVO:
 
-Quando o RELATÓRIO não trouxer DOC_ALVO definido, primeiro avaliar todos os DOC_ALVO permitidos e listar:
-* documentos com ABC necessário;
-* motivo curto do delta;
-* documentos sem ABC necessário, com motivo curto.
+```txt
+TRIAGEM
+```
 
-Depois gerar ABC apenas para documentos com DELTA permitido.
+Depois:
 
-Se houver múltiplos documentos com DELTA, emitir um bloco ABC completo e independente por documento, sem misturar operações, versões ou changelogs.
-
-PAUSA OBRIGATÓRIA (1 DOC POR EXECUÇÃO)
-
-19. Executar o ciclo completo apenas para o DOC_ALVO atual, salvo quando o fluxo começar pela triagem prévia ou o usuário pedir explicitamente ABCs de múltiplos documentos.
-20. Depois de emitir a saída, parar e aguardar próximo `DOC_ALVO`, exceto quando a triagem prévia identificar múltiplos documentos com DELTA permitido ou o usuário pedir explicitamente múltiplos documentos.
-21. Nesses casos de múltiplos DOC_ALVO, emitir um bloco ABC completo por documento, mantendo cada bloco independente e sem misturar operações, versões ou changelogs.
-
----
+* listar somente documentos com delta;
+* emitir um ABC independente por documento;
+* não misturar versões, operações ou changelogs.
