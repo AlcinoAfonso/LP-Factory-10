@@ -1,10 +1,10 @@
 14/07/2026 — Plano-base E18.5 — Parametrização de módulos e variantes `landing_page`
 
-Fontes: chat, `README.md`, `AGENTS.md`, `docs/prompt-estrategista.md`, `docs/template-roadmap.md`, `docs/template-briefing-codex.md`, `docs/prompt-executor.md`, `docs/roadmap.md`, `docs/base-tecnica.md`, `docs/schema.md`, `docs/lp-planejamento.md`, `docs/lousa-plano-base-e18-4.md`, `docs/template-blueprint.md`, `docs/blueprint-corretor-imoveis-end-customer.md`, `docs/prompt-nicho-itens-estruturados.md`, `lib/conversion-content/landing-page/`, contratos atuais de templates, compositions e módulos, PRs #559, #563, #564, #566, #567 e #577, avaliação do Analista e decisões humanas de 14/07/2026.
+Fontes: chat, `README.md`, `AGENTS.md`, `docs/prompt-estrategista.md`, `docs/template-roadmap.md`, `docs/template-briefing-codex.md`, `docs/prompt-executor.md`, `docs/roadmap.md`, `docs/base-tecnica.md`, `docs/schema.md`, `docs/lp-planejamento.md`, `docs/lousa-plano-base-e18-4.md`, `docs/template-blueprint.md`, `docs/blueprint-corretor-imoveis-end-customer.md`, `docs/prompt-nicho-itens-estruturados.md`, `lib/conversion-content/landing-page/`, contratos atuais de templates, compositions e módulos, PRs #559, #563, #564, #566, #567 e #577, avaliações do Analista e decisões humanas de 14 e 15/07/2026.
 
 Versão: v1 em ajuste.
 
-Status: PR vivo para debate e avaliação; correções conceituais do Analista incorporadas nesta v1; plano-base v2 ainda não consolidado; nenhuma implementação autorizada antes da consolidação v2 e do merge humano do PR #577.
+Status: PR vivo para debate e avaliação; decisões conceituais aprovadas incorporadas nesta v1; plano-base v2 ainda não consolidado; definição material da E18.5 bloqueada até a evolução versionada da raiz que garanta o tratamento editorial requerido pelo Hero e até o merge humano da v2 do PR #577.
 
 Path: `docs/lousa-plano-base-e18-5.md`.
 
@@ -17,7 +17,13 @@ Recorte do roadmap: `18.5 — Parametrização de módulos e variantes landing_p
 - O PR #559 foi mergeado na `main` em 13/07/2026.
 - A E18.4 foi concluída, aprovada, documentada e formalmente encerrada.
 - A parametrização raiz v1 está implementada em `lib/conversion-content/landing-page/`.
-- A raiz possui registry versionado, schema estrito, resolver fail-closed, saída profundamente imutável, papéis semânticos, faixas editoriais recomendadas, limites técnicos absolutos, opções comuns de espaçamento, critérios visuais e presets.
+- A raiz v1 possui registry versionado, schema estrito, resolver fail-closed, saída profundamente imutável, papéis semânticos, faixas editoriais recomendadas, limites técnicos absolutos, opções comuns de espaçamento, critérios visuais e presets.
+- A raiz v1 não garante `body.editorialEmphasis` em todos os presets:
+  - o tratamento é opcional no contrato compartilhado;
+  - o preset `balanced` o possui;
+  - o preset `compact` não o possui.
+- A decisão de produto é que o subtítulo do Hero normalmente use maior ênfase, sem fallback automático para texto-base.
+- Essa garantia exige evolução versionada da raiz em recorte e PR próprios, preservando integralmente a `rootVersion 1`.
 - A precedência obrigatória é:
   - parametrização raiz;
   - módulo;
@@ -30,12 +36,15 @@ Recorte do roadmap: `18.5 — Parametrização de módulos e variantes landing_p
 - O debate conceitual permanece aberto para fechar o contrato da E18.5.
 - As decisões aprovadas neste debate devem ser incorporadas no mesmo PR.
 - Não reiniciar o fluxo em novo arquivo ou novo PR.
+- A evolução da raiz será planejada e implementada em recorte e PR próprios.
+- O PR #577 registra somente a dependência e o contrato esperado; não incorpora tamanhos concretos nem detalhes internos da nova raiz.
 - A versão v2 será declarada somente após:
   - conclusão do debate necessário;
   - recebimento dos pareceres aplicáveis;
   - consolidação única dos retornos;
-  - decisão humana sobre os pontos pendentes.
-- O Executor não pode ser instruído antes do merge humano da v2.
+  - decisão humana sobre os pontos pendentes;
+  - confirmação da evolução versionada da raiz necessária para o Hero.
+- O Executor da E18.5 não pode ser instruído antes do merge humano da evolução da raiz e da v2 do PR #577.
 
 ### 1.3. Princípio canônico de herança
 
@@ -48,21 +57,26 @@ Recorte do roadmap: `18.5 — Parametrização de módulos e variantes landing_p
   - cardinalidade;
   - fontes de copy;
   - política de valor operacional;
+  - tratamento tipográfico padrão e alternativas permitidas somente quando disponibilizados pela raiz;
   - somente exceções próprias e justificadas.
 - A variante não repete o módulo.
 - A variante declara somente deltas fechados e tipados sobre campos já previstos pelo módulo.
+- A composição futura pode selecionar, por ocorrência, somente opções previamente autorizadas pelo módulo ou variante.
 - O resolver aplica:
   - raiz;
   - módulo;
-  - variante.
+  - variante;
+  - seleção válida por ocorrência quando o contrato futuro da composição a fornecer.
 - O consumidor recebe o contrato efetivo completo e profundamente imutável.
 - E20, E19, geração, validação e renderer futuros não podem reaplicar a herança por conta própria.
+- O renderer executa o tratamento resolvido; não escolhe fallback nem corrige ausência de capability.
 
 ### 1.4. Regras de exceção
 
 - Campo sem exceção herda integralmente a raiz.
-- Módulo pode restringir a raiz quando a função estrutural justificar.
+- Módulo pode restringir ou selecionar capacidades da raiz quando a função estrutural justificar.
 - Variante pode restringir o módulo quando sua execução reutilizável justificar.
+- Escolha por ocorrência não cria variante quando já estiver autorizada no contrato do módulo.
 - Módulo ou variante não pode ampliar limite técnico absoluto da raiz.
 - Necessidade acima do limite absoluto deve primeiro avaliar:
   - revisão do texto;
@@ -88,10 +102,17 @@ Recorte do roadmap: `18.5 — Parametrização de módulos e variantes landing_p
 - `structuralBehavior`, caso necessário, deverá ser união fechada, aprovada e validável.
 - Deltas de variante são internos ao registry e ao resolver.
 - O contrato público resolvido não expõe operações de delta para o consumidor aplicar.
-- A E18.5 associa campos a papéis semânticos, mas não cria agora mapeamento tipográfico como `paragraph → body.base`.
-- O Hero v1 não exige `body.editorialEmphasis`.
-- A E18.5 não altera a raiz para tornar `editorialEmphasis` obrigatório.
-- O futuro renderer deverá consumir a raiz e definir o mapeamento visual por contrato próprio, sem hardcode independente.
+- A E18.5 não cria mapeamento tipográfico geral como `paragraph → body.base` para toda a família.
+- A E18.5 pode selecionar tratamento tipográfico disponibilizado e garantido pela raiz para um campo específico do módulo.
+- O Hero define para `subtitle`:
+  - `semanticRole = paragraph`;
+  - tratamento padrão `body.editorialEmphasis`;
+  - tratamentos permitidos `body.editorialEmphasis` e `body.base`.
+- `body.base` é alternativa explícita autorizada, nunca fallback automático.
+- A E20 poderá selecionar `body.base` por ocorrência concreta do Hero quando houver justificativa.
+- A E18.5 dependerá explicitamente da versão da raiz que garanta `body.editorialEmphasis` em todos os presets compatíveis.
+- A forma concreta de preservar contratos da versão 1 e garantir a capability na versão seguinte pertence ao plano e ao PR próprios da evolução da raiz.
+- O futuro renderer deverá consumir o contrato resolvido, sem hardcode independente e sem escolher tratamento.
 - `hero.media_split` não está aprovada.
 - Mídia obrigatória, isoladamente, não comprova uma variante.
 - O catálogo inicial pode ter apenas uma variante para determinado módulo.
@@ -112,6 +133,7 @@ Recorte do roadmap: `18.5 — Parametrização de módulos e variantes landing_p
 - O banco possui estruturas transversais de templates e compositions, mas elas não autorizam registros de `landing_page` nesta fase.
 - A E18.5 será repo-only.
 - Composição concreta e registros por taxon pertencem à E20.
+- Seleção por ocorrência entre tratamentos previamente autorizados pertence à E20.
 - Geração, snapshot, persistência e ciclo das LPs por conta pertencem à E19.
 - `account_landing_pages` não será alterada neste recorte.
 
@@ -123,7 +145,6 @@ Recorte do roadmap: `18.5 — Parametrização de módulos e variantes landing_p
 - Critério mínimo de evidência para:
   - criar módulo;
   - criar variante;
-  - criar exceção editorial;
   - criar exceção estrutural.
 - Necessidade real de múltiplas variantes no primeiro catálogo.
 - Contratos fechados de comportamento estrutural que forem efetivamente necessários.
@@ -145,9 +166,11 @@ Recorte do roadmap: `18.5 — Parametrização de módulos e variantes landing_p
   - `funnel_copy_profile`;
   - tratamentos por BOFU, MOFU e TOFU;
   - lifecycle e compatibilidade histórica.
+- A raiz v1 não garante o tratamento editorial definido como padrão do subtítulo do Hero em todos os presets.
 - Repetir parâmetros da raiz nos módulos criaria múltiplas fontes da verdade.
 - Permitir variantes abertas criaria especializações por taxon, campanha ou conteúdo.
 - Entregar deltas aos consumidores faria cada camada reimplementar a precedência.
+- Usar `body.base` como fallback ocultaria a ausência da capability e transformaria exceção deliberada em degradação silenciosa.
 
 ### 2.2. Resultado esperado
 
@@ -156,6 +179,9 @@ Recorte do roadmap: `18.5 — Parametrização de módulos e variantes landing_p
 - Fazer módulos herdarem a raiz sem repetição.
 - Fazer variantes registrarem apenas deltas.
 - Fazer o resolver retornar contrato efetivo completo e imutável.
+- Fazer a E18.5 depender somente de raiz compatível com as capabilities tipográficas que selecionar.
+- Definir no Hero a ênfase como padrão do subtítulo e `body.base` como alternativa explícita.
+- Deixar a escolha por ocorrência para a composição futura, dentro das opções autorizadas.
 - Definir fontes de copy usando apenas `item_key` oficiais.
 - Separar valores factuais operacionais de orientação de pesquisa.
 - Definir BOFU, MOFU e TOFU como perfis de transformação, não como variantes.
@@ -168,7 +194,7 @@ A decisão sobre módulo, variante ou exceção deve seguir esta ordem de evidê
 
 1. Parametrização raiz:
    - contrato comum obrigatório;
-   - fonte dos papéis, limites e opções permitidas.
+   - fonte dos papéis, limites, treatments e opções permitidas.
 2. `docs/lp-planejamento.md`:
    - fronteiras entre raiz, módulo, variante, composição, conteúdo e entradas.
 3. Itens estruturados oficiais:
@@ -179,7 +205,10 @@ A decisão sobre módulo, variante ou exceção deve seguir esta ordem de evidê
 4. Blueprints e referências reais:
    - evidência para funções, estruturas, campos e riscos;
    - recomendação sem sustentação suficiente permanece hipótese.
-5. LP real validada:
+5. Decisão interna de produto:
+   - pode definir padrão funcional próprio do LP Factory 10;
+   - não deve ser apresentada como regra universal da web.
+6. LP real validada:
    - evidência posterior para promover, restringir, substituir ou depreciar contratos.
 
 Critérios:
@@ -189,18 +218,19 @@ Critérios:
 - Não criar variante quando a diferença puder ser atendida por:
   - conteúdo;
   - parâmetro herdado;
-  - escolha de ocorrência;
+  - escolha de ocorrência autorizada;
   - composição;
   - fonte de copy;
   - perfil de funil;
   - valor operacional.
 - Não generalizar para toda a família um valor observado apenas em um nicho.
+- Não usar fallback para mascarar ausência de capability requerida pelo módulo.
 
 ### 2.4. Identidade e versionamento previstos
 
 - Identidade inicial prevista:
   - `family = landing_page`;
-  - `rootVersion = 1`;
+  - `rootVersion = versão que garanta body.editorialEmphasis em todos os presets compatíveis`, prevista como evolução da versão 1 em recorte próprio;
   - `moduleCatalogVersion = 1`.
 - O registry deve ser explícito:
   - `moduleCatalogVersion → catálogo imutável`.
@@ -219,10 +249,12 @@ Critérios:
 - Regras:
   - `rootVersion` e `moduleCatalogVersion` obrigatórios;
   - compatibilidade explícita entre catálogo e raiz;
+  - a E18.5 não aceita raiz sem a capability requerida pelo Hero;
   - sem catálogo padrão implícito;
   - sem fallback silencioso;
   - versões publicadas imutáveis;
-  - mudança incompatível cria nova versão aplicável.
+  - mudança incompatível cria nova versão aplicável;
+  - a forma tipada de preservar a versão 1 e exigir a capability na nova versão será definida no recorte próprio da raiz.
 
 ### 2.5. Contrato-base de campo
 
@@ -233,6 +265,11 @@ Cada campo do módulo deve declarar:
 - `cardinality`;
 - `copySourceMap`;
 - `operationalValuePolicy`.
+
+Quando o módulo selecionar tratamento tipográfico garantido pela raiz, o campo também pode declarar:
+
+- `defaultTypographyTreatment`;
+- `allowedTypographyTreatments`.
 
 Regras:
 
@@ -248,7 +285,11 @@ Regras:
   - `absoluteMaxRestriction`.
 - `recommendedRangeOverride` deve respeitar o limite absoluto efetivo.
 - `absoluteMaxRestriction` só pode reduzir o teto herdado.
-- A E18.5 v1 não introduz `typographyTreatmentRef` no Hero.
+- `defaultTypographyTreatment` deve referenciar capability garantida pela raiz compatível.
+- `defaultTypographyTreatment` deve pertencer a `allowedTypographyTreatments`.
+- `allowedTypographyTreatments` deve ser lista fechada de referências válidas da raiz.
+- A ausência da capability requerida falha fechado; não aciona fallback.
+- Esse contrato não cria um mapeamento tipográfico geral para todos os papéis semânticos.
 - Campo factual deve declarar política operacional e não pode ser preenchido como fato por pesquisa.
 
 ### 2.6. Contrato de variante
@@ -262,12 +303,14 @@ Deltas permitidos, quando aprovados:
 - ativação obrigatória de campo já previsto;
 - restrição de faixa recomendada;
 - restrição de limite absoluto;
+- restrição de tratamentos tipográficos já autorizados pelo módulo;
 - comportamento estrutural enumerado e fechado.
 
 Deltas proibidos:
 
 - campo livre novo;
 - papel semântico inexistente;
+- tratamento tipográfico inexistente ou não autorizado pelo módulo;
 - ampliação do limite absoluto;
 - regra arbitrária;
 - taxon;
@@ -303,7 +346,11 @@ O resolver deve validar o delta e retornar apenas o contrato efetivo final.
   - cardinalidade: `{ min: 1, max: 1 }`.
 - `subtitle`:
   - papel: `paragraph`;
-  - cardinalidade: `{ min: 1, max: 1 }`.
+  - cardinalidade: `{ min: 1, max: 1 }`;
+  - `defaultTypographyTreatment: body.editorialEmphasis`;
+  - `allowedTypographyTreatments`:
+    - `body.editorialEmphasis`;
+    - `body.base`.
 - `primaryCta.label`:
   - papel: `cta_label`;
   - cardinalidade: `{ min: 1, max: 1 }`.
@@ -319,25 +366,31 @@ O resolver deve validar o delta e retornar apenas o contrato efetivo final.
 
 #### 2.7.3. Herança e exceções
 
-- Todos os campos textuais herdam integralmente a raiz.
+- Todos os campos textuais herdam faixas, limites e valores concretos da raiz.
 - Não há na proposta atual:
   - faixa numérica própria;
   - limite absoluto próprio;
-  - tratamento tipográfico próprio;
+  - tamanho de fonte próprio;
   - spacing próprio.
-- `subtitle` usa apenas `semanticRole = paragraph`.
+- `subtitle` permanece semanticamente `paragraph`.
+- `subtitle` seleciona `body.editorialEmphasis` como tratamento padrão disponibilizado pela raiz compatível.
+- `body.base` é alternativa permitida para seleção explícita por ocorrência futura.
+- A ausência de `body.editorialEmphasis` no preset é incompatibilidade, não autorização para fallback.
 - A existência de mídia não define sozinha nova variante.
 
 #### 2.7.4. Variante inicial em debate
 
 - `hero.standard`:
   - usa o contrato-base do Hero;
+  - herda `body.editorialEmphasis` como padrão do subtítulo;
   - não possui delta numérico;
-  - não possui delta tipográfico;
   - mídia permanece opcional.
 - `hero.media_split`:
   - rejeitada como variante aprovada no estado atual;
   - pode voltar ao debate somente com mudança estrutural reutilizável e contratualmente fechada.
+- Variante criada apenas para trocar `body.editorialEmphasis` por `body.base`:
+  - proibida;
+  - a escolha pertence à ocorrência futura da composição, dentro das opções do módulo.
 - Variante específica de nicho:
   - proibida.
 
@@ -533,13 +586,15 @@ Entrada mínima:
 Processamento:
 
 1. resolver raiz;
-2. validar compatibilidade do catálogo;
+2. validar compatibilidade e capabilities do catálogo;
 3. resolver módulo;
-4. validar delta da variante;
-5. aplicar precedência;
-6. calcular contrato efetivo;
-7. validar lifecycle e propósito;
-8. retornar resultado profundamente imutável.
+4. validar referências tipográficas do módulo;
+5. validar delta da variante;
+6. aplicar precedência;
+7. aplicar seleção por ocorrência quando fornecida por contrato futuro compatível;
+8. calcular contrato efetivo;
+9. validar lifecycle e propósito;
+10. retornar resultado profundamente imutável.
 
 Saída pública:
 
@@ -551,14 +606,15 @@ Saída pública:
 - papéis semânticos;
 - fontes finais;
 - políticas operacionais;
+- tratamentos tipográficos finais;
 - limites efetivos quando houver exceção;
 - comportamento estrutural efetivo quando aprovado.
 
-A saída não contém operações de delta para o consumidor executar.
+A saída não contém operações de delta nem fallback para o consumidor executar.
 
 ### 2.13. Artefatos previstos
 
-Criar somente após v2 mergeada:
+Criar somente após a evolução da raiz e a v2 deste plano serem mergeadas:
 
 - `lib/conversion-content/landing-page/module-catalog/contracts.ts`;
 - `lib/conversion-content/landing-page/module-catalog/registry.ts`;
@@ -575,8 +631,7 @@ Ajustar:
 
 Preservar:
 
-- `landingPageRoot`;
-- parametrização raiz;
+- `landingPageRoot` e versões históricas da raiz;
 - `commercial_activation`.
 
 Interface pública agregada prevista:
@@ -593,6 +648,12 @@ Não adicionar dependência npm.
 
 - Catálogo e versões válidos.
 - Compatibilidade explícita com a raiz.
+- Capability tipográfica requerida pelo módulo presente na raiz compatível.
+- Referência tipográfica desconhecida falha.
+- Tratamento padrão fora da lista permitida falha.
+- Ausência de `body.editorialEmphasis` em preset compatível falha.
+- Fallback automático para `body.base` falha.
+- Seleção por ocorrência fora da lista autorizada falha.
 - Módulo desconhecido falha fechado.
 - Variante desconhecida falha fechado.
 - Variante vinculada ao módulo errado falha fechado.
@@ -618,10 +679,11 @@ Não adicionar dependência npm.
 ### 2.15. Fluxo operacional
 
 - Gatilho:
+  - evolução versionada da raiz mergeada;
   - plano-base v2 consolidado e mergeado;
   - fase instruída pelo Estrategista.
 - Entrada:
-  - raiz v1;
+  - raiz versionada compatível com a capability requerida;
   - plano-base E18.5;
   - catálogo aprovado;
   - `item_key` oficiais;
@@ -632,6 +694,7 @@ Não adicionar dependência npm.
   - schema;
   - resolver;
   - validação de deltas;
+  - tratamentos tipográficos autorizados;
   - mapas;
   - perfis;
   - lifecycle;
@@ -651,7 +714,7 @@ Não adicionar dependência npm.
   - E20 e E19 em fases futuras.
 - Fallback:
   - falha fechada;
-  - sem versão, módulo ou variante implícita;
+  - sem versão, capability, módulo, variante ou tratamento implícito;
   - conflito retorna ao Estrategista.
 
 ## 3. Fases e próxima ação
@@ -660,7 +723,7 @@ Não adicionar dependência npm.
 
 - Status:
   - pendente;
-  - bloqueada até consolidação v2 e merge humano do plano-base.
+  - bloqueada até o merge da evolução versionada da raiz, consolidação v2 e merge humano do plano-base.
 - Automação:
   - não.
 - Risco:
@@ -669,9 +732,11 @@ Não adicionar dependência npm.
   - implementar atomicamente o contrato repo-only aprovado para módulos e variantes.
 - Escopo material previsto:
   - identidade e versões;
+  - compatibilidade com capabilities da raiz;
   - módulos aprovados;
   - variantes aprovadas;
   - campos e cardinalidades;
+  - tratamentos tipográficos autorizados;
   - deltas fechados;
   - resolução efetiva;
   - `copy_source_map`;
@@ -682,7 +747,11 @@ Não adicionar dependência npm.
   - validações.
 - Critérios de aceite:
   - nenhum valor comum da raiz duplicado;
-  - raiz preservada;
+  - versões históricas da raiz preservadas;
+  - capability requerida validada;
+  - `body.editorialEmphasis` padrão no subtítulo do Hero;
+  - `body.base` somente como alternativa explícita autorizada;
+  - nenhum fallback silencioso;
   - catálogo imutável;
   - resolver fail-closed;
   - consumidor recebe contrato efetivo;
@@ -693,6 +762,7 @@ Não adicionar dependência npm.
   - nenhum renderer, geração ou schema final de LP;
   - validações concluídas.
 - Próxima ação:
+  - abrir e concluir o recorte próprio da evolução da raiz;
   - continuar o debate do catálogo inicial;
   - consolidar os pareceres aplicáveis;
   - produzir v2 no mesmo PR;
@@ -703,6 +773,9 @@ Não adicionar dependência npm.
 
 ### 4.1. Fora do escopo
 
+- Implementação da evolução da raiz no PR #577.
+- Valores tipográficos concretos da nova raiz.
+- Forma interna de discriminar contratos das versões da raiz.
 - Catálogo de entradas.
 - Valores reais das entradas.
 - Resolução de pesquisas.
@@ -710,6 +783,7 @@ Não adicionar dependência npm.
 - Taxonomia.
 - Composição base.
 - Composição por taxon.
+- Escolha concreta de tratamento por ocorrência.
 - Ordem ou obrigatoriedade global das seções.
 - Herança concreta de composição.
 - Prontidão do taxon.
@@ -754,8 +828,12 @@ Não adicionar dependência npm.
 
 Parar e devolver ao Estrategista se:
 
+- a evolução versionada da raiz não estiver mergeada;
+- a raiz compatível não garantir a capability requerida;
+- a implementação tentar aplicar fallback automático para `body.base`;
 - a implementação exigir banco;
 - surgir necessidade de registrar composição;
+- surgir necessidade de escolher concretamente tratamento por ocorrência;
 - surgir necessidade de gerar ou renderizar conteúdo;
 - faltar `item_key` oficial necessário;
 - uma variante depender de taxon, campanha ou entrada específica;
@@ -772,10 +850,16 @@ Parar e devolver ao Estrategista se:
 
 - PR #577 preservado.
 - Plano-base permanece v1 em ajuste.
-- Correções conceituais do Analista incorporadas.
+- Parecer do Analista aprovado.
+- A evolução da raiz será tratada em recorte e PR próprios.
+- A definição material da E18.5 fica bloqueada até essa evolução ser mergeada.
+- O padrão de `hero.subtitle` será `body.editorialEmphasis`.
+- `body.base` será alternativa explícita autorizada para futura escolha por ocorrência na E20.
+- Fallback automático fica proibido.
 - `hero.media_split` não aprovada.
 - `hero.standard` permanece exemplo inicial em debate.
 - Próxima decisão humana:
+  - abrir o recorte próprio da evolução da raiz;
   - fechar a estrutura mínima do Hero;
   - decidir se o catálogo inicial será construído módulo a módulo;
   - definir o próximo módulo a debater.
