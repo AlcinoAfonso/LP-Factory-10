@@ -1,8 +1,8 @@
 0. Introdução
 
 0.1 Cabeçalho
-• Data: 14/07/2026
-• Versão: v1.5.93
+• Data: 15/07/2026
+• Versão: v1.5.94
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -1924,7 +1924,61 @@ Repositório — Ajustados
   - E10.7 não implementa bloqueio de novas ativações.
   - Esta referência não cria obrigação de nova implementação agora.
 
+20. E20 — Preparação e liberação de taxons para geração de landing pages
+
+* Objetivo: consolidar catálogo de entradas, composição base, herança, prontidão para teste e regras de liberação de taxons por plano antes da geração de LPs por conta.
+* Status: Em implementação por recortes; 20.2 concluído.
+
+20.2 Catálogo de entradas por taxon
+
+20.2.1 Objetivo e status
+
+* Objetivo: definir e resolver um catálogo declarativo versionado de entradas de `landing_page` por taxon e plano, separado de valores operacionais, composição, conteúdo e entitlement.
+* Status: Concluído (14/07/2026).
+
+20.2.2 Registros do recorte
+
+* Repositório:
+
+  * Criados:
+
+    * `lib/conversion-content/landing-page/input-catalog/contracts.ts`
+    * `lib/conversion-content/landing-page/input-catalog/registry.ts`
+    * `lib/conversion-content/landing-page/input-catalog/schema.ts`
+    * `lib/conversion-content/landing-page/input-catalog/resolver.ts`
+    * `lib/conversion-content/landing-page/input-catalog/validation-cases.ts`
+    * `lib/conversion-content/landing-page/input-catalog/index.ts`
+    * `supabase/snippets/e20_2_taxon_chain_verify.sql`
+  * Ajustados:
+
+    * `lib/conversion-content/index.ts`
+    * `package.json`
+
+20.2.3 Catálogo e resolução
+
+* Status: Implementados.
+* Conteúdo:
+
+  * O catálogo é declarativo, versionado no repositório e resolvido por taxon e plano.
+  * O primeiro catálogo imobiliário contém 19 campos.
+  * A herança segue `universal → segmento → nicho → ultranicho autorizado`.
+  * O ultranicho de corretor de imóveis de médio padrão herda o catálogo sem camada própria.
+  * O resultado preserva versão, plano, taxon atendido, camadas aplicadas, ordem determinística, proveniência, validação, evidência e sinal de validade.
+  * `requiredWhen` e `applicableWhen` permanecem declarativos e são preservados após o filtro por plano.
+
+20.2.4 Dependências e limites
+
+* Status: Validados.
+* Conteúdo:
+
+  * O resolver falha fechado para cadeia, camada, especialização, condição ou relação entre planos inválida.
+  * A E20.3 poderá consumir o catálogo resolvido e seu sinal de validade para os critérios de prontidão do taxon.
+  * A avaliação concreta das condições, a completude dos valores operacionais e o snapshot pertencem à futura E19.4.
+  * O recorte não cria banco, rota, API, Server Action, UI, adapter de banco, entitlement, integração Stripe, valor operacional, snapshot, automação, agente ou job.
+
 99. Changelog
+v1.5.94 — 15/07/2026 — E20 criada no roadmap e 20.2 concluída com catálogo declarativo versionado de entradas de `landing_page` por taxon e plano, resolução repo-only, herança taxonômica, proveniência e falha fechada, sem banco, rota, UI ou valores operacionais.
+
 v1.5.93 — 14/07/2026 — Ajustada a E10.8 para explicitar os quatro blocos obrigatórios, a versão comum dentro de cada `audience_scope` e a independência de versões entre `end_customer` e `business_buyer`.
 
 v1.5.92 — 14/07/2026 — E10.8 concluída com resolução server-side, read-only, tipada e fail-closed das pesquisas estruturadas de `landing_page`, preservando precedência, atomicidade e proveniência sem alteração de banco ou implementação dos consumidores futuros.
