@@ -2,8 +2,8 @@
 
 0.1. Cabeçalho
 • Documento: Base Técnica LP Factory 10
-• Versão: v2.0.49
-• Data: 14/07/2026
+• Versão: v2.0.50
+• Data: 15/07/2026
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -413,6 +413,18 @@ LP Builder
 • O resolver puro não registra logs; o adapter pode registrar somente metadados seguros, sem conteúdo das pesquisas, PII, credenciais ou secrets.
 • Casos executáveis: `npm run validate:landing-page-research`.
 
+3.15.4 Catálogo de entradas de `landing_page`
+• Boundary canônico: `lib/conversion-content/landing-page/input-catalog/`.
+• Fonte canônica das definições e versões: `registry.ts`; não duplicar seus campos, valores ou listas em documentos ou consumidores.
+• Consumidores devem usar `resolveLandingPageInputCatalog` pelo namespace `landingPageInputCatalog` exportado em `lib/conversion-content/index.ts`.
+• O resolver é puro e repo-only; recebe versão, plano e cadeia taxonômica já determinada, sem consultar Supabase, Stripe, assinatura, entitlement ou valores operacionais.
+• A resolução aplica as camadas `universal → segmento → nicho → ultranicho`; camada própria de ultranicho exige autorização explícita, enquanto sua ausência preserva a herança.
+• Especializações só podem ocorrer em camada estritamente mais específica e restringir obrigação, planos permitidos ou validação comparável, preservando identidade, tipo, escopo, origem, condições, snapshot e evidência.
+• Referências de `requiredWhen` e `applicableWhen` devem existir, respeitar a compatibilidade entre planos e permanecer válidas após o filtro pelo plano solicitado.
+• A avaliação concreta das condições e a completude dos valores pertencem ao fluxo consumidor de coleta e geração, não ao resolver do catálogo.
+• A saída deve permanecer determinística e profundamente imutável, preservando taxon atendido, camadas aplicadas, proveniência, validação, evidência e sinal de validade.
+• Casos executáveis: `npm run validate:landing-page-input-catalog`.
+
 4. DB Contract - Fonte única: PATH: docs/schema.md
 • Este documento não lista mais tabelas/views/functions/triggers/policies; isso está em PATH: docs/schema.md.
 • Trigger Hub é regra do contrato de DB (governança/auditoria). Fonte única e detalhes: PATH: docs/schema.md (seções 3.5 e 4.1).
@@ -560,6 +572,8 @@ Fonte normativa da allowlist SULB para exceções de Auth. Qualquer novo arquivo
 • Tipos canônicos e adapters vNext: validar por 3.6 e 3.14.
 
 99. Changelog
+v2.0.50 — 15/07/2026 — Registrado o contrato técnico durável do catálogo de entradas de `landing_page`, com registry versionado, resolução pura por taxon e plano, herança taxonômica, especializações restritivas, condições declarativas, proveniência, imutabilidade e falha fechada.
+
 v2.0.49 — 14/07/2026 — Registrado o contrato técnico durável da resolução de pesquisas estruturadas de `landing_page`, com adapter server-side, resolver puro, precedência própria/pai direto, proveniência e falha fechada.
 
 v2.0.48 — 13/07/2026 — Substituído o contrato antigo de composição `landing_page` pelo contrato técnico durável da parametrização raiz versionada, com registry canônico, resolução fail-closed, imutabilidade e validação executável.

@@ -3,7 +3,7 @@
 Fontes: chat, `README.md`, `AGENTS.md`, `docs/prompt-estrategista.md`, `docs/template-roadmap.md`, `docs/template-briefing-codex.md`, `docs/prompt-executor.md`, `docs/roadmap.md`, `docs/base-tecnica.md`, `docs/schema.md`, `docs/lp-planejamento.md`, `docs/lousa-plano-base-e10-8.md`, `docs/supa-up.md`, `docs/prod-up.md`, contratos atuais de planos, contas, taxons e landing pages, `Pesquisa bruta para corretor de imóveis de médio padrão.pdf`, `Projeto Piloto Imobiliário.pdf`, avaliações do Analista, do Gestor Estrutural e do Gestor de Updates e decisões humanas de 14/07/2026.
 
 - Versão: v2.
-- Status: plano-base v2 mergeado no PR #573; PR #576 aberto; correção da E20.2.3–E20.2.6 em andamento na branch material `codex-app/e20-2-3-input-catalog-v1`.
+- Status: plano-base v2 mergeado no PR #573; PR #576 mergeado; E20.2 concluída e encerrada, sem bloqueios e sem nova execução material pendente.
 - Recorte previsto para roadmap: `20.2 — Catálogo de entradas por taxon`.
 - Path canônico: `docs/lousa-plano-base-e20-2.md`.
 
@@ -26,7 +26,7 @@ Fontes: chat, `README.md`, `AGENTS.md`, `docs/prompt-estrategista.md`, `docs/tem
 - Os planos comerciais confirmados são `starter`, `lite`, `pro` e `ultra`.
 - Não existe fonte aprovada que determine campos diferentes entre os quatro planos na v1 do catálogo.
 - Não foi demonstrada necessidade de tabela, campo, view, RPC, migration, rota, UI, API, configuração dinâmica ou persistência nova.
-- A E20 ainda não está materializada em `docs/roadmap.md`; `docs/lp-planejamento.md` é a decisão conceitual obrigatória deste recorte.
+- A E20 está materializada em `docs/roadmap.md` e a E20.2 está registrada como concluída; `docs/lp-planejamento.md` permanece como decisão conceitual obrigatória deste recorte.
 
 ### 1.3. Função das fontes empíricas
 
@@ -704,7 +704,7 @@ O snippet não pode:
 
 ### 3.1. E20.2.3–E20.2.6 — Contrato, catálogo imobiliário v1 e resolver repo-only
 
-- Status: PR #576 aberto; correção em andamento após parecer do Analista e decisão do Estrategista.
+- Status: PR #576 mergeado; implementação concluída e fase encerrada após correção aprovada.
 - Automação: não.
 - Fontes obrigatórias de execução:
   - `README.md`;
@@ -730,7 +730,7 @@ O snippet não pode:
   - exportar namespace e adicionar script;
   - executar `npm ci`, `npm run check` e `npm run validate:landing-page-input-catalog`;
   - registrar neste plano a evidência, decisão e próxima ação da fase.
-- Artefatos previstos:
+- Artefatos implementados:
   - criar `lib/conversion-content/landing-page/input-catalog/contracts.ts`;
   - criar `lib/conversion-content/landing-page/input-catalog/registry.ts`;
   - criar `lib/conversion-content/landing-page/input-catalog/schema.ts`;
@@ -750,8 +750,10 @@ O snippet não pode:
   - `npm run check`: aprovado, com 24 warnings preexistentes e nenhum erro;
   - `npm run validate:landing-page-input-catalog`: aprovado em 32 casos executáveis;
   - `git diff --check`: aprovado.
-- Decisão da fase: ajustar.
-- Próxima ação real: concluir a correção no PR #576, submetê-la à nova análise e aguardar merge humano.
+- Decisão final da fase: encerrar.
+- Bloqueios: nenhum.
+- Próxima ação real: iniciar o planejamento da E20.3.
+- Nova execução material da E20.2: não prevista.
 - Critérios de aceite:
   - snippet confirma a cadeia real sem escrita;
   - matriz completa aprovada;
@@ -768,9 +770,9 @@ O snippet não pode:
   - nenhuma pesquisa da E10 é copiada;
   - nenhum valor ou snapshot é persistido;
   - nenhuma tabela, migration, rota, UI, API, adapter, Stripe, E20.3 ou E19.4 é criada ou alterada;
-  - diff limitado aos artefatos previstos e a este plano.
-- Próxima ação após merge humano:
-  - instruir o Executor somente para esta fase.
+  - diff limitado aos artefatos implementados e a este plano.
+- Próxima ação após encerramento:
+  - iniciar planejamento da E20.3 como novo recorte, sem reabrir execução material da E20.2.
 
 ## 4. Escopo negativo e critérios de parada
 
