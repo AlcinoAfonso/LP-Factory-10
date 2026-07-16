@@ -25,7 +25,7 @@ Recorte do roadmap: `18.5 — Parametrização de módulos e variantes landing_p
   - bloco `lp_sections`;
   - versão 1 ativa.
 - O ultranicho de médio padrão permanece evidência complementar.
-- Módulos serão transversais; precedência: `raiz → módulo → variante`.
+- Os módulos serão transversais; a precedência permanece `raiz → módulo → variante`.
 - `commercial_activation`, E18.2 e E18.3 permanecem preservados.
 
 ### 1.2. Estado processual
@@ -34,14 +34,22 @@ Recorte do roadmap: `18.5 — Parametrização de módulos e variantes landing_p
 - Cada candidato será analisado individualmente; existência na grade não equivale a aprovação.
 - Rejeição, fusão ou substituição exige justificativa e decisão humana.
 - A grade comum é obrigatória, com blocos condicionais conforme a função.
-- Cada módulo deve fechar identidade, evidência, fronteiras, campos, cardinalidades, policies, fontes, funil, responsividade aplicável, variante, versões, lifecycle, compatibilidades, casos da E18.5 e invariantes futuras da E19.
+- Cada módulo deve fechar:
+  - identidade e evidência;
+  - fronteiras;
+  - campos e cardinalidades;
+  - policies e suporte operacional;
+  - fontes e perfis de funil;
+  - responsividade e acessibilidade aplicáveis;
+  - variante, versões, lifecycle e compatibilidades;
+  - casos da E18.5 e invariantes futuras da E19.
 - O Hero é o piloto; `trust_bar` só começa após seu fechamento.
 - Implementação somente após evolução da raiz, v2 estável, pareceres e merge humano.
 
 ### 1.3. Princípio canônico de herança
 
 - A raiz contém regras comuns; módulo e variante registram apenas especializações justificadas.
-- E18.5 autoriza opções; E20 seleciona por ocorrência; E19 gera e vincula valores; renderer apenas executa.
+- A E18.5 autoriza opções; a E20 seleciona por ocorrência; a E19 gera e vincula valores; o renderer apenas executa.
 - Escolha excepcional na E20 exige decisão humana documentada, sem pressupor campo, coluna ou persistência nova.
 - O resolver entrega contrato efetivo, completo, imutável e sem fallback.
 
@@ -67,27 +75,38 @@ Recorte do roadmap: `18.5 — Parametrização de módulos e variantes landing_p
   - `faq` ← `faq_objeções`;
   - `final_cta` ← `cta_final_qualificado`.
 - `item_key` é evidência, não identidade canônica.
-- Formatos curto, médio e longo pertencem à composição/extensão.
-- `hero.subtitle`: `paragraph`, padrão `body.editorialEmphasis`, alternativa `body.base`, sem fallback.
+- Formatos curto, médio e longo pertencem à composição e à extensão.
+- `hero.subtitle`:
+  - `semanticRole = paragraph`;
+  - padrão `body.editorialEmphasis`;
+  - alternativa `body.base`;
+  - sem fallback.
 - `hero.standard` é a única variante inicial e pode ter delta vazio.
 - Canal e destino concretos de CTA permanecem fora do registry do módulo.
 - Nenhum `actionRole` está aprovado sem contrato fechado.
 - `moduleCatalogVersion` possui versão e compatibilidade; lifecycle próprio do catálogo não está aprovado.
+- Decisão humana de 16/07/2026:
+  - autorizar conceitualmente `desktop_only` como opção responsiva de `hero.media`;
+  - condicionar seu uso à evolução versionada da raiz;
+  - proibir a ocultação de informação essencial.
+- A relação entre lifecycle da raiz e propósito é política nova da E18.5; não é comportamento já implementado pelo resolver da raiz.
 
 ### 1.6. Estado técnico confirmado
 
 - Boundary: `lib/conversion-content/landing-page/`; namespace atual: `landingPageRoot`.
 - Ainda não existem catálogo de módulos, composição, renderer ou render model.
-- E18.5 é repo-only e não altera banco.
+- A E18.5 é repo-only e não altera banco.
 - O catálogo operacional já define `primary_conversion_channel` e destinos condicionais.
-- E20 seleciona composição; E19 vincula valores, gera e preserva snapshot.
+- A E20 seleciona composição; a E19 vincula valores, gera e preserva snapshot.
 
 ### 1.7. Pontos ainda em debate
 
 - Destinação do campo candidato `secondaryCta` na v1.
 - Contrato exato de acessibilidade para vídeo.
+- Contrato futuro de vínculo entre CTA principal e ocorrência de formulário na composição.
 - Confirmação dos oito candidatos restantes.
-- Evolução da raiz e divisão final em fases.
+- Evolução tipográfica e responsiva da raiz.
+- Divisão final em fases.
 
 ## 2. Contrato do caso
 
@@ -97,6 +116,7 @@ Recorte do roadmap: `18.5 — Parametrização de módulos e variantes landing_p
 - O catálogo deve generalizar funções sem carregar identidade imobiliária.
 - CTA não pode duplicar canal ou destino da E20.2.
 - Campos híbridos precisam representar declarativamente quando suporte operacional é exigido.
+- A combinação entre `fieldKind` e `operationalValuePolicy` precisa ser fechada por allowlist.
 - Mídia deve separar contrato estrutural e acessibilidade do schema concreto da E19.
 - Policies devem impedir invenção de fatos e fallback deve permanecer proibido.
 
@@ -129,6 +149,7 @@ Recorte do roadmap: `18.5 — Parametrização de módulos e variantes landing_p
 
 - resolve hipóteses e ambiguidades;
 - pode rejeitar evidência insuficiente;
+- pode aprovar padrão funcional do produto;
 - não viola contrato vigente sem evolução versionada.
 
 #### 2.3.4. Validação posterior
@@ -159,7 +180,17 @@ Todos os módulos devem analisar:
 9. fronteiras E20/E19/renderer;
 10. casos E18.5, invariantes E19 e critérios de fechamento.
 
-Blocos condicionais: CTA, mídia, coleção, valor operacional, referência técnica, interação, acessibilidade, visibilidade responsiva e variante adicional.
+Blocos condicionais:
+
+- CTA;
+- mídia;
+- coleção;
+- valor operacional;
+- referência técnica;
+- interação;
+- acessibilidade;
+- visibilidade responsiva;
+- variante adicional.
 
 O Hero é referência metodológica, não molde rígido de conteúdo.
 
@@ -182,7 +213,12 @@ O Hero é referência metodológica, não molde rígido de conteúdo.
 
 ### 2.5. Contrato-base de campo
 
-Todo campo declara `fieldKey`, `fieldKind`, cardinalidade e policy.
+Todo campo declara:
+
+- `fieldKey`;
+- `fieldKind`;
+- cardinalidade;
+- `operationalValuePolicy`.
 
 `fieldKind` fechado:
 
@@ -206,14 +242,20 @@ Regras:
 
 #### 2.5.1. Política fechada de origem do valor
 
-- `research_generated_non_factual`: copy não factual gerada da pesquisa.
-- `research_guided`: pesquisa orienta, mas não fornece o valor final completo.
-- `operational_required`: valor deve vir de fonte operacional autorizada.
-- `hybrid`: orientação editorial combinada com suporte operacional conforme exigência declarada pelo campo.
-- `technical_reference`: mídia, link, identificador ou vínculo técnico.
-- `not_copy`: objeto estrutural ou técnico.
+- `research_generated_non_factual`:
+  - copy não factual gerada da pesquisa.
+- `research_guided`:
+  - pesquisa orienta, mas não fornece o valor final completo.
+- `operational_required`:
+  - valor deve vir de fonte operacional autorizada.
+- `hybrid`:
+  - orientação editorial combinada com suporte operacional conforme exigência declarada pelo campo.
+- `technical_reference`:
+  - mídia, link, identificador ou vínculo técnico.
+- `not_copy`:
+  - objeto estrutural ou técnico.
 
-E18.5 declara; E19 aplica na instância concreta.
+A E18.5 declara; a E19 aplica na instância concreta.
 
 #### 2.5.2. Exigência declarativa de suporte operacional
 
@@ -232,21 +274,49 @@ Regras:
 - policy `hybrid` exige `operationalSupportRequirement` explícito.
 - policy `operational_required` equivale materialmente a `when_present`.
 - `technical_reference` e `not_copy` não usam essa propriedade.
-- E18.5 valida a declaração abstrata; E19 valida o suporte concreto.
+- A E18.5 valida a declaração abstrata; a E19 valida o suporte concreto.
 
-#### 2.5.3. Matriz de compatibilidade das policies
+#### 2.5.3. Allowlist de `fieldKind × operationalValuePolicy`
 
-- `research_generated_non_factual` e `research_guided` admitem `copySourceMap` em texto.
-- `hybrid` admite `copySourceMap`, mas deve declarar `operationalSupportRequirement`.
-- `operational_required` não pode ser preenchida somente por pesquisa.
-- `technical_reference` e `not_copy` não admitem `copySourceMap`.
-- Falham:
-  - policy incompatível com `fieldKind`;
-  - mídia com policy textual;
-  - `not_copy` com fontes;
-  - `hybrid` sem exigência de suporte;
-  - suporte exigido sem vínculo operacional aplicável;
-  - valor operacional gerado apenas da pesquisa.
+Combinações válidas na v1:
+
+- `text`:
+  - `research_generated_non_factual`;
+  - `research_guided`;
+  - `hybrid`;
+  - `operational_required`.
+- `action`:
+  - `not_copy`.
+- `media`:
+  - `technical_reference`.
+- `technical_reference`:
+  - `technical_reference`.
+- `operational_value`:
+  - `operational_required`.
+- `collection`:
+  - `not_copy` no contêiner;
+  - cada campo do item declara sua própria combinação conforme esta allowlist;
+  - coleção aninhada não está aprovada na v1.
+
+Regras adicionais:
+
+- qualquer combinação ausente da allowlist falha fechado;
+- `research_generated_non_factual` e `research_guided` admitem `copySourceMap` somente em `text`;
+- `hybrid` admite `copySourceMap` somente em `text` e exige `operationalSupportRequirement`;
+- `operational_required` não pode ser preenchida somente por pesquisa;
+- `technical_reference` e `not_copy` não admitem `copySourceMap`;
+- contêiner `collection` não gera copy; seus campos internos seguem seus próprios contratos.
+
+Falham:
+
+- policy não listada para o `fieldKind`;
+- mídia com policy textual;
+- ação com policy diferente de `not_copy`;
+- `not_copy` com fontes;
+- `hybrid` sem exigência de suporte;
+- suporte exigido sem vínculo operacional aplicável;
+- valor operacional gerado apenas da pesquisa;
+- item de coleção sem contrato fechado.
 
 #### 2.5.4. Dependência operacional de ações
 
@@ -255,22 +325,39 @@ Ação pode declarar `operationalBindingRequirement`:
 - referencia somente `fieldKey` estável do catálogo operacional;
 - não armazena valor, canal, URL, telefone, e-mail ou destino;
 - declara se o vínculo é obrigatório quando a ação estiver presente;
-- E19 resolve o campo e valida seus condicionais e destinos aplicáveis.
+- a E19 resolve o campo e valida seus condicionais e destinos aplicáveis.
 
 Nova chave operacional não pode ser criada implicitamente pela E18.5.
 
 ### 2.6. Contrato de variante
 
-- Deltas permitidos: cardinalidade, remoção ou ativação de campo previsto, restrição de faixa ou tratamento e comportamento enumerado.
-- Deltas proibidos: campo livre, papel desconhecido, ampliação de limite, taxon, conteúdo, valor operacional, URL, classe ou componente concreto.
+- Deltas permitidos:
+  - cardinalidade;
+  - remoção ou ativação de campo previsto;
+  - restrição de faixa ou tratamento;
+  - comportamento enumerado.
+- Deltas proibidos:
+  - campo livre;
+  - papel desconhecido;
+  - ampliação de limite;
+  - taxon;
+  - conteúdo;
+  - valor operacional;
+  - URL;
+  - classe;
+  - componente concreto.
 - `standard` pode ter delta vazio; outra variante vazia e redundante falha.
 
 ### 2.7. Módulo-piloto `hero`
 
 #### 2.7.1. Identidade e função estrutural
 
-- `moduleKey = hero`; `moduleVersion = 1` proposto.
-- Função: apresentar recorte, proposta principal e ação prioritária.
+- `moduleKey = hero`.
+- `moduleVersion = 1` proposto.
+- Função:
+  - apresentar recorte;
+  - comunicar proposta principal;
+  - indicar ação prioritária.
 - Não representa taxon, tráfego, funil ou composição.
 
 #### 2.7.2. Evidência estrutural inicial
@@ -281,8 +368,11 @@ Nova chave operacional não pode ser criada implicitamente pela E18.5.
 - bloco `lp_sections`;
 - `researchId = 31e4c229-1582-4d2c-8e4a-7b74e6e07681`;
 - `itemId = ee178af8-294c-403c-8c53-d0baef42ee8c`;
-- versão 1, pesquisa ativa;
-- `itemKey = hero_segmentado`, item ativo, ordem 1;
+- versão 1;
+- pesquisa ativa;
+- `itemKey = hero_segmentado`;
+- item ativo;
+- ordem 1;
 - função observada: apresentar valor central e segmentar por intenção;
 - interpretação v1:
   - a intenção já está resolvida para a LP concreta;
@@ -294,98 +384,211 @@ Escolha interativa entre intenções exigiria análise estrutural futura e não 
 
 #### 2.7.3. Fronteiras
 
-Pertencem: enquadramento, título, explicação curta, CTA principal, candidato a CTA secundário, microprova opcional e uma mídia opcional.
+Pertencem:
 
-Não pertencem: trust bar completa, oferta, processo, prova extensa, depoimentos, FAQ, formulário completo, seletor interativo de intenção, galeria, carrossel, tour, CTA final, navegação e ordem global.
+- enquadramento;
+- título;
+- explicação curta;
+- CTA principal;
+- candidato a CTA secundário;
+- microprova opcional;
+- uma mídia opcional.
+
+Não pertencem:
+
+- trust bar completa;
+- oferta;
+- processo;
+- prova extensa;
+- depoimentos;
+- FAQ;
+- formulário completo;
+- seletor interativo de intenção;
+- galeria;
+- carrossel;
+- tour;
+- CTA final;
+- navegação;
+- ordem global.
 
 #### 2.7.4. Catálogo de campos proposto
 
 - `eyebrow`:
-  - texto/`eyebrow`, `0..1`, `research_guided`;
+  - `fieldKind = text`;
+  - `semanticRole = eyebrow`;
+  - cardinalidade `0..1`;
+  - policy `research_guided`;
   - `operationalSupportRequirement = none`.
 - `title`:
-  - texto/`h1`, `1..1`, `hybrid`;
+  - `fieldKind = text`;
+  - `semanticRole = h1`;
+  - cardinalidade `1..1`;
+  - policy `hybrid`;
   - `operationalSupportRequirement = when_factual`.
 - `subtitle`:
-  - texto/`paragraph`, `1..1`, `hybrid`;
+  - `fieldKind = text`;
+  - `semanticRole = paragraph`;
+  - cardinalidade `1..1`;
+  - policy `hybrid`;
   - `operationalSupportRequirement = when_factual`;
-  - padrão `body.editorialEmphasis`, alternativa `body.base`.
+  - padrão `body.editorialEmphasis`;
+  - alternativa `body.base`.
 - `primaryCta`:
-  - ação `1..1`, `not_copy`;
-  - label `cta_label`, `1..1`, `hybrid`;
-  - label usa `operationalSupportRequirement = when_present`;
+  - `fieldKind = action`;
+  - cardinalidade `1..1`;
+  - policy `not_copy`;
+  - label:
+    - `fieldKind = text`;
+    - `semanticRole = cta_label`;
+    - cardinalidade `1..1`;
+    - policy `hybrid`;
+    - `operationalSupportRequirement = when_present`;
   - `operationalBindingRequirement.catalogFieldKey = primary_conversion_channel`;
   - vínculo obrigatório quando a ação estiver presente;
-  - canal e destino concretos ficam fora do registry;
-  - E19 resolve o canal e os destinos condicionais aplicáveis.
+  - canal e destino concretos ficam fora do registry.
 - `secondaryCta`:
-  - candidato a ação `0..1`, ainda não aprovado para publicação;
+  - candidato a ação `0..1`;
+  - ainda não aprovado para publicação;
   - não existe `secondary_conversion_channel` ou vínculo operacional equivalente aprovado;
-  - E18.5 não criará nova entrada operacional;
+  - a E18.5 não criará nova entrada operacional;
   - deve ser removido da v1 ou receber decisão explícita sobre reutilização de fonte existente ou navegação interna.
 - `proofShort`:
-  - texto/`paragraph`, `0..1`, `hybrid`;
+  - `fieldKind = text`;
+  - `semanticRole = paragraph`;
+  - cardinalidade `0..1`;
+  - policy `hybrid`;
   - `operationalSupportRequirement = when_present`;
-  - microprova, credencial ou sinal curto de confiança;
+  - finalidade limitada a microprova, credencial ou sinal curto de confiança;
   - não recebe genericamente preço, prazo, disponibilidade ou condição comercial.
 - `media`:
-  - mídia `0..1`, `technical_reference`;
+  - `fieldKind = media`;
+  - cardinalidade `0..1`;
+  - policy `technical_reference`;
   - `mediaKind = image | video`;
   - referência do ativo pertence à instância futura;
   - `accessibilityMode = informative | decorative`;
-  - acessibilidade usa contrato próprio de mídia, não `operationalValuePolicy` textual;
+  - acessibilidade usa contrato próprio de mídia, não policy textual;
   - imagem informativa exige alternativa acessível não vazia;
   - imagem decorativa exige ausência de descrição semântica, normalizada pelo contrato final;
   - conteúdo da alternativa acessível deriva do ativo, função e contexto reais;
   - legenda não integra o contrato inicial e não se confunde com alternativa acessível;
-  - vídeo exige alternativa acessível própria; contrato exato ainda pendente;
+  - vídeo exige alternativa acessível própria;
+  - contrato exato de vídeo ainda pendente;
   - mídia decorativa não transporta informação essencial.
 
-O conjunto candidato contém sete campos, mas `secondaryCta` não entra no `fieldCatalog` publicável enquanto seu contrato não for decidido.
+Estado dos campos:
+
+- o conjunto candidato contém sete campos;
+- `secondaryCta` não entra no `fieldCatalog` publicável enquanto seu contrato não for decidido;
+- o Hero possui seis campos admitidos no catálogo publicável candidato;
+- quatro possuem contrato interno definido:
+  - `eyebrow`;
+  - `title`;
+  - `subtitle`;
+  - `proofShort`;
+- `primaryCta` permanece parcialmente pendente para o canal `form`;
+- `media` permanece parcialmente pendente para acessibilidade de vídeo;
+- as capabilities tipográfica e responsiva da raiz são dependências externas, não pendências internas desses campos.
 
 #### 2.7.5. Herança e exceção tipográfica
 
 - Campos textuais herdam raiz; não há tamanho ou spacing próprio aprovado.
-- E18.5 autoriza `body.editorialEmphasis` e `body.base`; E20 seleciona.
+- A E18.5 autoriza `body.editorialEmphasis` e `body.base`; a E20 seleciona.
 - Exceção exige decisão humana documentada, sem presumir persistência nova.
-- Renderer não escolhe nem aplica fallback.
+- O renderer não escolhe nem aplica fallback.
+- A capability tipográfica ainda depende de nova `rootVersion`.
 
 #### 2.7.6. Mídia e comportamento responsivo
 
 - Imagem e vídeo no mesmo slot usam `hero.standard`.
 - Galeria, carrossel e tour ficam fora.
-- `responsiveVisibility = all_viewports | desktop_only`.
-- `desktop_only` é escolha da E20, não variante.
-- Contrato só autoriza ocultação para mídia decorativa, complementar ou redundante; E19 valida a mídia concreta.
-- Capability responsiva depende de nova raiz.
+- Opções conceitualmente autorizadas:
+  - `all_viewports`;
+  - `desktop_only`.
+- Decisão humana de 16/07/2026:
+  - `desktop_only` é opção responsiva aprovada para `hero.media`;
+  - pertence à escolha por ocorrência da E20;
+  - não cria variante;
+  - só pode ser usada quando a mídia for decorativa, complementar ou redundante;
+  - não pode ocultar informação essencial.
+- Aprovação conceitual não equivale a capability técnica disponível.
+- A raiz v1 não possui a capability necessária.
+- A implementação de `desktop_only` permanece bloqueada até evolução versionada da raiz.
+- A E19 valida a mídia concreta e a preservação da informação.
 
 #### 2.7.7. Fronteira com formulário
 
-- CTA pode acionar formulário quando a operação resolvida permitir.
-- O Hero não armazena `destinationRef`, URL ou destino.
-- Formulário completo fica fora de `hero.standard` e tende a módulo próprio composto pela E20.
+- O Hero não armazena `destinationRef`, URL, identificador de formulário ou destino concreto.
+- Quando `primary_conversion_channel` for:
+  - `whatsapp`:
+    - a E19 resolve `whatsapp_destination`;
+  - `phone`:
+    - a E19 resolve `phone_destination`;
+  - `email`:
+    - a E19 resolve `email_destination`;
+  - `external_url`:
+    - a E19 resolve `external_url_destination`.
+- Quando `primary_conversion_channel = form`:
+  - `privacy_policy_url` comprova requisito de privacidade, mas não identifica a ocorrência concreta do formulário;
+  - o CTA depende de futura ocorrência de módulo de formulário aprovada na composição;
+  - a E20 deverá compor o Hero com essa ocorrência;
+  - a E19 deverá vincular o CTA à ocorrência composta;
+  - esse vínculo ainda não possui contrato aprovado;
+  - o caso `form` não é considerado completamente resolvido pelo Hero.
+- Não criar agora:
+  - nova entrada operacional;
+  - identificador de formulário;
+  - propriedade de composição;
+  - `moduleKey` de formulário.
+- Formulário completo fica fora de `hero.standard`.
 - Variante com formulário não está aprovada.
 
 #### 2.7.8. `copySourceMap` do Hero
 
-- `eyebrow`: `positioning_opportunity`; auxiliar `search_intent`.
-- `title`: `positioning_opportunity` e `desire`; auxiliar `commercial_keywords`.
-- `subtitle`: `pain` e `desire`; auxiliar `belief`.
-- labels: `trigger`; auxiliar `search_intent`; ação concreta exige vínculo operacional.
-- `proofShort`: `proof_type`; auxiliar `objection`; suporte operacional obrigatório quando presente.
-- Alternativa acessível de mídia não usa `copySourceMap` nem `operationalValuePolicy`; E19 a produz a partir do ativo e contexto sob o contrato de acessibilidade.
+- `eyebrow`:
+  - primária `positioning_opportunity`;
+  - auxiliar `search_intent`.
+- `title`:
+  - primárias `positioning_opportunity` e `desire`;
+  - auxiliar `commercial_keywords`.
+- `subtitle`:
+  - primárias `pain` e `desire`;
+  - auxiliar `belief`.
+- labels:
+  - primária `trigger`;
+  - auxiliar `search_intent`;
+  - ação concreta exige vínculo operacional.
+- `proofShort`:
+  - primária `proof_type`;
+  - auxiliar `objection`;
+  - suporte operacional obrigatório quando presente.
+- Alternativa acessível de mídia:
+  - não usa `copySourceMap`;
+  - não usa `operationalValuePolicy`;
+  - a E19 a produz a partir do ativo e contexto sob o contrato de acessibilidade.
 - Ativo, tipo de mídia, modo de acessibilidade, visibilidade, canal e destino não recebem `copySourceMap`.
 
 #### 2.7.9. Perfis de funil do Hero
 
-- BOFU: direto, decisório e de alta intenção, sem alegação não sustentada.
-- MOFU: diferenciação e explicação, com pressão menor.
-- TOFU: contexto educativo e baixa fricção, sem pressão artificial.
+- BOFU:
+  - direto;
+  - decisório;
+  - alta intenção;
+  - sem alegação não sustentada.
+- MOFU:
+  - diferenciação;
+  - explicação;
+  - pressão menor.
+- TOFU:
+  - contexto educativo;
+  - baixa fricção;
+  - sem pressão artificial.
 - Perfil altera copy, não campos, estrutura ou variante.
 
 #### 2.7.10. Variante `hero.standard`
 
-- `variantVersion = 1`, compatível com `moduleVersion = 1`.
+- `variantVersion = 1`.
+- Compatível com `moduleVersion = 1`.
 - Execução-base com delta vazio.
 - Mídia permanece opcional.
 - O estado do CTA secundário depende da decisão final do campo candidato.
@@ -394,11 +597,25 @@ O conjunto candidato contém sete campos, mas `secondaryCta` não entra no `fiel
 
 #### 2.7.11. Lifecycle e compatibilidade do Hero
 
-- `moduleCatalogVersion`, `moduleVersion` e `variantVersion` iniciais: 1 propostos.
+- `moduleCatalogVersion = 1` proposto.
+- `moduleVersion = 1` proposto.
+- `variantVersion = 1` proposto.
 - `moduleCatalogVersion` não possui lifecycle próprio aprovado; declara apenas versão e compatibilidade com a raiz.
 - `rootVersion` depende das capabilities tipográfica e responsiva.
-- Raiz `hypothesis`: somente `controlled_test`; `validated`: conforme demais camadas; `deprecated`: somente `historical_read`.
-- Módulo e variante começam `experimental`; propósito inicial `controlled_test`.
+- Lifecycle da raiz disponível no contrato atual:
+  - `hypothesis`;
+  - `validated`;
+  - `deprecated`.
+- Política nova de elegibilidade criada pela E18.5:
+  - raiz `hypothesis` permite somente `controlled_test`;
+  - raiz `validated` segue a interseção das demais camadas;
+  - raiz `deprecated` permite somente `historical_read`.
+- Essa política:
+  - interpreta o lifecycle fornecido pela raiz;
+  - não é comportamento já implementado no resolver da raiz;
+  - será aplicada pelo futuro resolver da E18.5.
+- Módulo e variante começam `experimental`.
+- Propósito inicial: `controlled_test`.
 - Elegibilidade cruza:
   - lifecycle da raiz;
   - compatibilidade raiz–catálogo;
@@ -412,12 +629,15 @@ O conjunto candidato contém sete campos, mas `secondaryCta` não entra no `fiel
 - Validar identidade, evidência, proveniência e interpretação editorial de `hero_segmentado`.
 - Rejeitar publicação enquanto campo candidato não possuir contrato fechado.
 - Rejeitar campo, cardinalidade, policy, fonte, tratamento ou variante inválidos.
+- Rejeitar combinação ausente da allowlist.
 - Validar `operationalSupportRequirement` e sua compatibilidade com policy e campo.
 - Validar vínculo abstrato do CTA principal com `primary_conversion_channel`.
 - Garantir que CTA não armazene canal ou destino concreto.
+- Registrar o caso `form` como vínculo de composição ainda pendente.
 - Validar contrato abstrato de mídia, acessibilidade e responsividade.
 - Falhar sem capabilities exigidas e sem fallback.
 - Incluir raiz na elegibilidade sem exigir lifecycle do catálogo.
+- Tratar lifecycle–propósito como política da E18.5.
 - Retornar resultado imutável.
 
 #### 2.7.13. Invariantes futuras de conteúdo para E19
@@ -426,10 +646,12 @@ Não criam agora schema ou validador de conteúdo na E18.5:
 
 - título, subtítulo e CTA principal concretos conforme cardinalidade;
 - label compatível com canal, ação e destino resolvidos;
+- CTA para formulário vinculado à ocorrência composta quando esse contrato existir;
 - suporte operacional exigido disponível;
 - prova concreta sustentada;
 - ativo de mídia válido;
-- imagem informativa com alternativa acessível e decorativa sem descrição semântica;
+- imagem informativa com alternativa acessível;
+- imagem decorativa sem descrição semântica;
 - vídeo com alternativa acessível;
 - `desktop_only` sem ocultar informação essencial;
 - ausência de formulário completo, seletor interativo, galeria, carrossel ou tour dentro de `hero.standard`.
@@ -440,8 +662,10 @@ Fechar após aprovação de:
 
 - identidade, evidência, interpretação da segmentação e fronteiras;
 - campos publicáveis e cardinalidades;
-- matriz de policies e `operationalSupportRequirement`;
-- vínculo do CTA principal e decisão sobre `secondaryCta`;
+- allowlist de policies e `operationalSupportRequirement`;
+- vínculo do CTA principal;
+- contrato do caso `form`;
+- decisão sobre `secondaryCta`;
 - mídia e acessibilidade, inclusive vídeo;
 - visibilidade responsiva e nova raiz;
 - variante, versões, lifecycle e compatibilidades;
@@ -451,24 +675,32 @@ Estado:
 
 - `hero_segmentado` comprovado com `researchId` e `itemId`;
 - segmentação v1 definida como editorial, não interativa;
+- allowlist de policies registrada;
 - labels e `proofShort` usam `hybrid` com suporte declarativo;
 - CTA principal referencia somente a chave operacional aprovada;
-- destino concreto permanece fora do registry;
+- destinos concretos permanecem fora do registry;
+- caso `form` delimitado como vínculo futuro de composição;
 - alternativa acessível saiu de `operationalValuePolicy`;
+- `desktop_only` possui aprovação humana conceitual, mas capability técnica ainda não existe;
 - lifecycle próprio do catálogo foi retirado;
+- lifecycle–propósito foi identificado como política nova da E18.5;
 - `secondaryCta` e acessibilidade de vídeo ainda pendentes;
 - Hero ainda não fechado e implementação bloqueada.
 
 ### 2.8. `copy_source_map`
 
 - Até duas fontes primárias e uma auxiliar por campo.
-- `end_customer` é fonte primária; `business_buyer` só auxilia autoridade, processo, posicionamento ou prova institucional.
+- `end_customer` é fonte primária.
+- `business_buyer` só auxilia autoridade, processo, posicionamento ou prova institucional.
 - `lp_sections` comprova função, não vira fonte fixa de copy.
 - Policies e exigência de suporte controlam quando `copySourceMap` é permitido.
 
 ### 2.9. `funnel_copy_profile`
 
-- Perfis `bofu`, `mofu`, `tofu`.
+- Perfis:
+  - `bofu`;
+  - `mofu`;
+  - `tofu`.
 - Perfil altera transformação, nunca schema, cardinalidade, módulo ou variante.
 
 ### 2.10. Tratamentos comerciais
@@ -479,29 +711,60 @@ Estado:
 
 ### 2.11. Lifecycle e compatibilidade
 
-- Raiz: `hypothesis | validated | deprecated`.
-- Módulo e variante: `candidate | experimental | validated | deprecated`.
+- Raiz:
+  - `hypothesis`;
+  - `validated`;
+  - `deprecated`.
+- Módulo e variante:
+  - `candidate`;
+  - `experimental`;
+  - `validated`;
+  - `deprecated`.
 - `moduleCatalogVersion` possui versão e compatibilidade, sem lifecycle próprio na v1.
-- Propósitos: `controlled_test | new_use | historical_read`.
-- Elegibilidade é interseção de lifecycle da raiz, compatibilidade raiz–catálogo, lifecycle do módulo, lifecycle da variante e propósito.
-- `candidate` bloqueia uso; `experimental` permite teste; `deprecated` só permite histórico.
+- Propósitos:
+  - `controlled_test`;
+  - `new_use`;
+  - `historical_read`.
+- A relação lifecycle da raiz–propósito é política criada pela E18.5, não comportamento implementado pela raiz.
+- Elegibilidade é interseção de:
+  - lifecycle da raiz interpretado pela E18.5;
+  - compatibilidade raiz–catálogo;
+  - lifecycle do módulo;
+  - lifecycle da variante;
+  - propósito.
+- `candidate` bloqueia uso.
+- `experimental` permite teste controlado.
+- `deprecated` só permite leitura histórica.
 
 ### 2.12. Contrato de resolução previsto
 
-Entrada: `rootVersion`, `moduleCatalogVersion`, `moduleKey`, `variantKey`, `purpose`.
+Entrada:
+
+- `rootVersion`;
+- `moduleCatalogVersion`;
+- `moduleKey`;
+- `variantKey`;
+- `purpose`.
 
 Processamento:
 
-1. resolver raiz, lifecycle e propósito;
-2. validar compatibilidade do catálogo com a raiz;
-3. resolver módulo e lifecycle;
-4. validar evidências, campos, policies, suporte e vínculos abstratos;
-5. resolver variante, lifecycle e compatibilidade;
-6. aplicar delta válido;
-7. calcular contrato e elegibilidade;
-8. retornar resultado imutável.
+1. resolver raiz e ler seu lifecycle;
+2. aplicar a política lifecycle–propósito definida pela E18.5;
+3. validar compatibilidade do catálogo com a raiz;
+4. resolver módulo e lifecycle;
+5. validar evidências, campos, allowlist, suporte e vínculos abstratos;
+6. resolver variante, lifecycle e compatibilidade;
+7. aplicar delta válido;
+8. calcular contrato e elegibilidade;
+9. retornar resultado imutável.
 
-A saída não contém deltas, canal, destino concreto, lifecycle de catálogo ou fallback.
+A saída não contém:
+
+- deltas;
+- canal concreto;
+- destino concreto;
+- lifecycle de catálogo;
+- fallback.
 
 ### 2.13. Artefatos previstos
 
@@ -514,12 +777,15 @@ Após raiz e v2:
 - `validation-cases.ts`;
 - `index.ts`.
 
-Interface: `landingPageModules`. Script: `validate:landing-page-modules`.
+Interface prevista: `landingPageModules`.
+
+Script previsto: `validate:landing-page-modules`.
 
 #### 2.13.1. Evolução futura do catálogo
 
 - Extensão comum ocorre por registry, casos e nova versão aplicável.
-- Campo novo exige nova `moduleVersion`; capability comum exige nova `rootVersion`.
+- Campo novo exige nova `moduleVersion`.
+- Capability comum exige nova `rootVersion`.
 - Contrato, schema e resolver só mudam quando a necessidade não couber no contrato fechado.
 - Sem cadastro dinâmico, mutação runtime ou criação automática no MVP.
 
@@ -527,22 +793,30 @@ Interface: `landingPageModules`. Script: `validate:landing-page-modules`.
 
 Validações E18.5:
 
-- versões, evidências, compatibilidades e lifecycle de raiz, módulo e variante válidos;
+- versões, evidências e compatibilidades válidas;
+- lifecycle de raiz, módulo e variante válido;
 - ausência de lifecycle próprio não aprovado no catálogo;
 - campos, cardinalidades, policies, fontes e tratamentos válidos;
-- matriz de policy e suporte operacional respeitada;
+- combinação presente na allowlist;
+- matriz de suporte operacional respeitada;
 - vínculo de ação referencia apenas `fieldKey` aprovado do catálogo operacional;
 - nenhum destino concreto de CTA no registry;
+- caso `form` não tratado como resolvido sem vínculo de composição;
 - capabilities exigidas sem fallback;
+- `desktop_only` reconhecido como decisão conceitual dependente de nova raiz;
 - delta vazio somente na base autorizada;
 - contrato abstrato de mídia e acessibilidade válido;
 - formulário ou seletor interativo não adicionados ao Hero;
-- resultado imutável, versões históricas preservadas e sem imports fora do boundary.
+- política lifecycle–propósito atribuída à E18.5, não ao resolver atual da raiz;
+- resultado imutável;
+- versões históricas preservadas;
+- sem imports fora do boundary.
 
 #### 2.14.1. Invariantes futuras para E19
 
 - presença e consistência do conteúdo concreto;
 - CTA vinculado à operação real;
+- CTA de formulário vinculado à ocorrência composta, quando o contrato existir;
 - suporte operacional exigido resolvido;
 - prova sustentada;
 - ativo e acessibilidade válidos;
@@ -551,25 +825,60 @@ Validações E18.5:
 
 ### 2.15. Fluxo operacional
 
-- Gatilho: raiz e plano v2 mergeados, fase instruída.
-- Entrada: raiz compatível, catálogo aprovado, itens oficiais e decisões humanas.
-- Processamento: contratos, registry, resolver, policies, suporte, mapas, lifecycle e casos E18.5.
-- Validação: `npm ci`, validações da raiz, módulos e commercial activation, `npm run check`, `git diff --check` e checks do PR.
-- Persistência: repositório; consumo futuro: E20 e E19; fallback: falha fechada.
+- Gatilho:
+  - raiz e plano v2 mergeados;
+  - fase instruída.
+- Entrada:
+  - raiz compatível;
+  - catálogo aprovado;
+  - itens oficiais;
+  - decisões humanas.
+- Processamento:
+  - contratos;
+  - registry;
+  - resolver;
+  - policies;
+  - allowlist;
+  - suporte;
+  - mapas;
+  - lifecycle;
+  - casos E18.5.
+- Validação:
+  - `npm ci`;
+  - validações da raiz;
+  - validação de módulos;
+  - validação de commercial activation;
+  - `npm run check`;
+  - `git diff --check`;
+  - checks do PR.
+- Persistência: repositório.
+- Consumo futuro: E20 e E19.
+- Fallback: falha fechada.
 
 ## 3. Fases e próxima ação
 
 ### 3.1. E18.5.3–E18.5.9 — Catálogo versionado de módulos e variantes v1
 
-- Status pendente e bloqueado até grade fechada, raiz evoluída e v2 consolidada.
-- Automação: não. Risco: médio controlado.
-- Aceite: módulos aprovados, sem duplicação da raiz ou E20.2, compatibilidade validada, Hero conforme contrato, resolver fail-closed e separação E18.5/E19.
+- Status:
+  - pendente;
+  - bloqueado até grade fechada, raiz evoluída e v2 consolidada.
+- Automação: não.
+- Risco: médio controlado.
+- Critérios de aceite:
+  - módulos aprovados;
+  - nenhuma duplicação da raiz ou E20.2;
+  - compatibilidade validada;
+  - Hero conforme contrato;
+  - resolver fail-closed;
+  - separação E18.5/E19.
 - Próxima ação:
   - decidir `secondaryCta`;
   - fechar acessibilidade de vídeo;
+  - definir futuramente o vínculo do CTA para formulário na composição;
+  - concluir a evolução tipográfica e responsiva da raiz;
   - reavaliar Hero;
   - depois iniciar `trust_bar` e seguir a grade;
-  - concluir raiz, pareceres, v2 e merge humano.
+  - concluir pareceres, v2 e merge humano.
 
 ## 4. Escopo negativo e critérios de parada
 
@@ -578,6 +887,7 @@ Validações E18.5:
 - Implementação da raiz no PR #577.
 - Banco, composição, geração, renderer, Admin, Builder, tracking, automação ou nova infraestrutura.
 - Nova entrada operacional para sustentar `secondaryCta`.
+- Implementação do vínculo entre CTA e ocorrência de formulário.
 - Módulo de formulário, seletor interativo, galeria, carrossel ou tour neste recorte.
 - Persistência nova para justificativa da composição.
 
@@ -590,9 +900,12 @@ Parar se:
 - surgir fallback, dependência de taxon ou ampliação de limite;
 - faltar evidência oficial;
 - destino concreto entrar no registry;
+- combinação não listada for aceita;
 - campo híbrido depender de regra hardcoded por `fieldKey`;
-- formulário, seletor interativo ou mídia essencial forem tratados incorretamente;
+- formulário for tratado como resolvido sem vínculo de composição;
+- seletor interativo ou mídia essencial forem tratados incorretamente;
 - validação de conteúdo for antecipada na E18.5;
+- política da E18.5 for atribuída como comportamento já implementado pela raiz;
 - houver conflito de fronteiras ou perda histórica.
 
 ### 4.3. Decisão atual
@@ -600,14 +913,35 @@ Parar se:
 - PR #577 permanece em v1 e sem implementação autorizada.
 - `hero_segmentado` está comprovado com `itemId` e interpretado editorialmente na v1.
 - Grade comum e nove candidatos permanecem.
-- Hero mantém seis campos com contrato interno fechado e `secondaryCta` como candidato pendente.
+- O Hero possui seis campos admitidos no catálogo publicável candidato.
+- Quatro campos possuem contrato interno definido:
+  - `eyebrow`;
+  - `title`;
+  - `subtitle`;
+  - `proofShort`.
+- `primaryCta` permanece parcialmente pendente para formulário.
+- `media` permanece parcialmente pendente para vídeo.
+- `secondaryCta` permanece candidato fora do catálogo publicável.
+- As capabilities tipográfica e responsiva da raiz são dependências externas.
+- Allowlist completa de policies registrada.
 - `hero.standard` permanece a única variante inicial, com delta vazio.
 - Labels e `proofShort` usam `hybrid` com exigência declarativa de suporte.
 - CTA principal referencia `primary_conversion_channel`, sem canal ou destino concreto no registry.
+- O caso `form` depende de vínculo futuro com ocorrência de formulário na composição.
 - Alternativa acessível da mídia usa contrato próprio, não policy textual.
+- `desktop_only` possui aprovação humana conceitual e permanece bloqueado tecnicamente até nova `rootVersion`.
 - Imagem, vídeo e visibilidade responsiva não criam variante.
 - Formulário completo e seletor interativo ficam fora do Hero.
 - Elegibilidade inclui a raiz e não presume lifecycle do catálogo.
+- Lifecycle–propósito é política nova da E18.5.
 - E18.5 e E19 permanecem separadas.
-- Hero ainda não está fechado por `secondaryCta`, acessibilidade de vídeo e evolução da raiz.
-- Próxima decisão humana: fechar esses pontos e reavaliar antes de `trust_bar`.
+- Frentes materiais ainda abertas:
+  - decisão sobre `secondaryCta`;
+  - acessibilidade de vídeo;
+  - vínculo futuro do CTA para formulário;
+  - evolução tipográfica e responsiva da raiz.
+- Frente documental concluída nesta atualização:
+  - aprovação humana de `desktop_only` registrada;
+  - lifecycle–propósito identificado como política própria da E18.5.
+- Hero ainda não está fechado.
+- Próxima decisão humana: fechar as frentes materiais e reavaliar antes de `trust_bar`.
