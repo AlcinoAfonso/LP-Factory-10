@@ -4,7 +4,7 @@ Fontes: chat, `README.md`, `AGENTS.md`, `docs/prompt-estrategista.md`, `docs/tem
 
 Versão: v1 em ajuste.
 
-Status: PR vivo para debate; grade inicial de nove módulos candidatos definida a partir de `Corretor Imóveis`, `audience_scope = end_customer`, `lp_sections` v1 ativa; cada candidato será analisado individualmente antes de sua aprovação material; rejeição, fusão ou substituição exige decisão humana; a grade metodológica será aplicada primeiro ao Hero; nenhuma implementação autorizada.
+Status: PR vivo para debate; grade metodológica comum registrada; módulo `hero` e variante `hero.standard` registrados para avaliação; grade inicial de nove módulos candidatos preservada; nenhuma implementação autorizada.
 
 Path: `docs/lousa-plano-base-e18-5.md`.
 
@@ -22,6 +22,8 @@ Recorte do roadmap: `18.5 — Parametrização de módulos e variantes landing_p
   - o contrato compartilhado o mantém opcional.
 - O subtítulo do Hero deve usar maior ênfase por padrão, sem fallback automático para `body.base`.
 - A garantia exige evolução versionada da raiz em recorte e PR próprios, preservando a `rootVersion 1`.
+- A raiz atual também não possui capability fechada de visibilidade responsiva por campo.
+- A visibilidade responsiva reutilizável por vários módulos deve ser tratada como capability comum da família, em evolução versionada própria da raiz.
 - A consulta ao banco confirmou como fonte estrutural principal:
   - taxon: `Corretor Imóveis`;
   - nível: `niche`;
@@ -43,6 +45,8 @@ Recorte do roadmap: `18.5 — Parametrização de módulos e variantes landing_p
   - justificativa estrutural;
   - atualização explícita da grade;
   - decisão humana.
+- A mesma grade metodológica será usada por todos os módulos aprovados.
+- A grade comum é obrigatória, mas seus blocos condicionais são preenchidos apenas quando aplicáveis à função do módulo.
 - Para cada módulo aprovado, fechar:
   - identidade transversal;
   - restrições normativas;
@@ -53,6 +57,8 @@ Recorte do roadmap: `18.5 — Parametrização de módulos e variantes landing_p
   - política de origem dos valores;
   - fontes de copy;
   - perfis BOFU, MOFU e TOFU;
+  - mídia, ações, coleções ou interações quando aplicáveis;
+  - comportamento responsivo específico quando aplicável;
   - variante inicial e deltas;
   - versões e compatibilidades;
   - lifecycle e propósitos permitidos;
@@ -83,6 +89,7 @@ Recorte do roadmap: `18.5 — Parametrização de módulos e variantes landing_p
 - Módulo pode restringir ou selecionar capacidades da raiz quando sua função justificar.
 - Variante pode restringir o módulo quando houver mudança reutilizável de execução ou comportamento.
 - Escolha por ocorrência já autorizada não cria variante.
+- Tipo de mídia, ativo concreto ou visibilidade responsiva autorizada não criam variante por si só.
 - Módulo ou variante não pode ampliar limite técnico absoluto.
 - Necessidade acima do limite deve avaliar antes revisão de texto, divisão de conteúdo, mudança semântica ou nova estrutura.
 - Diferença apenas de taxon, conteúdo, campanha, conta, tráfego, funil ou composição não cria módulo nem variante.
@@ -132,25 +139,24 @@ Recorte do roadmap: `18.5 — Parametrização de módulos e variantes landing_p
 
 ### 1.7. Pontos ainda em debate
 
-- Aplicação completa da grade ao Hero.
+- Avaliação e ajustes da grade registrada do Hero.
 - Confirmação individual dos oito candidatos restantes.
-- Contratos específicos por `fieldKind`.
-- Política de origem de cada campo de cada módulo.
-- Variante inicial e deltas de cada módulo.
+- Contratos específicos por `fieldKind` ainda não exemplificados pelo Hero.
+- Variante inicial e deltas dos demais módulos.
 - Critério mínimo para nova variante e exceção estrutural.
-- Mapas de fontes de copy.
-- Perfis BOFU, MOFU e TOFU.
 - Lifecycle inicial e promoção para `validated`.
+- Evolução da raiz para `body.editorialEmphasis` e visibilidade responsiva.
 - Divisão final em fases executáveis.
 
 ## 2. Contrato do caso
 
 ### 2.1. Problema
 
-- A raiz existe, mas ainda faltam contratos aprovados para módulos, variantes, campos, fontes, perfis de funil e lifecycle.
+- A raiz existe, mas ainda faltam contratos aprovados para todos os módulos, variantes, campos, fontes, perfis de funil e lifecycle.
 - Os nove itens estruturais do primeiro recorte não podem virar módulos automaticamente.
 - O catálogo precisa generalizar funções reais sem transportar identidade imobiliária.
 - A raiz v1 não garante o tratamento editorial exigido pelo Hero.
+- A raiz v1 não oferece escolha fechada de visibilidade responsiva por campo.
 - Um contrato único de campo com `semanticRole` obrigatório não atende mídia, ação, coleção ou referência técnica.
 - A política de origem precisa impedir que pesquisa seja tratada como fonte de preço, endereço, credencial, métrica, depoimento, registro, garantia ou disponibilidade.
 - Repetição de valores da raiz ou deltas aplicados por consumidores criaria múltiplas fontes da verdade.
@@ -159,6 +165,7 @@ Recorte do roadmap: `18.5 — Parametrização de módulos e variantes landing_p
 ### 2.2. Resultado esperado
 
 - Criar catálogo repo-only versionado a partir dos nove módulos candidatos, incluindo apenas os contratos individualmente aprovados.
+- Usar grade metodológica única para todos os módulos, com blocos condicionais por função.
 - Usar `Corretor Imóveis`, `end_customer`, `lp_sections` v1 ativa como evidência estrutural principal.
 - Confirmar cada módulo e variante inicial individualmente.
 - Resolver `raiz → módulo → variante` em contrato final imutável.
@@ -215,6 +222,49 @@ Recorte do roadmap: `18.5 — Parametrização de módulos e variantes landing_p
 - Conteúdo, parâmetro herdado, escolha de ocorrência, composição, fonte, funil ou valor operacional não criam variante.
 - Identidade do módulo não pode carregar taxon, profissão ou campanha.
 - Itens de extensão de página não pertencem ao catálogo.
+
+#### 2.3.6. Grade metodológica comum
+
+Todos os módulos serão analisados pelos mesmos blocos obrigatórios:
+
+1. identidade transversal;
+2. função estrutural;
+3. evidências e equivalência semântica;
+4. fronteiras positivas e negativas;
+5. catálogo de campos;
+6. `fieldKind` e contrato condicionado pelo tipo;
+7. cardinalidades sem `required`;
+8. herança, capabilities e exceções;
+9. política fechada de origem do valor;
+10. `copySourceMap` quando aplicável;
+11. perfis BOFU, MOFU e TOFU quando houver copy;
+12. comportamento responsivo específico quando necessário;
+13. variante inicial e deltas;
+14. versões e compatibilidades;
+15. lifecycle e propósitos;
+16. fronteiras com E20, E19 e renderer;
+17. casos positivos e negativos;
+18. critérios de fechamento.
+
+Blocos condicionais serão preenchidos somente quando a função exigir:
+
+- ação ou CTA;
+- mídia;
+- coleção;
+- valor operacional;
+- referência técnica;
+- acessibilidade específica;
+- comportamento interativo;
+- visibilidade responsiva específica;
+- variante estrutural adicional.
+
+Regras da grade:
+
+- O Hero é o primeiro preenchimento, não um molde rígido de conteúdo.
+- Outros módulos podem possuir campos, coleções, interações e responsividade diferentes.
+- Nenhum módulo é obrigado a possuir CTA, mídia, copy ou segunda variante.
+- Nenhuma variante adicional será criada apenas para manter simetria entre módulos.
+- O contrato específico deve ser o mínimo suficiente para representar a função reutilizável.
 
 ### 2.4. Identidade, evidência e versionamento previstos
 
@@ -290,7 +340,8 @@ Contratos condicionais por tipo:
   - não haverá `actionRole` enquanto não existir contrato fechado e fonte aprovada.
 - `media`:
   - usa contrato abstrato de referência;
-  - deve prever política de texto alternativo e uso decorativo na parametrização específica;
+  - deve declarar tipo de mídia permitido;
+  - deve prever política de texto alternativo e uso decorativo;
   - não recebe `semanticRole` visual por padrão.
 - `collection`:
   - declara cardinalidade da coleção;
@@ -366,13 +417,18 @@ Regras adicionais:
 - Delta vazio não autoriza criar variantes redundantes.
 - Não se inventa delta para justificar a existência da variante-base.
 - Nova variante exige diferença reutilizável demonstrável dentro da mesma função estrutural.
+- Tipo de mídia, ativo concreto ou opção responsiva já autorizada não criam variante.
 
 ### 2.7. Módulo-piloto `hero`
 
 #### 2.7.1. Identidade e função estrutural
 
 - `moduleKey = hero`.
-- Apresentar o recorte da LP, a proposta de valor e a principal ação.
+- `moduleVersion = 1` proposto.
+- Função estrutural:
+  - apresentar o recorte da LP;
+  - comunicar a proposta de valor principal;
+  - indicar a ação prioritária esperada do visitante.
 - Não representa taxon, campanha, tráfego, funil ou composição.
 - A função deve permanecer transversal à família `landing_page`.
 
@@ -386,45 +442,99 @@ Regras adicionais:
 - função transversal inferida: apresentar recorte, proposta de valor e ação principal;
 - o nome da seção imobiliária não determina o `moduleKey`.
 
-#### 2.7.3. Catálogo preliminar de campos
+#### 2.7.3. Fronteiras
 
-O catálogo será fechado pela grade completa antes de avançar ao próximo módulo.
+Pertence ao Hero:
+
+- enquadramento inicial;
+- título principal;
+- explicação curta;
+- CTA principal;
+- CTA secundário opcional;
+- prova curta opcional;
+- uma mídia principal opcional.
+
+Não pertence ao Hero:
+
+- barra completa de confiança;
+- lista de serviços;
+- catálogo de ofertas;
+- processo detalhado;
+- prova técnica extensa;
+- conjunto de depoimentos;
+- FAQ;
+- formulário completo;
+- galeria, carrossel ou tour;
+- CTA final da página;
+- navegação;
+- composição ou ordem global.
+
+#### 2.7.4. Catálogo de campos proposto
 
 - `eyebrow`:
   - `fieldKind = text`;
   - `semanticRole = eyebrow`;
-  - `cardinality = { min: 0, max: 1 }`.
+  - `cardinality = { min: 0, max: 1 }`;
+  - `operationalValuePolicy = research_guided`;
+  - contextualiza categoria, intenção ou recorte sem repetir integralmente o título.
 - `title`:
   - `fieldKind = text`;
   - `semanticRole = h1`;
-  - `cardinality = { min: 1, max: 1 }`.
+  - `cardinality = { min: 1, max: 1 }`;
+  - `operationalValuePolicy = hybrid`;
+  - apresenta a principal proposta de valor;
+  - fatos concretos exigem entrada operacional.
 - `subtitle`:
   - `fieldKind = text`;
   - `semanticRole = paragraph`;
   - `cardinality = { min: 1, max: 1 }`;
-  - padrão `body.editorialEmphasis`;
-  - permitidos `body.editorialEmphasis` e `body.base`.
+  - `operationalValuePolicy = hybrid`;
+  - desenvolve promessa, benefício, contexto ou objeção principal;
+  - `defaultTypographyTreatment = body.editorialEmphasis`;
+  - `allowedTypographyTreatments = [body.editorialEmphasis, body.base]`.
 - `primaryCta`:
   - `fieldKind = action`;
   - `cardinality = { min: 1, max: 1 }`;
-  - `label` textual com `semanticRole = cta_label`.
+  - `operationalValuePolicy = not_copy`;
+  - `label`:
+    - `fieldKind = text`;
+    - `semanticRole = cta_label`;
+    - `cardinality = { min: 1, max: 1 }`;
+    - `operationalValuePolicy = research_generated_non_factual`;
+  - `destinationRef`:
+    - `fieldKind = technical_reference`;
+    - `cardinality = { min: 1, max: 1 }`;
+    - `operationalValuePolicy = technical_reference`;
+    - não contém URL concreta no catálogo.
 - `secondaryCta`:
   - `fieldKind = action`;
   - `cardinality = { min: 0, max: 1 }`;
-  - `label` textual com `semanticRole = cta_label`.
+  - `operationalValuePolicy = not_copy`;
+  - quando presente, exige `label` e `destinationRef` equivalentes ao contrato do CTA principal;
+  - representa ação complementar e não deve competir com a ação principal.
 - `proofShort`:
   - `fieldKind = text`;
   - `semanticRole = paragraph`;
-  - `cardinality = { min: 0, max: 1 }`.
+  - `cardinality = { min: 0, max: 1 }`;
+  - `operationalValuePolicy = operational_required`;
+  - pode apresentar credencial, prova ou redução curta de risco;
+  - a pesquisa pode indicar o tipo de prova, mas não fornecer prova concreta;
+  - sem entrada operacional válida, o campo é omitido.
 - `media`:
   - `fieldKind = media`;
-  - referência abstrata;
   - `cardinality = { min: 0, max: 1 }`;
-  - contrato de acessibilidade ainda deve ser fechado na análise do Hero.
+  - `operationalValuePolicy = technical_reference`;
+  - `mediaKind` permitido:
+    - `image`;
+    - `video`;
+  - `assetRef` obrigatório quando o campo estiver presente;
+  - `accessibilityMode` obrigatório:
+    - `informative`;
+    - `decorative`;
+  - mídia informativa exige texto alternativo ou alternativa acessível aplicável;
+  - mídia decorativa não transporta informação essencial.
 
-A política de origem de cada campo será decidida na aplicação completa da grade ao Hero.
-
-#### 2.7.4. Herança e exceção tipográfica
+#### 2.7.5. Herança e exceção tipográfica
 
 - Campos textuais herdam faixas, limites e valores da raiz.
 - Não há tamanho, limite ou spacing próprio aprovado.
@@ -435,28 +545,208 @@ A política de origem de cada campo será decidida na aplicação completa da gr
 - Ausência de `body.editorialEmphasis` é incompatibilidade, não fallback.
 - Mídia opcional não comprova variante.
 
-#### 2.7.5. Variante inicial definida
+#### 2.7.6. Mídia e comportamento responsivo
+
+- Imagem ou vídeo no mesmo slot estrutural usam `hero.standard`.
+- A escolha de `mediaKind` pertence à ocorrência concreta e não cria variante.
+- Galeria, carrossel, tour ou coleção de mídia representam função distinta e não entram no campo `media` do Hero.
+- Política responsiva proposta para o campo `media`:
+  - padrão: `all_viewports`;
+  - alternativa autorizada: `desktop_only`.
+- `desktop_only` significa que a mídia aparece no desktop e é omitida no mobile, sem alterar a função estrutural do Hero.
+- A seleção de `desktop_only` pertence à E20.
+- O renderer apenas executa a opção resolvida.
+- `desktop_only` só é válido quando a mídia for decorativa, complementar ou redundante em relação ao conteúdo textual.
+- Não é permitido ocultar no mobile mídia que contenha informação essencial, prova necessária, instrução, condição, preço, oferta ou conteúdo sem alternativa textual equivalente.
+- A capability comum de visibilidade responsiva ainda não existe na raiz v1 e deve ser adicionada em evolução versionada própria antes da implementação material.
+- Ativo alternativo específico para mobile não entra no contrato inicial; poderá ser avaliado em nova versão se houver evidência real.
+
+#### 2.7.7. Fronteira com formulário
+
+- CTA que leva, abre ou aciona formulário continua dentro de `hero.standard` por meio de `destinationRef`.
+- Formulário completo incorporado visualmente ao Hero não pertence ao contrato inicial de `hero.standard`.
+- A decisão padrão futura é representar captação ou qualificação como módulo próprio composto com o Hero pela E20.
+- Nenhum `moduleKey` novo para formulário é definido neste recorte.
+- Uma variante de Hero com formulário só poderá ser proposta se evidência posterior demonstrar que:
+  - a função principal continua sendo a do Hero;
+  - o formulário é subordinado e inseparável da abertura;
+  - a execução é reutilizável entre taxons;
+  - composição com módulo próprio é insuficiente;
+  - privacidade, validação, responsividade e campos possuem contrato fechado.
+- Nenhuma variante com formulário está aprovada na v1.
+
+#### 2.7.8. `copySourceMap` do Hero
+
+- `eyebrow`:
+  - primária: `end_customer.strategic_core.positioning_opportunity`;
+  - auxiliar: `end_customer.seo.search_intent`.
+- `title`:
+  - primárias: `end_customer.strategic_core.positioning_opportunity`, `end_customer.strategic_core.desire`;
+  - auxiliar: `end_customer.seo.commercial_keywords`.
+- `subtitle`:
+  - primárias: `end_customer.strategic_core.pain`, `end_customer.strategic_core.desire`;
+  - auxiliar: `end_customer.strategic_core.belief`.
+- labels de CTA:
+  - primária: `end_customer.strategic_core.trigger`;
+  - auxiliar: `end_customer.seo.search_intent`.
+- `proofShort`:
+  - orientadora primária: `end_customer.strategic_core.proof_type`;
+  - auxiliar: `end_customer.strategic_core.objection`;
+  - valor factual obrigatoriamente operacional.
+- Não recebem `copySourceMap`:
+  - `destinationRef`;
+  - `assetRef`;
+  - `mediaKind`;
+  - `accessibilityMode`;
+  - política de visibilidade responsiva.
+
+#### 2.7.9. Perfis de funil do Hero
+
+- BOFU:
+  - título direto e específico;
+  - subtítulo orientado à decisão;
+  - objeção principal tratada com clareza;
+  - CTA de alta intenção;
+  - prova curta quando houver fonte operacional real;
+  - sem promessa, urgência ou condição não sustentada.
+- MOFU:
+  - título orientado à diferenciação;
+  - subtítulo explicativo;
+  - CTA proporcional;
+  - prova contextual quando disponível;
+  - menor pressão comercial que BOFU.
+- TOFU:
+  - título orientado a contexto, problema ou desejo;
+  - subtítulo educativo;
+  - CTA de baixa fricção;
+  - sem urgência, escassez ou pressão artificial;
+  - prova curta apenas quando contribuir para confiança.
+- Os perfis usam o mesmo catálogo de campos e cardinalidades.
+- Perfil altera transformação da copy, não estrutura, identidade ou variante.
+
+#### 2.7.10. Variante `hero.standard`
 
 - `variantKey = hero.standard`.
+- `variantVersion = 1` proposta.
+- `compatibleModuleVersion = 1` proposta.
 - Representa a execução-base versionada do Hero.
 - Delta vazio é permitido.
-- Mídia permanece opcional pelo contrato do módulo.
-- É a única variante inicial aprovada do Hero.
+- Não altera campos, cardinalidades ou limites.
+- Mídia permanece opcional.
+- CTA secundário permanece opcional.
+- `mediaKind = image | video` não cria variante.
+- `responsiveVisibility = all_viewports | desktop_only` não cria variante.
 - `hero.media_split` permanece rejeitada.
 - Troca isolada para `body.base` não cria variante.
-- Variante específica de nicho é proibida.
+- Variante específica de nicho, campanha, tráfego ou funil é proibida.
 
-#### 2.7.6. Pendências para fechamento do Hero
+#### 2.7.11. Lifecycle e compatibilidade do Hero
 
-- confirmar o catálogo fechado de campos;
-- confirmar cardinalidades sem `required`;
-- classificar cada campo por `operationalValuePolicy`;
-- validar o `copySourceMap` de cada campo textual;
-- separar perfis BOFU, MOFU e TOFU da estrutura;
-- definir `moduleVersion`, `variantVersion` e compatibilidades;
-- definir lifecycle inicial do módulo e da variante;
-- criar casos positivos e negativos;
-- confirmar dependência da raiz que garanta `body.editorialEmphasis`.
+- `moduleCatalogVersion = 1` proposta para o primeiro catálogo publicado.
+- `moduleVersion = 1` proposta.
+- `variantVersion = 1` proposta.
+- `rootVersion` permanece pendente da evolução que garanta:
+  - `body.editorialEmphasis`;
+  - capability de visibilidade responsiva, caso `desktop_only` permaneça no contrato aprovado.
+- Lifecycle inicial proposto do módulo:
+  - `experimental`.
+- Lifecycle inicial proposto da variante:
+  - `experimental`.
+- Propósito permitido inicialmente:
+  - `controlled_test`.
+- `new_use` permanece proibido até promoção.
+- Promoção para `validated` exige:
+  - LP real em conta de teste;
+  - revisão humana;
+  - validação visual, responsiva e editorial;
+  - ausência de falha estrutural;
+  - decisão humana registrada.
+
+#### 2.7.12. Casos positivos do Hero
+
+- Hero mínimo válido:
+  - `title`;
+  - `subtitle`;
+  - `primaryCta`;
+  - sem eyebrow, CTA secundário, prova curta ou mídia.
+- Hero completo válido:
+  - eyebrow;
+  - title;
+  - subtitle;
+  - CTA principal;
+  - CTA secundário;
+  - prova curta sustentada operacionalmente;
+  - mídia com acessibilidade válida.
+- Hero com imagem:
+  - `hero.standard`;
+  - `mediaKind = image`;
+  - `all_viewports` ou `desktop_only` autorizado.
+- Hero com vídeo:
+  - `hero.standard`;
+  - `mediaKind = video`;
+  - mesmo slot estrutural.
+- Exceção tipográfica válida:
+  - E20 seleciona `body.base`;
+  - opção autorizada;
+  - justificativa registrada;
+  - renderer recebe tratamento resolvido.
+- CTA para formulário válido:
+  - CTA usa `destinationRef` operacional;
+  - formulário permanece fora do contrato do Hero.
+
+#### 2.7.13. Casos negativos do Hero
+
+- Estrutura inválida:
+  - ausência de `title`, `subtitle` ou `primaryCta`;
+  - mais de um título, mídia ou CTA secundário.
+- Origem inválida:
+  - prova concreta criada apenas a partir de `proof_type`;
+  - credencial, métrica ou condição inventada;
+  - destino do CTA inventado pela pesquisa;
+  - mídia sem referência operacional.
+- Tipografia inválida:
+  - raiz sem `body.editorialEmphasis`;
+  - tratamento não autorizado;
+  - fallback automático;
+  - renderer escolhendo tratamento.
+- Mídia inválida:
+  - `mediaKind` desconhecido;
+  - mídia informativa sem alternativa acessível;
+  - `desktop_only` ocultando informação essencial;
+  - galeria, carrossel ou tour tratados como mídia única do Hero.
+- Variante inválida:
+  - variante específica de corretor de imóveis;
+  - variante criada apenas por funil, imagem, vídeo ou visibilidade responsiva;
+  - variante com campo não previsto;
+  - variante redundante com delta vazio sem função de base autorizada.
+- Formulário inválido:
+  - formulário completo adicionado silenciosamente a `hero.standard`;
+  - variante de formulário criada sem análise estrutural própria.
+
+#### 2.7.14. Critérios de fechamento do Hero
+
+O Hero estará fechado para avaliação final quando forem aprovados:
+
+- identidade e função;
+- fronteiras;
+- sete campos e seus contratos internos;
+- cardinalidades;
+- políticas de origem;
+- `copySourceMap`;
+- perfis de funil;
+- contrato de mídia e acessibilidade;
+- decisão sobre `desktop_only` e sua capability de raiz;
+- fronteira com formulário;
+- `hero.standard` com delta vazio;
+- versões e compatibilidades;
+- lifecycle experimental;
+- casos positivos e negativos.
+
+Estado atual:
+
+- módulo e variante registrados como proposta consolidada para avaliação e ajustes;
+- nenhuma implementação autorizada;
+- próxima decisão humana: aprovar ou ajustar a grade do Hero antes de iniciar `trust_bar`.
 
 ### 2.8. `copy_source_map`
 
@@ -469,23 +759,12 @@ A política de origem de cada campo será decidida na aplicação completa da gr
 - `lp_sections` comprova funções estruturais, mas não vira fonte fixa de copy.
 - Chave desconhecida e fato operacional inferido falham fechado.
 
-Mapa inicial do Hero para validação:
-
-- `title`: `positioning_opportunity`, `desire`; auxiliar `commercial_keywords`.
-- `subtitle`: `pain`, `desire`; auxiliar `belief`.
-- labels de CTA: `trigger`; auxiliar `search_intent`.
-- `proofShort`: `proof_type`; auxiliar `objection`.
-
 ### 2.9. `funnel_copy_profile`
 
 - Perfis: `bofu`, `mofu`, `tofu`.
 - Perfil orienta transformação, sem alterar schema, cardinalidade, limite, identidade do módulo ou estrutura aprovada.
 - Módulo adapta o perfil à função.
 - Variante apenas restringe ou especializa tratamento permitido quando houver mudança comportamental comprovada.
-- Hero:
-  - BOFU: recorte específico, benefício sustentado, objeção direta e CTA de maior intenção;
-  - MOFU: diferenciação, explicação, prova contextual e CTA proporcional;
-  - TOFU: contexto, dor e desejo, baixa pressão e CTA de baixa fricção.
 
 ### 2.10. Tratamentos comerciais
 
@@ -596,9 +875,13 @@ Script previsto: `validate:landing-page-modules`.
 - Fato operacional originado apenas da pesquisa falha.
 - Referência, tratamento, módulo, variante ou campo desconhecido falha.
 - Tratamento padrão fora da lista permitida falha.
-- Ausência de `body.editorialEmphasis` e fallback automático falham.
+- Ausência de capability exigida e fallback automático falham.
 - Delta vazio é aceito somente para variante-base autorizada.
 - Variante redundante sem diferença nem função de base autorizada falha.
+- Tipo de mídia desconhecido falha.
+- Política responsiva desconhecida falha.
+- `desktop_only` com conteúdo essencial falha.
+- Formulário completo em `hero.standard` falha.
 - Faixa, limite e comportamento inválidos falham.
 - Valor da raiz não é duplicado.
 - Fontes excedentes ou `itemKey` desconhecido falham.
@@ -645,31 +928,27 @@ Script previsto: `validate:landing-page-modules`.
 
 - Status:
   - pendente;
-  - bloqueada até fechar individualmente os módulos aprovados, mergear a evolução da raiz e consolidar a v2.
+  - bloqueada até fechar a grade, mergear a evolução da raiz e consolidar a v2.
 - Automação: não.
 - Risco: médio controlado.
-- Objetivo: implementar o contrato repo-only dos módulos aprovados a partir dos nove candidatos e de suas variantes iniciais.
+- Objetivo: implementar o contrato repo-only dos módulos e variantes iniciais individualmente aprovados.
 - Critérios de aceite:
-  - catálogo derivado da análise individual dos nove candidatos;
-  - módulos transversais;
+  - grade metodológica comum aplicada;
+  - módulos transversais individualmente aprovados;
   - nenhuma duplicação da raiz;
-  - compatibilidades e capabilities validadas;
-  - contratos discriminados por `fieldKind`;
-  - policies de origem fechadas;
-  - variante-base com delta vazio somente quando autorizada;
-  - elegibilidade calculada por interseção;
-  - `hero.subtitle` com ênfase padrão e alternativa explícita;
+  - compatibilidade e capabilities validadas;
+  - Hero e `hero.standard` conforme contrato aprovado;
   - catálogo imutável e resolver fail-closed;
   - extensão futura comum pelo registry e casos de validação;
   - evolução de infraestrutura somente quando o contrato fechado não atender;
   - nenhum taxon, composição, banco, renderer ou geração.
 - Próxima ação:
-  - aplicar a grade completa ao Hero;
-  - fechar campos, policies, fontes, perfis, versões, lifecycle e casos do Hero;
+  - avaliar e ajustar a grade consolidada do Hero;
+  - fechar o Hero por decisão humana;
   - somente depois iniciar `trust_bar`;
   - seguir módulo por módulo na ordem da grade;
   - dividir depois em fases executáveis;
-  - concluir a evolução da raiz;
+  - concluir as evoluções necessárias da raiz;
   - realizar avaliação única dos especialistas;
   - consolidar v2 e solicitar merge humano.
 
@@ -682,7 +961,6 @@ Script previsto: `validate:landing-page-modules`.
 - Módulos identificados por corretor, imóveis, médio padrão ou outro taxon.
 - Implementação específica dos taxons usados como evidência.
 - Cadastro dinâmico de módulos ou variantes no banco ou Admin.
-- `actionRole` sem contrato fechado e fonte aprovada.
 - Catálogo de entradas, valores reais, taxonomia ou resolução de pesquisas.
 - Composição, ordem global, prontidão de taxon ou conta de teste.
 - Geração, IA, prompt, schema final, renderer, render model ou publicação.
@@ -690,6 +968,8 @@ Script previsto: `validate:landing-page-modules`.
 - Banco, migration, RPC, policy, grant, trigger, storage ou upload.
 - CRM, webhook, job, agente, automação, workflow ou nova infraestrutura.
 - Nova dependência, bundler ou alteração em `commercial_activation`.
+- Criação de módulo de formulário neste recorte.
+- Aprovação de galeria, carrossel ou tour como campo do Hero.
 
 ### 4.2. Critérios de parada
 
@@ -698,13 +978,14 @@ Parar se:
 - a raiz compatível não estiver mergeada ou não garantir a capability;
 - surgir fallback automático;
 - módulo ou variante depender do taxon usado como evidência;
-- `itemKey` for tratado como identidade automática de módulo;
 - surgir necessidade de banco, composição, geração ou renderer;
-- faltar `item_key` oficial necessário para copy;
+- faltar `item_key` oficial;
 - diferença puder ser atendida por conteúdo, parâmetro ou composição;
 - houver ampliação de limite absoluto;
 - houver tentativa de sobrescrever catálogo, módulo ou variante já publicado;
 - uma necessidade nova exigir alteração de contrato sem versionamento próprio;
+- formulário completo for incorporado silenciosamente ao Hero;
+- mídia essencial for ocultada no mobile;
 - houver conflito com E18.4, E20, E19 ou `commercial_activation`;
 - surgir nova dependência ou artefato fora do escopo;
 - preservação histórica não puder ser garantida.
@@ -714,7 +995,9 @@ Parar se:
 - PR #577 preservado e plano-base mantido em v1.
 - Fonte principal: `Corretor Imóveis`, `end_customer`, `lp_sections` v1 ativa.
 - Fonte complementar: `Corretor de imóveis de médio padrão`.
-- Grade inicial de candidatos:
+- Grade metodológica comum registrada para todos os módulos.
+- A grade comum possui núcleo obrigatório e blocos condicionais.
+- Grade inicial limitada aos candidatos:
   - `hero`;
   - `trust_bar`;
   - `problem_solution`;
@@ -724,19 +1007,18 @@ Parar se:
   - `social_proof`;
   - `faq`;
   - `final_cta`.
-- Os candidatos serão analisados individualmente; rejeição ou fusão exige decisão humana.
-- Os módulos aprovados serão transversais e reutilizáveis na família `landing_page`.
+- Os módulos serão transversais e reutilizáveis na família `landing_page`.
 - `formato_curto`, `formato_medio` e `formato_longo` não são módulos.
-- Hero e `hero.standard` possuem decisões-base aprovadas, mas a grade completa do Hero ainda deve ser fechada.
-- `hero.standard` pode possuir delta vazio como execução-base versionada.
+- Hero registrado com sete campos, mídia opcional e fronteira explícita com formulário.
+- `mediaKind = image | video` não cria variante.
+- `all_viewports | desktop_only` é escolha responsiva por ocorrência, dependente de capability futura da raiz, e não cria variante.
+- Formulário completo não pertence a `hero.standard`.
+- `hero.standard` é a única variante inicial e possui delta vazio autorizado.
 - `body.editorialEmphasis` é padrão; `body.base` é alternativa explícita; fallback é proibido.
-- A E20 controla a seleção tipográfica por ocorrência; o renderer apenas executa.
-- O contrato de campo será discriminado por `fieldKind` e não exigirá `semanticRole` para campos não textuais.
-- A política de origem será união fechada.
-- Elegibilidade será calculada pela interseção de catálogo, módulo, variante e propósito.
+- Lifecycle inicial proposto do Hero e da variante: `experimental`.
 - A criação futura comum de módulos e variantes será declarativa em `registry.ts`, acompanhada de casos em `validation-cases.ts` e nova versão aplicável.
 - `contracts.ts`, `schema.ts` e `resolver.ts` só serão alterados quando a necessidade não couber no contrato fechado existente.
 - Versões publicadas são imutáveis; campo novo exige nova `moduleVersion` e capability comum exige nova `rootVersion`.
 - Uso por taxon pertence à composição da E20.
 - A implementação permanece bloqueada.
-- Próxima decisão humana: aplicar e fechar a grade completa do Hero.
+- Próxima decisão humana: avaliar e ajustar o Hero antes de iniciar `trust_bar`.
