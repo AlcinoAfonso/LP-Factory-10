@@ -1,6 +1,6 @@
 14/07/2026 — Plano-base E18.5 — Parametrização de módulos e variantes `landing_page`
 
-Fontes: chat, `README.md`, `AGENTS.md`, `docs/prompt-estrategista.md`, `docs/template-roadmap.md`, `docs/prompt-executor.md`, `docs/roadmap.md`, `docs/base-tecnica.md`, `docs/schema.md`, `docs/lp-planejamento.md`, `docs/lousa-plano-base-e18-4.md`, `docs/template-blueprint.md`, `docs/blueprint-corretor-imoveis-end-customer.md`, `docs/prompt-nicho-itens-estruturados.md`, consulta read-only ao Supabase dos itens ativos de `lp_sections`, `lib/conversion-content/landing-page/`, PRs #559, #563, #564, #566, #567 e #577, avaliações do Analista e decisões humanas de 14 e 15/07/2026.
+Fontes: chat, `README.md`, `AGENTS.md`, `docs/prompt-estrategista.md`, `docs/template-roadmap.md`, `docs/prompt-executor.md`, `docs/roadmap.md`, `docs/base-tecnica.md`, `docs/schema.md`, `docs/lp-planejamento.md`, `docs/lousa-plano-base-e18-4.md`, `docs/template-blueprint.md`, `docs/blueprint-corretor-imoveis-end-customer.md`, `docs/prompt-nicho-itens-estruturados.md`, consulta read-only ao Supabase dos itens ativos de `lp_sections`, `lib/conversion-content/landing-page/`, PRs #559, #563, #564, #566, #567 e #577, avaliações do Analista e decisões humanas de 14, 15 e 16/07/2026.
 
 Versão: v1 em ajuste.
 
@@ -364,6 +364,38 @@ Interface prevista: `landingPageModules`.
 
 Script previsto: `validate:landing-page-modules`.
 
+#### 2.13.1. Evolução futura do catálogo
+
+- A operação comum de criação de módulo ou variante será declarativa e versionada no repositório.
+- Novo módulo que use campos, deltas, papéis e capabilities já suportados exigirá normalmente:
+  - registrar o módulo, sua versão e sua variante inicial em `registry.ts`;
+  - adicionar casos positivos e negativos em `validation-cases.ts`;
+  - publicar nova `moduleCatalogVersion` que preserve integralmente os catálogos anteriores.
+- Nova variante que use deltas já suportados exigirá normalmente:
+  - registrar a variante e sua versão em `registry.ts`;
+  - vinculá-la explicitamente ao módulo e à versão compatíveis;
+  - adicionar os respectivos casos em `validation-cases.ts`;
+  - publicar nova `moduleCatalogVersion` sem alterar versões anteriores.
+- `contracts.ts`, `schema.ts` e `resolver.ts` não devem ser alterados quando a necessidade puder ser expressa pelo contrato fechado existente.
+- Campo novo em módulo já publicado exige nova `moduleVersion`; não autoriza editar silenciosamente a versão publicada.
+- Novo tipo de delta, novo comportamento estrutural ou nova forma de resolução exige:
+  - evolução explícita de `contracts.ts`;
+  - ajuste correspondente de `schema.ts` e `resolver.ts`;
+  - atualização do registry e dos casos de validação;
+  - nova versão compatível do catálogo.
+- Capability comum ausente, como novo papel semântico, tratamento ou opção aplicável à família, não deve ser criada no módulo:
+  - exige evolução própria da raiz;
+  - cria nova `rootVersion`;
+  - somente depois autoriza catálogo compatível.
+- A inclusão do novo módulo ou variante em um taxon, sua ordem, obrigatoriedade e escolhas por ocorrência pertencem à composição futura da E20; não são efeito automático do registry.
+- Toda evolução ocorrerá por branch, PR, revisão e validações executáveis.
+- No MVP não haverá:
+  - cadastro dinâmico de módulos ou variantes no banco;
+  - Admin para editar contratos;
+  - mutação de versão publicada em runtime;
+  - criação automática de módulo ou variante a partir de taxon ou pesquisa.
+- A alteração de infraestrutura será exceção; a extensão rotineira deverá limitar-se ao registry, aos casos de validação e ao novo versionamento aplicável.
+
 ### 2.14. Validações mínimas previstas
 
 - Catálogo e versões válidos.
@@ -380,6 +412,9 @@ Script previsto: `validate:landing-page-modules`.
 - Lifecycle incompatível falha.
 - Resultado é profundamente imutável.
 - Versão antiga permanece resolvível.
+- Versão publicada de catálogo, módulo ou variante não pode ser sobrescrita.
+- Extensão declarativa compatível não exige alteração do contrato, schema ou resolver.
+- Mudança de contrato sem nova versão aplicável falha.
 - Sem imports de banco, Supabase, env, API, renderer, rota ou Admin.
 
 ### 2.15. Fluxo operacional
@@ -423,6 +458,8 @@ Script previsto: `validate:landing-page-modules`.
   - compatibilidade e capability validadas;
   - `hero.subtitle` com ênfase padrão e alternativa explícita;
   - catálogo imutável e resolver fail-closed;
+  - extensão futura comum pelo registry e casos de validação;
+  - evolução de infraestrutura somente quando o contrato fechado não atender;
   - nenhum taxon, composição, banco, renderer ou geração.
 - Próxima ação:
   - debater `trust_bar` e sua variante inicial;
@@ -440,6 +477,7 @@ Script previsto: `validate:landing-page-modules`.
 - Valores concretos da nova raiz.
 - Módulos identificados por corretor, imóveis, médio padrão ou outro taxon.
 - Implementação específica dos taxons usados como evidência.
+- Cadastro dinâmico de módulos ou variantes no banco ou Admin.
 - Catálogo de entradas, valores reais, taxonomia ou resolução de pesquisas.
 - Composição, ordem global, prontidão de taxon ou conta de teste.
 - Geração, IA, prompt, schema final, renderer, render model ou publicação.
@@ -459,6 +497,8 @@ Parar se:
 - faltar `item_key` oficial;
 - diferença puder ser atendida por conteúdo, parâmetro ou composição;
 - houver ampliação de limite absoluto;
+- houver tentativa de sobrescrever catálogo, módulo ou variante já publicado;
+- uma necessidade nova exigir alteração de contrato sem versionamento próprio;
 - houver conflito com E18.4, E20, E19 ou `commercial_activation`;
 - surgir nova dependência ou artefato fora do escopo;
 - preservação histórica não puder ser garantida.
@@ -482,5 +522,9 @@ Parar se:
 - `formato_curto`, `formato_medio` e `formato_longo` não são módulos.
 - Hero e `hero.standard` estão fechados para a v1.
 - `body.editorialEmphasis` é padrão; `body.base` é alternativa explícita; fallback é proibido.
+- A criação futura comum de módulos e variantes será declarativa em `registry.ts`, acompanhada de casos em `validation-cases.ts` e nova versão aplicável.
+- `contracts.ts`, `schema.ts` e `resolver.ts` só serão alterados quando a necessidade não couber no contrato fechado existente.
+- Versões publicadas são imutáveis; campo novo exige nova `moduleVersion` e capability comum exige nova `rootVersion`.
+- Uso por taxon pertence à composição da E20.
 - A implementação permanece bloqueada.
 - Próxima decisão humana: contrato e variante inicial de `trust_bar`.
