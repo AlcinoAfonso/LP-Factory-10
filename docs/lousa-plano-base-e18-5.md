@@ -4,7 +4,7 @@ Fontes: chat, `README.md`, `AGENTS.md`, `docs/roadmap.md`, `docs/base-tecnica.md
 
 Versão: v1 em ajuste.
 
-Status: PR vivo para debate; grade metodológica comum registrada; `hero` e `hero.standard` permanecem como proposta consolidada com pendências; nove módulos candidatos preservados; nenhuma implementação autorizada.
+Status: PR vivo para debate; grade metodológica comum registrada; `hero` e `hero.standard` conceitualmente fechados na v1; oito módulos candidatos ainda pendentes; nenhuma implementação autorizada.
 
 Path: `docs/lousa-plano-base-e18-5.md`.
 
@@ -17,6 +17,7 @@ Recorte do roadmap: `18.5 — Parametrização de módulos e variantes landing_p
 - A E18.4 está concluída e a raiz versionada existe em `lib/conversion-content/landing-page/`.
 - A raiz v1 não garante `body.editorialEmphasis` em todos os presets nem possui capability fechada de visibilidade responsiva por campo.
 - Ambas as necessidades exigem evolução versionada própria, preservando `rootVersion 1`.
+- Essas necessidades bloqueiam implementação, não o fechamento conceitual do módulo.
 - Fonte estrutural principal confirmada:
   - taxon `Corretor Imóveis`;
   - `taxonId = c7952d16-678c-4615-9483-a003e57d94aa`;
@@ -43,7 +44,8 @@ Recorte do roadmap: `18.5 — Parametrização de módulos e variantes landing_p
   - responsividade e acessibilidade aplicáveis;
   - variante, versões, lifecycle e compatibilidades;
   - casos da E18.5 e invariantes futuras da E19.
-- O Hero é o piloto; `trust_bar` só começa após seu fechamento.
+- O Hero é o piloto e está conceitualmente fechado na v1.
+- O próximo candidato é `trust_bar`.
 - Implementação somente após evolução da raiz, v2 estável, pareceres e merge humano.
 
 ### 1.3. Princípio canônico de herança
@@ -59,6 +61,7 @@ Recorte do roadmap: `18.5 — Parametrização de módulos e variantes landing_p
 - Tipo de mídia, ativo, taxon, campanha, funil, conteúdo ou visibilidade responsiva autorizada não criam variante isoladamente.
 - Módulo e variante não ampliam limite absoluto da raiz.
 - Campo novo exige nova versão do módulo.
+- Reintrodução de vídeo, formulário ou CTA secundário no Hero exige nova `moduleVersion`.
 
 ### 1.5. Decisões técnicas incorporadas
 
@@ -81,19 +84,27 @@ Recorte do roadmap: `18.5 — Parametrização de módulos e variantes landing_p
   - padrão `body.editorialEmphasis`;
   - alternativa `body.base`;
   - sem fallback.
-- `hero.standard` é a única variante inicial e pode ter delta vazio.
+- `hero.standard` é a única variante inicial e possui delta vazio.
 - Canal e destino concretos de CTA permanecem fora do registry do módulo.
 - Nenhum `actionRole` está aprovado sem contrato fechado.
 - `moduleCatalogVersion` possui versão e compatibilidade; lifecycle próprio do catálogo não está aprovado.
-- Decisão humana de 16/07/2026:
-  - autorizar conceitualmente `desktop_only` como opção responsiva de `hero.media`;
-  - condicionar seu uso à evolução versionada da raiz;
+- Decisão humana de 16/07/2026 sobre `desktop_only`:
+  - autorizar conceitualmente a opção para `hero.media`;
+  - condicionar sua implementação à evolução versionada da raiz;
   - proibir a ocultação de informação essencial.
 - A relação entre lifecycle da raiz e propósito é política nova da E18.5; não é comportamento já implementado pelo resolver da raiz.
 - Decisão humana de 16/07/2026 sobre `secondaryCta`:
   - retirar o campo da v1 de `hero` e de `hero.standard`;
   - não criar entrada operacional para sustentá-lo;
   - permitir reavaliação futura somente com evidência real, contrato fechado e nova `moduleVersion`.
+- Decisão humana de 16/07/2026 sobre mídia:
+  - restringir `hero.media` da v1 a imagem;
+  - retirar vídeo da v1;
+  - permitir vídeo futuramente somente com contrato de acessibilidade fechado e nova `moduleVersion`.
+- Decisão humana de 16/07/2026 sobre CTA para formulário:
+  - restringir a v1 a `whatsapp`, `phone`, `email` e `external_url`;
+  - retirar `form` do contrato do Hero v1;
+  - permitir suporte futuro somente após contrato de composição E20/E19 e nova `moduleVersion`.
 
 ### 1.6. Estado técnico confirmado
 
@@ -105,8 +116,6 @@ Recorte do roadmap: `18.5 — Parametrização de módulos e variantes landing_p
 
 ### 1.7. Pontos ainda em debate
 
-- Contrato exato de acessibilidade para vídeo.
-- Contrato futuro de vínculo entre CTA principal e ocorrência de formulário na composição.
 - Confirmação dos oito candidatos restantes.
 - Evolução tipográfica e responsiva da raiz.
 - Divisão final em fases.
@@ -115,7 +124,7 @@ Recorte do roadmap: `18.5 — Parametrização de módulos e variantes landing_p
 
 ### 2.1. Problema
 
-- Faltam contratos aprovados para todos os módulos e variantes.
+- Faltam contratos aprovados para oito módulos e suas variantes.
 - O catálogo deve generalizar funções sem carregar identidade imobiliária.
 - CTA não pode duplicar canal ou destino da E20.2.
 - Campos híbridos precisam representar declarativamente quando suporte operacional é exigido.
@@ -153,6 +162,7 @@ Recorte do roadmap: `18.5 — Parametrização de módulos e variantes landing_p
 - resolve hipóteses e ambiguidades;
 - pode rejeitar evidência insuficiente;
 - pode aprovar padrão funcional do produto;
+- pode reduzir a v1 para preservar fechamento e avanço seguro;
 - não viola contrato vigente sem evolução versionada.
 
 #### 2.3.4. Validação posterior
@@ -241,7 +251,7 @@ Regras:
 - valor operacional não pode ser inferido como fato;
 - referência técnica não é copy;
 - somente cardinalidade representa obrigatoriedade;
-- capability ausente falha fechado.
+- capability ausente falha fechado na implementação.
 
 #### 2.5.1. Política fechada de origem do valor
 
@@ -356,7 +366,7 @@ Nova chave operacional não pode ser criada implicitamente pela E18.5.
 #### 2.7.1. Identidade e função estrutural
 
 - `moduleKey = hero`.
-- `moduleVersion = 1` proposto.
+- `moduleVersion = 1`.
 - Função:
   - apresentar recorte;
   - comunicar proposta principal;
@@ -394,11 +404,13 @@ Pertencem:
 - explicação curta;
 - CTA principal;
 - microprova opcional;
-- uma mídia opcional.
+- uma imagem opcional.
 
 Não pertencem:
 
 - CTA secundário na v1;
+- vídeo na v1;
+- CTA para formulário na v1;
 - trust bar completa;
 - oferta;
 - processo;
@@ -414,7 +426,7 @@ Não pertencem:
 - navegação;
 - ordem global.
 
-#### 2.7.4. Catálogo de campos proposto
+#### 2.7.4. Catálogo de campos v1
 
 - `eyebrow`:
   - `fieldKind = text`;
@@ -447,6 +459,11 @@ Não pertencem:
     - policy `hybrid`;
     - `operationalSupportRequirement = when_present`;
   - `operationalBindingRequirement.catalogFieldKey = primary_conversion_channel`;
+  - canais admitidos na v1:
+    - `whatsapp`;
+    - `phone`;
+    - `email`;
+    - `external_url`;
   - vínculo obrigatório quando a ação estiver presente;
   - canal e destino concretos ficam fora do registry.
 - `proofShort`:
@@ -461,7 +478,7 @@ Não pertencem:
   - `fieldKind = media`;
   - cardinalidade `0..1`;
   - policy `technical_reference`;
-  - `mediaKind = image | video`;
+  - `mediaKind = image`;
   - referência do ativo pertence à instância futura;
   - `accessibilityMode = informative | decorative`;
   - acessibilidade usa contrato próprio de mídia, não policy textual;
@@ -469,28 +486,20 @@ Não pertencem:
   - imagem decorativa exige ausência de descrição semântica, normalizada pelo contrato final;
   - conteúdo da alternativa acessível deriva do ativo, função e contexto reais;
   - legenda não integra o contrato inicial e não se confunde com alternativa acessível;
-  - vídeo exige alternativa acessível própria;
-  - contrato exato de vídeo ainda pendente;
   - mídia decorativa não transporta informação essencial.
 
 Estado dos campos:
 
-- a v1 do Hero contém seis campos no catálogo publicável:
+- a v1 do Hero contém seis campos publicáveis:
   - `eyebrow`;
   - `title`;
   - `subtitle`;
   - `primaryCta`;
   - `proofShort`;
   - `media`;
-- quatro possuem contrato interno definido:
-  - `eyebrow`;
-  - `title`;
-  - `subtitle`;
-  - `proofShort`;
-- `primaryCta` permanece parcialmente pendente para o canal `form`;
-- `media` permanece parcialmente pendente para acessibilidade de vídeo;
-- `secondaryCta` foi retirado da v1 por decisão humana;
-- as capabilities tipográfica e responsiva da raiz são dependências externas, não pendências internas desses campos.
+- os seis possuem contrato interno conceitualmente fechado;
+- `secondaryCta`, vídeo e `form` foram retirados da v1 por decisão humana;
+- as capabilities tipográfica e responsiva da raiz são dependências externas de implementação.
 
 #### 2.7.5. Herança e exceção tipográfica
 
@@ -498,11 +507,12 @@ Estado dos campos:
 - A E18.5 autoriza `body.editorialEmphasis` e `body.base`; a E20 seleciona.
 - Exceção exige decisão humana documentada, sem presumir persistência nova.
 - O renderer não escolhe nem aplica fallback.
-- A capability tipográfica ainda depende de nova `rootVersion`.
+- A capability tipográfica ainda depende de nova `rootVersion` para implementação.
 
 #### 2.7.6. Mídia e comportamento responsivo
 
-- Imagem e vídeo no mesmo slot usam `hero.standard`.
+- A v1 admite apenas imagem no slot de mídia de `hero.standard`.
+- Vídeo exige nova `moduleVersion` e contrato de acessibilidade próprio.
 - Galeria, carrossel e tour ficam fora.
 - Opções conceitualmente autorizadas:
   - `all_viewports`;
@@ -511,12 +521,12 @@ Estado dos campos:
   - `desktop_only` é opção responsiva aprovada para `hero.media`;
   - pertence à escolha por ocorrência da E20;
   - não cria variante;
-  - só pode ser usada quando a mídia for decorativa, complementar ou redundante;
+  - só pode ser usada quando a imagem for decorativa, complementar ou redundante;
   - não pode ocultar informação essencial.
 - Aprovação conceitual não equivale a capability técnica disponível.
 - A raiz v1 não possui a capability necessária.
 - A implementação de `desktop_only` permanece bloqueada até evolução versionada da raiz.
-- A E19 valida a mídia concreta e a preservação da informação.
+- A E19 valida a imagem concreta e a preservação da informação.
 
 #### 2.7.7. Fronteira com formulário
 
@@ -530,13 +540,12 @@ Estado dos campos:
     - a E19 resolve `email_destination`;
   - `external_url`:
     - a E19 resolve `external_url_destination`.
-- Quando `primary_conversion_channel = form`:
-  - `privacy_policy_url` comprova requisito de privacidade, mas não identifica a ocorrência concreta do formulário;
-  - o CTA depende de futura ocorrência de módulo de formulário aprovada na composição;
-  - a E20 deverá compor o Hero com essa ocorrência;
-  - a E19 deverá vincular o CTA à ocorrência composta;
-  - esse vínculo ainda não possui contrato aprovado;
-  - o caso `form` não é considerado completamente resolvido pelo Hero.
+- `primary_conversion_channel = form` é inválido para `hero` v1.
+- Suporte futuro a formulário exige:
+  - ocorrência de módulo de formulário aprovada na composição;
+  - contrato E20 para composição;
+  - contrato E19 para vínculo;
+  - nova `moduleVersion` do Hero.
 - Não criar agora:
   - nova entrada operacional;
   - identificador de formulário;
@@ -556,7 +565,7 @@ Estado dos campos:
 - `subtitle`:
   - primárias `pain` e `desire`;
   - auxiliar `belief`.
-- labels:
+- label:
   - primária `trigger`;
   - auxiliar `search_intent`;
   - ação concreta exige vínculo operacional.
@@ -564,11 +573,11 @@ Estado dos campos:
   - primária `proof_type`;
   - auxiliar `objection`;
   - suporte operacional obrigatório quando presente.
-- Alternativa acessível de mídia:
+- Alternativa acessível de imagem:
   - não usa `copySourceMap`;
   - não usa `operationalValuePolicy`;
   - a E19 a produz a partir do ativo e contexto sob o contrato de acessibilidade.
-- Ativo, tipo de mídia, modo de acessibilidade, visibilidade, canal e destino não recebem `copySourceMap`.
+- Ativo, modo de acessibilidade, visibilidade, canal e destino não recebem `copySourceMap`.
 
 #### 2.7.9. Perfis de funil do Hero
 
@@ -592,19 +601,19 @@ Estado dos campos:
 - `variantVersion = 1`.
 - Compatível com `moduleVersion = 1`.
 - Execução-base com delta vazio.
-- Mídia permanece opcional.
-- `secondaryCta` não pertence à v1.
-- Inclusão futura de `secondaryCta` exige nova `moduleVersion`, vínculo operacional aprovado e casos próprios.
-- Imagem, vídeo, funil, visibilidade e troca para `body.base` não criam variante.
+- Imagem permanece opcional.
+- `secondaryCta`, vídeo e `form` não pertencem à v1.
+- Inclusão futura de qualquer um deles exige nova `moduleVersion`, contrato aprovado e casos próprios.
+- Funil, visibilidade e troca para `body.base` não criam variante.
 - `hero.media_split` permanece rejeitada.
+- A variante está conceitualmente fechada na v1.
 
 #### 2.7.11. Lifecycle e compatibilidade do Hero
 
 - `moduleCatalogVersion = 1` proposto.
-- `moduleVersion = 1` proposto.
-- `variantVersion = 1` proposto.
+- `moduleVersion = 1` fechado conceitualmente.
+- `variantVersion = 1` fechada conceitualmente.
 - `moduleCatalogVersion` não possui lifecycle próprio aprovado; declara apenas versão e compatibilidade com a raiz.
-- `rootVersion` depende das capabilities tipográfica e responsiva.
 - Lifecycle da raiz disponível no contrato atual:
   - `hypothesis`;
   - `validated`;
@@ -632,15 +641,16 @@ Estado dos campos:
 - Validar identidade, evidência, proveniência e interpretação editorial de `hero_segmentado`.
 - Aceitar exatamente os seis campos publicáveis da v1.
 - Rejeitar `secondaryCta` em `moduleVersion = 1`.
-- Exigir nova `moduleVersion` para inclusão futura de `secondaryCta`.
+- Rejeitar `mediaKind = video` em `moduleVersion = 1`.
+- Rejeitar `primary_conversion_channel = form` no Hero v1.
+- Exigir nova `moduleVersion` para inclusão futura desses recursos.
 - Rejeitar campo, cardinalidade, policy, fonte, tratamento ou variante inválidos.
 - Rejeitar combinação ausente da allowlist.
 - Validar `operationalSupportRequirement` e sua compatibilidade com policy e campo.
 - Validar vínculo abstrato do CTA principal com `primary_conversion_channel`.
 - Garantir que CTA não armazene canal ou destino concreto.
-- Registrar o caso `form` como vínculo de composição ainda pendente.
-- Validar contrato abstrato de mídia, acessibilidade e responsividade.
-- Falhar sem capabilities exigidas e sem fallback.
+- Validar contrato abstrato de imagem, acessibilidade e responsividade.
+- Falhar na implementação sem capabilities exigidas e sem fallback.
 - Incluir raiz na elegibilidade sem exigir lifecycle do catálogo.
 - Tratar lifecycle–propósito como política da E18.5.
 - Retornar resultado imutável.
@@ -651,27 +661,25 @@ Não criam agora schema ou validador de conteúdo na E18.5:
 
 - título, subtítulo e CTA principal concretos conforme cardinalidade;
 - label compatível com canal, ação e destino resolvidos;
-- CTA para formulário vinculado à ocorrência composta quando esse contrato existir;
+- canal limitado ao conjunto autorizado pela v1;
 - suporte operacional exigido disponível;
 - prova concreta sustentada;
-- ativo de mídia válido;
+- ativo de imagem válido;
 - imagem informativa com alternativa acessível;
 - imagem decorativa sem descrição semântica;
-- vídeo com alternativa acessível;
 - `desktop_only` sem ocultar informação essencial;
-- ausência de CTA secundário, formulário completo, seletor interativo, galeria, carrossel ou tour dentro de `hero.standard` v1.
+- ausência de CTA secundário, vídeo, formulário completo, seletor interativo, galeria, carrossel ou tour dentro de `hero.standard` v1.
 
-#### 2.7.14. Critérios de fechamento do Hero
+#### 2.7.14. Fechamento do Hero
 
-Fechar após aprovação de:
+Contrato conceitual aprovado na v1:
 
 - identidade, evidência, interpretação da segmentação e fronteiras;
 - seis campos publicáveis e cardinalidades;
 - allowlist de policies e `operationalSupportRequirement`;
-- vínculo do CTA principal;
-- contrato do caso `form`;
-- mídia e acessibilidade, inclusive vídeo;
-- visibilidade responsiva e nova raiz;
+- vínculo do CTA principal aos quatro canais autorizados;
+- imagem e acessibilidade abstrata;
+- visibilidade responsiva conceitual;
 - variante, versões, lifecycle e compatibilidades;
 - casos E18.5 e invariantes E19.
 
@@ -683,14 +691,16 @@ Estado:
 - labels e `proofShort` usam `hybrid` com suporte declarativo;
 - CTA principal referencia somente a chave operacional aprovada;
 - destinos concretos permanecem fora do registry;
-- caso `form` delimitado como vínculo futuro de composição;
+- `form` foi retirado da v1;
+- mídia foi restringida a imagem;
 - alternativa acessível saiu de `operationalValuePolicy`;
 - `desktop_only` possui aprovação humana conceitual, mas capability técnica ainda não existe;
 - lifecycle próprio do catálogo foi retirado;
 - lifecycle–propósito foi identificado como política nova da E18.5;
-- `secondaryCta` foi retirado da v1;
-- acessibilidade de vídeo ainda está pendente;
-- Hero ainda não fechado e implementação bloqueada.
+- `secondaryCta` e vídeo foram retirados da v1;
+- `hero` está conceitualmente fechado na v1;
+- `hero.standard` está conceitualmente fechada na v1;
+- implementação permanece bloqueada até evolução tipográfica e responsiva da raiz.
 
 ### 2.8. `copy_source_map`
 
@@ -772,17 +782,17 @@ Validações E18.5:
 - allowlist de policy e suporte operacional respeitada;
 - vínculo de ação referencia apenas `fieldKey` aprovado do catálogo operacional;
 - nenhum destino concreto de CTA no registry;
-- `secondaryCta` rejeitado na v1;
-- capabilities exigidas sem fallback;
+- `secondaryCta`, vídeo e canal `form` rejeitados no Hero v1;
+- capabilities exigidas sem fallback na implementação;
 - delta vazio somente na base autorizada;
-- contrato abstrato de mídia e acessibilidade válido;
+- contrato abstrato de imagem e acessibilidade válido;
 - formulário ou seletor interativo não adicionados ao Hero;
 - resultado imutável, versões históricas preservadas e sem imports fora do boundary.
 
 #### 2.14.1. Invariantes futuras para E19
 
 - presença e consistência do conteúdo concreto;
-- CTA vinculado à operação real;
+- CTA vinculado à operação real e a canal autorizado;
 - suporte operacional exigido resolvido;
 - prova sustentada;
 - ativo e acessibilidade válidos;
@@ -803,12 +813,15 @@ Validações E18.5:
 
 - Status pendente e bloqueado até grade fechada, raiz evoluída e v2 consolidada.
 - Automação: não. Risco: médio controlado.
-- Aceite: módulos aprovados, sem duplicação da raiz ou E20.2, compatibilidade validada, Hero conforme contrato, resolver fail-closed e separação E18.5/E19.
+- Aceite: módulos aprovados, sem duplicação da raiz ou E20.2, compatibilidade validada, resolver fail-closed e separação E18.5/E19.
+- Hero:
+  - contrato conceitual fechado;
+  - implementação bloqueada pela raiz.
 - Próxima ação:
-  - fechar acessibilidade de vídeo;
-  - reavaliar Hero;
-  - depois iniciar `trust_bar` e seguir a grade;
-  - concluir raiz, pareceres, v2 e merge humano.
+  - iniciar análise de `trust_bar` pela grade metodológica comum;
+  - seguir os oito candidatos restantes;
+  - evoluir a raiz antes da implementação;
+  - concluir pareceres, v2 e merge humano.
 
 ## 4. Escopo negativo e critérios de parada
 
@@ -817,7 +830,7 @@ Validações E18.5:
 - Implementação da raiz no PR #577.
 - Banco, composição, geração, renderer, Admin, Builder, tracking, automação ou nova infraestrutura.
 - Nova entrada operacional para sustentar `secondaryCta`.
-- `secondaryCta` na v1 do Hero.
+- `secondaryCta`, vídeo ou CTA para formulário na v1 do Hero.
 - Módulo de formulário, seletor interativo, galeria, carrossel ou tour neste recorte.
 - Persistência nova para justificativa da composição.
 
@@ -825,13 +838,13 @@ Validações E18.5:
 
 Parar se:
 
-- raiz, capability ou lifecycle aplicável não estiverem resolvidos;
+- raiz, capability ou lifecycle aplicável não estiverem resolvidos na implementação;
 - surgir lifecycle próprio de catálogo sem decisão explícita;
 - surgir fallback, dependência de taxon ou ampliação de limite;
 - faltar evidência oficial;
 - destino concreto entrar no registry;
 - campo híbrido depender de regra hardcoded por `fieldKey`;
-- `secondaryCta` for reintroduzido na v1;
+- `secondaryCta`, vídeo ou `form` forem reintroduzidos na v1;
 - formulário, seletor interativo ou mídia essencial forem tratados incorretamente;
 - validação de conteúdo for antecipada na E18.5;
 - houver conflito de fronteiras ou perda histórica.
@@ -841,16 +854,16 @@ Parar se:
 - PR #577 permanece em v1 e sem implementação autorizada.
 - `hero_segmentado` está comprovado com `itemId` e interpretado editorialmente na v1.
 - Grade comum e nove candidatos permanecem.
-- Hero possui seis campos publicáveis na v1.
-- Quatro campos têm contrato interno definido; `primaryCta` permanece pendente para `form` e `media` para vídeo.
-- `secondaryCta` foi retirado da v1; eventual retorno exige nova `moduleVersion` e contrato aprovado.
-- `hero.standard` permanece a única variante inicial, com delta vazio.
+- Hero possui seis campos publicáveis com contrato conceitualmente fechado.
+- `secondaryCta`, vídeo e canal `form` foram retirados da v1; eventual retorno exige nova `moduleVersion` e contrato aprovado.
+- `hero.standard` permanece a única variante inicial, com delta vazio, e está conceitualmente fechada.
 - Labels e `proofShort` usam `hybrid` com exigência declarativa de suporte.
 - CTA principal referencia `primary_conversion_channel`, sem canal ou destino concreto no registry.
-- Alternativa acessível da mídia usa contrato próprio, não policy textual.
-- Imagem, vídeo e visibilidade responsiva não criam variante.
+- Alternativa acessível da imagem usa contrato próprio, não policy textual.
+- Visibilidade responsiva não cria variante.
 - Formulário completo e seletor interativo ficam fora do Hero.
 - Elegibilidade inclui a raiz e não presume lifecycle do catálogo.
 - E18.5 e E19 permanecem separadas.
-- Hero ainda não está fechado por acessibilidade de vídeo, vínculo futuro do caso `form` e evolução da raiz.
-- Próxima decisão humana: fechar acessibilidade de vídeo e reavaliar o Hero antes de `trust_bar`.
+- Hero e `hero.standard` estão finalizados conceitualmente na v1.
+- A implementação continua bloqueada pela evolução tipográfica e responsiva da raiz.
+- Próxima ação humana: iniciar `trust_bar` e seguir a grade dos oito módulos restantes.
