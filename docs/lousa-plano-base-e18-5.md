@@ -4,7 +4,7 @@ Fontes: chat, `README.md`, `AGENTS.md`, `docs/prompt-estrategista.md`, `docs/tem
 
 Versão: v1 em ajuste.
 
-Status: PR vivo para debate; grade inicial de nove módulos definida a partir de `Corretor Imóveis`, `audience_scope = end_customer`, `lp_sections` v1 ativa; os contratos serão fechados um a um antes da avaliação única dos especialistas; nenhuma implementação autorizada.
+Status: PR vivo para debate; grade inicial de nove módulos candidatos definida a partir de `Corretor Imóveis`, `audience_scope = end_customer`, `lp_sections` v1 ativa; cada candidato será analisado individualmente antes de sua aprovação material; rejeição, fusão ou substituição exige decisão humana; a grade metodológica será aplicada primeiro ao Hero; nenhuma implementação autorizada.
 
 Path: `docs/lousa-plano-base-e18-5.md`.
 
@@ -37,16 +37,28 @@ Recorte do roadmap: `18.5 — Parametrização de módulos e variantes landing_p
 
 - O plano-base v1 e o PR #577 já existem.
 - As decisões do debate são incorporadas no mesmo PR; não criar arquivo paralelo.
-- A v1 permanecerá aberta até definir, um a um, os nove módulos e suas variantes iniciais.
-- Para cada módulo, fechar:
-  - função estrutural;
+- A v1 permanecerá aberta até analisar, um a um, os nove módulos candidatos e suas variantes iniciais.
+- A existência na grade não equivale a aprovação material do módulo.
+- Rejeitar, fundir ou substituir candidato exige:
+  - justificativa estrutural;
+  - atualização explícita da grade;
+  - decisão humana.
+- Para cada módulo aprovado, fechar:
+  - identidade transversal;
+  - restrições normativas;
+  - evidências estruturais;
+  - função e fronteiras;
   - campos e cardinalidades;
-  - herança e exceções;
-  - variante inicial e deltas;
+  - herança e capabilities;
+  - política de origem dos valores;
   - fontes de copy;
   - perfis BOFU, MOFU e TOFU;
-  - lifecycle e limites.
-- O Hero é o módulo-piloto; os demais seguem a ordem da grade inicial.
+  - variante inicial e deltas;
+  - versões e compatibilidades;
+  - lifecycle e propósitos permitidos;
+  - fronteiras com E20, E19 e renderer;
+  - casos executáveis e critérios de fechamento.
+- O Hero é o módulo-piloto; os demais seguem a ordem da grade inicial após o fechamento completo do Hero.
 - Depois da grade completa, o plano será dividido em fases executáveis específicas.
 - A avaliação única do Analista, Gestor Estrutural e Gestor de Updates ocorrerá somente com a v1 estável.
 - A v2 será consolidada no mesmo PR após os pareceres.
@@ -60,8 +72,10 @@ Recorte do roadmap: `18.5 — Parametrização de módulos e variantes landing_p
 - A variante registra somente deltas fechados sobre campos já previstos.
 - A composição futura pode selecionar por ocorrência apenas opções previamente autorizadas.
 - O resolver aplica a precedência e entrega contrato efetivo completo e imutável.
-- E20, E19, geração e renderer não podem reaplicar a herança.
-- O renderer executa o contrato resolvido; não escolhe fallback.
+- A E18.5 declara tratamento padrão, alternativas autorizadas e capability exigida.
+- A E20 seleciona, por ocorrência concreta, somente alternativa autorizada e registra a justificativa aplicável.
+- A E19 gera o conteúdo concreto sem alterar o contrato parametrizado.
+- O renderer executa o contrato já resolvido; não escolhe alternativa, não corrige ausência de capability e não aplica fallback.
 
 ### 1.4. Regras de exceção
 
@@ -76,6 +90,7 @@ Recorte do roadmap: `18.5 — Parametrização de módulos e variantes landing_p
 ### 1.5. Decisões técnicas incorporadas
 
 - Cardinalidade substitui propriedade `required` separada.
+- A obrigatoriedade pode ser verificada como pergunta analítica, mas não será duplicada no contrato.
 - Não haverá `structuralRules` aberto nem `addedFields` livre.
 - Campo novo exige nova versão do contrato do módulo.
 - Comportamento estrutural, quando necessário, será união fechada.
@@ -90,10 +105,11 @@ Recorte do roadmap: `18.5 — Parametrização de módulos e variantes landing_p
   - `social_proof`, derivado de `prova_social`;
   - `faq`, derivado de `faq_objeções`;
   - `final_cta`, derivado de `cta_final_qualificado`.
-- Os `item_key` de `lp_sections` são evidência da função, não identidade permanente do módulo.
+- Os `item_key` de `lp_sections` são referências de evidência, não identidade permanente do módulo.
+- Nomes diferentes de seção podem representar a mesma função estrutural transversal.
 - Cada candidato só será aprovado após confirmar função reutilizável e diferença real em relação aos demais.
 - `formato_curto`, `formato_medio` e `formato_longo` orientam composição e extensão; não são módulos nem variantes.
-- O catálogo inicial fica limitado a nove módulos; ampliação exige decisão posterior.
+- A grade inicial fica limitada aos nove candidatos; ampliação exige decisão posterior.
 - Para `hero.subtitle`:
   - `semanticRole = paragraph`;
   - padrão: `body.editorialEmphasis`;
@@ -101,7 +117,7 @@ Recorte do roadmap: `18.5 — Parametrização de módulos e variantes landing_p
   - ausência da capability falha fechado;
   - E20 poderá selecionar a alternativa por ocorrência.
 - `hero.media_split` não está aprovada.
-- `hero.standard` é a única variante inicial aprovada do Hero.
+- `hero.standard` é a única variante inicial aprovada do Hero e poderá possuir delta vazio como execução-base versionada.
 
 ### 1.6. Estado técnico confirmado
 
@@ -116,14 +132,15 @@ Recorte do roadmap: `18.5 — Parametrização de módulos e variantes landing_p
 
 ### 1.7. Pontos ainda em debate
 
-- Confirmação individual dos oito módulos restantes.
-- Campos, cardinalidades e papéis semânticos de cada módulo.
+- Aplicação completa da grade ao Hero.
+- Confirmação individual dos oito candidatos restantes.
+- Contratos específicos por `fieldKind`.
+- Política de origem de cada campo de cada módulo.
 - Variante inicial e deltas de cada módulo.
 - Critério mínimo para nova variante e exceção estrutural.
 - Mapas de fontes de copy.
 - Perfis BOFU, MOFU e TOFU.
-- Lifecycle inicial.
-- Critério de promoção de `experimental` para `validated`.
+- Lifecycle inicial e promoção para `validated`.
 - Divisão final em fases executáveis.
 
 ## 2. Contrato do caso
@@ -134,33 +151,61 @@ Recorte do roadmap: `18.5 — Parametrização de módulos e variantes landing_p
 - Os nove itens estruturais do primeiro recorte não podem virar módulos automaticamente.
 - O catálogo precisa generalizar funções reais sem transportar identidade imobiliária.
 - A raiz v1 não garante o tratamento editorial exigido pelo Hero.
+- Um contrato único de campo com `semanticRole` obrigatório não atende mídia, ação, coleção ou referência técnica.
+- A política de origem precisa impedir que pesquisa seja tratada como fonte de preço, endereço, credencial, métrica, depoimento, registro, garantia ou disponibilidade.
 - Repetição de valores da raiz ou deltas aplicados por consumidores criaria múltiplas fontes da verdade.
 - Fallback para `body.base` esconderia capability ausente.
 
 ### 2.2. Resultado esperado
 
-- Criar catálogo repo-only versionado com nove módulos transversais.
+- Criar catálogo repo-only versionado a partir dos nove módulos candidatos, incluindo apenas os contratos individualmente aprovados.
 - Usar `Corretor Imóveis`, `end_customer`, `lp_sections` v1 ativa como evidência estrutural principal.
 - Confirmar cada módulo e variante inicial individualmente.
 - Resolver `raiz → módulo → variante` em contrato final imutável.
-- Definir fontes somente com `item_key` oficiais.
+- Definir referências estruturais sem transformar `lp_sections.itemKey` em identidade canônica.
+- Definir fontes de copy somente com `item_key` oficiais dos blocos aplicáveis.
 - Separar pesquisa orientadora de valores factuais operacionais.
 - Tratar BOFU, MOFU e TOFU como perfis, não variantes.
 - Preservar versões históricas.
 - Não criar banco, composição, geração ou renderer.
 
-### 2.3. Fonte e critério para parametrização
+### 2.3. Hierarquia para parametrização
 
-Ordem de evidência:
+#### 2.3.1. Restrições normativas
 
-1. parametrização raiz;
-2. `docs/lp-planejamento.md`;
-3. itens estruturados oficiais;
-4. Blueprints e referências reais;
-5. decisão interna de produto;
-6. LP real validada.
+- parametrização raiz vigente;
+- `docs/lp-planejamento.md`;
+- contratos oficiais dos itens estruturados;
+- fronteiras da E18.5, E20 e E19;
+- decisões humanas já aprovadas e registradas;
+- compatibilidade histórica e versionamento imutável.
 
-Regras específicas:
+#### 2.3.2. Evidências
+
+- itens estruturados do taxon;
+- Blueprints;
+- referências reais;
+- LPs analisadas;
+- contrastes entre taxons e ultranichos;
+- evidência executável existente.
+
+#### 2.3.3. Decisão humana de produto
+
+- resolve hipóteses e ambiguidades;
+- pode rejeitar recomendação empírica insuficiente;
+- pode aprovar padrão funcional próprio do LP Factory 10;
+- não pode violar contrato vigente sem evolução versionada explícita;
+- deve decidir rejeição, fusão ou substituição de candidato da grade.
+
+#### 2.3.4. Validação posterior
+
+- LP real em conta de teste;
+- casos executáveis;
+- revisão humana;
+- evidência de uso reutilizável;
+- decisão de promoção, restrição, depreciação ou substituição.
+
+#### 2.3.5. Regras específicas
 
 - A grade inicial usa `Corretor Imóveis`, `end_customer`, `lp_sections` v1 ativa.
 - O ultranicho de médio padrão não restringe o catálogo transversal.
@@ -171,11 +216,11 @@ Regras específicas:
 - Identidade do módulo não pode carregar taxon, profissão ou campanha.
 - Itens de extensão de página não pertencem ao catálogo.
 
-### 2.4. Identidade e versionamento previstos
+### 2.4. Identidade, evidência e versionamento previstos
 
 - `family = landing_page`.
 - `rootVersion` será a versão que garanta as capabilities requeridas.
-- `moduleCatalogVersion = 1`.
+- `moduleCatalogVersion = 1` para o primeiro catálogo publicado.
 - Grade candidata de `moduleKey`:
   - `hero`;
   - `trust_bar`;
@@ -187,34 +232,111 @@ Regras específicas:
   - `faq`;
   - `final_cta`.
 - O registry será explícito e imutável por versão.
-- Módulo: chave, versão, lifecycle, função e catálogo de campos.
-- Variante: chave, versão, módulo, lifecycle e deltas fechados.
+- Módulo:
+  - `moduleKey`;
+  - `moduleVersion`;
+  - `lifecycle`;
+  - `structuralFunction`;
+  - `structuralEvidenceRefs`;
+  - `fieldCatalog`.
+- Cada `structuralEvidenceRef` deve registrar:
+  - taxon de origem;
+  - `audienceScope`;
+  - `researchVersion`;
+  - `itemKey` observado;
+  - função estrutural descrita pela fonte;
+  - função transversal inferida;
+  - justificativa da equivalência semântica.
+- `itemKey` observado não determina `moduleKey`.
+- Não haverá campo livre de força de evidência na v1; necessidade futura exige enum fechado e uso comprovado.
+- Variante:
+  - `variantKey`;
+  - `variantVersion`;
+  - `moduleKey`;
+  - `compatibleModuleVersion`;
+  - `lifecycle`;
+  - deltas fechados.
+- O catálogo declara compatibilidade explícita com `rootVersion`.
 - Não haverá versão ou catálogo implícito nem fallback silencioso.
 
 ### 2.5. Contrato-base de campo
 
-Cada campo declara:
+Todo campo declara:
 
 - `fieldKey`;
-- `semanticRole`;
+- `fieldKind`;
 - `cardinality`;
-- `copySourceMap`;
 - `operationalValuePolicy`.
 
-Quando aplicável:
+A união fechada prevista de `fieldKind` é:
 
-- `defaultTypographyTreatment`;
-- `allowedTypographyTreatments`.
+- `text`;
+- `action`;
+- `media`;
+- `collection`;
+- `operational_value`;
+- `technical_reference`.
 
-Regras:
+Contratos condicionais por tipo:
 
-- papéis e tratamentos devem existir na raiz;
-- cardinalidade contém somente `min` e `max`;
-- nenhum valor concreto da raiz é copiado;
-- exceção de faixa ou limite deve ser justificada e só pode restringir o teto herdado;
-- tratamento padrão deve pertencer à lista permitida;
-- capability ausente falha fechado;
-- fato operacional não pode ser preenchido como fato por pesquisa.
+- `text`:
+  - exige `semanticRole` existente na raiz;
+  - pode declarar `copySourceMap`;
+  - pode selecionar tratamentos tipográficos autorizados.
+- `action`:
+  - representa objeto estrutural de ação;
+  - seu `label` é campo textual separado com `semanticRole = cta_label`;
+  - destino real é referência operacional futura;
+  - não haverá `actionRole` enquanto não existir contrato fechado e fonte aprovada.
+- `media`:
+  - usa contrato abstrato de referência;
+  - deve prever política de texto alternativo e uso decorativo na parametrização específica;
+  - não recebe `semanticRole` visual por padrão.
+- `collection`:
+  - declara cardinalidade da coleção;
+  - declara contrato fechado do item;
+  - não recebe `semanticRole` na coleção como um todo.
+- `operational_value`:
+  - declara tipo do valor;
+  - exige fonte operacional aplicável;
+  - não pode ser inferido como fato pela pesquisa.
+- `technical_reference`:
+  - representa referência técnica, identificador ou vínculo abstrato;
+  - não é copy.
+
+Regras gerais:
+
+- `cardinality` contém somente `min` e `max`.
+- `{ min: 1, max: 1 }` representa campo único obrigatório.
+- `{ min: 0, max: 1 }` representa campo único opcional.
+- Coleção usa `max > 1` quando houver teto fechado.
+- Não haverá `required` ou propriedade equivalente.
+- Nenhum valor concreto da raiz é copiado.
+- Exceção de faixa ou limite deve ser justificada e só pode restringir o teto herdado.
+- Tratamento padrão deve pertencer à lista permitida.
+- Capability ausente falha fechado.
+
+#### 2.5.1. Política fechada de origem do valor
+
+`operationalValuePolicy` será união fechada com:
+
+- `research_generated_non_factual`:
+  - texto pode ser produzido a partir da pesquisa;
+  - não pode criar alegação operacional ou factual não sustentada.
+- `research_guided`:
+  - pesquisa orienta tema, enquadramento e vocabulário;
+  - não fornece por si só o valor final completo.
+- `operational_required`:
+  - valor deve vir da conta, negócio, oferta, campanha, LP ou fonte operacional autorizada.
+- `hybrid`:
+  - pesquisa orienta a copy;
+  - qualquer afirmação factual exige sustentação operacional.
+- `technical_reference`:
+  - mídia, link, identificador, evidência ou referência técnica.
+- `not_copy`:
+  - campo estrutural ou técnico sem geração de copy.
+
+A E18.5 declara a política. A E19 aplica a política durante a geração concreta.
 
 ### 2.6. Contrato de variante
 
@@ -237,41 +359,104 @@ Deltas proibidos:
 - valor de conta ou composição;
 - URL, classe ou componente visual concreto.
 
-O resolver valida o delta e retorna somente o contrato final.
+Regras adicionais:
+
+- O resolver valida o delta e retorna somente o contrato final.
+- Variante `standard` pode representar a execução-base versionada do módulo e possuir delta vazio quando `variantKey` for obrigatório.
+- Delta vazio não autoriza criar variantes redundantes.
+- Não se inventa delta para justificar a existência da variante-base.
+- Nova variante exige diferença reutilizável demonstrável dentro da mesma função estrutural.
 
 ### 2.7. Módulo-piloto `hero`
 
-#### 2.7.1. Função estrutural
+#### 2.7.1. Identidade e função estrutural
 
+- `moduleKey = hero`.
 - Apresentar o recorte da LP, a proposta de valor e a principal ação.
-- A evidência inicial é `hero_segmentado`, sem transportar para o contrato as intenções ou a profissão do recorte.
 - Não representa taxon, campanha, tráfego, funil ou composição.
+- A função deve permanecer transversal à família `landing_page`.
 
-#### 2.7.2. Catálogo fechado de campos proposto
+#### 2.7.2. Evidência estrutural inicial
 
-- `eyebrow`: `eyebrow`, `{ min: 0, max: 1 }`.
-- `title`: `h1`, `{ min: 1, max: 1 }`.
-- `subtitle`: `paragraph`, `{ min: 1, max: 1 }`, padrão `body.editorialEmphasis`, permitidos `body.editorialEmphasis` e `body.base`.
-- `primaryCta.label`: `cta_label`, `{ min: 1, max: 1 }`.
-- `secondaryCta.label`: `cta_label`, `{ min: 0, max: 1 }`.
-- `proofShort`: `paragraph`, `{ min: 0, max: 1 }`.
-- `media`: referência abstrata, `{ min: 0, max: 1 }`.
+- taxon: `Corretor Imóveis`;
+- `audienceScope = end_customer`;
+- `researchVersion = 1`;
+- `itemKey = hero_segmentado`;
+- função observada: abertura segmentada da LP com promessa e CTA;
+- função transversal inferida: apresentar recorte, proposta de valor e ação principal;
+- o nome da seção imobiliária não determina o `moduleKey`.
 
-#### 2.7.3. Herança e exceções
+#### 2.7.3. Catálogo preliminar de campos
+
+O catálogo será fechado pela grade completa antes de avançar ao próximo módulo.
+
+- `eyebrow`:
+  - `fieldKind = text`;
+  - `semanticRole = eyebrow`;
+  - `cardinality = { min: 0, max: 1 }`.
+- `title`:
+  - `fieldKind = text`;
+  - `semanticRole = h1`;
+  - `cardinality = { min: 1, max: 1 }`.
+- `subtitle`:
+  - `fieldKind = text`;
+  - `semanticRole = paragraph`;
+  - `cardinality = { min: 1, max: 1 }`;
+  - padrão `body.editorialEmphasis`;
+  - permitidos `body.editorialEmphasis` e `body.base`.
+- `primaryCta`:
+  - `fieldKind = action`;
+  - `cardinality = { min: 1, max: 1 }`;
+  - `label` textual com `semanticRole = cta_label`.
+- `secondaryCta`:
+  - `fieldKind = action`;
+  - `cardinality = { min: 0, max: 1 }`;
+  - `label` textual com `semanticRole = cta_label`.
+- `proofShort`:
+  - `fieldKind = text`;
+  - `semanticRole = paragraph`;
+  - `cardinality = { min: 0, max: 1 }`.
+- `media`:
+  - `fieldKind = media`;
+  - referência abstrata;
+  - `cardinality = { min: 0, max: 1 }`;
+  - contrato de acessibilidade ainda deve ser fechado na análise do Hero.
+
+A política de origem de cada campo será decidida na aplicação completa da grade ao Hero.
+
+#### 2.7.4. Herança e exceção tipográfica
 
 - Campos textuais herdam faixas, limites e valores da raiz.
-- Não há tamanho, limite ou spacing próprio.
+- Não há tamanho, limite ou spacing próprio aprovado.
 - `subtitle` permanece `paragraph` e usa tratamento da raiz.
-- `body.base` é alternativa explícita, não fallback.
+- A E18.5 define `body.editorialEmphasis` como padrão e `body.base` como alternativa autorizada.
+- A E20 pode selecionar `body.base` em ocorrência concreta com justificativa.
+- O renderer apenas executa o tratamento resolvido.
+- Ausência de `body.editorialEmphasis` é incompatibilidade, não fallback.
 - Mídia opcional não comprova variante.
 
-#### 2.7.4. Variante inicial definida
+#### 2.7.5. Variante inicial definida
 
-- `hero.standard` usa o contrato-base, mantém mídia opcional e não possui delta numérico.
+- `variantKey = hero.standard`.
+- Representa a execução-base versionada do Hero.
+- Delta vazio é permitido.
+- Mídia permanece opcional pelo contrato do módulo.
 - É a única variante inicial aprovada do Hero.
 - `hero.media_split` permanece rejeitada.
 - Troca isolada para `body.base` não cria variante.
 - Variante específica de nicho é proibida.
+
+#### 2.7.6. Pendências para fechamento do Hero
+
+- confirmar o catálogo fechado de campos;
+- confirmar cardinalidades sem `required`;
+- classificar cada campo por `operationalValuePolicy`;
+- validar o `copySourceMap` de cada campo textual;
+- separar perfis BOFU, MOFU e TOFU da estrutura;
+- definir `moduleVersion`, `variantVersion` e compatibilidades;
+- definir lifecycle inicial do módulo e da variante;
+- criar casos positivos e negativos;
+- confirmar dependência da raiz que garanta `body.editorialEmphasis`.
 
 ### 2.8. `copy_source_map`
 
@@ -279,24 +464,24 @@ O resolver valida o delta e retorna somente o contrato final.
 - Cada campo usa até duas fontes primárias e uma auxiliar.
 - Copy para visitante usa `end_customer` como fonte primária.
 - `business_buyer` pode auxiliar somente autoridade, processo, posicionamento ou prova institucional.
-- `strategic_core` e `seo` fornecem insumos factuais de pesquisa.
+- `strategic_core` e `seo` fornecem insumos aplicáveis de pesquisa.
 - `lp_overview` orienta transformação.
 - `lp_sections` comprova funções estruturais, mas não vira fonte fixa de copy.
 - Chave desconhecida e fato operacional inferido falham fechado.
 
-Mapa inicial do Hero:
+Mapa inicial do Hero para validação:
 
 - `title`: `positioning_opportunity`, `desire`; auxiliar `commercial_keywords`.
 - `subtitle`: `pain`, `desire`; auxiliar `belief`.
-- CTAs: `trigger`; auxiliar `search_intent`.
+- labels de CTA: `trigger`; auxiliar `search_intent`.
 - `proofShort`: `proof_type`; auxiliar `objection`.
 
 ### 2.9. `funnel_copy_profile`
 
 - Perfis: `bofu`, `mofu`, `tofu`.
-- Perfil orienta transformação, sem alterar schema, cardinalidade, limite ou estrutura.
+- Perfil orienta transformação, sem alterar schema, cardinalidade, limite, identidade do módulo ou estrutura aprovada.
 - Módulo adapta o perfil à função.
-- Variante apenas restringe ou especializa tratamento permitido.
+- Variante apenas restringe ou especializa tratamento permitido quando houver mudança comportamental comprovada.
 - Hero:
   - BOFU: recorte específico, benefício sustentado, objeção direta e CTA de maior intenção;
   - MOFU: diferenciação, explicação, prova contextual e CTA proporcional;
@@ -307,16 +492,24 @@ Mapa inicial do Hero:
 - Promessa, prova, autoridade, credencial, comparação, preço, oferta, desconto, garantia, urgência, escassez, resultado, depoimento e métrica exigem fonte real aplicável.
 - Pesquisa não fornece como fato preço, condição, prazo, disponibilidade, garantia, credencial, depoimento, métrica, contato, endereço, URL ou informação legal específica.
 - Valor factual exige entrada operacional futura.
+- BOFU não autoriza alegação não sustentada.
 - TOFU não admite pressão artificial.
 
 ### 2.11. Lifecycle e compatibilidade
 
 - Lifecycle: `candidate`, `experimental`, `validated`, `deprecated`.
+- Propósitos: `controlled_test`, `new_use`, `historical_read`.
 - `candidate` não entra em composição ou geração.
 - `experimental` serve a teste controlado.
-- `validated` exige LP real e decisão humana.
-- `deprecated` não entra em novo uso, mas permanece resolvível.
-- Propósitos: `controlled_test`, `new_use`, `historical_read`.
+- `validated` permite novo uso quando todas as camadas aplicáveis também permitirem.
+- `deprecated` não entra em novo uso, mas permanece resolvível historicamente.
+- O catálogo declara compatibilidade entre `moduleCatalogVersion` e `rootVersion`.
+- A variante declara compatibilidade com `moduleVersion`.
+- A elegibilidade efetiva é a interseção das permissões de catálogo, módulo, variante e propósito; não será calculada por ordenação textual simples dos estados.
+- Exemplos:
+  - módulo `experimental` e variante `validated` permitem `controlled_test`, mas não `new_use`;
+  - módulo `deprecated` e variante `validated` permitem `historical_read`, mas não `new_use`;
+  - módulo `candidate` bloqueia qualquer resolução para uso.
 - Versões efetivas serão preservadas em snapshot futuro.
 
 ### 2.12. Contrato de resolução previsto
@@ -334,16 +527,17 @@ Entrada:
 Processamento:
 
 1. resolver raiz;
-2. validar compatibilidade;
-3. resolver módulo;
-4. validar referências;
-5. validar variante;
-6. aplicar precedência;
-7. calcular contrato final;
-8. validar lifecycle;
-9. retornar resultado imutável.
+2. validar compatibilidade do catálogo com a raiz;
+3. resolver módulo e sua versão pelo catálogo imutável;
+4. validar referências, campos e policies;
+5. resolver variante e validar compatibilidade com `moduleVersion`;
+6. validar e aplicar delta, inclusive delta vazio autorizado da variante-base;
+7. aplicar precedência;
+8. calcular contrato final;
+9. calcular elegibilidade pela interseção de permissões;
+10. retornar resultado imutável.
 
-A saída contém identidades, versões, lifecycle, função, campos, cardinalidades, papéis, fontes, políticas, tratamentos e limites efetivos; não contém deltas ou fallback para o consumidor.
+A saída contém identidades, versões, lifecycle, elegibilidade efetiva, função, campos, cardinalidades, papéis, fontes, policies, tratamentos e limites efetivos; não contém deltas ou fallback para o consumidor.
 
 ### 2.13. Artefatos previstos
 
@@ -367,49 +561,51 @@ Script previsto: `validate:landing-page-modules`.
 #### 2.13.1. Evolução futura do catálogo
 
 - A operação comum de criação de módulo ou variante será declarativa e versionada no repositório.
-- Novo módulo que use campos, deltas, papéis e capabilities já suportados exigirá normalmente:
-  - registrar o módulo, sua versão e sua variante inicial em `registry.ts`;
+- Novo módulo compatível exigirá normalmente:
+  - registrar módulo, versão, evidências e variante inicial em `registry.ts`;
   - adicionar casos positivos e negativos em `validation-cases.ts`;
-  - publicar nova `moduleCatalogVersion` que preserve integralmente os catálogos anteriores.
-- Nova variante que use deltas já suportados exigirá normalmente:
-  - registrar a variante e sua versão em `registry.ts`;
-  - vinculá-la explicitamente ao módulo e à versão compatíveis;
-  - adicionar os respectivos casos em `validation-cases.ts`;
-  - publicar nova `moduleCatalogVersion` sem alterar versões anteriores.
-- `contracts.ts`, `schema.ts` e `resolver.ts` não devem ser alterados quando a necessidade puder ser expressa pelo contrato fechado existente.
-- Campo novo em módulo já publicado exige nova `moduleVersion`; não autoriza editar silenciosamente a versão publicada.
-- Novo tipo de delta, novo comportamento estrutural ou nova forma de resolução exige:
-  - evolução explícita de `contracts.ts`;
-  - ajuste correspondente de `schema.ts` e `resolver.ts`;
-  - atualização do registry e dos casos de validação;
-  - nova versão compatível do catálogo.
-- Capability comum ausente, como novo papel semântico, tratamento ou opção aplicável à família, não deve ser criada no módulo:
-  - exige evolução própria da raiz;
-  - cria nova `rootVersion`;
-  - somente depois autoriza catálogo compatível.
-- A inclusão do novo módulo ou variante em um taxon, sua ordem, obrigatoriedade e escolhas por ocorrência pertencem à composição futura da E20; não são efeito automático do registry.
-- Toda evolução ocorrerá por branch, PR, revisão e validações executáveis.
-- No MVP não haverá:
-  - cadastro dinâmico de módulos ou variantes no banco;
-  - Admin para editar contratos;
-  - mutação de versão publicada em runtime;
-  - criação automática de módulo ou variante a partir de taxon ou pesquisa.
-- A alteração de infraestrutura será exceção; a extensão rotineira deverá limitar-se ao registry, aos casos de validação e ao novo versionamento aplicável.
+  - publicar nova `moduleCatalogVersion` preservando catálogos anteriores.
+- Nova variante compatível exigirá normalmente:
+  - registrar variante e versão em `registry.ts`;
+  - vinculá-la ao módulo e à versão compatíveis;
+  - adicionar casos em `validation-cases.ts`;
+  - publicar nova `moduleCatalogVersion`.
+- `contracts.ts`, `schema.ts` e `resolver.ts` não mudam quando a necessidade couber no contrato fechado existente.
+- Campo novo em módulo publicado exige nova `moduleVersion`.
+- Novo `fieldKind`, policy, delta, comportamento ou forma de resolução exige evolução explícita de contrato, schema, resolver, registry e validações.
+- Capability comum ausente exige evolução da raiz e nova `rootVersion`.
+- Uso por taxon, ordem, obrigatoriedade e escolhas por ocorrência pertencem à E20.
+- Toda evolução ocorre por branch, PR, revisão e validações executáveis.
+- No MVP não haverá cadastro dinâmico no banco, Admin de contratos, mutação em runtime ou criação automática por taxon ou pesquisa.
+- Alteração de infraestrutura será exceção; extensão rotineira ficará no registry, validações e versionamento.
 
 ### 2.14. Validações mínimas previstas
 
 - Catálogo e versões válidos.
-- Exatamente nove módulos aprovados.
+- Cada módulo publicado foi individualmente aprovado a partir da grade candidata.
+- Rejeição ou fusão de candidato possui decisão humana registrada.
 - Nenhum módulo carrega identidade de taxon.
-- Compatibilidade e capabilities da raiz validadas.
+- `structuralEvidenceRefs` válidas e `itemKey` não usado como identidade automática.
+- Compatibilidade entre `moduleCatalogVersion` e `rootVersion` validada.
+- Compatibilidade entre variante e `moduleVersion` validada.
+- `fieldKind` conhecido e contrato condicional correto.
+- Campo textual sem `semanticRole` falha.
+- Campo não textual obrigado a ter `semanticRole` falha.
+- Cardinalidade inválida ou propriedade `required` falha.
+- `operationalValuePolicy` desconhecida falha.
+- Fato operacional originado apenas da pesquisa falha.
 - Referência, tratamento, módulo, variante ou campo desconhecido falha.
-- Tratamento padrão deve estar na lista permitida.
+- Tratamento padrão fora da lista permitida falha.
 - Ausência de `body.editorialEmphasis` e fallback automático falham.
-- Cardinalidade, faixa, limite e comportamento inválidos falham.
+- Delta vazio é aceito somente para variante-base autorizada.
+- Variante redundante sem diferença nem função de base autorizada falha.
+- Faixa, limite e comportamento inválidos falham.
 - Valor da raiz não é duplicado.
 - Fontes excedentes ou `itemKey` desconhecido falham.
-- `business_buyer` indevido e fato operacional inferido falham.
-- Lifecycle incompatível falha.
+- `business_buyer` indevido falha.
+- Elegibilidade incompatível com o propósito falha.
+- Módulo `candidate` não resolve para uso.
+- Módulo ou variante `deprecated` não resolve para `new_use`.
 - Resultado é profundamente imutável.
 - Versão antiga permanece resolvível.
 - Versão publicada de catálogo, módulo ou variante não pode ser sobrescrita.
@@ -426,10 +622,11 @@ Script previsto: `validate:landing-page-modules`.
 - Entrada:
   - raiz compatível;
   - plano E18.5;
-  - nove módulos aprovados;
-  - `item_key` oficiais.
+  - catálogo aprovado derivado da grade candidata;
+  - `item_key` oficiais;
+  - decisões humanas registradas.
 - Processamento:
-  - contratos, registry, schema, resolver, deltas, mapas, perfis, lifecycle e casos executáveis.
+  - contratos, registry, schema, resolver, evidências, fields, policies, deltas, mapas, perfis, lifecycle e casos executáveis.
 - Validação:
   - `npm ci`;
   - `npm run validate:landing-page-root`;
@@ -448,21 +645,28 @@ Script previsto: `validate:landing-page-modules`.
 
 - Status:
   - pendente;
-  - bloqueada até fechar a grade, mergear a evolução da raiz e consolidar a v2.
+  - bloqueada até fechar individualmente os módulos aprovados, mergear a evolução da raiz e consolidar a v2.
 - Automação: não.
 - Risco: médio controlado.
-- Objetivo: implementar o contrato repo-only dos nove módulos e variantes iniciais.
+- Objetivo: implementar o contrato repo-only dos módulos aprovados a partir dos nove candidatos e de suas variantes iniciais.
 - Critérios de aceite:
-  - nove módulos transversais;
+  - catálogo derivado da análise individual dos nove candidatos;
+  - módulos transversais;
   - nenhuma duplicação da raiz;
-  - compatibilidade e capability validadas;
+  - compatibilidades e capabilities validadas;
+  - contratos discriminados por `fieldKind`;
+  - policies de origem fechadas;
+  - variante-base com delta vazio somente quando autorizada;
+  - elegibilidade calculada por interseção;
   - `hero.subtitle` com ênfase padrão e alternativa explícita;
   - catálogo imutável e resolver fail-closed;
   - extensão futura comum pelo registry e casos de validação;
   - evolução de infraestrutura somente quando o contrato fechado não atender;
   - nenhum taxon, composição, banco, renderer ou geração.
 - Próxima ação:
-  - debater `trust_bar` e sua variante inicial;
+  - aplicar a grade completa ao Hero;
+  - fechar campos, policies, fontes, perfis, versões, lifecycle e casos do Hero;
+  - somente depois iniciar `trust_bar`;
   - seguir módulo por módulo na ordem da grade;
   - dividir depois em fases executáveis;
   - concluir a evolução da raiz;
@@ -478,6 +682,7 @@ Script previsto: `validate:landing-page-modules`.
 - Módulos identificados por corretor, imóveis, médio padrão ou outro taxon.
 - Implementação específica dos taxons usados como evidência.
 - Cadastro dinâmico de módulos ou variantes no banco ou Admin.
+- `actionRole` sem contrato fechado e fonte aprovada.
 - Catálogo de entradas, valores reais, taxonomia ou resolução de pesquisas.
 - Composição, ordem global, prontidão de taxon ou conta de teste.
 - Geração, IA, prompt, schema final, renderer, render model ou publicação.
@@ -493,8 +698,9 @@ Parar se:
 - a raiz compatível não estiver mergeada ou não garantir a capability;
 - surgir fallback automático;
 - módulo ou variante depender do taxon usado como evidência;
+- `itemKey` for tratado como identidade automática de módulo;
 - surgir necessidade de banco, composição, geração ou renderer;
-- faltar `item_key` oficial;
+- faltar `item_key` oficial necessário para copy;
 - diferença puder ser atendida por conteúdo, parâmetro ou composição;
 - houver ampliação de limite absoluto;
 - houver tentativa de sobrescrever catálogo, módulo ou variante já publicado;
@@ -508,7 +714,7 @@ Parar se:
 - PR #577 preservado e plano-base mantido em v1.
 - Fonte principal: `Corretor Imóveis`, `end_customer`, `lp_sections` v1 ativa.
 - Fonte complementar: `Corretor de imóveis de médio padrão`.
-- Grade inicial limitada a:
+- Grade inicial de candidatos:
   - `hero`;
   - `trust_bar`;
   - `problem_solution`;
@@ -518,13 +724,19 @@ Parar se:
   - `social_proof`;
   - `faq`;
   - `final_cta`.
-- Os módulos serão transversais e reutilizáveis na família `landing_page`.
+- Os candidatos serão analisados individualmente; rejeição ou fusão exige decisão humana.
+- Os módulos aprovados serão transversais e reutilizáveis na família `landing_page`.
 - `formato_curto`, `formato_medio` e `formato_longo` não são módulos.
-- Hero e `hero.standard` estão fechados para a v1.
+- Hero e `hero.standard` possuem decisões-base aprovadas, mas a grade completa do Hero ainda deve ser fechada.
+- `hero.standard` pode possuir delta vazio como execução-base versionada.
 - `body.editorialEmphasis` é padrão; `body.base` é alternativa explícita; fallback é proibido.
+- A E20 controla a seleção tipográfica por ocorrência; o renderer apenas executa.
+- O contrato de campo será discriminado por `fieldKind` e não exigirá `semanticRole` para campos não textuais.
+- A política de origem será união fechada.
+- Elegibilidade será calculada pela interseção de catálogo, módulo, variante e propósito.
 - A criação futura comum de módulos e variantes será declarativa em `registry.ts`, acompanhada de casos em `validation-cases.ts` e nova versão aplicável.
 - `contracts.ts`, `schema.ts` e `resolver.ts` só serão alterados quando a necessidade não couber no contrato fechado existente.
 - Versões publicadas são imutáveis; campo novo exige nova `moduleVersion` e capability comum exige nova `rootVersion`.
 - Uso por taxon pertence à composição da E20.
 - A implementação permanece bloqueada.
-- Próxima decisão humana: contrato e variante inicial de `trust_bar`.
+- Próxima decisão humana: aplicar e fechar a grade completa do Hero.
