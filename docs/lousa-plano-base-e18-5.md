@@ -2,9 +2,9 @@
 
 Fontes: chat, `README.md`, `AGENTS.md`, `docs/roadmap.md`, `docs/base-tecnica.md`, `docs/schema.md`, `docs/lp-planejamento.md`, `docs/lousa-plano-base-e18-4.md`, `docs/lousa-plano-base-e20-2.md`, `docs/blueprint-corretor-imoveis-end-customer.md`, `docs/prompt-nicho-itens-estruturados.md`, consulta read-only ao Supabase, `lib/conversion-content/landing-page/`, `lib/conversion-content/landing-page/input-catalog/registry.ts`, PRs #559, #563, #564, #566, #567, #577 e #581, avaliações do Analista e decisões humanas de 14 a 17/07/2026.
 
-Versão: v1 em ajuste.
+Versão: v1 conceitualmente fechada.
 
-Status: plano simplificado; nove módulos mantidos no escopo; `hero`, `hero.standard@v1`, `trust_bar`, `trust_bar.standard@v1`, `problem_solution`, `problem_solution.standard@v1`, `offer`, `offer.standard@v1`, `process`, `process.standard@v1`, `technical_assurance`, `technical_assurance.standard@v1`, `social_proof`, `social_proof.standard@v1`, `faq`, `faq.standard@v1` e `faq.accordion@v1` conceitualmente fechados; um módulo pendente; nenhuma implementação autorizada neste PR.
+Status: nove módulos e suas variantes `standard@v1` conceitualmente fechados; `faq.accordion@v1` aprovada como única variante adicional para validação controlada; nenhuma implementação de código autorizada neste PR.
 
 Path: `docs/lousa-plano-base-e18-5.md`.
 
@@ -16,8 +16,8 @@ Recorte do roadmap: `18.5 — Parametrização de módulos e variantes landing_p
 
 - Definir e implementar, no repositório, o catálogo versionado dos nove módulos `landing_page`, de suas variantes `standard@v1` e da variante controlada `faq.accordion@v1`.
 - Entregar contratos pequenos, estritos, imutáveis e suficientes para consumo posterior pela E20 e pela E19.
-- Preservar extensibilidade sem antecipar variantes, campos ou capacidades sem uso aprovado.
-- Encerrar a E18.5 após os nove módulos, suas variantes `standard@v1`, `faq.accordion@v1` e a validação integrada dos contratos.
+- Preservar extensibilidade sem antecipar campos, capacidades ou variantes sem uso aprovado.
+- Encerrar o fechamento conceitual após os nove módulos, suas variantes aprovadas e a validação integrada dos contratos.
 
 ### 1.2. Estado confirmado
 
@@ -44,11 +44,11 @@ Recorte do roadmap: `18.5 — Parametrização de módulos e variantes landing_p
 
 Regras:
 
-- Os nove módulos serão fechados e implementados na E18.5.
+- Os nove módulos serão implementados na E18.5 após autorização humana.
 - `item_key` é evidência de pesquisa, não identidade canônica do módulo.
 - Os módulos são transversais e não recebem identidade de taxon.
 - Formatos curto, médio e longo pertencem à composição e à extensão da LP.
-- O próximo módulo para análise é `final_cta`.
+- Não há módulo conceitual pendente.
 
 ### 1.4. Escopo positivo
 
@@ -99,54 +99,45 @@ Variante define:
 - validações próprias;
 - requisitos técnicos, factuais, operacionais e de acessibilidade aplicáveis.
 
-A separação aplica-se aos nove módulos.
-
 ### 2.2. Extensibilidade das variantes
 
 - Cada módulo começa com uma variante `standard@v1`; `faq.accordion@v1` é a única exceção adicional aprovada antes da primeira LP.
 - Nova variante exige diferença estrutural ou comportamental reutilizável.
 - Nova variante pode adicionar ou especializar campos, mídia, interação, responsividade e validações próprias.
 - Nova variante deve constituir evolução aditiva e localizada; poderá exigir capabilities compartilhadas ou infraestrutura inerente à nova execução, tratadas nos respectivos recortes, sem alteração destrutiva do módulo, das variantes existentes ou das LPs anteriores.
-- Nova variante não altera contratos ou LPs de variantes anteriores.
 - Restrições de `standard@v1` não restringem variantes futuras.
-- Nova variante não exige nova `moduleVersion` quando preserva função, fronteiras e invariantes do módulo.
+- Nova variante não exige nova `moduleVersion` quando preserva função, fronteiras, invariantes e integração comum.
 - Nova `moduleVersion` é exigida quando mudam função, fronteiras, invariantes permanentes ou integração comum.
 - Nova `variantVersion` é exigida quando muda o contrato de uma variante existente.
-- Cada referência futura deve identificar `moduleKey`, `moduleVersion`, `variantKey` e `variantVersion`.
+- Cada referência identifica `moduleKey`, `moduleVersion`, `variantKey` e `variantVersion`.
 
 Não criam variante isoladamente:
 
-- taxon;
-- plano;
-- campanha ou origem de tráfego;
-- funil;
-- copy;
+- taxon, plano, campanha ou origem de tráfego;
+- funil ou copy;
 - troca de ativo;
 - canal ou destino concreto;
 - ordem na LP;
 - quantidade já permitida;
-- ajuste responsivo normal do renderer.
+- ajuste visual ou responsivo normal do renderer.
 
-### 2.3. Herança e limites
+### 2.3. Herança, limites e resolução
 
-- A raiz contém regras comuns.
-- Módulo e variante registram apenas deltas necessários.
+- A raiz contém regras comuns; módulo e variante registram apenas deltas necessários.
 - Módulo ou variante pode restringir a raiz, mas não ampliar limite absoluto vigente.
 - Necessidade acima do limite da raiz exige evolução versionada da raiz.
-- Capability da raiz só bloqueia a implementação quando for indispensável à variante aprovada em implementação.
-- Capability opcional ou destinada a variante não aprovada permanece evolução posterior.
-- Variante deve declarar compatibilidade explícita com a versão da raiz usada por seu contrato.
-- O comportamento de uma variante imutável não muda pela disponibilidade posterior de nova capability da raiz.
+- Capability da raiz só bloqueia a implementação quando for indispensável à variante aprovada.
+- Variante declara compatibilidade explícita com a versão da raiz utilizada.
+- Variante imutável não muda pela disponibilidade posterior de nova capability.
 - Não existe fallback silencioso.
 - Contrato ausente, incompatível ou inválido falha fechado.
-- Resultado resolvido deve ser completo e imutável.
+- Resultado resolvido deve ser completo, profundamente imutável e sem referência mutável compartilhada.
 
 ### 2.4. Contrato mínimo de campo
 
 Cada campo usado por uma variante declara:
 
-- `fieldKey`;
-- `fieldKind`;
+- `fieldKey` e `fieldKind`;
 - cardinalidade;
 - `semanticRole`, quando textual;
 - policy de origem do valor;
@@ -156,25 +147,23 @@ Cada campo usado por uma variante declara:
 Regras:
 
 - cardinalidade representa obrigatoriedade;
-- texto visível usa papel semântico existente na raiz compatível;
-- coleção possui contrato fechado do item;
-- coleção aninhada não integra a v1;
+- texto visível usa papel semântico existente na raiz;
+- coleção possui contrato fechado do item e não admite coleção aninhada na v1;
 - ação não armazena canal, URL, telefone, e-mail ou destino concreto;
 - mídia referencia ativo futuro e declara apenas requisitos necessários à variante;
-- tipos, policies e matrizes só são adicionados quando um dos nove módulos realmente precisar.
+- tipos, policies e capabilities só entram quando consumidos por variante aprovada.
 
 ### 2.5. Copy e sustentação factual
 
 - `copySourceMap` define até duas fontes primárias e uma auxiliar por campo textual, salvo decisão humana registrada.
 - `funnelCopyProfile` adapta seleção e redação para BOFU, MOFU e TOFU.
-- O funil orienta copy e seleção e pode influenciar a escolha entre ordens previamente permitidas pela composição da E20; não redefine sozinho a estrutura da LP.
+- O funil não redefine sozinho a estrutura ou a ordem da LP.
 - Pesquisa orienta copy, mas não comprova fatos sobre a operação.
 - Credencial, capacidade, condição, preço, prazo, parceria, resultado, garantia ou ação concreta exige suporte operacional real.
-- A E18.5 declara a exigência estrutural.
 - A E19 resolve valores e valida a instância concreta conforme a composição recebida.
 - Nenhum módulo pode inventar prova, certificação, garantia ou resultado.
 
-Policies iniciais devem ser limitadas às efetivamente consumidas pelas variantes aprovadas:
+Policies aprovadas:
 
 - `research_guided`;
 - `hybrid`;
@@ -183,8 +172,6 @@ Policies iniciais devem ser limitadas às efetivamente consumidas pelas variante
 - `not_copy`.
 
 `operational_required` exige valor originado de evidência operacional real e impede geração a partir da pesquisa.
-
-Novas policies somente entram quando outro módulo aprovado exigir comportamento não representável pelas existentes.
 
 ### 2.6. Ações e vínculos operacionais
 
@@ -197,11 +184,8 @@ Novas policies somente entram quando outro módulo aprovado exigir comportamento
 ### 2.7. Lifecycle e compatibilidade
 
 - `moduleCatalogVersion` declara versão e compatibilidade com a raiz; não possui lifecycle próprio.
-- Módulo e variante usam lifecycle:
-  - `experimental`;
-  - `active`;
-  - `deprecated`.
-- Todos começam `experimental` e com propósito `controlled_test`.
+- Módulo e variante usam lifecycle `experimental`, `active` ou `deprecated`.
+- Todos começam `experimental`, com propósito `controlled_test`.
 - Promoção para `active` exige uso em LP real, revisão e decisão humanas.
 - `deprecated` impede novas composições, mas preserva leitura e renderização histórica.
 - Remoção física exige inexistência de dependentes ou migração aprovada.
@@ -224,57 +208,40 @@ E19:
 
 - recebe pesquisas, composição e entradas;
 - resolve conteúdo, ativos e vínculos;
-- trata ausência ou invalidade de dados conforme a obrigatoriedade definida pela E20 e seu próprio contrato;
+- trata ausência ou invalidade conforme a obrigatoriedade definida pela E20;
 - gera e administra a LP real;
-- preserva as versões utilizadas.
+- preserva versões e payload resolvido de forma genérica.
 
 Renderer:
 
 - executa o contrato resolvido;
 - não escolhe variante, conteúdo ou fallback.
 
-### 2.9. Checklist de fechamento de cada módulo
+### 2.9. Checklist de fechamento
 
 Obrigatório:
 
-- identidade, função e evidência;
-- fronteiras;
-- invariantes permanentes;
+- identidade, função, evidência, fronteiras e invariantes;
 - variante `standard@v1`;
-- campos e cardinalidades necessários;
-- especializações da raiz;
-- fontes de copy;
-- requisitos factuais ou operacionais;
-- lifecycle e compatibilidade;
-- validações estruturais indispensáveis.
+- campos, cardinalidades, fontes de copy e suporte factual;
+- lifecycle, compatibilidade e validações estruturais.
 
-Condicional, somente quando utilizado por `standard@v1` ou por variante adicional aprovada:
+Condicional, quando usado por variante aprovada:
 
-- ação;
-- mídia;
-- interação;
-- responsividade especial;
-- acessibilidade específica;
-- fallback técnico;
-- referência técnica.
-
-O fechamento conceitual não exige detalhar comportamentos de variantes futuras não aprovadas.
+- ação, mídia ou interação;
+- responsividade ou acessibilidade específica;
+- fallback técnico ou referência técnica.
 
 ### 2.10. Significado de implementação
 
-Um módulo está implementado na E18.5 quando existem, conforme o contrato técnico adotado:
+Um módulo está implementado na E18.5 quando existem:
 
-- identidade versionada do módulo;
-- identidade versionada de `standard@v1` e de cada variante adicional aprovada;
-- tipos e schemas;
-- campos, cardinalidades e capabilities;
-- registry;
-- resolver ou mecanismo equivalente;
-- validadores;
-- fixtures somente quando úteis ao padrão de teste;
+- identidade versionada do módulo e de suas variantes aprovadas;
+- tipos, schemas, campos, cardinalidades e capabilities;
+- registry, resolver e validadores;
+- fixtures quando úteis;
 - casos executáveis e testes de contrato;
-- regras de lifecycle e compatibilidade;
-- exportação pelo boundary `lib/conversion-content/landing-page/`.
+- lifecycle, compatibilidade e exportação pelo boundary `lib/conversion-content/landing-page/`.
 
 Isso não inclui seção visual funcional.
 
@@ -282,669 +249,281 @@ Isso não inclui seção visual funcional.
 
 ### 3.1. Módulo `hero`
 
-- `moduleKey = hero`.
-- `moduleVersion = 1`.
-- Função:
-  - apresentar a proposta principal;
-  - estabelecer o recorte da LP;
-  - conduzir a uma rota prioritária de conversão ou continuidade.
-- Invariantes:
-  - uma proposta principal identificável;
-  - hierarquia semântica coerente;
-  - ausência de identidade de taxon, plano, campanha ou funil no contrato;
-  - integração abstrata com a ação principal quando a variante a utilizar.
-- Fronteiras:
-  - não contém formulário completo, galeria, carrossel, tour, navegação global, oferta detalhada ou prova extensa.
-- Evidência principal:
-  - `hero_segmentado`, pesquisa ativa de `lp_sections`, taxon `Corretor Imóveis`.
-- Variantes futuras podem possuir campos e capacidades próprias sem alterar `hero.standard@v1`.
+- Identidade: `hero@v1`.
+- Função: apresentar proposta principal, estabelecer o recorte da LP e conduzir à rota prioritária de conversão ou continuidade.
+- Invariantes: proposta principal identificável, hierarquia semântica coerente e integração abstrata com ação quando utilizada.
+- Fronteiras: sem formulário completo, galeria, carrossel, tour, navegação global, oferta detalhada ou prova extensa.
+- Evidência: `hero_segmentado` de `lp_sections` e Blueprint do corretor.
 
 ### 3.2. Variante `hero.standard@v1`
 
-Identidade:
-
-- `variantKey = hero.standard`.
-- `variantVersion = 1`.
-- Compatível com `hero@v1` e com a versão vigente da raiz utilizada na implementação inicial.
-- Única variante inicial.
-
-Campos:
-
-- `eyebrow`:
-  - texto, papel `eyebrow`, cardinalidade `0..1`, policy `research_guided`.
-- `title`:
-  - texto, papel `h1`, cardinalidade `1..1`, policy `hybrid`, suporte `when_factual`.
-- `subtitle`:
-  - texto, papel `paragraph`, cardinalidade `1..1`, policy `hybrid`, suporte `when_factual`.
-- `primaryCta`:
-  - ação, cardinalidade `1..1`, policy `not_copy`;
-  - label textual com papel `cta_label`, cardinalidade `1..1`, policy `hybrid`, suporte `when_present`;
-  - vínculo obrigatório com `primary_conversion_channel`.
-- `proofShort`:
-  - texto, papel `paragraph`, cardinalidade `0..1`, policy `hybrid`, suporte `when_present`.
-- `media`:
-  - mídia, cardinalidade `0..1`, policy `technical_reference`;
-  - somente imagem;
-  - modo `informative` ou `decorative`.
-
-Copy:
-
-- `eyebrow`: primária `positioning_opportunity`; auxiliar `search_intent`.
-- `title`: primárias `positioning_opportunity` e `desire`; auxiliar `commercial_keywords`.
-- `subtitle`: primárias `pain` e `desire`; auxiliar `belief`.
-- `primaryCta.label`: primária `trigger`; auxiliar `search_intent`.
-- `proofShort`: primária `proof_type`; auxiliar `objection`.
-
-Regras específicas:
-
-- Canais permitidos: `whatsapp`, `phone`, `email` e `external_url`.
-- Canal e destino concretos ficam fora do registry.
-- Imagem informativa exige alternativa acessível.
-- Imagem decorativa não transporta informação essencial.
-- Visibilidade da mídia em `hero.standard@v1` é `all_viewports`.
-- `subtitle` usa `body.base` na versão inicial.
-- `desktop_only` e `body.editorialEmphasis` não integram `hero.standard@v1` enquanto não houver evolução versionada e compatibilidade explícita.
-- A adoção futura dessas capacidades exige nova `variantVersion` ou novo contrato compatível, sem alterar LPs existentes.
-- Não pertencem a `hero.standard@v1`:
-  - CTA secundário;
-  - vídeo;
-  - formulário;
-  - interação;
-  - galeria, carrossel ou tour.
-- Essas exclusões não restringem futuras variantes de `hero`.
-
-Funil:
-
-- BOFU: direto e decisório.
-- MOFU: diferenciação e explicação moderada.
-- TOFU: contexto educativo e baixa fricção.
-- Funil não altera campos ou variante.
-
-Estado:
-
-- contrato conceitualmente fechado;
-- lifecycle `experimental`;
-- propósito `controlled_test`;
-- implementação ainda não autorizada por este ajuste documental.
+- Campos:
+  - `eyebrow`: `eyebrow`, `0..1`, `research_guided`;
+  - `title`: `h1`, `1..1`, `hybrid`, suporte `when_factual`;
+  - `subtitle`: `paragraph`, `1..1`, `hybrid`, suporte `when_factual`;
+  - `primaryCta`: ação `1..1`, `not_copy`, label `cta_label`, `hybrid`, suporte `when_present`, vínculo obrigatório com `primary_conversion_channel`;
+  - `proofShort`: `paragraph`, `0..1`, `hybrid`, suporte `when_present`;
+  - `media`: imagem `0..1`, `technical_reference`, modo `informative` ou `decorative`.
+- Copy:
+  - `eyebrow`: `positioning_opportunity`; auxiliar `search_intent`;
+  - `title`: `positioning_opportunity` e `desire`; auxiliar `commercial_keywords`;
+  - `subtitle`: `pain` e `desire`; auxiliar `belief`;
+  - CTA: `trigger`; auxiliar `search_intent`;
+  - `proofShort`: `proof_type`; auxiliar `objection`.
+- Regras:
+  - canais permitidos: `whatsapp`, `phone`, `email` e `external_url`;
+  - imagem informativa exige alternativa acessível;
+  - visibilidade da mídia `all_viewports`;
+  - `subtitle` usa `body.base`;
+  - `desktop_only` e `body.editorialEmphasis` exigem evolução versionada;
+  - sem CTA secundário, vídeo, formulário, interação, galeria, carrossel ou tour.
+- Estado: `experimental`, `controlled_test`, conceitualmente fechada.
 
 ### 3.3. Módulo `trust_bar`
 
-- `moduleKey = trust_bar`.
-- `moduleVersion = 1`.
-- Função:
-  - apresentar sinais curtos e verificáveis de confiança;
-  - reduzir insegurança inicial;
-  - sustentar continuidade da leitura ou aproximação da conversão.
-- Invariantes:
-  - sinais curtos;
-  - relevância para o público;
-  - sustentação factual real.
-- Fronteiras:
-  - não contém depoimento, prova social extensa, explicação institucional, política completa, prova técnica detalhada, CTA, formulário ou mídia.
-- Evidência principal:
-  - `barra_de_confianca`, pesquisa ativa de `lp_sections`, taxon `Corretor Imóveis`.
-- Variantes futuras podem usar outra execução estrutural sem alterar `trust_bar.standard@v1`.
+- Identidade: `trust_bar@v1`.
+- Função: apresentar sinais curtos e verificáveis de confiança.
+- Invariantes: brevidade, relevância e sustentação factual real.
+- Fronteiras: sem depoimento, explicação extensa, prova técnica detalhada, CTA, formulário ou mídia.
+- Evidência: `barra_de_confianca` de `lp_sections`.
 
 ### 3.4. Variante `trust_bar.standard@v1`
 
-Identidade:
-
-- `variantKey = trust_bar.standard`.
-- `variantVersion = 1`.
-- Compatível com `trust_bar@v1`.
-- Única variante inicial.
-
-Campos:
-
-- `items`:
-  - coleção, cardinalidade `2..4`, policy `not_copy`;
-  - item fechado com `text`;
-  - `text`: papel `benefit_item`, cardinalidade `1..1`, policy `hybrid`, suporte `when_present`.
-
-Copy:
-
-- primárias `proof_type` e `belief`;
-- auxiliar `objection`.
-
-Regras específicas:
-
-- cada item exige suporte operacional real;
-- a pesquisa orienta seleção e redação, mas não comprova o sinal;
-- a coleção não admite item aninhado;
-- não possui título, subtítulo, CTA, ícone ou mídia;
-- disposição horizontal, quebra e empilhamento são responsabilidade responsiva do renderer;
-- TOFU, MOFU e BOFU alteram seleção e redação, não o contrato nem a ordem estrutural da LP;
-- uma ocorrência válida de `trust_bar.standard@v1` exige de dois a quatro sinais sustentados;
-- o tratamento da ausência de dados depende da obrigatoriedade definida pela composição da E20 e será especificado pela E19.
-
-Estado:
-
-- contrato conceitualmente fechado;
-- lifecycle `experimental`;
-- propósito `controlled_test`;
-- implementação ainda não autorizada por este ajuste documental.
+- Campo `items`: coleção `2..4`, `not_copy`, item `text` com papel `benefit_item`, `hybrid`, suporte `when_present`.
+- Copy: `proof_type` e `belief`; auxiliar `objection`.
+- Regras:
+  - cada item exige suporte operacional real;
+  - sem título, subtítulo, CTA, ícone ou mídia;
+  - disposição responsiva pertence ao renderer;
+  - ausência depende da obrigatoriedade definida pela E20.
+- Estado: `experimental`, `controlled_test`, conceitualmente fechada.
 
 ### 3.5. Módulo `problem_solution`
 
-- `moduleKey = problem_solution`.
-- `moduleVersion = 1`.
-- Função:
-  - apresentar problemas, fricções ou riscos reconhecíveis pelo público;
-  - relacionar cada problema a uma resposta prática e coerente;
-  - transformar posicionamento abstrato em relevância concreta antes da oferta ou do processo.
-- Invariantes:
-  - cada problema possui uma solução diretamente correspondente;
-  - problema e solução permanecem distinguíveis;
-  - o problema não usa alarmismo, medo artificial ou alegação não sustentada;
-  - a solução não promete resultado, garantia ou capacidade inexistente;
-  - ausência de identidade de taxon, plano, campanha ou funil no contrato.
-- Fronteiras:
-  - não substitui proposta principal da Hero;
-  - não detalha catálogo de serviços, preço, condição comercial ou oferta;
-  - não descreve sequência de atendimento;
-  - não apresenta prova técnica, depoimento, credencial, FAQ ou CTA;
-  - não contém mídia, formulário ou interação na execução inicial.
-- Evidências principais:
-  - `dores_e_solucoes`, pesquisa ativa de `lp_sections`, taxon `Corretor Imóveis`;
-  - itens `pain`, `fear`, `objection`, `desire`, `belief` e `positioning_opportunity` de `strategic_core`;
-  - Blueprint do corretor, especialmente dores, objeções, riscos percebidos e diferenciais objetivos.
-- Variantes futuras podem usar outra execução estrutural sem alterar `problem_solution.standard@v1`.
+- Identidade: `problem_solution@v1`.
+- Função: relacionar problemas, fricções ou riscos reconhecíveis a respostas práticas.
+- Invariantes: correspondência direta, distinção clara, sem alarmismo ou promessa não sustentada.
+- Fronteiras: sem oferta detalhada, processo, prova, FAQ, CTA, mídia ou interação.
+- Evidência: `dores_e_solucoes`, `pain`, `fear`, `objection`, `desire`, `belief` e `positioning_opportunity`.
 
 ### 3.6. Variante `problem_solution.standard@v1`
 
-Identidade:
-
-- `variantKey = problem_solution.standard`.
-- `variantVersion = 1`.
-- Compatível com `problem_solution@v1` e com a versão vigente da raiz utilizada na implementação inicial.
-- Única variante inicial.
-
-Campos:
-
-- `title`:
-  - texto, papel `h2`, cardinalidade `1..1`, policy `research_guided`.
-- `items`:
-  - coleção, cardinalidade `2..4`, policy `not_copy`;
-  - item fechado com `problem` e `solution`;
-  - `problem`: texto, papel `card_title`, cardinalidade `1..1`, policy `research_guided`;
-  - `solution`: texto, papel `card_body`, cardinalidade `1..1`, policy `hybrid`, suporte `when_present`.
-
-Copy:
-
-- `title`: primárias `pain` e `desire`; auxiliar `positioning_opportunity`.
-- `problem`: primárias `pain` e `fear`; auxiliar `objection`.
-- `solution`: primárias `positioning_opportunity` e `desire`; auxiliar `belief`.
-
-Regras específicas:
-
-- uma ocorrência válida contém de dois a quatro pares completos;
-- cada item contém exatamente um `problem` e uma `solution`;
-- a solução responde diretamente ao problema do mesmo item;
-- problemas devem ser concretos, reconhecíveis e proporcionais, sem amplificação artificial;
-- toda solução apresentada exige suporte operacional real;
-- a pesquisa orienta a solução, mas não comprova serviço, método, prazo, condição, garantia ou resultado;
-- os papéis `h2`, `card_title` e `card_body` usam as faixas da raiz sem especialização na v1;
-- a coleção não admite item aninhado;
-- não possui subtítulo, CTA, mídia, ícone, prova, preço, lista detalhada de serviços ou etapas de processo;
-- diferenças de copy, quantidade dentro de `2..4`, ordem dos pares e funil não criam variante;
-- o tratamento da ausência de pares válidos depende da obrigatoriedade definida pela composição da E20 e será especificado pela E19.
-
-Funil:
-
-- BOFU prioriza fricções decisórias e respostas operacionais diretas.
-- MOFU prioriza compreensão, comparação e redução de objeções.
-- TOFU prioriza problemas amplos e respostas educativas de baixa pressão.
-- O funil altera seleção, prioridade e redação dos pares, sem alterar campos, cardinalidades, variante ou ordem estrutural da LP.
-
-Validações estruturais:
-
-- exigir `title` e `items`;
-- exigir cardinalidade `2..4` em `items`;
-- exigir exatamente `problem` e `solution` em cada item;
-- rejeitar coleção aninhada e campos extras;
-- validar os papéis semânticos e as policies declaradas;
-- exigir suporte `when_present` em `solution`;
-- rejeitar CTA, mídia, ação, prova, preço, processo ou referência técnica na variante;
-- resolver de forma fail-closed e imutável.
-
-Estado:
-
-- contrato conceitualmente fechado;
-- lifecycle `experimental`;
-- propósito `controlled_test`;
-- implementação ainda não autorizada por este ajuste documental.
+- Campos:
+  - `title`: `h2`, `1..1`, `research_guided`;
+  - `items`: coleção `2..4`, `not_copy`, com `problem` (`card_title`, `research_guided`) e `solution` (`card_body`, `hybrid`, suporte `when_present`).
+- Copy:
+  - `title`: `pain` e `desire`; auxiliar `positioning_opportunity`;
+  - `problem`: `pain` e `fear`; auxiliar `objection`;
+  - `solution`: `positioning_opportunity` e `desire`; auxiliar `belief`.
+- Regras:
+  - cada solução responde ao problema do mesmo item e exige suporte operacional;
+  - sem subtítulo, CTA, mídia, prova, preço, oferta detalhada ou processo;
+  - resolução fail-closed e imutável.
+- Estado: `experimental`, `controlled_test`, conceitualmente fechada.
 
 ### 3.7. Módulo `offer`
 
-- `moduleKey = offer`.
-- `moduleVersion = 1`.
-- Função:
-  - apresentar o que o negócio ou profissional efetivamente oferece;
-  - organizar a oferta por intenção, caso de uso ou necessidade atendida;
-  - permitir que o visitante reconheça rapidamente se existe aderência ao que procura.
-- Invariantes:
-  - cada item representa uma oferta ou escopo real e identificável;
-  - título e descrição do item permanecem coerentes entre si;
-  - toda capacidade ou condição apresentada possui sustentação operacional;
-  - a oferta não implica preço, prazo, garantia, disponibilidade temporal ou resultado não declarado;
-  - ausência de identidade de taxon, plano, campanha ou funil no contrato.
-- Fronteiras:
-  - não repete pares de problema e solução;
-  - não descreve etapas ou sequência de atendimento;
-  - não apresenta prova técnica, depoimento, credencial ou FAQ;
-  - não define preço, condição comercial, plano ou disponibilidade temporal na execução inicial;
-  - não contém CTA, mídia, formulário ou interação na execução inicial.
-- Evidências principais:
-  - `servicos_por_intencao`, pesquisa ativa de `lp_sections`, taxon `Corretor Imóveis`;
-  - itens `trigger`, `desire`, `positioning_opportunity`, `belief` e `objection` de `strategic_core`;
-  - `narrative_arc` de `lp_overview`, que recomenda segmentação por intenção antes de processo e fechamento;
-  - Blueprint do corretor, especialmente diferenciais objetivos e ofertas orientadas a intenção;
-  - catálogo de entradas vigente, com capacidades e recortes operacionais aplicáveis ao primeiro taxon.
-- Variantes futuras podem usar outra execução estrutural sem alterar `offer.standard@v1`.
+- Identidade: `offer@v1`.
+- Função: apresentar ofertas, escopos ou casos de uso efetivamente disponíveis.
+- Invariantes: item real e identificável, coerência entre título e descrição e sustentação operacional.
+- Fronteiras: sem problema-solução, processo, prova, FAQ, preço, condição comercial, CTA, mídia ou interação.
+- Evidência: `servicos_por_intencao`, `trigger`, `desire`, `positioning_opportunity`, `belief`, `objection`, Blueprint e catálogo de entradas.
 
 ### 3.8. Variante `offer.standard@v1`
 
-Identidade:
-
-- `variantKey = offer.standard`.
-- `variantVersion = 1`.
-- Compatível com `offer@v1` e com a versão vigente da raiz utilizada na implementação inicial.
-- Única variante inicial.
-
-Campos:
-
-- `title`:
-  - texto, papel `h2`, cardinalidade `1..1`, policy `research_guided`.
-- `items`:
-  - coleção, cardinalidade `1..4`, policy `not_copy`;
-  - item fechado com `itemTitle` e `description`;
-  - `itemTitle`: texto, papel `card_title`, cardinalidade `1..1`, policy `hybrid`, suporte `when_present`;
-  - `description`: texto, papel `card_body`, cardinalidade `1..1`, policy `hybrid`, suporte `when_present`.
-
-Copy:
-
-- `title`: primárias `desire` e `trigger`; auxiliar `positioning_opportunity`.
-- `itemTitle`: primárias `trigger` e `desire`; sem fonte auxiliar na v1.
-- `description`: primárias `positioning_opportunity` e `belief`; auxiliar `objection`.
-
-Regras específicas:
-
-- uma ocorrência válida contém de um a quatro itens completos;
-- o mínimo de um item permite LPs de intenção única sem forçar ofertas irrelevantes;
-- cada item contém exatamente `itemTitle` e `description`;
-- título e descrição representam uma oferta, escopo ou caso de uso efetivamente disponível como capacidade da operação;
-- todo item exige suporte por entradas operacionais aplicáveis ao taxon, negócio ou oferta;
-- o contrato transversal não fixa chaves de um taxon específico;
-- no primeiro taxon, exemplos de sustentação incluem intenção de transação, apoio em financiamento, orientação documental, localização, tipologia, faixa de preço e estágio, quando aplicáveis e reais;
-- pesquisa e Blueprint orientam seleção e redação, mas não comprovam capacidade, preço, prazo, condição, parceria, garantia, disponibilidade temporal ou resultado;
-- os papéis `h2`, `card_title` e `card_body` usam as faixas da raiz sem especialização na v1;
-- a coleção não admite item aninhado;
-- não possui subtítulo, CTA, mídia, ícone, prova, preço, condição comercial, processo ou referência técnica;
-- diferenças de copy, quantidade dentro de `1..4`, ordem dos itens e funil não criam variante;
-- o tratamento da ausência de item válido depende da obrigatoriedade definida pela composição da E20 e será especificado pela E19.
-
-Funil:
-
-- BOFU prioriza oferta específica, aderência imediata e escopo operacional direto.
-- MOFU prioriza comparação entre casos de uso e clareza sobre o atendimento disponível.
-- TOFU prioriza categorias amplas e linguagem educativa, sem transformar interesse inicial em compromisso inexistente.
-- O funil altera seleção, prioridade e redação dos itens, sem alterar campos, cardinalidades, variante ou ordem estrutural da LP.
-
-Validações estruturais:
-
-- exigir `title` e `items`;
-- exigir cardinalidade `1..4` em `items`;
-- exigir exatamente `itemTitle` e `description` em cada item;
-- rejeitar coleção aninhada e campos extras;
-- validar os papéis semânticos e as policies declaradas;
-- exigir suporte `when_present` em `itemTitle` e `description`;
-- rejeitar CTA, mídia, ação, prova, preço, condição comercial, processo ou referência técnica na variante;
-- resolver de forma fail-closed e imutável.
-
-Estado:
-
-- contrato conceitualmente fechado;
-- lifecycle `experimental`;
-- propósito `controlled_test`;
-- implementação ainda não autorizada por este ajuste documental.
+- Campos:
+  - `title`: `h2`, `1..1`, `research_guided`;
+  - `items`: coleção `1..4`, `not_copy`, com `itemTitle` (`card_title`, `hybrid`) e `description` (`card_body`, `hybrid`), ambos com suporte `when_present`.
+- Copy:
+  - `title`: `desire` e `trigger`; auxiliar `positioning_opportunity`;
+  - `itemTitle`: `trigger` e `desire`;
+  - `description`: `positioning_opportunity` e `belief`; auxiliar `objection`.
+- Regras:
+  - cada item exige capacidade operacional real;
+  - pesquisa não comprova preço, prazo, condição, parceria, garantia ou disponibilidade;
+  - sem CTA, mídia, prova, preço, condição comercial, processo ou referência técnica.
+- Estado: `experimental`, `controlled_test`, conceitualmente fechada.
 
 ### 3.9. Módulo `process`
 
-- `moduleKey = process`.
-- `moduleVersion = 1`.
-- Função:
-  - explicar como o atendimento ou a entrega progride por etapas compreensíveis;
-  - transformar uma oferta abstrata em método previsível;
-  - esclarecer próximos passos, responsabilidades e progressão sem prometer resultado.
-- Invariantes:
-  - existe uma sequência ordenada e inteligível;
-  - cada etapa representa ação, transição ou marco real do processo;
-  - etapas permanecem distintas e coerentes entre si;
-  - a sequência não inventa prazo, garantia, disponibilidade ou resultado;
-  - ausência de identidade de taxon, plano, campanha ou funil no contrato.
-- Fronteiras:
-  - não repete o catálogo de ofertas;
-  - não apresenta pares de problema e solução;
-  - não funciona como workflow, checklist operacional interno ou motor de automação;
-  - não apresenta prova técnica, depoimento, credencial, FAQ ou CTA;
-  - não contém preço, condição comercial, mídia, formulário ou interação na execução inicial.
-- Evidências principais:
-  - `processo_de_atendimento`, pesquisa ativa de `lp_sections`, taxon `Corretor Imóveis`;
-  - itens `belief`, `desire`, `positioning_opportunity`, `trigger` e `objection` de `strategic_core`;
-  - `narrative_arc` de `lp_overview`, que recomenda explicar o processo antes da remoção final de objeções e do contato;
-  - Blueprint do corretor, especialmente qualificação, visita, documentação, negociação e formalização;
-  - catálogo de entradas vigente, somente para sustentar capacidades e modos reais quando aplicáveis.
-- Variantes futuras podem usar outra execução estrutural sem alterar `process.standard@v1`.
+- Identidade: `process@v1`.
+- Função: explicar progressão real do atendimento ou entrega por etapas compreensíveis.
+- Invariantes: sequência ordenada, etapas distintas e ausência de prazo, garantia ou resultado inventado.
+- Fronteiras: sem oferta, problema-solução, workflow interno, prova, FAQ, CTA, preço, mídia ou interação.
+- Evidência: `processo_de_atendimento`, `belief`, `desire`, `positioning_opportunity`, `trigger`, `objection`, Blueprint e catálogo de entradas.
 
 ### 3.10. Variante `process.standard@v1`
 
-Identidade:
-
-- `variantKey = process.standard`.
-- `variantVersion = 1`.
-- Compatível com `process@v1` e com a versão vigente da raiz utilizada na implementação inicial.
-- Única variante inicial.
-
-Campos:
-
-- `title`:
-  - texto, papel `h2`, cardinalidade `1..1`, policy `research_guided`.
-- `steps`:
-  - coleção ordenada, cardinalidade `2..6`, policy `not_copy`;
-  - item fechado com `stepTitle` e `stepBody`;
-  - `stepTitle`: texto, papel `step_title`, cardinalidade `1..1`, policy `hybrid`, suporte `when_present`;
-  - `stepBody`: texto, papel `step_body`, cardinalidade `1..1`, policy `hybrid`, suporte `when_present`.
-
-Copy:
-
-- `title`: primárias `belief` e `desire`; auxiliar `positioning_opportunity`.
-- `stepTitle`: primárias `trigger` e `positioning_opportunity`; auxiliar `desire`.
-- `stepBody`: primárias `belief` e `desire`; auxiliar `objection`.
-
-Regras específicas:
-
-- uma ocorrência válida contém de duas a seis etapas completas e ordenadas;
-- cada etapa contém exatamente `stepTitle` e `stepBody`;
-- cada etapa representa parte real do método ou atendimento e deve possuir sustentação operacional;
-- a ordem deve refletir a progressão real, sem ser reorganizada apenas por copy, campanha ou funil;
-- etapas podem variar por ocorrência dentro do intervalo permitido quando a composição da E20 autorizar e os dados sustentarem a sequência;
-- pesquisa e Blueprint orientam seleção e redação, mas não comprovam etapa, prazo, responsabilidade, disponibilidade, garantia ou resultado;
-- os papéis `h2`, `step_title` e `step_body` usam as faixas da raiz sem especialização na v1;
-- a coleção não admite item aninhado;
-- a numeração ou marcador visual das etapas pertence ao renderer e não cria campo de conteúdo na v1;
-- não possui subtítulo, CTA, mídia, ícone obrigatório, prova, preço, condição comercial, formulário ou referência técnica;
-- diferenças de copy, quantidade dentro de `2..6` e nível de detalhe não criam variante;
-- o tratamento da ausência de sequência válida depende da obrigatoriedade definida pela composição da E20 e será especificado pela E19.
-
-Funil:
-
-- BOFU prioriza etapas concretas, responsabilidades e próximo passo imediato.
-- MOFU prioriza explicação do método, critérios e redução de incerteza.
-- TOFU prioriza visão geral educativa e baixa pressão.
-- O funil altera profundidade, seleção e redação, mas não altera campos, cardinalidades, variante nem a ordem operacional real.
-
-Validações estruturais:
-
-- exigir `title` e `steps`;
-- exigir cardinalidade `2..6` em `steps`;
-- exigir exatamente `stepTitle` e `stepBody` em cada etapa;
-- preservar a ordem declarada e rejeitar etapas vazias ou duplicadas;
-- rejeitar coleção aninhada e campos extras;
-- validar os papéis semânticos e as policies declaradas;
-- exigir suporte `when_present` em `stepTitle` e `stepBody`;
-- rejeitar CTA, mídia, ação, prova, preço, condição comercial, formulário ou referência técnica na variante;
-- resolver de forma fail-closed e imutável.
-
-Estado:
-
-- contrato conceitualmente fechado;
-- lifecycle `experimental`;
-- propósito `controlled_test`;
-- implementação ainda não autorizada por este ajuste documental.
+- Campos:
+  - `title`: `h2`, `1..1`, `research_guided`;
+  - `steps`: coleção ordenada `2..6`, `not_copy`, com `stepTitle` (`step_title`, `hybrid`) e `stepBody` (`step_body`, `hybrid`), ambos com suporte `when_present`.
+- Copy:
+  - `title`: `belief` e `desire`; auxiliar `positioning_opportunity`;
+  - `stepTitle`: `trigger` e `positioning_opportunity`; auxiliar `desire`;
+  - `stepBody`: `belief` e `desire`; auxiliar `objection`.
+- Regras:
+  - ordem reflete a progressão real;
+  - numeração visual pertence ao renderer;
+  - sem CTA, mídia, prova, preço, condição, formulário ou referência técnica.
+- Estado: `experimental`, `controlled_test`, conceitualmente fechada.
 
 ### 3.11. Módulo `technical_assurance`
 
-- `moduleKey = technical_assurance`.
-- `moduleVersion = 1`.
-- Função:
-  - explicar salvaguardas, critérios, documentos, credenciais ou verificações técnicas relevantes para a decisão;
-  - transformar sinais abstratos de confiança em fundamentos compreensíveis;
-  - reduzir risco percebido sem prometer eliminação de risco ou emitir conclusão técnica ou jurídica.
-- Invariantes:
-  - cada item descreve uma salvaguarda, evidência ou critério real e verificável;
-  - o conteúdo distingue orientação geral de afirmação factual sobre a operação;
-  - toda credencial, documento, método, verificação ou capacidade apresentada possui sustentação operacional;
-  - nenhum item implica aprovação, regularidade integral, ausência de risco, certificação, garantia ou resultado sem comprovação específica;
-  - ausência de identidade de taxon, plano, campanha ou funil no contrato.
-- Fronteiras:
-  - não substitui sinais curtos de `trust_bar`;
-  - não contém depoimento, avaliação de cliente, caso real ou métrica de resultado;
-  - não descreve etapas do processo, catálogo de ofertas ou respostas de FAQ;
-  - não presta consultoria técnica ou jurídica individualizada;
-  - não contém CTA, mídia, download, link de verificação, formulário ou interação na execução inicial.
-- Evidências principais:
-  - `prova_tecnica_documental`, pesquisa ativa de `lp_sections`, taxon `Corretor Imóveis`;
-  - itens `proof_type`, `belief`, `fear`, `objection` e `positioning_opportunity` de `strategic_core`;
-  - `narrative_arc` de `lp_overview`, que recomenda provar regularidade e autoridade;
-  - Blueprint do corretor, especialmente compliance, identificação profissional, documentação e segurança da decisão;
-  - catálogo de entradas vigente, somente para sustentar credenciais e capacidades reais quando aplicáveis.
-- Variantes futuras podem usar outra execução estrutural ou referências verificáveis sem alterar `technical_assurance.standard@v1`.
+- Identidade: `technical_assurance@v1`.
+- Função: explicar salvaguardas, critérios, documentos, credenciais ou verificações relevantes.
+- Invariantes: item real, verificável, operacionalmente sustentado e sem implicar aprovação, risco zero, certificação ou resultado.
+- Fronteiras: sem trust bar curta, depoimento, processo, oferta, FAQ, aconselhamento individualizado, CTA, mídia, download ou link.
+- Evidência: `prova_tecnica_documental`, `proof_type`, `belief`, `fear`, `objection`, `positioning_opportunity`, narrativa e Blueprint.
 
 ### 3.12. Variante `technical_assurance.standard@v1`
 
-Identidade:
-
-- `variantKey = technical_assurance.standard`.
-- `variantVersion = 1`.
-- Compatível com `technical_assurance@v1` e com a versão vigente da raiz utilizada na implementação inicial.
-- Única variante inicial.
-
-Campos:
-
-- `title`:
-  - texto, papel `h2`, cardinalidade `1..1`, policy `research_guided`.
-- `items`:
-  - coleção, cardinalidade `1..4`, policy `not_copy`;
-  - item fechado com `assuranceTitle` e `assuranceBody`;
-  - `assuranceTitle`: texto, papel `card_title`, cardinalidade `1..1`, policy `hybrid`, suporte `when_present`;
-  - `assuranceBody`: texto, papel `card_body`, cardinalidade `1..1`, policy `hybrid`, suporte `when_present`.
-
-Copy:
-
-- `title`: primárias `proof_type` e `belief`; auxiliar `objection`.
-- `assuranceTitle`: primária `proof_type`; auxiliar `belief`.
-- `assuranceBody`: primárias `proof_type` e `positioning_opportunity`; auxiliar `objection`.
-
-Regras específicas:
-
-- uma ocorrência válida contém de um a quatro itens completos;
-- cada item contém exatamente `assuranceTitle` e `assuranceBody`;
-- cada item representa salvaguarda, credencial, documento, checklist, método, verificação ou critério técnico efetivamente aplicável;
-- todo item exige suporte operacional real e rastreável;
-- o contrato transversal não fixa chaves de um taxon específico;
-- no primeiro taxon, exemplos de sustentação incluem credencial profissional, orientação documental e apoio em financiamento, quando aplicáveis e reais;
-- pesquisa e Blueprint orientam seleção e redação, mas não comprovam credencial, documento, certificação, verificação, regularidade, aprovação, garantia ou resultado;
-- conteúdo não pode afirmar conclusão jurídica, técnica ou financeira individualizada;
-- os papéis `h2`, `card_title` e `card_body` usam as faixas da raiz sem especialização na v1;
-- a coleção não admite item aninhado;
-- não possui subtítulo, CTA, mídia, ícone, link, download, depoimento, caso, métrica, preço, processo ou resposta de FAQ;
-- diferenças de copy, quantidade dentro de `1..4`, ordem dos itens e funil não criam variante;
-- o tratamento da ausência de item válido depende da obrigatoriedade definida pela composição da E20 e será especificado pela E19.
-
-Funil:
-
-- BOFU prioriza evidências concretas, aplicabilidade e limites da salvaguarda apresentada.
-- MOFU prioriza explicação dos critérios e de como reduzem incerteza.
-- TOFU prioriza educação geral, sem aconselhamento técnico ou jurídico individualizado.
-- O funil altera seleção, profundidade e redação, sem alterar campos, cardinalidades, variante ou ordem estrutural da LP.
-
-Validações estruturais:
-
-- exigir `title` e `items`;
-- exigir cardinalidade `1..4` em `items`;
-- exigir exatamente `assuranceTitle` e `assuranceBody` em cada item;
-- rejeitar coleção aninhada e campos extras;
-- validar os papéis semânticos e as policies declaradas;
-- exigir suporte `when_present` em `assuranceTitle` e `assuranceBody`;
-- rejeitar item sem sustentação operacional rastreável;
-- rejeitar CTA, mídia, ação, link, download, depoimento, caso, métrica, preço, processo, FAQ ou referência técnica concreta na variante;
-- resolver de forma fail-closed e imutável.
-
-Estado:
-
-- contrato conceitualmente fechado;
-- lifecycle `experimental`;
-- propósito `controlled_test`;
-- implementação ainda não autorizada por este ajuste documental.
+- Campos:
+  - `title`: `h2`, `1..1`, `research_guided`;
+  - `items`: coleção `1..4`, `not_copy`, com `assuranceTitle` (`card_title`, `hybrid`) e `assuranceBody` (`card_body`, `hybrid`), ambos com suporte `when_present`.
+- Copy:
+  - `title`: `proof_type` e `belief`; auxiliar `objection`;
+  - `assuranceTitle`: `proof_type`; auxiliar `belief`;
+  - `assuranceBody`: `proof_type` e `positioning_opportunity`; auxiliar `objection`.
+- Regras:
+  - todo item exige suporte real e rastreável;
+  - sem conclusão jurídica, técnica ou financeira individualizada;
+  - sem CTA, mídia, link, download, depoimento, caso, métrica, preço, processo ou FAQ.
+- Estado: `experimental`, `controlled_test`, conceitualmente fechada.
 
 ### 3.13. Módulo `social_proof`
 
-- `moduleKey = social_proof`; `moduleVersion = 1`.
-- Função: apresentar experiências reais de terceiros que reduzam incerteza sobre atendimento, entrega ou relação com a operação.
-- Invariantes:
-  - toda prova é real, rastreável e autorizada para uso;
-  - conteúdo e atribuição correspondem à mesma evidência;
-  - não há fabricação, alteração material, resultado garantido ou generalização indevida.
-- Fronteiras: não substitui `trust_bar` ou `technical_assurance`; não contém oferta, processo, FAQ, CTA, rating agregado, métrica, logo, caso detalhado ou mídia na execução inicial.
-- Evidências: `prova_social` de `lp_sections`, `proof_type`, `belief` e `objection` de `strategic_core`, `narrative_arc` de `lp_overview` e Blueprint do corretor.
-- Variantes futuras podem usar outra execução estrutural sem alterar `social_proof.standard@v1`.
+- Identidade: `social_proof@v1`.
+- Função: apresentar experiências reais de terceiros que reduzam incerteza.
+- Invariantes: prova real, rastreável, autorizada, sem fabricação, alteração material ou generalização indevida.
+- Fronteiras: sem trust bar, prova técnica, oferta, processo, FAQ, CTA, rating agregado, métrica, logo, caso detalhado ou mídia.
+- Evidência: `prova_social`, `proof_type`, `belief`, `objection`, narrativa e Blueprint.
 
 ### 3.14. Variante `social_proof.standard@v1`
 
-Identidade:
-
-- `variantKey = social_proof.standard`; `variantVersion = 1`.
-- Compatível com `social_proof@v1` e com a versão vigente da raiz utilizada na implementação inicial; única variante inicial.
-
-Campos:
-
-- `title`: texto, papel `h2`, cardinalidade `1..1`, policy `research_guided`.
-- `items`: coleção `1..3`, policy `not_copy`; item fechado com:
-  - `quote`: texto, papel `card_body`, `1..1`, policy `operational_required`;
-  - `attribution`: texto, papel `card_title`, `1..1`, policy `operational_required`;
-  - `evidenceRef`: referência técnica, `1..1`, policy `technical_reference`.
-
-Copy:
-
-- `title`: primárias `proof_type` e `belief`; auxiliar `objection`.
-- `quote` e `attribution`: sem fonte de pesquisa; derivam exclusivamente da evidência operacional referenciada.
-
-Regras e validações:
-
-- exigir de um a três itens completos e exatamente `quote`, `attribution` e `evidenceRef` em cada item;
-- impedir geração, composição ou alteração material do depoimento e exigir referência rastreável;
-- atribuição pública identificável depende de autorização; atribuição reduzida não elimina a rastreabilidade interna;
-- os papéis `h2`, `card_title` e `card_body` usam as faixas da raiz sem especialização;
-- rejeitar coleção aninhada, campos extras, CTA, mídia, rating, métrica, logo, caso detalhado ou prova sem suporte;
-- BOFU, MOFU e TOFU alteram seleção e título, não o conteúdo factual da prova nem o contrato;
-- ausência de item válido depende da obrigatoriedade da E20 e será tratada pela E19;
-- resolver de forma fail-closed e imutável.
-
-Estado:
-
-- contrato conceitualmente fechado; lifecycle `experimental`; propósito `controlled_test`;
-- implementação ainda não autorizada por este ajuste documental.
+- Campos:
+  - `title`: `h2`, `1..1`, `research_guided`;
+  - `items`: coleção `1..3`, `not_copy`, com `quote` (`card_body`, `operational_required`), `attribution` (`card_title`, `operational_required`) e `evidenceRef` (`technical_reference`).
+- Copy:
+  - `title`: `proof_type` e `belief`; auxiliar `objection`;
+  - `quote` e `attribution`: exclusivamente da evidência operacional referenciada.
+- Regras:
+  - impedir geração ou alteração material do depoimento;
+  - atribuição pública depende de autorização e não elimina rastreabilidade interna;
+  - sem CTA, mídia, rating, métrica, logo ou caso detalhado.
+- Estado: `experimental`, `controlled_test`, conceitualmente fechada.
 
 ### 3.15. Módulo `faq`
 
-- `moduleKey = faq`; `moduleVersion = 1`.
-- Função: responder dúvidas e objeções recorrentes em pares claros de pergunta e resposta, apoiando compreensão e decisão.
-- Invariantes: cada pergunta é relevante e possui resposta direta; fatos e condições reais exigem sustentação; não há aconselhamento individualizado, promessa ou resposta enganosa.
-- Fronteiras: não substitui oferta, processo ou prova técnica; não contém CTA, mídia, formulário ou ação; comportamento interativo pertence à variante que o declarar.
-- Evidências: `faq_objeções` de `lp_sections`, `faq_questions` e `search_intent` de `seo`, `objection`, `fear`, `belief` e `awareness_level` de `strategic_core` e Blueprint do corretor.
-- Variantes podem usar execuções estruturais ou comportamentais distintas sem alterar o contrato permanente de `faq@v1`.
+- Identidade: `faq@v1`.
+- Função: responder dúvidas e objeções recorrentes em pares claros de pergunta e resposta.
+- Invariantes: pergunta relevante, resposta direta, sustentação factual e ausência de aconselhamento individualizado ou promessa enganosa.
+- Fronteiras: sem oferta, processo, prova técnica, CTA, mídia, formulário ou ação; interação pertence à variante que a declarar.
+- Evidência: `faq_objeções`, `faq_questions`, `search_intent`, `objection`, `fear`, `belief`, `awareness_level` e Blueprint.
 
 ### 3.16. Variante `faq.standard@v1`
 
-- Identidade: `variantKey = faq.standard`; `variantVersion = 1`; compatível com `faq@v1` e com a versão vigente da raiz; variante base sem interação.
 - Campos:
-  - `title`: texto, papel `h2`, `1..1`, policy `research_guided`;
-  - `items`: coleção `2..6`, policy `not_copy`, com `question` (`faq_question`, `1..1`, `research_guided`) e `answer` (`faq_answer`, `1..1`, `hybrid`, suporte `when_factual`).
+  - `title`: `h2`, `1..1`, `research_guided`;
+  - `items`: coleção `2..6`, `not_copy`, com `question` (`faq_question`, `research_guided`) e `answer` (`faq_answer`, `hybrid`, suporte `when_factual`).
 - Copy:
-  - `title`: primárias `objection` e `awareness_level`; auxiliar `search_intent`;
-  - `question`: primárias `objection` e `fear`; auxiliar `faq_questions`;
-  - `answer`: primárias `belief` e `positioning_opportunity`; auxiliar `desire`.
-- Regras e validações:
-  - exigir de dois a seis pares completos, sem perguntas vazias ou duplicadas;
-  - cada resposta deve tratar diretamente sua pergunta e fatos operacionais, legais, técnicos ou financeiros exigem suporte real;
-  - usar `h2`, `faq_question` e `faq_answer` da raiz sem especialização;
-  - rejeitar coleção aninhada, campos extras, CTA, mídia, formulário, ação, interação ou aconselhamento individualizado;
-  - funil altera seleção, ordem e profundidade, sem alterar campos, cardinalidades ou variante;
-  - ausência de pares válidos depende da obrigatoriedade da E20 e será tratada pela E19;
-  - resolver de forma fail-closed e imutável.
-- Estado: contrato conceitualmente fechado; lifecycle `experimental`; propósito `controlled_test`; implementação ainda não autorizada.
+  - `title`: `objection` e `awareness_level`; auxiliar `search_intent`;
+  - `question`: `objection` e `fear`; auxiliar `faq_questions`;
+  - `answer`: `belief` e `positioning_opportunity`; auxiliar `desire`.
+- Regras:
+  - rejeitar perguntas vazias ou duplicadas;
+  - resposta trata diretamente sua pergunta;
+  - fatos operacionais, legais, técnicos ou financeiros exigem suporte real;
+  - sem CTA, mídia, formulário, ação ou interação.
+- Estado: `experimental`, `controlled_test`, conceitualmente fechada.
 
 ### 3.17. Variante `faq.accordion@v1`
 
-- Identidade: `variantKey = faq.accordion`; `variantVersion = 1`; compatível com `faq@v1` e com a versão vigente da raiz.
-- Finalidade: validar de forma controlada duas variantes do mesmo módulo e oferecer uma apresentação compacta, especialmente no mobile.
+- Identidade: `faq.accordion@v1`, compatível com `faq@v1` e com a raiz vigente.
+- Finalidade: validar duas variantes do mesmo módulo e oferecer apresentação compacta, especialmente no mobile.
 - Conteúdo:
   - reutiliza integralmente `title`, `items`, `question` e `answer` de `faq.standard@v1`;
-  - mantém cardinalidades, semantic roles, policies, fontes de copy e exigências de sustentação factual;
-  - não adiciona campo de conteúdo na v1.
-- Capability:
-  - acrescenta somente interação de acordeão e requisitos de acessibilidade associados;
-  - a identificação técnica compartilhada será materializada de forma versionada na implementação, sem alterar a raiz ou variantes anteriores silenciosamente.
-- Comportamento esperado:
+  - mantém cardinalidades, semantic roles, policies, copy e sustentação factual;
+  - não adiciona campo de conteúdo.
+- Capability: interação de acordeão e requisitos de acessibilidade associados.
+- Comportamento:
   - todos os itens iniciam fechados;
   - pergunta abre e fecha sua resposta;
-  - somente um item permanece aberto por vez;
-  - abrir outro item fecha o anteriormente aberto;
-  - pergunta é operável por teclado;
-  - estado expandido é exposto semanticamente;
-  - pergunta e resposta possuem associação acessível;
-  - alternar o estado preserva o foco no controle acionado.
-- Limites e validações:
-  - não definir agora elemento HTML, componente, ícone, animação ou implementação visual do renderer;
-  - rejeitar configuração que altere conteúdo, cardinalidade, copy ou sustentação factual herdados;
-  - resolver de forma fail-closed e imutável.
-- Estado: contrato conceitualmente fechado; lifecycle `experimental`; propósito `controlled_test`; candidata à composição da primeira LP controlada; implementação ainda não autorizada.
+  - somente um item permanece aberto;
+  - abrir outro fecha o anterior;
+  - operação por teclado;
+  - estado expandido exposto semanticamente;
+  - associação acessível entre pergunta e resposta;
+  - foco preservado no controle acionado.
+- Limites:
+  - não define elemento HTML, componente, ícone, animação ou visual do renderer;
+  - não altera conteúdo, cardinalidade, copy ou sustentação factual herdados.
+- Estado: `experimental`, `controlled_test`, candidata à primeira composição controlada.
 
-## 4. Módulos pendentes
+### 3.18. Módulo `final_cta`
+
+- Identidade: `final_cta@v1`.
+- Função: encerrar a jornada com próximo passo claro, qualificado e coerente com a intenção da LP.
+- Invariantes: uma ação principal identificável, linguagem não coercitiva, vínculo abstrato com canal operacional e sustentação de toda condição factual apresentada.
+- Fronteiras: não repete oferta, processo, FAQ ou prova; não contém formulário, mídia, ação secundária, canal ou destino concreto na execução inicial.
+- Evidência: `cta_final_qualificado`, `narrative_arc`, `mobile_priority`, `trigger`, `desire`, `objection`, `belief`, `positioning_opportunity`, `search_intent` e catálogo operacional.
+
+### 3.19. Variante `final_cta.standard@v1`
+
+- Identidade: `final_cta.standard@v1`, compatível com `final_cta@v1` e com a raiz vigente; única variante inicial.
+- Campos:
+  - `title`: texto, papel `h2`, `1..1`, policy `hybrid`, suporte `when_factual`;
+  - `body`: texto, papel `paragraph`, `1..1`, policy `hybrid`, suporte `when_factual`;
+  - `primaryCta`: ação `1..1`, policy `not_copy`, com label `cta_label`, `1..1`, `hybrid`, suporte `when_present`, e vínculo obrigatório com `primary_conversion_channel`.
+- Copy:
+  - `title`: primárias `trigger` e `desire`; auxiliar `positioning_opportunity`;
+  - `body`: primárias `desire` e `objection`; auxiliar `belief`;
+  - `primaryCta.label`: primária `trigger`; auxiliar `search_intent`.
+- Regras:
+  - uma única ação principal;
+  - canais permitidos: `whatsapp`, `phone`, `email` e `external_url`;
+  - canal e destino concretos ficam fora do registry;
+  - a copy pode orientar o visitante a informar intenção, localização, prazo ou faixa aplicável, sem armazenar esses valores no contrato;
+  - pesquisa orienta a redação, mas não comprova disponibilidade, prazo, resposta imediata, condição, garantia ou resultado;
+  - BOFU prioriza ação direta; MOFU, contato orientado; TOFU, próximo passo de baixa fricção;
+  - rejeitar CTA secundário, formulário, mídia, prova, preço, condição comercial ou referência técnica;
+  - validar vínculo operacional obrigatório e resolver de forma fail-closed e imutável.
+- Estado: `experimental`, `controlled_test`, conceitualmente fechada; implementação ainda não autorizada.
+
+## 4. Fechamento conceitual do catálogo
 
 ### 4.1. Estado
 
-Permanece pendente:
+- Os nove módulos estão conceitualmente fechados.
+- As nove variantes `standard@v1` estão conceitualmente fechadas.
+- `faq.accordion@v1` está conceitualmente fechada como exceção controlada.
+- Não há módulo ou variante aprovada pendente de parametrização.
 
-- `final_cta`.
+### 4.2. Sequência de implementação
 
-Ele receberá:
+Após autorização humana:
 
-- contrato permanente do módulo;
-- variante `standard@v1`;
-- somente os detalhes exigidos por sua execução atual.
-
-### 4.2. Sequência incremental
-
-A implementação dos nove módulos ocorrerá em etapas dentro da E18.5:
-
-1. contrato compartilhado de módulos e variantes;
-2. `hero` e `trust_bar`;
-3. `problem_solution`, `offer` e `process`;
-4. `technical_assurance` e `social_proof`;
-5. `faq.standard@v1`, `faq.accordion@v1` e `final_cta.standard@v1`;
-6. validação integrada, documentação final e encerramento da E18.5.
-
-A etapa seguinte só deve reproduzir o contrato compartilhado após ele estar validado pelos módulos anteriores.
+1. implementar o contrato compartilhado;
+2. implementar os nove módulos e suas variantes `standard@v1`;
+3. implementar `faq.accordion@v1` como segundo caso do mesmo módulo;
+4. validar contratos, registries, resolução, lifecycle, compatibilidade e imutabilidade;
+5. atualizar a documentação final e encerrar a E18.5 técnica.
 
 ### 4.3. Próxima ação
 
-- Analisar `final_cta` pelo checklist mínimo da seção 2.9.
-- Separar `final_cta` de `final_cta.standard@v1`.
-- Não alterar o arquivo novamente sem decisão humana sobre o contrato proposto.
-- Não implementar código durante o fechamento conceitual.
+- Submeter o plano completo à avaliação final.
+- Após aprovação humana, autorizar a implementação repo-only da E18.5.
+- Não implementar E20, E19, renderer, Admin, Builder, banco ou LP real neste recorte.
 
 ## 5. Validação e encerramento
 
 ### 5.1. Validações da implementação
 
-Quando a implementação for autorizada:
+Quando autorizada:
 
-- validar schemas e registries;
-- validar identidade e compatibilidade de módulo e variante;
+- validar schemas, registries, identidade e compatibilidade;
 - rejeitar campos, policies, capabilities e deltas desconhecidos;
 - garantir resolução fail-closed e resultado imutável;
-- validar apenas combinações efetivamente utilizadas;
+- validar combinações efetivamente utilizadas;
 - executar casos próprios e integração dos nove módulos e das duas variantes de FAQ;
 - executar `npm ci`, validações aplicáveis, `npm run check` e `git diff --check`.
 
@@ -952,14 +531,14 @@ Alteração exclusivamente documental:
 
 - `npm ci`: não aplicável;
 - `npm run check`: não aplicável;
-- `git diff --check`: obrigatório antes da entrega.
+- `git diff --check`: obrigatório antes da entrega quando houver ambiente local disponível.
 
 ### 5.2. Regra de parada
 
 Após os nove módulos, suas variantes `standard@v1` e `faq.accordion@v1`:
 
 - encerrar a E18.5;
-- não criar outra variante além de `faq.accordion@v1` antes da primeira LP;
+- não criar outra variante antes da primeira LP;
 - não adicionar campo para cenário futuro;
 - não criar policy ou capability sem consumidor;
 - não antecipar matriz especulativa;
@@ -970,14 +549,14 @@ Após os nove módulos, suas variantes `standard@v1` e `faq.accordion@v1`:
 
 - Implementação técnica significa contrato executável no repositório.
 - Os módulos permanecem hipóteses de produto.
-- Validação comercial ocorrerá somente quando a E20 compuser e a E19 gerar a primeira LP real.
+- Validação comercial ocorrerá quando a E20 compuser e a E19 gerar a primeira LP real.
 - Promoção de lifecycle exige evidência dessa utilização e decisão humana.
 
 ### 5.4. Critérios de parada imediata
 
 Parar e informar a divergência se:
 
-- surgir banco, rota, job, agente, automação ou infraestrutura nova;
+- surgir banco, rota, job, agente, automação ou infraestrutura nova sem fonte e recorte próprios;
 - módulo receber identidade de taxon;
 - variante representar somente copy, campanha, plano ou ativo;
 - regra de `standard@v1` for tratada como limite permanente do módulo;
