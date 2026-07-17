@@ -560,7 +560,7 @@ Campos:
 Copy:
 
 - `title`: primárias `desire` e `trigger`; auxiliar `positioning_opportunity`.
-- `itemTitle`: primárias `trigger` e `desire`; auxiliar `search_intent`.
+- `itemTitle`: primárias `trigger` e `desire`; sem fonte auxiliar na v1.
 - `description`: primárias `positioning_opportunity` e `belief`; auxiliar `objection`.
 
 Regras específicas:
