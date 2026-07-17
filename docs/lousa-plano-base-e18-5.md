@@ -553,21 +553,21 @@ Campos:
   - texto, papel `h2`, cardinalidade `1..1`, policy `research_guided`.
 - `items`:
   - coleção, cardinalidade `1..4`, policy `not_copy`;
-  - item fechado com `title` e `description`;
-  - `title`: texto, papel `card_title`, cardinalidade `1..1`, policy `hybrid`, suporte `when_present`;
+  - item fechado com `itemTitle` e `description`;
+  - `itemTitle`: texto, papel `card_title`, cardinalidade `1..1`, policy `hybrid`, suporte `when_present`;
   - `description`: texto, papel `card_body`, cardinalidade `1..1`, policy `hybrid`, suporte `when_present`.
 
 Copy:
 
 - `title`: primárias `desire` e `trigger`; auxiliar `positioning_opportunity`.
-- `items.title`: primárias `trigger` e `desire`; auxiliar `search_intent`.
-- `items.description`: primárias `positioning_opportunity` e `belief`; auxiliar `objection`.
+- `itemTitle`: primárias `trigger` e `desire`; auxiliar `search_intent`.
+- `description`: primárias `positioning_opportunity` e `belief`; auxiliar `objection`.
 
 Regras específicas:
 
 - uma ocorrência válida contém de um a quatro itens completos;
 - o mínimo de um item permite LPs de intenção única sem forçar ofertas irrelevantes;
-- cada item contém exatamente `title` e `description`;
+- cada item contém exatamente `itemTitle` e `description`;
 - título e descrição representam uma oferta, escopo ou caso de uso efetivamente disponível;
 - todo item exige suporte por entradas operacionais aplicáveis ao taxon, negócio ou oferta;
 - o contrato transversal não fixa chaves de um taxon específico;
@@ -590,10 +590,10 @@ Validações estruturais:
 
 - exigir `title` e `items`;
 - exigir cardinalidade `1..4` em `items`;
-- exigir exatamente `title` e `description` em cada item;
+- exigir exatamente `itemTitle` e `description` em cada item;
 - rejeitar coleção aninhada e campos extras;
 - validar os papéis semânticos e as policies declaradas;
-- exigir suporte `when_present` em `items.title` e `items.description`;
+- exigir suporte `when_present` em `itemTitle` e `description`;
 - rejeitar CTA, mídia, ação, prova, preço, condição comercial, processo ou referência técnica na variante;
 - resolver de forma fail-closed e imutável.
 
