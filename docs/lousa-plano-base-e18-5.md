@@ -4,7 +4,7 @@ Fontes: chat, `README.md`, `AGENTS.md`, `docs/roadmap.md`, `docs/base-tecnica.md
 
 Versão: v1 em ajuste.
 
-Status: plano simplificado; nove módulos mantidos no escopo; `hero`, `hero.standard@v1`, `trust_bar`, `trust_bar.standard@v1`, `problem_solution`, `problem_solution.standard@v1`, `offer`, `offer.standard@v1`, `process`, `process.standard@v1`, `technical_assurance`, `technical_assurance.standard@v1`, `social_proof`, `social_proof.standard@v1`, `faq` e `faq.standard@v1` conceitualmente fechados; um módulo pendente; nenhuma implementação autorizada neste PR.
+Status: plano simplificado; nove módulos mantidos no escopo; `hero`, `hero.standard@v1`, `trust_bar`, `trust_bar.standard@v1`, `problem_solution`, `problem_solution.standard@v1`, `offer`, `offer.standard@v1`, `process`, `process.standard@v1`, `technical_assurance`, `technical_assurance.standard@v1`, `social_proof`, `social_proof.standard@v1`, `faq`, `faq.standard@v1` e `faq.accordion@v1` conceitualmente fechados; um módulo pendente; nenhuma implementação autorizada neste PR.
 
 Path: `docs/lousa-plano-base-e18-5.md`.
 
@@ -14,10 +14,10 @@ Recorte do roadmap: `18.5 — Parametrização de módulos e variantes landing_p
 
 ### 1.1. Objetivo da E18.5
 
-- Definir e implementar, no repositório, o catálogo versionado dos nove módulos `landing_page` e de suas variantes `standard@v1`.
+- Definir e implementar, no repositório, o catálogo versionado dos nove módulos `landing_page`, de suas variantes `standard@v1` e da variante controlada `faq.accordion@v1`.
 - Entregar contratos pequenos, estritos, imutáveis e suficientes para consumo posterior pela E20 e pela E19.
 - Preservar extensibilidade sem antecipar variantes, campos ou capacidades sem uso aprovado.
-- Encerrar a E18.5 após os nove módulos, suas variantes `standard@v1` e a validação integrada dos contratos.
+- Encerrar a E18.5 após os nove módulos, suas variantes `standard@v1`, `faq.accordion@v1` e a validação integrada dos contratos.
 
 ### 1.2. Estado confirmado
 
@@ -56,7 +56,7 @@ A E18.5 define e implementa:
 
 - identidade e versão do catálogo;
 - identidade, versão, função e invariantes dos módulos;
-- identidade, versão, campos, cardinalidades e capacidades das variantes `standard@v1`;
+- identidade, versão, campos, cardinalidades e capacidades das variantes `standard@v1` e de `faq.accordion@v1`;
 - especializações necessárias sobre a raiz;
 - fontes de copy e perfis de funil;
 - exigências factuais ou operacionais;
@@ -75,7 +75,7 @@ Ficam fora:
 - persistência e snapshot;
 - tracking;
 - conteúdo operacional concreto;
-- variantes além de `standard@v1`;
+- variantes além de `standard@v1`, exceto `faq.accordion@v1`, explicitamente aprovada para validação controlada;
 - capacidades sem consumidor aprovado.
 
 ## 2. Contrato compartilhado
@@ -103,7 +103,7 @@ A separação aplica-se aos nove módulos.
 
 ### 2.2. Extensibilidade das variantes
 
-- Cada módulo começa com uma única variante `standard@v1`.
+- Cada módulo começa com uma variante `standard@v1`; `faq.accordion@v1` é a única exceção adicional aprovada antes da primeira LP.
 - Nova variante exige diferença estrutural ou comportamental reutilizável.
 - Nova variante pode adicionar ou especializar campos, mídia, interação, responsividade e validações próprias.
 - Nova variante deve constituir evolução aditiva e localizada; poderá exigir capabilities compartilhadas ou infraestrutura inerente à nova execução, tratadas nos respectivos recortes, sem alteração destrutiva do módulo, das variantes existentes ou das LPs anteriores.
@@ -133,8 +133,8 @@ Não criam variante isoladamente:
 - Módulo e variante registram apenas deltas necessários.
 - Módulo ou variante pode restringir a raiz, mas não ampliar limite absoluto vigente.
 - Necessidade acima do limite da raiz exige evolução versionada da raiz.
-- Capability da raiz só bloqueia a implementação quando for indispensável à variante `standard@v1` em implementação.
-- Capability opcional ou destinada a variante futura permanece evolução posterior.
+- Capability da raiz só bloqueia a implementação quando for indispensável à variante aprovada em implementação.
+- Capability opcional ou destinada a variante não aprovada permanece evolução posterior.
 - Variante deve declarar compatibilidade explícita com a versão da raiz usada por seu contrato.
 - O comportamento de uma variante imutável não muda pela disponibilidade posterior de nova capability da raiz.
 - Não existe fallback silencioso.
@@ -248,7 +248,7 @@ Obrigatório:
 - lifecycle e compatibilidade;
 - validações estruturais indispensáveis.
 
-Condicional, somente quando utilizado por `standard@v1`:
+Condicional, somente quando utilizado por `standard@v1` ou por variante adicional aprovada:
 
 - ação;
 - mídia;
@@ -258,14 +258,14 @@ Condicional, somente quando utilizado por `standard@v1`:
 - fallback técnico;
 - referência técnica.
 
-O fechamento conceitual não exige detalhar comportamentos de variantes futuras.
+O fechamento conceitual não exige detalhar comportamentos de variantes futuras não aprovadas.
 
 ### 2.10. Significado de implementação
 
 Um módulo está implementado na E18.5 quando existem, conforme o contrato técnico adotado:
 
 - identidade versionada do módulo;
-- identidade versionada de `standard@v1`;
+- identidade versionada de `standard@v1` e de cada variante adicional aprovada;
 - tipos e schemas;
 - campos, cardinalidades e capabilities;
 - registry;
@@ -850,13 +850,13 @@ Estado:
 - `moduleKey = faq`; `moduleVersion = 1`.
 - Função: responder dúvidas e objeções recorrentes em pares claros de pergunta e resposta, apoiando compreensão e decisão.
 - Invariantes: cada pergunta é relevante e possui resposta direta; fatos e condições reais exigem sustentação; não há aconselhamento individualizado, promessa ou resposta enganosa.
-- Fronteiras: não substitui oferta, processo ou prova técnica; não contém CTA, mídia, formulário, ação ou interação na execução inicial.
+- Fronteiras: não substitui oferta, processo ou prova técnica; não contém CTA, mídia, formulário ou ação; comportamento interativo pertence à variante que o declarar.
 - Evidências: `faq_objeções` de `lp_sections`, `faq_questions` e `search_intent` de `seo`, `objection`, `fear`, `belief` e `awareness_level` de `strategic_core` e Blueprint do corretor.
-- Variantes futuras podem usar outra execução estrutural sem alterar `faq.standard@v1`.
+- Variantes podem usar execuções estruturais ou comportamentais distintas sem alterar o contrato permanente de `faq@v1`.
 
 ### 3.16. Variante `faq.standard@v1`
 
-- Identidade: `variantKey = faq.standard`; `variantVersion = 1`; compatível com `faq@v1` e com a versão vigente da raiz; única variante inicial.
+- Identidade: `variantKey = faq.standard`; `variantVersion = 1`; compatível com `faq@v1` e com a versão vigente da raiz; variante base sem interação.
 - Campos:
   - `title`: texto, papel `h2`, `1..1`, policy `research_guided`;
   - `items`: coleção `2..6`, policy `not_copy`, com `question` (`faq_question`, `1..1`, `research_guided`) e `answer` (`faq_answer`, `1..1`, `hybrid`, suporte `when_factual`).
@@ -873,6 +873,32 @@ Estado:
   - ausência de pares válidos depende da obrigatoriedade da E20 e será tratada pela E19;
   - resolver de forma fail-closed e imutável.
 - Estado: contrato conceitualmente fechado; lifecycle `experimental`; propósito `controlled_test`; implementação ainda não autorizada.
+
+### 3.17. Variante `faq.accordion@v1`
+
+- Identidade: `variantKey = faq.accordion`; `variantVersion = 1`; compatível com `faq@v1` e com a versão vigente da raiz.
+- Finalidade: validar de forma controlada duas variantes do mesmo módulo e oferecer uma apresentação compacta, especialmente no mobile.
+- Conteúdo:
+  - reutiliza integralmente `title`, `items`, `question` e `answer` de `faq.standard@v1`;
+  - mantém cardinalidades, semantic roles, policies, fontes de copy e exigências de sustentação factual;
+  - não adiciona campo de conteúdo na v1.
+- Capability:
+  - acrescenta somente interação de acordeão e requisitos de acessibilidade associados;
+  - a identificação técnica compartilhada será materializada de forma versionada na implementação, sem alterar a raiz ou variantes anteriores silenciosamente.
+- Comportamento esperado:
+  - todos os itens iniciam fechados;
+  - pergunta abre e fecha sua resposta;
+  - somente um item permanece aberto por vez;
+  - abrir outro item fecha o anteriormente aberto;
+  - pergunta é operável por teclado;
+  - estado expandido é exposto semanticamente;
+  - pergunta e resposta possuem associação acessível;
+  - alternar o estado preserva o foco no controle acionado.
+- Limites e validações:
+  - não definir agora elemento HTML, componente, ícone, animação ou implementação visual do renderer;
+  - rejeitar configuração que altere conteúdo, cardinalidade, copy ou sustentação factual herdados;
+  - resolver de forma fail-closed e imutável.
+- Estado: contrato conceitualmente fechado; lifecycle `experimental`; propósito `controlled_test`; candidata à composição da primeira LP controlada; implementação ainda não autorizada.
 
 ## 4. Módulos pendentes
 
@@ -896,7 +922,7 @@ A implementação dos nove módulos ocorrerá em etapas dentro da E18.5:
 2. `hero` e `trust_bar`;
 3. `problem_solution`, `offer` e `process`;
 4. `technical_assurance` e `social_proof`;
-5. `faq` e `final_cta`;
+5. `faq.standard@v1`, `faq.accordion@v1` e `final_cta.standard@v1`;
 6. validação integrada, documentação final e encerramento da E18.5.
 
 A etapa seguinte só deve reproduzir o contrato compartilhado após ele estar validado pelos módulos anteriores.
@@ -919,7 +945,7 @@ Quando a implementação for autorizada:
 - rejeitar campos, policies, capabilities e deltas desconhecidos;
 - garantir resolução fail-closed e resultado imutável;
 - validar apenas combinações efetivamente utilizadas;
-- executar casos próprios e integração dos nove módulos;
+- executar casos próprios e integração dos nove módulos e das duas variantes de FAQ;
 - executar `npm ci`, validações aplicáveis, `npm run check` e `git diff --check`.
 
 Alteração exclusivamente documental:
@@ -930,10 +956,10 @@ Alteração exclusivamente documental:
 
 ### 5.2. Regra de parada
 
-Após os nove módulos e suas variantes `standard@v1`:
+Após os nove módulos, suas variantes `standard@v1` e `faq.accordion@v1`:
 
 - encerrar a E18.5;
-- não criar nova variante antes da primeira LP;
+- não criar outra variante além de `faq.accordion@v1` antes da primeira LP;
 - não adicionar campo para cenário futuro;
 - não criar policy ou capability sem consumidor;
 - não antecipar matriz especulativa;
@@ -955,7 +981,7 @@ Parar e informar a divergência se:
 - módulo receber identidade de taxon;
 - variante representar somente copy, campanha, plano ou ativo;
 - regra de `standard@v1` for tratada como limite permanente do módulo;
-- nova variante for antecipada;
+- variante não aprovada for antecipada;
 - destino concreto entrar no registry;
 - conteúdo factual puder ser inventado;
 - E19, E20 ou renderer forem implementados implicitamente;
