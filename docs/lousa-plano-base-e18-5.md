@@ -4,7 +4,7 @@ Fontes: chat, `README.md`, `AGENTS.md`, `docs/roadmap.md`, `docs/base-tecnica.md
 
 Versão: v1 em ajuste.
 
-Status: plano simplificado; nove módulos mantidos no escopo; `hero`, `hero.standard@v1`, `trust_bar`, `trust_bar.standard@v1`, `problem_solution` e `problem_solution.standard@v1` conceitualmente fechados; seis módulos pendentes; nenhuma implementação autorizada neste PR.
+Status: plano simplificado; nove módulos mantidos no escopo; `hero`, `hero.standard@v1`, `trust_bar`, `trust_bar.standard@v1`, `problem_solution`, `problem_solution.standard@v1`, `offer` e `offer.standard@v1` conceitualmente fechados; cinco módulos pendentes; nenhuma implementação autorizada neste PR.
 
 Path: `docs/lousa-plano-base-e18-5.md`.
 
@@ -48,7 +48,7 @@ Regras:
 - `item_key` é evidência de pesquisa, não identidade canônica do módulo.
 - Os módulos são transversais e não recebem identidade de taxon.
 - Formatos curto, médio e longo pertencem à composição e à extensão da LP.
-- O próximo módulo para análise é `offer`.
+- O próximo módulo para análise é `process`.
 
 ### 1.4. Escopo positivo
 
@@ -510,13 +510,106 @@ Estado:
 - propósito `controlled_test`;
 - implementação ainda não autorizada por este ajuste documental.
 
+### 3.7. Módulo `offer`
+
+- `moduleKey = offer`.
+- `moduleVersion = 1`.
+- Função:
+  - apresentar o que o negócio ou profissional efetivamente oferece;
+  - organizar a oferta por intenção, caso de uso ou necessidade atendida;
+  - permitir que o visitante reconheça rapidamente se existe aderência ao que procura.
+- Invariantes:
+  - cada item representa uma oferta ou escopo real e identificável;
+  - título e descrição do item permanecem coerentes entre si;
+  - toda capacidade, disponibilidade ou condição apresentada possui sustentação operacional;
+  - a oferta não implica preço, prazo, garantia ou resultado não declarado;
+  - ausência de identidade de taxon, plano, campanha ou funil no contrato.
+- Fronteiras:
+  - não repete pares de problema e solução;
+  - não descreve etapas ou sequência de atendimento;
+  - não apresenta prova técnica, depoimento, credencial ou FAQ;
+  - não define preço, condição comercial, plano ou disponibilidade na execução inicial;
+  - não contém CTA, mídia, formulário ou interação na execução inicial.
+- Evidências principais:
+  - `servicos_por_intencao`, pesquisa ativa de `lp_sections`, taxon `Corretor Imóveis`;
+  - itens `trigger`, `desire`, `positioning_opportunity`, `belief` e `objection` de `strategic_core`;
+  - `narrative_arc` de `lp_overview`, que recomenda segmentação por intenção antes de processo e fechamento;
+  - Blueprint do corretor, especialmente diferenciais objetivos e ofertas orientadas a intenção;
+  - catálogo de entradas vigente, com capacidades e recortes operacionais aplicáveis ao primeiro taxon.
+- Variantes futuras podem usar outra execução estrutural sem alterar `offer.standard@v1`.
+
+### 3.8. Variante `offer.standard@v1`
+
+Identidade:
+
+- `variantKey = offer.standard`.
+- `variantVersion = 1`.
+- Compatível com `offer@v1` e com a versão vigente da raiz utilizada na implementação inicial.
+- Única variante inicial.
+
+Campos:
+
+- `title`:
+  - texto, papel `h2`, cardinalidade `1..1`, policy `research_guided`.
+- `items`:
+  - coleção, cardinalidade `1..4`, policy `not_copy`;
+  - item fechado com `title` e `description`;
+  - `title`: texto, papel `card_title`, cardinalidade `1..1`, policy `hybrid`, suporte `when_present`;
+  - `description`: texto, papel `card_body`, cardinalidade `1..1`, policy `hybrid`, suporte `when_present`.
+
+Copy:
+
+- `title`: primárias `desire` e `trigger`; auxiliar `positioning_opportunity`.
+- `items.title`: primárias `trigger` e `desire`; auxiliar `search_intent`.
+- `items.description`: primárias `positioning_opportunity` e `belief`; auxiliar `objection`.
+
+Regras específicas:
+
+- uma ocorrência válida contém de um a quatro itens completos;
+- o mínimo de um item permite LPs de intenção única sem forçar ofertas irrelevantes;
+- cada item contém exatamente `title` e `description`;
+- título e descrição representam uma oferta, escopo ou caso de uso efetivamente disponível;
+- todo item exige suporte por entradas operacionais aplicáveis ao taxon, negócio ou oferta;
+- o contrato transversal não fixa chaves de um taxon específico;
+- no primeiro taxon, exemplos de sustentação incluem intenção de transação, apoio em financiamento, orientação documental, localização, tipologia, faixa de preço e estágio, quando aplicáveis e reais;
+- pesquisa e Blueprint orientam seleção e redação, mas não comprovam disponibilidade, capacidade, preço, prazo, condição, parceria, garantia ou resultado;
+- os papéis `h2`, `card_title` e `card_body` usam as faixas da raiz sem especialização na v1;
+- a coleção não admite item aninhado;
+- não possui subtítulo, CTA, mídia, ícone, prova, preço, condição comercial, processo ou referência técnica;
+- diferenças de copy, quantidade dentro de `1..4`, ordem dos itens e funil não criam variante;
+- o tratamento da ausência de item válido depende da obrigatoriedade definida pela composição da E20 e será especificado pela E19.
+
+Funil:
+
+- BOFU prioriza oferta específica, aderência imediata e escopo operacional direto.
+- MOFU prioriza comparação entre casos de uso e clareza sobre o atendimento disponível.
+- TOFU prioriza categorias amplas e linguagem educativa, sem transformar interesse inicial em compromisso inexistente.
+- O funil altera seleção, prioridade e redação dos itens, sem alterar campos, cardinalidades, variante ou ordem estrutural da LP.
+
+Validações estruturais:
+
+- exigir `title` e `items`;
+- exigir cardinalidade `1..4` em `items`;
+- exigir exatamente `title` e `description` em cada item;
+- rejeitar coleção aninhada e campos extras;
+- validar os papéis semânticos e as policies declaradas;
+- exigir suporte `when_present` em `items.title` e `items.description`;
+- rejeitar CTA, mídia, ação, prova, preço, condição comercial, processo ou referência técnica na variante;
+- resolver de forma fail-closed e imutável.
+
+Estado:
+
+- contrato conceitualmente fechado;
+- lifecycle `experimental`;
+- propósito `controlled_test`;
+- implementação ainda não autorizada por este ajuste documental.
+
 ## 4. Módulos pendentes
 
 ### 4.1. Estado
 
 Permanecem pendentes:
 
-- `offer`;
 - `process`;
 - `technical_assurance`;
 - `social_proof`;
@@ -544,8 +637,8 @@ A etapa seguinte só deve reproduzir o contrato compartilhado após ele estar va
 
 ### 4.3. Próxima ação
 
-- Analisar `offer` pelo checklist mínimo da seção 2.9.
-- Separar `offer` de `offer.standard@v1`.
+- Analisar `process` pelo checklist mínimo da seção 2.9.
+- Separar `process` de `process.standard@v1`.
 - Não alterar o arquivo novamente sem decisão humana sobre o contrato proposto.
 - Não implementar código durante o fechamento conceitual.
 
