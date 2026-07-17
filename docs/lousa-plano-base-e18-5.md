@@ -521,14 +521,14 @@ Estado:
 - Invariantes:
   - cada item representa uma oferta ou escopo real e identificável;
   - título e descrição do item permanecem coerentes entre si;
-  - toda capacidade, disponibilidade ou condição apresentada possui sustentação operacional;
-  - a oferta não implica preço, prazo, garantia ou resultado não declarado;
+  - toda capacidade ou condição apresentada possui sustentação operacional;
+  - a oferta não implica preço, prazo, garantia, disponibilidade temporal ou resultado não declarado;
   - ausência de identidade de taxon, plano, campanha ou funil no contrato.
 - Fronteiras:
   - não repete pares de problema e solução;
   - não descreve etapas ou sequência de atendimento;
   - não apresenta prova técnica, depoimento, credencial ou FAQ;
-  - não define preço, condição comercial, plano ou disponibilidade na execução inicial;
+  - não define preço, condição comercial, plano ou disponibilidade temporal na execução inicial;
   - não contém CTA, mídia, formulário ou interação na execução inicial.
 - Evidências principais:
   - `servicos_por_intencao`, pesquisa ativa de `lp_sections`, taxon `Corretor Imóveis`;
@@ -568,11 +568,11 @@ Regras específicas:
 - uma ocorrência válida contém de um a quatro itens completos;
 - o mínimo de um item permite LPs de intenção única sem forçar ofertas irrelevantes;
 - cada item contém exatamente `itemTitle` e `description`;
-- título e descrição representam uma oferta, escopo ou caso de uso efetivamente disponível;
+- título e descrição representam uma oferta, escopo ou caso de uso efetivamente disponível como capacidade da operação;
 - todo item exige suporte por entradas operacionais aplicáveis ao taxon, negócio ou oferta;
 - o contrato transversal não fixa chaves de um taxon específico;
 - no primeiro taxon, exemplos de sustentação incluem intenção de transação, apoio em financiamento, orientação documental, localização, tipologia, faixa de preço e estágio, quando aplicáveis e reais;
-- pesquisa e Blueprint orientam seleção e redação, mas não comprovam disponibilidade, capacidade, preço, prazo, condição, parceria, garantia ou resultado;
+- pesquisa e Blueprint orientam seleção e redação, mas não comprovam capacidade, preço, prazo, condição, parceria, garantia, disponibilidade temporal ou resultado;
 - os papéis `h2`, `card_title` e `card_body` usam as faixas da raiz sem especialização na v1;
 - a coleção não admite item aninhado;
 - não possui subtítulo, CTA, mídia, ícone, prova, preço, condição comercial, processo ou referência técnica;
