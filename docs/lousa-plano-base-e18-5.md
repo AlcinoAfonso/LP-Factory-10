@@ -106,6 +106,7 @@ A separação aplica-se aos nove módulos.
 - Cada módulo começa com uma única variante `standard@v1`.
 - Nova variante exige diferença estrutural ou comportamental reutilizável.
 - Nova variante pode adicionar ou especializar campos, mídia, interação, responsividade e validações próprias.
+- Nova variante deve constituir evolução aditiva e localizada; poderá exigir capabilities compartilhadas ou infraestrutura inerente à nova execução, tratadas nos respectivos recortes, sem alteração destrutiva do módulo, das variantes existentes ou das LPs anteriores.
 - Nova variante não altera contratos ou LPs de variantes anteriores.
 - Restrições de `standard@v1` não restringem variantes futuras.
 - Nova variante não exige nova `moduleVersion` quando preserva função, fronteiras e invariantes do módulo.
