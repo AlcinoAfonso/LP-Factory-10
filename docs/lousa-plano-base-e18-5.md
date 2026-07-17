@@ -144,6 +144,12 @@ Cada campo usado por uma variante declara:
 - suporte operacional, quando aplicável;
 - capability específica, quando aplicável.
 
+Notação da seção 3:
+
+- campo textual usa `fieldKey: semanticRole, cardinalidade, policy[, suporte]`; somente nessa notação `fieldKind = text` fica implícito;
+- coleção, ação, mídia e referência técnica declaram o `fieldKind` explicitamente;
+- campos internos de coleção declaram sua própria cardinalidade, sem inferência por omissão.
+
 Regras:
 
 - cardinalidade representa obrigatoriedade;
@@ -245,6 +251,12 @@ Um módulo está implementado na E18.5 quando existem:
 
 Isso não inclui seção visual funcional.
 
+Compatibilidade comum da seção 3:
+
+- salvo indicação contrária, cada variante `standard@v1` é compatível exclusivamente com o respectivo módulo `@v1` e com a versão da raiz declarada pelo catálogo inicial;
+- `faq.accordion@v1` possui a mesma compatibilidade explícita com `faq@v1` e com essa versão da raiz;
+- definições compartilhadas podem ser reutilizadas na implementação, mas uma variante não herda semanticamente o contrato de uma variante irmã.
+
 ## 3. Contratos conceitualmente fechados
 
 ### 3.1. Módulo `hero`
@@ -261,7 +273,7 @@ Isso não inclui seção visual funcional.
   - `eyebrow`: `eyebrow`, `0..1`, `research_guided`;
   - `title`: `h1`, `1..1`, `hybrid`, suporte `when_factual`;
   - `subtitle`: `paragraph`, `1..1`, `hybrid`, suporte `when_factual`;
-  - `primaryCta`: ação `1..1`, `not_copy`, label `cta_label`, `hybrid`, suporte `when_present`, vínculo obrigatório com `primary_conversion_channel`;
+  - `primaryCta`: ação `1..1`, `not_copy`, label `cta_label`, `1..1`, `hybrid`, suporte `when_present`, vínculo obrigatório com `primary_conversion_channel`;
   - `proofShort`: `paragraph`, `0..1`, `hybrid`, suporte `when_present`;
   - `media`: imagem `0..1`, `technical_reference`, modo `informative` ou `decorative`.
 - Copy:
@@ -289,7 +301,7 @@ Isso não inclui seção visual funcional.
 
 ### 3.4. Variante `trust_bar.standard@v1`
 
-- Campo `items`: coleção `2..4`, `not_copy`, item `text` com papel `benefit_item`, `hybrid`, suporte `when_present`.
+- Campo `items`: coleção `2..4`, `not_copy`, com `text`: `benefit_item`, `1..1`, `hybrid`, suporte `when_present`.
 - Copy: `proof_type` e `belief`; auxiliar `objection`.
 - Regras:
   - cada item exige suporte operacional real;
@@ -310,7 +322,9 @@ Isso não inclui seção visual funcional.
 
 - Campos:
   - `title`: `h2`, `1..1`, `research_guided`;
-  - `items`: coleção `2..4`, `not_copy`, com `problem` (`card_title`, `research_guided`) e `solution` (`card_body`, `hybrid`, suporte `when_present`).
+  - `items`: coleção `2..4`, `not_copy`, com:
+    - `problem`: `card_title`, `1..1`, `research_guided`;
+    - `solution`: `card_body`, `1..1`, `hybrid`, suporte `when_present`.
 - Copy:
   - `title`: `pain` e `desire`; auxiliar `positioning_opportunity`;
   - `problem`: `pain` e `fear`; auxiliar `objection`;
@@ -333,7 +347,9 @@ Isso não inclui seção visual funcional.
 
 - Campos:
   - `title`: `h2`, `1..1`, `research_guided`;
-  - `items`: coleção `1..4`, `not_copy`, com `itemTitle` (`card_title`, `hybrid`) e `description` (`card_body`, `hybrid`), ambos com suporte `when_present`.
+  - `items`: coleção `1..4`, `not_copy`, com:
+    - `itemTitle`: `card_title`, `1..1`, `hybrid`, suporte `when_present`;
+    - `description`: `card_body`, `1..1`, `hybrid`, suporte `when_present`.
 - Copy:
   - `title`: `desire` e `trigger`; auxiliar `positioning_opportunity`;
   - `itemTitle`: `trigger` e `desire`;
@@ -356,7 +372,9 @@ Isso não inclui seção visual funcional.
 
 - Campos:
   - `title`: `h2`, `1..1`, `research_guided`;
-  - `steps`: coleção ordenada `2..6`, `not_copy`, com `stepTitle` (`step_title`, `hybrid`) e `stepBody` (`step_body`, `hybrid`), ambos com suporte `when_present`.
+  - `steps`: coleção ordenada `2..6`, `not_copy`, com:
+    - `stepTitle`: `step_title`, `1..1`, `hybrid`, suporte `when_present`;
+    - `stepBody`: `step_body`, `1..1`, `hybrid`, suporte `when_present`.
 - Copy:
   - `title`: `belief` e `desire`; auxiliar `positioning_opportunity`;
   - `stepTitle`: `trigger` e `positioning_opportunity`; auxiliar `desire`;
@@ -379,7 +397,9 @@ Isso não inclui seção visual funcional.
 
 - Campos:
   - `title`: `h2`, `1..1`, `research_guided`;
-  - `items`: coleção `1..4`, `not_copy`, com `assuranceTitle` (`card_title`, `hybrid`) e `assuranceBody` (`card_body`, `hybrid`), ambos com suporte `when_present`.
+  - `items`: coleção `1..4`, `not_copy`, com:
+    - `assuranceTitle`: `card_title`, `1..1`, `hybrid`, suporte `when_present`;
+    - `assuranceBody`: `card_body`, `1..1`, `hybrid`, suporte `when_present`.
 - Copy:
   - `title`: `proof_type` e `belief`; auxiliar `objection`;
   - `assuranceTitle`: `proof_type`; auxiliar `belief`;
@@ -402,7 +422,10 @@ Isso não inclui seção visual funcional.
 
 - Campos:
   - `title`: `h2`, `1..1`, `research_guided`;
-  - `items`: coleção `1..3`, `not_copy`, com `quote` (`card_body`, `operational_required`), `attribution` (`card_title`, `operational_required`) e `evidenceRef` (`technical_reference`).
+  - `items`: coleção `1..3`, `not_copy`, com:
+    - `quote`: `card_body`, `1..1`, `operational_required`;
+    - `attribution`: `card_title`, `1..1`, `operational_required`;
+    - `evidenceRef`: referência técnica, `1..1`, `technical_reference`.
 - Copy:
   - `title`: `proof_type` e `belief`; auxiliar `objection`;
   - `quote` e `attribution`: exclusivamente da evidência operacional referenciada.
@@ -424,7 +447,9 @@ Isso não inclui seção visual funcional.
 
 - Campos:
   - `title`: `h2`, `1..1`, `research_guided`;
-  - `items`: coleção `2..6`, `not_copy`, com `question` (`faq_question`, `research_guided`) e `answer` (`faq_answer`, `hybrid`, suporte `when_factual`).
+  - `items`: coleção `2..6`, `not_copy`, com:
+    - `question`: `faq_question`, `1..1`, `research_guided`;
+    - `answer`: `faq_answer`, `1..1`, `hybrid`, suporte `when_factual`.
 - Copy:
   - `title`: `objection` e `awareness_level`; auxiliar `search_intent`;
   - `question`: `objection` e `fear`; auxiliar `faq_questions`;
@@ -441,7 +466,8 @@ Isso não inclui seção visual funcional.
 - Identidade: `faq.accordion@v1`, compatível com `faq@v1` e com a raiz vigente.
 - Finalidade: validar duas variantes do mesmo módulo e oferecer apresentação compacta, especialmente no mobile.
 - Conteúdo:
-  - reutiliza integralmente `title`, `items`, `question` e `answer` de `faq.standard@v1`;
+  - declara o mesmo contrato de campos de `faq.standard@v1`;
+  - a implementação pode reutilizar definições imutáveis compartilhadas, sem estabelecer herança entre variantes;
   - mantém cardinalidades, semantic roles, policies, copy e sustentação factual;
   - não adiciona campo de conteúdo.
 - Capability: interação de acordeão e requisitos de acessibilidade associados.
@@ -456,7 +482,7 @@ Isso não inclui seção visual funcional.
   - foco preservado no controle acionado.
 - Limites:
   - não define elemento HTML, componente, ícone, animação ou visual do renderer;
-  - não altera conteúdo, cardinalidade, copy ou sustentação factual herdados.
+  - não altera conteúdo, cardinalidade, copy ou sustentação factual declarados em seu próprio contrato.
 - Estado: `experimental`, `controlled_test`, candidata à primeira composição controlada.
 
 ### 3.18. Módulo `final_cta`
@@ -471,13 +497,13 @@ Isso não inclui seção visual funcional.
 
 - Identidade: `final_cta.standard@v1`, compatível com `final_cta@v1` e com a raiz vigente; única variante inicial.
 - Campos:
-  - `title`: texto, papel `h2`, `1..1`, policy `hybrid`, suporte `when_factual`;
-  - `body`: texto, papel `paragraph`, `1..1`, policy `hybrid`, suporte `when_factual`;
-  - `primaryCta`: ação `1..1`, policy `not_copy`, com label `cta_label`, `1..1`, `hybrid`, suporte `when_present`, e vínculo obrigatório com `primary_conversion_channel`.
+  - `title`: `h2`, `1..1`, `hybrid`, suporte `when_factual`;
+  - `body`: `paragraph`, `1..1`, `hybrid`, suporte `when_factual`;
+  - `primaryCta`: ação `1..1`, `not_copy`, com label `cta_label`, `1..1`, `hybrid`, suporte `when_present`, e vínculo obrigatório com `primary_conversion_channel`.
 - Copy:
-  - `title`: primárias `trigger` e `desire`; auxiliar `positioning_opportunity`;
-  - `body`: primárias `desire` e `objection`; auxiliar `belief`;
-  - `primaryCta.label`: primária `trigger`; auxiliar `search_intent`.
+  - `title`: `trigger` e `desire`; auxiliar `positioning_opportunity`;
+  - `body`: `desire` e `objection`; auxiliar `belief`;
+  - `primaryCta.label`: `trigger`; auxiliar `search_intent`.
 - Regras:
   - uma única ação principal;
   - canais permitidos: `whatsapp`, `phone`, `email` e `external_url`;
