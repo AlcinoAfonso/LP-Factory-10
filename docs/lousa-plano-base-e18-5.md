@@ -4,7 +4,7 @@ Fontes: chat, `README.md`, `AGENTS.md`, `docs/roadmap.md`, `docs/base-tecnica.md
 
 Versão: v1 em ajuste.
 
-Status: plano simplificado; nove módulos mantidos no escopo; `hero`, `hero.standard@v1`, `trust_bar` e `trust_bar.standard@v1` conceitualmente fechados; sete módulos pendentes; nenhuma implementação autorizada neste PR.
+Status: plano simplificado; nove módulos mantidos no escopo; `hero`, `hero.standard@v1`, `trust_bar`, `trust_bar.standard@v1`, `problem_solution` e `problem_solution.standard@v1` conceitualmente fechados; seis módulos pendentes; nenhuma implementação autorizada neste PR.
 
 Path: `docs/lousa-plano-base-e18-5.md`.
 
@@ -48,7 +48,7 @@ Regras:
 - `item_key` é evidência de pesquisa, não identidade canônica do módulo.
 - Os módulos são transversais e não recebem identidade de taxon.
 - Formatos curto, médio e longo pertencem à composição e à extensão da LP.
-- O próximo módulo para análise é `problem_solution`.
+- O próximo módulo para análise é `offer`.
 
 ### 1.4. Escopo positivo
 
@@ -420,13 +420,102 @@ Estado:
 - propósito `controlled_test`;
 - implementação ainda não autorizada por este ajuste documental.
 
+### 3.5. Módulo `problem_solution`
+
+- `moduleKey = problem_solution`.
+- `moduleVersion = 1`.
+- Função:
+  - apresentar problemas, fricções ou riscos reconhecíveis pelo público;
+  - relacionar cada problema a uma resposta prática e coerente;
+  - transformar posicionamento abstrato em relevância concreta antes da oferta ou do processo.
+- Invariantes:
+  - cada problema possui uma solução diretamente correspondente;
+  - problema e solução permanecem distinguíveis;
+  - o problema não usa alarmismo, medo artificial ou alegação não sustentada;
+  - a solução não promete resultado, garantia ou capacidade inexistente;
+  - ausência de identidade de taxon, plano, campanha ou funil no contrato.
+- Fronteiras:
+  - não substitui proposta principal da Hero;
+  - não detalha catálogo de serviços, preço, condição comercial ou oferta;
+  - não descreve sequência de atendimento;
+  - não apresenta prova técnica, depoimento, credencial, FAQ ou CTA;
+  - não contém mídia, formulário ou interação na execução inicial.
+- Evidências principais:
+  - `dores_e_solucoes`, pesquisa ativa de `lp_sections`, taxon `Corretor Imóveis`;
+  - itens `pain`, `fear`, `objection`, `desire`, `belief` e `positioning_opportunity` de `strategic_core`;
+  - Blueprint do corretor, especialmente dores, objeções, riscos percebidos e diferenciais objetivos.
+- Variantes futuras podem usar outra execução estrutural sem alterar `problem_solution.standard@v1`.
+
+### 3.6. Variante `problem_solution.standard@v1`
+
+Identidade:
+
+- `variantKey = problem_solution.standard`.
+- `variantVersion = 1`.
+- Compatível com `problem_solution@v1` e com a versão vigente da raiz utilizada na implementação inicial.
+- Única variante inicial.
+
+Campos:
+
+- `title`:
+  - texto, papel `h2`, cardinalidade `1..1`, policy `research_guided`.
+- `items`:
+  - coleção, cardinalidade `2..4`, policy `not_copy`;
+  - item fechado com `problem` e `solution`;
+  - `problem`: texto, papel `card_title`, cardinalidade `1..1`, policy `research_guided`;
+  - `solution`: texto, papel `card_body`, cardinalidade `1..1`, policy `hybrid`, suporte `when_present`.
+
+Copy:
+
+- `title`: primárias `pain` e `desire`; auxiliar `positioning_opportunity`.
+- `problem`: primárias `pain` e `fear`; auxiliar `objection`.
+- `solution`: primárias `positioning_opportunity` e `desire`; auxiliar `belief`.
+
+Regras específicas:
+
+- uma ocorrência válida contém de dois a quatro pares completos;
+- cada item contém exatamente um `problem` e uma `solution`;
+- a solução responde diretamente ao problema do mesmo item;
+- problemas devem ser concretos, reconhecíveis e proporcionais, sem amplificação artificial;
+- toda solução apresentada exige suporte operacional real;
+- a pesquisa orienta a solução, mas não comprova serviço, método, prazo, condição, garantia ou resultado;
+- os papéis `h2`, `card_title` e `card_body` usam as faixas da raiz sem especialização na v1;
+- a coleção não admite item aninhado;
+- não possui subtítulo, CTA, mídia, ícone, prova, preço, lista detalhada de serviços ou etapas de processo;
+- diferenças de copy, quantidade dentro de `2..4`, ordem dos pares e funil não criam variante;
+- o tratamento da ausência de pares válidos depende da obrigatoriedade definida pela composição da E20 e será especificado pela E19.
+
+Funil:
+
+- BOFU prioriza fricções decisórias e respostas operacionais diretas.
+- MOFU prioriza compreensão, comparação e redução de objeções.
+- TOFU prioriza problemas amplos e respostas educativas de baixa pressão.
+- O funil altera seleção, prioridade e redação dos pares, sem alterar campos, cardinalidades, variante ou ordem estrutural da LP.
+
+Validações estruturais:
+
+- exigir `title` e `items`;
+- exigir cardinalidade `2..4` em `items`;
+- exigir exatamente `problem` e `solution` em cada item;
+- rejeitar coleção aninhada e campos extras;
+- validar os papéis semânticos e as policies declaradas;
+- exigir suporte `when_present` em `solution`;
+- rejeitar CTA, mídia, ação, prova, preço, processo ou referência técnica na variante;
+- resolver de forma fail-closed e imutável.
+
+Estado:
+
+- contrato conceitualmente fechado;
+- lifecycle `experimental`;
+- propósito `controlled_test`;
+- implementação ainda não autorizada por este ajuste documental.
+
 ## 4. Módulos pendentes
 
 ### 4.1. Estado
 
 Permanecem pendentes:
 
-- `problem_solution`;
 - `offer`;
 - `process`;
 - `technical_assurance`;
@@ -455,8 +544,8 @@ A etapa seguinte só deve reproduzir o contrato compartilhado após ele estar va
 
 ### 4.3. Próxima ação
 
-- Analisar `problem_solution` pelo checklist mínimo da seção 2.9.
-- Separar `problem_solution` de `problem_solution.standard@v1`.
+- Analisar `offer` pelo checklist mínimo da seção 2.9.
+- Separar `offer` de `offer.standard@v1`.
 - Não alterar o arquivo novamente sem decisão humana sobre o contrato proposto.
 - Não implementar código durante o fechamento conceitual.
 
