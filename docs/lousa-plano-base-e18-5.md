@@ -4,7 +4,7 @@ Fontes: chat, `README.md`, `AGENTS.md`, `docs/roadmap.md`, `docs/base-tecnica.md
 
 Versão: v1 em ajuste.
 
-Status: PR vivo para debate; grade metodológica comum registrada; `hero` e `hero.standard` conceitualmente fechados na v1; oito módulos candidatos ainda pendentes; nenhuma implementação autorizada.
+Status: PR vivo para debate; grade metodológica comum registrada; `hero`, `hero.standard`, `trust_bar` e `trust_bar.standard` conceitualmente fechados na v1; sete módulos candidatos ainda pendentes; nenhuma implementação autorizada.
 
 Path: `docs/lousa-plano-base-e18-5.md`.
 
@@ -44,8 +44,9 @@ Recorte do roadmap: `18.5 — Parametrização de módulos e variantes landing_p
   - responsividade e acessibilidade aplicáveis;
   - variante, versões, lifecycle e compatibilidades;
   - casos da E18.5 e invariantes futuras da E19.
-- O Hero é o piloto e está conceitualmente fechado na v1.
-- O próximo candidato é `trust_bar`.
+- O Hero permanece como piloto metodológico e está conceitualmente fechado na v1.
+- `trust_bar` e `trust_bar.standard` estão conceitualmente fechados na v1.
+- O próximo candidato é `problem_solution`.
 - Implementação somente após evolução da raiz, v2 estável, pareceres e merge humano.
 
 ### 1.3. Princípio canônico de herança
@@ -105,6 +106,11 @@ Recorte do roadmap: `18.5 — Parametrização de módulos e variantes landing_p
   - restringir a v1 a `whatsapp`, `phone`, `email` e `external_url`;
   - retirar `form` do contrato do Hero v1;
   - permitir suporte futuro somente após contrato de composição E20/E19 e nova `moduleVersion`.
+- Decisão humana de 16/07/2026 sobre `trust_bar`:
+  - aprovar coleção de dois a quatro sinais curtos de confiança;
+  - exigir suporte operacional real para cada sinal;
+  - manter TOFU, MOFU e BOFU como perfis de seleção e redação, sem alterar estrutura ou variante;
+  - aprovar `trust_bar.standard` como única variante inicial, com delta vazio.
 
 ### 1.6. Estado técnico confirmado
 
@@ -116,7 +122,7 @@ Recorte do roadmap: `18.5 — Parametrização de módulos e variantes landing_p
 
 ### 1.7. Pontos ainda em debate
 
-- Confirmação dos oito candidatos restantes.
+- Confirmação dos sete candidatos restantes.
 - Evolução tipográfica e responsiva da raiz.
 - Divisão final em fases.
 
@@ -124,7 +130,7 @@ Recorte do roadmap: `18.5 — Parametrização de módulos e variantes landing_p
 
 ### 2.1. Problema
 
-- Faltam contratos aprovados para oito módulos e suas variantes.
+- Faltam contratos aprovados para sete módulos e suas variantes.
 - O catálogo deve generalizar funções sem carregar identidade imobiliária.
 - CTA não pode duplicar canal ou destino da E20.2.
 - Campos híbridos precisam representar declarativamente quando suporte operacional é exigido.
@@ -807,6 +813,157 @@ Validações E18.5:
 - Validação: `npm ci`, validações da raiz, módulos e commercial activation, `npm run check`, `git diff --check` e checks do PR.
 - Persistência: repositório; consumo futuro: E20 e E19; fallback: falha fechada.
 
+### 2.16. Módulo `trust_bar`
+
+#### 2.16.1. Identidade e função estrutural
+
+- `moduleKey = trust_bar`.
+- `moduleVersion = 1`.
+- Função:
+  - apresentar sinais curtos e verificáveis de confiança;
+  - reduzir a insegurança inicial;
+  - sustentar a continuidade da leitura ou a aproximação do CTA.
+- O módulo é opcional na composição.
+- Sua posição mais comum é após o Hero, mas ordem e ocorrência pertencem à E20.
+
+#### 2.16.2. Evidência e equivalência
+
+- Evidência estrutural:
+  - candidato `barra_de_confianca` da grade de `lp_sections`;
+  - blueprint imobiliário com prova curta imediata;
+  - exemplos documentados: especialização, registro profissional, privacidade e marca parceira.
+- Função transversal:
+  - responder rapidamente se a empresa, profissional ou oferta possui sinais reais de confiança.
+- A evidência imobiliária orienta o primeiro caso, mas o módulo não carrega identidade de taxon.
+
+#### 2.16.3. Fronteiras
+
+Pertencem:
+
+- credencial ou registro verificável;
+- especialização real;
+- capacidade operacional concreta;
+- informação curta de segurança ou privacidade;
+- parceria ou vínculo real;
+- outro sinal curto sustentado por dado operacional.
+
+Não pertencem:
+
+- depoimentos ou avaliações;
+- prova social extensa;
+- explicação institucional;
+- política de privacidade completa;
+- prova técnica detalhada;
+- CTA;
+- formulário;
+- mídia;
+- selo, certificação, parceria, experiência ou resultado inventado.
+
+#### 2.16.4. Catálogo de campos v1
+
+- `items`:
+  - `fieldKind = collection`;
+  - cardinalidade `2..4`;
+  - policy `not_copy` no contêiner;
+  - contrato fechado do item:
+    - `text`:
+      - `fieldKind = text`;
+      - `semanticRole = benefit_item`;
+      - cardinalidade `1..1`;
+      - policy `hybrid`;
+      - `operationalSupportRequirement = when_present`.
+- A coleção não admite item aninhado.
+- A v1 não possui título, subtítulo, CTA, ícone ou mídia próprios.
+- A redação herda as faixas da raiz para `benefit_item`, sem especialização própria.
+
+#### 2.16.5. Fontes de copy e suporte
+
+- `copySourceMap` de `items.text`:
+  - primárias:
+    - `proof_type`;
+    - `belief`;
+  - auxiliar:
+    - `objection`.
+- Pesquisa orienta seleção, relevância e redação.
+- Pesquisa e `copySourceMap` não comprovam o sinal exibido.
+- Cada item presente exige suporte operacional real aplicável.
+- A E19 deve omitir o módulo quando não conseguir resolver ao menos dois sinais válidos.
+
+#### 2.16.6. Perfis de funil
+
+- BOFU:
+  - prioriza credencial, parceria, capacidade concreta e segurança verificável;
+  - usa redação direta e decisória.
+- MOFU:
+  - prioriza especialização, processo, orientação e suporte oferecido;
+  - reduz risco sem pressão excessiva.
+- TOFU:
+  - prioriza identificação clara, privacidade, atendimento humano e transparência;
+  - usa confiança leve e baixa fricção.
+- O perfil altera seleção, ordem e redação dos itens.
+- O perfil não altera campos, cardinalidade, módulo ou variante.
+
+#### 2.16.7. Variante `trust_bar.standard`
+
+- `variantKey = trust_bar.standard`.
+- `variantVersion = 1`.
+- Compatível com `moduleVersion = 1`.
+- Execução-base com delta vazio.
+- Única variante inicial.
+- Disposição horizontal, quebra de linha ou empilhamento mobile são comportamento responsivo do renderer, não novas variantes.
+- A variante está conceitualmente fechada na v1.
+
+#### 2.16.8. Lifecycle e compatibilidade
+
+- `moduleCatalogVersion = 1` proposto.
+- `moduleVersion = 1` fechado conceitualmente.
+- `variantVersion = 1` fechada conceitualmente.
+- Módulo e variante começam `experimental`.
+- Propósito inicial: `controlled_test`.
+- Promoção exige uso em LP real, revisão e decisão humanas.
+
+#### 2.16.9. Casos executáveis da E18.5
+
+- Validar identidade e função transversal.
+- Aceitar somente o campo `items` na v1.
+- Validar cardinalidade `2..4`.
+- Validar o contrato fechado de `items.text`.
+- Validar policy `hybrid` com `operationalSupportRequirement = when_present`.
+- Validar `copySourceMap` dentro do limite comum.
+- Rejeitar CTA, mídia, item aninhado, campo adicional ou variante não aprovada.
+- Confirmar que TOFU, MOFU e BOFU não alteram schema ou variante.
+- Retornar contrato imutável.
+
+#### 2.16.10. Invariantes futuras de conteúdo para E19
+
+- Resolver de dois a quatro itens válidos.
+- Exigir suporte operacional real para cada item.
+- Proibir credencial, parceria, experiência, certificação, capacidade ou resultado inventado.
+- Não tratar pesquisa como comprovação factual.
+- Evitar duplicidade material entre itens.
+- Manter os textos curtos, claros e relevantes para o público e o funil.
+- Omitir o módulo quando houver menos de dois sinais válidos.
+- Não inserir CTA, mídia, depoimento ou explicação extensa.
+
+#### 2.16.11. Fechamento da `trust_bar`
+
+Contrato conceitual aprovado na v1:
+
+- função e fronteiras;
+- coleção `items` com cardinalidade `2..4`;
+- contrato fechado de `items.text`;
+- fontes de copy e suporte operacional;
+- perfis BOFU, MOFU e TOFU;
+- variante única `trust_bar.standard`;
+- lifecycle inicial e propósito de teste;
+- casos E18.5 e invariantes E19.
+
+Estado:
+
+- `trust_bar` está conceitualmente fechada na v1;
+- `trust_bar.standard` está conceitualmente fechada na v1;
+- implementação permanece condicionada ao catálogo de módulos e ao fluxo futuro da E19.
+
 ## 3. Fases e próxima ação
 
 ### 3.1. E18.5.3–E18.5.9 — Catálogo versionado de módulos e variantes v1
@@ -817,9 +974,13 @@ Validações E18.5:
 - Hero:
   - contrato conceitual fechado;
   - implementação bloqueada pela raiz.
+- `trust_bar`:
+  - contrato conceitual fechado;
+  - variante `trust_bar.standard` fechada;
+  - implementação condicionada ao catálogo de módulos e à E19.
 - Próxima ação:
-  - iniciar análise de `trust_bar` pela grade metodológica comum;
-  - seguir os oito candidatos restantes;
+  - iniciar análise de `problem_solution` pela grade metodológica comum;
+  - seguir os sete candidatos restantes;
   - evoluir a raiz antes da implementação;
   - concluir pareceres, v2 e merge humano.
 
@@ -865,5 +1026,10 @@ Parar se:
 - Elegibilidade inclui a raiz e não presume lifecycle do catálogo.
 - E18.5 e E19 permanecem separadas.
 - Hero e `hero.standard` estão finalizados conceitualmente na v1.
+- `trust_bar` possui coleção de dois a quatro sinais reais de confiança.
+- TOFU, MOFU e BOFU alteram somente seleção, ordem e redação dos itens.
+- `trust_bar.standard` é a única variante inicial, com delta vazio.
+- `trust_bar` e `trust_bar.standard` estão finalizadas conceitualmente na v1.
+- Sete módulos candidatos permanecem pendentes.
 - A implementação continua bloqueada pela evolução tipográfica e responsiva da raiz.
-- Próxima ação humana: iniciar `trust_bar` e seguir a grade dos oito módulos restantes.
+- Próxima ação humana: iniciar `problem_solution`.
