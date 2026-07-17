@@ -134,6 +134,8 @@ Não criam variante isoladamente:
 - Necessidade acima do limite da raiz exige evolução versionada da raiz.
 - Capability da raiz só bloqueia a implementação quando for indispensável à variante `standard@v1` em implementação.
 - Capability opcional ou destinada a variante futura permanece evolução posterior.
+- Variante deve declarar compatibilidade explícita com a versão da raiz usada por seu contrato.
+- O comportamento de uma variante imutável não muda pela disponibilidade posterior de nova capability da raiz.
 - Não existe fallback silencioso.
 - Contrato ausente, incompatível ou inválido falha fechado.
 - Resultado resolvido deve ser completo e imutável.
@@ -153,7 +155,7 @@ Cada campo usado por uma variante declara:
 Regras:
 
 - cardinalidade representa obrigatoriedade;
-- texto visível usa papel semântico existente na raiz;
+- texto visível usa papel semântico existente na raiz compatível;
 - coleção possui contrato fechado do item;
 - coleção aninhada não integra a v1;
 - ação não armazena canal, URL, telefone, e-mail ou destino concreto;
@@ -164,11 +166,11 @@ Regras:
 
 - `copySourceMap` define até duas fontes primárias e uma auxiliar por campo textual, salvo decisão humana registrada.
 - `funnelCopyProfile` adapta seleção e redação para BOFU, MOFU e TOFU.
-- Funil altera copy, seleção e ordem permitida; não cria módulo ou variante.
+- O funil orienta copy e seleção e pode influenciar a escolha entre ordens previamente permitidas pela composição da E20; não redefine sozinho a estrutura da LP.
 - Pesquisa orienta copy, mas não comprova fatos sobre a operação.
 - Credencial, capacidade, condição, preço, prazo, parceria, resultado, garantia ou ação concreta exige suporte operacional real.
 - A E18.5 declara a exigência estrutural.
-- A E19 resolve valores, omissões e validação final da instância concreta.
+- A E19 resolve valores e valida a instância concreta conforme a composição recebida.
 - Nenhum módulo pode inventar prova, certificação, garantia ou resultado.
 
 Policies iniciais devem ser limitadas às efetivamente consumidas pelas variantes aprovadas:
@@ -217,7 +219,8 @@ E20:
 E19:
 
 - recebe pesquisas, composição e entradas;
-- resolve conteúdo, ativos, vínculos e omissões;
+- resolve conteúdo, ativos e vínculos;
+- trata ausência ou invalidade de dados conforme a obrigatoriedade definida pela E20 e seu próprio contrato;
 - gera e administra a LP real;
 - preserva as versões utilizadas.
 
@@ -298,7 +301,7 @@ Identidade:
 
 - `variantKey = hero.standard`.
 - `variantVersion = 1`.
-- Compatível com `hero@v1`.
+- Compatível com `hero@v1` e com a versão vigente da raiz utilizada na implementação inicial.
 - Única variante inicial.
 
 Campos:
@@ -334,9 +337,10 @@ Regras específicas:
 - Canal e destino concretos ficam fora do registry.
 - Imagem informativa exige alternativa acessível.
 - Imagem decorativa não transporta informação essencial.
-- Visibilidade `desktop_only` pode ser selecionada pela E20 somente para imagem complementar, decorativa ou redundante.
-- A capability técnica de `desktop_only` depende de evolução da raiz; sua ausência não bloqueia a implementação básica com `all_viewports`.
-- `subtitle` usa `body.editorialEmphasis` quando disponível; `body.base` é alternativa explícita, não fallback do renderer.
+- Visibilidade da mídia em `hero.standard@v1` é `all_viewports`.
+- `subtitle` usa `body.base` na versão inicial.
+- `desktop_only` e `body.editorialEmphasis` não integram `hero.standard@v1` enquanto não houver evolução versionada e compatibilidade explícita.
+- A adoção futura dessas capacidades exige nova `variantVersion` ou novo contrato compatível, sem alterar LPs existentes.
 - Não pertencem a `hero.standard@v1`:
   - CTA secundário;
   - vídeo;
@@ -405,8 +409,9 @@ Regras específicas:
 - a coleção não admite item aninhado;
 - não possui título, subtítulo, CTA, ícone ou mídia;
 - disposição horizontal, quebra e empilhamento são responsabilidade responsiva do renderer;
-- TOFU, MOFU e BOFU alteram seleção, ordem e redação, não o contrato;
-- futura E19 omite a ocorrência quando não houver ao menos dois sinais válidos.
+- TOFU, MOFU e BOFU alteram seleção e redação, não o contrato nem a ordem estrutural da LP;
+- uma ocorrência válida de `trust_bar.standard@v1` exige de dois a quatro sinais sustentados;
+- o tratamento da ausência de dados depende da obrigatoriedade definida pela composição da E20 e será especificado pela E19.
 
 Estado:
 
