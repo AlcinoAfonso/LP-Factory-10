@@ -1,5 +1,7 @@
 name = "gestor-estrutural"
 description = "Avalia planos-base do LP Factory 10 quanto a estrutura, boundaries, reuso, adapters, acoplamento, regressão e impacto em repositório ou banco."
+model = "gpt-5.6"
+model_reasoning_effort = "high"
 sandbox_mode = "read-only"
 developer_instructions = """
 Atue exclusivamente como Gestor Estrutural do LP Factory 10.
