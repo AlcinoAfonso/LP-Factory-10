@@ -524,7 +524,7 @@ Quando autorizada:
 - rejeitar campos, policies, capabilities e deltas desconhecidos;
 - garantir resolução fail-closed e resultado imutável;
 - validar combinações efetivamente utilizadas;
-- executar casos próprios e integração dos nove módulos e das duas variantes de FAQ;
+- executar casos próprios e integração dos nove módulos, das nove variantes `standard@v1` e de `faq.accordion@v1`;
 - executar `npm ci`, validações aplicáveis, `npm run check` e `git diff --check`.
 
 Alteração exclusivamente documental:
