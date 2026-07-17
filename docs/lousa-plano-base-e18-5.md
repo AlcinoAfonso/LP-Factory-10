@@ -4,7 +4,7 @@ Fontes: chat, `README.md`, `AGENTS.md`, `docs/roadmap.md`, `docs/base-tecnica.md
 
 Versão: v1 em ajuste.
 
-Status: plano simplificado; nove módulos mantidos no escopo; `hero`, `hero.standard@v1`, `trust_bar`, `trust_bar.standard@v1`, `problem_solution`, `problem_solution.standard@v1`, `offer` e `offer.standard@v1` conceitualmente fechados; cinco módulos pendentes; nenhuma implementação autorizada neste PR.
+Status: plano simplificado; nove módulos mantidos no escopo; `hero`, `hero.standard@v1`, `trust_bar`, `trust_bar.standard@v1`, `problem_solution`, `problem_solution.standard@v1`, `offer`, `offer.standard@v1`, `process` e `process.standard@v1` conceitualmente fechados; quatro módulos pendentes; nenhuma implementação autorizada neste PR.
 
 Path: `docs/lousa-plano-base-e18-5.md`.
 
@@ -48,7 +48,7 @@ Regras:
 - `item_key` é evidência de pesquisa, não identidade canônica do módulo.
 - Os módulos são transversais e não recebem identidade de taxon.
 - Formatos curto, médio e longo pertencem à composição e à extensão da LP.
-- O próximo módulo para análise é `process`.
+- O próximo módulo para análise é `technical_assurance`.
 
 ### 1.4. Escopo positivo
 
@@ -604,13 +604,106 @@ Estado:
 - propósito `controlled_test`;
 - implementação ainda não autorizada por este ajuste documental.
 
+### 3.9. Módulo `process`
+
+- `moduleKey = process`.
+- `moduleVersion = 1`.
+- Função:
+  - explicar como o atendimento ou a entrega progride por etapas compreensíveis;
+  - transformar uma oferta abstrata em método previsível;
+  - esclarecer próximos passos, responsabilidades e progressão sem prometer resultado.
+- Invariantes:
+  - existe uma sequência ordenada e inteligível;
+  - cada etapa representa ação, transição ou marco real do processo;
+  - etapas permanecem distintas e coerentes entre si;
+  - a sequência não inventa prazo, garantia, disponibilidade ou resultado;
+  - ausência de identidade de taxon, plano, campanha ou funil no contrato.
+- Fronteiras:
+  - não repete o catálogo de ofertas;
+  - não apresenta pares de problema e solução;
+  - não funciona como workflow, checklist operacional interno ou motor de automação;
+  - não apresenta prova técnica, depoimento, credencial, FAQ ou CTA;
+  - não contém preço, condição comercial, mídia, formulário ou interação na execução inicial.
+- Evidências principais:
+  - `processo_de_atendimento`, pesquisa ativa de `lp_sections`, taxon `Corretor Imóveis`;
+  - itens `belief`, `desire`, `positioning_opportunity`, `trigger` e `objection` de `strategic_core`;
+  - `narrative_arc` de `lp_overview`, que recomenda explicar o processo antes da remoção final de objeções e do contato;
+  - Blueprint do corretor, especialmente qualificação, visita, documentação, negociação e formalização;
+  - catálogo de entradas vigente, somente para sustentar capacidades e modos reais quando aplicáveis.
+- Variantes futuras podem usar outra execução estrutural sem alterar `process.standard@v1`.
+
+### 3.10. Variante `process.standard@v1`
+
+Identidade:
+
+- `variantKey = process.standard`.
+- `variantVersion = 1`.
+- Compatível com `process@v1` e com a versão vigente da raiz utilizada na implementação inicial.
+- Única variante inicial.
+
+Campos:
+
+- `title`:
+  - texto, papel `h2`, cardinalidade `1..1`, policy `research_guided`.
+- `steps`:
+  - coleção ordenada, cardinalidade `2..6`, policy `not_copy`;
+  - item fechado com `stepTitle` e `stepBody`;
+  - `stepTitle`: texto, papel `step_title`, cardinalidade `1..1`, policy `hybrid`, suporte `when_present`;
+  - `stepBody`: texto, papel `step_body`, cardinalidade `1..1`, policy `hybrid`, suporte `when_present`.
+
+Copy:
+
+- `title`: primárias `belief` e `desire`; auxiliar `positioning_opportunity`.
+- `stepTitle`: primárias `trigger` e `positioning_opportunity`; auxiliar `desire`.
+- `stepBody`: primárias `belief` e `desire`; auxiliar `objection`.
+
+Regras específicas:
+
+- uma ocorrência válida contém de duas a seis etapas completas e ordenadas;
+- cada etapa contém exatamente `stepTitle` e `stepBody`;
+- cada etapa representa parte real do método ou atendimento e deve possuir sustentação operacional;
+- a ordem deve refletir a progressão real, sem ser reorganizada apenas por copy, campanha ou funil;
+- etapas podem variar por ocorrência dentro do intervalo permitido quando a composição da E20 autorizar e os dados sustentarem a sequência;
+- pesquisa e Blueprint orientam seleção e redação, mas não comprovam etapa, prazo, responsabilidade, disponibilidade, garantia ou resultado;
+- os papéis `h2`, `step_title` e `step_body` usam as faixas da raiz sem especialização na v1;
+- a coleção não admite item aninhado;
+- a numeração ou marcador visual das etapas pertence ao renderer e não cria campo de conteúdo na v1;
+- não possui subtítulo, CTA, mídia, ícone obrigatório, prova, preço, condição comercial, formulário ou referência técnica;
+- diferenças de copy, quantidade dentro de `2..6` e nível de detalhe não criam variante;
+- o tratamento da ausência de sequência válida depende da obrigatoriedade definida pela composição da E20 e será especificado pela E19.
+
+Funil:
+
+- BOFU prioriza etapas concretas, responsabilidades e próximo passo imediato.
+- MOFU prioriza explicação do método, critérios e redução de incerteza.
+- TOFU prioriza visão geral educativa e baixa pressão.
+- O funil altera profundidade, seleção e redação, mas não altera campos, cardinalidades, variante nem a ordem operacional real.
+
+Validações estruturais:
+
+- exigir `title` e `steps`;
+- exigir cardinalidade `2..6` em `steps`;
+- exigir exatamente `stepTitle` e `stepBody` em cada etapa;
+- preservar a ordem declarada e rejeitar etapas vazias ou duplicadas;
+- rejeitar coleção aninhada e campos extras;
+- validar os papéis semânticos e as policies declaradas;
+- exigir suporte `when_present` em `stepTitle` e `stepBody`;
+- rejeitar CTA, mídia, ação, prova, preço, condição comercial, formulário ou referência técnica na variante;
+- resolver de forma fail-closed e imutável.
+
+Estado:
+
+- contrato conceitualmente fechado;
+- lifecycle `experimental`;
+- propósito `controlled_test`;
+- implementação ainda não autorizada por este ajuste documental.
+
 ## 4. Módulos pendentes
 
 ### 4.1. Estado
 
 Permanecem pendentes:
 
-- `process`;
 - `technical_assurance`;
 - `social_proof`;
 - `faq`;
@@ -637,8 +730,8 @@ A etapa seguinte só deve reproduzir o contrato compartilhado após ele estar va
 
 ### 4.3. Próxima ação
 
-- Analisar `process` pelo checklist mínimo da seção 2.9.
-- Separar `process` de `process.standard@v1`.
+- Analisar `technical_assurance` pelo checklist mínimo da seção 2.9.
+- Separar `technical_assurance` de `technical_assurance.standard@v1`.
 - Não alterar o arquivo novamente sem decisão humana sobre o contrato proposto.
 - Não implementar código durante o fechamento conceitual.
 
