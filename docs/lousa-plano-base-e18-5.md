@@ -4,7 +4,7 @@ Fontes: chat, `README.md`, `AGENTS.md`, `docs/roadmap.md`, `docs/base-tecnica.md
 
 Versão: v1 em ajuste.
 
-Status: plano simplificado; nove módulos mantidos no escopo; `hero`, `hero.standard@v1`, `trust_bar`, `trust_bar.standard@v1`, `problem_solution`, `problem_solution.standard@v1`, `offer`, `offer.standard@v1`, `process` e `process.standard@v1` conceitualmente fechados; quatro módulos pendentes; nenhuma implementação autorizada neste PR.
+Status: plano simplificado; nove módulos mantidos no escopo; `hero`, `hero.standard@v1`, `trust_bar`, `trust_bar.standard@v1`, `problem_solution`, `problem_solution.standard@v1`, `offer`, `offer.standard@v1`, `process`, `process.standard@v1`, `technical_assurance` e `technical_assurance.standard@v1` conceitualmente fechados; três módulos pendentes; nenhuma implementação autorizada neste PR.
 
 Path: `docs/lousa-plano-base-e18-5.md`.
 
@@ -48,7 +48,7 @@ Regras:
 - `item_key` é evidência de pesquisa, não identidade canônica do módulo.
 - Os módulos são transversais e não recebem identidade de taxon.
 - Formatos curto, médio e longo pertencem à composição e à extensão da LP.
-- O próximo módulo para análise é `technical_assurance`.
+- O próximo módulo para análise é `social_proof`.
 
 ### 1.4. Escopo positivo
 
@@ -698,13 +698,107 @@ Estado:
 - propósito `controlled_test`;
 - implementação ainda não autorizada por este ajuste documental.
 
+### 3.11. Módulo `technical_assurance`
+
+- `moduleKey = technical_assurance`.
+- `moduleVersion = 1`.
+- Função:
+  - explicar salvaguardas, critérios, documentos, credenciais ou verificações técnicas relevantes para a decisão;
+  - transformar sinais abstratos de confiança em fundamentos compreensíveis;
+  - reduzir risco percebido sem prometer eliminação de risco ou emitir conclusão técnica ou jurídica.
+- Invariantes:
+  - cada item descreve uma salvaguarda, evidência ou critério real e verificável;
+  - o conteúdo distingue orientação geral de afirmação factual sobre a operação;
+  - toda credencial, documento, método, verificação ou capacidade apresentada possui sustentação operacional;
+  - nenhum item implica aprovação, regularidade integral, ausência de risco, certificação, garantia ou resultado sem comprovação específica;
+  - ausência de identidade de taxon, plano, campanha ou funil no contrato.
+- Fronteiras:
+  - não substitui sinais curtos de `trust_bar`;
+  - não contém depoimento, avaliação de cliente, caso real ou métrica de resultado;
+  - não descreve etapas do processo, catálogo de ofertas ou respostas de FAQ;
+  - não presta consultoria técnica ou jurídica individualizada;
+  - não contém CTA, mídia, download, link de verificação, formulário ou interação na execução inicial.
+- Evidências principais:
+  - `prova_tecnica_documental`, pesquisa ativa de `lp_sections`, taxon `Corretor Imóveis`;
+  - itens `proof_type`, `belief`, `fear`, `objection` e `positioning_opportunity` de `strategic_core`;
+  - `narrative_arc` de `lp_overview`, que recomenda provar regularidade e autoridade;
+  - Blueprint do corretor, especialmente compliance, identificação profissional, documentação e segurança da decisão;
+  - catálogo de entradas vigente, somente para sustentar credenciais e capacidades reais quando aplicáveis.
+- Variantes futuras podem usar outra execução estrutural ou referências verificáveis sem alterar `technical_assurance.standard@v1`.
+
+### 3.12. Variante `technical_assurance.standard@v1`
+
+Identidade:
+
+- `variantKey = technical_assurance.standard`.
+- `variantVersion = 1`.
+- Compatível com `technical_assurance@v1` e com a versão vigente da raiz utilizada na implementação inicial.
+- Única variante inicial.
+
+Campos:
+
+- `title`:
+  - texto, papel `h2`, cardinalidade `1..1`, policy `research_guided`.
+- `items`:
+  - coleção, cardinalidade `1..4`, policy `not_copy`;
+  - item fechado com `assuranceTitle` e `assuranceBody`;
+  - `assuranceTitle`: texto, papel `card_title`, cardinalidade `1..1`, policy `hybrid`, suporte `when_present`;
+  - `assuranceBody`: texto, papel `card_body`, cardinalidade `1..1`, policy `hybrid`, suporte `when_present`.
+
+Copy:
+
+- `title`: primárias `proof_type` e `belief`; auxiliar `objection`.
+- `assuranceTitle`: primária `proof_type`; auxiliar `belief`.
+- `assuranceBody`: primárias `proof_type` e `positioning_opportunity`; auxiliar `objection`.
+
+Regras específicas:
+
+- uma ocorrência válida contém de um a quatro itens completos;
+- cada item contém exatamente `assuranceTitle` e `assuranceBody`;
+- cada item representa salvaguarda, credencial, documento, checklist, método, verificação ou critério técnico efetivamente aplicável;
+- todo item exige suporte operacional real e rastreável;
+- o contrato transversal não fixa chaves de um taxon específico;
+- no primeiro taxon, exemplos de sustentação incluem credencial profissional, orientação documental e apoio em financiamento, quando aplicáveis e reais;
+- pesquisa e Blueprint orientam seleção e redação, mas não comprovam credencial, documento, certificação, verificação, regularidade, aprovação, garantia ou resultado;
+- conteúdo não pode afirmar conclusão jurídica, técnica ou financeira individualizada;
+- os papéis `h2`, `card_title` e `card_body` usam as faixas da raiz sem especialização na v1;
+- a coleção não admite item aninhado;
+- não possui subtítulo, CTA, mídia, ícone, link, download, depoimento, caso, métrica, preço, processo ou resposta de FAQ;
+- diferenças de copy, quantidade dentro de `1..4`, ordem dos itens e funil não criam variante;
+- o tratamento da ausência de item válido depende da obrigatoriedade definida pela composição da E20 e será especificado pela E19.
+
+Funil:
+
+- BOFU prioriza evidências concretas, aplicabilidade e limites da salvaguarda apresentada.
+- MOFU prioriza explicação dos critérios e de como reduzem incerteza.
+- TOFU prioriza educação geral, sem aconselhamento técnico ou jurídico individualizado.
+- O funil altera seleção, profundidade e redação, sem alterar campos, cardinalidades, variante ou ordem estrutural da LP.
+
+Validações estruturais:
+
+- exigir `title` e `items`;
+- exigir cardinalidade `1..4` em `items`;
+- exigir exatamente `assuranceTitle` e `assuranceBody` em cada item;
+- rejeitar coleção aninhada e campos extras;
+- validar os papéis semânticos e as policies declaradas;
+- exigir suporte `when_present` em `assuranceTitle` e `assuranceBody`;
+- rejeitar item sem sustentação operacional rastreável;
+- rejeitar CTA, mídia, ação, link, download, depoimento, caso, métrica, preço, processo, FAQ ou referência técnica concreta na variante;
+- resolver de forma fail-closed e imutável.
+
+Estado:
+
+- contrato conceitualmente fechado;
+- lifecycle `experimental`;
+- propósito `controlled_test`;
+- implementação ainda não autorizada por este ajuste documental.
+
 ## 4. Módulos pendentes
 
 ### 4.1. Estado
 
 Permanecem pendentes:
 
-- `technical_assurance`;
 - `social_proof`;
 - `faq`;
 - `final_cta`.
@@ -730,8 +824,8 @@ A etapa seguinte só deve reproduzir o contrato compartilhado após ele estar va
 
 ### 4.3. Próxima ação
 
-- Analisar `technical_assurance` pelo checklist mínimo da seção 2.9.
-- Separar `technical_assurance` de `technical_assurance.standard@v1`.
+- Analisar `social_proof` pelo checklist mínimo da seção 2.9.
+- Separar `social_proof` de `social_proof.standard@v1`.
 - Não alterar o arquivo novamente sem decisão humana sobre o contrato proposto.
 - Não implementar código durante o fechamento conceitual.
 
