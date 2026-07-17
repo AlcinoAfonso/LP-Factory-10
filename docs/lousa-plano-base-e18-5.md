@@ -4,7 +4,7 @@ Fontes: chat, `README.md`, `AGENTS.md`, `docs/roadmap.md`, `docs/base-tecnica.md
 
 Versão: v1 em ajuste.
 
-Status: plano simplificado; nove módulos mantidos no escopo; `hero`, `hero.standard@v1`, `trust_bar`, `trust_bar.standard@v1`, `problem_solution`, `problem_solution.standard@v1`, `offer`, `offer.standard@v1`, `process`, `process.standard@v1`, `technical_assurance` e `technical_assurance.standard@v1` conceitualmente fechados; três módulos pendentes; nenhuma implementação autorizada neste PR.
+Status: plano simplificado; nove módulos mantidos no escopo; `hero`, `hero.standard@v1`, `trust_bar`, `trust_bar.standard@v1`, `problem_solution`, `problem_solution.standard@v1`, `offer`, `offer.standard@v1`, `process`, `process.standard@v1`, `technical_assurance`, `technical_assurance.standard@v1`, `social_proof` e `social_proof.standard@v1` conceitualmente fechados; dois módulos pendentes; nenhuma implementação autorizada neste PR.
 
 Path: `docs/lousa-plano-base-e18-5.md`.
 
@@ -48,7 +48,7 @@ Regras:
 - `item_key` é evidência de pesquisa, não identidade canônica do módulo.
 - Os módulos são transversais e não recebem identidade de taxon.
 - Formatos curto, médio e longo pertencem à composição e à extensão da LP.
-- O próximo módulo para análise é `social_proof`.
+- O próximo módulo para análise é `faq`.
 
 ### 1.4. Escopo positivo
 
@@ -177,8 +177,11 @@ Policies iniciais devem ser limitadas às efetivamente consumidas pelas variante
 
 - `research_guided`;
 - `hybrid`;
+- `operational_required`;
 - `technical_reference`;
 - `not_copy`.
+
+`operational_required` exige valor originado de evidência operacional real e impede geração a partir da pesquisa.
 
 Novas policies somente entram quando outro módulo aprovado exigir comportamento não representável pelas existentes.
 
@@ -793,13 +796,60 @@ Estado:
 - propósito `controlled_test`;
 - implementação ainda não autorizada por este ajuste documental.
 
+### 3.13. Módulo `social_proof`
+
+- `moduleKey = social_proof`; `moduleVersion = 1`.
+- Função: apresentar experiências reais de terceiros que reduzam incerteza sobre atendimento, entrega ou relação com a operação.
+- Invariantes:
+  - toda prova é real, rastreável e autorizada para uso;
+  - conteúdo e atribuição correspondem à mesma evidência;
+  - não há fabricação, alteração material, resultado garantido ou generalização indevida.
+- Fronteiras: não substitui `trust_bar` ou `technical_assurance`; não contém oferta, processo, FAQ, CTA, rating agregado, métrica, logo, caso detalhado ou mídia na execução inicial.
+- Evidências: `prova_social` de `lp_sections`, `proof_type`, `belief` e `objection` de `strategic_core`, `narrative_arc` de `lp_overview` e Blueprint do corretor.
+- Variantes futuras podem usar outra execução estrutural sem alterar `social_proof.standard@v1`.
+
+### 3.14. Variante `social_proof.standard@v1`
+
+Identidade:
+
+- `variantKey = social_proof.standard`; `variantVersion = 1`.
+- Compatível com `social_proof@v1` e com a versão vigente da raiz utilizada na implementação inicial; única variante inicial.
+
+Campos:
+
+- `title`: texto, papel `h2`, cardinalidade `1..1`, policy `research_guided`.
+- `items`: coleção `1..3`, policy `not_copy`; item fechado com:
+  - `quote`: texto, papel `card_body`, `1..1`, policy `operational_required`;
+  - `attribution`: texto, papel `card_title`, `1..1`, policy `operational_required`;
+  - `evidenceRef`: referência técnica, `1..1`, policy `technical_reference`.
+
+Copy:
+
+- `title`: primárias `proof_type` e `belief`; auxiliar `objection`.
+- `quote` e `attribution`: sem fonte de pesquisa; derivam exclusivamente da evidência operacional referenciada.
+
+Regras e validações:
+
+- exigir de um a três itens completos e exatamente `quote`, `attribution` e `evidenceRef` em cada item;
+- impedir geração, composição ou alteração material do depoimento e exigir referência rastreável;
+- atribuição pública identificável depende de autorização; atribuição reduzida não elimina a rastreabilidade interna;
+- os papéis `h2`, `card_title` e `card_body` usam as faixas da raiz sem especialização;
+- rejeitar coleção aninhada, campos extras, CTA, mídia, rating, métrica, logo, caso detalhado ou prova sem suporte;
+- BOFU, MOFU e TOFU alteram seleção e título, não o conteúdo factual da prova nem o contrato;
+- ausência de item válido depende da obrigatoriedade da E20 e será tratada pela E19;
+- resolver de forma fail-closed e imutável.
+
+Estado:
+
+- contrato conceitualmente fechado; lifecycle `experimental`; propósito `controlled_test`;
+- implementação ainda não autorizada por este ajuste documental.
+
 ## 4. Módulos pendentes
 
 ### 4.1. Estado
 
 Permanecem pendentes:
 
-- `social_proof`;
 - `faq`;
 - `final_cta`.
 
@@ -824,8 +874,8 @@ A etapa seguinte só deve reproduzir o contrato compartilhado após ele estar va
 
 ### 4.3. Próxima ação
 
-- Analisar `social_proof` pelo checklist mínimo da seção 2.9.
-- Separar `social_proof` de `social_proof.standard@v1`.
+- Analisar `faq` pelo checklist mínimo da seção 2.9.
+- Separar `faq` de `faq.standard@v1`.
 - Não alterar o arquivo novamente sem decisão humana sobre o contrato proposto.
 - Não implementar código durante o fechamento conceitual.
 
