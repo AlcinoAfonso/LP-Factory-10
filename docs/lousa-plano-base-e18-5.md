@@ -4,7 +4,7 @@ Fontes: chat, `README.md`, `AGENTS.md`, `docs/roadmap.md`, `docs/base-tecnica.md
 
 Versão: v1 em ajuste.
 
-Status: plano simplificado; nove módulos mantidos no escopo; `hero`, `hero.standard@v1`, `trust_bar`, `trust_bar.standard@v1`, `problem_solution`, `problem_solution.standard@v1`, `offer`, `offer.standard@v1`, `process`, `process.standard@v1`, `technical_assurance`, `technical_assurance.standard@v1`, `social_proof` e `social_proof.standard@v1` conceitualmente fechados; dois módulos pendentes; nenhuma implementação autorizada neste PR.
+Status: plano simplificado; nove módulos mantidos no escopo; `hero`, `hero.standard@v1`, `trust_bar`, `trust_bar.standard@v1`, `problem_solution`, `problem_solution.standard@v1`, `offer`, `offer.standard@v1`, `process`, `process.standard@v1`, `technical_assurance`, `technical_assurance.standard@v1`, `social_proof`, `social_proof.standard@v1`, `faq` e `faq.standard@v1` conceitualmente fechados; um módulo pendente; nenhuma implementação autorizada neste PR.
 
 Path: `docs/lousa-plano-base-e18-5.md`.
 
@@ -48,7 +48,7 @@ Regras:
 - `item_key` é evidência de pesquisa, não identidade canônica do módulo.
 - Os módulos são transversais e não recebem identidade de taxon.
 - Formatos curto, médio e longo pertencem à composição e à extensão da LP.
-- O próximo módulo para análise é `faq`.
+- O próximo módulo para análise é `final_cta`.
 
 ### 1.4. Escopo positivo
 
@@ -844,16 +844,44 @@ Estado:
 - contrato conceitualmente fechado; lifecycle `experimental`; propósito `controlled_test`;
 - implementação ainda não autorizada por este ajuste documental.
 
+### 3.15. Módulo `faq`
+
+- `moduleKey = faq`; `moduleVersion = 1`.
+- Função: responder dúvidas e objeções recorrentes em pares claros de pergunta e resposta, apoiando compreensão e decisão.
+- Invariantes: cada pergunta é relevante e possui resposta direta; fatos e condições reais exigem sustentação; não há aconselhamento individualizado, promessa ou resposta enganosa.
+- Fronteiras: não substitui oferta, processo ou prova técnica; não contém CTA, mídia, formulário, ação ou interação na execução inicial.
+- Evidências: `faq_objeções` de `lp_sections`, `faq_questions` e `search_intent` de `seo`, `objection`, `fear`, `belief` e `awareness_level` de `strategic_core` e Blueprint do corretor.
+- Variantes futuras podem usar outra execução estrutural sem alterar `faq.standard@v1`.
+
+### 3.16. Variante `faq.standard@v1`
+
+- Identidade: `variantKey = faq.standard`; `variantVersion = 1`; compatível com `faq@v1` e com a versão vigente da raiz; única variante inicial.
+- Campos:
+  - `title`: texto, papel `h2`, `1..1`, policy `research_guided`;
+  - `items`: coleção `2..6`, policy `not_copy`, com `question` (`faq_question`, `1..1`, `research_guided`) e `answer` (`faq_answer`, `1..1`, `hybrid`, suporte `when_factual`).
+- Copy:
+  - `title`: primárias `objection` e `awareness_level`; auxiliar `search_intent`;
+  - `question`: primárias `objection` e `fear`; auxiliar `faq_questions`;
+  - `answer`: primárias `belief` e `positioning_opportunity`; auxiliar `desire`.
+- Regras e validações:
+  - exigir de dois a seis pares completos, sem perguntas vazias ou duplicadas;
+  - cada resposta deve tratar diretamente sua pergunta e fatos operacionais, legais, técnicos ou financeiros exigem suporte real;
+  - usar `h2`, `faq_question` e `faq_answer` da raiz sem especialização;
+  - rejeitar coleção aninhada, campos extras, CTA, mídia, formulário, ação, interação ou aconselhamento individualizado;
+  - funil altera seleção, ordem e profundidade, sem alterar campos, cardinalidades ou variante;
+  - ausência de pares válidos depende da obrigatoriedade da E20 e será tratada pela E19;
+  - resolver de forma fail-closed e imutável.
+- Estado: contrato conceitualmente fechado; lifecycle `experimental`; propósito `controlled_test`; implementação ainda não autorizada.
+
 ## 4. Módulos pendentes
 
 ### 4.1. Estado
 
-Permanecem pendentes:
+Permanece pendente:
 
-- `faq`;
 - `final_cta`.
 
-Cada um receberá:
+Ele receberá:
 
 - contrato permanente do módulo;
 - variante `standard@v1`;
@@ -874,8 +902,8 @@ A etapa seguinte só deve reproduzir o contrato compartilhado após ele estar va
 
 ### 4.3. Próxima ação
 
-- Analisar `faq` pelo checklist mínimo da seção 2.9.
-- Separar `faq` de `faq.standard@v1`.
+- Analisar `final_cta` pelo checklist mínimo da seção 2.9.
+- Separar `final_cta` de `final_cta.standard@v1`.
 - Não alterar o arquivo novamente sem decisão humana sobre o contrato proposto.
 - Não implementar código durante o fechamento conceitual.
 
