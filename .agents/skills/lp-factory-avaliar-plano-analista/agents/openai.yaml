@@ -1,0 +1,4 @@
+interface:
+  display_name: "Avaliar consolidação do plano"
+  short_description: "Audita plano-base v2 com o Analista"
+  default_prompt: "Use $lp-factory-avaliar-plano-analista para avaliar a v2 e auditar a consolidação informada."

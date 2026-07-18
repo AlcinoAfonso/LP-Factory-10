@@ -1,8 +1,8 @@
 # Orquestração de planos-base no Codex
 
-Data: 17/07/2026
-Versão: v0.1
-Status: planejamento em construção; primeiro teste implementado e ainda não validado em execução real.
+Data: 18/07/2026
+Versão: v0.2
+Status: planejamento em construção; teste do Gestor Estrutural validado; primeiro recorte do Analista implementado e pendente de teste real.
 
 ## 1. Objetivo e função deste documento
 
@@ -12,8 +12,8 @@ Seu objetivo é estabelecer, antes da implementação, um contrato humano verifi
 
 1. recebe um plano-base v1;
 2. coordena as avaliações dos especialistas aplicáveis;
-3. entrega o plano e os pareceres ao Analista para consolidação;
-4. orienta a transformação do plano-base v1 em v2;
+3. orienta o orquestrador a transformar o plano-base v1 em v2 e registrar uma matriz de consolidação dos pareceres;
+4. entrega v1 e v2 ao Analista para avaliação independente e, depois, entrega pareceres e matriz para auditoria da consolidação;
 5. conduz a execução de uma fase por vez;
 6. devolve o PR da implementação ao Analista antes do merge;
 7. interrompe o fluxo nos pontos que exigem decisão humana;
@@ -23,7 +23,7 @@ O resultado esperado é reduzir coordenação manual e cópia de contexto entre 
 
 Este documento será a fonte humana do desenho aprovado. A futura skill executará o workflow definido aqui; os custom agents aplicarão os contratos de seus documentos correspondentes; e o task principal permanecerá responsável pela coordenação, pelas alterações no repositório e pela entrega ao humano.
 
-Enquanto o status permanecer `planejamento em construção`, o workflow completo não deve ser tratado como capacidade implementada ou fluxo operacional adotado. O primeiro teste descrito na seção 2 permanece experimental até sua validação em execução real.
+Enquanto o status permanecer `planejamento em construção`, o workflow completo não deve ser tratado como capacidade implementada ou fluxo operacional adotado. O teste estrutural da seção 2 foi validado em execução real; o recorte do Analista descrito na seção 3 permanece experimental até seu teste real.
 
 ## 2. Primeiro passo: teste do Gestor Estrutural
 
@@ -114,4 +114,82 @@ Este primeiro teste não inclui:
 - agenda, monitoramento ou retomada automática;
 - definição final do workflow completo.
 
-Somente após a avaliação humana desse teste será decidido se o mesmo padrão deve ser aplicado aos demais especialistas e incorporado à skill de orquestração completa.
+O teste foi executado em 17/07/2026 com o plano-base do PR #577. O parecer foi devolvido ao task principal em modo read-only, a qualidade foi comparada com a avaliação corrente e o humano aprovou a expansão controlada para o Analista antes da inclusão dos demais especialistas.
+
+## 3. Segundo passo: teste do Analista sobre a v2
+
+O segundo passo valida o Analista como gate de qualidade depois que o orquestrador consolida o parecer estrutural e produz o plano-base v2. Este recorte não inclui os demais especialistas nem a revisão de implementação.
+
+### 3.1 Separação de responsabilidades
+
+- o Gestor Estrutural emite o parecer dentro de sua competência;
+- o orquestrador produz a v2, classifica cada achado e registra a matriz de consolidação;
+- o Analista avalia a v2 de forma independente e depois audita a incorporação do parecer;
+- o orquestrador executa as correções;
+- o humano decide conflitos materiais e autoriza o merge pelo GitHub Web.
+
+O Analista não consolida nem edita o plano e não substitui o especialista.
+
+### 3.2 Componentes implementados
+
+1. `docs/analista.md`, contrato canônico deste primeiro recorte;
+2. `.codex/agents/analista.toml`, custom agent read-only configurado com GPT-5.6 Sol e inteligência alta;
+3. `.agents/skills/lp-factory-avaliar-plano-analista/`, skill de preparação, delegação sequencial e devolução do parecer.
+
+### 3.3 Entradas do teste
+
+O orquestrador deve possuir:
+
+- versão imutável e conteúdo integral da v1;
+- versão imutável e conteúdo integral da v2;
+- plano conceitual, quando existir, ou declaração explícita de `N/A`;
+- decisões humanas registradas aplicáveis;
+- parecer integral do Gestor Estrutural;
+- matriz de consolidação conforme `docs/analista.md`;
+- caso, roadmap, casos adjacentes e fontes técnicas aplicáveis.
+
+### 3.4 Duas passagens no mesmo Analista
+
+1. A skill inicia um único custom agent `analista` sem herdar turnos do task principal que possam expor os pareceres ou a matriz.
+2. Na primeira passagem, entrega v1, v2, plano conceitual, caso e fontes competentes, sem parecer ou matriz.
+3. O Analista registra sua avaliação independente e a devolve ao task principal.
+4. A skill continua no mesmo thread do subagent e somente então entrega parecer estrutural e matriz.
+5. O Analista preserva a primeira passagem e audita cada tratamento contra o parecer e a v2.
+6. O Analista devolve a conclusão final e as correções, rodadas especializadas ou decisões humanas necessárias.
+7. O task principal apresenta as duas passagens integralmente e confirma o estado Git.
+
+Se o parecer ou a matriz forem expostos antes da primeira conclusão, a avaliação independente é considerada contaminada e deve ser reiniciada sem esses artefatos.
+
+### 3.5 Gate e ciclo de correção
+
+As conclusões permitidas são:
+
+- `aprovado para merge do plano-base v2`;
+- `aprovado com correções obrigatórias`;
+- `requer nova rodada especializada`;
+- `bloqueado por decisão humana`.
+
+Somente a primeira libera o pedido de merge. Nas demais, o orquestrador corrige ou encaminha a pendência e devolve o delta ao Analista. Uma correção que altere materialmente a conclusão estrutural retorna primeiro ao Gestor Estrutural.
+
+### 3.6 Critérios de sucesso
+
+O teste será aprovado quando:
+
+- a primeira passagem ocorrer sem acesso aos pareceres ou à matriz;
+- o mesmo Analista receber a segunda passagem;
+- a avaliação cobrir plano conceitual quando existente, v1, v2, roadmap, casos adjacentes, escopo, suficiência e riscos;
+- cada achado estrutural for rastreado e auditado;
+- o Analista não refizer o parecer nem editar o repositório;
+- a conclusão formal e o próximo passo forem inequívocos;
+- o resultado permitir ao orquestrador corrigir a v2 sem nova interpretação informal.
+
+### 3.7 Escopo negativo
+
+Este passo não inclui:
+
+- Gestor de Updates;
+- Gestor de Automações;
+- implementação das fases;
+- revisão do PR de implementação;
+- alteração do fluxo operacional vigente de `docs/prompt-estrategista.md` antes da aprovação do workflow completo;
+- merge automático ou decisão humana delegada ao Codex.
