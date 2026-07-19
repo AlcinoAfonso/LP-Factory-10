@@ -4,7 +4,7 @@ Fontes: chat; `README.md`; `AGENTS.md`; `docs/prompt-estrategista.md`; `docs/pro
 
 Versão: v2 consolidada com patch final do Analista.
 
-Status: plano-base aprovado humanamente em 19/07/2026 para implementação manual comparativa da fase 3.1 em branch filha própria; PR #585 permanece documental, draft e sem merge durante o experimento.
+Status: plano-base aprovado humanamente em 19/07/2026 para implementação manual comparativa, fase a fase, das subseções 18.5.3 a 18.5.9 em branch filha própria; PR #585 permanece documental, draft e sem merge durante o experimento.
 
 Path: `docs/lousa-plano-base-e18-5.md`.
 
@@ -14,7 +14,7 @@ Branches:
 - v2 somente em `codex-app/e18-5-v2-processo-atual`;
 - não alterar diretamente o PR #577;
 - PR #585 compara a v2 manual contra a branch congelada do PR #577;
-- aprovação humana deste patch autoriza somente a criação da branch de implementação manual comparativa;
+- aprovação humana deste patch autoriza somente a criação da branch de implementação manual comparativa e o início da fase 18.5.3;
 - nenhum PR experimental deve ser mergeado antes da comparação com o workflow automatizado.
 
 ## 1. Estado e decisões fixas
@@ -65,7 +65,8 @@ Aceito:
 - aplicação obrigatória do `absoluteMax` da raiz com os helpers canônicos de normalização e contagem;
 - assinatura pública inequívoca do resolver e exposição dos três lifecycles mais o lifecycle efetivo;
 - paths literais em `copySourceMap` e teste de compatibilidade dos canais com o catálogo de entradas;
-- fluxo experimental sem merge, com duas entregas irmãs comparadas a partir do mesmo baseline.
+- fluxo experimental sem merge, com duas entregas irmãs comparadas a partir do mesmo baseline;
+- execução dividida nas fases 18.5.3 a 18.5.9, alinhadas às subseções futuras previstas em `docs/lp-planejamento.md`.
 
 Rejeitado:
 
@@ -537,83 +538,243 @@ Depois da comparação:
 
 ### 3.2. Regras comuns
 
-- Todos: `lifecycleStatus=hypothesis`, `purpose=controlled_test` e `rootDelta={}`.
+- Todos: lifecycle hypothesis, purpose controlled_test e `rootDelta={}`.
 - Suporte real conforme fields; Problem Solution sem alarmismo.
 - Social Proof sem fabricação/alteração material.
 - FAQ sem duplicidade ou fato sem suporte.
-- Hero e Final CTA excluem `form`.
+- Hero/Final CTA excluem form.
 - Accordion valida contrato declarativo, não comportamento.
 - Nenhum contrato armazena destino concreto ou taxon.
 
-## 4. Fase e próxima ação
+## 4. Fases e próxima ação
 
-### 4.1. Fase 3.1 — E18.5.3–E18.5.9 — Catálogo repo-only
+Regra geral:
+
+- o plano contém todas as fases executáveis necessárias ao recorte aprovado;
+- o Executor recebe somente a fase atual, uma por vez, na ordem abaixo;
+- cada avanço depende de avaliação do Analista e decisão do Estrategista;
+- as sete fases usam os identificadores das futuras subseções do roadmap previstos em `docs/lp-planejamento.md`;
+- todas as fases têm `Automação: não`;
+- `18.5.10 — Limites do recorte` não é fase executável e será materializada pelas regras de escopo negativo e parada deste plano;
+- as fases usam a mesma branch e o mesmo PR draft de implementação manual comparativa, sem merge durante o experimento.
+
+### 4.1. Fase 1 — E18.5.3 — Módulos e funções estruturais
 
 - Automação: não.
 
-Sequência:
-
-1. contracts, schemas, registry, API e raiz;
-2. FAQ Standard/Accordion;
-3. prova das duas variantes;
-4. demais módulos;
-5. integração e não regressão.
-
 Entregas:
 
-- somente arquivos da seção 2.7;
-- registry imutável, resolver/validator fail-closed, namespace e script;
-- sem banco, rede ou renderer.
+- criar a base interna de `contracts.ts`, `schema.ts`, `registry.ts`, `validation-cases.ts` e o script `validate:landing-page-module-catalog`;
+- registrar `family=landing_page`, `moduleCatalogVersion=1`, `compatibleRootVersions=[1]` e os nove módulos;
+- definir para cada módulo `moduleKey`, `moduleVersion`, função, fronteiras, invariantes, lifecycle inicial e purpose;
+- manter o catálogo parcial sem export público para consumidores até a fase 18.5.9.
 
 Critérios:
 
-- `landingPageRoot` preserva o contrato da raiz e reexporta somente os dois helpers canônicos de texto; resolver usa exclusivamente a API pública da raiz;
-- versões, identidades, fields, policies, supports, maps, treatments, `ctaMode`, capabilities, lifecycle e compatibilidade usam somente valores literais fechados;
-- rootDelta vazio, form rejeitado, FAQs independentes;
-- Accordion somente declarativo WCAG 2.2;
-- payload cobre todos os `fieldKind`, aplica normalização e `absoluteMax` da raiz e rejeita aliases, desconhecidos e combinações inválidas;
-- erros sem copy, pesquisa, PII, credenciais ou secrets;
-- output profundamente imutável;
-- nenhum consumidor ou família preservada é alterado, salvo o reexport aditivo dos helpers da raiz e a verificação test-only contra o catálogo de entradas.
+- nove identidades de módulo exatas e sem colisão com `commercial_activation`;
+- nenhum módulo contém taxon, campanha, plano, copy, ativo, ordem ou conteúdo concreto;
+- funções, fronteiras e invariantes são imutáveis e fail-closed;
+- nenhuma variante, field, map ou profile é antecipado como contrato público.
 
 Validações:
 
 - `npm ci`;
+- `npm run validate:landing-page-module-catalog` com os casos desta fase;
+- `npm run check`;
+- `git diff --check`.
+
+### 4.2. Fase 2 — E18.5.4 — Campos, estruturas e cardinalidades
+
+- Automação: não.
+
+Entregas:
+
+- implementar a gramática fechada de `fieldKind`, policies, supports e cardinalidades;
+- implementar os shapes de `text`, `collection`, `action`, `image` e `reference`;
+- definir os paths e contratos de fields previstos para os nove módulos, ainda sem publicar variantes;
+- criar a base do `payload-validator.ts` para keys, tipos, cardinalidades e shapes.
+
+Critérios:
+
+- somente literais aprovados são aceitos;
+- coleção aninhada, path desconhecido, combinação inválida ou field adicional falha fechado;
+- ação não armazena destino concreto;
+- imagem informativa/decorativa e `evidenceRef` seguem os shapes fechados;
+- o catálogo continua sem API pública consumível.
+
+Validações:
+
+- casos positivos e negativos de todos os `fieldKind`;
+- cardinalidades mínimas e máximas;
+- `npm run validate:landing-page-module-catalog`;
+- `npm run check`;
+- `git diff --check`.
+
+### 4.3. Fase 3 — E18.5.5 — Variantes e critérios de criação
+
+- Automação: não.
+
+Entregas:
+
+- registrar as nove variantes `standard@v1` e `faq.accordion@v1`;
+- vincular os fields definidos na fase anterior às dez variantes;
+- implementar `primary_action`, `image_asset` e `accordion_interaction`;
+- usar FAQ Standard e Accordion como prova inicial de duas variantes do mesmo módulo.
+
+Critérios:
+
+- cada variante pertence a um único módulo e versão compatível;
+- FAQ Accordion possui contrato próprio, sem herança semântica da FAQ Standard;
+- diferenças de taxon, copy, plano, campanha, ativo, ordem ou quantidade não criam variante;
+- `form` permanece incompatível com Hero e Final CTA;
+- capability desconhecida falha fechado.
+
+Validações:
+
+- resolução interna das dez identidades;
+- independência das duas FAQs;
+- contrato declarativo WCAG 2.2 do Accordion;
+- `npm run validate:landing-page-module-catalog`;
+- `npm run check`;
+- `git diff --check`.
+
+### 4.4. Fase 4 — E18.5.6 — Especializações sobre a parametrização raiz
+
+- Automação: não.
+
+Entregas:
+
+- integrar internamente `resolveLandingPageRootParameters` pelo boundary público;
+- reexportar de forma aditiva `normalizeLandingPageRootText` e `countLandingPageRootTextCharacters` no namespace da raiz;
+- manter `rootDelta={}` em todos os módulos e variantes da v1;
+- aplicar no payload validator o `absoluteMax` do `semanticRole` resolvido.
+
+Critérios:
+
+- nenhuma importação direta de `root-registry.ts`;
+- nenhuma duplicação de roles, ranges, limits, spacing, presets ou algoritmos de texto;
+- texto vazio após normalização ou acima de `absoluteMax` falha fechado;
+- faixas recomendadas não causam rejeição automática;
+- qualquer chave em `rootDelta` é inválida na v1.
+
+Validações:
+
+- valor exatamente em `absoluteMax` aceito;
+- valor acima de `absoluteMax` rejeitado;
+- intervalos recomendados não bloqueiam;
+- erro da raiz convertido em `ROOT_RESOLUTION_FAILED`;
+- `npm run validate:landing-page-module-catalog`;
+- validação existente da raiz;
+- `npm run check`;
+- `git diff --check`.
+
+### 4.5. Fase 5 — E18.5.7 — Mapa de fontes de copy
+
+- Automação: não.
+
+Entregas:
+
+- implementar os `copySourceMap` literais da seção 2.4;
+- usar paths exatos de fields, 1–2 `primaryItemKeys` e até 1 `auxiliaryItemKey`;
+- separar `sourceMode=research` de `sourceMode=operational_evidence`.
+
+Critérios:
+
+- todos os paths existem na variante correspondente;
+- todos os `item_key` pertencem aos conjuntos estruturados permitidos;
+- Social Proof preserva quote e attribution como evidência operacional;
+- path, source mode, item key ou quantidade desconhecida falha fechado.
+
+Validações:
+
+- casos de todos os paths mapeados;
+- excesso de fontes, item key inválido e map órfão rejeitados;
+- `npm run validate:landing-page-module-catalog`;
+- `npm run check`;
+- `git diff --check`.
+
+### 4.6. Fase 6 — E18.5.8 — Perfis de copy por intenção e funil
+
+- Automação: não.
+
+Entregas:
+
+- implementar os profiles BOFU, MOFU e TOFU com treatments e `ctaMode` literais;
+- implementar os deltas aprovados por módulo e o mesmo delta para as duas FAQs;
+- impedir categorias ou aliases como valores de registry.
+
+Critérios:
+
+- cada treatment aparece exatamente uma vez entre `allowed`, `restricted` e `prohibited`;
+- `ctaMode` corresponde ao action treatment definido;
+- deltas somente restringem, proíbem ou enfatizam tratamentos conhecidos;
+- suporte factual continua obrigatório quando aplicável;
+- alias, treatment ou `ctaMode` desconhecido falha fechado.
+
+Validações:
+
+- profiles completos dos três estágios;
+- deltas dos nove módulos e dez variantes;
+- conflitos e treatments ausentes/duplicados rejeitados;
+- `npm run validate:landing-page-module-catalog`;
+- `npm run check`;
+- `git diff --check`.
+
+### 4.7. Fase 7 — E18.5.9 — Ciclo de vida, compatibilidade e validação
+
+- Automação: não.
+
+Entregas:
+
+- finalizar `resolver.ts`, `payload-validator.ts` e `index.ts`;
+- implementar as assinaturas públicas da seção 2.6;
+- retornar os lifecycles de raiz, módulo, variante e o lifecycle efetivo;
+- adicionar o namespace público `landingPageModuleCatalog` em `lib/conversion-content/index.ts`;
+- fechar compatibilidade, erros, imutabilidade e matriz integrada de não regressão.
+
+Critérios:
+
+- resolver usa registries canônicos internamente, sem injeção pública e sem fallback;
+- versões, identidades, root compatibility e lifecycles inválidos falham fechado;
+- resultado e registry são profundamente imutáveis;
+- `primary_action.allowedValues` é subconjunto do enum público `primary_conversion_channel` em teste;
+- nenhum consumidor ou família preservada é alterado além dos exports aditivos aprovados;
+- o namespace público somente é liberado nesta fase, após o catálogo completo ser válido.
+
+Validações:
+
+- resolução pública das dez variantes;
+- matriz completa de erros, payloads, lifecycles, compatibilidade, imutabilidade e canais;
 - validações existentes de root, pesquisa, input catalog e commercial activation;
 - `npm run validate:landing-page-module-catalog`;
 - `npm run check`;
 - `git diff --check`.
 
-Matriz mínima:
+Parada comum a todas as fases:
 
-- resolve dez variantes;
-- rejeita versões, identidades, roles, fields, policies, supports, capabilities, maps, treatments, `ctaMode`, aliases, deltas e payloads inválidos;
-- rejeita form;
-- valida alt text, cardinalidade, texto vazio após normalização, valor exatamente em `absoluteMax`, valor acima de `absoluteMax` e ausência de bloqueio pelos intervalos recomendados;
-- comprova imutabilidade, independência das FAQs, cálculo dos quatro estados de lifecycle, ausência de colisão, preservação dos exports e subconjunto de canais frente a `primary_conversion_channel`.
-
-Parada:
-
-- arquivo/export/dependency/regra não listado retorna ao Estrategista;
+- arquivo, export, dependência ou regra não listado retorna ao Estrategista;
 - banco, rota, renderer, composição, persistência, tracking ou mudança destrutiva bloqueia;
-- sem merge ou fase futura automática.
+- o Executor não inicia a fase seguinte sem avaliação do Analista e decisão do Estrategista;
+- sem merge ou avanço automático durante a comparação.
 
-### 4.2. Próxima ação
+### 4.8. Próxima ação
 
-- Plano v2 aprovado humanamente neste patch final.
+- Plano v2 permanece aprovado humanamente, agora com a execução corrigida para sete fases.
 - Criar branch de implementação manual comparativa a partir do head atualizado de `codex-app/e18-5-v2-processo-atual`.
 - Abrir PR draft dessa branch com base `codex-app/e18-5-v2-processo-atual`.
-- Orientar o Executor a executar exclusivamente a fase 3.1 nessa nova branch.
-- Manter PR #577, PR #585 e o novo PR sem merge durante a comparação com o workflow automatizado.
-- Após as duas entregas, comparar aderência, qualidade, escopo, testes, retrabalho e decisões implícitas antes de escolher ou reconciliar a solução final.
+- Orientar o Executor somente para a fase 18.5.3.
+- Após a entrega, submeter a fase ao Analista e decidir entre avançar para 18.5.4, ajustar ou bloquear.
+- Repetir o fluxo, uma fase por vez, até 18.5.9.
+- Manter PR #577, PR #585 e o PR de implementação sem merge durante a comparação com o workflow automatizado.
+- Após as duas entregas completas, comparar aderência, qualidade, escopo, testes, retrabalho e decisões implícitas antes de escolher ou reconciliar a solução final.
 
 ## 5. Validação e encerramento
 
 ### 5.1. Validação documental
 
 - três pareceres iniciais e reavaliação final do Analista consolidados;
-- única fase, `Automação: não`;
-- topologia, API, copy, funil, limites, lifecycle efetivo, erros, testes e fluxo experimental definidos;
+- sete fases executáveis, todas com `Automação: não`;
+- fases 18.5.3 a 18.5.9, topologia, API, copy, funil, limites, lifecycle efetivo, erros, testes e fluxo experimental definidos;
 - sem fase administrativa.
 
 Nesta consolidação:
