@@ -70,7 +70,7 @@ Aceito:
 
 Rejeitado:
 
-- novas fases/variantes, banco, renderer, tracking, automação e updates de Supabase/Vercel/GitHub;
+- fases fora das subseções 18.5.3 a 18.5.9, variantes adicionais, banco, renderer, tracking, automação e updates de Supabase/Vercel/GitHub;
 - conformidade WCAG integral e validação comportamental real;
 - aliases aceitos pelo registry ou resolução pública por injeção de objetos de catálogo/raiz.
 
@@ -81,7 +81,7 @@ Pendente sem bloquear:
 Decisão humana de 19/07/2026:
 
 - este patch final está aprovado;
-- a implementação manual comparativa da fase 3.1 pode começar em branch filha criada do head atualizado do PR #585;
+- a implementação manual comparativa pode começar pela fase 18.5.3 em branch filha criada do head atualizado do PR #585;
 - a aprovação não autoriza merge do PR #585, do PR #577 ou de qualquer entrega experimental;
 - a integração na `main` será decidida somente após a comparação manual versus automatizada.
 
