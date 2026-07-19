@@ -68,15 +68,17 @@ Parar quando faltar uma decisão material que altere produto, escopo ou arquitet
 1. Executar o workflow de `lp-factory-avaliar-plano-estrutura` para a v1 congelada.
 2. Acionar exatamente um custom agent `gestor-estrutural` e preservar integralmente seu parecer.
 3. Não realizar avaliação estrutural paralela no task principal.
-4. Parar antes da v2 se o handoff estiver incompleto ou se a conclusão for `requer investigação` ou `rejeitado por conflito com fonte competente`.
-5. Permitir consolidação quando a conclusão for `aprovado`, `aprovado com condicionantes` ou `requer patch estrutural`, mantendo condicionantes e patches rastreáveis.
+4. Parar antes da v2 se o handoff estiver incompleto ou se a conclusão for `requer investigação`, `bloqueado por decisão humana` ou `rejeitado por conflito com fonte competente`.
+5. Em `requer patch estrutural`, confirmar que todo achado bloqueante possui patch autossuficiente. Patch que ainda exija escolha técnica torna o handoff incompleto; o orquestrador não completa a análise.
+6. Produzir a v2 quando a conclusão for `aprovado`, `aprovado com condicionantes` ou `requer patch estrutural`, mantendo cada condicionante e patch rastreável.
+7. Não retornar ao Gestor Estrutural durante a consolidação. O Analista audita a incorporação. Nova rodada estrutural só é cabível se a v2 introduzir questão material não coberta pelo parecer.
 
 Não acionar Gestor de Updates nem Gestor de Automações neste recorte.
 
 ## 5. Produzir a v2 e a matriz
 
 1. Editar somente o plano correspondente dentro da worktree de automação.
-2. Preservar objetivo, decisões válidas e limites da v1; incorporar apenas tratamentos sustentados pelo parecer e pelas fontes competentes.
+2. Preservar objetivo, decisões válidas e limites da v1; incorporar literalmente ou de forma inequivocamente equivalente os patches estruturais e somente tratamentos sustentados pelo parecer e pelas fontes competentes.
 3. Não implementar fases nem ampliar silenciosamente o escopo.
 4. Preparar uma matriz com uma linha por achado, usando o contrato de `docs/analista.md`.
 5. Manter a matriz fora do alcance do Analista até ele concluir a Passagem 1:
@@ -98,10 +100,10 @@ Não acionar Gestor de Updates nem Gestor de Automações neste recorte.
 
 - `aprovado para merge do plano-base v2`: avançar para publicação.
 - `aprovado com correções obrigatórias`: corrigir a v2 e a matriz, criar nova referência imutável e solicitar `revisao_delta` ao mesmo Analista.
-- `requer nova rodada especializada`: devolver o delta ao Gestor Estrutural antes de retornar ao Analista.
+- `requer nova rodada especializada`: retornar ao Gestor Estrutural somente se o Analista identificar uma questão estrutural nova ou mudança material fora do parecer original; nos demais casos, parar e apontar a incompatibilidade da conclusão.
 - `bloqueado por decisão humana`: parar e apresentar somente a decisão necessária, sem escolher pelo humano.
 
-Repetir o ciclo somente enquanto houver correções objetivas dentro do escopo. Não converter uma decisão material ausente em correção editorial.
+Repetir o ciclo somente enquanto houver correções objetivas dentro do escopo. Não usar nova rodada especializada para revalidar patches já cobertos nem converter decisão material ausente em correção editorial.
 
 ## 8. Publicar para decisão humana
 
