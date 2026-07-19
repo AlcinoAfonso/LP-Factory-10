@@ -1,8 +1,8 @@
 # Orquestração de planos-base no Codex
 
 Data: 18/07/2026
-Versão: v0.2
-Status: planejamento em construção; teste do Gestor Estrutural validado; primeiro recorte do Analista implementado e pendente de teste real.
+Versão: v0.3
+Status: primeiro fluxo integrado implementado e pendente de teste real com Gestor Estrutural e Analista.
 
 ## 1. Objetivo e função deste documento
 
@@ -193,3 +193,48 @@ Este passo não inclui:
 - revisão do PR de implementação;
 - alteração do fluxo operacional vigente de `docs/prompt-estrategista.md` antes da aprovação do workflow completo;
 - merge automático ou decisão humana delegada ao Codex.
+
+## 4. Terceiro passo: skill de orquestração integrada
+
+O terceiro passo reúne os dois testes anteriores em uma única entrada humana. Foi criada a skill `lp-factory-orquestrar-plano`, localizada em `.agents/skills/lp-factory-orquestrar-plano/`.
+
+Ela não cria um novo custom agent. O task comum permanece como orquestrador e executor, enquanto `gestor-estrutural` e `analista` permanecem read-only e aplicam seus contratos existentes.
+
+### 4.1 Entrada mínima
+
+O humano informa somente o PR que contém o plano-base v1 e invoca explicitamente a skill:
+
+`Use $lp-factory-orquestrar-plano no PR #577.`
+
+Paths, branches, agentes e etapas internas são resolvidos pela skill. Informação adicional só pode ser solicitada quando houver ambiguidade real que impeça selecionar o plano ou a worktree correta.
+
+### 4.2 Destino das alterações
+
+A skill usa uma worktree de automação previamente criada e nunca altera a `main`, a branch do processo atual ou a branch head do PR da v1.
+
+Uma worktree só pode ser selecionada automaticamente quando estiver limpa, usar branch `codex-app/*-v2-orquestracao`, contiver o head SHA da v1 e ainda possuir o mesmo blob do plano congelado. Se não houver exatamente uma candidata, o fluxo pede somente o path correto e para.
+
+No primeiro teste E18.5, o destino esperado é:
+
+- worktree: `C:\Dev\GitHub\LP-Factory-10-e18-5-automacao`;
+- branch: `codex-app/e18-5-v2-orquestracao`;
+- fonte congelada: plano-base v1 do PR #577.
+
+### 4.3 Sequência integrada
+
+1. Congelar a v1 pelo head SHA e blob do PR informado.
+2. Selecionar e validar a worktree de automação já existente.
+3. Acionar o Gestor Estrutural e preservar o parecer integral.
+4. Produzir a v2 e preparar a matriz de consolidação.
+5. Criar referência imutável da v2 e acionar o Analista sem parecer ou matriz.
+6. Depois da Passagem 1, gravar a matriz e entregá-la com o parecer ao mesmo Analista.
+7. Corrigir ou encaminhar pendências conforme a conclusão formal.
+8. Publicar um PR draft empilhado contra a branch da v1 somente após aprovação do Analista.
+
+A matriz não é gravada antes da Passagem 1. Isso impede que a avaliação independente seja contaminada por um arquivo acessível na própria worktree.
+
+### 4.4 Limites do primeiro fluxo integrado
+
+Este recorte inclui somente Gestor Estrutural, consolidação pelo orquestrador e gate do Analista. Gestor de Updates, Gestor de Automações, execução das fases e revisão do PR de implementação continuam fora do fluxo até testes próprios.
+
+O teste será considerado válido quando uma instrução humana curta produzir uma v2 rastreável, duas passagens não contaminadas do Analista e um PR filho comparável, sem alteração da v1 e sem edição feita pelos custom agents.
