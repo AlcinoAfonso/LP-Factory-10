@@ -16,10 +16,16 @@ A entrada deve informar:
 - path do plano-base;
 - fase ou recorte, quando a avaliação for parcial.
 
-Consultar:
+**Quatro catálogos obrigatórios:**
+
+- `docs/supa-up.md`;
+- `docs/vercel-up.md`;
+- `docs/github-up.md`;
+- `docs/prod-up.md`.
+
+Consultar também:
 
 - o plano indicado;
-- os quatro catálogos de updates;
 - `README.md`;
 - `docs/roadmap.md`;
 - `docs/base-tecnica.md`;
