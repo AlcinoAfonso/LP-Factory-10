@@ -2,9 +2,9 @@
 
 Fontes: chat, `README.md`, `AGENTS.md`, `docs/prompt-estrategista.md`, `docs/roadmap.md`, `docs/base-tecnica.md`, `docs/schema.md`, `docs/lp-planejamento.md`, `docs/lousa-plano-base-e18-4.md`, `docs/lousa-plano-base-e20-2.md`, `docs/blueprint-corretor-imoveis-end-customer.md`, `docs/prompt-nicho-itens-estruturados.md`, consulta read-only ao Supabase, `lib/conversion-content/landing-page/`, `lib/conversion-content/landing-page/input-catalog/registry.ts`, PRs #559, #563, #564, #566, #567, #577 e #581, avaliações do Analista e decisões humanas de 14 a 17/07/2026.
 
-Versão: v1 conceitualmente fechada.
+Versão: v2 consolidada pelos pareceres especializados e pendente do gate do Analista.
 
-Status: nove módulos e nove variantes `standard@v1` conceitualmente fechados; `faq.accordion@v1` aprovada como única variante adicional para validação controlada; uma fase executável definida; nenhuma implementação de código autorizada neste PR.
+Status: nove módulos e nove variantes `standard@v1` conceitualmente fechados; `faq.accordion@v1` aprovada como única variante adicional para validação controlada; patches do Gestor Estrutural e do Gestor de Updates consolidados; uma fase executável definida; nenhuma implementação de código autorizada antes do gate do Analista e do merge humano.
 
 Path: `docs/lousa-plano-base-e18-5.md`.
 
@@ -133,17 +133,22 @@ Notação da seção 3:
 ### 2.6. Ações e vínculos operacionais
 
 - Ação possui label e vínculo abstrato com campo estável do catálogo operacional.
-- O registry não armazena valor, canal ou destino concreto.
+- A E18.5 registra na ação somente o vínculo abstrato com `primary_conversion_channel`; não registra allowlist de canais, destinos concretos ou regras de resolução operacional.
+- Valores permitidos e destinos condicionais permanecem exclusivamente no `landingPageInputCatalog`.
+- O resolver da E18.5 não consulta nem replica o catálogo de entradas.
+- `hero.standard@v1` e `final_cta.standard@v1` preservam a fronteira sem formulário. Quando o canal operacional canônico resolvido for `form`, essas ocorrências não são compatíveis e o consumidor posterior deve falhar fechado ou não selecioná-las, sem fallback para outro canal.
 - A E19 resolve o campo operacional, condicionais e destino.
 - Nova chave operacional não pode ser criada implicitamente pela E18.5.
 
 ### 2.7. Lifecycle e compatibilidade
 
 - `moduleCatalogVersion` declara versão e compatibilidade com a raiz.
-- Módulo e variante usam `experimental`, `active` ou `deprecated`.
-- Todos começam `experimental`, com propósito `controlled_test`.
-- Promoção para `active` exige LP real, revisão e decisão humanas.
+- Módulos e variantes reutilizam o vocabulário canônico da raiz: `hypothesis`, `validated` e `deprecated`.
+- O contrato público do sub-boundary deve expor um alias tipado para `LandingPageRootLifecycleStatus`, sem criar uma segunda união literal de estados.
+- Todos os módulos e variantes iniciam em `hypothesis`, com propósito `controlled_test`.
+- Promoção para `validated` exige LP real, revisão e decisão humanas.
 - `deprecated` bloqueia novas composições, mas preserva leitura histórica.
+- Lifecycle da raiz, do módulo e da variante permanece registrado separadamente, mas usa o mesmo vocabulário; estado desconhecido falha fechado.
 
 ### 2.8. Fronteiras entre etapas
 
@@ -192,8 +197,8 @@ Compatibilidade comum da seção 3:
 
 - Campos: `eyebrow` (`eyebrow`, `0..1`, `research_guided`); `title` (`h1`, `1..1`, `hybrid`, `when_factual`); `subtitle` (`paragraph`, `1..1`, `hybrid`, `when_factual`); `primaryCta` (ação `1..1`, label `cta_label`, `hybrid`, `when_present`, vínculo com `primary_conversion_channel`); `proofShort` (`paragraph`, `0..1`, `hybrid`, `when_present`); `media` (imagem `0..1`, `technical_reference`).
 - Copy: posicionamento/desejo no título; dor/desejo no subtítulo; trigger no CTA; prova/objeção em `proofShort`.
-- Regras: canais `whatsapp`, `phone`, `email`, `external_url`; mídia informativa exige alternativa; `all_viewports`; sem CTA secundário, vídeo, formulário ou interação.
-- Estado: `experimental`, `controlled_test`.
+- Regras: mídia informativa exige alternativa; `all_viewports`; sem CTA secundário, vídeo, formulário ou interação; com `primary_conversion_channel = form`, a ocorrência é incompatível e o consumidor posterior deve falhar fechado ou não selecioná-la, sem fallback de canal.
+- Estado: `hypothesis`, `controlled_test`.
 
 ### 3.3. Módulo `trust_bar`
 
@@ -208,7 +213,7 @@ Compatibilidade comum da seção 3:
 - `items`: coleção `2..4`, `not_copy`; `text`: `benefit_item`, `1..1`, `hybrid`, `when_present`.
 - Copy: `proof_type`, `belief`; auxiliar `objection`.
 - Regras: cada item exige suporte; sem título, CTA, ícone ou mídia; responsividade pertence ao renderer.
-- Estado: `experimental`, `controlled_test`.
+- Estado: `hypothesis`, `controlled_test`.
 
 ### 3.5. Módulo `problem_solution`
 
@@ -224,7 +229,7 @@ Compatibilidade comum da seção 3:
 - `items`: coleção `2..4`, com `problem` (`card_title`, `1..1`, `research_guided`) e `solution` (`card_body`, `1..1`, `hybrid`, `when_present`).
 - Copy: dor/desejo no título; dor/medo no problema; posicionamento/desejo na solução.
 - Regras: solução responde ao problema do item; sem CTA, mídia, prova, preço, oferta ou processo.
-- Estado: `experimental`, `controlled_test`.
+- Estado: `hypothesis`, `controlled_test`.
 
 ### 3.7. Módulo `offer`
 
@@ -240,7 +245,7 @@ Compatibilidade comum da seção 3:
 - `items`: coleção `1..4`, com `itemTitle` (`card_title`, `1..1`, `hybrid`, `when_present`) e `description` (`card_body`, `1..1`, `hybrid`, `when_present`).
 - Copy: desejo/trigger no título e item; posicionamento/belief na descrição.
 - Regras: cada item exige capacidade real; pesquisa não comprova preço, prazo, parceria, garantia ou disponibilidade.
-- Estado: `experimental`, `controlled_test`.
+- Estado: `hypothesis`, `controlled_test`.
 
 ### 3.9. Módulo `process`
 
@@ -256,7 +261,7 @@ Compatibilidade comum da seção 3:
 - `steps`: coleção ordenada `2..6`, com `stepTitle` (`step_title`, `1..1`, `hybrid`, `when_present`) e `stepBody` (`step_body`, `1..1`, `hybrid`, `when_present`).
 - Copy: belief/desejo no título e corpo no título da etapa.
 - Regras: ordem reflete progressão real; numeração é do renderer; sem CTA, mídia, prova, preço ou formulário.
-- Estado: `experimental`, `controlled_test`.
+- Estado: `hypothesis`, `controlled_test`.
 
 ### 3.11. Módulo `technical_assurance`
 
@@ -272,7 +277,7 @@ Compatibilidade comum da seção 3:
 - `items`: coleção `1..4`, com `assuranceTitle` (`card_title`, `1..1`, `hybrid`, `when_present`) e `assuranceBody` (`card_body`, `1..1`, `hybrid`, `when_present`).
 - Copy: prova/belief no título; prova/posicionamento no corpo.
 - Regras: todo item exige suporte rastreável; sem aconselhamento individualizado, CTA, mídia, link, depoimento, preço, processo ou FAQ.
-- Estado: `experimental`, `controlled_test`.
+- Estado: `hypothesis`, `controlled_test`.
 
 ### 3.13. Módulo `social_proof`
 
@@ -288,7 +293,7 @@ Compatibilidade comum da seção 3:
 - `items`: coleção `1..3`, com `quote` (`card_body`, `1..1`, `operational_required`), `attribution` (`card_title`, `1..1`, `operational_required`) e `evidenceRef` (referência técnica `1..1`, `technical_reference`).
 - Copy: título por prova/belief; quote e atribuição exclusivamente da evidência.
 - Regras: impedir fabricação ou alteração; atribuição pública depende de autorização.
-- Estado: `experimental`, `controlled_test`.
+- Estado: `hypothesis`, `controlled_test`.
 
 ### 3.15. Módulo `faq`
 
@@ -304,7 +309,7 @@ Compatibilidade comum da seção 3:
 - `items`: coleção `2..6`, com `question` (`faq_question`, `1..1`, `research_guided`) e `answer` (`faq_answer`, `1..1`, `hybrid`, `when_factual`).
 - Copy: objeção/awareness no título; objeção/medo na pergunta; belief/posicionamento na resposta.
 - Regras: sem duplicidade; resposta direta; fatos legais, técnicos, financeiros ou operacionais exigem suporte; sem interação.
-- Estado: `experimental`, `controlled_test`.
+- Estado: `hypothesis`, `controlled_test`.
 
 ### 3.17. Variante `faq.accordion@v1`
 
@@ -312,8 +317,9 @@ Compatibilidade comum da seção 3:
 - Declara o mesmo contrato de campos da variante standard, sem herança semântica; não adiciona conteúdo.
 - Capability: interação de acordeão e acessibilidade.
 - Comportamento: todos fechados inicialmente; abre/fecha pelo controle; somente um aberto; teclado; estado e associação acessíveis; foco preservado.
+- Baseline de acessibilidade: WCAG 2.2 é a referência normativa de produto para `faq.accordion@v1`. Nesta E18.5, o contrato repo-only limita-se a exigir operação por teclado, exposição e associação acessível do estado expandido ou recolhido e preservação de foco. A conformidade da interface — inclusive contraste, tamanho de alvo, rotulagem concreta, semântica HTML e validação visual — pertence ao futuro renderer e à LP real.
 - Limites: não define HTML, componente, ícone, animação ou visual.
-- Estado: `experimental`, `controlled_test`, candidata à primeira composição controlada.
+- Estado: `hypothesis`, `controlled_test`, candidata à primeira composição controlada.
 
 ### 3.18. Módulo `final_cta`
 
@@ -329,8 +335,8 @@ Compatibilidade comum da seção 3:
 - `body`: `paragraph`, `1..1`, `hybrid`, `when_factual`.
 - `primaryCta`: ação `1..1`, label `cta_label`, `hybrid`, `when_present`, vínculo obrigatório com `primary_conversion_channel`.
 - Copy: trigger/desejo no título; desejo/objeção no body; trigger no label.
-- Regras: canais `whatsapp`, `phone`, `email`, `external_url`; uma ação; sem destino no registry; sem CTA secundário, formulário, mídia, preço ou condição.
-- Estado: `experimental`, `controlled_test`.
+- Regras: uma ação; sem destino no registry; sem CTA secundário, formulário, mídia, preço ou condição; com `primary_conversion_channel = form`, a ocorrência é incompatível e o consumidor posterior deve falhar fechado ou não selecioná-la, sem fallback de canal.
+- Estado: `hypothesis`, `controlled_test`.
 
 ## 4. Fases e próxima ação
 
@@ -351,35 +357,72 @@ Compatibilidade comum da seção 3:
   - schemas estritos, registry versionado, resolver fail-closed, validadores e casos executáveis;
   - exportação pública e script próprio de validação no `package.json`;
   - fixtures somente quando úteis ao padrão de teste.
+- Boundary e mapa de arquivos:
+  - o catálogo da E18.5 constitui o sub-boundary repo-only `lib/conversion-content/landing-page/module-catalog/`, separado da parametrização raiz, da resolução de pesquisas e do catálogo de entradas;
+  - criar exclusivamente no novo sub-boundary: `contracts.ts`, `registry.ts`, `schema.ts`, `resolver.ts`, `validation-cases.ts` e `index.ts`;
+  - `registry.ts` é a única fonte dos módulos, variantes, versões, campos, cardinalidades, policies, capabilities, lifecycle e compatibilidades efetivamente resolvidos;
+  - `schema.ts` valida estrutura e invariantes, sem duplicar o catálogo resolvido nem introduzir fallback;
+  - `resolver.ts` consulta exclusivamente o registry, falha fechado e devolve cópia profundamente imutável, sem referência mutável compartilhada;
+  - `index.ts` expõe somente os tipos públicos e o resolver autorizados; registry e schema não integram a API pública;
+  - ajustar `lib/conversion-content/index.ts` para expor o namespace `landingPageModuleCatalog` a partir de `./landing-page/module-catalog`;
+  - ajustar `package.json` com o script `validate:landing-page-module-catalog`;
+  - não alterar as responsabilidades ou a API pública de `landingPageRoot`, `landingPageResearch` e `landingPageInputCatalog`;
+  - não reutilizar nem recriar os arquivos removidos de composição, renderer ou render model.
 - Critérios de aceite:
   - identidade e compatibilidade completas;
-  - lifecycle `experimental` e propósito `controlled_test`;
+  - lifecycle `hypothesis` e propósito `controlled_test`;
   - todos os módulos e variantes aprovados resolvidos e validados;
   - `faq.accordion@v1` preserva `faq.standard@v1` e valida interaction sem herança entre variantes;
+  - `faq.accordion@v1` adota WCAG 2.2 como baseline de referência no limite do contrato abstrato; a validação própria deve comprovar a presença das regras de teclado, estado e associação acessíveis e preservação de foco, além de confirmar que `faq.standard@v1` permanece sem interação, sem exigir HTML, componente, estilo, Preview ou renderer nesta fase;
   - rejeição de campos, policies, capabilities, versões e deltas desconhecidos;
   - resultado profundamente imutável, sem fallback ou referência mutável compartilhada;
   - nenhuma regra específica de E19, E20, renderer, Admin, Builder ou banco;
-  - `npm ci`, validação própria da E18.5, `npm run check` e `git diff --check` aprovados.
+  - os seis arquivos novos existem somente no sub-boundary indicado;
+  - somente `lib/conversion-content/index.ts` e `package.json` são alterados fora dele, ressalvadas as atualizações documentais de encerramento;
+  - `landingPageRoot`, `landingPageResearch` e `landingPageInputCatalog` mantêm suas APIs;
+  - não reaparecem `registry.ts`, `schemas.ts`, `renderer.tsx`, `render-model.ts` ou `composition-validator.ts` diretamente na raiz `landing-page/`;
+  - o registry da E18.5 não contém listas de canais nem chaves de destino, e nenhuma mudança é feita em `input-catalog/registry.ts`;
+  - casos executáveis comprovam ausência de destino concreto e ausência de fallback de canal;
+  - schemas e casos executáveis rejeitam lifecycle desconhecido, e todos os dez contratos iniciais resolvem como `hypothesis` sem alterar a raiz v1.
+- Validação obrigatória da fase:
+  1. `npm ci`
+  2. `npm run validate:landing-page-root`
+  3. `npm run validate:landing-page-research`
+  4. `npm run validate:landing-page-input-catalog`
+  5. `npm run validate:landing-page-module-catalog`
+  6. `npm run validate:commercial-activation`
+  7. `npm run check`
+  8. `git diff --check`
+- A validação própria deve cobrir todos os módulos e variantes aprovados, versões e compatibilidades desconhecidas, contrato inválido, campos/policies/capabilities desconhecidos, lifecycle inválido, ausência de fallback, imutabilidade profunda, ausência de referências mutáveis compartilhadas e preservação independente de `faq.standard@v1` e `faq.accordion@v1`.
+- Os oito comandos devem terminar com código zero, e os casos negativos devem falhar pelo resultado discriminado esperado, não por exceção não tratada.
 - Parada:
   - necessidade de banco, migration, rota, renderer, composição, persistência, tracking, infraestrutura ou mudança destrutiva retorna ao Estrategista.
 
 ### 4.3. Próxima ação
 
-- Executar o item 5 de `docs/prompt-estrategista.md`.
-- Solicitar avaliação única do plano completo pelo Analista, Gestor Estrutural e Gestor de Updates.
+- Submeter esta v2 ao gate independente e à auditoria de consolidação do Analista.
+- Preservar integralmente os pareceres do Gestor Estrutural e do Gestor de Updates na matriz de consolidação.
 - Não chamar Gestor de Automação, pois a fase está marcada como `Automação: não`.
-- Consolidar os pareceres no mesmo PR como plano-base v2 antes de solicitar o merge humano.
-- Não autorizar a fase 3.1 antes da consolidação e do merge do plano-base v2 na `main`.
+- Não autorizar a fase 3.1 antes da aprovação do Analista e do merge humano do plano-base v2.
 
 ## 5. Validação e encerramento
 
-### 5.1. Validação do plano v1
+### 5.1. Validação do plano v2
 
 - Existe uma única fase executável e necessária ao recorte.
 - A fase usa identificadores implementáveis da E18.5 e declara `Automação: não`.
 - Validações técnicas integram os critérios de aceite, sem fase administrativa separada.
 - Não existe fase própria de governança, handoff, revisão, documentação final ou encerramento.
 - Os identificadores previstos não atualizam `docs/roadmap.md` automaticamente.
+
+Encerramento documental obrigatório, sem criar fase administrativa separada:
+
+- Após a implementação e as validações materiais, atualizar `docs/base-tecnica.md` com o contrato durável do catálogo E18.5: sub-boundary canônico, registry como fonte única, namespace público, resolução fail-closed, imutabilidade, comando de validação e limites repo-only sem banco, UI, composição ou renderer.
+- Atualizar a seção 18.5 de `docs/roadmap.md` com o status efetivamente alcançado e o inventário real de arquivos criados e ajustados.
+- Não registrar implementação, aprovação ou conclusão antes de existirem diff material e evidências de validação correspondentes.
+- O caso E18.5 não pode ser encerrado enquanto `docs/base-tecnica.md` e `docs/roadmap.md` permanecerem no estado anterior à implementação.
+- Base Técnica e roadmap devem descrever o mesmo boundary, namespace, script e escopo material presentes no diff; o inventário do roadmap deve corresponder aos arquivos realmente criados e alterados.
+- Nenhuma mudança de banco, UI, renderer, composição ou infraestrutura pode ser registrada.
 
 Alteração exclusivamente documental:
 
