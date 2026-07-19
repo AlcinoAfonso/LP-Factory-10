@@ -130,13 +130,63 @@ Notação da seção 3:
 - A E19 resolve valores e valida a instância concreta.
 - Policies aprovadas: `research_guided`, `hybrid`, `operational_required`, `technical_reference` e `not_copy`.
 
+#### 2.5.1. Perfil padrão por intenção de funil
+
+| Perfil | Fontes priorizadas | Tratamentos permitidos | Tratamentos restritos | Tratamentos proibidos |
+|---|---|---|---|---|
+| BOFU | `trigger`, `desire`, `objection`, `proof_type`, `positioning_opportunity` | próximo passo direto, resposta a objeção e prova sustentada | urgência, condição, preço, prazo, garantia ou disponibilidade somente com suporte operacional real | coerção, escassez, promessa, credencial ou resultado sem evidência |
+| MOFU | `pain`, `belief`, `positioning_opportunity`, `objection`, `proof_type`, `narrative_arc` | educação, relação problema-solução, processo, segurança técnica e FAQ | CTA direto somente não coercitivo; oferta e prova somente quando sustentadas | preço, urgência, garantia, comparação ou resultado inventados |
+| TOFU | `awareness_level`, `search_intent`, `pain`, `desire`, `belief`, `positioning_opportunity` | contexto, reconhecimento do problema, desejo e educação introdutória | oferta e CTA em linguagem de baixa pressão; prova factual somente quando sustentada | escassez, urgência, garantia, condição comercial ou promessa de resultado |
+
+Regras de aplicação:
+
+- O perfil seleciona e prioriza somente fontes já permitidas pelo `copySourceMap` do campo; não altera estrutura, cardinalidade, ordem, policy nem suporte factual.
+- `hero` e `final_cta` adaptam intensidade e próxima ação ao perfil; `problem_solution` e `faq` adaptam consciência, dor e objeção; `offer` e `process` adaptam intenção e progressão; `trust_bar`, `technical_assurance` e `social_proof` preservam prova verificável em qualquer perfil.
+- Quando nenhuma fonte permitida sustentar o tratamento requerido, a E19 não inventa copy factual; o campo opcional é omitido conforme a composição, e campo obrigatório torna a instância inválida.
+
+#### 2.5.2. `copySourceMap` fechado por campo textual
+
+| Variante e campo | Fontes principais | Fonte auxiliar |
+|---|---|---|
+| `hero.standard.eyebrow` | `positioning_opportunity`, `trigger` | `desire` |
+| `hero.standard.title` | `positioning_opportunity`, `desire` | `trigger` |
+| `hero.standard.subtitle` | `pain`, `desire` | `objection` |
+| `hero.standard.primaryCta.label` | `trigger`, `desire` | `objection` |
+| `hero.standard.proofShort` | `proof_type`, `belief` | `objection` |
+| `trust_bar.standard.items[].text` | `proof_type`, `belief` | `objection` |
+| `problem_solution.standard.title` | `pain`, `desire` | `fear` |
+| `problem_solution.standard.items[].problem` | `pain`, `fear` | `objection` |
+| `problem_solution.standard.items[].solution` | `positioning_opportunity`, `desire` | `belief` |
+| `offer.standard.title` | `desire`, `trigger` | `positioning_opportunity` |
+| `offer.standard.items[].itemTitle` | `trigger`, `desire` | `positioning_opportunity` |
+| `offer.standard.items[].description` | `positioning_opportunity`, `belief` | `objection` |
+| `process.standard.title` | `belief`, `desire` | `objection` |
+| `process.standard.steps[].stepTitle` | `narrative_arc`, `trigger` | `belief` |
+| `process.standard.steps[].stepBody` | `belief`, `desire` | `positioning_opportunity` |
+| `technical_assurance.standard.title` | `proof_type`, `belief` | `fear` |
+| `technical_assurance.standard.items[].assuranceTitle` | `proof_type`, `positioning_opportunity` | `objection` |
+| `technical_assurance.standard.items[].assuranceBody` | `proof_type`, `belief` | `fear` |
+| `social_proof.standard.title` | `proof_type`, `belief` | `objection` |
+| `social_proof.standard.items[].quote` | N/A — conteúdo `operational_required` obtido da evidência | N/A |
+| `social_proof.standard.items[].attribution` | N/A — conteúdo `operational_required` obtido da evidência | N/A |
+| `faq.standard.title` e `faq.accordion.title` | `objection`, `awareness_level` | `search_intent` |
+| `faq.standard.items[].question` e `faq.accordion.items[].question` | `objection`, `fear` | `search_intent` |
+| `faq.standard.items[].answer` e `faq.accordion.items[].answer` | `belief`, `positioning_opportunity` | `proof_type` |
+| `final_cta.standard.title` | `trigger`, `desire` | `positioning_opportunity` |
+| `final_cta.standard.body` | `desire`, `objection` | `belief` |
+| `final_cta.standard.primaryCta.label` | `trigger`, `desire` | `objection` |
+
+Campos `not_copy`, mídia e referências técnicas não recebem `copySourceMap`.
+
 ### 2.6. Ações e vínculos operacionais
 
 - Ação possui label e vínculo abstrato com campo estável do catálogo operacional.
 - A E18.5 registra na ação somente o vínculo abstrato com `primary_conversion_channel`; não registra allowlist de canais, destinos concretos ou regras de resolução operacional.
 - Valores permitidos e destinos condicionais permanecem exclusivamente no `landingPageInputCatalog`.
 - O resolver da E18.5 não consulta nem replica o catálogo de entradas.
-- `hero.standard@v1` e `final_cta.standard@v1` preservam a fronteira sem formulário. Quando o canal operacional canônico resolvido for `form`, essas ocorrências não são compatíveis e o consumidor posterior deve falhar fechado ou não selecioná-las, sem fallback para outro canal.
+- `hero.standard@v1` e `final_cta.standard@v1` expõem a metadata estrutural tipada `actionCompatibility.supportsPrimaryConversionForm = false`; ela não consulta nem replica valores do catálogo operacional.
+- Quando o canal operacional canônico resolvido for `form`, a E20 não deve selecionar ocorrência cuja metadata seja `false`, quando esse dado estiver disponível; a E19 avalia o valor concreto resolvido e falha fechado se receber composição incompatível, sem fallback para outro canal.
+- A E18.5 apenas expõe a metadata de compatibilidade; não implementa seleção de composição nem resolução do valor operacional.
 - A E19 resolve o campo operacional, condicionais e destino.
 - Nova chave operacional não pode ser criada implicitamente pela E18.5.
 
@@ -147,7 +197,8 @@ Notação da seção 3:
 - O contrato público do sub-boundary deve expor um alias tipado para `LandingPageRootLifecycleStatus`, sem criar uma segunda união literal de estados.
 - Todos os módulos e variantes iniciam em `hypothesis`, com propósito `controlled_test`.
 - Promoção para `validated` exige LP real, revisão e decisão humanas.
-- `deprecated` bloqueia novas composições, mas preserva leitura histórica.
+- A E18.5 expõe `deprecated` e preserva leitura histórica; a E20 consumidora deve bloquear novas composições com módulo ou variante depreciado.
+- A E18.5 não implementa enforcement de composição.
 - Lifecycle da raiz, do módulo e da variante permanece registrado separadamente, mas usa o mesmo vocabulário; estado desconhecido falha fechado.
 
 ### 2.8. Fronteiras entre etapas
@@ -197,7 +248,7 @@ Compatibilidade comum da seção 3:
 
 - Campos: `eyebrow` (`eyebrow`, `0..1`, `research_guided`); `title` (`h1`, `1..1`, `hybrid`, `when_factual`); `subtitle` (`paragraph`, `1..1`, `hybrid`, `when_factual`); `primaryCta` (ação `1..1`, label `cta_label`, `hybrid`, `when_present`, vínculo com `primary_conversion_channel`); `proofShort` (`paragraph`, `0..1`, `hybrid`, `when_present`); `media` (imagem `0..1`, `technical_reference`).
 - Copy: posicionamento/desejo no título; dor/desejo no subtítulo; trigger no CTA; prova/objeção em `proofShort`.
-- Regras: mídia informativa exige alternativa; `all_viewports`; sem CTA secundário, vídeo, formulário ou interação; com `primary_conversion_channel = form`, a ocorrência é incompatível e o consumidor posterior deve falhar fechado ou não selecioná-la, sem fallback de canal.
+- Regras: mídia informativa exige alternativa; `all_viewports`; sem CTA secundário, vídeo, formulário ou interação; declara `actionCompatibility.supportsPrimaryConversionForm = false`.
 - Estado: `hypothesis`, `controlled_test`.
 
 ### 3.3. Módulo `trust_bar`
@@ -335,7 +386,7 @@ Compatibilidade comum da seção 3:
 - `body`: `paragraph`, `1..1`, `hybrid`, `when_factual`.
 - `primaryCta`: ação `1..1`, label `cta_label`, `hybrid`, `when_present`, vínculo obrigatório com `primary_conversion_channel`.
 - Copy: trigger/desejo no título; desejo/objeção no body; trigger no label.
-- Regras: uma ação; sem destino no registry; sem CTA secundário, formulário, mídia, preço ou condição; com `primary_conversion_channel = form`, a ocorrência é incompatível e o consumidor posterior deve falhar fechado ou não selecioná-la, sem fallback de canal.
+- Regras: uma ação; sem destino no registry; sem CTA secundário, formulário, mídia, preço ou condição; declara `actionCompatibility.supportsPrimaryConversionForm = false`.
 - Estado: `hypothesis`, `controlled_test`.
 
 ## 4. Fases e próxima ação
@@ -382,8 +433,11 @@ Compatibilidade comum da seção 3:
   - `landingPageRoot`, `landingPageResearch` e `landingPageInputCatalog` mantêm suas APIs;
   - não reaparecem `registry.ts`, `schemas.ts`, `renderer.tsx`, `render-model.ts` ou `composition-validator.ts` diretamente na raiz `landing-page/`;
   - o registry da E18.5 não contém listas de canais nem chaves de destino, e nenhuma mudança é feita em `input-catalog/registry.ts`;
-  - casos executáveis comprovam ausência de destino concreto e ausência de fallback de canal;
-  - schemas e casos executáveis rejeitam lifecycle desconhecido, e todos os dez contratos iniciais resolvem como `hypothesis` sem alterar a raiz v1.
+  - casos executáveis comprovam a presença tipada de `actionCompatibility.supportsPrimaryConversionForm = false` em `hero.standard@v1` e `final_cta.standard@v1`, a ausência de destino concreto e a ausência de fallback de canal;
+  - schemas e casos executáveis rejeitam lifecycle desconhecido e validam separadamente lifecycle `hypothesis` nos nove módulos e nas dez variantes;
+  - o resolver cobre dez resultados módulo-variante: nove pares `standard@v1` e o par adicional `faq.accordion@v1`, sem alterar a raiz v1;
+  - a saída resolvida expõe `deprecated`; o contrato documental encaminha à E20 o bloqueio de novas composições, sem implementar composição na E18.5;
+  - o `copySourceMap` de cada campo textual e os perfis BOFU, MOFU e TOFU correspondem integralmente às seções 2.5.1 e 2.5.2.
 - Validação obrigatória da fase:
   1. `npm ci`
   2. `npm run validate:landing-page-root`
@@ -393,7 +447,7 @@ Compatibilidade comum da seção 3:
   6. `npm run validate:commercial-activation`
   7. `npm run check`
   8. `git diff --check`
-- A validação própria deve cobrir todos os módulos e variantes aprovados, versões e compatibilidades desconhecidas, contrato inválido, campos/policies/capabilities desconhecidos, lifecycle inválido, ausência de fallback, imutabilidade profunda, ausência de referências mutáveis compartilhadas e preservação independente de `faq.standard@v1` e `faq.accordion@v1`.
+- A validação própria deve cobrir os nove módulos, as dez variantes e os dez resultados módulo-variante aprovados; versões e compatibilidades desconhecidas; contrato inválido; campos, source maps, perfis de funil, policies e capabilities desconhecidos; lifecycle inválido; metadata de compatibilidade com formulário; ausência de fallback; imutabilidade profunda; ausência de referências mutáveis compartilhadas; e preservação independente de `faq.standard@v1` e `faq.accordion@v1`.
 - Os oito comandos devem terminar com código zero, e os casos negativos devem falhar pelo resultado discriminado esperado, não por exceção não tratada.
 - Parada:
   - necessidade de banco, migration, rota, renderer, composição, persistência, tracking, infraestrutura ou mudança destrutiva retorna ao Estrategista.
