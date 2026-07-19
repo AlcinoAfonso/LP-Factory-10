@@ -1,0 +1,7 @@
+interface:
+  display_name: "Avaliar estrutura do plano"
+  short_description: "Avalia estrutura de um plano-base com agente"
+  default_prompt: "Use $lp-factory-avaliar-plano-estrutura para avaliar estruturalmente o PR ou plano-base informado."
+
+policy:
+  allow_implicit_invocation: false
