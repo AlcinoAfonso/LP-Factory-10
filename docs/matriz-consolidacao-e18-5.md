@@ -1,0 +1,26 @@
+# Matriz de consolidação — Plano-base E18.5 v2
+
+Data: 19/07/2026
+
+Caso: E18.5 — Parametrização de módulos e variantes `landing_page`.
+
+Referências imutáveis:
+
+- v1: `83d0048678c3139b82075380c4e1bcbb1dac0043`, blob `905fc3ad861c038f79ca5fcdd28699cf22b6c561`;
+- v2 avaliada na Passagem 1: `762139be231ba0b0a4f30cf30db4a7fa8a58e379`, blob `3db7d44d122dd25deff1ae1881d61d34d3265a85`.
+
+| Especialista | ID do achado | Achado | Classificação original | Tratamento | Local na v2 | Evidência ou justificativa |
+|---|---|---|---|---|---|---|
+| Gestor Estrutural | `GE-E18.5-001` | O boundary material, os arquivos novos e existentes, os índices, o namespace público e os artefatos preservados não estavam determinados. | `requer patch estrutural` | `incorporado` | `4.2.1`, itens `Boundary e mapa de arquivos` e `Critérios de aceite` | A v2 fixa `module-catalog/`, os seis arquivos novos, responsabilidades internas, namespace `landingPageModuleCatalog`, ajustes permitidos em `lib/conversion-content/index.ts` e `package.json`, APIs preservadas e arquivos removidos que não podem reaparecer. |
+| Gestor Estrutural | `GE-E18.5-002` | A v1 criava um segundo vocabulário de lifecycle, divergente da raiz canônica. | `requer patch estrutural` | `incorporado` | `2.7`, estados da seção `3` e critérios de aceite de `4.2.1` | A v2 substitui `experimental/active` por `hypothesis/validated`, reutiliza `LandingPageRootLifecycleStatus`, preserva `deprecated`, separa os estados por camada e exige falha fechada para estado desconhecido. |
+| Gestor Estrutural | `GE-E18.5-003` | `hero` e `final_cta` duplicavam uma allowlist parcial do catálogo operacional e não tratavam `form` sem drift. | `requer patch estrutural` | `incorporado` | `2.6`, `3.2` e `3.19` | A v2 remove as listas locais, mantém somente o vínculo abstrato com `primary_conversion_channel`, preserva `landingPageInputCatalog` como fonte canônica e declara incompatibilidade fail-closed das ocorrências sem formulário, sem fallback de canal. |
+| Gestor Estrutural | `GE-E18.5-004` | O gate de regressão não executava os contratos runtime existentes afetados pelo índice público. | `requer patch estrutural` | `incorporado` | `4.2.1`, item `Validação obrigatória da fase` | A v2 ordena os oito comandos exigidos e amplia a validação própria para contratos positivos e negativos, lifecycle, fail-closed, imutabilidade e independência das variantes de FAQ. |
+| Gestor Estrutural | `GE-E18.5-005` | O encerramento não atualizava `docs/base-tecnica.md` e `docs/roadmap.md` após a implementação material. | `requer patch estrutural` | `incorporado` | `5.1`, item `Encerramento documental obrigatório` | A v2 exige atualização pós-implementação baseada no diff e nas evidências, igualdade entre boundary, namespace, script, escopo e inventário reais, e proíbe registrar conclusão antecipada ou escopo externo. |
+| Gestor de Updates | `prod#17` | WCAG 2.2 é baseline aplicável à capability de acessibilidade já aprovada para `faq.accordion@v1`, sem autorizar conformidade da interface ou antecipação do renderer. | `updates aplicáveis com patches autossuficientes`; uso `referência` | `incorporado` | `3.17` e critérios de aceite de `4.2.1` | A v2 inclui uma única referência normativa limitada a teclado, estado e associação acessíveis e foco; os critérios executáveis exigem esses itens, preservam `faq.standard@v1` sem interação e mantêm HTML, estilo, Preview, renderer e conformidade concreta fora do recorte. |
+
+## Limites da consolidação
+
+- Nenhum parecer anterior à reinicialização do fluxo foi usado.
+- Nenhum Gestor de Automações foi acionado, pois a fase declara `Automação: não`.
+- A matriz registra somente os cinco achados estruturais da rodada vigente e o único update preliminarmente elegível da rodada vigente.
+- A matriz não autoriza implementação, merge ou ampliação da grade fechada da E18.5.
