@@ -1,8 +1,8 @@
 # Orquestração de planos-base no Codex
 
 Data: 19/07/2026
-Versão: v0.4
-Status: fluxo integrado pausado após o primeiro gate; contrato estrutural otimizado e reteste pendente.
+Versão: v0.5
+Status: fluxo integrado pausado; contratos do Gestor Estrutural e do Analista otimizados e reteste pendente.
 
 ## 1. Objetivo e função deste documento
 
@@ -134,9 +134,8 @@ O Analista não consolida nem edita o plano e não substitui o especialista.
 
 ### 3.2 Componentes implementados
 
-1. `docs/analista.md`, contrato canônico deste primeiro recorte;
-2. `.codex/agents/analista.toml`, custom agent read-only configurado com GPT-5.6 Sol e inteligência alta;
-3. `.agents/skills/lp-factory-avaliar-plano-analista/`, skill de preparação, delegação sequencial e devolução do parecer.
+1. `.codex/agents/analista.toml`, contrato runtime único do custom agent read-only configurado com GPT-5.6 Sol e inteligência alta;
+2. `.agents/skills/lp-factory-avaliar-plano-analista/`, skill de preparação, validação da matriz, delegação sequencial e devolução do parecer.
 
 ### 3.3 Entradas do teste
 
@@ -147,7 +146,7 @@ O orquestrador deve possuir:
 - plano conceitual, quando existir, ou declaração explícita de `N/A`;
 - decisões humanas registradas aplicáveis;
 - parecer integral do Gestor Estrutural;
-- matriz de consolidação conforme `docs/analista.md`;
+- matriz de consolidação conforme a skill `lp-factory-avaliar-plano-analista`;
 - caso, roadmap, casos adjacentes e fontes técnicas aplicáveis.
 
 ### 3.4 Duas passagens no mesmo Analista

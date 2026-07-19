@@ -5,93 +5,60 @@ description: Avaliar um plano-base v2 do LP Factory 10 com o custom agent analis
 
 # Avaliar a consolidação do plano-base v2
 
-Executar duas passagens sequenciais com uma única instância do custom agent `analista`: uma avaliação independente da v2 e, somente depois, uma auditoria da consolidação dos pareceres.
+Executar duas passagens sequenciais com uma única instância do custom agent `analista`: avaliação independente e auditoria da consolidação.
 
-## Entrada obrigatória
+## Preparar
 
-Obter antes da delegação:
+1. Confirmar worktree, branch, repositório, caso e estado Git.
+2. Obter:
+   - referências imutáveis, paths e conteúdos integrais de v1 e v2;
+   - plano conceitual aplicável ou `N/A` confirmado;
+   - decisões humanas registradas, roadmap, casos adjacentes e fontes técnicas necessárias;
+   - parecer integral de cada especialista incluído;
+   - matriz de consolidação.
+3. Resolver versões em PR ou commit pelo SHA, nunca pela cópia local conveniente. Se v1 e v2 compartilharem path, diferenciá-las por referências imutáveis.
+4. Parar diante de artefato ausente, caso divergente ou fonte conceitual ambígua; não reconstruir por inferência.
+5. Neste recorte, exigir somente o Gestor Estrutural. Não exigir Gestor de Updates ou Gestor de Automações.
+6. Registrar o estado Git anterior à delegação.
 
-- repositório e caso ou recorte;
-- referência imutável, path e conteúdo integral do plano-base v1;
-- referência imutável, path e conteúdo integral do plano-base v2;
-- plano conceitual aplicável, com path e conteúdo, ou declaração explícita de que não existe;
-- decisões humanas ou debate do caso que tenham sido registrados como fonte do plano, quando existirem;
-- parecer completo de cada especialista incluído na consolidação;
-- matriz de consolidação produzida pelo orquestrador.
+## Validar a matriz
 
-Neste primeiro recorte, exigir somente o parecer do Gestor Estrutural. Não exigir Gestor de Updates nem Gestor de Automações.
+Exigir uma linha por achado com:
 
-Se v1 e v2 estiverem no mesmo path, diferenciá-las por commits, head SHAs ou outras referências imutáveis. Não comparar duas leituras do mesmo branch tip como se fossem versões diferentes.
+- especialista;
+- ID estável;
+- achado fiel ou referência inequívoca;
+- classificação original;
+- tratamento: `incorporado`, `não incorporado — justificado`, `requer decisão humana` ou `requer nova avaliação especializada`;
+- seção ou trecho exato na v2, ou `N/A` justificável;
+- evidência ou justificativa.
 
-Se faltar entrada obrigatória, parar e pedir exatamente o artefato ausente. Não reconstruir parecer, matriz, decisão humana ou versão histórica por inferência.
+Matriz incompleta ou sem correspondência verificável impede o handoff.
 
-## Preparação das fontes
+## Passagem 1
 
-1. Confirmar worktree, branch, repositório e estado Git atual.
-2. Resolver as referências da v1 e da v2 sem trocar a branch da worktree de orquestração.
-3. Quando uma versão estiver em PR ou commit, obter o arquivo pelo SHA correspondente, nunca pela versão local ou pela `main` por conveniência.
-4. Confirmar que v1 e v2 pertencem ao mesmo caso e identificar divergências de path ou recorte.
-5. Identificar a seção competente de `docs/roadmap.md`, os casos adjacentes relevantes e as fontes técnicas necessárias ao recorte.
-6. Tratar o plano conceitual como `N/A` somente quando sua inexistência tiver sido declarada ou confirmada. Não escolher um documento conceitual apenas por semelhança.
-7. Ler `docs/analista.md` e validar a matriz conforme o contrato definido nesse documento.
-8. Registrar o estado Git anterior à delegação.
+1. Iniciar exatamente um subagent `analista` com `fork_turns=none`, quando disponível, no modo `passagem_independente`.
+2. Entregar apenas v1, v2, plano conceitual ou `N/A`, decisões registradas, caso, roadmap, casos adjacentes e fontes técnicas.
+3. Não entregar, citar ou expor pareceres e matriz por prompt, histórico ou anexos.
+4. Preservar integralmente a resposta. Se contaminada, descartá-la e reiniciar uma única instância limpa.
 
-## Passagem 1 — avaliação independente
+## Passagem 2
 
-1. Iniciar exatamente um subagent usando o custom agent `analista`, sem herdar turnos do task principal (`fork_turns=none`, quando esse controle estiver disponível).
-2. Informar que o modo é `passagem_independente`.
-3. Entregar somente:
-   - metadados e conteúdo integral da v1;
-   - metadados e conteúdo integral da v2;
-   - plano conceitual ou `N/A`;
-   - decisões humanas registradas aplicáveis;
-   - caso, seção do roadmap, casos adjacentes e fontes técnicas necessárias;
-   - pedido de avaliação do plano completo;
-   - proibição de editar ou implementar.
-4. Não entregar, citar, resumir nem deixar acessíveis por prompt, turnos herdados ou anexos da primeira passagem os pareceres dos especialistas ou a matriz de consolidação.
-5. Aguardar a resposta do Analista e preservar integralmente o resultado como `Passagem 1`.
-6. Se o agente informar que recebeu parecer ou matriz antes de concluir, classificar a passagem como contaminada e reiniciar com uma nova instância sem esses artefatos.
+1. Continuar no mesmo thread no modo `auditoria_consolidacao`.
+2. Entregar pareceres integrais e matriz, sem reescrever achados.
+3. Exigir auditoria linha a linha contra os pareceres e a v2, preservando a Passagem 1.
+4. Aguardar a conclusão formal definida no contrato runtime de `.codex/agents/analista.toml`.
 
-## Passagem 2 — auditoria da consolidação
+## Devolver
 
-1. Continuar no mesmo thread do subagent que concluiu a Passagem 1; não iniciar outro Analista.
-2. Informar que o modo agora é `auditoria_consolidacao`.
-3. Entregar o parecer estrutural completo e a matriz de consolidação sem reescrever ou resumir seus achados.
-4. Exigir a auditoria de cada linha da matriz contra o parecer e contra a solução efetivamente registrada na v2.
-5. Proibir a alteração retroativa da Passagem 1. Novos achados devem aparecer separadamente como resultado da auditoria.
-6. Exigir uma das conclusões formais previstas em `docs/analista.md`.
-7. Aguardar a conclusão final do mesmo subagent.
+Apresentar sem reescrever Passagem 1, Passagem 2, conclusão, correções e eventuais rodadas especializadas ou decisões humanas. Acrescentar apenas versões avaliadas, pareceres auditados, agente acionado e estado Git final.
 
-## Devolução ao task principal
+Conferir o estado Git. Se faltar passagem ou conclusão, devolver o conteúdo e marcar o handoff como incompleto; não completar o parecer.
 
-Apresentar sem reescrever:
+## Revisar correções
 
-1. a Passagem 1 completa;
-2. a Passagem 2 completa;
-3. a conclusão final do Analista;
-4. as correções obrigatórias e seus alvos na v2;
-5. os pontos que exigem nova rodada especializada ou decisão humana;
-6. um resumo operacional informando agente acionado, versões avaliadas, pareceres auditados e estado Git final.
-
-Conferir novamente o estado Git e distinguir alterações preexistentes de qualquer mudança ocorrida durante a delegação.
-
-Se a saída obrigatória ou a conclusão formal estiver ausente, apresentar o resultado recebido e classificar o handoff como incompleto. Não completar o parecer em nome do Analista.
-
-## Revisão de correções
-
-Quando o orquestrador corrigir a v2:
-
-1. usar o modo `revisao_delta` no mesmo Analista quando o thread ainda estiver disponível;
-2. entregar o diff ou as versões anterior e corrigida, além da lista de correções solicitadas;
-3. exigir nova rodada do especialista competente antes do Analista quando a correção alterar materialmente uma conclusão especializada;
-4. permitir o gate de merge somente após a conclusão `aprovado para merge do plano-base v2`.
+Usar `revisao_delta` no mesmo Analista, entregando versões ou diff e correções solicitadas. Retornar ao especialista somente diante de questão material nova ou conclusão especializada alterada. Liberar o gate apenas após `aprovado para merge do plano-base v2`.
 
 ## Limites
 
-- Não editar v1, v2, matriz ou pareceres.
-- Não criar commits, branches ou PRs.
-- Não consolidar a v2 em nome do orquestrador.
-- Não refazer a avaliação especializada.
-- Não acionar Gestor de Updates ou Gestor de Automações neste primeiro recorte.
-- Não avaliar implementação ou PR de código nesta etapa.
-- Não autorizar merge quando houver correção obrigatória, nova rodada especializada ou decisão humana pendente.
+Não editar artefatos, criar branch/commit/PR, consolidar v2, refazer especialidade, acionar outros especialistas, avaliar implementação ou autorizar merge com pendência.

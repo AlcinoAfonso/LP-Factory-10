@@ -20,9 +20,8 @@ Não exigir do humano nomes de agentes, paths, branches, matriz ou etapas intern
 Antes de executar:
 
 1. Ler `docs/orquestracao-plano-base.md`.
-2. Ler `docs/analista.md`.
-3. Ler e seguir `.agents/skills/lp-factory-avaliar-plano-estrutura/SKILL.md` na delegação estrutural.
-4. Ler e seguir `.agents/skills/lp-factory-avaliar-plano-analista/SKILL.md` no gate do Analista.
+2. Ler e seguir `.agents/skills/lp-factory-avaliar-plano-estrutura/SKILL.md` na delegação estrutural.
+3. Ler e seguir `.agents/skills/lp-factory-avaliar-plano-analista/SKILL.md` no gate do Analista.
 
 Não copiar nem reinterpretar os contratos canônicos desses arquivos.
 
@@ -80,7 +79,7 @@ Não acionar Gestor de Updates nem Gestor de Automações neste recorte.
 1. Editar somente o plano correspondente dentro da worktree de automação.
 2. Preservar objetivo, decisões válidas e limites da v1; incorporar literalmente ou de forma inequivocamente equivalente os patches estruturais e somente tratamentos sustentados pelo parecer e pelas fontes competentes.
 3. Não implementar fases nem ampliar silenciosamente o escopo.
-4. Preparar uma matriz com uma linha por achado, usando o contrato de `docs/analista.md`.
+4. Preparar uma matriz com uma linha por achado, usando o contrato da skill `lp-factory-avaliar-plano-analista`.
 5. Manter a matriz fora do alcance do Analista até ele concluir a Passagem 1:
    - não incluí-la no prompt ou nos turnos herdados;
    - não gravá-la na worktree antes da conclusão independente;
