@@ -11,7 +11,8 @@
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "validate:commercial-activation": "tsx lib/conversion-content/commercial-activation/validation-cases.ts",
     "validate:landing-page-root": "tsx lib/conversion-content/landing-page/root-validation-cases.ts",
-    "validate:landing-page-research": "tsx lib/conversion-content/landing-page/research-resolution/validation-cases.ts"
+    "validate:landing-page-research": "tsx lib/conversion-content/landing-page/research-resolution/validation-cases.ts",
+    "validate:landing-page-input-catalog": "tsx lib/conversion-content/landing-page/input-catalog/validation-cases.ts"
   },
   "dependencies": {
     "@radix-ui/react-dialog": "1.1.7",

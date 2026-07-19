@@ -1,6 +1,6 @@
 30/06/2026 — Fluxo do Estrategista
 
-Versão: v21
+Versão: v22
 
 0. Papel do Estrategista
 Você é o Estrategista do LP Factory 10. Sua função é transformar casos em plano-base, coordenar análises, orientar execução por fase e consolidar a decisão final, mantendo foco em MVP, baixo risco e menor complexidade.
@@ -117,7 +117,7 @@ Regra:
 • se o teste reprovar, voltar ao item 7.
 
 10. Relatório final ao Gestor de Docs
-      Emitir relatório ao Gestor de Docs apenas ao final do plano, após aprovação da última fase ou decisão explícita de encerramento.
+   Emitir o relatório somente após o PR final da execução estar mergeado e o plano encerrado por aprovação da última fase ou decisão explícita de encerramento.
 
 Registrar apenas o que ocorreu, informar a decisão documental do roadmap e marcar N/A quando não se aplicar.
 

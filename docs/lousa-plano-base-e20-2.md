@@ -3,7 +3,7 @@
 Fontes: chat, `README.md`, `AGENTS.md`, `docs/prompt-estrategista.md`, `docs/template-roadmap.md`, `docs/template-briefing-codex.md`, `docs/prompt-executor.md`, `docs/roadmap.md`, `docs/base-tecnica.md`, `docs/schema.md`, `docs/lp-planejamento.md`, `docs/lousa-plano-base-e10-8.md`, `docs/supa-up.md`, `docs/prod-up.md`, contratos atuais de planos, contas, taxons e landing pages, `Pesquisa bruta para corretor de imóveis de médio padrão.pdf`, `Projeto Piloto Imobiliário.pdf`, avaliações do Analista, do Gestor Estrutural e do Gestor de Updates e decisões humanas de 14/07/2026.
 
 - Versão: v2.
-- Status: plano-base v2 consolidado no PR #573; merge humano pendente; Executor não autorizado.
+- Status: plano-base v2 mergeado no PR #573; PR #576 mergeado; E20.2 concluída e encerrada, sem bloqueios e sem nova execução material pendente.
 - Recorte previsto para roadmap: `20.2 — Catálogo de entradas por taxon`.
 - Path canônico: `docs/lousa-plano-base-e20-2.md`.
 
@@ -26,7 +26,7 @@ Fontes: chat, `README.md`, `AGENTS.md`, `docs/prompt-estrategista.md`, `docs/tem
 - Os planos comerciais confirmados são `starter`, `lite`, `pro` e `ultra`.
 - Não existe fonte aprovada que determine campos diferentes entre os quatro planos na v1 do catálogo.
 - Não foi demonstrada necessidade de tabela, campo, view, RPC, migration, rota, UI, API, configuração dinâmica ou persistência nova.
-- A E20 ainda não está materializada em `docs/roadmap.md`; `docs/lp-planejamento.md` é a decisão conceitual obrigatória deste recorte.
+- A E20 está materializada em `docs/roadmap.md` e a E20.2 está registrada como concluída; `docs/lp-planejamento.md` permanece como decisão conceitual obrigatória deste recorte.
 
 ### 1.3. Função das fontes empíricas
 
@@ -214,7 +214,7 @@ Validações-base:
 
 - `string`:
   - texto normalizado, sem apenas espaços e com pelo menos um caractere;
-  - sem validação adicional quando o campo declarar `type_only`.
+  - usa `type_only` quando não houver validação adicional.
 - `phone`:
   - valor canônico em formato E.164, com `+` e de 8 a 15 dígitos;
   - não aceitar texto livre, ramal ou URL.
@@ -228,9 +228,11 @@ Validações-base:
   - valor pertencente ao conjunto fechado declarado pelo campo.
 - `string_list`:
   - lista de textos não vazios, normalizados e sem duplicidade após comparação case-insensitive;
-  - quando não houver limites adicionais, declarar `type_only`.
+  - sempre usa validação `kind: string_list`;
+  - ausência de limites adicionais exige ausência de `allowed_values`, `min_items` e `max_items`.
 - `boolean`:
-  - somente `true` ou `false`.
+  - somente `true` ou `false`;
+  - usa `type_only`.
 - `number_range`:
   - limite mínimo e máximo finitos e não negativos;
   - mínimo menor ou igual ao máximo;
@@ -248,7 +250,9 @@ Condições v1:
 - o valor comparado deve ser compatível com o tipo do campo referenciado;
 - não haverá expressão livre, código executável, árvore arbitrária ou engine de regras;
 - condição não pode referenciar o próprio campo;
-- referências circulares, ausentes ou incompatíveis bloqueiam a resolução.
+- referências circulares, ausentes ou incompatíveis bloqueiam a resolução;
+- `allowed_plans` do campo condicionado deve ser subconjunto de `allowed_plans` do campo referenciado;
+- após o filtro pelo plano solicitado, as condições dos campos efetivos são validadas novamente e qualquer referência removida bloqueia a resolução.
 
 ### 2.5. Especialização entre camadas
 
@@ -350,6 +354,8 @@ O valor futuro se vinculará conceitualmente a:
 Limites:
 
 - a E20.2 não define tabela, coluna, JSON persistido, rota, action ou formulário;
+- o resolver retorna todos os campos permitidos pelo plano e preserva `required_when` e `applicable_when` sem receber nem avaliar valores operacionais;
+- aplicabilidade operacional e completude dos valores pertencem à E19.4;
 - a E19.4 decidirá a persistência operacional;
 - a E19.4 deverá preservar no snapshot a versão do catálogo e os valores efetivamente usados;
 - todos os campos v1 usam `include_if_used`;
@@ -391,7 +397,7 @@ Limites:
   - usam snapshot `include_if_used`;
   - possuem consumidor futuro E19.4;
   - não definem estrutura, copy ou composição.
-- Quando a validação declarar `type_only`, nenhuma regra adicional além da validação-base do tipo pode ser inventada.
+- `type_only` é permitido somente para `string` e `boolean`; `string_list` sempre declara `kind: string_list` e omite `allowed_values`, `min_items` e `max_items` quando não houver restrições adicionais.
 - As evidências abaixo são suficientes para implementação do registry; os PDFs permanecem fontes empíricas externas, não dependências de runtime.
 
 #### 2.10.2. Camada universal
@@ -683,12 +689,12 @@ O snippet não pode:
 - especialização textual, regex ou formato customizado: falhar;
 - referência de condição ausente ou incompatível: falhar;
 - condição circular: falhar;
-- cada destino de conversão deve aparecer somente no canal correspondente;
-- canal `form` exige `privacy_policy_url`;
-- `paid_search_keyword_map` ausente com busca paga: aceitar;
-- mapa presente sem busca paga: falhar;
-- mapa inválido: falhar;
-- mapa válido com busca paga: resolver;
+- planos do campo condicionado fora dos planos do campo referenciado: falhar;
+- após o filtro por plano, condição restante apontando para campo removido: falhar;
+- todos os destinos de conversão permanecem no catálogo com suas condições declarativas;
+- `privacy_policy_url` permanece no catálogo com condição declarativa de `form`;
+- `paid_search_keyword_map` permanece opcional com condição declarativa de `paid_search`;
+- avaliação concreta das condições de canal e origem de tráfego pertence à E19.4;
 - catálogo imobiliário nos quatro planos: resultado funcionalmente equivalente;
 - taxon de médio padrão: ausência de camada própria e herança integral;
 - saída: sem valores operacionais, entitlement ou snapshot;
@@ -698,7 +704,7 @@ O snippet não pode:
 
 ### 3.1. E20.2.3–E20.2.6 — Contrato, catálogo imobiliário v1 e resolver repo-only
 
-- Status: planejada; bloqueada até merge humano deste plano-base v2.
+- Status: PR #576 mergeado; implementação concluída e fase encerrada após correção aprovada.
 - Automação: não.
 - Fontes obrigatórias de execução:
   - `README.md`;
@@ -724,7 +730,7 @@ O snippet não pode:
   - exportar namespace e adicionar script;
   - executar `npm ci`, `npm run check` e `npm run validate:landing-page-input-catalog`;
   - registrar neste plano a evidência, decisão e próxima ação da fase.
-- Artefatos previstos:
+- Artefatos implementados:
   - criar `lib/conversion-content/landing-page/input-catalog/contracts.ts`;
   - criar `lib/conversion-content/landing-page/input-catalog/registry.ts`;
   - criar `lib/conversion-content/landing-page/input-catalog/schema.ts`;
@@ -735,6 +741,19 @@ O snippet não pode:
   - ajustar `lib/conversion-content/index.ts`;
   - ajustar `package.json`;
   - ajustar somente este plano-base para registrar execução.
+- Evidências da execução em 14/07/2026:
+  - inspeção read-only no projeto Supabase `LP-Factory-10` confirmou a cadeia ativa `imobiliario` (`segment`) → `corretor-imoveis` (`niche`) → `corretor-de-imoveis-de-medio-padrao` (`ultra_niche`), com relações pai-filho coerentes;
+  - `supabase/snippets/e20_2_taxon_chain_verify.sql` foi criado e executado sem escrita;
+  - registry v1 implementado com 19 campos efetivos, sem camada própria para o ultranicho de médio padrão;
+  - correção do PR #576 removeu contexto operacional do resolver, preservou as condições declarativas na saída completa e endureceu identidade de origem e precedência das especializações;
+  - `npm ci`: aprovado; o audit da árvore instalada reportou 13 vulnerabilidades preexistentes, sem mudança de dependências;
+  - `npm run check`: aprovado, com 24 warnings preexistentes e nenhum erro;
+  - `npm run validate:landing-page-input-catalog`: aprovado em 32 casos executáveis;
+  - `git diff --check`: aprovado.
+- Decisão final da fase: encerrar.
+- Bloqueios: nenhum.
+- Próxima ação real: iniciar o planejamento da E20.3.
+- Nova execução material da E20.2: não prevista.
 - Critérios de aceite:
   - snippet confirma a cadeia real sem escrita;
   - matriz completa aprovada;
@@ -751,9 +770,9 @@ O snippet não pode:
   - nenhuma pesquisa da E10 é copiada;
   - nenhum valor ou snapshot é persistido;
   - nenhuma tabela, migration, rota, UI, API, adapter, Stripe, E20.3 ou E19.4 é criada ou alterada;
-  - diff limitado aos artefatos previstos e a este plano.
-- Próxima ação após merge humano:
-  - instruir o Executor somente para esta fase.
+  - diff limitado aos artefatos implementados e a este plano.
+- Próxima ação após encerramento:
+  - iniciar planejamento da E20.3 como novo recorte, sem reabrir execução material da E20.2.
 
 ## 4. Escopo negativo e critérios de parada
 
