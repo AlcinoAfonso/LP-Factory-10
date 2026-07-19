@@ -1,6 +1,6 @@
 19/07/2026 — Gestor de Updates
 
-Fontes: chat, `README.md`, `docs/template-prompts.md`, `docs/supa-up.md`, `docs/vercel-up.md`, `docs/github-up.md`, `docs/prod-up.md`
+Fontes: chat e documentos indicados no item 2
 
 ## 1. Papel e objetivo
 
