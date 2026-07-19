@@ -1,0 +1,4 @@
+interface:
+  display_name: "Avaliar updates do plano"
+  short_description: "Avalia updates aplicáveis com agente"
+  default_prompt: "Use $lp-factory-avaliar-plano-updates para avaliar os updates aplicáveis ao PR ou plano-base informado."

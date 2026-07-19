@@ -1,8 +1,8 @@
 # Orquestração de planos-base no Codex
 
 Data: 19/07/2026
-Versão: v0.5
-Status: fluxo integrado pausado; contratos do Gestor Estrutural e do Analista otimizados e reteste pendente.
+Versão: v0.6
+Status: Gestor de Updates incluído no fluxo integrado; reteste pendente.
 
 ## 1. Objetivo e função deste documento
 
@@ -23,7 +23,7 @@ O resultado esperado é reduzir coordenação manual e cópia de contexto entre 
 
 Este documento será a fonte humana do desenho aprovado. A skill executará o workflow definido aqui; cada custom agent aplicará seu contrato runtime; e o task principal permanecerá responsável pela coordenação, pelas alterações no repositório e pela entrega ao humano.
 
-O teste estrutural isolado da seção 2 foi validado. O primeiro teste integrado revelou que `requer patch estrutural` ainda permitia uma escolha técnica pelo orquestrador; por isso o fluxo permanece pausado até o reteste do contrato v0.4. O Analista ainda não foi testado em execução real.
+O teste estrutural isolado da seção 2 foi validado. Os contratos do Gestor Estrutural e do Analista foram otimizados após o primeiro teste integrado. O Gestor de Updates agora integra o fluxo, que permanece pendente de reteste completo.
 
 ## 2. Primeiro passo: teste do Gestor Estrutural
 
@@ -199,7 +199,7 @@ Este passo não inclui:
 
 O terceiro passo reúne os dois testes anteriores em uma única entrada humana. Foi criada a skill `lp-factory-orquestrar-plano`, localizada em `.agents/skills/lp-factory-orquestrar-plano/`.
 
-Ela não cria um novo custom agent. O task comum permanece como orquestrador e executor, enquanto `gestor-estrutural` e `analista` permanecem read-only e aplicam seus contratos existentes.
+Ela não cria um custom agent de orquestração. O task comum permanece como orquestrador e executor, enquanto `gestor-estrutural`, `gestor-updates` e `analista` permanecem read-only e aplicam seus contratos runtime.
 
 ### 4.1 Entrada mínima
 
@@ -226,16 +226,17 @@ No primeiro teste E18.5, o destino esperado é:
 1. Congelar a v1 pelo head SHA e blob do PR informado.
 2. Selecionar e validar a worktree de automação já existente.
 3. Acionar o Gestor Estrutural e preservar o parecer integral.
-4. Aplicar os patches autossuficientes, produzir a v2 e preparar a matriz de consolidação, sem nova rodada estrutural padrão.
-5. Criar referência imutável da v2 e acionar o Analista sem parecer ou matriz.
-6. Depois da Passagem 1, gravar a matriz e entregá-la com o parecer ao mesmo Analista.
-7. Corrigir ou encaminhar pendências conforme a conclusão formal.
-8. Publicar um PR draft empilhado contra a branch da v1 somente após aprovação do Analista.
+4. Acionar o Gestor de Updates sobre a mesma v1 e preservar o parecer integral.
+5. Aplicar os patches autossuficientes dos dois especialistas, produzir a v2 e preparar a matriz de consolidação, sem nova rodada especializada padrão.
+6. Criar referência imutável da v2 e acionar o Analista sem pareceres ou matriz.
+7. Depois da Passagem 1, gravar a matriz e entregá-la com os dois pareceres ao mesmo Analista.
+8. Corrigir ou encaminhar pendências conforme a conclusão formal.
+9. Publicar um PR draft empilhado contra a branch da v1 somente após aprovação do Analista.
 
 A matriz não é gravada antes da Passagem 1. Isso impede que a avaliação independente seja contaminada por um arquivo acessível na própria worktree.
 
 ### 4.4 Limites do primeiro fluxo integrado
 
-Este recorte inclui somente Gestor Estrutural, consolidação pelo orquestrador e gate do Analista. O Gestor de Updates está fora deste ajuste enquanto seu contrato é redesenhado em trabalho próprio. Gestor de Automações, execução das fases e revisão do PR de implementação continuam fora do fluxo até testes próprios.
+Este recorte inclui Gestor Estrutural, Gestor de Updates, consolidação pelo orquestrador e gate do Analista. O Gestor de Updates consulta obrigatoriamente os quatro catálogos vigentes, mas não os mantém nem pesquisa novos updates fora deles. Gestor de Automações, execução das fases e revisão do PR de implementação continuam fora do fluxo até testes próprios.
 
-O teste será considerado válido quando uma instrução humana curta produzir uma v2 rastreável, duas passagens não contaminadas do Analista e um PR filho comparável, sem alteração da v1 e sem edição feita pelos custom agents.
+O teste será considerado válido quando uma instrução humana curta produzir dois pareceres especializados rastreáveis, uma v2 rastreável, duas passagens não contaminadas do Analista e um PR filho comparável, sem alteração da v1 e sem edição feita pelos custom agents.
