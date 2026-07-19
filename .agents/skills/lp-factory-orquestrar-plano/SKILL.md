@@ -1,6 +1,6 @@
 ---
 name: lp-factory-orquestrar-plano
-description: Orquestrar a produção e o gate de um plano-base v2 do LP Factory 10 a partir de um PR de plano-base v1, usando uma worktree de automação já preparada, o Gestor Estrutural e o Analista. Usar quando o humano informar o número ou a URL do PR e pedir para executar, orquestrar ou automatizar a revisão do plano.
+description: Orquestrar a produção e o gate de um plano-base v2 do LP Factory 10 a partir de um PR de plano-base v1, usando uma worktree de automação já preparada, o Gestor Estrutural, o Gestor de Updates e o Analista. Usar quando o humano informar o número ou a URL do PR e pedir para executar, orquestrar ou automatizar a revisão do plano.
 ---
 
 # Orquestrar plano-base v2
@@ -20,8 +20,8 @@ Não exigir do humano nomes de agentes, paths, branches, matriz ou etapas intern
 Antes de executar:
 
 1. Ler `docs/orquestracao-plano-base.md`.
-2. Ler `docs/analista.md`.
-3. Ler e seguir `.agents/skills/lp-factory-avaliar-plano-estrutura/SKILL.md` na delegação estrutural.
+2. Ler e seguir `.agents/skills/lp-factory-avaliar-plano-estrutura/SKILL.md` na delegação estrutural.
+3. Ler e seguir `.agents/skills/lp-factory-avaliar-plano-updates/SKILL.md` na avaliação de updates.
 4. Ler e seguir `.agents/skills/lp-factory-avaliar-plano-analista/SKILL.md` no gate do Analista.
 
 Não copiar nem reinterpretar os contratos canônicos desses arquivos.
@@ -63,22 +63,36 @@ Neste primeiro recorte, não criar worktree nem branch automaticamente.
 
 Parar quando faltar uma decisão material que altere produto, escopo ou arquitetura.
 
-## 4. Obter o parecer estrutural
+## 4. Obter os pareceres especializados
+
+### 4.1 Gestor Estrutural
 
 1. Executar o workflow de `lp-factory-avaliar-plano-estrutura` para a v1 congelada.
 2. Acionar exatamente um custom agent `gestor-estrutural` e preservar integralmente seu parecer.
 3. Não realizar avaliação estrutural paralela no task principal.
-4. Parar antes da v2 se o handoff estiver incompleto ou se a conclusão for `requer investigação` ou `rejeitado por conflito com fonte competente`.
-5. Permitir consolidação quando a conclusão for `aprovado`, `aprovado com condicionantes` ou `requer patch estrutural`, mantendo condicionantes e patches rastreáveis.
+4. Parar antes da v2 se o handoff estiver incompleto ou se a conclusão for `requer investigação`, `bloqueado por decisão humana` ou `rejeitado por conflito com fonte competente`.
+5. Em `requer patch estrutural`, confirmar que todo achado bloqueante possui patch autossuficiente. Patch que ainda exija escolha técnica torna o handoff incompleto; o orquestrador não completa a análise.
+6. Produzir a v2 quando a conclusão for `aprovado`, `aprovado com condicionantes` ou `requer patch estrutural`, mantendo cada condicionante e patch rastreável.
+7. Não retornar ao Gestor Estrutural durante a consolidação. O Analista audita a incorporação. Nova rodada estrutural só é cabível se a v2 introduzir questão material não coberta pelo parecer.
 
-Não acionar Gestor de Updates nem Gestor de Automações neste recorte.
+### 4.2 Gestor de Updates
+
+1. Executar o workflow de `lp-factory-avaliar-plano-updates` para a mesma v1 congelada.
+2. Acionar exatamente um custom agent `gestor-updates` e preservar integralmente seu parecer.
+3. Não realizar avaliação de updates paralela no task principal.
+4. Parar antes da v2 se o handoff estiver incompleto ou se o veredito for `requer investigação` ou `bloqueado por decisão humana`.
+5. Em `updates aplicáveis com patches autossuficientes`, confirmar que todo update aprovado possui patch completo. Patch que ainda exija interpretação ou escolha torna o handoff incompleto.
+6. Produzir a v2 quando o veredito for `nenhum update aplicável` ou `updates aplicáveis com patches autossuficientes`, mantendo cada update e patch rastreável.
+7. Não retornar ao Gestor de Updates durante a consolidação. Nova rodada só é cabível se a v2 introduzir questão material de updates não coberta pelo parecer.
+
+Não acionar Gestor de Automações neste recorte.
 
 ## 5. Produzir a v2 e a matriz
 
 1. Editar somente o plano correspondente dentro da worktree de automação.
-2. Preservar objetivo, decisões válidas e limites da v1; incorporar apenas tratamentos sustentados pelo parecer e pelas fontes competentes.
+2. Preservar objetivo, decisões válidas e limites da v1; incorporar literalmente ou de forma inequivocamente equivalente os patches estruturais e de updates, usando somente tratamentos sustentados pelos pareceres e pelas fontes competentes.
 3. Não implementar fases nem ampliar silenciosamente o escopo.
-4. Preparar uma matriz com uma linha por achado, usando o contrato de `docs/analista.md`.
+4. Preparar uma matriz com uma linha por achado estrutural e por update preliminarmente elegível, usando o contrato da skill `lp-factory-avaliar-plano-analista`.
 5. Manter a matriz fora do alcance do Analista até ele concluir a Passagem 1:
    - não incluí-la no prompt ou nos turnos herdados;
    - não gravá-la na worktree antes da conclusão independente;
@@ -88,20 +102,20 @@ Não acionar Gestor de Updates nem Gestor de Automações neste recorte.
 
 ## 6. Executar o gate do Analista
 
-1. Executar a Passagem 1 de `lp-factory-avaliar-plano-analista` com v1, v2, plano conceitual ou `N/A`, decisões registradas e fontes do caso, sem parecer estrutural ou matriz.
+1. Executar a Passagem 1 de `lp-factory-avaliar-plano-analista` com v1, v2, plano conceitual ou `N/A`, decisões registradas e fontes do caso, sem pareceres especializados ou matriz.
 2. Preservar integralmente a resposta independente.
 3. Depois da Passagem 1, gravar a matriz em `docs/matriz-consolidacao-<caso>.md`, validar e criar novo checkpoint.
-4. Continuar no mesmo Analista e entregar o parecer estrutural completo e a matriz para a Passagem 2.
+4. Continuar no mesmo Analista e entregar os pareceres completos do Gestor Estrutural e do Gestor de Updates, além da matriz, para a Passagem 2.
 5. Preservar integralmente a auditoria e a conclusão formal.
 
 ## 7. Tratar a conclusão
 
 - `aprovado para merge do plano-base v2`: avançar para publicação.
 - `aprovado com correções obrigatórias`: corrigir a v2 e a matriz, criar nova referência imutável e solicitar `revisao_delta` ao mesmo Analista.
-- `requer nova rodada especializada`: devolver o delta ao Gestor Estrutural antes de retornar ao Analista.
+- `requer nova rodada especializada`: retornar somente ao especialista do domínio indicado quando o Analista identificar questão material nova ou mudança fora do parecer original; nos demais casos, parar e apontar a incompatibilidade da conclusão.
 - `bloqueado por decisão humana`: parar e apresentar somente a decisão necessária, sem escolher pelo humano.
 
-Repetir o ciclo somente enquanto houver correções objetivas dentro do escopo. Não converter uma decisão material ausente em correção editorial.
+Repetir o ciclo somente enquanto houver correções objetivas dentro do escopo. Não usar nova rodada especializada para revalidar patches já cobertos nem converter decisão material ausente em correção editorial.
 
 ## 8. Publicar para decisão humana
 
@@ -121,6 +135,7 @@ Apresentar:
 - v1 avaliada e sua referência imutável;
 - worktree e branch de automação usadas;
 - conclusão integral do Gestor Estrutural;
+- parecer integral do Gestor de Updates;
 - Passagens 1 e 2 do Analista;
 - arquivos alterados;
 - commits e validações;

@@ -1,8 +1,8 @@
 # Orquestração de planos-base no Codex
 
-Data: 18/07/2026
-Versão: v0.3
-Status: primeiro fluxo integrado implementado e pendente de teste real com Gestor Estrutural e Analista.
+Data: 19/07/2026
+Versão: v0.6
+Status: Gestor de Updates incluído no fluxo integrado; reteste pendente.
 
 ## 1. Objetivo e função deste documento
 
@@ -21,9 +21,9 @@ Seu objetivo é estabelecer, antes da implementação, um contrato humano verifi
 
 O resultado esperado é reduzir coordenação manual e cópia de contexto entre tarefas, sem transferir ao Codex decisões que pertencem ao humano e sem permitir que agentes especializados alterem o repositório.
 
-Este documento será a fonte humana do desenho aprovado. A futura skill executará o workflow definido aqui; os custom agents aplicarão os contratos de seus documentos correspondentes; e o task principal permanecerá responsável pela coordenação, pelas alterações no repositório e pela entrega ao humano.
+Este documento será a fonte humana do desenho aprovado. A skill executará o workflow definido aqui; cada custom agent aplicará seu contrato runtime; e o task principal permanecerá responsável pela coordenação, pelas alterações no repositório e pela entrega ao humano.
 
-Enquanto o status permanecer `planejamento em construção`, o workflow completo não deve ser tratado como capacidade implementada ou fluxo operacional adotado. O teste estrutural da seção 2 foi validado em execução real; o recorte do Analista descrito na seção 3 permanece experimental até seu teste real.
+O teste estrutural isolado da seção 2 foi validado. Os contratos do Gestor Estrutural e do Analista foram otimizados após o primeiro teste integrado. O Gestor de Updates agora integra o fluxo, que permanece pendente de reteste completo.
 
 ## 2. Primeiro passo: teste do Gestor Estrutural
 
@@ -56,7 +56,7 @@ O custom agent definirá o papel especializado. A skill definirá o disparo, o c
 3. A skill identifica um único plano-base ou pede seu path quando a identificação for ambígua.
 4. A skill obtém o conteúdo integral do plano no head do PR e confirma o caso ou recorte declarado no arquivo.
 5. O task principal inicia o custom agent `gestor-estrutural` e entrega os metadados do PR, o path e o conteúdo do plano.
-6. O custom agent lê `docs/gestor-estrutural.md` antes de avaliar o plano.
+6. O custom agent aplica o contrato runtime de `.codex/agents/gestor-estrutural.toml`.
 7. O custom agent consulta somente as fontes competentes necessárias ao escopo da avaliação.
 8. O custom agent avalia o plano em modo read-only e devolve o parecer ao task principal.
 9. O task principal apresenta o parecer completo ao humano e confirma se houve alteração no repositório.
@@ -66,12 +66,13 @@ O custom agent definirá o papel especializado. A skill definirá o disparo, o c
 
 O custom agent deverá:
 
-- usar `docs/gestor-estrutural.md` como contrato obrigatório de sua especialidade;
+- usar `.codex/agents/gestor-estrutural.toml` como contrato runtime único de sua especialidade;
 - confirmar no repositório os paths e artefatos relevantes;
 - permanecer limitado a estrutura, boundaries, reaproveitamento, adapters, acoplamento, regressão, impacto em repositório ou banco e aderência às fontes competentes;
 - informar exatamente qual fonte falta quando não houver evidência suficiente;
 - não editar arquivos, criar commits, publicar branches ou ampliar o escopo;
-- devolver uma conclusão compatível com as classificações previstas em `docs/gestor-estrutural.md`.
+- distinguir patch autossuficiente, investigação factual e decisão humana material;
+- entregar, em `requer patch estrutural`, o tratamento exato que o orquestrador aplicará sem nova escolha técnica.
 
 ### 2.5 Saída esperada
 
@@ -82,7 +83,8 @@ O parecer devolvido ao task principal deverá conter, no mínimo:
 - conclusão estrutural;
 - achados objetivos;
 - condicionantes ou investigações necessárias;
-- patches estruturais recomendados, quando aplicáveis, sem implementação;
+- patches estruturais autossuficientes, quando aplicáveis, sem implementação;
+- decisão humana exata e opções válidas, quando as fontes não determinarem uma única solução;
 - riscos ou conflitos com fontes competentes;
 - próximo passo mínimo e seguro.
 
@@ -94,7 +96,7 @@ O teste será considerado bem-sucedido quando:
 
 - a skill acionar o custom agent correto;
 - o agente avaliar o arquivo indicado, sem confundir caso, branch ou path;
-- o parecer refletir os critérios de `docs/gestor-estrutural.md`;
+- o parecer cumprir o contrato runtime do custom agent;
 - nenhuma alteração for feita no repositório pelo custom agent;
 - o parecer completo for visível no task principal;
 - o resultado for suficientemente claro para ser usado, em uma etapa futura, pelo Analista;
@@ -132,9 +134,8 @@ O Analista não consolida nem edita o plano e não substitui o especialista.
 
 ### 3.2 Componentes implementados
 
-1. `docs/analista.md`, contrato canônico deste primeiro recorte;
-2. `.codex/agents/analista.toml`, custom agent read-only configurado com GPT-5.6 Sol e inteligência alta;
-3. `.agents/skills/lp-factory-avaliar-plano-analista/`, skill de preparação, delegação sequencial e devolução do parecer.
+1. `.codex/agents/analista.toml`, contrato runtime único do custom agent read-only configurado com GPT-5.6 Sol e inteligência alta;
+2. `.agents/skills/lp-factory-avaliar-plano-analista/`, skill de preparação, validação da matriz, delegação sequencial e devolução do parecer.
 
 ### 3.3 Entradas do teste
 
@@ -145,7 +146,7 @@ O orquestrador deve possuir:
 - plano conceitual, quando existir, ou declaração explícita de `N/A`;
 - decisões humanas registradas aplicáveis;
 - parecer integral do Gestor Estrutural;
-- matriz de consolidação conforme `docs/analista.md`;
+- matriz de consolidação conforme a skill `lp-factory-avaliar-plano-analista`;
 - caso, roadmap, casos adjacentes e fontes técnicas aplicáveis.
 
 ### 3.4 Duas passagens no mesmo Analista
@@ -169,7 +170,7 @@ As conclusões permitidas são:
 - `requer nova rodada especializada`;
 - `bloqueado por decisão humana`.
 
-Somente a primeira libera o pedido de merge. Nas demais, o orquestrador corrige ou encaminha a pendência e devolve o delta ao Analista. Uma correção que altere materialmente a conclusão estrutural retorna primeiro ao Gestor Estrutural.
+Somente a primeira libera o pedido de merge. Nas demais, o orquestrador corrige ou encaminha a pendência e devolve o delta ao Analista. Não há retorno padrão ao Gestor Estrutural: ele só é reacionado se a v2 introduzir questão material não coberta pelo parecer original ou se o Analista identificar explicitamente essa novidade.
 
 ### 3.6 Critérios de sucesso
 
@@ -191,14 +192,14 @@ Este passo não inclui:
 - Gestor de Automações;
 - implementação das fases;
 - revisão do PR de implementação;
-- alteração do fluxo operacional vigente de `docs/prompt-estrategista.md` antes da aprovação do workflow completo;
+- alteração dos contratos dos demais especialistas antes de seus trabalhos próprios;
 - merge automático ou decisão humana delegada ao Codex.
 
 ## 4. Terceiro passo: skill de orquestração integrada
 
 O terceiro passo reúne os dois testes anteriores em uma única entrada humana. Foi criada a skill `lp-factory-orquestrar-plano`, localizada em `.agents/skills/lp-factory-orquestrar-plano/`.
 
-Ela não cria um novo custom agent. O task comum permanece como orquestrador e executor, enquanto `gestor-estrutural` e `analista` permanecem read-only e aplicam seus contratos existentes.
+Ela não cria um custom agent de orquestração. O task comum permanece como orquestrador e executor, enquanto `gestor-estrutural`, `gestor-updates` e `analista` permanecem read-only e aplicam seus contratos runtime.
 
 ### 4.1 Entrada mínima
 
@@ -225,16 +226,17 @@ No primeiro teste E18.5, o destino esperado é:
 1. Congelar a v1 pelo head SHA e blob do PR informado.
 2. Selecionar e validar a worktree de automação já existente.
 3. Acionar o Gestor Estrutural e preservar o parecer integral.
-4. Produzir a v2 e preparar a matriz de consolidação.
-5. Criar referência imutável da v2 e acionar o Analista sem parecer ou matriz.
-6. Depois da Passagem 1, gravar a matriz e entregá-la com o parecer ao mesmo Analista.
-7. Corrigir ou encaminhar pendências conforme a conclusão formal.
-8. Publicar um PR draft empilhado contra a branch da v1 somente após aprovação do Analista.
+4. Acionar o Gestor de Updates sobre a mesma v1 e preservar o parecer integral.
+5. Aplicar os patches autossuficientes dos dois especialistas, produzir a v2 e preparar a matriz de consolidação, sem nova rodada especializada padrão.
+6. Criar referência imutável da v2 e acionar o Analista sem pareceres ou matriz.
+7. Depois da Passagem 1, gravar a matriz e entregá-la com os dois pareceres ao mesmo Analista.
+8. Corrigir ou encaminhar pendências conforme a conclusão formal.
+9. Publicar um PR draft empilhado contra a branch da v1 somente após aprovação do Analista.
 
 A matriz não é gravada antes da Passagem 1. Isso impede que a avaliação independente seja contaminada por um arquivo acessível na própria worktree.
 
 ### 4.4 Limites do primeiro fluxo integrado
 
-Este recorte inclui somente Gestor Estrutural, consolidação pelo orquestrador e gate do Analista. Gestor de Updates, Gestor de Automações, execução das fases e revisão do PR de implementação continuam fora do fluxo até testes próprios.
+Este recorte inclui Gestor Estrutural, Gestor de Updates, consolidação pelo orquestrador e gate do Analista. O Gestor de Updates consulta obrigatoriamente os quatro catálogos vigentes, mas não os mantém nem pesquisa novos updates fora deles. Gestor de Automações, execução das fases e revisão do PR de implementação continuam fora do fluxo até testes próprios.
 
-O teste será considerado válido quando uma instrução humana curta produzir uma v2 rastreável, duas passagens não contaminadas do Analista e um PR filho comparável, sem alteração da v1 e sem edição feita pelos custom agents.
+O teste será considerado válido quando uma instrução humana curta produzir dois pareceres especializados rastreáveis, uma v2 rastreável, duas passagens não contaminadas do Analista e um PR filho comparável, sem alteração da v1 e sem edição feita pelos custom agents.
