@@ -1,0 +1,316 @@
+import type {
+  LandingPageRootLifecycleStatus,
+  LandingPageRootSemanticRoleKey,
+} from "../index";
+
+export const landingPageModuleKeys = [
+  "hero",
+  "trust_bar",
+  "problem_solution",
+  "offer",
+  "process",
+  "technical_assurance",
+  "social_proof",
+  "faq",
+  "final_cta",
+] as const;
+
+export const landingPageVariantFieldContractKeys = [
+  "hero.standard@v1",
+  "trust_bar.standard@v1",
+  "problem_solution.standard@v1",
+  "offer.standard@v1",
+  "process.standard@v1",
+  "technical_assurance.standard@v1",
+  "social_proof.standard@v1",
+  "faq.standard@v1",
+  "faq.accordion@v1",
+  "final_cta.standard@v1",
+] as const;
+
+export const landingPageFieldKinds = [
+  "text",
+  "collection",
+  "action",
+  "image",
+  "technical_reference",
+] as const;
+
+export const landingPageFieldPolicies = [
+  "research_guided",
+  "hybrid",
+  "operational_required",
+  "technical_reference",
+  "not_copy",
+] as const;
+
+export const landingPageFieldSupports = [
+  "when_factual",
+  "when_present",
+] as const;
+
+export const landingPageVariantKeys = landingPageVariantFieldContractKeys;
+
+export const landingPageVariantCapabilities = [
+  "primary_action",
+  "image_asset",
+  "accordion_interaction",
+] as const;
+
+export const landingPageResearchItemKeys = [
+  "positioning_opportunity", "trigger", "desire", "pain", "objection",
+  "proof_type", "belief", "fear", "narrative_arc", "awareness_level",
+  "search_intent",
+] as const;
+
+export const landingPageTextFieldPaths = [
+  "hero.standard.eyebrow", "hero.standard.title", "hero.standard.subtitle", "hero.standard.primaryCta.label", "hero.standard.proofShort",
+  "trust_bar.standard.items[].text",
+  "problem_solution.standard.title", "problem_solution.standard.items[].problem", "problem_solution.standard.items[].solution",
+  "offer.standard.title", "offer.standard.items[].itemTitle", "offer.standard.items[].description",
+  "process.standard.title", "process.standard.steps[].stepTitle", "process.standard.steps[].stepBody",
+  "technical_assurance.standard.title", "technical_assurance.standard.items[].assuranceTitle", "technical_assurance.standard.items[].assuranceBody",
+  "social_proof.standard.title", "social_proof.standard.items[].quote", "social_proof.standard.items[].attribution",
+  "faq.standard.title", "faq.standard.items[].question", "faq.standard.items[].answer",
+  "faq.accordion.title", "faq.accordion.items[].question", "faq.accordion.items[].answer",
+  "final_cta.standard.title", "final_cta.standard.body", "final_cta.standard.primaryCta.label",
+] as const;
+
+export const landingPageFunnelProfileKeys = ["bofu", "mofu", "tofu"] as const;
+export const landingPageCtaModes = ["direct_next_step", "non_coercive_direct", "low_pressure"] as const;
+export const landingPageFunnelTreatmentKeys = [
+  "direct_next_step", "objection_response", "supported_proof", "supported_urgency", "supported_commercial_condition",
+  "supported_price", "supported_deadline", "supported_guarantee", "supported_availability", "coercion", "unsupported_scarcity",
+  "unsupported_promise", "unsupported_credential", "unsupported_result", "education", "problem_solution_relation", "process",
+  "technical_assurance", "faq", "direct_cta", "supported_offer", "invented_price", "invented_urgency", "invented_guarantee",
+  "invented_comparison", "invented_result", "context", "problem_recognition", "desire", "introductory_education",
+  "low_pressure_offer", "low_pressure_cta", "supported_factual_proof", "scarcity", "urgency", "guarantee",
+  "commercial_condition", "result_promise",
+] as const;
+
+export type LandingPageModuleFamily = "landing_page";
+export type LandingPageModuleCatalogVersion = 1;
+export type LandingPageCompatibleRootVersion = 1;
+export type LandingPageModuleKey = (typeof landingPageModuleKeys)[number];
+export type LandingPageModuleVersion = 1;
+export type LandingPageModuleLifecycleStatus = LandingPageRootLifecycleStatus;
+export type LandingPageModulePurpose = "controlled_test";
+export type LandingPageVariantFieldContractKey =
+  (typeof landingPageVariantFieldContractKeys)[number];
+export type LandingPageFieldKind = (typeof landingPageFieldKinds)[number];
+export type LandingPageFieldPolicy =
+  (typeof landingPageFieldPolicies)[number];
+export type LandingPageFieldSupport =
+  (typeof landingPageFieldSupports)[number];
+export type LandingPageVariantKey = (typeof landingPageVariantKeys)[number];
+export type LandingPageVariantName = "standard" | "accordion";
+export type LandingPageVariantVersion = 1;
+export type LandingPageVariantCapability =
+  (typeof landingPageVariantCapabilities)[number];
+export type LandingPageVariantLifecycleStatus = LandingPageRootLifecycleStatus;
+export type LandingPageResearchItemKey = (typeof landingPageResearchItemKeys)[number];
+export type LandingPageTextFieldPath = (typeof landingPageTextFieldPaths)[number];
+export type LandingPageFunnelProfileKey = (typeof landingPageFunnelProfileKeys)[number];
+export type LandingPageCtaMode = (typeof landingPageCtaModes)[number];
+export type LandingPageFunnelTreatmentKey = (typeof landingPageFunnelTreatmentKeys)[number];
+
+export type LandingPageFunnelCopyProfile = Readonly<{
+  profileKey: LandingPageFunnelProfileKey;
+  prioritizedSources: readonly LandingPageResearchItemKey[];
+  permittedTreatments: readonly LandingPageFunnelTreatmentKey[];
+  restrictedTreatments: readonly LandingPageFunnelTreatmentKey[];
+  prohibitedTreatments: readonly LandingPageFunnelTreatmentKey[];
+  ctaMode: LandingPageCtaMode;
+}>;
+
+export type LandingPageFunnelProfileDelta = Readonly<{
+  emphasizeTreatments: readonly LandingPageFunnelTreatmentKey[];
+  restrictTreatments: readonly LandingPageFunnelTreatmentKey[];
+  prohibitTreatments: readonly LandingPageFunnelTreatmentKey[];
+}>;
+
+export type LandingPageCopySourceMap =
+  | Readonly<{
+      sourceMode: "research";
+      researchPath: "endCustomer.researches[].items[]";
+      primaryItemKeys: readonly [LandingPageResearchItemKey, LandingPageResearchItemKey?];
+      auxiliaryItemKey?: LandingPageResearchItemKey;
+    }>
+  | Readonly<{
+      sourceMode: "operational_evidence";
+      evidencePath: string;
+    }>;
+
+export type LandingPageTextRangeRestriction = Readonly<{
+  semanticRole: LandingPageRootSemanticRoleKey;
+  recommended?: Readonly<{ min: number; max: number }>;
+  absoluteMax?: number;
+}>;
+
+export type LandingPageRootSpecializationDelta = Readonly<{
+  textRanges: readonly LandingPageTextRangeRestriction[];
+}>;
+
+export type LandingPageActionCompatibility = Readonly<{
+  supportsPrimaryConversionForm: false;
+}>;
+
+export type LandingPageAccordionAccessibilityContract = Readonly<{
+  baseline: "WCAG 2.2";
+  keyboardOperable: true;
+  exposesExpandedState: true;
+  associatesControlAndRegion: true;
+  preservesFocus: true;
+  initiallyCollapsed: true;
+  singleExpandedItem: true;
+}>;
+
+export type LandingPageFieldCardinality = Readonly<{
+  min: number;
+  max: number;
+}>;
+
+type LandingPageFieldBase = Readonly<{
+  fieldKey: string;
+  path: string;
+  cardinality: LandingPageFieldCardinality;
+  policy: LandingPageFieldPolicy;
+}>;
+
+export type LandingPageTextFieldDefinition = LandingPageFieldBase &
+  Readonly<{
+    fieldKind: "text";
+    semanticRole: LandingPageRootSemanticRoleKey;
+    support?: LandingPageFieldSupport;
+    copySourceMap: LandingPageCopySourceMap;
+  }>;
+
+export type LandingPageTechnicalReferenceFieldDefinition =
+  LandingPageFieldBase &
+    Readonly<{
+      fieldKind: "technical_reference";
+      policy: "technical_reference";
+    }>;
+
+export type LandingPageCollectionItemFieldDefinition =
+  | LandingPageTextFieldDefinition
+  | LandingPageTechnicalReferenceFieldDefinition;
+
+export type LandingPageCollectionFieldDefinition = LandingPageFieldBase &
+  Readonly<{
+    fieldKind: "collection";
+    policy: "not_copy";
+    itemFields: readonly LandingPageCollectionItemFieldDefinition[];
+  }>;
+
+export type LandingPageActionFieldDefinition = LandingPageFieldBase &
+  Readonly<{
+    fieldKind: "action";
+    policy: "not_copy";
+    label: LandingPageTextFieldDefinition;
+    operationalBinding: "primary_conversion_channel";
+  }>;
+
+export type LandingPageImageFieldDefinition = LandingPageFieldBase &
+  Readonly<{
+    fieldKind: "image";
+    policy: "technical_reference";
+    alternativeTextRequiredWhenInformative: true;
+  }>;
+
+export type LandingPageFieldDefinition =
+  | LandingPageTextFieldDefinition
+  | LandingPageCollectionFieldDefinition
+  | LandingPageActionFieldDefinition
+  | LandingPageImageFieldDefinition
+  | LandingPageTechnicalReferenceFieldDefinition;
+
+export type LandingPageVariantFieldContract = Readonly<{
+  fieldContractKey: LandingPageVariantFieldContractKey;
+  fields: readonly LandingPageFieldDefinition[];
+}>;
+
+export type LandingPageVariantDefinition = Readonly<{
+  variantKey: LandingPageVariantKey;
+  variantName: LandingPageVariantName;
+  variantVersion: LandingPageVariantVersion;
+  moduleKey: LandingPageModuleKey;
+  moduleVersion: LandingPageModuleVersion;
+  fieldContractKey: LandingPageVariantFieldContractKey;
+  lifecycleStatus: LandingPageVariantLifecycleStatus;
+  purpose: LandingPageModulePurpose;
+  compatibleRootVersion: LandingPageCompatibleRootVersion;
+  rootDelta: LandingPageRootSpecializationDelta;
+  capabilities: readonly LandingPageVariantCapability[];
+  actionCompatibility?: LandingPageActionCompatibility;
+  accordionAccessibility?: LandingPageAccordionAccessibilityContract;
+}>;
+
+export type LandingPageModuleDefinition = Readonly<{
+  family: LandingPageModuleFamily;
+  moduleKey: LandingPageModuleKey;
+  moduleVersion: LandingPageModuleVersion;
+  lifecycleStatus: LandingPageModuleLifecycleStatus;
+  purpose: LandingPageModulePurpose;
+  compatibleRootVersion: LandingPageCompatibleRootVersion;
+  rootDelta: LandingPageRootSpecializationDelta;
+  funnelProfileDeltas: Readonly<Record<LandingPageFunnelProfileKey, LandingPageFunnelProfileDelta>>;
+  structuralFunction: string;
+  invariants: readonly string[];
+  boundaries: readonly string[];
+}>;
+
+export type LandingPageModuleCatalogRegistry = Readonly<{
+  family: LandingPageModuleFamily;
+  moduleCatalogVersion: LandingPageModuleCatalogVersion;
+  compatibleRootVersions: readonly [LandingPageCompatibleRootVersion];
+  copySourceMaps: Readonly<Record<LandingPageTextFieldPath, LandingPageCopySourceMap>>;
+  funnelCopyProfiles: Readonly<Record<LandingPageFunnelProfileKey, LandingPageFunnelCopyProfile>>;
+  modules: Readonly<
+    Record<LandingPageModuleKey, LandingPageModuleDefinition>
+  >;
+  variantFieldContracts: Readonly<
+    Record<LandingPageVariantFieldContractKey, LandingPageVariantFieldContract>
+  >;
+  variants: Readonly<Record<LandingPageVariantKey, LandingPageVariantDefinition>>;
+}>;
+
+export type LandingPageModuleCatalogErrorCode =
+  | "UNKNOWN_MODULE_CATALOG_VERSION"
+  | "INCOMPATIBLE_ROOT_VERSION"
+  | "UNKNOWN_MODULE"
+  | "UNKNOWN_MODULE_VERSION"
+  | "UNKNOWN_VARIANT"
+  | "UNKNOWN_FUNNEL_PROFILE"
+  | "INVALID_MODULE_CATALOG_CONTRACT";
+
+export type LandingPageModuleCatalogError = Readonly<{
+  code: LandingPageModuleCatalogErrorCode;
+  message: string;
+}>;
+
+export type ResolveLandingPageModuleCatalogInput = Readonly<{
+  moduleCatalogVersion: number;
+  rootVersion: number;
+  moduleKey: string;
+  moduleVersion: number;
+  variantName: string;
+  variantVersion: number;
+  funnelProfileKey: string;
+}>;
+
+export type ResolvedLandingPageModuleCatalog = Readonly<{
+  family: LandingPageModuleFamily;
+  moduleCatalogVersion: LandingPageModuleCatalogVersion;
+  root: import("../index").LandingPageRootParameters;
+  module: LandingPageModuleDefinition;
+  variant: LandingPageVariantDefinition;
+  fieldContract: LandingPageVariantFieldContract;
+  copySourceMaps: Readonly<Record<LandingPageTextFieldPath, LandingPageCopySourceMap>>;
+  funnelCopyProfile: LandingPageFunnelCopyProfile;
+  funnelProfileDelta: LandingPageFunnelProfileDelta;
+}>;
+
+export type ResolveLandingPageModuleCatalogResult =
+  | Readonly<{ ok: true; value: ResolvedLandingPageModuleCatalog }>
+  | Readonly<{ ok: false; error: LandingPageModuleCatalogError }>;
