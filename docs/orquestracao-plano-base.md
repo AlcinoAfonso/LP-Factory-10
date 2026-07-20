@@ -1,8 +1,8 @@
 # Orquestração de planos-base no Codex
 
-Data: 19/07/2026
-Versão: v0.6
-Status: Gestor de Updates incluído no fluxo integrado; reteste pendente.
+Data: 20/07/2026
+Versão: v0.7
+Status: Fluxo de plano integrado e fluxo de execução end-to-end definidos; teste da execução por subseção pendente.
 
 ## 1. Objetivo e função deste documento
 
@@ -14,10 +14,10 @@ Seu objetivo é estabelecer, antes da implementação, um contrato humano verifi
 2. coordena as avaliações dos especialistas aplicáveis;
 3. orienta o orquestrador a transformar o plano-base v1 em v2 e registrar uma matriz de consolidação dos pareceres;
 4. entrega v1 e v2 ao Analista para avaliação independente e, depois, entrega pareceres e matriz para auditoria da consolidação;
-5. conduz a execução de uma fase por vez;
-6. devolve o PR da implementação ao Analista antes do merge;
-7. interrompe o fluxo nos pontos que exigem decisão humana;
-8. permite retomar a mesma frente após cada decisão ou merge.
+5. conduz a execução de uma subseção canônica por vez, na mesma branch e PR de implementação;
+6. devolve cada checkpoint e a entrega final ao Analista antes do avanço ou merge;
+7. interrompe o fluxo nos pontos que exigem decisão humana ou teste humano;
+8. permite retomar a mesma frente sem merge entre subseções.
 
 O resultado esperado é reduzir coordenação manual e cópia de contexto entre tarefas, sem transferir ao Codex decisões que pertencem ao humano e sem permitir que agentes especializados alterem o repositório.
 
@@ -235,8 +235,35 @@ No primeiro teste E18.5, o destino esperado é:
 
 A matriz não é gravada antes da Passagem 1. Isso impede que a avaliação independente seja contaminada por um arquivo acessível na própria worktree.
 
-### 4.4 Limites do primeiro fluxo integrado
+### 4.4 Limites do fluxo de plano integrado
 
-Este recorte inclui Gestor Estrutural, Gestor de Updates, consolidação pelo orquestrador e gate do Analista. O Gestor de Updates consulta obrigatoriamente os quatro catálogos vigentes, mas não os mantém nem pesquisa novos updates fora deles. Gestor de Automações, execução das fases e revisão do PR de implementação continuam fora do fluxo até testes próprios.
+Este recorte inclui Gestor Estrutural, Gestor de Updates, consolidação pelo orquestrador e gate do Analista. O Gestor de Updates consulta obrigatoriamente os quatro catálogos vigentes, mas não os mantém nem pesquisa novos updates fora deles. Gestor de Automações continua fora do fluxo até teste próprio.
 
 O teste será considerado válido quando uma instrução humana curta produzir dois pareceres especializados rastreáveis, uma v2 rastreável, duas passagens não contaminadas do Analista e um PR filho comparável, sem alteração da v1 e sem edição feita pelos custom agents.
+
+## 5. Quarto passo: execução end-to-end do plano aprovado
+
+Depois da aprovação humana do plano-base v2, o mesmo task passa a atuar como executor. A skill `lp-factory-executar-plano` cria ou reutiliza uma única branch e um único PR draft para todo o recorte. Não há merge entre subseções.
+
+### 5.1 Contrato de fases
+
+Cada fase deve representar exatamente uma subseção executável do roadmap, identificada como `EXX.Y.Z — título`. Não são permitidos aliases ordinais como “Fase 1”, nem o agrupamento de subseções independentes. Cada aprovação de fase gera somente um checkpoint de commit com o identificador canônico; o próximo ciclo permanece na mesma branch e PR.
+
+### 5.2 Ciclo por subseção
+
+1. Confirmar a subseção, critérios de aceite, escopo negativo e fontes competentes.
+2. Implementar somente o necessário para a subseção.
+3. Executar validações automáticas aplicáveis.
+4. Acionar o Analista em modo de revisão de implementação.
+5. Corrigir o delta ou parar para teste humano ou decisão humana quando exigido.
+6. Após `aprovado para avançar`, criar checkpoint e, no modo experimental, entregar relatório e parar; no modo end-to-end, seguir para a próxima subseção.
+
+### 5.3 Testes, documentação e merge
+
+Após a última subseção, o executor realiza validações integradas e solicita a revisão final do Analista. Teste humano só abre gate quando o plano ou o Analista o exigir. Em seguida, o executor aplica o delta documental canônico, pede revisão delta do Analista e atualiza o resumo do mesmo PR.
+
+Somente a conclusão `aprovado para merge da implementação` libera o PR para decisão humana. O relatório do PR substitui o envio manual de um relatório ao Gestor de Docs.
+
+### 5.4 Matriz de consolidação
+
+A matriz pertence exclusivamente à etapa de revisão do plano-base v2: ela permite ao orquestrador registrar o tratamento dos pareceres e ao Analista auditar essa consolidação. Em modo experimental, fica no PR como evidência. Em modo end-to-end, é temporária, é resumida no PR e removida antes da publicação final da v2. Não há remoção agendada nem matriz durante a implementação.
