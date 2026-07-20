@@ -178,6 +178,38 @@ export const landingPageCopySourceItemKeys = [
   ...landingPageCopySourceItemKeyCatalog.seo,
 ] as const;
 
+export const landingPageFunnelStages = ["bofu", "mofu", "tofu"] as const;
+
+export const landingPageCopyTreatments = [
+  "direct_action",
+  "qualified_action",
+  "low_friction_action",
+  "educational_context",
+  "problem_emphasis",
+  "offer_specificity",
+  "proof",
+  "comparison",
+  "price",
+  "promise",
+  "credential",
+  "authority",
+  "urgency",
+  "scarcity",
+  "guarantee",
+] as const;
+
+export const landingPageCtaModes = [
+  "direct",
+  "qualified",
+  "low_friction",
+] as const;
+
+export const landingPageCtaModeTreatmentMap = {
+  direct: "direct_action",
+  qualified: "qualified_action",
+  low_friction: "low_friction_action",
+} as const;
+
 export type LandingPageVariantKey = (typeof landingPageVariantKeys)[number];
 export type LandingPageCapabilityKey =
   (typeof landingPageCapabilityKeys)[number];
@@ -185,6 +217,10 @@ export type LandingPageCopySourceMode =
   (typeof landingPageCopySourceModes)[number];
 export type LandingPageCopySourceItemKey =
   (typeof landingPageCopySourceItemKeys)[number];
+export type LandingPageFunnelStage = (typeof landingPageFunnelStages)[number];
+export type LandingPageCopyTreatment =
+  (typeof landingPageCopyTreatments)[number];
+export type LandingPageCtaMode = (typeof landingPageCtaModes)[number];
 
 export type LandingPageResearchCopySource = Readonly<{
   sourceMode: "research";
@@ -202,6 +238,39 @@ export type LandingPageCopySource =
 
 export type LandingPageCopySourceMap = Readonly<
   Record<string, LandingPageCopySource>
+>;
+
+export type LandingPageFunnelCopyProfile = Readonly<{
+  allowed: readonly LandingPageCopyTreatment[];
+  restricted: readonly LandingPageCopyTreatment[];
+  prohibited: readonly LandingPageCopyTreatment[];
+  ctaMode: LandingPageCtaMode;
+}>;
+
+export type LandingPageFunnelCopyProfileRegistry = Readonly<
+  Record<LandingPageFunnelStage, LandingPageFunnelCopyProfile>
+>;
+
+export type LandingPageTreatmentSupportRequirement = Readonly<{
+  fieldPaths: readonly string[];
+  policies: readonly ("hybrid" | "operational_required")[];
+  supports: readonly ("when_factual" | "when_present")[];
+  sourceModes: readonly ("research" | "operational_evidence")[];
+}>;
+
+export type LandingPageFunnelProfileStageDelta = Readonly<{
+  restricted: readonly LandingPageCopyTreatment[];
+  prohibited: readonly LandingPageCopyTreatment[];
+  emphasized: readonly LandingPageCopyTreatment[];
+  supportRequirements: Readonly<
+    Partial<
+      Record<LandingPageCopyTreatment, LandingPageTreatmentSupportRequirement>
+    >
+  >;
+}>;
+
+export type LandingPageFunnelProfileDelta = Readonly<
+  Record<LandingPageFunnelStage, LandingPageFunnelProfileStageDelta>
 >;
 
 export type LandingPagePrimaryActionCapability = Readonly<{
@@ -244,6 +313,7 @@ export type LandingPageModuleVariantDefinition = Readonly<{
   compatibleModuleVersion: number;
   fields: Readonly<Record<string, LandingPageFieldDefinition>>;
   copySourceMap: LandingPageCopySourceMap;
+  funnelProfileDelta: LandingPageFunnelProfileDelta;
   capabilities: readonly LandingPageCapabilityKey[];
   rootDelta: LandingPageRootDelta;
 }>;
@@ -252,11 +322,13 @@ export type LandingPageModuleVariantCatalogModuleEntry = Readonly<{
   moduleKey: LandingPageModuleKey;
   moduleVersion: number;
   rootDelta: LandingPageRootDelta;
+  funnelProfileDelta: LandingPageFunnelProfileDelta;
   variants: Readonly<Record<string, LandingPageModuleVariantDefinition>>;
 }>;
 
 export type LandingPageModuleVariantCatalogEntry = Readonly<{
   moduleCatalogVersion: number;
+  funnelCopyProfiles: LandingPageFunnelCopyProfileRegistry;
   capabilities: Readonly<
     Record<LandingPageCapabilityKey, LandingPageCapabilityDefinition>
   >;

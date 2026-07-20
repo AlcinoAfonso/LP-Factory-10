@@ -2,15 +2,22 @@ import { z } from "zod";
 
 import {
   landingPageCapabilityKeys,
+  landingPageCopySourceModes,
   landingPageCopySourceItemKeys,
+  landingPageCopyTreatments,
+  landingPageCtaModes,
+  landingPageCtaModeTreatmentMap,
   landingPageFieldKinds,
   landingPageFieldPolicies,
   landingPageFieldSupports,
+  landingPageFunnelStages,
   landingPageModuleKeys,
   landingPageModuleLifecycleStatuses,
   landingPageVariantKeys,
   type LandingPageCopySourceMap,
   type LandingPageFieldDefinition,
+  type LandingPageFunnelCopyProfile,
+  type LandingPageFunnelProfileStageDelta,
   type LandingPageModuleDefinition,
   type LandingPageModuleKey,
 } from "./contracts";
@@ -18,6 +25,7 @@ import {
   landingPageModuleCatalogRegistry,
   landingPageModuleFieldCatalogRegistry,
   landingPageModuleVariantCatalogRegistry,
+  applyLandingPageFunnelProfileDeltaInternal,
 } from "./registry";
 import { landingPageRootSemanticRoleKeys } from "../root-schema";
 
@@ -270,6 +278,73 @@ const copySourceSchema = z.discriminatedUnion("sourceMode", [
   z.object({ sourceMode: z.literal("operational_evidence") }).strict(),
 ]);
 
+const treatmentArraySchema = z
+  .array(z.enum(landingPageCopyTreatments))
+  .superRefine((treatments, context) => {
+    if (new Set(treatments).size !== treatments.length) {
+      context.addIssue({
+        code: "custom",
+        message: "copy treatments must be unique",
+      });
+    }
+  });
+
+const funnelCopyProfileSchema = z
+  .object({
+    allowed: treatmentArraySchema,
+    restricted: treatmentArraySchema,
+    prohibited: treatmentArraySchema,
+    ctaMode: z.enum(landingPageCtaModes),
+  })
+  .strict()
+  .superRefine((profile, context) => {
+    validateFunnelCopyProfile(profile, context);
+  });
+
+const treatmentSupportRequirementSchema = z
+  .object({
+    fieldPaths: z.array(fieldPathSchema).min(1),
+    policies: z.array(z.enum(["hybrid", "operational_required"])).min(1),
+    supports: z.array(z.enum(["when_factual", "when_present"])).min(1),
+    sourceModes: z.array(z.enum(landingPageCopySourceModes)).min(1),
+  })
+  .strict()
+  .superRefine((requirement, context) => {
+    for (const values of [
+      requirement.fieldPaths,
+      requirement.policies,
+      requirement.supports,
+      requirement.sourceModes,
+    ]) {
+      if (new Set(values).size !== values.length) {
+        context.addIssue({
+          code: "custom",
+          message: "treatment support values must be unique",
+        });
+      }
+    }
+  });
+
+const funnelProfileStageDeltaSchema = z
+  .object({
+    restricted: treatmentArraySchema,
+    prohibited: treatmentArraySchema,
+    emphasized: treatmentArraySchema,
+    supportRequirements: z.partialRecord(
+      z.enum(landingPageCopyTreatments),
+      treatmentSupportRequirementSchema,
+    ),
+  })
+  .strict();
+
+const funnelProfileDeltaSchema = z
+  .object({
+    bofu: funnelProfileStageDeltaSchema,
+    mofu: funnelProfileStageDeltaSchema,
+    tofu: funnelProfileStageDeltaSchema,
+  })
+  .strict();
+
 const moduleVariantDefinitionSchema = z
   .object({
     variantKey: z.enum(landingPageVariantKeys),
@@ -279,6 +354,7 @@ const moduleVariantDefinitionSchema = z
     compatibleModuleVersion: z.literal(1),
     fields: z.record(z.string(), fieldDefinitionSchema),
     copySourceMap: z.record(z.string(), copySourceSchema),
+    funnelProfileDelta: funnelProfileDeltaSchema,
     capabilities: z.array(z.enum(landingPageCapabilityKeys)),
     rootDelta: rootDeltaSchema,
   })
@@ -300,6 +376,7 @@ const moduleVariantCatalogModuleEntrySchema = z
     moduleKey: z.enum(landingPageModuleKeys),
     moduleVersion: z.literal(1),
     rootDelta: rootDeltaSchema,
+    funnelProfileDelta: funnelProfileDeltaSchema,
     variants: z.record(z.string(), moduleVariantDefinitionSchema),
   })
   .strict();
@@ -307,11 +384,34 @@ const moduleVariantCatalogModuleEntrySchema = z
 export const landingPageModuleVariantCatalogEntrySchema = z
   .object({
     moduleCatalogVersion: z.literal(1),
+    funnelCopyProfiles: z.object({
+      bofu: funnelCopyProfileSchema,
+      mofu: funnelCopyProfileSchema,
+      tofu: funnelCopyProfileSchema,
+    }).strict(),
     capabilities: z.record(z.string(), capabilityDefinitionSchema),
     modules: z.record(z.string(), moduleVariantCatalogModuleEntrySchema),
   })
   .strict()
   .superRefine((catalog, context) => {
+    validateExactValues({
+      context,
+      path: ["funnelCopyProfiles"],
+      actual: Object.keys(catalog.funnelCopyProfiles),
+      expected: landingPageFunnelStages,
+    });
+    if (
+      !isDeepEqual(
+        catalog.funnelCopyProfiles,
+        landingPageModuleVariantCatalogRegistry[1].funnelCopyProfiles,
+      )
+    ) {
+      context.addIssue({
+        code: "custom",
+        path: ["funnelCopyProfiles"],
+        message: "funnel copy profiles must match the approved v1 contract",
+      });
+    }
     validateExactValues({
       context,
       path: ["capabilities"],
@@ -362,6 +462,29 @@ export const landingPageModuleVariantCatalogEntrySchema = z
       }
       if (!canonicalModule) continue;
 
+      if (
+        !isDeepEqual(
+          moduleEntry.funnelProfileDelta,
+          canonicalModule.funnelProfileDelta,
+        )
+      ) {
+        context.addIssue({
+          code: "custom",
+          path: ["modules", moduleKey, "funnelProfileDelta"],
+          message: "module funnel delta must match the approved v1 contract",
+        });
+      }
+
+      validateFunnelProfileDelta({
+        moduleKey,
+        variantKey: undefined,
+        fields: canonicalModule.variants.standard.fields,
+        copySourceMap: canonicalModule.variants.standard.copySourceMap,
+        delta: moduleEntry.funnelProfileDelta,
+        profiles: catalog.funnelCopyProfiles,
+        context,
+      });
+
       validateExactValues({
         context,
         path: ["modules", moduleKey, "variants"],
@@ -389,6 +512,15 @@ export const landingPageModuleVariantCatalogEntrySchema = z
           moduleKey,
           variantKey,
           variant,
+          context,
+        });
+        validateFunnelProfileDelta({
+          moduleKey,
+          variantKey,
+          fields: variant.fields,
+          copySourceMap: variant.copySourceMap,
+          delta: variant.funnelProfileDelta,
+          profiles: catalog.funnelCopyProfiles,
           context,
         });
       }
@@ -674,6 +806,159 @@ function validateCapabilityBindings(input: {
       ],
       message: "accordion interaction belongs only to faq accordion",
     });
+  }
+}
+
+function validateFunnelCopyProfile(
+  profile: LandingPageFunnelCopyProfile,
+  context: z.RefinementCtx,
+) {
+  const classified = [
+    ...profile.allowed,
+    ...profile.restricted,
+    ...profile.prohibited,
+  ];
+  if (
+    classified.length !== landingPageCopyTreatments.length ||
+    new Set(classified).size !== landingPageCopyTreatments.length ||
+    landingPageCopyTreatments.some(
+      (treatment) => !classified.includes(treatment),
+    )
+  ) {
+    context.addIssue({
+      code: "custom",
+      message: "every copy treatment must have exactly one classification",
+    });
+  }
+
+  const actionTreatment = landingPageCtaModeTreatmentMap[profile.ctaMode];
+  if (!profile.allowed.includes(actionTreatment)) {
+    context.addIssue({
+      code: "custom",
+      path: ["ctaMode"],
+      message: "cta mode action treatment must be allowed",
+    });
+  }
+}
+
+function validateFunnelProfileDelta(input: {
+  moduleKey: string;
+  variantKey: string | undefined;
+  fields: Readonly<Record<string, LandingPageFieldDefinition>>;
+  copySourceMap: LandingPageCopySourceMap;
+  delta: Readonly<Record<string, LandingPageFunnelProfileStageDelta>>;
+  profiles: Readonly<Record<string, LandingPageFunnelCopyProfile>>;
+  context: z.RefinementCtx;
+}) {
+  const basePath = input.variantKey === undefined
+    ? ["modules", input.moduleKey, "funnelProfileDelta"]
+    : [
+        "modules",
+        input.moduleKey,
+        "variants",
+        input.variantKey,
+        "funnelProfileDelta",
+      ];
+
+  validateExactValues({
+    context: input.context,
+    path: basePath,
+    actual: Object.keys(input.delta),
+    expected: landingPageFunnelStages,
+  });
+
+  for (const stage of landingPageFunnelStages) {
+    const profile = input.profiles[stage];
+    const delta = input.delta[stage];
+    if (!profile || !delta) continue;
+
+    const result = applyLandingPageFunnelProfileDeltaInternal(profile, delta);
+    if (!result) {
+      input.context.addIssue({
+        code: "custom",
+        path: [...basePath, stage],
+        message: "funnel profile delta is invalid",
+      });
+      continue;
+    }
+
+    const actionTreatment = landingPageCtaModeTreatmentMap[result.ctaMode];
+    const hasPrimaryAction = input.fields.primaryCta?.fieldKind === "action";
+    if (hasPrimaryAction && !result.allowed.includes(actionTreatment)) {
+      input.context.addIssue({
+        code: "custom",
+        path: [...basePath, stage],
+        message: "delta must preserve the effective cta action treatment",
+      });
+    }
+
+    const classificationRank = (
+      candidate: LandingPageFunnelCopyProfile,
+      treatment: (typeof landingPageCopyTreatments)[number],
+    ) => candidate.prohibited.includes(treatment)
+      ? 2
+      : candidate.restricted.includes(treatment)
+        ? 1
+        : 0;
+    for (const treatment of landingPageCopyTreatments) {
+      if (
+        classificationRank(result, treatment) <
+        classificationRank(profile, treatment)
+      ) {
+        input.context.addIssue({
+          code: "custom",
+          path: [...basePath, stage],
+          message: "delta cannot expand the family profile permissions",
+        });
+      }
+    }
+
+    for (const treatment of delta.emphasized) {
+      if (result.prohibited.includes(treatment)) {
+        input.context.addIssue({
+          code: "custom",
+          path: [...basePath, stage, "emphasized"],
+          message: "a prohibited treatment cannot be emphasized",
+        });
+      }
+    }
+
+    validateExactValues({
+      context: input.context,
+      path: [...basePath, stage, "supportRequirements"],
+      actual: Object.keys(delta.supportRequirements),
+      expected: result.restricted,
+    });
+
+    for (const [treatment, requirement] of Object.entries(
+      delta.supportRequirements,
+    )) {
+      if (!requirement) continue;
+      for (const fieldPath of requirement.fieldPaths) {
+        const field = input.fields[fieldPath];
+        const source = input.copySourceMap[fieldPath];
+        if (
+          !field ||
+          field.fieldKind !== "text" ||
+          !requirement.policies.includes(field.policy as never) ||
+          !requirement.supports.includes(field.support as never) ||
+          !source ||
+          !requirement.sourceModes.includes(source.sourceMode)
+        ) {
+          input.context.addIssue({
+            code: "custom",
+            path: [
+              ...basePath,
+              stage,
+              "supportRequirements",
+              treatment,
+              "fieldPaths",
+            ],
+            message: "restricted treatment requires a compatible supported field",
+          });
+        }
+      }
+    }
   }
 }
 

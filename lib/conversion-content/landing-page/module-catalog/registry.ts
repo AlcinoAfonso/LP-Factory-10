@@ -5,6 +5,13 @@ import type {
   LandingPageCapabilityKey,
   LandingPageCopySourceItemKey,
   LandingPageCopySourceMap,
+  LandingPageCopyTreatment,
+  LandingPageCtaMode,
+  LandingPageFunnelCopyProfile,
+  LandingPageFunnelCopyProfileRegistry,
+  LandingPageFunnelProfileDelta,
+  LandingPageFunnelProfileStageDelta,
+  LandingPageFunnelStage,
   LandingPageModuleCatalogRegistry,
   LandingPageModuleFieldCatalogRegistry,
   LandingPageModuleKey,
@@ -12,7 +19,20 @@ import type {
   LandingPageModuleVariantDefinition,
   LandingPageReferenceFieldDefinition,
   LandingPageTextFieldDefinition,
+  LandingPageTreatmentSupportRequirement,
 } from "./contracts";
+import {
+  landingPageCopyTreatments,
+  landingPageCtaModeTreatmentMap,
+  landingPageFunnelStages,
+} from "./contracts";
+
+type ModuleFunnelPolicy = Readonly<{
+  prohibited: readonly LandingPageCopyTreatment[];
+  restricted: readonly LandingPageCopyTreatment[];
+  emphasized: readonly LandingPageCopyTreatment[];
+  effectiveActionOnly: boolean;
+}>;
 
 export const landingPageModuleCatalogRegistry = deepFreeze({
   1: {
@@ -351,6 +371,165 @@ export const landingPageModuleFieldCatalogRegistry = deepFreeze({
   },
 } satisfies LandingPageModuleFieldCatalogRegistry);
 
+const approvedFunnelCopyProfiles = {
+  bofu: {
+    allowed: [
+      "direct_action",
+      "qualified_action",
+      "low_friction_action",
+      "educational_context",
+      "problem_emphasis",
+      "offer_specificity",
+    ],
+    restricted: [
+      "proof",
+      "comparison",
+      "price",
+      "promise",
+      "credential",
+      "authority",
+      "urgency",
+      "scarcity",
+      "guarantee",
+    ],
+    prohibited: [],
+    ctaMode: "direct",
+  },
+  mofu: {
+    allowed: [
+      "qualified_action",
+      "low_friction_action",
+      "educational_context",
+      "problem_emphasis",
+      "offer_specificity",
+    ],
+    restricted: [
+      "direct_action",
+      "proof",
+      "comparison",
+      "price",
+      "promise",
+      "credential",
+      "authority",
+      "urgency",
+      "scarcity",
+      "guarantee",
+    ],
+    prohibited: [],
+    ctaMode: "qualified",
+  },
+  tofu: {
+    allowed: [
+      "low_friction_action",
+      "educational_context",
+      "problem_emphasis",
+    ],
+    restricted: [
+      "qualified_action",
+      "offer_specificity",
+      "proof",
+      "credential",
+      "authority",
+    ],
+    prohibited: [
+      "direct_action",
+      "comparison",
+      "price",
+      "promise",
+      "urgency",
+      "scarcity",
+      "guarantee",
+    ],
+    ctaMode: "low_friction",
+  },
+} satisfies LandingPageFunnelCopyProfileRegistry;
+
+const actionTreatments = [
+  "direct_action",
+  "qualified_action",
+  "low_friction_action",
+] as const satisfies readonly LandingPageCopyTreatment[];
+
+const moduleFunnelPolicies = {
+  hero: {
+    prohibited: [
+      "comparison",
+      "price",
+      "guarantee",
+      "urgency",
+      "scarcity",
+    ],
+    restricted: [],
+    emphasized: [],
+    effectiveActionOnly: true,
+  },
+  trust_bar: {
+    prohibited: [
+      ...actionTreatments,
+      "educational_context",
+      "problem_emphasis",
+      "offer_specificity",
+      "comparison",
+      "price",
+      "promise",
+      "urgency",
+      "scarcity",
+      "guarantee",
+    ],
+    restricted: [],
+    emphasized: [],
+    effectiveActionOnly: false,
+  },
+  problem_solution: policyAllowingOnly([
+    "educational_context",
+    "problem_emphasis",
+  ]),
+  offer: {
+    prohibited: [
+      ...actionTreatments,
+      "proof",
+      "comparison",
+      "price",
+      "promise",
+      "credential",
+      "authority",
+      "urgency",
+      "scarcity",
+      "guarantee",
+    ],
+    restricted: ["offer_specificity"],
+    emphasized: [],
+    effectiveActionOnly: false,
+  },
+  process: policyAllowingOnly(["educational_context"]),
+  technical_assurance: {
+    prohibited: [
+      ...actionTreatments,
+      "problem_emphasis",
+      "offer_specificity",
+      "comparison",
+      "price",
+      "promise",
+      "urgency",
+      "scarcity",
+      "guarantee",
+    ],
+    restricted: [],
+    emphasized: ["educational_context"],
+    effectiveActionOnly: false,
+  },
+  social_proof: policyAllowingOnly(["proof"]),
+  faq: policyAllowingOnly(["educational_context", "problem_emphasis"]),
+  final_cta: {
+    prohibited: landingPageCopyTreatments.filter(
+      (treatment) => !actionTreatments.includes(treatment as never),
+    ),
+    restricted: [],
+    emphasized: [],
+    effectiveActionOnly: true,
+  },
+} satisfies Readonly<Record<LandingPageModuleKey, ModuleFunnelPolicy>>;
+
 const approvedCopySourceMaps = {
   hero: {
     eyebrow: researchSource(["positioning_opportunity"], "search_intent"),
@@ -420,6 +599,7 @@ const approvedCopySourceMaps = {
 export const landingPageModuleVariantCatalogRegistry = deepFreeze({
   1: {
     moduleCatalogVersion: 1,
+    funnelCopyProfiles: approvedFunnelCopyProfiles,
     capabilities: {
       primary_action: {
         capabilityKey: "primary_action",
@@ -535,7 +715,13 @@ function moduleVariants(
   moduleKey: LandingPageModuleKey,
   variants: Readonly<Record<string, LandingPageModuleVariantDefinition>>,
 ) {
-  return { moduleKey, moduleVersion: 1, rootDelta: {}, variants };
+  return {
+    moduleKey,
+    moduleVersion: 1,
+    rootDelta: {},
+    funnelProfileDelta: createModuleFunnelProfileDelta(moduleKey),
+    variants,
+  };
 }
 
 function variantDefinition(
@@ -551,9 +737,183 @@ function variantDefinition(
     compatibleModuleVersion: 1,
     fields: copyApprovedModuleFields(moduleKey),
     copySourceMap: copyApprovedCopySourceMap(moduleKey),
+    funnelProfileDelta: createModuleFunnelProfileDelta(moduleKey),
     capabilities,
     rootDelta: {},
   };
+}
+
+export function applyLandingPageFunnelProfileDeltaInternal(
+  profile: LandingPageFunnelCopyProfile,
+  delta: LandingPageFunnelProfileStageDelta,
+): LandingPageFunnelCopyProfile | undefined {
+  const knownTreatments = new Set<string>(landingPageCopyTreatments);
+  const profileTreatments = [
+    ...profile.allowed,
+    ...profile.restricted,
+    ...profile.prohibited,
+  ];
+  const deltaTreatments = [
+    ...delta.restricted,
+    ...delta.prohibited,
+    ...delta.emphasized,
+  ];
+  if (
+    profileTreatments.length !== landingPageCopyTreatments.length ||
+    new Set(profileTreatments).size !== landingPageCopyTreatments.length ||
+    [...profileTreatments, ...deltaTreatments].some(
+      (treatment) => !knownTreatments.has(treatment),
+    )
+  ) {
+    return undefined;
+  }
+
+  const restricted = new Set(delta.restricted);
+  const prohibited = new Set(delta.prohibited);
+  const classification = new Map<
+    LandingPageCopyTreatment,
+    "allowed" | "restricted" | "prohibited"
+  >();
+
+  for (const treatment of profile.allowed) classification.set(treatment, "allowed");
+  for (const treatment of profile.restricted) {
+    classification.set(treatment, "restricted");
+  }
+  for (const treatment of profile.prohibited) {
+    classification.set(treatment, "prohibited");
+  }
+  for (const treatment of landingPageCopyTreatments) {
+    if (restricted.has(treatment) && classification.get(treatment) === "allowed") {
+      classification.set(treatment, "restricted");
+    }
+    if (prohibited.has(treatment)) classification.set(treatment, "prohibited");
+  }
+
+  return {
+    allowed: landingPageCopyTreatments.filter(
+      (treatment) => classification.get(treatment) === "allowed",
+    ),
+    restricted: landingPageCopyTreatments.filter(
+      (treatment) => classification.get(treatment) === "restricted",
+    ),
+    prohibited: landingPageCopyTreatments.filter(
+      (treatment) => classification.get(treatment) === "prohibited",
+    ),
+    ctaMode: profile.ctaMode,
+  };
+}
+
+function createModuleFunnelProfileDelta(
+  moduleKey: LandingPageModuleKey,
+): LandingPageFunnelProfileDelta {
+  return Object.fromEntries(
+    landingPageFunnelStages.map((stage) => {
+      const profile = approvedFunnelCopyProfiles[stage];
+      const policy = moduleFunnelPolicies[moduleKey];
+      const effectiveAction = landingPageCtaModeTreatmentMap[profile.ctaMode];
+      const prohibited = new Set<LandingPageCopyTreatment>(policy.prohibited);
+      if (policy.effectiveActionOnly) {
+        for (const treatment of actionTreatments) {
+          if (treatment !== effectiveAction) prohibited.add(treatment);
+        }
+      }
+
+      const restricted = policy.restricted.filter(
+        (treatment) => !prohibited.has(treatment),
+      );
+      const emphasized = [
+        ...policy.emphasized,
+        ...(policy.effectiveActionOnly ? [effectiveAction] : []),
+      ].filter((treatment) => !prohibited.has(treatment));
+      const partialDelta = {
+        restricted,
+        prohibited: landingPageCopyTreatments.filter((treatment) =>
+          prohibited.has(treatment),
+        ),
+        emphasized,
+        supportRequirements: {},
+      } satisfies LandingPageFunnelProfileStageDelta;
+      const result = applyLandingPageFunnelProfileDeltaInternal(
+        profile,
+        partialDelta,
+      );
+      if (!result) throw new Error("invalid internal funnel profile delta");
+
+      const supportRequirements = Object.fromEntries(
+        result.restricted.map((treatment) => [
+          treatment,
+          treatmentSupportRequirement(moduleKey, treatment),
+        ]),
+      );
+      return [stage, { ...partialDelta, supportRequirements }];
+    }),
+  ) as unknown as LandingPageFunnelProfileDelta;
+}
+
+function policyAllowingOnly(
+  emphasized: readonly LandingPageCopyTreatment[],
+): ModuleFunnelPolicy {
+  return {
+    prohibited: landingPageCopyTreatments.filter(
+      (treatment) => !emphasized.includes(treatment),
+    ),
+    restricted: [],
+    emphasized,
+    effectiveActionOnly: false,
+  };
+}
+
+function treatmentSupportRequirement(
+  moduleKey: LandingPageModuleKey,
+  treatment: LandingPageCopyTreatment,
+): LandingPageTreatmentSupportRequirement {
+  const researchSupport = (
+    fieldPaths: readonly string[],
+  ): LandingPageTreatmentSupportRequirement => ({
+    fieldPaths,
+    policies: ["hybrid"],
+    supports: ["when_factual", "when_present"],
+    sourceModes: ["research"],
+  });
+
+  if (moduleKey === "hero") {
+    if (treatment === "proof" || treatment === "credential" || treatment === "authority") {
+      return researchSupport(["proofShort"]);
+    }
+    if (treatment === "promise" || treatment === "offer_specificity") {
+      return researchSupport(["title", "subtitle"]);
+    }
+  }
+  if (
+    moduleKey === "trust_bar" &&
+    ["proof", "credential", "authority"].includes(treatment)
+  ) {
+    return researchSupport(["items[].text"]);
+  }
+  if (moduleKey === "offer" && treatment === "offer_specificity") {
+    return researchSupport(["items[].itemTitle", "items[].description"]);
+  }
+  if (
+    moduleKey === "technical_assurance" &&
+    ["proof", "credential", "authority"].includes(treatment)
+  ) {
+    return researchSupport([
+      "items[].assuranceTitle",
+      "items[].assuranceBody",
+    ]);
+  }
+  if (moduleKey === "social_proof" && treatment === "proof") {
+    return {
+      fieldPaths: ["items[].quote", "items[].attribution"],
+      policies: ["operational_required"],
+      supports: ["when_present"],
+      sourceModes: ["operational_evidence"],
+    };
+  }
+
+  throw new Error(
+    `missing internal support requirement for ${moduleKey}.${treatment}`,
+  );
 }
 
 function copyApprovedCopySourceMap(

@@ -621,7 +621,8 @@ Estado da fase:
 - fase `18.5.4` concluída e aprovada;
 - fase `18.5.5` concluída e aprovada;
 - fase `18.5.6` concluída e aprovada;
-- fase `18.5.7` em execução;
+- fase `18.5.7` concluída e aprovada;
+- fase `18.5.8` em execução;
 - PR experimental permanece draft e sem merge.
 
 ### 4.3. Fase 3 — E18.5.5 — Variantes e critérios de criação

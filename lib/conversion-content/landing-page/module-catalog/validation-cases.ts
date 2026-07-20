@@ -10,7 +10,13 @@ import {
 import {
   landingPageCopySourceItemKeyCatalog,
   landingPageCopySourceItemKeys,
+  landingPageCopyTreatments,
+  landingPageCtaModeTreatmentMap,
+  landingPageFunnelStages,
   landingPageModuleKeys,
+  type LandingPageCopyTreatment,
+  type LandingPageFunnelCopyProfile,
+  type LandingPageFunnelProfileStageDelta,
   type LandingPageCopySourceMap,
   type LandingPageModuleCatalogEntry,
   type LandingPageModuleDefinition,
@@ -23,6 +29,7 @@ import {
   landingPageModuleCatalogRegistry,
   landingPageModuleFieldCatalogRegistry,
   landingPageModuleVariantCatalogRegistry,
+  applyLandingPageFunnelProfileDeltaInternal,
   resolveLandingPageModuleVariantDefinitionInternal,
 } from "./registry";
 import {
@@ -863,6 +870,295 @@ const cases: readonly Case[] = [
     },
   },
   {
+    name: "bofu mofu and tofu profiles classify every approved treatment exactly once",
+    run: () => {
+      const profiles =
+        landingPageModuleVariantCatalogRegistry[1].funnelCopyProfiles;
+      assert.deepEqual(profiles, {
+        bofu: {
+          allowed: [
+            "direct_action",
+            "qualified_action",
+            "low_friction_action",
+            "educational_context",
+            "problem_emphasis",
+            "offer_specificity",
+          ],
+          restricted: [
+            "proof",
+            "comparison",
+            "price",
+            "promise",
+            "credential",
+            "authority",
+            "urgency",
+            "scarcity",
+            "guarantee",
+          ],
+          prohibited: [],
+          ctaMode: "direct",
+        },
+        mofu: {
+          allowed: [
+            "qualified_action",
+            "low_friction_action",
+            "educational_context",
+            "problem_emphasis",
+            "offer_specificity",
+          ],
+          restricted: [
+            "direct_action",
+            "proof",
+            "comparison",
+            "price",
+            "promise",
+            "credential",
+            "authority",
+            "urgency",
+            "scarcity",
+            "guarantee",
+          ],
+          prohibited: [],
+          ctaMode: "qualified",
+        },
+        tofu: {
+          allowed: [
+            "low_friction_action",
+            "educational_context",
+            "problem_emphasis",
+          ],
+          restricted: [
+            "qualified_action",
+            "offer_specificity",
+            "proof",
+            "credential",
+            "authority",
+          ],
+          prohibited: [
+            "direct_action",
+            "comparison",
+            "price",
+            "promise",
+            "urgency",
+            "scarcity",
+            "guarantee",
+          ],
+          ctaMode: "low_friction",
+        },
+      });
+
+      for (const stage of landingPageFunnelStages) {
+        const profile = profiles[stage];
+        const classified = [
+          ...profile.allowed,
+          ...profile.restricted,
+          ...profile.prohibited,
+        ];
+        assert.equal(classified.length, landingPageCopyTreatments.length);
+        assert.equal(new Set(classified).size, landingPageCopyTreatments.length);
+        assert.deepEqual(new Set(classified), new Set(landingPageCopyTreatments));
+      }
+    },
+  },
+  {
+    name: "profiles reject missing duplicate unknown aliased or internal-category treatments",
+    run: () => {
+      assertVariantCatalogMutationInvalid((catalog) => {
+        mutableFunnelProfile(catalog, "bofu").allowed.pop();
+      });
+      assertVariantCatalogMutationInvalid((catalog) => {
+        mutableFunnelProfile(catalog, "bofu").allowed.push("direct_action");
+      });
+      for (const invalidTreatment of [
+        "unknown_treatment",
+        "action",
+        "action_treatment",
+      ]) {
+        assertVariantCatalogMutationInvalid((catalog) => {
+          mutableFunnelProfile(catalog, "bofu").allowed[0] = invalidTreatment;
+        });
+      }
+      assertVariantCatalogMutationInvalid((catalog) => {
+        mutableFunnelProfile(catalog, "bofu").restricted.push("direct_action");
+      });
+      assertVariantCatalogMutationInvalid((catalog) => {
+        (catalog.funnelCopyProfiles as Record<string, unknown>).unknown = {};
+      });
+    },
+  },
+  {
+    name: "cta modes map to their allowed action treatments and incompatible modes fail closed",
+    run: () => {
+      const profiles =
+        landingPageModuleVariantCatalogRegistry[1].funnelCopyProfiles;
+      assert.deepEqual(landingPageCtaModeTreatmentMap, {
+        direct: "direct_action",
+        qualified: "qualified_action",
+        low_friction: "low_friction_action",
+      });
+      for (const profile of Object.values(profiles)) {
+        assert.equal(
+          (profile.allowed as readonly LandingPageCopyTreatment[]).includes(
+            landingPageCtaModeTreatmentMap[profile.ctaMode],
+          ),
+          true,
+        );
+      }
+      assertVariantCatalogMutationInvalid((catalog) => {
+        mutableFunnelProfile(catalog, "bofu").ctaMode = "qualified";
+      });
+      assertVariantCatalogMutationInvalid((catalog) => {
+        mutableFunnelProfile(catalog, "bofu").ctaMode = "unknown";
+      });
+    },
+  },
+  {
+    name: "delta precedence is prohibited over restricted over allowed",
+    run: () => {
+      const profile =
+        landingPageModuleVariantCatalogRegistry[1].funnelCopyProfiles.bofu;
+      const restricted = applyLandingPageFunnelProfileDeltaInternal(
+        profile,
+        syntheticStageDelta({ restricted: ["educational_context"] }),
+      );
+      assert.equal(restricted?.restricted.includes("educational_context"), true);
+      assert.equal(restricted?.allowed.includes("educational_context"), false);
+
+      const prohibited = applyLandingPageFunnelProfileDeltaInternal(
+        profile,
+        syntheticStageDelta({
+          restricted: ["educational_context"],
+          prohibited: ["educational_context", "proof"],
+        }),
+      );
+      assert.equal(prohibited?.prohibited.includes("educational_context"), true);
+      assert.equal(prohibited?.restricted.includes("educational_context"), false);
+      assert.equal(prohibited?.prohibited.includes("proof"), true);
+    },
+  },
+  {
+    name: "nine module and ten variant deltas produce only the approved effective treatments",
+    run: () => {
+      const catalog = landingPageModuleVariantCatalogRegistry[1];
+      assert.equal(Object.keys(catalog.modules).length, 9);
+      assert.equal(
+        Object.values(catalog.modules).reduce(
+          (count, moduleEntry) => count + Object.keys(moduleEntry.variants).length,
+          0,
+        ),
+        10,
+      );
+
+      for (const [moduleKey, moduleEntry] of Object.entries(catalog.modules)) {
+        for (const stage of landingPageFunnelStages) {
+          const result = applyLandingPageFunnelProfileDeltaInternal(
+            catalog.funnelCopyProfiles[stage],
+            moduleEntry.funnelProfileDelta[stage],
+          );
+          assert.ok(result);
+          assertModuleTreatmentContract(moduleKey, result);
+        }
+        for (const variant of Object.values(moduleEntry.variants)) {
+          assert.deepEqual(variant.funnelProfileDelta, moduleEntry.funnelProfileDelta);
+          assert.notStrictEqual(variant.funnelProfileDelta, moduleEntry.funnelProfileDelta);
+        }
+      }
+    },
+  },
+  {
+    name: "faq deltas are equivalent independent contracts",
+    run: () => {
+      const faq = landingPageModuleVariantCatalogRegistry[1].modules.faq;
+      const standard = faq.variants.standard.funnelProfileDelta;
+      const accordion = faq.variants.accordion.funnelProfileDelta;
+      assert.deepEqual(standard, accordion);
+      assert.notStrictEqual(standard, accordion);
+      assert.notStrictEqual(standard.bofu, accordion.bofu);
+      assert.notStrictEqual(standard.bofu.prohibited, accordion.bofu.prohibited);
+      assert.notStrictEqual(
+        standard.bofu.supportRequirements,
+        accordion.bofu.supportRequirements,
+      );
+    },
+  },
+  {
+    name: "restricted treatments bind compatible support and social proof stays operational",
+    run: () => {
+      const catalog = landingPageModuleVariantCatalogRegistry[1];
+      for (const moduleEntry of Object.values(catalog.modules)) {
+        const variant = Object.values(moduleEntry.variants)[0];
+        for (const stage of landingPageFunnelStages) {
+          const delta = moduleEntry.funnelProfileDelta[stage];
+          const result = applyLandingPageFunnelProfileDeltaInternal(
+            catalog.funnelCopyProfiles[stage],
+            delta,
+          );
+          assert.ok(result);
+          assert.deepEqual(
+            new Set(Object.keys(delta.supportRequirements)),
+            new Set(result.restricted),
+          );
+          for (const requirement of Object.values(delta.supportRequirements)) {
+            assert.ok(requirement);
+            for (const fieldPath of requirement.fieldPaths) {
+              const field = variant.fields[fieldPath];
+              const source = variant.copySourceMap[fieldPath];
+              assert.equal(field?.fieldKind, "text");
+              if (!field || field.fieldKind !== "text" || !source) assert.fail();
+              assert.equal(requirement.policies.includes(field.policy as never), true);
+              assert.equal(requirement.supports.includes(field.support as never), true);
+              assert.equal(requirement.sourceModes.includes(source.sourceMode), true);
+            }
+          }
+        }
+      }
+
+      const social = catalog.modules.social_proof.funnelProfileDelta;
+      for (const stage of landingPageFunnelStages) {
+        const result = applyLandingPageFunnelProfileDeltaInternal(
+          catalog.funnelCopyProfiles[stage],
+          social[stage],
+        );
+        assert.deepEqual(result?.restricted, ["proof"]);
+        assert.deepEqual(social[stage].supportRequirements.proof, {
+          fieldPaths: ["items[].quote", "items[].attribution"],
+          policies: ["operational_required"],
+          supports: ["when_present"],
+          sourceModes: ["operational_evidence"],
+        });
+      }
+    },
+  },
+  {
+    name: "unknown or permission-expanding deltas and missing support fail closed",
+    run: () => {
+      assertVariantCatalogMutationInvalid((catalog) => {
+        mutableFunnelStageDelta(catalog, "hero", "bofu").prohibited.push(
+          "unknown_treatment",
+        );
+      });
+      assertVariantCatalogMutationInvalid((catalog) => {
+        mutableFunnelStageDelta(catalog, "trust_bar", "bofu").prohibited = [];
+      });
+      assertVariantCatalogMutationInvalid((catalog) => {
+        delete mutableFunnelStageDelta(catalog, "hero", "bofu")
+          .supportRequirements.proof;
+      });
+      assertVariantCatalogMutationInvalid((catalog) => {
+        mutableFunnelStageDelta(
+          catalog,
+          "hero",
+          "bofu",
+        ).supportRequirements.proof = {
+          fieldPaths: ["title"],
+          policies: ["operational_required"],
+          supports: ["when_present"],
+          sourceModes: ["operational_evidence"],
+        };
+      });
+    },
+  },
+  {
     name: "root text normalization and absolute maximum use the public root boundary",
     run: () => {
       const rootParameters = resolveApprovedRootParameters();
@@ -1013,7 +1309,24 @@ const cases: readonly Case[] = [
         true,
       );
       assert.equal(Object.isFrozen(landingPageModuleVariantCatalogRegistry), true);
+      assert.equal(Object.isFrozen(variantCatalog.funnelCopyProfiles), true);
+      assert.equal(Object.isFrozen(variantCatalog.funnelCopyProfiles.bofu), true);
+      assert.equal(
+        Object.isFrozen(variantCatalog.funnelCopyProfiles.bofu.allowed),
+        true,
+      );
       assert.equal(Object.isFrozen(variantCatalog.modules.faq.variants), true);
+      assert.equal(
+        Object.isFrozen(variantCatalog.modules.faq.funnelProfileDelta),
+        true,
+      );
+      assert.equal(
+        Object.isFrozen(
+          variantCatalog.modules.faq.variants.accordion.funnelProfileDelta
+            .bofu.prohibited,
+        ),
+        true,
+      );
       assert.equal(Object.isFrozen(variantCatalog.modules.faq.rootDelta), true);
       assert.equal(
         Object.isFrozen(variantCatalog.modules.faq.variants.accordion.fields),
@@ -1061,6 +1374,17 @@ const cases: readonly Case[] = [
         ).min = 0;
       }, TypeError);
       assert.throws(() => {
+        (variantCatalog.funnelCopyProfiles.bofu.allowed as string[]).push(
+          "forbidden",
+        );
+      }, TypeError);
+      assert.throws(() => {
+        (
+          variantCatalog.modules.faq.variants.accordion.funnelProfileDelta.bofu
+            .prohibited as string[]
+        ).push("forbidden");
+      }, TypeError);
+      assert.throws(() => {
         (
           variantCatalog.modules.faq.variants.accordion
             .capabilities as string[]
@@ -1077,6 +1401,131 @@ const cases: readonly Case[] = [
     },
   },
 ];
+
+function syntheticStageDelta(input: {
+  restricted?: readonly LandingPageCopyTreatment[];
+  prohibited?: readonly LandingPageCopyTreatment[];
+}): LandingPageFunnelProfileStageDelta {
+  return {
+    restricted: input.restricted ?? [],
+    prohibited: input.prohibited ?? [],
+    emphasized: [],
+    supportRequirements: {},
+  };
+}
+
+function assertModuleTreatmentContract(
+  moduleKey: string,
+  result: LandingPageFunnelCopyProfile,
+) {
+  const effectiveAction = landingPageCtaModeTreatmentMap[result.ctaMode];
+  const expected = (() => {
+    switch (moduleKey) {
+      case "hero":
+        return {
+          allowed: result.allowed,
+          restricted: result.restricted,
+          prohibited: result.prohibited,
+        };
+      case "trust_bar":
+        return {
+          allowed: [],
+          restricted: ["proof", "credential", "authority"],
+          prohibited: landingPageCopyTreatments.filter(
+            (treatment) =>
+              !["proof", "credential", "authority"].includes(treatment),
+          ),
+        };
+      case "problem_solution":
+      case "faq":
+        return onlyTreatments(["educational_context", "problem_emphasis"]);
+      case "offer":
+        return {
+          allowed: ["educational_context", "problem_emphasis"],
+          restricted: ["offer_specificity"],
+          prohibited: landingPageCopyTreatments.filter(
+            (treatment) =>
+              ![
+                "educational_context",
+                "problem_emphasis",
+                "offer_specificity",
+              ].includes(treatment),
+          ),
+        };
+      case "process":
+        return onlyTreatments(["educational_context"]);
+      case "technical_assurance":
+        return {
+          allowed: ["educational_context"],
+          restricted: ["proof", "credential", "authority"],
+          prohibited: landingPageCopyTreatments.filter(
+            (treatment) =>
+              ![
+                "educational_context",
+                "proof",
+                "credential",
+                "authority",
+              ].includes(treatment),
+          ),
+        };
+      case "social_proof":
+        return {
+          allowed: [],
+          restricted: ["proof"],
+          prohibited: landingPageCopyTreatments.filter(
+            (treatment) => treatment !== "proof",
+          ),
+        };
+      case "final_cta":
+        return onlyTreatments([effectiveAction]);
+      default:
+        assert.fail(`unknown module treatment contract: ${moduleKey}`);
+    }
+  })();
+
+  if (moduleKey === "hero") {
+    assert.equal(result.allowed.includes(effectiveAction), true);
+    for (const treatment of [
+      "direct_action",
+      "qualified_action",
+      "low_friction_action",
+    ] as const) {
+      assert.equal(
+        treatment === effectiveAction
+          ? result.allowed.includes(treatment)
+          : result.prohibited.includes(treatment),
+        true,
+      );
+    }
+    assert.equal(result.restricted.includes("proof"), true);
+    for (const treatment of [
+      "comparison",
+      "price",
+      "guarantee",
+      "urgency",
+      "scarcity",
+    ] as const) {
+      assert.equal(result.prohibited.includes(treatment), true);
+    }
+    return;
+  }
+
+  assert.deepEqual(result.allowed, expected.allowed);
+  assert.deepEqual(result.restricted, expected.restricted);
+  assert.deepEqual(result.prohibited, expected.prohibited);
+}
+
+function onlyTreatments(
+  allowed: readonly LandingPageCopyTreatment[],
+): Pick<LandingPageFunnelCopyProfile, "allowed" | "restricted" | "prohibited"> {
+  return {
+    allowed,
+    restricted: [],
+    prohibited: landingPageCopyTreatments.filter(
+      (treatment) => !allowed.includes(treatment),
+    ),
+  };
+}
 
 function assertInvalid(catalog: LandingPageModuleCatalogEntry) {
   assert.equal(landingPageModuleCatalogEntrySchema.safeParse(catalog).success, false);
@@ -1132,6 +1581,41 @@ function cloneVariantCatalog(): LandingPageModuleVariantCatalogEntry {
   return JSON.parse(
     JSON.stringify(landingPageModuleVariantCatalogRegistry[1]),
   ) as LandingPageModuleVariantCatalogEntry;
+}
+
+function mutableFunnelProfile(
+  catalog: LandingPageModuleVariantCatalogEntry,
+  stage: (typeof landingPageFunnelStages)[number],
+): {
+  allowed: string[];
+  restricted: string[];
+  prohibited: string[];
+  ctaMode: string;
+} {
+  return catalog.funnelCopyProfiles[stage] as unknown as {
+    allowed: string[];
+    restricted: string[];
+    prohibited: string[];
+    ctaMode: string;
+  };
+}
+
+function mutableFunnelStageDelta(
+  catalog: LandingPageModuleVariantCatalogEntry,
+  moduleKey: LandingPageModuleDefinition["moduleKey"],
+  stage: (typeof landingPageFunnelStages)[number],
+): {
+  restricted: string[];
+  prohibited: string[];
+  emphasized: string[];
+  supportRequirements: Record<string, unknown>;
+} {
+  return catalog.modules[moduleKey].funnelProfileDelta[stage] as unknown as {
+    restricted: string[];
+    prohibited: string[];
+    emphasized: string[];
+    supportRequirements: Record<string, unknown>;
+  };
 }
 
 function mutableVariants(
