@@ -4,7 +4,7 @@ Fontes: chat, `README.md`, `AGENTS.md`, `docs/prompt-estrategista.md`, `docs/roa
 
 Versão: v2 consolidada pelos pareceres especializados e pendente do gate do Analista.
 
-Status: nove módulos e nove variantes `standard@v1` conceitualmente fechados; `faq.accordion@v1` aprovada como única variante adicional para validação controlada; patches do Gestor Estrutural e do Gestor de Updates consolidados; uma fase executável definida; nenhuma implementação de código autorizada antes do gate do Analista e do merge humano.
+Status: nove módulos e nove variantes `standard@v1` conceitualmente fechados; `faq.accordion@v1` aprovada como única variante adicional para validação controlada; patches do Gestor Estrutural e do Gestor de Updates consolidados; sete fases executáveis definidas; nenhuma implementação de código autorizada antes do gate do Analista e do merge humano.
 
 Path: `docs/lousa-plano-base-e18-5.md`.
 
@@ -396,49 +396,123 @@ Compatibilidade comum da seção 3:
 - Os nove módulos, as nove variantes `standard@v1` e `faq.accordion@v1` estão conceitualmente fechados.
 - Não há parametrização aprovada pendente.
 
-### 4.2. Fase executável
+### 4.2. Fases executáveis
 
-#### 4.2.1. Fase 3.1 — E18.5.3–E18.5.9 — Catálogo repo-only de módulos e variantes
+Regra comum:
+
+- as sete fases usam exatamente os identificadores previstos em `docs/lp-planejamento.md`, sem aliases ordinais;
+- todas declaram `Automação: não` porque não implementam automação de produto;
+- são executadas na ordem abaixo, na mesma branch e no mesmo PR draft, sem merge intermediário;
+- cada avanço exige validações aplicáveis e `aprovado para avançar` do Analista;
+- no modo experimental, o orquestrador entrega relatório e para após cada checkpoint;
+- o sub-boundary permanece `lib/conversion-content/landing-page/module-catalog/`, limitado a `contracts.ts`, `registry.ts`, `schema.ts`, `resolver.ts`, `validation-cases.ts` e `index.ts`;
+- somente `package.json` e, na fase E18.5.9, `lib/conversion-content/index.ts` podem ser alterados fora dele, ressalvada a documentação de encerramento;
+- banco, migration, rota, renderer, composição, persistência, tracking, infraestrutura ou mudança destrutiva bloqueiam a execução.
+
+#### 4.2.1. E18.5.3 — Módulos e funções estruturais
 
 - Automação: não.
-- Objetivo:
-  - implementar no boundary existente o contrato compartilhado, os nove módulos, as nove variantes `standard@v1` e `faq.accordion@v1`.
+- Objetivo: criar a base interna versionada do catálogo e registrar os nove módulos.
 - Entregas:
-  - contratos e tipos públicos profundamente `readonly`;
-  - schemas estritos, registry versionado, resolver fail-closed, validadores e casos executáveis;
-  - exportação pública e script próprio de validação no `package.json`;
-  - fixtures somente quando úteis ao padrão de teste.
-- Boundary e mapa de arquivos:
-  - o catálogo da E18.5 constitui o sub-boundary repo-only `lib/conversion-content/landing-page/module-catalog/`, separado da parametrização raiz, da resolução de pesquisas e do catálogo de entradas;
-  - criar exclusivamente no novo sub-boundary: `contracts.ts`, `registry.ts`, `schema.ts`, `resolver.ts`, `validation-cases.ts` e `index.ts`;
-  - `registry.ts` é a única fonte dos módulos, variantes, versões, campos, cardinalidades, policies, capabilities, lifecycle e compatibilidades efetivamente resolvidos;
-  - `schema.ts` valida estrutura e invariantes, sem duplicar o catálogo resolvido nem introduzir fallback;
-  - `resolver.ts` consulta exclusivamente o registry, falha fechado e devolve cópia profundamente imutável, sem referência mutável compartilhada;
-  - `index.ts` expõe somente os tipos públicos e o resolver autorizados; registry e schema não integram a API pública;
-  - ajustar `lib/conversion-content/index.ts` para expor o namespace `landingPageModuleCatalog` a partir de `./landing-page/module-catalog`;
-  - ajustar `package.json` com o script `validate:landing-page-module-catalog`;
-  - não alterar as responsabilidades ou a API pública de `landingPageRoot`, `landingPageResearch` e `landingPageInputCatalog`;
-  - não reutilizar nem recriar os arquivos removidos de composição, renderer ou render model.
+  - criar a base de `contracts.ts`, `registry.ts`, `schema.ts` e `validation-cases.ts`;
+  - registrar `family = landing_page`, `moduleCatalogVersion = 1`, compatibilidade com a raiz v1 e as nove identidades de módulo;
+  - fixar função, fronteiras, invariantes, lifecycle `hypothesis` e propósito `controlled_test` de cada módulo;
+  - adicionar `validate:landing-page-module-catalog` ao `package.json`, sem export público do catálogo.
 - Critérios de aceite:
-  - identidade e compatibilidade completas;
-  - lifecycle `hypothesis` e propósito `controlled_test`;
-  - todos os módulos e variantes aprovados resolvidos e validados;
-  - `faq.accordion@v1` preserva `faq.standard@v1` e valida interaction sem herança entre variantes;
-  - `faq.accordion@v1` adota WCAG 2.2 como baseline de referência no limite do contrato abstrato; a validação própria deve comprovar a presença das regras de teclado, estado e associação acessíveis e preservação de foco, além de confirmar que `faq.standard@v1` permanece sem interação, sem exigir HTML, componente, estilo, Preview ou renderer nesta fase;
-  - rejeição de campos, policies, capabilities, versões e deltas desconhecidos;
-  - resultado profundamente imutável, sem fallback ou referência mutável compartilhada;
-  - nenhuma regra específica de E19, E20, renderer, Admin, Builder ou banco;
-  - os seis arquivos novos existem somente no sub-boundary indicado;
-  - somente `lib/conversion-content/index.ts` e `package.json` são alterados fora dele, ressalvadas as atualizações documentais de encerramento;
-  - `landingPageRoot`, `landingPageResearch` e `landingPageInputCatalog` mantêm suas APIs;
-  - não reaparecem `registry.ts`, `schemas.ts`, `renderer.tsx`, `render-model.ts` ou `composition-validator.ts` diretamente na raiz `landing-page/`;
-  - o registry da E18.5 não contém listas de canais nem chaves de destino, e nenhuma mudança é feita em `input-catalog/registry.ts`;
-  - casos executáveis comprovam a presença tipada de `actionCompatibility.supportsPrimaryConversionForm = false` em `hero.standard@v1` e `final_cta.standard@v1`, a ausência de destino concreto e a ausência de fallback de canal;
-  - schemas e casos executáveis rejeitam lifecycle desconhecido e validam separadamente lifecycle `hypothesis` nos nove módulos e nas dez variantes;
-  - o resolver cobre dez resultados módulo-variante: nove pares `standard@v1` e o par adicional `faq.accordion@v1`, sem alterar a raiz v1;
-  - a saída resolvida expõe `deprecated`; o contrato documental encaminha à E20 o bloqueio de novas composições, sem implementar composição na E18.5;
-  - o `copySourceMap` de cada campo textual e os perfis BOFU, MOFU e TOFU correspondem integralmente às seções 2.5.1 e 2.5.2.
-- Validação obrigatória da fase:
+  - identidades e valores estruturais são literais fechados, imutáveis e sem colisão com `commercial_activation`;
+  - nenhum módulo contém taxon, campanha, plano, copy, ativo, ordem, canal ou destino concreto;
+  - nenhuma variante, field, source map ou profile é antecipado como API pública.
+- Validações: `npm ci`, validação própria da fase, `npm run check` e `git diff --check`.
+
+#### 4.2.2. E18.5.4 — Campos, estruturas e cardinalidades
+
+- Automação: não.
+- Objetivo: implementar a gramática fechada de fields e cardinalidades descrita nas seções 2.4 e 3.
+- Entregas:
+  - implementar `fieldKind`, policies, supports, `semanticRole` e cardinalidades;
+  - implementar os shapes de texto, coleção, ação, imagem e referência técnica;
+  - registrar os fields dos nove módulos em `registry.ts` e validá-los em `schema.ts`, sem arquivo paralelo de catálogo.
+- Critérios de aceite:
+  - somente literais e combinações aprovados são aceitos;
+  - field, path, shape, cardinalidade ou policy desconhecidos falham fechado;
+  - coleção aninhada e destino concreto não integram a v1;
+  - o catálogo permanece sem API pública consumível.
+- Validações: casos positivos e negativos de todos os kinds e cardinalidades, validação própria, `npm run check` e `git diff --check`.
+
+#### 4.2.3. E18.5.5 — Variantes e critérios de criação
+
+- Automação: não.
+- Objetivo: registrar as dez variantes aprovadas e suas capabilities estruturais.
+- Entregas:
+  - registrar as nove variantes `standard@v1` e `faq.accordion@v1`;
+  - vincular os fields às variantes compatíveis;
+  - implementar as capabilities `primary_action`, `image_asset` e `accordion_interaction`;
+  - expor `actionCompatibility.supportsPrimaryConversionForm = false` em Hero e Final CTA.
+- Critérios de aceite:
+  - cada variante pertence a um único módulo e versão compatível;
+  - `faq.accordion@v1` preserva `faq.standard@v1`, sem herança semântica, e registra o contrato abstrato WCAG 2.2 de teclado, estado, associação acessível e foco;
+  - diferença apenas de taxon, copy, plano, campanha, ativo, ordem ou quantidade não cria variante;
+  - capability desconhecida e fallback de canal falham fechado.
+- Validações: dez identidades, independência das FAQs, metadata de formulário, contrato abstrato de acessibilidade, validação própria, `npm run check` e `git diff --check`.
+
+#### 4.2.4. E18.5.6 — Especializações sobre a parametrização raiz
+
+- Automação: não.
+- Objetivo: implementar a precedência `raiz → módulo → variante` sem duplicar a raiz canônica.
+- Entregas:
+  - tipar compatibilidade com a versão da raiz e deltas de módulo e variante;
+  - reutilizar contratos públicos da raiz, inclusive `semanticRole` e lifecycle;
+  - validar que especializações apenas restringem regras e limites absolutos da raiz.
+- Critérios de aceite:
+  - nenhuma importação de registry interno da raiz nem duplicação de roles, limits ou lifecycle;
+  - ampliação de limite absoluto exige nova versão da raiz;
+  - contrato ausente, incompatível ou inválido falha fechado;
+  - as APIs de `landingPageRoot`, `landingPageResearch` e `landingPageInputCatalog` permanecem preservadas.
+- Validações: compatibilidade, restrições e deltas inválidos, validação existente da raiz, validação própria, `npm run check` e `git diff --check`.
+
+#### 4.2.5. E18.5.7 — Mapa de fontes de copy
+
+- Automação: não.
+- Objetivo: implementar o `copySourceMap` fechado de cada field textual da seção 2.5.2.
+- Entregas:
+  - registrar paths exatos, até duas fontes primárias e uma auxiliar;
+  - separar `research` de `operational_evidence` sem consultar nem replicar o catálogo de entradas.
+- Critérios de aceite:
+  - todo path pertence à variante correspondente e todo `item_key` pertence aos conjuntos permitidos;
+  - Social Proof preserva quote e attribution como evidência operacional;
+  - source mode, path, item key, quantidade ou mapa órfão desconhecidos falham fechado.
+- Validações: todos os fields mapeados e casos negativos de fonte, quantidade e path, validação própria, `npm run check` e `git diff --check`.
+
+#### 4.2.6. E18.5.8 — Perfis de copy por intenção e funil
+
+- Automação: não.
+- Objetivo: implementar os perfis BOFU, MOFU e TOFU da seção 2.5.1.
+- Entregas:
+  - registrar treatments permitidos, restritos e proibidos e `ctaMode` literal por perfil;
+  - implementar deltas por módulo e preservar o mesmo delta para as duas variantes de FAQ.
+- Critérios de aceite:
+  - cada treatment aparece exatamente uma vez por perfil;
+  - `ctaMode` corresponde ao tratamento de ação;
+  - deltas somente restringem, proíbem ou enfatizam tratamentos conhecidos;
+  - alias, treatment, conflito ou `ctaMode` desconhecido falha fechado.
+- Validações: três perfis completos, deltas dos nove módulos e dez variantes, casos negativos, validação própria, `npm run check` e `git diff --check`.
+
+#### 4.2.7. E18.5.9 — Ciclo de vida, compatibilidade e validação
+
+- Automação: não.
+- Objetivo: fechar resolução, API pública, lifecycle, compatibilidade e regressões do catálogo completo.
+- Entregas:
+  - finalizar `resolver.ts`, `validation-cases.ts` e `index.ts`;
+  - expor somente tipos públicos e o resolver autorizados;
+  - adicionar `landingPageModuleCatalog` a `lib/conversion-content/index.ts`;
+  - resolver dez resultados módulo-variante com cópia profundamente imutável e sem fallback.
+- Critérios de aceite:
+  - versões, identidades, compatibilidade, lifecycle e contratos desconhecidos falham fechado;
+  - raiz, módulo e variante usam o vocabulário canônico e mantêm estados separados;
+  - a saída expõe `deprecated`, sem implementar o bloqueio de composição pertencente à E20;
+  - registry e schema não integram a API pública;
+  - não reaparecem composição, renderer, render model nem arquivos removidos na raiz `landing-page/`.
+- Validação integrada obrigatória:
   1. `npm ci`
   2. `npm run validate:landing-page-root`
   3. `npm run validate:landing-page-research`
@@ -447,24 +521,22 @@ Compatibilidade comum da seção 3:
   6. `npm run validate:commercial-activation`
   7. `npm run check`
   8. `git diff --check`
-- A validação própria deve cobrir os nove módulos, as dez variantes e os dez resultados módulo-variante aprovados; versões e compatibilidades desconhecidas; contrato inválido; campos, source maps, perfis de funil, policies e capabilities desconhecidos; lifecycle inválido; metadata de compatibilidade com formulário; ausência de fallback; imutabilidade profunda; ausência de referências mutáveis compartilhadas; e preservação independente de `faq.standard@v1` e `faq.accordion@v1`.
-- Os oito comandos devem terminar com código zero, e os casos negativos devem falhar pelo resultado discriminado esperado, não por exceção não tratada.
-- Parada:
-  - necessidade de banco, migration, rota, renderer, composição, persistência, tracking, infraestrutura ou mudança destrutiva retorna ao Estrategista.
+- Os oito comandos devem terminar com código zero; casos negativos devem falhar pelo resultado discriminado esperado, não por exceção não tratada.
 
 ### 4.3. Próxima ação
 
 - Submeter esta v2 ao gate independente e à auditoria de consolidação do Analista.
 - Preservar integralmente os pareceres do Gestor Estrutural e do Gestor de Updates na matriz de consolidação.
-- Não chamar Gestor de Automação, pois a fase está marcada como `Automação: não`.
-- Não autorizar a fase 3.1 antes da aprovação do Analista e do merge humano do plano-base v2.
+- Não chamar Gestor de Automação, pois as fases estão marcadas como `Automação: não`.
+- Submeter esta correção de topologia ao Analista em `revisao_delta`.
+- Não autorizar E18.5.3 antes da aprovação do delta e do merge humano do plano-base v2.
 
 ## 5. Validação e encerramento
 
 ### 5.1. Validação do plano v2
 
-- Existe uma única fase executável e necessária ao recorte.
-- A fase usa identificadores implementáveis da E18.5 e declara `Automação: não`.
+- Existem sete fases executáveis e necessárias ao recorte, de E18.5.3 a E18.5.9.
+- Cada fase usa somente o identificador canônico previsto em `docs/lp-planejamento.md` e declara `Automação: não`.
 - Validações técnicas integram os critérios de aceite, sem fase administrativa separada.
 - Não existe fase própria de governança, handoff, revisão, documentação final ou encerramento.
 - Os identificadores previstos não atualizam `docs/roadmap.md` automaticamente.
