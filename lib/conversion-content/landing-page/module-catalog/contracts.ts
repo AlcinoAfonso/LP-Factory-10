@@ -274,3 +274,43 @@ export type LandingPageModuleCatalogRegistry = Readonly<{
   >;
   variants: Readonly<Record<LandingPageVariantKey, LandingPageVariantDefinition>>;
 }>;
+
+export type LandingPageModuleCatalogErrorCode =
+  | "UNKNOWN_MODULE_CATALOG_VERSION"
+  | "INCOMPATIBLE_ROOT_VERSION"
+  | "UNKNOWN_MODULE"
+  | "UNKNOWN_MODULE_VERSION"
+  | "UNKNOWN_VARIANT"
+  | "UNKNOWN_FUNNEL_PROFILE"
+  | "INVALID_MODULE_CATALOG_CONTRACT";
+
+export type LandingPageModuleCatalogError = Readonly<{
+  code: LandingPageModuleCatalogErrorCode;
+  message: string;
+}>;
+
+export type ResolveLandingPageModuleCatalogInput = Readonly<{
+  moduleCatalogVersion: number;
+  rootVersion: number;
+  moduleKey: string;
+  moduleVersion: number;
+  variantName: string;
+  variantVersion: number;
+  funnelProfileKey: string;
+}>;
+
+export type ResolvedLandingPageModuleCatalog = Readonly<{
+  family: LandingPageModuleFamily;
+  moduleCatalogVersion: LandingPageModuleCatalogVersion;
+  root: import("../index").LandingPageRootParameters;
+  module: LandingPageModuleDefinition;
+  variant: LandingPageVariantDefinition;
+  fieldContract: LandingPageVariantFieldContract;
+  copySourceMaps: Readonly<Record<LandingPageTextFieldPath, LandingPageCopySourceMap>>;
+  funnelCopyProfile: LandingPageFunnelCopyProfile;
+  funnelProfileDelta: LandingPageFunnelProfileDelta;
+}>;
+
+export type ResolveLandingPageModuleCatalogResult =
+  | Readonly<{ ok: true; value: ResolvedLandingPageModuleCatalog }>
+  | Readonly<{ ok: false; error: LandingPageModuleCatalogError }>;

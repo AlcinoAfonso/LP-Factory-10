@@ -275,7 +275,7 @@ const variantDefinitionSchema = z
     moduleKey: z.enum(landingPageModuleKeys),
     moduleVersion: z.literal(1),
     fieldContractKey: z.enum(landingPageVariantFieldContractKeys),
-    lifecycleStatus: z.literal("hypothesis"),
+    lifecycleStatus: z.enum(["hypothesis", "validated", "deprecated"]),
     purpose: z.literal("controlled_test"),
     compatibleRootVersion: z.literal(1),
     rootDelta: rootDeltaSchema,
@@ -381,7 +381,7 @@ const moduleDefinitionSchema = z
     family: z.literal("landing_page"),
     moduleKey: z.enum(landingPageModuleKeys),
     moduleVersion: z.literal(1),
-    lifecycleStatus: z.literal("hypothesis"),
+    lifecycleStatus: z.enum(["hypothesis", "validated", "deprecated"]),
     purpose: z.literal("controlled_test"),
     compatibleRootVersion: z.literal(1),
     rootDelta: rootDeltaSchema,
@@ -589,7 +589,7 @@ export const landingPageModuleCatalogSchema = z
       }
       const canonical =
         landingPageModuleCatalogRegistry.variants[key as LandingPageVariantKey];
-      if (JSON.stringify(variant) !== JSON.stringify(canonical)) {
+      if (JSON.stringify({ ...variant, lifecycleStatus: canonical.lifecycleStatus }) !== JSON.stringify(canonical)) {
         context.addIssue({
           code: "custom",
           path: ["variants", key],

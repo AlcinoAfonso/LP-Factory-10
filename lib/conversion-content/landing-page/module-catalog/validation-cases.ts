@@ -11,6 +11,9 @@ import {
 } from "./contracts";
 import { landingPageModuleCatalogRegistry } from "./registry";
 import { landingPageModuleCatalogSchema } from "./schema";
+import { resolveLandingPageModuleCatalog } from "./resolver";
+import * as publicModuleCatalog from "./index";
+import { resolveLandingPageRootParameters } from "../index";
 
 type Case = Readonly<{
   name: string;
@@ -567,6 +570,85 @@ const cases: readonly Case[] = [
       const emphasizedProhibition = cloneRegistry();
       emphasizedProhibition.modules.hero.funnelProfileDeltas.bofu.emphasizeTreatments = ["coercion"];
       assertInvalid(emphasizedProhibition);
+    },
+  },
+  {
+    name: "resolver returns ten complete isolated variants without fallback",
+    run: () => {
+      for (const variantKey of landingPageVariantKeys) {
+        const [moduleKey, qualifiedVariant] = variantKey.split(".");
+        const [variantName, version] = qualifiedVariant.split("@v");
+        const result = resolveLandingPageModuleCatalog({
+          moduleCatalogVersion: 1, rootVersion: 1, moduleKey, moduleVersion: 1,
+          variantName, variantVersion: Number(version), funnelProfileKey: "mofu",
+        });
+        assert.equal(result.ok, true);
+        if (!result.ok) continue;
+        assert.equal(result.value.variant.variantKey, variantKey);
+        assert.equal(result.value.module.moduleKey, moduleKey);
+        assert.equal(result.value.fieldContract.fieldContractKey, variantKey);
+        assert.equal(result.value.funnelCopyProfile.profileKey, "mofu");
+        assertDeeplyFrozen(result.value);
+      }
+
+      const first = resolveLandingPageModuleCatalog({ moduleCatalogVersion: 1, rootVersion: 1, moduleKey: "hero", moduleVersion: 1, variantName: "standard", variantVersion: 1, funnelProfileKey: "bofu" });
+      const second = resolveLandingPageModuleCatalog({ moduleCatalogVersion: 1, rootVersion: 1, moduleKey: "hero", moduleVersion: 1, variantName: "standard", variantVersion: 1, funnelProfileKey: "bofu" });
+      assert.equal(first.ok && second.ok, true);
+      if (first.ok && second.ok) {
+        assert.notEqual(first.value, second.value);
+        assert.notEqual(first.value.module, second.value.module);
+        assert.notEqual(first.value.root, second.value.root);
+        assert.notEqual(first.value.variant, second.value.variant);
+        assert.notEqual(first.value.fieldContract, second.value.fieldContract);
+        assert.notEqual(first.value.copySourceMaps, second.value.copySourceMaps);
+        assert.notEqual(first.value.funnelCopyProfile, second.value.funnelCopyProfile);
+        assert.notEqual(first.value.funnelProfileDelta, second.value.funnelProfileDelta);
+        assert.notEqual(first.value.module, landingPageModuleCatalogRegistry.modules.hero);
+        assert.notEqual(first.value.variant, landingPageModuleCatalogRegistry.variants["hero.standard@v1"]);
+        assert.notEqual(first.value.fieldContract, landingPageModuleCatalogRegistry.variantFieldContracts["hero.standard@v1"]);
+        assert.notEqual(first.value.copySourceMaps, landingPageModuleCatalogRegistry.copySourceMaps);
+        assert.notEqual(first.value.funnelCopyProfile, landingPageModuleCatalogRegistry.funnelCopyProfiles.bofu);
+        assert.notEqual(first.value.funnelProfileDelta, landingPageModuleCatalogRegistry.modules.hero.funnelProfileDeltas.bofu);
+        const canonicalRoot = resolveLandingPageRootParameters({ rootVersion: 1 });
+        assert.equal(canonicalRoot.ok, true);
+        if (canonicalRoot.ok) assert.notEqual(first.value.root, canonicalRoot.value);
+      }
+    },
+  },
+  {
+    name: "resolver identities versions and compatibility fail closed",
+    run: () => {
+      const base = { moduleCatalogVersion: 1, rootVersion: 1, moduleKey: "hero", moduleVersion: 1, variantName: "standard", variantVersion: 1, funnelProfileKey: "bofu" };
+      for (const [patch, code] of [
+        [{ moduleCatalogVersion: 2 }, "UNKNOWN_MODULE_CATALOG_VERSION"],
+        [{ rootVersion: 2 }, "INCOMPATIBLE_ROOT_VERSION"],
+        [{ moduleKey: "unknown" }, "UNKNOWN_MODULE"],
+        [{ moduleVersion: 2 }, "UNKNOWN_MODULE_VERSION"],
+        [{ variantName: "unknown" }, "UNKNOWN_VARIANT"],
+        [{ variantVersion: 2 }, "UNKNOWN_VARIANT"],
+        [{ funnelProfileKey: "bottom" }, "UNKNOWN_FUNNEL_PROFILE"],
+      ] as const) {
+        const result = resolveLandingPageModuleCatalog({ ...base, ...patch });
+        assert.equal(result.ok, false);
+        if (!result.ok) assert.equal(result.error.code, code);
+      }
+      assert.deepEqual(Object.keys(publicModuleCatalog).sort(), ["resolveLandingPageModuleCatalog"]);
+      assert.equal("landingPageModuleCatalogRegistry" in publicModuleCatalog, false);
+      assert.equal("landingPageModuleCatalogSchema" in publicModuleCatalog, false);
+    },
+  },
+  {
+    name: "canonical lifecycle vocabulary is accepted without composition enforcement",
+    run: () => {
+      for (const lifecycleStatus of ["validated", "deprecated"]) {
+        const historical = cloneRegistry();
+        historical.modules.hero.lifecycleStatus = lifecycleStatus;
+        historical.variants["hero.standard@v1"].lifecycleStatus = lifecycleStatus;
+        assert.equal(landingPageModuleCatalogSchema.safeParse(historical).success, true);
+      }
+      const unknown = cloneRegistry();
+      unknown.modules.hero.lifecycleStatus = "retired";
+      assertInvalid(unknown);
     },
   },
 ];
