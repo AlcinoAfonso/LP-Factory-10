@@ -1,7 +1,9 @@
 import assert from "node:assert/strict";
 
 import {
+  landingPageFieldKinds,
   landingPageModuleKeys,
+  landingPageVariantFieldContractKeys,
   type LandingPageModuleKey,
 } from "./contracts";
 import { landingPageModuleCatalogRegistry } from "./registry";
@@ -165,6 +167,102 @@ const cases: readonly Case[] = [
       );
     },
   },
+  {
+    name: "all ten field contracts and five field kinds are valid",
+    run: () => {
+      assert.deepEqual(
+        Object.keys(
+          landingPageModuleCatalogRegistry.variantFieldContracts,
+        ).sort(),
+        [...landingPageVariantFieldContractKeys].sort(),
+      );
+
+      const kinds = new Set<string>();
+      for (const contract of Object.values(
+        landingPageModuleCatalogRegistry.variantFieldContracts,
+      )) {
+        for (const field of contract.fields) collectFieldKinds(field, kinds);
+      }
+      assert.deepEqual([...kinds].sort(), [...landingPageFieldKinds].sort());
+    },
+  },
+  {
+    name: "unknown field, path, shape, cardinality and policy fail closed",
+    run: () => {
+      const unknownField = cloneRegistry();
+      unknownField.variantFieldContracts["hero.standard@v1"].fields.push({
+        ...cloneField("hero.standard@v1", 0),
+        fieldKey: "unknown",
+        path: "hero.standard.unknown",
+      });
+      assertInvalid(unknownField);
+
+      const unknownPath = cloneRegistry();
+      unknownPath.variantFieldContracts["hero.standard@v1"].fields[0].path =
+        "hero.standard.unapproved";
+      assertInvalid(unknownPath);
+
+      const unknownShape = cloneRegistry();
+      unknownShape.variantFieldContracts["hero.standard@v1"].fields[0].fieldKind =
+        "video";
+      assertInvalid(unknownShape);
+
+      const invertedCardinality = cloneRegistry();
+      invertedCardinality.variantFieldContracts[
+        "hero.standard@v1"
+      ].fields[0].cardinality = { min: 2, max: 1 };
+      assertInvalid(invertedCardinality);
+
+      const unknownPolicy = cloneRegistry();
+      unknownPolicy.variantFieldContracts["hero.standard@v1"].fields[0].policy =
+        "generated";
+      assertInvalid(unknownPolicy);
+    },
+  },
+  {
+    name: "nested collections and concrete action destinations fail closed",
+    run: () => {
+      const nestedCollection = cloneRegistry();
+      const collection = nestedCollection.variantFieldContracts[
+        "trust_bar.standard@v1"
+      ].fields[0];
+      collection.itemFields = [structuredClone(collection)];
+      assertInvalid(nestedCollection);
+
+      const concreteDestination = cloneRegistry();
+      const action = concreteDestination.variantFieldContracts[
+        "hero.standard@v1"
+      ].fields.find((field) => field.fieldKind === "action");
+      assert.ok(action);
+      action.destination = "https://example.com";
+      assertInvalid(concreteDestination);
+    },
+  },
+  {
+    name: "field contract identity, semantic role and support fail closed",
+    run: () => {
+      const mismatchedContract = cloneRegistry();
+      mismatchedContract.variantFieldContracts[
+        "hero.standard@v1"
+      ].fieldContractKey = "faq.standard@v1";
+      assertInvalid(mismatchedContract);
+
+      const unknownSemanticRole = cloneRegistry();
+      unknownSemanticRole.variantFieldContracts[
+        "hero.standard@v1"
+      ].fields[0].semanticRole = "display";
+      assertInvalid(unknownSemanticRole);
+
+      const unknownSupport = cloneRegistry();
+      unknownSupport.variantFieldContracts["hero.standard@v1"].fields[1].support =
+        "always";
+      assertInvalid(unknownSupport);
+
+      const missingContract = cloneRegistry();
+      delete missingContract.variantFieldContracts["faq.accordion@v1"];
+      assertInvalid(missingContract);
+    },
+  },
 ];
 
 for (const testCase of cases) {
@@ -192,6 +290,32 @@ function assertDeeplyFrozen(value: unknown): void {
   for (const nested of Object.values(value)) assertDeeplyFrozen(nested);
 }
 
+function collectFieldKinds(field: Record<string, unknown>, kinds: Set<string>) {
+  assert.equal(typeof field.fieldKind, "string");
+  kinds.add(field.fieldKind as string);
+  if (Array.isArray(field.itemFields)) {
+    for (const itemField of field.itemFields) collectFieldKinds(itemField, kinds);
+  }
+  if (field.label && typeof field.label === "object") {
+    collectFieldKinds(field.label as Record<string, unknown>, kinds);
+  }
+}
+
+function cloneField(
+  contractKey: string,
+  fieldIndex: number,
+): MutableField {
+  return structuredClone(
+    landingPageModuleCatalogRegistry.variantFieldContracts[
+      contractKey as keyof typeof landingPageModuleCatalogRegistry.variantFieldContracts
+    ].fields[fieldIndex],
+  ) as unknown as MutableField;
+}
+
+function assertInvalid(catalog: MutableCatalog): void {
+  assert.equal(landingPageModuleCatalogSchema.safeParse(catalog).success, false);
+}
+
 type MutableModule = {
   family: string;
   moduleKey: string;
@@ -209,4 +333,26 @@ type MutableCatalog = {
   moduleCatalogVersion: number;
   compatibleRootVersions: number[];
   modules: Record<string, MutableModule>;
+  variantFieldContracts: Record<
+    string,
+    {
+      fieldContractKey: string;
+      fields: MutableField[];
+    }
+  >;
+};
+
+type MutableField = {
+  fieldKind: string;
+  fieldKey: string;
+  path: string;
+  cardinality: { min: number; max: number };
+  policy: string;
+  semanticRole?: string;
+  support?: string;
+  itemFields?: MutableField[];
+  label?: MutableField;
+  operationalBinding?: string;
+  destination?: string;
+  [key: string]: unknown;
 };

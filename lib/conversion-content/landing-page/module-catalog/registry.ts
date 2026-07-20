@@ -1,8 +1,18 @@
 import type {
+  LandingPageActionFieldDefinition,
   LandingPageModuleCatalogRegistry,
   LandingPageModuleDefinition,
   LandingPageModuleKey,
+  LandingPageCollectionFieldDefinition,
+  LandingPageCollectionItemFieldDefinition,
+  LandingPageFieldCardinality,
+  LandingPageFieldPolicy,
+  LandingPageFieldSupport,
+  LandingPageImageFieldDefinition,
+  LandingPageTechnicalReferenceFieldDefinition,
+  LandingPageTextFieldDefinition,
 } from "./contracts";
+import type { LandingPageRootSemanticRoleKey } from "../contracts";
 
 export const landingPageModuleCatalogRegistry = deepFreeze({
   family: "landing_page",
@@ -109,7 +119,190 @@ export const landingPageModuleCatalogRegistry = deepFreeze({
       ],
     ),
   },
+  variantFieldContracts: {
+    "hero.standard@v1": {
+      fieldContractKey: "hero.standard@v1",
+      fields: [
+        text("hero.standard.eyebrow", "eyebrow", "eyebrow", 0, 1, "research_guided"),
+        text("hero.standard.title", "title", "h1", 1, 1, "hybrid", "when_factual"),
+        text("hero.standard.subtitle", "subtitle", "paragraph", 1, 1, "hybrid", "when_factual"),
+        action("hero.standard.primaryCta", "primaryCta"),
+        text("hero.standard.proofShort", "proofShort", "paragraph", 0, 1, "hybrid", "when_present"),
+        image("hero.standard.media", "media", 0, 1),
+      ],
+    },
+    "trust_bar.standard@v1": {
+      fieldContractKey: "trust_bar.standard@v1",
+      fields: [
+        collection("trust_bar.standard.items", "items", 2, 4, [
+          text("trust_bar.standard.items[].text", "text", "benefit_item", 1, 1, "hybrid", "when_present"),
+        ]),
+      ],
+    },
+    "problem_solution.standard@v1": {
+      fieldContractKey: "problem_solution.standard@v1",
+      fields: [
+        text("problem_solution.standard.title", "title", "h2", 1, 1, "research_guided"),
+        collection("problem_solution.standard.items", "items", 2, 4, [
+          text("problem_solution.standard.items[].problem", "problem", "card_title", 1, 1, "research_guided"),
+          text("problem_solution.standard.items[].solution", "solution", "card_body", 1, 1, "hybrid", "when_present"),
+        ]),
+      ],
+    },
+    "offer.standard@v1": {
+      fieldContractKey: "offer.standard@v1",
+      fields: [
+        text("offer.standard.title", "title", "h2", 1, 1, "research_guided"),
+        collection("offer.standard.items", "items", 1, 4, [
+          text("offer.standard.items[].itemTitle", "itemTitle", "card_title", 1, 1, "hybrid", "when_present"),
+          text("offer.standard.items[].description", "description", "card_body", 1, 1, "hybrid", "when_present"),
+        ]),
+      ],
+    },
+    "process.standard@v1": {
+      fieldContractKey: "process.standard@v1",
+      fields: [
+        text("process.standard.title", "title", "h2", 1, 1, "research_guided"),
+        collection("process.standard.steps", "steps", 2, 6, [
+          text("process.standard.steps[].stepTitle", "stepTitle", "step_title", 1, 1, "hybrid", "when_present"),
+          text("process.standard.steps[].stepBody", "stepBody", "step_body", 1, 1, "hybrid", "when_present"),
+        ]),
+      ],
+    },
+    "technical_assurance.standard@v1": {
+      fieldContractKey: "technical_assurance.standard@v1",
+      fields: [
+        text("technical_assurance.standard.title", "title", "h2", 1, 1, "research_guided"),
+        collection("technical_assurance.standard.items", "items", 1, 4, [
+          text("technical_assurance.standard.items[].assuranceTitle", "assuranceTitle", "card_title", 1, 1, "hybrid", "when_present"),
+          text("technical_assurance.standard.items[].assuranceBody", "assuranceBody", "card_body", 1, 1, "hybrid", "when_present"),
+        ]),
+      ],
+    },
+    "social_proof.standard@v1": {
+      fieldContractKey: "social_proof.standard@v1",
+      fields: [
+        text("social_proof.standard.title", "title", "h2", 1, 1, "research_guided"),
+        collection("social_proof.standard.items", "items", 1, 3, [
+          text("social_proof.standard.items[].quote", "quote", "card_body", 1, 1, "operational_required"),
+          text("social_proof.standard.items[].attribution", "attribution", "card_title", 1, 1, "operational_required"),
+          technicalReference("social_proof.standard.items[].evidenceRef", "evidenceRef"),
+        ]),
+      ],
+    },
+    "faq.standard@v1": {
+      fieldContractKey: "faq.standard@v1",
+      fields: faqFields("faq.standard"),
+    },
+    "faq.accordion@v1": {
+      fieldContractKey: "faq.accordion@v1",
+      fields: faqFields("faq.accordion"),
+    },
+    "final_cta.standard@v1": {
+      fieldContractKey: "final_cta.standard@v1",
+      fields: [
+        text("final_cta.standard.title", "title", "h2", 1, 1, "hybrid", "when_factual"),
+        text("final_cta.standard.body", "body", "paragraph", 1, 1, "hybrid", "when_factual"),
+        action("final_cta.standard.primaryCta", "primaryCta"),
+      ],
+    },
+  },
 } satisfies LandingPageModuleCatalogRegistry);
+
+function text(
+  path: string,
+  fieldKey: string,
+  semanticRole: LandingPageRootSemanticRoleKey,
+  min: number,
+  max: number,
+  policy: LandingPageFieldPolicy,
+  support?: LandingPageFieldSupport,
+): LandingPageTextFieldDefinition {
+  return {
+    fieldKind: "text",
+    fieldKey,
+    path,
+    cardinality: cardinality(min, max),
+    policy,
+    semanticRole,
+    ...(support ? { support } : {}),
+  };
+}
+
+function collection(
+  path: string,
+  fieldKey: string,
+  min: number,
+  max: number,
+  itemFields: readonly LandingPageCollectionItemFieldDefinition[],
+): LandingPageCollectionFieldDefinition {
+  return {
+    fieldKind: "collection",
+    fieldKey,
+    path,
+    cardinality: cardinality(min, max),
+    policy: "not_copy",
+    itemFields,
+  };
+}
+
+function action(
+  path: string,
+  fieldKey: string,
+): LandingPageActionFieldDefinition {
+  return {
+    fieldKind: "action",
+    fieldKey,
+    path,
+    cardinality: cardinality(1, 1),
+    policy: "not_copy",
+    label: text(`${path}.label`, "label", "cta_label", 1, 1, "hybrid", "when_present"),
+    operationalBinding: "primary_conversion_channel",
+  };
+}
+
+function image(
+  path: string,
+  fieldKey: string,
+  min: number,
+  max: number,
+): LandingPageImageFieldDefinition {
+  return {
+    fieldKind: "image",
+    fieldKey,
+    path,
+    cardinality: cardinality(min, max),
+    policy: "technical_reference",
+    alternativeTextRequiredWhenInformative: true,
+  };
+}
+
+function technicalReference(
+  path: string,
+  fieldKey: string,
+): LandingPageTechnicalReferenceFieldDefinition {
+  return {
+    fieldKind: "technical_reference",
+    fieldKey,
+    path,
+    cardinality: cardinality(1, 1),
+    policy: "technical_reference",
+  };
+}
+
+function faqFields(prefix: "faq.standard" | "faq.accordion") {
+  return [
+    text(`${prefix}.title`, "title", "h2", 1, 1, "research_guided"),
+    collection(`${prefix}.items`, "items", 2, 6, [
+      text(`${prefix}.items[].question`, "question", "faq_question", 1, 1, "research_guided"),
+      text(`${prefix}.items[].answer`, "answer", "faq_answer", 1, 1, "hybrid", "when_factual"),
+    ]),
+  ] as const;
+}
+
+function cardinality(min: number, max: number): LandingPageFieldCardinality {
+  return { min, max };
+}
 
 function moduleDefinition(
   moduleKey: LandingPageModuleKey,
