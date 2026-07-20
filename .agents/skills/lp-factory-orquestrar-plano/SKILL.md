@@ -13,6 +13,8 @@ Aceitar como comando suficiente o número ou a URL do PR que contém o plano-bas
 
 `Use $lp-factory-orquestrar-plano no PR #577.`
 
+Usar `modo experimental` por padrão. Aceitar `modo end-to-end` explícito: neste modo, a matriz será descartada antes da publicação final da v2.
+
 Não exigir do humano nomes de agentes, paths, branches, matriz ou etapas internas. Pedir informação adicional somente diante de ambiguidade que impeça selecionar com segurança o plano ou a worktree de destino.
 
 ## Fontes obrigatórias
@@ -60,6 +62,7 @@ Neste primeiro recorte, não criar worktree nem branch automaticamente.
 4. Obter o plano conceitual somente quando houver referência competente ou vínculo inequívoco com o caso.
 5. Registrar `N/A` quando a inexistência de plano conceitual for confirmada; não escolher documento por semelhança.
 6. Identificar decisões humanas registradas que sejam fontes do plano.
+7. Validar que cada fase executável use exatamente o identificador da subseção do roadmap; não aceitar aliases ordinais como `Fase 1` nem agrupamento de subseções independentes.
 
 Parar quando faltar uma decisão material que altere produto, escopo ou arquitetura.
 
@@ -104,9 +107,10 @@ Não acionar Gestor de Automações neste recorte.
 
 1. Executar a Passagem 1 de `lp-factory-avaliar-plano-analista` com v1, v2, plano conceitual ou `N/A`, decisões registradas e fontes do caso, sem pareceres especializados ou matriz.
 2. Preservar integralmente a resposta independente.
-3. Depois da Passagem 1, gravar a matriz em `docs/matriz-consolidacao-<caso>.md`, validar e criar novo checkpoint.
+3. Depois da Passagem 1, gravar a matriz em `docs/matriz-consolidacao-<caso>.md`, validar e criar novo checkpoint. No modo `experimental`, mantê-la no PR como evidência; no modo `end-to-end`, usá-la somente até a conclusão do Analista.
 4. Continuar no mesmo Analista e entregar os pareceres completos do Gestor Estrutural e do Gestor de Updates, além da matriz, para a Passagem 2.
 5. Preservar integralmente a auditoria e a conclusão formal.
+6. No modo `end-to-end`, após aprovação final, resumir a rastreabilidade no PR e remover a matriz antes da publicação final; não agendar remoção posterior.
 
 ## 7. Tratar a conclusão
 
@@ -121,7 +125,7 @@ Repetir o ciclo somente enquanto houver correções objetivas dentro do escopo. 
 
 Somente após `aprovado para merge do plano-base v2`:
 
-1. Confirmar que o diff contém apenas o plano v2 e sua matriz.
+1. Confirmar que o diff contém apenas o plano v2 e, somente no modo `experimental`, sua matriz.
 2. Verificar alterações acidentais, secrets, `.env`, banco e workflows.
 3. Executar `git diff --check`; tratar `npm ci` e `npm run check` como não aplicáveis quando o diff for exclusivamente documental.
 4. Commitar a versão final e publicar a branch de automação.
@@ -150,5 +154,5 @@ Apresentar:
 - Não acionar especialistas fora do recorte.
 - Não permitir que custom agents editem arquivos.
 - Não executar fases do plano.
-- Não avaliar implementação ou PR de código.
+- Não avaliar implementação ou PR de código; encaminhar a execução aprovada para `$lp-factory-executar-plano`.
 - Não fazer merge nem substituir decisão humana.
