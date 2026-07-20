@@ -1066,6 +1066,34 @@ const cases: readonly Case[] = [
     },
   },
   {
+    name: "all v1 module and variant deltas keep emphasized treatments empty",
+    run: () => {
+      const catalog = landingPageModuleVariantCatalogRegistry[1];
+
+      for (const [moduleKey, moduleEntry] of Object.entries(catalog.modules)) {
+        for (const stage of landingPageFunnelStages) {
+          assert.deepEqual(
+            moduleEntry.funnelProfileDelta[stage].emphasized,
+            [],
+            `${moduleKey}.${stage} must not emphasize a treatment`,
+          );
+        }
+
+        for (const [variantKey, variant] of Object.entries(
+          moduleEntry.variants,
+        )) {
+          for (const stage of landingPageFunnelStages) {
+            assert.deepEqual(
+              variant.funnelProfileDelta[stage].emphasized,
+              [],
+              `${moduleKey}.${variantKey}.${stage} must not emphasize a treatment`,
+            );
+          }
+        }
+      }
+    },
+  },
+  {
     name: "faq deltas are equivalent independent contracts",
     run: () => {
       const faq = landingPageModuleVariantCatalogRegistry[1].modules.faq;
@@ -1075,6 +1103,9 @@ const cases: readonly Case[] = [
       assert.notStrictEqual(standard, accordion);
       assert.notStrictEqual(standard.bofu, accordion.bofu);
       assert.notStrictEqual(standard.bofu.prohibited, accordion.bofu.prohibited);
+      assert.deepEqual(standard.bofu.emphasized, []);
+      assert.deepEqual(accordion.bofu.emphasized, []);
+      assert.notStrictEqual(standard.bofu.emphasized, accordion.bofu.emphasized);
       assert.notStrictEqual(
         standard.bofu.supportRequirements,
         accordion.bofu.supportRequirements,
@@ -1135,6 +1166,11 @@ const cases: readonly Case[] = [
       assertVariantCatalogMutationInvalid((catalog) => {
         mutableFunnelStageDelta(catalog, "hero", "bofu").prohibited.push(
           "unknown_treatment",
+        );
+      });
+      assertVariantCatalogMutationInvalid((catalog) => {
+        mutableFunnelStageDelta(catalog, "hero", "bofu").emphasized.push(
+          "direct_action",
         );
       });
       assertVariantCatalogMutationInvalid((catalog) => {

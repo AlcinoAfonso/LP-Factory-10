@@ -30,7 +30,6 @@ import {
 type ModuleFunnelPolicy = Readonly<{
   prohibited: readonly LandingPageCopyTreatment[];
   restricted: readonly LandingPageCopyTreatment[];
-  emphasized: readonly LandingPageCopyTreatment[];
   effectiveActionOnly: boolean;
 }>;
 
@@ -460,7 +459,6 @@ const moduleFunnelPolicies = {
       "scarcity",
     ],
     restricted: [],
-    emphasized: [],
     effectiveActionOnly: true,
   },
   trust_bar: {
@@ -477,10 +475,9 @@ const moduleFunnelPolicies = {
       "guarantee",
     ],
     restricted: [],
-    emphasized: [],
     effectiveActionOnly: false,
   },
-  problem_solution: policyAllowingOnly([
+  problem_solution: policyPermittingOnly([
     "educational_context",
     "problem_emphasis",
   ]),
@@ -498,10 +495,9 @@ const moduleFunnelPolicies = {
       "guarantee",
     ],
     restricted: ["offer_specificity"],
-    emphasized: [],
     effectiveActionOnly: false,
   },
-  process: policyAllowingOnly(["educational_context"]),
+  process: policyPermittingOnly(["educational_context"]),
   technical_assurance: {
     prohibited: [
       ...actionTreatments,
@@ -515,17 +511,15 @@ const moduleFunnelPolicies = {
       "guarantee",
     ],
     restricted: [],
-    emphasized: ["educational_context"],
     effectiveActionOnly: false,
   },
-  social_proof: policyAllowingOnly(["proof"]),
-  faq: policyAllowingOnly(["educational_context", "problem_emphasis"]),
+  social_proof: policyPermittingOnly(["proof"]),
+  faq: policyPermittingOnly(["educational_context", "problem_emphasis"]),
   final_cta: {
     prohibited: landingPageCopyTreatments.filter(
       (treatment) => !actionTreatments.includes(treatment as never),
     ),
     restricted: [],
-    emphasized: [],
     effectiveActionOnly: true,
   },
 } satisfies Readonly<Record<LandingPageModuleKey, ModuleFunnelPolicy>>;
@@ -821,16 +815,12 @@ function createModuleFunnelProfileDelta(
       const restricted = policy.restricted.filter(
         (treatment) => !prohibited.has(treatment),
       );
-      const emphasized = [
-        ...policy.emphasized,
-        ...(policy.effectiveActionOnly ? [effectiveAction] : []),
-      ].filter((treatment) => !prohibited.has(treatment));
       const partialDelta = {
         restricted,
         prohibited: landingPageCopyTreatments.filter((treatment) =>
           prohibited.has(treatment),
         ),
-        emphasized,
+        emphasized: [],
         supportRequirements: {},
       } satisfies LandingPageFunnelProfileStageDelta;
       const result = applyLandingPageFunnelProfileDeltaInternal(
@@ -850,15 +840,14 @@ function createModuleFunnelProfileDelta(
   ) as unknown as LandingPageFunnelProfileDelta;
 }
 
-function policyAllowingOnly(
-  emphasized: readonly LandingPageCopyTreatment[],
+function policyPermittingOnly(
+  allowed: readonly LandingPageCopyTreatment[],
 ): ModuleFunnelPolicy {
   return {
     prohibited: landingPageCopyTreatments.filter(
-      (treatment) => !emphasized.includes(treatment),
+      (treatment) => !allowed.includes(treatment),
     ),
     restricted: [],
-    emphasized,
     effectiveActionOnly: false,
   };
 }
