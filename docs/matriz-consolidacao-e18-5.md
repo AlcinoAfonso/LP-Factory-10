@@ -10,6 +10,7 @@ Referências imutáveis:
 - v2 avaliada na Passagem 1: `762139be231ba0b0a4f30cf30db4a7fa8a58e379`, blob `3db7d44d122dd25deff1ae1881d61d34d3265a85`;
 - v2 corrigida para `revisao_delta`: `f541b0f4bcddae981d8413f3e47a05742af3ba65`, blob `f0118be75962ec1b7e309f70a61c7e9399d1191f`.
 - v2 com topologia canônica das fases: `bbc99e1351f6adb68b7000a1909de9a6a5a18ec7`, blob `d3a24065d62bdc93b1ec9d98bc5719d30b585688`.
+- v2 com correções obrigatórias da revisão de topologia: `005a437d12f124e78052c21cab402ea9351fd927`, blob `955c397923feb39740ca68be8afb35a3264a8c31`.
 
 | Especialista | ID do achado | Achado | Classificação original | Tratamento | Local na v2 | Evidência ou justificativa |
 |---|---|---|---|---|---|---|
@@ -25,10 +26,12 @@ Referências imutáveis:
 | Analista | `AN-E18.5-004` | O bloqueio de novas composições com lifecycle `deprecated` estava atribuído indevidamente à E18.5. | `aprovado com correções obrigatórias` | `incorporado` | `2.7` e `4.2.7` | A v2 corrigida limita E18.5 a expor o estado e preservar leitura histórica, encaminhando à E20 consumidora o bloqueio de novas composições. |
 | Analista | `AN-E18.5-005` | A matriz deveria preservar as seis linhas especialistas e registrar os achados independentes do Analista antes da revisão de delta. | `aprovado com correções obrigatórias` | `incorporado` | N/A — correção da matriz | As seis linhas especialistas foram preservadas integralmente e as cinco correções obrigatórias do Analista foram adicionadas com tratamento e evidência rastreáveis. |
 | Decisão humana | `HUM-E18.5-001` | A execução deve usar as sete subseções canônicas E18.5.3–E18.5.9, sem aliases ordinais e sem merge entre fases. | `decisão registrada` | `incorporado` | `4.2` e `5.1` | A fase agregada foi desmembrada; o avanço ocorre na mesma branch e no mesmo PR, com gate do Analista por subseção e parada experimental para relatório. |
+| Analista | `AN-E18.5-006` | A decomposição atribuía os fields aos módulos, embora o contrato aprovado os atribua às variantes. | `aprovado com correções obrigatórias` | `incorporado` | `4.2.2` | E18.5.4 passa a registrar os contratos de fields das dez variantes e proíbe catálogo próprio de fields no nível dos módulos. |
+| Analista | `AN-E18.5-007` | A fase agregada continha garantias executáveis que não foram integralmente redistribuídas. | `aprovado com correções obrigatórias` | `incorporado` | `4.2.7` | Foram restaurados registry como fonte única, schema sem duplicação ou fallback, resolver exclusivo do registry, lifecycle `hypothesis` explícito e testes de imutabilidade sem referências compartilhadas. |
 
 ## Limites da consolidação
 
 - Nenhum parecer anterior à reinicialização do fluxo foi usado.
 - Nenhum Gestor de Automações foi acionado, pois as fases declaram `Automação: não`.
-- A matriz preserva os cinco achados estruturais e o único update aplicável da rodada vigente, registra as cinco correções obrigatórias do Analista e a decisão humana de topologia.
+- A matriz preserva os cinco achados estruturais e o único update aplicável da rodada vigente, registra as sete correções obrigatórias do Analista e a decisão humana de topologia.
 - A matriz não autoriza implementação, merge ou ampliação da grade fechada da E18.5.
