@@ -49,6 +49,14 @@ export const landingPageFieldSupports = [
   "when_present",
 ] as const;
 
+export const landingPageVariantKeys = landingPageVariantFieldContractKeys;
+
+export const landingPageVariantCapabilities = [
+  "primary_action",
+  "image_asset",
+  "accordion_interaction",
+] as const;
+
 export type LandingPageModuleFamily = "landing_page";
 export type LandingPageModuleCatalogVersion = 1;
 export type LandingPageCompatibleRootVersion = 1;
@@ -63,6 +71,26 @@ export type LandingPageFieldPolicy =
   (typeof landingPageFieldPolicies)[number];
 export type LandingPageFieldSupport =
   (typeof landingPageFieldSupports)[number];
+export type LandingPageVariantKey = (typeof landingPageVariantKeys)[number];
+export type LandingPageVariantName = "standard" | "accordion";
+export type LandingPageVariantVersion = 1;
+export type LandingPageVariantCapability =
+  (typeof landingPageVariantCapabilities)[number];
+export type LandingPageVariantLifecycleStatus = LandingPageRootLifecycleStatus;
+
+export type LandingPageActionCompatibility = Readonly<{
+  supportsPrimaryConversionForm: false;
+}>;
+
+export type LandingPageAccordionAccessibilityContract = Readonly<{
+  baseline: "WCAG 2.2";
+  keyboardOperable: true;
+  exposesExpandedState: true;
+  associatesControlAndRegion: true;
+  preservesFocus: true;
+  initiallyCollapsed: true;
+  singleExpandedItem: true;
+}>;
 
 export type LandingPageFieldCardinality = Readonly<{
   min: number;
@@ -128,6 +156,20 @@ export type LandingPageVariantFieldContract = Readonly<{
   fields: readonly LandingPageFieldDefinition[];
 }>;
 
+export type LandingPageVariantDefinition = Readonly<{
+  variantKey: LandingPageVariantKey;
+  variantName: LandingPageVariantName;
+  variantVersion: LandingPageVariantVersion;
+  moduleKey: LandingPageModuleKey;
+  moduleVersion: LandingPageModuleVersion;
+  fieldContractKey: LandingPageVariantFieldContractKey;
+  lifecycleStatus: LandingPageVariantLifecycleStatus;
+  purpose: LandingPageModulePurpose;
+  capabilities: readonly LandingPageVariantCapability[];
+  actionCompatibility?: LandingPageActionCompatibility;
+  accordionAccessibility?: LandingPageAccordionAccessibilityContract;
+}>;
+
 export type LandingPageModuleDefinition = Readonly<{
   family: LandingPageModuleFamily;
   moduleKey: LandingPageModuleKey;
@@ -149,4 +191,5 @@ export type LandingPageModuleCatalogRegistry = Readonly<{
   variantFieldContracts: Readonly<
     Record<LandingPageVariantFieldContractKey, LandingPageVariantFieldContract>
   >;
+  variants: Readonly<Record<LandingPageVariantKey, LandingPageVariantDefinition>>;
 }>;

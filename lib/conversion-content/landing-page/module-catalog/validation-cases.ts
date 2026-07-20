@@ -3,8 +3,11 @@ import assert from "node:assert/strict";
 import {
   landingPageFieldKinds,
   landingPageModuleKeys,
+  landingPageVariantCapabilities,
   landingPageVariantFieldContractKeys,
+  landingPageVariantKeys,
   type LandingPageModuleKey,
+  type LandingPageVariantKey,
 } from "./contracts";
 import { landingPageModuleCatalogRegistry } from "./registry";
 import { landingPageModuleCatalogSchema } from "./schema";
@@ -263,6 +266,191 @@ const cases: readonly Case[] = [
       assertInvalid(missingContract);
     },
   },
+  {
+    name: "all ten variants link one module and their own field contract",
+    run: () => {
+      assert.deepEqual(
+        Object.keys(landingPageModuleCatalogRegistry.variants).sort(),
+        [...landingPageVariantKeys].sort(),
+      );
+
+      for (const variantDefinition of Object.values(
+        landingPageModuleCatalogRegistry.variants,
+      )) {
+        assert.equal(variantDefinition.moduleVersion, 1);
+        assert.equal(variantDefinition.variantVersion, 1);
+        assert.equal(variantDefinition.lifecycleStatus, "hypothesis");
+        assert.equal(variantDefinition.purpose, "controlled_test");
+        assert.equal(
+          variantDefinition.fieldContractKey,
+          variantDefinition.variantKey,
+        );
+        assert.ok(
+          landingPageModuleCatalogRegistry.modules[variantDefinition.moduleKey],
+        );
+        assert.ok(
+          landingPageModuleCatalogRegistry.variantFieldContracts[
+            variantDefinition.fieldContractKey
+          ],
+        );
+      }
+    },
+  },
+  {
+    name: "only the three approved capabilities are assigned",
+    run: () => {
+      const assignedCapabilities = new Set(
+        Object.values(landingPageModuleCatalogRegistry.variants).flatMap(
+          (variantDefinition) => variantDefinition.capabilities,
+        ),
+      );
+      assert.deepEqual(
+        [...assignedCapabilities].sort(),
+        [...landingPageVariantCapabilities].sort(),
+      );
+      assert.deepEqual(
+        landingPageModuleCatalogRegistry.variants["hero.standard@v1"]
+          .capabilities,
+        ["primary_action", "image_asset"],
+      );
+      assert.deepEqual(
+        landingPageModuleCatalogRegistry.variants["final_cta.standard@v1"]
+          .capabilities,
+        ["primary_action"],
+      );
+      assert.deepEqual(
+        landingPageModuleCatalogRegistry.variants["faq.accordion@v1"]
+          .capabilities,
+        ["accordion_interaction"],
+      );
+    },
+  },
+  {
+    name: "faq variants are independent and accordion declares the WCAG contract",
+    run: () => {
+      const standardFields =
+        landingPageModuleCatalogRegistry.variantFieldContracts[
+          "faq.standard@v1"
+        ].fields;
+      const accordionFields =
+        landingPageModuleCatalogRegistry.variantFieldContracts[
+          "faq.accordion@v1"
+        ].fields;
+      assert.notEqual(standardFields, accordionFields);
+      assert.deepEqual(
+        normalizeFaqFieldPaths(standardFields),
+        normalizeFaqFieldPaths(accordionFields),
+      );
+
+      assert.equal(
+        landingPageModuleCatalogRegistry.variants["faq.standard@v1"]
+          .accordionAccessibility,
+        undefined,
+      );
+      assert.deepEqual(
+        landingPageModuleCatalogRegistry.variants["faq.accordion@v1"]
+          .accordionAccessibility,
+        {
+          baseline: "WCAG 2.2",
+          keyboardOperable: true,
+          exposesExpandedState: true,
+          associatesControlAndRegion: true,
+          preservesFocus: true,
+          initiallyCollapsed: true,
+          singleExpandedItem: true,
+        },
+      );
+    },
+  },
+  {
+    name: "form compatibility is explicit without channel fallback",
+    run: () => {
+      for (const variantKey of [
+        "hero.standard@v1",
+        "final_cta.standard@v1",
+      ] as const) {
+        assert.deepEqual(
+          landingPageModuleCatalogRegistry.variants[variantKey]
+            .actionCompatibility,
+          { supportsPrimaryConversionForm: false },
+        );
+      }
+
+      const formFallback = cloneRegistry();
+      formFallback.variants["hero.standard@v1"].fallbackChannel = "whatsapp";
+      assertInvalid(formFallback);
+
+      const formSupported = cloneRegistry();
+      formSupported.variants[
+        "hero.standard@v1"
+      ].actionCompatibility = { supportsPrimaryConversionForm: true };
+      assertInvalid(formSupported);
+    },
+  },
+  {
+    name: "unknown capability, variant and creation motivation fail closed",
+    run: () => {
+      const unknownCapability = cloneRegistry();
+      unknownCapability.variants["hero.standard@v1"].capabilities.push(
+        "carousel",
+      );
+      assertInvalid(unknownCapability);
+
+      const unknownVariant = cloneRegistry();
+      unknownVariant.variants["hero.campaign@v1"] = cloneVariant(
+        "hero.standard@v1",
+      );
+      unknownVariant.variants["hero.campaign@v1"].variantKey =
+        "hero.campaign@v1";
+      assertInvalid(unknownVariant);
+
+      for (const motivation of [
+        "taxon",
+        "copy",
+        "plan",
+        "campaign",
+        "asset",
+        "order",
+        "quantity",
+      ]) {
+        const motivatedVariant = cloneRegistry();
+        motivatedVariant.variants[
+          "hero.standard@v1"
+        ].creationMotivation = motivation;
+        assertInvalid(motivatedVariant);
+      }
+    },
+  },
+  {
+    name: "incomplete accordion accessibility and mismatched links fail closed",
+    run: () => {
+      for (const requirement of [
+        "keyboardOperable",
+        "exposesExpandedState",
+        "associatesControlAndRegion",
+        "preservesFocus",
+        "initiallyCollapsed",
+        "singleExpandedItem",
+      ]) {
+        const incompleteAccordion = cloneRegistry();
+        const accessibility = incompleteAccordion.variants[
+          "faq.accordion@v1"
+        ].accordionAccessibility;
+        assert.ok(accessibility);
+        accessibility[requirement] = false;
+        assertInvalid(incompleteAccordion);
+      }
+
+      const mismatchedModule = cloneRegistry();
+      mismatchedModule.variants["hero.standard@v1"].moduleKey = "faq";
+      assertInvalid(mismatchedModule);
+
+      const mismatchedFields = cloneRegistry();
+      mismatchedFields.variants["hero.standard@v1"].fieldContractKey =
+        "faq.standard@v1";
+      assertInvalid(mismatchedFields);
+    },
+  },
 ];
 
 for (const testCase of cases) {
@@ -312,6 +500,18 @@ function cloneField(
   ) as unknown as MutableField;
 }
 
+function cloneVariant(variantKey: LandingPageVariantKey): MutableVariant {
+  return structuredClone(
+    landingPageModuleCatalogRegistry.variants[variantKey],
+  ) as unknown as MutableVariant;
+}
+
+function normalizeFaqFieldPaths(value: unknown): unknown {
+  return JSON.parse(
+    JSON.stringify(value).replace(/faq\.(?:standard|accordion)/g, "faq.variant"),
+  );
+}
+
 function assertInvalid(catalog: MutableCatalog): void {
   assert.equal(landingPageModuleCatalogSchema.safeParse(catalog).success, false);
 }
@@ -340,6 +540,7 @@ type MutableCatalog = {
       fields: MutableField[];
     }
   >;
+  variants: Record<string, MutableVariant>;
 };
 
 type MutableField = {
@@ -354,5 +555,22 @@ type MutableField = {
   label?: MutableField;
   operationalBinding?: string;
   destination?: string;
+  [key: string]: unknown;
+};
+
+type MutableVariant = {
+  variantKey: string;
+  variantName: string;
+  variantVersion: number;
+  moduleKey: string;
+  moduleVersion: number;
+  fieldContractKey: string;
+  lifecycleStatus: string;
+  purpose: string;
+  capabilities: string[];
+  actionCompatibility?: { supportsPrimaryConversionForm: boolean };
+  accordionAccessibility?: Record<string, string | boolean>;
+  fallbackChannel?: string;
+  creationMotivation?: string;
   [key: string]: unknown;
 };

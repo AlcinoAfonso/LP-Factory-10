@@ -4,9 +4,12 @@ import {
   landingPageFieldPolicies,
   landingPageFieldSupports,
   landingPageModuleKeys,
+  landingPageVariantCapabilities,
   landingPageVariantFieldContractKeys,
+  landingPageVariantKeys,
   type LandingPageModuleKey,
   type LandingPageVariantFieldContractKey,
+  type LandingPageVariantKey,
 } from "./contracts";
 import { landingPageModuleCatalogRegistry } from "./registry";
 
@@ -155,6 +158,113 @@ const variantFieldContractSchema = z
     }
   });
 
+const variantDefinitionSchema = z
+  .object({
+    variantKey: z.enum(landingPageVariantKeys),
+    variantName: z.enum(["standard", "accordion"]),
+    variantVersion: z.literal(1),
+    moduleKey: z.enum(landingPageModuleKeys),
+    moduleVersion: z.literal(1),
+    fieldContractKey: z.enum(landingPageVariantFieldContractKeys),
+    lifecycleStatus: z.literal("hypothesis"),
+    purpose: z.literal("controlled_test"),
+    capabilities: z.array(z.enum(landingPageVariantCapabilities)),
+    actionCompatibility: z
+      .object({
+        supportsPrimaryConversionForm: z.literal(false),
+      })
+      .strict()
+      .optional(),
+    accordionAccessibility: z
+      .object({
+        baseline: z.literal("WCAG 2.2"),
+        keyboardOperable: z.literal(true),
+        exposesExpandedState: z.literal(true),
+        associatesControlAndRegion: z.literal(true),
+        preservesFocus: z.literal(true),
+        initiallyCollapsed: z.literal(true),
+        singleExpandedItem: z.literal(true),
+      })
+      .strict()
+      .optional(),
+  })
+  .strict()
+  .superRefine((variant, context) => {
+    if (new Set(variant.capabilities).size !== variant.capabilities.length) {
+      context.addIssue({
+        code: "custom",
+        path: ["capabilities"],
+        message: "capabilities must be unique",
+      });
+    }
+
+    const [qualifiedModule, qualifiedVariant] = variant.variantKey.split(".");
+    const variantName = qualifiedVariant?.replace("@v1", "");
+    if (
+      variant.moduleKey !== qualifiedModule ||
+      variant.variantName !== variantName
+    ) {
+      context.addIssue({
+        code: "custom",
+        message: "variant identity does not match module and variant name",
+      });
+    }
+
+    if (variant.fieldContractKey !== variant.variantKey) {
+      context.addIssue({
+        code: "custom",
+        path: ["fieldContractKey"],
+        message: "variant must use its own field contract",
+      });
+    }
+
+    const hasPrimaryAction = variant.capabilities.includes("primary_action");
+    const hasImageAsset = variant.capabilities.includes("image_asset");
+    const hasAccordion = variant.capabilities.includes("accordion_interaction");
+    const isFormIncompatible =
+      variant.variantKey === "hero.standard@v1" ||
+      variant.variantKey === "final_cta.standard@v1";
+
+    if (hasPrimaryAction !== isFormIncompatible) {
+      context.addIssue({
+        code: "custom",
+        path: ["capabilities"],
+        message: "primary action capability is assigned to an invalid variant",
+      });
+    }
+    if (Boolean(variant.actionCompatibility) !== isFormIncompatible) {
+      context.addIssue({
+        code: "custom",
+        path: ["actionCompatibility"],
+        message: "form compatibility metadata is assigned to an invalid variant",
+      });
+    }
+    if (hasImageAsset !== (variant.variantKey === "hero.standard@v1")) {
+      context.addIssue({
+        code: "custom",
+        path: ["capabilities"],
+        message: "image asset capability is assigned to an invalid variant",
+      });
+    }
+    if (hasAccordion !== (variant.variantKey === "faq.accordion@v1")) {
+      context.addIssue({
+        code: "custom",
+        path: ["capabilities"],
+        message: "accordion capability is assigned to an invalid variant",
+      });
+    }
+    if (
+      Boolean(variant.accordionAccessibility) !==
+      (variant.variantKey === "faq.accordion@v1")
+    ) {
+      context.addIssue({
+        code: "custom",
+        path: ["accordionAccessibility"],
+        message: "accordion accessibility belongs only to faq accordion",
+      });
+    }
+  });
+
 const moduleDefinitionSchema = z
   .object({
     family: z.literal("landing_page"),
@@ -179,6 +289,7 @@ export const landingPageModuleCatalogSchema = z
     compatibleRootVersions: z.tuple([z.literal(1)]),
     modules: z.record(z.string(), moduleDefinitionSchema),
     variantFieldContracts: z.record(z.string(), variantFieldContractSchema),
+    variants: z.record(z.string(), variantDefinitionSchema),
   })
   .strict()
   .superRefine((catalog, context) => {
@@ -273,6 +384,51 @@ export const landingPageModuleCatalogSchema = z
           code: "custom",
           path: ["variantFieldContracts", key],
           message: "field contract differs from the canonical registry",
+        });
+      }
+    }
+
+    const expectedVariantKeys = new Set<string>(landingPageVariantKeys);
+    const actualVariantKeys = Object.keys(catalog.variants);
+    validateExactKeys({
+      actual: actualVariantKeys,
+      expected: expectedVariantKeys,
+      context,
+      path: ["variants"],
+      label: "variant",
+    });
+
+    for (const [key, variant] of Object.entries(catalog.variants)) {
+      if (variant.variantKey !== key) {
+        context.addIssue({
+          code: "custom",
+          path: ["variants", key, "variantKey"],
+          message: "variant key mismatch",
+        });
+      }
+      if (!catalog.modules[variant.moduleKey]) {
+        context.addIssue({
+          code: "custom",
+          path: ["variants", key, "moduleKey"],
+          message: "variant module is not registered",
+        });
+      }
+      if (!catalog.variantFieldContracts[variant.fieldContractKey]) {
+        context.addIssue({
+          code: "custom",
+          path: ["variants", key, "fieldContractKey"],
+          message: "variant field contract is not registered",
+        });
+      }
+
+      if (!expectedVariantKeys.has(key)) continue;
+      const canonical =
+        landingPageModuleCatalogRegistry.variants[key as LandingPageVariantKey];
+      if (JSON.stringify(variant) !== JSON.stringify(canonical)) {
+        context.addIssue({
+          code: "custom",
+          path: ["variants", key],
+          message: "variant differs from the canonical registry",
         });
       }
     }

@@ -11,6 +11,11 @@ import type {
   LandingPageImageFieldDefinition,
   LandingPageTechnicalReferenceFieldDefinition,
   LandingPageTextFieldDefinition,
+  LandingPageVariantCapability,
+  LandingPageVariantDefinition,
+  LandingPageVariantFieldContractKey,
+  LandingPageVariantKey,
+  LandingPageVariantName,
 } from "./contracts";
 import type { LandingPageRootSemanticRoleKey } from "../contracts";
 
@@ -207,7 +212,99 @@ export const landingPageModuleCatalogRegistry = deepFreeze({
       ],
     },
   },
+  variants: {
+    "hero.standard@v1": variant(
+      "hero.standard@v1",
+      "standard",
+      "hero",
+      ["primary_action", "image_asset"],
+      { actionCompatibility: { supportsPrimaryConversionForm: false } },
+    ),
+    "trust_bar.standard@v1": variant(
+      "trust_bar.standard@v1",
+      "standard",
+      "trust_bar",
+    ),
+    "problem_solution.standard@v1": variant(
+      "problem_solution.standard@v1",
+      "standard",
+      "problem_solution",
+    ),
+    "offer.standard@v1": variant(
+      "offer.standard@v1",
+      "standard",
+      "offer",
+    ),
+    "process.standard@v1": variant(
+      "process.standard@v1",
+      "standard",
+      "process",
+    ),
+    "technical_assurance.standard@v1": variant(
+      "technical_assurance.standard@v1",
+      "standard",
+      "technical_assurance",
+    ),
+    "social_proof.standard@v1": variant(
+      "social_proof.standard@v1",
+      "standard",
+      "social_proof",
+    ),
+    "faq.standard@v1": variant(
+      "faq.standard@v1",
+      "standard",
+      "faq",
+    ),
+    "faq.accordion@v1": variant(
+      "faq.accordion@v1",
+      "accordion",
+      "faq",
+      ["accordion_interaction"],
+      {
+        accordionAccessibility: {
+          baseline: "WCAG 2.2",
+          keyboardOperable: true,
+          exposesExpandedState: true,
+          associatesControlAndRegion: true,
+          preservesFocus: true,
+          initiallyCollapsed: true,
+          singleExpandedItem: true,
+        },
+      },
+    ),
+    "final_cta.standard@v1": variant(
+      "final_cta.standard@v1",
+      "standard",
+      "final_cta",
+      ["primary_action"],
+      { actionCompatibility: { supportsPrimaryConversionForm: false } },
+    ),
+  },
 } satisfies LandingPageModuleCatalogRegistry);
+
+function variant(
+  variantKey: LandingPageVariantKey,
+  variantName: LandingPageVariantName,
+  moduleKey: LandingPageModuleKey,
+  capabilities: readonly LandingPageVariantCapability[] = [],
+  optional: Pick<
+    LandingPageVariantDefinition,
+    "actionCompatibility" | "accordionAccessibility"
+  > = {},
+): LandingPageVariantDefinition {
+  return {
+    variantKey,
+    variantName,
+    variantVersion: 1,
+    moduleKey,
+    moduleVersion: 1,
+    fieldContractKey: variantKey as LandingPageVariantFieldContractKey,
+    lifecycleStatus: "hypothesis",
+    purpose: "controlled_test",
+    capabilities,
+    ...optional,
+  };
+}
 
 function text(
   path: string,
