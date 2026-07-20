@@ -1,19 +1,21 @@
 import { z } from "zod";
 
 import {
+  landingPageCapabilityKeys,
   landingPageFieldKinds,
   landingPageFieldPolicies,
   landingPageFieldSupports,
   landingPageModuleKeys,
   landingPageModuleLifecycleStatuses,
+  landingPageVariantKeys,
   type LandingPageFieldDefinition,
   type LandingPageModuleDefinition,
-  type LandingPageModuleFieldDefinition,
   type LandingPageModuleKey,
 } from "./contracts";
 import {
   landingPageModuleCatalogRegistry,
   landingPageModuleFieldCatalogRegistry,
+  landingPageModuleVariantCatalogRegistry,
 } from "./registry";
 import { landingPageRootSemanticRoleKeys } from "../root-schema";
 
@@ -140,7 +142,7 @@ const moduleFieldDefinitionSchema = z
   })
   .strict()
   .superRefine((moduleDefinition, context) => {
-    validateFieldPaths(moduleDefinition, context);
+    validateFieldPaths(moduleDefinition.fields, context);
   });
 
 export const landingPageModuleFieldCatalogEntrySchema = z
@@ -181,6 +183,171 @@ export const landingPageModuleFieldCatalogEntrySchema = z
           code: "custom",
           path: ["modules", moduleKey, "fields"],
           message: "module fields must match the approved v1 contract",
+        });
+      }
+    }
+  });
+
+const primaryActionCapabilitySchema = z
+  .object({
+    capabilityKey: z.literal("primary_action"),
+    bindingFieldKey: z.literal("primary_conversion_channel"),
+    allowedValues: z.tuple([
+      z.literal("whatsapp"),
+      z.literal("phone"),
+      z.literal("email"),
+      z.literal("external_url"),
+    ]),
+  })
+  .strict();
+
+const imageAssetCapabilitySchema = z
+  .object({
+    capabilityKey: z.literal("image_asset"),
+    modes: z.tuple([z.literal("informative"), z.literal("decorative")]),
+    visibility: z.literal("all_viewports"),
+    informativeRequiresAltText: z.literal(true),
+    decorativeRequiresEmptyAltText: z.literal(true),
+  })
+  .strict();
+
+const accordionInteractionCapabilitySchema = z
+  .object({
+    capabilityKey: z.literal("accordion_interaction"),
+    initialState: z.literal("all_closed"),
+    expansionMode: z.literal("single"),
+    toggleMode: z.literal("own_control"),
+    keyboardRequired: z.literal(true),
+    stateExposed: z.literal(true),
+    controlContentAssociationRequired: z.literal(true),
+    focusPreserved: z.literal(true),
+    focusVisible: z.literal("inherited_from_root"),
+    wcagBaseline: z.literal("2.2"),
+  })
+  .strict();
+
+const capabilityDefinitionSchema = z.discriminatedUnion("capabilityKey", [
+  primaryActionCapabilitySchema,
+  imageAssetCapabilitySchema,
+  accordionInteractionCapabilitySchema,
+]);
+
+const moduleVariantDefinitionSchema = z
+  .object({
+    variantKey: z.enum(landingPageVariantKeys),
+    variantVersion: z.literal(1),
+    lifecycleStatus: z.literal("hypothesis"),
+    purpose: z.literal("controlled_test"),
+    compatibleModuleVersion: z.literal(1),
+    fields: z.record(z.string(), fieldDefinitionSchema),
+    capabilities: z.array(z.enum(landingPageCapabilityKeys)),
+  })
+  .strict()
+  .superRefine((variant, context) => {
+    validateFieldPaths(variant.fields, context);
+    if (new Set(variant.capabilities).size !== variant.capabilities.length) {
+      context.addIssue({
+        code: "custom",
+        path: ["capabilities"],
+        message: "variant capabilities must be unique",
+      });
+    }
+  });
+
+const moduleVariantCatalogModuleEntrySchema = z
+  .object({
+    moduleKey: z.enum(landingPageModuleKeys),
+    moduleVersion: z.literal(1),
+    variants: z.record(z.string(), moduleVariantDefinitionSchema),
+  })
+  .strict();
+
+export const landingPageModuleVariantCatalogEntrySchema = z
+  .object({
+    moduleCatalogVersion: z.literal(1),
+    capabilities: z.record(z.string(), capabilityDefinitionSchema),
+    modules: z.record(z.string(), moduleVariantCatalogModuleEntrySchema),
+  })
+  .strict()
+  .superRefine((catalog, context) => {
+    validateExactValues({
+      context,
+      path: ["capabilities"],
+      actual: Object.keys(catalog.capabilities),
+      expected: landingPageCapabilityKeys,
+    });
+    validateExactValues({
+      context,
+      path: ["modules"],
+      actual: Object.keys(catalog.modules),
+      expected: landingPageModuleKeys,
+    });
+
+    for (const [capabilityKey, capability] of Object.entries(
+      catalog.capabilities,
+    )) {
+      const canonicalCapability =
+        landingPageModuleVariantCatalogRegistry[1].capabilities[
+          capabilityKey as keyof typeof landingPageModuleVariantCatalogRegistry[1]["capabilities"]
+        ];
+      if (
+        capability.capabilityKey !== capabilityKey ||
+        !canonicalCapability ||
+        !isDeepEqual(capability, canonicalCapability)
+      ) {
+        context.addIssue({
+          code: "custom",
+          path: ["capabilities", capabilityKey],
+          message: "capability must match the approved v1 contract",
+        });
+      }
+    }
+
+    for (const [moduleKey, moduleEntry] of Object.entries(catalog.modules)) {
+      const canonicalModule =
+        landingPageModuleVariantCatalogRegistry[1].modules[
+          moduleKey as LandingPageModuleKey
+        ];
+      if (
+        moduleEntry.moduleKey !== moduleKey ||
+        moduleEntry.moduleVersion !== canonicalModule?.moduleVersion
+      ) {
+        context.addIssue({
+          code: "custom",
+          path: ["modules", moduleKey],
+          message: "variant module identity must match the approved v1 contract",
+        });
+      }
+      if (!canonicalModule) continue;
+
+      validateExactValues({
+        context,
+        path: ["modules", moduleKey, "variants"],
+        actual: Object.keys(moduleEntry.variants),
+        expected: Object.keys(canonicalModule.variants),
+      });
+
+      for (const [variantKey, variant] of Object.entries(
+        moduleEntry.variants,
+      )) {
+        const canonicalVariant = canonicalModule.variants[variantKey];
+        if (
+          variant.variantKey !== variantKey ||
+          variant.compatibleModuleVersion !== moduleEntry.moduleVersion ||
+          !canonicalVariant ||
+          !isDeepEqual(variant, canonicalVariant)
+        ) {
+          context.addIssue({
+            code: "custom",
+            path: ["modules", moduleKey, "variants", variantKey],
+            message: "variant must match the approved v1 contract",
+          });
+        }
+        validateCapabilityBindings({
+          moduleKey,
+          variantKey,
+          variant,
+          context,
         });
       }
     }
@@ -302,11 +469,9 @@ function validateExactModuleV1Structure(input: {
 }
 
 function validateFieldPaths(
-  moduleDefinition: LandingPageModuleFieldDefinition,
+  fields: Readonly<Record<string, LandingPageFieldDefinition>>,
   context: z.RefinementCtx,
 ) {
-  const fields = moduleDefinition.fields;
-
   for (const [fieldPath, fieldDefinition] of Object.entries(fields)) {
     if (fieldDefinition.path !== fieldPath) {
       context.addIssue({
@@ -378,6 +543,65 @@ function validateFieldPaths(
         message: "action requires a closed child contract",
       });
     }
+  }
+}
+
+function validateCapabilityBindings(input: {
+  moduleKey: string;
+  variantKey: string;
+  variant: {
+    fields: Readonly<Record<string, LandingPageFieldDefinition>>;
+    capabilities: readonly string[];
+  };
+  context: z.RefinementCtx;
+}) {
+  if (
+    input.variant.capabilities.includes("primary_action") &&
+    input.variant.fields.primaryCta?.fieldKind !== "action"
+  ) {
+    input.context.addIssue({
+      code: "custom",
+      path: [
+        "modules",
+        input.moduleKey,
+        "variants",
+        input.variantKey,
+        "capabilities",
+      ],
+      message: "primary action capability requires the approved action field",
+    });
+  }
+  if (
+    input.variant.capabilities.includes("image_asset") &&
+    input.variant.fields.media?.fieldKind !== "image"
+  ) {
+    input.context.addIssue({
+      code: "custom",
+      path: [
+        "modules",
+        input.moduleKey,
+        "variants",
+        input.variantKey,
+        "capabilities",
+      ],
+      message: "image asset capability requires the approved image field",
+    });
+  }
+  if (
+    input.variant.capabilities.includes("accordion_interaction") &&
+    (input.moduleKey !== "faq" || input.variantKey !== "accordion")
+  ) {
+    input.context.addIssue({
+      code: "custom",
+      path: [
+        "modules",
+        input.moduleKey,
+        "variants",
+        input.variantKey,
+        "capabilities",
+      ],
+      message: "accordion interaction belongs only to faq accordion",
+    });
   }
 }
 

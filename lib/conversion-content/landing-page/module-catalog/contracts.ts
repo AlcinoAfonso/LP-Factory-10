@@ -142,3 +142,77 @@ export type LandingPageModuleFieldCatalogEntry = Readonly<{
 export type LandingPageModuleFieldCatalogRegistry = Readonly<
   Record<number, LandingPageModuleFieldCatalogEntry>
 >;
+
+export const landingPageVariantKeys = ["standard", "accordion"] as const;
+
+export const landingPageCapabilityKeys = [
+  "primary_action",
+  "image_asset",
+  "accordion_interaction",
+] as const;
+
+export type LandingPageVariantKey = (typeof landingPageVariantKeys)[number];
+export type LandingPageCapabilityKey =
+  (typeof landingPageCapabilityKeys)[number];
+
+export type LandingPagePrimaryActionCapability = Readonly<{
+  capabilityKey: "primary_action";
+  bindingFieldKey: "primary_conversion_channel";
+  allowedValues: readonly ["whatsapp", "phone", "email", "external_url"];
+}>;
+
+export type LandingPageImageAssetCapability = Readonly<{
+  capabilityKey: "image_asset";
+  modes: readonly ["informative", "decorative"];
+  visibility: "all_viewports";
+  informativeRequiresAltText: true;
+  decorativeRequiresEmptyAltText: true;
+}>;
+
+export type LandingPageAccordionInteractionCapability = Readonly<{
+  capabilityKey: "accordion_interaction";
+  initialState: "all_closed";
+  expansionMode: "single";
+  toggleMode: "own_control";
+  keyboardRequired: true;
+  stateExposed: true;
+  controlContentAssociationRequired: true;
+  focusPreserved: true;
+  focusVisible: "inherited_from_root";
+  wcagBaseline: "2.2";
+}>;
+
+export type LandingPageCapabilityDefinition =
+  | LandingPagePrimaryActionCapability
+  | LandingPageImageAssetCapability
+  | LandingPageAccordionInteractionCapability;
+
+export type LandingPageModuleVariantDefinition = Readonly<{
+  variantKey: LandingPageVariantKey;
+  variantVersion: number;
+  lifecycleStatus: LandingPageModuleLifecycleStatus;
+  purpose: LandingPageModulePurpose;
+  compatibleModuleVersion: number;
+  fields: Readonly<Record<string, LandingPageFieldDefinition>>;
+  capabilities: readonly LandingPageCapabilityKey[];
+}>;
+
+export type LandingPageModuleVariantCatalogModuleEntry = Readonly<{
+  moduleKey: LandingPageModuleKey;
+  moduleVersion: number;
+  variants: Readonly<Record<string, LandingPageModuleVariantDefinition>>;
+}>;
+
+export type LandingPageModuleVariantCatalogEntry = Readonly<{
+  moduleCatalogVersion: number;
+  capabilities: Readonly<
+    Record<LandingPageCapabilityKey, LandingPageCapabilityDefinition>
+  >;
+  modules: Readonly<
+    Record<LandingPageModuleKey, LandingPageModuleVariantCatalogModuleEntry>
+  >;
+}>;
+
+export type LandingPageModuleVariantCatalogRegistry = Readonly<
+  Record<number, LandingPageModuleVariantCatalogEntry>
+>;

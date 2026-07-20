@@ -1,19 +1,24 @@
 import assert from "node:assert/strict";
 
+import { landingPageInputCatalogRegistry } from "../input-catalog";
 import {
   landingPageModuleKeys,
   type LandingPageModuleCatalogEntry,
   type LandingPageModuleDefinition,
   type LandingPageModuleFieldCatalogEntry,
+  type LandingPageModuleVariantCatalogEntry,
 } from "./contracts";
 import { validateLandingPageModuleFieldPayload } from "./payload-validator";
 import {
   landingPageModuleCatalogRegistry,
   landingPageModuleFieldCatalogRegistry,
+  landingPageModuleVariantCatalogRegistry,
+  resolveLandingPageModuleVariantDefinitionInternal,
 } from "./registry";
 import {
   landingPageModuleCatalogEntrySchema,
   landingPageModuleFieldCatalogEntrySchema,
+  landingPageModuleVariantCatalogEntrySchema,
 } from "./schema";
 
 type Case = Readonly<{
@@ -425,10 +430,254 @@ const cases: readonly Case[] = [
     },
   },
   {
+    name: "ten approved variant identities resolve internally",
+    run: () => {
+      const catalog = landingPageModuleVariantCatalogRegistry[1];
+      assert.equal(
+        landingPageModuleVariantCatalogEntrySchema.safeParse(catalog).success,
+        true,
+      );
+
+      const identities: string[] = [];
+      for (const [moduleKey, moduleEntry] of Object.entries(catalog.modules)) {
+        for (const [variantKey, variant] of Object.entries(
+          moduleEntry.variants,
+        )) {
+          identities.push(
+            `${moduleKey}.${variantKey}@v${variant.variantVersion}`,
+          );
+          assert.strictEqual(
+            resolveLandingPageModuleVariantDefinitionInternal({
+              moduleKey,
+              moduleVersion: moduleEntry.moduleVersion,
+              variantKey,
+              variantVersion: variant.variantVersion,
+            }),
+            variant,
+          );
+        }
+      }
+
+      assert.deepEqual(identities, [
+        "hero.standard@v1",
+        "trust_bar.standard@v1",
+        "problem_solution.standard@v1",
+        "offer.standard@v1",
+        "process.standard@v1",
+        "technical_assurance.standard@v1",
+        "social_proof.standard@v1",
+        "faq.standard@v1",
+        "faq.accordion@v1",
+        "final_cta.standard@v1",
+      ]);
+    },
+  },
+  {
+    name: "variants bind to one module version and approved fields only",
+    run: () => {
+      const catalog = landingPageModuleVariantCatalogRegistry[1];
+      for (const [moduleKey, moduleEntry] of Object.entries(catalog.modules)) {
+        for (const variant of Object.values(moduleEntry.variants)) {
+          assert.equal(
+            variant.compatibleModuleVersion,
+            moduleEntry.moduleVersion,
+          );
+          assert.deepEqual(
+            variant.fields,
+            landingPageModuleFieldCatalogRegistry[1].modules[
+              moduleKey as LandingPageModuleDefinition["moduleKey"]
+            ].fields,
+          );
+          assert.notStrictEqual(
+            variant.fields,
+            landingPageModuleFieldCatalogRegistry[1].modules[
+              moduleKey as LandingPageModuleDefinition["moduleKey"]
+            ].fields,
+          );
+        }
+      }
+
+      assert.deepEqual(catalog.modules.hero.variants.standard.capabilities, [
+        "primary_action",
+        "image_asset",
+      ]);
+      assert.deepEqual(
+        catalog.modules.final_cta.variants.standard.capabilities,
+        ["primary_action"],
+      );
+    },
+  },
+  {
+    name: "faq variants own independent contracts and accordion declares wcag 2.2",
+    run: () => {
+      const catalog = landingPageModuleVariantCatalogRegistry[1];
+      const standard = catalog.modules.faq.variants.standard;
+      const accordion = catalog.modules.faq.variants.accordion;
+      const interaction = catalog.capabilities.accordion_interaction;
+
+      assert.notStrictEqual(standard, accordion);
+      assert.notStrictEqual(standard.fields, accordion.fields);
+      assert.notStrictEqual(
+        standard.fields.title,
+        accordion.fields.title,
+      );
+      assert.deepEqual(standard.fields, accordion.fields);
+      assert.deepEqual(standard.capabilities, []);
+      assert.deepEqual(accordion.capabilities, ["accordion_interaction"]);
+      assert.deepEqual(interaction, {
+        capabilityKey: "accordion_interaction",
+        initialState: "all_closed",
+        expansionMode: "single",
+        toggleMode: "own_control",
+        keyboardRequired: true,
+        stateExposed: true,
+        controlContentAssociationRequired: true,
+        focusPreserved: true,
+        focusVisible: "inherited_from_root",
+        wcagBaseline: "2.2",
+      });
+    },
+  },
+  {
+    name: "unknown capability fails closed",
+    run: () => {
+      assertVariantCatalogMutationInvalid((catalog) => {
+        mutableVariantCapabilities(catalog, "hero", "standard").push(
+          "unknown_capability",
+        );
+      });
+    },
+  },
+  {
+    name: "primary action is a strict subset of public conversion channels",
+    run: () => {
+      const inputField = landingPageInputCatalogRegistry[1].universal.entries.find(
+        (entry) =>
+          entry.kind === "field" &&
+          entry.fieldKey === "primary_conversion_channel",
+      );
+      assert.equal(inputField?.kind, "field");
+      assert.equal(inputField?.validation.kind, "enum");
+      if (!inputField || inputField.validation.kind !== "enum") {
+        assert.fail("primary conversion channel enum must exist");
+      }
+
+      const capability =
+        landingPageModuleVariantCatalogRegistry[1].capabilities.primary_action;
+      for (const value of capability.allowedValues) {
+        assert.equal(inputField.validation.allowedValues.includes(value), true);
+      }
+      assert.equal(inputField.validation.allowedValues.includes("form"), true);
+      assert.equal(
+        (capability.allowedValues as readonly string[]).includes("form"),
+        false,
+      );
+      assert.equal(
+        landingPageModuleVariantCatalogRegistry[1].modules.hero.variants.standard.capabilities.includes(
+          "primary_action",
+        ),
+        true,
+      );
+      assert.equal(
+        landingPageModuleVariantCatalogRegistry[1].modules.final_cta.variants.standard.capabilities.includes(
+          "primary_action",
+        ),
+        true,
+      );
+    },
+  },
+  {
+    name: "unknown identity module and incompatible versions fail closed",
+    run: () => {
+      assert.equal(
+        resolveLandingPageModuleVariantDefinitionInternal({
+          moduleKey: "unknown_module",
+          moduleVersion: 1,
+          variantKey: "standard",
+          variantVersion: 1,
+        }),
+        undefined,
+      );
+      assert.equal(
+        resolveLandingPageModuleVariantDefinitionInternal({
+          moduleKey: "hero",
+          moduleVersion: 2,
+          variantKey: "standard",
+          variantVersion: 1,
+        }),
+        undefined,
+      );
+      assert.equal(
+        resolveLandingPageModuleVariantDefinitionInternal({
+          moduleKey: "hero",
+          moduleVersion: 1,
+          variantKey: "unknown_variant",
+          variantVersion: 1,
+        }),
+        undefined,
+      );
+      assert.equal(
+        resolveLandingPageModuleVariantDefinitionInternal({
+          moduleKey: "hero",
+          moduleVersion: 1,
+          variantKey: "standard",
+          variantVersion: 2,
+        }),
+        undefined,
+      );
+      assertVariantCatalogMutationInvalid((catalog) => {
+        mutableVariant(catalog, "hero", "standard").compatibleModuleVersion =
+          2;
+      });
+    },
+  },
+  {
+    name: "variant field outside the approved contract fails closed",
+    run: () => {
+      assertVariantCatalogMutationInvalid((catalog) => {
+        const fields = mutableVariantFields(catalog, "faq", "accordion");
+        delete fields["items[].answer"];
+      });
+      assertVariantCatalogMutationInvalid((catalog) => {
+        mutableVariantFields(catalog, "faq", "standard").unknownField = {
+          path: "unknownField",
+          fieldKind: "text",
+          semanticRole: "paragraph",
+          cardinality: { min: 0, max: 1 },
+          policy: "hybrid",
+          support: "when_factual",
+        };
+      });
+    },
+  },
+  {
+    name: "commercial context alone cannot create a variant",
+    run: () => {
+      for (const variantKey of [
+        "taxon_specific",
+        "copy_specific",
+        "plan_specific",
+        "campaign_specific",
+        "asset_specific",
+        "order_specific",
+        "quantity_specific",
+      ]) {
+        assertVariantCatalogMutationInvalid((catalog) => {
+          const variants = mutableVariants(catalog, "hero");
+          variants[variantKey] = {
+            ...JSON.parse(JSON.stringify(variants.standard)),
+            variantKey,
+          };
+        });
+      }
+    },
+  },
+  {
     name: "catalog and nested structural definitions are deeply immutable",
     run: () => {
       const catalog = landingPageModuleCatalogRegistry[1];
       const fieldCatalog = landingPageModuleFieldCatalogRegistry[1];
+      const variantCatalog = landingPageModuleVariantCatalogRegistry[1];
 
       assert.equal(Object.isFrozen(landingPageModuleCatalogRegistry), true);
       assert.equal(Object.isFrozen(catalog), true);
@@ -440,6 +689,16 @@ const cases: readonly Case[] = [
         Object.isFrozen(fieldCatalog.modules.hero.fields.title.cardinality),
         true,
       );
+      assert.equal(Object.isFrozen(landingPageModuleVariantCatalogRegistry), true);
+      assert.equal(Object.isFrozen(variantCatalog.modules.faq.variants), true);
+      assert.equal(
+        Object.isFrozen(variantCatalog.modules.faq.variants.accordion.fields),
+        true,
+      );
+      assert.equal(
+        Object.isFrozen(variantCatalog.capabilities.accordion_interaction),
+        true,
+      );
       assert.throws(() => {
         (catalog.modules.hero.boundaries as string[]).push("forbidden");
       }, TypeError);
@@ -449,6 +708,12 @@ const cases: readonly Case[] = [
             min: number;
           }
         ).min = 0;
+      }, TypeError);
+      assert.throws(() => {
+        (
+          variantCatalog.modules.faq.variants.accordion
+            .capabilities as string[]
+        ).push("forbidden");
       }, TypeError);
     },
   },
@@ -491,6 +756,63 @@ function cloneFieldCatalog(): LandingPageModuleFieldCatalogEntry {
   return JSON.parse(
     JSON.stringify(landingPageModuleFieldCatalogRegistry[1]),
   ) as LandingPageModuleFieldCatalogEntry;
+}
+
+function assertVariantCatalogMutationInvalid(
+  mutate: (catalog: LandingPageModuleVariantCatalogEntry) => void,
+) {
+  const catalog = cloneVariantCatalog();
+  mutate(catalog);
+  assert.equal(
+    landingPageModuleVariantCatalogEntrySchema.safeParse(catalog).success,
+    false,
+  );
+}
+
+function cloneVariantCatalog(): LandingPageModuleVariantCatalogEntry {
+  return JSON.parse(
+    JSON.stringify(landingPageModuleVariantCatalogRegistry[1]),
+  ) as LandingPageModuleVariantCatalogEntry;
+}
+
+function mutableVariants(
+  catalog: LandingPageModuleVariantCatalogEntry,
+  moduleKey: LandingPageModuleDefinition["moduleKey"],
+): Record<string, Record<string, unknown>> {
+  return catalog.modules[moduleKey].variants as unknown as Record<
+    string,
+    Record<string, unknown>
+  >;
+}
+
+function mutableVariant(
+  catalog: LandingPageModuleVariantCatalogEntry,
+  moduleKey: LandingPageModuleDefinition["moduleKey"],
+  variantKey: string,
+): Record<string, unknown> {
+  const variant = mutableVariants(catalog, moduleKey)[variantKey];
+  assert.notEqual(variant, undefined);
+  return variant;
+}
+
+function mutableVariantCapabilities(
+  catalog: LandingPageModuleVariantCatalogEntry,
+  moduleKey: LandingPageModuleDefinition["moduleKey"],
+  variantKey: string,
+): string[] {
+  return mutableVariant(catalog, moduleKey, variantKey)
+    .capabilities as string[];
+}
+
+function mutableVariantFields(
+  catalog: LandingPageModuleVariantCatalogEntry,
+  moduleKey: LandingPageModuleDefinition["moduleKey"],
+  variantKey: string,
+): Record<string, Record<string, unknown>> {
+  return mutableVariant(catalog, moduleKey, variantKey).fields as Record<
+    string,
+    Record<string, unknown>
+  >;
 }
 
 function mutableFields(

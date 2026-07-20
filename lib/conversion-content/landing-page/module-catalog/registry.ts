@@ -2,8 +2,12 @@ import type {
   LandingPageActionFieldDefinition,
   LandingPageCollectionFieldDefinition,
   LandingPageImageFieldDefinition,
+  LandingPageCapabilityKey,
   LandingPageModuleCatalogRegistry,
   LandingPageModuleFieldCatalogRegistry,
+  LandingPageModuleKey,
+  LandingPageModuleVariantCatalogRegistry,
+  LandingPageModuleVariantDefinition,
   LandingPageReferenceFieldDefinition,
   LandingPageTextFieldDefinition,
 } from "./contracts";
@@ -345,6 +349,95 @@ export const landingPageModuleFieldCatalogRegistry = deepFreeze({
   },
 } satisfies LandingPageModuleFieldCatalogRegistry);
 
+export const landingPageModuleVariantCatalogRegistry = deepFreeze({
+  1: {
+    moduleCatalogVersion: 1,
+    capabilities: {
+      primary_action: {
+        capabilityKey: "primary_action",
+        bindingFieldKey: "primary_conversion_channel",
+        allowedValues: ["whatsapp", "phone", "email", "external_url"],
+      },
+      image_asset: {
+        capabilityKey: "image_asset",
+        modes: ["informative", "decorative"],
+        visibility: "all_viewports",
+        informativeRequiresAltText: true,
+        decorativeRequiresEmptyAltText: true,
+      },
+      accordion_interaction: {
+        capabilityKey: "accordion_interaction",
+        initialState: "all_closed",
+        expansionMode: "single",
+        toggleMode: "own_control",
+        keyboardRequired: true,
+        stateExposed: true,
+        controlContentAssociationRequired: true,
+        focusPreserved: true,
+        focusVisible: "inherited_from_root",
+        wcagBaseline: "2.2",
+      },
+    },
+    modules: {
+      hero: moduleVariants("hero", {
+        standard: variantDefinition("hero", "standard", [
+          "primary_action",
+          "image_asset",
+        ]),
+      }),
+      trust_bar: moduleVariants("trust_bar", {
+        standard: variantDefinition("trust_bar", "standard"),
+      }),
+      problem_solution: moduleVariants("problem_solution", {
+        standard: variantDefinition("problem_solution", "standard"),
+      }),
+      offer: moduleVariants("offer", {
+        standard: variantDefinition("offer", "standard"),
+      }),
+      process: moduleVariants("process", {
+        standard: variantDefinition("process", "standard"),
+      }),
+      technical_assurance: moduleVariants("technical_assurance", {
+        standard: variantDefinition("technical_assurance", "standard"),
+      }),
+      social_proof: moduleVariants("social_proof", {
+        standard: variantDefinition("social_proof", "standard"),
+      }),
+      faq: moduleVariants("faq", {
+        standard: variantDefinition("faq", "standard"),
+        accordion: variantDefinition("faq", "accordion", [
+          "accordion_interaction",
+        ]),
+      }),
+      final_cta: moduleVariants("final_cta", {
+        standard: variantDefinition("final_cta", "standard", [
+          "primary_action",
+        ]),
+      }),
+    },
+  },
+} satisfies LandingPageModuleVariantCatalogRegistry);
+
+export function resolveLandingPageModuleVariantDefinitionInternal(input: {
+  moduleKey: string;
+  moduleVersion: number;
+  variantKey: string;
+  variantVersion: number;
+}): LandingPageModuleVariantDefinition | undefined {
+  const catalog = landingPageModuleVariantCatalogRegistry[1];
+  const moduleEntry = catalog.modules[input.moduleKey as LandingPageModuleKey];
+  if (!moduleEntry || moduleEntry.moduleVersion !== input.moduleVersion) {
+    return undefined;
+  }
+
+  const variant = moduleEntry.variants[input.variantKey];
+  if (!variant || variant.variantVersion !== input.variantVersion) {
+    return undefined;
+  }
+
+  return variant;
+}
+
 function moduleDefinition(input: {
   moduleKey: keyof LandingPageModuleCatalogRegistry[1]["modules"];
   function: string;
@@ -367,6 +460,40 @@ function moduleFields(
   fields: LandingPageModuleFieldCatalogRegistry[1]["modules"][typeof moduleKey]["fields"],
 ) {
   return { moduleKey, moduleVersion: 1, fields };
+}
+
+function moduleVariants(
+  moduleKey: LandingPageModuleKey,
+  variants: Readonly<Record<string, LandingPageModuleVariantDefinition>>,
+) {
+  return { moduleKey, moduleVersion: 1, variants };
+}
+
+function variantDefinition(
+  moduleKey: LandingPageModuleKey,
+  variantKey: LandingPageModuleVariantDefinition["variantKey"],
+  capabilities: readonly LandingPageCapabilityKey[] = [],
+): LandingPageModuleVariantDefinition {
+  return {
+    variantKey,
+    variantVersion: 1,
+    lifecycleStatus: "hypothesis",
+    purpose: "controlled_test",
+    compatibleModuleVersion: 1,
+    fields: copyApprovedModuleFields(moduleKey),
+    capabilities,
+  };
+}
+
+function copyApprovedModuleFields(moduleKey: LandingPageModuleKey) {
+  return Object.fromEntries(
+    Object.entries(
+      landingPageModuleFieldCatalogRegistry[1].modules[moduleKey].fields,
+    ).map(([path, field]) => [
+      path,
+      { ...field, cardinality: { ...field.cardinality } },
+    ]),
+  ) as LandingPageModuleVariantDefinition["fields"];
 }
 
 function textField(
