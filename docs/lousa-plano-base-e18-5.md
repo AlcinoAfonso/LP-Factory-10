@@ -431,9 +431,10 @@ Regra comum:
 - Entregas:
   - implementar `fieldKind`, policies, supports, `semanticRole` e cardinalidades;
   - implementar os shapes de texto, coleção, ação, imagem e referência técnica;
-  - registrar os fields dos nove módulos em `registry.ts` e validá-los em `schema.ts`, sem arquivo paralelo de catálogo.
+  - registrar os contratos de fields das dez variantes aprovadas em `registry.ts` e validá-los em `schema.ts`, sem arquivo paralelo de catálogo.
 - Critérios de aceite:
   - somente literais e combinações aprovados são aceitos;
+  - fields e cardinalidades pertencem às variantes; módulos não recebem catálogo próprio de fields;
   - field, path, shape, cardinalidade ou policy desconhecidos falham fechado;
   - coleção aninhada e destino concreto não integram a v1;
   - o catálogo permanece sem API pública consumível.
@@ -509,7 +510,11 @@ Regra comum:
 - Critérios de aceite:
   - versões, identidades, compatibilidade, lifecycle e contratos desconhecidos falham fechado;
   - raiz, módulo e variante usam o vocabulário canônico e mantêm estados separados;
+  - os nove módulos e as dez variantes preservam lifecycle `hypothesis`;
   - a saída expõe `deprecated`, sem implementar o bloqueio de composição pertencente à E20;
+  - `registry.ts` é a única fonte dos contratos efetivamente resolvidos;
+  - `schema.ts` valida estrutura e invariantes sem duplicar o catálogo resolvido nem introduzir fallback;
+  - `resolver.ts` consulta exclusivamente o registry e devolve cópia profundamente imutável, sem referência mutável compartilhada;
   - registry e schema não integram a API pública;
   - não reaparecem composição, renderer, render model nem arquivos removidos na raiz `landing-page/`.
 - Validação integrada obrigatória:
@@ -522,6 +527,7 @@ Regra comum:
   7. `npm run check`
   8. `git diff --check`
 - Os oito comandos devem terminar com código zero; casos negativos devem falhar pelo resultado discriminado esperado, não por exceção não tratada.
+- A validação própria deve comprovar lifecycle `hypothesis` nos nove módulos e nas dez variantes, resolução exclusivamente pelo registry, ausência de fallback, imutabilidade profunda e ausência de referências mutáveis compartilhadas.
 
 ### 4.3. Próxima ação
 
