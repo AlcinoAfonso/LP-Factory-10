@@ -1,6 +1,6 @@
 ---
 name: lp-factory-orquestrar-plano
-description: Orquestrar a produção e o gate de um plano-base v2 do LP Factory 10 a partir de um PR de plano-base v1, usando uma worktree de automação já preparada, o Gestor Estrutural, o Gestor de Updates e o Analista. Usar quando o humano informar o número ou a URL do PR e pedir para executar, orquestrar ou automatizar a revisão do plano.
+description: Orquestrar a produção e o gate de um plano-base v2 do LP Factory 10 a partir de uma v1 já incorporada à main, usando o Gestor Estrutural, o Gestor de Updates e o Analista. Usar quando o humano informar o PR ou path da v1 e pedir para executar, orquestrar ou automatizar a revisão do plano.
 ---
 
 # Orquestrar plano-base v2
@@ -9,11 +9,13 @@ Conduzir o primeiro fluxo integrado de revisão do plano-base. Manter o task pri
 
 ## Entrada humana
 
-Aceitar como comando suficiente o número ou a URL do PR que contém o plano-base v1, por exemplo:
+Aceitar como comando suficiente o número, a URL do PR ou o path da v1, por exemplo:
 
 `Use $lp-factory-orquestrar-plano no PR #577.`
 
-Usar `modo experimental` por padrão. Aceitar `modo end-to-end` explícito: neste modo, a matriz será descartada antes da publicação final da v2.
+Usar o fluxo normal por padrão. Nele, exigir que a v1 esteja na `main` atualizada e publicar a v2 em uma única branch e PR contra `main`.
+
+Aceitar `modo experimental` somente quando explícito e apenas para controlar checkpoints. Se a v1 ainda não estiver na `main`, limitar-se à avaliação read-only e parar; qualquer mutação exige primeiro sua incorporação à `main`. Nunca criar PR empilhado.
 
 Não exigir do humano nomes de agentes, paths, branches, matriz ou etapas internas. Pedir informação adicional somente diante de ambiguidade que impeça selecionar com segurança o plano ou a worktree de destino.
 
@@ -30,29 +32,30 @@ Não copiar nem reinterpretar os contratos canônicos desses arquivos.
 
 ## 1. Congelar a fonte v1
 
-1. Confirmar repositório, número, URL, estado, base, head e head SHA do PR informado.
+1. Confirmar repositório, número, URL, estado, base, head e head SHA do PR informado, quando houver.
 2. Listar os arquivos do PR e selecionar automaticamente o plano somente quando houver exatamente um path compatível com `docs/lousa-plano-base-*.md`.
 3. Se nenhum plano ou mais de um plano for encontrado, pedir somente o path exato.
 4. Obter o conteúdo integral do plano pelo head SHA do PR.
 5. Registrar head SHA, blob SHA, path e caso ou recorte como referência imutável da v1.
-6. Não editar a branch head do PR nem alterar o PR de origem.
+6. No fluxo normal, confirmar que o blob congelado da v1 está incorporado à `main`; se não estiver, parar antes de qualquer mutação.
+7. Não editar a branch head do PR nem alterar o PR de origem.
 
 ## 2. Selecionar a worktree de automação
 
-O task principal pode estar aberto no projeto local padrão. Direcionar todas as mutações ao checkout de automação selecionado, sem trocar ou editar a `main`.
+O task principal pode estar aberto no projeto local padrão. Direcionar as mutações a uma branch dedicada criada a partir da `main` atualizada; nunca editar diretamente a `main`.
 
 1. Listar as worktrees Git já registradas.
-2. Considerar candidatas somente worktrees:
+2. No fluxo normal, considerar candidatas somente worktrees:
    - limpas;
    - fora da `main`;
    - em branch compatível com `codex-app/*-v2-orquestracao`;
-   - cujo histórico contenha o head SHA da v1;
-   - cujo plano, antes das alterações, corresponda ao blob SHA congelado.
-3. Selecionar automaticamente somente quando existir exatamente uma candidata.
-4. Se não houver candidata ou houver mais de uma, parar e pedir apenas o path da worktree de automação.
-5. Recusar worktree ou branch destinada ao processo atual/manual, incluindo branches compatíveis com `*-v2-processo-atual`.
-
-Neste primeiro recorte, não criar worktree nem branch automaticamente.
+   - criadas ou realinhadas a partir da `main` que contém a v1 congelada;
+   - cujo plano, antes das alterações, corresponda ao blob SHA congelado incorporado à `main`.
+3. Selecionar automaticamente quando existir exatamente uma candidata.
+4. Se não houver candidata e não existir frente paralela, usar o modo simples: atualizar `main` com `git pull --ff-only` e criar uma única branch `codex-app/<caso>-v2-orquestracao`.
+5. Se houver mais de uma candidata, pedir apenas o path da worktree de automação.
+6. Recusar worktree ou branch destinada ao processo atual/manual, incluindo branches compatíveis com `*-v2-processo-atual`.
+7. No modo experimental com v1 ainda não incorporada à `main`, não selecionar nem criar destino mutável; exigir primeiro sua incorporação à `main`.
 
 ## 3. Preparar as fontes do caso
 
@@ -107,10 +110,10 @@ Não acionar Gestor de Automações neste recorte.
 
 1. Executar a Passagem 1 de `lp-factory-avaliar-plano-analista` com v1, v2, plano conceitual ou `N/A`, decisões registradas e fontes do caso, sem pareceres especializados ou matriz.
 2. Preservar integralmente a resposta independente.
-3. Depois da Passagem 1, gravar a matriz em `docs/matriz-consolidacao-<caso>.md`, validar e criar novo checkpoint. No modo `experimental`, mantê-la no PR como evidência; no modo `end-to-end`, usá-la somente até a conclusão do Analista.
+3. Depois da Passagem 1, gravar a matriz em `docs/matriz-consolidacao-<caso>.md`, validar e criar novo checkpoint. No modo `experimental`, mantê-la como evidência; no fluxo normal, usá-la somente até a conclusão do Analista.
 4. Continuar no mesmo Analista e entregar os pareceres completos do Gestor Estrutural e do Gestor de Updates, além da matriz, para a Passagem 2.
 5. Preservar integralmente a auditoria e a conclusão formal.
-6. No modo `end-to-end`, após aprovação final, resumir a rastreabilidade no PR e remover a matriz antes da publicação final; não agendar remoção posterior.
+6. No fluxo normal, após aprovação final, resumir a rastreabilidade no PR e remover a matriz antes da publicação final; não agendar remoção posterior.
 
 ## 7. Tratar a conclusão
 
@@ -129,7 +132,7 @@ Somente após `aprovado para merge do plano-base v2`:
 2. Verificar alterações acidentais, secrets, `.env`, banco e workflows.
 3. Executar `git diff --check`; tratar `npm ci` e `npm run check` como não aplicáveis quando o diff for exclusivamente documental.
 4. Commitar a versão final e publicar a branch de automação.
-5. Abrir um PR draft tendo como base a branch head do PR da v1; se a criação automática não estiver disponível, entregar o link de comparação com base e head preenchidos.
+5. Abrir um único PR draft contra `main`; recusar qualquer base diferente de `main`. Se a criação automática não estiver disponível, entregar o link de comparação com base e head preenchidos.
 6. Não fazer merge. O humano compara, decide e realiza o merge pelo GitHub Web.
 
 ## Devolução ao humano
@@ -150,7 +153,7 @@ Apresentar:
 
 - Não alterar a v1 nem o PR de origem.
 - Não editar ou commitar na `main`.
-- Não criar worktree ou branch neste primeiro recorte.
+- Não criar PR empilhado.
 - Não acionar especialistas fora do recorte.
 - Não permitir que custom agents editem arquivos.
 - Não executar fases do plano.

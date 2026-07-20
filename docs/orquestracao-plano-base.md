@@ -1,8 +1,8 @@
 # Orquestração de planos-base no Codex
 
 Data: 20/07/2026
-Versão: v0.7
-Status: Fluxo de plano integrado e fluxo de execução end-to-end definidos; teste da execução por subseção pendente.
+Versão: v0.8
+Status: Fluxos de plano e execução validados no experimento E18.5; fluxo normal corrigido para operar sem PRs empilhados; fechamento documental pendente de decisão.
 
 ## 1. Objetivo e função deste documento
 
@@ -23,7 +23,7 @@ O resultado esperado é reduzir coordenação manual e cópia de contexto entre 
 
 Este documento será a fonte humana do desenho aprovado. A skill executará o workflow definido aqui; cada custom agent aplicará seu contrato runtime; e o task principal permanecerá responsável pela coordenação, pelas alterações no repositório e pela entrega ao humano.
 
-O teste estrutural isolado da seção 2 foi validado. Os contratos do Gestor Estrutural e do Analista foram otimizados após o primeiro teste integrado. O Gestor de Updates agora integra o fluxo, que permanece pendente de reteste completo.
+O teste estrutural isolado da seção 2 foi validado. Os contratos do Gestor Estrutural e do Analista foram otimizados, o Gestor de Updates foi integrado e a execução E18.5.3–E18.5.9 foi concluída com gates por subseção e gate final de testes. Os PRs empilhados usados nessa comparação são exceção histórica e não integram o fluxo normal.
 
 ## 2. Primeiro passo: teste do Gestor Estrutural
 
@@ -211,11 +211,11 @@ Paths, branches, agentes e etapas internas são resolvidos pela skill. Informaç
 
 ### 4.2 Destino das alterações
 
-A skill usa uma worktree de automação previamente criada e nunca altera a `main`, a branch do processo atual ou a branch head do PR da v1.
+A skill nunca edita diretamente a `main`, a branch do processo atual ou a branch head do PR da v1. No fluxo normal, exige a v1 já incorporada à `main`, atualiza a base e cria uma única branch da v2 contra `main`.
 
-Uma worktree só pode ser selecionada automaticamente quando estiver limpa, usar branch `codex-app/*-v2-orquestracao`, contiver o head SHA da v1 e ainda possuir o mesmo blob do plano congelado. Se não houver exatamente uma candidata, o fluxo pede somente o path correto e para.
+Usar o modo simples quando não houver frente paralela. Uma worktree existente só pode ser selecionada automaticamente quando estiver limpa, usar branch `codex-app/*-v2-orquestracao` baseada na `main` competente e possuir o mesmo blob da v1 congelada. Se houver mais de uma candidata, o fluxo pede somente o path correto.
 
-No primeiro teste E18.5, o destino esperado é:
+No experimento E18.5, o destino usado foi:
 
 - worktree: `C:\Dev\GitHub\LP-Factory-10-e18-5-automacao`;
 - branch: `codex-app/e18-5-v2-orquestracao`;
@@ -224,14 +224,14 @@ No primeiro teste E18.5, o destino esperado é:
 ### 4.3 Sequência integrada
 
 1. Congelar a v1 pelo head SHA e blob do PR informado.
-2. Selecionar e validar a worktree de automação já existente.
+2. Atualizar a `main` e criar a branch da v2 no checkout simples ou selecionar uma única worktree de automação quando houver frente paralela.
 3. Acionar o Gestor Estrutural e preservar o parecer integral.
 4. Acionar o Gestor de Updates sobre a mesma v1 e preservar o parecer integral.
 5. Aplicar os patches autossuficientes dos dois especialistas, produzir a v2 e preparar a matriz de consolidação, sem nova rodada especializada padrão.
 6. Criar referência imutável da v2 e acionar o Analista sem pareceres ou matriz.
 7. Depois da Passagem 1, gravar a matriz e entregá-la com os dois pareceres ao mesmo Analista.
 8. Corrigir ou encaminhar pendências conforme a conclusão formal.
-9. Publicar um PR draft empilhado contra a branch da v1 somente após aprovação do Analista.
+9. No fluxo normal, publicar um único PR draft da v2 contra `main` somente após aprovação do Analista.
 
 A matriz não é gravada antes da Passagem 1. Isso impede que a avaliação independente seja contaminada por um arquivo acessível na própria worktree.
 
@@ -239,11 +239,11 @@ A matriz não é gravada antes da Passagem 1. Isso impede que a avaliação inde
 
 Este recorte inclui Gestor Estrutural, Gestor de Updates, consolidação pelo orquestrador e gate do Analista. O Gestor de Updates consulta obrigatoriamente os quatro catálogos vigentes, mas não os mantém nem pesquisa novos updates fora deles. Gestor de Automações continua fora do fluxo até teste próprio.
 
-O teste será considerado válido quando uma instrução humana curta produzir dois pareceres especializados rastreáveis, uma v2 rastreável, duas passagens não contaminadas do Analista e um PR filho comparável, sem alteração da v1 e sem edição feita pelos custom agents.
+O teste E18.5 foi considerado válido porque uma instrução humana curta produziu dois pareceres especializados rastreáveis, uma v2 rastreável e duas passagens não contaminadas do Analista, sem edição feita pelos custom agents. O PR filho usado na comparação permanece como evidência excepcional; o workflow não permite novos PRs empilhados. O modo experimental altera apenas os checkpoints e também exige a versão do plano incorporada à `main` antes de qualquer mutação.
 
 ## 5. Quarto passo: execução end-to-end do plano aprovado
 
-Depois da aprovação humana do plano-base v2, o mesmo task passa a atuar como executor. A skill `lp-factory-executar-plano` cria ou reutiliza uma única branch e um único PR draft para todo o recorte. Não há merge entre subseções.
+Depois do merge humano do plano-base v2 na `main`, o mesmo task passa a atuar como executor. A skill `lp-factory-executar-plano` atualiza a `main` e cria ou reutiliza uma única branch e um único PR draft contra `main` para todo o recorte. Não há PR empilhado nem merge entre subseções.
 
 ### 5.1 Contrato de fases
 
@@ -253,17 +253,19 @@ Cada fase deve representar exatamente uma subseção executável do roadmap, ide
 
 1. Confirmar a subseção, critérios de aceite, escopo negativo e fontes competentes.
 2. Implementar somente o necessário para a subseção.
-3. Executar validações automáticas aplicáveis.
+3. Executar `npm ci` uma vez por lote contínuo quando o lockfile e as dependências não mudarem, além das validações automáticas aplicáveis a cada subseção.
 4. Acionar o Analista em modo de revisão de implementação.
 5. Corrigir o delta ou parar para teste humano ou decisão humana quando exigido.
-6. Após `aprovado para avançar`, criar checkpoint e, no modo experimental, entregar relatório e parar; no modo end-to-end, seguir para a próxima subseção.
+6. Após `aprovado para avançar`, criar checkpoint, atualizar título e resumo do mesmo PR e, no modo experimental, parar somente no checkpoint solicitado; no fluxo normal end-to-end, seguir para a próxima subseção.
 
 ### 5.3 Testes, documentação e merge
 
-Após a última subseção, o executor realiza validações integradas e solicita a revisão final do Analista. Teste humano só abre gate quando o plano ou o Analista o exigir. Em seguida, o executor aplica o delta documental canônico, pede revisão delta do Analista e atualiza o resumo do mesmo PR.
+Após a última subseção, o executor realiza validações integradas, solicita a revisão final do Analista e avalia explicitamente a necessidade de teste humano. Quando o teste humano for `N/A`, registra a justificativa.
 
-Somente a conclusão `aprovado para merge da implementação` libera o PR para decisão humana. O relatório do PR substitui o envio manual de um relatório ao Gestor de Docs.
+Enquanto não houver decisão canônica entre relatório e aplicação direta de `$lp-factory-abc`, o executor para após esse gate, mesmo com teste humano `N/A`, sem gerar relatório nem alterar documentação. A decisão só se torna canônica quando este documento e a skill de execução forem atualizados e incorporados à `main`. Depois disso, executará apenas o fechamento aprovado, pedirá revisão delta do Analista e atualizará título e resumo do mesmo PR.
+
+Somente a conclusão `aprovado para merge da implementação` libera o PR para decisão humana. O formato do registro operacional final permanece pendente da decisão sobre o fechamento documental.
 
 ### 5.4 Matriz de consolidação
 
-A matriz pertence exclusivamente à etapa de revisão do plano-base v2: ela permite ao orquestrador registrar o tratamento dos pareceres e ao Analista auditar essa consolidação. Em modo experimental, fica no PR como evidência. Em modo end-to-end, é temporária, é resumida no PR e removida antes da publicação final da v2. Não há remoção agendada nem matriz durante a implementação.
+A matriz pertence exclusivamente à etapa de revisão do plano-base v2: ela permite ao orquestrador registrar o tratamento dos pareceres e ao Analista auditar essa consolidação. Em modo experimental, fica como evidência. No fluxo normal, é temporária, é resumida no PR e removida antes da publicação final da v2. Não há remoção agendada nem matriz durante a implementação.
