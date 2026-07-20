@@ -221,6 +221,20 @@ const cases: readonly Case[] = [
     },
   },
   {
+    name: "unknown runtime module key returns invalid without throwing",
+    run: () => {
+      let result: ReturnType<typeof validateLandingPageModuleFieldPayload>;
+
+      assert.doesNotThrow(() => {
+        result = validateLandingPageModuleFieldPayload(
+          "unknown_module" as LandingPageModuleDefinition["moduleKey"],
+          {},
+        );
+      });
+      assert.deepEqual(result!, { ok: false });
+    },
+  },
+  {
     name: "collection minimum and maximum cardinalities are enforced",
     run: () => {
       assert.equal(

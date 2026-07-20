@@ -14,6 +14,7 @@ export function validateLandingPageModuleFieldPayload(
 ): LandingPageModuleFieldPayloadValidationResult {
   const moduleDefinition =
     landingPageModuleFieldCatalogRegistry[1].modules[moduleKey];
+  if (!moduleDefinition) return { ok: false };
 
   return validatePayloadObject(payload, moduleDefinition.fields)
     ? { ok: true }
