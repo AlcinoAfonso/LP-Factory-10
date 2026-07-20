@@ -6,6 +6,8 @@ import type {
   LandingPageCollectionFieldDefinition,
   LandingPageCollectionItemFieldDefinition,
   LandingPageCopySourceMap,
+  LandingPageFunnelProfileDelta,
+  LandingPageFunnelProfileKey,
   LandingPageFieldCardinality,
   LandingPageFieldPolicy,
   LandingPageFieldSupport,
@@ -55,6 +57,32 @@ const copySourceMaps: Readonly<Record<LandingPageTextFieldPath, LandingPageCopyS
   "final_cta.standard.body": research(["desire", "objection"], "belief"),
   "final_cta.standard.primaryCta.label": research(["trigger", "desire"], "objection"),
 };
+const funnelCopyProfiles = {
+  bofu: {
+    profileKey: "bofu",
+    prioritizedSources: ["trigger", "desire", "objection", "proof_type", "positioning_opportunity"],
+    permittedTreatments: ["direct_next_step", "objection_response", "supported_proof"],
+    restrictedTreatments: ["supported_urgency", "supported_commercial_condition", "supported_price", "supported_deadline", "supported_guarantee", "supported_availability"],
+    prohibitedTreatments: ["coercion", "unsupported_scarcity", "unsupported_promise", "unsupported_credential", "unsupported_result"],
+    ctaMode: "direct_next_step",
+  },
+  mofu: {
+    profileKey: "mofu",
+    prioritizedSources: ["pain", "belief", "positioning_opportunity", "objection", "proof_type", "narrative_arc"],
+    permittedTreatments: ["education", "problem_solution_relation", "process", "technical_assurance", "faq"],
+    restrictedTreatments: ["direct_cta", "supported_offer", "supported_proof"],
+    prohibitedTreatments: ["invented_price", "invented_urgency", "invented_guarantee", "invented_comparison", "invented_result"],
+    ctaMode: "non_coercive_direct",
+  },
+  tofu: {
+    profileKey: "tofu",
+    prioritizedSources: ["awareness_level", "search_intent", "pain", "desire", "belief", "positioning_opportunity"],
+    permittedTreatments: ["context", "problem_recognition", "desire", "introductory_education"],
+    restrictedTreatments: ["low_pressure_offer", "low_pressure_cta", "supported_factual_proof"],
+    prohibitedTreatments: ["scarcity", "urgency", "guarantee", "commercial_condition", "result_promise"],
+    ctaMode: "low_pressure",
+  },
+} as const;
 
 function research(
   primaryItemKeys: readonly [import("./contracts").LandingPageResearchItemKey, import("./contracts").LandingPageResearchItemKey?],
@@ -68,6 +96,7 @@ export const landingPageModuleCatalogRegistry = deepFreeze({
   moduleCatalogVersion: 1,
   compatibleRootVersions: [1],
   copySourceMaps,
+  funnelCopyProfiles,
   modules: {
     hero: moduleDefinition(
       "hero",
@@ -353,6 +382,34 @@ function variant(
   };
 }
 
+function emptyFunnelDelta(): LandingPageFunnelProfileDelta {
+  return { emphasizeTreatments: [], restrictTreatments: [], prohibitTreatments: [] };
+}
+
+function moduleFunnelDeltas(moduleKey: LandingPageModuleKey): Readonly<Record<LandingPageFunnelProfileKey, LandingPageFunnelProfileDelta>> {
+  const deltas: Record<LandingPageFunnelProfileKey, LandingPageFunnelProfileDelta> = {
+    bofu: emptyFunnelDelta(), mofu: emptyFunnelDelta(), tofu: emptyFunnelDelta(),
+  };
+  if (moduleKey === "hero" || moduleKey === "final_cta") {
+    deltas.bofu = { ...emptyFunnelDelta(), emphasizeTreatments: ["direct_next_step"] };
+    deltas.mofu = { ...emptyFunnelDelta(), restrictTreatments: ["direct_cta"] };
+    deltas.tofu = { ...emptyFunnelDelta(), restrictTreatments: ["low_pressure_cta"] };
+  } else if (moduleKey === "problem_solution" || moduleKey === "faq") {
+    deltas.bofu = { ...emptyFunnelDelta(), emphasizeTreatments: ["objection_response"] };
+    deltas.mofu = { ...emptyFunnelDelta(), emphasizeTreatments: [moduleKey === "faq" ? "faq" : "problem_solution_relation"] };
+    deltas.tofu = { ...emptyFunnelDelta(), emphasizeTreatments: ["problem_recognition"] };
+  } else if (moduleKey === "offer" || moduleKey === "process") {
+    deltas.bofu = { ...emptyFunnelDelta(), emphasizeTreatments: [moduleKey === "offer" ? "direct_next_step" : "objection_response"] };
+    deltas.mofu = { ...emptyFunnelDelta(), emphasizeTreatments: [moduleKey === "offer" ? "supported_offer" : "process"] };
+    deltas.tofu = { ...emptyFunnelDelta(), restrictTreatments: [moduleKey === "offer" ? "low_pressure_offer" : "introductory_education"] };
+  } else if (["trust_bar", "technical_assurance", "social_proof"].includes(moduleKey)) {
+    deltas.bofu = { ...emptyFunnelDelta(), emphasizeTreatments: ["supported_proof"] };
+    deltas.mofu = { ...emptyFunnelDelta(), emphasizeTreatments: [moduleKey === "technical_assurance" ? "technical_assurance" : "supported_proof"] };
+    deltas.tofu = { ...emptyFunnelDelta(), emphasizeTreatments: ["supported_factual_proof"] };
+  }
+  return deltas;
+}
+
 function text(
   path: string,
   fieldKey: string,
@@ -463,6 +520,7 @@ function moduleDefinition(
     purpose: "controlled_test",
     compatibleRootVersion: 1,
     rootDelta: noRootRestrictions,
+    funnelProfileDeltas: moduleFunnelDeltas(moduleKey),
     structuralFunction,
     invariants,
     boundaries,

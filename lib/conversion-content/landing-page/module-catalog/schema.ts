@@ -5,6 +5,9 @@ import {
   landingPageFieldSupports,
   landingPageResearchItemKeys,
   landingPageTextFieldPaths,
+  landingPageCtaModes,
+  landingPageFunnelProfileKeys,
+  landingPageFunnelTreatmentKeys,
   landingPageModuleKeys,
   landingPageVariantCapabilities,
   landingPageVariantFieldContractKeys,
@@ -69,6 +72,30 @@ const rootDeltaSchema = z.object({
       context.addIssue({ code: "custom", path: ["textRanges", index], message: "recommended maximum exceeds absolute maximum" });
     }
   }
+});
+
+const funnelTreatmentSchema = z.enum(landingPageFunnelTreatmentKeys);
+const funnelProfileDeltaSchema = z.object({
+  emphasizeTreatments: z.array(funnelTreatmentSchema),
+  restrictTreatments: z.array(funnelTreatmentSchema),
+  prohibitTreatments: z.array(funnelTreatmentSchema),
+}).strict();
+const funnelProfileDeltasSchema = z.object({
+  bofu: funnelProfileDeltaSchema, mofu: funnelProfileDeltaSchema, tofu: funnelProfileDeltaSchema,
+}).strict();
+const funnelCopyProfileSchema = z.object({
+  profileKey: z.enum(landingPageFunnelProfileKeys),
+  prioritizedSources: z.array(z.enum(landingPageResearchItemKeys)).min(1),
+  permittedTreatments: z.array(funnelTreatmentSchema).min(1),
+  restrictedTreatments: z.array(funnelTreatmentSchema),
+  prohibitedTreatments: z.array(funnelTreatmentSchema).min(1),
+  ctaMode: z.enum(landingPageCtaModes),
+}).strict().superRefine((profile, context) => {
+  const all = [...profile.permittedTreatments, ...profile.restrictedTreatments, ...profile.prohibitedTreatments];
+  if (new Set(all).size !== all.length) context.addIssue({ code: "custom", message: "each treatment must appear exactly once in its profile" });
+  if (new Set(profile.prioritizedSources).size !== profile.prioritizedSources.length) context.addIssue({ code: "custom", message: "prioritized sources must be unique" });
+  const expectedCtaMode = { bofu: "direct_next_step", mofu: "non_coercive_direct", tofu: "low_pressure" } as const;
+  if (profile.ctaMode !== expectedCtaMode[profile.profileKey]) context.addIssue({ code: "custom", path: ["ctaMode"], message: "cta mode does not correspond to profile action" });
 });
 
 const nonEmptyPlainText = z
@@ -358,6 +385,7 @@ const moduleDefinitionSchema = z
     purpose: z.literal("controlled_test"),
     compatibleRootVersion: z.literal(1),
     rootDelta: rootDeltaSchema,
+    funnelProfileDeltas: funnelProfileDeltasSchema,
     structuralFunction: nonEmptyPlainText,
     invariants: z.array(nonEmptyPlainText).min(1),
     boundaries: z.array(nonEmptyPlainText).min(1),
@@ -374,6 +402,7 @@ export const landingPageModuleCatalogSchema = z
     moduleCatalogVersion: z.literal(1),
     compatibleRootVersions: z.tuple([z.literal(1)]),
     copySourceMaps: z.record(z.string(), copySourceMapSchema),
+    funnelCopyProfiles: z.record(z.string(), funnelCopyProfileSchema),
     modules: z.record(z.string(), moduleDefinitionSchema),
     variantFieldContracts: z.record(z.string(), variantFieldContractSchema),
     variants: z.record(z.string(), variantDefinitionSchema),
@@ -386,6 +415,18 @@ export const landingPageModuleCatalogSchema = z
       return;
     }
     const expectedKeys = new Set<string>(landingPageModuleKeys);
+    validateExactKeys({
+      actual: Object.keys(catalog.funnelCopyProfiles), expected: new Set(landingPageFunnelProfileKeys),
+      context, path: ["funnelCopyProfiles"], label: "funnel profile",
+    });
+    for (const profileKey of landingPageFunnelProfileKeys) {
+      const profile = catalog.funnelCopyProfiles[profileKey];
+      if (!profile) continue;
+      if (profile.profileKey !== profileKey) context.addIssue({ code: "custom", path: ["funnelCopyProfiles", profileKey, "profileKey"], message: "funnel profile key mismatch" });
+      if (JSON.stringify(profile) !== JSON.stringify(landingPageModuleCatalogRegistry.funnelCopyProfiles[profileKey])) {
+        context.addIssue({ code: "custom", path: ["funnelCopyProfiles", profileKey], message: "funnel profile differs from the canonical registry" });
+      }
+    }
     const expectedCopyPaths = new Set<string>(landingPageTextFieldPaths);
     validateExactKeys({
       actual: Object.keys(catalog.copySourceMaps), expected: expectedCopyPaths,
@@ -436,6 +477,7 @@ export const landingPageModuleCatalogSchema = z
         context,
         path: ["modules", key, "rootDelta"],
       });
+      validateModuleFunnelDeltas(module.funnelProfileDeltas, catalog.funnelCopyProfiles, context, ["modules", key, "funnelProfileDeltas"]);
       const canonical =
         landingPageModuleCatalogRegistry.modules[key as LandingPageModuleKey];
 
@@ -452,6 +494,9 @@ export const landingPageModuleCatalogSchema = z
         context,
         path: ["modules", key, "invariants"],
       });
+      if (JSON.stringify(module.funnelProfileDeltas) !== JSON.stringify(canonical.funnelProfileDeltas)) {
+        context.addIssue({ code: "custom", path: ["modules", key, "funnelProfileDeltas"], message: "funnel profile deltas differ from the canonical registry" });
+      }
       validateCanonicalTextList({
         actual: module.boundaries,
         canonical: canonical.boundaries,
@@ -596,6 +641,31 @@ function validateComposedRootDelta(input: {
     }
     if (childRange.recommended.max > childRange.absoluteMax) {
       input.context.addIssue({ code: "custom", path: [...input.path, "textRanges", index], message: "effective recommended maximum exceeds effective absolute maximum" });
+    }
+  }
+}
+
+function validateModuleFunnelDeltas(
+  deltas: Record<string, { emphasizeTreatments: string[]; restrictTreatments: string[]; prohibitTreatments: string[] }>,
+  profiles: Record<string, { permittedTreatments: string[]; restrictedTreatments: string[]; prohibitedTreatments: string[] }>,
+  context: z.RefinementCtx,
+  path: (string | number)[],
+) {
+  for (const profileKey of landingPageFunnelProfileKeys) {
+    const delta = deltas[profileKey];
+    const profile = profiles[profileKey];
+    if (!delta || !profile) continue;
+    const known = new Set([...profile.permittedTreatments, ...profile.restrictedTreatments, ...profile.prohibitedTreatments]);
+    const prohibited = new Set(profile.prohibitedTreatments);
+    const operations = [...delta.emphasizeTreatments, ...delta.restrictTreatments, ...delta.prohibitTreatments];
+    if (new Set(operations).size !== operations.length) {
+      context.addIssue({ code: "custom", path: [...path, profileKey], message: "funnel delta has conflicting treatment operations" });
+    }
+    for (const treatment of operations) {
+      if (!known.has(treatment)) context.addIssue({ code: "custom", path: [...path, profileKey], message: "funnel delta references treatment outside its profile" });
+    }
+    for (const treatment of [...delta.emphasizeTreatments, ...delta.restrictTreatments]) {
+      if (prohibited.has(treatment)) context.addIssue({ code: "custom", path: [...path, profileKey], message: "funnel delta cannot emphasize or merely restrict a prohibited treatment" });
     }
   }
 }

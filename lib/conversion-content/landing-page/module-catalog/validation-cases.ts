@@ -526,6 +526,49 @@ const cases: readonly Case[] = [
       assertInvalid(orphanMap);
     },
   },
+  {
+    name: "funnel profiles and module deltas fail closed",
+    run: () => {
+      assert.deepEqual(Object.keys(landingPageModuleCatalogRegistry.funnelCopyProfiles), ["bofu", "mofu", "tofu"]);
+      const standardFaqModule = landingPageModuleCatalogRegistry.modules[
+        landingPageModuleCatalogRegistry.variants["faq.standard@v1"].moduleKey
+      ];
+      const accordionFaqModule = landingPageModuleCatalogRegistry.modules[
+        landingPageModuleCatalogRegistry.variants["faq.accordion@v1"].moduleKey
+      ];
+      assert.equal(standardFaqModule, accordionFaqModule);
+      assert.equal(standardFaqModule.moduleKey, "faq");
+      assert.deepEqual(standardFaqModule.funnelProfileDeltas, accordionFaqModule.funnelProfileDeltas);
+
+      const unknownProfile = cloneRegistry();
+      unknownProfile.funnelCopyProfiles.bottom = structuredClone(unknownProfile.funnelCopyProfiles.bofu);
+      assertInvalid(unknownProfile);
+
+      const mismatchedCtaMode = cloneRegistry();
+      mismatchedCtaMode.funnelCopyProfiles.bofu.ctaMode = "low_pressure";
+      assertInvalid(mismatchedCtaMode);
+
+      const duplicateTreatment = cloneRegistry();
+      duplicateTreatment.funnelCopyProfiles.bofu.prohibitedTreatments.push("direct_next_step");
+      assertInvalid(duplicateTreatment);
+
+      const unknownTreatment = cloneRegistry();
+      unknownTreatment.modules.hero.funnelProfileDeltas.bofu.emphasizeTreatments = ["viral_hook"];
+      assertInvalid(unknownTreatment);
+
+      const crossProfileTreatment = cloneRegistry();
+      crossProfileTreatment.modules.hero.funnelProfileDeltas.tofu.emphasizeTreatments = ["direct_next_step"];
+      assertInvalid(crossProfileTreatment);
+
+      const conflictingDelta = cloneRegistry();
+      conflictingDelta.modules.hero.funnelProfileDeltas.bofu.prohibitTreatments = ["direct_next_step"];
+      assertInvalid(conflictingDelta);
+
+      const emphasizedProhibition = cloneRegistry();
+      emphasizedProhibition.modules.hero.funnelProfileDeltas.bofu.emphasizeTreatments = ["coercion"];
+      assertInvalid(emphasizedProhibition);
+    },
+  },
 ];
 
 for (const testCase of cases) {
@@ -613,6 +656,7 @@ type MutableModule = {
   purpose: string;
   compatibleRootVersion: number;
   rootDelta: MutableRootDelta;
+  funnelProfileDeltas: Record<string, MutableFunnelDelta>;
   structuralFunction: string;
   invariants: string[];
   boundaries: string[];
@@ -624,6 +668,7 @@ type MutableCatalog = {
   moduleCatalogVersion: number;
   compatibleRootVersions: number[];
   copySourceMaps: Record<string, MutableField["copySourceMap"]>;
+  funnelCopyProfiles: Record<string, MutableFunnelProfile>;
   modules: Record<string, MutableModule>;
   variantFieldContracts: Record<
     string,
@@ -682,4 +727,19 @@ type MutableRootDelta = {
     recommended?: { min: number; max: number };
     absoluteMax?: number;
   }>;
+};
+
+type MutableFunnelDelta = {
+  emphasizeTreatments: string[];
+  restrictTreatments: string[];
+  prohibitTreatments: string[];
+};
+
+type MutableFunnelProfile = {
+  profileKey: string;
+  prioritizedSources: string[];
+  permittedTreatments: string[];
+  restrictedTreatments: string[];
+  prohibitedTreatments: string[];
+  ctaMode: string;
 };

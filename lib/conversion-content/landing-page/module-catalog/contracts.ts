@@ -76,6 +76,18 @@ export const landingPageTextFieldPaths = [
   "final_cta.standard.title", "final_cta.standard.body", "final_cta.standard.primaryCta.label",
 ] as const;
 
+export const landingPageFunnelProfileKeys = ["bofu", "mofu", "tofu"] as const;
+export const landingPageCtaModes = ["direct_next_step", "non_coercive_direct", "low_pressure"] as const;
+export const landingPageFunnelTreatmentKeys = [
+  "direct_next_step", "objection_response", "supported_proof", "supported_urgency", "supported_commercial_condition",
+  "supported_price", "supported_deadline", "supported_guarantee", "supported_availability", "coercion", "unsupported_scarcity",
+  "unsupported_promise", "unsupported_credential", "unsupported_result", "education", "problem_solution_relation", "process",
+  "technical_assurance", "faq", "direct_cta", "supported_offer", "invented_price", "invented_urgency", "invented_guarantee",
+  "invented_comparison", "invented_result", "context", "problem_recognition", "desire", "introductory_education",
+  "low_pressure_offer", "low_pressure_cta", "supported_factual_proof", "scarcity", "urgency", "guarantee",
+  "commercial_condition", "result_promise",
+] as const;
+
 export type LandingPageModuleFamily = "landing_page";
 export type LandingPageModuleCatalogVersion = 1;
 export type LandingPageCompatibleRootVersion = 1;
@@ -98,6 +110,24 @@ export type LandingPageVariantCapability =
 export type LandingPageVariantLifecycleStatus = LandingPageRootLifecycleStatus;
 export type LandingPageResearchItemKey = (typeof landingPageResearchItemKeys)[number];
 export type LandingPageTextFieldPath = (typeof landingPageTextFieldPaths)[number];
+export type LandingPageFunnelProfileKey = (typeof landingPageFunnelProfileKeys)[number];
+export type LandingPageCtaMode = (typeof landingPageCtaModes)[number];
+export type LandingPageFunnelTreatmentKey = (typeof landingPageFunnelTreatmentKeys)[number];
+
+export type LandingPageFunnelCopyProfile = Readonly<{
+  profileKey: LandingPageFunnelProfileKey;
+  prioritizedSources: readonly LandingPageResearchItemKey[];
+  permittedTreatments: readonly LandingPageFunnelTreatmentKey[];
+  restrictedTreatments: readonly LandingPageFunnelTreatmentKey[];
+  prohibitedTreatments: readonly LandingPageFunnelTreatmentKey[];
+  ctaMode: LandingPageCtaMode;
+}>;
+
+export type LandingPageFunnelProfileDelta = Readonly<{
+  emphasizeTreatments: readonly LandingPageFunnelTreatmentKey[];
+  restrictTreatments: readonly LandingPageFunnelTreatmentKey[];
+  prohibitTreatments: readonly LandingPageFunnelTreatmentKey[];
+}>;
 
 export type LandingPageCopySourceMap =
   | Readonly<{
@@ -224,6 +254,7 @@ export type LandingPageModuleDefinition = Readonly<{
   purpose: LandingPageModulePurpose;
   compatibleRootVersion: LandingPageCompatibleRootVersion;
   rootDelta: LandingPageRootSpecializationDelta;
+  funnelProfileDeltas: Readonly<Record<LandingPageFunnelProfileKey, LandingPageFunnelProfileDelta>>;
   structuralFunction: string;
   invariants: readonly string[];
   boundaries: readonly string[];
@@ -234,6 +265,7 @@ export type LandingPageModuleCatalogRegistry = Readonly<{
   moduleCatalogVersion: LandingPageModuleCatalogVersion;
   compatibleRootVersions: readonly [LandingPageCompatibleRootVersion];
   copySourceMaps: Readonly<Record<LandingPageTextFieldPath, LandingPageCopySourceMap>>;
+  funnelCopyProfiles: Readonly<Record<LandingPageFunnelProfileKey, LandingPageFunnelCopyProfile>>;
   modules: Readonly<
     Record<LandingPageModuleKey, LandingPageModuleDefinition>
   >;
