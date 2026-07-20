@@ -1,12 +1,21 @@
 import { z } from "zod";
 
 import {
+  landingPageFieldKinds,
+  landingPageFieldPolicies,
+  landingPageFieldSupports,
   landingPageModuleKeys,
   landingPageModuleLifecycleStatuses,
+  type LandingPageFieldDefinition,
   type LandingPageModuleDefinition,
+  type LandingPageModuleFieldDefinition,
   type LandingPageModuleKey,
 } from "./contracts";
-import { landingPageModuleCatalogRegistry } from "./registry";
+import {
+  landingPageModuleCatalogRegistry,
+  landingPageModuleFieldCatalogRegistry,
+} from "./registry";
+import { landingPageRootSemanticRoleKeys } from "../root-schema";
 
 const identifierSchema = z.string().regex(/^[a-z][a-z0-9_]*$/);
 const uniqueIdentifiersSchema = z
@@ -18,6 +27,162 @@ const uniqueIdentifiersSchema = z
         code: "custom",
         message: "structural identifiers must be unique",
       });
+    }
+  });
+
+const fieldPathSchema = z
+  .string()
+  .regex(/^[a-z][a-zA-Z0-9]*(?:\[\])?(?:\.[a-z][a-zA-Z0-9]*)?$/);
+const cardinalitySchema = z
+  .object({
+    min: z.number().int().min(0),
+    max: z.number().int().min(0),
+  })
+  .strict()
+  .superRefine((cardinality, context) => {
+    if (cardinality.min > cardinality.max) {
+      context.addIssue({
+        code: "custom",
+        message: "field cardinality is inverted",
+      });
+    }
+  });
+
+const textFieldDefinitionSchema = z
+  .object({
+    path: fieldPathSchema,
+    fieldKind: z.literal(landingPageFieldKinds[0]),
+    semanticRole: z.enum(landingPageRootSemanticRoleKeys),
+    cardinality: cardinalitySchema,
+    policy: z.enum([
+      landingPageFieldPolicies[0],
+      landingPageFieldPolicies[1],
+      landingPageFieldPolicies[2],
+    ]),
+    support: z.enum(landingPageFieldSupports),
+  })
+  .strict()
+  .superRefine((field, context) => {
+    if (
+      field.policy === "operational_required" &&
+      field.support !== "when_present"
+    ) {
+      context.addIssue({
+        code: "custom",
+        path: ["support"],
+        message: "operational required text needs when_present support",
+      });
+    }
+  });
+
+const collectionFieldDefinitionSchema = z
+  .object({
+    path: fieldPathSchema,
+    fieldKind: z.literal(landingPageFieldKinds[1]),
+    cardinality: cardinalitySchema,
+    policy: z.literal("not_copy"),
+    ordered: z.literal(true).optional(),
+  })
+  .strict();
+
+const actionFieldDefinitionSchema = z
+  .object({
+    path: fieldPathSchema,
+    fieldKind: z.literal(landingPageFieldKinds[2]),
+    cardinality: cardinalitySchema,
+    policy: z.literal("not_copy"),
+  })
+  .strict();
+
+const imageFieldDefinitionSchema = z
+  .object({
+    path: fieldPathSchema,
+    fieldKind: z.literal(landingPageFieldKinds[3]),
+    cardinality: cardinalitySchema,
+    policy: z.literal("technical_reference"),
+    visibility: z.literal("all_viewports"),
+  })
+  .strict();
+
+const referenceFieldDefinitionSchema = z
+  .object({
+    path: fieldPathSchema,
+    fieldKind: z.literal(landingPageFieldKinds[4]),
+    cardinality: cardinalitySchema,
+    policy: z.literal("technical_reference"),
+    referenceKind: z.literal("operational_evidence"),
+  })
+  .strict();
+
+const fieldDefinitionSchema = z
+  .discriminatedUnion("fieldKind", [
+    textFieldDefinitionSchema,
+    collectionFieldDefinitionSchema,
+    actionFieldDefinitionSchema,
+    imageFieldDefinitionSchema,
+    referenceFieldDefinitionSchema,
+  ])
+  .superRefine((field, context) => {
+    if (field.fieldKind !== "collection" && field.cardinality.max > 1) {
+      context.addIssue({
+        code: "custom",
+        path: ["cardinality", "max"],
+        message: "non-collection fields allow at most one value",
+      });
+    }
+  });
+
+const moduleFieldDefinitionSchema = z
+  .object({
+    moduleKey: z.enum(landingPageModuleKeys),
+    moduleVersion: z.literal(1),
+    fields: z.record(z.string(), fieldDefinitionSchema),
+  })
+  .strict()
+  .superRefine((moduleDefinition, context) => {
+    validateFieldPaths(moduleDefinition, context);
+  });
+
+export const landingPageModuleFieldCatalogEntrySchema = z
+  .object({
+    moduleCatalogVersion: z.literal(1),
+    modules: z.record(z.string(), moduleFieldDefinitionSchema),
+  })
+  .strict()
+  .superRefine((catalog, context) => {
+    validateExactValues({
+      context,
+      path: ["modules"],
+      actual: Object.keys(catalog.modules),
+      expected: landingPageModuleKeys,
+    });
+
+    for (const [moduleKey, moduleDefinition] of Object.entries(
+      catalog.modules,
+    )) {
+      if (moduleDefinition.moduleKey !== moduleKey) {
+        context.addIssue({
+          code: "custom",
+          path: ["modules", moduleKey, "moduleKey"],
+          message: "module field identity must match its registry key",
+        });
+      }
+
+      const canonicalModule =
+        landingPageModuleFieldCatalogRegistry[1].modules[
+          moduleKey as LandingPageModuleKey
+        ];
+      if (
+        moduleDefinition.moduleVersion === 1 &&
+        canonicalModule &&
+        !isDeepEqual(moduleDefinition.fields, canonicalModule.fields)
+      ) {
+        context.addIssue({
+          code: "custom",
+          path: ["modules", moduleKey, "fields"],
+          message: "module fields must match the approved v1 contract",
+        });
+      }
     }
   });
 
@@ -134,6 +299,114 @@ function validateExactModuleV1Structure(input: {
     actual: input.actual.invariants,
     expected: input.expected.invariants,
   });
+}
+
+function validateFieldPaths(
+  moduleDefinition: LandingPageModuleFieldDefinition,
+  context: z.RefinementCtx,
+) {
+  const fields = moduleDefinition.fields;
+
+  for (const [fieldPath, fieldDefinition] of Object.entries(fields)) {
+    if (fieldDefinition.path !== fieldPath) {
+      context.addIssue({
+        code: "custom",
+        path: ["fields", fieldPath, "path"],
+        message: "field path must match its registry key",
+      });
+    }
+
+    const collectionChild = fieldPath.match(
+      /^([a-z][a-zA-Z0-9]*)\[\]\.([a-z][a-zA-Z0-9]*)$/,
+    );
+    const objectChild = fieldPath.match(
+      /^([a-z][a-zA-Z0-9]*)\.([a-z][a-zA-Z0-9]*)$/,
+    );
+
+    if (collectionChild) {
+      const parent = fields[collectionChild[1]];
+      if (!parent || parent.fieldKind !== "collection") {
+        context.addIssue({
+          code: "custom",
+          path: ["fields", fieldPath],
+          message: "collection child requires a declared collection parent",
+        });
+      }
+      if (fieldDefinition.fieldKind === "collection") {
+        context.addIssue({
+          code: "custom",
+          path: ["fields", fieldPath, "fieldKind"],
+          message: "nested collections are not allowed",
+        });
+      }
+    } else if (objectChild) {
+      const parent = fields[objectChild[1]];
+      if (!parent || parent.fieldKind !== "action") {
+        context.addIssue({
+          code: "custom",
+          path: ["fields", fieldPath],
+          message: "object child requires a declared action parent",
+        });
+      }
+    } else if (fieldPath.includes(".") || fieldPath.includes("[]")) {
+      context.addIssue({
+        code: "custom",
+        path: ["fields", fieldPath],
+        message: "unknown field path structure",
+      });
+    }
+  }
+
+  for (const [fieldPath, fieldDefinition] of Object.entries(fields)) {
+    if (
+      fieldDefinition.fieldKind === "collection" &&
+      !Object.keys(fields).some((path) => path.startsWith(`${fieldPath}[].`))
+    ) {
+      context.addIssue({
+        code: "custom",
+        path: ["fields", fieldPath],
+        message: "collection requires a closed item contract",
+      });
+    }
+    if (
+      fieldDefinition.fieldKind === "action" &&
+      !Object.keys(fields).some((path) => path.startsWith(`${fieldPath}.`))
+    ) {
+      context.addIssue({
+        code: "custom",
+        path: ["fields", fieldPath],
+        message: "action requires a closed child contract",
+      });
+    }
+  }
+}
+
+function isDeepEqual(left: unknown, right: unknown): boolean {
+  if (Object.is(left, right)) return true;
+  if (Array.isArray(left) || Array.isArray(right)) {
+    return (
+      Array.isArray(left) &&
+      Array.isArray(right) &&
+      left.length === right.length &&
+      left.every((value, index) => isDeepEqual(value, right[index]))
+    );
+  }
+  if (isPlainObject(left) && isPlainObject(right)) {
+    const leftKeys = Object.keys(left).sort();
+    const rightKeys = Object.keys(right).sort();
+    return (
+      leftKeys.length === rightKeys.length &&
+      leftKeys.every(
+        (key, index) =>
+          key === rightKeys[index] && isDeepEqual(left[key], right[key]),
+      )
+    );
+  }
+  return false;
+}
+
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
 function validateExactOrderedIdentifiers(input: {

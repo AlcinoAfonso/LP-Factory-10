@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-const semanticRoleKeys = [
+export const landingPageRootSemanticRoleKeys = [
   "eyebrow",
   "h1",
   "h2",
@@ -35,7 +35,7 @@ const requiredVersionOneSpacingOptions = [
 
 const lifecycleStatuses = ["hypothesis", "validated", "deprecated"] as const;
 
-const semanticRoleKeySet = new Set<string>(semanticRoleKeys);
+const semanticRoleKeySet = new Set<string>(landingPageRootSemanticRoleKeys);
 const visualRoleKeySet = new Set<string>(visualRoleKeys);
 const lifecycleStatusSet = new Set<string>(lifecycleStatuses);
 

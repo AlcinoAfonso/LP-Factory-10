@@ -1,3 +1,5 @@
+import type { LandingPageRootSemanticRoleKey } from "../contracts";
+
 export const landingPageModuleKeys = [
   "hero",
   "trust_bar",
@@ -40,4 +42,103 @@ export type LandingPageModuleCatalogEntry = Readonly<{
 
 export type LandingPageModuleCatalogRegistry = Readonly<
   Record<number, LandingPageModuleCatalogEntry>
+>;
+
+export const landingPageFieldKinds = [
+  "text",
+  "collection",
+  "action",
+  "image",
+  "reference",
+] as const;
+
+export const landingPageFieldPolicies = [
+  "research_guided",
+  "hybrid",
+  "operational_required",
+  "technical_reference",
+  "not_copy",
+] as const;
+
+export const landingPageFieldSupports = [
+  "none",
+  "when_factual",
+  "when_present",
+] as const;
+
+export type LandingPageFieldKind = (typeof landingPageFieldKinds)[number];
+export type LandingPageFieldPolicy = (typeof landingPageFieldPolicies)[number];
+export type LandingPageFieldSupport = (typeof landingPageFieldSupports)[number];
+export type LandingPageFieldCardinality = Readonly<{
+  min: number;
+  max: number;
+}>;
+
+type LandingPageFieldDefinitionBase = Readonly<{
+  path: string;
+  cardinality: LandingPageFieldCardinality;
+}>;
+
+export type LandingPageTextFieldDefinition =
+  LandingPageFieldDefinitionBase &
+    Readonly<{
+      fieldKind: "text";
+      semanticRole: LandingPageRootSemanticRoleKey;
+      policy: "research_guided" | "hybrid" | "operational_required";
+      support: LandingPageFieldSupport;
+    }>;
+
+export type LandingPageCollectionFieldDefinition =
+  LandingPageFieldDefinitionBase &
+    Readonly<{
+      fieldKind: "collection";
+      policy: "not_copy";
+      ordered?: true;
+    }>;
+
+export type LandingPageActionFieldDefinition =
+  LandingPageFieldDefinitionBase &
+    Readonly<{
+      fieldKind: "action";
+      policy: "not_copy";
+    }>;
+
+export type LandingPageImageFieldDefinition =
+  LandingPageFieldDefinitionBase &
+    Readonly<{
+      fieldKind: "image";
+      policy: "technical_reference";
+      visibility: "all_viewports";
+    }>;
+
+export type LandingPageReferenceFieldDefinition =
+  LandingPageFieldDefinitionBase &
+    Readonly<{
+      fieldKind: "reference";
+      policy: "technical_reference";
+      referenceKind: "operational_evidence";
+    }>;
+
+export type LandingPageFieldDefinition =
+  | LandingPageTextFieldDefinition
+  | LandingPageCollectionFieldDefinition
+  | LandingPageActionFieldDefinition
+  | LandingPageImageFieldDefinition
+  | LandingPageReferenceFieldDefinition;
+
+export type LandingPageModuleFieldDefinition = Readonly<{
+  moduleKey: LandingPageModuleKey;
+  moduleVersion: number;
+  fields: Readonly<Record<string, LandingPageFieldDefinition>>;
+}>;
+
+export type LandingPageModuleFieldCatalogEntry = Readonly<{
+  moduleCatalogVersion: number;
+  modules: Readonly<
+    Record<LandingPageModuleKey, LandingPageModuleFieldDefinition>
+  >;
+}>;
+
+export type LandingPageModuleFieldCatalogRegistry = Readonly<
+  Record<number, LandingPageModuleFieldCatalogEntry>
 >;

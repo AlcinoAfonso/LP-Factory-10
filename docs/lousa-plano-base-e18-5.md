@@ -587,7 +587,7 @@ Estado da fase:
 
 - definições estruturais do registry revisadas e ratificadas pelo Estrategista como contrato da v1;
 - ajuste solicitado e implementado para proteger os valores exatos de `function`, `boundaries` e `invariants` da v1;
-- fase `18.5.3` ainda aguardando reavaliação do Analista.
+- fase `18.5.3` concluída e aprovada.
 
 ### 4.2. Fase 2 — E18.5.4 — Campos, estruturas e cardinalidades
 
@@ -615,6 +615,11 @@ Validações:
 - `npm run validate:landing-page-module-catalog`;
 - `npm run check`;
 - `git diff --check`.
+
+Estado da fase:
+
+- fase `18.5.4` em execução;
+- PR experimental permanece draft e sem merge.
 
 ### 4.3. Fase 3 — E18.5.5 — Variantes e critérios de criação
 
