@@ -3,6 +3,8 @@ import { z } from "zod";
 import {
   landingPageFieldPolicies,
   landingPageFieldSupports,
+  landingPageResearchItemKeys,
+  landingPageTextFieldPaths,
   landingPageModuleKeys,
   landingPageVariantCapabilities,
   landingPageVariantFieldContractKeys,
@@ -96,6 +98,24 @@ const cardinalitySchema = z
     }
   });
 
+const copySourceMapSchema = z.discriminatedUnion("sourceMode", [
+  z.object({
+    sourceMode: z.literal("research"),
+    researchPath: z.literal("endCustomer.researches[].items[]"),
+    primaryItemKeys: z.tuple([z.enum(landingPageResearchItemKeys), z.enum(landingPageResearchItemKeys).optional()]),
+    auxiliaryItemKey: z.enum(landingPageResearchItemKeys).optional(),
+  }).strict().superRefine((map, context) => {
+    const keys = map.primaryItemKeys.filter((key): key is NonNullable<typeof key> => Boolean(key));
+    if (new Set(keys).size !== keys.length || (map.auxiliaryItemKey && keys.includes(map.auxiliaryItemKey))) {
+      context.addIssue({ code: "custom", message: "copy sources must be unique" });
+    }
+  }),
+  z.object({
+    sourceMode: z.literal("operational_evidence"),
+    evidencePath: fieldPathSchema,
+  }).strict(),
+]);
+
 const textFieldSchema = z
   .object({
     fieldKind: z.literal("text"),
@@ -105,6 +125,7 @@ const textFieldSchema = z
     policy: z.enum(landingPageFieldPolicies),
     semanticRole: nonEmptyPlainText,
     support: z.enum(landingPageFieldSupports).optional(),
+    copySourceMap: copySourceMapSchema,
   })
   .strict();
 
@@ -176,6 +197,7 @@ const variantFieldContractSchema = z
     validateUniqueFieldIdentities(contract.fields, context);
 
     for (const [fieldIndex, field] of contract.fields.entries()) {
+      validateCopySourceMode(field, context, ["fields", fieldIndex]);
       if (!field.path.startsWith(`${prefix}.`)) {
         context.addIssue({
           code: "custom",
@@ -191,6 +213,7 @@ const variantFieldContractSchema = z
           "itemFields",
         ]);
         for (const [itemIndex, itemField] of field.itemFields.entries()) {
+          validateCopySourceMode(itemField, context, ["fields", fieldIndex, "itemFields", itemIndex]);
           if (!itemField.path.startsWith(`${field.path}[].`)) {
             context.addIssue({
               code: "custom",
@@ -210,6 +233,9 @@ const variantFieldContractSchema = z
           path: ["fields", fieldIndex, "label", "path"],
           message: "action label path does not belong to its action",
         });
+      }
+      if (field.fieldKind === "action") {
+        validateCopySourceMode(field.label, context, ["fields", fieldIndex, "label"]);
       }
     }
   });
@@ -347,6 +373,7 @@ export const landingPageModuleCatalogSchema = z
     family: z.literal("landing_page"),
     moduleCatalogVersion: z.literal(1),
     compatibleRootVersions: z.tuple([z.literal(1)]),
+    copySourceMaps: z.record(z.string(), copySourceMapSchema),
     modules: z.record(z.string(), moduleDefinitionSchema),
     variantFieldContracts: z.record(z.string(), variantFieldContractSchema),
     variants: z.record(z.string(), variantDefinitionSchema),
@@ -359,6 +386,18 @@ export const landingPageModuleCatalogSchema = z
       return;
     }
     const expectedKeys = new Set<string>(landingPageModuleKeys);
+    const expectedCopyPaths = new Set<string>(landingPageTextFieldPaths);
+    validateExactKeys({
+      actual: Object.keys(catalog.copySourceMaps), expected: expectedCopyPaths,
+      context, path: ["copySourceMaps"], label: "copy source map",
+    });
+    for (const path of landingPageTextFieldPaths) {
+      const actual = catalog.copySourceMaps[path];
+      const canonical = landingPageModuleCatalogRegistry.copySourceMaps[path];
+      if (actual && JSON.stringify(actual) !== JSON.stringify(canonical)) {
+        context.addIssue({ code: "custom", path: ["copySourceMaps", path], message: "copy source map differs from the canonical registry" });
+      }
+    }
     const actualKeys = Object.keys(catalog.modules);
 
     for (const key of actualKeys) {
@@ -578,6 +617,24 @@ function validateUniqueText(
       path: [path],
       message: `${path} must be unique`,
     });
+  }
+}
+
+function validateCopySourceMode(
+  field: { fieldKind: string; policy: string; path: string; copySourceMap?: { sourceMode: string; evidencePath?: string } },
+  context: z.RefinementCtx,
+  path: (string | number)[],
+) {
+  if (field.fieldKind !== "text" || !field.copySourceMap) return;
+  const operational = field.policy === "operational_required";
+  if (operational !== (field.copySourceMap.sourceMode === "operational_evidence")) {
+    context.addIssue({ code: "custom", path: [...path, "copySourceMap"], message: "copy source mode is incompatible with field policy" });
+  }
+  if (operational) {
+    const collectionPrefix = field.path.replace(/\.(?:quote|attribution)$/, "");
+    if (field.copySourceMap.evidencePath !== `${collectionPrefix}.evidenceRef`) {
+      context.addIssue({ code: "custom", path: [...path, "copySourceMap", "evidencePath"], message: "operational evidence path does not belong to the field item" });
+    }
   }
 }
 

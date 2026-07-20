@@ -57,6 +57,25 @@ export const landingPageVariantCapabilities = [
   "accordion_interaction",
 ] as const;
 
+export const landingPageResearchItemKeys = [
+  "positioning_opportunity", "trigger", "desire", "pain", "objection",
+  "proof_type", "belief", "fear", "narrative_arc", "awareness_level",
+  "search_intent",
+] as const;
+
+export const landingPageTextFieldPaths = [
+  "hero.standard.eyebrow", "hero.standard.title", "hero.standard.subtitle", "hero.standard.primaryCta.label", "hero.standard.proofShort",
+  "trust_bar.standard.items[].text",
+  "problem_solution.standard.title", "problem_solution.standard.items[].problem", "problem_solution.standard.items[].solution",
+  "offer.standard.title", "offer.standard.items[].itemTitle", "offer.standard.items[].description",
+  "process.standard.title", "process.standard.steps[].stepTitle", "process.standard.steps[].stepBody",
+  "technical_assurance.standard.title", "technical_assurance.standard.items[].assuranceTitle", "technical_assurance.standard.items[].assuranceBody",
+  "social_proof.standard.title", "social_proof.standard.items[].quote", "social_proof.standard.items[].attribution",
+  "faq.standard.title", "faq.standard.items[].question", "faq.standard.items[].answer",
+  "faq.accordion.title", "faq.accordion.items[].question", "faq.accordion.items[].answer",
+  "final_cta.standard.title", "final_cta.standard.body", "final_cta.standard.primaryCta.label",
+] as const;
+
 export type LandingPageModuleFamily = "landing_page";
 export type LandingPageModuleCatalogVersion = 1;
 export type LandingPageCompatibleRootVersion = 1;
@@ -77,6 +96,20 @@ export type LandingPageVariantVersion = 1;
 export type LandingPageVariantCapability =
   (typeof landingPageVariantCapabilities)[number];
 export type LandingPageVariantLifecycleStatus = LandingPageRootLifecycleStatus;
+export type LandingPageResearchItemKey = (typeof landingPageResearchItemKeys)[number];
+export type LandingPageTextFieldPath = (typeof landingPageTextFieldPaths)[number];
+
+export type LandingPageCopySourceMap =
+  | Readonly<{
+      sourceMode: "research";
+      researchPath: "endCustomer.researches[].items[]";
+      primaryItemKeys: readonly [LandingPageResearchItemKey, LandingPageResearchItemKey?];
+      auxiliaryItemKey?: LandingPageResearchItemKey;
+    }>
+  | Readonly<{
+      sourceMode: "operational_evidence";
+      evidencePath: string;
+    }>;
 
 export type LandingPageTextRangeRestriction = Readonly<{
   semanticRole: LandingPageRootSemanticRoleKey;
@@ -119,6 +152,7 @@ export type LandingPageTextFieldDefinition = LandingPageFieldBase &
     fieldKind: "text";
     semanticRole: LandingPageRootSemanticRoleKey;
     support?: LandingPageFieldSupport;
+    copySourceMap: LandingPageCopySourceMap;
   }>;
 
 export type LandingPageTechnicalReferenceFieldDefinition =
@@ -199,6 +233,7 @@ export type LandingPageModuleCatalogRegistry = Readonly<{
   family: LandingPageModuleFamily;
   moduleCatalogVersion: LandingPageModuleCatalogVersion;
   compatibleRootVersions: readonly [LandingPageCompatibleRootVersion];
+  copySourceMaps: Readonly<Record<LandingPageTextFieldPath, LandingPageCopySourceMap>>;
   modules: Readonly<
     Record<LandingPageModuleKey, LandingPageModuleDefinition>
   >;

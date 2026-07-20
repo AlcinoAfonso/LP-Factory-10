@@ -5,12 +5,14 @@ import type {
   LandingPageModuleKey,
   LandingPageCollectionFieldDefinition,
   LandingPageCollectionItemFieldDefinition,
+  LandingPageCopySourceMap,
   LandingPageFieldCardinality,
   LandingPageFieldPolicy,
   LandingPageFieldSupport,
   LandingPageImageFieldDefinition,
   LandingPageTechnicalReferenceFieldDefinition,
   LandingPageTextFieldDefinition,
+  LandingPageTextFieldPath,
   LandingPageVariantCapability,
   LandingPageVariantDefinition,
   LandingPageVariantFieldContractKey,
@@ -20,11 +22,52 @@ import type {
 import type { LandingPageRootSemanticRoleKey } from "../index";
 
 const noRootRestrictions = { textRanges: [] } as const;
+const researchPath = "endCustomer.researches[].items[]" as const;
+const copySourceMaps: Readonly<Record<LandingPageTextFieldPath, LandingPageCopySourceMap>> = {
+  "hero.standard.eyebrow": research(["positioning_opportunity", "trigger"], "desire"),
+  "hero.standard.title": research(["positioning_opportunity", "desire"], "trigger"),
+  "hero.standard.subtitle": research(["pain", "desire"], "objection"),
+  "hero.standard.primaryCta.label": research(["trigger", "desire"], "objection"),
+  "hero.standard.proofShort": research(["proof_type", "belief"], "objection"),
+  "trust_bar.standard.items[].text": research(["proof_type", "belief"], "objection"),
+  "problem_solution.standard.title": research(["pain", "desire"], "fear"),
+  "problem_solution.standard.items[].problem": research(["pain", "fear"], "objection"),
+  "problem_solution.standard.items[].solution": research(["positioning_opportunity", "desire"], "belief"),
+  "offer.standard.title": research(["desire", "trigger"], "positioning_opportunity"),
+  "offer.standard.items[].itemTitle": research(["trigger", "desire"], "positioning_opportunity"),
+  "offer.standard.items[].description": research(["positioning_opportunity", "belief"], "objection"),
+  "process.standard.title": research(["belief", "desire"], "objection"),
+  "process.standard.steps[].stepTitle": research(["narrative_arc", "trigger"], "belief"),
+  "process.standard.steps[].stepBody": research(["belief", "desire"], "positioning_opportunity"),
+  "technical_assurance.standard.title": research(["proof_type", "belief"], "fear"),
+  "technical_assurance.standard.items[].assuranceTitle": research(["proof_type", "positioning_opportunity"], "objection"),
+  "technical_assurance.standard.items[].assuranceBody": research(["proof_type", "belief"], "fear"),
+  "social_proof.standard.title": research(["proof_type", "belief"], "objection"),
+  "social_proof.standard.items[].quote": { sourceMode: "operational_evidence", evidencePath: "social_proof.standard.items[].evidenceRef" },
+  "social_proof.standard.items[].attribution": { sourceMode: "operational_evidence", evidencePath: "social_proof.standard.items[].evidenceRef" },
+  "faq.standard.title": research(["objection", "awareness_level"], "search_intent"),
+  "faq.standard.items[].question": research(["objection", "fear"], "search_intent"),
+  "faq.standard.items[].answer": research(["belief", "positioning_opportunity"], "proof_type"),
+  "faq.accordion.title": research(["objection", "awareness_level"], "search_intent"),
+  "faq.accordion.items[].question": research(["objection", "fear"], "search_intent"),
+  "faq.accordion.items[].answer": research(["belief", "positioning_opportunity"], "proof_type"),
+  "final_cta.standard.title": research(["trigger", "desire"], "positioning_opportunity"),
+  "final_cta.standard.body": research(["desire", "objection"], "belief"),
+  "final_cta.standard.primaryCta.label": research(["trigger", "desire"], "objection"),
+};
+
+function research(
+  primaryItemKeys: readonly [import("./contracts").LandingPageResearchItemKey, import("./contracts").LandingPageResearchItemKey?],
+  auxiliaryItemKey?: import("./contracts").LandingPageResearchItemKey,
+): LandingPageCopySourceMap {
+  return { sourceMode: "research", researchPath, primaryItemKeys, ...(auxiliaryItemKey ? { auxiliaryItemKey } : {}) };
+}
 
 export const landingPageModuleCatalogRegistry = deepFreeze({
   family: "landing_page",
   moduleCatalogVersion: 1,
   compatibleRootVersions: [1],
+  copySourceMaps,
   modules: {
     hero: moduleDefinition(
       "hero",
@@ -327,6 +370,7 @@ function text(
     policy,
     semanticRole,
     ...(support ? { support } : {}),
+    copySourceMap: copySourceMaps[path as LandingPageTextFieldPath],
   };
 }
 

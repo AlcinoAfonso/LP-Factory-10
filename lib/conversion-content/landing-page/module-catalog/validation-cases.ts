@@ -492,6 +492,40 @@ const cases: readonly Case[] = [
       assert.doesNotThrow(() => assertInvalid(inheritedPropertyRole));
     },
   },
+  {
+    name: "copy source maps are closed and operational evidence stays separate",
+    run: () => {
+      const textualFields = Object.values(landingPageModuleCatalogRegistry.variantFieldContracts)
+        .flatMap((contract) => flattenFields(contract.fields))
+        .filter((field) => field.fieldKind === "text");
+      assert.equal(textualFields.length, 30);
+      assert.equal(textualFields.every((field) => Boolean(field.copySourceMap)), true);
+
+      const unknownSourceMode = cloneRegistry();
+      getMutableTextField(unknownSourceMode, "hero.standard@v1", "hero.standard.title").copySourceMap.sourceMode = "input_catalog";
+      assertInvalid(unknownSourceMode);
+
+      const unknownPath = cloneRegistry();
+      getMutableTextField(unknownPath, "hero.standard@v1", "hero.standard.title").copySourceMap.researchPath = "businessBuyer.items[]";
+      assertInvalid(unknownPath);
+
+      const unknownItemKey = cloneRegistry();
+      getMutableTextField(unknownItemKey, "hero.standard@v1", "hero.standard.title").copySourceMap.primaryItemKeys = ["unknown"];
+      assertInvalid(unknownItemKey);
+
+      const tooManySources = cloneRegistry();
+      getMutableTextField(tooManySources, "hero.standard@v1", "hero.standard.title").copySourceMap.primaryItemKeys = ["trigger", "desire", "belief"];
+      assertInvalid(tooManySources);
+
+      const orphanOperationalEvidence = cloneRegistry();
+      getMutableTextField(orphanOperationalEvidence, "social_proof.standard@v1", "social_proof.standard.items[].quote").copySourceMap.evidencePath = "social_proof.standard.orphan";
+      assertInvalid(orphanOperationalEvidence);
+
+      const orphanMap = cloneRegistry();
+      orphanMap.copySourceMaps["hero.standard.orphan"] = structuredClone(orphanMap.copySourceMaps["hero.standard.title"]);
+      assertInvalid(orphanMap);
+    },
+  },
 ];
 
 for (const testCase of cases) {
@@ -528,6 +562,20 @@ function collectFieldKinds(field: Record<string, unknown>, kinds: Set<string>) {
   if (field.label && typeof field.label === "object") {
     collectFieldKinds(field.label as Record<string, unknown>, kinds);
   }
+}
+
+function flattenFields(fields: readonly Record<string, unknown>[]): Record<string, unknown>[] {
+  return fields.flatMap((field) => [
+    field,
+    ...(Array.isArray(field.itemFields) ? flattenFields(field.itemFields) : []),
+    ...(field.label && typeof field.label === "object" ? flattenFields([field.label as Record<string, unknown>]) : []),
+  ]);
+}
+
+function getMutableTextField(catalog: MutableCatalog, contractKey: string, path: string): MutableField {
+  const field = flattenFields(catalog.variantFieldContracts[contractKey].fields).find((candidate) => candidate.path === path);
+  assert.ok(field);
+  return field as MutableField;
 }
 
 function cloneField(
@@ -575,6 +623,7 @@ type MutableCatalog = {
   family: string;
   moduleCatalogVersion: number;
   compatibleRootVersions: number[];
+  copySourceMaps: Record<string, MutableField["copySourceMap"]>;
   modules: Record<string, MutableModule>;
   variantFieldContracts: Record<
     string,
@@ -594,6 +643,13 @@ type MutableField = {
   policy: string;
   semanticRole?: string;
   support?: string;
+  copySourceMap: {
+    sourceMode: string;
+    researchPath?: string;
+    primaryItemKeys?: string[];
+    auxiliaryItemKey?: string;
+    evidencePath?: string;
+  };
   itemFields?: MutableField[];
   label?: MutableField;
   operationalBinding?: string;
