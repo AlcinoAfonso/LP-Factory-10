@@ -1637,11 +1637,12 @@ Integração do Supabase com agentes por meio do plugin MCP e das Agent Skills, 
 ## 60 — Supabase Changelog com RSS, tags e feed Markdown *(🟦 Estável)*
 
 2026-05-19
+Atualizado em 2026-07-20
 
 ### Status no Projeto
 
-- Status: Não implementado
-- Evidência: Supabase Update May 2026; ainda sem rotina formal do Gestor de Updates baseada nesses feeds.
+- Status: Em uso manual como fonte oficial; feeds não automatizados
+- Evidência: `docs/workflow-atualizacao-updates.md` formaliza a consulta de changelog, documentação e blog oficiais em cada rodada; não há consumidor RSS/Markdown nem automação desses feeds no repositório.
 
 ### Descrição
 
@@ -1659,17 +1660,17 @@ Melhorias no changelog da Supabase com RSS feeds, filtros por tag, feed `.md` e 
 
 ### Ações Recomendadas
 
-1. Avaliar uso como fonte recorrente do Gestor de Updates.
-2. Não automatizar decisões; usar como entrada de triagem.
-3. Registrar updates relevantes no `docs/supa-up.md` apenas após avaliação humana.
+1. Manter o changelog como fonte recorrente das rodadas do Gestor de Updates.
+2. Não criar consumidor RSS/Markdown ou automatizar decisões sem caso aprovado.
+3. Registrar no `docs/supa-up.md` somente updates com fonte oficial e valor concreto para o projeto.
 
 ### Registro (Tipo B — Tooling/Infra)
 
-- Status: PENDENTE
-- Verificado em: —
+- Status: PARCIAL
+- Verificado em: 2026-07-20
 - Ambiente: Supabase Changelog / RSS / Markdown feed
-- Evidência: —
-- Observação: recurso para governança de updates, não feature do produto.
+- Evidência: `docs/workflow-atualizacao-updates.md` e Supabase Changelog oficial.
+- Observação: a consulta manual está formalizada; RSS, feed Markdown e automação continuam não adotados. Recurso de governança de updates, não feature do produto.
 
 ---
 
@@ -1828,4 +1829,3 @@ A ferramenta ajuda a verificar o comportamento das políticas declaradas, mas n�
 
 - Nenhuma extensão, biblioteca, tabela, policy, rota, job, agente, automação ou infraestrutura foi criada.
 - Nenhuma configuração do projeto Supabase foi alterada.
-
