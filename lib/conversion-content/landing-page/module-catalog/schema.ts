@@ -20,6 +20,7 @@ import {
 import { landingPageRootSemanticRoleKeys } from "../root-schema";
 
 const identifierSchema = z.string().regex(/^[a-z][a-z0-9_]*$/);
+const rootDeltaSchema = z.object({}).strict();
 const uniqueIdentifiersSchema = z
   .array(identifierSchema)
   .min(1)
@@ -241,6 +242,7 @@ const moduleVariantDefinitionSchema = z
     compatibleModuleVersion: z.literal(1),
     fields: z.record(z.string(), fieldDefinitionSchema),
     capabilities: z.array(z.enum(landingPageCapabilityKeys)),
+    rootDelta: rootDeltaSchema,
   })
   .strict()
   .superRefine((variant, context) => {
@@ -258,6 +260,7 @@ const moduleVariantCatalogModuleEntrySchema = z
   .object({
     moduleKey: z.enum(landingPageModuleKeys),
     moduleVersion: z.literal(1),
+    rootDelta: rootDeltaSchema,
     variants: z.record(z.string(), moduleVariantDefinitionSchema),
   })
   .strict();
@@ -362,6 +365,7 @@ export const landingPageModuleDefinitionSchema = z
     function: identifierSchema,
     boundaries: uniqueIdentifiersSchema,
     invariants: uniqueIdentifiersSchema,
+    rootDelta: rootDeltaSchema,
   })
   .strict();
 

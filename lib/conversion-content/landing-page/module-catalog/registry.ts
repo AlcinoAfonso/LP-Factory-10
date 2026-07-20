@@ -452,6 +452,7 @@ function moduleDefinition(input: {
     function: input.function,
     boundaries: input.boundaries,
     invariants: input.invariants,
+    rootDelta: {},
   };
 }
 
@@ -466,7 +467,7 @@ function moduleVariants(
   moduleKey: LandingPageModuleKey,
   variants: Readonly<Record<string, LandingPageModuleVariantDefinition>>,
 ) {
-  return { moduleKey, moduleVersion: 1, variants };
+  return { moduleKey, moduleVersion: 1, rootDelta: {}, variants };
 }
 
 function variantDefinition(
@@ -482,6 +483,7 @@ function variantDefinition(
     compatibleModuleVersion: 1,
     fields: copyApprovedModuleFields(moduleKey),
     capabilities,
+    rootDelta: {},
   };
 }
 

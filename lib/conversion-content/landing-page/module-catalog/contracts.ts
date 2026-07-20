@@ -22,6 +22,7 @@ export type LandingPageModuleKey = (typeof landingPageModuleKeys)[number];
 export type LandingPageModuleLifecycleStatus =
   (typeof landingPageModuleLifecycleStatuses)[number];
 export type LandingPageModulePurpose = "controlled_test";
+export type LandingPageRootDelta = Readonly<Record<string, never>>;
 
 export type LandingPageModuleDefinition = Readonly<{
   moduleKey: LandingPageModuleKey;
@@ -31,6 +32,7 @@ export type LandingPageModuleDefinition = Readonly<{
   function: string;
   boundaries: readonly string[];
   invariants: readonly string[];
+  rootDelta: LandingPageRootDelta;
 }>;
 
 export type LandingPageModuleCatalogEntry = Readonly<{
@@ -195,11 +197,13 @@ export type LandingPageModuleVariantDefinition = Readonly<{
   compatibleModuleVersion: number;
   fields: Readonly<Record<string, LandingPageFieldDefinition>>;
   capabilities: readonly LandingPageCapabilityKey[];
+  rootDelta: LandingPageRootDelta;
 }>;
 
 export type LandingPageModuleVariantCatalogModuleEntry = Readonly<{
   moduleKey: LandingPageModuleKey;
   moduleVersion: number;
+  rootDelta: LandingPageRootDelta;
   variants: Readonly<Record<string, LandingPageModuleVariantDefinition>>;
 }>;
 

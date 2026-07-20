@@ -2,21 +2,60 @@ import type {
   LandingPageFieldDefinition,
   LandingPageModuleKey,
 } from "./contracts";
-import { landingPageModuleFieldCatalogRegistry } from "./registry";
+import {
+  countLandingPageRootTextCharacters,
+  normalizeLandingPageRootText,
+  resolveLandingPageRootParameters,
+  type LandingPageRootParameters,
+} from "../index";
+import {
+  landingPageModuleCatalogRegistry,
+  landingPageModuleFieldCatalogRegistry,
+} from "./registry";
+
+export type LandingPageModuleFieldPayloadValidationErrorCode =
+  "ROOT_RESOLUTION_FAILED";
 
 export type LandingPageModuleFieldPayloadValidationResult =
   | Readonly<{ ok: true }>
-  | Readonly<{ ok: false }>;
+  | Readonly<{
+      ok: false;
+      error?: Readonly<{
+        code: LandingPageModuleFieldPayloadValidationErrorCode;
+      }>;
+    }>;
+
+type LandingPageModuleFieldPayloadValidationOptions = Readonly<{
+  rootVersion?: number;
+  presetKey?: string;
+}>;
 
 export function validateLandingPageModuleFieldPayload(
   moduleKey: LandingPageModuleKey,
   payload: unknown,
+  options: LandingPageModuleFieldPayloadValidationOptions = {},
 ): LandingPageModuleFieldPayloadValidationResult {
   const moduleDefinition =
     landingPageModuleFieldCatalogRegistry[1].modules[moduleKey];
   if (!moduleDefinition) return { ok: false };
 
-  return validatePayloadObject(payload, moduleDefinition.fields)
+  const rootResolution = resolveLandingPageRootParameters({
+    rootVersion:
+      options.rootVersion ??
+      landingPageModuleCatalogRegistry[1].compatibleRootVersions[0],
+    ...(options.presetKey === undefined
+      ? {}
+      : { presetKey: options.presetKey }),
+  });
+  if (!rootResolution.ok) {
+    return { ok: false, error: { code: "ROOT_RESOLUTION_FAILED" } };
+  }
+
+  return validatePayloadObject(
+    payload,
+    moduleDefinition.fields,
+    rootResolution.value,
+  )
     ? { ok: true }
     : { ok: false };
 }
@@ -24,6 +63,7 @@ export function validateLandingPageModuleFieldPayload(
 function validatePayloadObject(
   payload: unknown,
   fields: Readonly<Record<string, LandingPageFieldDefinition>>,
+  rootParameters: LandingPageRootParameters,
 ): boolean {
   if (!isPlainObject(payload)) return false;
 
@@ -38,7 +78,12 @@ function validatePayloadObject(
     const hasValue = Object.hasOwn(payload, field.path);
     if (!hasValue && field.cardinality.min > 0) return false;
     if (!hasValue) continue;
-    if (!validateFieldValue(field, payload[field.path], fields)) return false;
+    if (!validateFieldValue(
+      field,
+      payload[field.path],
+      fields,
+      rootParameters,
+    )) return false;
   }
 
   return true;
@@ -48,14 +93,21 @@ function validateFieldValue(
   field: LandingPageFieldDefinition,
   value: unknown,
   fields: Readonly<Record<string, LandingPageFieldDefinition>>,
+  rootParameters: LandingPageRootParameters,
 ): boolean {
   switch (field.fieldKind) {
     case "text":
-      return typeof value === "string";
+      return validateText(field, value, rootParameters);
     case "collection":
-      return validateCollection(field, value, fields);
+      return validateCollection(field, value, fields, rootParameters);
     case "action":
-      return validateChildObject(field.path, value, fields, ".");
+      return validateChildObject(
+        field.path,
+        value,
+        fields,
+        ".",
+        rootParameters,
+      );
     case "image":
       return validateImage(value);
     case "reference":
@@ -63,10 +115,29 @@ function validateFieldValue(
   }
 }
 
+function validateText(
+  field: Extract<LandingPageFieldDefinition, { fieldKind: "text" }>,
+  value: unknown,
+  rootParameters: LandingPageRootParameters,
+): boolean {
+  if (typeof value !== "string") return false;
+
+  const normalizedValue = normalizeLandingPageRootText(value);
+  if (normalizedValue.length === 0) return false;
+
+  const semanticRole = rootParameters.semanticRoles[field.semanticRole];
+  return (
+    semanticRole !== undefined &&
+    countLandingPageRootTextCharacters(normalizedValue) <=
+      semanticRole.textRange.absoluteMax
+  );
+}
+
 function validateCollection(
   field: Extract<LandingPageFieldDefinition, { fieldKind: "collection" }>,
   value: unknown,
   fields: Readonly<Record<string, LandingPageFieldDefinition>>,
+  rootParameters: LandingPageRootParameters,
 ): boolean {
   if (!Array.isArray(value)) return false;
   if (
@@ -77,7 +148,7 @@ function validateCollection(
   }
 
   return value.every((item) =>
-    validateChildObject(field.path, item, fields, "[]."),
+    validateChildObject(field.path, item, fields, "[].", rootParameters),
   );
 }
 
@@ -86,6 +157,7 @@ function validateChildObject(
   value: unknown,
   fields: Readonly<Record<string, LandingPageFieldDefinition>>,
   separator: "." | "[].",
+  rootParameters: LandingPageRootParameters,
 ): boolean {
   if (!isPlainObject(value)) return false;
 
@@ -109,7 +181,9 @@ function validateChildObject(
     const hasValue = Object.hasOwn(value, key);
     if (!hasValue && childField.cardinality.min > 0) return false;
     if (!hasValue) continue;
-    if (!validateFieldValue(childField, value[key], fields)) return false;
+    if (!validateFieldValue(childField, value[key], fields, rootParameters)) {
+      return false;
+    }
   }
 
   return true;

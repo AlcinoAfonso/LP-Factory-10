@@ -1,6 +1,12 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 
 import { landingPageInputCatalogRegistry } from "../input-catalog";
+import {
+  countLandingPageRootTextCharacters,
+  normalizeLandingPageRootText,
+  resolveLandingPageRootParameters,
+} from "..";
 import {
   landingPageModuleKeys,
   type LandingPageModuleCatalogEntry,
@@ -176,7 +182,6 @@ const cases: readonly Case[] = [
         "copySourceMap",
         "funnelCopyProfile",
         "capabilities",
-        "rootDelta",
       ] as const;
 
       for (const forbiddenKey of forbiddenKeys) {
@@ -673,6 +678,138 @@ const cases: readonly Case[] = [
     },
   },
   {
+    name: "root text normalization and absolute maximum use the public root boundary",
+    run: () => {
+      const rootParameters = resolveApprovedRootParameters();
+      const h1Range = rootParameters.semanticRoles.h1.textRange;
+      const exactMaximum = "a".repeat(h1Range.absoluteMax);
+      const aboveMaximum = `${exactMaximum}a`;
+      const outsideRecommended = "a".repeat(h1Range.recommended.max + 1);
+
+      assert.equal(
+        validateLandingPageModuleFieldPayload(
+          "hero",
+          heroPayloadWithTitle(exactMaximum),
+        ).ok,
+        true,
+      );
+      assert.equal(
+        validateLandingPageModuleFieldPayload(
+          "hero",
+          heroPayloadWithTitle(aboveMaximum),
+        ).ok,
+        false,
+      );
+      assert.equal(
+        validateLandingPageModuleFieldPayload(
+          "hero",
+          heroPayloadWithTitle(" \t\r\n "),
+        ).ok,
+        false,
+      );
+
+      const rawText = "  Alpha \t Beta\r\nGamma  ";
+      assert.equal(
+        normalizeLandingPageRootText(rawText),
+        "Alpha Beta\nGamma",
+      );
+      assert.equal(
+        countLandingPageRootTextCharacters(rawText),
+        Array.from("Alpha Beta\nGamma").length,
+      );
+      assert.equal(
+        validateLandingPageModuleFieldPayload(
+          "hero",
+          heroPayloadWithTitle(`  ${exactMaximum}  `),
+        ).ok,
+        true,
+      );
+
+      assert.ok(h1Range.recommended.max < h1Range.absoluteMax);
+      assert.equal(
+        validateLandingPageModuleFieldPayload(
+          "hero",
+          heroPayloadWithTitle(outsideRecommended),
+        ).ok,
+        true,
+      );
+    },
+  },
+  {
+    name: "root resolution errors are converted to ROOT_RESOLUTION_FAILED",
+    run: () => {
+      assert.deepEqual(
+        validateLandingPageModuleFieldPayload("hero", validPayloads.hero, {
+          rootVersion: Number.MAX_SAFE_INTEGER,
+        }),
+        { ok: false, error: { code: "ROOT_RESOLUTION_FAILED" } },
+      );
+    },
+  },
+  {
+    name: "v1 modules and variants accept only an empty root delta",
+    run: () => {
+      for (const moduleDefinition of Object.values(
+        landingPageModuleCatalogRegistry[1].modules,
+      )) {
+        assert.deepEqual(moduleDefinition.rootDelta, {});
+      }
+
+      for (const moduleEntry of Object.values(
+        landingPageModuleVariantCatalogRegistry[1].modules,
+      )) {
+        assert.deepEqual(moduleEntry.rootDelta, {});
+        for (const variant of Object.values(moduleEntry.variants)) {
+          assert.deepEqual(variant.rootDelta, {});
+        }
+      }
+
+      assertMutationInvalid((catalog) => {
+        (catalog.modules.hero.rootDelta as Record<string, unknown>).spacing =
+          "compact";
+      });
+      assertVariantCatalogMutationInvalid((catalog) => {
+        (
+          catalog.modules.hero.rootDelta as Record<string, unknown>
+        ).presetKey = "compact";
+      });
+      assertVariantCatalogMutationInvalid((catalog) => {
+        (mutableVariant(catalog, "hero", "standard").rootDelta as Record<
+          string,
+          unknown
+        >).spacing = "compact";
+      });
+    },
+  },
+  {
+    name: "module catalog does not import or duplicate the root implementation",
+    run: () => {
+      const sources = [
+        "contracts.ts",
+        "payload-validator.ts",
+        "registry.ts",
+        "schema.ts",
+      ].map((fileName) =>
+        readFileSync(
+          `lib/conversion-content/landing-page/module-catalog/${fileName}`,
+          "utf8",
+        ),
+      );
+      const combinedSource = sources.join("\n");
+
+      assert.doesNotMatch(combinedSource, /root-registry/);
+      assert.doesNotMatch(
+        combinedSource,
+        /function\s+(?:normalizeLandingPageRootText|countLandingPageRootTextCharacters)/,
+      );
+      assert.doesNotMatch(
+        combinedSource,
+        /(?:const|let|var)\s+landingPageRootSemanticRoleKeys\s*=/,
+      );
+      assert.match(sources[1], /from "\.\.\/index"/);
+    },
+  },
+  {
     name: "catalog and nested structural definitions are deeply immutable",
     run: () => {
       const catalog = landingPageModuleCatalogRegistry[1];
@@ -682,6 +819,7 @@ const cases: readonly Case[] = [
       assert.equal(Object.isFrozen(landingPageModuleCatalogRegistry), true);
       assert.equal(Object.isFrozen(catalog), true);
       assert.equal(Object.isFrozen(catalog.modules.hero), true);
+      assert.equal(Object.isFrozen(catalog.modules.hero.rootDelta), true);
       assert.equal(Object.isFrozen(catalog.modules.hero.boundaries), true);
       assert.equal(Object.isFrozen(landingPageModuleFieldCatalogRegistry), true);
       assert.equal(Object.isFrozen(fieldCatalog.modules.hero.fields), true);
@@ -691,8 +829,15 @@ const cases: readonly Case[] = [
       );
       assert.equal(Object.isFrozen(landingPageModuleVariantCatalogRegistry), true);
       assert.equal(Object.isFrozen(variantCatalog.modules.faq.variants), true);
+      assert.equal(Object.isFrozen(variantCatalog.modules.faq.rootDelta), true);
       assert.equal(
         Object.isFrozen(variantCatalog.modules.faq.variants.accordion.fields),
+        true,
+      );
+      assert.equal(
+        Object.isFrozen(
+          variantCatalog.modules.faq.variants.accordion.rootDelta,
+        ),
         true,
       );
       assert.equal(
@@ -852,6 +997,22 @@ function imagePayload(mode: "informative" | "decorative", altText: string) {
   };
 }
 
+function heroPayloadWithTitle(title: string) {
+  return {
+    ...(validPayloads.hero as Record<string, unknown>),
+    title,
+  };
+}
+
+function resolveApprovedRootParameters() {
+  const result = resolveLandingPageRootParameters({
+    rootVersion: landingPageModuleCatalogRegistry[1].compatibleRootVersions[0],
+  });
+  assert.equal(result.ok, true);
+  if (!result.ok) assert.fail("approved root parameters must resolve");
+  return result.value;
+}
+
 const validPayloads: Readonly<Record<
   LandingPageModuleDefinition["moduleKey"],
   unknown
@@ -930,6 +1091,7 @@ function fixtureModule(
     function: "fixture_function",
     boundaries: ["fixture_boundary"],
     invariants: ["fixture_invariant"],
+    rootDelta: {},
   };
 }
 

@@ -20,3 +20,7 @@ export type {
   ResolveLandingPageRootParametersResult,
 } from "./contracts";
 export { resolveLandingPageRootParameters } from "./root-resolver";
+export {
+  countLandingPageRootTextCharacters,
+  normalizeLandingPageRootText,
+} from "./root-schema";
