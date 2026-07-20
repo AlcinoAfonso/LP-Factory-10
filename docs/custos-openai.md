@@ -37,6 +37,7 @@
 - Plano atual: ChatGPT Pro.
 - Valor informado no upgrade: US$ 100 por mês.
 - Data do upgrade: 20/07/2026.
+- Vigência atual: até 19/08/2026.
 - Plano anterior: ChatGPT Plus, US$ 20 por mês.
 - Finalidade principal no projeto: uso do Codex App para análise, documentação, implementação e validação.
 
@@ -94,6 +95,7 @@
 
 - O upgrade aumenta o custo recorrente mensal de US$ 20 para US$ 100.
 - A diferença mensal em relação ao Plus é de US$ 80.
+- A vigência atual do Pro vai de 20/07/2026 até 19/08/2026.
 - A decisão foi tomada após os 500 créditos avulsos, também comprados por US$ 20, serem consumidos sem concluir duas tarefas de implementação.
 - O plano Pro passa a ser avaliado pelo volume real de trabalho permitido, pela redução de interrupções e pela previsibilidade operacional.
 
@@ -126,7 +128,7 @@
 - Usar a franquia do plano Pro para implementações críticas com GPT-5.6 Sol.
 - Medir a duração da franquia e a quantidade de tarefas concluídas no Pro.
 - Comparar o desempenho real do Pro com o histórico observado no Plus e com os créditos avulsos.
-- Reavaliar a permanência no Pro após um ciclo mensal de uso real.
+- Reavaliar a permanência no Pro antes do fim da vigência atual, em 19/08/2026.
 
 ## 8. Histórico de decisões
 
@@ -143,6 +145,7 @@
 ### 8.3. 20/07/2026 — upgrade
 
 - Decisão: realizar upgrade do ChatGPT Plus para o ChatGPT Pro de US$ 100 por mês.
+- Vigência atual: de 20/07/2026 até 19/08/2026.
 - Motivo: créditos avulsos apresentaram custo operacional muito elevado e não permitiram concluir duas tarefas de implementação.
 - Hipótese a validar: a franquia ampliada do Pro oferece melhor custo por trabalho concluído e maior previsibilidade que o Plus complementado por créditos avulsos.
-- Próxima análise: após um ciclo mensal de uso real do plano Pro.
+- Próxima análise: antes de 19/08/2026, com base no ciclo real de uso do plano Pro.
