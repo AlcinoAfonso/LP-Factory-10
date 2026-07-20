@@ -34,7 +34,10 @@
 
 ### 3.1. Plano
 
-- Plano atual: ChatGPT Plus.
+- Plano atual: ChatGPT Pro.
+- Valor informado no upgrade: US$ 100 por mês.
+- Data do upgrade: 20/07/2026.
+- Plano anterior: ChatGPT Plus, US$ 20 por mês.
 - Finalidade principal no projeto: uso do Codex App para análise, documentação, implementação e validação.
 
 ### 3.2. Compra de créditos
@@ -87,6 +90,13 @@
 - A percepção inicial é de que o custo por trabalho realizado com créditos avulsos é muitas vezes superior ao custo efetivo do uso incluído no Plus.
 - Ainda não há base oficial para definir uma proporção exata.
 
+### 5.3. Upgrade para o Pro
+
+- O upgrade aumenta o custo recorrente mensal de US$ 20 para US$ 100.
+- A diferença mensal em relação ao Plus é de US$ 80.
+- A decisão foi tomada após os 500 créditos avulsos, também comprados por US$ 20, serem consumidos sem concluir duas tarefas de implementação.
+- O plano Pro passa a ser avaliado pelo volume real de trabalho permitido, pela redução de interrupções e pela previsibilidade operacional.
+
 ## 6. Aprendizados
 
 ### 6.1. Resultado do primeiro experimento
@@ -113,9 +123,10 @@
 
 ### 7.2. Uso do Codex
 
-- Priorizar o GPT-5.6 Sol para implementações críticas dentro da franquia do plano.
-- Quando a franquia terminar, preferir aguardar a redefinição antes de reduzir o modelo sem avaliação do risco.
-- Avaliar upgrade de plano com base no volume real de trabalho incluído, e não por equivalência nominal entre US$ 20 de plano e US$ 20 de créditos.
+- Usar a franquia do plano Pro para implementações críticas com GPT-5.6 Sol.
+- Medir a duração da franquia e a quantidade de tarefas concluídas no Pro.
+- Comparar o desempenho real do Pro com o histórico observado no Plus e com os créditos avulsos.
+- Reavaliar a permanência no Pro após um ciclo mensal de uso real.
 
 ## 8. Histórico de decisões
 
@@ -128,4 +139,10 @@
 
 - Resultado: os 500 créditos foram consumidos no mesmo dia em duas execuções de implementação, sem conclusão integral das duas tarefas.
 - Decisão: hipótese inicial rejeitada para o fluxo normal de implementação com GPT-5.6 Sol médio.
-- Próxima análise: comparar a franquia real do Plus com os planos superiores antes de qualquer nova compra ou upgrade.
+
+### 8.3. 20/07/2026 — upgrade
+
+- Decisão: realizar upgrade do ChatGPT Plus para o ChatGPT Pro de US$ 100 por mês.
+- Motivo: créditos avulsos apresentaram custo operacional muito elevado e não permitiram concluir duas tarefas de implementação.
+- Hipótese a validar: a franquia ampliada do Pro oferece melhor custo por trabalho concluído e maior previsibilidade que o Plus complementado por créditos avulsos.
+- Próxima análise: após um ciclo mensal de uso real do plano Pro.
