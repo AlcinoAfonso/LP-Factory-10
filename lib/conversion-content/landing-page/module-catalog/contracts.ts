@@ -153,9 +153,56 @@ export const landingPageCapabilityKeys = [
   "accordion_interaction",
 ] as const;
 
+export const landingPageCopySourceModes = [
+  "research",
+  "operational_evidence",
+] as const;
+
+export const landingPageCopySourceItemKeyCatalog = {
+  strategic_core: [
+    "pain",
+    "objection",
+    "desire",
+    "belief",
+    "fear",
+    "awareness_level",
+    "trigger",
+    "proof_type",
+    "positioning_opportunity",
+  ],
+  seo: ["search_intent", "commercial_keywords", "faq_questions"],
+} as const;
+
+export const landingPageCopySourceItemKeys = [
+  ...landingPageCopySourceItemKeyCatalog.strategic_core,
+  ...landingPageCopySourceItemKeyCatalog.seo,
+] as const;
+
 export type LandingPageVariantKey = (typeof landingPageVariantKeys)[number];
 export type LandingPageCapabilityKey =
   (typeof landingPageCapabilityKeys)[number];
+export type LandingPageCopySourceMode =
+  (typeof landingPageCopySourceModes)[number];
+export type LandingPageCopySourceItemKey =
+  (typeof landingPageCopySourceItemKeys)[number];
+
+export type LandingPageResearchCopySource = Readonly<{
+  sourceMode: "research";
+  primaryItemKeys: readonly LandingPageCopySourceItemKey[];
+  auxiliaryItemKey?: LandingPageCopySourceItemKey;
+}>;
+
+export type LandingPageOperationalEvidenceCopySource = Readonly<{
+  sourceMode: "operational_evidence";
+}>;
+
+export type LandingPageCopySource =
+  | LandingPageResearchCopySource
+  | LandingPageOperationalEvidenceCopySource;
+
+export type LandingPageCopySourceMap = Readonly<
+  Record<string, LandingPageCopySource>
+>;
 
 export type LandingPagePrimaryActionCapability = Readonly<{
   capabilityKey: "primary_action";
@@ -196,6 +243,7 @@ export type LandingPageModuleVariantDefinition = Readonly<{
   purpose: LandingPageModulePurpose;
   compatibleModuleVersion: number;
   fields: Readonly<Record<string, LandingPageFieldDefinition>>;
+  copySourceMap: LandingPageCopySourceMap;
   capabilities: readonly LandingPageCapabilityKey[];
   rootDelta: LandingPageRootDelta;
 }>;

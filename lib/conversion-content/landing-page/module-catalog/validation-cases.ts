@@ -8,11 +8,15 @@ import {
   resolveLandingPageRootParameters,
 } from "..";
 import {
+  landingPageCopySourceItemKeyCatalog,
+  landingPageCopySourceItemKeys,
   landingPageModuleKeys,
+  type LandingPageCopySourceMap,
   type LandingPageModuleCatalogEntry,
   type LandingPageModuleDefinition,
   type LandingPageModuleFieldCatalogEntry,
   type LandingPageModuleVariantCatalogEntry,
+  type LandingPageResearchCopySource,
 } from "./contracts";
 import { validateLandingPageModuleFieldPayload } from "./payload-validator";
 import {
@@ -513,6 +517,187 @@ const cases: readonly Case[] = [
     },
   },
   {
+    name: "all approved literal copy source maps are registered per variant",
+    run: () => {
+      const catalog = landingPageModuleVariantCatalogRegistry[1];
+
+      for (const [moduleKey, moduleEntry] of Object.entries(catalog.modules)) {
+        for (const variant of Object.values(moduleEntry.variants)) {
+          assert.deepEqual(
+            variant.copySourceMap,
+            expectedCopySourceMaps[
+              moduleKey as LandingPageModuleDefinition["moduleKey"]
+            ],
+          );
+        }
+      }
+    },
+  },
+  {
+    name: "copy source paths exactly cover approved text fields",
+    run: () => {
+      const catalog = landingPageModuleVariantCatalogRegistry[1];
+
+      for (const moduleEntry of Object.values(catalog.modules)) {
+        for (const variant of Object.values(moduleEntry.variants)) {
+          const textFieldPaths = Object.entries(variant.fields)
+            .filter(([, field]) => field.fieldKind === "text")
+            .map(([path]) => path);
+          assert.deepEqual(Object.keys(variant.copySourceMap), textFieldPaths);
+
+          for (const source of Object.values(variant.copySourceMap)) {
+            if (source.sourceMode !== "research") continue;
+            for (const itemKey of [
+              ...source.primaryItemKeys,
+              ...(source.auxiliaryItemKey === undefined
+                ? []
+                : [source.auxiliaryItemKey]),
+            ]) {
+              assert.equal(landingPageCopySourceItemKeys.includes(itemKey), true);
+            }
+          }
+        }
+      }
+
+      assert.deepEqual(landingPageCopySourceItemKeys, [
+        ...landingPageCopySourceItemKeyCatalog.strategic_core,
+        ...landingPageCopySourceItemKeyCatalog.seo,
+      ]);
+      assert.equal(
+        new Set(landingPageCopySourceItemKeys).size,
+        landingPageCopySourceItemKeys.length,
+      );
+    },
+  },
+  {
+    name: "research copy sources enforce primary and auxiliary cardinalities",
+    run: () => {
+      const sources = allResearchCopySources();
+      assert.ok(sources.some((source) => source.primaryItemKeys.length === 1));
+      assert.ok(sources.some((source) => source.primaryItemKeys.length === 2));
+      assert.ok(sources.some((source) => source.auxiliaryItemKey === undefined));
+      assert.ok(sources.some((source) => source.auxiliaryItemKey !== undefined));
+
+      assertVariantCatalogMutationInvalid((catalog) => {
+        delete mutableCopySource(catalog, "hero", "standard", "title")
+          .primaryItemKeys;
+      });
+      assertVariantCatalogMutationInvalid((catalog) => {
+        (
+          mutableCopySource(
+            catalog,
+            "hero",
+            "standard",
+            "title",
+          ).primaryItemKeys as string[]
+        ).push("belief");
+      });
+      assertVariantCatalogMutationInvalid((catalog) => {
+        mutableCopySource(
+          catalog,
+          "offer",
+          "standard",
+          "items[].itemTitle",
+        ).auxiliaryItemKey = ["belief", "objection"];
+      });
+    },
+  },
+  {
+    name: "unknown item key path and source mode fail closed",
+    run: () => {
+      assertVariantCatalogMutationInvalid((catalog) => {
+        const source = mutableCopySource(
+          catalog,
+          "hero",
+          "standard",
+          "title",
+        );
+        source.primaryItemKeys = ["unknown_item_key"];
+      });
+      assertVariantCatalogMutationInvalid((catalog) => {
+        mutableCopySourceMap(catalog, "hero", "standard").unknownPath = {
+          sourceMode: "research",
+          primaryItemKeys: ["desire"],
+        };
+      });
+      assertVariantCatalogMutationInvalid((catalog) => {
+        mutableCopySource(
+          catalog,
+          "hero",
+          "standard",
+          "title",
+        ).sourceMode = "generated";
+      });
+    },
+  },
+  {
+    name: "research and operational evidence source shapes cannot be mixed",
+    run: () => {
+      assertVariantCatalogMutationInvalid((catalog) => {
+        mutableCopySource(
+          catalog,
+          "social_proof",
+          "standard",
+          "items[].quote",
+        ).primaryItemKeys = ["proof_type"];
+      });
+      assertVariantCatalogMutationInvalid((catalog) => {
+        delete mutableCopySource(catalog, "hero", "standard", "title")
+          .primaryItemKeys;
+      });
+      assertVariantCatalogMutationInvalid((catalog) => {
+        mutableCopySourceMap(catalog, "hero", "standard").media = {
+          sourceMode: "research",
+          primaryItemKeys: ["desire"],
+        };
+      });
+      assertVariantCatalogMutationInvalid((catalog) => {
+        mutableVariant(catalog, "hero", "standard").copySourceMap =
+          JSON.parse(
+            JSON.stringify(
+              catalog.modules.final_cta.variants.standard.copySourceMap,
+            ),
+          );
+      });
+    },
+  },
+  {
+    name: "social proof preserves operational evidence sources",
+    run: () => {
+      const copySourceMap =
+        landingPageModuleVariantCatalogRegistry[1].modules.social_proof
+          .variants.standard.copySourceMap;
+
+      assert.deepEqual(copySourceMap["items[].quote"], {
+        sourceMode: "operational_evidence",
+      });
+      assert.deepEqual(copySourceMap["items[].attribution"], {
+        sourceMode: "operational_evidence",
+      });
+      assert.equal(copySourceMap.title.sourceMode, "research");
+    },
+  },
+  {
+    name: "faq standard and accordion own independent copy source maps",
+    run: () => {
+      const faq = landingPageModuleVariantCatalogRegistry[1].modules.faq;
+      const standard = faq.variants.standard.copySourceMap;
+      const accordion = faq.variants.accordion.copySourceMap;
+
+      assert.deepEqual(standard, accordion);
+      assert.notStrictEqual(standard, accordion);
+      assert.notStrictEqual(standard.title, accordion.title);
+      assert.notStrictEqual(
+        "primaryItemKeys" in standard.title
+          ? standard.title.primaryItemKeys
+          : undefined,
+        "primaryItemKeys" in accordion.title
+          ? accordion.title.primaryItemKeys
+          : undefined,
+      );
+    },
+  },
+  {
     name: "faq variants own independent contracts and accordion declares wcag 2.2",
     run: () => {
       const catalog = landingPageModuleVariantCatalogRegistry[1];
@@ -836,6 +1021,27 @@ const cases: readonly Case[] = [
       );
       assert.equal(
         Object.isFrozen(
+          variantCatalog.modules.faq.variants.accordion.copySourceMap,
+        ),
+        true,
+      );
+      assert.equal(
+        Object.isFrozen(
+          variantCatalog.modules.faq.variants.accordion.copySourceMap.title,
+        ),
+        true,
+      );
+      assert.equal(
+        Object.isFrozen(
+          (
+            variantCatalog.modules.faq.variants.accordion.copySourceMap
+              .title as LandingPageResearchCopySource
+          ).primaryItemKeys,
+        ),
+        true,
+      );
+      assert.equal(
+        Object.isFrozen(
           variantCatalog.modules.faq.variants.accordion.rootDelta,
         ),
         true,
@@ -858,6 +1064,14 @@ const cases: readonly Case[] = [
         (
           variantCatalog.modules.faq.variants.accordion
             .capabilities as string[]
+        ).push("forbidden");
+      }, TypeError);
+      assert.throws(() => {
+        (
+          (
+            variantCatalog.modules.faq.variants.accordion.copySourceMap
+              .title as LandingPageResearchCopySource
+          ).primaryItemKeys as string[]
         ).push("forbidden");
       }, TypeError);
     },
@@ -958,6 +1172,39 @@ function mutableVariantFields(
     string,
     Record<string, unknown>
   >;
+}
+
+function mutableCopySourceMap(
+  catalog: LandingPageModuleVariantCatalogEntry,
+  moduleKey: LandingPageModuleDefinition["moduleKey"],
+  variantKey: string,
+): Record<string, Record<string, unknown>> {
+  return mutableVariant(catalog, moduleKey, variantKey)
+    .copySourceMap as Record<string, Record<string, unknown>>;
+}
+
+function mutableCopySource(
+  catalog: LandingPageModuleVariantCatalogEntry,
+  moduleKey: LandingPageModuleDefinition["moduleKey"],
+  variantKey: string,
+  path: string,
+): Record<string, unknown> {
+  const source = mutableCopySourceMap(catalog, moduleKey, variantKey)[path];
+  assert.notEqual(source, undefined);
+  return source;
+}
+
+function allResearchCopySources(): LandingPageResearchCopySource[] {
+  return Object.values(
+    landingPageModuleVariantCatalogRegistry[1].modules,
+  ).flatMap((moduleEntry) =>
+    Object.values(moduleEntry.variants).flatMap((variant) =>
+      Object.values(variant.copySourceMap).filter(
+        (source): source is LandingPageResearchCopySource =>
+          source.sourceMode === "research",
+      ),
+    ),
+  );
 }
 
 function mutableFields(
@@ -1079,6 +1326,155 @@ const validPayloads: Readonly<Record<
     primaryCta: { label: "Comecar" },
   },
 };
+
+const expectedCopySourceMaps = {
+  hero: {
+    eyebrow: {
+      sourceMode: "research",
+      primaryItemKeys: ["positioning_opportunity"],
+      auxiliaryItemKey: "search_intent",
+    },
+    title: {
+      sourceMode: "research",
+      primaryItemKeys: ["positioning_opportunity", "desire"],
+      auxiliaryItemKey: "commercial_keywords",
+    },
+    subtitle: {
+      sourceMode: "research",
+      primaryItemKeys: ["pain", "desire"],
+      auxiliaryItemKey: "belief",
+    },
+    "primaryCta.label": {
+      sourceMode: "research",
+      primaryItemKeys: ["trigger"],
+      auxiliaryItemKey: "search_intent",
+    },
+    proofShort: {
+      sourceMode: "research",
+      primaryItemKeys: ["proof_type"],
+      auxiliaryItemKey: "objection",
+    },
+  },
+  trust_bar: {
+    "items[].text": {
+      sourceMode: "research",
+      primaryItemKeys: ["proof_type", "belief"],
+      auxiliaryItemKey: "objection",
+    },
+  },
+  problem_solution: {
+    title: {
+      sourceMode: "research",
+      primaryItemKeys: ["pain", "desire"],
+      auxiliaryItemKey: "positioning_opportunity",
+    },
+    "items[].problem": {
+      sourceMode: "research",
+      primaryItemKeys: ["pain", "fear"],
+      auxiliaryItemKey: "objection",
+    },
+    "items[].solution": {
+      sourceMode: "research",
+      primaryItemKeys: ["positioning_opportunity", "desire"],
+      auxiliaryItemKey: "belief",
+    },
+  },
+  offer: {
+    title: {
+      sourceMode: "research",
+      primaryItemKeys: ["desire", "trigger"],
+      auxiliaryItemKey: "positioning_opportunity",
+    },
+    "items[].itemTitle": {
+      sourceMode: "research",
+      primaryItemKeys: ["trigger", "desire"],
+    },
+    "items[].description": {
+      sourceMode: "research",
+      primaryItemKeys: ["positioning_opportunity", "belief"],
+      auxiliaryItemKey: "objection",
+    },
+  },
+  process: {
+    title: {
+      sourceMode: "research",
+      primaryItemKeys: ["belief", "desire"],
+      auxiliaryItemKey: "positioning_opportunity",
+    },
+    "steps[].stepTitle": {
+      sourceMode: "research",
+      primaryItemKeys: ["trigger", "positioning_opportunity"],
+      auxiliaryItemKey: "desire",
+    },
+    "steps[].stepBody": {
+      sourceMode: "research",
+      primaryItemKeys: ["belief", "desire"],
+      auxiliaryItemKey: "objection",
+    },
+  },
+  technical_assurance: {
+    title: {
+      sourceMode: "research",
+      primaryItemKeys: ["proof_type", "belief"],
+      auxiliaryItemKey: "objection",
+    },
+    "items[].assuranceTitle": {
+      sourceMode: "research",
+      primaryItemKeys: ["proof_type"],
+      auxiliaryItemKey: "belief",
+    },
+    "items[].assuranceBody": {
+      sourceMode: "research",
+      primaryItemKeys: ["proof_type", "positioning_opportunity"],
+      auxiliaryItemKey: "objection",
+    },
+  },
+  social_proof: {
+    title: {
+      sourceMode: "research",
+      primaryItemKeys: ["proof_type", "belief"],
+      auxiliaryItemKey: "objection",
+    },
+    "items[].quote": { sourceMode: "operational_evidence" },
+    "items[].attribution": { sourceMode: "operational_evidence" },
+  },
+  faq: {
+    title: {
+      sourceMode: "research",
+      primaryItemKeys: ["objection", "awareness_level"],
+      auxiliaryItemKey: "search_intent",
+    },
+    "items[].question": {
+      sourceMode: "research",
+      primaryItemKeys: ["objection", "fear"],
+      auxiliaryItemKey: "faq_questions",
+    },
+    "items[].answer": {
+      sourceMode: "research",
+      primaryItemKeys: ["belief", "positioning_opportunity"],
+      auxiliaryItemKey: "desire",
+    },
+  },
+  final_cta: {
+    title: {
+      sourceMode: "research",
+      primaryItemKeys: ["trigger", "desire"],
+      auxiliaryItemKey: "positioning_opportunity",
+    },
+    body: {
+      sourceMode: "research",
+      primaryItemKeys: ["desire", "objection"],
+      auxiliaryItemKey: "belief",
+    },
+    "primaryCta.label": {
+      sourceMode: "research",
+      primaryItemKeys: ["trigger"],
+      auxiliaryItemKey: "search_intent",
+    },
+  },
+} satisfies Readonly<
+  Record<LandingPageModuleDefinition["moduleKey"], LandingPageCopySourceMap>
+>;
 
 function fixtureModule(
   moduleKey: LandingPageModuleDefinition["moduleKey"],

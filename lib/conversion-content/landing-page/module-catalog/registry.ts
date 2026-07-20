@@ -3,6 +3,8 @@ import type {
   LandingPageCollectionFieldDefinition,
   LandingPageImageFieldDefinition,
   LandingPageCapabilityKey,
+  LandingPageCopySourceItemKey,
+  LandingPageCopySourceMap,
   LandingPageModuleCatalogRegistry,
   LandingPageModuleFieldCatalogRegistry,
   LandingPageModuleKey,
@@ -349,6 +351,72 @@ export const landingPageModuleFieldCatalogRegistry = deepFreeze({
   },
 } satisfies LandingPageModuleFieldCatalogRegistry);
 
+const approvedCopySourceMaps = {
+  hero: {
+    eyebrow: researchSource(["positioning_opportunity"], "search_intent"),
+    title: researchSource(
+      ["positioning_opportunity", "desire"],
+      "commercial_keywords",
+    ),
+    subtitle: researchSource(["pain", "desire"], "belief"),
+    "primaryCta.label": researchSource(["trigger"], "search_intent"),
+    proofShort: researchSource(["proof_type"], "objection"),
+  },
+  trust_bar: {
+    "items[].text": researchSource(["proof_type", "belief"], "objection"),
+  },
+  problem_solution: {
+    title: researchSource(["pain", "desire"], "positioning_opportunity"),
+    "items[].problem": researchSource(["pain", "fear"], "objection"),
+    "items[].solution": researchSource(
+      ["positioning_opportunity", "desire"],
+      "belief",
+    ),
+  },
+  offer: {
+    title: researchSource(["desire", "trigger"], "positioning_opportunity"),
+    "items[].itemTitle": researchSource(["trigger", "desire"]),
+    "items[].description": researchSource(
+      ["positioning_opportunity", "belief"],
+      "objection",
+    ),
+  },
+  process: {
+    title: researchSource(["belief", "desire"], "positioning_opportunity"),
+    "steps[].stepTitle": researchSource(
+      ["trigger", "positioning_opportunity"],
+      "desire",
+    ),
+    "steps[].stepBody": researchSource(["belief", "desire"], "objection"),
+  },
+  technical_assurance: {
+    title: researchSource(["proof_type", "belief"], "objection"),
+    "items[].assuranceTitle": researchSource(["proof_type"], "belief"),
+    "items[].assuranceBody": researchSource(
+      ["proof_type", "positioning_opportunity"],
+      "objection",
+    ),
+  },
+  social_proof: {
+    title: researchSource(["proof_type", "belief"], "objection"),
+    "items[].quote": operationalEvidenceSource(),
+    "items[].attribution": operationalEvidenceSource(),
+  },
+  faq: {
+    title: researchSource(["objection", "awareness_level"], "search_intent"),
+    "items[].question": researchSource(["objection", "fear"], "faq_questions"),
+    "items[].answer": researchSource(
+      ["belief", "positioning_opportunity"],
+      "desire",
+    ),
+  },
+  final_cta: {
+    title: researchSource(["trigger", "desire"], "positioning_opportunity"),
+    body: researchSource(["desire", "objection"], "belief"),
+    "primaryCta.label": researchSource(["trigger"], "search_intent"),
+  },
+} satisfies Readonly<Record<LandingPageModuleKey, LandingPageCopySourceMap>>;
+
 export const landingPageModuleVariantCatalogRegistry = deepFreeze({
   1: {
     moduleCatalogVersion: 1,
@@ -482,9 +550,44 @@ function variantDefinition(
     purpose: "controlled_test",
     compatibleModuleVersion: 1,
     fields: copyApprovedModuleFields(moduleKey),
+    copySourceMap: copyApprovedCopySourceMap(moduleKey),
     capabilities,
     rootDelta: {},
   };
+}
+
+function copyApprovedCopySourceMap(
+  moduleKey: LandingPageModuleKey,
+): LandingPageCopySourceMap {
+  return Object.fromEntries(
+    Object.entries(approvedCopySourceMaps[moduleKey]).map(([path, source]) => [
+      path,
+      source.sourceMode === "research"
+        ? {
+            sourceMode: source.sourceMode,
+            primaryItemKeys: [...source.primaryItemKeys],
+            ...(source.auxiliaryItemKey === undefined
+              ? {}
+              : { auxiliaryItemKey: source.auxiliaryItemKey }),
+          }
+        : { sourceMode: source.sourceMode },
+    ]),
+  );
+}
+
+function researchSource(
+  primaryItemKeys: readonly LandingPageCopySourceItemKey[],
+  auxiliaryItemKey?: LandingPageCopySourceItemKey,
+) {
+  return {
+    sourceMode: "research" as const,
+    primaryItemKeys,
+    ...(auxiliaryItemKey === undefined ? {} : { auxiliaryItemKey }),
+  };
+}
+
+function operationalEvidenceSource() {
+  return { sourceMode: "operational_evidence" as const };
 }
 
 function copyApprovedModuleFields(moduleKey: LandingPageModuleKey) {

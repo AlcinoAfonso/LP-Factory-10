@@ -2,12 +2,14 @@ import { z } from "zod";
 
 import {
   landingPageCapabilityKeys,
+  landingPageCopySourceItemKeys,
   landingPageFieldKinds,
   landingPageFieldPolicies,
   landingPageFieldSupports,
   landingPageModuleKeys,
   landingPageModuleLifecycleStatuses,
   landingPageVariantKeys,
+  type LandingPageCopySourceMap,
   type LandingPageFieldDefinition,
   type LandingPageModuleDefinition,
   type LandingPageModuleKey,
@@ -233,6 +235,41 @@ const capabilityDefinitionSchema = z.discriminatedUnion("capabilityKey", [
   accordionInteractionCapabilitySchema,
 ]);
 
+const researchCopySourceSchema = z
+  .object({
+    sourceMode: z.literal("research"),
+    primaryItemKeys: z
+      .array(z.enum(landingPageCopySourceItemKeys))
+      .min(1)
+      .max(2),
+    auxiliaryItemKey: z.enum(landingPageCopySourceItemKeys).optional(),
+  })
+  .strict()
+  .superRefine((source, context) => {
+    if (new Set(source.primaryItemKeys).size !== source.primaryItemKeys.length) {
+      context.addIssue({
+        code: "custom",
+        path: ["primaryItemKeys"],
+        message: "primary item keys must be unique",
+      });
+    }
+    if (
+      source.auxiliaryItemKey !== undefined &&
+      source.primaryItemKeys.includes(source.auxiliaryItemKey)
+    ) {
+      context.addIssue({
+        code: "custom",
+        path: ["auxiliaryItemKey"],
+        message: "auxiliary item key must differ from primary item keys",
+      });
+    }
+  });
+
+const copySourceSchema = z.discriminatedUnion("sourceMode", [
+  researchCopySourceSchema,
+  z.object({ sourceMode: z.literal("operational_evidence") }).strict(),
+]);
+
 const moduleVariantDefinitionSchema = z
   .object({
     variantKey: z.enum(landingPageVariantKeys),
@@ -241,12 +278,14 @@ const moduleVariantDefinitionSchema = z
     purpose: z.literal("controlled_test"),
     compatibleModuleVersion: z.literal(1),
     fields: z.record(z.string(), fieldDefinitionSchema),
+    copySourceMap: z.record(z.string(), copySourceSchema),
     capabilities: z.array(z.enum(landingPageCapabilityKeys)),
     rootDelta: rootDeltaSchema,
   })
   .strict()
   .superRefine((variant, context) => {
     validateFieldPaths(variant.fields, context);
+    validateCopySourceMap(variant, context);
     if (new Set(variant.capabilities).size !== variant.capabilities.length) {
       context.addIssue({
         code: "custom",
@@ -545,6 +584,35 @@ function validateFieldPaths(
         code: "custom",
         path: ["fields", fieldPath],
         message: "action requires a closed child contract",
+      });
+    }
+  }
+}
+
+function validateCopySourceMap(
+  variant: Readonly<{
+    fields: Readonly<Record<string, LandingPageFieldDefinition>>;
+    copySourceMap: LandingPageCopySourceMap;
+  }>,
+  context: z.RefinementCtx,
+) {
+  const textFieldPaths = Object.entries(variant.fields)
+    .filter(([, field]) => field.fieldKind === "text")
+    .map(([path]) => path);
+
+  validateExactValues({
+    context,
+    path: ["copySourceMap"],
+    actual: Object.keys(variant.copySourceMap),
+    expected: textFieldPaths,
+  });
+
+  for (const sourcePath of Object.keys(variant.copySourceMap)) {
+    if (variant.fields[sourcePath]?.fieldKind !== "text") {
+      context.addIssue({
+        code: "custom",
+        path: ["copySourceMap", sourcePath],
+        message: "copy source path must reference an approved text field",
       });
     }
   }
