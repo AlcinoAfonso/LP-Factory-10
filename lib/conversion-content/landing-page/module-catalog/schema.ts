@@ -12,6 +12,62 @@ import {
   type LandingPageVariantKey,
 } from "./contracts";
 import { landingPageModuleCatalogRegistry } from "./registry";
+import {
+  resolveLandingPageRootParameters,
+  type LandingPageRootSemanticRoleKey,
+} from "../index";
+
+const resolvedRootV1 = resolveLandingPageRootParameters({ rootVersion: 1 });
+const rootSemanticRoleSchema = z.string().refine(
+  (key) => resolvedRootV1.ok && Object.hasOwn(resolvedRootV1.value.semanticRoles, key),
+  { message: "semantic role is absent from the compatible root contract" },
+);
+
+const textRangeRestrictionSchema = z.object({
+  semanticRole: rootSemanticRoleSchema,
+  recommended: z.object({ min: z.number().int().min(0), max: z.number().int().min(1) }).strict().optional(),
+  absoluteMax: z.number().int().min(1).optional(),
+}).strict().superRefine((restriction, context) => {
+  if (restriction.recommended && restriction.recommended.min > restriction.recommended.max) {
+    context.addIssue({ code: "custom", message: "recommended range is inverted" });
+  }
+  if (!restriction.recommended && restriction.absoluteMax === undefined) {
+    context.addIssue({ code: "custom", message: "empty root restriction" });
+  }
+});
+
+const rootDeltaSchema = z.object({
+  textRanges: z.array(textRangeRestrictionSchema),
+}).strict().superRefine((delta, context) => {
+  const root = resolveLandingPageRootParameters({ rootVersion: 1 });
+  if (!root.ok) {
+    context.addIssue({ code: "custom", message: "compatible root contract is unavailable" });
+    return;
+  }
+  const seen = new Set<string>();
+  for (const [index, restriction] of delta.textRanges.entries()) {
+    if (seen.has(restriction.semanticRole)) {
+      context.addIssue({ code: "custom", path: ["textRanges", index], message: "duplicate semantic role restriction" });
+    }
+    seen.add(restriction.semanticRole);
+    if (!Object.hasOwn(root.value.semanticRoles, restriction.semanticRole)) {
+      continue;
+    }
+    const rootRange = root.value.semanticRoles[restriction.semanticRole as LandingPageRootSemanticRoleKey].textRange;
+    if (restriction.recommended && (
+      restriction.recommended.min < rootRange.recommended.min ||
+      restriction.recommended.max > rootRange.recommended.max
+    )) {
+      context.addIssue({ code: "custom", path: ["textRanges", index], message: "recommended range widens the root contract" });
+    }
+    if (restriction.absoluteMax !== undefined && restriction.absoluteMax > rootRange.absoluteMax) {
+      context.addIssue({ code: "custom", path: ["textRanges", index], message: "absolute limit widens the root contract" });
+    }
+    if (restriction.recommended && restriction.absoluteMax !== undefined && restriction.recommended.max > restriction.absoluteMax) {
+      context.addIssue({ code: "custom", path: ["textRanges", index], message: "recommended maximum exceeds absolute maximum" });
+    }
+  }
+});
 
 const nonEmptyPlainText = z
   .string()
@@ -168,6 +224,8 @@ const variantDefinitionSchema = z
     fieldContractKey: z.enum(landingPageVariantFieldContractKeys),
     lifecycleStatus: z.literal("hypothesis"),
     purpose: z.literal("controlled_test"),
+    compatibleRootVersion: z.literal(1),
+    rootDelta: rootDeltaSchema,
     capabilities: z.array(z.enum(landingPageVariantCapabilities)),
     actionCompatibility: z
       .object({
@@ -272,6 +330,8 @@ const moduleDefinitionSchema = z
     moduleVersion: z.literal(1),
     lifecycleStatus: z.literal("hypothesis"),
     purpose: z.literal("controlled_test"),
+    compatibleRootVersion: z.literal(1),
+    rootDelta: rootDeltaSchema,
     structuralFunction: nonEmptyPlainText,
     invariants: z.array(nonEmptyPlainText).min(1),
     boundaries: z.array(nonEmptyPlainText).min(1),
@@ -293,6 +353,11 @@ export const landingPageModuleCatalogSchema = z
   })
   .strict()
   .superRefine((catalog, context) => {
+    const root = resolveLandingPageRootParameters({ rootVersion: 1 });
+    if (!root.ok) {
+      context.addIssue({ code: "custom", message: "compatible root contract is unavailable" });
+      return;
+    }
     const expectedKeys = new Set<string>(landingPageModuleKeys);
     const actualKeys = Object.keys(catalog.modules);
 
@@ -326,6 +391,12 @@ export const landingPageModuleCatalogSchema = z
       }
 
       if (!expectedKeys.has(key)) continue;
+      validateComposedRootDelta({
+        parentRanges: root.value.semanticRoles,
+        delta: module.rootDelta,
+        context,
+        path: ["modules", key, "rootDelta"],
+      });
       const canonical =
         landingPageModuleCatalogRegistry.modules[key as LandingPageModuleKey];
 
@@ -422,6 +493,16 @@ export const landingPageModuleCatalogSchema = z
       }
 
       if (!expectedVariantKeys.has(key)) continue;
+      const moduleDefinition = catalog.modules[variant.moduleKey];
+      if (moduleDefinition) {
+        const moduleRanges = composeRootRanges(root.value.semanticRoles, moduleDefinition.rootDelta);
+        validateComposedRootDelta({
+          parentRanges: moduleRanges,
+          delta: variant.rootDelta,
+          context,
+          path: ["variants", key, "rootDelta"],
+        });
+      }
       const canonical =
         landingPageModuleCatalogRegistry.variants[key as LandingPageVariantKey];
       if (JSON.stringify(variant) !== JSON.stringify(canonical)) {
@@ -433,6 +514,52 @@ export const landingPageModuleCatalogSchema = z
       }
     }
   });
+
+type EffectiveTextRange = Readonly<{
+  recommended: Readonly<{ min: number; max: number }>;
+  absoluteMax: number;
+}>;
+
+function composeRootRanges(
+  parentRanges: Readonly<Record<string, { textRange?: EffectiveTextRange } | EffectiveTextRange>>,
+  delta: { textRanges: readonly { semanticRole: string; recommended?: { min: number; max: number }; absoluteMax?: number }[] },
+) {
+  const result: Record<string, EffectiveTextRange> = {};
+  for (const [key, parent] of Object.entries(parentRanges)) {
+    const range = "textRange" in parent && parent.textRange ? parent.textRange : parent as EffectiveTextRange;
+    const restriction = delta.textRanges.find((item) => item.semanticRole === key);
+    result[key] = {
+      recommended: restriction?.recommended ?? range.recommended,
+      absoluteMax: restriction?.absoluteMax ?? range.absoluteMax,
+    };
+  }
+  return result;
+}
+
+function validateComposedRootDelta(input: {
+  parentRanges: Readonly<Record<string, { textRange?: EffectiveTextRange } | EffectiveTextRange>>;
+  delta: { textRanges: readonly { semanticRole: string; recommended?: { min: number; max: number }; absoluteMax?: number }[] };
+  context: z.RefinementCtx;
+  path: (string | number)[];
+}) {
+  const effective = composeRootRanges(input.parentRanges, input.delta);
+  for (const [index, restriction] of input.delta.textRanges.entries()) {
+    if (!Object.hasOwn(input.parentRanges, restriction.semanticRole)) continue;
+    const parent = input.parentRanges[restriction.semanticRole];
+    const parentRange = "textRange" in parent && parent.textRange ? parent.textRange : parent as EffectiveTextRange;
+    const childRange = effective[restriction.semanticRole];
+    if (
+      childRange.recommended.min < parentRange.recommended.min ||
+      childRange.recommended.max > parentRange.recommended.max ||
+      childRange.absoluteMax > parentRange.absoluteMax
+    ) {
+      input.context.addIssue({ code: "custom", path: [...input.path, "textRanges", index], message: "specialization widens its parent contract" });
+    }
+    if (childRange.recommended.max > childRange.absoluteMax) {
+      input.context.addIssue({ code: "custom", path: [...input.path, "textRanges", index], message: "effective recommended maximum exceeds effective absolute maximum" });
+    }
+  }
+}
 
 function containsFreeMarkupOrRendererHint(value: string): boolean {
   return /<[^>]+>|<\/|script|style=|class=|className=|tailwind|component|props/i.test(

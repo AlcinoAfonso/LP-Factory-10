@@ -17,7 +17,9 @@ import type {
   LandingPageVariantKey,
   LandingPageVariantName,
 } from "./contracts";
-import type { LandingPageRootSemanticRoleKey } from "../contracts";
+import type { LandingPageRootSemanticRoleKey } from "../index";
+
+const noRootRestrictions = { textRanges: [] } as const;
 
 export const landingPageModuleCatalogRegistry = deepFreeze({
   family: "landing_page",
@@ -301,6 +303,8 @@ function variant(
     fieldContractKey: variantKey as LandingPageVariantFieldContractKey,
     lifecycleStatus: "hypothesis",
     purpose: "controlled_test",
+    compatibleRootVersion: 1,
+    rootDelta: noRootRestrictions,
     capabilities,
     ...optional,
   };
@@ -413,11 +417,14 @@ function moduleDefinition(
     moduleVersion: 1,
     lifecycleStatus: "hypothesis",
     purpose: "controlled_test",
+    compatibleRootVersion: 1,
+    rootDelta: noRootRestrictions,
     structuralFunction,
     invariants,
     boundaries,
   };
 }
+
 
 function deepFreeze<T>(value: T): T {
   if (value && typeof value === "object") {

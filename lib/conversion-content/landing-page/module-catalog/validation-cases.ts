@@ -451,6 +451,47 @@ const cases: readonly Case[] = [
       assertInvalid(mismatchedFields);
     },
   },
+  {
+    name: "root compatibility and specialization deltas fail closed",
+    run: () => {
+      const incompatibleModule = cloneRegistry();
+      incompatibleModule.modules.hero.compatibleRootVersion = 2;
+      assertInvalid(incompatibleModule);
+
+      const incompatibleVariant = cloneRegistry();
+      incompatibleVariant.variants["hero.standard@v1"].compatibleRootVersion = 2;
+      assertInvalid(incompatibleVariant);
+
+      const widenedModuleLimit = cloneRegistry();
+      widenedModuleLimit.modules.hero.rootDelta.textRanges.push({ semanticRole: "h1", absoluteMax: 121 });
+      assertInvalid(widenedModuleLimit);
+
+      const widenedVariantLimit = cloneRegistry();
+      widenedVariantLimit.modules.hero.rootDelta.textRanges.push({ semanticRole: "h1", recommended: { min: 36, max: 64 }, absoluteMax: 100 });
+      widenedVariantLimit.variants["hero.standard@v1"].rootDelta.textRanges.push({ semanticRole: "h1", recommended: { min: 36, max: 70 }, absoluteMax: 110 });
+      assertInvalid(widenedVariantLimit);
+
+      const invalidInheritedRange = cloneRegistry();
+      invalidInheritedRange.modules.hero.rootDelta.textRanges.push({ semanticRole: "h1", recommended: { min: 36, max: 64 }, absoluteMax: 100 });
+      invalidInheritedRange.variants["hero.standard@v1"].rootDelta.textRanges.push({ semanticRole: "h1", absoluteMax: 50 });
+      assertInvalid(invalidInheritedRange);
+
+      const duplicateRestriction = cloneRegistry();
+      duplicateRestriction.variants["hero.standard@v1"].rootDelta.textRanges.push(
+        { semanticRole: "h1", absoluteMax: 100 },
+        { semanticRole: "h1", absoluteMax: 90 },
+      );
+      assertInvalid(duplicateRestriction);
+
+      const unknownRootContract = cloneRegistry();
+      unknownRootContract.compatibleRootVersions = [2];
+      assertInvalid(unknownRootContract);
+
+      const inheritedPropertyRole = cloneRegistry();
+      inheritedPropertyRole.modules.hero.rootDelta.textRanges.push({ semanticRole: "toString", absoluteMax: 1 });
+      assert.doesNotThrow(() => assertInvalid(inheritedPropertyRole));
+    },
+  },
 ];
 
 for (const testCase of cases) {
@@ -522,6 +563,8 @@ type MutableModule = {
   moduleVersion: number;
   lifecycleStatus: string;
   purpose: string;
+  compatibleRootVersion: number;
+  rootDelta: MutableRootDelta;
   structuralFunction: string;
   invariants: string[];
   boundaries: string[];
@@ -567,10 +610,20 @@ type MutableVariant = {
   fieldContractKey: string;
   lifecycleStatus: string;
   purpose: string;
+  compatibleRootVersion: number;
+  rootDelta: MutableRootDelta;
   capabilities: string[];
   actionCompatibility?: { supportsPrimaryConversionForm: boolean };
   accordionAccessibility?: Record<string, string | boolean>;
   fallbackChannel?: string;
   creationMotivation?: string;
   [key: string]: unknown;
+};
+
+type MutableRootDelta = {
+  textRanges: Array<{
+    semanticRole: string;
+    recommended?: { min: number; max: number };
+    absoluteMax?: number;
+  }>;
 };

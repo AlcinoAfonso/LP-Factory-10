@@ -1,7 +1,7 @@
 import type {
   LandingPageRootLifecycleStatus,
   LandingPageRootSemanticRoleKey,
-} from "../contracts";
+} from "../index";
 
 export const landingPageModuleKeys = [
   "hero",
@@ -77,6 +77,16 @@ export type LandingPageVariantVersion = 1;
 export type LandingPageVariantCapability =
   (typeof landingPageVariantCapabilities)[number];
 export type LandingPageVariantLifecycleStatus = LandingPageRootLifecycleStatus;
+
+export type LandingPageTextRangeRestriction = Readonly<{
+  semanticRole: LandingPageRootSemanticRoleKey;
+  recommended?: Readonly<{ min: number; max: number }>;
+  absoluteMax?: number;
+}>;
+
+export type LandingPageRootSpecializationDelta = Readonly<{
+  textRanges: readonly LandingPageTextRangeRestriction[];
+}>;
 
 export type LandingPageActionCompatibility = Readonly<{
   supportsPrimaryConversionForm: false;
@@ -165,6 +175,8 @@ export type LandingPageVariantDefinition = Readonly<{
   fieldContractKey: LandingPageVariantFieldContractKey;
   lifecycleStatus: LandingPageVariantLifecycleStatus;
   purpose: LandingPageModulePurpose;
+  compatibleRootVersion: LandingPageCompatibleRootVersion;
+  rootDelta: LandingPageRootSpecializationDelta;
   capabilities: readonly LandingPageVariantCapability[];
   actionCompatibility?: LandingPageActionCompatibility;
   accordionAccessibility?: LandingPageAccordionAccessibilityContract;
@@ -176,6 +188,8 @@ export type LandingPageModuleDefinition = Readonly<{
   moduleVersion: LandingPageModuleVersion;
   lifecycleStatus: LandingPageModuleLifecycleStatus;
   purpose: LandingPageModulePurpose;
+  compatibleRootVersion: LandingPageCompatibleRootVersion;
+  rootDelta: LandingPageRootSpecializationDelta;
   structuralFunction: string;
   invariants: readonly string[];
   boundaries: readonly string[];
