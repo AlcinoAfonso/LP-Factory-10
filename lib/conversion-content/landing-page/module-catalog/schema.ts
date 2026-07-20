@@ -3,7 +3,10 @@ import { z } from "zod";
 import {
   landingPageModuleKeys,
   landingPageModuleLifecycleStatuses,
+  type LandingPageModuleDefinition,
+  type LandingPageModuleKey,
 } from "./contracts";
+import { landingPageModuleCatalogRegistry } from "./registry";
 
 const identifierSchema = z.string().regex(/^[a-z][a-z0-9_]*$/);
 const uniqueIdentifiersSchema = z
@@ -88,9 +91,68 @@ export const landingPageModuleCatalogEntrySchema = z
             message: "module catalog v1 starts as hypothesis",
           });
         }
+
+        const canonicalModule =
+          landingPageModuleCatalogRegistry[1].modules[
+            moduleKey as LandingPageModuleKey
+          ];
+        if (moduleDefinition.moduleVersion === 1 && canonicalModule) {
+          validateExactModuleV1Structure({
+            context,
+            moduleKey,
+            actual: moduleDefinition,
+            expected: canonicalModule,
+          });
+        }
       }
     }
   });
+
+function validateExactModuleV1Structure(input: {
+  context: z.RefinementCtx;
+  moduleKey: string;
+  actual: LandingPageModuleDefinition;
+  expected: LandingPageModuleDefinition;
+}) {
+  if (input.actual.function !== input.expected.function) {
+    input.context.addIssue({
+      code: "custom",
+      path: ["modules", input.moduleKey, "function"],
+      message: "module function must match the approved v1 contract",
+    });
+  }
+
+  validateExactOrderedIdentifiers({
+    context: input.context,
+    path: ["modules", input.moduleKey, "boundaries"],
+    actual: input.actual.boundaries,
+    expected: input.expected.boundaries,
+  });
+  validateExactOrderedIdentifiers({
+    context: input.context,
+    path: ["modules", input.moduleKey, "invariants"],
+    actual: input.actual.invariants,
+    expected: input.expected.invariants,
+  });
+}
+
+function validateExactOrderedIdentifiers(input: {
+  context: z.RefinementCtx;
+  path: (string | number)[];
+  actual: readonly string[];
+  expected: readonly string[];
+}) {
+  if (
+    input.actual.length !== input.expected.length ||
+    input.actual.some((value, index) => value !== input.expected[index])
+  ) {
+    input.context.addIssue({
+      code: "custom",
+      path: input.path,
+      message: "structural identifiers must match the approved v1 contract",
+    });
+  }
+}
 
 function validateExactValues(input: {
   context: z.RefinementCtx;

@@ -583,6 +583,12 @@ Validações:
 - `npm run check`;
 - `git diff --check`.
 
+Estado da fase:
+
+- definições estruturais do registry revisadas e ratificadas pelo Estrategista como contrato da v1;
+- ajuste solicitado e implementado para proteger os valores exatos de `function`, `boundaries` e `invariants` da v1;
+- fase `18.5.3` ainda aguardando reavaliação do Analista.
+
 ### 4.2. Fase 2 — E18.5.4 — Campos, estruturas e cardinalidades
 
 - Automação: não.

@@ -40,18 +40,13 @@ const cases: readonly Case[] = [
     },
   },
   {
-    name: "landing page identities remain scoped away from commercial activation",
+    name: "commercial activation cannot replace the landing page family",
     run: () => {
-      const landingPageIdentities = landingPageModuleKeys.map(
-        (moduleKey) => `landing_page:${moduleKey}@1`,
-      );
-      const commercialActivationIdentities = landingPageModuleKeys.map(
-        (moduleKey) => `commercial_activation:${moduleKey}@1`,
-      );
+      const catalog = cloneCatalog();
+      (catalog as unknown as { family: string }).family =
+        "commercial_activation";
 
-      for (const identity of landingPageIdentities) {
-        assert.equal(commercialActivationIdentities.includes(identity), false);
-      }
+      assertInvalid(catalog);
     },
   },
   {
@@ -114,6 +109,40 @@ const cases: readonly Case[] = [
       });
       assertMutationInvalid((catalog) => {
         (catalog.modules.hero as MutableModule).invariants = [];
+      });
+    },
+  },
+  {
+    name: "a valid but unapproved v1 module function fails closed",
+    run: () => {
+      assertMutationInvalid((catalog) => {
+        assert.equal(catalog.modules.hero.moduleVersion, 1);
+        (catalog.modules.hero as MutableModule).function =
+          "unapproved_but_valid_function";
+      });
+    },
+  },
+  {
+    name: "a valid but unapproved v1 module boundary fails closed",
+    run: () => {
+      assertMutationInvalid((catalog) => {
+        assert.equal(catalog.modules.hero.moduleVersion, 1);
+        (catalog.modules.hero as MutableModule).boundaries = [
+          "unapproved_but_valid_boundary",
+          ...catalog.modules.hero.boundaries.slice(1),
+        ];
+      });
+    },
+  },
+  {
+    name: "a valid but unapproved v1 module invariant fails closed",
+    run: () => {
+      assertMutationInvalid((catalog) => {
+        assert.equal(catalog.modules.hero.moduleVersion, 1);
+        (catalog.modules.hero as MutableModule).invariants = [
+          "unapproved_but_valid_invariant",
+          ...catalog.modules.hero.invariants.slice(1),
+        ];
       });
     },
   },
