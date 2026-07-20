@@ -540,6 +540,18 @@ export const landingPageModuleDefinitionSchema = z
   })
   .strict();
 
+export const landingPageModuleVariantReferenceSchema = z
+  .object({
+    family: z.literal("landing_page"),
+    moduleCatalogVersion: z.number().int().min(1),
+    rootVersion: z.number().int().min(1),
+    moduleKey: identifierSchema,
+    moduleVersion: z.number().int().min(1),
+    variantKey: identifierSchema,
+    variantVersion: z.number().int().min(1),
+  })
+  .strict();
+
 export const landingPageModuleCatalogEntrySchema = z
   .object({
     family: z.literal("landing_page"),

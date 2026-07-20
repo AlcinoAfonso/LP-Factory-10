@@ -1,4 +1,8 @@
-import type { LandingPageRootSemanticRoleKey } from "../contracts";
+import type {
+  LandingPageRootLifecycleStatus,
+  LandingPageRootParameters,
+  LandingPageRootSemanticRoleKey,
+} from "../contracts";
 
 export const landingPageModuleKeys = [
   "hero",
@@ -340,3 +344,73 @@ export type LandingPageModuleVariantCatalogEntry = Readonly<{
 export type LandingPageModuleVariantCatalogRegistry = Readonly<
   Record<number, LandingPageModuleVariantCatalogEntry>
 >;
+
+export const landingPageModuleCatalogErrorCodes = [
+  "UNKNOWN_MODULE_CATALOG_VERSION",
+  "INVALID_MODULE_CATALOG_CONTRACT",
+  "ROOT_RESOLUTION_FAILED",
+  "INCOMPATIBLE_ROOT_VERSION",
+  "UNKNOWN_MODULE",
+  "UNKNOWN_MODULE_VERSION",
+  "UNKNOWN_VARIANT",
+  "UNKNOWN_VARIANT_VERSION",
+  "INCOMPATIBLE_REFERENCE",
+  "INVALID_VARIANT_PAYLOAD",
+] as const;
+
+export type LandingPageModuleCatalogErrorCode =
+  (typeof landingPageModuleCatalogErrorCodes)[number];
+
+export type LandingPageModuleCatalogError = Readonly<{
+  code: LandingPageModuleCatalogErrorCode;
+  message: string;
+}>;
+
+export type LandingPageModuleVariantReference = Readonly<{
+  family: "landing_page";
+  moduleCatalogVersion: number;
+  rootVersion: number;
+  moduleKey: LandingPageModuleKey;
+  moduleVersion: number;
+  variantKey: LandingPageVariantKey;
+  variantVersion: number;
+}>;
+
+export type LandingPageEffectiveFunnelCopyProfile =
+  LandingPageFunnelCopyProfile &
+    Readonly<{
+      emphasized: readonly LandingPageCopyTreatment[];
+    }>;
+
+export type LandingPageEffectiveFunnelCopyProfileRegistry = Readonly<
+  Record<LandingPageFunnelStage, LandingPageEffectiveFunnelCopyProfile>
+>;
+
+export type ResolvedLandingPageModuleVariant = Readonly<{
+  reference: LandingPageModuleVariantReference;
+  rootParameters: LandingPageRootParameters;
+  module: LandingPageModuleDefinition;
+  variant: LandingPageModuleVariantDefinition;
+  fields: Readonly<Record<string, LandingPageFieldDefinition>>;
+  capabilities: readonly LandingPageCapabilityDefinition[];
+  copySourceMap: LandingPageCopySourceMap;
+  funnelCopyProfile: LandingPageEffectiveFunnelCopyProfileRegistry;
+  rootLifecycleStatus: LandingPageRootLifecycleStatus;
+  moduleLifecycleStatus: LandingPageModuleLifecycleStatus;
+  variantLifecycleStatus: LandingPageModuleLifecycleStatus;
+  effectiveLifecycleStatus: LandingPageModuleLifecycleStatus;
+  modulePurpose: LandingPageModulePurpose;
+  variantPurpose: LandingPageModulePurpose;
+}>;
+
+export type ResolveLandingPageModuleVariantOptions = Readonly<{
+  presetKey?: string;
+}>;
+
+export type ResolveLandingPageModuleVariantResult =
+  | Readonly<{ ok: true; value: ResolvedLandingPageModuleVariant }>
+  | Readonly<{ ok: false; error: LandingPageModuleCatalogError }>;
+
+export type ValidateLandingPageVariantPayloadResult =
+  | Readonly<{ ok: true }>
+  | Readonly<{ ok: false; error: LandingPageModuleCatalogError }>;

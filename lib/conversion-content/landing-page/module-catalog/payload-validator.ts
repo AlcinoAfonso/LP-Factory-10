@@ -1,6 +1,9 @@
 import type {
   LandingPageFieldDefinition,
   LandingPageModuleKey,
+  LandingPageModuleVariantReference,
+  ResolveLandingPageModuleVariantOptions,
+  ValidateLandingPageVariantPayloadResult,
 } from "./contracts";
 import {
   countLandingPageRootTextCharacters,
@@ -12,6 +15,7 @@ import {
   landingPageModuleCatalogRegistry,
   landingPageModuleFieldCatalogRegistry,
 } from "./registry";
+import { resolveLandingPageModuleVariant } from "./resolver";
 
 export type LandingPageModuleFieldPayloadValidationErrorCode =
   "ROOT_RESOLUTION_FAILED";
@@ -58,6 +62,33 @@ export function validateLandingPageModuleFieldPayload(
   )
     ? { ok: true }
     : { ok: false };
+}
+
+export function validateLandingPageVariantPayload(
+  reference: LandingPageModuleVariantReference,
+  payload: unknown,
+  options: ResolveLandingPageModuleVariantOptions = {},
+): ValidateLandingPageVariantPayloadResult {
+  const resolution = resolveLandingPageModuleVariant(reference, options);
+  if (!resolution.ok) return deepFreeze(cloneJson(resolution));
+
+  if (
+    !validatePayloadObject(
+      payload,
+      resolution.value.fields,
+      resolution.value.rootParameters,
+    )
+  ) {
+    return deepFreeze({
+      ok: false,
+      error: {
+        code: "INVALID_VARIANT_PAYLOAD",
+        message: "Invalid landing page variant payload.",
+      },
+    });
+  }
+
+  return deepFreeze({ ok: true });
 }
 
 function validatePayloadObject(
@@ -235,4 +266,21 @@ function hasExactKeys<T extends string>(
 
 function isPlainObject(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function cloneJson<T>(value: T): T {
+  return JSON.parse(JSON.stringify(value)) as T;
+}
+
+function deepFreeze<T>(value: T): T {
+  if (value && typeof value === "object") {
+    for (const property of Object.getOwnPropertyNames(value)) {
+      const nested = value[property as keyof T];
+      if (nested && typeof nested === "object" && !Object.isFrozen(nested)) {
+        deepFreeze(nested);
+      }
+    }
+    Object.freeze(value);
+  }
+  return value;
 }

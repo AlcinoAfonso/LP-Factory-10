@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 
 import { landingPageInputCatalogRegistry } from "../input-catalog";
+import * as publicModuleCatalog from "./index";
 import {
   countLandingPageRootTextCharacters,
   normalizeLandingPageRootText,
@@ -22,9 +23,14 @@ import {
   type LandingPageModuleDefinition,
   type LandingPageModuleFieldCatalogEntry,
   type LandingPageModuleVariantCatalogEntry,
+  type LandingPageModuleVariantReference,
   type LandingPageResearchCopySource,
+  type ResolveLandingPageModuleVariantResult,
 } from "./contracts";
-import { validateLandingPageModuleFieldPayload } from "./payload-validator";
+import {
+  validateLandingPageModuleFieldPayload,
+  validateLandingPageVariantPayload,
+} from "./payload-validator";
 import {
   landingPageModuleCatalogRegistry,
   landingPageModuleFieldCatalogRegistry,
@@ -33,9 +39,16 @@ import {
   resolveLandingPageModuleVariantDefinitionInternal,
 } from "./registry";
 import {
+  calculateLandingPageEffectiveLifecycleStatusInternal,
+  resolveLandingPageModuleVariant,
+  resolveLandingPageModuleVariantWithDependenciesInternal,
+  type LandingPageModuleResolverDependenciesInternal,
+} from "./resolver";
+import {
   landingPageModuleCatalogEntrySchema,
   landingPageModuleFieldCatalogEntrySchema,
   landingPageModuleVariantCatalogEntrySchema,
+  landingPageModuleVariantReferenceSchema,
 } from "./schema";
 
 type Case = Readonly<{
@@ -1305,6 +1318,7 @@ const cases: readonly Case[] = [
         "contracts.ts",
         "payload-validator.ts",
         "registry.ts",
+        "resolver.ts",
         "schema.ts",
       ].map((fileName) =>
         readFileSync(
@@ -1436,7 +1450,394 @@ const cases: readonly Case[] = [
       }, TypeError);
     },
   },
+  {
+    name: "public reference requires all seven exact fields",
+    run: () => {
+      const reference = approvedReference("hero");
+      assert.equal(
+        landingPageModuleVariantReferenceSchema.safeParse(reference).success,
+        true,
+      );
+      for (const key of Object.keys(reference)) {
+        const missing = cloneJson(reference) as Record<string, unknown>;
+        delete missing[key];
+        assertPublicError(
+          resolveLandingPageModuleVariant(
+            missing as LandingPageModuleVariantReference,
+          ),
+          "INCOMPATIBLE_REFERENCE",
+        );
+      }
+      assertPublicError(
+        resolveLandingPageModuleVariant({
+          ...reference,
+          additionalField: true,
+        } as unknown as LandingPageModuleVariantReference),
+        "INCOMPATIBLE_REFERENCE",
+      );
+    },
+  },
+  {
+    name: "public resolver resolves all ten approved variants without fallback",
+    run: () => {
+      for (const reference of approvedVariantReferences()) {
+        const result = resolveLandingPageModuleVariant(reference);
+        assert.equal(result.ok, true);
+        if (!result.ok) assert.fail("approved variant must resolve");
+        assert.deepEqual(result.value.reference, reference);
+        assert.equal(result.value.module.moduleKey, reference.moduleKey);
+        assert.equal(result.value.variant.variantKey, reference.variantKey);
+        assert.equal(result.value.rootParameters.rootVersion, reference.rootVersion);
+        assert.equal(result.value.effectiveLifecycleStatus, "hypothesis");
+        for (const stage of landingPageFunnelStages) {
+          assert.deepEqual(result.value.funnelCopyProfile[stage].emphasized, []);
+        }
+      }
+    },
+  },
+  {
+    name: "UNKNOWN_MODULE_CATALOG_VERSION is returned safely",
+    run: () => {
+      assertPublicError(
+        resolveLandingPageModuleVariant({
+          ...approvedReference("hero"),
+          moduleCatalogVersion: 2,
+        }),
+        "UNKNOWN_MODULE_CATALOG_VERSION",
+      );
+    },
+  },
+  {
+    name: "INVALID_MODULE_CATALOG_CONTRACT is returned safely",
+    run: () => {
+      const dependencies = cloneResolverDependencies();
+      const catalog = dependencies.moduleCatalogRegistry[1] as unknown as {
+        modules: Record<string, unknown>;
+      };
+      delete catalog.modules.hero;
+      assertPublicError(
+        resolveLandingPageModuleVariantWithDependenciesInternal(
+          approvedReference("hero"),
+          {},
+          dependencies,
+        ),
+        "INVALID_MODULE_CATALOG_CONTRACT",
+      );
+    },
+  },
+  {
+    name: "ROOT_RESOLUTION_FAILED is returned safely",
+    run: () => {
+      assertPublicError(
+        resolveLandingPageModuleVariant(approvedReference("hero"), {
+          presetKey: "unknown_preset",
+        }),
+        "ROOT_RESOLUTION_FAILED",
+      );
+    },
+  },
+  {
+    name: "INCOMPATIBLE_ROOT_VERSION is returned without selecting a fallback",
+    run: () => {
+      assertPublicError(
+        resolveLandingPageModuleVariant({
+          ...approvedReference("hero"),
+          rootVersion: 2,
+        }),
+        "INCOMPATIBLE_ROOT_VERSION",
+      );
+    },
+  },
+  {
+    name: "UNKNOWN_MODULE is returned safely",
+    run: () => {
+      assertPublicError(
+        resolveLandingPageModuleVariant({
+          ...approvedReference("hero"),
+          moduleKey: "unknown_module",
+        } as unknown as LandingPageModuleVariantReference),
+        "UNKNOWN_MODULE",
+      );
+    },
+  },
+  {
+    name: "UNKNOWN_MODULE_VERSION is returned without selecting a fallback",
+    run: () => {
+      assertPublicError(
+        resolveLandingPageModuleVariant({
+          ...approvedReference("hero"),
+          moduleVersion: 2,
+        }),
+        "UNKNOWN_MODULE_VERSION",
+      );
+    },
+  },
+  {
+    name: "UNKNOWN_VARIANT is returned safely",
+    run: () => {
+      assertPublicError(
+        resolveLandingPageModuleVariant({
+          ...approvedReference("hero"),
+          variantKey: "unknown_variant",
+        } as unknown as LandingPageModuleVariantReference),
+        "UNKNOWN_VARIANT",
+      );
+    },
+  },
+  {
+    name: "UNKNOWN_VARIANT_VERSION is returned without selecting a fallback",
+    run: () => {
+      assertPublicError(
+        resolveLandingPageModuleVariant({
+          ...approvedReference("hero"),
+          variantVersion: 2,
+        }),
+        "UNKNOWN_VARIANT_VERSION",
+      );
+    },
+  },
+  {
+    name: "INCOMPATIBLE_REFERENCE is returned for mismatched root resolution",
+    run: () => {
+      const dependencies = cloneResolverDependencies();
+      dependencies.resolveRootParameters = () => {
+        const rootParameters = cloneJson(resolveApprovedRootParameters()) as {
+          rootVersion: number;
+        };
+        rootParameters.rootVersion = 2;
+        return { ok: true, value: rootParameters as never };
+      };
+      assertPublicError(
+        resolveLandingPageModuleVariantWithDependenciesInternal(
+          approvedReference("hero"),
+          {},
+          dependencies,
+        ),
+        "INCOMPATIBLE_REFERENCE",
+      );
+    },
+  },
+  {
+    name: "INVALID_VARIANT_PAYLOAD is returned safely",
+    run: () => {
+      assertPublicError(
+        validateLandingPageVariantPayload(approvedReference("hero"), {
+          title: "incomplete",
+        }),
+        "INVALID_VARIANT_PAYLOAD",
+      );
+    },
+  },
+  {
+    name: "public payload validator accepts all nine modules and ten variants",
+    run: () => {
+      for (const reference of approvedVariantReferences()) {
+        assert.deepEqual(
+          validateLandingPageVariantPayload(
+            reference,
+            validPayloads[reference.moduleKey],
+          ),
+          { ok: true },
+        );
+      }
+    },
+  },
+  {
+    name: "effective lifecycle follows deprecated hypothesis validated precedence",
+    run: () => {
+      assert.equal(
+        calculateLandingPageEffectiveLifecycleStatusInternal(
+          "deprecated",
+          "hypothesis",
+          "validated",
+        ),
+        "deprecated",
+      );
+      assert.equal(
+        calculateLandingPageEffectiveLifecycleStatusInternal(
+          "validated",
+          "hypothesis",
+          "validated",
+        ),
+        "hypothesis",
+      );
+      assert.equal(
+        calculateLandingPageEffectiveLifecycleStatusInternal(
+          "validated",
+          "validated",
+          "validated",
+        ),
+        "validated",
+      );
+
+      const dependencies = cloneResolverDependencies();
+      dependencies.resolveRootParameters = () => {
+        const value = cloneJson(resolveApprovedRootParameters()) as {
+          lifecycleStatus: string;
+        };
+        value.lifecycleStatus = "deprecated";
+        return { ok: true, value: value as never };
+      };
+      const deprecated = resolveLandingPageModuleVariantWithDependenciesInternal(
+        approvedReference("hero"),
+        {},
+        dependencies,
+      );
+      assert.equal(deprecated.ok, true);
+      if (deprecated.ok) {
+        assert.equal(deprecated.value.effectiveLifecycleStatus, "deprecated");
+        assert.equal(deprecated.value.moduleLifecycleStatus, "hypothesis");
+      }
+    },
+  },
+  {
+    name: "unknown lifecycle fails closed",
+    run: () => {
+      assert.equal(
+        calculateLandingPageEffectiveLifecycleStatusInternal(
+          "unknown",
+          "validated",
+          "validated",
+        ),
+        undefined,
+      );
+      const dependencies = cloneResolverDependencies();
+      (
+        dependencies.moduleCatalogRegistry[1].modules.hero as unknown as {
+          lifecycleStatus: string;
+        }
+      ).lifecycleStatus = "unknown";
+      assertPublicError(
+        resolveLandingPageModuleVariantWithDependenciesInternal(
+          approvedReference("hero"),
+          {},
+          dependencies,
+        ),
+        "INVALID_MODULE_CATALOG_CONTRACT",
+      );
+    },
+  },
+  {
+    name: "public namespace exposes only the approved module catalog boundary",
+    run: () => {
+      const boundary = publicModuleCatalog as Record<string, unknown>;
+      for (const key of [
+        "landingPageModuleCatalogRegistry",
+        "landingPageModuleFieldCatalogRegistry",
+        "landingPageModuleVariantCatalogRegistry",
+        "landingPageModuleCatalogEntrySchema",
+        "landingPageModuleFieldCatalogEntrySchema",
+        "landingPageModuleVariantCatalogEntrySchema",
+        "landingPageModuleVariantReferenceSchema",
+        "resolveLandingPageModuleVariant",
+        "validateLandingPageVariantPayload",
+      ]) {
+        assert.equal(Object.hasOwn(boundary, key), true);
+      }
+      for (const internalKey of [
+        "resolveLandingPageModuleVariantDefinitionInternal",
+        "applyLandingPageFunnelProfileDeltaInternal",
+        "resolveLandingPageModuleVariantWithDependenciesInternal",
+        "calculateLandingPageEffectiveLifecycleStatusInternal",
+      ]) {
+        assert.equal(Object.hasOwn(boundary, internalKey), false);
+      }
+      assert.match(
+        readFileSync("lib/conversion-content/index.ts", "utf8"),
+        /export \* as landingPageModuleCatalog from "\.\/landing-page\/module-catalog";/,
+      );
+      assert.equal(resolveLandingPageModuleVariant.length, 1);
+    },
+  },
+  {
+    name: "public registry resolver and validator results are deeply immutable",
+    run: () => {
+      const first = resolveLandingPageModuleVariant(approvedReference("faq", "accordion"));
+      assert.equal(first.ok, true);
+      if (!first.ok) assert.fail("approved variant must resolve");
+      assert.equal(Object.isFrozen(first), true);
+      assert.equal(Object.isFrozen(first.value), true);
+      assert.equal(Object.isFrozen(first.value.reference), true);
+      assert.equal(Object.isFrozen(first.value.rootParameters), true);
+      assert.equal(Object.isFrozen(first.value.fields), true);
+      assert.equal(Object.isFrozen(first.value.capabilities), true);
+      assert.equal(Object.isFrozen(first.value.copySourceMap), true);
+      assert.equal(Object.isFrozen(first.value.funnelCopyProfile), true);
+      assert.equal(Object.isFrozen(first.value.funnelCopyProfile.bofu.emphasized), true);
+      assert.throws(() => {
+        (first.value.funnelCopyProfile.bofu.emphasized as string[]).push("proof");
+      }, TypeError);
+      const validation = validateLandingPageVariantPayload(
+        approvedReference("faq", "accordion"),
+        validPayloads.faq,
+      );
+      assert.equal(Object.isFrozen(validation), true);
+      const second = resolveLandingPageModuleVariant(approvedReference("faq", "accordion"));
+      assert.equal(second.ok, true);
+      if (second.ok) assert.deepEqual(second.value.funnelCopyProfile.bofu.emphasized, []);
+    },
+  },
 ];
+
+type MutableResolverDependencies = {
+  -readonly [Key in keyof LandingPageModuleResolverDependenciesInternal]: LandingPageModuleResolverDependenciesInternal[Key];
+};
+
+function approvedReference(
+  moduleKey: LandingPageModuleDefinition["moduleKey"],
+  variantKey: LandingPageModuleVariantReference["variantKey"] = "standard",
+): LandingPageModuleVariantReference {
+  return {
+    family: "landing_page",
+    moduleCatalogVersion: 1,
+    rootVersion: 1,
+    moduleKey,
+    moduleVersion: 1,
+    variantKey,
+    variantVersion: 1,
+  };
+}
+
+function approvedVariantReferences(): readonly LandingPageModuleVariantReference[] {
+  return [
+    ...landingPageModuleKeys.map((moduleKey) => approvedReference(moduleKey)),
+    approvedReference("faq", "accordion"),
+  ];
+}
+
+function cloneResolverDependencies(): MutableResolverDependencies {
+  return {
+    moduleCatalogRegistry: {
+      1: cloneJson(landingPageModuleCatalogRegistry[1]),
+    },
+    fieldCatalogRegistry: {
+      1: cloneJson(landingPageModuleFieldCatalogRegistry[1]),
+    },
+    variantCatalogRegistry: {
+      1: cloneJson(landingPageModuleVariantCatalogRegistry[1]),
+    },
+    resolveRootParameters: resolveLandingPageRootParameters,
+  };
+}
+
+function assertPublicError(
+  result:
+    | ResolveLandingPageModuleVariantResult
+    | ReturnType<typeof validateLandingPageVariantPayload>,
+  code: string,
+) {
+  assert.equal(result.ok, false);
+  if (result.ok) assert.fail(`expected public error ${code}`);
+  assert.deepEqual(Object.keys(result.error).sort(), ["code", "message"]);
+  assert.equal(result.error.code, code);
+  assert.equal(typeof result.error.message, "string");
+  assert.equal(Object.isFrozen(result), true);
+  assert.equal(Object.isFrozen(result.error), true);
+}
+
+function cloneJson<T>(value: T): T {
+  return JSON.parse(JSON.stringify(value)) as T;
+}
 
 function syntheticStageDelta(input: {
   restricted?: readonly LandingPageCopyTreatment[];
