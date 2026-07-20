@@ -349,7 +349,7 @@ const moduleVariantDefinitionSchema = z
   .object({
     variantKey: z.enum(landingPageVariantKeys),
     variantVersion: z.literal(1),
-    lifecycleStatus: z.literal("hypothesis"),
+    lifecycleStatus: z.enum(landingPageModuleLifecycleStatuses),
     purpose: z.literal("controlled_test"),
     compatibleModuleVersion: z.literal(1),
     fields: z.record(z.string(), fieldDefinitionSchema),
@@ -500,7 +500,7 @@ export const landingPageModuleVariantCatalogEntrySchema = z
           variant.variantKey !== variantKey ||
           variant.compatibleModuleVersion !== moduleEntry.moduleVersion ||
           !canonicalVariant ||
-          !isDeepEqual(variant, canonicalVariant)
+          !isDeepEqualExceptLifecycle(variant, canonicalVariant)
         ) {
           context.addIssue({
             code: "custom",
@@ -603,14 +603,6 @@ export const landingPageModuleCatalogEntrySchema = z
             message: "module catalog v1 requires module version 1",
           });
         }
-        if (moduleDefinition.lifecycleStatus !== "hypothesis") {
-          context.addIssue({
-            code: "custom",
-            path: ["modules", moduleKey, "lifecycleStatus"],
-            message: "module catalog v1 starts as hypothesis",
-          });
-        }
-
         const canonicalModule =
           landingPageModuleCatalogRegistry[1].modules[
             moduleKey as LandingPageModuleKey
@@ -633,6 +625,13 @@ function validateExactModuleV1Structure(input: {
   actual: LandingPageModuleDefinition;
   expected: LandingPageModuleDefinition;
 }) {
+  if (!isDeepEqualExceptLifecycle(input.actual, input.expected)) {
+    input.context.addIssue({
+      code: "custom",
+      path: ["modules", input.moduleKey],
+      message: "module must match the approved v1 contract except lifecycle",
+    });
+  }
   if (input.actual.function !== input.expected.function) {
     input.context.addIssue({
       code: "custom",
@@ -996,6 +995,15 @@ function isDeepEqual(left: unknown, right: unknown): boolean {
     );
   }
   return false;
+}
+
+function isDeepEqualExceptLifecycle(
+  left: Readonly<{ lifecycleStatus: unknown; [key: string]: unknown }>,
+  right: Readonly<{ lifecycleStatus: unknown; [key: string]: unknown }>,
+): boolean {
+  const { lifecycleStatus: _leftLifecycle, ...leftContract } = left;
+  const { lifecycleStatus: _rightLifecycle, ...rightContract } = right;
+  return isDeepEqual(leftContract, rightContract);
 }
 
 function isPlainObject(value: unknown): value is Record<string, unknown> {

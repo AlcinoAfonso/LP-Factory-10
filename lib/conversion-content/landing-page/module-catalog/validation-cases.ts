@@ -22,9 +22,11 @@ import {
   type LandingPageModuleCatalogEntry,
   type LandingPageModuleDefinition,
   type LandingPageModuleFieldCatalogEntry,
+  type LandingPageModuleLifecycleStatus,
   type LandingPageModuleVariantCatalogEntry,
   type LandingPageModuleVariantReference,
   type LandingPageResearchCopySource,
+  type ResolvedLandingPageModuleVariant,
   type ResolveLandingPageModuleVariantResult,
 } from "./contracts";
 import {
@@ -39,7 +41,6 @@ import {
   resolveLandingPageModuleVariantDefinitionInternal,
 } from "./registry";
 import {
-  calculateLandingPageEffectiveLifecycleStatusInternal,
   resolveLandingPageModuleVariant,
   resolveLandingPageModuleVariantWithDependenciesInternal,
   type LandingPageModuleResolverDependenciesInternal,
@@ -79,6 +80,24 @@ const cases: readonly Case[] = [
         assert.equal(modules[moduleKey].moduleVersion, 1);
         assert.equal(modules[moduleKey].lifecycleStatus, "hypothesis");
         assert.equal(modules[moduleKey].purpose, "controlled_test");
+      }
+    },
+  },
+  {
+    name: "canonical v1 registry starts every module and variant as hypothesis",
+    run: () => {
+      for (const moduleKey of landingPageModuleKeys) {
+        assert.equal(
+          landingPageModuleCatalogRegistry[1].modules[moduleKey]
+            .lifecycleStatus,
+          "hypothesis",
+        );
+        for (const variant of Object.values(
+          landingPageModuleVariantCatalogRegistry[1].modules[moduleKey]
+            .variants,
+        )) {
+          assert.equal(variant.lifecycleStatus, "hypothesis");
+        }
       }
     },
   },
@@ -1643,78 +1662,88 @@ const cases: readonly Case[] = [
     },
   },
   {
-    name: "effective lifecycle follows deprecated hypothesis validated precedence",
+    name: "full resolver applies lifecycle promotions and effective precedence",
     run: () => {
-      assert.equal(
-        calculateLandingPageEffectiveLifecycleStatusInternal(
-          "deprecated",
-          "hypothesis",
-          "validated",
-        ),
-        "deprecated",
-      );
-      assert.equal(
-        calculateLandingPageEffectiveLifecycleStatusInternal(
-          "validated",
-          "hypothesis",
-          "validated",
-        ),
-        "hypothesis",
-      );
-      assert.equal(
-        calculateLandingPageEffectiveLifecycleStatusInternal(
-          "validated",
-          "validated",
-          "validated",
-        ),
+      const validated = assertIntegratedLifecycle(
+        "validated",
+        "validated",
+        "validated",
         "validated",
       );
-
-      const dependencies = cloneResolverDependencies();
-      dependencies.resolveRootParameters = () => {
-        const value = cloneJson(resolveApprovedRootParameters()) as {
-          lifecycleStatus: string;
-        };
-        value.lifecycleStatus = "deprecated";
-        return { ok: true, value: value as never };
-      };
-      const deprecated = resolveLandingPageModuleVariantWithDependenciesInternal(
-        approvedReference("hero"),
-        {},
-        dependencies,
+      assert.deepEqual(
+        contractWithoutLifecycle(validated.module),
+        contractWithoutLifecycle(
+          landingPageModuleCatalogRegistry[1].modules.hero,
+        ),
       );
-      assert.equal(deprecated.ok, true);
-      if (deprecated.ok) {
-        assert.equal(deprecated.value.effectiveLifecycleStatus, "deprecated");
-        assert.equal(deprecated.value.moduleLifecycleStatus, "hypothesis");
-      }
+      assert.deepEqual(
+        contractWithoutLifecycle(validated.variant),
+        contractWithoutLifecycle(
+          landingPageModuleVariantCatalogRegistry[1].modules.hero.variants
+            .standard,
+        ),
+      );
+
+      assertIntegratedLifecycle(
+        "deprecated",
+        "validated",
+        "validated",
+        "deprecated",
+      );
+      assertIntegratedLifecycle(
+        "validated",
+        "deprecated",
+        "validated",
+        "deprecated",
+      );
+      assertIntegratedLifecycle(
+        "validated",
+        "validated",
+        "deprecated",
+        "deprecated",
+      );
+      assertIntegratedLifecycle(
+        "hypothesis",
+        "validated",
+        "validated",
+        "hypothesis",
+      );
+      assertIntegratedLifecycle(
+        "validated",
+        "hypothesis",
+        "validated",
+        "hypothesis",
+      );
+      assertIntegratedLifecycle(
+        "validated",
+        "validated",
+        "hypothesis",
+        "hypothesis",
+      );
     },
   },
   {
-    name: "unknown lifecycle fails closed",
+    name: "full resolver rejects unknown root module and variant lifecycle",
     run: () => {
-      assert.equal(
-        calculateLandingPageEffectiveLifecycleStatusInternal(
-          "unknown",
-          "validated",
-          "validated",
-        ),
-        undefined,
-      );
-      const dependencies = cloneResolverDependencies();
-      (
-        dependencies.moduleCatalogRegistry[1].modules.hero as unknown as {
-          lifecycleStatus: string;
-        }
-      ).lifecycleStatus = "unknown";
-      assertPublicError(
-        resolveLandingPageModuleVariantWithDependenciesInternal(
-          approvedReference("hero"),
-          {},
-          dependencies,
-        ),
-        "INVALID_MODULE_CATALOG_CONTRACT",
-      );
+      for (const statuses of [
+        ["unknown", "validated", "validated"],
+        ["validated", "unknown", "validated"],
+        ["validated", "validated", "unknown"],
+      ] as const) {
+        const dependencies = lifecycleResolverDependencies(
+          statuses[0],
+          statuses[1],
+          statuses[2],
+        );
+        assertPublicError(
+          resolveLandingPageModuleVariantWithDependenciesInternal(
+            approvedReference("hero"),
+            {},
+            dependencies,
+          ),
+          "INVALID_MODULE_CATALOG_CONTRACT",
+        );
+      }
     },
   },
   {
@@ -1820,6 +1849,59 @@ function cloneResolverDependencies(): MutableResolverDependencies {
   };
 }
 
+function lifecycleResolverDependencies(
+  rootLifecycleStatus: string,
+  moduleLifecycleStatus: string,
+  variantLifecycleStatus: string,
+): MutableResolverDependencies {
+  const dependencies = cloneResolverDependencies();
+  (
+    dependencies.moduleCatalogRegistry[1].modules.hero as unknown as {
+      lifecycleStatus: string;
+    }
+  ).lifecycleStatus = moduleLifecycleStatus;
+  mutableVariant(
+    dependencies.variantCatalogRegistry[1],
+    "hero",
+    "standard",
+  ).lifecycleStatus = variantLifecycleStatus;
+  dependencies.resolveRootParameters = () => {
+    const value = cloneJson(resolveApprovedRootParameters()) as unknown as {
+      lifecycleStatus: string;
+    };
+    value.lifecycleStatus = rootLifecycleStatus;
+    return { ok: true, value: value as never };
+  };
+  return dependencies;
+}
+
+function assertIntegratedLifecycle(
+  rootLifecycleStatus: LandingPageModuleLifecycleStatus,
+  moduleLifecycleStatus: LandingPageModuleLifecycleStatus,
+  variantLifecycleStatus: LandingPageModuleLifecycleStatus,
+  expectedLifecycleStatus: LandingPageModuleLifecycleStatus,
+): ResolvedLandingPageModuleVariant {
+  const result = resolveLandingPageModuleVariantWithDependenciesInternal(
+    approvedReference("hero"),
+    {},
+    lifecycleResolverDependencies(
+      rootLifecycleStatus,
+      moduleLifecycleStatus,
+      variantLifecycleStatus,
+    ),
+  );
+  assert.equal(result.ok, true);
+  if (!result.ok) assert.fail("known lifecycle promotion must resolve");
+  assert.equal(result.value.rootLifecycleStatus, rootLifecycleStatus);
+  assert.equal(result.value.moduleLifecycleStatus, moduleLifecycleStatus);
+  assert.equal(result.value.variantLifecycleStatus, variantLifecycleStatus);
+  assert.equal(result.value.effectiveLifecycleStatus, expectedLifecycleStatus);
+  assert.equal(Object.isFrozen(result.value), true);
+  assert.equal(Object.isFrozen(result.value.module), true);
+  assert.equal(Object.isFrozen(result.value.variant), true);
+  return result.value;
+}
+
 function assertPublicError(
   result:
     | ResolveLandingPageModuleVariantResult
@@ -1837,6 +1919,12 @@ function assertPublicError(
 
 function cloneJson<T>(value: T): T {
   return JSON.parse(JSON.stringify(value)) as T;
+}
+
+function contractWithoutLifecycle(value: object): Record<string, unknown> {
+  const contract = cloneJson(value) as Record<string, unknown>;
+  delete contract.lifecycleStatus;
+  return contract;
 }
 
 function syntheticStageDelta(input: {
