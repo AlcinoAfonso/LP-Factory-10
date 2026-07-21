@@ -32,11 +32,11 @@ Fontes secundárias podem apoiar, mas não substituir a fonte oficial.
 
 1. Congelar o SHA inicial de `main` e confirmar os quatro documentos-alvo.
 2. Para cada catálogo, na ordem do item 2:
-   - ler o documento e suas regras de catálogo ativo e IDs;
-   - verificar no repositório o estado real dos itens e possíveis duplicações;
+   - ler o documento e suas regras de catálogo ativo e IDs; preservar IDs e lacunas históricas, sem renumerar ou reutilizar ID, e atribuir novo ID somente acima do maior ID histórico identificado;
+   - verificar no repositório o estado real dos itens e possíveis duplicações, incluindo o uso global e seu registro na Base Técnica;
    - considerar os relatórios e diffs já produzidos nesta execução;
    - pesquisar recursos novos, alterados, deprecados ou superados;
-   - classificar itens existentes como manter, ajustar ou remover;
+   - classificar itens existentes como manter, ajustar ou remover; remover item globalmente usado somente quando esse uso estiver registrado na Base Técnica; se houver uso real sem registro, classificá-lo como lacuna documental e mantê-lo no catálogo;
    - classificar recursos pesquisados como adicionar ou não adicionar;
    - produzir o relatório obrigatório;
    - criar branch independente, ajustar somente o documento-alvo e validar o diff;
@@ -68,8 +68,9 @@ Fontes secundárias podem apoiar, mas não substituir a fonte oficial.
 7. Itens avaliados e não adicionados:
    - recurso;
    - motivo.
-8. Pontos não validados.
-9. Validação do diff.
+8. Pontos não validados ou lacunas documentais.
+9. Validação do diff:
+   - confirmar que não houve renumeração, reutilização de ID ou remoção sem evidência documental suficiente.
 
 ## 6. Limites e parada
 
