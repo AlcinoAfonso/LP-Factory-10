@@ -1,8 +1,8 @@
 0. Introdução
 0.1. Cabeçalho
 • Documento: README — LP Factory 10 (MVP)
-• Versão: 4 — 21/06/2026
-• Data: 21/06/2026
+• Versão: 5 — 21/07/2026
+• Data: 21/07/2026
 • Escopo: visão geral do produto + documentos de referência + pendências estratégicas
 
 1. Visão geral do produto
@@ -32,6 +32,7 @@
 • Responses API para fluxos lineares de geração, revisão ou adaptação de conteúdo.
 • Agents SDK TypeScript quando houver orquestração real e controlada com tools, decisões intermediárias, estado, aprovações ou handoffs.
 • Sandbox Agent como camada de laboratório técnico para tarefas com arquivos, repositório, worktree, branch experimental, testes isolados ou geração de artefatos.
+• As tecnologias citadas representam os padrões vigentes de implementação, não uma proibição de avaliar alternativas capazes de gerar valor e aderentes à arquitetura.
 
 1.4.3. Dashboard
 • Suporte para ajustes e testes guiados por dados.
@@ -41,9 +42,17 @@
 • Runtime não pode depender de objetos ou comportamentos de banco ainda não aplicados e validados no ambiente alvo.
 • A stack base do MVP permanece Next.js, Supabase e TypeScript.
 • Automações e agentes devem ser introduzidos de forma incremental, começando por fluxos simples, seguros e mensuráveis.
+• A stack e a arquitetura adotadas são o padrão vigente; o produto permanece aberto à avaliação de recursos tecnológicos com caso de uso e valor plausível.
+• Todo recurso candidato deve ser classificado quanto à relação com a stack e a arquitetura — complementar, sobreposto, substituto ou incompatível — e avaliado por benefício, maturidade das fontes, custo, complexidade, segurança, manutenção e horizonte de adoção.
+• Incompatibilidade pode justificar descarte. Recursos sobrepostos ou substitutos só devem permanecer como condicionais quando houver hipótese concreta de superioridade e gatilho objetivo para comparação ou adoção.
+• A simplicidade do MVP limita a implementação do momento, não o radar tecnológico nem a preservação de diferenciais estratégicos para a evolução dos planos.
+• Avaliação ou catalogação não autoriza implementação, mudança de stack, nova infraestrutura nem ampliação de escopo.
+• Em cada plano-base, fase ou recorte, o Gestor de Updates recomenda a aplicabilidade dos recursos catalogados, e o Estrategista decide sua consolidação no plano-base dentro do escopo aprovado.
+• Decisões materiais de produto, arquitetura ou ampliação de escopo permanecem sujeitas à decisão humana.
 
 1.5. Modelo de oferta
 • Planos em camadas (Starter → Lite → Pro → Ultra), com capacidades escalando ao longo do tempo.
+• Capacidades futuras ou condicionais podem ser preservadas como diferenciais potenciais, sem representar promessa comercial, requisito imediato ou autorização técnica.
 
 2. Documentos de referência
 • docs/base-tecnica.md — regras técnicas de runtime, implementação segura, arquitetura, adapters, imports, SSR, observability e anti-regressão.
