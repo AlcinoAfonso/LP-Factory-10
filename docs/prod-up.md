@@ -99,75 +99,135 @@ Monitoramento de experiência real com LCP, CLS e INP, além de métricas comple
 
 ---
 
-## 4 — Agent Experience (AX) *(🧪 Experimental)*  
+## 4 — Agent Experience (AX) para acesso por navegador *(🟨 Avaliação futura)*
 2025-07-01  
+Atualizado em 2026-07-20
 
 ### Descrição  
-Estruturar o produto para ser “compreendido” por agentes de IA via endpoints e metadados semânticos.  
+Preparar páginas reais para que pessoas e agentes de navegador consigam compreender e operar a interface por estrutura técnica clara, conteúdo legível, DOM semântico e árvore de acessibilidade. A orientação oficial do Google não exige protocolo, arquivo ou marcação especial para experiências agentic.
 
 ### Valor para o Projeto  
-- Prepara o produto para automações avançadas.  
+- Reforça decisões já úteis para usuários humanos: HTML semântico, acessibilidade, rótulos claros e fluxos previsíveis.
+- Mantém compatibilidade futura com agentes sem criar endpoint ou infraestrutura antecipada.
 
 ### Valor para o Usuário  
-- Experiências inteligentes e adaptativas.  
+- Interfaces mais compreensíveis e operáveis por pessoas e tecnologias assistivas.
+
+### Ações Recomendadas
+
+1. Aplicar semântica e acessibilidade nos fluxos reais conforme `prod#17`.
+2. Não criar API, protocolo ou metadado exclusivo para agentes sem caso aprovado.
+3. Avaliar experiências agentic somente quando houver fluxo de usuário e risco definidos.
+
+### Fonte Oficial
+
+- [Google — Optimizing for generative AI features: Explore agentic experiences](https://developers.google.com/search/docs/fundamentals/ai-optimization-guide)
 
 ---
 
-## 6 — Conteúdo IA-Ready + Smart Gating *(🟧 Em Rollout)*  
+## 6 — Conteúdo útil para busca generativa *(🟩 Orientação oficial)*
 2025-09-01  
+Atualizado em 2026-07-20
 
 ### Descrição  
-LPs otimizadas para Zero-Click/IA, combinando conteúdo aberto e premium com gating inteligente.  
+Aplicar às experiências generativas do Google os mesmos fundamentos de SEO: estrutura técnica clara e conteúdo original, útil, confiável e orientado a pessoas. Não existe schema especial obrigatório para busca generativa, e táticas como `llms.txt`, fragmentação artificial de texto ou menções inautênticas não substituem esses fundamentos.
 
 ### Valor para o Projeto  
-- Cria base para IA Visibility e LLMO.  
-- Reforça autoridade topical.  
+- Evita transformar AEO/GEO em hacks ou escopo técnico sem evidência.
+- Reforça pesquisa própria, clareza editorial e diferenciação por segmento.
+- Mantém structured data apenas quando houver benefício normal de Search e rich results.
 
 ### Valor para o Usuário  
-- Gera visibilidade sem clique e leads mais qualificados.  
+- Conteúdo mais claro, confiável e útil, independentemente de a descoberta ocorrer na busca tradicional ou generativa.
+
+### Ações Recomendadas
+
+1. Priorizar conteúdo original, específico e sustentado pelas pesquisas do taxon.
+2. Não criar `llms.txt`, schema especial ou gating apenas para alegar otimização para IA.
+3. Medir visibilidade generativa somente quando o relatório oficial estiver disponível, conforme `prod#20`.
+
+### Fonte Oficial
+
+- [Google — Optimizing for generative AI features](https://developers.google.com/search/docs/fundamentals/ai-optimization-guide)
 
 ---
 
-## 7 — Estratégia de Lealdade Opt-in *(🟧 Em Rollout)*  
+## 7 — Google Preferred Sources *(🟩 Disponível globalmente)*
 2025-09-15  
+Atualizado em 2026-07-20
 
 ### Descrição  
-Implementar CTAs para que usuários adicionem a marca como “fonte preferida” em buscadores e newsletters.  
+O Google permite que usuários escolham domínios ou subdomínios como fontes preferidas. Conteúdo recente dessas fontes pode ganhar destaque em Top Stories e, onde disponível, em AI Mode e AI Overviews. Sites elegíveis podem usar o deeplink ou os assets oficiais para convidar leitores a fazer essa escolha.
 
 ### Valor para o Projeto  
-- Amplia retenção de tráfego orgânico.  
+- Pode apoiar clientes com publicação recorrente e audiência própria.
+- Não se aplica automaticamente a landing pages promocionais sem conteúdo editorial recente.
 
 ### Valor para o Usuário  
-- Experiência personalizada e contínua.  
+- Permite optar por ver com mais destaque fontes que já considera úteis.
+
+### Ações Recomendadas
+
+1. Verificar elegibilidade do domínio na ferramenta oficial antes de propor CTA.
+2. Usar somente em casos de conteúdo recorrente, sem prometer ranking ou destaque.
+3. Não adicionar o CTA ao template geral de landing pages.
+
+### Fonte Oficial
+
+- [Google — Help your readers find your site through preferred sources](https://developers.google.com/search/docs/appearance/preferred-sources)
 
 ---
 
-## 8 — Meta Ads Value Rules + Tracking Inteligente *(🧪 Experimental)*  
+## 8 — Meta Value Rules e Conversions API *(🟨 Capacidades separadas)*
 2025-10-10  
+Atualizado em 2026-07-20
 
 ### Descrição  
-LPs passam a enviar dados de comportamento diretamente para Ads APIs (Server-side Tracking).  
+Value Rules permitem informar ao sistema de anúncios diferenças de valor por critérios de audiência, placement e local de conversão. Conversions API é outra capacidade: conecta dados de marketing do anunciante, como eventos web, app, offline ou business messaging, aos sistemas da Meta. Uma não implementa nem exige automaticamente a outra.
 
 ### Valor para o Projeto  
-- Reduz dependência de tags externas.  
-- Base para pricing e relatórios consultivos.  
+- Permite avaliar otimização por valor e envio server-side de eventos como decisões independentes.
+- Evita tratar qualquer clique ou scroll como dado automaticamente apropriado para Ads.
 
 ### Valor para o Usuário  
-- Leads mais qualificados e campanhas otimizadas.  
+- Pode melhorar mensuração e otimização quando houver campanha, consentimento, evento e valor comercial definidos.
+
+### Ações Recomendadas
+
+1. Não incluir nenhuma das capacidades na primeira entrega genérica de LP.
+2. Para Value Rules, exigir hipótese de valor e campanha real.
+3. Para Conversions API, exigir plano próprio de tracking, consentimento, minimização de dados, deduplicação e validação.
+
+### Fontes Oficiais
+
+- [Meta — Value Rules](https://developers.facebook.com/documentation/ads-commerce/marketing-api/bidding/value-rules)
+- [Meta — Conversions API](https://developers.facebook.com/documentation/ads-commerce/conversions-api)
 
 ---
 
-## 9 — Google Ads Text Guidelines *(🟩 Preparado)*  
+## 9 — Google Ads Text Guidelines *(🧪 Beta)*
 2025-10-14  
+Atualizado em 2026-07-20
 
 ### Descrição  
-Permite definir regras de redação e tom de marca para anúncios IA (Text Customization).  
+Recurso em beta no nível da campanha para orientar assets criados exclusivamente por Text Customization em campanhas Performance Max e Search, incluindo restrições de termos, mensagens e tom. Text Customization precisa estar habilitado para que as diretrizes tenham efeito.
 
 ### Valor para o Projeto  
-- Reforça governança e consistência da comunicação.  
+- Pode preservar restrições de marca em campanhas que usem geração automática de texto.
+- Complementa, sem substituir, copy aprovada, revisão humana e políticas do Google Ads.
 
 ### Valor para o Usuário  
-- Clareza e coerência nas mensagens de campanha.  
+- Maior consistência entre a comunicação aprovada e variações geradas pelo Google Ads.
+
+### Ações Recomendadas
+
+1. Usar somente em campanha real com Text Customization habilitado.
+2. Não tratar o beta como contrato garantido nem como recurso da landing page.
+3. Validar termos, tom e resultados gerados antes de ampliar uso.
+
+### Fonte Oficial
+
+- [Google Ads — Use text guidelines with Performance Max and Search campaigns](https://support.google.com/google-ads/answer/16489313)
 
 ---
 
@@ -342,5 +402,41 @@ Referência externa da Stripe para concessão e revogação de acesso a features
 1. Manter como referência de produto.
 2. Não substituir o modelo interno de grants/entitlements já definido no projeto.
 3. Avaliar apenas em conjunto com E9, Base Técnica e schema vigente.
+
+---
+
+## 20 — Search Generative AI Performance no Search Console *(🧪 Rollout limitado)*
+
+2026-06-03
+
+### Descrição
+
+Relatórios dedicados do Search Console mostram visibilidade de URLs em recursos generativos do Google Search e Discover, com impressões, páginas, países, dispositivos e evolução temporal. O lançamento está restrito inicialmente a um subconjunto de sites.
+
+### Valor para o Projeto
+
+- Cria uma fonte oficial para avaliar presença de LPs e conteúdos em AI Overviews, AI Mode e experiências generativas do Discover.
+- Permite separar mensuração real de alegações genéricas de AEO/GEO.
+- Pode apoiar análise consultiva futura sem exigir tracking próprio da LP.
+
+### Valor para o Usuário
+
+- Oferece evidência de como o conteúdo é descoberto em experiências generativas quando o relatório estiver disponível para o domínio.
+
+### Ações Recomendadas
+
+1. Não criar integração, dashboard ou promessa comercial enquanto o relatório não estiver disponível ao domínio avaliado.
+2. Quando disponível, usar como fonte complementar ao desempenho geral do Search Console.
+3. Interpretar impressões como visibilidade, não como lead, conversão ou receita.
+
+### Limites
+
+- Rollout limitado; disponibilidade não garantida para o projeto ou clientes.
+- O relatório não informa ranking interno, prompts completos nem causalidade de conversão.
+- Não substitui Search Console geral, analytics da LP ou dados de campanha.
+
+### Fonte Oficial
+
+- [Google Search Central — Search Generative AI performance reports](https://developers.google.com/search/blog/2026/06/gen-ai-performance-reports)
 
 ---
