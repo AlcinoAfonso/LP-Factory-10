@@ -1778,7 +1778,7 @@ Repositório — Ajustados
   * Banco: N/A.
   * Repositório — criados: `lib/conversion-content/landing-page/module-catalog/contracts.ts`, `registry.ts`, `schema.ts`, `resolver.ts`, `validation-cases.ts` e `index.ts`.
   * Repositório — ajustados: `lib/conversion-content/index.ts` e `package.json`.
-  * Documentação — criados: `docs/lousa-plano-base-e18-5.md` e `docs/matriz-consolidacao-e18-5.md`.
+  * Documentação — criado: `docs/lousa-plano-base-e18-5.md`.
   * Documentação — ajustados no encerramento: `docs/base-tecnica.md` e `docs/roadmap.md`.
   * Excluídos: N/A.
   * Updates aplicados: N/A.
