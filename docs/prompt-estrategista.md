@@ -64,10 +64,10 @@ Analista
 Avalie no PR [URL_DO_PR] o plano-base docs/lousa-plano-base-EXX-YY.md quanto a lacunas, contradições, riscos, escopo, clareza e aderência ao debate do caso, docs/roadmap.md e docs/base-tecnica.md.
 
 Gestor Estrutural
-Avalie no PR [URL_DO_PR] o plano-base docs/lousa-plano-base-EXX-YY.md completo, com todas as fases. Consulte antes docs/gestor-estrutural.md e baseie o relatório nos objetivos desse documento. Se faltar fonte técnica do projeto, diga exatamente o que falta.
+Use $lp-factory-avaliar-plano-estrutura no PR [URL_DO_PR].
 
 Gestor de Updates
-Avalie no PR [URL_DO_PR] o plano-base docs/lousa-plano-base-EXX-YY.md completo, com todas as fases. Faça varredura de docs/supa-up.md, docs/vercel-up.md, docs/github-up.md e docs/prod-up.md. Primeiro, liste updates preliminarmente elegíveis. Depois, defina quais realmente merecem aplicação no MVP e quais devem ser rejeitados, informando o porquê de cada decisão.
+Use $lp-factory-avaliar-plano-updates no PR [URL_DO_PR].
 
 Gestor de Automação
 Avalie no PR [URL_DO_PR] o plano-base docs/lousa-plano-base-EXX-YY.md completo, com todas as fases. Consulte antes docs/gestor-automations.md, docs/automations.md e docs/services.md. Avalie apenas automações, services, integrações, workflows, agentes, jobs ou rotinas recorrentes aplicáveis ao plano.

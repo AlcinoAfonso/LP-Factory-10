@@ -1,8 +1,8 @@
 # Orquestração de planos-base no Codex
 
-Data: 18/07/2026
-Versão: v0.2
-Status: planejamento em construção; teste do Gestor Estrutural validado; primeiro recorte do Analista implementado e pendente de teste real.
+Data: 20/07/2026
+Versão: v0.8
+Status: Fluxos de plano e execução validados no experimento E18.5; fluxo normal corrigido para operar sem PRs empilhados; fechamento documental pendente de decisão.
 
 ## 1. Objetivo e função deste documento
 
@@ -14,16 +14,16 @@ Seu objetivo é estabelecer, antes da implementação, um contrato humano verifi
 2. coordena as avaliações dos especialistas aplicáveis;
 3. orienta o orquestrador a transformar o plano-base v1 em v2 e registrar uma matriz de consolidação dos pareceres;
 4. entrega v1 e v2 ao Analista para avaliação independente e, depois, entrega pareceres e matriz para auditoria da consolidação;
-5. conduz a execução de uma fase por vez;
-6. devolve o PR da implementação ao Analista antes do merge;
-7. interrompe o fluxo nos pontos que exigem decisão humana;
-8. permite retomar a mesma frente após cada decisão ou merge.
+5. conduz a execução de uma subseção canônica por vez, na mesma branch e PR de implementação;
+6. devolve cada checkpoint e a entrega final ao Analista antes do avanço ou merge;
+7. interrompe o fluxo nos pontos que exigem decisão humana ou teste humano;
+8. permite retomar a mesma frente sem merge entre subseções.
 
 O resultado esperado é reduzir coordenação manual e cópia de contexto entre tarefas, sem transferir ao Codex decisões que pertencem ao humano e sem permitir que agentes especializados alterem o repositório.
 
-Este documento será a fonte humana do desenho aprovado. A futura skill executará o workflow definido aqui; os custom agents aplicarão os contratos de seus documentos correspondentes; e o task principal permanecerá responsável pela coordenação, pelas alterações no repositório e pela entrega ao humano.
+Este documento será a fonte humana do desenho aprovado. A skill executará o workflow definido aqui; cada custom agent aplicará seu contrato runtime; e o task principal permanecerá responsável pela coordenação, pelas alterações no repositório e pela entrega ao humano.
 
-Enquanto o status permanecer `planejamento em construção`, o workflow completo não deve ser tratado como capacidade implementada ou fluxo operacional adotado. O teste estrutural da seção 2 foi validado em execução real; o recorte do Analista descrito na seção 3 permanece experimental até seu teste real.
+O teste estrutural isolado da seção 2 foi validado. Os contratos do Gestor Estrutural e do Analista foram otimizados, o Gestor de Updates foi integrado e a execução E18.5.3–E18.5.9 foi concluída com gates por subseção e gate final de testes. Os PRs empilhados usados nessa comparação são exceção histórica e não integram o fluxo normal.
 
 ## 2. Primeiro passo: teste do Gestor Estrutural
 
@@ -56,7 +56,7 @@ O custom agent definirá o papel especializado. A skill definirá o disparo, o c
 3. A skill identifica um único plano-base ou pede seu path quando a identificação for ambígua.
 4. A skill obtém o conteúdo integral do plano no head do PR e confirma o caso ou recorte declarado no arquivo.
 5. O task principal inicia o custom agent `gestor-estrutural` e entrega os metadados do PR, o path e o conteúdo do plano.
-6. O custom agent lê `docs/gestor-estrutural.md` antes de avaliar o plano.
+6. O custom agent aplica o contrato runtime de `.codex/agents/gestor-estrutural.toml`.
 7. O custom agent consulta somente as fontes competentes necessárias ao escopo da avaliação.
 8. O custom agent avalia o plano em modo read-only e devolve o parecer ao task principal.
 9. O task principal apresenta o parecer completo ao humano e confirma se houve alteração no repositório.
@@ -66,12 +66,13 @@ O custom agent definirá o papel especializado. A skill definirá o disparo, o c
 
 O custom agent deverá:
 
-- usar `docs/gestor-estrutural.md` como contrato obrigatório de sua especialidade;
+- usar `.codex/agents/gestor-estrutural.toml` como contrato runtime único de sua especialidade;
 - confirmar no repositório os paths e artefatos relevantes;
 - permanecer limitado a estrutura, boundaries, reaproveitamento, adapters, acoplamento, regressão, impacto em repositório ou banco e aderência às fontes competentes;
 - informar exatamente qual fonte falta quando não houver evidência suficiente;
 - não editar arquivos, criar commits, publicar branches ou ampliar o escopo;
-- devolver uma conclusão compatível com as classificações previstas em `docs/gestor-estrutural.md`.
+- distinguir patch autossuficiente, investigação factual e decisão humana material;
+- entregar, em `requer patch estrutural`, o tratamento exato que o orquestrador aplicará sem nova escolha técnica.
 
 ### 2.5 Saída esperada
 
@@ -82,7 +83,8 @@ O parecer devolvido ao task principal deverá conter, no mínimo:
 - conclusão estrutural;
 - achados objetivos;
 - condicionantes ou investigações necessárias;
-- patches estruturais recomendados, quando aplicáveis, sem implementação;
+- patches estruturais autossuficientes, quando aplicáveis, sem implementação;
+- decisão humana exata e opções válidas, quando as fontes não determinarem uma única solução;
 - riscos ou conflitos com fontes competentes;
 - próximo passo mínimo e seguro.
 
@@ -94,7 +96,7 @@ O teste será considerado bem-sucedido quando:
 
 - a skill acionar o custom agent correto;
 - o agente avaliar o arquivo indicado, sem confundir caso, branch ou path;
-- o parecer refletir os critérios de `docs/gestor-estrutural.md`;
+- o parecer cumprir o contrato runtime do custom agent;
 - nenhuma alteração for feita no repositório pelo custom agent;
 - o parecer completo for visível no task principal;
 - o resultado for suficientemente claro para ser usado, em uma etapa futura, pelo Analista;
@@ -132,9 +134,8 @@ O Analista não consolida nem edita o plano e não substitui o especialista.
 
 ### 3.2 Componentes implementados
 
-1. `docs/analista.md`, contrato canônico deste primeiro recorte;
-2. `.codex/agents/analista.toml`, custom agent read-only configurado com GPT-5.6 Sol e inteligência alta;
-3. `.agents/skills/lp-factory-avaliar-plano-analista/`, skill de preparação, delegação sequencial e devolução do parecer.
+1. `.codex/agents/analista.toml`, contrato runtime único do custom agent read-only configurado com GPT-5.6 Sol e inteligência alta;
+2. `.agents/skills/lp-factory-avaliar-plano-analista/`, skill de preparação, validação da matriz, delegação sequencial e devolução do parecer.
 
 ### 3.3 Entradas do teste
 
@@ -145,7 +146,7 @@ O orquestrador deve possuir:
 - plano conceitual, quando existir, ou declaração explícita de `N/A`;
 - decisões humanas registradas aplicáveis;
 - parecer integral do Gestor Estrutural;
-- matriz de consolidação conforme `docs/analista.md`;
+- matriz de consolidação conforme a skill `lp-factory-avaliar-plano-analista`;
 - caso, roadmap, casos adjacentes e fontes técnicas aplicáveis.
 
 ### 3.4 Duas passagens no mesmo Analista
@@ -169,7 +170,7 @@ As conclusões permitidas são:
 - `requer nova rodada especializada`;
 - `bloqueado por decisão humana`.
 
-Somente a primeira libera o pedido de merge. Nas demais, o orquestrador corrige ou encaminha a pendência e devolve o delta ao Analista. Uma correção que altere materialmente a conclusão estrutural retorna primeiro ao Gestor Estrutural.
+Somente a primeira libera o pedido de merge. Nas demais, o orquestrador corrige ou encaminha a pendência e devolve o delta ao Analista. Não há retorno padrão ao Gestor Estrutural: ele só é reacionado se a v2 introduzir questão material não coberta pelo parecer original ou se o Analista identificar explicitamente essa novidade.
 
 ### 3.6 Critérios de sucesso
 
@@ -191,5 +192,80 @@ Este passo não inclui:
 - Gestor de Automações;
 - implementação das fases;
 - revisão do PR de implementação;
-- alteração do fluxo operacional vigente de `docs/prompt-estrategista.md` antes da aprovação do workflow completo;
+- alteração dos contratos dos demais especialistas antes de seus trabalhos próprios;
 - merge automático ou decisão humana delegada ao Codex.
+
+## 4. Terceiro passo: skill de orquestração integrada
+
+O terceiro passo reúne os dois testes anteriores em uma única entrada humana. Foi criada a skill `lp-factory-orquestrar-plano`, localizada em `.agents/skills/lp-factory-orquestrar-plano/`.
+
+Ela não cria um custom agent de orquestração. O task comum permanece como orquestrador e executor, enquanto `gestor-estrutural`, `gestor-updates` e `analista` permanecem read-only e aplicam seus contratos runtime.
+
+### 4.1 Entrada mínima
+
+O humano informa somente o PR que contém o plano-base v1 e invoca explicitamente a skill:
+
+`Use $lp-factory-orquestrar-plano no PR #577.`
+
+Paths, branches, agentes e etapas internas são resolvidos pela skill. Informação adicional só pode ser solicitada quando houver ambiguidade real que impeça selecionar o plano ou a worktree correta.
+
+### 4.2 Destino das alterações
+
+A skill nunca edita diretamente a `main`, a branch do processo atual ou a branch head do PR da v1. No fluxo normal, exige a v1 já incorporada à `main`, atualiza a base e cria uma única branch da v2 contra `main`.
+
+Usar o modo simples quando não houver frente paralela. Uma worktree existente só pode ser selecionada automaticamente quando estiver limpa, usar branch `codex-app/*-v2-orquestracao` baseada na `main` competente e possuir o mesmo blob da v1 congelada. Se houver mais de uma candidata, o fluxo pede somente o path correto.
+
+No experimento E18.5, o destino usado foi:
+
+- worktree: `C:\Dev\GitHub\LP-Factory-10-e18-5-automacao`;
+- branch: `codex-app/e18-5-v2-orquestracao`;
+- fonte congelada: plano-base v1 do PR #577.
+
+### 4.3 Sequência integrada
+
+1. Congelar a v1 pelo head SHA e blob do PR informado.
+2. Atualizar a `main` e criar a branch da v2 no checkout simples ou selecionar uma única worktree de automação quando houver frente paralela.
+3. Acionar o Gestor Estrutural e preservar o parecer integral.
+4. Acionar o Gestor de Updates sobre a mesma v1 e preservar o parecer integral.
+5. Aplicar os patches autossuficientes dos dois especialistas, produzir a v2 e preparar a matriz de consolidação, sem nova rodada especializada padrão.
+6. Criar referência imutável da v2 e acionar o Analista sem pareceres ou matriz.
+7. Depois da Passagem 1, gravar a matriz e entregá-la com os dois pareceres ao mesmo Analista.
+8. Corrigir ou encaminhar pendências conforme a conclusão formal.
+9. No fluxo normal, publicar um único PR draft da v2 contra `main` somente após aprovação do Analista.
+
+A matriz não é gravada antes da Passagem 1. Isso impede que a avaliação independente seja contaminada por um arquivo acessível na própria worktree.
+
+### 4.4 Limites do fluxo de plano integrado
+
+Este recorte inclui Gestor Estrutural, Gestor de Updates, consolidação pelo orquestrador e gate do Analista. O Gestor de Updates consulta obrigatoriamente os quatro catálogos vigentes, mas não os mantém nem pesquisa novos updates fora deles. Gestor de Automações continua fora do fluxo até teste próprio.
+
+O teste E18.5 foi considerado válido porque uma instrução humana curta produziu dois pareceres especializados rastreáveis, uma v2 rastreável e duas passagens não contaminadas do Analista, sem edição feita pelos custom agents. O PR filho usado na comparação permanece como evidência excepcional; o workflow não permite novos PRs empilhados. O modo experimental altera apenas os checkpoints e também exige a versão do plano incorporada à `main` antes de qualquer mutação.
+
+## 5. Quarto passo: execução end-to-end do plano aprovado
+
+Depois do merge humano do plano-base v2 na `main`, o mesmo task passa a atuar como executor. A skill `lp-factory-executar-plano` atualiza a `main` e cria ou reutiliza uma única branch e um único PR draft contra `main` para todo o recorte. Não há PR empilhado nem merge entre subseções.
+
+### 5.1 Contrato de fases
+
+Cada fase deve representar exatamente uma subseção executável do roadmap, identificada como `EXX.Y.Z — título`. Não são permitidos aliases ordinais como “Fase 1”, nem o agrupamento de subseções independentes. Cada aprovação de fase gera somente um checkpoint de commit com o identificador canônico; o próximo ciclo permanece na mesma branch e PR.
+
+### 5.2 Ciclo por subseção
+
+1. Confirmar a subseção, critérios de aceite, escopo negativo e fontes competentes.
+2. Implementar somente o necessário para a subseção.
+3. Executar `npm ci` uma vez por lote contínuo quando o lockfile e as dependências não mudarem, além das validações automáticas aplicáveis a cada subseção.
+4. Acionar o Analista em modo de revisão de implementação.
+5. Corrigir o delta ou parar para teste humano ou decisão humana quando exigido.
+6. Após `aprovado para avançar`, criar checkpoint, atualizar título e resumo do mesmo PR e, no modo experimental, parar somente no checkpoint solicitado; no fluxo normal end-to-end, seguir para a próxima subseção.
+
+### 5.3 Testes, documentação e merge
+
+Após a última subseção, o executor realiza validações integradas, solicita a revisão final do Analista e avalia explicitamente a necessidade de teste humano. Quando o teste humano for `N/A`, registra a justificativa.
+
+Enquanto não houver decisão canônica entre relatório e aplicação direta de `$lp-factory-abc`, o executor para após esse gate, mesmo com teste humano `N/A`, sem gerar relatório nem alterar documentação. A decisão só se torna canônica quando este documento e a skill de execução forem atualizados e incorporados à `main`. Depois disso, executará apenas o fechamento aprovado, pedirá revisão delta do Analista e atualizará título e resumo do mesmo PR.
+
+Somente a conclusão `aprovado para merge da implementação` libera o PR para decisão humana. O formato do registro operacional final permanece pendente da decisão sobre o fechamento documental.
+
+### 5.4 Matriz de consolidação
+
+A matriz pertence exclusivamente à etapa de revisão do plano-base v2: ela permite ao orquestrador registrar o tratamento dos pareceres e ao Analista auditar essa consolidação. Em modo experimental, fica como evidência. No fluxo normal, é temporária, é resumida no PR e removida antes da publicação final da v2. Não há remoção agendada nem matriz durante a implementação.

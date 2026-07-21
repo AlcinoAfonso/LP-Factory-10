@@ -1,0 +1,4 @@
+interface:
+  display_name: "Avaliar implementacao"
+  short_description: "Revisa uma fase implementada pelo Analista"
+  default_prompt: "Use $lp-factory-avaliar-implementacao-analista para revisar a fase implementada do plano-base informado."

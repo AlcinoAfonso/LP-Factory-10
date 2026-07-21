@@ -1,0 +1,4 @@
+interface:
+  display_name: "Executar plano-base"
+  short_description: "Executa fases aprovadas com gates"
+  default_prompt: "Use $lp-factory-executar-plano para executar o plano-base aprovado informado."
