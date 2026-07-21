@@ -2,8 +2,8 @@
 
 0.1. Cabeçalho
 • Documento: Base Técnica LP Factory 10
-• Versão: v2.0.50
-• Data: 15/07/2026
+• Versão: v2.0.51
+• Data: 21/07/2026
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -425,6 +425,17 @@ LP Builder
 • A saída deve permanecer determinística e profundamente imutável, preservando taxon atendido, camadas aplicadas, proveniência, validação, evidência e sinal de validade.
 • Casos executáveis: `npm run validate:landing-page-input-catalog`.
 
+3.15.5 Catálogo de módulos e variantes de `landing_page`
+• Boundary canônico: `lib/conversion-content/landing-page/module-catalog/`.
+• `registry.ts` é a fonte única das definições versionadas de módulos, variantes, fields, mapas de fontes e perfis de funil; fields e seus mapas pertencem às variantes, sem registry paralelo.
+• Consumidores devem usar `resolveLandingPageModuleCatalog` pelo namespace `landingPageModuleCatalog` exportado em `lib/conversion-content/index.ts`; registry e schema não integram a API pública.
+• A entrada runtime é estrita e falha fechado para shape, versão, módulo, variante, perfil ou preset desconhecido, sem fallback aproximado nem exceção não tratada.
+• A resolução aplica `raiz → módulo → variante` e `perfil-base → delta do módulo`, devolvendo contratos efetivos, rastreáveis e profundamente imutáveis; consumidores não reaplicam deltas.
+• Especializações podem apenas restringir. Proibições prevalecem sobre restrições, que prevalecem sobre permissões; lifecycle da raiz, do módulo e da variante permanece separado no vocabulário canônico.
+• Ações registram somente o vínculo abstrato `primary_conversion_channel`; Hero e Final CTA declaram `supportsPrimaryConversionForm = false` sem replicar o catálogo de entradas.
+• O recorte é repo-only e não seleciona composição, ordem, obrigatoriedade ou lifecycle efetivo, nem cria payload, banco, UI, renderer, persistência, automação ou consumo E19/E20.
+• Casos executáveis: `npm run validate:landing-page-module-catalog`.
+
 4. DB Contract - Fonte única: PATH: docs/schema.md
 • Este documento não lista mais tabelas/views/functions/triggers/policies; isso está em PATH: docs/schema.md.
 • Trigger Hub é regra do contrato de DB (governança/auditoria). Fonte única e detalhes: PATH: docs/schema.md (seções 3.5 e 4.1).
@@ -572,6 +583,8 @@ Fonte normativa da allowlist SULB para exceções de Auth. Qualquer novo arquivo
 • Tipos canônicos e adapters vNext: validar por 3.6 e 3.14.
 
 99. Changelog
+v2.0.51 — 21/07/2026 — Registrado o contrato técnico durável do catálogo repo-only de módulos e variantes de `landing_page`, com registry único, resolução efetiva fail-closed, mapas por field, perfis de funil fechados, API pública mínima e imutabilidade profunda.
+
 v2.0.50 — 15/07/2026 — Registrado o contrato técnico durável do catálogo de entradas de `landing_page`, com registry versionado, resolução pura por taxon e plano, herança taxonômica, especializações restritivas, condições declarativas, proveniência, imutabilidade e falha fechada.
 
 v2.0.49 — 14/07/2026 — Registrado o contrato técnico durável da resolução de pesquisas estruturadas de `landing_page`, com adapter server-side, resolver puro, precedência própria/pai direto, proveniência e falha fechada.

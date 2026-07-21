@@ -60,33 +60,30 @@ export const landingPageVariantCapabilities = [
 export const landingPageResearchItemKeys = [
   "positioning_opportunity", "trigger", "desire", "pain", "objection",
   "proof_type", "belief", "fear", "narrative_arc", "awareness_level",
-  "search_intent",
-] as const;
-
-export const landingPageTextFieldPaths = [
-  "hero.standard.eyebrow", "hero.standard.title", "hero.standard.subtitle", "hero.standard.primaryCta.label", "hero.standard.proofShort",
-  "trust_bar.standard.items[].text",
-  "problem_solution.standard.title", "problem_solution.standard.items[].problem", "problem_solution.standard.items[].solution",
-  "offer.standard.title", "offer.standard.items[].itemTitle", "offer.standard.items[].description",
-  "process.standard.title", "process.standard.steps[].stepTitle", "process.standard.steps[].stepBody",
-  "technical_assurance.standard.title", "technical_assurance.standard.items[].assuranceTitle", "technical_assurance.standard.items[].assuranceBody",
-  "social_proof.standard.title", "social_proof.standard.items[].quote", "social_proof.standard.items[].attribution",
-  "faq.standard.title", "faq.standard.items[].question", "faq.standard.items[].answer",
-  "faq.accordion.title", "faq.accordion.items[].question", "faq.accordion.items[].answer",
-  "final_cta.standard.title", "final_cta.standard.body", "final_cta.standard.primaryCta.label",
+  "search_intent", "commercial_keywords", "faq_questions",
 ] as const;
 
 export const landingPageFunnelProfileKeys = ["bofu", "mofu", "tofu"] as const;
 export const landingPageCtaModes = ["direct_next_step", "non_coercive_direct", "low_pressure"] as const;
-export const landingPageFunnelTreatmentKeys = [
-  "direct_next_step", "objection_response", "supported_proof", "supported_urgency", "supported_commercial_condition",
-  "supported_price", "supported_deadline", "supported_guarantee", "supported_availability", "coercion", "unsupported_scarcity",
-  "unsupported_promise", "unsupported_credential", "unsupported_result", "education", "problem_solution_relation", "process",
-  "technical_assurance", "faq", "direct_cta", "supported_offer", "invented_price", "invented_urgency", "invented_guarantee",
-  "invented_comparison", "invented_result", "context", "problem_recognition", "desire", "introductory_education",
-  "low_pressure_offer", "low_pressure_cta", "supported_factual_proof", "scarcity", "urgency", "guarantee",
-  "commercial_condition", "result_promise",
-] as const;
+export const landingPageFunnelTreatmentKeysByProfile = {
+  bofu: [
+    "direct_next_step", "objection_response", "supported_proof",
+    "supported_urgency", "supported_commercial_condition", "supported_price",
+    "supported_deadline", "supported_guarantee", "supported_availability",
+    "coercion", "unsupported_scarcity", "unsupported_promise",
+    "unsupported_credential", "unsupported_result",
+  ],
+  mofu: [
+    "education", "problem_solution_relation", "process", "technical_assurance", "faq",
+    "direct_cta", "supported_offer", "supported_proof", "invented_price",
+    "invented_urgency", "invented_guarantee", "invented_comparison", "invented_result",
+  ],
+  tofu: [
+    "context", "problem_recognition", "desire", "introductory_education",
+    "low_pressure_offer", "low_pressure_cta", "supported_factual_proof",
+    "scarcity", "urgency", "guarantee", "commercial_condition", "result_promise",
+  ],
+} as const;
 
 export type LandingPageModuleFamily = "landing_page";
 export type LandingPageModuleCatalogVersion = 1;
@@ -109,24 +106,40 @@ export type LandingPageVariantCapability =
   (typeof landingPageVariantCapabilities)[number];
 export type LandingPageVariantLifecycleStatus = LandingPageRootLifecycleStatus;
 export type LandingPageResearchItemKey = (typeof landingPageResearchItemKeys)[number];
-export type LandingPageTextFieldPath = (typeof landingPageTextFieldPaths)[number];
 export type LandingPageFunnelProfileKey = (typeof landingPageFunnelProfileKeys)[number];
 export type LandingPageCtaMode = (typeof landingPageCtaModes)[number];
-export type LandingPageFunnelTreatmentKey = (typeof landingPageFunnelTreatmentKeys)[number];
+export type LandingPageFunnelTreatmentKeyByProfile<
+  ProfileKey extends LandingPageFunnelProfileKey,
+> = (typeof landingPageFunnelTreatmentKeysByProfile)[ProfileKey][number];
+export type LandingPageFunnelTreatmentKey =
+  LandingPageFunnelTreatmentKeyByProfile<LandingPageFunnelProfileKey>;
 
-export type LandingPageFunnelCopyProfile = Readonly<{
-  profileKey: LandingPageFunnelProfileKey;
+export type LandingPageFunnelCopyProfile<
+  ProfileKey extends LandingPageFunnelProfileKey = LandingPageFunnelProfileKey,
+> = Readonly<{
+  profileKey: ProfileKey;
   prioritizedSources: readonly LandingPageResearchItemKey[];
-  permittedTreatments: readonly LandingPageFunnelTreatmentKey[];
-  restrictedTreatments: readonly LandingPageFunnelTreatmentKey[];
-  prohibitedTreatments: readonly LandingPageFunnelTreatmentKey[];
+  permittedTreatments: readonly LandingPageFunnelTreatmentKeyByProfile<ProfileKey>[];
+  restrictedTreatments: readonly LandingPageFunnelTreatmentKeyByProfile<ProfileKey>[];
+  prohibitedTreatments: readonly LandingPageFunnelTreatmentKeyByProfile<ProfileKey>[];
+  emphasizeTreatments: readonly [];
   ctaMode: LandingPageCtaMode;
 }>;
 
-export type LandingPageFunnelProfileDelta = Readonly<{
-  emphasizeTreatments: readonly LandingPageFunnelTreatmentKey[];
-  restrictTreatments: readonly LandingPageFunnelTreatmentKey[];
-  prohibitTreatments: readonly LandingPageFunnelTreatmentKey[];
+export type LandingPageFunnelProfileDelta<
+  ProfileKey extends LandingPageFunnelProfileKey = LandingPageFunnelProfileKey,
+> = Readonly<{
+  emphasizeTreatments: readonly LandingPageFunnelTreatmentKeyByProfile<ProfileKey>[];
+  restrictTreatments: readonly LandingPageFunnelTreatmentKeyByProfile<ProfileKey>[];
+  prohibitTreatments: readonly LandingPageFunnelTreatmentKeyByProfile<ProfileKey>[];
+}>;
+
+export type LandingPageFunnelCopyProfiles = Readonly<{
+  [ProfileKey in LandingPageFunnelProfileKey]: LandingPageFunnelCopyProfile<ProfileKey>;
+}>;
+
+export type LandingPageFunnelProfileDeltas = Readonly<{
+  [ProfileKey in LandingPageFunnelProfileKey]: LandingPageFunnelProfileDelta<ProfileKey>;
 }>;
 
 export type LandingPageCopySourceMap =
@@ -254,7 +267,7 @@ export type LandingPageModuleDefinition = Readonly<{
   purpose: LandingPageModulePurpose;
   compatibleRootVersion: LandingPageCompatibleRootVersion;
   rootDelta: LandingPageRootSpecializationDelta;
-  funnelProfileDeltas: Readonly<Record<LandingPageFunnelProfileKey, LandingPageFunnelProfileDelta>>;
+  funnelProfileDeltas: LandingPageFunnelProfileDeltas;
   structuralFunction: string;
   invariants: readonly string[];
   boundaries: readonly string[];
@@ -264,8 +277,7 @@ export type LandingPageModuleCatalogRegistry = Readonly<{
   family: LandingPageModuleFamily;
   moduleCatalogVersion: LandingPageModuleCatalogVersion;
   compatibleRootVersions: readonly [LandingPageCompatibleRootVersion];
-  copySourceMaps: Readonly<Record<LandingPageTextFieldPath, LandingPageCopySourceMap>>;
-  funnelCopyProfiles: Readonly<Record<LandingPageFunnelProfileKey, LandingPageFunnelCopyProfile>>;
+  funnelCopyProfiles: LandingPageFunnelCopyProfiles;
   modules: Readonly<
     Record<LandingPageModuleKey, LandingPageModuleDefinition>
   >;
@@ -282,6 +294,8 @@ export type LandingPageModuleCatalogErrorCode =
   | "UNKNOWN_MODULE_VERSION"
   | "UNKNOWN_VARIANT"
   | "UNKNOWN_FUNNEL_PROFILE"
+  | "UNKNOWN_ROOT_PRESET"
+  | "INVALID_INPUT"
   | "INVALID_MODULE_CATALOG_CONTRACT";
 
 export type LandingPageModuleCatalogError = Readonly<{
@@ -292,6 +306,7 @@ export type LandingPageModuleCatalogError = Readonly<{
 export type ResolveLandingPageModuleCatalogInput = Readonly<{
   moduleCatalogVersion: number;
   rootVersion: number;
+  rootPresetKey?: string;
   moduleKey: string;
   moduleVersion: number;
   variantName: string;
@@ -303,12 +318,11 @@ export type ResolvedLandingPageModuleCatalog = Readonly<{
   family: LandingPageModuleFamily;
   moduleCatalogVersion: LandingPageModuleCatalogVersion;
   root: import("../index").LandingPageRootParameters;
+  effectiveRoot: import("../index").LandingPageRootParameters;
   module: LandingPageModuleDefinition;
   variant: LandingPageVariantDefinition;
   fieldContract: LandingPageVariantFieldContract;
-  copySourceMaps: Readonly<Record<LandingPageTextFieldPath, LandingPageCopySourceMap>>;
   funnelCopyProfile: LandingPageFunnelCopyProfile;
-  funnelProfileDelta: LandingPageFunnelProfileDelta;
 }>;
 
 export type ResolveLandingPageModuleCatalogResult =

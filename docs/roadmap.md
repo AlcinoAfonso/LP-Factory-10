@@ -1,8 +1,8 @@
 0. Introdução
 
 0.1 Cabeçalho
-• Data: 15/07/2026
-• Versão: v1.5.94
+• Data: 21/07/2026
+• Versão: v1.5.95
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -1773,7 +1773,16 @@ Repositório — Ajustados
 18.5.1 Objetivo e status
 
 * Objetivo: Definir as especializações de módulos e variantes sobre a parametrização raiz da família `landing_page`.
-* Status: Planejada; não implementada no recorte 18.4.
+* Status: Implementada no repositório e reconciliada no PR #590; pendente do gate final do Analista e de merge humano. Os nove módulos, as dez variantes aprovadas, seus fields, mapas de fontes, perfis de funil, deltas, lifecycle, schema, resolver e validação executável permanecem repo-only e em `hypothesis`.
+* Registros do recorte:
+  * Banco: N/A.
+  * Repositório — criados: `lib/conversion-content/landing-page/module-catalog/contracts.ts`, `registry.ts`, `schema.ts`, `resolver.ts`, `validation-cases.ts` e `index.ts`.
+  * Repositório — ajustados: `lib/conversion-content/index.ts` e `package.json`.
+  * Documentação — criados: `docs/lousa-plano-base-e18-5.md` e `docs/matriz-consolidacao-e18-5.md`.
+  * Documentação — ajustados no encerramento: `docs/base-tecnica.md` e `docs/roadmap.md`.
+  * Excluídos: N/A.
+  * Updates aplicados: N/A.
+* Limites preservados: sem payload de conteúdo, banco, migration, rota, UI, renderer, composição, persistência, automação, job ou consumo E19/E20; seleção, ordem, obrigatoriedade e bloqueio de lifecycle em composição permanecem futuros.
 
 19. E19 — LP Builder
 - Objetivo: Consolidar a seção do Core responsável pela criação, edição e organização de landing pages. No recorte atual, limitar E19 à criação mínima de LP por conta com status inicial `draft`.
@@ -1977,6 +1986,8 @@ Repositório — Ajustados
   * O recorte não cria banco, rota, API, Server Action, UI, adapter de banco, entitlement, integração Stripe, valor operacional, snapshot, automação, agente ou job.
 
 99. Changelog
+v1.5.95 — 21/07/2026 — E18.5 implementada e reconciliada como catálogo repo-only de nove módulos e dez variantes de `landing_page`, com fields e mapas por variante, perfis de funil fechados, resolução efetiva fail-closed e API pública mínima, pendente do gate final do Analista.
+
 v1.5.94 — 15/07/2026 — E20 criada no roadmap e 20.2 concluída com catálogo declarativo versionado de entradas de `landing_page` por taxon e plano, resolução repo-only, herança taxonômica, proveniência e falha fechada, sem banco, rota, UI ou valores operacionais.
 
 v1.5.93 — 14/07/2026 — Ajustada a E10.8 para explicitar os quatro blocos obrigatórios, a versão comum dentro de cada `audience_scope` e a independência de versões entre `end_customer` e `business_buyer`.

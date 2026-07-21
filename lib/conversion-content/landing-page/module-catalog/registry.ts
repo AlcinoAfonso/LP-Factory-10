@@ -7,6 +7,8 @@ import type {
   LandingPageCollectionItemFieldDefinition,
   LandingPageCopySourceMap,
   LandingPageFunnelProfileDelta,
+  LandingPageFunnelCopyProfiles,
+  LandingPageFunnelProfileDeltas,
   LandingPageFunnelProfileKey,
   LandingPageFieldCardinality,
   LandingPageFieldPolicy,
@@ -14,7 +16,6 @@ import type {
   LandingPageImageFieldDefinition,
   LandingPageTechnicalReferenceFieldDefinition,
   LandingPageTextFieldDefinition,
-  LandingPageTextFieldPath,
   LandingPageVariantCapability,
   LandingPageVariantDefinition,
   LandingPageVariantFieldContractKey,
@@ -25,38 +26,6 @@ import type { LandingPageRootSemanticRoleKey } from "../index";
 
 const noRootRestrictions = { textRanges: [] } as const;
 const researchPath = "endCustomer.researches[].items[]" as const;
-const copySourceMaps: Readonly<Record<LandingPageTextFieldPath, LandingPageCopySourceMap>> = {
-  "hero.standard.eyebrow": research(["positioning_opportunity", "trigger"], "desire"),
-  "hero.standard.title": research(["positioning_opportunity", "desire"], "trigger"),
-  "hero.standard.subtitle": research(["pain", "desire"], "objection"),
-  "hero.standard.primaryCta.label": research(["trigger", "desire"], "objection"),
-  "hero.standard.proofShort": research(["proof_type", "belief"], "objection"),
-  "trust_bar.standard.items[].text": research(["proof_type", "belief"], "objection"),
-  "problem_solution.standard.title": research(["pain", "desire"], "fear"),
-  "problem_solution.standard.items[].problem": research(["pain", "fear"], "objection"),
-  "problem_solution.standard.items[].solution": research(["positioning_opportunity", "desire"], "belief"),
-  "offer.standard.title": research(["desire", "trigger"], "positioning_opportunity"),
-  "offer.standard.items[].itemTitle": research(["trigger", "desire"], "positioning_opportunity"),
-  "offer.standard.items[].description": research(["positioning_opportunity", "belief"], "objection"),
-  "process.standard.title": research(["belief", "desire"], "objection"),
-  "process.standard.steps[].stepTitle": research(["narrative_arc", "trigger"], "belief"),
-  "process.standard.steps[].stepBody": research(["belief", "desire"], "positioning_opportunity"),
-  "technical_assurance.standard.title": research(["proof_type", "belief"], "fear"),
-  "technical_assurance.standard.items[].assuranceTitle": research(["proof_type", "positioning_opportunity"], "objection"),
-  "technical_assurance.standard.items[].assuranceBody": research(["proof_type", "belief"], "fear"),
-  "social_proof.standard.title": research(["proof_type", "belief"], "objection"),
-  "social_proof.standard.items[].quote": { sourceMode: "operational_evidence", evidencePath: "social_proof.standard.items[].evidenceRef" },
-  "social_proof.standard.items[].attribution": { sourceMode: "operational_evidence", evidencePath: "social_proof.standard.items[].evidenceRef" },
-  "faq.standard.title": research(["objection", "awareness_level"], "search_intent"),
-  "faq.standard.items[].question": research(["objection", "fear"], "search_intent"),
-  "faq.standard.items[].answer": research(["belief", "positioning_opportunity"], "proof_type"),
-  "faq.accordion.title": research(["objection", "awareness_level"], "search_intent"),
-  "faq.accordion.items[].question": research(["objection", "fear"], "search_intent"),
-  "faq.accordion.items[].answer": research(["belief", "positioning_opportunity"], "proof_type"),
-  "final_cta.standard.title": research(["trigger", "desire"], "positioning_opportunity"),
-  "final_cta.standard.body": research(["desire", "objection"], "belief"),
-  "final_cta.standard.primaryCta.label": research(["trigger", "desire"], "objection"),
-};
 const funnelCopyProfiles = {
   bofu: {
     profileKey: "bofu",
@@ -64,6 +33,7 @@ const funnelCopyProfiles = {
     permittedTreatments: ["direct_next_step", "objection_response", "supported_proof"],
     restrictedTreatments: ["supported_urgency", "supported_commercial_condition", "supported_price", "supported_deadline", "supported_guarantee", "supported_availability"],
     prohibitedTreatments: ["coercion", "unsupported_scarcity", "unsupported_promise", "unsupported_credential", "unsupported_result"],
+    emphasizeTreatments: [],
     ctaMode: "direct_next_step",
   },
   mofu: {
@@ -72,6 +42,7 @@ const funnelCopyProfiles = {
     permittedTreatments: ["education", "problem_solution_relation", "process", "technical_assurance", "faq"],
     restrictedTreatments: ["direct_cta", "supported_offer", "supported_proof"],
     prohibitedTreatments: ["invented_price", "invented_urgency", "invented_guarantee", "invented_comparison", "invented_result"],
+    emphasizeTreatments: [],
     ctaMode: "non_coercive_direct",
   },
   tofu: {
@@ -80,9 +51,10 @@ const funnelCopyProfiles = {
     permittedTreatments: ["context", "problem_recognition", "desire", "introductory_education"],
     restrictedTreatments: ["low_pressure_offer", "low_pressure_cta", "supported_factual_proof"],
     prohibitedTreatments: ["scarcity", "urgency", "guarantee", "commercial_condition", "result_promise"],
+    emphasizeTreatments: [],
     ctaMode: "low_pressure",
   },
-} as const;
+} as const satisfies LandingPageFunnelCopyProfiles;
 
 function research(
   primaryItemKeys: readonly [import("./contracts").LandingPageResearchItemKey, import("./contracts").LandingPageResearchItemKey?],
@@ -95,7 +67,6 @@ export const landingPageModuleCatalogRegistry = deepFreeze({
   family: "landing_page",
   moduleCatalogVersion: 1,
   compatibleRootVersions: [1],
-  copySourceMaps,
   funnelCopyProfiles,
   modules: {
     hero: moduleDefinition(
@@ -382,32 +353,18 @@ function variant(
   };
 }
 
-function emptyFunnelDelta(): LandingPageFunnelProfileDelta {
+function emptyFunnelDelta<
+  ProfileKey extends LandingPageFunnelProfileKey,
+>(): LandingPageFunnelProfileDelta<ProfileKey> {
   return { emphasizeTreatments: [], restrictTreatments: [], prohibitTreatments: [] };
 }
 
-function moduleFunnelDeltas(moduleKey: LandingPageModuleKey): Readonly<Record<LandingPageFunnelProfileKey, LandingPageFunnelProfileDelta>> {
-  const deltas: Record<LandingPageFunnelProfileKey, LandingPageFunnelProfileDelta> = {
-    bofu: emptyFunnelDelta(), mofu: emptyFunnelDelta(), tofu: emptyFunnelDelta(),
+function moduleFunnelDeltas(): LandingPageFunnelProfileDeltas {
+  return {
+    bofu: emptyFunnelDelta<"bofu">(),
+    mofu: emptyFunnelDelta<"mofu">(),
+    tofu: emptyFunnelDelta<"tofu">(),
   };
-  if (moduleKey === "hero" || moduleKey === "final_cta") {
-    deltas.bofu = { ...emptyFunnelDelta(), emphasizeTreatments: ["direct_next_step"] };
-    deltas.mofu = { ...emptyFunnelDelta(), restrictTreatments: ["direct_cta"] };
-    deltas.tofu = { ...emptyFunnelDelta(), restrictTreatments: ["low_pressure_cta"] };
-  } else if (moduleKey === "problem_solution" || moduleKey === "faq") {
-    deltas.bofu = { ...emptyFunnelDelta(), emphasizeTreatments: ["objection_response"] };
-    deltas.mofu = { ...emptyFunnelDelta(), emphasizeTreatments: [moduleKey === "faq" ? "faq" : "problem_solution_relation"] };
-    deltas.tofu = { ...emptyFunnelDelta(), emphasizeTreatments: ["problem_recognition"] };
-  } else if (moduleKey === "offer" || moduleKey === "process") {
-    deltas.bofu = { ...emptyFunnelDelta(), emphasizeTreatments: [moduleKey === "offer" ? "direct_next_step" : "objection_response"] };
-    deltas.mofu = { ...emptyFunnelDelta(), emphasizeTreatments: [moduleKey === "offer" ? "supported_offer" : "process"] };
-    deltas.tofu = { ...emptyFunnelDelta(), restrictTreatments: [moduleKey === "offer" ? "low_pressure_offer" : "introductory_education"] };
-  } else if (["trust_bar", "technical_assurance", "social_proof"].includes(moduleKey)) {
-    deltas.bofu = { ...emptyFunnelDelta(), emphasizeTreatments: ["supported_proof"] };
-    deltas.mofu = { ...emptyFunnelDelta(), emphasizeTreatments: [moduleKey === "technical_assurance" ? "technical_assurance" : "supported_proof"] };
-    deltas.tofu = { ...emptyFunnelDelta(), emphasizeTreatments: ["supported_factual_proof"] };
-  }
-  return deltas;
 }
 
 function text(
@@ -427,7 +384,7 @@ function text(
     policy,
     semanticRole,
     ...(support ? { support } : {}),
-    copySourceMap: copySourceMaps[path as LandingPageTextFieldPath],
+    copySourceMap: copySourceMapFor(path),
   };
 }
 
@@ -520,11 +477,48 @@ function moduleDefinition(
     purpose: "controlled_test",
     compatibleRootVersion: 1,
     rootDelta: noRootRestrictions,
-    funnelProfileDeltas: moduleFunnelDeltas(moduleKey),
+    funnelProfileDeltas: moduleFunnelDeltas(),
     structuralFunction,
     invariants,
     boundaries,
   };
+}
+
+function copySourceMapFor(path: string): LandingPageCopySourceMap {
+  switch (path) {
+    case "hero.standard.eyebrow": return research(["positioning_opportunity", "trigger"], "desire");
+    case "hero.standard.title": return research(["positioning_opportunity", "desire"], "commercial_keywords");
+    case "hero.standard.subtitle": return research(["pain", "desire"], "objection");
+    case "hero.standard.primaryCta.label": return research(["trigger", "desire"], "objection");
+    case "hero.standard.proofShort": return research(["proof_type", "belief"], "objection");
+    case "trust_bar.standard.items[].text": return research(["proof_type", "belief"], "objection");
+    case "problem_solution.standard.title": return research(["pain", "desire"], "fear");
+    case "problem_solution.standard.items[].problem": return research(["pain", "fear"], "objection");
+    case "problem_solution.standard.items[].solution": return research(["positioning_opportunity", "desire"], "belief");
+    case "offer.standard.title": return research(["desire", "trigger"], "positioning_opportunity");
+    case "offer.standard.items[].itemTitle": return research(["trigger", "desire"], "positioning_opportunity");
+    case "offer.standard.items[].description": return research(["positioning_opportunity", "belief"], "objection");
+    case "process.standard.title": return research(["belief", "desire"], "objection");
+    case "process.standard.steps[].stepTitle": return research(["narrative_arc", "trigger"], "belief");
+    case "process.standard.steps[].stepBody": return research(["belief", "desire"], "positioning_opportunity");
+    case "technical_assurance.standard.title": return research(["proof_type", "belief"], "fear");
+    case "technical_assurance.standard.items[].assuranceTitle": return research(["proof_type", "positioning_opportunity"], "objection");
+    case "technical_assurance.standard.items[].assuranceBody": return research(["proof_type", "belief"], "fear");
+    case "social_proof.standard.title": return research(["proof_type", "belief"], "objection");
+    case "social_proof.standard.items[].quote":
+    case "social_proof.standard.items[].attribution":
+      return { sourceMode: "operational_evidence", evidencePath: "social_proof.standard.items[].evidenceRef" };
+    case "faq.standard.title":
+    case "faq.accordion.title": return research(["objection", "awareness_level"], "search_intent");
+    case "faq.standard.items[].question":
+    case "faq.accordion.items[].question": return research(["objection", "fear"], "faq_questions");
+    case "faq.standard.items[].answer":
+    case "faq.accordion.items[].answer": return research(["belief", "positioning_opportunity"], "proof_type");
+    case "final_cta.standard.title": return research(["trigger", "desire"], "positioning_opportunity");
+    case "final_cta.standard.body": return research(["desire", "objection"], "belief");
+    case "final_cta.standard.primaryCta.label": return research(["trigger", "desire"], "objection");
+    default: throw new Error(`Missing canonical copySourceMap for text field: ${path}`);
+  }
 }
 
 

@@ -2,9 +2,9 @@
 
 Fontes: chat, `README.md`, `AGENTS.md`, `docs/prompt-estrategista.md`, `docs/roadmap.md`, `docs/base-tecnica.md`, `docs/schema.md`, `docs/lp-planejamento.md`, `docs/lousa-plano-base-e18-4.md`, `docs/lousa-plano-base-e20-2.md`, `docs/blueprint-corretor-imoveis-end-customer.md`, `docs/prompt-nicho-itens-estruturados.md`, consulta read-only ao Supabase, `lib/conversion-content/landing-page/`, `lib/conversion-content/landing-page/input-catalog/registry.ts`, PRs #559, #563, #564, #566, #567, #577 e #581, avaliações do Analista e decisões humanas de 14 a 17/07/2026.
 
-Versão: v2 consolidada pelos pareceres especializados e pendente do gate do Analista.
+Versão: v2 implementada e reconciliada após comparação de proteções com o PR #589; pendente do gate final do Analista.
 
-Status: nove módulos e nove variantes `standard@v1` conceitualmente fechados; `faq.accordion@v1` aprovada como única variante adicional para validação controlada; patches do Gestor Estrutural e do Gestor de Updates consolidados; sete fases executáveis definidas; nenhuma implementação de código autorizada antes do gate do Analista e do merge humano.
+Status: nove módulos, nove variantes `standard@v1` e `faq.accordion@v1` implementados no catálogo repo-only; sete fases E18.5.3–E18.5.9 executadas; reconciliação técnica concluída e pendente do gate final do Analista.
 
 Path: `docs/lousa-plano-base-e18-5.md`.
 
@@ -25,7 +25,7 @@ Recorte do roadmap: `18.5 — Parametrização de módulos e variantes landing_p
 - A E18.5 é repo-only; ainda não existem composição, renderer ou render model deste recorte.
 - O catálogo operacional já define `primary_conversion_channel` e destinos condicionais.
 - `commercial_activation`, E18.2 e E18.3 permanecem preservados.
-- O trabalho documental ocorre no PR #577 e na branch `docs/e18-5-modules-variants`.
+- O plano-base foi consolidado no PR #577; a implementação e sua reconciliação ocorrem no PR #590.
 - O PR não deve ser mergeado sem confirmação humana explícita.
 
 ### 1.3. Grade fechada de módulos
@@ -103,6 +103,8 @@ Não criam variante isoladamente:
 - Variante declara compatibilidade explícita com a versão da raiz utilizada.
 - Variante imutável não muda pela disponibilidade posterior de nova capability.
 - Contrato ausente, incompatível ou inválido falha fechado, sem fallback silencioso.
+- O resolver aplica `raiz → delta do módulo → delta da variante` e `perfil-base → delta do módulo`, devolvendo os contratos efetivos; o consumidor não reaplica deltas.
+- O resolver preserva rastreabilidade de módulo e variante, mas não seleciona ordem, obrigatoriedade, composição ou lifecycle efetivo.
 - Resultado resolvido é completo, profundamente imutável e sem referência mutável compartilhada.
 
 ### 2.4. Contrato mínimo de campo
@@ -140,6 +142,9 @@ Notação da seção 3:
 
 Regras de aplicação:
 
+- Cada perfil possui vocabulário fechado próprio; todo treatment do perfil é classificado exatamente uma vez como permitido, restrito ou proibido.
+- Na v1, `emphasizeTreatments` permanece vazio nos três perfis e em todos os deltas de módulo; uma permissão não se transforma implicitamente em ênfase.
+- A precedência efetiva é `proibido → restrito → permitido`: uma camada mais específica pode restringir ou proibir, mas nunca relaxar proibição ou restrição herdada.
 - O perfil seleciona e prioriza somente fontes já permitidas pelo `copySourceMap` do campo; não altera estrutura, cardinalidade, ordem, policy nem suporte factual.
 - `hero` e `final_cta` adaptam intensidade e próxima ação ao perfil; `problem_solution` e `faq` adaptam consciência, dor e objeção; `offer` e `process` adaptam intenção e progressão; `trust_bar`, `technical_assurance` e `social_proof` preservam prova verificável em qualquer perfil.
 - Quando nenhuma fonte permitida sustentar o tratamento requerido, a E19 não inventa copy factual; o campo opcional é omitido conforme a composição, e campo obrigatório torna a instância inválida.
@@ -149,7 +154,7 @@ Regras de aplicação:
 | Variante e campo | Fontes principais | Fonte auxiliar |
 |---|---|---|
 | `hero.standard.eyebrow` | `positioning_opportunity`, `trigger` | `desire` |
-| `hero.standard.title` | `positioning_opportunity`, `desire` | `trigger` |
+| `hero.standard.title` | `positioning_opportunity`, `desire` | `commercial_keywords` |
 | `hero.standard.subtitle` | `pain`, `desire` | `objection` |
 | `hero.standard.primaryCta.label` | `trigger`, `desire` | `objection` |
 | `hero.standard.proofShort` | `proof_type`, `belief` | `objection` |
@@ -170,7 +175,7 @@ Regras de aplicação:
 | `social_proof.standard.items[].quote` | N/A — conteúdo `operational_required` obtido da evidência | N/A |
 | `social_proof.standard.items[].attribution` | N/A — conteúdo `operational_required` obtido da evidência | N/A |
 | `faq.standard.title` e `faq.accordion.title` | `objection`, `awareness_level` | `search_intent` |
-| `faq.standard.items[].question` e `faq.accordion.items[].question` | `objection`, `fear` | `search_intent` |
+| `faq.standard.items[].question` e `faq.accordion.items[].question` | `objection`, `fear` | `faq_questions` |
 | `faq.standard.items[].answer` e `faq.accordion.items[].answer` | `belief`, `positioning_opportunity` | `proof_type` |
 | `final_cta.standard.title` | `trigger`, `desire` | `positioning_opportunity` |
 | `final_cta.standard.body` | `desire`, `objection` | `belief` |
@@ -477,11 +482,12 @@ Regra comum:
 - Objetivo: implementar o `copySourceMap` fechado de cada field textual da seção 2.5.2.
 - Entregas:
   - registrar paths exatos, até duas fontes primárias e uma auxiliar;
+  - manter cada mapa somente no field textual da variante correspondente, sem segundo mapa global;
   - separar `research` de `operational_evidence` sem consultar nem replicar o catálogo de entradas.
 - Critérios de aceite:
   - todo path pertence à variante correspondente e todo `item_key` pertence aos conjuntos permitidos;
   - Social Proof preserva quote e attribution como evidência operacional;
-  - source mode, path, item key, quantidade ou mapa órfão desconhecidos falham fechado.
+  - source mode, path, item key, quantidade, duplicação ou mapa não autorizado falham fechado.
 - Validações: todos os fields mapeados e casos negativos de fonte, quantidade e path, validação própria, `npm run check` e `git diff --check`.
 
 #### 4.2.6. E18.5.8 — Perfis de copy por intenção e funil
@@ -494,7 +500,7 @@ Regra comum:
 - Critérios de aceite:
   - cada treatment aparece exatamente uma vez por perfil;
   - `ctaMode` corresponde ao tratamento de ação;
-  - deltas somente restringem, proíbem ou enfatizam tratamentos conhecidos;
+  - deltas somente restringem ou proíbem tratamentos conhecidos; `emphasizeTreatments` permanece vazio na v1;
   - alias, treatment, conflito ou `ctaMode` desconhecido falha fechado.
 - Validações: três perfis completos, deltas dos nove módulos e dez variantes, casos negativos, validação própria, `npm run check` e `git diff --check`.
 
@@ -531,11 +537,9 @@ Regra comum:
 
 ### 4.3. Próxima ação
 
-- Submeter esta v2 ao gate independente e à auditoria de consolidação do Analista.
-- Preservar integralmente os pareceres do Gestor Estrutural e do Gestor de Updates na matriz de consolidação.
-- Não chamar Gestor de Automação, pois as fases estão marcadas como `Automação: não`.
-- Submeter esta correção de topologia ao Analista em `revisao_delta`.
-- Não autorizar E18.5.3 antes da aprovação do delta e do merge humano do plano-base v2.
+- Submeter a implementação reconciliada ao gate final independente do Analista.
+- Manter o PR #590 em draft e não realizar merge antes da aprovação humana.
+- Após o gate, corrigir apenas achados materiais ou preparar o encerramento conforme decisão humana.
 
 ## 5. Validação e encerramento
 
@@ -573,7 +577,7 @@ Alteração exclusivamente documental:
 
 ### 5.3. Estado de validação
 
-- Implementação técnica significa contrato executável no repositório.
+- Implementação técnica repo-only concluída e reconciliada; validações finais devem permanecer registradas no PR #590.
 - Os módulos permanecem hipóteses até validação por LP real.
 - Promoção de lifecycle exige evidência e decisão humana.
 

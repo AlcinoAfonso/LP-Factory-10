@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 
 import {
   landingPageFieldKinds,
+  landingPageFunnelTreatmentKeysByProfile,
   landingPageModuleKeys,
   landingPageVariantCapabilities,
   landingPageVariantFieldContractKeys,
@@ -11,7 +12,10 @@ import {
 } from "./contracts";
 import { landingPageModuleCatalogRegistry } from "./registry";
 import { landingPageModuleCatalogSchema } from "./schema";
-import { resolveLandingPageModuleCatalog } from "./resolver";
+import {
+  resolveLandingPageModuleCatalog,
+  resolveLandingPageModuleCatalogFromRegistry,
+} from "./resolver";
 import * as publicModuleCatalog from "./index";
 import { resolveLandingPageRootParameters } from "../index";
 
@@ -524,15 +528,36 @@ const cases: readonly Case[] = [
       getMutableTextField(orphanOperationalEvidence, "social_proof.standard@v1", "social_proof.standard.items[].quote").copySourceMap.evidencePath = "social_proof.standard.orphan";
       assertInvalid(orphanOperationalEvidence);
 
-      const orphanMap = cloneRegistry();
-      orphanMap.copySourceMaps["hero.standard.orphan"] = structuredClone(orphanMap.copySourceMaps["hero.standard.title"]);
-      assertInvalid(orphanMap);
+      assert.equal("copySourceMaps" in landingPageModuleCatalogRegistry, false);
+
+      const validButUnauthorized = cloneRegistry();
+      getMutableTextField(validButUnauthorized, "hero.standard@v1", "hero.standard.title").copySourceMap.auxiliaryItemKey = "faq_questions";
+      assertInvalid(validButUnauthorized);
     },
   },
   {
     name: "funnel profiles and module deltas fail closed",
     run: () => {
       assert.deepEqual(Object.keys(landingPageModuleCatalogRegistry.funnelCopyProfiles), ["bofu", "mofu", "tofu"]);
+      for (const profileKey of ["bofu", "mofu", "tofu"] as const) {
+        const profile = landingPageModuleCatalogRegistry.funnelCopyProfiles[profileKey];
+        const classified = [
+          ...profile.permittedTreatments,
+          ...profile.restrictedTreatments,
+          ...profile.prohibitedTreatments,
+        ];
+        assert.deepEqual(
+          [...classified].sort(),
+          [...landingPageFunnelTreatmentKeysByProfile[profileKey]].sort(),
+        );
+        assert.equal(new Set(classified).size, classified.length);
+        assert.deepEqual(profile.emphasizeTreatments, []);
+      }
+      for (const moduleDefinition of Object.values(landingPageModuleCatalogRegistry.modules)) {
+        for (const profileKey of ["bofu", "mofu", "tofu"] as const) {
+          assert.deepEqual(moduleDefinition.funnelProfileDeltas[profileKey].emphasizeTreatments, []);
+        }
+      }
       const standardFaqModule = landingPageModuleCatalogRegistry.modules[
         landingPageModuleCatalogRegistry.variants["faq.standard@v1"].moduleKey
       ];
@@ -555,6 +580,18 @@ const cases: readonly Case[] = [
       duplicateTreatment.funnelCopyProfiles.bofu.prohibitedTreatments.push("direct_next_step");
       assertInvalid(duplicateTreatment);
 
+      const missingTreatment = cloneRegistry();
+      missingTreatment.funnelCopyProfiles.mofu.permittedTreatments.pop();
+      assertInvalid(missingTreatment);
+
+      const unknownProfileTreatment = cloneRegistry();
+      unknownProfileTreatment.funnelCopyProfiles.tofu.permittedTreatments.push("viral_hook");
+      assertInvalid(unknownProfileTreatment);
+
+      const crossProfileClassification = cloneRegistry();
+      crossProfileClassification.funnelCopyProfiles.bofu.permittedTreatments.push("education");
+      assertInvalid(crossProfileClassification);
+
       const unknownTreatment = cloneRegistry();
       unknownTreatment.modules.hero.funnelProfileDeltas.bofu.emphasizeTreatments = ["viral_hook"];
       assertInvalid(unknownTreatment);
@@ -564,6 +601,7 @@ const cases: readonly Case[] = [
       assertInvalid(crossProfileTreatment);
 
       const conflictingDelta = cloneRegistry();
+      conflictingDelta.modules.hero.funnelProfileDeltas.bofu.restrictTreatments = ["direct_next_step"];
       conflictingDelta.modules.hero.funnelProfileDeltas.bofu.prohibitTreatments = ["direct_next_step"];
       assertInvalid(conflictingDelta);
 
@@ -588,6 +626,12 @@ const cases: readonly Case[] = [
         assert.equal(result.value.module.moduleKey, moduleKey);
         assert.equal(result.value.fieldContract.fieldContractKey, variantKey);
         assert.equal(result.value.funnelCopyProfile.profileKey, "mofu");
+        const prefix = variantKey.replace("@v1", "");
+        assert.equal(
+          flattenFields(result.value.fieldContract.fields as readonly Record<string, unknown>[])
+            .every((field) => String(field.path).startsWith(`${prefix}.`)),
+          true,
+        );
         assertDeeplyFrozen(result.value);
       }
 
@@ -598,20 +642,28 @@ const cases: readonly Case[] = [
         assert.notEqual(first.value, second.value);
         assert.notEqual(first.value.module, second.value.module);
         assert.notEqual(first.value.root, second.value.root);
+        assert.notEqual(first.value.effectiveRoot, second.value.effectiveRoot);
         assert.notEqual(first.value.variant, second.value.variant);
         assert.notEqual(first.value.fieldContract, second.value.fieldContract);
-        assert.notEqual(first.value.copySourceMaps, second.value.copySourceMaps);
         assert.notEqual(first.value.funnelCopyProfile, second.value.funnelCopyProfile);
-        assert.notEqual(first.value.funnelProfileDelta, second.value.funnelProfileDelta);
         assert.notEqual(first.value.module, landingPageModuleCatalogRegistry.modules.hero);
         assert.notEqual(first.value.variant, landingPageModuleCatalogRegistry.variants["hero.standard@v1"]);
         assert.notEqual(first.value.fieldContract, landingPageModuleCatalogRegistry.variantFieldContracts["hero.standard@v1"]);
-        assert.notEqual(first.value.copySourceMaps, landingPageModuleCatalogRegistry.copySourceMaps);
         assert.notEqual(first.value.funnelCopyProfile, landingPageModuleCatalogRegistry.funnelCopyProfiles.bofu);
-        assert.notEqual(first.value.funnelProfileDelta, landingPageModuleCatalogRegistry.modules.hero.funnelProfileDeltas.bofu);
         const canonicalRoot = resolveLandingPageRootParameters({ rootVersion: 1 });
         assert.equal(canonicalRoot.ok, true);
         if (canonicalRoot.ok) assert.notEqual(first.value.root, canonicalRoot.value);
+      }
+
+      const hero = resolveLandingPageModuleCatalog({ moduleCatalogVersion: 1, rootVersion: 1, moduleKey: "hero", moduleVersion: 1, variantName: "standard", variantVersion: 1, funnelProfileKey: "bofu" });
+      const faq = resolveLandingPageModuleCatalog({ moduleCatalogVersion: 1, rootVersion: 1, moduleKey: "faq", moduleVersion: 1, variantName: "standard", variantVersion: 1, funnelProfileKey: "bofu" });
+      assert.equal(hero.ok && faq.ok, true);
+      if (hero.ok && faq.ok) {
+        const heroMaps = flattenFields(hero.value.fieldContract.fields as readonly Record<string, unknown>[]).map((field) => field.copySourceMap).filter(Boolean);
+        const faqMaps = flattenFields(faq.value.fieldContract.fields as readonly Record<string, unknown>[]).map((field) => field.copySourceMap).filter(Boolean);
+        assert.equal(JSON.stringify(heroMaps).includes("faq_questions"), false);
+        assert.equal(JSON.stringify(heroMaps).includes("commercial_keywords"), true);
+        assert.equal(JSON.stringify(faqMaps).includes("faq_questions"), true);
       }
     },
   },
@@ -635,6 +687,47 @@ const cases: readonly Case[] = [
       assert.deepEqual(Object.keys(publicModuleCatalog).sort(), ["resolveLandingPageModuleCatalog"]);
       assert.equal("landingPageModuleCatalogRegistry" in publicModuleCatalog, false);
       assert.equal("landingPageModuleCatalogSchema" in publicModuleCatalog, false);
+    },
+  },
+  {
+    name: "resolver input presets and effective deltas are strict and explicit",
+    run: () => {
+      const base = { moduleCatalogVersion: 1, rootVersion: 1, moduleKey: "hero", moduleVersion: 1, variantName: "standard", variantVersion: 1, funnelProfileKey: "bofu" };
+      for (const malformed of [null, [], "hero", 1, {}, { ...base, extra: true }, { ...base, moduleVersion: "1" }, { ...base, moduleKey: null }]) {
+        assert.doesNotThrow(() => resolveLandingPageModuleCatalog(malformed));
+        const result = resolveLandingPageModuleCatalog(malformed);
+        assert.equal(result.ok, false);
+        if (!result.ok) assert.equal(result.error.code, "INVALID_INPUT");
+      }
+
+      for (const rootPresetKey of ["balanced", "compact"] as const) {
+        const result = resolveLandingPageModuleCatalog({ ...base, rootPresetKey });
+        assert.equal(result.ok, true);
+        if (result.ok) {
+          assert.equal(result.value.root.resolvedPresetKey, rootPresetKey);
+          assert.equal(result.value.effectiveRoot.resolvedPresetKey, rootPresetKey);
+        }
+      }
+      const unknownPreset = resolveLandingPageModuleCatalog({ ...base, rootPresetKey: "wide" });
+      assert.equal(unknownPreset.ok, false);
+      if (!unknownPreset.ok) assert.equal(unknownPreset.error.code, "UNKNOWN_ROOT_PRESET");
+
+      const specialized = cloneRegistry();
+      specialized.modules.hero.rootDelta = { textRanges: [{ semanticRole: "h1", recommended: { min: 40, max: 60 }, absoluteMax: 100 }] };
+      specialized.variants["hero.standard@v1"].rootDelta = { textRanges: [{ semanticRole: "h1", recommended: { min: 45, max: 55 }, absoluteMax: 90 }] };
+      specialized.modules.hero.funnelProfileDeltas.bofu.restrictTreatments = ["direct_next_step"];
+      specialized.modules.hero.funnelProfileDeltas.bofu.prohibitTreatments = ["supported_urgency"];
+      const result = resolveLandingPageModuleCatalogFromRegistry(base, specialized as unknown as Parameters<typeof resolveLandingPageModuleCatalogFromRegistry>[1]);
+      assert.equal(result.ok, true);
+      if (result.ok) {
+        assert.deepEqual(result.value.effectiveRoot.semanticRoles.h1.textRange.recommended, { min: 45, max: 55 });
+        assert.equal(result.value.effectiveRoot.semanticRoles.h1.textRange.absoluteMax, 90);
+        assert.equal(result.value.root.semanticRoles.h1.textRange.absoluteMax > 90, true);
+        assert.equal(result.value.funnelCopyProfile.permittedTreatments.includes("direct_next_step"), false);
+        assert.equal(result.value.funnelCopyProfile.restrictedTreatments.includes("direct_next_step"), true);
+        assert.equal(result.value.funnelCopyProfile.restrictedTreatments.includes("supported_urgency"), false);
+        assert.equal(result.value.funnelCopyProfile.prohibitedTreatments.includes("supported_urgency"), true);
+      }
     },
   },
   {
@@ -749,7 +842,6 @@ type MutableCatalog = {
   family: string;
   moduleCatalogVersion: number;
   compatibleRootVersions: number[];
-  copySourceMaps: Record<string, MutableField["copySourceMap"]>;
   funnelCopyProfiles: Record<string, MutableFunnelProfile>;
   modules: Record<string, MutableModule>;
   variantFieldContracts: Record<
@@ -823,5 +915,6 @@ type MutableFunnelProfile = {
   permittedTreatments: string[];
   restrictedTreatments: string[];
   prohibitedTreatments: string[];
+  emphasizeTreatments: string[];
   ctaMode: string;
 };

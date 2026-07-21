@@ -4,10 +4,9 @@ import {
   landingPageFieldPolicies,
   landingPageFieldSupports,
   landingPageResearchItemKeys,
-  landingPageTextFieldPaths,
   landingPageCtaModes,
   landingPageFunnelProfileKeys,
-  landingPageFunnelTreatmentKeys,
+  landingPageFunnelTreatmentKeysByProfile,
   landingPageModuleKeys,
   landingPageVariantCapabilities,
   landingPageVariantFieldContractKeys,
@@ -74,29 +73,52 @@ const rootDeltaSchema = z.object({
   }
 });
 
-const funnelTreatmentSchema = z.enum(landingPageFunnelTreatmentKeys);
-const funnelProfileDeltaSchema = z.object({
-  emphasizeTreatments: z.array(funnelTreatmentSchema),
-  restrictTreatments: z.array(funnelTreatmentSchema),
-  prohibitTreatments: z.array(funnelTreatmentSchema),
-}).strict();
+function funnelProfileDeltaSchema<T extends readonly [string, ...string[]]>(treatments: T) {
+  const treatmentSchema = z.enum(treatments);
+  return z.object({
+    emphasizeTreatments: z.array(treatmentSchema).max(0),
+    restrictTreatments: z.array(treatmentSchema),
+    prohibitTreatments: z.array(treatmentSchema),
+  }).strict();
+}
+
 const funnelProfileDeltasSchema = z.object({
-  bofu: funnelProfileDeltaSchema, mofu: funnelProfileDeltaSchema, tofu: funnelProfileDeltaSchema,
+  bofu: funnelProfileDeltaSchema(landingPageFunnelTreatmentKeysByProfile.bofu),
+  mofu: funnelProfileDeltaSchema(landingPageFunnelTreatmentKeysByProfile.mofu),
+  tofu: funnelProfileDeltaSchema(landingPageFunnelTreatmentKeysByProfile.tofu),
 }).strict();
-const funnelCopyProfileSchema = z.object({
-  profileKey: z.enum(landingPageFunnelProfileKeys),
-  prioritizedSources: z.array(z.enum(landingPageResearchItemKeys)).min(1),
-  permittedTreatments: z.array(funnelTreatmentSchema).min(1),
-  restrictedTreatments: z.array(funnelTreatmentSchema),
-  prohibitedTreatments: z.array(funnelTreatmentSchema).min(1),
-  ctaMode: z.enum(landingPageCtaModes),
-}).strict().superRefine((profile, context) => {
-  const all = [...profile.permittedTreatments, ...profile.restrictedTreatments, ...profile.prohibitedTreatments];
-  if (new Set(all).size !== all.length) context.addIssue({ code: "custom", message: "each treatment must appear exactly once in its profile" });
-  if (new Set(profile.prioritizedSources).size !== profile.prioritizedSources.length) context.addIssue({ code: "custom", message: "prioritized sources must be unique" });
-  const expectedCtaMode = { bofu: "direct_next_step", mofu: "non_coercive_direct", tofu: "low_pressure" } as const;
-  if (profile.ctaMode !== expectedCtaMode[profile.profileKey]) context.addIssue({ code: "custom", path: ["ctaMode"], message: "cta mode does not correspond to profile action" });
-});
+
+function funnelCopyProfileSchema<
+  ProfileKey extends "bofu" | "mofu" | "tofu",
+  Treatments extends readonly [string, ...string[]],
+>(profileKey: ProfileKey, treatments: Treatments) {
+  const treatmentSchema = z.enum(treatments);
+  return z.object({
+    profileKey: z.literal(profileKey),
+    prioritizedSources: z.array(z.enum(landingPageResearchItemKeys)).min(1),
+    permittedTreatments: z.array(treatmentSchema).min(1),
+    restrictedTreatments: z.array(treatmentSchema),
+    prohibitedTreatments: z.array(treatmentSchema).min(1),
+    emphasizeTreatments: z.tuple([]),
+    ctaMode: z.enum(landingPageCtaModes),
+  }).strict().superRefine((profile, context) => {
+    const all = [...profile.permittedTreatments, ...profile.restrictedTreatments, ...profile.prohibitedTreatments];
+    if (
+      all.length !== treatments.length ||
+      new Set(all).size !== treatments.length ||
+      treatments.some((treatment) => !all.includes(treatment))
+    ) context.addIssue({ code: "custom", message: "profile treatment vocabulary must be classified exactly once" });
+    if (new Set(profile.prioritizedSources).size !== profile.prioritizedSources.length) context.addIssue({ code: "custom", message: "prioritized sources must be unique" });
+    const expectedCtaMode = { bofu: "direct_next_step", mofu: "non_coercive_direct", tofu: "low_pressure" } as const;
+    if (profile.ctaMode !== expectedCtaMode[profileKey]) context.addIssue({ code: "custom", path: ["ctaMode"], message: "cta mode does not correspond to profile action" });
+  });
+}
+
+const funnelCopyProfileSchemaByKey = {
+  bofu: funnelCopyProfileSchema("bofu", landingPageFunnelTreatmentKeysByProfile.bofu),
+  mofu: funnelCopyProfileSchema("mofu", landingPageFunnelTreatmentKeysByProfile.mofu),
+  tofu: funnelCopyProfileSchema("tofu", landingPageFunnelTreatmentKeysByProfile.tofu),
+};
 
 const nonEmptyPlainText = z
   .string()
@@ -401,8 +423,11 @@ export const landingPageModuleCatalogSchema = z
     family: z.literal("landing_page"),
     moduleCatalogVersion: z.literal(1),
     compatibleRootVersions: z.tuple([z.literal(1)]),
-    copySourceMaps: z.record(z.string(), copySourceMapSchema),
-    funnelCopyProfiles: z.record(z.string(), funnelCopyProfileSchema),
+    funnelCopyProfiles: z.record(z.string(), z.union([
+      funnelCopyProfileSchemaByKey.bofu,
+      funnelCopyProfileSchemaByKey.mofu,
+      funnelCopyProfileSchemaByKey.tofu,
+    ])),
     modules: z.record(z.string(), moduleDefinitionSchema),
     variantFieldContracts: z.record(z.string(), variantFieldContractSchema),
     variants: z.record(z.string(), variantDefinitionSchema),
@@ -425,18 +450,6 @@ export const landingPageModuleCatalogSchema = z
       if (profile.profileKey !== profileKey) context.addIssue({ code: "custom", path: ["funnelCopyProfiles", profileKey, "profileKey"], message: "funnel profile key mismatch" });
       if (JSON.stringify(profile) !== JSON.stringify(landingPageModuleCatalogRegistry.funnelCopyProfiles[profileKey])) {
         context.addIssue({ code: "custom", path: ["funnelCopyProfiles", profileKey], message: "funnel profile differs from the canonical registry" });
-      }
-    }
-    const expectedCopyPaths = new Set<string>(landingPageTextFieldPaths);
-    validateExactKeys({
-      actual: Object.keys(catalog.copySourceMaps), expected: expectedCopyPaths,
-      context, path: ["copySourceMaps"], label: "copy source map",
-    });
-    for (const path of landingPageTextFieldPaths) {
-      const actual = catalog.copySourceMaps[path];
-      const canonical = landingPageModuleCatalogRegistry.copySourceMaps[path];
-      if (actual && JSON.stringify(actual) !== JSON.stringify(canonical)) {
-        context.addIssue({ code: "custom", path: ["copySourceMaps", path], message: "copy source map differs from the canonical registry" });
       }
     }
     const actualKeys = Object.keys(catalog.modules);
@@ -494,9 +507,6 @@ export const landingPageModuleCatalogSchema = z
         context,
         path: ["modules", key, "invariants"],
       });
-      if (JSON.stringify(module.funnelProfileDeltas) !== JSON.stringify(canonical.funnelProfileDeltas)) {
-        context.addIssue({ code: "custom", path: ["modules", key, "funnelProfileDeltas"], message: "funnel profile deltas differ from the canonical registry" });
-      }
       validateCanonicalTextList({
         actual: module.boundaries,
         canonical: canonical.boundaries,
@@ -589,7 +599,11 @@ export const landingPageModuleCatalogSchema = z
       }
       const canonical =
         landingPageModuleCatalogRegistry.variants[key as LandingPageVariantKey];
-      if (JSON.stringify({ ...variant, lifecycleStatus: canonical.lifecycleStatus }) !== JSON.stringify(canonical)) {
+      if (JSON.stringify({
+        ...variant,
+        lifecycleStatus: canonical.lifecycleStatus,
+        rootDelta: canonical.rootDelta,
+      }) !== JSON.stringify(canonical)) {
         context.addIssue({
           code: "custom",
           path: ["variants", key],
