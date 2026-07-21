@@ -129,10 +129,13 @@ export type LandingPageFunnelCopyProfile<
 export type LandingPageFunnelProfileDelta<
   ProfileKey extends LandingPageFunnelProfileKey = LandingPageFunnelProfileKey,
 > = Readonly<{
-  emphasizeTreatments: readonly LandingPageFunnelTreatmentKeyByProfile<ProfileKey>[];
+  emphasizeTreatments: readonly [];
   restrictTreatments: readonly LandingPageFunnelTreatmentKeyByProfile<ProfileKey>[];
   prohibitTreatments: readonly LandingPageFunnelTreatmentKeyByProfile<ProfileKey>[];
 }>;
+
+// @ts-expect-error v1 rejects every non-empty emphasizeTreatments tuple.
+type _LandingPageFunnelProfileDeltaV1RejectsEmphasis<Candidate extends LandingPageFunnelProfileDelta<"bofu">["emphasizeTreatments"] = readonly ["direct_next_step"]> = Candidate;
 
 export type LandingPageFunnelCopyProfiles = Readonly<{
   [ProfileKey in LandingPageFunnelProfileKey]: LandingPageFunnelCopyProfile<ProfileKey>;
