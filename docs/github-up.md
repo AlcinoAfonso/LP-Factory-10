@@ -122,6 +122,7 @@ Recurso para limitar créditos de IA consumidos em uma sessão do Copilot CLI ou
 ## github#7 — Secret scanning public monitoring for enterprises *(🧪 Public preview / Enterprise)*
 
 2026-07-01
+Atualizado em 2026-07-20
 
 ### Status no Projeto
 
@@ -130,7 +131,7 @@ Recurso para limitar créditos de IA consumidos em uma sessão do Copilot CLI ou
 
 ### Descrição
 
-Recurso de monitoramento público de secrets para Enterprise, capaz de detectar segredos vazados em conteúdo público do GitHub fora dos repositórios próprios da organização, como forks pessoais, issues, pull requests e outros repositórios públicos.
+Recurso de monitoramento público de secrets para Enterprise, capaz de detectar segredos vazados em conteúdo público do GitHub fora dos repositórios próprios da organização, como forks pessoais, issues, pull requests e outros repositórios públicos. A lista de alertas passou a exibir indicadores de vazamentos por atribuição, quantidade de membros e domínios verificados.
 
 ### Valor para o Projeto
 
@@ -147,6 +148,7 @@ Recurso de monitoramento público de secrets para Enterprise, capaz de detectar 
 ### Fonte Oficial
 
 - [Secret scanning public monitoring for enterprises](https://github.blog/changelog/2026-07-01-secret-scanning-public-monitoring-for-enterprises/)
+- [Improvements to secret scanning and public monitoring](https://github.blog/changelog/2026-07-15-improvements-to-secret-scanning-and-public-monitoring/)
 
 ---
 
@@ -178,3 +180,40 @@ Ferramentas de navegador para GitHub Copilot no VS Code que permitem ao agente a
 ### Fonte Oficial
 
 - [Browser tools for GitHub Copilot in VS Code are generally available](https://github.blog/changelog/2026-07-01-browser-tools-for-github-copilot-in-vs-code-are-generally-available/)
+
+---
+
+## github#9 — Cooldown padrão do Dependabot para updates de versão *(🟩 Estável)*
+
+2026-07-14
+
+### Status no Projeto
+
+- Status: Não implementado — capacidade condicional.
+- Evidência: não existe `.github/dependabot.yml` nem outro registro de version updates automatizados no repositório.
+
+### Descrição
+
+O Dependabot passou a aguardar por padrão três dias após a publicação de uma versão no registry antes de abrir PR de version update. Security updates continuam imediatos. A janela pode ser alterada ou desativada pela opção `cooldown` quando existir configuração do Dependabot.
+
+### Valor para o Projeto
+
+- Reduz a chance de adotar imediatamente uma versão recém-comprometida ou quebrada quando o projeto habilitar version updates.
+- Preserva a velocidade de correções de segurança, que não entram no atraso padrão.
+- Oferece uma proteção simples de supply chain sem justificar automação antecipada no MVP.
+
+### Ações Recomendadas
+
+1. Não criar configuração do Dependabot apenas por causa do cooldown.
+2. Se version updates forem aprovados futuramente, manter inicialmente a janela padrão de três dias.
+3. Alterar a janela somente com motivo operacional e revisão do impacto sobre atualização e segurança.
+
+### Limites
+
+- O cooldown não valida a qualidade da versão e não substitui lockfile, testes, revisão de diff e CI.
+- O padrão só produz efeito quando version updates do Dependabot estiverem configurados ou habilitados.
+- Não atrasar security updates.
+
+### Fonte Oficial
+
+- [Dependabot version updates introduce default package cooldown](https://github.blog/changelog/2026-07-14-dependabot-version-updates-introduce-default-package-cooldown/)
