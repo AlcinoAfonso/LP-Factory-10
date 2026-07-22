@@ -229,3 +229,60 @@ O Dependabot passou a aguardar por padrão três dias após a publicação de um
 ### Fonte Oficial
 
 - [Dependabot version updates introduce default package cooldown](https://github.blog/changelog/2026-07-14-dependabot-version-updates-introduce-default-package-cooldown/)
+
+---
+
+## github#10 — Workflow execution protections por ator e evento *(🧪 Public preview; adoção condicional)*
+
+2026-06-18
+Verificado em 2026-07-22
+
+### Status no Projeto
+
+- Status: Não implementado — disponibilidade e configuração pendentes de validação.
+- Evidência: o repositório possui workflows acionados por `pull_request` e `workflow_dispatch`, incluindo `pipeline-docs-apply-report.yml` com permissões de escrita; não há registro de Actions policy ou workflow execution protection configurada.
+
+### Descrição
+
+As workflow execution protections permitem criar uma allow list para controlar quais atores podem iniciar GitHub Actions e quais eventos podem disparar workflows. As primeiras regras cobrem atores — usuários, papéis, GitHub Apps, Copilot e Dependabot — e eventos como `push`, `pull_request`, `pull_request_target` e `workflow_dispatch`.
+
+O recurso usa a estrutura de rulesets e oferece modo de avaliação antes da aplicação obrigatória.
+
+### Valor para o Projeto
+
+- Pode restringir `workflow_dispatch` e outros eventos sensíveis a responsáveis autorizados.
+- Pode impedir que um ator não confiável execute workflow modificado e alcance permissões ou secrets.
+- Complementa permissões mínimas no YAML e revisão humana; não substitui essas proteções.
+- Tem caso concreto porque o repositório já opera múltiplos workflows e um pipeline documental com `contents: write` e `pull-requests: write`.
+
+### Valor para o Usuário
+
+- Benefício indireto por reduzir risco de execução indevida, alteração do repositório e consumo desnecessário de Actions.
+
+### Limites
+
+- Recurso em public preview e sujeito a mudanças.
+- A disponibilidade depende do nível de configuração, do plano e da visibilidade do repositório; deve ser confirmada novamente se o repositório se tornar privado.
+- Não bloquear eventos ou atores antes de testar em modo de avaliação e mapear os workflows legítimos.
+- O registro não autoriza criar ruleset, alterar workflow, permissões, secrets ou plano do GitHub.
+
+### Gatilho de avaliação
+
+Avaliar configuração somente quando:
+
+1. a opção estiver disponível na conta e no repositório;
+2. os eventos e atores legítimos estiverem inventariados;
+3. o efeito sobre PRs humanos, PRs de bot, Dependabot e `workflow_dispatch` estiver documentado;
+4. houver modo de avaliação ou teste reversível antes da aplicação obrigatória.
+
+### Ações Recomendadas
+
+1. Verificar a disponibilidade em Settings → Actions → Policies.
+2. Se disponível, mapear primeiro atores e eventos atuais sem alterar o comportamento.
+3. Usar modo de avaliação antes de qualquer bloqueio.
+4. Revalidar plano e disponibilidade após eventual mudança do repositório para privado.
+
+### Fontes Oficiais
+
+- [GitHub Changelog — Control who and what triggers GitHub Actions workflows](https://github.blog/changelog/2026-06-18-control-who-and-what-triggers-github-actions-workflows/)
+- [GitHub Docs — About Actions policies](https://docs.github.com/en/enterprise-cloud@latest/admin/enforcing-policies/enforcing-policies-for-your-enterprise/actions-policies/about-actions-policies)
