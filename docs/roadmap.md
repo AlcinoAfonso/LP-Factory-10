@@ -1779,7 +1779,6 @@ Repositório — Ajustados
 - Banco: N/A.
 - Repositório:
   - Criados:
-    - `docs/lousa-plano-base-e18-5.md`
     - `lib/conversion-content/landing-page/module-catalog/contracts.ts`
     - `lib/conversion-content/landing-page/module-catalog/index.ts`
     - `lib/conversion-content/landing-page/module-catalog/registry.ts`
@@ -1787,8 +1786,6 @@ Repositório — Ajustados
     - `lib/conversion-content/landing-page/module-catalog/schema.ts`
     - `lib/conversion-content/landing-page/module-catalog/validation-cases.ts`
   - Ajustados:
-    - `docs/base-tecnica.md`
-    - `docs/roadmap.md`
     - `lib/conversion-content/index.ts`
     - `package.json`
   - Excluídos: N/A.
@@ -2067,7 +2064,7 @@ Repositório — Ajustados
   * O recorte não cria banco, rota, API, Server Action, UI, adapter de banco, entitlement, integração Stripe, valor operacional, snapshot, automação, agente ou job.
 
 99. Changelog
-v1.5.96 — 21/07/2026 — E18.5 reorganizada conforme `docs/template-roadmap.md`: registros movidos para 18.5.2, conteúdos implementados distribuídos entre 18.5.3 e 18.5.9 e status atualizado após aprovação e merge do PR #590.
+v1.5.96 — 21/07/2026 — E18.5 reorganizada conforme `docs/template-roadmap.md`: registros de implementação movidos para 18.5.2 sem artefatos `docs/**`, conteúdos implementados distribuídos entre 18.5.3 e 18.5.9 e status atualizado após aprovação e merge do PR #590.
 
 v1.5.95 — 21/07/2026 — E18.5 implementada e reconciliada como catálogo repo-only de nove módulos e dez variantes de `landing_page`, com fields e mapas por variante, perfis de funil fechados, resolução efetiva fail-closed e API pública mínima, pendente do gate final do Analista.
 
