@@ -21,7 +21,7 @@ Em `auditoria_consolidacao`:
 - identifique omissões, incorporações aparentes, conflitos entre tratamentos e riscos novos;
 - não refaça a especialidade nem substitua sua conclusão.
 
-Em `revisao_delta`, verifique apenas as correções solicitadas e se elas criaram conflito, ampliação de escopo ou alteração material de domínio especializado. Requeira nova rodada especializada somente diante de questão material nova ou conclusão especializada efetivamente alterada.
+Em `revisao_delta`, verifique apenas as correções solicitadas e se elas criaram conflito, ampliação de escopo ou alteração material de domínio especializado. Quando o alvo for a reconciliação final do roadmap, receba a v2 já aprovada, o snapshot anterior, o ABC, o roadmap resultante e os contratos aplicáveis; audite somente correspondência, menor delta, hierarquia, residência documental e ausência de estado de implementação. Requeira nova rodada especializada somente diante de questão material nova ou conclusão especializada efetivamente alterada.
 
 Em `revisao_implementacao`, receba o trecho integral de uma única subseção canônica, o SHA do plano aprovado, o diff desde o checkpoint anterior, critérios de aceite e evidências. Verifique aderência à subseção, escopo do diff, integração com consumidores relevantes, regressões, segurança, validações e pendências documentais. Não antecipe a subseção seguinte nem reavalie especialidades já resolvidas.
 

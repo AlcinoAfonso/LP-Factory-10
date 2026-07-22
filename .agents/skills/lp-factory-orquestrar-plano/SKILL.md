@@ -1,6 +1,6 @@
 ---
 name: lp-factory-orquestrar-plano
-description: Orquestrar a produção e o gate de um plano-base v2 do LP Factory 10 a partir de uma v1 já incorporada à main, usando o Gestor Estrutural, o Gestor de Updates, o Gestor de Automações quando aplicável e o Analista. Usar quando o humano informar o PR ou path da v1 e pedir para executar, orquestrar ou automatizar a revisão do plano.
+description: Orquestrar a produção e o gate de um plano-base v2 do LP Factory 10 a partir de uma v1 já incorporada à main, usando especialistas e Analista e reconciliando o roadmap antes da publicação. Usar quando o humano informar o PR ou path da v1 e pedir para executar, orquestrar ou automatizar a revisão do plano.
 ---
 
 # Orquestrar plano-base v2
@@ -40,6 +40,7 @@ Não copiar nem reinterpretar os contratos canônicos desses arquivos.
 5. Registrar head SHA, blob SHA, path e caso ou recorte como referência imutável da v1.
 6. No fluxo normal, confirmar que o blob congelado da v1 está incorporado à `main`; se não estiver, parar antes de qualquer mutação.
 7. Não editar a branch head do PR nem alterar o PR de origem.
+8. Registrar commit SHA, blob SHA e conteúdo integral de `docs/roadmap.md` na `main` como snapshot imutável anterior à v2.
 
 ## 2. Selecionar a worktree de automação
 
@@ -107,15 +108,17 @@ Parar quando faltar uma decisão material que altere produto, escopo ou arquitet
 ## 5. Produzir a v2 e a matriz
 
 1. Editar somente o plano correspondente dentro da worktree de automação.
-2. Preservar objetivo, decisões válidas e limites da v1; incorporar literalmente ou de forma inequivocamente equivalente os patches estruturais, de updates e, quando aplicável, de automações, usando somente tratamentos sustentados pelos pareceres e pelas fontes competentes.
-3. Não implementar fases nem ampliar silenciosamente o escopo.
-4. Preparar uma matriz com uma linha por achado estrutural, por update preliminarmente elegível e por decisão do Gestor de Automações, quando acionado, usando o contrato da skill `lp-factory-avaliar-plano-analista`.
-5. Manter a matriz fora do alcance do Analista até ele concluir a Passagem 1:
+2. Preservar a ordem, as seções, a hierarquia e a granularidade da v1. Criar ou consolidar seções somente quando um parecer especializado trouxer necessidade e patch autossuficiente.
+3. Rastrear na matriz cada alteração estrutural da v1 até o especialista, o achado e o patch que a determinou.
+4. Preservar objetivo, decisões válidas e limites da v1; incorporar literalmente ou de forma inequivocamente equivalente os patches estruturais, de updates e, quando aplicável, de automações, usando somente tratamentos sustentados pelos pareceres e pelas fontes competentes.
+5. Não implementar fases nem ampliar silenciosamente o escopo.
+6. Preparar uma matriz com uma linha por achado estrutural, por update preliminarmente elegível e por decisão do Gestor de Automações, quando acionado, usando o contrato da skill `lp-factory-avaliar-plano-analista`.
+7. Manter a matriz fora do alcance do Analista até ele concluir a Passagem 1:
    - não incluí-la no prompt ou nos turnos herdados;
    - não gravá-la na worktree antes da conclusão independente;
    - iniciar o Analista com `fork_turns=none`.
-6. Validar a v2 com `git diff --check` e criar um commit de checkpoint somente com o plano-base v2.
-7. Usar esse commit como referência imutável da v2 na Passagem 1.
+8. Validar a v2 com `git diff --check` e criar um commit de checkpoint somente com o plano-base v2.
+9. Usar esse commit como referência imutável da v2 na Passagem 1.
 
 ## 6. Executar o gate do Analista
 
@@ -124,22 +127,38 @@ Parar quando faltar uma decisão material que altere produto, escopo ou arquitet
 3. Depois da Passagem 1, gravar a matriz em `docs/matriz-consolidacao-<caso>.md`, validar e criar novo checkpoint. No modo `experimental`, mantê-la como evidência; no fluxo normal, usá-la somente até a conclusão do Analista.
 4. Continuar no mesmo Analista e entregar os pareceres completos do Gestor Estrutural, do Gestor de Updates e, quando acionado, do Gestor de Automações, além da matriz, para a Passagem 2.
 5. Preservar integralmente a auditoria e a conclusão formal.
-6. No fluxo normal, após aprovação final, resumir a rastreabilidade no PR e remover a matriz antes da publicação final; não agendar remoção posterior.
+6. No fluxo normal, após aprovação da v2, resumir a rastreabilidade no PR e manter a matriz somente até a revisão delta do roadmap.
 
 ## 7. Tratar a conclusão
 
-- `aprovado para merge do plano-base v2`: avançar para publicação.
+- `aprovado para merge do plano-base v2`: avançar para a reconciliação do roadmap.
 - `aprovado com correções obrigatórias`: corrigir a v2 e a matriz, criar nova referência imutável e solicitar `revisao_delta` ao mesmo Analista.
 - `requer nova rodada especializada`: retornar somente ao especialista do domínio indicado quando o Analista identificar questão material nova ou mudança fora do parecer original; nos demais casos, parar e apontar a incompatibilidade da conclusão.
 - `bloqueado por decisão humana`: parar e apresentar somente a decisão necessária, sem escolher pelo humano.
 
 Repetir o ciclo somente enquanto houver correções objetivas dentro do escopo. Não usar nova rodada especializada para revalidar patches já cobertos nem converter decisão material ausente em correção editorial.
 
-## 8. Publicar para decisão humana
+## 8. Reconciliar o roadmap
 
 Somente após `aprovado para merge do plano-base v2`:
 
-1. Confirmar que o diff contém apenas o plano v2 e, somente no modo `experimental`, sua matriz.
+1. Invocar `$lp-factory-abc` em modo planejamento com `DOC_ALVO: docs/roadmap.md`, usando a v2 aprovada como `RELATÓRIO` e o snapshot imutável anterior à v2 como estado inicial do documento-alvo.
+2. Exigir que a skill leia `docs/prompt-abc.md` e `docs/template-roadmap.md` e devolva o menor delta ou `SEM ALTERAÇÕES NECESSÁRIAS`.
+3. Aplicar literalmente somente as operações do ABC ao roadmap. Não alterar os demais documentos canônicos.
+4. Limitar o delta a seções e subseções do recorte, identificadores, títulos, objetivos, status planejado ou definido, limites, decisões futuras aprovadas e dependências indispensáveis.
+5. Não registrar implementação concluída, banco, migrations, arquivos, updates aplicados, evidências, comandos, PRs ou histórico operacional. Omitir `Registros do recorte` enquanto não houver implementação material.
+6. Validar com `git diff --check` e criar referência imutável da v2 aprovada com o roadmap resultante.
+7. Continuar no mesmo Analista em `revisao_delta`, entregando v2 aprovada, snapshot do roadmap, ABC emitido, roadmap resultante, `docs/prompt-abc.md` e `docs/template-roadmap.md`.
+8. Solicitar somente a auditoria da correspondência entre v2 e roadmap. Corrigir e reenviar apenas divergências objetivas; questão material nova segue a seção 7.
+9. Mesmo quando o ABC retornar `SEM ALTERAÇÕES NECESSÁRIAS`, exigir confirmação do Analista de que o snapshot já corresponde à v2.
+10. Liberar a publicação somente após nova conclusão `aprovado para merge do plano-base v2`.
+11. No fluxo normal, remover a matriz temporária antes da publicação e preservar sua rastreabilidade apenas no resumo do PR.
+
+## 9. Publicar para decisão humana
+
+Somente após a aprovação da v2 e da revisão delta do roadmap:
+
+1. Confirmar que o diff contém apenas o plano v2, `docs/roadmap.md` e, somente no modo `experimental`, sua matriz.
 2. Verificar alterações acidentais, secrets, `.env`, banco e workflows.
 3. Executar `git diff --check`; tratar `npm ci` e `npm run check` como não aplicáveis quando o diff for exclusivamente documental.
 4. Commitar a versão final e publicar a branch de automação.
@@ -156,6 +175,8 @@ Apresentar:
 - parecer integral do Gestor de Updates;
 - parecer integral do Gestor de Automações ou `N/A`;
 - Passagens 1 e 2 do Analista;
+- snapshot inicial, ABC e delta aplicado em `docs/roadmap.md`;
+- revisão delta final do roadmap pelo mesmo Analista;
 - arquivos alterados;
 - commits e validações;
 - PR draft ou link de criação;
@@ -169,5 +190,6 @@ Apresentar:
 - Não acionar especialistas fora do recorte.
 - Não permitir que custom agents editem arquivos.
 - Não executar fases do plano.
+- Não alterar outros documentos canônicos durante a reconciliação do roadmap.
 - Não avaliar implementação ou PR de código; encaminhar a execução aprovada para `$lp-factory-executar-plano`.
 - Não fazer merge nem substituir decisão humana.

@@ -1,8 +1,8 @@
 # Orquestração de planos-base no Codex
 
 Data: 22/07/2026
-Versão: v0.9
-Status: Fluxos de plano e execução validados no experimento E18.5; Gestor de Automações integrado de forma condicional e pendente de teste próprio; fechamento documental pendente de decisão.
+Versão: v0.10
+Status: Fluxos de plano e execução validados no experimento E18.5; Gestor de Automações integrado de forma condicional; reconciliação planejada do roadmap incorporada e pendente de teste próprio; fechamento documental da implementação pendente de decisão.
 
 ## 1. Objetivo e função deste documento
 
@@ -14,16 +14,17 @@ Seu objetivo é estabelecer, antes da implementação, um contrato humano verifi
 2. coordena as avaliações dos especialistas aplicáveis;
 3. orienta o orquestrador a transformar o plano-base v1 em v2 e registrar uma matriz de consolidação dos pareceres;
 4. entrega v1 e v2 ao Analista para avaliação independente e, depois, entrega pareceres e matriz para auditoria da consolidação;
-5. conduz a execução de uma subseção canônica por vez, na mesma branch e PR de implementação;
-6. devolve cada checkpoint e a entrega final ao Analista antes do avanço ou merge;
-7. interrompe o fluxo nos pontos que exigem decisão humana ou teste humano;
-8. permite retomar a mesma frente sem merge entre subseções.
+5. reconcilia o roadmap com a v2 aprovada e submete o delta ao mesmo Analista;
+6. conduz a execução de uma subseção canônica por vez, na mesma branch e PR de implementação;
+7. devolve cada checkpoint e a entrega final ao Analista antes do avanço ou merge;
+8. interrompe o fluxo nos pontos que exigem decisão humana ou teste humano;
+9. permite retomar a mesma frente sem merge entre subseções.
 
 O resultado esperado é reduzir coordenação manual e cópia de contexto entre tarefas, sem transferir ao Codex decisões que pertencem ao humano e sem permitir que agentes especializados alterem o repositório.
 
 Este documento será a fonte humana do desenho aprovado. A skill executará o workflow definido aqui; cada custom agent aplicará seu contrato runtime; e o task principal permanecerá responsável pela coordenação, pelas alterações no repositório e pela entrega ao humano.
 
-O teste estrutural isolado da seção 2 foi validado. Os contratos do Gestor Estrutural e do Analista foram otimizados, o Gestor de Updates foi integrado, o Gestor de Automações foi adicionado condicionalmente e a execução E18.5.3–E18.5.9 foi concluída com gates por subseção e gate final de testes. Os PRs empilhados usados nessa comparação são exceção histórica e não integram o fluxo normal.
+O teste estrutural isolado da seção 2 foi validado. Os contratos do Gestor Estrutural e do Analista foram otimizados, o Gestor de Updates foi integrado, o Gestor de Automações foi adicionado condicionalmente e a reconciliação planejada do roadmap foi incorporada ao fluxo da v2. A execução E18.5.3–E18.5.9 foi concluída com gates por subseção e gate final de testes. Os PRs empilhados usados nessa comparação são exceção histórica e não integram o fluxo normal.
 
 ## 2. Primeiro passo: teste do Gestor Estrutural
 
@@ -223,22 +224,24 @@ No experimento E18.5, o destino usado foi:
 
 ### 4.3 Sequência integrada
 
-1. Congelar a v1 pelo head SHA e blob do PR informado.
+1. Congelar a v1 pelo head SHA e blob do PR informado e registrar snapshot imutável do roadmap já atualizado pela entrega da v1.
 2. Atualizar a `main` e criar a branch da v2 no checkout simples ou selecionar uma única worktree de automação quando houver frente paralela.
 3. Acionar o Gestor Estrutural e preservar o parecer integral.
 4. Acionar o Gestor de Updates sobre a mesma v1 e preservar o parecer integral.
 5. Acionar o Gestor de Automações somente se alguma fase estiver marcada como `Automação: sim`; caso contrário, registrar `N/A`.
-6. Aplicar os patches autossuficientes dos especialistas acionados, produzir a v2 e preparar a matriz de consolidação, sem nova rodada especializada padrão.
+6. Aplicar os patches autossuficientes dos especialistas acionados, produzir a v2 preservando a estrutura da v1 salvo alteração estrutural especializada rastreável e preparar a matriz de consolidação, sem nova rodada especializada padrão.
 7. Criar referência imutável da v2 e acionar o Analista sem pareceres ou matriz.
 8. Depois da Passagem 1, gravar a matriz e entregá-la com os pareceres dos especialistas acionados ao mesmo Analista.
 9. Corrigir ou encaminhar pendências conforme a conclusão formal.
-10. No fluxo normal, publicar um único PR draft da v2 contra `main` somente após aprovação do Analista.
+10. Usar `$lp-factory-abc` em modo planejamento para reconciliar o snapshot do roadmap com a v2 aprovada.
+11. Submeter o roadmap resultante ao mesmo Analista em revisão delta.
+12. No fluxo normal, publicar um único PR draft da v2 contra `main` somente após aprovação da v2 e do roadmap reconciliado.
 
 A matriz não é gravada antes da Passagem 1. Isso impede que a avaliação independente seja contaminada por um arquivo acessível na própria worktree.
 
 ### 4.4 Limites do fluxo de plano integrado
 
-Este recorte inclui Gestor Estrutural, Gestor de Updates, Gestor de Automações quando aplicável, consolidação pelo orquestrador e gate do Analista. O Gestor de Updates consulta obrigatoriamente os quatro catálogos vigentes, mas não os mantém nem pesquisa novos updates fora deles. O Gestor de Automações é acionado exclusivamente por `Automação: sim`, avalia somente essas fases e não pesquisa recursos sem caso concreto.
+Este recorte inclui Gestor Estrutural, Gestor de Updates, Gestor de Automações quando aplicável, consolidação pelo orquestrador, gate do Analista e reconciliação final do roadmap. O Gestor de Updates consulta obrigatoriamente os quatro catálogos vigentes, mas não os mantém nem pesquisa novos updates fora deles. O Gestor de Automações é acionado exclusivamente por `Automação: sim`, avalia somente essas fases e não pesquisa recursos sem caso concreto.
 
 O teste E18.5 foi considerado válido porque uma instrução humana curta produziu dois pareceres especializados rastreáveis, uma v2 rastreável e duas passagens não contaminadas do Analista, sem edição feita pelos custom agents. O PR filho usado na comparação permanece como evidência excepcional; o workflow não permite novos PRs empilhados. O modo experimental altera apenas os checkpoints e também exige a versão do plano incorporada à `main` antes de qualquer mutação.
 
@@ -249,6 +252,20 @@ O teste E18.5 foi considerado válido porque uma instrução humana curta produz
 3. `.agents/skills/lp-factory-orquestrar-plano/SKILL.md`: gatilho condicional, consolidação e encaminhamento ao Analista.
 
 Aprovação humana operacional indicada pelo especialista vira requisito do plano e não interrompe automaticamente a orquestração. Escolhas materiais são registradas para avaliação do Analista, que decide se existe bloqueio humano.
+
+### 4.6 Preservação da v1 e reconciliação do roadmap
+
+A v2 mantém ordem, seções, hierarquia e granularidade da v1. Criar ou consolidar seção exige parecer especializado com achado e patch autossuficiente rastreados na matriz.
+
+Depois de `aprovado para merge do plano-base v2`, o orquestrador usa:
+
+1. a v2 aprovada como `RELATÓRIO`;
+2. o snapshot imutável de `docs/roadmap.md` produzido após a v1;
+3. `$lp-factory-abc` em modo planejamento, regida por `docs/prompt-abc.md` e `docs/template-roadmap.md`.
+
+O menor delta pode registrar somente estrutura do recorte, identificadores, títulos, objetivos, status planejado ou definido, limites, decisões futuras aprovadas e dependências indispensáveis. Não registra implementação, banco, migrations, arquivos, updates, evidências, comandos, PRs ou histórico operacional e não altera outros documentos canônicos.
+
+O mesmo Analista recebe v2, snapshot, ABC e roadmap resultante em `revisao_delta`. A publicação só é liberada após confirmação de alinhamento, inclusive quando o ABC concluir `SEM ALTERAÇÕES NECESSÁRIAS`. No fluxo normal, o PR final contém apenas plano-base v2 e roadmap; a matriz temporária é removida antes da publicação.
 
 ## 5. Quarto passo: execução end-to-end do plano aprovado
 
