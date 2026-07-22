@@ -1790,7 +1790,7 @@ Repositório — Ajustados
     - `package.json`
   - Excluídos: N/A.
 - Updates:
-  - Aplicados: N/A.
+  - Aplicados: `prod#17` — WCAG 2.2 como baseline de acessibilidade, incorporado exclusivamente ao contrato abstrato de `faq.accordion@v1` para operação por teclado, exposição do estado expandido ou recolhido, associação acessível e preservação de foco.
 
 18.5.3 Módulos e funções estruturais
 - Status: Implementada.
@@ -2064,7 +2064,7 @@ Repositório — Ajustados
   * O recorte não cria banco, rota, API, Server Action, UI, adapter de banco, entitlement, integração Stripe, valor operacional, snapshot, automação, agente ou job.
 
 99. Changelog
-v1.5.96 — 21/07/2026 — E18.5 reorganizada conforme `docs/template-roadmap.md`: registros de implementação movidos para 18.5.2 sem artefatos `docs/**`, conteúdos implementados distribuídos entre 18.5.3 e 18.5.9 e status atualizado após aprovação e merge do PR #590.
+v1.5.96 — 21/07/2026 — E18.5 reorganizada conforme `docs/template-roadmap.md`: registros de implementação movidos para 18.5.2 sem artefatos `docs/**`, `prod#17` registrado como update aplicado ao contrato abstrato de `faq.accordion@v1`, conteúdos implementados distribuídos entre 18.5.3 e 18.5.9 e status atualizado após aprovação e merge do PR #590.
 
 v1.5.95 — 21/07/2026 — E18.5 implementada e reconciliada como catálogo repo-only de nove módulos e dez variantes de `landing_page`, com fields e mapas por variante, perfis de funil fechados, resolução efetiva fail-closed e API pública mínima, pendente do gate final do Analista.
 
