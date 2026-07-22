@@ -2,7 +2,7 @@
 
 0.1 Cabeçalho
 • Data: 21/07/2026
-• Versão: v1.5.95
+• Versão: v1.5.96
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -1464,7 +1464,7 @@ Repositório — Ajustados
 
 18. E18 — Base transversal de templates, módulos, composições e artefatos
 - Objetivo: Definir infraestrutura e contratos reutilizáveis para famílias de templates por canal, templates versionados, módulos de conteúdo, seções de página, variantes, composições e artefatos finais persistidos; sustentar primeiro a E10.7 sem produzir diretamente a página comercial de um taxon; e permitir consumidores futuros somente como visão de evolução, sem antecipar sua implementação.
-- Status: Base mínima de `commercial_activation` concluída; parametrização raiz versionada de `landing_page` concluída em 13/07/2026; implementação anterior de composição `landing_page` removida; parametrização de módulos e variantes permanece separada no recorte 18.5.
+- Status: Base mínima de `commercial_activation` concluída; parametrização raiz versionada de `landing_page` concluída em 13/07/2026; implementação anterior de composição `landing_page` removida; catálogo repo-only de módulos e variantes concluído em 21/07/2026 no recorte 18.5.
 
 18.1 Contrato transversal de templates, módulos, composições e artefatos
 
@@ -1771,18 +1771,96 @@ Repositório — Ajustados
 18.5 Parametrização de módulos e variantes `landing_page`
 
 18.5.1 Objetivo e status
+- Objetivo: consolidar o catálogo versionado de módulos e variantes da família `landing_page` sobre a parametrização raiz definida em 18.4.
+- Status: Concluída, reconciliada, aprovada e mergeada em 21/07/2026 pelo PR #590. Os nove módulos e as dez variantes aprovadas permanecem repo-only e iniciam em lifecycle `hypothesis`.
+- Limites preservados: sem payload de conteúdo, banco, migration, rota, UI, renderer, composição, persistência, automação, job ou consumo por E19/E20; seleção, ordem, obrigatoriedade e bloqueio de lifecycle em composição permanecem futuros.
 
-* Objetivo: Definir as especializações de módulos e variantes sobre a parametrização raiz da família `landing_page`.
-* Status: Implementada no repositório e reconciliada no PR #590; pendente do gate final do Analista e de merge humano. Os nove módulos, as dez variantes aprovadas, seus fields, mapas de fontes, perfis de funil, deltas, lifecycle, schema, resolver e validação executável permanecem repo-only e em `hypothesis`.
-* Registros do recorte:
-  * Banco: N/A.
-  * Repositório — criados: `lib/conversion-content/landing-page/module-catalog/contracts.ts`, `registry.ts`, `schema.ts`, `resolver.ts`, `validation-cases.ts` e `index.ts`.
-  * Repositório — ajustados: `lib/conversion-content/index.ts` e `package.json`.
-  * Documentação — criado: `docs/lousa-plano-base-e18-5.md`.
-  * Documentação — ajustados no encerramento: `docs/base-tecnica.md` e `docs/roadmap.md`.
-  * Excluídos: N/A.
-  * Updates aplicados: N/A.
-* Limites preservados: sem payload de conteúdo, banco, migration, rota, UI, renderer, composição, persistência, automação, job ou consumo E19/E20; seleção, ordem, obrigatoriedade e bloqueio de lifecycle em composição permanecem futuros.
+18.5.2 Registros do recorte
+- Banco: N/A.
+- Repositório:
+  - Criados:
+    - `lib/conversion-content/landing-page/module-catalog/contracts.ts`
+    - `lib/conversion-content/landing-page/module-catalog/index.ts`
+    - `lib/conversion-content/landing-page/module-catalog/registry.ts`
+    - `lib/conversion-content/landing-page/module-catalog/resolver.ts`
+    - `lib/conversion-content/landing-page/module-catalog/schema.ts`
+    - `lib/conversion-content/landing-page/module-catalog/validation-cases.ts`
+  - Ajustados:
+    - `lib/conversion-content/index.ts`
+    - `package.json`
+  - Excluídos: N/A.
+- Updates:
+  - Aplicados: `prod#17` — WCAG 2.2 como baseline de acessibilidade, incorporado exclusivamente ao contrato abstrato de `faq.accordion@v1` para operação por teclado, exposição do estado expandido ou recolhido, associação acessível e preservação de foco.
+
+18.5.3 Módulos e funções estruturais
+- Status: Implementada.
+- Conteúdo:
+  - Catálogo interno `landing_page@v1`, compatível com a parametrização raiz v1.
+  - Nove módulos versionados: `hero`, `trust_bar`, `problem_solution`, `offer`, `process`, `technical_assurance`, `social_proof`, `faq` e `final_cta`.
+  - Cada módulo registra função estrutural, fronteiras, invariantes, lifecycle inicial `hypothesis` e propósito `controlled_test`.
+  - Identidades e valores estruturais são fechados e imutáveis, sem colisão com `commercial_activation`.
+  - Módulos não registram taxon, campanha, plano, copy, ativo, ordem, canal ou destino concreto.
+
+18.5.4 Campos, estruturas e cardinalidades
+- Status: Implementada.
+- Conteúdo:
+  - Gramática fechada de fields de texto, coleção, ação, imagem e referência técnica.
+  - Fields registram `fieldKind`, `fieldKey`, path, policy, cardinalidade, `semanticRole` e suporte quando aplicável.
+  - Fields e cardinalidades pertencem diretamente aos contratos das variantes; módulos não possuem catálogo paralelo de fields.
+  - Coleção aninhada e destino concreto permanecem fora da v1.
+  - Field, path, shape, cardinalidade, policy ou combinação não autorizada falham fechado.
+
+18.5.5 Variantes e critérios de criação
+- Status: Implementada.
+- Conteúdo:
+  - Nove variantes `standard@v1` e a variante adicional `faq.accordion@v1`.
+  - Cada variante pertence a um único módulo e versão compatível e aponta para seu próprio contrato de fields.
+  - Capabilities estruturais aprovadas: `primary_action`, `image_asset` e `accordion_interaction`.
+  - `faq.standard@v1` e `faq.accordion@v1` preservam contratos independentes; o Accordion registra contrato abstrato WCAG 2.2 de teclado, estado expandido, associação acessível e foco.
+  - Hero e Final CTA declaram `actionCompatibility.supportsPrimaryConversionForm = false`, sem fallback de canal.
+  - Diferenças apenas de taxon, copy, plano, campanha, ativo, ordem ou quantidade não criam variante.
+
+18.5.6 Especializações sobre a parametrização raiz
+- Status: Implementada.
+- Conteúdo:
+  - Compatibilidade explícita de módulos e variantes com a versão raiz v1.
+  - Precedência efetiva `raiz → delta do módulo → delta da variante`.
+  - Deltas de módulo e variante podem apenas restringir faixas e limites da raiz; ampliação de limite absoluto exige nova versão raiz.
+  - O resolver preserva a raiz original e devolve também a raiz efetiva após as especializações.
+  - Contrato ausente, incompatível, inválido ou que amplie o contrato-pai falha fechado.
+  - Os boundaries públicos existentes de `landingPageRoot`, `landingPageResearch` e `landingPageInputCatalog` permanecem preservados.
+
+18.5.7 Mapa de fontes de copy
+- Status: Implementada.
+- Conteúdo:
+  - Cada field textual possui `copySourceMap` fechado no próprio contrato da variante, sem mapa global duplicado.
+  - Cada mapa admite até duas fontes primárias e uma fonte auxiliar.
+  - Fontes de pesquisa usam `endCustomer.researches[].items[]`; conteúdo factual operacional usa `operational_evidence`.
+  - O conjunto aprovado contempla `commercial_keywords`, `faq_questions` e `narrative_arc` nos fields correspondentes.
+  - Quote e attribution de Social Proof permanecem vinculados à referência de evidência operacional do próprio item.
+  - Source mode, path, item key, quantidade, duplicação ou mapa não autorizado falham fechado.
+
+18.5.8 Perfis de copy por intenção e funil
+- Status: Implementada.
+- Conteúdo:
+  - Perfis BOFU, MOFU e TOFU com vocabulários fechados próprios.
+  - Em cada perfil, todo treatment aparece exatamente uma vez como permitido, restrito ou proibido.
+  - `ctaMode` é literal e específico por perfil: `direct_next_step`, `non_coercive_direct` ou `low_pressure`.
+  - `emphasizeTreatments` permanece vazio nos perfis e em todos os deltas da v1; permissão não se converte implicitamente em ênfase.
+  - Deltas de módulo podem apenas restringir ou proibir treatments conhecidos, sem relaxar restrição ou proibição herdada.
+  - As variantes `faq.standard@v1` e `faq.accordion@v1` compartilham o mesmo delta do módulo `faq`.
+
+18.5.9 Ciclo de vida, compatibilidade e validação
+- Status: Implementada e aprovada.
+- Conteúdo:
+  - Namespace público `landingPageModuleCatalog` expõe somente tipos autorizados e `resolveLandingPageModuleCatalog`; registry e schema permanecem internos.
+  - Entrada runtime estrita e fail-closed para shape, versão, módulo, variante, perfil ou preset desconhecido, sem exceção não tratada.
+  - Presets raiz `balanced` e `compact` podem ser selecionados explicitamente.
+  - O resolver consulta o registry canônico, aplica as especializações da raiz e o delta do perfil e devolve somente o contrato completo da variante resolvida.
+  - Lifecycle da raiz, do módulo e da variante usa o vocabulário canônico `hypothesis`, `validated` e `deprecated` e permanece registrado separadamente; a E18.5 não implementa enforcement de composição nem lifecycle efetivo.
+  - Resultados são profundamente imutáveis, sem referência mutável compartilhada e sem fallback aproximado.
+  - Validação executável própria concluída com 23 casos, além das regressões de raiz, pesquisas, catálogo de entradas e ativação comercial.
+  - Comando canônico: `npm run validate:landing-page-module-catalog`.
 
 19. E19 — LP Builder
 - Objetivo: Consolidar a seção do Core responsável pela criação, edição e organização de landing pages. No recorte atual, limitar E19 à criação mínima de LP por conta com status inicial `draft`.
@@ -1986,6 +2064,8 @@ Repositório — Ajustados
   * O recorte não cria banco, rota, API, Server Action, UI, adapter de banco, entitlement, integração Stripe, valor operacional, snapshot, automação, agente ou job.
 
 99. Changelog
+v1.5.96 — 21/07/2026 — E18.5 reorganizada conforme `docs/template-roadmap.md`: registros de implementação movidos para 18.5.2 sem artefatos `docs/**`, `prod#17` registrado como update aplicado ao contrato abstrato de `faq.accordion@v1`, conteúdos implementados distribuídos entre 18.5.3 e 18.5.9 e status atualizado após aprovação e merge do PR #590.
+
 v1.5.95 — 21/07/2026 — E18.5 implementada e reconciliada como catálogo repo-only de nove módulos e dez variantes de `landing_page`, com fields e mapas por variante, perfis de funil fechados, resolução efetiva fail-closed e API pública mínima, pendente do gate final do Analista.
 
 v1.5.94 — 15/07/2026 — E20 criada no roadmap e 20.2 concluída com catálogo declarativo versionado de entradas de `landing_page` por taxon e plano, resolução repo-only, herança taxonômica, proveniência e falha fechada, sem banco, rota, UI ou valores operacionais.
