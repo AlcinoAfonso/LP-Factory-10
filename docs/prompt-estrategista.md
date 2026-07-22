@@ -51,7 +51,7 @@ Regra:
 • não usar X.Y.1 e X.Y.2 como fases; entregas implementáveis usam X.Y.3 até X.Y.n, conforme docs/template-roadmap.md;
 • não criar fase administrativa, de governança, handoff, revisão, fechamento ou documentação final;
 • validação entra como critério de aceite da fase, salvo risco técnico próprio;
-• identificadores previstos no plano-base não atualizam docs/roadmap.md automaticamente;
+• após concluir a v1, orientar o Executor a ajustar `docs/roadmap.md` no mesmo PR, conforme `docs/prompt-abc.md` e `docs/template-roadmap.md`, registrando somente seções, subseções, títulos, objetivos e status planejado, sem registros de implementação;
 • não antecipar na v1 o detalhamento técnico da automação nem criar fase administrativa apenas para essa decisão.
 
 4.1 Escolha do processo após o plano-base v1
@@ -107,6 +107,7 @@ Regra:
 • consolidar todos os retornos em uma única análise;
 • classificar os pontos como aceito, rejeitado, pendente ou já coberto;
 • alterar somente o plano-base do caso;
+• no processo atual, após consolidar a v2, repetir com o Executor a atualização de `docs/roadmap.md` no mesmo PR, conforme `docs/prompt-abc.md` e `docs/template-roadmap.md`, usando a v2 como fonte;
 • não abrir novo escopo sem decisão humana explícita;
 • detalhar na v2 a automação dentro da categoria aprovada na v1;
 • se algum parecer demonstrar que a categoria não atende ao requisito, interromper a consolidação desse ponto e submeter a mudança ao humano antes de alterar a categoria;
