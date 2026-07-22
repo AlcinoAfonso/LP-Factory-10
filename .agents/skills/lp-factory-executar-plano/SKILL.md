@@ -29,9 +29,9 @@ Exigir que a v2 esteja na `main` antes de qualquer implementação. O modo exper
 
 Para a próxima subseção ainda não aprovada:
 
-1. Confirmar objetivo, arquivos prováveis, escopo negativo e critérios de aceite do plano.
+1. Confirmar objetivo, arquivos prováveis, escopo negativo e critérios de aceite do plano. Antes de editar, confrontar o plano com o repositório real; se conflito, drift ou dependência alterar objetivo, escopo, arquitetura, banco ou comportamento do produto, não improvisar e encaminhar a incompatibilidade ao Analista no próprio workflow.
 2. Implementar somente o necessário para essa subseção; não antecipar a próxima.
-3. Executar as validações aplicáveis. Para código, executar `npm ci` uma vez no início do lote contínuo e repeti-lo somente se `package-lock.json`, dependências ou o estado de instalação mudarem; executar a validação própria e `npm run check` antes de cada gate. Para alterações exclusivamente documentais, justificar esses comandos como não aplicáveis.
+3. Executar as validações aplicáveis. Para código, executar `npm ci` uma vez no início do lote contínuo e repeti-lo somente se `package-lock.json`, dependências ou o estado de instalação mudarem; executar a validação própria e `npm run check` antes de cada gate. Para alterações exclusivamente documentais, justificar esses comandos como não aplicáveis. Quando aplicável, incluir no gate do Analista evidências de observabilidade mínima e smoke ou QA funcional; se a evidência não puder ser obtida automaticamente, o Analista decide se exige teste humano.
 4. Invocar `$lp-factory-avaliar-implementacao-analista` com o plano, o identificador, o diff e as evidências.
 5. Tratar `aprovado para avançar` como checkpoint: commitar com o trailer `LP-Factory-Phase: <identificador>` e atualizar código, título e resumo do mesmo PR draft para refletir o último checkpoint efetivamente publicado.
 6. Tratar `aprovado com correções obrigatórias` corrigindo somente o delta indicado e retornando ao mesmo Analista em `revisao_delta_implementacao`.
