@@ -1805,10 +1805,79 @@ A ferramenta ajuda a verificar o comportamento das políticas declaradas, mas n�
 
 ---
 
+
+## 64 — Supabase Pipelines para CDC analítico *(🧪 Public alpha; adoção condicional)*
+
+2026-07-21
+
+### Status no Projeto
+
+- Status: Não implementado — capacidade futura condicionada a destino analítico aprovado
+- Evidência: o LP Factory 10 usa Supabase Postgres como base transacional, mas não possui BigQuery, warehouse ou pipeline CDC aprovado no roadmap, na Base Técnica ou em `docs/services.md`
+
+### Descrição
+
+Supabase Pipelines é um serviço gerenciado de change data capture (CDC), apresentado oficialmente em dezembro de 2025 e disponibilizado em public alpha em 21/07/2026, que replica alterações do Postgres para destinos analíticos em quase tempo real. Na public alpha, BigQuery é o destino aberto a todos os planos pagos; ClickHouse, Snowflake e DuckLake dependem de acesso antecipado.
+
+A entrega é ao menos uma vez, inclui cópia inicial, filtros por tabela, coluna ou linha, suporte a mudanças de schema selecionadas e monitoramento pelo Dashboard. Os dados são replicados sem transformação.
+
+### Valor para o Projeto
+
+- Pode isolar consultas analíticas pesadas do banco transacional quando volume e relatórios futuros justificarem um warehouse.
+- Preserva uma alternativa gerenciada a exportações e pipelines CDC próprios.
+- Pode apoiar analytics históricos ou planos superiores sem alterar a stack transacional do Core.
+- Complementa o Supabase Postgres; não substitui agregações simples, exports pontuais nem a arquitetura atual.
+
+### Valor para o Usuário
+
+- Futuro e indireto: relatórios mais amplos sem transferir carga analítica pesada para o runtime transacional.
+
+### Limites no MVP
+
+- Não criar BigQuery, warehouse, replication slot, pipeline, credencial, job ou nova infraestrutura.
+- Public alpha, somente em planos pagos e com cobrança por hora e por volume replicado.
+- No destino BigQuery, cada tabela de origem precisa de chave primária incluída na publicação; colunas geradas não são suportadas e tipos customizados são replicados como texto.
+- Entrega ao menos uma vez exige tratamento de duplicidade no destino.
+- Replicação sem transformação não substitui modelagem, governança, LGPD, controle de acesso ou política de retenção.
+- Avaliar carga no WAL, recuperação, mudanças de schema, exposição de dados, região e dependência do destino.
+- Não usar para resolver analytics que continuem simples e seguros no Postgres.
+
+### Gatilho futuro de avaliação
+
+Avaliar somente quando houver:
+
+1. destino analítico aprovado e responsável operacional definido;
+2. volume ou consulta analítica que gere impacto mensurável no banco transacional;
+3. vantagem comprovada sobre agregações internas, exportação pontual ou job simples;
+4. custo, região, segurança, retenção, duplicidade e recuperação formalmente avaliados.
+
+### Ações Recomendadas
+
+1. Manter como opção futura e condicional.
+2. Não implementar no MVP atual.
+3. Reavaliar maturidade, destinos e preços quando surgir caso analítico real.
+4. Comparar com alternativas mais simples antes de adotar.
+
+### Fonte Oficial
+
+- [Supabase Changelog — Public Alpha: Supabase Pipelines](https://supabase.com/changelog/48158-public-alpha-supabase-pipelines)
+- [Supabase Blog — Introducing Supabase Pipelines](https://supabase.com/blog/introducing-supabase-pipelines)
+
+### Registro (Tipo C — Infra/Dados)
+
+- Status: PENDENTE
+- Verificado em: 2026-07-22
+- Ambiente futuro: Supabase Pipelines + destino analítico aprovado
+- Evidência: changelog oficial de 21/07/2026, anúncio oficial de dezembro de 2025 e ausência de warehouse/CDC no repositório
+- Observação: o registro não autoriza implementação, mudança de stack ou nova infraestrutura.
+
+---
+
 ## Registro da rodada — Supabase Update July 2026
 
 ### Updates incorporados ao catálogo ativo
 
+- Supabase Pipelines: criado como `supa#64`, condicionado a destino analítico e carga real que justifiquem CDC.
 - MongoDB Foreign Data Wrapper: incorporado ao `supa#4`.
 - Realtime Broadcast com payload binário: registrado como nota complementar do `supa#26`, com maturidade e eventual adoção separadas.
 - Audit Log Drains: incorporado ao `supa#46`.
@@ -1823,6 +1892,8 @@ A ferramenta ajuda a verificar o comportamento das políticas declaradas, mas n�
 - `log_connections` off por padrão: configuração operacional a ser tratada no Supabase e em `docs/platform-config.md`, não item permanente do catálogo.
 - Connect para `@supabase/server`: SDK não adotado; o projeto usa `@supabase/ssr`.
 - Docker self-hosted: projeto usa Supabase Cloud; configuração local já está em Postgres 17 e contempla `/auth/v1`.
+- Envoy como gateway padrão do Supabase self-hosted: não afeta o projeto hospedado no Supabase Cloud e não constitui capacidade aproveitável separada.
+- `@supabase/supabase-js` exigirá TypeScript 5.0+ a partir de 31/01/2027: o projeto já fixa TypeScript `5.5.4`, portanto não há ação nem item permanente de catálogo.
 - Heym: workflow engine sem caso aprovado e com dependência/licenciamento próprios.
 
 ### Limite da rodada
