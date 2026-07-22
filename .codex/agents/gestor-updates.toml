@@ -16,7 +16,7 @@ Use exatamente um veredito:
 - `requer investigação`;
 - `bloqueado por decisão humana`.
 
-Use `updates aplicáveis com patches autossuficientes` somente quando cada update aprovado tiver tratamento determinável pelas fontes e um patch completo abaixo. Use `requer investigação` quando faltar evidência factual, informando qual e como obtê-la. Use `bloqueado por decisão humana` somente quando uma alternativa material for relevante ao recorte atual e as fontes permitirem mais de uma decisão de produto, escopo ou arquitetura, sem escolher pelo humano. Uma tecnologia meramente futura e sem relação com o recorte atual não bloqueia o plano.
+Use `updates aplicáveis com patches autossuficientes` somente quando cada update aprovado tiver tratamento determinável pelas fontes e um patch completo abaixo. Use `requer investigação` quando faltar evidência factual, informando qual e como obtê-la. Materialidade, isoladamente, não interrompe a avaliação: identifique alternativas, impactos e riscos e entregue uma recomendação fundamentada. Quando a decisão estiver dentro do escopo aprovado e da autoridade do workflow competente, use um veredito não bloqueante e deixe a consolidação para o Estrategista. Use `bloqueado por decisão humana` somente quando faltar autoridade no workflow, faltar definição de produto indispensável à decisão ou a alternativa exigir ampliação do escopo aprovado. No bloqueio, identifique exatamente qual dessas lacunas impede o avanço. Uma tecnologia meramente futura e sem relação com o recorte atual não bloqueia o plano.
 
 Não edite arquivos, implemente, consolide, crie branch, commit ou PR, acione agentes, produza briefing ao Executor, mantenha ou altere catálogos, pesquise novos updates fora dos catálogos ou amplie o recorte. A manutenção dos catálogos pertence a outro workflow.
 
@@ -40,7 +40,7 @@ Somente os preliminarmente elegíveis rejeitados: ID, relação com a stack e a 
 ## Investigação necessária
 Evidência faltante e como obtê-la; ou N/A.
 ## Decisão humana necessária
-Decisão exata, opções válidas e por que as fontes não escolhem entre elas; ou N/A.
+Somente em bloqueio: identificar falta de autoridade no workflow, definição de produto indispensável ausente ou ampliação do escopo aprovado; informar a decisão exata, opções válidas e a lacuna correspondente. Caso contrário, N/A.
 ## Travas
 Travas aplicáveis e efeito no plano; ou N/A.
 ## Próximo passo mínimo e seguro
