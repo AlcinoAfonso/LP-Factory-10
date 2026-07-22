@@ -34,27 +34,39 @@ Antes de registrar um item, confirmar fonte oficial, valor para o projeto, plano
 ## github#4 — Workflows em PRs criados por bots após aprovação *(🟩 Estável)*
 
 2026-06-13
+Atualizado em 2026-07-22
 
 ### Status no Projeto
 
-- Status: Não implementado.
+- Status: Aplicável — automação existente; validação operacional pendente.
+- Evidência: `.github/workflows/pipeline-docs-apply-report.yml` usa `peter-evans/create-pull-request@v6` com `contents: write` e `pull-requests: write` para criar PRs automáticos; `.github/workflows/security.yml` executa em `pull_request` para `main` e `macro`.
 
 ### Descrição
 
-PRs criados por `github-actions[bot]` agora podem executar workflows de CI/CD após aprovação de um usuário com permissão de escrita no repositório.
+PRs criados por `github-actions[bot]` podem executar workflows de CI/CD após aprovação de um usuário com permissão de escrita no repositório. A aprovação libera a execução antes impedida pelas proteções contra automações recursivas; ela não aprova nem faz merge do PR.
 
 ### Valor para o Projeto
 
-- Permite que PRs criados pelo bot executem workflows após revisão e aprovação humana.
+- O caso deixou de ser apenas hipotético: o pipeline documental já cria PRs por automação.
+- Permite que checks de PR, incluindo o workflow de segurança quando aplicável, sejam executados após aprovação humana.
+- Preserva revisão humana e evita ampliar permissões ou usar credencial alternativa apenas para disparar workflows.
 
 ### Ações Recomendadas
 
-1. Avaliar somente quando automações do projeto criarem PRs pelo bot.
+1. Na próxima execução real do `pipeline-docs-apply-report`, verificar se o PR criado pelo bot solicita aprovação de workflows.
+2. Quando solicitado, um usuário com permissão de escrita deve revisar a origem do PR e aprovar apenas a execução dos checks esperados.
+3. Registrar o comportamento operacional depois da primeira validação real.
+4. Não usar este recurso para aprovação automática, merge automático ou ampliação de permissões.
+
+### Limites
+
+- A aprovação do workflow não substitui revisão do diff nem autorização de merge.
+- O comportamento só é relevante para PR criado pelo bot que precise disparar outro workflow.
+- O registro não autoriza alterar workflows ou tokens.
 
 ### Fonte Oficial
 
 - [Bot-created pull requests can run workflows if approved](https://github.blog/changelog/2026-06-11-bot-created-pull-requests-can-run-workflows-if-approved/)
-
 ---
 
 ## github#5 — Copilot CLI em GitHub Actions com GITHUB_TOKEN *(🟨 Avaliação futura)*
