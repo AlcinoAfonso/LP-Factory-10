@@ -18,7 +18,7 @@ Executar duas passagens sequenciais com uma única instância do custom agent `a
    - matriz de consolidação.
 3. Resolver versões em PR ou commit pelo SHA, nunca pela cópia local conveniente. Se v1 e v2 compartilharem path, diferenciá-las por referências imutáveis.
 4. Parar diante de artefato ausente, caso divergente ou fonte conceitual ambígua; não reconstruir por inferência.
-5. Neste recorte, exigir pareceres do Gestor Estrutural e do Gestor de Updates. Não exigir Gestor de Automações.
+5. Exigir pareceres do Gestor Estrutural e do Gestor de Updates. Exigir também o parecer do Gestor de Automações somente quando a v1 contiver ao menos uma fase marcada como `Automação: sim`; caso contrário, exigir o registro `N/A`.
 6. Registrar o estado Git anterior à delegação.
 
 ## Validar a matriz
@@ -58,6 +58,12 @@ Conferir o estado Git. Se faltar passagem ou conclusão, devolver o conteúdo e 
 ## Revisar correções
 
 Usar `revisao_delta` no mesmo Analista, entregando versões ou diff e correções solicitadas. Retornar ao especialista somente diante de questão material nova ou conclusão especializada alterada. Liberar o gate apenas após `aprovado para merge do plano-base v2`.
+
+## Revisar o roadmap final
+
+Após a primeira aprovação da v2, continuar no mesmo Analista em `revisao_delta`. Entregar a v2 aprovada, o snapshot imutável do roadmap anterior, o ABC emitido por `$lp-factory-abc`, o roadmap resultante, `docs/prompt-abc.md` e `docs/template-roadmap.md`.
+
+Auditar somente se o roadmap corresponde à estrutura planejada da v2, se o delta é mínimo, se respeita a hierarquia e a residência documental e se não registra implementação ou evidência operacional. Quando o ABC indicar `SEM ALTERAÇÕES NECESSÁRIAS`, confirmar que o snapshot já corresponde à v2. Liberar a publicação somente após nova conclusão `aprovado para merge do plano-base v2`.
 
 ## Limites
 

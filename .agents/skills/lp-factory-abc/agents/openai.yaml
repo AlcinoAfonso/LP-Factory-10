@@ -1,3 +1,4 @@
 interface:
   display_name: "LP Factory ABC v2"
-  short_description: "Generate concise delta-only ABC updates for LP Factory canonical docs."
+  short_description: "Gera deltas canônicos mínimos e executáveis"
+  default_prompt: "Use $lp-factory-abc para gerar o menor delta canônico a partir da fonte e do documento-alvo informados."
