@@ -1,8 +1,8 @@
 # Orquestração de planos-base no Codex
 
-Data: 20/07/2026
-Versão: v0.8
-Status: Fluxos de plano e execução validados no experimento E18.5; fluxo normal corrigido para operar sem PRs empilhados; fechamento documental pendente de decisão.
+Data: 22/07/2026
+Versão: v0.9
+Status: Fluxos de plano e execução validados no experimento E18.5; Gestor de Automações integrado de forma condicional e pendente de teste próprio; fechamento documental pendente de decisão.
 
 ## 1. Objetivo e função deste documento
 
@@ -23,7 +23,7 @@ O resultado esperado é reduzir coordenação manual e cópia de contexto entre 
 
 Este documento será a fonte humana do desenho aprovado. A skill executará o workflow definido aqui; cada custom agent aplicará seu contrato runtime; e o task principal permanecerá responsável pela coordenação, pelas alterações no repositório e pela entrega ao humano.
 
-O teste estrutural isolado da seção 2 foi validado. Os contratos do Gestor Estrutural e do Analista foram otimizados, o Gestor de Updates foi integrado e a execução E18.5.3–E18.5.9 foi concluída com gates por subseção e gate final de testes. Os PRs empilhados usados nessa comparação são exceção histórica e não integram o fluxo normal.
+O teste estrutural isolado da seção 2 foi validado. Os contratos do Gestor Estrutural e do Analista foram otimizados, o Gestor de Updates foi integrado, o Gestor de Automações foi adicionado condicionalmente e a execução E18.5.3–E18.5.9 foi concluída com gates por subseção e gate final de testes. Os PRs empilhados usados nessa comparação são exceção histórica e não integram o fluxo normal.
 
 ## 2. Primeiro passo: teste do Gestor Estrutural
 
@@ -199,7 +199,7 @@ Este passo não inclui:
 
 O terceiro passo reúne os dois testes anteriores em uma única entrada humana. Foi criada a skill `lp-factory-orquestrar-plano`, localizada em `.agents/skills/lp-factory-orquestrar-plano/`.
 
-Ela não cria um custom agent de orquestração. O task comum permanece como orquestrador e executor, enquanto `gestor-estrutural`, `gestor-updates` e `analista` permanecem read-only e aplicam seus contratos runtime.
+Ela não cria um custom agent de orquestração. O task comum permanece como orquestrador e executor, enquanto `gestor-estrutural`, `gestor-updates`, `gestor-automacoes` e `analista` permanecem read-only e aplicam seus contratos runtime.
 
 ### 4.1 Entrada mínima
 
@@ -227,19 +227,28 @@ No experimento E18.5, o destino usado foi:
 2. Atualizar a `main` e criar a branch da v2 no checkout simples ou selecionar uma única worktree de automação quando houver frente paralela.
 3. Acionar o Gestor Estrutural e preservar o parecer integral.
 4. Acionar o Gestor de Updates sobre a mesma v1 e preservar o parecer integral.
-5. Aplicar os patches autossuficientes dos dois especialistas, produzir a v2 e preparar a matriz de consolidação, sem nova rodada especializada padrão.
-6. Criar referência imutável da v2 e acionar o Analista sem pareceres ou matriz.
-7. Depois da Passagem 1, gravar a matriz e entregá-la com os dois pareceres ao mesmo Analista.
-8. Corrigir ou encaminhar pendências conforme a conclusão formal.
-9. No fluxo normal, publicar um único PR draft da v2 contra `main` somente após aprovação do Analista.
+5. Acionar o Gestor de Automações somente se alguma fase estiver marcada como `Automação: sim`; caso contrário, registrar `N/A`.
+6. Aplicar os patches autossuficientes dos especialistas acionados, produzir a v2 e preparar a matriz de consolidação, sem nova rodada especializada padrão.
+7. Criar referência imutável da v2 e acionar o Analista sem pareceres ou matriz.
+8. Depois da Passagem 1, gravar a matriz e entregá-la com os pareceres dos especialistas acionados ao mesmo Analista.
+9. Corrigir ou encaminhar pendências conforme a conclusão formal.
+10. No fluxo normal, publicar um único PR draft da v2 contra `main` somente após aprovação do Analista.
 
 A matriz não é gravada antes da Passagem 1. Isso impede que a avaliação independente seja contaminada por um arquivo acessível na própria worktree.
 
 ### 4.4 Limites do fluxo de plano integrado
 
-Este recorte inclui Gestor Estrutural, Gestor de Updates, consolidação pelo orquestrador e gate do Analista. O Gestor de Updates consulta obrigatoriamente os quatro catálogos vigentes, mas não os mantém nem pesquisa novos updates fora deles. Gestor de Automações continua fora do fluxo até teste próprio.
+Este recorte inclui Gestor Estrutural, Gestor de Updates, Gestor de Automações quando aplicável, consolidação pelo orquestrador e gate do Analista. O Gestor de Updates consulta obrigatoriamente os quatro catálogos vigentes, mas não os mantém nem pesquisa novos updates fora deles. O Gestor de Automações é acionado exclusivamente por `Automação: sim`, avalia somente essas fases e não pesquisa recursos sem caso concreto.
 
 O teste E18.5 foi considerado válido porque uma instrução humana curta produziu dois pareceres especializados rastreáveis, uma v2 rastreável e duas passagens não contaminadas do Analista, sem edição feita pelos custom agents. O PR filho usado na comparação permanece como evidência excepcional; o workflow não permite novos PRs empilhados. O modo experimental altera apenas os checkpoints e também exige a versão do plano incorporada à `main` antes de qualquer mutação.
+
+### 4.5 Entidades do Gestor de Automações
+
+1. `.codex/agents/gestor-automacoes.toml`: contrato runtime read-only, baseado na governança de `docs/gestor-automations.md`.
+2. `.agents/skills/lp-factory-avaliar-plano-automacoes/`: seleção das fases aplicáveis, delegação, validação e devolução do parecer.
+3. `.agents/skills/lp-factory-orquestrar-plano/SKILL.md`: gatilho condicional, consolidação e encaminhamento ao Analista.
+
+Aprovação humana operacional indicada pelo especialista vira requisito do plano e não interrompe automaticamente a orquestração. Escolhas materiais são registradas para avaliação do Analista, que decide se existe bloqueio humano.
 
 ## 5. Quarto passo: execução end-to-end do plano aprovado
 

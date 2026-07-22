@@ -18,7 +18,7 @@ Executar duas passagens sequenciais com uma única instância do custom agent `a
    - matriz de consolidação.
 3. Resolver versões em PR ou commit pelo SHA, nunca pela cópia local conveniente. Se v1 e v2 compartilharem path, diferenciá-las por referências imutáveis.
 4. Parar diante de artefato ausente, caso divergente ou fonte conceitual ambígua; não reconstruir por inferência.
-5. Neste recorte, exigir pareceres do Gestor Estrutural e do Gestor de Updates. Não exigir Gestor de Automações.
+5. Exigir pareceres do Gestor Estrutural e do Gestor de Updates. Exigir também o parecer do Gestor de Automações somente quando a v1 contiver ao menos uma fase marcada como `Automação: sim`; caso contrário, exigir o registro `N/A`.
 6. Registrar o estado Git anterior à delegação.
 
 ## Validar a matriz

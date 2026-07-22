@@ -1,6 +1,6 @@
 ---
 name: lp-factory-orquestrar-plano
-description: Orquestrar a produção e o gate de um plano-base v2 do LP Factory 10 a partir de uma v1 já incorporada à main, usando o Gestor Estrutural, o Gestor de Updates e o Analista. Usar quando o humano informar o PR ou path da v1 e pedir para executar, orquestrar ou automatizar a revisão do plano.
+description: Orquestrar a produção e o gate de um plano-base v2 do LP Factory 10 a partir de uma v1 já incorporada à main, usando o Gestor Estrutural, o Gestor de Updates, o Gestor de Automações quando aplicável e o Analista. Usar quando o humano informar o PR ou path da v1 e pedir para executar, orquestrar ou automatizar a revisão do plano.
 ---
 
 # Orquestrar plano-base v2
@@ -26,7 +26,8 @@ Antes de executar:
 1. Ler `docs/orquestracao-plano-base.md`.
 2. Ler e seguir `.agents/skills/lp-factory-avaliar-plano-estrutura/SKILL.md` na delegação estrutural.
 3. Ler e seguir `.agents/skills/lp-factory-avaliar-plano-updates/SKILL.md` na avaliação de updates.
-4. Ler e seguir `.agents/skills/lp-factory-avaliar-plano-analista/SKILL.md` no gate do Analista.
+4. Ler e seguir `.agents/skills/lp-factory-avaliar-plano-automacoes/SKILL.md` quando alguma fase estiver marcada como `Automação: sim`.
+5. Ler e seguir `.agents/skills/lp-factory-avaliar-plano-analista/SKILL.md` no gate do Analista.
 
 Não copiar nem reinterpretar os contratos canônicos desses arquivos.
 
@@ -66,6 +67,7 @@ O task principal pode estar aberto no projeto local padrão. Direcionar as muta�
 5. Registrar `N/A` quando a inexistência de plano conceitual for confirmada; não escolher documento por semelhança.
 6. Identificar decisões humanas registradas que sejam fontes do plano.
 7. Validar que cada fase executável use exatamente o identificador da subseção do roadmap; não aceitar aliases ordinais como `Fase 1` nem agrupamento de subseções independentes.
+8. Identificar se existe ao menos uma fase marcada exatamente como `Automação: sim`; essa marca é o único gatilho automático do Gestor de Automações.
 
 Parar quando faltar uma decisão material que altere produto, escopo ou arquitetura.
 
@@ -91,14 +93,23 @@ Parar quando faltar uma decisão material que altere produto, escopo ou arquitet
 6. Produzir a v2 quando o veredito for `nenhum update aplicável` ou `updates aplicáveis com patches autossuficientes`, mantendo cada update e patch rastreável.
 7. Não retornar ao Gestor de Updates durante a consolidação. Nova rodada só é cabível se a v2 introduzir questão material de updates não coberta pelo parecer.
 
-Não acionar Gestor de Automações neste recorte.
+### 4.3 Gestor de Automações
+
+1. Se nenhuma fase estiver marcada como `Automação: sim`, registrar `N/A` e não acionar o especialista.
+2. Se houver ao menos uma, executar `lp-factory-avaliar-plano-automacoes` sobre a mesma v1 congelada, entregando o plano completo e destacando somente as fases aplicáveis.
+3. Acionar exatamente um custom agent `gestor-automacoes` e preservar integralmente seu parecer.
+4. Não realizar avaliação de automações paralela no task principal.
+5. Parar antes da v2 somente se o handoff estiver incompleto ou se o veredito for `requer investigação factual`.
+6. Em `automação aplicável com patches autossuficientes`, exigir patch completo para cada decisão aplicável.
+7. Em `requer validação material pelo Analista`, preservar a pendência na v2 e na matriz; não abrir gate humano nem decidir no task principal.
+8. Não retornar ao Gestor de Automações durante a consolidação. Nova rodada só é cabível se a v2 introduzir questão material de automação não coberta pelo parecer.
 
 ## 5. Produzir a v2 e a matriz
 
 1. Editar somente o plano correspondente dentro da worktree de automação.
-2. Preservar objetivo, decisões válidas e limites da v1; incorporar literalmente ou de forma inequivocamente equivalente os patches estruturais e de updates, usando somente tratamentos sustentados pelos pareceres e pelas fontes competentes.
+2. Preservar objetivo, decisões válidas e limites da v1; incorporar literalmente ou de forma inequivocamente equivalente os patches estruturais, de updates e, quando aplicável, de automações, usando somente tratamentos sustentados pelos pareceres e pelas fontes competentes.
 3. Não implementar fases nem ampliar silenciosamente o escopo.
-4. Preparar uma matriz com uma linha por achado estrutural e por update preliminarmente elegível, usando o contrato da skill `lp-factory-avaliar-plano-analista`.
+4. Preparar uma matriz com uma linha por achado estrutural, por update preliminarmente elegível e por decisão do Gestor de Automações, quando acionado, usando o contrato da skill `lp-factory-avaliar-plano-analista`.
 5. Manter a matriz fora do alcance do Analista até ele concluir a Passagem 1:
    - não incluí-la no prompt ou nos turnos herdados;
    - não gravá-la na worktree antes da conclusão independente;
@@ -111,7 +122,7 @@ Não acionar Gestor de Automações neste recorte.
 1. Executar a Passagem 1 de `lp-factory-avaliar-plano-analista` com v1, v2, plano conceitual ou `N/A`, decisões registradas e fontes do caso, sem pareceres especializados ou matriz.
 2. Preservar integralmente a resposta independente.
 3. Depois da Passagem 1, gravar a matriz em `docs/matriz-consolidacao-<caso>.md`, validar e criar novo checkpoint. No modo `experimental`, mantê-la como evidência; no fluxo normal, usá-la somente até a conclusão do Analista.
-4. Continuar no mesmo Analista e entregar os pareceres completos do Gestor Estrutural e do Gestor de Updates, além da matriz, para a Passagem 2.
+4. Continuar no mesmo Analista e entregar os pareceres completos do Gestor Estrutural, do Gestor de Updates e, quando acionado, do Gestor de Automações, além da matriz, para a Passagem 2.
 5. Preservar integralmente a auditoria e a conclusão formal.
 6. No fluxo normal, após aprovação final, resumir a rastreabilidade no PR e remover a matriz antes da publicação final; não agendar remoção posterior.
 
@@ -143,6 +154,7 @@ Apresentar:
 - worktree e branch de automação usadas;
 - conclusão integral do Gestor Estrutural;
 - parecer integral do Gestor de Updates;
+- parecer integral do Gestor de Automações ou `N/A`;
 - Passagens 1 e 2 do Analista;
 - arquivos alterados;
 - commits e validações;
