@@ -1817,7 +1817,7 @@ A ferramenta ajuda a verificar o comportamento das políticas declaradas, mas n�
 
 ### Descrição
 
-Supabase Pipelines é um serviço gerenciado de change data capture (CDC) que replica alterações do Postgres para destinos analíticos em quase tempo real. Na public alpha, BigQuery é o destino aberto a todos os planos pagos; ClickHouse, Snowflake e DuckLake dependem de acesso antecipado.
+Supabase Pipelines é um serviço gerenciado de change data capture (CDC), apresentado oficialmente em dezembro de 2025 e disponibilizado em public alpha em 21/07/2026, que replica alterações do Postgres para destinos analíticos em quase tempo real. Na public alpha, BigQuery é o destino aberto a todos os planos pagos; ClickHouse, Snowflake e DuckLake dependem de acesso antecipado.
 
 A entrega é ao menos uma vez, inclui cópia inicial, filtros por tabela, coluna ou linha, suporte a mudanças de schema selecionadas e monitoramento pelo Dashboard. Os dados são replicados sem transformação.
 
@@ -1836,6 +1836,7 @@ A entrega é ao menos uma vez, inclui cópia inicial, filtros por tabela, coluna
 
 - Não criar BigQuery, warehouse, replication slot, pipeline, credencial, job ou nova infraestrutura.
 - Public alpha, somente em planos pagos e com cobrança por hora e por volume replicado.
+- No destino BigQuery, cada tabela de origem precisa de chave primária incluída na publicação; colunas geradas não são suportadas e tipos customizados são replicados como texto.
 - Entrega ao menos uma vez exige tratamento de duplicidade no destino.
 - Replicação sem transformação não substitui modelagem, governança, LGPD, controle de acesso ou política de retenção.
 - Avaliar carga no WAL, recuperação, mudanças de schema, exposição de dados, região e dependência do destino.
@@ -1859,14 +1860,15 @@ Avaliar somente quando houver:
 
 ### Fonte Oficial
 
-- [Supabase Changelog — Supabase Pipelines](https://supabase.com/changelog)
+- [Supabase Changelog — Public Alpha: Supabase Pipelines](https://supabase.com/changelog/48158-public-alpha-supabase-pipelines)
+- [Supabase Blog — Introducing Supabase Pipelines](https://supabase.com/blog/introducing-supabase-pipelines)
 
 ### Registro (Tipo C — Infra/Dados)
 
 - Status: PENDENTE
 - Verificado em: 2026-07-22
 - Ambiente futuro: Supabase Pipelines + destino analítico aprovado
-- Evidência: changelog oficial de 21/07/2026 e ausência de warehouse/CDC no repositório
+- Evidência: changelog oficial de 21/07/2026, anúncio oficial de dezembro de 2025 e ausência de warehouse/CDC no repositório
 - Observação: o registro não autoriza implementação, mudança de stack ou nova infraestrutura.
 
 ---
@@ -1890,6 +1892,8 @@ Avaliar somente quando houver:
 - `log_connections` off por padrão: configuração operacional a ser tratada no Supabase e em `docs/platform-config.md`, não item permanente do catálogo.
 - Connect para `@supabase/server`: SDK não adotado; o projeto usa `@supabase/ssr`.
 - Docker self-hosted: projeto usa Supabase Cloud; configuração local já está em Postgres 17 e contempla `/auth/v1`.
+- Envoy como gateway padrão do Supabase self-hosted: não afeta o projeto hospedado no Supabase Cloud e não constitui capacidade aproveitável separada.
+- `@supabase/supabase-js` exigirá TypeScript 5.0+ a partir de 31/01/2027: o projeto já fixa TypeScript `5.5.4`, portanto não há ação nem item permanente de catálogo.
 - Heym: workflow engine sem caso aprovado e com dependência/licenciamento próprios.
 
 ### Limite da rodada
