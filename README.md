@@ -48,7 +48,7 @@
 • A simplicidade do MVP limita a implementação do momento, não o radar tecnológico nem a preservação de diferenciais estratégicos para a evolução dos planos.
 • Avaliação ou catalogação não autoriza implementação, mudança de stack, nova infraestrutura nem ampliação de escopo.
 • Em cada plano-base, fase ou recorte, o Gestor de Updates recomenda a aplicabilidade dos recursos catalogados, e o Estrategista decide sua consolidação no plano-base dentro do escopo aprovado.
-• Decisões materiais de produto, arquitetura ou ampliação de escopo permanecem sujeitas à decisão humana.
+• A intervenção humana é necessária somente quando faltar autoridade ou definição indispensável de produto, ou quando houver ampliação do escopo aprovado; a materialidade, isoladamente, não constitui bloqueio.
 
 1.5. Modelo de oferta
 • Planos em camadas (Starter → Lite → Pro → Ultra), com capacidades escalando ao longo do tempo.
