@@ -30,7 +30,7 @@ Somente fontes efetivamente inspecionadas.
 ## Veredito
 Um veredito permitido.
 ## Updates preliminarmente elegíveis
-Para cada item: ID, relação com a stack e a arquitetura, horizonte e relação objetiva com o recorte; use N/A quando não houver.
+Para cada item: ID, relação com a stack e a arquitetura, horizonte, relação objetiva com o recorte e motivo da aplicabilidade ou não; use N/A quando não houver.
 ## Updates aprovados
 Para cada update: ID, tipo de uso, local de aplicação, motivo e limite de escopo; use N/A quando não houver.
 ## Patches aplicáveis pelo orquestrador
