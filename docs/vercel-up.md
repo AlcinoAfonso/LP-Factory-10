@@ -249,6 +249,7 @@ Observação de varredura oficial: Vercel Flags segments podem ser gerenciados p
 ## 21 — Vercel Private Blob *(🟩 GA)*
 
 2026-06-30
+Atualizado em 2026-07-14
 
 ### Status no Projeto
 
@@ -259,21 +260,35 @@ Observação de varredura oficial: Vercel Flags segments podem ser gerenciados p
 
 Storage privado da Vercel para arquivos sensíveis, com controle de acesso, Signed URLs e autenticação OIDC.
 
+Desde julho de 2026, leituras de objetos privados podem solicitar consistência explícita com `useCache: false` em `get()` ou `presignUrl()`. O bypass é útil após sobrescrever um pathname existente, quando a leitura padrão pode retornar a versão em cache por até 60 segundos.
+
 ### Valor para o Projeto
 
 - Pode ser aproveitado em casos futuros de arquivos privados, exportações, relatórios, anexos, documentos internos, invoices ou memória de agentes.
 - Pode reduzir necessidade de expor arquivos sensíveis por URLs públicas.
 - OIDC reduz dependência de tokens estáticos em alguns fluxos.
+- A leitura consistente pode evitar conteúdo antigo em relatórios, memória de agentes ou arquivos substituídos no mesmo pathname.
 
 ### Valor para o Usuário
 
 - Acesso mais seguro a arquivos privados quando houver necessidade real no produto.
+
+### Limites no MVP
+
+- `useCache: false` ignora o CDN, pode aumentar a latência e gera Fast Origin Transfer.
+- O recurso exige `@vercel/blob` compatível; a publicação oficial indica a versão `2.6.1`.
+- Não adotar Vercel Blob ou criar storage novo apenas para obter leitura consistente.
 
 ### Ações Recomendadas
 
 1. Manter como recurso aproveitável por caso.
 2. Não adotar no MVP sem caso concreto de arquivo privado.
 3. Antes de adotar, comparar com Supabase Storage e com a estratégia de dados já aprovada.
+4. Se houver sobrescrita no mesmo pathname e exigência real de leitura imediata, avaliar `useCache: false` com custo e latência medidos.
+
+### Fonte Oficial
+
+- [Vercel Blob now supports consistent reads on private storage](https://vercel.com/changelog/vercel-blob-now-supports-consistent-reads-on-private-storage)
 
 ---
 
@@ -439,5 +454,55 @@ Os Runtime Logs da Vercel exibem o motivo associado ao estado de cache de respos
 ### Fonte Oficial
 
 - [Runtime logs now show cache reasons](https://vercel.com/changelog/runtime-logs-now-show-cache-reasons)
+
+---
+
+## 27 — Next.js July 2026 Security Release *(🔴 Correção oficial pendente)*
+
+2026-07-20
+
+### Status no Projeto
+
+- Status: Não implementado — atualização de segurança necessária em recorte próprio
+- Evidência: `package.json` declara `next: ^16.1.1` e `eslint-config-next: ^16.1.1`; `package-lock.json` fixa ambos em `16.1.1`; o repositório usa App Router, Server Actions, `middleware.ts` e rewrites; a versão oficial corrigida na linha Active LTS é `16.2.11`
+
+### Descrição
+
+A primeira rodada mensal de segurança do Next.js corrigiu quatro vulnerabilidades de severidade alta e cinco de severidade média. A orientação oficial é atualizar para `16.2.11` na linha Active LTS ou `15.5.21` na linha Maintenance LTS.
+
+Para o LP Factory 10, trata-se de atualização corretiva dentro da stack vigente, não de nova tecnologia ou mudança de arquitetura.
+
+### Valor para o Projeto
+
+- Fecha vulnerabilidades oficiais na dependência central do runtime web.
+- O projeto usa superfícies abrangidas pela atualização, incluindo App Router e Server Actions; a correção não é apenas preventiva para tecnologia não utilizada.
+- Mantém o projeto na linha Next.js 16 adotada, com correção oficial.
+- Reduz exposição sem criar infraestrutura nem ampliar o escopo do produto.
+
+### Valor para o Usuário
+
+- Benefício indireto por redução de risco de segurança e indisponibilidade no SaaS e nas landing pages.
+
+### Limites no MVP
+
+- Este registro não autoriza alterar dependências neste PR documental.
+- A atualização deve ocorrer em PR técnico próprio, alinhando `next` e `eslint-config-next`, com lockfile, lint, typecheck, build e Preview verificados.
+- Não assumir compatibilidade apenas por permanecer na mesma major.
+- Não migrar para preview do Next.js 16.3 como consequência desta correção.
+
+### Gatilho de aplicação
+
+Aplicar em recorte técnico prioritário que atualize a linha Next.js 16 para `16.2.11` ou outra versão estável oficialmente corrigida, validando o comportamento real do projeto.
+
+### Ações Recomendadas
+
+1. Priorizar um PR técnico exclusivo para atualizar `next` e `eslint-config-next` de forma alinhada.
+2. Executar `npm run check`, build e validação do Preview antes do merge.
+3. Confirmar no lockfile as versões efetivamente instaladas.
+4. Remover este item do catálogo ativo quando a correção estiver absorvida e registrada na documentação técnica competente.
+
+### Fonte Oficial
+
+- [Next.js — July 2026 Security Release](https://nextjs.org/blog/july-2026-security-release)
 
 ---
