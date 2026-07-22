@@ -1,0 +1,104 @@
+name: Temporary E18.5 docs adjustment
+
+on:
+  push:
+    branches:
+      - agent/e18-5-roadmap-subsections
+
+permissions:
+  contents: write
+
+jobs:
+  adjust-docs:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v4
+        with:
+          ref: agent/e18-5-roadmap-subsections
+          fetch-depth: 0
+
+      - name: Apply Prompt ABC corrections
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          roadmap_path = Path('docs/roadmap.md')
+          roadmap = roadmap_path.read_text(encoding='utf-8')
+          for line in (
+              '    - `docs/lousa-plano-base-e18-5.md`\n',
+              '    - `docs/base-tecnica.md`\n',
+              '    - `docs/roadmap.md`\n',
+          ):
+              if line not in roadmap:
+                  raise SystemExit(f'Expected roadmap line not found: {line!r}')
+              roadmap = roadmap.replace(line, '', 1)
+
+          old_roadmap_changelog = (
+              'v1.5.96 — 21/07/2026 — E18.5 reorganizada conforme `docs/template-roadmap.md`: '
+              'registros movidos para 18.5.2, conteúdos implementados distribuídos entre 18.5.3 e 18.5.9 '
+              'e status atualizado após aprovação e merge do PR #590.'
+          )
+          new_roadmap_changelog = (
+              'v1.5.96 — 21/07/2026 — E18.5 reorganizada conforme `docs/template-roadmap.md`: '
+              'registros de implementação movidos para 18.5.2 sem artefatos `docs/**`, conteúdos implementados '
+              'distribuídos entre 18.5.3 e 18.5.9 e status atualizado após aprovação e merge do PR #590.'
+          )
+          if old_roadmap_changelog not in roadmap:
+              raise SystemExit('Expected roadmap changelog entry not found')
+          roadmap = roadmap.replace(old_roadmap_changelog, new_roadmap_changelog, 1)
+          roadmap_path.write_text(roadmap, encoding='utf-8')
+
+          base_path = Path('docs/base-tecnica.md')
+          base = base_path.read_text(encoding='utf-8')
+          if '• Versão: v2.0.51' not in base:
+              raise SystemExit('Expected Base Técnica version not found')
+          base = base.replace('• Versão: v2.0.51', '• Versão: v2.0.52', 1)
+
+          old_actions = (
+              '• Ações registram somente o vínculo abstrato `primary_conversion_channel`; Hero e Final CTA '
+              'declaram `supportsPrimaryConversionForm = false` sem replicar o catálogo de entradas.'
+          )
+          new_actions = (
+              '• Ações registram somente vínculos operacionais abstratos; valores permitidos e compatibilidades '
+              'concretas permanecem na fonte canônica versionada.'
+          )
+          if old_actions not in base:
+              raise SystemExit('Expected action rule not found')
+          base = base.replace(old_actions, new_actions, 1)
+
+          old_scope = (
+              '• O recorte é repo-only e não seleciona composição, ordem, obrigatoriedade ou lifecycle efetivo, '
+              'nem cria payload, banco, UI, renderer, persistência, automação ou consumo E19/E20.'
+          )
+          new_scope = (
+              '• O boundary permanece repo-only e não executa composição, persistência ou renderização.'
+          )
+          if old_scope not in base:
+              raise SystemExit('Expected scope rule not found')
+          base = base.replace(old_scope, new_scope, 1)
+
+          changelog_anchor = '99. Changelog\n'
+          new_base_changelog = (
+              'v2.0.52 — 21/07/2026 — Enxugado o contrato durável do catálogo de módulos e variantes de '
+              '`landing_page`, preservando vínculos operacionais abstratos e limites permanentes sem duplicar '
+              'valores ou decisões específicas do registry.\n\n'
+          )
+          if changelog_anchor not in base:
+              raise SystemExit('Base Técnica changelog anchor not found')
+          base = base.replace(changelog_anchor, changelog_anchor + new_base_changelog, 1)
+          base_path.write_text(base, encoding='utf-8')
+
+          Path('.github/workflows/tmp-e18-5-docs-adjust.yml').unlink()
+          PY
+
+      - name: Commit final documentary adjustment
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs/roadmap.md docs/base-tecnica.md .github/workflows/tmp-e18-5-docs-adjust.yml
+          git commit -m "docs: alinha E18.5 ao Prompt ABC"
+          git push origin HEAD:agent/e18-5-roadmap-subsections
