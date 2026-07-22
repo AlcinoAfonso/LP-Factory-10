@@ -441,3 +441,52 @@ Os Runtime Logs da Vercel exibem o motivo associado ao estado de cache de respos
 - [Runtime logs now show cache reasons](https://vercel.com/changelog/runtime-logs-now-show-cache-reasons)
 
 ---
+
+## 27 — Next.js July 2026 Security Release *(🔴 Correção oficial pendente)*
+
+2026-07-20
+
+### Status no Projeto
+
+- Status: Não implementado — atualização de segurança necessária em recorte próprio
+- Evidência: `package.json` declara `next: ^16.1.1` e `package-lock.json` fixa `node_modules/next` em `16.1.1`; a versão oficial corrigida na linha Active LTS é `16.2.11`
+
+### Descrição
+
+A primeira rodada mensal de segurança do Next.js corrigiu quatro vulnerabilidades de severidade alta e cinco de severidade média. A orientação oficial é atualizar para `16.2.11` na linha Active LTS ou `15.5.21` na linha Maintenance LTS.
+
+Para o LP Factory 10, trata-se de atualização corretiva dentro da stack vigente, não de nova tecnologia ou mudança de arquitetura.
+
+### Valor para o Projeto
+
+- Fecha vulnerabilidades oficiais na dependência central do runtime web.
+- Mantém o projeto na linha Next.js 16 adotada, com correção oficial.
+- Reduz exposição sem criar infraestrutura nem ampliar o escopo do produto.
+
+### Valor para o Usuário
+
+- Benefício indireto por redução de risco de segurança e indisponibilidade no SaaS e nas landing pages.
+
+### Limites no MVP
+
+- Este registro não autoriza alterar dependências neste PR documental.
+- A atualização deve ocorrer em PR técnico próprio, com lockfile, lint, typecheck, build e Preview verificados.
+- Não assumir compatibilidade apenas por permanecer na mesma major.
+- Não migrar para preview do Next.js 16.3 como consequência desta correção.
+
+### Gatilho de aplicação
+
+Aplicar em recorte técnico prioritário que atualize a linha Next.js 16 para versão corrigida igual ou superior à `16.2.11`, validando o comportamento real do projeto.
+
+### Ações Recomendadas
+
+1. Priorizar um PR técnico exclusivo para a atualização corrigida.
+2. Executar `npm run check`, build e validação do Preview antes do merge.
+3. Confirmar no lockfile a versão efetivamente instalada.
+4. Remover este item do catálogo ativo quando a correção estiver absorvida e registrada na documentação técnica competente.
+
+### Fonte Oficial
+
+- [Next.js — July 2026 Security Release](https://nextjs.org/blog/july-2026-security-release)
+
+---
