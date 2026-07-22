@@ -100,7 +100,17 @@ Plugins aproximam serviços externos das tarefas de investigação e execução.
 
 Skills podem transformar procedimentos recorrentes em capacidades reutilizáveis.
 
-Nenhuma skill foi adotada formalmente após a reinstalação. Skills do Supabase permanecem no registro do Supabase Plugin para evitar duplicação.
+### 5.1 LP Factory — Atualizar Catálogos
+
+**Skill:** `$lp-factory-atualizar-catalogos`.
+**Aptidão:** pesquisar e manter os quatro catálogos de updates do projeto.
+**Estado:** adotada; validação estrutural concluída em 22/07/2026; primeira execução integral pendente de teste funcional.
+**Valor:** preserva IDs e regras dos catálogos, usa fontes oficiais e conclui um catálogo inteiro antes de iniciar o seguinte.
+**Operação:** execução manual no Codex, com até quatro draft PRs independentes originados do mesmo SHA de `main`.
+**Limite:** não agenda execuções, não implementa recursos catalogados, não altera outros documentos e não realiza merge.
+**Referência de transição:** `docs/workflow-atualizacao-updates.md`.
+
+Skills do Supabase permanecem no registro do Supabase Plugin para evitar duplicação.
 
 **Disponíveis não adotadas:** Spreadsheets e Presentations.
 
