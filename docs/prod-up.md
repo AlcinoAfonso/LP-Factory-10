@@ -440,3 +440,117 @@ Relatórios dedicados do Search Console mostram visibilidade de URLs em recursos
 - [Google Search Central — Search Generative AI performance reports](https://developers.google.com/search/blog/2026/06/gen-ai-performance-reports)
 
 ---
+
+## 21 — Meta Ads MCP Server *(🧪 Disponível; adoção condicional)*
+
+2026-07-16
+
+### Status no Projeto
+
+- Status: Não implementado — capacidade futura de operação assistida
+- Evidência: o repositório não possui Meta Ads MCP, Meta app ou fluxo aprovado de gestão de campanhas por agente; `prod#8` cobre Value Rules e Conversions API, não operação de campanhas por MCP
+
+### Descrição
+
+Servidor MCP oficial da Meta Ads, disponível para desenvolvedores com Meta app próprio, para expor capacidades de gestão de anúncios a clientes e ambientes compatíveis com MCP. Entre os casos oficiais estão operações sobre campanhas e catálogos, além de testes A/B e estudos de lift de conversão.
+
+O recurso é uma camada operacional sobre capacidades da Meta Ads. Não substitui tracking, consentimento, Conversions API, governança de campanhas nem revisão humana.
+
+### Valor para o Projeto
+
+- Pode reduzir trabalho manual em operações futuras de campanhas ligadas às LPs.
+- Pode apoiar diagnóstico e ações assistidas quando houver cliente, permissões e processo comercial aprovados.
+- Complementa a Meta Marketing API e o `prod#8`; pode se sobrepor a uma integração customizada de gestão de anúncios.
+- Preserva uma alternativa oficial antes de construir interface ou automação própria.
+
+### Valor para o Usuário
+
+- Futuro: operação mais rápida e contextual de campanhas, com possibilidade de relacionar anúncios, catálogos, testes e conversões ao trabalho de landing pages.
+
+### Gatilho futuro de avaliação
+
+Avaliar somente quando houver:
+
+1. cliente ou operação aprovada que exija gestão recorrente de Meta Ads;
+2. Meta app, escopos e responsáveis definidos;
+3. comparação objetiva com Meta Business Manager e integração direta pela Marketing API;
+4. fluxo de aprovação humana para toda ação que altere campanha, público, orçamento ou gasto.
+
+### Dependências, riscos e limites
+
+- Exige Meta app, autenticação, permissões e conformidade com políticas e versões da Marketing API.
+- Tratar dados de anúncios, públicos e conversões segundo LGPD, consentimento e menor privilégio.
+- Risco de prompt injection, ação destrutiva e gasto indevido exige allowlist de tools, confirmação humana e limites operacionais.
+- Começar por leitura e diagnóstico; não autorizar mutações ou publicação automática no primeiro recorte.
+- Não criar MCP, agente, rota, job, automação, banco ou nova infraestrutura por causa deste registro.
+- O registro não autoriza implementação.
+
+### Ações Recomendadas
+
+1. Manter como capacidade futura e condicional.
+2. Reavaliar apenas diante do gatilho definido.
+3. Em eventual prova, comparar valor, custo, segurança e manutenção com operação manual e API direta.
+4. Documentar permissões, aprovação e rollback antes de qualquer mutação.
+
+### Fonte Oficial
+
+- [Meta for Developers — Meta's ads MCP server is now available for developers](https://developers.facebook.com/blog/post/2026/07/16/meta-ads-mcp-server/)
+
+---
+
+
+## 22 — Propriedades de plataformas sociais no Search Console *(🧪 Rollout gradual; uso condicional)*
+
+2026-07-07
+
+### Status no Projeto
+
+- Status: Não implementado — capacidade externa de mensuração, sem integração própria
+- Evidência: o repositório não possui propriedade de plataforma social, autorização de conta social ou relatório consolidado de Search Console; não há implementação necessária na landing page
+
+### Descrição
+
+O Google Search Console passou a aceitar propriedades de Instagram, TikTok, X e YouTube. Depois de autorizar e verificar a conta da plataforma, o responsável pode consultar como posts sociais e vídeos são descobertos no Google Search e Discover.
+
+Os relatórios oficiais incluem cliques, impressões, consultas, posts com melhor desempenho, tendências recentes e marcos de crescimento. A disponibilidade está sendo liberada gradualmente.
+
+### Valor para o Projeto
+
+- Pode complementar a análise de aquisição de clientes que combinam landing pages com conteúdo social ou em vídeo.
+- Permite observar descoberta orgânica desses canais em uma fonte oficial, sem construir coleta própria.
+- Ajuda a separar desempenho de conteúdo social no Google de métricas da landing page, anúncios e conversões.
+
+### Valor para o Usuário
+
+- Oferece uma visão consolidada de quais posts, vídeos e consultas geram descoberta no Search e Discover.
+- Pode orientar temas e canais de conteúdo quando o cliente já tiver operação social recorrente.
+
+### Gatilho futuro de avaliação
+
+Avaliar somente quando houver:
+
+1. cliente com conta ativa e estratégia recorrente em ao menos uma plataforma suportada;
+2. responsável autorizado a conectar a conta ao Search Console;
+3. necessidade real de analisar descoberta orgânica do conteúdo social;
+4. disponibilidade da propriedade para a conta, devido ao rollout gradual.
+
+### Dependências, riscos e limites
+
+- Exige autorização e verificação da conta de Instagram, TikTok, X ou YouTube.
+- Mede descoberta no Google Search e Discover; não mede alcance total da plataforma, desempenho de mídia paga, leads ou receita.
+- Não substitui analytics da landing page, dados nativos da rede social, Google Ads, Meta Ads ou CRM.
+- Não criar integração, banco, dashboard ou promessa comercial por causa deste registro.
+- O registro não autoriza conexão de contas nem tratamento de dados de clientes.
+
+### Ações Recomendadas
+
+1. Manter como capacidade condicional de mensuração de aquisição.
+2. Verificar disponibilidade no Search Console apenas diante do gatilho definido.
+3. Em uso futuro, interpretar cliques e impressões como descoberta orgânica, sem atribuir conversão automaticamente.
+4. Manter autorização da conta e acesso aos relatórios sob responsabilidade definida com o cliente.
+
+### Fonte Oficial
+
+- [Google Search Central — See how content from social and video platforms performs on Google Search](https://developers.google.com/search/blog/2026/07/search-console-social-video-platforms)
+
+---
