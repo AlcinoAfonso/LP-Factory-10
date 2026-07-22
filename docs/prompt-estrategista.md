@@ -36,6 +36,7 @@ Regra:
      2. Contrato do caso
      3. Fases e próxima ação
      4. Escopo negativo e critérios de parada
+   • Plano conceitual: [path ou URL] | N/A
    • fases executáveis;
    • Automação: sim | não em cada fase;
    • quando Automação: sim:
@@ -55,15 +56,13 @@ Regra:
 
 4.1 Escolha do processo após o plano-base v1
 
-Após concluir o item 4, apresentar ao humano as opções aplicáveis:
+Após concluir o item 4, apresentar ao humano as duas opções:
 
-• Opção 1 — Processo atual com coordenação manual: seguir normalmente para o item 5 e continuar este fluxo.
+• Opção 1 — Processo atual: seguir para o item 5.
 
-• Opção 2 — Processo automatizado no Codex App: entregar ao humano a instrução abaixo para envio ao Executor Orquestrador e suspender a continuidade pelos itens seguintes deste fluxo.
+• Opção 2 — Processo automatizado: após o merge da v1, entregar ao orquestrador somente:
 
-Instrução ao Executor Orquestrador
-
-[CONTEÚDO DA INSTRUÇÃO A DEFINIR COM O CRIADOR DO PROCESSO AUTOMATIZADO]
+Use Orquestrar plano-base no PR #[NÚMERO].
 
 Regra:
 • a escolha do processo depende de decisão humana explícita;
@@ -97,7 +96,7 @@ Gestor de Updates
 Use $lp-factory-avaliar-plano-updates no PR [URL_DO_PR].
 
 Gestor de Automação
-Avalie o plano dentro da categoria aprovada na v1, conforme docs/gestor-automations.md, docs/automations.md e docs/services.md, e detalhe a solução para a v2. Se a categoria não atender ao requisito, devolva a necessidade de nova decisão humana.
+Avalie no PR [URL_DO_PR] o plano-base `docs/lousa-plano-base-EXX-YY.md` dentro da categoria aprovada na v1, conforme docs/gestor-automations.md, docs/automations.md e docs/services.md, e detalhe a solução para a v2. Se a categoria não atender ao requisito, devolva a necessidade de nova decisão humana.
 
 Regra: entregar somente as mensagens aplicáveis, substituindo apenas o path e a URL do PR, salvo pedido humano explícito.
 
