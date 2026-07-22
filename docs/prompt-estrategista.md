@@ -53,6 +53,23 @@ Regra:
 • identificadores previstos no plano-base não atualizam docs/roadmap.md automaticamente;
 • não antecipar na v1 o detalhamento técnico da automação nem criar fase administrativa apenas para essa decisão.
 
+4.1 Escolha do processo após o plano-base v1
+
+Após concluir o item 4, apresentar ao humano as opções aplicáveis:
+
+• Opção 1 — Processo atual com coordenação manual: seguir normalmente para o item 5 e continuar este fluxo.
+
+• Opção 2 — Processo automatizado no Codex App: entregar ao humano a instrução abaixo para envio ao Executor Orquestrador e suspender a continuidade pelos itens seguintes deste fluxo.
+
+Instrução ao Executor Orquestrador
+
+[CONTEÚDO DA INSTRUÇÃO A DEFINIR COM O CRIADOR DO PROCESSO AUTOMATIZADO]
+
+Regra:
+• a escolha do processo depende de decisão humana explícita;
+• por decisão humana, os processos podem ser desenvolvidos paralelamente, como já ocorreu para testes;
+• qualquer mutação do processo automatizado depende de o plano-base v1 já estar incorporado à main.
+
 5. Avaliação única do plano-base v1 por especialistas
    Solicitar uma avaliação do plano completo no PR antes da execução.
 
