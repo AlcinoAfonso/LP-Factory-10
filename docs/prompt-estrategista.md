@@ -106,7 +106,7 @@ Regra: entregar somente as mensagens aplicáveis, substituindo apenas o path e a
 Regra:
 • consolidar todos os retornos em uma única análise;
 • classificar os pontos como aceito, rejeitado, pendente ou já coberto;
-• alterar somente o plano-base do caso;
+• fora da atualização prevista do roadmap, alterar somente o plano-base do caso;
 • no processo atual, após consolidar a v2, repetir com o Executor a atualização de `docs/roadmap.md` no mesmo PR, conforme `docs/prompt-abc.md` e `docs/template-roadmap.md`, usando a v2 como fonte;
 • não abrir novo escopo sem decisão humana explícita;
 • detalhar na v2 a automação dentro da categoria aprovada na v1;
