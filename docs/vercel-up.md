@@ -29,6 +29,7 @@ A rejeição ou adoção de cada recurso deve ser decidida caso a caso pelo Gest
 
 ## 1 — Vercel AI Cloud *(🟨 Disponibilidade por recurso/plano)*
 2025-06-30
+Atualizado em 2026-07-20
 
 ### Status no Projeto
 - Status: Não implementado
@@ -43,6 +44,8 @@ Conjunto de capacidades de plataforma com disponibilidade e cobrança próprias 
 - **BotID:** proteção invisível contra bots para rotas sensíveis, com validação client-side e verificação server-side.
 
 Observação de varredura oficial: AI Gateway routing rules permitem controlar rewrite/deny de modelos no gateway; Sandbox possui suporte a FUSE-based filesystems e Custom Images em public beta. Esses subrecursos permanecem como avaliação por caso, sem adoção automática no LP Factory 10.
+
+Atualização de custo do Sandbox: desde 17/07/2026, dados baixados da internet para instalar pacotes, clonar repositórios ou obter artefatos não consomem Data Transfer. Tráfego recebido em portas expostas, tráfego enviado pelo Sandbox, CPU ativa, memória provisionada, snapshots e criações continuam sujeitos à cobrança aplicável.
 
 ### Valor para o Projeto
 - Pode apoiar workloads de IA, execução isolada e proteção de endpoints quando existir um caso de uso aprovado.
@@ -395,5 +398,46 @@ Agente da Vercel no dashboard para responder perguntas sobre projetos, investiga
 1. Manter como avaliação futura.
 2. Não habilitar ações aprovadas ou automações sem decisão humana explícita.
 3. Não transformar em agente operacional do LP Factory 10 sem plano próprio e fonte real do projeto.
+
+---
+
+## 26 — Runtime Logs com Cache Reasons *(🟩 Disponível na plataforma)*
+
+2026-07-17
+
+### Status no Projeto
+
+- Status: Não implementado — diagnóstico condicional a rotas cacheáveis
+- Evidência: o repositório não adota Cache Components, ISR ou política explícita de cache por tag; `docs/base-tecnica.md` exige rotas com sessão/cookies dinâmicas.
+
+### Descrição
+
+Os Runtime Logs da Vercel exibem o motivo associado ao estado de cache de respostas cacheáveis, como revalidação por tempo ou tag, erro de revalidação, Draft Mode, crawler, cold miss ou request collapsed. O motivo também pode ser consultado pela Vercel CLI e agregado em métricas.
+
+### Valor para o Projeto
+
+- Permite distinguir configuração esperada, invalidação e falha de revalidação quando uma rota futura não obtiver cache hit.
+- Complementa `vercel#3` e `vercel#8` sem exigir nova estratégia de cache.
+- Pode reduzir investigação baseada apenas em hipótese quando houver problema real de CDN, ISR ou revalidação.
+
+### Valor para o Usuário
+
+- Benefício indireto por diagnósticos mais rápidos de performance e conteúdo desatualizado.
+
+### Limites no MVP
+
+- Não introduzir Cache Components, ISR, `Cache-Control`, `revalidateTag()` ou `updateTag()` apenas para usar o diagnóstico.
+- Não aplicar cache compartilhado a rotas dependentes de sessão ou cookies.
+- Usar somente quando existir resposta cacheável e incidente, custo ou hipótese de performance concretos.
+
+### Ações Recomendadas
+
+1. Manter como ferramenta diagnóstica condicional.
+2. Quando houver cache explícito, consultar o Cache Reason antes de alterar intervalos ou invalidação.
+3. Preservar as regras de cache e sessão de `docs/base-tecnica.md`.
+
+### Fonte Oficial
+
+- [Runtime logs now show cache reasons](https://vercel.com/changelog/runtime-logs-now-show-cache-reasons)
 
 ---
