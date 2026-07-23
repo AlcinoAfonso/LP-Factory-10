@@ -142,8 +142,8 @@ Fontes de referência: `README.md`, `docs/roadmap.md`, `docs/base-tecnica.md`, `
 
 ## 3. Ordem dos próximos planos-base
 
-- 1º — simplificar a E18.4 como base geral consultiva e facilmente ajustável.
-- 2º — simplificar a E18.5 como catálogo consultivo e facilmente extensível.
+- 1º — simplificar a E18.5 como catálogo consultivo e facilmente extensível.
+- 2º — reavaliar e simplificar a E18.4 conforme as necessidades reais da E18.5 simplificada.
 - 3º — implementar E20.3 com a operação administrativa mínima da E12.4.3 e E12.4.4.
 - 4º — implementar E19.4 como fluxo real e único de geração por conta.
 - 5º — implementar a avaliação e liberação por E20.4 e E12.4.5–12.4.6.
