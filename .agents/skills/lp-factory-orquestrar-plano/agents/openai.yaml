@@ -1,7 +1,7 @@
 interface:
   display_name: "Orquestrar plano-base"
-  short_description: "Produz e valida a v2 com especialistas"
-  default_prompt: "Use $lp-factory-orquestrar-plano no plano-base v1 informado, já incorporado à main."
+  short_description: "Produz a v2 e executa o plano no mesmo PR"
+  default_prompt: "Use $lp-factory-orquestrar-plano no PR informado para produzir a v2 e executar o plano completo."
 
 policy:
   allow_implicit_invocation: false

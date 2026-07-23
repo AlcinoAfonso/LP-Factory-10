@@ -1,28 +1,41 @@
 ---
 name: lp-factory-executar-plano
-description: Executar end-to-end um plano-base v2 aprovado e incorporado à main do LP Factory 10, uma subseção canônica do roadmap por vez, na mesma branch e PR de implementação, com validação e gate do Analista. Usar após o merge humano da v2 ou em experimento explicitamente autorizado.
+description: "Executar end-to-end um plano-base v2 aprovado do LP Factory 10, uma subseção canônica do roadmap por vez, com validação e gate do Analista. Usar como subfluxo interno de lp-factory-orquestrar-plano na mesma branch e PR da v2 ou, de forma independente, quando a v2 já estiver incorporada à main."
 ---
 
 # Executar plano-base aprovado
 
-Manter o task principal como orquestrador e executor. No fluxo normal, criar uma única branch a partir da `main` atualizada e um único PR de implementação contra `main`; subseções são checkpoints internos, nunca PRs ou merges intermediários.
+Manter o task principal como orquestrador e executor. No handoff interno, continuar na branch e no PR únicos já abertos pela orquestração. Na execução independente, criar uma única branch a partir da `main` atualizada e um único PR de implementação contra `main`. Subseções são checkpoints internos, nunca PRs ou merges intermediários.
 
 ## Entrada
 
-Aceitar como comando suficiente a referência do plano-base v2:
+Na execução independente, aceitar como comando suficiente a referência do plano-base v2:
 
 `Use $lp-factory-executar-plano no plano-base aprovado do PR #<número>.`
 
+No handoff interno de `$lp-factory-orquestrar-plano`, não exigir nova instrução humana. Receber o checkpoint `LP-Factory-Stage: plan-v2-approved` e continuar no mesmo task.
+
 Usar `end-to-end` por padrão no fluxo normal. Exigir `experimental` explícito para parar nos checkpoints solicitados pelo humano.
 
-Exigir que a v2 esteja na `main` antes de qualquer implementação. O modo experimental altera somente os checkpoints; não autoriza mutação sobre v2 não incorporada. Nunca criar PR empilhado.
+Exigir que a v2 esteja na `main` somente na execução independente. No handoff interno, aceitar a v2 aprovada pelo Analista no checkpoint `plan-v2-approved` da mesma branch e PR contra `main`. Nunca criar PR empilhado.
+
+## Handoff interno
+
+Quando invocada por `$lp-factory-orquestrar-plano`:
+
+1. Confirmar que branch, worktree e PR são os mesmos usados para produzir a v2.
+2. Confirmar o checkpoint `plan-v2-approved` e usar esse commit como contrato imutável.
+3. Não criar branch, PR ou pedido de merge intermediário.
+4. Não acionar Gestor Estrutural, Gestor de Updates ou Gestor de Automações; usar somente o Analista nos gates de implementação.
+5. Reutilizar checkpoints `LP-Factory-Phase: <identificador>` e continuar na próxima subseção pendente.
+6. Se houver mudança material fora da v2 aprovada, encaminhar ao Analista e, se necessário, ao humano; não reiniciar especialistas.
 
 ## Preparar
 
-1. Confirmar repositório, worktree, branch, estado Git limpo, plano, SHA e caso; no fluxo normal, confirmar que o plano está na `main` atualizada.
+1. Confirmar repositório, worktree, branch, estado Git limpo, plano, SHA e caso; na execução independente, confirmar que o plano está na `main` atualizada; no handoff interno, confirmar o checkpoint `plan-v2-approved` no PR único.
 2. Ler o plano integral, a seção competente de `docs/roadmap.md`, `docs/base-tecnica.md` e somente fontes adicionais exigidas pela subseção atual.
 3. Validar que cada fase executável use exatamente o identificador do roadmap, como `E18.5.3 — título`; rejeitar aliases ordinais como `Fase 1` e agrupamentos de subseções independentes.
-4. Criar ou selecionar uma única branch `codex-app/<caso>-implementacao` a partir da `main` e um único PR draft contra `main` para todo o recorte. Recusar base diferente de `main` e nunca criar branch ou PR por subseção.
+4. No handoff interno, reutilizar a branch e o PR existentes. Na execução independente, criar ou selecionar uma única branch `codex-app/<caso>-implementacao` a partir da `main` e um único PR draft contra `main`. Recusar base diferente de `main` e nunca criar branch ou PR por subseção.
 5. Registrar o SHA do plano como contrato imutável. Se houver execução anterior, identificar o último checkpoint pelo trailer de commit `LP-Factory-Phase: <identificador>`; se não for possível determinar unicamente a próxima subseção, parar e pedir o identificador.
 
 ## Executar uma subseção
@@ -59,4 +72,6 @@ O resumo do PR deve refletir sempre o checkpoint publicado. O formato do registr
 - Não iniciar a fase seguinte sem checkpoint aprovado.
 - Não criar matriz de consolidação durante a implementação; ela pertence apenas à revisão do plano v2.
 - Não criar PR empilhado.
+- Não criar segundo PR quando houver handoff da orquestração.
+- Não acionar novamente os especialistas do plano durante a implementação.
 - Não substituir gate humano, decisão material ou teste humano exigido.

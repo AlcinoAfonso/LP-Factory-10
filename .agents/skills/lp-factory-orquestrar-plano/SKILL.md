@@ -1,11 +1,11 @@
 ---
 name: lp-factory-orquestrar-plano
-description: Orquestrar a produção e o gate de um plano-base v2 do LP Factory 10 a partir de uma v1 já incorporada à main, usando especialistas e Analista e reconciliando o roadmap antes da publicação. Usar quando o humano informar o PR ou path da v1 e pedir para executar, orquestrar ou automatizar a revisão do plano.
+description: "Orquestrar end-to-end um plano-base do LP Factory 10 a partir de uma v1 incorporada à main: produzir e aprovar a v2, reconciliar o roadmap e executar todas as subseções na mesma branch e no mesmo PR, usando especialistas uma única vez antes da v2 e o Analista nos gates. Usar quando o humano informar o PR ou path da v1 e pedir para orquestrar, automatizar ou executar o plano completo."
 ---
 
-# Orquestrar plano-base v2
+# Orquestrar plano-base end-to-end
 
-Conduzir o primeiro fluxo integrado de revisão do plano-base. Manter o task principal como orquestrador e executor; usar os custom agents somente para avaliações read-only.
+Conduzir com uma única instrução humana a revisão do plano-base e sua implementação. Manter o task principal como orquestrador e executor; usar os custom agents somente para avaliações read-only.
 
 ## Entrada humana
 
@@ -13,11 +13,11 @@ Aceitar como comando suficiente o número, a URL do PR ou o path da v1, por exem
 
 `Use $lp-factory-orquestrar-plano no PR #577.`
 
-Usar o fluxo normal por padrão. Nele, exigir que a v1 esteja na `main` atualizada e publicar a v2 em uma única branch e PR contra `main`.
+Usar o fluxo normal `end-to-end` por padrão. Exigir que a v1 esteja na `main` atualizada e usar uma única branch e um único PR contra `main` para v2, roadmap, implementação, validações e fechamento aplicável. Não exigir nova instrução humana entre a aprovação da v2 e sua execução.
 
 Aceitar `modo experimental` somente quando explícito e apenas para controlar checkpoints. Se a v1 ainda não estiver na `main`, limitar-se à avaliação read-only e parar; qualquer mutação exige primeiro sua incorporação à `main`. Nunca criar PR empilhado.
 
-Não exigir do humano nomes de agentes, paths, branches, matriz ou etapas internas. Pedir informação adicional somente diante de ambiguidade que impeça selecionar com segurança o plano ou a worktree de destino.
+Não exigir do humano nomes de agentes, paths, branches, matriz, etapas internas ou invocação separada da skill de execução. Pedir informação adicional somente diante de ambiguidade que impeça selecionar com segurança o plano, o estado de retomada ou a worktree de destino.
 
 ## Fontes obrigatórias
 
@@ -28,8 +28,22 @@ Antes de executar:
 3. Ler e seguir `.agents/skills/lp-factory-avaliar-plano-updates/SKILL.md` na avaliação de updates.
 4. Ler e seguir `.agents/skills/lp-factory-avaliar-plano-automacoes/SKILL.md` quando alguma fase estiver marcada como `Automação: sim`.
 5. Ler e seguir `.agents/skills/lp-factory-avaliar-plano-analista/SKILL.md` no gate do Analista.
+6. Ler e seguir `.agents/skills/lp-factory-executar-plano/SKILL.md` como subfluxo interno depois da aprovação da v2 e do roadmap.
+7. Ler e seguir `.agents/skills/lp-factory-avaliar-implementacao-analista/SKILL.md` nos gates da implementação.
 
 Não copiar nem reinterpretar os contratos canônicos desses arquivos.
+
+## Retomar antes de repetir
+
+Antes de iniciar qualquer especialista, identificar o estágio já concluído pelo task, Git e PR:
+
+1. Reutilizar pareceres completos já obtidos para o mesmo blob da v1; não acionar novamente o especialista correspondente.
+2. Se existir checkpoint inequívoco `LP-Factory-Stage: plan-v2-approved`, pular toda a produção da v2 e seguir diretamente para a execução.
+3. Se existir checkpoint de implementação `LP-Factory-Phase: <identificador>`, retomar na próxima subseção ainda não aprovada.
+4. Se a v2 estiver pronta, mas faltar somente a aprovação do Analista ou a reconciliação do roadmap, retomar exatamente nesse gate.
+5. Se o estágio não puder ser determinado unicamente, pedir somente a referência faltante; não reiniciar o fluxo por precaução.
+
+Parecer só é reutilizável quando estiver vinculado ao mesmo blob da v1 e seu conteúdo integral estiver disponível.
 
 ## 1. Congelar a fonte v1
 
@@ -50,11 +64,11 @@ O task principal pode estar aberto no projeto local padrão. Direcionar as muta�
 2. No fluxo normal, considerar candidatas somente worktrees:
    - limpas;
    - fora da `main`;
-   - em branch compatível com `codex-app/*-v2-orquestracao`;
+   - em branch compatível com `codex-app/*-orquestracao` ou `codex-app/*-v2-orquestracao`;
    - criadas ou realinhadas a partir da `main` que contém a v1 congelada;
    - cujo plano, antes das alterações, corresponda ao blob SHA congelado incorporado à `main`.
 3. Selecionar automaticamente quando existir exatamente uma candidata.
-4. Se não houver candidata e não existir frente paralela, usar o modo simples: atualizar `main` com `git pull --ff-only` e criar uma única branch `codex-app/<caso>-v2-orquestracao`.
+4. Se não houver candidata e não existir frente paralela, usar o modo simples: atualizar `main` com `git pull --ff-only` e criar uma única branch `codex-app/<caso>-orquestracao`.
 5. Se houver mais de uma candidata, pedir apenas o path da worktree de automação.
 6. Recusar worktree ou branch destinada ao processo atual/manual, incluindo branches compatíveis com `*-v2-processo-atual`.
 7. No modo experimental com v1 ainda não incorporada à `main`, não selecionar nem criar destino mutável; exigir primeiro sua incorporação à `main`.
@@ -117,7 +131,7 @@ Parar quando faltar uma decisão material que altere produto, escopo ou arquitet
    - não incluí-la no prompt ou nos turnos herdados;
    - não gravá-la na worktree antes da conclusão independente;
    - iniciar o Analista com `fork_turns=none`.
-8. Validar a v2 com `git diff --check` e criar um commit de checkpoint somente com o plano-base v2.
+8. Validar a v2 com `git diff --check` e criar um commit de checkpoint somente com o plano-base v2, usando o trailer `LP-Factory-Stage: plan-v2`.
 9. Usar esse commit como referência imutável da v2 na Passagem 1.
 
 ## 6. Executar o gate do Analista
@@ -151,19 +165,29 @@ Somente após `aprovado para merge do plano-base v2`:
 7. Continuar no mesmo Analista em `revisao_delta`, entregando v2 aprovada, snapshot do roadmap, ABC emitido, roadmap resultante, `docs/prompt-abc.md` e `docs/template-roadmap.md`.
 8. Solicitar somente a auditoria da correspondência entre v2 e roadmap. Corrigir e reenviar apenas divergências objetivas; questão material nova segue a seção 7.
 9. Mesmo quando o ABC retornar `SEM ALTERAÇÕES NECESSÁRIAS`, exigir confirmação do Analista de que o snapshot já corresponde à v2.
-10. Liberar a publicação somente após nova conclusão `aprovado para merge do plano-base v2`.
-11. No fluxo normal, remover a matriz temporária antes da publicação e preservar sua rastreabilidade apenas no resumo do PR.
+10. Liberar a execução somente após nova conclusão `aprovado para merge do plano-base v2`.
+11. No fluxo normal, remover a matriz temporária, preservar sua rastreabilidade no resumo do PR e criar o checkpoint `LP-Factory-Stage: plan-v2-approved` com plano e roadmap aprovados.
 
-## 9. Publicar para decisão humana
+## 9. Abrir o PR único
 
 Somente após a aprovação da v2 e da revisão delta do roadmap:
 
 1. Confirmar que o diff contém apenas o plano v2, `docs/roadmap.md` e, somente no modo `experimental`, sua matriz.
 2. Verificar alterações acidentais, secrets, `.env`, banco e workflows.
 3. Executar `git diff --check`; tratar `npm ci` e `npm run check` como não aplicáveis quando o diff for exclusivamente documental.
-4. Commitar a versão final e publicar a branch de automação.
-5. Abrir um único PR draft contra `main`; recusar qualquer base diferente de `main`. Se a criação automática não estiver disponível, entregar o link de comparação com base e head preenchidos.
-6. Não fazer merge. O humano compara, decide e realiza o merge pelo GitHub Web.
+4. Publicar o checkpoint `plan-v2-approved` na branch de automação.
+5. Abrir ou atualizar um único PR draft contra `main`; recusar qualquer base diferente de `main`. Se a criação automática não estiver disponível, entregar o link de comparação com base e head preenchidos.
+6. Não encerrar o fluxo nem pedir merge neste ponto. Continuar a implementação na mesma branch e no mesmo PR.
+
+## 10. Executar a v2 no mesmo PR
+
+1. Invocar internamente `$lp-factory-executar-plano` com o checkpoint `plan-v2-approved`; não pedir ao humano uma nova instrução.
+2. Usar o modo de handoff interno da skill de execução: preservar branch, worktree e PR atuais, mesmo que a v2 ainda não esteja na `main`.
+3. Não acionar novamente Gestor Estrutural, Gestor de Updates ou Gestor de Automações. Durante a implementação, usar somente o Analista nos gates por subseção e no gate final.
+4. Se o Analista encontrar mudança material fora da v2 aprovada, parar e pedir a decisão humana necessária; não reiniciar especialistas automaticamente.
+5. Executar todas as subseções no fluxo normal `end-to-end`, reutilizando checkpoints existentes e mantendo o mesmo PR draft atualizado.
+6. Realizar as validações e o fechamento definidos na skill de execução.
+7. Somente após `aprovado para merge da implementação`, marcar o PR único como pronto e entregá-lo para merge humano pelo GitHub Web.
 
 ## Devolução ao humano
 
@@ -177,9 +201,11 @@ Apresentar:
 - Passagens 1 e 2 do Analista;
 - snapshot inicial, ABC e delta aplicado em `docs/roadmap.md`;
 - revisão delta final do roadmap pelo mesmo Analista;
+- checkpoints e pareceres do Analista durante a implementação;
+- validações integradas e decisão sobre teste humano;
 - arquivos alterados;
 - commits e validações;
-- PR draft ou link de criação;
+- PR único e seu estado final;
 - eventual decisão ou bloqueio pendente.
 
 ## Limites
@@ -187,9 +213,10 @@ Apresentar:
 - Não alterar a v1 nem o PR de origem.
 - Não editar ou commitar na `main`.
 - Não criar PR empilhado.
+- Não criar segunda branch ou segundo PR entre v2 e implementação.
 - Não acionar especialistas fora do recorte.
 - Não permitir que custom agents editem arquivos.
-- Não executar fases do plano.
+- Não repetir especialistas já concluídos para o mesmo blob da v1.
 - Não alterar outros documentos canônicos durante a reconciliação do roadmap.
-- Não avaliar implementação ou PR de código; encaminhar a execução aprovada para `$lp-factory-executar-plano`.
+- Não encerrar o fluxo após a v2; encaminhar internamente a execução aprovada para `$lp-factory-executar-plano`.
 - Não fazer merge nem substituir decisão humana.
