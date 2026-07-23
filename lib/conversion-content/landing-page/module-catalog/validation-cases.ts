@@ -575,7 +575,7 @@ const cases: readonly Case[] = [
     },
   },
   {
-    name: "embedded form requirements fail closed independently",
+    name: "embedded form requirement omissions and false values fail closed independently",
     run: () => {
       for (const requirement of [
         "labelsProgrammaticallyAssociated",
@@ -590,6 +590,13 @@ const cases: readonly Case[] = [
         assert.ok(accessibility);
         accessibility[requirement] = false;
         assertInvalid(incomplete);
+
+        const missing = cloneRegistry();
+        const missingAccessibility = missing.variants["hero.form@v1"]
+          .formContract?.accessibility;
+        assert.ok(missingAccessibility);
+        delete missingAccessibility[requirement];
+        assertInvalid(missing);
       }
 
       const missingConsent = cloneRegistry();

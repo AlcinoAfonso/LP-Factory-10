@@ -2,8 +2,8 @@
 
 0.1. Cabeçalho
 • Documento: Base Técnica LP Factory 10
-• Versão: v2.0.52
-• Data: 21/07/2026
+• Versão: v2.0.53
+• Data: 23/07/2026
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -432,6 +432,8 @@ LP Builder
 • A entrada runtime é estrita e falha fechado para shape, versão, módulo, variante, perfil ou preset desconhecido, sem fallback aproximado nem exceção não tratada.
 • A resolução aplica `raiz → módulo → variante` e `perfil-base → delta do módulo`, devolvendo contratos efetivos, rastreáveis e profundamente imutáveis; consumidores não reaplicam deltas.
 • Especializações podem apenas restringir. Proibições prevalecem sobre restrições, que prevalecem sobre permissões; lifecycle da raiz, do módulo e da variante permanece separado no vocabulário canônico.
+• Sources textuais permanecem junto dos fields e distinguem pesquisa estruturada, evidência operacional e pesquisa com suporte operacional declarativo; uma referência sintaticamente válida não comprova integridade com outro registry.
+• Variantes com formulário declaram capability, compatibilidade, fields abstratos, consentimento, privacidade e acessibilidade estrutural no próprio contrato, sem definir UI, HTML, ARIA, submissão ou conformidade integral com WCAG.
 • Ações registram somente vínculos operacionais abstratos; valores permitidos e compatibilidades concretas permanecem na fonte canônica versionada.
 • O boundary permanece repo-only e não executa composição, persistência ou renderização.
 • Casos executáveis: `npm run validate:landing-page-module-catalog`.
@@ -583,6 +585,8 @@ Fonte normativa da allowlist SULB para exceções de Auth. Qualquer novo arquivo
 • Tipos canônicos e adapters vNext: validar por 3.6 e 3.14.
 
 99. Changelog
+v2.0.53 — 23/07/2026 — Consolidado o contrato durável de sources declarativas e variantes com formulário abstrato no catálogo `landing_page`, mantendo registry único, API mínima e boundary repo-only.
+
 v2.0.52 — 21/07/2026 — Enxugado o contrato durável do catálogo de módulos e variantes de `landing_page`, preservando vínculos operacionais abstratos e limites permanentes sem duplicar valores ou decisões específicas do registry.
 
 v2.0.51 — 21/07/2026 — Registrado o contrato técnico durável do catálogo repo-only de módulos e variantes de `landing_page`, com registry único, resolução efetiva fail-closed, mapas por field, perfis de funil fechados, API pública mínima e imutabilidade profunda.
