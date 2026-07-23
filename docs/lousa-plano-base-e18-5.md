@@ -1,6 +1,6 @@
 23/07/2026 — Plano-base E18.5 — Otimização do catálogo de módulos e variantes `landing_page`
 
-Fontes: `README.md`, `AGENTS.md`, `docs/prompt-estrategista.md`, `docs/prompt-executor.md`, `docs/prompt-abc.md`, `docs/template-roadmap.md`, `docs/lp-planejamento.md`, `docs/roadmap.md`, `docs/base-tecnica.md`, `docs/lousa-plano-base-e18-4.md`, `docs/lousa-plano-base-e20-2.md`, conteúdo anterior deste path, PRs #590, #616, #617 e #618, pareceres do Gestor Estrutural e do Gestor de Updates desta orquestração, decisões humanas registradas em 23/07/2026, `lib/conversion-content/landing-page/`, `lib/conversion-content/landing-page/module-catalog/`, `lib/conversion-content/landing-page/input-catalog/`, `lib/conversion-content/index.ts` e scripts relacionados no `package.json`.
+Fontes: `README.md`, `AGENTS.md`, `docs/prompt-estrategista.md`, `docs/prompt-executor.md`, `docs/prompt-abc.md`, `docs/template-roadmap.md`, `docs/lp-planejamento.md`, `docs/roadmap.md`, `docs/base-tecnica.md`, `docs/prod-up.md` item `prod#17`, `docs/lousa-plano-base-e18-4.md`, `docs/lousa-plano-base-e20-2.md`, conteúdo anterior deste path, PRs #590, #616, #617 e #618, pareceres do Gestor Estrutural e do Gestor de Updates desta orquestração, decisões humanas registradas em 23/07/2026, `lib/conversion-content/landing-page/`, `lib/conversion-content/landing-page/module-catalog/`, `lib/conversion-content/landing-page/input-catalog/`, `lib/conversion-content/index.ts` e scripts relacionados no `package.json`.
 
 Versão: v2 consolidada após os quatro testes experimentais do PR #617 e os pareceres especializados da orquestração; pendente do gate do Analista.
 
@@ -32,7 +32,7 @@ Plano conceitual: `docs/lp-planejamento.md`.
 - A E20.2 permanece concluída e não será reaberta neste recorte.
 - O PR #617 não será mergeado nem terá seus commits transportados integralmente para a `main`.
 - O histórico Git e o conhecimento produzido pelos PRs #577, #590 e #617 devem ser preservados.
-- Para este recorte, este plano-base mergeado pelo PR #616 é a fonte da verdade detalhada e normativa; `docs/lp-planejamento.md` fornece contexto conceitual amplo e não substitui, amplia ou redefine seus contratos, hipóteses, limites, testes ou critérios.
+- Para este recorte, o plano-base v1 mergeado pelo PR #616 é a fonte da verdade detalhada e normativa; `docs/lp-planejamento.md` fornece contexto conceitual amplo e não substitui, amplia ou redefine seus contratos, hipóteses, limites, testes ou critérios.
 
 ### 1.2. Direção aprovada
 
@@ -271,41 +271,59 @@ Plano conceitual: `docs/lp-planejamento.md`.
 
 - Automação: não.
 - Objetivo:
-  - otimizar a declaração de fields e cardinalidades;
-  - preparar os contratos de fields exigidos por `benefits.standard@v1` e `hero.form@v1`.
+  - otimizar a gramática genérica de fields e cardinalidades das dez variantes já registradas;
+  - preparar o boundary para extensão posterior sem antecipar nova identidade.
+- Limite do checkpoint:
+  - esta fase não pode adicionar `benefits.standard@v1`, `hero.form@v1`, novo `LandingPageVariantFieldContractKey`, novo `LandingPageVariantKey`, novo variant record, novo field contract identificado ou referência nominal a essas variantes;
+  - esta fase não altera `LandingPageCopySourceMap`, `copySourceMapFor(path)`, seus cases ou a residência atual das sources;
+  - a criação dos novos field contracts ocorre atomicamente com suas variantes na fase 18.5.5.
 - Entregas:
-  - remover contagens globais fixas de fields;
+  - remover assertions e regras baseadas em contagem global fixa de fields;
   - preservar a separação entre módulo, variante e fields;
-  - representar em `benefits.standard@v1` título e coleção controlada de benefícios, cada item com título e descrição;
-  - representar os fields estruturais necessários à Hero com formulário sem implementar UI, submissão ou persistência;
-  - preservar cardinalidade, policy, semantic role, suporte e source válido em cada field aplicável;
-  - não criar catálogo paralelo de fields;
-  - não determinar nesta fase o shape final dos helpers de fontes, cuja consolidação pertence à fase 18.5.7.
-- Teste obrigatório 1 — parte de fields:
-  - comprovar cardinalidades e imutabilidade dos fields de `benefits.standard@v1`;
-  - comprovar falha fechada para field, shape, cardinalidade, policy ou combinação inválida.
-- Teste obrigatório 4 — parte de fields:
-  - comprovar a representação tipada dos fields abstratos e de sua obrigatoriedade;
-  - preservar labels finais, renderer e valores concretos fora do contrato.
+  - preservar cardinalidade, policy, semantic role, suporte e source dos fields existentes;
+  - manter fields pertencentes diretamente aos contratos das variantes existentes, sem catálogo paralelo;
+  - tornar validações de shape, cardinalidade, policy e combinações estruturalmente genéricas, sem criar regra nominal nova;
+  - manter registry, schema e resolver válidos e completos ao fim do checkpoint.
+- Regressões obrigatórias:
+  - resolver as dez variantes existentes;
+  - comprovar cardinalidades e imutabilidade dos contratos existentes;
+  - comprovar falha fechada para field, shape, cardinalidade, policy ou combinação inválida;
+  - comprovar igualdade exata entre os conjuntos registrados de variant keys e field contract keys;
+  - comprovar ausência de `benefits.standard@v1` e `hero.form@v1` neste checkpoint.
 - Métricas comparativas da fase:
   - registrar arquivos alterados, inserções, exclusões, pontos necessários de alteração, contratos e tipos alterados, alterações no registry, schema e resolver, listas paralelas, contagens fixas, regras nominais, duplicações, casos negativos, proteções preservadas e diferença em relação ao PR #617;
-  - registrar `0` ou `N/A` explicitamente quando não houver alteração no item.
+  - registrar `0` ou `N/A` explicitamente quando não houver alteração no item;
+  - publicar a evidência conforme a regra de residência de 18.5.9, vinculada ao SHA do checkpoint 18.5.4.
 - Validações:
   - executar `npm run validate:landing-page-module-catalog`;
   - executar `npm run check`;
   - executar `git diff --check`;
-  - todos os comandos devem terminar com código zero.
+  - todos os comandos devem terminar com código zero antes do checkpoint.
 
 ### 3.3. 18.5.5 — Variantes e critérios de criação
 
 - Automação: não.
 - Objetivo:
-  - incorporar definitivamente `benefits.standard@v1` e `hero.form@v1`;
+  - incorporar atomicamente `benefits.standard@v1` e `hero.form@v1`, seus field contracts e todas as dependências estruturais necessárias;
   - manter variantes como execuções estruturais ou comportamentais reutilizáveis de seus módulos.
+- Atomicidade obrigatória do checkpoint:
+  - adicionar no mesmo checkpoint os novos field contract keys, variant keys, field contract records e variant records;
+  - não permitir estado intermediário versionado em que exista field contract identificado sem variante correspondente, variante sem field contract ou conjunto inexato entre contracts, registry e schema;
+  - criar no mesmo checkpoint os fields, cardinalidades, capabilities, `formContract`, acessibilidade e sources exigidos pelas novas variantes;
+  - manter registry, schema, resolver e validações verdes ao fim da fase.
+- Fundação estrutural das sources:
+  - alterar o helper `text(...)` para receber obrigatoriamente um `copySourceMap: LandingPageCopySourceMap` explícito;
+  - migrar atomicamente todos os fields textuais existentes para declarar sua source junto da própria chamada de `text(...)`, preservando semântica e valores vigentes;
+  - remover integralmente `copySourceMapFor(path)`, seu `switch`, seu erro default e toda dependência de lookup nominal por path no mesmo checkpoint;
+  - introduzir em contracts, schema e registry somente a estrutura mínima e estrita de source necessária às novas variantes, conforme os critérios já aprovados em §2.2;
+  - não criar case nominal temporário, segundo helper de lookup por path, construção paralela provisória ou fallback;
+  - a fundação criada nesta fase deve estar estruturalmente válida e coberta por casos positivos; a semântica completa, as relações genéricas e os casos negativos específicos de sources pertencem à fase 18.5.7.
 - Entregas:
   - preservar as dez variantes existentes;
   - registrar `benefits.standard@v1` vinculada exclusivamente a `benefits@v1`;
   - registrar `hero.form@v1` vinculada exclusivamente a `hero@v1`;
+  - representar em `benefits.standard@v1` título e coleção controlada de benefícios, cada item com título e descrição;
+  - representar os fields estruturais necessários à Hero com formulário, sem implementar UI, submissão ou persistência;
   - manter `hero.standard@v1` incompatível com formulário;
   - representar capability de formulário e contrato abstrato de formulário;
   - `hero.form@v1` deve registrar `WCAG 2.2` como baseline do contrato abstrato de acessibilidade e exigir rótulos programaticamente associados aos controles; instruções e mensagens de erro programaticamente associadas quando presentes; operação por teclado; e foco direcionado ao primeiro field inválido após tentativa de submissão. Todos esses requisitos são obrigatórios e devem falhar fechado quando ausentes ou inválidos;
@@ -314,7 +332,7 @@ Plano conceitual: `docs/lp-planejamento.md`.
   - não alterar o resolver.
 - Teste obrigatório 1 — conclusão:
   - resolver `benefits@v1` com `benefits.standard@v1`;
-  - comprovar cardinalidades e imutabilidade;
+  - comprovar fields, cardinalidades, sources e imutabilidade;
   - comprovar ausência de alteração no resolver, contagem global e regra nominal por identidade.
 - Teste obrigatório 2:
   - resolver `hero.form@v1`;
@@ -322,18 +340,29 @@ Plano conceitual: `docs/lp-planejamento.md`.
   - comprovar capability e contrato abstrato;
   - preservar falha fechada;
   - rejeitar combinações estruturalmente incompatíveis.
-- Teste obrigatório 4 — conclusão estrutural:
+- Teste obrigatório 4:
   - representar fields abstratos, obrigatoriedade, consentimento, necessidade de política de privacidade, acessibilidade mínima e conversão por formulário;
   - comprovar incompatibilidades por casos negativos;
   - não implementar formulário funcional.
+- Regressões da fundação de sources:
+  - comprovar que todos os fields textuais existentes preservam seus mapas anteriores;
+  - comprovar ausência de `copySourceMapFor`, do `switch` por path e da mensagem `Missing canonical copySourceMap`;
+  - comprovar que todo field textual recebe source explícita;
+  - comprovar que nova source necessária às variantes é aceita quando estruturalmente completa;
+  - não declarar ainda concluída a matriz semântica do teste obrigatório 3.
 - Métricas comparativas da fase:
   - registrar arquivos alterados, inserções, exclusões, pontos necessários de alteração, contratos e tipos alterados, alterações no registry, schema e resolver, listas paralelas, contagens fixas, regras nominais, duplicações, casos negativos, proteções preservadas e diferença em relação ao PR #617;
-  - registrar `0` ou `N/A` explicitamente quando não houver alteração no item.
+  - registrar `0` ou `N/A` explicitamente quando não houver alteração no item;
+  - publicar a evidência conforme a regra de residência de 18.5.9, vinculada ao SHA do checkpoint 18.5.5.
 - Validações:
+  - executar busca versionada que comprove ausência de `copySourceMapFor`, do `switch` nominal por path e da mensagem de erro associada;
+  - executar `npm run validate:landing-page-root`;
+  - executar `npm run validate:landing-page-research`;
+  - executar `npm run validate:landing-page-input-catalog`;
   - executar `npm run validate:landing-page-module-catalog`;
   - executar `npm run check`;
   - executar `git diff --check`;
-  - todos os comandos devem terminar com código zero.
+  - todos os comandos devem terminar com código zero antes do checkpoint.
 
 ### 3.4. 18.5.6 — Especializações sobre a parametrização raiz
 
@@ -366,39 +395,47 @@ Plano conceitual: `docs/lp-planejamento.md`.
 
 - Automação: não.
 - Objetivo:
-  - manter as fontes declaradas junto dos próprios fields;
-  - distinguir pesquisa estruturada de comprovação operacional.
+  - concluir a semântica das sources já declaradas junto dos fields desde 18.5.5;
+  - distinguir pesquisa estruturada, necessidade de suporte operacional e evidência operacional.
+- Precondição estrutural:
+  - o checkpoint 18.5.5 já deve ter removido `copySourceMapFor(path)` e seu `switch`, migrado todas as sources para junto dos fields e criado a estrutura mínima exigida pelas novas variantes;
+  - esta fase não repete essa migração, não introduz lookup paralelo e não corrige checkpoint inválido anterior.
 - Entregas:
-  - substituir `copySourceMapFor(path)` por fontes declaradas junto dos fields;
-  - remover o `switch` paralelo por path;
-  - avaliar helpers tipados equivalentes a pesquisa estruturada, pesquisa com necessidade de suporte operacional e evidência operacional, sem predeterminar seu shape final;
+  - validar estruturalmente as relações genéricas entre pesquisa e necessidade de suporte operacional;
+  - completar os casos negativos da nova estrutura de source;
   - evitar crescimento combinatório artificial de `sourceMode`;
   - impedir segundo ponto nominal de edição para uma extensão comum;
   - não importar ou duplicar o registry da E20.2;
   - manter referências operacionais abstratas e sintaticamente válidas;
-  - separar declaração de suporte operacional da validação concreta de valor ou integridade referencial pelo consumidor competente.
+  - separar declaração de necessidade de suporte operacional da validação concreta de valor ou integridade referencial pelo consumidor competente;
+  - preservar source declarada junto do field como única definição canônica por field textual.
 - Teste obrigatório 3:
   - representar pesquisa estruturada e necessidade de suporte operacional;
-  - manter as fontes junto dos fields;
+  - comprovar falha para declaração sem pesquisa válida;
+  - comprovar falha para necessidade de suporte operacional ausente, vazia ou malformada quando exigida;
+  - comprovar falha para duplicação ou combinação estruturalmente incompatível;
   - não incluir referência imobiliária direta;
   - não importar o registry da E20.2;
-  - comprovar falha para declaração estruturalmente incompleta;
   - comprovar que chave sintaticamente válida não equivale a integridade referencial;
   - distinguir explicitamente representação declarativa de validação concreta pelo consumidor.
 - Regressões obrigatórias:
   - preservar os mapas existentes das dez variantes anteriores;
   - preservar os contratos de `benefits.standard@v1` e `hero.form@v1`;
-  - preservar falha fechada para source mode, path, item key, duplicação ou mapa inválido.
+  - preservar falha fechada para source mode, path, item key, duplicação ou mapa inválido;
+  - comprovar novamente ausência de `copySourceMapFor`, switch nominal, fallback e lookup paralelo;
+  - manter o resolver inalterado.
 - Métricas comparativas da fase:
   - registrar arquivos alterados, inserções, exclusões, pontos necessários de alteração, contratos e tipos alterados, alterações no registry, schema e resolver, listas paralelas, contagens fixas, regras nominais, duplicações, casos negativos, proteções preservadas e diferença em relação ao PR #617;
-  - registrar `0` ou `N/A` explicitamente quando não houver alteração no item.
+  - registrar `0` ou `N/A` explicitamente quando não houver alteração no item;
+  - publicar a evidência conforme a regra de residência de 18.5.9, vinculada ao SHA do checkpoint 18.5.7.
 - Validações:
+  - executar busca versionada que comprove ausência de lookup nominal ou fallback de sources;
   - executar `npm run validate:landing-page-research`;
   - executar `npm run validate:landing-page-input-catalog`;
   - executar `npm run validate:landing-page-module-catalog`;
   - executar `npm run check`;
   - executar `git diff --check`;
-  - todos os comandos devem terminar com código zero.
+  - todos os comandos devem terminar com código zero antes do checkpoint.
 
 ### 3.6. 18.5.8 — Perfis de copy por intenção e funil
 
@@ -455,6 +492,13 @@ Plano conceitual: `docs/lp-planejamento.md`.
   - comparar o conjunto final com o PR #617;
   - priorizar menos pontos distribuídos, ausência de contagens fixas, ausência de novas regras nominais, fontes junto dos fields, resolver intacto, mesmas proteções, mesmos casos negativos e ausência de dependência direta entre E18.5 e E20.2;
   - tratar quantidade de arquivos como métrica auxiliar, não como objetivo isolado.
+- Residência da evidência comparativa:
+  - após cada checkpoint, registrar no resumo do mesmo PR de implementação uma subseção `Métricas 18.5.X`, identificada pelo ID canônico da fase, SHA-base e SHA do checkpoint;
+  - incluir nessa subseção os arquivos alterados, `diff --stat`, inserções, exclusões e os demais itens normativos da matriz de métricas da fase, usando `0` ou `N/A` quando aplicável;
+  - vincular cada registro ao commit do checkpoint para que os valores possam ser reproduzidos pelo diff entre o SHA-base e o SHA da fase;
+  - em 18.5.9, registrar no mesmo resumo do PR a subseção `Consolidação 18.5.3–18.5.9`, referenciando todos os SHAs dos checkpoints e a comparação final com o PR #617;
+  - não criar novo arquivo em `docs/**`, matriz durável, relatório canônico ou outro artefato de repositório exclusivamente para essas métricas;
+  - a matriz temporária de consolidação da v2 não é residência das métricas da implementação.
 - Validações finais:
   - confirmar `npm ci` executado no lote contínuo; repetir somente se dependências ou lockfile mudarem;
   - executar `npm run validate:landing-page-root`;
