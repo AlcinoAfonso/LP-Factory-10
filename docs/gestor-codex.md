@@ -39,11 +39,11 @@ Configurações sustentam o fluxo local adotado para editar, validar e publicar 
 
 ### GitHub CLI (`gh`)
 
-**Aptidão:** criar PRs e consultar recursos do GitHub pelo terminal.
-**Estado:** não adotado; indisponível no teste de publicação que retornou `gh` não reconhecido.
-**Valor:** pode reduzir etapas manuais ao criar PRs, consultar PRs, checks e diffs depois do `git push`.
-**Limite:** não é dependência obrigatória do fluxo local; não instalar ferramenta nem alterar autenticação durante tarefas do Executor.
-**Fallback:** quando `gh` estiver indisponível, seguir `AGENTS.md`: concluir commit/push e entregar link de criação do PR.
+**Aptidão:** criar PRs e consultar PRs, checks e diffs pelo terminal.
+**Estado:** instalado e autenticado localmente.
+**Uso:** teste controlado.
+**Valor:** agiliza a criação de PRs e a consulta de PRs, checks e diffs pelo terminal.
+**Limite:** seguir as regras operacionais de `AGENTS.md`.
 
 **Outras configurações:** GitHub Web é a fonte de verdade para PRs, Actions, preview e merge; GitHub Desktop está fora do fluxo principal; não há hooks, conexões ou worktrees ativos.
 
