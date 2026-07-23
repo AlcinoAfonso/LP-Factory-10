@@ -2,7 +2,7 @@
 
 0.1 Cabeçalho
 • Data: 23/07/2026
-• Versão: v1.5.97
+• Versão: v1.5.98
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -1464,7 +1464,7 @@ Repositório — Ajustados
 
 18. E18 — Base transversal de templates, módulos, composições e artefatos
 - Objetivo: Definir infraestrutura e contratos reutilizáveis para famílias de templates por canal, templates versionados, módulos de conteúdo, seções de página, variantes, composições e artefatos finais persistidos; sustentar primeiro a E10.7 sem produzir diretamente a página comercial de um taxon; e permitir consumidores futuros somente como visão de evolução, sem antecipar sua implementação.
-- Status: Base mínima de `commercial_activation` concluída; parametrização raiz versionada de `landing_page` concluída em 13/07/2026; implementação anterior de composição `landing_page` removida; catálogo repo-only do PR #590 permanece vigente e a E18.5 foi reaberta em planejamento para otimização antes da E20.3.
+- Status: Base mínima de `commercial_activation` concluída; parametrização raiz versionada de `landing_page` concluída em 13/07/2026; implementação anterior de composição `landing_page` removida; catálogo repo-only permanece vigente e a otimização da E18.5 está definida antes da E20.3.
 
 18.1 Contrato transversal de templates, módulos, composições e artefatos
 
@@ -1771,12 +1771,12 @@ Repositório — Ajustados
 18.5 Parametrização de módulos e variantes `landing_page`
 
 18.5.1 Objetivo e status
-- Objetivo: otimizar o catálogo versionado de módulos e variantes da família `landing_page`, preservando o núcleo executável incorporado pelo PR #590 e reduzindo pontos distribuídos de manutenção comprovados pelo experimento do PR #617.
-- Status: Reaberta em planejamento para otimização pelo plano-base `docs/lousa-plano-base-e18-5.md`, antes da E20.3. A implementação repo-only mergeada no PR #590 permanece como base material vigente até o futuro PR material incorporar as otimizações aprovadas.
-- Estado planejado: dez módulos e doze variantes, com incorporação futura de `benefits@v1`, `benefits.standard@v1` e `hero.form@v1`; registry versionado, resolver genérico, Zod estrito, falha fechada, contratos tipados, imutabilidade profunda, testes negativos e API pública mínima permanecem preservados.
-- Evidência: os quatro testes do PR #617 não alteraram o resolver e concentraram o custo de extensão em contratos, registry, schema, listas paralelas, contagens e testes; o PR experimental permanecerá aberto em draft, sem merge, como baseline comparativa.
+- Objetivo: otimizar o catálogo versionado de módulos e variantes da família `landing_page`, preservando o núcleo executável vigente e reduzindo pontos distribuídos de manutenção.
+- Status: Núcleo repo-only vigente com nove módulos e dez variantes; evolução planejada para implementação antes da E20.3.
+- Estado planejado: dez módulos e doze variantes, com incorporação futura de `benefits@v1`, `benefits.standard@v1` e `hero.form@v1`.
+- Proteções preservadas: registry versionado, resolver genérico, Zod estrito, falha fechada, contratos tipados, separação entre módulo, variante e fields, imutabilidade profunda, casos negativos, API pública mínima e ausência de fallback.
 - Limites preservados: sem payload de conteúdo, banco, migration, rota, UI, renderer, composição, persistência, automação, job ou consumo por E19/E20; a E18.4 permanece fora da otimização e E19, E20.2 e E20.3 não serão implementadas ou alteradas neste recorte.
-- Nota de transição: as subseções 18.5.2–18.5.9 continuam registrando o estado material vigente do PR #590; `benefits` e `hero.form` não estão registrados como implementados e seu inventário será atualizado somente pelo futuro PR material conforme o diff real.
+- Transição: as subseções 18.5.2–18.5.9 preservam o estado material vigente e registram separadamente a evolução planejada; `benefits` e `hero.form` não estão implementados e o inventário só será atualizado após o diff material correspondente.
 
 18.5.2 Registros do recorte
 - Banco: N/A.
@@ -1803,6 +1803,10 @@ Repositório — Ajustados
   - Cada módulo registra função estrutural, fronteiras, invariantes, lifecycle inicial `hypothesis` e propósito `controlled_test`.
   - Identidades e valores estruturais são fechados e imutáveis, sem colisão com `commercial_activation`.
   - Módulos não registram taxon, campanha, plano, copy, ativo, ordem, canal ou destino concreto.
+- Evolução planejada:
+  - preservar os nove módulos vigentes e incorporar `benefits@v1` como décimo módulo;
+  - remover contagens globais fixas e reduzir identidades paralelas quando houver derivação segura;
+  - manter o módulo transversal sem acoplamento ao catálogo da E20.2 e sem alteração do resolver.
 
 18.5.4 Campos, estruturas e cardinalidades
 - Status: Implementada.
@@ -1812,6 +1816,10 @@ Repositório — Ajustados
   - Fields e cardinalidades pertencem diretamente aos contratos das variantes; módulos não possuem catálogo paralelo de fields.
   - Coleção aninhada e destino concreto permanecem fora da v1.
   - Field, path, shape, cardinalidade, policy ou combinação não autorizada falham fechado.
+- Evolução planejada:
+  - otimizar primeiro a gramática genérica das dez variantes existentes, sem antecipar novas identidades ou field contracts identificados;
+  - remover regras baseadas em contagens globais e preservar igualdade exata entre variant keys e field contract keys;
+  - manter registry, schema, resolver e validações completos ao fim do checkpoint.
 
 18.5.5 Variantes e critérios de criação
 - Status: Implementada.
@@ -1822,6 +1830,11 @@ Repositório — Ajustados
   - `faq.standard@v1` e `faq.accordion@v1` preservam contratos independentes; o Accordion registra contrato abstrato WCAG 2.2 de teclado, estado expandido, associação acessível e foco.
   - Hero e Final CTA declaram `actionCompatibility.supportsPrimaryConversionForm = false`, sem fallback de canal.
   - Diferenças apenas de taxon, copy, plano, campanha, ativo, ordem ou quantidade não criam variante.
+- Evolução planejada:
+  - incorporar atomicamente `benefits.standard@v1` e `hero.form@v1`, seus field contracts, records, fields, sources, capabilities e `formContract`;
+  - declarar sources junto dos fields e remover o lookup nominal por path sem case temporário, construção paralela ou fallback;
+  - aplicar a `hero.form@v1` baseline abstrato WCAG 2.2, sem UI, renderer, formulário funcional ou declaração de conformidade integral;
+  - manter `hero.standard@v1` sem formulário e preservar o resolver.
 
 18.5.6 Especializações sobre a parametrização raiz
 - Status: Implementada.
@@ -1832,6 +1845,10 @@ Repositório — Ajustados
   - O resolver preserva a raiz original e devolve também a raiz efetiva após as especializações.
   - Contrato ausente, incompatível, inválido ou que amplie o contrato-pai falha fechado.
   - Os boundaries públicos existentes de `landingPageRoot`, `landingPageResearch` e `landingPageInputCatalog` permanecem preservados.
+- Evolução planejada:
+  - preservar compatibilidade com a raiz e permitir somente especializações restritivas;
+  - manter validações estruturais genéricas, sem regras nominais para as novas identidades;
+  - não alterar nem reabrir a E18.4 e não alterar o resolver para extensões comuns.
 
 18.5.7 Mapa de fontes de copy
 - Status: Implementada.
@@ -1842,6 +1859,10 @@ Repositório — Ajustados
   - O conjunto aprovado contempla `commercial_keywords`, `faq_questions` e `narrative_arc` nos fields correspondentes.
   - Quote e attribution de Social Proof permanecem vinculados à referência de evidência operacional do próprio item.
   - Source mode, path, item key, quantidade, duplicação ou mapa não autorizado falham fechado.
+- Evolução planejada:
+  - concluir a semântica das sources declaradas junto dos fields e seus casos negativos;
+  - distinguir pesquisa estruturada, necessidade de suporte operacional e evidência operacional;
+  - manter referências operacionais abstratas, sem importar ou duplicar o registry da E20.2 e sem confundir formato válido com integridade referencial.
 
 18.5.8 Perfis de copy por intenção e funil
 - Status: Implementada.
@@ -1852,6 +1873,10 @@ Repositório — Ajustados
   - `emphasizeTreatments` permanece vazio nos perfis e em todos os deltas da v1; permissão não se converte implicitamente em ênfase.
   - Deltas de módulo podem apenas restringir ou proibir treatments conhecidos, sem relaxar restrição ou proibição herdada.
   - As variantes `faq.standard@v1` e `faq.accordion@v1` compartilham o mesmo delta do módulo `faq`.
+- Evolução planejada:
+  - preservar vocabulários, classificação única, `ctaMode` e ausência de ênfase implícita nos perfis BOFU, MOFU e TOFU;
+  - reduzir listas paralelas somente por derivação segura;
+  - impedir regra nominal para nova identidade quando a relação for estruturalmente genérica.
 
 18.5.9 Ciclo de vida, compatibilidade e validação
 - Status: Implementada e aprovada.
@@ -1864,6 +1889,11 @@ Repositório — Ajustados
   - Resultados são profundamente imutáveis, sem referência mutável compartilhada e sem fallback aproximado.
   - Validação executável própria concluída com 23 casos, além das regressões de raiz, pesquisas, catálogo de entradas e ativação comercial.
   - Comando canônico: `npm run validate:landing-page-module-catalog`.
+- Evolução planejada:
+  - consolidar dez módulos e doze variantes, preservando lifecycle separado, API pública mínima, internalidade de registry/schema, ausência de fallback e imutabilidade profunda;
+  - repetir os quatro testes de extensibilidade e preservar casos positivos e negativos das proteções existentes;
+  - manter o resolver inalterado e a E18.5 independente do registry da E20.2;
+  - reconciliar registros materiais e updates somente depois de código e validações correspondentes.
 
 19. E19 — LP Builder
 - Objetivo: Consolidar a seção do Core responsável pela criação, edição e organização de landing pages. No recorte atual, limitar E19 à criação mínima de LP por conta com status inicial `draft`.
@@ -2067,6 +2097,8 @@ Repositório — Ajustados
   * O recorte não cria banco, rota, API, Server Action, UI, adapter de banco, entitlement, integração Stripe, valor operacional, snapshot, automação, agente ou job.
 
 99. Changelog
+v1.5.98 — 23/07/2026 — Detalhada a evolução planejada da E18.5 em sete subseções canônicas, preservando o estado material vigente e definindo extensões atômicas, sources junto dos fields, proteções do núcleo executável e limites antes da E20.3.
+
 v1.5.97 — 23/07/2026 — Abandonada a substituição integral planejada para a E18.5; preservado o núcleo repo-only incorporado pelo PR #590 e redirecionado o plano para otimizações pontuais, com incorporação futura de `benefits.standard@v1` e `hero.form@v1` e uso do PR #617 como evidência experimental sem merge.
 
 v1.5.96 — 21/07/2026 — E18.5 reorganizada conforme `docs/template-roadmap.md`: registros de implementação movidos para 18.5.2 sem artefatos `docs/**`, `prod#17` registrado como update aplicado ao contrato abstrato de `faq.accordion@v1`, conteúdos implementados distribuídos entre 18.5.3 e 18.5.9 e status atualizado após aprovação e merge do PR #590.
