@@ -22,22 +22,26 @@ Fontes de referência: `README.md`, `docs/roadmap.md`, `docs/base-tecnica.md`, `
 - O resultado preserva taxon atendido, origem, pesquisas, `audience_scope` e versões.
 - Conteúdo, copy, prova, oferta, FAQ e CTA permanecem específicos do taxon atendido, mesmo quando a composição é herdada.
 
-### 1.3. Manter a base geral da família `landing_page`
+### 1.3. Manter a base raiz da família `landing_page`
 
-- A E18.4 reúne orientações gerais reutilizáveis, como papéis de texto, extensão, limites necessários e princípios visuais e responsivos.
-- Essa base orienta a IA e os implementadores; no MVP, não deve funcionar como engine universal de geração, validação ou renderização.
-- Ajustar uma orientação deve exigir mudança localizada na fonte versionada, sem banco, nova infraestrutura ou alterações distribuídas em consumidores genéricos.
-- Regras técnicas rígidas só devem ser criadas quando houver consumidor real e necessidade comprovada.
+- A E18.4 reúne a parametrização raiz versionada de `landing_page`, incluindo papéis semânticos, faixas editoriais, limites técnicos e princípios visuais, responsivos e de acessibilidade.
+- O núcleo atual com registry, resolver, schema, falha fechada e contratos versionados permanece vigente enquanto essas proteções tiverem valor comprovado.
+- A E18.4 não será automaticamente simplificada nem substituída antes da E20.3.
+- Depois da otimização da E18.5, a E18.4 deve ser reavaliada somente se testes reais demonstrarem manutenção distribuída, rigidez desnecessária ou dificuldade relevante de extensão.
+- Ajustar uma orientação deve exigir mudança localizada e validação proporcional ao dado alterado, sem banco ou nova infraestrutura.
 - Os valores iniciais permanecem hipóteses até validação por LP real.
 
-### 1.4. Manter o catálogo de módulos e variantes
+### 1.4. Manter e otimizar o catálogo de módulos e variantes
 
-- A E18.5 é um catálogo versionado e consultivo para a IA conhecer módulos, variantes, finalidades, estruturas sugeridas, campos usuais e cuidados relevantes.
-- Módulo representa função estrutural reutilizável; variante representa outra execução reutilizável da mesma função.
+- A E18.5 mantém um catálogo executável, versionado e tipado para a IA e futuros consumidores conhecerem módulos, variantes, finalidades, estruturas, fields, fontes e capacidades permitidas.
+- O núcleo incorporado pelo PR #590 permanece preservado: registry versionado, resolver genérico, Zod estrito, falha fechada, contratos TypeScript, API pública mínima, isolamento e imutabilidade profunda.
+- Módulo representa função estrutural reutilizável; variante representa outra execução estrutural ou comportamental reutilizável da mesma função.
 - Taxon, plano, campanha, conteúdo, ordem ou ajuste já permitido não justificam isoladamente novo módulo ou variante.
-- Adicionar ou ajustar módulo ou variante deve ser uma mudança simples e localizada no catálogo, sem banco, migration, novo resolver ou atualização de listas e testes genéricos duplicados.
-- Código adicional só se justifica quando a nova opção exigir capacidade técnica ainda inexistente no fluxo real, como nova interação ou suporte de renderer.
-- A implementação vigente da E18.4 e da E18.5 deve ser reavaliada e simplificada antes da E20.3; preservar o conhecimento útil e o histórico Git.
+- Para o humano, adicionar ou ajustar módulo ou variante deve continuar simples por briefing e revisão do PR; internamente, a extensão comum deve ficar concentrada na definição canônica da identidade.
+- Uma extensão comum não deve exigir alteração do resolver, nova regra nominal no schema genérico, ajuste de contagem global, atualização de `switch` por path ou manutenção de listas paralelas evitáveis.
+- Código adicional permanece legítimo quando a nova opção introduzir capability técnica realmente nova; nesse caso, contrato TypeScript, Zod, registry e casos negativos podem precisar evoluir.
+- A otimização planejada incorpora permanentemente `benefits@v1`, `benefits.standard@v1` e `hero.form@v1` e repete os quatro testes do PR #617 antes da E20.3.
+- A E18.5 não será substituída por catálogo apenas consultivo e não perderá as proteções comprovadas nos testes.
 
 ### 1.5. Definir o catálogo de entradas para geração da LP
 
@@ -52,6 +56,7 @@ Fontes de referência: `README.md`, `docs/roadmap.md`, `docs/base-tecnica.md`, `
 - A composição pode pertencer a segmento ou nicho; composição própria de ultranicho é excepcional.
 - Pelo Admin Dashboard, o administrador solicita à IA uma proposta baseada nas pesquisas resolvidas, na E18.4 e no catálogo E18.5.
 - A IA propõe módulos, variantes, ordem, obrigatoriedade e escolhas permitidas; o sistema valida a proposta e o humano revisa, ajusta, salva como `draft`, aprova e ativa.
+- A composição válida só pode referenciar módulos, variantes e versões oficialmente registrados na E18.5.
 - Migration, seed, fixture, script ou insert direto podem apoiar testes, mas não criam a composição oficial nem atendem ao fluxo funcional.
 - Uma versão ativa não é editada diretamente; mudança aprovada cria nova versão e preserva as anteriores.
 - A composição do ancestral elegível é herdada quando não houver composição própria aprovada e a herança não estiver bloqueada.
@@ -59,12 +64,15 @@ Fontes de referência: `README.md`, `docs/roadmap.md`, `docs/base-tecnica.md`, `
 ### 1.7. Tratar gaps identificados pela IA
 
 - A IA deve separar proposta válida, usando apenas o catálogo existente, de necessidades não atendidas por módulos ou variantes atuais.
-- Ela não cria novos contratos automaticamente.
+- Identidade inexistente não pode entrar na composição válida; o sistema deve rejeitar referência desconhecida e mantê-la apenas como gap para decisão humana.
+- A IA não cria novos contratos automaticamente.
 - O administrador decide se o gap:
   - bloqueia a composição ou a prontidão atual e deve retornar à E18.5;
   - pode ser adiado, com justificativa, impacto, responsável e condição de retomada registrados.
 - Gap de função estrutural aponta para novo módulo; diferença reutilizável de execução aponta para nova variante.
-- A ampliação da E18.5 deve permanecer simples. Se uma extensão comum exigir alterações espalhadas em vários schemas, resolvers ou testes genéricos, a arquitetura deve ser simplificada antes de prosseguir.
+- Quando o gap for impeditivo, a composição permanece `draft`, a prontidão não é aprovada e a extensão segue por plano e PR próprios da E18.5.
+- Depois do merge da nova identidade versionada, a IA deve refazer ou revalidar a composição antes da aprovação humana.
+- A ampliação da E18.5 deve permanecer simples. Se uma extensão comum voltar a exigir alterações distribuídas, a arquitetura deve ser otimizada antes de prosseguir, sem remover proteções comprovadas.
 
 ### 1.8. Confirmar prontidão e autorizar a primeira geração
 
@@ -96,18 +104,22 @@ Fontes de referência: `README.md`, `docs/roadmap.md`, `docs/base-tecnica.md`, `
 - Preservar o resolver server-side, determinístico, rastreável e fail-closed já concluído.
 - E20 e E19 consomem seu resultado sem recalcular herança de pesquisas.
 
-### 2.2. E18.4 — Base geral simples
+### 2.2. E18.4 — Base raiz versionada
 
-- Reavaliar a implementação atual para manter somente orientação versionada necessária à IA e aos consumidores reais.
-- Remover rigidez e artefatos sem consumidor comprovado.
+- Preservar a implementação atual enquanto suas proteções permanecerem úteis para a E18.5 e para os consumidores reais.
+- Reavaliar a extensibilidade somente depois da otimização e dos testes comparativos da E18.5.
+- Criar plano próprio de otimização apenas se houver evidência de rigidez, manutenção distribuída ou artefato sem retorno proporcional.
 - Garantir alteração localizada e validação proporcional ao dado alterado.
 
-### 2.3. E18.5 — Catálogo consultivo simples
+### 2.3. E18.5 — Otimização do catálogo executável
 
-- Preservar as definições úteis dos módulos e variantes atuais.
-- Substituir o catálogo executável excessivamente fechado por uma fonte consultiva simples e extensível.
-- Tornar adição e ajuste de módulos e variantes localizados, sem listas duplicadas, contagens fixas ou regras genéricas vinculadas a chaves específicas.
-- Manter revisão humana e critérios de reutilização.
+- Preservar o núcleo executável incorporado pelo PR #590 e suas proteções comprovadas.
+- Incorporar `benefits@v1`, `benefits.standard@v1` e `hero.form@v1` como identidades permanentes.
+- Remover contagens globais fixas, declarar fontes junto dos fields, eliminar o `switch` paralelo por path e reduzir listas e identidades paralelas evitáveis.
+- Preferir relações Zod estruturais realmente genéricas a regras nominais vinculadas a variantes específicas.
+- Manter resolver genérico, Zod estrito, falha fechada, tipagem, imutabilidade, casos negativos e API pública mínima.
+- Repetir os quatro testes do PR #617 e comparar pontos de alteração, duplicações e proteções antes de concluir a otimização.
+- Não substituir o catálogo por fonte apenas consultiva.
 
 ### 2.4. E20.2 — Catálogo de entradas
 
@@ -119,7 +131,9 @@ Fontes de referência: `README.md`, `docs/roadmap.md`, `docs/base-tecnica.md`, `
 - Implementar no Admin Dashboard o fluxo real de solicitar proposta à IA, revisar, ajustar, salvar `draft`, aprovar e ativar a composição.
 - Persistir composição, versões, herança, gaps, prontidão, aprovação, autorização e revogação conforme plano-base próprio.
 - Usar composição única por taxon proprietário e avaliar prontidão separadamente por plano.
+- Validar que a composição usa somente identidades e versões registradas na E18.5.
 - Permitir que a IA registre gaps sem criar módulos ou variantes automaticamente.
+- Manter composição com gap impeditivo em `draft` até a extensão da E18.5 ser mergeada e a proposta ser revalidada.
 - Impedir atalhos que considerem composição oficial criada apenas por carga direta.
 
 ### 2.6. E19.4 — Fluxo único da LP por conta
@@ -142,11 +156,12 @@ Fontes de referência: `README.md`, `docs/roadmap.md`, `docs/base-tecnica.md`, `
 
 ## 3. Ordem dos próximos planos-base
 
-- 1º — simplificar a E18.5 como catálogo consultivo e facilmente extensível.
-- 2º — reavaliar e simplificar a E18.4 conforme as necessidades reais da E18.5 simplificada.
-- 3º — implementar E20.3 com a operação administrativa mínima da E12.4.3 e E12.4.4.
-- 4º — implementar E19.4 como fluxo real e único de geração por conta.
-- 5º — implementar a avaliação e liberação por E20.4 e E12.4.5–12.4.6.
+- 1º — otimizar a E18.5 preservando o núcleo do PR #590 e incorporando as extensões comprovadas.
+- 2º — repetir comparativamente os quatro testes do PR #617 e consolidar a implementação material.
+- 3º — reavaliar se a E18.4 necessita plano próprio; sem evidência de problema, mantê-la vigente e seguir.
+- 4º — implementar E20.3 com a operação administrativa mínima da E12.4.3 e E12.4.4.
+- 5º — implementar E19.4 como fluxo real e único de geração por conta.
+- 6º — implementar a avaliação e liberação por E20.4 e E12.4.5–12.4.6.
 - E10.8 e E20.2 permanecem concluídas e são consumidas pelos próximos recortes.
 
 ## 4. Onde cada ajuste entra no roadmap
@@ -165,15 +180,17 @@ Fontes de referência: `README.md`, `docs/roadmap.md`, `docs/base-tecnica.md`, `
 
 ### 4.3. E18
 
-- E18.4 mantém a base geral consultiva da família `landing_page`.
-- E18.5 mantém o catálogo consultivo de módulos e variantes.
-- Ambos devem ser simples de ajustar e não antecipar engines, renderers ou validações sem consumidor real.
-- As implementações atuais devem ser simplificadas por planos-base próprios antes da E20.3.
+- E18.4 mantém a base raiz versionada e executável da família `landing_page`.
+- E18.5 mantém o catálogo executável, versionado e tipado de módulos e variantes.
+- A E18.5 será otimizada sem remover resolver, Zod, falha fechada, contratos tipados, imutabilidade ou API pública mínima.
+- A E18.4 será reavaliada somente após os testes da E18.5 e não é condição automática para iniciar a E20.3.
+- Ambos devem permanecer simples para o humano e eficientes para o sistema, sem antecipar renderer, persistência ou infraestrutura fora de seus recortes.
 
 ### 4.4. E20
 
 - E20.2 permanece responsável pelo catálogo de entradas.
 - E20.3 define e persiste composição, herança, gaps, prontidão e autorização, operados pela E12.
+- E20.3 só aceita identidades oficialmente registradas na E18.5; sugestões inexistentes permanecem gaps até decisão humana e eventual extensão versionada.
 - E20.4 define critérios de liberação por evidência da LP real.
 - A composição é única por taxon proprietário e versão; prontidão e liberação são avaliadas por plano.
 
