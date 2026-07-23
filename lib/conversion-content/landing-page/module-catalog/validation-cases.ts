@@ -26,7 +26,7 @@ type Case = Readonly<{
 
 const cases: readonly Case[] = [
   {
-    name: "the versioned catalog and all nine modules are valid",
+    name: "the versioned catalog and all ten modules are valid",
     run: () => {
       const result = landingPageModuleCatalogSchema.safeParse(
         landingPageModuleCatalogRegistry,
@@ -178,7 +178,7 @@ const cases: readonly Case[] = [
     },
   },
   {
-    name: "all ten field contracts and five field kinds are valid",
+    name: "all twelve field contracts and five field kinds are valid",
     run: () => {
       assert.deepEqual(
         Object.keys(
@@ -274,7 +274,7 @@ const cases: readonly Case[] = [
     },
   },
   {
-    name: "all ten variants link one module and their own field contract",
+    name: "all twelve variants link one module and their own field contract",
     run: () => {
       assert.deepEqual(
         Object.keys(landingPageModuleCatalogRegistry.variants).sort(),
@@ -304,7 +304,44 @@ const cases: readonly Case[] = [
     },
   },
   {
-    name: "only the three approved capabilities are assigned",
+    name: "benefits standard resolves its bounded reusable-benefits contract",
+    run: () => {
+      const result = resolveLandingPageModuleCatalog({
+        moduleCatalogVersion: 1,
+        rootVersion: 1,
+        moduleKey: "benefits",
+        moduleVersion: 1,
+        variantName: "standard",
+        variantVersion: 1,
+        funnelProfileKey: "mofu",
+      });
+
+      assert.equal(result.ok, true);
+      if (!result.ok) return;
+      assert.equal(result.value.module.moduleKey, "benefits");
+      assert.equal(result.value.variant.variantKey, "benefits.standard@v1");
+      assert.deepEqual(
+        result.value.fieldContract.fields.map((field) => field.path),
+        ["benefits.standard.title", "benefits.standard.items"],
+      );
+      const items = result.value.fieldContract.fields[1];
+      assert.equal(items?.fieldKind, "collection");
+      if (items?.fieldKind !== "collection") return;
+      assert.deepEqual(items.cardinality, { min: 2, max: 6 });
+      assert.deepEqual(
+        items.itemFields.map((field) => field.path),
+        [
+          "benefits.standard.items[].benefitTitle",
+          "benefits.standard.items[].description",
+        ],
+      );
+      assert.equal(result.value.variant.capabilities.length, 0);
+      assert.equal(result.value.variant.actionCompatibility, undefined);
+      assertDeeplyFrozen(result.value);
+    },
+  },
+  {
+    name: "only the four approved capabilities are assigned",
     run: () => {
       const assignedCapabilities = new Set(
         Object.values(landingPageModuleCatalogRegistry.variants).flatMap(
@@ -319,6 +356,11 @@ const cases: readonly Case[] = [
         landingPageModuleCatalogRegistry.variants["hero.standard@v1"]
           .capabilities,
         ["primary_action", "image_asset"],
+      );
+      assert.deepEqual(
+        landingPageModuleCatalogRegistry.variants["hero.form@v1"]
+          .capabilities,
+        ["primary_action", "image_asset", "embedded_form"],
       );
       assert.deepEqual(
         landingPageModuleCatalogRegistry.variants["final_cta.standard@v1"]
@@ -370,18 +412,144 @@ const cases: readonly Case[] = [
     },
   },
   {
+    name: "hero form resolves with an abstract primary conversion form",
+    run: () => {
+      const result = resolveLandingPageModuleCatalog({
+        moduleCatalogVersion: 1,
+        rootVersion: 1,
+        moduleKey: "hero",
+        moduleVersion: 1,
+        variantName: "form",
+        variantVersion: 1,
+        funnelProfileKey: "bofu",
+      });
+
+      assert.equal(result.ok, true);
+      if (!result.ok) return;
+      assert.equal(result.value.variant.variantKey, "hero.form@v1");
+      assert.deepEqual(result.value.variant.actionCompatibility, {
+        supportsPrimaryConversionForm: true,
+      });
+      assert.deepEqual(result.value.variant.formContract, {
+        fields: [
+          {
+            fieldKey: "name",
+            valueType: "text",
+            obligation: "required",
+            label: "Name",
+            purpose: "Identify the person requesting contact.",
+          },
+          {
+            fieldKey: "email",
+            valueType: "email",
+            obligation: "required",
+            label: "Email",
+            purpose: "Provide a reply address for the contact request.",
+          },
+          {
+            fieldKey: "phone",
+            valueType: "phone",
+            obligation: "optional",
+            label: "Phone",
+            purpose: "Provide an optional telephone contact route.",
+          },
+        ],
+        consent: {
+          required: true,
+          fieldKey: "privacyConsent",
+          label: "I agree to the privacy policy.",
+          purpose: "Record explicit consent before form submission.",
+          privacyPolicyInputFieldKey: "privacy_policy_url",
+        },
+        accessibility: {
+          baseline: "WCAG 2.2",
+          labelsProgrammaticallyAssociated: true,
+          instructionsProgrammaticallyAssociated: true,
+          errorsProgrammaticallyAssociated: true,
+          keyboardOperable: true,
+          focusMovesToFirstInvalidField: true,
+        },
+        operationalBinding: {
+          inputCatalogFieldKey: "primary_conversion_channel",
+          requiredValue: "form",
+        },
+      });
+      assert.equal(
+        flattenFields(
+          result.value.fieldContract.fields as readonly Record<string, unknown>[],
+        ).every((field) => String(field.path).startsWith("hero.form.")),
+        true,
+      );
+      assert.equal(
+        flattenFields(
+          result.value.fieldContract.fields as readonly Record<string, unknown>[],
+        ).some((field) => String(field.path).includes("formField")),
+        false,
+      );
+      assertDeeplyFrozen(result.value);
+    },
+  },
+  {
+    name: "embedded form contract fails closed when incomplete or incompatible",
+    run: () => {
+      const incompatibleCapability = cloneRegistry();
+      incompatibleCapability.variants["hero.standard@v1"].capabilities.push(
+        "embedded_form",
+      );
+      assertInvalid(incompatibleCapability);
+
+      const invalidFormField = cloneRegistry();
+      const invalidFormContract = invalidFormField.variants["hero.form@v1"].formContract;
+      assert.ok(invalidFormContract);
+      invalidFormContract.fields[0].valueType = "number";
+      assertInvalid(invalidFormField);
+
+      const missingConsent = cloneRegistry();
+      delete missingConsent.variants["hero.form@v1"].formContract?.consent;
+      assertInvalid(missingConsent);
+
+      const missingPrivacyPolicy = cloneRegistry();
+      const consent = missingPrivacyPolicy.variants["hero.form@v1"].formContract?.consent;
+      assert.ok(consent);
+      delete consent.privacyPolicyInputFieldKey;
+      assertInvalid(missingPrivacyPolicy);
+
+      const incompleteAccessibility = cloneRegistry();
+      const accessibility = incompleteAccessibility.variants["hero.form@v1"].formContract?.accessibility;
+      assert.ok(accessibility);
+      delete accessibility.errorsProgrammaticallyAssociated;
+      assertInvalid(incompleteAccessibility);
+
+      const missingOperationalBinding = cloneRegistry();
+      delete missingOperationalBinding.variants["hero.form@v1"].formContract?.operationalBinding;
+      assertInvalid(missingOperationalBinding);
+
+      const standardHero = landingPageModuleCatalogRegistry.variants["hero.standard@v1"];
+      assert.equal(standardHero.capabilities.includes("embedded_form"), false);
+      assert.equal(standardHero.formContract, undefined);
+      assert.deepEqual(standardHero.actionCompatibility, {
+        supportsPrimaryConversionForm: false,
+      });
+    },
+  },
+  {
     name: "form compatibility is explicit without channel fallback",
     run: () => {
-      for (const variantKey of [
-        "hero.standard@v1",
-        "final_cta.standard@v1",
-      ] as const) {
-        assert.deepEqual(
-          landingPageModuleCatalogRegistry.variants[variantKey]
-            .actionCompatibility,
-          { supportsPrimaryConversionForm: false },
-        );
-      }
+      assert.deepEqual(
+        landingPageModuleCatalogRegistry.variants["hero.standard@v1"]
+          .actionCompatibility,
+        { supportsPrimaryConversionForm: false },
+      );
+      assert.deepEqual(
+        landingPageModuleCatalogRegistry.variants["hero.form@v1"]
+          .actionCompatibility,
+        { supportsPrimaryConversionForm: true },
+      );
+      assert.deepEqual(
+        landingPageModuleCatalogRegistry.variants["final_cta.standard@v1"]
+          .actionCompatibility,
+        { supportsPrimaryConversionForm: false },
+      );
 
       const formFallback = cloneRegistry();
       formFallback.variants["hero.standard@v1"].fallbackChannel = "whatsapp";
@@ -392,6 +560,12 @@ const cases: readonly Case[] = [
         "hero.standard@v1"
       ].actionCompatibility = { supportsPrimaryConversionForm: true };
       assertInvalid(formSupported);
+
+      const formUnsupported = cloneRegistry();
+      formUnsupported.variants[
+        "hero.form@v1"
+      ].actionCompatibility = { supportsPrimaryConversionForm: false };
+      assertInvalid(formUnsupported);
     },
   },
   {
@@ -500,13 +674,73 @@ const cases: readonly Case[] = [
     },
   },
   {
-    name: "copy source maps are closed and operational evidence stays separate",
+    name: "copy source maps support research with declared operational dependencies",
     run: () => {
       const textualFields = Object.values(landingPageModuleCatalogRegistry.variantFieldContracts)
         .flatMap((contract) => flattenFields(contract.fields))
         .filter((field) => field.fieldKind === "text");
-      assert.equal(textualFields.length, 30);
+      assert.equal(textualFields.length, 38);
       assert.equal(textualFields.every((field) => Boolean(field.copySourceMap)), true);
+
+      for (const path of [
+        "benefits.standard.items[].benefitTitle",
+        "benefits.standard.items[].description",
+      ]) {
+        const field = getMutableTextField(
+          cloneRegistry(),
+          "benefits.standard@v1",
+          path,
+        );
+        assert.equal(field.support, "when_factual");
+        assert.equal(
+          field.copySourceMap.sourceMode,
+          "research_with_operational_support",
+        );
+        assert.deepEqual(field.copySourceMap.operationalSupport, {
+          requirement: "required_when_claimed",
+          inputCatalogFieldKeys: [
+            "financing_support_available",
+            "document_support_available",
+          ],
+        });
+      }
+
+      const incompleteCombinedSource = cloneRegistry();
+      delete getMutableTextField(
+        incompleteCombinedSource,
+        "benefits.standard@v1",
+        "benefits.standard.items[].description",
+      ).copySourceMap.operationalSupport;
+      assertInvalid(incompleteCombinedSource);
+
+      const missingOperationalDeclaration = cloneRegistry();
+      delete getMutableTextField(
+        missingOperationalDeclaration,
+        "benefits.standard@v1",
+        "benefits.standard.items[].description",
+      ).support;
+      assertInvalid(missingOperationalDeclaration);
+
+      for (const invalidReference of ["", "invalid reference"]) {
+        const invalidOperationalReference = cloneRegistry();
+        getMutableTextField(
+          invalidOperationalReference,
+          "benefits.standard@v1",
+          "benefits.standard.items[].description",
+        ).copySourceMap.operationalSupport = {
+          requirement: "required_when_claimed",
+          inputCatalogFieldKeys: [invalidReference],
+        };
+        assertInvalid(invalidOperationalReference);
+      }
+
+      const invalidCombinedResearch = cloneRegistry();
+      getMutableTextField(
+        invalidCombinedResearch,
+        "benefits.standard@v1",
+        "benefits.standard.items[].description",
+      ).copySourceMap.primaryItemKeys = ["unknown"];
+      assertInvalid(invalidCombinedResearch);
 
       const unknownSourceMode = cloneRegistry();
       getMutableTextField(unknownSourceMode, "hero.standard@v1", "hero.standard.title").copySourceMap.sourceMode = "input_catalog";
@@ -611,7 +845,7 @@ const cases: readonly Case[] = [
     },
   },
   {
-    name: "resolver returns ten complete isolated variants without fallback",
+    name: "resolver returns twelve complete isolated variants without fallback",
     run: () => {
       for (const variantKey of landingPageVariantKeys) {
         const [moduleKey, qualifiedVariant] = variantKey.split(".");
@@ -868,6 +1102,10 @@ type MutableField = {
     primaryItemKeys?: string[];
     auxiliaryItemKey?: string;
     evidencePath?: string;
+    operationalSupport?: {
+      requirement: string;
+      inputCatalogFieldKeys: string[];
+    };
   };
   itemFields?: MutableField[];
   label?: MutableField;
@@ -889,6 +1127,34 @@ type MutableVariant = {
   rootDelta: MutableRootDelta;
   capabilities: string[];
   actionCompatibility?: { supportsPrimaryConversionForm: boolean };
+  formContract?: {
+    fields: Array<{
+      fieldKey: string;
+      valueType: string;
+      obligation: string;
+      label: string;
+      purpose: string;
+    }>;
+    consent?: {
+      required: boolean;
+      fieldKey: string;
+      label: string;
+      purpose: string;
+      privacyPolicyInputFieldKey?: string;
+    };
+    accessibility?: {
+      baseline: string;
+      labelsProgrammaticallyAssociated: boolean;
+      instructionsProgrammaticallyAssociated: boolean;
+      errorsProgrammaticallyAssociated?: boolean;
+      keyboardOperable: boolean;
+      focusMovesToFirstInvalidField: boolean;
+    };
+    operationalBinding?: {
+      inputCatalogFieldKey: string;
+      requiredValue: string;
+    };
+  };
   accordionAccessibility?: Record<string, string | boolean>;
   fallbackChannel?: string;
   creationMotivation?: string;

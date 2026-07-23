@@ -108,6 +108,19 @@ export const landingPageModuleCatalogRegistry = deepFreeze({
         "No price, commercial condition, action, media, proof, process or FAQ.",
       ],
     ),
+    benefits: moduleDefinition(
+      "benefits",
+      "Present practical and reusable benefits of the solution.",
+      [
+        "Benefits are practical, reusable and distinct from available offers.",
+        "Benefits remain distinct from problem-solution pairs, trust signals and social proof.",
+        "Result claims require support and are not invented.",
+      ],
+      [
+        "No action, form, social proof, price or media.",
+        "No detailed offer, problem-solution pair, trust bar, testimonial or case.",
+      ],
+    ),
     process: moduleDefinition(
       "process",
       "Explain a real progression through distinct steps.",
@@ -181,6 +194,17 @@ export const landingPageModuleCatalogRegistry = deepFreeze({
         image("hero.standard.media", "media", 0, 1),
       ],
     },
+    "hero.form@v1": {
+      fieldContractKey: "hero.form@v1",
+      fields: [
+        text("hero.form.eyebrow", "eyebrow", "eyebrow", 0, 1, "research_guided"),
+        text("hero.form.title", "title", "h1", 1, 1, "hybrid", "when_factual"),
+        text("hero.form.subtitle", "subtitle", "paragraph", 1, 1, "hybrid", "when_factual"),
+        action("hero.form.primaryCta", "primaryCta"),
+        text("hero.form.proofShort", "proofShort", "paragraph", 0, 1, "hybrid", "when_present"),
+        image("hero.form.media", "media", 0, 1),
+      ],
+    },
     "trust_bar.standard@v1": {
       fieldContractKey: "trust_bar.standard@v1",
       fields: [
@@ -206,6 +230,16 @@ export const landingPageModuleCatalogRegistry = deepFreeze({
         collection("offer.standard.items", "items", 1, 4, [
           text("offer.standard.items[].itemTitle", "itemTitle", "card_title", 1, 1, "hybrid", "when_present"),
           text("offer.standard.items[].description", "description", "card_body", 1, 1, "hybrid", "when_present"),
+        ]),
+      ],
+    },
+    "benefits.standard@v1": {
+      fieldContractKey: "benefits.standard@v1",
+      fields: [
+        text("benefits.standard.title", "title", "h2", 1, 1, "research_guided"),
+        collection("benefits.standard.items", "items", 2, 6, [
+          text("benefits.standard.items[].benefitTitle", "benefitTitle", "card_title", 1, 1, "hybrid", "when_factual"),
+          text("benefits.standard.items[].description", "description", "card_body", 1, 1, "hybrid", "when_factual"),
         ]),
       ],
     },
@@ -265,6 +299,59 @@ export const landingPageModuleCatalogRegistry = deepFreeze({
       ["primary_action", "image_asset"],
       { actionCompatibility: { supportsPrimaryConversionForm: false } },
     ),
+    "hero.form@v1": variant(
+      "hero.form@v1",
+      "form",
+      "hero",
+      ["primary_action", "image_asset", "embedded_form"],
+      {
+        actionCompatibility: { supportsPrimaryConversionForm: true },
+        formContract: {
+          fields: [
+            {
+              fieldKey: "name",
+              valueType: "text",
+              obligation: "required",
+              label: "Name",
+              purpose: "Identify the person requesting contact.",
+            },
+            {
+              fieldKey: "email",
+              valueType: "email",
+              obligation: "required",
+              label: "Email",
+              purpose: "Provide a reply address for the contact request.",
+            },
+            {
+              fieldKey: "phone",
+              valueType: "phone",
+              obligation: "optional",
+              label: "Phone",
+              purpose: "Provide an optional telephone contact route.",
+            },
+          ],
+          consent: {
+            required: true,
+            fieldKey: "privacyConsent",
+            label: "I agree to the privacy policy.",
+            purpose: "Record explicit consent before form submission.",
+            privacyPolicyInputFieldKey: "privacy_policy_url",
+          },
+          accessibility: {
+            baseline: "WCAG 2.2",
+            labelsProgrammaticallyAssociated: true,
+            instructionsProgrammaticallyAssociated: true,
+            errorsProgrammaticallyAssociated: true,
+            keyboardOperable: true,
+            focusMovesToFirstInvalidField: true,
+          },
+          operationalBinding: {
+            inputCatalogFieldKey: "primary_conversion_channel",
+            requiredValue: "form",
+          },
+        },
+      },
+    ),
     "trust_bar.standard@v1": variant(
       "trust_bar.standard@v1",
       "standard",
@@ -279,6 +366,11 @@ export const landingPageModuleCatalogRegistry = deepFreeze({
       "offer.standard@v1",
       "standard",
       "offer",
+    ),
+    "benefits.standard@v1": variant(
+      "benefits.standard@v1",
+      "standard",
+      "benefits",
     ),
     "process.standard@v1": variant(
       "process.standard@v1",
@@ -334,7 +426,7 @@ function variant(
   capabilities: readonly LandingPageVariantCapability[] = [],
   optional: Pick<
     LandingPageVariantDefinition,
-    "actionCompatibility" | "accordionAccessibility"
+    "actionCompatibility" | "formContract" | "accordionAccessibility"
   > = {},
 ): LandingPageVariantDefinition {
   return {
@@ -491,6 +583,11 @@ function copySourceMapFor(path: string): LandingPageCopySourceMap {
     case "hero.standard.subtitle": return research(["pain", "desire"], "objection");
     case "hero.standard.primaryCta.label": return research(["trigger", "desire"], "objection");
     case "hero.standard.proofShort": return research(["proof_type", "belief"], "objection");
+    case "hero.form.eyebrow": return research(["positioning_opportunity", "trigger"], "desire");
+    case "hero.form.title": return research(["positioning_opportunity", "desire"], "commercial_keywords");
+    case "hero.form.subtitle": return research(["pain", "desire"], "objection");
+    case "hero.form.primaryCta.label": return research(["trigger", "desire"], "objection");
+    case "hero.form.proofShort": return research(["proof_type", "belief"], "objection");
     case "trust_bar.standard.items[].text": return research(["proof_type", "belief"], "objection");
     case "problem_solution.standard.title": return research(["pain", "desire"], "fear");
     case "problem_solution.standard.items[].problem": return research(["pain", "fear"], "objection");
@@ -498,6 +595,17 @@ function copySourceMapFor(path: string): LandingPageCopySourceMap {
     case "offer.standard.title": return research(["desire", "trigger"], "positioning_opportunity");
     case "offer.standard.items[].itemTitle": return research(["trigger", "desire"], "positioning_opportunity");
     case "offer.standard.items[].description": return research(["positioning_opportunity", "belief"], "objection");
+    case "benefits.standard.title": return research(["desire", "positioning_opportunity"], "pain");
+    case "benefits.standard.items[].benefitTitle": return researchWithOperationalSupport(
+      ["positioning_opportunity", "desire"],
+      ["financing_support_available", "document_support_available"],
+      "belief",
+    );
+    case "benefits.standard.items[].description": return researchWithOperationalSupport(
+      ["belief", "desire"],
+      ["financing_support_available", "document_support_available"],
+      "objection",
+    );
     case "process.standard.title": return research(["belief", "desire"], "objection");
     case "process.standard.steps[].stepTitle": return research(["narrative_arc", "trigger"], "belief");
     case "process.standard.steps[].stepBody": return research(["belief", "desire"], "positioning_opportunity");
@@ -519,6 +627,23 @@ function copySourceMapFor(path: string): LandingPageCopySourceMap {
     case "final_cta.standard.primaryCta.label": return research(["trigger", "desire"], "objection");
     default: throw new Error(`Missing canonical copySourceMap for text field: ${path}`);
   }
+}
+
+function researchWithOperationalSupport(
+  primaryItemKeys: readonly [import("./contracts").LandingPageResearchItemKey, import("./contracts").LandingPageResearchItemKey?],
+  inputCatalogFieldKeys: readonly [string, ...string[]],
+  auxiliaryItemKey?: import("./contracts").LandingPageResearchItemKey,
+): LandingPageCopySourceMap {
+  return {
+    sourceMode: "research_with_operational_support",
+    researchPath,
+    primaryItemKeys,
+    ...(auxiliaryItemKey ? { auxiliaryItemKey } : {}),
+    operationalSupport: {
+      requirement: "required_when_claimed",
+      inputCatalogFieldKeys,
+    },
+  };
 }
 
 
