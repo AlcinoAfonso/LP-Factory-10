@@ -292,7 +292,7 @@ const variantFieldContractSchema = z
 const variantDefinitionSchema = z
   .object({
     variantKey: z.enum(landingPageVariantKeys),
-    variantName: z.enum(["standard", "accordion"]),
+    variantName: z.enum(["standard", "accordion", "form"]),
     variantVersion: z.literal(1),
     moduleKey: z.enum(landingPageModuleKeys),
     moduleVersion: z.literal(1),
@@ -304,7 +304,7 @@ const variantDefinitionSchema = z
     capabilities: z.array(z.enum(landingPageVariantCapabilities)),
     actionCompatibility: z
       .object({
-        supportsPrimaryConversionForm: z.literal(false),
+        supportsPrimaryConversionForm: z.boolean(),
       })
       .strict()
       .optional(),
@@ -354,25 +354,41 @@ const variantDefinitionSchema = z
     const hasPrimaryAction = variant.capabilities.includes("primary_action");
     const hasImageAsset = variant.capabilities.includes("image_asset");
     const hasAccordion = variant.capabilities.includes("accordion_interaction");
-    const isFormIncompatible =
+    const hasPrimaryActionContract =
       variant.variantKey === "hero.standard@v1" ||
+      variant.variantKey === "hero.form@v1" ||
       variant.variantKey === "final_cta.standard@v1";
 
-    if (hasPrimaryAction !== isFormIncompatible) {
+    if (hasPrimaryAction !== hasPrimaryActionContract) {
       context.addIssue({
         code: "custom",
         path: ["capabilities"],
         message: "primary action capability is assigned to an invalid variant",
       });
     }
-    if (Boolean(variant.actionCompatibility) !== isFormIncompatible) {
+    if (Boolean(variant.actionCompatibility) !== hasPrimaryActionContract) {
       context.addIssue({
         code: "custom",
         path: ["actionCompatibility"],
         message: "form compatibility metadata is assigned to an invalid variant",
       });
     }
-    if (hasImageAsset !== (variant.variantKey === "hero.standard@v1")) {
+    if (
+      variant.actionCompatibility &&
+      variant.actionCompatibility.supportsPrimaryConversionForm !==
+        (variant.variantKey === "hero.form@v1")
+    ) {
+      context.addIssue({
+        code: "custom",
+        path: ["actionCompatibility", "supportsPrimaryConversionForm"],
+        message: "form compatibility differs from the canonical variant contract",
+      });
+    }
+    if (
+      hasImageAsset !==
+      (variant.variantKey === "hero.standard@v1" ||
+        variant.variantKey === "hero.form@v1")
+    ) {
       context.addIssue({
         code: "custom",
         path: ["capabilities"],

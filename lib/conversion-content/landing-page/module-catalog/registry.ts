@@ -194,6 +194,17 @@ export const landingPageModuleCatalogRegistry = deepFreeze({
         image("hero.standard.media", "media", 0, 1),
       ],
     },
+    "hero.form@v1": {
+      fieldContractKey: "hero.form@v1",
+      fields: [
+        text("hero.form.eyebrow", "eyebrow", "eyebrow", 0, 1, "research_guided"),
+        text("hero.form.title", "title", "h1", 1, 1, "hybrid", "when_factual"),
+        text("hero.form.subtitle", "subtitle", "paragraph", 1, 1, "hybrid", "when_factual"),
+        action("hero.form.primaryCta", "primaryCta"),
+        text("hero.form.proofShort", "proofShort", "paragraph", 0, 1, "hybrid", "when_present"),
+        image("hero.form.media", "media", 0, 1),
+      ],
+    },
     "trust_bar.standard@v1": {
       fieldContractKey: "trust_bar.standard@v1",
       fields: [
@@ -287,6 +298,13 @@ export const landingPageModuleCatalogRegistry = deepFreeze({
       "hero",
       ["primary_action", "image_asset"],
       { actionCompatibility: { supportsPrimaryConversionForm: false } },
+    ),
+    "hero.form@v1": variant(
+      "hero.form@v1",
+      "form",
+      "hero",
+      ["primary_action", "image_asset"],
+      { actionCompatibility: { supportsPrimaryConversionForm: true } },
     ),
     "trust_bar.standard@v1": variant(
       "trust_bar.standard@v1",
@@ -519,6 +537,11 @@ function copySourceMapFor(path: string): LandingPageCopySourceMap {
     case "hero.standard.subtitle": return research(["pain", "desire"], "objection");
     case "hero.standard.primaryCta.label": return research(["trigger", "desire"], "objection");
     case "hero.standard.proofShort": return research(["proof_type", "belief"], "objection");
+    case "hero.form.eyebrow": return research(["positioning_opportunity", "trigger"], "desire");
+    case "hero.form.title": return research(["positioning_opportunity", "desire"], "commercial_keywords");
+    case "hero.form.subtitle": return research(["pain", "desire"], "objection");
+    case "hero.form.primaryCta.label": return research(["trigger", "desire"], "objection");
+    case "hero.form.proofShort": return research(["proof_type", "belief"], "objection");
     case "trust_bar.standard.items[].text": return research(["proof_type", "belief"], "objection");
     case "problem_solution.standard.title": return research(["pain", "desire"], "fear");
     case "problem_solution.standard.items[].problem": return research(["pain", "fear"], "objection");

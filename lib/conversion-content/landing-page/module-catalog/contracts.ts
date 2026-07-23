@@ -18,6 +18,7 @@ export const landingPageModuleKeys = [
 
 export const landingPageVariantFieldContractKeys = [
   "hero.standard@v1",
+  "hero.form@v1",
   "trust_bar.standard@v1",
   "problem_solution.standard@v1",
   "offer.standard@v1",
@@ -102,7 +103,7 @@ export type LandingPageFieldPolicy =
 export type LandingPageFieldSupport =
   (typeof landingPageFieldSupports)[number];
 export type LandingPageVariantKey = (typeof landingPageVariantKeys)[number];
-export type LandingPageVariantName = "standard" | "accordion";
+export type LandingPageVariantName = "standard" | "accordion" | "form";
 export type LandingPageVariantVersion = 1;
 export type LandingPageVariantCapability =
   (typeof landingPageVariantCapabilities)[number];
@@ -170,7 +171,7 @@ export type LandingPageRootSpecializationDelta = Readonly<{
 }>;
 
 export type LandingPageActionCompatibility = Readonly<{
-  supportsPrimaryConversionForm: false;
+  supportsPrimaryConversionForm: boolean;
 }>;
 
 export type LandingPageAccordionAccessibilityContract = Readonly<{

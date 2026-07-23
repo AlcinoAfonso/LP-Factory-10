@@ -178,7 +178,7 @@ const cases: readonly Case[] = [
     },
   },
   {
-    name: "all eleven field contracts and five field kinds are valid",
+    name: "all twelve field contracts and five field kinds are valid",
     run: () => {
       assert.deepEqual(
         Object.keys(
@@ -274,7 +274,7 @@ const cases: readonly Case[] = [
     },
   },
   {
-    name: "all eleven variants link one module and their own field contract",
+    name: "all twelve variants link one module and their own field contract",
     run: () => {
       assert.deepEqual(
         Object.keys(landingPageModuleCatalogRegistry.variants).sort(),
@@ -358,6 +358,11 @@ const cases: readonly Case[] = [
         ["primary_action", "image_asset"],
       );
       assert.deepEqual(
+        landingPageModuleCatalogRegistry.variants["hero.form@v1"]
+          .capabilities,
+        ["primary_action", "image_asset"],
+      );
+      assert.deepEqual(
         landingPageModuleCatalogRegistry.variants["final_cta.standard@v1"]
           .capabilities,
         ["primary_action"],
@@ -407,18 +412,57 @@ const cases: readonly Case[] = [
     },
   },
   {
+    name: "hero form resolves with an abstract primary conversion form",
+    run: () => {
+      const result = resolveLandingPageModuleCatalog({
+        moduleCatalogVersion: 1,
+        rootVersion: 1,
+        moduleKey: "hero",
+        moduleVersion: 1,
+        variantName: "form",
+        variantVersion: 1,
+        funnelProfileKey: "bofu",
+      });
+
+      assert.equal(result.ok, true);
+      if (!result.ok) return;
+      assert.equal(result.value.variant.variantKey, "hero.form@v1");
+      assert.deepEqual(result.value.variant.actionCompatibility, {
+        supportsPrimaryConversionForm: true,
+      });
+      assert.equal(
+        flattenFields(
+          result.value.fieldContract.fields as readonly Record<string, unknown>[],
+        ).every((field) => String(field.path).startsWith("hero.form.")),
+        true,
+      );
+      assert.equal(
+        flattenFields(
+          result.value.fieldContract.fields as readonly Record<string, unknown>[],
+        ).some((field) => String(field.path).includes("formField")),
+        false,
+      );
+      assertDeeplyFrozen(result.value);
+    },
+  },
+  {
     name: "form compatibility is explicit without channel fallback",
     run: () => {
-      for (const variantKey of [
-        "hero.standard@v1",
-        "final_cta.standard@v1",
-      ] as const) {
-        assert.deepEqual(
-          landingPageModuleCatalogRegistry.variants[variantKey]
-            .actionCompatibility,
-          { supportsPrimaryConversionForm: false },
-        );
-      }
+      assert.deepEqual(
+        landingPageModuleCatalogRegistry.variants["hero.standard@v1"]
+          .actionCompatibility,
+        { supportsPrimaryConversionForm: false },
+      );
+      assert.deepEqual(
+        landingPageModuleCatalogRegistry.variants["hero.form@v1"]
+          .actionCompatibility,
+        { supportsPrimaryConversionForm: true },
+      );
+      assert.deepEqual(
+        landingPageModuleCatalogRegistry.variants["final_cta.standard@v1"]
+          .actionCompatibility,
+        { supportsPrimaryConversionForm: false },
+      );
 
       const formFallback = cloneRegistry();
       formFallback.variants["hero.standard@v1"].fallbackChannel = "whatsapp";
@@ -429,6 +473,12 @@ const cases: readonly Case[] = [
         "hero.standard@v1"
       ].actionCompatibility = { supportsPrimaryConversionForm: true };
       assertInvalid(formSupported);
+
+      const formUnsupported = cloneRegistry();
+      formUnsupported.variants[
+        "hero.form@v1"
+      ].actionCompatibility = { supportsPrimaryConversionForm: false };
+      assertInvalid(formUnsupported);
     },
   },
   {
@@ -542,7 +592,7 @@ const cases: readonly Case[] = [
       const textualFields = Object.values(landingPageModuleCatalogRegistry.variantFieldContracts)
         .flatMap((contract) => flattenFields(contract.fields))
         .filter((field) => field.fieldKind === "text");
-      assert.equal(textualFields.length, 33);
+      assert.equal(textualFields.length, 38);
       assert.equal(textualFields.every((field) => Boolean(field.copySourceMap)), true);
 
       const unknownSourceMode = cloneRegistry();
@@ -648,7 +698,7 @@ const cases: readonly Case[] = [
     },
   },
   {
-    name: "resolver returns eleven complete isolated variants without fallback",
+    name: "resolver returns twelve complete isolated variants without fallback",
     run: () => {
       for (const variantKey of landingPageVariantKeys) {
         const [moduleKey, qualifiedVariant] = variantKey.split(".");
