@@ -998,6 +998,63 @@ const cases: readonly Case[] = [
     },
   },
   {
+    name: "new variants preserve closed funnel profiles without implicit emphasis",
+    run: () => {
+      for (const funnelProfileKey of ["bofu", "mofu", "tofu"] as const) {
+        const heroStandard = resolveLandingPageModuleCatalog({
+          moduleCatalogVersion: 1,
+          rootVersion: 1,
+          moduleKey: "hero",
+          moduleVersion: 1,
+          variantName: "standard",
+          variantVersion: 1,
+          funnelProfileKey,
+        });
+        const heroForm = resolveLandingPageModuleCatalog({
+          moduleCatalogVersion: 1,
+          rootVersion: 1,
+          moduleKey: "hero",
+          moduleVersion: 1,
+          variantName: "form",
+          variantVersion: 1,
+          funnelProfileKey,
+        });
+        const benefits = resolveLandingPageModuleCatalog({
+          moduleCatalogVersion: 1,
+          rootVersion: 1,
+          moduleKey: "benefits",
+          moduleVersion: 1,
+          variantName: "standard",
+          variantVersion: 1,
+          funnelProfileKey,
+        });
+
+        assert.equal(heroStandard.ok && heroForm.ok && benefits.ok, true);
+        if (!heroStandard.ok || !heroForm.ok || !benefits.ok) continue;
+        assert.deepEqual(
+          heroForm.value.funnelCopyProfile,
+          heroStandard.value.funnelCopyProfile,
+        );
+        assert.deepEqual(
+          benefits.value.funnelCopyProfile,
+          landingPageModuleCatalogRegistry.funnelCopyProfiles[funnelProfileKey],
+        );
+        assert.deepEqual(heroForm.value.funnelCopyProfile.emphasizeTreatments, []);
+        assert.deepEqual(benefits.value.funnelCopyProfile.emphasizeTreatments, []);
+        assert.deepEqual(
+          landingPageModuleCatalogRegistry.modules.benefits.funnelProfileDeltas[
+            funnelProfileKey
+          ],
+          {
+            emphasizeTreatments: [],
+            restrictTreatments: [],
+            prohibitTreatments: [],
+          },
+        );
+      }
+    },
+  },
+  {
     name: "resolver returns every registered complete isolated variant without fallback",
     run: () => {
       for (const variantKey of landingPageVariantKeys) {
