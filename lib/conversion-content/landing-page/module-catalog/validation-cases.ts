@@ -676,6 +676,15 @@ const cases: readonly Case[] = [
       incompatibleVariant.variants["hero.standard@v1"].compatibleRootVersion = 2;
       assertInvalid(incompatibleVariant);
 
+      for (const variantKey of [
+        "benefits.standard@v1",
+        "hero.form@v1",
+      ] as const) {
+        const incompatibleNewVariant = cloneRegistry();
+        incompatibleNewVariant.variants[variantKey].compatibleRootVersion = 2;
+        assertInvalid(incompatibleNewVariant);
+      }
+
       const widenedModuleLimit = cloneRegistry();
       widenedModuleLimit.modules.hero.rootDelta.textRanges.push({ semanticRole: "h1", absoluteMax: 121 });
       assertInvalid(widenedModuleLimit);
@@ -684,6 +693,11 @@ const cases: readonly Case[] = [
       widenedVariantLimit.modules.hero.rootDelta.textRanges.push({ semanticRole: "h1", recommended: { min: 36, max: 64 }, absoluteMax: 100 });
       widenedVariantLimit.variants["hero.standard@v1"].rootDelta.textRanges.push({ semanticRole: "h1", recommended: { min: 36, max: 70 }, absoluteMax: 110 });
       assertInvalid(widenedVariantLimit);
+
+      const widenedFormLimit = cloneRegistry();
+      widenedFormLimit.modules.hero.rootDelta.textRanges.push({ semanticRole: "h1", recommended: { min: 40, max: 60 }, absoluteMax: 100 });
+      widenedFormLimit.variants["hero.form@v1"].rootDelta.textRanges.push({ semanticRole: "h1", recommended: { min: 39, max: 61 }, absoluteMax: 101 });
+      assertInvalid(widenedFormLimit);
 
       const invalidInheritedRange = cloneRegistry();
       invalidInheritedRange.modules.hero.rootDelta.textRanges.push({ semanticRole: "h1", recommended: { min: 36, max: 64 }, absoluteMax: 100 });
@@ -704,6 +718,69 @@ const cases: readonly Case[] = [
       const inheritedPropertyRole = cloneRegistry();
       inheritedPropertyRole.modules.hero.rootDelta.textRanges.push({ semanticRole: "toString", absoluteMax: 1 });
       assert.doesNotThrow(() => assertInvalid(inheritedPropertyRole));
+    },
+  },
+  {
+    name: "new variants preserve root lineage and restrictive specialization",
+    run: () => {
+      for (const input of [
+        { moduleKey: "benefits", variantName: "standard" },
+        { moduleKey: "hero", variantName: "form" },
+      ]) {
+        const result = resolveLandingPageModuleCatalog({
+          moduleCatalogVersion: 1,
+          rootVersion: 1,
+          moduleKey: input.moduleKey,
+          moduleVersion: 1,
+          variantName: input.variantName,
+          variantVersion: 1,
+          funnelProfileKey: "bofu",
+        });
+        assert.equal(result.ok, true);
+        if (!result.ok) continue;
+        assert.equal(result.value.root.rootVersion, 1);
+        assert.equal(result.value.effectiveRoot.rootVersion, 1);
+        assert.deepEqual(result.value.module.rootDelta, { textRanges: [] });
+        assert.deepEqual(result.value.variant.rootDelta, { textRanges: [] });
+        assert.notEqual(result.value.root, result.value.effectiveRoot);
+      }
+
+      const specialized = cloneRegistry();
+      specialized.modules.hero.rootDelta = {
+        textRanges: [
+          { semanticRole: "h1", recommended: { min: 40, max: 60 }, absoluteMax: 100 },
+        ],
+      };
+      specialized.variants["hero.form@v1"].rootDelta = {
+        textRanges: [
+          { semanticRole: "h1", recommended: { min: 45, max: 55 }, absoluteMax: 90 },
+        ],
+      };
+      const result = resolveLandingPageModuleCatalogFromRegistry(
+        {
+          moduleCatalogVersion: 1,
+          rootVersion: 1,
+          moduleKey: "hero",
+          moduleVersion: 1,
+          variantName: "form",
+          variantVersion: 1,
+          funnelProfileKey: "bofu",
+        },
+        specialized as unknown as Parameters<
+          typeof resolveLandingPageModuleCatalogFromRegistry
+        >[1],
+      );
+      assert.equal(result.ok, true);
+      if (!result.ok) return;
+      assert.equal(result.value.root.semanticRoles.h1.textRange.absoluteMax > 90, true);
+      assert.deepEqual(
+        result.value.effectiveRoot.semanticRoles.h1.textRange.recommended,
+        { min: 45, max: 55 },
+      );
+      assert.equal(
+        result.value.effectiveRoot.semanticRoles.h1.textRange.absoluteMax,
+        90,
+      );
     },
   },
   {
