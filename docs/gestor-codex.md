@@ -44,6 +44,7 @@ Configurações sustentam o fluxo local adotado para editar, validar e publicar 
 **Uso:** teste controlado.
 **Valor:** agiliza a criação de PRs e a consulta de PRs, checks e diffs pelo terminal.
 **Limite:** seguir as regras operacionais de `AGENTS.md`.
+**Aprendizado:** para operações GitHub no ambiente local, usar diretamente os recursos nativos do `gh`; scripts auxiliares em Python não foram adotados. O fluxo operacional está definido no `AGENTS.md`.
 
 **Outras configurações:** GitHub Web é a fonte de verdade para PRs, Actions, preview e merge; GitHub Desktop está fora do fluxo principal; não há hooks, conexões ou worktrees ativos.
 

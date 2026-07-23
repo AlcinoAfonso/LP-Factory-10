@@ -17,6 +17,18 @@ Não editar nem commitar na `main`; usar branch dedicada por tarefa ou etapa. Ao
 
 Publicar com `git push`. Não alterar configurações SSH durante a tarefa; se o push falhar, parar e informar o erro exato. Se a GitHub CLI estiver indisponível, entregar o link de criação do PR.
 
+## GitHub CLI no Codex App local
+
+Para consultar ou operar pull requests, reviews, comentários, checks, Actions e diffs no GitHub:
+
+1. Usar primeiro os comandos nativos da GitHub CLI (`gh`).
+2. Preferir `gh pr`, `gh run` e `gh api`, usando os recursos nativos de JSON, `--jq` ou `--template` quando necessário.
+3. Não usar Python, instalar runtimes, alterar `PATH`, aliases, página de código ou configurações do Windows apenas para processar resultados do GitHub.
+4. Se o acesso pelo `gh` funcionar, mas um script auxiliar falhar, abandonar o script e repetir a operação somente com recursos nativos do `gh`.
+5. Não testar runtimes ou caminhos alternativos sucessivamente sem necessidade explícita do caso.
+6. Se o `gh` não concluir a operação, usar GitHub Plugin ou GitHub Web como fallback.
+7. Se nenhum caminho aprovado funcionar, parar e informar o erro ou a limitação exata.
+
 ## Modo simples
 
 Usar por padrão quando não houver necessidade real de worktree.
