@@ -1,9 +1,11 @@
 name: Temp update E18.5 roadmap
 
 on:
-  push:
+  pull_request:
+    types:
+      - synchronize
     branches:
-      - docs/simplifica-e18-5-catalogo
+      - main
     paths:
       - .github/workflows/temp-update-e18-5-roadmap.yml
 
@@ -12,12 +14,13 @@ permissions:
 
 jobs:
   update-roadmap:
+    if: github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout branch
+      - name: Checkout PR branch
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
-          ref: docs/simplifica-e18-5-catalogo
+          ref: ${{ github.event.pull_request.head.ref }}
           fetch-depth: 0
 
       - name: Apply localized roadmap update
@@ -74,4 +77,4 @@ jobs:
           git add docs/roadmap.md
           git diff --cached --quiet && exit 0
           git commit -m "docs: atualiza roadmap da E18.5"
-          git push origin HEAD:docs/simplifica-e18-5-catalogo
+          git push origin HEAD:${{ github.event.pull_request.head.ref }}
