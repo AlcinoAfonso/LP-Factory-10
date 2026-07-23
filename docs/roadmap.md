@@ -1,8 +1,8 @@
 0. Introdução
 
 0.1 Cabeçalho
-• Data: 21/07/2026
-• Versão: v1.5.96
+• Data: 23/07/2026
+• Versão: v1.5.97
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -1464,7 +1464,7 @@ Repositório — Ajustados
 
 18. E18 — Base transversal de templates, módulos, composições e artefatos
 - Objetivo: Definir infraestrutura e contratos reutilizáveis para famílias de templates por canal, templates versionados, módulos de conteúdo, seções de página, variantes, composições e artefatos finais persistidos; sustentar primeiro a E10.7 sem produzir diretamente a página comercial de um taxon; e permitir consumidores futuros somente como visão de evolução, sem antecipar sua implementação.
-- Status: Base mínima de `commercial_activation` concluída; parametrização raiz versionada de `landing_page` concluída em 13/07/2026; implementação anterior de composição `landing_page` removida; catálogo repo-only de módulos e variantes concluído em 21/07/2026 no recorte 18.5.
+- Status: Base mínima de `commercial_activation` concluída; parametrização raiz versionada de `landing_page` concluída em 13/07/2026; implementação anterior de composição `landing_page` removida; catálogo repo-only do PR #590 permanece vigente e a E18.5 foi reaberta em planejamento para simplificação antes da E20.3.
 
 18.1 Contrato transversal de templates, módulos, composições e artefatos
 
@@ -1771,9 +1771,11 @@ Repositório — Ajustados
 18.5 Parametrização de módulos e variantes `landing_page`
 
 18.5.1 Objetivo e status
-- Objetivo: consolidar o catálogo versionado de módulos e variantes da família `landing_page` sobre a parametrização raiz definida em 18.4.
-- Status: Concluída, reconciliada, aprovada e mergeada em 21/07/2026 pelo PR #590. Os nove módulos e as dez variantes aprovadas permanecem repo-only e iniciam em lifecycle `hypothesis`.
-- Limites preservados: sem payload de conteúdo, banco, migration, rota, UI, renderer, composição, persistência, automação, job ou consumo por E19/E20; seleção, ordem, obrigatoriedade e bloqueio de lifecycle em composição permanecem futuros.
+- Objetivo: manter um catálogo versionado, consultivo e facilmente extensível de módulos e variantes da família `landing_page`, adequado para contexto de IA e sem funcionar como engine universal de runtime.
+- Status: Reaberta em planejamento para simplificação pelo plano-base `docs/lousa-plano-base-e18-5.md`, antes da E20.3. A implementação repo-only mergeada no PR #590 permanece vigente até ser substituída atomicamente em PR material próprio.
+- Estado planejado: preservar os nove módulos e as dez variantes como conhecimento consultivo; remover rigidez sem consumidor real, como resolver exclusivo, schema por chaves atuais, listas duplicadas, contagens fixas e validações genéricas vinculadas às identidades atuais.
+- Limites preservados: sem payload de conteúdo, banco, migration, rota, UI, renderer, composição, persistência, automação, job ou consumo por E19/E20; a E18.4 não será simplificada neste recorte.
+- Nota de transição: as subseções 18.5.2–18.5.9 registram o estado material vigente até a substituição ser executada.
 
 18.5.2 Registros do recorte
 - Banco: N/A.
@@ -2064,6 +2066,8 @@ Repositório — Ajustados
   * O recorte não cria banco, rota, API, Server Action, UI, adapter de banco, entitlement, integração Stripe, valor operacional, snapshot, automação, agente ou job.
 
 99. Changelog
+v1.5.97 — 23/07/2026 — E18.5 reaberta em planejamento para substituir o catálogo rígido vigente por uma fonte consultiva mínima e extensível, preservando os nove módulos, as dez variantes e a integridade da `main` até a substituição atômica.
+
 v1.5.96 — 21/07/2026 — E18.5 reorganizada conforme `docs/template-roadmap.md`: registros de implementação movidos para 18.5.2 sem artefatos `docs/**`, `prod#17` registrado como update aplicado ao contrato abstrato de `faq.accordion@v1`, conteúdos implementados distribuídos entre 18.5.3 e 18.5.9 e status atualizado após aprovação e merge do PR #590.
 
 v1.5.95 — 21/07/2026 — E18.5 implementada e reconciliada como catálogo repo-only de nove módulos e dez variantes de `landing_page`, com fields e mapas por variante, perfis de funil fechados, resolução efetiva fail-closed e API pública mínima, pendente do gate final do Analista.
@@ -2097,7 +2101,6 @@ v1.5.82 — 23/06/2026 — E10.7 Fase 3 concluída com operação administrativa
 v1.5.81 — 22/06/2026 — E12.3.2 concluído e validado: `/admin/documentacao` passa a leitor read-only protegido de documentos whitelist de `docs/`, com leitura server-side por filesystem, tracing explícito dos arquivos permitidos, UI responsiva com filtro/dropdown e sem Supabase, migrations, GitHub API em runtime, edição ou mutações.
 
 v1.5.80 — 22/06/2026 — E10.7 Fase 2 concluída e validada: geração administrativa server-side de draft comercial por IA, draft real criado como `status = draft` para o taxon piloto, validação em duas camadas, fontes `business_buyer` registradas, `end_customer` apenas em `provenance_json`, falha segura por arquivamento/invalidação de draft parcial e sem publicação, `published`, Account Dashboard ou `/a/[account]`.
-
 v1.5.79 — 22/06/2026 — E12 registra o refinamento 12.3.2 em implementação: `/admin/documentacao` como leitor read-only protegido para whitelist de documentos de `docs/`, sem Supabase, migrations, GitHub API em runtime, edição ou mutações.
 v1.5.78 — 22/06/2026 — E12 registra o refinamento 12.3.1 concluído e validado: `/admin` passa a entrada pública do Admin Dashboard, subrotas internas seguem protegidas por `app/admin/(protected)/layout.tsx`.
 v1.5.77 — 21/06/2026 — E10.7 Fase 2: critérios de IA, validação e logs.
