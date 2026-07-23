@@ -44,6 +44,8 @@ export const landingPageVariantCapabilities = [
   "embedded_form",
 ] as const;
 
+export const landingPageInteractionKinds = ["form", "accordion"] as const;
+
 export const landingPageFormFieldValueTypes = ["text", "email", "phone"] as const;
 export const landingPageFormFieldObligations = ["required", "optional"] as const;
 
@@ -208,6 +210,9 @@ export type LandingPageAccordionInteractionContract = Readonly<{
   singleExpandedItem: true;
 }>;
 
+export type LandingPageInteractionKind =
+  (typeof landingPageInteractionKinds)[number];
+
 export type LandingPageInteractionContract =
   | LandingPageFormInteractionContract
   | LandingPageAccordionInteractionContract;
@@ -304,6 +309,7 @@ export type LandingPageModuleDefinition = Readonly<{
   structuralFunction: string;
   invariants: readonly string[];
   boundaries: readonly string[];
+  permittedInteractionKinds: readonly LandingPageInteractionKind[];
 }>;
 
 export type LandingPageModuleCatalogRegistry = Readonly<{

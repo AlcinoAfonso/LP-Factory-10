@@ -15,6 +15,7 @@ import type {
   LandingPageFieldSupport,
   LandingPageImageFieldDefinition,
   LandingPageInteractionContract,
+  LandingPageInteractionKind,
   LandingPageTechnicalReferenceFieldDefinition,
   LandingPageTextFieldDefinition,
   LandingPageVariantDefinition,
@@ -103,6 +104,7 @@ const landingPageModuleCatalogDefinition = {
         "A complete form requires a valid form interaction contract declared by the variant; gallery, carousel, tour and global navigation remain outside the module.",
         "No detailed offer or extensive proof.",
       ],
+      ["form"],
     ),
     trust_bar: moduleDefinition(
       "trust_bar",
@@ -189,6 +191,7 @@ const landingPageModuleCatalogDefinition = {
         "No offer, process, technical proof, action, media or form.",
         "Interaction belongs to a variant contract.",
       ],
+      ["accordion"],
     ),
     final_cta: moduleDefinition(
       "final_cta",
@@ -672,6 +675,7 @@ function moduleDefinition(
   structuralFunction: string,
   invariants: readonly string[],
   boundaries: readonly string[],
+  permittedInteractionKinds: readonly LandingPageInteractionKind[] = [],
 ): LandingPageModuleDefinition {
   return {
     family: "landing_page",
@@ -685,6 +689,7 @@ function moduleDefinition(
     structuralFunction,
     invariants,
     boundaries,
+    permittedInteractionKinds,
   };
 }
 

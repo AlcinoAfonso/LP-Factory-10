@@ -573,6 +573,14 @@ const cases: readonly Case[] = [
         ),
         true,
       );
+      assert.deepEqual(
+        landingPageModuleCatalogRegistry.modules.hero.permittedInteractionKinds,
+        ["form"],
+      );
+      assert.deepEqual(
+        landingPageModuleCatalogRegistry.modules.faq.permittedInteractionKinds,
+        ["accordion"],
+      );
 
       const formFallback = cloneRegistry();
       formFallback.variants["hero.standard@v1"].fallbackChannel = "whatsapp";
@@ -694,6 +702,27 @@ const cases: readonly Case[] = [
         "accordion",
       ).kind = "form";
       assertInvalid(incompatibleDiscriminator);
+
+      const incompatibleModuleInteraction = cloneRegistry();
+      addSyntheticVariant(
+        incompatibleModuleInteraction,
+        "faq.syntheticform@v1",
+        "faq.standard@v1",
+        "hero.form@v1",
+        "form",
+      );
+      assertInvalidCatalogFailsClosedWithoutThrow(
+        incompatibleModuleInteraction,
+        {
+          moduleCatalogVersion: 1,
+          rootVersion: 1,
+          moduleKey: "faq",
+          moduleVersion: 1,
+          variantName: "syntheticform",
+          variantVersion: 1,
+          funnelProfileKey: "mofu",
+        },
+      );
 
       const orphanVariant = cloneRegistry();
       orphanVariant.variants["hero.campaign@v1"] = cloneVariant(
@@ -1541,6 +1570,7 @@ type MutableModule = {
   structuralFunction: string;
   invariants: string[];
   boundaries: string[];
+  permittedInteractionKinds: string[];
   [key: string]: unknown;
 };
 

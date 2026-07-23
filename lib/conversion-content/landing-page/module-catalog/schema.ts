@@ -9,6 +9,7 @@ import {
   landingPageCtaModes,
   landingPageFunnelProfileKeys,
   landingPageFunnelTreatmentKeysByProfile,
+  landingPageInteractionKinds,
   landingPageModuleKeys,
   landingPageVariantCapabilities,
   type LandingPageFieldDefinition,
@@ -461,11 +462,17 @@ const moduleDefinitionSchema = z
     structuralFunction: nonEmptyPlainText,
     invariants: z.array(nonEmptyPlainText).min(1),
     boundaries: z.array(nonEmptyPlainText).min(1),
+    permittedInteractionKinds: z.array(z.enum(landingPageInteractionKinds)),
   })
   .strict()
   .superRefine((module, context) => {
     validateUniqueText(module.invariants, "invariants", context);
     validateUniqueText(module.boundaries, "boundaries", context);
+    validateUniqueText(
+      module.permittedInteractionKinds,
+      "permittedInteractionKinds",
+      context,
+    );
   });
 
 export const landingPageModuleCatalogSchema = z
@@ -563,6 +570,18 @@ export const landingPageModuleCatalogSchema = z
         context,
         path: ["modules", key, "boundaries"],
       });
+      if (
+        !structurallyEqual(
+          module.permittedInteractionKinds,
+          canonical.permittedInteractionKinds,
+        )
+      ) {
+        context.addIssue({
+          code: "custom",
+          path: ["modules", key, "permittedInteractionKinds"],
+          message: "permitted interaction kinds differ from the canonical registry",
+        });
+      }
     }
 
     const expectedFieldContractKeys = new Set<string>(
@@ -663,6 +682,19 @@ export const landingPageModuleCatalogSchema = z
 
       const moduleDefinition = catalog.modules[variant.moduleKey];
       if (moduleDefinition) {
+        const incompatibleInteraction = variant.interactionContracts.find(
+          (interaction) =>
+            !moduleDefinition.permittedInteractionKinds.includes(
+              interaction.kind,
+            ),
+        );
+        if (incompatibleInteraction) {
+          context.addIssue({
+            code: "custom",
+            path: ["variants", key, "interactionContracts"],
+            message: "interaction kind is not permitted by the module",
+          });
+        }
         const moduleRanges = composeRootRanges(root.value.semanticRoles, moduleDefinition.rootDelta);
         validateComposedRootDelta({
           parentRanges: moduleRanges,
@@ -766,7 +798,7 @@ function containsFreeMarkupOrRendererHint(value: string): boolean {
 
 function validateUniqueText(
   values: readonly string[],
-  path: "invariants" | "boundaries",
+  path: "invariants" | "boundaries" | "permittedInteractionKinds",
   context: z.RefinementCtx,
 ) {
   if (new Set(values).size !== values.length) {
