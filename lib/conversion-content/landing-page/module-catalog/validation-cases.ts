@@ -11,7 +11,10 @@ import {
   type LandingPageVariantKey,
 } from "./contracts";
 import { landingPageModuleCatalogRegistry } from "./registry";
-import { landingPageModuleCatalogSchema } from "./schema";
+import {
+  landingPageCopySourceMapSchema,
+  landingPageModuleCatalogSchema,
+} from "./schema";
 import {
   resolveLandingPageModuleCatalog,
   resolveLandingPageModuleCatalogFromRegistry,
@@ -855,6 +858,68 @@ const cases: readonly Case[] = [
       const validButUnauthorized = cloneRegistry();
       getMutableTextField(validButUnauthorized, "hero.standard@v1", "hero.standard.title").copySourceMap.auxiliaryItemKey = "faq_questions";
       assertInvalid(validButUnauthorized);
+    },
+  },
+  {
+    name: "combined sources require research and declarative operational support",
+    run: () => {
+      const validSource = {
+        sourceMode: "research_with_operational_support",
+        researchPath: "endCustomer.researches[].items[]",
+        primaryItemKeys: ["positioning_opportunity", "desire"],
+        auxiliaryItemKey: "belief",
+        operationalSupport: {
+          requirement: "required_when_claimed",
+          referenceKeys: ["syntactically_valid_but_not_registered"],
+        },
+      };
+      assert.equal(landingPageCopySourceMapSchema.safeParse(validSource).success, true);
+
+      const missingResearch = structuredClone(validSource) as Record<string, unknown>;
+      delete missingResearch.researchPath;
+      assert.equal(landingPageCopySourceMapSchema.safeParse(missingResearch).success, false);
+
+      const invalidResearch = structuredClone(validSource);
+      invalidResearch.primaryItemKeys = ["unknown", "desire"];
+      assert.equal(landingPageCopySourceMapSchema.safeParse(invalidResearch).success, false);
+
+      const missingOperationalSupport = structuredClone(validSource) as Record<string, unknown>;
+      delete missingOperationalSupport.operationalSupport;
+      assert.equal(
+        landingPageCopySourceMapSchema.safeParse(missingOperationalSupport).success,
+        false,
+      );
+
+      for (const referenceKeys of [
+        [],
+        [""],
+        ["Invalid-Key"],
+        ["duplicate_key", "duplicate_key"],
+      ]) {
+        const invalidReference = structuredClone(validSource);
+        invalidReference.operationalSupport.referenceKeys = referenceKeys;
+        assert.equal(
+          landingPageCopySourceMapSchema.safeParse(invalidReference).success,
+          false,
+        );
+      }
+
+      const incompatiblePolicy = cloneRegistry();
+      const benefitTitle = getMutableTextField(
+        incompatiblePolicy,
+        "benefits.standard@v1",
+        "benefits.standard.items[].benefitTitle",
+      );
+      benefitTitle.policy = "research_guided";
+      assertInvalid(incompatiblePolicy);
+
+      const missingFactualSupport = cloneRegistry();
+      delete getMutableTextField(
+        missingFactualSupport,
+        "benefits.standard@v1",
+        "benefits.standard.items[].description",
+      ).support;
+      assertInvalid(missingFactualSupport);
     },
   },
   {

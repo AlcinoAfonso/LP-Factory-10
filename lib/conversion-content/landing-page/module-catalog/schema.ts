@@ -150,7 +150,7 @@ const cardinalitySchema = z
     }
   });
 
-const copySourceMapSchema = z.discriminatedUnion("sourceMode", [
+export const landingPageCopySourceMapSchema = z.discriminatedUnion("sourceMode", [
   z.object({
     sourceMode: z.literal("research"),
     researchPath: z.literal("endCustomer.researches[].items[]"),
@@ -195,18 +195,18 @@ const textFieldSchema = z
     policy: z.enum(landingPageFieldPolicies),
     semanticRole: nonEmptyPlainText,
     support: z.enum(landingPageFieldSupports).optional(),
-    copySourceMap: copySourceMapSchema,
+    copySourceMap: landingPageCopySourceMapSchema,
   })
   .strict()
   .superRefine((field, context) => {
     if (
       field.copySourceMap.sourceMode === "research_with_operational_support" &&
-      field.support !== "when_factual"
+      (field.policy !== "hybrid" || field.support !== "when_factual")
     ) {
       context.addIssue({
         code: "custom",
         path: ["support"],
-        message: "combined copy source requires operational support when factual",
+        message: "combined copy source requires hybrid policy and operational support when factual",
       });
     }
   });
