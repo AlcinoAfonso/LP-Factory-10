@@ -2,7 +2,7 @@
 
 Fontes: `README.md`, `AGENTS.md`, `docs/prompt-estrategista.md`, `docs/prompt-executor.md`, `docs/prompt-abc.md`, `docs/template-roadmap.md`, `docs/lp-planejamento.md` após o PR #615, `docs/roadmap.md`, `docs/base-tecnica.md`, `docs/lousa-plano-base-e18-4.md`, conteúdo anterior deste path, PR #590, `lib/conversion-content/landing-page/module-catalog/`, `lib/conversion-content/landing-page/`, `lib/conversion-content/index.ts` e scripts relacionados no `package.json`.
 
-Versão: v1 para avaliação dos especialistas.
+Versão: v1 para merge humano e posterior orquestração.
 
 Status: simplificação planejada; a implementação vigente do PR #590 permanece íntegra até sua substituição atômica em PR material próprio.
 
@@ -207,11 +207,11 @@ Plano conceitual: `docs/lp-planejamento.md`.
 
 ### 3.2. Próxima ação
 
-- Submeter esta v1, no mesmo PR do ajuste planejado do roadmap, ao Analista, Gestor Estrutural e Gestor de Updates.
-- Consolidar os pareceres em v2 neste mesmo PR, sem ampliar o escopo.
-- Solicitar merge humano do plano-base v2.
-- Somente após o merge, instruir o Executor a executar a fase material em branch e PR próprios.
-- O Executor deve trabalhar somente na fase 3.1 e devolver conflito, dependência ou ampliação ao Estrategista.
+- Processo escolhido pelo humano: Opção 2 — Processo automatizado.
+- Solicitar merge humano desta v1, com `docs/roadmap.md` já ajustado no mesmo PR.
+- Após a confirmação do merge, entregar ao orquestrador somente:
+  - `Use Orquestrar plano-base no PR #616.`
+- Não iniciar a rodada manual dos especialistas nem a execução material antes do merge.
 
 ## 4. Escopo negativo e critérios de parada
 
@@ -223,7 +223,8 @@ Plano conceitual: `docs/lp-planejamento.md`.
 - Não criar conteúdo real, banco, migration, persistência, rota, Server Action ou UI.
 - Não criar agente, automação, job ou nova infraestrutura.
 - Não integrar a E18.5 à E19 ou à E20.
-- Não adicionar novos módulos ou variantes, salvo necessidade indispensável para provar a extensibilidade e com justificativa explícita.
+- Não adicionar novos módulos ou variantes reais neste recorte.
+- Eventual prova automatizada de extensibilidade deve usar dado sintético de teste, sem incorporar nova identidade permanente ao catálogo.
 
 ### 4.2. Critérios de parada imediata
 
