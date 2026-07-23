@@ -341,7 +341,7 @@ const cases: readonly Case[] = [
     },
   },
   {
-    name: "only the three approved capabilities are assigned",
+    name: "only the four approved capabilities are assigned",
     run: () => {
       const assignedCapabilities = new Set(
         Object.values(landingPageModuleCatalogRegistry.variants).flatMap(
@@ -360,7 +360,7 @@ const cases: readonly Case[] = [
       assert.deepEqual(
         landingPageModuleCatalogRegistry.variants["hero.form@v1"]
           .capabilities,
-        ["primary_action", "image_asset"],
+        ["primary_action", "image_asset", "embedded_form"],
       );
       assert.deepEqual(
         landingPageModuleCatalogRegistry.variants["final_cta.standard@v1"]
@@ -430,6 +430,50 @@ const cases: readonly Case[] = [
       assert.deepEqual(result.value.variant.actionCompatibility, {
         supportsPrimaryConversionForm: true,
       });
+      assert.deepEqual(result.value.variant.formContract, {
+        fields: [
+          {
+            fieldKey: "name",
+            valueType: "text",
+            obligation: "required",
+            label: "Name",
+            purpose: "Identify the person requesting contact.",
+          },
+          {
+            fieldKey: "email",
+            valueType: "email",
+            obligation: "required",
+            label: "Email",
+            purpose: "Provide a reply address for the contact request.",
+          },
+          {
+            fieldKey: "phone",
+            valueType: "phone",
+            obligation: "optional",
+            label: "Phone",
+            purpose: "Provide an optional telephone contact route.",
+          },
+        ],
+        consent: {
+          required: true,
+          fieldKey: "privacyConsent",
+          label: "I agree to the privacy policy.",
+          purpose: "Record explicit consent before form submission.",
+          privacyPolicyInputFieldKey: "privacy_policy_url",
+        },
+        accessibility: {
+          baseline: "WCAG 2.2",
+          labelsProgrammaticallyAssociated: true,
+          instructionsProgrammaticallyAssociated: true,
+          errorsProgrammaticallyAssociated: true,
+          keyboardOperable: true,
+          focusMovesToFirstInvalidField: true,
+        },
+        operationalBinding: {
+          inputCatalogFieldKey: "primary_conversion_channel",
+          requiredValue: "form",
+        },
+      });
       assert.equal(
         flattenFields(
           result.value.fieldContract.fields as readonly Record<string, unknown>[],
@@ -443,6 +487,49 @@ const cases: readonly Case[] = [
         false,
       );
       assertDeeplyFrozen(result.value);
+    },
+  },
+  {
+    name: "embedded form contract fails closed when incomplete or incompatible",
+    run: () => {
+      const incompatibleCapability = cloneRegistry();
+      incompatibleCapability.variants["hero.standard@v1"].capabilities.push(
+        "embedded_form",
+      );
+      assertInvalid(incompatibleCapability);
+
+      const invalidFormField = cloneRegistry();
+      const invalidFormContract = invalidFormField.variants["hero.form@v1"].formContract;
+      assert.ok(invalidFormContract);
+      invalidFormContract.fields[0].valueType = "number";
+      assertInvalid(invalidFormField);
+
+      const missingConsent = cloneRegistry();
+      delete missingConsent.variants["hero.form@v1"].formContract?.consent;
+      assertInvalid(missingConsent);
+
+      const missingPrivacyPolicy = cloneRegistry();
+      const consent = missingPrivacyPolicy.variants["hero.form@v1"].formContract?.consent;
+      assert.ok(consent);
+      delete consent.privacyPolicyInputFieldKey;
+      assertInvalid(missingPrivacyPolicy);
+
+      const incompleteAccessibility = cloneRegistry();
+      const accessibility = incompleteAccessibility.variants["hero.form@v1"].formContract?.accessibility;
+      assert.ok(accessibility);
+      delete accessibility.errorsProgrammaticallyAssociated;
+      assertInvalid(incompleteAccessibility);
+
+      const missingOperationalBinding = cloneRegistry();
+      delete missingOperationalBinding.variants["hero.form@v1"].formContract?.operationalBinding;
+      assertInvalid(missingOperationalBinding);
+
+      const standardHero = landingPageModuleCatalogRegistry.variants["hero.standard@v1"];
+      assert.equal(standardHero.capabilities.includes("embedded_form"), false);
+      assert.equal(standardHero.formContract, undefined);
+      assert.deepEqual(standardHero.actionCompatibility, {
+        supportsPrimaryConversionForm: false,
+      });
     },
   },
   {
@@ -1040,6 +1127,34 @@ type MutableVariant = {
   rootDelta: MutableRootDelta;
   capabilities: string[];
   actionCompatibility?: { supportsPrimaryConversionForm: boolean };
+  formContract?: {
+    fields: Array<{
+      fieldKey: string;
+      valueType: string;
+      obligation: string;
+      label: string;
+      purpose: string;
+    }>;
+    consent?: {
+      required: boolean;
+      fieldKey: string;
+      label: string;
+      purpose: string;
+      privacyPolicyInputFieldKey?: string;
+    };
+    accessibility?: {
+      baseline: string;
+      labelsProgrammaticallyAssociated: boolean;
+      instructionsProgrammaticallyAssociated: boolean;
+      errorsProgrammaticallyAssociated?: boolean;
+      keyboardOperable: boolean;
+      focusMovesToFirstInvalidField: boolean;
+    };
+    operationalBinding?: {
+      inputCatalogFieldKey: string;
+      requiredValue: string;
+    };
+  };
   accordionAccessibility?: Record<string, string | boolean>;
   fallbackChannel?: string;
   creationMotivation?: string;

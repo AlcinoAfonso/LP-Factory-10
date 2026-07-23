@@ -3,6 +3,8 @@ import { z } from "zod";
 import {
   landingPageFieldPolicies,
   landingPageFieldSupports,
+  landingPageFormFieldObligations,
+  landingPageFormFieldValueTypes,
   landingPageResearchItemKeys,
   landingPageCtaModes,
   landingPageFunnelProfileKeys,
@@ -320,6 +322,44 @@ const variantFieldContractSchema = z
     }
   });
 
+const embeddedFormContractSchema = z.object({
+  fields: z.array(z.object({
+    fieldKey: fieldKeySchema,
+    valueType: z.enum(landingPageFormFieldValueTypes),
+    obligation: z.enum(landingPageFormFieldObligations),
+    label: nonEmptyPlainText,
+    purpose: nonEmptyPlainText,
+  }).strict()).min(1),
+  consent: z.object({
+    required: z.literal(true),
+    fieldKey: z.literal("privacyConsent"),
+    label: nonEmptyPlainText,
+    purpose: nonEmptyPlainText,
+    privacyPolicyInputFieldKey: z.literal("privacy_policy_url"),
+  }).strict(),
+  accessibility: z.object({
+    baseline: z.literal("WCAG 2.2"),
+    labelsProgrammaticallyAssociated: z.literal(true),
+    instructionsProgrammaticallyAssociated: z.literal(true),
+    errorsProgrammaticallyAssociated: z.literal(true),
+    keyboardOperable: z.literal(true),
+    focusMovesToFirstInvalidField: z.literal(true),
+  }).strict(),
+  operationalBinding: z.object({
+    inputCatalogFieldKey: z.literal("primary_conversion_channel"),
+    requiredValue: z.literal("form"),
+  }).strict(),
+}).strict().superRefine((contract, context) => {
+  const fieldKeys = contract.fields.map((field) => field.fieldKey);
+  if (new Set(fieldKeys).size !== fieldKeys.length) {
+    context.addIssue({
+      code: "custom",
+      path: ["fields"],
+      message: "embedded form field keys must be unique",
+    });
+  }
+});
+
 const variantDefinitionSchema = z
   .object({
     variantKey: z.enum(landingPageVariantKeys),
@@ -339,6 +379,7 @@ const variantDefinitionSchema = z
       })
       .strict()
       .optional(),
+    formContract: embeddedFormContractSchema.optional(),
     accordionAccessibility: z
       .object({
         baseline: z.literal("WCAG 2.2"),
@@ -385,6 +426,8 @@ const variantDefinitionSchema = z
     const hasPrimaryAction = variant.capabilities.includes("primary_action");
     const hasImageAsset = variant.capabilities.includes("image_asset");
     const hasAccordion = variant.capabilities.includes("accordion_interaction");
+    const hasEmbeddedForm = variant.capabilities.includes("embedded_form");
+    const isEmbeddedFormVariant = variant.variantKey === "hero.form@v1";
     const hasPrimaryActionContract =
       variant.variantKey === "hero.standard@v1" ||
       variant.variantKey === "hero.form@v1" ||
@@ -413,6 +456,20 @@ const variantDefinitionSchema = z
         code: "custom",
         path: ["actionCompatibility", "supportsPrimaryConversionForm"],
         message: "form compatibility differs from the canonical variant contract",
+      });
+    }
+    if (hasEmbeddedForm !== isEmbeddedFormVariant) {
+      context.addIssue({
+        code: "custom",
+        path: ["capabilities"],
+        message: "embedded form capability is assigned to an invalid variant",
+      });
+    }
+    if (Boolean(variant.formContract) !== isEmbeddedFormVariant) {
+      context.addIssue({
+        code: "custom",
+        path: ["formContract"],
+        message: "embedded form contract is assigned to an invalid variant",
       });
     }
     if (

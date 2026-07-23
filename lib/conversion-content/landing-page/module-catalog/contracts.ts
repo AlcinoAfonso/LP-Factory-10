@@ -58,7 +58,11 @@ export const landingPageVariantCapabilities = [
   "primary_action",
   "image_asset",
   "accordion_interaction",
+  "embedded_form",
 ] as const;
+
+export const landingPageFormFieldValueTypes = ["text", "email", "phone"] as const;
+export const landingPageFormFieldObligations = ["required", "optional"] as const;
 
 export const landingPageResearchItemKeys = [
   "positioning_opportunity", "trigger", "desire", "pain", "objection",
@@ -184,6 +188,37 @@ export type LandingPageActionCompatibility = Readonly<{
   supportsPrimaryConversionForm: boolean;
 }>;
 
+export type LandingPageFormFieldDefinition = Readonly<{
+  fieldKey: string;
+  valueType: (typeof landingPageFormFieldValueTypes)[number];
+  obligation: (typeof landingPageFormFieldObligations)[number];
+  label: string;
+  purpose: string;
+}>;
+
+export type LandingPageEmbeddedFormContract = Readonly<{
+  fields: readonly [LandingPageFormFieldDefinition, ...LandingPageFormFieldDefinition[]];
+  consent: Readonly<{
+    required: true;
+    fieldKey: "privacyConsent";
+    label: string;
+    purpose: string;
+    privacyPolicyInputFieldKey: "privacy_policy_url";
+  }>;
+  accessibility: Readonly<{
+    baseline: "WCAG 2.2";
+    labelsProgrammaticallyAssociated: true;
+    instructionsProgrammaticallyAssociated: true;
+    errorsProgrammaticallyAssociated: true;
+    keyboardOperable: true;
+    focusMovesToFirstInvalidField: true;
+  }>;
+  operationalBinding: Readonly<{
+    inputCatalogFieldKey: "primary_conversion_channel";
+    requiredValue: "form";
+  }>;
+}>;
+
 export type LandingPageAccordionAccessibilityContract = Readonly<{
   baseline: "WCAG 2.2";
   keyboardOperable: true;
@@ -272,6 +307,7 @@ export type LandingPageVariantDefinition = Readonly<{
   rootDelta: LandingPageRootSpecializationDelta;
   capabilities: readonly LandingPageVariantCapability[];
   actionCompatibility?: LandingPageActionCompatibility;
+  formContract?: LandingPageEmbeddedFormContract;
   accordionAccessibility?: LandingPageAccordionAccessibilityContract;
 }>;
 

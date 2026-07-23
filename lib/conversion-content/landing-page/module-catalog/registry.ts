@@ -303,8 +303,54 @@ export const landingPageModuleCatalogRegistry = deepFreeze({
       "hero.form@v1",
       "form",
       "hero",
-      ["primary_action", "image_asset"],
-      { actionCompatibility: { supportsPrimaryConversionForm: true } },
+      ["primary_action", "image_asset", "embedded_form"],
+      {
+        actionCompatibility: { supportsPrimaryConversionForm: true },
+        formContract: {
+          fields: [
+            {
+              fieldKey: "name",
+              valueType: "text",
+              obligation: "required",
+              label: "Name",
+              purpose: "Identify the person requesting contact.",
+            },
+            {
+              fieldKey: "email",
+              valueType: "email",
+              obligation: "required",
+              label: "Email",
+              purpose: "Provide a reply address for the contact request.",
+            },
+            {
+              fieldKey: "phone",
+              valueType: "phone",
+              obligation: "optional",
+              label: "Phone",
+              purpose: "Provide an optional telephone contact route.",
+            },
+          ],
+          consent: {
+            required: true,
+            fieldKey: "privacyConsent",
+            label: "I agree to the privacy policy.",
+            purpose: "Record explicit consent before form submission.",
+            privacyPolicyInputFieldKey: "privacy_policy_url",
+          },
+          accessibility: {
+            baseline: "WCAG 2.2",
+            labelsProgrammaticallyAssociated: true,
+            instructionsProgrammaticallyAssociated: true,
+            errorsProgrammaticallyAssociated: true,
+            keyboardOperable: true,
+            focusMovesToFirstInvalidField: true,
+          },
+          operationalBinding: {
+            inputCatalogFieldKey: "primary_conversion_channel",
+            requiredValue: "form",
+          },
+        },
+      },
     ),
     "trust_bar.standard@v1": variant(
       "trust_bar.standard@v1",
@@ -380,7 +426,7 @@ function variant(
   capabilities: readonly LandingPageVariantCapability[] = [],
   optional: Pick<
     LandingPageVariantDefinition,
-    "actionCompatibility" | "accordionAccessibility"
+    "actionCompatibility" | "formContract" | "accordionAccessibility"
   > = {},
 ): LandingPageVariantDefinition {
   return {
