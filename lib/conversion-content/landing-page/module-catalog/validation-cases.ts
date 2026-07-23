@@ -300,10 +300,25 @@ const cases: readonly Case[] = [
       assertInvalid(mismatchedContract);
 
       const unknownSemanticRole = cloneRegistry();
-      unknownSemanticRole.variantFieldContracts[
-        "hero.standard@v1"
-      ].fields[0].semanticRole = "display";
-      assertInvalid(unknownSemanticRole);
+      addSyntheticVariant(
+        unknownSemanticRole,
+        "hero.unknownrole@v1",
+        "hero.standard@v1",
+      );
+      getMutableTextField(
+        unknownSemanticRole,
+        "hero.unknownrole@v1",
+        "hero.unknownrole.title",
+      ).semanticRole = "totally_unknown_role";
+      assertInvalidCatalogFailsClosedWithoutThrow(unknownSemanticRole, {
+        moduleCatalogVersion: 1,
+        rootVersion: 1,
+        moduleKey: "hero",
+        moduleVersion: 1,
+        variantName: "unknownrole",
+        variantVersion: 1,
+        funnelProfileKey: "bofu",
+      });
 
       const unknownSupport = cloneRegistry();
       unknownSupport.variantFieldContracts["hero.standard@v1"].fields[1].support =
@@ -747,6 +762,27 @@ const cases: readonly Case[] = [
         variantVersion: 1,
         funnelProfileKey: "bofu",
       });
+
+      const repeatedActionLabel = cloneRegistry();
+      addSyntheticVariant(
+        repeatedActionLabel,
+        "final_cta.repeatedlabel@v1",
+        "final_cta.standard@v1",
+      );
+      const actionWithRepeatedLabel = repeatedActionLabel.variantFieldContracts[
+        "final_cta.repeatedlabel@v1"
+      ].fields.find((field) => field.fieldKind === "action");
+      assert.ok(actionWithRepeatedLabel?.label);
+      actionWithRepeatedLabel.label.cardinality = { min: 0, max: 2 };
+      assertInvalidCatalogFailsClosedWithoutThrow(repeatedActionLabel, {
+        moduleCatalogVersion: 1,
+        rootVersion: 1,
+        moduleKey: "final_cta",
+        moduleVersion: 1,
+        variantName: "repeatedlabel",
+        variantVersion: 1,
+        funnelProfileKey: "bofu",
+      });
       assertInvalidCatalogFailsClosedWithoutThrow(
         incompatibleModuleInteraction,
         {
@@ -1073,6 +1109,29 @@ const cases: readonly Case[] = [
       const orphanOperationalEvidence = cloneRegistry();
       getMutableTextField(orphanOperationalEvidence, "social_proof.standard@v1", "social_proof.standard.items[].quote").copySourceMap.evidencePath = "social_proof.standard.orphan";
       assertInvalid(orphanOperationalEvidence);
+
+      const missingOperationalEvidence = cloneRegistry();
+      addSyntheticVariant(
+        missingOperationalEvidence,
+        "social_proof.missingevidence@v1",
+        "social_proof.standard@v1",
+      );
+      const proofItems = missingOperationalEvidence.variantFieldContracts[
+        "social_proof.missingevidence@v1"
+      ].fields.find((field) => field.fieldKind === "collection");
+      assert.ok(proofItems?.itemFields);
+      proofItems.itemFields = proofItems.itemFields.filter(
+        (field) => field.fieldKind !== "technical_reference",
+      );
+      assertInvalidCatalogFailsClosedWithoutThrow(missingOperationalEvidence, {
+        moduleCatalogVersion: 1,
+        rootVersion: 1,
+        moduleKey: "social_proof",
+        moduleVersion: 1,
+        variantName: "missingevidence",
+        variantVersion: 1,
+        funnelProfileKey: "mofu",
+      });
 
       assert.equal("copySourceMaps" in landingPageModuleCatalogRegistry, false);
 

@@ -205,7 +205,7 @@ const textFieldSchema = z
     path: fieldPathSchema,
     cardinality: cardinalitySchema,
     policy: z.enum(landingPageFieldPolicies),
-    semanticRole: nonEmptyPlainText,
+    semanticRole: rootSemanticRoleSchema,
     support: z.enum(landingPageFieldSupports).optional(),
     copySourceMap: landingPageCopySourceMapSchema,
   })
@@ -289,6 +289,16 @@ const actionFieldSchema = z
         message: "primary action cardinality must be exactly one",
       });
     }
+    if (
+      field.label.cardinality.min !== 1 ||
+      field.label.cardinality.max !== 1
+    ) {
+      context.addIssue({
+        code: "custom",
+        path: ["label", "cardinality"],
+        message: "primary action label cardinality must be exactly one",
+      });
+    }
   });
 
 const imageFieldSchema = z
@@ -319,6 +329,10 @@ const variantFieldContractSchema = z
   .superRefine((contract, context) => {
     const prefix = contract.fieldContractKey.replace("@v1", "");
     validateUniqueFieldIdentities(contract.fields, context);
+    validateOperationalEvidenceReferences(
+      contract.fields as readonly LandingPageFieldDefinition[],
+      context,
+    );
 
     for (const [fieldIndex, field] of contract.fields.entries()) {
       validateCopySourceMode(field, context, ["fields", fieldIndex]);
@@ -856,6 +870,46 @@ function validateCopySourceMode(
       context.addIssue({ code: "custom", path: [...path, "copySourceMap", "evidencePath"], message: "operational evidence path does not belong to the field item" });
     }
   }
+}
+
+function validateOperationalEvidenceReferences(
+  fields: readonly LandingPageFieldDefinition[],
+  context: z.RefinementCtx,
+): void {
+  const flattenedFields = flattenFieldDefinitions(fields);
+  for (const field of flattenedFields) {
+    if (
+      field.fieldKind !== "text" ||
+      field.copySourceMap.sourceMode !== "operational_evidence"
+    ) {
+      continue;
+    }
+    const evidencePath = field.copySourceMap.evidencePath;
+    const evidenceField = flattenedFields.find(
+      (candidate) => candidate.path === evidencePath,
+    );
+    if (evidenceField?.fieldKind !== "technical_reference") {
+      context.addIssue({
+        code: "custom",
+        path: ["fields"],
+        message: "operational evidence path must reference a declared technical field",
+      });
+    }
+  }
+}
+
+function flattenFieldDefinitions(
+  fields: readonly LandingPageFieldDefinition[],
+): readonly LandingPageFieldDefinition[] {
+  return fields.flatMap((field) => [
+    field,
+    ...(field.fieldKind === "collection"
+      ? flattenFieldDefinitions(field.itemFields)
+      : []),
+    ...(field.fieldKind === "action"
+      ? flattenFieldDefinitions([field.label])
+      : []),
+  ]);
 }
 
 function validateCanonicalTextList(input: {
