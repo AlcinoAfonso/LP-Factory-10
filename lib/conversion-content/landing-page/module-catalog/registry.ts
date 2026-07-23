@@ -63,6 +63,27 @@ function research(
   return { sourceMode: "research", researchPath, primaryItemKeys, ...(auxiliaryItemKey ? { auxiliaryItemKey } : {}) };
 }
 
+function researchWithOperationalSupport(
+  primaryItemKeys: readonly [import("./contracts").LandingPageResearchItemKey, import("./contracts").LandingPageResearchItemKey?],
+  referenceKeys: readonly [string, ...string[]],
+  auxiliaryItemKey?: import("./contracts").LandingPageResearchItemKey,
+): LandingPageCopySourceMap {
+  return {
+    sourceMode: "research_with_operational_support",
+    researchPath,
+    primaryItemKeys,
+    ...(auxiliaryItemKey ? { auxiliaryItemKey } : {}),
+    operationalSupport: {
+      requirement: "required_when_claimed",
+      referenceKeys,
+    },
+  };
+}
+
+function operationalEvidence(evidencePath: string): LandingPageCopySourceMap {
+  return { sourceMode: "operational_evidence", evidencePath };
+}
+
 export const landingPageModuleCatalogRegistry = deepFreeze({
   family: "landing_page",
   moduleCatalogVersion: 1,
@@ -186,69 +207,116 @@ export const landingPageModuleCatalogRegistry = deepFreeze({
     "hero.standard@v1": {
       fieldContractKey: "hero.standard@v1",
       fields: [
-        text("hero.standard.eyebrow", "eyebrow", "eyebrow", 0, 1, "research_guided"),
-        text("hero.standard.title", "title", "h1", 1, 1, "hybrid", "when_factual"),
-        text("hero.standard.subtitle", "subtitle", "paragraph", 1, 1, "hybrid", "when_factual"),
-        action("hero.standard.primaryCta", "primaryCta"),
-        text("hero.standard.proofShort", "proofShort", "paragraph", 0, 1, "hybrid", "when_present"),
+        text("hero.standard.eyebrow", "eyebrow", "eyebrow", 0, 1, "research_guided", research(["positioning_opportunity", "trigger"], "desire")),
+        text("hero.standard.title", "title", "h1", 1, 1, "hybrid", research(["positioning_opportunity", "desire"], "commercial_keywords"), "when_factual"),
+        text("hero.standard.subtitle", "subtitle", "paragraph", 1, 1, "hybrid", research(["pain", "desire"], "objection"), "when_factual"),
+        action("hero.standard.primaryCta", "primaryCta", research(["trigger", "desire"], "objection")),
+        text("hero.standard.proofShort", "proofShort", "paragraph", 0, 1, "hybrid", research(["proof_type", "belief"], "objection"), "when_present"),
         image("hero.standard.media", "media", 0, 1),
+      ],
+    },
+    "hero.form@v1": {
+      fieldContractKey: "hero.form@v1",
+      fields: [
+        text("hero.form.eyebrow", "eyebrow", "eyebrow", 0, 1, "research_guided", research(["positioning_opportunity", "trigger"], "desire")),
+        text("hero.form.title", "title", "h1", 1, 1, "hybrid", research(["positioning_opportunity", "desire"], "commercial_keywords"), "when_factual"),
+        text("hero.form.subtitle", "subtitle", "paragraph", 1, 1, "hybrid", research(["pain", "desire"], "objection"), "when_factual"),
+        action("hero.form.primaryCta", "primaryCta", research(["trigger", "desire"], "objection")),
+        text("hero.form.proofShort", "proofShort", "paragraph", 0, 1, "hybrid", research(["proof_type", "belief"], "objection"), "when_present"),
+        image("hero.form.media", "media", 0, 1),
       ],
     },
     "trust_bar.standard@v1": {
       fieldContractKey: "trust_bar.standard@v1",
       fields: [
         collection("trust_bar.standard.items", "items", 2, 4, [
-          text("trust_bar.standard.items[].text", "text", "benefit_item", 1, 1, "hybrid", "when_present"),
+          text("trust_bar.standard.items[].text", "text", "benefit_item", 1, 1, "hybrid", research(["proof_type", "belief"], "objection"), "when_present"),
         ]),
       ],
     },
     "problem_solution.standard@v1": {
       fieldContractKey: "problem_solution.standard@v1",
       fields: [
-        text("problem_solution.standard.title", "title", "h2", 1, 1, "research_guided"),
+        text("problem_solution.standard.title", "title", "h2", 1, 1, "research_guided", research(["pain", "desire"], "fear")),
         collection("problem_solution.standard.items", "items", 2, 4, [
-          text("problem_solution.standard.items[].problem", "problem", "card_title", 1, 1, "research_guided"),
-          text("problem_solution.standard.items[].solution", "solution", "card_body", 1, 1, "hybrid", "when_present"),
+          text("problem_solution.standard.items[].problem", "problem", "card_title", 1, 1, "research_guided", research(["pain", "fear"], "objection")),
+          text("problem_solution.standard.items[].solution", "solution", "card_body", 1, 1, "hybrid", research(["positioning_opportunity", "desire"], "belief"), "when_present"),
         ]),
       ],
     },
     "offer.standard@v1": {
       fieldContractKey: "offer.standard@v1",
       fields: [
-        text("offer.standard.title", "title", "h2", 1, 1, "research_guided"),
+        text("offer.standard.title", "title", "h2", 1, 1, "research_guided", research(["desire", "trigger"], "positioning_opportunity")),
         collection("offer.standard.items", "items", 1, 4, [
-          text("offer.standard.items[].itemTitle", "itemTitle", "card_title", 1, 1, "hybrid", "when_present"),
-          text("offer.standard.items[].description", "description", "card_body", 1, 1, "hybrid", "when_present"),
+          text("offer.standard.items[].itemTitle", "itemTitle", "card_title", 1, 1, "hybrid", research(["trigger", "desire"], "positioning_opportunity"), "when_present"),
+          text("offer.standard.items[].description", "description", "card_body", 1, 1, "hybrid", research(["positioning_opportunity", "belief"], "objection"), "when_present"),
+        ]),
+      ],
+    },
+    "benefits.standard@v1": {
+      fieldContractKey: "benefits.standard@v1",
+      fields: [
+        text("benefits.standard.title", "title", "h2", 1, 1, "research_guided", research(["desire", "positioning_opportunity"], "pain")),
+        collection("benefits.standard.items", "items", 2, 6, [
+          text(
+            "benefits.standard.items[].benefitTitle",
+            "benefitTitle",
+            "card_title",
+            1,
+            1,
+            "hybrid",
+            researchWithOperationalSupport(
+              ["positioning_opportunity", "desire"],
+              ["applicable_capabilities"],
+              "belief",
+            ),
+            "when_factual",
+          ),
+          text(
+            "benefits.standard.items[].description",
+            "description",
+            "card_body",
+            1,
+            1,
+            "hybrid",
+            researchWithOperationalSupport(
+              ["belief", "desire"],
+              ["applicable_capabilities"],
+              "objection",
+            ),
+            "when_factual",
+          ),
         ]),
       ],
     },
     "process.standard@v1": {
       fieldContractKey: "process.standard@v1",
       fields: [
-        text("process.standard.title", "title", "h2", 1, 1, "research_guided"),
+        text("process.standard.title", "title", "h2", 1, 1, "research_guided", research(["belief", "desire"], "objection")),
         collection("process.standard.steps", "steps", 2, 6, [
-          text("process.standard.steps[].stepTitle", "stepTitle", "step_title", 1, 1, "hybrid", "when_present"),
-          text("process.standard.steps[].stepBody", "stepBody", "step_body", 1, 1, "hybrid", "when_present"),
+          text("process.standard.steps[].stepTitle", "stepTitle", "step_title", 1, 1, "hybrid", research(["narrative_arc", "trigger"], "belief"), "when_present"),
+          text("process.standard.steps[].stepBody", "stepBody", "step_body", 1, 1, "hybrid", research(["belief", "desire"], "positioning_opportunity"), "when_present"),
         ]),
       ],
     },
     "technical_assurance.standard@v1": {
       fieldContractKey: "technical_assurance.standard@v1",
       fields: [
-        text("technical_assurance.standard.title", "title", "h2", 1, 1, "research_guided"),
+        text("technical_assurance.standard.title", "title", "h2", 1, 1, "research_guided", research(["proof_type", "belief"], "fear")),
         collection("technical_assurance.standard.items", "items", 1, 4, [
-          text("technical_assurance.standard.items[].assuranceTitle", "assuranceTitle", "card_title", 1, 1, "hybrid", "when_present"),
-          text("technical_assurance.standard.items[].assuranceBody", "assuranceBody", "card_body", 1, 1, "hybrid", "when_present"),
+          text("technical_assurance.standard.items[].assuranceTitle", "assuranceTitle", "card_title", 1, 1, "hybrid", research(["proof_type", "positioning_opportunity"], "objection"), "when_present"),
+          text("technical_assurance.standard.items[].assuranceBody", "assuranceBody", "card_body", 1, 1, "hybrid", research(["proof_type", "belief"], "fear"), "when_present"),
         ]),
       ],
     },
     "social_proof.standard@v1": {
       fieldContractKey: "social_proof.standard@v1",
       fields: [
-        text("social_proof.standard.title", "title", "h2", 1, 1, "research_guided"),
+        text("social_proof.standard.title", "title", "h2", 1, 1, "research_guided", research(["proof_type", "belief"], "objection")),
         collection("social_proof.standard.items", "items", 1, 3, [
-          text("social_proof.standard.items[].quote", "quote", "card_body", 1, 1, "operational_required"),
-          text("social_proof.standard.items[].attribution", "attribution", "card_title", 1, 1, "operational_required"),
+          text("social_proof.standard.items[].quote", "quote", "card_body", 1, 1, "operational_required", operationalEvidence("social_proof.standard.items[].evidenceRef")),
+          text("social_proof.standard.items[].attribution", "attribution", "card_title", 1, 1, "operational_required", operationalEvidence("social_proof.standard.items[].evidenceRef")),
           technicalReference("social_proof.standard.items[].evidenceRef", "evidenceRef"),
         ]),
       ],
@@ -264,9 +332,9 @@ export const landingPageModuleCatalogRegistry = deepFreeze({
     "final_cta.standard@v1": {
       fieldContractKey: "final_cta.standard@v1",
       fields: [
-        text("final_cta.standard.title", "title", "h2", 1, 1, "hybrid", "when_factual"),
-        text("final_cta.standard.body", "body", "paragraph", 1, 1, "hybrid", "when_factual"),
-        action("final_cta.standard.primaryCta", "primaryCta"),
+        text("final_cta.standard.title", "title", "h2", 1, 1, "hybrid", research(["trigger", "desire"], "positioning_opportunity"), "when_factual"),
+        text("final_cta.standard.body", "body", "paragraph", 1, 1, "hybrid", research(["desire", "objection"], "belief"), "when_factual"),
+        action("final_cta.standard.primaryCta", "primaryCta", research(["trigger", "desire"], "objection")),
       ],
     },
   },
@@ -277,6 +345,55 @@ export const landingPageModuleCatalogRegistry = deepFreeze({
       "hero",
       ["primary_action", "image_asset"],
       { actionCompatibility: { supportsPrimaryConversionForm: false } },
+    ),
+    "hero.form@v1": variant(
+      "hero.form@v1",
+      "form",
+      "hero",
+      ["primary_action", "image_asset", "embedded_form"],
+      {
+        actionCompatibility: { supportsPrimaryConversionForm: true },
+        formContract: {
+          fields: [
+            {
+              fieldKey: "name",
+              valueType: "text",
+              obligation: "required",
+              purposeKey: "contact_identity",
+            },
+            {
+              fieldKey: "email",
+              valueType: "email",
+              obligation: "required",
+              purposeKey: "reply_email",
+            },
+            {
+              fieldKey: "phone",
+              valueType: "phone",
+              obligation: "optional",
+              purposeKey: "optional_phone",
+            },
+          ],
+          consent: {
+            required: true,
+            fieldKey: "privacyConsent",
+            purposeKey: "privacy_policy_consent",
+            privacyPolicyInputFieldKey: "privacy_policy_url",
+          },
+          accessibility: {
+            baseline: "WCAG 2.2",
+            labelsProgrammaticallyAssociated: true,
+            instructionsProgrammaticallyAssociated: true,
+            errorsProgrammaticallyAssociated: true,
+            keyboardOperable: true,
+            focusMovesToFirstInvalidField: true,
+          },
+          operationalBinding: {
+            inputCatalogFieldKey: "primary_conversion_channel",
+            requiredValue: "form",
+          },
+        },
+      },
     ),
     "trust_bar.standard@v1": variant(
       "trust_bar.standard@v1",
@@ -292,6 +409,11 @@ export const landingPageModuleCatalogRegistry = deepFreeze({
       "offer.standard@v1",
       "standard",
       "offer",
+    ),
+    "benefits.standard@v1": variant(
+      "benefits.standard@v1",
+      "standard",
+      "benefits",
     ),
     "process.standard@v1": variant(
       "process.standard@v1",
@@ -347,7 +469,7 @@ function variant(
   capabilities: readonly LandingPageVariantCapability[] = [],
   optional: Pick<
     LandingPageVariantDefinition,
-    "actionCompatibility" | "accordionAccessibility"
+    "actionCompatibility" | "formContract" | "accordionAccessibility"
   > = {},
 ): LandingPageVariantDefinition {
   return {
@@ -387,6 +509,7 @@ function text(
   min: number,
   max: number,
   policy: LandingPageFieldPolicy,
+  copySourceMap: LandingPageCopySourceMap,
   support?: LandingPageFieldSupport,
 ): LandingPageTextFieldDefinition {
   return {
@@ -397,7 +520,7 @@ function text(
     policy,
     semanticRole,
     ...(support ? { support } : {}),
-    copySourceMap: copySourceMapFor(path),
+    copySourceMap,
   };
 }
 
@@ -421,6 +544,7 @@ function collection(
 function action(
   path: string,
   fieldKey: string,
+  labelCopySourceMap: LandingPageCopySourceMap,
 ): LandingPageActionFieldDefinition {
   return {
     fieldKind: "action",
@@ -428,7 +552,16 @@ function action(
     path,
     cardinality: cardinality(1, 1),
     policy: "not_copy",
-    label: text(`${path}.label`, "label", "cta_label", 1, 1, "hybrid", "when_present"),
+    label: text(
+      `${path}.label`,
+      "label",
+      "cta_label",
+      1,
+      1,
+      "hybrid",
+      labelCopySourceMap,
+      "when_present",
+    ),
     operationalBinding: "primary_conversion_channel",
   };
 }
@@ -464,10 +597,35 @@ function technicalReference(
 
 function faqFields(prefix: "faq.standard" | "faq.accordion") {
   return [
-    text(`${prefix}.title`, "title", "h2", 1, 1, "research_guided"),
+    text(
+      `${prefix}.title`,
+      "title",
+      "h2",
+      1,
+      1,
+      "research_guided",
+      research(["objection", "awareness_level"], "search_intent"),
+    ),
     collection(`${prefix}.items`, "items", 2, 6, [
-      text(`${prefix}.items[].question`, "question", "faq_question", 1, 1, "research_guided"),
-      text(`${prefix}.items[].answer`, "answer", "faq_answer", 1, 1, "hybrid", "when_factual"),
+      text(
+        `${prefix}.items[].question`,
+        "question",
+        "faq_question",
+        1,
+        1,
+        "research_guided",
+        research(["objection", "fear"], "faq_questions"),
+      ),
+      text(
+        `${prefix}.items[].answer`,
+        "answer",
+        "faq_answer",
+        1,
+        1,
+        "hybrid",
+        research(["belief", "positioning_opportunity"], "proof_type"),
+        "when_factual",
+      ),
     ]),
   ] as const;
 }
@@ -496,44 +654,6 @@ function moduleDefinition(
     boundaries,
   };
 }
-
-function copySourceMapFor(path: string): LandingPageCopySourceMap {
-  switch (path) {
-    case "hero.standard.eyebrow": return research(["positioning_opportunity", "trigger"], "desire");
-    case "hero.standard.title": return research(["positioning_opportunity", "desire"], "commercial_keywords");
-    case "hero.standard.subtitle": return research(["pain", "desire"], "objection");
-    case "hero.standard.primaryCta.label": return research(["trigger", "desire"], "objection");
-    case "hero.standard.proofShort": return research(["proof_type", "belief"], "objection");
-    case "trust_bar.standard.items[].text": return research(["proof_type", "belief"], "objection");
-    case "problem_solution.standard.title": return research(["pain", "desire"], "fear");
-    case "problem_solution.standard.items[].problem": return research(["pain", "fear"], "objection");
-    case "problem_solution.standard.items[].solution": return research(["positioning_opportunity", "desire"], "belief");
-    case "offer.standard.title": return research(["desire", "trigger"], "positioning_opportunity");
-    case "offer.standard.items[].itemTitle": return research(["trigger", "desire"], "positioning_opportunity");
-    case "offer.standard.items[].description": return research(["positioning_opportunity", "belief"], "objection");
-    case "process.standard.title": return research(["belief", "desire"], "objection");
-    case "process.standard.steps[].stepTitle": return research(["narrative_arc", "trigger"], "belief");
-    case "process.standard.steps[].stepBody": return research(["belief", "desire"], "positioning_opportunity");
-    case "technical_assurance.standard.title": return research(["proof_type", "belief"], "fear");
-    case "technical_assurance.standard.items[].assuranceTitle": return research(["proof_type", "positioning_opportunity"], "objection");
-    case "technical_assurance.standard.items[].assuranceBody": return research(["proof_type", "belief"], "fear");
-    case "social_proof.standard.title": return research(["proof_type", "belief"], "objection");
-    case "social_proof.standard.items[].quote":
-    case "social_proof.standard.items[].attribution":
-      return { sourceMode: "operational_evidence", evidencePath: "social_proof.standard.items[].evidenceRef" };
-    case "faq.standard.title":
-    case "faq.accordion.title": return research(["objection", "awareness_level"], "search_intent");
-    case "faq.standard.items[].question":
-    case "faq.accordion.items[].question": return research(["objection", "fear"], "faq_questions");
-    case "faq.standard.items[].answer":
-    case "faq.accordion.items[].answer": return research(["belief", "positioning_opportunity"], "proof_type");
-    case "final_cta.standard.title": return research(["trigger", "desire"], "positioning_opportunity");
-    case "final_cta.standard.body": return research(["desire", "objection"], "belief");
-    case "final_cta.standard.primaryCta.label": return research(["trigger", "desire"], "objection");
-    default: throw new Error(`Missing canonical copySourceMap for text field: ${path}`);
-  }
-}
-
 
 function deepFreeze<T>(value: T): T {
   if (value && typeof value === "object") {

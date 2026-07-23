@@ -3,6 +3,8 @@ import { z } from "zod";
 import {
   landingPageFieldPolicies,
   landingPageFieldSupports,
+  landingPageFormFieldObligations,
+  landingPageFormFieldValueTypes,
   landingPageResearchItemKeys,
   landingPageCtaModes,
   landingPageFunnelProfileKeys,
@@ -129,6 +131,7 @@ const nonEmptyPlainText = z
   });
 
 const fieldKeySchema = z.string().regex(/^[a-z][A-Za-z0-9]*$/);
+const operationalReferenceKeySchema = z.string().regex(/^[a-z][a-z0-9_]*$/);
 const fieldPathSchema = z
   .string()
   .regex(/^[a-z][a-z0-9_]*(?:\.[A-Za-z][A-Za-z0-9]*|\.[A-Za-z][A-Za-z0-9]*\[\]\.[A-Za-z][A-Za-z0-9]*)+$/);
@@ -160,6 +163,24 @@ const copySourceMapSchema = z.discriminatedUnion("sourceMode", [
     }
   }),
   z.object({
+    sourceMode: z.literal("research_with_operational_support"),
+    researchPath: z.literal("endCustomer.researches[].items[]"),
+    primaryItemKeys: z.tuple([z.enum(landingPageResearchItemKeys), z.enum(landingPageResearchItemKeys).optional()]),
+    auxiliaryItemKey: z.enum(landingPageResearchItemKeys).optional(),
+    operationalSupport: z.object({
+      requirement: z.literal("required_when_claimed"),
+      referenceKeys: z.array(operationalReferenceKeySchema).min(1),
+    }).strict(),
+  }).strict().superRefine((map, context) => {
+    const keys = map.primaryItemKeys.filter((key): key is NonNullable<typeof key> => Boolean(key));
+    if (new Set(keys).size !== keys.length || (map.auxiliaryItemKey && keys.includes(map.auxiliaryItemKey))) {
+      context.addIssue({ code: "custom", message: "copy sources must be unique" });
+    }
+    if (new Set(map.operationalSupport.referenceKeys).size !== map.operationalSupport.referenceKeys.length) {
+      context.addIssue({ code: "custom", path: ["operationalSupport", "referenceKeys"], message: "operational support references must be unique" });
+    }
+  }),
+  z.object({
     sourceMode: z.literal("operational_evidence"),
     evidencePath: fieldPathSchema,
   }).strict(),
@@ -176,7 +197,19 @@ const textFieldSchema = z
     support: z.enum(landingPageFieldSupports).optional(),
     copySourceMap: copySourceMapSchema,
   })
-  .strict();
+  .strict()
+  .superRefine((field, context) => {
+    if (
+      field.copySourceMap.sourceMode === "research_with_operational_support" &&
+      field.support !== "when_factual"
+    ) {
+      context.addIssue({
+        code: "custom",
+        path: ["support"],
+        message: "combined copy source requires operational support when factual",
+      });
+    }
+  });
 
 const technicalReferenceFieldSchema = z
   .object({
@@ -289,10 +322,46 @@ const variantFieldContractSchema = z
     }
   });
 
+const embeddedFormContractSchema = z.object({
+  fields: z.array(z.object({
+    fieldKey: fieldKeySchema,
+    valueType: z.enum(landingPageFormFieldValueTypes),
+    obligation: z.enum(landingPageFormFieldObligations),
+    purposeKey: operationalReferenceKeySchema,
+  }).strict()).min(1),
+  consent: z.object({
+    required: z.literal(true),
+    fieldKey: z.literal("privacyConsent"),
+    purposeKey: z.literal("privacy_policy_consent"),
+    privacyPolicyInputFieldKey: z.literal("privacy_policy_url"),
+  }).strict(),
+  accessibility: z.object({
+    baseline: z.literal("WCAG 2.2"),
+    labelsProgrammaticallyAssociated: z.literal(true),
+    instructionsProgrammaticallyAssociated: z.literal(true),
+    errorsProgrammaticallyAssociated: z.literal(true),
+    keyboardOperable: z.literal(true),
+    focusMovesToFirstInvalidField: z.literal(true),
+  }).strict(),
+  operationalBinding: z.object({
+    inputCatalogFieldKey: z.literal("primary_conversion_channel"),
+    requiredValue: z.literal("form"),
+  }).strict(),
+}).strict().superRefine((contract, context) => {
+  const fieldKeys = contract.fields.map((field) => field.fieldKey);
+  if (new Set(fieldKeys).size !== fieldKeys.length) {
+    context.addIssue({
+      code: "custom",
+      path: ["fields"],
+      message: "embedded form field keys must be unique",
+    });
+  }
+});
+
 const variantDefinitionSchema = z
   .object({
     variantKey: z.enum(landingPageVariantKeys),
-    variantName: z.enum(["standard", "accordion"]),
+    variantName: z.enum(["standard", "accordion", "form"]),
     variantVersion: z.literal(1),
     moduleKey: z.enum(landingPageModuleKeys),
     moduleVersion: z.literal(1),
@@ -304,10 +373,11 @@ const variantDefinitionSchema = z
     capabilities: z.array(z.enum(landingPageVariantCapabilities)),
     actionCompatibility: z
       .object({
-        supportsPrimaryConversionForm: z.literal(false),
+        supportsPrimaryConversionForm: z.boolean(),
       })
       .strict()
       .optional(),
+    formContract: embeddedFormContractSchema.optional(),
     accordionAccessibility: z
       .object({
         baseline: z.literal("WCAG 2.2"),
@@ -352,48 +422,38 @@ const variantDefinitionSchema = z
     }
 
     const hasPrimaryAction = variant.capabilities.includes("primary_action");
-    const hasImageAsset = variant.capabilities.includes("image_asset");
     const hasAccordion = variant.capabilities.includes("accordion_interaction");
-    const isFormIncompatible =
-      variant.variantKey === "hero.standard@v1" ||
-      variant.variantKey === "final_cta.standard@v1";
+    const hasEmbeddedForm = variant.capabilities.includes("embedded_form");
 
-    if (hasPrimaryAction !== isFormIncompatible) {
-      context.addIssue({
-        code: "custom",
-        path: ["capabilities"],
-        message: "primary action capability is assigned to an invalid variant",
-      });
-    }
-    if (Boolean(variant.actionCompatibility) !== isFormIncompatible) {
+    if (Boolean(variant.actionCompatibility) !== hasPrimaryAction) {
       context.addIssue({
         code: "custom",
         path: ["actionCompatibility"],
-        message: "form compatibility metadata is assigned to an invalid variant",
-      });
-    }
-    if (hasImageAsset !== (variant.variantKey === "hero.standard@v1")) {
-      context.addIssue({
-        code: "custom",
-        path: ["capabilities"],
-        message: "image asset capability is assigned to an invalid variant",
-      });
-    }
-    if (hasAccordion !== (variant.variantKey === "faq.accordion@v1")) {
-      context.addIssue({
-        code: "custom",
-        path: ["capabilities"],
-        message: "accordion capability is assigned to an invalid variant",
+        message: "primary action capability and action compatibility must agree",
       });
     }
     if (
-      Boolean(variant.accordionAccessibility) !==
-      (variant.variantKey === "faq.accordion@v1")
+      variant.actionCompatibility &&
+      variant.actionCompatibility.supportsPrimaryConversionForm !== hasEmbeddedForm
     ) {
       context.addIssue({
         code: "custom",
+        path: ["actionCompatibility", "supportsPrimaryConversionForm"],
+        message: "form compatibility and embedded form capability must agree",
+      });
+    }
+    if (Boolean(variant.formContract) !== hasEmbeddedForm) {
+      context.addIssue({
+        code: "custom",
+        path: ["formContract"],
+        message: "embedded form capability and form contract must agree",
+      });
+    }
+    if (Boolean(variant.accordionAccessibility) !== hasAccordion) {
+      context.addIssue({
+        code: "custom",
         path: ["accordionAccessibility"],
-        message: "accordion accessibility belongs only to faq accordion",
+        message: "accordion capability and accessibility contract must agree",
       });
     }
   });
@@ -584,6 +644,32 @@ export const landingPageModuleCatalogSchema = z
           path: ["variants", key, "fieldContractKey"],
           message: "variant field contract is not registered",
         });
+      }
+      const fieldContract =
+        catalog.variantFieldContracts[variant.fieldContractKey];
+      if (fieldContract) {
+        const hasActionField = fieldContract.fields.some(
+          (field) => field.fieldKind === "action",
+        );
+        const hasImageField = fieldContract.fields.some(
+          (field) => field.fieldKind === "image",
+        );
+        if (
+          variant.capabilities.includes("primary_action") !== hasActionField
+        ) {
+          context.addIssue({
+            code: "custom",
+            path: ["variants", key, "capabilities"],
+            message: "primary action capability must match the field contract",
+          });
+        }
+        if (variant.capabilities.includes("image_asset") !== hasImageField) {
+          context.addIssue({
+            code: "custom",
+            path: ["variants", key, "capabilities"],
+            message: "image asset capability must match the field contract",
+          });
+        }
       }
 
       if (!expectedVariantKeys.has(key)) continue;

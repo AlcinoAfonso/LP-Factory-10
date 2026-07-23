@@ -319,8 +319,8 @@ const cases: readonly Case[] = [
         landingPageModuleCatalogRegistry.variantFieldContracts,
       ).sort();
 
-      assert.equal(registeredVariantKeys.includes("benefits.standard@v1"), false);
-      assert.equal(registeredVariantKeys.includes("hero.form@v1"), false);
+      assert.equal(registeredVariantKeys.includes("benefits.standard@v1"), true);
+      assert.equal(registeredVariantKeys.includes("hero.form@v1"), true);
       assert.deepEqual(registeredVariantKeys, [...landingPageVariantKeys].sort());
       assert.deepEqual(registeredVariantKeys, registeredFieldContractKeys);
 
@@ -347,7 +347,7 @@ const cases: readonly Case[] = [
     },
   },
   {
-    name: "only the three approved capabilities are assigned",
+    name: "only registered capabilities are assigned",
     run: () => {
       const assignedCapabilities = new Set(
         Object.values(landingPageModuleCatalogRegistry.variants).flatMap(
@@ -364,6 +364,11 @@ const cases: readonly Case[] = [
         ["primary_action", "image_asset"],
       );
       assert.deepEqual(
+        landingPageModuleCatalogRegistry.variants["hero.form@v1"]
+          .capabilities,
+        ["primary_action", "image_asset", "embedded_form"],
+      );
+      assert.deepEqual(
         landingPageModuleCatalogRegistry.variants["final_cta.standard@v1"]
           .capabilities,
         ["primary_action"],
@@ -373,6 +378,114 @@ const cases: readonly Case[] = [
           .capabilities,
         ["accordion_interaction"],
       );
+    },
+  },
+  {
+    name: "benefits standard resolves a bounded collection with explicit support sources",
+    run: () => {
+      const result = resolveLandingPageModuleCatalog({
+        moduleCatalogVersion: 1,
+        rootVersion: 1,
+        moduleKey: "benefits",
+        moduleVersion: 1,
+        variantName: "standard",
+        variantVersion: 1,
+        funnelProfileKey: "mofu",
+      });
+
+      assert.equal(result.ok, true);
+      if (!result.ok) return;
+      assert.equal(result.value.variant.variantKey, "benefits.standard@v1");
+      assert.deepEqual(
+        result.value.fieldContract.fields.map((field) => field.path),
+        ["benefits.standard.title", "benefits.standard.items"],
+      );
+      const title = result.value.fieldContract.fields[0];
+      assert.equal(title?.fieldKind, "text");
+      if (title?.fieldKind !== "text") return;
+      assert.deepEqual(title.cardinality, { min: 1, max: 1 });
+      assert.deepEqual(
+        title.copySourceMap,
+        expectedResearch(["desire", "positioning_opportunity"], "pain"),
+      );
+      const items = result.value.fieldContract.fields[1];
+      assert.equal(items?.fieldKind, "collection");
+      if (items?.fieldKind !== "collection") return;
+      assert.deepEqual(items.cardinality, { min: 2, max: 6 });
+      assert.deepEqual(
+        items.itemFields.map((field) => field.path),
+        [
+          "benefits.standard.items[].benefitTitle",
+          "benefits.standard.items[].description",
+        ],
+      );
+      for (const field of items.itemFields) {
+        assert.equal(field.fieldKind, "text");
+        if (field.fieldKind !== "text") continue;
+        assert.deepEqual(field.cardinality, { min: 1, max: 1 });
+        assert.deepEqual(field.copySourceMap, {
+          sourceMode: "research_with_operational_support",
+          researchPath: "endCustomer.researches[].items[]",
+          primaryItemKeys:
+            field.fieldKey === "benefitTitle"
+              ? ["positioning_opportunity", "desire"]
+              : ["belief", "desire"],
+          auxiliaryItemKey:
+            field.fieldKey === "benefitTitle" ? "belief" : "objection",
+          operationalSupport: {
+            requirement: "required_when_claimed",
+            referenceKeys: ["applicable_capabilities"],
+          },
+        });
+      }
+      assertDeeplyFrozen(result.value);
+    },
+  },
+  {
+    name: "hero form resolves with a complete abstract accessible form contract",
+    run: () => {
+      const result = resolveLandingPageModuleCatalog({
+        moduleCatalogVersion: 1,
+        rootVersion: 1,
+        moduleKey: "hero",
+        moduleVersion: 1,
+        variantName: "form",
+        variantVersion: 1,
+        funnelProfileKey: "bofu",
+      });
+
+      assert.equal(result.ok, true);
+      if (!result.ok) return;
+      assert.equal(result.value.variant.variantKey, "hero.form@v1");
+      assert.deepEqual(result.value.variant.actionCompatibility, {
+        supportsPrimaryConversionForm: true,
+      });
+      assert.deepEqual(result.value.variant.formContract, {
+        fields: [
+          { fieldKey: "name", valueType: "text", obligation: "required", purposeKey: "contact_identity" },
+          { fieldKey: "email", valueType: "email", obligation: "required", purposeKey: "reply_email" },
+          { fieldKey: "phone", valueType: "phone", obligation: "optional", purposeKey: "optional_phone" },
+        ],
+        consent: {
+          required: true,
+          fieldKey: "privacyConsent",
+          purposeKey: "privacy_policy_consent",
+          privacyPolicyInputFieldKey: "privacy_policy_url",
+        },
+        accessibility: {
+          baseline: "WCAG 2.2",
+          labelsProgrammaticallyAssociated: true,
+          instructionsProgrammaticallyAssociated: true,
+          errorsProgrammaticallyAssociated: true,
+          keyboardOperable: true,
+          focusMovesToFirstInvalidField: true,
+        },
+        operationalBinding: {
+          inputCatalogFieldKey: "primary_conversion_channel",
+          requiredValue: "form",
+        },
+      });
+      assertDeeplyFrozen(result.value);
     },
   },
   {
@@ -413,7 +526,7 @@ const cases: readonly Case[] = [
     },
   },
   {
-    name: "form compatibility is explicit without channel fallback",
+    name: "form compatibility and contracts agree structurally without channel fallback",
     run: () => {
       for (const variantKey of [
         "hero.standard@v1",
@@ -425,6 +538,16 @@ const cases: readonly Case[] = [
           { supportsPrimaryConversionForm: false },
         );
       }
+      assert.deepEqual(
+        landingPageModuleCatalogRegistry.variants["hero.form@v1"]
+          .actionCompatibility,
+        { supportsPrimaryConversionForm: true },
+      );
+      assert.equal(
+        landingPageModuleCatalogRegistry.variants["hero.standard@v1"]
+          .formContract,
+        undefined,
+      );
 
       const formFallback = cloneRegistry();
       formFallback.variants["hero.standard@v1"].fallbackChannel = "whatsapp";
@@ -435,6 +558,47 @@ const cases: readonly Case[] = [
         "hero.standard@v1"
       ].actionCompatibility = { supportsPrimaryConversionForm: true };
       assertInvalid(formSupported);
+
+      const capabilityWithoutContract = cloneRegistry();
+      delete capabilityWithoutContract.variants["hero.form@v1"].formContract;
+      assertInvalid(capabilityWithoutContract);
+
+      const contractWithoutCapability = cloneRegistry();
+      contractWithoutCapability.variants["hero.form@v1"].capabilities = [
+        "primary_action",
+        "image_asset",
+      ];
+      assertInvalid(contractWithoutCapability);
+    },
+  },
+  {
+    name: "embedded form requirements fail closed independently",
+    run: () => {
+      for (const requirement of [
+        "labelsProgrammaticallyAssociated",
+        "instructionsProgrammaticallyAssociated",
+        "errorsProgrammaticallyAssociated",
+        "keyboardOperable",
+        "focusMovesToFirstInvalidField",
+      ]) {
+        const incomplete = cloneRegistry();
+        const accessibility = incomplete.variants["hero.form@v1"]
+          .formContract?.accessibility;
+        assert.ok(accessibility);
+        accessibility[requirement] = false;
+        assertInvalid(incomplete);
+      }
+
+      const missingConsent = cloneRegistry();
+      delete missingConsent.variants["hero.form@v1"].formContract?.consent;
+      assertInvalid(missingConsent);
+
+      const duplicatedField = cloneRegistry();
+      const formFields = duplicatedField.variants["hero.form@v1"]
+        .formContract?.fields;
+      assert.ok(formFields);
+      formFields.push(structuredClone(formFields[0]));
+      assertInvalid(duplicatedField);
     },
   },
   {
@@ -550,6 +714,44 @@ const cases: readonly Case[] = [
         .filter((field) => field.fieldKind === "text");
       assert.equal(textualFields.length > 0, true);
       assert.equal(textualFields.every((field) => Boolean(field.copySourceMap)), true);
+
+      const expectedLegacySources: Record<string, unknown> = {
+        "hero.standard.eyebrow": expectedResearch(["positioning_opportunity", "trigger"], "desire"),
+        "hero.standard.title": expectedResearch(["positioning_opportunity", "desire"], "commercial_keywords"),
+        "hero.standard.subtitle": expectedResearch(["pain", "desire"], "objection"),
+        "hero.standard.primaryCta.label": expectedResearch(["trigger", "desire"], "objection"),
+        "hero.standard.proofShort": expectedResearch(["proof_type", "belief"], "objection"),
+        "trust_bar.standard.items[].text": expectedResearch(["proof_type", "belief"], "objection"),
+        "problem_solution.standard.title": expectedResearch(["pain", "desire"], "fear"),
+        "problem_solution.standard.items[].problem": expectedResearch(["pain", "fear"], "objection"),
+        "problem_solution.standard.items[].solution": expectedResearch(["positioning_opportunity", "desire"], "belief"),
+        "offer.standard.title": expectedResearch(["desire", "trigger"], "positioning_opportunity"),
+        "offer.standard.items[].itemTitle": expectedResearch(["trigger", "desire"], "positioning_opportunity"),
+        "offer.standard.items[].description": expectedResearch(["positioning_opportunity", "belief"], "objection"),
+        "process.standard.title": expectedResearch(["belief", "desire"], "objection"),
+        "process.standard.steps[].stepTitle": expectedResearch(["narrative_arc", "trigger"], "belief"),
+        "process.standard.steps[].stepBody": expectedResearch(["belief", "desire"], "positioning_opportunity"),
+        "technical_assurance.standard.title": expectedResearch(["proof_type", "belief"], "fear"),
+        "technical_assurance.standard.items[].assuranceTitle": expectedResearch(["proof_type", "positioning_opportunity"], "objection"),
+        "technical_assurance.standard.items[].assuranceBody": expectedResearch(["proof_type", "belief"], "fear"),
+        "social_proof.standard.title": expectedResearch(["proof_type", "belief"], "objection"),
+        "social_proof.standard.items[].quote": expectedEvidence("social_proof.standard.items[].evidenceRef"),
+        "social_proof.standard.items[].attribution": expectedEvidence("social_proof.standard.items[].evidenceRef"),
+        "faq.standard.title": expectedResearch(["objection", "awareness_level"], "search_intent"),
+        "faq.accordion.title": expectedResearch(["objection", "awareness_level"], "search_intent"),
+        "faq.standard.items[].question": expectedResearch(["objection", "fear"], "faq_questions"),
+        "faq.accordion.items[].question": expectedResearch(["objection", "fear"], "faq_questions"),
+        "faq.standard.items[].answer": expectedResearch(["belief", "positioning_opportunity"], "proof_type"),
+        "faq.accordion.items[].answer": expectedResearch(["belief", "positioning_opportunity"], "proof_type"),
+        "final_cta.standard.title": expectedResearch(["trigger", "desire"], "positioning_opportunity"),
+        "final_cta.standard.body": expectedResearch(["desire", "objection"], "belief"),
+        "final_cta.standard.primaryCta.label": expectedResearch(["trigger", "desire"], "objection"),
+      };
+      for (const [path, expected] of Object.entries(expectedLegacySources)) {
+        const field = textualFields.find((candidate) => candidate.path === path);
+        assert.ok(field, `missing legacy text field: ${path}`);
+        assert.deepEqual(field.copySourceMap, expected, `source changed: ${path}`);
+      }
 
       const unknownSourceMode = cloneRegistry();
       getMutableTextField(unknownSourceMode, "hero.standard@v1", "hero.standard.title").copySourceMap.sourceMode = "input_catalog";
@@ -866,6 +1068,22 @@ function assertInvalid(catalog: MutableCatalog): void {
   assert.equal(landingPageModuleCatalogSchema.safeParse(catalog).success, false);
 }
 
+function expectedResearch(
+  primaryItemKeys: readonly [string, string?],
+  auxiliaryItemKey?: string,
+) {
+  return {
+    sourceMode: "research",
+    researchPath: "endCustomer.researches[].items[]",
+    primaryItemKeys,
+    ...(auxiliaryItemKey ? { auxiliaryItemKey } : {}),
+  };
+}
+
+function expectedEvidence(evidencePath: string) {
+  return { sourceMode: "operational_evidence", evidencePath };
+}
+
 type MutableModule = {
   family: string;
   moduleKey: string;
@@ -911,6 +1129,10 @@ type MutableField = {
     primaryItemKeys?: string[];
     auxiliaryItemKey?: string;
     evidencePath?: string;
+    operationalSupport?: {
+      requirement?: string;
+      referenceKeys?: string[];
+    };
   };
   itemFields?: MutableField[];
   label?: MutableField;
@@ -932,6 +1154,12 @@ type MutableVariant = {
   rootDelta: MutableRootDelta;
   capabilities: string[];
   actionCompatibility?: { supportsPrimaryConversionForm: boolean };
+  formContract?: {
+    fields: Record<string, unknown>[];
+    consent?: Record<string, unknown>;
+    accessibility: Record<string, string | boolean>;
+    operationalBinding: Record<string, string>;
+  };
   accordionAccessibility?: Record<string, string | boolean>;
   fallbackChannel?: string;
   creationMotivation?: string;

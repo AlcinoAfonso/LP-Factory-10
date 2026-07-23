@@ -18,9 +18,11 @@ export const landingPageModuleKeys = [
 
 export const landingPageVariantFieldContractKeys = [
   "hero.standard@v1",
+  "hero.form@v1",
   "trust_bar.standard@v1",
   "problem_solution.standard@v1",
   "offer.standard@v1",
+  "benefits.standard@v1",
   "process.standard@v1",
   "technical_assurance.standard@v1",
   "social_proof.standard@v1",
@@ -56,7 +58,11 @@ export const landingPageVariantCapabilities = [
   "primary_action",
   "image_asset",
   "accordion_interaction",
+  "embedded_form",
 ] as const;
+
+export const landingPageFormFieldValueTypes = ["text", "email", "phone"] as const;
+export const landingPageFormFieldObligations = ["required", "optional"] as const;
 
 export const landingPageResearchItemKeys = [
   "positioning_opportunity", "trigger", "desire", "pain", "objection",
@@ -101,7 +107,7 @@ export type LandingPageFieldPolicy =
 export type LandingPageFieldSupport =
   (typeof landingPageFieldSupports)[number];
 export type LandingPageVariantKey = (typeof landingPageVariantKeys)[number];
-export type LandingPageVariantName = "standard" | "accordion";
+export type LandingPageVariantName = "standard" | "accordion" | "form";
 export type LandingPageVariantVersion = 1;
 export type LandingPageVariantCapability =
   (typeof landingPageVariantCapabilities)[number];
@@ -154,6 +160,16 @@ export type LandingPageCopySourceMap =
       auxiliaryItemKey?: LandingPageResearchItemKey;
     }>
   | Readonly<{
+      sourceMode: "research_with_operational_support";
+      researchPath: "endCustomer.researches[].items[]";
+      primaryItemKeys: readonly [LandingPageResearchItemKey, LandingPageResearchItemKey?];
+      auxiliaryItemKey?: LandingPageResearchItemKey;
+      operationalSupport: Readonly<{
+        requirement: "required_when_claimed";
+        referenceKeys: readonly [string, ...string[]];
+      }>;
+    }>
+  | Readonly<{
       sourceMode: "operational_evidence";
       evidencePath: string;
     }>;
@@ -169,7 +185,36 @@ export type LandingPageRootSpecializationDelta = Readonly<{
 }>;
 
 export type LandingPageActionCompatibility = Readonly<{
-  supportsPrimaryConversionForm: false;
+  supportsPrimaryConversionForm: boolean;
+}>;
+
+export type LandingPageFormFieldDefinition = Readonly<{
+  fieldKey: string;
+  valueType: (typeof landingPageFormFieldValueTypes)[number];
+  obligation: (typeof landingPageFormFieldObligations)[number];
+  purposeKey: string;
+}>;
+
+export type LandingPageEmbeddedFormContract = Readonly<{
+  fields: readonly [LandingPageFormFieldDefinition, ...LandingPageFormFieldDefinition[]];
+  consent: Readonly<{
+    required: true;
+    fieldKey: "privacyConsent";
+    purposeKey: "privacy_policy_consent";
+    privacyPolicyInputFieldKey: "privacy_policy_url";
+  }>;
+  accessibility: Readonly<{
+    baseline: "WCAG 2.2";
+    labelsProgrammaticallyAssociated: true;
+    instructionsProgrammaticallyAssociated: true;
+    errorsProgrammaticallyAssociated: true;
+    keyboardOperable: true;
+    focusMovesToFirstInvalidField: true;
+  }>;
+  operationalBinding: Readonly<{
+    inputCatalogFieldKey: "primary_conversion_channel";
+    requiredValue: "form";
+  }>;
 }>;
 
 export type LandingPageAccordionAccessibilityContract = Readonly<{
@@ -260,6 +305,7 @@ export type LandingPageVariantDefinition = Readonly<{
   rootDelta: LandingPageRootSpecializationDelta;
   capabilities: readonly LandingPageVariantCapability[];
   actionCompatibility?: LandingPageActionCompatibility;
+  formContract?: LandingPageEmbeddedFormContract;
   accordionAccessibility?: LandingPageAccordionAccessibilityContract;
 }>;
 
