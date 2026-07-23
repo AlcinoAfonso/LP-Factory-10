@@ -360,12 +360,15 @@ const formInteractionContractSchema = z.object({
     requiredValue: z.literal("form"),
   }).strict(),
 }).strict().superRefine((contract, context) => {
-  const fieldKeys = contract.fields.map((field) => field.fieldKey);
+  const fieldKeys = [
+    ...contract.fields.map((field) => field.fieldKey),
+    contract.consent.fieldKey,
+  ];
   if (new Set(fieldKeys).size !== fieldKeys.length) {
     context.addIssue({
       code: "custom",
       path: ["fields"],
-      message: "embedded form field keys must be unique",
+      message: "embedded form and consent field keys must be unique",
     });
   }
 });

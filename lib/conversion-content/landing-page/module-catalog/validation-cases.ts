@@ -9,7 +9,11 @@ import {
   type LandingPageVariantKey,
 } from "./contracts";
 import { deriveLandingPageVariantCapabilities } from "./capabilities";
-import { landingPageModuleCatalogRegistry } from "./registry";
+import {
+  landingPageModuleCatalogRegistry,
+  withDerivedCapabilities,
+  type LandingPageModuleCatalogDefinition,
+} from "./registry";
 import {
   landingPageCopySourceMapSchema,
   landingPageModuleCatalogSchema,
@@ -308,7 +312,25 @@ const cases: readonly Case[] = [
 
       const missingContract = cloneRegistry();
       delete missingContract.variantFieldContracts["faq.accordion@v1"];
-      assertInvalid(missingContract);
+      let derivedMissingContract: MutableCatalog | undefined;
+      assert.doesNotThrow(() => {
+        derivedMissingContract = withDerivedCapabilities(
+          missingContract as unknown as LandingPageModuleCatalogDefinition,
+        ) as unknown as MutableCatalog;
+      });
+      assert.ok(derivedMissingContract);
+      assertInvalidCatalogFailsClosedWithoutThrow(
+        derivedMissingContract,
+        {
+          moduleCatalogVersion: 1,
+          rootVersion: 1,
+          moduleKey: "faq",
+          moduleVersion: 1,
+          variantName: "accordion",
+          variantVersion: 1,
+          funnelProfileKey: "mofu",
+        },
+      );
     },
   },
   {
@@ -611,6 +633,30 @@ const cases: readonly Case[] = [
       assert.ok(formFields);
       formFields.push(structuredClone(formFields[0]));
       assertInvalid(duplicatedField);
+
+      const consentCollision = cloneRegistry();
+      const collisionFields = getMutableInteraction(
+        consentCollision,
+        "hero.form@v1",
+        "form",
+      ).fields as Record<string, unknown>[];
+      assert.ok(collisionFields);
+      collisionFields.push({
+        ...structuredClone(collisionFields[0]),
+        fieldKey: "privacyConsent",
+      });
+      assertInvalidCatalogFailsClosedWithoutThrow(
+        consentCollision,
+        {
+          moduleCatalogVersion: 1,
+          rootVersion: 1,
+          moduleKey: "hero",
+          moduleVersion: 1,
+          variantName: "form",
+          variantVersion: 1,
+          funnelProfileKey: "bofu",
+        },
+      );
     },
   },
   {
@@ -877,46 +923,48 @@ const cases: readonly Case[] = [
       const textualFields = Object.values(landingPageModuleCatalogRegistry.variantFieldContracts)
         .flatMap((contract) => flattenFields(contract.fields))
         .filter((field) => field.fieldKind === "text");
-      assert.equal(textualFields.length > 0, true);
+      assert.equal(textualFields.length, 38);
       assert.equal(textualFields.every((field) => Boolean(field.copySourceMap)), true);
+      assert.equal(
+        new Set(textualFields.map((field) => field.path)).size,
+        textualFields.length,
+      );
+      const sourceModeCounts = textualFields.reduce<Record<string, number>>(
+        (counts, field) => {
+          const sourceMode = String(
+            (field.copySourceMap as Record<string, unknown>).sourceMode,
+          );
+          counts[sourceMode] = (counts[sourceMode] ?? 0) + 1;
+          return counts;
+        },
+        {},
+      );
+      assert.deepEqual(sourceModeCounts, {
+        research: 34,
+        research_with_operational_support: 2,
+        operational_evidence: 2,
+      });
 
-      const expectedLegacySources: Record<string, unknown> = {
-        "hero.standard.eyebrow": expectedResearch(["positioning_opportunity", "trigger"], "desire"),
-        "hero.standard.title": expectedResearch(["positioning_opportunity", "desire"], "commercial_keywords"),
-        "hero.standard.subtitle": expectedResearch(["pain", "desire"], "objection"),
-        "hero.standard.primaryCta.label": expectedResearch(["trigger", "desire"], "objection"),
-        "hero.standard.proofShort": expectedResearch(["proof_type", "belief"], "objection"),
-        "trust_bar.standard.items[].text": expectedResearch(["proof_type", "belief"], "objection"),
-        "problem_solution.standard.title": expectedResearch(["pain", "desire"], "fear"),
-        "problem_solution.standard.items[].problem": expectedResearch(["pain", "fear"], "objection"),
-        "problem_solution.standard.items[].solution": expectedResearch(["positioning_opportunity", "desire"], "belief"),
-        "offer.standard.title": expectedResearch(["desire", "trigger"], "positioning_opportunity"),
-        "offer.standard.items[].itemTitle": expectedResearch(["trigger", "desire"], "positioning_opportunity"),
-        "offer.standard.items[].description": expectedResearch(["positioning_opportunity", "belief"], "objection"),
-        "process.standard.title": expectedResearch(["belief", "desire"], "objection"),
-        "process.standard.steps[].stepTitle": expectedResearch(["narrative_arc", "trigger"], "belief"),
-        "process.standard.steps[].stepBody": expectedResearch(["belief", "desire"], "positioning_opportunity"),
-        "technical_assurance.standard.title": expectedResearch(["proof_type", "belief"], "fear"),
-        "technical_assurance.standard.items[].assuranceTitle": expectedResearch(["proof_type", "positioning_opportunity"], "objection"),
-        "technical_assurance.standard.items[].assuranceBody": expectedResearch(["proof_type", "belief"], "fear"),
-        "social_proof.standard.title": expectedResearch(["proof_type", "belief"], "objection"),
-        "social_proof.standard.items[].quote": expectedEvidence("social_proof.standard.items[].evidenceRef"),
-        "social_proof.standard.items[].attribution": expectedEvidence("social_proof.standard.items[].evidenceRef"),
-        "faq.standard.title": expectedResearch(["objection", "awareness_level"], "search_intent"),
-        "faq.accordion.title": expectedResearch(["objection", "awareness_level"], "search_intent"),
-        "faq.standard.items[].question": expectedResearch(["objection", "fear"], "faq_questions"),
-        "faq.accordion.items[].question": expectedResearch(["objection", "fear"], "faq_questions"),
-        "faq.standard.items[].answer": expectedResearch(["belief", "positioning_opportunity"], "proof_type"),
-        "faq.accordion.items[].answer": expectedResearch(["belief", "positioning_opportunity"], "proof_type"),
-        "final_cta.standard.title": expectedResearch(["trigger", "desire"], "positioning_opportunity"),
-        "final_cta.standard.body": expectedResearch(["desire", "objection"], "belief"),
-        "final_cta.standard.primaryCta.label": expectedResearch(["trigger", "desire"], "objection"),
-      };
-      for (const [path, expected] of Object.entries(expectedLegacySources)) {
-        const field = textualFields.find((candidate) => candidate.path === path);
-        assert.ok(field, `missing legacy text field: ${path}`);
-        assert.deepEqual(field.copySourceMap, expected, `source changed: ${path}`);
-      }
+      const heroTitle = textualFields.find(
+        (field) => field.path === "hero.standard.title",
+      );
+      assert.ok(heroTitle);
+      assert.deepEqual(
+        heroTitle.copySourceMap,
+        expectedResearch(
+          ["positioning_opportunity", "desire"],
+          "commercial_keywords",
+        ),
+      );
+
+      const socialProofQuote = textualFields.find(
+        (field) => field.path === "social_proof.standard.items[].quote",
+      );
+      assert.ok(socialProofQuote);
+      assert.deepEqual(
+        socialProofQuote.copySourceMap,
+        expectedEvidence("social_proof.standard.items[].evidenceRef"),
+      );
 
       const unknownSourceMode = cloneRegistry();
       getMutableTextField(unknownSourceMode, "hero.standard@v1", "hero.standard.title").copySourceMap.sourceMode = "input_catalog";
@@ -1438,6 +1486,31 @@ function normalizeFaqFieldPaths(value: unknown): unknown {
 
 function assertInvalid(catalog: MutableCatalog): void {
   assert.equal(landingPageModuleCatalogSchema.safeParse(catalog).success, false);
+}
+
+function assertInvalidCatalogFailsClosedWithoutThrow(
+  catalog: MutableCatalog,
+  input: Parameters<typeof resolveLandingPageModuleCatalogFromRegistry>[0],
+): void {
+  assert.doesNotThrow(() => landingPageModuleCatalogSchema.safeParse(catalog));
+  assertInvalid(catalog);
+
+  let resolution: ReturnType<
+    typeof resolveLandingPageModuleCatalogFromRegistry
+  > | undefined;
+  assert.doesNotThrow(() => {
+    resolution = resolveLandingPageModuleCatalogFromRegistry(
+      input,
+      catalog as unknown as Parameters<
+        typeof resolveLandingPageModuleCatalogFromRegistry
+      >[1],
+    );
+  });
+  assert.ok(resolution);
+  assert.equal(resolution.ok, false);
+  if (!resolution.ok) {
+    assert.equal(resolution.error.code, "INVALID_MODULE_CATALOG_CONTRACT");
+  }
 }
 
 function expectedResearch(

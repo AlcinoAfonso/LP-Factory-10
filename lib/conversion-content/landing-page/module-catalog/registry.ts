@@ -462,12 +462,12 @@ export const landingPageModuleCatalogRegistry = deepFreeze(
   withDerivedCapabilities(landingPageModuleCatalogDefinition),
 );
 
-type LandingPageVariantDefinitionSource = Omit<
+export type LandingPageVariantDefinitionSource = Omit<
   LandingPageVariantDefinition,
   "capabilities"
 >;
 
-type LandingPageModuleCatalogDefinition = Omit<
+export type LandingPageModuleCatalogDefinition = Omit<
   LandingPageModuleCatalogRegistry,
   "variants"
 > &
@@ -498,7 +498,7 @@ function variant(
   };
 }
 
-function withDerivedCapabilities(
+export function withDerivedCapabilities(
   definition: LandingPageModuleCatalogDefinition,
 ): LandingPageModuleCatalogRegistry {
   const variants = Object.fromEntries(
@@ -510,7 +510,7 @@ function withDerivedCapabilities(
         {
           ...variant,
           capabilities: deriveLandingPageVariantCapabilities(
-            fieldContract.fields,
+            fieldContract?.fields ?? [],
             variant.interactionContracts,
           ),
         },
