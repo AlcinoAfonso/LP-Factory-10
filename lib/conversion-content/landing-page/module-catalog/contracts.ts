@@ -16,21 +16,6 @@ export const landingPageModuleKeys = [
   "final_cta",
 ] as const;
 
-export const landingPageVariantFieldContractKeys = [
-  "hero.standard@v1",
-  "hero.form@v1",
-  "trust_bar.standard@v1",
-  "problem_solution.standard@v1",
-  "offer.standard@v1",
-  "benefits.standard@v1",
-  "process.standard@v1",
-  "technical_assurance.standard@v1",
-  "social_proof.standard@v1",
-  "faq.standard@v1",
-  "faq.accordion@v1",
-  "final_cta.standard@v1",
-] as const;
-
 export const landingPageFieldKinds = [
   "text",
   "collection",
@@ -51,8 +36,6 @@ export const landingPageFieldSupports = [
   "when_factual",
   "when_present",
 ] as const;
-
-export const landingPageVariantKeys = landingPageVariantFieldContractKeys;
 
 export const landingPageVariantCapabilities = [
   "primary_action",
@@ -100,14 +83,14 @@ export type LandingPageModuleVersion = 1;
 export type LandingPageModuleLifecycleStatus = LandingPageRootLifecycleStatus;
 export type LandingPageModulePurpose = "controlled_test";
 export type LandingPageVariantFieldContractKey =
-  (typeof landingPageVariantFieldContractKeys)[number];
+  `${LandingPageModuleKey}.${string}@v1`;
 export type LandingPageFieldKind = (typeof landingPageFieldKinds)[number];
 export type LandingPageFieldPolicy =
   (typeof landingPageFieldPolicies)[number];
 export type LandingPageFieldSupport =
   (typeof landingPageFieldSupports)[number];
-export type LandingPageVariantKey = (typeof landingPageVariantKeys)[number];
-export type LandingPageVariantName = "standard" | "accordion" | "form";
+export type LandingPageVariantKey = LandingPageVariantFieldContractKey;
+export type LandingPageVariantName = string;
 export type LandingPageVariantVersion = 1;
 export type LandingPageVariantCapability =
   (typeof landingPageVariantCapabilities)[number];
@@ -184,10 +167,6 @@ export type LandingPageRootSpecializationDelta = Readonly<{
   textRanges: readonly LandingPageTextRangeRestriction[];
 }>;
 
-export type LandingPageActionCompatibility = Readonly<{
-  supportsPrimaryConversionForm: boolean;
-}>;
-
 export type LandingPageFormFieldDefinition = Readonly<{
   fieldKey: string;
   valueType: (typeof landingPageFormFieldValueTypes)[number];
@@ -195,7 +174,8 @@ export type LandingPageFormFieldDefinition = Readonly<{
   purposeKey: string;
 }>;
 
-export type LandingPageEmbeddedFormContract = Readonly<{
+export type LandingPageFormInteractionContract = Readonly<{
+  kind: "form";
   fields: readonly [LandingPageFormFieldDefinition, ...LandingPageFormFieldDefinition[]];
   consent: Readonly<{
     required: true;
@@ -217,7 +197,8 @@ export type LandingPageEmbeddedFormContract = Readonly<{
   }>;
 }>;
 
-export type LandingPageAccordionAccessibilityContract = Readonly<{
+export type LandingPageAccordionInteractionContract = Readonly<{
+  kind: "accordion";
   baseline: "WCAG 2.2";
   keyboardOperable: true;
   exposesExpandedState: true;
@@ -226,6 +207,10 @@ export type LandingPageAccordionAccessibilityContract = Readonly<{
   initiallyCollapsed: true;
   singleExpandedItem: true;
 }>;
+
+export type LandingPageInteractionContract =
+  | LandingPageFormInteractionContract
+  | LandingPageAccordionInteractionContract;
 
 export type LandingPageFieldCardinality = Readonly<{
   min: number;
@@ -304,9 +289,7 @@ export type LandingPageVariantDefinition = Readonly<{
   compatibleRootVersion: LandingPageCompatibleRootVersion;
   rootDelta: LandingPageRootSpecializationDelta;
   capabilities: readonly LandingPageVariantCapability[];
-  actionCompatibility?: LandingPageActionCompatibility;
-  formContract?: LandingPageEmbeddedFormContract;
-  accordionAccessibility?: LandingPageAccordionAccessibilityContract;
+  interactionContracts: readonly LandingPageInteractionContract[];
 }>;
 
 export type LandingPageModuleDefinition = Readonly<{

@@ -1,10 +1,10 @@
 23/07/2026 — Plano-base E18.5 — Otimização do catálogo de módulos e variantes `landing_page`
 
-Fontes: `README.md`, `AGENTS.md`, `docs/prompt-estrategista.md`, `docs/prompt-executor.md`, `docs/prompt-abc.md`, `docs/template-roadmap.md`, `docs/lp-planejamento.md`, `docs/roadmap.md`, `docs/base-tecnica.md`, `docs/prod-up.md` item `prod#17`, `docs/lousa-plano-base-e18-4.md`, `docs/lousa-plano-base-e20-2.md`, conteúdo anterior deste path, PRs #590, #616, #617 e #618, pareceres do Gestor Estrutural e do Gestor de Updates desta orquestração, decisões humanas registradas em 23/07/2026, `lib/conversion-content/landing-page/`, `lib/conversion-content/landing-page/module-catalog/`, `lib/conversion-content/landing-page/input-catalog/`, `lib/conversion-content/index.ts` e scripts relacionados no `package.json`.
+Fontes: `README.md`, `AGENTS.md`, `docs/prompt-estrategista.md`, `docs/prompt-executor.md`, `docs/prompt-abc.md`, `docs/template-roadmap.md`, `docs/lp-planejamento.md`, `docs/roadmap.md`, `docs/base-tecnica.md`, `docs/prod-up.md` item `prod#17`, `docs/lousa-plano-base-e18-4.md`, `docs/lousa-plano-base-e20-2.md`, conteúdo anterior deste path, PRs #590, #616, #617, #618 e #619, relatório consolidado e decisões humanas registradas em 23/07/2026, `lib/conversion-content/landing-page/`, `lib/conversion-content/landing-page/module-catalog/`, `lib/conversion-content/landing-page/input-catalog/`, `lib/conversion-content/index.ts` e scripts relacionados no `package.json`.
 
-Versão: v2 consolidada após os quatro testes experimentais do PR #617 e os pareceres especializados da orquestração; pendente do gate do Analista.
+Versão: v2 consolidada com ajuste final da moldura comum de interações no PR #619.
 
-Status: otimização planejada; o núcleo repo-only incorporado pelo PR #590 permanece como base material vigente; o PR #617 permanece aberto em draft, sem merge, como evidência comparativa.
+Status: implementação material em ajuste final no PR #619; o núcleo repo-only incorporado pelo PR #590 permanece preservado e o PR #617 permanece como evidência comparativa, sem transporte integral.
 
 Path: `docs/lousa-plano-base-e18-5.md`.
 
@@ -76,8 +76,6 @@ Plano conceitual: `docs/lp-planejamento.md`.
 
 - Derivar todas as identidades de um único descritor canônico.
 - Unificar todos os modos de fontes em um único contrato.
-- Remover `supportsPrimaryConversionForm`.
-- Tornar `formContract` a única fonte canônica da compatibilidade com formulário.
 - Validar ou cachear o registry canônico somente uma vez.
 - Eliminar integralmente comparações com o registry canônico.
 - O Executor material deve comparar essas alternativas e adotar somente as que:
@@ -120,10 +118,11 @@ Plano conceitual: `docs/lp-planejamento.md`.
 - Preserva fields abstratos, obrigatoriedade, tipo, função, consentimento e privacidade.
 - O contrato abstrato de acessibilidade de `hero.form@v1` adota `prod#17` e WCAG 2.2 como baseline, limitado a rótulos programaticamente associados aos controles; instruções e mensagens de erro programaticamente associadas quando presentes; operação por teclado; e foco direcionado ao primeiro field inválido após tentativa de submissão.
 - Esse uso de `prod#17` não declara conformidade integral com WCAG e não define HTML, ARIA concreto, contraste, alvo de toque, layout, copy final, renderer ou formulário funcional.
+- O suporte a formulário é determinado pelo interaction contract discriminado de kind `form`, sem booleano paralelo.
 - Mantém vínculo conceitual com conversão por formulário.
 - Não cristaliza copy final, labels definitivos ou decisões de renderer.
-- `hero.standard@v1` continua incompatível com formulário.
-- Redundâncias entre booleano, capability e `formContract` devem ser comparadas durante a implementação.
+- `hero.standard@v1` continua sem interação de formulário.
+- A capability `embedded_form` é derivada do interaction contract e não constitui fonte canônica paralela.
 - Formulário visual, submissão e persistência permanecem fora da E18.5.
 
 ### 1.9. Gap de produto
@@ -229,6 +228,19 @@ Plano conceitual: `docs/lp-planejamento.md`.
 - Registry e schema não integram a API pública.
 - O schema genérico valida estrutura e invariantes sem se tornar uma segunda fonte nominal do catálogo.
 - Testes preservam contratos específicos relevantes e casos negativos.
+
+### 2.7. Moldura comum de interações e crescimento
+
+- Cada variante declara `interactionContracts` como coleção de uma união discriminada estrita.
+- Os únicos interaction kinds atuais são `form` e `accordion`; cada kind possui contrato TypeScript e ramo Zod próprios.
+- `formContract`, `accordionAccessibility` e `supportsPrimaryConversionForm` não permanecem como propriedades isoladas ou fontes paralelas.
+- Um mesmo kind não pode aparecer duas vezes na variante; kind desconhecido ou shape incompatível falha fechado.
+- Capabilities interativas são derivadas dos interaction contracts; `primary_action` e `image_asset` são derivadas dos fields quando seguro.
+- Reutilizar um kind existente exige somente identidade e definição local da variante, fields aplicáveis, contrato existente e teste curto, sem alterar resolver, schema genérico, contratos de interação, listas globais, contagens ou regras nominais.
+- O primeiro caso real de novo interaction kind pode adicionar um contrato TypeScript, um ramo discriminado, um schema Zod e sua suíte própria; reutilizações posteriores não repetem essa evolução.
+- Fixtures sintéticas devem comprovar reutilização de Form e Accordion sem registrar identidades permanentes no catálogo.
+- Testes devem usar parametrização e helpers comuns, evitando cópia integral de contratos ou provas intermediárias redundantes.
+- Mídias avançadas permanecem adiadas. O primeiro caso real deve introduzir moldura discriminada própria, sem antecipar shapes ou uma propriedade isolada por tipo de mídia.
 - Contagem de módulos, variantes ou fields não é regra arquitetural.
 - Comparações com o registry canônico somente permanecem quando protegerem coerência real; sua remoção total não está previamente aprovada.
 
@@ -309,7 +321,7 @@ Plano conceitual: `docs/lp-planejamento.md`.
 - Atomicidade obrigatória do checkpoint:
   - adicionar no mesmo checkpoint os novos field contract keys, variant keys, field contract records e variant records;
   - não permitir estado intermediário versionado em que exista field contract identificado sem variante correspondente, variante sem field contract ou conjunto inexato entre contracts, registry e schema;
-  - criar no mesmo checkpoint os fields, cardinalidades, capabilities, `formContract`, acessibilidade e sources exigidos pelas novas variantes;
+  - criar no mesmo checkpoint os fields, cardinalidades, interaction contracts, capabilities derivadas, acessibilidade e sources exigidos pelas novas variantes;
   - manter registry, schema, resolver e validações verdes ao fim da fase.
 - Fundação estrutural das sources:
   - alterar o helper `text(...)` para receber obrigatoriamente um `copySourceMap: LandingPageCopySourceMap` explícito;
@@ -325,9 +337,9 @@ Plano conceitual: `docs/lp-planejamento.md`.
   - representar em `benefits.standard@v1` título e coleção controlada de benefícios, cada item com título e descrição;
   - representar os fields estruturais necessários à Hero com formulário, sem implementar UI, submissão ou persistência;
   - manter `hero.standard@v1` incompatível com formulário;
-  - representar capability de formulário e contrato abstrato de formulário;
+  - representar formulário pelo ramo discriminado `form` da moldura comum de interações;
   - `hero.form@v1` deve registrar `WCAG 2.2` como baseline do contrato abstrato de acessibilidade e exigir rótulos programaticamente associados aos controles; instruções e mensagens de erro programaticamente associadas quando presentes; operação por teclado; e foco direcionado ao primeiro field inválido após tentativa de submissão. Todos esses requisitos são obrigatórios e devem falhar fechado quando ausentes ou inválidos;
-  - comparar redundâncias entre capability, `supportsPrimaryConversionForm` e `formContract`, adotando somente redução que preserve tipagem, falha fechada e ausência de import circular;
+  - remover redundâncias entre capability, `supportsPrimaryConversionForm` e contrato de formulário, mantendo o interaction kind `form` como fonte canônica e derivando capability com tipagem, falha fechada e ausência de import circular;
   - expressar relações genéricas estruturalmente, sem regra Zod nominal vinculada a `hero.form@v1`;
   - não alterar o resolver.
 - Teste obrigatório 1 — conclusão:
@@ -337,7 +349,7 @@ Plano conceitual: `docs/lp-planejamento.md`.
 - Teste obrigatório 2:
   - resolver `hero.form@v1`;
   - manter `hero.standard@v1` sem formulário;
-  - comprovar capability e contrato abstrato;
+  - comprovar interaction contract abstrato e capability derivada;
   - preservar falha fechada;
   - rejeitar combinações estruturalmente incompatíveis.
 - Teste obrigatório 4:
@@ -486,7 +498,7 @@ Plano conceitual: `docs/lp-planejamento.md`.
   - comprovar resolver inalterado;
   - comprovar ausência de dependência direta entre os registries E18.5 e E20.2;
   - comprovar API pública mínima e internalidade de registry/schema;
-  - a validação executável deve resolver um caso positivo de `hero.form@v1` com o contrato abstrato de acessibilidade completo e, para cada requisito obrigatório, comprovar em caso negativo independente que sua omissão ou falsidade falha fechado, sem exceção não tratada. `hero.standard@v1` deve continuar sem `formContract`.
+  - a validação executável deve resolver um caso positivo de `hero.form@v1` com o interaction contract abstrato de acessibilidade completo e, para cada requisito obrigatório, comprovar em caso negativo independente que sua omissão ou falsidade falha fechado, sem exceção não tratada. `hero.standard@v1` deve continuar sem interaction kind `form`.
 - Consolidação das métricas:
   - consolidar, por teste e por fase, arquivos alterados, inserções, exclusões, pontos necessários de alteração, contratos e tipos alterados, alterações no registry, schema e resolver, listas paralelas, contagens fixas, regras nominais, duplicações, casos negativos e proteções comprovadas;
   - comparar o conjunto final com o PR #617;

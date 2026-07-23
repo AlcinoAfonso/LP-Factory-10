@@ -5,11 +5,10 @@ import {
   landingPageFunnelTreatmentKeysByProfile,
   landingPageModuleKeys,
   landingPageVariantCapabilities,
-  landingPageVariantFieldContractKeys,
-  landingPageVariantKeys,
   type LandingPageModuleKey,
   type LandingPageVariantKey,
 } from "./contracts";
+import { deriveLandingPageVariantCapabilities } from "./capabilities";
 import { landingPageModuleCatalogRegistry } from "./registry";
 import {
   landingPageCopySourceMapSchema,
@@ -223,7 +222,7 @@ const cases: readonly Case[] = [
         Object.keys(
           landingPageModuleCatalogRegistry.variantFieldContracts,
         ).sort(),
-        [...landingPageVariantFieldContractKeys].sort(),
+        Object.keys(landingPageModuleCatalogRegistry.variants).sort(),
       );
 
       const kinds = new Set<string>();
@@ -324,7 +323,6 @@ const cases: readonly Case[] = [
 
       assert.equal(registeredVariantKeys.includes("benefits.standard@v1"), true);
       assert.equal(registeredVariantKeys.includes("hero.form@v1"), true);
-      assert.deepEqual(registeredVariantKeys, [...landingPageVariantKeys].sort());
       assert.deepEqual(registeredVariantKeys, registeredFieldContractKeys);
 
       for (const variantDefinition of Object.values(
@@ -350,7 +348,7 @@ const cases: readonly Case[] = [
     },
   },
   {
-    name: "only registered capabilities are assigned",
+    name: "capabilities are derived from fields and interaction contracts",
     run: () => {
       const assignedCapabilities = new Set(
         Object.values(landingPageModuleCatalogRegistry.variants).flatMap(
@@ -361,25 +359,32 @@ const cases: readonly Case[] = [
         [...assignedCapabilities].sort(),
         [...landingPageVariantCapabilities].sort(),
       );
-      assert.deepEqual(
-        landingPageModuleCatalogRegistry.variants["hero.standard@v1"]
-          .capabilities,
-        ["primary_action", "image_asset"],
+      for (const variant of Object.values(
+        landingPageModuleCatalogRegistry.variants,
+      )) {
+        const fields =
+          landingPageModuleCatalogRegistry.variantFieldContracts[
+            variant.fieldContractKey
+          ].fields;
+        assert.deepEqual(
+          variant.capabilities,
+          deriveLandingPageVariantCapabilities(
+            fields,
+            variant.interactionContracts,
+          ),
+        );
+      }
+      assert.equal(
+        landingPageModuleCatalogRegistry.variants[
+          "hero.form@v1"
+        ].capabilities.includes("embedded_form"),
+        true,
       );
-      assert.deepEqual(
-        landingPageModuleCatalogRegistry.variants["hero.form@v1"]
-          .capabilities,
-        ["primary_action", "image_asset", "embedded_form"],
-      );
-      assert.deepEqual(
-        landingPageModuleCatalogRegistry.variants["final_cta.standard@v1"]
-          .capabilities,
-        ["primary_action"],
-      );
-      assert.deepEqual(
-        landingPageModuleCatalogRegistry.variants["faq.accordion@v1"]
-          .capabilities,
-        ["accordion_interaction"],
+      assert.equal(
+        landingPageModuleCatalogRegistry.variants[
+          "faq.accordion@v1"
+        ].capabilities.includes("accordion_interaction"),
+        true,
       );
     },
   },
@@ -460,34 +465,26 @@ const cases: readonly Case[] = [
       assert.equal(result.ok, true);
       if (!result.ok) return;
       assert.equal(result.value.variant.variantKey, "hero.form@v1");
-      assert.deepEqual(result.value.variant.actionCompatibility, {
-        supportsPrimaryConversionForm: true,
-      });
-      assert.deepEqual(result.value.variant.formContract, {
-        fields: [
-          { fieldKey: "name", valueType: "text", obligation: "required", purposeKey: "contact_identity" },
-          { fieldKey: "email", valueType: "email", obligation: "required", purposeKey: "reply_email" },
-          { fieldKey: "phone", valueType: "phone", obligation: "optional", purposeKey: "optional_phone" },
+      const form = result.value.variant.interactionContracts.find(
+        (contract) => contract.kind === "form",
+      );
+      assert.ok(form);
+      assert.deepEqual(
+        form.fields.map(({ fieldKey, valueType, obligation }) => ({
+          fieldKey,
+          valueType,
+          obligation,
+        })),
+        [
+          { fieldKey: "name", valueType: "text", obligation: "required" },
+          { fieldKey: "email", valueType: "email", obligation: "required" },
+          { fieldKey: "phone", valueType: "phone", obligation: "optional" },
         ],
-        consent: {
-          required: true,
-          fieldKey: "privacyConsent",
-          purposeKey: "privacy_policy_consent",
-          privacyPolicyInputFieldKey: "privacy_policy_url",
-        },
-        accessibility: {
-          baseline: "WCAG 2.2",
-          labelsProgrammaticallyAssociated: true,
-          instructionsProgrammaticallyAssociated: true,
-          errorsProgrammaticallyAssociated: true,
-          keyboardOperable: true,
-          focusMovesToFirstInvalidField: true,
-        },
-        operationalBinding: {
-          inputCatalogFieldKey: "primary_conversion_channel",
-          requiredValue: "form",
-        },
-      });
+      );
+      assert.equal(form.consent.privacyPolicyInputFieldKey, "privacy_policy_url");
+      assert.equal(form.accessibility.baseline, "WCAG 2.2");
+      assert.equal(form.accessibility.focusMovesToFirstInvalidField, true);
+      assert.equal(form.operationalBinding.requiredValue, "form");
       assertDeeplyFrozen(result.value);
     },
   },
@@ -509,110 +506,115 @@ const cases: readonly Case[] = [
       );
 
       assert.equal(
-        landingPageModuleCatalogRegistry.variants["faq.standard@v1"]
-          .accordionAccessibility,
-        undefined,
+        landingPageModuleCatalogRegistry.variants[
+          "faq.standard@v1"
+        ].interactionContracts.some((contract) => contract.kind === "accordion"),
+        false,
       );
-      assert.deepEqual(
-        landingPageModuleCatalogRegistry.variants["faq.accordion@v1"]
-          .accordionAccessibility,
-        {
-          baseline: "WCAG 2.2",
-          keyboardOperable: true,
-          exposesExpandedState: true,
-          associatesControlAndRegion: true,
-          preservesFocus: true,
-          initiallyCollapsed: true,
-          singleExpandedItem: true,
-        },
-      );
+      const accordion = landingPageModuleCatalogRegistry.variants[
+        "faq.accordion@v1"
+      ].interactionContracts.find((contract) => contract.kind === "accordion");
+      assert.ok(accordion);
+      assert.equal(accordion.baseline, "WCAG 2.2");
+      assert.equal(accordion.keyboardOperable, true);
+      assert.equal(accordion.exposesExpandedState, true);
+      assert.equal(accordion.associatesControlAndRegion, true);
+      assert.equal(accordion.preservesFocus, true);
+      assert.equal(accordion.initiallyCollapsed, true);
+      assert.equal(accordion.singleExpandedItem, true);
     },
   },
   {
-    name: "form compatibility and contracts agree structurally without channel fallback",
+    name: "interaction contracts are canonical and the Hero boundary is coherent",
     run: () => {
       for (const variantKey of [
         "hero.standard@v1",
         "final_cta.standard@v1",
       ] as const) {
-        assert.deepEqual(
-          landingPageModuleCatalogRegistry.variants[variantKey]
-            .actionCompatibility,
-          { supportsPrimaryConversionForm: false },
+        assert.equal(
+          landingPageModuleCatalogRegistry.variants[
+            variantKey
+          ].interactionContracts.some((contract) => contract.kind === "form"),
+          false,
         );
       }
-      assert.deepEqual(
-        landingPageModuleCatalogRegistry.variants["hero.form@v1"]
-          .actionCompatibility,
-        { supportsPrimaryConversionForm: true },
+      assert.equal(
+        landingPageModuleCatalogRegistry.variants[
+          "hero.form@v1"
+        ].interactionContracts.some((contract) => contract.kind === "form"),
+        true,
       );
       assert.equal(
-        landingPageModuleCatalogRegistry.variants["hero.standard@v1"]
-          .formContract,
-        undefined,
+        landingPageModuleCatalogRegistry.modules.hero.boundaries.some(
+          (boundary) =>
+            boundary.includes("requires a valid form interaction contract"),
+        ),
+        true,
       );
 
       const formFallback = cloneRegistry();
       formFallback.variants["hero.standard@v1"].fallbackChannel = "whatsapp";
       assertInvalid(formFallback);
 
-      const formSupported = cloneRegistry();
-      formSupported.variants[
-        "hero.standard@v1"
-      ].actionCompatibility = { supportsPrimaryConversionForm: true };
-      assertInvalid(formSupported);
-
-      const capabilityWithoutContract = cloneRegistry();
-      delete capabilityWithoutContract.variants["hero.form@v1"].formContract;
-      assertInvalid(capabilityWithoutContract);
-
-      const contractWithoutCapability = cloneRegistry();
-      contractWithoutCapability.variants["hero.form@v1"].capabilities = [
+      const staleCapability = cloneRegistry();
+      staleCapability.variants["hero.form@v1"].capabilities = [
         "primary_action",
         "image_asset",
       ];
-      assertInvalid(contractWithoutCapability);
+      assertInvalid(staleCapability);
+
+      const interactionWithoutCapability = cloneRegistry();
+      interactionWithoutCapability.variants[
+        "hero.standard@v1"
+      ].interactionContracts.push(
+        structuredClone(
+          getMutableInteraction(
+            interactionWithoutCapability,
+            "hero.form@v1",
+            "form",
+          ),
+        ),
+      );
+      assertInvalid(interactionWithoutCapability);
     },
   },
   {
     name: "embedded form requirement omissions and false values fail closed independently",
     run: () => {
-      for (const requirement of [
+      assertRequiredTrueInteractionPropertiesFailClosed(
+        "hero.form@v1",
+        "form",
+        [
         "labelsProgrammaticallyAssociated",
         "instructionsProgrammaticallyAssociated",
         "errorsProgrammaticallyAssociated",
         "keyboardOperable",
         "focusMovesToFirstInvalidField",
-      ]) {
-        const incomplete = cloneRegistry();
-        const accessibility = incomplete.variants["hero.form@v1"]
-          .formContract?.accessibility;
-        assert.ok(accessibility);
-        accessibility[requirement] = false;
-        assertInvalid(incomplete);
-
-        const missing = cloneRegistry();
-        const missingAccessibility = missing.variants["hero.form@v1"]
-          .formContract?.accessibility;
-        assert.ok(missingAccessibility);
-        delete missingAccessibility[requirement];
-        assertInvalid(missing);
-      }
+        ],
+        "accessibility",
+      );
 
       const missingConsent = cloneRegistry();
-      delete missingConsent.variants["hero.form@v1"].formContract?.consent;
+      delete getMutableInteraction(
+        missingConsent,
+        "hero.form@v1",
+        "form",
+      ).consent;
       assertInvalid(missingConsent);
 
       const duplicatedField = cloneRegistry();
-      const formFields = duplicatedField.variants["hero.form@v1"]
-        .formContract?.fields;
+      const formFields = getMutableInteraction(
+        duplicatedField,
+        "hero.form@v1",
+        "form",
+      ).fields as Record<string, unknown>[];
       assert.ok(formFields);
       formFields.push(structuredClone(formFields[0]));
       assertInvalid(duplicatedField);
     },
   },
   {
-    name: "unknown capability, variant and creation motivation fail closed",
+    name: "interaction kinds and capabilities fail closed structurally",
     run: () => {
       const unknownCapability = cloneRegistry();
       unknownCapability.variants["hero.standard@v1"].capabilities.push(
@@ -620,13 +622,40 @@ const cases: readonly Case[] = [
       );
       assertInvalid(unknownCapability);
 
-      const unknownVariant = cloneRegistry();
-      unknownVariant.variants["hero.campaign@v1"] = cloneVariant(
+      const unknownInteraction = cloneRegistry();
+      unknownInteraction.variants[
+        "hero.standard@v1"
+      ].interactionContracts.push({ kind: "booking" });
+      assertInvalid(unknownInteraction);
+
+      for (const [variantKey, kind] of [
+        ["hero.form@v1", "form"],
+        ["faq.accordion@v1", "accordion"],
+      ] as const) {
+        const duplicatedInteraction = cloneRegistry();
+        duplicatedInteraction.variants[variantKey].interactionContracts.push(
+          structuredClone(
+            getMutableInteraction(duplicatedInteraction, variantKey, kind),
+          ),
+        );
+        assertInvalid(duplicatedInteraction);
+      }
+
+      const incompatibleDiscriminator = cloneRegistry();
+      getMutableInteraction(
+        incompatibleDiscriminator,
+        "faq.accordion@v1",
+        "accordion",
+      ).kind = "form";
+      assertInvalid(incompatibleDiscriminator);
+
+      const orphanVariant = cloneRegistry();
+      orphanVariant.variants["hero.campaign@v1"] = cloneVariant(
         "hero.standard@v1",
       );
-      unknownVariant.variants["hero.campaign@v1"].variantKey =
+      orphanVariant.variants["hero.campaign@v1"].variantKey =
         "hero.campaign@v1";
-      assertInvalid(unknownVariant);
+      assertInvalid(orphanVariant);
 
       for (const motivation of [
         "taxon",
@@ -646,24 +675,20 @@ const cases: readonly Case[] = [
     },
   },
   {
-    name: "incomplete accordion accessibility and mismatched links fail closed",
+    name: "accordion requirements and mismatched links fail closed",
     run: () => {
-      for (const requirement of [
-        "keyboardOperable",
-        "exposesExpandedState",
-        "associatesControlAndRegion",
-        "preservesFocus",
-        "initiallyCollapsed",
-        "singleExpandedItem",
-      ]) {
-        const incompleteAccordion = cloneRegistry();
-        const accessibility = incompleteAccordion.variants[
-          "faq.accordion@v1"
-        ].accordionAccessibility;
-        assert.ok(accessibility);
-        accessibility[requirement] = false;
-        assertInvalid(incompleteAccordion);
-      }
+      assertRequiredTrueInteractionPropertiesFailClosed(
+        "faq.accordion@v1",
+        "accordion",
+        [
+          "keyboardOperable",
+          "exposesExpandedState",
+          "associatesControlAndRegion",
+          "preservesFocus",
+          "initiallyCollapsed",
+          "singleExpandedItem",
+        ],
+      );
 
       const mismatchedModule = cloneRegistry();
       mismatchedModule.variants["hero.standard@v1"].moduleKey = "faq";
@@ -673,6 +698,59 @@ const cases: readonly Case[] = [
       mismatchedFields.variants["hero.standard@v1"].fieldContractKey =
         "faq.standard@v1";
       assertInvalid(mismatchedFields);
+    },
+  },
+  {
+    name: "existing interaction kinds are reusable by synthetic variants",
+    run: () => {
+      const synthetic = cloneRegistry();
+      addSyntheticVariant(
+        synthetic,
+        "hero.syntheticform@v1",
+        "hero.standard@v1",
+        "hero.form@v1",
+        "form",
+      );
+      addSyntheticVariant(
+        synthetic,
+        "faq.syntheticaccordion@v1",
+        "faq.standard@v1",
+        "faq.accordion@v1",
+        "accordion",
+      );
+
+      const parsedSynthetic = landingPageModuleCatalogSchema.safeParse(synthetic);
+      assert.equal(
+        parsedSynthetic.success,
+        true,
+        parsedSynthetic.success
+          ? undefined
+          : JSON.stringify(parsedSynthetic.error.issues),
+      );
+
+      for (const [moduleKey, variantName, capability] of [
+        ["hero", "syntheticform", "embedded_form"],
+        ["faq", "syntheticaccordion", "accordion_interaction"],
+      ] as const) {
+        const result = resolveLandingPageModuleCatalogFromRegistry(
+          {
+            moduleCatalogVersion: 1,
+            rootVersion: 1,
+            moduleKey,
+            moduleVersion: 1,
+            variantName,
+            variantVersion: 1,
+            funnelProfileKey: "mofu",
+          },
+          synthetic as unknown as Parameters<
+            typeof resolveLandingPageModuleCatalogFromRegistry
+          >[1],
+        );
+        assert.equal(result.ok, true, JSON.stringify(result));
+        if (!result.ok) continue;
+        assert.equal(result.value.variant.capabilities.includes(capability), true);
+        assertDeeplyFrozen(result.value);
+      }
     },
   },
   {
@@ -1064,7 +1142,9 @@ const cases: readonly Case[] = [
   {
     name: "resolver returns every registered complete isolated variant without fallback",
     run: () => {
-      for (const variantKey of landingPageVariantKeys) {
+      for (const variantKey of Object.keys(
+        landingPageModuleCatalogRegistry.variants,
+      ) as LandingPageVariantKey[]) {
         const [moduleKey, qualifiedVariant] = variantKey.split(".");
         const [variantName, version] = qualifiedVariant.split("@v");
         const result = resolveLandingPageModuleCatalog({
@@ -1258,6 +1338,92 @@ function cloneField(
   ) as unknown as MutableField;
 }
 
+function getMutableInteraction(
+  catalog: MutableCatalog,
+  variantKey: string,
+  kind: string,
+): MutableInteraction {
+  const interaction = catalog.variants[variantKey].interactionContracts.find(
+    (contract) => contract.kind === kind,
+  );
+  assert.ok(interaction);
+  return interaction;
+}
+
+function assertRequiredTrueInteractionPropertiesFailClosed(
+  variantKey: string,
+  kind: string,
+  requirements: readonly string[],
+  nestedProperty?: string,
+): void {
+  for (const requirement of requirements) {
+    for (const mutation of ["false", "missing"] as const) {
+      const catalog = cloneRegistry();
+      const interaction = getMutableInteraction(catalog, variantKey, kind);
+      const target = nestedProperty
+        ? (interaction[nestedProperty] as Record<string, unknown>)
+        : interaction;
+      assert.ok(target);
+      if (mutation === "false") target[requirement] = false;
+      else delete target[requirement];
+      assertInvalid(catalog);
+    }
+  }
+}
+
+function addSyntheticVariant(
+  catalog: MutableCatalog,
+  variantKey: string,
+  sourceVariantKey: LandingPageVariantKey,
+  interactionSourceVariantKey: string,
+  interactionKind: string,
+): void {
+  const sourceContract = structuredClone(
+    catalog.variantFieldContracts[sourceVariantKey],
+  );
+  const sourcePrefix = sourceVariantKey.replace("@v1", "");
+  const targetPrefix = variantKey.replace("@v1", "");
+  sourceContract.fieldContractKey = variantKey;
+  for (const field of flattenFields(sourceContract.fields)) {
+    field.path = String(field.path).replace(sourcePrefix, targetPrefix);
+    const sourceMap = field.copySourceMap as Record<string, unknown> | undefined;
+    if (typeof sourceMap?.evidencePath === "string") {
+      sourceMap.evidencePath = sourceMap.evidencePath.replace(
+        sourcePrefix,
+        targetPrefix,
+      );
+    }
+  }
+  catalog.variantFieldContracts[variantKey] = sourceContract;
+
+  const [moduleKey, qualifiedVariant] = variantKey.split(".");
+  const variant = cloneVariant(sourceVariantKey);
+  variant.variantKey = variantKey;
+  variant.variantName = qualifiedVariant.replace("@v1", "");
+  variant.moduleKey = moduleKey;
+  variant.fieldContractKey = variantKey;
+  variant.interactionContracts = [
+    structuredClone(
+      getMutableInteraction(
+        catalog,
+        interactionSourceVariantKey,
+        interactionKind,
+      ),
+    ),
+  ];
+  variant.capabilities = [
+    ...deriveLandingPageVariantCapabilities(
+      sourceContract.fields as unknown as Parameters<
+        typeof deriveLandingPageVariantCapabilities
+      >[0],
+      variant.interactionContracts as unknown as Parameters<
+        typeof deriveLandingPageVariantCapabilities
+      >[1],
+    ),
+  ];
+  catalog.variants[variantKey] = variant;
+}
+
 function cloneVariant(variantKey: LandingPageVariantKey): MutableVariant {
   return structuredClone(
     landingPageModuleCatalogRegistry.variants[variantKey],
@@ -1359,16 +1525,18 @@ type MutableVariant = {
   compatibleRootVersion: number;
   rootDelta: MutableRootDelta;
   capabilities: string[];
-  actionCompatibility?: { supportsPrimaryConversionForm: boolean };
-  formContract?: {
-    fields: Record<string, unknown>[];
-    consent?: Record<string, unknown>;
-    accessibility: Record<string, string | boolean>;
-    operationalBinding: Record<string, string>;
-  };
-  accordionAccessibility?: Record<string, string | boolean>;
+  interactionContracts: MutableInteraction[];
   fallbackChannel?: string;
   creationMotivation?: string;
+  [key: string]: unknown;
+};
+
+type MutableInteraction = {
+  kind: string;
+  fields?: Record<string, unknown>[];
+  consent?: Record<string, unknown>;
+  accessibility?: Record<string, string | boolean>;
+  operationalBinding?: Record<string, string>;
   [key: string]: unknown;
 };
 

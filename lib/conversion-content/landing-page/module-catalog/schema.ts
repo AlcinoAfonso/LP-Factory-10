@@ -11,12 +11,13 @@ import {
   landingPageFunnelTreatmentKeysByProfile,
   landingPageModuleKeys,
   landingPageVariantCapabilities,
-  landingPageVariantFieldContractKeys,
-  landingPageVariantKeys,
+  type LandingPageFieldDefinition,
+  type LandingPageInteractionContract,
   type LandingPageModuleKey,
   type LandingPageVariantFieldContractKey,
   type LandingPageVariantKey,
 } from "./contracts";
+import { deriveLandingPageVariantCapabilities } from "./capabilities";
 import { landingPageModuleCatalogRegistry } from "./registry";
 import {
   resolveLandingPageRootParameters,
@@ -24,6 +25,16 @@ import {
 } from "../index";
 
 const resolvedRootV1 = resolveLandingPageRootParameters({ rootVersion: 1 });
+const variantNameSchema = z
+  .string()
+  .regex(/^[a-z][a-z0-9_]*$/, "variant name must use snake_case");
+const variantKeySchema = z.string().refine((key) => {
+  const match = /^([a-z][a-z0-9_]*)\.([a-z][a-z0-9_]*)@v1$/.exec(key);
+  return (
+    Boolean(match) &&
+    landingPageModuleKeys.includes(match?.[1] as LandingPageModuleKey)
+  );
+}, "variant key must identify a registered module and version 1");
 const rootSemanticRoleSchema = z.string().refine(
   (key) => resolvedRootV1.ok && Object.hasOwn(resolvedRootV1.value.semanticRoles, key),
   { message: "semantic role is absent from the compatible root contract" },
@@ -270,7 +281,7 @@ const fieldDefinitionSchema = z.discriminatedUnion("fieldKind", [
 
 const variantFieldContractSchema = z
   .object({
-    fieldContractKey: z.enum(landingPageVariantFieldContractKeys),
+    fieldContractKey: variantKeySchema,
     fields: z.array(fieldDefinitionSchema).min(1),
   })
   .strict()
@@ -322,7 +333,8 @@ const variantFieldContractSchema = z
     }
   });
 
-const embeddedFormContractSchema = z.object({
+const formInteractionContractSchema = z.object({
+  kind: z.literal("form"),
   fields: z.array(z.object({
     fieldKey: fieldKeySchema,
     valueType: z.enum(landingPageFormFieldValueTypes),
@@ -358,38 +370,38 @@ const embeddedFormContractSchema = z.object({
   }
 });
 
+const accordionInteractionContractSchema = z
+  .object({
+    kind: z.literal("accordion"),
+    baseline: z.literal("WCAG 2.2"),
+    keyboardOperable: z.literal(true),
+    exposesExpandedState: z.literal(true),
+    associatesControlAndRegion: z.literal(true),
+    preservesFocus: z.literal(true),
+    initiallyCollapsed: z.literal(true),
+    singleExpandedItem: z.literal(true),
+  })
+  .strict();
+
+const interactionContractSchema = z.discriminatedUnion("kind", [
+  formInteractionContractSchema,
+  accordionInteractionContractSchema,
+]);
+
 const variantDefinitionSchema = z
   .object({
-    variantKey: z.enum(landingPageVariantKeys),
-    variantName: z.enum(["standard", "accordion", "form"]),
+    variantKey: variantKeySchema,
+    variantName: variantNameSchema,
     variantVersion: z.literal(1),
     moduleKey: z.enum(landingPageModuleKeys),
     moduleVersion: z.literal(1),
-    fieldContractKey: z.enum(landingPageVariantFieldContractKeys),
+    fieldContractKey: variantKeySchema,
     lifecycleStatus: z.enum(["hypothesis", "validated", "deprecated"]),
     purpose: z.literal("controlled_test"),
     compatibleRootVersion: z.literal(1),
     rootDelta: rootDeltaSchema,
     capabilities: z.array(z.enum(landingPageVariantCapabilities)),
-    actionCompatibility: z
-      .object({
-        supportsPrimaryConversionForm: z.boolean(),
-      })
-      .strict()
-      .optional(),
-    formContract: embeddedFormContractSchema.optional(),
-    accordionAccessibility: z
-      .object({
-        baseline: z.literal("WCAG 2.2"),
-        keyboardOperable: z.literal(true),
-        exposesExpandedState: z.literal(true),
-        associatesControlAndRegion: z.literal(true),
-        preservesFocus: z.literal(true),
-        initiallyCollapsed: z.literal(true),
-        singleExpandedItem: z.literal(true),
-      })
-      .strict()
-      .optional(),
+    interactionContracts: z.array(interactionContractSchema),
   })
   .strict()
   .superRefine((variant, context) => {
@@ -421,39 +433,14 @@ const variantDefinitionSchema = z
       });
     }
 
-    const hasPrimaryAction = variant.capabilities.includes("primary_action");
-    const hasAccordion = variant.capabilities.includes("accordion_interaction");
-    const hasEmbeddedForm = variant.capabilities.includes("embedded_form");
-
-    if (Boolean(variant.actionCompatibility) !== hasPrimaryAction) {
+    const interactionKinds = variant.interactionContracts.map(
+      (contract) => contract.kind,
+    );
+    if (new Set(interactionKinds).size !== interactionKinds.length) {
       context.addIssue({
         code: "custom",
-        path: ["actionCompatibility"],
-        message: "primary action capability and action compatibility must agree",
-      });
-    }
-    if (
-      variant.actionCompatibility &&
-      variant.actionCompatibility.supportsPrimaryConversionForm !== hasEmbeddedForm
-    ) {
-      context.addIssue({
-        code: "custom",
-        path: ["actionCompatibility", "supportsPrimaryConversionForm"],
-        message: "form compatibility and embedded form capability must agree",
-      });
-    }
-    if (Boolean(variant.formContract) !== hasEmbeddedForm) {
-      context.addIssue({
-        code: "custom",
-        path: ["formContract"],
-        message: "embedded form capability and form contract must agree",
-      });
-    }
-    if (Boolean(variant.accordionAccessibility) !== hasAccordion) {
-      context.addIssue({
-        code: "custom",
-        path: ["accordionAccessibility"],
-        message: "accordion capability and accessibility contract must agree",
+        path: ["interactionContracts"],
+        message: "interaction contract kinds must be unique per variant",
       });
     }
   });
@@ -576,11 +563,10 @@ export const landingPageModuleCatalogSchema = z
     }
 
     const expectedFieldContractKeys = new Set<string>(
-      landingPageVariantFieldContractKeys,
+      Object.keys(landingPageModuleCatalogRegistry.variantFieldContracts),
     );
     const actualFieldContractKeys = Object.keys(catalog.variantFieldContracts);
-
-    validateExactKeys({
+    validateRequiredKeys({
       actual: actualFieldContractKeys,
       expected: expectedFieldContractKeys,
       context,
@@ -599,12 +585,11 @@ export const landingPageModuleCatalogSchema = z
         });
       }
 
-      if (!expectedFieldContractKeys.has(key)) continue;
       const canonical =
         landingPageModuleCatalogRegistry.variantFieldContracts[
           key as LandingPageVariantFieldContractKey
         ];
-      if (JSON.stringify(contract) !== JSON.stringify(canonical)) {
+      if (canonical && JSON.stringify(contract) !== JSON.stringify(canonical)) {
         context.addIssue({
           code: "custom",
           path: ["variantFieldContracts", key],
@@ -613,14 +598,23 @@ export const landingPageModuleCatalogSchema = z
       }
     }
 
-    const expectedVariantKeys = new Set<string>(landingPageVariantKeys);
+    const expectedVariantKeys = new Set<string>(
+      Object.keys(landingPageModuleCatalogRegistry.variants),
+    );
     const actualVariantKeys = Object.keys(catalog.variants);
-    validateExactKeys({
+    validateRequiredKeys({
       actual: actualVariantKeys,
       expected: expectedVariantKeys,
       context,
       path: ["variants"],
       label: "variant",
+    });
+    validateExactKeys({
+      actual: actualVariantKeys,
+      expected: new Set(actualFieldContractKeys),
+      context,
+      path: ["variants"],
+      label: "variant and field contract identity",
     });
 
     for (const [key, variant] of Object.entries(catalog.variants)) {
@@ -648,31 +642,22 @@ export const landingPageModuleCatalogSchema = z
       const fieldContract =
         catalog.variantFieldContracts[variant.fieldContractKey];
       if (fieldContract) {
-        const hasActionField = fieldContract.fields.some(
-          (field) => field.fieldKind === "action",
-        );
-        const hasImageField = fieldContract.fields.some(
-          (field) => field.fieldKind === "image",
+        const expectedCapabilities = deriveLandingPageVariantCapabilities(
+          fieldContract.fields as readonly LandingPageFieldDefinition[],
+          variant.interactionContracts as readonly LandingPageInteractionContract[],
         );
         if (
-          variant.capabilities.includes("primary_action") !== hasActionField
+          JSON.stringify(variant.capabilities) !==
+          JSON.stringify(expectedCapabilities)
         ) {
           context.addIssue({
             code: "custom",
             path: ["variants", key, "capabilities"],
-            message: "primary action capability must match the field contract",
-          });
-        }
-        if (variant.capabilities.includes("image_asset") !== hasImageField) {
-          context.addIssue({
-            code: "custom",
-            path: ["variants", key, "capabilities"],
-            message: "image asset capability must match the field contract",
+            message: "capabilities must be derived from fields and interactions",
           });
         }
       }
 
-      if (!expectedVariantKeys.has(key)) continue;
       const moduleDefinition = catalog.modules[variant.moduleKey];
       if (moduleDefinition) {
         const moduleRanges = composeRootRanges(root.value.semanticRoles, moduleDefinition.rootDelta);
@@ -685,11 +670,11 @@ export const landingPageModuleCatalogSchema = z
       }
       const canonical =
         landingPageModuleCatalogRegistry.variants[key as LandingPageVariantKey];
-      if (JSON.stringify({
+      if (canonical && !structurallyEqual({
         ...variant,
         lifecycleStatus: canonical.lifecycleStatus,
         rootDelta: canonical.rootDelta,
-      }) !== JSON.stringify(canonical)) {
+      }, canonical)) {
         context.addIssue({
           code: "custom",
           path: ["variants", key],
@@ -844,6 +829,38 @@ function validateUniqueFieldIdentities(
   }
 }
 
+function validateRequiredKeys(input: {
+  actual: readonly string[];
+  expected: Set<string>;
+  context: z.RefinementCtx;
+  path: (string | number)[];
+  label: string;
+}) {
+  for (const key of input.expected) {
+    if (!input.actual.includes(key)) {
+      input.context.addIssue({
+        code: "custom",
+        path: [...input.path, key],
+        message: `required ${input.label} missing`,
+      });
+    }
+  }
+}
+
+function structurallyEqual(left: unknown, right: unknown): boolean {
+  return JSON.stringify(sortObjectKeys(left)) === JSON.stringify(sortObjectKeys(right));
+}
+
+function sortObjectKeys(value: unknown): unknown {
+  if (Array.isArray(value)) return value.map(sortObjectKeys);
+  if (!value || typeof value !== "object") return value;
+  return Object.fromEntries(
+    Object.entries(value)
+      .sort(([left], [right]) => left.localeCompare(right))
+      .map(([key, nested]) => [key, sortObjectKeys(nested)]),
+  );
+}
+
 function validateExactKeys(input: {
   actual: readonly string[];
   expected: Set<string>;
@@ -860,13 +877,5 @@ function validateExactKeys(input: {
       });
     }
   }
-  for (const key of input.expected) {
-    if (!input.actual.includes(key)) {
-      input.context.addIssue({
-        code: "custom",
-        path: [...input.path, key],
-        message: `required ${input.label} missing`,
-      });
-    }
-  }
+  validateRequiredKeys(input);
 }

@@ -14,15 +14,16 @@ import type {
   LandingPageFieldPolicy,
   LandingPageFieldSupport,
   LandingPageImageFieldDefinition,
+  LandingPageInteractionContract,
   LandingPageTechnicalReferenceFieldDefinition,
   LandingPageTextFieldDefinition,
-  LandingPageVariantCapability,
   LandingPageVariantDefinition,
   LandingPageVariantFieldContractKey,
   LandingPageVariantKey,
   LandingPageVariantName,
 } from "./contracts";
 import type { LandingPageRootSemanticRoleKey } from "../index";
+import { deriveLandingPageVariantCapabilities } from "./capabilities";
 
 const noRootRestrictions = { textRanges: [] } as const;
 const researchPath = "endCustomer.researches[].items[]" as const;
@@ -84,7 +85,7 @@ function operationalEvidence(evidencePath: string): LandingPageCopySourceMap {
   return { sourceMode: "operational_evidence", evidencePath };
 }
 
-export const landingPageModuleCatalogRegistry = deepFreeze({
+const landingPageModuleCatalogDefinition = {
   family: "landing_page",
   moduleCatalogVersion: 1,
   compatibleRootVersions: [1],
@@ -99,7 +100,7 @@ export const landingPageModuleCatalogRegistry = deepFreeze({
         "An action remains abstract when present.",
       ],
       [
-        "No complete form, gallery, carousel, tour or global navigation.",
+        "A complete form requires a valid form interaction contract declared by the variant; gallery, carousel, tour and global navigation remain outside the module.",
         "No detailed offer or extensive proof.",
       ],
     ),
@@ -343,17 +344,14 @@ export const landingPageModuleCatalogRegistry = deepFreeze({
       "hero.standard@v1",
       "standard",
       "hero",
-      ["primary_action", "image_asset"],
-      { actionCompatibility: { supportsPrimaryConversionForm: false } },
     ),
     "hero.form@v1": variant(
       "hero.form@v1",
       "form",
       "hero",
-      ["primary_action", "image_asset", "embedded_form"],
-      {
-        actionCompatibility: { supportsPrimaryConversionForm: true },
-        formContract: {
+      [
+        {
+          kind: "form",
           fields: [
             {
               fieldKey: "name",
@@ -393,7 +391,7 @@ export const landingPageModuleCatalogRegistry = deepFreeze({
             requiredValue: "form",
           },
         },
-      },
+      ],
     ),
     "trust_bar.standard@v1": variant(
       "trust_bar.standard@v1",
@@ -439,9 +437,9 @@ export const landingPageModuleCatalogRegistry = deepFreeze({
       "faq.accordion@v1",
       "accordion",
       "faq",
-      ["accordion_interaction"],
-      {
-        accordionAccessibility: {
+      [
+        {
+          kind: "accordion",
           baseline: "WCAG 2.2",
           keyboardOperable: true,
           exposesExpandedState: true,
@@ -450,28 +448,41 @@ export const landingPageModuleCatalogRegistry = deepFreeze({
           initiallyCollapsed: true,
           singleExpandedItem: true,
         },
-      },
+      ],
     ),
     "final_cta.standard@v1": variant(
       "final_cta.standard@v1",
       "standard",
       "final_cta",
-      ["primary_action"],
-      { actionCompatibility: { supportsPrimaryConversionForm: false } },
     ),
   },
-} satisfies LandingPageModuleCatalogRegistry);
+} satisfies LandingPageModuleCatalogDefinition;
+
+export const landingPageModuleCatalogRegistry = deepFreeze(
+  withDerivedCapabilities(landingPageModuleCatalogDefinition),
+);
+
+type LandingPageVariantDefinitionSource = Omit<
+  LandingPageVariantDefinition,
+  "capabilities"
+>;
+
+type LandingPageModuleCatalogDefinition = Omit<
+  LandingPageModuleCatalogRegistry,
+  "variants"
+> &
+  Readonly<{
+    variants: Readonly<
+      Record<LandingPageVariantKey, LandingPageVariantDefinitionSource>
+    >;
+  }>;
 
 function variant(
   variantKey: LandingPageVariantKey,
   variantName: LandingPageVariantName,
   moduleKey: LandingPageModuleKey,
-  capabilities: readonly LandingPageVariantCapability[] = [],
-  optional: Pick<
-    LandingPageVariantDefinition,
-    "actionCompatibility" | "formContract" | "accordionAccessibility"
-  > = {},
-): LandingPageVariantDefinition {
+  interactionContracts: readonly LandingPageInteractionContract[] = [],
+): LandingPageVariantDefinitionSource {
   return {
     variantKey,
     variantName,
@@ -483,9 +494,31 @@ function variant(
     purpose: "controlled_test",
     compatibleRootVersion: 1,
     rootDelta: noRootRestrictions,
-    capabilities,
-    ...optional,
+    interactionContracts,
   };
+}
+
+function withDerivedCapabilities(
+  definition: LandingPageModuleCatalogDefinition,
+): LandingPageModuleCatalogRegistry {
+  const variants = Object.fromEntries(
+    Object.entries(definition.variants).map(([key, variant]) => {
+      const fieldContract =
+        definition.variantFieldContracts[variant.fieldContractKey];
+      return [
+        key,
+        {
+          ...variant,
+          capabilities: deriveLandingPageVariantCapabilities(
+            fieldContract.fields,
+            variant.interactionContracts,
+          ),
+        },
+      ];
+    }),
+  ) as Record<LandingPageVariantKey, LandingPageVariantDefinition>;
+
+  return { ...definition, variants };
 }
 
 function emptyFunnelDelta<

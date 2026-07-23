@@ -2,7 +2,7 @@
 
 0.1. Cabeçalho
 • Documento: Base Técnica LP Factory 10
-• Versão: v2.0.53
+• Versão: v2.0.54
 • Data: 23/07/2026
 
 0.2 Contrato do documento (consulta)
@@ -433,7 +433,10 @@ LP Builder
 • A resolução aplica `raiz → módulo → variante` e `perfil-base → delta do módulo`, devolvendo contratos efetivos, rastreáveis e profundamente imutáveis; consumidores não reaplicam deltas.
 • Especializações podem apenas restringir. Proibições prevalecem sobre restrições, que prevalecem sobre permissões; lifecycle da raiz, do módulo e da variante permanece separado no vocabulário canônico.
 • Sources textuais permanecem junto dos fields e distinguem pesquisa estruturada, evidência operacional e pesquisa com suporte operacional declarativo; uma referência sintaticamente válida não comprova integridade com outro registry.
-• Variantes com formulário declaram capability, compatibilidade, fields abstratos, consentimento, privacidade e acessibilidade estrutural no próprio contrato, sem definir UI, HTML, ARIA, submissão ou conformidade integral com WCAG.
+• Interações de variante usam coleção de união discriminada estrita; Form e Accordion são os únicos kinds atuais, e cada kind aparece no máximo uma vez por variante.
+• Interaction contracts são a fonte canônica das capabilities interativas; capabilities de ação e imagem são derivadas dos fields. O registry não mantém booleanos ou propriedades paralelas para a mesma condição.
+• O contrato de Form preserva fields abstratos, consentimento, privacidade, binding e acessibilidade estrutural, sem definir UI, HTML, ARIA, submissão ou conformidade integral com WCAG.
+• Um interaction kind novo evolui uma vez o contrato TypeScript, a união, o schema e sua suíte; variantes posteriores reutilizam o kind sem ampliar os mecanismos. Mídia avançada só recebe moldura discriminada própria no primeiro caso real.
 • Ações registram somente vínculos operacionais abstratos; valores permitidos e compatibilidades concretas permanecem na fonte canônica versionada.
 • O boundary permanece repo-only e não executa composição, persistência ou renderização.
 • Casos executáveis: `npm run validate:landing-page-module-catalog`.
@@ -585,6 +588,8 @@ Fonte normativa da allowlist SULB para exceções de Auth. Qualquer novo arquivo
 • Tipos canônicos e adapters vNext: validar por 3.6 e 3.14.
 
 99. Changelog
+v2.0.54 — 23/07/2026 — Unificadas as interações de variante em união discriminada, com capabilities derivadas e evolução localizada por interaction kind, sem antecipar contratos de mídia avançada.
+
 v2.0.53 — 23/07/2026 — Consolidado o contrato durável de sources declarativas e variantes com formulário abstrato no catálogo `landing_page`, mantendo registry único, API mínima e boundary repo-only.
 
 v2.0.52 — 21/07/2026 — Enxugado o contrato durável do catálogo de módulos e variantes de `landing_page`, preservando vínculos operacionais abstratos e limites permanentes sem duplicar valores ou decisões específicas do registry.
