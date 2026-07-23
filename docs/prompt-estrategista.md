@@ -67,7 +67,8 @@ Use Orquestrar plano-base no PR #[NÚMERO].
 Regra:
 • a escolha do processo depende de decisão humana explícita;
 • por decisão humana, os processos podem ser desenvolvidos paralelamente, como já ocorreu para testes;
-• qualquer mutação do processo automatizado depende de o plano-base v1 já estar incorporado à main.
+• qualquer mutação do processo automatizado depende de o plano-base v1 já estar incorporado à main;
+• na opção 2, a v2, o roadmap e a implementação seguem na mesma branch e no mesmo PR, sem merge intermediário da v2.
 
 5. Avaliação única do plano-base v1 por especialistas
    Solicitar uma avaliação do plano completo no PR antes da execução.
@@ -100,8 +101,8 @@ Avalie no PR [URL_DO_PR] o plano-base `docs/lousa-plano-base-EXX-YY.md` dentro d
 
 Regra: entregar somente as mensagens aplicáveis, substituindo apenas o path e a URL do PR, salvo pedido humano explícito.
 
-6. Consolidação do plano-base v2
-   Consolidar no mesmo PR os retornos dos especialistas antes da execução.
+6. Consolidação do plano-base v2 — processo atual
+   No processo atual, consolidar no mesmo PR os retornos dos especialistas antes da execução.
 
 Regra:
 • consolidar todos os retornos em uma única análise;
@@ -114,8 +115,8 @@ Regra:
 • após a consolidação, solicitar ao humano o merge do PR;
 • não seguir ao item 7 antes da confirmação do merge.
 
-7. Instrução ao Executor
-   Após a confirmação do merge, referenciar o path do plano-base v2 na main, indicando a fase atual e as fontes obrigatórias, conforme docs/prompt-executor.md e AGENTS.md.
+7. Instrução ao Executor — processo atual
+   No processo atual, após a confirmação do merge, referenciar o path do plano-base v2 na main, indicando a fase atual e as fontes obrigatórias, conforme docs/prompt-executor.md e AGENTS.md.
 
 Regra:
 • executar uma fase por vez, na ordem do plano;
