@@ -1464,7 +1464,7 @@ Repositório — Ajustados
 
 18. E18 — Base transversal de templates, módulos, composições e artefatos
 - Objetivo: Definir infraestrutura e contratos reutilizáveis para famílias de templates por canal, templates versionados, módulos de conteúdo, seções de página, variantes, composições e artefatos finais persistidos; sustentar primeiro a E10.7 sem produzir diretamente a página comercial de um taxon; e permitir consumidores futuros somente como visão de evolução, sem antecipar sua implementação.
-- Status: Base mínima de `commercial_activation` concluída; parametrização raiz versionada de `landing_page` concluída em 13/07/2026; implementação anterior de composição `landing_page` removida; catálogo repo-only do PR #590 permanece vigente e a E18.5 foi reaberta em planejamento para simplificação antes da E20.3.
+- Status: Base mínima de `commercial_activation` concluída; parametrização raiz versionada de `landing_page` concluída em 13/07/2026; implementação anterior de composição `landing_page` removida; catálogo repo-only do PR #590 permanece vigente e a E18.5 foi reaberta em planejamento para otimização antes da E20.3.
 
 18.1 Contrato transversal de templates, módulos, composições e artefatos
 
@@ -1771,11 +1771,12 @@ Repositório — Ajustados
 18.5 Parametrização de módulos e variantes `landing_page`
 
 18.5.1 Objetivo e status
-- Objetivo: manter um catálogo versionado, consultivo e facilmente extensível de módulos e variantes da família `landing_page`, adequado para contexto de IA e sem funcionar como engine universal de runtime.
-- Status: Reaberta em planejamento para simplificação pelo plano-base `docs/lousa-plano-base-e18-5.md`, antes da E20.3. A implementação repo-only mergeada no PR #590 permanece vigente até ser substituída atomicamente em PR material próprio.
-- Estado planejado: preservar os nove módulos e as dez variantes como conhecimento consultivo; remover rigidez sem consumidor real, como resolver exclusivo, schema por chaves atuais, listas duplicadas, contagens fixas e validações genéricas vinculadas às identidades atuais.
-- Limites preservados: sem payload de conteúdo, banco, migration, rota, UI, renderer, composição, persistência, automação, job ou consumo por E19/E20; a E18.4 não será simplificada neste recorte.
-- Nota de transição: as subseções 18.5.2–18.5.9 registram o estado material vigente até a substituição ser executada.
+- Objetivo: otimizar o catálogo versionado de módulos e variantes da família `landing_page`, preservando o núcleo executável incorporado pelo PR #590 e reduzindo pontos distribuídos de manutenção comprovados pelo experimento do PR #617.
+- Status: Reaberta em planejamento para otimização pelo plano-base `docs/lousa-plano-base-e18-5.md`, antes da E20.3. A implementação repo-only mergeada no PR #590 permanece como base material vigente até o futuro PR material incorporar as otimizações aprovadas.
+- Estado planejado: dez módulos e doze variantes, com incorporação futura de `benefits@v1`, `benefits.standard@v1` e `hero.form@v1`; registry versionado, resolver genérico, Zod estrito, falha fechada, contratos tipados, imutabilidade profunda, testes negativos e API pública mínima permanecem preservados.
+- Evidência: os quatro testes do PR #617 não alteraram o resolver e concentraram o custo de extensão em contratos, registry, schema, listas paralelas, contagens e testes; o PR experimental permanecerá aberto em draft, sem merge, como baseline comparativa.
+- Limites preservados: sem payload de conteúdo, banco, migration, rota, UI, renderer, composição, persistência, automação, job ou consumo por E19/E20; a E18.4 permanece fora da otimização e E19, E20.2 e E20.3 não serão implementadas ou alteradas neste recorte.
+- Nota de transição: as subseções 18.5.2–18.5.9 continuam registrando o estado material vigente do PR #590; `benefits` e `hero.form` não estão registrados como implementados e seu inventário será atualizado somente pelo futuro PR material conforme o diff real.
 
 18.5.2 Registros do recorte
 - Banco: N/A.
@@ -2066,7 +2067,7 @@ Repositório — Ajustados
   * O recorte não cria banco, rota, API, Server Action, UI, adapter de banco, entitlement, integração Stripe, valor operacional, snapshot, automação, agente ou job.
 
 99. Changelog
-v1.5.97 — 23/07/2026 — E18.5 reaberta em planejamento para substituir o catálogo rígido vigente por uma fonte consultiva mínima e extensível, preservando os nove módulos, as dez variantes e a integridade da `main` até a substituição atômica.
+v1.5.97 — 23/07/2026 — Abandonada a substituição integral planejada para a E18.5; preservado o núcleo repo-only incorporado pelo PR #590 e redirecionado o plano para otimizações pontuais, com incorporação futura de `benefits.standard@v1` e `hero.form@v1` e uso do PR #617 como evidência experimental sem merge.
 
 v1.5.96 — 21/07/2026 — E18.5 reorganizada conforme `docs/template-roadmap.md`: registros de implementação movidos para 18.5.2 sem artefatos `docs/**`, `prod#17` registrado como update aplicado ao contrato abstrato de `faq.accordion@v1`, conteúdos implementados distribuídos entre 18.5.3 e 18.5.9 e status atualizado após aprovação e merge do PR #590.
 
