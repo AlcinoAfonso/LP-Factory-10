@@ -26,7 +26,7 @@ type Case = Readonly<{
 
 const cases: readonly Case[] = [
   {
-    name: "the versioned catalog and all nine modules are valid",
+    name: "the versioned catalog and all ten modules are valid",
     run: () => {
       const result = landingPageModuleCatalogSchema.safeParse(
         landingPageModuleCatalogRegistry,
@@ -178,7 +178,7 @@ const cases: readonly Case[] = [
     },
   },
   {
-    name: "all ten field contracts and five field kinds are valid",
+    name: "all eleven field contracts and five field kinds are valid",
     run: () => {
       assert.deepEqual(
         Object.keys(
@@ -274,7 +274,7 @@ const cases: readonly Case[] = [
     },
   },
   {
-    name: "all ten variants link one module and their own field contract",
+    name: "all eleven variants link one module and their own field contract",
     run: () => {
       assert.deepEqual(
         Object.keys(landingPageModuleCatalogRegistry.variants).sort(),
@@ -301,6 +301,43 @@ const cases: readonly Case[] = [
           ],
         );
       }
+    },
+  },
+  {
+    name: "benefits standard resolves its bounded reusable-benefits contract",
+    run: () => {
+      const result = resolveLandingPageModuleCatalog({
+        moduleCatalogVersion: 1,
+        rootVersion: 1,
+        moduleKey: "benefits",
+        moduleVersion: 1,
+        variantName: "standard",
+        variantVersion: 1,
+        funnelProfileKey: "mofu",
+      });
+
+      assert.equal(result.ok, true);
+      if (!result.ok) return;
+      assert.equal(result.value.module.moduleKey, "benefits");
+      assert.equal(result.value.variant.variantKey, "benefits.standard@v1");
+      assert.deepEqual(
+        result.value.fieldContract.fields.map((field) => field.path),
+        ["benefits.standard.title", "benefits.standard.items"],
+      );
+      const items = result.value.fieldContract.fields[1];
+      assert.equal(items?.fieldKind, "collection");
+      if (items?.fieldKind !== "collection") return;
+      assert.deepEqual(items.cardinality, { min: 2, max: 6 });
+      assert.deepEqual(
+        items.itemFields.map((field) => field.path),
+        [
+          "benefits.standard.items[].benefitTitle",
+          "benefits.standard.items[].description",
+        ],
+      );
+      assert.equal(result.value.variant.capabilities.length, 0);
+      assert.equal(result.value.variant.actionCompatibility, undefined);
+      assertDeeplyFrozen(result.value);
     },
   },
   {
@@ -505,7 +542,7 @@ const cases: readonly Case[] = [
       const textualFields = Object.values(landingPageModuleCatalogRegistry.variantFieldContracts)
         .flatMap((contract) => flattenFields(contract.fields))
         .filter((field) => field.fieldKind === "text");
-      assert.equal(textualFields.length, 30);
+      assert.equal(textualFields.length, 33);
       assert.equal(textualFields.every((field) => Boolean(field.copySourceMap)), true);
 
       const unknownSourceMode = cloneRegistry();
@@ -611,7 +648,7 @@ const cases: readonly Case[] = [
     },
   },
   {
-    name: "resolver returns ten complete isolated variants without fallback",
+    name: "resolver returns eleven complete isolated variants without fallback",
     run: () => {
       for (const variantKey of landingPageVariantKeys) {
         const [moduleKey, qualifiedVariant] = variantKey.split(".");

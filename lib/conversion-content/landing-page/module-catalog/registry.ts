@@ -108,6 +108,19 @@ export const landingPageModuleCatalogRegistry = deepFreeze({
         "No price, commercial condition, action, media, proof, process or FAQ.",
       ],
     ),
+    benefits: moduleDefinition(
+      "benefits",
+      "Present practical and reusable benefits of the solution.",
+      [
+        "Benefits are practical, reusable and distinct from available offers.",
+        "Benefits remain distinct from problem-solution pairs, trust signals and social proof.",
+        "Result claims require support and are not invented.",
+      ],
+      [
+        "No action, form, social proof, price or media.",
+        "No detailed offer, problem-solution pair, trust bar, testimonial or case.",
+      ],
+    ),
     process: moduleDefinition(
       "process",
       "Explain a real progression through distinct steps.",
@@ -209,6 +222,16 @@ export const landingPageModuleCatalogRegistry = deepFreeze({
         ]),
       ],
     },
+    "benefits.standard@v1": {
+      fieldContractKey: "benefits.standard@v1",
+      fields: [
+        text("benefits.standard.title", "title", "h2", 1, 1, "research_guided"),
+        collection("benefits.standard.items", "items", 2, 6, [
+          text("benefits.standard.items[].benefitTitle", "benefitTitle", "card_title", 1, 1, "hybrid", "when_present"),
+          text("benefits.standard.items[].description", "description", "card_body", 1, 1, "hybrid", "when_factual"),
+        ]),
+      ],
+    },
     "process.standard@v1": {
       fieldContractKey: "process.standard@v1",
       fields: [
@@ -279,6 +302,11 @@ export const landingPageModuleCatalogRegistry = deepFreeze({
       "offer.standard@v1",
       "standard",
       "offer",
+    ),
+    "benefits.standard@v1": variant(
+      "benefits.standard@v1",
+      "standard",
+      "benefits",
     ),
     "process.standard@v1": variant(
       "process.standard@v1",
@@ -498,6 +526,9 @@ function copySourceMapFor(path: string): LandingPageCopySourceMap {
     case "offer.standard.title": return research(["desire", "trigger"], "positioning_opportunity");
     case "offer.standard.items[].itemTitle": return research(["trigger", "desire"], "positioning_opportunity");
     case "offer.standard.items[].description": return research(["positioning_opportunity", "belief"], "objection");
+    case "benefits.standard.title": return research(["desire", "positioning_opportunity"], "pain");
+    case "benefits.standard.items[].benefitTitle": return research(["positioning_opportunity", "desire"], "belief");
+    case "benefits.standard.items[].description": return research(["belief", "desire"], "objection");
     case "process.standard.title": return research(["belief", "desire"], "objection");
     case "process.standard.steps[].stepTitle": return research(["narrative_arc", "trigger"], "belief");
     case "process.standard.steps[].stepBody": return research(["belief", "desire"], "positioning_opportunity");
