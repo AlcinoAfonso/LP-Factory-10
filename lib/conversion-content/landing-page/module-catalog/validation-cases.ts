@@ -711,6 +711,42 @@ const cases: readonly Case[] = [
         "hero.form@v1",
         "form",
       );
+
+      const repeatedPrimaryAction = cloneRegistry();
+      addSyntheticVariant(
+        repeatedPrimaryAction,
+        "final_cta.repeated@v1",
+        "final_cta.standard@v1",
+      );
+      const repeatedAction = repeatedPrimaryAction.variantFieldContracts[
+        "final_cta.repeated@v1"
+      ].fields.find((field) => field.fieldKind === "action");
+      assert.ok(repeatedAction);
+      repeatedAction.cardinality = { min: 0, max: 2 };
+      const repeatedCapabilities = deriveLandingPageVariantCapabilities(
+        repeatedPrimaryAction.variantFieldContracts[
+          "final_cta.repeated@v1"
+        ].fields as unknown as Parameters<
+          typeof deriveLandingPageVariantCapabilities
+        >[0],
+        [],
+      );
+      assert.equal(
+        repeatedCapabilities.includes("primary_action"),
+        false,
+      );
+      repeatedPrimaryAction.variants["final_cta.repeated@v1"].capabilities = [
+        ...repeatedCapabilities,
+      ];
+      assertInvalidCatalogFailsClosedWithoutThrow(repeatedPrimaryAction, {
+        moduleCatalogVersion: 1,
+        rootVersion: 1,
+        moduleKey: "final_cta",
+        moduleVersion: 1,
+        variantName: "repeated",
+        variantVersion: 1,
+        funnelProfileKey: "bofu",
+      });
       assertInvalidCatalogFailsClosedWithoutThrow(
         incompatibleModuleInteraction,
         {
@@ -731,6 +767,29 @@ const cases: readonly Case[] = [
       orphanVariant.variants["hero.campaign@v1"].variantKey =
         "hero.campaign@v1";
       assertInvalid(orphanVariant);
+
+      for (const policy of ["not_copy", "technical_reference"]) {
+        const invalidTextPolicy = cloneRegistry();
+        addSyntheticVariant(
+          invalidTextPolicy,
+          "hero.invalidtext@v1",
+          "hero.standard@v1",
+        );
+        getMutableTextField(
+          invalidTextPolicy,
+          "hero.invalidtext@v1",
+          "hero.invalidtext.title",
+        ).policy = policy;
+        assertInvalidCatalogFailsClosedWithoutThrow(invalidTextPolicy, {
+          moduleCatalogVersion: 1,
+          rootVersion: 1,
+          moduleKey: "hero",
+          moduleVersion: 1,
+          variantName: "invalidtext",
+          variantVersion: 1,
+          funnelProfileKey: "bofu",
+        });
+      }
 
       for (const motivation of [
         "taxon",
@@ -1452,8 +1511,8 @@ function addSyntheticVariant(
   catalog: MutableCatalog,
   variantKey: string,
   sourceVariantKey: LandingPageVariantKey,
-  interactionSourceVariantKey: string,
-  interactionKind: string,
+  interactionSourceVariantKey?: string,
+  interactionKind?: string,
 ): void {
   const sourceContract = structuredClone(
     catalog.variantFieldContracts[sourceVariantKey],
@@ -1479,15 +1538,18 @@ function addSyntheticVariant(
   variant.variantName = qualifiedVariant.replace("@v1", "");
   variant.moduleKey = moduleKey;
   variant.fieldContractKey = variantKey;
-  variant.interactionContracts = [
-    structuredClone(
-      getMutableInteraction(
-        catalog,
-        interactionSourceVariantKey,
-        interactionKind,
-      ),
-    ),
-  ];
+  assert.equal(Boolean(interactionSourceVariantKey), Boolean(interactionKind));
+  variant.interactionContracts = interactionSourceVariantKey && interactionKind
+    ? [
+        structuredClone(
+          getMutableInteraction(
+            catalog,
+            interactionSourceVariantKey,
+            interactionKind,
+          ),
+        ),
+      ]
+    : [];
   variant.capabilities = [
     ...deriveLandingPageVariantCapabilities(
       sourceContract.fields as unknown as Parameters<

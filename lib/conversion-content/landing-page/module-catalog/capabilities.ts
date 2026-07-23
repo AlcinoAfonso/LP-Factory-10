@@ -13,13 +13,26 @@ export function deriveLandingPageVariantCapabilities(
   );
 
   return [
-    ...(hasFieldKind(fields, "action") ? ["primary_action" as const] : []),
+    ...(hasSingletonAction(fields) ? ["primary_action" as const] : []),
     ...(hasFieldKind(fields, "image") ? ["image_asset" as const] : []),
     ...(interactionKinds.has("accordion")
       ? ["accordion_interaction" as const]
       : []),
     ...(interactionKinds.has("form") ? ["embedded_form" as const] : []),
   ];
+}
+
+function hasSingletonAction(
+  fields: readonly LandingPageFieldDefinition[],
+): boolean {
+  return fields.some(
+    (field) =>
+      (field.fieldKind === "action" &&
+        field.cardinality.min === 1 &&
+        field.cardinality.max === 1) ||
+      (field.fieldKind === "collection" &&
+        hasSingletonAction(field.itemFields)),
+  );
 }
 
 function hasFieldKind(

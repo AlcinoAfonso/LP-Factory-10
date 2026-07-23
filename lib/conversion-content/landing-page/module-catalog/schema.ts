@@ -212,6 +212,17 @@ const textFieldSchema = z
   .strict()
   .superRefine((field, context) => {
     if (
+      field.copySourceMap.sourceMode === "research" &&
+      field.policy !== "research_guided" &&
+      field.policy !== "hybrid"
+    ) {
+      context.addIssue({
+        code: "custom",
+        path: ["policy"],
+        message: "research copy source requires a research-guided or hybrid policy",
+      });
+    }
+    if (
       field.copySourceMap.sourceMode === "research_with_operational_support" &&
       (field.policy !== "hybrid" || field.support !== "when_factual")
     ) {
@@ -219,6 +230,16 @@ const textFieldSchema = z
         code: "custom",
         path: ["support"],
         message: "combined copy source requires hybrid policy and operational support when factual",
+      });
+    }
+    if (
+      field.copySourceMap.sourceMode === "operational_evidence" &&
+      field.policy !== "operational_required"
+    ) {
+      context.addIssue({
+        code: "custom",
+        path: ["policy"],
+        message: "operational evidence requires an operational-required policy",
       });
     }
   });
@@ -259,7 +280,16 @@ const actionFieldSchema = z
     label: textFieldSchema,
     operationalBinding: z.literal("primary_conversion_channel"),
   })
-  .strict();
+  .strict()
+  .superRefine((field, context) => {
+    if (field.cardinality.min !== 1 || field.cardinality.max !== 1) {
+      context.addIssue({
+        code: "custom",
+        path: ["cardinality"],
+        message: "primary action cardinality must be exactly one",
+      });
+    }
+  });
 
 const imageFieldSchema = z
   .object({
