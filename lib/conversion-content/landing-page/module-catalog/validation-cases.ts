@@ -26,7 +26,7 @@ type Case = Readonly<{
 
 const cases: readonly Case[] = [
   {
-    name: "the versioned catalog and all nine modules are valid",
+    name: "the versioned catalog and all registered modules are valid",
     run: () => {
       const result = landingPageModuleCatalogSchema.safeParse(
         landingPageModuleCatalogRegistry,
@@ -43,6 +43,42 @@ const cases: readonly Case[] = [
         Object.keys(landingPageModuleCatalogRegistry.modules).sort(),
         [...landingPageModuleKeys].sort(),
       );
+    },
+  },
+  {
+    name: "benefits is a bounded reusable module without operational registry coupling",
+    run: () => {
+      const benefits = landingPageModuleCatalogRegistry.modules.benefits;
+
+      assert.equal(benefits.family, "landing_page");
+      assert.equal(benefits.moduleKey, "benefits");
+      assert.equal(benefits.moduleVersion, 1);
+      assert.equal(benefits.lifecycleStatus, "hypothesis");
+      assert.equal(benefits.purpose, "controlled_test");
+      assert.equal(benefits.compatibleRootVersion, 1);
+      assert.deepEqual(benefits.rootDelta, { textRanges: [] });
+      assert.equal(
+        benefits.structuralFunction,
+        "Present practical benefits supported by research and real operational capabilities.",
+      );
+      assert.deepEqual(benefits.invariants, [
+        "Benefits are distinct, practical and reusable across landing-page compositions.",
+        "Research may guide a benefit but does not prove an operational capability.",
+        "Factual benefit claims require applicable operational support.",
+      ]);
+      assert.deepEqual(benefits.boundaries, [
+        "No action, form, social proof, price, offer detail or media.",
+        "No taxon-specific key or dependency on an operational input registry.",
+      ]);
+      assert.equal(
+        JSON.stringify(benefits).includes("real_estate"),
+        false,
+      );
+      assert.equal(
+        JSON.stringify(benefits).includes("inputCatalog"),
+        false,
+      );
+      assertDeeplyFrozen(benefits);
     },
   },
   {

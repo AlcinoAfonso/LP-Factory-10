@@ -108,6 +108,19 @@ export const landingPageModuleCatalogRegistry = deepFreeze({
         "No price, commercial condition, action, media, proof, process or FAQ.",
       ],
     ),
+    benefits: moduleDefinition(
+      "benefits",
+      "Present practical benefits supported by research and real operational capabilities.",
+      [
+        "Benefits are distinct, practical and reusable across landing-page compositions.",
+        "Research may guide a benefit but does not prove an operational capability.",
+        "Factual benefit claims require applicable operational support.",
+      ],
+      [
+        "No action, form, social proof, price, offer detail or media.",
+        "No taxon-specific key or dependency on an operational input registry.",
+      ],
+    ),
     process: moduleDefinition(
       "process",
       "Explain a real progression through distinct steps.",
