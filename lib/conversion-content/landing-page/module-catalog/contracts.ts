@@ -156,6 +156,16 @@ export type LandingPageCopySourceMap =
       auxiliaryItemKey?: LandingPageResearchItemKey;
     }>
   | Readonly<{
+      sourceMode: "research_with_operational_support";
+      researchPath: "endCustomer.researches[].items[]";
+      primaryItemKeys: readonly [LandingPageResearchItemKey, LandingPageResearchItemKey?];
+      auxiliaryItemKey?: LandingPageResearchItemKey;
+      operationalSupport: Readonly<{
+        requirement: "required_when_claimed";
+        inputCatalogFieldKeys: readonly [string, ...string[]];
+      }>;
+    }>
+  | Readonly<{
       sourceMode: "operational_evidence";
       evidencePath: string;
     }>;

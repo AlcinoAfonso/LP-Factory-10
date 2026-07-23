@@ -238,7 +238,7 @@ export const landingPageModuleCatalogRegistry = deepFreeze({
       fields: [
         text("benefits.standard.title", "title", "h2", 1, 1, "research_guided"),
         collection("benefits.standard.items", "items", 2, 6, [
-          text("benefits.standard.items[].benefitTitle", "benefitTitle", "card_title", 1, 1, "hybrid", "when_present"),
+          text("benefits.standard.items[].benefitTitle", "benefitTitle", "card_title", 1, 1, "hybrid", "when_factual"),
           text("benefits.standard.items[].description", "description", "card_body", 1, 1, "hybrid", "when_factual"),
         ]),
       ],
@@ -550,8 +550,16 @@ function copySourceMapFor(path: string): LandingPageCopySourceMap {
     case "offer.standard.items[].itemTitle": return research(["trigger", "desire"], "positioning_opportunity");
     case "offer.standard.items[].description": return research(["positioning_opportunity", "belief"], "objection");
     case "benefits.standard.title": return research(["desire", "positioning_opportunity"], "pain");
-    case "benefits.standard.items[].benefitTitle": return research(["positioning_opportunity", "desire"], "belief");
-    case "benefits.standard.items[].description": return research(["belief", "desire"], "objection");
+    case "benefits.standard.items[].benefitTitle": return researchWithOperationalSupport(
+      ["positioning_opportunity", "desire"],
+      ["financing_support_available", "document_support_available"],
+      "belief",
+    );
+    case "benefits.standard.items[].description": return researchWithOperationalSupport(
+      ["belief", "desire"],
+      ["financing_support_available", "document_support_available"],
+      "objection",
+    );
     case "process.standard.title": return research(["belief", "desire"], "objection");
     case "process.standard.steps[].stepTitle": return research(["narrative_arc", "trigger"], "belief");
     case "process.standard.steps[].stepBody": return research(["belief", "desire"], "positioning_opportunity");
@@ -573,6 +581,23 @@ function copySourceMapFor(path: string): LandingPageCopySourceMap {
     case "final_cta.standard.primaryCta.label": return research(["trigger", "desire"], "objection");
     default: throw new Error(`Missing canonical copySourceMap for text field: ${path}`);
   }
+}
+
+function researchWithOperationalSupport(
+  primaryItemKeys: readonly [import("./contracts").LandingPageResearchItemKey, import("./contracts").LandingPageResearchItemKey?],
+  inputCatalogFieldKeys: readonly [string, ...string[]],
+  auxiliaryItemKey?: import("./contracts").LandingPageResearchItemKey,
+): LandingPageCopySourceMap {
+  return {
+    sourceMode: "research_with_operational_support",
+    researchPath,
+    primaryItemKeys,
+    ...(auxiliaryItemKey ? { auxiliaryItemKey } : {}),
+    operationalSupport: {
+      requirement: "required_when_claimed",
+      inputCatalogFieldKeys,
+    },
+  };
 }
 
 

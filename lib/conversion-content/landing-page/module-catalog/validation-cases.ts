@@ -587,13 +587,73 @@ const cases: readonly Case[] = [
     },
   },
   {
-    name: "copy source maps are closed and operational evidence stays separate",
+    name: "copy source maps support research with declared operational dependencies",
     run: () => {
       const textualFields = Object.values(landingPageModuleCatalogRegistry.variantFieldContracts)
         .flatMap((contract) => flattenFields(contract.fields))
         .filter((field) => field.fieldKind === "text");
       assert.equal(textualFields.length, 38);
       assert.equal(textualFields.every((field) => Boolean(field.copySourceMap)), true);
+
+      for (const path of [
+        "benefits.standard.items[].benefitTitle",
+        "benefits.standard.items[].description",
+      ]) {
+        const field = getMutableTextField(
+          cloneRegistry(),
+          "benefits.standard@v1",
+          path,
+        );
+        assert.equal(field.support, "when_factual");
+        assert.equal(
+          field.copySourceMap.sourceMode,
+          "research_with_operational_support",
+        );
+        assert.deepEqual(field.copySourceMap.operationalSupport, {
+          requirement: "required_when_claimed",
+          inputCatalogFieldKeys: [
+            "financing_support_available",
+            "document_support_available",
+          ],
+        });
+      }
+
+      const incompleteCombinedSource = cloneRegistry();
+      delete getMutableTextField(
+        incompleteCombinedSource,
+        "benefits.standard@v1",
+        "benefits.standard.items[].description",
+      ).copySourceMap.operationalSupport;
+      assertInvalid(incompleteCombinedSource);
+
+      const missingOperationalDeclaration = cloneRegistry();
+      delete getMutableTextField(
+        missingOperationalDeclaration,
+        "benefits.standard@v1",
+        "benefits.standard.items[].description",
+      ).support;
+      assertInvalid(missingOperationalDeclaration);
+
+      for (const invalidReference of ["", "invalid reference"]) {
+        const invalidOperationalReference = cloneRegistry();
+        getMutableTextField(
+          invalidOperationalReference,
+          "benefits.standard@v1",
+          "benefits.standard.items[].description",
+        ).copySourceMap.operationalSupport = {
+          requirement: "required_when_claimed",
+          inputCatalogFieldKeys: [invalidReference],
+        };
+        assertInvalid(invalidOperationalReference);
+      }
+
+      const invalidCombinedResearch = cloneRegistry();
+      getMutableTextField(
+        invalidCombinedResearch,
+        "benefits.standard@v1",
+        "benefits.standard.items[].description",
+      ).copySourceMap.primaryItemKeys = ["unknown"];
+      assertInvalid(invalidCombinedResearch);
 
       const unknownSourceMode = cloneRegistry();
       getMutableTextField(unknownSourceMode, "hero.standard@v1", "hero.standard.title").copySourceMap.sourceMode = "input_catalog";
@@ -955,6 +1015,10 @@ type MutableField = {
     primaryItemKeys?: string[];
     auxiliaryItemKey?: string;
     evidencePath?: string;
+    operationalSupport?: {
+      requirement: string;
+      inputCatalogFieldKeys: string[];
+    };
   };
   itemFields?: MutableField[];
   label?: MutableField;

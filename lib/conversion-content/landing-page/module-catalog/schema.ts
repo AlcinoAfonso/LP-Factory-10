@@ -129,6 +129,7 @@ const nonEmptyPlainText = z
   });
 
 const fieldKeySchema = z.string().regex(/^[a-z][A-Za-z0-9]*$/);
+const inputCatalogFieldKeySchema = z.string().regex(/^[a-z][a-z0-9_]*$/);
 const fieldPathSchema = z
   .string()
   .regex(/^[a-z][a-z0-9_]*(?:\.[A-Za-z][A-Za-z0-9]*|\.[A-Za-z][A-Za-z0-9]*\[\]\.[A-Za-z][A-Za-z0-9]*)+$/);
@@ -160,6 +161,24 @@ const copySourceMapSchema = z.discriminatedUnion("sourceMode", [
     }
   }),
   z.object({
+    sourceMode: z.literal("research_with_operational_support"),
+    researchPath: z.literal("endCustomer.researches[].items[]"),
+    primaryItemKeys: z.tuple([z.enum(landingPageResearchItemKeys), z.enum(landingPageResearchItemKeys).optional()]),
+    auxiliaryItemKey: z.enum(landingPageResearchItemKeys).optional(),
+    operationalSupport: z.object({
+      requirement: z.literal("required_when_claimed"),
+      inputCatalogFieldKeys: z.array(inputCatalogFieldKeySchema).min(1),
+    }).strict(),
+  }).strict().superRefine((map, context) => {
+    const researchKeys = map.primaryItemKeys.filter((key): key is NonNullable<typeof key> => Boolean(key));
+    if (new Set(researchKeys).size !== researchKeys.length || (map.auxiliaryItemKey && researchKeys.includes(map.auxiliaryItemKey))) {
+      context.addIssue({ code: "custom", message: "copy sources must be unique" });
+    }
+    if (new Set(map.operationalSupport.inputCatalogFieldKeys).size !== map.operationalSupport.inputCatalogFieldKeys.length) {
+      context.addIssue({ code: "custom", path: ["operationalSupport", "inputCatalogFieldKeys"], message: "operational input references must be unique" });
+    }
+  }),
+  z.object({
     sourceMode: z.literal("operational_evidence"),
     evidencePath: fieldPathSchema,
   }).strict(),
@@ -176,7 +195,19 @@ const textFieldSchema = z
     support: z.enum(landingPageFieldSupports).optional(),
     copySourceMap: copySourceMapSchema,
   })
-  .strict();
+  .strict()
+  .superRefine((field, context) => {
+    if (
+      field.copySourceMap.sourceMode === "research_with_operational_support" &&
+      field.support !== "when_factual"
+    ) {
+      context.addIssue({
+        code: "custom",
+        path: ["support"],
+        message: "combined copy source requires operational support when factual",
+      });
+    }
+  });
 
 const technicalReferenceFieldSchema = z
   .object({
