@@ -889,13 +889,9 @@ const cases: readonly Case[] = [
         "accordion",
       );
 
-      const parsedSynthetic = landingPageModuleCatalogSchema.safeParse(synthetic);
       assert.equal(
-        parsedSynthetic.success,
+        landingPageModuleCatalogSchema.safeParse(synthetic).success,
         true,
-        parsedSynthetic.success
-          ? undefined
-          : JSON.stringify(parsedSynthetic.error.issues),
       );
 
       for (const [moduleKey, variantName, capability] of [
@@ -1122,6 +1118,76 @@ const cases: readonly Case[] = [
       const validButUnauthorized = cloneRegistry();
       getMutableTextField(validButUnauthorized, "hero.standard@v1", "hero.standard.title").copySourceMap.auxiliaryItemKey = "faq_questions";
       assertInvalid(validButUnauthorized);
+    },
+  },
+  {
+    name: "operational evidence ownership is structural for synthetic fields",
+    run: () => {
+      const synthetic = cloneRegistry();
+      addSyntheticVariant(
+        synthetic,
+        "social_proof.synthetic@v1",
+        "social_proof.standard@v1",
+      );
+      const syntheticContract = synthetic.variantFieldContracts[
+        "social_proof.synthetic@v1"
+      ];
+      const items = syntheticContract.fields.find(
+        (field) => field.fieldKind === "collection" && field.fieldKey === "items",
+      );
+      assert.ok(items?.itemFields);
+      const body = items.itemFields.find((field) => field.fieldKey === "quote");
+      assert.ok(body);
+      body.fieldKey = "body";
+      body.path = "social_proof.synthetic.items[].body";
+
+      const parsedSynthetic = landingPageModuleCatalogSchema.safeParse(synthetic);
+      assert.equal(
+        parsedSynthetic.success,
+        true,
+        parsedSynthetic.success
+          ? undefined
+          : JSON.stringify(parsedSynthetic.error.issues),
+      );
+      const resolverInput = {
+        moduleCatalogVersion: 1,
+        rootVersion: 1,
+        moduleKey: "social_proof" as const,
+        moduleVersion: 1,
+        variantName: "synthetic",
+        variantVersion: 1,
+        funnelProfileKey: "mofu" as const,
+      };
+      const resolution = resolveLandingPageModuleCatalogFromRegistry(
+        resolverInput,
+        synthetic as unknown as Parameters<
+          typeof resolveLandingPageModuleCatalogFromRegistry
+        >[1],
+      );
+      assert.ok(resolution.ok, JSON.stringify(resolution));
+
+      const foreignItemEvidence = structuredClone(synthetic);
+      const foreignContract = foreignItemEvidence.variantFieldContracts[
+        "social_proof.synthetic@v1"
+      ];
+      const evidenceRef = flattenFields(foreignContract.fields).find(
+        (field) => field.fieldKind === "technical_reference",
+      );
+      assert.ok(evidenceRef);
+      foreignContract.fields.push({
+        ...(structuredClone(evidenceRef) as MutableField),
+        path: "social_proof.synthetic.evidenceRef",
+      });
+      getMutableTextField(
+        foreignItemEvidence,
+        "social_proof.synthetic@v1",
+        "social_proof.synthetic.items[].body",
+      ).copySourceMap.evidencePath =
+        "social_proof.synthetic.evidenceRef";
+      assertInvalidCatalogFailsClosedWithoutThrow(
+        foreignItemEvidence,
+        resolverInput,
+      );
     },
   },
   {

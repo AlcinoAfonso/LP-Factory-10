@@ -865,11 +865,19 @@ function validateCopySourceMode(
     context.addIssue({ code: "custom", path: [...path, "copySourceMap"], message: "copy source mode is incompatible with field policy" });
   }
   if (operational) {
-    const collectionPrefix = field.path.replace(/\.(?:quote|attribution)$/, "");
-    if (field.copySourceMap.evidencePath !== `${collectionPrefix}.evidenceRef`) {
+    const fieldOwnerPath = structuralOwnerPath(field.path);
+    const evidenceOwnerPath = field.copySourceMap.evidencePath
+      ? structuralOwnerPath(field.copySourceMap.evidencePath)
+      : undefined;
+    if (!fieldOwnerPath || fieldOwnerPath !== evidenceOwnerPath) {
       context.addIssue({ code: "custom", path: [...path, "copySourceMap", "evidencePath"], message: "operational evidence path does not belong to the field item" });
     }
   }
+}
+
+function structuralOwnerPath(fieldPath: string): string | undefined {
+  const separatorIndex = fieldPath.lastIndexOf(".");
+  return separatorIndex > 0 ? fieldPath.slice(0, separatorIndex) : undefined;
 }
 
 function validateOperationalEvidenceReferences(
