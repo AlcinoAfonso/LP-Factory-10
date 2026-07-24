@@ -138,7 +138,7 @@ Parar quando faltar uma decisão material que altere produto, escopo ou arquitet
 
 1. Executar a Passagem 1 de `lp-factory-avaliar-plano-analista` com v1, v2, plano conceitual ou `N/A`, decisões registradas e fontes do caso, sem pareceres especializados ou matriz.
 2. Preservar integralmente a resposta independente.
-3. Depois da Passagem 1, gravar a matriz em `docs/matriz-consolidacao-<caso>.md`, validar e criar novo checkpoint. Mantê-la versionada e acessível até a aprovação final da implementação.
+3. Depois da Passagem 1, gravar a matriz em `docs/matriz-consolidacao-<caso>.md`, validar e criar novo checkpoint. Mantê-la versionada e acessível até o Executor declarar a entrega completa.
 4. Continuar no mesmo Analista e entregar os pareceres completos do Gestor Estrutural, do Gestor de Updates e, quando acionado, do Gestor de Automações, além da matriz, para a Passagem 2.
 5. Preservar integralmente a auditoria e a conclusão formal.
 6. Após a aprovação da v2, resumir a rastreabilidade no PR e preservar a matriz no mesmo PR durante toda a implementação.
@@ -183,11 +183,12 @@ Somente após a aprovação da v2 e da revisão delta do roadmap:
 
 1. Invocar internamente `$lp-factory-executar-plano` com o checkpoint `plan-v2-approved`; não pedir ao humano uma nova instrução.
 2. Usar o modo de handoff interno da skill de execução: preservar branch, worktree e PR atuais, mesmo que a v2 ainda não esteja na `main`.
-3. Não acionar novamente Gestor Estrutural, Gestor de Updates ou Gestor de Automações. Durante a implementação, usar somente o Analista nos gates por subseção e no gate final, entregando a matriz e os pareceres especializados pertinentes ao recorte avaliado.
+3. Não acionar novamente Gestor Estrutural, Gestor de Updates ou Gestor de Automações. Durante a implementação, usar o Analista somente nos gates por subseção, entregando a matriz e os pareceres especializados pertinentes ao recorte avaliado.
 4. Se o Analista encontrar mudança material fora da v2 aprovada, parar e pedir a decisão humana necessária; não reiniciar especialistas automaticamente.
 5. Executar todas as subseções no fluxo normal `end-to-end`, reutilizando checkpoints existentes e mantendo o mesmo PR draft atualizado.
-6. Realizar as validações e o fechamento definidos na skill de execução. Manter a matriz até o Analista concluir `aprovado para merge da implementação`; depois removê-la e submeter somente esse delta de limpeza ao mesmo Analista.
-7. Somente após a confirmação de que a limpeza removeu apenas a matriz e preservou sua rastreabilidade no resumo do PR, marcar o PR único como pronto e entregá-lo para merge humano pelo GitHub Web.
+6. Depois da última subseção e das validações aplicáveis, declarar a entrega completa no PR e parar. Não acionar `revisao_final_implementacao`, `revisao_delta_implementacao` nem qualquer outro gate do Analista após essa declaração.
+7. Não acionar nem fazer handoff ao Estrategista. Ele só atua por instrução humana e acessa diretamente o repositório e o PR. Se o humano devolver correções do Estrategista, aplicá-las, republicar a entrega e parar novamente, sem chamar o Analista; o mesmo Estrategista reavalia somente quando o humano o instruir.
+8. Manter a matriz disponível na entrega. Removê-la depois somente por instrução humana decorrente desse ciclo externo, sem transformar a remoção em novo gate do Analista.
 
 ## Devolução ao humano
 
@@ -219,4 +220,6 @@ Apresentar:
 - Não repetir especialistas já concluídos para o mesmo blob da v1.
 - Não alterar outros documentos canônicos durante a reconciliação do roadmap.
 - Não encerrar o fluxo após a v2; encaminhar internamente a execução aprovada para `$lp-factory-executar-plano`.
+- Não acionar o Analista depois que o Executor declarar a entrega completa.
+- Não acionar o Estrategista; sua avaliação pré-merge depende de instrução humana externa a esta skill.
 - Não fazer merge nem substituir decisão humana.

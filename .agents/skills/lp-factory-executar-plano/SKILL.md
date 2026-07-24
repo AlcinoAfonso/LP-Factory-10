@@ -57,22 +57,23 @@ No modo `experimental`, parar somente nos checkpoints solicitados pelo humano. N
 Depois do último checkpoint:
 
 1. Executar validações integradas e corrigir regressões.
-2. Acionar o Analista em `revisao_final_implementacao` com a matriz e os pareceres especializados preservados para avaliar o conjunto contra o plano aprovado.
-3. Avaliar explicitamente a necessidade de teste humano. Se exigido, parar e pedir a evidência; se `N/A`, registrar a justificativa.
-4. Enquanto o fechamento documental permanecer sem decisão canônica entre relatório e `$lp-factory-abc`, parar neste gate mesmo quando o teste humano for `N/A`; não gerar relatório nem alterar documentação. Considerar a decisão canônica somente após atualização correspondente desta skill e de `docs/orquestracao-plano-base.md` incorporada à `main`.
-5. Depois que o fechamento documental for definido, aplicar somente o workflow aprovado, submeter seu delta ao Analista e atualizar título e resumo do PR.
-6. Somente após `aprovado para merge da implementação`, remover a matriz, preservar no resumo do PR sua referência, os especialistas consultados e os tratamentos incorporados, e submeter esse delta de limpeza ao mesmo Analista em `revisao_delta_implementacao`.
-7. Publicar o mesmo PR como pronto para merge somente após o Analista confirmar novamente `aprovado para merge da implementação`, verificando que o último delta removeu apenas a matriz e não alterou plano, roadmap, código ou demais documentos.
+2. Avaliar explicitamente a necessidade de teste humano. Se exigido, parar e pedir a evidência; se `N/A`, registrar a justificativa.
+3. Atualizar o PR com checkpoints, arquivos, validações, decisão sobre teste humano, matriz e pendências; declarar a entrega completa e parar.
+4. Depois dessa declaração, não acionar `revisao_final_implementacao`, `revisao_delta_implementacao` nem qualquer outro gate do Analista.
+5. Não acionar nem fazer handoff ao Estrategista. Ele será instruído pelo humano e consultará diretamente o repositório. Se o humano devolver seu relatório com correções, aplicar somente esse delta, atualizar a entrega e parar novamente, sem Analista.
+6. Manter a matriz disponível. Removê-la somente quando o humano solicitar durante o ciclo externo de avaliação, preservando sua rastreabilidade no resumo e no histórico do PR.
 
-O resumo do PR deve refletir sempre o checkpoint publicado. O formato do registro operacional final permanece pendente da decisão sobre o fechamento documental.
+O resumo do PR deve refletir sempre o checkpoint publicado e a entrega completa. A decisão de merge ocorre fora desta skill, depois da avaliação do Estrategista acionada pelo humano.
 
 ## Limites
 
 - Não alterar a `main` nem fazer merge.
 - Não executar fase fora do plano ou fora da ordem do roadmap.
 - Não iniciar a fase seguinte sem checkpoint aprovado.
-- Não recriar, resumir nem alterar a matriz durante a implementação, salvo correção de rastreabilidade exigida pelo Analista; preservá-la desde o handoff até a aprovação final e removê-la somente no fechamento definido acima.
+- Não recriar, resumir nem alterar a matriz durante a implementação, salvo correção de rastreabilidade exigida pelo Analista; preservá-la até a entrega completa e removê-la depois somente por instrução humana.
 - Não criar PR empilhado.
 - Não criar segundo PR quando houver handoff da orquestração.
 - Não acionar novamente os especialistas do plano durante a implementação.
+- Não acionar o Analista depois de declarar a entrega completa.
+- Não acionar o Estrategista nem simular handoff para ele.
 - Não substituir gate humano, decisão material ou teste humano exigido.
