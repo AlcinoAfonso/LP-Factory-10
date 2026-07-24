@@ -9,6 +9,7 @@ export const landingPageModuleKeys = [
   "problem_solution",
   "offer",
   "benefits",
+  "comparison",
   "process",
   "technical_assurance",
   "social_proof",
