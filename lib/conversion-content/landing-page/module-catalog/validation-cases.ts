@@ -480,7 +480,7 @@ const cases: readonly Case[] = [
       const items = result.value.fieldContract.fields[1];
       assert.equal(items?.fieldKind, "collection");
       if (items?.fieldKind !== "collection") return;
-      assert.deepEqual(items.cardinality, { min: 2, max: 6 });
+      assert.deepEqual(items.cardinality, { min: 3, max: 6 });
       assert.deepEqual(
         items.itemFields.map((field) => field.path),
         [
@@ -507,6 +507,80 @@ const cases: readonly Case[] = [
           },
         });
       }
+      assertDeeplyFrozen(result.value);
+    },
+  },
+  {
+    name: "comparison standard resolves as a neutral non-interactive module",
+    run: () => {
+      const result = resolveLandingPageModuleCatalog({
+        moduleCatalogVersion: 1,
+        rootVersion: 1,
+        moduleKey: "comparison",
+        moduleVersion: 1,
+        variantName: "standard",
+        variantVersion: 1,
+        funnelProfileKey: "mofu",
+      });
+
+      assert.equal(result.ok, true);
+      if (!result.ok) return;
+      assert.equal(result.value.variant.variantKey, "comparison.standard@v1");
+      assert.deepEqual(result.value.module.permittedInteractionKinds, []);
+      assert.deepEqual(result.value.variant.interactionContracts, []);
+      assert.deepEqual(result.value.variant.capabilities, []);
+      assert.deepEqual(
+        result.value.fieldContract.fields.map((field) => field.path),
+        ["comparison.standard.title", "comparison.standard.items"],
+      );
+      const items = result.value.fieldContract.fields[1];
+      assert.equal(items?.fieldKind, "collection");
+      if (items?.fieldKind !== "collection") return;
+      assert.deepEqual(items.cardinality, { min: 2, max: 4 });
+      assert.deepEqual(
+        items.itemFields.map((field) => field.path),
+        [
+          "comparison.standard.items[].optionTitle",
+          "comparison.standard.items[].description",
+        ],
+      );
+      assertDeeplyFrozen(result.value);
+    },
+  },
+  {
+    name: "lead capture reuses the complete canonical form interaction",
+    run: () => {
+      const result = resolveLandingPageModuleCatalog({
+        moduleCatalogVersion: 1,
+        rootVersion: 1,
+        moduleKey: "lead_capture",
+        moduleVersion: 1,
+        variantName: "form",
+        variantVersion: 1,
+        funnelProfileKey: "bofu",
+      });
+
+      assert.equal(result.ok, true);
+      if (!result.ok) return;
+      assert.equal(result.value.variant.variantKey, "lead_capture.form@v1");
+      assert.deepEqual(result.value.module.permittedInteractionKinds, ["form"]);
+      assert.deepEqual(result.value.variant.capabilities, [
+        "primary_action",
+        "embedded_form",
+      ]);
+      assert.deepEqual(
+        result.value.fieldContract.fields.map((field) => field.path),
+        [
+          "lead_capture.form.title",
+          "lead_capture.form.body",
+          "lead_capture.form.primaryCta",
+        ],
+      );
+      assert.deepEqual(
+        result.value.variant.interactionContracts,
+        landingPageModuleCatalogRegistry.variants["hero.form@v1"]
+          .interactionContracts,
+      );
       assertDeeplyFrozen(result.value);
     },
   },

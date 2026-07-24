@@ -146,6 +146,39 @@ const landingPageModuleCatalogDefinition = {
         "No taxon-specific key or dependency on an operational input registry.",
       ],
     ),
+    comparison: moduleDefinition(
+      "comparison",
+      "Compare alternatives or criteria in a neutral and structured way.",
+      [
+        "Present between two and four options.",
+        "Apply a coherent comparative basis across the options.",
+        "Keep the options clearly distinct.",
+        "Do not invent superiority, recommendation or result.",
+      ],
+      [
+        "No action, form or media.",
+        "No price or commercial condition.",
+        "No social proof, ranking or automatic recommendation.",
+      ],
+    ),
+    lead_capture: moduleDefinition(
+      "lead_capture",
+      "Present a focused contact-conversion section and lead to the primary conversion route.",
+      [
+        "There is one primary action.",
+        "The Form interaction is explicitly declared.",
+        "Consent, privacy and accessibility are preserved.",
+        "The operational destination remains abstract.",
+        "No response, approval or result is promised.",
+      ],
+      [
+        "No booking, schedule or availability.",
+        "No checkout, payment or CRM.",
+        "No functional submission, persistence or renderer.",
+        "No media or secondary action.",
+      ],
+      ["form"],
+    ),
     process: moduleDefinition(
       "process",
       "Explain a real progression through distinct steps.",
@@ -263,7 +296,7 @@ const landingPageModuleCatalogDefinition = {
       fieldContractKey: "benefits.standard@v1",
       fields: [
         text("benefits.standard.title", "title", "h2", 1, 1, "research_guided", research(["desire", "positioning_opportunity"], "pain")),
-        collection("benefits.standard.items", "items", 2, 6, [
+        collection("benefits.standard.items", "items", 3, 6, [
           text(
             "benefits.standard.items[].benefitTitle",
             "benefitTitle",
@@ -293,6 +326,24 @@ const landingPageModuleCatalogDefinition = {
             "when_factual",
           ),
         ]),
+      ],
+    },
+    "comparison.standard@v1": {
+      fieldContractKey: "comparison.standard@v1",
+      fields: [
+        text("comparison.standard.title", "title", "h2", 1, 1, "research_guided", research(["positioning_opportunity", "desire"], "objection")),
+        collection("comparison.standard.items", "items", 2, 4, [
+          text("comparison.standard.items[].optionTitle", "optionTitle", "card_title", 1, 1, "hybrid", research(["positioning_opportunity", "belief"], "desire"), "when_present"),
+          text("comparison.standard.items[].description", "description", "card_body", 1, 1, "hybrid", research(["belief", "objection"], "proof_type"), "when_present"),
+        ]),
+      ],
+    },
+    "lead_capture.form@v1": {
+      fieldContractKey: "lead_capture.form@v1",
+      fields: [
+        text("lead_capture.form.title", "title", "h2", 1, 1, "research_guided", research(["trigger", "desire"], "positioning_opportunity")),
+        text("lead_capture.form.body", "body", "paragraph", 1, 1, "hybrid", research(["desire", "objection"], "belief"), "when_factual"),
+        action("lead_capture.form.primaryCta", "primaryCta", research(["trigger", "desire"], "objection")),
       ],
     },
     "process.standard@v1": {
@@ -374,6 +425,17 @@ const landingPageModuleCatalogDefinition = {
       "benefits.standard@v1",
       "standard",
       "benefits",
+    ),
+    "comparison.standard@v1": variant(
+      "comparison.standard@v1",
+      "standard",
+      "comparison",
+    ),
+    "lead_capture.form@v1": variant(
+      "lead_capture.form@v1",
+      "form",
+      "lead_capture",
+      [contactFormInteraction()],
     ),
     "process.standard@v1": variant(
       "process.standard@v1",
