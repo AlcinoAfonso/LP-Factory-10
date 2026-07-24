@@ -13,6 +13,7 @@ import type {
   LandingPageFieldCardinality,
   LandingPageFieldPolicy,
   LandingPageFieldSupport,
+  LandingPageFormInteractionContract,
   LandingPageImageFieldDefinition,
   LandingPageInteractionContract,
   LandingPageInteractionKind,
@@ -352,49 +353,7 @@ const landingPageModuleCatalogDefinition = {
       "hero.form@v1",
       "form",
       "hero",
-      [
-        {
-          kind: "form",
-          fields: [
-            {
-              fieldKey: "name",
-              valueType: "text",
-              obligation: "required",
-              purposeKey: "contact_identity",
-            },
-            {
-              fieldKey: "email",
-              valueType: "email",
-              obligation: "required",
-              purposeKey: "reply_email",
-            },
-            {
-              fieldKey: "phone",
-              valueType: "phone",
-              obligation: "optional",
-              purposeKey: "optional_phone",
-            },
-          ],
-          consent: {
-            required: true,
-            fieldKey: "privacyConsent",
-            purposeKey: "privacy_policy_consent",
-            privacyPolicyInputFieldKey: "privacy_policy_url",
-          },
-          accessibility: {
-            baseline: "WCAG 2.2",
-            labelsProgrammaticallyAssociated: true,
-            instructionsProgrammaticallyAssociated: true,
-            errorsProgrammaticallyAssociated: true,
-            keyboardOperable: true,
-            focusMovesToFirstInvalidField: true,
-          },
-          operationalBinding: {
-            inputCatalogFieldKey: "primary_conversion_channel",
-            requiredValue: "form",
-          },
-        },
-      ],
+      [contactFormInteraction()],
     ),
     "trust_bar.standard@v1": variant(
       "trust_bar.standard@v1",
@@ -668,6 +627,50 @@ function faqFields(prefix: "faq.standard" | "faq.accordion") {
 
 function cardinality(min: number, max: number): LandingPageFieldCardinality {
   return { min, max };
+}
+
+function contactFormInteraction(): LandingPageFormInteractionContract {
+  return {
+    kind: "form",
+    fields: [
+      {
+        fieldKey: "name",
+        valueType: "text",
+        obligation: "required",
+        purposeKey: "contact_identity",
+      },
+      {
+        fieldKey: "email",
+        valueType: "email",
+        obligation: "required",
+        purposeKey: "reply_email",
+      },
+      {
+        fieldKey: "phone",
+        valueType: "phone",
+        obligation: "optional",
+        purposeKey: "optional_phone",
+      },
+    ],
+    consent: {
+      required: true,
+      fieldKey: "privacyConsent",
+      purposeKey: "privacy_policy_consent",
+      privacyPolicyInputFieldKey: "privacy_policy_url",
+    },
+    accessibility: {
+      baseline: "WCAG 2.2",
+      labelsProgrammaticallyAssociated: true,
+      instructionsProgrammaticallyAssociated: true,
+      errorsProgrammaticallyAssociated: true,
+      keyboardOperable: true,
+      focusMovesToFirstInvalidField: true,
+    },
+    operationalBinding: {
+      inputCatalogFieldKey: "primary_conversion_channel",
+      requiredValue: "form",
+    },
+  };
 }
 
 function moduleDefinition(
