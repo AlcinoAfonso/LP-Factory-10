@@ -2,7 +2,7 @@
 
 0.1 Cabeçalho
 • Data: 23/07/2026
-• Versão: v1.5.97
+• Versão: v1.5.100
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -1464,7 +1464,7 @@ Repositório — Ajustados
 
 18. E18 — Base transversal de templates, módulos, composições e artefatos
 - Objetivo: Definir infraestrutura e contratos reutilizáveis para famílias de templates por canal, templates versionados, módulos de conteúdo, seções de página, variantes, composições e artefatos finais persistidos; sustentar primeiro a E10.7 sem produzir diretamente a página comercial de um taxon; e permitir consumidores futuros somente como visão de evolução, sem antecipar sua implementação.
-- Status: Base mínima de `commercial_activation` concluída; parametrização raiz versionada de `landing_page` concluída em 13/07/2026; implementação anterior de composição `landing_page` removida; catálogo repo-only do PR #590 permanece vigente e a E18.5 foi reaberta em planejamento para otimização antes da E20.3.
+- Status: Base mínima de `commercial_activation` concluída; parametrização raiz versionada de `landing_page` concluída em 13/07/2026; implementação anterior de composição `landing_page` removida; catálogo repo-only permanece vigente e a otimização da E18.5 está definida antes da E20.3.
 
 18.1 Contrato transversal de templates, módulos, composições e artefatos
 
@@ -1771,18 +1771,19 @@ Repositório — Ajustados
 18.5 Parametrização de módulos e variantes `landing_page`
 
 18.5.1 Objetivo e status
-- Objetivo: otimizar o catálogo versionado de módulos e variantes da família `landing_page`, preservando o núcleo executável incorporado pelo PR #590 e reduzindo pontos distribuídos de manutenção comprovados pelo experimento do PR #617.
-- Status: Reaberta em planejamento para otimização pelo plano-base `docs/lousa-plano-base-e18-5.md`, antes da E20.3. A implementação repo-only mergeada no PR #590 permanece como base material vigente até o futuro PR material incorporar as otimizações aprovadas.
-- Estado planejado: dez módulos e doze variantes, com incorporação futura de `benefits@v1`, `benefits.standard@v1` e `hero.form@v1`; registry versionado, resolver genérico, Zod estrito, falha fechada, contratos tipados, imutabilidade profunda, testes negativos e API pública mínima permanecem preservados.
-- Evidência: os quatro testes do PR #617 não alteraram o resolver e concentraram o custo de extensão em contratos, registry, schema, listas paralelas, contagens e testes; o PR experimental permanecerá aberto em draft, sem merge, como baseline comparativa.
+- Objetivo: otimizar o catálogo versionado de módulos e variantes da família `landing_page`, preservando o núcleo executável vigente e reduzindo pontos distribuídos de manutenção.
+- Status: Implementada e aprovada no recorte repo-only, com dez módulos e doze variantes.
+- Estado material: `benefits@v1`, `benefits.standard@v1` e `hero.form@v1` incorporados ao registry canônico, sem alteração do resolver.
+- Proteções preservadas: registry versionado, resolver genérico, Zod estrito, falha fechada, contratos tipados, separação entre módulo, variante e fields, imutabilidade profunda, casos negativos, API pública mínima e ausência de fallback.
 - Limites preservados: sem payload de conteúdo, banco, migration, rota, UI, renderer, composição, persistência, automação, job ou consumo por E19/E20; a E18.4 permanece fora da otimização e E19, E20.2 e E20.3 não serão implementadas ou alteradas neste recorte.
-- Nota de transição: as subseções 18.5.2–18.5.9 continuam registrando o estado material vigente do PR #590; `benefits` e `hero.form` não estão registrados como implementados e seu inventário será atualizado somente pelo futuro PR material conforme o diff real.
+- Validação: 32 casos executáveis do catálogo, além das regressões de raiz, pesquisas, catálogo de entradas e ativação comercial.
 
 18.5.2 Registros do recorte
 - Banco: N/A.
 - Repositório:
   - Criados:
     - `lib/conversion-content/landing-page/module-catalog/contracts.ts`
+    - `lib/conversion-content/landing-page/module-catalog/capabilities.ts`
     - `lib/conversion-content/landing-page/module-catalog/index.ts`
     - `lib/conversion-content/landing-page/module-catalog/registry.ts`
     - `lib/conversion-content/landing-page/module-catalog/resolver.ts`
@@ -1793,16 +1794,19 @@ Repositório — Ajustados
     - `package.json`
   - Excluídos: N/A.
 - Updates:
-  - Aplicados: `prod#17` — WCAG 2.2 como baseline de acessibilidade, incorporado exclusivamente ao contrato abstrato de `faq.accordion@v1` para operação por teclado, exposição do estado expandido ou recolhido, associação acessível e preservação de foco.
+  - Aplicados: `prod#17` — WCAG 2.2 como baseline abstrata e limitada de acessibilidade, incorporada a `faq.accordion@v1` para operação por teclado, exposição do estado expandido ou recolhido, associação acessível e preservação de foco; e a `hero.form@v1` para associação programática de labels, instruções e mensagens de erro quando presentes, operação por teclado e foco no primeiro field inválido. O registro não declara conformidade integral com WCAG nem define UI, HTML ou ARIA concretos.
 
 18.5.3 Módulos e funções estruturais
 - Status: Implementada.
 - Conteúdo:
   - Catálogo interno `landing_page@v1`, compatível com a parametrização raiz v1.
-  - Nove módulos versionados: `hero`, `trust_bar`, `problem_solution`, `offer`, `process`, `technical_assurance`, `social_proof`, `faq` e `final_cta`.
+  - Dez módulos versionados: `hero`, `trust_bar`, `problem_solution`, `offer`, `process`, `technical_assurance`, `social_proof`, `faq`, `final_cta` e `benefits`.
   - Cada módulo registra função estrutural, fronteiras, invariantes, lifecycle inicial `hypothesis` e propósito `controlled_test`.
   - Identidades e valores estruturais são fechados e imutáveis, sem colisão com `commercial_activation`.
   - Módulos não registram taxon, campanha, plano, copy, ativo, ordem, canal ou destino concreto.
+- Resultado da otimização:
+  - `benefits@v1` incorporado como módulo transversal, sem acoplamento ao catálogo da E20.2 e sem alteração do resolver;
+  - contagens globais fixas removidas e identidades paralelas reduzidas por derivação segura.
 
 18.5.4 Campos, estruturas e cardinalidades
 - Status: Implementada.
@@ -1812,16 +1816,24 @@ Repositório — Ajustados
   - Fields e cardinalidades pertencem diretamente aos contratos das variantes; módulos não possuem catálogo paralelo de fields.
   - Coleção aninhada e destino concreto permanecem fora da v1.
   - Field, path, shape, cardinalidade, policy ou combinação não autorizada falham fechado.
+- Resultado da otimização:
+  - gramática genérica preservada sem regras baseadas em contagens globais;
+  - igualdade exata entre variant keys e field contract keys comprovada executavelmente.
 
 18.5.5 Variantes e critérios de criação
 - Status: Implementada.
 - Conteúdo:
-  - Nove variantes `standard@v1` e a variante adicional `faq.accordion@v1`.
+  - Dez variantes `standard@v1`, mais `faq.accordion@v1` e `hero.form@v1`.
   - Cada variante pertence a um único módulo e versão compatível e aponta para seu próprio contrato de fields.
-  - Capabilities estruturais aprovadas: `primary_action`, `image_asset` e `accordion_interaction`.
-  - `faq.standard@v1` e `faq.accordion@v1` preservam contratos independentes; o Accordion registra contrato abstrato WCAG 2.2 de teclado, estado expandido, associação acessível e foco.
-  - Hero e Final CTA declaram `actionCompatibility.supportsPrimaryConversionForm = false`, sem fallback de canal.
+  - Variantes declaram `interactionContracts` como coleção de união discriminada estrita; os kinds atuais são `form` e `accordion`, únicos por variante.
+  - Capabilities `embedded_form` e `accordion_interaction` são derivadas das interações; `primary_action` e `image_asset` são derivadas dos fields.
+  - `faq.standard@v1` e `faq.accordion@v1` preservam contratos independentes; o interaction contract Accordion registra baseline abstrata WCAG 2.2 de teclado, estado expandido, associação acessível e foco.
+  - Hero Standard permanece sem interação de formulário; Hero Form declara o interaction contract abstrato com fields, consentimento, privacidade, acessibilidade e binding operacional, sem fallback de canal.
   - Diferenças apenas de taxon, copy, plano, campanha, ativo, ordem ou quantidade não criam variante.
+- Resultado da otimização:
+  - `benefits.standard@v1` e `hero.form@v1` foram incorporados atomicamente com seus field contracts, records, fields, sources e interaction contracts;
+  - sources permanecem junto dos fields, sem lookup nominal por path, construção paralela ou fallback;
+  - propriedades isoladas e o booleano paralelo de compatibilidade foram removidos; `hero.standard@v1` permanece sem formulário e o resolver foi preservado.
 
 18.5.6 Especializações sobre a parametrização raiz
 - Status: Implementada.
@@ -1832,6 +1844,9 @@ Repositório — Ajustados
   - O resolver preserva a raiz original e devolve também a raiz efetiva após as especializações.
   - Contrato ausente, incompatível, inválido ou que amplie o contrato-pai falha fechado.
   - Os boundaries públicos existentes de `landingPageRoot`, `landingPageResearch` e `landingPageInputCatalog` permanecem preservados.
+- Resultado da otimização:
+  - novas identidades preservam a compatibilidade com a raiz e aceitam somente especializações restritivas;
+  - validações estruturais permanecem genéricas, sem regra nominal no schema e sem reabrir a E18.4.
 
 18.5.7 Mapa de fontes de copy
 - Status: Implementada.
@@ -1842,6 +1857,9 @@ Repositório — Ajustados
   - O conjunto aprovado contempla `commercial_keywords`, `faq_questions` e `narrative_arc` nos fields correspondentes.
   - Quote e attribution de Social Proof permanecem vinculados à referência de evidência operacional do próprio item.
   - Source mode, path, item key, quantidade, duplicação ou mapa não autorizado falham fechado.
+- Resultado da otimização:
+  - sources declaradas junto dos fields distinguem pesquisa estruturada, necessidade de suporte operacional e evidência operacional;
+  - referências operacionais permanecem abstratas, sem importar ou duplicar o registry da E20.2 e sem confundir formato válido com integridade referencial.
 
 18.5.8 Perfis de copy por intenção e funil
 - Status: Implementada.
@@ -1852,6 +1870,9 @@ Repositório — Ajustados
   - `emphasizeTreatments` permanece vazio nos perfis e em todos os deltas da v1; permissão não se converte implicitamente em ênfase.
   - Deltas de módulo podem apenas restringir ou proibir treatments conhecidos, sem relaxar restrição ou proibição herdada.
   - As variantes `faq.standard@v1` e `faq.accordion@v1` compartilham o mesmo delta do módulo `faq`.
+- Resultado da otimização:
+  - as novas identidades preservam vocabulários, classificação única, `ctaMode` e ausência de ênfase implícita nos perfis BOFU, MOFU e TOFU;
+  - não foi adicionada regra nominal quando a relação pôde permanecer estruturalmente genérica.
 
 18.5.9 Ciclo de vida, compatibilidade e validação
 - Status: Implementada e aprovada.
@@ -1862,8 +1883,13 @@ Repositório — Ajustados
   - O resolver consulta o registry canônico, aplica as especializações da raiz e o delta do perfil e devolve somente o contrato completo da variante resolvida.
   - Lifecycle da raiz, do módulo e da variante usa o vocabulário canônico `hypothesis`, `validated` e `deprecated` e permanece registrado separadamente; a E18.5 não implementa enforcement de composição nem lifecycle efetivo.
   - Resultados são profundamente imutáveis, sem referência mutável compartilhada e sem fallback aproximado.
-  - Validação executável própria concluída com 23 casos, além das regressões de raiz, pesquisas, catálogo de entradas e ativação comercial.
+  - Validação executável própria concluída com 32 casos, além das regressões de raiz, pesquisas, catálogo de entradas e ativação comercial.
   - Comando canônico: `npm run validate:landing-page-module-catalog`.
+- Resultado da otimização:
+  - dez módulos e doze variantes consolidados, com lifecycle separado, API pública mínima, internalidade de registry/schema, ausência de fallback e imutabilidade profunda;
+  - quatro testes de extensibilidade e proteções positivas e negativas repetidos;
+  - fixtures sintéticas reutilizam Form e Accordion sem registrar identidades permanentes nem alterar resolver, schema genérico, contratos de interação, listas globais, contagens ou regras nominais;
+  - resolver inalterado e E18.5 independente do registry da E20.2.
 
 19. E19 — LP Builder
 - Objetivo: Consolidar a seção do Core responsável pela criação, edição e organização de landing pages. No recorte atual, limitar E19 à criação mínima de LP por conta com status inicial `draft`.
@@ -2067,6 +2093,12 @@ Repositório — Ajustados
   * O recorte não cria banco, rota, API, Server Action, UI, adapter de banco, entitlement, integração Stripe, valor operacional, snapshot, automação, agente ou job.
 
 99. Changelog
+v1.5.100 — 23/07/2026 — Consolidada a moldura discriminada de interações da E18.5, com Form e Accordion, capabilities derivadas, fronteira coerente da Hero e prova sintética de reutilização sem ampliar os mecanismos arquiteturais.
+
+v1.5.99 — 23/07/2026 — Consolidada a implementação material da E18.5 com dez módulos e doze variantes, `benefits.standard@v1`, `hero.form@v1`, sources combinadas, proteções executáveis e `prod#17` ampliado ao contrato abstrato do Hero Form.
+
+v1.5.98 — 23/07/2026 — Detalhada a evolução planejada da E18.5 em sete subseções canônicas, preservando o estado material vigente e definindo extensões atômicas, sources junto dos fields, proteções do núcleo executável e limites antes da E20.3.
+
 v1.5.97 — 23/07/2026 — Abandonada a substituição integral planejada para a E18.5; preservado o núcleo repo-only incorporado pelo PR #590 e redirecionado o plano para otimizações pontuais, com incorporação futura de `benefits.standard@v1` e `hero.form@v1` e uso do PR #617 como evidência experimental sem merge.
 
 v1.5.96 — 21/07/2026 — E18.5 reorganizada conforme `docs/template-roadmap.md`: registros de implementação movidos para 18.5.2 sem artefatos `docs/**`, `prod#17` registrado como update aplicado ao contrato abstrato de `faq.accordion@v1`, conteúdos implementados distribuídos entre 18.5.3 e 18.5.9 e status atualizado após aprovação e merge do PR #590.

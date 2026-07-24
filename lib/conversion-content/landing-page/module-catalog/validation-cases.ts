@@ -5,13 +5,19 @@ import {
   landingPageFunnelTreatmentKeysByProfile,
   landingPageModuleKeys,
   landingPageVariantCapabilities,
-  landingPageVariantFieldContractKeys,
-  landingPageVariantKeys,
   type LandingPageModuleKey,
   type LandingPageVariantKey,
 } from "./contracts";
-import { landingPageModuleCatalogRegistry } from "./registry";
-import { landingPageModuleCatalogSchema } from "./schema";
+import { deriveLandingPageVariantCapabilities } from "./capabilities";
+import {
+  landingPageModuleCatalogRegistry,
+  withDerivedCapabilities,
+  type LandingPageModuleCatalogDefinition,
+} from "./registry";
+import {
+  landingPageCopySourceMapSchema,
+  landingPageModuleCatalogSchema,
+} from "./schema";
 import {
   resolveLandingPageModuleCatalog,
   resolveLandingPageModuleCatalogFromRegistry,
@@ -26,7 +32,7 @@ type Case = Readonly<{
 
 const cases: readonly Case[] = [
   {
-    name: "the versioned catalog and all nine modules are valid",
+    name: "the versioned catalog and all registered modules are valid",
     run: () => {
       const result = landingPageModuleCatalogSchema.safeParse(
         landingPageModuleCatalogRegistry,
@@ -43,6 +49,42 @@ const cases: readonly Case[] = [
         Object.keys(landingPageModuleCatalogRegistry.modules).sort(),
         [...landingPageModuleKeys].sort(),
       );
+    },
+  },
+  {
+    name: "benefits is a bounded reusable module without operational registry coupling",
+    run: () => {
+      const benefits = landingPageModuleCatalogRegistry.modules.benefits;
+
+      assert.equal(benefits.family, "landing_page");
+      assert.equal(benefits.moduleKey, "benefits");
+      assert.equal(benefits.moduleVersion, 1);
+      assert.equal(benefits.lifecycleStatus, "hypothesis");
+      assert.equal(benefits.purpose, "controlled_test");
+      assert.equal(benefits.compatibleRootVersion, 1);
+      assert.deepEqual(benefits.rootDelta, { textRanges: [] });
+      assert.equal(
+        benefits.structuralFunction,
+        "Present practical benefits supported by research and real operational capabilities.",
+      );
+      assert.deepEqual(benefits.invariants, [
+        "Benefits are distinct, practical and reusable across landing-page compositions.",
+        "Research may guide a benefit but does not prove an operational capability.",
+        "Factual benefit claims require applicable operational support.",
+      ]);
+      assert.deepEqual(benefits.boundaries, [
+        "No action, form, social proof, price, offer detail or media.",
+        "No taxon-specific key or dependency on an operational input registry.",
+      ]);
+      assert.equal(
+        JSON.stringify(benefits).includes("real_estate"),
+        false,
+      );
+      assert.equal(
+        JSON.stringify(benefits).includes("inputCatalog"),
+        false,
+      );
+      assertDeeplyFrozen(benefits);
     },
   },
   {
@@ -178,13 +220,13 @@ const cases: readonly Case[] = [
     },
   },
   {
-    name: "all ten field contracts and five field kinds are valid",
+    name: "all registered field contracts and field kinds are valid",
     run: () => {
       assert.deepEqual(
         Object.keys(
           landingPageModuleCatalogRegistry.variantFieldContracts,
         ).sort(),
-        [...landingPageVariantFieldContractKeys].sort(),
+        Object.keys(landingPageModuleCatalogRegistry.variants).sort(),
       );
 
       const kinds = new Set<string>();
@@ -211,6 +253,30 @@ const cases: readonly Case[] = [
       unknownPath.variantFieldContracts["hero.standard@v1"].fields[0].path =
         "hero.standard.unapproved";
       assertInvalid(unknownPath);
+
+      const duplicatePath = cloneRegistry();
+      addSyntheticVariant(
+        duplicatePath,
+        "faq.synthetic@v1",
+        "faq.standard@v1",
+      );
+      const duplicateQuestion = getMutableTextField(
+        duplicatePath,
+        "faq.synthetic@v1",
+        "faq.synthetic.items[].question",
+      );
+      duplicatePath.variantFieldContracts["faq.synthetic@v1"].fields.push(
+        structuredClone(duplicateQuestion),
+      );
+      assertInvalidCatalogFailsClosedWithoutThrow(duplicatePath, {
+        moduleCatalogVersion: 1,
+        rootVersion: 1,
+        moduleKey: "faq",
+        moduleVersion: 1,
+        variantName: "synthetic",
+        variantVersion: 1,
+        funnelProfileKey: "mofu",
+      });
 
       const unknownShape = cloneRegistry();
       unknownShape.variantFieldContracts["hero.standard@v1"].fields[0].fieldKind =
@@ -258,10 +324,25 @@ const cases: readonly Case[] = [
       assertInvalid(mismatchedContract);
 
       const unknownSemanticRole = cloneRegistry();
-      unknownSemanticRole.variantFieldContracts[
-        "hero.standard@v1"
-      ].fields[0].semanticRole = "display";
-      assertInvalid(unknownSemanticRole);
+      addSyntheticVariant(
+        unknownSemanticRole,
+        "hero.unknownrole@v1",
+        "hero.standard@v1",
+      );
+      getMutableTextField(
+        unknownSemanticRole,
+        "hero.unknownrole@v1",
+        "hero.unknownrole.title",
+      ).semanticRole = "totally_unknown_role";
+      assertInvalidCatalogFailsClosedWithoutThrow(unknownSemanticRole, {
+        moduleCatalogVersion: 1,
+        rootVersion: 1,
+        moduleKey: "hero",
+        moduleVersion: 1,
+        variantName: "unknownrole",
+        variantVersion: 1,
+        funnelProfileKey: "bofu",
+      });
 
       const unknownSupport = cloneRegistry();
       unknownSupport.variantFieldContracts["hero.standard@v1"].fields[1].support =
@@ -270,16 +351,40 @@ const cases: readonly Case[] = [
 
       const missingContract = cloneRegistry();
       delete missingContract.variantFieldContracts["faq.accordion@v1"];
-      assertInvalid(missingContract);
+      let derivedMissingContract: MutableCatalog | undefined;
+      assert.doesNotThrow(() => {
+        derivedMissingContract = withDerivedCapabilities(
+          missingContract as unknown as LandingPageModuleCatalogDefinition,
+        ) as unknown as MutableCatalog;
+      });
+      assert.ok(derivedMissingContract);
+      assertInvalidCatalogFailsClosedWithoutThrow(
+        derivedMissingContract,
+        {
+          moduleCatalogVersion: 1,
+          rootVersion: 1,
+          moduleKey: "faq",
+          moduleVersion: 1,
+          variantName: "accordion",
+          variantVersion: 1,
+          funnelProfileKey: "mofu",
+        },
+      );
     },
   },
   {
-    name: "all ten variants link one module and their own field contract",
+    name: "registered variants and field contracts have the same exact identities",
     run: () => {
-      assert.deepEqual(
-        Object.keys(landingPageModuleCatalogRegistry.variants).sort(),
-        [...landingPageVariantKeys].sort(),
-      );
+      const registeredVariantKeys: string[] = Object.keys(
+        landingPageModuleCatalogRegistry.variants,
+      ).sort();
+      const registeredFieldContractKeys = Object.keys(
+        landingPageModuleCatalogRegistry.variantFieldContracts,
+      ).sort();
+
+      assert.equal(registeredVariantKeys.includes("benefits.standard@v1"), true);
+      assert.equal(registeredVariantKeys.includes("hero.form@v1"), true);
+      assert.deepEqual(registeredVariantKeys, registeredFieldContractKeys);
 
       for (const variantDefinition of Object.values(
         landingPageModuleCatalogRegistry.variants,
@@ -304,7 +409,7 @@ const cases: readonly Case[] = [
     },
   },
   {
-    name: "only the three approved capabilities are assigned",
+    name: "capabilities are derived from fields and interaction contracts",
     run: () => {
       const assignedCapabilities = new Set(
         Object.values(landingPageModuleCatalogRegistry.variants).flatMap(
@@ -315,21 +420,133 @@ const cases: readonly Case[] = [
         [...assignedCapabilities].sort(),
         [...landingPageVariantCapabilities].sort(),
       );
-      assert.deepEqual(
-        landingPageModuleCatalogRegistry.variants["hero.standard@v1"]
-          .capabilities,
-        ["primary_action", "image_asset"],
+      for (const variant of Object.values(
+        landingPageModuleCatalogRegistry.variants,
+      )) {
+        const fields =
+          landingPageModuleCatalogRegistry.variantFieldContracts[
+            variant.fieldContractKey
+          ].fields;
+        assert.deepEqual(
+          variant.capabilities,
+          deriveLandingPageVariantCapabilities(
+            fields,
+            variant.interactionContracts,
+          ),
+        );
+      }
+      assert.equal(
+        landingPageModuleCatalogRegistry.variants[
+          "hero.form@v1"
+        ].capabilities.includes("embedded_form"),
+        true,
       );
-      assert.deepEqual(
-        landingPageModuleCatalogRegistry.variants["final_cta.standard@v1"]
-          .capabilities,
-        ["primary_action"],
+      assert.equal(
+        landingPageModuleCatalogRegistry.variants[
+          "faq.accordion@v1"
+        ].capabilities.includes("accordion_interaction"),
+        true,
       );
+    },
+  },
+  {
+    name: "benefits standard resolves a bounded collection with explicit support sources",
+    run: () => {
+      const result = resolveLandingPageModuleCatalog({
+        moduleCatalogVersion: 1,
+        rootVersion: 1,
+        moduleKey: "benefits",
+        moduleVersion: 1,
+        variantName: "standard",
+        variantVersion: 1,
+        funnelProfileKey: "mofu",
+      });
+
+      assert.equal(result.ok, true);
+      if (!result.ok) return;
+      assert.equal(result.value.variant.variantKey, "benefits.standard@v1");
       assert.deepEqual(
-        landingPageModuleCatalogRegistry.variants["faq.accordion@v1"]
-          .capabilities,
-        ["accordion_interaction"],
+        result.value.fieldContract.fields.map((field) => field.path),
+        ["benefits.standard.title", "benefits.standard.items"],
       );
+      const title = result.value.fieldContract.fields[0];
+      assert.equal(title?.fieldKind, "text");
+      if (title?.fieldKind !== "text") return;
+      assert.deepEqual(title.cardinality, { min: 1, max: 1 });
+      assert.deepEqual(
+        title.copySourceMap,
+        expectedResearch(["desire", "positioning_opportunity"], "pain"),
+      );
+      const items = result.value.fieldContract.fields[1];
+      assert.equal(items?.fieldKind, "collection");
+      if (items?.fieldKind !== "collection") return;
+      assert.deepEqual(items.cardinality, { min: 2, max: 6 });
+      assert.deepEqual(
+        items.itemFields.map((field) => field.path),
+        [
+          "benefits.standard.items[].benefitTitle",
+          "benefits.standard.items[].description",
+        ],
+      );
+      for (const field of items.itemFields) {
+        assert.equal(field.fieldKind, "text");
+        if (field.fieldKind !== "text") continue;
+        assert.deepEqual(field.cardinality, { min: 1, max: 1 });
+        assert.deepEqual(field.copySourceMap, {
+          sourceMode: "research_with_operational_support",
+          researchPath: "endCustomer.researches[].items[]",
+          primaryItemKeys:
+            field.fieldKey === "benefitTitle"
+              ? ["positioning_opportunity", "desire"]
+              : ["belief", "desire"],
+          auxiliaryItemKey:
+            field.fieldKey === "benefitTitle" ? "belief" : "objection",
+          operationalSupport: {
+            requirement: "required_when_claimed",
+            referenceKeys: ["applicable_capabilities"],
+          },
+        });
+      }
+      assertDeeplyFrozen(result.value);
+    },
+  },
+  {
+    name: "hero form resolves with a complete abstract accessible form contract",
+    run: () => {
+      const result = resolveLandingPageModuleCatalog({
+        moduleCatalogVersion: 1,
+        rootVersion: 1,
+        moduleKey: "hero",
+        moduleVersion: 1,
+        variantName: "form",
+        variantVersion: 1,
+        funnelProfileKey: "bofu",
+      });
+
+      assert.equal(result.ok, true);
+      if (!result.ok) return;
+      assert.equal(result.value.variant.variantKey, "hero.form@v1");
+      const form = result.value.variant.interactionContracts.find(
+        (contract) => contract.kind === "form",
+      );
+      assert.ok(form);
+      assert.deepEqual(
+        form.fields.map(({ fieldKey, valueType, obligation }) => ({
+          fieldKey,
+          valueType,
+          obligation,
+        })),
+        [
+          { fieldKey: "name", valueType: "text", obligation: "required" },
+          { fieldKey: "email", valueType: "email", obligation: "required" },
+          { fieldKey: "phone", valueType: "phone", obligation: "optional" },
+        ],
+      );
+      assert.equal(form.consent.privacyPolicyInputFieldKey, "privacy_policy_url");
+      assert.equal(form.accessibility.baseline, "WCAG 2.2");
+      assert.equal(form.accessibility.focusMovesToFirstInvalidField, true);
+      assert.equal(form.operationalBinding.requiredValue, "form");
+      assertDeeplyFrozen(result.value);
     },
   },
   {
@@ -350,52 +567,147 @@ const cases: readonly Case[] = [
       );
 
       assert.equal(
-        landingPageModuleCatalogRegistry.variants["faq.standard@v1"]
-          .accordionAccessibility,
-        undefined,
+        landingPageModuleCatalogRegistry.variants[
+          "faq.standard@v1"
+        ].interactionContracts.some((contract) => contract.kind === "accordion"),
+        false,
       );
-      assert.deepEqual(
-        landingPageModuleCatalogRegistry.variants["faq.accordion@v1"]
-          .accordionAccessibility,
-        {
-          baseline: "WCAG 2.2",
-          keyboardOperable: true,
-          exposesExpandedState: true,
-          associatesControlAndRegion: true,
-          preservesFocus: true,
-          initiallyCollapsed: true,
-          singleExpandedItem: true,
-        },
-      );
+      const accordion = landingPageModuleCatalogRegistry.variants[
+        "faq.accordion@v1"
+      ].interactionContracts.find((contract) => contract.kind === "accordion");
+      assert.ok(accordion);
+      assert.equal(accordion.baseline, "WCAG 2.2");
+      assert.equal(accordion.keyboardOperable, true);
+      assert.equal(accordion.exposesExpandedState, true);
+      assert.equal(accordion.associatesControlAndRegion, true);
+      assert.equal(accordion.preservesFocus, true);
+      assert.equal(accordion.initiallyCollapsed, true);
+      assert.equal(accordion.singleExpandedItem, true);
     },
   },
   {
-    name: "form compatibility is explicit without channel fallback",
+    name: "interaction contracts are canonical and the Hero boundary is coherent",
     run: () => {
       for (const variantKey of [
         "hero.standard@v1",
         "final_cta.standard@v1",
       ] as const) {
-        assert.deepEqual(
-          landingPageModuleCatalogRegistry.variants[variantKey]
-            .actionCompatibility,
-          { supportsPrimaryConversionForm: false },
+        assert.equal(
+          landingPageModuleCatalogRegistry.variants[
+            variantKey
+          ].interactionContracts.some((contract) => contract.kind === "form"),
+          false,
         );
       }
+      assert.equal(
+        landingPageModuleCatalogRegistry.variants[
+          "hero.form@v1"
+        ].interactionContracts.some((contract) => contract.kind === "form"),
+        true,
+      );
+      assert.equal(
+        landingPageModuleCatalogRegistry.modules.hero.boundaries.some(
+          (boundary) =>
+            boundary.includes("requires a valid form interaction contract"),
+        ),
+        true,
+      );
+      assert.deepEqual(
+        landingPageModuleCatalogRegistry.modules.hero.permittedInteractionKinds,
+        ["form"],
+      );
+      assert.deepEqual(
+        landingPageModuleCatalogRegistry.modules.faq.permittedInteractionKinds,
+        ["accordion"],
+      );
 
       const formFallback = cloneRegistry();
       formFallback.variants["hero.standard@v1"].fallbackChannel = "whatsapp";
       assertInvalid(formFallback);
 
-      const formSupported = cloneRegistry();
-      formSupported.variants[
+      const staleCapability = cloneRegistry();
+      staleCapability.variants["hero.form@v1"].capabilities = [
+        "primary_action",
+        "image_asset",
+      ];
+      assertInvalid(staleCapability);
+
+      const interactionWithoutCapability = cloneRegistry();
+      interactionWithoutCapability.variants[
         "hero.standard@v1"
-      ].actionCompatibility = { supportsPrimaryConversionForm: true };
-      assertInvalid(formSupported);
+      ].interactionContracts.push(
+        structuredClone(
+          getMutableInteraction(
+            interactionWithoutCapability,
+            "hero.form@v1",
+            "form",
+          ),
+        ),
+      );
+      assertInvalid(interactionWithoutCapability);
     },
   },
   {
-    name: "unknown capability, variant and creation motivation fail closed",
+    name: "embedded form requirement omissions and false values fail closed independently",
+    run: () => {
+      assertRequiredTrueInteractionPropertiesFailClosed(
+        "hero.form@v1",
+        "form",
+        [
+        "labelsProgrammaticallyAssociated",
+        "instructionsProgrammaticallyAssociated",
+        "errorsProgrammaticallyAssociated",
+        "keyboardOperable",
+        "focusMovesToFirstInvalidField",
+        ],
+        "accessibility",
+      );
+
+      const missingConsent = cloneRegistry();
+      delete getMutableInteraction(
+        missingConsent,
+        "hero.form@v1",
+        "form",
+      ).consent;
+      assertInvalid(missingConsent);
+
+      const duplicatedField = cloneRegistry();
+      const formFields = getMutableInteraction(
+        duplicatedField,
+        "hero.form@v1",
+        "form",
+      ).fields as Record<string, unknown>[];
+      assert.ok(formFields);
+      formFields.push(structuredClone(formFields[0]));
+      assertInvalid(duplicatedField);
+
+      const consentCollision = cloneRegistry();
+      const collisionFields = getMutableInteraction(
+        consentCollision,
+        "hero.form@v1",
+        "form",
+      ).fields as Record<string, unknown>[];
+      assert.ok(collisionFields);
+      collisionFields.push({
+        ...structuredClone(collisionFields[0]),
+        fieldKey: "privacyConsent",
+      });
+      assertInvalidCatalogFailsClosedWithoutThrow(
+        consentCollision,
+        {
+          moduleCatalogVersion: 1,
+          rootVersion: 1,
+          moduleKey: "hero",
+          moduleVersion: 1,
+          variantName: "form",
+          variantVersion: 1,
+          funnelProfileKey: "bofu",
+        },
+      );
+    },
+  },
+  {
+    name: "interaction kinds and capabilities fail closed structurally",
     run: () => {
       const unknownCapability = cloneRegistry();
       unknownCapability.variants["hero.standard@v1"].capabilities.push(
@@ -403,13 +715,141 @@ const cases: readonly Case[] = [
       );
       assertInvalid(unknownCapability);
 
-      const unknownVariant = cloneRegistry();
-      unknownVariant.variants["hero.campaign@v1"] = cloneVariant(
+      const unknownInteraction = cloneRegistry();
+      unknownInteraction.variants[
+        "hero.standard@v1"
+      ].interactionContracts.push({ kind: "booking" });
+      assertInvalid(unknownInteraction);
+
+      for (const [variantKey, kind] of [
+        ["hero.form@v1", "form"],
+        ["faq.accordion@v1", "accordion"],
+      ] as const) {
+        const duplicatedInteraction = cloneRegistry();
+        duplicatedInteraction.variants[variantKey].interactionContracts.push(
+          structuredClone(
+            getMutableInteraction(duplicatedInteraction, variantKey, kind),
+          ),
+        );
+        assertInvalid(duplicatedInteraction);
+      }
+
+      const incompatibleDiscriminator = cloneRegistry();
+      getMutableInteraction(
+        incompatibleDiscriminator,
+        "faq.accordion@v1",
+        "accordion",
+      ).kind = "form";
+      assertInvalid(incompatibleDiscriminator);
+
+      const incompatibleModuleInteraction = cloneRegistry();
+      addSyntheticVariant(
+        incompatibleModuleInteraction,
+        "faq.syntheticform@v1",
+        "faq.standard@v1",
+        "hero.form@v1",
+        "form",
+      );
+
+      const repeatedPrimaryAction = cloneRegistry();
+      addSyntheticVariant(
+        repeatedPrimaryAction,
+        "final_cta.repeated@v1",
+        "final_cta.standard@v1",
+      );
+      const repeatedAction = repeatedPrimaryAction.variantFieldContracts[
+        "final_cta.repeated@v1"
+      ].fields.find((field) => field.fieldKind === "action");
+      assert.ok(repeatedAction);
+      repeatedAction.cardinality = { min: 0, max: 2 };
+      const repeatedCapabilities = deriveLandingPageVariantCapabilities(
+        repeatedPrimaryAction.variantFieldContracts[
+          "final_cta.repeated@v1"
+        ].fields as unknown as Parameters<
+          typeof deriveLandingPageVariantCapabilities
+        >[0],
+        [],
+      );
+      assert.equal(
+        repeatedCapabilities.includes("primary_action"),
+        false,
+      );
+      repeatedPrimaryAction.variants["final_cta.repeated@v1"].capabilities = [
+        ...repeatedCapabilities,
+      ];
+      assertInvalidCatalogFailsClosedWithoutThrow(repeatedPrimaryAction, {
+        moduleCatalogVersion: 1,
+        rootVersion: 1,
+        moduleKey: "final_cta",
+        moduleVersion: 1,
+        variantName: "repeated",
+        variantVersion: 1,
+        funnelProfileKey: "bofu",
+      });
+
+      const repeatedActionLabel = cloneRegistry();
+      addSyntheticVariant(
+        repeatedActionLabel,
+        "final_cta.repeatedlabel@v1",
+        "final_cta.standard@v1",
+      );
+      const actionWithRepeatedLabel = repeatedActionLabel.variantFieldContracts[
+        "final_cta.repeatedlabel@v1"
+      ].fields.find((field) => field.fieldKind === "action");
+      assert.ok(actionWithRepeatedLabel?.label);
+      actionWithRepeatedLabel.label.cardinality = { min: 0, max: 2 };
+      assertInvalidCatalogFailsClosedWithoutThrow(repeatedActionLabel, {
+        moduleCatalogVersion: 1,
+        rootVersion: 1,
+        moduleKey: "final_cta",
+        moduleVersion: 1,
+        variantName: "repeatedlabel",
+        variantVersion: 1,
+        funnelProfileKey: "bofu",
+      });
+      assertInvalidCatalogFailsClosedWithoutThrow(
+        incompatibleModuleInteraction,
+        {
+          moduleCatalogVersion: 1,
+          rootVersion: 1,
+          moduleKey: "faq",
+          moduleVersion: 1,
+          variantName: "syntheticform",
+          variantVersion: 1,
+          funnelProfileKey: "mofu",
+        },
+      );
+
+      const orphanVariant = cloneRegistry();
+      orphanVariant.variants["hero.campaign@v1"] = cloneVariant(
         "hero.standard@v1",
       );
-      unknownVariant.variants["hero.campaign@v1"].variantKey =
+      orphanVariant.variants["hero.campaign@v1"].variantKey =
         "hero.campaign@v1";
-      assertInvalid(unknownVariant);
+      assertInvalid(orphanVariant);
+
+      for (const policy of ["not_copy", "technical_reference"]) {
+        const invalidTextPolicy = cloneRegistry();
+        addSyntheticVariant(
+          invalidTextPolicy,
+          "hero.invalidtext@v1",
+          "hero.standard@v1",
+        );
+        getMutableTextField(
+          invalidTextPolicy,
+          "hero.invalidtext@v1",
+          "hero.invalidtext.title",
+        ).policy = policy;
+        assertInvalidCatalogFailsClosedWithoutThrow(invalidTextPolicy, {
+          moduleCatalogVersion: 1,
+          rootVersion: 1,
+          moduleKey: "hero",
+          moduleVersion: 1,
+          variantName: "invalidtext",
+          variantVersion: 1,
+          funnelProfileKey: "bofu",
+        });
+      }
 
       for (const motivation of [
         "taxon",
@@ -429,24 +869,20 @@ const cases: readonly Case[] = [
     },
   },
   {
-    name: "incomplete accordion accessibility and mismatched links fail closed",
+    name: "accordion requirements and mismatched links fail closed",
     run: () => {
-      for (const requirement of [
-        "keyboardOperable",
-        "exposesExpandedState",
-        "associatesControlAndRegion",
-        "preservesFocus",
-        "initiallyCollapsed",
-        "singleExpandedItem",
-      ]) {
-        const incompleteAccordion = cloneRegistry();
-        const accessibility = incompleteAccordion.variants[
-          "faq.accordion@v1"
-        ].accordionAccessibility;
-        assert.ok(accessibility);
-        accessibility[requirement] = false;
-        assertInvalid(incompleteAccordion);
-      }
+      assertRequiredTrueInteractionPropertiesFailClosed(
+        "faq.accordion@v1",
+        "accordion",
+        [
+          "keyboardOperable",
+          "exposesExpandedState",
+          "associatesControlAndRegion",
+          "preservesFocus",
+          "initiallyCollapsed",
+          "singleExpandedItem",
+        ],
+      );
 
       const mismatchedModule = cloneRegistry();
       mismatchedModule.variants["hero.standard@v1"].moduleKey = "faq";
@@ -456,6 +892,59 @@ const cases: readonly Case[] = [
       mismatchedFields.variants["hero.standard@v1"].fieldContractKey =
         "faq.standard@v1";
       assertInvalid(mismatchedFields);
+    },
+  },
+  {
+    name: "existing interaction kinds are reusable by synthetic variants",
+    run: () => {
+      const synthetic = cloneRegistry();
+      addSyntheticVariant(
+        synthetic,
+        "hero.syntheticform@v1",
+        "hero.standard@v1",
+        "hero.form@v1",
+        "form",
+      );
+      addSyntheticVariant(
+        synthetic,
+        "faq.syntheticaccordion@v1",
+        "faq.standard@v1",
+        "faq.accordion@v1",
+        "accordion",
+      );
+
+      const parsedSynthetic = landingPageModuleCatalogSchema.safeParse(synthetic);
+      assert.equal(
+        parsedSynthetic.success,
+        true,
+        parsedSynthetic.success
+          ? undefined
+          : JSON.stringify(parsedSynthetic.error.issues),
+      );
+
+      for (const [moduleKey, variantName, capability] of [
+        ["hero", "syntheticform", "embedded_form"],
+        ["faq", "syntheticaccordion", "accordion_interaction"],
+      ] as const) {
+        const result = resolveLandingPageModuleCatalogFromRegistry(
+          {
+            moduleCatalogVersion: 1,
+            rootVersion: 1,
+            moduleKey,
+            moduleVersion: 1,
+            variantName,
+            variantVersion: 1,
+            funnelProfileKey: "mofu",
+          },
+          synthetic as unknown as Parameters<
+            typeof resolveLandingPageModuleCatalogFromRegistry
+          >[1],
+        );
+        assert.equal(result.ok, true, JSON.stringify(result));
+        if (!result.ok) continue;
+        assert.equal(result.value.variant.capabilities.includes(capability), true);
+        assertDeeplyFrozen(result.value);
+      }
     },
   },
   {
@@ -469,6 +958,15 @@ const cases: readonly Case[] = [
       incompatibleVariant.variants["hero.standard@v1"].compatibleRootVersion = 2;
       assertInvalid(incompatibleVariant);
 
+      for (const variantKey of [
+        "benefits.standard@v1",
+        "hero.form@v1",
+      ] as const) {
+        const incompatibleNewVariant = cloneRegistry();
+        incompatibleNewVariant.variants[variantKey].compatibleRootVersion = 2;
+        assertInvalid(incompatibleNewVariant);
+      }
+
       const widenedModuleLimit = cloneRegistry();
       widenedModuleLimit.modules.hero.rootDelta.textRanges.push({ semanticRole: "h1", absoluteMax: 121 });
       assertInvalid(widenedModuleLimit);
@@ -477,6 +975,11 @@ const cases: readonly Case[] = [
       widenedVariantLimit.modules.hero.rootDelta.textRanges.push({ semanticRole: "h1", recommended: { min: 36, max: 64 }, absoluteMax: 100 });
       widenedVariantLimit.variants["hero.standard@v1"].rootDelta.textRanges.push({ semanticRole: "h1", recommended: { min: 36, max: 70 }, absoluteMax: 110 });
       assertInvalid(widenedVariantLimit);
+
+      const widenedFormLimit = cloneRegistry();
+      widenedFormLimit.modules.hero.rootDelta.textRanges.push({ semanticRole: "h1", recommended: { min: 40, max: 60 }, absoluteMax: 100 });
+      widenedFormLimit.variants["hero.form@v1"].rootDelta.textRanges.push({ semanticRole: "h1", recommended: { min: 39, max: 61 }, absoluteMax: 101 });
+      assertInvalid(widenedFormLimit);
 
       const invalidInheritedRange = cloneRegistry();
       invalidInheritedRange.modules.hero.rootDelta.textRanges.push({ semanticRole: "h1", recommended: { min: 36, max: 64 }, absoluteMax: 100 });
@@ -500,13 +1003,100 @@ const cases: readonly Case[] = [
     },
   },
   {
+    name: "new variants preserve root lineage and restrictive specialization",
+    run: () => {
+      for (const input of [
+        { moduleKey: "benefits", variantName: "standard" },
+        { moduleKey: "hero", variantName: "form" },
+      ]) {
+        const result = resolveLandingPageModuleCatalog({
+          moduleCatalogVersion: 1,
+          rootVersion: 1,
+          moduleKey: input.moduleKey,
+          moduleVersion: 1,
+          variantName: input.variantName,
+          variantVersion: 1,
+          funnelProfileKey: "bofu",
+        });
+        assert.equal(result.ok, true);
+        if (!result.ok) continue;
+        assert.equal(result.value.root.rootVersion, 1);
+        assert.equal(result.value.effectiveRoot.rootVersion, 1);
+        assert.deepEqual(result.value.module.rootDelta, { textRanges: [] });
+        assert.deepEqual(result.value.variant.rootDelta, { textRanges: [] });
+        assert.notEqual(result.value.root, result.value.effectiveRoot);
+      }
+
+      const specialized = cloneRegistry();
+      specialized.modules.hero.rootDelta = {
+        textRanges: [
+          { semanticRole: "h1", recommended: { min: 40, max: 60 }, absoluteMax: 100 },
+        ],
+      };
+      specialized.variants["hero.form@v1"].rootDelta = {
+        textRanges: [
+          { semanticRole: "h1", recommended: { min: 45, max: 55 }, absoluteMax: 90 },
+        ],
+      };
+      const result = resolveLandingPageModuleCatalogFromRegistry(
+        {
+          moduleCatalogVersion: 1,
+          rootVersion: 1,
+          moduleKey: "hero",
+          moduleVersion: 1,
+          variantName: "form",
+          variantVersion: 1,
+          funnelProfileKey: "bofu",
+        },
+        specialized as unknown as Parameters<
+          typeof resolveLandingPageModuleCatalogFromRegistry
+        >[1],
+      );
+      assert.equal(result.ok, true);
+      if (!result.ok) return;
+      assert.equal(result.value.root.semanticRoles.h1.textRange.absoluteMax > 90, true);
+      assert.deepEqual(
+        result.value.effectiveRoot.semanticRoles.h1.textRange.recommended,
+        { min: 45, max: 55 },
+      );
+      assert.equal(
+        result.value.effectiveRoot.semanticRoles.h1.textRange.absoluteMax,
+        90,
+      );
+    },
+  },
+  {
     name: "copy source maps are closed and operational evidence stays separate",
     run: () => {
       const textualFields = Object.values(landingPageModuleCatalogRegistry.variantFieldContracts)
         .flatMap((contract) => flattenFields(contract.fields))
         .filter((field) => field.fieldKind === "text");
-      assert.equal(textualFields.length, 30);
       assert.equal(textualFields.every((field) => Boolean(field.copySourceMap)), true);
+      assert.equal(
+        new Set(textualFields.map((field) => field.path)).size,
+        textualFields.length,
+      );
+
+      const heroTitle = textualFields.find(
+        (field) => field.path === "hero.standard.title",
+      );
+      assert.ok(heroTitle);
+      assert.deepEqual(
+        heroTitle.copySourceMap,
+        expectedResearch(
+          ["positioning_opportunity", "desire"],
+          "commercial_keywords",
+        ),
+      );
+
+      const socialProofQuote = textualFields.find(
+        (field) => field.path === "social_proof.standard.items[].quote",
+      );
+      assert.ok(socialProofQuote);
+      assert.deepEqual(
+        socialProofQuote.copySourceMap,
+        expectedEvidence("social_proof.standard.items[].evidenceRef"),
+      );
 
       const unknownSourceMode = cloneRegistry();
       getMutableTextField(unknownSourceMode, "hero.standard@v1", "hero.standard.title").copySourceMap.sourceMode = "input_catalog";
@@ -528,11 +1118,166 @@ const cases: readonly Case[] = [
       getMutableTextField(orphanOperationalEvidence, "social_proof.standard@v1", "social_proof.standard.items[].quote").copySourceMap.evidencePath = "social_proof.standard.orphan";
       assertInvalid(orphanOperationalEvidence);
 
+      const missingOperationalEvidence = cloneRegistry();
+      addSyntheticVariant(
+        missingOperationalEvidence,
+        "social_proof.missingevidence@v1",
+        "social_proof.standard@v1",
+      );
+      const proofItems = missingOperationalEvidence.variantFieldContracts[
+        "social_proof.missingevidence@v1"
+      ].fields.find((field) => field.fieldKind === "collection");
+      assert.ok(proofItems?.itemFields);
+      proofItems.itemFields = proofItems.itemFields.filter(
+        (field) => field.fieldKind !== "technical_reference",
+      );
+      assertInvalidCatalogFailsClosedWithoutThrow(missingOperationalEvidence, {
+        moduleCatalogVersion: 1,
+        rootVersion: 1,
+        moduleKey: "social_proof",
+        moduleVersion: 1,
+        variantName: "missingevidence",
+        variantVersion: 1,
+        funnelProfileKey: "mofu",
+      });
+
       assert.equal("copySourceMaps" in landingPageModuleCatalogRegistry, false);
 
       const validButUnauthorized = cloneRegistry();
       getMutableTextField(validButUnauthorized, "hero.standard@v1", "hero.standard.title").copySourceMap.auxiliaryItemKey = "faq_questions";
       assertInvalid(validButUnauthorized);
+    },
+  },
+  {
+    name: "operational evidence ownership is structural for synthetic fields",
+    run: () => {
+      const synthetic = cloneRegistry();
+      addSyntheticVariant(
+        synthetic,
+        "social_proof.synthetic@v1",
+        "social_proof.standard@v1",
+      );
+      const syntheticContract = synthetic.variantFieldContracts[
+        "social_proof.synthetic@v1"
+      ];
+      const items = syntheticContract.fields.find(
+        (field) => field.fieldKind === "collection" && field.fieldKey === "items",
+      );
+      assert.ok(items?.itemFields);
+      const body = items.itemFields.find((field) => field.fieldKey === "quote");
+      assert.ok(body);
+      body.fieldKey = "body";
+      body.path = "social_proof.synthetic.items[].body";
+
+      const parsedSynthetic = landingPageModuleCatalogSchema.safeParse(synthetic);
+      assert.equal(
+        parsedSynthetic.success,
+        true,
+        parsedSynthetic.success
+          ? undefined
+          : JSON.stringify(parsedSynthetic.error.issues),
+      );
+      const resolverInput = {
+        moduleCatalogVersion: 1,
+        rootVersion: 1,
+        moduleKey: "social_proof" as const,
+        moduleVersion: 1,
+        variantName: "synthetic",
+        variantVersion: 1,
+        funnelProfileKey: "mofu" as const,
+      };
+      const resolution = resolveLandingPageModuleCatalogFromRegistry(
+        resolverInput,
+        synthetic as unknown as Parameters<
+          typeof resolveLandingPageModuleCatalogFromRegistry
+        >[1],
+      );
+      assert.ok(resolution.ok, JSON.stringify(resolution));
+
+      const foreignItemEvidence = structuredClone(synthetic);
+      const foreignContract = foreignItemEvidence.variantFieldContracts[
+        "social_proof.synthetic@v1"
+      ];
+      const evidenceRef = flattenFields(foreignContract.fields).find(
+        (field) => field.fieldKind === "technical_reference",
+      );
+      assert.ok(evidenceRef);
+      foreignContract.fields.push({
+        ...(structuredClone(evidenceRef) as MutableField),
+        path: "social_proof.synthetic.evidenceRef",
+      });
+      getMutableTextField(
+        foreignItemEvidence,
+        "social_proof.synthetic@v1",
+        "social_proof.synthetic.items[].body",
+      ).copySourceMap.evidencePath =
+        "social_proof.synthetic.evidenceRef";
+      assertInvalidCatalogFailsClosedWithoutThrow(
+        foreignItemEvidence,
+        resolverInput,
+      );
+    },
+  },
+  {
+    name: "combined sources require research and declarative operational support",
+    run: () => {
+      const validSource = {
+        sourceMode: "research_with_operational_support",
+        researchPath: "endCustomer.researches[].items[]",
+        primaryItemKeys: ["positioning_opportunity", "desire"],
+        auxiliaryItemKey: "belief",
+        operationalSupport: {
+          requirement: "required_when_claimed",
+          referenceKeys: ["syntactically_valid_but_not_registered"],
+        },
+      };
+      assert.equal(landingPageCopySourceMapSchema.safeParse(validSource).success, true);
+
+      const missingResearch = structuredClone(validSource) as Record<string, unknown>;
+      delete missingResearch.researchPath;
+      assert.equal(landingPageCopySourceMapSchema.safeParse(missingResearch).success, false);
+
+      const invalidResearch = structuredClone(validSource);
+      invalidResearch.primaryItemKeys = ["unknown", "desire"];
+      assert.equal(landingPageCopySourceMapSchema.safeParse(invalidResearch).success, false);
+
+      const missingOperationalSupport = structuredClone(validSource) as Record<string, unknown>;
+      delete missingOperationalSupport.operationalSupport;
+      assert.equal(
+        landingPageCopySourceMapSchema.safeParse(missingOperationalSupport).success,
+        false,
+      );
+
+      for (const referenceKeys of [
+        [],
+        [""],
+        ["Invalid-Key"],
+        ["duplicate_key", "duplicate_key"],
+      ]) {
+        const invalidReference = structuredClone(validSource);
+        invalidReference.operationalSupport.referenceKeys = referenceKeys;
+        assert.equal(
+          landingPageCopySourceMapSchema.safeParse(invalidReference).success,
+          false,
+        );
+      }
+
+      const incompatiblePolicy = cloneRegistry();
+      const benefitTitle = getMutableTextField(
+        incompatiblePolicy,
+        "benefits.standard@v1",
+        "benefits.standard.items[].benefitTitle",
+      );
+      benefitTitle.policy = "research_guided";
+      assertInvalid(incompatiblePolicy);
+
+      const missingFactualSupport = cloneRegistry();
+      delete getMutableTextField(
+        missingFactualSupport,
+        "benefits.standard@v1",
+        "benefits.standard.items[].description",
+      ).support;
+      assertInvalid(missingFactualSupport);
     },
   },
   {
@@ -611,9 +1356,68 @@ const cases: readonly Case[] = [
     },
   },
   {
-    name: "resolver returns ten complete isolated variants without fallback",
+    name: "new variants preserve closed funnel profiles without implicit emphasis",
     run: () => {
-      for (const variantKey of landingPageVariantKeys) {
+      for (const funnelProfileKey of ["bofu", "mofu", "tofu"] as const) {
+        const heroStandard = resolveLandingPageModuleCatalog({
+          moduleCatalogVersion: 1,
+          rootVersion: 1,
+          moduleKey: "hero",
+          moduleVersion: 1,
+          variantName: "standard",
+          variantVersion: 1,
+          funnelProfileKey,
+        });
+        const heroForm = resolveLandingPageModuleCatalog({
+          moduleCatalogVersion: 1,
+          rootVersion: 1,
+          moduleKey: "hero",
+          moduleVersion: 1,
+          variantName: "form",
+          variantVersion: 1,
+          funnelProfileKey,
+        });
+        const benefits = resolveLandingPageModuleCatalog({
+          moduleCatalogVersion: 1,
+          rootVersion: 1,
+          moduleKey: "benefits",
+          moduleVersion: 1,
+          variantName: "standard",
+          variantVersion: 1,
+          funnelProfileKey,
+        });
+
+        assert.equal(heroStandard.ok && heroForm.ok && benefits.ok, true);
+        if (!heroStandard.ok || !heroForm.ok || !benefits.ok) continue;
+        assert.deepEqual(
+          heroForm.value.funnelCopyProfile,
+          heroStandard.value.funnelCopyProfile,
+        );
+        assert.deepEqual(
+          benefits.value.funnelCopyProfile,
+          landingPageModuleCatalogRegistry.funnelCopyProfiles[funnelProfileKey],
+        );
+        assert.deepEqual(heroForm.value.funnelCopyProfile.emphasizeTreatments, []);
+        assert.deepEqual(benefits.value.funnelCopyProfile.emphasizeTreatments, []);
+        assert.deepEqual(
+          landingPageModuleCatalogRegistry.modules.benefits.funnelProfileDeltas[
+            funnelProfileKey
+          ],
+          {
+            emphasizeTreatments: [],
+            restrictTreatments: [],
+            prohibitTreatments: [],
+          },
+        );
+      }
+    },
+  },
+  {
+    name: "resolver returns every registered complete isolated variant without fallback",
+    run: () => {
+      for (const variantKey of Object.keys(
+        landingPageModuleCatalogRegistry.variants,
+      ) as LandingPageVariantKey[]) {
         const [moduleKey, qualifiedVariant] = variantKey.split(".");
         const [variantName, version] = qualifiedVariant.split("@v");
         const result = resolveLandingPageModuleCatalog({
@@ -807,6 +1611,95 @@ function cloneField(
   ) as unknown as MutableField;
 }
 
+function getMutableInteraction(
+  catalog: MutableCatalog,
+  variantKey: string,
+  kind: string,
+): MutableInteraction {
+  const interaction = catalog.variants[variantKey].interactionContracts.find(
+    (contract) => contract.kind === kind,
+  );
+  assert.ok(interaction);
+  return interaction;
+}
+
+function assertRequiredTrueInteractionPropertiesFailClosed(
+  variantKey: string,
+  kind: string,
+  requirements: readonly string[],
+  nestedProperty?: string,
+): void {
+  for (const requirement of requirements) {
+    for (const mutation of ["false", "missing"] as const) {
+      const catalog = cloneRegistry();
+      const interaction = getMutableInteraction(catalog, variantKey, kind);
+      const target = nestedProperty
+        ? (interaction[nestedProperty] as Record<string, unknown>)
+        : interaction;
+      assert.ok(target);
+      if (mutation === "false") target[requirement] = false;
+      else delete target[requirement];
+      assertInvalid(catalog);
+    }
+  }
+}
+
+function addSyntheticVariant(
+  catalog: MutableCatalog,
+  variantKey: string,
+  sourceVariantKey: LandingPageVariantKey,
+  interactionSourceVariantKey?: string,
+  interactionKind?: string,
+): void {
+  const sourceContract = structuredClone(
+    catalog.variantFieldContracts[sourceVariantKey],
+  );
+  const sourcePrefix = sourceVariantKey.replace("@v1", "");
+  const targetPrefix = variantKey.replace("@v1", "");
+  sourceContract.fieldContractKey = variantKey;
+  for (const field of flattenFields(sourceContract.fields)) {
+    field.path = String(field.path).replace(sourcePrefix, targetPrefix);
+    const sourceMap = field.copySourceMap as Record<string, unknown> | undefined;
+    if (typeof sourceMap?.evidencePath === "string") {
+      sourceMap.evidencePath = sourceMap.evidencePath.replace(
+        sourcePrefix,
+        targetPrefix,
+      );
+    }
+  }
+  catalog.variantFieldContracts[variantKey] = sourceContract;
+
+  const [moduleKey, qualifiedVariant] = variantKey.split(".");
+  const variant = cloneVariant(sourceVariantKey);
+  variant.variantKey = variantKey;
+  variant.variantName = qualifiedVariant.replace("@v1", "");
+  variant.moduleKey = moduleKey;
+  variant.fieldContractKey = variantKey;
+  assert.equal(Boolean(interactionSourceVariantKey), Boolean(interactionKind));
+  variant.interactionContracts = interactionSourceVariantKey && interactionKind
+    ? [
+        structuredClone(
+          getMutableInteraction(
+            catalog,
+            interactionSourceVariantKey,
+            interactionKind,
+          ),
+        ),
+      ]
+    : [];
+  variant.capabilities = [
+    ...deriveLandingPageVariantCapabilities(
+      sourceContract.fields as unknown as Parameters<
+        typeof deriveLandingPageVariantCapabilities
+      >[0],
+      variant.interactionContracts as unknown as Parameters<
+        typeof deriveLandingPageVariantCapabilities
+      >[1],
+    ),
+  ];
+  catalog.variants[variantKey] = variant;
+}
+
 function cloneVariant(variantKey: LandingPageVariantKey): MutableVariant {
   return structuredClone(
     landingPageModuleCatalogRegistry.variants[variantKey],
@@ -823,6 +1716,47 @@ function assertInvalid(catalog: MutableCatalog): void {
   assert.equal(landingPageModuleCatalogSchema.safeParse(catalog).success, false);
 }
 
+function assertInvalidCatalogFailsClosedWithoutThrow(
+  catalog: MutableCatalog,
+  input: Parameters<typeof resolveLandingPageModuleCatalogFromRegistry>[0],
+): void {
+  assert.doesNotThrow(() => landingPageModuleCatalogSchema.safeParse(catalog));
+  assertInvalid(catalog);
+
+  let resolution: ReturnType<
+    typeof resolveLandingPageModuleCatalogFromRegistry
+  > | undefined;
+  assert.doesNotThrow(() => {
+    resolution = resolveLandingPageModuleCatalogFromRegistry(
+      input,
+      catalog as unknown as Parameters<
+        typeof resolveLandingPageModuleCatalogFromRegistry
+      >[1],
+    );
+  });
+  assert.ok(resolution);
+  assert.equal(resolution.ok, false);
+  if (!resolution.ok) {
+    assert.equal(resolution.error.code, "INVALID_MODULE_CATALOG_CONTRACT");
+  }
+}
+
+function expectedResearch(
+  primaryItemKeys: readonly [string, string?],
+  auxiliaryItemKey?: string,
+) {
+  return {
+    sourceMode: "research",
+    researchPath: "endCustomer.researches[].items[]",
+    primaryItemKeys,
+    ...(auxiliaryItemKey ? { auxiliaryItemKey } : {}),
+  };
+}
+
+function expectedEvidence(evidencePath: string) {
+  return { sourceMode: "operational_evidence", evidencePath };
+}
+
 type MutableModule = {
   family: string;
   moduleKey: string;
@@ -835,6 +1769,7 @@ type MutableModule = {
   structuralFunction: string;
   invariants: string[];
   boundaries: string[];
+  permittedInteractionKinds: string[];
   [key: string]: unknown;
 };
 
@@ -868,6 +1803,10 @@ type MutableField = {
     primaryItemKeys?: string[];
     auxiliaryItemKey?: string;
     evidencePath?: string;
+    operationalSupport?: {
+      requirement?: string;
+      referenceKeys?: string[];
+    };
   };
   itemFields?: MutableField[];
   label?: MutableField;
@@ -888,10 +1827,18 @@ type MutableVariant = {
   compatibleRootVersion: number;
   rootDelta: MutableRootDelta;
   capabilities: string[];
-  actionCompatibility?: { supportsPrimaryConversionForm: boolean };
-  accordionAccessibility?: Record<string, string | boolean>;
+  interactionContracts: MutableInteraction[];
   fallbackChannel?: string;
   creationMotivation?: string;
+  [key: string]: unknown;
+};
+
+type MutableInteraction = {
+  kind: string;
+  fields?: Record<string, unknown>[];
+  consent?: Record<string, unknown>;
+  accessibility?: Record<string, string | boolean>;
+  operationalBinding?: Record<string, string>;
   [key: string]: unknown;
 };
 

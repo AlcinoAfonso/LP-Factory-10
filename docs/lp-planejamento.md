@@ -37,11 +37,14 @@ Fontes de referência: `README.md`, `docs/roadmap.md`, `docs/base-tecnica.md`, `
 - O núcleo incorporado pelo PR #590 permanece preservado: registry versionado, resolver genérico, Zod estrito, falha fechada, contratos TypeScript, API pública mínima, isolamento e imutabilidade profunda.
 - Módulo representa função estrutural reutilizável; variante representa outra execução estrutural ou comportamental reutilizável da mesma função.
 - Taxon, plano, campanha, conteúdo, ordem ou ajuste já permitido não justificam isoladamente novo módulo ou variante.
-- Para o humano, adicionar ou ajustar módulo ou variante deve continuar simples por briefing e revisão do PR; internamente, a extensão comum deve ficar concentrada na definição canônica da identidade.
-- Uma extensão comum não deve exigir alteração do resolver, nova regra nominal no schema genérico, ajuste de contagem global, atualização de `switch` por path ou manutenção de listas paralelas evitáveis.
-- Código adicional permanece legítimo quando a nova opção introduzir capability técnica realmente nova; nesse caso, contrato TypeScript, Zod, registry e casos negativos podem precisar evoluir.
-- A otimização planejada incorpora permanentemente `benefits@v1`, `benefits.standard@v1` e `hero.form@v1` e repete os quatro testes do PR #617 antes da E20.3.
+- Para o humano, adicionar ou ajustar módulo ou variante deve continuar simples por briefing e revisão do PR; internamente, a extensão frequente deve ficar concentrada na definição canônica da identidade, nos fields aplicáveis e nos contratos já existentes.
+- Uma extensão que reutiliza capability ou interaction kind existente não deve exigir alteração do resolver, do schema genérico, dos contratos TypeScript de interação, de contagem global, de `switch` por path ou de listas paralelas evitáveis.
+- Form e Accordion usam uma moldura discriminada comum de interações; capability interativa é derivada do contrato declarado, e capabilities de ação ou imagem são derivadas dos fields quando seguro.
+- Código adicional permanece legítimo quando o primeiro caso real introduzir capability ou interaction kind realmente novo; nesse caso, contrato TypeScript, ramo discriminado, schema Zod e casos positivos e negativos próprios podem evoluir uma vez, sem criar propriedade isolada por variante.
+- O primeiro caso real de mídia avançada deve introduzir moldura discriminada própria; a E18.5 não antecipa vídeo, áudio, animação, visual interativo ou 3D sem caso material.
+- A otimização incorpora permanentemente `benefits@v1`, `benefits.standard@v1` e `hero.form@v1` e preserva os quatro testes de extensibilidade derivados do PR #617.
 - A E18.5 não será substituída por catálogo apenas consultivo e não perderá as proteções comprovadas nos testes.
+- A E18.5 não implementa dados concretos, conteúdo final, composição, renderer, persistência ou integração operacional.
 
 ### 1.5. Definir o catálogo de entradas para geração da LP
 
@@ -117,6 +120,8 @@ Fontes de referência: `README.md`, `docs/roadmap.md`, `docs/base-tecnica.md`, `
 - Incorporar `benefits@v1`, `benefits.standard@v1` e `hero.form@v1` como identidades permanentes.
 - Remover contagens globais fixas, declarar fontes junto dos fields, eliminar o `switch` paralelo por path e reduzir listas e identidades paralelas evitáveis.
 - Preferir relações Zod estruturais realmente genéricas a regras nominais vinculadas a variantes específicas.
+- Reutilizar interaction kinds existentes pela coleção discriminada da variante e derivar capabilities simples de interactions e fields, evitando booleanos ou propriedades paralelas como fontes canônicas.
+- Reservar a evolução de contratos e schema ao primeiro caso real de novo interaction kind; reutilizações posteriores devem permanecer localizadas.
 - Manter resolver genérico, Zod estrito, falha fechada, tipagem, imutabilidade, casos negativos e API pública mínima.
 - Repetir os quatro testes do PR #617 e comparar pontos de alteração, duplicações e proteções antes de concluir a otimização.
 - Não substituir o catálogo por fonte apenas consultiva.
