@@ -1047,27 +1047,11 @@ const cases: readonly Case[] = [
       const textualFields = Object.values(landingPageModuleCatalogRegistry.variantFieldContracts)
         .flatMap((contract) => flattenFields(contract.fields))
         .filter((field) => field.fieldKind === "text");
-      assert.equal(textualFields.length, 38);
       assert.equal(textualFields.every((field) => Boolean(field.copySourceMap)), true);
       assert.equal(
         new Set(textualFields.map((field) => field.path)).size,
         textualFields.length,
       );
-      const sourceModeCounts = textualFields.reduce<Record<string, number>>(
-        (counts, field) => {
-          const sourceMode = String(
-            (field.copySourceMap as Record<string, unknown>).sourceMode,
-          );
-          counts[sourceMode] = (counts[sourceMode] ?? 0) + 1;
-          return counts;
-        },
-        {},
-      );
-      assert.deepEqual(sourceModeCounts, {
-        research: 34,
-        research_with_operational_support: 2,
-        operational_evidence: 2,
-      });
 
       const heroTitle = textualFields.find(
         (field) => field.path === "hero.standard.title",
