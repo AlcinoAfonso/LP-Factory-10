@@ -161,6 +161,24 @@ const landingPageModuleCatalogDefinition = {
         "No social proof, ranking or automatic recommendation.",
       ],
     ),
+    lead_capture: moduleDefinition(
+      "lead_capture",
+      "Present a focused contact-conversion section and lead to the primary conversion route.",
+      [
+        "There is one primary action.",
+        "The Form interaction is explicitly declared.",
+        "Consent, privacy and accessibility are preserved.",
+        "The operational destination remains abstract.",
+        "No response, approval or result is promised.",
+      ],
+      [
+        "No booking, schedule or availability.",
+        "No checkout, payment or CRM.",
+        "No functional submission, persistence or renderer.",
+        "No media or secondary action.",
+      ],
+      ["form"],
+    ),
     process: moduleDefinition(
       "process",
       "Explain a real progression through distinct steps.",
@@ -320,6 +338,14 @@ const landingPageModuleCatalogDefinition = {
         ]),
       ],
     },
+    "lead_capture.form@v1": {
+      fieldContractKey: "lead_capture.form@v1",
+      fields: [
+        text("lead_capture.form.title", "title", "h2", 1, 1, "research_guided", research(["trigger", "desire"], "positioning_opportunity")),
+        text("lead_capture.form.body", "body", "paragraph", 1, 1, "hybrid", research(["desire", "objection"], "belief"), "when_factual"),
+        action("lead_capture.form.primaryCta", "primaryCta", research(["trigger", "desire"], "objection")),
+      ],
+    },
     "process.standard@v1": {
       fieldContractKey: "process.standard@v1",
       fields: [
@@ -404,6 +430,12 @@ const landingPageModuleCatalogDefinition = {
       "comparison.standard@v1",
       "standard",
       "comparison",
+    ),
+    "lead_capture.form@v1": variant(
+      "lead_capture.form@v1",
+      "form",
+      "lead_capture",
+      [contactFormInteraction()],
     ),
     "process.standard@v1": variant(
       "process.standard@v1",

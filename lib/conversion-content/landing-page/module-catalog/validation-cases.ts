@@ -548,6 +548,43 @@ const cases: readonly Case[] = [
     },
   },
   {
+    name: "lead capture reuses the complete canonical form interaction",
+    run: () => {
+      const result = resolveLandingPageModuleCatalog({
+        moduleCatalogVersion: 1,
+        rootVersion: 1,
+        moduleKey: "lead_capture",
+        moduleVersion: 1,
+        variantName: "form",
+        variantVersion: 1,
+        funnelProfileKey: "bofu",
+      });
+
+      assert.equal(result.ok, true);
+      if (!result.ok) return;
+      assert.equal(result.value.variant.variantKey, "lead_capture.form@v1");
+      assert.deepEqual(result.value.module.permittedInteractionKinds, ["form"]);
+      assert.deepEqual(result.value.variant.capabilities, [
+        "primary_action",
+        "embedded_form",
+      ]);
+      assert.deepEqual(
+        result.value.fieldContract.fields.map((field) => field.path),
+        [
+          "lead_capture.form.title",
+          "lead_capture.form.body",
+          "lead_capture.form.primaryCta",
+        ],
+      );
+      assert.deepEqual(
+        result.value.variant.interactionContracts,
+        landingPageModuleCatalogRegistry.variants["hero.form@v1"]
+          .interactionContracts,
+      );
+      assertDeeplyFrozen(result.value);
+    },
+  },
+  {
     name: "hero form resolves with a complete abstract accessible form contract",
     run: () => {
       const result = resolveLandingPageModuleCatalog({
