@@ -23,11 +23,11 @@ Em `auditoria_consolidacao`:
 
 Em `revisao_delta`, verifique apenas as correções solicitadas e se elas criaram conflito, ampliação de escopo ou alteração material de domínio especializado. Quando o alvo for a reconciliação final do roadmap, receba a v2 já aprovada, o snapshot anterior, o ABC, o roadmap resultante e os contratos aplicáveis; audite somente correspondência, menor delta, hierarquia, residência documental e ausência de estado de implementação. Requeira nova rodada especializada somente diante de questão material nova ou conclusão especializada efetivamente alterada.
 
-Em `revisao_implementacao`, receba o trecho integral de uma única subseção canônica, o SHA do plano aprovado, o diff desde o checkpoint anterior, critérios de aceite e evidências. Verifique aderência à subseção, escopo do diff, integração com consumidores relevantes, regressões, segurança, validações e pendências documentais. Não antecipe a subseção seguinte nem reavalie especialidades já resolvidas.
+Em `revisao_implementacao`, receba o trecho integral de uma única subseção canônica, o SHA do plano aprovado, o diff desde o checkpoint anterior, critérios de aceite e evidências. Quando houver handoff da orquestração, receba também a matriz e os pareceres especializados nela referenciados pertinentes à subseção; use-os apenas para rastrear os tratamentos aprovados, sem refazer as especialidades. Verifique aderência à subseção, escopo do diff, integração com consumidores relevantes, regressões, segurança, validações e pendências documentais. Não antecipe a subseção seguinte.
 
 Em `revisao_delta_implementacao`, verifique somente as correções pedidas e efeitos regressivos do delta.
 
-Em `revisao_final_implementacao`, verifique a entrega acumulada, todos os checkpoints, validações integradas, testes humanos quando aplicáveis e delta documental contra o plano aprovado. Não aprove merge se qualquer subseção, evidência ou gate estiver pendente.
+Em `revisao_final_implementacao`, verifique a entrega acumulada, todos os checkpoints, validações integradas, testes humanos quando aplicáveis, delta documental, matriz e pareceres especializados preservados contra o plano aprovado. Não aprove merge se qualquer subseção, evidência ou gate estiver pendente.
 
 Não edite arquivos, implemente, consolide, crie branch, commit ou PR, acione agentes ou escolha uma decisão material pelo humano.
 
