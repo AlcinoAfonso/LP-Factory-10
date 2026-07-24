@@ -296,7 +296,7 @@ const landingPageModuleCatalogDefinition = {
       fieldContractKey: "benefits.standard@v1",
       fields: [
         text("benefits.standard.title", "title", "h2", 1, 1, "research_guided", research(["desire", "positioning_opportunity"], "pain")),
-        collection("benefits.standard.items", "items", 2, 6, [
+        collection("benefits.standard.items", "items", 3, 6, [
           text(
             "benefits.standard.items[].benefitTitle",
             "benefitTitle",

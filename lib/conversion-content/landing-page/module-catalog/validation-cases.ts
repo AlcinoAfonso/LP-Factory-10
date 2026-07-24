@@ -480,7 +480,7 @@ const cases: readonly Case[] = [
       const items = result.value.fieldContract.fields[1];
       assert.equal(items?.fieldKind, "collection");
       if (items?.fieldKind !== "collection") return;
-      assert.deepEqual(items.cardinality, { min: 2, max: 6 });
+      assert.deepEqual(items.cardinality, { min: 3, max: 6 });
       assert.deepEqual(
         items.itemFields.map((field) => field.path),
         [
