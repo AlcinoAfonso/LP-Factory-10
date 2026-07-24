@@ -889,9 +889,13 @@ const cases: readonly Case[] = [
         "accordion",
       );
 
+      const parsedSynthetic = landingPageModuleCatalogSchema.safeParse(synthetic);
       assert.equal(
-        landingPageModuleCatalogSchema.safeParse(synthetic).success,
+        parsedSynthetic.success,
         true,
+        parsedSynthetic.success
+          ? undefined
+          : JSON.stringify(parsedSynthetic.error.issues),
       );
 
       for (const [moduleKey, variantName, capability] of [
@@ -917,6 +921,34 @@ const cases: readonly Case[] = [
         assert.equal(result.value.variant.capabilities.includes(capability), true);
         assertDeeplyFrozen(result.value);
       }
+    },
+  },
+  {
+    name: "field paths are unique across the flattened field contract",
+    run: () => {
+      const duplicatePath = cloneRegistry();
+      addSyntheticVariant(
+        duplicatePath,
+        "faq.synthetic@v1",
+        "faq.standard@v1",
+      );
+      const duplicateQuestion = getMutableTextField(
+        duplicatePath,
+        "faq.synthetic@v1",
+        "faq.synthetic.items[].question",
+      );
+      duplicatePath.variantFieldContracts["faq.synthetic@v1"].fields.push(
+        structuredClone(duplicateQuestion),
+      );
+      assertInvalidCatalogFailsClosedWithoutThrow(duplicatePath, {
+        moduleCatalogVersion: 1,
+        rootVersion: 1,
+        moduleKey: "faq",
+        moduleVersion: 1,
+        variantName: "synthetic",
+        variantVersion: 1,
+        funnelProfileKey: "mofu",
+      });
     },
   },
   {

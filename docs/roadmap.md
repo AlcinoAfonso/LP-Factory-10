@@ -1776,7 +1776,7 @@ Repositório — Ajustados
 - Estado material: `benefits@v1`, `benefits.standard@v1` e `hero.form@v1` incorporados ao registry canônico, sem alteração do resolver.
 - Proteções preservadas: registry versionado, resolver genérico, Zod estrito, falha fechada, contratos tipados, separação entre módulo, variante e fields, imutabilidade profunda, casos negativos, API pública mínima e ausência de fallback.
 - Limites preservados: sem payload de conteúdo, banco, migration, rota, UI, renderer, composição, persistência, automação, job ou consumo por E19/E20; a E18.4 permanece fora da otimização e E19, E20.2 e E20.3 não serão implementadas ou alteradas neste recorte.
-- Validação: 31 casos executáveis do catálogo, além das regressões de raiz, pesquisas, catálogo de entradas e ativação comercial.
+- Validação: 32 casos executáveis do catálogo, além das regressões de raiz, pesquisas, catálogo de entradas e ativação comercial.
 
 18.5.2 Registros do recorte
 - Banco: N/A.
@@ -1883,7 +1883,7 @@ Repositório — Ajustados
   - O resolver consulta o registry canônico, aplica as especializações da raiz e o delta do perfil e devolve somente o contrato completo da variante resolvida.
   - Lifecycle da raiz, do módulo e da variante usa o vocabulário canônico `hypothesis`, `validated` e `deprecated` e permanece registrado separadamente; a E18.5 não implementa enforcement de composição nem lifecycle efetivo.
   - Resultados são profundamente imutáveis, sem referência mutável compartilhada e sem fallback aproximado.
-  - Validação executável própria concluída com 31 casos, além das regressões de raiz, pesquisas, catálogo de entradas e ativação comercial.
+  - Validação executável própria concluída com 32 casos, além das regressões de raiz, pesquisas, catálogo de entradas e ativação comercial.
   - Comando canônico: `npm run validate:landing-page-module-catalog`.
 - Resultado da otimização:
   - dez módulos e doze variantes consolidados, com lifecycle separado, API pública mínima, internalidade de registry/schema, ausência de fallback e imutabilidade profunda;

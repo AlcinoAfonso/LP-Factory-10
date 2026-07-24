@@ -329,6 +329,17 @@ const variantFieldContractSchema = z
   .superRefine((contract, context) => {
     const prefix = contract.fieldContractKey.replace("@v1", "");
     validateUniqueFieldIdentities(contract.fields, context);
+    const flattenedFields = flattenFieldDefinitions(
+      contract.fields as readonly LandingPageFieldDefinition[],
+    );
+    const flattenedPaths = flattenedFields.map((field) => field.path);
+    if (new Set(flattenedPaths).size !== flattenedPaths.length) {
+      context.addIssue({
+        code: "custom",
+        path: ["fields"],
+        message: "field paths must be unique across the contract",
+      });
+    }
     validateOperationalEvidenceReferences(
       contract.fields as readonly LandingPageFieldDefinition[],
       context,
