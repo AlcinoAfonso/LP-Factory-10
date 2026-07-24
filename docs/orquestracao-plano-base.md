@@ -1,7 +1,7 @@
 # Orquestração de planos-base no Codex
 
 Data: 23/07/2026
-Versão: v0.11
+Versão: v0.12
 Status: Fluxo end-to-end unificado em uma instrução, uma branch e um PR; retomada por checkpoints incorporada; fechamento documental da implementação pendente de decisão.
 
 ## 1. Objetivo e função deste documento
@@ -238,12 +238,12 @@ No experimento E18.5, o destino usado foi:
 9. Corrigir ou encaminhar pendências conforme a conclusão formal.
 10. Usar `$lp-factory-abc` em modo planejamento para reconciliar o snapshot do roadmap com a v2 aprovada.
 11. Submeter o roadmap resultante ao mesmo Analista em revisão delta.
-12. Criar o checkpoint `LP-Factory-Stage: plan-v2-approved`, remover a matriz temporária e abrir um único PR draft contra `main`.
+12. Criar o checkpoint `LP-Factory-Stage: plan-v2-approved` com a matriz versionada e abrir um único PR draft contra `main`.
 13. Invocar internamente `lp-factory-executar-plano`, sem novo comando humano, preservando branch, worktree e PR.
 14. Executar todas as subseções com gates do Analista, validações integradas e eventual teste humano.
-15. Marcar o mesmo PR como pronto somente após `aprovado para merge da implementação`.
+15. Após `aprovado para merge da implementação`, remover a matriz, submeter somente esse delta ao mesmo Analista e marcar o PR como pronto apenas quando ele confirmar novamente a aprovação.
 
-A matriz não é gravada antes da Passagem 1. Isso impede que a avaliação independente seja contaminada por um arquivo acessível na própria worktree. Depois do checkpoint da v2 aprovada, a matriz é removida e não participa da implementação.
+A matriz não é gravada antes da Passagem 1. Isso impede que a avaliação independente seja contaminada por um arquivo acessível na própria worktree. Depois da Passagem 2, ela permanece versionada durante toda a implementação para que o Analista rastreie os pareceres até o gate final.
 
 ### 4.4 Limites do fluxo de plano integrado
 
@@ -271,7 +271,7 @@ Depois de `aprovado para merge do plano-base v2`, o orquestrador usa:
 
 O menor delta pode registrar somente estrutura do recorte, identificadores, títulos, objetivos, status planejado ou definido, limites, decisões futuras aprovadas e dependências indispensáveis. Não registra implementação, banco, migrations, arquivos, updates, evidências, comandos, PRs ou histórico operacional e não altera outros documentos canônicos.
 
-O mesmo Analista recebe v2, snapshot, ABC e roadmap resultante em `revisao_delta`. A implementação só é liberada após confirmação de alinhamento, inclusive quando o ABC concluir `SEM ALTERAÇÕES NECESSÁRIAS`. No fluxo normal, o PR único acumula plano-base v2, roadmap e implementação; a matriz temporária é removida antes da execução.
+O mesmo Analista recebe v2, snapshot, ABC e roadmap resultante em `revisao_delta`. A implementação só é liberada após confirmação de alinhamento, inclusive quando o ABC concluir `SEM ALTERAÇÕES NECESSÁRIAS`. No fluxo normal, o PR único acumula plano-base v2, roadmap, matriz e implementação até o gate final.
 
 ## 5. Quarto passo: execução end-to-end do plano aprovado
 
@@ -286,7 +286,7 @@ Cada fase deve representar exatamente uma subseção executável do roadmap, ide
 1. Confirmar a subseção, critérios de aceite, escopo negativo e fontes competentes.
 2. Implementar somente o necessário para a subseção.
 3. Executar `npm ci` uma vez por lote contínuo quando o lockfile e as dependências não mudarem, além das validações automáticas aplicáveis a cada subseção.
-4. Acionar o Analista em modo de revisão de implementação.
+4. Acionar o Analista em modo de revisão de implementação com a matriz e os pareceres nela referenciados pertinentes à subseção.
 5. Corrigir o delta ou parar para teste humano ou decisão humana quando exigido.
 6. Após `aprovado para avançar`, criar checkpoint, atualizar título e resumo do mesmo PR e, no modo experimental, parar somente no checkpoint solicitado; no fluxo normal end-to-end, seguir para a próxima subseção.
 
@@ -296,11 +296,11 @@ Após a última subseção, o executor realiza validações integradas, solicita
 
 Enquanto não houver decisão canônica entre relatório e aplicação direta de `$lp-factory-abc`, o executor para após esse gate, mesmo com teste humano `N/A`, sem gerar relatório nem alterar documentação. A decisão só se torna canônica quando este documento e a skill de execução forem atualizados e incorporados à `main`. Depois disso, executará apenas o fechamento aprovado, pedirá revisão delta do Analista e atualizará título e resumo do mesmo PR.
 
-Somente a conclusão `aprovado para merge da implementação` libera o PR para decisão humana. O formato do registro operacional final permanece pendente da decisão sobre o fechamento documental.
+Após a conclusão `aprovado para merge da implementação`, o executor remove a matriz e preserva sua rastreabilidade no resumo do PR. O mesmo Analista audita esse delta e deve confirmar novamente a aprovação antes de o PR ser liberado para decisão humana. O formato do registro operacional final permanece pendente da decisão sobre o fechamento documental.
 
 ### 5.4 Matriz de consolidação
 
-A matriz pertence exclusivamente à etapa de revisão do plano-base v2: ela permite ao orquestrador registrar o tratamento dos pareceres e ao Analista auditar essa consolidação. Em modo experimental, fica como evidência. No fluxo normal, é temporária, é resumida no PR e removida antes da implementação. Não há remoção agendada nem matriz durante a implementação.
+A matriz nasce na revisão do plano-base v2 e permanece como artefato temporário de rastreabilidade durante toda a implementação. O Analista a recebe nos gates junto aos pareceres pertinentes, sem reabrir decisões especializadas já aprovadas. Depois da aprovação final, o executor preserva seu resumo no PR, remove o arquivo e submete exclusivamente essa limpeza ao mesmo Analista; o histórico dos commits mantém a evidência auditável.
 
 ### 5.5 Retomada sem repetição
 

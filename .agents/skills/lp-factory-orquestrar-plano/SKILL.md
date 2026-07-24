@@ -138,10 +138,10 @@ Parar quando faltar uma decisão material que altere produto, escopo ou arquitet
 
 1. Executar a Passagem 1 de `lp-factory-avaliar-plano-analista` com v1, v2, plano conceitual ou `N/A`, decisões registradas e fontes do caso, sem pareceres especializados ou matriz.
 2. Preservar integralmente a resposta independente.
-3. Depois da Passagem 1, gravar a matriz em `docs/matriz-consolidacao-<caso>.md`, validar e criar novo checkpoint. No modo `experimental`, mantê-la como evidência; no fluxo normal, usá-la somente até a conclusão do Analista.
+3. Depois da Passagem 1, gravar a matriz em `docs/matriz-consolidacao-<caso>.md`, validar e criar novo checkpoint. Mantê-la versionada e acessível até a aprovação final da implementação.
 4. Continuar no mesmo Analista e entregar os pareceres completos do Gestor Estrutural, do Gestor de Updates e, quando acionado, do Gestor de Automações, além da matriz, para a Passagem 2.
 5. Preservar integralmente a auditoria e a conclusão formal.
-6. No fluxo normal, após aprovação da v2, resumir a rastreabilidade no PR e manter a matriz somente até a revisão delta do roadmap.
+6. Após a aprovação da v2, resumir a rastreabilidade no PR e preservar a matriz no mesmo PR durante toda a implementação.
 
 ## 7. Tratar a conclusão
 
@@ -166,13 +166,13 @@ Somente após `aprovado para merge do plano-base v2`:
 8. Solicitar somente a auditoria da correspondência entre v2 e roadmap. Corrigir e reenviar apenas divergências objetivas; questão material nova segue a seção 7.
 9. Mesmo quando o ABC retornar `SEM ALTERAÇÕES NECESSÁRIAS`, exigir confirmação do Analista de que o snapshot já corresponde à v2.
 10. Liberar a execução somente após nova conclusão `aprovado para merge do plano-base v2`.
-11. No fluxo normal, remover a matriz temporária, preservar sua rastreabilidade no resumo do PR e criar o checkpoint `LP-Factory-Stage: plan-v2-approved` com plano e roadmap aprovados.
+11. Criar o checkpoint `LP-Factory-Stage: plan-v2-approved` com plano, roadmap e matriz aprovados. Não remover a matriz neste estágio.
 
 ## 9. Abrir o PR único
 
 Somente após a aprovação da v2 e da revisão delta do roadmap:
 
-1. Confirmar que o diff contém apenas o plano v2, `docs/roadmap.md` e, somente no modo `experimental`, sua matriz.
+1. Confirmar que o diff contém apenas o plano v2, `docs/roadmap.md` e a matriz de consolidação.
 2. Verificar alterações acidentais, secrets, `.env`, banco e workflows.
 3. Executar `git diff --check`; tratar `npm ci` e `npm run check` como não aplicáveis quando o diff for exclusivamente documental.
 4. Publicar o checkpoint `plan-v2-approved` na branch de automação.
@@ -183,11 +183,11 @@ Somente após a aprovação da v2 e da revisão delta do roadmap:
 
 1. Invocar internamente `$lp-factory-executar-plano` com o checkpoint `plan-v2-approved`; não pedir ao humano uma nova instrução.
 2. Usar o modo de handoff interno da skill de execução: preservar branch, worktree e PR atuais, mesmo que a v2 ainda não esteja na `main`.
-3. Não acionar novamente Gestor Estrutural, Gestor de Updates ou Gestor de Automações. Durante a implementação, usar somente o Analista nos gates por subseção e no gate final.
+3. Não acionar novamente Gestor Estrutural, Gestor de Updates ou Gestor de Automações. Durante a implementação, usar somente o Analista nos gates por subseção e no gate final, entregando a matriz e os pareceres especializados pertinentes ao recorte avaliado.
 4. Se o Analista encontrar mudança material fora da v2 aprovada, parar e pedir a decisão humana necessária; não reiniciar especialistas automaticamente.
 5. Executar todas as subseções no fluxo normal `end-to-end`, reutilizando checkpoints existentes e mantendo o mesmo PR draft atualizado.
-6. Realizar as validações e o fechamento definidos na skill de execução.
-7. Somente após `aprovado para merge da implementação`, marcar o PR único como pronto e entregá-lo para merge humano pelo GitHub Web.
+6. Realizar as validações e o fechamento definidos na skill de execução. Manter a matriz até o Analista concluir `aprovado para merge da implementação`; depois removê-la e submeter somente esse delta de limpeza ao mesmo Analista.
+7. Somente após a confirmação de que a limpeza removeu apenas a matriz e preservou sua rastreabilidade no resumo do PR, marcar o PR único como pronto e entregá-lo para merge humano pelo GitHub Web.
 
 ## Devolução ao humano
 
