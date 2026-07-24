@@ -328,7 +328,7 @@ const variantFieldContractSchema = z
   .strict()
   .superRefine((contract, context) => {
     const prefix = contract.fieldContractKey.replace("@v1", "");
-    validateUniqueFieldIdentities(contract.fields, context);
+    validateUniqueFieldKeys(contract.fields, context);
     const flattenedFields = flattenFieldDefinitions(
       contract.fields as readonly LandingPageFieldDefinition[],
     );
@@ -340,10 +340,7 @@ const variantFieldContractSchema = z
         message: "field paths must be unique across the contract",
       });
     }
-    validateOperationalEvidenceReferences(
-      contract.fields as readonly LandingPageFieldDefinition[],
-      context,
-    );
+    validateOperationalEvidenceReferences(flattenedFields, context);
 
     for (const [fieldIndex, field] of contract.fields.entries()) {
       validateCopySourceMode(field, context, ["fields", fieldIndex]);
@@ -356,7 +353,7 @@ const variantFieldContractSchema = z
       }
 
       if (field.fieldKind === "collection") {
-        validateUniqueFieldIdentities(field.itemFields, context, [
+        validateUniqueFieldKeys(field.itemFields, context, [
           "fields",
           fieldIndex,
           "itemFields",
@@ -892,10 +889,9 @@ function structuralOwnerPath(fieldPath: string): string | undefined {
 }
 
 function validateOperationalEvidenceReferences(
-  fields: readonly LandingPageFieldDefinition[],
+  flattenedFields: readonly LandingPageFieldDefinition[],
   context: z.RefinementCtx,
 ): void {
-  const flattenedFields = flattenFieldDefinitions(fields);
   for (const field of flattenedFields) {
     if (
       field.fieldKind !== "text" ||
@@ -950,20 +946,18 @@ function validateCanonicalTextList(input: {
   }
 }
 
-function validateUniqueFieldIdentities(
-  fields: readonly { fieldKey: string; path: string }[],
+function validateUniqueFieldKeys(
+  fields: readonly { fieldKey: string }[],
   context: z.RefinementCtx,
   path: (string | number)[] = ["fields"],
 ) {
-  for (const property of ["fieldKey", "path"] as const) {
-    const values = fields.map((field) => field[property]);
-    if (new Set(values).size !== values.length) {
-      context.addIssue({
-        code: "custom",
-        path,
-        message: `${property} values must be unique`,
-      });
-    }
+  const fieldKeys = fields.map((field) => field.fieldKey);
+  if (new Set(fieldKeys).size !== fieldKeys.length) {
+    context.addIssue({
+      code: "custom",
+      path,
+      message: "fieldKey values must be unique",
+    });
   }
 }
 
