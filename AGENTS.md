@@ -13,6 +13,21 @@ Se houver divergência ou dúvida, parar e reportar a incompatibilidade; não ad
 
 Não editar nem commitar na `main`; usar branch dedicada por tarefa ou etapa. Ao usar a `main` local como base, atualizar com `git pull --ff-only`. O merge final deve ocorrer somente pelo GitHub Web. Se o ambiente não estiver claro, perguntar antes de publicar.
 
+## Edição segura de arquivos existentes
+
+Ao alterar arquivo existente:
+
+1. Ler a versão atual no branch-alvo imediatamente antes da edição.
+2. Preservar integralmente a estrutura, a ordem e o conteúdo fora do trecho autorizado.
+3. Aplicar uma única atualização por arquivo sempre que possível.
+4. Usar o identificador ou `sha` da versão lida quando a ferramenta exigir substituição integral.
+5. Depois de uma gravação bem-sucedida, não gravar novamente no mesmo arquivo sem reler o estado atual e identificar objetivamente o ajuste ainda necessário.
+6. Revisar imediatamente o diff do arquivo alterado.
+7. Confirmar que o diff contém somente as adições, remoções ou substituições autorizadas.
+8. Se houver alteração inesperada, não compensar com gravações sucessivas; restaurar a partir da versão correta ou parar e informar o problema.
+9. Não mover, reescrever ou forçar o ponteiro da branch para ocultar tentativas intermediárias sem necessidade explícita e validação do estado final.
+10. Antes de publicar, confirmar ausência de perda de conteúdo, alteração acidental de formatação e commits redundantes.
+
 ## Publicação no Codex App local
 
 Publicar com `git push`. Não alterar configurações SSH durante a tarefa; se o push falhar, parar e informar o erro exato. Se a GitHub CLI estiver indisponível, entregar o link de criação do PR.
@@ -63,7 +78,9 @@ Antes de publicar:
 * confirmar que commits e arquivos pertencem somente ao escopo atual;
 * verificar alterações acidentais, secrets, `.env`, banco e workflows;
 * executar ou justificar as validações aplicáveis;
-* revisar `main..HEAD` e `main...HEAD`, quando disponíveis.
+* revisar `main..HEAD` e `main...HEAD`, quando disponíveis;
+* em substituições integrais feitas por API, comparar cada arquivo com sua versão anterior e confirmar ausência de mudanças fora do trecho autorizado;
+* confirmar que não existem commits redundantes produzidos por repetição da mesma gravação.
 
 ## Preview local
 
