@@ -1,8 +1,8 @@
 0. Introdução
 
 0.1 Cabeçalho
-• Data da última atualização: 02/07/2026
-• Documento: LP Factory 10 — Schema (DB Contract) v1.0.32
+• Data da última atualização: 25/07/2026
+• Documento: LP Factory 10 — Schema (DB Contract) v1.0.33
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -739,6 +739,87 @@
 1.23.4 Índices
 • `content_artifact_research_sources_research_id_idx`: btree em `research_id`.
 
+1.24 landing_page_taxon_policies
+
+1.24.1 Chaves, constraints e relacionamentos
+• PK/FK: taxon_id → business_taxons(id) ON UPDATE CASCADE ON DELETE RESTRICT.
+• `own_composition_allowed = true` é aceito somente para taxon `ultra_niche`.
+• `decision_reason`, quando presente, deve ter entre 3 e 500 caracteres após trim.
+
+1.24.2 Campos
+• taxon_id uuid not null
+• inheritance_blocked boolean not null default false
+• own_composition_allowed boolean not null default false
+• decision_reason text null
+• created_by uuid not null → auth.users(id) ON UPDATE CASCADE ON DELETE RESTRICT
+• updated_by uuid not null → auth.users(id) ON UPDATE CASCADE ON DELETE RESTRICT
+• created_at timestamptz not null default now()
+• updated_at timestamptz not null default now()
+
+1.24.3 Segurança
+• Trigger Hub: não.
+• RLS: ativo, com policies administrativas explícitas de SELECT, INSERT e UPDATE.
+• public, anon e authenticated: sem acesso direto à tabela.
+• service_role: SELECT, INSERT e UPDATE somente das colunas mutáveis da decisão; sem DELETE.
+
+1.24.4 Triggers
+• `landing_page_taxon_policies_validate`: valida o nível elegível para composição própria e atualiza `updated_at`.
+
+1.25 landing_page_compositions
+
+1.25.1 Chaves, constraints e relacionamentos
+• PK: id uuid.
+• UNIQUE: (owner_taxon_id, version).
+• UNIQUE parcial: no máximo uma composição `active` por owner_taxon_id.
+• CHECK: version > 0.
+• CHECK: status IN ('draft', 'active', 'archived').
+• CHECKs JSONB: snapshots e provenance são objetos; items e gaps são arrays; items não pode ser vazio.
+• CHECK: validation_fingerprint possui de 16 a 256 caracteres após trim.
+• CHECK: `draft` não possui ator/data de ativação; `active` e `archived` preservam ambos.
+• FK: owner_taxon_id → business_taxons(id) ON UPDATE CASCADE ON DELETE RESTRICT.
+• FKs de created_by, updated_by e activated_by → auth.users(id) ON UPDATE CASCADE ON DELETE RESTRICT.
+
+1.25.2 Campos
+• owner_taxon_id uuid not null
+• version integer not null
+• status text not null default 'draft'
+• root_snapshot_json jsonb not null
+• module_catalog_snapshot_json jsonb not null
+• research_snapshot_json jsonb not null
+• input_catalog_snapshot_json jsonb not null
+• items_json jsonb not null
+• gaps_json jsonb not null default '[]'
+• provenance_json jsonb not null
+• validation_fingerprint text not null
+• created_by uuid not null
+• updated_by uuid not null
+• activated_by uuid null
+• created_at timestamptz not null default now()
+• updated_at timestamptz not null default now()
+• activated_at timestamptz null
+
+1.25.3 Lifecycle
+• `draft` pode ser editado e pode transicionar somente para `active` pela RPC autorizada.
+• `active` tem payload imutável e pode transicionar somente para `archived` durante a ativação atômica de nova versão.
+• `archived` é integralmente imutável.
+• owner_taxon_id, version, created_by e created_at são imutáveis.
+• DELETE é bloqueado por trigger e não possui grant funcional.
+
+1.25.4 Segurança
+• Trigger Hub: não.
+• RLS: ativo, com policies administrativas explícitas de SELECT, INSERT e UPDATE.
+• public, anon e authenticated: sem acesso direto à tabela.
+• service_role: SELECT, INSERT e UPDATE somente do payload de `draft`; sem UPDATE direto de lifecycle e sem DELETE.
+• A ativação ocorre somente por `activate_landing_page_composition(uuid, text, timestamptz)`.
+
+1.25.5 Índices
+• `landing_page_compositions_one_active_per_owner_idx`: UNIQUE parcial em owner_taxon_id para status = 'active'.
+• `landing_page_compositions_owner_status_version_idx`: btree em owner_taxon_id, status e version DESC.
+
+1.25.6 Triggers
+• `landing_page_compositions_validate_owner`: exige owner ativo, nível `segment`, `niche` ou `ultra_niche` autorizado.
+• `landing_page_compositions_protect_lifecycle`: protege identidade, payload ativo, histórico arquivado, transições e `updated_at`.
+
 2. Views
 
 2.1 v_access_context_v2
@@ -858,6 +939,7 @@
 • ensure_first_account_for_current_user (motivo: F2 auto 1ª conta; limites: idempotente; cria 1ª conta + owner/active)
 • publish_content_artifact_draft (motivo: publicação transacional E10.7; limites: publica um draft por `id`, arquiva o published anterior do mesmo template/taxon/audience_scope e exige is_super_admin() OU is_platform_admin())
 • ensure_commercial_activation_composition (motivo: materialização técnica genérica E10.7 Fase 5; limites: somente `commercial_activation`, taxon ativo e elegível por pesquisa completa v1; cria/atualiza vínculo, composição e itens técnicos mínimos sem duplicar template de canal)
+• activate_landing_page_composition (motivo: ativação transacional E20.3.3; limites: exige admin autenticado, bloqueia o draft e a ativa anterior, compara fingerprint e updated_at sob lock, arquiva a ativa anterior, ativa o snapshot validado e audita na mesma transação)
 
 3.3.4 publish_content_artifact_draft(p_artifact_id uuid) → content_artifacts
 • Segurança: SECURITY DEFINER (aprovado; escrita transacional controlada)
@@ -882,6 +964,16 @@
 • EXECUTE: somente `service_role`.
 • `public`, `anon` e `authenticated`: sem `EXECUTE`.
 • Migration relacionada: `supabase/migrations/20260624203000_e10_7_phase_5_ensure_commercial_activation_composition.sql`.
+
+3.3.6 public.activate_landing_page_composition(p_composition_id uuid, p_expected_fingerprint text, p_expected_updated_at timestamptz) → landing_page_compositions
+• Segurança: SECURITY DEFINER aprovado para ativação transacional E20.3.3.
+• search_path: public, pg_temp.
+• EXECUTE: authenticated.
+• public e anon: sem EXECUTE.
+• Autorização interna obrigatória: `is_platform_admin()` ou `is_super_admin()`; ator obtido de `auth.uid()`.
+• Comportamento: bloqueia o draft, o taxon proprietário, a política corrente de ultranicho e a ativa anterior do mesmo owner; exige `status = draft`, owner ainda ativo/elegível e autorização atual de composição própria quando aplicável; compara fingerprint e updated_at esperados; rejeita gap impeditivo; arquiva a ativa anterior; ativa o draft; chama `audit_context_event` na mesma transação.
+• Concorrência: divergência do snapshot validado falha com conflito serializável e exige nova validação.
+• Migrations: `supabase/migrations/20260725210305_e20_3_3_landing_page_compositions.sql` e `supabase/migrations/20260725212930_e20_3_3_activation_owner_revalidation.sql`.
 
 3.4 Convites de Conta
 • accept_account_invite(account_id uuid, ttl_days int) → boolean
@@ -969,6 +1061,10 @@
 • Rollback: não remove automaticamente a extensão, pois pode ser reutilizada por outros recursos
 
 99. Changelog
+v1.0.33 (25/07/2026) — E20.3.3: políticas e composições persistentes de landing_page
+• Registradas `landing_page_taxon_policies` e `landing_page_compositions`, com snapshots JSONB, lifecycle protegido, RLS, policies e grants mínimos.
+• Registrada a RPC `activate_landing_page_composition(uuid, text, timestamptz)` na allowlist SECURITY DEFINER, com autorização interna, proteção contra TOCTOU, ativação atômica e auditoria.
+
 v1.0.30 (28/06/2026) — E9 Fase 3: schema mínimo de entitlement comercial
 • Registrada a tabela `account_commercial_entitlements` como fonte mínima de entitlement comercial por conta.
 • Registrados campos, checks, índices, RLS, policy de SELECT para membro ativo/platform_admin, grants e trigger de updated_at.

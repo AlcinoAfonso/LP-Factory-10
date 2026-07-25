@@ -2,8 +2,8 @@
 
 0.1. Cabeçalho
 • Documento: Base Técnica LP Factory 10
-• Versão: v2.0.54
-• Data: 23/07/2026
+• Versão: v2.0.55
+• Data: 25/07/2026
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -441,6 +441,19 @@ LP Builder
 • O boundary permanece repo-only e não executa composição, persistência ou renderização.
 • Casos executáveis: `npm run validate:landing-page-module-catalog`.
 
+3.15.6 Composição base persistente de `landing_page`
+• Boundary puro canônico: `lib/conversion-content/landing-page/composition/`; esse núcleo não importa Next.js, Supabase, OpenAI nem código de `lib/admin`.
+• API pública: namespace `landingPageComposition` exportado por `lib/conversion-content/index.ts`, limitado a contratos e `validateLandingPageComposition`; schema interno e detalhes de persistência não são reexportados.
+• Adapter persistente canônico: `lib/conversion-content/adapters/landingPageCompositionAdapter.ts`, server-only, com DTOs finais e operações separadas para política, leitura, criação e atualização otimista de `draft`.
+• O contrato valida estritamente owner ativo, snapshots, identidades e versões do catálogo, ordem contínua, unicidade de módulo, opções permitidas, lifecycle e no máximo uma interação `form`.
+• Gaps impeditivos podem ser preservados em `draft`, mas bloqueiam ativação; adiamento exige decisão humana, justificativa e condição de retomada.
+• O fingerprint SHA-256 representa o snapshot normalizado exato validado; ativação deve comparar fingerprint e `updated_at` esperados sob o mesmo lock transacional.
+• A ativação usa `activate_landing_page_composition(uuid, text, timestamptz)` pelo client SSR autenticado após `requirePlatformAdmin()`; o ator vem da sessão e nunca de payload do client, e a RPC bloqueia e revalida o taxon proprietário e a autorização corrente de ultranicho.
+• `service_role` é restrita a adapters server-side e não altera diretamente status de lifecycle; UI, componentes e consumers públicos não importam Supabase nem rows do banco.
+• Composições `active` e `archived` são imutáveis; uma nova ativação arquiva atomicamente a ativa anterior do mesmo owner.
+• O boundary de E20.3 não reutiliza `commercial_activation`, não armazena copy, valores operacionais ou LP gerada e não antecipa geração da E19.4.
+• Casos executáveis da fase: `npx tsx lib/conversion-content/landing-page/composition/validation-cases.ts`.
+
 4. DB Contract - Fonte única: PATH: docs/schema.md
 • Este documento não lista mais tabelas/views/functions/triggers/policies; isso está em PATH: docs/schema.md.
 • Trigger Hub é regra do contrato de DB (governança/auditoria). Fonte única e detalhes: PATH: docs/schema.md (seções 3.5 e 4.1).
@@ -588,6 +601,8 @@ Fonte normativa da allowlist SULB para exceções de Auth. Qualquer novo arquivo
 • Tipos canônicos e adapters vNext: validar por 3.6 e 3.14.
 
 99. Changelog
+v2.0.55 — 25/07/2026 — Registrado o boundary durável da composição base `landing_page`, com validação pura e estrita, fingerprint do snapshot, adapter server-only, persistência dedicada e ativação transacional protegida contra TOCTOU.
+
 v2.0.54 — 23/07/2026 — Unificadas as interações de variante em união discriminada, com capabilities derivadas e evolução localizada por interaction kind, sem antecipar contratos de mídia avançada.
 
 v2.0.53 — 23/07/2026 — Consolidado o contrato durável de sources declarativas e variantes com formulário abstrato no catálogo `landing_page`, mantendo registry único, API mínima e boundary repo-only.
