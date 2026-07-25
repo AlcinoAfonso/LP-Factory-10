@@ -1,8 +1,8 @@
 # Plano-base — E20.3 e E12.4.3–E12.4.4
 
 - Data: 25/07/2026.
-- Versão: v1.
-- Status: plano-base v1 para avaliação única dos especialistas.
+- Versão: v2.
+- Status: plano-base v2 consolidado para o gate do Analista na orquestração end-to-end.
 - Recorte principal previsto para o roadmap: `20.3 — Composição base, prontidão e autorização de geração`.
 - Recorte administrativo complementar: `12.4 — Operação administrativa da E20.3`.
 - Path canônico: `docs/lousa-plano-base-e20-3.md`.
@@ -298,11 +298,7 @@
 - A autorização anterior permanece registrada, mas não produz efeito enquanto a prontidão atual estiver bloqueada.
 - Revalidar a prontidão pode restaurar o efeito de uma autorização ainda `active`; não criar autorização automática nova.
 - Revogação é explícita, preserva histórico e impede uso mesmo quando a prontidão estiver válida.
-- Autorização não substitui:
-  - conta ativa;
-  - membership e papel válidos;
-  - entitlement comercial da E9;
-  - futuros gates próprios da E19.4.
+- Referência de acesso comercial — `prod#19` (`referência`): a autorização operacional da E20.3 complementa, mas não substitui, a fonte canônica de entitlement comercial da E9 nem o modelo interno vigente. Não consultar Stripe diretamente e não criar grants, feature access ou entitlements paralelos. O efeito da autorização continua condicionado a conta ativa, membership e papel válidos, entitlement comercial da E9 e futuros gates próprios da E19.4.
 
 ### 2.9. Persistência mínima
 
@@ -312,11 +308,12 @@
   - `content_template_compositions`;
   - `content_artifacts`;
   - estruturas de `commercial_activation`.
-- O modelo mínimo deve cobrir quatro responsabilidades sem criar engine genérica:
-  - política de herança e autorização de composição própria do taxon;
-  - versões de composição com payload e gaps validados;
-  - última avaliação de prontidão por taxon atendido, plano e composição;
-  - autorização e revogação por conta, taxon atendido e plano.
+- O modelo mínimo será composto por quatro tabelas dedicadas, sem engine genérica:
+  1. `public.landing_page_taxon_policies`: uma política por taxon atendido, contendo bloqueio de herança e autorização de composição própria de ultranicho.
+  2. `public.landing_page_compositions`: versões por `owner_taxon_id`, com status, snapshots de fontes, itens, gaps e proveniência em JSONB estrito; `UNIQUE (owner_taxon_id, version)` e índice único parcial para uma única linha `active` por proprietário.
+  3. `public.landing_page_readiness_evaluations`: última evidência por `served_taxon_id + plan_key + composition_id + composition_version`, com resultado, checks, códigos e data da avaliação.
+  4. `public.landing_page_generation_authorizations`: histórico por `account_id + served_taxon_id + plan_key`, com referência à prontidão usada, ator e datas. Revogar altera a decisão ativa para `revoked`; uma autorização humana posterior cria nova linha. Índice único parcial permite no máximo uma linha `active` por combinação.
+- `plan_key` aceita somente `starter`, `lite`, `pro` e `ultra`. Todas as FKs declaram `ON UPDATE` e `ON DELETE`; objetos históricos não podem ser removidos por cascade implícito. Composições `archived`, autorizações `revoked` e avaliações referenciadas não são apagadas pelo fluxo funcional. Itens, gaps, fontes e checks permanecem em JSONB com check de objeto/array no banco e validação integral por Zod no runtime.
 - Preferir snapshot JSONB estrito e validado para itens, gaps, fontes e checks, em vez de normalização prematura de cada propriedade.
 - O banco deve proteger:
   - FKs;
@@ -337,6 +334,20 @@
   - rollback por nova migration, sem editar migration aplicada;
   - `docs/schema.md` atualizado na fase que criar os objetos;
   - runtime só entra após migration aplicada e verificada no ambiente alvo.
+
+**Mutações transacionais, ator e segurança**
+
+- Ativação, autorização e revogação são executadas por funções transacionais versionadas no banco: `activate_landing_page_composition`, `authorize_landing_page_generation` e `revoke_landing_page_generation`.
+- As funções são `SECURITY DEFINER`, usam `search_path = public, pg_temp`, verificam internamente `is_platform_admin() OR is_super_admin()`, são registradas na allowlist de `docs/schema.md`, têm `EXECUTE` para `authenticated` e revogação explícita para `public` e `anon`.
+- As Server Actions chamam essas funções pelo client SSR autenticado após `requirePlatformAdmin()`. O ator é obtido da sessão server-side e nunca de FormData ou payload do client.
+- A ativação bloqueia o `draft` e a composição ativa do mesmo proprietário, revalida identidade e lifecycle, arquiva a ativa anterior, ativa o alvo e chama `audit_context_event` na mesma transação.
+- A autorização recebe a referência da prontidão revalidada pelo runtime, bloqueia e confere a evidência persistida e registra autorização e auditoria na mesma transação. Revogação bloqueia a autorização ativa e registra revogação e auditoria na mesma transação.
+- A migration cria proteção de lifecycle que impede alteração de payload, itens, gaps, fontes ou versão quando a composição já estiver `active`, e impede qualquer mutação de composição `archived`.
+- As tabelas ficam no schema `public` e são consumidas pela Data API somente por adapters server-side.
+- Habilitar RLS e criar policies administrativas explícitas para as operações aplicáveis. Revogar acesso direto de tabela de `public`, `anon` e `authenticated`.
+- Conceder ao `service_role` somente `SELECT`, `INSERT` e os `UPDATE` necessários aos drafts, políticas e avaliações. Não conceder `DELETE` nem atualização direta das colunas de lifecycle.
+- RLS/policies e grants devem ser testados separadamente. Caso alguma view seja criada, ela usa `security_invoker = true`; sem view, registrar `security_invoker: N/A`.
+- O runtime que referencia os novos objetos somente entra após a migration estar aplicada e verificada no ambiente-alvo.
 
 ### 2.10. Superfície administrativa mínima
 
@@ -368,11 +379,13 @@
   - herdado;
   - erro seguro da IA;
   - operação não autorizada.
+- Validação de Preview — `prod#16` (`validação`): antes do aceite de E12.4.3 e E12.4.4, executar revisão humana no Preview das telas e mutações entregues, cobrindo desktop e mobile, estados de carregamento, vazio, erro seguro, bloqueio, `draft`, ativo, herdado, autorização e revogação; verificar navegação por teclado, foco visível e preservado, labels, mensagens de erro, botões durante submissão, timing perceptível das interações e ausência de layout shift impeditivo. Podem ser usadas as ferramentas disponíveis no ambiente, mas nenhuma ferramenta específica ou nova infraestrutura é requisito.
 - Critérios visuais:
   - reutilizar shell, `AdminPageHeader`, `AdminStatusBadge`, componentes do design system e tokens vigentes;
   - layout responsivo empilhado no mobile;
   - tabelas com overflow horizontal quando necessário;
   - foco visível, labels associados, mensagens de erro acessíveis e botões desabilitados durante submissão;
+  - Baseline de acessibilidade — `prod#17` (`referência`): usar WCAG 2.2 como referência aplicável às superfícies efetivamente entregues, cobrindo contraste, foco visível, navegação por teclado, rótulos associados, mensagens de erro acessíveis, alvo de toque e autenticação/autorização compreensíveis. O recorte exige checklist e correção dos critérios aplicáveis, mas não autoriza declarar conformidade integral com WCAG nem substitui validação manual;
   - não criar redesign do Admin, preview de LP ou editor visual.
 
 ### 2.11. Handoff de gaps para a E18.5
@@ -402,7 +415,19 @@
   - implementar ativação transacional e arquivamento da versão anterior;
   - implementar política de herança e autorização de composição própria de ultranicho;
   - registrar auditoria material;
-  - atualizar `docs/schema.md` e, somente quando houver contrato técnico durável material, `docs/base-tecnica.md`.
+  - atualizar obrigatoriamente `docs/schema.md` com tabelas, constraints, RLS, policies, grants, funções, triggers e Data API; atualizar `docs/base-tecnica.md` com o boundary `landingPageComposition`, API pública, adapters, provider e mutações transacionais; atualizar `docs/platform-config.md` com a env server-side `OPENAI_LANDING_PAGE_COMPOSITION_MODEL`; ajustar `package.json` com a validação executável da E20.3. Esses ajustes pertencem à mesma fase que materializar os respectivos contratos.
+
+**Classificação, residência e API pública**
+
+- A E20.3 pertence ao domínio transversal Core `conversion-content`; seu boundary puro é `lib/conversion-content/landing-page/composition/`.
+- Criar nesse boundary `contracts.ts`, `schema.ts`, `resolver.ts`, `validation-cases.ts` e `index.ts`. Esses arquivos não podem importar Next.js, Supabase, OpenAI nem código de `lib/admin`.
+- Ajustar o arquivo existente `lib/conversion-content/index.ts` para exportar o namespace público `landingPageComposition`. A API pública expõe somente contratos e resolvers autorizados; schema interno, provider e detalhes de persistência não são reexportados.
+- Todo acesso ao banco nasce em `lib/conversion-content/adapters/`, com um adapter por caso de uso, DTO final, colunas explícitas, ordenação determinística e sem exposição de rows do banco.
+- A proposta OpenAI fica em `lib/conversion-content/landing-page/composition/openai-proposal-provider.ts`, marcada `server-only`. Esse provider recebe contexto já resolvido, chama Responses API, aplica timeout e limite, normaliza a resposta e não lê banco, não persiste, não executa guard e não ativa composição.
+- Criar `app/admin/(protected)/templates/landing-page/page.tsx`, `app/admin/(protected)/templates/landing-page/[taxonSlug]/page.tsx`, actions route-local e componentes route-local em `_components/`.
+- Server Actions executam o guard e orquestram provider, resolvers e adapters; UI e componentes não importam Supabase, provider OpenAI ou rows de banco.
+- Read models em `lib/admin/adapters/`, quando necessários, somente compõem DTOs obtidos pelos adapters e resolvers do boundary; não duplicam herança, prontidão ou autorização.
+- A futura E19.4 consumirá `landingPageComposition` e seus adapters server-side, nunca actions, páginas ou adapters exclusivos do Admin.
 - Critérios de aceite:
   - lifecycle e constraints protegidos no banco e no runtime;
   - versão ativa imutável;
@@ -410,6 +435,7 @@
   - payload inválido ou gap impeditivo não ativa;
   - sem reutilização de `commercial_activation`;
   - RLS, policies, grants e migration validados;
+  - Update aplicável — `supa#2` (`validação`): após a migration ser aplicada e verificada no ambiente-alvo, revisar as novas tabelas e policies da E20.3 no Supabase Security Controls Dashboard. O gate só passa sem alerta crítico não justificado sobre RLS, papéis ou policies. A inspeção complementa, mas não substitui, revisão da migration, testes SQL de acesso, validação de grants e atualização de `docs/schema.md`; não criar métricas de acesso no Admin neste recorte;
   - casos positivos e negativos executáveis;
   - `npm run check` e `git diff --check` aprovados.
 
@@ -442,6 +468,7 @@
 - Automação: não.
 - Objetivo:
   - implementar a cooperação humano + IA para criar e ativar a composition do taxon no Admin Dashboard.
+- Trava tecnológica — `vercel#27`: o primeiro PR material de E12.4.3 ou E12.4.4 não pode ser mergeado enquanto `next` e `eslint-config-next` permanecerem efetivamente instalados em `16.1.1`. Antes desse merge, concluir PR técnico próprio que alinhe ambos em `16.2.11` ou versão estável posterior da linha Next.js 16 que contenha as correções oficiais, atualize o lockfile e valide `npm run check`, checks de CI, build em ambiente autorizado e Preview. Não migrar para versão preview do Next.js como consequência desta trava.
 - Entregas:
   - criar as rotas da seção 2.10 como extensão da área existente `/admin/templates`;
   - criar leitura administrativa por adapters;
@@ -488,14 +515,10 @@
 
 ### 3.5. Próxima ação
 
-- Submeter esta v1 à avaliação única:
-  - Analista;
-  - Gestor Estrutural;
-  - Gestor de Updates.
 - Gestor de Automação: N/A, pois todas as fases têm `Automação: não`.
-- Após os pareceres:
-  - consolidar a v2 no mesmo PR pelo processo escolhido pelo humano;
-  - orientar a atualização de `docs/roadmap.md` no mesmo PR, criando somente:
+- Submeter esta v2 ao gate de duas passagens do Analista.
+- Após a aprovação da v2:
+  - reconciliar `docs/roadmap.md` na mesma branch e no PR único de orquestração, criando somente:
     - `20.3`;
     - `20.3.1`;
     - `20.3.3`;
@@ -505,7 +528,7 @@
     - `12.4.3`;
     - `12.4.4`;
   - omitir `20.3.2` e `12.4.2` enquanto não houver registros materiais, conforme `docs/template-roadmap.md`.
-- Não iniciar implementação material antes da aprovação, consolidação e merge humano do plano-base v2.
+- Não iniciar implementação material antes do checkpoint `LP-Factory-Stage: plan-v2-approved`. No fluxo end-to-end, não há merge intermediário da v2: plano, roadmap, matriz e implementação permanecem na mesma branch e no mesmo PR contra `main`.
 
 ## 4. Escopo negativo e critérios de parada
 
