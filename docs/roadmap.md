@@ -1800,12 +1800,12 @@ Repositório — Ajustados
 - Status: Implementada.
 - Conteúdo:
   - Catálogo interno `landing_page@v1`, compatível com a parametrização raiz v1.
-  - Dez módulos versionados: `hero`, `trust_bar`, `problem_solution`, `offer`, `process`, `technical_assurance`, `social_proof`, `faq`, `final_cta` e `benefits`.
+  - Doze módulos versionados: `hero`, `trust_bar`, `problem_solution`, `offer`, `process`, `technical_assurance`, `social_proof`, `faq`, `final_cta`, `benefits`, `comparison` e `lead_capture`.
   - Cada módulo registra função estrutural, fronteiras, invariantes, lifecycle inicial `hypothesis` e propósito `controlled_test`.
   - Identidades e valores estruturais são fechados e imutáveis, sem colisão com `commercial_activation`.
   - Módulos não registram taxon, campanha, plano, copy, ativo, ordem, canal ou destino concreto.
 - Resultado da otimização:
-  - `benefits@v1` incorporado como módulo transversal, sem acoplamento ao catálogo da E20.2 e sem alteração do resolver;
+  - `benefits@v1`, `comparison@v1` e `lead_capture@v1` incorporados como módulos transversais, sem acoplamento ao catálogo da E20.2 e sem alteração do resolver;
   - contagens globais fixas removidas e identidades paralelas reduzidas por derivação segura.
 
 18.5.4 Campos, estruturas e cardinalidades
@@ -1823,7 +1823,7 @@ Repositório — Ajustados
 18.5.5 Variantes e critérios de criação
 - Status: Implementada.
 - Conteúdo:
-  - Dez variantes `standard@v1`, mais `faq.accordion@v1` e `hero.form@v1`.
+  - Onze variantes `standard@v1`, mais `faq.accordion@v1`, `hero.form@v1` e `lead_capture.form@v1`.
   - Cada variante pertence a um único módulo e versão compatível e aponta para seu próprio contrato de fields.
   - Variantes declaram `interactionContracts` como coleção de união discriminada estrita; os kinds atuais são `form` e `accordion`, únicos por variante.
   - Capabilities `embedded_form` e `accordion_interaction` são derivadas das interações; `primary_action` e `image_asset` são derivadas dos fields.
@@ -1831,7 +1831,7 @@ Repositório — Ajustados
   - Hero Standard permanece sem interação de formulário; Hero Form declara o interaction contract abstrato com fields, consentimento, privacidade, acessibilidade e binding operacional, sem fallback de canal.
   - Diferenças apenas de taxon, copy, plano, campanha, ativo, ordem ou quantidade não criam variante.
 - Resultado da otimização:
-  - `benefits.standard@v1` e `hero.form@v1` foram incorporados atomicamente com seus field contracts, records, fields, sources e interaction contracts;
+  - `benefits.standard@v1`, `comparison.standard@v1`, `hero.form@v1` e `lead_capture.form@v1` foram incorporados atomicamente com seus field contracts, records, fields, sources e interaction contracts;
   - sources permanecem junto dos fields, sem lookup nominal por path, construção paralela ou fallback;
   - propriedades isoladas e o booleano paralelo de compatibilidade foram removidos; `hero.standard@v1` permanece sem formulário e o resolver foi preservado.
 
@@ -1883,10 +1883,10 @@ Repositório — Ajustados
   - O resolver consulta o registry canônico, aplica as especializações da raiz e o delta do perfil e devolve somente o contrato completo da variante resolvida.
   - Lifecycle da raiz, do módulo e da variante usa o vocabulário canônico `hypothesis`, `validated` e `deprecated` e permanece registrado separadamente; a E18.5 não implementa enforcement de composição nem lifecycle efetivo.
   - Resultados são profundamente imutáveis, sem referência mutável compartilhada e sem fallback aproximado.
-  - Validação executável própria concluída com 32 casos, além das regressões de raiz, pesquisas, catálogo de entradas e ativação comercial.
+  - Validação executável própria concluída com 34 casos, além das regressões de raiz, pesquisas, catálogo de entradas e ativação comercial.
   - Comando canônico: `npm run validate:landing-page-module-catalog`.
 - Resultado da otimização:
-  - dez módulos e doze variantes consolidados, com lifecycle separado, API pública mínima, internalidade de registry/schema, ausência de fallback e imutabilidade profunda;
+  - doze módulos e quatorze variantes consolidados, com lifecycle separado, API pública mínima, internalidade de registry/schema, ausência de fallback e imutabilidade profunda;
   - quatro testes de extensibilidade e proteções positivas e negativas repetidos;
   - fixtures sintéticas reutilizam Form e Accordion sem registrar identidades permanentes nem alterar resolver, schema genérico, contratos de interação, listas globais, contagens ou regras nominais;
   - resolver inalterado e E18.5 independente do registry da E20.2.
@@ -2093,6 +2093,8 @@ Repositório — Ajustados
   * O recorte não cria banco, rota, API, Server Action, UI, adapter de banco, entitlement, integração Stripe, valor operacional, snapshot, automação, agente ou job.
 
 99. Changelog
+v1.5.101 — 25/07/2026 — Promovidos `comparison@v1`, `comparison.standard@v1`, `lead_capture@v1` e `lead_capture.form@v1` ao catálogo canônico da E18.5, totalizando doze módulos, quatorze variantes e 34 casos executáveis, com Form reutilizado e mecanismos centrais preservados.
+
 v1.5.100 — 23/07/2026 — Consolidada a moldura discriminada de interações da E18.5, com Form e Accordion, capabilities derivadas, fronteira coerente da Hero e prova sintética de reutilização sem ampliar os mecanismos arquiteturais.
 
 v1.5.99 — 23/07/2026 — Consolidada a implementação material da E18.5 com dez módulos e doze variantes, `benefits.standard@v1`, `hero.form@v1`, sources combinadas, proteções executáveis e `prod#17` ampliado ao contrato abstrato do Hero Form.

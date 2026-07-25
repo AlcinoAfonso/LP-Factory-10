@@ -42,7 +42,7 @@ Fontes de referência: `README.md`, `docs/roadmap.md`, `docs/base-tecnica.md`, `
 - Form e Accordion usam uma moldura discriminada comum de interações; capability interativa é derivada do contrato declarado, e capabilities de ação ou imagem são derivadas dos fields quando seguro.
 - Código adicional permanece legítimo quando o primeiro caso real introduzir capability ou interaction kind realmente novo; nesse caso, contrato TypeScript, ramo discriminado, schema Zod e casos positivos e negativos próprios podem evoluir uma vez, sem criar propriedade isolada por variante.
 - O primeiro caso real de mídia avançada deve introduzir moldura discriminada própria; a E18.5 não antecipa vídeo, áudio, animação, visual interativo ou 3D sem caso material.
-- A otimização incorpora permanentemente `benefits@v1`, `benefits.standard@v1` e `hero.form@v1` e preserva os quatro testes de extensibilidade derivados do PR #617.
+- A otimização incorpora permanentemente `benefits@v1`, `benefits.standard@v1`, `hero.form@v1`, `comparison@v1`, `comparison.standard@v1`, `lead_capture@v1` e `lead_capture.form@v1` e preserva os quatro testes de extensibilidade derivados do PR #617.
 - A E18.5 não será substituída por catálogo apenas consultivo e não perderá as proteções comprovadas nos testes.
 - A E18.5 não implementa dados concretos, conteúdo final, composição, renderer, persistência ou integração operacional.
 
@@ -117,7 +117,7 @@ Fontes de referência: `README.md`, `docs/roadmap.md`, `docs/base-tecnica.md`, `
 ### 2.3. E18.5 — Otimização do catálogo executável
 
 - Preservar o núcleo executável incorporado pelo PR #590 e suas proteções comprovadas.
-- Incorporar `benefits@v1`, `benefits.standard@v1` e `hero.form@v1` como identidades permanentes.
+- Incorporar `benefits@v1`, `benefits.standard@v1`, `hero.form@v1`, `comparison@v1`, `comparison.standard@v1`, `lead_capture@v1` e `lead_capture.form@v1` como identidades permanentes.
 - Remover contagens globais fixas, declarar fontes junto dos fields, eliminar o `switch` paralelo por path e reduzir listas e identidades paralelas evitáveis.
 - Preferir relações Zod estruturais realmente genéricas a regras nominais vinculadas a variantes específicas.
 - Reutilizar interaction kinds existentes pela coleção discriminada da variante e derivar capabilities simples de interactions e fields, evitando booleanos ou propriedades paralelas como fontes canônicas.
