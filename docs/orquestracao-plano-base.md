@@ -271,7 +271,7 @@ Depois de `aprovado para merge do plano-base v2`, o orquestrador usa:
 
 O menor delta pode registrar somente estrutura do recorte, identificadores, títulos, objetivos, status planejado ou definido, limites, decisões futuras aprovadas e dependências indispensáveis. Não registra implementação, banco, migrations, arquivos, updates, evidências, comandos, PRs ou histórico operacional e não altera outros documentos canônicos.
 
-O mesmo Analista recebe v2, snapshot, ABC e roadmap resultante em `revisao_delta`. A implementação só é liberada após confirmação de alinhamento, inclusive quando o ABC concluir `SEM ALTERAÇÕES NECESSÁRIAS`. No fluxo normal, o PR único acumula plano-base v2, roadmap, matriz e implementação até o gate final.
+O mesmo Analista recebe v2, snapshot, ABC, roadmap resultante e os contratos `docs/prompt-abc.md` e `docs/template-roadmap.md` em `revisao_delta`, lendo-os integralmente antes da conclusão. A implementação só é liberada após confirmação de alinhamento, inclusive quando o ABC concluir `SEM ALTERAÇÕES NECESSÁRIAS`. No fluxo normal, o PR único acumula plano-base v2, roadmap, matriz e implementação até o gate final.
 
 ## 5. Quarto passo: execução end-to-end do plano aprovado
 

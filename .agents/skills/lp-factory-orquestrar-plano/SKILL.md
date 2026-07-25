@@ -162,7 +162,7 @@ Somente após `aprovado para merge do plano-base v2`:
 4. Limitar o delta a seções e subseções do recorte, identificadores, títulos, objetivos, status planejado ou definido, limites, decisões futuras aprovadas e dependências indispensáveis.
 5. Não registrar implementação concluída, banco, migrations, arquivos, updates aplicados, evidências, comandos, PRs ou histórico operacional. Omitir `Registros do recorte` enquanto não houver implementação material.
 6. Validar com `git diff --check` e criar referência imutável da v2 aprovada com o roadmap resultante.
-7. Continuar no mesmo Analista em `revisao_delta`, entregando v2 aprovada, snapshot do roadmap, ABC emitido, roadmap resultante, `docs/prompt-abc.md` e `docs/template-roadmap.md`.
+7. Continuar no mesmo Analista em `revisao_delta`, entregando v2 aprovada, snapshot do roadmap, ABC emitido, roadmap resultante e os contratos `docs/prompt-abc.md` e `docs/template-roadmap.md` para leitura integral.
 8. Solicitar somente a auditoria da correspondência entre v2 e roadmap. Corrigir e reenviar apenas divergências objetivas; questão material nova segue a seção 7.
 9. Mesmo quando o ABC retornar `SEM ALTERAÇÕES NECESSÁRIAS`, exigir confirmação do Analista de que o snapshot já corresponde à v2.
 10. Liberar a execução somente após nova conclusão `aprovado para merge do plano-base v2`.
