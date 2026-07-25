@@ -13,6 +13,17 @@ Se houver divergência ou dúvida, parar e reportar a incompatibilidade; não ad
 
 Não editar nem commitar na `main`; usar branch dedicada por tarefa ou etapa. Ao usar a `main` local como base, atualizar com `git pull --ff-only`. O merge final deve ocorrer somente pelo GitHub Web. Se o ambiente não estiver claro, perguntar antes de publicar.
 
+## Edição segura de arquivos existentes
+
+Ao alterar arquivo existente:
+
+1. Ler a versão atual no branch-alvo imediatamente antes da edição e usar seu `sha` quando a ferramenta exigir substituição integral.
+2. Preservar estrutura, ordem e conteúdo fora do trecho autorizado.
+3. Fazer uma única gravação por arquivo sempre que possível.
+4. Após a gravação, revisar imediatamente o diff e confirmar que contém apenas as alterações autorizadas.
+5. Antes de uma segunda gravação, reler o arquivo e identificar objetivamente o ajuste ainda necessário.
+6. Diante de alteração inesperada, não fazer correções sucessivas nem reescrever a branch para ocultá-las; restaurar a versão correta ou parar e informar o problema.
+
 ## Publicação no Codex App local
 
 Publicar com `git push`. Não alterar configurações SSH durante a tarefa; se o push falhar, parar e informar o erro exato. Se a GitHub CLI estiver indisponível, entregar o link de criação do PR.
@@ -60,7 +71,7 @@ Após o merge, atualizar a base e criar nova branch na mesma worktree. Não cria
 
 Antes de publicar:
 
-* confirmar que commits e arquivos pertencem somente ao escopo atual;
+* confirmar que commits, arquivos e respectivos diffs pertencem somente ao escopo atual e seguem o protocolo de edição segura;
 * verificar alterações acidentais, secrets, `.env`, banco e workflows;
 * executar ou justificar as validações aplicáveis;
 * revisar `main..HEAD` e `main...HEAD`, quando disponíveis.
