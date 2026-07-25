@@ -1,50 +1,24 @@
 # AGENTS.md
 
-## Regra geral de execução
+## Execução
 
 Antes de executar, confirmar objetivo, fontes, limites e validação esperada.
 
-Não completar lacunas críticas por suposição; se faltar informação necessária para executar com segurança, parar e pedir exatamente o que falta.
+Não completar lacunas críticas por suposição; se faltar informação necessária, parar e pedir exatamente o que falta.
 
-Antes de executar briefing recebido por chat, confirmar se ele pertence ao caso, fase, branch e arquivos-alvo da tarefa atual.
-Se houver divergência ou dúvida, parar e reportar a incompatibilidade; não adaptar briefing de outro caso por inferência.
+Antes de executar briefing recebido por chat, confirmar se ele pertence ao caso, fase, branch e arquivos-alvo atuais. Diante de divergência ou dúvida, parar e reportar a incompatibilidade; não adaptar briefing de outro caso por inferência.
 
-## Regras operacionais
+Fluxos auxiliares de GitHub devem respeitar estas regras. Em caso de divergência, seguir este documento e informar a incompatibilidade.
 
-Não editar nem commitar na `main`; usar branch dedicada por tarefa ou etapa. Ao usar a `main` local como base, atualizar com `git pull --ff-only`. O merge final deve ocorrer somente pelo GitHub Web. Se o ambiente não estiver claro, perguntar antes de publicar.
+## Branch, worktree e publicação
 
-## Edição segura de arquivos existentes
+Não editar nem commitar na `main`; usar branch dedicada por tarefa ou etapa. Ao usar a `main` local como base, atualizar com `git pull --ff-only`. O merge final deve ocorrer somente pelo GitHub Web.
 
-Ao alterar arquivo existente:
+Se o ambiente não estiver claro, perguntar antes de publicar.
 
-1. Ler a versão atual no branch-alvo imediatamente antes da edição e usar seu `sha` quando a ferramenta exigir substituição integral.
-2. Preservar estrutura, ordem e conteúdo fora do trecho autorizado.
-3. Fazer uma única gravação por arquivo sempre que possível.
-4. Após a gravação, revisar imediatamente o diff e confirmar que contém apenas as alterações autorizadas.
-5. Antes de uma segunda gravação, reler o arquivo e identificar objetivamente o ajuste ainda necessário.
-6. Diante de alteração inesperada, não fazer correções sucessivas nem reescrever a branch para ocultá-las; restaurar a versão correta ou parar e informar o problema.
+### Modo simples
 
-## Publicação no Codex App local
-
-Publicar com `git push`. Não alterar configurações SSH durante a tarefa; se o push falhar, parar e informar o erro exato. Se a GitHub CLI estiver indisponível, entregar o link de criação do PR.
-
-## GitHub CLI no Codex App local
-
-Para consultar ou operar pull requests, reviews, comentários, checks, Actions e diffs no GitHub:
-
-1. Usar primeiro os comandos nativos da GitHub CLI (`gh`).
-2. Preferir `gh pr`, `gh run` e `gh api`, usando os recursos nativos de JSON, `--jq` ou `--template` quando necessário.
-3. Não usar Python, instalar runtimes, alterar `PATH`, aliases, página de código ou configurações do Windows apenas para processar resultados do GitHub.
-4. Se o acesso pelo `gh` funcionar, mas um script auxiliar falhar, abandonar o script e repetir a operação somente com recursos nativos do `gh`.
-5. Não testar runtimes ou caminhos alternativos sucessivamente sem necessidade explícita do caso.
-6. Se o `gh` não concluir a operação, usar GitHub Plugin ou GitHub Web como fallback.
-7. Se nenhum caminho aprovado funcionar, parar e informar o erro ou a limitação exata.
-
-## Modo simples
-
-Usar por padrão quando não houver necessidade real de worktree.
-
-Processo:
+Usar por padrão quando não houver necessidade real de isolamento:
 
 1. Confirmar branch, `git status` e remote.
 2. Atualizar a base e criar branch dedicada.
@@ -53,11 +27,9 @@ Processo:
 5. Revisar o diff, fazer commit e publicar.
 6. Entregar PR ou link de criação do PR.
 
-## Modo robusto
+### Modo robusto
 
-Usar somente quando houver frente paralela ou necessidade real de isolamento.
-
-Regra-base:
+Usar somente quando houver frente paralela ou necessidade real de isolamento:
 
 ```txt
 1 frente = 1 worktree
@@ -67,20 +39,39 @@ Regra-base:
 
 Após o merge, atualizar a base e criar nova branch na mesma worktree. Não criar outra worktree para continuar a mesma frente.
 
-## Gate pré-PR
+Publicar com `git push`. Não alterar configurações SSH durante a tarefa; se o push falhar, parar e informar o erro exato.
+
+## Edição segura e gate pré-PR
+
+Ao alterar arquivo existente:
+
+1. Ler a versão atual no branch-alvo imediatamente antes da edição e usar seu `sha` quando a ferramenta exigir substituição integral.
+2. Preservar estrutura, ordem e conteúdo fora do trecho autorizado.
+3. Fazer uma única gravação por arquivo sempre que possível.
+4. Revisar imediatamente o diff e confirmar que contém apenas as alterações autorizadas.
+5. Antes de uma segunda gravação, reler o arquivo e identificar objetivamente o ajuste ainda necessário.
+6. Diante de alteração inesperada, restaurar a versão correta ou parar e informar o problema; não fazer correções sucessivas nem reescrever a branch para ocultá-las.
 
 Antes de publicar:
 
-* confirmar que commits, arquivos e respectivos diffs pertencem somente ao escopo atual e seguem o protocolo de edição segura;
+* confirmar que commits, arquivos e diffs pertencem somente ao escopo atual;
 * verificar alterações acidentais, secrets, `.env`, banco e workflows;
 * executar ou justificar as validações aplicáveis;
 * revisar `main..HEAD` e `main...HEAD`, quando disponíveis.
 
-## Preview local
+## GitHub CLI e fallbacks
 
-Em alterações visuais/frontend, executar `npm run dev`, abrir a URL indicada e validar tela, comportamento e erros visíveis. Se a conexão falhar, confirmar se o servidor iniciou e em qual porta.
+Para PRs, reviews, comentários, checks, Actions e diffs, usar primeiro os comandos nativos da GitHub CLI (`gh`), preferindo `gh pr`, `gh run`, `gh api`, JSON, `--jq` ou `--template`.
 
-## Sandbox checks
+Falha ou indisponibilidade do `gh` não deve interromper criação da branch, implementação, validações, revisão do diff, commit local ou tentativa de `git push`. Verificar autenticação somente quando uma operação remota realmente exigir o `gh`.
+
+Não usar Python, instalar runtimes, alterar `PATH`, aliases, página de código ou configurações do Windows apenas para processar resultados do GitHub. Se um script auxiliar falhar, abandonar o script e usar recursos nativos do `gh`.
+
+Não testar runtimes ou caminhos alternativos sucessivamente sem necessidade explícita do caso.
+
+Se o `gh` não concluir a operação, usar GitHub Plugin ou GitHub Web como fallback. Se a criação do PR não estiver disponível, entregar o link de criação. Parar somente quando nenhum caminho aprovado permitir concluir a operação remota, informando o erro exato.
+
+## Validações
 
 Para tarefas com impacto em código, rodar nesta ordem:
 
@@ -91,6 +82,8 @@ No sandbox do Codex, não incluir `npm run build` na rotina de check.
 
 Para alterações exclusivamente documentais ou de texto, `npm ci` e `npm run check` podem ser considerados não aplicáveis.
 
+Em alterações visuais/frontend, executar `npm run dev`, abrir a URL indicada e validar tela, comportamento e erros visíveis. Se a conexão falhar, confirmar se o servidor iniciou e em qual porta.
+
 ## Entrega
 
 A resposta final deve informar:
@@ -100,4 +93,4 @@ A resposta final deve informar:
 * PR ou link de PR/compare, quando aplicável;
 * `npm ci`: executado, não executado ou não aplicável;
 * `npm run check`: executado, não executado ou não aplicável;
-* observações de bloqueio, fallback ou risco, quando houver.
+* bloqueios, fallbacks ou riscos, quando houver.
