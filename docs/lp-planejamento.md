@@ -140,6 +140,13 @@ Fontes de referência: `README.md`, `docs/roadmap.md`, `docs/base-tecnica.md`, `
 - Permitir que a IA registre gaps sem criar módulos ou variantes automaticamente.
 - Manter composição com gap impeditivo em `draft` até a extensão da E18.5 ser mergeada e a proposta ser revalidada.
 - Impedir atalhos que considerem composição oficial criada apenas por carga direta.
+- Pendência da E20.3: definir o handoff semântico dos gaps para `docs/prompt-catalogo-lp.md`, incluindo:
+  - evidência de `lp_sections` para justificar função e anatomia da seção;
+  - papéis semânticos e limites da E18.4;
+  - itens estruturados da E10.8 para os source maps de copy;
+  - dados ou evidências da E20.2 quando houver afirmações factuais;
+  - critério de parada quando essas fontes forem insuficientes.
+- Após validar esse handoff na composição real, decidir se `docs/prompt-catalogo-lp.md` precisa de ajuste antes da primeira promoção derivada de gap.
 
 ### 2.6. E19.4 — Fluxo único da LP por conta
 
