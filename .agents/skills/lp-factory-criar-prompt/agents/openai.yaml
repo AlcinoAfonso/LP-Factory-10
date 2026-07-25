@@ -1,0 +1,4 @@
+interface:
+  display_name: "Criar prompt LP Factory"
+  short_description: "Cria prompts outcome-first para outras IAs"
+  default_prompt: "Use $lp-factory-criar-prompt para criar um prompt ou instrução outcome-first para o papel informado, sem gerar briefing de implementação para Codex."

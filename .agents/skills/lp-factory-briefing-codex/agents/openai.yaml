@@ -1,0 +1,4 @@
+interface:
+  display_name: "Briefing para Codex"
+  short_description: "Cria briefings de implementação no repositório"
+  default_prompt: "Use $lp-factory-briefing-codex para criar um briefing de implementação para o Codex com contexto, arquivos-alvo, limites, validações e entrega final."
