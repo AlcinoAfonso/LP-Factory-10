@@ -1772,11 +1772,11 @@ Repositório — Ajustados
 
 18.5.1 Objetivo e status
 - Objetivo: otimizar o catálogo versionado de módulos e variantes da família `landing_page`, preservando o núcleo executável vigente e reduzindo pontos distribuídos de manutenção.
-- Status: Implementada e aprovada no recorte repo-only, com dez módulos e doze variantes.
-- Estado material: `benefits@v1`, `benefits.standard@v1` e `hero.form@v1` incorporados ao registry canônico, sem alteração do resolver.
+- Status: Implementada e aprovada no recorte repo-only, com doze módulos e quatorze variantes.
+- Estado material: `benefits@v1`, `benefits.standard@v1`, `hero.form@v1`, `comparison@v1`, `comparison.standard@v1`, `lead_capture@v1` e `lead_capture.form@v1` incorporados ao registry canônico, sem alteração do resolver.
 - Proteções preservadas: registry versionado, resolver genérico, Zod estrito, falha fechada, contratos tipados, separação entre módulo, variante e fields, imutabilidade profunda, casos negativos, API pública mínima e ausência de fallback.
 - Limites preservados: sem payload de conteúdo, banco, migration, rota, UI, renderer, composição, persistência, automação, job ou consumo por E19/E20; a E18.4 permanece fora da otimização e E19, E20.2 e E20.3 não serão implementadas ou alteradas neste recorte.
-- Validação: 32 casos executáveis do catálogo, além das regressões de raiz, pesquisas, catálogo de entradas e ativação comercial.
+- Validação: 34 casos executáveis do catálogo, além das regressões de raiz, pesquisas, catálogo de entradas e ativação comercial.
 
 18.5.2 Registros do recorte
 - Banco: N/A.
