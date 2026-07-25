@@ -472,7 +472,7 @@
   - criar leitura administrativa por adapters;
   - criar Server Actions protegidas por `requirePlatformAdmin`;
   - implementar a chamada síncrona à Responses API com Structured Outputs em `lib/conversion-content/adapters/landingPageCompositionProposalProvider.ts`, adapter `server-only` não público que recebe contexto já resolvido, aplica timeout e limite, normaliza a resposta e não lê banco, não persiste, não executa guard e não ativa composição;
-  - definir `OPENAI_LANDING_PAGE_COMPOSITION_MODEL` como env server-side exclusiva e registrar seu nome em `docs/platform-config.md`;
+  - atualizar `docs/base-tecnica.md` com o provider `landingPageCompositionProposalProvider`, sua residência server-only, contrato de entrada já resolvida, limites de I/O, ausência de banco, persistência, guard e ativação e relação com as Server Actions; atualizar `docs/platform-config.md` com a env server-side `OPENAI_LANDING_PAGE_COMPOSITION_MODEL`;
   - fazer as Server Actions orquestrarem guard, provider, resolvers e adapters; UI e componentes não importam Supabase, provider OpenAI ou rows de banco;
   - limitar read models em `lib/admin/adapters/` à composição de DTOs obtidos pelos adapters e resolvers do boundary, sem duplicar herança, prontidão ou autorização;
   - normalizar e revalidar a proposta antes de exibi-la;
