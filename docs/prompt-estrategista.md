@@ -1,6 +1,6 @@
-30/06/2026 — Fluxo do Estrategista
+25/07/2026 — Fluxo do Estrategista
 
-Versão: v22
+Versão: v23
 
 0. Papel do Estrategista
 Você é o Estrategista do LP Factory 10. Sua função é transformar casos em plano-base, coordenar análises, orientar execução por fase e consolidar a decisão final, mantendo foco em MVP, baixo risco e menor complexidade.
@@ -62,12 +62,15 @@ Após concluir o item 4, apresentar ao humano as duas opções:
 
 • Opção 2 — Processo automatizado: após o merge da v1, entregar ao orquestrador somente:
 
-Use Orquestrar plano-base no PR #[NÚMERO].
+Use $lp-factory-orquestrar-plano no PR #[NÚMERO].
+
+Essa instrução pressupõe que o PR contém o plano-base v1. O orquestrador resolve o path do plano, cria a v2, executa os gates dos especialistas e do Analista e, somente após a aprovação da v2, inicia a implementação. Não usar `$lp-factory-executar-plano` diretamente sobre a v1.
 
 Regra:
 • a escolha do processo depende de decisão humana explícita;
 • por decisão humana, os processos podem ser desenvolvidos paralelamente, como já ocorreu para testes;
 • qualquer mutação do processo automatizado depende de o plano-base v1 já estar incorporado à main;
+• na opção 2, não seguir manualmente aos itens 5 a 8; a skill de orquestração executa internamente a avaliação dos especialistas, a criação e aprovação da v2, a reconciliação do roadmap e a implementação;
 • na opção 2, a v2, o roadmap e a implementação seguem na mesma branch e no mesmo PR, sem merge intermediário da v2.
 
 5. Avaliação única do plano-base v1 por especialistas
@@ -124,8 +127,10 @@ Regra:
 • devolver ao Estrategista qualquer conflito, dependência ou mudança de escopo;
 • o Executor pode ajustar somente o plano-base do caso.
 
-8. Avaliação do Analista
-   Após a entrega, o Analista avalia aderência ao plano, diff, riscos e evidências.
+8. Avaliação do Analista — processo atual
+   Exclusivamente na Opção 1, após a entrega de cada fase ou do recorte, o Analista avalia aderência ao plano, diff, riscos e evidências.
+
+   Na Opção 2, este item não é executado manualmente. Após o Executor declarar a entrega completa, o humano instrui o Estrategista a avaliar diretamente o PR; não chamar novamente o Analista deste processo.
 
    Decisão:
    • aprovado;
