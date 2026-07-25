@@ -1,8 +1,8 @@
 0. Introdução
 
 0.1 Cabeçalho
-• Data: 23/07/2026
-• Versão: v1.5.100
+• Data: 25/07/2026
+• Versão: v1.5.102
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -1324,6 +1324,32 @@ Repositório — Ajustados
   - Sem LP Builder.
   - Sem curadoria de composição de nicho, LP teste ou liberação de nicho registrada como implementação da E12.
 
+12.4 Operação administrativa da E20.3
+
+12.4.1 Objetivo e status
+- Objetivo: operar no Admin Dashboard a proposta, revisão, ativação, prontidão, autorização e revogação da composição base de `landing_page` definida pela E20.3.
+- Status: Planejada em duas fases; E12.4.3 depende da base da E20.3.3–E20.3.4 e E12.4.4 depende da prontidão materializada pela E20.3.4.
+
+12.4.3 Proposta por IA, revisão, ativação e prontidão
+- Status: Planejada.
+- Conteúdo:
+  - A operação ocorrerá em `/admin/templates/landing-page` e no detalhe do taxon, protegida por privilégio administrativo.
+  - A IA será acionada somente por ação humana para propor uma composição estruturada; sua saída será normalizada e revalidada e não salvará nem ativará composição automaticamente.
+  - O administrador poderá revisar a proposta, ajustar itens permitidos, tratar gaps, salvar `draft`, revalidar e ativar uma versão válida.
+  - A interface exibirá os três critérios de preparação do taxon e a prontidão separada dos quatro planos, incluindo estados de vazio, erro seguro, bloqueio, `draft`, ativo e herdado.
+  - O primeiro merge material de E12.4.3 ou E12.4.4 depende da atualização técnica prévia de `next` e `eslint-config-next` para `16.2.11` ou versão estável posterior da linha 16 com as correções oficiais.
+  - O aceite exige validação humana do primeiro taxon real em Preview, desktop e mobile.
+
+12.4.4 Autorização e revogação por conta, taxon e plano
+- Status: Planejada.
+- Conteúdo:
+  - A autorização humana será específica para a combinação exata `conta + taxon atendido + plano` e exigirá prontidão atual válida.
+  - Outro taxon ou plano não será liberado implicitamente; a revogação será explícita e impedirá o efeito mesmo quando a prontidão permanecer válida.
+  - Autorização registrada e efeito atual serão apresentados separadamente, preservando histórico e falhando fechado quando a prontidão atual deixar de ser válida.
+  - A autorização complementará, sem substituir ou contornar, conta e membership válidos e o entitlement comercial da E9.
+  - O consumo produtivo permanecerá sob responsabilidade da futura E19.4.
+  - O aceite exige validação humana em Preview dos fluxos de autorizar, bloquear por prontidão e revogar.
+
 13. E13 — Partner Dashboard
 
 13.1 Status
@@ -2092,7 +2118,42 @@ Repositório — Ajustados
   * A avaliação concreta das condições, a completude dos valores operacionais e o snapshot pertencem à futura E19.4.
   * O recorte não cria banco, rota, API, Server Action, UI, adapter de banco, entitlement, integração Stripe, valor operacional, snapshot, automação, agente ou job.
 
+20.3 Composição base, prontidão e autorização de geração
+
+20.3.1 Objetivo e status
+
+* Objetivo: definir a composição base oficial de `landing_page`, resolver composição própria ou herdada, avaliar prontidão por plano e sustentar autorização humana específica antes da futura geração de LP por conta.
+* Status: Planejada e definida para execução faseada em E20.3.3 e E20.3.4, com operação administrativa complementar em E12.4.3 e E12.4.4.
+
+20.3.3 Contrato de composição, versões, gaps e herança
+
+* Status: Planejado.
+* Conteúdo:
+
+  * Cada composição será identificada por taxon proprietário e versão e poderá estar em `draft`, `active` ou `archived`.
+  * `draft` será editável e revalidável; `active` será aprovada, imutável e única por taxon proprietário; versões anteriores serão preservadas como histórico.
+  * Segmento e nicho poderão possuir composição própria; composição própria de ultranicho exigirá autorização humana explícita.
+  * A ausência de composição própria permitirá herança do ancestral elegível mais próximo, salvo bloqueio explícito; composição próxima inválida não poderá ser mascarada por fallback mais distante.
+  * Cada módulo poderá ocorrer no máximo uma vez, com variante fixa, ordem determinística e somente escolhas permitidas pelos contratos vigentes; a composição v1 aceitará no máximo uma interação `form`.
+  * Gaps não criarão identidades automaticamente; gap impeditivo bloqueará ativação e gap não impeditivo só poderá ser adiado por decisão humana justificada.
+  * `commercial_activation` permanecerá fora deste domínio.
+
+20.3.4 Resolução e prontidão por plano
+
+* Status: Planejada.
+* Conteúdo:
+
+  * A resolução preservará o taxon atendido, o taxon proprietário, a relação própria ou herdada e as versões efetivamente usadas.
+  * A prontidão será avaliada separadamente por `taxon atendido + plano + versão da composição resolvida` para Starter, Lite, Pro e Ultra.
+  * Taxon ativo, pesquisas estruturadas válidas para os dois públicos e composição ativa própria ou herdada serão critérios independentes e obrigatórios.
+  * A avaliação consumirá os sinais canônicos da E10.8, E18.4, E18.5 e E20.2 sem recalcular suas regras nem coletar valores operacionais.
+  * Resultado inválido, fonte inválida, gap impeditivo, herança bloqueada ou ausência de composição elegível falhará fechado, sem composição universal ou correção silenciosa.
+  * Avaliações anteriores serão preservadas como evidência histórica, mas não autorizarão consumo quando a validação atual falhar.
+  * A geração real, a avaliação concreta dos valores operacionais e o snapshot permanecerão sob responsabilidade da futura E19.4.
+
 99. Changelog
+v1.5.102 — 25/07/2026 — Planejados E20.3 e E12.4 com composição base versionada, herança controlada, prontidão por plano, proposta administrativa por IA sob revisão humana e autorização específica por conta, taxon e plano, preservando a geração real para E19.4.
+
 v1.5.101 — 25/07/2026 — Promovidos `comparison@v1`, `comparison.standard@v1`, `lead_capture@v1` e `lead_capture.form@v1` ao catálogo canônico da E18.5, totalizando doze módulos, quatorze variantes e 34 casos executáveis, com Form reutilizado e mecanismos centrais preservados.
 
 v1.5.100 — 23/07/2026 — Consolidada a moldura discriminada de interações da E18.5, com Form e Accordion, capabilities derivadas, fronteira coerente da Hero e prova sintética de reutilização sem ampliar os mecanismos arquiteturais.
