@@ -14,6 +14,8 @@ Fluxos auxiliares de GitHub devem respeitar estas regras. Em caso de divergênci
 
 Não editar nem commitar na `main`; usar branch dedicada por tarefa ou etapa. Ao usar a `main` local como base, atualizar com `git pull --ff-only`. O merge final deve ocorrer somente pelo GitHub Web.
 
+Se o ambiente não estiver claro, perguntar antes de publicar.
+
 ### Modo simples
 
 Usar por padrão quando não houver necessidade real de isolamento:
@@ -64,6 +66,8 @@ Para PRs, reviews, comentários, checks, Actions e diffs, usar primeiro os coman
 Falha ou indisponibilidade do `gh` não deve interromper criação da branch, implementação, validações, revisão do diff, commit local ou tentativa de `git push`. Verificar autenticação somente quando uma operação remota realmente exigir o `gh`.
 
 Não usar Python, instalar runtimes, alterar `PATH`, aliases, página de código ou configurações do Windows apenas para processar resultados do GitHub. Se um script auxiliar falhar, abandonar o script e usar recursos nativos do `gh`.
+
+Não testar runtimes ou caminhos alternativos sucessivamente sem necessidade explícita do caso.
 
 Se o `gh` não concluir a operação, usar GitHub Plugin ou GitHub Web como fallback. Se a criação do PR não estiver disponível, entregar o link de criação. Parar somente quando nenhum caminho aprovado permitir concluir a operação remota, informando o erro exato.
 
