@@ -309,11 +309,11 @@
   - `content_artifacts`;
   - estruturas de `commercial_activation`.
 - O modelo mínimo será composto por quatro tabelas dedicadas, sem engine genérica:
-  1. `public.landing_page_taxon_policies`: uma política por taxon atendido, contendo bloqueio de herança e autorização de composição própria de ultranicho.
-  2. `public.landing_page_compositions`: versões por `owner_taxon_id`, com status, snapshots de fontes, itens, gaps e proveniência em JSONB estrito; `UNIQUE (owner_taxon_id, version)` e índice único parcial para uma única linha `active` por proprietário.
-  3. `public.landing_page_readiness_evaluations`: última evidência por `served_taxon_id + plan_key + composition_id + composition_version`, com resultado, checks, códigos e data da avaliação.
-  4. `public.landing_page_generation_authorizations`: histórico por `account_id + served_taxon_id + plan_key`, com referência à prontidão usada, ator e datas. Revogar altera a decisão ativa para `revoked`; uma autorização humana posterior cria nova linha. Índice único parcial permite no máximo uma linha `active` por combinação.
-- `plan_key` aceita somente `starter`, `lite`, `pro` e `ultra`. Todas as FKs declaram `ON UPDATE` e `ON DELETE`; objetos históricos não podem ser removidos por cascade implícito. Composições `archived`, autorizações `revoked` e avaliações referenciadas não são apagadas pelo fluxo funcional. Itens, gaps, fontes e checks permanecem em JSONB com check de objeto/array no banco e validação integral por Zod no runtime.
+  1. `public.landing_page_taxon_policies`: nasce em E20.3.3, com uma política por taxon atendido, bloqueio de herança e autorização de composição própria de ultranicho.
+  2. `public.landing_page_compositions`: nasce em E20.3.3, com versões por `owner_taxon_id`, status, snapshots de fontes, itens, gaps e proveniência em JSONB estrito; `UNIQUE (owner_taxon_id, version)` e índice único parcial para uma única linha `active` por proprietário.
+  3. `public.landing_page_readiness_evaluations`: nasce em E20.3.4 como histórico append-only, com ID próprio, `served_taxon_id + plan_key + composition_id + composition_version`, resultado, checks, códigos, fingerprint e data da avaliação. Índice determinístico permite localizar a avaliação mais recente sem atualizar ou apagar evidência anterior.
+  4. `public.landing_page_generation_authorizations`: nasce em E12.4.4 como histórico por `account_id + served_taxon_id + plan_key`, com FK para o ID imutável da prontidão usada, ator e datas. Revogar altera a decisão ativa para `revoked`; uma autorização humana posterior cria nova linha. Índice único parcial permite no máximo uma linha `active` por combinação.
+- `plan_key` aceita somente `starter`, `lite`, `pro` e `ultra`. Todas as FKs declaram `ON UPDATE` e `ON DELETE`; objetos históricos não podem ser removidos por cascade implícito. Composições `archived`, autorizações `revoked` e avaliações de prontidão não são apagadas pelo fluxo funcional, e uma avaliação referenciada nunca é atualizada destrutivamente. Itens, gaps, fontes e checks permanecem em JSONB com check de objeto/array no banco e validação integral por Zod no runtime.
 - Preferir snapshot JSONB estrito e validado para itens, gaps, fontes e checks, em vez de normalização prematura de cada propriedade.
 - O banco deve proteger:
   - FKs;
@@ -340,7 +340,7 @@
 - Ativação, autorização e revogação são executadas por funções transacionais versionadas no banco: `activate_landing_page_composition`, `authorize_landing_page_generation` e `revoke_landing_page_generation`.
 - As funções são `SECURITY DEFINER`, usam `search_path = public, pg_temp`, verificam internamente `is_platform_admin() OR is_super_admin()`, são registradas na allowlist de `docs/schema.md`, têm `EXECUTE` para `authenticated` e revogação explícita para `public` e `anon`.
 - As Server Actions chamam essas funções pelo client SSR autenticado após `requirePlatformAdmin()`. O ator é obtido da sessão server-side e nunca de FormData ou payload do client.
-- A ativação bloqueia o `draft` e a composição ativa do mesmo proprietário, revalida identidade e lifecycle, arquiva a ativa anterior, ativa o alvo e chama `audit_context_event` na mesma transação.
+- A ativação bloqueia o `draft` e a composição ativa do mesmo proprietário, revalida identidade e lifecycle e compara, sob o mesmo lock, o fingerprint e o `updated_at` esperados produzidos pela validação server-side. Divergência falha fechado e exige nova validação; somente o mesmo snapshot validado pode arquivar a ativa anterior, ativar o alvo e chamar `audit_context_event` na mesma transação.
 - A autorização recebe a referência da prontidão revalidada pelo runtime, bloqueia e confere a evidência persistida e registra autorização e auditoria na mesma transação. Revogação bloqueia a autorização ativa e registra revogação e auditoria na mesma transação.
 - A migration cria proteção de lifecycle que impede alteração de payload, itens, gaps, fontes ou versão quando a composição já estiver `active`, e impede qualquer mutação de composição `archived`.
 - As tabelas ficam no schema `public` e são consumidas pela Data API somente por adapters server-side.
@@ -409,24 +409,20 @@
 - Entregas:
   - definir o path canônico dentro de `lib/conversion-content/landing-page/composition/`;
   - criar contratos TypeScript e schemas Zod estritos;
-  - criar migration incremental com as estruturas mínimas da seção 2.9;
+  - criar migration incremental com `landing_page_taxon_policies`, `landing_page_compositions`, proteções de lifecycle e `activate_landing_page_composition`;
   - implementar adapters por caso de uso, sem Supabase na UI;
   - implementar criação, edição e validação de `draft`;
   - implementar ativação transacional e arquivamento da versão anterior;
   - implementar política de herança e autorização de composição própria de ultranicho;
   - registrar auditoria material;
-  - atualizar obrigatoriamente `docs/schema.md` com tabelas, constraints, RLS, policies, grants, funções, triggers e Data API; atualizar `docs/base-tecnica.md` com o boundary `landingPageComposition`, API pública, adapters, provider e mutações transacionais; atualizar `docs/platform-config.md` com a env server-side `OPENAI_LANDING_PAGE_COMPOSITION_MODEL`; ajustar `package.json` com a validação executável da E20.3. Esses ajustes pertencem à mesma fase que materializar os respectivos contratos.
+  - atualizar obrigatoriamente `docs/schema.md` com as políticas, composições, constraints, RLS, policies, grants, funções, triggers e Data API materializados nesta fase; atualizar `docs/base-tecnica.md` com o núcleo `landingPageComposition`, API pública, adapters persistentes e ativação transacional.
 
 **Classificação, residência e API pública**
 
-- A E20.3 pertence ao domínio transversal Core `conversion-content`; seu boundary puro é `lib/conversion-content/landing-page/composition/`.
+- A E20.3 pertence ao domínio transversal Core `conversion-content`; seu núcleo puro reside em `lib/conversion-content/landing-page/composition/`.
 - Criar nesse boundary `contracts.ts`, `schema.ts`, `resolver.ts`, `validation-cases.ts` e `index.ts`. Esses arquivos não podem importar Next.js, Supabase, OpenAI nem código de `lib/admin`.
 - Ajustar o arquivo existente `lib/conversion-content/index.ts` para exportar o namespace público `landingPageComposition`. A API pública expõe somente contratos e resolvers autorizados; schema interno, provider e detalhes de persistência não são reexportados.
 - Todo acesso ao banco nasce em `lib/conversion-content/adapters/`, com um adapter por caso de uso, DTO final, colunas explícitas, ordenação determinística e sem exposição de rows do banco.
-- A proposta OpenAI fica em `lib/conversion-content/landing-page/composition/openai-proposal-provider.ts`, marcada `server-only`. Esse provider recebe contexto já resolvido, chama Responses API, aplica timeout e limite, normaliza a resposta e não lê banco, não persiste, não executa guard e não ativa composição.
-- Criar `app/admin/(protected)/templates/landing-page/page.tsx`, `app/admin/(protected)/templates/landing-page/[taxonSlug]/page.tsx`, actions route-local e componentes route-local em `_components/`.
-- Server Actions executam o guard e orquestram provider, resolvers e adapters; UI e componentes não importam Supabase, provider OpenAI ou rows de banco.
-- Read models em `lib/admin/adapters/`, quando necessários, somente compõem DTOs obtidos pelos adapters e resolvers do boundary; não duplicam herança, prontidão ou autorização.
 - A futura E19.4 consumirá `landingPageComposition` e seus adapters server-side, nunca actions, páginas ou adapters exclusivos do Admin.
 - Critérios de aceite:
   - lifecycle e constraints protegidos no banco e no runtime;
@@ -451,9 +447,10 @@
   - implementar bloqueio explícito de herança;
   - bloquear fallback distante quando a composição mais próxima estiver inválida;
   - consumir sinais de E10.8, E18.4, E18.5 e E20.2 sem duplicar seus resolvers;
-  - persistir a última evidência de prontidão;
+  - criar a migration incremental de `landing_page_readiness_evaluations` e persistir cada avaliação como evidência append-only;
   - expor contrato mínimo de prontidão para E12.4 e futura E19.4;
-  - adicionar script de validação executável da E20.3.
+  - adicionar script de validação executável da E20.3 em `package.json`;
+  - atualizar `docs/schema.md` e `docs/base-tecnica.md` com a avaliação histórica, seus adapters e a resolução materializados nesta fase.
 - Critérios de aceite:
   - casos próprios, herdados, bloqueados e inválidos cobertos;
   - os quatro planos avaliados separadamente;
@@ -471,10 +468,13 @@
 - Trava tecnológica — `vercel#27`: o primeiro PR material de E12.4.3 ou E12.4.4 não pode ser mergeado enquanto `next` e `eslint-config-next` permanecerem efetivamente instalados em `16.1.1`. Antes desse merge, concluir PR técnico próprio que alinhe ambos em `16.2.11` ou versão estável posterior da linha Next.js 16 que contenha as correções oficiais, atualize o lockfile e valide `npm run check`, checks de CI, build em ambiente autorizado e Preview. Não migrar para versão preview do Next.js como consequência desta trava.
 - Entregas:
   - criar as rotas da seção 2.10 como extensão da área existente `/admin/templates`;
+  - criar `app/admin/(protected)/templates/landing-page/page.tsx`, `app/admin/(protected)/templates/landing-page/[taxonSlug]/page.tsx`, actions route-local e componentes route-local em `_components/`;
   - criar leitura administrativa por adapters;
   - criar Server Actions protegidas por `requirePlatformAdmin`;
-  - implementar chamada síncrona à Responses API com Structured Outputs;
-  - definir env server-side exclusiva do modelo e registrar seu nome em `docs/platform-config.md`;
+  - implementar a chamada síncrona à Responses API com Structured Outputs em `lib/conversion-content/adapters/landingPageCompositionProposalProvider.ts`, adapter `server-only` não público que recebe contexto já resolvido, aplica timeout e limite, normaliza a resposta e não lê banco, não persiste, não executa guard e não ativa composição;
+  - definir `OPENAI_LANDING_PAGE_COMPOSITION_MODEL` como env server-side exclusiva e registrar seu nome em `docs/platform-config.md`;
+  - fazer as Server Actions orquestrarem guard, provider, resolvers e adapters; UI e componentes não importam Supabase, provider OpenAI ou rows de banco;
+  - limitar read models em `lib/admin/adapters/` à composição de DTOs obtidos pelos adapters e resolvers do boundary, sem duplicar herança, prontidão ou autorização;
   - normalizar e revalidar a proposta antes de exibi-la;
   - implementar editor estrutural mínimo, gaps, salvamento, revalidação e ativação;
   - exibir os três critérios do taxon e a prontidão dos quatro planos;
@@ -496,14 +496,15 @@
 - Objetivo:
   - permitir que o administrador controle quais contas podem usar um taxon e plano já prontos na futura E19.4.
 - Entregas:
-  - implementar contrato e persistência da autorização da seção 2.8;
+  - criar a migration incremental de `landing_page_generation_authorizations` com `authorize_landing_page_generation` e `revoke_landing_page_generation`, implementando o contrato e a persistência da seção 2.8;
   - criar leitura e mutações administrativas protegidas;
   - listar somente contas elegíveis pela operação administrativa vigente;
   - exigir prontidão atual antes de autorizar;
   - permitir revogação explícita;
   - exibir autorização registrada e efeito atual separadamente;
   - expor resolver server-side fail-closed para futura E19.4;
-  - registrar auditoria segura.
+  - registrar auditoria segura;
+  - atualizar `docs/schema.md` e `docs/base-tecnica.md` com a autorização histórica, seus adapters e mutações transacionais materializados nesta fase.
 - Critérios de aceite:
   - combinação exata `conta + servedTaxon + plano`;
   - outro plano ou taxon não é liberado implicitamente;
@@ -569,7 +570,7 @@
 
 ### 4.3. Validação deste trabalho documental
 
-- Confirmar que o diff da v1 contém somente `docs/lousa-plano-base-e20-3.md`.
+- Confirmar que o diff da v2 contém somente `docs/lousa-plano-base-e20-3.md`.
 - Confirmar as quatro seções principais obrigatórias.
 - Confirmar quatro fases executáveis:
   - E20.3.3;
@@ -580,7 +581,7 @@
 - Confirmar que `commercial_activation` aparece somente como fronteira negativa ou comparação rejeitada.
 - Confirmar que E19.4, E20.4 e E12.4.5–E12.4.6 permanecem fora.
 - Executar `git diff --check`.
-- Registrar como N/A nesta v1 documental:
+- Registrar como N/A nesta v2 documental:
   - `npm ci`;
   - `npm run check`;
   - validações materiais;
