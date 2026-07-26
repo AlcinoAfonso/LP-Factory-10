@@ -58,9 +58,10 @@ Fontes de referência: `README.md`, `docs/roadmap.md`, `docs/base-tecnica.md`, `
 - Existe um perfil versionado e evolutivo por taxon proprietário, reutilizado entre planos para orientar a geração inicial da LP.
 - O perfil pode pertencer a segmento ou nicho; perfil próprio de ultranicho é excepcional.
 - O perfil reúne orientação geral, módulos recomendados, variantes preferenciais, prioridades, ordem recomendada e orientações específicas por módulo.
+- Prioridade orienta a seleção futura; ordem recomendada indica a posição relativa entre os módulos selecionados; nenhuma delas torna um módulo obrigatório.
 - Em etapa futura da E12.4, o Admin Dashboard permitirá à IA propor e ao humano revisar, ajustar, aprovar e ativar novas versões do perfil.
-- Módulos e variantes referenciados devem existir na E18.5.
-- Migration, seed, fixture, script ou insert direto podem apoiar testes, mas não criam o perfil oficial nem atendem ao fluxo funcional.
+- A orientação pode guiar escolhas dentro dos contratos vigentes, mas não redefinir, ampliar ou contrariar a E18.4 ou a E18.5; módulos e variantes referenciados devem existir na E18.5.
+- Migration, seed, fixture, script ou insert direto podem apoiar testes, mas não criam o perfil oficial; o primeiro cadastro e a primeira ativação serão operados pela futura E12.4.
 - Uma versão ativa não é editada diretamente; mudança aprovada cria nova versão e preserva as anteriores.
 - Na ausência de perfil próprio, o ancestral elegível mais próximo pode fornecer a orientação herdada.
 
@@ -133,10 +134,10 @@ Fontes de referência: `README.md`, `docs/roadmap.md`, `docs/base-tecnica.md`, `
 
 ### 2.5. E20.3 — Perfil de orientação para geração
 
-- Definir e persistir o perfil versionado por taxon, com orientação geral e recomendações próprias por módulo.
+- Definir a persistência mínima do perfil versionado por taxon, com orientação geral e recomendações próprias por módulo.
 - Registrar módulo, variante preferencial, prioridade, ordem recomendada, orientação específica e justificativa quando aplicável, validando as referências contra a E18.5.
 - Resolver perfil próprio ou herdado e entregá-lo por um único boundary server-side.
-- O perfil orienta a geração inicial sem governar a LP materializada; E12.4, IA, geração, gaps persistidos, prontidão, autorização e aprendizado automático pertencem a planos posteriores.
+- O perfil orienta a geração inicial sem governar a LP materializada; a E20.3 atual não cadastra nem ativa perfil oficial, e E12.4, IA, geração, gaps persistidos, prontidão, autorização e aprendizado automático pertencem a planos posteriores.
 
 ### 2.6. E19.4 — Fluxo único da LP por conta
 
