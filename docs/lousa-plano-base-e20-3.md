@@ -52,13 +52,13 @@
 - Existe um perfil versionado por `taxon proprietário + versão`, reutilizado entre planos.
 - O perfil pode pertencer a segmento ou nicho; perfil próprio de ultranicho é excepcional e depende de decisão humana explícita no fluxo futuro responsável.
 - O perfil reúne:
-  - orientação geral;
-  - módulo recomendado;
+  - orientação geral em `generation_guidance`;
+  - recomendações próprias por módulo;
   - variante preferencial, quando aplicável;
   - prioridade;
   - ordem recomendada;
-  - orientação específica;
-  - justificativa, quando aplicável.
+  - `item_guidance`, quando aplicável.
+- A prioridade usa enum fechado `P1`, `P2` e `P3`, em ordem decrescente de importância.
 - Prioridade orientará a seleção futura; ordem recomendada indicará a posição relativa entre os módulos selecionados.
 - Nenhuma recomendação torna módulo obrigatório ou redefine a E18.4 ou a E18.5.
 - Somente identidades oficialmente registradas na E18.5 são válidas.
@@ -96,7 +96,8 @@
   - validar identidades contra a E18.5;
   - devolver resultado tipado e com proveniência.
 - Persistência:
-  - somente perfil versionado e payload de orientação.
+  - exatamente duas tabelas de domínio: perfil versionado e itens recomendados;
+  - os itens pertencem à versão do perfil e não possuem versão ou lifecycle próprios.
 - Fallback:
   - perfil próprio;
   - perfil herdado;
@@ -112,18 +113,20 @@
   - estado.
 - Orientação geral:
   - texto não vazio.
-- Cada recomendação contém:
+- Cada item recomendado contém:
   - módulo e versão;
   - variante preferencial e versão, quando aplicável;
-  - prioridade inteira positiva;
+  - prioridade `P1`, `P2` ou `P3`;
   - ordem recomendada inteira positiva;
-  - orientação específica, quando aplicável;
-  - justificativa, quando aplicável.
+  - `item_guidance`, quando aplicável.
 - Regras:
-  - menor prioridade numérica representa maior prioridade;
-  - ordem recomendada é única entre as recomendações, mas não precisa ser contínua;
-  - existe no máximo uma recomendação por módulo;
+  - `P1` representa maior prioridade, seguida por `P2` e `P3`;
+  - não são aceitos `P4`, `P5` ou valores numéricos arbitrários;
+  - ordem recomendada é única entre os itens do perfil, mas não precisa ser contínua;
+  - existe no máximo um item por módulo no perfil;
+  - `item_guidance` pode reunir a orientação específica e sua razão;
   - não existe campo de obrigatoriedade.
+- Perfil e itens formam um único agregado de domínio entregue aos consumidores.
 - O perfil não armazena:
   - composição final;
   - copy;
@@ -136,24 +139,48 @@
 
 ### 2.3. Persistência mínima
 
-- Criar uma única tabela para o perfil versionado.
-- Manter orientação e recomendações em payload compacto, sem tabela própria por recomendação.
+- Criar exatamente duas tabelas de domínio:
+  - `landing_page_generation_profiles`:
+    - ID;
+    - taxon proprietário;
+    - versão;
+    - status;
+    - `generation_guidance`;
+    - metadados mínimos;
+  - `landing_page_generation_profile_items`:
+    - ID;
+    - `profile_id`;
+    - módulo e versão;
+    - variante preferencial e versão, quando houver;
+    - prioridade;
+    - ordem recomendada;
+    - `item_guidance`, quando houver.
+- A tabela de itens possui FK para `landing_page_generation_profiles`.
+- Os itens pertencem à versão do perfil e não possuem versão, status ou lifecycle próprios.
 - Proteger no banco:
-  - FK para o taxon proprietário;
+  - FK do perfil para o taxon proprietário;
+  - FK de cada item para o perfil;
   - versão positiva e única por taxon proprietário;
-  - estado fechado;
+  - status fechado;
   - uma única versão `active` por taxon proprietário;
-  - payload presente;
-  - RLS habilitado e ausência de acesso direto por `anon` e `authenticated`.
+  - `generation_guidance` presente;
+  - prioridade fechada em `P1`, `P2` e `P3`;
+  - integridade entre perfil e itens;
+  - RLS habilitado nas duas tabelas e ausência de acesso direto por `anon` e `authenticated`.
 - Proteger no runtime:
-  - shape estrito do payload;
+  - contratos próprios do perfil e dos itens;
+  - schema estrito do agregado;
   - regras de prioridade e ordem;
   - ausência de obrigatoriedade;
   - existência e compatibilidade de módulo e variante na E18.5;
   - imutabilidade do resultado entregue.
+- Implementar adapter server-side que leia as duas tabelas.
+- Expor um único boundary que entregue perfil e itens juntos.
+- Consumidores não consultam as duas tabelas separadamente.
 - Implementar somente leitura server-side.
 - Não criar operação de escrita, RPC, trigger de lifecycle, rota, API, Server Action, UI ou tabela de política do taxon.
 - A migration deve:
+  - criar exatamente as duas tabelas;
   - ser incremental e forward-only;
   - ser aplicada remotamente somente após merge na `main`;
   - atualizar `docs/schema.md`;
@@ -203,11 +230,18 @@
 - Contrato:
   - perfil válido;
   - estado ou versão inválidos;
-  - orientação inválida;
-  - prioridade ou ordem inválidas;
-  - recomendação duplicada;
+  - `generation_guidance` inválida;
+  - prioridade fora de `P1`, `P2` e `P3`;
+  - ordem recomendada inválida;
+  - item duplicado;
+  - `item_guidance` inválida, quando presente;
   - tentativa de declarar obrigatoriedade;
   - módulo ou variante inválidos.
+- Integridade:
+  - item vinculado ao perfil por FK;
+  - item sem perfil rejeitado;
+  - item sem versão ou lifecycle próprio;
+  - agregado entregue sempre com perfil e itens juntos.
 - Estados:
   - somente `active` participa da resolução;
   - unicidade da versão ativa protegida pela persistência.
@@ -225,17 +259,24 @@
 
 - Automação: não.
 - Objetivo:
-  - implementar contrato versionado e persistência mínima do perfil de orientação.
+  - implementar o agregado versionado e a persistência mínima do perfil de orientação.
 - Entregas:
   - criar boundary em `lib/conversion-content/landing-page/generation-profile/`;
-  - criar contratos TypeScript e schemas Zod estritos;
-  - criar a migration mínima da seção 2.3;
-  - implementar leitura server-side;
+  - criar contratos TypeScript próprios do perfil e dos itens;
+  - criar schema Zod estrito do agregado;
+  - criar migration com `landing_page_generation_profiles` e `landing_page_generation_profile_items`;
+  - implementar adapter server-side que leia as duas tabelas;
+  - expor boundary único que entregue perfil e itens juntos;
   - atualizar `docs/schema.md`;
-  - adicionar casos de contrato e estados.
+  - adicionar casos de contrato, estados e integridade entre perfil e itens.
 - Critérios de aceite:
-  - uma única tabela do perfil;
+  - exatamente duas tabelas de domínio;
+  - FK dos itens para o perfil;
+  - itens sem versão ou lifecycle próprios;
+  - prioridade limitada a `P1`, `P2` e `P3`;
+  - um único `item_guidance` textual por item;
   - uma única versão `active` por taxon proprietário;
+  - consumidores sem consulta separada às tabelas;
   - nenhum módulo obrigatório ou composição final;
   - nenhuma mutação, RPC, trigger, rota, API, Server Action ou UI;
   - nenhum registro oficial;
@@ -285,7 +326,8 @@
 - Copy, geração, renderização, preview, publicação, tracking ou snapshot.
 - E19.4, E20.4 e E12.4.3–E12.4.6.
 - Dados operacionais de conta, oferta, campanha ou LP.
-- Tabela por recomendação, tabela de política ou estrutura operacional paralela.
+- Terceira tabela de domínio.
+- Tabelas de políticas, gaps, avaliações, aprendizado ou autorização.
 - RPC, trigger de lifecycle, rota, API, Server Action ou UI.
 - Editor visual, agente, automação, job, fila, cron, webhook, cache, serviço ou nova infraestrutura.
 - Perfil oficial criado por migration, seed, fixture, script ou insert direto.
@@ -298,7 +340,7 @@
   - for exigida qualquer mutação do perfil;
   - a E18.5 não oferecer contrato público suficiente;
   - surgir caso real de perfil próprio de ultranicho antes da definição de sua autorização;
-  - a persistência exigir mais de uma tabela de domínio;
+  - surgir necessidade de uma terceira tabela de domínio nesta etapa;
   - surgir rota, UI, serviço, automação ou infraestrutura;
   - uma migration precisar ser aplicada antes do merge;
   - o repositório divergir das fontes do plano.
@@ -310,6 +352,10 @@
   - quatro seções preservadas;
   - duas fases com `Automação: não`;
   - documento mantido como v1;
+  - exatamente duas tabelas de domínio;
+  - prioridade fechada em `P1`, `P2` e `P3`;
+  - um único `item_guidance` por item;
+  - boundary único para perfil e itens;
   - ausência de composição obrigatória, cadastro oficial, E12.4, IA, gaps, prontidão, autorização, revogação e geração.
 - Executar `git diff --check`.
 - Registrar como N/A:
