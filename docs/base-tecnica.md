@@ -49,7 +49,7 @@
 • Configurações operacionais do Supabase: ver `docs/platform-config.md`.
 
 2.3 UI
-• Design System (identidade visual — E6.4–E6.6): referência oficial em docs/design-system.md (documento consolidado do ciclo E6.4–E6.6; API mínima, regras de uso e superffícies cobertas).
+• Design System (identidade visual — E6.4–E6.6): referência oficial em docs/design-system.md (documento consolidado do ciclo E6.4–E6.6; API mínima, regras de uso e superfícies cobertas).
 • Marca provisória: wordmark textual temporário “LP Factory” enquanto o asset oficial de logo não estiver versionado no repo.
 • UI Component Library (E6.5/E6.6): componentes mínimos — Button, Input, Card, Select, FormField, Textarea, FeedbackMessage, EmptyState e LoadingState. Fonte detalhada: docs/design-system.md.
 • Regra: em Auth, onboarding mínimo e superfícies reais tocadas, preferir os componentes e estados reutilizáveis acima (evitar markup cru) e seguir docs/design-system.md.
