@@ -2,8 +2,8 @@
 
 0.1. Cabeçalho
 • Documento: Base Técnica LP Factory 10
-• Versão: v2.0.54
-• Data: 23/07/2026
+• Versão: v2.0.55
+• Data: 25/07/2026
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -153,7 +153,7 @@
 • PATH (pipeline): automations/supabase-inspect/
 • Regra (v1): somente SELECT/WITH (sem mutações).
 • Secrets (job): OPENAI_API_KEY e SUPABASE_DB_URL_READONLY.
-• Detalhamento operacional, evolução funcional e posicionamento na camada de automações: consultar docs/automacoes.md.
+• Detalhamento operacional, evolução funcional e posicionamento na camada de automações: consultar docs/automations.md.
 • Contrato técnico detalhado do pipeline: automations/supabase-inspect/README.md.
 
 3.4.4 Migrations Supabase versionadas
@@ -586,169 +586,3 @@ Fonte normativa da allowlist SULB para exceções de Auth. Qualquer novo arquivo
 • Imports/adapters e allowlist SULB: validar por 2.5 e 6.4.
 • Anti-regressão de mutações/queries (ex.: .maxAffected(1), search_path): validar por 3.8 e 3.12.
 • Tipos canônicos e adapters vNext: validar por 3.6 e 3.14.
-
-99. Changelog
-v2.0.54 — 23/07/2026 — Unificadas as interações de variante em união discriminada, com capabilities derivadas e evolução localizada por interaction kind, sem antecipar contratos de mídia avançada.
-
-v2.0.53 — 23/07/2026 — Consolidado o contrato durável de sources declarativas e variantes com formulário abstrato no catálogo `landing_page`, mantendo registry único, API mínima e boundary repo-only.
-
-v2.0.52 — 21/07/2026 — Enxugado o contrato durável do catálogo de módulos e variantes de `landing_page`, preservando vínculos operacionais abstratos e limites permanentes sem duplicar valores ou decisões específicas do registry.
-
-v2.0.51 — 21/07/2026 — Registrado o contrato técnico durável do catálogo repo-only de módulos e variantes de `landing_page`, com registry único, resolução efetiva fail-closed, mapas por field, perfis de funil fechados, API pública mínima e imutabilidade profunda.
-
-v2.0.50 — 15/07/2026 — Registrado o contrato técnico durável do catálogo de entradas de `landing_page`, com registry versionado, resolução pura por taxon e plano, herança taxonômica, especializações restritivas, condições declarativas, proveniência, imutabilidade e falha fechada.
-
-v2.0.49 — 14/07/2026 — Registrado o contrato técnico durável da resolução de pesquisas estruturadas de `landing_page`, com adapter server-side, resolver puro, precedência própria/pai direto, proveniência e falha fechada.
-
-v2.0.48 — 13/07/2026 — Substituído o contrato antigo de composição `landing_page` pelo contrato técnico durável da parametrização raiz versionada, com registry canônico, resolução fail-closed, imutabilidade e validação executável.
-v2.0.47 — 07/07/2026 — Registrado contrato técnico da base repo-only de composição `landing_page`, com path canônico, catálogo mínimo, registry fechado, schemas, renderer mínimo, resolver/validador e limites de `config_json`.
-v2.0.46 — 04/07/2026 — Registrado contrato técnico da liberação manual administrativa mínima de entitlement comercial, com Server Action protegida por `requirePlatformAdmin`, boundary Admin server-only e persistência exclusiva em `public.account_commercial_entitlements`.
-v2.0.45 (02/07/2026) — Registrado webhook Stripe mínimo do E9, com endpoint canônico, boundary, assinatura obrigatória, evento `invoice.paid`, idempotência e persistência segura de entitlement.
-v2.0.43 — 22/06/2026 — Registrado o contrato técnico da geração administrativa de draft `commercial_activation`: fluxo server-side/Admin com Responses API e Structured Outputs, modelo por env var, validação em duas camadas, persistência somente como `draft`, fontes relacionais `business_buyer`, `end_customer` apenas em `provenance_json` e compensação segura em falha parcial.
-
-v2.0.42 — 16/06/2026 — Registrado o contrato técnico do renderer composicional de `commercial_activation`, com `content_json` v1, validação Zod estrita, registry fechado, regras de falha e conteúdo estruturado seguro.
-
-v2.0.41 — 12/06/2026 — Concluído o fluxo universal de migrations Supabase: merge na `main` aplica migrations automaticamente com gate `true`; SQL Editor excluído do fluxo normal e histórico definido como forward-only, com reversões por nova migration.
-
-v2.0.40 — 12/06/2026 — Retirada a family antecipada `conversion-content` do estado técnico atual; estruturas compartilhadas de conteúdo serão reavaliadas somente após dois casos reais aprovados.
-
-v2.0.39 — 11/06/2026 — Registrado o fluxo canônico de migrations Supabase versionadas, com baseline, incrementais, validação isolada, dry-run obrigatório e workflow mantido sob gate fechado; `supabase/setup-cli` v2.1.1 fixada por SHA completo e CLI `2.106.0`.
-
-v2.0.38 — 09/06/2026 — Registrado o runtime inicial de `conversion-content`, com template comercial universal, resolução pura, adapter server-only, fallback hierárquico/genérico e grants read-only para pesquisa comercial.
-
-v2.0.37 — 08/06/2026 — Consolidadas em 3.3 as regras estruturais e registrada a family `conversion-content`.
-
-v2.0.36 — 21/05/2026 — Base técnica atualizada com contrato mínimo de configuração do resolvedor IA de nicho: `OPENAI_API_KEY`, `OPENAI_NICHE_RESOLVER_MODEL`, modelo de referência `gpt-5.4-mini`, ajuste via Vercel Environment Variables e necessidade de redeploy por ambiente.
-
-v2.0.35 — 14/05/2026 — Base técnica atualizada com contrato mínimo de runtime para IA complementar server-side com Structured Outputs, variáveis server-only, preservação de `account_taxonomy`, persistência apenas em `account_niche_resolutions`, fluxo degradável e logs sem PII.
-
-v2.0.34 — 11/05/2026 — Base técnica atualizada com contrato mínimo de runtime para gravação server-side do vínculo oficial em `account_taxonomy`, preservando `account_niche_resolutions` como registro operacional, regra de alta confiança, conflito de primário sem substituição automática, fluxo não bloqueante e logs sem PII.
-
-v2.0.33 — 11/05/2026 — Base técnica atualizada com contrato mínimo de runtime para persistência operacional de resolução em `account_niche_resolutions`, sem gravação de `account_taxonomy`, com fluxo não bloqueante e logs sem PII.
-
-v2.0.32 — 10/05/2026 — Base técnica atualizada com contrato runtime do matching determinístico de taxonomia no pós-save do `pending_setup`, regra não bloqueante e observability segura com eventos canônicos.
-
-v2.0.31 (10/05/2026)
-• Registrada a regra de confiança determinística para taxon match via helper puro `evaluateDeterministicTaxonMatch`, com contrato tipado em `lib/onboarding/niche-resolution/contracts.ts` e uso obrigatório sem lógica inline em UI/route/server action.
-
-v2.0.31 (09/05/2026) — E10.5.6: adapter server-side do matching determinístico de taxonomia
-• Registrado o path canônico do adapter `taxonMatchAdapter`.
-• Registrado o contrato público `TaxonMatchCandidate`.
-• Registrada a regra de consumo server-side da RPC de matching, com DTO camelCase e erro sem PII.
-
-v2.0.30 (09/05/2026) — E10.5.6: regras técnicas para consumo runtime do matching de taxonomia
-• Registrada regra de consumo server-side via adapter para matching determinístico de taxonomia.
-• Registrada restrição contra consumo direto pelo client/UI.
-• Registrada observability mínima sem PII para futura integração runtime da RPC de matching.
-
-v2.0.29 (29/04/2026) — Registra convenção route-local para componentes específicos de rota que dependem da própria boundary da rota.
-v2.0.28 (18/04/2026) — E12.5.1: primeira superfície ativa do Admin + retorno administrativo no login
-• Atualizada 5.2.2 para registrar a seção Admin ativa no runtime via `app/admin/layout.tsx`, protegida por guard SSR administrativo reaproveitando `requirePlatformAdmin()`.
-• Atualizada 5.3.1 para registrar a preservação do retorno para `/admin` quando o login partir do contexto administrativo, mantendo o fluxo padrão para `/protected` nos demais casos.
-v2.0.27 (15/04/2026) — Ajuste operacional Vercel do projeto de services
-• Registrada nota operacional do projeto `lpf-10-services` com boundary de deploy por `Root Directory = services/mcp-supabase-inspect`.
-• Registradas as regras operacionais `Include files outside the root directory in the Build Step = OFF` e `Ignored Build Step` customizado para reduzir builds desnecessários fora do escopo do service.
-v2.0.26 (13/04/2026) — Limpeza documental pós-remoção do legado de tokens
-• Removidas referências ao onboarding consultivo por token no contrato técnico/runtime, incluindo menções de adapters e operações legadas.
-• Atualizada a seção de rate limit administrativo para refletir que o limite específico de tokens não faz parte do estado atual e será redefinido no novo Admin Dashboard (E12).
-v2.0.25 (31/03/2026) — Alinhamento documental de topologia e paths canônicos
-• Atualizados os paths canônicos em acesso, auth, onboarding, types, utils e admin, mantendo o escopo estritamente documental e sem mudança funcional de produto.
-v2.0.24 (31/03/2026) — Fase 1 do Core: extração dos guards SSR de seção
-• Atualizadas 5.1.2, 5.2.2 e 5.4 para refletir a extração dos guards SSR de seção cliente/admin (sem mudança de URL e sem nova camada no root).
-v2.0.23 (31/03/2026) — Nota operacional sobre STAGING
-• Registrado que não há Supabase STAGING ativo, que previews usam o projeto principal e que eventual novo staging não deve existir sem controles mínimos de segurança.
-v2.0.22 (27/03/2026) — Formalização de `services/` e remoção da MCP do runtime do Core
-• Registrada na topologia canônica a terceira raiz `services/` para serviços e integrações com deploy independente.
-• Registrado o projeto Vercel de services `lpf-10-services` e o endpoint canônico da MCP Supabase Inspect.
-• Registrado que a MCP Supabase Inspect não é mais hospedada no runtime do app Core.
-v2.0.21 (26/03/2026) — Separação estrutural entre Core SaaS e automations
-• Formalizada na Base Técnica a separação canônica entre o runtime do Core SaaS no root do repositório e a camada de automações em `automations/`.
-• Registrado que `.github/workflows/` permanece como camada de orquestração/entrada.
-• Registrado que dependências de automação não devem entrar no `package.json` do Core, salvo exceção técnica aprovada.
-• Registrado que automações relevantes podem nascer como subprojetos isolados com `package.json` e `package-lock.json` próprios.
-• Alinhamento documental com a convenção já registrada em `docs/automacoes.md`.
-v2.0.20 (24/03/2026) — Alinhamento de topologia canônica e descontinuação do repo-inv
-• Ajustadas as seções 2.5, 3.14, 6.3 e 6.5 para alinhar imports, adapters e contratos à regra já vigente em 3.3.1: código novo nasce na raiz; src/** permanece apenas como legado controlado.
-• Removidas referências normativas a docs/repo-inv.md; o estado atual de arquivos passa a ser consultado diretamente no repositório real.
-v2.0.19 (20/03/2026) — Regra estrutural: raiz como padrão canônico; src/ como legado controlado
-• Adicionada 3.3.1 com a política mínima de topologia do repositório: código novo nasce na raiz, src/ fica como legado controlado e não haverá migração em big bang.
-v2.0.18 (10/03/2026) — E6.6: Visual States & Feedback (Textarea + estados reutilizáveis)
-• Registrados os componentes mínimos do E6.6 (Textarea, FeedbackMessage, EmptyState e LoadingState) como parte da UI proprietária, com referência ao docs/design-system.md consolidado (E6.4–E6.6).
-v2.0.17 (09/03/2026) — E6.5: UI Component Library (base) + docs/design-system.md atualizado
-• Registrada a biblioteca base de UI proprietária (components/ui/*) e a regra de uso para reduzir markup cru em Auth e onboarding mínimo (referência em docs/design-system.md).
-v2.0.16 (09/03/2026) — E6.4: identidade visual mínima + docs/design-system.md
-• Registrada a referência oficial `docs/design-system.md`, o uso de wordmark textual temporário e o remapeamento semântico contido em `app/globals.css` (primary/ring/border/accent) para aplicação mínima de identidade visual.
-v2.0.15 (06/03/2026) — `supabase-inspect`: SQL batch no briefing + relatório completo no Summary
-• Registrado o modo batch com delimitador `---` (briefing e briefing_path) com execução determinística e relatório completo por query no Job Summary (contrato em automations/supabase-inspect/README.md).
-v2.0.14 (04/03/2026) — Pipeline `supabase-inspect` v1 (read-only) + secret SUPABASE_DB_URL_READONLY
-• Registrado o pipeline read-only `supabase-inspect` (workflow + contrato em automations/supabase-inspect/README.md) e o secret `SUPABASE_DB_URL_READONLY` para execução via GitHub Actions (preferir session pooler).
-v2.0.13 (04/03/2026) — ESLint CLI + AGENTS.md (Codex checks)
-• Registrada a rotina determinística no sandbox do Codex via AGENTS.md (`npm ci` + `npm run check`) e a divisão “build fora do sandbox (CI/Vercel)”.
-• Registrados scripts de lint/typecheck/check e o ESLint Flat Config com exceção temporária `react-hooks/set-state-in-effect: off`.
-v2.0.12 (02/03/2026) — OpenAI Platform (DEV/PROD) + GitHub Actions `openai-smoke`
-• Registrados OPENAI_API_KEY (Actions secret) e workflow `.github/workflows/openai-smoke.yml` como teste mínimo de integração.
-• Registrada governança mínima de OpenAI Projects (DEV/PROD), sharing isolado no DEV e higiene de keys (revogação imediata em caso de exposição).
-v2.0.11 (01/03/2026) — Infra Auth: e-mail transacional via Resend (SMTP) no domínio raiz
-• Registrada a configuração estável de e-mails transacionais do Supabase Auth via Resend (SMTP) com sender `no-reply@lpfactory.com.br`, incluindo consequências do domínio raiz e condição de migração futura para subdomínio dedicado.
-v2.0.10 (24/02/2026) — E5.4: signup/confirm com correlação rid + logs (supa#5/VERC mínimo)
-• Signup documentado com rid (não-PII) para correlação ponta a ponta e logs estruturados no client (supa#5) para signup/resend sem PII, com sinal mínimo no runtime Vercel (VERC).
-v2.0.9 (19/02/2026) — Design System: Inter + tokens Tailwind
-• Registrada tipografia oficial Inter via next/font/google e aplicação global no app/layout.tsx.
-• Registrados tokens Tailwind LP Factory (brand/ink/graytech/surface/state + boxShadow.card) como extensão aditiva, preservando padrão shadcn.
-• Registrada expansão do content Tailwind para incluir js/jsx/mdx, prevenindo purge silencioso.
-v2.0.8 (13/02/2026) — E10.4.6: setup status-based + account_profiles + logs canônicos + templates Supabase
-• Retificada 5.2.1: accountAdapter e accountProfileAdapter; setup concluído = accounts.status='active'; setup_completed_at deprecated sem uso no gating do runtime.
-• Retificada 5.3.2 e 5.3.5: regras de Email Templates Supabase usando {{ .RedirectTo }} (signup/reset).
-• Retificada 5.3.4: observabilidade mínima com logs JSON + request_id e regra sem PII; revalidatePath no pós-save.
-v2.0.7 (07/02/2026) — E10.4.3: setter idempotente do marcador setup_completed_at no accountAdapter
-• Documentado setSetupCompletedAtIfNull(accountId) como operação NULL-only (write-once no MVP).
-v2.0.6 (04/02/2026) — E9.8.3: drift de trial no runtime/tipos resolvido
-• Confirmado no zip 29: não há ocorrências de trial em arquivos .ts/.tsx do repo (drift citado em v2.0.5 encerrado).
-v2.0.5 (31/01/2026) — Correções de contrato vs implementação (cookie SSR + referência a trial)
-• Corrigida 5.1.2: persistência do cookie last_account_subdomain reflete runtime (middleware best-effort em /a/{slug} sem prefetch + escrita autoritativa no gate SSR com ctx.blocked=false e subdomain canônico; Secure apenas em produção; TTL 90 dias; limpeza via clear_last=1 e delete em bloqueio).
-• Retificada a referência do changelog v2.0.4 sobre “remoção de trial” no runtime: o repo ainda contém trial em tipos/adapter (drift de runtime), embora o contrato de access (v_access_context_v2) permaneça sem trial.
-v2.0.4 (30/01/2026) — E10.4.1: alinhamento do contrato de status (sem trial no access)
-• Removidas referências a 'trial' como status de conta em 5.1.2 (cookie SSR) e 5.2.1 (accountAdapter), alinhando ao contrato active|pending_setup.
-v2.0.3 (27/01/2026) — E4.2 + E8.2: auto 1ª conta (pending_setup) quando usuário não tem membership
-• Atualizado accessContextAdapter (v_access_context_v2) com fallback: sem membership → ensure_first_account_for_current_user(); com qualquer membership → não cria.
-• Atualizado fluxo pós-confirmação (Signup) e gateway /a para refletir criação automática de 1ª conta e redirecionamento para /a/{account_slug} (modo vitrine).
-v2.0.2 (26/01/2026) — Auth: Signup documentado
-• Adicionada 5.3.5 com o fluxo mínimo de signup (/auth/sign-up → /auth/sign-up-success → confirmação via /auth/confirm?next=/a/home), incluindo regra de type=signup no template e comportamento esperado sem vínculo (fallback /auth/confirm/info).
-v2.0.1 (23/01/2026) — Hardening accounts.status
-• Registrado hardening executado em produção: public.accounts.status com DEFAULT 'pending_setup'::text e NOT NULL.
-v1.9.10 (22/01/2026) — Gate SSR: bloqueio por status (membership/conta)
-• Ajustado 5.4 para incluir roteamento de bloqueio por status de membership e por conta via FORBIDDEN_ACCOUNT (inactive/suspended) para rotas /auth/confirm dedicadas, mantendo fallback genérico.
-• Corrigida linha truncada em 5.1.2 (atributos do cookie last_account_subdomain: Path=/.)
-v1.9.9 (16/01/2026) — Alinhamento do contrato de Auth ao fluxo real do MVP
-• Ajustado 5.3.1 para refletir login page-based em /auth/login e uso de /protected → /a/home.
-• Ajustado 5.3.2 e 5.3.3 para refletir reset via /auth/forgot-password e cooldown UI de 60s (sem modal/throttle 5min).
-• Ajustado 5.1.2 e 5.4 para refletir leitura do cookie no gateway /a/home, TTL de 90 dias e limpeza via clear_last=1 no middleware, incluindo fallback /auth/confirm/info e mailto de solicitação de acesso.
-v1.9.8 (14/01/2026) — Password Reset sem etapa “Continuar” (anti-scanner)
-• Atualizada a regra de Redirect URLs para preview Vercel (wildcard com “/**” para paths profundos).
-• Refinado o bloqueio de implicit flow no CI para permitir o handler server-side em app/auth/confirm/** sem afrouxar o restante do app/src.
-• Consolidado o fluxo de Password Reset para abrir direto em /auth/update-password e consumir token apenas no POST ao salvar a nova senha.
-v1.9.7 (08/01/2026) — Ajustes normativos para Auth, PostgREST e rota /a
-• Registrada regra de Site URL e Redirect URLs do Supabase Auth para produção e previews quando necessário (2.4).
-• Removidas linhas truncadas e consolidada a orientação de PostgREST 14.1 (3.12).
-• Refinada mensagem neutra do reset para email não cadastrado (5.3.2).
-• Documentado comportamento de recuperação para cookie last_account_subdomain inválido (5.4).
-v1.9.6 (04/01/2026) — Base Técnica: correções de texto truncado e reforço de referências de manutenção/validação (paths e disparo manual) para o contexto do Next.js 16.1.1
-v1.9.5 (30/12/2025) — Upgrade Next.js 16.1.1
-• Atualizado 0.1 Cabeçalho: data/versão para v1.9.5.
-• Atualizado 2.1 Framework: Next.js 16.1.1 + lockfile canônico (package-lock.json, npm) + contexto Turbopack.
-• Atualizado 3.4 CI/Lint (Bloqueios): bloqueios de segurança (implicit flow + allowlist de verifyOtp) e smoke mínimo antes de merge.
-• Atualizado 3.13 Compatibilidade Next.js 15 / React 19: registrado estado atual em Next.js 16.1.1 e impactos práticos (await e build).
-• Adicionada 3.4.1: manutenção de upgrade + lockfile canônico.
-v1.9.4 (26/12/2025) — Adapters vNext
-• Adicionada seção 3.14 (regras simples para adapters: caso de uso, DTO final, v2, order, paginação 416=fim somente em range, enums sem fallback silencioso, gate logs deny vs error).
-v1.9.3 (23/12/2025) — Schema extraído para docs/schema.md
-• Movido o conteúdo da seção 4 (Schema) para PATH: docs/schema.md como DB Contract.
-• Atualizado checklist/referências para apontar para PATH: docs/schema.md.
-v1.9.2 (23/12/2025) — Infra/Auth/PostgREST (estado atual)
-• Atualizado 2.2 Backend: Supabase PostgreSQL 17.6.1.063.
-• Atualizado 2.2 Backend: PostgREST (Supabase Data API) 14.1 + regra “versões devem refletir Settings > Infrastructure”.
-• Atualizado 2.2 Backend: Auth com JWT Signing Keys ativo (Current ECC P-256; Previous Legacy HS256), regra “não revogar anterior por padrão” e validação futura via JWKS + kid.
-• Atualizado 3.12 Compatibilidade PostgREST 14.1: registrado Spread (...) em relações to-many (disponível; ainda não usado) + regra de alias para evitar colisão de chaves.
-• Atualizado 3.12 Compatibilidade PostgREST 14.1: registrado FTS (fts/plfts/phfts/wfts) (disponível; sem escopo de telas) + preferência por wfts e índices GIN conforme necessidade.
-• Atualizado 3.12 Compatibilidade PostgREST 14.1: UX de paginação — HTTP 416 / PGRST103 = fim da lista (não erro de sistema).
-• Atualizado 5.3.4 Observabilidade: server-timing/proxy-status não observados nos requests testados via DevTools; diretriz de instrumentação/logs/APM se necessário.
