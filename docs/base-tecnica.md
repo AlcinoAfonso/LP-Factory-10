@@ -105,67 +105,36 @@
 • Regra: Stripe não substitui `public.account_commercial_entitlements`.
 • Webhook, assinatura, idempotência e persistência de entitlement pertencem à fase seguinte.
 
-3.4 CI/Lint (Bloqueios)
-• Validação por PR + preview de deploy (Vercel)
-• PATH: .github/workflows/security.yml
-• Bloqueio de segurança: impedir padrões de implicit flow em client/UI (access_token, refresh_token, setSession, getSessionFromUrl)
-• Regra: o bloqueio de tokens/sessão ignora app/auth/confirm/** (allowlist mínima para handler server-side)
-• Regra: verifyOtp() só pode existir em app/auth/confirm/**
-• Regra de merge (mínimo): validação automática ok + preview ok + smoke de acesso (login/logout/reset de senha/navegação pós-login)
-• Regra: antes de merge, seguir obrigatoriamente o checklist da seção 7 (anti-regressão)
+3.4 CI e validação
+• Alterações devem passar por PR, validações aplicáveis e preview quando houver impacto no runtime ou na UI; o merge final é humano.
+• Checks de segurança devem falhar fechado e bloquear padrões proibidos no client/UI; exceções server-side devem ser explícitas e mínimas no workflow canônico.
+• Alterações em acesso ou Auth devem validar os fluxos afetados conforme os contratos operacionais em `docs/automations.md` e nos READMEs locais.
+• Workflows, gatilhos, runners, actions, versões, inputs e steps têm fonte canônica no repositório real e em `docs/platform-config.md`; não duplicar esses detalhes aqui.
+• Antes do merge, aplicar o checklist da seção 7.
 
-3.4.1 Manutenção (Upgrade Next.js + lockfile)
-• PATH: .github/workflows/upgrade-next-16-1-1.yml
-• Disparo: manual (inputs: target_branch, next_version)
-• Objetivo: atualizar Next.js + eslint-config-next para a versão informada e manter lockfile canônico versionado (npm)
-• Regra: lockfile canônico é package-lock.json (deve ficar commitado e alinhado ao package.json)
-• Setup: Node.js 22.x
-• Regra: se existir package-lock.json, usar instalação reprodutível; se não existir, gerar e commitar package-lock.json
-• Lint: non-blocking em manutenção (não deve impedir o bump/lockfile)
-• Build: blocking (não publicar se build falhar)
-• Regra: commitar alterações somente quando houver mudanças detectadas
+3.4.1 Manutenção de dependências
+• Atualizações de dependências devem preservar o alinhamento entre `package.json` e `package-lock.json` e usar instalação reprodutível.
+• Rotinas automatizadas de manutenção devem executar validações aplicáveis, bloquear publicação quando a validação crítica falhar e commitar somente quando houver mudança real.
+• O workflow e seus detalhes operacionais permanecem canônicos em `.github/workflows/` e no repositório real.
 
-3.4.2 Codex (sandbox) — checks determinísticos (lint/typecheck)
-• PATH: AGENTS.md (rotina padrão no sandbox)
-• Rotina padrão (sandbox): `npm ci` → `npm run check`
-• package.json (scripts):
-• `lint`: `eslint .`
-• `typecheck`: `tsc -p tsconfig.json --noEmit`
-• `check`: `npm run lint && npm run typecheck`
-• Build: não rodar `npm run build` no sandbox (sem rede; `next/font/google` faz download no build). Build é validado no CI/Vercel.
-• ESLint config: PATH: eslint.config.mjs (Flat Config baseado em eslint-config-next)
-• Regra temporária (lint): `react-hooks/set-state-in-effect: off` (remover no harden do lint)
-• Nota: `eslint .` analisa o repo inteiro; warnings não quebram o check; errors quebram.
+3.4.2 Validação local e sandbox
+• `AGENTS.md` é a fonte canônica das regras de execução e validação no ambiente de agentes.
+• Para alterações de código, a rotina padrão é `npm ci` seguida de `npm run check`; os scripts exatos permanecem em `package.json`.
+• Para alterações exclusivamente documentais, essas validações podem ser não aplicáveis, com justificativa na entrega.
+• Build não integra a rotina padrão do sandbox; quando aplicável, deve ser validado pelo CI ou pela Vercel.
 
-3.4.3 Pipeline `supabase-inspect` (referência mínima)
-• PATH (workflow): .github/workflows/pipeline-supabase-inspect.yml
-• PATH (pipeline): automations/supabase-inspect/
-• Regra (v1): somente SELECT/WITH (sem mutações).
-• Secrets (job): OPENAI_API_KEY e SUPABASE_DB_URL_READONLY.
-• Detalhamento operacional, evolução funcional e posicionamento na camada de automações: consultar docs/automations.md.
-• Contrato técnico detalhado do pipeline: automations/supabase-inspect/README.md.
+3.4.3 Automações e inspeções operacionais
+• Automações devem permanecer isoladas em `automations/`; `.github/workflows/` atua somente como entrada e orquestração.
+• Catálogo, uso e comportamento operacional pertencem a `docs/automations.md` e aos READMEs locais; secrets, ambientes e configuração de workflows pertencem a `docs/platform-config.md`.
+• Inspeções de banco por automação devem ser read-only, salvo mutação expressamente aprovada em contrato próprio.
 
 3.4.4 Migrations Supabase versionadas
 • Runtime não pode depender de objeto ou comportamento de banco ainda não aplicado e validado no ambiente alvo.
-• Snippet operacional ou SQL avulso não equivale a migration histórica nem substitui migration versionada.
-• SQL avulso é permitido apenas para inspeção, verificação read-only ou exceção expressamente autorizada.
-• Avaliação de banco exige migration, validação e evidência aplicável ao ambiente alvo.
-• Fonte canônica: `supabase/migrations/<timestamp>_<nome>.sql`.
-• A baseline oficial é o ponto inicial do histórico versionado; alterações posteriores de schema devem entrar como migrations incrementais novas.
-• Migrations legadas preservadas fora de `supabase/migrations/` são somente evidência histórica e não integram o fluxo ativo da CLI.
-• Toda baseline ou migration incremental deve ser reconstruída e validada em ambiente isolado antes de qualquer apply remoto.
-• Antes de apply remoto, executar `supabase migration list --linked` e `supabase db push --linked --dry-run` e revisar exatamente as migrations pendentes.
-• O workflow `.github/workflows/pipeline-supabase-apply-migrations.yml` usa `supabase/setup-cli` v2.1.1 fixada pelo SHA completo `3c2f5e2ae34c34e428e8e206e2c4d21fa2d20fbf`, com Supabase CLI `2.106.0`.
-• A Action é fixada por SHA imutável para garantir reprodutibilidade e impedir mudança silenciosa da referência móvel `@v2`.
-• O merge de migration na `main` dispara o apply automático pelo workflow; o gate operacional `SUPABASE_APPLY_MIGRATIONS_ENABLED` deve permanecer em `true` no fluxo normal.
-• Alterar o gate para valor diferente de `true` é medida excepcional de bloqueio para incidente ou manutenção, pois impede o apply automático.
-• Os secrets de apply ficam disponíveis somente no passo `Apply migrations`, condicionado explicitamente ao gate aberto.
-• Com gate fechado, um passo separado sem secrets registra o bloqueio e não instala a CLI nem executa `supabase link` ou `supabase db push`.
-• O SQL Editor não deve ser usado para alterações de schema no fluxo normal; toda alteração deve ser versionada por migration e passar por PR e merge na `main`.
-• Migration já aplicada é imutável: não editar, apagar, renomear, substituir conteúdo nem reutilizar seu timestamp.
-• Reversão ou correção deve ser feita por nova migration incremental, preservando o histórico forward-only.
-• Alterar a versão da CLI, a Action ou o contrato do workflow exige revisão e autorização operacional próprias.
-• Configuração de gatilhos, secrets e variável do gate: ver `docs/platform-config.md`.
+• Alterações de schema devem usar nova migration em `supabase/migrations/`, com revisão e validação antes do apply remoto.
+• SQL avulso é permitido apenas para inspeção read-only ou exceção expressamente autorizada; o SQL Editor não integra o fluxo normal de alteração de schema.
+• Migration aplicada é imutável; correção ou reversão exige nova migration incremental, preservando histórico forward-only.
+• Apply remoto deve ocorrer somente pelo workflow aprovado após merge humano; gatilhos, gates, secrets, versões de CLI/Actions e projeto alvo pertencem ao workflow real e a `docs/platform-config.md`.
+• Actions e CLIs capazes de alterar schema devem usar referências controladas e passar por revisão antes de qualquer mudança.
 
 3.5 Secrets & Variáveis
 • Código client nunca deve acessar secrets server-side.
