@@ -1,7 +1,16 @@
 # Design System — LP Factory
 
 ## Visão geral
-Este documento consolida o estado atual do design system ao final do ciclo E6.4–E6.6, com foco em componentes base reutilizáveis, acessibilidade e consistência visual sem mudança de regra de negócio.
+Este documento define o contrato visual vigente do produto, com foco em componentes base reutilizáveis, acessibilidade e consistência visual sem mudança de regra de negócio.
+
+## Residência e fundamentos visuais
+- Este documento é a fonte canônica de identidade visual, tipografia, tokens, componentes, estados e superfícies do produto.
+- A Base Técnica deve apenas referenciar este contrato quando uma regra visual afetar uma implementação; não deve reproduzir inventários ou valores visuais.
+- A marca provisória permanece como wordmark textual “LP Factory” enquanto o asset oficial de logo não estiver versionado no repositório.
+- A tipografia oficial da UI do dashboard é Inter via `next/font/google`, aplicada globalmente em `app/layout.tsx`; a configuração exata permanece canônica no código.
+- Os tokens LP Factory estendem o padrão shadcn sem substituir seus tokens-base; nomes, valores, `content` e sombras permanecem canônicos em `tailwind.config.ts`.
+- O remapeamento semântico de `primary`, `ring`, `border` e `accent` permanece contido em `app/globals.css`, sem redesign amplo das superfícies-base.
+- O repositório real é a fonte do estado atual de arquivos, valores e implementação visual.
 
 ## Componentes padronizados
 - `Button`
@@ -146,5 +155,3 @@ Este documento consolida o estado atual do design system ao final do ciclo E6.4�
 ## Fora de escopo atual
 - Redesign amplo de dashboards
 - Branding por cliente/multi-tenant visual
-
-19/05/2026 — Design System alinhado ao estado atual do Admin Dashboard: shell próprio, header fixo, navegação responsiva, listagens/detalhes read-only e estados vazios enxutos.

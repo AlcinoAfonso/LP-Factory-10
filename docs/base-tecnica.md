@@ -1,9 +1,9 @@
 0. Introdução
 
-0.1. Cabeçalho
+0.1 Cabeçalho
 • Documento: Base Técnica LP Factory 10
-• Versão: v2.0.54
-• Data: 23/07/2026
+• Versão: v2.0.55
+• Data: 26/07/2026
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -13,7 +13,7 @@
 
 0.2.2 GUIA_DE_CONSULTA
 • O QUE É: a fonte única de regras técnicas de runtime e implementação segura do produto.
-• POR QUE CONSULTAR: para evitar implementação errada, manter consistência técnica e reduzir risco em código, acesso, SSR, adapters, segurança e observability.
+• POR QUE CONSULTAR: para evitar implementação errada, manter consistência técnica e reduzir risco em código, acesso, SSR, adapters, segurança e observabilidade.
 • COMO USAR: ao gerar plano, macro-roteiro, código ou ajuste de código, consultar este documento como contrato técnico.
 • QUANDO CONSULTAR: decisões de runtime, rotas/gating/estados, segurança de implementação, padrões mínimos de logs, adapters, imports, camadas e convenções de código.
 • QUANDO NÃO CONSULTAR:
@@ -31,36 +31,25 @@
 2. Stack & Dependências
 
 2.1 Framework
-• Next.js 16.1.1 (App Router, SSR, Server Components)
-• React 19.2.x + React DOM 19.2.x
-• TypeScript 5.5.4 (strict)
-• Zod 4.2.1 para contratos tipados e validação runtime de conteúdo persistido.
-• Node.js 22.x
-• Package manager: npm
-• Lockfile canônico: package-lock.json (deve ficar commitado e alinhado ao package.json)
-• Next 16.x prioriza Turbopack; evitar customizações via webpack() no next.config quando possível (preferir alias via tsconfig.json > paths)
+• Fontes canônicas de dependências e versões: `package.json` e `package-lock.json`; não duplicar versões neste documento.
+• O Core usa Next.js com App Router, SSR e Server Components, React, TypeScript em modo strict e Zod para contratos e validação runtime.
+• Runtime JavaScript server-side: Node.js; versão operacional deve ser confirmada na configuração real do ambiente.
+• Package manager canônico: npm; `package-lock.json` deve permanecer versionado e alinhado ao `package.json`.
+• Preferir recursos e defaults do framework, incluindo Turbopack quando aplicável; evitar customização por `webpack()` quando alias em `tsconfig.json` resolver o caso.
 
 2.2 Backend
-• Supabase (PostgreSQL, Auth, Storage, RLS)
-• PostgREST/Data API em uso no runtime.
-• @supabase/supabase-js ≥ 2.56.0
-• .maxAffected(1) obrigatório em mutações 1-a-1.
-• Integrações que validam JWT devem usar JWKS + kid.
+• O backend usa Supabase para PostgreSQL, Auth, Storage e RLS, com PostgREST/Data API no runtime.
+• A versão do client Supabase e demais dependências pertence ao `package.json` e ao `package-lock.json`.
+• `.maxAffected(1)` é obrigatório em mutações 1-a-1.
+• Integrações que validam JWT devem usar JWKS + `kid`.
 • Configurações operacionais do Supabase: ver `docs/platform-config.md`.
 
 2.3 UI
-• Design System (identidade visual — E6.4–E6.6): referência oficial em docs/design-system.md (documento consolidado do ciclo E6.4–E6.6; API mínima, regras de uso e superfícies cobertas).
-• Marca provisória: wordmark textual temporário “LP Factory” enquanto o asset oficial de logo não estiver versionado no repo.
-• UI Component Library (E6.5/E6.6): componentes mínimos — Button, Input, Card, Select, FormField, Textarea, FeedbackMessage, EmptyState e LoadingState. Fonte detalhada: docs/design-system.md.
-• Regra: em Auth, onboarding mínimo e superfícies reais tocadas, preferir os componentes e estados reutilizáveis acima (evitar markup cru) e seguir docs/design-system.md.
-• Tipografia oficial do produto (UI do dashboard): Inter via next/font/google; aplicar globalmente no <html> com className={inter.className} (PATH: app/layout.tsx); weights 400/500/600/700; display=swap.
-• Tailwind tokens LP Factory: adicionar de forma aditiva (sem substituir tokens shadcn) com namespaces brand/ink/graytech/surface/state e boxShadow.card (PATH: tailwind.config.ts).
-• Tailwind content: incluir js/ts/jsx/tsx/mdx em {pages,components,app,src} para evitar purge silencioso (PATH: tailwind.config.ts).
-• Padrão shadcn preservado: cores baseadas em hsl(var(--...)); remapeamento semântico contido em app/globals.css para tokens `--primary`, `--ring`, `--border`, `--accent` (sem redesign amplo de `--background`, `--foreground`, `--card`) — ver docs/design-system.md.
+• Contrato visual, componentes, tipografia, tokens, estados e superfícies: consultar `docs/design-system.md`.
+• Esta Base Técnica mantém somente guardrails técnicos de UI que afetem segurança, imports ou boundaries.
 • SULB (auth forms): definição: rotas/arquivos de autenticação copiados do Supabase (vendor interno).
 • Regra (SULB): não criar auth fora do escopo SULB/autorizado; exceções só quando explicitamente previstas nesta Base Técnica (ex.: allowlist 6.4).
 • Alterações no SULB: somente quando necessário e sempre respeitando a allowlist 6.4.
-• shadcn/ui: base provisória.
 
 2.4 Configurações operacionais de Auth
 • Redirect URLs, SMTP Auth, sender, DNS e demais configurações operacionais do Supabase Auth ficam em `docs/platform-config.md`.
@@ -100,83 +89,42 @@
 • Partner Dashboard não ganha boundary antecipada. LP Builder é seção própria, fora do Account Dashboard.
 
 3.3.3 Billing checkout
-• Path canônico: `lib/billing-checkout/`.
-• Uso: domínio server-side para criação de Checkout Session de provedor externo.
-• Provedor inicial: Stripe.
-• Ambiente inicial: teste.
-• Modo: `subscription`.
-• Contrato de planos pagos: `starter`, `lite`, `pro` e `ultra`.
-• Recorrências permitidas: `monthly` e `annual`.
-• `free`, `light` e `PlanId` legado não são contrato de negócio do checkout novo.
-• Adapter inicial: `createStripeTestCheckoutSession`.
-• Mapeamento Stripe teste: Product/Price por env, sem valores versionados.
-• Integração Stripe: chamada server-side via `fetch`, sem SDK Stripe no MVP.
-• Regra: UI/client não acessa `STRIPE_SECRET_KEY` nem cria sessão diretamente.
-• Regra: redirect de sucesso/cancelamento não confirma pagamento e não libera entitlement.
-• Regra: Stripe não substitui `public.account_commercial_entitlements`.
-• Webhook, assinatura, idempotência e persistência de entitlement pertencem à fase seguinte.
+• Boundary canônico: `lib/billing-checkout/`, server-side, com contratos públicos, normalização e adapters de provedor definidos no próprio código.
+• UI/client não acessa secrets nem cria sessão de checkout diretamente.
+• Redirect de sucesso ou cancelamento não comprova pagamento e não libera entitlement.
+• Provedor, planos, recorrências, mapeamentos e configuração operacional pertencem ao boundary real e a `docs/platform-config.md`; não duplicar suas listas aqui.
+• Checkout não substitui o domínio de entitlement comercial; ativação exige confirmação server-side pelo fluxo aprovado.
 
-3.4 CI/Lint (Bloqueios)
-• Validação por PR + preview de deploy (Vercel)
-• PATH: .github/workflows/security.yml
-• Bloqueio de segurança: impedir padrões de implicit flow em client/UI (access_token, refresh_token, setSession, getSessionFromUrl)
-• Regra: o bloqueio de tokens/sessão ignora app/auth/confirm/** (allowlist mínima para handler server-side)
-• Regra: verifyOtp() só pode existir em app/auth/confirm/**
-• Regra de merge (mínimo): validação automática ok + preview ok + smoke de acesso (login/logout/reset de senha/navegação pós-login)
-• Regra: antes de merge, seguir obrigatoriamente o checklist da seção 7 (anti-regressão)
+3.4 CI e validação
+• Alterações devem passar por PR, validações aplicáveis e preview quando houver impacto no runtime ou na UI; o merge final é humano.
+• Checks de segurança devem falhar fechado e bloquear padrões proibidos no client/UI; exceções server-side devem ser explícitas e mínimas no workflow canônico.
+• Alterações em acesso ou Auth devem validar os fluxos afetados conforme os contratos operacionais em `docs/automations.md` e nos READMEs locais.
+• Workflows, gatilhos, runners, actions, versões, inputs e steps têm fonte canônica no repositório real e em `docs/platform-config.md`; não duplicar esses detalhes aqui.
+• Antes do merge, aplicar o checklist da seção 7.
 
-3.4.1 Manutenção (Upgrade Next.js + lockfile)
-• PATH: .github/workflows/upgrade-next-16-1-1.yml
-• Disparo: manual (inputs: target_branch, next_version)
-• Objetivo: atualizar Next.js + eslint-config-next para a versão informada e manter lockfile canônico versionado (npm)
-• Regra: lockfile canônico é package-lock.json (deve ficar commitado e alinhado ao package.json)
-• Setup: Node.js 22.x
-• Regra: se existir package-lock.json, usar instalação reprodutível; se não existir, gerar e commitar package-lock.json
-• Lint: non-blocking em manutenção (não deve impedir o bump/lockfile)
-• Build: blocking (não publicar se build falhar)
-• Regra: commitar alterações somente quando houver mudanças detectadas
+3.4.1 Manutenção de dependências
+• Atualizações de dependências devem preservar o alinhamento entre `package.json` e `package-lock.json` e usar instalação reprodutível.
+• Rotinas automatizadas de manutenção devem executar validações aplicáveis, bloquear publicação quando a validação crítica falhar e commitar somente quando houver mudança real.
+• O workflow e seus detalhes operacionais permanecem canônicos em `.github/workflows/` e no repositório real.
 
-3.4.2 Codex (sandbox) — checks determinísticos (lint/typecheck)
-• PATH: AGENTS.md (rotina padrão no sandbox)
-• Rotina padrão (sandbox): `npm ci` → `npm run check`
-• package.json (scripts):
-• `lint`: `eslint .`
-• `typecheck`: `tsc -p tsconfig.json --noEmit`
-• `check`: `npm run lint && npm run typecheck`
-• Build: não rodar `npm run build` no sandbox (sem rede; `next/font/google` faz download no build). Build é validado no CI/Vercel.
-• ESLint config: PATH: eslint.config.mjs (Flat Config baseado em eslint-config-next)
-• Regra temporária (lint): `react-hooks/set-state-in-effect: off` (remover no harden do lint)
-• Nota: `eslint .` analisa o repo inteiro; warnings não quebram o check; errors quebram.
+3.4.2 Validação local e sandbox
+• `AGENTS.md` é a fonte canônica das regras de execução e validação no ambiente de agentes.
+• Para alterações de código, a rotina padrão é `npm ci` seguida de `npm run check`; os scripts exatos permanecem em `package.json`.
+• Para alterações exclusivamente documentais, essas validações podem ser não aplicáveis, com justificativa na entrega.
+• Build não integra a rotina padrão do sandbox; quando aplicável, deve ser validado pelo CI ou pela Vercel.
 
-3.4.3 Pipeline `supabase-inspect` (referência mínima)
-• PATH (workflow): .github/workflows/pipeline-supabase-inspect.yml
-• PATH (pipeline): automations/supabase-inspect/
-• Regra (v1): somente SELECT/WITH (sem mutações).
-• Secrets (job): OPENAI_API_KEY e SUPABASE_DB_URL_READONLY.
-• Detalhamento operacional, evolução funcional e posicionamento na camada de automações: consultar docs/automacoes.md.
-• Contrato técnico detalhado do pipeline: automations/supabase-inspect/README.md.
+3.4.3 Automações e inspeções operacionais
+• Automações devem permanecer isoladas em `automations/`; `.github/workflows/` atua somente como entrada e orquestração.
+• Catálogo, uso e comportamento operacional pertencem a `docs/automations.md` e aos READMEs locais; secrets, ambientes e configuração de workflows pertencem a `docs/platform-config.md`.
+• Inspeções de banco por automação devem ser read-only, salvo mutação expressamente aprovada em contrato próprio.
 
 3.4.4 Migrations Supabase versionadas
 • Runtime não pode depender de objeto ou comportamento de banco ainda não aplicado e validado no ambiente alvo.
-• Snippet operacional ou SQL avulso não equivale a migration histórica nem substitui migration versionada.
-• SQL avulso é permitido apenas para inspeção, verificação read-only ou exceção expressamente autorizada.
-• Avaliação de banco exige migration, validação e evidência aplicável ao ambiente alvo.
-• Fonte canônica: `supabase/migrations/<timestamp>_<nome>.sql`.
-• A baseline oficial é o ponto inicial do histórico versionado; alterações posteriores de schema devem entrar como migrations incrementais novas.
-• Migrations legadas preservadas fora de `supabase/migrations/` são somente evidência histórica e não integram o fluxo ativo da CLI.
-• Toda baseline ou migration incremental deve ser reconstruída e validada em ambiente isolado antes de qualquer apply remoto.
-• Antes de apply remoto, executar `supabase migration list --linked` e `supabase db push --linked --dry-run` e revisar exatamente as migrations pendentes.
-• O workflow `.github/workflows/pipeline-supabase-apply-migrations.yml` usa `supabase/setup-cli` v2.1.1 fixada pelo SHA completo `3c2f5e2ae34c34e428e8e206e2c4d21fa2d20fbf`, com Supabase CLI `2.106.0`.
-• A Action é fixada por SHA imutável para garantir reprodutibilidade e impedir mudança silenciosa da referência móvel `@v2`.
-• O merge de migration na `main` dispara o apply automático pelo workflow; o gate operacional `SUPABASE_APPLY_MIGRATIONS_ENABLED` deve permanecer em `true` no fluxo normal.
-• Alterar o gate para valor diferente de `true` é medida excepcional de bloqueio para incidente ou manutenção, pois impede o apply automático.
-• Os secrets de apply ficam disponíveis somente no passo `Apply migrations`, condicionado explicitamente ao gate aberto.
-• Com gate fechado, um passo separado sem secrets registra o bloqueio e não instala a CLI nem executa `supabase link` ou `supabase db push`.
-• O SQL Editor não deve ser usado para alterações de schema no fluxo normal; toda alteração deve ser versionada por migration e passar por PR e merge na `main`.
-• Migration já aplicada é imutável: não editar, apagar, renomear, substituir conteúdo nem reutilizar seu timestamp.
-• Reversão ou correção deve ser feita por nova migration incremental, preservando o histórico forward-only.
-• Alterar a versão da CLI, a Action ou o contrato do workflow exige revisão e autorização operacional próprias.
-• Configuração de gatilhos, secrets e variável do gate: ver `docs/platform-config.md`.
+• Alterações de schema devem usar nova migration em `supabase/migrations/`, com revisão e validação antes do apply remoto.
+• SQL avulso é permitido apenas para inspeção read-only ou exceção expressamente autorizada; o SQL Editor não integra o fluxo normal de alteração de schema.
+• Migration aplicada é imutável; correção ou reversão exige nova migration incremental, preservando histórico forward-only.
+• Apply remoto deve ocorrer somente pelo workflow aprovado após merge humano; gatilhos, gates, secrets, versões de CLI/Actions e projeto alvo pertencem ao workflow real e a `docs/platform-config.md`.
+• Actions e CLIs capazes de alterar schema devem usar referências controladas e passar por revisão antes de qualquer mudança.
 
 3.5 Secrets & Variáveis
 • Código client nunca deve acessar secrets server-side.
@@ -194,15 +142,13 @@
 • TS: camelCase
 • SQL: snake_case
 • -1 = ilimitado para limites numéricos
-• Auditoria via jsonb_diff_val()
 
-3.8 Anti-Regressão
-• Migrations sempre idempotentes
-• .maxAffected(1) obrigatório em mutações 1-a-1
-• Alteração de schema exige revisão de views/functions dependentes e atualização do PATH: docs/schema.md
-• Sem secrets expostos no client
+3.8 Integração com o contrato de banco
+• `docs/schema.md` é a fonte canônica do estado real e dos detalhes de objetos do banco.
+• Alteração de schema exige migration versionada, atualização de `docs/schema.md` e revisão de views, functions, RPCs e adapters dependentes.
+• Runtime não pode redefinir nem assumir objetos, colunas ou comportamentos ausentes do ambiente alvo.
 
-3.8.1 Convenção mínima para novas tabelas
+3.8.1 Convenções transversais para novas tabelas
 
 3.8.1.1 Chave primária
 • Entidade: `id uuid primary key default gen_random_uuid()`
@@ -222,19 +168,15 @@
 • Índice só entra por motivo claro: FK relevante, unicidade, hierarquia ou consulta operacional prevista
 
 3.8.1.5 Segurança e governança
-• Toda tabela deve ter decisão explícita de segurança/acesso
-• Se for exposta ao app, tenant, admin ou fluxo operacional, nasce com RLS e policies na mesma etapa
-• Se for interna, schema e modelo de acesso devem ser definidos explicitamente
-• Toda tabela deve decidir se entra em auditoria, Trigger Hub ou fica fora
-• Data API / GRANT explícito: toda tabela nova no schema `public` que precise ser acessada via Supabase Data API/PostgREST/GraphQL deve declarar explicitamente, na mesma migration, os `GRANTs` necessários para as roles aplicáveis.
-• `GRANT` não substitui RLS/policies.
-• RLS/policies não substituem `GRANT`.
-• Tabelas internas podem nascer sem `GRANT` para `anon`/`authenticated`, desde que o modelo de acesso esteja explícito.
-• Tabelas expostas ao app, admin, adapters ou fluxo operacional via Supabase API devem ter decisão explícita de grants junto com RLS e policies.
+• Toda tabela deve ter decisão explícita de segurança, acesso, auditoria e participação no Trigger Hub.
+• Tabela exposta ao app, tenant, admin ou fluxo operacional deve nascer com RLS, policies e grants aplicáveis na mesma migration.
+• Tabela interna pode omitir grants para `anon` e `authenticated` quando seu modelo de acesso estiver explícito.
+• Grants e RLS/policies são controles independentes; nenhum substitui o outro.
 
-3.9 Rate Limit administrativo (estado atual)
-• Não há rate limit ativo do fluxo legado de tokens no runtime atual.
-• Qualquer nova política de limite para operações administrativas deve ser redefinida no contexto do novo Admin Dashboard (E12), sem reutilizar contrato legado removido.
+3.9 Rate limit administrativo
+• Não reutilizar contratos legados de tokens ou limites removidos.
+• Nova política de limite deve ser definida no boundary administrativo responsável, com escopo, chave, janela, resposta e observabilidade explicitamente contratados.
+• Ausência de política aprovada não autoriza fallback permissivo nem limite inventado no client.
 
 3.10 Anti-Patterns
 • Importar Supabase na UI para dados de domínio (exceções de Auth/SULB seguem 2.5 e 6.4)
@@ -243,332 +185,183 @@
 • Modificar SULB fora dos arquivos autorizados
 • Manipular last_account_subdomain no client
 
-3.11 Sistema de Grants (E9)
+3.11 Sistema de Grants
 • Nunca usar plan_id para liberar features
 • Usar sempre get_feature(account_id, feature_key)
 • Hierarquia: section → lp → account → plan → default
 • Cada conta preserva seu snapshot de recursos
 
-3.12 Compatibilidade PostgREST 14.1
-• Ambiente atual: PostgREST 14.1
-• Índice GIN accounts_name_gin_idx obrigatório quando a feature de busca por nome (FTS) estiver ativa
-• search_path fixado em public
-• Recurso: Spread (to-many) em relações to-many (disponível). Estratégia: usar alias para evitar colisão de chaves quando retornar múltiplas relações na mesma resposta
-• Recurso: busca FTS (fts, plfts, phfts, wfts) em text/json. Preferir wfts e criar índices GIN conforme necessidade de performance
-• UX/Erro: HTTP 416 / PGRST103 em paginação. Interpretação: resultado vazio (fim da lista), não erro de sistema; manter itens já carregados e parar novas requisições
+3.12 PostgREST e Data API
+• `search_path` deve permanecer fixado conforme o contrato de banco aplicável.
+• Consultas com múltiplas relações devem usar aliases explícitos para evitar colisão de chaves.
+• Busca textual exige índice justificado pela consulta ativa e pela necessidade de desempenho.
+• Em paginação por range, HTTP 416 / PGRST103 representa fim da lista, não erro de sistema; preservar itens carregados e interromper novas requisições.
 
-3.13 Compatibilidade Next.js 15 / React 19
-• Contexto: notas de compatibilidade da migração Next.js 15 → Next.js 16 (estado atual: Next.js 16.1.1 + React 19.x)
-• cookies() e headers() podem exigir await em SSR/Server Components (usar async quando necessário)
-• params/searchParams podem exigir await em algumas rotas/pages (usar async quando necessário)
-• Rotas que dependem de sessão/cookies devem ser dinâmicas (evitar cache entre usuários)
-• Next 16.x prioriza Turbopack; evitar webpack() custom no next.config quando possível
-• Em novos códigos de forms/Server Actions: preferir useActionState (não usar useFormState)
+3.13 Compatibilidade do framework
+• APIs assíncronas de SSR e Server Components, como `cookies()`, `headers()`, `params` e `searchParams`, devem ser aguardadas quando exigido pelo framework.
+• Rotas que dependem de sessão ou cookies devem permanecer dinâmicas e sem cache entre usuários.
+• Preferir recursos nativos e o bundler padrão do framework; evitar `webpack()` customizado quando `tsconfig.json` resolver o caso.
+• Formulários e Server Actions devem usar APIs vigentes do framework; versões e contratos exatos pertencem às dependências e ao código.
 
-3.14 Padrão de Adapters (vNext)
-• Novas páginas/casos de uso: DB somente via adapters.
-• Regra canônica para código novo: adapters devem nascer em paths canônicos na raiz do repositório (conforme 3.3.1 e 3.3.2).
-• Adapters já existentes fora dos paths canônicos podem permanecer como compatibilidade, sem expansão de escopo.
-• 1 adapter = 1 caso de uso; se crescer, dividir (<=150 linhas ou <=6 exports).
-• Adapter retorna DTO final; UI não normaliza; não expor DBRow.
-• Mudança de shape: v2; manter v1 até migrar.
-• Queries: colunas explícitas; listas com order determinístico.
-• Paginação (range): 416/PGRST103 = fim da lista somente em range/paginação.
-• Enums: proibido fallback silencioso.
-• Gate adapters: pode retornar null, mas logs devem diferenciar deny vs error.
+3.14 Padrão de Adapters
+• Novos casos de uso acessam o DB somente por adapters no boundary canônico.
+• Adapters existentes fora dos paths canônicos podem permanecer por compatibilidade, sem expansão de escopo.
+• Cada adapter deve permanecer coeso; dividir quando concentrar múltiplos casos de uso ou responsabilidades.
+• Adapter retorna DTO final; UI não normaliza nem recebe DBRow.
+• Mudança incompatível de shape exige contrato versionado e migração explícita, sem substituição silenciosa.
+• Queries usam colunas explícitas e ordenação determinística.
+• Enums não admitem fallback silencioso; paginação segue 3.12; gates devem distinguir deny de erro operacional.
 
-Commercial entitlements
-• Path canônico: `lib/commercial-entitlements/`.
-• Uso: domínio server-side para leitura do sinal de elegibilidade comercial da conta.
-• Contrato público mínimo: `CommercialEntitlementSignal`.
-• Adapter inicial: `getCommercialEntitlementSignal({ accountId })`.
-• Fonte de leitura: `public.v_account_commercial_entitlement_effective`.
-• Regra de segurança: fail-closed; erro, exceção, `accountId` vazio ou ausência de linha retornam não elegível.
-• Limite: UI/client não acessa Supabase para entitlement comercial; consumo deve passar pelo boundary server-side.
+3.14.1 Commercial entitlements
+• Boundary canônico: `lib/commercial-entitlements/`; contratos públicos e adapter de leitura permanecem como fonte da API real.
+• Leitura de elegibilidade é server-side e fail-closed para entrada inválida, ausência de linha, erro ou exceção.
+• UI/client não consulta Supabase diretamente para determinar entitlement comercial.
+• View, campos e estados persistidos pertencem a `docs/schema.md` e ao código; não duplicar seus inventários aqui.
 
-Admin commercial entitlements
-• Superfície administrativa mínima: `app/admin/(protected)/contas/[accountId]/page.tsx`.
-• Path canônico de mutação: `app/admin/(protected)/contas/[accountId]/actions.ts`.
-• Boundary server-only: `lib/admin/adapters/adminCommercialEntitlementsAdapter.ts`.
-• Guard obrigatório: `requirePlatformAdmin`.
-• Ator autorizado: `platform_admin`, incluindo `super_admin` pelo guard existente.
-• Escrita: server-side via `createServiceClient()`.
-• Persistência exclusiva: `public.account_commercial_entitlements`.
-• Origem manual: `origin = liberacao_manual`.
-• Operações mínimas autorizadas: concessão, atualização e cancelamento manual de entitlement.
-• Regra de conflito: entitlement efetivo de `plano_pago_confirmado` ou `trial` deve falhar fechado.
-• Entitlement manual `ativo` existente deve ser atualizado, não duplicado intencionalmente.
-• Stripe, checkout e webhook não podem ser usados como bypass da liberação manual.
-• Não criar rota, UI artificial, migration, schema, RPC, policy, grant, trigger, job ou automação para validar esse recorte.
+3.14.2 Admin commercial entitlements
+• Mutação administrativa é server-only, protegida por `requirePlatformAdmin()` e centralizada no boundary Admin existente.
+• O fluxo manual pode conceder, atualizar ou cancelar entitlement, deve atualizar o registro ativo quando aplicável e falhar fechado diante de conflito ou duplicidade.
+• Checkout, Stripe e webhook não podem servir como bypass da operação administrativa autorizada.
+• Superfícies, funções, payloads e persistência exatos permanecem canônicos no código e em `docs/schema.md`.
 
-Stripe webhook
-• Endpoint canônico: `app/api/stripe/webhook/route.ts`.
-• Runtime: Node.js, dinâmico, server-side.
-• Boundary: `lib/billing-checkout/`.
-• Adapter: `lib/billing-checkout/adapters/stripeWebhookAdapter.ts`.
-• Secret obrigatório: `STRIPE_WEBHOOK_SECRET`.
-• Assinatura Stripe deve ser validada antes de qualquer persistência.
-• Evento que ativa/renova entitlement: `invoice.paid`.
-• Eventos aceitos mas sem liberar entitlement neste recorte: `checkout.session.completed`, `customer.subscription.deleted`, `invoice.payment_failed`.
-• Idempotência: `public.stripe_webhook_events.event_id`.
-• Persistência de entitlement: upsert server-side em `public.account_commercial_entitlements`.
-• Retry permitido para evento `failed` e `processing` antigo.
-• Logs e metadata devem ser mínimos e seguros, sem payload bruto, secrets, cartão ou PII sensível.
+3.14.3 Stripe webhook
+• Endpoint e processamento permanecem server-side no boundary `lib/billing-checkout/`.
+• Assinatura e tipo de evento devem ser validados antes de qualquer persistência.
+• Processamento deve ser idempotente, tolerar retry seguro e liberar entitlement somente pelo evento aprovado no código.
+• Eventos, secrets, tabelas e estados exatos pertencem ao endpoint real, a `docs/platform-config.md` e a `docs/schema.md`.
+• Logs e metadata devem ser mínimos e não conter payload bruto, secrets, cartão ou PII sensível.
 
-LP Builder
-• Path canônico: `lib/lp-builder/`.
-• Uso: boundary server-side da E19 para criação e evolução de landing pages por conta.
-• Action canônica inicial: `app/lp-builder/actions.ts`.
-• Adapter inicial: `createAccountLandingPage`.
-• Persistência inicial: `public.account_landing_pages`.
-• Status inicial permitido: `draft`.
-• Regra de gate antes do insert: conta `active` + membership `active` com role `owner` ou `admin` + entitlement comercial válido.
-• Entitlement comercial deve ser lido pelo boundary E9 existente, não duplicado no LP Builder.
-• Escrita deve ocorrer server-side com permissão adequada; UI/client não acessa Supabase diretamente para criar LP.
-• Logs server-side devem registrar falhas operacionais de forma segura, sem payload bruto, secrets, dados de cartão ou PII sensível.
-• Escopo negativo técnico: sem editor visual, publicação, render público, domínio customizado, analytics, A/B, IA runtime, automação, agente ou job nesta fase.
+3.14.4 LP Builder
+• Boundary canônico: `lib/lp-builder/`; contratos, adapter e action reais permanecem fontes da API.
+• Criação de LP é server-side e deve falhar fechado sem usuário autenticado, conta ativa, membership ativo autorizado e entitlement comercial válido.
+• O LP Builder deve consumir o boundary de entitlement existente, sem duplicar sua lógica.
+• Persistência inicial permanece limitada a draft; schema e campos exatos pertencem a `docs/schema.md` e ao código.
+• UI/client não acessa Supabase diretamente para criar LP; evolução funcional fora do runtime atual pertence ao roadmap.
 
-3.14.1 Matching de taxonomia via adapter server-side
-• Provider/API do resolvedor IA: OpenAI Responses API com Structured Outputs, sempre server-side.
-• Configuração operacional do modelo IA, envs e redeploy: ver `docs/platform-config.md`.
-• IA complementar: quando o matching determinístico não resolver com segurança, o runtime pode usar resolver server-side com OpenAI Responses API e Structured Outputs.
-• Resolver canônico: PATH: `lib/onboarding/niche-resolution/adapters/openAiResolver.ts`.
-• Regra: IA não roda em `high`, não cria taxon, não cria alias, não grava em `account_taxonomy` e não substitui vínculo oficial.
-• Regra: IA atualiza somente a resolução operacional em `account_niche_resolutions`.
-• Regra: falha da IA não pode bloquear lead, setup, ativação da conta, `revalidatePath(route)` ou `redirect(route)`.
-• Regra: `shouldCreateOfficialLink` no Structured Output deve permanecer sempre `false` no schema atual.
-• Regra: prompt, payload bruto, aliases, candidatos completos e dados de formulário não devem ser persistidos.
-• No pós-save do `pending_setup`, a integração determinística deve ocorrer server-side em `saveSetupAndContinueAction`, depois de salvar perfil, atualizar nome e promover a conta para `active`.
-• Regra: `matchBusinessTaxonsDeterministic(validated.values.niche, 10)` pode ser chamado no fluxo server-side após validação do onboarding, mas falha no matching não pode bloquear o lead, `revalidatePath(route)` ou `redirect(route)`.
-• Regra: a decisão observável do matching determinístico deve usar `evaluateDeterministicTaxonMatch(candidates)` e registrar somente metadados seguros.
-• Regra: consumo de matching determinístico de taxonomia deve ocorrer somente via camada server/adapter do app.
-• Regra: não chamar RPC de matching diretamente do client/UI.
-• Regra: adapter deve retornar DTO final com candidatos oficiais; UI não normaliza nem interpreta rows crus do banco.
-• Regra: não logar nicho bruto, `p_query`, aliases digitados ou valores de formulário.
-• Adapter canônico: PATH: `lib/onboarding/niche-resolution/adapters/taxonMatchAdapter.ts`.
-• Contrato público: PATH: `lib/onboarding/niche-resolution/contracts.ts`.
-• Decisão de confiança determinística para taxon match deve usar o helper puro `evaluateDeterministicTaxonMatch` (PATH: `lib/onboarding/niche-resolution/deterministicConfidence.ts`).
-• Contrato tipado da decisão determinística e de `aiEscalationMode` fica em `lib/onboarding/niche-resolution/contracts.ts`.
-• Regra: não embutir avaliação de confiança, thresholds ou reasons semânticos inline em UI, route ou server action; reutilizar helper + contrato.
-• `aiEscalationMode` é preparação contratual para evolução futura e não autoriza IA no runtime atual sem caso específico.
-• Resolução operacional: após avaliar o matching determinístico no pós-save do `pending_setup`, o runtime pode persistir a resolução atual da conta via adapter server-side canônico em `lib/onboarding/niche-resolution/adapters/accountNicheResolutionAdapter.ts`.
-• Regra: `account_niche_resolutions` registra a resolução operacional atual.
-• Regra: falha de matching ou persistência da resolução não pode bloquear o lead, `revalidatePath(route)` ou `redirect(route)`.
-• Vínculo oficial: após a resolução determinística, o runtime pode gravar vínculo oficial em `account_taxonomy` via adapter server-side canônico em `lib/onboarding/niche-resolution/adapters/accountTaxonomyAdapter.ts`.
-• Regra: gravar `account_taxonomy` somente quando a decisão determinística for de alta confiança, houver candidato oficial com `taxon_id` e não houver necessidade de revisão administrativa.
-• Regra: `account_niche_resolutions` permanece como registro operacional; `account_taxonomy` representa o vínculo oficial da conta com o taxon.
-• Regra: falha na gravação do vínculo oficial não pode bloquear o lead, setup, ativação da conta, `revalidatePath(route)` ou `redirect(route)`.
-• Regra MVP: se já houver vínculo primário ativo diferente, não substituir automaticamente; manter revisão humana para etapa futura.
-• Regra: IA, microdiálogo, criação automática de taxon/alias e alteração de UI ficam fora deste recorte.
-• Regra: logs do fluxo devem permanecer sem PII e não devem registrar `raw_input`, nicho bruto, query, aliases, candidatos completos ou dados de formulário.
-• Regra: timestamps da resolução operacional devem ser controlados pelo banco.
+3.14.5 Resolução de nicho e taxonomia
+• Boundary canônico: `lib/onboarding/niche-resolution/`; contratos, thresholds, reasons, schemas e adapters permanecem canônicos no código.
+• Matching, avaliação de confiança e persistência devem ocorrer server-side; UI, routes e actions não podem chamar RPC diretamente nem reimplementar thresholds ou decisões semânticas.
+• IA complementar só pode ser usada quando o resultado determinístico for insuficiente, com Structured Outputs e configuração operacional em `docs/platform-config.md`.
+• IA não cria taxon ou alias, não grava vínculo oficial e não substitui decisão determinística de alta confiança.
+• `account_niche_resolutions` representa a resolução operacional; `account_taxonomy` representa o vínculo oficial e só pode ser gravado quando o contrato de alta confiança permitir, sem substituir automaticamente vínculo primário diferente.
+• Falhas de matching, IA ou persistência não podem bloquear setup, ativação, revalidação ou redirect.
+• Logs e persistência não devem conter prompt, payload bruto, nicho bruto, aliases, candidatos completos, formulário ou PII; objetos e campos exatos pertencem a `docs/schema.md`.
 
 3.15 Conteúdo composicional de `commercial_activation`
-• Path canônico: `lib/conversion-content/commercial-activation/`.
-• `content_json` v1 usa `schema_version = 1` e `sections` com `composition_item_id` e `content`.
-• Módulo, variante, ordem e obrigatoriedade pertencem ao item da composição e não devem ser duplicados no artefato.
-• O registry fechado é a fonte canônica de `variantKey → moduleKey → schema Zod → componente`.
-• Envelope, seções e objetos internos devem usar validação estrita, rejeitando campos desconhecidos.
-• Seção obrigatória ausente ou inválida invalida o artefato.
-• Seção opcional ausente é omitida; seção opcional inválida é omitida com log seguro.
-• IDs duplicados ou desconhecidos e combinações de módulo/variante não registradas invalidam o artefato.
-• Conteúdo persistido deve ser estruturado; não aceitar HTML bruto, scripts, CSS, Tailwind ou nomes livres de componentes.
-• CTAs v1 aceitam somente URL HTTPS válida ou caminho interno iniciado por uma única `/`; rejeitar `//`, âncoras e protocolos não aprovados.
-• A validação deve ocorrer no servidor antes da renderização.
-• Casos executáveis: `npm run validate:commercial-activation`.
+• Boundary canônico: `lib/conversion-content/commercial-activation/`; registry, schemas, resolver e renderer são fontes do contrato executável.
+• Composição define módulo, variante, ordem e obrigatoriedade; o artefato não deve duplicar essas decisões.
+• Conteúdo persistido deve ser estruturado e validado estritamente no servidor; HTML bruto, scripts, CSS, Tailwind e nomes livres de componentes são proibidos.
+• Seção obrigatória ausente ou inválida invalida o artefato; seção opcional inválida pode ser omitida somente com log seguro.
+• IDs desconhecidos, duplicados ou combinações não registradas devem falhar fechado.
+• CTAs devem usar destino seguro aprovado pelo contrato; schemas, variantes e casos executáveis permanecem canônicos no código e em `package.json`.
 
 3.15.1 Geração administrativa de draft de `commercial_activation`
-• Path canônico do adapter de geração: `lib/conversion-content/commercial-activation/draft-generation.ts`.
-• Entrada administrativa canônica: `app/admin/(protected)/templates/actions.ts`, protegida por `requirePlatformAdmin()`.
-• A geração deve ser server-side/Admin, usando `createServiceClient()` para leituras e persistência permitidas pelo contrato de banco.
-• Recurso de IA aprovado para fluxo linear de draft: OpenAI Responses API com Structured Outputs; o modelo deve ser configurado por `OPENAI_COMMERCIAL_ACTIVATION_MODEL`.
-• O fluxo não deve depender de Agents SDK, Sandbox Agents, job, fila, agente ou IA em runtime público.
-• Fontes de entrada permitidas: taxon, pesquisa ativa `business_buyer`, contexto `end_customer` apenas para proveniência, composição/variantes de `commercial_activation` e `public.plans` como fonte parcial de planos.
-• `public.plans` só é fonte canônica parcial para `name`, `price_monthly`, `max_lps`, `max_conversions` e `features`; não é fonte para garantias, condições comerciais, checkout, promessas, descontos ou promoções.
-• Antes da persistência, validar em duas camadas: envelope `CommercialActivationContentV1` e cada `section.content` contra o schema registrado para a `variant_key` permitida pela composição.
-• Persistir apenas `status = draft`; publicação e alteração de `published` pertencem a fluxo transacional próprio.
-• `content_artifact_research_sources` deve receber somente fontes relacionais `business_buyer`; contexto `end_customer` permanece apenas em `provenance_json`.
-• CTA gerado deve usar `href` interno seguro aprovado pelo servidor; sem `href` seguro, bloquear antes de persistir.
-• Se o insert das fontes relacionais falhar após criar o artifact, o draft recém-criado deve ser arquivado/invalidado e o fluxo deve retornar erro seguro, sem parecer concluído.
-• Logs devem registrar somente metadados operacionais seguros; não registrar prompt completo, pesquisa bruta, payload sensível ou resposta integral da IA.
+• Geração é server-side/Admin, protegida por `requirePlatformAdmin()`, usando Responses API com Structured Outputs e configuração em `docs/platform-config.md`.
+• O fluxo é linear e não depende de Agents SDK, job, fila, agente ou IA no runtime público.
+• Somente fontes aprovadas pelo código e pelo Schema podem alimentar a geração; dados de planos são fonte parcial e não autorizam garantias, condições, descontos, promoções ou promessas comerciais.
+• Antes de persistir, validar o envelope e cada seção contra a composição e o registry efetivos.
+• Persistência é somente como draft; publicação exige fluxo próprio. Proveniência relacional e contextual deve respeitar o contrato do código e do Schema.
+• Falha parcial após criação deve ser compensada para não aparentar conclusão; logs não incluem prompt integral, pesquisas brutas, payload sensível ou resposta completa da IA.
 
 3.15.2 Parametrização raiz de `landing_page`
-• Boundary canônico: `lib/conversion-content/landing-page/`.
-• Fonte canônica dos parâmetros e versões: `root-registry.ts`; não duplicar seus valores ou listas em documentos ou contratos públicos.
-• Resolver versões e presets registrados por `root-resolver.ts`, com falha fechada e sem fallback implícito.
-• Validar o contrato raiz por `root-schema.ts`; a saída resolvida deve permanecer imutável.
-• Consumir o boundary pelo namespace `landingPageRoot` exportado em `lib/conversion-content/index.ts`.
-• Não reutilizar as APIs removidas de composição, módulos, variantes, renderer ou render model.
-• Especializações futuras devem preservar a precedência `raiz → módulo → variante`.
-• Casos executáveis: `npm run validate:landing-page-root`.
+• Boundary canônico: `lib/conversion-content/landing-page/`; contracts, registry, schema e resolver são fontes executáveis.
+• Consumidores devem usar a API pública exportada por `lib/conversion-content/index.ts`, sem acessar registry ou schema diretamente.
+• Versão, preset ou parâmetro desconhecido deve falhar fechado, sem fallback implícito; a saída resolvida deve permanecer imutável.
+• Evolução deve preservar a precedência `raiz → módulo → variante`; APIs removidas não podem ser reutilizadas.
 
 3.15.3 Resolução de pesquisas estruturadas de `landing_page`
-• Boundary canônico: `lib/conversion-content/landing-page/research-resolution/`.
-• Adapter server-side canônico: `lib/conversion-content/adapters/landingPageResearchAdapter.ts`.
-• Consumidores devem usar `resolveLandingPageResearchForTaxon` e não consultar as tabelas diretamente nem reimplementar precedência ou herança.
-• A entrada é o `taxon_id` já resolvido; este fluxo não resolve conta ou nicho e não cria persistência.
-• `end_customer` usa somente o taxon atendido; `business_buyer` prioriza o conjunto próprio e admite somente o pai direto quando o próprio estiver ausente ou incompleto.
-• Conjunto próprio inválido ou ambíguo deve falhar fechado, sem mistura parcial ou mascaramento pelo pai.
-• O resultado deve preservar a proveniência das fontes e versões efetivamente usadas.
-• O resolver puro não registra logs; o adapter pode registrar somente metadados seguros, sem conteúdo das pesquisas, PII, credenciais ou secrets.
-• Casos executáveis: `npm run validate:landing-page-research`.
+• Boundary canônico: `lib/conversion-content/landing-page/research-resolution/`, consumido pelo adapter server-side de `conversion-content`.
+• Consumidores devem usar a API pública e não consultar tabelas diretamente nem reimplementar precedência ou herança.
+• A resolução recebe taxon já determinado; `end_customer` usa o taxon atendido e `business_buyer` admite pai direto somente quando o conjunto próprio estiver ausente ou incompleto.
+• Conjunto próprio inválido ou ambíguo deve falhar fechado, sem mistura parcial nem mascaramento pelo pai.
+• Resultado preserva proveniência; resolver permanece puro e adapter registra apenas metadados seguros.
 
 3.15.4 Catálogo de entradas de `landing_page`
-• Boundary canônico: `lib/conversion-content/landing-page/input-catalog/`.
-• Fonte canônica das definições e versões: `registry.ts`; não duplicar seus campos, valores ou listas em documentos ou consumidores.
-• Consumidores devem usar `resolveLandingPageInputCatalog` pelo namespace `landingPageInputCatalog` exportado em `lib/conversion-content/index.ts`.
-• O resolver é puro e repo-only; recebe versão, plano e cadeia taxonômica já determinada, sem consultar Supabase, Stripe, assinatura, entitlement ou valores operacionais.
-• A resolução aplica as camadas `universal → segmento → nicho → ultranicho`; camada própria de ultranicho exige autorização explícita, enquanto sua ausência preserva a herança.
-• Especializações só podem ocorrer em camada estritamente mais específica e restringir obrigação, planos permitidos ou validação comparável, preservando identidade, tipo, escopo, origem, condições, snapshot e evidência.
-• Referências de `requiredWhen` e `applicableWhen` devem existir, respeitar a compatibilidade entre planos e permanecer válidas após o filtro pelo plano solicitado.
-• A avaliação concreta das condições e a completude dos valores pertencem ao fluxo consumidor de coleta e geração, não ao resolver do catálogo.
-• A saída deve permanecer determinística e profundamente imutável, preservando taxon atendido, camadas aplicadas, proveniência, validação, evidência e sinal de validade.
-• Casos executáveis: `npm run validate:landing-page-input-catalog`.
+• Boundary canônico: `lib/conversion-content/landing-page/input-catalog/`; registry, contracts, schema e resolver são fontes executáveis.
+• O resolver é puro e repo-only, sem consultar Supabase, Stripe, assinatura, entitlement ou valores operacionais.
+• Resolução segue `universal → segmento → nicho → ultranicho`; especializações só podem restringir e devem preservar identidade, tipo, origem, condições e evidência.
+• Referências condicionais devem existir e permanecer válidas após o filtro de plano; avaliação dos valores concretos pertence ao consumidor.
+• A saída deve ser determinística, rastreável e profundamente imutável.
 
 3.15.5 Catálogo de módulos e variantes de `landing_page`
-• Boundary canônico: `lib/conversion-content/landing-page/module-catalog/`.
-• `registry.ts` é a fonte única das definições versionadas de módulos, variantes, fields, mapas de fontes e perfis de funil; fields e seus mapas pertencem às variantes, sem registry paralelo.
-• Consumidores devem usar `resolveLandingPageModuleCatalog` pelo namespace `landingPageModuleCatalog` exportado em `lib/conversion-content/index.ts`; registry e schema não integram a API pública.
-• A entrada runtime é estrita e falha fechado para shape, versão, módulo, variante, perfil ou preset desconhecido, sem fallback aproximado nem exceção não tratada.
-• A resolução aplica `raiz → módulo → variante` e `perfil-base → delta do módulo`, devolvendo contratos efetivos, rastreáveis e profundamente imutáveis; consumidores não reaplicam deltas.
-• Especializações podem apenas restringir. Proibições prevalecem sobre restrições, que prevalecem sobre permissões; lifecycle da raiz, do módulo e da variante permanece separado no vocabulário canônico.
-• Sources textuais permanecem junto dos fields e distinguem pesquisa estruturada, evidência operacional e pesquisa com suporte operacional declarativo; uma referência sintaticamente válida não comprova integridade com outro registry.
-• Interações de variante usam coleção de união discriminada estrita; Form e Accordion são os únicos kinds atuais, e cada kind aparece no máximo uma vez por variante.
-• Interaction contracts são a fonte canônica das capabilities interativas; capabilities de ação e imagem são derivadas dos fields. O registry não mantém booleanos ou propriedades paralelas para a mesma condição.
-• O contrato de Form preserva fields abstratos, consentimento, privacidade, binding e acessibilidade estrutural, sem definir UI, HTML, ARIA, submissão ou conformidade integral com WCAG.
-• Um interaction kind novo evolui uma vez o contrato TypeScript, a união, o schema e sua suíte; variantes posteriores reutilizam o kind sem ampliar os mecanismos. Mídia avançada só recebe moldura discriminada própria no primeiro caso real.
-• Ações registram somente vínculos operacionais abstratos; valores permitidos e compatibilidades concretas permanecem na fonte canônica versionada.
+• Boundary canônico: `lib/conversion-content/landing-page/module-catalog/`; registry e contracts são fontes das definições versionadas.
+• Consumidores devem usar o resolver público; registry e schema não integram a API externa do boundary.
+• Entrada desconhecida ou inválida deve falhar fechado; a resolução efetiva deve ser rastreável e profundamente imutável.
+• Especializações só podem restringir; consumidores não reaplicam deltas nem mantêm propriedades paralelas para condições deriváveis.
+• Interaction contracts são a fonte das capabilities interativas e devem ser evoluídos uma vez por novo kind, com reutilização pelas variantes.
 • O boundary permanece repo-only e não executa composição, persistência ou renderização.
-• Casos executáveis: `npm run validate:landing-page-module-catalog`.
 
-4. DB Contract - Fonte única: PATH: docs/schema.md
-• Este documento não lista mais tabelas/views/functions/triggers/policies; isso está em PATH: docs/schema.md.
-• Trigger Hub é regra do contrato de DB (governança/auditoria). Fonte única e detalhes: PATH: docs/schema.md (seções 3.5 e 4.1).
-• Alterações no DB exigem atualizar PATH: docs/schema.md e revisar dependências no código (views/RPC/adapters).
-• SECURITY DEFINER só é permitido quando estiver explicitamente registrado/aprovado em PATH: docs/schema.md (com motivo e limites).
-• Views expostas a usuário: security_invoker=true e registro no PATH: docs/schema.md.
-• Hardening executado (B2): public.accounts.status é obrigatório (NOT NULL) e tem DEFAULT 'pending_setup'::text.
+4. DB Contract
+• `docs/schema.md` é a fonte única de tabelas, views, functions, RPCs, triggers, policies, constraints, grants e do estado exato do banco.
+• Esta Base Técnica mantém somente guardrails transversais de implementação e não deve duplicar inventários de objetos.
+• Alterações no banco exigem atualização do Schema e revisão das dependências no código.
+• `SECURITY DEFINER` só é permitido quando estiver explicitamente aprovado no Schema, com motivo e limites.
+• Views expostas a usuário devem usar `security_invoker = true` e estar registradas no Schema.
 
 5. Arquitetura de Acesso
 
 5.1 Conceitos Fundamentais
 
-5.1.1 Access Context v2
-• Fonte única: v_access_context_v2
-• Decide se o usuário pode acessar uma conta (allow + reason)
-• Usado em SSR (getAccessContext), AccessProvider e AccountSwitcher
+5.1.1 Access Context
+• O boundary `access` concentra a decisão server-side de acesso; a view e os objetos exatos pertencem a `docs/schema.md`, e contratos, adapters e guards pertencem ao código real.
+• Decisões de acesso devem falhar fechado e distinguir contexto inexistente de conta ou membership existentes, porém bloqueados.
+• UI, providers e componentes client podem consumir contexto, mas não autorizam nem elevam privilégios.
+• Conclusão de setup e gating devem usar o estado canônico da conta; campos legados ou deprecated não podem voltar a decidir acesso.
 
-5.1.2 Persistência SSR (cookie last_account_subdomain)
-• Cookie HttpOnly de “última conta”, usado pelo gateway /a/home (SSR) para redirecionar /a/home → /a/{account_slug}.
-• Escrita (best-effort) em middleware.ts para GET /a/{account_slug} (exceto 'home'), somente em navegação real (sem prefetch).
-• Escrita (autoritativa) no guard SSR de seção cliente (PATH: app/a/_server/section-guard.ts), consumido por /a/[account]/layout.tsx, somente quando ctx existe, ctx.blocked=false e houver subdomain canônico (ctx.account.subdomain).
-• Atributos obrigatórios: HttpOnly; SameSite=Lax; Max-Age=7776000; Path=/.
-• Secure: true em produção (NODE_ENV=production).
-• Leitura do cookie ocorre no SSR do gateway /a/home.
-• Limpeza do cookie: /a/home?clear_last=1 (middleware zera Max-Age=0) e, em bloqueio, o guard SSR de seção cliente deleta cookie (best-effort) antes de redirecionar.
-• /a/home não define cookie (apenas lê; clear_last=1 ignora cookie no SSR e delega limpeza ao middleware).
+5.1.2 Persistência SSR da última conta
+• `last_account_subdomain` é cookie exclusivamente server-side, `HttpOnly`, `SameSite=Lax`, com `Secure` em produção; duração e detalhes exatos permanecem canônicos no código.
+• Middleware pode persistir a última conta em navegação real como best-effort; o guard SSR é a escrita autoritativa após decisão de acesso permitida.
+• Conta inválida ou bloqueada exige limpeza do cookie antes do fallback seguro, evitando loops de redirecionamento.
+• Rotas que dependem de sessão ou cookie devem permanecer dinâmicas e sem cache entre usuários.
 
-5.2 Adapters, Guards, Providers
+5.2 Adapters, Guards e Consumidores
+• Estado atual de adapters, guards, providers, APIs e superfícies deve ser consultado no repositório; esta Base não mantém inventário desses arquivos.
+• Acesso ao banco ocorre por adapters server-side; guards SSR aplicam a autorização final e consumidores no client não reinterpretam decisões de acesso.
+• Privilégios administrativos devem permanecer centralizados nos guards existentes, sem autorização paralela em páginas ou componentes.
+• Deny, bloqueio e erro operacional devem permanecer distinguíveis, sem fallback permissivo.
 
-5.2.1 Adapters
-• taxonMatchAdapter (PATH: lib/onboarding/niche-resolution/adapters/taxonMatchAdapter.ts): consumo server-side da RPC `match_business_taxons_deterministic`, com retorno DTO camelCase de candidatos oficiais de taxonomia e tratamento seguro de erro sem PII.
-• accountAdapter (PATH: lib/access/adapters/accountAdapter.ts): operações de conta e status no runtime, com normalização de status e mutações idempotentes quando aplicável.
-• accountProfileAdapter (PATH: lib/access/adapters/accountProfileAdapter.ts): persistência/atualização do perfil operacional da conta (E10.4.6).
-• accessContextAdapter (PATH: lib/access/adapters/accessContextAdapter.ts): leitura do contexto em v_access_context_v2, decisão de acesso (allow/deny), fallback de primeira conta via RPC quando não há membership e observabilidade de deny vs error.
-• adminAdapter (PATH: lib/admin/adapters/adminAdapter.ts): valida privilégios administrativos (super_admin/platform_admin) e centraliza operações administrativas do runtime atual.
-• Regra: setup_completed_at/account_setup_completed_at é legado/deprecated; não usar em gating, fluxo, renderização ou logs. Setup concluído no runtime é decidido por accounts.status.
+5.3 Fluxos de Sessão e Auth
 
-5.2.2 Guards
-• guard SSR da seção cliente (PATH: app/a/_server/section-guard.ts): aplica allow/deny de /a/{account_slug} e redirecionamentos de bloqueio na seção cliente.
-• guard SSR da seção Admin (PATH: app/admin/layout.tsx): protege a seção administrativa, reaproveita `requirePlatformAdmin()` e concentra a moldura inicial do Admin.
-• Infra shared de privilégio admin permanece ativa via helpers/guards (`requirePlatformAdmin()` e `requireSuperAdmin()`), agora consumida pela superfície `/admin` ativa no runtime.
-• guards legados compartilhados (PATH: lib/access/guards.ts): utilitários de validação de acesso usados pelo runtime.
+5.3.1 Login e redirecionamentos
+• Login pode ocorrer pelo client SULB autorizado, mas a autorização da conta permanece responsabilidade do SSR.
+• Parâmetros de retorno aceitam somente paths internos seguros; URLs externas, protocolos e paths iniciados por `//` devem cair no destino padrão seguro.
+• Rotas, mensagens, estados de loading e tratamento exato de erros permanecem canônicos no código.
 
-5.2.3 Providers
-• AccessProvider (PATH: providers/AccessProvider.tsx): carrega contexto de acesso no app.
-• account-switcher (PATH: components/features/account-switcher/*): consome v_user_accounts_list via /api/user/accounts.
+5.3.2 Signup, confirmação e recuperação
+• Signup e reenvio devem usar somente os clients e imports autorizados pelo SULB, com redirects internos aprovados; templates, Redirect URLs e configuração de e-mail pertencem a `docs/platform-config.md`.
+• Links de confirmação ou recuperação não podem consumir token no GET; verificação, criação de sessão e eventual atualização de senha ocorrem somente no POST.
+• Recuperação de senha deve usar resposta neutra contra enumeração de usuários; mensagens, cooldowns e limites de UX exatos permanecem no código, e limitação server-side pertence ao Supabase Auth.
+• Senha só pode ser atualizada após validação do token ou código e estabelecimento da sessão correspondente.
+• E-mail, senha, token, código e valores sensíveis de formulário não podem ser registrados em logs.
 
-5.3 Fluxos de Sessão
+5.3.3 Observabilidade
+• Decisões críticas de acesso, Auth e Server Actions devem emitir logs estruturados com resultado, motivo seguro, `request_id` e latência quando disponíveis.
+• Nomes de eventos e campos específicos permanecem canônicos no código; a Base mantém apenas o contrato mínimo de diagnóstico.
+• Logs não devem conter PII, secrets, credenciais, tokens, códigos, payloads brutos, prompts ou valores de formulário.
+• Falha de logging não pode bloquear o fluxo principal.
+• Mutação seguida de redirect deve revalidar a rota afetada quando houver risco de UI stale.
 
-5.3.1 Login (MVP)
-• Login primário em /auth/login.
-• Sucesso preserva next seguro; quando partir do contexto administrativo, deve retornar para `/admin`.
-• Sem retorno explícito, fluxo padrão: /protected → /a/home → /a/{account_slug}.
-• Erro de credenciais: exibir error.message do Supabase (ex.: “Invalid login credentials”).
-• Throttling específico de login não está implementado na UI atual (ver 5.3.3).
-
-5.3.2 Password Reset (MVP)
-• Entrada do reset: /auth/forgot-password.
-• Mensagem neutra obrigatória (anti-enumeração): “Se este e-mail estiver cadastrado, enviaremos instruções para redefinir a senha.” (em sucesso e descrição).
-• Cooldown UI: 60s com contador e botão desabilitado após solicitar.
-• resetPasswordForEmail deve usar redirectTo direto para /auth/update-password (sem querystring).
-• Regra (template Supabase — Reset password): usar {{ .RedirectTo }}?token_hash={{ .TokenHash }}&type=recovery (RedirectTo aponta para /auth/update-password).
-• Link de recovery abre /auth/update-password com type=recovery e token_hash=<TOKEN_HASH> ou code=<CODE>.
-• Regra anti-scanner: não consumir token no GET; confirmação ocorre somente no POST ao “Salvar nova senha”.
-• /auth/update-password faz POST para supabase.auth.updateUser({ password }) e, em sucesso, redireciona para /auth/update-password/success.
-
-5.3.3 Throttling
-• Login: sem throttling dedicado; UI apenas desabilita o botão durante a request e exibe error.message em falha.
-• Reset: cooldown UI de 60s (contador), iniciado após uma solicitação bem-sucedida.
-• Limitação adicional (server-side) é responsabilidade do Supabase Auth.
-5.3.4 Observabilidade
-• IA de resolução de nicho: logs devem registrar apenas sinais seguros como status, modo UX, quantidade de opções, necessidade de revisão/confirmação, persistência e código de erro seguro; não logar prompt, payload bruto, `niche`, `raw_input`, query, aliases, candidatos completos, `name`, `whatsapp` ou `site_url`.
-• server-timing/proxy-status não observados nos requests testados via DevTools
-• Diretriz: se precisar medir, instrumentar via logs/Apm e/ou headers próprios no server
-• Server Actions críticas devem emitir logs estruturados (JSON) com request_id e latency_ms (padrão mínimo).
-• Regra (logs sem PII): não logar valores de formulário (ex.: name, whatsapp, site_url).
-• Onboarding pós-save (E10.4.6): revalidatePath(route) antes do redirect para evitar UI stale.
-• Matching de taxonomia: quando a RPC determinística for consumida em runtime, observability mínima deve registrar apenas metadados não sensíveis, como request_id, latency_ms, candidates_count, top_match_source e top_score; eventos canônicos: `setup_taxonomy_match_evaluated` e `setup_taxonomy_match_failed`; não logar nicho bruto, `p_query`, query, aliases digitados, dados de formulário ou valores identificáveis do usuário.
-• Vínculo oficial de taxonomia: logs devem registrar apenas sinais seguros de avaliação, gravação, skip ou falha do vínculo em `account_taxonomy`; não logar `niche`, `raw_input`, query, aliases, candidatos completos, `name`, `whatsapp` ou `site_url`.
-
-5.3.5 Signup
-• Entrada: /auth/sign-up (SignUpForm usa supabase.auth.signUp) (PATH: components/sign-up-form.tsx).
-• Sucesso do signUp: redirecionar para /auth/sign-up-success (mensagem de confirmação para checar o e-mail).
-• Regra: signUp deve usar emailRedirectTo apontando para /auth/confirm?next=/a/home (somente path interno).
-• Regra (correlação ponta a ponta): gerar rid no client (não-PII) e anexar no emailRedirectTo como querystring (ex.: &rid=<rid>) para rastrear submit → e-mail → confirm → redirect.
-• Regra (supa#5 no client — Auth/signup): emitir logs estruturados para eventos de signup/resend com rid e sem PII (não logar email/senha nem valores sensíveis).
-• Regra (observabilidade mínima na Vercel): logs no runtime do front em produção devem permitir diagnóstico rápido do fluxo por rid (submit/resultado).
-• Regra (template Supabase — Confirm sign up): usar {{ .RedirectTo }} (não {{ .SiteURL }}); quando RedirectTo já contém querystring (ex.: ?next=/a/home&rid=...), anexar &token_hash={{ .TokenHash }}&type=signup.
-• Confirmação: /auth/confirm (GET) exibe interstitial “Continuar” e consome token apenas no POST (anti-scanner).
-• Pós-confirmação: /auth/confirm (POST) cria sessão e redireciona para next=/a/home.
-• Com sessão e sem membership: /a/home cria 1ª conta via RPC ensure_first_account_for_current_user() e redireciona para /a/{account_slug} (pending_setup; owner/active).
-• Sem vínculo e sem auto-criação (negado pela view): /auth/confirm/info (fallback genérico).
-
-5.4 Regras da rota /a (anti-regressão)
-• /a é o entrypoint público e redireciona para /a/home.
-• /a/home é pública e funciona como gateway:
-• Sem sessão: renderiza home pública.
-• Com sessão: tenta resolver conta via cookie last_account_subdomain e redireciona para /a/{account_slug} (quando houver allow=true).
-• Com sessão e sem membership: cria 1ª conta via RPC ensure_first_account_for_current_user() e redireciona para /a/{account_slug} (pending_setup; owner/active).
-• Com sessão e sem conta allow e com qualquer membership: redireciona para /auth/confirm/info.
-• Dashboard privado só em /a/{account_slug}.
-• allow/deny é responsabilidade do guard SSR de seção cliente (PATH: app/a/_server/section-guard.ts), consumido por /a/[account]/layout.tsx.
-• /a/home bypassa o guard SSR de seção cliente consumido em app/a/[account]/layout.tsx.
-• Se o guard SSR de seção cliente negar com usuário autenticado: redirecionar para /a/home?clear_last=1 para limpar o cookie e forçar fallback determinístico (sem loop).
-• “Solicitar acesso” em /auth/confirm/info abre mailto (não é rota interna do app).
-• Se ctx.blocked por membership.status: redirecionar para:
-• pending → /auth/confirm/pending
-• inactive → /auth/confirm/inactive
-• revoked → /auth/confirm/revoked
-• Se ctx.blocked por conta (ctx.error_code="FORBIDDEN_ACCOUNT"): redirecionar para:
-• accounts.status=inactive → /auth/confirm/account/inactive
-• accounts.status=suspended → /auth/confirm/account/suspended
-• fallback → /auth/confirm/account
+5.4 Gateway `/a` e seção privada
+• `/a/home` é o gateway público; a seção privada existe somente sob uma conta resolvida e autorizada.
+• Usuário autenticado deve tentar a última conta permitida e depois um fallback determinístico de conta; o gateway não decide allow/deny por conta própria.
+• Usuário sem qualquer membership pode criar a primeira conta somente pelo fluxo server-side aprovado; a existência de qualquer membership impede auto-criação adicional.
+• O guard SSR da seção privada é responsável por allow/deny, bloqueios e redirecionamentos seguros; mapeamentos exatos de status e destinos pertencem ao código.
+• Negação com cookie inválido deve limpar a última conta e voltar ao gateway sem loop; ausência de contexto autenticado deve usar fallback informativo seguro.
 
 6. Estrutura de Arquivos Essencial
 
-6.1 Visão rápida (fonte única)
-• Fonte única do estado atual de pastas e arquivos: o repositório real.
-• Regra: esta Base Técnica não mantém “árvore” nem lista completa de paths fora das exceções normativas (6.4).
+6.1 Repositório real
+• O repositório real é a fonte única do estado atual de pastas, arquivos, exports e paths; esta Base não mantém árvore nem inventário.
+• Antes de criar ou mover artefato, confirmar classificação, boundary e path no repositório conforme 3.3.2.
 
-6.2 Arquivos críticos por fluxo (fonte única)
-• Localização atual de arquivos críticos (Acesso, Onboarding, Multi-conta, Supabase núcleo, SULB, Admin): consultar o repositório real.
-• Regra: se um arquivo crítico mudar de path, atualizar esta Base Técnica somente quando a mudança afetar regra, boundary, allowlist ou contrato técnico (ver 3.3.2).
+6.2 Paths normativos
+• Esta Base registra path somente quando ele define boundary, fonte canônica ou exceção normativa.
+• Mudança de path exige atualização documental apenas quando alterar classificação, boundary, allowlist ou contrato técnico.
 
-6.3 Tipos e contratos críticos (mínimo normativo)
-• Fonte única de tipos canônicos: PATH: lib/types/status.ts
-• Regra: proibido redefinir AccountStatus, MemberStatus, MemberRole fora do arquivo canônico
-• Contratos e reexports existentes fora dos paths canônicos podem permanecer por compatibilidade; isso não altera a regra canônica de código novo definida em 3.3.2.
+6.3 Tipos e contratos críticos
+• Contratos, exports e tipos específicos permanecem canônicos no código; consumidores devem usar a API pública do boundary.
+• `lib/types/status.ts` é fonte única de `AccountStatus`, `MemberStatus` e `MemberRole`; não redefinir esses tipos.
+• Compatibilidade legada não autoriza novos artefatos fora do path canônico.
 
 6.4 Arquivos SULB autorizados a importar Supabase (fonte única normativa)
 Fonte normativa da allowlist SULB para exceções de Auth. Qualquer novo arquivo em app/auth/ não pode importar @supabase/* até ser incluído nesta lista.
@@ -581,174 +374,9 @@ Fonte normativa da allowlist SULB para exceções de Auth. Qualquer novo arquivo
 • app/auth/protected/page.tsx
 
 7. Checklist mínima (anti-regressão)
-• Segurança de DB e views (security_invoker, RLS, SECURITY DEFINER): validar pelas seções 3.1 e 4 (PATH: docs/schema.md).
-• Regras de acesso/SSR da rota /a e cookie last_account_subdomain: validar por 5.1.2 e 5.4.
-• Imports/adapters e allowlist SULB: validar por 2.5 e 6.4.
-• Anti-regressão de mutações/queries (ex.: .maxAffected(1), search_path): validar por 3.8 e 3.12.
-• Tipos canônicos e adapters vNext: validar por 3.6 e 3.14.
-
-99. Changelog
-v2.0.54 — 23/07/2026 — Unificadas as interações de variante em união discriminada, com capabilities derivadas e evolução localizada por interaction kind, sem antecipar contratos de mídia avançada.
-
-v2.0.53 — 23/07/2026 — Consolidado o contrato durável de sources declarativas e variantes com formulário abstrato no catálogo `landing_page`, mantendo registry único, API mínima e boundary repo-only.
-
-v2.0.52 — 21/07/2026 — Enxugado o contrato durável do catálogo de módulos e variantes de `landing_page`, preservando vínculos operacionais abstratos e limites permanentes sem duplicar valores ou decisões específicas do registry.
-
-v2.0.51 — 21/07/2026 — Registrado o contrato técnico durável do catálogo repo-only de módulos e variantes de `landing_page`, com registry único, resolução efetiva fail-closed, mapas por field, perfis de funil fechados, API pública mínima e imutabilidade profunda.
-
-v2.0.50 — 15/07/2026 — Registrado o contrato técnico durável do catálogo de entradas de `landing_page`, com registry versionado, resolução pura por taxon e plano, herança taxonômica, especializações restritivas, condições declarativas, proveniência, imutabilidade e falha fechada.
-
-v2.0.49 — 14/07/2026 — Registrado o contrato técnico durável da resolução de pesquisas estruturadas de `landing_page`, com adapter server-side, resolver puro, precedência própria/pai direto, proveniência e falha fechada.
-
-v2.0.48 — 13/07/2026 — Substituído o contrato antigo de composição `landing_page` pelo contrato técnico durável da parametrização raiz versionada, com registry canônico, resolução fail-closed, imutabilidade e validação executável.
-v2.0.47 — 07/07/2026 — Registrado contrato técnico da base repo-only de composição `landing_page`, com path canônico, catálogo mínimo, registry fechado, schemas, renderer mínimo, resolver/validador e limites de `config_json`.
-v2.0.46 — 04/07/2026 — Registrado contrato técnico da liberação manual administrativa mínima de entitlement comercial, com Server Action protegida por `requirePlatformAdmin`, boundary Admin server-only e persistência exclusiva em `public.account_commercial_entitlements`.
-v2.0.45 (02/07/2026) — Registrado webhook Stripe mínimo do E9, com endpoint canônico, boundary, assinatura obrigatória, evento `invoice.paid`, idempotência e persistência segura de entitlement.
-v2.0.43 — 22/06/2026 — Registrado o contrato técnico da geração administrativa de draft `commercial_activation`: fluxo server-side/Admin com Responses API e Structured Outputs, modelo por env var, validação em duas camadas, persistência somente como `draft`, fontes relacionais `business_buyer`, `end_customer` apenas em `provenance_json` e compensação segura em falha parcial.
-
-v2.0.42 — 16/06/2026 — Registrado o contrato técnico do renderer composicional de `commercial_activation`, com `content_json` v1, validação Zod estrita, registry fechado, regras de falha e conteúdo estruturado seguro.
-
-v2.0.41 — 12/06/2026 — Concluído o fluxo universal de migrations Supabase: merge na `main` aplica migrations automaticamente com gate `true`; SQL Editor excluído do fluxo normal e histórico definido como forward-only, com reversões por nova migration.
-
-v2.0.40 — 12/06/2026 — Retirada a family antecipada `conversion-content` do estado técnico atual; estruturas compartilhadas de conteúdo serão reavaliadas somente após dois casos reais aprovados.
-
-v2.0.39 — 11/06/2026 — Registrado o fluxo canônico de migrations Supabase versionadas, com baseline, incrementais, validação isolada, dry-run obrigatório e workflow mantido sob gate fechado; `supabase/setup-cli` v2.1.1 fixada por SHA completo e CLI `2.106.0`.
-
-v2.0.38 — 09/06/2026 — Registrado o runtime inicial de `conversion-content`, com template comercial universal, resolução pura, adapter server-only, fallback hierárquico/genérico e grants read-only para pesquisa comercial.
-
-v2.0.37 — 08/06/2026 — Consolidadas em 3.3 as regras estruturais e registrada a family `conversion-content`.
-
-v2.0.36 — 21/05/2026 — Base técnica atualizada com contrato mínimo de configuração do resolvedor IA de nicho: `OPENAI_API_KEY`, `OPENAI_NICHE_RESOLVER_MODEL`, modelo de referência `gpt-5.4-mini`, ajuste via Vercel Environment Variables e necessidade de redeploy por ambiente.
-
-v2.0.35 — 14/05/2026 — Base técnica atualizada com contrato mínimo de runtime para IA complementar server-side com Structured Outputs, variáveis server-only, preservação de `account_taxonomy`, persistência apenas em `account_niche_resolutions`, fluxo degradável e logs sem PII.
-
-v2.0.34 — 11/05/2026 — Base técnica atualizada com contrato mínimo de runtime para gravação server-side do vínculo oficial em `account_taxonomy`, preservando `account_niche_resolutions` como registro operacional, regra de alta confiança, conflito de primário sem substituição automática, fluxo não bloqueante e logs sem PII.
-
-v2.0.33 — 11/05/2026 — Base técnica atualizada com contrato mínimo de runtime para persistência operacional de resolução em `account_niche_resolutions`, sem gravação de `account_taxonomy`, com fluxo não bloqueante e logs sem PII.
-
-v2.0.32 — 10/05/2026 — Base técnica atualizada com contrato runtime do matching determinístico de taxonomia no pós-save do `pending_setup`, regra não bloqueante e observability segura com eventos canônicos.
-
-v2.0.31 (10/05/2026)
-• Registrada a regra de confiança determinística para taxon match via helper puro `evaluateDeterministicTaxonMatch`, com contrato tipado em `lib/onboarding/niche-resolution/contracts.ts` e uso obrigatório sem lógica inline em UI/route/server action.
-
-v2.0.31 (09/05/2026) — E10.5.6: adapter server-side do matching determinístico de taxonomia
-• Registrado o path canônico do adapter `taxonMatchAdapter`.
-• Registrado o contrato público `TaxonMatchCandidate`.
-• Registrada a regra de consumo server-side da RPC de matching, com DTO camelCase e erro sem PII.
-
-v2.0.30 (09/05/2026) — E10.5.6: regras técnicas para consumo runtime do matching de taxonomia
-• Registrada regra de consumo server-side via adapter para matching determinístico de taxonomia.
-• Registrada restrição contra consumo direto pelo client/UI.
-• Registrada observability mínima sem PII para futura integração runtime da RPC de matching.
-
-v2.0.29 (29/04/2026) — Registra convenção route-local para componentes específicos de rota que dependem da própria boundary da rota.
-v2.0.28 (18/04/2026) — E12.5.1: primeira superfície ativa do Admin + retorno administrativo no login
-• Atualizada 5.2.2 para registrar a seção Admin ativa no runtime via `app/admin/layout.tsx`, protegida por guard SSR administrativo reaproveitando `requirePlatformAdmin()`.
-• Atualizada 5.3.1 para registrar a preservação do retorno para `/admin` quando o login partir do contexto administrativo, mantendo o fluxo padrão para `/protected` nos demais casos.
-v2.0.27 (15/04/2026) — Ajuste operacional Vercel do projeto de services
-• Registrada nota operacional do projeto `lpf-10-services` com boundary de deploy por `Root Directory = services/mcp-supabase-inspect`.
-• Registradas as regras operacionais `Include files outside the root directory in the Build Step = OFF` e `Ignored Build Step` customizado para reduzir builds desnecessários fora do escopo do service.
-v2.0.26 (13/04/2026) — Limpeza documental pós-remoção do legado de tokens
-• Removidas referências ao onboarding consultivo por token no contrato técnico/runtime, incluindo menções de adapters e operações legadas.
-• Atualizada a seção de rate limit administrativo para refletir que o limite específico de tokens não faz parte do estado atual e será redefinido no novo Admin Dashboard (E12).
-v2.0.25 (31/03/2026) — Alinhamento documental de topologia e paths canônicos
-• Atualizados os paths canônicos em acesso, auth, onboarding, types, utils e admin, mantendo o escopo estritamente documental e sem mudança funcional de produto.
-v2.0.24 (31/03/2026) — Fase 1 do Core: extração dos guards SSR de seção
-• Atualizadas 5.1.2, 5.2.2 e 5.4 para refletir a extração dos guards SSR de seção cliente/admin (sem mudança de URL e sem nova camada no root).
-v2.0.23 (31/03/2026) — Nota operacional sobre STAGING
-• Registrado que não há Supabase STAGING ativo, que previews usam o projeto principal e que eventual novo staging não deve existir sem controles mínimos de segurança.
-v2.0.22 (27/03/2026) — Formalização de `services/` e remoção da MCP do runtime do Core
-• Registrada na topologia canônica a terceira raiz `services/` para serviços e integrações com deploy independente.
-• Registrado o projeto Vercel de services `lpf-10-services` e o endpoint canônico da MCP Supabase Inspect.
-• Registrado que a MCP Supabase Inspect não é mais hospedada no runtime do app Core.
-v2.0.21 (26/03/2026) — Separação estrutural entre Core SaaS e automations
-• Formalizada na Base Técnica a separação canônica entre o runtime do Core SaaS no root do repositório e a camada de automações em `automations/`.
-• Registrado que `.github/workflows/` permanece como camada de orquestração/entrada.
-• Registrado que dependências de automação não devem entrar no `package.json` do Core, salvo exceção técnica aprovada.
-• Registrado que automações relevantes podem nascer como subprojetos isolados com `package.json` e `package-lock.json` próprios.
-• Alinhamento documental com a convenção já registrada em `docs/automacoes.md`.
-v2.0.20 (24/03/2026) — Alinhamento de topologia canônica e descontinuação do repo-inv
-• Ajustadas as seções 2.5, 3.14, 6.3 e 6.5 para alinhar imports, adapters e contratos à regra já vigente em 3.3.1: código novo nasce na raiz; src/** permanece apenas como legado controlado.
-• Removidas referências normativas a docs/repo-inv.md; o estado atual de arquivos passa a ser consultado diretamente no repositório real.
-v2.0.19 (20/03/2026) — Regra estrutural: raiz como padrão canônico; src/ como legado controlado
-• Adicionada 3.3.1 com a política mínima de topologia do repositório: código novo nasce na raiz, src/ fica como legado controlado e não haverá migração em big bang.
-v2.0.18 (10/03/2026) — E6.6: Visual States & Feedback (Textarea + estados reutilizáveis)
-• Registrados os componentes mínimos do E6.6 (Textarea, FeedbackMessage, EmptyState e LoadingState) como parte da UI proprietária, com referência ao docs/design-system.md consolidado (E6.4–E6.6).
-v2.0.17 (09/03/2026) — E6.5: UI Component Library (base) + docs/design-system.md atualizado
-• Registrada a biblioteca base de UI proprietária (components/ui/*) e a regra de uso para reduzir markup cru em Auth e onboarding mínimo (referência em docs/design-system.md).
-v2.0.16 (09/03/2026) — E6.4: identidade visual mínima + docs/design-system.md
-• Registrada a referência oficial `docs/design-system.md`, o uso de wordmark textual temporário e o remapeamento semântico contido em `app/globals.css` (primary/ring/border/accent) para aplicação mínima de identidade visual.
-v2.0.15 (06/03/2026) — `supabase-inspect`: SQL batch no briefing + relatório completo no Summary
-• Registrado o modo batch com delimitador `---` (briefing e briefing_path) com execução determinística e relatório completo por query no Job Summary (contrato em automations/supabase-inspect/README.md).
-v2.0.14 (04/03/2026) — Pipeline `supabase-inspect` v1 (read-only) + secret SUPABASE_DB_URL_READONLY
-• Registrado o pipeline read-only `supabase-inspect` (workflow + contrato em automations/supabase-inspect/README.md) e o secret `SUPABASE_DB_URL_READONLY` para execução via GitHub Actions (preferir session pooler).
-v2.0.13 (04/03/2026) — ESLint CLI + AGENTS.md (Codex checks)
-• Registrada a rotina determinística no sandbox do Codex via AGENTS.md (`npm ci` + `npm run check`) e a divisão “build fora do sandbox (CI/Vercel)”.
-• Registrados scripts de lint/typecheck/check e o ESLint Flat Config com exceção temporária `react-hooks/set-state-in-effect: off`.
-v2.0.12 (02/03/2026) — OpenAI Platform (DEV/PROD) + GitHub Actions `openai-smoke`
-• Registrados OPENAI_API_KEY (Actions secret) e workflow `.github/workflows/openai-smoke.yml` como teste mínimo de integração.
-• Registrada governança mínima de OpenAI Projects (DEV/PROD), sharing isolado no DEV e higiene de keys (revogação imediata em caso de exposição).
-v2.0.11 (01/03/2026) — Infra Auth: e-mail transacional via Resend (SMTP) no domínio raiz
-• Registrada a configuração estável de e-mails transacionais do Supabase Auth via Resend (SMTP) com sender `no-reply@lpfactory.com.br`, incluindo consequências do domínio raiz e condição de migração futura para subdomínio dedicado.
-v2.0.10 (24/02/2026) — E5.4: signup/confirm com correlação rid + logs (supa#5/VERC mínimo)
-• Signup documentado com rid (não-PII) para correlação ponta a ponta e logs estruturados no client (supa#5) para signup/resend sem PII, com sinal mínimo no runtime Vercel (VERC).
-v2.0.9 (19/02/2026) — Design System: Inter + tokens Tailwind
-• Registrada tipografia oficial Inter via next/font/google e aplicação global no app/layout.tsx.
-• Registrados tokens Tailwind LP Factory (brand/ink/graytech/surface/state + boxShadow.card) como extensão aditiva, preservando padrão shadcn.
-• Registrada expansão do content Tailwind para incluir js/jsx/mdx, prevenindo purge silencioso.
-v2.0.8 (13/02/2026) — E10.4.6: setup status-based + account_profiles + logs canônicos + templates Supabase
-• Retificada 5.2.1: accountAdapter e accountProfileAdapter; setup concluído = accounts.status='active'; setup_completed_at deprecated sem uso no gating do runtime.
-• Retificada 5.3.2 e 5.3.5: regras de Email Templates Supabase usando {{ .RedirectTo }} (signup/reset).
-• Retificada 5.3.4: observabilidade mínima com logs JSON + request_id e regra sem PII; revalidatePath no pós-save.
-v2.0.7 (07/02/2026) — E10.4.3: setter idempotente do marcador setup_completed_at no accountAdapter
-• Documentado setSetupCompletedAtIfNull(accountId) como operação NULL-only (write-once no MVP).
-v2.0.6 (04/02/2026) — E9.8.3: drift de trial no runtime/tipos resolvido
-• Confirmado no zip 29: não há ocorrências de trial em arquivos .ts/.tsx do repo (drift citado em v2.0.5 encerrado).
-v2.0.5 (31/01/2026) — Correções de contrato vs implementação (cookie SSR + referência a trial)
-• Corrigida 5.1.2: persistência do cookie last_account_subdomain reflete runtime (middleware best-effort em /a/{slug} sem prefetch + escrita autoritativa no gate SSR com ctx.blocked=false e subdomain canônico; Secure apenas em produção; TTL 90 dias; limpeza via clear_last=1 e delete em bloqueio).
-• Retificada a referência do changelog v2.0.4 sobre “remoção de trial” no runtime: o repo ainda contém trial em tipos/adapter (drift de runtime), embora o contrato de access (v_access_context_v2) permaneça sem trial.
-v2.0.4 (30/01/2026) — E10.4.1: alinhamento do contrato de status (sem trial no access)
-• Removidas referências a 'trial' como status de conta em 5.1.2 (cookie SSR) e 5.2.1 (accountAdapter), alinhando ao contrato active|pending_setup.
-v2.0.3 (27/01/2026) — E4.2 + E8.2: auto 1ª conta (pending_setup) quando usuário não tem membership
-• Atualizado accessContextAdapter (v_access_context_v2) com fallback: sem membership → ensure_first_account_for_current_user(); com qualquer membership → não cria.
-• Atualizado fluxo pós-confirmação (Signup) e gateway /a para refletir criação automática de 1ª conta e redirecionamento para /a/{account_slug} (modo vitrine).
-v2.0.2 (26/01/2026) — Auth: Signup documentado
-• Adicionada 5.3.5 com o fluxo mínimo de signup (/auth/sign-up → /auth/sign-up-success → confirmação via /auth/confirm?next=/a/home), incluindo regra de type=signup no template e comportamento esperado sem vínculo (fallback /auth/confirm/info).
-v2.0.1 (23/01/2026) — Hardening accounts.status
-• Registrado hardening executado em produção: public.accounts.status com DEFAULT 'pending_setup'::text e NOT NULL.
-v1.9.10 (22/01/2026) — Gate SSR: bloqueio por status (membership/conta)
-• Ajustado 5.4 para incluir roteamento de bloqueio por status de membership e por conta via FORBIDDEN_ACCOUNT (inactive/suspended) para rotas /auth/confirm dedicadas, mantendo fallback genérico.
-• Corrigida linha truncada em 5.1.2 (atributos do cookie last_account_subdomain: Path=/.)
-v1.9.9 (16/01/2026) — Alinhamento do contrato de Auth ao fluxo real do MVP
-• Ajustado 5.3.1 para refletir login page-based em /auth/login e uso de /protected → /a/home.
-• Ajustado 5.3.2 e 5.3.3 para refletir reset via /auth/forgot-password e cooldown UI de 60s (sem modal/throttle 5min).
-• Ajustado 5.1.2 e 5.4 para refletir leitura do cookie no gateway /a/home, TTL de 90 dias e limpeza via clear_last=1 no middleware, incluindo fallback /auth/confirm/info e mailto de solicitação de acesso.
-v1.9.8 (14/01/2026) — Password Reset sem etapa “Continuar” (anti-scanner)
-• Atualizada a regra de Redirect URLs para preview Vercel (wildcard com “/**” para paths profundos).
-• Refinado o bloqueio de implicit flow no CI para permitir o handler server-side em app/auth/confirm/** sem afrouxar o restante do app/src.
-• Consolidado o fluxo de Password Reset para abrir direto em /auth/update-password e consumir token apenas no POST ao salvar a nova senha.
-v1.9.7 (08/01/2026) — Ajustes normativos para Auth, PostgREST e rota /a
-• Registrada regra de Site URL e Redirect URLs do Supabase Auth para produção e previews quando necessário (2.4).
-• Removidas linhas truncadas e consolidada a orientação de PostgREST 14.1 (3.12).
-• Refinada mensagem neutra do reset para email não cadastrado (5.3.2).
-• Documentado comportamento de recuperação para cookie last_account_subdomain inválido (5.4).
-v1.9.6 (04/01/2026) — Base Técnica: correções de texto truncado e reforço de referências de manutenção/validação (paths e disparo manual) para o contexto do Next.js 16.1.1
-v1.9.5 (30/12/2025) — Upgrade Next.js 16.1.1
-• Atualizado 0.1 Cabeçalho: data/versão para v1.9.5.
-• Atualizado 2.1 Framework: Next.js 16.1.1 + lockfile canônico (package-lock.json, npm) + contexto Turbopack.
-• Atualizado 3.4 CI/Lint (Bloqueios): bloqueios de segurança (implicit flow + allowlist de verifyOtp) e smoke mínimo antes de merge.
-• Atualizado 3.13 Compatibilidade Next.js 15 / React 19: registrado estado atual em Next.js 16.1.1 e impactos práticos (await e build).
-• Adicionada 3.4.1: manutenção de upgrade + lockfile canônico.
-v1.9.4 (26/12/2025) — Adapters vNext
-• Adicionada seção 3.14 (regras simples para adapters: caso de uso, DTO final, v2, order, paginação 416=fim somente em range, enums sem fallback silencioso, gate logs deny vs error).
-v1.9.3 (23/12/2025) — Schema extraído para docs/schema.md
-• Movido o conteúdo da seção 4 (Schema) para PATH: docs/schema.md como DB Contract.
-• Atualizado checklist/referências para apontar para PATH: docs/schema.md.
-v1.9.2 (23/12/2025) — Infra/Auth/PostgREST (estado atual)
-• Atualizado 2.2 Backend: Supabase PostgreSQL 17.6.1.063.
-• Atualizado 2.2 Backend: PostgREST (Supabase Data API) 14.1 + regra “versões devem refletir Settings > Infrastructure”.
-• Atualizado 2.2 Backend: Auth com JWT Signing Keys ativo (Current ECC P-256; Previous Legacy HS256), regra “não revogar anterior por padrão” e validação futura via JWKS + kid.
-• Atualizado 3.12 Compatibilidade PostgREST 14.1: registrado Spread (...) em relações to-many (disponível; ainda não usado) + regra de alias para evitar colisão de chaves.
-• Atualizado 3.12 Compatibilidade PostgREST 14.1: registrado FTS (fts/plfts/phfts/wfts) (disponível; sem escopo de telas) + preferência por wfts e índices GIN conforme necessidade.
-• Atualizado 3.12 Compatibilidade PostgREST 14.1: UX de paginação — HTTP 416 / PGRST103 = fim da lista (não erro de sistema).
-• Atualizado 5.3.4 Observabilidade: server-timing/proxy-status não observados nos requests testados via DevTools; diretriz de instrumentação/logs/APM se necessário.
+• Residência e estrutura: confirmar o repositório real, 3.3.2 e as fontes documentais canônicas antes de alterar path ou contrato.
+• Segurança e banco: validar 3.1, 3.4.4, 3.8, 4 e `docs/schema.md`.
+• Boundaries e acesso a dados: validar 2.5, 3.2, 3.3, 3.14 e a allowlist 6.4.
+• Acesso e Auth: validar a seção 5 e, quando aplicável, `docs/platform-config.md`, `docs/automations.md` e os READMEs operacionais.
+• Contratos de domínio: consumir APIs públicas e validadores canônicos do código, sem duplicar lógica de registry, schema, provedor ou resolução.
+• Release: seguir 3.4 e `AGENTS.md`, executar ou justificar validações aplicáveis, revisar preview quando necessário e manter merge humano.
