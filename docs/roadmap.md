@@ -1,8 +1,8 @@
 0. Introdução
 
 0.1 Cabeçalho
-• Data: 23/07/2026
-• Versão: v1.5.100
+• Data: 26/07/2026
+• Versão: v1.5.102
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -2042,8 +2042,8 @@ Repositório — Ajustados
 
 20. E20 — Preparação e liberação de taxons para geração de landing pages
 
-* Objetivo: consolidar catálogo de entradas, composição base, herança, prontidão para teste e regras de liberação de taxons por plano antes da geração de LPs por conta.
-* Status: Em implementação por recortes; 20.2 concluído.
+* Objetivo: consolidar catálogo de entradas por taxon e plano, perfis versionados de orientação à geração, herança e, em recortes futuros, prontidão e liberação antes da geração de LPs por conta.
+* Status: Em implementação por recortes; 20.2 concluído e 20.3 aprovado para implementação em duas fases.
 
 20.2 Catálogo de entradas por taxon
 
@@ -2088,9 +2088,46 @@ Repositório — Ajustados
 * Conteúdo:
 
   * O resolver falha fechado para cadeia, camada, especialização, condição ou relação entre planos inválida.
-  * A E20.3 poderá consumir o catálogo resolvido e seu sinal de validade para os critérios de prontidão do taxon.
+  * A E20.3 é independente deste catálogo: orienta geração por identidade de módulo e variante da E18.5, sem consumir valores da E20.2 nem determinar prontidão.
   * A avaliação concreta das condições, a completude dos valores operacionais e o snapshot pertencem à futura E19.4.
   * O recorte não cria banco, rota, API, Server Action, UI, adapter de banco, entitlement, integração Stripe, valor operacional, snapshot, automação, agente ou job.
+
+20.3 Perfil de orientação para geração
+
+20.3.1 Objetivo e status
+
+* Objetivo: definir e resolver um perfil versionado por taxon que oriente a geração de `landing_page` com recomendações de módulos e variantes da E18.5, sem impor composição final ou prontidão.
+* Status: Planejado e aprovado para implementação nas fases E20.3.3 e E20.3.4, ambas com `Automação: não`.
+
+20.3.2 Contrato e limites
+
+* Status: Definido.
+* Conteúdo:
+
+  * O perfil pertence a um taxon, possui versão, estado e orientação geral e reúne itens com módulo e versão, variante e versão opcionais, prioridade `P1`, `P2` ou `P3`, ordem recomendada positiva e orientação específica opcional.
+  * Prioridade e ordem são orientação; não criam módulo obrigatório, composição final, seleção por plano, prontidão, autorização, revogação ou geração.
+  * Perfil e itens formam um agregado único, somente leitura server-side, persistido em exatamente duas tabelas e entregue por um único boundary, sem perfil oficial neste recorte.
+  * A resolução usa perfil `active` próprio ou do ancestral elegível mais próximo, preserva proveniência e falha fechado para cadeia, leitura, identidade ou perfil inválido; ausência legítima permanece distinta de erro.
+  * A E20.3 depende da taxonomia vigente e da identidade pública da E18.5, mas permanece independente do catálogo e dos valores da E20.2.
+  * Permanecem fora do recorte mutações e lifecycle operacional do perfil, terceira tabela de domínio, rota, API HTTP, Server Action, UI, composição, copy, geração, IA, automação, job, serviço e nova infraestrutura.
+
+20.3.3 Contrato e persistência mínima do perfil
+
+* Status: Planejado.
+* Conteúdo:
+
+  * Implementar o agregado versionado, as duas tabelas sem registros oficiais, a leitura server-side, o boundary único e as validações de contrato, estados, cadeia taxonômica, integridade e segurança.
+  * Nenhum consumidor, rota ou outro caminho runtime será ativado antes do apply da migration após merge humano e da verificação do estado final do banco.
+
+20.3.4 Validação E18.5 e resolução própria ou herdada
+
+* Status: Planejado.
+* Conteúdo:
+
+  * Estender minimamente a API pública TypeScript da E18.5 para validar identidade e versão de módulo e, quando informada, identidade e versão de variante e seu vínculo com o módulo, reutilizando o registry vigente.
+  * Preservar o resolver, o registry, o schema e todos os exports públicos preexistentes, sem rota, banco, serviço, novo catálogo, contexto artificial, refatoração ampla ou resolver paralelo.
+  * Implementar resolução determinística própria ou herdada, recomendações em ordem crescente e bloqueio de fallback distante quando o ancestral elegível mais próximo possuir perfil `active` inválido.
+  * A futura E12.4 tratará mutações e atomicidade do lifecycle; a futura E19.4 poderá consumir o perfil resolvido. A conclusão da E20.3 apenas libera o debate da E12.4, sem autorizar sua implementação.
 
 99. Changelog
 v1.5.101 — 25/07/2026 — Promovidos `comparison@v1`, `comparison.standard@v1`, `lead_capture@v1` e `lead_capture.form@v1` ao catálogo canônico da E18.5, totalizando doze módulos, quatorze variantes e 34 casos executáveis, com Form reutilizado e mecanismos centrais preservados.
