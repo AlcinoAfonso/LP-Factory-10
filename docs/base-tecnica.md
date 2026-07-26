@@ -306,107 +306,51 @@ LP Builder
 
 5.1 Conceitos Fundamentais
 
-5.1.1 Access Context v2
-• Fonte única: v_access_context_v2
-• Decide se o usuário pode acessar uma conta (allow + reason)
-• Usado em SSR (getAccessContext), AccessProvider e AccountSwitcher
+5.1.1 Access Context
+• O boundary `access` concentra a decisão server-side de acesso; a view e os objetos exatos pertencem a `docs/schema.md`, e contratos, adapters e guards pertencem ao código real.
+• Decisões de acesso devem falhar fechado e distinguir contexto inexistente de conta ou membership existentes, porém bloqueados.
+• UI, providers e componentes client podem consumir contexto, mas não autorizam nem elevam privilégios.
+• Conclusão de setup e gating devem usar o estado canônico da conta; campos legados ou deprecated não podem voltar a decidir acesso.
 
-5.1.2 Persistência SSR (cookie last_account_subdomain)
-• Cookie HttpOnly de “última conta”, usado pelo gateway /a/home (SSR) para redirecionar /a/home → /a/{account_slug}.
-• Escrita (best-effort) em middleware.ts para GET /a/{account_slug} (exceto 'home'), somente em navegação real (sem prefetch).
-• Escrita (autoritativa) no guard SSR de seção cliente (PATH: app/a/_server/section-guard.ts), consumido por /a/[account]/layout.tsx, somente quando ctx existe, ctx.blocked=false e houver subdomain canônico (ctx.account.subdomain).
-• Atributos obrigatórios: HttpOnly; SameSite=Lax; Max-Age=7776000; Path=/.
-• Secure: true em produção (NODE_ENV=production).
-• Leitura do cookie ocorre no SSR do gateway /a/home.
-• Limpeza do cookie: /a/home?clear_last=1 (middleware zera Max-Age=0) e, em bloqueio, o guard SSR de seção cliente deleta cookie (best-effort) antes de redirecionar.
-• /a/home não define cookie (apenas lê; clear_last=1 ignora cookie no SSR e delega limpeza ao middleware).
+5.1.2 Persistência SSR da última conta
+• `last_account_subdomain` é cookie exclusivamente server-side, `HttpOnly`, `SameSite=Lax`, com `Secure` em produção; duração e detalhes exatos permanecem canônicos no código.
+• Middleware pode persistir a última conta em navegação real como best-effort; o guard SSR é a escrita autoritativa após decisão de acesso permitida.
+• Conta inválida ou bloqueada exige limpeza do cookie antes do fallback seguro, evitando loops de redirecionamento.
+• Rotas que dependem de sessão ou cookie devem permanecer dinâmicas e sem cache entre usuários.
 
-5.2 Adapters, Guards, Providers
+5.2 Adapters, Guards e Consumers
+• Estado atual de adapters, guards, providers, APIs e superfícies deve ser consultado no repositório; esta Base não mantém inventário desses arquivos.
+• Acesso ao banco ocorre por adapters server-side; guards SSR aplicam a autorização final e consumers client não reinterpretam decisões de acesso.
+• Privilégios administrativos devem permanecer centralizados nos guards existentes, sem autorização paralela em páginas ou componentes.
+• Deny, bloqueio e erro operacional devem permanecer distinguíveis, sem fallback permissivo.
 
-5.2.1 Adapters
-• taxonMatchAdapter (PATH: lib/onboarding/niche-resolution/adapters/taxonMatchAdapter.ts): consumo server-side da RPC `match_business_taxons_deterministic`, com retorno DTO camelCase de candidatos oficiais de taxonomia e tratamento seguro de erro sem PII.
-• accountAdapter (PATH: lib/access/adapters/accountAdapter.ts): operações de conta e status no runtime, com normalização de status e mutações idempotentes quando aplicável.
-• accountProfileAdapter (PATH: lib/access/adapters/accountProfileAdapter.ts): persistência/atualização do perfil operacional da conta (E10.4.6).
-• accessContextAdapter (PATH: lib/access/adapters/accessContextAdapter.ts): leitura do contexto em v_access_context_v2, decisão de acesso (allow/deny), fallback de primeira conta via RPC quando não há membership e observabilidade de deny vs error.
-• adminAdapter (PATH: lib/admin/adapters/adminAdapter.ts): valida privilégios administrativos (super_admin/platform_admin) e centraliza operações administrativas do runtime atual.
-• Regra: setup_completed_at/account_setup_completed_at é legado/deprecated; não usar em gating, fluxo, renderização ou logs. Setup concluído no runtime é decidido por accounts.status.
+5.3 Fluxos de Sessão e Auth
 
-5.2.2 Guards
-• guard SSR da seção cliente (PATH: app/a/_server/section-guard.ts): aplica allow/deny de /a/{account_slug} e redirecionamentos de bloqueio na seção cliente.
-• guard SSR da seção Admin (PATH: app/admin/layout.tsx): protege a seção administrativa, reaproveita `requirePlatformAdmin()` e concentra a moldura inicial do Admin.
-• Infra shared de privilégio admin permanece ativa via helpers/guards (`requirePlatformAdmin()` e `requireSuperAdmin()`), agora consumida pela superfície `/admin` ativa no runtime.
-• guards legados compartilhados (PATH: lib/access/guards.ts): utilitários de validação de acesso usados pelo runtime.
+5.3.1 Login e redirecionamentos
+• Login pode ocorrer pelo client SULB autorizado, mas a autorização da conta permanece responsabilidade do SSR.
+• Parâmetros de retorno aceitam somente paths internos seguros; URLs externas, protocolos e paths iniciados por `//` devem cair no destino padrão seguro.
+• Rotas, mensagens, estados de loading e tratamento exato de erros permanecem canônicos no código.
 
-5.2.3 Providers
-• AccessProvider (PATH: providers/AccessProvider.tsx): carrega contexto de acesso no app.
-• account-switcher (PATH: components/features/account-switcher/*): consome v_user_accounts_list via /api/user/accounts.
+5.3.2 Signup, confirmação e recuperação
+• Signup e reenvio devem usar somente os clients e imports autorizados pelo SULB, com redirects internos aprovados; templates, Redirect URLs e configuração de e-mail pertencem a `docs/platform-config.md`.
+• Links de confirmação ou recuperação não podem consumir token no GET; verificação, criação de sessão e eventual atualização de senha ocorrem somente no POST.
+• Recuperação de senha deve usar resposta neutra contra enumeração de usuários; mensagens, cooldowns e limites de UX exatos permanecem no código, e limitação server-side pertence ao Supabase Auth.
+• Senha só pode ser atualizada após validação do token ou código e estabelecimento da sessão correspondente.
+• E-mail, senha, token, código e valores sensíveis de formulário não podem ser registrados em logs.
 
-5.3 Fluxos de Sessão
+5.3.3 Observabilidade
+• Decisões críticas de acesso, Auth e Server Actions devem emitir logs estruturados com resultado, motivo seguro, `request_id` e latência quando disponíveis.
+• Nomes de eventos e campos específicos permanecem canônicos no código; a Base mantém apenas o contrato mínimo de diagnóstico.
+• Logs não devem conter PII, secrets, credenciais, tokens, códigos, payloads brutos, prompts ou valores de formulário.
+• Falha de logging não pode bloquear o fluxo principal.
+• Mutação seguida de redirect deve revalidar a rota afetada quando houver risco de UI stale.
 
-5.3.1 Login (MVP)
-• Login primário em /auth/login.
-• Sucesso preserva next seguro; quando partir do contexto administrativo, deve retornar para `/admin`.
-• Sem retorno explícito, fluxo padrão: /protected → /a/home → /a/{account_slug}.
-• Erro de credenciais: exibir error.message do Supabase (ex.: “Invalid login credentials”).
-• Throttling específico de login não está implementado na UI atual (ver 5.3.3).
-
-5.3.2 Password Reset (MVP)
-• Entrada do reset: /auth/forgot-password.
-• Mensagem neutra obrigatória (anti-enumeração): “Se este e-mail estiver cadastrado, enviaremos instruções para redefinir a senha.” (em sucesso e descrição).
-• Cooldown UI: 60s com contador e botão desabilitado após solicitar.
-• resetPasswordForEmail deve usar redirectTo direto para /auth/update-password (sem querystring).
-• Regra (template Supabase — Reset password): usar {{ .RedirectTo }}?token_hash={{ .TokenHash }}&type=recovery (RedirectTo aponta para /auth/update-password).
-• Link de recovery abre /auth/update-password com type=recovery e token_hash=<TOKEN_HASH> ou code=<CODE>.
-• Regra anti-scanner: não consumir token no GET; confirmação ocorre somente no POST ao “Salvar nova senha”.
-• /auth/update-password faz POST para supabase.auth.updateUser({ password }) e, em sucesso, redireciona para /auth/update-password/success.
-
-5.3.3 Throttling
-• Login: sem throttling dedicado; UI apenas desabilita o botão durante a request e exibe error.message em falha.
-• Reset: cooldown UI de 60s (contador), iniciado após uma solicitação bem-sucedida.
-• Limitação adicional (server-side) é responsabilidade do Supabase Auth.
-5.3.4 Observabilidade
-• IA de resolução de nicho: logs devem registrar apenas sinais seguros como status, modo UX, quantidade de opções, necessidade de revisão/confirmação, persistência e código de erro seguro; não logar prompt, payload bruto, `niche`, `raw_input`, query, aliases, candidatos completos, `name`, `whatsapp` ou `site_url`.
-• server-timing/proxy-status não observados nos requests testados via DevTools
-• Diretriz: se precisar medir, instrumentar via logs/Apm e/ou headers próprios no server
-• Server Actions críticas devem emitir logs estruturados (JSON) com request_id e latency_ms (padrão mínimo).
-• Regra (logs sem PII): não logar valores de formulário (ex.: name, whatsapp, site_url).
-• Onboarding pós-save (E10.4.6): revalidatePath(route) antes do redirect para evitar UI stale.
-• Matching de taxonomia: quando a RPC determinística for consumida em runtime, observability mínima deve registrar apenas metadados não sensíveis, como request_id, latency_ms, candidates_count, top_match_source e top_score; eventos canônicos: `setup_taxonomy_match_evaluated` e `setup_taxonomy_match_failed`; não logar nicho bruto, `p_query`, query, aliases digitados, dados de formulário ou valores identificáveis do usuário.
-• Vínculo oficial de taxonomia: logs devem registrar apenas sinais seguros de avaliação, gravação, skip ou falha do vínculo em `account_taxonomy`; não logar `niche`, `raw_input`, query, aliases, candidatos completos, `name`, `whatsapp` ou `site_url`.
-
-5.3.5 Signup
-• Entrada: /auth/sign-up (SignUpForm usa supabase.auth.signUp) (PATH: components/sign-up-form.tsx).
-• Sucesso do signUp: redirecionar para /auth/sign-up-success (mensagem de confirmação para checar o e-mail).
-• Regra: signUp deve usar emailRedirectTo apontando para /auth/confirm?next=/a/home (somente path interno).
-• Regra (correlação ponta a ponta): gerar rid no client (não-PII) e anexar no emailRedirectTo como querystring (ex.: &rid=<rid>) para rastrear submit → e-mail → confirm → redirect.
-• Regra (supa#5 no client — Auth/signup): emitir logs estruturados para eventos de signup/resend com rid e sem PII (não logar email/senha nem valores sensíveis).
-• Regra (observabilidade mínima na Vercel): logs no runtime do front em produção devem permitir diagnóstico rápido do fluxo por rid (submit/resultado).
-• Regra (template Supabase — Confirm sign up): usar {{ .RedirectTo }} (não {{ .SiteURL }}); quando RedirectTo já contém querystring (ex.: ?next=/a/home&rid=...), anexar &token_hash={{ .TokenHash }}&type=signup.
-• Confirmação: /auth/confirm (GET) exibe interstitial “Continuar” e consome token apenas no POST (anti-scanner).
-• Pós-confirmação: /auth/confirm (POST) cria sessão e redireciona para next=/a/home.
-• Com sessão e sem membership: /a/home cria 1ª conta via RPC ensure_first_account_for_current_user() e redireciona para /a/{account_slug} (pending_setup; owner/active).
-• Sem vínculo e sem auto-criação (negado pela view): /auth/confirm/info (fallback genérico).
-
-5.4 Regras da rota /a (anti-regressão)
-• /a é o entrypoint público e redireciona para /a/home.
-• /a/home é pública e funciona como gateway:
-• Sem sessão: renderiza home pública.
-• Com sessão: tenta resolver conta via cookie last_account_subdomain e redireciona para /a/{account_slug} (quando houver allow=true).
-• Com sessão e sem membership: cria 1ª conta via RPC ensure_first_account_for_current_user() e redireciona para /a/{account_slug} (pending_setup; owner/active).
-• Com sessão e sem conta allow e com qualquer membership: redireciona para /auth/confirm/info.
-• Dashboard privado só em /a/{account_slug}.
-• allow/deny é responsabilidade do guard SSR de seção cliente (PATH: app/a/_server/section-guard.ts), consumido por /a/[account]/layout.tsx.
-• /a/home bypassa o guard SSR de seção cliente consumido em app/a/[account]/layout.tsx.
-• Se o guard SSR de seção cliente negar com usuário autenticado: redirecionar para /a/home?clear_last=1 para limpar o cookie e forçar fallback determinístico (sem loop).
-• “Solicitar acesso” em /auth/confirm/info abre mailto (não é rota interna do app).
-• Se ctx.blocked por membership.status: redirecionar para:
-• pending → /auth/confirm/pending
-• inactive → /auth/confirm/inactive
-• revoked → /auth/confirm/revoked
-• Se ctx.blocked por conta (ctx.error_code="FORBIDDEN_ACCOUNT"): redirecionar para:
-• accounts.status=inactive → /auth/confirm/account/inactive
-• accounts.status=suspended → /auth/confirm/account/suspended
-• fallback → /auth/confirm/account
+5.4 Gateway `/a` e seção privada
+• `/a/home` é o gateway público; a seção privada existe somente sob uma conta resolvida e autorizada.
+• Usuário autenticado deve tentar a última conta permitida e depois um fallback determinístico de conta; o gateway não decide allow/deny por conta própria.
+• Usuário sem qualquer membership pode criar a primeira conta somente pelo fluxo server-side aprovado; a existência de qualquer membership impede auto-criação adicional.
+• O guard SSR da seção privada é responsável por allow/deny, bloqueios e redirecionamentos seguros; mapeamentos exatos de status e destinos pertencem ao código.
+• Negação com cookie inválido deve limpar a última conta e voltar ao gateway sem loop; ausência de contexto autenticado deve usar fallback informativo seguro.
 
 6. Estrutura de Arquivos Essencial
 
