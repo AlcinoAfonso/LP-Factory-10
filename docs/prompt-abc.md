@@ -1,4 +1,4 @@
-# docs/prompt-abc.md vs10
+# docs/prompt-abc.md vs12
 
 PROMPT ABC
 
@@ -10,6 +10,7 @@ Antes de adicionar, avaliar nesta ordem: remover; ajustar; substituir; consolida
 * REF: `main`, branch ou commit; padrão: `main`.
 * DOC_ALVO: documento a atualizar, quando informado.
 * RELATÓRIO: fonte do estado final.
+* ETAPA: `única`, `intermediária` ou `consolidação final`; padrão: `única`.
 
 ## 2. Objetivo
 
@@ -65,9 +66,13 @@ Um assunto deve ter uma única residência. Não duplicar fonte canônica.
 ### 6.2 Base Técnica
 
 * Só gerar delta para regra técnica durável e reutilizável além do caso imediato.
-* Não registrar detalhes de fase ou caso.
+* Não registrar detalhes de fase, etapa ou caso E*.
 * Não copiar valores ou listas definidos em código, registry, schema ou configuração versionada.
-* Registrar somente a regra permanente e, quando necessário, o path da fonte canônica.
+* Não registrar inventário de rotas, adapters, tabelas, workflows ou arquivos do estado atual.
+* Regra específica de um único domínio pode permanecer quando for durável, proteger um boundary real e não houver outra fonte canônica suficiente.
+* Preservar regras globais de classificação, responsabilidade e isolamento de boundaries.
+* Quando código ou documento próprio já for fonte canônica suficiente, registrar somente a regra transversal necessária e o path dessa fonte.
+* Rejeitar delta cuja fonte correta seja o repositório, `docs/schema.md`, `docs/design-system.md`, `docs/platform-config.md`, `docs/services.md`, `docs/automations.md` ou `docs/roadmap.md`.
 
 ### 6.3 Schema
 
@@ -91,9 +96,10 @@ Regras:
 
 ## 8. Versionamento
 
-* Versão, data e changelog só mudam com delta real.
-* Changelog recebe somente a nova entrada.
-* Changelog não entra em OPERAÇÕES.
+* Versão e data só mudam com delta real na publicação consolidada do documento.
+* Em `ETAPA: intermediária`, preservar versão e data atuais e omitir `VERSAO_NOVA` e `DATA_NOVA`.
+* Em `ETAPA: única` ou `ETAPA: consolidação final`, emitir nova versão e data quando houver delta real.
+* Não gerar nem manter changelog documental; o histórico fica no Git e nos PRs.
 
 ## 9. Formato da saída
 
@@ -112,7 +118,24 @@ DOC_ALVO: <DOC_ALVO>
 SEM ALTERAÇÕES NECESSÁRIAS
 ```
 
-Com delta:
+Com delta em etapa intermediária:
+
+```txt
+DD/MM/YYYY HH:MM — ABC (DELTA-ONLY) para <DOC_ALVO>
+DOC_ALVO: <DOC_ALVO>
+ETAPA: INTERMEDIÁRIA
+
+OPERAÇÕES
+
+OP1)
+TIPO: <operação>
+ALVO: <alvo>
+ANCORA: <âncora, somente quando aplicável>
+CONTEUDO:
+<conteúdo literal>
+```
+
+Com delta em etapa única ou consolidação final:
 
 ```txt
 DD/MM/YYYY HH:MM — ABC (DELTA-ONLY) para <DOC_ALVO>
@@ -128,11 +151,6 @@ ALVO: <alvo>
 ANCORA: <âncora, somente quando aplicável>
 CONTEUDO:
 <conteúdo literal>
-
-CHANGELOG
-
-CH1)
-<nova entrada>
 ```
 
 Sem DOC_ALVO:
@@ -145,4 +163,4 @@ Depois:
 
 * listar somente documentos com delta;
 * emitir um ABC independente por documento;
-* não misturar versões, operações ou changelogs.
+* não misturar versões ou operações.
