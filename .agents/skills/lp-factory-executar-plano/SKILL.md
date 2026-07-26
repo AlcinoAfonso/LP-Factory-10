@@ -38,6 +38,14 @@ Quando invocada por `$lp-factory-orquestrar-plano`:
 4. No handoff interno, reutilizar a branch e o PR existentes. Na execução independente, criar ou selecionar uma única branch `codex-app/<caso>-implementacao` a partir da `main` e um único PR draft contra `main`. Recusar base diferente de `main` e nunca criar branch ou PR por subseção.
 5. Registrar o SHA do plano como contrato imutável. Se houver execução anterior, identificar o último checkpoint pelo trailer de commit `LP-Factory-Phase: <identificador>`; se não for possível determinar unicamente a próxima subseção, parar e pedir o identificador.
 
+## Gate Supabase pré-merge
+
+Quando a subseção alterar schema ou migrations:
+
+1. Criar e versionar a migration em `supabase/migrations/` e validá-la somente em ambiente local ou isolado. Antes do merge, permitir no projeto remoto apenas inspeção read-only, `supabase migration list --linked` e `supabase db push --linked --dry-run`.
+2. Não executar alteração remota de schema ou do histórico de migrations, inclusive por `apply_migration`, SQL mutável via `execute_sql`, SQL Editor, Table Editor, `supabase db push --linked` sem `--dry-run` ou ferramenta equivalente. O merge na `main` dispara o workflow canônico de aplicação.
+3. Se o plano exigir aplicação remota pré-merge ou se ela já tiver ocorrido, parar em modo fail-closed, registrar a operação e o estado encontrados e informar o humano. Não aplicar rollback, `migration repair`, nova migration corretiva ou outra mutação remota por inferência.
+
 ## Executar uma subseção
 
 Para a próxima subseção ainda não aprovada:
