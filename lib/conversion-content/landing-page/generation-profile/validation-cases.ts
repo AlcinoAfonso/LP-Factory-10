@@ -1,5 +1,10 @@
 import assert from "node:assert/strict";
 
+import {
+  loadLandingPageGenerationProfileSourceFromClient,
+  resolveLandingPageGenerationProfileForTaxonFromClient,
+  type LandingPageGenerationProfileReadClient,
+} from "../../adapters/landingPageGenerationProfileAdapterCore";
 import { normalizeLandingPageGenerationProfileItemRow } from "../../adapters/landingPageGenerationProfileRowNormalization";
 import {
   landingPageGenerationProfileSchema,
@@ -41,7 +46,10 @@ const validChain = {
   ],
 } as const;
 
-const cases: readonly Readonly<{ name: string; run: () => void }>[] = [
+const cases: readonly Readonly<{
+  name: string;
+  run: () => void | Promise<void>;
+}>[] = [
   {
     name: "valid profile keeps profile and items in one aggregate",
     run: () => assert.equal(landingPageGenerationProfileSchema.safeParse(validProfile).success, true),
@@ -258,9 +266,51 @@ const cases: readonly Readonly<{ name: string; run: () => void }>[] = [
       if (!result.ok) assert.equal(result.error.code, "INVALID_PROFILE");
     },
   },
+  {
+    name: "adapter boundary preserves READ_FAILED instead of returning profile absence",
+    run: async () => {
+      const readFailureClient = {
+        from: () => ({
+          select: () => ({
+            eq: () => ({
+              limit: () => ({
+                maybeSingle: async () => ({
+                  data: null,
+                  error: { message: "forced read failure" },
+                }),
+              }),
+            }),
+          }),
+        }),
+      } as unknown as LandingPageGenerationProfileReadClient;
+
+      const source = await loadLandingPageGenerationProfileSourceFromClient(
+        { taxonId: SEGMENT_ID },
+        readFailureClient,
+      );
+      assert.equal(source.ok, false);
+      if (!source.ok) assert.equal(source.error.code, "READ_FAILED");
+
+      const resolved = await resolveLandingPageGenerationProfileForTaxonFromClient(
+        { taxonId: SEGMENT_ID },
+        readFailureClient,
+      );
+      const resolutionKind = resolved.ok ? resolved.value.kind : "error";
+      assert.equal(resolved.ok, false);
+      if (!resolved.ok) assert.equal(resolved.error.code, "READ_FAILED");
+      assert.equal(resolutionKind, "error");
+    },
+  },
 ];
 
-for (const validationCase of cases) {
-  validationCase.run();
-  console.log(`ok - ${validationCase.name}`);
+async function runValidationCases() {
+  for (const validationCase of cases) {
+    await validationCase.run();
+    console.log(`ok - ${validationCase.name}`);
+  }
 }
+
+runValidationCases().catch((error: unknown) => {
+  console.error(error);
+  process.exitCode = 1;
+});
