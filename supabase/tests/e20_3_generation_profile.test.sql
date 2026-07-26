@@ -150,7 +150,7 @@ begin
     end if;
 
     foreach privilege_name in array array[
-      'INSERT', 'UPDATE', 'DELETE', 'TRUNCATE', 'REFERENCES', 'TRIGGER'
+      'INSERT', 'UPDATE', 'DELETE', 'TRUNCATE', 'REFERENCES', 'TRIGGER', 'MAINTAIN'
     ] loop
       if has_table_privilege('service_role', 'public.' || target_table, privilege_name) then
         raise exception 'service_role has unexpected % on %', privilege_name, target_table;
@@ -159,7 +159,7 @@ begin
 
     foreach target_role in array array['anon', 'authenticated'] loop
       foreach privilege_name in array array[
-        'SELECT', 'INSERT', 'UPDATE', 'DELETE', 'TRUNCATE', 'REFERENCES', 'TRIGGER'
+        'SELECT', 'INSERT', 'UPDATE', 'DELETE', 'TRUNCATE', 'REFERENCES', 'TRIGGER', 'MAINTAIN'
       ] loop
         if has_table_privilege(target_role, 'public.' || target_table, privilege_name) then
           raise exception '% has unexpected % on %', target_role, privilege_name, target_table;
@@ -169,7 +169,7 @@ begin
 
     if to_regrole('ai_readonly') is not null then
       foreach privilege_name in array array[
-        'SELECT', 'INSERT', 'UPDATE', 'DELETE', 'TRUNCATE', 'REFERENCES', 'TRIGGER'
+        'SELECT', 'INSERT', 'UPDATE', 'DELETE', 'TRUNCATE', 'REFERENCES', 'TRIGGER', 'MAINTAIN'
       ] loop
         if has_table_privilege('ai_readonly', 'public.' || target_table, privilege_name) then
           raise exception 'ai_readonly has unexpected % on %', privilege_name, target_table;

@@ -1,5 +1,6 @@
 begin;
 set transaction read only;
+set local search_path = public, pg_catalog;
 
 with target_tables(table_name) as (
   values
@@ -38,26 +39,26 @@ with target_tables(table_name) as (
   from expected_columns expected
   full join actual_columns actual using (table_name, column_name)
   where expected.column_name is null or actual.column_name is null
-), expected_constraints(table_name, constraint_name, definition_pattern) as (
+), expected_constraints(table_name, constraint_name, expected_definition) as (
   values
-    ('landing_page_generation_profiles', 'landing_page_generation_profiles_pkey', '^PRIMARY KEY.*id'),
-    ('landing_page_generation_profiles', 'landing_page_generation_profiles_owner_taxon_id_fkey', '^FOREIGN KEY.*owner_taxon_id.*REFERENCES.*business_taxons.*ON UPDATE CASCADE ON DELETE RESTRICT$'),
-    ('landing_page_generation_profiles', 'landing_page_generation_profiles_version_chk', '^CHECK.*version > 0'),
-    ('landing_page_generation_profiles', 'landing_page_generation_profiles_status_chk', '^CHECK.*status.*draft.*active.*archived'),
-    ('landing_page_generation_profiles', 'landing_page_generation_profiles_guidance_chk', '^CHECK.*length.*btrim.*generation_guidance.*> 0'),
-    ('landing_page_generation_profiles', 'landing_page_generation_profiles_owner_version_uidx', '^UNIQUE.*owner_taxon_id.*version'),
-    ('landing_page_generation_profile_items', 'landing_page_generation_profile_items_pkey', '^PRIMARY KEY.*id'),
-    ('landing_page_generation_profile_items', 'landing_page_generation_profile_items_profile_id_fkey', '^FOREIGN KEY.*profile_id.*REFERENCES.*landing_page_generation_profiles.*ON UPDATE CASCADE ON DELETE CASCADE$'),
-    ('landing_page_generation_profile_items', 'landing_page_generation_profile_items_module_key_chk', '^CHECK.*length.*btrim.*module_key.*> 0'),
-    ('landing_page_generation_profile_items', 'landing_page_generation_profile_items_module_version_chk', '^CHECK.*module_version > 0'),
-    ('landing_page_generation_profile_items', 'landing_page_generation_profile_items_variant_pair_chk', '^CHECK.*variant_key IS NULL.*=.*variant_version IS NULL'),
-    ('landing_page_generation_profile_items', 'landing_page_generation_profile_items_variant_key_chk', '^CHECK.*variant_key IS NULL.*length.*btrim.*variant_key.*> 0'),
-    ('landing_page_generation_profile_items', 'landing_page_generation_profile_items_variant_version_chk', '^CHECK.*variant_version IS NULL.*variant_version > 0'),
-    ('landing_page_generation_profile_items', 'landing_page_generation_profile_items_priority_chk', '^CHECK.*priority.*P1.*P2.*P3'),
-    ('landing_page_generation_profile_items', 'landing_page_generation_profile_items_order_chk', '^CHECK.*recommended_order > 0'),
-    ('landing_page_generation_profile_items', 'landing_page_generation_profile_items_guidance_chk', '^CHECK.*item_guidance IS NULL.*length.*btrim.*item_guidance.*> 0'),
-    ('landing_page_generation_profile_items', 'landing_page_generation_profile_items_profile_order_uidx', '^UNIQUE.*profile_id.*recommended_order'),
-    ('landing_page_generation_profile_items', 'landing_page_generation_profile_items_profile_module_uidx', '^UNIQUE.*profile_id.*module_key')
+    ('landing_page_generation_profiles', 'landing_page_generation_profiles_pkey', 'primary key (id)'),
+    ('landing_page_generation_profiles', 'landing_page_generation_profiles_owner_taxon_id_fkey', 'foreign key (owner_taxon_id) references business_taxons(id) on update cascade on delete restrict'),
+    ('landing_page_generation_profiles', 'landing_page_generation_profiles_version_chk', 'check ((version > 0))'),
+    ('landing_page_generation_profiles', 'landing_page_generation_profiles_status_chk', 'check ((status = any (array[''draft''::text, ''active''::text, ''archived''::text])))'),
+    ('landing_page_generation_profiles', 'landing_page_generation_profiles_guidance_chk', 'check ((length(btrim(generation_guidance)) > 0))'),
+    ('landing_page_generation_profiles', 'landing_page_generation_profiles_owner_version_uidx', 'unique (owner_taxon_id, version)'),
+    ('landing_page_generation_profile_items', 'landing_page_generation_profile_items_pkey', 'primary key (id)'),
+    ('landing_page_generation_profile_items', 'landing_page_generation_profile_items_profile_id_fkey', 'foreign key (profile_id) references landing_page_generation_profiles(id) on update cascade on delete cascade'),
+    ('landing_page_generation_profile_items', 'landing_page_generation_profile_items_module_key_chk', 'check ((length(btrim(module_key)) > 0))'),
+    ('landing_page_generation_profile_items', 'landing_page_generation_profile_items_module_version_chk', 'check ((module_version > 0))'),
+    ('landing_page_generation_profile_items', 'landing_page_generation_profile_items_variant_pair_chk', 'check (((variant_key is null) = (variant_version is null)))'),
+    ('landing_page_generation_profile_items', 'landing_page_generation_profile_items_variant_key_chk', 'check (((variant_key is null) or (length(btrim(variant_key)) > 0)))'),
+    ('landing_page_generation_profile_items', 'landing_page_generation_profile_items_variant_version_chk', 'check (((variant_version is null) or (variant_version > 0)))'),
+    ('landing_page_generation_profile_items', 'landing_page_generation_profile_items_priority_chk', 'check ((priority = any (array[''p1''::text, ''p2''::text, ''p3''::text])))'),
+    ('landing_page_generation_profile_items', 'landing_page_generation_profile_items_order_chk', 'check ((recommended_order > 0))'),
+    ('landing_page_generation_profile_items', 'landing_page_generation_profile_items_guidance_chk', 'check (((item_guidance is null) or (length(btrim(item_guidance)) > 0)))'),
+    ('landing_page_generation_profile_items', 'landing_page_generation_profile_items_profile_order_uidx', 'unique (profile_id, recommended_order)'),
+    ('landing_page_generation_profile_items', 'landing_page_generation_profile_items_profile_module_uidx', 'unique (profile_id, module_key)')
 ), actual_constraints as (
   select
     target.table_name,
@@ -80,11 +81,11 @@ with target_tables(table_name) as (
   full join actual_constraints actual using (table_name, constraint_name)
   where expected.constraint_name is null
     or actual.constraint_name is null
-    or actual.definition !~* expected.definition_pattern
+    or lower(regexp_replace(actual.definition, '\s+', ' ', 'g')) <> expected.expected_definition
 ), target_roles(role_name) as (
   values ('service_role'::text), ('anon'), ('authenticated'), ('ai_readonly')
 ), privilege_names(privilege_name) as (
-  values ('SELECT'::text), ('INSERT'), ('UPDATE'), ('DELETE'), ('TRUNCATE'), ('REFERENCES'), ('TRIGGER')
+  values ('SELECT'::text), ('INSERT'), ('UPDATE'), ('DELETE'), ('TRUNCATE'), ('REFERENCES'), ('TRIGGER'), ('MAINTAIN')
 ), effective_privileges as (
   select
     target.table_name,
