@@ -42,9 +42,10 @@ Quando invocada por `$lp-factory-orquestrar-plano`:
 
 Quando a subseção alterar schema ou migrations:
 
-1. Criar e versionar a migration em `supabase/migrations/` e validá-la somente em ambiente local ou isolado. Antes do merge, permitir no projeto remoto apenas inspeção read-only, `supabase migration list --linked` e `supabase db push --linked --dry-run`.
+1. Criar e versionar a migration em `supabase/migrations/` e, quando disponível, validá-la em ambiente local ou isolado. Antes do merge, permitir no projeto remoto apenas inspeção read-only, `supabase migration list --linked` e `supabase db push --linked --dry-run`.
 2. Não executar alteração remota de schema ou do histórico de migrations, inclusive por `apply_migration`, SQL mutável via `execute_sql`, SQL Editor, Table Editor, `supabase db push --linked` sem `--dry-run` ou ferramenta equivalente. O merge na `main` dispara o workflow canônico de aplicação.
 3. Se o plano exigir aplicação remota pré-merge ou se ela já tiver ocorrido, parar em modo fail-closed, registrar a operação e o estado encontrados e informar o humano. Não aplicar rollback, `migration repair`, nova migration corretiva ou outra mutação remota por inferência.
+4. Tratar ausência de Docker, PostgreSQL, Supabase CLI, vínculo ou credenciais locais como validação pendente, não como bloqueio de implementação, commit, push ou trabalho comprovadamente independente. Executar as validações disponíveis, registrar a pendência e não declarar essa validação aprovada nem o PR pronto para merge. Parar somente se faltar informação necessária para escrever a migration com segurança ou existir dependência não resolvida.
 
 ## Executar uma subseção
 
@@ -57,6 +58,8 @@ Para a próxima subseção ainda não aprovada:
 5. Tratar `aprovado para avançar` como checkpoint: commitar com o trailer `LP-Factory-Phase: <identificador>` e atualizar código, título e resumo do mesmo PR draft para refletir o último checkpoint efetivamente publicado.
 6. Tratar `aprovado com correções obrigatórias` corrigindo somente o delta indicado e retornando ao mesmo Analista em `revisao_delta_implementacao`.
 7. Tratar `requer teste humano` ou `bloqueado por decisão humana` como gate: parar e pedir apenas a evidência ou decisão necessária.
+
+Antes de reportar qualquer gate após produzir alterações materiais, publicar o estado atual no PR draft. Publicação sem `aprovado para avançar` não recebe trailer `LP-Factory-Phase`, não constitui checkpoint aprovado e não autoriza avanço ou merge.
 
 No modo `experimental`, parar somente nos checkpoints solicitados pelo humano. No fluxo normal `end-to-end`, avançar para a próxima subseção aprovada.
 
