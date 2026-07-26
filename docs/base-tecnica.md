@@ -49,18 +49,11 @@
 • Configurações operacionais do Supabase: ver `docs/platform-config.md`.
 
 2.3 UI
-• Design System (identidade visual — E6.4–E6.6): referência oficial em docs/design-system.md (documento consolidado do ciclo E6.4–E6.6; API mínima, regras de uso e superfícies cobertas).
-• Marca provisória: wordmark textual temporário “LP Factory” enquanto o asset oficial de logo não estiver versionado no repo.
-• UI Component Library (E6.5/E6.6): componentes mínimos — Button, Input, Card, Select, FormField, Textarea, FeedbackMessage, EmptyState e LoadingState. Fonte detalhada: docs/design-system.md.
-• Regra: em Auth, onboarding mínimo e superfícies reais tocadas, preferir os componentes e estados reutilizáveis acima (evitar markup cru) e seguir docs/design-system.md.
-• Tipografia oficial do produto (UI do dashboard): Inter via next/font/google; aplicar globalmente no <html> com className={inter.className} (PATH: app/layout.tsx); weights 400/500/600/700; display=swap.
-• Tailwind tokens LP Factory: adicionar de forma aditiva (sem substituir tokens shadcn) com namespaces brand/ink/graytech/surface/state e boxShadow.card (PATH: tailwind.config.ts).
-• Tailwind content: incluir js/ts/jsx/tsx/mdx em {pages,components,app,src} para evitar purge silencioso (PATH: tailwind.config.ts).
-• Padrão shadcn preservado: cores baseadas em hsl(var(--...)); remapeamento semântico contido em app/globals.css para tokens `--primary`, `--ring`, `--border`, `--accent` (sem redesign amplo de `--background`, `--foreground`, `--card`) — ver docs/design-system.md.
+• Contrato visual, componentes, tipografia, tokens, estados e superfícies: consultar `docs/design-system.md`.
+• Esta Base Técnica mantém somente guardrails técnicos de UI que afetem segurança, imports ou boundaries.
 • SULB (auth forms): definição: rotas/arquivos de autenticação copiados do Supabase (vendor interno).
 • Regra (SULB): não criar auth fora do escopo SULB/autorizado; exceções só quando explicitamente previstas nesta Base Técnica (ex.: allowlist 6.4).
 • Alterações no SULB: somente quando necessário e sempre respeitando a allowlist 6.4.
-• shadcn/ui: base provisória.
 
 2.4 Configurações operacionais de Auth
 • Redirect URLs, SMTP Auth, sender, DNS e demais configurações operacionais do Supabase Auth ficam em `docs/platform-config.md`.
