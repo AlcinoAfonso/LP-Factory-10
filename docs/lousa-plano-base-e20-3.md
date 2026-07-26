@@ -1,11 +1,11 @@
-# Plano-base — E20.3 — Composição estrutural mínima
+# Plano-base — E20.3 — Perfil de orientação para geração
 
-- Data: 25/07/2026.
-- Versão: v1 substitutiva após o PR #635.
+- Data: 26/07/2026.
+- Versão: v1.
 - Status: plano-base v1 para avaliação única do Analista.
-- Recorte previsto para o roadmap: `20.3 — Composição estrutural mínima de landing_page`.
+- Recorte previsto para o roadmap: `20.3 — Perfil de orientação para geração de landing_page`.
 - Path canônico: `docs/lousa-plano-base-e20-3.md`.
-- Plano conceitual: `docs/lp-planejamento.md`.
+- Plano conceitual: `docs/lp-planejamento.md`, após o merge do PR #642.
 
 ## 1. Estado e decisões fixas
 
@@ -16,18 +16,16 @@
   - parametrização raiz versionada da E18.4;
   - catálogo executável de módulos e variantes da E18.5;
   - catálogo declarativo de entradas da E20.2.
-- Ainda não existe a composição estrutural canônica que determine, por taxon proprietário e versão:
-  - módulos;
-  - variantes;
-  - ordem;
-  - obrigatoriedade quando aplicável.
-- O resultado esperado da E20.3 é:
-  - representar e persistir minimamente essa composição;
-  - preservar estados e versões;
-  - validar as identidades contra a E18.5;
-  - resolver composição própria ou herdada.
-- A E20.3 não cria composição oficial nesta etapa.
-- A futura E12.4 operará proposta, revisão, aprovação e ativação da primeira composição oficial.
+- Ainda não existe o perfil canônico que oriente a geração inicial de `landing_page` para um taxon.
+- A E20.3 deve:
+  - representar e persistir minimamente um perfil versionado por taxon proprietário;
+  - reunir orientação geral e recomendações por módulo;
+  - validar referências de módulo e variante contra a E18.5;
+  - resolver perfil próprio ou herdado;
+  - entregar o perfil por um único boundary server-side.
+- O perfil orienta escolhas futuras. Ele não define uma composição obrigatória, não fixa a LP final e não gera conteúdo.
+- A E20.3 atual não cadastra nem ativa perfil oficial.
+- O primeiro cadastro e a primeira ativação serão operados pela futura E12.4.
 
 ### 1.2. Fontes usadas
 
@@ -35,267 +33,212 @@
 - `docs/prompt-estrategista.md`.
 - `docs/template-roadmap.md`.
 - `docs/roadmap.md`.
-- `docs/lp-planejamento.md`, após o merge do PR #635.
+- `docs/lp-planejamento.md`, após o merge do PR #642.
 - `docs/base-tecnica.md`.
 - `docs/schema.md`.
 - `docs/lousa-plano-base-e18-5.md`.
 - `docs/lousa-plano-base-e20-2.md`.
-- Implementação vigente em:
+- Implementação vigente:
   - `lib/conversion-content/landing-page/module-catalog/`;
   - `lib/conversion-content/landing-page/input-catalog/`;
   - `lib/conversion-content/index.ts`.
 - Estado pós-reconciliação do PR #636:
-  - as migrations antecipadas permanecem no histórico;
-  - os objetos abandonados foram removidos;
-  - nenhuma estrutura da implementação superdimensionada permanece vigente.
+  - migrations antecipadas preservadas no histórico;
+  - objetos abandonados removidos;
+  - nenhuma estrutura superdimensionada vigente.
 
 ### 1.3. Decisões funcionais fixas
 
-- Existe uma composição canônica por `taxon proprietário + versão`.
-- A composição é reutilizada entre planos.
-- Cada item da composição referencia:
-  - módulo e versão;
-  - variante e versão;
-  - posição ordenada;
-  - obrigatoriedade quando aplicável.
+- Existe um perfil versionado por `taxon proprietário + versão`, reutilizado entre planos.
+- O perfil pode pertencer a segmento ou nicho; perfil próprio de ultranicho é excepcional e depende de decisão humana explícita no fluxo futuro responsável.
+- O perfil reúne:
+  - orientação geral;
+  - módulo recomendado;
+  - variante preferencial, quando aplicável;
+  - prioridade;
+  - ordem recomendada;
+  - orientação específica;
+  - justificativa, quando aplicável.
+- Prioridade orientará a seleção futura; ordem recomendada indicará a posição relativa entre os módulos selecionados.
+- Nenhuma recomendação torna módulo obrigatório ou redefine a E18.4 ou a E18.5.
 - Somente identidades oficialmente registradas na E18.5 são válidas.
-- O lifecycle mínimo distingue:
-  - `draft`;
-  - `active`;
-  - `archived`.
-- Uma versão `active` não é editada diretamente.
-- Uma mudança aprovada cria nova versão e preserva as anteriores.
-- No máximo uma versão pode estar `active` por taxon proprietário.
-- Na ausência de composição própria ativa, a resolução usa o ancestral elegível mais próximo, salvo bloqueio explícito de herança.
-- Não existe composição universal implícita.
-- A composição própria de ultranicho permanece excepcional e depende de permissão explícita no contrato mínimo de política do taxon.
+- Estados do perfil: `draft`, `active` e `archived`.
+- Uma versão `active` não é editada diretamente; mudança aprovada cria nova versão e preserva as anteriores.
+- Existe no máximo uma versão `active` por taxon proprietário.
+- Sem perfil próprio ativo, a resolução usa o ancestral elegível mais próximo.
+- Não existe perfil universal implícito.
+- A LP futuramente materializada é independente e não muda com novas versões do perfil.
 - Automação: não.
 
 ### 1.4. Fronteiras de responsabilidade
 
-- A E18.5 define módulos e variantes; a E20.3 apenas referencia e valida suas identidades versionadas.
-- A E20.2 permanece responsável pelo catálogo de entradas e não integra o payload da composição.
-- A E20.3 fornece:
-  - contrato estrutural;
-  - persistência mínima;
-  - lifecycle e versões;
-  - validação;
-  - resolução própria ou herdada.
-- A futura E12.4 operará:
-  - proposta;
-  - revisão;
-  - aprovação;
-  - ativação;
-  - primeiro cadastro oficial.
-- Planos posteriores tratarão:
-  - IA;
-  - gaps persistidos;
-  - prontidão;
-  - autorização;
-  - revogação;
-  - geração e publicação de LP.
+- E18.4 define a parametrização raiz.
+- E18.5 define módulos, variantes e contratos; E20.3 apenas referencia e valida suas identidades versionadas.
+- E20.2 define entradas; seus valores não integram o perfil.
+- E20.3 fornece contrato, persistência mínima, estados, versões, validação, leitura e resolução.
+- A futura E12.4 opera proposta por IA, revisão humana, primeiro cadastro, aprovação e ativação.
+- Planos posteriores tratam seleção efetiva por prioridade, geração, gaps persistidos, prontidão, autorização, revogação, aprendizado, publicação e evolução da LP.
 
 ## 2. Contrato do caso
 
 ### 2.1. Fluxo operacional
 
 - Gatilho:
-  - consumidor server-side solicita a composição aplicável a um taxon;
-  - casos executáveis validam criação, lifecycle e resolução com dados de teste.
+  - consumidor server-side solicita o perfil aplicável a um taxon;
+  - casos executáveis validam contrato e resolução com fixtures.
 - Entrada:
   - taxon atendido e cadeia taxonômica normalizada;
-  - política mínima do taxon;
-  - composições persistidas;
+  - perfis persistidos;
   - catálogo oficial da E18.5.
 - Processamento:
-  - localizar composição própria ativa;
-  - na ausência, verificar bloqueio de herança;
-  - localizar o ancestral elegível mais próximo;
-  - validar estrutura, estado, versão e identidades;
-  - devolver resultado tipado e determinístico.
-- Validação:
-  - taxon proprietário e cadeia válidos;
-  - versão inteira positiva;
-  - lifecycle válido;
-  - ordem inteira, única e contínua;
-  - módulo e variante existentes e compatíveis na E18.5;
-  - política de herança respeitada.
+  - localizar perfil próprio `active` ou, na ausência, o ancestral elegível mais próximo;
+  - validar versão, estado, orientação e recomendações;
+  - validar identidades contra a E18.5;
+  - devolver resultado tipado e com proveniência.
 - Persistência:
-  - política mínima necessária à herança e à excepcionalidade do ultranicho;
-  - composição versionada e seus itens estruturais.
-- Consumo:
-  - boundary server-side da própria E20.3;
-  - futura E12.4;
-  - futuros consumidores somente após seus planos próprios.
+  - somente perfil versionado e payload de orientação.
 - Fallback:
-  - composição própria ativa;
-  - composição ativa do ancestral elegível mais próximo;
+  - perfil próprio;
+  - perfil herdado;
   - ausência tipada;
-  - falha fechada diante de estrutura ou identidade inválida.
+  - falha fechada para perfil ou referência inválida.
 
-### 2.2. Contrato mínimo da composição
+### 2.2. Contrato mínimo do perfil
 
 - Identidade:
   - ID;
   - taxon proprietário;
-  - versão;
-  - status.
-- Itens ordenados:
-  - ID e versão do módulo;
-  - ID e versão da variante;
-  - posição;
-  - obrigatoriedade quando aplicável.
-- Metadados mínimos:
-  - criação;
-  - última atualização;
-  - ativação quando aplicável.
-- A composição não armazena:
+  - versão inteira positiva;
+  - estado.
+- Orientação geral:
+  - texto não vazio.
+- Cada recomendação contém:
+  - módulo e versão;
+  - variante preferencial e versão, quando aplicável;
+  - prioridade inteira positiva;
+  - ordem recomendada inteira positiva;
+  - orientação específica, quando aplicável;
+  - justificativa, quando aplicável.
+- Regras:
+  - menor prioridade numérica representa maior prioridade;
+  - ordem recomendada é única entre as recomendações, mas não precisa ser contínua;
+  - existe no máximo uma recomendação por módulo;
+  - não existe campo de obrigatoriedade.
+- O perfil não armazena:
+  - composição final;
   - copy;
   - pesquisas;
   - parâmetros da E18.4;
   - catálogo ou valores da E20.2;
-  - gaps;
-  - prontidão;
-  - autorização;
-  - revogação;
+  - gaps, prontidão, autorização ou revogação;
   - dados da conta;
-  - LP gerada.
+  - LP ou snapshot.
 
 ### 2.3. Persistência mínima
 
-- Criar somente as estruturas necessárias para:
-  - política de herança e permissão excepcional de composição própria;
-  - composição versionada com payload estrutural validado.
-- Usar uma representação compacta para os itens ordenados, sem normalizar prematuramente cada item em tabela própria.
+- Criar uma única tabela para o perfil versionado.
+- Manter orientação e recomendações em payload compacto, sem tabela própria por recomendação.
 - Proteger no banco:
-  - referências ao taxon;
+  - FK para o taxon proprietário;
   - versão positiva e única por taxon proprietário;
-  - status fechado;
-  - no máximo uma versão ativa por taxon proprietário;
-  - payload estrutural presente;
-  - imutabilidade da versão ativa.
+  - estado fechado;
+  - uma única versão `active` por taxon proprietário;
+  - payload presente;
+  - RLS habilitado e ausência de acesso direto por `anon` e `authenticated`.
 - Proteger no runtime:
-  - validação estrita do payload;
-  - compatibilidade módulo-variante;
-  - existência das versões na E18.5;
-  - transições de lifecycle permitidas.
-- Implementar adapter server-side no boundary da E20.3.
-- Não criar rota, API, Server Action ou UI.
-- Migration:
-  - incremental e forward-only;
-  - criada e revisada no PR da implementação;
-  - aplicada remotamente somente após merge na `main`;
-  - acompanhada da atualização de `docs/schema.md`.
-- A migration deve terminar sem registros oficiais:
-  - sem seed;
-  - sem insert de composição;
-  - sem composição ativa criada automaticamente.
+  - shape estrito do payload;
+  - regras de prioridade e ordem;
+  - ausência de obrigatoriedade;
+  - existência e compatibilidade de módulo e variante na E18.5;
+  - imutabilidade do resultado entregue.
+- Implementar somente leitura server-side.
+- Não criar operação de escrita, RPC, trigger de lifecycle, rota, API, Server Action, UI ou tabela de política do taxon.
+- A migration deve:
+  - ser incremental e forward-only;
+  - ser aplicada remotamente somente após merge na `main`;
+  - atualizar `docs/schema.md`;
+  - terminar sem seed, insert ou perfil oficial.
 
-### 2.4. Lifecycle e versionamento
+### 2.4. Estados e versionamento
 
 - `draft`:
-  - pode ser validado e substituído antes da ativação;
+  - versão ainda não aprovada;
   - não participa da resolução.
 - `active`:
-  - é imutável;
+  - versão aprovada;
   - participa da resolução;
-  - existe no máximo uma por taxon proprietário.
+  - não é editada diretamente.
 - `archived`:
-  - preserva a versão histórica;
-  - não participa da resolução;
-  - não retorna a `draft` nem a `active`.
-- A ativação de nova versão:
-  - revalida o payload no servidor;
-  - arquiva atomicamente a versão ativa anterior;
-  - ativa a nova versão.
-- Nesta etapa, as operações existem apenas como contrato e boundary interno para testes e futuro consumo da E12.4.
+  - versão histórica;
+  - não participa da resolução.
+- Nesta etapa:
+  - estados e invariantes pertencem ao contrato da E20.3;
+  - transições não são implementadas;
+  - fixtures podem representar os três estados sem criar perfil oficial.
+- A futura E12.4 implementará as mutações e a atomicidade necessárias sem alterar o significado dos estados.
 
 ### 2.5. Validação contra a E18.5
 
-- Cada item deve referenciar:
-  - módulo existente na versão informada;
-  - variante existente na versão informada;
-  - variante vinculada ao módulo informado.
-- A ordem deve ser:
-  - inteira;
-  - única;
-  - contínua;
-  - determinística.
-- Não impor nesta etapa:
-  - módulo único por composição;
-  - formulário único;
-  - limite nominal por módulo ou variante;
-  - escolhas livres não previstas pelo contrato estrutural.
+- Módulo deve existir na versão informada.
+- Variante preferencial, quando presente, deve existir na versão informada e pertencer ao módulo.
+- A recomendação não pode redefinir fields, capabilities ou interactions.
+- Prioridade não significa obrigação; ordem recomendada não significa composição fixa.
 - Identidade desconhecida ou incompatível falha fechado.
-- A validação não altera o catálogo E18.5 nem cria identidades.
+- A validação não altera a E18.5 nem cria identidades.
 
 ### 2.6. Herança e resolução
 
 - Precedência:
-  - composição própria `active`;
-  - composição `active` do ancestral elegível mais próximo;
-  - ausência de composição.
-- Para ultranicho sem composição própria ativa:
-  - nicho direto;
-  - depois segmento.
-- Para nicho sem composição própria ativa:
-  - segmento direto.
-- O bloqueio explícito no taxon atendido impede herança.
-- Uma composição inválida não é corrigida, ignorada ou substituída silenciosamente.
-- O resultado preserva:
-  - taxon atendido;
-  - taxon proprietário;
-  - ID e versão da composição;
-  - relação `own` ou `inherited`;
-  - itens ordenados;
-  - validade ou código fechado de falha.
+  - perfil próprio `active`;
+  - perfil `active` do ancestral elegível mais próximo;
+  - ausência de perfil.
+- Ultranicho sem perfil próprio ativo consulta nicho direto e depois segmento.
+- Nicho sem perfil próprio ativo consulta segmento direto.
+- A excepcionalidade de perfil próprio de ultranicho será controlada pelo fluxo futuro de cadastro, sem política persistente paralela nesta etapa.
+- Perfil inválido não é corrigido, ignorado ou substituído silenciosamente.
+- Resultado preserva taxon atendido, taxon proprietário, ID, versão, relação `own` ou `inherited`, orientação e recomendações.
 
 ### 2.7. Casos executáveis mínimos
 
 - Contrato:
-  - composição válida;
-  - status inválido;
-  - versão inválida;
-  - ordem duplicada ou descontínua;
-  - módulo desconhecido;
-  - variante desconhecida ou incompatível.
-- Lifecycle:
-  - criação de `draft`;
-  - ativação sem versão anterior;
-  - ativação com arquivamento da anterior;
-  - tentativa de editar versão ativa;
-  - tentativa de manter duas versões ativas.
+  - perfil válido;
+  - estado ou versão inválidos;
+  - orientação inválida;
+  - prioridade ou ordem inválidas;
+  - recomendação duplicada;
+  - tentativa de declarar obrigatoriedade;
+  - módulo ou variante inválidos.
+- Estados:
+  - somente `active` participa da resolução;
+  - unicidade da versão ativa protegida pela persistência.
 - Resolução:
-  - composição própria;
+  - perfil próprio;
   - herança de nicho;
   - herança de segmento;
-  - herança bloqueada;
-  - ausência de composição;
-  - composição encontrada, porém inválida.
-- Os casos usam fixtures e não criam composição oficial.
+  - ausência;
+  - perfil inválido.
+- Casos usam fixtures e não cadastram nem ativam perfil oficial.
 
 ## 3. Fases e próxima ação
 
-### 3.1. E20.3.3 — Contrato e persistência mínima da composição
+### 3.1. E20.3.3 — Contrato e persistência mínima do perfil
 
 - Automação: não.
 - Objetivo:
-  - implementar o contrato estrutural, lifecycle, versionamento e persistência mínima da composição.
+  - implementar contrato versionado e persistência mínima do perfil de orientação.
 - Entregas:
-  - criar o boundary canônico em `lib/conversion-content/landing-page/composition/`;
+  - criar boundary em `lib/conversion-content/landing-page/generation-profile/`;
   - criar contratos TypeScript e schemas Zod estritos;
   - criar a migration mínima da seção 2.3;
-  - implementar adapter server-side;
-  - implementar operações internas de `draft`, validação e ativação;
+  - implementar leitura server-side;
   - atualizar `docs/schema.md`;
-  - adicionar casos executáveis de contrato e lifecycle.
+  - adicionar casos de contrato e estados.
 - Critérios de aceite:
-  - somente as duas responsabilidades persistentes da seção 2.3;
-  - uma única versão ativa por taxon proprietário;
-  - versão ativa imutável;
-  - payload inválido não ativa;
-  - migration sem seed ou registro oficial;
-  - nenhuma rota, API, Server Action ou UI;
+  - uma única tabela do perfil;
+  - uma única versão `active` por taxon proprietário;
+  - nenhum módulo obrigatório ou composição final;
+  - nenhuma mutação, RPC, trigger, rota, API, Server Action ou UI;
+  - nenhum registro oficial;
   - `npm run check` e `git diff --check` aprovados;
   - apply remoto somente após merge na `main`.
 
@@ -303,97 +246,85 @@
 
 - Automação: não.
 - Objetivo:
-  - validar a composição contra o catálogo vigente e resolver a versão aplicável de forma determinística e fail-closed.
+  - validar recomendações e resolver o perfil aplicável de forma determinística e fail-closed.
 - Entregas:
-  - implementar resolver puro;
-  - integrar leitura pelo adapter server-side;
-  - validar módulo, variante, versões, vínculo e ordem contra a E18.5;
-  - implementar precedência própria e ancestral elegível mais próximo;
-  - implementar bloqueio explícito de herança;
-  - preservar proveniência mínima no resultado tipado;
-  - exportar API pública mínima pelo namespace vigente;
-  - adicionar casos executáveis de validação e resolução.
+  - implementar resolver puro e integrar a leitura server-side;
+  - validar módulo, variante, versões e vínculo contra a E18.5;
+  - preservar prioridade e ordem como orientação;
+  - implementar precedência própria e ancestral;
+  - preservar proveniência;
+  - exportar API pública mínima;
+  - adicionar casos de validação e resolução.
 - Critérios de aceite:
-  - casos próprios, herdados, bloqueados, ausentes e inválidos cobertos;
-  - nenhuma composição universal implícita;
-  - nenhuma identidade criada ou corrigida silenciosamente;
-  - nenhuma dependência de E10.8, E18.4 ou E20.2 para resolver a estrutura;
-  - nenhuma prontidão, autorização ou revogação;
+  - casos próprios, herdados, ausentes e inválidos cobertos;
+  - nenhum perfil universal implícito;
+  - nenhuma identidade criada ou corrigida;
+  - nenhuma seleção por plano ou prioridade;
+  - nenhuma prontidão, autorização, revogação ou geração;
   - `npm run check` e `git diff --check` aprovados.
 
 ### 3.3. Próxima ação
 
 - Submeter esta v1 à avaliação única do Analista.
-- Após o parecer:
-  - consolidar a v2 no mesmo PR;
-  - orientar o Executor a atualizar `docs/roadmap.md` no PR da implementação com:
-    - `20.3`;
-    - `20.3.1`;
-    - `20.3.3`;
-    - `20.3.4`;
-  - omitir `20.3.2` enquanto não houver registro material.
-- Não iniciar implementação antes da aprovação, consolidação e merge humano do plano-base.
+- Se necessário, ajustar a própria v1 no mesmo PR.
+- Após aprovação e merge humano, orientar o Executor a:
+  - implementar E20.3.3 e E20.3.4 na ordem;
+  - atualizar `docs/roadmap.md` no PR material;
+  - não iniciar E12.4.
 - Debater a E12.4 somente após a conclusão da E20.3.
 
 ## 4. Escopo negativo e critérios de parada
 
 ### 4.1. Escopo negativo
 
-- E12.4.
-- Admin Dashboard.
-- Integração com IA.
-- Proposta, revisão ou aprovação por usuário.
-- Gap persistido ou governança de gaps.
-- Prontidão.
-- Autorização ou revogação por conta, taxon ou plano.
-- Copy, geração, renderização, preview, publicação ou tracking de LP.
+- Composição obrigatória, estrutura final ou módulo obrigatório.
+- Seleção efetiva por prioridade ou diferenciação por plano.
+- E12.4, Admin Dashboard, IA e aprendizado automático.
+- Cadastro, edição, aprovação, ativação ou arquivamento de perfil.
+- Gaps persistidos, prontidão, autorização ou revogação.
+- Copy, geração, renderização, preview, publicação, tracking ou snapshot.
 - E19.4, E20.4 e E12.4.3–E12.4.6.
-- Snapshot das pesquisas E10.8, da raiz E18.4 ou das entradas E20.2.
 - Dados operacionais de conta, oferta, campanha ou LP.
-- Normalização de cada item da composição em tabela própria.
-- Tabela de avaliações, autorizações, gaps ou histórico operacional separado.
-- Rota, API, Server Action ou UI.
-- Editor visual, canvas ou drag-and-drop.
-- Agente, automação, job, fila, cron, webhook, cache ou serviço separado.
-- Nova infraestrutura.
-- Composição oficial criada por migration, seed, fixture, script ou insert direto.
-- Reaproveitamento automático do código ou dos objetos abandonados no PR #631.
+- Tabela por recomendação, tabela de política ou estrutura operacional paralela.
+- RPC, trigger de lifecycle, rota, API, Server Action ou UI.
+- Editor visual, agente, automação, job, fila, cron, webhook, cache, serviço ou nova infraestrutura.
+- Perfil oficial criado por migration, seed, fixture, script ou insert direto.
+- Reaproveitamento automático dos objetos abandonados no PR #631.
 
 ### 4.2. Critérios de parada imediata
 
 - Parar e devolver ao Estrategista se:
-  - a implementação exigir prontidão, autorização, revogação, gaps persistidos ou Admin;
-  - a E18.5 não oferecer contrato público suficiente para validar módulo e variante;
-  - a política de ultranicho ou herança exigir decisão funcional adicional;
-  - a persistência mínima exigir responsabilidade além das duas previstas na seção 2.3;
-  - surgir necessidade de nova rota, UI, serviço, automação ou infraestrutura;
-  - qualquer migration precisar ser aplicada remotamente antes do merge;
-  - o estado real do repositório divergir das fontes deste plano.
+  - surgir composição obrigatória, seleção efetiva, geração ou diferença por plano;
+  - for exigida qualquer mutação do perfil;
+  - a E18.5 não oferecer contrato público suficiente;
+  - surgir caso real de perfil próprio de ultranicho antes da definição de sua autorização;
+  - a persistência exigir mais de uma tabela de domínio;
+  - surgir rota, UI, serviço, automação ou infraestrutura;
+  - uma migration precisar ser aplicada antes do merge;
+  - o repositório divergir das fontes do plano.
 
 ### 4.3. Validação deste trabalho documental
 
-- Confirmar que o diff contém somente `docs/lousa-plano-base-e20-3.md`.
-- Confirmar as quatro seções obrigatórias.
-- Confirmar duas fases executáveis:
-  - E20.3.3;
-  - E20.3.4.
-- Confirmar `Automação: não` nas duas fases.
-- Confirmar que E12.4, IA, gaps persistidos, prontidão, autorização e revogação permanecem fora.
-- Confirmar ausência de composição oficial nesta etapa.
+- Confirmar:
+  - somente `docs/lousa-plano-base-e20-3.md` alterado;
+  - quatro seções preservadas;
+  - duas fases com `Automação: não`;
+  - documento mantido como v1;
+  - ausência de composição obrigatória, cadastro oficial, E12.4, IA, gaps, prontidão, autorização, revogação e geração.
 - Executar `git diff --check`.
-- Registrar como N/A nesta v1 documental:
+- Registrar como N/A:
   - `npm ci`;
   - `npm run check`;
-  - validações materiais;
+  - validação material;
   - teste humano;
   - smoke visual.
 
 ### 4.4. Critérios de encerramento do plano
 
 - O plano encerra após:
-  - implementação das duas fases na ordem aprovada;
-  - avaliação do Analista após cada entrega material;
-  - merge humano da implementação;
+  - implementação das duas fases na ordem;
+  - avaliação do Analista após cada entrega;
+  - merge humano;
   - confirmação do estado final do banco;
   - relatório final ao Gestor de Docs.
-- A conclusão da E20.3 libera o debate conceitual da E12.4, mas não autoriza sua implementação automática.
+- A conclusão da E20.3 libera o debate da E12.4, mas não autoriza sua implementação.
