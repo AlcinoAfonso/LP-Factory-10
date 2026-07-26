@@ -22,6 +22,7 @@ import {
   resolveLandingPageModuleCatalog,
   resolveLandingPageModuleCatalogFromRegistry,
 } from "./resolver";
+import { validateLandingPageModuleIdentity } from "./identity-validator";
 import * as publicModuleCatalog from "./index";
 import { resolveLandingPageRootParameters } from "../index";
 
@@ -1562,9 +1563,74 @@ const cases: readonly Case[] = [
         assert.equal(result.ok, false);
         if (!result.ok) assert.equal(result.error.code, code);
       }
-      assert.deepEqual(Object.keys(publicModuleCatalog).sort(), ["resolveLandingPageModuleCatalog"]);
+      assert.deepEqual(Object.keys(publicModuleCatalog).sort(), [
+        "resolveLandingPageModuleCatalog",
+        "validateLandingPageModuleIdentity",
+      ]);
       assert.equal("landingPageModuleCatalogRegistry" in publicModuleCatalog, false);
       assert.equal("landingPageModuleCatalogSchema" in publicModuleCatalog, false);
+    },
+  },
+  {
+    name: "public identity validator checks module and optional linked variant only",
+    run: () => {
+      assert.deepEqual(
+        validateLandingPageModuleIdentity({ moduleKey: "hero", moduleVersion: 1 }),
+        { ok: true },
+      );
+      assert.deepEqual(
+        validateLandingPageModuleIdentity({
+          moduleKey: "hero",
+          moduleVersion: 1,
+          variantKey: "hero.form",
+          variantVersion: 1,
+        }),
+        { ok: true },
+      );
+
+      for (const [input, code] of [
+        [{ moduleKey: "unknown", moduleVersion: 1 }, "UNKNOWN_MODULE"],
+        [{ moduleKey: "hero", moduleVersion: 2 }, "UNKNOWN_MODULE_VERSION"],
+        [
+          {
+            moduleKey: "hero",
+            moduleVersion: 1,
+            variantKey: "hero.unknown",
+            variantVersion: 1,
+          },
+          "UNKNOWN_VARIANT",
+        ],
+        [
+          {
+            moduleKey: "hero",
+            moduleVersion: 1,
+            variantKey: "hero.form",
+            variantVersion: 2,
+          },
+          "UNKNOWN_VARIANT_VERSION",
+        ],
+        [
+          {
+            moduleKey: "hero",
+            moduleVersion: 1,
+            variantKey: "faq.accordion",
+            variantVersion: 1,
+          },
+          "VARIANT_MODULE_MISMATCH",
+        ],
+        [
+          {
+            moduleKey: "hero",
+            moduleVersion: 1,
+            variantKey: "hero.form",
+          },
+          "INVALID_INPUT",
+        ],
+      ] as const) {
+        const result = validateLandingPageModuleIdentity(input);
+        assert.equal(result.ok, false);
+        if (!result.ok) assert.equal(result.error.code, code);
+      }
     },
   },
   {

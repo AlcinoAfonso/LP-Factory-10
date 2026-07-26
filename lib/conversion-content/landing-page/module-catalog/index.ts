@@ -10,6 +10,7 @@ export type {
   LandingPageFunnelTreatmentKeyByProfile,
   LandingPageModuleCatalogError,
   LandingPageModuleCatalogErrorCode,
+  LandingPageModuleIdentityErrorCode,
   LandingPageModuleDefinition,
   LandingPageModuleKey,
   LandingPageModuleLifecycleStatus,
@@ -21,5 +22,8 @@ export type {
   ResolveLandingPageModuleCatalogInput,
   ResolveLandingPageModuleCatalogResult,
   ResolvedLandingPageModuleCatalog,
+  ValidateLandingPageModuleIdentityInput,
+  ValidateLandingPageModuleIdentityResult,
 } from "./contracts";
+export { validateLandingPageModuleIdentity } from "./identity-validator";
 export { resolveLandingPageModuleCatalog } from "./resolver";

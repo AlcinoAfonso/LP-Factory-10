@@ -60,10 +60,42 @@ export type LandingPageGenerationProfileSourceErrorCode =
   | "INVALID_TAXON_ID"
   | "TAXON_NOT_FOUND"
   | "READ_FAILED"
-  | "NOT_NORMALIZABLE";
+  | "INVALID_TAXON_CHAIN"
+  | "INVALID_PROFILE";
 
 export type LoadLandingPageGenerationProfileSourceResult =
   | Readonly<{ ok: true; value: LandingPageGenerationProfileSource }>
+  | Readonly<{
+      ok: false;
+      error: Readonly<{
+        code: LandingPageGenerationProfileSourceErrorCode;
+        message: string;
+      }>;
+    }>;
+
+export type ResolvedLandingPageGenerationProfile = Readonly<{
+  kind: "resolved";
+  servedTaxonId: string;
+  ownerTaxonId: string;
+  profileId: string;
+  profileVersion: number;
+  relation: "own" | "inherited";
+  generationGuidance: string;
+  recommendations: readonly LandingPageGenerationProfileItem[];
+}>;
+
+export type AbsentLandingPageGenerationProfile = Readonly<{
+  kind: "absent";
+  servedTaxonId: string;
+}>;
+
+export type ResolveLandingPageGenerationProfileResult =
+  | Readonly<{
+      ok: true;
+      value:
+        | ResolvedLandingPageGenerationProfile
+        | AbsentLandingPageGenerationProfile;
+    }>
   | Readonly<{
       ok: false;
       error: Readonly<{

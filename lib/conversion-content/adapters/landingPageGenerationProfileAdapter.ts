@@ -5,12 +5,18 @@ import { z } from "zod";
 import { createServiceClient } from "@/lib/supabase/service";
 import { normalizeLandingPageGenerationProfileItemRow } from "./landingPageGenerationProfileRowNormalization";
 import {
-  landingPageGenerationProfileSourceSchema,
+  resolveLandingPageGenerationProfile,
   type LandingPageGenerationProfile,
   type LandingPageGenerationProfileItem,
   type LandingPageGenerationProfileTaxonNode,
   type LoadLandingPageGenerationProfileSourceResult,
+  type ResolveLandingPageGenerationProfileResult,
 } from "../landing-page/generation-profile";
+import {
+  landingPageGenerationProfileSchema,
+  landingPageGenerationProfileSourceSchema,
+  landingPageGenerationProfileTaxonChainSchema,
+} from "../landing-page/generation-profile/schema";
 
 type ServiceClient = ReturnType<typeof createServiceClient>;
 
@@ -34,17 +40,29 @@ export async function loadLandingPageGenerationProfileSource(input: {
     );
     if (!profileResult.ok) return profileResult;
 
+    const taxonChain = {
+      servedTaxonId: taxonId,
+      nodes: chainResult.nodes,
+    };
+    if (!landingPageGenerationProfileTaxonChainSchema.safeParse(taxonChain).success) {
+      return failure("INVALID_TAXON_CHAIN", "Generation profile taxon chain is invalid");
+    }
+    if (
+      profileResult.profiles.some(
+        (profile) => !landingPageGenerationProfileSchema.safeParse(profile).success,
+      )
+    ) {
+      return failure("INVALID_PROFILE", "Generation profile is invalid");
+    }
+
     const parsed = landingPageGenerationProfileSourceSchema.safeParse({
-      taxonChain: {
-        servedTaxonId: taxonId,
-        nodes: chainResult.nodes,
-      },
+      taxonChain,
       profiles: profileResult.profiles,
     });
 
     if (!parsed.success) {
       return failure(
-        "NOT_NORMALIZABLE",
+        "INVALID_PROFILE",
         "Generation profile source violates its domain contract",
       );
     }
@@ -53,6 +71,14 @@ export async function loadLandingPageGenerationProfileSource(input: {
   } catch {
     return failure("READ_FAILED", "Generation profile source could not be read");
   }
+}
+
+export async function resolveLandingPageGenerationProfileForTaxon(input: {
+  taxonId: string;
+}): Promise<ResolveLandingPageGenerationProfileResult> {
+  const source = await loadLandingPageGenerationProfileSource(input);
+  if (!source.ok) return source;
+  return resolveLandingPageGenerationProfile(source.value);
 }
 
 async function readTaxonChain(
@@ -77,12 +103,12 @@ async function readTaxonChain(
     if (!data) {
       return depth === 0
         ? failure("TAXON_NOT_FOUND", "Served taxon was not found")
-        : failure("NOT_NORMALIZABLE", "Taxon chain has a missing parent");
+        : failure("INVALID_TAXON_CHAIN", "Taxon chain has a missing parent");
     }
 
     const node = normalizeTaxonNode(data);
     if (!node) {
-      return failure("NOT_NORMALIZABLE", "Taxon chain contains an invalid node");
+      return failure("INVALID_TAXON_CHAIN", "Taxon chain contains an invalid node");
     }
     nodes.push(node);
 
@@ -112,12 +138,12 @@ async function readActiveProfiles(
     return failure("READ_FAILED", "Generation profiles could not be read");
   }
   if (!Array.isArray(profileRows)) {
-    return failure("NOT_NORMALIZABLE", "Generation profile rows are invalid");
+    return failure("INVALID_PROFILE", "Generation profile rows are invalid");
   }
 
   const normalizedProfiles = profileRows.map(normalizeProfile);
   if (normalizedProfiles.some((profile) => profile === null)) {
-    return failure("NOT_NORMALIZABLE", "Generation profile rows are invalid");
+    return failure("INVALID_PROFILE", "Generation profile rows are invalid");
   }
 
   const profiles = normalizedProfiles as Omit<
@@ -139,12 +165,12 @@ async function readActiveProfiles(
     return failure("READ_FAILED", "Generation profile items could not be read");
   }
   if (!Array.isArray(itemRows)) {
-    return failure("NOT_NORMALIZABLE", "Generation profile item rows are invalid");
+    return failure("INVALID_PROFILE", "Generation profile item rows are invalid");
   }
 
   const normalizedItems = itemRows.map(normalizeLandingPageGenerationProfileItemRow);
   if (normalizedItems.some((item) => item === null)) {
-    return failure("NOT_NORMALIZABLE", "Generation profile item rows are invalid");
+    return failure("INVALID_PROFILE", "Generation profile item rows are invalid");
   }
 
   const items = normalizedItems as Readonly<{
@@ -152,7 +178,7 @@ async function readActiveProfiles(
     item: LandingPageGenerationProfileItem;
   }>[];
   if (items.some(({ profileId }) => !profileIds.includes(profileId))) {
-    return failure("NOT_NORMALIZABLE", "Generation profile item has no loaded profile");
+    return failure("INVALID_PROFILE", "Generation profile item has no loaded profile");
   }
 
   return {

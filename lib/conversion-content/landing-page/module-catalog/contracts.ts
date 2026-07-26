@@ -344,6 +344,32 @@ export type LandingPageModuleCatalogError = Readonly<{
   message: string;
 }>;
 
+export type ValidateLandingPageModuleIdentityInput = Readonly<{
+  moduleKey: string;
+  moduleVersion: number;
+  variantKey?: string;
+  variantVersion?: number;
+}>;
+
+export type LandingPageModuleIdentityErrorCode =
+  | "INVALID_INPUT"
+  | "UNKNOWN_MODULE"
+  | "UNKNOWN_MODULE_VERSION"
+  | "UNKNOWN_VARIANT"
+  | "UNKNOWN_VARIANT_VERSION"
+  | "VARIANT_MODULE_MISMATCH"
+  | "INVALID_MODULE_CATALOG_CONTRACT";
+
+export type ValidateLandingPageModuleIdentityResult =
+  | Readonly<{ ok: true }>
+  | Readonly<{
+      ok: false;
+      error: Readonly<{
+        code: LandingPageModuleIdentityErrorCode;
+        message: string;
+      }>;
+    }>;
+
 export type ResolveLandingPageModuleCatalogInput = Readonly<{
   moduleCatalogVersion: number;
   rootVersion: number;
