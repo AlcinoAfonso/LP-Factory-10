@@ -212,7 +212,7 @@
   - ser aplicada remotamente somente após merge na `main`;
   - atualizar `docs/schema.md`;
   - terminar sem seed, insert ou perfil oficial.
-- Reconstruir e validar baseline + migration nova em banco local ou isolado, cobrindo FKs, checks, unicidades, RLS, policies e GRANTs; nenhuma mutação remota é permitida antes do merge.
+- Versionar e revisar a migration no PR; nenhuma mutação remota é permitida antes do merge, o apply ocorre automaticamente somente após o merge na `main` e a confirmação final usa o snippet read-only pós-apply.
 
 ### 2.4. Estados e versionamento
 
@@ -331,10 +331,10 @@
   - nenhuma operação de mutação do perfil, RPC, trigger de lifecycle, rota, API HTTP, Server Action ou UI;
   - nenhum registro oficial;
   - RLS habilitado, nenhuma policy, nenhum privilégio para `PUBLIC`, `anon`, `authenticated` ou, quando existente, `ai_readonly`, `SELECT` exclusivo de `service_role` e ausência de grants de mutação;
-  - migration reconstruída e validada em banco local ou isolado, com casos positivos e negativos para FKs, checks, unicidades, RLS, policies e GRANTs;
+  - migration versionada e revisada no PR;
   - nenhum consumidor, rota ou outro call path runtime do novo boundary é ativado antes do apply e da verificação pós-merge da migration;
   - `npm run validate:landing-page-generation-profile`, `npm run check` e `git diff --check` aprovados;
-  - apply remoto somente após merge na `main`;
+  - apply remoto automático somente após merge na `main`;
   - após o merge e o apply remoto, `supabase/snippets/e20_3_generation_profile_verify.sql` confirma todos os invariantes previstos e zero registros oficiais; qualquer resultado diferente do esperado impede declarar confirmado o estado final do banco.
 
 ### 3.2. E20.3.4 — Validação E18.5 e resolução própria ou herdada

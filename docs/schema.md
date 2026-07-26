@@ -1034,6 +1034,11 @@
 • Rollback: não remove automaticamente a extensão, pois pode ser reutilizada por outros recursos
 
 99. Changelog
+v1.0.33 (26/07/2026) — E20.3: perfil de orientação para geração
+• Registrado o contrato versionado das tabelas `landing_page_generation_profiles` e `landing_page_generation_profile_items`, sem perfis ou itens oficiais.
+• Registradas FKs, checks, unicidades, RLS sem policies, ausência de acesso por papéis públicos e leitura exclusiva por `service_role`.
+• Registrada a migration `20260726144651_e20_3_generation_profile.sql`, com apply automático somente após o merge e verificação read-only pós-apply por `e20_3_generation_profile_verify.sql`.
+
 v1.0.30 (28/06/2026) — E9 Fase 3: schema mínimo de entitlement comercial
 • Registrada a tabela `account_commercial_entitlements` como fonte mínima de entitlement comercial por conta.
 • Registrados campos, checks, índices, RLS, policy de SELECT para membro ativo/platform_admin, grants e trigger de updated_at.

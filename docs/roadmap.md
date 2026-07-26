@@ -2097,11 +2097,11 @@ Repositório — Ajustados
 20.3.1 Objetivo e status
 
 * Objetivo: definir e resolver um perfil versionado por taxon que oriente a geração de `landing_page` com recomendações de módulos e variantes da E18.5, sem impor composição final ou prontidão.
-* Status: Planejado e aprovado para implementação nas fases E20.3.3 e E20.3.4, ambas com `Automação: não`.
+* Status: Implementação concluída no PR #644; pendente apenas de merge, apply automático da migration e verificação read-only pós-apply.
 
 20.3.3 Contrato e persistência mínima do perfil
 
-* Status: Planejado.
+* Status: Implementada no PR #644, com aplicação da migration pendente do merge.
 * Conteúdo:
 
   * Implementar o agregado versionado, as duas tabelas sem registros oficiais, a leitura server-side, o boundary único e as validações de contrato, estados, cadeia taxonômica, integridade e segurança.
@@ -2109,7 +2109,7 @@ Repositório — Ajustados
 
 20.3.4 Validação E18.5 e resolução própria ou herdada
 
-* Status: Planejado.
+* Status: Implementada e validada no PR #644.
 * Conteúdo:
 
   * Estender minimamente a API pública TypeScript da E18.5 para validar identidade e versão de módulo e, quando informada, identidade e versão de variante e seu vínculo com o módulo, reutilizando o registry vigente.
@@ -2130,6 +2130,8 @@ Repositório — Ajustados
   * Permanecem fora do recorte mutações e lifecycle operacional do perfil, terceira tabela de domínio, rota, API HTTP, Server Action, UI, composição, copy, geração, IA, automação, job, serviço e nova infraestrutura.
 
 99. Changelog
+v1.5.102 — 26/07/2026 — E20.3 implementada no PR #644: E20.3.3 concluída com migration versionada e aplicação pendente do merge; E20.3.4 implementada e validada; fechamento da fase pendente apenas de merge, apply automático e verificação read-only pós-apply.
+
 v1.5.101 — 25/07/2026 — Promovidos `comparison@v1`, `comparison.standard@v1`, `lead_capture@v1` e `lead_capture.form@v1` ao catálogo canônico da E18.5, totalizando doze módulos, quatorze variantes e 34 casos executáveis, com Form reutilizado e mecanismos centrais preservados.
 
 v1.5.100 — 23/07/2026 — Consolidada a moldura discriminada de interações da E18.5, com Form e Accordion, capabilities derivadas, fronteira coerente da Hero e prova sintética de reutilização sem ampliar os mecanismos arquiteturais.
