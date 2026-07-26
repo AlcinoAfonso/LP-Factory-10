@@ -1,9 +1,9 @@
 0. Introdução
 
-0.1. Cabeçalho
+0.1 Cabeçalho
 • Documento: Base Técnica LP Factory 10
-• Versão: v2.0.54
-• Data: 23/07/2026
+• Versão: v2.0.55
+• Data: 26/07/2026
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -13,7 +13,7 @@
 
 0.2.2 GUIA_DE_CONSULTA
 • O QUE É: a fonte única de regras técnicas de runtime e implementação segura do produto.
-• POR QUE CONSULTAR: para evitar implementação errada, manter consistência técnica e reduzir risco em código, acesso, SSR, adapters, segurança e observability.
+• POR QUE CONSULTAR: para evitar implementação errada, manter consistência técnica e reduzir risco em código, acesso, SSR, adapters, segurança e observabilidade.
 • COMO USAR: ao gerar plano, macro-roteiro, código ou ajuste de código, consultar este documento como contrato técnico.
 • QUANDO CONSULTAR: decisões de runtime, rotas/gating/estados, segurança de implementação, padrões mínimos de logs, adapters, imports, camadas e convenções de código.
 • QUANDO NÃO CONSULTAR:
@@ -173,9 +173,10 @@
 • Tabela interna pode omitir grants para `anon` e `authenticated` quando seu modelo de acesso estiver explícito.
 • Grants e RLS/policies são controles independentes; nenhum substitui o outro.
 
-3.9 Rate Limit administrativo (estado atual)
-• Não há rate limit ativo do fluxo legado de tokens no runtime atual.
-• Qualquer nova política de limite para operações administrativas deve ser redefinida no contexto do novo Admin Dashboard (E12), sem reutilizar contrato legado removido.
+3.9 Rate limit administrativo
+• Não reutilizar contratos legados de tokens ou limites removidos.
+• Nova política de limite deve ser definida no boundary administrativo responsável, com escopo, chave, janela, resposta e observabilidade explicitamente contratados.
+• Ausência de política aprovada não autoriza fallback permissivo nem limite inventado no client.
 
 3.10 Anti-Patterns
 • Importar Supabase na UI para dados de domínio (exceções de Auth/SULB seguem 2.5 e 6.4)
@@ -184,7 +185,7 @@
 • Modificar SULB fora dos arquivos autorizados
 • Manipular last_account_subdomain no client
 
-3.11 Sistema de Grants (E9)
+3.11 Sistema de Grants
 • Nunca usar plan_id para liberar features
 • Usar sempre get_feature(account_id, feature_key)
 • Hierarquia: section → lp → account → plan → default
@@ -196,53 +197,48 @@
 • Busca textual exige índice justificado pela consulta ativa e pela necessidade de desempenho.
 • Em paginação por range, HTTP 416 / PGRST103 representa fim da lista, não erro de sistema; preservar itens carregados e interromper novas requisições.
 
-3.13 Compatibilidade Next.js 15 / React 19
-• Contexto: notas de compatibilidade da migração Next.js 15 → Next.js 16 (estado atual: Next.js 16.1.1 + React 19.x)
-• cookies() e headers() podem exigir await em SSR/Server Components (usar async quando necessário)
-• params/searchParams podem exigir await em algumas rotas/pages (usar async quando necessário)
-• Rotas que dependem de sessão/cookies devem ser dinâmicas (evitar cache entre usuários)
-• Next 16.x prioriza Turbopack; evitar webpack() custom no next.config quando possível
-• Em novos códigos de forms/Server Actions: preferir useActionState (não usar useFormState)
+3.13 Compatibilidade do framework
+• APIs assíncronas de SSR e Server Components, como `cookies()`, `headers()`, `params` e `searchParams`, devem ser aguardadas quando exigido pelo framework.
+• Rotas que dependem de sessão ou cookies devem permanecer dinâmicas e sem cache entre usuários.
+• Preferir recursos nativos e o bundler padrão do framework; evitar `webpack()` customizado quando `tsconfig.json` resolver o caso.
+• Formulários e Server Actions devem usar APIs vigentes do framework; versões e contratos exatos pertencem às dependências e ao código.
 
-3.14 Padrão de Adapters (vNext)
-• Novas páginas/casos de uso: DB somente via adapters.
-• Regra canônica para código novo: adapters devem nascer em paths canônicos na raiz do repositório (conforme 3.3.1 e 3.3.2).
-• Adapters já existentes fora dos paths canônicos podem permanecer como compatibilidade, sem expansão de escopo.
-• 1 adapter = 1 caso de uso; se crescer, dividir (<=150 linhas ou <=6 exports).
-• Adapter retorna DTO final; UI não normaliza; não expor DBRow.
-• Mudança de shape: v2; manter v1 até migrar.
-• Queries: colunas explícitas; listas com order determinístico.
-• Paginação (range): 416/PGRST103 = fim da lista somente em range/paginação.
-• Enums: proibido fallback silencioso.
-• Gate adapters: pode retornar null, mas logs devem diferenciar deny vs error.
+3.14 Padrão de Adapters
+• Novos casos de uso acessam o DB somente por adapters no boundary canônico.
+• Adapters existentes fora dos paths canônicos podem permanecer por compatibilidade, sem expansão de escopo.
+• Cada adapter deve permanecer coeso; dividir quando concentrar múltiplos casos de uso ou responsabilidades.
+• Adapter retorna DTO final; UI não normaliza nem recebe DBRow.
+• Mudança incompatível de shape exige contrato versionado e migração explícita, sem substituição silenciosa.
+• Queries usam colunas explícitas e ordenação determinística.
+• Enums não admitem fallback silencioso; paginação segue 3.12; gates devem distinguir deny de erro operacional.
 
-Commercial entitlements
+3.14.1 Commercial entitlements
 • Boundary canônico: `lib/commercial-entitlements/`; contratos públicos e adapter de leitura permanecem como fonte da API real.
 • Leitura de elegibilidade é server-side e fail-closed para entrada inválida, ausência de linha, erro ou exceção.
 • UI/client não consulta Supabase diretamente para determinar entitlement comercial.
 • View, campos e estados persistidos pertencem a `docs/schema.md` e ao código; não duplicar seus inventários aqui.
 
-Admin commercial entitlements
+3.14.2 Admin commercial entitlements
 • Mutação administrativa é server-only, protegida por `requirePlatformAdmin()` e centralizada no boundary Admin existente.
 • O fluxo manual pode conceder, atualizar ou cancelar entitlement, deve atualizar o registro ativo quando aplicável e falhar fechado diante de conflito ou duplicidade.
 • Checkout, Stripe e webhook não podem servir como bypass da operação administrativa autorizada.
 • Superfícies, funções, payloads e persistência exatos permanecem canônicos no código e em `docs/schema.md`.
 
-Stripe webhook
+3.14.3 Stripe webhook
 • Endpoint e processamento permanecem server-side no boundary `lib/billing-checkout/`.
 • Assinatura e tipo de evento devem ser validados antes de qualquer persistência.
 • Processamento deve ser idempotente, tolerar retry seguro e liberar entitlement somente pelo evento aprovado no código.
 • Eventos, secrets, tabelas e estados exatos pertencem ao endpoint real, a `docs/platform-config.md` e a `docs/schema.md`.
 • Logs e metadata devem ser mínimos e não conter payload bruto, secrets, cartão ou PII sensível.
 
-LP Builder
+3.14.4 LP Builder
 • Boundary canônico: `lib/lp-builder/`; contratos, adapter e action reais permanecem fontes da API.
 • Criação de LP é server-side e deve falhar fechado sem usuário autenticado, conta ativa, membership ativo autorizado e entitlement comercial válido.
 • O LP Builder deve consumir o boundary de entitlement existente, sem duplicar sua lógica.
 • Persistência inicial permanece limitada a draft; schema e campos exatos pertencem a `docs/schema.md` e ao código.
 • UI/client não acessa Supabase diretamente para criar LP; evolução funcional fora do runtime atual pertence ao roadmap.
 
-3.14.1 Resolução de nicho e taxonomia
+3.14.5 Resolução de nicho e taxonomia
 • Boundary canônico: `lib/onboarding/niche-resolution/`; contratos, thresholds, reasons, schemas e adapters permanecem canônicos no código.
 • Matching, avaliação de confiança e persistência devem ocorrer server-side; UI, routes e actions não podem chamar RPC diretamente nem reimplementar thresholds ou decisões semânticas.
 • IA complementar só pode ser usada quando o resultado determinístico for insuficiente, com Structured Outputs e configuração operacional em `docs/platform-config.md`.
@@ -318,9 +314,9 @@ LP Builder
 • Conta inválida ou bloqueada exige limpeza do cookie antes do fallback seguro, evitando loops de redirecionamento.
 • Rotas que dependem de sessão ou cookie devem permanecer dinâmicas e sem cache entre usuários.
 
-5.2 Adapters, Guards e Consumers
+5.2 Adapters, Guards e Consumidores
 • Estado atual de adapters, guards, providers, APIs e superfícies deve ser consultado no repositório; esta Base não mantém inventário desses arquivos.
-• Acesso ao banco ocorre por adapters server-side; guards SSR aplicam a autorização final e consumers client não reinterpretam decisões de acesso.
+• Acesso ao banco ocorre por adapters server-side; guards SSR aplicam a autorização final e consumidores no client não reinterpretam decisões de acesso.
 • Privilégios administrativos devem permanecer centralizados nos guards existentes, sem autorização paralela em páginas ou componentes.
 • Deny, bloqueio e erro operacional devem permanecer distinguíveis, sem fallback permissivo.
 
