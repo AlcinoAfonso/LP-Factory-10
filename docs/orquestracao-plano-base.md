@@ -236,12 +236,13 @@ No experimento E18.5, o destino usado foi:
 7. Criar referência imutável da v2 e acionar o Analista sem pareceres ou matriz.
 8. Depois da Passagem 1, gravar a matriz e entregá-la com os pareceres dos especialistas acionados ao mesmo Analista.
 9. Corrigir ou encaminhar pendências conforme a conclusão formal.
-10. Usar `$lp-factory-abc` em modo planejamento para reconciliar o snapshot do roadmap com a v2 aprovada.
-11. Submeter o roadmap resultante ao mesmo Analista em revisão delta.
-12. Criar o checkpoint `LP-Factory-Stage: plan-v2-approved` com a matriz versionada e abrir um único PR draft contra `main`.
-13. Invocar internamente `lp-factory-executar-plano`, sem novo comando humano, preservando branch, worktree e PR.
-14. Executar todas as subseções com gates do Analista por subseção, validações integradas e eventual teste humano.
-15. Declarar a entrega completa no PR, manter a matriz disponível e encerrar a automação sem revisão final do Analista.
+10. Em checkpoint limpo, verificar mudanças supervenientes da `main`; integrar fontes canônicas alteradas sem trocar o snapshot em uso nem repetir especialistas e submeter somente conflito material ao mesmo Analista em revisão delta.
+11. Usar `$lp-factory-abc` em modo planejamento para reconciliar o snapshot do roadmap com a v2 aprovada.
+12. Submeter o roadmap resultante ao mesmo Analista em revisão delta.
+13. Criar o checkpoint `LP-Factory-Stage: plan-v2-approved` com a matriz versionada e abrir um único PR draft contra `main`.
+14. Invocar internamente `lp-factory-executar-plano`, sem novo comando humano, preservando branch, worktree e PR.
+15. Executar todas as subseções com gates do Analista por subseção, validações integradas e eventual teste humano.
+16. Declarar a entrega completa no PR, manter a matriz disponível e encerrar a automação sem revisão final do Analista.
 
 A matriz não é gravada antes da Passagem 1. Isso impede que a avaliação independente seja contaminada por um arquivo acessível na própria worktree. Depois da Passagem 2, ela permanece versionada durante toda a implementação e disponível na entrega completa.
 
@@ -262,6 +263,8 @@ Aprovação humana operacional indicada pelo especialista vira requisito do plan
 ### 4.6 Preservação da v1 e reconciliação do roadmap
 
 A v2 mantém ordem, seções, hierarquia e granularidade da v1. Criar ou consolidar seção exige parecer especializado com achado e patch autossuficiente rastreados na matriz.
+
+Fontes permanecem imutáveis durante cada gate. Depois da aprovação da v2 e antes do ABC, o orquestrador compara a branch com `origin/main`; em checkpoint limpo, integra por merge não destrutivo as fontes canônicas alteradas e registra seus novos SHAs. Mudança sem conflito material não repete especialistas. Conflito material segue para `revisao_delta` do mesmo Analista, preservando v1, v2, pareceres e o snapshot original do roadmap.
 
 Depois de `aprovado para merge do plano-base v2`, o orquestrador usa:
 
@@ -289,6 +292,8 @@ Cada fase deve representar exatamente uma subseção executável do roadmap, ide
 4. Acionar o Analista em modo de revisão de implementação com a matriz e os pareceres nela referenciados pertinentes à subseção.
 5. Corrigir o delta ou parar para teste humano ou decisão humana quando exigido.
 6. Após `aprovado para avançar`, criar checkpoint, atualizar título e resumo do mesmo PR e, no modo experimental, parar somente no checkpoint solicitado; no fluxo normal end-to-end, seguir para a próxima subseção.
+
+Indisponibilidade de Docker, PostgreSQL, Supabase CLI ou credenciais locais impede apenas a validação dependente desses recursos. O Executor executa as demais validações, publica todo trabalho material no PR draft e continua o que for comprovadamente independente; a pendência permanece explícita para o gate final e impede declarar o PR pronto para merge. Publicação antes de aprovação não constitui checkpoint nem autoriza avanço.
 
 ### 5.3 Testes, documentação e merge
 

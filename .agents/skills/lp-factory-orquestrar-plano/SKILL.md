@@ -156,6 +156,8 @@ Repetir o ciclo somente enquanto houver correções objetivas dentro do escopo. 
 
 Somente após `aprovado para merge do plano-base v2`:
 
+Antes do ABC, concluir qualquer gate em andamento e verificar se `origin/main` avançou desde a criação da branch. Não atualizar fontes durante um parecer. Em checkpoint limpo, comparar as fontes canônicas usadas pelo recorte; se alguma mudou, integrar `origin/main` por merge não destrutivo, reler somente as fontes alteradas e registrar seus novos SHAs. Preservar v1, v2, pareceres e snapshot do roadmap; não repetir especialistas. Se a mudança criar conflito material com a v2 aprovada, solicitar `revisao_delta` ao mesmo Analista e seguir a seção 7; sem conflito material, continuar diretamente.
+
 1. Invocar `$lp-factory-abc` em modo planejamento com `DOC_ALVO: docs/roadmap.md`, usando a v2 aprovada como `RELATÓRIO` e o snapshot imutável anterior à v2 como estado inicial do documento-alvo.
 2. Exigir que a skill leia `docs/prompt-abc.md` e `docs/template-roadmap.md` e devolva o menor delta ou `SEM ALTERAÇÕES NECESSÁRIAS`.
 3. Aplicar literalmente somente as operações do ABC ao roadmap. Não alterar os demais documentos canônicos.

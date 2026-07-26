@@ -24,7 +24,7 @@ No fluxo de `$lp-factory-orquestrar-plano`, usar esta skill somente nos gates po
 
 ## Tratar a conclusão
 
-- `aprovado para avançar`: permitir somente o checkpoint da subseção atual.
+- `aprovado para avançar`: permitir somente o checkpoint da subseção atual; validação dependente de recurso ambiental indisponível pode ficar registrada para o gate final quando não impedir avaliar a correção nem a continuidade segura.
 - `aprovado com correções obrigatórias`: corrigir o delta e pedir `revisao_delta_implementacao` ao mesmo Analista.
 - `requer teste humano`: parar e apresentar os passos e a evidência mínima solicitada.
 - `bloqueado por decisão humana`: parar e apresentar apenas a decisão necessária.
