@@ -31,21 +31,17 @@
 2. Stack & Dependências
 
 2.1 Framework
-• Next.js 16.1.1 (App Router, SSR, Server Components)
-• React 19.2.x + React DOM 19.2.x
-• TypeScript 5.5.4 (strict)
-• Zod 4.2.1 para contratos tipados e validação runtime de conteúdo persistido.
-• Node.js 22.x
-• Package manager: npm
-• Lockfile canônico: package-lock.json (deve ficar commitado e alinhado ao package.json)
-• Next 16.x prioriza Turbopack; evitar customizações via webpack() no next.config quando possível (preferir alias via tsconfig.json > paths)
+• Fontes canônicas de dependências e versões: `package.json` e `package-lock.json`; não duplicar versões neste documento.
+• O Core usa Next.js com App Router, SSR e Server Components, React, TypeScript em modo strict e Zod para contratos e validação runtime.
+• Runtime JavaScript server-side: Node.js; versão operacional deve ser confirmada na configuração real do ambiente.
+• Package manager canônico: npm; `package-lock.json` deve permanecer versionado e alinhado ao `package.json`.
+• Preferir recursos e defaults do framework, incluindo Turbopack quando aplicável; evitar customização por `webpack()` quando alias em `tsconfig.json` resolver o caso.
 
 2.2 Backend
-• Supabase (PostgreSQL, Auth, Storage, RLS)
-• PostgREST/Data API em uso no runtime.
-• @supabase/supabase-js ≥ 2.56.0
-• .maxAffected(1) obrigatório em mutações 1-a-1.
-• Integrações que validam JWT devem usar JWKS + kid.
+• O backend usa Supabase para PostgreSQL, Auth, Storage e RLS, com PostgREST/Data API no runtime.
+• A versão do client Supabase e demais dependências pertence ao `package.json` e ao `package-lock.json`.
+• `.maxAffected(1)` é obrigatório em mutações 1-a-1.
+• Integrações que validam JWT devem usar JWKS + `kid`.
 • Configurações operacionais do Supabase: ver `docs/platform-config.md`.
 
 2.3 UI
