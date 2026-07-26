@@ -152,15 +152,13 @@
 • TS: camelCase
 • SQL: snake_case
 • -1 = ilimitado para limites numéricos
-• Auditoria via jsonb_diff_val()
 
-3.8 Anti-Regressão
-• Migrations sempre idempotentes
-• .maxAffected(1) obrigatório em mutações 1-a-1
-• Alteração de schema exige revisão de views/functions dependentes e atualização do PATH: docs/schema.md
-• Sem secrets expostos no client
+3.8 Integração com o contrato de banco
+• `docs/schema.md` é a fonte canônica do estado real e dos detalhes de objetos do banco.
+• Alteração de schema exige migration versionada, atualização de `docs/schema.md` e revisão de views, functions, RPCs e adapters dependentes.
+• Runtime não pode redefinir nem assumir objetos, colunas ou comportamentos ausentes do ambiente alvo.
 
-3.8.1 Convenção mínima para novas tabelas
+3.8.1 Convenções transversais para novas tabelas
 
 3.8.1.1 Chave primária
 • Entidade: `id uuid primary key default gen_random_uuid()`
@@ -180,15 +178,10 @@
 • Índice só entra por motivo claro: FK relevante, unicidade, hierarquia ou consulta operacional prevista
 
 3.8.1.5 Segurança e governança
-• Toda tabela deve ter decisão explícita de segurança/acesso
-• Se for exposta ao app, tenant, admin ou fluxo operacional, nasce com RLS e policies na mesma etapa
-• Se for interna, schema e modelo de acesso devem ser definidos explicitamente
-• Toda tabela deve decidir se entra em auditoria, Trigger Hub ou fica fora
-• Data API / GRANT explícito: toda tabela nova no schema `public` que precise ser acessada via Supabase Data API/PostgREST/GraphQL deve declarar explicitamente, na mesma migration, os `GRANTs` necessários para as roles aplicáveis.
-• `GRANT` não substitui RLS/policies.
-• RLS/policies não substituem `GRANT`.
-• Tabelas internas podem nascer sem `GRANT` para `anon`/`authenticated`, desde que o modelo de acesso esteja explícito.
-• Tabelas expostas ao app, admin, adapters ou fluxo operacional via Supabase API devem ter decisão explícita de grants junto com RLS e policies.
+• Toda tabela deve ter decisão explícita de segurança, acesso, auditoria e participação no Trigger Hub.
+• Tabela exposta ao app, tenant, admin ou fluxo operacional deve nascer com RLS, policies e grants aplicáveis na mesma migration.
+• Tabela interna pode omitir grants para `anon` e `authenticated` quando seu modelo de acesso estiver explícito.
+• Grants e RLS/policies são controles independentes; nenhum substitui o outro.
 
 3.9 Rate Limit administrativo (estado atual)
 • Não há rate limit ativo do fluxo legado de tokens no runtime atual.
@@ -207,13 +200,11 @@
 • Hierarquia: section → lp → account → plan → default
 • Cada conta preserva seu snapshot de recursos
 
-3.12 Compatibilidade PostgREST 14.1
-• Ambiente atual: PostgREST 14.1
-• Índice GIN accounts_name_gin_idx obrigatório quando a feature de busca por nome (FTS) estiver ativa
-• search_path fixado em public
-• Recurso: Spread (to-many) em relações to-many (disponível). Estratégia: usar alias para evitar colisão de chaves quando retornar múltiplas relações na mesma resposta
-• Recurso: busca FTS (fts, plfts, phfts, wfts) em text/json. Preferir wfts e criar índices GIN conforme necessidade de performance
-• UX/Erro: HTTP 416 / PGRST103 em paginação. Interpretação: resultado vazio (fim da lista), não erro de sistema; manter itens já carregados e parar novas requisições
+3.12 PostgREST e Data API
+• `search_path` deve permanecer fixado conforme o contrato de banco aplicável.
+• Consultas com múltiplas relações devem usar aliases explícitos para evitar colisão de chaves.
+• Busca textual exige índice justificado pela consulta ativa e pela necessidade de desempenho.
+• Em paginação por range, HTTP 416 / PGRST103 representa fim da lista, não erro de sistema; preservar itens carregados e interromper novas requisições.
 
 3.13 Compatibilidade Next.js 15 / React 19
 • Contexto: notas de compatibilidade da migração Next.js 15 → Next.js 16 (estado atual: Next.js 16.1.1 + React 19.x)
@@ -399,13 +390,12 @@ LP Builder
 • O boundary permanece repo-only e não executa composição, persistência ou renderização.
 • Casos executáveis: `npm run validate:landing-page-module-catalog`.
 
-4. DB Contract - Fonte única: PATH: docs/schema.md
-• Este documento não lista mais tabelas/views/functions/triggers/policies; isso está em PATH: docs/schema.md.
-• Trigger Hub é regra do contrato de DB (governança/auditoria). Fonte única e detalhes: PATH: docs/schema.md (seções 3.5 e 4.1).
-• Alterações no DB exigem atualizar PATH: docs/schema.md e revisar dependências no código (views/RPC/adapters).
-• SECURITY DEFINER só é permitido quando estiver explicitamente registrado/aprovado em PATH: docs/schema.md (com motivo e limites).
-• Views expostas a usuário: security_invoker=true e registro no PATH: docs/schema.md.
-• Hardening executado (B2): public.accounts.status é obrigatório (NOT NULL) e tem DEFAULT 'pending_setup'::text.
+4. DB Contract
+• `docs/schema.md` é a fonte única de tabelas, views, functions, RPCs, triggers, policies, constraints, grants e do estado exato do banco.
+• Esta Base Técnica mantém somente guardrails transversais de implementação e não deve duplicar inventários de objetos.
+• Alterações no banco exigem atualização do Schema e revisão das dependências no código.
+• `SECURITY DEFINER` só é permitido quando estiver explicitamente aprovado no Schema, com motivo e limites.
+• Views expostas a usuário devem usar `security_invoker = true` e estar registradas no Schema.
 
 5. Arquitetura de Acesso
 
