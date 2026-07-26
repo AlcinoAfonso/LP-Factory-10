@@ -293,6 +293,8 @@ Cada fase deve representar exatamente uma subseção executável do roadmap, ide
 5. Corrigir o delta ou parar para teste humano ou decisão humana quando exigido.
 6. Após `aprovado para avançar`, criar checkpoint, atualizar título e resumo do mesmo PR e, no modo experimental, parar somente no checkpoint solicitado; no fluxo normal end-to-end, seguir para a próxima subseção.
 
+Indisponibilidade de Docker, PostgreSQL, Supabase CLI ou credenciais locais impede apenas a validação dependente desses recursos. O Executor executa as demais validações, publica todo trabalho material no PR draft e continua o que for comprovadamente independente; a pendência permanece explícita para o gate final e impede declarar o PR pronto para merge. Publicação antes de aprovação não constitui checkpoint nem autoriza avanço.
+
 ### 5.3 Testes, documentação e merge
 
 Após a última subseção, o Executor realiza validações integradas e avalia explicitamente a necessidade de teste humano. Quando o teste humano for `N/A`, registra a justificativa.
