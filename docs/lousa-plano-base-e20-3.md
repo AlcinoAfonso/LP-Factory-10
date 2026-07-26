@@ -112,7 +112,11 @@
   - acesso ao banco em `lib/conversion-content/adapters/landingPageGenerationProfileAdapter.ts`, com `import "server-only"`, `createServiceClient()`, colunas explícitas, normalização `snake_case` → `camelCase` e falha fechada;
   - boundary server-side público recebe somente o `taxonId`, lê e normaliza a cadeia de `business_taxons`, lê perfil e itens e chama o resolver puro;
   - cadeia normalizada é entrada interna do resolver puro; consumidores não consultam taxons, perfis ou itens separadamente;
-  - `lib/conversion-content/index.ts` expõe somente a API mínima e não expõe registry, schema ou DTO de banco.
+  - DTO interno da cadeia contém `servedTaxonId` e nós imutáveis em ordem do taxon atendido até o segmento, cada nó limitado a `taxonId`, `level`, `parentId` e `status`;
+  - cadeia válida contém somente taxons existentes e `active`, níveis em ordem `ultra_niche → niche → segment`, `niche → segment` ou `segment`, IDs distintos, relações pai-filho coerentes, ausência de ciclo e término no segmento;
+  - pai ausente, nível incompatível, taxon inativo, ID duplicado, ciclo, leitura incompleta ou subida além do segmento falham fechado;
+  - erro de leitura ou normalização produz falha tipada e nunca é convertido em ausência de perfil;
+  - `lib/conversion-content/index.ts` preserva todos os namespaces e exports públicos existentes e adiciona somente os novos contratos públicos da E20.3; os novos exports não expõem registry, schema ou DTO de banco.
 
 ### 2.2. Contrato mínimo do perfil
 
@@ -185,9 +189,11 @@
 - Segurança das duas tabelas em `public`:
   - habilitar RLS em ambas e não criar policies neste recorte somente-leitura;
   - executar `REVOKE ALL` de `PUBLIC`, `anon` e `authenticated`;
+  - quando a role `ai_readonly` existir, executar revogação condicional e explícita de todos os privilégios nas duas tabelas, tornando-as exceção aos default privileges legados;
   - conceder exclusivamente `GRANT SELECT` a `service_role`, sem `INSERT`, `UPDATE` ou `DELETE` para roles da aplicação;
   - usar `createServiceClient()` no adapter;
-  - validar GRANTs e RLS/policies como controles independentes.
+  - validar GRANTs e RLS/policies como controles independentes, incluindo ausência de privilégios de `ai_readonly` quando a role existir;
+  - registrar em `docs/schema.md` a exceção explícita de `ai_readonly` para ambas as tabelas.
 - Proteger no runtime:
   - contratos próprios do perfil e dos itens;
   - schema estrito do agregado;
@@ -250,6 +256,9 @@
 - Nicho sem perfil próprio ativo consulta segmento direto.
 - A excepcionalidade de perfil próprio de ultranicho será controlada pelo fluxo futuro de cadastro, sem política persistente paralela nesta etapa.
 - Perfil inválido não é corrigido, ignorado ou substituído silenciosamente.
+- Perfil `active` inválido no ancestral elegível mais próximo bloqueia a resolução e não permite fallback para ancestral mais distante.
+- Ausência tipada só ocorre após leitura e cadeia válidas sem perfil `active`; erro de leitura, cadeia inválida ou perfil inválido retorna falha tipada distinta.
+- Recomendações do perfil resolvido são devolvidas em `recommendedOrder` crescente; ordem duplicada ou inválida falha fechado.
 - Resultado preserva taxon atendido, taxon proprietário, ID, versão, relação `own` ou `inherited`, orientação e recomendações.
 
 ### 2.7. Casos executáveis mínimos
@@ -272,6 +281,12 @@
   - item sem perfil rejeitado;
   - item sem versão ou lifecycle próprio;
   - agregado entregue sempre com perfil e itens juntos.
+- Cadeia taxonômica:
+  - segmento ativo isolado;
+  - nicho ativo ligado diretamente ao segmento ativo;
+  - ultranicho ativo ligado ao nicho ativo e ao segmento ativo;
+  - taxon inativo, pai ausente, nível fora de ordem, vínculo pai-filho incoerente, ID duplicado e ciclo rejeitados;
+  - erro de leitura ou cadeia inválida retorna falha distinta de ausência de perfil.
 - Estados:
   - somente `active` participa da resolução;
   - unicidade da versão ativa protegida pela persistência.
@@ -280,7 +295,9 @@
   - herança de nicho;
   - herança de segmento;
   - ausência;
-  - perfil inválido.
+  - perfil inválido;
+  - recomendações em ordem crescente de `recommendedOrder`;
+  - perfil `active` inválido no ancestral elegível mais próximo bloqueia fallback para ancestral mais distante.
 - Casos usam fixtures e não cadastram nem ativam perfil oficial.
 
 ## 3. Fases e próxima ação
@@ -298,10 +315,10 @@
   - implementar `lib/conversion-content/adapters/landingPageGenerationProfileAdapter.ts` como adapter server-only que leia as duas tabelas e a cadeia taxonômica com `createServiceClient()`;
   - expor boundary único que entregue perfil e itens juntos;
   - adicionar `validate:landing-page-generation-profile` ao `package.json`;
-  - criar `supabase/snippets/e20_3_generation_profile_verify.sql`, estritamente read-only, para verificar no ambiente alvo após o apply da migration: existência das duas tabelas; colunas esperadas; FKs; checks de versão, status, prioridade e textos obrigatórios; unicidades por perfil; proteção de uma única versão `active` por taxon proprietário; RLS habilitado; ausência de policies e de acesso direto por `PUBLIC`, `anon` e `authenticated`; `SELECT` exclusivo de `service_role`; e ausência de perfis ou itens oficiais. O snippet não cria, corrige, remove ou altera objetos ou dados e não substitui a migration versionada;
+  - criar `supabase/snippets/e20_3_generation_profile_verify.sql`, estritamente read-only, para verificar no ambiente alvo após o apply da migration: existência das duas tabelas; colunas esperadas; FKs; checks de versão, status, prioridade e textos obrigatórios; unicidades por perfil; proteção de uma única versão `active` por taxon proprietário; RLS habilitado; ausência de policies e de acesso direto por `PUBLIC`, `anon`, `authenticated` e, quando existente, `ai_readonly`; `SELECT` exclusivo de `service_role`; e ausência de perfis ou itens oficiais. O snippet não cria, corrige, remove ou altera objetos ou dados e não substitui a migration versionada;
   - atualizar `docs/base-tecnica.md` com boundary puro, adapter server-only, API pública, precedência, falha fechada e dependência da E18.5;
-  - atualizar `docs/schema.md`;
-  - adicionar casos de contrato, estados e integridade entre perfil e itens.
+  - atualizar `docs/schema.md`, incluindo a exceção de privilégios de `ai_readonly` nas duas tabelas;
+  - adicionar casos de contrato, estados, cadeia taxonômica e integridade entre perfil e itens.
 - Critérios de aceite:
   - exatamente duas tabelas de domínio;
   - FK dos itens para o perfil;
@@ -313,8 +330,9 @@
   - nenhum módulo obrigatório ou composição final;
   - nenhuma operação de mutação do perfil, RPC, trigger de lifecycle, rota, API HTTP, Server Action ou UI;
   - nenhum registro oficial;
-  - RLS habilitado, nenhuma policy, nenhum privilégio para `PUBLIC`, `anon` ou `authenticated`, `SELECT` exclusivo de `service_role` e ausência de grants de mutação;
+  - RLS habilitado, nenhuma policy, nenhum privilégio para `PUBLIC`, `anon`, `authenticated` ou, quando existente, `ai_readonly`, `SELECT` exclusivo de `service_role` e ausência de grants de mutação;
   - migration reconstruída e validada em banco local ou isolado, com casos positivos e negativos para FKs, checks, unicidades, RLS, policies e GRANTs;
+  - nenhum consumidor, rota ou outro call path runtime do novo boundary é ativado antes do apply e da verificação pós-merge da migration;
   - `npm run validate:landing-page-generation-profile`, `npm run check` e `git diff --check` aprovados;
   - apply remoto somente após merge na `main`;
   - após o merge e o apply remoto, `supabase/snippets/e20_3_generation_profile_verify.sql` confirma todos os invariantes previstos e zero registros oficiais; qualquer resultado diferente do esperado impede declarar confirmado o estado final do banco.
@@ -329,16 +347,23 @@
   - adicionar somente os casos positivos e negativos necessários à validação de módulo/versão, variante opcional/versão e vínculo entre ambos;
   - implementar resolver puro e integrar a leitura server-side;
   - validar módulo, variante, versões e vínculo contra a E18.5;
+  - validar a cadeia taxonômica interna e separar falha de leitura de ausência legítima;
   - preservar prioridade e ordem como orientação;
   - implementar precedência própria e ancestral;
+  - ordenar recomendações por `recommendedOrder` crescente e bloquear fallback distante quando o ancestral elegível mais próximo estiver inválido;
   - preservar proveniência;
   - exportar API pública mínima;
   - adicionar casos de validação e resolução.
 - Critérios de aceite:
   - API da E18.5 limitada à validação de identidade e versão do módulo e, quando informada, da variante e de seu vínculo com o módulo;
   - registry e schema permanecem internos; o resolver vigente permanece inalterado e nenhum resolver paralelo é criado;
+  - namespaces e exports públicos preexistentes permanecem intactos; os novos exports limitam-se aos contratos da E20.3 e a `validateLandingPageModuleIdentity`;
   - nenhum contexto artificial de raiz ou perfil de funil, rota, banco, serviço, catálogo ou refatoração ampla;
   - casos próprios, herdados, ausentes e inválidos cobertos;
+  - cadeias de segmento, nicho e ultranicho válidas cobertas, com casos negativos para atividade, níveis, pais, IDs duplicados e ciclos;
+  - ausência de perfil é distinta de erro de leitura, cadeia inválida ou perfil inválido;
+  - recomendações são devolvidas em `recommendedOrder` crescente;
+  - perfil `active` inválido no ancestral elegível mais próximo bloqueia fallback para ancestral mais distante;
   - nenhum perfil universal implícito;
   - nenhuma identidade criada ou corrigida;
   - nenhuma seleção por plano ou prioridade;
