@@ -1,12 +1,12 @@
 # Plano-base E11 — Gestão de Usuários e Convites
 
-- Versão: v1
+- Versão: v2
 - Data: 25/07/2026
-- Status: aguardando avaliação única dos especialistas.
+- Status: ajustado após parecer técnico; aguardando reavaliação dos especialistas.
 - Recorte previsto para roadmap: `11.1 — Gestão de membros e convites`
 - Path canônico: `docs/lousa-plano-base-e11.md`
 - Plano conceitual: N/A — debate realizado entre Estrategista, Analista e humano antes da v1.
-- Fontes obrigatórias: `README.md`, `AGENTS.md`, `docs/prompt-estrategista.md`, `docs/template-roadmap.md`, `docs/prompt-executor.md`, `docs/prompt-abc.md`, `docs/roadmap.md`, `docs/base-tecnica.md`, `docs/schema.md`, `docs/platform-config.md`, `docs/design-system.md`, `docs/lp-planejamento.md`, `docs/supa-up.md`, `app/auth/confirm/route.ts`, `app/a/home/page.tsx`, `app/a/[account]/actions.ts`, `lib/admin/adapters/adminAccountsAdapter.ts`, `supabase/migrations/20260611172930_remote_public_baseline.sql` e documentação oficial vigente do Supabase para `listUsers()`, `createUser()`, `updateUserById()`, `inviteUserByEmail()`, templates de Auth e redirects.
+- Fontes obrigatórias: `README.md`, `AGENTS.md`, `docs/prompt-estrategista.md`, `docs/template-roadmap.md`, `docs/prompt-executor.md`, `docs/prompt-abc.md`, `docs/roadmap.md`, `docs/base-tecnica.md`, `docs/schema.md`, `docs/platform-config.md`, `docs/design-system.md`, `docs/lp-planejamento.md`, `docs/supa-up.md`, `app/auth/confirm/route.ts`, `app/auth/update-password/page.tsx`, `app/a/home/page.tsx`, `app/a/[account]/actions.ts`, `lib/admin/adapters/adminAccountsAdapter.ts`, `supabase/migrations/20260611172930_remote_public_baseline.sql` e documentação oficial vigente do Supabase para `listUsers()`, `createUser()`, `updateUserById()`, `inviteUserByEmail()`, templates de Auth e redirects.
 
 ## 1. Estado e decisões fixas
 
@@ -24,7 +24,7 @@
   - unicidade por `(account_id, user_id)`;
   - papéis `owner`, `admin`, `editor` e `viewer`;
   - estados `pending`, `active`, `inactive` e `revoked`;
-  - `created_at` como referência temporal existente;
+  - `created_at` como registro da criação da linha, sem representar a validade de cada link do Supabase Auth;
   - proteção do último owner.
 - As policies atuais permitem leitura do próprio vínculo ou por owner/admin e reservam mutações diretas a owner/admin ou platform admin.
 - `accept_account_invite(account_id, ttl_days)` é invoker, identifica o vínculo por conta e usuário e depende de uma policy de update que o convidado não satisfaz.
@@ -33,7 +33,7 @@
 - `/a/home` redireciona imediatamente o usuário logado para a última ou primeira conta ativa e não apresenta convites pendentes.
 - O projeto já possui `createServiceClient()` server-only e consulta `user_id → e-mail` por `auth.admin.getUserById()`.
 - Supabase Auth, SMTP via Resend, redirects e o template nativo `Invite user` pertencem à stack atual.
-- O ambiente Supabase foi limpo antes desta v1 e preserva somente a conta real e seu owner; a limpeza não integra o escopo funcional da E11.
+- O estado remoto é volátil e deve ser inspecionado antes da primeira migration e dos testes, sem assumir como contrato da E11 qualquer inventário anterior de contas ou usuários.
 
 ### 1.3. Decisões humanas encerradas
 
@@ -59,9 +59,10 @@
   - vínculo `inactive` ou `revoked`: iniciar novo ciclo de convite sem criar duplicidade permanente;
   - vínculo pertencente a outra conta: não impede novo convite para a conta atual.
 - A identidade mínima exibida é o e-mail obtido server-side do Supabase Auth; nome não é requisito do MVP.
-- O prazo funcional do convite é de 7 dias e não pode ser escolhido pela UI ou pelo chamador.
-- Reenvio dentro do ciclo pendente não estende o prazo funcional.
-- Convite expirado não é aceito; novo convite deve iniciar novo ciclo temporal de forma auditável.
+- Para usuário novo ou ainda não confirmado, a validade de cada link pertence exclusivamente ao Supabase Auth e à configuração vigente de Email OTP Expiration.
+- Reenvio gera um novo convite e um novo link do Auth, sem criar ou renovar prazo local do membership.
+- Para usuário já confirmado, o vínculo permanece `pending` até aceitar, recusar ou ser revogado por owner/admin.
+- O MVP não possui expiração automática local do membership, não converte `pending → revoked` pelo relógio e não exibe prazo exato sem fonte operacional verificada.
 - Usuário confirmado aceita ou recusa apenas um de seus próprios vínculos pendentes por vez.
 
 ### 1.5. Decisões técnicas consolidadas
@@ -80,8 +81,11 @@
 - `user_metadata` serve somente como transporte para o template; nunca participa da autorização.
 - A assinatura usa HMAC e secret server-side `INVITE_STATE_SECRET`, sem valor versionado.
 - `/auth/confirm` deve preservar o estado do GET até o POST e validá-lo somente depois de o Supabase confirmar o usuário.
-- A ativação deve validar simultaneamente o usuário autenticado, a assinatura e a linha específica de `account_users`.
-- Aceite repetido da mesma linha já `active` retorna sucesso idempotente; divergência, expiração, `inactive`, `revoked` ou ausência falha fechada.
+- Após a confirmação Auth, o usuário novo deve concluir o cadastro definindo senha em `/auth/update-password` com a sessão autenticada.
+- O `invite_state` deve permanecer disponível de forma segura durante a conclusão do cadastro, sem servir como autorização por si só.
+- Somente depois da senha definida, a ativação valida simultaneamente o usuário autenticado, a assinatura e a linha específica de `account_users`.
+- Aceite repetido da mesma linha já `active` retorna sucesso idempotente; divergência, `inactive`, `revoked` ou ausência falha fechada.
+- Se a senha for definida e a ativação falhar, o mesmo vínculo pode ser retomado por retry idempotente; enquanto permanecer `pending`, não concede acesso à conta.
 - Usuário confirmado aceita ou recusa pela sessão autenticada e pelo `account_user_id` escolhido, sem `invite_state`.
 - Reenvio do usuário ainda não confirmado usa nova chamada a `inviteUserByEmail()`; `auth.resend()` não será usado como convite.
 - O hook amplo existente não será adotado.
@@ -127,20 +131,29 @@
 - Entrada: token ou code do Supabase, tipo `invite`, redirect seguro e `invite_state`.
 - Processamento:
   - GET apresenta o intersticial sem consumir o token;
-  - POST confirma o token;
-  - obtém o usuário autenticado;
-  - valida assinatura e versão do estado;
-  - valida a linha específica por `account_user_id`, `account_id`, `user_id`, status e prazo;
-  - ativa somente essa linha.
+  - POST confirma o token e obtém a sessão do usuário;
+  - valida assinatura, versão e correspondência do estado com o usuário autenticado;
+  - direciona o usuário para concluir o cadastro em `/auth/update-password`;
+  - define a senha com a sessão autenticada;
+  - valida a linha específica por `account_user_id`, `account_id`, `user_id` e status;
+  - ativa somente essa linha;
+  - redireciona para a conta aceita.
 - Validação:
+  - a validade do token ou code é decidida pelo Supabase Auth;
   - parâmetros manipulados não alteram a conta;
   - outro membership pendente do usuário permanece inalterado;
   - estado já ativo é idempotente;
-  - redirect final é interno ou allowlisted.
-- Persistência: `pending → active` na linha específica.
-- Consumo: sessão válida e redirecionamento para a conta aceita.
+  - redirect final é interno ou allowlisted;
+  - logout e novo login por e-mail e senha funcionam após a conclusão.
+- Persistência:
+  - senha definida no Supabase Auth;
+  - `pending → active` na linha específica somente depois da senha.
+- Consumo: cadastro concluído, vínculo ativo, sessão válida e redirecionamento para a conta aceita.
 - Fallback:
-  - token inválido, estado inválido, vínculo divergente ou expirado falha fechado;
+  - token inválido ou expirado é rejeitado pelo Auth;
+  - estado inválido ou vínculo divergente falha fechado;
+  - abandono antes da senha mantém o vínculo `pending` e sem acesso;
+  - falha de ativação após a senha permite retry idempotente da mesma linha;
   - não ativar por `account_id` isolado;
   - não usar o hook amplo.
 
@@ -150,12 +163,12 @@
 - Entrada: sessão autenticada e vínculos próprios `pending`.
 - Processamento:
   - verificar pendências antes do redirect automático para conta ativa;
-  - mostrar conta, papel proposto, prazo e ações aceitar ou recusar;
+  - mostrar conta, papel proposto e ações aceitar ou recusar;
   - processar uma linha selecionada por vez;
   - validar `account_users.user_id = usuário autenticado`.
 - Validação:
   - o usuário não acessa pendência de terceiro;
-  - convite expirado não pode ser aceito;
+  - o vínculo permanece pendente sem expiração automática local;
   - aceite e recusa repetidos possuem resposta determinística.
 - Persistência:
   - aceitar: `pending → active`;
@@ -197,20 +210,19 @@
 - Migration relacionada deve revisar grants e remover do caminho público qualquer função legada incompatível com o contrato.
 - Se uma função `SECURITY DEFINER` se mostrar indispensável na v2, ela deve ficar fora do schema exposto quando viável, validar `auth.uid()`, fixar `search_path`, revogar `PUBLIC` e receber grants mínimos.
 
-### 2.6. Prazo, reenvio e consistência
+### 2.6. Validade do link, reenvio e consistência
 
-- Constante de domínio única: 7 dias.
-- A referência temporal do ciclo deve permanecer compatível com `invitation_expires_at()` e `account_users.created_at` enquanto não houver estrutura nova aprovada.
-- A v2 deve definir a operação mínima para reiniciar um ciclo `inactive`, `revoked` ou expirado sem preservar a data antiga como se fosse nova.
+- Para usuário novo ou ainda não confirmado, o Supabase Auth é a única fonte de validade do link, conforme Email OTP Expiration vigente no projeto.
+- O membership não possui prazo local no MVP e `account_users.created_at` não deve ser usado para calcular expiração de convite.
+- Usuário já confirmado permanece `pending` até aceitar, recusar ou ser revogado por owner/admin.
+- A UI não exibe prazo exato sem consultar uma fonte operacional real; não deriva prazo por constante local.
 - Reenvio válido:
   - somente para membership `pending`;
   - somente para usuário ainda não confirmado;
-  - mantém `account_user_id` e prazo do ciclo;
-  - gera envio novo pelo Supabase Auth.
-- Expiração:
-  - bloqueia aceite;
-  - converte o ciclo para `revoked` de forma determinística;
-  - exige novo ciclo para novo convite.
+  - mantém o mesmo `account_user_id`;
+  - gera novo convite e novo link pelo Supabase Auth;
+  - não usa `auth.resend()` como convite.
+- O runtime não converte `pending → revoked` por passagem do tempo.
 - Falha entre Auth, membership e envio não possui transação distribuída:
   - a ordem definida evita e-mail sem membership;
   - a operação deve ser idempotente;
@@ -229,7 +241,7 @@
   - formulário de convite;
   - membros ativos;
   - convites pendentes;
-  - e-mail, papel, estado e prazo aplicáveis;
+  - e-mail, papel e estado aplicáveis;
   - ações permitidas por linha.
 - Estados obrigatórios:
   - carregando;
@@ -237,7 +249,7 @@
   - sucesso;
   - erro seguro;
   - ação em andamento com botão desabilitado;
-  - convite expirado;
+  - link Auth inválido ou expirado no fluxo por e-mail;
   - usuário já pertencente à conta.
 - A interface deve funcionar em desktop e mobile sem tabela ilegível ou ações inacessíveis.
 - A confirmação de ação destrutiva deve nomear o efeito: revogar convite ou desativar membro.
@@ -253,11 +265,14 @@
 - E-mail não confirmado já existente reutiliza o usuário sem duplicá-lo.
 - Membership ativo retorna “já pertence”.
 - Membership pendente não duplica.
-- Membership inactive, revoked ou expirado inicia novo ciclo válido.
+- Membership inactive ou revoked pode iniciar novo ciclo válido sem duplicar a linha.
 - Reenvio para não confirmado funciona no Supabase hospedado.
-- Reenvio preserva prazo e contexto da linha.
+- Reenvio preserva o contexto da linha e gera novo link conforme a validade controlada pelo Auth.
 - Segundo link e comportamento do primeiro link após reenvio são registrados como evidência.
-- Confirmação por e-mail ativa somente a linha assinada.
+- Confirmação por e-mail cria sessão e conduz à definição de senha antes da ativação.
+- Conclusão do cadastro ativa somente a linha assinada.
+- Logout e novo login por e-mail e senha funcionam após o aceite.
+- Abandono antes da senha ou falha de ativação mantém o vínculo sem acesso e permite retomada segura.
 - Manipulação de `account_id`, `account_user_id`, `user_id` ou assinatura falha.
 - Aceite repetido da linha ativa é idempotente.
 - Usuário confirmado aceita e recusa somente pendências próprias.
@@ -273,7 +288,7 @@
 - E2 — sessão, Supabase Auth, SSR e Access Context.
 - E5/E6 — Account Dashboard, shell, navegação e componentes visuais existentes.
 - `account_users`, proteção do owner, RLS, funções de convite e auditoria existentes.
-- `/auth/confirm` e sua mitigação anti-scanner.
+- `/auth/confirm`, sua mitigação anti-scanner e `/auth/update-password` como base da conclusão do cadastro.
 - `/a/home` e sua precedência atual de redirect.
 - Supabase Auth Admin, template nativo `Invite user`, SMTP via Resend e Redirect URL allowlist.
 - Vercel Preview e Production para `INVITE_STATE_SECRET`, com redeploy após configuração.
@@ -295,7 +310,7 @@
   - implementar convite, aceite interno, recusa, alteração de papel, revogação e desativação como operações idempotentes por `account_user_id`;
   - criar migration mínima para corrigir ou retirar do caminho operacional as funções, grants e policies legadas incompatíveis;
   - confirmar no Supabase que o hook amplo não está configurado antes de removê-lo ou restringi-lo;
-  - definir na v2 a forma mínima e auditável de reiniciar o ciclo temporal;
+  - impedir expiração automática local do membership e uso de `created_at` como validade do link;
   - criar casos executáveis da matriz aplicável.
 - Artefatos previstos:
   - `lib/access/account-members/contracts.ts`;
@@ -317,25 +332,30 @@
 - Decisão da fase: executar após aprovação da v2.
 - Próxima ação: E11.1.4.
 
-### 3.2. E11.1.4 — Convite de novo usuário e confirmação específica
+### 3.2. E11.1.4 — Convite de novo usuário, conclusão do cadastro e confirmação específica
 
 - Status: planejada.
-- Objetivo: entregar o convite nativo por e-mail, o estado assinado e o aceite seguro de uma única linha.
+- Objetivo: entregar o convite nativo por e-mail, a definição de senha e o aceite seguro de uma única linha.
 - Automação: não.
 - Escopo executável:
   - implementar criação prévia do usuário não confirmado e membership;
   - implementar HMAC versionado com `INVITE_STATE_SECRET`;
   - gravar o estado opaco em metadata somente para transporte;
   - ajustar o template `Invite user` para enviar token e estado à rota canônica;
-  - ajustar `/auth/confirm` para preservar o estado do GET ao POST;
-  - validar Auth, assinatura, linha, usuário, conta, estado e prazo antes da ativação;
+  - ajustar `/auth/confirm` para preservar o estado do GET ao POST, confirmar o Auth e criar a sessão;
+  - reutilizar ou adaptar `/auth/update-password` para o contexto de convite;
+  - preservar com segurança o contexto específico até a conclusão do cadastro;
+  - definir a senha antes de ativar o membership;
+  - validar assinatura, linha, usuário, conta e estado antes da ativação;
+  - implementar retry idempotente da mesma linha se a ativação falhar após a senha;
   - implementar reenvio por `inviteUserByEmail()`;
-  - validar Redirect URL em Preview e Production;
-  - executar teste hospedado ponta a ponta do envio, reenvio e aceite.
+  - validar Email OTP Expiration e Redirect URL vigentes em Preview e Production, sem duplicar prazo local na aplicação;
+  - executar teste hospedado ponta a ponta do envio, reenvio, senha, aceite, logout e novo login.
 - Artefatos previstos:
   - `lib/access/account-members/invite-state.ts`;
   - ajustes em `lib/access/account-members/adapter.ts`;
   - ajuste em `app/auth/confirm/route.ts`;
+  - ajuste em `app/auth/update-password/page.tsx`;
   - configuração externa do template `Invite user`;
   - variável server-only `INVITE_STATE_SECRET` na Vercel;
   - casos executáveis e evidência hospedada.
@@ -343,12 +363,16 @@
   - o e-mail é enviado somente pelo Supabase Auth;
   - o template não expõe secret nem usa metadata como autorização;
   - scanner não consome o token no GET;
+  - validade do link é controlada pelo Auth, sem revogação automática local do membership;
+  - usuário define senha antes de receber acesso à conta;
   - outro vínculo pendente permanece inalterado;
   - manipulação do estado falha;
-  - aceite repetido é idempotente;
+  - aceite repetido e retry da ativação são idempotentes;
+  - abandono antes da senha mantém o membership `pending` e sem acesso;
+  - logout e novo login por e-mail e senha funcionam;
   - reenvio real entrega o segundo e-mail e possui comportamento documentado para ambos os links;
   - falha de envio deixa retry recuperável sem duplicidade.
-- Decisão da fase: avançar se a prova hospedada confirmar o fluxo.
+- Decisão da fase: avançar se a prova hospedada confirmar o fluxo completo.
 - Próxima ação: E11.1.5.
 
 ### 3.3. E11.1.5 — Gestão de membros no Account Dashboard
@@ -388,7 +412,7 @@
 - Automação: não.
 - Escopo executável:
   - ajustar `/a/home` para verificar pendências próprias antes do redirect automático;
-  - exibir conta, papel proposto e prazo;
+  - exibir conta e papel proposto;
   - criar ações autenticadas de aceitar e recusar uma linha;
   - preservar o redirect atual quando não houver pendência;
   - após aceite, permitir entrada na conta ativada;
@@ -401,7 +425,7 @@
   - usuário com conta ativa ainda vê novo convite pendente antes do redirect;
   - apenas pendências do usuário autenticado aparecem;
   - aceite ativa uma linha e recusa revoga uma linha;
-  - convite expirado não concede acesso;
+  - a pendência não expira automaticamente e só concede acesso após aceite;
   - sem pendências, o comportamento atual de `/a/home` é preservado;
   - falha de leitura ou escrita não cria acesso parcial.
 - Decisão da fase: encerrar o recorte se toda a matriz estiver aprovada.
@@ -428,7 +452,6 @@
 - Tabela, view, coluna, fila, job, agente, engine, cron ou serviço novo sem retorno ao Estrategista.
 - E12, Stripe, billing, plano comercial, automação ou agentes.
 - Redesign amplo do Account Dashboard.
-- Alteração de registros reais preservados na limpeza anterior, exceto dados de teste criados e autorizados para validar a E11.
 
 ### 4.2. Critérios de parada
 
@@ -440,7 +463,6 @@
 - Parar antes de criar e-mail próprio como fallback.
 - Parar se o aceite específico exigir ativar mais de um membership.
 - Parar se for necessária tabela ou coluna nova; demonstrar a necessidade e devolver ao Estrategista.
-- Parar se a referência temporal existente não permitir reiniciar o ciclo sem ambiguidade ou perda de auditabilidade.
 - Parar se a solução exigir transferir, rebaixar, revogar ou desativar owner.
 - Parar se a UI exigir nome ou perfil não existente para funcionar.
 - Parar se a implementação exigir automação, job, agente, fila ou infraestrutura nova.
@@ -448,6 +470,6 @@
 
 ### 4.3. Decisão atual e próxima ação
 
-- Decisão: enviar a v1 para avaliação única do Analista, Gestor Estrutural e Gestor de Updates.
+- Decisão: reapresentar a v2 ajustada ao Analista, Gestor Estrutural e Gestor de Updates.
 - Gestor de Automação: não se aplica, pois todas as fases estão marcadas como `Automação: não`.
-- Próxima ação após os pareceres: consolidar a v2 no mesmo PR ou, após merge da v1, seguir o processo automatizado escolhido pelo humano.
+- Próxima ação após a reavaliação: consolidar eventuais ajustes no mesmo PR ou liberar o plano para merge humano.
