@@ -354,18 +354,18 @@ LP Builder
 
 6. Estrutura de Arquivos Essencial
 
-6.1 Visão rápida (fonte única)
-• Fonte única do estado atual de pastas e arquivos: o repositório real.
-• Regra: esta Base Técnica não mantém “árvore” nem lista completa de paths fora das exceções normativas (6.4).
+6.1 Repositório real
+• O repositório real é a fonte única do estado atual de pastas, arquivos, exports e paths; esta Base não mantém árvore nem inventário.
+• Antes de criar ou mover artefato, confirmar classificação, boundary e path no repositório conforme 3.3.2.
 
-6.2 Arquivos críticos por fluxo (fonte única)
-• Localização atual de arquivos críticos (Acesso, Onboarding, Multi-conta, Supabase núcleo, SULB, Admin): consultar o repositório real.
-• Regra: se um arquivo crítico mudar de path, atualizar esta Base Técnica somente quando a mudança afetar regra, boundary, allowlist ou contrato técnico (ver 3.3.2).
+6.2 Paths normativos
+• Esta Base registra path somente quando ele define boundary, fonte canônica ou exceção normativa.
+• Mudança de path exige atualização documental apenas quando alterar classificação, boundary, allowlist ou contrato técnico.
 
-6.3 Tipos e contratos críticos (mínimo normativo)
-• Fonte única de tipos canônicos: PATH: lib/types/status.ts
-• Regra: proibido redefinir AccountStatus, MemberStatus, MemberRole fora do arquivo canônico
-• Contratos e reexports existentes fora dos paths canônicos podem permanecer por compatibilidade; isso não altera a regra canônica de código novo definida em 3.3.2.
+6.3 Tipos e contratos críticos
+• Contratos, exports e tipos específicos permanecem canônicos no código; consumidores devem usar a API pública do boundary.
+• `lib/types/status.ts` é fonte única de `AccountStatus`, `MemberStatus` e `MemberRole`; não redefinir esses tipos.
+• Compatibilidade legada não autoriza novos artefatos fora do path canônico.
 
 6.4 Arquivos SULB autorizados a importar Supabase (fonte única normativa)
 Fonte normativa da allowlist SULB para exceções de Auth. Qualquer novo arquivo em app/auth/ não pode importar @supabase/* até ser incluído nesta lista.
@@ -378,8 +378,9 @@ Fonte normativa da allowlist SULB para exceções de Auth. Qualquer novo arquivo
 • app/auth/protected/page.tsx
 
 7. Checklist mínima (anti-regressão)
-• Segurança de DB e views (security_invoker, RLS, SECURITY DEFINER): validar pelas seções 3.1 e 4 (PATH: docs/schema.md).
-• Regras de acesso/SSR da rota /a e cookie last_account_subdomain: validar por 5.1.2 e 5.4.
-• Imports/adapters e allowlist SULB: validar por 2.5 e 6.4.
-• Anti-regressão de mutações/queries (ex.: .maxAffected(1), search_path): validar por 3.8 e 3.12.
-• Tipos canônicos e adapters vNext: validar por 3.6 e 3.14.
+• Residência e estrutura: confirmar o repositório real, 3.3.2 e as fontes documentais canônicas antes de alterar path ou contrato.
+• Segurança e banco: validar 3.1, 3.4.4, 3.8, 4 e `docs/schema.md`.
+• Boundaries e acesso a dados: validar 2.5, 3.2, 3.3, 3.14 e a allowlist 6.4.
+• Acesso e Auth: validar a seção 5 e, quando aplicável, `docs/platform-config.md`, `docs/automations.md` e os READMEs operacionais.
+• Contratos de domínio: consumir APIs públicas e validadores canônicos do código, sem duplicar lógica de registry, schema, provedor ou resolução.
+• Release: seguir 3.4 e `AGENTS.md`, executar ou justificar validações aplicáveis, revisar preview quando necessário e manter merge humano.
