@@ -1,8 +1,8 @@
 0. Introdução
 
 0.1 Cabeçalho
-• Data da última atualização: 02/07/2026
-• Documento: LP Factory 10 — Schema (DB Contract) v1.0.32
+• Data da última atualização: 26/07/2026
+• Documento: LP Factory 10 — Schema (DB Contract) v1.0.33
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -738,6 +738,71 @@
 
 1.23.4 Índices
 • `content_artifact_research_sources_research_id_idx`: btree em `research_id`.
+
+1.24 landing_page_generation_profiles
+
+1.24.1 Função
+• Perfil versionado de orientação para geração pertencente a um taxon.
+• Estados permitidos: `draft`, `active` e `archived`; transições não são implementadas neste recorte.
+
+1.24.2 Colunas
+• id uuid primary key default gen_random_uuid()
+• owner_taxon_id uuid not null
+• version integer not null
+• status text not null
+• generation_guidance text not null
+• created_at timestamptz not null default now()
+• updated_at timestamptz not null default now()
+
+1.24.3 Relacionamentos e constraints
+• `landing_page_generation_profiles_owner_taxon_id_fkey`: owner_taxon_id → business_taxons(id) ON UPDATE CASCADE ON DELETE RESTRICT.
+• `landing_page_generation_profiles_version_chk`: version > 0.
+• `landing_page_generation_profiles_status_chk`: status IN (`draft`, `active`, `archived`).
+• `landing_page_generation_profiles_guidance_chk`: orientação não vazia após trim.
+• `landing_page_generation_profiles_owner_version_uidx`: UNIQUE (owner_taxon_id, version).
+• `landing_page_generation_profiles_one_active_owner_idx`: UNIQUE parcial em owner_taxon_id para status `active`.
+
+1.24.4 Segurança e trigger
+• RLS habilitado e nenhuma policy.
+• public, anon e authenticated: sem grants.
+• service_role: SELECT; sem INSERT, UPDATE ou DELETE.
+• ai_readonly: exceção explícita aos default privileges, sem grants quando a role existir.
+• Trigger Hub e auditoria: não.
+• `landing_page_generation_profiles_set_updated_at`: executa `public.tg_set_updated_at()` antes de UPDATE.
+
+1.25 landing_page_generation_profile_items
+
+1.25.1 Função
+• Recomendações ordenadas que integram uma versão do perfil; não possuem versão, status ou lifecycle próprios.
+
+1.25.2 Colunas
+• id uuid primary key default gen_random_uuid()
+• profile_id uuid not null
+• module_key text not null
+• module_version integer not null
+• variant_key text null
+• variant_version integer null
+• priority text not null
+• recommended_order integer not null
+• item_guidance text null
+• created_at timestamptz not null default now()
+• updated_at timestamptz not null default now()
+
+1.25.3 Relacionamentos e constraints
+• `landing_page_generation_profile_items_profile_id_fkey`: profile_id → landing_page_generation_profiles(id) ON UPDATE CASCADE ON DELETE CASCADE.
+• Módulo não vazio, module_version positiva, priority IN (`P1`, `P2`, `P3`) e recommended_order positiva.
+• variant_key e variant_version devem estar ambas presentes ou ambas ausentes; chave não vazia e versão positiva quando presentes.
+• item_guidance, quando presente, não vazio após trim.
+• `landing_page_generation_profile_items_profile_order_uidx`: UNIQUE (profile_id, recommended_order).
+• `landing_page_generation_profile_items_profile_module_uidx`: UNIQUE (profile_id, module_key).
+
+1.25.4 Segurança e trigger
+• RLS habilitado e nenhuma policy.
+• public, anon e authenticated: sem grants.
+• service_role: SELECT; sem INSERT, UPDATE ou DELETE.
+• ai_readonly: exceção explícita aos default privileges, sem grants quando a role existir.
+• Trigger Hub e auditoria: não.
+• `landing_page_generation_profile_items_set_updated_at`: executa `public.tg_set_updated_at()` antes de UPDATE.
 
 2. Views
 

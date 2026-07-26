@@ -2,7 +2,7 @@
 
 0.1 Cabeçalho
 • Documento: Base Técnica LP Factory 10
-• Versão: v2.0.55
+• Versão: v2.0.56
 • Data: 26/07/2026
 
 0.2 Contrato do documento (consulta)
@@ -290,6 +290,15 @@
 • Especializações só podem restringir; consumidores não reaplicam deltas nem mantêm propriedades paralelas para condições deriváveis.
 • Interaction contracts são a fonte das capabilities interativas e devem ser evoluídos uma vez por novo kind, com reutilização pelas variantes.
 • O boundary permanece repo-only e não executa composição, persistência ou renderização.
+
+3.15.6 Perfil de orientação para geração de `landing_page`
+• Boundary canônico: `lib/conversion-content/landing-page/generation-profile/`; contratos e schemas são puros e não acessam Supabase.
+• A leitura de taxons, perfis e itens pertence exclusivamente ao adapter server-only de `conversion-content`, que usa `createServiceClient()`, colunas explícitas e normalização `snake_case` → `camelCase`.
+• Consumidores recebem cadeia taxonômica e agregado de perfil por um único boundary; não consultam taxons, perfis ou itens separadamente nem recebem DBRow.
+• Cadeia, leitura e agregado inválidos falham fechado com erro operacional distinguível; ausência de perfil não pode mascarar falha de leitura ou normalização.
+• A saída deve preservar proveniência, usar ordenação determinística e permanecer profundamente imutável.
+• Identidades de módulo e variante dependem da API pública da E18.5; registry e schema do catálogo não podem ser importados diretamente.
+• Nenhum consumidor, rota ou outro caminho runtime pode depender das tabelas antes do apply da migration e da verificação do ambiente alvo.
 
 4. DB Contract
 • `docs/schema.md` é a fonte única de tabelas, views, functions, RPCs, triggers, policies, constraints, grants e do estado exato do banco.
