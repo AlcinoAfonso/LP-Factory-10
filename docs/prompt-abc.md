@@ -1,4 +1,4 @@
-# docs/prompt-abc.md vs10
+# docs/prompt-abc.md vs11
 
 PROMPT ABC
 
@@ -65,9 +65,13 @@ Um assunto deve ter uma única residência. Não duplicar fonte canônica.
 ### 6.2 Base Técnica
 
 * Só gerar delta para regra técnica durável e reutilizável além do caso imediato.
-* Não registrar detalhes de fase ou caso.
+* Não registrar detalhes de fase, etapa ou caso E*.
 * Não copiar valores ou listas definidos em código, registry, schema ou configuração versionada.
-* Registrar somente a regra permanente e, quando necessário, o path da fonte canônica.
+* Não registrar inventário de rotas, adapters, tabelas, workflows ou arquivos do estado atual.
+* Não registrar regra restrita a um único domínio sem demonstrar reutilização além desse domínio.
+* Preservar regras globais de classificação, responsabilidade e isolamento de boundaries.
+* Para contrato específico de domínio, registrar somente a regra transversal necessária e o path da fonte canônica.
+* Rejeitar delta cuja fonte correta seja o repositório, `docs/schema.md`, `docs/design-system.md`, `docs/platform-config.md`, `docs/services.md`, `docs/automations.md` ou `docs/roadmap.md`.
 
 ### 6.3 Schema
 
@@ -91,9 +95,8 @@ Regras:
 
 ## 8. Versionamento
 
-* Versão, data e changelog só mudam com delta real.
-* Changelog recebe somente a nova entrada.
-* Changelog não entra em OPERAÇÕES.
+* Versão e data só mudam com delta real.
+* Não gerar nem manter changelog documental; o histórico fica no Git e nos PRs.
 
 ## 9. Formato da saída
 
@@ -128,11 +131,6 @@ ALVO: <alvo>
 ANCORA: <âncora, somente quando aplicável>
 CONTEUDO:
 <conteúdo literal>
-
-CHANGELOG
-
-CH1)
-<nova entrada>
 ```
 
 Sem DOC_ALVO:
@@ -145,4 +143,4 @@ Depois:
 
 * listar somente documentos com delta;
 * emitir um ABC independente por documento;
-* não misturar versões, operações ou changelogs.
+* não misturar versões ou operações.
