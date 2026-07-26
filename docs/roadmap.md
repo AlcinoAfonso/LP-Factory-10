@@ -1164,16 +1164,19 @@ Repositório — Ajustados
   - boundary server-only para identidade, autorização e transições de `account_users`;
   - busca paginada de usuário por e-mail no Supabase Auth após autorização;
   - aceite, recusa, alteração de papel, revogação e desativação por membership específico;
-  - prazo funcional único de 7 dias e tratamento idempotente de duplicidade, expiração e novo ciclo;
+  - tratamento idempotente de duplicidade e reuso de vínculo, sem expiração automática local do membership;
   - correção ou retirada do caminho operacional das funções legadas incompatíveis, sem tabela ou coluna nova por padrão.
 
-11.1.4 Convite de novo usuário e confirmação específica
+11.1.4 Convite de novo usuário, conclusão do cadastro e confirmação específica
 - Status: Planejado.
 - Conteúdo:
   - usuário novo ou ainda não confirmado recebe o template nativo `Invite user`;
   - contexto versionado e assinado identifica um único `account_user_id`;
-  - `/auth/confirm` preserva a mitigação anti-scanner e ativa somente o vínculo validado;
-  - reenvio usa `inviteUserByEmail()` e exige evidência no Supabase hospedado;
+  - `/auth/confirm` preserva a mitigação anti-scanner, confirma o Auth e cria a sessão;
+  - `/auth/update-password` é reutilizada ou adaptada para definir senha antes da ativação do vínculo;
+  - a conclusão ativa somente o vínculo validado e admite retry idempotente da mesma linha;
+  - o happy path inclui logout e novo login por e-mail e senha;
+  - validade e reenvio do link pertencem ao Supabase Auth, sem prazo local do membership;
   - nenhum e-mail próprio, hook amplo, job ou automação.
 
 11.1.5 Gestão de membros no Account Dashboard
@@ -1191,6 +1194,7 @@ Repositório — Ajustados
   - usuário confirmado não recebe novo e-mail;
   - `/a/home` apresenta os próprios convites pendentes antes do redirect para conta ativa;
   - usuário pode aceitar ou recusar uma pendência por vez;
+  - membership permanece `pending` sem expiração automática local até aceite, recusa ou revogação;
   - sem pendências, permanece o comportamento atual de redirect.
 
 12. E12 — Admin Dashboard
