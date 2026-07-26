@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 
+import { normalizeLandingPageGenerationProfileItemRow } from "../../adapters/landingPageGenerationProfileRowNormalization";
 import {
   landingPageGenerationProfileSchema,
   landingPageGenerationProfileSourceSchema,
@@ -82,6 +83,21 @@ const cases: readonly Readonly<{ name: string; run: () => void }>[] = [
         ...validProfile,
         items: [{ ...validProfile.items[0], variantVersion: undefined }],
       }).success, false);
+
+      const row = {
+        id: validProfile.items[0].id,
+        profile_id: validProfile.id,
+        module_key: validProfile.items[0].moduleKey,
+        module_version: validProfile.items[0].moduleVersion,
+        variant_key: validProfile.items[0].variantKey,
+        variant_version: validProfile.items[0].variantVersion,
+        priority: validProfile.items[0].priority,
+        recommended_order: validProfile.items[0].recommendedOrder,
+        item_guidance: validProfile.items[0].itemGuidance,
+      };
+      assert.notEqual(normalizeLandingPageGenerationProfileItemRow(row), null);
+      assert.equal(normalizeLandingPageGenerationProfileItemRow({ ...row, variant_key: null }), null);
+      assert.equal(normalizeLandingPageGenerationProfileItemRow({ ...row, variant_version: null }), null);
     },
   },
   {

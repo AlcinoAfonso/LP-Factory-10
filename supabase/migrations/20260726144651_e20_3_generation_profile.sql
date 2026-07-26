@@ -84,9 +84,9 @@ alter table public.landing_page_generation_profiles enable row level security;
 alter table public.landing_page_generation_profile_items enable row level security;
 
 revoke all on table public.landing_page_generation_profiles
-  from public, anon, authenticated;
+  from public, anon, authenticated, service_role;
 revoke all on table public.landing_page_generation_profile_items
-  from public, anon, authenticated;
+  from public, anon, authenticated, service_role;
 
 do $$
 begin

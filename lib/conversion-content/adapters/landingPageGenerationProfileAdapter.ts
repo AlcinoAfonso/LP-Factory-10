@@ -3,6 +3,7 @@ import "server-only";
 import { z } from "zod";
 
 import { createServiceClient } from "@/lib/supabase/service";
+import { normalizeLandingPageGenerationProfileItemRow } from "./landingPageGenerationProfileRowNormalization";
 import {
   landingPageGenerationProfileSourceSchema,
   type LandingPageGenerationProfile,
@@ -141,7 +142,7 @@ async function readActiveProfiles(
     return failure("NOT_NORMALIZABLE", "Generation profile item rows are invalid");
   }
 
-  const normalizedItems = itemRows.map(normalizeItem);
+  const normalizedItems = itemRows.map(normalizeLandingPageGenerationProfileItemRow);
   if (normalizedItems.some((item) => item === null)) {
     return failure("NOT_NORMALIZABLE", "Generation profile item rows are invalid");
   }
@@ -209,53 +210,6 @@ function normalizeProfile(
     version: value.version as number,
     status: value.status as LandingPageGenerationProfile["status"],
     generationGuidance: value.generation_guidance,
-  };
-}
-
-function normalizeItem(
-  value: unknown,
-): Readonly<{
-  profileId: string;
-  item: LandingPageGenerationProfileItem;
-}> | null {
-  if (!isRecord(value)) return null;
-  if (
-    typeof value.id !== "string" ||
-    typeof value.profile_id !== "string" ||
-    typeof value.module_key !== "string" ||
-    !Number.isInteger(value.module_version) ||
-    (value.variant_key !== null && typeof value.variant_key !== "string") ||
-    (value.variant_version !== null && !Number.isInteger(value.variant_version)) ||
-    typeof value.priority !== "string" ||
-    !Number.isInteger(value.recommended_order) ||
-    (value.item_guidance !== null && typeof value.item_guidance !== "string")
-  ) {
-    return null;
-  }
-
-  const variant =
-    value.variant_key === null || value.variant_version === null
-      ? {}
-      : {
-          variantKey: value.variant_key,
-          variantVersion: value.variant_version as number,
-        };
-  const guidance =
-    value.item_guidance === null
-      ? {}
-      : { itemGuidance: value.item_guidance as string };
-
-  return {
-    profileId: value.profile_id,
-    item: {
-      id: value.id,
-      moduleKey: value.module_key,
-      moduleVersion: value.module_version as number,
-      ...variant,
-      priority: value.priority as LandingPageGenerationProfileItem["priority"],
-      recommendedOrder: value.recommended_order as number,
-      ...guidance,
-    },
   };
 }
 
