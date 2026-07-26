@@ -132,10 +132,10 @@ Fontes de referência: `README.md`, `docs/roadmap.md`, `docs/base-tecnica.md`, `
 
 ### 2.5. E20.3 — Composição estrutural mínima
 
-- Definir composição versionada por taxon proprietário, reutilizada entre planos, com módulos, variantes, ordem e obrigatoriedade quando aplicável.
-- Validar somente identidades registradas na E18.5 e resolver composição própria ou herdada.
-- Entregar contrato tipado e casos executáveis, sem gerar copy ou LP.
-- Admin Dashboard, IA, gaps persistidos, prontidão, autorização e revogação pertencem a planos posteriores.
+- Definir e persistir minimamente a composição versionada por taxon proprietário, reutilizada entre planos, com módulos, variantes, ordem e obrigatoriedade quando aplicável.
+- Validar somente identidades registradas na E18.5 e resolver composição própria ou herdada, preservando estados e versões.
+- A futura E12.4 operará proposta, revisão, aprovação e ativação; até lá, nenhuma composição oficial precisa ser cadastrada.
+- IA, gaps persistidos, prontidão, autorização, revogação, copy e geração de LP pertencem a planos posteriores.
 
 ### 2.6. E19.4 — Fluxo único da LP por conta
 
@@ -190,7 +190,7 @@ Fontes de referência: `README.md`, `docs/roadmap.md`, `docs/base-tecnica.md`, `
 ### 4.4. E20
 
 - E20.2 permanece responsável pelo catálogo de entradas.
-- E20.3 fornece a composição estrutural versionada e validada.
+- E20.3 fornece e persiste minimamente a composição versionada, seus estados e herança.
 - Identidades inexistentes não entram na composição válida e poderão ser tratadas posteriormente como gaps.
 - E20.4 define critérios de liberação por evidência da LP real.
 
