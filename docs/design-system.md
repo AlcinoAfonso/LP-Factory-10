@@ -1,7 +1,7 @@
 # Design System — LP Factory
 
 ## Visão geral
-Este documento consolida o estado atual do design system ao final do ciclo E6.4–E6.6, com foco em componentes base reutilizáveis, acessibilidade e consistência visual sem mudança de regra de negócio.
+Este documento define o contrato visual vigente do produto, com foco em componentes base reutilizáveis, acessibilidade e consistência visual sem mudança de regra de negócio.
 
 ## Residência e fundamentos visuais
 - Este documento é a fonte canônica de identidade visual, tipografia, tokens, componentes, estados e superfícies do produto.
@@ -155,5 +155,3 @@ Este documento consolida o estado atual do design system ao final do ciclo E6.4�
 ## Fora de escopo atual
 - Redesign amplo de dashboards
 - Branding por cliente/multi-tenant visual
-
-19/05/2026 — Design System alinhado ao estado atual do Admin Dashboard: shell próprio, header fixo, navegação responsiva, listagens/detalhes read-only e estados vazios enxutos.
