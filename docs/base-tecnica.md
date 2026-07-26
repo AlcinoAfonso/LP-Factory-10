@@ -242,118 +242,58 @@ LP Builder
 • Persistência inicial permanece limitada a draft; schema e campos exatos pertencem a `docs/schema.md` e ao código.
 • UI/client não acessa Supabase diretamente para criar LP; evolução funcional fora do runtime atual pertence ao roadmap.
 
-3.14.1 Matching de taxonomia via adapter server-side
-• Provider/API do resolvedor IA: OpenAI Responses API com Structured Outputs, sempre server-side.
-• Configuração operacional do modelo IA, envs e redeploy: ver `docs/platform-config.md`.
-• IA complementar: quando o matching determinístico não resolver com segurança, o runtime pode usar resolver server-side com OpenAI Responses API e Structured Outputs.
-• Resolver canônico: PATH: `lib/onboarding/niche-resolution/adapters/openAiResolver.ts`.
-• Regra: IA não roda em `high`, não cria taxon, não cria alias, não grava em `account_taxonomy` e não substitui vínculo oficial.
-• Regra: IA atualiza somente a resolução operacional em `account_niche_resolutions`.
-• Regra: falha da IA não pode bloquear lead, setup, ativação da conta, `revalidatePath(route)` ou `redirect(route)`.
-• Regra: `shouldCreateOfficialLink` no Structured Output deve permanecer sempre `false` no schema atual.
-• Regra: prompt, payload bruto, aliases, candidatos completos e dados de formulário não devem ser persistidos.
-• No pós-save do `pending_setup`, a integração determinística deve ocorrer server-side em `saveSetupAndContinueAction`, depois de salvar perfil, atualizar nome e promover a conta para `active`.
-• Regra: `matchBusinessTaxonsDeterministic(validated.values.niche, 10)` pode ser chamado no fluxo server-side após validação do onboarding, mas falha no matching não pode bloquear o lead, `revalidatePath(route)` ou `redirect(route)`.
-• Regra: a decisão observável do matching determinístico deve usar `evaluateDeterministicTaxonMatch(candidates)` e registrar somente metadados seguros.
-• Regra: consumo de matching determinístico de taxonomia deve ocorrer somente via camada server/adapter do app.
-• Regra: não chamar RPC de matching diretamente do client/UI.
-• Regra: adapter deve retornar DTO final com candidatos oficiais; UI não normaliza nem interpreta rows crus do banco.
-• Regra: não logar nicho bruto, `p_query`, aliases digitados ou valores de formulário.
-• Adapter canônico: PATH: `lib/onboarding/niche-resolution/adapters/taxonMatchAdapter.ts`.
-• Contrato público: PATH: `lib/onboarding/niche-resolution/contracts.ts`.
-• Decisão de confiança determinística para taxon match deve usar o helper puro `evaluateDeterministicTaxonMatch` (PATH: `lib/onboarding/niche-resolution/deterministicConfidence.ts`).
-• Contrato tipado da decisão determinística e de `aiEscalationMode` fica em `lib/onboarding/niche-resolution/contracts.ts`.
-• Regra: não embutir avaliação de confiança, thresholds ou reasons semânticos inline em UI, route ou server action; reutilizar helper + contrato.
-• `aiEscalationMode` é preparação contratual para evolução futura e não autoriza IA no runtime atual sem caso específico.
-• Resolução operacional: após avaliar o matching determinístico no pós-save do `pending_setup`, o runtime pode persistir a resolução atual da conta via adapter server-side canônico em `lib/onboarding/niche-resolution/adapters/accountNicheResolutionAdapter.ts`.
-• Regra: `account_niche_resolutions` registra a resolução operacional atual.
-• Regra: falha de matching ou persistência da resolução não pode bloquear o lead, `revalidatePath(route)` ou `redirect(route)`.
-• Vínculo oficial: após a resolução determinística, o runtime pode gravar vínculo oficial em `account_taxonomy` via adapter server-side canônico em `lib/onboarding/niche-resolution/adapters/accountTaxonomyAdapter.ts`.
-• Regra: gravar `account_taxonomy` somente quando a decisão determinística for de alta confiança, houver candidato oficial com `taxon_id` e não houver necessidade de revisão administrativa.
-• Regra: `account_niche_resolutions` permanece como registro operacional; `account_taxonomy` representa o vínculo oficial da conta com o taxon.
-• Regra: falha na gravação do vínculo oficial não pode bloquear o lead, setup, ativação da conta, `revalidatePath(route)` ou `redirect(route)`.
-• Regra MVP: se já houver vínculo primário ativo diferente, não substituir automaticamente; manter revisão humana para etapa futura.
-• Regra: IA, microdiálogo, criação automática de taxon/alias e alteração de UI ficam fora deste recorte.
-• Regra: logs do fluxo devem permanecer sem PII e não devem registrar `raw_input`, nicho bruto, query, aliases, candidatos completos ou dados de formulário.
-• Regra: timestamps da resolução operacional devem ser controlados pelo banco.
+3.14.1 Resolução de nicho e taxonomia
+• Boundary canônico: `lib/onboarding/niche-resolution/`; contratos, thresholds, reasons, schemas e adapters permanecem canônicos no código.
+• Matching, avaliação de confiança e persistência devem ocorrer server-side; UI, routes e actions não podem chamar RPC diretamente nem reimplementar thresholds ou decisões semânticas.
+• IA complementar só pode ser usada quando o resultado determinístico for insuficiente, com Structured Outputs e configuração operacional em `docs/platform-config.md`.
+• IA não cria taxon ou alias, não grava vínculo oficial e não substitui decisão determinística de alta confiança.
+• `account_niche_resolutions` representa a resolução operacional; `account_taxonomy` representa o vínculo oficial e só pode ser gravado quando o contrato de alta confiança permitir, sem substituir automaticamente vínculo primário diferente.
+• Falhas de matching, IA ou persistência não podem bloquear setup, ativação, revalidação ou redirect.
+• Logs e persistência não devem conter prompt, payload bruto, nicho bruto, aliases, candidatos completos, formulário ou PII; objetos e campos exatos pertencem a `docs/schema.md`.
 
 3.15 Conteúdo composicional de `commercial_activation`
-• Path canônico: `lib/conversion-content/commercial-activation/`.
-• `content_json` v1 usa `schema_version = 1` e `sections` com `composition_item_id` e `content`.
-• Módulo, variante, ordem e obrigatoriedade pertencem ao item da composição e não devem ser duplicados no artefato.
-• O registry fechado é a fonte canônica de `variantKey → moduleKey → schema Zod → componente`.
-• Envelope, seções e objetos internos devem usar validação estrita, rejeitando campos desconhecidos.
-• Seção obrigatória ausente ou inválida invalida o artefato.
-• Seção opcional ausente é omitida; seção opcional inválida é omitida com log seguro.
-• IDs duplicados ou desconhecidos e combinações de módulo/variante não registradas invalidam o artefato.
-• Conteúdo persistido deve ser estruturado; não aceitar HTML bruto, scripts, CSS, Tailwind ou nomes livres de componentes.
-• CTAs v1 aceitam somente URL HTTPS válida ou caminho interno iniciado por uma única `/`; rejeitar `//`, âncoras e protocolos não aprovados.
-• A validação deve ocorrer no servidor antes da renderização.
-• Casos executáveis: `npm run validate:commercial-activation`.
+• Boundary canônico: `lib/conversion-content/commercial-activation/`; registry, schemas, resolver e renderer são fontes do contrato executável.
+• Composição define módulo, variante, ordem e obrigatoriedade; o artefato não deve duplicar essas decisões.
+• Conteúdo persistido deve ser estruturado e validado estritamente no servidor; HTML bruto, scripts, CSS, Tailwind e nomes livres de componentes são proibidos.
+• Seção obrigatória ausente ou inválida invalida o artefato; seção opcional inválida pode ser omitida somente com log seguro.
+• IDs desconhecidos, duplicados ou combinações não registradas devem falhar fechado.
+• CTAs devem usar destino seguro aprovado pelo contrato; schemas, variantes e casos executáveis permanecem canônicos no código e em `package.json`.
 
 3.15.1 Geração administrativa de draft de `commercial_activation`
-• Path canônico do adapter de geração: `lib/conversion-content/commercial-activation/draft-generation.ts`.
-• Entrada administrativa canônica: `app/admin/(protected)/templates/actions.ts`, protegida por `requirePlatformAdmin()`.
-• A geração deve ser server-side/Admin, usando `createServiceClient()` para leituras e persistência permitidas pelo contrato de banco.
-• Recurso de IA aprovado para fluxo linear de draft: OpenAI Responses API com Structured Outputs; o modelo deve ser configurado por `OPENAI_COMMERCIAL_ACTIVATION_MODEL`.
-• O fluxo não deve depender de Agents SDK, Sandbox Agents, job, fila, agente ou IA em runtime público.
-• Fontes de entrada permitidas: taxon, pesquisa ativa `business_buyer`, contexto `end_customer` apenas para proveniência, composição/variantes de `commercial_activation` e `public.plans` como fonte parcial de planos.
-• `public.plans` só é fonte canônica parcial para `name`, `price_monthly`, `max_lps`, `max_conversions` e `features`; não é fonte para garantias, condições comerciais, checkout, promessas, descontos ou promoções.
-• Antes da persistência, validar em duas camadas: envelope `CommercialActivationContentV1` e cada `section.content` contra o schema registrado para a `variant_key` permitida pela composição.
-• Persistir apenas `status = draft`; publicação e alteração de `published` pertencem a fluxo transacional próprio.
-• `content_artifact_research_sources` deve receber somente fontes relacionais `business_buyer`; contexto `end_customer` permanece apenas em `provenance_json`.
-• CTA gerado deve usar `href` interno seguro aprovado pelo servidor; sem `href` seguro, bloquear antes de persistir.
-• Se o insert das fontes relacionais falhar após criar o artifact, o draft recém-criado deve ser arquivado/invalidado e o fluxo deve retornar erro seguro, sem parecer concluído.
-• Logs devem registrar somente metadados operacionais seguros; não registrar prompt completo, pesquisa bruta, payload sensível ou resposta integral da IA.
+• Geração é server-side/Admin, protegida por `requirePlatformAdmin()`, usando Responses API com Structured Outputs e configuração em `docs/platform-config.md`.
+• O fluxo é linear e não depende de Agents SDK, job, fila, agente ou IA no runtime público.
+• Somente fontes aprovadas pelo código e pelo Schema podem alimentar a geração; dados de planos são fonte parcial e não autorizam garantias, condições, descontos, promoções ou promessas comerciais.
+• Antes de persistir, validar o envelope e cada seção contra a composição e o registry efetivos.
+• Persistência é somente como draft; publicação exige fluxo próprio. Proveniência relacional e contextual deve respeitar o contrato do código e do Schema.
+• Falha parcial após criação deve ser compensada para não aparentar conclusão; logs não incluem prompt integral, pesquisas brutas, payload sensível ou resposta completa da IA.
 
 3.15.2 Parametrização raiz de `landing_page`
-• Boundary canônico: `lib/conversion-content/landing-page/`.
-• Fonte canônica dos parâmetros e versões: `root-registry.ts`; não duplicar seus valores ou listas em documentos ou contratos públicos.
-• Resolver versões e presets registrados por `root-resolver.ts`, com falha fechada e sem fallback implícito.
-• Validar o contrato raiz por `root-schema.ts`; a saída resolvida deve permanecer imutável.
-• Consumir o boundary pelo namespace `landingPageRoot` exportado em `lib/conversion-content/index.ts`.
-• Não reutilizar as APIs removidas de composição, módulos, variantes, renderer ou render model.
-• Especializações futuras devem preservar a precedência `raiz → módulo → variante`.
-• Casos executáveis: `npm run validate:landing-page-root`.
+• Boundary canônico: `lib/conversion-content/landing-page/`; contracts, registry, schema e resolver são fontes executáveis.
+• Consumidores devem usar a API pública exportada por `lib/conversion-content/index.ts`, sem acessar registry ou schema diretamente.
+• Versão, preset ou parâmetro desconhecido deve falhar fechado, sem fallback implícito; a saída resolvida deve permanecer imutável.
+• Evolução deve preservar a precedência `raiz → módulo → variante`; APIs removidas não podem ser reutilizadas.
 
 3.15.3 Resolução de pesquisas estruturadas de `landing_page`
-• Boundary canônico: `lib/conversion-content/landing-page/research-resolution/`.
-• Adapter server-side canônico: `lib/conversion-content/adapters/landingPageResearchAdapter.ts`.
-• Consumidores devem usar `resolveLandingPageResearchForTaxon` e não consultar as tabelas diretamente nem reimplementar precedência ou herança.
-• A entrada é o `taxon_id` já resolvido; este fluxo não resolve conta ou nicho e não cria persistência.
-• `end_customer` usa somente o taxon atendido; `business_buyer` prioriza o conjunto próprio e admite somente o pai direto quando o próprio estiver ausente ou incompleto.
-• Conjunto próprio inválido ou ambíguo deve falhar fechado, sem mistura parcial ou mascaramento pelo pai.
-• O resultado deve preservar a proveniência das fontes e versões efetivamente usadas.
-• O resolver puro não registra logs; o adapter pode registrar somente metadados seguros, sem conteúdo das pesquisas, PII, credenciais ou secrets.
-• Casos executáveis: `npm run validate:landing-page-research`.
+• Boundary canônico: `lib/conversion-content/landing-page/research-resolution/`, consumido pelo adapter server-side de `conversion-content`.
+• Consumidores devem usar a API pública e não consultar tabelas diretamente nem reimplementar precedência ou herança.
+• A resolução recebe taxon já determinado; `end_customer` usa o taxon atendido e `business_buyer` admite pai direto somente quando o conjunto próprio estiver ausente ou incompleto.
+• Conjunto próprio inválido ou ambíguo deve falhar fechado, sem mistura parcial nem mascaramento pelo pai.
+• Resultado preserva proveniência; resolver permanece puro e adapter registra apenas metadados seguros.
 
 3.15.4 Catálogo de entradas de `landing_page`
-• Boundary canônico: `lib/conversion-content/landing-page/input-catalog/`.
-• Fonte canônica das definições e versões: `registry.ts`; não duplicar seus campos, valores ou listas em documentos ou consumidores.
-• Consumidores devem usar `resolveLandingPageInputCatalog` pelo namespace `landingPageInputCatalog` exportado em `lib/conversion-content/index.ts`.
-• O resolver é puro e repo-only; recebe versão, plano e cadeia taxonômica já determinada, sem consultar Supabase, Stripe, assinatura, entitlement ou valores operacionais.
-• A resolução aplica as camadas `universal → segmento → nicho → ultranicho`; camada própria de ultranicho exige autorização explícita, enquanto sua ausência preserva a herança.
-• Especializações só podem ocorrer em camada estritamente mais específica e restringir obrigação, planos permitidos ou validação comparável, preservando identidade, tipo, escopo, origem, condições, snapshot e evidência.
-• Referências de `requiredWhen` e `applicableWhen` devem existir, respeitar a compatibilidade entre planos e permanecer válidas após o filtro pelo plano solicitado.
-• A avaliação concreta das condições e a completude dos valores pertencem ao fluxo consumidor de coleta e geração, não ao resolver do catálogo.
-• A saída deve permanecer determinística e profundamente imutável, preservando taxon atendido, camadas aplicadas, proveniência, validação, evidência e sinal de validade.
-• Casos executáveis: `npm run validate:landing-page-input-catalog`.
+• Boundary canônico: `lib/conversion-content/landing-page/input-catalog/`; registry, contracts, schema e resolver são fontes executáveis.
+• O resolver é puro e repo-only, sem consultar Supabase, Stripe, assinatura, entitlement ou valores operacionais.
+• Resolução segue `universal → segmento → nicho → ultranicho`; especializações só podem restringir e devem preservar identidade, tipo, origem, condições e evidência.
+• Referências condicionais devem existir e permanecer válidas após o filtro de plano; avaliação dos valores concretos pertence ao consumidor.
+• A saída deve ser determinística, rastreável e profundamente imutável.
 
 3.15.5 Catálogo de módulos e variantes de `landing_page`
-• Boundary canônico: `lib/conversion-content/landing-page/module-catalog/`.
-• `registry.ts` é a fonte única das definições versionadas de módulos, variantes, fields, mapas de fontes e perfis de funil; fields e seus mapas pertencem às variantes, sem registry paralelo.
-• Consumidores devem usar `resolveLandingPageModuleCatalog` pelo namespace `landingPageModuleCatalog` exportado em `lib/conversion-content/index.ts`; registry e schema não integram a API pública.
-• A entrada runtime é estrita e falha fechado para shape, versão, módulo, variante, perfil ou preset desconhecido, sem fallback aproximado nem exceção não tratada.
-• A resolução aplica `raiz → módulo → variante` e `perfil-base → delta do módulo`, devolvendo contratos efetivos, rastreáveis e profundamente imutáveis; consumidores não reaplicam deltas.
-• Especializações podem apenas restringir. Proibições prevalecem sobre restrições, que prevalecem sobre permissões; lifecycle da raiz, do módulo e da variante permanece separado no vocabulário canônico.
-• Sources textuais permanecem junto dos fields e distinguem pesquisa estruturada, evidência operacional e pesquisa com suporte operacional declarativo; uma referência sintaticamente válida não comprova integridade com outro registry.
-• Interações de variante usam coleção de união discriminada estrita; Form e Accordion são os únicos kinds atuais, e cada kind aparece no máximo uma vez por variante.
-• Interaction contracts são a fonte canônica das capabilities interativas; capabilities de ação e imagem são derivadas dos fields. O registry não mantém booleanos ou propriedades paralelas para a mesma condição.
-• O contrato de Form preserva fields abstratos, consentimento, privacidade, binding e acessibilidade estrutural, sem definir UI, HTML, ARIA, submissão ou conformidade integral com WCAG.
-• Um interaction kind novo evolui uma vez o contrato TypeScript, a união, o schema e sua suíte; variantes posteriores reutilizam o kind sem ampliar os mecanismos. Mídia avançada só recebe moldura discriminada própria no primeiro caso real.
-• Ações registram somente vínculos operacionais abstratos; valores permitidos e compatibilidades concretas permanecem na fonte canônica versionada.
+• Boundary canônico: `lib/conversion-content/landing-page/module-catalog/`; registry e contracts são fontes das definições versionadas.
+• Consumidores devem usar o resolver público; registry e schema não integram a API externa do boundary.
+• Entrada desconhecida ou inválida deve falhar fechado; a resolução efetiva deve ser rastreável e profundamente imutável.
+• Especializações só podem restringir; consumidores não reaplicam deltas nem mantêm propriedades paralelas para condições deriváveis.
+• Interaction contracts são a fonte das capabilities interativas e devem ser evoluídos uma vez por novo kind, com reutilização pelas variantes.
 • O boundary permanece repo-only e não executa composição, persistência ou renderização.
-• Casos executáveis: `npm run validate:landing-page-module-catalog`.
 
 4. DB Contract
 • `docs/schema.md` é a fonte única de tabelas, views, functions, RPCs, triggers, policies, constraints, grants e do estado exato do banco.
