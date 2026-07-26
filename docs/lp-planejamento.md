@@ -20,7 +20,7 @@ Fontes de referência: `README.md`, `docs/roadmap.md`, `docs/base-tecnica.md`, `
 - A E10.8 resolve `end_customer` no taxon atendido e `business_buyer` próprio ou, na sua ausência, do pai direto.
 - A resolução exige `strategic_core`, `lp_overview`, `lp_sections` e `seo`, sem mistura de fontes ou versões incompatíveis.
 - O resultado preserva taxon atendido, origem, pesquisas, `audience_scope` e versões.
-- Conteúdo, copy, prova, oferta, FAQ e CTA permanecem específicos do taxon atendido, mesmo quando a composição é herdada.
+- Conteúdo, copy, prova, oferta, FAQ e CTA permanecem específicos do taxon atendido, mesmo quando o perfil de orientação é herdado.
 
 ### 1.3. Manter a base raiz da família `landing_page`
 
@@ -44,42 +44,44 @@ Fontes de referência: `README.md`, `docs/roadmap.md`, `docs/base-tecnica.md`, `
 - O primeiro caso real de mídia avançada deve introduzir moldura discriminada própria; a E18.5 não antecipa vídeo, áudio, animação, visual interativo ou 3D sem caso material.
 - A otimização incorpora permanentemente `benefits@v1`, `benefits.standard@v1`, `hero.form@v1`, `comparison@v1`, `comparison.standard@v1`, `lead_capture@v1` e `lead_capture.form@v1` e preserva os quatro testes de extensibilidade derivados do PR #617.
 - A E18.5 não será substituída por catálogo apenas consultivo e não perderá as proteções comprovadas nos testes.
-- A E18.5 não implementa dados concretos, conteúdo final, composição, renderer, persistência ou integração operacional.
+- A E18.5 não implementa dados concretos, conteúdo final, perfil de orientação, renderer, persistência ou integração operacional.
 
 ### 1.5. Definir o catálogo de entradas para geração da LP
 
-- A E20.2 define entradas universais e específicas por taxon e plano, separadas de composição e conteúdo.
+- A E20.2 define entradas universais e específicas por taxon e plano, separadas do perfil de orientação e do conteúdo.
 - O catálogo indica campos obrigatórios, opcionais e condicionais; os valores reais pertencem à conta, oferta, campanha ou LP.
 - O catálogo participa da prontidão, mas não decide automaticamente módulos, variantes ou ordem.
 - `paid_search_keyword_map` permanece opcional para alinhamento entre busca, anúncio e LP.
 
-### 1.6. Criar e aprovar a composição base do taxon
+### 1.6. Manter o perfil de orientação do taxon
 
-- Existe uma composição base canônica por taxon proprietário e versão, reutilizada entre planos.
-- A composição pode pertencer a segmento ou nicho; composição própria de ultranicho é excepcional.
-- Em etapa futura da E12.4, o Admin Dashboard permitirá solicitar à IA uma proposta de módulos, variantes, ordem, obrigatoriedade e escolhas permitidas, para revisão, ajuste, salvamento, aprovação e ativação humanos.
-- A composição válida só pode referenciar módulos, variantes e versões oficialmente registrados na E18.5.
-- Migration, seed, fixture, script ou insert direto podem apoiar testes, mas não criam a composição oficial nem atendem ao fluxo funcional.
+- Existe um perfil versionado e evolutivo por taxon proprietário, reutilizado entre planos para orientar a geração inicial da LP.
+- O perfil pode pertencer a segmento ou nicho; perfil próprio de ultranicho é excepcional.
+- O perfil reúne orientação geral, módulos recomendados, variantes preferenciais, prioridades, ordem recomendada e orientações específicas por módulo.
+- Prioridade orienta a seleção futura; ordem recomendada indica a posição relativa entre os módulos selecionados; nenhuma delas torna um módulo obrigatório.
+- Em etapa futura da E12.4, o Admin Dashboard permitirá à IA propor e ao humano revisar, ajustar, aprovar e ativar novas versões do perfil.
+- A orientação pode guiar escolhas dentro dos contratos vigentes, mas não redefinir, ampliar ou contrariar a E18.4 ou a E18.5; módulos e variantes referenciados devem existir na E18.5.
+- Migration, seed, fixture, script ou insert direto podem apoiar testes, mas não criam o perfil oficial; o primeiro cadastro e a primeira ativação serão operados pela futura E12.4.
 - Uma versão ativa não é editada diretamente; mudança aprovada cria nova versão e preserva as anteriores.
-- A composição do ancestral elegível é herdada quando não houver composição própria aprovada e a herança não estiver bloqueada.
+- Na ausência de perfil próprio, o ancestral elegível mais próximo pode fornecer a orientação herdada.
 
 ### 1.7. Tratar gaps identificados pela IA
 
-- A IA deve separar proposta válida, usando apenas o catálogo existente, de necessidades não atendidas por módulos ou variantes atuais.
-- Identidade inexistente não pode entrar na composição válida; o sistema deve rejeitar referência desconhecida e mantê-la apenas como gap para decisão humana.
+- A IA deve separar recomendações válidas, usando apenas o catálogo existente, de necessidades não atendidas por módulos ou variantes atuais.
+- Identidade inexistente não pode entrar nas recomendações oficiais e deve permanecer como gap para decisão humana.
 - A IA não cria novos contratos automaticamente.
 - O administrador decide se o gap:
-  - bloqueia a composição ou a prontidão atual e deve retornar à E18.5;
+  - bloqueia o perfil ou a prontidão atual e deve retornar à E18.5;
   - pode ser adiado, com justificativa, impacto, responsável e condição de retomada registrados.
 - Gap de função estrutural aponta para novo módulo; diferença reutilizável de execução aponta para nova variante.
-- Quando o gap for impeditivo, a composição permanece `draft`, a prontidão não é aprovada e a extensão segue por plano e PR próprios da E18.5.
-- Depois do merge da nova identidade versionada, a IA deve refazer ou revalidar a composição antes da aprovação humana.
+- Quando o gap for impeditivo, o perfil permanece `draft`, a prontidão não é aprovada e a extensão segue por plano e PR próprios da E18.5.
+- Depois do merge da nova identidade versionada, a IA deve refazer ou revalidar o perfil antes da aprovação humana.
 - A ampliação da E18.5 deve permanecer simples. Se uma extensão comum voltar a exigir alterações distribuídas, a arquitetura deve ser otimizada antes de prosseguir, sem remover proteções comprovadas.
 
 ### 1.8. Confirmar prontidão e autorizar a primeira geração
 
-- A prontidão é avaliada por `taxon atendido + plano + versão da composição`.
-- O checklist confirma taxon, E10.8, E18.4, E18.5, E20.2, composição própria ou herdada, compatibilidade e ausência de gaps impeditivos.
+- A prontidão é avaliada por `taxon atendido + plano + versão do perfil`.
+- O checklist confirma taxon, E10.8, E18.4, E18.5, E20.2, perfil próprio ou herdado, compatibilidade e ausência de gaps impeditivos.
 - A autorização é uma decisão humana para a combinação exata `conta + taxon + plano`, vinculada à prontidão aprovada.
 - A conta permanece normal; outro taxon ou plano exige nova autorização.
 - Autorização não substitui conta ativa, membership válido nem entitlement E9.
@@ -88,16 +90,16 @@ Fontes de referência: `README.md`, `docs/roadmap.md`, `docs/base-tecnica.md`, `
 
 - A E19 é o único fluxo de LPs para contas autorizadas e clientes liberados.
 - Pelo Account Dashboard, a conta fornece os valores aplicáveis, gera, revisa e publica a LP conforme o recorte aprovado.
-- A geração usa pesquisas E10.8, base E18.4, catálogo E18.5, composição E20 e entradas E20.2, sem alterar essas fontes.
-- O snapshot preserva taxon, plano, valores, pesquisas, composição, módulos, variantes e versões usados.
+- A geração usa pesquisas E10.8, base E18.4, catálogo E18.5, perfil E20 e entradas E20.2, sem alterar essas fontes.
+- A LP é materializada como artefato independente; o snapshot preserva taxon, plano, valores, pesquisas, perfil e versão usados, mas mudanças futuras no perfil não alteram LPs existentes.
 
 ### 1.10. Validar e liberar por plano
 
 - O Admin Dashboard avalia a LP real produzida pela E19 e registra aprovação, rejeição ou correção.
 - A liberação é registrada por taxon e plano; aprovação de um plano não libera automaticamente os superiores.
-- A mesma composição é reutilizada entre planos.
+- O mesmo perfil é reutilizado entre planos; a regra exata de seleção por prioridade permanece para a geração futura.
 - A regra exata para evoluir ou reutilizar a LP entre `starter`, `lite`, `pro` e `ultra` permanece para E19.4, E20.4 e E12.4.5–12.4.6.
-- A evidência pode abranger descendentes que utilizem a mesma composição e versão, conforme decisão posterior de liberação.
+- A evidência pode abranger descendentes que utilizem o mesmo perfil e versão, conforme decisão posterior de liberação.
 
 ## 2. O que precisa ser ajustado ou implementado no projeto
 
@@ -130,12 +132,12 @@ Fontes de referência: `README.md`, `docs/roadmap.md`, `docs/base-tecnica.md`, `
 - Preservar catálogo declarativo, herança e resolução já concluídos.
 - Valores operacionais e snapshot permanecem para a E19.
 
-### 2.5. E20.3 — Composição estrutural mínima
+### 2.5. E20.3 — Perfil de orientação para geração
 
-- Definir e persistir minimamente a composição versionada por taxon proprietário, reutilizada entre planos, com módulos, variantes, ordem e obrigatoriedade quando aplicável.
-- Validar somente identidades registradas na E18.5 e resolver composição própria ou herdada, preservando estados e versões.
-- A futura E12.4 operará proposta, revisão, aprovação e ativação; até lá, nenhuma composição oficial precisa ser cadastrada.
-- IA, gaps persistidos, prontidão, autorização, revogação, copy e geração de LP pertencem a planos posteriores.
+- Definir a persistência mínima do perfil versionado por taxon, com orientação geral e recomendações próprias por módulo.
+- Registrar módulo, variante preferencial, prioridade, ordem recomendada, orientação específica e justificativa quando aplicável, validando as referências contra a E18.5.
+- Resolver perfil próprio ou herdado e entregá-lo por um único boundary server-side.
+- O perfil orienta a geração inicial sem governar a LP materializada; a E20.3 atual não cadastra nem ativa perfil oficial, e E12.4, IA, geração, gaps persistidos, prontidão, autorização e aprendizado automático pertencem a planos posteriores.
 
 ### 2.6. E19.4 — Fluxo único da LP por conta
 
@@ -151,7 +153,7 @@ Fontes de referência: `README.md`, `docs/roadmap.md`, `docs/base-tecnica.md`, `
 
 ### 2.8. Evolução controlada
 
-- Aprendizados de LPs reais podem ajustar E18.4, E18.5, E20.2 ou composições por novos planos e versões.
+- Aprendizados de LPs reais podem ajustar E18.4, E18.5, E20.2 ou perfis de orientação por novos planos e versões.
 - Benchmark Blueprint permanece opcional e não altera contratos automaticamente.
 - Não criar catálogo multicanal, editor visual, agente ou nova infraestrutura sem evidência e plano-base próprios.
 
@@ -160,7 +162,7 @@ Fontes de referência: `README.md`, `docs/roadmap.md`, `docs/base-tecnica.md`, `
 - 1º — otimizar a E18.5 preservando o núcleo do PR #590 e incorporando as extensões comprovadas.
 - 2º — repetir comparativamente os quatro testes do PR #617 e consolidar a implementação material.
 - 3º — reavaliar se a E18.4 necessita plano próprio; sem evidência de problema, mantê-la vigente e seguir.
-- 4º — implementar a E20.3 estrutural mínima; após sua conclusão, debater a E12.4 em plano próprio.
+- 4º — implementar a E20.3 como perfil versionado de orientação; após sua conclusão, debater a E12.4 em plano próprio.
 - 5º — implementar E19.4 como fluxo real e único de geração por conta.
 - 6º — implementar a avaliação e liberação por E20.4 e E12.4.5–12.4.6.
 - E10.8 e E20.2 permanecem concluídas e são consumidas pelos próximos recortes.
@@ -170,11 +172,11 @@ Fontes de referência: `README.md`, `docs/roadmap.md`, `docs/base-tecnica.md`, `
 ### 4.1. E10
 
 - E10.8 permanece responsável somente pela resolução das pesquisas de `landing_page`.
-- Não cria composição, catálogo, geração ou UI administrativa.
+- Não cria perfil de orientação, catálogo, geração ou UI administrativa.
 
 ### 4.2. E12
 
-- `12.4.3` operará futuramente proposta por IA, revisão, aprovação e ativação da composição.
+- `12.4.3` operará futuramente proposta por IA, revisão, aprovação e ativação do perfil.
 - `12.4.4` tratará futuramente autorização e revogação por conta, taxon e plano.
 - `12.4.5` e `12.4.6` avaliam a LP real e registram a liberação.
 - A E12 opera decisões humanas; os contratos e estados pertencem à E20.
@@ -190,8 +192,8 @@ Fontes de referência: `README.md`, `docs/roadmap.md`, `docs/base-tecnica.md`, `
 ### 4.4. E20
 
 - E20.2 permanece responsável pelo catálogo de entradas.
-- E20.3 fornece e persiste minimamente a composição versionada, seus estados e herança.
-- Identidades inexistentes não entram na composição válida e poderão ser tratadas posteriormente como gaps.
+- E20.3 mantém o perfil versionado de orientação por taxon e suas recomendações estruturais para a geração inicial.
+- Identidades inexistentes não entram nas recomendações oficiais e poderão ser tratadas posteriormente como gaps.
 - E20.4 define critérios de liberação por evidência da LP real.
 
 ### 4.5. E19
