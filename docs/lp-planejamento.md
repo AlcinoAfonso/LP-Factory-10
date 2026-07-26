@@ -57,8 +57,7 @@ Fontes de referência: `README.md`, `docs/roadmap.md`, `docs/base-tecnica.md`, `
 
 - Existe uma composição base canônica por taxon proprietário e versão, reutilizada entre planos.
 - A composição pode pertencer a segmento ou nicho; composição própria de ultranicho é excepcional.
-- Pelo Admin Dashboard, o administrador solicita à IA uma proposta baseada nas pesquisas resolvidas, na E18.4 e no catálogo E18.5.
-- A IA propõe módulos, variantes, ordem, obrigatoriedade e escolhas permitidas; o sistema valida a proposta e o humano revisa, ajusta, salva como `draft`, aprova e ativa.
+- Em etapa futura da E12.4, o Admin Dashboard permitirá solicitar à IA uma proposta de módulos, variantes, ordem, obrigatoriedade e escolhas permitidas, para revisão, ajuste, salvamento, aprovação e ativação humanos.
 - A composição válida só pode referenciar módulos, variantes e versões oficialmente registrados na E18.5.
 - Migration, seed, fixture, script ou insert direto podem apoiar testes, mas não criam a composição oficial nem atendem ao fluxo funcional.
 - Uma versão ativa não é editada diretamente; mudança aprovada cria nova versão e preserva as anteriores.
@@ -131,22 +130,12 @@ Fontes de referência: `README.md`, `docs/roadmap.md`, `docs/base-tecnica.md`, `
 - Preservar catálogo declarativo, herança e resolução já concluídos.
 - Valores operacionais e snapshot permanecem para a E19.
 
-### 2.5. E20.3 e E12.4.3–12.4.4 — Composição e autorização
+### 2.5. E20.3 — Composição estrutural mínima
 
-- Implementar no Admin Dashboard o fluxo real de solicitar proposta à IA, revisar, ajustar, salvar `draft`, aprovar e ativar a composição.
-- Persistir composição, versões, herança, gaps, prontidão, aprovação, autorização e revogação conforme plano-base próprio.
-- Usar composição única por taxon proprietário e avaliar prontidão separadamente por plano.
-- Validar que a composição usa somente identidades e versões registradas na E18.5.
-- Permitir que a IA registre gaps sem criar módulos ou variantes automaticamente.
-- Manter composição com gap impeditivo em `draft` até a extensão da E18.5 ser mergeada e a proposta ser revalidada.
-- Impedir atalhos que considerem composição oficial criada apenas por carga direta.
-- Pendência da E20.3: definir o handoff semântico dos gaps para `docs/prompt-catalogo-lp.md`, incluindo:
-  - evidência de `lp_sections` para justificar função e anatomia da seção;
-  - papéis semânticos e limites da E18.4;
-  - itens estruturados da E10.8 para os source maps de copy;
-  - dados ou evidências da E20.2 quando houver afirmações factuais;
-  - critério de parada quando essas fontes forem insuficientes.
-- Após validar esse handoff na composição real, decidir se `docs/prompt-catalogo-lp.md` precisa de ajuste antes da primeira promoção derivada de gap.
+- Definir e persistir minimamente a composição versionada por taxon proprietário, reutilizada entre planos, com módulos, variantes, ordem e obrigatoriedade quando aplicável.
+- Validar somente identidades registradas na E18.5 e resolver composição própria ou herdada, preservando estados e versões.
+- A futura E12.4 operará proposta, revisão, aprovação e ativação; até lá, nenhuma composição oficial precisa ser cadastrada.
+- IA, gaps persistidos, prontidão, autorização, revogação, copy e geração de LP pertencem a planos posteriores.
 
 ### 2.6. E19.4 — Fluxo único da LP por conta
 
@@ -171,7 +160,7 @@ Fontes de referência: `README.md`, `docs/roadmap.md`, `docs/base-tecnica.md`, `
 - 1º — otimizar a E18.5 preservando o núcleo do PR #590 e incorporando as extensões comprovadas.
 - 2º — repetir comparativamente os quatro testes do PR #617 e consolidar a implementação material.
 - 3º — reavaliar se a E18.4 necessita plano próprio; sem evidência de problema, mantê-la vigente e seguir.
-- 4º — implementar E20.3 com a operação administrativa mínima da E12.4.3 e E12.4.4.
+- 4º — implementar a E20.3 estrutural mínima; após sua conclusão, debater a E12.4 em plano próprio.
 - 5º — implementar E19.4 como fluxo real e único de geração por conta.
 - 6º — implementar a avaliação e liberação por E20.4 e E12.4.5–12.4.6.
 - E10.8 e E20.2 permanecem concluídas e são consumidas pelos próximos recortes.
@@ -185,8 +174,8 @@ Fontes de referência: `README.md`, `docs/roadmap.md`, `docs/base-tecnica.md`, `
 
 ### 4.2. E12
 
-- `12.4.3` deve abranger proposição por IA, criação, revisão, aprovação, ativação e prontidão da composição.
-- `12.4.4` opera autorização e revogação por `conta + taxon + plano`.
+- `12.4.3` operará futuramente proposta por IA, revisão, aprovação e ativação da composição.
+- `12.4.4` tratará futuramente autorização e revogação por conta, taxon e plano.
 - `12.4.5` e `12.4.6` avaliam a LP real e registram a liberação.
 - A E12 opera decisões humanas; os contratos e estados pertencem à E20.
 
@@ -201,10 +190,9 @@ Fontes de referência: `README.md`, `docs/roadmap.md`, `docs/base-tecnica.md`, `
 ### 4.4. E20
 
 - E20.2 permanece responsável pelo catálogo de entradas.
-- E20.3 define e persiste composição, herança, gaps, prontidão e autorização, operados pela E12.
-- E20.3 só aceita identidades oficialmente registradas na E18.5; sugestões inexistentes permanecem gaps até decisão humana e eventual extensão versionada.
+- E20.3 fornece e persiste minimamente a composição versionada, seus estados e herança.
+- Identidades inexistentes não entram na composição válida e poderão ser tratadas posteriormente como gaps.
 - E20.4 define critérios de liberação por evidência da LP real.
-- A composição é única por taxon proprietário e versão; prontidão e liberação são avaliadas por plano.
 
 ### 4.5. E19
 
