@@ -46,10 +46,6 @@
   - migrations antecipadas preservadas no histórico;
   - objetos abandonados removidos;
   - nenhuma estrutura superdimensionada vigente.
-- Pareceres especializados vinculados ao blob v1 `54a5bc2afc17b3c803138d36b5bb64034f827319`:
-  - Gestor Estrutural: `bloqueado por decisão humana`, com a decisão material `GE-E20.3-01` e os patches autossuficientes `P-GE-E20.3-02` a `P-GE-E20.3-05`;
-  - Gestor de Updates: `updates aplicáveis com patches autossuficientes`, limitado a `supa#40`;
-  - Gestor de Automações: `N/A`, pois as duas fases usam `Automação: não`.
 - Decisão humana de 26/07/2026: autorizar a extensão mínima da API pública TypeScript da E18.5 dentro da E20.3.4 e no mesmo PR, limitada à validação de identidade e versão do módulo e, quando informada, da variante e de seu vínculo com o módulo, reutilizando o registry vigente.
 
 ### 1.3. Decisões funcionais fixas
