@@ -89,21 +89,11 @@
 • Partner Dashboard não ganha boundary antecipada. LP Builder é seção própria, fora do Account Dashboard.
 
 3.3.3 Billing checkout
-• Path canônico: `lib/billing-checkout/`.
-• Uso: domínio server-side para criação de Checkout Session de provedor externo.
-• Provedor inicial: Stripe.
-• Ambiente inicial: teste.
-• Modo: `subscription`.
-• Contrato de planos pagos: `starter`, `lite`, `pro` e `ultra`.
-• Recorrências permitidas: `monthly` e `annual`.
-• `free`, `light` e `PlanId` legado não são contrato de negócio do checkout novo.
-• Adapter inicial: `createStripeTestCheckoutSession`.
-• Mapeamento Stripe teste: Product/Price por env, sem valores versionados.
-• Integração Stripe: chamada server-side via `fetch`, sem SDK Stripe no MVP.
-• Regra: UI/client não acessa `STRIPE_SECRET_KEY` nem cria sessão diretamente.
-• Regra: redirect de sucesso/cancelamento não confirma pagamento e não libera entitlement.
-• Regra: Stripe não substitui `public.account_commercial_entitlements`.
-• Webhook, assinatura, idempotência e persistência de entitlement pertencem à fase seguinte.
+• Boundary canônico: `lib/billing-checkout/`, server-side, com contratos públicos, normalização e adapters de provedor definidos no próprio código.
+• UI/client não acessa secrets nem cria sessão de checkout diretamente.
+• Redirect de sucesso ou cancelamento não comprova pagamento e não libera entitlement.
+• Provedor, planos, recorrências, mapeamentos e configuração operacional pertencem ao boundary real e a `docs/platform-config.md`; não duplicar suas listas aqui.
+• Checkout não substitui o domínio de entitlement comercial; ativação exige confirmação server-side pelo fluxo aprovado.
 
 3.4 CI e validação
 • Alterações devem passar por PR, validações aplicáveis e preview quando houver impacto no runtime ou na UI; o merge final é humano.
@@ -227,55 +217,30 @@
 • Gate adapters: pode retornar null, mas logs devem diferenciar deny vs error.
 
 Commercial entitlements
-• Path canônico: `lib/commercial-entitlements/`.
-• Uso: domínio server-side para leitura do sinal de elegibilidade comercial da conta.
-• Contrato público mínimo: `CommercialEntitlementSignal`.
-• Adapter inicial: `getCommercialEntitlementSignal({ accountId })`.
-• Fonte de leitura: `public.v_account_commercial_entitlement_effective`.
-• Regra de segurança: fail-closed; erro, exceção, `accountId` vazio ou ausência de linha retornam não elegível.
-• Limite: UI/client não acessa Supabase para entitlement comercial; consumo deve passar pelo boundary server-side.
+• Boundary canônico: `lib/commercial-entitlements/`; contratos públicos e adapter de leitura permanecem como fonte da API real.
+• Leitura de elegibilidade é server-side e fail-closed para entrada inválida, ausência de linha, erro ou exceção.
+• UI/client não consulta Supabase diretamente para determinar entitlement comercial.
+• View, campos e estados persistidos pertencem a `docs/schema.md` e ao código; não duplicar seus inventários aqui.
 
 Admin commercial entitlements
-• Superfície administrativa mínima: `app/admin/(protected)/contas/[accountId]/page.tsx`.
-• Path canônico de mutação: `app/admin/(protected)/contas/[accountId]/actions.ts`.
-• Boundary server-only: `lib/admin/adapters/adminCommercialEntitlementsAdapter.ts`.
-• Guard obrigatório: `requirePlatformAdmin`.
-• Ator autorizado: `platform_admin`, incluindo `super_admin` pelo guard existente.
-• Escrita: server-side via `createServiceClient()`.
-• Persistência exclusiva: `public.account_commercial_entitlements`.
-• Origem manual: `origin = liberacao_manual`.
-• Operações mínimas autorizadas: concessão, atualização e cancelamento manual de entitlement.
-• Regra de conflito: entitlement efetivo de `plano_pago_confirmado` ou `trial` deve falhar fechado.
-• Entitlement manual `ativo` existente deve ser atualizado, não duplicado intencionalmente.
-• Stripe, checkout e webhook não podem ser usados como bypass da liberação manual.
-• Não criar rota, UI artificial, migration, schema, RPC, policy, grant, trigger, job ou automação para validar esse recorte.
+• Mutação administrativa é server-only, protegida por `requirePlatformAdmin()` e centralizada no boundary Admin existente.
+• O fluxo manual pode conceder, atualizar ou cancelar entitlement, deve atualizar o registro ativo quando aplicável e falhar fechado diante de conflito ou duplicidade.
+• Checkout, Stripe e webhook não podem servir como bypass da operação administrativa autorizada.
+• Superfícies, funções, payloads e persistência exatos permanecem canônicos no código e em `docs/schema.md`.
 
 Stripe webhook
-• Endpoint canônico: `app/api/stripe/webhook/route.ts`.
-• Runtime: Node.js, dinâmico, server-side.
-• Boundary: `lib/billing-checkout/`.
-• Adapter: `lib/billing-checkout/adapters/stripeWebhookAdapter.ts`.
-• Secret obrigatório: `STRIPE_WEBHOOK_SECRET`.
-• Assinatura Stripe deve ser validada antes de qualquer persistência.
-• Evento que ativa/renova entitlement: `invoice.paid`.
-• Eventos aceitos mas sem liberar entitlement neste recorte: `checkout.session.completed`, `customer.subscription.deleted`, `invoice.payment_failed`.
-• Idempotência: `public.stripe_webhook_events.event_id`.
-• Persistência de entitlement: upsert server-side em `public.account_commercial_entitlements`.
-• Retry permitido para evento `failed` e `processing` antigo.
-• Logs e metadata devem ser mínimos e seguros, sem payload bruto, secrets, cartão ou PII sensível.
+• Endpoint e processamento permanecem server-side no boundary `lib/billing-checkout/`.
+• Assinatura e tipo de evento devem ser validados antes de qualquer persistência.
+• Processamento deve ser idempotente, tolerar retry seguro e liberar entitlement somente pelo evento aprovado no código.
+• Eventos, secrets, tabelas e estados exatos pertencem ao endpoint real, a `docs/platform-config.md` e a `docs/schema.md`.
+• Logs e metadata devem ser mínimos e não conter payload bruto, secrets, cartão ou PII sensível.
 
 LP Builder
-• Path canônico: `lib/lp-builder/`.
-• Uso: boundary server-side da E19 para criação e evolução de landing pages por conta.
-• Action canônica inicial: `app/lp-builder/actions.ts`.
-• Adapter inicial: `createAccountLandingPage`.
-• Persistência inicial: `public.account_landing_pages`.
-• Status inicial permitido: `draft`.
-• Regra de gate antes do insert: conta `active` + membership `active` com role `owner` ou `admin` + entitlement comercial válido.
-• Entitlement comercial deve ser lido pelo boundary E9 existente, não duplicado no LP Builder.
-• Escrita deve ocorrer server-side com permissão adequada; UI/client não acessa Supabase diretamente para criar LP.
-• Logs server-side devem registrar falhas operacionais de forma segura, sem payload bruto, secrets, dados de cartão ou PII sensível.
-• Escopo negativo técnico: sem editor visual, publicação, render público, domínio customizado, analytics, A/B, IA runtime, automação, agente ou job nesta fase.
+• Boundary canônico: `lib/lp-builder/`; contratos, adapter e action reais permanecem fontes da API.
+• Criação de LP é server-side e deve falhar fechado sem usuário autenticado, conta ativa, membership ativo autorizado e entitlement comercial válido.
+• O LP Builder deve consumir o boundary de entitlement existente, sem duplicar sua lógica.
+• Persistência inicial permanece limitada a draft; schema e campos exatos pertencem a `docs/schema.md` e ao código.
+• UI/client não acessa Supabase diretamente para criar LP; evolução funcional fora do runtime atual pertence ao roadmap.
 
 3.14.1 Matching de taxonomia via adapter server-side
 • Provider/API do resolvedor IA: OpenAI Responses API com Structured Outputs, sempre server-side.
