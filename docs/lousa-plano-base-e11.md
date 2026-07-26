@@ -90,7 +90,7 @@
 - Reenvio do usuário ainda não confirmado usa nova chamada a `inviteUserByEmail()`; `auth.resend()` não será usado como convite.
 - O hook amplo existente não será adotado.
 - O runtime não dependerá da função legada de aceite enquanto ela não garantir linha específica, autorização e confirmação de linha alterada.
-- Qualquer ajuste de função, grant ou policy deve ocorrer por migration versionada; esta v1 não autoriza tabela ou coluna nova.
+- Qualquer ajuste de função, grant ou policy deve ocorrer por migration versionada; esta v2 não autoriza tabela ou coluna nova.
 
 ## 2. Contrato do caso
 
