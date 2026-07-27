@@ -107,7 +107,7 @@
 - A migration não cria tabela, coluna, view, RPC ou `SECURITY DEFINER` e preserva o Trigger Hub e a proteção do último owner.
 - O gate server-only `E11_MEMBERS_ENABLED` é obrigatório, com ausência ou valor diferente de `true` interpretado como desabilitado. Enquanto desabilitado, a navegação não aparece e `/a/[account]/members`, Server Actions e o fluxo específico de convite falham fechados sem chamar Auth Admin nem realizar writes.
 - O booleano do gate pode ser passado explicitamente pelo layout server ao Header, mas não integra a decisão de autorização do `AccessProvider`.
-- Antes do merge, o PR entrega implementação, migration versionada, documentação e todas as validações locais, estáticas, contratuais e de Preview disponíveis com o gate fechado. A prova hospedada real não bloqueia commit, push ou merge; ela bloqueia somente a habilitação funcional pós-merge.
+- Antes do merge, o PR entrega implementação, migration versionada, documentação e todas as validações locais, estáticas, contratuais e de Preview disponíveis com o gate fechado. A prova hospedada real não bloqueia commit, push ou merge; após o merge, a prova em Preview ou ambiente hospedado autorizado bloqueia a habilitação do gate em Production.
 
 ## 2. Contrato do caso
 
@@ -317,8 +317,9 @@
 - Vercel Preview e Production para `INVITE_STATE_SECRET`, com redeploy após configuração.
 - `E11_MEMBERS_ENABLED`, ausente ou falso por padrão durante todo o PR e no primeiro deployment posterior ao merge.
 - Pré-merge: implementar no PR único, executar `npm ci`, validações próprias, `npm run check`, testes contratuais, revisão de migration e QA disponível com o gate fechado; commitar e publicar normalmente, sem apply remoto, configuração externa ou prova hospedada.
-- Pós-merge: aguardar o workflow aprovado aplicar a migration da `main`, executar `supabase/snippets/e11_account_members_verify.sql`, configurar `INVITE_STATE_SECRET`, template, Email OTP Expiration e redirects, redeployar ainda com o gate fechado, habilitar `E11_MEMBERS_ENABLED`, redeployar e então executar a matriz hospedada.
-- A prova hospedada é gate de ativação e fechamento operacional pós-merge, não de commit, push ou merge. Falha mantém o gate desabilitado e exige correção incremental pelo fluxo normal, sem fallback de e-mail próprio nem ativação parcial.
+- Pós-merge: manter `E11_MEMBERS_ENABLED=false` em Production; aguardar o workflow aprovado aplicar a migration da `main`; executar `supabase/snippets/e11_account_members_verify.sql`; configurar `INVITE_STATE_SECRET`, template, Email OTP Expiration e redirects; habilitar o gate somente no escopo Preview ou em ambiente hospedado autorizado; redeployar esse ambiente e executar a matriz hospedada.
+- Somente após aprovação da prova hospedada habilitar `E11_MEMBERS_ENABLED=true` em Production e redeployar. A prova hospedada é gate de ativação de Production, não de commit, push ou merge. Falha preserva Production com o gate desabilitado e exige correção incremental pelo fluxo normal, sem fallback de e-mail próprio nem ativação parcial.
+- Após a ativação de Production, executar smoke mínimo pós-ativação. Esse smoke confirma o fechamento operacional; se falhar, desabilitar novamente o gate e corrigir pelo fluxo normal, sem tratá-lo como condição retroativa do merge ou da habilitação já executada.
 - Não há dependência de E12, limite por plano, Stripe, automações ou agentes.
 
 ## 3. Fases e próxima ação
@@ -413,7 +414,7 @@
   - logout e novo login por e-mail e senha funcionam;
   - reenvio real entrega o segundo e-mail e possui comportamento documentado para ambos os links;
   - falha de envio deixa retry recuperável sem duplicidade.
-- Decisão da fase: antes do merge, avançar após as validações disponíveis com `E11_MEMBERS_ENABLED` fechado; a prova hospedada permanece pendência explícita do gate de ativação pós-merge.
+- Decisão da fase: antes do merge, avançar após as validações disponíveis com `E11_MEMBERS_ENABLED` fechado; após o merge, a prova hospedada em Preview ou ambiente autorizado deve ser aprovada antes de habilitar o gate em Production.
 - Próxima ação: 11.1.5.
 
 ### 3.3. 11.1.5 — Gestão de membros no Account Dashboard
@@ -472,7 +473,7 @@
   - a pendência não expira automaticamente e só concede acesso após aceite;
   - sem pendências, o comportamento atual de `/a/home` é preservado;
   - falha de leitura ou escrita não cria acesso parcial.
-- Decisão da fase: concluir a implementação e as validações pré-merge disponíveis; o fechamento operacional permanece condicionado à prova hospedada pós-merge com o gate habilitado.
+- Decisão da fase: concluir a implementação e as validações pré-merge disponíveis; após o merge, aprovar a prova hospedada fora de Production, habilitar Production e executar o smoke pós-ativação para fechar operacionalmente o recorte.
 - Próxima ação: N/A — plano implementado.
 
 ## 4. Escopo negativo e critérios de parada
