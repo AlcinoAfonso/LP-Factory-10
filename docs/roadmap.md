@@ -1,8 +1,8 @@
 0. Introdução
 
 0.1 Cabeçalho
-• Data: 26/07/2026
-• Versão: v1.5.102
+• Data: 27/07/2026
+• Versão: v1.5.103
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -1161,7 +1161,8 @@ Repositório — Ajustados
 11.1.3 Domínio server-side e ciclo seguro de vínculos
 - Status: Planejado.
 - Conteúdo:
-  - boundary server-only para identidade, autorização e transições de `account_users`;
+  - boundary server-only com adapters separados para Data API e Supabase Auth Admin;
+  - guard canônico owner/admin para os fluxos administrativos, sem reutilizá-lo no autoatendimento do convidado;
   - busca paginada de usuário por e-mail no Supabase Auth após autorização;
   - aceite, recusa, alteração de papel, revogação e desativação por membership específico;
   - tratamento idempotente de duplicidade e reuso de vínculo, sem expiração automática local do membership;
@@ -1174,10 +1175,12 @@ Repositório — Ajustados
   - contexto versionado e assinado identifica um único `account_user_id`;
   - `/auth/confirm` preserva a mitigação anti-scanner, confirma o Auth e cria a sessão;
   - `/auth/update-password` é reutilizada ou adaptada para definir senha antes da ativação do vínculo;
+  - estado de convite, metadata, query string e cookie servem somente como transporte; a autorização exige sessão autenticada e validação da linha específica;
   - a conclusão ativa somente o vínculo validado e admite retry idempotente da mesma linha;
   - o happy path inclui logout e novo login por e-mail e senha;
   - validade e reenvio do link pertencem ao Supabase Auth, sem prazo local do membership;
-  - nenhum e-mail próprio, hook amplo, job ou automação.
+  - nenhum e-mail próprio, hook amplo, job ou automação;
+  - o gate permanece desabilitado em Production durante o PR e até a prova hospedada pós-merge em Preview ou ambiente autorizado; somente após a aprovação dessa prova ocorre a ativação em Production e o redeploy, seguidos de smoke pós-ativação.
 
 11.1.5 Gestão de membros no Account Dashboard
 - Status: Planejado.
@@ -1186,14 +1189,15 @@ Repositório — Ajustados
   - lista de membros ativos e convites pendentes;
   - convite para admin, editor ou viewer;
   - reenvio e revogação de pendente, alteração de papel e desativação de membro ativo;
-  - owner e vínculo do próprio ator protegidos.
+  - owner e vínculo do próprio ator protegidos;
+  - navegação, rota e ações falham fechadas enquanto o gate da E11 não estiver habilitado.
 
 11.1.6 Pendências do usuário já cadastrado
 - Status: Planejado.
 - Conteúdo:
   - usuário confirmado não recebe novo e-mail;
   - `/a/home` apresenta os próprios convites pendentes antes do redirect para conta ativa;
-  - usuário pode aceitar ou recusar uma pendência por vez;
+  - usuário pode aceitar ou recusar uma pendência por vez, com identidade derivada da sessão e validação de que a linha pendente pertence ao próprio usuário;
   - membership permanece `pending` sem expiração automática local até aceite, recusa ou revogação;
   - sem pendências, permanece o comportamento atual de redirect.
 
