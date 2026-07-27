@@ -13,6 +13,7 @@ import {
   decideAdminMemberTransition,
   decideSelfServiceInviteTransition,
   isManageableMemberRole,
+  isSelfServiceInviteEligible,
   isValidMemberEmail,
   normalizeMemberEmail,
   shouldDiscardInviteStateAfterActivationError,
@@ -146,6 +147,35 @@ const cases: readonly Readonly<{ name: string; run: () => void }>[] = [
           operation: "decline",
         }),
         { ok: true, value: { nextRole: "viewer", nextStatus: "revoked", idempotent: true } },
+      );
+    },
+  },
+  {
+    name: "self-service rejects an email-delivered invite even after Auth creates a session",
+    run: () => {
+      assert.equal(
+        isSelfServiceInviteEligible({
+          memberId: TARGET_ID,
+          status: "pending",
+          inAppPendingMembershipIds: [],
+        }),
+        false,
+      );
+      assert.equal(
+        isSelfServiceInviteEligible({
+          memberId: TARGET_ID,
+          status: "pending",
+          inAppPendingMembershipIds: [TARGET_ID],
+        }),
+        true,
+      );
+      assert.equal(
+        isSelfServiceInviteEligible({
+          memberId: TARGET_ID,
+          status: "active",
+          inAppPendingMembershipIds: [TARGET_ID],
+        }),
+        false,
       );
     },
   },

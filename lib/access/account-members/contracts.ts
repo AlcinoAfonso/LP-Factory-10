@@ -36,6 +36,7 @@ export type AccountMemberError =
   | "invalid_transition"
   | "membership_conflict"
   | "auth_lookup_failed"
+  | "auth_state_failed"
   | "auth_create_failed"
   | "auth_invite_failed"
   | "feature_disabled"

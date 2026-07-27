@@ -20,7 +20,9 @@ import {
   findAuthUserByEmail,
   getAuthUserById,
   getAuthUsersByUserIds,
+  getInAppPendingMembershipIds,
   sendAuthInvite,
+  setInAppPendingMembershipEligibility,
 } from "./adapters/authAdminAdapter";
 import { getAccountMembersConfirmUrl, isAccountMembersEnabled } from "./config";
 import type {
@@ -32,7 +34,12 @@ import type {
   PendingAccountMemberInvite,
 } from "./contracts";
 import { createSignedInviteState } from "./invite-state";
-import { isManageableMemberRole, isValidMemberEmail, normalizeMemberEmail } from "./policy";
+import {
+  isManageableMemberRole,
+  isSelfServiceInviteEligible,
+  isValidMemberEmail,
+  normalizeMemberEmail,
+} from "./policy";
 
 export type {
   AccountMember,
@@ -107,6 +114,13 @@ export async function inviteAccountMember(
   });
   if (!prepared.ok) return prepared;
 
+  const eligibility = await setInAppPendingMembershipEligibility({
+    userId: user.id,
+    memberId: prepared.value.member.id,
+    eligible: user.isConfirmed,
+  });
+  if (!eligibility.ok) return eligibility;
+
   if (!user.isConfirmed) {
     const inviteState = createSignedInviteState({
       accountUserId: prepared.value.member.id,
@@ -153,6 +167,13 @@ export async function resendAccountMemberInvite(
   if (!user.ok) return user;
   if (user.value.isConfirmed) return { ok: false, error: "invalid_transition" };
 
+  const eligibility = await setInAppPendingMembershipEligibility({
+    userId: membership.value.userId,
+    memberId: membership.value.id,
+    eligible: false,
+  });
+  if (!eligibility.ok) return eligibility;
+
   const inviteState = createSignedInviteState({
     accountUserId: membership.value.id,
     accountId: context.accountId,
@@ -185,15 +206,23 @@ export async function mutateAccountMember(
 ) {
   if (!isAccountMembersEnabled()) return { ok: false, error: "feature_disabled" } as const;
 
-  return applyAdminMemberOperation({
+  const result = await applyAdminMemberOperation({
     accountId: context.accountId,
     memberId: input.memberId,
     actorUserId: context.actorUserId,
     operation: input.operation,
   });
+  if (result.ok && input.operation.type === "revoke") {
+    await setInAppPendingMembershipEligibility({
+      userId: result.value.member.userId,
+      memberId: result.value.member.id,
+      eligible: false,
+    });
+  }
+  return result;
 }
 
-export async function respondToAccountMemberInvite(
+export async function respondToInAppAccountMemberInvite(
   context: AccountMemberUserContext,
   input: Readonly<{
     accountId: string;
@@ -203,11 +232,42 @@ export async function respondToAccountMemberInvite(
 ) {
   if (!isAccountMembersEnabled()) return { ok: false, error: "feature_disabled" } as const;
 
-  return applySelfServiceInviteOperation({
+  const validated = await validatePendingAccountMemberInvite(context, input);
+  if (!validated.ok) return validated;
+
+  const result = await applySelfServiceInviteOperation({
     accountId: input.accountId,
     memberId: input.memberId,
     actorUserId: context.actorUserId,
     operation: input.operation,
+  });
+  if (!result.ok) return result;
+
+  await setInAppPendingMembershipEligibility({
+    userId: context.actorUserId,
+    memberId: input.memberId,
+    eligible: false,
+  });
+  return result;
+}
+
+export async function activateAccountMemberEmailInvite(
+  context: AccountMemberUserContext,
+  input: Readonly<{ accountId: string; memberId: string }>,
+) {
+  if (!isAccountMembersEnabled()) return { ok: false, error: "feature_disabled" } as const;
+
+  const inAppMembershipIds = await getInAppPendingMembershipIds(context.actorUserId);
+  if (!inAppMembershipIds.ok) return inAppMembershipIds;
+  if (inAppMembershipIds.value.includes(input.memberId)) {
+    return { ok: false, error: "invalid_transition" } as const;
+  }
+
+  return applySelfServiceInviteOperation({
+    accountId: input.accountId,
+    memberId: input.memberId,
+    actorUserId: context.actorUserId,
+    operation: "accept",
   });
 }
 
@@ -215,7 +275,9 @@ export async function listPendingAccountMemberInvites(
   context: AccountMemberUserContext,
 ): Promise<AccountMemberResult<readonly PendingAccountMemberInvite[]>> {
   if (!isAccountMembersEnabled()) return { ok: false, error: "feature_disabled" };
-  return listSelfServicePendingMemberships(context.actorUserId);
+  const inAppMembershipIds = await getInAppPendingMembershipIds(context.actorUserId);
+  if (!inAppMembershipIds.ok) return inAppMembershipIds;
+  return listSelfServicePendingMemberships(context.actorUserId, inAppMembershipIds.value);
 }
 
 export async function validatePendingAccountMemberInvite(
@@ -229,7 +291,13 @@ export async function validatePendingAccountMemberInvite(
     actorUserId: context.actorUserId,
   });
   if (!membership.ok) return membership;
-  return membership.value.status === "pending"
+  const inAppMembershipIds = await getInAppPendingMembershipIds(context.actorUserId);
+  if (!inAppMembershipIds.ok) return inAppMembershipIds;
+  return isSelfServiceInviteEligible({
+    memberId: membership.value.id,
+    status: membership.value.status,
+    inAppPendingMembershipIds: inAppMembershipIds.value,
+  })
     ? membership
     : { ok: false, error: "invalid_transition" };
 }

@@ -24,6 +24,14 @@ export function isManageableMemberRole(value: string): value is ManageableMember
   return MANAGEABLE_MEMBER_ROLES.includes(value as ManageableMemberRole);
 }
 
+export function isSelfServiceInviteEligible(input: Readonly<{
+  memberId: string;
+  status: MemberStatus;
+  inAppPendingMembershipIds: readonly string[];
+}>): boolean {
+  return input.status === "pending" && input.inAppPendingMembershipIds.includes(input.memberId);
+}
+
 export type InviteAuthRequestDecision =
   | "not_account_member_invite"
   | "feature_disabled"

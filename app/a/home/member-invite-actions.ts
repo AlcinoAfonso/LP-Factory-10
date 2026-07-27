@@ -5,8 +5,7 @@ import { redirect } from "next/navigation";
 
 import {
   getAccountMemberInviteDestination,
-  respondToAccountMemberInvite,
-  validatePendingAccountMemberInvite,
+  respondToInAppAccountMemberInvite,
   type AccountMemberError,
 } from "@/lib/access/account-members";
 import { isAccountMembersEnabled } from "@/lib/access/account-members/config";
@@ -15,10 +14,7 @@ import { requireAuthenticatedAccountMemberUser } from "@/lib/access/guards";
 export async function acceptPendingMemberInviteAction(formData: FormData) {
   const input = readInviteInput(formData);
   const context = await requireInviteActor();
-  const validated = await validatePendingAccountMemberInvite(context, input);
-  if (!validated.ok) redirectWithError(validated.error);
-
-  const accepted = await respondToAccountMemberInvite(context, {
+  const accepted = await respondToInAppAccountMemberInvite(context, {
     ...input,
     operation: "accept",
   });
@@ -32,10 +28,7 @@ export async function acceptPendingMemberInviteAction(formData: FormData) {
 export async function declinePendingMemberInviteAction(formData: FormData) {
   const input = readInviteInput(formData);
   const context = await requireInviteActor();
-  const validated = await validatePendingAccountMemberInvite(context, input);
-  if (!validated.ok) redirectWithError(validated.error);
-
-  const declined = await respondToAccountMemberInvite(context, {
+  const declined = await respondToInAppAccountMemberInvite(context, {
     ...input,
     operation: "decline",
   });

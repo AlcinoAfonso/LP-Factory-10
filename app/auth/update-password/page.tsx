@@ -8,8 +8,8 @@ import { FormField, FormFieldError, FormFieldHint, FormFieldLabel } from "@/comp
 import { FeedbackMessage } from "@/components/ui/feedback-message";
 import { Input } from "@/components/ui/input";
 import {
+  activateAccountMemberEmailInvite,
   getAccountMemberInviteDestination,
-  respondToAccountMemberInvite,
   validateAccountMemberInvite,
 } from "@/lib/access/account-members";
 import { isAccountMembersEnabled } from "@/lib/access/account-members/config";
@@ -130,10 +130,9 @@ async function completeAccountMemberInviteAction(formData: FormData) {
     redirect(invitePasswordErrorPath(inviteId, "Não foi possível definir a senha. Tente novamente."));
   }
 
-  const activated = await respondToAccountMemberInvite(authenticated.context, {
+  const activated = await activateAccountMemberEmailInvite(authenticated.context, {
     accountId: inviteState.value.account_id,
     memberId: inviteState.value.account_user_id,
-    operation: "accept",
   });
   if (!activated.ok) {
     if (shouldDiscardInviteStateAfterActivationError(activated.error)) {

@@ -144,13 +144,17 @@ export async function getSelfServiceInviteMembership(input: Readonly<{
 
 export async function listSelfServicePendingMemberships(
   actorUserId: string,
+  eligibleMemberIds: readonly string[],
 ): Promise<AccountMemberResult<readonly PendingAccountMemberInvite[]>> {
+  if (eligibleMemberIds.length === 0) return { ok: true, value: [] };
+
   const supabase = createServiceClient();
   const { data: membershipData, error: membershipError } = await supabase
     .from("account_users")
     .select(MEMBER_COLUMNS)
     .eq("user_id", actorUserId)
     .eq("status", "pending")
+    .in("id", eligibleMemberIds)
     .order("created_at", { ascending: true })
     .order("id", { ascending: true });
 
