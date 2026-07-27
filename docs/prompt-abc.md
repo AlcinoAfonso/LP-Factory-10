@@ -1,4 +1,4 @@
-# docs/prompt-abc.md vs15
+# docs/prompt-abc.md vs16
 
 PROMPT ABC
 
@@ -79,6 +79,34 @@ Um assunto deve ter uma única residência. Não duplicar fonte canônica.
 ### 6.3 Schema
 
 * Só gerar delta com alteração real de banco e evidência.
+
+### 6.4 Design System
+
+* Só gerar delta para contrato visual aprovado ou implementado: identidade, tipografia, tokens, componentes reutilizáveis, estados, superfícies e acessibilidade.
+* Não registrar inventário de telas ou rotas, adoção pontual, API ou valor exato já canônico no código ou configuração; manter somente regra visual durável e referência necessária.
+* Não registrar regra de negócio, runtime, banco, plataforma ou status de caso.
+* Sem mudança visual durável, emitir `SEM ALTERAÇÕES NECESSÁRIAS`.
+
+### 6.5 Platform Config
+
+* Só gerar delta para configuração externa confirmada ou decisão operacional aprovada: plataforma, projeto, ambiente, variável ou secret por nome, finalidade, escopo, endpoint, URL, redirect, SMTP, DNS ou regra de redeploy.
+* Nunca registrar valor real de secret, credencial protegida ou dado sensível; valor público só entra quando confirmado e operacionalmente necessário.
+* Marcar explicitamente estado futuro, pendente, bloqueado ou não validado; não registrar regra de runtime, contrato de banco, padrão visual ou status de caso.
+* Substituir estado superado em vez de manter histórico; sem mudança operacional real, emitir `SEM ALTERAÇÕES NECESSÁRIAS`.
+
+### 6.6 Services
+
+* Só gerar delta para service implantável, MCP ou infraestrutura reutilizável com identidade própria, materializada ou aprovada, registrando objetivo, status, acesso, consumidores, dependências e referência técnica local.
+* Registrar boundary operacional de deploy somente quando houver deploy independente e ela for necessária para evitar drift.
+* Detalhes técnicos ficam no README ou código; configurações externas ficam em `docs/platform-config.md`; automações consumidoras ficam em `docs/automations.md`.
+* Não registrar biblioteca genérica, rota do Core, ideia futura sem service aprovado, histórico ou secret; sem mudança de service real, emitir `SEM ALTERAÇÕES NECESSÁRIAS`.
+
+### 6.7 Automations
+
+* Só gerar delta para automação operacional materializada ou aprovada, registrando objetivo, status, modo de uso, resultado esperado, consumidores, dependências e aprendizado operacional durável.
+* Configuração de plataforma, secrets por nome, ambientes, endpoints e catálogo consolidado de workflows ficam em `docs/platform-config.md`; services ficam em `docs/services.md`; detalhes técnicos ficam no README ou código.
+* Pendência ou update só permanece quando vigente, aprovado e ligado a automação existente; evolução futura sem efeito operacional pertence ao roadmap.
+* Não registrar tentativa histórica, proposta não aprovada, inventário redundante ou secret; sem mudança operacional real, emitir `SEM ALTERAÇÕES NECESSÁRIAS`.
 
 ## 7. Operações permitidas
 
