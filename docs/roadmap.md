@@ -1149,18 +1149,53 @@ Repositório — Ajustados
   * E10.7, E18.4, E19, E20, automações, agentes e jobs permaneceram fora do recorte.
 
 11. E11 — Gestão de Usuários e Convites
+- Objetivo: permitir gestão segura de membros não-owner e convites por conta, usando Supabase Auth e o Account Dashboard.
+- Status: Planejado.
 
-11.1 Status
-• Planejado
+11.1 Gestão de membros e convites
 
-11.2 Escopo
-• UI /a/[account]/members
-• Convites via email com tokens
-• Controle de papéis (Admin, Editor, Viewer)
+11.1.1 Objetivo e status
+- Objetivo: permitir que owner e admin convidem, acompanhem e administrem membros com papéis admin, editor e viewer, preservando o owner e o isolamento multi-tenant.
+- Status: Planejado.
 
-11.3 Regras
-• Viewer não convida
-• Admin pode convidar e revogar
+11.1.3 Domínio server-side e ciclo seguro de vínculos
+- Status: Planejado.
+- Conteúdo:
+  - boundary server-only para identidade, autorização e transições de `account_users`;
+  - busca paginada de usuário por e-mail no Supabase Auth após autorização;
+  - aceite, recusa, alteração de papel, revogação e desativação por membership específico;
+  - tratamento idempotente de duplicidade e reuso de vínculo, sem expiração automática local do membership;
+  - correção ou retirada do caminho operacional das funções legadas incompatíveis, sem tabela ou coluna nova por padrão.
+
+11.1.4 Convite de novo usuário, conclusão do cadastro e confirmação específica
+- Status: Planejado.
+- Conteúdo:
+  - usuário novo ou ainda não confirmado recebe o template nativo `Invite user`;
+  - contexto versionado e assinado identifica um único `account_user_id`;
+  - `/auth/confirm` preserva a mitigação anti-scanner, confirma o Auth e cria a sessão;
+  - `/auth/update-password` é reutilizada ou adaptada para definir senha antes da ativação do vínculo;
+  - a conclusão ativa somente o vínculo validado e admite retry idempotente da mesma linha;
+  - o happy path inclui logout e novo login por e-mail e senha;
+  - validade e reenvio do link pertencem ao Supabase Auth, sem prazo local do membership;
+  - nenhum e-mail próprio, hook amplo, job ou automação.
+
+11.1.5 Gestão de membros no Account Dashboard
+- Status: Planejado.
+- Conteúdo:
+  - rota `/a/[account]/members` acessível somente a owner e admin;
+  - lista de membros ativos e convites pendentes;
+  - convite para admin, editor ou viewer;
+  - reenvio e revogação de pendente, alteração de papel e desativação de membro ativo;
+  - owner e vínculo do próprio ator protegidos.
+
+11.1.6 Pendências do usuário já cadastrado
+- Status: Planejado.
+- Conteúdo:
+  - usuário confirmado não recebe novo e-mail;
+  - `/a/home` apresenta os próprios convites pendentes antes do redirect para conta ativa;
+  - usuário pode aceitar ou recusar uma pendência por vez;
+  - membership permanece `pending` sem expiração automática local até aceite, recusa ou revogação;
+  - sem pendências, permanece o comportamento atual de redirect.
 
 12. E12 — Admin Dashboard
 - Objetivo: Consolidar o Admin Dashboard como seção administrativa protegida, separada do Account Dashboard, com navegação própria e leitura operacional read-only.
