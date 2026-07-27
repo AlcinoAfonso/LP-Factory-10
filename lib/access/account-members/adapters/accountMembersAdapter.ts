@@ -4,6 +4,7 @@ import { createServiceClient } from "@/lib/supabase/service";
 import type { MemberRole, MemberStatus } from "@/lib/types/status";
 
 import type {
+  AccountMemberInviteChannel,
   AccountMemberRecord,
   AccountMemberResult,
   AdminMemberOperation,
@@ -16,6 +17,7 @@ import {
   decideAdminMemberTransition,
   decideSelfServiceInviteTransition,
   isManageableMemberRole,
+  selectLatestInviteChannels,
 } from "../policy";
 
 type AccountMemberRow = Readonly<{
@@ -34,7 +36,14 @@ type PendingAccountRow = Readonly<{
   subdomain: string;
 }>;
 
+type InviteChannelEventRow = Readonly<{
+  id: string;
+  record_id: string;
+  changes_json: unknown;
+}>;
+
 const MEMBER_COLUMNS = "id,account_id,user_id,role,status,created_at,invited_by";
+const INVITE_CHANNEL_EVENT = "e11_account_member_invite_channel";
 
 export async function listAccountMemberships(
   accountId: string,
@@ -144,17 +153,13 @@ export async function getSelfServiceInviteMembership(input: Readonly<{
 
 export async function listSelfServicePendingMemberships(
   actorUserId: string,
-  eligibleMemberIds: readonly string[],
 ): Promise<AccountMemberResult<readonly PendingAccountMemberInvite[]>> {
-  if (eligibleMemberIds.length === 0) return { ok: true, value: [] };
-
   const supabase = createServiceClient();
   const { data: membershipData, error: membershipError } = await supabase
     .from("account_users")
     .select(MEMBER_COLUMNS)
     .eq("user_id", actorUserId)
     .eq("status", "pending")
-    .in("id", eligibleMemberIds)
     .order("created_at", { ascending: true })
     .order("id", { ascending: true });
 
@@ -170,7 +175,16 @@ export async function listSelfServicePendingMemberships(
   );
   if (pending.length === 0) return { ok: true, value: [] };
 
-  const accountIds = Array.from(new Set(pending.map((membership) => membership.accountId)));
+  const channels = await getInviteChannels(pending.map((membership) => membership.id));
+  if (!channels.ok) return channels;
+  const eligiblePending = pending.filter(
+    (membership) => channels.value.get(membership.id) === "in_app",
+  );
+  if (eligiblePending.length === 0) return { ok: true, value: [] };
+
+  const accountIds = Array.from(
+    new Set(eligiblePending.map((membership) => membership.accountId)),
+  );
   const { data: accountData, error: accountError } = await supabase
     .from("accounts")
     .select("id,name,subdomain")
@@ -181,7 +195,7 @@ export async function listSelfServicePendingMemberships(
     ((accountData ?? []) as PendingAccountRow[]).map((account) => [account.id, account] as const),
   );
 
-  const invites = pending.map((membership): PendingAccountMemberInvite | null => {
+  const invites = eligiblePending.map((membership): PendingAccountMemberInvite | null => {
     const account = accounts.get(membership.accountId);
     if (!account || !account.name?.trim() || !account.subdomain?.trim()) return null;
     if (!isManageableMemberRole(membership.role)) return null;
@@ -201,6 +215,72 @@ export async function listSelfServicePendingMemberships(
     ok: true,
     value: invites.filter((invite): invite is PendingAccountMemberInvite => invite !== null),
   };
+}
+
+export async function recordInviteChannel(input: Readonly<{
+  accountId: string;
+  memberId: string;
+  userId: string;
+  actorUserId: string;
+  channel: AccountMemberInviteChannel;
+}>): Promise<AccountMemberResult<true>> {
+  const supabase = createServiceClient();
+  const { error } = await supabase.from("audit_logs").insert({
+    table_name: "account_users",
+    record_id: input.memberId,
+    action: "insert",
+    user_id: input.userId,
+    actor_user_id: input.actorUserId,
+    changes_json: { invite_channel: input.channel },
+    account_id: input.accountId,
+    event: INVITE_CHANNEL_EVENT,
+  });
+  return error
+    ? { ok: false, error: "invite_channel_unavailable" }
+    : { ok: true, value: true };
+}
+
+export async function getInviteChannel(input: Readonly<{
+  accountId: string;
+  memberId: string;
+}>): Promise<AccountMemberResult<AccountMemberInviteChannel | null>> {
+  const channels = await getInviteChannels([input.memberId], input.accountId);
+  if (!channels.ok) return channels;
+  return { ok: true, value: channels.value.get(input.memberId) ?? null };
+}
+
+async function getInviteChannels(
+  memberIds: readonly string[],
+  accountId?: string,
+): Promise<AccountMemberResult<ReadonlyMap<string, AccountMemberInviteChannel>>> {
+  if (memberIds.length === 0) return { ok: true, value: new Map() };
+
+  const supabase = createServiceClient();
+  let query = supabase
+    .from("audit_logs")
+    .select("id,record_id,changes_json")
+    .eq("event", INVITE_CHANNEL_EVENT)
+    .in("record_id", memberIds)
+    .order("created_at", { ascending: false })
+    .order("id", { ascending: false });
+  if (accountId) query = query.eq("account_id", accountId);
+
+  const { data, error } = await query;
+  if (error) return { ok: false, error: "read_failed" };
+
+  const events: Array<{ memberId: string; channel: AccountMemberInviteChannel }> = [];
+  for (const row of (data ?? []) as InviteChannelEventRow[]) {
+    const channel = readInviteChannel(row.changes_json);
+    if (!channel) return { ok: false, error: "read_failed" };
+    events.push({ memberId: row.record_id, channel });
+  }
+  return { ok: true, value: selectLatestInviteChannels(events) };
+}
+
+function readInviteChannel(value: unknown): AccountMemberInviteChannel | null {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+  const channel = (value as Record<string, unknown>).invite_channel;
+  return channel === "email" || channel === "in_app" ? channel : null;
 }
 
 export async function getAccountSubdomain(

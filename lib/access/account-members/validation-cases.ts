@@ -9,6 +9,7 @@ import {
 
 import {
   classifyInviteCycle,
+  decideInviteChannel,
   decideInviteAuthRequest,
   decideAdminMemberTransition,
   decideSelfServiceInviteTransition,
@@ -16,6 +17,7 @@ import {
   isSelfServiceInviteEligible,
   isValidMemberEmail,
   normalizeMemberEmail,
+  selectLatestInviteChannels,
   shouldDiscardInviteStateAfterActivationError,
 } from "./policy";
 
@@ -155,28 +157,67 @@ const cases: readonly Readonly<{ name: string; run: () => void }>[] = [
     run: () => {
       assert.equal(
         isSelfServiceInviteEligible({
-          memberId: TARGET_ID,
           status: "pending",
-          inAppPendingMembershipIds: [],
+          channel: "email",
         }),
         false,
       );
       assert.equal(
         isSelfServiceInviteEligible({
-          memberId: TARGET_ID,
           status: "pending",
-          inAppPendingMembershipIds: [TARGET_ID],
+          channel: "in_app",
         }),
         true,
       );
       assert.equal(
         isSelfServiceInviteEligible({
-          memberId: TARGET_ID,
           status: "active",
-          inAppPendingMembershipIds: [TARGET_ID],
+          channel: "in_app",
         }),
         false,
       );
+    },
+  },
+  {
+    name: "retry after email confirmation preserves the original email channel",
+    run: () => {
+      assert.equal(
+        decideInviteChannel({
+          existingChannel: "email",
+          preparedIdempotently: true,
+          isConfirmed: true,
+        }),
+        "email",
+      );
+      assert.equal(
+        decideInviteChannel({
+          existingChannel: null,
+          preparedIdempotently: true,
+          isConfirmed: true,
+        }),
+        null,
+      );
+      assert.equal(
+        decideInviteChannel({
+          existingChannel: "email",
+          preparedIdempotently: false,
+          isConfirmed: true,
+        }),
+        "in_app",
+      );
+    },
+  },
+  {
+    name: "append-only channel events preserve concurrent memberships independently",
+    run: () => {
+      const otherMemberId = "10000000-0000-4000-8000-000000000004";
+      const channels = selectLatestInviteChannels([
+        { memberId: TARGET_ID, channel: "email" },
+        { memberId: otherMemberId, channel: "in_app" },
+      ]);
+      assert.equal(channels.get(TARGET_ID), "email");
+      assert.equal(channels.get(otherMemberId), "in_app");
+      assert.equal(channels.size, 2);
     },
   },
   {

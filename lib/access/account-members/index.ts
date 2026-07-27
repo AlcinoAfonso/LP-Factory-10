@@ -10,19 +10,19 @@ import {
   applySelfServiceInviteOperation,
   getAccountMembershipById,
   getAccountSubdomain,
+  getInviteChannel,
   getSelfServiceInviteMembership,
   listAccountMemberships,
   listSelfServicePendingMemberships,
   preparePendingMembership,
+  recordInviteChannel,
 } from "./adapters/accountMembersAdapter";
 import {
   createUnconfirmedAuthUser,
   findAuthUserByEmail,
   getAuthUserById,
   getAuthUsersByUserIds,
-  getInAppPendingMembershipIds,
   sendAuthInvite,
-  setInAppPendingMembershipEligibility,
 } from "./adapters/authAdminAdapter";
 import { getAccountMembersConfirmUrl, isAccountMembersEnabled } from "./config";
 import type {
@@ -35,6 +35,7 @@ import type {
 } from "./contracts";
 import { createSignedInviteState } from "./invite-state";
 import {
+  decideInviteChannel,
   isManageableMemberRole,
   isSelfServiceInviteEligible,
   isValidMemberEmail,
@@ -114,14 +115,31 @@ export async function inviteAccountMember(
   });
   if (!prepared.ok) return prepared;
 
-  const eligibility = await setInAppPendingMembershipEligibility({
-    userId: user.id,
+  const existingChannel = await getInviteChannel({
+    accountId: context.accountId,
     memberId: prepared.value.member.id,
-    eligible: user.isConfirmed,
   });
-  if (!eligibility.ok) return eligibility;
+  if (!existingChannel.ok) return existingChannel;
+  const channel = decideInviteChannel({
+    existingChannel: existingChannel.value,
+    preparedIdempotently: prepared.value.idempotent,
+    isConfirmed: user.isConfirmed,
+  });
+  if (!channel) return { ok: false, error: "invite_channel_unavailable" };
 
-  if (!user.isConfirmed) {
+  if (!prepared.value.idempotent || !existingChannel.value) {
+    const recorded = await recordInviteChannel({
+      accountId: context.accountId,
+      memberId: prepared.value.member.id,
+      userId: user.id,
+      actorUserId: context.actorUserId,
+      channel,
+    });
+    if (!recorded.ok) return recorded;
+  }
+
+  if (channel === "email") {
+    if (user.isConfirmed) return { ok: false, error: "invalid_transition" };
     const inviteState = createSignedInviteState({
       accountUserId: prepared.value.member.id,
       accountId: context.accountId,
@@ -144,7 +162,7 @@ export async function inviteAccountMember(
     ok: true,
     value: {
       member: prepared.value.member,
-      delivery: user.isConfirmed ? "in_app" : "email",
+      delivery: channel,
     },
   };
 }
@@ -167,12 +185,12 @@ export async function resendAccountMemberInvite(
   if (!user.ok) return user;
   if (user.value.isConfirmed) return { ok: false, error: "invalid_transition" };
 
-  const eligibility = await setInAppPendingMembershipEligibility({
-    userId: membership.value.userId,
+  const channel = await getInviteChannel({
+    accountId: context.accountId,
     memberId: membership.value.id,
-    eligible: false,
   });
-  if (!eligibility.ok) return eligibility;
+  if (!channel.ok) return channel;
+  if (channel.value !== "email") return { ok: false, error: "invalid_transition" };
 
   const inviteState = createSignedInviteState({
     accountUserId: membership.value.id,
@@ -206,20 +224,12 @@ export async function mutateAccountMember(
 ) {
   if (!isAccountMembersEnabled()) return { ok: false, error: "feature_disabled" } as const;
 
-  const result = await applyAdminMemberOperation({
+  return applyAdminMemberOperation({
     accountId: context.accountId,
     memberId: input.memberId,
     actorUserId: context.actorUserId,
     operation: input.operation,
   });
-  if (result.ok && input.operation.type === "revoke") {
-    await setInAppPendingMembershipEligibility({
-      userId: result.value.member.userId,
-      memberId: result.value.member.id,
-      eligible: false,
-    });
-  }
-  return result;
 }
 
 export async function respondToInAppAccountMemberInvite(
@@ -235,20 +245,12 @@ export async function respondToInAppAccountMemberInvite(
   const validated = await validatePendingAccountMemberInvite(context, input);
   if (!validated.ok) return validated;
 
-  const result = await applySelfServiceInviteOperation({
+  return applySelfServiceInviteOperation({
     accountId: input.accountId,
     memberId: input.memberId,
     actorUserId: context.actorUserId,
     operation: input.operation,
   });
-  if (!result.ok) return result;
-
-  await setInAppPendingMembershipEligibility({
-    userId: context.actorUserId,
-    memberId: input.memberId,
-    eligible: false,
-  });
-  return result;
 }
 
 export async function activateAccountMemberEmailInvite(
@@ -257,9 +259,9 @@ export async function activateAccountMemberEmailInvite(
 ) {
   if (!isAccountMembersEnabled()) return { ok: false, error: "feature_disabled" } as const;
 
-  const inAppMembershipIds = await getInAppPendingMembershipIds(context.actorUserId);
-  if (!inAppMembershipIds.ok) return inAppMembershipIds;
-  if (inAppMembershipIds.value.includes(input.memberId)) {
+  const channel = await getInviteChannel(input);
+  if (!channel.ok) return channel;
+  if (channel.value !== "email") {
     return { ok: false, error: "invalid_transition" } as const;
   }
 
@@ -275,9 +277,7 @@ export async function listPendingAccountMemberInvites(
   context: AccountMemberUserContext,
 ): Promise<AccountMemberResult<readonly PendingAccountMemberInvite[]>> {
   if (!isAccountMembersEnabled()) return { ok: false, error: "feature_disabled" };
-  const inAppMembershipIds = await getInAppPendingMembershipIds(context.actorUserId);
-  if (!inAppMembershipIds.ok) return inAppMembershipIds;
-  return listSelfServicePendingMemberships(context.actorUserId, inAppMembershipIds.value);
+  return listSelfServicePendingMemberships(context.actorUserId);
 }
 
 export async function validatePendingAccountMemberInvite(
@@ -291,12 +291,11 @@ export async function validatePendingAccountMemberInvite(
     actorUserId: context.actorUserId,
   });
   if (!membership.ok) return membership;
-  const inAppMembershipIds = await getInAppPendingMembershipIds(context.actorUserId);
-  if (!inAppMembershipIds.ok) return inAppMembershipIds;
+  const channel = await getInviteChannel(input);
+  if (!channel.ok) return channel;
   return isSelfServiceInviteEligible({
-    memberId: membership.value.id,
     status: membership.value.status,
-    inAppPendingMembershipIds: inAppMembershipIds.value,
+    channel: channel.value,
   })
     ? membership
     : { ok: false, error: "invalid_transition" };

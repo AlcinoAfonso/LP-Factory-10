@@ -3,6 +3,7 @@ import type { MemberRole, MemberStatus } from "@/lib/types/status";
 import {
   MANAGEABLE_MEMBER_ROLES,
   type AccountMemberError,
+  type AccountMemberInviteChannel,
   type AccountMemberResult,
   type AdminMemberOperation,
   type InviteCycleClassification,
@@ -25,11 +26,34 @@ export function isManageableMemberRole(value: string): value is ManageableMember
 }
 
 export function isSelfServiceInviteEligible(input: Readonly<{
-  memberId: string;
   status: MemberStatus;
-  inAppPendingMembershipIds: readonly string[];
+  channel: AccountMemberInviteChannel | null;
 }>): boolean {
-  return input.status === "pending" && input.inAppPendingMembershipIds.includes(input.memberId);
+  return input.status === "pending" && input.channel === "in_app";
+}
+
+export function decideInviteChannel(input: Readonly<{
+  existingChannel: AccountMemberInviteChannel | null;
+  preparedIdempotently: boolean;
+  isConfirmed: boolean;
+}>): AccountMemberInviteChannel | null {
+  if (!input.preparedIdempotently) return input.isConfirmed ? "in_app" : "email";
+  if (input.existingChannel) return input.existingChannel;
+  if (input.isConfirmed) return null;
+  return "email";
+}
+
+export function selectLatestInviteChannels(
+  orderedEvents: readonly Readonly<{
+    memberId: string;
+    channel: AccountMemberInviteChannel;
+  }>[],
+): ReadonlyMap<string, AccountMemberInviteChannel> {
+  const channels = new Map<string, AccountMemberInviteChannel>();
+  for (const event of orderedEvents) {
+    if (!channels.has(event.memberId)) channels.set(event.memberId, event.channel);
+  }
+  return channels;
 }
 
 export type InviteAuthRequestDecision =

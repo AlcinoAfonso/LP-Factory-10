@@ -36,7 +36,7 @@ export type AccountMemberError =
   | "invalid_transition"
   | "membership_conflict"
   | "auth_lookup_failed"
-  | "auth_state_failed"
+  | "invite_channel_unavailable"
   | "auth_create_failed"
   | "auth_invite_failed"
   | "feature_disabled"
@@ -79,8 +79,10 @@ export type MemberMutationResult = Readonly<{
 
 export type AccountMemberInvitationResult = Readonly<{
   member: AccountMemberRecord;
-  delivery: "email" | "in_app";
+  delivery: AccountMemberInviteChannel;
 }>;
+
+export type AccountMemberInviteChannel = "email" | "in_app";
 
 export type PendingAccountMemberInvite = Readonly<{
   memberId: string;
