@@ -44,14 +44,21 @@ export function decideInviteChannel(input: Readonly<{
 }
 
 export function selectLatestInviteChannels(
+  currentCycleIds: ReadonlyMap<string, string>,
   orderedEvents: readonly Readonly<{
     memberId: string;
+    cycleId: string;
     channel: AccountMemberInviteChannel;
   }>[],
 ): ReadonlyMap<string, AccountMemberInviteChannel> {
   const channels = new Map<string, AccountMemberInviteChannel>();
   for (const event of orderedEvents) {
-    if (!channels.has(event.memberId)) channels.set(event.memberId, event.channel);
+    if (
+      !channels.has(event.memberId) &&
+      currentCycleIds.get(event.memberId) === event.cycleId
+    ) {
+      channels.set(event.memberId, event.channel);
+    }
   }
   return channels;
 }

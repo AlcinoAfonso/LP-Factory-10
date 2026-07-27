@@ -39,11 +39,13 @@ type PendingAccountRow = Readonly<{
 type InviteChannelEventRow = Readonly<{
   id: string;
   record_id: string;
+  action?: string;
   changes_json: unknown;
 }>;
 
 const MEMBER_COLUMNS = "id,account_id,user_id,role,status,created_at,invited_by";
 const INVITE_CHANNEL_EVENT = "e11_account_member_invite_channel";
+const HUB_DISPATCH_EVENT = "hub_dispatch";
 
 export async function listAccountMemberships(
   accountId: string,
@@ -224,6 +226,11 @@ export async function recordInviteChannel(input: Readonly<{
   actorUserId: string;
   channel: AccountMemberInviteChannel;
 }>): Promise<AccountMemberResult<true>> {
+  const cycleIds = await getPendingCycleIds([input.memberId], input.accountId);
+  if (!cycleIds.ok) return cycleIds;
+  const cycleId = cycleIds.value.get(input.memberId);
+  if (!cycleId) return { ok: false, error: "invite_channel_unavailable" };
+
   const supabase = createServiceClient();
   const { error } = await supabase.from("audit_logs").insert({
     table_name: "account_users",
@@ -231,7 +238,10 @@ export async function recordInviteChannel(input: Readonly<{
     action: "insert",
     user_id: input.userId,
     actor_user_id: input.actorUserId,
-    changes_json: { invite_channel: input.channel },
+    changes_json: {
+      invite_channel: input.channel,
+      pending_cycle_event_id: cycleId,
+    },
     account_id: input.accountId,
     event: INVITE_CHANNEL_EVENT,
   });
@@ -255,6 +265,10 @@ async function getInviteChannels(
 ): Promise<AccountMemberResult<ReadonlyMap<string, AccountMemberInviteChannel>>> {
   if (memberIds.length === 0) return { ok: true, value: new Map() };
 
+  const cycleIds = await getPendingCycleIds(memberIds, accountId);
+  if (!cycleIds.ok) return cycleIds;
+  if (cycleIds.value.size === 0) return { ok: true, value: new Map() };
+
   const supabase = createServiceClient();
   let query = supabase
     .from("audit_logs")
@@ -268,19 +282,81 @@ async function getInviteChannels(
   const { data, error } = await query;
   if (error) return { ok: false, error: "read_failed" };
 
-  const events: Array<{ memberId: string; channel: AccountMemberInviteChannel }> = [];
+  const events: Array<{
+    memberId: string;
+    cycleId: string;
+    channel: AccountMemberInviteChannel;
+  }> = [];
   for (const row of (data ?? []) as InviteChannelEventRow[]) {
-    const channel = readInviteChannel(row.changes_json);
-    if (!channel) return { ok: false, error: "read_failed" };
-    events.push({ memberId: row.record_id, channel });
+    const event = readInviteChannelEvent(row.changes_json);
+    if (!event) return { ok: false, error: "read_failed" };
+    events.push({ memberId: row.record_id, ...event });
   }
-  return { ok: true, value: selectLatestInviteChannels(events) };
+  return { ok: true, value: selectLatestInviteChannels(cycleIds.value, events) };
 }
 
-function readInviteChannel(value: unknown): AccountMemberInviteChannel | null {
+async function getPendingCycleIds(
+  memberIds: readonly string[],
+  accountId?: string,
+): Promise<AccountMemberResult<ReadonlyMap<string, string>>> {
+  const supabase = createServiceClient();
+  let query = supabase
+    .from("audit_logs")
+    .select("id,record_id,action,changes_json")
+    .eq("table_name", "account_users")
+    .eq("event", HUB_DISPATCH_EVENT)
+    .in("record_id", memberIds)
+    .order("created_at", { ascending: false })
+    .order("id", { ascending: false });
+  if (accountId) query = query.eq("account_id", accountId);
+
+  const { data, error } = await query;
+  if (error) return { ok: false, error: "read_failed" };
+
+  const cycles = new Map<string, string>();
+  for (const row of (data ?? []) as InviteChannelEventRow[]) {
+    if (!cycles.has(row.record_id) && isPendingCycleEntry(row.action, row.changes_json)) {
+      cycles.set(row.record_id, row.id);
+    }
+  }
+  return { ok: true, value: cycles };
+}
+
+function isPendingCycleEntry(action: string | undefined, value: unknown): boolean {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return false;
+  const changes = value as Record<string, unknown>;
+  if (action === "insert") {
+    if (changes.status === "pending") return true;
+    const inserted = changes.new;
+    return Boolean(
+      inserted &&
+        typeof inserted === "object" &&
+        !Array.isArray(inserted) &&
+        (inserted as Record<string, unknown>).status === "pending",
+    );
+  }
+  if (action !== "update") return false;
+  const status = changes.status;
+  return Boolean(
+    status &&
+      typeof status === "object" &&
+      !Array.isArray(status) &&
+      (status as Record<string, unknown>).new === "pending" &&
+      (status as Record<string, unknown>).old !== "pending",
+  );
+}
+
+function readInviteChannelEvent(value: unknown): Readonly<{
+  channel: AccountMemberInviteChannel;
+  cycleId: string;
+}> | null {
   if (!value || typeof value !== "object" || Array.isArray(value)) return null;
-  const channel = (value as Record<string, unknown>).invite_channel;
-  return channel === "email" || channel === "in_app" ? channel : null;
+  const record = value as Record<string, unknown>;
+  const channel = record.invite_channel;
+  const cycleId = record.pending_cycle_event_id;
+  return (channel === "email" || channel === "in_app") && typeof cycleId === "string"
+    ? { channel, cycleId }
+    : null;
 }
 
 export async function getAccountSubdomain(

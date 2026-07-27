@@ -211,13 +211,37 @@ const cases: readonly Readonly<{ name: string; run: () => void }>[] = [
     name: "append-only channel events preserve concurrent memberships independently",
     run: () => {
       const otherMemberId = "10000000-0000-4000-8000-000000000004";
-      const channels = selectLatestInviteChannels([
-        { memberId: TARGET_ID, channel: "email" },
-        { memberId: otherMemberId, channel: "in_app" },
-      ]);
+      const channels = selectLatestInviteChannels(
+        new Map([
+          [TARGET_ID, "cycle-a"],
+          [otherMemberId, "cycle-b"],
+        ]),
+        [
+          { memberId: TARGET_ID, cycleId: "cycle-a", channel: "email" },
+          { memberId: otherMemberId, cycleId: "cycle-b", channel: "in_app" },
+        ],
+      );
       assert.equal(channels.get(TARGET_ID), "email");
       assert.equal(channels.get(otherMemberId), "in_app");
       assert.equal(channels.size, 2);
+    },
+  },
+  {
+    name: "an old channel event cannot authorize a restarted pending cycle",
+    run: () => {
+      const channels = selectLatestInviteChannels(
+        new Map([[TARGET_ID, "current-cycle"]]),
+        [{ memberId: TARGET_ID, cycleId: "previous-cycle", channel: "email" }],
+      );
+      assert.equal(channels.has(TARGET_ID), false);
+      assert.equal(
+        decideInviteChannel({
+          existingChannel: channels.get(TARGET_ID) ?? null,
+          preparedIdempotently: true,
+          isConfirmed: true,
+        }),
+        null,
+      );
     },
   },
   {
