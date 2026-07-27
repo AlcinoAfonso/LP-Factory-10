@@ -1,4 +1,4 @@
-# docs/prompt-abc.md vs13
+# docs/prompt-abc.md vs14
 
 PROMPT ABC
 
@@ -37,7 +37,7 @@ Gerar um ABC humano, curto, delta-only e executável.
    * histórico operacional;
    * passo superado.
 4. Comparar com o documento atual.
-5. Quando o DOC_ALVO for `docs/base-tecnica.md`, validar autoridade, momento e delta literal conforme 6.2 antes de emitir qualquer operação.
+5. Quando o DOC_ALVO for `docs/base-tecnica.md`, validar escopo, evidência, durabilidade e residência conforme 6.2 antes de emitir qualquer operação.
 6. Emitir somente o menor delta necessário.
 
 ## 5. Residência documental
@@ -66,11 +66,14 @@ Um assunto deve ter uma única residência. Não duplicar fonte canônica.
 
 ### 6.2 Base Técnica
 
-* A Base Técnica é read-only por padrão durante a execução de plano aprovado.
-* O Executor não pode criar, redigir, reinterpretar, ampliar, reduzir ou remover regra da Base Técnica por inferência da implementação.
-* Durante execução, alteração da Base só é permitida quando o plano aprovado contiver previamente o delta literal completo, com operações, alvos e conteúdos aprovados antes do checkpoint de execução.
-* Instrução genérica como “atualizar a Base Técnica com o novo boundary” não autoriza o Executor a produzir o texto normativo.
-* Necessidade material descoberta durante a implementação deve interromper o delta documental e ser encaminhada ao Analista e, quando necessário, ao humano; não improvisar regra global no mesmo fluxo.
+* O Executor pode atualizar a Base Técnica no mesmo PR como fechamento documental da implementação aprovada.
+* A atualização deve ocorrer por este Prompt ABC; o Executor não edita a Base livremente nem aplica texto fora das operações literais emitidas pelo ABC.
+* O plano aprovado deve autorizar o escopo documental, identificando o contrato, boundary ou regra técnica afetada; não precisa antecipar o texto literal.
+* Gerar o ABC após existir evidência implementada e validada no checkpoint correspondente; não documentar hipótese ou arquitetura ainda não materializada.
+* O RELATÓRIO deve informar a implementação concluída, o escopo aprovado e as fontes canônicas consultadas.
+* Se a implementação não produzir regra técnica durável além do caso imediato, emitir `SEM ALTERAÇÕES NECESSÁRIAS`.
+* O delta documental não pode ampliar retrospectivamente o escopo da implementação nem autorizar novo boundary, rota, banco, serviço, automação ou comportamento não aprovado.
+* Necessidade material fora do escopo aprovado deve interromper esse delta e ser encaminhada ao Analista e, quando necessário, ao humano.
 * Evidência de um único caso, fase, implementação ou PR não demonstra, isoladamente, que uma regra é durável ou reutilizável.
 * Só gerar delta para regra técnica durável e reutilizável além do caso imediato.
 * Não registrar detalhes de fase, etapa ou caso E*.
