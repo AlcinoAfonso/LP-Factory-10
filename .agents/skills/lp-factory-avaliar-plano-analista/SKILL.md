@@ -12,7 +12,7 @@ Executar duas passagens sequenciais com uma única instância do custom agent `a
 1. Confirmar worktree, branch, repositório, caso e estado Git.
 2. Obter:
    - referências imutáveis, paths e conteúdos integrais de v1 e v2;
-   - plano conceitual aplicável ou `N/A` confirmado;
+   - plano conceitual somente quando houver referência competente ou vínculo inequívoco com o recorte; caso contrário, `N/A` confirmado sem bloquear o fluxo;
    - decisões humanas registradas, roadmap, casos adjacentes e fontes técnicas necessárias;
    - parecer integral de cada especialista incluído;
    - matriz de consolidação.
@@ -28,8 +28,9 @@ Exigir uma linha por achado com:
 - especialista;
 - ID estável;
 - achado fiel ou referência inequívoca;
-- classificação original;
+- classificação original e relação com o escopo: `preservação`, `extensão adjacente necessária e proporcional` ou `expansão`;
 - tratamento: `incorporado`, `não incorporado — justificado`, `requer decisão humana` ou `requer nova avaliação especializada`;
+- para update, destino: `aplicar agora`, `usar como referência, validação ou trava`, `preservar como oportunidade estratégica condicional` ou `não aplicável ao recorte`;
 - seção ou trecho exato na v2, ou `N/A` justificável;
 - evidência ou justificativa.
 
@@ -38,7 +39,7 @@ Matriz incompleta ou sem correspondência verificável impede o handoff.
 ## Passagem 1
 
 1. Iniciar exatamente um subagent `analista` com `fork_turns=none`, quando disponível, no modo `passagem_independente`.
-2. Entregar apenas v1, v2, plano conceitual ou `N/A`, decisões registradas, caso, roadmap, casos adjacentes e fontes técnicas.
+2. Entregar apenas v1, v2, plano conceitual quando existente ou `N/A`, decisões registradas, caso, roadmap, casos adjacentes e fontes técnicas.
 3. Não entregar, citar ou expor pareceres e matriz por prompt, histórico ou anexos.
 4. Preservar integralmente a resposta. Se contaminada, descartá-la e reiniciar uma única instância limpa.
 
