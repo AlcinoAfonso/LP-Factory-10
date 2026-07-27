@@ -48,7 +48,8 @@ Matriz incompleta ou sem correspondência verificável impede o handoff.
 1. Continuar no mesmo thread no modo `auditoria_consolidacao`.
 2. Entregar pareceres integrais e matriz, sem reescrever achados.
 3. Exigir auditoria linha a linha contra os pareceres e a v2, preservando a Passagem 1.
-4. Aguardar a conclusão formal definida no contrato runtime de `.codex/agents/analista.toml`.
+4. Antes da conclusão, exigir o filtro de bloqueio definido no contrato runtime: conflito resolvido por fonte ou invariante vira correção objetiva; validação exclusivamente pós-merge vira pendência; precedência de banco exige prova de inevitabilidade.
+5. Aguardar a conclusão formal definida no contrato runtime de `.codex/agents/analista.toml`.
 
 ## Devolver
 
@@ -58,7 +59,7 @@ Conferir o estado Git. Se faltar passagem ou conclusão, devolver o conteúdo e 
 
 ## Revisar correções
 
-Usar `revisao_delta` no mesmo Analista, entregando versões ou diff e correções solicitadas. Retornar ao especialista somente diante de questão material nova ou conclusão especializada alterada. Liberar o gate apenas após `aprovado para merge do plano-base v2`.
+Usar `revisao_delta` no mesmo Analista, entregando versões ou diff e correções solicitadas. Retornar ao especialista somente diante de questão material nova ou conclusão especializada alterada. Não encaminhar bloqueio humano sem o filtro obrigatório do contrato runtime. Liberar o gate apenas após `aprovado para merge do plano-base v2`.
 
 ## Revisar o roadmap final
 
