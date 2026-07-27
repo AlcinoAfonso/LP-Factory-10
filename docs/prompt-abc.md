@@ -1,4 +1,4 @@
-# docs/prompt-abc.md vs14
+# docs/prompt-abc.md vs15
 
 PROMPT ABC
 
@@ -37,7 +37,7 @@ Gerar um ABC humano, curto, delta-only e executável.
    * histórico operacional;
    * passo superado.
 4. Comparar com o documento atual.
-5. Quando o DOC_ALVO for `docs/base-tecnica.md`, validar escopo, evidência, durabilidade e residência conforme 6.2 antes de emitir qualquer operação.
+5. Aplicar o gate específico do DOC_ALVO antes de emitir qualquer operação.
 6. Emitir somente o menor delta necessário.
 
 ## 5. Residência documental
@@ -66,24 +66,15 @@ Um assunto deve ter uma única residência. Não duplicar fonte canônica.
 
 ### 6.2 Base Técnica
 
-* O Executor pode atualizar a Base Técnica no mesmo PR como fechamento documental da implementação aprovada.
-* A atualização deve ocorrer por este Prompt ABC; o Executor não edita a Base livremente nem aplica texto fora das operações literais emitidas pelo ABC.
-* O plano aprovado deve autorizar o escopo documental, identificando o contrato, boundary ou regra técnica afetada; não precisa antecipar o texto literal.
-* Gerar o ABC após existir evidência implementada e validada no checkpoint correspondente; não documentar hipótese ou arquitetura ainda não materializada.
-* O RELATÓRIO deve informar a implementação concluída, o escopo aprovado e as fontes canônicas consultadas.
-* Se a implementação não produzir regra técnica durável além do caso imediato, emitir `SEM ALTERAÇÕES NECESSÁRIAS`.
-* O delta documental não pode ampliar retrospectivamente o escopo da implementação nem autorizar novo boundary, rota, banco, serviço, automação ou comportamento não aprovado.
-* Necessidade material fora do escopo aprovado deve interromper esse delta e ser encaminhada ao Analista e, quando necessário, ao humano.
-* Evidência de um único caso, fase, implementação ou PR não demonstra, isoladamente, que uma regra é durável ou reutilizável.
-* Só gerar delta para regra técnica durável e reutilizável além do caso imediato.
-* Não registrar detalhes de fase, etapa ou caso E*.
-* Não registrar condições temporárias, incluindo “antes do apply”, “até o merge”, “pendente de verificação”, “nesta fase” ou equivalentes.
-* Não copiar valores ou listas definidos em código, registry, schema ou configuração versionada.
-* Não registrar inventário de rotas, adapters, tabelas, workflows ou arquivos do estado atual.
-* Regra específica de um único domínio pode permanecer quando for durável, proteger um boundary real e não houver outra fonte canônica suficiente.
+* Só gerar delta para regra técnica durável e reutilizável além do caso imediato; um único caso, fase, implementação ou PR não comprova durabilidade por si só.
+* Antes de adicionar regra ou subseção, verificar se o conteúdo já está coberto por regra global, fonte canônica existente ou ajuste/consolidação de trecho atual.
+* Regra específica de domínio só permanece quando protege boundary real e orienta implementações futuras sem exigir leitura da implementação interna.
+* Não registrar conteúdo transitório, histórico ou operacional, incluindo fase, etapa, caso E*, “antes do apply”, “até o merge”, “pendente de verificação”, “nesta fase” ou equivalente.
+* Não registrar inventários, valores, listas ou detalhes exatos definidos no repositório, código, registry, schema ou configuração versionada.
+* Não duplicar outra residência documental; quando a fonte própria for suficiente, registrar somente o invariável transversal necessário e o path canônico.
+* O delta documenta contrato técnico já implementado ou definido; não pode ampliar escopo, autorizar novo boundary, rota, banco, serviço, automação ou comportamento.
 * Preservar regras globais de classificação, responsabilidade e isolamento de boundaries.
-* Quando código ou documento próprio já for fonte canônica suficiente, registrar somente o invariável transversal necessário e o path dessa fonte.
-* Rejeitar delta cuja fonte correta seja o repositório, `docs/schema.md`, `docs/design-system.md`, `docs/platform-config.md`, `docs/services.md`, `docs/automations.md` ou `docs/roadmap.md`.
+* Se nenhum conteúdo superar esses gates, emitir `SEM ALTERAÇÕES NECESSÁRIAS`.
 
 ### 6.3 Schema
 
