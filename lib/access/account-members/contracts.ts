@@ -80,3 +80,11 @@ export type AccountMemberInvitationResult = Readonly<{
   member: AccountMemberRecord;
   delivery: "email" | "in_app";
 }>;
+
+export type PendingAccountMemberInvite = Readonly<{
+  memberId: string;
+  accountId: string;
+  accountName: string;
+  accountSubdomain: string;
+  role: ManageableMemberRole;
+}>;

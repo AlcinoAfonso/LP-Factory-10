@@ -12,6 +12,7 @@ import {
   getAccountSubdomain,
   getSelfServiceInviteMembership,
   listAccountMemberships,
+  listSelfServicePendingMemberships,
   preparePendingMembership,
 } from "./adapters/accountMembersAdapter";
 import {
@@ -28,6 +29,7 @@ import type {
   AccountMemberRecord,
   AccountMemberResult,
   ManageableMemberRole,
+  PendingAccountMemberInvite,
 } from "./contracts";
 import { createSignedInviteState } from "./invite-state";
 import { isManageableMemberRole, isValidMemberEmail, normalizeMemberEmail } from "./policy";
@@ -43,6 +45,7 @@ export type {
   InviteCycleClassification,
   ManageableMemberRole,
   MemberMutationResult,
+  PendingAccountMemberInvite,
   SelfServiceInviteOperation,
 } from "./contracts";
 
@@ -206,6 +209,29 @@ export async function respondToAccountMemberInvite(
     actorUserId: context.actorUserId,
     operation: input.operation,
   });
+}
+
+export async function listPendingAccountMemberInvites(
+  context: AccountMemberUserContext,
+): Promise<AccountMemberResult<readonly PendingAccountMemberInvite[]>> {
+  if (!isAccountMembersEnabled()) return { ok: false, error: "feature_disabled" };
+  return listSelfServicePendingMemberships(context.actorUserId);
+}
+
+export async function validatePendingAccountMemberInvite(
+  context: AccountMemberUserContext,
+  input: Readonly<{ accountId: string; memberId: string }>,
+): Promise<AccountMemberResult<AccountMemberRecord>> {
+  if (!isAccountMembersEnabled()) return { ok: false, error: "feature_disabled" };
+  const membership = await getSelfServiceInviteMembership({
+    accountId: input.accountId,
+    memberId: input.memberId,
+    actorUserId: context.actorUserId,
+  });
+  if (!membership.ok) return membership;
+  return membership.value.status === "pending"
+    ? membership
+    : { ok: false, error: "invalid_transition" };
 }
 
 export async function validateAccountMemberInvite(

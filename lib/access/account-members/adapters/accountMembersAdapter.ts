@@ -9,6 +9,7 @@ import type {
   AdminMemberOperation,
   ManageableMemberRole,
   MemberMutationResult,
+  PendingAccountMemberInvite,
   SelfServiceInviteOperation,
 } from "../contracts";
 import {
@@ -25,6 +26,12 @@ type AccountMemberRow = Readonly<{
   status: string;
   created_at: string;
   invited_by: string | null;
+}>;
+
+type PendingAccountRow = Readonly<{
+  id: string;
+  name: string;
+  subdomain: string;
 }>;
 
 const MEMBER_COLUMNS = "id,account_id,user_id,role,status,created_at,invited_by";
@@ -133,6 +140,63 @@ export async function getSelfServiceInviteMembership(input: Readonly<{
     return { ok: false, error: "member_not_found" };
   }
   return { ok: true, value: current.value };
+}
+
+export async function listSelfServicePendingMemberships(
+  actorUserId: string,
+): Promise<AccountMemberResult<readonly PendingAccountMemberInvite[]>> {
+  const supabase = createServiceClient();
+  const { data: membershipData, error: membershipError } = await supabase
+    .from("account_users")
+    .select(MEMBER_COLUMNS)
+    .eq("user_id", actorUserId)
+    .eq("status", "pending")
+    .order("created_at", { ascending: true })
+    .order("id", { ascending: true });
+
+  if (membershipError) return { ok: false, error: "read_failed" };
+
+  const memberships = ((membershipData ?? []) as AccountMemberRow[]).map(mapAccountMemberRow);
+  if (memberships.some((membership) => membership === null)) {
+    return { ok: false, error: "read_failed" };
+  }
+
+  const pending = memberships.filter(
+    (membership): membership is AccountMemberRecord => membership !== null,
+  );
+  if (pending.length === 0) return { ok: true, value: [] };
+
+  const accountIds = Array.from(new Set(pending.map((membership) => membership.accountId)));
+  const { data: accountData, error: accountError } = await supabase
+    .from("accounts")
+    .select("id,name,subdomain")
+    .in("id", accountIds);
+
+  if (accountError) return { ok: false, error: "read_failed" };
+  const accounts = new Map(
+    ((accountData ?? []) as PendingAccountRow[]).map((account) => [account.id, account] as const),
+  );
+
+  const invites = pending.map((membership): PendingAccountMemberInvite | null => {
+    const account = accounts.get(membership.accountId);
+    if (!account || !account.name?.trim() || !account.subdomain?.trim()) return null;
+    if (!isManageableMemberRole(membership.role)) return null;
+    return {
+      memberId: membership.id,
+      accountId: membership.accountId,
+      accountName: account.name.trim(),
+      accountSubdomain: account.subdomain.trim(),
+      role: membership.role,
+    };
+  });
+
+  if (invites.some((invite) => invite === null)) {
+    return { ok: false, error: "read_failed" };
+  }
+  return {
+    ok: true,
+    value: invites.filter((invite): invite is PendingAccountMemberInvite => invite !== null),
+  };
 }
 
 export async function getAccountSubdomain(

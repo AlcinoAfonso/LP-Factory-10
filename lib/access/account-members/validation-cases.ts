@@ -120,6 +120,16 @@ const cases: readonly Readonly<{ name: string; run: () => void }>[] = [
       assert.deepEqual(
         decideSelfServiceInviteTransition({
           actorUserId: ACTOR_ID,
+          targetUserId: ACTOR_ID,
+          targetRole: "viewer",
+          targetStatus: "pending",
+          operation: "decline",
+        }),
+        { ok: true, value: { nextRole: "viewer", nextStatus: "revoked", idempotent: false } },
+      );
+      assert.deepEqual(
+        decideSelfServiceInviteTransition({
+          actorUserId: ACTOR_ID,
           targetUserId: TARGET_ID,
           targetRole: "viewer",
           targetStatus: "pending",
