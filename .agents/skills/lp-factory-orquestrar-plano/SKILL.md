@@ -86,16 +86,17 @@ Parar somente diante de handoff incompleto, investigação necessária ou decis�
 ## 6. Executar no mesmo PR
 
 1. Invocar internamente `$lp-factory-executar-plano` no checkpoint aprovado, preservando branch, worktree e PR.
-2. Não repetir especialistas. Usar o Analista somente nos gates por subseção, com a matriz e os pareceres pertinentes.
-3. Executar todas as subseções e validações aplicáveis; manter o PR draft atualizado e retomar por checkpoints.
-4. Depois da última subseção e dos testes aplicáveis, declarar a entrega completa e parar. Não acionar nenhum modo do Analista nem o Estrategista após essa declaração.
-5. O Estrategista atua somente por instrução humana e lê diretamente o PR. Correções devolvidas pelo humano são aplicadas e publicadas sem novo Analista; o mesmo Estrategista reavalia quando instruído.
+2. Em cada subseção, exigir que o subfluxo identifique documentos canônicos afetados e execute `$lp-factory-abc` separadamente para cada um antes do gate do Analista. Aplicar somente o delta literal; com `SEM ALTERAÇÕES NECESSÁRIAS`, preservar o documento. Não permitir edição canônica direta.
+3. Não repetir especialistas. Usar o Analista somente nos gates por subseção, com a matriz, os pareceres pertinentes e as evidências de execução do ABC quando houver documento canônico avaliado.
+4. Executar todas as subseções e validações aplicáveis; manter o PR draft atualizado e retomar por checkpoints.
+5. Depois da última subseção e dos testes aplicáveis, declarar a entrega completa, informar os ABCs executados e seus resultados por documento e parar. Não acionar nenhum modo do Analista nem o Estrategista após essa declaração.
+6. O Estrategista atua somente por instrução humana e lê diretamente o PR. Correções devolvidas pelo humano são aplicadas e publicadas sem novo Analista; o mesmo Estrategista reavalia quando instruído.
 
 Manter a matriz disponível na entrega. Removê-la depois somente por instrução humana, sem novo gate do Analista.
 
 ## Devolução
 
-Informar referências de v1, worktree, branch, pareceres, Passagens 1 e 2, ABC e delta do roadmap, checkpoints, validações, arquivos, commits, PR e pendências. Não reescrever pareceres.
+Informar referências de v1, worktree, branch, pareceres, Passagens 1 e 2, ABC e delta do roadmap, ABCs da implementação e seus resultados por documento, checkpoints, validações, arquivos, commits, PR e pendências. Não reescrever pareceres.
 
 ## Limites
 

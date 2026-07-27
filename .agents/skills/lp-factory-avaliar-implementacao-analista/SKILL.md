@@ -10,7 +10,7 @@ Usar exatamente um custom agent `analista` read-only por revisão. O task princi
 ## Preparar
 
 1. Confirmar repositório, worktree, branch, estado Git, SHA do plano aprovado e identificador exato da subseção.
-2. Entregar ao Analista o trecho integral da subseção, critérios de aceite, diff desde o checkpoint anterior, arquivos alterados, validações executadas e fontes técnicas necessárias. No handoff da orquestração, incluir a matriz e os pareceres especializados nela referenciados que forem pertinentes à subseção.
+2. Entregar ao Analista o trecho integral da subseção, critérios de aceite, diff desde o checkpoint anterior, arquivos alterados, validações executadas e fontes técnicas necessárias. No handoff da orquestração, incluir a matriz e os pareceres especializados nela referenciados que forem pertinentes à subseção. Para cada documento canônico avaliado, incluir snapshot anterior, relatório factual, resultado integral do ABC e documento resultante.
 3. Para revisão final solicitada fora do fluxo automatizado, entregar todos os checkpoints, diff acumulado, resultados integrados, delta documental, matriz, pareceres especializados preservados e eventuais evidências de teste humano.
 4. Parar se plano, fase, diff ou evidência forem ambíguos; não reconstruir o escopo por inferência.
 
@@ -18,7 +18,8 @@ Usar exatamente um custom agent `analista` read-only por revisão. O task princi
 
 1. Acionar o `analista` em `revisao_implementacao` ou `revisao_final_implementacao`.
 2. Usar a matriz como índice de rastreabilidade. Em revisão de subseção, expor somente os pareceres de plano nela referenciados que sejam pertinentes; na revisão final, disponibilizar a matriz e todos os pareceres preservados. O Analista não refaz os especialistas.
-3. Preservar a resposta integral e o estado Git antes e depois da delegação.
+3. Quando houver documento canônico, auditar se o diff corresponde somente às operações emitidas pelo ABC e se `SEM ALTERAÇÕES NECESSÁRIAS` preservou o documento. Não refazer os critérios internos do contrato canônico.
+4. Preservar a resposta integral e o estado Git antes e depois da delegação.
 
 No fluxo de `$lp-factory-orquestrar-plano`, usar esta skill somente nos gates por subseção. Depois que o Executor declarar a entrega completa, não acionar nenhuma revisão do Analista; a avaliação seguinte pertence ao Estrategista acionado pelo humano.
 
