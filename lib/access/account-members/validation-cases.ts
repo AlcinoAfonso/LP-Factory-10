@@ -9,11 +9,13 @@ import {
 
 import {
   classifyInviteCycle,
+  decideInviteAuthRequest,
   decideAdminMemberTransition,
   decideSelfServiceInviteTransition,
   isManageableMemberRole,
   isValidMemberEmail,
   normalizeMemberEmail,
+  shouldDiscardInviteStateAfterActivationError,
 } from "./policy";
 
 const ACTOR_ID = "10000000-0000-4000-8000-000000000001";
@@ -177,6 +179,33 @@ const cases: readonly Readonly<{ name: string; run: () => void }>[] = [
       });
       assert.equal(getInviteStateCookieName(TARGET_ID), `e11_invite_${TARGET_ID}`);
       assert.notEqual(getInviteStateCookieName(TARGET_ID), getInviteStateCookieName(ACTOR_ID));
+    },
+  },
+  {
+    name: "fails closed when an Auth invite has no signed state",
+    run: () => {
+      assert.equal(
+        decideInviteAuthRequest({ type: "invite", inviteState: "", featureEnabled: true }),
+        "invalid_invite_state",
+      );
+      assert.equal(
+        decideInviteAuthRequest({ type: "invite", inviteState: "signed", featureEnabled: false }),
+        "feature_disabled",
+      );
+      assert.equal(
+        decideInviteAuthRequest({ type: "recovery", inviteState: "", featureEnabled: false }),
+        "not_account_member_invite",
+      );
+    },
+  },
+  {
+    name: "discards invite state only after definitive activation rejection",
+    run: () => {
+      assert.equal(shouldDiscardInviteStateAfterActivationError("member_not_found"), true);
+      assert.equal(shouldDiscardInviteStateAfterActivationError("owner_protected"), true);
+      assert.equal(shouldDiscardInviteStateAfterActivationError("invalid_transition"), true);
+      assert.equal(shouldDiscardInviteStateAfterActivationError("write_failed"), false);
+      assert.equal(shouldDiscardInviteStateAfterActivationError("read_failed"), false);
     },
   },
 ];

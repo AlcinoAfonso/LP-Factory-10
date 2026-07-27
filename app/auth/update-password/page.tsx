@@ -17,6 +17,7 @@ import {
   getInviteStateCookieName,
   verifySignedInviteState,
 } from "@/lib/access/account-members/invite-state";
+import { shouldDiscardInviteStateAfterActivationError } from "@/lib/access/account-members/policy";
 import { requireAuthenticatedAccountMemberUser } from "@/lib/access/guards";
 import { createClient } from "@/lib/supabase/server";
 
@@ -135,6 +136,10 @@ async function completeAccountMemberInviteAction(formData: FormData) {
     operation: "accept",
   });
   if (!activated.ok) {
+    if (shouldDiscardInviteStateAfterActivationError(activated.error)) {
+      await clearInviteStateCookie(cookieName);
+      redirect(invitePasswordErrorPath(inviteId, "Este convite não pode mais ser concluído."));
+    }
     redirect(invitePasswordErrorPath(inviteId, "Senha definida. Tente concluir o convite novamente."));
   }
 

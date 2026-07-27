@@ -9,6 +9,7 @@ import {
   verifySignedInviteState,
   type InviteStatePayload,
 } from "@/lib/access/account-members/invite-state";
+import { decideInviteAuthRequest } from "@/lib/access/account-members/policy";
 
 type CookieToSet = { name: string; value: string; options: CookieOptions };
 
@@ -173,13 +174,21 @@ export async function GET(req: NextRequest) {
     );
   }
 
-  if (type === "invite" && invite_state) {
-    if (!isAccountMembersEnabled()) {
+  const inviteDecision = decideInviteAuthRequest({
+    type,
+    inviteState: invite_state,
+    featureEnabled: isAccountMembersEnabled(),
+  });
+  if (inviteDecision !== "not_account_member_invite") {
+    if (inviteDecision === "feature_disabled") {
       return NextResponse.redirect(
         new URL("/auth/error?error=Convites%20indispon%C3%ADveis.", url),
       );
     }
-    if (!verifySignedInviteState(invite_state).ok) {
+    if (
+      inviteDecision === "invalid_invite_state" ||
+      !verifySignedInviteState(invite_state).ok
+    ) {
       return NextResponse.redirect(
         new URL("/auth/error?error=Contexto%20de%20convite%20inv%C3%A1lido.", url),
       );
@@ -227,10 +236,21 @@ export async function POST(req: NextRequest) {
   }
 
   let verifiedInviteState: InviteStatePayload | null = null;
-  if (type === "invite" && invite_state) {
-    if (!isAccountMembersEnabled()) {
+  const inviteDecision = decideInviteAuthRequest({
+    type,
+    inviteState: invite_state,
+    featureEnabled: isAccountMembersEnabled(),
+  });
+  if (inviteDecision !== "not_account_member_invite") {
+    if (inviteDecision === "feature_disabled") {
       return NextResponse.redirect(
         new URL("/auth/error?error=Convites%20indispon%C3%ADveis.", url),
+        303,
+      );
+    }
+    if (inviteDecision === "invalid_invite_state") {
+      return NextResponse.redirect(
+        new URL("/auth/error?error=Contexto%20de%20convite%20inv%C3%A1lido.", url),
         303,
       );
     }

@@ -24,6 +24,28 @@ export function isManageableMemberRole(value: string): value is ManageableMember
   return MANAGEABLE_MEMBER_ROLES.includes(value as ManageableMemberRole);
 }
 
+export type InviteAuthRequestDecision =
+  | "not_account_member_invite"
+  | "feature_disabled"
+  | "invalid_invite_state"
+  | "verify_invite_state";
+
+export function decideInviteAuthRequest(input: Readonly<{
+  type: string;
+  inviteState: string;
+  featureEnabled: boolean;
+}>): InviteAuthRequestDecision {
+  if (input.type !== "invite") return "not_account_member_invite";
+  if (!input.featureEnabled) return "feature_disabled";
+  return input.inviteState ? "verify_invite_state" : "invalid_invite_state";
+}
+
+export function shouldDiscardInviteStateAfterActivationError(
+  error: AccountMemberError,
+): boolean {
+  return error === "member_not_found" || error === "owner_protected" || error === "invalid_transition";
+}
+
 export function classifyInviteCycle(input: Readonly<{
   existingStatus: MemberStatus | null;
   isConfirmed: boolean;
