@@ -1,5 +1,99 @@
 // src/lib/access/guards.ts
 import { checkSuperAdmin, checkPlatformAdmin } from '@/lib/admin';
+import { createClient } from '@/lib/supabase/server';
+import type { MemberRole } from '@/lib/types/status';
+import { getAccessContext } from './getAccessContext';
+
+const accountMembersManagerContextBrand: unique symbol = Symbol('accountMembersManagerContext');
+const accountMemberUserContextBrand: unique symbol = Symbol('accountMemberUserContext');
+
+export type AccountMembersManagerContext = Readonly<{
+  [accountMembersManagerContextBrand]: true;
+  accountId: string;
+  accountSubdomain: string;
+  actorUserId: string;
+  actorRole: Extract<MemberRole, 'owner' | 'admin'>;
+}>;
+
+export type AccountMemberUserContext = Readonly<{
+  [accountMemberUserContextBrand]: true;
+  actorUserId: string;
+}>;
+
+export type AccountMembersManagerGuardResult =
+  | Readonly<{ allowed: true; context: AccountMembersManagerContext }>
+  | Readonly<{
+      allowed: false;
+      reason:
+        | 'unauthenticated'
+        | 'account_not_allowed'
+        | 'membership_not_active'
+        | 'insufficient_role';
+    }>;
+
+export async function requireAccountMembersManager(
+  rawAccountSubdomain: string,
+): Promise<AccountMembersManagerGuardResult> {
+  const accountSubdomain = rawAccountSubdomain.trim().toLowerCase();
+  if (!accountSubdomain || accountSubdomain === 'home') {
+    return { allowed: false, reason: 'account_not_allowed' };
+  }
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+    error,
+  } = await supabase.auth.getUser();
+
+  if (error || !user?.id) return { allowed: false, reason: 'unauthenticated' };
+
+  const access = await getAccessContext({
+    params: { account: accountSubdomain },
+    userId: user.id,
+  });
+
+  if (!access || access.blocked) {
+    return { allowed: false, reason: 'account_not_allowed' };
+  }
+  if (access.status !== 'active') {
+    return { allowed: false, reason: 'membership_not_active' };
+  }
+  if (access.role !== 'owner' && access.role !== 'admin') {
+    return { allowed: false, reason: 'insufficient_role' };
+  }
+
+  return {
+    allowed: true,
+    context: {
+      [accountMembersManagerContextBrand]: true,
+      accountId: access.account_id,
+      accountSubdomain: access.account_slug ?? accountSubdomain,
+      actorUserId: user.id,
+      actorRole: access.role,
+    },
+  };
+}
+
+export async function requireAuthenticatedAccountMemberUser(): Promise<
+  | Readonly<{ allowed: true; context: AccountMemberUserContext }>
+  | Readonly<{ allowed: false; reason: 'unauthenticated' }>
+> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+    error,
+  } = await supabase.auth.getUser();
+
+  if (error || !user?.id) return { allowed: false, reason: 'unauthenticated' };
+
+  return {
+    allowed: true,
+    context: {
+      [accountMemberUserContextBrand]: true,
+      actorUserId: user.id,
+    },
+  };
+}
 
 /**
  * Guard: verifica super_admin via adapter
