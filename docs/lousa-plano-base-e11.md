@@ -45,6 +45,7 @@
 - O owner não é transferido, rebaixado, desativado ou revogado na E11.
 - Não haverá e-mail customizado pelo Core.
 - Não haverá tabela, serviço, fila, job, agente ou engine de convite.
+- A E11 preserva uma única branch e um único PR para v2 e implementação; não haverá `workflow_dispatch` pré-merge nem PR precursor. Apply da migration, configuração externa, redeploy, habilitação do gate e prova hospedada ocorrerão somente após o merge humano.
 
 ### 1.4. Decisões funcionais consolidadas
 
@@ -76,7 +77,8 @@
 - Toda mutação 1-a-1 usa filtros de conta, membership, usuário e estado esperado, aplica `.maxAffected(1)` e só retorna sucesso após confirmar exatamente uma linha ou o estado idempotente permitido.
 - `e-mail → user_id` será resolvido por `adapters/authAdminAdapter.ts` com `auth.admin.listUsers()` paginado, depois da autorização do owner/admin.
 - `lib/access/guards.ts` será estendido com um guard server-only de gestão de membros que resolve sessão e Access Context, exige conta permitida, membership `active` e papel `owner` ou `admin`, e devolve contexto autoritativo com `accountId`, `accountSubdomain`, `actorUserId` e `actorRole`.
-- Página, Server Actions e fluxos de convite usam esse guard antes de consultar Auth Admin ou chamar adapters privilegiados. A navegação pode usar o papel sanitizado do `AccessProvider` apenas para visibilidade; a URL e todas as actions repetem o guard server-side.
+- A página administrativa, suas Server Actions e os fluxos administrativos de convite usam esse guard antes de consultar Auth Admin ou chamar adapters privilegiados. A navegação pode usar o papel sanitizado do `AccessProvider` apenas para visibilidade; a URL e todas as actions administrativas repetem o guard server-side.
+- O autoatendimento em `/a/home` não usa o guard owner/admin. Ele exige sessão autenticada, deriva `actorUserId` exclusivamente de `auth.getUser()`, seleciona a linha por `account_user_id` e confirma `account_users.user_id = actorUserId` e status `pending` antes de aceitar ou recusar.
 - A UI nunca recebe resultado que revele a existência global de um e-mail no Auth.
 - E-mail novo segue a ordem:
   - normalizar e procurar o e-mail;
@@ -105,6 +107,7 @@
 - A migration não cria tabela, coluna, view, RPC ou `SECURITY DEFINER` e preserva o Trigger Hub e a proteção do último owner.
 - O gate server-only `E11_MEMBERS_ENABLED` é obrigatório, com ausência ou valor diferente de `true` interpretado como desabilitado. Enquanto desabilitado, a navegação não aparece e `/a/[account]/members`, Server Actions e o fluxo específico de convite falham fechados sem chamar Auth Admin nem realizar writes.
 - O booleano do gate pode ser passado explicitamente pelo layout server ao Header, mas não integra a decisão de autorização do `AccessProvider`.
+- Antes do merge, o PR entrega implementação, migration versionada, documentação e todas as validações locais, estáticas, contratuais e de Preview disponíveis com o gate fechado. A prova hospedada real não bloqueia commit, push ou merge; ela bloqueia somente a habilitação funcional pós-merge.
 
 ## 2. Contrato do caso
 
@@ -177,11 +180,13 @@
 - Gatilho: usuário confirmado entra em `/a/home`.
 - Entrada: sessão autenticada e vínculos próprios `pending`.
 - Processamento:
+  - exigir sessão autenticada e derivar o usuário por `auth.getUser()`, sem guard owner/admin;
   - verificar pendências antes do redirect automático para conta ativa;
   - mostrar conta, papel proposto e ações aceitar ou recusar;
   - processar uma linha selecionada por vez;
   - validar `account_users.user_id = usuário autenticado`.
 - Validação:
+  - a linha selecionada deve estar `pending` e ter `account_users.user_id = usuário autenticado`;
   - o usuário não acessa pendência de terceiro;
   - o vínculo permanece pendente sem expiração automática local;
   - aceite e recusa repetidos possuem resposta determinística.
@@ -216,6 +221,7 @@
 
 - A página, Server Actions e adapters devem validar sessão, conta e papel antes de qualquer operação administrativa.
 - Essa decisão é centralizada no guard de gestão de membros em `lib/access/guards.ts`; `policy.ts` recebe o contexto autorizado e aplica somente proteções de alvo, papel e transição.
+- O fluxo self-service de `/a/home` usa um guard autenticado próprio, sem requisito owner/admin, e autoriza somente a linha `pending` cujo `user_id` coincide com o usuário obtido por `auth.getUser()`.
 - Código client não acessa `SUPABASE_SECRET_KEY`, Auth Admin ou mutações privilegiadas.
 - O service client fica restrito a módulos server-only.
 - Toda escrita privilegiada deve repetir autorização no servidor e validar a linha afetada.
@@ -309,8 +315,10 @@
 - `/a/home` e sua precedência atual de redirect.
 - Supabase Auth Admin, template nativo `Invite user`, SMTP via Resend e Redirect URL allowlist.
 - Vercel Preview e Production para `INVITE_STATE_SECRET`, com redeploy após configuração.
-- `E11_MEMBERS_ENABLED`, ausente ou falso por padrão, até a migration ser aplicada e verificada, o secret e o Auth serem configurados e o deployment ser refeito.
-- Após merge humano: aguardar o workflow aprovado aplicar a migration, executar `supabase/snippets/e11_account_members_verify.sql`, configurar secret, template e redirects, habilitar o gate e redeployar; somente então executar a matriz hospedada.
+- `E11_MEMBERS_ENABLED`, ausente ou falso por padrão durante todo o PR e no primeiro deployment posterior ao merge.
+- Pré-merge: implementar no PR único, executar `npm ci`, validações próprias, `npm run check`, testes contratuais, revisão de migration e QA disponível com o gate fechado; commitar e publicar normalmente, sem apply remoto, configuração externa ou prova hospedada.
+- Pós-merge: aguardar o workflow aprovado aplicar a migration da `main`, executar `supabase/snippets/e11_account_members_verify.sql`, configurar `INVITE_STATE_SECRET`, template, Email OTP Expiration e redirects, redeployar ainda com o gate fechado, habilitar `E11_MEMBERS_ENABLED`, redeployar e então executar a matriz hospedada.
+- A prova hospedada é gate de ativação e fechamento operacional pós-merge, não de commit, push ou merge. Falha mantém o gate desabilitado e exige correção incremental pelo fluxo normal, sem fallback de e-mail próprio nem ativação parcial.
 - Não há dependência de E12, limite por plano, Stripe, automações ou agentes.
 
 ## 3. Fases e próxima ação
@@ -329,6 +337,7 @@
   - implementar classificação de active, pending, inactive e revoked;
   - implementar convite, aceite interno, recusa, alteração de papel, revogação e desativação como operações idempotentes por `account_user_id`;
   - criar migration obrigatória com o contrato exato de grants, RLS preservada e revogações de funções legadas definido na seção 1.5;
+  - manter a migration somente versionada e revisada no PR; não aplicar antes do merge;
   - confirmar no Supabase que o hook amplo não está configurado antes de removê-lo ou restringi-lo;
   - atualizar `docs/schema.md` na mesma alteração da migration, registrando grants finais de `account_users`, RLS/policies preservadas, funções legadas retiradas do caminho operacional e migration relacionada;
   - criar `supabase/snippets/e11_account_members_verify.sql` para verificar ACL de tabela, RLS/policies e ACL das funções separadamente;
@@ -379,7 +388,7 @@
   - implementar reenvio por `inviteUserByEmail()`;
   - validar Email OTP Expiration e Redirect URL vigentes em Preview e Production, sem duplicar prazo local na aplicação;
   - atualizar `docs/platform-config.md` com `INVITE_STATE_SECRET`, `E11_MEMBERS_ENABLED`, finalidade e escopos server-only, proibição de versionar valores, necessidade de redeploy, template `Invite user`, Redirect URLs e Email OTP Expiration verificados;
-  - executar teste hospedado ponta a ponta do envio, reenvio, senha, aceite, logout e novo login.
+  - preparar os casos do teste hospedado de envio, reenvio, senha, aceite, logout e novo login; executá-los somente no gate pós-merge descrito na seção 2.9.
 - Artefatos previstos:
   - `lib/access/account-members/invite-state.ts`;
   - ajustes em `lib/access/account-members/adapters/accountMembersAdapter.ts` e `lib/access/account-members/adapters/authAdminAdapter.ts`;
@@ -404,7 +413,7 @@
   - logout e novo login por e-mail e senha funcionam;
   - reenvio real entrega o segundo e-mail e possui comportamento documentado para ambos os links;
   - falha de envio deixa retry recuperável sem duplicidade.
-- Decisão da fase: avançar se a prova hospedada confirmar o fluxo completo.
+- Decisão da fase: antes do merge, avançar após as validações disponíveis com `E11_MEMBERS_ENABLED` fechado; a prova hospedada permanece pendência explícita do gate de ativação pós-merge.
 - Próxima ação: 11.1.5.
 
 ### 3.3. 11.1.5 — Gestão de membros no Account Dashboard
@@ -447,7 +456,7 @@
   - ajustar `/a/home` para verificar pendências próprias antes do redirect automático;
   - preservar o redirect atual e não realizar writes enquanto `E11_MEMBERS_ENABLED` não for exatamente `true`;
   - exibir conta e papel proposto;
-  - criar ações autenticadas de aceitar e recusar uma linha;
+  - criar ações autenticadas de aceitar e recusar uma linha com `actorUserId` derivado de `auth.getUser()`, validação de `account_users.user_id` e status `pending`, sem usar o guard owner/admin;
   - preservar o redirect atual quando não houver pendência;
   - após aceite, permitir entrada na conta ativada;
   - após recusa, remover a pendência da superfície.
@@ -458,11 +467,12 @@
 - Critérios de aceite:
   - usuário com conta ativa ainda vê novo convite pendente antes do redirect;
   - apenas pendências do usuário autenticado aparecem;
+  - chamada direta com `account_user_id` de terceiro ou linha não pendente falha fechada;
   - aceite ativa uma linha e recusa revoga uma linha;
   - a pendência não expira automaticamente e só concede acesso após aceite;
   - sem pendências, o comportamento atual de `/a/home` é preservado;
   - falha de leitura ou escrita não cria acesso parcial.
-- Decisão da fase: encerrar o recorte se toda a matriz estiver aprovada.
+- Decisão da fase: concluir a implementação e as validações pré-merge disponíveis; o fechamento operacional permanece condicionado à prova hospedada pós-merge com o gate habilitado.
 - Próxima ação: N/A — plano implementado.
 
 ## 4. Escopo negativo e critérios de parada
