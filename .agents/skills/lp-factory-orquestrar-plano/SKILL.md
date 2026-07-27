@@ -73,7 +73,7 @@ Parar somente diante de handoff incompleto, investigação necessária ou decis�
 1. Executar a Passagem 1 com v1, v2, plano conceitual quando existente ou `N/A`, decisões e fontes do caso, sem pareceres ou matriz.
 2. Preservar a resposta, gravar e versionar `docs/matriz-consolidacao-<caso>.md` e continuar no mesmo Analista.
 3. Executar a Passagem 2 com os pareceres integrais e a matriz.
-4. Em correções objetivas, atualizar v2 e matriz e pedir `revisao_delta` ao mesmo Analista. Retornar a especialista somente por questão material nova; decisão humana permanece humana.
+4. Em correções objetivas, inclusive conflito resolvido por fonte ou invariante e validação exclusivamente pós-merge, atualizar v2 e matriz e pedir `revisao_delta` ao mesmo Analista. Antes de parar por decisão humana, exigir ausência de fonte determinante e, para precedência de banco, prova de que migration compatível, feature flag ou expand/contract não evita PR precursor. Retornar a especialista somente por questão material nova.
 5. Avançar apenas com `aprovado para merge do plano-base v2`.
 
 ## 5. Reconciliar roadmap e abrir o PR
