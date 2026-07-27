@@ -1,4 +1,4 @@
-# docs/prompt-abc.md vs12
+# docs/prompt-abc.md vs13
 
 PROMPT ABC
 
@@ -37,7 +37,8 @@ Gerar um ABC humano, curto, delta-only e executável.
    * histórico operacional;
    * passo superado.
 4. Comparar com o documento atual.
-5. Emitir somente o menor delta necessário.
+5. Quando o DOC_ALVO for `docs/base-tecnica.md`, validar autoridade, momento e delta literal conforme 6.2 antes de emitir qualquer operação.
+6. Emitir somente o menor delta necessário.
 
 ## 5. Residência documental
 
@@ -65,13 +66,20 @@ Um assunto deve ter uma única residência. Não duplicar fonte canônica.
 
 ### 6.2 Base Técnica
 
+* A Base Técnica é read-only por padrão durante a execução de plano aprovado.
+* O Executor não pode criar, redigir, reinterpretar, ampliar, reduzir ou remover regra da Base Técnica por inferência da implementação.
+* Durante execução, alteração da Base só é permitida quando o plano aprovado contiver previamente o delta literal completo, com operações, alvos e conteúdos aprovados antes do checkpoint de execução.
+* Instrução genérica como “atualizar a Base Técnica com o novo boundary” não autoriza o Executor a produzir o texto normativo.
+* Necessidade material descoberta durante a implementação deve interromper o delta documental e ser encaminhada ao Analista e, quando necessário, ao humano; não improvisar regra global no mesmo fluxo.
+* Evidência de um único caso, fase, implementação ou PR não demonstra, isoladamente, que uma regra é durável ou reutilizável.
 * Só gerar delta para regra técnica durável e reutilizável além do caso imediato.
 * Não registrar detalhes de fase, etapa ou caso E*.
+* Não registrar condições temporárias, incluindo “antes do apply”, “até o merge”, “pendente de verificação”, “nesta fase” ou equivalentes.
 * Não copiar valores ou listas definidos em código, registry, schema ou configuração versionada.
 * Não registrar inventário de rotas, adapters, tabelas, workflows ou arquivos do estado atual.
 * Regra específica de um único domínio pode permanecer quando for durável, proteger um boundary real e não houver outra fonte canônica suficiente.
 * Preservar regras globais de classificação, responsabilidade e isolamento de boundaries.
-* Quando código ou documento próprio já for fonte canônica suficiente, registrar somente a regra transversal necessária e o path dessa fonte.
+* Quando código ou documento próprio já for fonte canônica suficiente, registrar somente o invariável transversal necessário e o path dessa fonte.
 * Rejeitar delta cuja fonte correta seja o repositório, `docs/schema.md`, `docs/design-system.md`, `docs/platform-config.md`, `docs/services.md`, `docs/automations.md` ou `docs/roadmap.md`.
 
 ### 6.3 Schema
