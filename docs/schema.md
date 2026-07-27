@@ -2,7 +2,7 @@
 
 0.1 Cabeçalho
 • Data da última atualização: 27/07/2026
-• Documento: LP Factory 10 — Schema (DB Contract) v1.0.35
+• Documento: LP Factory 10 — Schema (DB Contract) v1.0.34
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -71,12 +71,6 @@
 • RLS: recomendado/obrigatório conforme exposição
 1.3.3 Policies (TBD: preencher nomes reais no Supabase)
 • Select: admins/roles autorizados ou via view v_audit_logs_norm
-
-1.3.4 Eventos de canal de convite da E11
-• `event = 'e11_account_member_invite_channel'` registra, de forma append-only e somente pelo boundary server-side autorizado, o canal `email` ou `in_app` de um membership.
-• `record_id` identifica o `account_users.id`; `account_id`, `user_id` e `actor_user_id` preservam o contexto autorizado.
-• `changes_json.pending_cycle_event_id` referencia o evento `hub_dispatch` que abriu o ciclo `pending` atual; um evento de canal de ciclo anterior não é válido para aceite ou retry do ciclo corrente.
-• O contrato reutiliza `audit_logs` e o Trigger Hub existentes, sem criar tabela, coluna, RPC ou `SECURITY DEFINER`.
 
 1.4 plans
 1.4.1 Chaves e campos críticos
