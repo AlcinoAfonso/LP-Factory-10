@@ -11,12 +11,13 @@ Sua funcao e receber um plano-base de caso, investigar o necessario no repositor
 
 Siga obrigatoriamente o `AGENTS.md` vigente, fonte oficial para regras operacionais do repositorio. Este prompt define apenas o papel e o fluxo proprio do Executor.
 
-Alterar documentacao somente quando isso fizer parte explicita do plano-base recebido.
+Qualquer ajuste em documento canonico deve ser produzido pelo Prompt ABC. O plano-base define o escopo documental, mas nao substitui o gate de `docs/prompt-abc.md`.
 
 ## 2. Fontes condicionais
 
 Usar como fontes condicionais, conforme o impacto do plano-base:
 
+- `docs/prompt-abc.md`, antes de qualquer ajuste documental;
 - `docs/base-tecnica.md`, quando houver runtime, estrutura ou seguranca;
 - `docs/schema.md`, quando houver banco;
 - documentos citados no plano-base;
@@ -115,6 +116,19 @@ Nao afirmar funcionamento sem evidencia objetiva ou confirmacao humana.
 
 Quando houver frontend, validar superficies, viewports e evidencias definidas no plano-base.
 
-## 9. Etapa 6 - Entrega
+## 9. Etapa 6 - Fechamento documental pelo ABC
 
-Entregar o resultado conforme o `AGENTS.md`, incluindo bloqueios, fallbacks, riscos e estado `depende validacao` quando nao houver confirmacao suficiente.
+Depois de implementar e validar o recorte, antes da entrega:
+
+- identificar os documentos canonicos previstos no plano ou materialmente afetados pela implementacao, sem ampliar o escopo aprovado;
+- executar `$lp-factory-abc` separadamente para cada `DOC_ALVO`, usando como `RELATORIO` somente o estado implementado, as validacoes concluidas, o escopo aprovado e as fontes canonicas consultadas;
+- ler integralmente `docs/prompt-abc.md`, o documento-alvo atual e a fonte estrutural aplicavel;
+- aplicar literalmente somente as operacoes emitidas pelo ABC;
+- quando o ABC retornar `SEM ALTERACOES NECESSARIAS`, nao modificar o documento;
+- nao editar documento canonico diretamente, combinar documentos em um unico ABC ou acrescentar texto fora das operacoes emitidas;
+- se o ABC identificar necessidade material fora do escopo aprovado, interromper o ajuste documental e devolver a decisao ao Estrategista ou ao humano competente;
+- registrar na entrega cada `DOC_ALVO`, o resultado do ABC e a correspondencia entre as operacoes emitidas e o diff aplicado.
+
+## 10. Etapa 7 - Entrega
+
+Entregar o resultado conforme o `AGENTS.md`, incluindo bloqueios, fallbacks, riscos, estado `depende validacao` quando nao houver confirmacao suficiente e o fechamento documental produzido pelo ABC.

@@ -2,8 +2,8 @@
 
 0.1 Cabeçalho
 • Documento: Base Técnica LP Factory 10
-• Versão: v2.0.56
-• Data: 26/07/2026
+• Versão: v2.0.57
+• Data: 27/07/2026
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -292,13 +292,11 @@
 • O boundary permanece repo-only e não executa composição, persistência ou renderização.
 
 3.15.6 Perfil de orientação para geração de `landing_page`
-• Boundary canônico: `lib/conversion-content/landing-page/generation-profile/`; contratos e schemas são puros e não acessam Supabase.
-• A leitura de taxons, perfis e itens pertence exclusivamente ao adapter server-only de `conversion-content`, que usa `createServiceClient()`, colunas explícitas e normalização `snake_case` → `camelCase`.
-• Consumidores recebem cadeia taxonômica e agregado de perfil por um único boundary; não consultam taxons, perfis ou itens separadamente nem recebem DBRow.
-• Cadeia, leitura e agregado inválidos falham fechado com erro operacional distinguível; ausência de perfil não pode mascarar falha de leitura ou normalização.
-• A saída deve preservar proveniência, usar ordenação determinística e permanecer profundamente imutável.
-• Identidades de módulo e variante dependem da API pública da E18.5; registry e schema do catálogo não podem ser importados diretamente.
-• Nenhum consumidor, rota ou outro caminho runtime pode depender das tabelas antes do apply da migration e da verificação do ambiente alvo.
+• Boundary canônico: `lib/conversion-content/landing-page/generation-profile/`; contratos, schema e resolver permanecem puros e sem acesso ao banco.
+• Leitura e normalização pertencem ao adapter server-only de `conversion-content`; consumidores usam um único boundary e não consultam taxons, perfis ou itens separadamente nem recebem DBRow.
+• Cadeia, leitura ou agregado inválido devem falhar fechado com erro operacional distinguível; ausência legítima de perfil não pode mascarar falha.
+• A saída deve preservar proveniência, ordenação determinística e imutabilidade profunda.
+• Identidades de módulo e variante devem ser validadas pela API pública da E18.5, sem importação direta do registry ou schema do catálogo.
 
 4. DB Contract
 • `docs/schema.md` é a fonte única de tabelas, views, functions, RPCs, triggers, policies, constraints, grants e do estado exato do banco.

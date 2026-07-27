@@ -1,4 +1,4 @@
-# docs/prompt-abc.md vs12
+# docs/prompt-abc.md vs16
 
 PROMPT ABC
 
@@ -37,7 +37,8 @@ Gerar um ABC humano, curto, delta-only e executável.
    * histórico operacional;
    * passo superado.
 4. Comparar com o documento atual.
-5. Emitir somente o menor delta necessário.
+5. Aplicar o gate específico do DOC_ALVO antes de emitir qualquer operação.
+6. Emitir somente o menor delta necessário.
 
 ## 5. Residência documental
 
@@ -65,18 +66,47 @@ Um assunto deve ter uma única residência. Não duplicar fonte canônica.
 
 ### 6.2 Base Técnica
 
-* Só gerar delta para regra técnica durável e reutilizável além do caso imediato.
-* Não registrar detalhes de fase, etapa ou caso E*.
-* Não copiar valores ou listas definidos em código, registry, schema ou configuração versionada.
-* Não registrar inventário de rotas, adapters, tabelas, workflows ou arquivos do estado atual.
-* Regra específica de um único domínio pode permanecer quando for durável, proteger um boundary real e não houver outra fonte canônica suficiente.
+* Só gerar delta para regra técnica durável e reutilizável além do caso imediato; um único caso, fase, implementação ou PR não comprova durabilidade por si só.
+* Antes de adicionar regra ou subseção, verificar se o conteúdo já está coberto por regra global, fonte canônica existente ou ajuste/consolidação de trecho atual.
+* Regra específica de domínio só permanece quando protege boundary real e orienta implementações futuras sem exigir leitura da implementação interna.
+* Não registrar conteúdo transitório, histórico ou operacional, incluindo fase, etapa, caso E*, “antes do apply”, “até o merge”, “pendente de verificação”, “nesta fase” ou equivalente.
+* Não registrar inventários, valores, listas ou detalhes exatos definidos no repositório, código, registry, schema ou configuração versionada.
+* Não duplicar outra residência documental; quando a fonte própria for suficiente, registrar somente o invariável transversal necessário e o path canônico.
+* O delta documenta contrato técnico já implementado ou definido; não pode ampliar escopo, autorizar novo boundary, rota, banco, serviço, automação ou comportamento.
 * Preservar regras globais de classificação, responsabilidade e isolamento de boundaries.
-* Quando código ou documento próprio já for fonte canônica suficiente, registrar somente a regra transversal necessária e o path dessa fonte.
-* Rejeitar delta cuja fonte correta seja o repositório, `docs/schema.md`, `docs/design-system.md`, `docs/platform-config.md`, `docs/services.md`, `docs/automations.md` ou `docs/roadmap.md`.
+* Se nenhum conteúdo superar esses gates, emitir `SEM ALTERAÇÕES NECESSÁRIAS`.
 
 ### 6.3 Schema
 
 * Só gerar delta com alteração real de banco e evidência.
+
+### 6.4 Design System
+
+* Só gerar delta para contrato visual aprovado ou implementado: identidade, tipografia, tokens, componentes reutilizáveis, estados, superfícies e acessibilidade.
+* Não registrar inventário de telas ou rotas, adoção pontual, API ou valor exato já canônico no código ou configuração; manter somente regra visual durável e referência necessária.
+* Não registrar regra de negócio, runtime, banco, plataforma ou status de caso.
+* Sem mudança visual durável, emitir `SEM ALTERAÇÕES NECESSÁRIAS`.
+
+### 6.5 Platform Config
+
+* Só gerar delta para configuração externa confirmada ou decisão operacional aprovada: plataforma, projeto, ambiente, variável ou secret por nome, finalidade, escopo, endpoint, URL, redirect, SMTP, DNS ou regra de redeploy.
+* Nunca registrar valor real de secret, credencial protegida ou dado sensível; valor público só entra quando confirmado e operacionalmente necessário.
+* Marcar explicitamente estado futuro, pendente, bloqueado ou não validado; não registrar regra de runtime, contrato de banco, padrão visual ou status de caso.
+* Substituir estado superado em vez de manter histórico; sem mudança operacional real, emitir `SEM ALTERAÇÕES NECESSÁRIAS`.
+
+### 6.6 Services
+
+* Só gerar delta para service implantável, MCP ou infraestrutura reutilizável com identidade própria, materializada ou aprovada, registrando objetivo, status, acesso, consumidores, dependências e referência técnica local.
+* Registrar boundary operacional de deploy somente quando houver deploy independente e ela for necessária para evitar drift.
+* Detalhes técnicos ficam no README ou código; configurações externas ficam em `docs/platform-config.md`; automações consumidoras ficam em `docs/automations.md`.
+* Não registrar biblioteca genérica, rota do Core, ideia futura sem service aprovado, histórico ou secret; sem mudança de service real, emitir `SEM ALTERAÇÕES NECESSÁRIAS`.
+
+### 6.7 Automations
+
+* Só gerar delta para automação operacional materializada ou aprovada, registrando objetivo, status, modo de uso, resultado esperado, consumidores, dependências e aprendizado operacional durável.
+* Configuração de plataforma, secrets por nome, ambientes, endpoints e catálogo consolidado de workflows ficam em `docs/platform-config.md`; services ficam em `docs/services.md`; detalhes técnicos ficam no README ou código.
+* Pendência ou update só permanece quando vigente, aprovado e ligado a automação existente; evolução futura sem efeito operacional pertence ao roadmap.
+* Não registrar tentativa histórica, proposta não aprovada, inventário redundante ou secret; sem mudança operacional real, emitir `SEM ALTERAÇÕES NECESSÁRIAS`.
 
 ## 7. Operações permitidas
 
