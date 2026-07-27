@@ -1,8 +1,8 @@
 # Plano-base E11 — Gestão de Usuários e Convites
 
-- Versão: v1
+- Versão: v2
 - Data: 27/07/2026
-- Status: concluído; processo automatizado selecionado; aguardando incorporação à `main`.
+- Status: consolidado pelos pareceres especializados; aguardando gate do Analista.
 - Recorte previsto para roadmap: `11.1 — Gestão de membros e convites`
 - Path canônico: `docs/lousa-plano-base-e11.md`
 - Plano conceitual: N/A — debate realizado entre Estrategista, Analista e humano antes da v1.
@@ -67,8 +67,16 @@
 
 ### 1.5. Decisões técnicas consolidadas
 
-- O boundary canônico será server-only em `lib/access/account-members/`.
-- `e-mail → user_id` será resolvido por adapter server-only com `auth.admin.listUsers()` paginado, depois da autorização do owner/admin.
+- O boundary canônico permanece `lib/access/account-members/`, com `contracts.ts`, `policy.ts`, `validation-cases.ts` e `index.ts`.
+- O acesso a `public.account_users` e `public.accounts` pertence exclusivamente ao adapter server-only `adapters/accountMembersAdapter.ts`.
+- Operações de Supabase Auth Admin pertencem exclusivamente ao adapter server-only `adapters/authAdminAdapter.ts`; nenhum arquivo mistura Data API e Auth Admin.
+- `policy.ts` contém apenas regras puras de transição e proteção de owner e ator, sem reimplementar autenticação ou resolução de conta.
+- `contracts.ts` importa `MemberRole` e `MemberStatus` de `lib/types/status.ts`, sem redefini-los.
+- `index.ts` não exporta clients, rows de banco nem tipos do SDK Supabase.
+- Toda mutação 1-a-1 usa filtros de conta, membership, usuário e estado esperado, aplica `.maxAffected(1)` e só retorna sucesso após confirmar exatamente uma linha ou o estado idempotente permitido.
+- `e-mail → user_id` será resolvido por `adapters/authAdminAdapter.ts` com `auth.admin.listUsers()` paginado, depois da autorização do owner/admin.
+- `lib/access/guards.ts` será estendido com um guard server-only de gestão de membros que resolve sessão e Access Context, exige conta permitida, membership `active` e papel `owner` ou `admin`, e devolve contexto autoritativo com `accountId`, `accountSubdomain`, `actorUserId` e `actorRole`.
+- Página, Server Actions e fluxos de convite usam esse guard antes de consultar Auth Admin ou chamar adapters privilegiados. A navegação pode usar o papel sanitizado do `AccessProvider` apenas para visibilidade; a URL e todas as actions repetem o guard server-side.
 - A UI nunca recebe resultado que revele a existência global de um e-mail no Auth.
 - E-mail novo segue a ordem:
   - normalizar e procurar o e-mail;
@@ -80,9 +88,12 @@
 - O estado assinado deve conter no mínimo versão, `account_user_id`, `account_id` e `user_id`.
 - `user_metadata` serve somente como transporte para o template; nunca participa da autorização.
 - A assinatura usa HMAC e secret server-side `INVITE_STATE_SECRET`, sem valor versionado.
-- `/auth/confirm` deve preservar o estado do GET até o POST e validá-lo somente depois de o Supabase confirmar o usuário.
+- `invite_state` chega no link somente como transporte do template e é copiado do GET para o POST anti-scanner.
+- Depois de o Supabase confirmar o Auth e estabelecer a sessão, o POST valida assinatura, versão e correspondência com o usuário autenticado e grava o estado assinado em cookie `HttpOnly`, `Secure` em ambiente hospedado, `SameSite=Lax` e `Path=/auth`, isolado pelo `account_user_id`.
+- O redirect para `/auth/update-password` transporta apenas o identificador opaco necessário para selecionar esse cookie.
 - Após a confirmação Auth, o usuário novo deve concluir o cadastro definindo senha em `/auth/update-password` com a sessão autenticada.
-- O `invite_state` deve permanecer disponível de forma segura durante a conclusão do cadastro, sem servir como autorização por si só.
+- A action de senha relê a sessão com `auth.getUser()`, recupera o cookie, revalida assinatura, usuário, conta, membership e status, define a senha e só então ativa a linha.
+- O cookie é removido apenas após ativação bem-sucedida ou rejeição definitiva; falha transitória de ativação o preserva para retry. Query string, `user_metadata` e cookie nunca autorizam isoladamente.
 - Somente depois da senha definida, a ativação valida simultaneamente o usuário autenticado, a assinatura e a linha específica de `account_users`.
 - Aceite repetido da mesma linha já `active` retorna sucesso idempotente; divergência, `inactive`, `revoked` ou ausência falha fechada.
 - Se a senha for definida e a ativação falhar, o mesmo vínculo pode ser retomado por retry idempotente; enquanto permanecer `pending`, não concede acesso à conta.
@@ -90,7 +101,10 @@
 - Reenvio do usuário ainda não confirmado usa nova chamada a `inviteUserByEmail()`; `auth.resend()` não será usado como convite.
 - O hook amplo existente não será adotado.
 - O runtime não dependerá da função legada de aceite enquanto ela não garantir linha específica, autorização e confirmação de linha alterada.
-- Qualquer ajuste de função, grant ou policy deve ocorrer por migration versionada; esta v2 não autoriza tabela ou coluna nova.
+- A migration incremental da E11 é obrigatória após confirmar que o Auth Hook amplo não está configurado. Ela preserva `account_users` com RLS habilitada e mantém a policy de SELECT própria/owner-admin; revoga `INSERT`, `UPDATE` e `DELETE` de `authenticated`; concede explicitamente `SELECT`, `INSERT` e `UPDATE` a `service_role`, sem `DELETE`; revoga `EXECUTE` de `PUBLIC`, `anon`, `authenticated` e `ai_readonly` nas funções `accept_account_invite(uuid, integer)`, `revoke_account_invite(uuid, uuid)`, `invitation_expires_at(uuid, integer)` e `invitation_is_expired(uuid, integer)`; e, após confirmação operacional de ausência do hook, revoga `EXECUTE` de `PUBLIC`, `anon`, `authenticated`, `ai_readonly` e `supabase_auth_admin` em `activate_user_from_auth_hook(jsonb)`.
+- A migration não cria tabela, coluna, view, RPC ou `SECURITY DEFINER` e preserva o Trigger Hub e a proteção do último owner.
+- O gate server-only `E11_MEMBERS_ENABLED` é obrigatório, com ausência ou valor diferente de `true` interpretado como desabilitado. Enquanto desabilitado, a navegação não aparece e `/a/[account]/members`, Server Actions e o fluxo específico de convite falham fechados sem chamar Auth Admin nem realizar writes.
+- O booleano do gate pode ser passado explicitamente pelo layout server ao Header, mas não integra a decisão de autorização do `AccessProvider`.
 
 ## 2. Contrato do caso
 
@@ -103,7 +117,7 @@
   - e-mail válido;
   - papel `admin`, `editor` ou `viewer`.
 - Processamento:
-  - autorizar o ator antes de consultar o Auth;
+  - usar o guard canônico de `lib/access/guards.ts` e autorizar o ator antes de consultar o Auth;
   - resolver o usuário por e-mail;
   - classificar o vínculo atual;
   - criar ou preparar um único ciclo `pending`;
@@ -133,8 +147,9 @@
   - GET apresenta o intersticial sem consumir o token;
   - POST confirma o token e obtém a sessão do usuário;
   - valida assinatura, versão e correspondência do estado com o usuário autenticado;
+  - persiste o estado validado no cookie server-only isolado por `account_user_id` e redireciona somente com seu identificador opaco;
   - direciona o usuário para concluir o cadastro em `/auth/update-password`;
-  - define a senha com a sessão autenticada;
+  - relê sessão e cookie, revalida o contexto e define a senha com a sessão autenticada;
   - valida a linha específica por `account_user_id`, `account_id`, `user_id` e status;
   - ativa somente essa linha;
   - redireciona para a conta aceita.
@@ -200,6 +215,7 @@
 ### 2.5. Segurança e autorização
 
 - A página, Server Actions e adapters devem validar sessão, conta e papel antes de qualquer operação administrativa.
+- Essa decisão é centralizada no guard de gestão de membros em `lib/access/guards.ts`; `policy.ts` recebe o contexto autorizado e aplica somente proteções de alvo, papel e transição.
 - Código client não acessa `SUPABASE_SECRET_KEY`, Auth Admin ou mutações privilegiadas.
 - O service client fica restrito a módulos server-only.
 - Toda escrita privilegiada deve repetir autorização no servidor e validar a linha afetada.
@@ -207,8 +223,8 @@
 - Comparações de e-mail devem usar normalização única e igualdade exata.
 - Erros da UI devem evitar confirmar se um e-mail existe globalmente.
 - Logs não registram tokens, `invite_state`, secret, e-mail integral ou metadata Auth.
-- Migration relacionada deve revisar grants e remover do caminho público qualquer função legada incompatível com o contrato.
-- Se uma função `SECURITY DEFINER` se mostrar indispensável na v2, ela deve ficar fora do schema exposto quando viável, validar `auth.uid()`, fixar `search_path`, revogar `PUBLIC` e receber grants mínimos.
+- A migration aplica o contrato exato de grants e revogações da seção 1.5 e sua verificação distingue privilégios de tabela, RLS/policies e ACL de funções.
+- A E11 não cria função `SECURITY DEFINER`.
 
 ### 2.6. Validade do link, reenvio e consistência
 
@@ -282,6 +298,7 @@
 - Revogação afeta pending; desativação afeta active.
 - Erro ou zero linha alterada nunca retorna sucesso.
 - Nenhum token, estado assinado, secret ou e-mail integral aparece em logs.
+- Aplicar `prod#17` como baseline de validação, sem declarar conformidade WCAG integral: executar por teclado o formulário de convite, as ações por linha, o aceite ou recusa em `/a/home` e a definição de senha; confirmar foco visível e previsível, label e associação de erro nos campos, anúncio de feedback dinâmico, contraste legível, alvos de toque utilizáveis e ausência de ação acessível somente por hover, em desktop e mobile.
 
 ### 2.9. Dependências reais
 
@@ -292,11 +309,13 @@
 - `/a/home` e sua precedência atual de redirect.
 - Supabase Auth Admin, template nativo `Invite user`, SMTP via Resend e Redirect URL allowlist.
 - Vercel Preview e Production para `INVITE_STATE_SECRET`, com redeploy após configuração.
+- `E11_MEMBERS_ENABLED`, ausente ou falso por padrão, até a migration ser aplicada e verificada, o secret e o Auth serem configurados e o deployment ser refeito.
+- Após merge humano: aguardar o workflow aprovado aplicar a migration, executar `supabase/snippets/e11_account_members_verify.sql`, configurar secret, template e redirects, habilitar o gate e redeployar; somente então executar a matriz hospedada.
 - Não há dependência de E12, limite por plano, Stripe, automações ou agentes.
 
 ## 3. Fases e próxima ação
 
-### 3.1. E11.1.3 — Domínio server-side e ciclo seguro de vínculos
+### 3.1. 11.1.3 — Domínio server-side e ciclo seguro de vínculos
 
 - Status: planejada.
 - Objetivo: implementar contratos, autorização, resolução de identidade e transições seguras de `account_users`.
@@ -304,21 +323,28 @@
 - Escopo executável:
   - criar o boundary `lib/access/account-members/`;
   - implementar contratos tipados e normalização de e-mail;
+  - estender `lib/access/guards.ts` com o guard canônico owner/admin e reutilizá-lo em todos os consumidores administrativos;
   - implementar `listUsers()` paginado após autorização;
   - implementar leitura de membros e convites com e-mail server-side;
   - implementar classificação de active, pending, inactive e revoked;
   - implementar convite, aceite interno, recusa, alteração de papel, revogação e desativação como operações idempotentes por `account_user_id`;
-  - criar migration mínima para corrigir ou retirar do caminho operacional as funções, grants e policies legadas incompatíveis;
+  - criar migration obrigatória com o contrato exato de grants, RLS preservada e revogações de funções legadas definido na seção 1.5;
   - confirmar no Supabase que o hook amplo não está configurado antes de removê-lo ou restringi-lo;
+  - atualizar `docs/schema.md` na mesma alteração da migration, registrando grants finais de `account_users`, RLS/policies preservadas, funções legadas retiradas do caminho operacional e migration relacionada;
+  - criar `supabase/snippets/e11_account_members_verify.sql` para verificar ACL de tabela, RLS/policies e ACL das funções separadamente;
   - impedir expiração automática local do membership e uso de `created_at` como validade do link;
   - criar casos executáveis da matriz aplicável.
 - Artefatos previstos:
   - `lib/access/account-members/contracts.ts`;
   - `lib/access/account-members/policy.ts`;
-  - `lib/access/account-members/adapter.ts`;
+  - `lib/access/account-members/adapters/accountMembersAdapter.ts`;
+  - `lib/access/account-members/adapters/authAdminAdapter.ts`;
   - `lib/access/account-members/validation-cases.ts`;
   - `lib/access/account-members/index.ts`;
-  - migration incremental da E11, se confirmada pela investigação;
+  - ajuste em `lib/access/guards.ts`;
+  - migration incremental obrigatória da E11 após confirmação de ausência do hook;
+  - `supabase/snippets/e11_account_members_verify.sql`;
+  - ajuste em `docs/schema.md`;
   - script de validação em `package.json`.
 - Critérios de aceite:
   - nenhuma operação administrativa ocorre antes do guard owner/admin;
@@ -327,12 +353,14 @@
   - transições e duplicidades seguem as seções 1.4 e 2.6;
   - owner e vínculo do ator permanecem protegidos;
   - zero linha alterada falha;
+  - nenhuma mutação afeta mais de uma linha e o estado idempotente permitido é relido explicitamente;
+  - `service_role` possui somente `SELECT`, `INSERT` e `UPDATE` em `account_users`, e os papéis revogados não executam as funções legadas;
   - nenhum client importa módulo privilegiado;
   - nenhuma tabela ou coluna nova é criada sem retorno ao Estrategista.
 - Decisão da fase: executar após aprovação da v2.
-- Próxima ação: E11.1.4.
+- Próxima ação: 11.1.4.
 
-### 3.2. E11.1.4 — Convite de novo usuário, conclusão do cadastro e confirmação específica
+### 3.2. 11.1.4 — Convite de novo usuário, conclusão do cadastro e confirmação específica
 
 - Status: planejada.
 - Objetivo: entregar o convite nativo por e-mail, a definição de senha e o aceite seguro de uma única linha.
@@ -341,23 +369,26 @@
   - implementar criação prévia do usuário não confirmado e membership;
   - implementar HMAC versionado com `INVITE_STATE_SECRET`;
   - gravar o estado opaco em metadata somente para transporte;
-  - ajustar o template `Invite user` para enviar token e estado à rota canônica;
+  - aplicar `supa#30` no template nativo `Invite user` do Supabase Auth: usar copy PT-BR sem lógica condicional, encaminhar o link ou token do Auth e o `invite_state` opaco à rota canônica, validar links e redirects em Preview e Production e manter proibido qualquer envio customizado pelo Next.js; template, metadata e estado transportado não autorizam a ativação;
   - ajustar `/auth/confirm` para preservar o estado do GET ao POST, confirmar o Auth e criar a sessão;
   - reutilizar ou adaptar `/auth/update-password` para o contexto de convite;
-  - preservar com segurança o contexto específico até a conclusão do cadastro;
+  - implementar o cookie `HttpOnly`, seguro em ambiente hospedado, `SameSite=Lax` e `Path=/auth`, isolado pelo `account_user_id`, com redirect contendo somente o identificador opaco;
   - definir a senha antes de ativar o membership;
   - validar assinatura, linha, usuário, conta e estado antes da ativação;
   - implementar retry idempotente da mesma linha se a ativação falhar após a senha;
   - implementar reenvio por `inviteUserByEmail()`;
   - validar Email OTP Expiration e Redirect URL vigentes em Preview e Production, sem duplicar prazo local na aplicação;
+  - atualizar `docs/platform-config.md` com `INVITE_STATE_SECRET`, `E11_MEMBERS_ENABLED`, finalidade e escopos server-only, proibição de versionar valores, necessidade de redeploy, template `Invite user`, Redirect URLs e Email OTP Expiration verificados;
   - executar teste hospedado ponta a ponta do envio, reenvio, senha, aceite, logout e novo login.
 - Artefatos previstos:
   - `lib/access/account-members/invite-state.ts`;
-  - ajustes em `lib/access/account-members/adapter.ts`;
+  - ajustes em `lib/access/account-members/adapters/accountMembersAdapter.ts` e `lib/access/account-members/adapters/authAdminAdapter.ts`;
   - ajuste em `app/auth/confirm/route.ts`;
   - ajuste em `app/auth/update-password/page.tsx`;
   - configuração externa do template `Invite user`;
   - variável server-only `INVITE_STATE_SECRET` na Vercel;
+  - gate server-only `E11_MEMBERS_ENABLED` na Vercel;
+  - ajuste em `docs/platform-config.md`;
   - casos executáveis e evidência hospedada.
 - Critérios de aceite:
   - o e-mail é enviado somente pelo Supabase Auth;
@@ -369,13 +400,14 @@
   - manipulação do estado falha;
   - aceite repetido e retry da ativação são idempotentes;
   - abandono antes da senha mantém o membership `pending` e sem acesso;
+  - dois convites distintos não selecionam a mesma linha por sobrescrita global; manipulação de identificador, cookie ou assinatura falha fechada;
   - logout e novo login por e-mail e senha funcionam;
   - reenvio real entrega o segundo e-mail e possui comportamento documentado para ambos os links;
   - falha de envio deixa retry recuperável sem duplicidade.
 - Decisão da fase: avançar se a prova hospedada confirmar o fluxo completo.
-- Próxima ação: E11.1.5.
+- Próxima ação: 11.1.5.
 
-### 3.3. E11.1.5 — Gestão de membros no Account Dashboard
+### 3.3. 11.1.5 — Gestão de membros no Account Dashboard
 
 - Status: planejada.
 - Objetivo: permitir que owner/admin listem e administrem membros e convites não-owner.
@@ -384,6 +416,7 @@
   - criar `/a/[account]/members`;
   - criar Server Actions próprias da rota;
   - adicionar navegação condicionada a owner/admin;
+  - ocultar navegação e falhar fechado na rota e nas actions enquanto `E11_MEMBERS_ENABLED` não for exatamente `true`;
   - implementar formulário de convite;
   - listar membros ativos e convites pendentes;
   - implementar reenvio, revogação, alteração de papel e desativação;
@@ -403,15 +436,16 @@
   - desktop e mobile permanecem utilizáveis;
   - nenhuma regra de negócio fica somente no client.
 - Decisão da fase: avançar após validação funcional e visual.
-- Próxima ação: E11.1.6.
+- Próxima ação: 11.1.6.
 
-### 3.4. E11.1.6 — Pendências do usuário já cadastrado
+### 3.4. 11.1.6 — Pendências do usuário já cadastrado
 
 - Status: planejada.
 - Objetivo: permitir que usuário confirmado veja, aceite ou recuse seus convites sem receber e-mail.
 - Automação: não.
 - Escopo executável:
   - ajustar `/a/home` para verificar pendências próprias antes do redirect automático;
+  - preservar o redirect atual e não realizar writes enquanto `E11_MEMBERS_ENABLED` não for exatamente `true`;
   - exibir conta e papel proposto;
   - criar ações autenticadas de aceitar e recusar uma linha;
   - preservar o redirect atual quando não houver pendência;
@@ -470,7 +504,7 @@
 
 ### 4.3. Decisão atual e próxima ação
 
-- Decisão: plano-base v1 concluído após validação humana; as discussões posteriores não alteraram o recorte nem exigem novo papel, permissão ou infraestrutura na E11.1.
+- Decisão: plano-base v2 consolidado a partir da v1 imutável e dos pareceres especializados; o recorte não exige novo papel, permissão ou infraestrutura na E11.1.
 - Processo selecionado: Opção 2 — processo automatizado.
 - Gestor de Automação: não se aplica, pois todas as fases estão marcadas como `Automação: não`.
-- Próxima ação: incorporar esta v1 à `main` e entregar o PR ao orquestrador conforme `docs/prompt-estrategista.md`.
+- Próxima ação: submeter esta v2 ao gate do Analista e reconciliar `docs/roadmap.md` somente após sua aprovação.
