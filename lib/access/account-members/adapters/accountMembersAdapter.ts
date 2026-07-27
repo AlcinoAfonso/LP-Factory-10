@@ -122,6 +122,36 @@ export async function applySelfServiceInviteOperation(input: Readonly<{
   return updateMembership(current.value, decision.value.nextRole, decision.value.nextStatus);
 }
 
+export async function getSelfServiceInviteMembership(input: Readonly<{
+  accountId: string;
+  memberId: string;
+  actorUserId: string;
+}>): Promise<AccountMemberResult<AccountMemberRecord>> {
+  const current = await getAccountMembershipById(input.accountId, input.memberId);
+  if (!current.ok) return current;
+  if (!current.value || current.value.userId !== input.actorUserId) {
+    return { ok: false, error: "member_not_found" };
+  }
+  return { ok: true, value: current.value };
+}
+
+export async function getAccountSubdomain(
+  accountId: string,
+): Promise<AccountMemberResult<string>> {
+  const supabase = createServiceClient();
+  const { data, error } = await supabase
+    .from("accounts")
+    .select("subdomain")
+    .eq("id", accountId)
+    .limit(1)
+    .maybeSingle();
+
+  const subdomain = typeof data?.subdomain === "string" ? data.subdomain.trim() : "";
+  return error || !subdomain
+    ? { ok: false, error: "read_failed" }
+    : { ok: true, value: subdomain };
+}
+
 async function getAccountMembership(
   accountId: string,
   userId: string,

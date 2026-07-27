@@ -35,6 +35,12 @@ export type AccountMemberError =
   | "invalid_transition"
   | "membership_conflict"
   | "auth_lookup_failed"
+  | "auth_create_failed"
+  | "auth_invite_failed"
+  | "feature_disabled"
+  | "external_config_missing"
+  | "invite_state_unavailable"
+  | "invalid_invite_state"
   | "read_failed"
   | "write_failed";
 
@@ -67,4 +73,8 @@ export type MemberTransition = Readonly<{
 export type MemberMutationResult = Readonly<{
   member: AccountMemberRecord;
   idempotent: boolean;
+}>;
+
+export type AccountMemberInvitationResult = Readonly<{
+  member: AccountMemberRecord;
 }>;

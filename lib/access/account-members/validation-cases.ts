@@ -1,6 +1,13 @@
 import assert from "node:assert/strict";
 
 import {
+  createInviteStatePayload,
+  decodeInviteState,
+  encodeInviteState,
+  getInviteStateCookieName,
+} from "./invite-state-codec";
+
+import {
   classifyInviteCycle,
   decideAdminMemberTransition,
   decideSelfServiceInviteTransition,
@@ -11,6 +18,8 @@ import {
 
 const ACTOR_ID = "10000000-0000-4000-8000-000000000001";
 const TARGET_ID = "10000000-0000-4000-8000-000000000002";
+const ACCOUNT_ID = "10000000-0000-4000-8000-000000000003";
+const INVITE_STATE_SECRET = "test-only-secret-with-at-least-32-characters";
 
 const cases: readonly Readonly<{ name: string; run: () => void }>[] = [
   {
@@ -126,6 +135,48 @@ const cases: readonly Readonly<{ name: string; run: () => void }>[] = [
         }),
         { ok: true, value: { nextRole: "viewer", nextStatus: "revoked", idempotent: true } },
       );
+    },
+  },
+  {
+    name: "signs a versioned invite state without local expiration",
+    run: () => {
+      const payload = createInviteStatePayload({
+        accountUserId: TARGET_ID,
+        accountId: ACCOUNT_ID,
+        userId: ACTOR_ID,
+      });
+      assert.ok(payload);
+
+      const token = encodeInviteState(payload, INVITE_STATE_SECRET);
+      assert.ok(token);
+      assert.deepEqual(decodeInviteState(token, INVITE_STATE_SECRET), {
+        ok: true,
+        value: payload,
+      });
+
+      const decodedBody = JSON.parse(Buffer.from(token.split(".")[0], "base64url").toString());
+      assert.equal("exp" in decodedBody, false);
+      assert.equal("created_at" in decodedBody, false);
+    },
+  },
+  {
+    name: "rejects tampering and isolates cookies by account_user_id",
+    run: () => {
+      const payload = createInviteStatePayload({
+        accountUserId: TARGET_ID,
+        accountId: ACCOUNT_ID,
+        userId: ACTOR_ID,
+      });
+      assert.ok(payload);
+      const token = encodeInviteState(payload, INVITE_STATE_SECRET);
+      assert.ok(token);
+
+      assert.deepEqual(decodeInviteState(`${token}x`, INVITE_STATE_SECRET), {
+        ok: false,
+        error: "invalid_invite_state",
+      });
+      assert.equal(getInviteStateCookieName(TARGET_ID), `e11_invite_${TARGET_ID}`);
+      assert.notEqual(getInviteStateCookieName(TARGET_ID), getInviteStateCookieName(ACTOR_ID));
     },
   },
 ];
