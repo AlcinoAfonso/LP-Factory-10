@@ -89,16 +89,16 @@ export async function sendAuthInvite(input: Readonly<{
   return error ? { ok: false, error: "auth_invite_failed" } : { ok: true, value: true };
 }
 
-export async function getAuthEmailsByUserIds(
+export async function getAuthUsersByUserIds(
   userIds: readonly string[],
-): Promise<AccountMemberResult<ReadonlyMap<string, string>>> {
+): Promise<AccountMemberResult<ReadonlyMap<string, AuthUserSummary>>> {
   const supabase = createServiceClient();
   const uniqueUserIds = Array.from(new Set(userIds));
   const entries = await Promise.all(
-    uniqueUserIds.map(async (userId): Promise<readonly [string, string] | null> => {
+    uniqueUserIds.map(async (userId): Promise<readonly [string, AuthUserSummary] | null> => {
       const { data, error } = await supabase.auth.admin.getUserById(userId);
       if (error || !data.user?.email) return null;
-      return [userId, normalizeMemberEmail(data.user.email)] as const;
+      return [userId, mapAuthUser(data.user)] as const;
     }),
   );
 
@@ -108,8 +108,22 @@ export async function getAuthEmailsByUserIds(
 
   return {
     ok: true,
-    value: new Map(entries.filter((entry): entry is readonly [string, string] => entry !== null)),
+    value: new Map(
+      entries.filter(
+        (entry): entry is readonly [string, AuthUserSummary] => entry !== null,
+      ),
+    ),
   };
+}
+
+export async function getAuthUserById(
+  userId: string,
+): Promise<AccountMemberResult<AuthUserSummary>> {
+  const supabase = createServiceClient();
+  const { data, error } = await supabase.auth.admin.getUserById(userId);
+  return error || !data.user?.email
+    ? { ok: false, error: "auth_lookup_failed" }
+    : { ok: true, value: mapAuthUser(data.user) };
 }
 
 function mapAuthUser(user: AuthUserRow): AuthUserSummary {

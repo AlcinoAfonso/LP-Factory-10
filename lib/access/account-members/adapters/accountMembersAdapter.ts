@@ -172,7 +172,7 @@ async function getAccountMembership(
   return member ? { ok: true, value: member } : { ok: false, error: "read_failed" };
 }
 
-async function getAccountMembershipById(
+export async function getAccountMembershipById(
   accountId: string,
   memberId: string,
 ): Promise<AccountMemberResult<AccountMemberRecord | null>> {

@@ -1,6 +1,7 @@
 import { AccessProvider } from "@/providers/AccessProvider";
 import { getUserEmail } from "@/lib/auth/authAdapter";
 import { Header } from "@/components/layout/Header";
+import { isAccountMembersEnabled } from "@/lib/access/account-members/config";
 import { getClientAccountSectionContext } from "../_server/section-guard";
 import { getActivePrimaryAccountTaxon } from "../../../lib/onboarding/niche-resolution/adapters/accountTaxonomyAdapter";
 import { getConfirmedOperationalNicheResolutionLabel } from "../../../lib/onboarding/niche-resolution/adapters/accountNicheResolutionUserAdapter";
@@ -40,7 +41,7 @@ export default async function Layout({ children, params }: LayoutProps) {
 
   return (
     <AccessProvider value={enrichedCtx as any}>
-      <Header userEmail={userEmail} />
+      <Header userEmail={userEmail} accountMembersEnabled={isAccountMembersEnabled()} />
       {children}
     </AccessProvider>
   );

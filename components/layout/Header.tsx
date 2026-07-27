@@ -8,9 +8,10 @@ type HeaderVariant = 'public' | 'authenticated' | 'account';
 
 interface HeaderProps {
   userEmail?: string | null;
+  accountMembersEnabled?: boolean;
 }
 
-export function Header({ userEmail }: HeaderProps) {
+export function Header({ userEmail, accountMembersEnabled = false }: HeaderProps) {
   const ctx = useAccessContext();
 
   const variant = getVariant(ctx, userEmail);
@@ -26,6 +27,7 @@ export function Header({ userEmail }: HeaderProps) {
           account={ctx.account!}
           userEmail={userEmail ?? undefined}
           role={(ctx?.member?.role ?? undefined) as string | undefined}
+          membersEnabled={accountMembersEnabled}
         />
       );
     case 'authenticated':
@@ -100,10 +102,12 @@ function HeaderAccount({
   account,
   userEmail,
   role,
+  membersEnabled,
 }: {
   account: { name?: string | null; subdomain?: string | null; status?: string | null; primaryTaxonName?: string | null };
   userEmail?: string;
   role?: string;
+  membersEnabled: boolean;
 }) {
   const accountLabel = account?.name ?? account?.subdomain ?? 'Minha conta';
   const primaryTaxonName = account?.primaryTaxonName?.trim();
@@ -116,7 +120,15 @@ function HeaderAccount({
         <div className="flex-1" />
 
         <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2">
+          {membersEnabled && (role === "owner" || role === "admin") ? (
+            <Link
+              href={`/a/${account.subdomain}/members`}
+              className="rounded-md border border-border bg-white px-3 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-accent"
+            >
+              Membros
+            </Link>
+          ) : null}
+          <div className="hidden items-center gap-2 sm:flex">
             <span className="text-sm text-foreground">
               {accountLabel}
               {primaryTaxonName ? <span className="text-muted-foreground"> · {primaryTaxonName}</span> : null}

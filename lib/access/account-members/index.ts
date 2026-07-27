@@ -8,6 +8,7 @@ import type {
 import {
   applyAdminMemberOperation,
   applySelfServiceInviteOperation,
+  getAccountMembershipById,
   getAccountSubdomain,
   getSelfServiceInviteMembership,
   listAccountMemberships,
@@ -16,7 +17,8 @@ import {
 import {
   createUnconfirmedAuthUser,
   findAuthUserByEmail,
-  getAuthEmailsByUserIds,
+  getAuthUserById,
+  getAuthUsersByUserIds,
   sendAuthInvite,
 } from "./adapters/authAdminAdapter";
 import { getAccountMembersConfirmUrl, isAccountMembersEnabled } from "./config";
@@ -52,12 +54,16 @@ export async function listAccountMembers(
   const memberships = await listAccountMemberships(context.accountId);
   if (!memberships.ok) return memberships;
 
-  const emails = await getAuthEmailsByUserIds(memberships.value.map((member) => member.userId));
-  if (!emails.ok) return emails;
+  const authUsers = await getAuthUsersByUserIds(
+    memberships.value.map((member) => member.userId),
+  );
+  if (!authUsers.ok) return authUsers;
 
   const members = memberships.value.map((member) => {
-    const email = emails.value.get(member.userId);
-    return email ? { ...member, email } : null;
+    const authUser = authUsers.value.get(member.userId);
+    return authUser
+      ? { ...member, email: authUser.email, isConfirmed: authUser.isConfirmed }
+      : null;
   });
 
   if (members.some((member) => member === null)) {
@@ -117,7 +123,54 @@ export async function inviteAccountMember(
     if (!delivery.ok) return delivery;
   }
 
-  return { ok: true, value: { member: prepared.value.member } };
+  return {
+    ok: true,
+    value: {
+      member: prepared.value.member,
+      delivery: user.isConfirmed ? "in_app" : "email",
+    },
+  };
+}
+
+export async function resendAccountMemberInvite(
+  context: AccountMembersManagerContext,
+  input: Readonly<{ memberId: string }>,
+): Promise<AccountMemberResult<AccountMemberInvitationResult>> {
+  if (!isAccountMembersEnabled()) return { ok: false, error: "feature_disabled" };
+
+  const membership = await getAccountMembershipById(context.accountId, input.memberId);
+  if (!membership.ok) return membership;
+  if (!membership.value) return { ok: false, error: "member_not_found" };
+  if (membership.value.role === "owner") return { ok: false, error: "owner_protected" };
+  if (membership.value.status !== "pending") {
+    return { ok: false, error: "invalid_transition" };
+  }
+
+  const user = await getAuthUserById(membership.value.userId);
+  if (!user.ok) return user;
+  if (user.value.isConfirmed) return { ok: false, error: "invalid_transition" };
+
+  const inviteState = createSignedInviteState({
+    accountUserId: membership.value.id,
+    accountId: context.accountId,
+    userId: membership.value.userId,
+  });
+  if (!inviteState.ok) return inviteState;
+
+  const redirectTo = getAccountMembersConfirmUrl();
+  if (!redirectTo.ok) return redirectTo;
+
+  const delivery = await sendAuthInvite({
+    email: user.value.email,
+    inviteState: inviteState.value,
+    redirectTo: redirectTo.value,
+  });
+  if (!delivery.ok) return delivery;
+
+  return {
+    ok: true,
+    value: { member: membership.value, delivery: "email" },
+  };
 }
 
 export async function mutateAccountMember(

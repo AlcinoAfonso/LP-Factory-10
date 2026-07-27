@@ -17,6 +17,7 @@ export type AccountMemberRecord = Readonly<{
 export type AccountMember = AccountMemberRecord &
   Readonly<{
     email: string;
+    isConfirmed: boolean;
   }>;
 
 export type AuthUserSummary = Readonly<{
@@ -77,4 +78,5 @@ export type MemberMutationResult = Readonly<{
 
 export type AccountMemberInvitationResult = Readonly<{
   member: AccountMemberRecord;
+  delivery: "email" | "in_app";
 }>;
