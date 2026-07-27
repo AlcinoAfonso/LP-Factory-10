@@ -1,8 +1,8 @@
 0. Introdução
 
 0.1 Cabeçalho
-• Data da última atualização: 26/07/2026
-• Documento: LP Factory 10 — Schema (DB Contract) v1.0.33
+• Data da última atualização: 27/07/2026
+• Documento: LP Factory 10 — Schema (DB Contract) v1.0.34
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -48,10 +48,16 @@
 • FK: account_id → accounts; user_id → auth.users; invited_by → auth.users
 1.2.2 Segurança
 • Trigger Hub: sim (protege último owner)
-• RLS: obrigatório
-1.2.3 Policies (TBD: preencher nomes reais no Supabase)
-• Select: usuário vê seus vínculos
-• Insert/Update: regras via convites e governança (hub + RPC)
+• RLS: habilitado
+• Grants finais versionados: `authenticated` com SELECT; `service_role` com SELECT, INSERT e UPDATE, sem DELETE; `ai_readonly` permanece somente com SELECT.
+• Mutações operacionais de membros ocorrem somente no boundary server-only autorizado; o Trigger Hub e a proteção do último owner permanecem ativos.
+1.2.3 Policies
+• account_users_select_self_or_admin (SELECT): vínculo próprio, owner/admin ativo da conta ou platform admin.
+• account_users_insert_by_admins (INSERT): owner/admin ativo da conta ou platform admin.
+• account_users_update_by_admins (UPDATE): owner/admin ativo da conta ou platform admin, em USING e WITH CHECK.
+• account_users_delete_by_admins (DELETE): owner/admin ativo da conta ou platform admin; o runtime E11 não usa DELETE.
+1.2.4 Migration relacionada
+• `supabase/migrations/20260727155312_e11_account_members_security.sql` versiona os grants e ACLs finais; o apply permanece reservado ao fluxo automático posterior ao merge.
 
 1.3 audit_logs
 1.3.1 Chaves e campos-chave
@@ -949,10 +955,10 @@
 • Migration relacionada: `supabase/migrations/20260624203000_e10_7_phase_5_ensure_commercial_activation_composition.sql`.
 
 3.4 Convites de Conta
-• accept_account_invite(account_id uuid, ttl_days int) → boolean
-• revoke_account_invite(account_id uuid, user_id uuid) → boolean
-• invitation_expires_at(account_user_id uuid, ttl_days int) → timestamptz
-• invitation_is_expired(account_user_id uuid, ttl_days int) → boolean
+• As funções legadas permanecem como objetos de banco, mas ficam retiradas do caminho operacional da E11.
+• `accept_account_invite(uuid, integer)`, `revoke_account_invite(uuid, uuid)`, `invitation_expires_at(uuid, integer)` e `invitation_is_expired(uuid, integer)`: sem EXECUTE para PUBLIC, anon, authenticated e ai_readonly.
+• `activate_user_from_auth_hook(jsonb)`: sem EXECUTE para PUBLIC, anon, authenticated, ai_readonly e supabase_auth_admin; o Auth Hook amplo não está configurado no projeto.
+• Nenhuma função nova, RPC ou SECURITY DEFINER é criada pela E11.
 
 3.5 Trigger Hub & Auditoria
 • hub_router()
