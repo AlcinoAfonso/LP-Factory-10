@@ -1,8 +1,8 @@
 # Plano-base E11 — Gestão de Usuários e Convites
 
-- Versão: v2
-- Data: 25/07/2026
-- Status: ajustado após parecer técnico; aguardando reavaliação dos especialistas.
+- Versão: v1
+- Data: 27/07/2026
+- Status: concluído; processo automatizado selecionado; aguardando incorporação à `main`.
 - Recorte previsto para roadmap: `11.1 — Gestão de membros e convites`
 - Path canônico: `docs/lousa-plano-base-e11.md`
 - Plano conceitual: N/A — debate realizado entre Estrategista, Analista e humano antes da v1.
@@ -470,6 +470,7 @@
 
 ### 4.3. Decisão atual e próxima ação
 
-- Decisão: reapresentar a v2 ajustada ao Analista, Gestor Estrutural e Gestor de Updates.
+- Decisão: plano-base v1 concluído após validação humana; as discussões posteriores não alteraram o recorte nem exigem novo papel, permissão ou infraestrutura na E11.1.
+- Processo selecionado: Opção 2 — processo automatizado.
 - Gestor de Automação: não se aplica, pois todas as fases estão marcadas como `Automação: não`.
-- Próxima ação após a reavaliação: consolidar eventuais ajustes no mesmo PR ou liberar o plano para merge humano.
+- Próxima ação: incorporar esta v1 à `main` e entregar o PR ao orquestrador conforme `docs/prompt-estrategista.md`.
