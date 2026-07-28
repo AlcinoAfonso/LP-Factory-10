@@ -7,10 +7,22 @@ import {
 } from "../../adapters/landingPageGenerationProfileAdapterCore";
 import { normalizeLandingPageGenerationProfileItemRow } from "../../adapters/landingPageGenerationProfileRowNormalization";
 import {
+  fingerprintGenerationProfileProposal,
+  validateGenerationProfileDraft,
+} from "./index";
+import {
   landingPageGenerationProfileSchema,
   landingPageGenerationProfileSourceSchema,
   landingPageGenerationProfileTaxonChainSchema,
 } from "./schema";
+import {
+  buildGenerationProfileResponsesRequest,
+  isGenerationProfileAssistanceConfigured,
+  mapProviderFailureToProposalError,
+  mapResearchErrorToProposalError,
+  validateGenerationProfileProviderPayload,
+} from "./proposal";
+import { listLandingPageModuleIdentities } from "../module-catalog";
 import { resolveLandingPageGenerationProfile } from "./resolver";
 
 const SEGMENT_ID = "10000000-0000-4000-8000-000000000001";
@@ -299,6 +311,114 @@ const cases: readonly Readonly<{
       assert.equal(resolved.ok, false);
       if (!resolved.ok) assert.equal(resolved.error.code, "READ_FAILED");
       assert.equal(resolutionKind, "error");
+    },
+  },
+  {
+    name: "admin draft validation accepts only eligible identities and optimistic snapshots",
+    run: () => {
+      const input = {
+        ownerTaxonId: NICHE_ID,
+        generationGuidance: validProfile.generationGuidance,
+        recommendations: validProfile.items.map(({ id: _id, ...item }) => item),
+        origin: "manual",
+      } as const;
+      assert.equal(validateGenerationProfileDraft(input).ok, true);
+      assert.equal(validateGenerationProfileDraft({ ...input, recommendations: [{ ...input.recommendations[0], moduleKey: "invented" }] }).ok, false);
+      assert.equal(validateGenerationProfileDraft({ ...input, profileId: validProfile.id }).ok, false);
+      assert.equal(validateGenerationProfileDraft({ ...input, expectedUpdatedAt: "2026-07-28T12:00:00Z" }).ok, false);
+    },
+  },
+  {
+    name: "proposal schema rejects invented identities duplicate order and extra properties",
+    run: () => {
+      const payload = {
+        generation_guidance: "Oriente a progressao narrativa.",
+        recommendations: [{
+          module_key: "hero",
+          module_version: 1,
+          variant_key: "hero.form",
+          variant_version: 1,
+          priority: "P1",
+          recommended_order: 10,
+          item_guidance: null,
+        }],
+      };
+      assert.equal(validateGenerationProfileProviderPayload(payload).ok, true);
+      assert.equal(validateGenerationProfileProviderPayload({ ...payload, extra: true }).ok, false);
+      assert.equal(validateGenerationProfileProviderPayload({ ...payload, recommendations: [{ ...payload.recommendations[0], module_key: "invented" }] }).ok, false);
+      assert.equal(validateGenerationProfileProviderPayload({ ...payload, recommendations: [payload.recommendations[0], { ...payload.recommendations[0], module_key: "faq" }] }).ok, false);
+    },
+  },
+  {
+    name: "proposal fingerprint is deterministic and detects human adjustment",
+    run: () => {
+      const proposal = {
+        generationGuidance: validProfile.generationGuidance,
+        recommendations: validProfile.items.map(({ id: _id, ...item }) => item),
+      };
+      const fingerprint = fingerprintGenerationProfileProposal(proposal);
+      assert.match(fingerprint, /^[a-f0-9]{64}$/);
+      assert.equal(fingerprintGenerationProfileProposal(proposal), fingerprint);
+      assert.notEqual(fingerprintGenerationProfileProposal({ ...proposal, generationGuidance: "Ajustada" }), fingerprint);
+    },
+  },
+  {
+    name: "Responses API request is strict stateless tool-free and bounded",
+    run: () => {
+      const request = buildGenerationProfileResponsesRequest({
+        model: "configured-model",
+        taxonId: NICHE_ID,
+        research: {
+          servedTaxonId: NICHE_ID,
+          endCustomer: { audienceScope: "end_customer", sourceTaxonId: NICHE_ID, sourceRelation: "own", version: 1, researches: [] },
+          businessBuyer: { audienceScope: "business_buyer", sourceTaxonId: NICHE_ID, sourceRelation: "own", version: 1, researches: [] },
+          versions: { endCustomer: 1, businessBuyer: 1 },
+        },
+        moduleIdentities: listLandingPageModuleIdentities(),
+        previousActiveProfile: null,
+      });
+      assert.equal(request.ok, true);
+      assert.equal(request.body.store, false);
+      assert.equal(request.body.max_output_tokens, 2000);
+      assert.equal(Object.hasOwn(request.body, "tools"), false);
+      assert.equal(request.body.text.format.strict, true);
+      assert.equal(request.body.text.format.schema.additionalProperties, false);
+      const oversized = buildGenerationProfileResponsesRequest({
+        model: "configured-model",
+        taxonId: NICHE_ID,
+        research: {
+          servedTaxonId: NICHE_ID,
+          endCustomer: { audienceScope: "end_customer", sourceTaxonId: NICHE_ID, sourceRelation: "own", version: 1, researches: [] },
+          businessBuyer: { audienceScope: "business_buyer", sourceTaxonId: NICHE_ID, sourceRelation: "own", version: 1, researches: [] },
+          versions: { endCustomer: 1, businessBuyer: 1 },
+        },
+        moduleIdentities: listLandingPageModuleIdentities(),
+        previousActiveProfile: null,
+        adminGuidance: "x".repeat(100_000),
+      });
+      assert.equal(oversized.ok, false);
+    },
+  },
+  {
+    name: "research failures preserve missing invalid and technical categories",
+    run: () => {
+      assert.equal(mapResearchErrorToProposalError("RESEARCH_INCOMPLETE"), "missing_information");
+      assert.equal(mapResearchErrorToProposalError("RESEARCH_INVALID"), "invalid_data");
+      assert.equal(mapResearchErrorToProposalError("RESEARCH_AMBIGUOUS"), "invalid_data");
+      assert.equal(mapResearchErrorToProposalError("READ_FAILED"), "technical_failure");
+      assert.equal(mapResearchErrorToProposalError("SOURCE_NOT_NORMALIZABLE"), "technical_failure");
+    },
+  },
+  {
+    name: "provider refusal truncation timeout oversize and absent env fail closed",
+    run: () => {
+      assert.equal(mapProviderFailureToProposalError("refusal"), "technical_failure");
+      assert.equal(mapProviderFailureToProposalError("incomplete"), "technical_failure");
+      assert.equal(mapProviderFailureToProposalError("timeout"), "technical_failure");
+      assert.equal(mapProviderFailureToProposalError("request_too_large"), "invalid_data");
+      assert.equal(isGenerationProfileAssistanceConfigured({ apiKey: "", model: "configured-model" }), false);
+      assert.equal(isGenerationProfileAssistanceConfigured({ apiKey: "secret", model: "" }), false);
+      assert.equal(isGenerationProfileAssistanceConfigured({ apiKey: "secret", model: "configured-model" }), true);
     },
   },
 ];
