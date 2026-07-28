@@ -151,7 +151,6 @@ export async function inviteAccountMember(
     if (!redirectTo.ok) return redirectTo;
 
     const delivery = await sendAuthInvite({
-      userId: user.id,
       email,
       inviteState: inviteState.value,
       redirectTo: redirectTo.value,
@@ -204,7 +203,6 @@ export async function resendAccountMemberInvite(
   if (!redirectTo.ok) return redirectTo;
 
   const delivery = await sendAuthInvite({
-    userId: membership.value.userId,
     email: user.value.email,
     inviteState: inviteState.value,
     redirectTo: redirectTo.value,

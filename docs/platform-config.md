@@ -230,12 +230,12 @@
 4.6 Supabase Auth — convite de membro
 • Auth Hook: ausência de hook configurado confirmada operacionalmente em 27/07/2026.
 • Envio: usar o convite nativo `inviteUserByEmail`; não configurar envio customizado no Core.
-• Template: `Invite user` configurado em português do Brasil em 28/07/2026, preservando o estado assinado enviado em `{{ .Data.invite_state }}`.
-• Link aprovado para o template: `{{ .RedirectTo }}?token_hash={{ .TokenHash }}&type=invite&invite_state={{ .Data.invite_state }}`.
+• Template: `Invite user` configurado em português do Brasil em 28/07/2026; o estado assinado é codificado no `redirectTo` específico de cada emissão e transportado por `{{ .RedirectTo }}`, sem `data` ou `user_metadata` compartilhado.
+• Link aprovado para o template: `{{ .RedirectTo }}&token_hash={{ .TokenHash }}&type=invite`.
 • Redirect de Production: `https://lp-factory-10.vercel.app/auth/confirm` cadastrado na allowlist do Supabase Auth em 28/07/2026.
 • Redirect de Preview: wildcard restrito a `https://*-alcino-afonsos-projects.vercel.app/**` confirmado na allowlist; a prova deve usar somente o deployment autorizado.
 • Email OTP Expiration: `3600` segundos confirmados no Dashboard em 28/07/2026; o Core não adiciona validade local paralela.
-• Estado: template, redirects e expiração configurados; envio real e matriz hospedada aprovados no Preview autorizado da fase `11.1.7` em 28/07/2026.
+• Estado: template, redirects e expiração configurados; correção do transporte concorrente implementada e reteste hospedado restrito pendente no Preview autorizado da fase `11.1.7`.
 • Ordem operacional remanescente: manter Production desabilitada até o merge humano do PR #656; após o merge, habilitar o gate em Production, redeployar e executar o smoke final.
 • Evidência hospedada exigida antes da habilitação: convite novo, reenvio idempotente, link adulterado rejeitado, link legítimo concluído com definição de senha antes da ativação e isolamento entre memberships.
 

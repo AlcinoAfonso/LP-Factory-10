@@ -3,6 +3,7 @@ import "server-only";
 import { createServiceClient } from "@/lib/supabase/service";
 
 import type { AccountMemberResult, AuthUserSummary } from "../contracts";
+import { createInviteTransportOptions } from "../invite-state-codec";
 import { isValidMemberEmail, normalizeMemberEmail } from "../policy";
 
 const AUTH_PAGE_SIZE = 1000;
@@ -60,7 +61,6 @@ export async function createUnconfirmedAuthUser(
 }
 
 export async function sendAuthInvite(input: Readonly<{
-  userId: string;
   email: string;
   inviteState: string;
   redirectTo: string;
@@ -69,29 +69,11 @@ export async function sendAuthInvite(input: Readonly<{
   if (!isValidMemberEmail(email)) return { ok: false, error: "invalid_email" };
   if (!input.inviteState) return { ok: false, error: "invite_state_unavailable" };
 
-  try {
-    const redirect = new URL(input.redirectTo);
-    if (
-      (redirect.protocol !== "https:" && redirect.protocol !== "http:") ||
-      redirect.pathname !== "/auth/confirm"
-    ) {
-      return { ok: false, error: "external_config_missing" };
-    }
-  } catch {
-    return { ok: false, error: "external_config_missing" };
-  }
+  const transport = createInviteTransportOptions(input);
+  if (!transport) return { ok: false, error: "external_config_missing" };
 
   const supabase = createServiceClient();
-  const { error: metadataError } = await supabase.auth.admin.updateUserById(
-    input.userId,
-    { user_metadata: { invite_state: input.inviteState } },
-  );
-  if (metadataError) return { ok: false, error: "auth_invite_failed" };
-
-  const { error } = await supabase.auth.admin.inviteUserByEmail(email, {
-    data: { invite_state: input.inviteState },
-    redirectTo: input.redirectTo,
-  });
+  const { error } = await supabase.auth.admin.inviteUserByEmail(email, transport);
 
   return error ? { ok: false, error: "auth_invite_failed" } : { ok: true, value: true };
 }

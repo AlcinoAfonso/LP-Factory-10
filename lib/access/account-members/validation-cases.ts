@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 
 import {
   createInviteStatePayload,
+  createInviteTransportOptions,
   decodeInviteState,
   encodeInviteState,
   getInviteStateCookieName,
@@ -284,6 +285,47 @@ const cases: readonly Readonly<{ name: string; run: () => void }>[] = [
       });
       assert.equal(getInviteStateCookieName(TARGET_ID), `e11_invite_${TARGET_ID}`);
       assert.notEqual(getInviteStateCookieName(TARGET_ID), getInviteStateCookieName(ACTOR_ID));
+    },
+  },
+  {
+    name: "transports concurrent invite states per emission without shared metadata",
+    run: () => {
+      const otherAccountUserId = "10000000-0000-4000-8000-000000000004";
+      const otherAccountId = "10000000-0000-4000-8000-000000000005";
+      const firstPayload = createInviteStatePayload({
+        accountUserId: TARGET_ID,
+        accountId: ACCOUNT_ID,
+        userId: ACTOR_ID,
+      });
+      const secondPayload = createInviteStatePayload({
+        accountUserId: otherAccountUserId,
+        accountId: otherAccountId,
+        userId: ACTOR_ID,
+      });
+      assert.ok(firstPayload);
+      assert.ok(secondPayload);
+
+      const firstState = encodeInviteState(firstPayload, INVITE_STATE_SECRET);
+      const secondState = encodeInviteState(secondPayload, INVITE_STATE_SECRET);
+      assert.ok(firstState);
+      assert.ok(secondState);
+      assert.notEqual(firstState, secondState);
+
+      const firstTransport = createInviteTransportOptions({
+        redirectTo: "https://preview.example.com/auth/confirm",
+        inviteState: firstState,
+      });
+      const secondTransport = createInviteTransportOptions({
+        redirectTo: "https://preview.example.com/auth/confirm",
+        inviteState: secondState,
+      });
+      assert.ok(firstTransport);
+      assert.ok(secondTransport);
+      assert.deepEqual(Object.keys(firstTransport), ["redirectTo"]);
+      assert.deepEqual(Object.keys(secondTransport), ["redirectTo"]);
+      assert.equal(new URL(firstTransport.redirectTo).searchParams.get("invite_state"), firstState);
+      assert.equal(new URL(secondTransport.redirectTo).searchParams.get("invite_state"), secondState);
+      assert.notEqual(firstTransport.redirectTo, secondTransport.redirectTo);
     },
   },
   {
