@@ -1,8 +1,8 @@
 0. Introdução
 
 0.1 Cabeçalho
-• Data: 27/07/2026
-• Versão: v1.5.104
+• Data: 28/07/2026
+• Versão: v1.5.105
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -1150,7 +1150,7 @@ Repositório — Ajustados
 
 11. E11 — Gestão de Usuários e Convites
 - Objetivo: permitir gestão segura de membros não-owner e convites por conta, usando Supabase Auth e o Account Dashboard.
-- Status: implementação e validações disponíveis pré-merge concluídas; não liberado para merge enquanto os gates externos pós-merge permanecerem pendentes.
+- Status: validações pré-merge concluídas; PR liberado para merge humano. A ativação de Production permanece condicionada aos gates pós-merge, com `E11_MEMBERS_ENABLED=false` até sua conclusão.
 
 11.1 Gestão de membros e convites
 
