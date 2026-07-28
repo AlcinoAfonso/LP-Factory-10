@@ -2,7 +2,7 @@
 
 0.1 Cabeçalho
 • Data da última atualização: 28/07/2026
-• Documento: LP Factory 10 — Schema (DB Contract) v1.0.35
+• Documento: LP Factory 10 — Schema (DB Contract) v1.0.36
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -1014,14 +1014,14 @@
 
 3.7.2 activate_landing_page_generation_profile(uuid, timestamptz) → table
 • Ativa um `draft` com concorrência otimista e arquiva atomicamente a versão `active` anterior do mesmo taxon.
-• Registra `generation_profile_activated` sem reutilizar correlação de proposta.
+• Registra `generation_profile_activated` reutilizando, quando disponível, o `request_id` e o `correlation_status` do último salvamento do `draft`; na ausência de correlação salva, registra `correlation_status = unavailable`.
 
 3.7.3 archive_landing_page_generation_profile(uuid, timestamptz) → table
 • Arquiva uma versão `draft` ou `active` com concorrência otimista.
 • Registra `generation_profile_archived`.
 
 3.7.4 get_landing_page_generation_profile_lifecycle_status() → table
-• Retorna readiness administrativo calculado a partir de tabelas, constraints, RLS e grants exigidos pelo lifecycle.
+• Retorna readiness administrativo calculado a partir das RPCs, grants, RLS e ausência de policies exigidos pelo lifecycle.
 
 • Migration aplicada: `supabase/migrations/20260728153500_e12_4_3_generation_profile_lifecycle.sql`.
 • Provas pós-apply: `supabase/tests/e12_4_3_generation_profile_lifecycle.test.sql` e `supabase/snippets/e12_4_3_generation_profile_lifecycle_verify.sql`.
