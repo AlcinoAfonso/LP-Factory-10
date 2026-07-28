@@ -293,6 +293,10 @@
 - Ativação, salvamento, repetição ou correção automática pela IA.
 - Agente, comportamento agentic, job, fila, cron, webhook, workflow ou nova infraestrutura.
 - Escolha antecipada de RPC, Server Action, rota, modelo, parâmetros ou configuração operacional.
+- Implementação além do menor delta necessário para cumprir as entregas e os critérios de aceite da E12.4.3.
+- Refatoração, limpeza ou reorganização de áreas não indispensáveis à E12.4.3.
+- Abstração genérica criada para necessidade futura ou reutilização ainda não comprovada neste recorte.
+- Componente, ação administrativa ou funcionalidade não prevista explicitamente nas entregas e nos critérios de aceite.
 
 ### 4.2. Critérios de parada imediata
 
@@ -303,6 +307,7 @@
   - a categoria aprovada não atender ao requisito;
   - houver necessidade de agente, ferramenta autônoma ou fonte externa não aprovada;
   - a auditoria vigente não puder ser reutilizada sem ampliar o escopo;
+  - uma entrega exigir refatoração lateral, abstração genérica ou funcionalidade não prevista neste plano;
   - houver conflito com o contrato ou a implementação vigente da E20.3;
   - o repositório ou o ambiente alvo divergir das fontes do plano.
 
