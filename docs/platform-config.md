@@ -2,7 +2,7 @@
 
 0.1 Cabeçalho
 • Documento: LP Factory 10 — Platform Config
-• Versão: v0.1.10
+• Versão: v0.1.11
 • Data: 28/07/2026
 
 0.2 Contrato do documento
@@ -230,13 +230,13 @@
 4.6 Supabase Auth — convite de membro
 • Auth Hook: ausência de hook configurado confirmada operacionalmente em 27/07/2026.
 • Envio: usar o convite nativo `inviteUserByEmail`; não configurar envio customizado no Core.
-• Template: personalizar `Invite user` em português do Brasil e preservar o estado assinado enviado em `{{ .Data.invite_state }}`.
+• Template: `Invite user` configurado em português do Brasil em 28/07/2026, preservando o estado assinado enviado em `{{ .Data.invite_state }}`.
 • Link aprovado para o template: `{{ .RedirectTo }}?token_hash={{ .TokenHash }}&type=invite&invite_state={{ .Data.invite_state }}`.
-• Redirect de Production: cadastrar `https://lp-factory-10.vercel.app/auth/confirm` na allowlist do Supabase Auth.
-• Redirect de Preview: cadastrar somente o domínio/path do deployment usado na validação; quando wildcard for necessário, restringir a Preview e usar `/**`.
-• Email OTP Expiration: confirmar no Dashboard que a validade hospedada é compatível com a janela operacional do convite; o Core não adiciona validade local paralela.
-• Estado: template, redirects, expiração e envio real permanecem pendentes de configuração e validação hospedada pós-merge.
-• Ordem operacional remanescente: configurar e revisar template, redirects e expiração; habilitar o gate somente no Preview autorizado; redeployar e validar o fluxo hospedado; manter Production desabilitada até a aprovação da prova.
+• Redirect de Production: `https://lp-factory-10.vercel.app/auth/confirm` cadastrado na allowlist do Supabase Auth em 28/07/2026.
+• Redirect de Preview: wildcard restrito a `https://*-alcino-afonsos-projects.vercel.app/**` confirmado na allowlist; a prova deve usar somente o deployment autorizado.
+• Email OTP Expiration: `3600` segundos confirmados no Dashboard em 28/07/2026; o Core não adiciona validade local paralela.
+• Estado: template, redirects e expiração configurados; envio real e matriz hospedada permanecem pendentes na fase `11.1.7`.
+• Ordem operacional remanescente: habilitar o gate somente no Preview autorizado, redeployar e validar o fluxo hospedado; manter Production desabilitada até a aprovação da prova.
 • Evidência hospedada exigida antes da habilitação: convite novo, reenvio idempotente, link adulterado rejeitado, link legítimo concluído com definição de senha antes da ativação e isolamento entre memberships.
 
 4.7 Acesso operacional read-only para automações
