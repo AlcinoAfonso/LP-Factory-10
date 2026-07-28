@@ -79,7 +79,6 @@ declare
   v_archived_active record;
   v_draft_to_archive record;
   v_archived_draft record;
-  v_previous_active_updated_at timestamptz;
 begin
   select status.ready into v_ready
   from public.get_landing_page_generation_profile_lifecycle_status() status;
@@ -127,7 +126,7 @@ begin
     perform public.save_landing_page_generation_profile_draft(
       '12040000-0000-4000-8000-000000000001',
       v_created.profile_id,
-      v_created.updated_at,
+      v_created.updated_at - interval '1 second',
       'Stale write',
       '[]'::jsonb,
       'manual',
@@ -139,14 +138,11 @@ begin
     if sqlerrm not like '%E12_4_3_STALE_SNAPSHOT%' then raise; end if;
   end;
 
-  select updated_at into v_previous_active_updated_at
-  from public.landing_page_generation_profiles
-  where id = '12040000-0000-4000-8000-000000000010';
   begin
     perform public.save_landing_page_generation_profile_draft(
       '12040000-0000-4000-8000-000000000001',
       '12040000-0000-4000-8000-000000000010',
-      v_previous_active_updated_at,
+      v_uncorrelated.updated_at,
       'Forbidden active edit',
       '[]'::jsonb,
       'manual',
@@ -167,10 +163,12 @@ begin
   exception when others then
     if sqlerrm not like '%E12_4_3_STALE_SNAPSHOT%' then raise; end if;
   end;
+  execute 'reset role';
   if (select status from public.landing_page_generation_profiles where id = '12040000-0000-4000-8000-000000000010') <> 'active'
     or (select status from public.landing_page_generation_profiles where id = v_uncorrelated.profile_id) <> 'draft' then
     raise exception 'failed activation did not preserve active and draft';
   end if;
+  execute 'set local role authenticated';
 
   select * into v_activated
   from public.activate_landing_page_generation_profile(v_uncorrelated.profile_id, v_uncorrelated.updated_at);
