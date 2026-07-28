@@ -1388,25 +1388,21 @@ Repositório — Ajustados
   - Sem curadoria de composição de nicho, LP teste ou liberação de nicho registrada como implementação da E12.
 
 12.4 Gestão do perfil de orientação
-- Objetivo: Definir a operação administrativa do perfil de orientação que direciona gerações futuras de páginas comerciais sem materializar nem alterar LPs.
+- Objetivo: Definir a operação administrativa do perfil de orientação que direciona gerações futuras de landing pages sem materializar nem alterar LPs.
 - Status: E12.4.3 definida e aprovada para execução após a dependência externa registrada em 12.4.3.
 
 12.4.1 Objetivo e status
 - Objetivo: Entregar a operação manual completa de criação, edição, revisão, ativação e arquivamento de versões do perfil, com proposta opcional por IA no mesmo editor.
 - Status: Planejado e definido; implementação não iniciada.
 
-12.4.2 Contrato da E12.4.3
-- Status: Contrato funcional definido.
+12.4.3 Proposta, revisão, aprovação e ativação do perfil
+- Status: Contrato funcional definido; dependência externa vigente antes da implementação.
 - Conteúdo:
   - Perfil próprio permitido somente para segmento e nicho; ultranicho resolve o perfil ativo do ancestral elegível mais próximo.
   - Estados persistidos limitados a `draft`, `active` e `archived`; uma versão ativa é imutável e qualquer mudança exige nova versão em rascunho.
   - A operação manual permanece completa; a IA apenas propõe conteúdo após ação explícita do `platform_admin`, sem salvar, aprovar, ativar, arquivar ou gerar LP.
   - `Salvar rascunho`, `Aprovar e ativar` e arquivamento permanecem ações humanas; a troca da versão ativa deve ser atômica e auditada.
   - A E12.4.3 reutiliza o contrato e a persistência da E20.3 sem alterar o resolver público do perfil ativo próprio ou herdado.
-
-12.4.3 Dependências e limites de execução
-- Status: Dependência externa vigente antes da implementação.
-- Conteúdo:
   - Aguardar o merge do PR técnico de atualização do Next.js e, depois, sincronizar a branch da E12 com a `main` atualizada e confirmar a versão corrigida no lockfile antes de qualquer código, Admin Dashboard ou banco da E12.4.3.
   - A proposta por IA exige resolução completa da E10.8 e identidades públicas vigentes da E18.5; ausência ou indisponibilidade da assistência não bloqueia o fluxo manual.
   - E12.4.4 e subseções posteriores, autorização por conta, geração, materialização, preview, publicação e alteração de LP permanecem fora do recorte.
