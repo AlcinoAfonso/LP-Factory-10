@@ -1,8 +1,8 @@
 # Plano-base — E12.4 — Gestão do perfil de orientação
 
 - Data: 28/07/2026.
-- Versão: v2.1.
-- Status: plano-base v2 vigente com a subfase candidata E12.4.3.1 incorporada para revisão delta do Analista.
+- Versão: v2.2.
+- Status: plano-base v2 vigente com a E12.4.3.1 como implementação candidata no PR draft #654; revisão delta aprovada e provas hospedadas e gates pós-merge ainda pendentes.
 - Recorte previsto para o roadmap: `12.4 — Gestão do perfil de orientação`.
 - Recorte executável inicial: `12.4.3 — Proposta, revisão, aprovação e ativação do perfil`.
 - Path canônico: `docs/lousa-plano-base-e12-4.md`.
@@ -305,10 +305,8 @@
 
 ### 3.2. Próxima ação
 
-- Publicar o microdelta candidato da E12.4.3.1 no mesmo PR draft #654 e solicitar somente revisão delta ao Analista, sem repetir a avaliação completa dos especialistas.
-- Não marcar a E12.4.3.1 como concluída antes das provas hospedadas aplicáveis.
-- Aguardar o merge do PR técnico de atualização do Next.js. Depois do merge, sincronizar esta branch com a `main` atualizada por integração não destrutiva, reler as fontes alteradas e confirmar a versão corrigida no lockfile; somente então iniciar qualquer mudança de código, Admin Dashboard ou banco da E12.4.3.
-- Antes de iniciar a implementação e novamente antes do merge da E12.4.3, confirmar no `package-lock.json` que `next` e `eslint-config-next` estão alinhados em `16.2.11` ou em outra versão estável oficialmente corrigida para o mesmo conjunto de vulnerabilidades. Se a base permanecer em `16.1.1`, parar a implementação ou o merge e encaminhar a correção para PR técnico próprio, sem atualizar dependências dentro da E12.4.3 e sem migrar para versão preview.
+- Submeter o PR draft #654 à autorização final de merge humano, preservando a E12.4.3.1 como implementação candidata.
+- Não marcar a E12.4.3.1 como concluída antes das provas hospedadas aplicáveis e da execução dos gates pós-merge previstos neste plano.
 - Preservar `vercel#1 — AI Gateway` e `supa#63 — rlsautotest` apenas como oportunidades estratégicas condicionais, sem implementação neste recorte.
 
 ## 4. Escopo negativo e critérios de parada
