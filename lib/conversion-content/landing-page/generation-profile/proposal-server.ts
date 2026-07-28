@@ -54,7 +54,7 @@ export async function proposeLandingPageGenerationProfile(input: {
       startedAt,
     });
   }
-  const previousActiveProfile = detail.profiles.find((profile) => profile.status === "active") ?? null;
+  const previousActiveProfile = detail.lastActivatedOwnProfile;
   const moduleIdentities = listLandingPageModuleIdentities();
   const provider = await requestGenerationProfileProposal({
     model,

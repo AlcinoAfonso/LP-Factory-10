@@ -2,7 +2,8 @@ with expected(signature) as (
   values
     ('save_landing_page_generation_profile_draft(uuid,uuid,timestamp with time zone,text,jsonb,text,uuid,text)'),
     ('activate_landing_page_generation_profile(uuid,timestamp with time zone)'),
-    ('archive_landing_page_generation_profile(uuid,timestamp with time zone)')
+    ('archive_landing_page_generation_profile(uuid,timestamp with time zone)'),
+    ('get_landing_page_generation_profile_lifecycle_status()')
 ), actual as (
   select
     p.proname || '(' || pg_get_function_identity_arguments(p.oid) || ')' as signature,
@@ -14,7 +15,8 @@ with expected(signature) as (
     and p.proname in (
       'save_landing_page_generation_profile_draft',
       'activate_landing_page_generation_profile',
-      'archive_landing_page_generation_profile'
+      'archive_landing_page_generation_profile',
+      'get_landing_page_generation_profile_lifecycle_status'
     )
 )
 select
@@ -35,7 +37,8 @@ where specific_schema = 'public'
   and routine_name in (
     'save_landing_page_generation_profile_draft',
     'activate_landing_page_generation_profile',
-    'archive_landing_page_generation_profile'
+    'archive_landing_page_generation_profile',
+    'get_landing_page_generation_profile_lifecycle_status'
   )
 order by routine_name, grantee, privilege_type;
 

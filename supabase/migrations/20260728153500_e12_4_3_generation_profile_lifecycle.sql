@@ -33,7 +33,7 @@ begin
     or p_items is null
     or jsonb_typeof(p_items) <> 'array'
     or ((p_request_id is null) <> (p_review_result is null))
-    or ((p_origin = 'ai') <> (p_request_id is not null))
+    or (p_request_id is not null and p_origin <> 'ai')
     or (p_review_result is not null and p_review_result not in ('accepted', 'adjusted')) then
     raise exception 'E12_4_3_INVALID_INPUT';
   end if;
@@ -176,6 +176,7 @@ begin
       'origin', p_origin,
       'request_id', p_request_id,
       'review_result', p_review_result,
+      'correlation_status', case when p_request_id is null then 'unavailable' else 'available' end,
       'version', v_profile.version
     )),
     null
@@ -196,8 +197,12 @@ set search_path = public, pg_temp
 as $function$
 declare
   v_profile public.landing_page_generation_profiles%rowtype;
+  v_taxon public.business_taxons%rowtype;
+  v_owner_taxon_id uuid;
   v_previous_active_id uuid;
   v_request_id text;
+  v_correlation_status text;
+  v_last_save_changes jsonb;
 begin
   if auth.uid() is null or not (
     coalesce(public.is_platform_admin(), false)
@@ -206,12 +211,24 @@ begin
     raise exception 'E12_4_3_UNAUTHORIZED';
   end if;
 
+  select owner_taxon_id into v_owner_taxon_id
+  from public.landing_page_generation_profiles
+  where id = p_profile_id;
+  if not found then raise exception 'E12_4_3_NOT_FOUND'; end if;
+
+  select * into v_taxon
+  from public.business_taxons
+  where id = v_owner_taxon_id
+  for update;
+  if not found or not v_taxon.is_active or v_taxon.level not in ('segment', 'niche') then
+    raise exception 'E12_4_3_INVALID_INPUT';
+  end if;
+
   select * into v_profile
   from public.landing_page_generation_profiles
-  where id = p_profile_id
+  where id = p_profile_id and owner_taxon_id = v_owner_taxon_id
   for update;
   if not found then raise exception 'E12_4_3_NOT_FOUND'; end if;
-  perform 1 from public.business_taxons where id = v_profile.owner_taxon_id for update;
   if v_profile.status <> 'draft' then raise exception 'E12_4_3_INVALID_STATE'; end if;
   if p_expected_updated_at is null or v_profile.updated_at <> p_expected_updated_at then
     raise exception 'E12_4_3_STALE_SNAPSHOT';
@@ -233,13 +250,14 @@ begin
   where id = v_profile.id
   returning * into v_profile;
 
-  select changes_json->>'request_id' into v_request_id
+  select changes_json into v_last_save_changes
   from public.audit_logs
   where record_id = v_profile.id
     and event = 'generation_profile_draft_saved'
-    and changes_json ? 'request_id'
-  order by created_at desc
+  order by created_at desc, id desc
   limit 1;
+  v_request_id := v_last_save_changes->>'request_id';
+  v_correlation_status := coalesce(v_last_save_changes->>'correlation_status', 'unavailable');
 
   perform public.audit_context_event(
     'generation_profile_activated',
@@ -247,6 +265,7 @@ begin
     v_profile.id,
     jsonb_strip_nulls(jsonb_build_object(
       'request_id', v_request_id,
+      'correlation_status', v_correlation_status,
       'human_result', 'activated',
       'previous_active_id', v_previous_active_id,
       'version', v_profile.version
@@ -269,6 +288,8 @@ set search_path = public, pg_temp
 as $function$
 declare
   v_profile public.landing_page_generation_profiles%rowtype;
+  v_taxon public.business_taxons%rowtype;
+  v_owner_taxon_id uuid;
   v_previous_status text;
 begin
   if auth.uid() is null or not (
@@ -278,12 +299,24 @@ begin
     raise exception 'E12_4_3_UNAUTHORIZED';
   end if;
 
+  select owner_taxon_id into v_owner_taxon_id
+  from public.landing_page_generation_profiles
+  where id = p_profile_id;
+  if not found then raise exception 'E12_4_3_NOT_FOUND'; end if;
+
+  select * into v_taxon
+  from public.business_taxons
+  where id = v_owner_taxon_id
+  for update;
+  if not found or not v_taxon.is_active or v_taxon.level not in ('segment', 'niche') then
+    raise exception 'E12_4_3_INVALID_INPUT';
+  end if;
+
   select * into v_profile
   from public.landing_page_generation_profiles
-  where id = p_profile_id
+  where id = p_profile_id and owner_taxon_id = v_owner_taxon_id
   for update;
   if not found then raise exception 'E12_4_3_NOT_FOUND'; end if;
-  perform 1 from public.business_taxons where id = v_profile.owner_taxon_id for update;
   if v_profile.status not in ('draft', 'active') then raise exception 'E12_4_3_INVALID_STATE'; end if;
   if p_expected_updated_at is null or v_profile.updated_at <> p_expected_updated_at then
     raise exception 'E12_4_3_STALE_SNAPSHOT';
@@ -311,11 +344,85 @@ begin
 end
 $function$;
 
+create or replace function public.get_landing_page_generation_profile_lifecycle_status()
+returns table(ready boolean)
+language plpgsql
+security definer
+set search_path = public, pg_temp
+as $function$
+begin
+  if auth.uid() is null or not (
+    coalesce(public.is_platform_admin(), false)
+    or coalesce(public.is_super_admin(), false)
+  ) then
+    raise exception 'E12_4_3_UNAUTHORIZED';
+  end if;
+
+  return query
+  select
+    has_function_privilege('authenticated', 'public.save_landing_page_generation_profile_draft(uuid,uuid,timestamp with time zone,text,jsonb,text,uuid,text)', 'EXECUTE')
+    and has_function_privilege('authenticated', 'public.activate_landing_page_generation_profile(uuid,timestamp with time zone)', 'EXECUTE')
+    and has_function_privilege('authenticated', 'public.archive_landing_page_generation_profile(uuid,timestamp with time zone)', 'EXECUTE')
+    and not has_function_privilege('anon', 'public.save_landing_page_generation_profile_draft(uuid,uuid,timestamp with time zone,text,jsonb,text,uuid,text)', 'EXECUTE')
+    and not has_function_privilege('anon', 'public.activate_landing_page_generation_profile(uuid,timestamp with time zone)', 'EXECUTE')
+    and not has_function_privilege('anon', 'public.archive_landing_page_generation_profile(uuid,timestamp with time zone)', 'EXECUTE')
+    and not has_function_privilege('service_role', 'public.save_landing_page_generation_profile_draft(uuid,uuid,timestamp with time zone,text,jsonb,text,uuid,text)', 'EXECUTE')
+    and not has_function_privilege('service_role', 'public.activate_landing_page_generation_profile(uuid,timestamp with time zone)', 'EXECUTE')
+    and not has_function_privilege('service_role', 'public.archive_landing_page_generation_profile(uuid,timestamp with time zone)', 'EXECUTE')
+    and not has_table_privilege('authenticated', 'public.landing_page_generation_profiles', 'INSERT')
+    and not has_table_privilege('authenticated', 'public.landing_page_generation_profiles', 'UPDATE')
+    and not has_table_privilege('authenticated', 'public.landing_page_generation_profiles', 'DELETE')
+    and not has_table_privilege('authenticated', 'public.landing_page_generation_profile_items', 'INSERT')
+    and not has_table_privilege('authenticated', 'public.landing_page_generation_profile_items', 'UPDATE')
+    and not has_table_privilege('authenticated', 'public.landing_page_generation_profile_items', 'DELETE')
+    and not has_table_privilege('anon', 'public.landing_page_generation_profiles', 'INSERT')
+    and not has_table_privilege('anon', 'public.landing_page_generation_profiles', 'UPDATE')
+    and not has_table_privilege('anon', 'public.landing_page_generation_profiles', 'DELETE')
+    and not has_table_privilege('anon', 'public.landing_page_generation_profile_items', 'INSERT')
+    and not has_table_privilege('anon', 'public.landing_page_generation_profile_items', 'UPDATE')
+    and not has_table_privilege('anon', 'public.landing_page_generation_profile_items', 'DELETE')
+    and not has_table_privilege('service_role', 'public.landing_page_generation_profiles', 'INSERT')
+    and not has_table_privilege('service_role', 'public.landing_page_generation_profiles', 'UPDATE')
+    and not has_table_privilege('service_role', 'public.landing_page_generation_profiles', 'DELETE')
+    and not has_table_privilege('service_role', 'public.landing_page_generation_profile_items', 'INSERT')
+    and not has_table_privilege('service_role', 'public.landing_page_generation_profile_items', 'UPDATE')
+    and not has_table_privilege('service_role', 'public.landing_page_generation_profile_items', 'DELETE')
+    and has_table_privilege('service_role', 'public.landing_page_generation_profiles', 'SELECT')
+    and has_table_privilege('service_role', 'public.landing_page_generation_profile_items', 'SELECT')
+    and case
+      when to_regrole('ai_readonly') is null then true
+      else (
+        not has_table_privilege('ai_readonly', 'public.landing_page_generation_profiles', 'INSERT')
+        and not has_table_privilege('ai_readonly', 'public.landing_page_generation_profiles', 'UPDATE')
+        and not has_table_privilege('ai_readonly', 'public.landing_page_generation_profiles', 'DELETE')
+        and not has_table_privilege('ai_readonly', 'public.landing_page_generation_profile_items', 'INSERT')
+        and not has_table_privilege('ai_readonly', 'public.landing_page_generation_profile_items', 'UPDATE')
+        and not has_table_privilege('ai_readonly', 'public.landing_page_generation_profile_items', 'DELETE')
+        and not has_function_privilege('ai_readonly', 'public.save_landing_page_generation_profile_draft(uuid,uuid,timestamp with time zone,text,jsonb,text,uuid,text)', 'EXECUTE')
+        and not has_function_privilege('ai_readonly', 'public.activate_landing_page_generation_profile(uuid,timestamp with time zone)', 'EXECUTE')
+        and not has_function_privilege('ai_readonly', 'public.archive_landing_page_generation_profile(uuid,timestamp with time zone)', 'EXECUTE')
+      )
+    end
+    and coalesce((select relrowsecurity from pg_class where oid = 'public.landing_page_generation_profiles'::regclass), false)
+    and coalesce((select relrowsecurity from pg_class where oid = 'public.landing_page_generation_profile_items'::regclass), false)
+    and not exists (
+      select 1
+      from pg_policy
+      where polrelid in (
+        'public.landing_page_generation_profiles'::regclass,
+        'public.landing_page_generation_profile_items'::regclass
+      )
+    );
+end
+$function$;
+
 revoke all on function public.save_landing_page_generation_profile_draft(uuid, uuid, timestamptz, text, jsonb, text, uuid, text)
   from public, anon, service_role;
 revoke all on function public.activate_landing_page_generation_profile(uuid, timestamptz)
   from public, anon, service_role;
 revoke all on function public.archive_landing_page_generation_profile(uuid, timestamptz)
+  from public, anon, service_role;
+revoke all on function public.get_landing_page_generation_profile_lifecycle_status()
   from public, anon, service_role;
 
 do $$
@@ -324,6 +431,7 @@ begin
     execute 'revoke all on function public.save_landing_page_generation_profile_draft(uuid, uuid, timestamptz, text, jsonb, text, uuid, text) from ai_readonly';
     execute 'revoke all on function public.activate_landing_page_generation_profile(uuid, timestamptz) from ai_readonly';
     execute 'revoke all on function public.archive_landing_page_generation_profile(uuid, timestamptz) from ai_readonly';
+    execute 'revoke all on function public.get_landing_page_generation_profile_lifecycle_status() from ai_readonly';
   end if;
 end;
 $$;
@@ -331,6 +439,7 @@ $$;
 grant execute on function public.save_landing_page_generation_profile_draft(uuid, uuid, timestamptz, text, jsonb, text, uuid, text) to authenticated;
 grant execute on function public.activate_landing_page_generation_profile(uuid, timestamptz) to authenticated;
 grant execute on function public.archive_landing_page_generation_profile(uuid, timestamptz) to authenticated;
+grant execute on function public.get_landing_page_generation_profile_lifecycle_status() to authenticated;
 
 comment on function public.save_landing_page_generation_profile_draft(uuid, uuid, timestamptz, text, jsonb, text, uuid, text)
   is 'E12.4.3: salva atomicamente um agregado draft com concorrencia otimista e auditoria.';
@@ -338,5 +447,7 @@ comment on function public.activate_landing_page_generation_profile(uuid, timest
   is 'E12.4.3: arquiva o active anterior e ativa o draft atomicamente.';
 comment on function public.archive_landing_page_generation_profile(uuid, timestamptz)
   is 'E12.4.3: arquiva explicitamente um draft ou active com auditoria.';
+comment on function public.get_landing_page_generation_profile_lifecycle_status()
+  is 'E12.4.3: readiness read-only do lifecycle, incluindo ACL, RLS e ausencia de policies.';
 
 commit;

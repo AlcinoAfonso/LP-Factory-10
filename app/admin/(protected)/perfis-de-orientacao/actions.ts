@@ -9,7 +9,7 @@ import {
   archiveAdminGenerationProfile,
   saveAdminGenerationProfileDraft,
 } from "@/conversion-content/adapters/landingPageGenerationProfileAdminAdapter";
-import { fingerprintGenerationProfileProposal, type GenerationProfileDraftInput } from "@/conversion-content/landing-page/generation-profile";
+import { fingerprintGenerationProfileProposal, getGenerationProfileProposalCorrelation, type GenerationProfileDraftInput } from "@/conversion-content/landing-page/generation-profile";
 import { proposeLandingPageGenerationProfile } from "@/conversion-content/landing-page/generation-profile/proposal-server";
 
 export async function saveGenerationProfileAction(input: GenerationProfileDraftInput) {
@@ -18,12 +18,19 @@ export async function saveGenerationProfileAction(input: GenerationProfileDraftI
   const result = await saveAdminGenerationProfileDraft(input);
   if (result.ok) {
     revalidateGenerationProfilePaths(input.ownerTaxonId);
-    if (input.requestId && input.proposalFingerprint) {
+    const correlation = getGenerationProfileProposalCorrelation(input);
+    if (correlation) {
       console.info("generation_profile_proposal_review", {
-        requestId: input.requestId,
+        requestId: correlation.requestId,
         taxonId: input.ownerTaxonId,
         profileId: result.profileId,
-        result: fingerprintGenerationProfileProposal(input) === input.proposalFingerprint ? "accepted" : "adjusted",
+        result: fingerprintGenerationProfileProposal(input) === correlation.proposalFingerprint ? "accepted" : "adjusted",
+      });
+    } else if (input.origin === "ai") {
+      console.info("generation_profile_proposal_review", {
+        taxonId: input.ownerTaxonId,
+        profileId: result.profileId,
+        result: "correlation_unavailable",
       });
     }
   }

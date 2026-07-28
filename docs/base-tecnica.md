@@ -2,7 +2,7 @@
 
 0.1 Cabeçalho
 • Documento: Base Técnica LP Factory 10
-• Versão: v2.0.58
+• Versão: v2.0.59
 • Data: 28/07/2026
 
 0.2 Contrato do documento (consulta)
@@ -298,6 +298,7 @@
 • A saída deve preservar proveniência, ordenação determinística e imutabilidade profunda.
 • Identidades de módulo e variante devem ser validadas pela API pública da E18.5, sem importação direta do registry ou schema do catálogo.
 • Mutações administrativas do agregado devem ocorrer somente por RPC autenticada, atômica e auditada; tabelas permanecem sem DML direto para o cliente, e a ativação troca a versão ativa na mesma transação.
+• O runtime deve manter ações de lifecycle indisponíveis, com motivo objetivo, até um probe read-only confirmar RPCs, ACLs, RLS e ausência de policies esperadas no ambiente alvo.
 • Versão ativa é imutável; edição cria ou atualiza somente draft, com controle de concorrência por `updated_at` e validação server-side do agregado completo antes da persistência.
 • Assistência por IA é opcional, explícita e não autoritativa: produz proposta validada para revisão no editor, sem salvar, ativar, arquivar ou alterar o resolver público.
 • Prompts, payloads e respostas integrais não devem ser persistidos nem registrados; correlação deve usar identificadores, fingerprint e metadados operacionais seguros.

@@ -39,8 +39,8 @@ export const generationProfileDraftInputSchema = z
     generationGuidance: z.string().trim().min(1),
     recommendations: z.array(generationProfileRecommendationInputSchema),
     origin: z.enum(["manual", "ai"]),
-    requestId: z.uuid().optional(),
-    proposalFingerprint: z.string().regex(/^[a-f0-9]{64}$/).optional(),
+    requestId: z.string().optional(),
+    proposalFingerprint: z.string().optional(),
   })
   .strict()
   .superRefine((input, context) => {
@@ -49,20 +49,6 @@ export const generationProfileDraftInputSchema = z
         code: "custom",
         path: ["expectedUpdatedAt"],
         message: "existing drafts require their expected updated_at snapshot",
-      });
-    }
-    if ((input.requestId === undefined) !== (input.proposalFingerprint === undefined)) {
-      context.addIssue({
-        code: "custom",
-        path: ["proposalFingerprint"],
-        message: "proposal request id and fingerprint must be provided together",
-      });
-    }
-    if ((input.origin === "ai") !== (input.requestId !== undefined)) {
-      context.addIssue({
-        code: "custom",
-        path: ["origin"],
-        message: "AI origin requires proposal correlation and manual origin forbids it",
       });
     }
     const moduleKeys = input.recommendations.map((item) => item.moduleKey);
@@ -118,7 +104,27 @@ export function validateGenerationProfileDraft(input: unknown):
       };
     }
   }
-  return { ok: true, value: parsed.data };
+  const { requestId: _requestId, proposalFingerprint: _proposalFingerprint, ...aggregate } = parsed.data;
+  const correlation = getGenerationProfileProposalCorrelation(parsed.data);
+  return {
+    ok: true,
+    value: {
+      ...aggregate,
+      ...(correlation ?? {}),
+    },
+  };
+}
+
+export function getGenerationProfileProposalCorrelation(input: {
+  origin: "manual" | "ai";
+  requestId?: string;
+  proposalFingerprint?: string;
+}): Readonly<{ requestId: string; proposalFingerprint: string }> | null {
+  if (input.origin !== "ai") return null;
+  const requestId = z.uuid().safeParse(input.requestId);
+  const fingerprint = z.string().regex(/^[a-f0-9]{64}$/).safeParse(input.proposalFingerprint);
+  if (!requestId.success || !fingerprint.success) return null;
+  return { requestId: requestId.data, proposalFingerprint: fingerprint.data };
 }
 
 export function normalizeGenerationProfileProposal(input: unknown):

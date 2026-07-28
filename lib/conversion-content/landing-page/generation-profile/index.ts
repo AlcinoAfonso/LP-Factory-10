@@ -2,6 +2,7 @@ export * from "./contracts";
 export * from "./admin-contracts";
 export {
   fingerprintGenerationProfileProposal,
+  getGenerationProfileProposalCorrelation,
   normalizeGenerationProfileProposal,
   validateGenerationProfileDraft,
 } from "./admin-schema";

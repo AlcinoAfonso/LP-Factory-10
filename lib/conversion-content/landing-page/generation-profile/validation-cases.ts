@@ -326,6 +326,18 @@ const cases: readonly Readonly<{
       assert.equal(validateGenerationProfileDraft({ ...input, recommendations: [{ ...input.recommendations[0], moduleKey: "invented" }] }).ok, false);
       assert.equal(validateGenerationProfileDraft({ ...input, profileId: validProfile.id }).ok, false);
       assert.equal(validateGenerationProfileDraft({ ...input, expectedUpdatedAt: "2026-07-28T12:00:00Z" }).ok, false);
+      const unavailableCorrelation = validateGenerationProfileDraft({
+        ...input,
+        origin: "ai",
+        requestId: "invalid-request-id",
+        proposalFingerprint: "invalid-fingerprint",
+      });
+      assert.equal(unavailableCorrelation.ok, true);
+      if (unavailableCorrelation.ok) {
+        assert.equal(unavailableCorrelation.value.origin, "ai");
+        assert.equal(unavailableCorrelation.value.requestId, undefined);
+        assert.equal(unavailableCorrelation.value.proposalFingerprint, undefined);
+      }
     },
   },
   {

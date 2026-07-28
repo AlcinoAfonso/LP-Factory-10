@@ -91,3 +91,8 @@ export type GenerationProfileProposalResult =
         message: string;
       }>;
     }>;
+
+export type GenerationProfileLifecycleReadiness = Readonly<{
+  ready: boolean;
+  reason: string;
+}>;

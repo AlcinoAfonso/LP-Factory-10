@@ -11,6 +11,7 @@ import {
   type AdminGenerationProfileListItem,
   type AdminGenerationProfileTaxon,
   type GenerationProfileDraftInput,
+  type GenerationProfileLifecycleReadiness,
   type GenerationProfileMutationErrorCode,
   type GenerationProfileMutationResult,
 } from "../landing-page/generation-profile";
@@ -71,6 +72,7 @@ export async function readAdminGenerationProfileDetail(input: {
       ok: true;
       taxon: AdminGenerationProfileTaxon;
       profiles: readonly AdminGenerationProfile[];
+      lastActivatedOwnProfile: AdminGenerationProfile | null;
     }>
   | Readonly<{ ok: false; error: string }>
 > {
@@ -113,7 +115,38 @@ export async function readAdminGenerationProfileDetail(input: {
   if (profiles.some((profile) => profile === null)) {
     return { ok: false, error: "profile_invalid_data" };
   }
-  return { ok: true, taxon, profiles: profiles as AdminGenerationProfile[] };
+  const validProfiles = profiles as AdminGenerationProfile[];
+  const activeProfile = validProfiles.find((profile) => profile.status === "active") ?? null;
+  let lastActivatedOwnProfile = activeProfile;
+  if (!activeProfile && profileIds.length > 0) {
+    const { data: auditRow, error: auditError } = await supabase
+      .from("audit_logs")
+      .select("record_id")
+      .eq("event", "generation_profile_activated")
+      .in("record_id", profileIds)
+      .order("created_at", { ascending: false })
+      .order("id", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (auditError) return { ok: false, error: "profile_history_read_failed" };
+    if (auditRow?.record_id) {
+      lastActivatedOwnProfile = validProfiles.find((profile) => profile.id === auditRow.record_id) ?? null;
+    }
+  }
+  return { ok: true, taxon, profiles: validProfiles, lastActivatedOwnProfile };
+}
+
+export async function readAdminGenerationProfileLifecycleReadiness(): Promise<GenerationProfileLifecycleReadiness> {
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("get_landing_page_generation_profile_lifecycle_status");
+  const row = Array.isArray(data) ? data[0] : data;
+  if (error || !isRecord(row) || row.ready !== true) {
+    return {
+      ready: false,
+      reason: "Lifecycle indisponivel ate a migration e o verificador read-only serem aprovados.",
+    };
+  }
+  return { ready: true, reason: "Lifecycle verificado e disponivel." };
 }
 
 export async function saveAdminGenerationProfileDraft(
@@ -121,9 +154,11 @@ export async function saveAdminGenerationProfileDraft(
 ): Promise<GenerationProfileMutationResult> {
   const validated = validateGenerationProfileDraft(input);
   if (!validated.ok) return mutationFailure("invalid_data", validated.message);
+  const lifecycle = await readAdminGenerationProfileLifecycleReadiness();
+  if (!lifecycle.ready) return mutationFailure("lifecycle_unavailable", lifecycle.reason);
 
-  const reviewResult = input.requestId && input.proposalFingerprint
-    ? fingerprintGenerationProfileProposal(validated.value) === input.proposalFingerprint
+  const reviewResult = validated.value.requestId && validated.value.proposalFingerprint
+    ? fingerprintGenerationProfileProposal(validated.value) === validated.value.proposalFingerprint
       ? "accepted"
       : "adjusted"
     : null;
@@ -147,6 +182,8 @@ export async function activateAdminGenerationProfile(input: {
   if (!z.uuid().safeParse(input.taxonId).success || !z.uuid().safeParse(input.profileId).success || !z.iso.datetime({ offset: true }).safeParse(input.expectedUpdatedAt).success) {
     return mutationFailure("invalid_data", "Activation input is invalid.");
   }
+  const lifecycle = await readAdminGenerationProfileLifecycleReadiness();
+  if (!lifecycle.ready) return mutationFailure("lifecycle_unavailable", lifecycle.reason);
   const detail = await readAdminGenerationProfileDetail({ taxonId: input.taxonId });
   if (!detail.ok) return mutationFailure("technical_failure", "Draft could not be validated before activation.");
   const draft = detail.profiles.find((profile) => profile.id === input.profileId);
@@ -175,6 +212,8 @@ export async function archiveAdminGenerationProfile(input: {
   if (!z.uuid().safeParse(input.profileId).success || !z.iso.datetime({ offset: true }).safeParse(input.expectedUpdatedAt).success) {
     return mutationFailure("invalid_data", "Archive input is invalid.");
   }
+  const lifecycle = await readAdminGenerationProfileLifecycleReadiness();
+  if (!lifecycle.ready) return mutationFailure("lifecycle_unavailable", lifecycle.reason);
   return callMutationRpc("archive_landing_page_generation_profile", {
     p_profile_id: input.profileId,
     p_expected_updated_at: input.expectedUpdatedAt,
@@ -212,6 +251,9 @@ function mapRpcError(message: string): GenerationProfileMutationResult {
   if (match) return mutationFailure(match[1], message);
   if (/schema cache|function .* does not exist|PGRST202/i.test(message)) {
     return mutationFailure("lifecycle_unavailable", "Generation profile lifecycle is not available yet.");
+  }
+  if (/permission denied|insufficient privilege|42501/i.test(message)) {
+    return mutationFailure("lifecycle_unavailable", "Generation profile lifecycle permissions are unavailable.");
   }
   return mutationFailure("technical_failure", "Generation profile mutation failed.");
 }
