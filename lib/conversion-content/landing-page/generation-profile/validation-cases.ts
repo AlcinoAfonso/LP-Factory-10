@@ -25,6 +25,10 @@ import {
   validateGenerationProfileProviderPayload,
 } from "./proposal";
 import { listLandingPageModuleIdentities } from "../module-catalog";
+import {
+  applyGenerationProfileProposalToEditor,
+  hasGenerationProfileEditorContent,
+} from "./editor-assistance";
 import { resolveLandingPageGenerationProfile } from "./resolver";
 
 const SEGMENT_ID = "10000000-0000-4000-8000-000000000001";
@@ -399,6 +403,7 @@ const cases: readonly Readonly<{
         },
         moduleIdentities: listLandingPageModuleIdentities(),
         previousActiveProfile: null,
+        currentEditor: null,
       });
       assert.equal(request.ok, true);
       assert.equal(request.body.store, false);
@@ -406,6 +411,7 @@ const cases: readonly Readonly<{
       assert.equal(Object.hasOwn(request.body, "tools"), false);
       assert.equal(request.body.text.format.strict, true);
       assert.equal(request.body.text.format.schema.additionalProperties, false);
+      assert.equal(Object.hasOwn(request.body, "previous_response_id"), false);
       const oversized = buildGenerationProfileResponsesRequest({
         model: GENERATION_PROFILE_APPROVED_MODEL,
         taxonId: NICHE_ID,
@@ -417,9 +423,107 @@ const cases: readonly Readonly<{
         },
         moduleIdentities: listLandingPageModuleIdentities(),
         previousActiveProfile: null,
-        adminGuidance: "x".repeat(100_000),
+        currentEditor: null,
+        humanFeedback: "x".repeat(100_000),
       });
       assert.equal(oversized.ok, false);
+    },
+  },
+  {
+    name: "initial proposal and refinement expose only the authorized current editor and latest feedback",
+    run: () => {
+      const research = {
+        servedTaxonId: NICHE_ID,
+        endCustomer: { audienceScope: "end_customer" as const, sourceTaxonId: NICHE_ID, sourceRelation: "own" as const, version: 1, researches: [] },
+        businessBuyer: { audienceScope: "business_buyer" as const, sourceTaxonId: NICHE_ID, sourceRelation: "own" as const, version: 1, researches: [] },
+        versions: { endCustomer: 1, businessBuyer: 1 },
+      };
+      const initial = buildGenerationProfileResponsesRequest({
+        model: GENERATION_PROFILE_APPROVED_MODEL,
+        taxonId: NICHE_ID,
+        research,
+        moduleIdentities: listLandingPageModuleIdentities(),
+        previousActiveProfile: null,
+        currentEditor: null,
+      });
+      const initialInput = JSON.parse(initial.body.input[1].content[0].text);
+      assert.equal(initialInput.request_kind, "initial");
+      assert.equal(initialInput.current_editor, null);
+      assert.equal(initialInput.human_feedback, null);
+
+      const currentEditor = {
+        generationGuidance: validProfile.generationGuidance,
+        recommendations: validProfile.items.map(({ id: _id, ...item }) => item),
+      };
+      const refined = buildGenerationProfileResponsesRequest({
+        model: GENERATION_PROFILE_APPROVED_MODEL,
+        taxonId: NICHE_ID,
+        research,
+        moduleIdentities: listLandingPageModuleIdentities(),
+        previousActiveProfile: null,
+        currentEditor,
+        humanFeedback: "Priorize a prova antes da FAQ.",
+      });
+      const refinedInput = JSON.parse(refined.body.input[1].content[0].text);
+      assert.equal(refinedInput.request_kind, "refinement");
+      assert.deepEqual(refinedInput.current_editor, currentEditor);
+      assert.equal(refinedInput.human_feedback, "Priorize a prova antes da FAQ.");
+      assert.equal(Object.hasOwn(refined.body, "previous_response_id"), false);
+    },
+  },
+  {
+    name: "validated refinement replaces only the editor while failure preserves it and its dirty state",
+    run: () => {
+      const currentEditor = {
+        generationGuidance: validProfile.generationGuidance,
+        recommendations: validProfile.items.map(({ id: _id, ...item }) => item),
+      };
+      assert.equal(hasGenerationProfileEditorContent({ generationGuidance: "", recommendations: [] }), false);
+      assert.equal(hasGenerationProfileEditorContent(currentEditor), true);
+
+      const refinedPayload = validateGenerationProfileProviderPayload({
+        generation_guidance: "Priorize prova e clareza.",
+        recommendations: [{
+          module_key: "hero",
+          module_version: 1,
+          variant_key: "hero.form",
+          variant_version: 1,
+          priority: "P1",
+          recommended_order: 10,
+          item_guidance: "Conecte a prova ao CTA.",
+        }],
+      });
+      assert.equal(refinedPayload.ok, true);
+      if (!refinedPayload.ok) return;
+      const success = applyGenerationProfileProposalToEditor({
+        currentEditor,
+        currentDirty: false,
+        result: {
+          ok: true,
+          value: {
+            ...refinedPayload.value,
+            requestId: "50000000-0000-4000-8000-000000000001",
+          },
+        },
+      });
+      assert.equal(success.applied, true);
+      assert.equal(success.dirty, true);
+      assert.equal(success.editor.generationGuidance, "Priorize prova e clareza.");
+      assert.deepEqual(Object.keys(success).sort(), ["applied", "dirty", "editor"]);
+
+      const failure = applyGenerationProfileProposalToEditor({
+        currentEditor,
+        currentDirty: true,
+        result: {
+          ok: false,
+          requestId: "50000000-0000-4000-8000-000000000002",
+          error: { code: "technical_failure", message: "Provider unavailable." },
+        },
+      });
+      assert.equal(failure.applied, false);
+      assert.equal(failure.editor, currentEditor);
+      assert.equal(failure.dirty, true);
+      assert.deepEqual(Object.keys(failure).sort(), ["applied", "dirty", "editor"]);
     },
   },
   {

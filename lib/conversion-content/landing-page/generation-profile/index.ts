@@ -1,6 +1,10 @@
 export * from "./contracts";
 export * from "./admin-contracts";
 export {
+  applyGenerationProfileProposalToEditor,
+  hasGenerationProfileEditorContent,
+} from "./editor-assistance";
+export {
   fingerprintGenerationProfileProposal,
   getGenerationProfileProposalCorrelation,
   normalizeGenerationProfileProposal,

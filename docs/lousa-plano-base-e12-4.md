@@ -1,8 +1,8 @@
 # Plano-base — E12.4 — Gestão do perfil de orientação
 
 - Data: 28/07/2026.
-- Versão: v2.
-- Status: plano-base v2 consolidado para avaliação do Analista.
+- Versão: v2.1.
+- Status: plano-base v2 vigente com a subfase candidata E12.4.3.1 incorporada para revisão delta do Analista.
 - Recorte previsto para o roadmap: `12.4 — Gestão do perfil de orientação`.
 - Recorte executável inicial: `12.4.3 — Proposta, revisão, aprovação e ativação do perfil`.
 - Path canônico: `docs/lousa-plano-base-e12-4.md`.
@@ -56,9 +56,10 @@
 - O mesmo `platform_admin` pode revisar e executar `Aprovar e ativar`.
 - A aprovação é decisão humana e evento auditado dentro de `Aprovar e ativar`; não é status persistido nem resultado estável separado.
 - A IA apenas propõe conteúdo para o editor. Não salva, aprova, ativa, arquiva nem gera LP.
+- A proposta pode iniciar ou refinar o conteúdo do editor; cada acionamento humano autoriza somente uma chamada, sem conversa persistente, memória própria ou continuidade automática.
 - A operação manual permanece completa quando a IA não for usada, falhar ou estiver indisponível.
 - A LP materializada permanece independente e não muda quando o perfil evolui.
-- A E12.4.4 e as subseções posteriores permanecem fora desta v2.
+- A E12.4.4 e as subseções posteriores permanecem fora deste plano.
 
 ### 1.4. Fronteiras de responsabilidade
 
@@ -84,7 +85,8 @@
 - Entrada adicional da IA:
   - resultado completo e resolvido da E10.8, com versões e proveniência;
   - última versão anteriormente ativa do perfil, quando houver;
-  - orientação textual opcional do `platform_admin`.
+  - conteúdo atual do editor, quando o acionamento for um refinamento;
+  - feedback humano mais recente do `platform_admin`, quando informado.
 - Processamento manual:
   - iniciar a próxima versão no editor;
   - preencher orientação geral e recomendações;
@@ -94,6 +96,8 @@
   - exigir ação explícita do `platform_admin`;
   - verificar a resolução completa da E10.8 antes da chamada;
   - fornecer somente as entradas autorizadas;
+  - distinguir a primeira proposta, sem conteúdo anterior, do refinamento que recebe o estado atual do editor e o feedback humano mais recente;
+  - realizar no máximo uma chamada por acionamento, sem retry ou encadeamento automático;
   - receber proposta limitada aos campos do perfil;
   - validar a saída deterministicamente;
   - preencher o editor sem persistência automática.
@@ -183,8 +187,8 @@
 - A implementação deve reutilizar `OPENAI_API_KEY` e usar a variável dedicada `OPENAI_LANDING_PAGE_GENERATION_PROFILE_MODEL`, sem fallback hardcoded; o valor inicial de referência é `gpt-5.4-mini`. A chamada deve usar `POST https://api.openai.com/v1/responses`, `text.format.type = json_schema`, `strict = true`, `store = false`, `max_output_tokens = 2000` e timeout de 30 segundos. O request não deve fornecer `tools`, `previous_response_id`, background mode ou qualquer mecanismo agentic. O corpo JSON integral da requisição, já serializado e incluindo schema e instruções, não pode exceder 96 KiB. Não existe retry automático.
 - Com os limites e tarifas vigentes na consolidação da v2, o teto operacional de referência deve permanecer inferior a aproximadamente US$ 0,09 por chamada. Antes de habilitar qualquer troca do modelo configurado ou mudança material de tarifa, repetir as fixtures de contrato, qualidade e custo e atualizar a referência operacional; configuração alterada sem essa evidência mantém a assistência indisponível e não afeta o fluxo manual.
 - A saída permitida contém somente `generation_guidance` e `recommendations[]`, cada recomendação limitada a `module_key`, `module_version`, `variant_key`, `variant_version`, `priority`, `recommended_order` e `item_guidance`. Todos os objetos do JSON Schema devem usar `additionalProperties: false`. A proposta deve passar por schema Zod próprio e pela validação pública de identidade da E18.5 antes de preencher o editor. A função de IA não recebe cliente de banco e não salva, ativa, arquiva ou corrige dados.
-- O clique humano em `Solicitar proposta por IA` autoriza uma única chamada paga. A proposta válida apenas preenche o editor; `Salvar rascunho`, `Aprovar e ativar` e arquivamento permanecem ações humanas independentes. Env ausente ou indisponibilidade da OpenAI tornam somente a assistência indisponível, preservando o fluxo manual completo.
-- O contrato e a validação puros permanecem em `lib/conversion-content/landing-page/generation-profile/`, e o provider fica em adapter server-only separado. A Server Action protegida monta somente o DTO autorizado usando `resolveLandingPageResearchForTaxon`, a última versão anteriormente ativa própria do taxon quando houver e APIs públicas da E18.5; perfil herdado ou ausência atual não substituem silenciosamente essa entrada histórica. O provider não importa Supabase, tabelas, registry interno nem adapter de mutação. Sua saída retorna ao boundary puro, é validada e somente então preenche o editor. O caminho de proposta não chama RPC de salvamento, ativação ou arquivamento.
+- O primeiro clique humano em `Solicitar proposta por IA` e cada clique posterior em `Refinar com IA` autorizam, cada um, uma única chamada paga. No refinamento, o DTO autorizado inclui o conteúdo atual do editor e o feedback humano mais recente; não usa `previous_response_id`, conversa, histórico persistente ou memória própria. A proposta válida apenas substitui o conteúdo visível do editor após validação; `Salvar rascunho`, `Aprovar e ativar` e arquivamento permanecem ações humanas independentes. Env ausente ou indisponibilidade da OpenAI tornam somente a assistência indisponível, preservando o fluxo manual completo.
+- O contrato e a validação puros permanecem em `lib/conversion-content/landing-page/generation-profile/`, e o provider fica em adapter server-only separado. A Server Action protegida monta somente o DTO autorizado usando `resolveLandingPageResearchForTaxon`, a última versão anteriormente ativa própria do taxon quando houver, o estado atual validado do editor no refinamento, o feedback humano mais recente e APIs públicas da E18.5; perfil herdado ou ausência atual não substituem silenciosamente essa entrada histórica. O provider não importa Supabase, tabelas, registry interno nem adapter de mutação. Sua saída completa retorna ao boundary puro, é validada e somente então preenche o editor. O caminho de proposta ou refinamento não chama RPC de salvamento, ativação ou arquivamento.
 - O mapeamento de falhas é fechado e preserva os códigos reais da E10.8: ausência, incompletude ou inelegibilidade legítima retornam `missing_information`; `READ_FAILED` e `SOURCE_NOT_NORMALIZABLE` retornam `technical_failure`; `RESEARCH_INVALID` e `RESEARCH_AMBIGUOUS` retornam `invalid_data`, sem mascaramento como ausência. Schema de proposta inválido, identidade inexistente, variante incompatível, módulo ou ordem duplicados, corpo autorizado acima de 96 KiB e demais violações do agregado retornam `invalid_data` antes de qualquer chamada quando aplicável. Configuração ausente, timeout, erro HTTP, recusa, conteúdo filtrado, resposta incompleta, ausência de output ou falha de parsing retornam `technical_failure`, com motivo técnico seguro apenas nos logs. Qualquer falha preserva integralmente os valores atuais do editor, o `draft` e o `active`. Nova tentativa exige nova ação explícita do `platform_admin`.
 
 ### 2.5. Critérios visuais
@@ -197,6 +201,7 @@
 - Ações visuais:
   - criar nova versão;
   - solicitar proposta por IA;
+  - refinar com IA quando houver conteúdo no editor;
   - `Salvar rascunho`;
   - `Aprovar e ativar`;
   - arquivar.
@@ -243,7 +248,7 @@
   - superfície administrativa protegida para listar, criar, editar, ativar e arquivar versões;
   - boundary de mutação controlado e exclusivo para `platform_admin`;
   - fluxo manual com uma única ação `Salvar rascunho`;
-  - fluxo opcional de proposta por IA no mesmo editor;
+  - fluxo opcional de proposta inicial e refinamento iterativo por IA no mesmo editor, sempre por acionamento explícito e sem estado conversacional persistente;
   - validação determinística do agregado e das identidades públicas da E18.5;
   - `Aprovar e ativar` atômico;
   - arquivamento com efeitos distintos para `draft` e `active`;
@@ -261,6 +266,8 @@
   - operação manual completa sem dependência da IA;
   - nenhuma chamada à IA sem ação humana e E10.8 completa;
   - proposta válida preenche o editor sem salvar automaticamente;
+  - refinamento recebe o conteúdo atual do editor e o feedback humano mais recente, devolve uma proposta completa validada e mantém o editor como não salvo;
+  - cada proposta ou refinamento exige um novo clique e realiza no máximo uma chamada, sem retry, encadeamento ou continuidade automática;
   - saída inválida ou falha técnica preserva o `draft` e o `active`;
   - apenas segmento e nicho aceitam perfil próprio;
   - `active` não pode ser editado;
@@ -278,10 +285,28 @@
   - o runtime não considera o lifecycle habilitado antes do apply da migration E12.4.3 e da execução aprovada do verificador read-only no ambiente alvo. RPC ausente, schema cache ainda não atualizado ou ACL divergente deve ser mapeado pelo adapter para indisponibilidade fail-closed, com ações de mutação indisponíveis e preservação integral do `draft` e do `active`. A reconciliação final deve atualizar `docs/schema.md` com funções, ACLs, RLS, policies e grants efetivos e `docs/roadmap.md` com o estado comprovado da E20.3 e da E12.4.3;
   - validações do repositório e evidências do ambiente alvo definidas na v2 e aprovadas antes da execução.
 
+#### 3.1.1. E12.4.3.1 — Refinamento iterativo assistido por IA
+
+- Objetivo:
+  - permitir que o `platform_admin` refine a proposta no editor com o conteúdo corrente e seu feedback humano mais recente, sem transformar o refinamento em frente, conversa ou automação independente.
+- Entregas:
+  - manter `Solicitar proposta por IA` para o editor sem conteúdo anterior e apresentar `Refinar com IA` quando houver conteúdo;
+  - enviar E10.8 completa, identidades públicas da E18.5, referências vigentes, conteúdo atual validado do editor e feedback humano mais recente;
+  - receber e validar uma proposta completa antes de substituir somente o conteúdo visível do editor;
+  - reutilizar modelo, tarifa, limites, gates, correlação e observabilidade da E12.4.3.
+- Critérios de aceite:
+  - primeira proposta funciona sem conteúdo anterior;
+  - refinamento usa o conteúdo atual e o feedback humano mais recente;
+  - falha ou resposta inválida preserva integralmente editor, `draft` e `active`;
+  - proposta refinada mantém o editor com alterações não salvas e bloqueia a ativação;
+  - nenhuma chamada salva ou ativa, e cada refinamento exige novo acionamento explícito.
+- Escopo negativo:
+  - sem tabela, migration, RPC, rota estrutural, chat, histórico de mensagens, memória persistente, agente, autonomia, `previous_response_id`, provider adicional, abstração genérica, comparação automática, métricas de desempenho, E12.4.4 ou geração de LP.
+
 ### 3.2. Próxima ação
 
-- Submeter esta v2 ao Analista em Passagem 1 independente e, depois, em Passagem 2 com a matriz e os pareceres integrais.
-- Não iniciar a implementação antes da conclusão `aprovado para merge do plano-base v2`, da reconciliação do roadmap pelo Prompt ABC e do checkpoint `LP-Factory-Stage: plan-v2-approved`.
+- Publicar o microdelta candidato da E12.4.3.1 no mesmo PR draft #654 e solicitar somente revisão delta ao Analista, sem repetir a avaliação completa dos especialistas.
+- Não marcar a E12.4.3.1 como concluída antes das provas hospedadas aplicáveis.
 - Aguardar o merge do PR técnico de atualização do Next.js. Depois do merge, sincronizar esta branch com a `main` atualizada por integração não destrutiva, reler as fontes alteradas e confirmar a versão corrigida no lockfile; somente então iniciar qualquer mudança de código, Admin Dashboard ou banco da E12.4.3.
 - Antes de iniciar a implementação e novamente antes do merge da E12.4.3, confirmar no `package-lock.json` que `next` e `eslint-config-next` estão alinhados em `16.2.11` ou em outra versão estável oficialmente corrigida para o mesmo conjunto de vulnerabilidades. Se a base permanecer em `16.1.1`, parar a implementação ou o merge e encaminhar a correção para PR técnico próprio, sem atualizar dependências dentro da E12.4.3 e sem migrar para versão preview.
 - Preservar `vercel#1 — AI Gateway` e `supa#63 — rlsautotest` apenas como oportunidades estratégicas condicionais, sem implementação neste recorte.
@@ -301,6 +326,7 @@
 - Quarto status, estado `approved`, terceira tabela de domínio ou tabela própria de auditoria.
 - Escrita direta por `public`, `anon`, `authenticated`, cliente ou `ai_readonly`.
 - Ativação, salvamento, repetição ou correção automática pela IA.
+- Chat, histórico de mensagens, memória persistente, `previous_response_id`, refinamento automático, retry automático, comparação de versões ou otimização baseada em métricas.
 - Agente, comportamento agentic, job, fila, cron, webhook, workflow ou nova infraestrutura.
 - Implementação além do menor delta necessário para cumprir as entregas e os critérios de aceite da E12.4.3.
 - Refatoração, limpeza ou reorganização de áreas não indispensáveis à E12.4.3.
@@ -324,20 +350,13 @@
 ### 4.3. Validação deste trabalho documental
 
 - Confirmar:
-  - somente `docs/lousa-plano-base-e12-4.md` alterado;
+  - `docs/lousa-plano-base-e12-4.md` e `docs/roadmap.md` ajustados pelo menor delta; `docs/base-tecnica.md` sem alteração por não registrar o payload detalhado da assistência;
   - quatro seções principais preservadas;
-  - uma única fase executável, `E12.4.3`;
+  - uma única fase executável, `E12.4.3`, com a subfase interna `E12.4.3.1` sem frente independente;
   - `Automação: sim` com categoria, ambiente, objetivo e limites;
   - E12.4.4 e subseções posteriores fora do recorte;
-  - ausência de implementação;
-  - ausência de alteração em `docs/roadmap.md` neste checkpoint de v2.
-- Executar verificação de whitespace e estrutura Markdown.
-- Registrar como N/A nesta entrega documental:
-  - `npm ci`;
-  - `npm run check`;
-  - validação material;
-  - teste humano;
-  - smoke visual.
+  - ausência de tabela, migration, RPC, rota estrutural, agente, memória ou provider novo.
+- Executar a validação específica, typecheck, check e verificação de whitespace; manter Preview autenticado e teste humano como provas hospedadas pendentes.
 
 ### 4.4. Critérios de encerramento do plano
 

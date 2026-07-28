@@ -2,7 +2,7 @@
 
 0.1 Cabeçalho
 • Data: 28/07/2026
-• Versão: v1.5.109
+• Versão: v1.5.110
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -1411,6 +1411,16 @@ Repositório — Ajustados
   - Boundary e adapters: contratos administrativos, validação estrita, correlação da proposta, acesso server-only e integração opcional com Responses API em `lib/conversion-content/`.
   - Banco versionado: migration `20260728153500_e12_4_3_generation_profile_lifecycle.sql`, teste SQL e snippet de verificação; aplicação no Supabase e reconciliação posterior de `docs/schema.md` ainda pendentes.
   - Validação local: casos executáveis do perfil, typecheck e check aprovados; Preview autenticado e fluxo real com OpenAI/Supabase ainda não executados por ausência das configurações locais.
+
+12.4.3.1 Refinamento iterativo assistido por IA
+- Status: Implementação candidata no PR #654; provas hospedadas aplicáveis permanecem pendentes e a subfase não está concluída.
+- Conteúdo:
+  - Toda proposta inicial ou revisão depende de ação explícita do `platform_admin`.
+  - A IA pode sugerir alterações em `generation_guidance`, recomendações e `item_guidance` dentro do contrato fechado vigente.
+  - O refinamento recebe o conteúdo atual do editor e o feedback humano mais recente, além das fontes já autorizadas pela E12.4.3.
+  - Cada acionamento autoriza somente uma chamada; não há refinamento nem retry automático.
+  - Nenhuma proposta salva, aprova ou ativa automaticamente; o `platform_admin` continua responsável por revisar, editar, salvar e ativar.
+  - Não existe conversa persistente, histórico de mensagens, agente ou memória própria.
 
 13. E13 — Partner Dashboard
 

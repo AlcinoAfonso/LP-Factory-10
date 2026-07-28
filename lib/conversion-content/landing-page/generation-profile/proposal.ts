@@ -6,6 +6,7 @@ import {
 } from "./admin-schema";
 import type {
   AdminGenerationProfile,
+  GenerationProfileEditorContent,
   GenerationProfileProposalErrorCode,
 } from "./admin-contracts";
 
@@ -21,7 +22,8 @@ export type GenerationProfileProviderInput = Readonly<{
   research: ResolvedLandingPageResearch;
   moduleIdentities: LandingPageModuleIdentityCatalog;
   previousActiveProfile: AdminGenerationProfile | null;
-  adminGuidance?: string;
+  currentEditor: GenerationProfileEditorContent | null;
+  humanFeedback?: string;
 }>;
 
 export type GenerationProfileProviderResult =
@@ -48,7 +50,7 @@ export function buildGenerationProfileResponsesRequest(input: GenerationProfileP
         content: [
           {
             type: "input_text",
-            text: "Proponha apenas um perfil orientativo de landing page. Nao invente identidades: use apenas modulos e variantes que voce reconheca como pertencentes ao catalogo LP Factory. Prioridade e ordem sao orientativas. Nao gere copy, LP, dados de conta ou acoes.",
+            text: "Proponha um perfil orientativo completo de landing page. Quando houver editor atual, refine-o conforme o feedback humano sem alterar o contrato fechado da saida. Nao invente identidades: use apenas modulos e variantes do catalogo LP Factory. Prioridade e ordem sao orientativas. Nao gere copy, LP, dados de conta ou acoes.",
           },
         ],
       },
@@ -62,7 +64,9 @@ export function buildGenerationProfileResponsesRequest(input: GenerationProfileP
               research: input.research,
               module_identities: input.moduleIdentities,
               previous_active_profile: input.previousActiveProfile,
-              admin_guidance: input.adminGuidance?.trim() || null,
+              request_kind: input.currentEditor ? "refinement" : "initial",
+              current_editor: input.currentEditor,
+              human_feedback: input.humanFeedback?.trim() || null,
             }),
           },
         ],

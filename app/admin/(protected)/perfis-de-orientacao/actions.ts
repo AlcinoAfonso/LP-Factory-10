@@ -9,7 +9,7 @@ import {
   archiveAdminGenerationProfile,
   saveAdminGenerationProfileDraft,
 } from "@/conversion-content/adapters/landingPageGenerationProfileAdminAdapter";
-import { fingerprintGenerationProfileProposal, getGenerationProfileProposalCorrelation, type GenerationProfileDraftInput } from "@/conversion-content/landing-page/generation-profile";
+import { fingerprintGenerationProfileProposal, getGenerationProfileProposalCorrelation, type GenerationProfileDraftInput, type GenerationProfileEditorContent } from "@/conversion-content/landing-page/generation-profile";
 import { proposeLandingPageGenerationProfile } from "@/conversion-content/landing-page/generation-profile/proposal-server";
 
 export async function saveGenerationProfileAction(input: GenerationProfileDraftInput) {
@@ -39,7 +39,7 @@ export async function saveGenerationProfileAction(input: GenerationProfileDraftI
   return result;
 }
 
-export async function proposeGenerationProfileAction(input: { taxonId: string; adminGuidance?: string }) {
+export async function proposeGenerationProfileAction(input: { taxonId: string; currentEditor?: GenerationProfileEditorContent; humanFeedback?: string }) {
   const gate = await requirePlatformAdmin();
   if (!gate.allowed) return { ok: false as const, requestId: "", error: { code: "technical_failure" as const, message: "Acesso administrativo nao autorizado." } };
   const supabase = await createClient();

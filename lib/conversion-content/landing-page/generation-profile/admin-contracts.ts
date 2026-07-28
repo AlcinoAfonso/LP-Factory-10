@@ -24,6 +24,11 @@ export type GenerationProfileDraftInput = Readonly<{
   proposalFingerprint?: string;
 }>;
 
+export type GenerationProfileEditorContent = Readonly<{
+  generationGuidance: string;
+  recommendations: readonly GenerationProfileRecommendationInput[];
+}>;
+
 export type AdminGenerationProfileTaxon = Readonly<{
   id: string;
   name: string;
