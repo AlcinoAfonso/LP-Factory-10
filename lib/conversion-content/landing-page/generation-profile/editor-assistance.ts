@@ -1,5 +1,6 @@
 import type {
   GenerationProfileEditorContent,
+  GenerationProfileProposalCorrelation,
   GenerationProfileProposalResult,
 } from "./admin-contracts";
 
@@ -14,6 +15,7 @@ export function hasGenerationProfileEditorContent(
 export function applyGenerationProfileProposalToEditor(input: {
   currentEditor: GenerationProfileEditorContent;
   currentDirty: boolean;
+  currentProposal: GenerationProfileProposalCorrelation | null;
   result: GenerationProfileProposalResult;
 }) {
   if (!input.result.ok) {
@@ -21,6 +23,7 @@ export function applyGenerationProfileProposalToEditor(input: {
       applied: false as const,
       editor: input.currentEditor,
       dirty: input.currentDirty,
+      proposal: input.currentProposal,
     };
   }
   return {
@@ -30,5 +33,9 @@ export function applyGenerationProfileProposalToEditor(input: {
       recommendations: input.result.value.recommendations,
     },
     dirty: true,
+    proposal: {
+      requestId: input.result.value.requestId,
+      fingerprint: input.result.value.fingerprint,
+    },
   };
 }

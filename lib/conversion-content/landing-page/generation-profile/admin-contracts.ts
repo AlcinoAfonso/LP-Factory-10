@@ -29,6 +29,11 @@ export type GenerationProfileEditorContent = Readonly<{
   recommendations: readonly GenerationProfileRecommendationInput[];
 }>;
 
+export type GenerationProfileProposalCorrelation = Readonly<{
+  requestId: string;
+  fingerprint: string;
+}>;
+
 export type AdminGenerationProfileTaxon = Readonly<{
   id: string;
   name: string;

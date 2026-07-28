@@ -472,7 +472,7 @@ const cases: readonly Readonly<{
     },
   },
   {
-    name: "validated refinement replaces only the editor while failure preserves it and its dirty state",
+    name: "validated refinement replaces only the editor while failure preserves editor correlation and dirty state",
     run: () => {
       const currentEditor = {
         generationGuidance: validProfile.generationGuidance,
@@ -498,6 +498,7 @@ const cases: readonly Readonly<{
       const success = applyGenerationProfileProposalToEditor({
         currentEditor,
         currentDirty: false,
+        currentProposal: null,
         result: {
           ok: true,
           value: {
@@ -509,11 +510,17 @@ const cases: readonly Readonly<{
       assert.equal(success.applied, true);
       assert.equal(success.dirty, true);
       assert.equal(success.editor.generationGuidance, "Priorize prova e clareza.");
-      assert.deepEqual(Object.keys(success).sort(), ["applied", "dirty", "editor"]);
+      assert.equal(success.proposal.requestId, "50000000-0000-4000-8000-000000000001");
+      assert.deepEqual(Object.keys(success).sort(), ["applied", "dirty", "editor", "proposal"]);
 
+      const currentProposal = {
+        requestId: "50000000-0000-4000-8000-000000000000",
+        fingerprint: "a".repeat(64),
+      };
       const failure = applyGenerationProfileProposalToEditor({
         currentEditor,
         currentDirty: true,
+        currentProposal,
         result: {
           ok: false,
           requestId: "50000000-0000-4000-8000-000000000002",
@@ -523,7 +530,8 @@ const cases: readonly Readonly<{
       assert.equal(failure.applied, false);
       assert.equal(failure.editor, currentEditor);
       assert.equal(failure.dirty, true);
-      assert.deepEqual(Object.keys(failure).sort(), ["applied", "dirty", "editor"]);
+      assert.equal(failure.proposal, currentProposal);
+      assert.deepEqual(Object.keys(failure).sort(), ["applied", "dirty", "editor", "proposal"]);
     },
   },
   {
