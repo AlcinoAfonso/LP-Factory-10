@@ -1,8 +1,8 @@
 0. Introdução
 
 0.1 Cabeçalho
-• Data: 26/07/2026
-• Versão: v1.5.102
+• Data: 28/07/2026
+• Versão: v1.5.105
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -1150,50 +1150,77 @@ Repositório — Ajustados
 
 11. E11 — Gestão de Usuários e Convites
 - Objetivo: permitir gestão segura de membros não-owner e convites por conta, usando Supabase Auth e o Account Dashboard.
-- Status: Planejado.
+- Status: validações pré-merge concluídas; PR liberado para merge humano. A ativação de Production permanece condicionada aos gates pós-merge, com `E11_MEMBERS_ENABLED=false` até sua conclusão.
 
 11.1 Gestão de membros e convites
 
 11.1.1 Objetivo e status
 - Objetivo: permitir que owner e admin convidem, acompanhem e administrem membros com papéis admin, editor e viewer, preservando o owner e o isolamento multi-tenant.
-- Status: Planejado.
+- Status: implementado no repositório com `E11_MEMBERS_ENABLED=false`; migration versionada e não aplicada.
+- Gate confirmado: ausência de Auth Hook configurado no Supabase, verificada operacionalmente em 27/07/2026.
+- Validações pré-merge: `npm ci`, `npm run check` com zero erros, `npm run validate:account-members` com 13 casos aprovados e `git diff --check`.
+- Gates externos pendentes após o merge: apply e verificação da migration pelo fluxo aprovado, configuração de secret/template/redirects/expiração, redeploy com gate desabilitado, prova hospedada em Preview, habilitação controlada em Production, novo redeploy e smoke pós-ativação.
+
+11.1.2 Registros do recorte
+- Banco — versionados, sem apply manual:
+  - `supabase/migrations/20260727155312_e11_account_members_security.sql`;
+  - `supabase/snippets/e11_account_members_verify.sql`.
+- Repositório — criados:
+  - `lib/access/account-members/`;
+  - `app/a/[account]/members/`;
+  - `app/a/home/PendingInviteActionButton.tsx`;
+  - `app/a/home/member-invite-actions.ts`.
+- Repositório — ajustados:
+  - `app/a/[account]/layout.tsx`;
+  - `app/a/home/page.tsx`;
+  - `app/auth/confirm/route.ts`;
+  - `app/auth/update-password/page.tsx`;
+  - `components/layout/Header.tsx`;
+  - `lib/access/guards.ts`;
+  - `lib/supabase/service.ts`;
+  - `package.json`.
 
 11.1.3 Domínio server-side e ciclo seguro de vínculos
-- Status: Planejado.
+- Status: implementado e aprovado no gate de implementação pré-merge.
 - Conteúdo:
-  - boundary server-only para identidade, autorização e transições de `account_users`;
+  - boundary server-only com adapters separados para Data API e Supabase Auth Admin;
+  - guard canônico owner/admin para os fluxos administrativos, sem reutilizá-lo no autoatendimento do convidado;
   - busca paginada de usuário por e-mail no Supabase Auth após autorização;
   - aceite, recusa, alteração de papel, revogação e desativação por membership específico;
   - tratamento idempotente de duplicidade e reuso de vínculo, sem expiração automática local do membership;
   - correção ou retirada do caminho operacional das funções legadas incompatíveis, sem tabela ou coluna nova por padrão.
 
 11.1.4 Convite de novo usuário, conclusão do cadastro e confirmação específica
-- Status: Planejado.
+- Status: implementado e aprovado no gate de implementação pré-merge; configuração e prova hospedada permanecem pós-merge.
 - Conteúdo:
   - usuário novo ou ainda não confirmado recebe o template nativo `Invite user`;
   - contexto versionado e assinado identifica um único `account_user_id`;
   - `/auth/confirm` preserva a mitigação anti-scanner, confirma o Auth e cria a sessão;
   - `/auth/update-password` é reutilizada ou adaptada para definir senha antes da ativação do vínculo;
+  - estado de convite, metadata, query string e cookie servem somente como transporte; a autorização exige sessão autenticada e validação da linha específica;
   - a conclusão ativa somente o vínculo validado e admite retry idempotente da mesma linha;
   - o happy path inclui logout e novo login por e-mail e senha;
   - validade e reenvio do link pertencem ao Supabase Auth, sem prazo local do membership;
-  - nenhum e-mail próprio, hook amplo, job ou automação.
+  - nenhum e-mail próprio, hook amplo, job ou automação;
+  - o gate permanece desabilitado em Production durante o PR e até a prova hospedada pós-merge em Preview ou ambiente autorizado; somente após a aprovação dessa prova ocorre a ativação em Production e o redeploy, seguidos de smoke pós-ativação.
 
 11.1.5 Gestão de membros no Account Dashboard
-- Status: Planejado.
+- Status: implementado e aprovado no gate de implementação pré-merge; validação hospedada permanece pós-merge.
 - Conteúdo:
   - rota `/a/[account]/members` acessível somente a owner e admin;
   - lista de membros ativos e convites pendentes;
   - convite para admin, editor ou viewer;
   - reenvio e revogação de pendente, alteração de papel e desativação de membro ativo;
-  - owner e vínculo do próprio ator protegidos.
+  - owner e vínculo do próprio ator protegidos;
+  - navegação, rota e ações falham fechadas enquanto o gate da E11 não estiver habilitado.
 
 11.1.6 Pendências do usuário já cadastrado
-- Status: Planejado.
+- Status: implementado e aprovado no gate de implementação pré-merge; validação hospedada permanece pós-merge.
 - Conteúdo:
   - usuário confirmado não recebe novo e-mail;
   - `/a/home` apresenta os próprios convites pendentes antes do redirect para conta ativa;
-  - usuário pode aceitar ou recusar uma pendência por vez;
+  - usuário pode aceitar ou recusar uma pendência por vez, com identidade derivada da sessão e validação de que a linha pendente pertence ao próprio usuário;
+  - o canal do convite é registrado em evento append-only e vinculado ao `hub_dispatch` que abriu o ciclo `pending` atual; eventos de ciclos anteriores são ignorados e ausência de canal corrente falha fechada;
   - membership permanece `pending` sem expiração automática local até aceite, recusa ou revogação;
   - sem pendências, permanece o comportamento atual de redirect.
 

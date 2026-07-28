@@ -2,8 +2,8 @@
 
 0.1 Cabeçalho
 • Documento: LP Factory 10 — Platform Config
-• Versão: v0.1.8
-• Data: 02/07/2026
+• Versão: v0.1.9
+• Data: 27/07/2026
 
 0.2 Contrato do documento
 • O QUE É: snapshot operacional e fonte única das configurações de plataformas externas do LP Factory 10, refletindo o estado conhecido/cadastrado nas plataformas conforme indicado.
@@ -109,6 +109,12 @@
 • Regra: testar primeiro em Preview da feature branch antes de Production, quando aplicável.
 
 3.4 Variáveis públicas no Vercel
+• `NEXT_PUBLIC_SITE_URL`
+• Finalidade: origem canônica usada pelo fluxo de Auth para formar o callback `/auth/confirm`.
+• Escopo: Production e Preview.
+• Produção: `https://lp-factory-10.vercel.app`.
+• Preview: usar a origem HTTPS do deployment validado, sem path adicional.
+
 • `NEXT_PUBLIC_SUPABASE_URL`
 • Finalidade: URL pública do projeto Supabase usado pelo app.
 • Escopo: Production e Preview.
@@ -120,6 +126,18 @@
 • Observação: é variável pública, mas deve ser registrada com mínimo necessário.
 
 3.5 Secrets e variáveis server-side no Vercel
+• `E11_MEMBERS_ENABLED`
+• Finalidade: gate operacional da gestão de membros e convites.
+• Escopo: Production e Preview.
+• Estado aprovado antes do merge, apply da migration e validação hospedada: `false`.
+• Regra operacional: manter `false` até a migration ter sido aplicada pelo workflow pós-merge e as configurações externas desta entrega terem sido concluídas; a liberação exige redeploy e validação primeiro em Preview.
+
+• `INVITE_STATE_SECRET`
+• Finalidade: assinar o estado opaco transportado pelo convite nativo do Supabase Auth.
+• Escopo: Production e Preview.
+• Estado: pendente de configuração pós-merge; usar valores independentes por ambiente, com no mínimo 32 caracteres, sem versionar o conteúdo.
+• Regra operacional: configurar antes de habilitar `E11_MEMBERS_ENABLED` e executar redeploy do deployment alvo.
+
 • `SUPABASE_SECRET_KEY`
 • Finalidade: chave server-side Supabase para operações autorizadas do runtime.
 • Escopo: Production e Preview.
@@ -208,8 +226,19 @@
 • Regra: manter SPF/DKIM compatíveis com Resend.
 • Validação atual conhecida: signup e forgot password testados, entrega confirmada, links funcionais e sem erro de envio.
 
+4.6 Supabase Auth — convite de membro
+• Auth Hook: ausência de hook configurado confirmada operacionalmente em 27/07/2026.
+• Envio: usar o convite nativo `inviteUserByEmail`; não configurar envio customizado no Core.
+• Template: personalizar `Invite user` em português do Brasil e preservar o estado assinado enviado em `{{ .Data.invite_state }}`.
+• Link aprovado para o template: `{{ .RedirectTo }}?token_hash={{ .TokenHash }}&type=invite&invite_state={{ .Data.invite_state }}`.
+• Redirect de Production: cadastrar `https://lp-factory-10.vercel.app/auth/confirm` na allowlist do Supabase Auth.
+• Redirect de Preview: cadastrar somente o domínio/path do deployment usado na validação; quando wildcard for necessário, restringir a Preview e usar `/**`.
+• Email OTP Expiration: confirmar no Dashboard que a validade hospedada é compatível com a janela operacional do convite; o Core não adiciona validade local paralela.
+• Estado: template, redirects, expiração e envio real permanecem pendentes de configuração e validação hospedada pós-merge.
+• Ordem operacional pós-merge: aguardar o workflow aplicar a migration, configurar e revisar os itens externos, configurar as envs no ambiente alvo, redeployar com `E11_MEMBERS_ENABLED=false`, validar em Preview e só então avaliar a habilitação do gate.
+• Evidência hospedada exigida antes da habilitação: convite novo, reenvio idempotente, link adulterado rejeitado, link legítimo concluído com definição de senha antes da ativação e isolamento entre memberships.
 
-4.6 Acesso operacional read-only para automações
+4.7 Acesso operacional read-only para automações
 • Role operacional read-only: `ai_readonly`.
 • Secret relacionado: `SUPABASE_DB_URL_READONLY`.
 • Uso: inspeções e verificações read-only em automações.

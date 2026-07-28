@@ -24,9 +24,11 @@ function assertServerSide() {
 }
 
 /** Singleton (evita múltiplas instâncias em dev/hot-reload) */
-let _svc:
-  | ReturnType<typeof createClient<any, 'public', any>>
-  | undefined
+type ServiceClient = ReturnType<
+  typeof createClient<any, { PostgrestVersion: '13' }, 'public'>
+>
+
+let _svc: ServiceClient | undefined
 
 export function createServiceClient() {
   assertServerSide()
@@ -36,7 +38,7 @@ export function createServiceClient() {
   const supabaseUrl = requireEnv('NEXT_PUBLIC_SUPABASE_URL')
   const serviceRoleKey = requireEnv('SUPABASE_SECRET_KEY')
 
-  _svc = createClient(supabaseUrl, serviceRoleKey, {
+  _svc = createClient<any, { PostgrestVersion: '13' }, 'public'>(supabaseUrl, serviceRoleKey, {
     auth: {
       persistSession: false,
       autoRefreshToken: false,

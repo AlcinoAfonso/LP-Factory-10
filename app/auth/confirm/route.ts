@@ -3,6 +3,14 @@ import { type EmailOtpType } from "@supabase/supabase-js";
 import { createServerClient, type CookieOptions } from "@supabase/ssr";
 import { NextRequest, NextResponse } from "next/server";
 
+import { isAccountMembersEnabled } from "@/lib/access/account-members/config";
+import {
+  getInviteStateCookieName,
+  verifySignedInviteState,
+  type InviteStatePayload,
+} from "@/lib/access/account-members/invite-state";
+import { decideInviteAuthRequest } from "@/lib/access/account-members/policy";
+
 type CookieToSet = { name: string; value: string; options: CookieOptions };
 
 function isSafeInternal(path?: string | null) {
@@ -46,12 +54,14 @@ function interstitialHTML(params: {
   type: string;
   next: string;
   rid: string;
+  invite_state: string;
 }) {
   const th = escAttr(params.token_hash);
   const cd = escAttr(params.code);
   const ty = escAttr(params.type);
   const nx = escAttr(params.next);
   const rid = escAttr(params.rid);
+  const inviteState = escAttr(params.invite_state);
 
   return `<!doctype html><html><head>
     <meta charset="utf-8"/>
@@ -70,6 +80,7 @@ function interstitialHTML(params: {
         <input type="hidden" name="type" value="${ty}"/>
         <input type="hidden" name="next" value="${nx}"/>
         <input type="hidden" name="rid" value="${rid}"/>
+        <input type="hidden" name="invite_state" value="${inviteState}"/>
 
         <noscript>
           <div style="font-size:13px;opacity:.9;margin:10px 0">
@@ -138,6 +149,7 @@ export async function GET(req: NextRequest) {
   const type = isValidEmailOtpType(typeRaw) ? typeRaw : null;
 
   const rid = url.searchParams.get("rid") ?? "";
+  const invite_state = url.searchParams.get("invite_state") ?? "";
 
   const rawNext = url.searchParams.get("next");
   const next = isSafeInternal(rawNext)
@@ -153,6 +165,7 @@ export async function GET(req: NextRequest) {
     type: typeRaw,
     type_valid: !!type,
     next,
+    has_invite_state: !!invite_state,
   });
 
   if ((!token_hash && !code) || !type) {
@@ -161,15 +174,39 @@ export async function GET(req: NextRequest) {
     );
   }
 
+  const inviteDecision = decideInviteAuthRequest({
+    type,
+    inviteState: invite_state,
+    featureEnabled: isAccountMembersEnabled(),
+  });
+  if (inviteDecision !== "not_account_member_invite") {
+    if (inviteDecision === "feature_disabled") {
+      return NextResponse.redirect(
+        new URL("/auth/error?error=Convites%20indispon%C3%ADveis.", url),
+      );
+    }
+    if (
+      inviteDecision === "invalid_invite_state" ||
+      !verifySignedInviteState(invite_state).ok
+    ) {
+      return NextResponse.redirect(
+        new URL("/auth/error?error=Contexto%20de%20convite%20inv%C3%A1lido.", url),
+      );
+    }
+  }
+
   // Mitigação anti-scanner: token é consumido SOMENTE no POST.
   // UX: sem clique manual (auto-avança) com fallback (noscript).
-  return new Response(interstitialHTML({ token_hash, code, type, next, rid }), {
-    headers: {
-      "Content-Type": "text/html; charset=utf-8",
-      "Cache-Control": "no-store, max-age=0",
-      Pragma: "no-cache",
+  return new Response(
+    interstitialHTML({ token_hash, code, type, next, rid, invite_state }),
+    {
+      headers: {
+        "Content-Type": "text/html; charset=utf-8",
+        "Cache-Control": "no-store, max-age=0",
+        Pragma: "no-cache",
+      },
     },
-  });
+  );
 }
 
 export async function POST(req: NextRequest) {
@@ -182,26 +219,10 @@ export async function POST(req: NextRequest) {
   const type = isValidEmailOtpType(typeRaw) ? (typeRaw as EmailOtpType) : null;
 
   const rid = String(form.get("rid") || "");
+  const invite_state = String(form.get("invite_state") || "");
 
   const password = String(form.get("password") || "");
   const confirm = String(form.get("confirm") || "");
-
-  const rawNext = String(form.get("next") || "");
-  const next = isSafeInternal(rawNext)
-    ? rawNext
-    : type === "recovery"
-      ? "/a"
-      : "/a/home";
-
-  logAuth("auth_confirm_post_start", {
-    rid,
-    has_token_hash: !!token_hash,
-    has_code: !!code,
-    type: typeRaw,
-    type_valid: !!type,
-    next,
-    has_password_fields: !!password || !!confirm,
-  });
 
   if ((!token_hash && !code) || !type) {
     logAuth("auth_confirm_post_error", {
@@ -213,6 +234,55 @@ export async function POST(req: NextRequest) {
       new URL("/auth/error?error=No%20token%20hash/code%20or%20type", url)
     );
   }
+
+  let verifiedInviteState: InviteStatePayload | null = null;
+  const inviteDecision = decideInviteAuthRequest({
+    type,
+    inviteState: invite_state,
+    featureEnabled: isAccountMembersEnabled(),
+  });
+  if (inviteDecision !== "not_account_member_invite") {
+    if (inviteDecision === "feature_disabled") {
+      return NextResponse.redirect(
+        new URL("/auth/error?error=Convites%20indispon%C3%ADveis.", url),
+        303,
+      );
+    }
+    if (inviteDecision === "invalid_invite_state") {
+      return NextResponse.redirect(
+        new URL("/auth/error?error=Contexto%20de%20convite%20inv%C3%A1lido.", url),
+        303,
+      );
+    }
+    const verified = verifySignedInviteState(invite_state);
+    if (!verified.ok) {
+      return NextResponse.redirect(
+        new URL("/auth/error?error=Contexto%20de%20convite%20inv%C3%A1lido.", url),
+        303,
+      );
+    }
+    verifiedInviteState = verified.value;
+  }
+
+  const rawNext = String(form.get("next") || "");
+  const next = verifiedInviteState
+    ? `/auth/update-password?invite=${encodeURIComponent(verifiedInviteState.account_user_id)}`
+    : isSafeInternal(rawNext)
+      ? rawNext
+      : type === "recovery"
+        ? "/a"
+        : "/a/home";
+
+  logAuth("auth_confirm_post_start", {
+    rid,
+    has_token_hash: !!token_hash,
+    has_code: !!code,
+    type: typeRaw,
+    type_valid: !!type,
+    next,
+    has_password_fields: !!password || !!confirm,
+    has_invite_state: !!invite_state,
+  });
 
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const supabaseKey =
@@ -332,6 +402,40 @@ export async function POST(req: NextRequest) {
         refresh_token: data.session.refresh_token,
       });
     }
+  }
+
+  if (verifiedInviteState) {
+    const {
+      data: { user },
+      error,
+    } = await supabase.auth.getUser();
+    const cookieName = getInviteStateCookieName(verifiedInviteState.account_user_id);
+
+    if (error || !user?.id || user.id !== verifiedInviteState.user_id || !cookieName) {
+      logAuth("auth_confirm_post_error", {
+        rid,
+        reason: "invite_state_user_mismatch",
+      });
+      return NextResponse.redirect(
+        new URL("/auth/error?error=Contexto%20de%20convite%20inv%C3%A1lido.", url),
+        303,
+      );
+    }
+
+    redirectRes.cookies.set(cookieName, invite_state, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      path: "/auth",
+    });
+
+    logAuth("auth_confirm_post_ok", {
+      rid,
+      type: typeRaw,
+      next,
+      invite_context_stored: true,
+    });
+    return redirectRes;
   }
 
   // 3) Se for recovery com senha, atualiza aqui e finaliza em /a/home
