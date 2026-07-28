@@ -1,8 +1,8 @@
 # Plano-base — E12.4 — Gestão do perfil de orientação
 
 - Data: 28/07/2026.
-- Versão: v1.
-- Status: plano-base v1 para avaliação única dos especialistas.
+- Versão: v2.
+- Status: plano-base v2 consolidado para avaliação do Analista.
 - Recorte previsto para o roadmap: `12.4 — Gestão do perfil de orientação`.
 - Recorte executável inicial: `12.4.3 — Proposta, revisão, aprovação e ativação do perfil`.
 - Path canônico: `docs/lousa-plano-base-e12-4.md`.
@@ -58,7 +58,7 @@
 - A IA apenas propõe conteúdo para o editor. Não salva, aprova, ativa, arquiva nem gera LP.
 - A operação manual permanece completa quando a IA não for usada, falhar ou estiver indisponível.
 - A LP materializada permanece independente e não muda quando o perfil evolui.
-- A E12.4.4 e as subseções posteriores permanecem fora desta v1.
+- A E12.4.4 e as subseções posteriores permanecem fora desta v2.
 
 ### 1.4. Fronteiras de responsabilidade
 
@@ -106,7 +106,12 @@
   - manter `public`, `anon`, `authenticated`, cliente e `ai_readonly` sem escrita direta;
   - usar uma única ação visual `Salvar rascunho`;
   - executar `Aprovar e ativar` atomicamente, arquivando a versão `active` anterior quando existir;
-  - reservar para a v2 a escolha entre RPC, Server Action, rota ou outro mecanismo já compatível com a arquitetura.
+  - implementar a superfície em `app/admin/(protected)/perfis_de_orientacao/`, com listagem em `page.tsx`, edição por taxon em `[taxonId]/page.tsx`, Server Actions route-local em `actions.ts` e componentes com estado próprio somente em `_components/`;
+  - ajustar `components/admin/adminNavigation.ts` para expor a área;
+  - exigir que toda Server Action execute `requirePlatformAdmin` antes de ler entradas operacionais, chamar IA ou mutar estado;
+  - impedir que UI e componentes importem Supabase, provider externo ou DBRow;
+  - manter contrato, schema e validações puras em `lib/conversion-content/landing-page/generation-profile/`;
+  - reutilizar `landingPageGenerationProfileAdapter.ts` para leitura e concentrar mutações em adapter server-only coeso sob `lib/conversion-content/adapters/`, sem implementação paralela em `lib/admin`.
 - Consumo:
   - Admin Dashboard apresenta versões e o perfil resolvido atual;
   - o boundary vigente da E20.3 continua entregando somente o perfil `active` próprio ou herdado;
@@ -159,36 +164,24 @@
   - registrar somente mutações confirmadas;
   - distinguir criação ou salvamento de `draft` com origem manual ou IA;
   - registrar `Aprovar e ativar` como uma operação;
-  - registrar arquivamento explícito;
-  - reservar para a v2 a compatibilidade técnica e a forma exata de integração.
+  - registrar arquivamento explícito.
+
+- Criar uma única migration incremental, forward-only, em `supabase/migrations/*_e12_4_3_generation_profile_lifecycle.sql`, sem alterar `20260726144651_e20_3_generation_profile.sql`, e um verificador read-only em `supabase/snippets/e12_4_3_generation_profile_lifecycle_verify.sql`.
+- A migration deve criar RPCs distintas para salvar o agregado `draft`, aprovar e ativar e arquivar. Cada função deve usar transação PostgreSQL, `SECURITY DEFINER` justificado e registrado em `docs/schema.md`, `search_path` fixo, `auth.uid()` obrigatório e verificação interna de `is_platform_admin()` ou `is_super_admin()`. Revogar `EXECUTE` de `PUBLIC`, `anon`, `ai_readonly` e papéis não autorizados e conceder somente o `EXECUTE` necessário a `authenticated`.
+- As tabelas devem permanecer com RLS habilitado, sem policies de DML direto e sem `INSERT`, `UPDATE` ou `DELETE` para `public`, `anon`, `authenticated`, `service_role` ou `ai_readonly`; `service_role` permanece somente com `SELECT`. As RPCs são a única exposição de mutação pela Data API. Se qualquer acesso direto for introduzido, deverão ser definidos separadamente os GRANTs e as policies correspondentes, invalidando este desenho mínimo.
+- A RPC de salvamento deve bloquear o taxon proprietário, confirmar taxon ativo de nível `segment` ou `niche`, alocar a próxima versão sem corrida, criar ou atualizar somente `draft`, substituir seus itens como um único agregado e registrar auditoria somente após sucesso.
+- A RPC de ativação deve bloquear o taxon, o `draft` e o `active` vigente; conferir a versão de concorrência recebida do agregado previamente revalidado; rejeitar estado diferente de `draft`; arquivar o `active` anterior; ativar o novo perfil; e registrar um único evento de aprovação e ativação dentro da mesma transação.
+- A RPC de arquivamento deve bloquear e revalidar o perfil, aceitar apenas `draft` ou `active`, registrar arquivamento explícito na mesma transação e não criar fallback intermediário.
+- Antes de salvar e novamente antes de ativar, o boundary puro deve validar o agregado pelo schema vigente e cada identidade exclusivamente por `validateLandingPageModuleIdentity`. O adapter não aceita DTO não validado nem importa o registry da E18.5.
 
 ### 2.4. Contrato da assistência por IA
 
-- Gate:
-  - E10.8 completa é obrigatória antes da chamada;
-  - pesquisa parcial retorna `missing_information` e não aciona a IA.
-- Entradas permitidas:
-  - taxon proprietário e cadeia ativa;
-  - resultado resolvido da E10.8, com versões e proveniência;
-  - contrato público da E18.4;
-  - catálogo e validação pública da E18.5;
-  - última versão anteriormente ativa do perfil, quando houver;
-  - orientação textual opcional do `platform_admin`.
-- Saída permitida:
-  - orientação geral;
-  - módulos e variantes existentes;
-  - prioridade;
-  - ordem recomendada;
-  - orientação específica por recomendação.
-- Resultados de falha:
-  - `missing_information` para E10.8 incompleta antes da chamada;
-  - `invalid_data` para saída incompatível;
-  - `technical_failure` para indisponibilidade ou falha técnica.
-- Controles:
-  - saída estruturada e validada antes de preencher o editor;
-  - nenhuma ferramenta externa, autonomia ou comportamento agentic;
-  - nenhuma persistência ou ativação automática;
-  - provedor, modelo, parâmetros, contrato técnico e limite de custo definidos somente na v2 após avaliação formal do Gestor de Automações.
+- A assistência por IA é opcional e exclusivamente server-side. Uma Server Action protegida por `requirePlatformAdmin()` deve chamar uma função server-only local ao boundary `lib/conversion-content/landing-page/generation-profile/`. Antes da chamada, a função deve resolver a E10.8 pela API pública `resolveLandingPageResearchForTaxon`, exigir resultado completo e obter módulos e variantes somente pelas APIs públicas da E18.5.
+- A implementação deve reutilizar `OPENAI_API_KEY` e usar a variável dedicada `OPENAI_LANDING_PAGE_GENERATION_PROFILE_MODEL`, sem fallback hardcoded; o valor inicial de referência é `gpt-5.4-mini`. A chamada deve usar `POST https://api.openai.com/v1/responses`, `text.format.type = json_schema`, `strict = true`, `store = false`, `max_output_tokens = 2000` e timeout de 30 segundos. O request não deve fornecer `tools`, `previous_response_id`, background mode ou qualquer mecanismo agentic. O corpo JSON integral da requisição, já serializado e incluindo schema e instruções, não pode exceder 96 KiB. Não existe retry automático.
+- A saída permitida contém somente `generation_guidance` e `recommendations[]`, cada recomendação limitada a `module_key`, `module_version`, `variant_key`, `variant_version`, `priority`, `recommended_order` e `item_guidance`. Todos os objetos do JSON Schema devem usar `additionalProperties: false`. A proposta deve passar por schema Zod próprio e pela validação pública de identidade da E18.5 antes de preencher o editor. A função de IA não recebe cliente de banco e não salva, ativa, arquiva ou corrige dados.
+- O clique humano em `Solicitar proposta por IA` autoriza uma única chamada paga. A proposta válida apenas preenche o editor; `Salvar rascunho`, `Aprovar e ativar` e arquivamento permanecem ações humanas independentes. Env ausente ou indisponibilidade da OpenAI tornam somente a assistência indisponível, preservando o fluxo manual completo.
+- O contrato e a validação puros permanecem em `lib/conversion-content/landing-page/generation-profile/`, e o provider fica em adapter server-only separado. A Server Action protegida monta somente o DTO autorizado usando `resolveLandingPageResearchForTaxon`, o perfil vigente e APIs públicas da E18.5; o provider não importa Supabase, tabelas, registry interno nem adapter de mutação. Sua saída retorna ao boundary puro, é validada e somente então preenche o editor. O caminho de proposta não chama RPC de salvamento, ativação ou arquivamento.
+- O mapeamento de falhas é fechado: E10.8 ausente, incompleta ou inelegível antes da chamada retorna `missing_information`; schema inválido, identidade inexistente, variante incompatível, módulo ou ordem duplicados e demais violações do agregado retornam `invalid_data`; configuração ausente, timeout, erro HTTP, recusa, conteúdo filtrado, resposta incompleta, ausência de output ou falha de parsing retornam `technical_failure`, com motivo técnico seguro apenas nos logs. Qualquer falha preserva integralmente os valores atuais do editor, o `draft` e o `active`. Nova tentativa exige nova ação explícita do `platform_admin`.
 
 ### 2.5. Critérios visuais
 
@@ -207,6 +200,7 @@
 - Ativação e arquivamento exigem confirmação explícita.
 - `missing_information`, `invalid_data` e `technical_failure` são estados distintos.
 - Responsividade mínima em desktop e mobile.
+- Aplicar WCAG 2.2 como baseline limitada aos critérios pertinentes ao fluxo: operação completa por teclado; foco visível e ordem de foco previsível; associação programática entre campos, labels, instruções e erros; anúncio acessível de feedback dinâmico; alvos de toque adequados; e gestão de foco nas confirmações e após erro ou conclusão. A validação não declara conformidade integral com WCAG 2.2.
 
 ### 2.6. Segurança e observabilidade
 
@@ -221,6 +215,8 @@
   - latência, consumo e custo da chamada quando houver;
   - resultado da revisão humana.
 - Logs não devem expor segredo, credencial ou conteúdo não autorizado.
+- Cada solicitação de proposta deve registrar evento estruturado com `request_id`, identificador do `platform_admin`, taxon, versões e relações de proveniência da E10.8, versão das identidades públicas da E18.5, modelo configurado, OpenAI response ID quando disponível, latência, `input_tokens`, `output_tokens`, custo calculado pelas tarifas operacionais vigentes, resultado (`success`, `missing_information`, `invalid_data` ou `technical_failure`) e, posteriormente, resultado da revisão humana. Logs não podem conter API key, prompt integral, orientação livre do admin, pesquisas brutas, payload completo nem resposta integral. Falha de logging não altera o resultado funcional.
+- A chamada deve usar `store:false`. Isso evita estado de aplicação da resposta, mas não elimina por si só os logs de monitoramento de abuso da OpenAI, que podem ser retidos por até 30 dias no regime padrão; portanto somente a allowlist de dados já aprovada pode sair do LP Factory. Não se exige Moderation API no MVP porque a saída é interna, estruturada, sem ação autônoma e obrigatoriamente revisada por `platform_admin`; essa decisão deve ser reavaliada se o conteúdo passar a ser publicado ou enviado externamente sem revisão equivalente.
 
 ## 3. Fases e próxima ação
 
@@ -248,6 +244,13 @@
   - arquivamento com efeitos distintos para `draft` e `active`;
   - auditoria e observabilidade mínimas, reutilizando mecanismos vigentes;
   - casos executáveis e evidências visuais;
+  - estender os artefatos SQL versionados de teste e verificação do perfil para comprovar: edição exclusiva de `draft`; salvamento íntegro do agregado; unicidade de versão e de `active`; arquivamento explícito de `draft` e `active`; troca atômica entre `draft` e `active`; preservação do `active` diante de falha; e ausência de escrita direta por `public`, `anon`, `authenticated`, cliente e `ai_readonly`; testes mutáveis devem executar em transação com rollback e a verificação pós-apply deve permanecer read-only, sem uso do SQL Editor para alteração de schema;
+  - registrar a automação controlada da E12.4.3 em `docs/automations.md`;
+  - registrar `OPENAI_LANDING_PAGE_GENERATION_PROFILE_MODEL`, seu escopo Production/Preview, o consumidor e o endpoint já vigente em `docs/platform-config.md`;
+  - registrar o contrato estável de IA controlada, validação, fallback, segurança e observabilidade em `docs/base-tecnica.md`;
+  - não criar entrada em `docs/services.md`, novo service, provider abstraction, SDK, agente, job, fila ou infraestrutura;
+  - validar a assistência com fixtures representativas da E10.8 e da E18.5, incluindo proposta válida, identidade inventada, duplicidade, recusa, truncamento, timeout e env ausente;
+  - manter a operação manual funcional quando a configuração OpenAI ainda não estiver confirmada no ambiente alvo; essa pendência impede declarar a assistência pronta no ambiente, mas não interrompe a implementação independente nem a consolidação do plano;
   - atualização dos documentos canônicos materialmente afetados e de `docs/roadmap.md` pelo Prompt ABC.
 - Critérios de aceite:
   - operação manual completa sem dependência da IA;
@@ -263,18 +266,19 @@
   - mutações confirmadas auditadas sem nova tabela;
   - nenhuma LP materializada alterada;
   - fluxo validado em desktop e mobile;
+  - evidenciar em Preview, por logs estruturados correlacionáveis por `request_id`, os resultados `success`, `missing_information`, `invalid_data` e `technical_failure`, incluindo somente taxon, versões das fontes, origem manual ou IA, latência, consumo e custo quando houver; usar o Logs Explorer vigente como meio de inspeção, sem registrar prompt, payload bruto, credencial ou conteúdo não autorizado; AI Debugging permanece apoio opcional e não constitui dependência nem critério de aprovação;
+  - no Preview funcional, usar a Vercel Toolbar e suas inspeções de acessibilidade, timing de interação e layout shift somente quando disponíveis no plano e no ambiente; sua indisponibilidade não bloqueia a entrega nem substitui validação humana de conteúdo, navegação, foco, estados e responsividade;
+  - em teste humano, o `platform_admin` deve identificar sem ajuda externa o taxon selecionado, se o perfil atual é próprio, herdado ou ausente, sua versão e status, e as ações disponíveis no estado corrente; ações indisponíveis devem permanecer visíveis com motivo objetivo, sem depender de interação oculta;
+  - validar em Preview, em desktop e mobile, os estados sem perfil, perfil próprio, perfil herdado, `draft`, `active`, `archived`, IA indisponível, `missing_information`, `invalid_data`, `technical_failure`, confirmação de ativação e confirmação de arquivamento; revisar navegação, conteúdo, foco, feedback, timing de interação e mudanças inesperadas de layout, registrando evidência visual dos estados materialmente distintos;
+  - o runtime não considera o lifecycle habilitado antes do apply da migration E12.4.3 e da execução aprovada do verificador read-only no ambiente alvo. RPC ausente, schema cache ainda não atualizado ou ACL divergente deve ser mapeado pelo adapter para indisponibilidade fail-closed, com ações de mutação indisponíveis e preservação integral do `draft` e do `active`. A reconciliação final deve atualizar `docs/schema.md` com funções, ACLs, RLS, policies e grants efetivos e `docs/roadmap.md` com o estado comprovado da E20.3 e da E12.4.3;
   - validações do repositório e evidências do ambiente alvo definidas na v2 e aprovadas antes da execução.
 
 ### 3.2. Próxima ação
 
-- Submeter esta v1 em avaliação única a:
-  - Analista;
-  - Gestor Estrutural;
-  - Gestor de Updates;
-  - Gestor de Automações.
-- O Gestor de Automações deve detalhar na v2 a solução dentro da categoria aprovada, incluindo decisão atual de OpenAI, contrato técnico, custo, segurança, observabilidade e fallback.
-- Consolidar os pareceres na v2 sem mudar a categoria de automação ou ampliar o recorte sem nova decisão humana.
-- Não iniciar implementação a partir desta v1.
+- Submeter esta v2 ao Analista em Passagem 1 independente e, depois, em Passagem 2 com a matriz e os pareceres integrais.
+- Não iniciar a implementação antes da conclusão `aprovado para merge do plano-base v2`, da reconciliação do roadmap pelo Prompt ABC e do checkpoint `LP-Factory-Stage: plan-v2-approved`.
+- Antes de iniciar a implementação e novamente antes do merge da E12.4.3, confirmar no `package-lock.json` que `next` e `eslint-config-next` estão alinhados em `16.2.11` ou em outra versão estável oficialmente corrigida para o mesmo conjunto de vulnerabilidades. Se a base permanecer em `16.1.1`, parar a implementação ou o merge e encaminhar a correção para PR técnico próprio, sem atualizar dependências dentro da E12.4.3 e sem migrar para versão preview.
+- Preservar `vercel#1 — AI Gateway` e `supa#63 — rlsautotest` apenas como oportunidades estratégicas condicionais, sem implementação neste recorte.
 
 ## 4. Escopo negativo e critérios de parada
 
@@ -292,7 +296,6 @@
 - Escrita direta por `public`, `anon`, `authenticated`, cliente ou `ai_readonly`.
 - Ativação, salvamento, repetição ou correção automática pela IA.
 - Agente, comportamento agentic, job, fila, cron, webhook, workflow ou nova infraestrutura.
-- Escolha antecipada de RPC, Server Action, rota, modelo, parâmetros ou configuração operacional.
 - Implementação além do menor delta necessário para cumprir as entregas e os critérios de aceite da E12.4.3.
 - Refatoração, limpeza ou reorganização de áreas não indispensáveis à E12.4.3.
 - Abstração genérica criada para necessidade futura ou reutilização ainda não comprovada neste recorte.
@@ -310,17 +313,18 @@
   - uma entrega exigir refatoração lateral, abstração genérica ou funcionalidade não prevista neste plano;
   - houver conflito com o contrato ou a implementação vigente da E20.3;
   - o repositório ou o ambiente alvo divergir das fontes do plano.
+  - a base permanecer em Next.js `16.1.1` ou outra versão sem a correção oficial exigida; encaminhar a atualização para PR técnico próprio, fora da E12.4.3.
 
 ### 4.3. Validação deste trabalho documental
 
 - Confirmar:
-  - somente `docs/lousa-plano-base-e12-4.md` criado;
+  - somente `docs/lousa-plano-base-e12-4.md` alterado;
   - quatro seções principais preservadas;
   - uma única fase executável, `E12.4.3`;
   - `Automação: sim` com categoria, ambiente, objetivo e limites;
   - E12.4.4 e subseções posteriores fora do recorte;
-  - ausência de implementação e de decisão técnica reservada à v2;
-  - ausência de alteração em `docs/roadmap.md` nesta v1.
+  - ausência de implementação;
+  - ausência de alteração em `docs/roadmap.md` neste checkpoint de v2.
 - Executar verificação de whitespace e estrutura Markdown.
 - Registrar como N/A nesta entrega documental:
   - `npm ci`;
