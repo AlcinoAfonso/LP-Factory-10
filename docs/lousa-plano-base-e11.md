@@ -20,20 +20,14 @@
 
 ### 1.2. Estado real confirmado
 
-- `account_users` possui:
-  - unicidade por `(account_id, user_id)`;
-  - papéis `owner`, `admin`, `editor` e `viewer`;
-  - estados `pending`, `active`, `inactive` e `revoked`;
-  - `created_at` como registro da criação da linha, sem representar a validade de cada link do Supabase Auth;
-  - proteção do último owner.
-- As policies atuais permitem leitura do próprio vínculo ou por owner/admin e reservam mutações diretas a owner/admin ou platform admin.
-- `accept_account_invite(account_id, ttl_days)` é invoker, identifica o vínculo por conta e usuário e depende de uma policy de update que o convidado não satisfaz.
-- `activate_user_from_auth_hook(event)` ativa todos os vínculos pendentes do usuário e não pode ser usado pela E11.
-- `/auth/confirm` confirma tokens no POST, com mitigação anti-scanner, mas atualmente não preserva contexto específico de convite nem ativa membership.
-- `/a/home` redireciona imediatamente o usuário logado para a última ou primeira conta ativa e não apresenta convites pendentes.
-- O projeto já possui `createServiceClient()` server-only e consulta `user_id → e-mail` por `auth.admin.getUserById()`.
-- Supabase Auth, SMTP via Resend, redirects e o template nativo `Invite user` pertencem à stack atual.
-- A migration `20260727155312_e11_account_members_security.sql` foi aplicada e o estado pós-apply foi verificado; a prova hospedada deve partir do estado remoto atual, sem assumir inventários anteriores de contas ou usuários.
+- `account_users` preserva unicidade por `(account_id, user_id)`, papéis `owner`, `admin`, `editor` e `viewer`, estados `pending`, `active`, `inactive` e `revoked` e proteção do último owner.
+- O boundary server-only, os adapters separados de Data API e Auth Admin, o guard owner/admin e as transições por membership específico estão implementados.
+- As mutações da E11 usam contexto autorizado e escrita privilegiada; funções legadas amplas estão fora do caminho operacional e indisponíveis aos papéis revogados.
+- `/auth/confirm` preserva a mitigação anti-scanner e transporta contexto assinado de um convite específico até a conclusão do cadastro.
+- `/a/home` apresenta as pendências do usuário autenticado antes do redirect para conta ativa quando o gate está habilitado.
+- A migration `20260727155312_e11_account_members_security.sql` foi aplicada e o estado pós-apply foi verificado.
+- `INVITE_STATE_SECRET` e `E11_MEMBERS_ENABLED=false` estão configuradas em Production e Preview, com os redeploys concluídos.
+- Template `Invite user`, redirects, Email OTP Expiration e prova hospedada permanecem na fase `11.1.7`; o estado operacional detalhado reside em `docs/platform-config.md`.
 
 ### 1.3. Decisões humanas encerradas
 
@@ -73,8 +67,8 @@
 - `contracts.ts` importa `MemberRole` e `MemberStatus` de `lib/types/status.ts`, sem redefini-los.
 - `index.ts` não exporta clients, rows de banco nem tipos do SDK Supabase.
 - Toda mutação 1-a-1 usa filtros de conta, membership, usuário e estado esperado, aplica `.maxAffected(1)` e só retorna sucesso após confirmar exatamente uma linha ou o estado idempotente permitido.
-- `e-mail → user_id` será resolvido por `adapters/authAdminAdapter.ts` com `auth.admin.listUsers()` paginado, depois da autorização do owner/admin.
-- `lib/access/guards.ts` será estendido com um guard server-only de gestão de membros que resolve sessão e Access Context, exige conta permitida, membership `active` e papel `owner` ou `admin`, e devolve contexto autoritativo com `accountId`, `accountSubdomain`, `actorUserId` e `actorRole`.
+- `e-mail → user_id` é resolvido por `adapters/authAdminAdapter.ts` com `auth.admin.listUsers()` paginado, depois da autorização do owner/admin.
+- `lib/access/guards.ts` contém o guard server-only de gestão de membros que resolve sessão e Access Context, exige conta permitida, membership `active` e papel `owner` ou `admin`, e devolve contexto autoritativo com `accountId`, `accountSubdomain`, `actorUserId` e `actorRole`.
 - A página administrativa, suas Server Actions e os fluxos administrativos de convite usam esse guard antes de consultar Auth Admin ou chamar adapters privilegiados. A navegação pode usar o papel sanitizado do `AccessProvider` apenas para visibilidade; a URL e todas as actions administrativas repetem o guard server-side.
 - O autoatendimento em `/a/home` não usa o guard owner/admin. Ele exige sessão autenticada, deriva `actorUserId` exclusivamente de `auth.getUser()`, seleciona a linha por `account_user_id` e confirma `account_users.user_id = actorUserId` e status `pending` antes de aceitar ou recusar.
 - A UI nunca recebe resultado que revele a existência global de um e-mail no Auth.
@@ -98,9 +92,9 @@
 - Aceite repetido da mesma linha já `active` retorna sucesso idempotente; divergência, `inactive`, `revoked` ou ausência falha fechada.
 - Se a senha for definida e a ativação falhar, o mesmo vínculo pode ser retomado por retry idempotente; enquanto permanecer `pending`, não concede acesso à conta.
 - Usuário confirmado aceita ou recusa pela sessão autenticada e pelo `account_user_id` escolhido, sem `invite_state`.
-- Reenvio do usuário ainda não confirmado usa nova chamada a `inviteUserByEmail()`; `auth.resend()` não será usado como convite.
-- O hook amplo existente não será adotado.
-- O runtime não dependerá da função legada de aceite enquanto ela não garantir linha específica, autorização e confirmação de linha alterada.
+- Reenvio do usuário ainda não confirmado usa nova chamada a `inviteUserByEmail()`; `auth.resend()` não é usado como convite.
+- O hook amplo existente não é adotado.
+- O runtime não depende da função legada de aceite.
 - A migration incremental da E11 está aplicada e verificada. O contrato final de grants, RLS, policies e funções reside em `docs/schema.md`; o snippet canônico de verificação é `supabase/snippets/e11_account_members_verify.sql`.
 - A migration não cria tabela, coluna, view, RPC ou `SECURITY DEFINER` e preserva o Trigger Hub e a proteção do último owner.
 - O gate server-only `E11_MEMBERS_ENABLED` é obrigatório, com ausência ou valor diferente de `true` interpretado como desabilitado. Enquanto desabilitado, a navegação não aparece e `/a/[account]/members`, Server Actions e o fluxo específico de convite falham fechados sem chamar Auth Admin nem realizar writes.
