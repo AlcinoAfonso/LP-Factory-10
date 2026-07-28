@@ -130,7 +130,7 @@
 • Finalidade: gate operacional da gestão de membros e convites.
 • Escopo: Production e Preview.
 • Estado atual: `false`, configurada em Production e Preview.
-• Regra operacional: manter `false` até a configuração remanescente do Supabase Auth e a prova hospedada terem sido concluídas; a liberação exige validação primeiro em Preview.
+• Regra operacional: manter Production em `false` até a aprovação da prova hospedada; o Preview pode ser habilitado temporariamente somente após a configuração remanescente do Supabase Auth, com redeploy próprio e finalidade exclusiva de validação.
 
 • `INVITE_STATE_SECRET`
 • Finalidade: assinar o estado opaco transportado pelo convite nativo do Supabase Auth.
@@ -236,7 +236,7 @@
 • Redirect de Preview: cadastrar somente o domínio/path do deployment usado na validação; quando wildcard for necessário, restringir a Preview e usar `/**`.
 • Email OTP Expiration: confirmar no Dashboard que a validade hospedada é compatível com a janela operacional do convite; o Core não adiciona validade local paralela.
 • Estado: template, redirects, expiração e envio real permanecem pendentes de configuração e validação hospedada pós-merge.
-• Ordem operacional remanescente: configurar e revisar template, redirects e expiração, validar o fluxo hospedado em Preview com `E11_MEMBERS_ENABLED=false` e só então avaliar a habilitação do gate.
+• Ordem operacional remanescente: configurar e revisar template, redirects e expiração; habilitar o gate somente no Preview autorizado; redeployar e validar o fluxo hospedado; manter Production desabilitada até a aprovação da prova.
 • Evidência hospedada exigida antes da habilitação: convite novo, reenvio idempotente, link adulterado rejeitado, link legítimo concluído com definição de senha antes da ativação e isolamento entre memberships.
 
 4.7 Acesso operacional read-only para automações
