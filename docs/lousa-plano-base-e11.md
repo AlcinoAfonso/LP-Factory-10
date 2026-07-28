@@ -1,9 +1,9 @@
 # Plano-base E11 — Gestão de Usuários e Convites
 
-- Versão: v2
-- Data: 27/07/2026
-- Status: consolidado pelos pareceres especializados; aguardando gate do Analista.
-- Recorte previsto para roadmap: `11.1 — Gestão de membros e convites`
+- Versão: v3
+- Data: 28/07/2026
+- Status: fases `11.1.3` a `11.1.6` implementadas; `11.1.7` em validação para ativação controlada.
+- Recorte no roadmap: `11.1 — Gestão de membros e convites`
 - Path canônico: `docs/lousa-plano-base-e11.md`
 - Plano conceitual: N/A — debate realizado entre Estrategista, Analista e humano antes da v1.
 - Fontes obrigatórias: `README.md`, `AGENTS.md`, `docs/prompt-estrategista.md`, `docs/template-roadmap.md`, `docs/prompt-executor.md`, `docs/prompt-abc.md`, `docs/roadmap.md`, `docs/base-tecnica.md`, `docs/schema.md`, `docs/platform-config.md`, `docs/design-system.md`, `docs/lp-planejamento.md`, `docs/supa-up.md`, `app/auth/confirm/route.ts`, `app/auth/update-password/page.tsx`, `app/a/home/page.tsx`, `app/a/[account]/actions.ts`, `lib/admin/adapters/adminAccountsAdapter.ts`, `supabase/migrations/20260611172930_remote_public_baseline.sql` e documentação oficial vigente do Supabase para `listUsers()`, `createUser()`, `updateUserById()`, `inviteUserByEmail()`, templates de Auth e redirects.
@@ -12,7 +12,7 @@
 
 ### 1.1. Problema e resultado esperado
 
-- O banco já representa vínculos entre contas e usuários, mas o produto ainda não possui gestão funcional de membros e convites.
+- A gestão funcional de membros e convites está implementada, mas permanece desabilitada até a conclusão da fase `11.1.7`.
 - A E11 deve permitir que owner e admin administrem membros não-owner da conta pelo Account Dashboard.
 - O fluxo deve atender tanto um e-mail ainda inexistente no Supabase Auth quanto um usuário já cadastrado.
 - O aceite deve ativar somente o vínculo selecionado e nunca todos os vínculos pendentes do usuário.
@@ -33,11 +33,10 @@
 - `/a/home` redireciona imediatamente o usuário logado para a última ou primeira conta ativa e não apresenta convites pendentes.
 - O projeto já possui `createServiceClient()` server-only e consulta `user_id → e-mail` por `auth.admin.getUserById()`.
 - Supabase Auth, SMTP via Resend, redirects e o template nativo `Invite user` pertencem à stack atual.
-- O estado remoto é volátil e deve ser inspecionado antes da primeira migration e dos testes, sem assumir como contrato da E11 qualquer inventário anterior de contas ou usuários.
+- A migration `20260727155312_e11_account_members_security.sql` foi aplicada e o estado pós-apply foi verificado; a prova hospedada deve partir do estado remoto atual, sem assumir inventários anteriores de contas ou usuários.
 
 ### 1.3. Decisões humanas encerradas
 
-- Automação: não.
 - Usuário já cadastrado e confirmado não recebe novo e-mail.
 - Ao entrar no produto, esse usuário vê o convite pendente e pode aceitar ou recusar.
 - Owner e admin acessam a gestão de membros.
@@ -45,7 +44,6 @@
 - O owner não é transferido, rebaixado, desativado ou revogado na E11.
 - Não haverá e-mail customizado pelo Core.
 - Não haverá tabela, serviço, fila, job, agente ou engine de convite.
-- A E11 preserva uma única branch e um único PR para v2 e implementação; não haverá `workflow_dispatch` pré-merge nem PR precursor. Apply da migration, configuração externa, redeploy, habilitação do gate e prova hospedada ocorrerão somente após o merge humano.
 
 ### 1.4. Decisões funcionais consolidadas
 
@@ -103,11 +101,11 @@
 - Reenvio do usuário ainda não confirmado usa nova chamada a `inviteUserByEmail()`; `auth.resend()` não será usado como convite.
 - O hook amplo existente não será adotado.
 - O runtime não dependerá da função legada de aceite enquanto ela não garantir linha específica, autorização e confirmação de linha alterada.
-- A migration incremental da E11 é obrigatória após confirmar que o Auth Hook amplo não está configurado. Ela preserva `account_users` com RLS habilitada e mantém a policy de SELECT própria/owner-admin; revoga `INSERT`, `UPDATE` e `DELETE` de `authenticated`; concede explicitamente `SELECT`, `INSERT` e `UPDATE` a `service_role`, sem `DELETE`; revoga `EXECUTE` de `PUBLIC`, `anon`, `authenticated` e `ai_readonly` nas funções `accept_account_invite(uuid, integer)`, `revoke_account_invite(uuid, uuid)`, `invitation_expires_at(uuid, integer)` e `invitation_is_expired(uuid, integer)`; e, após confirmação operacional de ausência do hook, revoga `EXECUTE` de `PUBLIC`, `anon`, `authenticated`, `ai_readonly` e `supabase_auth_admin` em `activate_user_from_auth_hook(jsonb)`.
+- A migration incremental da E11 está aplicada e verificada. O contrato final de grants, RLS, policies e funções reside em `docs/schema.md`; o snippet canônico de verificação é `supabase/snippets/e11_account_members_verify.sql`.
 - A migration não cria tabela, coluna, view, RPC ou `SECURITY DEFINER` e preserva o Trigger Hub e a proteção do último owner.
 - O gate server-only `E11_MEMBERS_ENABLED` é obrigatório, com ausência ou valor diferente de `true` interpretado como desabilitado. Enquanto desabilitado, a navegação não aparece e `/a/[account]/members`, Server Actions e o fluxo específico de convite falham fechados sem chamar Auth Admin nem realizar writes.
 - O booleano do gate pode ser passado explicitamente pelo layout server ao Header, mas não integra a decisão de autorização do `AccessProvider`.
-- Antes do merge, o PR entrega implementação, migration versionada, documentação e todas as validações locais, estáticas, contratuais e de Preview disponíveis com o gate fechado. A prova hospedada real não bloqueia commit, push ou merge; após o merge, a prova em Preview ou ambiente hospedado autorizado bloqueia a habilitação do gate em Production.
+- As fases `11.1.3` a `11.1.6` estão implementadas. A configuração remanescente do Supabase Auth e a prova hospedada da fase `11.1.7` bloqueiam a habilitação do gate em Production.
 
 ## 2. Contrato do caso
 
@@ -314,22 +312,18 @@
 - `/auth/confirm`, sua mitigação anti-scanner e `/auth/update-password` como base da conclusão do cadastro.
 - `/a/home` e sua precedência atual de redirect.
 - Supabase Auth Admin, template nativo `Invite user`, SMTP via Resend e Redirect URL allowlist.
-- Vercel Preview e Production para `INVITE_STATE_SECRET`, com redeploy após configuração.
-- `E11_MEMBERS_ENABLED`, ausente ou falso por padrão durante todo o PR e no primeiro deployment posterior ao merge.
-- Pré-merge: implementar no PR único, executar `npm ci`, validações próprias, `npm run check`, testes contratuais, revisão de migration e QA disponível com o gate fechado; commitar e publicar normalmente, sem apply remoto, configuração externa ou prova hospedada.
-- Pós-merge: manter `E11_MEMBERS_ENABLED=false` em Production; aguardar o workflow aprovado aplicar a migration da `main`; executar `supabase/snippets/e11_account_members_verify.sql`; configurar `INVITE_STATE_SECRET`, template, Email OTP Expiration e redirects; habilitar o gate somente no escopo Preview ou em ambiente hospedado autorizado; redeployar esse ambiente e executar a matriz hospedada.
-- Somente após aprovação da prova hospedada habilitar `E11_MEMBERS_ENABLED=true` em Production e redeployar. A prova hospedada é gate de ativação de Production, não de commit, push ou merge. Falha preserva Production com o gate desabilitado e exige correção incremental pelo fluxo normal, sem fallback de e-mail próprio nem ativação parcial.
-- Após a ativação de Production, executar smoke mínimo pós-ativação. Esse smoke confirma o fechamento operacional; se falhar, desabilitar novamente o gate e corrigir pelo fluxo normal, sem tratá-lo como condição retroativa do merge ou da habilitação já executada.
+- Vercel Preview e Production para o gate e o secret server-only já configurados.
+- `docs/platform-config.md` como fonte única do estado e das regras de configuração externa.
+- Fase `11.1.7` para a ordem vigente de configuração do Supabase Auth, prova hospedada, ativação e smoke.
 - Não há dependência de E12, limite por plano, Stripe, automações ou agentes.
 
 ## 3. Fases e próxima ação
 
 ### 3.1. 11.1.3 — Domínio server-side e ciclo seguro de vínculos
 
-- Status: planejada.
+- Status: implementada e verificada.
 - Objetivo: implementar contratos, autorização, resolução de identidade e transições seguras de `account_users`.
-- Automação: não.
-- Escopo executável:
+- Escopo implementado:
   - criar o boundary `lib/access/account-members/`;
   - implementar contratos tipados e normalização de e-mail;
   - estender `lib/access/guards.ts` com o guard canônico owner/admin e reutilizá-lo em todos os consumidores administrativos;
@@ -338,13 +332,12 @@
   - implementar classificação de active, pending, inactive e revoked;
   - implementar convite, aceite interno, recusa, alteração de papel, revogação e desativação como operações idempotentes por `account_user_id`;
   - criar migration obrigatória com o contrato exato de grants, RLS preservada e revogações de funções legadas definido na seção 1.5;
-  - manter a migration somente versionada e revisada no PR; não aplicar antes do merge;
-  - confirmar no Supabase que o hook amplo não está configurado antes de removê-lo ou restringi-lo;
+  - aplicar a migration após confirmar no Supabase que o hook amplo não estava configurado;
   - atualizar `docs/schema.md` na mesma alteração da migration, registrando grants finais de `account_users`, RLS/policies preservadas, funções legadas retiradas do caminho operacional e migration relacionada;
   - criar `supabase/snippets/e11_account_members_verify.sql` para verificar ACL de tabela, RLS/policies e ACL das funções separadamente;
   - impedir expiração automática local do membership e uso de `created_at` como validade do link;
   - criar casos executáveis da matriz aplicável.
-- Artefatos previstos:
+- Artefatos implementados:
   - `lib/access/account-members/contracts.ts`;
   - `lib/access/account-members/policy.ts`;
   - `lib/access/account-members/adapters/accountMembersAdapter.ts`;
@@ -352,7 +345,7 @@
   - `lib/access/account-members/validation-cases.ts`;
   - `lib/access/account-members/index.ts`;
   - ajuste em `lib/access/guards.ts`;
-  - migration incremental obrigatória da E11 após confirmação de ausência do hook;
+  - `supabase/migrations/20260727155312_e11_account_members_security.sql`;
   - `supabase/snippets/e11_account_members_verify.sql`;
   - ajuste em `docs/schema.md`;
   - script de validação em `package.json`.
@@ -367,15 +360,14 @@
   - `service_role` possui somente `SELECT`, `INSERT` e `UPDATE` em `account_users`, e os papéis revogados não executam as funções legadas;
   - nenhum client importa módulo privilegiado;
   - nenhuma tabela ou coluna nova é criada sem retorno ao Estrategista.
-- Decisão da fase: executar após aprovação da v2.
+- Decisão da fase: concluída.
 - Próxima ação: 11.1.4.
 
 ### 3.2. 11.1.4 — Convite de novo usuário, conclusão do cadastro e confirmação específica
 
-- Status: planejada.
+- Status: implementada no repositório; validação hospedada pendente na `11.1.7`.
 - Objetivo: entregar o convite nativo por e-mail, a definição de senha e o aceite seguro de uma única linha.
-- Automação: não.
-- Escopo executável:
+- Escopo implementado:
   - implementar criação prévia do usuário não confirmado e membership;
   - implementar HMAC versionado com `INVITE_STATE_SECRET`;
   - gravar o estado opaco em metadata somente para transporte;
@@ -387,19 +379,14 @@
   - validar assinatura, linha, usuário, conta e estado antes da ativação;
   - implementar retry idempotente da mesma linha se a ativação falhar após a senha;
   - implementar reenvio por `inviteUserByEmail()`;
-  - validar Email OTP Expiration e Redirect URL vigentes em Preview e Production, sem duplicar prazo local na aplicação;
-  - atualizar `docs/platform-config.md` com `INVITE_STATE_SECRET`, `E11_MEMBERS_ENABLED`, finalidade e escopos server-only, proibição de versionar valores, necessidade de redeploy, template `Invite user`, Redirect URLs e Email OTP Expiration verificados;
-  - preparar os casos do teste hospedado de envio, reenvio, senha, aceite, logout e novo login; executá-los somente no gate pós-merge descrito na seção 2.9.
-- Artefatos previstos:
+  - definir a matriz hospedada de envio, reenvio, senha, aceite, logout e novo login para execução na `11.1.7`.
+- Artefatos implementados:
   - `lib/access/account-members/invite-state.ts`;
   - ajustes em `lib/access/account-members/adapters/accountMembersAdapter.ts` e `lib/access/account-members/adapters/authAdminAdapter.ts`;
   - ajuste em `app/auth/confirm/route.ts`;
   - ajuste em `app/auth/update-password/page.tsx`;
-  - configuração externa do template `Invite user`;
-  - variável server-only `INVITE_STATE_SECRET` na Vercel;
-  - gate server-only `E11_MEMBERS_ENABLED` na Vercel;
-  - ajuste em `docs/platform-config.md`;
-  - casos executáveis e evidência hospedada.
+  - gate server-only `E11_MEMBERS_ENABLED`;
+  - casos executáveis da matriz hospedada.
 - Critérios de aceite:
   - o e-mail é enviado somente pelo Supabase Auth;
   - o template não expõe secret nem usa metadata como autorização;
@@ -414,15 +401,14 @@
   - logout e novo login por e-mail e senha funcionam;
   - reenvio real entrega o segundo e-mail e possui comportamento documentado para ambos os links;
   - falha de envio deixa retry recuperável sem duplicidade.
-- Decisão da fase: antes do merge, avançar após as validações disponíveis com `E11_MEMBERS_ENABLED` fechado; após o merge, a prova hospedada em Preview ou ambiente autorizado deve ser aprovada antes de habilitar o gate em Production.
+- Decisão da fase: implementação concluída; critérios hospedados transferidos para a `11.1.7`.
 - Próxima ação: 11.1.5.
 
 ### 3.3. 11.1.5 — Gestão de membros no Account Dashboard
 
-- Status: planejada.
+- Status: implementada.
 - Objetivo: permitir que owner/admin listem e administrem membros e convites não-owner.
-- Automação: não.
-- Escopo executável:
+- Escopo implementado:
   - criar `/a/[account]/members`;
   - criar Server Actions próprias da rota;
   - adicionar navegação condicionada a owner/admin;
@@ -432,7 +418,7 @@
   - implementar reenvio, revogação, alteração de papel e desativação;
   - aplicar estados visuais e responsividade da seção 2.7;
   - manter bloqueio server-side para editor/viewer.
-- Artefatos previstos:
+- Artefatos implementados:
   - `app/a/[account]/members/page.tsx`;
   - `app/a/[account]/members/actions.ts`;
   - componentes locais mínimos quando necessários;
@@ -445,15 +431,14 @@
   - estados vazio, carregando, erro, sucesso e em andamento estão presentes;
   - desktop e mobile permanecem utilizáveis;
   - nenhuma regra de negócio fica somente no client.
-- Decisão da fase: avançar após validação funcional e visual.
+- Decisão da fase: concluída.
 - Próxima ação: 11.1.6.
 
 ### 3.4. 11.1.6 — Pendências do usuário já cadastrado
 
-- Status: planejada.
+- Status: implementada.
 - Objetivo: permitir que usuário confirmado veja, aceite ou recuse seus convites sem receber e-mail.
-- Automação: não.
-- Escopo executável:
+- Escopo implementado:
   - ajustar `/a/home` para verificar pendências próprias antes do redirect automático;
   - preservar o redirect atual e não realizar writes enquanto `E11_MEMBERS_ENABLED` não for exatamente `true`;
   - exibir conta e papel proposto;
@@ -461,7 +446,7 @@
   - preservar o redirect atual quando não houver pendência;
   - após aceite, permitir entrada na conta ativada;
   - após recusa, remover a pendência da superfície.
-- Artefatos previstos:
+- Artefatos implementados:
   - ajuste em `app/a/home/page.tsx`;
   - action ou boundary server-side mínimo para aceite e recusa;
   - componentes locais mínimos quando necessários.
@@ -473,8 +458,40 @@
   - a pendência não expira automaticamente e só concede acesso após aceite;
   - sem pendências, o comportamento atual de `/a/home` é preservado;
   - falha de leitura ou escrita não cria acesso parcial.
-- Decisão da fase: concluir a implementação e as validações pré-merge disponíveis; após o merge, aprovar a prova hospedada fora de Production, habilitar Production e executar o smoke pós-ativação para fechar operacionalmente o recorte.
-- Próxima ação: N/A — plano implementado.
+- Decisão da fase: concluída.
+- Próxima ação: 11.1.7.
+
+### 3.5. 11.1.7 — Ativação controlada e validação hospedada
+
+- Status: em validação.
+- Objetivo: concluir a configuração externa remanescente, comprovar os fluxos hospedados e ativar a funcionalidade em Production de forma reversível.
+- Estado de entrada:
+  - migration aplicada e estado pós-apply verificado;
+  - `INVITE_STATE_SECRET` configurada com valores independentes em Production e Preview;
+  - `E11_MEMBERS_ENABLED=false` em Production e Preview;
+  - redeploys dos dois ambientes concluídos;
+  - fases `11.1.3` a `11.1.6` implementadas.
+- Execução:
+  - configurar no Supabase Auth o template nativo `Invite user`, os redirects estritamente necessários e a Email OTP Expiration compatível com o fluxo;
+  - manter Production com o gate desabilitado;
+  - habilitar `E11_MEMBERS_ENABLED=true` somente no Preview autorizado e executar novo redeploy;
+  - executar a matriz da seção 2.8, incluindo convite novo, reenvio, adulteração do link, senha antes da ativação, isolamento entre memberships, aceite e recusa do usuário já cadastrado, autorização por papel e idempotência;
+  - se a prova falhar, desabilitar novamente o gate do Preview, redeployar e limitar a correção à falha comprovada;
+  - se a prova for aprovada, habilitar o gate em Production, redeployar e executar o smoke mínimo do fluxo;
+  - se o smoke de Production falhar, desabilitar novamente o gate, redeployar e corrigir pelo fluxo normal;
+  - reconciliar `docs/roadmap.md` e `docs/platform-config.md` com o estado final comprovado, sem duplicar detalhes técnicos ou valores de configuração.
+- Critérios de aceite:
+  - configuração do Supabase Auth confirmada sem exposição de secrets;
+  - matriz hospedada aprovada no Preview antes da ativação de Production;
+  - Production mantida desabilitada até a aprovação da prova;
+  - smoke de Production aprovado após a ativação;
+  - nenhuma tabela, coluna, rota, envio próprio de e-mail ou infraestrutura nova;
+  - evidências sem token, secret, senha ou e-mail pessoal integral.
+- Autonomia do Executor:
+  - executar esta fase diretamente com este plano-base;
+  - corrigir falhas localizadas que não ampliem o escopo nem alterem contratos;
+  - parar e retornar ao Estrategista somente quando algum critério da seção 4.2 ocorrer.
+- Próxima ação: configurar o Supabase Auth e iniciar a prova controlada em Preview.
 
 ## 4. Escopo negativo e critérios de parada
 
@@ -515,7 +532,6 @@
 
 ### 4.3. Decisão atual e próxima ação
 
-- Decisão: plano-base v2 consolidado a partir da v1 imutável e dos pareceres especializados; o recorte não exige novo papel, permissão ou infraestrutura na E11.1.
-- Processo selecionado: Opção 2 — processo automatizado.
-- Gestor de Automação: não se aplica, pois todas as fases estão marcadas como `Automação: não`.
-- Próxima ação: submeter esta v2 ao gate do Analista e reconciliar `docs/roadmap.md` somente após sua aprovação.
+- Decisão: plano-base v3 reconciliado com o estado pós-merge; nenhuma nova passagem por especialistas é exigida para executar a `11.1.7`.
+- Processo selecionado: execução direta pelo Executor, sem automação.
+- Próxima ação: configurar o Supabase Auth e executar a prova controlada em Preview conforme a seção 3.5.
