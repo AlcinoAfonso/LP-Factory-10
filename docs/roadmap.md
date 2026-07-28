@@ -2,7 +2,7 @@
 
 0.1 Cabeçalho
 • Data: 28/07/2026
-• Versão: v1.5.107
+• Versão: v1.5.108
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -1150,7 +1150,7 @@ Repositório — Ajustados
 
 11. E11 — Gestão de Usuários e Convites
 - Objetivo: permitir gestão segura de membros não-owner e convites por conta, usando Supabase Auth e o Account Dashboard.
-- Status: implementação concluída com a funcionalidade desabilitada em Production; ativação pendente da configuração remanescente do Supabase Auth e da prova hospedada.
+- Status: implementação e prova hospedada em Preview concluídas; funcionalidade mantida desabilitada em Production até o merge humano e a ativação pós-merge.
 
 11.1 Gestão de membros e convites
 
@@ -1218,12 +1218,15 @@ Repositório — Ajustados
   - membership permanece `pending` até aceite, recusa ou revogação, sem expiração local.
 
 11.1.7 Ativação controlada e validação hospedada
-- Status: em validação.
+- Status: validação de Preview concluída; aguardando merge humano e ativação pós-merge em Production.
 - Conteúdo:
   - migration aplicada e estado pós-apply verificado;
-  - gate da funcionalidade mantido desabilitado em Production e Preview;
-  - configuração remanescente do Supabase Auth e prova funcional hospedada pendentes;
-  - ativação em Production e smoke final condicionados à aprovação da prova.
+  - configuração remanescente do Supabase Auth concluída;
+  - gate habilitado somente no Preview da branch `codex-app/e11-11-1-7`, com redeploy próprio;
+  - prova hospedada aprovada para convite de usuário novo e existente, reenvio, aceite, recusa, reativação, troca de papel, desativação, proteções de owner e do próprio vínculo, isolamento de acesso, logout, navegação por teclado, responsividade e retorno da gestão de membros à página principal;
+  - dois desvios comprovados na prova foram corrigidos no mesmo PR: transporte do estado assinado no convite e retorno da gestão de membros à página principal;
+  - gate mantido desabilitado em Production até o merge humano do PR #656;
+  - após o merge, habilitar Production, redeployar e executar o smoke final antes de concluir a fase.
 
 12. E12 — Admin Dashboard
 - Objetivo: Consolidar o Admin Dashboard como seção administrativa protegida, separada do Account Dashboard, com navegação própria e leitura operacional read-only.
@@ -2193,6 +2196,8 @@ Repositório — Ajustados
   * Permanecem fora do recorte mutações e lifecycle operacional do perfil, terceira tabela de domínio, rota, API HTTP, Server Action, UI, composição, copy, geração, IA, automação, job, serviço e nova infraestrutura.
 
 99. Changelog
+v1.5.108 — 28/07/2026 — Registrada a aprovação da matriz hospedada da E11.1.7 em Preview, com Production mantida desabilitada até o merge humano e o smoke pós-merge.
+
 v1.5.102 — 26/07/2026 — E20.3 implementada no PR #644: E20.3.3 concluída com migration versionada e aplicação pendente do merge; E20.3.4 implementada e validada; fechamento da fase pendente apenas de merge, apply automático e verificação read-only pós-apply.
 
 v1.5.101 — 25/07/2026 — Promovidos `comparison@v1`, `comparison.standard@v1`, `lead_capture@v1` e `lead_capture.form@v1` ao catálogo canônico da E18.5, totalizando doze módulos, quatorze variantes e 34 casos executáveis, com Form reutilizado e mecanismos centrais preservados.

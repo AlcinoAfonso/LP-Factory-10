@@ -2,7 +2,7 @@
 
 0.1 Cabeçalho
 • Documento: LP Factory 10 — Platform Config
-• Versão: v0.1.11
+• Versão: v0.1.12
 • Data: 28/07/2026
 
 0.2 Contrato do documento
@@ -129,14 +129,14 @@
 • `E11_MEMBERS_ENABLED`
 • Finalidade: gate operacional da gestão de membros e convites.
 • Escopo: Production e Preview.
-• Estado atual: `false`, configurada em Production e Preview.
-• Regra operacional: manter Production em `false` até a aprovação da prova hospedada; o Preview pode ser habilitado temporariamente somente após a configuração remanescente do Supabase Auth, com redeploy próprio e finalidade exclusiva de validação.
+• Estado atual: `false` em Production e `true` somente no Preview da branch `codex-app/e11-11-1-7`.
+• Regra operacional: a prova hospedada do Preview foi aprovada em 28/07/2026; manter Production em `false` até o merge humano do PR #656 e habilitar somente no fluxo pós-merge, com redeploy e smoke próprios.
 
 • `INVITE_STATE_SECRET`
 • Finalidade: assinar o estado opaco transportado pelo convite nativo do Supabase Auth.
 • Escopo: Production e Preview.
 • Estado atual: configurada em Production e Preview, com valores independentes por ambiente e sem versionar o conteúdo.
-• Estado operacional conjunto: redeploys de Production e Preview concluídos após a configuração das variáveis da E11.
+• Estado operacional conjunto: Preview da branch `codex-app/e11-11-1-7` redeployado com as variáveis da E11 e validado com o gate habilitado; Production permanece com o gate desabilitado.
 • Regra operacional: manter configurada antes de habilitar `E11_MEMBERS_ENABLED`.
 
 • `SUPABASE_SECRET_KEY`
@@ -235,8 +235,8 @@
 • Redirect de Production: `https://lp-factory-10.vercel.app/auth/confirm` cadastrado na allowlist do Supabase Auth em 28/07/2026.
 • Redirect de Preview: wildcard restrito a `https://*-alcino-afonsos-projects.vercel.app/**` confirmado na allowlist; a prova deve usar somente o deployment autorizado.
 • Email OTP Expiration: `3600` segundos confirmados no Dashboard em 28/07/2026; o Core não adiciona validade local paralela.
-• Estado: template, redirects e expiração configurados; envio real e matriz hospedada permanecem pendentes na fase `11.1.7`.
-• Ordem operacional remanescente: habilitar o gate somente no Preview autorizado, redeployar e validar o fluxo hospedado; manter Production desabilitada até a aprovação da prova.
+• Estado: template, redirects e expiração configurados; envio real e matriz hospedada aprovados no Preview autorizado da fase `11.1.7` em 28/07/2026.
+• Ordem operacional remanescente: manter Production desabilitada até o merge humano do PR #656; após o merge, habilitar o gate em Production, redeployar e executar o smoke final.
 • Evidência hospedada exigida antes da habilitação: convite novo, reenvio idempotente, link adulterado rejeitado, link legítimo concluído com definição de senha antes da ativação e isolamento entre memberships.
 
 4.7 Acesso operacional read-only para automações
@@ -440,6 +440,8 @@ Regra:
 • Configurações de plataformas, secrets por nome, workflows, ambientes e endpoints usados por automações devem ser registrados neste documento.
 
 99. Changelog
+v0.1.12 — 28/07/2026 — Registrada a prova hospedada aprovada da E11.1.7 no Preview autorizado e preservado o gate de Production até o merge humano e o smoke pós-merge.
+
 v0.1.10 — 28/07/2026 — Registradas as variáveis da E11 configuradas em Production e Preview, os redeploys concluídos e a configuração remanescente do Supabase Auth.
 
 v0.1.8 — 02/07/2026 — Configuração Stripe atualizada com uso de webhook produtivo, endpoint `/api/stripe/webhook`, lookup de subscriptions e secret `STRIPE_WEBHOOK_SECRET`.
