@@ -65,7 +65,7 @@ reset role;
 set local role authenticated;
 select set_config(
   'request.jwt.claims',
-  '{"sub":"12040000-0000-4000-8000-000000000099","role":"authenticated","platform_admin":true}',
+  '{"sub":"ce899cd2-5360-478e-817e-ee3690aabecd","role":"authenticated","platform_admin":true}',
   true
 );
 
@@ -289,7 +289,7 @@ $$;
 set local role authenticated;
 select set_config(
   'request.jwt.claims',
-  '{"sub":"12040000-0000-4000-8000-000000000099","role":"authenticated","platform_admin":true}',
+  '{"sub":"ce899cd2-5360-478e-817e-ee3690aabecd","role":"authenticated","platform_admin":true}',
   true
 );
 do $$

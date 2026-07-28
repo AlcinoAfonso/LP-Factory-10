@@ -4,28 +4,15 @@ with expected(signature) as (
     ('activate_landing_page_generation_profile(uuid,timestamp with time zone)'),
     ('archive_landing_page_generation_profile(uuid,timestamp with time zone)'),
     ('get_landing_page_generation_profile_lifecycle_status()')
-), actual as (
-  select
-    p.proname || '(' || pg_get_function_identity_arguments(p.oid) || ')' as signature,
-    p.prosecdef,
-    p.proconfig
-  from pg_proc p
-  join pg_namespace n on n.oid = p.pronamespace
-  where n.nspname = 'public'
-    and p.proname in (
-      'save_landing_page_generation_profile_draft',
-      'activate_landing_page_generation_profile',
-      'archive_landing_page_generation_profile',
-      'get_landing_page_generation_profile_lifecycle_status'
-    )
 )
 select
   expected.signature,
-  actual.signature is not null as exists,
-  coalesce(actual.prosecdef, false) as security_definer,
-  coalesce(actual.proconfig @> array['search_path=public, pg_temp'], false) as fixed_search_path
+  function.oid is not null as exists,
+  coalesce(function.prosecdef, false) as security_definer,
+  coalesce(function.proconfig @> array['search_path=public, pg_temp'], false) as fixed_search_path
 from expected
-left join actual using (signature)
+left join pg_proc function
+  on function.oid = to_regprocedure('public.' || expected.signature)
 order by expected.signature;
 
 select
