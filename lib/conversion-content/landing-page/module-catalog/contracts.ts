@@ -370,6 +370,20 @@ export type ValidateLandingPageModuleIdentityResult =
       }>;
     }>;
 
+export type LandingPageModuleIdentityCatalog = Readonly<{
+  moduleCatalogVersion: number;
+  modules: readonly Readonly<{
+    moduleKey: string;
+    moduleVersion: number;
+    lifecycleStatus: LandingPageModuleLifecycleStatus;
+    variants: readonly Readonly<{
+      variantKey: string;
+      variantVersion: number;
+      lifecycleStatus: LandingPageVariantLifecycleStatus;
+    }>[];
+  }>[];
+}>;
+
 export type ResolveLandingPageModuleCatalogInput = Readonly<{
   moduleCatalogVersion: number;
   rootVersion: number;

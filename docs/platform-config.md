@@ -2,7 +2,7 @@
 
 0.1 Cabeçalho
 • Documento: LP Factory 10 — Platform Config
-• Versão: v0.1.10
+• Versão: v0.1.12
 • Data: 28/07/2026
 
 0.2 Contrato do documento
@@ -165,6 +165,15 @@
 • Valor atual de referência: `gpt-5.4-mini`
 • Regra: deve conter apenas o ID do modelo; nunca inserir `OPENAI_API_KEY` nessa variável.
 
+• `OPENAI_LANDING_PAGE_GENERATION_PROFILE_MODEL`
+• Plataforma: Vercel.
+• Finalidade: selecionar o modelo usado pela proposta administrativa opcional do perfil de orientação de `landing_page`.
+• Escopo: Production e Preview.
+• Valor permitido: `gpt-5.4-mini`.
+• Estado: configuração e validação operacional pendentes; sem a variável, sem `OPENAI_API_KEY` ou com qualquer outro modelo, a assistência fica indisponível e o fluxo manual permanece funcional.
+• Valor real: não versionar.
+• Regra: deve conter apenas o ID do modelo; nunca inserir `OPENAI_API_KEY` nessa variável.
+
 • `OPENAI_COMMERCIAL_ACTIVATION_MODEL`
 • Finalidade: modelo usado pela geração administrativa server-side de drafts `commercial_activation` da E10.7.
 • Escopo: Production e Preview.
@@ -295,10 +304,20 @@
 • Valor real: não versionar.
 • Regra: deve conter apenas o ID do modelo; nunca inserir `OPENAI_API_KEY` nessa variável.
 
+• `OPENAI_LANDING_PAGE_GENERATION_PROFILE_MODEL`
+• Plataforma: Vercel.
+• Finalidade: selecionar o modelo usado pela proposta administrativa opcional do perfil de orientação de `landing_page`.
+• Escopo: Production e Preview.
+• Valor permitido: `gpt-5.4-mini`.
+• Estado: configuração e validação operacional pendentes; sem a variável, sem `OPENAI_API_KEY` ou com qualquer outro modelo, a assistência fica indisponível e o fluxo manual permanece funcional.
+• Valor real: não versionar.
+• Regra: deve conter apenas o ID do modelo; nunca inserir `OPENAI_API_KEY` nessa variável.
+
 6.3.1 Endpoint externo atual
 • Endpoint OpenAI Responses API: `https://api.openai.com/v1/responses`
 • Consumidores atuais conhecidos:
 • `lib/conversion-content/commercial-activation/draft-generation.ts`
+• `lib/conversion-content/adapters/landingPageGenerationProfileOpenAiAdapter.ts`
 • `lib/onboarding/niche-resolution/adapters/openAiResolver.ts`
 • `automations/supabase-inspect/run.mjs`
 • Regra: novas APIs ou endpoints OpenAI devem ser registrados aqui quando virarem dependência operacional.
@@ -440,6 +459,8 @@ Regra:
 • Configurações de plataformas, secrets por nome, workflows, ambientes e endpoints usados por automações devem ser registrados neste documento.
 
 99. Changelog
+v0.1.11 — 28/07/2026 — Registrada `OPENAI_LANDING_PAGE_GENERATION_PROFILE_MODEL`, seus ambientes, estado pendente e consumidor server-side da E12.4.3.
+
 v0.1.10 — 28/07/2026 — Registradas as variáveis da E11 configuradas em Production e Preview, os redeploys concluídos e a configuração remanescente do Supabase Auth.
 
 v0.1.8 — 02/07/2026 — Configuração Stripe atualizada com uso de webhook produtivo, endpoint `/api/stripe/webhook`, lookup de subscriptions e secret `STRIPE_WEBHOOK_SECRET`.

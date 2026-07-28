@@ -2,7 +2,7 @@
 
 0.1 Cabeçalho
 • Data: 28/07/2026
-• Versão: v1.5.107
+• Versão: v1.5.110
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -1386,6 +1386,41 @@ Repositório — Ajustados
   - Sem permissão de criar LPs.
   - Sem LP Builder.
   - Sem curadoria de composição de nicho, LP teste ou liberação de nicho registrada como implementação da E12.
+
+12.4 Gestão do perfil de orientação
+- Objetivo: Definir a operação administrativa do perfil de orientação que direciona gerações futuras de landing pages sem materializar nem alterar LPs.
+- Status: E12.4.3 implementada como candidata no repositório; aplicação da migration, configuração da assistência e teste humano em Preview permanecem pendentes antes da conclusão.
+
+12.4.1 Objetivo e status
+- Objetivo: Entregar a operação manual completa de criação, edição, revisão, ativação e arquivamento de versões do perfil, com proposta opcional por IA no mesmo editor.
+- Status: Operação manual e assistência opcional implementadas como candidatas; validações externas pendentes.
+
+12.4.3 Proposta, revisão, aprovação e ativação do perfil
+- Status: Implementação candidata concluída no repositório; validações externas pendentes.
+- Conteúdo:
+  - Perfil próprio permitido somente para segmento e nicho; ultranicho resolve o perfil ativo do ancestral elegível mais próximo.
+  - Estados persistidos limitados a `draft`, `active` e `archived`; uma versão ativa é imutável e qualquer mudança exige nova versão em rascunho.
+  - A operação manual permanece completa; a IA apenas propõe conteúdo após ação explícita do `platform_admin`, sem salvar, aprovar, ativar, arquivar ou gerar LP.
+  - `Salvar rascunho`, `Aprovar e ativar` e arquivamento permanecem ações humanas; a troca da versão ativa deve ser atômica e auditada.
+  - A E12.4.3 reutiliza o contrato e a persistência da E20.3 sem alterar o resolver público do perfil ativo próprio ou herdado.
+  - Dependência técnica atendida em 28/07/2026: PR #655 mergeado, branch sincronizada com a `main` e `next`/`eslint-config-next` confirmados em `16.2.11` no lockfile antes da implementação.
+  - A proposta por IA exige resolução completa da E10.8 e identidades públicas vigentes da E18.5; ausência ou indisponibilidade da assistência não bloqueia o fluxo manual.
+  - E12.4.4 e subseções posteriores, autorização por conta, geração, materialização, preview, publicação e alteração de LP permanecem fora do recorte.
+- Registros de implementação candidata:
+  - Admin Dashboard: listagem e editor em `app/admin/(protected)/perfis-de-orientacao/`, com salvar draft, ativar e arquivar protegidos por `platform_admin`.
+  - Boundary e adapters: contratos administrativos, validação estrita, correlação da proposta, acesso server-only e integração opcional com Responses API em `lib/conversion-content/`.
+  - Banco versionado: migration `20260728153500_e12_4_3_generation_profile_lifecycle.sql`, teste SQL e snippet de verificação; aplicação no Supabase e reconciliação posterior de `docs/schema.md` ainda pendentes.
+  - Validação local: casos executáveis do perfil, typecheck e check aprovados; Preview autenticado e fluxo real com OpenAI/Supabase ainda não executados por ausência das configurações locais.
+
+12.4.3.1 Refinamento iterativo assistido por IA
+- Status: Implementação candidata no PR #654; provas hospedadas aplicáveis permanecem pendentes e a subfase não está concluída.
+- Conteúdo:
+  - Toda proposta inicial ou revisão depende de ação explícita do `platform_admin`.
+  - A IA pode sugerir alterações em `generation_guidance`, recomendações e `item_guidance` dentro do contrato fechado vigente.
+  - O refinamento recebe o conteúdo atual do editor e o feedback humano mais recente, além das fontes já autorizadas pela E12.4.3.
+  - Cada acionamento autoriza somente uma chamada; não há refinamento nem retry automático.
+  - Nenhuma proposta salva, aprova ou ativa automaticamente; o `platform_admin` continua responsável por revisar, editar, salvar e ativar.
+  - Não existe conversa persistente, histórico de mensagens, agente ou memória própria.
 
 13. E13 — Partner Dashboard
 
