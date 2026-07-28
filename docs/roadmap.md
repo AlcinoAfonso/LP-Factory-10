@@ -2,7 +2,7 @@
 
 0.1 Cabeçalho
 • Data: 28/07/2026
-• Versão: v1.5.106
+• Versão: v1.5.107
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -1150,13 +1150,13 @@ Repositório — Ajustados
 
 11. E11 — Gestão de Usuários e Convites
 - Objetivo: permitir gestão segura de membros não-owner e convites por conta, usando Supabase Auth e o Account Dashboard.
-- Status: implementação concluída com a funcionalidade desabilitada em Production; ativação pendente de verificação do banco, configuração externa e prova hospedada.
+- Status: implementação concluída com a funcionalidade desabilitada em Production; ativação pendente da configuração remanescente do Supabase Auth e da prova hospedada.
 
 11.1 Gestão de membros e convites
 
 11.1.1 Objetivo e status
 - Objetivo: permitir que owner e admin convidem, acompanhem e administrem membros com papéis admin, editor e viewer, preservando o owner e o isolamento multi-tenant.
-- Status: implementado; migration aplicada; ativação controlada pendente.
+- Status: implementado; migration aplicada e estado pós-apply verificado; ativação controlada pendente.
 
 11.1.2 Registros do recorte
 - Banco:
@@ -1220,10 +1220,10 @@ Repositório — Ajustados
 11.1.7 Ativação controlada e validação hospedada
 - Status: em validação.
 - Conteúdo:
-  - migration aplicada, com verificação pós-apply do banco pendente;
-  - gate da funcionalidade mantido desabilitado;
-  - configuração externa e prova funcional hospedada pendentes;
-  - ativação em Production e smoke final condicionados à aprovação das verificações.
+  - migration aplicada e estado pós-apply verificado;
+  - gate da funcionalidade mantido desabilitado em Production e Preview;
+  - configuração remanescente do Supabase Auth e prova funcional hospedada pendentes;
+  - ativação em Production e smoke final condicionados à aprovação da prova.
 
 12. E12 — Admin Dashboard
 - Objetivo: Consolidar o Admin Dashboard como seção administrativa protegida, separada do Account Dashboard, com navegação própria e leitura operacional read-only.
