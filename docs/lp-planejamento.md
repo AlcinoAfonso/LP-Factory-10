@@ -45,7 +45,7 @@ Fontes de referência: `README.md`, `docs/roadmap.md`, `docs/base-tecnica.md`, `
 - A E18.5 não será substituída por catálogo apenas consultivo e não perderá as proteções comprovadas nos testes.
 - A E18.5 não implementa dados concretos, conteúdo final, perfil de orientação, renderer, persistência ou integração operacional.
 
-### 1.5. Definir o catálogo de entradas para geração da LP
+### 1.5. Manter o catálogo de entradas para geração da LP
 
 - A E20.2 define entradas universais e específicas por taxon e plano, separadas do perfil de orientação e do conteúdo.
 - O catálogo indica campos obrigatórios, opcionais e condicionais; os valores reais pertencem à conta, oferta, campanha ou LP.
@@ -91,7 +91,7 @@ Fontes de referência: `README.md`, `docs/roadmap.md`, `docs/base-tecnica.md`, `
 ### 1.9. Gerar, revisar e publicar a LP real
 
 - A E19 é o único fluxo de LPs para contas autorizadas e clientes liberados.
-- Pelo Account Dashboard, a conta fornece os valores aplicáveis, gera, revisa e publica a LP conforme o recorte aprovado.
+- Pelo fluxo da E19, a conta fornece os valores aplicáveis, gera, revisa e publica a LP conforme o recorte aprovado.
 - A geração usa pesquisas E10.8, base E18.4, catálogo E18.5, perfil E20 e entradas E20.2, sem alterar essas fontes.
 - A LP é materializada como artefato independente; o snapshot preserva taxon, plano, valores, pesquisas, perfil e versão usados, mas mudanças futuras no perfil não alteram LPs existentes.
 
