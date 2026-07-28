@@ -60,6 +60,7 @@ export async function createUnconfirmedAuthUser(
 }
 
 export async function sendAuthInvite(input: Readonly<{
+  userId: string;
   email: string;
   inviteState: string;
   redirectTo: string;
@@ -81,6 +82,12 @@ export async function sendAuthInvite(input: Readonly<{
   }
 
   const supabase = createServiceClient();
+  const { error: metadataError } = await supabase.auth.admin.updateUserById(
+    input.userId,
+    { user_metadata: { invite_state: input.inviteState } },
+  );
+  if (metadataError) return { ok: false, error: "auth_invite_failed" };
+
   const { error } = await supabase.auth.admin.inviteUserByEmail(email, {
     data: { invite_state: input.inviteState },
     redirectTo: input.redirectTo,
