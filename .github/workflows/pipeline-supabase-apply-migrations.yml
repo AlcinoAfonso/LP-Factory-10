@@ -27,6 +27,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Report disabled migration gate
         if: ${{ vars.SUPABASE_APPLY_MIGRATIONS_ENABLED != 'true' }}

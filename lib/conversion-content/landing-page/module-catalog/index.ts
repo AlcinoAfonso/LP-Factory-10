@@ -11,6 +11,7 @@ export type {
   LandingPageModuleCatalogError,
   LandingPageModuleCatalogErrorCode,
   LandingPageModuleIdentityErrorCode,
+  LandingPageModuleIdentityCatalog,
   LandingPageModuleDefinition,
   LandingPageModuleKey,
   LandingPageModuleLifecycleStatus,
@@ -25,5 +26,6 @@ export type {
   ValidateLandingPageModuleIdentityInput,
   ValidateLandingPageModuleIdentityResult,
 } from "./contracts";
+export { listLandingPageModuleIdentities } from "./identity-catalog";
 export { validateLandingPageModuleIdentity } from "./identity-validator";
 export { resolveLandingPageModuleCatalog } from "./resolver";

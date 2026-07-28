@@ -2,7 +2,7 @@
 
 0.1 Cabeçalho
 • Documento: LP Factory 10 — Platform Config
-• Versão: v0.1.12
+• Versão: v0.1.13
 • Data: 28/07/2026
 
 0.2 Contrato do documento
@@ -130,13 +130,13 @@
 • Finalidade: gate operacional da gestão de membros e convites.
 • Escopo: Production e Preview.
 • Estado atual: `false` em Production e `true` somente no Preview da branch `codex-app/e11-11-1-7`.
-• Regra operacional: a prova hospedada do Preview foi aprovada em 28/07/2026; manter Production em `false` até o merge humano do PR #656 e habilitar somente no fluxo pós-merge, com redeploy e smoke próprios.
+• Regra operacional: a correção do transporte concorrente deve ser retestada no Preview da branch `codex-app/e11-11-1-7`; manter Production em `false` até a aprovação desse reteste, o merge humano do PR #656 e o fluxo pós-merge.
 
 • `INVITE_STATE_SECRET`
 • Finalidade: assinar o estado opaco transportado pelo convite nativo do Supabase Auth.
 • Escopo: Production e Preview.
 • Estado atual: configurada em Production e Preview, com valores independentes por ambiente e sem versionar o conteúdo.
-• Estado operacional conjunto: Preview da branch `codex-app/e11-11-1-7` redeployado com as variáveis da E11 e validado com o gate habilitado; Production permanece com o gate desabilitado.
+• Estado operacional conjunto: Preview da branch `codex-app/e11-11-1-7` configurado para o reteste corretivo com o gate habilitado; Production permanece com o gate desabilitado.
 • Regra operacional: manter configurada antes de habilitar `E11_MEMBERS_ENABLED`.
 
 • `SUPABASE_SECRET_KEY`
@@ -163,6 +163,15 @@
 • Finalidade: modelo usado pelo resolvedor IA de nicho.
 • Escopo: Production e Preview.
 • Valor atual de referência: `gpt-5.4-mini`
+• Regra: deve conter apenas o ID do modelo; nunca inserir `OPENAI_API_KEY` nessa variável.
+
+• `OPENAI_LANDING_PAGE_GENERATION_PROFILE_MODEL`
+• Plataforma: Vercel.
+• Finalidade: selecionar o modelo usado pela proposta administrativa opcional do perfil de orientação de `landing_page`.
+• Escopo: Production e Preview.
+• Valor permitido: `gpt-5.4-mini`.
+• Estado: configuração e validação operacional pendentes; sem a variável, sem `OPENAI_API_KEY` ou com qualquer outro modelo, a assistência fica indisponível e o fluxo manual permanece funcional.
+• Valor real: não versionar.
 • Regra: deve conter apenas o ID do modelo; nunca inserir `OPENAI_API_KEY` nessa variável.
 
 • `OPENAI_COMMERCIAL_ACTIVATION_MODEL`
@@ -295,10 +304,20 @@
 • Valor real: não versionar.
 • Regra: deve conter apenas o ID do modelo; nunca inserir `OPENAI_API_KEY` nessa variável.
 
+• `OPENAI_LANDING_PAGE_GENERATION_PROFILE_MODEL`
+• Plataforma: Vercel.
+• Finalidade: selecionar o modelo usado pela proposta administrativa opcional do perfil de orientação de `landing_page`.
+• Escopo: Production e Preview.
+• Valor permitido: `gpt-5.4-mini`.
+• Estado: configuração e validação operacional pendentes; sem a variável, sem `OPENAI_API_KEY` ou com qualquer outro modelo, a assistência fica indisponível e o fluxo manual permanece funcional.
+• Valor real: não versionar.
+• Regra: deve conter apenas o ID do modelo; nunca inserir `OPENAI_API_KEY` nessa variável.
+
 6.3.1 Endpoint externo atual
 • Endpoint OpenAI Responses API: `https://api.openai.com/v1/responses`
 • Consumidores atuais conhecidos:
 • `lib/conversion-content/commercial-activation/draft-generation.ts`
+• `lib/conversion-content/adapters/landingPageGenerationProfileOpenAiAdapter.ts`
 • `lib/onboarding/niche-resolution/adapters/openAiResolver.ts`
 • `automations/supabase-inspect/run.mjs`
 • Regra: novas APIs ou endpoints OpenAI devem ser registrados aqui quando virarem dependência operacional.
@@ -440,7 +459,11 @@ Regra:
 • Configurações de plataformas, secrets por nome, workflows, ambientes e endpoints usados por automações devem ser registrados neste documento.
 
 99. Changelog
+v0.1.13 — 28/07/2026 — Corrigido o transporte do estado assinado por emissão no `RedirectTo` do convite nativo, removida a dependência de metadata compartilhado e registrado o reteste hospedado restrito como pendente, com Production desabilitada.
+
 v0.1.12 — 28/07/2026 — Registrada a prova hospedada aprovada da E11.1.7 no Preview autorizado e preservado o gate de Production até o merge humano e o smoke pós-merge.
+
+v0.1.11 — 28/07/2026 — Registrada `OPENAI_LANDING_PAGE_GENERATION_PROFILE_MODEL`, seus ambientes, estado pendente e consumidor server-side da E12.4.3.
 
 v0.1.10 — 28/07/2026 — Registradas as variáveis da E11 configuradas em Production e Preview, os redeploys concluídos e a configuração remanescente do Supabase Auth.
 

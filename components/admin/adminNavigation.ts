@@ -54,6 +54,17 @@ export const adminAreas: AdminArea[] = [
     ],
   },
   {
+    title: 'Perfis de orientação',
+    href: '/admin/perfis-de-orientacao',
+    description: 'Gestão versionada da orientação para landing pages.',
+    status: 'Disponível',
+    scope: [
+      'Perfis próprios de segmentos e nichos',
+      'Draft, revisão humana, ativação e arquivamento',
+      'Proposta opcional por IA com fallback manual',
+    ],
+  },
+  {
     title: 'Auditoria',
     href: '/admin/auditoria',
     description: 'Área prevista para leitura de eventos administrativos.',
