@@ -1,8 +1,8 @@
 0. Introdução
 
 0.1 Cabeçalho
-• Data da última atualização: 27/07/2026
-• Documento: LP Factory 10 — Schema (DB Contract) v1.0.34
+• Data da última atualização: 28/07/2026
+• Documento: LP Factory 10 — Schema (DB Contract) v1.0.35
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -749,7 +749,8 @@
 
 1.24.1 Função
 • Perfil versionado de orientação para geração pertencente a um taxon.
-• Estados permitidos: `draft`, `active` e `archived`; transições não são implementadas neste recorte.
+• Estados permitidos: `draft`, `active` e `archived`; as transições controladas são executadas somente pelas RPCs da seção 3.7.
+• Uma versão `active` é imutável; alterações exigem uma versão `draft`.
 
 1.24.2 Colunas
 • id uuid primary key default gen_random_uuid()
@@ -773,7 +774,7 @@
 • public, anon e authenticated: sem grants.
 • service_role: SELECT; sem INSERT, UPDATE ou DELETE.
 • ai_readonly: exceção explícita aos default privileges, sem grants quando a role existir.
-• Trigger Hub e auditoria: não.
+• Trigger Hub de tabela: não; as mutações pelas RPCs da seção 3.7 registram auditoria em `audit_logs` por `audit_context_event`.
 • `landing_page_generation_profiles_set_updated_at`: executa `public.tg_set_updated_at()` antes de UPDATE.
 
 1.25 landing_page_generation_profile_items
@@ -1001,6 +1002,29 @@
 • Estratégias cobertas: alias_exact, alias_normalized, taxon_name_exact, taxon_name_normalized, taxon_slug_normalized, fts, trgm
 • Consumidor previsto: camada server/adapter do app; sem consumo direto pelo client nesta etapa
 • Fora do escopo: writes, IA, fallback final, account_taxonomy, account_niche_resolutions e escolha de template
+
+3.7 Lifecycle administrativo do perfil de orientação
+• As quatro RPCs são `SECURITY DEFINER`, fixam `search_path = public, pg_temp` e concedem `EXECUTE` somente a `authenticated`; `public`, `anon`, `service_role` e `ai_readonly`, quando existir, não possuem `EXECUTE`.
+• Todas exigem `platform_admin`; as tabelas permanecem sem DML direto para papéis de runtime.
+
+3.7.1 save_landing_page_generation_profile_draft(uuid, uuid, timestamptz, text, jsonb, text, uuid, text) → table
+• Cria nova versão `draft` ou atualiza um `draft` existente com concorrência otimista por `updated_at`.
+• Valida o agregado completo, inclusive o par opcional `variant_key`/`variant_version`, e substitui atomicamente os itens do rascunho.
+• Registra `generation_profile_draft_saved`, origem `manual` ou `ai` e somente a correlação autorizada; não registra prompt, pesquisa bruta nem payload integral.
+
+3.7.2 activate_landing_page_generation_profile(uuid, timestamptz) → table
+• Ativa um `draft` com concorrência otimista e arquiva atomicamente a versão `active` anterior do mesmo taxon.
+• Registra `generation_profile_activated` sem reutilizar correlação de proposta.
+
+3.7.3 archive_landing_page_generation_profile(uuid, timestamptz) → table
+• Arquiva uma versão `draft` ou `active` com concorrência otimista.
+• Registra `generation_profile_archived`.
+
+3.7.4 get_landing_page_generation_profile_lifecycle_status() → table
+• Retorna readiness administrativo calculado a partir de tabelas, constraints, RLS e grants exigidos pelo lifecycle.
+
+• Migration aplicada: `supabase/migrations/20260728153500_e12_4_3_generation_profile_lifecycle.sql`.
+• Provas pós-apply: `supabase/tests/e12_4_3_generation_profile_lifecycle.test.sql` e `supabase/snippets/e12_4_3_generation_profile_lifecycle_verify.sql`.
 
 4. Triggers 
 

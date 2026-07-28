@@ -2,7 +2,7 @@
 
 0.1 Cabeçalho
 • Data: 28/07/2026
-• Versão: v1.5.110
+• Versão: v1.5.111
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -1389,14 +1389,14 @@ Repositório — Ajustados
 
 12.4 Gestão do perfil de orientação
 - Objetivo: Definir a operação administrativa do perfil de orientação que direciona gerações futuras de landing pages sem materializar nem alterar LPs.
-- Status: E12.4.3 implementada como candidata no repositório; aplicação da migration, configuração da assistência e teste humano em Preview permanecem pendentes antes da conclusão.
+- Status: E12.4.3 implementada como candidata; migration aplicada e provas automatizadas pós-apply aprovadas. Configuração da assistência e teste humano autenticado em Preview permanecem pendentes antes da conclusão.
 
 12.4.1 Objetivo e status
 - Objetivo: Entregar a operação manual completa de criação, edição, revisão, ativação e arquivamento de versões do perfil, com proposta opcional por IA no mesmo editor.
-- Status: Operação manual e assistência opcional implementadas como candidatas; validações externas pendentes.
+- Status: Operação manual e assistência opcional implementadas como candidatas; validações automatizadas de banco concluídas e validações humanas em Preview pendentes.
 
 12.4.3 Proposta, revisão, aprovação e ativação do perfil
-- Status: Implementação candidata concluída no repositório; validações externas pendentes.
+- Status: Implementação candidata integrada à `main`; workflow idempotente, teste SQL transacional e verificação read-only pós-apply aprovados. Configuração da OpenAI em Preview e teste humano autenticado permanecem pendentes.
 - Conteúdo:
   - Perfil próprio permitido somente para segmento e nicho; ultranicho resolve o perfil ativo do ancestral elegível mais próximo.
   - Estados persistidos limitados a `draft`, `active` e `archived`; uma versão ativa é imutável e qualquer mudança exige nova versão em rascunho.
@@ -1409,11 +1409,11 @@ Repositório — Ajustados
 - Registros de implementação candidata:
   - Admin Dashboard: listagem e editor em `app/admin/(protected)/perfis-de-orientacao/`, com salvar draft, ativar e arquivar protegidos por `platform_admin`.
   - Boundary e adapters: contratos administrativos, validação estrita, correlação da proposta, acesso server-only e integração opcional com Responses API em `lib/conversion-content/`.
-  - Banco versionado: migration `20260728153500_e12_4_3_generation_profile_lifecycle.sql`, teste SQL e snippet de verificação; aplicação no Supabase e reconciliação posterior de `docs/schema.md` ainda pendentes.
-  - Validação local: casos executáveis do perfil, typecheck e check aprovados; Preview autenticado e fluxo real com OpenAI/Supabase ainda não executados por ausência das configurações locais.
+  - Banco: migration `20260728153500_e12_4_3_generation_profile_lifecycle.sql` aplicada; teste SQL transacional, snippet read-only, RPCs, ACLs, RLS e policies verificados pós-apply.
+  - Validação: casos executáveis do perfil, typecheck, check e checks hospedados aprovados; Preview autenticado e fluxo real com OpenAI permanecem pendentes.
 
 12.4.3.1 Refinamento iterativo assistido por IA
-- Status: Implementação candidata no PR #654; provas hospedadas aplicáveis permanecem pendentes e a subfase não está concluída.
+- Status: Implementação candidata integrada à `main`; checks hospedados automatizados aprovados. Teste humano autenticado do refinamento em Preview permanece pendente e a subfase não está concluída.
 - Conteúdo:
   - Toda proposta inicial ou revisão depende de ação explícita do `platform_admin`.
   - A IA pode sugerir alterações em `generation_guidance`, recomendações e `item_guidance` dentro do contrato fechado vigente.
