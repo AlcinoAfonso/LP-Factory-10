@@ -3,7 +3,7 @@ import "server-only";
 import { randomUUID } from "node:crypto";
 
 import { resolveLandingPageResearchForTaxon } from "../../adapters/landingPageResearchAdapter";
-import { readAdminGenerationProfileDetail } from "../../adapters/landingPageGenerationProfileAdminAdapter";
+import { readAdminGenerationProfileDetail, readLastActivatedOwnGenerationProfile } from "../../adapters/landingPageGenerationProfileAdminAdapter";
 import { requestGenerationProfileProposal } from "../../adapters/landingPageGenerationProfileOpenAiAdapter";
 import type { GenerationProfileProposalResult } from "./admin-contracts";
 import { listLandingPageModuleIdentities } from "../module-catalog";
@@ -54,7 +54,16 @@ export async function proposeLandingPageGenerationProfile(input: {
       startedAt,
     });
   }
-  const previousActiveProfile = detail.lastActivatedOwnProfile;
+  const historicalProfile = await readLastActivatedOwnGenerationProfile({ profiles: detail.profiles });
+  if (!historicalProfile.ok) {
+    return finishFailure(requestId, "technical_failure", "Previous active profile context could not be loaded.", {
+      taxonId: input.taxonId,
+      platformAdminId: input.actorUserId,
+      model,
+      startedAt,
+    });
+  }
+  const previousActiveProfile = historicalProfile.profile;
   const moduleIdentities = listLandingPageModuleIdentities();
   const provider = await requestGenerationProfileProposal({
     model,

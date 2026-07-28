@@ -72,7 +72,6 @@ export async function readAdminGenerationProfileDetail(input: {
       ok: true;
       taxon: AdminGenerationProfileTaxon;
       profiles: readonly AdminGenerationProfile[];
-      lastActivatedOwnProfile: AdminGenerationProfile | null;
     }>
   | Readonly<{ ok: false; error: string }>
 > {
@@ -115,25 +114,33 @@ export async function readAdminGenerationProfileDetail(input: {
   if (profiles.some((profile) => profile === null)) {
     return { ok: false, error: "profile_invalid_data" };
   }
-  const validProfiles = profiles as AdminGenerationProfile[];
-  const activeProfile = validProfiles.find((profile) => profile.status === "active") ?? null;
-  let lastActivatedOwnProfile = activeProfile;
-  if (!activeProfile && profileIds.length > 0) {
-    const { data: auditRow, error: auditError } = await supabase
-      .from("audit_logs")
-      .select("record_id")
-      .eq("event", "generation_profile_activated")
-      .in("record_id", profileIds)
-      .order("created_at", { ascending: false })
-      .order("id", { ascending: false })
-      .limit(1)
-      .maybeSingle();
-    if (auditError) return { ok: false, error: "profile_history_read_failed" };
-    if (auditRow?.record_id) {
-      lastActivatedOwnProfile = validProfiles.find((profile) => profile.id === auditRow.record_id) ?? null;
-    }
-  }
-  return { ok: true, taxon, profiles: validProfiles, lastActivatedOwnProfile };
+  return { ok: true, taxon, profiles: profiles as AdminGenerationProfile[] };
+}
+
+export async function readLastActivatedOwnGenerationProfile(input: {
+  profiles: readonly AdminGenerationProfile[];
+}): Promise<
+  | Readonly<{ ok: true; profile: AdminGenerationProfile | null }>
+  | Readonly<{ ok: false; error: string }>
+> {
+  const activeProfile = input.profiles.find((profile) => profile.status === "active") ?? null;
+  if (activeProfile || input.profiles.length === 0) return { ok: true, profile: activeProfile };
+
+  const supabase = createServiceClient();
+  const { data: auditRow, error: auditError } = await supabase
+    .from("audit_logs")
+    .select("record_id")
+    .eq("event", "generation_profile_activated")
+    .in("record_id", input.profiles.map((profile) => profile.id))
+    .order("created_at", { ascending: false })
+    .order("id", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (auditError) return { ok: false, error: "profile_history_read_failed" };
+  const profile = auditRow?.record_id
+    ? input.profiles.find((candidate) => candidate.id === auditRow.record_id) ?? null
+    : null;
+  return { ok: true, profile };
 }
 
 export async function readAdminGenerationProfileLifecycleReadiness(): Promise<GenerationProfileLifecycleReadiness> {

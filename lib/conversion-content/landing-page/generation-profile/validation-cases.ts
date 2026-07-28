@@ -338,6 +338,13 @@ const cases: readonly Readonly<{
         assert.equal(unavailableCorrelation.value.requestId, undefined);
         assert.equal(unavailableCorrelation.value.proposalFingerprint, undefined);
       }
+      const nonTextCorrelation = validateGenerationProfileDraft({
+        ...input,
+        origin: "ai",
+        requestId: null,
+        proposalFingerprint: { unexpected: true },
+      });
+      assert.equal(nonTextCorrelation.ok, true);
     },
   },
   {

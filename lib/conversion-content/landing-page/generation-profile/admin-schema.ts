@@ -39,8 +39,8 @@ export const generationProfileDraftInputSchema = z
     generationGuidance: z.string().trim().min(1),
     recommendations: z.array(generationProfileRecommendationInputSchema),
     origin: z.enum(["manual", "ai"]),
-    requestId: z.string().optional(),
-    proposalFingerprint: z.string().optional(),
+    requestId: z.unknown().optional(),
+    proposalFingerprint: z.unknown().optional(),
   })
   .strict()
   .superRefine((input, context) => {
@@ -117,8 +117,8 @@ export function validateGenerationProfileDraft(input: unknown):
 
 export function getGenerationProfileProposalCorrelation(input: {
   origin: "manual" | "ai";
-  requestId?: string;
-  proposalFingerprint?: string;
+  requestId?: unknown;
+  proposalFingerprint?: unknown;
 }): Readonly<{ requestId: string; proposalFingerprint: string }> | null {
   if (input.origin !== "ai") return null;
   const requestId = z.uuid().safeParse(input.requestId);
