@@ -57,7 +57,7 @@ Apresentar ao humano:
 - **Opção 1 — Processo atual:** especialistas, v2 e execução conduzidos por este fluxo.
 - **Opção 2 — Processo automatizado:** orquestração end-to-end após o merge da v1.
 
-Após a escolha explícita, orientar o Executor a reconciliar `docs/roadmap.md` no mesmo PR pelo Prompt ABC, usando a v1 como fonte e registrando somente o estado planejado.
+Após a escolha explícita, orientar o Executor a reconciliar `docs/roadmap.md` no mesmo PR pelo Prompt ABC, usando a v1 como fonte e registrando somente o estado planejado. Aguardar a publicação desse ajuste.
 
 - **Opção 1:** manter o PR aberto e seguir para a seção 6.
 - **Opção 2:** solicitar o merge humano da v1 com o Roadmap; após a confirmação, entregar somente:
@@ -94,7 +94,7 @@ Consolidar no mesmo PR todos os pareceres em uma única v2.
 Depois da v2, orientar o Executor a reconciliar novamente o Roadmap pelo Prompt ABC usando a v2 como fonte. Solicitar o merge humano e aguardar a confirmação.
 
 8. Execução — processo atual
-Após o merge da v2, instruir o Executor com o path do plano, a fase atual e as fontes necessárias, conforme `docs/prompt-executor.md` e `AGENTS.md`.
+Após o merge da v2, entregar ao Executor o path do plano e a fase atual. O restante segue `docs/prompt-executor.md` e `AGENTS.md`.
 
 Executar uma fase por vez. Após cada entrega, seguir para a seção 9 antes de autorizar a próxima.
 
