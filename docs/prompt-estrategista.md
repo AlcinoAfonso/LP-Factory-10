@@ -40,7 +40,8 @@ Também deve registrar:
 - com `Automação: sim`: categoria aprovada, objetivo e limites;
 - critérios visuais e evidência esperada quando houver frontend.
 
-Validação e fechamento documental pelo Prompt ABC integram a fase implementável; não criar fases administrativas, de handoff, revisão ou fechamento.
+- Criar somente fases executáveis e necessárias ao recorte aprovado.
+- Validação e fechamento documental pelo Prompt ABC integram a fase implementável, salvo validação com risco técnico próprio; não criar fases administrativas, de governança, handoff, revisão ou fechamento.
 
 4. Produção e aprovação humana da v1
 Seguir `AGENTS.md` para branch, PR e publicação. Criar ou atualizar no PR somente o plano-base v1.
@@ -111,8 +112,6 @@ Decisões:
 - Com ajuste ou teste reprovado, voltar à seção 8.
 - Em teste humano, definir somente passos e evidência esperada; credenciais administrativas são digitadas pelo humano e secrets não são registrados.
 - Com aprovação, avançar para a próxima fase ou para a seção 10.
-
-Na Opção 2, esta seção não é executada manualmente. Depois da entrega completa, o humano instrui o Estrategista a avaliar diretamente o PR, sem novo Analista do processo automatizado.
 
 10. Encerramento
 Após a última aprovação:
