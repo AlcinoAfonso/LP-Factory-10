@@ -282,6 +282,7 @@
 
 - Submeter esta v2 ao Analista em Passagem 1 independente e, depois, em Passagem 2 com a matriz e os pareceres integrais.
 - Não iniciar a implementação antes da conclusão `aprovado para merge do plano-base v2`, da reconciliação do roadmap pelo Prompt ABC e do checkpoint `LP-Factory-Stage: plan-v2-approved`.
+- Aguardar o merge do PR técnico de atualização do Next.js. Depois do merge, sincronizar esta branch com a `main` atualizada por integração não destrutiva, reler as fontes alteradas e confirmar a versão corrigida no lockfile; somente então iniciar qualquer mudança de código, Admin Dashboard ou banco da E12.4.3.
 - Antes de iniciar a implementação e novamente antes do merge da E12.4.3, confirmar no `package-lock.json` que `next` e `eslint-config-next` estão alinhados em `16.2.11` ou em outra versão estável oficialmente corrigida para o mesmo conjunto de vulnerabilidades. Se a base permanecer em `16.1.1`, parar a implementação ou o merge e encaminhar a correção para PR técnico próprio, sem atualizar dependências dentro da E12.4.3 e sem migrar para versão preview.
 - Preservar `vercel#1 — AI Gateway` e `supa#63 — rlsautotest` apenas como oportunidades estratégicas condicionais, sem implementação neste recorte.
 
