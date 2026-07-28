@@ -2,8 +2,8 @@
 
 0.1 Cabeçalho
 • Documento: LP Factory 10 — Platform Config
-• Versão: v0.1.9
-• Data: 27/07/2026
+• Versão: v0.1.10
+• Data: 28/07/2026
 
 0.2 Contrato do documento
 • O QUE É: snapshot operacional e fonte única das configurações de plataformas externas do LP Factory 10, refletindo o estado conhecido/cadastrado nas plataformas conforme indicado.
@@ -129,14 +129,15 @@
 • `E11_MEMBERS_ENABLED`
 • Finalidade: gate operacional da gestão de membros e convites.
 • Escopo: Production e Preview.
-• Estado aprovado antes do merge, apply da migration e validação hospedada: `false`.
-• Regra operacional: manter `false` até a migration ter sido aplicada pelo workflow pós-merge e as configurações externas desta entrega terem sido concluídas; a liberação exige redeploy e validação primeiro em Preview.
+• Estado atual: `false`, configurada em Production e Preview.
+• Regra operacional: manter `false` até a configuração remanescente do Supabase Auth e a prova hospedada terem sido concluídas; a liberação exige validação primeiro em Preview.
 
 • `INVITE_STATE_SECRET`
 • Finalidade: assinar o estado opaco transportado pelo convite nativo do Supabase Auth.
 • Escopo: Production e Preview.
-• Estado: pendente de configuração pós-merge; usar valores independentes por ambiente, com no mínimo 32 caracteres, sem versionar o conteúdo.
-• Regra operacional: configurar antes de habilitar `E11_MEMBERS_ENABLED` e executar redeploy do deployment alvo.
+• Estado atual: configurada em Production e Preview, com valores independentes por ambiente e sem versionar o conteúdo.
+• Estado operacional conjunto: redeploys de Production e Preview concluídos após a configuração das variáveis da E11.
+• Regra operacional: manter configurada antes de habilitar `E11_MEMBERS_ENABLED`.
 
 • `SUPABASE_SECRET_KEY`
 • Finalidade: chave server-side Supabase para operações autorizadas do runtime.
@@ -235,7 +236,7 @@
 • Redirect de Preview: cadastrar somente o domínio/path do deployment usado na validação; quando wildcard for necessário, restringir a Preview e usar `/**`.
 • Email OTP Expiration: confirmar no Dashboard que a validade hospedada é compatível com a janela operacional do convite; o Core não adiciona validade local paralela.
 • Estado: template, redirects, expiração e envio real permanecem pendentes de configuração e validação hospedada pós-merge.
-• Ordem operacional pós-merge: aguardar o workflow aplicar a migration, configurar e revisar os itens externos, configurar as envs no ambiente alvo, redeployar com `E11_MEMBERS_ENABLED=false`, validar em Preview e só então avaliar a habilitação do gate.
+• Ordem operacional remanescente: configurar e revisar template, redirects e expiração, validar o fluxo hospedado em Preview com `E11_MEMBERS_ENABLED=false` e só então avaliar a habilitação do gate.
 • Evidência hospedada exigida antes da habilitação: convite novo, reenvio idempotente, link adulterado rejeitado, link legítimo concluído com definição de senha antes da ativação e isolamento entre memberships.
 
 4.7 Acesso operacional read-only para automações
@@ -439,6 +440,8 @@ Regra:
 • Configurações de plataformas, secrets por nome, workflows, ambientes e endpoints usados por automações devem ser registrados neste documento.
 
 99. Changelog
+v0.1.10 — 28/07/2026 — Registradas as variáveis da E11 configuradas em Production e Preview, os redeploys concluídos e a configuração remanescente do Supabase Auth.
+
 v0.1.8 — 02/07/2026 — Configuração Stripe atualizada com uso de webhook produtivo, endpoint `/api/stripe/webhook`, lookup de subscriptions e secret `STRIPE_WEBHOOK_SECRET`.
 
 v0.1.7 — 25/06/2026 — Atualizado `OPENAI_COMMERCIAL_ACTIVATION_MODEL` para escopo Production e Preview, com referência `gpt-5.4-mini` e regra operacional de não prender configuração a branch no MVP.
