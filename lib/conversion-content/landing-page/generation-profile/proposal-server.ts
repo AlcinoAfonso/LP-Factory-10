@@ -52,6 +52,8 @@ export async function proposeLandingPageGenerationProfile(input: {
       platformAdminId: input.actorUserId,
       model,
       startedAt,
+      researchVersions: research.value.versions,
+      researchProvenance: getResearchProvenance(research.value),
     });
   }
   const historicalProfile = await readLastActivatedOwnGenerationProfile({ profiles: detail.profiles });
@@ -61,6 +63,8 @@ export async function proposeLandingPageGenerationProfile(input: {
       platformAdminId: input.actorUserId,
       model,
       startedAt,
+      researchVersions: research.value.versions,
+      researchProvenance: getResearchProvenance(research.value),
     });
   }
   const previousActiveProfile = historicalProfile.profile;
@@ -81,6 +85,7 @@ export async function proposeLandingPageGenerationProfile(input: {
       startedAt,
       providerKind: provider.kind,
       researchVersions: research.value.versions,
+      researchProvenance: getResearchProvenance(research.value),
       moduleCatalogVersion: moduleIdentities.moduleCatalogVersion,
     });
   }
@@ -94,22 +99,25 @@ export async function proposeLandingPageGenerationProfile(input: {
       startedAt,
       responseId: provider.responseId,
       researchVersions: research.value.versions,
+      researchProvenance: getResearchProvenance(research.value),
       moduleCatalogVersion: moduleIdentities.moduleCatalogVersion,
     });
   }
 
   console.info("generation_profile_proposal", {
     requestId,
+    origin: "ai",
     platformAdminId: input.actorUserId,
     taxonId: input.taxonId,
     researchVersions: research.value.versions,
+    researchProvenance: getResearchProvenance(research.value),
     moduleCatalogVersion: moduleIdentities.moduleCatalogVersion,
     model,
     responseId: provider.responseId,
     latencyMs: Date.now() - startedAt,
     inputTokens: provider.inputTokens,
     outputTokens: provider.outputTokens,
-    estimatedCostUsd: estimateGenerationProfileCostUsd(provider.inputTokens, provider.outputTokens),
+    estimatedCostUsd: estimateGenerationProfileCostUsd(model, provider.inputTokens, provider.outputTokens),
     result: "success",
   });
   return {
@@ -130,9 +138,28 @@ function finishFailure(
   const { startedAt, ...safeLog } = log;
   console.warn("generation_profile_proposal", {
     requestId,
+    origin: "ai",
     ...safeLog,
     latencyMs: Date.now() - startedAt,
     result: code,
   });
   return { ok: false, requestId, error: { code, message } };
+}
+
+function getResearchProvenance(research: {
+  endCustomer: { sourceTaxonId: string; sourceRelation: string; version: number };
+  businessBuyer: { sourceTaxonId: string; sourceRelation: string; version: number };
+}) {
+  return {
+    endCustomer: {
+      sourceTaxonId: research.endCustomer.sourceTaxonId,
+      sourceRelation: research.endCustomer.sourceRelation,
+      version: research.endCustomer.version,
+    },
+    businessBuyer: {
+      sourceTaxonId: research.businessBuyer.sourceTaxonId,
+      sourceRelation: research.businessBuyer.sourceRelation,
+      version: research.businessBuyer.version,
+    },
+  };
 }

@@ -75,7 +75,16 @@ export const generationProfileProposalPayloadSchema = z
           recommended_order: z.number().int().positive(),
           item_guidance: z.string().trim().min(1).nullable(),
         })
-        .strict(),
+        .strict()
+        .superRefine((item, context) => {
+          if ((item.variant_key === null) !== (item.variant_version === null)) {
+            context.addIssue({
+              code: "custom",
+              path: ["variant_key"],
+              message: "variant key and version must be provided together",
+            });
+          }
+        }),
     ),
   })
   .strict();
@@ -144,7 +153,7 @@ export function normalizeGenerationProfileProposal(input: unknown):
     moduleVersion: item.module_version,
     ...(item.variant_key === null
       ? {}
-      : { variantKey: item.variant_key, variantVersion: item.variant_version ?? undefined }),
+      : { variantKey: item.variant_key, variantVersion: item.variant_version as number }),
     priority: item.priority,
     recommendedOrder: item.recommended_order,
     ...(item.item_guidance === null ? {} : { itemGuidance: item.item_guidance }),

@@ -9,6 +9,8 @@ export {
 export {
   buildGenerationProfileResponsesRequest,
   estimateGenerationProfileCostUsd,
+  GENERATION_PROFILE_APPROVED_MODEL,
+  isGenerationProfileAssistanceConfigured,
   mapResearchErrorToProposalError,
   validateGenerationProfileProviderPayload,
 } from "./proposal";

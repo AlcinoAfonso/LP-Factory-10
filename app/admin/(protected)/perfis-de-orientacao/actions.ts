@@ -22,12 +22,14 @@ export async function saveGenerationProfileAction(input: GenerationProfileDraftI
     if (correlation) {
       console.info("generation_profile_proposal_review", {
         requestId: correlation.requestId,
+        origin: "ai",
         taxonId: input.ownerTaxonId,
         profileId: result.profileId,
         result: fingerprintGenerationProfileProposal(input) === correlation.proposalFingerprint ? "accepted" : "adjusted",
       });
     } else if (input.origin === "ai") {
       console.info("generation_profile_proposal_review", {
+        origin: "ai",
         taxonId: input.ownerTaxonId,
         profileId: result.profileId,
         result: "correlation_unavailable",
@@ -49,7 +51,7 @@ export async function proposeGenerationProfileAction(input: { taxonId: string; a
 export async function discardGenerationProfileProposalAction(input: { taxonId: string; requestId: string }) {
   const gate = await requirePlatformAdmin();
   if (!gate.allowed) return { ok: false as const };
-  console.info("generation_profile_proposal_review", { requestId: input.requestId, taxonId: input.taxonId, result: "discarded" });
+  console.info("generation_profile_proposal_review", { requestId: input.requestId, origin: "ai", taxonId: input.taxonId, result: "discarded" });
   return { ok: true as const };
 }
 

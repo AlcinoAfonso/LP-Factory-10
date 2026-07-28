@@ -17,6 +17,8 @@ import {
 } from "./schema";
 import {
   buildGenerationProfileResponsesRequest,
+  estimateGenerationProfileCostUsd,
+  GENERATION_PROFILE_APPROVED_MODEL,
   isGenerationProfileAssistanceConfigured,
   mapProviderFailureToProposalError,
   mapResearchErrorToProposalError,
@@ -366,6 +368,8 @@ const cases: readonly Readonly<{
       assert.equal(validateGenerationProfileProviderPayload({ ...payload, extra: true }).ok, false);
       assert.equal(validateGenerationProfileProviderPayload({ ...payload, recommendations: [{ ...payload.recommendations[0], module_key: "invented" }] }).ok, false);
       assert.equal(validateGenerationProfileProviderPayload({ ...payload, recommendations: [payload.recommendations[0], { ...payload.recommendations[0], module_key: "faq" }] }).ok, false);
+      assert.equal(validateGenerationProfileProviderPayload({ ...payload, recommendations: [{ ...payload.recommendations[0], variant_key: null }] }).ok, false);
+      assert.equal(validateGenerationProfileProviderPayload({ ...payload, recommendations: [{ ...payload.recommendations[0], variant_version: null }] }).ok, false);
     },
   },
   {
@@ -385,7 +389,7 @@ const cases: readonly Readonly<{
     name: "Responses API request is strict stateless tool-free and bounded",
     run: () => {
       const request = buildGenerationProfileResponsesRequest({
-        model: "configured-model",
+        model: GENERATION_PROFILE_APPROVED_MODEL,
         taxonId: NICHE_ID,
         research: {
           servedTaxonId: NICHE_ID,
@@ -403,7 +407,7 @@ const cases: readonly Readonly<{
       assert.equal(request.body.text.format.strict, true);
       assert.equal(request.body.text.format.schema.additionalProperties, false);
       const oversized = buildGenerationProfileResponsesRequest({
-        model: "configured-model",
+        model: GENERATION_PROFILE_APPROVED_MODEL,
         taxonId: NICHE_ID,
         research: {
           servedTaxonId: NICHE_ID,
@@ -429,15 +433,18 @@ const cases: readonly Readonly<{
     },
   },
   {
-    name: "provider refusal truncation timeout oversize and absent env fail closed",
+    name: "provider failures and any unapproved model fail closed",
     run: () => {
       assert.equal(mapProviderFailureToProposalError("refusal"), "technical_failure");
       assert.equal(mapProviderFailureToProposalError("incomplete"), "technical_failure");
       assert.equal(mapProviderFailureToProposalError("timeout"), "technical_failure");
       assert.equal(mapProviderFailureToProposalError("request_too_large"), "invalid_data");
-      assert.equal(isGenerationProfileAssistanceConfigured({ apiKey: "", model: "configured-model" }), false);
+      assert.equal(isGenerationProfileAssistanceConfigured({ apiKey: "", model: GENERATION_PROFILE_APPROVED_MODEL }), false);
       assert.equal(isGenerationProfileAssistanceConfigured({ apiKey: "secret", model: "" }), false);
-      assert.equal(isGenerationProfileAssistanceConfigured({ apiKey: "secret", model: "configured-model" }), true);
+      assert.equal(isGenerationProfileAssistanceConfigured({ apiKey: "secret", model: "gpt-5.4" }), false);
+      assert.equal(isGenerationProfileAssistanceConfigured({ apiKey: "secret", model: GENERATION_PROFILE_APPROVED_MODEL }), true);
+      assert.equal(estimateGenerationProfileCostUsd("gpt-5.4", 1000, 1000), null);
+      assert.equal(estimateGenerationProfileCostUsd(GENERATION_PROFILE_APPROVED_MODEL, 1000, 1000), 0.0035);
     },
   },
 ];

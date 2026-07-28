@@ -2,7 +2,7 @@
 
 0.1 Cabeçalho
 • Documento: LP Factory 10 — Platform Config
-• Versão: v0.1.11
+• Versão: v0.1.12
 • Data: 28/07/2026
 
 0.2 Contrato do documento
@@ -169,8 +169,8 @@
 • Plataforma: Vercel.
 • Finalidade: selecionar o modelo usado pela proposta administrativa opcional do perfil de orientação de `landing_page`.
 • Escopo: Production e Preview.
-• Valor atual de referência: `gpt-5.4-mini`.
-• Estado: configuração e validação operacional pendentes; sem a variável ou `OPENAI_API_KEY`, a assistência fica indisponível e o fluxo manual permanece funcional.
+• Valor permitido: `gpt-5.4-mini`.
+• Estado: configuração e validação operacional pendentes; sem a variável, sem `OPENAI_API_KEY` ou com qualquer outro modelo, a assistência fica indisponível e o fluxo manual permanece funcional.
 • Valor real: não versionar.
 • Regra: deve conter apenas o ID do modelo; nunca inserir `OPENAI_API_KEY` nessa variável.
 
@@ -308,8 +308,8 @@
 • Plataforma: Vercel.
 • Finalidade: selecionar o modelo usado pela proposta administrativa opcional do perfil de orientação de `landing_page`.
 • Escopo: Production e Preview.
-• Valor atual de referência: `gpt-5.4-mini`.
-• Estado: configuração e validação operacional pendentes; sem a variável ou `OPENAI_API_KEY`, a assistência fica indisponível e o fluxo manual permanece funcional.
+• Valor permitido: `gpt-5.4-mini`.
+• Estado: configuração e validação operacional pendentes; sem a variável, sem `OPENAI_API_KEY` ou com qualquer outro modelo, a assistência fica indisponível e o fluxo manual permanece funcional.
 • Valor real: não versionar.
 • Regra: deve conter apenas o ID do modelo; nunca inserir `OPENAI_API_KEY` nessa variável.
 

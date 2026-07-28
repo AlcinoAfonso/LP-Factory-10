@@ -9,6 +9,62 @@ values ('12040000-0000-4000-8000-000000000010', '12040000-0000-4000-8000-0000000
 set local role authenticated;
 select set_config(
   'request.jwt.claims',
+  '{"sub":"12040000-0000-4000-8000-000000000097","role":"authenticated"}',
+  true
+);
+
+do $$
+begin
+  begin
+    perform public.save_landing_page_generation_profile_draft(
+      '12040000-0000-4000-8000-000000000001',
+      null,
+      null,
+      'Unauthorized draft',
+      '[]'::jsonb,
+      'manual',
+      null,
+      null
+    );
+    raise exception 'expected ordinary authenticated save rejection';
+  exception when others then
+    if sqlerrm not like '%E12_4_3_UNAUTHORIZED%' then raise; end if;
+  end;
+
+  begin
+    perform public.activate_landing_page_generation_profile(
+      '12040000-0000-4000-8000-000000000010',
+      now()
+    );
+    raise exception 'expected ordinary authenticated activation rejection';
+  exception when others then
+    if sqlerrm not like '%E12_4_3_UNAUTHORIZED%' then raise; end if;
+  end;
+
+  begin
+    perform public.archive_landing_page_generation_profile(
+      '12040000-0000-4000-8000-000000000010',
+      now()
+    );
+    raise exception 'expected ordinary authenticated archive rejection';
+  exception when others then
+    if sqlerrm not like '%E12_4_3_UNAUTHORIZED%' then raise; end if;
+  end;
+
+  begin
+    perform public.get_landing_page_generation_profile_lifecycle_status();
+    raise exception 'expected ordinary authenticated readiness rejection';
+  exception when others then
+    if sqlerrm not like '%E12_4_3_UNAUTHORIZED%' then raise; end if;
+  end;
+end;
+$$;
+
+reset role;
+
+set local role authenticated;
+select set_config(
+  'request.jwt.claims',
   '{"sub":"12040000-0000-4000-8000-000000000099","role":"authenticated","platform_admin":true}',
   true
 );

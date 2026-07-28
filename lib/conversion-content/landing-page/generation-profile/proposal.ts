@@ -11,6 +11,9 @@ import type {
 
 export const GENERATION_PROFILE_REQUEST_MAX_BYTES = 96 * 1024;
 export const GENERATION_PROFILE_MAX_OUTPUT_TOKENS = 2000;
+export const GENERATION_PROFILE_APPROVED_MODEL = "gpt-5.4-mini";
+const GENERATION_PROFILE_INPUT_USD_PER_TOKEN = 0.0000005;
+const GENERATION_PROFILE_OUTPUT_USD_PER_TOKEN = 0.000003;
 
 export type GenerationProfileProviderInput = Readonly<{
   model: string;
@@ -147,10 +150,28 @@ export function isGenerationProfileAssistanceConfigured(input: {
   apiKey?: string;
   model?: string;
 }) {
-  return Boolean(input.apiKey?.trim() && input.model?.trim());
+  return Boolean(
+    input.apiKey?.trim() &&
+      input.model?.trim() === GENERATION_PROFILE_APPROVED_MODEL,
+  );
 }
 
-export function estimateGenerationProfileCostUsd(inputTokens: number | null, outputTokens: number | null) {
-  if (inputTokens === null || outputTokens === null) return null;
-  return Number((inputTokens * 0.0000005 + outputTokens * 0.000003).toFixed(6));
+export function estimateGenerationProfileCostUsd(
+  model: string,
+  inputTokens: number | null,
+  outputTokens: number | null,
+) {
+  if (
+    model !== GENERATION_PROFILE_APPROVED_MODEL ||
+    inputTokens === null ||
+    outputTokens === null
+  ) {
+    return null;
+  }
+  return Number(
+    (
+      inputTokens * GENERATION_PROFILE_INPUT_USD_PER_TOKEN +
+      outputTokens * GENERATION_PROFILE_OUTPUT_USD_PER_TOKEN
+    ).toFixed(6),
+  );
 }
