@@ -1,8 +1,8 @@
 0. Introdução
 
 0.1 Cabeçalho
-• Data: 28/07/2026
-• Versão: v1.5.112
+• Data: 29/07/2026
+• Versão: v1.5.113
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -1389,7 +1389,7 @@ Repositório — Ajustados
 
 12.4 Gestão do perfil de orientação
 - Objetivo: Definir a operação administrativa do perfil de orientação que direciona gerações futuras de landing pages sem materializar nem alterar LPs.
-- Status: E12.4.3 concluída; migration aplicada, provas automatizadas pós-apply, configuração da assistência e validação humana autenticada em Preview aprovadas.
+- Status: E12.4.3 e E12.4.3.1 concluídas; E12.4.3.2 planejada como correção funcional da proposta estrutural.
 
 12.4.1 Objetivo e status
 - Objetivo: Entregar a operação manual completa de criação, edição, revisão, ativação e arquivamento de versões do perfil, com proposta opcional por IA no mesmo editor.
@@ -1416,11 +1416,24 @@ Repositório — Ajustados
 - Status: Concluída; implementação integrada à `main`, com checks hospedados automatizados e teste humano autenticado do refinamento em Preview aprovados.
 - Conteúdo:
   - Toda proposta inicial ou revisão depende de ação explícita do `platform_admin`.
-  - A IA pode sugerir alterações em `generation_guidance`, recomendações e `item_guidance` dentro do contrato fechado vigente.
+  - No estado implementado, a IA ainda pode sugerir `generation_guidance`, recomendações e `item_guidance`; a E12.4.3.2 restringirá o refinamento a módulos, variantes, prioridade, ordem e gaps.
   - O refinamento recebe o conteúdo atual do editor e o feedback humano mais recente, além das fontes já autorizadas pela E12.4.3.
   - Cada acionamento autoriza somente uma chamada; não há refinamento nem retry automático.
   - Nenhuma proposta salva, aprova ou ativa automaticamente; o `platform_admin` continua responsável por revisar, editar, salvar e ativar.
   - Não existe conversa persistente, histórico de mensagens, agente ou memória própria.
+
+12.4.3.2 Proposta estrutural baseada em `lp_sections` e delta do catálogo
+- Status: Planejada; correção conceitual definida no plano-base E12.4 v2.4 e implementação técnica pendente.
+- Conteúdo:
+  - `Criar perfil com IA` será a ação inicial destacada; o fluxo manual permanece completo.
+  - `coverage[]` avaliará cada item de `lp_sections`; `recommendations[]` será a lista final única por módulo.
+  - Várias seções poderão convergir para um módulo e uma seção poderá exigir vários módulos.
+  - A prioridade será convertida por `3 → P1`, `2 → P2`, `1 → P3`; a ordem final será determinística, positiva e única.
+  - A IA não preencherá nem modificará `generation_guidance` ou `item_guidance`, que serão exceções humanas opcionais.
+  - A decisão `wait_for_modules` ou `proceed_with_available` será registrada no evento de auditoria do rascunho; aguardar bloqueará ativação.
+  - A E12.4.4 recalculará os gaps antes da prontidão, sem nova tabela neste recorte.
+  - A evolução E20.3.5 tornará `generation_guidance` opcional no mesmo PR técnico.
+  - Snapshot e independência da LP permanecem consolidados; liberdade de edição e comportamento de regeneração serão decididos apenas no futuro plano-base da E19.4.
 
 13. E13 — Partner Dashboard
 
@@ -2220,14 +2233,25 @@ Repositório — Ajustados
 * Status: Definido.
 * Conteúdo:
 
-  * O perfil pertence a um taxon, possui versão, estado e orientação geral e reúne itens com módulo e versão, variante e versão opcionais, prioridade `P1`, `P2` ou `P3`, ordem recomendada positiva e orientação específica opcional.
+  * O perfil pertence a um taxon, possui versão e estado e reúne itens com módulo e versão, variante e versão opcionais, prioridade `P1`, `P2` ou `P3`, ordem recomendada positiva e orientação específica opcional; `generation_guidance` permanece obrigatória no contrato vigente até a E20.3.5.
   * Prioridade e ordem são orientação; não criam módulo obrigatório, composição final, seleção por plano, prontidão, autorização, revogação ou geração.
   * Perfil e itens formam um agregado único, somente leitura server-side, persistido em exatamente duas tabelas e entregue por um único boundary, sem perfil oficial neste recorte.
   * A resolução usa perfil `active` próprio ou do ancestral elegível mais próximo, preserva proveniência e falha fechado para cadeia, leitura, identidade ou perfil inválido; ausência legítima permanece distinta de erro.
   * A E20.3 depende da taxonomia vigente e da identidade pública da E18.5, mas permanece independente do catálogo e dos valores da E20.2.
   * Permanecem fora do recorte mutações e lifecycle operacional do perfil, terceira tabela de domínio, rota, API HTTP, Server Action, UI, composição, copy, geração, IA, automação, job, serviço e nova infraestrutura.
 
+20.3.5 Opcionalidade da orientação geral
+
+* Status: Planejada; evolução de domínio vinculada à implementação técnica da E12.4.3.2.
+* Conteúdo:
+
+  * Tornar `generation_guidance` anulável, mas não vazio quando presente, por migration incremental forward-only.
+  * Atualizar contratos, schemas, DTOs, RPCs, normalização, testes e verificador read-only sem alterar estados, herança, resolução active-only ou recomendações.
+  * Preservar `item_guidance` opcional e exclusivamente humano.
+
 99. Changelog
+v1.5.113 — 29/07/2026 — Planejada a E12.4.3.2 com cobertura por `lp_sections`, recomendações deduplicadas, prioridade e ordem determinísticas, auditoria da decisão sobre gaps e evolução E20.3.5; decisões de edição e regeneração permanecem para o futuro plano-base da E19.4.
+
 v1.5.102 — 26/07/2026 — E20.3 implementada no PR #644: E20.3.3 concluída com migration versionada e aplicação pendente do merge; E20.3.4 implementada e validada; fechamento da fase pendente apenas de merge, apply automático e verificação read-only pós-apply.
 
 v1.5.101 — 25/07/2026 — Promovidos `comparison@v1`, `comparison.standard@v1`, `lead_capture@v1` e `lead_capture.form@v1` ao catálogo canônico da E18.5, totalizando doze módulos, quatorze variantes e 34 casos executáveis, com Form reutilizado e mecanismos centrais preservados.
