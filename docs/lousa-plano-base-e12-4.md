@@ -1,7 +1,7 @@
 # Plano-base — E12.4 — Gestão do perfil de orientação
 
 - Data: 29/07/2026.
-- Versão: v2.3.
+- Versão: v2.4.
 - Status: E12.4.3 e E12.4.3.1 implementadas, validadas e reconciliadas na `main`; E12.4.3.2 planejada como correção funcional do fluxo de proposta estrutural.
 - Recorte previsto para o roadmap: `12.4 — Gestão do perfil de orientação`.
 - Recorte executável inicial: `12.4.3 — Proposta, revisão, aprovação e ativação do perfil`.
@@ -62,12 +62,11 @@
 - O mesmo `platform_admin` pode revisar e executar `Aprovar e ativar`; a decisão é humana e auditada, sem novo status persistido.
 - Quando não houver perfil próprio, a ação inicial destacada deve ser `Criar perfil com IA`; o fluxo manual permanece alternativa completa.
 - A IA usa `lp_sections` como fonte estrutural principal e os demais blocos resolvidos da E10.8 apenas como contexto.
-- A IA propõe somente:
-  - correspondência entre cada seção pesquisada e identidades válidas do catálogo;
-  - módulo e variante disponíveis;
-  - prioridade `P1`, `P2` ou `P3`;
-  - ordem recomendada;
-  - seções atendidas parcialmente ou sem correspondência no catálogo.
+- A resposta estrutural separa obrigatoriamente:
+  - `coverage[]`, com uma avaliação para cada item de `lp_sections`;
+  - `recommendations[]`, com a lista final deduplicada por módulo.
+- Cada item de `coverage[]` preserva `item_key`, nome da seção, prioridade e ordem de origem e informa cobertura `covered`, `partial` ou `missing`, além das identidades compatíveis, motivo e impacto quando aplicáveis.
+- `recommendations[]` contém somente módulo e variante disponíveis, prioridade `P1`, `P2` ou `P3` e ordem recomendada.
 - A IA não cria módulo, variante ou identidade e não preenche nem modifica `generation_guidance` ou `item_guidance`.
 - `generation_guidance`, no perfil-pai, e `item_guidance`, no item-filho, são exceções opcionais preenchidas somente pelo humano.
 - O refinamento por IA atua apenas sobre a estrutura proposta e preserva integralmente as exceções humanas existentes.
@@ -83,7 +82,7 @@
 
 - E10.8 fornece a pesquisa resolvida e versionada; dentro dela, `lp_sections` é a fonte estrutural principal da proposta.
 - E18.4 e E18.5 fornecem limites e identidades vigentes para a geração inicial; a E12.4.3.2 não os redefine nem cria módulos.
-- E20.3 continua responsável pelo contrato, persistência e resolução do perfil; a E12.4.3.2 aplica somente o delta mínimo para tornar `generation_guidance` opcional.
+- Tornar `generation_guidance` opcional altera o contrato de domínio da E20.3; a evolução é formalizada na E20.3.5 e implementada no mesmo PR técnico da E12.4.3.2.
 - E12.4.3.2 corrige a criação e o refinamento estrutural do perfil no Admin Dashboard.
 - E12.4.4 deverá, obrigatoriamente:
   - recalcular ou recuperar os gaps antes de autorizar geração;
@@ -91,11 +90,11 @@
   - classificar se o gap é impeditivo;
   - bloquear autorização enquanto houver gap impeditivo;
   - verificar incompatibilidades entre exceções humanas e os contratos usados na geração inicial.
-- E19.4 deverá formalizar:
-  - geração e materialização com snapshot das fontes usadas;
-  - independência da LP materializada;
-  - liberdade posterior de edição pelo cliente dentro das capacidades técnicas, de funcionamento e de segurança do editor;
-  - proteção contra regeneração que apague silenciosamente alterações humanas.
+- O snapshot das fontes e a independência da LP materializada permanecem decisões consolidadas para consumo futuro pela E19.4.
+- O futuro plano-base da E19.4 deverá decidir, sem antecipação neste plano:
+  - quais edições o cliente poderá fazer após a materialização;
+  - quais limites permanentes pertencem ao editor;
+  - se haverá regeneração e como ela tratará alterações humanas.
 
 ## 2. Contrato do caso
 
@@ -123,17 +122,23 @@
   - exigir ação explícita do `platform_admin` e resolução completa da E10.8;
   - usar todos os itens de `lp_sections` como esqueleto;
   - fazer correspondência semântica somente com identidades válidas da E18.5;
-  - propor módulo, variante, prioridade e ordem;
+  - produzir `coverage[]` para avaliar cada seção e `recommendations[]` como lista final única por módulo;
+  - permitir que várias seções apontem para o mesmo módulo e que uma seção aponte para mais de um módulo;
+  - converter a prioridade de origem explicitamente em `3 → P1`, `2 → P2` e `1 → P3`;
+  - ao deduplicar um módulo, preservar a prioridade mais alta entre as seções cobertas;
+  - ordenar recomendações pela menor ordem de origem; em empate, usar a primeira ocorrência em `coverage[]` e depois `module_key`, atribuindo ordens finais positivas e únicas em intervalos de 10;
   - separar seções atendidas, parcialmente atendidas e sem correspondência;
   - não inventar identidade nem preencher ou modificar exceções humanas;
   - realizar no máximo uma chamada por acionamento, sem retry ou encadeamento;
-  - validar deterministicamente cobertura, identidades, duplicidades e ordem;
+  - validar deterministicamente cobertura, identidades, duplicidades, conversão de prioridade e ordem final;
   - preencher o editor sem persistência automática.
 - Tratamento do delta:
   - apresentar seção pesquisada, prioridade, ordem, motivo da ausência e impacto de prosseguir;
-  - `Aguardar criação dos módulos` mantém o perfil sem conclusão estrutural e não cria nada automaticamente na E18.5;
-  - `Prosseguir com os disponíveis` usa somente recomendações válidas e mantém aviso visível;
-  - gaps e decisão permanecem transitórios neste recorte; registro e reavaliação pertencem à E12.4.4.
+  - `Aguardar criação dos módulos` mantém o perfil em `draft`, bloqueia `Aprovar e ativar` e não cria nada automaticamente na E18.5;
+  - `Prosseguir com os disponíveis` usa somente recomendações válidas e mantém aviso visível na sessão corrente;
+  - nenhuma nova tabela é criada e os gaps não integram as tabelas do perfil;
+  - ao salvar o rascunho, registrar no evento de auditoria vigente a decisão `wait_for_modules` ou `proceed_with_available`, os `item_key` afetados, quantidade de gaps, impacto resumido e versões das fontes usadas;
+  - a auditoria preserva a decisão, mas não substitui o recálculo obrigatório dos gaps pela E12.4.4 antes da prontidão.
 - Validação:
   - validar taxon, agregado, identidades e versões antes de salvar, ativar ou arquivar;
   - rejeitar saída ou mutação incompatível sem alterar o `draft` nem o `active`.
@@ -200,6 +205,7 @@
   - usar `Salvar rascunho` tanto após proposta da IA quanto após edição humana.
 - Aprovar e ativar:
   - revalidar o agregado;
+  - bloquear quando a última decisão auditada para o rascunho for `wait_for_modules`;
   - registrar a decisão humana;
   - arquivar o `active` anterior, quando existir;
   - ativar o novo `draft`;
@@ -212,6 +218,7 @@
   - reutilizar o mecanismo vigente, sem nova tabela;
   - registrar somente mutações confirmadas;
   - distinguir criação ou salvamento de `draft` com origem manual ou IA;
+  - incluir no `changes_json` do salvamento a decisão humana sobre gaps e seu resumo auditável, quando houver;
   - registrar `Aprovar e ativar` como uma operação;
   - registrar arquivamento explícito.
 
@@ -223,7 +230,7 @@
 - A RPC de arquivamento deve bloquear e revalidar o perfil, receber e conferir `expected_updated_at`, aceitar apenas `draft` ou `active`, registrar arquivamento explícito na mesma transação e não criar fallback intermediário.
 - Cada RPC deve reutilizar explicitamente `public.audit_context_event(...)` dentro da mesma transação da mutação confirmada, incluindo `request_id` e resultado humano em `changes_json` quando aplicáveis. É proibido substituir esse vínculo por auditoria paralela ou operação posterior best-effort.
 - Antes de salvar e novamente antes de ativar, o boundary puro deve validar o agregado pelo schema vigente e cada identidade exclusivamente por `validateLandingPageModuleIdentity`. O adapter não aceita DTO não validado nem importa o registry da E18.5.
-- A E12.4.3.2 deve criar migration incremental própria para permitir `generation_guidance` nulo, sem alterar migrations históricas, preservando invariantes e atualizando RPCs, DTOs, schemas, testes e verificador read-only.
+- A evolução E20.3.5 deve ser materializada por migration incremental própria no PR técnico da E12.4.3.2 para permitir `generation_guidance` nulo, sem alterar migrations históricas, preservando invariantes e atualizando RPCs, DTOs, schemas, testes e verificador read-only.
 
 ### 2.4. Contrato da assistência por IA
 
@@ -237,10 +244,11 @@
   - delta de cobertura parcial ou ausente, com motivo e impacto.
 - A saída não contém `generation_guidance` nem `item_guidance`.
 - A resposta estruturada separa:
-  - recomendações válidas vinculadas ao `item_key` de origem;
-  - gaps vinculados ao `item_key`, com cobertura `partial` ou `missing`, prioridade, ordem, motivo e impacto.
-- O vínculo de origem e os gaps são transitórios e não integram as tabelas do perfil.
-- A validação determinística comprova que todos os itens de `lp_sections` foram avaliados, que identidades existem, que a variante pertence ao módulo e que não há módulo ou ordem duplicados.
+  - `coverage[]`, com exatamente uma avaliação por `item_key`, podendo referenciar zero, uma ou várias identidades válidas;
+  - `recommendations[]`, deduplicado por módulo e sem obrigação de relação um para um com as seções.
+- Várias seções podem convergir para uma recomendação; uma seção pode originar várias recomendações quando funções estruturais distintas forem necessárias.
+- `coverage[]` e os gaps não integram as tabelas do perfil; a decisão humana é registrada no evento de auditoria existente.
+- A validação determinística comprova cobertura de todos os itens, conversão `3 → P1`, `2 → P2`, `1 → P3`, identidades existentes, vínculo da variante, deduplicação por módulo e ordens finais positivas e únicas.
 - No refinamento, o provider recebe somente a estrutura atual e feedback estrutural; o merge local preserva integralmente as exceções humanas.
 - Cada clique em `Criar perfil com IA` ou `Refinar estrutura com IA` autoriza uma chamada, sem conversa, histórico, memória, `previous_response_id`, retry ou encadeamento.
 - A proposta válida substitui somente a estrutura visível; salvar, ativar, arquivar e decidir sobre gaps permanecem ações humanas.
@@ -263,7 +271,7 @@
 - Quando houver gaps, mostrar seção, prioridade, ordem, motivo e impacto, com:
   - `Aguardar criação dos módulos`;
   - `Prosseguir com os disponíveis`.
-- O aviso permanece visível durante a criação e revisão quando o humano prosseguir.
+- O aviso permanece visível na sessão corrente quando o humano prosseguir; após recarga, a E12.4.3.2 não promete reconstruí-lo pelas tabelas do perfil, e a E12.4.4 deverá recalcular os gaps.
 - Ações visuais:
   - criar nova versão;
   - criar perfil com IA;
@@ -373,19 +381,22 @@
 - Entregas:
   - destacar `Criar perfil com IA` antes do editor manual;
   - usar todos os itens de `lp_sections` como esqueleto;
-  - retornar somente recomendações estruturais e gaps;
+  - retornar `coverage[]`, recomendações estruturais deduplicadas e gaps;
+  - aplicar as regras explícitas de cardinalidade, prioridade e ordem;
   - perguntar se o humano aguarda módulos ou prossegue com os disponíveis;
-  - manter aviso transitório quando houver pendência;
+  - auditar a decisão no evento vigente e manter aviso na sessão corrente;
   - tornar `generation_guidance` opcional por migration incremental;
   - preservar `item_guidance` opcional;
   - impedir alteração de exceções humanas pela IA;
   - registrar em E12.4.4 a obrigação de recuperar gaps e decidir prontidão;
   - registrar em E19.4 a independência da LP materializada.
 - Critérios de aceite:
-  - cada item de `lp_sections` aparece como atendido, parcialmente atendido ou faltante;
+  - `coverage[]` avalia exatamente cada item de `lp_sections` como atendido, parcialmente atendido ou faltante;
+  - `recommendations[]` aceita um-para-muitos e muitos-para-um, mas termina único por módulo;
   - somente identidades válidas entram nas recomendações;
-  - prioridade e ordem são propostas para todas as seções;
+  - a prioridade de origem é convertida por `3 → P1`, `2 → P2`, `1 → P3` e a ordem final é determinística, positiva e única;
   - gaps exibem seção, motivo, impacto e decisão humana;
+  - a decisão é auditada no salvamento, `wait_for_modules` bloqueia ativação e a E12.4.4 recalcula gaps;
   - IA não produz nem altera `generation_guidance` ou `item_guidance`;
   - prosseguir não oculta a pendência e aguardar não cria módulo automaticamente;
   - lifecycle, auditoria e resolver active-only permanecem funcionais;
@@ -446,7 +457,7 @@
 
 - Confirmar:
   - quatro seções principais, numeração e ordem preservadas;
-  - E12.4.3.2 registrada como sub-recorte corretivo, sem reabrir E20.3;
+  - E12.4.3.2 registrada como sub-recorte corretivo e E20.3.5 como evolução do contrato de domínio;
   - `lp_sections` como fonte estrutural principal;
   - IA limitada a módulos, variantes, prioridade, ordem e gaps;
   - `generation_guidance` e `item_guidance` como exceções opcionais humanas;
@@ -463,7 +474,7 @@
   - implementação da E12.4.3.2;
   - migration incremental aplicada e verificada;
   - validações técnicas e visuais aprovadas;
-  - pendências da E12.4.4 e E19.4 registradas nos documentos próprios;
+  - pendência da E12.4.4 e questões ainda não decididas da E19.4 registradas nos documentos próprios;
   - reconciliação documental pelo Prompt ABC;
   - merge humano;
   - confirmação do estado final no ambiente alvo.
