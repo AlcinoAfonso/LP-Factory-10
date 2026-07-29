@@ -1,10 +1,11 @@
 # Plano-base — E12.4 — Gestão do perfil de orientação
 
-- Data: 28/07/2026.
-- Versão: v2.2.
-- Status: plano-base v2 vigente com a E12.4.3.1 como implementação candidata no PR draft #654; revisão delta aprovada e provas hospedadas e gates pós-merge ainda pendentes.
+- Data: 29/07/2026.
+- Versão: v2.3.
+- Status: E12.4.3 e E12.4.3.1 implementadas, validadas e reconciliadas na `main`; E12.4.3.2 planejada como correção funcional do fluxo de proposta estrutural.
 - Recorte previsto para o roadmap: `12.4 — Gestão do perfil de orientação`.
 - Recorte executável inicial: `12.4.3 — Proposta, revisão, aprovação e ativação do perfil`.
+- Recorte corretivo planejado: `12.4.3.2 — Proposta estrutural baseada em lp_sections e delta do catálogo`.
 - Path canônico: `docs/lousa-plano-base-e12-4.md`.
 - Plano conceitual: `docs/lp-planejamento.md`.
 
@@ -12,14 +13,17 @@
 
 ### 1.1. Problema e resultado esperado
 
-- A E20.3 já fornece o contrato versionado, a persistência mínima e a resolução server-side, read-only e fail-closed do perfil `active` próprio ou herdado.
-- Ainda não existe operação oficial para o `platform_admin` criar, revisar, ativar ou arquivar versões do perfil.
-- A E12.4.3 deve entregar no Admin Dashboard:
-  - fluxo manual completo;
-  - assistência opcional por IA para propor uma nova versão;
-  - lifecycle humano e controlado entre `draft`, `active` e `archived`;
-  - primeiro cadastro e primeira ativação oficiais do perfil.
-- O resultado é uma nova versão do perfil orientativo. Não é uma composição final, uma LP ou uma autorização de geração.
+- A E20.3 fornece o contrato versionado, a persistência mínima e a resolução server-side, read-only e fail-closed do perfil `active` próprio ou herdado.
+- A E12.4.3 e a E12.4.3.1 já entregaram a operação oficial do lifecycle e a assistência por IA no editor.
+- O teste do primeiro perfil revelou um desvio funcional: a tela começa pelo preenchimento manual e a IA também propõe textos de orientação, quando a ação principal deveria criar a estrutura a partir de `lp_sections`.
+- A E12.4.3.2 deve corrigir o fluxo para que:
+  - a primeira ação humana destacada seja `Criar perfil com IA`;
+  - `lp_sections` seja o esqueleto obrigatório da análise;
+  - a IA proponha somente módulos e variantes válidos, prioridade e ordem;
+  - a IA informe o delta de seções sem módulo ou variante compatível;
+  - `generation_guidance` e `item_guidance` sejam exceções opcionais e exclusivamente humanas;
+  - o humano escolha entre aguardar a criação dos módulos faltantes ou prosseguir com os disponíveis, mantendo aviso explícito.
+- O resultado continua sendo um perfil orientativo. Não é composição final, LP, autorização de geração nem criação automática de módulo.
 
 ### 1.2. Fontes usadas
 
@@ -36,39 +40,62 @@
   - `lib/conversion-content/landing-page/generation-profile/`;
   - `lib/conversion-content/adapters/landingPageGenerationProfileAdapter.ts`;
   - migration `20260726144651_e20_3_generation_profile.sql`.
-- Parecer do Gestor de Automações e decisão humana de 28/07/2026:
+- Parecer do Gestor de Automações e decisões humanas de 28 e 29/07/2026:
   - automação opcional;
   - categoria `Automação com IA em fluxo controlado`;
   - ambiente `Runtime do LP Factory`;
   - OpenAI condicional;
   - acionamento exclusivo pelo `platform_admin`;
-  - validação determinística, revisão e ativação humanas e fallback manual completo.
+  - validação determinística, revisão e ativação humanas e fallback manual completo;
+  - `lp_sections` como fonte estrutural principal da proposta;
+  - IA limitada a módulos, variantes, prioridade, ordem e delta do catálogo;
+  - `generation_guidance` e `item_guidance` como exceções opcionais exclusivamente humanas;
+  - independência da LP materializada em relação às fontes usadas na geração inicial.
 
 ### 1.3. Decisões funcionais fixas
 
 - Perfil próprio é permitido somente para segmento e nicho no MVP.
 - Ultranicho usa o perfil `active` do ancestral elegível mais próximo.
 - Os estados persistidos permanecem somente `draft`, `active` e `archived`.
-- Uma versão `active` é imutável.
-- Mudança de orientação exige nova versão em `draft`.
-- Existe no máximo uma versão `active` por taxon proprietário.
-- A versão é única por taxon proprietário.
-- O mesmo `platform_admin` pode revisar e executar `Aprovar e ativar`.
-- A aprovação é decisão humana e evento auditado dentro de `Aprovar e ativar`; não é status persistido nem resultado estável separado.
-- A IA apenas propõe conteúdo para o editor. Não salva, aprova, ativa, arquiva nem gera LP.
-- A proposta pode iniciar ou refinar o conteúdo do editor; cada acionamento humano autoriza somente uma chamada, sem conversa persistente, memória própria ou continuidade automática.
-- A operação manual permanece completa quando a IA não for usada, falhar ou estiver indisponível.
-- A LP materializada permanece independente e não muda quando o perfil evolui.
-- A E12.4.4 e as subseções posteriores permanecem fora deste plano.
+- Uma versão `active` é imutável; mudança exige nova versão em `draft`.
+- Existe no máximo uma versão `active` por taxon proprietário e a versão é única nesse taxon.
+- O mesmo `platform_admin` pode revisar e executar `Aprovar e ativar`; a decisão é humana e auditada, sem novo status persistido.
+- Quando não houver perfil próprio, a ação inicial destacada deve ser `Criar perfil com IA`; o fluxo manual permanece alternativa completa.
+- A IA usa `lp_sections` como fonte estrutural principal e os demais blocos resolvidos da E10.8 apenas como contexto.
+- A IA propõe somente:
+  - correspondência entre cada seção pesquisada e identidades válidas do catálogo;
+  - módulo e variante disponíveis;
+  - prioridade `P1`, `P2` ou `P3`;
+  - ordem recomendada;
+  - seções atendidas parcialmente ou sem correspondência no catálogo.
+- A IA não cria módulo, variante ou identidade e não preenche nem modifica `generation_guidance` ou `item_guidance`.
+- `generation_guidance`, no perfil-pai, e `item_guidance`, no item-filho, são exceções opcionais preenchidas somente pelo humano.
+- O refinamento por IA atua apenas sobre a estrutura proposta e preserva integralmente as exceções humanas existentes.
+- Cada acionamento humano autoriza somente uma chamada, sem conversa persistente, memória, retry ou continuidade automática.
+- Quando houver faltantes, o humano escolhe:
+  - aguardar a criação dos módulos, sem concluir o perfil como estruturalmente completo;
+  - prosseguir com os disponíveis, mantendo aviso explícito da pendência.
+- E18.4, E18.5, E10.8 e o perfil orientam somente a geração inicial.
+- Depois de materializada, a LP pertence à conta e permanece independente dessas fontes; mudanças nelas não alteram nem governam automaticamente a LP existente.
+- A E12.4.4 e a E19.4 permanecem fora da implementação deste plano, com pendências explícitas registradas em 1.4.
 
 ### 1.4. Fronteiras de responsabilidade
 
-- E10.8 fornece a pesquisa estruturada resolvida e versionada usada pela proposta por IA.
-- E18.4 e E18.5 mantêm seus contratos vigentes; a E12.4.3 não os redefine.
-- E20.3 continua responsável pelo contrato, validação, persistência e resolução do perfil.
-- E12.4.3 opera criação, edição, revisão, ativação e arquivamento por `platform_admin`.
-- E12.4.4 tratará autorização e revogação por conta, taxon e plano.
-- E19.4 e planos posteriores tratarão geração e materialização da LP.
+- E10.8 fornece a pesquisa resolvida e versionada; dentro dela, `lp_sections` é a fonte estrutural principal da proposta.
+- E18.4 e E18.5 fornecem limites e identidades vigentes para a geração inicial; a E12.4.3.2 não os redefine nem cria módulos.
+- E20.3 continua responsável pelo contrato, persistência e resolução do perfil; a E12.4.3.2 aplica somente o delta mínimo para tornar `generation_guidance` opcional.
+- E12.4.3.2 corrige a criação e o refinamento estrutural do perfil no Admin Dashboard.
+- E12.4.4 deverá, obrigatoriamente:
+  - recalcular ou recuperar os gaps antes de autorizar geração;
+  - registrar adiamento com justificativa, impacto, responsável e condição de retomada;
+  - classificar se o gap é impeditivo;
+  - bloquear autorização enquanto houver gap impeditivo;
+  - verificar incompatibilidades entre exceções humanas e os contratos usados na geração inicial.
+- E19.4 deverá formalizar:
+  - geração e materialização com snapshot das fontes usadas;
+  - independência da LP materializada;
+  - liberdade posterior de edição pelo cliente dentro das capacidades técnicas, de funcionamento e de segurança do editor;
+  - proteção contra regeneração que apague silenciosamente alterações humanas.
 
 ## 2. Contrato do caso
 
@@ -89,18 +116,24 @@
   - feedback humano mais recente do `platform_admin`, quando informado.
 - Processamento manual:
   - iniciar a próxima versão no editor;
-  - preencher orientação geral e recomendações;
+  - preencher recomendações e, excepcionalmente, `generation_guidance` e `item_guidance`;
   - persistir somente após `Salvar rascunho`;
   - permitir alteração somente enquanto a versão estiver em `draft`.
 - Processamento com IA:
-  - exigir ação explícita do `platform_admin`;
-  - verificar a resolução completa da E10.8 antes da chamada;
-  - fornecer somente as entradas autorizadas;
-  - distinguir a primeira proposta, sem conteúdo anterior, do refinamento que recebe o estado atual do editor e o feedback humano mais recente;
-  - realizar no máximo uma chamada por acionamento, sem retry ou encadeamento automático;
-  - receber proposta limitada aos campos do perfil;
-  - validar a saída deterministicamente;
+  - exigir ação explícita do `platform_admin` e resolução completa da E10.8;
+  - usar todos os itens de `lp_sections` como esqueleto;
+  - fazer correspondência semântica somente com identidades válidas da E18.5;
+  - propor módulo, variante, prioridade e ordem;
+  - separar seções atendidas, parcialmente atendidas e sem correspondência;
+  - não inventar identidade nem preencher ou modificar exceções humanas;
+  - realizar no máximo uma chamada por acionamento, sem retry ou encadeamento;
+  - validar deterministicamente cobertura, identidades, duplicidades e ordem;
   - preencher o editor sem persistência automática.
+- Tratamento do delta:
+  - apresentar seção pesquisada, prioridade, ordem, motivo da ausência e impacto de prosseguir;
+  - `Aguardar criação dos módulos` mantém o perfil sem conclusão estrutural e não cria nada automaticamente na E18.5;
+  - `Prosseguir com os disponíveis` usa somente recomendações válidas e mantém aviso visível;
+  - gaps e decisão permanecem transitórios neste recorte; registro e reavaliação pertencem à E12.4.4.
 - Validação:
   - validar taxon, agregado, identidades e versões antes de salvar, ativar ou arquivar;
   - rejeitar saída ou mutação incompatível sem alterar o `draft` nem o `active`.
@@ -110,6 +143,7 @@
   - manter `public`, `anon`, `authenticated`, cliente e `ai_readonly` sem escrita direta;
   - usar uma única ação visual `Salvar rascunho`;
   - executar `Aprovar e ativar` atomicamente, arquivando a versão `active` anterior quando existir;
+  - tornar `generation_guidance` opcional por migration incremental e atualizar contrato, schemas, DTOs e RPCs pelo menor delta;
   - implementar a superfície em `app/admin/(protected)/perfis-de-orientacao/`, com listagem em `page.tsx`, edição por taxon em `[taxonId]/page.tsx`, Server Actions route-local em `actions.ts` e componentes com estado próprio somente em `_components/`;
   - ajustar `components/admin/adminNavigation.ts` para expor a área;
   - exigir que toda Server Action execute `requirePlatformAdmin` antes de ler entradas operacionais, chamar IA ou mutar estado;
@@ -121,7 +155,8 @@
 - Consumo:
   - Admin Dashboard apresenta versões e o perfil resolvido atual;
   - o boundary vigente da E20.3 continua entregando somente o perfil `active` próprio ou herdado;
-  - somente gerações futuras poderão consumir a nova versão ativa.
+  - somente a futura geração inicial poderá consumir a nova versão ativa;
+  - a LP materializada não recebe atualização automática quando catálogo, pesquisa ou perfil evoluem.
 - Fallback:
   - manter o editor manual disponível sem IA;
   - preservar o `active` atual em qualquer falha de proposta, salvamento ou ativação;
@@ -131,21 +166,29 @@
 ### 2.2. Contrato do perfil e validações
 
 - O taxon proprietário deve ser segmento ou nicho ativo.
-- `generation_guidance` deve ser texto não vazio.
+- `generation_guidance`:
+  - opcional no banco, contrato e interface;
+  - texto não vazio quando informado;
+  - preenchimento e alteração exclusivamente humanos.
 - Cada recomendação deve conter:
   - módulo e versão existentes;
   - `variant_key` e `variant_version` ambas presentes ou ambas ausentes;
   - variante existente e pertencente ao módulo, quando informada;
   - prioridade `P1`, `P2` ou `P3`;
   - ordem recomendada inteira positiva;
-  - orientação específica não vazia, quando presente.
+  - `item_guidance` opcional, não vazio quando presente e exclusivamente humano.
+- Exemplos de exceção humana:
+  - `generation_guidance`: usar somente duas cores nas LPs do nicho;
+  - `item_guidance`: impor uma faixa específica ao título do módulo hero.
 - No mesmo perfil:
   - módulo não pode se repetir;
   - ordem recomendada não pode se repetir;
   - a versão não pode se repetir para o mesmo taxon proprietário.
-- Prioridade e ordem permanecem orientativas.
-- Nenhum campo pode transformar módulo em obrigatório.
+- Prioridade e ordem permanecem orientativas e nenhum campo transforma módulo em obrigatório.
 - Identidade ausente ou incompatível falha fechado e não é criada ou corrigida automaticamente.
+- A E12.4.3.2 não interpreta semanticamente as exceções humanas nem permite que alterem E18.4 ou E18.5.
+- Exceção humana incompatível pode permanecer no perfil, mas não autoriza geração: a E12.4.4 deve classificá-la como não pronta e a futura geração deve falhar fechado.
+- Os gaps da proposta não são persistidos nas tabelas do perfil neste recorte.
 
 ### 2.3. Lifecycle, atomicidade e auditoria
 
@@ -180,16 +223,32 @@
 - A RPC de arquivamento deve bloquear e revalidar o perfil, receber e conferir `expected_updated_at`, aceitar apenas `draft` ou `active`, registrar arquivamento explícito na mesma transação e não criar fallback intermediário.
 - Cada RPC deve reutilizar explicitamente `public.audit_context_event(...)` dentro da mesma transação da mutação confirmada, incluindo `request_id` e resultado humano em `changes_json` quando aplicáveis. É proibido substituir esse vínculo por auditoria paralela ou operação posterior best-effort.
 - Antes de salvar e novamente antes de ativar, o boundary puro deve validar o agregado pelo schema vigente e cada identidade exclusivamente por `validateLandingPageModuleIdentity`. O adapter não aceita DTO não validado nem importa o registry da E18.5.
+- A E12.4.3.2 deve criar migration incremental própria para permitir `generation_guidance` nulo, sem alterar migrations históricas, preservando invariantes e atualizando RPCs, DTOs, schemas, testes e verificador read-only.
 
 ### 2.4. Contrato da assistência por IA
 
-- A assistência por IA é opcional e exclusivamente server-side. Uma Server Action protegida por `requirePlatformAdmin()` deve chamar uma função server-only local ao boundary `lib/conversion-content/landing-page/generation-profile/`. Antes da chamada, a função deve resolver a E10.8 pela API pública `resolveLandingPageResearchForTaxon`, exigir resultado completo e obter módulos e variantes somente pelas APIs públicas da E18.5.
-- A implementação deve reutilizar `OPENAI_API_KEY` e usar a variável dedicada `OPENAI_LANDING_PAGE_GENERATION_PROFILE_MODEL`, sem fallback hardcoded; o valor inicial de referência é `gpt-5.4-mini`. A chamada deve usar `POST https://api.openai.com/v1/responses`, `text.format.type = json_schema`, `strict = true`, `store = false`, `max_output_tokens = 2000` e timeout de 30 segundos. O request não deve fornecer `tools`, `previous_response_id`, background mode ou qualquer mecanismo agentic. O corpo JSON integral da requisição, já serializado e incluindo schema e instruções, não pode exceder 96 KiB. Não existe retry automático.
-- Com os limites e tarifas vigentes na consolidação da v2, o teto operacional de referência deve permanecer inferior a aproximadamente US$ 0,09 por chamada. Antes de habilitar qualquer troca do modelo configurado ou mudança material de tarifa, repetir as fixtures de contrato, qualidade e custo e atualizar a referência operacional; configuração alterada sem essa evidência mantém a assistência indisponível e não afeta o fluxo manual.
-- A saída permitida contém somente `generation_guidance` e `recommendations[]`, cada recomendação limitada a `module_key`, `module_version`, `variant_key`, `variant_version`, `priority`, `recommended_order` e `item_guidance`. Todos os objetos do JSON Schema devem usar `additionalProperties: false`. A proposta deve passar por schema Zod próprio e pela validação pública de identidade da E18.5 antes de preencher o editor. A função de IA não recebe cliente de banco e não salva, ativa, arquiva ou corrige dados.
-- O primeiro clique humano em `Solicitar proposta por IA` e cada clique posterior em `Refinar com IA` autorizam, cada um, uma única chamada paga. No refinamento, o DTO autorizado inclui o conteúdo atual do editor e o feedback humano mais recente; não usa `previous_response_id`, conversa, histórico persistente ou memória própria. A proposta válida apenas substitui o conteúdo visível do editor após validação; `Salvar rascunho`, `Aprovar e ativar` e arquivamento permanecem ações humanas independentes. Env ausente ou indisponibilidade da OpenAI tornam somente a assistência indisponível, preservando o fluxo manual completo.
-- O contrato e a validação puros permanecem em `lib/conversion-content/landing-page/generation-profile/`, e o provider fica em adapter server-only separado. A Server Action protegida monta somente o DTO autorizado usando `resolveLandingPageResearchForTaxon`, a última versão anteriormente ativa própria do taxon quando houver, o estado atual validado do editor no refinamento, o feedback humano mais recente e APIs públicas da E18.5; perfil herdado ou ausência atual não substituem silenciosamente essa entrada histórica. O provider não importa Supabase, tabelas, registry interno nem adapter de mutação. Sua saída completa retorna ao boundary puro, é validada e somente então preenche o editor. O caminho de proposta ou refinamento não chama RPC de salvamento, ativação ou arquivamento.
-- O mapeamento de falhas é fechado e preserva os códigos reais da E10.8: ausência, incompletude ou inelegibilidade legítima retornam `missing_information`; `READ_FAILED` e `SOURCE_NOT_NORMALIZABLE` retornam `technical_failure`; `RESEARCH_INVALID` e `RESEARCH_AMBIGUOUS` retornam `invalid_data`, sem mascaramento como ausência. Schema de proposta inválido, identidade inexistente, variante incompatível, módulo ou ordem duplicados, corpo autorizado acima de 96 KiB e demais violações do agregado retornam `invalid_data` antes de qualquer chamada quando aplicável. Configuração ausente, timeout, erro HTTP, recusa, conteúdo filtrado, resposta incompleta, ausência de output ou falha de parsing retornam `technical_failure`, com motivo técnico seguro apenas nos logs. Qualquer falha preserva integralmente os valores atuais do editor, o `draft` e o `active`. Nova tentativa exige nova ação explícita do `platform_admin`.
+- A assistência permanece opcional, exclusivamente server-side e protegida por `requirePlatformAdmin()`.
+- Antes da chamada, o boundary resolve a E10.8, exige resultado completo, separa `lp_sections` e obtém módulos e variantes somente pelas APIs públicas da E18.5.
+- `lp_sections` é o esqueleto obrigatório; `strategic_core`, `lp_overview` e `seo` apenas contextualizam prioridade, ordem e escolha entre identidades válidas.
+- A saída da IA contém somente:
+  - correspondências entre itens de `lp_sections` e módulos ou variantes válidos;
+  - prioridade `P1`, `P2` ou `P3`;
+  - ordem recomendada;
+  - delta de cobertura parcial ou ausente, com motivo e impacto.
+- A saída não contém `generation_guidance` nem `item_guidance`.
+- A resposta estruturada separa:
+  - recomendações válidas vinculadas ao `item_key` de origem;
+  - gaps vinculados ao `item_key`, com cobertura `partial` ou `missing`, prioridade, ordem, motivo e impacto.
+- O vínculo de origem e os gaps são transitórios e não integram as tabelas do perfil.
+- A validação determinística comprova que todos os itens de `lp_sections` foram avaliados, que identidades existem, que a variante pertence ao módulo e que não há módulo ou ordem duplicados.
+- No refinamento, o provider recebe somente a estrutura atual e feedback estrutural; o merge local preserva integralmente as exceções humanas.
+- Cada clique em `Criar perfil com IA` ou `Refinar estrutura com IA` autoriza uma chamada, sem conversa, histórico, memória, `previous_response_id`, retry ou encadeamento.
+- A proposta válida substitui somente a estrutura visível; salvar, ativar, arquivar e decidir sobre gaps permanecem ações humanas.
+- A implementação reutiliza `OPENAI_API_KEY` e `OPENAI_LANDING_PAGE_GENERATION_PROFILE_MODEL`, Responses API, JSON Schema estrito, `store = false`, limite de 96 KiB e timeout de 30 segundos.
+- Limite de saída ou custo só muda após fixtures comprovarem cobertura, qualidade e custo; truncamento é `technical_failure` e preserva o editor.
+- A função de IA não recebe cliente de banco e não salva, ativa, arquiva, cria módulo ou corrige dados.
+- O mapeamento de falhas permanece fechado entre `missing_information`, `invalid_data` e `technical_failure`.
+- Qualquer falha preserva editor, exceções humanas, `draft` e `active`; nova tentativa exige nova ação explícita.
 
 ### 2.5. Critérios visuais
 
@@ -197,11 +256,18 @@
 - Seleção somente de segmento e nicho.
 - Exibição clara do perfil atual como próprio, herdado ou ausente.
 - Versão e status sempre visíveis.
-- Editor único para orientação geral e recomendações.
+- Editor único para recomendações e exceções humanas opcionais.
+- Na ausência de perfil próprio, `Criar perfil com IA` aparece antes do editor técnico como ação principal; o preenchimento manual permanece alternativa.
+- Após proposta válida, o editor mostra módulos, variantes, prioridade e ordem para revisão.
+- `generation_guidance` e `item_guidance` aparecem como exceções humanas opcionais, visualmente secundárias e sem sugestão automática.
+- Quando houver gaps, mostrar seção, prioridade, ordem, motivo e impacto, com:
+  - `Aguardar criação dos módulos`;
+  - `Prosseguir com os disponíveis`.
+- O aviso permanece visível durante a criação e revisão quando o humano prosseguir.
 - Ações visuais:
   - criar nova versão;
-  - solicitar proposta por IA;
-  - refinar com IA quando houver conteúdo no editor;
+  - criar perfil com IA;
+  - refinar estrutura com IA;
   - `Salvar rascunho`;
   - `Aprovar e ativar`;
   - arquivar.
@@ -287,36 +353,67 @@
 
 #### 3.1.1. E12.4.3.1 — Refinamento iterativo assistido por IA
 
-- Objetivo:
-  - permitir que o `platform_admin` refine a proposta no editor com o conteúdo corrente e seu feedback humano mais recente, sem transformar o refinamento em frente, conversa ou automação independente.
-- Entregas:
-  - manter `Solicitar proposta por IA` para o editor sem conteúdo anterior e apresentar `Refinar com IA` quando houver conteúdo;
-  - enviar E10.8 completa, identidades públicas da E18.5, referências vigentes, conteúdo atual validado do editor e feedback humano mais recente;
-  - receber e validar uma proposta completa antes de substituir somente o conteúdo visível do editor;
-  - reutilizar modelo, tarifa, limites, gates, correlação e observabilidade da E12.4.3.
-- Critérios de aceite:
-  - primeira proposta funciona sem conteúdo anterior;
-  - refinamento usa o conteúdo atual e o feedback humano mais recente;
-  - falha ou resposta inválida preserva integralmente editor, `draft` e `active`;
-  - proposta refinada mantém o editor com alterações não salvas e bloqueia a ativação;
-  - nenhuma chamada salva ou ativa, e cada refinamento exige novo acionamento explícito.
+- Status: implementada e validada; seu escopo será restringido pela E12.4.3.2.
+- Objetivo final:
+  - refinar módulos, variantes, prioridade, ordem e gaps, preservando exceções humanas.
+- Critérios finais:
+  - cada refinamento exige novo acionamento explícito;
+  - não existe conversa, memória ou continuidade automática;
+  - falha preserva editor, `draft` e `active`;
+  - proposta refinada mantém alterações não salvas e bloqueia ativação até novo salvamento;
+  - `generation_guidance` e `item_guidance` nunca são enviados para alteração pela IA.
 - Escopo negativo:
-  - sem tabela, migration, RPC, rota estrutural, chat, histórico de mensagens, memória persistente, agente, autonomia, `previous_response_id`, provider adicional, abstração genérica, comparação automática, métricas de desempenho, E12.4.4 ou geração de LP.
+  - sem tabela, rota estrutural, chat, histórico, memória, agente, `previous_response_id`, provider adicional, E12.4.4 ou geração de LP.
+
+#### 3.1.2. E12.4.3.2 — Proposta estrutural baseada em `lp_sections` e delta do catálogo
+
+- Status: planejada; implementação pendente após aprovação deste plano.
+- Objetivo:
+  - corrigir a ação inicial, o contrato da IA e a opcionalidade das exceções humanas sem refazer o lifecycle entregue.
+- Entregas:
+  - destacar `Criar perfil com IA` antes do editor manual;
+  - usar todos os itens de `lp_sections` como esqueleto;
+  - retornar somente recomendações estruturais e gaps;
+  - perguntar se o humano aguarda módulos ou prossegue com os disponíveis;
+  - manter aviso transitório quando houver pendência;
+  - tornar `generation_guidance` opcional por migration incremental;
+  - preservar `item_guidance` opcional;
+  - impedir alteração de exceções humanas pela IA;
+  - registrar em E12.4.4 a obrigação de recuperar gaps e decidir prontidão;
+  - registrar em E19.4 a independência da LP materializada.
+- Critérios de aceite:
+  - cada item de `lp_sections` aparece como atendido, parcialmente atendido ou faltante;
+  - somente identidades válidas entram nas recomendações;
+  - prioridade e ordem são propostas para todas as seções;
+  - gaps exibem seção, motivo, impacto e decisão humana;
+  - IA não produz nem altera `generation_guidance` ou `item_guidance`;
+  - prosseguir não oculta a pendência e aguardar não cria módulo automaticamente;
+  - lifecycle, auditoria e resolver active-only permanecem funcionais;
+  - migration e contratos aceitam `generation_guidance` ausente ou não vazio;
+  - testes cobrem cobertura, gaps, identidade inventada, preservação de exceções, env ausente, timeout e truncamento;
+  - Preview desktop e mobile comprovam ação inicial, editor preenchido, decisão de gaps e ausência de salvamento ou ativação automática.
+- Escopo negativo:
+  - sem tabela de gaps, criação automática de módulos, diálogo com IA para exceções, E12.4.4, E19.4, geração, job, fila, agente ou nova infraestrutura.
 
 ### 3.2. Próxima ação
 
-- Submeter o PR draft #654 à autorização final de merge humano, preservando a E12.4.3.1 como implementação candidata.
-- Não marcar a E12.4.3.1 como concluída antes das provas hospedadas aplicáveis e da execução dos gates pós-merge previstos neste plano.
-- Preservar `vercel#1 — AI Gateway` e `supa#63 — rlsautotest` apenas como oportunidades estratégicas condicionais, sem implementação neste recorte.
+- Aprovar e mergear a v2.3 documental.
+- Implementar a E12.4.3.2 em PR técnico próprio criado a partir da `main` atual.
+- Não usar o PR #656, que permanece restrito à correção e ao reteste da E11.1.7.
+- No PR técnico, aplicar o menor delta em UI, contrato da proposta, normalização, migration incremental, testes e documentos canônicos materialmente afetados.
+- Não marcar a E12.4.3.2 como concluída antes de migration aplicada, verificador read-only aprovado, checks e validação humana hospedada em desktop e mobile.
+- Preservar `vercel#1 — AI Gateway` e `supa#63 — rlsautotest` apenas como oportunidades estratégicas condicionais.
 
 ## 4. Escopo negativo e critérios de parada
 
 ### 4.1. Escopo negativo
 
-- E12.4.4, autorização ou revogação por conta, taxon e plano.
-- E12.4.5, E12.4.6, E19.4, geração, materialização, preview, publicação ou alteração de LP.
+- Implementação da E12.4.4; somente o registro explícito de suas pendências integra este plano.
+- Autorização ou revogação por conta, taxon e plano.
+- E12.4.5, E12.4.6 e implementação da E19.4; somente o registro da independência da LP integra este plano.
+- Geração, materialização, preview, publicação ou alteração de LP.
 - Perfil próprio de ultranicho.
-- Gaps persistidos, prontidão, aprendizado automático ou evolução automática do catálogo.
+- Tabela ou persistência de gaps na E12.4.3.2, prontidão, aprendizado automático ou evolução automática do catálogo.
 - Criação ou alteração de módulo, variante, E18.4 ou E18.5.
 - Dados de conta, oferta, campanha, LP ou copy produzida.
 - Acesso a tabelas brutas de pesquisa ou ao registry interno da E18.5.
@@ -324,7 +421,7 @@
 - Quarto status, estado `approved`, terceira tabela de domínio ou tabela própria de auditoria.
 - Escrita direta por `public`, `anon`, `authenticated`, cliente ou `ai_readonly`.
 - Ativação, salvamento, repetição ou correção automática pela IA.
-- Chat, histórico de mensagens, memória persistente, `previous_response_id`, refinamento automático, retry automático, comparação de versões ou otimização baseada em métricas.
+- Chat, histórico de mensagens, memória persistente, `previous_response_id`, diálogo com IA para exceções humanas, refinamento automático, retry automático, comparação de versões ou otimização baseada em métricas.
 - Agente, comportamento agentic, job, fila, cron, webhook, workflow ou nova infraestrutura.
 - Implementação além do menor delta necessário para cumprir as entregas e os critérios de aceite da E12.4.3.
 - Refatoração, limpeza ou reorganização de áreas não indispensáveis à E12.4.3.
@@ -348,20 +445,25 @@
 ### 4.3. Validação deste trabalho documental
 
 - Confirmar:
-  - `docs/lousa-plano-base-e12-4.md` e `docs/roadmap.md` ajustados pelo menor delta; `docs/base-tecnica.md` sem alteração por não registrar o payload detalhado da assistência;
-  - quatro seções principais preservadas;
-  - uma única fase executável, `E12.4.3`, com a subfase interna `E12.4.3.1` sem frente independente;
-  - `Automação: sim` com categoria, ambiente, objetivo e limites;
-  - E12.4.4 e subseções posteriores fora do recorte;
-  - ausência de tabela, migration, RPC, rota estrutural, agente, memória ou provider novo.
-- Executar a validação específica, typecheck, check e verificação de whitespace; manter Preview autenticado e teste humano como provas hospedadas pendentes.
+  - quatro seções principais, numeração e ordem preservadas;
+  - E12.4.3.2 registrada como sub-recorte corretivo, sem reabrir E20.3;
+  - `lp_sections` como fonte estrutural principal;
+  - IA limitada a módulos, variantes, prioridade, ordem e gaps;
+  - `generation_guidance` e `item_guidance` como exceções opcionais humanas;
+  - decisão entre aguardar ou prosseguir com aviso;
+  - pendências explícitas da E12.4.4 e E19.4;
+  - PR #656 preservado fora do escopo;
+  - ausência de nova tabela, agente, job, fila, service ou infraestrutura.
+- Para este delta documental, executar revisão do diff e verificação de whitespace; checks de runtime, typecheck e banco pertencem ao futuro PR técnico.
 
 ### 4.4. Critérios de encerramento do plano
 
-- O plano será encerrado somente após:
-  - v2 aprovada;
-  - implementação da E12.4.3;
+- O plano v2.3 será encerrado somente após:
+  - decisão conceitual aprovada;
+  - implementação da E12.4.3.2;
+  - migration incremental aplicada e verificada;
   - validações técnicas e visuais aprovadas;
+  - pendências da E12.4.4 e E19.4 registradas nos documentos próprios;
   - reconciliação documental pelo Prompt ABC;
   - merge humano;
   - confirmação do estado final no ambiente alvo.
