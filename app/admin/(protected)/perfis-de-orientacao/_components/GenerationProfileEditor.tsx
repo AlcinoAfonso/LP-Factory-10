@@ -150,11 +150,12 @@ export function GenerationProfileEditor({ taxon, profiles, aiConfigured, researc
         ...(proposal ? { requestId: proposal.requestId, proposalFingerprint: proposal.fingerprint } : {}),
         ...(appliedProposalContext ? {
           rawResearchReferences: appliedProposalContext.candidate.rawResearchReferences,
+          gapAnalysisCompleted: true,
+          gapItemKeys: appliedProposalContext.candidate.gaps.map((gap) => gap.itemKey),
+          researchVersions: appliedProposalContext.candidate.researchVersions,
           ...(appliedProposalContext.decision ? {
             gapDecision: appliedProposalContext.decision,
-            gapItemKeys: appliedProposalContext.candidate.gaps.map((gap) => gap.itemKey),
             gapImpactSummary: appliedProposalContext.candidate.gaps.map((gap) => gap.impact).join("; "),
-            researchVersions: appliedProposalContext.candidate.researchVersions,
           } : {}),
         } : {}),
       });
@@ -165,7 +166,7 @@ export function GenerationProfileEditor({ taxon, profiles, aiConfigured, researc
       setDraftMeta({ id: result.profileId, version: result.version, updatedAt: result.updatedAt });
       setSavedEditorState(serializeEditorState(generationGuidance, recommendationPayload));
       setProposal(null);
-      setPersistedGapDecision(appliedProposalContext?.decision ?? persistedGapDecision);
+      setPersistedGapDecision(appliedProposalContext ? appliedProposalContext.decision ?? null : persistedGapDecision);
       setAppliedProposalContext(null);
       announce({ tone: "success", message: `Draft v${result.version} salvo.` });
       router.refresh();

@@ -93,10 +93,16 @@ export function findGenerationProfileReplacements(input: {
   editor: GenerationProfileEditorContent;
   candidate: GenerationProfileProposal;
 }) {
-  const currentByOrder = new Map(input.editor.recommendations.map((item) => [item.recommendedOrder, item.moduleKey]));
-  return input.candidate.recommendations.flatMap((item) => {
-    const previousModuleKey = currentByOrder.get(item.recommendedOrder);
-    return previousModuleKey && previousModuleKey !== item.moduleKey
+  const currentModuleKeys = new Set(input.editor.recommendations.map((item) => item.moduleKey));
+  const candidateModuleKeys = new Set(input.candidate.recommendations.map((item) => item.moduleKey));
+  const removedByOrder = new Map(
+    input.editor.recommendations
+      .filter((item) => !candidateModuleKeys.has(item.moduleKey))
+      .map((item) => [item.recommendedOrder, item.moduleKey]),
+  );
+  return input.candidate.recommendations.filter((item) => !currentModuleKeys.has(item.moduleKey)).flatMap((item) => {
+    const previousModuleKey = removedByOrder.get(item.recommendedOrder);
+    return previousModuleKey
       ? [{ fromModuleKey: previousModuleKey, toModuleKey: item.moduleKey, recommendedOrder: item.recommendedOrder }]
       : [];
   });

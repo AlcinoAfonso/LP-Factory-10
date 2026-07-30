@@ -160,6 +160,18 @@ export function normalizeGenerationProfileCandidate(input: unknown):
     });
     if (!identity.ok) return { ok: false, message: "Current candidate contains an invalid identity." };
   }
+  for (const coverage of candidate.coverage) {
+    for (const compatibleIdentity of coverage.compatibleIdentities) {
+      const identity = validateLandingPageModuleIdentity({
+        moduleKey: compatibleIdentity.moduleKey,
+        moduleVersion: compatibleIdentity.moduleVersion,
+        ...(compatibleIdentity.variantKey === undefined
+          ? {}
+          : { variantKey: compatibleIdentity.variantKey, variantVersion: compatibleIdentity.variantVersion }),
+      });
+      if (!identity.ok) return { ok: false, message: "Current candidate coverage contains an invalid identity." };
+    }
+  }
   const gapKeys = new Set(candidate.gaps.map((gap) => `${gap.audienceScope}:${gap.itemKey}`));
   const derivedGapKeys = new Set(candidate.coverage.filter((item) => item.status !== "covered").map((item) => `${item.audienceScope}:${item.itemKey}`));
   if (gapKeys.size !== derivedGapKeys.size || [...gapKeys].some((key) => !derivedGapKeys.has(key))) {

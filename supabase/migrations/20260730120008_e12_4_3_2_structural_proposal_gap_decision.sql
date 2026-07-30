@@ -25,6 +25,7 @@ declare
   v_taxon public.business_taxons%rowtype;
   v_version integer;
   v_gap_decision text;
+  v_gap_analysis_completed boolean;
   v_effective_audit_context jsonb := p_audit_context;
   v_last_save_changes jsonb;
 begin
@@ -45,25 +46,40 @@ begin
     or p_audit_context is null
     or jsonb_typeof(p_audit_context) <> 'object'
     or p_audit_context - array[
-      'gap_decision', 'gap_item_keys', 'gap_impact_summary',
+      'gap_analysis_completed', 'gap_decision', 'gap_item_keys', 'gap_impact_summary',
       'research_versions', 'raw_research_references'
     ] <> '{}'::jsonb then
     raise exception 'E12_4_3_INVALID_INPUT';
   end if;
 
   v_gap_decision := p_audit_context->>'gap_decision';
+  v_gap_analysis_completed := coalesce(p_audit_context->'gap_analysis_completed' = 'true'::jsonb, false);
   if coalesce(jsonb_typeof(p_audit_context->'gap_item_keys'), 'array') <> 'array'
     or coalesce(jsonb_typeof(p_audit_context->'raw_research_references'), 'array') <> 'array'
+    or (p_audit_context ? 'gap_analysis_completed' and p_audit_context->'gap_analysis_completed' <> 'true'::jsonb)
     or (v_gap_decision is not null and v_gap_decision not in ('wait_for_modules', 'proceed_with_available'))
     or (
-      v_gap_decision is null and (
+      v_gap_decision is null and not v_gap_analysis_completed and (
         case when jsonb_typeof(p_audit_context->'gap_item_keys') = 'array' then jsonb_array_length(p_audit_context->'gap_item_keys') else 0 end <> 0
         or p_audit_context->>'gap_impact_summary' is not null
         or p_audit_context->'research_versions' is not null
       )
     )
     or (
+      v_gap_decision is null and v_gap_analysis_completed and (
+        case when jsonb_typeof(p_audit_context->'gap_item_keys') = 'array' then jsonb_array_length(p_audit_context->'gap_item_keys') else 0 end <> 0
+        or p_audit_context->>'gap_impact_summary' is not null
+        or coalesce(jsonb_typeof(p_audit_context->'research_versions'), '') <> 'object'
+        or p_audit_context->'research_versions' - array['endCustomer', 'businessBuyer'] <> '{}'::jsonb
+        or not (p_audit_context->'research_versions' ?& array['endCustomer', 'businessBuyer'])
+        or (p_audit_context->'research_versions'->>'endCustomer') !~ '^[1-9][0-9]*$'
+        or (p_audit_context->'research_versions'->>'businessBuyer') !~ '^[1-9][0-9]*$'
+      )
+    )
+    or (
       v_gap_decision is not null and (
+        not v_gap_analysis_completed
+        or
         case when jsonb_typeof(p_audit_context->'gap_item_keys') = 'array' then jsonb_array_length(p_audit_context->'gap_item_keys') else 0 end = 0
         or coalesce(length(btrim(p_audit_context->>'gap_impact_summary')), 0) = 0
         or coalesce(jsonb_typeof(p_audit_context->'research_versions'), '') <> 'object'
@@ -166,7 +182,7 @@ begin
     where landing_page_generation_profile_items.profile_id = v_profile.id;
   end if;
 
-  if p_profile_id is not null and v_gap_decision is null then
+  if p_profile_id is not null and v_gap_decision is null and not v_gap_analysis_completed then
     select changes_json into v_last_save_changes
     from public.audit_logs
     where record_id = v_profile.id
@@ -176,6 +192,7 @@ begin
     if v_last_save_changes->>'gap_decision' in ('wait_for_modules', 'proceed_with_available') then
       v_gap_decision := v_last_save_changes->>'gap_decision';
       v_effective_audit_context := p_audit_context || jsonb_build_object(
+        'gap_analysis_completed', true,
         'gap_decision', v_gap_decision,
         'gap_item_keys', v_last_save_changes->'gap_item_keys',
         'gap_impact_summary', v_last_save_changes->>'gap_impact_summary',
@@ -207,6 +224,7 @@ begin
       'review_result', p_review_result,
       'correlation_status', case when p_request_id is null then 'unavailable' else 'available' end,
       'version', v_profile.version,
+      'gap_analysis_completed', v_effective_audit_context->'gap_analysis_completed',
       'gap_decision', v_gap_decision,
       'gap_item_keys', v_effective_audit_context->'gap_item_keys',
       'gap_count', coalesce(jsonb_array_length(v_effective_audit_context->'gap_item_keys'), 0),

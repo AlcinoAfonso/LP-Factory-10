@@ -40,6 +40,7 @@ export const generationProfileDraftInputSchema = z
     origin: z.enum(["manual", "ai"]),
     requestId: z.unknown().optional(),
     proposalFingerprint: z.unknown().optional(),
+    gapAnalysisCompleted: z.literal(true).optional(),
     gapDecision: z.enum(["wait_for_modules", "proceed_with_available"]).optional(),
     gapItemKeys: z.array(z.string().trim().min(1)).optional(),
     gapImpactSummary: optionalNonEmptyText,
@@ -73,11 +74,14 @@ export const generationProfileDraftInputSchema = z
     if (new Set(orders).size !== orders.length) {
       context.addIssue({ code: "custom", path: ["recommendations"], message: "recommended orders must be unique" });
     }
-    if (input.gapDecision !== undefined && (!input.gapItemKeys || input.gapItemKeys.length === 0 || !input.gapImpactSummary || !input.researchVersions)) {
+    if (input.gapDecision !== undefined && (!input.gapAnalysisCompleted || !input.gapItemKeys || input.gapItemKeys.length === 0 || !input.gapImpactSummary || !input.researchVersions)) {
       context.addIssue({ code: "custom", path: ["gapDecision"], message: "gap decisions require affected items, impact and source versions" });
     }
-    if (input.gapDecision === undefined && (input.gapItemKeys !== undefined || input.gapImpactSummary !== undefined)) {
-      context.addIssue({ code: "custom", path: ["gapDecision"], message: "gap metadata requires a decision" });
+    if (input.gapAnalysisCompleted && input.gapDecision === undefined && ((input.gapItemKeys?.length ?? 0) !== 0 || input.gapImpactSummary !== undefined || !input.researchVersions)) {
+      context.addIssue({ code: "custom", path: ["gapAnalysisCompleted"], message: "completed analysis without gaps requires an empty item list and source versions" });
+    }
+    if (!input.gapAnalysisCompleted && (input.gapDecision !== undefined || input.gapItemKeys !== undefined || input.gapImpactSummary !== undefined || input.researchVersions !== undefined)) {
+      context.addIssue({ code: "custom", path: ["gapAnalysisCompleted"], message: "gap metadata requires a completed analysis" });
     }
   });
 

@@ -22,6 +22,7 @@ export type GenerationProfileDraftInput = Readonly<{
   origin: "manual" | "ai";
   requestId?: string;
   proposalFingerprint?: string;
+  gapAnalysisCompleted?: true;
   gapDecision?: GenerationProfileGapDecision;
   gapItemKeys?: readonly string[];
   gapImpactSummary?: string;

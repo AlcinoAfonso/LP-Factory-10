@@ -501,9 +501,18 @@ const cases: readonly Readonly<{
         ownerTaxonId: NICHE_ID,
         recommendations: validated.value.recommendations,
         origin: "ai",
+        gapAnalysisCompleted: true,
         gapDecision: "wait_for_modules",
         gapItemKeys: ["buyer_faq"],
         gapImpactSummary: "FAQ comercial parcial.",
+        researchVersions: structuralResearch.versions,
+      }).ok, true);
+      assert.equal(validateGenerationProfileDraft({
+        ownerTaxonId: NICHE_ID,
+        recommendations: validated.value.recommendations,
+        origin: "ai",
+        gapAnalysisCompleted: true,
+        gapItemKeys: [],
         researchVersions: structuralResearch.versions,
       }).ok, true);
     },
@@ -629,6 +638,13 @@ const cases: readonly Readonly<{
       assert.equal(normalizeGenerationProfileCandidate({ ...candidate, generationGuidance: "Nao autorizado" }).ok, false);
       assert.equal(normalizeGenerationProfileCandidate({ ...candidate, recommendations: [{ ...candidate.recommendations[0], itemGuidance: "Nao autorizado" }] }).ok, false);
       assert.equal(normalizeGenerationProfileCandidate({ ...candidate, fingerprint: "a".repeat(64) }).ok, false);
+      assert.equal(normalizeGenerationProfileCandidate({
+        ...candidate,
+        coverage: candidate.coverage.map((item, index) => index === 0 ? {
+          ...item,
+          compatibleIdentities: [{ moduleKey: "invented", moduleVersion: 1 }],
+        } : item),
+      }).ok, false);
       const nextRound = buildGenerationProfileResponsesRequest({
         model: GENERATION_PROFILE_APPROVED_MODEL,
         taxonId: NICHE_ID,
@@ -685,6 +701,22 @@ const cases: readonly Readonly<{
           recommendations: [{ moduleKey: "faq", moduleVersion: 1, variantKey: "faq.accordion", variantVersion: 1, priority: "P1", recommendedOrder: 10 }],
         },
       }), [{ fromModuleKey: "hero", toModuleKey: "faq", recommendedOrder: 10 }]);
+      assert.deepEqual(findGenerationProfileReplacements({
+        editor: {
+          generationGuidance: currentEditor.generationGuidance,
+          recommendations: [
+            { moduleKey: "hero", moduleVersion: 1, variantKey: "hero.form", variantVersion: 1, priority: "P1", recommendedOrder: 10 },
+            { moduleKey: "faq", moduleVersion: 1, variantKey: "faq.accordion", variantVersion: 1, priority: "P2", recommendedOrder: 20 },
+          ],
+        },
+        candidate: {
+          ...received.candidate,
+          recommendations: [
+            { moduleKey: "hero", moduleVersion: 1, variantKey: "hero.form", variantVersion: 1, priority: "P1", recommendedOrder: 20 },
+            { moduleKey: "faq", moduleVersion: 1, variantKey: "faq.accordion", variantVersion: 1, priority: "P2", recommendedOrder: 10 },
+          ],
+        },
+      }), []);
 
       const failure = receiveGenerationProfileProposal({
         currentEditor,

@@ -78,6 +78,10 @@ declare
   v_uncorrelated record;
   v_activated record;
   v_archived_active record;
+  v_zero_gap_wait record;
+  v_zero_gap_cleared record;
+  v_zero_gap_activated record;
+  v_zero_gap_archived record;
   v_draft_to_archive record;
   v_archived_draft record;
 begin
@@ -122,6 +126,7 @@ begin
     null,
     null,
     jsonb_build_object(
+      'gap_analysis_completed', true,
       'gap_decision', 'wait_for_modules',
       'gap_item_keys', jsonb_build_array('end_customer:missing_section'),
       'gap_impact_summary', 'Section remains unavailable.',
@@ -243,6 +248,7 @@ begin
     null,
     null,
     jsonb_build_object(
+      'gap_analysis_completed', true,
       'gap_decision', 'proceed_with_available',
       'gap_item_keys', jsonb_build_array('end_customer:missing_section'),
       'gap_impact_summary', 'Administrator accepted the available modules.',
@@ -256,6 +262,50 @@ begin
 
   select * into v_archived_active
   from public.archive_landing_page_generation_profile(v_activated.profile_id, v_activated.updated_at);
+
+  select * into v_zero_gap_wait
+  from public.save_landing_page_generation_profile_draft(
+    '12040000-0000-4000-8000-000000000001',
+    null,
+    null,
+    null,
+    '[{"module_key":"hero","module_version":1,"variant_key":null,"variant_version":null,"priority":"P1","recommended_order":10,"item_guidance":null}]'::jsonb,
+    'ai',
+    null,
+    null,
+    jsonb_build_object(
+      'gap_analysis_completed', true,
+      'gap_decision', 'wait_for_modules',
+      'gap_item_keys', jsonb_build_array('end_customer:temporary_gap'),
+      'gap_impact_summary', 'Module is not available yet.',
+      'research_versions', jsonb_build_object('endCustomer', 1, 'businessBuyer', 1),
+      'raw_research_references', '[]'::jsonb
+    )
+  );
+
+  select * into v_zero_gap_cleared
+  from public.save_landing_page_generation_profile_draft(
+    '12040000-0000-4000-8000-000000000001',
+    v_zero_gap_wait.profile_id,
+    v_zero_gap_wait.updated_at,
+    null,
+    '[{"module_key":"hero","module_version":1,"variant_key":null,"variant_version":null,"priority":"P1","recommended_order":10,"item_guidance":null}]'::jsonb,
+    'ai',
+    null,
+    null,
+    jsonb_build_object(
+      'gap_analysis_completed', true,
+      'gap_item_keys', '[]'::jsonb,
+      'research_versions', jsonb_build_object('endCustomer', 1, 'businessBuyer', 1),
+      'raw_research_references', '[]'::jsonb
+    )
+  );
+
+  select * into v_zero_gap_activated
+  from public.activate_landing_page_generation_profile(v_zero_gap_cleared.profile_id, v_zero_gap_cleared.updated_at);
+
+  select * into v_zero_gap_archived
+  from public.archive_landing_page_generation_profile(v_zero_gap_activated.profile_id, v_zero_gap_activated.updated_at);
 
   select * into v_draft_to_archive
   from public.save_landing_page_generation_profile_draft(
@@ -272,6 +322,7 @@ begin
   from public.archive_landing_page_generation_profile(v_draft_to_archive.profile_id, v_draft_to_archive.updated_at);
 
   perform set_config('e12_4_3.test_active_profile_id', v_archived_active.profile_id::text, true);
+  perform set_config('e12_4_3.test_zero_gap_profile_id', v_zero_gap_archived.profile_id::text, true);
   perform set_config('e12_4_3.test_draft_profile_id', v_archived_draft.profile_id::text, true);
 end;
 $$;
@@ -281,6 +332,7 @@ reset role;
 do $$
 declare
   v_active_profile_id uuid := current_setting('e12_4_3.test_active_profile_id')::uuid;
+  v_zero_gap_profile_id uuid := current_setting('e12_4_3.test_zero_gap_profile_id')::uuid;
   v_draft_profile_id uuid := current_setting('e12_4_3.test_draft_profile_id')::uuid;
   v_temporary_active_id uuid;
 begin
@@ -347,6 +399,20 @@ begin
       and changes_json->>'gap_decision' = 'proceed_with_available'
   ) then
     raise exception 'proceed decision was not audited';
+  end if;
+  if not exists (
+    select 1 from public.audit_logs
+    where record_id = v_zero_gap_profile_id
+      and event = 'generation_profile_draft_saved'
+      and changes_json->'gap_analysis_completed' = 'true'::jsonb
+      and changes_json->>'gap_count' = '0'
+      and not (changes_json ? 'gap_decision')
+  ) or not exists (
+    select 1 from public.audit_logs
+    where record_id = v_zero_gap_profile_id
+      and event = 'generation_profile_activated'
+  ) then
+    raise exception 'new candidate without gaps did not clear wait_for_modules before activation';
   end if;
   if (select count(*) from public.audit_logs where record_id = v_active_profile_id and event in ('generation_profile_draft_saved', 'generation_profile_activated', 'generation_profile_archived')) <> 7 then
     raise exception 'confirmed active lifecycle mutations were not fully audited';
