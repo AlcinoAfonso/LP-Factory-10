@@ -64,6 +64,33 @@ export type GenerationProfileProviderResult =
       kind: "refusal" | "http_error" | "timeout" | "invalid_response" | "request_too_large";
     }>;
 
+export type GenerationProfileProviderValidationReason =
+  | "payload_schema_invalid"
+  | "coverage_items_mismatch"
+  | "coverage_source_changed"
+  | "coverage_identity_count_invalid"
+  | "coverage_gap_details_missing"
+  | "coverage_identity_invalid"
+  | "recommendation_duplicates"
+  | "recommendation_identity_invalid"
+  | "recommendation_derivation_mismatch";
+
+export function buildGenerationProfileInvalidDataMetadata(input: Readonly<{
+  model: string;
+  validationReason: GenerationProfileProviderValidationReason;
+  responseId: string | null;
+  inputTokens: number | null;
+  outputTokens: number | null;
+}>) {
+  return {
+    validationReason: input.validationReason,
+    responseId: input.responseId,
+    inputTokens: input.inputTokens,
+    outputTokens: input.outputTokens,
+    estimatedCostUsd: estimateGenerationProfileCostUsd(input.model, input.inputTokens, input.outputTokens),
+  } as const;
+}
+
 export function normalizeGenerationProfileIncompleteMetadata(payload: unknown): Readonly<{
   incompleteReason: string | null;
   responseId: string | null;
@@ -356,33 +383,33 @@ export function validateGenerationProfileProviderPayload(input: {
   rawResearchReferences?: readonly GenerationProfileRawResearchReference[];
 }) {
   const parsed = providerPayloadSchema.safeParse(input.payload);
-  if (!parsed.success) return { ok: false as const, message: "Proposal payload is invalid." };
+  if (!parsed.success) return { ok: false as const, reason: "payload_schema_invalid" as const, message: "Proposal payload is invalid." };
 
   const sections = readLpSections(input.research);
   const coverageKeys = parsed.data.coverage.map(coverageIdentityKey);
   if (new Set(coverageKeys).size !== coverageKeys.length || sections.length !== parsed.data.coverage.length) {
-    return { ok: false as const, message: "Coverage must contain every lp_sections item exactly once." };
+    return { ok: false as const, reason: "coverage_items_mismatch" as const, message: "Coverage must contain every lp_sections item exactly once." };
   }
   const sectionsByKey = new Map(sections.map((section) => [coverageIdentityKey(section), section]));
   for (const coverage of parsed.data.coverage) {
     const source = sectionsByKey.get(coverageIdentityKey(coverage));
     if (!source || source.section_name !== coverage.section_name || source.source_priority !== coverage.source_priority || source.source_order !== coverage.source_order) {
-      return { ok: false as const, message: "Coverage changed the authorized lp_sections source." };
+      return { ok: false as const, reason: "coverage_source_changed" as const, message: "Coverage changed the authorized lp_sections source." };
     }
     if (!isCoverageIdentityCountValid(coverage.status, coverage.compatible_identities.length)) {
-      return { ok: false as const, message: "Coverage identity count is inconsistent with its status." };
+      return { ok: false as const, reason: "coverage_identity_count_invalid" as const, message: "Coverage identity count is inconsistent with its status." };
     }
     if (coverage.status !== "covered" && (!coverage.reason || !coverage.impact)) {
-      return { ok: false as const, message: "Coverage gaps require reason and impact." };
+      return { ok: false as const, reason: "coverage_gap_details_missing" as const, message: "Coverage gaps require reason and impact." };
     }
     for (const identity of coverage.compatible_identities) {
-      if (!validateIdentity(identity)) return { ok: false as const, message: "Coverage contains an invalid identity." };
+      if (!validateIdentity(identity)) return { ok: false as const, reason: "coverage_identity_invalid" as const, message: "Coverage contains an invalid identity." };
     }
   }
 
   const recommendations = parsed.data.recommendations.map(normalizeStructuralRecommendation);
   if (new Set(recommendations.map((item) => item.moduleKey)).size !== recommendations.length || new Set(recommendations.map((item) => item.recommendedOrder)).size !== recommendations.length) {
-    return { ok: false as const, message: "Recommendations must be unique by module and order." };
+    return { ok: false as const, reason: "recommendation_duplicates" as const, message: "Recommendations must be unique by module and order." };
   }
   for (const recommendation of recommendations) {
     const identity = validateLandingPageModuleIdentity({
@@ -394,12 +421,12 @@ export function validateGenerationProfileProviderPayload(input: {
       }),
     });
     if (!identity.ok) {
-      return { ok: false as const, message: `Recommendation contains an invalid catalog identity: ${identity.error.code}.` };
+      return { ok: false as const, reason: "recommendation_identity_invalid" as const, message: `Recommendation contains an invalid catalog identity: ${identity.error.code}.` };
     }
   }
   const expected = deriveRecommendations(parsed.data.coverage);
   if (JSON.stringify(recommendations) !== JSON.stringify(expected)) {
-    return { ok: false as const, message: "Recommendation priority or order is not deterministic from coverage." };
+    return { ok: false as const, reason: "recommendation_derivation_mismatch" as const, message: "Recommendation priority or order is not deterministic from coverage." };
   }
 
   const coverage: GenerationProfileCoverage[] = parsed.data.coverage.map((item) => ({

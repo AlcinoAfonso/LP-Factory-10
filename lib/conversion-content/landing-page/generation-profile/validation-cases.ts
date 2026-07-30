@@ -18,6 +18,7 @@ import {
   landingPageGenerationProfileTaxonChainSchema,
 } from "./schema";
 import {
+  buildGenerationProfileInvalidDataMetadata,
   buildGenerationProfileResponsesRequest,
   estimateGenerationProfileCostUsd,
   GENERATION_PROFILE_APPROVED_MODEL,
@@ -470,7 +471,9 @@ const cases: readonly Readonly<{
       const validate = (payload: unknown) => validateGenerationProfileProviderPayload({ payload, research: structuralResearch, moduleIdentities: listLandingPageModuleIdentities() });
       const valid = validate(structuralPayload);
       assert.equal(valid.ok, true, valid.ok ? undefined : valid.message);
-      assert.equal(validate({ ...structuralPayload, generation_guidance: "Nao autorizado" }).ok, false);
+      const invalidSchema = validate({ ...structuralPayload, generation_guidance: "Nao autorizado" });
+      assert.equal(invalidSchema.ok, false);
+      if (!invalidSchema.ok) assert.equal(invalidSchema.reason, "payload_schema_invalid");
       assert.equal(validate({ ...structuralPayload, recommendations: [{ ...structuralPayload.recommendations[0], item_guidance: "Nao autorizado" }] }).ok, false);
       assert.equal(validate({ ...structuralPayload, coverage: structuralPayload.coverage.slice(1) }).ok, false);
       assert.equal(validate({ ...structuralPayload, recommendations: [{ ...structuralPayload.recommendations[0], module_key: "invented" }, structuralPayload.recommendations[1]] }).ok, false);
@@ -757,6 +760,38 @@ const cases: readonly Readonly<{
       assert.equal(mapResearchErrorToProposalError("RESEARCH_AMBIGUOUS"), "invalid_data");
       assert.equal(mapResearchErrorToProposalError("READ_FAILED"), "technical_failure");
       assert.equal(mapResearchErrorToProposalError("SOURCE_NOT_NORMALIZABLE"), "technical_failure");
+    },
+  },
+  {
+    name: "invalid provider payload metadata is safely allowlisted with usage and cost",
+    run: () => {
+      const invalid = validateGenerationProfileProviderPayload({
+        payload: { ...structuralPayload, coverage: structuralPayload.coverage.slice(1) },
+        research: structuralResearch,
+        moduleIdentities: listLandingPageModuleIdentities(),
+      });
+      assert.equal(invalid.ok, false);
+      if (invalid.ok) return;
+      assert.equal(invalid.reason, "coverage_items_mismatch");
+
+      const unsafeInput = {
+        model: GENERATION_PROFILE_APPROVED_MODEL,
+        validationReason: invalid.reason,
+        responseId: "resp_invalid_123",
+        inputTokens: 20856,
+        outputTokens: 4000,
+        payload: "sensitive candidate content",
+        research: "raw research must not cross the boundary",
+      } as const;
+      const metadata = buildGenerationProfileInvalidDataMetadata(unsafeInput);
+      assert.deepEqual(metadata, {
+        validationReason: "coverage_items_mismatch",
+        responseId: "resp_invalid_123",
+        inputTokens: 20856,
+        outputTokens: 4000,
+        estimatedCostUsd: 0.022428,
+      });
+      assert.deepEqual(Object.keys(metadata).sort(), ["estimatedCostUsd", "inputTokens", "outputTokens", "responseId", "validationReason"]);
     },
   },
   {

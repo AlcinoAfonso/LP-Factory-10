@@ -14,6 +14,7 @@ import type {
 import { validateGenerationProfileDraft } from "./admin-schema";
 import { listLandingPageModuleIdentities } from "../module-catalog";
 import {
+  buildGenerationProfileInvalidDataMetadata,
   estimateGenerationProfileCostUsd,
   isGenerationProfileAssistanceConfigured,
   mapProviderFailureToProposalError,
@@ -150,7 +151,13 @@ export async function proposeLandingPageGenerationProfile(input: {
       requestKind,
       model,
       startedAt,
-      responseId: provider.responseId,
+      ...buildGenerationProfileInvalidDataMetadata({
+        model,
+        validationReason: validated.reason,
+        responseId: provider.responseId,
+        inputTokens: provider.inputTokens,
+        outputTokens: provider.outputTokens,
+      }),
       researchVersions: research.value.versions,
       researchProvenance: getResearchProvenance(research.value),
       moduleCatalogVersion: moduleIdentities.moduleCatalogVersion,
