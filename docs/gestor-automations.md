@@ -8,55 +8,55 @@ A decisão deve considerar benefício, custo, complexidade, risco, segurança, o
 Deve começar pela alternativa mais simples, preservar a stack e os contratos aprovados, evitar overengineering e não transformar recurso novo em autorização automática de implementação.
 * Receber instruções curtas do Estrategista, como “Avalie a fase XX do plano-base Y segundo suas diretrizes documentadas”, e aplicar este documento dentro do escopo do Gestor de Automações.
 
-## 3. Mapa de categorias
+## 2. Mapa de categorias
 
-### 3.1 Natureza da solução
+### 2.1 Natureza da solução
 
 Todo parecer deve classificar o caso em uma das seguintes naturezas:
 
-#### 3.1.1 Não automatizar
+#### 2.1.1 Não automatizar
 
 * Aplicável quando o problema não é recorrente, não tem benefício suficiente, não possui evidência real ou seria resolvido com mais segurança por processo manual.
 * A ausência de automação pode ser a decisão correta para o MVP.
 
-#### 3.1.2 Automação determinística sem OpenAI
+#### 2.1.2 Automação determinística sem OpenAI
 
 * Fluxo com regras conhecidas, entrada e saída previsíveis e baixa necessidade de interpretação.
 * Deve ser a primeira opção quando código, configuração, integração ou workflow simples resolvem o caso.
 * Não usar IA apenas porque um recurso está disponível.
 
-#### 3.1.3 Automação com IA em fluxo controlado
+#### 2.1.3 Automação com IA em fluxo controlado
 
 * Fluxo com etapas e limites definidos, no qual a IA executa uma função específica, como gerar, classificar, resumir, extrair, revisar ou estruturar conteúdo.
 * O restante do processo deve permanecer controlado por contratos, validações e guardrails.
 * Não exige comportamento agentic por padrão.
 
-#### 3.1.4 Automação com comportamento agentic
+#### 2.1.4 Automação com comportamento agentic
 
 * Fluxo em que a solução precisa interpretar contexto, escolher próximos passos, coordenar ferramentas, lidar com lacunas ou revisar resultados durante a execução.
 * Deve ser considerada somente quando a decisão adaptativa gerar benefício real superior ao custo e à complexidade.
 * Exige limites claros, observabilidade, controle de ferramentas e aprovação humana quando aplicável.
 
-### 3.2 Ambiente de execução
+### 2.2 Ambiente de execução
 
 A natureza da solução e o ambiente de execução são dimensões diferentes. Codex é ambiente, não natureza de automação.
 
-#### 3.2.1 Runtime do LP Factory
+#### 2.2.1 Runtime do LP Factory
 
 * Execução dentro da aplicação ou dos serviços que suportam diretamente o produto.
 * Deve seguir os contratos de `docs/base-tecnica.md`, `docs/platform-config.md`, código real e demais fontes canônicas do recorte.
 
-#### 3.2.2 Infraestrutura operacional
+#### 2.2.2 Infraestrutura operacional
 
 * Execução em workflows, jobs, pipelines, webhooks, filas, runners ou serviços operacionais do projeto.
 * Automação aprovada ou implementada deve ser registrada em `docs/automations.md`.
 
-#### 3.2.3 Ambiente interno do Codex
+#### 2.2.3 Ambiente interno do Codex
 
 * Execução usada para desenvolvimento, investigação, validação, edição de arquivos, testes ou produção de artefatos internos.
 * Recursos e limites desse ambiente devem ser registrados em `docs/gestor-codex.md`.
 
-#### 3.2.4 Serviço ou plataforma externa
+#### 2.2.4 Serviço ou plataforma externa
 
 * Execução realizada por fornecedor, API, plataforma ou integração externa.
 * A recomendação deve considerar dependência, custo, segurança, disponibilidade, portabilidade e operação.
