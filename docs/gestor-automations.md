@@ -94,7 +94,23 @@ Quando o caso envolver ou puder envolver OpenAI, o Gestor deve consultar a docum
 
 Este documento não mantém catálogo permanente de modelos, preços, parâmetros ou recursos OpenAI. Esses detalhes devem ser verificados no caso concreto.
 
-## 6. Regras de destino documental
+## 4. Entrega e destino da decisão
+
+Cada parecer deve ser curto, decisório e declarar:
+
+* Automação: sim ou não.
+* Classificação: uma das quatro naturezas da seção 2.
+* Ambiente: um dos quatro ambientes da seção 2.
+* OpenAI: sim, não ou condicional.
+* Solução mínima recomendada e divisão entre processamento determinístico, IA e decisão humana.
+* Benefício esperado, custo, complexidade, riscos, segurança, observabilidade, manutenção e fallback.
+* Recursos OpenAI materialmente relevantes avaliados, com decisão de adotar agora, rejeitar para o caso, não aplicável ou solicitar decisão humana.
+* Recomendação final ao humano: aprovar, rejeitar ou solicitar decisão adicional.
+* Fontes do projeto e fontes oficiais efetivamente consultadas.
+
+O parecer não autoriza implementação por si só.
+
+### 4.1 Destino documental
 
 * Decisão, categorias, critérios, segurança e governança → `docs/gestor-automations.md`.
 * Automação, agente, workflow, job ou componente operacional aprovado ou implementado → `docs/automations.md`.
@@ -104,59 +120,3 @@ Este documento não mantém catálogo permanente de modelos, preços, parâmetro
 * OpenAI Docs skill, OpenAI Developers plugin e outros recursos do ambiente Codex → `docs/gestor-codex.md`.
 * Funcionalidade visível ao cliente → gestor de produto ou `docs/roadmap.md`.
 * Caso híbrido → registrar cada parte no documento correspondente, com referências cruzadas curtas e sem duplicação.
-
-## 8. Critérios mínimos de decisão
-
-Cada parecer do Gestor deve conter o contrato abaixo.
-
-### 8.1 Classificação
-
-* não automatizar;
-* automação determinística sem OpenAI;
-* automação com IA em fluxo controlado;
-* automação com comportamento agentic.
-
-### 8.2 Ambiente
-
-* runtime do LP Factory;
-* infraestrutura operacional;
-* ambiente interno do Codex;
-* serviço ou plataforma externa.
-
-### 8.3 Necessidade de OpenAI
-
-* sim;
-* não;
-* condicional ou pendente de evidência.
-
-### 8.4 Fontes
-
-* documentos e código do projeto;
-* PR ou branch do recorte;
-* documentação oficial atual, quando aplicável.
-
-### 8.5 Decisão
-
-* recurso mínimo recomendado;
-* motivo e benefício;
-* custo e risco;
-* segurança e observabilidade;
-* aprovação humana;
-* situação atual, futura, condicional ou não aplicável;
-* destino documental após aprovação.
-
-## 9. Estado atual
-
-* Este documento é uma referência estável de decisão e governança, não um catálogo atualizado de recursos de fornecedores.
-* Automações, agentes, workflows, jobs e componentes operacionais aprovados ou implementados permanecem registrados em `docs/automations.md`.
-* Services, MCPs, endpoints e infraestrutura reutilizável permanecem registrados em `docs/services.md`.
-* Configurações operacionais e recursos efetivamente configurados permanecem registrados em `docs/platform-config.md`.
-* Recursos do ambiente Codex permanecem registrados em `docs/gestor-codex.md`.
-* Nenhuma implementação é autorizada apenas por menção neste documento.
-
-## 10. Próximas pesquisas
-
-1. Investigar recursos somente quando um caso concreto exigir decisão.
-2. Comparar sempre não automatizar, solução determinística, IA em fluxo controlado e comportamento agentic.
-3. Em casos OpenAI, consultar a documentação oficial atual e registrar as fontes.
-4. Após aprovação, encaminhar o resultado ao documento operacional correto sem duplicação.
