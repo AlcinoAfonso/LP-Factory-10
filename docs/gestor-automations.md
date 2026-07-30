@@ -2,29 +2,11 @@
 
 ## 1. Objetivo
 
-Este documento é a referência estável de decisão e governança para automações, fluxos com IA, comportamentos agentic e tecnologias operacionais relacionadas ao LP Factory 10.
-Ele ajuda a decidir se um caso deve ser automatizado, se precisa de IA, qual natureza de solução é adequada, em qual ambiente deve executar e qual é a solução mínima suficiente.
-A avaliação deve considerar benefício, custo, complexidade, risco, segurança, observabilidade, manutenção, aprovação humana e adequação ao MVP.
-O documento não substitui catálogos operacionais, contratos técnicos, configurações de plataforma nem documentação oficial atual dos fornecedores.
-Decisões aprovadas devem ser encaminhadas ao documento correto, sem duplicar catálogos.
-* Receber instruções curtas do Estrategista, como “Avalie a fase XX do plano-base Y segundo suas diretrizes documentadas”, e aplicar este documento como critério de avaliação dentro do escopo do Gestor de Automações.
-
-## 2. Objetivos de melhoria no LP Factory 10
-
-A avaliação deve priorizar soluções que ajudem a:
-* reduzir custos de infraestrutura e consumo de APIs;
-* acelerar carregamento e processamento;
-* melhorar UI e UX;
-* reduzir trabalho manual;
-* reduzir erros operacionais;
-* melhorar segurança;
-* melhorar observabilidade;
-* simplificar manutenção;
-* acelerar validação e entrega do MVP;
-* aumentar confiabilidade;
-* evitar overengineering;
-* preservar a stack e os contratos já aprovados;
-* adotar a menor solução capaz de resolver o problema real.
+Este documento orienta decisões sobre automações, uso de IA e comportamento agentic no LP Factory 10.
+O Gestor deve decidir se o caso deve ser automatizado, escolher a natureza e o ambiente adequados e recomendar a solução mínima suficiente.
+A decisão deve considerar benefício, custo, complexidade, risco, segurança, observabilidade, manutenção, aprovação humana e adequação ao MVP.
+Deve começar pela alternativa mais simples, preservar a stack e os contratos aprovados, evitar overengineering e não transformar recurso novo em autorização automática de implementação.
+* Receber instruções curtas do Estrategista, como “Avalie a fase XX do plano-base Y segundo suas diretrizes documentadas”, e aplicar este documento dentro do escopo do Gestor de Automações.
 
 ## 3. Mapa de categorias
 
