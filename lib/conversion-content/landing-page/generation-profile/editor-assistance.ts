@@ -61,7 +61,7 @@ export function applyGenerationProfileCandidate(input: {
 export type GenerationProfileRecommendationDiff = Readonly<{
   moduleKey: string;
   status: "kept" | "added" | "changed" | "removed";
-  changes: readonly ("variant" | "priority" | "order")[];
+  changes: readonly ("module_version" | "variant" | "priority" | "order")[];
 }>;
 
 export function diffGenerationProfileRecommendations(input: {
@@ -76,7 +76,8 @@ export function diffGenerationProfileRecommendations(input: {
     const after = proposed.get(moduleKey);
     if (!before) return { moduleKey, status: "added" as const, changes: [] };
     if (!after) return { moduleKey, status: "removed" as const, changes: [] };
-    const changes: ("variant" | "priority" | "order")[] = [];
+    const changes: ("module_version" | "variant" | "priority" | "order")[] = [];
+    if (before.moduleVersion !== after.moduleVersion) changes.push("module_version");
     if (before.variantKey !== after.variantKey || before.variantVersion !== after.variantVersion) changes.push("variant");
     if (before.priority !== after.priority) changes.push("priority");
     if (before.recommendedOrder !== after.recommendedOrder) changes.push("order");
@@ -85,6 +86,19 @@ export function diffGenerationProfileRecommendations(input: {
       status: changes.length === 0 ? "kept" as const : "changed" as const,
       changes,
     };
+  });
+}
+
+export function findGenerationProfileReplacements(input: {
+  editor: GenerationProfileEditorContent;
+  candidate: GenerationProfileProposal;
+}) {
+  const currentByOrder = new Map(input.editor.recommendations.map((item) => [item.recommendedOrder, item.moduleKey]));
+  return input.candidate.recommendations.flatMap((item) => {
+    const previousModuleKey = currentByOrder.get(item.recommendedOrder);
+    return previousModuleKey && previousModuleKey !== item.moduleKey
+      ? [{ fromModuleKey: previousModuleKey, toModuleKey: item.moduleKey, recommendedOrder: item.recommendedOrder }]
+      : [];
   });
 }
 

@@ -176,10 +176,17 @@ with target_tables(table_name) as (
   from privilege_mismatches
   union all
   select
-    'no_official_rows',
+    'historical_rows_preserved',
     case
-      when (select count(*) from public.landing_page_generation_profiles) = 0
-        and (select count(*) from public.landing_page_generation_profile_items) = 0
+      when not exists (
+        select 1 from public.landing_page_generation_profiles
+        where generation_guidance is not null and length(btrim(generation_guidance)) = 0
+      ) and not exists (
+        select 1
+        from public.landing_page_generation_profile_items item
+        left join public.landing_page_generation_profiles profile on profile.id = item.profile_id
+        where profile.id is null
+      )
       then 'ok' else 'unexpected'
     end,
     jsonb_build_object(

@@ -25,6 +25,8 @@ declare
   v_taxon public.business_taxons%rowtype;
   v_version integer;
   v_gap_decision text;
+  v_effective_audit_context jsonb := p_audit_context;
+  v_last_save_changes jsonb;
 begin
   if auth.uid() is null or not (
     coalesce(public.is_platform_admin(), false)
@@ -164,6 +166,24 @@ begin
     where landing_page_generation_profile_items.profile_id = v_profile.id;
   end if;
 
+  if p_profile_id is not null and v_gap_decision is null then
+    select changes_json into v_last_save_changes
+    from public.audit_logs
+    where record_id = v_profile.id
+      and event = 'generation_profile_draft_saved'
+    order by created_at desc, id desc
+    limit 1;
+    if v_last_save_changes->>'gap_decision' in ('wait_for_modules', 'proceed_with_available') then
+      v_gap_decision := v_last_save_changes->>'gap_decision';
+      v_effective_audit_context := p_audit_context || jsonb_build_object(
+        'gap_decision', v_gap_decision,
+        'gap_item_keys', v_last_save_changes->'gap_item_keys',
+        'gap_impact_summary', v_last_save_changes->>'gap_impact_summary',
+        'research_versions', v_last_save_changes->'research_versions'
+      );
+    end if;
+  end if;
+
   insert into public.landing_page_generation_profile_items (
     profile_id, module_key, module_version, variant_key, variant_version,
     priority, recommended_order, item_guidance
@@ -188,11 +208,11 @@ begin
       'correlation_status', case when p_request_id is null then 'unavailable' else 'available' end,
       'version', v_profile.version,
       'gap_decision', v_gap_decision,
-      'gap_item_keys', p_audit_context->'gap_item_keys',
-      'gap_count', coalesce(jsonb_array_length(p_audit_context->'gap_item_keys'), 0),
-      'gap_impact_summary', p_audit_context->>'gap_impact_summary',
-      'research_versions', p_audit_context->'research_versions',
-      'raw_research_references', p_audit_context->'raw_research_references'
+      'gap_item_keys', v_effective_audit_context->'gap_item_keys',
+      'gap_count', coalesce(jsonb_array_length(v_effective_audit_context->'gap_item_keys'), 0),
+      'gap_impact_summary', v_effective_audit_context->>'gap_impact_summary',
+      'research_versions', v_effective_audit_context->'research_versions',
+      'raw_research_references', v_effective_audit_context->'raw_research_references'
     )),
     null
   );
@@ -264,8 +284,10 @@ begin
 end
 $function$;
 
-create or replace function public.get_landing_page_generation_profile_lifecycle_status()
-returns table(ready boolean)
+drop function public.get_landing_page_generation_profile_lifecycle_status();
+
+create function public.get_landing_page_generation_profile_lifecycle_status()
+returns table(ready boolean, contract_version integer)
 language plpgsql
 security definer
 set search_path = public, pg_temp
@@ -331,18 +353,22 @@ begin
         'public.landing_page_generation_profiles'::regclass,
         'public.landing_page_generation_profile_items'::regclass
       )
-    );
+    ),
+    2;
 end
 $function$;
 
 revoke all on function public.save_landing_page_generation_profile_draft(
   uuid, uuid, timestamptz, text, jsonb, text, uuid, text, jsonb
 ) from public, anon, service_role;
+revoke all on function public.get_landing_page_generation_profile_lifecycle_status()
+  from public, anon, service_role;
 
 do $$
 begin
   if to_regrole('ai_readonly') is not null then
     execute 'revoke all on function public.save_landing_page_generation_profile_draft(uuid, uuid, timestamptz, text, jsonb, text, uuid, text, jsonb) from ai_readonly';
+    execute 'revoke all on function public.get_landing_page_generation_profile_lifecycle_status() from ai_readonly';
   end if;
 end;
 $$;
@@ -350,9 +376,12 @@ $$;
 grant execute on function public.save_landing_page_generation_profile_draft(
   uuid, uuid, timestamptz, text, jsonb, text, uuid, text, jsonb
 ) to authenticated;
+grant execute on function public.get_landing_page_generation_profile_lifecycle_status() to authenticated;
 
 comment on function public.save_landing_page_generation_profile_draft(
   uuid, uuid, timestamptz, text, jsonb, text, uuid, text, jsonb
 ) is 'E12.4.3.2: saves a draft and audits the transient gap decision and safe source references.';
+comment on function public.get_landing_page_generation_profile_lifecycle_status()
+  is 'E12.4.3.2: reports lifecycle readiness with contract_version 2.';
 
 commit;

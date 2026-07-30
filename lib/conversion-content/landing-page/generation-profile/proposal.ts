@@ -89,6 +89,85 @@ const providerPayloadSchema = z.object({
   source_notices: z.array(z.string().trim().min(1)),
 }).strict();
 
+const candidateIdentitySchema = z.object({
+  moduleKey: z.string().trim().min(1),
+  moduleVersion: z.number().int().positive(),
+  variantKey: z.string().trim().min(1).optional(),
+  variantVersion: z.number().int().positive().optional(),
+}).strict().superRefine((value, context) => {
+  if ((value.variantKey === undefined) !== (value.variantVersion === undefined)) {
+    context.addIssue({ code: "custom", message: "variant identity must be complete" });
+  }
+});
+
+const candidateSchema = z.object({
+  coverage: z.array(z.object({
+    audienceScope: z.enum(["business_buyer", "end_customer"]),
+    itemKey: z.string().trim().min(1),
+    sectionName: z.string().trim().min(1),
+    sourcePriority: z.union([z.literal(1), z.literal(2), z.literal(3)]),
+    sourceOrder: z.number().int().positive(),
+    status: z.enum(["covered", "partial", "missing"]),
+    compatibleIdentities: z.array(candidateIdentitySchema),
+    reason: z.string().trim().min(1).optional(),
+    impact: z.string().trim().min(1).optional(),
+  }).strict()),
+  recommendations: z.array(candidateIdentitySchema.safeExtend({
+    priority: z.enum(["P1", "P2", "P3"]),
+    recommendedOrder: z.number().int().positive(),
+  }).strict()),
+  gaps: z.array(z.object({
+    audienceScope: z.enum(["business_buyer", "end_customer"]),
+    itemKey: z.string().trim().min(1),
+    sectionName: z.string().trim().min(1),
+    sourcePriority: z.union([z.literal(1), z.literal(2), z.literal(3)]),
+    sourceOrder: z.number().int().positive(),
+    status: z.enum(["partial", "missing"]),
+    reason: z.string().trim().min(1),
+    impact: z.string().trim().min(1),
+  }).strict()),
+  notices: z.array(z.string().trim().min(1)),
+  rawResearchReferences: z.array(z.object({
+    path: z.string().trim().min(1),
+    audienceScope: z.enum(["business_buyer", "end_customer"]),
+    sourceTaxonId: z.uuid(),
+    sourceRelation: z.enum(["own", "direct_parent"]),
+    version: z.number().int().positive(),
+    blob: z.string().regex(/^[a-f0-9]{40}$/),
+  }).strict()),
+  researchVersions: z.object({ endCustomer: z.number().int().positive(), businessBuyer: z.number().int().positive() }).strict(),
+  requestId: z.uuid(),
+  fingerprint: z.string().regex(/^[a-f0-9]{64}$/),
+}).strict();
+
+export function normalizeGenerationProfileCandidate(input: unknown):
+  | Readonly<{ ok: true; value: GenerationProfileProposal }>
+  | Readonly<{ ok: false; message: string }> {
+  const parsed = candidateSchema.safeParse(input);
+  if (!parsed.success) return { ok: false, message: "Current candidate is invalid." };
+  const candidate = parsed.data as GenerationProfileProposal;
+  if (fingerprintGenerationProfileProposal(candidate) !== candidate.fingerprint) {
+    return { ok: false, message: "Current candidate fingerprint is invalid." };
+  }
+  if (new Set(candidate.recommendations.map((item) => item.moduleKey)).size !== candidate.recommendations.length) {
+    return { ok: false, message: "Current candidate modules are not unique." };
+  }
+  for (const recommendation of candidate.recommendations) {
+    const identity = validateLandingPageModuleIdentity({
+      moduleKey: recommendation.moduleKey,
+      moduleVersion: recommendation.moduleVersion,
+      ...(recommendation.variantKey === undefined ? {} : { variantKey: recommendation.variantKey, variantVersion: recommendation.variantVersion }),
+    });
+    if (!identity.ok) return { ok: false, message: "Current candidate contains an invalid identity." };
+  }
+  const gapKeys = new Set(candidate.gaps.map((gap) => `${gap.audienceScope}:${gap.itemKey}`));
+  const derivedGapKeys = new Set(candidate.coverage.filter((item) => item.status !== "covered").map((item) => `${item.audienceScope}:${item.itemKey}`));
+  if (gapKeys.size !== derivedGapKeys.size || [...gapKeys].some((key) => !derivedGapKeys.has(key))) {
+    return { ok: false, message: "Current candidate gaps do not match coverage." };
+  }
+  return { ok: true, value: candidate };
+}
+
 export function buildGenerationProfileResponsesRequest(input: GenerationProfileProviderInput) {
   const baseUserInput = {
     taxon_id: input.taxonId,
@@ -282,7 +361,7 @@ export function validateGenerationProfileProviderPayload(input: {
   }));
   const gaps = coverage
     .filter((item): item is GenerationProfileCoverage & { status: "partial" | "missing"; reason: string; impact: string } => item.status !== "covered")
-    .map((item) => ({ audienceScope: item.audienceScope, itemKey: item.itemKey, sectionName: item.sectionName, status: item.status, reason: item.reason, impact: item.impact }));
+    .map((item) => ({ audienceScope: item.audienceScope, itemKey: item.itemKey, sectionName: item.sectionName, sourcePriority: item.sourcePriority, sourceOrder: item.sourceOrder, status: item.status, reason: item.reason, impact: item.impact }));
   const fingerprint = fingerprintGenerationProfileProposal({ recommendations });
   return {
     ok: true as const,

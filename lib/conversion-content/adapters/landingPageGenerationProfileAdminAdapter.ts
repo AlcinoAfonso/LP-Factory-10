@@ -6,6 +6,7 @@ import { createServiceClient } from "@/lib/supabase/service";
 import { createClient } from "@/lib/supabase/server";
 import {
   fingerprintGenerationProfileProposal,
+  normalizeGenerationProfileLifecycleReadiness,
   validateGenerationProfileDraft,
   type AdminGenerationProfile,
   type AdminGenerationProfileListItem,
@@ -133,13 +134,7 @@ export async function readAdminGenerationProfileLifecycleReadiness(): Promise<Ge
   const supabase = await createClient();
   const { data, error } = await supabase.rpc("get_landing_page_generation_profile_lifecycle_status");
   const row = Array.isArray(data) ? data[0] : data;
-  if (error || !isRecord(row) || row.ready !== true) {
-    return {
-      ready: false,
-      reason: "Lifecycle indisponivel ate a migration e o verificador read-only serem aprovados.",
-    };
-  }
-  return { ready: true, reason: "Lifecycle verificado e disponivel." };
+  return error ? normalizeGenerationProfileLifecycleReadiness(null) : normalizeGenerationProfileLifecycleReadiness(row);
 }
 
 export async function saveAdminGenerationProfileDraft(

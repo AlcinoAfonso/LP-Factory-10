@@ -9,7 +9,8 @@ select
   expected.signature,
   function.oid is not null as exists,
   coalesce(function.prosecdef, false) as security_definer,
-  coalesce(function.proconfig @> array['search_path=public, pg_temp'], false) as fixed_search_path
+  coalesce(function.proconfig @> array['search_path=public, pg_temp'], false) as fixed_search_path,
+  pg_get_function_result(function.oid) as result_contract
 from expected
 left join pg_proc function
   on function.oid = to_regprocedure('public.' || expected.signature)

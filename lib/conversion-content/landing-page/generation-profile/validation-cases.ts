@@ -8,6 +8,8 @@ import {
 import { normalizeLandingPageGenerationProfileItemRow } from "../../adapters/landingPageGenerationProfileRowNormalization";
 import {
   fingerprintGenerationProfileProposal,
+  normalizeGenerationProfileCandidate,
+  normalizeGenerationProfileLifecycleReadiness,
   validateGenerationProfileDraft,
 } from "./index";
 import {
@@ -28,6 +30,7 @@ import { listLandingPageModuleIdentities } from "../module-catalog";
 import {
   applyGenerationProfileCandidate,
   diffGenerationProfileRecommendations,
+  findGenerationProfileReplacements,
   receiveGenerationProfileProposal,
   hasGenerationProfileEditorContent,
 } from "./editor-assistance";
@@ -452,6 +455,15 @@ const cases: readonly Readonly<{
     },
   },
   {
+    name: "lifecycle readiness fails closed before the versioned contract is applied",
+    run: () => {
+      assert.equal(normalizeGenerationProfileLifecycleReadiness({ ready: true }).ready, false);
+      assert.equal(normalizeGenerationProfileLifecycleReadiness({ ready: true, contract_version: 1 }).ready, false);
+      assert.equal(normalizeGenerationProfileLifecycleReadiness({ ready: true, contract_version: 2 }).ready, true);
+      assert.equal(normalizeGenerationProfileLifecycleReadiness({ ready: false, contract_version: 2 }).ready, false);
+    },
+  },
+  {
     name: "structural proposal covers every lp_sections item and rejects output drift",
     run: () => {
       const validate = (payload: unknown) => validateGenerationProfileProviderPayload({ payload, research: structuralResearch, moduleIdentities: listLandingPageModuleIdentities() });
@@ -613,6 +625,10 @@ const cases: readonly Readonly<{
       assert.equal(validated.ok, true);
       if (!validated.ok) return;
       const candidate = { ...validated.value, researchVersions: structuralResearch.versions, requestId: "50000000-0000-4000-8000-000000000010" };
+      assert.equal(normalizeGenerationProfileCandidate(candidate).ok, true);
+      assert.equal(normalizeGenerationProfileCandidate({ ...candidate, generationGuidance: "Nao autorizado" }).ok, false);
+      assert.equal(normalizeGenerationProfileCandidate({ ...candidate, recommendations: [{ ...candidate.recommendations[0], itemGuidance: "Nao autorizado" }] }).ok, false);
+      assert.equal(normalizeGenerationProfileCandidate({ ...candidate, fingerprint: "a".repeat(64) }).ok, false);
       const nextRound = buildGenerationProfileResponsesRequest({
         model: GENERATION_PROFILE_APPROVED_MODEL,
         taxonId: NICHE_ID,
@@ -662,6 +678,13 @@ const cases: readonly Readonly<{
         { moduleKey: "faq", status: "added", changes: [] },
         { moduleKey: "hero", status: "kept", changes: [] },
       ]);
+      assert.deepEqual(findGenerationProfileReplacements({
+        editor: currentEditor,
+        candidate: {
+          ...received.candidate,
+          recommendations: [{ moduleKey: "faq", moduleVersion: 1, variantKey: "faq.accordion", variantVersion: 1, priority: "P1", recommendedOrder: 10 }],
+        },
+      }), [{ fromModuleKey: "hero", toModuleKey: "faq", recommendedOrder: 10 }]);
 
       const failure = receiveGenerationProfileProposal({
         currentEditor,

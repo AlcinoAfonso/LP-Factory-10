@@ -66,6 +66,8 @@ export type GenerationProfileGap = Readonly<{
   audienceScope: "business_buyer" | "end_customer";
   itemKey: string;
   sectionName: string;
+  sourcePriority: 1 | 2 | 3;
+  sourceOrder: number;
   status: "partial" | "missing";
   reason: string;
   impact: string;

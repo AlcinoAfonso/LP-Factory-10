@@ -72,6 +72,7 @@ select set_config(
 do $$
 declare
   v_ready boolean;
+  v_contract_version integer;
   v_created record;
   v_ai_updated record;
   v_uncorrelated record;
@@ -80,9 +81,9 @@ declare
   v_draft_to_archive record;
   v_archived_draft record;
 begin
-  select status.ready into v_ready
+  select status.ready, status.contract_version into v_ready, v_contract_version
   from public.get_landing_page_generation_profile_lifecycle_status() status;
-  if not coalesce(v_ready, false) then
+  if not coalesce(v_ready, false) or v_contract_version <> 2 then
     raise exception 'lifecycle readiness should be true after the migration';
   end if;
 
@@ -219,6 +220,27 @@ begin
     '[{"module_key":"hero","module_version":1,"variant_key":null,"variant_version":null,"priority":"P1","recommended_order":10,"item_guidance":null}]'::jsonb,
     'manual',
     null,
+    null
+  );
+  begin
+    perform public.activate_landing_page_generation_profile(
+      v_uncorrelated.profile_id,
+      v_uncorrelated.updated_at
+    );
+    raise exception 'expected inherited wait_for_modules activation rejection';
+  exception when others then
+    if sqlerrm not like '%E12_4_3_INVALID_STATE%' then raise; end if;
+  end;
+
+  select * into v_uncorrelated
+  from public.save_landing_page_generation_profile_draft(
+    '12040000-0000-4000-8000-000000000001',
+    v_uncorrelated.profile_id,
+    v_uncorrelated.updated_at,
+    null,
+    '[{"module_key":"hero","module_version":1,"variant_key":null,"variant_version":null,"priority":"P1","recommended_order":10,"item_guidance":null}]'::jsonb,
+    'manual',
+    null,
     null,
     jsonb_build_object(
       'gap_decision', 'proceed_with_available',
@@ -310,6 +332,14 @@ begin
   ) then
     raise exception 'wait decision and safe raw research provenance were not audited';
   end if;
+  if (
+    select count(*) from public.audit_logs
+    where record_id = v_active_profile_id
+      and event = 'generation_profile_draft_saved'
+      and changes_json->>'gap_decision' = 'wait_for_modules'
+  ) <> 2 then
+    raise exception 'wait decision was not preserved across a save without a new decision';
+  end if;
   if not exists (
     select 1 from public.audit_logs
     where record_id = v_active_profile_id
@@ -318,7 +348,7 @@ begin
   ) then
     raise exception 'proceed decision was not audited';
   end if;
-  if (select count(*) from public.audit_logs where record_id = v_active_profile_id and event in ('generation_profile_draft_saved', 'generation_profile_activated', 'generation_profile_archived')) <> 6 then
+  if (select count(*) from public.audit_logs where record_id = v_active_profile_id and event in ('generation_profile_draft_saved', 'generation_profile_activated', 'generation_profile_archived')) <> 7 then
     raise exception 'confirmed active lifecycle mutations were not fully audited';
   end if;
   if (select count(*) from public.audit_logs where record_id = v_draft_profile_id and event in ('generation_profile_draft_saved', 'generation_profile_archived')) <> 2 then

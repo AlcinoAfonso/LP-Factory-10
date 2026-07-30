@@ -4,6 +4,7 @@ import { validateLandingPageModuleIdentity } from "../module-catalog";
 import { landingPageGenerationProfilePriorities } from "./contracts";
 import type {
   GenerationProfileDraftInput,
+  GenerationProfileLifecycleReadiness,
 } from "./admin-contracts";
 
 const optionalNonEmptyText = z.string().trim().min(1).optional();
@@ -125,4 +126,20 @@ export function getGenerationProfileProposalCorrelation(input: {
   const fingerprint = z.string().regex(/^[a-f0-9]{64}$/).safeParse(input.proposalFingerprint);
   if (!requestId.success || !fingerprint.success) return null;
   return { requestId: requestId.data, proposalFingerprint: fingerprint.data };
+}
+
+export function normalizeGenerationProfileLifecycleReadiness(input: unknown): GenerationProfileLifecycleReadiness {
+  if (
+    typeof input === "object" &&
+    input !== null &&
+    !Array.isArray(input) &&
+    (input as Record<string, unknown>).ready === true &&
+    (input as Record<string, unknown>).contract_version === 2
+  ) {
+    return { ready: true, reason: "Lifecycle verificado e disponivel." };
+  }
+  return {
+    ready: false,
+    reason: "Lifecycle indisponivel ate a migration e o verificador read-only serem aprovados.",
+  };
 }

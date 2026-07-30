@@ -18,6 +18,7 @@ import {
   isGenerationProfileAssistanceConfigured,
   mapProviderFailureToProposalError,
   mapResearchErrorToProposalError,
+  normalizeGenerationProfileCandidate,
   validateGenerationProfileProviderPayload,
 } from "./proposal";
 
@@ -61,6 +62,18 @@ export async function proposeLandingPageGenerationProfile(input: {
     generationGuidance: input.currentEditor.generationGuidance.trim(),
     recommendations: validatedEditor.value.recommendations,
   };
+  const currentCandidate = input.currentCandidate
+    ? normalizeGenerationProfileCandidate(input.currentCandidate)
+    : null;
+  if (currentCandidate && !currentCandidate.ok) {
+    return finishFailure(requestId, "invalid_data", currentCandidate.message, {
+      taxonId: input.taxonId,
+      platformAdminId: input.actorUserId,
+      requestKind,
+      model,
+      startedAt,
+    });
+  }
 
   const research = await resolveLandingPageResearchForTaxon({
     taxonId: input.taxonId,
@@ -97,7 +110,7 @@ export async function proposeLandingPageGenerationProfile(input: {
     moduleIdentities,
     previousActiveProfile,
     currentEditor,
-    currentCandidate: input.currentCandidate ?? null,
+    currentCandidate: currentCandidate?.value ?? null,
     humanFeedback: input.humanFeedback,
     rawResearch: rawResearch.items,
     rawResearchNotices: rawResearch.notices,
