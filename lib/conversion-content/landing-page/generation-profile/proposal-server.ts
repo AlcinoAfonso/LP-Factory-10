@@ -128,6 +128,7 @@ export async function proposeLandingPageGenerationProfile(input: {
         responseId: provider.responseId,
         inputTokens: provider.inputTokens,
         outputTokens: provider.outputTokens,
+        estimatedCostUsd: estimateGenerationProfileCostUsd(model, provider.inputTokens, provider.outputTokens),
       } : {}),
       researchVersions: research.value.versions,
       researchProvenance: getResearchProvenance(research.value),

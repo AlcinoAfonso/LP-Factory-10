@@ -561,7 +561,7 @@ const cases: readonly Readonly<{
       });
       assert.equal(request.ok, true);
       assert.equal(request.body.store, false);
-      assert.equal(request.body.max_output_tokens, 2000);
+      assert.equal(request.body.max_output_tokens, 3000);
       assert.match(request.body.input[0].content[0].text, /Não invente nem crie identidades\. Use somente identidades válidas fornecidas pelo catálogo autorizado\./);
       assert.equal(Object.hasOwn(request.body, "tools"), false);
       assert.equal(request.body.text.format.strict, true);
@@ -766,7 +766,7 @@ const cases: readonly Readonly<{
         id: "resp_incomplete_123",
         status: "incomplete",
         incomplete_details: { reason: "future_provider_reason" },
-        usage: { input_tokens: 321, output_tokens: 2000, total_tokens: 2321 },
+        usage: { input_tokens: 20856, output_tokens: 2000, total_tokens: 22856 },
         output: [{ content: [{ type: "output_text", text: "partial sensitive content" }] }],
         recommendations: [{ module_key: "invented" }],
         current_candidate: { secret: "must not cross the boundary" },
@@ -774,31 +774,63 @@ const cases: readonly Readonly<{
       assert.deepEqual(completeMetadata, {
         incompleteReason: "future_provider_reason",
         responseId: "resp_incomplete_123",
-        inputTokens: 321,
+        inputTokens: 20856,
         outputTokens: 2000,
       });
       assert.deepEqual(Object.keys(completeMetadata).sort(), ["incompleteReason", "inputTokens", "outputTokens", "responseId"]);
+      assert.equal(estimateGenerationProfileCostUsd(
+        GENERATION_PROFILE_APPROVED_MODEL,
+        completeMetadata.inputTokens,
+        completeMetadata.outputTokens,
+      ), 0.016428);
 
-      assert.deepEqual(normalizeGenerationProfileIncompleteMetadata({
+      const nullUsageMetadata = normalizeGenerationProfileIncompleteMetadata({
         id: "resp_null_usage",
         status: "incomplete",
         incomplete_details: { reason: "max_output_tokens" },
         usage: null,
-      }), {
+      });
+      assert.deepEqual(nullUsageMetadata, {
         incompleteReason: "max_output_tokens",
         responseId: "resp_null_usage",
         inputTokens: null,
         outputTokens: null,
       });
-      assert.deepEqual(normalizeGenerationProfileIncompleteMetadata({
+      assert.equal(estimateGenerationProfileCostUsd(
+        GENERATION_PROFILE_APPROVED_MODEL,
+        nullUsageMetadata.inputTokens,
+        nullUsageMetadata.outputTokens,
+      ), null);
+
+      const missingUsageMetadata = normalizeGenerationProfileIncompleteMetadata({
         status: "incomplete",
         incomplete_details: { reason: "unknown_but_valid_reason" },
-      }), {
+      });
+      assert.deepEqual(missingUsageMetadata, {
         incompleteReason: "unknown_but_valid_reason",
         responseId: null,
         inputTokens: null,
         outputTokens: null,
       });
+      assert.equal(estimateGenerationProfileCostUsd(
+        GENERATION_PROFILE_APPROVED_MODEL,
+        missingUsageMetadata.inputTokens,
+        missingUsageMetadata.outputTokens,
+      ), null);
+
+      const partialUsageMetadata = normalizeGenerationProfileIncompleteMetadata({
+        status: "incomplete",
+        incomplete_details: { reason: "max_output_tokens" },
+        usage: { input_tokens: 20856 },
+      });
+      assert.equal(partialUsageMetadata.inputTokens, 20856);
+      assert.equal(partialUsageMetadata.outputTokens, null);
+      assert.equal(estimateGenerationProfileCostUsd(
+        GENERATION_PROFILE_APPROVED_MODEL,
+        partialUsageMetadata.inputTokens,
+        partialUsageMetadata.outputTokens,
+      ), null);
+
       assert.deepEqual(normalizeGenerationProfileIncompleteMetadata({
         id: 123,
         incomplete_details: { reason: " " },
