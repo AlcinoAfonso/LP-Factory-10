@@ -42,6 +42,35 @@ const SEGMENT_ID = "10000000-0000-4000-8000-000000000001";
 const NICHE_ID = "10000000-0000-4000-8000-000000000002";
 const ULTRA_ID = "10000000-0000-4000-8000-000000000003";
 
+function compactResearchParent(
+  audienceScope: "business_buyer" | "end_customer",
+  researchBlock: "strategic_core" | "lp_overview" | "seo",
+  suffix: string,
+  itemText: string,
+) {
+  const researchId = `43000000-0000-4000-8000-0000000000${suffix}`;
+  return {
+    researchId,
+    researchBlock,
+    audienceScope,
+    version: 1,
+    sourceTaxonId: NICHE_ID,
+    items: [{
+      itemId: `44000000-0000-4000-8000-0000000000${suffix}`,
+      researchId,
+      itemKey: `${researchBlock}_${suffix}`,
+      itemText,
+      priority: 2,
+      sortOrder: 1,
+      servedTaxonId: NICHE_ID,
+      sourceTaxonId: NICHE_ID,
+      sourceRelation: "own" as const,
+      audienceScope,
+      researchVersion: 1,
+    }],
+  };
+}
+
 const validProfile = {
   id: "20000000-0000-4000-8000-000000000001",
   ownerTaxonId: NICHE_ID,
@@ -69,7 +98,11 @@ const structuralResearch = {
     sourceTaxonId: NICHE_ID,
     sourceRelation: "own" as const,
     version: 1,
-    researches: [{
+    researches: [
+      compactResearchParent("business_buyer", "strategic_core", "01", "Estratégia do comprador"),
+      compactResearchParent("business_buyer", "lp_overview", "02", "Visão da LP para o comprador"),
+      compactResearchParent("business_buyer", "seo", "03", "SEO do comprador"),
+      {
       researchId: "41000000-0000-4000-8000-000000000001",
       researchBlock: "lp_sections" as const,
       audienceScope: "business_buyer" as const,
@@ -88,14 +121,19 @@ const structuralResearch = {
         audienceScope: "business_buyer" as const,
         researchVersion: 1,
       }],
-    }],
+      },
+    ],
   },
   endCustomer: {
     audienceScope: "end_customer" as const,
     sourceTaxonId: NICHE_ID,
     sourceRelation: "own" as const,
     version: 1,
-    researches: [{
+    researches: [
+      compactResearchParent("end_customer", "strategic_core", "04", "Estratégia do cliente"),
+      compactResearchParent("end_customer", "lp_overview", "05", "Visão da LP para o cliente"),
+      compactResearchParent("end_customer", "seo", "06", "SEO do cliente"),
+      {
       researchId: "41000000-0000-4000-8000-000000000002",
       researchBlock: "lp_sections" as const,
       audienceScope: "end_customer" as const,
@@ -114,7 +152,8 @@ const structuralResearch = {
         audienceScope: "end_customer" as const,
         researchVersion: 1,
       }],
-    }],
+      },
+    ],
   },
   versions: { endCustomer: 1, businessBuyer: 1 },
 } as const;
@@ -124,16 +163,12 @@ const structuralPayload = {
     {
       coverage_id: "business_buyer:buyer_faq",
       status: "covered" as const,
-      compatible_identities: [{ module_key: "faq", module_version: 1, variant_key: "faq.accordion", variant_version: 1 }],
-      reason: null,
-      impact: null,
+      compatible_aliases: ["faq.accordion"],
     },
     {
       coverage_id: "end_customer:customer_hero",
       status: "covered" as const,
-      compatible_identities: [{ module_key: "hero", module_version: 1, variant_key: "hero.form", variant_version: 1 }],
-      reason: null,
-      impact: null,
+      compatible_aliases: ["hero.form"],
     },
   ],
 };
@@ -480,26 +515,25 @@ const cases: readonly Readonly<{
       assert.equal(invalidSchema.ok, false);
       if (!invalidSchema.ok) assert.equal(invalidSchema.reason, "payload_schema_invalid");
       assert.equal(validate({ ...structuralPayload, recommendations: [] }).ok, false);
-      assert.equal(validate({ ...structuralPayload, source_notices: [] }).ok, false);
       assert.equal(validate({ ...structuralPayload, coverage: [{ ...structuralPayload.coverage[0], section_name: "Drift" }, structuralPayload.coverage[1]] }).ok, false);
       assert.equal(validate({ ...structuralPayload, coverage: structuralPayload.coverage.slice(1) }).ok, false);
       assert.equal(validate({ ...structuralPayload, coverage: [{ ...structuralPayload.coverage[0], coverage_id: "business_buyer:unknown" }, structuralPayload.coverage[1]] }).ok, false);
       assert.equal(validate({ ...structuralPayload, coverage: [structuralPayload.coverage[1], structuralPayload.coverage[0]] }).ok, true);
       assert.equal(validate({
         ...structuralPayload,
-        coverage: [{ ...structuralPayload.coverage[0], compatible_identities: [{ module_key: "invented", module_version: 1, variant_key: null, variant_version: null }] }, structuralPayload.coverage[1]],
+        coverage: [{ ...structuralPayload.coverage[0], compatible_aliases: ["invented"] }, structuralPayload.coverage[1]],
       }).ok, false);
       assert.equal(validate({
         ...structuralPayload,
-        coverage: [{ ...structuralPayload.coverage[0], compatible_identities: [] }, structuralPayload.coverage[1]],
+        coverage: [{ ...structuralPayload.coverage[0], compatible_aliases: [] }, structuralPayload.coverage[1]],
       }).ok, false);
       assert.equal(validate({
         ...structuralPayload,
-        coverage: [{ ...structuralPayload.coverage[0], status: "partial", compatible_identities: [], reason: "Cobertura parcial.", impact: "Estrutura incompleta." }, structuralPayload.coverage[1]],
+        coverage: [{ ...structuralPayload.coverage[0], status: "partial", compatible_aliases: [], reason: "Cobertura parcial.", impact: "Estrutura incompleta." }, structuralPayload.coverage[1]],
       }).ok, false);
       assert.equal(validate({
         ...structuralPayload,
-        coverage: [{ ...structuralPayload.coverage[0], status: "missing", reason: "Modulo indisponivel.", impact: "Estrutura incompleta." }, structuralPayload.coverage[1]],
+        coverage: [{ ...structuralPayload.coverage[0], status: "missing", compatible_aliases: ["faq.accordion"], reason: "Modulo indisponivel.", impact: "Estrutura incompleta." }, structuralPayload.coverage[1]],
       }).ok, false);
     },
   },
@@ -509,7 +543,7 @@ const cases: readonly Readonly<{
       const missingBuyer = {
         ...structuralPayload,
         coverage: [
-          { ...structuralPayload.coverage[0], status: "missing" as const, compatible_identities: [], reason: "Modulo indisponivel.", impact: "FAQ comercial parcial." },
+          { ...structuralPayload.coverage[0], status: "missing" as const, compatible_aliases: [], reason: "Modulo indisponivel.", impact: "FAQ comercial parcial." },
           structuralPayload.coverage[1],
         ],
       };
@@ -575,12 +609,9 @@ const cases: readonly Readonly<{
         coverage: [
           {
             ...structuralPayload.coverage[0],
-            compatible_identities: [
-              { module_key: "hero", module_version: 1, variant_key: "hero.form", variant_version: 1 },
-              { module_key: "faq", module_version: 1, variant_key: "faq.accordion", variant_version: 1 },
-            ],
+            compatible_aliases: ["hero.form", "faq.accordion"],
           },
-          { ...structuralPayload.coverage[1], status: "missing", compatible_identities: [], reason: "Sem modulo.", impact: "Cobertura indisponivel." },
+          { ...structuralPayload.coverage[1], status: "missing", compatible_aliases: [], reason: "Sem modulo.", impact: "Cobertura indisponivel." },
         ],
       });
       assert.equal(oneToMany.ok, true);
@@ -593,7 +624,7 @@ const cases: readonly Readonly<{
       const manyToOne = validate({
         coverage: structuralPayload.coverage.map((item) => ({
           ...item,
-          compatible_identities: [{ module_key: "hero", module_version: 1, variant_key: "hero.form", variant_version: 1 }],
+          compatible_aliases: ["hero.form"],
         })),
       });
       assert.equal(manyToOne.ok, true);
@@ -614,8 +645,8 @@ const cases: readonly Readonly<{
       };
       const firstOccurrenceTie = validate({
         coverage: [
-          { ...structuralPayload.coverage[0], compatible_identities: [{ module_key: "hero", module_version: 1, variant_key: "hero.form", variant_version: 1 }] },
-          { ...structuralPayload.coverage[1], compatible_identities: [{ module_key: "faq", module_version: 1, variant_key: "faq.accordion", variant_version: 1 }] },
+          { ...structuralPayload.coverage[0], compatible_aliases: ["hero.form"] },
+          { ...structuralPayload.coverage[1], compatible_aliases: ["faq.accordion"] },
         ],
       }, tiedResearch);
       assert.equal(firstOccurrenceTie.ok, true);
@@ -635,67 +666,46 @@ const cases: readonly Readonly<{
     },
   },
   {
-    name: "Responses API request is structural stateless tool-free and bounded with whole raw files",
+    name: "Responses API request is compact structural stateless tool-free and bounded",
     run: () => {
       const request = buildGenerationProfileResponsesRequest({
         model: GENERATION_PROFILE_APPROVED_MODEL,
-        taxonId: NICHE_ID,
         research: structuralResearch,
         moduleIdentities: listLandingPageModuleIdentities(),
-        previousActiveProfile: null,
-        currentEditor: { generationGuidance: "Segredo humano", recommendations: [] },
+        requestKind: "creation",
         currentCandidate: null,
-        rawResearch: [{
-          reference: { path: "docs/pesquisas-brutas/exemplo/business_buyer/v1.md", audienceScope: "business_buyer", sourceTaxonId: SEGMENT_ID, sourceRelation: "direct_parent", version: 1, blob: "a".repeat(40) },
-          content: "arquivo completo",
-        }],
-        rawResearchNotices: [],
       });
       assert.equal(request.ok, true);
       assert.equal(request.body.store, false);
       assert.equal(request.body.max_output_tokens, 2000);
-      assert.match(request.body.input[0].content[0].text, /Não derive recommendations, gaps ou diff; o servidor fará isso deterministicamente\./);
+      assert.match(request.body.input[0].content[0].text, /servidor reconstruirá identidades/);
       assert.equal(Object.hasOwn(request.body, "tools"), false);
       assert.equal(request.body.text.format.strict, true);
       assert.equal(request.body.text.format.schema.additionalProperties, false);
       assert.equal(Object.hasOwn(request.body, "previous_response_id"), false);
       const input = JSON.parse(request.body.input[1].content[0].text);
-      assert.equal(Object.hasOwn(input.current_editor, "generationGuidance"), false);
-      assert.deepEqual(input.coverage_sources.map((item: { coverage_id: string }) => item.coverage_id), ["business_buyer:buyer_faq", "end_customer:customer_hero"]);
+      assert.equal(Object.hasOwn(input, "taxon_id"), false);
+      assert.equal(Object.hasOwn(input, "current_editor"), false);
+      assert.equal(Object.hasOwn(input, "previous_active_profile"), false);
+      assert.equal(Object.hasOwn(input, "raw_research"), false);
+      assert.deepEqual(input.research.business_buyer.lp_sections, [{ coverage_id: "business_buyer:buyer_faq", text: "FAQ comercial" }]);
+      assert.deepEqual(input.research.end_customer.lp_sections, [{ coverage_id: "end_customer:customer_hero", text: "Hero de conversao" }]);
+      assert.deepEqual(input.research.business_buyer.strategic_core, ["Estratégia do comprador"]);
+      assert.deepEqual(input.research.business_buyer.lp_overview, ["Visão da LP para o comprador"]);
+      assert.deepEqual(input.research.business_buyer.seo, ["SEO do comprador"]);
+      assert.equal(input.identity_aliases.includes("hero.form"), true);
+      assert.equal(input.identity_aliases.includes("faq.accordion"), true);
       assert.deepEqual(request.body.text.format.schema.required, ["coverage"]);
-      assert.deepEqual(request.body.text.format.schema.properties.coverage.items.required, ["coverage_id", "status", "compatible_identities", "reason", "impact"]);
+      const itemSchemas = request.body.text.format.schema.properties.coverage.items.anyOf;
+      assert.deepEqual(itemSchemas[0].required, ["coverage_id", "status", "compatible_aliases"]);
+      assert.deepEqual(itemSchemas[1].required, ["coverage_id", "status", "compatible_aliases", "reason", "impact"]);
       assert.equal(Object.hasOwn(request.body.text.format.schema.properties, "recommendations"), false);
-      assert.equal(Object.hasOwn(request.body.text.format.schema.properties, "source_notices"), false);
-      assert.equal(input.raw_research[0].content, "arquivo completo");
-      assert.equal(input.raw_research[0].reference.sourceRelation, "direct_parent");
-      const omittedRaw = buildGenerationProfileResponsesRequest({
-        model: GENERATION_PROFILE_APPROVED_MODEL,
-        taxonId: NICHE_ID,
-        research: structuralResearch,
-        moduleIdentities: listLandingPageModuleIdentities(),
-        previousActiveProfile: null,
-        currentEditor: { generationGuidance: "", recommendations: [] },
-        currentCandidate: null,
-        rawResearch: [{
-          reference: { path: "docs/pesquisas-brutas/exemplo/end_customer/v1.md", audienceScope: "end_customer", sourceTaxonId: NICHE_ID, sourceRelation: "own", version: 1, blob: "b".repeat(40) },
-          content: "x".repeat(100_000),
-        }],
-        rawResearchNotices: ["Pesquisa bruta complementar ausente para business_buyer."],
-      });
-      assert.equal(omittedRaw.ok, true);
-      assert.equal(omittedRaw.rawResearchReferences.length, 0);
-      assert.equal(omittedRaw.notices.length, 2);
-      assert.deepEqual(JSON.parse(omittedRaw.body.input[1].content[0].text).raw_research, []);
       const oversized = buildGenerationProfileResponsesRequest({
         model: GENERATION_PROFILE_APPROVED_MODEL,
-        taxonId: NICHE_ID,
         research: structuralResearch,
         moduleIdentities: listLandingPageModuleIdentities(),
-        previousActiveProfile: null,
-        currentEditor: { generationGuidance: "", recommendations: [] },
+        requestKind: "creation",
         currentCandidate: null,
-        rawResearch: [],
-        rawResearchNotices: [],
         humanFeedback: "x".repeat(100_000),
       });
       assert.equal(oversized.ok, false);
@@ -706,18 +716,13 @@ const cases: readonly Readonly<{
     run: () => {
       const initial = buildGenerationProfileResponsesRequest({
         model: GENERATION_PROFILE_APPROVED_MODEL,
-        taxonId: NICHE_ID,
         research: structuralResearch,
         moduleIdentities: listLandingPageModuleIdentities(),
-        previousActiveProfile: null,
-        currentEditor: { generationGuidance: "", recommendations: [] },
+        requestKind: "creation",
         currentCandidate: null,
-        rawResearch: [],
-        rawResearchNotices: [],
       });
       const initialInput = JSON.parse(initial.body.input[1].content[0].text);
       assert.equal(initialInput.request_kind, "creation");
-      assert.deepEqual(initialInput.current_editor, { recommendations: [] });
       assert.equal(initialInput.human_feedback, null);
 
       const currentEditor = {
@@ -726,20 +731,16 @@ const cases: readonly Readonly<{
       };
       const evolution = buildGenerationProfileResponsesRequest({
         model: GENERATION_PROFILE_APPROVED_MODEL,
-        taxonId: NICHE_ID,
         research: structuralResearch,
         moduleIdentities: listLandingPageModuleIdentities(),
-        previousActiveProfile: { ...validProfile, recommendations: currentEditor.recommendations, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
-        currentEditor,
+        requestKind: "evolution",
         currentCandidate: null,
-        rawResearch: [],
-        rawResearchNotices: [],
         humanFeedback: "Priorize a prova antes da FAQ.",
       });
       const evolutionInput = JSON.parse(evolution.body.input[1].content[0].text);
       assert.equal(evolutionInput.request_kind, "evolution");
-      assert.equal(Object.hasOwn(evolutionInput.current_editor.recommendations[0], "itemGuidance"), false);
-      assert.equal(Object.hasOwn(evolutionInput.previous_active_profile, "generationGuidance"), false);
+      assert.equal(Object.hasOwn(evolutionInput, "current_editor"), false);
+      assert.equal(Object.hasOwn(evolutionInput, "previous_active_profile"), false);
       assert.equal(evolutionInput.human_feedback, "Priorize a prova antes da FAQ.");
 
       const validated = validateGenerationProfileProviderPayload({ payload: structuralPayload, research: structuralResearch, moduleIdentities: listLandingPageModuleIdentities(), currentEditor });
@@ -759,20 +760,16 @@ const cases: readonly Readonly<{
       }).ok, false);
       const nextRound = buildGenerationProfileResponsesRequest({
         model: GENERATION_PROFILE_APPROVED_MODEL,
-        taxonId: NICHE_ID,
         research: structuralResearch,
         moduleIdentities: listLandingPageModuleIdentities(),
-        previousActiveProfile: null,
-        currentEditor,
+        requestKind: "creation",
         currentCandidate: candidate,
-        rawResearch: [],
-        rawResearchNotices: [],
         humanFeedback: "Refine novamente.",
       });
       const nextRoundInput = JSON.parse(nextRound.body.input[1].content[0].text);
-      assert.deepEqual(nextRoundInput.current_candidate.recommendations, candidate.recommendations);
+      assert.deepEqual(nextRoundInput.current_candidate.coverage[0].compatible_aliases, ["faq.accordion"]);
+      assert.equal(Object.hasOwn(nextRoundInput.current_candidate, "recommendations"), false);
       assert.equal(nextRoundInput.human_feedback, "Refine novamente.");
-      assert.equal(validated.value.notices.length, 0);
     },
   },
   {

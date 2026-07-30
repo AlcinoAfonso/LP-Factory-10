@@ -144,7 +144,6 @@ export function GenerationProfileEditor({ taxon, profiles, aiConfigured, researc
         origin: proposal ? "ai" : "manual",
         ...(proposal ? { requestId: proposal.requestId, proposalFingerprint: proposal.fingerprint } : {}),
         ...(appliedProposalContext ? {
-          rawResearchReferences: appliedProposalContext.candidate.rawResearchReferences,
           gapAnalysisCompleted: true,
           gapItemKeys: appliedProposalContext.candidate.gaps.map((gap) => gap.itemKey),
           researchVersions: appliedProposalContext.candidate.researchVersions,
@@ -299,7 +298,6 @@ function CandidateReview({ candidate, diff, replacements, gapDiff, gapDecision, 
       <ul className="space-y-1 text-sm">{candidate.gaps.map((gap) => <li key={`${gap.audienceScope}:${gap.itemKey}`}><strong>{gap.sectionName}</strong> — prioridade {gap.sourcePriority}, ordem {gap.sourceOrder}: {gap.reason} Impacto: {gap.impact}</li>)}</ul>
       <label className="block text-sm font-medium">Decisão humana<Select value={gapDecision} onChange={(event) => onGapDecision(event.target.value as GenerationProfileGapDecision | "")} disabled={pending}><option value="">Selecione</option><option value="wait_for_modules">Aguardar criacao dos modulos</option><option value="proceed_with_available">Prosseguir com os disponiveis</option></Select></label>
     </div>}
-    {candidate.notices.map((notice) => <p key={notice} className="text-xs text-amber-700">{notice}</p>)}
     <div className="flex flex-wrap gap-2"><Button onClick={onApply} disabled={pending || (candidate.gaps.length > 0 && !gapDecision)}>Aplicar proposta</Button><Button className="bg-secondary text-secondary-foreground hover:bg-secondary/80" onClick={onDiscard} disabled={pending}>Descartar proposta</Button></div>
   </section>;
 }

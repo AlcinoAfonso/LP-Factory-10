@@ -5,7 +5,6 @@ import { randomUUID } from "node:crypto";
 import { resolveLandingPageResearchForTaxon } from "../../adapters/landingPageResearchAdapter";
 import { readAdminGenerationProfileDetail } from "../../adapters/landingPageGenerationProfileAdminAdapter";
 import { requestGenerationProfileProposal } from "../../adapters/landingPageGenerationProfileOpenAiAdapter";
-import { readGenerationProfileRawResearch } from "../../adapters/landingPageGenerationProfileRawResearchAdapter";
 import type {
   GenerationProfileEditorContent,
   GenerationProfileProposal,
@@ -103,18 +102,13 @@ export async function proposeLandingPageGenerationProfile(input: {
   }
   const previousActiveProfile = detail.profiles.find((profile) => profile.status === "active") ?? null;
   const moduleIdentities = listLandingPageModuleIdentities();
-  const rawResearch = await readGenerationProfileRawResearch(research.value);
   const provider = await requestGenerationProfileProposal({
     model,
-    taxonId: input.taxonId,
     research: research.value,
     moduleIdentities,
-    previousActiveProfile,
-    currentEditor,
+    requestKind: previousActiveProfile ? "evolution" : "creation",
     currentCandidate: currentCandidate?.value ?? null,
     humanFeedback: input.humanFeedback,
-    rawResearch: rawResearch.items,
-    rawResearchNotices: rawResearch.notices,
   });
   if (!provider.ok) {
     return finishFailure(requestId, mapProviderFailureToProposalError(provider.kind), "AI proposal could not be produced.", {
@@ -143,8 +137,6 @@ export async function proposeLandingPageGenerationProfile(input: {
     moduleIdentities,
     currentEditor,
     previousCandidate: currentCandidate?.value ?? null,
-    notices: provider.notices,
-    rawResearchReferences: provider.rawResearchReferences,
   });
   if (!validated.ok) {
     return finishFailure(requestId, "invalid_data", "AI proposal violated the generation profile contract.", {

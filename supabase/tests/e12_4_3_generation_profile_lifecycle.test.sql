@@ -130,15 +130,7 @@ begin
       'gap_decision', 'wait_for_modules',
       'gap_item_keys', jsonb_build_array('end_customer:missing_section'),
       'gap_impact_summary', 'Section remains unavailable.',
-      'research_versions', jsonb_build_object('endCustomer', 1, 'businessBuyer', 1),
-      'raw_research_references', jsonb_build_array(jsonb_build_object(
-        'path', 'docs/pesquisas-brutas/e12-4-3-test-segment/end_customer/v1.md',
-        'audienceScope', 'end_customer',
-        'sourceTaxonId', '12040000-0000-4000-8000-000000000001',
-        'sourceRelation', 'own',
-        'version', 1,
-        'blob', repeat('a', 40)
-      ))
+      'research_versions', jsonb_build_object('endCustomer', 1, 'businessBuyer', 1)
     )
   );
 
@@ -252,8 +244,7 @@ begin
       'gap_decision', 'proceed_with_available',
       'gap_item_keys', jsonb_build_array('end_customer:missing_section'),
       'gap_impact_summary', 'Administrator accepted the available modules.',
-      'research_versions', jsonb_build_object('endCustomer', 1, 'businessBuyer', 1),
-      'raw_research_references', '[]'::jsonb
+      'research_versions', jsonb_build_object('endCustomer', 1, 'businessBuyer', 1)
     )
   );
 
@@ -278,8 +269,7 @@ begin
       'gap_decision', 'wait_for_modules',
       'gap_item_keys', jsonb_build_array('end_customer:temporary_gap'),
       'gap_impact_summary', 'Module is not available yet.',
-      'research_versions', jsonb_build_object('endCustomer', 1, 'businessBuyer', 1),
-      'raw_research_references', '[]'::jsonb
+      'research_versions', jsonb_build_object('endCustomer', 1, 'businessBuyer', 1)
     )
   );
 
@@ -296,8 +286,7 @@ begin
     jsonb_build_object(
       'gap_analysis_completed', true,
       'gap_item_keys', '[]'::jsonb,
-      'research_versions', jsonb_build_object('endCustomer', 1, 'businessBuyer', 1),
-      'raw_research_references', '[]'::jsonb
+      'research_versions', jsonb_build_object('endCustomer', 1, 'businessBuyer', 1)
     )
   );
 
@@ -380,9 +369,9 @@ begin
       and event = 'generation_profile_draft_saved'
       and changes_json->>'gap_decision' = 'wait_for_modules'
       and changes_json->>'gap_count' = '1'
-      and jsonb_array_length(changes_json->'raw_research_references') = 1
+      and changes_json->'research_versions' = jsonb_build_object('endCustomer', 1, 'businessBuyer', 1)
   ) then
-    raise exception 'wait decision and safe raw research provenance were not audited';
+    raise exception 'wait decision and canonical research versions were not audited';
   end if;
   if (
     select count(*) from public.audit_logs

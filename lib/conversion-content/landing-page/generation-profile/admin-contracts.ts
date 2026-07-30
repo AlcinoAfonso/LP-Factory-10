@@ -27,7 +27,6 @@ export type GenerationProfileDraftInput = Readonly<{
   gapItemKeys?: readonly string[];
   gapImpactSummary?: string;
   researchVersions?: Readonly<{ endCustomer: number; businessBuyer: number }>;
-  rawResearchReferences?: readonly GenerationProfileRawResearchReference[];
 }>;
 
 export type GenerationProfileEditorContent = Readonly<{
@@ -72,15 +71,6 @@ export type GenerationProfileGap = Readonly<{
   status: "partial" | "missing";
   reason: string;
   impact: string;
-}>;
-
-export type GenerationProfileRawResearchReference = Readonly<{
-  path: string;
-  audienceScope: "business_buyer" | "end_customer";
-  sourceTaxonId: string;
-  sourceRelation: "own" | "direct_parent";
-  version: number;
-  blob: string;
 }>;
 
 export type GenerationProfileGapDecision =
@@ -169,8 +159,6 @@ export type GenerationProfileProposal = Readonly<{
   recommendations: readonly GenerationProfileStructuralRecommendation[];
   gaps: readonly GenerationProfileGap[];
   diff: GenerationProfileProposalDiff;
-  notices: readonly string[];
-  rawResearchReferences: readonly GenerationProfileRawResearchReference[];
   researchVersions: Readonly<{ endCustomer: number; businessBuyer: number }>;
   requestId: string;
   fingerprint: string;

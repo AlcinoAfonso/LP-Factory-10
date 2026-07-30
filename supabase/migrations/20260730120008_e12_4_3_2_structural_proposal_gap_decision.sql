@@ -47,7 +47,7 @@ begin
     or jsonb_typeof(p_audit_context) <> 'object'
     or p_audit_context - array[
       'gap_analysis_completed', 'gap_decision', 'gap_item_keys', 'gap_impact_summary',
-      'research_versions', 'raw_research_references'
+      'research_versions'
     ] <> '{}'::jsonb then
     raise exception 'E12_4_3_INVALID_INPUT';
   end if;
@@ -55,7 +55,6 @@ begin
   v_gap_decision := p_audit_context->>'gap_decision';
   v_gap_analysis_completed := coalesce(p_audit_context->'gap_analysis_completed' = 'true'::jsonb, false);
   if coalesce(jsonb_typeof(p_audit_context->'gap_item_keys'), 'array') <> 'array'
-    or coalesce(jsonb_typeof(p_audit_context->'raw_research_references'), 'array') <> 'array'
     or (p_audit_context ? 'gap_analysis_completed' and p_audit_context->'gap_analysis_completed' <> 'true'::jsonb)
     or (v_gap_decision is not null and v_gap_decision not in ('wait_for_modules', 'proceed_with_available'))
     or (
@@ -92,18 +91,6 @@ begin
     or exists (
       select 1 from jsonb_array_elements(case when jsonb_typeof(p_audit_context->'gap_item_keys') = 'array' then p_audit_context->'gap_item_keys' else '[]'::jsonb end) item
       where jsonb_typeof(item) <> 'string' or length(btrim(item #>> '{}')) = 0
-    )
-    or exists (
-      select 1 from jsonb_array_elements(case when jsonb_typeof(p_audit_context->'raw_research_references') = 'array' then p_audit_context->'raw_research_references' else '[]'::jsonb end) raw
-      where jsonb_typeof(raw) <> 'object'
-        or raw - array['path', 'audienceScope', 'sourceTaxonId', 'sourceRelation', 'version', 'blob'] <> '{}'::jsonb
-        or not (raw ?& array['path', 'audienceScope', 'sourceTaxonId', 'sourceRelation', 'version', 'blob'])
-        or raw->>'path' !~ '^docs/pesquisas-brutas/[a-z0-9]+(-[a-z0-9]+)*/(business_buyer|end_customer)/v[1-9][0-9]*[.]md$'
-        or raw->>'audienceScope' not in ('business_buyer', 'end_customer')
-        or raw->>'sourceRelation' not in ('own', 'direct_parent')
-        or raw->>'sourceTaxonId' !~ '^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$'
-        or (raw->>'version') !~ '^[1-9][0-9]*$'
-        or raw->>'blob' !~ '^[0-9a-f]{40}$'
     ) then
     raise exception 'E12_4_3_INVALID_INPUT';
   end if;
@@ -229,8 +216,7 @@ begin
       'gap_item_keys', v_effective_audit_context->'gap_item_keys',
       'gap_count', coalesce(jsonb_array_length(v_effective_audit_context->'gap_item_keys'), 0),
       'gap_impact_summary', v_effective_audit_context->>'gap_impact_summary',
-      'research_versions', v_effective_audit_context->'research_versions',
-      'raw_research_references', v_effective_audit_context->'raw_research_references'
+      'research_versions', v_effective_audit_context->'research_versions'
     )),
     null
   );
@@ -398,7 +384,7 @@ grant execute on function public.get_landing_page_generation_profile_lifecycle_s
 
 comment on function public.save_landing_page_generation_profile_draft(
   uuid, uuid, timestamptz, text, jsonb, text, uuid, text, jsonb
-) is 'E12.4.3.2: saves a draft and audits the transient gap decision and safe source references.';
+) is 'E12.4.3.2: saves a draft and audits the transient gap decision and canonical research versions.';
 comment on function public.get_landing_page_generation_profile_lifecycle_status()
   is 'E12.4.3.2: reports lifecycle readiness with contract_version 2.';
 

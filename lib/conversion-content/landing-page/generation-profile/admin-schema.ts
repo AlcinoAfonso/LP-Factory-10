@@ -48,14 +48,6 @@ export const generationProfileDraftInputSchema = z
       endCustomer: z.number().int().positive(),
       businessBuyer: z.number().int().positive(),
     }).strict().optional(),
-    rawResearchReferences: z.array(z.object({
-      path: z.string().trim().min(1),
-      audienceScope: z.enum(["business_buyer", "end_customer"]),
-      sourceTaxonId: z.uuid(),
-      sourceRelation: z.enum(["own", "direct_parent"]),
-      version: z.number().int().positive(),
-      blob: z.string().regex(/^[a-f0-9]{40}$/),
-    }).strict()).optional(),
   })
   .strict()
   .superRefine((input, context) => {

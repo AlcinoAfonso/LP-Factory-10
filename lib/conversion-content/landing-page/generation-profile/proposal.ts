@@ -8,12 +8,11 @@ import {
   type LandingPageModuleIdentityCatalog,
 } from "../module-catalog";
 import type {
-  AdminGenerationProfile,
   GenerationProfileCoverage,
+  GenerationProfileCoverageIdentity,
   GenerationProfileEditorContent,
   GenerationProfileProposal,
   GenerationProfileProposalErrorCode,
-  GenerationProfileRawResearchReference,
   GenerationProfileStructuralRecommendation,
 } from "./admin-contracts";
 import { deriveGenerationProfileProposalDiff } from "./editor-assistance";
@@ -24,22 +23,13 @@ export const GENERATION_PROFILE_APPROVED_MODEL = "gpt-5.4-mini";
 const GENERATION_PROFILE_INPUT_USD_PER_TOKEN = 0.00000075;
 const GENERATION_PROFILE_OUTPUT_USD_PER_TOKEN = 0.0000045;
 
-export type GenerationProfileRawResearch = Readonly<{
-  reference: GenerationProfileRawResearchReference;
-  content: string;
-}>;
-
 export type GenerationProfileProviderInput = Readonly<{
   model: string;
-  taxonId: string;
   research: ResolvedLandingPageResearch;
   moduleIdentities: LandingPageModuleIdentityCatalog;
-  previousActiveProfile: AdminGenerationProfile | null;
-  currentEditor: GenerationProfileEditorContent;
+  requestKind: "creation" | "evolution";
   currentCandidate: GenerationProfileProposal | null;
   humanFeedback?: string;
-  rawResearch: readonly GenerationProfileRawResearch[];
-  rawResearchNotices: readonly string[];
 }>;
 
 export type GenerationProfileProviderResult =
@@ -49,8 +39,6 @@ export type GenerationProfileProviderResult =
       responseId: string | null;
       inputTokens: number | null;
       outputTokens: number | null;
-      rawResearchReferences: readonly GenerationProfileRawResearchReference[];
-      notices: readonly string[];
     }>
   | Readonly<{
       ok: false;
@@ -69,7 +57,6 @@ export type GenerationProfileProviderValidationReason =
   | "payload_schema_invalid"
   | "coverage_items_mismatch"
   | "coverage_identity_count_invalid"
-  | "coverage_gap_details_missing"
   | "coverage_identity_invalid";
 
 export function buildGenerationProfileInvalidDataMetadata(input: Readonly<{
@@ -119,26 +106,22 @@ function isUnknownRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
-const identitySchema = z
-  .object({
-    module_key: z.string().trim().min(1),
-    module_version: z.number().int().positive(),
-    variant_key: z.string().trim().min(1).nullable(),
-    variant_version: z.number().int().positive().nullable(),
-  })
-  .strict()
-  .refine((value) => (value.variant_key === null) === (value.variant_version === null));
-
-const coverageSchema = z.object({
+const coveredSchema = z.object({
   coverage_id: z.string().trim().min(1),
-  status: z.enum(["covered", "partial", "missing"]),
-  compatible_identities: z.array(identitySchema),
-  reason: z.string().trim().min(1).nullable(),
-  impact: z.string().trim().min(1).nullable(),
+  status: z.literal("covered"),
+  compatible_aliases: z.array(z.string().trim().min(1)),
+}).strict();
+
+const gapCoverageSchema = z.object({
+  coverage_id: z.string().trim().min(1),
+  status: z.enum(["partial", "missing"]),
+  compatible_aliases: z.array(z.string().trim().min(1)),
+  reason: z.string().trim().min(1),
+  impact: z.string().trim().min(1),
 }).strict();
 
 const providerPayloadSchema = z.object({
-  coverage: z.array(coverageSchema),
+  coverage: z.array(z.discriminatedUnion("status", [coveredSchema, gapCoverageSchema])),
 }).strict();
 
 const candidateIdentitySchema = z.object({
@@ -196,15 +179,6 @@ const candidateSchema = z.object({
       resolved: z.array(candidateGapSchema),
     }).strict(),
   }).strict(),
-  notices: z.array(z.string().trim().min(1)),
-  rawResearchReferences: z.array(z.object({
-    path: z.string().trim().min(1),
-    audienceScope: z.enum(["business_buyer", "end_customer"]),
-    sourceTaxonId: z.uuid(),
-    sourceRelation: z.enum(["own", "direct_parent"]),
-    version: z.number().int().positive(),
-    blob: z.string().regex(/^[a-f0-9]{40}$/),
-  }).strict()),
   researchVersions: z.object({ endCustomer: z.number().int().positive(), businessBuyer: z.number().int().positive() }).strict(),
   requestId: z.uuid(),
   fingerprint: z.string().regex(/^[a-f0-9]{64}$/),
@@ -254,49 +228,30 @@ export function normalizeGenerationProfileCandidate(input: unknown):
 }
 
 export function buildGenerationProfileResponsesRequest(input: GenerationProfileProviderInput) {
-  const baseUserInput = {
-    taxon_id: input.taxonId,
-    research: input.research,
-    coverage_sources: readLpSections(input.research).map((section) => ({
-      coverage_id: coverageIdentityKey(section),
-      ...section,
-    })),
-    module_identities: input.moduleIdentities,
-    previous_active_profile: toStructuralProfile(input.previousActiveProfile),
-    current_editor: toStructuralEditor(input.currentEditor),
+  const aliasEntries = buildIdentityAliasEntries(input.moduleIdentities);
+  const userInput = {
+    research: compactResearch(input.research),
+    identity_aliases: aliasEntries.map((entry) => entry.alias),
     current_candidate: input.currentCandidate
       ? {
-          coverage: input.currentCandidate.coverage,
-          recommendations: input.currentCandidate.recommendations,
-          gaps: input.currentCandidate.gaps,
-          notices: input.currentCandidate.notices,
-          research_versions: input.currentCandidate.researchVersions,
+          coverage: input.currentCandidate.coverage.map((item) => ({
+            coverage_id: `${item.audienceScope}:${item.itemKey}`,
+            status: item.status,
+            compatible_aliases: item.compatibleIdentities.map(identityAlias),
+            ...(item.status === "covered" ? {} : { reason: item.reason, impact: item.impact }),
+          })),
         }
       : null,
-    request_kind: input.previousActiveProfile ? "evolution" : "creation",
+    request_kind: input.requestKind,
     human_feedback: input.humanFeedback?.trim() || null,
-    raw_research: [] as readonly GenerationProfileRawResearch[],
   };
-  const included: GenerationProfileRawResearch[] = [];
-  const notices = [...input.rawResearchNotices];
-  for (const raw of input.rawResearch) {
-    const candidate = [...included, raw];
-    const request = createRequest({ ...baseUserInput, raw_research: candidate });
-    if (Buffer.byteLength(JSON.stringify(request), "utf8") <= GENERATION_PROFILE_REQUEST_MAX_BYTES) {
-      included.push(raw);
-    } else {
-      notices.push(`Pesquisa bruta omitida por limite: ${raw.reference.path}`);
-    }
-  }
-  const body = createRequest({ ...baseUserInput, raw_research: included });
+  const body = createRequest(userInput);
   const serialized = JSON.stringify(body);
   return {
     ok: Buffer.byteLength(serialized, "utf8") <= GENERATION_PROFILE_REQUEST_MAX_BYTES,
     body,
     serialized,
     bytes: Buffer.byteLength(serialized, "utf8"),
-    rawResearchReferences: included.map((item) => item.reference),
-    notices,
   } as const;
 }
 
@@ -310,7 +265,7 @@ function createRequest(userInput: Record<string, unknown>) {
         role: "system",
         content: [{
           type: "input_text",
-          text: "Crie ou evolua somente a análise estrutural do perfil. Avalie exatamente cada coverage_source canônica da E10.8 e devolva somente coverage_id, status, compatible_identities, reason e impact. Não repita nem altere audience_scope, item_key, section_name, source_priority ou source_order. Não derive recommendations, gaps ou diff; o servidor fará isso deterministicamente. Não invente nem crie identidades. Use somente identidades válidas fornecidas pelo catálogo autorizado. Não invente nem crie módulos ou variantes. Não produza copy, generation_guidance, item_guidance, LP, avisos ou ações. A pesquisa estruturada governa; pesquisa bruta e feedback são apenas contexto a avaliar.",
+          text: "Crie ou evolua somente a análise estrutural do perfil. Avalie exatamente cada lp_section identificada por coverage_id e devolva somente coverage_id, status, compatible_aliases e, apenas para partial ou missing, reason e impact. Use exclusivamente aliases presentes em identity_aliases. Não invente aliases, identidades, módulos ou variantes. Não derive recommendations, gaps ou diff; o servidor reconstruirá identidades e fará essas derivações deterministicamente. Não produza copy, generation_guidance, item_guidance, LP, avisos ou ações. Os textos da pesquisa estruturada governam; feedback serve somente para refinar a análise sem alterar o contrato.",
         }],
       },
       {
@@ -331,16 +286,7 @@ function createRequest(userInput: Record<string, unknown>) {
             coverage: {
               type: "array",
               items: {
-                type: "object",
-                additionalProperties: false,
-                required: ["coverage_id", "status", "compatible_identities", "reason", "impact"],
-                properties: {
-                  coverage_id: { type: "string", minLength: 1 },
-                  status: { type: "string", enum: ["covered", "partial", "missing"] },
-                  compatible_identities: { type: "array", items: identityJsonSchema },
-                  reason: { type: ["string", "null"] },
-                  impact: { type: ["string", "null"] },
-                },
+                anyOf: [coveredJsonSchema, gapCoverageJsonSchema],
               },
             },
           },
@@ -350,15 +296,27 @@ function createRequest(userInput: Record<string, unknown>) {
   };
 }
 
-const identityJsonSchema = {
+const coveredJsonSchema = {
   type: "object",
   additionalProperties: false,
-  required: ["module_key", "module_version", "variant_key", "variant_version"],
+  required: ["coverage_id", "status", "compatible_aliases"],
   properties: {
-    module_key: { type: "string", minLength: 1 },
-    module_version: { type: "integer", minimum: 1 },
-    variant_key: { type: ["string", "null"] },
-    variant_version: { type: ["integer", "null"], minimum: 1 },
+    coverage_id: { type: "string", minLength: 1 },
+    status: { type: "string", enum: ["covered"] },
+    compatible_aliases: { type: "array", items: { type: "string", minLength: 1 } },
+  },
+} as const;
+
+const gapCoverageJsonSchema = {
+  type: "object",
+  additionalProperties: false,
+  required: ["coverage_id", "status", "compatible_aliases", "reason", "impact"],
+  properties: {
+    coverage_id: { type: "string", minLength: 1 },
+    status: { type: "string", enum: ["partial", "missing"] },
+    compatible_aliases: { type: "array", items: { type: "string", minLength: 1 } },
+    reason: { type: "string", minLength: 1 },
+    impact: { type: "string", minLength: 1 },
   },
 } as const;
 
@@ -368,8 +326,6 @@ export function validateGenerationProfileProviderPayload(input: {
   moduleIdentities: LandingPageModuleIdentityCatalog;
   currentEditor?: GenerationProfileEditorContent;
   previousCandidate?: GenerationProfileProposal | null;
-  notices?: readonly string[];
-  rawResearchReferences?: readonly GenerationProfileRawResearchReference[];
 }) {
   const parsed = providerPayloadSchema.safeParse(input.payload);
   if (!parsed.success) return { ok: false as const, reason: "payload_schema_invalid" as const, message: "Proposal payload is invalid." };
@@ -380,19 +336,25 @@ export function validateGenerationProfileProviderPayload(input: {
     return { ok: false as const, reason: "coverage_items_mismatch" as const, message: "Coverage must contain every lp_sections item exactly once." };
   }
   const sectionsByKey = new Map(sections.map((section) => [coverageIdentityKey(section), section]));
+  const identitiesByAlias = new Map(
+    buildIdentityAliasEntries(input.moduleIdentities).map((entry) => [entry.alias, entry.identity]),
+  );
+  const decodedCoverage = new Map<string, readonly GenerationProfileCoverageIdentity[]>();
   for (const coverage of parsed.data.coverage) {
     if (!sectionsByKey.has(coverage.coverage_id)) {
       return { ok: false as const, reason: "coverage_items_mismatch" as const, message: "Coverage must contain every lp_sections item exactly once." };
     }
-    if (!isCoverageIdentityCountValid(coverage.status, coverage.compatible_identities.length)) {
+    if (new Set(coverage.compatible_aliases).size !== coverage.compatible_aliases.length) {
+      return { ok: false as const, reason: "coverage_identity_invalid" as const, message: "Coverage contains a repeated identity alias." };
+    }
+    const compatibleIdentities = coverage.compatible_aliases.map((alias) => identitiesByAlias.get(alias));
+    if (compatibleIdentities.some((identity) => identity === undefined)) {
+      return { ok: false as const, reason: "coverage_identity_invalid" as const, message: "Coverage contains an invalid identity alias." };
+    }
+    if (!isCoverageIdentityCountValid(coverage.status, compatibleIdentities.length)) {
       return { ok: false as const, reason: "coverage_identity_count_invalid" as const, message: "Coverage identity count is inconsistent with its status." };
     }
-    if (coverage.status !== "covered" && (!coverage.reason || !coverage.impact)) {
-      return { ok: false as const, reason: "coverage_gap_details_missing" as const, message: "Coverage gaps require reason and impact." };
-    }
-    for (const identity of coverage.compatible_identities) {
-      if (!validateIdentity(identity)) return { ok: false as const, reason: "coverage_identity_invalid" as const, message: "Coverage contains an invalid identity." };
-    }
+    decodedCoverage.set(coverage.coverage_id, compatibleIdentities as readonly GenerationProfileCoverageIdentity[]);
   }
 
   const analysisByKey = new Map(parsed.data.coverage.map((item) => [item.coverage_id, item]));
@@ -406,9 +368,8 @@ export function validateGenerationProfileProviderPayload(input: {
       sourcePriority: source.source_priority,
       sourceOrder: source.source_order,
       status: item.status,
-      compatibleIdentities: item.compatible_identities.map(normalizeIdentity),
-      ...(item.reason ? { reason: item.reason } : {}),
-      ...(item.impact ? { impact: item.impact } : {}),
+      compatibleIdentities: decodedCoverage.get(item.coverage_id) ?? [],
+      ...(item.status === "covered" ? {} : { reason: item.reason, impact: item.impact }),
     };
   });
   const recommendations = deriveRecommendations(coverage);
@@ -429,8 +390,6 @@ export function validateGenerationProfileProviderPayload(input: {
       recommendations,
       gaps,
       diff,
-      notices: [...(input.notices ?? [])],
-      rawResearchReferences: [...(input.rawResearchReferences ?? [])],
       fingerprint,
     },
   };
@@ -454,16 +413,47 @@ function coverageIdentityKey(value: { audience_scope: string; item_key: string }
   return `${value.audience_scope}:${value.item_key}`;
 }
 
-function validateIdentity(value: z.infer<typeof identitySchema>) {
-  return validateLandingPageModuleIdentity(normalizeIdentity(value)).ok;
+function compactResearch(research: ResolvedLandingPageResearch) {
+  return {
+    business_buyer: compactResearchAudience(research.businessBuyer),
+    end_customer: compactResearchAudience(research.endCustomer),
+  };
 }
 
-function normalizeIdentity(value: z.infer<typeof identitySchema>) {
+function compactResearchAudience(audience: ResolvedLandingPageResearch["businessBuyer"]) {
+  const texts = (block: "strategic_core" | "lp_overview" | "seo") => audience.researches
+    .filter((parent) => parent.researchBlock === block)
+    .flatMap((parent) => parent.items.map((item) => item.itemText));
   return {
-    moduleKey: value.module_key,
-    moduleVersion: value.module_version,
-    ...(value.variant_key === null ? {} : { variantKey: value.variant_key, variantVersion: value.variant_version as number }),
+    strategic_core: texts("strategic_core"),
+    lp_overview: texts("lp_overview"),
+    seo: texts("seo"),
+    lp_sections: audience.researches
+      .filter((parent) => parent.researchBlock === "lp_sections")
+      .flatMap((parent) => parent.items.map((item) => ({
+        coverage_id: `${audience.audienceScope}:${item.itemKey}`,
+        text: item.itemText,
+      }))),
   };
+}
+
+function buildIdentityAliasEntries(catalog: LandingPageModuleIdentityCatalog) {
+  return catalog.modules.flatMap((module) => [
+    { alias: module.moduleKey, identity: { moduleKey: module.moduleKey, moduleVersion: module.moduleVersion } },
+    ...module.variants.map((variant) => ({
+      alias: variant.variantKey,
+      identity: {
+        moduleKey: module.moduleKey,
+        moduleVersion: module.moduleVersion,
+        variantKey: variant.variantKey,
+        variantVersion: variant.variantVersion,
+      },
+    })),
+  ] satisfies readonly Readonly<{ alias: string; identity: GenerationProfileCoverageIdentity }>[]);
+}
+
+function identityAlias(identity: GenerationProfileCoverageIdentity) {
+  return identity.variantKey ?? identity.moduleKey;
 }
 
 function deriveRecommendations(coverage: readonly GenerationProfileCoverage[]): GenerationProfileStructuralRecommendation[] {
@@ -493,14 +483,6 @@ function isCoverageIdentityCountValid(status: "covered" | "partial" | "missing",
 
 function priorityRank(value: "P1" | "P2" | "P3") {
   return value === "P1" ? 1 : value === "P2" ? 2 : 3;
-}
-
-function toStructuralProfile(profile: AdminGenerationProfile | null) {
-  return profile ? { id: profile.id, version: profile.version, recommendations: profile.recommendations.map(stripHumanGuidance) } : null;
-}
-
-function toStructuralEditor(editor: GenerationProfileEditorContent) {
-  return { recommendations: editor.recommendations.map(stripHumanGuidance) };
 }
 
 function stripHumanGuidance(item: GenerationProfileEditorContent["recommendations"][number]): GenerationProfileStructuralRecommendation {

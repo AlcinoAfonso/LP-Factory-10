@@ -161,7 +161,6 @@ export async function saveAdminGenerationProfileDraft(
     p_review_result: reviewResult,
     p_audit_context: {
       gap_item_keys: validated.value.gapItemKeys ?? [],
-      raw_research_references: validated.value.rawResearchReferences ?? [],
       ...(validated.value.gapAnalysisCompleted ? {
         gap_analysis_completed: true,
         research_versions: validated.value.researchVersions,

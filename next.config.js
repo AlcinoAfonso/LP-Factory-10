@@ -15,9 +15,6 @@ const nextConfig = {
       './docs/template-briefing-codex.md',
       './docs/template-prompts.md',
     ],
-    '/admin/perfis-de-orientacao/*': [
-      './docs/pesquisas-brutas/**/*.md',
-    ],
   },
 
   // 6.3.1 — validação do `next` em /auth/confirm (somente caminhos internos)
