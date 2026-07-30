@@ -1244,6 +1244,12 @@ Repositório — Ajustados
     - `app/a/[account]/_components/commercial-page/checkout-validation-cases.ts`
   - Ajustados:
     - `app/a/[account]/_components/commercial-page/checkout-actions.ts`
+    - `app/a/[account]/members/page.tsx`
+    - `lib/access/account-members/contracts.ts`
+    - `lib/access/account-members/index.ts`
+    - `lib/access/account-members/policy.ts`
+    - `lib/access/account-members/validation-cases.ts`
+    - `lib/access/guards.ts`
     - `package.json`
 
 11.2.3 Autoridade para o checkout
@@ -1256,7 +1262,7 @@ Repositório — Ajustados
   - preço, recorrência, webhook, gestão de assinatura e outros fluxos de billing permanecem fora do recorte.
 
 11.2.4 Elegibilidade para criação e reenvio de convites
-- Status: planejado.
+- Status: implementado.
 - Conteúdo:
   - owner e admin só criam ou reenviam convites quando `isCommerciallyEligible=true`;
   - a conta precisa estar `active`, com `accountStatus` derivado do Access Context, e os guards ocorrem antes de leitura ou criação no Auth, preparação do membership, canal ou envio;

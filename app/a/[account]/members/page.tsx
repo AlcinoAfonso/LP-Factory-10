@@ -19,6 +19,7 @@ import {
 } from "@/lib/access/account-members";
 import { isAccountMembersEnabled } from "@/lib/access/account-members/config";
 import { requireAccountMembersManager } from "@/lib/access/guards";
+import { getCommercialEntitlementSignal } from "../../../../lib/commercial-entitlements";
 
 import {
   changeMemberRoleAction,
@@ -66,6 +67,11 @@ export default async function MembersPage({ params, searchParams }: MembersPageP
   const hasEmailError = queryError === "invalid_email";
   const hasRoleError = queryError === "invalid_role";
   const result = await listAccountMembers(guarded.context);
+  const commercialEntitlement =
+    guarded.context.accountStatus === "active"
+      ? await getCommercialEntitlementSignal({ accountId: guarded.context.accountId })
+      : null;
+  const canInvite = commercialEntitlement?.isCommerciallyEligible === true;
   const activeMembers = result.ok
     ? result.value.filter((member) => member.status === "active")
     : [];
@@ -107,7 +113,8 @@ export default async function MembersPage({ params, searchParams }: MembersPageP
             </p>
           </div>
 
-          <form action={inviteMemberAction} className="grid gap-4 md:grid-cols-[minmax(0,1fr)_220px_auto] md:items-end">
+          {canInvite ? (
+            <form action={inviteMemberAction} className="grid gap-4 md:grid-cols-[minmax(0,1fr)_220px_auto] md:items-end">
             <input type="hidden" name="account" value={account} />
             <FormField>
               <FormFieldLabel htmlFor="member-email" required>E-mail</FormFieldLabel>
@@ -140,7 +147,12 @@ export default async function MembersPage({ params, searchParams }: MembersPageP
               {hasRoleError ? <FormFieldError id="member-role-error">{memberErrorMessage(queryError)}</FormFieldError> : null}
             </FormField>
             <MemberActionButton pendingLabel="Enviando convite...">Enviar convite</MemberActionButton>
-          </form>
+            </form>
+          ) : (
+            <p className="rounded-lg border border-border bg-muted px-4 py-3 text-sm text-muted-foreground">
+              A conta precisa estar comercialmente ativa para criar ou reenviar convites.
+            </p>
+          )}
         </section>
 
         {result.ok ? (
@@ -152,6 +164,7 @@ export default async function MembersPage({ params, searchParams }: MembersPageP
               members={activeMembers}
               account={account}
               actorUserId={guarded.context.actorUserId}
+              canInvite={canInvite}
             />
 
             <MemberSection
@@ -161,6 +174,7 @@ export default async function MembersPage({ params, searchParams }: MembersPageP
               members={pendingMembers}
               account={account}
               actorUserId={guarded.context.actorUserId}
+              canInvite={canInvite}
             />
           </>
         ) : null}
@@ -176,6 +190,7 @@ function MemberSection(props: Readonly<{
   members: readonly AccountMember[];
   account: string;
   actorUserId: string;
+  canInvite: boolean;
 }>) {
   return (
     <section className="space-y-4" aria-labelledby={`${props.title.toLowerCase().replaceAll(" ", "-")}-title`}>
@@ -196,6 +211,7 @@ function MemberSection(props: Readonly<{
               member={member}
               account={props.account}
               actorUserId={props.actorUserId}
+              canInvite={props.canInvite}
             />
           ))}
         </div>
@@ -208,8 +224,9 @@ function MemberCard(props: Readonly<{
   member: AccountMember;
   account: string;
   actorUserId: string;
+  canInvite: boolean;
 }>) {
-  const { member, account, actorUserId } = props;
+  const { member, account, actorUserId, canInvite } = props;
   const isProtected = member.role === "owner" || member.userId === actorUserId;
 
   return (
@@ -263,7 +280,7 @@ function MemberCard(props: Readonly<{
         )
       ) : (
         <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
-          {!member.isConfirmed ? (
+          {!member.isConfirmed && canInvite ? (
             <form action={resendMemberInviteAction}>
               <input type="hidden" name="account" value={account} />
               <input type="hidden" name="member_id" value={member.id} />
@@ -289,6 +306,8 @@ function MemberCard(props: Readonly<{
 
 function memberErrorMessage(error: AccountMemberError): string {
   const messages: Partial<Record<AccountMemberError, string>> = {
+    account_not_active: "A conta precisa estar ativa para criar ou reenviar convites.",
+    commercial_entitlement_required: "A conta precisa estar comercialmente ativa para criar ou reenviar convites.",
     invalid_email: "Informe um e-mail válido.",
     invalid_role: "Selecione um papel permitido.",
     already_member: "Este usuário já pertence à conta.",
