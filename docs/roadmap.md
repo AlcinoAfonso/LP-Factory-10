@@ -1,8 +1,8 @@
 0. Introdução
 
 0.1 Cabeçalho
-• Data: 29/07/2026
-• Versão: v1.5.113
+• Data: 30/07/2026
+• Versão: v1.5.114
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -1389,7 +1389,7 @@ Repositório — Ajustados
 
 12.4 Gestão do perfil de orientação
 - Objetivo: Definir a operação administrativa do perfil de orientação que direciona gerações futuras de landing pages sem materializar nem alterar LPs.
-- Status: E12.4.3 e E12.4.3.1 concluídas; E12.4.3.2 planejada como correção funcional da proposta estrutural.
+- Status: E12.4.3 e E12.4.3.1 concluídas; E12.4.3.2 planejada como correção funcional da criação e evolução estrutural do perfil.
 
 12.4.1 Objetivo e status
 - Objetivo: Entregar a operação manual completa de criação, edição, revisão, ativação e arquivamento de versões do perfil, com proposta opcional por IA no mesmo editor.
@@ -1422,17 +1422,22 @@ Repositório — Ajustados
   - Nenhuma proposta salva, aprova ou ativa automaticamente; o `platform_admin` continua responsável por revisar, editar, salvar e ativar.
   - Não existe conversa persistente, histórico de mensagens, agente ou memória própria.
 
-12.4.3.2 Proposta estrutural baseada em `lp_sections` e delta do catálogo
-- Status: Planejada; correção conceitual definida no plano-base E12.4 v2.4 e implementação técnica pendente.
+12.4.3.2 Criação e evolução estrutural baseada em `lp_sections`, catálogo vigente e debate humano–IA
+- Status: Planejada; correção conceitual definida no plano-base E12.4 v2.5 e implementação técnica pendente.
 - Conteúdo:
-  - `Criar perfil com IA` será a ação inicial destacada; o fluxo manual permanece completo.
+  - Sem perfil próprio, a ação será `Criar perfil com IA`; com perfil `active` próprio, será `Evoluir perfil com IA`; o fluxo manual permanece completo.
+  - A evolução inicializará o editor da nova versão com a estrutura ativa completa como baseline não persistido e revalidará cada recomendação contra as versões vigentes da E10.8 e da E18.5.
   - `coverage[]` avaliará cada item de `lp_sections`; `recommendations[]` será a lista final única por módulo.
+  - `coverage[]`, relações seção–módulo, gaps e estados do diff serão resultados derivados e transitórios; somente recomendações aplicadas e salvas integrarão o perfil.
   - Várias seções poderão convergir para um módulo e uma seção poderá exigir vários módulos.
   - A prioridade será convertida por `3 → P1`, `2 → P2`, `1 → P3`; a ordem final será determinística, positiva e única.
+  - Cada rodada explícita ocorrerá sobre a nova versão em `draft`, usando editor original, candidata atual e feedback humano; a candidata e o diff aparecerão antes de aplicar, refinar novamente ou descartar.
+  - Aplicar alterará somente o editor; `Salvar rascunho`, aprovação, ativação e arquivamento continuarão separados e humanos.
+  - A pesquisa bruta será contexto complementar opcional, resolvido pela proveniência efetiva da E10.8 e incluído apenas quando existir e couber integralmente no limite da requisição; ausência ou omissão não criarão gate.
   - A IA não preencherá nem modificará `generation_guidance` ou `item_guidance`, que serão exceções humanas opcionais.
   - A decisão `wait_for_modules` ou `proceed_with_available` será registrada no evento de auditoria do rascunho; aguardar bloqueará ativação.
   - A E12.4.4 recalculará os gaps antes da prontidão, sem nova tabela neste recorte.
-  - A evolução E20.3.5 tornará `generation_guidance` opcional no mesmo PR técnico.
+  - A evolução E20.3.5 tornará `generation_guidance` opcional no mesmo PR técnico, sem reabrir E20.3.3 ou E20.3.4.
   - Snapshot e independência da LP permanecem consolidados; liberdade de edição e comportamento de regeneração serão decididos apenas no futuro plano-base da E19.4.
 
 13. E13 — Partner Dashboard
@@ -2245,11 +2250,14 @@ Repositório — Ajustados
 * Status: Planejada; evolução de domínio vinculada à implementação técnica da E12.4.3.2.
 * Conteúdo:
 
-  * Tornar `generation_guidance` anulável, mas não vazio quando presente, por migration incremental forward-only.
+  * Tornar `generation_guidance` anulável, exclusivamente humano e não vazio quando presente, por migration incremental forward-only.
   * Atualizar contratos, schemas, DTOs, RPCs, normalização, testes e verificador read-only sem alterar estados, herança, resolução active-only ou recomendações.
   * Preservar `item_guidance` opcional e exclusivamente humano.
+  * Não criar novo campo, estado, tabela, resolver ou infraestrutura e não reabrir E20.3.3 ou E20.3.4.
 
 99. Changelog
+v1.5.114 — 30/07/2026 — Reconciliada a E12.4.3.2 para criação e evolução do perfil em `draft`, baseline ativo revalidado, ações contextuais, candidata e diff transitórios, aplicação separada do salvamento e pesquisa bruta complementar opcional; E20.3.5 mantida como evolução mínima.
+
 v1.5.113 — 29/07/2026 — Planejada a E12.4.3.2 com cobertura por `lp_sections`, recomendações deduplicadas, prioridade e ordem determinísticas, auditoria da decisão sobre gaps e evolução E20.3.5; decisões de edição e regeneração permanecem para o futuro plano-base da E19.4.
 
 v1.5.102 — 26/07/2026 — E20.3 implementada no PR #644: E20.3.3 concluída com migration versionada e aplicação pendente do merge; E20.3.4 implementada e validada; fechamento da fase pendente apenas de merge, apply automático e verificação read-only pós-apply.
