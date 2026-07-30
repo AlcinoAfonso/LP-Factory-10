@@ -1237,8 +1237,17 @@ Repositório — Ajustados
 - Plano-base: `docs/lousa-plano-base-e11-2.md`.
 - Automação: não.
 
+11.2.2 Registros do recorte
+- Repositório:
+  - Criados:
+    - `app/a/[account]/_components/commercial-page/checkout-policy.ts`
+    - `app/a/[account]/_components/commercial-page/checkout-validation-cases.ts`
+  - Ajustados:
+    - `app/a/[account]/_components/commercial-page/checkout-actions.ts`
+    - `package.json`
+
 11.2.3 Autoridade para o checkout
-- Status: planejado.
+- Status: implementado.
 - Conteúdo:
   - somente owner ativo de conta ativa e sem entitlement comercial válido pode visualizar a ação de contratação e iniciar o checkout existente;
   - admin, editor e viewer não iniciam checkout, com bloqueio server-side independente da UI;

@@ -9,6 +9,7 @@
     "lint": "eslint .",
     "check": "npm run lint && npm run typecheck",
     "validate:account-members": "tsx lib/access/account-members/validation-cases.ts",
+    "validate:e11-checkout": "tsx app/a/[account]/_components/commercial-page/checkout-validation-cases.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "validate:commercial-activation": "tsx lib/conversion-content/commercial-activation/validation-cases.ts",
     "validate:landing-page-root": "tsx lib/conversion-content/landing-page/root-validation-cases.ts",
