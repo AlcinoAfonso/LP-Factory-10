@@ -1242,14 +1242,21 @@ Repositório — Ajustados
   - Criados:
     - `app/a/[account]/_components/commercial-page/checkout-policy.ts`
     - `app/a/[account]/_components/commercial-page/checkout-validation-cases.ts`
+    - `app/a/[account]/_components/commercial-page/commercial-experience-policy.ts`
+    - `app/a/[account]/_components/commercial-page/commercial-experience-validation-cases.ts`
   - Ajustados:
+    - `app/a/[account]/_components/commercial-page/CommercialActivationTrackingScope.tsx`
+    - `app/a/[account]/_components/commercial-page/GenericCommercialPage.tsx`
+    - `app/a/[account]/_components/commercial-page/PublishedCommercialActivationPage.tsx`
     - `app/a/[account]/_components/commercial-page/checkout-actions.ts`
+    - `app/a/[account]/page.tsx`
     - `app/a/[account]/members/page.tsx`
     - `lib/access/account-members/contracts.ts`
     - `lib/access/account-members/index.ts`
     - `lib/access/account-members/policy.ts`
     - `lib/access/account-members/validation-cases.ts`
     - `lib/access/guards.ts`
+    - `lib/conversion-content/commercial-activation/renderer.tsx`
     - `package.json`
 
 11.2.3 Autoridade para o checkout
@@ -1272,7 +1279,7 @@ Repositório — Ajustados
   - editor e viewer permanecem sem gestão de membros.
 
 11.2.5 Experiência da conta sem entitlement
-- Status: planejado.
+- Status: implementado; validação visual autenticada em Preview pendente.
 - Conteúdo:
   - `GenericCommercialPage` e `PublishedCommercialActivationPage` aplicam a mesma política de autoridade financeira;
   - owner sem entitlement mantém a variante comercial vigente e inicia o checkout existente; owner com entitlement não inicia nova compra;
@@ -1281,14 +1288,14 @@ Repositório — Ajustados
   - a E11.2 não cria novo dashboard produtivo nem antecipa a E10.5.1.
 
 11.2.6 Preservação dos vínculos e ações existentes
-- Status: planejado.
+- Status: implementado e coberto pela validação automatizada.
 - Conteúdo:
   - listagem, aceite, recusa, revogação, desativação e alteração de papel permanecem regidos pela E11.1 e independentes de entitlement;
   - memberships existentes não são apagados, desativados ou alterados retroativamente;
   - a decisão comercial consome exclusivamente `CommercialEntitlementSignal.isCommerciallyEligible`, sem reinterpretar origem, plano ou provedor.
 
 11.2.7 Validação técnica, visual e humana
-- Status: planejado.
+- Status: validação automatizada aprovada; Preview autenticado desktop/mobile pendente.
 - Conteúdo:
   - validar a matriz de variante genérica/publicada, owner/admin/editor/viewer e `isCommerciallyEligible=false/true`, incluindo visibilidade, chamada direta e comportamento preservado;
   - comprovar que bloqueios de checkout e convite ocorrem antes de efeitos externos ou persistência;

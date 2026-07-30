@@ -24,9 +24,11 @@ import type {
 type RendererProps = {
   composition: ContentComposition;
   contentJson: unknown;
+  showFinancialActions?: boolean;
 };
 
 type SectionComponentProps<Variant extends CommercialActivationSectionVariant> = {
+  showFinancialActions: boolean;
   section: CommercialActivationRenderSection & {
     variantKey: Variant;
     content: CommercialActivationSectionContentByVariant[Variant];
@@ -82,6 +84,7 @@ export const commercialActivationRendererRegistry = {
 export function CommercialActivationRenderer({
   composition,
   contentJson,
+  showFinancialActions = true,
 }: RendererProps) {
   const resolved = resolveCommercialActivationRenderModel({
     composition,
@@ -99,13 +102,20 @@ export function CommercialActivationRenderer({
     return null;
   }
 
-  return <CommercialActivationSections model={resolved.model} />;
+  return (
+    <CommercialActivationSections
+      model={resolved.model}
+      showFinancialActions={showFinancialActions}
+    />
+  );
 }
 
 export function CommercialActivationSections({
   model,
+  showFinancialActions = true,
 }: {
   model: CommercialActivationRenderModel;
+  showFinancialActions?: boolean;
 }) {
   return (
     <article
@@ -113,21 +123,35 @@ export function CommercialActivationSections({
       data-content-schema-version={model.schemaVersion}
     >
       {model.sections.map((section) => (
-        <SectionRenderer key={section.compositionItemId} section={section} />
+        <SectionRenderer
+          key={section.compositionItemId}
+          section={section}
+          showFinancialActions={showFinancialActions}
+        />
       ))}
     </article>
   );
 }
 
-function SectionRenderer({ section }: { section: CommercialActivationRenderSection }) {
+function SectionRenderer({
+  section,
+  showFinancialActions,
+}: {
+  section: CommercialActivationRenderSection;
+  showFinancialActions: boolean;
+}) {
   const Component = commercialActivationRendererRegistry[section.variantKey]
-    .component as ComponentType<{ section: CommercialActivationRenderSection }>;
+    .component as ComponentType<{
+      section: CommercialActivationRenderSection;
+      showFinancialActions: boolean;
+    }>;
 
-  return <Component section={section} />;
+  return <Component section={section} showFinancialActions={showFinancialActions} />;
 }
 
 function HeroDefault({
   section,
+  showFinancialActions,
 }: SectionComponentProps<"hero.default">) {
   const content = section.content;
   return (
@@ -143,13 +167,15 @@ function HeroDefault({
           {content.description}
         </p>
         <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-          <a
-            href={content.primary_cta.href}
-            data-commercial-cta="hero"
-            className="inline-flex min-h-11 items-center justify-center rounded-md bg-white px-5 py-3 text-sm font-semibold text-brand-dark-900 shadow-sm hover:bg-brand-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-brand-dark-900"
-          >
-            {content.primary_cta.label}
-          </a>
+          {showFinancialActions ? (
+            <a
+              href={content.primary_cta.href}
+              data-commercial-cta="hero"
+              className="inline-flex min-h-11 items-center justify-center rounded-md bg-white px-5 py-3 text-sm font-semibold text-brand-dark-900 shadow-sm hover:bg-brand-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-brand-dark-900"
+            >
+              {content.primary_cta.label}
+            </a>
+          ) : null}
           {content.secondary_cta ? (
             <a
               href={content.secondary_cta.href}
@@ -224,7 +250,9 @@ function ServicesList({
 
 function PlansCards({
   section,
+  showFinancialActions,
 }: SectionComponentProps<"plans.cards">) {
+  if (!showFinancialActions) return null;
   const content: PlansCardsContent = section.content;
   return (
     <PageSection eyebrow={content.eyebrow} title={content.title} centered>
@@ -347,7 +375,9 @@ function FaqAccordion({
 
 function FinalCtaSimple({
   section,
+  showFinancialActions,
 }: SectionComponentProps<"final_cta.simple">) {
+  if (!showFinancialActions) return null;
   const content: FinalCtaSimpleContent = section.content;
   return (
     <section className="bg-brand-50 px-6 py-12 text-center sm:px-10 lg:px-14">
