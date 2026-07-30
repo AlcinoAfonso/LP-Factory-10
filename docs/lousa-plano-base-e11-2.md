@@ -161,6 +161,11 @@
 ### 2.4. Experiência da conta sem entitlement
 
 - Owner recebe a página comercial vigente e seus CTAs de contratação.
+- A política cobre as duas variantes reais: `GenericCommercialPage` e `PublishedCommercialActivationPage` com `CommercialActivationTrackingScope`.
+- Na variante publicada, a integração route-local controla a disponibilidade da contratação existente sem alterar o bundle, o conteúdo persistido, a composição, a ordem ou os schemas da E10.7:
+  - owner sem entitlement preserva a página publicada e pode iniciar o checkout existente pelos controles de plano;
+  - owner com entitlement preserva a página publicada sem ação capaz de iniciar nova compra;
+  - admin, editor e viewer não recebem controles financeiros, mesmo quando o bundle publicado estiver `ready`.
 - Admin, editor e viewer recebem um estado enxuto com:
   - título ou mensagem clara de indisponibilidade comercial;
   - texto `Esta conta aguarda ativação comercial pelo proprietário.`;
@@ -202,9 +207,11 @@
   - convidado ainda aceita ou recusa convite pendente próprio;
   - memberships existentes permanecem inalterados pela mudança comercial.
 - Renderização:
-  - owner sem entitlement recebe página comercial;
-  - não-owner sem entitlement recebe estado de espera;
-  - nenhum não-owner recebe botão ou cards acionáveis de checkout;
+  - cruzar `generic-v1` e `commercial_activation` publicado com owner, admin, editor e viewer, cada papel com `isCommerciallyEligible=false` e `true`;
+  - em cada combinação, validar visibilidade de planos e ação financeira, chamada direta de checkout, experiência esperada e comportamento preservado;
+  - owner sem entitlement recebe a variante vigente e contratação funcional; owner com entitlement não inicia nova compra;
+  - não-owner sem entitlement recebe estado de espera e nenhum não-owner recebe botão, cards ou CTA financeiro acionável;
+  - a variante publicada preserva bundle, conteúdo, composição, ordem e schemas da E10.7;
   - desktop e mobile mantêm hierarquia, contraste, foco e legibilidade.
   - Reconhecimento: owner sem entitlement identifica sem ajuda a ação de contratação; admin, editor e viewer sem entitlement identificam que a ativação comercial depende do proprietário e não encontram escolha de plano, cards acionáveis ou ação financeira.
   - Acessibilidade aplicável: validar contraste e legibilidade, ordem e visibilidade de foco, navegação por teclado, rótulos e mensagens compreensíveis, estado `disabled` quando utilizado e alvos de toque adequados nos controles existentes; não declarar auditoria ou conformidade WCAG 2.2 integral.
@@ -217,6 +224,7 @@
 ### 2.7. Observabilidade e updates condicionais
 
 - Cada decisão server-side de `checkout`, `invite` ou `resend` deve emitir um único evento estruturado seguro com `operation`, `result` (`allowed`, `denied` ou `error`), `reason`, `account_id`, `actor_role`, `request_id` e `latency_ms` quando disponíveis. O log deve ocorrer no fluxo server-side responsável pela operação, reutilizando o padrão de logging estruturado já existente no repositório, sem novo serviço. Não registrar e-mail, dados de formulário, payload Stripe/Auth, URL de checkout, token, secret ou demais PII. Falha de logging não pode liberar nem bloquear a operação principal.
+- A validação deve comprovar, para cada operação, os resultados `allowed`, `denied` e `error`, exatamente um evento por decisão, ausência de PII e preservação integral do resultado principal quando a emissão do log falhar.
 - `supa#5` permanece como oportunidade estratégica condicional para reduzir o tempo de diagnóstico de incidentes recorrentes em Auth ou convites que não possam ser resolvidos pelos logs e testes existentes; não habilitar AI Debugging, drains, alertas ou nova integração de observabilidade nesta E11.2.
 - `vercel#15` permanece como oportunidade estratégica condicional quando a Toolbar já estiver disponível ao revisor e trouxer valor à revisão visual do Preview; não configurar, contratar nem tornar a Toolbar dependência ou gate desta E11.2.
 - `vercel#27` não é aplicável ao recorte porque `next` e `eslint-config-next` já estão em `16.2.11`; a E11.2 não reabre manutenção de dependências.
@@ -300,20 +308,25 @@
 - Objetivo: separar a experiência comercial do owner do estado de espera dos demais papéis, sem criar novo dashboard produtivo.
 - Execução:
   - usar o sinal já carregado em `/a/[account]` e o papel do Access Context;
-  - manter a página comercial e os CTAs existentes para owner sem entitlement;
+  - aplicar a política de ação financeira tanto a `GenericCommercialPage` quanto a `PublishedCommercialActivationPage` e `CommercialActivationTrackingScope`;
+  - manter a variante vigente e os CTAs de contratação para owner sem entitlement, fazendo os controles de plano da variante publicada iniciarem o checkout existente somente no modo autorizado;
   - remover cards e CTAs financeiros de admin, editor e viewer;
   - apresentar a não-owner sem entitlement a mensagem `Esta conta aguarda ativação comercial pelo proprietário.`;
   - manter o comportamento pós-entitlement vigente, sem antecipar a E10.5.1;
-  - validar desktop e mobile e executar o fechamento documental material pelo Prompt ABC;
-  - no fechamento pelo Prompt ABC, reconciliar `docs/schema.md` 1.2.4 substituindo a afirmação de apply futuro por registro de que `supabase/migrations/20260727155312_e11_account_members_security.sql` está aplicada no ambiente alvo e teve o estado pós-apply verificado. Atualizar o status E11.2 no Roadmap e na v2 para registrar o merge do PR #666. Esta reconciliação é exclusivamente documental: não criar, reaplicar ou modificar migration, RLS, policy, GRANT, view ou exposição pela Data API.
+  - preservar sem mutação o bundle, o conteúdo persistido, a composição, a ordem e os schemas da E10.7;
+  - validar desktop e mobile e executar o fechamento documental material pelo Prompt ABC.
 - Artefatos esperados:
   - ajuste em `app/a/[account]/page.tsx`;
-  - ajuste nos componentes existentes de `app/a/[account]/_components/commercial-page/`;
+  - ajuste em `app/a/[account]/_components/commercial-page/GenericCommercialPage.tsx` quando necessário à política comum;
+  - ajuste em `app/a/[account]/_components/commercial-page/PublishedCommercialActivationPage.tsx` e `CommercialActivationTrackingScope.tsx` para a integração route-local da variante publicada;
+  - ajuste mínimo no renderer apenas se indispensável para omitir controles financeiros em runtime, sem mudar contratos persistidos, composição ou schemas;
   - testes ou casos de validação nos artefatos canônicos existentes.
 - Critérios de aceite:
   - owner sem entitlement recebe página comercial e CTA funcional;
   - admin, editor e viewer sem entitlement recebem estado de espera sem escolha de plano ou checkout;
   - nenhum não-owner recebe CTA financeiro, inclusive com chamada direta já bloqueada pela E11.2.3;
+  - a matriz de `2 variantes × 4 papéis × 2 estados de entitlement` comprova visibilidade, chamada direta e comportamento preservado em todas as combinações;
+  - a variante publicada mantém bundle, conteúdo persistido, composição, ordem e schemas inalterados;
   - memberships, papéis e ações preservadas não sofrem alteração retroativa;
   - estado visual aprovado em desktop e mobile quanto a hierarquia, contraste, foco e legibilidade;
   - a prova em Preview deve cobrir owner e não-owner sem entitlement em desktop e mobile, validando conteúdo, responsividade, foco, ausência de CTA financeiro indevido e ausência de erro ou quebra visual. Ferramentas da Vercel podem ser usadas quando já disponíveis, mas não substituem a validação manual nem constituem dependência da fase;
@@ -321,14 +334,15 @@
   - diff não cria banco, rota, boundary ou infraestrutura;
   - Roadmap e documentos materialmente afetados são reconciliados pelo Prompt ABC.
 - Evidência esperada:
-  - capturas do owner e de pelo menos um papel não-owner sem entitlement;
-  - capturas em desktop e mobile sem dados sensíveis;
+  - resultados completos da matriz de duas variantes, quatro papéis e dois estados de entitlement;
+  - capturas de owner, admin, editor e viewer nas combinações visualmente distintas, em desktop e mobile, sem dados sensíveis;
   - smoke do fluxo autorizado e das ações preservadas;
   - checks e fechamento documental registrados no PR.
 
 ### 3.4. Próxima ação
 
 - O PR #666 foi incorporado à `main` e o Processo automatizado está em execução na branch única de orquestração.
+- A reconciliação do Roadmap anterior a `plan-v2-approved` registra que o PR #666 já foi incorporado à `main`; essa atualização não integra a fase E11.2.5.
 - A v2 deve passar pelas duas passagens do Analista e pela reconciliação do Roadmap antes do checkpoint `LP-Factory-Stage: plan-v2-approved`.
 - Depois do checkpoint aprovado, executar E11.2.3, E11.2.4 e E11.2.5 no mesmo PR, sem repetir especialistas nem criar branch ou PR por fase.
 
