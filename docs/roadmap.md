@@ -2,7 +2,7 @@
 
 0.1 Cabeçalho
 • Data: 30/07/2026
-• Versão: v1.5.116
+• Versão: v1.5.117
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -1228,6 +1228,55 @@ Repositório — Ajustados
   - testes humanos corretivos aprovados para convite novo e reenvio, senha e ativação, dois convites do mesmo usuário não confirmado para contas diferentes, ativação exclusiva do respectivo `account_user_id` e adulteração do estado bloqueada;
   - smoke final em Production aprovado na página de membros e convites, com dados e ações de gestão carregados;
   - fase concluída sem teste manual remanescente.
+
+11.2 Autoridade comercial e elegibilidade para gestão de membros
+
+11.2.1 Objetivo e status
+- Objetivo: conectar os papéis da E11 ao sinal canônico de entitlement da E9, separando autoridade financeira, elegibilidade para novos convites e ações de manutenção dos vínculos existentes.
+- Status: planejado; plano-base v1 aguardando aprovação humana.
+- Plano-base: `docs/lousa-plano-base-e11-2.md`.
+- Automação: não.
+
+11.2.3 Autoridade para o checkout
+- Status: planejado.
+- Conteúdo:
+  - somente owner ativo de conta ativa e sem entitlement comercial válido pode visualizar a ação de contratação e iniciar o checkout existente;
+  - admin, editor e viewer não iniciam checkout, com bloqueio server-side independente da UI;
+  - owner com `isCommerciallyEligible=true` não cria nova assinatura pela action atual;
+  - preço, recorrência, webhook, gestão de assinatura e outros fluxos de billing permanecem fora do recorte.
+
+11.2.4 Elegibilidade para criação e reenvio de convites
+- Status: planejado.
+- Conteúdo:
+  - owner e admin só criam ou reenviam convites quando `isCommerciallyEligible=true`;
+  - o guard ocorre no boundary server-side existente antes de criação no Auth, preparação do membership ou envio;
+  - ausência ou erro do sinal bloqueia criação e reenvio;
+  - editor e viewer permanecem sem gestão de membros.
+
+11.2.5 Experiência da conta sem entitlement
+- Status: planejado.
+- Conteúdo:
+  - owner sem entitlement mantém a página comercial e os CTAs do checkout existente;
+  - admin, editor e viewer sem entitlement recebem estado simples de espera pela ativação comercial do proprietário;
+  - nenhum não-owner recebe cards ou CTA financeiro;
+  - a E11.2 não cria novo dashboard produtivo nem antecipa a E10.5.1.
+
+11.2.6 Preservação dos vínculos e ações existentes
+- Status: planejado.
+- Conteúdo:
+  - listagem, aceite, recusa, revogação, desativação e alteração de papel permanecem regidos pela E11.1 e independentes de entitlement;
+  - memberships existentes não são apagados, desativados ou alterados retroativamente;
+  - a decisão comercial consome exclusivamente `CommercialEntitlementSignal.isCommerciallyEligible`, sem reinterpretar origem, plano ou provedor.
+
+11.2.7 Validação técnica, visual e humana
+- Status: planejado.
+- Conteúdo:
+  - validar owner, admin, editor e viewer com e sem entitlement nos fluxos de página, checkout e membros;
+  - comprovar que bloqueios de checkout e convite ocorrem antes de efeitos externos ou persistência;
+  - confirmar que as ações preservadas continuam funcionando sem entitlement;
+  - validar o estado de espera em desktop e mobile, sem CTA financeiro para não-owner;
+  - concluir no mesmo recorte os checks aplicáveis, a prova em Preview e o fechamento documental pelo Prompt ABC.
+
 
 12. E12 — Admin Dashboard
 - Objetivo: Consolidar o Admin Dashboard como seção administrativa protegida, separada do Account Dashboard, com navegação própria e leitura operacional read-only.
