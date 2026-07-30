@@ -2,7 +2,7 @@
 
 0.1 Cabeçalho
 • Data: 30/07/2026
-• Versão: v1.5.117
+• Versão: v1.5.118
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -1233,7 +1233,7 @@ Repositório — Ajustados
 
 11.2.1 Objetivo e status
 - Objetivo: conectar os papéis da E11 ao sinal canônico de entitlement da E9, separando autoridade financeira, elegibilidade para novos convites e ações de manutenção dos vínculos existentes.
-- Status: planejado; plano-base v1 aprovado; Processo automatizado escolhido; aguardando merge humano.
+- Status: planejado; plano-base v2 aprovado; Processo automatizado em execução; PR #666 incorporado à main.
 - Plano-base: `docs/lousa-plano-base-e11-2.md`.
 - Automação: não.
 
@@ -1243,22 +1243,26 @@ Repositório — Ajustados
   - somente owner ativo de conta ativa e sem entitlement comercial válido pode visualizar a ação de contratação e iniciar o checkout existente;
   - admin, editor e viewer não iniciam checkout, com bloqueio server-side independente da UI;
   - owner com `isCommerciallyEligible=true` não cria nova assinatura pela action atual;
+  - decisões server-side de checkout emitem evento estruturado seguro para `allowed`, `denied` e `error`, sem PII e sem alterar o resultado da operação;
   - preço, recorrência, webhook, gestão de assinatura e outros fluxos de billing permanecem fora do recorte.
 
 11.2.4 Elegibilidade para criação e reenvio de convites
 - Status: planejado.
 - Conteúdo:
   - owner e admin só criam ou reenviam convites quando `isCommerciallyEligible=true`;
-  - o guard ocorre no boundary server-side existente antes de criação no Auth, preparação do membership ou envio;
+  - a conta precisa estar `active`, com `accountStatus` derivado do Access Context, e os guards ocorrem antes de leitura ou criação no Auth, preparação do membership, canal ou envio;
   - ausência ou erro do sinal bloqueia criação e reenvio;
+  - o fluxo preserva `inviteUserByEmail` e o template nativo `Invite user`, sem envio customizado;
+  - decisões server-side de convite e reenvio emitem evento estruturado seguro sem interferir no resultado da operação;
   - editor e viewer permanecem sem gestão de membros.
 
 11.2.5 Experiência da conta sem entitlement
 - Status: planejado.
 - Conteúdo:
-  - owner sem entitlement mantém a página comercial e os CTAs do checkout existente;
-  - admin, editor e viewer sem entitlement recebem estado simples de espera pela ativação comercial do proprietário;
-  - nenhum não-owner recebe cards ou CTA financeiro;
+  - `GenericCommercialPage` e `PublishedCommercialActivationPage` aplicam a mesma política de autoridade financeira;
+  - owner sem entitlement mantém a variante comercial vigente e inicia o checkout existente; owner com entitlement não inicia nova compra;
+  - admin, editor e viewer sem entitlement recebem estado simples de espera pela ativação comercial do proprietário, e nenhum não-owner recebe cards ou CTA financeiro;
+  - a variante publicada preserva bundle, conteúdo persistido, composição, ordem e schemas da E10.7;
   - a E11.2 não cria novo dashboard produtivo nem antecipa a E10.5.1.
 
 11.2.6 Preservação dos vínculos e ações existentes
@@ -1271,10 +1275,11 @@ Repositório — Ajustados
 11.2.7 Validação técnica, visual e humana
 - Status: planejado.
 - Conteúdo:
-  - validar owner, admin, editor e viewer com e sem entitlement nos fluxos de página, checkout e membros;
+  - validar a matriz de variante genérica/publicada, owner/admin/editor/viewer e `isCommerciallyEligible=false/true`, incluindo visibilidade, chamada direta e comportamento preservado;
   - comprovar que bloqueios de checkout e convite ocorrem antes de efeitos externos ou persistência;
+  - comprovar `allowed`, `denied` e `error`, exatamente um evento seguro por decisão e logging sem interferência no fluxo;
   - confirmar que as ações preservadas continuam funcionando sem entitlement;
-  - validar o estado de espera em desktop e mobile, sem CTA financeiro para não-owner;
+  - validar em Preview os estados visualmente distintos em desktop e mobile, sem CTA financeiro para não-owner;
   - concluir no mesmo recorte os checks aplicáveis, a prova em Preview e o fechamento documental pelo Prompt ABC.
 
 
