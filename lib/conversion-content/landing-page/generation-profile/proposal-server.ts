@@ -3,10 +3,12 @@ import "server-only";
 import { randomUUID } from "node:crypto";
 
 import { resolveLandingPageResearchForTaxon } from "../../adapters/landingPageResearchAdapter";
-import { readAdminGenerationProfileDetail, readLastActivatedOwnGenerationProfile } from "../../adapters/landingPageGenerationProfileAdminAdapter";
+import { readAdminGenerationProfileDetail } from "../../adapters/landingPageGenerationProfileAdminAdapter";
 import { requestGenerationProfileProposal } from "../../adapters/landingPageGenerationProfileOpenAiAdapter";
+import { readGenerationProfileRawResearch } from "../../adapters/landingPageGenerationProfileRawResearchAdapter";
 import type {
   GenerationProfileEditorContent,
+  GenerationProfileProposal,
   GenerationProfileProposalResult,
 } from "./admin-contracts";
 import { validateGenerationProfileDraft } from "./admin-schema";
@@ -22,12 +24,13 @@ import {
 export async function proposeLandingPageGenerationProfile(input: {
   taxonId: string;
   actorUserId: string;
-  currentEditor?: GenerationProfileEditorContent;
+  currentEditor: GenerationProfileEditorContent;
+  currentCandidate?: GenerationProfileProposal;
   humanFeedback?: string;
 }): Promise<GenerationProfileProposalResult> {
   const requestId = randomUUID();
   const startedAt = Date.now();
-  const requestKind = input.currentEditor ? "refinement" : "initial";
+  const requestKind = input.currentCandidate ? "refinement" : "initial";
   const model = process.env.OPENAI_LANDING_PAGE_GENERATION_PROFILE_MODEL?.trim();
   if (!model || !isGenerationProfileAssistanceConfigured({ apiKey: process.env.OPENAI_API_KEY, model })) {
     return finishFailure(requestId, "technical_failure", "AI assistance is unavailable.", {
@@ -39,33 +42,25 @@ export async function proposeLandingPageGenerationProfile(input: {
     });
   }
 
-  let currentEditor: GenerationProfileEditorContent | null = null;
-  if (input.currentEditor) {
-    const validatedEditor = validateGenerationProfileDraft({
-      ownerTaxonId: input.taxonId,
-      generationGuidance: input.currentEditor.generationGuidance,
-      recommendations: input.currentEditor.recommendations,
-      origin: "manual",
+  const validatedEditor = validateGenerationProfileDraft({
+    ownerTaxonId: input.taxonId,
+    ...(input.currentEditor.generationGuidance.trim() ? { generationGuidance: input.currentEditor.generationGuidance } : {}),
+    recommendations: input.currentEditor.recommendations,
+    origin: "manual",
+  });
+  if (!validatedEditor.ok) {
+    return finishFailure(requestId, "invalid_data", "Current editor content is invalid.", {
+      taxonId: input.taxonId,
+      platformAdminId: input.actorUserId,
+      requestKind,
+      model,
+      startedAt,
     });
-    if (!validatedEditor.ok) {
-      return finishFailure(
-        requestId,
-        "invalid_data",
-        "Current editor content is invalid for refinement.",
-        {
-          taxonId: input.taxonId,
-          platformAdminId: input.actorUserId,
-          requestKind,
-          model,
-          startedAt,
-        },
-      );
-    }
-    currentEditor = {
-      generationGuidance: validatedEditor.value.generationGuidance,
-      recommendations: validatedEditor.value.recommendations,
-    };
   }
+  const currentEditor = {
+    generationGuidance: input.currentEditor.generationGuidance.trim(),
+    recommendations: validatedEditor.value.recommendations,
+  };
 
   const research = await resolveLandingPageResearchForTaxon({
     taxonId: input.taxonId,
@@ -92,20 +87,9 @@ export async function proposeLandingPageGenerationProfile(input: {
       researchProvenance: getResearchProvenance(research.value),
     });
   }
-  const historicalProfile = await readLastActivatedOwnGenerationProfile({ profiles: detail.profiles });
-  if (!historicalProfile.ok) {
-    return finishFailure(requestId, "technical_failure", "Previous active profile context could not be loaded.", {
-      taxonId: input.taxonId,
-      platformAdminId: input.actorUserId,
-      requestKind,
-      model,
-      startedAt,
-      researchVersions: research.value.versions,
-      researchProvenance: getResearchProvenance(research.value),
-    });
-  }
-  const previousActiveProfile = historicalProfile.profile;
+  const previousActiveProfile = detail.profiles.find((profile) => profile.status === "active") ?? null;
   const moduleIdentities = listLandingPageModuleIdentities();
+  const rawResearch = await readGenerationProfileRawResearch(research.value);
   const provider = await requestGenerationProfileProposal({
     model,
     taxonId: input.taxonId,
@@ -113,7 +97,10 @@ export async function proposeLandingPageGenerationProfile(input: {
     moduleIdentities,
     previousActiveProfile,
     currentEditor,
+    currentCandidate: input.currentCandidate ?? null,
     humanFeedback: input.humanFeedback,
+    rawResearch: rawResearch.items,
+    rawResearchNotices: rawResearch.notices,
   });
   if (!provider.ok) {
     return finishFailure(requestId, mapProviderFailureToProposalError(provider.kind), "AI proposal could not be produced.", {
@@ -129,7 +116,13 @@ export async function proposeLandingPageGenerationProfile(input: {
     });
   }
 
-  const validated = validateGenerationProfileProviderPayload(provider.payload);
+  const validated = validateGenerationProfileProviderPayload({
+    payload: provider.payload,
+    research: research.value,
+    moduleIdentities,
+    notices: provider.notices,
+    rawResearchReferences: provider.rawResearchReferences,
+  });
   if (!validated.ok) {
     return finishFailure(requestId, "invalid_data", "AI proposal violated the generation profile contract.", {
       taxonId: input.taxonId,
@@ -165,6 +158,7 @@ export async function proposeLandingPageGenerationProfile(input: {
     ok: true,
     value: {
       ...validated.value,
+      researchVersions: research.value.versions,
       requestId,
     },
   };

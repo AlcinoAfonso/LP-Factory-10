@@ -26,7 +26,9 @@ import {
 } from "./proposal";
 import { listLandingPageModuleIdentities } from "../module-catalog";
 import {
-  applyGenerationProfileProposalToEditor,
+  applyGenerationProfileCandidate,
+  diffGenerationProfileRecommendations,
+  receiveGenerationProfileProposal,
   hasGenerationProfileEditorContent,
 } from "./editor-assistance";
 import { resolveLandingPageGenerationProfile } from "./resolver";
@@ -55,6 +57,95 @@ const validProfile = {
   ],
 } as const;
 
+const structuralResearch = {
+  servedTaxonId: NICHE_ID,
+  businessBuyer: {
+    audienceScope: "business_buyer" as const,
+    sourceTaxonId: NICHE_ID,
+    sourceRelation: "own" as const,
+    version: 1,
+    researches: [{
+      researchId: "41000000-0000-4000-8000-000000000001",
+      researchBlock: "lp_sections" as const,
+      audienceScope: "business_buyer" as const,
+      version: 1,
+      sourceTaxonId: NICHE_ID,
+      items: [{
+        itemId: "42000000-0000-4000-8000-000000000001",
+        researchId: "41000000-0000-4000-8000-000000000001",
+        itemKey: "buyer_faq",
+        itemText: "FAQ comercial",
+        priority: 2,
+        sortOrder: 2,
+        servedTaxonId: NICHE_ID,
+        sourceTaxonId: NICHE_ID,
+        sourceRelation: "own" as const,
+        audienceScope: "business_buyer" as const,
+        researchVersion: 1,
+      }],
+    }],
+  },
+  endCustomer: {
+    audienceScope: "end_customer" as const,
+    sourceTaxonId: NICHE_ID,
+    sourceRelation: "own" as const,
+    version: 1,
+    researches: [{
+      researchId: "41000000-0000-4000-8000-000000000002",
+      researchBlock: "lp_sections" as const,
+      audienceScope: "end_customer" as const,
+      version: 1,
+      sourceTaxonId: NICHE_ID,
+      items: [{
+        itemId: "42000000-0000-4000-8000-000000000002",
+        researchId: "41000000-0000-4000-8000-000000000002",
+        itemKey: "customer_hero",
+        itemText: "Hero de conversao",
+        priority: 3,
+        sortOrder: 1,
+        servedTaxonId: NICHE_ID,
+        sourceTaxonId: NICHE_ID,
+        sourceRelation: "own" as const,
+        audienceScope: "end_customer" as const,
+        researchVersion: 1,
+      }],
+    }],
+  },
+  versions: { endCustomer: 1, businessBuyer: 1 },
+} as const;
+
+const structuralPayload = {
+  coverage: [
+    {
+      audience_scope: "business_buyer" as const,
+      item_key: "buyer_faq",
+      section_name: "FAQ comercial",
+      source_priority: 2 as const,
+      source_order: 2,
+      status: "covered" as const,
+      compatible_identities: [{ module_key: "faq", module_version: 1, variant_key: "faq.accordion", variant_version: 1 }],
+      reason: null,
+      impact: null,
+    },
+    {
+      audience_scope: "end_customer" as const,
+      item_key: "customer_hero",
+      section_name: "Hero de conversao",
+      source_priority: 3 as const,
+      source_order: 1,
+      status: "covered" as const,
+      compatible_identities: [{ module_key: "hero", module_version: 1, variant_key: "hero.form", variant_version: 1 }],
+      reason: null,
+      impact: null,
+    },
+  ],
+  recommendations: [
+    { module_key: "hero", module_version: 1, variant_key: "hero.form", variant_version: 1, priority: "P1" as const, recommended_order: 10 },
+    { module_key: "faq", module_version: 1, variant_key: "faq.accordion", variant_version: 1, priority: "P2" as const, recommended_order: 20 },
+  ],
+  source_notices: [],
+};
+
 const validChain = {
   servedTaxonId: ULTRA_ID,
   nodes: [
@@ -70,7 +161,11 @@ const cases: readonly Readonly<{
 }>[] = [
   {
     name: "valid profile keeps profile and items in one aggregate",
-    run: () => assert.equal(landingPageGenerationProfileSchema.safeParse(validProfile).success, true),
+    run: () => {
+      assert.equal(landingPageGenerationProfileSchema.safeParse(validProfile).success, true);
+      const { generationGuidance: _generationGuidance, ...withoutGuidance } = validProfile;
+      assert.equal(landingPageGenerationProfileSchema.safeParse(withoutGuidance).success, true);
+    },
   },
   {
     name: "draft and archived states are valid but item lifecycle is rejected",
@@ -329,6 +424,9 @@ const cases: readonly Readonly<{
         origin: "manual",
       } as const;
       assert.equal(validateGenerationProfileDraft(input).ok, true);
+      const { generationGuidance: _generationGuidance, ...withoutGuidance } = input;
+      assert.equal(validateGenerationProfileDraft(withoutGuidance).ok, true);
+      assert.equal(validateGenerationProfileDraft({ ...input, generationGuidance: " " }).ok, false);
       assert.equal(validateGenerationProfileDraft({ ...input, recommendations: [{ ...input.recommendations[0], moduleKey: "invented" }] }).ok, false);
       assert.equal(validateGenerationProfileDraft({ ...input, profileId: validProfile.id }).ok, false);
       assert.equal(validateGenerationProfileDraft({ ...input, expectedUpdatedAt: "2026-07-28T12:00:00Z" }).ok, false);
@@ -354,125 +452,187 @@ const cases: readonly Readonly<{
     },
   },
   {
-    name: "proposal schema rejects invented identities duplicate order and extra properties",
+    name: "structural proposal covers every lp_sections item and rejects output drift",
     run: () => {
-      const payload = {
-        generation_guidance: "Oriente a progressao narrativa.",
-        recommendations: [{
-          module_key: "hero",
-          module_version: 1,
-          variant_key: "hero.form",
-          variant_version: 1,
-          priority: "P1",
-          recommended_order: 10,
-          item_guidance: null,
-        }],
-      };
-      assert.equal(validateGenerationProfileProviderPayload(payload).ok, true);
-      assert.equal(validateGenerationProfileProviderPayload({ ...payload, extra: true }).ok, false);
-      assert.equal(validateGenerationProfileProviderPayload({ ...payload, recommendations: [{ ...payload.recommendations[0], module_key: "invented" }] }).ok, false);
-      assert.equal(validateGenerationProfileProviderPayload({ ...payload, recommendations: [payload.recommendations[0], { ...payload.recommendations[0], module_key: "faq" }] }).ok, false);
-      assert.equal(validateGenerationProfileProviderPayload({ ...payload, recommendations: [{ ...payload.recommendations[0], variant_key: null }] }).ok, false);
-      assert.equal(validateGenerationProfileProviderPayload({ ...payload, recommendations: [{ ...payload.recommendations[0], variant_version: null }] }).ok, false);
+      const validate = (payload: unknown) => validateGenerationProfileProviderPayload({ payload, research: structuralResearch, moduleIdentities: listLandingPageModuleIdentities() });
+      const valid = validate(structuralPayload);
+      assert.equal(valid.ok, true, valid.ok ? undefined : valid.message);
+      assert.equal(validate({ ...structuralPayload, generation_guidance: "Nao autorizado" }).ok, false);
+      assert.equal(validate({ ...structuralPayload, recommendations: [{ ...structuralPayload.recommendations[0], item_guidance: "Nao autorizado" }] }).ok, false);
+      assert.equal(validate({ ...structuralPayload, coverage: structuralPayload.coverage.slice(1) }).ok, false);
+      assert.equal(validate({ ...structuralPayload, recommendations: [{ ...structuralPayload.recommendations[0], module_key: "invented" }, structuralPayload.recommendations[1]] }).ok, false);
+      assert.equal(validate({ ...structuralPayload, recommendations: [structuralPayload.recommendations[1], structuralPayload.recommendations[0]] }).ok, false);
     },
   },
   {
-    name: "proposal fingerprint is deterministic and detects human adjustment",
+    name: "coverage derives transient gaps and gap decisions require complete audit metadata",
     run: () => {
-      const proposal = {
-        generationGuidance: validProfile.generationGuidance,
-        recommendations: validProfile.items.map(({ id: _id, ...item }) => item),
+      const missingBuyer = {
+        ...structuralPayload,
+        coverage: [
+          { ...structuralPayload.coverage[0], status: "missing" as const, compatible_identities: [], reason: "Modulo indisponivel.", impact: "FAQ comercial parcial." },
+          structuralPayload.coverage[1],
+        ],
+        recommendations: [structuralPayload.recommendations[0]],
       };
+      const validated = validateGenerationProfileProviderPayload({ payload: missingBuyer, research: structuralResearch, moduleIdentities: listLandingPageModuleIdentities() });
+      assert.equal(validated.ok, true);
+      if (!validated.ok) return;
+      assert.deepEqual(validated.value.gaps.map((gap) => gap.itemKey), ["buyer_faq"]);
+      assert.equal(validateGenerationProfileDraft({
+        ownerTaxonId: NICHE_ID,
+        recommendations: validated.value.recommendations,
+        origin: "ai",
+        gapDecision: "wait_for_modules",
+      }).ok, false);
+      assert.equal(validateGenerationProfileDraft({
+        ownerTaxonId: NICHE_ID,
+        recommendations: validated.value.recommendations,
+        origin: "ai",
+        gapDecision: "wait_for_modules",
+        gapItemKeys: ["buyer_faq"],
+        gapImpactSummary: "FAQ comercial parcial.",
+        researchVersions: structuralResearch.versions,
+      }).ok, true);
+    },
+  },
+  {
+    name: "proposal fingerprint ignores human-only guidance and detects structural adjustment",
+    run: () => {
+      const proposal = { recommendations: validProfile.items.map(({ id: _id, ...item }) => item) };
       const fingerprint = fingerprintGenerationProfileProposal(proposal);
       assert.match(fingerprint, /^[a-f0-9]{64}$/);
       assert.equal(fingerprintGenerationProfileProposal(proposal), fingerprint);
-      assert.notEqual(fingerprintGenerationProfileProposal({ ...proposal, generationGuidance: "Ajustada" }), fingerprint);
+      assert.equal(fingerprintGenerationProfileProposal({ recommendations: proposal.recommendations.map((item) => ({ ...item, itemGuidance: "Ajustada" })) }), fingerprint);
+      assert.notEqual(fingerprintGenerationProfileProposal({ recommendations: proposal.recommendations.map((item) => ({ ...item, priority: "P2" as const })) }), fingerprint);
     },
   },
   {
-    name: "Responses API request is strict stateless tool-free and bounded",
+    name: "Responses API request is structural stateless tool-free and bounded with whole raw files",
     run: () => {
       const request = buildGenerationProfileResponsesRequest({
         model: GENERATION_PROFILE_APPROVED_MODEL,
         taxonId: NICHE_ID,
-        research: {
-          servedTaxonId: NICHE_ID,
-          endCustomer: { audienceScope: "end_customer", sourceTaxonId: NICHE_ID, sourceRelation: "own", version: 1, researches: [] },
-          businessBuyer: { audienceScope: "business_buyer", sourceTaxonId: NICHE_ID, sourceRelation: "own", version: 1, researches: [] },
-          versions: { endCustomer: 1, businessBuyer: 1 },
-        },
+        research: structuralResearch,
         moduleIdentities: listLandingPageModuleIdentities(),
         previousActiveProfile: null,
-        currentEditor: null,
+        currentEditor: { generationGuidance: "Segredo humano", recommendations: [] },
+        currentCandidate: null,
+        rawResearch: [{
+          reference: { path: "docs/pesquisas-brutas/exemplo/business_buyer/v1.md", audienceScope: "business_buyer", sourceTaxonId: SEGMENT_ID, sourceRelation: "direct_parent", version: 1, blob: "a".repeat(40) },
+          content: "arquivo completo",
+        }],
+        rawResearchNotices: [],
       });
       assert.equal(request.ok, true);
       assert.equal(request.body.store, false);
-      assert.equal(request.body.max_output_tokens, 2000);
+      assert.equal(request.body.max_output_tokens, 4000);
       assert.equal(Object.hasOwn(request.body, "tools"), false);
       assert.equal(request.body.text.format.strict, true);
       assert.equal(request.body.text.format.schema.additionalProperties, false);
       assert.equal(Object.hasOwn(request.body, "previous_response_id"), false);
+      const input = JSON.parse(request.body.input[1].content[0].text);
+      assert.equal(Object.hasOwn(input.current_editor, "generationGuidance"), false);
+      assert.equal(input.raw_research[0].content, "arquivo completo");
+      assert.equal(input.raw_research[0].reference.sourceRelation, "direct_parent");
+      const omittedRaw = buildGenerationProfileResponsesRequest({
+        model: GENERATION_PROFILE_APPROVED_MODEL,
+        taxonId: NICHE_ID,
+        research: structuralResearch,
+        moduleIdentities: listLandingPageModuleIdentities(),
+        previousActiveProfile: null,
+        currentEditor: { generationGuidance: "", recommendations: [] },
+        currentCandidate: null,
+        rawResearch: [{
+          reference: { path: "docs/pesquisas-brutas/exemplo/end_customer/v1.md", audienceScope: "end_customer", sourceTaxonId: NICHE_ID, sourceRelation: "own", version: 1, blob: "b".repeat(40) },
+          content: "x".repeat(100_000),
+        }],
+        rawResearchNotices: ["Pesquisa bruta complementar ausente para business_buyer."],
+      });
+      assert.equal(omittedRaw.ok, true);
+      assert.equal(omittedRaw.rawResearchReferences.length, 0);
+      assert.equal(omittedRaw.notices.length, 2);
+      assert.deepEqual(JSON.parse(omittedRaw.body.input[1].content[0].text).raw_research, []);
       const oversized = buildGenerationProfileResponsesRequest({
         model: GENERATION_PROFILE_APPROVED_MODEL,
         taxonId: NICHE_ID,
-        research: {
-          servedTaxonId: NICHE_ID,
-          endCustomer: { audienceScope: "end_customer", sourceTaxonId: NICHE_ID, sourceRelation: "own", version: 1, researches: [] },
-          businessBuyer: { audienceScope: "business_buyer", sourceTaxonId: NICHE_ID, sourceRelation: "own", version: 1, researches: [] },
-          versions: { endCustomer: 1, businessBuyer: 1 },
-        },
+        research: structuralResearch,
         moduleIdentities: listLandingPageModuleIdentities(),
         previousActiveProfile: null,
-        currentEditor: null,
+        currentEditor: { generationGuidance: "", recommendations: [] },
+        currentCandidate: null,
+        rawResearch: [],
+        rawResearchNotices: [],
         humanFeedback: "x".repeat(100_000),
       });
       assert.equal(oversized.ok, false);
     },
   },
   {
-    name: "initial proposal and refinement expose only the authorized current editor and latest feedback",
+    name: "creation and evolution expose structural baseline candidate and latest feedback only",
     run: () => {
-      const research = {
-        servedTaxonId: NICHE_ID,
-        endCustomer: { audienceScope: "end_customer" as const, sourceTaxonId: NICHE_ID, sourceRelation: "own" as const, version: 1, researches: [] },
-        businessBuyer: { audienceScope: "business_buyer" as const, sourceTaxonId: NICHE_ID, sourceRelation: "own" as const, version: 1, researches: [] },
-        versions: { endCustomer: 1, businessBuyer: 1 },
-      };
       const initial = buildGenerationProfileResponsesRequest({
         model: GENERATION_PROFILE_APPROVED_MODEL,
         taxonId: NICHE_ID,
-        research,
+        research: structuralResearch,
         moduleIdentities: listLandingPageModuleIdentities(),
         previousActiveProfile: null,
-        currentEditor: null,
+        currentEditor: { generationGuidance: "", recommendations: [] },
+        currentCandidate: null,
+        rawResearch: [],
+        rawResearchNotices: [],
       });
       const initialInput = JSON.parse(initial.body.input[1].content[0].text);
-      assert.equal(initialInput.request_kind, "initial");
-      assert.equal(initialInput.current_editor, null);
+      assert.equal(initialInput.request_kind, "creation");
+      assert.deepEqual(initialInput.current_editor, { recommendations: [] });
       assert.equal(initialInput.human_feedback, null);
 
       const currentEditor = {
         generationGuidance: validProfile.generationGuidance,
         recommendations: validProfile.items.map(({ id: _id, ...item }) => item),
       };
-      const refined = buildGenerationProfileResponsesRequest({
+      const evolution = buildGenerationProfileResponsesRequest({
         model: GENERATION_PROFILE_APPROVED_MODEL,
         taxonId: NICHE_ID,
-        research,
+        research: structuralResearch,
+        moduleIdentities: listLandingPageModuleIdentities(),
+        previousActiveProfile: { ...validProfile, recommendations: currentEditor.recommendations, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+        currentEditor,
+        currentCandidate: null,
+        rawResearch: [],
+        rawResearchNotices: [],
+        humanFeedback: "Priorize a prova antes da FAQ.",
+      });
+      const evolutionInput = JSON.parse(evolution.body.input[1].content[0].text);
+      assert.equal(evolutionInput.request_kind, "evolution");
+      assert.equal(Object.hasOwn(evolutionInput.current_editor.recommendations[0], "itemGuidance"), false);
+      assert.equal(Object.hasOwn(evolutionInput.previous_active_profile, "generationGuidance"), false);
+      assert.equal(evolutionInput.human_feedback, "Priorize a prova antes da FAQ.");
+
+      const validated = validateGenerationProfileProviderPayload({ payload: { ...structuralPayload, source_notices: ["Pesquisa bruta diverge da E10.8; a fonte estruturada foi preservada."] }, research: structuralResearch, moduleIdentities: listLandingPageModuleIdentities() });
+      assert.equal(validated.ok, true);
+      if (!validated.ok) return;
+      const candidate = { ...validated.value, researchVersions: structuralResearch.versions, requestId: "50000000-0000-4000-8000-000000000010" };
+      const nextRound = buildGenerationProfileResponsesRequest({
+        model: GENERATION_PROFILE_APPROVED_MODEL,
+        taxonId: NICHE_ID,
+        research: structuralResearch,
         moduleIdentities: listLandingPageModuleIdentities(),
         previousActiveProfile: null,
         currentEditor,
-        humanFeedback: "Priorize a prova antes da FAQ.",
+        currentCandidate: candidate,
+        rawResearch: [],
+        rawResearchNotices: [],
+        humanFeedback: "Refine novamente.",
       });
-      const refinedInput = JSON.parse(refined.body.input[1].content[0].text);
-      assert.equal(refinedInput.request_kind, "refinement");
-      assert.deepEqual(refinedInput.current_editor, currentEditor);
-      assert.equal(refinedInput.human_feedback, "Priorize a prova antes da FAQ.");
-      assert.equal(Object.hasOwn(refined.body, "previous_response_id"), false);
+      const nextRoundInput = JSON.parse(nextRound.body.input[1].content[0].text);
+      assert.deepEqual(nextRoundInput.current_candidate.recommendations, candidate.recommendations);
+      assert.equal(nextRoundInput.human_feedback, "Refine novamente.");
+      assert.equal(validated.value.notices.length, 1);
     },
   },
   {
-    name: "validated refinement replaces only the editor while failure preserves editor correlation and dirty state",
+    name: "candidate review preserves editor and apply preserves human guidance while marking dirty",
     run: () => {
       const currentEditor = {
         generationGuidance: validProfile.generationGuidance,
@@ -480,58 +640,43 @@ const cases: readonly Readonly<{
       };
       assert.equal(hasGenerationProfileEditorContent({ generationGuidance: "", recommendations: [] }), false);
       assert.equal(hasGenerationProfileEditorContent(currentEditor), true);
-
-      const refinedPayload = validateGenerationProfileProviderPayload({
-        generation_guidance: "Priorize prova e clareza.",
-        recommendations: [{
-          module_key: "hero",
-          module_version: 1,
-          variant_key: "hero.form",
-          variant_version: 1,
-          priority: "P1",
-          recommended_order: 10,
-          item_guidance: "Conecte a prova ao CTA.",
-        }],
-      });
-      assert.equal(refinedPayload.ok, true);
-      if (!refinedPayload.ok) return;
-      const success = applyGenerationProfileProposalToEditor({
+      const validated = validateGenerationProfileProviderPayload({ payload: structuralPayload, research: structuralResearch, moduleIdentities: listLandingPageModuleIdentities() });
+      assert.equal(validated.ok, true);
+      if (!validated.ok) return;
+      const result = { ok: true as const, value: { ...validated.value, researchVersions: structuralResearch.versions, requestId: "50000000-0000-4000-8000-000000000001" } };
+      const received = receiveGenerationProfileProposal({
         currentEditor,
         currentDirty: false,
-        currentProposal: null,
-        result: {
-          ok: true,
-          value: {
-            ...refinedPayload.value,
-            requestId: "50000000-0000-4000-8000-000000000001",
-          },
-        },
+        currentCandidate: null,
+        result,
       });
-      assert.equal(success.applied, true);
-      assert.equal(success.dirty, true);
-      assert.equal(success.editor.generationGuidance, "Priorize prova e clareza.");
-      assert.equal(success.proposal.requestId, "50000000-0000-4000-8000-000000000001");
-      assert.deepEqual(Object.keys(success).sort(), ["applied", "dirty", "editor", "proposal"]);
+      assert.equal(received.received, true);
+      assert.equal(received.editor, currentEditor);
+      assert.equal(received.dirty, false);
+      if (!received.candidate) return;
+      const applied = applyGenerationProfileCandidate({ currentEditor, candidate: received.candidate });
+      assert.equal(applied.editor.generationGuidance, currentEditor.generationGuidance);
+      assert.equal(applied.editor.recommendations.find((item) => item.moduleKey === "hero")?.itemGuidance, validProfile.items[0].itemGuidance);
+      assert.equal(applied.dirty, true);
+      assert.deepEqual(diffGenerationProfileRecommendations({ editor: currentEditor, candidate: received.candidate }), [
+        { moduleKey: "faq", status: "added", changes: [] },
+        { moduleKey: "hero", status: "kept", changes: [] },
+      ]);
 
-      const currentProposal = {
-        requestId: "50000000-0000-4000-8000-000000000000",
-        fingerprint: "a".repeat(64),
-      };
-      const failure = applyGenerationProfileProposalToEditor({
+      const failure = receiveGenerationProfileProposal({
         currentEditor,
         currentDirty: true,
-        currentProposal,
+        currentCandidate: received.candidate,
         result: {
           ok: false,
           requestId: "50000000-0000-4000-8000-000000000002",
           error: { code: "technical_failure", message: "Provider unavailable." },
         },
       });
-      assert.equal(failure.applied, false);
+      assert.equal(failure.received, false);
       assert.equal(failure.editor, currentEditor);
       assert.equal(failure.dirty, true);
-      assert.equal(failure.proposal, currentProposal);
-      assert.deepEqual(Object.keys(failure).sort(), ["applied", "dirty", "editor", "proposal"]);
+      assert.equal(failure.candidate, received.candidate);
     },
   },
   {

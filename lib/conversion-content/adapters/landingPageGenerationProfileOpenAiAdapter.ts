@@ -48,6 +48,8 @@ export async function requestGenerationProfileProposal(
       responseId: typeof payload.id === "string" ? payload.id : null,
       inputTokens: usage && Number.isInteger(usage.input_tokens) ? usage.input_tokens as number : null,
       outputTokens: usage && Number.isInteger(usage.output_tokens) ? usage.output_tokens as number : null,
+      rawResearchReferences: request.rawResearchReferences,
+      notices: request.notices,
     };
   } catch (error) {
     return { ok: false, kind: error instanceof Error && error.name === "AbortError" ? "timeout" : "http_error" };

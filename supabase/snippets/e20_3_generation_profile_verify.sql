@@ -45,7 +45,7 @@ with target_tables(table_name) as (
     ('landing_page_generation_profiles', 'landing_page_generation_profiles_owner_taxon_id_fkey', 'foreign key (owner_taxon_id) references business_taxons(id) on update cascade on delete restrict'),
     ('landing_page_generation_profiles', 'landing_page_generation_profiles_version_chk', 'check ((version > 0))'),
     ('landing_page_generation_profiles', 'landing_page_generation_profiles_status_chk', 'check ((status = any (array[''draft''::text, ''active''::text, ''archived''::text])))'),
-    ('landing_page_generation_profiles', 'landing_page_generation_profiles_guidance_chk', 'check ((length(btrim(generation_guidance)) > 0))'),
+    ('landing_page_generation_profiles', 'landing_page_generation_profiles_guidance_chk', 'check (((generation_guidance is null) or (length(btrim(generation_guidance)) > 0)))'),
     ('landing_page_generation_profiles', 'landing_page_generation_profiles_owner_version_uidx', 'unique (owner_taxon_id, version)'),
     ('landing_page_generation_profile_items', 'landing_page_generation_profile_items_pkey', 'primary key (id)'),
     ('landing_page_generation_profile_items', 'landing_page_generation_profile_items_profile_id_fkey', 'foreign key (profile_id) references landing_page_generation_profiles(id) on update cascade on delete cascade'),
@@ -130,6 +130,15 @@ with target_tables(table_name) as (
     case when count(*) = 0 then 'ok' else 'unexpected' end,
     coalesce(jsonb_agg(to_jsonb(column_mismatches) order by table_name, column_name), '[]'::jsonb)
   from column_mismatches
+  union all
+  select
+    'generation_guidance_nullable',
+    case when is_nullable = 'YES' then 'ok' else 'unexpected' end,
+    jsonb_build_object('is_nullable', is_nullable)
+  from information_schema.columns
+  where table_schema = 'public'
+    and table_name = 'landing_page_generation_profiles'
+    and column_name = 'generation_guidance'
   union all
   select
     'named_constraint_definitions',

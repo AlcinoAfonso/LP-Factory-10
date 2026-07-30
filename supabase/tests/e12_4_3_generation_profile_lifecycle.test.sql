@@ -115,12 +115,42 @@ begin
     '12040000-0000-4000-8000-000000000001',
     v_ai_updated.profile_id,
     v_ai_updated.updated_at,
-    'AI draft with unavailable correlation',
+    null,
     '[{"module_key":"hero","module_version":1,"variant_key":null,"variant_version":null,"priority":"P1","recommended_order":10,"item_guidance":null}]'::jsonb,
     'ai',
     null,
-    null
+    null,
+    jsonb_build_object(
+      'gap_decision', 'wait_for_modules',
+      'gap_item_keys', jsonb_build_array('end_customer:missing_section'),
+      'gap_impact_summary', 'Section remains unavailable.',
+      'research_versions', jsonb_build_object('endCustomer', 1, 'businessBuyer', 1),
+      'raw_research_references', jsonb_build_array(jsonb_build_object(
+        'path', 'docs/pesquisas-brutas/e12-4-3-test-segment/end_customer/v1.md',
+        'audienceScope', 'end_customer',
+        'sourceTaxonId', '12040000-0000-4000-8000-000000000001',
+        'sourceRelation', 'own',
+        'version', 1,
+        'blob', repeat('a', 40)
+      ))
+    )
   );
+
+  begin
+    perform public.save_landing_page_generation_profile_draft(
+      '12040000-0000-4000-8000-000000000001',
+      v_uncorrelated.profile_id,
+      v_uncorrelated.updated_at,
+      ' ',
+      '[]'::jsonb,
+      'manual',
+      null,
+      null
+    );
+    raise exception 'expected blank generation guidance rejection';
+  exception when others then
+    if sqlerrm not like '%E12_4_3_INVALID_INPUT%' then raise; end if;
+  end;
 
   begin
     perform public.save_landing_page_generation_profile_draft(
@@ -169,6 +199,35 @@ begin
     raise exception 'failed activation did not preserve active and draft';
   end if;
   execute 'set local role authenticated';
+
+  begin
+    perform public.activate_landing_page_generation_profile(
+      v_uncorrelated.profile_id,
+      v_uncorrelated.updated_at
+    );
+    raise exception 'expected wait_for_modules activation rejection';
+  exception when others then
+    if sqlerrm not like '%E12_4_3_INVALID_STATE%' then raise; end if;
+  end;
+
+  select * into v_uncorrelated
+  from public.save_landing_page_generation_profile_draft(
+    '12040000-0000-4000-8000-000000000001',
+    v_uncorrelated.profile_id,
+    v_uncorrelated.updated_at,
+    null,
+    '[{"module_key":"hero","module_version":1,"variant_key":null,"variant_version":null,"priority":"P1","recommended_order":10,"item_guidance":null}]'::jsonb,
+    'manual',
+    null,
+    null,
+    jsonb_build_object(
+      'gap_decision', 'proceed_with_available',
+      'gap_item_keys', jsonb_build_array('end_customer:missing_section'),
+      'gap_impact_summary', 'Administrator accepted the available modules.',
+      'research_versions', jsonb_build_object('endCustomer', 1, 'businessBuyer', 1),
+      'raw_research_references', '[]'::jsonb
+    )
+  );
 
   select * into v_activated
   from public.activate_landing_page_generation_profile(v_uncorrelated.profile_id, v_uncorrelated.updated_at);
@@ -241,7 +300,25 @@ begin
   ) then
     raise exception 'activation reused stale proposal correlation';
   end if;
-  if (select count(*) from public.audit_logs where record_id = v_active_profile_id and event in ('generation_profile_draft_saved', 'generation_profile_activated', 'generation_profile_archived')) <> 5 then
+  if not exists (
+    select 1 from public.audit_logs
+    where record_id = v_active_profile_id
+      and event = 'generation_profile_draft_saved'
+      and changes_json->>'gap_decision' = 'wait_for_modules'
+      and changes_json->>'gap_count' = '1'
+      and jsonb_array_length(changes_json->'raw_research_references') = 1
+  ) then
+    raise exception 'wait decision and safe raw research provenance were not audited';
+  end if;
+  if not exists (
+    select 1 from public.audit_logs
+    where record_id = v_active_profile_id
+      and event = 'generation_profile_draft_saved'
+      and changes_json->>'gap_decision' = 'proceed_with_available'
+  ) then
+    raise exception 'proceed decision was not audited';
+  end if;
+  if (select count(*) from public.audit_logs where record_id = v_active_profile_id and event in ('generation_profile_draft_saved', 'generation_profile_activated', 'generation_profile_archived')) <> 6 then
     raise exception 'confirmed active lifecycle mutations were not fully audited';
   end if;
   if (select count(*) from public.audit_logs where record_id = v_draft_profile_id and event in ('generation_profile_draft_saved', 'generation_profile_archived')) <> 2 then

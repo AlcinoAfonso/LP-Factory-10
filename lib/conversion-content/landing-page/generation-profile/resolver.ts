@@ -85,7 +85,9 @@ export function resolveLandingPageGenerationProfile(
       selectedProfile.ownerTaxonId === parsedSource.data.taxonChain.servedTaxonId
         ? "own"
         : "inherited",
-    generationGuidance: selectedProfile.generationGuidance,
+    ...(selectedProfile.generationGuidance === undefined
+      ? {}
+      : { generationGuidance: selectedProfile.generationGuidance }),
     recommendations: [...selectedProfile.items]
       .sort((left, right) => left.recommendedOrder - right.recommendedOrder)
       .map((item) => ({ ...item })),

@@ -1,6 +1,6 @@
 with expected(signature) as (
   values
-    ('save_landing_page_generation_profile_draft(uuid,uuid,timestamp with time zone,text,jsonb,text,uuid,text)'),
+    ('save_landing_page_generation_profile_draft(uuid,uuid,timestamp with time zone,text,jsonb,text,uuid,text,jsonb)'),
     ('activate_landing_page_generation_profile(uuid,timestamp with time zone)'),
     ('archive_landing_page_generation_profile(uuid,timestamp with time zone)'),
     ('get_landing_page_generation_profile_lifecycle_status()')
@@ -14,6 +14,10 @@ from expected
 left join pg_proc function
   on function.oid = to_regprocedure('public.' || expected.signature)
 order by expected.signature;
+
+select
+  to_regprocedure('public.save_landing_page_generation_profile_draft(uuid,uuid,timestamp with time zone,text,jsonb,text,uuid,text)') is null
+    as obsolete_save_signature_removed;
 
 select
   routine_name,
