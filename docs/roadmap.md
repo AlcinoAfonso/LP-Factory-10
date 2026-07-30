@@ -1233,7 +1233,7 @@ Repositório — Ajustados
 
 11.2.1 Objetivo e status
 - Objetivo: conectar os papéis da E11 ao sinal canônico de entitlement da E9, separando autoridade financeira, elegibilidade para novos convites e ações de manutenção dos vínculos existentes.
-- Status: planejado; plano-base v1 aguardando aprovação humana.
+- Status: planejado; plano-base v1 aprovado; Processo automatizado escolhido; aguardando merge humano.
 - Plano-base: `docs/lousa-plano-base-e11-2.md`.
 - Automação: não.
 
@@ -2309,6 +2309,8 @@ Repositório — Ajustados
   * Não criar novo campo, estado, tabela, resolver ou infraestrutura e não reabrir E20.3.3 ou E20.3.4.
 
 99. Changelog
+v1.5.117 — 30/07/2026 — Planejada a E11.2 com fases executáveis E11.2.3, E11.2.4 e E11.2.5; v1 aprovada e Processo automatizado escolhido, aguardando merge humano.
+
 v1.5.116 — 30/07/2026 — Registrados o merge do PR #656, a habilitação da E11, o redeploy e o smoke final aprovado em Production.
 
 v1.5.115 — 30/07/2026 — Registrada a aprovação dos testes humanos da correção concorrente da E11.1.7 no Preview autorizado, removida a pendência de reteste e mantida Production desabilitada até o merge humano do PR #656.
