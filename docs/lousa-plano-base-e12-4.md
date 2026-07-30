@@ -1,11 +1,11 @@
 # Plano-base — E12.4 — Gestão do perfil de orientação
 
-- Data: 29/07/2026.
-- Versão: v2.4.
+- Data: 30/07/2026.
+- Versão: v2.5.
 - Status: E12.4.3 e E12.4.3.1 implementadas, validadas e reconciliadas na `main`; E12.4.3.2 planejada como correção funcional do fluxo de proposta estrutural.
 - Recorte previsto para o roadmap: `12.4 — Gestão do perfil de orientação`.
 - Recorte executável inicial: `12.4.3 — Proposta, revisão, aprovação e ativação do perfil`.
-- Recorte corretivo planejado: `12.4.3.2 — Proposta estrutural baseada em lp_sections e delta do catálogo`.
+- Recorte corretivo planejado: `12.4.3.2 — Criação e evolução estrutural baseada em lp_sections, catálogo vigente e debate humano–IA`.
 - Path canônico: `docs/lousa-plano-base-e12-4.md`.
 - Plano conceitual: `docs/lp-planejamento.md`.
 
@@ -17,10 +17,13 @@
 - A E12.4.3 e a E12.4.3.1 já entregaram a operação oficial do lifecycle e a assistência por IA no editor.
 - O teste do primeiro perfil revelou um desvio funcional: a tela começa pelo preenchimento manual e a IA também propõe textos de orientação, quando a ação principal deveria criar a estrutura a partir de `lp_sections`.
 - A E12.4.3.2 deve corrigir o fluxo para que:
-  - a primeira ação humana destacada seja `Criar perfil com IA`;
+  - sem perfil próprio, a ação destacada seja `Criar perfil com IA`;
+  - com perfil `active` próprio, a nova versão use `Evoluir perfil com IA` e inicialize o editor com a estrutura completa ativa como baseline;
   - `lp_sections` seja o esqueleto obrigatório da análise;
-  - a IA proponha somente módulos e variantes válidos, prioridade e ordem;
+  - a IA reavalie cada recomendação contra as pesquisas e o catálogo vigentes, propondo somente módulos e variantes válidos, prioridade e ordem;
+  - o debate ocorra sobre a nova versão em `draft`, com proposta candidata e diff transitórios antes de qualquer aplicação ao editor;
   - a IA informe o delta de seções sem módulo ou variante compatível;
+  - a pesquisa bruta arquivada seja usada apenas como contexto complementar quando existir e couber integralmente na requisição, sem novo gate;
   - `generation_guidance` e `item_guidance` sejam exceções opcionais e exclusivamente humanas;
   - o humano escolha entre aguardar a criação dos módulos faltantes ou prosseguir com os disponíveis, mantendo aviso explícito.
 - O resultado continua sendo um perfil orientativo. Não é composição final, LP, autorização de geração nem criação automática de módulo.
@@ -36,6 +39,7 @@
 - `docs/base-tecnica.md`.
 - `docs/schema.md`.
 - `docs/lousa-plano-base-e20-3.md`.
+- PR #662 e convenção opcional `docs/pesquisas-brutas/<taxon_slug>/<audience_scope>/v<research_version>.md`.
 - PR #644 e implementação vigente da E20.3:
   - `lib/conversion-content/landing-page/generation-profile/`;
   - `lib/conversion-content/adapters/landingPageGenerationProfileAdapter.ts`;
@@ -58,19 +62,26 @@
 - Ultranicho usa o perfil `active` do ancestral elegível mais próximo.
 - Os estados persistidos permanecem somente `draft`, `active` e `archived`.
 - Uma versão `active` é imutável; mudança exige nova versão em `draft`.
+- Ao iniciar a evolução, o editor copia integralmente a estrutura do `active` como baseline transitório; a cópia não persiste e nenhuma recomendação herdada continua válida sem reavaliação.
 - Existe no máximo uma versão `active` por taxon proprietário e a versão é única nesse taxon.
 - O mesmo `platform_admin` pode revisar e executar `Aprovar e ativar`; a decisão é humana e auditada, sem novo status persistido.
-- Quando não houver perfil próprio, a ação inicial destacada deve ser `Criar perfil com IA`; o fluxo manual permanece alternativa completa.
-- A IA usa `lp_sections` como fonte estrutural principal e os demais blocos resolvidos da E10.8 apenas como contexto.
+- Quando não houver perfil próprio, a ação inicial destacada deve ser `Criar perfil com IA`; quando houver perfil `active` próprio, a ação contextual deve ser `Evoluir perfil com IA`.
+- O fluxo manual permanece alternativa completa nos dois contextos.
+- A hierarquia das fontes é: E10.8 estruturada, aprovada e obrigatória como fonte operacional; E18.5 como fonte canônica das identidades executáveis; pesquisa bruta como contexto complementar opcional; feedback humano como hipótese ou orientação a avaliar.
+- A IA usa `lp_sections` como esqueleto estrutural e os demais blocos resolvidos da E10.8 como contexto obrigatório.
+- Quando existir pesquisa bruta correspondente à proveniência efetivamente resolvida pela E10.8, ela pode complementar a análise sem substituir, ampliar ou contrariar a fonte estruturada; divergências devem ser apresentadas ao humano e a E10.8 continua governando o perfil.
 - A resposta estrutural separa obrigatoriamente:
   - `coverage[]`, com uma avaliação para cada item de `lp_sections`;
   - `recommendations[]`, com a lista final deduplicada por módulo.
 - Cada item de `coverage[]` preserva `item_key`, nome da seção, prioridade e ordem de origem e informa cobertura `covered`, `partial` ou `missing`, além das identidades compatíveis, motivo e impacto quando aplicáveis.
 - `recommendations[]` contém somente módulo e variante disponíveis, prioridade `P1`, `P2` ou `P3` e ordem recomendada.
+- `coverage[]`, referências entre seções e módulos, gaps e estados do diff são derivados e transitórios; somente `recommendations[]`, depois de aplicada ao editor e persistida por `Salvar rascunho`, integra o perfil.
 - A IA não cria módulo, variante ou identidade e não preenche nem modifica `generation_guidance` ou `item_guidance`.
 - `generation_guidance`, no perfil-pai, e `item_guidance`, no item-filho, são exceções opcionais preenchidas somente pelo humano.
-- O refinamento por IA atua apenas sobre a estrutura proposta e preserva integralmente as exceções humanas existentes.
-- Cada acionamento humano autoriza somente uma chamada, sem conversa persistente, memória, retry ou continuidade automática.
+- A criação e a evolução por IA atuam somente sobre a estrutura da nova versão em `draft` e preservam integralmente as exceções humanas existentes.
+- Em cada rodada, a proposta candidata permanece apenas no estado transitório da interface; nova rodada recebe o draft original, a candidata exibida e o feedback humano mais recente.
+- `Aplicar proposta` altera somente o editor não salvo; `Refinar novamente` mantém o editor original intacto; `Descartar proposta` remove a candidata e preserva o editor original.
+- Cada acionamento humano autoriza somente uma chamada, sem chat persistente, memória própria, retry ou continuidade automática; a candidata transitória é reenviada explicitamente como entrada quando houver nova rodada.
 - Quando houver faltantes, o humano escolhe:
   - aguardar a criação dos módulos, sem concluir o perfil como estruturalmente completo;
   - prosseguir com os disponíveis, mantendo aviso explícito da pendência.
@@ -103,23 +114,28 @@
 - Gatilho:
   - `platform_admin` acessa a gestão de perfis no Admin Dashboard;
   - seleciona um segmento ou nicho;
-  - inicia manualmente uma nova versão ou solicita a proposta opcional por IA.
+  - sem perfil próprio, inicia manualmente ou usa `Criar perfil com IA`;
+  - com perfil `active` próprio, inicia a nova versão e usa `Evoluir perfil com IA` quando desejar assistência.
 - Entrada comum:
   - taxon proprietário e cadeia ativa;
   - perfil `active` atual, quando existir;
   - identidades públicas vigentes da E18.4 e E18.5.
 - Entrada adicional da IA:
-  - resultado completo e resolvido da E10.8, com versões e proveniência;
-  - última versão anteriormente ativa do perfil, quando houver;
-  - conteúdo atual do editor, quando o acionamento for um refinamento;
-  - feedback humano mais recente do `platform_admin`, quando informado.
+  - resultado completo e resolvido da E10.8, com `sourceTaxonId`, `audienceScope`, versões e proveniência;
+  - estrutura completa do perfil `active` próprio como baseline, quando houver;
+  - conteúdo original atual do editor da nova versão em `draft`;
+  - proposta candidata transitória, quando houver nova rodada antes da aplicação;
+  - feedback humano mais recente do `platform_admin`, quando informado;
+  - pesquisa bruta opcional correspondente a cada fonte resolvida, localizada pelo slug canônico server-side do `sourceTaxonId`, `audienceScope` e `version`, somente quando existir e couber integralmente na requisição.
 - Processamento manual:
-  - iniciar a próxima versão no editor;
+  - iniciar a próxima versão no editor; quando houver `active` próprio, copiar integralmente sua estrutura como baseline não persistido;
   - preencher recomendações e, excepcionalmente, `generation_guidance` e `item_guidance`;
   - persistir somente após `Salvar rascunho`;
   - permitir alteração somente enquanto a versão estiver em `draft`.
 - Processamento com IA:
   - exigir ação explícita do `platform_admin` e resolução completa da E10.8;
+  - comparar as versões e proveniências vigentes da E10.8 e as identidades e contratos vigentes da E18.5 com o baseline ativo;
+  - copiar apenas o que continua válido e reavaliar semanticamente o que mudou, sem manter recomendação apenas por herança;
   - usar todos os itens de `lp_sections` como esqueleto;
   - fazer correspondência semântica somente com identidades válidas da E18.5;
   - produzir `coverage[]` para avaliar cada seção e `recommendations[]` como lista final única por módulo;
@@ -131,13 +147,17 @@
   - não inventar identidade nem preencher ou modificar exceções humanas;
   - realizar no máximo uma chamada por acionamento, sem retry ou encadeamento;
   - validar deterministicamente cobertura, identidades, duplicidades, conversão de prioridade e ordem final;
-  - preencher o editor sem persistência automática.
+    - apresentar a proposta candidata e o diff antes de alterar o editor;
+  - permitir `Aplicar proposta`, `Refinar novamente` ou `Descartar proposta`;
+  - aplicar somente ao editor e nunca persistir automaticamente.
 - Tratamento do delta:
+  - comparar candidata e editor original e mostrar módulos mantidos, adicionados, removidos e substituídos, além de variantes, prioridades e ordens alteradas e gaps novos ou resolvidos;
+  - usar `mantido`, `adicionado`, `alterado` e `removido` somente como estados derivados de apresentação, sem persistência no perfil;
   - apresentar seção pesquisada, prioridade, ordem, motivo da ausência e impacto de prosseguir;
   - `Aguardar criação dos módulos` mantém o perfil em `draft`, bloqueia `Aprovar e ativar` e não cria nada automaticamente na E18.5;
   - `Prosseguir com os disponíveis` usa somente recomendações válidas e mantém aviso visível na sessão corrente;
   - nenhuma nova tabela é criada e os gaps não integram as tabelas do perfil;
-  - ao salvar o rascunho, registrar no evento de auditoria vigente a decisão `wait_for_modules` ou `proceed_with_available`, os `item_key` afetados, quantidade de gaps, impacto resumido e versões das fontes usadas;
+  - ao salvar o rascunho, registrar no evento de auditoria vigente a decisão `wait_for_modules` ou `proceed_with_available`, os `item_key` afetados, quantidade de gaps, impacto resumido, versões das fontes usadas e, quando utilizada, referência segura da pesquisa bruta com path, versão declarada, commit ou blob, público e taxon de origem;
   - a auditoria preserva a decisão, mas não substitui o recálculo obrigatório dos gaps pela E12.4.4 antes da prontidão.
 - Validação:
   - validar taxon, agregado, identidades e versões antes de salvar, ativar ou arquivar;
@@ -199,7 +219,9 @@
 
 - Criar nova versão:
   - calcular a próxima versão sem sobrescrever histórico;
-  - persistir como `draft` somente após confirmação humana.
+  - quando houver `active` próprio, inicializar o editor com sua estrutura completa como baseline não persistido;
+  - reavaliar todas as recomendações contra E10.8 e E18.5 vigentes antes da aprovação;
+  - persistir como `draft` somente após `Salvar rascunho`.
 - Salvar:
   - permitir apenas sobre `draft`;
   - usar `Salvar rascunho` tanto após proposta da IA quanto após edição humana.
@@ -247,12 +269,14 @@
   - `coverage[]`, com exatamente uma avaliação por `item_key`, podendo referenciar zero, uma ou várias identidades válidas;
   - `recommendations[]`, deduplicado por módulo e sem obrigação de relação um para um com as seções.
 - Várias seções podem convergir para uma recomendação; uma seção pode originar várias recomendações quando funções estruturais distintas forem necessárias.
-- `coverage[]` e os gaps não integram as tabelas do perfil; a decisão humana é registrada no evento de auditoria existente.
+- `coverage[]`, referências seção–módulo, estados do diff e gaps não integram as tabelas do perfil; somente `recommendations[]` aplicadas e salvas integram o agregado, e a decisão humana sobre gaps é registrada no evento de auditoria existente.
 - A validação determinística comprova cobertura de todos os itens, conversão `3 → P1`, `2 → P2`, `1 → P3`, identidades existentes, vínculo da variante, deduplicação por módulo e ordens finais positivas e únicas.
-- No refinamento, o provider recebe somente a estrutura atual e feedback estrutural; o merge local preserva integralmente as exceções humanas.
-- Cada clique em `Criar perfil com IA` ou `Refinar estrutura com IA` autoriza uma chamada, sem conversa, histórico, memória, `previous_response_id`, retry ou encadeamento.
-- A proposta válida substitui somente a estrutura visível; salvar, ativar, arquivar e decidir sobre gaps permanecem ações humanas.
-- A implementação reutiliza `OPENAI_API_KEY` e `OPENAI_LANDING_PAGE_GENERATION_PROFILE_MODEL`, Responses API, JSON Schema estrito, `store = false`, limite de 96 KiB e timeout de 30 segundos.
+- Em cada rodada, o provider recebe o editor original, a proposta candidata transitória quando existir e o feedback estrutural mais recente; o merge local preserva integralmente as exceções humanas.
+- Cada clique em `Criar perfil com IA`, `Evoluir perfil com IA` ou `Refinar novamente` autoriza uma chamada, sem chat persistente, histórico próprio, memória, `previous_response_id`, retry ou encadeamento.
+- A proposta válida é exibida como candidata com diff; somente `Aplicar proposta` substitui a estrutura visível do editor, e salvar, ativar, arquivar e decidir sobre gaps permanecem ações humanas separadas.
+- A implementação reutiliza `OPENAI_API_KEY` e `OPENAI_LANDING_PAGE_GENERATION_PROFILE_MODEL`, Responses API, JSON Schema estrito, `store = false`, limite integral de 96 KiB por requisição e timeout de 30 segundos.
+- O carregamento da pesquisa bruta é server-side e determinístico no path `docs/pesquisas-brutas/<taxon_slug>/<audience_scope>/v<research_version>.md`; ausência não bloqueia o fluxo.
+- A pesquisa bruta só é incluída integralmente quando couber junto às fontes obrigatórias; se não couber, é omitida sem truncamento silencioso, a proposta continua com E10.8 e E18.5 e a interface informa transitoriamente a omissão por limite.
 - Limite de saída ou custo só muda após fixtures comprovarem cobertura, qualidade e custo; truncamento é `technical_failure` e preserva o editor.
 - A função de IA não recebe cliente de banco e não salva, ativa, arquiva, cria módulo ou corrige dados.
 - O mapeamento de falhas permanece fechado entre `missing_information`, `invalid_data` e `technical_failure`.
@@ -265,8 +289,10 @@
 - Exibição clara do perfil atual como próprio, herdado ou ausente.
 - Versão e status sempre visíveis.
 - Editor único para recomendações e exceções humanas opcionais.
-- Na ausência de perfil próprio, `Criar perfil com IA` aparece antes do editor técnico como ação principal; o preenchimento manual permanece alternativa.
-- Após proposta válida, o editor mostra módulos, variantes, prioridade e ordem para revisão.
+- Na ausência de perfil próprio, `Criar perfil com IA` aparece antes do editor técnico como ação principal; com perfil `active` próprio, a ação contextual é `Evoluir perfil com IA`; o preenchimento manual permanece alternativa.
+- A evolução inicializa o editor da nova versão com a estrutura ativa completa, sem salvar automaticamente.
+- Antes da aplicação, a interface mostra candidata, diff e as ações `Aplicar proposta`, `Refinar novamente` e `Descartar proposta`, preservando o editor original.
+- Após `Aplicar proposta`, o editor mostra ordem, módulo, variante preferencial opcional e prioridade; módulo presente na lista está recomendado e não existe estado ativado/desativado por item.
 - `generation_guidance` e `item_guidance` aparecem como exceções humanas opcionais, visualmente secundárias e sem sugestão automática.
 - Quando houver gaps, mostrar seção, prioridade, ordem, motivo e impacto, com:
   - `Aguardar criação dos módulos`;
@@ -274,8 +300,8 @@
 - O aviso permanece visível na sessão corrente quando o humano prosseguir; após recarga, a E12.4.3.2 não promete reconstruí-lo pelas tabelas do perfil, e a E12.4.4 deverá recalcular os gaps.
 - Ações visuais:
   - criar nova versão;
-  - criar perfil com IA;
-  - refinar estrutura com IA;
+  - `Criar perfil com IA` ou `Evoluir perfil com IA`, conforme o contexto;
+  - `Aplicar proposta`, `Refinar novamente` e `Descartar proposta` durante o debate transitório;
   - `Salvar rascunho`;
   - `Aprovar e ativar`;
   - arquivar.
@@ -289,7 +315,7 @@
 
 - Toda leitura e mutação operacional permanece server-side.
 - Toda mutação exige `platform_admin` confirmado pelo guard vigente.
-- A IA não recebe dados de conta, oferta, campanha, LP, copy produzida, tabelas brutas de pesquisa ou registry interno da E18.5.
+- A IA não recebe dados de conta, oferta, campanha, LP, copy produzida, tabelas brutas do banco ou registry interno da E18.5; pode receber somente o Markdown opcional autorizado e resolvido pelas regras deste plano.
 - Registrar o mínimo necessário para diagnóstico e auditoria:
   - `platform_admin` solicitante;
   - taxon e versões das fontes utilizadas;
@@ -298,7 +324,7 @@
   - latência, consumo e custo da chamada quando houver;
   - resultado da revisão humana.
 - Logs não devem expor segredo, credencial ou conteúdo não autorizado.
-- Cada solicitação de proposta deve registrar evento estruturado com `request_id`, identificador do `platform_admin`, taxon, versões e relações de proveniência da E10.8, versão das identidades públicas da E18.5, modelo configurado, OpenAI response ID quando disponível, latência, `input_tokens`, `output_tokens`, custo calculado pelas tarifas operacionais vigentes, resultado (`success`, `missing_information`, `invalid_data` ou `technical_failure`) e, posteriormente, resultado da revisão humana. Logs não podem conter API key, prompt integral, orientação livre do admin, pesquisas brutas, payload completo nem resposta integral. Falha de logging não altera o resultado funcional.
+- Cada solicitação de proposta deve registrar evento estruturado com `request_id`, identificador do `platform_admin`, taxon, versões e relações de proveniência da E10.8, versão das identidades públicas da E18.5, referência segura da pesquisa bruta quando utilizada ou motivo transitório de omissão, modelo configurado, OpenAI response ID quando disponível, latência, `input_tokens`, `output_tokens`, custo calculado pelas tarifas operacionais vigentes, resultado (`success`, `missing_information`, `invalid_data` ou `technical_failure`) e, posteriormente, resultado da revisão humana. Logs não podem conter API key, prompt integral, orientação livre do admin, pesquisas brutas, payload completo nem resposta integral. Falha de logging não altera o resultado funcional.
 - O provider retorna ao editor um `request_id` opaco e um fingerprint da proposta, usados somente para correlação e nunca para autorização. Ao salvar, a Server Action recomputa o fingerprint: igualdade registra revisão `aceita`; diferença registra `ajustada`. A RPC inclui `request_id` e resultado da revisão no `changes_json` do evento de auditoria da mutação confirmada. A ativação recupera a correlação do último evento auditado do `draft` e registra o mesmo `request_id` como `ativada`. Substituir ou limpar uma proposta ainda não salva registra apenas evento estruturado `descartada`, sem linha de domínio ou nova tabela. Valores ausentes ou inválidos de correlação não impedem o fluxo funcional e são registrados como correlação indisponível.
 - A chamada deve usar `store:false`. Isso evita estado de aplicação da resposta, mas não elimina por si só os logs de monitoramento de abuso da OpenAI, que podem ser retidos por até 30 dias no regime padrão; portanto somente a allowlist de dados já aprovada pode sair do LP Factory. Não se exige Moderation API no MVP porque a saída é interna, estruturada, sem ação autônoma e obrigatoriamente revisada por `platform_admin`; essa decisão deve ser reavaliada se o conteúdo passar a ser publicado ou enviado externamente sem revisão equivalente.
 
@@ -363,12 +389,12 @@
 
 - Status: implementada e validada; seu escopo será restringido pela E12.4.3.2.
 - Objetivo final:
-  - refinar módulos, variantes, prioridade, ordem e gaps, preservando exceções humanas.
+  - sustentar rodadas explícitas de debate sobre a nova versão em `draft`, refinando módulos, variantes, prioridade, ordem e gaps e preservando exceções humanas.
 - Critérios finais:
   - cada refinamento exige novo acionamento explícito;
-  - não existe conversa, memória ou continuidade automática;
+  - não existe chat persistente, memória própria ou continuidade automática; a proposta candidata é somente estado transitório explícito da interface;
   - falha preserva editor, `draft` e `active`;
-  - proposta refinada mantém alterações não salvas e bloqueia ativação até novo salvamento;
+  - proposta refinada permanece candidata até aplicação; depois de aplicada, mantém alterações não salvas e bloqueia ativação até novo salvamento;
   - `generation_guidance` e `item_guidance` nunca são enviados para alteração pela IA.
 - Escopo negativo:
   - sem tabela, rota estrutural, chat, histórico, memória, agente, `previous_response_id`, provider adicional, E12.4.4 ou geração de LP.
@@ -377,11 +403,15 @@
 
 - Status: planejada; implementação pendente após aprovação deste plano.
 - Objetivo:
-  - corrigir a ação inicial, o contrato da IA e a opcionalidade das exceções humanas sem refazer o lifecycle entregue.
+  - corrigir a criação e a evolução estrutural, o debate humano–IA, o contrato da proposta e a opcionalidade das exceções humanas sem refazer o lifecycle entregue.
 - Entregas:
-  - destacar `Criar perfil com IA` antes do editor manual;
+  - destacar `Criar perfil com IA` sem perfil próprio e `Evoluir perfil com IA` quando existir perfil `active` próprio;
+- inicializar a nova versão com a estrutura ativa completa como baseline não persistido e revalidar cada recomendação contra as fontes vigentes;
   - usar todos os itens de `lp_sections` como esqueleto;
   - retornar `coverage[]`, recomendações estruturais deduplicadas e gaps;
+- manter `coverage[]`, relações seção–módulo, gaps e estados do diff como resultados transitórios;
+- mostrar candidata e diff antes da aplicação e permitir aplicar, refinar novamente ou descartar sem alterar o editor original;
+- carregar opcionalmente a pesquisa bruta pela proveniência resolvida da E10.8, sem novo gate, truncamento silencioso ou bloqueio por ausência;
   - aplicar as regras explícitas de cardinalidade, prioridade e ordem;
   - perguntar se o humano aguarda módulos ou prossegue com os disponíveis;
   - auditar a decisão no evento vigente e manter aviso na sessão corrente;
@@ -391,7 +421,9 @@
   - registrar em E12.4.4 a obrigação de recuperar gaps e decidir prontidão;
   - registrar em E19.4 a independência da LP materializada.
 - Critérios de aceite:
-  - `coverage[]` avalia exatamente cada item de `lp_sections` como atendido, parcialmente atendido ou faltante;
+  - `coverage[]` avalia exatamente cada item de `lp_sections` como atendido, parcialmente atendido ou faltante e não é persistido;
+- evolução parte da estrutura ativa completa, mas só mantém recomendações revalidadas contra as versões vigentes da E10.8 e da E18.5;
+- rodadas adicionais recebem draft original, candidata atual e novo feedback; descartar preserva o editor original;
   - `recommendations[]` aceita um-para-muitos e muitos-para-um, mas termina único por módulo;
   - somente identidades válidas entram nas recomendações;
   - a prioridade de origem é convertida por `3 → P1`, `2 → P2`, `1 → P3` e a ordem final é determinística, positiva e única;
@@ -402,13 +434,13 @@
   - lifecycle, auditoria e resolver active-only permanecem funcionais;
   - migration e contratos aceitam `generation_guidance` ausente ou não vazio;
   - testes cobrem cobertura, gaps, identidade inventada, preservação de exceções, env ausente, timeout e truncamento;
-  - Preview desktop e mobile comprovam ação inicial, editor preenchido, decisão de gaps e ausência de salvamento ou ativação automática.
+  - Preview desktop e mobile comprovam ações contextuais, baseline ativo, candidata com diff, aplicar/refinar/descartar, editor não salvo, decisão de gaps e ausência de salvamento ou ativação automática.
 - Escopo negativo:
   - sem tabela de gaps, criação automática de módulos, diálogo com IA para exceções, E12.4.4, E19.4, geração, job, fila, agente ou nova infraestrutura.
 
 ### 3.2. Próxima ação
 
-- Aprovar e mergear a v2.3 documental.
+- Aprovar e mergear a v2.5 documental.
 - Implementar a E12.4.3.2 em PR técnico próprio criado a partir da `main` atual.
 - Não usar o PR #656, que permanece restrito à correção e ao reteste da E11.1.7.
 - No PR técnico, aplicar o menor delta em UI, contrato da proposta, normalização, migration incremental, testes e documentos canônicos materialmente afetados.
@@ -432,7 +464,7 @@
 - Quarto status, estado `approved`, terceira tabela de domínio ou tabela própria de auditoria.
 - Escrita direta por `public`, `anon`, `authenticated`, cliente ou `ai_readonly`.
 - Ativação, salvamento, repetição ou correção automática pela IA.
-- Chat, histórico de mensagens, memória persistente, `previous_response_id`, diálogo com IA para exceções humanas, refinamento automático, retry automático, comparação de versões ou otimização baseada em métricas.
+- Chat persistente, histórico de mensagens, memória própria, `previous_response_id`, diálogo com IA para exceções humanas, refinamento automático, retry automático ou otimização baseada em métricas.
 - Agente, comportamento agentic, job, fila, cron, webhook, workflow ou nova infraestrutura.
 - Implementação além do menor delta necessário para cumprir as entregas e os critérios de aceite da E12.4.3.
 - Refatoração, limpeza ou reorganização de áreas não indispensáveis à E12.4.3.
@@ -469,7 +501,7 @@
 
 ### 4.4. Critérios de encerramento do plano
 
-- O plano v2.3 será encerrado somente após:
+- O plano v2.5 será encerrado somente após:
   - decisão conceitual aprovada;
   - implementação da E12.4.3.2;
   - migration incremental aplicada e verificada;
