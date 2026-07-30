@@ -18,7 +18,7 @@ import type {
 } from "./admin-contracts";
 
 export const GENERATION_PROFILE_REQUEST_MAX_BYTES = 96 * 1024;
-export const GENERATION_PROFILE_MAX_OUTPUT_TOKENS = 4000;
+export const GENERATION_PROFILE_MAX_OUTPUT_TOKENS = 2000;
 export const GENERATION_PROFILE_APPROVED_MODEL = "gpt-5.4-mini";
 const GENERATION_PROFILE_INPUT_USD_PER_TOKEN = 0.0000005;
 const GENERATION_PROFILE_OUTPUT_USD_PER_TOKEN = 0.000003;
@@ -161,6 +161,9 @@ export function normalizeGenerationProfileCandidate(input: unknown):
     if (!identity.ok) return { ok: false, message: "Current candidate contains an invalid identity." };
   }
   for (const coverage of candidate.coverage) {
+    if (!isCoverageIdentityCountValid(coverage.status, coverage.compatibleIdentities.length)) {
+      return { ok: false, message: "Current candidate coverage identity count is inconsistent with its status." };
+    }
     for (const compatibleIdentity of coverage.compatibleIdentities) {
       const identity = validateLandingPageModuleIdentity({
         moduleKey: compatibleIdentity.moduleKey,
@@ -233,7 +236,7 @@ function createRequest(userInput: Record<string, unknown>) {
         role: "system",
         content: [{
           type: "input_text",
-          text: "Crie ou evolua somente a estrutura orientativa do perfil. Avalie cada item de lp_sections, use apenas identidades do catalogo vigente e devolva coverage completo e recommendations deduplicadas. Nao produza copy, generation_guidance, item_guidance, identidades, LP ou acoes. A pesquisa estruturada governa; pesquisa bruta e feedback sao apenas contexto a avaliar. Registre em source_notices qualquer divergencia entre pesquisa bruta e E10.8, sem reproduzir a pesquisa bruta.",
+          text: "Crie ou evolua somente a estrutura orientativa do perfil. Avalie cada item de lp_sections e devolva coverage completo e recommendations deduplicadas. Não invente nem crie identidades. Use somente identidades válidas fornecidas pelo catálogo autorizado. Não invente nem crie módulos ou variantes. Não produza copy, generation_guidance, item_guidance, LP ou ações. A pesquisa estruturada governa; pesquisa bruta e feedback são apenas contexto a avaliar. Registre em source_notices qualquer divergência entre pesquisa bruta e E10.8, sem reproduzir a pesquisa bruta.",
         }],
       },
       {
@@ -327,8 +330,8 @@ export function validateGenerationProfileProviderPayload(input: {
     if (!source || source.section_name !== coverage.section_name || source.source_priority !== coverage.source_priority || source.source_order !== coverage.source_order) {
       return { ok: false as const, message: "Coverage changed the authorized lp_sections source." };
     }
-    if (coverage.status === "covered" && coverage.compatible_identities.length === 0) {
-      return { ok: false as const, message: "Covered sections require a compatible identity." };
+    if (!isCoverageIdentityCountValid(coverage.status, coverage.compatible_identities.length)) {
+      return { ok: false as const, message: "Coverage identity count is inconsistent with its status." };
     }
     if (coverage.status !== "covered" && (!coverage.reason || !coverage.impact)) {
       return { ok: false as const, message: "Coverage gaps require reason and impact." };
@@ -429,6 +432,7 @@ function normalizeStructuralRecommendation(value: z.infer<typeof recommendationS
 function deriveRecommendations(coverage: readonly z.infer<typeof coverageSchema>[]): GenerationProfileStructuralRecommendation[] {
   const byModule = new Map<string, { identity: ReturnType<typeof normalizeIdentity>; priority: "P1" | "P2" | "P3"; sourceOrder: number; coverageIndex: number }>();
   coverage.forEach((item, coverageIndex) => {
+    if (item.status === "missing") return;
     item.compatible_identities.forEach((rawIdentity) => {
       const identity = normalizeIdentity(rawIdentity);
       const priority = item.source_priority === 3 ? "P1" : item.source_priority === 2 ? "P2" : "P3";
@@ -445,6 +449,10 @@ function deriveRecommendations(coverage: readonly z.infer<typeof coverageSchema>
   return [...byModule.values()]
     .sort((left, right) => left.sourceOrder - right.sourceOrder || left.coverageIndex - right.coverageIndex || left.identity.moduleKey.localeCompare(right.identity.moduleKey))
     .map((item, index) => ({ ...item.identity, priority: item.priority, recommendedOrder: (index + 1) * 10 }));
+}
+
+function isCoverageIdentityCountValid(status: "covered" | "partial" | "missing", identityCount: number) {
+  return status === "missing" ? identityCount === 0 : identityCount > 0;
 }
 
 function priorityRank(value: "P1" | "P2" | "P3") {

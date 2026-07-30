@@ -64,6 +64,7 @@ export function GenerationProfileEditor({ taxon, profiles, aiConfigured, researc
   const [persistedGapDecision, setPersistedGapDecision] = useState<GenerationProfileGapDecision | null>(draft?.lastGapDecision ?? null);
   const [proposal, setProposal] = useState<{ requestId: string; fingerprint: string } | null>(null);
   const [feedback, setFeedback] = useState<Feedback>(null);
+  const [manualEditorVisible, setManualEditorVisible] = useState(draft !== null);
   const feedbackRef = useRef<HTMLDivElement>(null);
 
   const recommendationPayload = recommendations.map(({ editorKey: _editorKey, ...item }) => item);
@@ -125,6 +126,7 @@ export function GenerationProfileEditor({ taxon, profiles, aiConfigured, researc
     setCandidate(null);
     setPreviousCandidate(null);
     setCandidateGapDecision("");
+    setManualEditorVisible(true);
     announce({ tone: "warning", message: "Proposta aplicada somente ao editor. Salve o rascunho para persistir as recomendacoes." });
   }
 
@@ -204,6 +206,29 @@ export function GenerationProfileEditor({ taxon, profiles, aiConfigured, researc
 
   return <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_20rem]">
     <section className="space-y-5 rounded-lg border border-border bg-card p-4 shadow-card">
+      <div className="rounded-lg border border-blue-200 bg-blue-50/60 p-4">
+        <h2 className="font-semibold">{active ? "Evolua a estrutura do perfil" : "Crie a estrutura do perfil"}</h2>
+        <p className="mt-1 text-sm text-muted-foreground">
+          {active
+            ? `A IA reavalia o active v${active.version} contra as fontes vigentes antes de propor qualquer alteracao.`
+            : "A IA usa lp_sections e o catalogo autorizado para preparar a estrutura inicial antes da edicao tecnica."}
+        </p>
+        <div className="mt-4">
+          <label className="text-sm font-medium" htmlFor="human-feedback">Feedback humano mais recente para a IA</label>
+          <Textarea id="human-feedback" value={humanFeedback} onChange={(event) => setHumanFeedback(event.target.value)} disabled={pending || !aiAvailable} />
+          <p className="mt-1 text-xs text-muted-foreground">{aiAvailable ? "Uma acao explicita realiza uma unica chamada paga; nao ha retry automatico." : aiUnavailableReason}</p>
+        </div>
+        <div className="mt-3 flex flex-wrap gap-2">
+          <Button onClick={requestProposal} disabled={pending || !aiAvailable}>{aiActionLabel}</Button>
+          {!manualEditorVisible && <Button className="bg-secondary text-secondary-foreground hover:bg-secondary/80" onClick={() => setManualEditorVisible(true)} disabled={pending}>Editar manualmente</Button>}
+        </div>
+      </div>
+
+      {candidate && <CandidateReview candidate={candidate} diff={proposalDiff} replacements={replacements} gapDiff={gapDiff} gapDecision={candidateGapDecision} onGapDecision={setCandidateGapDecision} onApply={applyCandidate} onDiscard={discardCandidate} pending={pending} />}
+
+      <div ref={feedbackRef} tabIndex={-1} aria-live="polite" className={feedback ? `rounded-md border p-3 text-sm ${feedback.tone === "error" ? "border-red-200 bg-red-50 text-red-700" : feedback.tone === "warning" ? "border-amber-200 bg-amber-50 text-amber-700" : "border-green-200 bg-green-50 text-green-700"}` : "sr-only"}>{feedback?.message ?? "Sem feedback."}</div>
+
+      {manualEditorVisible && <>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h2 className="font-semibold">Editor do perfil</h2>
@@ -236,17 +261,6 @@ export function GenerationProfileEditor({ taxon, profiles, aiConfigured, researc
         </fieldset>)}
       </div>
 
-      <div className="rounded-md border border-border bg-muted/30 p-3">
-        <label className="text-sm font-medium" htmlFor="human-feedback">Feedback humano mais recente para a IA</label>
-        <Textarea id="human-feedback" value={humanFeedback} onChange={(event) => setHumanFeedback(event.target.value)} disabled={pending || !aiAvailable} />
-        <p className="mt-1 text-xs text-muted-foreground">{aiAvailable ? "Uma acao explicita realiza uma unica chamada paga; nao ha retry automatico." : aiUnavailableReason}</p>
-        <div className="mt-3 flex flex-wrap gap-2"><Button onClick={requestProposal} disabled={pending || !aiAvailable}>{aiActionLabel}</Button></div>
-      </div>
-
-      {candidate && <CandidateReview candidate={candidate} diff={proposalDiff} replacements={replacements} gapDiff={gapDiff} gapDecision={candidateGapDecision} onGapDecision={setCandidateGapDecision} onApply={applyCandidate} onDiscard={discardCandidate} pending={pending} />}
-
-      <div ref={feedbackRef} tabIndex={-1} aria-live="polite" className={feedback ? `rounded-md border p-3 text-sm ${feedback.tone === "error" ? "border-red-200 bg-red-50 text-red-700" : feedback.tone === "warning" ? "border-amber-200 bg-amber-50 text-amber-700" : "border-green-200 bg-green-50 text-green-700"}` : "sr-only"}>{feedback?.message ?? "Sem feedback."}</div>
-
       <div className="space-y-2">
         <div className="flex flex-wrap gap-3">
           <Button onClick={saveDraft} disabled={pending || !lifecycle.ready}>Salvar rascunho</Button>
@@ -258,6 +272,7 @@ export function GenerationProfileEditor({ taxon, profiles, aiConfigured, researc
         {activationBlockedByGaps && <p className="text-sm text-red-700">Ativacao bloqueada: a decisao atual e aguardar a criacao dos modulos faltantes.</p>}
         {!draftMeta && <p className="text-sm text-muted-foreground">Aprovar e ativar indisponivel: salve primeiro uma versao draft.</p>}
       </div>
+      </>}
     </section>
 
     <aside className="space-y-3">

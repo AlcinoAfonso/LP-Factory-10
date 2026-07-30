@@ -474,6 +474,18 @@ const cases: readonly Readonly<{
       assert.equal(validate({ ...structuralPayload, coverage: structuralPayload.coverage.slice(1) }).ok, false);
       assert.equal(validate({ ...structuralPayload, recommendations: [{ ...structuralPayload.recommendations[0], module_key: "invented" }, structuralPayload.recommendations[1]] }).ok, false);
       assert.equal(validate({ ...structuralPayload, recommendations: [structuralPayload.recommendations[1], structuralPayload.recommendations[0]] }).ok, false);
+      assert.equal(validate({
+        ...structuralPayload,
+        coverage: [{ ...structuralPayload.coverage[0], compatible_identities: [] }, structuralPayload.coverage[1]],
+      }).ok, false);
+      assert.equal(validate({
+        ...structuralPayload,
+        coverage: [{ ...structuralPayload.coverage[0], status: "partial", compatible_identities: [], reason: "Cobertura parcial.", impact: "Estrutura incompleta." }, structuralPayload.coverage[1]],
+      }).ok, false);
+      assert.equal(validate({
+        ...structuralPayload,
+        coverage: [{ ...structuralPayload.coverage[0], status: "missing", reason: "Modulo indisponivel.", impact: "Estrutura incompleta." }, structuralPayload.coverage[1]],
+      }).ok, false);
     },
   },
   {
@@ -491,6 +503,7 @@ const cases: readonly Readonly<{
       assert.equal(validated.ok, true);
       if (!validated.ok) return;
       assert.deepEqual(validated.value.gaps.map((gap) => gap.itemKey), ["buyer_faq"]);
+      assert.deepEqual(validated.value.recommendations.map((item) => item.moduleKey), [structuralPayload.recommendations[0].module_key]);
       assert.equal(validateGenerationProfileDraft({
         ownerTaxonId: NICHE_ID,
         recommendations: validated.value.recommendations,
@@ -547,7 +560,8 @@ const cases: readonly Readonly<{
       });
       assert.equal(request.ok, true);
       assert.equal(request.body.store, false);
-      assert.equal(request.body.max_output_tokens, 4000);
+      assert.equal(request.body.max_output_tokens, 2000);
+      assert.match(request.body.input[0].content[0].text, /Não invente nem crie identidades\. Use somente identidades válidas fornecidas pelo catálogo autorizado\./);
       assert.equal(Object.hasOwn(request.body, "tools"), false);
       assert.equal(request.body.text.format.strict, true);
       assert.equal(request.body.text.format.schema.additionalProperties, false);
