@@ -26,27 +26,26 @@ Fontes de referência: `README.md`, `docs/roadmap.md`, `docs/base-tecnica.md`, `
 
 - A E18.4 reúne a parametrização raiz versionada de `landing_page`, incluindo papéis semânticos, faixas editoriais, limites técnicos e princípios visuais, responsivos e de acessibilidade.
 - O núcleo atual com registry, resolver, schema, falha fechada e contratos versionados permanece vigente enquanto essas proteções tiverem valor comprovado.
-- A E18.4 não será automaticamente simplificada nem substituída antes da E20.3.
-- Depois da otimização da E18.5, a E18.4 deve ser reavaliada somente se testes reais demonstrarem manutenção distribuída, rigidez desnecessária ou dificuldade relevante de extensão.
+- A E18.4 não é simplificada, substituída ou reaberta automaticamente.
+- Sua reavaliação depende de testes com LPs reais que demonstrem manutenção distribuída, rigidez desnecessária ou dificuldade relevante de extensão.
 - Ajustar uma orientação deve exigir mudança localizada e validação proporcional ao dado alterado, sem banco ou nova infraestrutura.
 - Os valores iniciais permanecem hipóteses até validação por LP real.
 
-### 1.4. Manter e otimizar o catálogo de módulos e variantes
+### 1.4. Manter o catálogo de módulos e variantes
 
 - A E18.5 mantém um catálogo executável, versionado e tipado para a IA e futuros consumidores conhecerem módulos, variantes, finalidades, estruturas, fields, fontes e capacidades permitidas.
-- O núcleo incorporado pelo PR #590 permanece preservado: registry versionado, resolver genérico, Zod estrito, falha fechada, contratos TypeScript, API pública mínima, isolamento e imutabilidade profunda.
+- O catálogo otimizado preserva registry versionado, resolver genérico, Zod estrito, falha fechada, contratos TypeScript, API pública mínima, isolamento e imutabilidade profunda.
 - Módulo representa função estrutural reutilizável; variante representa outra execução estrutural ou comportamental reutilizável da mesma função.
 - Taxon, plano, campanha, conteúdo, ordem ou ajuste já permitido não justificam isoladamente novo módulo ou variante.
-- Para o humano, adicionar ou ajustar módulo ou variante deve continuar simples por briefing e revisão do PR; internamente, a extensão frequente deve ficar concentrada na definição canônica da identidade, nos fields aplicáveis e nos contratos já existentes.
-- Uma extensão que reutiliza capability ou interaction kind existente não deve exigir alteração do resolver, do schema genérico, dos contratos TypeScript de interação, de contagem global, de `switch` por path ou de listas paralelas evitáveis.
-- Form e Accordion usam uma moldura discriminada comum de interações; capability interativa é derivada do contrato declarado, e capabilities de ação ou imagem são derivadas dos fields quando seguro.
-- Código adicional permanece legítimo quando o primeiro caso real introduzir capability ou interaction kind realmente novo; nesse caso, contrato TypeScript, ramo discriminado, schema Zod e casos positivos e negativos próprios podem evoluir uma vez, sem criar propriedade isolada por variante.
-- O primeiro caso real de mídia avançada deve introduzir moldura discriminada própria; a E18.5 não antecipa vídeo, áudio, animação, visual interativo ou 3D sem caso material.
-- A otimização incorpora permanentemente `benefits@v1`, `benefits.standard@v1`, `hero.form@v1`, `comparison@v1`, `comparison.standard@v1`, `lead_capture@v1` e `lead_capture.form@v1` e preserva os quatro testes de extensibilidade derivados do PR #617.
+- Para o humano, adicionar ou ajustar módulo ou variante deve continuar simples por briefing e revisão do PR; internamente, extensões frequentes devem permanecer concentradas na identidade canônica, nos fields aplicáveis e nos contratos vigentes.
+- Uma extensão que reutiliza capability ou interaction kind existente não deve exigir alteração do resolver, do schema genérico, dos contratos TypeScript de interação ou de listas paralelas evitáveis.
+- Form e Accordion usam uma moldura discriminada comum de interações; capabilities são derivadas dos contratos e fields quando seguro.
+- Código adicional permanece legítimo quando o primeiro caso real introduzir capability, interaction kind ou mídia realmente novos, sem antecipação para necessidades hipotéticas.
+- As identidades já consolidadas permanecem canônicas; novas identidades dependem de função ou execução estrutural nova e comprovada.
 - A E18.5 não será substituída por catálogo apenas consultivo e não perderá as proteções comprovadas nos testes.
 - A E18.5 não implementa dados concretos, conteúdo final, perfil de orientação, renderer, persistência ou integração operacional.
 
-### 1.5. Definir o catálogo de entradas para geração da LP
+### 1.5. Manter o catálogo de entradas para geração da LP
 
 - A E20.2 define entradas universais e específicas por taxon e plano, separadas do perfil de orientação e do conteúdo.
 - O catálogo indica campos obrigatórios, opcionais e condicionais; os valores reais pertencem à conta, oferta, campanha ou LP.
@@ -56,14 +55,19 @@ Fontes de referência: `README.md`, `docs/roadmap.md`, `docs/base-tecnica.md`, `
 ### 1.6. Manter o perfil de orientação do taxon
 
 - Existe um perfil versionado e evolutivo por taxon proprietário, reutilizado entre planos para orientar a geração inicial da LP.
-- O perfil pode pertencer a segmento ou nicho; perfil próprio de ultranicho é excepcional.
-- O perfil reúne orientação geral, módulos recomendados, variantes preferenciais, prioridades, ordem recomendada e orientações específicas por módulo.
+- No MVP, o perfil próprio pertence somente a segmento ou nicho; ultranicho usa o perfil `active` do ancestral elegível mais próximo.
+- Os estados persistidos são `draft`, `active` e `archived`.
+- O perfil reúne módulos recomendados, variantes preferenciais, prioridades e ordem recomendada; `generation_guidance` e `item_guidance` são exceções humanas opcionais.
 - Prioridade orienta a seleção futura; ordem recomendada indica a posição relativa entre os módulos selecionados; nenhuma delas torna um módulo obrigatório.
-- Em etapa futura da E12.4, o Admin Dashboard permitirá à IA propor e ao humano revisar, ajustar, aprovar e ativar novas versões do perfil.
+- A E12.4.3 estabelece o Admin Dashboard como fluxo oficial para o `platform_admin` criar, revisar, salvar, ativar e arquivar versões do perfil.
+- A E12.4.3.2 usa `lp_sections` como esqueleto: `coverage[]` avalia cada seção e `recommendations[]` entrega a lista final deduplicada por módulo.
+- Várias seções podem convergir para um módulo e uma seção pode exigir vários módulos; a prioridade é convertida por `3 → P1`, `2 → P2`, `1 → P3` e a ordem final é determinística, positiva e única.
+- A IA propõe ou refina somente módulos, variantes, prioridade, ordem e gaps após ação explícita; cada acionamento autoriza uma chamada e nenhuma proposta salva, aprova, ativa ou arquiva automaticamente.
+- O fluxo manual permanece completo quando a IA não é usada, falha ou está indisponível.
 - A orientação pode guiar escolhas dentro dos contratos vigentes, mas não redefinir, ampliar ou contrariar a E18.4 ou a E18.5; módulos e variantes referenciados devem existir na E18.5.
-- Migration, seed, fixture, script ou insert direto podem apoiar testes, mas não criam o perfil oficial; o primeiro cadastro e a primeira ativação serão operados pela futura E12.4.
-- Uma versão ativa não é editada diretamente; mudança aprovada cria nova versão e preserva as anteriores.
-- Na ausência de perfil próprio, o ancestral elegível mais próximo pode fornecer a orientação herdada.
+- Migration, seed, fixture, script ou insert direto podem apoiar testes, mas não substituem o fluxo oficial de gestão do perfil.
+- Uma versão `active` não é editada diretamente; mudança aprovada cria nova versão e preserva as anteriores.
+- Na ausência de perfil próprio ativo, o ancestral elegível mais próximo fornece a orientação herdada; sem ancestral elegível, o resultado é ausência tipada.
 
 ### 1.7. Tratar gaps identificados pela IA
 
@@ -71,10 +75,12 @@ Fontes de referência: `README.md`, `docs/roadmap.md`, `docs/base-tecnica.md`, `
 - Identidade inexistente não pode entrar nas recomendações oficiais e deve permanecer como gap para decisão humana.
 - A IA não cria novos contratos automaticamente.
 - O administrador decide se o gap:
-  - bloqueia o perfil ou a prontidão atual e deve retornar à E18.5;
-  - pode ser adiado, com justificativa, impacto, responsável e condição de retomada registrados.
+  - exige `wait_for_modules`, mantém o perfil em `draft` e bloqueia sua ativação;
+  - permite `proceed_with_available`, com aviso na sessão corrente.
+- A decisão e o resumo dos gaps são registrados no evento de auditoria vigente ao salvar o rascunho, sem nova tabela.
+- A E12.4.4 deve recalcular os gaps antes da prontidão e, se houver adiamento, registrar justificativa, impacto, responsável e condição de retomada.
 - Gap de função estrutural aponta para novo módulo; diferença reutilizável de execução aponta para nova variante.
-- Quando o gap for impeditivo, o perfil permanece `draft`, a prontidão não é aprovada e a extensão segue por plano e PR próprios da E18.5.
+- Quando o gap for impeditivo, a prontidão não é aprovada e a extensão segue por plano e PR próprios da E18.5.
 - Depois do merge da nova identidade versionada, a IA deve refazer ou revalidar o perfil antes da aprovação humana.
 - A ampliação da E18.5 deve permanecer simples. Se uma extensão comum voltar a exigir alterações distribuídas, a arquitetura deve ser otimizada antes de prosseguir, sem remover proteções comprovadas.
 
@@ -89,7 +95,7 @@ Fontes de referência: `README.md`, `docs/roadmap.md`, `docs/base-tecnica.md`, `
 ### 1.9. Gerar, revisar e publicar a LP real
 
 - A E19 é o único fluxo de LPs para contas autorizadas e clientes liberados.
-- Pelo Account Dashboard, a conta fornece os valores aplicáveis, gera, revisa e publica a LP conforme o recorte aprovado.
+- Pelo fluxo da E19, a conta fornece os valores aplicáveis, gera, revisa e publica a LP conforme o recorte aprovado.
 - A geração usa pesquisas E10.8, base E18.4, catálogo E18.5, perfil E20 e entradas E20.2, sem alterar essas fontes.
 - A LP é materializada como artefato independente; o snapshot preserva taxon, plano, valores, pesquisas, perfil e versão usados, mas mudanças futuras no perfil não alteram LPs existentes.
 
@@ -101,7 +107,7 @@ Fontes de referência: `README.md`, `docs/roadmap.md`, `docs/base-tecnica.md`, `
 - A regra exata para evoluir ou reutilizar a LP entre `starter`, `lite`, `pro` e `ultra` permanece para E19.4, E20.4 e E12.4.5–12.4.6.
 - A evidência pode abranger descendentes que utilizem o mesmo perfil e versão, conforme decisão posterior de liberação.
 
-## 2. O que precisa ser ajustado ou implementado no projeto
+## 2. O que precisa ser preservado ou implementado no projeto
 
 ### 2.1. E10.8 — Pesquisas resolvidas
 
@@ -111,20 +117,17 @@ Fontes de referência: `README.md`, `docs/roadmap.md`, `docs/base-tecnica.md`, `
 ### 2.2. E18.4 — Base raiz versionada
 
 - Preservar a implementação atual enquanto suas proteções permanecerem úteis para a E18.5 e para os consumidores reais.
-- Reavaliar a extensibilidade somente depois da otimização e dos testes comparativos da E18.5.
-- Criar plano próprio de otimização apenas se houver evidência de rigidez, manutenção distribuída ou artefato sem retorno proporcional.
+- Reavaliar a extensibilidade somente quando testes com LPs reais demonstrarem rigidez, manutenção distribuída ou dificuldade material de extensão.
+- Criar plano próprio de otimização apenas diante dessa evidência.
 - Garantir alteração localizada e validação proporcional ao dado alterado.
 
-### 2.3. E18.5 — Otimização do catálogo executável
+### 2.3. E18.5 — Catálogo executável otimizado
 
-- Preservar o núcleo executável incorporado pelo PR #590 e suas proteções comprovadas.
-- Incorporar `benefits@v1`, `benefits.standard@v1`, `hero.form@v1`, `comparison@v1`, `comparison.standard@v1`, `lead_capture@v1` e `lead_capture.form@v1` como identidades permanentes.
-- Remover contagens globais fixas, declarar fontes junto dos fields, eliminar o `switch` paralelo por path e reduzir listas e identidades paralelas evitáveis.
-- Preferir relações Zod estruturais realmente genéricas a regras nominais vinculadas a variantes específicas.
-- Reutilizar interaction kinds existentes pela coleção discriminada da variante e derivar capabilities simples de interactions e fields, evitando booleanos ou propriedades paralelas como fontes canônicas.
-- Reservar a evolução de contratos e schema ao primeiro caso real de novo interaction kind; reutilizações posteriores devem permanecer localizadas.
-- Manter resolver genérico, Zod estrito, falha fechada, tipagem, imutabilidade, casos negativos e API pública mínima.
-- Repetir os quatro testes do PR #617 e comparar pontos de alteração, duplicações e proteções antes de concluir a otimização.
+- Preservar o catálogo executável, versionado e tipado já consolidado.
+- Manter resolver genérico, Zod estrito, falha fechada, tipagem, imutabilidade, casos positivos e negativos e API pública mínima.
+- Manter fields, fontes, capabilities e interações junto das identidades competentes, sem listas ou regras nominais paralelas evitáveis.
+- Reutilizar capabilities e interaction kinds vigentes quando o novo caso não introduzir diferença estrutural real.
+- Evoluir contratos e schema somente diante do primeiro caso material de nova capability, interaction kind ou mídia.
 - Não substituir o catálogo por fonte apenas consultiva.
 
 ### 2.4. E20.2 — Catálogo de entradas
@@ -134,10 +137,20 @@ Fontes de referência: `README.md`, `docs/roadmap.md`, `docs/base-tecnica.md`, `
 
 ### 2.5. E20.3 — Perfil de orientação para geração
 
-- Definir a persistência mínima do perfil versionado por taxon, com orientação geral e recomendações próprias por módulo.
-- Registrar módulo, variante preferencial, prioridade, ordem recomendada, orientação específica e justificativa quando aplicável, validando as referências contra a E18.5.
+- Preservar a persistência mínima e os três estados do perfil versionado por taxon.
+- Evoluir o contrato pela E20.3.5 para manter recomendações por módulo e tornar `generation_guidance` exceção humana opcional; `item_guidance` permanece opcional por item.
+- Validar todas as referências contra a E18.5.
 - Resolver perfil próprio ou herdado e entregá-lo por um único boundary server-side.
-- O perfil orienta a geração inicial sem governar a LP materializada; a E20.3 atual não cadastra nem ativa perfil oficial, e E12.4, IA, geração, gaps persistidos, prontidão, autorização e aprendizado automático pertencem a planos posteriores.
+- O perfil orienta gerações futuras sem governar ou alterar a LP materializada.
+
+#### 2.5.1. E12.4.3 — Operação administrativa do perfil
+
+- Operar criação, edição, salvamento, ativação e arquivamento por decisão humana no Admin Dashboard.
+- Manter `Salvar rascunho`, `Aprovar e ativar` e arquivamento como ações explícitas do `platform_admin`.
+- Pela E12.4.3.2, permitir proposta inicial e refinamento estrutural por IA com `coverage[]`, recomendações deduplicadas e gaps, sem persistência ou ativação automática.
+- Não permitir que a IA preencha ou modifique `generation_guidance` ou `item_guidance`.
+- Exigir uma nova ação humana para cada chamada, sem conversa persistente, memória própria, retry ou continuidade automática.
+- Preservar validação determinística, fallback manual completo e independência das LPs já materializadas.
 
 ### 2.6. E19.4 — Fluxo único da LP por conta
 
@@ -159,13 +172,13 @@ Fontes de referência: `README.md`, `docs/roadmap.md`, `docs/base-tecnica.md`, `
 
 ## 3. Ordem dos próximos planos-base
 
-- 1º — otimizar a E18.5 preservando o núcleo do PR #590 e incorporando as extensões comprovadas.
-- 2º — repetir comparativamente os quatro testes do PR #617 e consolidar a implementação material.
-- 3º — reavaliar se a E18.4 necessita plano próprio; sem evidência de problema, mantê-la vigente e seguir.
-- 4º — implementar a E20.3 como perfil versionado de orientação; após sua conclusão, debater a E12.4 em plano próprio.
-- 5º — implementar E19.4 como fluxo real e único de geração por conta.
-- 6º — implementar a avaliação e liberação por E20.4 e E12.4.5–12.4.6.
-- E10.8 e E20.2 permanecem concluídas e são consumidas pelos próximos recortes.
+- Base consolidada para a jornada: E10.8, E18.4, E18.5, E20.2, E20.3 e E12.4.3.
+- Correção anterior à prontidão — implementar E12.4.3.2 e a evolução E20.3.5 no mesmo PR técnico.
+- 1º — implementar E12.4.4 para prontidão, autorização e revogação por conta, taxon e plano.
+- 2º — implementar E19.4 como fluxo real e único de geração, revisão, materialização e publicação por conta.
+- 3º — implementar a avaliação e liberação por E20.4 e E12.4.5–12.4.6.
+- Reabrir E18.4, E18.5, E20.2 ou o perfil de orientação somente diante de aprendizado material obtido com LPs reais.
+- Gates operacionais remanescentes da E12.4.3 são acompanhados no roadmap e não criam novo plano conceitual.
 
 ## 4. Onde cada ajuste entra no roadmap
 
@@ -176,23 +189,26 @@ Fontes de referência: `README.md`, `docs/roadmap.md`, `docs/base-tecnica.md`, `
 
 ### 4.2. E12
 
-- `12.4.3` operará futuramente proposta por IA, revisão, aprovação e ativação do perfil.
-- `12.4.4` tratará futuramente autorização e revogação por conta, taxon e plano.
+- `12.4.3` opera proposta por IA, revisão, salvamento, aprovação, ativação e arquivamento do perfil.
+- `12.4.3.1` mantém refinamento por ação explícita; após a E12.4.3.2, ele atua somente sobre a estrutura.
+- `12.4.3.2` separa `coverage[]` de `recommendations[]`, restringe a IA à estrutura, audita a decisão sobre gaps e implementa a opcionalidade da orientação geral definida pela E20.3.5.
+- `12.4.4` recalculará gaps e tratará prontidão, autorização e revogação por conta, taxon e plano.
 - `12.4.5` e `12.4.6` avaliam a LP real e registram a liberação.
-- A E12 opera decisões humanas; os contratos e estados pertencem à E20.
+- A E12 opera decisões humanas; os contratos, estados e resolução pertencem à E20.
 
 ### 4.3. E18
 
 - E18.4 mantém a base raiz versionada e executável da família `landing_page`.
-- E18.5 mantém o catálogo executável, versionado e tipado de módulos e variantes.
-- A E18.5 será otimizada sem remover resolver, Zod, falha fechada, contratos tipados, imutabilidade ou API pública mínima.
-- A E18.4 será reavaliada somente após os testes da E18.5 e não é condição automática para iniciar a E20.3.
+- E18.5 mantém o catálogo executável, otimizado, versionado e tipado de módulos e variantes.
 - Ambos devem permanecer simples para o humano e eficientes para o sistema, sem antecipar renderer, persistência ou infraestrutura fora de seus recortes.
+- E18.4 ou E18.5 só devem ser reabertas diante de evidência material produzida por consumidores ou LPs reais.
 
 ### 4.4. E20
 
 - E20.2 permanece responsável pelo catálogo de entradas.
-- E20.3 mantém o perfil versionado de orientação por taxon e suas recomendações estruturais para a geração inicial.
+- E20.3 mantém contrato, persistência, estados, validação e resolução própria ou herdada do perfil de orientação.
+- A E20.3.5 torna `generation_guidance` opcional sem alterar os demais contratos.
+- A operação humana do lifecycle pertence à E12.4.3.
 - Identidades inexistentes não entram nas recomendações oficiais e poderão ser tratadas posteriormente como gaps.
 - E20.4 define critérios de liberação por evidência da LP real.
 

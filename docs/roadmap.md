@@ -1,8 +1,8 @@
 0. Introdução
 
 0.1 Cabeçalho
-• Data: 28/07/2026
-• Versão: v1.5.111
+• Data: 30/07/2026
+• Versão: v1.5.114
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -1393,14 +1393,14 @@ Repositório — Ajustados
 
 12.4 Gestão do perfil de orientação
 - Objetivo: Definir a operação administrativa do perfil de orientação que direciona gerações futuras de landing pages sem materializar nem alterar LPs.
-- Status: E12.4.3 implementada como candidata no repositório; aplicação da migration, configuração da assistência e teste humano em Preview permanecem pendentes antes da conclusão.
+- Status: E12.4.3 e E12.4.3.1 concluídas; E12.4.3.2 planejada como correção funcional da criação e evolução estrutural do perfil.
 
 12.4.1 Objetivo e status
 - Objetivo: Entregar a operação manual completa de criação, edição, revisão, ativação e arquivamento de versões do perfil, com proposta opcional por IA no mesmo editor.
-- Status: Operação manual e assistência opcional implementadas como candidatas; validações externas pendentes.
+- Status: Operação manual e assistência opcional implementadas e validadas; provas automatizadas de banco e validações humanas autenticadas em Preview concluídas.
 
 12.4.3 Proposta, revisão, aprovação e ativação do perfil
-- Status: Implementação candidata concluída no repositório; validações externas pendentes.
+- Status: Concluída; implementação integrada à `main`, com workflow idempotente, teste SQL transacional, verificação read-only pós-apply, configuração da OpenAI em Preview e teste humano autenticado aprovados.
 - Conteúdo:
   - Perfil próprio permitido somente para segmento e nicho; ultranicho resolve o perfil ativo do ancestral elegível mais próximo.
   - Estados persistidos limitados a `draft`, `active` e `archived`; uma versão ativa é imutável e qualquer mudança exige nova versão em rascunho.
@@ -1410,21 +1410,39 @@ Repositório — Ajustados
   - Dependência técnica atendida em 28/07/2026: PR #655 mergeado, branch sincronizada com a `main` e `next`/`eslint-config-next` confirmados em `16.2.11` no lockfile antes da implementação.
   - A proposta por IA exige resolução completa da E10.8 e identidades públicas vigentes da E18.5; ausência ou indisponibilidade da assistência não bloqueia o fluxo manual.
   - E12.4.4 e subseções posteriores, autorização por conta, geração, materialização, preview, publicação e alteração de LP permanecem fora do recorte.
-- Registros de implementação candidata:
+- Registros de implementação:
   - Admin Dashboard: listagem e editor em `app/admin/(protected)/perfis-de-orientacao/`, com salvar draft, ativar e arquivar protegidos por `platform_admin`.
   - Boundary e adapters: contratos administrativos, validação estrita, correlação da proposta, acesso server-only e integração opcional com Responses API em `lib/conversion-content/`.
-  - Banco versionado: migration `20260728153500_e12_4_3_generation_profile_lifecycle.sql`, teste SQL e snippet de verificação; aplicação no Supabase e reconciliação posterior de `docs/schema.md` ainda pendentes.
-  - Validação local: casos executáveis do perfil, typecheck e check aprovados; Preview autenticado e fluxo real com OpenAI/Supabase ainda não executados por ausência das configurações locais.
+  - Banco: migration `20260728153500_e12_4_3_generation_profile_lifecycle.sql` aplicada; teste SQL transacional, snippet read-only, RPCs, ACLs, RLS e policies verificados pós-apply.
+  - Validação: casos executáveis do perfil, typecheck, check, checks hospedados e fluxo autenticado em Preview aprovados; proposta inicial, refinamento e gate negativo da E10.8 validados sem salvamento ou ativação automáticos.
 
 12.4.3.1 Refinamento iterativo assistido por IA
-- Status: Implementação candidata no PR #654; provas hospedadas aplicáveis permanecem pendentes e a subfase não está concluída.
+- Status: Concluída; implementação integrada à `main`, com checks hospedados automatizados e teste humano autenticado do refinamento em Preview aprovados.
 - Conteúdo:
   - Toda proposta inicial ou revisão depende de ação explícita do `platform_admin`.
-  - A IA pode sugerir alterações em `generation_guidance`, recomendações e `item_guidance` dentro do contrato fechado vigente.
+  - No estado implementado, a IA ainda pode sugerir `generation_guidance`, recomendações e `item_guidance`; a E12.4.3.2 restringirá o refinamento a módulos, variantes, prioridade, ordem e gaps.
   - O refinamento recebe o conteúdo atual do editor e o feedback humano mais recente, além das fontes já autorizadas pela E12.4.3.
   - Cada acionamento autoriza somente uma chamada; não há refinamento nem retry automático.
   - Nenhuma proposta salva, aprova ou ativa automaticamente; o `platform_admin` continua responsável por revisar, editar, salvar e ativar.
   - Não existe conversa persistente, histórico de mensagens, agente ou memória própria.
+
+12.4.3.2 Criação e evolução estrutural baseada em `lp_sections`, catálogo vigente e debate humano–IA
+- Status: Planejada; correção conceitual definida no plano-base E12.4 v2.5 e implementação técnica pendente.
+- Conteúdo:
+  - Sem perfil próprio, a ação será `Criar perfil com IA`; com perfil `active` próprio, será `Evoluir perfil com IA`; o fluxo manual permanece completo.
+  - A evolução inicializará o editor da nova versão com a estrutura ativa completa como baseline não persistido e revalidará cada recomendação contra as versões vigentes da E10.8 e da E18.5.
+  - `coverage[]` avaliará cada item de `lp_sections`; `recommendations[]` será a lista final única por módulo.
+  - `coverage[]`, relações seção–módulo, gaps e estados do diff serão resultados derivados e transitórios; somente recomendações aplicadas e salvas integrarão o perfil.
+  - Várias seções poderão convergir para um módulo e uma seção poderá exigir vários módulos.
+  - A prioridade será convertida por `3 → P1`, `2 → P2`, `1 → P3`; a ordem final será determinística, positiva e única.
+  - Cada rodada explícita ocorrerá sobre a nova versão em `draft`, usando editor original, candidata atual e feedback humano; a candidata e o diff aparecerão antes de aplicar, refinar novamente ou descartar.
+  - Aplicar alterará somente o editor; `Salvar rascunho`, aprovação, ativação e arquivamento continuarão separados e humanos.
+  - A pesquisa bruta será contexto complementar opcional, resolvido pela proveniência efetiva da E10.8 e incluído apenas quando existir e couber integralmente no limite da requisição; ausência ou omissão não criarão gate.
+  - A IA não preencherá nem modificará `generation_guidance` ou `item_guidance`, que serão exceções humanas opcionais.
+  - A decisão `wait_for_modules` ou `proceed_with_available` será registrada no evento de auditoria do rascunho; aguardar bloqueará ativação.
+  - A E12.4.4 recalculará os gaps antes da prontidão, sem nova tabela neste recorte.
+  - A evolução E20.3.5 tornará `generation_guidance` opcional no mesmo PR técnico, sem reabrir E20.3.3 ou E20.3.4.
+  - Snapshot e independência da LP permanecem consolidados; liberdade de edição e comportamento de regeneração serão decididos apenas no futuro plano-base da E19.4.
 
 13. E13 — Partner Dashboard
 
@@ -2199,15 +2217,15 @@ Repositório — Ajustados
 20.3.1 Objetivo e status
 
 * Objetivo: definir e resolver um perfil versionado por taxon que oriente a geração de `landing_page` com recomendações de módulos e variantes da E18.5, sem impor composição final ou prontidão.
-* Status: Implementação concluída no PR #644; pendente apenas de merge, apply automático da migration e verificação read-only pós-apply.
+* Status: Concluída; PR #644 mergeado, migration aplicada e verificação read-only pós-apply aprovada.
 
 20.3.3 Contrato e persistência mínima do perfil
 
-* Status: Implementada no PR #644, com aplicação da migration pendente do merge.
+* Status: Concluída; implementação do PR #644 integrada à `main`, migration aplicada e estado final do banco verificado.
 * Conteúdo:
 
-  * Implementar o agregado versionado, as duas tabelas sem registros oficiais, a leitura server-side, o boundary único e as validações de contrato, estados, cadeia taxonômica, integridade e segurança.
-  * Nenhum consumidor, rota ou outro caminho runtime será ativado antes do apply da migration após merge humano e da verificação do estado final do banco.
+  * O agregado versionado, as duas tabelas sem registros oficiais, a leitura server-side, o boundary único e as validações de contrato, estados, cadeia taxonômica, integridade e segurança estão implementados.
+  * A migration foi aplicada após o merge humano e o estado final do banco foi verificado antes da ativação de consumidores, rotas ou outros caminhos runtime.
 
 20.3.4 Validação E18.5 e resolução própria ou herdada
 
@@ -2224,14 +2242,28 @@ Repositório — Ajustados
 * Status: Definido.
 * Conteúdo:
 
-  * O perfil pertence a um taxon, possui versão, estado e orientação geral e reúne itens com módulo e versão, variante e versão opcionais, prioridade `P1`, `P2` ou `P3`, ordem recomendada positiva e orientação específica opcional.
+  * O perfil pertence a um taxon, possui versão e estado e reúne itens com módulo e versão, variante e versão opcionais, prioridade `P1`, `P2` ou `P3`, ordem recomendada positiva e orientação específica opcional; `generation_guidance` permanece obrigatória no contrato vigente até a E20.3.5.
   * Prioridade e ordem são orientação; não criam módulo obrigatório, composição final, seleção por plano, prontidão, autorização, revogação ou geração.
   * Perfil e itens formam um agregado único, somente leitura server-side, persistido em exatamente duas tabelas e entregue por um único boundary, sem perfil oficial neste recorte.
   * A resolução usa perfil `active` próprio ou do ancestral elegível mais próximo, preserva proveniência e falha fechado para cadeia, leitura, identidade ou perfil inválido; ausência legítima permanece distinta de erro.
   * A E20.3 depende da taxonomia vigente e da identidade pública da E18.5, mas permanece independente do catálogo e dos valores da E20.2.
   * Permanecem fora do recorte mutações e lifecycle operacional do perfil, terceira tabela de domínio, rota, API HTTP, Server Action, UI, composição, copy, geração, IA, automação, job, serviço e nova infraestrutura.
 
+20.3.5 Opcionalidade da orientação geral
+
+* Status: Planejada; evolução de domínio vinculada à implementação técnica da E12.4.3.2.
+* Conteúdo:
+
+  * Tornar `generation_guidance` anulável, exclusivamente humano e não vazio quando presente, por migration incremental forward-only.
+  * Atualizar contratos, schemas, DTOs, RPCs, normalização, testes e verificador read-only sem alterar estados, herança, resolução active-only ou recomendações.
+  * Preservar `item_guidance` opcional e exclusivamente humano.
+  * Não criar novo campo, estado, tabela, resolver ou infraestrutura e não reabrir E20.3.3 ou E20.3.4.
+
 99. Changelog
+v1.5.114 — 30/07/2026 — Reconciliada a E12.4.3.2 para criação e evolução do perfil em `draft`, baseline ativo revalidado, ações contextuais, candidata e diff transitórios, aplicação separada do salvamento e pesquisa bruta complementar opcional; E20.3.5 mantida como evolução mínima.
+
+v1.5.113 — 29/07/2026 — Planejada a E12.4.3.2 com cobertura por `lp_sections`, recomendações deduplicadas, prioridade e ordem determinísticas, auditoria da decisão sobre gaps e evolução E20.3.5; decisões de edição e regeneração permanecem para o futuro plano-base da E19.4.
+
 v1.5.111 — 28/07/2026 — Corrigido o registro do transporte concorrente do `invite_state`: estado assinado por emissão no `redirectTo`, template sem metadata compartilhado e reteste corretivo de Preview pendente, mantendo Production desabilitada.
 
 v1.5.108 — 28/07/2026 — Registrada a aprovação da matriz hospedada da E11.1.7 em Preview, com Production mantida desabilitada até o merge humano e o smoke pós-merge.

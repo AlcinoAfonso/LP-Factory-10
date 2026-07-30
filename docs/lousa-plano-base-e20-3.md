@@ -1,8 +1,8 @@
 # Plano-base — E20.3 — Perfil de orientação para geração
 
-- Data: 26/07/2026.
-- Versão: v2.
-- Status: plano-base v2 consolidado para o gate do Analista na orquestração end-to-end.
+- Data: 30/07/2026.
+- Versão: v2.2.
+- Status: E20.3.3 e E20.3.4 concluídas; E20.3.5 planejada como evolução mínima do contrato para tornar `generation_guidance` opcional.
 - Recorte previsto para o roadmap: `20.3 — Perfil de orientação para geração de landing_page`.
 - Path canônico: `docs/lousa-plano-base-e20-3.md`.
 - Plano conceitual: `docs/lp-planejamento.md`, após o merge do PR #642.
@@ -19,7 +19,7 @@
 - Ainda não existe o perfil canônico que oriente a geração inicial de `landing_page` para um taxon.
 - A E20.3 deve:
   - representar e persistir minimamente um perfil versionado por taxon proprietário;
-  - reunir orientação geral e recomendações por módulo;
+  - reunir recomendações por módulo e, excepcionalmente, orientação geral humana;
   - validar referências de módulo e variante contra a E18.5;
   - resolver perfil próprio ou herdado;
   - entregar o perfil por um único boundary server-side.
@@ -53,12 +53,12 @@
 - Existe um perfil versionado por `taxon proprietário + versão`, reutilizado entre planos.
 - O perfil pode pertencer a segmento ou nicho; perfil próprio de ultranicho é excepcional e depende de decisão humana explícita no fluxo futuro responsável.
 - O perfil reúne:
-  - orientação geral em `generation_guidance`;
   - recomendações próprias por módulo;
+  - `generation_guidance` opcional, exclusivamente humano e excepcional;
   - variante preferencial, quando aplicável;
   - prioridade;
   - ordem recomendada;
-  - `item_guidance`, quando aplicável.
+  - `item_guidance` opcional e exclusivamente humano, quando aplicável.
 - A prioridade usa enum fechado `P1`, `P2` e `P3`, em ordem decrescente de importância.
 - Prioridade orientará a seleção futura; ordem recomendada indicará a posição relativa entre os módulos selecionados.
 - Nenhuma recomendação torna módulo obrigatório ou redefine a E18.4 ou a E18.5.
@@ -79,7 +79,7 @@
 - E18.5 define módulos, variantes e contratos; E20.3 apenas referencia suas identidades versionadas e consome a validação pública mínima autorizada, sem acessar registry ou schema internos.
 - E20.2 define entradas; seus valores não integram o perfil.
 - E20.3 fornece contrato, persistência mínima, estados, versões, validação, leitura e resolução.
-- A futura E12.4 opera proposta por IA, revisão humana, primeiro cadastro, aprovação e ativação.
+- A E12.4 opera proposta estrutural por IA, revisão humana, cadastro, aprovação e ativação; a E12.4.3.2 implementará a evolução de domínio E20.3.5 no mesmo PR técnico.
 - Planos posteriores tratam seleção efetiva por prioridade, geração, gaps persistidos, prontidão, autorização, revogação, aprendizado, publicação e evolução da LP.
 
 ## 2. Contrato do caso
@@ -126,13 +126,15 @@
   - versão inteira positiva;
   - estado.
 - Orientação geral:
-  - texto não vazio.
+  - `generation_guidance` opcional;
+  - quando informada, texto não vazio após `trim`;
+  - preenchimento e alteração exclusivamente humanos.
 - Cada item recomendado contém:
   - módulo e versão;
   - variante preferencial e versão, quando aplicável;
   - prioridade `P1`, `P2` ou `P3`;
   - ordem recomendada inteira positiva;
-  - `item_guidance`, quando aplicável.
+  - `item_guidance` opcional e exclusivamente humano, quando aplicável.
 - Regras:
   - `P1` representa maior prioridade, seguida por `P2` e `P3`;
   - não são aceitos `P4`, `P5` ou valores numéricos arbitrários;
@@ -177,7 +179,8 @@
   - FK de cada item para o perfil com `ON UPDATE CASCADE` e `ON DELETE CASCADE`, pois os itens integram o agregado;
   - versão do perfil positiva e única por taxon proprietário;
   - status fechado e índice único parcial de uma versão `active` por taxon proprietário;
-  - `generation_guidance` não vazia após `trim`;
+  - no contrato vigente, `generation_guidance` é obrigatória e não vazia após `trim`;
+  - após a E20.3.5, `generation_guidance` será anulável e, quando presente, continuará não vazia após `trim`;
   - prioridade fechada em `P1`, `P2` e `P3`;
   - ordem recomendada positiva e única por perfil;
   - módulo textual não vazio e único por perfil;
@@ -266,7 +269,8 @@
 - Contrato:
   - perfil válido;
   - estado ou versão inválidos;
-  - `generation_guidance` inválida;
+  - no contrato vigente, `generation_guidance` ausente ou inválida;
+  - após a E20.3.5, ausência aceita e valor presente vazio ou inválido rejeitado;
   - prioridade fora de `P1`, `P2` e `P3`;
   - ordem recomendada inválida;
   - item duplicado;
@@ -370,12 +374,31 @@
   - nenhuma prontidão, autorização, revogação ou geração;
   - `npm run validate:landing-page-module-catalog`, `npm run validate:landing-page-generation-profile`, `npm run check` e `git diff --check` aprovados.
 
-### 3.3. Próxima ação
+### 3.3. E20.3.5 — Opcionalidade da orientação geral
 
-- Submeter esta v2 ao gate do Analista em duas passagens, preservando a independência da Passagem 1 e auditando pareceres e matriz somente na Passagem 2.
-- Após aprovação da v2, reconciliar `docs/roadmap.md` pelo fluxo ABC e submeter o delta ao mesmo Analista.
-- Depois do checkpoint `LP-Factory-Stage: plan-v2-approved`, implementar E20.3.3 e E20.3.4 na ordem, na mesma branch e no mesmo PR draft contra `main`, sem iniciar E12.4.
-- Debater a E12.4 somente após a conclusão da E20.3.
+- Automação: não.
+- Status: planejada; implementação vinculada ao PR técnico da E12.4.3.2.
+- Objetivo:
+  - evoluir o agregado para que `generation_guidance` seja exceção humana opcional, sem alterar estados, herança, resolução active-only ou recomendações.
+- Entregas:
+  - migration incremental forward-only, sem editar a migration histórica da E20.3;
+  - coluna anulável com validação de texto não vazio quando presente;
+  - atualização coordenada de contratos, schemas, DTOs, RPCs, normalização, testes e verificador read-only;
+  - preservação integral de `item_guidance` como campo opcional do item-filho.
+- Critérios de aceite:
+  - perfil válido sem `generation_guidance`;
+  - valor presente vazio ou inválido rejeitado;
+  - perfis históricos preservados;
+  - resolver público mantém o mesmo comportamento próprio, herdado e fail-closed;
+  - nenhuma IA produz ou modifica `generation_guidance` ou `item_guidance`.
+- Escopo negativo:
+  - sem novo estado, tabela, resolver, herança, módulo, variante, gap, prontidão, UI ou infraestrutura própria da E20.3.5.
+
+### 3.4. Próxima ação
+
+- Preservar E20.3.3 e E20.3.4 como concluídas.
+- Aprovar conceitualmente a E20.3.5 junto da E12.4.3.2.
+- Implementar a E20.3.5 no mesmo PR técnico da E12.4.3.2, com migration e reconciliação documental, sem reabrir os demais contratos da E20.3.
 
 ## 4. Escopo negativo e critérios de parada
 
@@ -383,7 +406,7 @@
 
 - Composição obrigatória, estrutura final ou módulo obrigatório.
 - Seleção efetiva por prioridade ou diferenciação por plano.
-- E12.4, Admin Dashboard, IA e aprendizado automático.
+- E12.4, Admin Dashboard, IA e aprendizado automático, exceto a evolução de domínio E20.3.5 executada pelo PR técnico da E12.4.3.2.
 - Cadastro, edição, aprovação, ativação ou arquivamento de perfil.
 - Gaps persistidos, prontidão, autorização ou revogação.
 - Copy, geração, renderização, preview, publicação, tracking ou snapshot.
@@ -432,10 +455,6 @@
 
 ### 4.4. Critérios de encerramento do plano
 
-- O plano encerra após:
-  - implementação das duas fases na ordem;
-  - avaliação do Analista após cada entrega;
-  - merge humano;
-  - confirmação do estado final do banco;
-  - relatório final ao Gestor de Docs.
-- A conclusão da E20.3 libera o debate da E12.4, mas não autoriza sua implementação.
+- E20.3.3 e E20.3.4 estão encerradas após implementação, merge humano e confirmação do banco.
+- A E20.3.5 encerra somente após migration incremental, contratos, testes, verificação do banco, reconciliação documental e merge humano.
+- A E20.3.5 não reabre as fases concluídas nem autoriza ampliar E12.4.3.2.
