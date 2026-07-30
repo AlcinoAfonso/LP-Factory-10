@@ -2,7 +2,7 @@
 
 - Versão: v1
 - Data: 30/07/2026
-- Status: planejado; v1 aguardando aprovação humana.
+- Status: planejado; v1 aprovada; Processo automatizado escolhido; aguardando merge humano.
 - Recorte no roadmap: `11.2 — Autoridade comercial e elegibilidade para gestão de membros`
 - Path canônico: `docs/lousa-plano-base-e11-2.md`
 - Plano conceitual: N/A — debate realizado entre humano, Analista e Estrategista antes da v1.
@@ -218,51 +218,95 @@
 
 ## 3. Fases e próxima ação
 
-### 3.1. Fase única — 11.2.3 a 11.2.7
+### 3.1. E11.2.3 — Autoridade para o checkout
 
-- Status: planejada; execução bloqueada até aprovação da v1 e escolha do processo.
+- Status: planejada; execução pelo Processo automatizado somente após o merge humano da v1.
 - Automação: não.
-- Objetivo: aplicar a política consolidada de autoridade comercial e elegibilidade para convites nos fluxos existentes, com validação técnica, visual e humana no mesmo recorte.
-- Subseções do Roadmap atendidas:
-  - `11.2.3` Autoridade para o checkout;
-  - `11.2.4` Elegibilidade para criação e reenvio de convites;
-  - `11.2.5` Experiência da conta sem entitlement;
-  - `11.2.6` Preservação dos vínculos e ações existentes;
-  - `11.2.7` Validação técnica, visual e humana.
+- Objetivo: restringir o checkout existente ao owner sem entitlement comercial válido e impedir nova compra pela mesma action quando a conta já estiver elegível.
 - Execução:
-  - usar o sinal canônico já carregado em `/a/[account]` para separar a experiência por papel e entitlement;
-  - restringir a action de checkout a owner sem entitlement;
-  - bloquear checkout quando já houver entitlement válido;
-  - exigir entitlement no boundary existente de criação e reenvio de convites;
-  - ajustar a página de membros para comunicar e refletir o bloqueio somente nas ações dependentes de entitlement;
-  - preservar as demais operações da E11.1;
-  - criar ou ajustar testes no padrão já existente, sem inventar infraestrutura de testes paralela;
-  - validar Preview em desktop e mobile;
-  - reconciliar o Roadmap e somente os documentos que apresentarem delta real pelo Prompt ABC.
+  - revalidar conta, membership, papel e sinal canônico na Server Action antes de `createStripeTestCheckoutSession()`;
+  - permitir o fluxo apenas para owner ativo de conta ativa com `isCommerciallyEligible=false`;
+  - bloquear admin, editor, viewer e owner com entitlement válido;
+  - preservar preço, recorrência, URLs, webhook e confirmação comercial existentes.
+- Artefatos esperados:
+  - ajuste em `app/a/[account]/_components/commercial-page/checkout-actions.ts`;
+  - testes no padrão já existente para papel e entitlement, conforme a estrutura confirmada durante a execução.
+- Critérios de aceite:
+  - owner sem entitlement inicia o checkout existente;
+  - owner com entitlement e todos os papéis não-owner falham server-side;
+  - nenhum bloqueio cria Checkout Session;
+  - `isCommerciallyEligible` permanece a única decisão comercial consumida;
+  - nenhuma regra de billing inexistente é antecipada;
+  - validações automatizadas aplicáveis são aprovadas.
+- Evidência esperada:
+  - resultados dos casos autorizados e bloqueados;
+  - prova de ausência de Checkout Session nos bloqueios;
+  - diff restrito ao checkout existente.
+
+### 3.2. E11.2.4 — Elegibilidade para criação e reenvio de convites
+
+- Status: planejada; sucede a E11.2.3 no Processo automatizado.
+- Automação: não.
+- Objetivo: exigir entitlement comercial válido somente para criar e reenviar convites, preservando as ações de manutenção dos vínculos existentes.
+- Execução:
+  - aplicar o guard no boundary server-side existente com o `accountId` autoritativo;
+  - permitir criação e reenvio somente a owner/admin com `isCommerciallyEligible=true`;
+  - bloquear antes de criação no Auth, preparação do membership, gravação do canal ou envio;
+  - refletir o bloqueio no formulário de novo convite e na ação de reenvio;
+  - preservar listagem, aceite, recusa, revogação, desativação e alteração de papel conforme a E11.1.
+- Artefatos esperados:
+  - ajuste no boundary existente `lib/access/account-members/`;
+  - ajuste em `app/a/[account]/members/page.tsx` e nos componentes/actions já responsáveis pelo fluxo;
+  - testes no padrão já existente, conforme a estrutura confirmada durante a execução.
+- Critérios de aceite:
+  - owner/admin com entitlement criam e reenviam convites;
+  - owner/admin sem entitlement não produzem efeito;
+  - editor/viewer continuam bloqueados pela autorização da E11.1;
+  - ações preservadas continuam disponíveis sem entitlement;
+  - convites pendentes e memberships existentes permanecem inalterados;
+  - isolamento multi-tenant e proteções do owner continuam aprovados.
+- Evidência esperada:
+  - matriz de owner/admin com e sem entitlement;
+  - prova de ausência de efeitos externos e persistência nos bloqueios;
+  - smoke das ações preservadas.
+
+### 3.3. E11.2.5 — Experiência da conta sem entitlement
+
+- Status: planejada; sucede a E11.2.4 no Processo automatizado.
+- Automação: não.
+- Objetivo: separar a experiência comercial do owner do estado de espera dos demais papéis, sem criar novo dashboard produtivo.
+- Execução:
+  - usar o sinal já carregado em `/a/[account]` e o papel do Access Context;
+  - manter a página comercial e os CTAs existentes para owner sem entitlement;
+  - remover cards e CTAs financeiros de admin, editor e viewer;
+  - apresentar a não-owner sem entitlement a mensagem `Esta conta aguarda ativação comercial pelo proprietário.`;
+  - manter o comportamento pós-entitlement vigente, sem antecipar a E10.5.1;
+  - validar desktop e mobile e executar o fechamento documental material pelo Prompt ABC.
 - Artefatos esperados:
   - ajuste em `app/a/[account]/page.tsx`;
-  - ajuste em `app/a/[account]/_components/commercial-page/GenericCommercialPage.tsx`;
-  - ajuste em `app/a/[account]/_components/commercial-page/checkout-actions.ts`;
-  - ajuste no boundary existente `lib/access/account-members/`;
-  - ajuste em `app/a/[account]/members/page.tsx`;
-  - testes ou casos de validação nos artefatos canônicos já existentes, conforme a estrutura confirmada pelo Executor.
+  - ajuste nos componentes existentes de `app/a/[account]/_components/commercial-page/`;
+  - testes ou casos de validação nos artefatos canônicos existentes.
 - Critérios de aceite:
-  - todos os casos da seção 2.6 aprovados;
-  - nenhuma sessão Stripe criada por ator não-owner ou conta já elegível;
-  - nenhum novo convite ou reenvio produz efeito sem entitlement;
-  - ações preservadas continuam funcionando sem entitlement;
-  - não-owner sem entitlement recebe estado de espera sem CTA financeiro;
-  - Preview aprovado em desktop e mobile;
-  - `npm ci`, `npm run check` e validações específicas aplicáveis aprovados;
-  - diff restrito ao recorte, sem banco, rota ou infraestrutura nova;
-  - fechamento documental executado na própria implementação pelo Prompt ABC.
+  - owner sem entitlement recebe página comercial e CTA funcional;
+  - admin, editor e viewer sem entitlement recebem estado de espera sem escolha de plano ou checkout;
+  - nenhum não-owner recebe CTA financeiro, inclusive com chamada direta já bloqueada pela E11.2.3;
+  - memberships, papéis e ações preservadas não sofrem alteração retroativa;
+  - estado visual aprovado em desktop e mobile quanto a hierarquia, contraste, foco e legibilidade;
+  - `npm ci`, `npm run check` e validações específicas aplicáveis são aprovados;
+  - diff não cria banco, rota, boundary ou infraestrutura;
+  - Roadmap e documentos materialmente afetados são reconciliados pelo Prompt ABC.
 - Evidência esperada:
-  - resultados automatizados para a matriz de papéis e entitlement;
-  - prova de ausência de efeito nos bloqueios de checkout e convite;
-  - capturas do owner sem entitlement, do não-owner sem entitlement e da gestão de membros com convite bloqueado;
-  - capturas em desktop e mobile sem dado sensível;
-  - smoke do fluxo autorizado e das ações preservadas.
-- Próxima ação: após aprovação humana da v1, escolher entre Processo atual e Processo automatizado antes de instruir Executor ou especialistas.
+  - capturas do owner e de pelo menos um papel não-owner sem entitlement;
+  - capturas em desktop e mobile sem dados sensíveis;
+  - smoke do fluxo autorizado e das ações preservadas;
+  - checks e fechamento documental registrados no PR.
+
+### 3.4. Próxima ação
+
+- A v1 está aprovada e o Processo automatizado foi escolhido.
+- Após o merge humano do PR #666, acionar exclusivamente o orquestrador com:
+  - `Use $lp-factory-orquestrar-plano no PR #666.`
+- Não executar manualmente as fases, não chamar especialistas fora da orquestração e não usar `$lp-factory-executar-plano` diretamente sobre a v1.
 
 ## 4. Escopo negativo e critérios de parada
 
@@ -296,5 +340,7 @@
 
 ### 4.3. Decisão atual
 
-- Decisão: debate concluído e v1 produzida com uma única fase executável, sem automação.
-- Execução: não autorizada antes da aprovação humana da v1 e da escolha explícita do processo.
+- Decisão: debate concluído, v1 aprovada e Processo automatizado escolhido.
+- Fases executáveis: E11.2.3, E11.2.4 e E11.2.5, todas sem automação.
+- Preservação dos vínculos e validação das subseções 11.2.6 e 11.2.7 integram os critérios de aceite das fases correspondentes.
+- Execução: não autorizada antes do merge humano; após o merge, cabe exclusivamente ao orquestrador previsto no item 3.4.
