@@ -16,6 +16,7 @@ import type {
 import {
   decideAdminMemberTransition,
   decideSelfServiceInviteTransition,
+  isSelfServiceInviteEligible,
   isManageableMemberRole,
   selectLatestInviteChannels,
 } from "../policy";
@@ -153,6 +154,22 @@ export async function getSelfServiceInviteMembership(input: Readonly<{
   return { ok: true, value: current.value };
 }
 
+export async function hasActiveAccountMembership(
+  actorUserId: string,
+): Promise<AccountMemberResult<boolean>> {
+  const supabase = createServiceClient();
+  const { data, error } = await supabase
+    .from("account_users")
+    .select("id")
+    .eq("user_id", actorUserId)
+    .eq("status", "active")
+    .limit(1);
+
+  if (error) return { ok: false, error: "read_failed" };
+
+  return { ok: true, value: (data ?? []).length > 0 };
+}
+
 export async function listSelfServicePendingMemberships(
   actorUserId: string,
 ): Promise<AccountMemberResult<readonly PendingAccountMemberInvite[]>> {
@@ -179,8 +196,19 @@ export async function listSelfServicePendingMemberships(
 
   const channels = await getInviteChannels(pending.map((membership) => membership.id));
   if (!channels.ok) return channels;
-  const eligiblePending = pending.filter(
-    (membership) => channels.value.get(membership.id) === "in_app",
+  const hasPendingEmail = pending.some(
+    (membership) => channels.value.get(membership.id) === "email",
+  );
+  const activeMembership = hasPendingEmail
+    ? await hasActiveAccountMembership(actorUserId)
+    : ({ ok: true, value: false } as const);
+  if (!activeMembership.ok) return activeMembership;
+  const eligiblePending = pending.filter((membership) =>
+    isSelfServiceInviteEligible({
+      status: membership.status,
+      channel: channels.value.get(membership.id) ?? null,
+      hasActiveMembership: activeMembership.value,
+    }),
   );
   if (eligiblePending.length === 0) return { ok: true, value: [] };
 

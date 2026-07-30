@@ -14,6 +14,8 @@ export type InviteStateCodecResult =
   | Readonly<{ ok: true; value: InviteStatePayload }>
   | Readonly<{ ok: false; error: "invalid_invite_state" }>;
 
+export type InviteTransportOptions = Readonly<{ redirectTo: string }>;
+
 export function createInviteStatePayload(input: Readonly<{
   accountUserId: string;
   accountId: string;
@@ -59,6 +61,28 @@ export function decodeInviteState(token: string, secret: string): InviteStateCod
     return isValidPayload(parsed) ? { ok: true, value: parsed } : invalidInviteState();
   } catch {
     return invalidInviteState();
+  }
+}
+
+export function createInviteTransportOptions(input: Readonly<{
+  redirectTo: string;
+  inviteState: string;
+}>): InviteTransportOptions | null {
+  if (!input.inviteState) return null;
+
+  try {
+    const redirect = new URL(input.redirectTo);
+    if (
+      (redirect.protocol !== "https:" && redirect.protocol !== "http:") ||
+      redirect.pathname !== "/auth/confirm"
+    ) {
+      return null;
+    }
+
+    redirect.searchParams.set("invite_state", input.inviteState);
+    return { redirectTo: redirect.toString() };
+  } catch {
+    return null;
   }
 }
 

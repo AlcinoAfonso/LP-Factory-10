@@ -2,8 +2,8 @@
 
 0.1 Cabeçalho
 • Documento: LP Factory 10 — Platform Config
-• Versão: v0.1.12
-• Data: 28/07/2026
+• Versão: v0.1.14
+• Data: 30/07/2026
 
 0.2 Contrato do documento
 • O QUE É: snapshot operacional e fonte única das configurações de plataformas externas do LP Factory 10, refletindo o estado conhecido/cadastrado nas plataformas conforme indicado.
@@ -129,14 +129,14 @@
 • `E11_MEMBERS_ENABLED`
 • Finalidade: gate operacional da gestão de membros e convites.
 • Escopo: Production e Preview.
-• Estado atual: `false`, configurada em Production e Preview.
-• Regra operacional: manter Production em `false` até a aprovação da prova hospedada; o Preview pode ser habilitado temporariamente somente após a configuração remanescente do Supabase Auth, com redeploy próprio e finalidade exclusiva de validação.
+• Estado atual: `false` em Production e `true` somente no Preview da branch `codex-app/e11-11-1-7`.
+• Regra operacional: os testes humanos da correção do transporte concorrente foram aprovados no Preview da branch `codex-app/e11-11-1-7`; manter Production em `false` até o merge humano do PR #656 e o fluxo pós-merge.
 
 • `INVITE_STATE_SECRET`
 • Finalidade: assinar o estado opaco transportado pelo convite nativo do Supabase Auth.
 • Escopo: Production e Preview.
 • Estado atual: configurada em Production e Preview, com valores independentes por ambiente e sem versionar o conteúdo.
-• Estado operacional conjunto: redeploys de Production e Preview concluídos após a configuração das variáveis da E11.
+• Estado operacional conjunto: Preview da branch `codex-app/e11-11-1-7` configurado e aprovado nos testes humanos corretivos com o gate habilitado; Production permanece com o gate desabilitado.
 • Regra operacional: manter configurada antes de habilitar `E11_MEMBERS_ENABLED`.
 
 • `SUPABASE_SECRET_KEY`
@@ -239,14 +239,14 @@
 4.6 Supabase Auth — convite de membro
 • Auth Hook: ausência de hook configurado confirmada operacionalmente em 27/07/2026.
 • Envio: usar o convite nativo `inviteUserByEmail`; não configurar envio customizado no Core.
-• Template: personalizar `Invite user` em português do Brasil e preservar o estado assinado enviado em `{{ .Data.invite_state }}`.
-• Link aprovado para o template: `{{ .RedirectTo }}?token_hash={{ .TokenHash }}&type=invite&invite_state={{ .Data.invite_state }}`.
-• Redirect de Production: cadastrar `https://lp-factory-10.vercel.app/auth/confirm` na allowlist do Supabase Auth.
-• Redirect de Preview: cadastrar somente o domínio/path do deployment usado na validação; quando wildcard for necessário, restringir a Preview e usar `/**`.
-• Email OTP Expiration: confirmar no Dashboard que a validade hospedada é compatível com a janela operacional do convite; o Core não adiciona validade local paralela.
-• Estado: template, redirects, expiração e envio real permanecem pendentes de configuração e validação hospedada pós-merge.
-• Ordem operacional remanescente: configurar e revisar template, redirects e expiração; habilitar o gate somente no Preview autorizado; redeployar e validar o fluxo hospedado; manter Production desabilitada até a aprovação da prova.
-• Evidência hospedada exigida antes da habilitação: convite novo, reenvio idempotente, link adulterado rejeitado, link legítimo concluído com definição de senha antes da ativação e isolamento entre memberships.
+• Template: `Invite user` configurado em português do Brasil em 28/07/2026; o estado assinado é codificado no `redirectTo` específico de cada emissão e transportado por `{{ .RedirectTo }}`, sem `data` ou `user_metadata` compartilhado.
+• Link aprovado para o template: `{{ .RedirectTo }}&token_hash={{ .TokenHash }}&type=invite`.
+• Redirect de Production: `https://lp-factory-10.vercel.app/auth/confirm` cadastrado na allowlist do Supabase Auth em 28/07/2026.
+• Redirect de Preview: wildcard restrito a `https://*-alcino-afonsos-projects.vercel.app/**` confirmado na allowlist; a prova deve usar somente o deployment autorizado.
+• Email OTP Expiration: `3600` segundos confirmados no Dashboard em 28/07/2026; o Core não adiciona validade local paralela.
+• Estado: template, redirects e expiração configurados; correção do transporte concorrente implementada e testes humanos hospedados aprovados no Preview autorizado da fase `11.1.7`.
+• Ordem operacional remanescente: manter Production desabilitada até o merge humano do PR #656; após o merge, habilitar o gate em Production, redeployar e executar o smoke final.
+• Evidência hospedada aprovada: convite novo, reenvio idempotente, link adulterado rejeitado, link legítimo concluído com definição de senha antes da ativação, dois convites concorrentes para contas diferentes e isolamento entre memberships por `account_user_id`.
 
 4.7 Acesso operacional read-only para automações
 • Role operacional read-only: `ai_readonly`.
@@ -459,6 +459,12 @@ Regra:
 • Configurações de plataformas, secrets por nome, workflows, ambientes e endpoints usados por automações devem ser registrados neste documento.
 
 99. Changelog
+v0.1.14 — 30/07/2026 — Registrada a aprovação dos testes humanos da correção do transporte concorrente no Preview autorizado, removida a pendência de reteste e mantida Production desabilitada até o merge humano do PR #656.
+
+v0.1.13 — 28/07/2026 — Corrigido o transporte do estado assinado por emissão no `RedirectTo` do convite nativo, removida a dependência de metadata compartilhado e preparado o reteste hospedado restrito, com Production desabilitada.
+
+v0.1.12 — 28/07/2026 — Registrada a prova hospedada aprovada da E11.1.7 no Preview autorizado e preservado o gate de Production até o merge humano e o smoke pós-merge.
+
 v0.1.11 — 28/07/2026 — Registrada `OPENAI_LANDING_PAGE_GENERATION_PROFILE_MODEL`, seus ambientes, estado pendente e consumidor server-side da E12.4.3.
 
 v0.1.10 — 28/07/2026 — Registradas as variáveis da E11 configuradas em Production e Preview, os redeploys concluídos e a configuração remanescente do Supabase Auth.

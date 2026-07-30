@@ -28,8 +28,13 @@ export function isManageableMemberRole(value: string): value is ManageableMember
 export function isSelfServiceInviteEligible(input: Readonly<{
   status: MemberStatus;
   channel: AccountMemberInviteChannel | null;
+  hasActiveMembership: boolean;
 }>): boolean {
-  return input.status === "pending" && input.channel === "in_app";
+  return (
+    input.status === "pending" &&
+    (input.channel === "in_app" ||
+      (input.channel === "email" && input.hasActiveMembership))
+  );
 }
 
 export function decideInviteChannel(input: Readonly<{
