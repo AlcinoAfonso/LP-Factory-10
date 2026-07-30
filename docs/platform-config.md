@@ -2,7 +2,7 @@
 
 0.1 Cabeçalho
 • Documento: LP Factory 10 — Platform Config
-• Versão: v0.1.14
+• Versão: v0.1.15
 • Data: 30/07/2026
 
 0.2 Contrato do documento
@@ -129,14 +129,14 @@
 • `E11_MEMBERS_ENABLED`
 • Finalidade: gate operacional da gestão de membros e convites.
 • Escopo: Production e Preview.
-• Estado atual: `false` em Production e `true` somente no Preview da branch `codex-app/e11-11-1-7`.
-• Regra operacional: os testes humanos da correção do transporte concorrente foram aprovados no Preview da branch `codex-app/e11-11-1-7`; manter Production em `false` até o merge humano do PR #656 e o fluxo pós-merge.
+• Estado atual: `true` em Production e Preview.
+• Estado operacional: PR #656 mergeado, redeploy de Production concluído e smoke final aprovado em 30/07/2026.
 
 • `INVITE_STATE_SECRET`
 • Finalidade: assinar o estado opaco transportado pelo convite nativo do Supabase Auth.
 • Escopo: Production e Preview.
 • Estado atual: configurada em Production e Preview, com valores independentes por ambiente e sem versionar o conteúdo.
-• Estado operacional conjunto: Preview da branch `codex-app/e11-11-1-7` configurado e aprovado nos testes humanos corretivos com o gate habilitado; Production permanece com o gate desabilitado.
+• Estado operacional conjunto: configurado em Production e Preview; fluxo corretivo aprovado no Preview e operação final aprovada em Production.
 • Regra operacional: manter configurada antes de habilitar `E11_MEMBERS_ENABLED`.
 
 • `SUPABASE_SECRET_KEY`
@@ -245,7 +245,7 @@
 • Redirect de Preview: wildcard restrito a `https://*-alcino-afonsos-projects.vercel.app/**` confirmado na allowlist; a prova deve usar somente o deployment autorizado.
 • Email OTP Expiration: `3600` segundos confirmados no Dashboard em 28/07/2026; o Core não adiciona validade local paralela.
 • Estado: template, redirects e expiração configurados; correção do transporte concorrente implementada e testes humanos hospedados aprovados no Preview autorizado da fase `11.1.7`.
-• Ordem operacional remanescente: manter Production desabilitada até o merge humano do PR #656; após o merge, habilitar o gate em Production, redeployar e executar o smoke final.
+• Estado final: PR #656 mergeado; gate habilitado em Production; redeploy concluído; smoke final aprovado na página de membros e convites.
 • Evidência hospedada aprovada: convite novo, reenvio idempotente, link adulterado rejeitado, link legítimo concluído com definição de senha antes da ativação, dois convites concorrentes para contas diferentes e isolamento entre memberships por `account_user_id`.
 
 4.7 Acesso operacional read-only para automações
@@ -459,6 +459,8 @@ Regra:
 • Configurações de plataformas, secrets por nome, workflows, ambientes e endpoints usados por automações devem ser registrados neste documento.
 
 99. Changelog
+v0.1.15 — 30/07/2026 — Registrados o merge do PR #656, a habilitação do gate, o redeploy e o smoke final aprovado em Production.
+
 v0.1.14 — 30/07/2026 — Registrada a aprovação dos testes humanos da correção do transporte concorrente no Preview autorizado, removida a pendência de reteste e mantida Production desabilitada até o merge humano do PR #656.
 
 v0.1.13 — 28/07/2026 — Corrigido o transporte do estado assinado por emissão no `RedirectTo` do convite nativo, removida a dependência de metadata compartilhado e preparado o reteste hospedado restrito, com Production desabilitada.
