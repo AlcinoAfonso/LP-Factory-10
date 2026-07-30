@@ -1,7 +1,7 @@
 # Plano-base — E20.3 — Perfil de orientação para geração
 
-- Data: 29/07/2026.
-- Versão: v2.1.
+- Data: 30/07/2026.
+- Versão: v2.2.
 - Status: E20.3.3 e E20.3.4 concluídas; E20.3.5 planejada como evolução mínima do contrato para tornar `generation_guidance` opcional.
 - Recorte previsto para o roadmap: `20.3 — Perfil de orientação para geração de landing_page`.
 - Path canônico: `docs/lousa-plano-base-e20-3.md`.
@@ -58,7 +58,7 @@
   - variante preferencial, quando aplicável;
   - prioridade;
   - ordem recomendada;
-  - `item_guidance`, quando aplicável.
+  - `item_guidance` opcional e exclusivamente humano, quando aplicável.
 - A prioridade usa enum fechado `P1`, `P2` e `P3`, em ordem decrescente de importância.
 - Prioridade orientará a seleção futura; ordem recomendada indicará a posição relativa entre os módulos selecionados.
 - Nenhuma recomendação torna módulo obrigatório ou redefine a E18.4 ou a E18.5.
@@ -126,13 +126,15 @@
   - versão inteira positiva;
   - estado.
 - Orientação geral:
-  - texto não vazio.
+  - `generation_guidance` opcional;
+  - quando informada, texto não vazio após `trim`;
+  - preenchimento e alteração exclusivamente humanos.
 - Cada item recomendado contém:
   - módulo e versão;
   - variante preferencial e versão, quando aplicável;
   - prioridade `P1`, `P2` ou `P3`;
   - ordem recomendada inteira positiva;
-  - `item_guidance`, quando aplicável.
+  - `item_guidance` opcional e exclusivamente humano, quando aplicável.
 - Regras:
   - `P1` representa maior prioridade, seguida por `P2` e `P3`;
   - não são aceitos `P4`, `P5` ou valores numéricos arbitrários;
