@@ -143,11 +143,7 @@ async function completeAccountMemberInviteAction(formData: FormData) {
   }
 
   await clearInviteStateCookie(cookieName);
-  const destination = await getAccountMemberInviteDestination(
-    authenticated.context,
-    inviteState.value.account_id,
-  );
-  redirect(destination.ok ? `/a/${destination.value}` : "/a/home");
+  redirect("/a/home");
 }
 
 async function clearInviteStateCookie(cookieName: string) {

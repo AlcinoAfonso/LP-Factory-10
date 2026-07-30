@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 
 import { EmptyState } from "@/components/ui/empty-state";
@@ -76,6 +77,9 @@ export default async function MembersPage({ params, searchParams }: MembersPageP
     <main className="mx-auto max-w-6xl px-4 py-8 sm:px-6 sm:py-10">
       <div className="space-y-8">
         <header className="space-y-2">
+          <Link className="inline-block text-sm font-medium text-brand-700 hover:underline" href={`/a/${account}`}>
+            Voltar para a página principal
+          </Link>
           <p className="text-sm font-medium text-brand-700">Configurações da conta</p>
           <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">Membros e convites</h1>
           <p className="max-w-3xl text-sm text-muted-foreground sm:text-base">
