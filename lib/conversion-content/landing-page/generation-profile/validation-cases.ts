@@ -561,7 +561,7 @@ const cases: readonly Readonly<{
       });
       assert.equal(request.ok, true);
       assert.equal(request.body.store, false);
-      assert.equal(request.body.max_output_tokens, 3000);
+      assert.equal(request.body.max_output_tokens, 4000);
       assert.match(request.body.input[0].content[0].text, /Não invente nem crie identidades\. Use somente identidades válidas fornecidas pelo catálogo autorizado\./);
       assert.equal(Object.hasOwn(request.body, "tools"), false);
       assert.equal(request.body.text.format.strict, true);
