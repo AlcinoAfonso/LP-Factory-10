@@ -154,26 +154,37 @@ const cases: readonly Readonly<{ name: string; run: () => void }>[] = [
     },
   },
   {
-    name: "self-service rejects an email-delivered invite even after Auth creates a session",
+    name: "self-service surfaces remaining email invites only after one membership activates",
     run: () => {
       assert.equal(
         isSelfServiceInviteEligible({
           status: "pending",
           channel: "email",
+          hasActiveMembership: false,
         }),
         false,
       );
       assert.equal(
         isSelfServiceInviteEligible({
           status: "pending",
+          channel: "email",
+          hasActiveMembership: true,
+        }),
+        true,
+      );
+      assert.equal(
+        isSelfServiceInviteEligible({
+          status: "pending",
           channel: "in_app",
+          hasActiveMembership: false,
         }),
         true,
       );
       assert.equal(
         isSelfServiceInviteEligible({
           status: "active",
-          channel: "in_app",
+          channel: "email",
+          hasActiveMembership: true,
         }),
         false,
       );

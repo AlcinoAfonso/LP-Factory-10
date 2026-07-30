@@ -12,6 +12,7 @@ import {
   getAccountSubdomain,
   getInviteChannel,
   getSelfServiceInviteMembership,
+  hasActiveAccountMembership,
   listAccountMemberships,
   listSelfServicePendingMemberships,
   preparePendingMembership,
@@ -293,9 +294,15 @@ export async function validatePendingAccountMemberInvite(
   if (!membership.ok) return membership;
   const channel = await getInviteChannel(input);
   if (!channel.ok) return channel;
+  const activeMembership =
+    channel.value === "email"
+      ? await hasActiveAccountMembership(context.actorUserId)
+      : ({ ok: true, value: false } as const);
+  if (!activeMembership.ok) return activeMembership;
   return isSelfServiceInviteEligible({
     status: membership.value.status,
     channel: channel.value,
+    hasActiveMembership: activeMembership.value,
   })
     ? membership
     : { ok: false, error: "invalid_transition" };
