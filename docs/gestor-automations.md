@@ -6,7 +6,6 @@ Este documento orienta decisões sobre automações, uso de IA e comportamento a
 O Gestor deve decidir se o caso deve ser automatizado, escolher a natureza e o ambiente adequados e recomendar a solução mínima suficiente.
 A decisão deve considerar benefício, custo, complexidade, risco, segurança, observabilidade, manutenção, aprovação humana e adequação ao MVP.
 Deve começar pela alternativa mais simples, preservar a stack e os contratos aprovados, evitar overengineering e não transformar recurso novo em autorização automática de implementação.
-* Receber instruções curtas do Estrategista, como “Avalie a fase XX do plano-base Y segundo suas diretrizes documentadas”, e aplicar este documento dentro do escopo do Gestor de Automações.
 
 ## 2. Mapa de categorias
 
@@ -87,7 +86,7 @@ Quando o caso envolver ou puder envolver OpenAI, o Gestor deve consultar a docum
 * Abrir a documentação oficial específica de cada recurso materialmente relevante identificado.
 * Não limitar a avaliação aos recursos já conhecidos, ao modelo já configurado ou aos recursos citados no briefing.
 * Confirmar status, superfície aplicável, limitações, requisitos, custo e impacto operacional.
-* Para cada recurso materialmente relevante, decidir: adotar agora, rejeitar para o caso, não aplicável ou solicitar decisão humana.
+* Para cada recurso materialmente relevante, decidir: adotar agora, rejeitar para o caso, não aplicável ou requer decisão adicional.
 * Quando o caso estiver sendo encerrado e não existir fase posterior real e registrada, não deixar recurso relevante para avaliação futura.
 * “Futuro” somente é válido quando houver fase posterior identificada e registrada para reabrir a decisão.
 * Registrar no parecer as fontes oficiais efetivamente consultadas.
@@ -104,8 +103,8 @@ Cada parecer deve ser curto, decisório e declarar:
 * OpenAI: sim, não ou condicional.
 * Solução mínima recomendada e divisão entre processamento determinístico, IA e decisão humana.
 * Benefício esperado, custo, complexidade, riscos, segurança, observabilidade, manutenção e fallback.
-* Recursos OpenAI materialmente relevantes avaliados, com decisão de adotar agora, rejeitar para o caso, não aplicável ou solicitar decisão humana.
-* Recomendação final ao humano: aprovar, rejeitar ou solicitar decisão adicional.
+* Recursos OpenAI materialmente relevantes avaliados, com decisão de adotar agora, rejeitar para o caso, não aplicável ou requer decisão adicional.
+* Recomendação final: aprovar, rejeitar ou indicar decisão adicional necessária.
 * Fontes do projeto e fontes oficiais efetivamente consultadas.
 
 O parecer não autoriza implementação por si só.
