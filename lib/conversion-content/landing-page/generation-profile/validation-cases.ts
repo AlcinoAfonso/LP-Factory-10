@@ -24,6 +24,7 @@ import {
   isGenerationProfileAssistanceConfigured,
   mapProviderFailureToProposalError,
   mapResearchErrorToProposalError,
+  normalizeGenerationProfileIncompleteMetadata,
   validateGenerationProfileProviderPayload,
 } from "./proposal";
 import { listLandingPageModuleIdentities } from "../module-catalog";
@@ -756,6 +757,58 @@ const cases: readonly Readonly<{
       assert.equal(mapResearchErrorToProposalError("RESEARCH_AMBIGUOUS"), "invalid_data");
       assert.equal(mapResearchErrorToProposalError("READ_FAILED"), "technical_failure");
       assert.equal(mapResearchErrorToProposalError("SOURCE_NOT_NORMALIZABLE"), "technical_failure");
+    },
+  },
+  {
+    name: "incomplete response metadata is allowlisted nullable and independent from partial output",
+    run: () => {
+      const completeMetadata = normalizeGenerationProfileIncompleteMetadata({
+        id: "resp_incomplete_123",
+        status: "incomplete",
+        incomplete_details: { reason: "future_provider_reason" },
+        usage: { input_tokens: 321, output_tokens: 2000, total_tokens: 2321 },
+        output: [{ content: [{ type: "output_text", text: "partial sensitive content" }] }],
+        recommendations: [{ module_key: "invented" }],
+        current_candidate: { secret: "must not cross the boundary" },
+      });
+      assert.deepEqual(completeMetadata, {
+        incompleteReason: "future_provider_reason",
+        responseId: "resp_incomplete_123",
+        inputTokens: 321,
+        outputTokens: 2000,
+      });
+      assert.deepEqual(Object.keys(completeMetadata).sort(), ["incompleteReason", "inputTokens", "outputTokens", "responseId"]);
+
+      assert.deepEqual(normalizeGenerationProfileIncompleteMetadata({
+        id: "resp_null_usage",
+        status: "incomplete",
+        incomplete_details: { reason: "max_output_tokens" },
+        usage: null,
+      }), {
+        incompleteReason: "max_output_tokens",
+        responseId: "resp_null_usage",
+        inputTokens: null,
+        outputTokens: null,
+      });
+      assert.deepEqual(normalizeGenerationProfileIncompleteMetadata({
+        status: "incomplete",
+        incomplete_details: { reason: "unknown_but_valid_reason" },
+      }), {
+        incompleteReason: "unknown_but_valid_reason",
+        responseId: null,
+        inputTokens: null,
+        outputTokens: null,
+      });
+      assert.deepEqual(normalizeGenerationProfileIncompleteMetadata({
+        id: 123,
+        incomplete_details: { reason: " " },
+        usage: { input_tokens: -1, output_tokens: 1.5 },
+      }), {
+        incompleteReason: null,
+        responseId: null,
+        inputTokens: null,
+        outputTokens: null,
+      });
     },
   },
   {

@@ -123,6 +123,12 @@ export async function proposeLandingPageGenerationProfile(input: {
       model,
       startedAt,
       providerKind: provider.kind,
+      ...(provider.kind === "incomplete" ? {
+        incompleteReason: provider.incompleteReason,
+        responseId: provider.responseId,
+        inputTokens: provider.inputTokens,
+        outputTokens: provider.outputTokens,
+      } : {}),
       researchVersions: research.value.versions,
       researchProvenance: getResearchProvenance(research.value),
       moduleCatalogVersion: moduleIdentities.moduleCatalogVersion,

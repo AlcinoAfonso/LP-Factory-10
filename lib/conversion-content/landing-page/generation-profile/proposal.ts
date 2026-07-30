@@ -53,8 +53,47 @@ export type GenerationProfileProviderResult =
     }>
   | Readonly<{
       ok: false;
-      kind: "refusal" | "incomplete" | "http_error" | "timeout" | "invalid_response" | "request_too_large";
+      kind: "incomplete";
+      incompleteReason: string | null;
+      responseId: string | null;
+      inputTokens: number | null;
+      outputTokens: number | null;
+    }>
+  | Readonly<{
+      ok: false;
+      kind: "refusal" | "http_error" | "timeout" | "invalid_response" | "request_too_large";
     }>;
+
+export function normalizeGenerationProfileIncompleteMetadata(payload: unknown): Readonly<{
+  incompleteReason: string | null;
+  responseId: string | null;
+  inputTokens: number | null;
+  outputTokens: number | null;
+}> {
+  const response = isUnknownRecord(payload) ? payload : null;
+  const incompleteDetails = response && isUnknownRecord(response.incomplete_details)
+    ? response.incomplete_details
+    : null;
+  const usage = response && isUnknownRecord(response.usage) ? response.usage : null;
+  return {
+    incompleteReason: readNonEmptyString(incompleteDetails?.reason),
+    responseId: readNonEmptyString(response?.id),
+    inputTokens: readTokenCount(usage?.input_tokens),
+    outputTokens: readTokenCount(usage?.output_tokens),
+  };
+}
+
+function readNonEmptyString(value: unknown) {
+  return typeof value === "string" && value.trim().length > 0 ? value : null;
+}
+
+function readTokenCount(value: unknown) {
+  return Number.isSafeInteger(value) && (value as number) >= 0 ? value as number : null;
+}
+
+function isUnknownRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
 
 const identitySchema = z
   .object({
