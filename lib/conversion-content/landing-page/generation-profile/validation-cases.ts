@@ -29,9 +29,9 @@ import {
   validateGenerationProfileProviderPayload,
 } from "./proposal";
 import { listLandingPageModuleIdentities } from "../module-catalog";
+import type { ResolvedLandingPageResearch } from "../research-resolution";
 import {
   applyGenerationProfileCandidate,
-  diffGenerationProfileRecommendations,
   findGenerationProfileReplacements,
   receiveGenerationProfileProposal,
   hasGenerationProfileEditorContent,
@@ -122,34 +122,26 @@ const structuralResearch = {
 const structuralPayload = {
   coverage: [
     {
-      audience_scope: "business_buyer" as const,
-      item_key: "buyer_faq",
-      section_name: "FAQ comercial",
-      source_priority: 2 as const,
-      source_order: 2,
+      coverage_id: "business_buyer:buyer_faq",
       status: "covered" as const,
       compatible_identities: [{ module_key: "faq", module_version: 1, variant_key: "faq.accordion", variant_version: 1 }],
       reason: null,
       impact: null,
     },
     {
-      audience_scope: "end_customer" as const,
-      item_key: "customer_hero",
-      section_name: "Hero de conversao",
-      source_priority: 3 as const,
-      source_order: 1,
+      coverage_id: "end_customer:customer_hero",
       status: "covered" as const,
       compatible_identities: [{ module_key: "hero", module_version: 1, variant_key: "hero.form", variant_version: 1 }],
       reason: null,
       impact: null,
     },
   ],
-  recommendations: [
-    { module_key: "hero", module_version: 1, variant_key: "hero.form", variant_version: 1, priority: "P1" as const, recommended_order: 10 },
-    { module_key: "faq", module_version: 1, variant_key: "faq.accordion", variant_version: 1, priority: "P2" as const, recommended_order: 20 },
-  ],
-  source_notices: [],
 };
+
+const expectedStructuralRecommendations = [
+  { moduleKey: "hero", moduleVersion: 1, variantKey: "hero.form", variantVersion: 1, priority: "P1" as const, recommendedOrder: 10 },
+  { moduleKey: "faq", moduleVersion: 1, variantKey: "faq.accordion", variantVersion: 1, priority: "P2" as const, recommendedOrder: 20 },
+];
 
 const validChain = {
   servedTaxonId: ULTRA_ID,
@@ -466,18 +458,37 @@ const cases: readonly Readonly<{
     },
   },
   {
-    name: "structural proposal covers every lp_sections item and rejects output drift",
+    name: "structural proposal accepts only reduced AI analysis and reconstructs canonical output",
     run: () => {
       const validate = (payload: unknown) => validateGenerationProfileProviderPayload({ payload, research: structuralResearch, moduleIdentities: listLandingPageModuleIdentities() });
       const valid = validate(structuralPayload);
       assert.equal(valid.ok, true, valid.ok ? undefined : valid.message);
+      if (valid.ok) {
+        assert.deepEqual(valid.value.coverage.map((item) => ({
+          audienceScope: item.audienceScope,
+          itemKey: item.itemKey,
+          sectionName: item.sectionName,
+          sourcePriority: item.sourcePriority,
+          sourceOrder: item.sourceOrder,
+        })), [
+          { audienceScope: "business_buyer", itemKey: "buyer_faq", sectionName: "FAQ comercial", sourcePriority: 2, sourceOrder: 2 },
+          { audienceScope: "end_customer", itemKey: "customer_hero", sectionName: "Hero de conversao", sourcePriority: 3, sourceOrder: 1 },
+        ]);
+        assert.deepEqual(valid.value.recommendations, expectedStructuralRecommendations);
+      }
       const invalidSchema = validate({ ...structuralPayload, generation_guidance: "Nao autorizado" });
       assert.equal(invalidSchema.ok, false);
       if (!invalidSchema.ok) assert.equal(invalidSchema.reason, "payload_schema_invalid");
-      assert.equal(validate({ ...structuralPayload, recommendations: [{ ...structuralPayload.recommendations[0], item_guidance: "Nao autorizado" }] }).ok, false);
+      assert.equal(validate({ ...structuralPayload, recommendations: [] }).ok, false);
+      assert.equal(validate({ ...structuralPayload, source_notices: [] }).ok, false);
+      assert.equal(validate({ ...structuralPayload, coverage: [{ ...structuralPayload.coverage[0], section_name: "Drift" }, structuralPayload.coverage[1]] }).ok, false);
       assert.equal(validate({ ...structuralPayload, coverage: structuralPayload.coverage.slice(1) }).ok, false);
-      assert.equal(validate({ ...structuralPayload, recommendations: [{ ...structuralPayload.recommendations[0], module_key: "invented" }, structuralPayload.recommendations[1]] }).ok, false);
-      assert.equal(validate({ ...structuralPayload, recommendations: [structuralPayload.recommendations[1], structuralPayload.recommendations[0]] }).ok, false);
+      assert.equal(validate({ ...structuralPayload, coverage: [{ ...structuralPayload.coverage[0], coverage_id: "business_buyer:unknown" }, structuralPayload.coverage[1]] }).ok, false);
+      assert.equal(validate({ ...structuralPayload, coverage: [structuralPayload.coverage[1], structuralPayload.coverage[0]] }).ok, true);
+      assert.equal(validate({
+        ...structuralPayload,
+        coverage: [{ ...structuralPayload.coverage[0], compatible_identities: [{ module_key: "invented", module_version: 1, variant_key: null, variant_version: null }] }, structuralPayload.coverage[1]],
+      }).ok, false);
       assert.equal(validate({
         ...structuralPayload,
         coverage: [{ ...structuralPayload.coverage[0], compatible_identities: [] }, structuralPayload.coverage[1]],
@@ -501,13 +512,35 @@ const cases: readonly Readonly<{
           { ...structuralPayload.coverage[0], status: "missing" as const, compatible_identities: [], reason: "Modulo indisponivel.", impact: "FAQ comercial parcial." },
           structuralPayload.coverage[1],
         ],
-        recommendations: [structuralPayload.recommendations[0]],
       };
       const validated = validateGenerationProfileProviderPayload({ payload: missingBuyer, research: structuralResearch, moduleIdentities: listLandingPageModuleIdentities() });
       assert.equal(validated.ok, true);
       if (!validated.ok) return;
       assert.deepEqual(validated.value.gaps.map((gap) => gap.itemKey), ["buyer_faq"]);
-      assert.deepEqual(validated.value.recommendations.map((item) => item.moduleKey), [structuralPayload.recommendations[0].module_key]);
+      assert.deepEqual(validated.value.recommendations.map((item) => item.moduleKey), ["hero"]);
+      assert.deepEqual(validated.value.diff.gaps.added.map((gap) => gap.itemKey), ["buyer_faq"]);
+      const previousCandidate = { ...validated.value, researchVersions: structuralResearch.versions, requestId: "50000000-0000-4000-8000-000000000020" };
+      const resolvedGap = validateGenerationProfileProviderPayload({
+        payload: structuralPayload,
+        research: structuralResearch,
+        moduleIdentities: listLandingPageModuleIdentities(),
+        previousCandidate,
+      });
+      assert.equal(resolvedGap.ok, true);
+      if (resolvedGap.ok) assert.deepEqual(resolvedGap.value.diff.gaps.resolved.map((gap) => gap.itemKey), ["buyer_faq"]);
+      const partialBuyer = validateGenerationProfileProviderPayload({
+        payload: {
+          ...structuralPayload,
+          coverage: [
+            { ...structuralPayload.coverage[0], status: "partial", reason: "Cobertura parcial.", impact: "FAQ exige complemento." },
+            structuralPayload.coverage[1],
+          ],
+        },
+        research: structuralResearch,
+        moduleIdentities: listLandingPageModuleIdentities(),
+      });
+      assert.equal(partialBuyer.ok, true);
+      if (partialBuyer.ok) assert.deepEqual(partialBuyer.value.gaps.map((gap) => [gap.itemKey, gap.status]), [["buyer_faq", "partial"]]);
       assert.equal(validateGenerationProfileDraft({
         ownerTaxonId: NICHE_ID,
         recommendations: validated.value.recommendations,
@@ -532,6 +565,62 @@ const cases: readonly Readonly<{
         gapItemKeys: [],
         researchVersions: structuralResearch.versions,
       }).ok, true);
+    },
+  },
+  {
+    name: "server derivation handles one-to-many many-to-one priority order and deterministic ties",
+    run: () => {
+      const validate = (payload: unknown, research: ResolvedLandingPageResearch = structuralResearch) => validateGenerationProfileProviderPayload({ payload, research, moduleIdentities: listLandingPageModuleIdentities() });
+      const oneToMany = validate({
+        coverage: [
+          {
+            ...structuralPayload.coverage[0],
+            compatible_identities: [
+              { module_key: "hero", module_version: 1, variant_key: "hero.form", variant_version: 1 },
+              { module_key: "faq", module_version: 1, variant_key: "faq.accordion", variant_version: 1 },
+            ],
+          },
+          { ...structuralPayload.coverage[1], status: "missing", compatible_identities: [], reason: "Sem modulo.", impact: "Cobertura indisponivel." },
+        ],
+      });
+      assert.equal(oneToMany.ok, true);
+      if (!oneToMany.ok) return;
+      assert.deepEqual(oneToMany.value.recommendations.map((item) => [item.moduleKey, item.priority, item.recommendedOrder]), [
+        ["faq", "P2", 10],
+        ["hero", "P2", 20],
+      ]);
+
+      const manyToOne = validate({
+        coverage: structuralPayload.coverage.map((item) => ({
+          ...item,
+          compatible_identities: [{ module_key: "hero", module_version: 1, variant_key: "hero.form", variant_version: 1 }],
+        })),
+      });
+      assert.equal(manyToOne.ok, true);
+      if (!manyToOne.ok) return;
+      assert.deepEqual(manyToOne.value.recommendations, [
+        { moduleKey: "hero", moduleVersion: 1, variantKey: "hero.form", variantVersion: 1, priority: "P1", recommendedOrder: 10 },
+      ]);
+
+      const tiedResearch = {
+        ...structuralResearch,
+        endCustomer: {
+          ...structuralResearch.endCustomer,
+          researches: structuralResearch.endCustomer.researches.map((parent) => ({
+            ...parent,
+            items: parent.items.map((item) => ({ ...item, sortOrder: 2 })),
+          })),
+        },
+      };
+      const firstOccurrenceTie = validate({
+        coverage: [
+          { ...structuralPayload.coverage[0], compatible_identities: [{ module_key: "hero", module_version: 1, variant_key: "hero.form", variant_version: 1 }] },
+          { ...structuralPayload.coverage[1], compatible_identities: [{ module_key: "faq", module_version: 1, variant_key: "faq.accordion", variant_version: 1 }] },
+        ],
+      }, tiedResearch);
+      assert.equal(firstOccurrenceTie.ok, true);
+      if (!firstOccurrenceTie.ok) return;
+      assert.deepEqual(firstOccurrenceTie.value.recommendations.map((item) => item.moduleKey), ["hero", "faq"]);
     },
   },
   {
@@ -565,13 +654,18 @@ const cases: readonly Readonly<{
       assert.equal(request.ok, true);
       assert.equal(request.body.store, false);
       assert.equal(request.body.max_output_tokens, 2000);
-      assert.match(request.body.input[0].content[0].text, /Não invente nem crie identidades\. Use somente identidades válidas fornecidas pelo catálogo autorizado\./);
+      assert.match(request.body.input[0].content[0].text, /Não derive recommendations, gaps ou diff; o servidor fará isso deterministicamente\./);
       assert.equal(Object.hasOwn(request.body, "tools"), false);
       assert.equal(request.body.text.format.strict, true);
       assert.equal(request.body.text.format.schema.additionalProperties, false);
       assert.equal(Object.hasOwn(request.body, "previous_response_id"), false);
       const input = JSON.parse(request.body.input[1].content[0].text);
       assert.equal(Object.hasOwn(input.current_editor, "generationGuidance"), false);
+      assert.deepEqual(input.coverage_sources.map((item: { coverage_id: string }) => item.coverage_id), ["business_buyer:buyer_faq", "end_customer:customer_hero"]);
+      assert.deepEqual(request.body.text.format.schema.required, ["coverage"]);
+      assert.deepEqual(request.body.text.format.schema.properties.coverage.items.required, ["coverage_id", "status", "compatible_identities", "reason", "impact"]);
+      assert.equal(Object.hasOwn(request.body.text.format.schema.properties, "recommendations"), false);
+      assert.equal(Object.hasOwn(request.body.text.format.schema.properties, "source_notices"), false);
       assert.equal(input.raw_research[0].content, "arquivo completo");
       assert.equal(input.raw_research[0].reference.sourceRelation, "direct_parent");
       const omittedRaw = buildGenerationProfileResponsesRequest({
@@ -648,7 +742,7 @@ const cases: readonly Readonly<{
       assert.equal(Object.hasOwn(evolutionInput.previous_active_profile, "generationGuidance"), false);
       assert.equal(evolutionInput.human_feedback, "Priorize a prova antes da FAQ.");
 
-      const validated = validateGenerationProfileProviderPayload({ payload: { ...structuralPayload, source_notices: ["Pesquisa bruta diverge da E10.8; a fonte estruturada foi preservada."] }, research: structuralResearch, moduleIdentities: listLandingPageModuleIdentities() });
+      const validated = validateGenerationProfileProviderPayload({ payload: structuralPayload, research: structuralResearch, moduleIdentities: listLandingPageModuleIdentities(), currentEditor });
       assert.equal(validated.ok, true);
       if (!validated.ok) return;
       const candidate = { ...validated.value, researchVersions: structuralResearch.versions, requestId: "50000000-0000-4000-8000-000000000010" };
@@ -678,7 +772,7 @@ const cases: readonly Readonly<{
       const nextRoundInput = JSON.parse(nextRound.body.input[1].content[0].text);
       assert.deepEqual(nextRoundInput.current_candidate.recommendations, candidate.recommendations);
       assert.equal(nextRoundInput.human_feedback, "Refine novamente.");
-      assert.equal(validated.value.notices.length, 1);
+      assert.equal(validated.value.notices.length, 0);
     },
   },
   {
@@ -690,7 +784,7 @@ const cases: readonly Readonly<{
       };
       assert.equal(hasGenerationProfileEditorContent({ generationGuidance: "", recommendations: [] }), false);
       assert.equal(hasGenerationProfileEditorContent(currentEditor), true);
-      const validated = validateGenerationProfileProviderPayload({ payload: structuralPayload, research: structuralResearch, moduleIdentities: listLandingPageModuleIdentities() });
+      const validated = validateGenerationProfileProviderPayload({ payload: structuralPayload, research: structuralResearch, moduleIdentities: listLandingPageModuleIdentities(), currentEditor });
       assert.equal(validated.ok, true);
       if (!validated.ok) return;
       const result = { ok: true as const, value: { ...validated.value, researchVersions: structuralResearch.versions, requestId: "50000000-0000-4000-8000-000000000001" } };
@@ -708,16 +802,13 @@ const cases: readonly Readonly<{
       assert.equal(applied.editor.generationGuidance, currentEditor.generationGuidance);
       assert.equal(applied.editor.recommendations.find((item) => item.moduleKey === "hero")?.itemGuidance, validProfile.items[0].itemGuidance);
       assert.equal(applied.dirty, true);
-      assert.deepEqual(diffGenerationProfileRecommendations({ editor: currentEditor, candidate: received.candidate }), [
+      assert.deepEqual(received.candidate.diff.recommendations, [
         { moduleKey: "faq", status: "added", changes: [] },
         { moduleKey: "hero", status: "kept", changes: [] },
       ]);
       assert.deepEqual(findGenerationProfileReplacements({
         editor: currentEditor,
-        candidate: {
-          ...received.candidate,
-          recommendations: [{ moduleKey: "faq", moduleVersion: 1, variantKey: "faq.accordion", variantVersion: 1, priority: "P1", recommendedOrder: 10 }],
-        },
+        recommendations: [{ moduleKey: "faq", moduleVersion: 1, variantKey: "faq.accordion", variantVersion: 1, priority: "P1", recommendedOrder: 10 }],
       }), [{ fromModuleKey: "hero", toModuleKey: "faq", recommendedOrder: 10 }]);
       assert.deepEqual(findGenerationProfileReplacements({
         editor: {
@@ -727,13 +818,10 @@ const cases: readonly Readonly<{
             { moduleKey: "faq", moduleVersion: 1, variantKey: "faq.accordion", variantVersion: 1, priority: "P2", recommendedOrder: 20 },
           ],
         },
-        candidate: {
-          ...received.candidate,
-          recommendations: [
-            { moduleKey: "hero", moduleVersion: 1, variantKey: "hero.form", variantVersion: 1, priority: "P1", recommendedOrder: 20 },
-            { moduleKey: "faq", moduleVersion: 1, variantKey: "faq.accordion", variantVersion: 1, priority: "P2", recommendedOrder: 10 },
-          ],
-        },
+        recommendations: [
+          { moduleKey: "hero", moduleVersion: 1, variantKey: "hero.form", variantVersion: 1, priority: "P1", recommendedOrder: 20 },
+          { moduleKey: "faq", moduleVersion: 1, variantKey: "faq.accordion", variantVersion: 1, priority: "P2", recommendedOrder: 10 },
+        ],
       }), []);
 
       const failure = receiveGenerationProfileProposal({
@@ -789,7 +877,7 @@ const cases: readonly Readonly<{
         responseId: "resp_invalid_123",
         inputTokens: 20856,
         outputTokens: 4000,
-        estimatedCostUsd: 0.022428,
+        estimatedCostUsd: 0.033642,
       });
       assert.deepEqual(Object.keys(metadata).sort(), ["estimatedCostUsd", "inputTokens", "outputTokens", "responseId", "validationReason"]);
     },
@@ -817,7 +905,7 @@ const cases: readonly Readonly<{
         GENERATION_PROFILE_APPROVED_MODEL,
         completeMetadata.inputTokens,
         completeMetadata.outputTokens,
-      ), 0.016428);
+      ), 0.024642);
 
       const nullUsageMetadata = normalizeGenerationProfileIncompleteMetadata({
         id: "resp_null_usage",
@@ -890,7 +978,7 @@ const cases: readonly Readonly<{
       assert.equal(isGenerationProfileAssistanceConfigured({ apiKey: "secret", model: "gpt-5.4" }), false);
       assert.equal(isGenerationProfileAssistanceConfigured({ apiKey: "secret", model: GENERATION_PROFILE_APPROVED_MODEL }), true);
       assert.equal(estimateGenerationProfileCostUsd("gpt-5.4", 1000, 1000), null);
-      assert.equal(estimateGenerationProfileCostUsd(GENERATION_PROFILE_APPROVED_MODEL, 1000, 1000), 0.0035);
+      assert.equal(estimateGenerationProfileCostUsd(GENERATION_PROFILE_APPROVED_MODEL, 1000, 1000), 0.00525);
     },
   },
 ];

@@ -18,9 +18,6 @@ import type {
 } from "@/conversion-content/landing-page/generation-profile";
 import {
   applyGenerationProfileCandidate,
-  diffGenerationProfileGaps,
-  diffGenerationProfileRecommendations,
-  findGenerationProfileReplacements,
   receiveGenerationProfileProposal,
 } from "@/conversion-content/landing-page/generation-profile/editor-assistance";
 import {
@@ -58,7 +55,6 @@ export function GenerationProfileEditor({ taxon, profiles, aiConfigured, researc
   const [savedEditorState, setSavedEditorState] = useState(() => serializeEditorState(seed?.generationGuidance ?? "", seed?.recommendations ?? []));
   const [humanFeedback, setHumanFeedback] = useState("");
   const [candidate, setCandidate] = useState<GenerationProfileProposal | null>(null);
-  const [previousCandidate, setPreviousCandidate] = useState<GenerationProfileProposal | null>(null);
   const [candidateGapDecision, setCandidateGapDecision] = useState<GenerationProfileGapDecision | "">("");
   const [appliedProposalContext, setAppliedProposalContext] = useState<AppliedProposalContext>(null);
   const [persistedGapDecision, setPersistedGapDecision] = useState<GenerationProfileGapDecision | null>(draft?.lastGapDecision ?? null);
@@ -103,7 +99,6 @@ export function GenerationProfileEditor({ taxon, profiles, aiConfigured, researc
         if (!result.ok) announce({ tone: result.error.code === "missing_information" ? "warning" : "error", message: `${result.error.code}: ${result.error.message}` });
         return;
       }
-      setPreviousCandidate(candidate);
       setCandidate(transition.candidate);
       setCandidateGapDecision("");
       announce({ tone: "success", message: candidate ? "Proposta refinada recebida; o editor original foi preservado." : "Proposta candidata recebida; revise o diff antes de aplicar." });
@@ -124,7 +119,6 @@ export function GenerationProfileEditor({ taxon, profiles, aiConfigured, researc
       ...(candidate.gaps.length > 0 ? { decision: candidateGapDecision as GenerationProfileGapDecision } : {}),
     });
     setCandidate(null);
-    setPreviousCandidate(null);
     setCandidateGapDecision("");
     setManualEditorVisible(true);
     announce({ tone: "warning", message: "Proposta aplicada somente ao editor. Salve o rascunho para persistir as recomendacoes." });
@@ -135,7 +129,6 @@ export function GenerationProfileEditor({ taxon, profiles, aiConfigured, researc
     startTransition(async () => {
       await discardGenerationProfileProposalAction({ taxonId: taxon.id, requestId: candidate.requestId });
       setCandidate(null);
-      setPreviousCandidate(null);
       setCandidateGapDecision("");
       announce({ tone: "warning", message: "Proposta candidata descartada; o editor original foi preservado." });
     });
@@ -199,9 +192,9 @@ export function GenerationProfileEditor({ taxon, profiles, aiConfigured, researc
     });
   }
 
-  const proposalDiff = candidate ? diffGenerationProfileRecommendations({ editor: currentEditor, candidate }) : [];
-  const replacements = candidate ? findGenerationProfileReplacements({ editor: currentEditor, candidate }) : [];
-  const gapDiff = candidate ? diffGenerationProfileGaps({ previousCandidate, candidate }) : { added: [], resolved: [] };
+  const proposalDiff = candidate?.diff.recommendations ?? [];
+  const replacements = candidate?.diff.replacements ?? [];
+  const gapDiff = candidate?.diff.gaps ?? { added: [], resolved: [] };
   const aiActionLabel = candidate ? "Refinar novamente com IA" : active ? "Evoluir perfil com IA" : "Criar perfil com IA";
 
   return <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_20rem]">

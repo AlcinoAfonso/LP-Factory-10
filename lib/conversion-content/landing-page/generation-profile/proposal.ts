@@ -16,12 +16,13 @@ import type {
   GenerationProfileRawResearchReference,
   GenerationProfileStructuralRecommendation,
 } from "./admin-contracts";
+import { deriveGenerationProfileProposalDiff } from "./editor-assistance";
 
 export const GENERATION_PROFILE_REQUEST_MAX_BYTES = 96 * 1024;
 export const GENERATION_PROFILE_MAX_OUTPUT_TOKENS = 2000;
 export const GENERATION_PROFILE_APPROVED_MODEL = "gpt-5.4-mini";
-const GENERATION_PROFILE_INPUT_USD_PER_TOKEN = 0.0000005;
-const GENERATION_PROFILE_OUTPUT_USD_PER_TOKEN = 0.000003;
+const GENERATION_PROFILE_INPUT_USD_PER_TOKEN = 0.00000075;
+const GENERATION_PROFILE_OUTPUT_USD_PER_TOKEN = 0.0000045;
 
 export type GenerationProfileRawResearch = Readonly<{
   reference: GenerationProfileRawResearchReference;
@@ -67,13 +68,9 @@ export type GenerationProfileProviderResult =
 export type GenerationProfileProviderValidationReason =
   | "payload_schema_invalid"
   | "coverage_items_mismatch"
-  | "coverage_source_changed"
   | "coverage_identity_count_invalid"
   | "coverage_gap_details_missing"
-  | "coverage_identity_invalid"
-  | "recommendation_duplicates"
-  | "recommendation_identity_invalid"
-  | "recommendation_derivation_mismatch";
+  | "coverage_identity_invalid";
 
 export function buildGenerationProfileInvalidDataMetadata(input: Readonly<{
   model: string;
@@ -132,17 +129,8 @@ const identitySchema = z
   .strict()
   .refine((value) => (value.variant_key === null) === (value.variant_version === null));
 
-const recommendationSchema = identitySchema.safeExtend({
-  priority: z.enum(["P1", "P2", "P3"]),
-  recommended_order: z.number().int().positive(),
-}).strict();
-
 const coverageSchema = z.object({
-  audience_scope: z.enum(["business_buyer", "end_customer"]),
-  item_key: z.string().trim().min(1),
-  section_name: z.string().trim().min(1),
-  source_priority: z.union([z.literal(1), z.literal(2), z.literal(3)]),
-  source_order: z.number().int().positive(),
+  coverage_id: z.string().trim().min(1),
   status: z.enum(["covered", "partial", "missing"]),
   compatible_identities: z.array(identitySchema),
   reason: z.string().trim().min(1).nullable(),
@@ -151,8 +139,6 @@ const coverageSchema = z.object({
 
 const providerPayloadSchema = z.object({
   coverage: z.array(coverageSchema),
-  recommendations: z.array(recommendationSchema),
-  source_notices: z.array(z.string().trim().min(1)),
 }).strict();
 
 const candidateIdentitySchema = z.object({
@@ -165,6 +151,17 @@ const candidateIdentitySchema = z.object({
     context.addIssue({ code: "custom", message: "variant identity must be complete" });
   }
 });
+
+const candidateGapSchema = z.object({
+  audienceScope: z.enum(["business_buyer", "end_customer"]),
+  itemKey: z.string().trim().min(1),
+  sectionName: z.string().trim().min(1),
+  sourcePriority: z.union([z.literal(1), z.literal(2), z.literal(3)]),
+  sourceOrder: z.number().int().positive(),
+  status: z.enum(["partial", "missing"]),
+  reason: z.string().trim().min(1),
+  impact: z.string().trim().min(1),
+}).strict();
 
 const candidateSchema = z.object({
   coverage: z.array(z.object({
@@ -182,16 +179,23 @@ const candidateSchema = z.object({
     priority: z.enum(["P1", "P2", "P3"]),
     recommendedOrder: z.number().int().positive(),
   }).strict()),
-  gaps: z.array(z.object({
-    audienceScope: z.enum(["business_buyer", "end_customer"]),
-    itemKey: z.string().trim().min(1),
-    sectionName: z.string().trim().min(1),
-    sourcePriority: z.union([z.literal(1), z.literal(2), z.literal(3)]),
-    sourceOrder: z.number().int().positive(),
-    status: z.enum(["partial", "missing"]),
-    reason: z.string().trim().min(1),
-    impact: z.string().trim().min(1),
-  }).strict()),
+  gaps: z.array(candidateGapSchema),
+  diff: z.object({
+    recommendations: z.array(z.object({
+      moduleKey: z.string().trim().min(1),
+      status: z.enum(["kept", "added", "changed", "removed"]),
+      changes: z.array(z.enum(["module_version", "variant", "priority", "order"])),
+    }).strict()),
+    replacements: z.array(z.object({
+      fromModuleKey: z.string().trim().min(1),
+      toModuleKey: z.string().trim().min(1),
+      recommendedOrder: z.number().int().positive(),
+    }).strict()),
+    gaps: z.object({
+      added: z.array(candidateGapSchema),
+      resolved: z.array(candidateGapSchema),
+    }).strict(),
+  }).strict(),
   notices: z.array(z.string().trim().min(1)),
   rawResearchReferences: z.array(z.object({
     path: z.string().trim().min(1),
@@ -253,6 +257,10 @@ export function buildGenerationProfileResponsesRequest(input: GenerationProfileP
   const baseUserInput = {
     taxon_id: input.taxonId,
     research: input.research,
+    coverage_sources: readLpSections(input.research).map((section) => ({
+      coverage_id: coverageIdentityKey(section),
+      ...section,
+    })),
     module_identities: input.moduleIdentities,
     previous_active_profile: toStructuralProfile(input.previousActiveProfile),
     current_editor: toStructuralEditor(input.currentEditor),
@@ -302,7 +310,7 @@ function createRequest(userInput: Record<string, unknown>) {
         role: "system",
         content: [{
           type: "input_text",
-          text: "Crie ou evolua somente a estrutura orientativa do perfil. Avalie cada item de lp_sections e devolva coverage completo e recommendations deduplicadas. Não invente nem crie identidades. Use somente identidades válidas fornecidas pelo catálogo autorizado. Não invente nem crie módulos ou variantes. Não produza copy, generation_guidance, item_guidance, LP ou ações. A pesquisa estruturada governa; pesquisa bruta e feedback são apenas contexto a avaliar. Registre em source_notices qualquer divergência entre pesquisa bruta e E10.8, sem reproduzir a pesquisa bruta.",
+          text: "Crie ou evolua somente a análise estrutural do perfil. Avalie exatamente cada coverage_source canônica da E10.8 e devolva somente coverage_id, status, compatible_identities, reason e impact. Não repita nem altere audience_scope, item_key, section_name, source_priority ou source_order. Não derive recommendations, gaps ou diff; o servidor fará isso deterministicamente. Não invente nem crie identidades. Use somente identidades válidas fornecidas pelo catálogo autorizado. Não invente nem crie módulos ou variantes. Não produza copy, generation_guidance, item_guidance, LP, avisos ou ações. A pesquisa estruturada governa; pesquisa bruta e feedback são apenas contexto a avaliar.",
         }],
       },
       {
@@ -318,43 +326,22 @@ function createRequest(userInput: Record<string, unknown>) {
         schema: {
           type: "object",
           additionalProperties: false,
-          required: ["coverage", "recommendations", "source_notices"],
+          required: ["coverage"],
           properties: {
             coverage: {
               type: "array",
               items: {
                 type: "object",
                 additionalProperties: false,
-                required: ["audience_scope", "item_key", "section_name", "source_priority", "source_order", "status", "compatible_identities", "reason", "impact"],
+                required: ["coverage_id", "status", "compatible_identities", "reason", "impact"],
                 properties: {
-                  audience_scope: { type: "string", enum: ["business_buyer", "end_customer"] },
-                  item_key: { type: "string", minLength: 1 },
-                  section_name: { type: "string", minLength: 1 },
-                  source_priority: { type: "integer", enum: [1, 2, 3] },
-                  source_order: { type: "integer", minimum: 1 },
+                  coverage_id: { type: "string", minLength: 1 },
                   status: { type: "string", enum: ["covered", "partial", "missing"] },
                   compatible_identities: { type: "array", items: identityJsonSchema },
                   reason: { type: ["string", "null"] },
                   impact: { type: ["string", "null"] },
                 },
               },
-            },
-            recommendations: {
-              type: "array",
-              items: {
-                type: "object",
-                additionalProperties: false,
-                required: ["module_key", "module_version", "variant_key", "variant_version", "priority", "recommended_order"],
-                properties: {
-                  ...identityJsonSchema.properties,
-                  priority: { type: "string", enum: ["P1", "P2", "P3"] },
-                  recommended_order: { type: "integer", minimum: 1 },
-                },
-              },
-            },
-            source_notices: {
-              type: "array",
-              items: { type: "string", minLength: 1 },
             },
           },
         },
@@ -379,6 +366,8 @@ export function validateGenerationProfileProviderPayload(input: {
   payload: unknown;
   research: ResolvedLandingPageResearch;
   moduleIdentities: LandingPageModuleIdentityCatalog;
+  currentEditor?: GenerationProfileEditorContent;
+  previousCandidate?: GenerationProfileProposal | null;
   notices?: readonly string[];
   rawResearchReferences?: readonly GenerationProfileRawResearchReference[];
 }) {
@@ -386,15 +375,14 @@ export function validateGenerationProfileProviderPayload(input: {
   if (!parsed.success) return { ok: false as const, reason: "payload_schema_invalid" as const, message: "Proposal payload is invalid." };
 
   const sections = readLpSections(input.research);
-  const coverageKeys = parsed.data.coverage.map(coverageIdentityKey);
+  const coverageKeys = parsed.data.coverage.map((item) => item.coverage_id);
   if (new Set(coverageKeys).size !== coverageKeys.length || sections.length !== parsed.data.coverage.length) {
     return { ok: false as const, reason: "coverage_items_mismatch" as const, message: "Coverage must contain every lp_sections item exactly once." };
   }
   const sectionsByKey = new Map(sections.map((section) => [coverageIdentityKey(section), section]));
   for (const coverage of parsed.data.coverage) {
-    const source = sectionsByKey.get(coverageIdentityKey(coverage));
-    if (!source || source.section_name !== coverage.section_name || source.source_priority !== coverage.source_priority || source.source_order !== coverage.source_order) {
-      return { ok: false as const, reason: "coverage_source_changed" as const, message: "Coverage changed the authorized lp_sections source." };
+    if (!sectionsByKey.has(coverage.coverage_id)) {
+      return { ok: false as const, reason: "coverage_items_mismatch" as const, message: "Coverage must contain every lp_sections item exactly once." };
     }
     if (!isCoverageIdentityCountValid(coverage.status, coverage.compatible_identities.length)) {
       return { ok: false as const, reason: "coverage_identity_count_invalid" as const, message: "Coverage identity count is inconsistent with its status." };
@@ -407,42 +395,32 @@ export function validateGenerationProfileProviderPayload(input: {
     }
   }
 
-  const recommendations = parsed.data.recommendations.map(normalizeStructuralRecommendation);
-  if (new Set(recommendations.map((item) => item.moduleKey)).size !== recommendations.length || new Set(recommendations.map((item) => item.recommendedOrder)).size !== recommendations.length) {
-    return { ok: false as const, reason: "recommendation_duplicates" as const, message: "Recommendations must be unique by module and order." };
-  }
-  for (const recommendation of recommendations) {
-    const identity = validateLandingPageModuleIdentity({
-      moduleKey: recommendation.moduleKey,
-      moduleVersion: recommendation.moduleVersion,
-      ...(recommendation.variantKey === undefined ? {} : {
-        variantKey: recommendation.variantKey,
-        variantVersion: recommendation.variantVersion,
-      }),
-    });
-    if (!identity.ok) {
-      return { ok: false as const, reason: "recommendation_identity_invalid" as const, message: `Recommendation contains an invalid catalog identity: ${identity.error.code}.` };
-    }
-  }
-  const expected = deriveRecommendations(parsed.data.coverage);
-  if (JSON.stringify(recommendations) !== JSON.stringify(expected)) {
-    return { ok: false as const, reason: "recommendation_derivation_mismatch" as const, message: "Recommendation priority or order is not deterministic from coverage." };
-  }
-
-  const coverage: GenerationProfileCoverage[] = parsed.data.coverage.map((item) => ({
-    audienceScope: item.audience_scope,
-    itemKey: item.item_key,
-    sectionName: item.section_name,
-    sourcePriority: item.source_priority,
-    sourceOrder: item.source_order,
-    status: item.status,
-    compatibleIdentities: item.compatible_identities.map(normalizeIdentity),
-    ...(item.reason ? { reason: item.reason } : {}),
-    ...(item.impact ? { impact: item.impact } : {}),
-  }));
+  const analysisByKey = new Map(parsed.data.coverage.map((item) => [item.coverage_id, item]));
+  const coverage: GenerationProfileCoverage[] = sections.map((source) => {
+    const item = analysisByKey.get(coverageIdentityKey(source));
+    if (!item) throw new Error("Validated coverage is missing a canonical section.");
+    return {
+      audienceScope: source.audience_scope,
+      itemKey: source.item_key,
+      sectionName: source.section_name,
+      sourcePriority: source.source_priority,
+      sourceOrder: source.source_order,
+      status: item.status,
+      compatibleIdentities: item.compatible_identities.map(normalizeIdentity),
+      ...(item.reason ? { reason: item.reason } : {}),
+      ...(item.impact ? { impact: item.impact } : {}),
+    };
+  });
+  const recommendations = deriveRecommendations(coverage);
   const gaps = coverage
     .filter((item): item is GenerationProfileCoverage & { status: "partial" | "missing"; reason: string; impact: string } => item.status !== "covered")
     .map((item) => ({ audienceScope: item.audienceScope, itemKey: item.itemKey, sectionName: item.sectionName, sourcePriority: item.sourcePriority, sourceOrder: item.sourceOrder, status: item.status, reason: item.reason, impact: item.impact }));
+  const diff = deriveGenerationProfileProposalDiff({
+    editor: input.currentEditor ?? { generationGuidance: "", recommendations: [] },
+    previousCandidate: input.previousCandidate ?? null,
+    recommendations,
+    gaps,
+  });
   const fingerprint = fingerprintGenerationProfileProposal({ recommendations });
   return {
     ok: true as const,
@@ -450,7 +428,8 @@ export function validateGenerationProfileProviderPayload(input: {
       coverage,
       recommendations,
       gaps,
-      notices: [...(input.notices ?? []), ...parsed.data.source_notices],
+      diff,
+      notices: [...(input.notices ?? [])],
       rawResearchReferences: [...(input.rawResearchReferences ?? [])],
       fingerprint,
     },
@@ -487,28 +466,19 @@ function normalizeIdentity(value: z.infer<typeof identitySchema>) {
   };
 }
 
-function normalizeStructuralRecommendation(value: z.infer<typeof recommendationSchema>): GenerationProfileStructuralRecommendation {
-  return {
-    ...normalizeIdentity(value),
-    priority: value.priority,
-    recommendedOrder: value.recommended_order,
-  };
-}
-
-function deriveRecommendations(coverage: readonly z.infer<typeof coverageSchema>[]): GenerationProfileStructuralRecommendation[] {
-  const byModule = new Map<string, { identity: ReturnType<typeof normalizeIdentity>; priority: "P1" | "P2" | "P3"; sourceOrder: number; coverageIndex: number }>();
+function deriveRecommendations(coverage: readonly GenerationProfileCoverage[]): GenerationProfileStructuralRecommendation[] {
+  const byModule = new Map<string, { identity: GenerationProfileCoverage["compatibleIdentities"][number]; priority: "P1" | "P2" | "P3"; sourceOrder: number; coverageIndex: number }>();
   coverage.forEach((item, coverageIndex) => {
     if (item.status === "missing") return;
-    item.compatible_identities.forEach((rawIdentity) => {
-      const identity = normalizeIdentity(rawIdentity);
-      const priority = item.source_priority === 3 ? "P1" : item.source_priority === 2 ? "P2" : "P3";
+    item.compatibleIdentities.forEach((identity) => {
+      const priority = item.sourcePriority === 3 ? "P1" : item.sourcePriority === 2 ? "P2" : "P3";
       const existing = byModule.get(identity.moduleKey);
       if (!existing) {
-        byModule.set(identity.moduleKey, { identity, priority, sourceOrder: item.source_order, coverageIndex });
+        byModule.set(identity.moduleKey, { identity, priority, sourceOrder: item.sourceOrder, coverageIndex });
         return;
       }
       if (priorityRank(priority) < priorityRank(existing.priority)) existing.priority = priority;
-      if (item.source_order < existing.sourceOrder) existing.sourceOrder = item.source_order;
+      if (item.sourceOrder < existing.sourceOrder) existing.sourceOrder = item.sourceOrder;
       if (coverageIndex < existing.coverageIndex) existing.coverageIndex = coverageIndex;
     });
   });

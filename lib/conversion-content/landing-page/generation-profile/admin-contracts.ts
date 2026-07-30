@@ -92,6 +92,27 @@ export type GenerationProfileProposalCorrelation = Readonly<{
   fingerprint: string;
 }>;
 
+export type GenerationProfileRecommendationDiff = Readonly<{
+  moduleKey: string;
+  status: "kept" | "added" | "changed" | "removed";
+  changes: readonly ("module_version" | "variant" | "priority" | "order")[];
+}>;
+
+export type GenerationProfileReplacement = Readonly<{
+  fromModuleKey: string;
+  toModuleKey: string;
+  recommendedOrder: number;
+}>;
+
+export type GenerationProfileProposalDiff = Readonly<{
+  recommendations: readonly GenerationProfileRecommendationDiff[];
+  replacements: readonly GenerationProfileReplacement[];
+  gaps: Readonly<{
+    added: readonly GenerationProfileGap[];
+    resolved: readonly GenerationProfileGap[];
+  }>;
+}>;
+
 export type AdminGenerationProfileTaxon = Readonly<{
   id: string;
   name: string;
@@ -147,6 +168,7 @@ export type GenerationProfileProposal = Readonly<{
   coverage: readonly GenerationProfileCoverage[];
   recommendations: readonly GenerationProfileStructuralRecommendation[];
   gaps: readonly GenerationProfileGap[];
+  diff: GenerationProfileProposalDiff;
   notices: readonly string[];
   rawResearchReferences: readonly GenerationProfileRawResearchReference[];
   researchVersions: Readonly<{ endCustomer: number; businessBuyer: number }>;

@@ -2,8 +2,12 @@ import type {
   GenerationProfileEditorContent,
   GenerationProfileProposal,
   GenerationProfileProposalCorrelation,
+  GenerationProfileProposalDiff,
   GenerationProfileProposalResult,
+  GenerationProfileRecommendationDiff,
   GenerationProfileRecommendationInput,
+  GenerationProfileStructuralRecommendation,
+  GenerationProfileGap,
 } from "./admin-contracts";
 
 export function hasGenerationProfileEditorContent(editor: GenerationProfileEditorContent): boolean {
@@ -58,18 +62,12 @@ export function applyGenerationProfileCandidate(input: {
   };
 }
 
-export type GenerationProfileRecommendationDiff = Readonly<{
-  moduleKey: string;
-  status: "kept" | "added" | "changed" | "removed";
-  changes: readonly ("module_version" | "variant" | "priority" | "order")[];
-}>;
-
 export function diffGenerationProfileRecommendations(input: {
   editor: GenerationProfileEditorContent;
-  candidate: GenerationProfileProposal;
+  recommendations: readonly GenerationProfileStructuralRecommendation[];
 }): readonly GenerationProfileRecommendationDiff[] {
   const current = new Map(input.editor.recommendations.map((item) => [item.moduleKey, stripGuidance(item)]));
-  const proposed = new Map(input.candidate.recommendations.map((item) => [item.moduleKey, item]));
+  const proposed = new Map(input.recommendations.map((item) => [item.moduleKey, item]));
   const keys = [...new Set([...current.keys(), ...proposed.keys()])].sort();
   return keys.map((moduleKey) => {
     const before = current.get(moduleKey);
@@ -91,16 +89,16 @@ export function diffGenerationProfileRecommendations(input: {
 
 export function findGenerationProfileReplacements(input: {
   editor: GenerationProfileEditorContent;
-  candidate: GenerationProfileProposal;
+  recommendations: readonly GenerationProfileStructuralRecommendation[];
 }) {
   const currentModuleKeys = new Set(input.editor.recommendations.map((item) => item.moduleKey));
-  const candidateModuleKeys = new Set(input.candidate.recommendations.map((item) => item.moduleKey));
+  const candidateModuleKeys = new Set(input.recommendations.map((item) => item.moduleKey));
   const removedByOrder = new Map(
     input.editor.recommendations
       .filter((item) => !candidateModuleKeys.has(item.moduleKey))
       .map((item) => [item.recommendedOrder, item.moduleKey]),
   );
-  return input.candidate.recommendations.filter((item) => !currentModuleKeys.has(item.moduleKey)).flatMap((item) => {
+  return input.recommendations.filter((item) => !currentModuleKeys.has(item.moduleKey)).flatMap((item) => {
     const previousModuleKey = removedByOrder.get(item.recommendedOrder);
     return previousModuleKey
       ? [{ fromModuleKey: previousModuleKey, toModuleKey: item.moduleKey, recommendedOrder: item.recommendedOrder }]
@@ -110,14 +108,27 @@ export function findGenerationProfileReplacements(input: {
 
 export function diffGenerationProfileGaps(input: {
   previousCandidate: GenerationProfileProposal | null;
-  candidate: GenerationProfileProposal;
+  gaps: readonly GenerationProfileGap[];
 }) {
   const previous = new Map((input.previousCandidate?.gaps ?? []).map((gap) => [`${gap.audienceScope}:${gap.itemKey}`, gap]));
-  const current = new Map(input.candidate.gaps.map((gap) => [`${gap.audienceScope}:${gap.itemKey}`, gap]));
+  const current = new Map(input.gaps.map((gap) => [`${gap.audienceScope}:${gap.itemKey}`, gap]));
   return {
     added: [...current.entries()].filter(([key]) => !previous.has(key)).map(([, gap]) => gap),
     resolved: [...previous.entries()].filter(([key]) => !current.has(key)).map(([, gap]) => gap),
   } as const;
+}
+
+export function deriveGenerationProfileProposalDiff(input: {
+  editor: GenerationProfileEditorContent;
+  previousCandidate: GenerationProfileProposal | null;
+  recommendations: readonly GenerationProfileStructuralRecommendation[];
+  gaps: readonly GenerationProfileGap[];
+}): GenerationProfileProposalDiff {
+  return {
+    recommendations: diffGenerationProfileRecommendations({ editor: input.editor, recommendations: input.recommendations }),
+    replacements: findGenerationProfileReplacements({ editor: input.editor, recommendations: input.recommendations }),
+    gaps: diffGenerationProfileGaps({ previousCandidate: input.previousCandidate, gaps: input.gaps }),
+  };
 }
 
 function stripGuidance(item: GenerationProfileRecommendationInput) {

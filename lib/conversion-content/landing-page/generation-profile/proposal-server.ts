@@ -141,6 +141,8 @@ export async function proposeLandingPageGenerationProfile(input: {
     payload: provider.payload,
     research: research.value,
     moduleIdentities,
+    currentEditor,
+    previousCandidate: currentCandidate?.value ?? null,
     notices: provider.notices,
     rawResearchReferences: provider.rawResearchReferences,
   });
