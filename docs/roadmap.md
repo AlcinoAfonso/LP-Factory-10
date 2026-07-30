@@ -2,7 +2,7 @@
 
 0.1 Cabeçalho
 • Data: 30/07/2026
-• Versão: v1.5.114
+• Versão: v1.5.115
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -1150,7 +1150,7 @@ Repositório — Ajustados
 
 11. E11 — Gestão de Usuários e Convites
 - Objetivo: permitir gestão segura de membros não-owner e convites por conta, usando Supabase Auth e o Account Dashboard.
-- Status: implementação concluída; correção do transporte concorrente do convite em reteste hospedado no Preview, com a funcionalidade mantida desabilitada em Production.
+- Status: implementação e validação hospedada concluídas, incluindo os testes humanos da correção do transporte concorrente; funcionalidade mantida desabilitada em Production até o merge humano do PR #656.
 
 11.1 Gestão de membros e convites
 
@@ -1218,14 +1218,14 @@ Repositório — Ajustados
   - membership permanece `pending` até aceite, recusa ou revogação, sem expiração local.
 
 11.1.7 Ativação controlada e validação hospedada
-- Status: correção do transporte concorrente implementada; reteste corretivo de Preview pendente antes de qualquer liberação para merge ou ativação em Production.
+- Status: correção do transporte concorrente implementada e testes humanos corretivos aprovados no Preview; Production permanece desabilitada até o merge humano do PR #656.
 - Conteúdo:
   - migration aplicada e estado pós-apply verificado;
   - configuração remanescente do Supabase Auth concluída, com o template `Invite user` usando `RedirectTo`, `TokenHash` e `type=invite`;
   - gate habilitado somente no Preview da branch `codex-app/e11-11-1-7`, com redeploy próprio;
   - matriz hospedada anterior aprovada para convite de usuário novo e existente, aceite, recusa, reativação, troca de papel, desativação, proteções de owner e do próprio vínculo, isolamento de acesso, logout, navegação por teclado, responsividade e retorno da gestão de membros à página principal;
   - transporte do estado assinado corrigido para ser codificado no `redirectTo` específico de cada emissão, sem gravação ou leitura por `data` ou `user_metadata` compartilhado;
-  - reteste corretivo restrito pendente para convite novo e reenvio, senha e ativação, dois convites do mesmo usuário não confirmado para contas diferentes, ativação exclusiva do respectivo `account_user_id` e adulteração do estado bloqueada;
+  - testes humanos corretivos aprovados para convite novo e reenvio, senha e ativação, dois convites do mesmo usuário não confirmado para contas diferentes, ativação exclusiva do respectivo `account_user_id` e adulteração do estado bloqueada;
   - gate mantido desabilitado em Production até o merge humano do PR #656;
   - após o merge, habilitar Production, redeployar e executar o smoke final antes de concluir a fase.
 
@@ -2260,11 +2260,13 @@ Repositório — Ajustados
   * Não criar novo campo, estado, tabela, resolver ou infraestrutura e não reabrir E20.3.3 ou E20.3.4.
 
 99. Changelog
+v1.5.115 — 30/07/2026 — Registrada a aprovação dos testes humanos da correção concorrente da E11.1.7 no Preview autorizado, removida a pendência de reteste e mantida Production desabilitada até o merge humano do PR #656.
+
 v1.5.114 — 30/07/2026 — Reconciliada a E12.4.3.2 para criação e evolução do perfil em `draft`, baseline ativo revalidado, ações contextuais, candidata e diff transitórios, aplicação separada do salvamento e pesquisa bruta complementar opcional; E20.3.5 mantida como evolução mínima.
 
 v1.5.113 — 29/07/2026 — Planejada a E12.4.3.2 com cobertura por `lp_sections`, recomendações deduplicadas, prioridade e ordem determinísticas, auditoria da decisão sobre gaps e evolução E20.3.5; decisões de edição e regeneração permanecem para o futuro plano-base da E19.4.
 
-v1.5.111 — 28/07/2026 — Corrigido o registro do transporte concorrente do `invite_state`: estado assinado por emissão no `redirectTo`, template sem metadata compartilhado e reteste corretivo de Preview pendente, mantendo Production desabilitada.
+v1.5.111 — 28/07/2026 — Corrigido o registro do transporte concorrente do `invite_state`: estado assinado por emissão no `redirectTo`, template sem metadata compartilhado e reteste corretivo de Preview preparado, mantendo Production desabilitada.
 
 v1.5.108 — 28/07/2026 — Registrada a aprovação da matriz hospedada da E11.1.7 em Preview, com Production mantida desabilitada até o merge humano e o smoke pós-merge.
 
