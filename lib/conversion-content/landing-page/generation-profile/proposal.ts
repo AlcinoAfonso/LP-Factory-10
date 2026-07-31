@@ -28,6 +28,7 @@ export type GenerationProfileProviderInput = Readonly<{
   research: ResolvedLandingPageResearch;
   moduleIdentities: LandingPageModuleIdentityCatalog;
   requestKind: "creation" | "evolution";
+  activeBaseline: readonly GenerationProfileStructuralRecommendation[] | null;
   currentCandidate: GenerationProfileProposal | null;
   humanFeedback?: string;
 }>;
@@ -232,6 +233,13 @@ export function buildGenerationProfileResponsesRequest(input: GenerationProfileP
   const userInput = {
     research: compactResearch(input.research),
     identity_aliases: aliasEntries.map((entry) => entry.alias),
+    active_baseline: input.activeBaseline
+      ? input.activeBaseline.map((item) => ({
+          alias: identityAlias(item),
+          priority: item.priority,
+          order: item.recommendedOrder,
+        }))
+      : null,
     current_candidate: input.currentCandidate
       ? {
           coverage: input.currentCandidate.coverage.map((item) => ({
@@ -265,7 +273,7 @@ function createRequest(userInput: Record<string, unknown>) {
         role: "system",
         content: [{
           type: "input_text",
-          text: "Crie ou evolua somente a análise estrutural do perfil. Avalie exatamente cada lp_section identificada por coverage_id e devolva somente coverage_id, status, compatible_aliases e, apenas para partial ou missing, reason e impact. Use exclusivamente aliases presentes em identity_aliases. Não invente aliases, identidades, módulos ou variantes. Não derive recommendations, gaps ou diff; o servidor reconstruirá identidades e fará essas derivações deterministicamente. Não produza copy, generation_guidance, item_guidance, LP, avisos ou ações. Os textos da pesquisa estruturada governam; feedback serve somente para refinar a análise sem alterar o contrato.",
+          text: "Crie ou evolua somente a análise estrutural do perfil. Em evolution, active_baseline descreve a estrutura ativa original por alias, prioridade e ordem: reavalie cada item contra a pesquisa e as identidades vigentes, sem preservá-lo apenas por herança. Em nova rodada, current_candidate é a candidata transitória anterior e human_feedback é o feedback humano mais recente. Avalie exatamente cada lp_section identificada por coverage_id e devolva somente coverage_id, status, compatible_aliases e, apenas para partial ou missing, reason e impact. Use exclusivamente aliases presentes em identity_aliases na resposta. Não invente aliases, identidades, módulos ou variantes. Não derive recommendations, gaps ou diff; o servidor reconstruirá identidades e fará essas derivações deterministicamente. Não produza copy, generation_guidance, item_guidance, LP, avisos ou ações. Os textos da pesquisa estruturada governam; feedback serve somente para refinar a análise sem alterar o contrato.",
         }],
       },
       {

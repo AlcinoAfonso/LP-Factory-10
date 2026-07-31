@@ -673,6 +673,7 @@ const cases: readonly Readonly<{
         research: structuralResearch,
         moduleIdentities: listLandingPageModuleIdentities(),
         requestKind: "creation",
+        activeBaseline: null,
         currentCandidate: null,
       });
       assert.equal(request.ok, true);
@@ -687,6 +688,7 @@ const cases: readonly Readonly<{
       assert.equal(Object.hasOwn(input, "taxon_id"), false);
       assert.equal(Object.hasOwn(input, "current_editor"), false);
       assert.equal(Object.hasOwn(input, "previous_active_profile"), false);
+      assert.equal(input.active_baseline, null);
       assert.equal(Object.hasOwn(input, "raw_research"), false);
       assert.deepEqual(input.research.business_buyer.lp_sections, [{ coverage_id: "business_buyer:buyer_faq", text: "FAQ comercial" }]);
       assert.deepEqual(input.research.end_customer.lp_sections, [{ coverage_id: "end_customer:customer_hero", text: "Hero de conversao" }]);
@@ -705,6 +707,7 @@ const cases: readonly Readonly<{
         research: structuralResearch,
         moduleIdentities: listLandingPageModuleIdentities(),
         requestKind: "creation",
+        activeBaseline: null,
         currentCandidate: null,
         humanFeedback: "x".repeat(100_000),
       });
@@ -719,6 +722,7 @@ const cases: readonly Readonly<{
         research: structuralResearch,
         moduleIdentities: listLandingPageModuleIdentities(),
         requestKind: "creation",
+        activeBaseline: null,
         currentCandidate: null,
       });
       const initialInput = JSON.parse(initial.body.input[1].content[0].text);
@@ -734,6 +738,7 @@ const cases: readonly Readonly<{
         research: structuralResearch,
         moduleIdentities: listLandingPageModuleIdentities(),
         requestKind: "evolution",
+        activeBaseline: currentEditor.recommendations,
         currentCandidate: null,
         humanFeedback: "Priorize a prova antes da FAQ.",
       });
@@ -741,6 +746,13 @@ const cases: readonly Readonly<{
       assert.equal(evolutionInput.request_kind, "evolution");
       assert.equal(Object.hasOwn(evolutionInput, "current_editor"), false);
       assert.equal(Object.hasOwn(evolutionInput, "previous_active_profile"), false);
+      assert.deepEqual(evolutionInput.active_baseline, currentEditor.recommendations.map((item) => ({
+        alias: item.variantKey ?? item.moduleKey,
+        priority: item.priority,
+        order: item.recommendedOrder,
+      })));
+      assert.equal(Object.hasOwn(evolutionInput.active_baseline[0], "itemGuidance"), false);
+      assert.equal(Object.hasOwn(evolutionInput.active_baseline[0], "moduleVersion"), false);
       assert.equal(evolutionInput.human_feedback, "Priorize a prova antes da FAQ.");
 
       const validated = validateGenerationProfileProviderPayload({ payload: structuralPayload, research: structuralResearch, moduleIdentities: listLandingPageModuleIdentities(), currentEditor });
@@ -762,11 +774,13 @@ const cases: readonly Readonly<{
         model: GENERATION_PROFILE_APPROVED_MODEL,
         research: structuralResearch,
         moduleIdentities: listLandingPageModuleIdentities(),
-        requestKind: "creation",
+        requestKind: "evolution",
+        activeBaseline: currentEditor.recommendations,
         currentCandidate: candidate,
         humanFeedback: "Refine novamente.",
       });
       const nextRoundInput = JSON.parse(nextRound.body.input[1].content[0].text);
+      assert.deepEqual(nextRoundInput.active_baseline, evolutionInput.active_baseline);
       assert.deepEqual(nextRoundInput.current_candidate.coverage[0].compatible_aliases, ["faq.accordion"]);
       assert.equal(Object.hasOwn(nextRoundInput.current_candidate, "recommendations"), false);
       assert.equal(nextRoundInput.human_feedback, "Refine novamente.");

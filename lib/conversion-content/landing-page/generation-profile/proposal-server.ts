@@ -107,6 +107,7 @@ export async function proposeLandingPageGenerationProfile(input: {
     research: research.value,
     moduleIdentities,
     requestKind: previousActiveProfile ? "evolution" : "creation",
+    activeBaseline: previousActiveProfile?.recommendations ?? null,
     currentCandidate: currentCandidate?.value ?? null,
     humanFeedback: input.humanFeedback,
   });
