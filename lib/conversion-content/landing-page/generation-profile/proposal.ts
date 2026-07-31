@@ -56,6 +56,7 @@ export type GenerationProfileProviderResult =
 
 export type GenerationProfileProviderValidationReason =
   | "payload_schema_invalid"
+  | "coverage_source_priority_invalid"
   | "coverage_items_mismatch"
   | "coverage_identity_count_invalid"
   | "coverage_identity_invalid";
@@ -137,6 +138,7 @@ const candidateIdentitySchema = z.object({
 });
 
 const candidateGapSchema = z.object({
+  coverageId: z.string().trim().min(1),
   audienceScope: z.enum(["business_buyer", "end_customer"]),
   itemKey: z.string().trim().min(1),
   sectionName: z.string().trim().min(1),
@@ -149,6 +151,7 @@ const candidateGapSchema = z.object({
 
 const candidateSchema = z.object({
   coverage: z.array(z.object({
+    coverageId: z.string().trim().min(1),
     audienceScope: z.enum(["business_buyer", "end_customer"]),
     itemKey: z.string().trim().min(1),
     sectionName: z.string().trim().min(1),
@@ -220,8 +223,16 @@ export function normalizeGenerationProfileCandidate(input: unknown):
       if (!identity.ok) return { ok: false, message: "Current candidate coverage contains an invalid identity." };
     }
   }
-  const gapKeys = new Set(candidate.gaps.map((gap) => `${gap.audienceScope}:${gap.itemKey}`));
-  const derivedGapKeys = new Set(candidate.coverage.filter((item) => item.status !== "covered").map((item) => `${item.audienceScope}:${item.itemKey}`));
+  const coverageIds = candidate.coverage.map((item) => item.coverageId);
+  if (new Set(coverageIds).size !== coverageIds.length) {
+    return { ok: false, message: "Current candidate coverage identities are not unique." };
+  }
+  const gapIds = candidate.gaps.map((gap) => gap.coverageId);
+  const gapKeys = new Set(gapIds);
+  if (gapKeys.size !== gapIds.length) {
+    return { ok: false, message: "Current candidate gap identities are not unique." };
+  }
+  const derivedGapKeys = new Set(candidate.coverage.filter((item) => item.status !== "covered").map((item) => item.coverageId));
   if (gapKeys.size !== derivedGapKeys.size || [...gapKeys].some((key) => !derivedGapKeys.has(key))) {
     return { ok: false, message: "Current candidate gaps do not match coverage." };
   }
@@ -243,7 +254,7 @@ export function buildGenerationProfileResponsesRequest(input: GenerationProfileP
     current_candidate: input.currentCandidate
       ? {
           coverage: input.currentCandidate.coverage.map((item) => ({
-            coverage_id: `${item.audienceScope}:${item.itemKey}`,
+            coverage_id: item.coverageId,
             status: item.status,
             compatible_aliases: item.compatibleIdentities.map(identityAlias),
             ...(item.status === "covered" ? {} : { reason: item.reason, impact: item.impact }),
@@ -339,6 +350,9 @@ export function validateGenerationProfileProviderPayload(input: {
   if (!parsed.success) return { ok: false as const, reason: "payload_schema_invalid" as const, message: "Proposal payload is invalid." };
 
   const sections = readLpSections(input.research);
+  if (!sections) {
+    return { ok: false as const, reason: "coverage_source_priority_invalid" as const, message: "lp_sections contains an unsupported priority." };
+  }
   const coverageKeys = parsed.data.coverage.map((item) => item.coverage_id);
   if (new Set(coverageKeys).size !== coverageKeys.length || sections.length !== parsed.data.coverage.length) {
     return { ok: false as const, reason: "coverage_items_mismatch" as const, message: "Coverage must contain every lp_sections item exactly once." };
@@ -370,6 +384,7 @@ export function validateGenerationProfileProviderPayload(input: {
     const item = analysisByKey.get(coverageIdentityKey(source));
     if (!item) throw new Error("Validated coverage is missing a canonical section.");
     return {
+      coverageId: coverageIdentityKey(source),
       audienceScope: source.audience_scope,
       itemKey: source.item_key,
       sectionName: source.section_name,
@@ -383,7 +398,7 @@ export function validateGenerationProfileProviderPayload(input: {
   const recommendations = deriveRecommendations(coverage);
   const gaps = coverage
     .filter((item): item is GenerationProfileCoverage & { status: "partial" | "missing"; reason: string; impact: string } => item.status !== "covered")
-    .map((item) => ({ audienceScope: item.audienceScope, itemKey: item.itemKey, sectionName: item.sectionName, sourcePriority: item.sourcePriority, sourceOrder: item.sourceOrder, status: item.status, reason: item.reason, impact: item.impact }));
+    .map((item) => ({ coverageId: item.coverageId, audienceScope: item.audienceScope, itemKey: item.itemKey, sectionName: item.sectionName, sourcePriority: item.sourcePriority, sourceOrder: item.sourceOrder, status: item.status, reason: item.reason, impact: item.impact }));
   const diff = deriveGenerationProfileProposalDiff({
     editor: input.currentEditor ?? { generationGuidance: "", recommendations: [] },
     previousCandidate: input.previousCandidate ?? null,
@@ -404,21 +419,44 @@ export function validateGenerationProfileProviderPayload(input: {
 }
 
 function readLpSections(research: ResolvedLandingPageResearch) {
-  return [research.businessBuyer, research.endCustomer].flatMap((audience) =>
-    audience.researches
-      .filter((parent) => parent.researchBlock === "lp_sections")
-      .flatMap((parent) => parent.items.map((item) => ({
-        audience_scope: audience.audienceScope,
-        item_key: item.itemKey,
-        section_name: item.itemText,
-        source_priority: item.priority as 1 | 2 | 3,
-        source_order: item.sortOrder,
-      }))),
-  );
+  const sections: Array<{
+    audience_scope: "business_buyer" | "end_customer";
+    item_id: string;
+    item_key: string;
+    section_name: string;
+    source_priority: 1 | 2 | 3;
+    source_order: number;
+  }> = [];
+  for (const audience of [research.businessBuyer, research.endCustomer]) {
+    for (const parent of audience.researches) {
+      if (parent.researchBlock !== "lp_sections") continue;
+      for (const item of parent.items) {
+        const sourcePriority = normalizeSourcePriority(item.priority);
+        if (sourcePriority === null) return null;
+        sections.push({
+          audience_scope: audience.audienceScope,
+          item_id: item.itemId,
+          item_key: item.itemKey,
+          section_name: item.itemText,
+          source_priority: sourcePriority,
+          source_order: item.sortOrder,
+        });
+      }
+    }
+  }
+  return sections;
 }
 
-function coverageIdentityKey(value: { audience_scope: string; item_key: string }) {
-  return `${value.audience_scope}:${value.item_key}`;
+export function validateGenerationProfileResearchPriorities(research: ResolvedLandingPageResearch) {
+  return readLpSections(research) !== null;
+}
+
+function normalizeSourcePriority(value: number): 1 | 2 | 3 | null {
+  return value === 1 || value === 2 || value === 3 ? value : null;
+}
+
+function coverageIdentityKey(value: { audience_scope: string; item_id: string }) {
+  return `${value.audience_scope}:${value.item_id}`;
 }
 
 function compactResearch(research: ResolvedLandingPageResearch) {
@@ -439,7 +477,7 @@ function compactResearchAudience(audience: ResolvedLandingPageResearch["business
     lp_sections: audience.researches
       .filter((parent) => parent.researchBlock === "lp_sections")
       .flatMap((parent) => parent.items.map((item) => ({
-        coverage_id: `${audience.audienceScope}:${item.itemKey}`,
+        coverage_id: `${audience.audienceScope}:${item.itemId}`,
         text: item.itemText,
       }))),
   };

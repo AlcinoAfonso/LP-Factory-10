@@ -26,6 +26,7 @@ import {
   mapProviderFailureToProposalError,
   mapResearchErrorToProposalError,
   normalizeGenerationProfileIncompleteMetadata,
+  validateGenerationProfileResearchPriorities,
   validateGenerationProfileProviderPayload,
 } from "./proposal";
 import { listLandingPageModuleIdentities } from "../module-catalog";
@@ -41,6 +42,12 @@ import { resolveLandingPageGenerationProfile } from "./resolver";
 const SEGMENT_ID = "10000000-0000-4000-8000-000000000001";
 const NICHE_ID = "10000000-0000-4000-8000-000000000002";
 const ULTRA_ID = "10000000-0000-4000-8000-000000000003";
+const BUYER_SECTION_ITEM_ID = "42000000-0000-4000-8000-000000000001";
+const CUSTOMER_SECTION_ITEM_ID = "42000000-0000-4000-8000-000000000002";
+const REPEATED_BUYER_SECTION_ITEM_ID = "42000000-0000-4000-8000-000000000003";
+const BUYER_COVERAGE_ID = `business_buyer:${BUYER_SECTION_ITEM_ID}`;
+const CUSTOMER_COVERAGE_ID = `end_customer:${CUSTOMER_SECTION_ITEM_ID}`;
+const REPEATED_BUYER_COVERAGE_ID = `business_buyer:${REPEATED_BUYER_SECTION_ITEM_ID}`;
 
 function compactResearchParent(
   audienceScope: "business_buyer" | "end_customer",
@@ -109,7 +116,7 @@ const structuralResearch = {
       version: 1,
       sourceTaxonId: NICHE_ID,
       items: [{
-        itemId: "42000000-0000-4000-8000-000000000001",
+        itemId: BUYER_SECTION_ITEM_ID,
         researchId: "41000000-0000-4000-8000-000000000001",
         itemKey: "buyer_faq",
         itemText: "FAQ comercial",
@@ -140,7 +147,7 @@ const structuralResearch = {
       version: 1,
       sourceTaxonId: NICHE_ID,
       items: [{
-        itemId: "42000000-0000-4000-8000-000000000002",
+        itemId: CUSTOMER_SECTION_ITEM_ID,
         researchId: "41000000-0000-4000-8000-000000000002",
         itemKey: "customer_hero",
         itemText: "Hero de conversao",
@@ -161,17 +168,53 @@ const structuralResearch = {
 const structuralPayload = {
   coverage: [
     {
-      coverage_id: "business_buyer:buyer_faq",
+      coverage_id: BUYER_COVERAGE_ID,
       status: "covered" as const,
       compatible_aliases: ["faq.accordion"],
     },
     {
-      coverage_id: "end_customer:customer_hero",
+      coverage_id: CUSTOMER_COVERAGE_ID,
       status: "covered" as const,
       compatible_aliases: ["hero.form"],
     },
   ],
 };
+
+function withBuyerSectionPriority(priority: number): ResolvedLandingPageResearch {
+  return {
+    ...structuralResearch,
+    businessBuyer: {
+      ...structuralResearch.businessBuyer,
+      researches: structuralResearch.businessBuyer.researches.map((parent) => parent.researchBlock === "lp_sections"
+        ? { ...parent, items: parent.items.map((item) => ({ ...item, priority })) }
+        : parent),
+    },
+  };
+}
+
+function withRepeatedBuyerItemKey(): ResolvedLandingPageResearch {
+  return {
+    ...structuralResearch,
+    businessBuyer: {
+      ...structuralResearch.businessBuyer,
+      researches: structuralResearch.businessBuyer.researches.map((parent) => parent.researchBlock === "lp_sections"
+        ? {
+            ...parent,
+            items: [
+              ...parent.items,
+              {
+                ...parent.items[0],
+                itemId: REPEATED_BUYER_SECTION_ITEM_ID,
+                itemText: "FAQ para objecoes",
+                priority: 2,
+                sortOrder: 2,
+              },
+            ],
+          }
+        : parent),
+    },
+  };
+}
 
 const expectedStructuralRecommendations = [
   { moduleKey: "hero", moduleVersion: 1, variantKey: "hero.form", variantVersion: 1, priority: "P1" as const, recommendedOrder: 10 },
@@ -500,14 +543,15 @@ const cases: readonly Readonly<{
       assert.equal(valid.ok, true, valid.ok ? undefined : valid.message);
       if (valid.ok) {
         assert.deepEqual(valid.value.coverage.map((item) => ({
+          coverageId: item.coverageId,
           audienceScope: item.audienceScope,
           itemKey: item.itemKey,
           sectionName: item.sectionName,
           sourcePriority: item.sourcePriority,
           sourceOrder: item.sourceOrder,
         })), [
-          { audienceScope: "business_buyer", itemKey: "buyer_faq", sectionName: "FAQ comercial", sourcePriority: 2, sourceOrder: 2 },
-          { audienceScope: "end_customer", itemKey: "customer_hero", sectionName: "Hero de conversao", sourcePriority: 3, sourceOrder: 1 },
+          { coverageId: BUYER_COVERAGE_ID, audienceScope: "business_buyer", itemKey: "buyer_faq", sectionName: "FAQ comercial", sourcePriority: 2, sourceOrder: 2 },
+          { coverageId: CUSTOMER_COVERAGE_ID, audienceScope: "end_customer", itemKey: "customer_hero", sectionName: "Hero de conversao", sourcePriority: 3, sourceOrder: 1 },
         ]);
         assert.deepEqual(valid.value.recommendations, expectedStructuralRecommendations);
       }
@@ -517,7 +561,7 @@ const cases: readonly Readonly<{
       assert.equal(validate({ ...structuralPayload, recommendations: [] }).ok, false);
       assert.equal(validate({ ...structuralPayload, coverage: [{ ...structuralPayload.coverage[0], section_name: "Drift" }, structuralPayload.coverage[1]] }).ok, false);
       assert.equal(validate({ ...structuralPayload, coverage: structuralPayload.coverage.slice(1) }).ok, false);
-      assert.equal(validate({ ...structuralPayload, coverage: [{ ...structuralPayload.coverage[0], coverage_id: "business_buyer:unknown" }, structuralPayload.coverage[1]] }).ok, false);
+      assert.equal(validate({ ...structuralPayload, coverage: [{ ...structuralPayload.coverage[0], coverage_id: "business_buyer:00000000-0000-4000-8000-000000000000" }, structuralPayload.coverage[1]] }).ok, false);
       assert.equal(validate({ ...structuralPayload, coverage: [structuralPayload.coverage[1], structuralPayload.coverage[0]] }).ok, true);
       assert.equal(validate({
         ...structuralPayload,
@@ -535,6 +579,82 @@ const cases: readonly Readonly<{
         ...structuralPayload,
         coverage: [{ ...structuralPayload.coverage[0], status: "missing", compatible_aliases: ["faq.accordion"], reason: "Modulo indisponivel.", impact: "Estrutura incompleta." }, structuralPayload.coverage[1]],
       }).ok, false);
+    },
+  },
+  {
+    name: "lp_sections priority accepts only the explicit one-to-three mapping",
+    run: () => {
+      for (const [sourcePriority, expectedPriority] of [[1, "P3"], [2, "P2"], [3, "P1"]] as const) {
+        const research = withBuyerSectionPriority(sourcePriority);
+        assert.equal(validateGenerationProfileResearchPriorities(research), true);
+        const validated = validateGenerationProfileProviderPayload({ payload: structuralPayload, research, moduleIdentities: listLandingPageModuleIdentities() });
+        assert.equal(validated.ok, true, validated.ok ? undefined : validated.message);
+        if (validated.ok) assert.equal(validated.value.recommendations.find((item) => item.moduleKey === "faq")?.priority, expectedPriority);
+      }
+      for (const invalidPriority of [0, -1, 4]) {
+        const research = withBuyerSectionPriority(invalidPriority);
+        assert.equal(validateGenerationProfileResearchPriorities(research), false);
+        const validated = validateGenerationProfileProviderPayload({ payload: structuralPayload, research, moduleIdentities: listLandingPageModuleIdentities() });
+        assert.equal(validated.ok, false);
+        if (!validated.ok) assert.equal(validated.reason, "coverage_source_priority_invalid");
+      }
+    },
+  },
+  {
+    name: "repeated item_key remains distinct through provider candidate refinement gaps and diff",
+    run: () => {
+      const research = withRepeatedBuyerItemKey();
+      const previousPayload = {
+        coverage: [
+          { ...structuralPayload.coverage[0], status: "missing" as const, compatible_aliases: [], reason: "Modulo indisponivel.", impact: "FAQ comercial ausente." },
+          { coverage_id: REPEATED_BUYER_COVERAGE_ID, status: "covered" as const, compatible_aliases: ["faq.accordion"] },
+          structuralPayload.coverage[1],
+        ],
+      };
+      const previous = validateGenerationProfileProviderPayload({ payload: previousPayload, research, moduleIdentities: listLandingPageModuleIdentities() });
+      assert.equal(previous.ok, true, previous.ok ? undefined : previous.message);
+      if (!previous.ok) return;
+      const previousCandidate = { ...previous.value, researchVersions: research.versions, requestId: "50000000-0000-4000-8000-000000000030" };
+      const currentPayload = {
+        coverage: [
+          structuralPayload.coverage[0],
+          { coverage_id: REPEATED_BUYER_COVERAGE_ID, status: "missing" as const, compatible_aliases: [], reason: "Modulo indisponivel.", impact: "FAQ para objecoes ausente." },
+          structuralPayload.coverage[1],
+        ],
+      };
+      const current = validateGenerationProfileProviderPayload({
+        payload: currentPayload,
+        research,
+        moduleIdentities: listLandingPageModuleIdentities(),
+        previousCandidate,
+      });
+      assert.equal(current.ok, true, current.ok ? undefined : current.message);
+      if (!current.ok) return;
+
+      assert.deepEqual(current.value.coverage.filter((item) => item.itemKey === "buyer_faq").map((item) => item.coverageId), [BUYER_COVERAGE_ID, REPEATED_BUYER_COVERAGE_ID]);
+      assert.deepEqual(current.value.gaps.map((gap) => [gap.coverageId, gap.itemKey]), [[REPEATED_BUYER_COVERAGE_ID, "buyer_faq"]]);
+      assert.deepEqual(current.value.diff.gaps.added.map((gap) => gap.coverageId), [REPEATED_BUYER_COVERAGE_ID]);
+      assert.deepEqual(current.value.diff.gaps.resolved.map((gap) => gap.coverageId), [BUYER_COVERAGE_ID]);
+      assert.equal(fingerprintGenerationProfileProposal(previous.value), fingerprintGenerationProfileProposal(current.value));
+
+      const candidate = { ...current.value, researchVersions: research.versions, requestId: "50000000-0000-4000-8000-000000000031" };
+      assert.equal(normalizeGenerationProfileCandidate(candidate).ok, true);
+      assert.equal(normalizeGenerationProfileCandidate({ ...candidate, coverage: [candidate.coverage[0], { ...candidate.coverage[1], coverageId: candidate.coverage[0].coverageId }, ...candidate.coverage.slice(2)] }).ok, false);
+      assert.equal(normalizeGenerationProfileCandidate({ ...candidate, gaps: [...candidate.gaps, candidate.gaps[0]] }).ok, false);
+
+      const request = buildGenerationProfileResponsesRequest({
+        model: GENERATION_PROFILE_APPROVED_MODEL,
+        research,
+        moduleIdentities: listLandingPageModuleIdentities(),
+        requestKind: "evolution",
+        activeBaseline: null,
+        currentCandidate: candidate,
+      });
+      assert.equal(request.ok, true);
+      const input = JSON.parse(request.body.input[1].content[0].text);
+      assert.deepEqual(input.research.business_buyer.lp_sections.map((item: { coverage_id: string }) => item.coverage_id), [BUYER_COVERAGE_ID, REPEATED_BUYER_COVERAGE_ID]);
+      assert.equal(input.research.business_buyer.lp_sections.some((item: Record<string, unknown>) => Object.hasOwn(item, "item_id")), false);
+      assert.deepEqual(input.current_candidate.coverage.map((item: { coverage_id: string }) => item.coverage_id), [BUYER_COVERAGE_ID, REPEATED_BUYER_COVERAGE_ID, CUSTOMER_COVERAGE_ID]);
     },
   },
   {
@@ -690,8 +810,8 @@ const cases: readonly Readonly<{
       assert.equal(Object.hasOwn(input, "previous_active_profile"), false);
       assert.equal(input.active_baseline, null);
       assert.equal(Object.hasOwn(input, "raw_research"), false);
-      assert.deepEqual(input.research.business_buyer.lp_sections, [{ coverage_id: "business_buyer:buyer_faq", text: "FAQ comercial" }]);
-      assert.deepEqual(input.research.end_customer.lp_sections, [{ coverage_id: "end_customer:customer_hero", text: "Hero de conversao" }]);
+      assert.deepEqual(input.research.business_buyer.lp_sections, [{ coverage_id: BUYER_COVERAGE_ID, text: "FAQ comercial" }]);
+      assert.deepEqual(input.research.end_customer.lp_sections, [{ coverage_id: CUSTOMER_COVERAGE_ID, text: "Hero de conversao" }]);
       assert.deepEqual(input.research.business_buyer.strategic_core, ["Estratégia do comprador"]);
       assert.deepEqual(input.research.business_buyer.lp_overview, ["Visão da LP para o comprador"]);
       assert.deepEqual(input.research.business_buyer.seo, ["SEO do comprador"]);
