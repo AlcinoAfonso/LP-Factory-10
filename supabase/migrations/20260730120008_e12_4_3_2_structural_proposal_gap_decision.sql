@@ -28,6 +28,7 @@ declare
   v_gap_analysis_completed boolean;
   v_effective_audit_context jsonb := p_audit_context;
   v_last_save_changes jsonb;
+  v_save_revision bigint;
 begin
   if auth.uid() is null or not (
     coalesce(public.is_platform_admin(), false)
@@ -169,12 +170,24 @@ begin
     where landing_page_generation_profile_items.profile_id = v_profile.id;
   end if;
 
+  select coalesce(max(
+    case
+      when (changes_json->>'save_revision') ~ '^[1-9][0-9]*$'
+        then (changes_json->>'save_revision')::bigint
+    end
+  ), 0) + 1
+  into v_save_revision
+  from public.audit_logs
+  where record_id = v_profile.id
+    and event = 'generation_profile_draft_saved';
+
   if p_profile_id is not null and v_gap_decision is null and not v_gap_analysis_completed then
     select changes_json into v_last_save_changes
     from public.audit_logs
     where record_id = v_profile.id
       and event = 'generation_profile_draft_saved'
-    order by created_at desc, id desc
+      and (changes_json->>'save_revision') ~ '^[1-9][0-9]*$'
+    order by (changes_json->>'save_revision')::bigint desc
     limit 1;
     if v_last_save_changes->>'gap_decision' in ('wait_for_modules', 'proceed_with_available') then
       v_gap_decision := v_last_save_changes->>'gap_decision';
@@ -211,6 +224,7 @@ begin
       'review_result', p_review_result,
       'correlation_status', case when p_request_id is null then 'unavailable' else 'available' end,
       'version', v_profile.version,
+      'save_revision', v_save_revision,
       'gap_analysis_completed', v_effective_audit_context->'gap_analysis_completed',
       'gap_decision', v_gap_decision,
       'gap_item_keys', v_effective_audit_context->'gap_item_keys',
@@ -241,6 +255,7 @@ declare
   v_previous_active_id uuid;
   v_request_id text;
   v_correlation_status text;
+  v_gap_decision text;
   v_last_save_changes jsonb;
 begin
   if auth.uid() is null or not (coalesce(public.is_platform_admin(), false) or coalesce(public.is_super_admin(), false)) then
@@ -260,8 +275,13 @@ begin
   select changes_json into v_last_save_changes
   from public.audit_logs
   where record_id = v_profile.id and event = 'generation_profile_draft_saved'
-  order by created_at desc, id desc limit 1;
-  if coalesce(v_last_save_changes->>'gap_decision', '') = 'wait_for_modules' then
+    and (changes_json->>'save_revision') ~ '^[1-9][0-9]*$'
+  order by (changes_json->>'save_revision')::bigint desc
+  limit 1;
+  v_gap_decision := v_last_save_changes->>'gap_decision';
+  v_request_id := v_last_save_changes->>'request_id';
+  v_correlation_status := coalesce(v_last_save_changes->>'correlation_status', 'unavailable');
+  if coalesce(v_gap_decision, '') = 'wait_for_modules' then
     raise exception 'E12_4_3_INVALID_STATE: waiting for missing modules';
   end if;
 
@@ -272,8 +292,6 @@ begin
   end if;
   update public.landing_page_generation_profiles set status = 'active'
   where id = v_profile.id returning * into v_profile;
-  v_request_id := v_last_save_changes->>'request_id';
-  v_correlation_status := coalesce(v_last_save_changes->>'correlation_status', 'unavailable');
   perform public.audit_context_event(
     'generation_profile_activated', 'landing_page_generation_profiles', v_profile.id,
     jsonb_strip_nulls(jsonb_build_object(
