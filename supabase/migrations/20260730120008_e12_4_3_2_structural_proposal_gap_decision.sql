@@ -70,7 +70,7 @@ begin
         or p_audit_context->>'gap_impact_summary' is not null
         or coalesce(jsonb_typeof(p_audit_context->'research_versions'), '') <> 'object'
         or p_audit_context->'research_versions' - array['endCustomer', 'businessBuyer'] <> '{}'::jsonb
-        or not (p_audit_context->'research_versions' ?& array['endCustomer', 'businessBuyer'])
+        or not ((p_audit_context->'research_versions') ?& array['endCustomer', 'businessBuyer']::text[])
         or (p_audit_context->'research_versions'->>'endCustomer') !~ '^[1-9][0-9]*$'
         or (p_audit_context->'research_versions'->>'businessBuyer') !~ '^[1-9][0-9]*$'
       )
@@ -83,7 +83,7 @@ begin
         or coalesce(length(btrim(p_audit_context->>'gap_impact_summary')), 0) = 0
         or coalesce(jsonb_typeof(p_audit_context->'research_versions'), '') <> 'object'
         or p_audit_context->'research_versions' - array['endCustomer', 'businessBuyer'] <> '{}'::jsonb
-        or not (p_audit_context->'research_versions' ?& array['endCustomer', 'businessBuyer'])
+        or not ((p_audit_context->'research_versions') ?& array['endCustomer', 'businessBuyer']::text[])
         or (p_audit_context->'research_versions'->>'endCustomer') !~ '^[1-9][0-9]*$'
         or (p_audit_context->'research_versions'->>'businessBuyer') !~ '^[1-9][0-9]*$'
       )
