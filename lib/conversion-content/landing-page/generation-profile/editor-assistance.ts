@@ -110,8 +110,8 @@ export function diffGenerationProfileGaps(input: {
   previousCandidate: GenerationProfileProposal | null;
   gaps: readonly GenerationProfileGap[];
 }) {
-  const previous = new Map((input.previousCandidate?.gaps ?? []).map((gap) => [`${gap.audienceScope}:${gap.itemKey}`, gap]));
-  const current = new Map(input.gaps.map((gap) => [`${gap.audienceScope}:${gap.itemKey}`, gap]));
+  const previous = new Map((input.previousCandidate?.gaps ?? []).map((gap) => [gap.coverageId, gap]));
+  const current = new Map(input.gaps.map((gap) => [gap.coverageId, gap]));
   return {
     added: [...current.entries()].filter(([key]) => !previous.has(key)).map(([, gap]) => gap),
     resolved: [...previous.entries()].filter(([key]) => !current.has(key)).map(([, gap]) => gap),

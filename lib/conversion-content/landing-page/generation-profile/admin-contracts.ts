@@ -51,6 +51,7 @@ export type GenerationProfileCoverageIdentity = Readonly<{
 }>;
 
 export type GenerationProfileCoverage = Readonly<{
+  coverageId: string;
   audienceScope: "business_buyer" | "end_customer";
   itemKey: string;
   sectionName: string;
@@ -63,6 +64,7 @@ export type GenerationProfileCoverage = Readonly<{
 }>;
 
 export type GenerationProfileGap = Readonly<{
+  coverageId: string;
   audienceScope: "business_buyer" | "end_customer";
   itemKey: string;
   sectionName: string;

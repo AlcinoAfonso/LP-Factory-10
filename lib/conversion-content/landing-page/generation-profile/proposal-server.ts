@@ -19,6 +19,7 @@ import {
   mapProviderFailureToProposalError,
   mapResearchErrorToProposalError,
   normalizeGenerationProfileCandidate,
+  validateGenerationProfileResearchPriorities,
   validateGenerationProfileProviderPayload,
 } from "./proposal";
 
@@ -86,6 +87,17 @@ export async function proposeLandingPageGenerationProfile(input: {
       "Required research is unavailable or invalid.",
       { taxonId: input.taxonId, platformAdminId: input.actorUserId, requestKind, model, startedAt, researchCode: research.error.code },
     );
+  }
+  if (!validateGenerationProfileResearchPriorities(research.value)) {
+    return finishFailure(requestId, "invalid_data", "Required research contains an unsupported lp_sections priority.", {
+      taxonId: input.taxonId,
+      platformAdminId: input.actorUserId,
+      requestKind,
+      model,
+      startedAt,
+      researchVersions: research.value.versions,
+      researchProvenance: getResearchProvenance(research.value),
+    });
   }
 
   const detail = await readAdminGenerationProfileDetail({ taxonId: input.taxonId });

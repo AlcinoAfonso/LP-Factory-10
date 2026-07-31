@@ -71,6 +71,7 @@ export function GenerationProfileEditor({ taxon, profiles, aiConfigured, researc
     ? "Assistencia indisponivel: use exclusivamente o modelo aprovado gpt-5.4-mini e configure a OpenAI. O fluxo manual continua completo."
     : researchAvailability.reason;
   const activationBlockedByGaps = (appliedProposalContext?.decision ?? persistedGapDecision) === "wait_for_modules";
+  const editorLockedByCandidate = candidate !== null;
 
   function announce(next: Feedback) {
     setFeedback(next);
@@ -135,6 +136,7 @@ export function GenerationProfileEditor({ taxon, profiles, aiConfigured, researc
   }
 
   function saveDraft() {
+    if (editorLockedByCandidate) return;
     startTransition(async () => {
       const result = await saveGenerationProfileAction({
         ownerTaxonId: taxon.id,
@@ -221,6 +223,9 @@ export function GenerationProfileEditor({ taxon, profiles, aiConfigured, researc
       <div ref={feedbackRef} tabIndex={-1} aria-live="polite" className={feedback ? `rounded-md border p-3 text-sm ${feedback.tone === "error" ? "border-red-200 bg-red-50 text-red-700" : feedback.tone === "warning" ? "border-amber-200 bg-amber-50 text-amber-700" : "border-green-200 bg-green-50 text-green-700"}` : "sr-only"}>{feedback?.message ?? "Sem feedback."}</div>
 
       {manualEditorVisible && <>
+      {editorLockedByCandidate && <p id="editor-candidate-lock" className="rounded-md border border-amber-300 bg-amber-50 p-3 text-sm text-amber-800">O editor esta temporariamente bloqueado enquanto a proposta candidata e o diff estao em revisao. Aplique ou descarte a proposta para voltar a editar.</p>}
+      <fieldset disabled={editorLockedByCandidate} aria-describedby={editorLockedByCandidate ? "editor-candidate-lock" : undefined} className="min-w-0 space-y-5 border-0 p-0">
+      <legend className="sr-only">Editor do perfil</legend>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h2 className="font-semibold">Editor do perfil</h2>
@@ -264,6 +269,7 @@ export function GenerationProfileEditor({ taxon, profiles, aiConfigured, researc
         {activationBlockedByGaps && <p className="text-sm text-red-700">Ativacao bloqueada: a decisao atual e aguardar a criacao dos modulos faltantes.</p>}
         {!draftMeta && <p className="text-sm text-muted-foreground">Aprovar e ativar indisponivel: salve primeiro uma versao draft.</p>}
       </div>
+      </fieldset>
       </>}
     </section>
 
@@ -291,11 +297,11 @@ function CandidateReview({ candidate, diff, replacements, gapDiff, gapDecision, 
 }) {
   return <section className="space-y-4 rounded-md border border-blue-200 bg-blue-50/50 p-4" aria-label="Proposta candidata">
     <div><h3 className="font-semibold">Proposta candidata</h3><p className="text-sm text-muted-foreground">A candidata e o diff sao transitórios; o editor ainda nao foi alterado.</p></div>
-    <div><h4 className="text-sm font-semibold">Cobertura de lp_sections</h4><ul className="mt-2 space-y-1 text-sm">{candidate.coverage.map((item) => <li key={`${item.audienceScope}:${item.itemKey}`}><strong>{item.sectionName}</strong> — {item.status} — {item.compatibleIdentities.map((identity) => identity.variantKey ?? identity.moduleKey).join(", ") || "sem identidade compatível"}</li>)}</ul></div>
+    <div><h4 className="text-sm font-semibold">Cobertura de lp_sections</h4><ul className="mt-2 space-y-1 text-sm">{candidate.coverage.map((item) => <li key={item.coverageId}><strong>{item.sectionName}</strong> — {item.status} — {item.compatibleIdentities.map((identity) => identity.variantKey ?? identity.moduleKey).join(", ") || "sem identidade compatível"}</li>)}</ul></div>
     <div><h4 className="text-sm font-semibold">Diff estrutural</h4><ul className="mt-2 flex flex-wrap gap-2">{diff.map((item) => <li key={item.moduleKey}><AdminStatusBadge tone={item.status === "removed" ? "danger" : item.status === "added" ? "success" : "neutral"}>{item.moduleKey}: {item.status}{item.changes.length > 0 ? ` (${item.changes.join(", ")})` : ""}</AdminStatusBadge></li>)}</ul><p className="mt-2 text-xs text-muted-foreground">Substituições: {replacements.map((item) => `${item.fromModuleKey} → ${item.toModuleKey} (ordem ${item.recommendedOrder})`).join(", ") || "nenhuma"}. Gaps novos: {gapDiff.added.map((gap) => gap.sectionName).join(", ") || "nenhum"}. Gaps resolvidos: {gapDiff.resolved.map((gap) => gap.sectionName).join(", ") || "nenhum"}.</p></div>
     {candidate.gaps.length > 0 && <div className="space-y-2 rounded-md border border-amber-300 bg-amber-50 p-3">
       <h4 className="text-sm font-semibold">Gaps do catálogo vigente</h4>
-      <ul className="space-y-1 text-sm">{candidate.gaps.map((gap) => <li key={`${gap.audienceScope}:${gap.itemKey}`}><strong>{gap.sectionName}</strong> — prioridade {gap.sourcePriority}, ordem {gap.sourceOrder}: {gap.reason} Impacto: {gap.impact}</li>)}</ul>
+      <ul className="space-y-1 text-sm">{candidate.gaps.map((gap) => <li key={gap.coverageId}><strong>{gap.sectionName}</strong> — prioridade {gap.sourcePriority}, ordem {gap.sourceOrder}: {gap.reason} Impacto: {gap.impact}</li>)}</ul>
       <label className="block text-sm font-medium">Decisão humana<Select value={gapDecision} onChange={(event) => onGapDecision(event.target.value as GenerationProfileGapDecision | "")} disabled={pending}><option value="">Selecione</option><option value="wait_for_modules">Aguardar criacao dos modulos</option><option value="proceed_with_available">Prosseguir com os disponiveis</option></Select></label>
     </div>}
     <div className="flex flex-wrap gap-2"><Button onClick={onApply} disabled={pending || (candidate.gaps.length > 0 && !gapDecision)}>Aplicar proposta</Button><Button className="bg-secondary text-secondary-foreground hover:bg-secondary/80" onClick={onDiscard} disabled={pending}>Descartar proposta</Button></div>
