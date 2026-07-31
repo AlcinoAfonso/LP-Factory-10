@@ -6,6 +6,7 @@ import { createServiceClient } from "@/lib/supabase/service";
 import { createClient } from "@/lib/supabase/server";
 import {
   fingerprintGenerationProfileProposal,
+  normalizeGenerationProfileLifecycleReadiness,
   validateGenerationProfileDraft,
   type AdminGenerationProfile,
   type AdminGenerationProfileListItem,
@@ -109,51 +110,31 @@ export async function readAdminGenerationProfileDetail(input: {
   if (itemResult.error || !Array.isArray(itemResult.data)) {
     return { ok: false, error: "profile_item_read_failed" };
   }
+  const auditResult = profileIds.length === 0
+    ? { data: [], error: null }
+    : await supabase
+        .from("audit_logs")
+        .select("record_id,changes_json,created_at,id")
+        .eq("event", "generation_profile_draft_saved")
+        .in("record_id", profileIds)
+        .order("created_at", { ascending: false })
+        .order("id", { ascending: false });
+  if (auditResult.error || !Array.isArray(auditResult.data)) {
+    return { ok: false, error: "profile_audit_read_failed" };
+  }
 
-  const profiles = profileRows.map((row) => normalizeAdminProfile(row, itemResult.data));
+  const profiles = profileRows.map((row) => normalizeAdminProfile(row, itemResult.data, auditResult.data));
   if (profiles.some((profile) => profile === null)) {
     return { ok: false, error: "profile_invalid_data" };
   }
   return { ok: true, taxon, profiles: profiles as AdminGenerationProfile[] };
 }
 
-export async function readLastActivatedOwnGenerationProfile(input: {
-  profiles: readonly AdminGenerationProfile[];
-}): Promise<
-  | Readonly<{ ok: true; profile: AdminGenerationProfile | null }>
-  | Readonly<{ ok: false; error: string }>
-> {
-  const activeProfile = input.profiles.find((profile) => profile.status === "active") ?? null;
-  if (activeProfile || input.profiles.length === 0) return { ok: true, profile: activeProfile };
-
-  const supabase = createServiceClient();
-  const { data: auditRow, error: auditError } = await supabase
-    .from("audit_logs")
-    .select("record_id")
-    .eq("event", "generation_profile_activated")
-    .in("record_id", input.profiles.map((profile) => profile.id))
-    .order("created_at", { ascending: false })
-    .order("id", { ascending: false })
-    .limit(1)
-    .maybeSingle();
-  if (auditError) return { ok: false, error: "profile_history_read_failed" };
-  const profile = auditRow?.record_id
-    ? input.profiles.find((candidate) => candidate.id === auditRow.record_id) ?? null
-    : null;
-  return { ok: true, profile };
-}
-
 export async function readAdminGenerationProfileLifecycleReadiness(): Promise<GenerationProfileLifecycleReadiness> {
   const supabase = await createClient();
   const { data, error } = await supabase.rpc("get_landing_page_generation_profile_lifecycle_status");
   const row = Array.isArray(data) ? data[0] : data;
-  if (error || !isRecord(row) || row.ready !== true) {
-    return {
-      ready: false,
-      reason: "Lifecycle indisponivel ate a migration e o verificador read-only serem aprovados.",
-    };
-  }
-  return { ready: true, reason: "Lifecycle verificado e disponivel." };
+  return error ? normalizeGenerationProfileLifecycleReadiness(null) : normalizeGenerationProfileLifecycleReadiness(row);
 }
 
 export async function saveAdminGenerationProfileDraft(
@@ -173,11 +154,22 @@ export async function saveAdminGenerationProfileDraft(
     p_owner_taxon_id: validated.value.ownerTaxonId,
     p_profile_id: validated.value.profileId ?? null,
     p_expected_updated_at: validated.value.expectedUpdatedAt ?? null,
-    p_generation_guidance: validated.value.generationGuidance,
+    p_generation_guidance: validated.value.generationGuidance ?? null,
     p_items: validated.value.recommendations.map(toRpcRecommendation),
     p_origin: validated.value.origin,
     p_request_id: validated.value.requestId ?? null,
     p_review_result: reviewResult,
+    p_audit_context: {
+      gap_item_keys: validated.value.gapItemKeys ?? [],
+      ...(validated.value.gapAnalysisCompleted ? {
+        gap_analysis_completed: true,
+        research_versions: validated.value.researchVersions,
+      } : {}),
+      ...(validated.value.gapDecision ? {
+        gap_decision: validated.value.gapDecision,
+        gap_impact_summary: validated.value.gapImpactSummary,
+      } : {}),
+    },
   });
 }
 
@@ -201,7 +193,7 @@ export async function activateAdminGenerationProfile(input: {
     ownerTaxonId: input.taxonId,
     profileId: draft.id,
     expectedUpdatedAt: draft.updatedAt,
-    generationGuidance: draft.generationGuidance,
+    ...(draft.generationGuidance === undefined ? {} : { generationGuidance: draft.generationGuidance }),
     recommendations: draft.recommendations,
     origin: "manual",
   });
@@ -292,19 +284,24 @@ function normalizeTaxon(value: unknown): AdminGenerationProfileTaxon | null {
   };
 }
 
-function normalizeAdminProfile(value: unknown, itemRows: unknown[]): AdminGenerationProfile | null {
-  if (!isRecord(value) || typeof value.id !== "string" || typeof value.owner_taxon_id !== "string" || !Number.isInteger(value.version) || !["draft", "active", "archived"].includes(String(value.status)) || typeof value.generation_guidance !== "string" || typeof value.created_at !== "string" || typeof value.updated_at !== "string") return null;
+function normalizeAdminProfile(value: unknown, itemRows: unknown[], auditRows: unknown[]): AdminGenerationProfile | null {
+  if (!isRecord(value) || typeof value.id !== "string" || typeof value.owner_taxon_id !== "string" || !Number.isInteger(value.version) || !["draft", "active", "archived"].includes(String(value.status)) || (value.generation_guidance !== null && typeof value.generation_guidance !== "string") || typeof value.created_at !== "string" || typeof value.updated_at !== "string") return null;
   const recommendations = itemRows
     .filter((row) => isRecord(row) && row.profile_id === value.id)
     .map(normalizeRecommendation);
   if (recommendations.some((item) => item === null)) return null;
+  const latestSave = auditRows.find((row) => isRecord(row) && row.record_id === value.id);
+  const changes = latestSave && isRecord(latestSave) && isRecord(latestSave.changes_json) ? latestSave.changes_json : null;
+  const lastGapDecision = changes?.gap_decision;
+  if (lastGapDecision !== undefined && !["wait_for_modules", "proceed_with_available"].includes(String(lastGapDecision))) return null;
   return {
     id: value.id,
     ownerTaxonId: value.owner_taxon_id,
     version: value.version as number,
     status: value.status as AdminGenerationProfile["status"],
-    generationGuidance: value.generation_guidance,
+    ...(value.generation_guidance === null ? {} : { generationGuidance: value.generation_guidance }),
     recommendations: recommendations as AdminGenerationProfile["recommendations"],
+    ...(lastGapDecision === undefined ? {} : { lastGapDecision: lastGapDecision as "wait_for_modules" | "proceed_with_available" }),
     createdAt: value.created_at,
     updatedAt: value.updated_at,
   };

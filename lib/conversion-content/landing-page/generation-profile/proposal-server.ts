@@ -3,31 +3,35 @@ import "server-only";
 import { randomUUID } from "node:crypto";
 
 import { resolveLandingPageResearchForTaxon } from "../../adapters/landingPageResearchAdapter";
-import { readAdminGenerationProfileDetail, readLastActivatedOwnGenerationProfile } from "../../adapters/landingPageGenerationProfileAdminAdapter";
+import { readAdminGenerationProfileDetail } from "../../adapters/landingPageGenerationProfileAdminAdapter";
 import { requestGenerationProfileProposal } from "../../adapters/landingPageGenerationProfileOpenAiAdapter";
 import type {
   GenerationProfileEditorContent,
+  GenerationProfileProposal,
   GenerationProfileProposalResult,
 } from "./admin-contracts";
 import { validateGenerationProfileDraft } from "./admin-schema";
 import { listLandingPageModuleIdentities } from "../module-catalog";
 import {
+  buildGenerationProfileInvalidDataMetadata,
   estimateGenerationProfileCostUsd,
   isGenerationProfileAssistanceConfigured,
   mapProviderFailureToProposalError,
   mapResearchErrorToProposalError,
+  normalizeGenerationProfileCandidate,
   validateGenerationProfileProviderPayload,
 } from "./proposal";
 
 export async function proposeLandingPageGenerationProfile(input: {
   taxonId: string;
   actorUserId: string;
-  currentEditor?: GenerationProfileEditorContent;
+  currentEditor: GenerationProfileEditorContent;
+  currentCandidate?: GenerationProfileProposal;
   humanFeedback?: string;
 }): Promise<GenerationProfileProposalResult> {
   const requestId = randomUUID();
   const startedAt = Date.now();
-  const requestKind = input.currentEditor ? "refinement" : "initial";
+  const requestKind = input.currentCandidate ? "refinement" : "initial";
   const model = process.env.OPENAI_LANDING_PAGE_GENERATION_PROFILE_MODEL?.trim();
   if (!model || !isGenerationProfileAssistanceConfigured({ apiKey: process.env.OPENAI_API_KEY, model })) {
     return finishFailure(requestId, "technical_failure", "AI assistance is unavailable.", {
@@ -39,32 +43,36 @@ export async function proposeLandingPageGenerationProfile(input: {
     });
   }
 
-  let currentEditor: GenerationProfileEditorContent | null = null;
-  if (input.currentEditor) {
-    const validatedEditor = validateGenerationProfileDraft({
-      ownerTaxonId: input.taxonId,
-      generationGuidance: input.currentEditor.generationGuidance,
-      recommendations: input.currentEditor.recommendations,
-      origin: "manual",
+  const validatedEditor = validateGenerationProfileDraft({
+    ownerTaxonId: input.taxonId,
+    ...(input.currentEditor.generationGuidance.trim() ? { generationGuidance: input.currentEditor.generationGuidance } : {}),
+    recommendations: input.currentEditor.recommendations,
+    origin: "manual",
+  });
+  if (!validatedEditor.ok) {
+    return finishFailure(requestId, "invalid_data", "Current editor content is invalid.", {
+      taxonId: input.taxonId,
+      platformAdminId: input.actorUserId,
+      requestKind,
+      model,
+      startedAt,
     });
-    if (!validatedEditor.ok) {
-      return finishFailure(
-        requestId,
-        "invalid_data",
-        "Current editor content is invalid for refinement.",
-        {
-          taxonId: input.taxonId,
-          platformAdminId: input.actorUserId,
-          requestKind,
-          model,
-          startedAt,
-        },
-      );
-    }
-    currentEditor = {
-      generationGuidance: validatedEditor.value.generationGuidance,
-      recommendations: validatedEditor.value.recommendations,
-    };
+  }
+  const currentEditor = {
+    generationGuidance: input.currentEditor.generationGuidance.trim(),
+    recommendations: validatedEditor.value.recommendations,
+  };
+  const currentCandidate = input.currentCandidate
+    ? normalizeGenerationProfileCandidate(input.currentCandidate)
+    : null;
+  if (currentCandidate && !currentCandidate.ok) {
+    return finishFailure(requestId, "invalid_data", currentCandidate.message, {
+      taxonId: input.taxonId,
+      platformAdminId: input.actorUserId,
+      requestKind,
+      model,
+      startedAt,
+    });
   }
 
   const research = await resolveLandingPageResearchForTaxon({
@@ -92,27 +100,15 @@ export async function proposeLandingPageGenerationProfile(input: {
       researchProvenance: getResearchProvenance(research.value),
     });
   }
-  const historicalProfile = await readLastActivatedOwnGenerationProfile({ profiles: detail.profiles });
-  if (!historicalProfile.ok) {
-    return finishFailure(requestId, "technical_failure", "Previous active profile context could not be loaded.", {
-      taxonId: input.taxonId,
-      platformAdminId: input.actorUserId,
-      requestKind,
-      model,
-      startedAt,
-      researchVersions: research.value.versions,
-      researchProvenance: getResearchProvenance(research.value),
-    });
-  }
-  const previousActiveProfile = historicalProfile.profile;
+  const previousActiveProfile = detail.profiles.find((profile) => profile.status === "active") ?? null;
   const moduleIdentities = listLandingPageModuleIdentities();
   const provider = await requestGenerationProfileProposal({
     model,
-    taxonId: input.taxonId,
     research: research.value,
     moduleIdentities,
-    previousActiveProfile,
-    currentEditor,
+    requestKind: previousActiveProfile ? "evolution" : "creation",
+    activeBaseline: previousActiveProfile?.recommendations ?? null,
+    currentCandidate: currentCandidate?.value ?? null,
     humanFeedback: input.humanFeedback,
   });
   if (!provider.ok) {
@@ -123,13 +119,26 @@ export async function proposeLandingPageGenerationProfile(input: {
       model,
       startedAt,
       providerKind: provider.kind,
+      ...(provider.kind === "incomplete" ? {
+        incompleteReason: provider.incompleteReason,
+        responseId: provider.responseId,
+        inputTokens: provider.inputTokens,
+        outputTokens: provider.outputTokens,
+        estimatedCostUsd: estimateGenerationProfileCostUsd(model, provider.inputTokens, provider.outputTokens),
+      } : {}),
       researchVersions: research.value.versions,
       researchProvenance: getResearchProvenance(research.value),
       moduleCatalogVersion: moduleIdentities.moduleCatalogVersion,
     });
   }
 
-  const validated = validateGenerationProfileProviderPayload(provider.payload);
+  const validated = validateGenerationProfileProviderPayload({
+    payload: provider.payload,
+    research: research.value,
+    moduleIdentities,
+    currentEditor,
+    previousCandidate: currentCandidate?.value ?? null,
+  });
   if (!validated.ok) {
     return finishFailure(requestId, "invalid_data", "AI proposal violated the generation profile contract.", {
       taxonId: input.taxonId,
@@ -137,7 +146,13 @@ export async function proposeLandingPageGenerationProfile(input: {
       requestKind,
       model,
       startedAt,
-      responseId: provider.responseId,
+      ...buildGenerationProfileInvalidDataMetadata({
+        model,
+        validationReason: validated.reason,
+        responseId: provider.responseId,
+        inputTokens: provider.inputTokens,
+        outputTokens: provider.outputTokens,
+      }),
       researchVersions: research.value.versions,
       researchProvenance: getResearchProvenance(research.value),
       moduleCatalogVersion: moduleIdentities.moduleCatalogVersion,
@@ -165,6 +180,7 @@ export async function proposeLandingPageGenerationProfile(input: {
     ok: true,
     value: {
       ...validated.value,
+      researchVersions: research.value.versions,
       requestId,
     },
   };

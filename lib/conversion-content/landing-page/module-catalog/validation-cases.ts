@@ -1564,6 +1564,7 @@ const cases: readonly Case[] = [
         if (!result.ok) assert.equal(result.error.code, code);
       }
       assert.deepEqual(Object.keys(publicModuleCatalog).sort(), [
+        "listLandingPageModuleIdentities",
         "resolveLandingPageModuleCatalog",
         "validateLandingPageModuleIdentity",
       ]);

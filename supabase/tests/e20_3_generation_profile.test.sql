@@ -48,6 +48,31 @@ values (
   null
 );
 
+insert into public.landing_page_generation_profiles (
+  owner_taxon_id,
+  version,
+  status
+)
+values (
+  '10000000-0000-4000-8000-000000000001',
+  99,
+  'draft'
+);
+
+do $$
+begin
+  if not exists (
+    select 1
+    from public.landing_page_generation_profiles
+    where owner_taxon_id = '10000000-0000-4000-8000-000000000001'
+      and version = 99
+      and generation_guidance is null
+  ) then
+    raise exception 'generation guidance should be optional';
+  end if;
+end;
+$$;
+
 do $$
 declare
   candidate record;

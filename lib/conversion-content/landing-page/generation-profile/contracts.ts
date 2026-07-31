@@ -35,7 +35,7 @@ export type LandingPageGenerationProfile = Readonly<{
   ownerTaxonId: string;
   version: number;
   status: LandingPageGenerationProfileStatus;
-  generationGuidance: string;
+  generationGuidance?: string;
   items: readonly LandingPageGenerationProfileItem[];
 }>;
 
@@ -80,7 +80,7 @@ export type ResolvedLandingPageGenerationProfile = Readonly<{
   profileId: string;
   profileVersion: number;
   relation: "own" | "inherited";
-  generationGuidance: string;
+  generationGuidance?: string;
   recommendations: readonly LandingPageGenerationProfileItem[];
 }>;
 
