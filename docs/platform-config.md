@@ -157,7 +157,7 @@
 • `OPENAI_API_KEY`
 • Finalidade: chave server-side da OpenAI para resolvedor IA e/ou integrações server-side autorizadas.
 • Escopo: Production e Preview, conforme necessidade do recurso.
-• Estado atual: configurada em Production e Preview; presença confirmada operacionalmente em 31/07/2026 sem exposição do valor.
+• Estado atual: configurada em Production e Preview; presença confirmada na configuração em 31/07/2026 sem exposição do valor.
 • Valor real: não versionar.
 
 • `OPENAI_NICHE_RESOLVER_MODEL`
@@ -173,6 +173,7 @@
 • Valor permitido: `gpt-5.4-mini`.
 • Estado atual: configurada em Production e Preview com `gpt-5.4-mini`.
 • Validação operacional: redeploy de Production concluído em 31/07/2026 no commit `072d6d3f25368cf80c539519fe5f74bd6c4db359`; assistência habilitada no domínio oficial e primeira chamada real concluída.
+• Preview: configuração presente, sem novo redeploy ou smoke específico comprovado após a correção.
 • Fallback: sem a variável, sem `OPENAI_API_KEY` ou com qualquer outro modelo, a assistência fica indisponível e o fluxo manual permanece funcional.
 • Valor real: não versionar.
 • Regra: deve conter apenas o ID do modelo; nunca inserir `OPENAI_API_KEY` nessa variável.
@@ -312,7 +313,7 @@
 • Finalidade: selecionar o modelo usado pela proposta administrativa opcional do perfil de orientação de `landing_page`.
 • Escopo: Production e Preview.
 • Valor permitido: `gpt-5.4-mini`.
-• Estado operacional: configurada e validada em Production e Preview em 31/07/2026; detalhes em 3.5.
+• Estado operacional: configurada em Production e Preview; validada operacionalmente somente em Production em 31/07/2026; Preview permanece sem novo redeploy ou smoke comprovado; detalhes em 3.5.
 • Fallback: sem a variável, sem `OPENAI_API_KEY` ou com qualquer outro modelo, a assistência fica indisponível e o fluxo manual permanece funcional.
 • Valor real: não versionar.
 • Regra: deve conter apenas o ID do modelo; nunca inserir `OPENAI_API_KEY` nessa variável.
@@ -463,7 +464,7 @@ Regra:
 • Configurações de plataformas, secrets por nome, workflows, ambientes e endpoints usados por automações devem ser registrados neste documento.
 
 99. Changelog
-v0.1.16 — 31/07/2026 — Registradas a correção de `OPENAI_LANDING_PAGE_GENERATION_PROFILE_MODEL` para `gpt-5.4-mini`, a ampliação para Production e Preview, o redeploy e a validação operacional da assistência no domínio oficial.
+v0.1.16 — 31/07/2026 — Registradas a correção de `OPENAI_LANDING_PAGE_GENERATION_PROFILE_MODEL` para `gpt-5.4-mini`, a ampliação para Production e Preview, o redeploy e a validação operacional da assistência somente em Production no domínio oficial.
 
 v0.1.15 — 30/07/2026 — Registrados o merge do PR #656, a habilitação do gate, o redeploy e o smoke final aprovado em Production.
 
