@@ -384,6 +384,19 @@ export type LandingPageModuleIdentityCatalog = Readonly<{
   }>[];
 }>;
 
+export type LandingPageModuleSelectionCatalog = Readonly<{
+  moduleCatalogVersion: number;
+  modules: readonly Readonly<{
+    moduleAlias: string;
+    purpose: string;
+    variants: readonly Readonly<{
+      alias: string;
+      capabilities: readonly LandingPageVariantCapability[];
+      interactions: readonly LandingPageInteractionKind[];
+    }>[];
+  }>[];
+}>;
+
 export type ResolveLandingPageModuleCatalogInput = Readonly<{
   moduleCatalogVersion: number;
   rootVersion: number;

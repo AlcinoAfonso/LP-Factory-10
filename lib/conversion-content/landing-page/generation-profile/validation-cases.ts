@@ -29,7 +29,10 @@ import {
   validateGenerationProfileResearchPriorities,
   validateGenerationProfileProviderPayload,
 } from "./proposal";
-import { listLandingPageModuleIdentities } from "../module-catalog";
+import {
+  listLandingPageModuleIdentities,
+  listLandingPageModuleSelectionCatalog,
+} from "../module-catalog";
 import type { ResolvedLandingPageResearch } from "../research-resolution";
 import {
   applyGenerationProfileCandidate,
@@ -171,11 +174,13 @@ const structuralPayload = {
       coverage_id: BUYER_COVERAGE_ID,
       status: "covered" as const,
       compatible_aliases: ["faq.accordion"],
+      selected_aliases: ["faq.accordion"],
     },
     {
       coverage_id: CUSTOMER_COVERAGE_ID,
       status: "covered" as const,
       compatible_aliases: ["hero.form"],
+      selected_aliases: ["hero.form"],
     },
   ],
 };
@@ -601,13 +606,108 @@ const cases: readonly Readonly<{
     },
   },
   {
+    name: "selected aliases exclusively and deterministically choose recommendation identities",
+    run: () => {
+      const validate = (payload: unknown) => validateGenerationProfileProviderPayload({ payload, research: structuralResearch, moduleIdentities: listLandingPageModuleIdentities() });
+      const withCustomerSelection = (compatibleAliases: string[], selectedAliases: string[], status: "covered" | "partial" | "missing" = "covered") => ({
+        coverage: [
+          structuralPayload.coverage[0],
+          {
+            ...structuralPayload.coverage[1],
+            status,
+            compatible_aliases: compatibleAliases,
+            selected_aliases: selectedAliases,
+            ...(status === "covered" ? {} : { reason: "Cobertura incompleta.", impact: "Estrutura afetada." }),
+          },
+        ],
+      });
+
+      const selectedVariant = validate(withCustomerSelection(["hero", "hero.standard"], ["hero.standard"]));
+      assert.equal(selectedVariant.ok, true);
+      if (!selectedVariant.ok) return;
+      assert.deepEqual(selectedVariant.value.recommendations.find((item) => item.moduleKey === "hero"), {
+        moduleKey: "hero",
+        moduleVersion: 1,
+        variantKey: "hero.standard",
+        variantVersion: 1,
+        priority: "P1",
+        recommendedOrder: 10,
+      });
+
+      const selectedBase = validate(withCustomerSelection(["hero", "hero.standard"], ["hero"]));
+      assert.equal(selectedBase.ok, true);
+      if (selectedBase.ok) assert.deepEqual(selectedBase.value.recommendations.find((item) => item.moduleKey === "hero"), {
+        moduleKey: "hero",
+        moduleVersion: 1,
+        priority: "P1",
+        recommendedOrder: 10,
+      });
+
+      for (const [payload, reason] of [
+        [withCustomerSelection(["hero"], ["hero.form"]), "coverage_selected_identity_invalid"],
+        [withCustomerSelection(["hero.form"], ["hero.form", "hero.form"]), "coverage_selected_identity_invalid"],
+        [withCustomerSelection(["hero", "hero.form"], ["hero", "hero.form"]), "coverage_selected_module_conflict"],
+        [withCustomerSelection(["hero.form"], []), "coverage_selected_identity_count_invalid"],
+        [withCustomerSelection(["hero.form"], [], "partial"), "coverage_selected_identity_count_invalid"],
+      ] as const) {
+        const result = validate(payload);
+        assert.equal(result.ok, false);
+        if (!result.ok) assert.equal(result.reason, reason);
+      }
+
+      const partial = validate(withCustomerSelection(["hero.form"], ["hero.form"], "partial"));
+      assert.equal(partial.ok, true, partial.ok ? undefined : partial.message);
+      const missingWithAliases = validate(withCustomerSelection(["hero.form"], ["hero.form"], "missing"));
+      assert.equal(missingWithAliases.ok, false);
+
+      const repeatedSelection = validate({
+        coverage: structuralPayload.coverage.map((item) => ({
+          ...item,
+          compatible_aliases: ["hero.form"],
+          selected_aliases: ["hero.form"],
+        })),
+      });
+      assert.equal(repeatedSelection.ok, true);
+      if (repeatedSelection.ok) {
+        assert.equal(repeatedSelection.value.recommendations.length, 1);
+        assert.equal(repeatedSelection.value.recommendations[0].variantKey, "hero.form");
+      }
+
+      for (const selectedAliases of [["hero"], ["hero.standard"]] as const) {
+        const conflict = validate({
+          coverage: [
+            { ...structuralPayload.coverage[0], compatible_aliases: [...selectedAliases], selected_aliases: [...selectedAliases] },
+            { ...structuralPayload.coverage[1], compatible_aliases: ["hero.form"], selected_aliases: ["hero.form"] },
+          ],
+        });
+        assert.equal(conflict.ok, false);
+        if (!conflict.ok) assert.equal(conflict.reason, "coverage_selected_identity_conflict");
+      }
+
+      const ordered = validate({
+        coverage: [
+          { ...structuralPayload.coverage[0], compatible_aliases: ["hero.form", "faq.accordion"], selected_aliases: ["hero.form", "faq.accordion"] },
+          { ...structuralPayload.coverage[1], status: "missing", compatible_aliases: [], selected_aliases: [], reason: "Sem modulo.", impact: "Cobertura indisponivel." },
+        ],
+      });
+      const reversed = validate({
+        coverage: [
+          { ...structuralPayload.coverage[0], compatible_aliases: ["faq.accordion", "hero.form"], selected_aliases: ["faq.accordion", "hero.form"] },
+          { ...structuralPayload.coverage[1], status: "missing", compatible_aliases: [], selected_aliases: [], reason: "Sem modulo.", impact: "Cobertura indisponivel." },
+        ],
+      });
+      assert.equal(ordered.ok && reversed.ok, true);
+      if (ordered.ok && reversed.ok) assert.deepEqual(ordered.value, reversed.value);
+    },
+  },
+  {
     name: "repeated item_key remains distinct through provider candidate refinement gaps and diff",
     run: () => {
       const research = withRepeatedBuyerItemKey();
       const previousPayload = {
         coverage: [
-          { ...structuralPayload.coverage[0], status: "missing" as const, compatible_aliases: [], reason: "Modulo indisponivel.", impact: "FAQ comercial ausente." },
-          { coverage_id: REPEATED_BUYER_COVERAGE_ID, status: "covered" as const, compatible_aliases: ["faq.accordion"] },
+          { ...structuralPayload.coverage[0], status: "missing" as const, compatible_aliases: [], selected_aliases: [], reason: "Modulo indisponivel.", impact: "FAQ comercial ausente." },
+          { coverage_id: REPEATED_BUYER_COVERAGE_ID, status: "covered" as const, compatible_aliases: ["faq.accordion"], selected_aliases: ["faq.accordion"] },
           structuralPayload.coverage[1],
         ],
       };
@@ -618,7 +718,7 @@ const cases: readonly Readonly<{
       const currentPayload = {
         coverage: [
           structuralPayload.coverage[0],
-          { coverage_id: REPEATED_BUYER_COVERAGE_ID, status: "missing" as const, compatible_aliases: [], reason: "Modulo indisponivel.", impact: "FAQ para objecoes ausente." },
+          { coverage_id: REPEATED_BUYER_COVERAGE_ID, status: "missing" as const, compatible_aliases: [], selected_aliases: [], reason: "Modulo indisponivel.", impact: "FAQ para objecoes ausente." },
           structuralPayload.coverage[1],
         ],
       };
@@ -646,6 +746,7 @@ const cases: readonly Readonly<{
         model: GENERATION_PROFILE_APPROVED_MODEL,
         research,
         moduleIdentities: listLandingPageModuleIdentities(),
+        moduleSelectionCatalog: listLandingPageModuleSelectionCatalog(),
         requestKind: "evolution",
         activeBaseline: null,
         currentCandidate: candidate,
@@ -663,7 +764,7 @@ const cases: readonly Readonly<{
       const missingBuyer = {
         ...structuralPayload,
         coverage: [
-          { ...structuralPayload.coverage[0], status: "missing" as const, compatible_aliases: [], reason: "Modulo indisponivel.", impact: "FAQ comercial parcial." },
+          { ...structuralPayload.coverage[0], status: "missing" as const, compatible_aliases: [], selected_aliases: [], reason: "Modulo indisponivel.", impact: "FAQ comercial parcial." },
           structuralPayload.coverage[1],
         ],
       };
@@ -730,8 +831,9 @@ const cases: readonly Readonly<{
           {
             ...structuralPayload.coverage[0],
             compatible_aliases: ["hero.form", "faq.accordion"],
+            selected_aliases: ["hero.form", "faq.accordion"],
           },
-          { ...structuralPayload.coverage[1], status: "missing", compatible_aliases: [], reason: "Sem modulo.", impact: "Cobertura indisponivel." },
+          { ...structuralPayload.coverage[1], status: "missing", compatible_aliases: [], selected_aliases: [], reason: "Sem modulo.", impact: "Cobertura indisponivel." },
         ],
       });
       assert.equal(oneToMany.ok, true);
@@ -745,6 +847,7 @@ const cases: readonly Readonly<{
         coverage: structuralPayload.coverage.map((item) => ({
           ...item,
           compatible_aliases: ["hero.form"],
+          selected_aliases: ["hero.form"],
         })),
       });
       assert.equal(manyToOne.ok, true);
@@ -765,8 +868,8 @@ const cases: readonly Readonly<{
       };
       const firstOccurrenceTie = validate({
         coverage: [
-          { ...structuralPayload.coverage[0], compatible_aliases: ["hero.form"] },
-          { ...structuralPayload.coverage[1], compatible_aliases: ["faq.accordion"] },
+          { ...structuralPayload.coverage[0], compatible_aliases: ["hero.form"], selected_aliases: ["hero.form"] },
+          { ...structuralPayload.coverage[1], compatible_aliases: ["faq.accordion"], selected_aliases: ["faq.accordion"] },
         ],
       }, tiedResearch);
       assert.equal(firstOccurrenceTie.ok, true);
@@ -792,6 +895,7 @@ const cases: readonly Readonly<{
         model: GENERATION_PROFILE_APPROVED_MODEL,
         research: structuralResearch,
         moduleIdentities: listLandingPageModuleIdentities(),
+        moduleSelectionCatalog: listLandingPageModuleSelectionCatalog(),
         requestKind: "creation",
         activeBaseline: null,
         currentCandidate: null,
@@ -799,7 +903,8 @@ const cases: readonly Readonly<{
       assert.equal(request.ok, true);
       assert.equal(request.body.store, false);
       assert.equal(request.body.max_output_tokens, 2000);
-      assert.match(request.body.input[0].content[0].text, /servidor reconstruirá identidades/);
+      assert.match(request.body.input[0].content[0].text, /selected_aliases/);
+      assert.match(request.body.input[0].content[0].text, /module_catalog/);
       assert.equal(Object.hasOwn(request.body, "tools"), false);
       assert.equal(request.body.text.format.strict, true);
       assert.equal(request.body.text.format.schema.additionalProperties, false);
@@ -815,17 +920,29 @@ const cases: readonly Readonly<{
       assert.deepEqual(input.research.business_buyer.strategic_core, ["Estratégia do comprador"]);
       assert.deepEqual(input.research.business_buyer.lp_overview, ["Visão da LP para o comprador"]);
       assert.deepEqual(input.research.business_buyer.seo, ["SEO do comprador"]);
-      assert.equal(input.identity_aliases.includes("hero.form"), true);
-      assert.equal(input.identity_aliases.includes("faq.accordion"), true);
+      assert.equal(Object.hasOwn(input, "identity_aliases"), false);
+      const heroCatalog = input.module_catalog.find((module: { module_alias: string }) => module.module_alias === "hero");
+      assert.deepEqual(heroCatalog, {
+        module_alias: "hero",
+        purpose: "Present the primary proposition and lead to the priority route.",
+        variants: [
+          { alias: "hero.standard", capabilities: ["primary_action", "image_asset"], interactions: [] },
+          { alias: "hero.form", capabilities: ["primary_action", "image_asset", "embedded_form"], interactions: ["form"] },
+        ],
+      });
+      assert.equal(JSON.stringify(input.module_catalog).includes("moduleVersion"), false);
+      assert.equal(JSON.stringify(input.module_catalog).includes("fieldContract"), false);
+      assert.equal(request.bytes < 96 * 1024, true);
       assert.deepEqual(request.body.text.format.schema.required, ["coverage"]);
       const itemSchemas = request.body.text.format.schema.properties.coverage.items.anyOf;
-      assert.deepEqual(itemSchemas[0].required, ["coverage_id", "status", "compatible_aliases"]);
-      assert.deepEqual(itemSchemas[1].required, ["coverage_id", "status", "compatible_aliases", "reason", "impact"]);
+      assert.deepEqual(itemSchemas[0].required, ["coverage_id", "status", "compatible_aliases", "selected_aliases"]);
+      assert.deepEqual(itemSchemas[1].required, ["coverage_id", "status", "compatible_aliases", "selected_aliases", "reason", "impact"]);
       assert.equal(Object.hasOwn(request.body.text.format.schema.properties, "recommendations"), false);
       const oversized = buildGenerationProfileResponsesRequest({
         model: GENERATION_PROFILE_APPROVED_MODEL,
         research: structuralResearch,
         moduleIdentities: listLandingPageModuleIdentities(),
+        moduleSelectionCatalog: listLandingPageModuleSelectionCatalog(),
         requestKind: "creation",
         activeBaseline: null,
         currentCandidate: null,
@@ -841,6 +958,7 @@ const cases: readonly Readonly<{
         model: GENERATION_PROFILE_APPROVED_MODEL,
         research: structuralResearch,
         moduleIdentities: listLandingPageModuleIdentities(),
+        moduleSelectionCatalog: listLandingPageModuleSelectionCatalog(),
         requestKind: "creation",
         activeBaseline: null,
         currentCandidate: null,
@@ -857,6 +975,7 @@ const cases: readonly Readonly<{
         model: GENERATION_PROFILE_APPROVED_MODEL,
         research: structuralResearch,
         moduleIdentities: listLandingPageModuleIdentities(),
+        moduleSelectionCatalog: listLandingPageModuleSelectionCatalog(),
         requestKind: "evolution",
         activeBaseline: currentEditor.recommendations,
         currentCandidate: null,
@@ -890,10 +1009,25 @@ const cases: readonly Readonly<{
           compatibleIdentities: [{ moduleKey: "invented", moduleVersion: 1 }],
         } : item),
       }).ok, false);
+      assert.equal(normalizeGenerationProfileCandidate({
+        ...candidate,
+        coverage: candidate.coverage.map((item, index) => index === 0 ? {
+          ...item,
+          selectedIdentities: [{ moduleKey: "hero", moduleVersion: 1 }],
+        } : item),
+      }).ok, false);
+      assert.equal(normalizeGenerationProfileCandidate({
+        ...candidate,
+        coverage: candidate.coverage.map((item, index) => index === 0 ? {
+          ...item,
+          selectedIdentities: [],
+        } : item),
+      }).ok, false);
       const nextRound = buildGenerationProfileResponsesRequest({
         model: GENERATION_PROFILE_APPROVED_MODEL,
         research: structuralResearch,
         moduleIdentities: listLandingPageModuleIdentities(),
+        moduleSelectionCatalog: listLandingPageModuleSelectionCatalog(),
         requestKind: "evolution",
         activeBaseline: currentEditor.recommendations,
         currentCandidate: candidate,
@@ -902,6 +1036,7 @@ const cases: readonly Readonly<{
       const nextRoundInput = JSON.parse(nextRound.body.input[1].content[0].text);
       assert.deepEqual(nextRoundInput.active_baseline, evolutionInput.active_baseline);
       assert.deepEqual(nextRoundInput.current_candidate.coverage[0].compatible_aliases, ["faq.accordion"]);
+      assert.deepEqual(nextRoundInput.current_candidate.coverage[0].selected_aliases, ["faq.accordion"]);
       assert.equal(Object.hasOwn(nextRoundInput.current_candidate, "recommendations"), false);
       assert.equal(nextRoundInput.human_feedback, "Refine novamente.");
     },

@@ -59,6 +59,7 @@ export type GenerationProfileCoverage = Readonly<{
   sourceOrder: number;
   status: "covered" | "partial" | "missing";
   compatibleIdentities: readonly GenerationProfileCoverageIdentity[];
+  selectedIdentities: readonly GenerationProfileCoverageIdentity[];
   reason?: string;
   impact?: string;
 }>;
