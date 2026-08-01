@@ -493,20 +493,20 @@
   - quatro seções principais, numeração e ordem preservadas;
   - E12.4.3.2 registrada como sub-recorte corretivo e E20.3.5 como evolução do contrato de domínio;
   - `lp_sections` como fonte estrutural principal;
-  - IA limitada a módulos, variantes, prioridade, ordem e gaps;
+  - IA limitada a informar `compatible_aliases` e `selected_aliases`, com prioridade e ordem derivadas deterministicamente pelo servidor e gaps derivados da cobertura;
   - `generation_guidance` e `item_guidance` como exceções opcionais humanas;
   - decisão entre aguardar ou prosseguir com aviso;
   - pendências explícitas da E12.4.4 e E19.4;
   - PR #656 preservado fora do escopo;
   - ausência de nova tabela, agente, job, fila, service ou infraestrutura.
-- Para este delta documental, executar revisão do diff e verificação de whitespace; checks de runtime, typecheck e banco pertencem ao futuro PR técnico.
+- Para este delta documental no PR técnico corretivo #672, executar revisão do diff e verificação de whitespace; os checks de runtime e typecheck pertencem ao próprio PR #672, e banco não se aplica porque este PR não contém nem exige alteração de schema ou migration.
 
 ### 4.4. Critérios de encerramento do plano
 
 - O plano v2.6 será encerrado somente após:
   - decisão conceitual aprovada;
   - implementação da E12.4.3.2;
-  - migration incremental aplicada e verificada;
+  - migration incremental da implementação histórica incorporada pelo PR #663 aplicada e verificada; o PR #672 não contém nem exige nova migration;
   - validações técnicas e visuais aprovadas;
   - pendência da E12.4.4 e questões ainda não decididas da E19.4 registradas nos documentos próprios;
   - reconciliação documental pelo Prompt ABC;
