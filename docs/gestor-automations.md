@@ -99,6 +99,7 @@ Este documento não mantém catálogo permanente de modelos, preços, parâmetro
 
 Cada parecer deve ser curto, decisório e declarar:
 
+* Plano e fases avaliados, com referência, path, branch e head SHA quando aplicáveis.
 * Automação: sim ou não.
 * Classificação: uma das quatro naturezas da seção 2.
 * Ambiente principal e, quando aplicável, ambientes ou plataformas dependentes.
@@ -108,7 +109,9 @@ Cada parecer deve ser curto, decisório e declarar:
 * Recursos OpenAI materialmente relevantes avaliados, com decisão de adotar agora, rejeitar para o caso, não aplicável ou requer decisão adicional.
 * Veredito: `nenhuma automação aplicável`, `automação aplicável com patches autossuficientes`, `requer investigação factual` ou `requer validação material pelo Analista`.
 * Patches aplicáveis pelo orquestrador, investigação factual e validação material pelo Analista, quando correspondentes ao veredito.
+* Situação e destino documental de cada decisão.
 * Fontes do projeto e fontes oficiais efetivamente consultadas.
+* Próximo passo mínimo e seguro.
 
 O parecer não autoriza implementação por si só.
 
