@@ -7,6 +7,7 @@ Este complemento não autoriza troca de modelo, alteração de runtime ou uso au
 Fontes conceituais:
 
 - https://developers.openai.com/api/docs/guides/latest-model
+- https://developers.openai.com/api/docs/guides/prompt-guidance-gpt-5p6
 - https://developers.openai.com/api/docs/models
 
 ## 1. Quando aplicar
@@ -44,16 +45,12 @@ Defina somente as configurações relevantes:
 - tools: expor somente as necessárias ao caso
 - limite de saída: dimensionar pelo contrato real, sem inflar preventivamente
 
-## 4. Ajustes do prompt
+## 4. Ajustes específicos do prompt
 
 Além do template geral:
 
-- forneça contexto de domínio suficiente
-- declare restrições rígidas e fronteiras de aprovação
-- defina critérios de sucesso verificáveis
 - indique quando uma ambiguidade importante deve gerar pergunta ou parada
 - evite prescrever cada etapa interna quando o resultado e os limites já estiverem claros
-- não peça cadeia de raciocínio privada
 
 ## 5. Template complementar preenchível
 
@@ -85,7 +82,7 @@ Use apenas os campos necessários:
 - condição de aprovação:
 - fallback:
 
-## 6. Gate de adoção
+## 6. Critérios de adoção
 
 Não alterar o runtime antes de comprovar, com os mesmos casos representativos:
 
