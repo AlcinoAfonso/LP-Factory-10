@@ -48,9 +48,19 @@ const ULTRA_ID = "10000000-0000-4000-8000-000000000003";
 const BUYER_SECTION_ITEM_ID = "42000000-0000-4000-8000-000000000001";
 const CUSTOMER_SECTION_ITEM_ID = "42000000-0000-4000-8000-000000000002";
 const REPEATED_BUYER_SECTION_ITEM_ID = "42000000-0000-4000-8000-000000000003";
+const REALTOR_POSITIONING_SECTION_ITEM_ID = "42000000-0000-4000-8000-000000000004";
+const REALTOR_LEAD_SECTION_ITEM_ID = "42000000-0000-4000-8000-000000000005";
+const REALTOR_PROPERTY_SECTION_ITEM_ID = "42000000-0000-4000-8000-000000000006";
+const REALTOR_CONTACT_SECTION_ITEM_ID = "42000000-0000-4000-8000-000000000007";
 const BUYER_COVERAGE_ID = `business_buyer:${BUYER_SECTION_ITEM_ID}`;
 const CUSTOMER_COVERAGE_ID = `end_customer:${CUSTOMER_SECTION_ITEM_ID}`;
 const REPEATED_BUYER_COVERAGE_ID = `business_buyer:${REPEATED_BUYER_SECTION_ITEM_ID}`;
+const REALTOR_COVERAGE_IDS = [
+  `business_buyer:${REALTOR_POSITIONING_SECTION_ITEM_ID}`,
+  `business_buyer:${REALTOR_LEAD_SECTION_ITEM_ID}`,
+  `end_customer:${REALTOR_PROPERTY_SECTION_ITEM_ID}`,
+  `end_customer:${REALTOR_CONTACT_SECTION_ITEM_ID}`,
+] as const;
 
 function compactResearchParent(
   audienceScope: "business_buyer" | "end_customer",
@@ -213,6 +223,64 @@ function withRepeatedBuyerItemKey(): ResolvedLandingPageResearch {
                 itemText: "FAQ para objecoes",
                 priority: 2,
                 sortOrder: 2,
+              },
+            ],
+          }
+        : parent),
+    },
+  };
+}
+
+function buildCorretorImoveisInitialResearchFixture(): ResolvedLandingPageResearch {
+  return {
+    ...structuralResearch,
+    businessBuyer: {
+      ...structuralResearch.businessBuyer,
+      researches: structuralResearch.businessBuyer.researches.map((parent) => parent.researchBlock === "lp_sections"
+        ? {
+            ...parent,
+            items: [
+              {
+                ...parent.items[0],
+                itemId: REALTOR_POSITIONING_SECTION_ITEM_ID,
+                itemKey: "realtor_positioning",
+                itemText: "Apresentar o posicionamento do corretor e a proposta principal para captar proprietários.",
+                priority: 3,
+                sortOrder: 20,
+              },
+              {
+                ...parent.items[0],
+                itemId: REALTOR_LEAD_SECTION_ITEM_ID,
+                itemKey: "realtor_lead_capture",
+                itemText: "Convidar o proprietário a solicitar uma avaliação pelo formulário de contato.",
+                priority: 1,
+                sortOrder: 40,
+              },
+            ],
+          }
+        : parent),
+    },
+    endCustomer: {
+      ...structuralResearch.endCustomer,
+      researches: structuralResearch.endCustomer.researches.map((parent) => parent.researchBlock === "lp_sections"
+        ? {
+            ...parent,
+            items: [
+              {
+                ...parent.items[0],
+                itemId: REALTOR_PROPERTY_SECTION_ITEM_ID,
+                itemKey: "property_search_positioning",
+                itemText: "Abrir a página com imóveis selecionados e uma proposta clara de atendimento.",
+                priority: 2,
+                sortOrder: 10,
+              },
+              {
+                ...parent.items[0],
+                itemId: REALTOR_CONTACT_SECTION_ITEM_ID,
+                itemKey: "property_contact",
+                itemText: "Permitir que o interessado envie seus dados para receber opções de imóveis.",
+                priority: 3,
+                sortOrder: 30,
               },
             ],
           }
@@ -698,6 +766,80 @@ const cases: readonly Readonly<{
       });
       assert.equal(ordered.ok && reversed.ok, true);
       if (ordered.ok && reversed.ok) assert.deepEqual(ordered.value, reversed.value);
+    },
+  },
+  {
+    name: "initial realtor fixture requires one global identity per module independently of coverage alias priority and order",
+    run: () => {
+      const research = buildCorretorImoveisInitialResearchFixture();
+      const moduleIdentities = listLandingPageModuleIdentities();
+      const moduleSelectionCatalog = listLandingPageModuleSelectionCatalog();
+      const validate = (payload: unknown) => validateGenerationProfileProviderPayload({ payload, research, moduleIdentities });
+      const compatibleAliases = ["hero", "hero.standard", "hero.form"];
+      const coherentCoverage = REALTOR_COVERAGE_IDS.map((coverageId) => ({
+        coverage_id: coverageId,
+        status: "covered" as const,
+        compatible_aliases: [...compatibleAliases],
+        selected_aliases: ["hero.form"],
+      }));
+
+      const coherent = validate({ coverage: coherentCoverage });
+      assert.equal(coherent.ok, true, coherent.ok ? undefined : coherent.message);
+      if (!coherent.ok) return;
+      assert.deepEqual(coherent.value.recommendations, [{
+        moduleKey: "hero",
+        moduleVersion: 1,
+        variantKey: "hero.form",
+        variantVersion: 1,
+        priority: "P1",
+        recommendedOrder: 10,
+      }]);
+
+      const reversedCoverage = validate({ coverage: [...coherentCoverage].reverse() });
+      assert.equal(reversedCoverage.ok, true, reversedCoverage.ok ? undefined : reversedCoverage.message);
+      if (reversedCoverage.ok) assert.deepEqual(reversedCoverage.value, coherent.value);
+      const reversedAliases = validate({
+        coverage: coherentCoverage.map((item) => ({ ...item, compatible_aliases: [...item.compatible_aliases].reverse() })),
+      });
+      assert.equal(reversedAliases.ok, true, reversedAliases.ok ? undefined : reversedAliases.message);
+      if (reversedAliases.ok) assert.deepEqual(reversedAliases.value, coherent.value);
+
+      for (const conflictingAlias of ["hero", "hero.standard"] as const) {
+        const conflictingCoverage = coherentCoverage.map((item, index) => index === 0
+          ? { ...item, selected_aliases: [conflictingAlias] }
+          : item);
+        for (const coverage of [conflictingCoverage, [...conflictingCoverage].reverse()]) {
+          const conflict = validate({ coverage });
+          assert.equal(conflict.ok, false);
+          if (!conflict.ok) assert.equal(conflict.reason, "coverage_selected_identity_conflict");
+        }
+      }
+
+      const request = buildGenerationProfileResponsesRequest({
+        model: GENERATION_PROFILE_APPROVED_MODEL,
+        research,
+        moduleIdentities,
+        moduleSelectionCatalog,
+        requestKind: "creation",
+        activeBaseline: null,
+        currentCandidate: null,
+      });
+      assert.equal(request.ok, true);
+      const input = JSON.parse(request.body.input[1].content[0].text);
+      assert.deepEqual(
+        input.module_catalog.map((module: { module_alias: string }) => module.module_alias),
+        moduleSelectionCatalog.modules.map((module) => module.moduleAlias),
+      );
+      assert.deepEqual(
+        [...input.research.business_buyer.lp_sections, ...input.research.end_customer.lp_sections]
+          .map((item: { coverage_id: string }) => item.coverage_id),
+        REALTOR_COVERAGE_IDS,
+      );
+      const prompt = request.body.input[0].content[0].text;
+      assert.match(prompt, /opções mutuamente exclusivas da mesma decisão global/);
+      assert.match(prompt, /necessidades conjuntas de todas as lp_sections/);
+      assert.match(prompt, /Reutilize exatamente esse alias em toda cobertura/);
+      assert.match(prompt, /Nunca desempate por prioridade, ordem ou posição/);
     },
   },
   {
