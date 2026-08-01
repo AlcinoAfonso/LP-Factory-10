@@ -17,11 +17,16 @@ export type GenerationProfileDraftInput = Readonly<{
   ownerTaxonId: string;
   profileId?: string;
   expectedUpdatedAt?: string;
-  generationGuidance: string;
+  generationGuidance?: string;
   recommendations: readonly GenerationProfileRecommendationInput[];
   origin: "manual" | "ai";
   requestId?: string;
   proposalFingerprint?: string;
+  gapAnalysisCompleted?: true;
+  gapDecision?: GenerationProfileGapDecision;
+  gapItemKeys?: readonly string[];
+  gapImpactSummary?: string;
+  researchVersions?: Readonly<{ endCustomer: number; businessBuyer: number }>;
 }>;
 
 export type GenerationProfileEditorContent = Readonly<{
@@ -29,9 +34,75 @@ export type GenerationProfileEditorContent = Readonly<{
   recommendations: readonly GenerationProfileRecommendationInput[];
 }>;
 
+export type GenerationProfileStructuralRecommendation = Readonly<{
+  moduleKey: string;
+  moduleVersion: number;
+  variantKey?: string;
+  variantVersion?: number;
+  priority: LandingPageGenerationProfilePriority;
+  recommendedOrder: number;
+}>;
+
+export type GenerationProfileCoverageIdentity = Readonly<{
+  moduleKey: string;
+  moduleVersion: number;
+  variantKey?: string;
+  variantVersion?: number;
+}>;
+
+export type GenerationProfileCoverage = Readonly<{
+  coverageId: string;
+  audienceScope: "business_buyer" | "end_customer";
+  itemKey: string;
+  sectionName: string;
+  sourcePriority: 1 | 2 | 3;
+  sourceOrder: number;
+  status: "covered" | "partial" | "missing";
+  compatibleIdentities: readonly GenerationProfileCoverageIdentity[];
+  reason?: string;
+  impact?: string;
+}>;
+
+export type GenerationProfileGap = Readonly<{
+  coverageId: string;
+  audienceScope: "business_buyer" | "end_customer";
+  itemKey: string;
+  sectionName: string;
+  sourcePriority: 1 | 2 | 3;
+  sourceOrder: number;
+  status: "partial" | "missing";
+  reason: string;
+  impact: string;
+}>;
+
+export type GenerationProfileGapDecision =
+  | "wait_for_modules"
+  | "proceed_with_available";
+
 export type GenerationProfileProposalCorrelation = Readonly<{
   requestId: string;
   fingerprint: string;
+}>;
+
+export type GenerationProfileRecommendationDiff = Readonly<{
+  moduleKey: string;
+  status: "kept" | "added" | "changed" | "removed";
+  changes: readonly ("module_version" | "variant" | "priority" | "order")[];
+}>;
+
+export type GenerationProfileReplacement = Readonly<{
+  fromModuleKey: string;
+  toModuleKey: string;
+  recommendedOrder: number;
+}>;
+
+export type GenerationProfileProposalDiff = Readonly<{
+  recommendations: readonly GenerationProfileRecommendationDiff[];
+  replacements: readonly GenerationProfileReplacement[];
+  gaps: Readonly<{
+    added: readonly GenerationProfileGap[];
+    resolved: readonly GenerationProfileGap[];
+  }>;
 }>;
 
 export type AdminGenerationProfileTaxon = Readonly<{
@@ -47,8 +118,9 @@ export type AdminGenerationProfile = Readonly<{
   ownerTaxonId: string;
   version: number;
   status: LandingPageGenerationProfileStatus;
-  generationGuidance: string;
+  generationGuidance?: string;
   recommendations: readonly GenerationProfileRecommendationInput[];
+  lastGapDecision?: GenerationProfileGapDecision;
   createdAt: string;
   updatedAt: string;
 }>;
@@ -85,8 +157,11 @@ export type GenerationProfileProposalErrorCode =
   | "technical_failure";
 
 export type GenerationProfileProposal = Readonly<{
-  generationGuidance: string;
-  recommendations: readonly GenerationProfileRecommendationInput[];
+  coverage: readonly GenerationProfileCoverage[];
+  recommendations: readonly GenerationProfileStructuralRecommendation[];
+  gaps: readonly GenerationProfileGap[];
+  diff: GenerationProfileProposalDiff;
+  researchVersions: Readonly<{ endCustomer: number; businessBuyer: number }>;
   requestId: string;
   fingerprint: string;
 }>;

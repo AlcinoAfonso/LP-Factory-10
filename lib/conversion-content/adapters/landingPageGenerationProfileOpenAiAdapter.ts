@@ -2,6 +2,7 @@ import "server-only";
 
 import {
   buildGenerationProfileResponsesRequest,
+  normalizeGenerationProfileIncompleteMetadata,
   type GenerationProfileProviderInput,
   type GenerationProfileProviderResult,
 } from "../landing-page/generation-profile/proposal";
@@ -31,7 +32,13 @@ export async function requestGenerationProfileProposal(
     if (!response.ok) return { ok: false, kind: "http_error" };
     const payload: unknown = await response.json();
     if (!isRecord(payload)) return { ok: false, kind: "invalid_response" };
-    if (payload.status === "incomplete") return { ok: false, kind: "incomplete" };
+    if (payload.status === "incomplete") {
+      return {
+        ok: false,
+        kind: "incomplete",
+        ...normalizeGenerationProfileIncompleteMetadata(payload),
+      };
+    }
 
     const outputText = readOutputText(payload.output);
     if (outputText.kind !== "text") return { ok: false, kind: outputText.kind };

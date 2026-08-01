@@ -229,7 +229,7 @@ function normalizeProfile(
     typeof value.owner_taxon_id !== "string" ||
     !Number.isInteger(value.version) ||
     typeof value.status !== "string" ||
-    typeof value.generation_guidance !== "string"
+    (value.generation_guidance !== null && typeof value.generation_guidance !== "string")
   ) {
     return null;
   }
@@ -239,7 +239,7 @@ function normalizeProfile(
     ownerTaxonId: value.owner_taxon_id,
     version: value.version as number,
     status: value.status as LandingPageGenerationProfile["status"],
-    generationGuidance: value.generation_guidance,
+    ...(value.generation_guidance === null ? {} : { generationGuidance: value.generation_guidance }),
   };
 }
 

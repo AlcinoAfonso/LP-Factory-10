@@ -1,11 +1,10 @@
-import { createHash } from "node:crypto";
 import { z } from "zod";
 
 import { validateLandingPageModuleIdentity } from "../module-catalog";
 import { landingPageGenerationProfilePriorities } from "./contracts";
 import type {
   GenerationProfileDraftInput,
-  GenerationProfileRecommendationInput,
+  GenerationProfileLifecycleReadiness,
 } from "./admin-contracts";
 
 const optionalNonEmptyText = z.string().trim().min(1).optional();
@@ -36,11 +35,19 @@ export const generationProfileDraftInputSchema = z
     ownerTaxonId: z.uuid(),
     profileId: z.uuid().optional(),
     expectedUpdatedAt: z.iso.datetime({ offset: true }).optional(),
-    generationGuidance: z.string().trim().min(1),
+    generationGuidance: optionalNonEmptyText,
     recommendations: z.array(generationProfileRecommendationInputSchema),
     origin: z.enum(["manual", "ai"]),
     requestId: z.unknown().optional(),
     proposalFingerprint: z.unknown().optional(),
+    gapAnalysisCompleted: z.literal(true).optional(),
+    gapDecision: z.enum(["wait_for_modules", "proceed_with_available"]).optional(),
+    gapItemKeys: z.array(z.string().trim().min(1)).optional(),
+    gapImpactSummary: optionalNonEmptyText,
+    researchVersions: z.object({
+      endCustomer: z.number().int().positive(),
+      businessBuyer: z.number().int().positive(),
+    }).strict().optional(),
   })
   .strict()
   .superRefine((input, context) => {
@@ -59,35 +66,16 @@ export const generationProfileDraftInputSchema = z
     if (new Set(orders).size !== orders.length) {
       context.addIssue({ code: "custom", path: ["recommendations"], message: "recommended orders must be unique" });
     }
+    if (input.gapDecision !== undefined && (!input.gapAnalysisCompleted || !input.gapItemKeys || input.gapItemKeys.length === 0 || !input.gapImpactSummary || !input.researchVersions)) {
+      context.addIssue({ code: "custom", path: ["gapDecision"], message: "gap decisions require affected items, impact and source versions" });
+    }
+    if (input.gapAnalysisCompleted && input.gapDecision === undefined && ((input.gapItemKeys?.length ?? 0) !== 0 || input.gapImpactSummary !== undefined || !input.researchVersions)) {
+      context.addIssue({ code: "custom", path: ["gapAnalysisCompleted"], message: "completed analysis without gaps requires an empty item list and source versions" });
+    }
+    if (!input.gapAnalysisCompleted && (input.gapDecision !== undefined || input.gapItemKeys !== undefined || input.gapImpactSummary !== undefined || input.researchVersions !== undefined)) {
+      context.addIssue({ code: "custom", path: ["gapAnalysisCompleted"], message: "gap metadata requires a completed analysis" });
+    }
   });
-
-export const generationProfileProposalPayloadSchema = z
-  .object({
-    generation_guidance: z.string().trim().min(1),
-    recommendations: z.array(
-      z
-        .object({
-          module_key: z.string().trim().min(1),
-          module_version: z.number().int().positive(),
-          variant_key: z.string().trim().min(1).nullable(),
-          variant_version: z.number().int().positive().nullable(),
-          priority: z.enum(landingPageGenerationProfilePriorities),
-          recommended_order: z.number().int().positive(),
-          item_guidance: z.string().trim().min(1).nullable(),
-        })
-        .strict()
-        .superRefine((item, context) => {
-          if ((item.variant_key === null) !== (item.variant_version === null)) {
-            context.addIssue({
-              code: "custom",
-              path: ["variant_key"],
-              message: "variant key and version must be provided together",
-            });
-          }
-        }),
-    ),
-  })
-  .strict();
 
 export function validateGenerationProfileDraft(input: unknown):
   | Readonly<{ ok: true; value: GenerationProfileDraftInput }>
@@ -136,54 +124,18 @@ export function getGenerationProfileProposalCorrelation(input: {
   return { requestId: requestId.data, proposalFingerprint: fingerprint.data };
 }
 
-export function normalizeGenerationProfileProposal(input: unknown):
-  | Readonly<{
-      ok: true;
-      value: Readonly<{
-        generationGuidance: string;
-        recommendations: readonly GenerationProfileRecommendationInput[];
-      }>;
-    }>
-  | Readonly<{ ok: false; message: string }> {
-  const parsed = generationProfileProposalPayloadSchema.safeParse(input);
-  if (!parsed.success) return { ok: false, message: "Proposal payload is invalid." };
-
-  const recommendations = parsed.data.recommendations.map((item) => ({
-    moduleKey: item.module_key,
-    moduleVersion: item.module_version,
-    ...(item.variant_key === null
-      ? {}
-      : { variantKey: item.variant_key, variantVersion: item.variant_version as number }),
-    priority: item.priority,
-    recommendedOrder: item.recommended_order,
-    ...(item.item_guidance === null ? {} : { itemGuidance: item.item_guidance }),
-  }));
-  const draft = validateGenerationProfileDraft({
-    ownerTaxonId: "00000000-0000-4000-8000-000000000001",
-    generationGuidance: parsed.data.generation_guidance,
-    recommendations,
-    origin: "manual",
-  });
-  if (!draft.ok) return draft;
-
+export function normalizeGenerationProfileLifecycleReadiness(input: unknown): GenerationProfileLifecycleReadiness {
+  if (
+    typeof input === "object" &&
+    input !== null &&
+    !Array.isArray(input) &&
+    (input as Record<string, unknown>).ready === true &&
+    (input as Record<string, unknown>).contract_version === 2
+  ) {
+    return { ready: true, reason: "Lifecycle verificado e disponivel." };
+  }
   return {
-    ok: true,
-    value: {
-      generationGuidance: draft.value.generationGuidance,
-      recommendations: draft.value.recommendations,
-    },
+    ready: false,
+    reason: "Lifecycle indisponivel ate a migration e o verificador read-only serem aprovados.",
   };
-}
-
-export function fingerprintGenerationProfileProposal(input: {
-  generationGuidance: string;
-  recommendations: readonly GenerationProfileRecommendationInput[];
-}) {
-  const canonical = JSON.stringify({
-    generationGuidance: input.generationGuidance.trim(),
-    recommendations: [...input.recommendations]
-      .map((item) => ({ ...item, moduleKey: item.moduleKey.trim() }))
-      .sort((left, right) => left.recommendedOrder - right.recommendedOrder),
-  });
-  return createHash("sha256").update(canonical).digest("hex");
 }

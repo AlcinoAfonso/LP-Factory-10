@@ -2,130 +2,114 @@
 
 ## 1. Objetivo
 
-Este documento é a referência estável de decisão e governança para automações, fluxos com IA, comportamentos agentic e tecnologias operacionais relacionadas ao LP Factory 10.
-Ele ajuda a decidir se um caso deve ser automatizado, se precisa de IA, qual natureza de solução é adequada, em qual ambiente deve executar e qual é a solução mínima suficiente.
-A avaliação deve considerar benefício, custo, complexidade, risco, segurança, observabilidade, manutenção, aprovação humana e adequação ao MVP.
-O documento não substitui catálogos operacionais, contratos técnicos, configurações de plataforma nem documentação oficial atual dos fornecedores.
-Decisões aprovadas devem ser encaminhadas ao documento correto, sem duplicar catálogos.
-* Receber instruções curtas do Estrategista, como “Avalie a fase XX do plano-base Y segundo suas diretrizes documentadas”, e aplicar este documento como critério de avaliação dentro do escopo do Gestor de Automações.
+Este documento orienta decisões sobre automações, uso de IA e comportamento agentic no LP Factory 10.
+O Gestor deve decidir se o caso deve ser automatizado, escolher a natureza e o ambiente adequados e recomendar a solução mínima suficiente.
+A decisão deve considerar benefício, custo, complexidade, risco, segurança, observabilidade, manutenção, aprovação humana e adequação ao MVP.
+Deve começar pela alternativa mais simples, preservar a stack e os contratos aprovados, evitar overengineering e não transformar recurso novo em autorização automática de implementação.
 
-## 2. Objetivos de melhoria no LP Factory 10
+## 2. Mapa de categorias
 
-A avaliação deve priorizar soluções que ajudem a:
-* reduzir custos de infraestrutura e consumo de APIs;
-* acelerar carregamento e processamento;
-* melhorar UI e UX;
-* reduzir trabalho manual;
-* reduzir erros operacionais;
-* melhorar segurança;
-* melhorar observabilidade;
-* simplificar manutenção;
-* acelerar validação e entrega do MVP;
-* aumentar confiabilidade;
-* evitar overengineering;
-* preservar a stack e os contratos já aprovados;
-* adotar a menor solução capaz de resolver o problema real.
-
-## 3. Mapa de categorias
-
-### 3.1 Natureza da solução
+### 2.1 Natureza da solução
 
 Todo parecer deve classificar o caso em uma das seguintes naturezas:
 
-#### 3.1.1 Não automatizar
+#### 2.1.1 Não automatizar
 
 * Aplicável quando o problema não é recorrente, não tem benefício suficiente, não possui evidência real ou seria resolvido com mais segurança por processo manual.
 * A ausência de automação pode ser a decisão correta para o MVP.
 
-#### 3.1.2 Automação determinística sem OpenAI
+#### 2.1.2 Automação determinística sem OpenAI
 
 * Fluxo com regras conhecidas, entrada e saída previsíveis e baixa necessidade de interpretação.
 * Deve ser a primeira opção quando código, configuração, integração ou workflow simples resolvem o caso.
 * Não usar IA apenas porque um recurso está disponível.
 
-#### 3.1.3 Automação com IA em fluxo controlado
+#### 2.1.3 Automação com IA em fluxo controlado
 
 * Fluxo com etapas e limites definidos, no qual a IA executa uma função específica, como gerar, classificar, resumir, extrair, revisar ou estruturar conteúdo.
 * O restante do processo deve permanecer controlado por contratos, validações e guardrails.
 * Não exige comportamento agentic por padrão.
 
-#### 3.1.4 Automação com comportamento agentic
+#### 2.1.4 Automação com comportamento agentic
 
 * Fluxo em que a solução precisa interpretar contexto, escolher próximos passos, coordenar ferramentas, lidar com lacunas ou revisar resultados durante a execução.
 * Deve ser considerada somente quando a decisão adaptativa gerar benefício real superior ao custo e à complexidade.
 * Exige limites claros, observabilidade, controle de ferramentas e aprovação humana quando aplicável.
 
-### 3.2 Ambiente de execução
+### 2.2 Ambiente de execução
 
 A natureza da solução e o ambiente de execução são dimensões diferentes. Codex é ambiente, não natureza de automação.
 
-#### 3.2.1 Runtime do LP Factory
+#### 2.2.1 Runtime do LP Factory
 
 * Execução dentro da aplicação ou dos serviços que suportam diretamente o produto.
 * Deve seguir os contratos de `docs/base-tecnica.md`, `docs/platform-config.md`, código real e demais fontes canônicas do recorte.
 
-#### 3.2.2 Infraestrutura operacional
+#### 2.2.2 Infraestrutura operacional
 
 * Execução em workflows, jobs, pipelines, webhooks, filas, runners ou serviços operacionais do projeto.
 * Automação aprovada ou implementada deve ser registrada em `docs/automations.md`.
 
-#### 3.2.3 Ambiente interno do Codex
+#### 2.2.3 Ambiente interno do Codex
 
 * Execução usada para desenvolvimento, investigação, validação, edição de arquivos, testes ou produção de artefatos internos.
 * Recursos e limites desse ambiente devem ser registrados em `docs/gestor-codex.md`.
 
-#### 3.2.4 Serviço ou plataforma externa
+#### 2.2.4 Serviço ou plataforma externa
 
 * Execução realizada por fornecedor, API, plataforma ou integração externa.
 * A recomendação deve considerar dependência, custo, segurança, disponibilidade, portabilidade e operação.
 
-## 4. Definições essenciais
+## 3. Regra obrigatória de avaliação
 
-**Automação simples:** fluxo linear ou determinístico, com passos conhecidos, entrada e saída previsíveis e pouca necessidade de decisão adaptativa.
+* Confirmar o problema real, o recorte, as fontes do projeto e a evidência disponível.
+* Comparar as quatro naturezas da seção 2 e escolher uma única classificação.
+* Identificar separadamente o ambiente de execução.
+* Começar por não automatizar ou por solução determinística sem OpenAI.
+* Usar IA somente onde interpretação, geração, classificação, extração, revisão ou estruturação trouxer benefício comprovável.
+* Considerar comportamento agentic somente quando decisão adaptativa, coordenação de ferramentas ou revisão dinâmica forem realmente necessárias.
+* Separar o que pertence à IA do que deve permanecer determinístico no LP Factory.
+* Avaliar benefício, custo, complexidade, risco, segurança, observabilidade, manutenção e adequação ao MVP.
+* Preferir a solução mais simples, segura, mensurável, reversível e compatível com a stack aprovada.
+* Exigir aprovação humana para publicação, envio externo, custo relevante, mutação ou exclusão de dados, configuração sensível e conteúdo comercial público.
+* Definir fallback e distinguir falha técnica de ausência de informação.
+* A existência de recurso novo não autoriza implementação.
 
-**Fluxo controlado com IA:** automação em que a IA atua em uma etapa delimitada, com entrada, saída, validação e fallback definidos.
+### 3.1 Consulta obrigatória à OpenAI
 
-**Comportamento agentic:** execução adaptativa que pode selecionar ações, usar ferramentas, revisar resultados ou coordenar etapas com base no contexto.
+Quando o caso envolver ou puder envolver OpenAI, o Gestor deve consultar a documentação oficial atual antes de concluir o parecer.
 
-**Aprovação humana:** ponto obrigatório de decisão antes de ações críticas, como publicação, envio externo, custo relevante, mutação ou exclusão de dados, alteração de configuração sensível ou conteúdo comercial público.
+* No Codex, usar preferencialmente a OpenAI Docs skill, quando disponível.
+* Se a skill não estiver disponível ou não resolver a consulta, usar diretamente a documentação oficial da OpenAI.
+* Iniciar pela página oficial `Model guidance`, para descobrir modelos, recursos, formas de orquestração e capacidades atuais potencialmente aplicáveis: `https://developers.openai.com/api/docs/guides/latest-model`.
+* Consultar também o catálogo oficial `Models`, para confirmar disponibilidade, ferramentas suportadas, limites e preços: `https://developers.openai.com/api/docs/models`.
+* Abrir a documentação oficial específica de cada recurso materialmente relevante identificado.
+* Não limitar a avaliação aos recursos já conhecidos, ao modelo já configurado ou aos recursos citados no briefing.
+* Confirmar status, superfície aplicável, limitações, requisitos, custo e impacto operacional.
+* Para cada recurso materialmente relevante, decidir: adotar agora, rejeitar para o caso, não aplicável ou requer decisão adicional.
+* Quando o caso estiver sendo encerrado e não existir fase posterior real e registrada, não deixar recurso relevante para avaliação futura.
+* “Futuro” somente é válido quando houver fase posterior identificada e registrada para reabrir a decisão.
+* Registrar no parecer as fontes oficiais efetivamente consultadas.
 
-**Observabilidade:** capacidade de registrar execução, resultado, falha, custo, origem e decisão suficiente para diagnóstico e auditoria.
+Este documento não mantém catálogo permanente de modelos, preços, parâmetros ou recursos OpenAI. Esses detalhes devem ser verificados no caso concreto.
 
-**Solução mínima suficiente:** alternativa de menor complexidade que atende ao problema real com segurança e manutenção aceitáveis.
+## 4. Entrega e destino da decisão
 
-Termos como Responses API, Agents SDK, MCP, GitHub Actions, Server Actions, Route Handlers, webhooks, jobs, pipelines e services podem permanecer como exemplos conceituais.
-Esses exemplos não definem adoção, disponibilidade, status, versão, custo ou aplicação permanente.
-Recursos OpenAI citados como exemplo devem ser confirmados na documentação oficial atual antes de qualquer recomendação concreta.
+Cada parecer deve ser curto, decisório e declarar:
 
-## 5. Regra para recursos OpenAI
+* Automação: sim ou não.
+* Classificação: uma das quatro naturezas da seção 2.
+* Ambiente: um dos quatro ambientes da seção 2.
+* OpenAI: sim, não ou condicional.
+* Solução mínima recomendada e divisão entre processamento determinístico, IA e decisão humana.
+* Benefício esperado, custo, complexidade, riscos, segurança, observabilidade, manutenção e fallback.
+* Recursos OpenAI materialmente relevantes avaliados, com decisão de adotar agora, rejeitar para o caso, não aplicável ou requer decisão adicional.
+* Recomendação final: aprovar, rejeitar ou indicar decisão adicional necessária.
+* Fontes do projeto e fontes oficiais efetivamente consultadas.
 
-Quando um caso concreto puder exigir OpenAI, o Gestor deve:
+O parecer não autoriza implementação por si só.
 
-* consultar a documentação oficial atual da OpenAI;
-* no Codex, usar a skill oficial de documentação da OpenAI quando disponível, sem depender de um nome técnico específico como regra permanente;
-* confirmar a disponibilidade e o status do recurso;
-* confirmar a API, SDK ou superfície aplicável;
-* verificar limitações, requisitos e guardrails;
-* verificar o custo vigente quando for relevante para a decisão;
-* identificar se o recurso é estável, beta, preview, legado ou descontinuado;
-* comparar alternativas atuais, inclusive solução determinística sem OpenAI;
-* registrar as fontes oficiais consultadas no parecer;
-* evitar transformar novidade técnica em autorização automática de implementação.
-
-Este documento não deve funcionar como fonte normativa permanente para:
-* modelos atuais;
-* preços;
-* parâmetros de API;
-* sintaxe;
-* níveis ou modos específicos de reasoning;
-* recursos beta ou preview;
-* capacidades recém-lançadas;
-* datas de descontinuação;
-* comparações técnicas dependentes da versão vigente.
-
-Detalhes voláteis devem ser investigados somente quando um caso concreto exigir OpenAI.
-
-## 6. Regras de destino documental
+### 4.1 Destino documental
 
 * Decisão, categorias, critérios, segurança e governança → `docs/gestor-automations.md`.
 * Automação, agente, workflow, job ou componente operacional aprovado ou implementado → `docs/automations.md`.
@@ -135,76 +119,3 @@ Detalhes voláteis devem ser investigados somente quando um caso concreto exigir
 * OpenAI Docs skill, OpenAI Developers plugin e outros recursos do ambiente Codex → `docs/gestor-codex.md`.
 * Funcionalidade visível ao cliente → gestor de produto ou `docs/roadmap.md`.
 * Caso híbrido → registrar cada parte no documento correspondente, com referências cruzadas curtas e sem duplicação.
-
-## 7. Como decidir
-
-* Confirmar o problema real, o recorte, as fontes do projeto e a evidência disponível.
-* Decidir primeiro se o caso deve ser automatizado.
-* Quando houver automação, começar pela alternativa determinística sem OpenAI.
-* Usar IA em fluxo controlado somente quando interpretação, geração, classificação, extração, revisão ou estruturação trouxer benefício comprovável.
-* Considerar comportamento agentic somente quando houver decisão adaptativa real, coordenação de ferramentas, tratamento de lacunas ou revisão dinâmica que um fluxo controlado não resolva adequadamente.
-* Identificar separadamente o ambiente de execução.
-* Avaliar benefício, custo, complexidade, risco, segurança, observabilidade, manutenção e adequação ao MVP.
-* Preferir a solução mais simples, segura, mensurável e reversível.
-* Manter aprovação humana quando houver publicação, custo relevante, alteração ou exclusão de dados, envio externo, configuração sensível ou conteúdo comercial público.
-* Conteúdo comercial público, como LP, e-mail, WhatsApp, oferta, preço, promessa e CTA, deve passar por revisão ou aprovação humana antes de publicação ou envio externo.
-* Recursos internos podem evoluir para funcionalidades vendáveis somente após validação de valor real.
-* Mudança material de stack, arquitetura, infraestrutura ou escopo depende de decisão humana explícita.
-* A existência de recurso novo não autoriza implementação.
-* Quando OpenAI for necessária, aplicar integralmente a regra da seção 5.
-
-## 8. Critérios mínimos de decisão
-
-Cada parecer do Gestor deve conter o contrato abaixo.
-
-### 8.1 Classificação
-
-* não automatizar;
-* automação determinística sem OpenAI;
-* automação com IA em fluxo controlado;
-* automação com comportamento agentic.
-
-### 8.2 Ambiente
-
-* runtime do LP Factory;
-* infraestrutura operacional;
-* ambiente interno do Codex;
-* serviço ou plataforma externa.
-
-### 8.3 Necessidade de OpenAI
-
-* sim;
-* não;
-* condicional ou pendente de evidência.
-
-### 8.4 Fontes
-
-* documentos e código do projeto;
-* PR ou branch do recorte;
-* documentação oficial atual, quando aplicável.
-
-### 8.5 Decisão
-
-* recurso mínimo recomendado;
-* motivo e benefício;
-* custo e risco;
-* segurança e observabilidade;
-* aprovação humana;
-* situação atual, futura, condicional ou não aplicável;
-* destino documental após aprovação.
-
-## 9. Estado atual
-
-* Este documento é uma referência estável de decisão e governança, não um catálogo atualizado de recursos de fornecedores.
-* Automações, agentes, workflows, jobs e componentes operacionais aprovados ou implementados permanecem registrados em `docs/automations.md`.
-* Services, MCPs, endpoints e infraestrutura reutilizável permanecem registrados em `docs/services.md`.
-* Configurações operacionais e recursos efetivamente configurados permanecem registrados em `docs/platform-config.md`.
-* Recursos do ambiente Codex permanecem registrados em `docs/gestor-codex.md`.
-* Nenhuma implementação é autorizada apenas por menção neste documento.
-
-## 10. Próximas pesquisas
-
-1. Investigar recursos somente quando um caso concreto exigir decisão.
-2. Comparar sempre não automatizar, solução determinística, IA em fluxo controlado e comportamento agentic.
-3. Em casos OpenAI, consultar a documentação oficial atual e registrar as fontes.
-4. Após aprovação, encaminhar o resultado ao documento operacional correto sem duplicação.

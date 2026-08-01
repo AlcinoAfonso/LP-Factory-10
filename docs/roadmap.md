@@ -1469,7 +1469,7 @@ Repositório — Ajustados
 
 12.4 Gestão do perfil de orientação
 - Objetivo: Definir a operação administrativa do perfil de orientação que direciona gerações futuras de landing pages sem materializar nem alterar LPs.
-- Status: E12.4.3 e E12.4.3.1 concluídas; E12.4.3.2 planejada como correção funcional da criação e evolução estrutural do perfil.
+- Status: E12.4.3 e E12.4.3.1 concluídas; E12.4.3.2 possui implementação candidata no PR técnico, pendente de revisão delta, provas de banco e validação hospedada.
 
 12.4.1 Objetivo e status
 - Objetivo: Entregar a operação manual completa de criação, edição, revisão, ativação e arquivamento de versões do perfil, com proposta opcional por IA no mesmo editor.
@@ -1496,14 +1496,14 @@ Repositório — Ajustados
 - Status: Concluída; implementação integrada à `main`, com checks hospedados automatizados e teste humano autenticado do refinamento em Preview aprovados.
 - Conteúdo:
   - Toda proposta inicial ou revisão depende de ação explícita do `platform_admin`.
-  - No estado implementado, a IA ainda pode sugerir `generation_guidance`, recomendações e `item_guidance`; a E12.4.3.2 restringirá o refinamento a módulos, variantes, prioridade, ordem e gaps.
+  - A implementação integrada à `main` ainda permite sugestões textuais; a candidata da E12.4.3.2 restringe a saída da IA a cobertura, módulos, variantes, prioridade, ordem, gaps e avisos transitórios, preservando as orientações exclusivamente humanas.
   - O refinamento recebe o conteúdo atual do editor e o feedback humano mais recente, além das fontes já autorizadas pela E12.4.3.
   - Cada acionamento autoriza somente uma chamada; não há refinamento nem retry automático.
   - Nenhuma proposta salva, aprova ou ativa automaticamente; o `platform_admin` continua responsável por revisar, editar, salvar e ativar.
   - Não existe conversa persistente, histórico de mensagens, agente ou memória própria.
 
 12.4.3.2 Criação e evolução estrutural baseada em `lp_sections`, catálogo vigente e debate humano–IA
-- Status: Planejada; correção conceitual definida no plano-base E12.4 v2.5 e implementação técnica pendente.
+- Status: Implementação candidata; validações puras e TypeScript aprovadas, com revisão delta, migration, verificador read-only e Preview desktop/mobile ainda pendentes.
 - Conteúdo:
   - Sem perfil próprio, a ação será `Criar perfil com IA`; com perfil `active` próprio, será `Evoluir perfil com IA`; o fluxo manual permanece completo.
   - A evolução inicializará o editor da nova versão com a estrutura ativa completa como baseline não persistido e revalidará cada recomendação contra as versões vigentes da E10.8 e da E18.5.
@@ -1519,6 +1519,10 @@ Repositório — Ajustados
   - A E12.4.4 recalculará os gaps antes da prontidão, sem nova tabela neste recorte.
   - A evolução E20.3.5 tornará `generation_guidance` opcional no mesmo PR técnico, sem reabrir E20.3.3 ou E20.3.4.
   - Snapshot e independência da LP permanecem consolidados; liberdade de edição e comportamento de regeneração serão decididos apenas no futuro plano-base da E19.4.
+  - Registros da implementação candidata:
+    - Admin Dashboard e Server Actions em `app/admin/(protected)/perfis-de-orientacao/`.
+    - Contrato estrutural, validação determinística, candidata, diff, carregamento opcional de pesquisa bruta e integração server-only em `lib/conversion-content/`.
+    - Migration incremental e provas em `supabase/migrations/`, `supabase/tests/` e `supabase/snippets/`.
 
 13. E13 — Partner Dashboard
 
@@ -2327,7 +2331,7 @@ Repositório — Ajustados
 
 20.3.5 Opcionalidade da orientação geral
 
-* Status: Planejada; evolução de domínio vinculada à implementação técnica da E12.4.3.2.
+* Status: Implementação candidata no mesmo PR técnico da E12.4.3.2; apply, verificação read-only e reconciliação final do schema permanecem pendentes.
 * Conteúdo:
 
   * Tornar `generation_guidance` anulável, exclusivamente humano e não vazio quando presente, por migration incremental forward-only.

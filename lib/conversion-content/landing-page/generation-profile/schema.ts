@@ -36,7 +36,7 @@ export const landingPageGenerationProfileSchema = z
     ownerTaxonId: z.uuid(),
     version: z.number().int().positive(),
     status: z.enum(landingPageGenerationProfileStatuses),
-    generationGuidance: nonEmptyText,
+    generationGuidance: nonEmptyText.optional(),
     items: z.array(landingPageGenerationProfileItemSchema),
   })
   .strict()
