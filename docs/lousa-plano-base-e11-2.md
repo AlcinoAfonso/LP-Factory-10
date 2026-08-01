@@ -1,8 +1,8 @@
 # Plano-base E11.2 — Autoridade comercial e elegibilidade para gestão de membros
 
-- Versão: v1
-- Data: 30/07/2026
-- Status: planejado; v1 aprovada; Processo automatizado escolhido; aguardando merge humano.
+- Versão: v2.1
+- Data: 01/08/2026
+- Status: implementado e validado; validação humana autenticada em Preview aprovada; HEAD funcional validado `7557f7053a95df07cd4c33b1224deed657671bfb`; PR #667 pronto para merge humano.
 - Recorte no roadmap: `11.2 — Autoridade comercial e elegibilidade para gestão de membros`
 - Path canônico: `docs/lousa-plano-base-e11-2.md`
 - Plano conceitual: N/A — debate realizado entre humano, Analista e Estrategista antes da v1.
@@ -68,6 +68,7 @@
 ### 1.5. Decisões técnicas consolidadas
 
 - A E11.2 consome exclusivamente `commercialEntitlement.isCommerciallyEligible`; não consulta origem comercial, provedor, plano ou tabela diretamente.
+- `prod#19` permanece somente como referência de produto: Stripe Entitlements não substitui `CommercialEntitlementSignal`, `lib/commercial-entitlements/` nem a persistência local vigente. A E11.2 não consulta Stripe, plano, provedor ou feature entitlement para decidir checkout, convite ou renderização.
 - Autorização, papel e entitlement são revalidados server-side nas operações protegidas; ocultar controles na UI não substitui os guards.
 - O checkout usa o Access Context existente, exige conta e membership ativos, exige papel owner e exige `isCommerciallyEligible=false` antes de criar a Checkout Session.
 - Erro ou ausência do sinal equivale a não elegível:
@@ -141,6 +142,11 @@
 
 - `inviteAccountMember()` e `resendAccountMemberInvite()` exigem `isCommerciallyEligible=true` antes de efeitos externos ou persistência.
 - O guard reutiliza o `accountId` autoritativo do `AccountMembersManagerContext`.
+- O `AccountMembersManagerContext` existente em `lib/access/guards.ts` deve transportar `accountStatus`, derivado de `access.account.status` no mesmo guard que resolve `accountId`, membership e papel.
+- `inviteAccountMember()` e `resendAccountMemberInvite()` retornam o deny de domínio `account_not_active` quando `context.accountStatus !== "active"`, antes de `findAuthUserByEmail()`, `createUnconfirmedAuthUser()`, `preparePendingMembership()`, `getAuthUserById()`, `recordInviteChannel()` ou `sendAuthInvite()`.
+- `account_not_active` integra o contrato de erro existente e recebe feedback neutro na UI; `listAccountMembers()` e `mutateAccountMember()` permanecem independentes de entitlement e não recebem esse bloqueio.
+- Não é criada nova consulta de conta, novo guard paralelo ou novo boundary.
+- O guard comercial deve concluir com `isCommerciallyEligible=true` antes de `findAuthUserByEmail`, criação no Supabase Auth, preparação do membership, leitura ou gravação do canal e `sendAuthInvite`. Quando o canal for e-mail, preservar `inviteUserByEmail` e o template nativo `Invite user`, sem introduzir envio customizado no Core.
 - Quando bloqueado:
   - não cria usuário no Supabase Auth;
   - não cria nem reabre ciclo `pending`;
@@ -155,6 +161,11 @@
 ### 2.4. Experiência da conta sem entitlement
 
 - Owner recebe a página comercial vigente e seus CTAs de contratação.
+- A política cobre as duas variantes reais: `GenericCommercialPage` e `PublishedCommercialActivationPage` com `CommercialActivationTrackingScope`.
+- Na variante publicada, a integração route-local controla a disponibilidade da contratação existente sem alterar o bundle, o conteúdo persistido, a composição, a ordem ou os schemas da E10.7:
+  - owner sem entitlement preserva a página publicada e pode iniciar o checkout existente pelos controles de plano;
+  - owner com entitlement preserva a página publicada sem ação capaz de iniciar nova compra;
+  - admin, editor e viewer não recebem controles financeiros, mesmo quando o bundle publicado estiver `ready`.
 - Admin, editor e viewer recebem um estado enxuto com:
   - título ou mensagem clara de indisponibilidade comercial;
   - texto `Esta conta aguarda ativação comercial pelo proprietário.`;
@@ -196,17 +207,29 @@
   - convidado ainda aceita ou recusa convite pendente próprio;
   - memberships existentes permanecem inalterados pela mudança comercial.
 - Renderização:
-  - owner sem entitlement recebe página comercial;
-  - não-owner sem entitlement recebe estado de espera;
-  - nenhum não-owner recebe botão ou cards acionáveis de checkout;
+  - cruzar `generic-v1` e `commercial_activation` publicado com owner, admin, editor e viewer, cada papel com `isCommerciallyEligible=false` e `true`;
+  - em cada combinação, validar visibilidade de planos e ação financeira, chamada direta de checkout, experiência esperada e comportamento preservado;
+  - owner sem entitlement recebe a variante vigente e contratação funcional; owner com entitlement não inicia nova compra;
+  - não-owner sem entitlement recebe estado de espera e nenhum não-owner recebe botão, cards ou CTA financeiro acionável;
+  - a variante publicada preserva bundle, conteúdo, composição, ordem e schemas da E10.7;
   - desktop e mobile mantêm hierarquia, contraste, foco e legibilidade.
+  - Reconhecimento: owner sem entitlement identifica sem ajuda a ação de contratação; admin, editor e viewer sem entitlement identificam que a ativação comercial depende do proprietário e não encontram escolha de plano, cards acionáveis ou ação financeira.
+  - Acessibilidade aplicável: validar contraste e legibilidade, ordem e visibilidade de foco, navegação por teclado, rótulos e mensagens compreensíveis, estado `disabled` quando utilizado e alvos de toque adequados nos controles existentes; não declarar auditoria ou conformidade WCAG 2.2 integral.
 - Anti-regressão:
   - `isCommerciallyEligible` é a única decisão comercial consumida;
   - entitlement por liberação manual produz o mesmo comportamento que outro entitlement efetivo;
   - conta com entitlement não inicia checkout duplicado;
   - isolamento entre contas e papéis permanece intacto.
 
-### 2.7. Dependências reais
+### 2.7. Observabilidade e updates condicionais
+
+- Cada decisão server-side de `checkout`, `invite` ou `resend` deve emitir um único evento estruturado seguro com `operation`, `result` (`allowed`, `denied` ou `error`), `reason`, `account_id`, `actor_role`, `request_id` e `latency_ms` quando disponíveis. O log deve ocorrer no fluxo server-side responsável pela operação, reutilizando o padrão de logging estruturado já existente no repositório, sem novo serviço. Não registrar e-mail, dados de formulário, payload Stripe/Auth, URL de checkout, token, secret ou demais PII. Falha de logging não pode liberar nem bloquear a operação principal.
+- A validação deve comprovar, para cada operação, os resultados `allowed`, `denied` e `error`, exatamente um evento por decisão, ausência de PII e preservação integral do resultado principal quando a emissão do log falhar.
+- `supa#5` permanece como oportunidade estratégica condicional para reduzir o tempo de diagnóstico de incidentes recorrentes em Auth ou convites que não possam ser resolvidos pelos logs e testes existentes; não habilitar AI Debugging, drains, alertas ou nova integração de observabilidade nesta E11.2.
+- `vercel#15` permanece como oportunidade estratégica condicional quando a Toolbar já estiver disponível ao revisor e trouxer valor à revisão visual do Preview; não configurar, contratar nem tornar a Toolbar dependência ou gate desta E11.2.
+- `vercel#27` não é aplicável ao recorte porque `next` e `eslint-config-next` já estão em `16.2.11`; a E11.2 não reabre manutenção de dependências.
+
+### 2.8. Dependências reais
 
 - E9.1 — sinal canônico de entitlement comercial.
 - E9.4 — checkout Stripe existente.
@@ -220,13 +243,14 @@
 
 ### 3.1. E11.2.3 — Autoridade para o checkout
 
-- Status: planejada; execução pelo Processo automatizado somente após o merge humano da v1.
+- Status: implementada e validada no checkpoint `LP-Factory-Phase: E11.2.3`.
 - Automação: não.
 - Objetivo: restringir o checkout existente ao owner sem entitlement comercial válido e impedir nova compra pela mesma action quando a conta já estiver elegível.
 - Execução:
   - revalidar conta, membership, papel e sinal canônico na Server Action antes de `createStripeTestCheckoutSession()`;
   - permitir o fluxo apenas para owner ativo de conta ativa com `isCommerciallyEligible=false`;
   - bloquear admin, editor, viewer e owner com entitlement válido;
+  - emitir o evento estruturado seguro da decisão antes de devolver o deny ou iniciar a criação da Checkout Session;
   - preservar preço, recorrência, URLs, webhook e confirmação comercial existentes.
 - Artefatos esperados:
   - ajuste em `app/a/[account]/_components/commercial-page/checkout-actions.ts`;
@@ -235,6 +259,7 @@
   - owner sem entitlement inicia o checkout existente;
   - owner com entitlement e todos os papéis não-owner falham server-side;
   - nenhum bloqueio cria Checkout Session;
+  - decisões permitidas e negadas produzem evento estruturado sem PII, payload externo ou URL de checkout;
   - `isCommerciallyEligible` permanece a única decisão comercial consumida;
   - nenhuma regra de billing inexistente é antecipada;
   - validações automatizadas aplicáveis são aprovadas.
@@ -245,25 +270,31 @@
 
 ### 3.2. E11.2.4 — Elegibilidade para criação e reenvio de convites
 
-- Status: planejada; sucede a E11.2.3 no Processo automatizado.
+- Status: implementada e validada no checkpoint `LP-Factory-Phase: E11.2.4`.
 - Automação: não.
 - Objetivo: exigir entitlement comercial válido somente para criar e reenviar convites, preservando as ações de manutenção dos vínculos existentes.
 - Execução:
-  - aplicar o guard no boundary server-side existente com o `accountId` autoritativo;
+  - ampliar o `AccountMembersManagerContext` existente em `lib/access/guards.ts` com `accountStatus`, derivado de `access.account.status` no mesmo guard que resolve `accountId`, membership e papel. `inviteAccountMember()` e `resendAccountMemberInvite()` devem retornar o deny de domínio `account_not_active` quando `context.accountStatus !== "active"`, antes de `findAuthUserByEmail()`, `createUnconfirmedAuthUser()`, `preparePendingMembership()`, `getAuthUserById()`, `recordInviteChannel()` ou `sendAuthInvite()`. Registrar `account_not_active` no contrato de erro existente e mapeá-lo para feedback neutro na UI. `listAccountMembers()` e `mutateAccountMember()` permanecem independentes de entitlement e não recebem esse bloqueio. Incluir `lib/access/guards.ts` entre os artefatos ajustados; não criar nova query de conta, novo guard paralelo ou novo boundary;
   - permitir criação e reenvio somente a owner/admin com `isCommerciallyEligible=true`;
-  - bloquear antes de criação no Auth, preparação do membership, gravação do canal ou envio;
+  - bloquear conta ou entitlement antes de qualquer leitura ou criação no Auth, preparação do membership, leitura ou gravação do canal ou envio;
+  - preservar `inviteUserByEmail` e o template nativo `Invite user`, sem envio customizado;
+  - emitir o evento estruturado seguro da decisão de `invite` ou `resend`;
   - refletir o bloqueio no formulário de novo convite e na ação de reenvio;
   - preservar listagem, aceite, recusa, revogação, desativação e alteração de papel conforme a E11.1.
 - Artefatos esperados:
+  - ajuste em `lib/access/guards.ts` e no contrato de erro existente;
   - ajuste no boundary existente `lib/access/account-members/`;
   - ajuste em `app/a/[account]/members/page.tsx` e nos componentes/actions já responsáveis pelo fluxo;
   - testes no padrão já existente, conforme a estrutura confirmada durante a execução.
 - Critérios de aceite:
   - owner/admin com entitlement criam e reenviam convites;
   - owner/admin sem entitlement não produzem efeito;
+  - owner/admin com membership ativo, entitlement válido e conta `pending_setup` não criam nem reenviam convite;
   - editor/viewer continuam bloqueados pela autorização da E11.1;
   - ações preservadas continuam disponíveis sem entitlement;
   - convites pendentes e memberships existentes permanecem inalterados;
+  - nenhum bloqueio chama adapters de Auth, preparação/escrita de membership, canal ou envio;
+  - decisões permitidas e negadas produzem evento estruturado seguro;
   - isolamento multi-tenant e proteções do owner continuam aprovados.
 - Evidência esperada:
   - matriz de owner/admin com e sem entitlement;
@@ -272,41 +303,49 @@
 
 ### 3.3. E11.2.5 — Experiência da conta sem entitlement
 
-- Status: planejada; sucede a E11.2.4 no Processo automatizado.
+- Status: implementada e validada no checkpoint `LP-Factory-Phase: E11.2.5`; validação humana autenticada em Preview aprovada no HEAD funcional `7557f7053a95df07cd4c33b1224deed657671bfb`.
 - Automação: não.
 - Objetivo: separar a experiência comercial do owner do estado de espera dos demais papéis, sem criar novo dashboard produtivo.
 - Execução:
   - usar o sinal já carregado em `/a/[account]` e o papel do Access Context;
-  - manter a página comercial e os CTAs existentes para owner sem entitlement;
+  - aplicar a política de ação financeira tanto a `GenericCommercialPage` quanto a `PublishedCommercialActivationPage` e `CommercialActivationTrackingScope`;
+  - manter a variante vigente e os CTAs de contratação para owner sem entitlement, fazendo os controles de plano da variante publicada iniciarem o checkout existente somente no modo autorizado;
   - remover cards e CTAs financeiros de admin, editor e viewer;
   - apresentar a não-owner sem entitlement a mensagem `Esta conta aguarda ativação comercial pelo proprietário.`;
   - manter o comportamento pós-entitlement vigente, sem antecipar a E10.5.1;
+  - preservar sem mutação o bundle, o conteúdo persistido, a composição, a ordem e os schemas da E10.7;
   - validar desktop e mobile e executar o fechamento documental material pelo Prompt ABC.
 - Artefatos esperados:
   - ajuste em `app/a/[account]/page.tsx`;
-  - ajuste nos componentes existentes de `app/a/[account]/_components/commercial-page/`;
+  - ajuste em `app/a/[account]/_components/commercial-page/GenericCommercialPage.tsx` quando necessário à política comum;
+  - ajuste em `app/a/[account]/_components/commercial-page/PublishedCommercialActivationPage.tsx` e `CommercialActivationTrackingScope.tsx` para a integração route-local da variante publicada;
+  - ajuste mínimo no renderer apenas se indispensável para omitir controles financeiros em runtime, sem mudar contratos persistidos, composição ou schemas;
   - testes ou casos de validação nos artefatos canônicos existentes.
 - Critérios de aceite:
   - owner sem entitlement recebe página comercial e CTA funcional;
   - admin, editor e viewer sem entitlement recebem estado de espera sem escolha de plano ou checkout;
   - nenhum não-owner recebe CTA financeiro, inclusive com chamada direta já bloqueada pela E11.2.3;
+  - a matriz de `2 variantes × 4 papéis × 2 estados de entitlement` comprova visibilidade, chamada direta e comportamento preservado em todas as combinações;
+  - a variante publicada mantém bundle, conteúdo persistido, composição, ordem e schemas inalterados;
   - memberships, papéis e ações preservadas não sofrem alteração retroativa;
   - estado visual aprovado em desktop e mobile quanto a hierarquia, contraste, foco e legibilidade;
+  - a prova em Preview deve cobrir owner e não-owner sem entitlement em desktop e mobile, validando conteúdo, responsividade, foco, ausência de CTA financeiro indevido e ausência de erro ou quebra visual. Ferramentas da Vercel podem ser usadas quando já disponíveis, mas não substituem a validação manual nem constituem dependência da fase;
   - `npm ci`, `npm run check` e validações específicas aplicáveis são aprovados;
   - diff não cria banco, rota, boundary ou infraestrutura;
   - Roadmap e documentos materialmente afetados são reconciliados pelo Prompt ABC.
 - Evidência esperada:
-  - capturas do owner e de pelo menos um papel não-owner sem entitlement;
-  - capturas em desktop e mobile sem dados sensíveis;
+  - resultados completos da matriz de duas variantes, quatro papéis e dois estados de entitlement;
+  - capturas de owner, admin, editor e viewer nas combinações visualmente distintas, em desktop e mobile, sem dados sensíveis;
   - smoke do fluxo autorizado e das ações preservadas;
   - checks e fechamento documental registrados no PR.
 
 ### 3.4. Próxima ação
 
-- A v1 está aprovada e o Processo automatizado foi escolhido.
-- Após o merge humano do PR #666, acionar exclusivamente o orquestrador com:
-  - `Use $lp-factory-orquestrar-plano no PR #666.`
-- Não executar manualmente as fases, não chamar especialistas fora da orquestração e não usar `$lp-factory-executar-plano` diretamente sobre a v1.
+- E11.2.3, E11.2.4 e E11.2.5 foram implementadas e aprovadas no mesmo PR, preservando a matriz de consolidação e os checkpoints do Processo automatizado.
+- A validação humana autenticada em Preview aprovou owner e non-owner em desktop e mobile, incluindo conteúdo, responsividade, foco, ausência de CTA financeiro indevido e ausência de erro ou quebra visual.
+- `npm ci`, `npm run check`, as validações específicas e `git diff --check` foram aprovados após a reconciliação com a `main`.
+- O HEAD funcional validado permanece `7557f7053a95df07cd4c33b1224deed657671bfb`; a reconciliação documental posterior não altera o runtime da E11.2.
+- Próxima ação: merge humano do PR #667 pelo GitHub Web.
 
 ## 4. Escopo negativo e critérios de parada
 
@@ -340,7 +379,7 @@
 
 ### 4.3. Decisão atual
 
-- Decisão: debate concluído, v1 aprovada e Processo automatizado escolhido.
-- Fases executáveis: E11.2.3, E11.2.4 e E11.2.5, todas sem automação.
-- Preservação dos vínculos e validação das subseções 11.2.6 e 11.2.7 integram os critérios de aceite das fases correspondentes.
-- Execução: não autorizada antes do merge humano; após o merge, cabe exclusivamente ao orquestrador previsto no item 3.4.
+- Decisão: E11.2 concluída no recorte de implementação e validação, sem automação, banco, rota, boundary ou infraestrutura nova.
+- Fases E11.2.3, E11.2.4 e E11.2.5 aprovadas; preservação dos vínculos e validações das subseções 11.2.6 e 11.2.7 comprovadas.
+- HEAD funcional validado: `7557f7053a95df07cd4c33b1224deed657671bfb`.
+- Pendência única: merge humano do PR #667.

@@ -1,7 +1,8 @@
 // src/lib/access/guards.ts
 import { checkSuperAdmin, checkPlatformAdmin } from '@/lib/admin';
 import { createClient } from '@/lib/supabase/server';
-import type { MemberRole } from '@/lib/types/status';
+import type { AccountStatus, MemberRole } from '@/lib/types/status';
+import { headers } from 'next/headers';
 import { getAccessContext } from './getAccessContext';
 
 const accountMembersManagerContextBrand: unique symbol = Symbol('accountMembersManagerContext');
@@ -11,8 +12,10 @@ export type AccountMembersManagerContext = Readonly<{
   [accountMembersManagerContextBrand]: true;
   accountId: string;
   accountSubdomain: string;
+  accountStatus: AccountStatus;
   actorUserId: string;
   actorRole: Extract<MemberRole, 'owner' | 'admin'>;
+  requestId: string | null;
 }>;
 
 export type AccountMemberUserContext = Readonly<{
@@ -40,6 +43,13 @@ export async function requireAccountMembersManager(
   }
 
   const supabase = await createClient();
+  let requestId: string | null = null;
+  try {
+    const requestHeaders = await headers();
+    requestId = normalizeRequestId(requestHeaders.get('x-request-id'));
+  } catch {
+    requestId = null;
+  }
   const {
     data: { user },
     error,
@@ -50,9 +60,14 @@ export async function requireAccountMembersManager(
   const access = await getAccessContext({
     params: { account: accountSubdomain },
     userId: user.id,
+    requestId: requestId ?? undefined,
   });
 
   if (!access || access.blocked) {
+    return { allowed: false, reason: 'account_not_allowed' };
+  }
+  const accountStatus = access.account?.status;
+  if (!accountStatus) {
     return { allowed: false, reason: 'account_not_allowed' };
   }
   if (access.status !== 'active') {
@@ -68,10 +83,17 @@ export async function requireAccountMembersManager(
       [accountMembersManagerContextBrand]: true,
       accountId: access.account_id,
       accountSubdomain: access.account_slug ?? accountSubdomain,
+      accountStatus,
       actorUserId: user.id,
       actorRole: access.role,
+      requestId,
     },
   };
+}
+
+function normalizeRequestId(value: string | null): string | null {
+  const normalized = value?.trim() ?? '';
+  return normalized.length > 0 ? normalized : null;
 }
 
 export async function requireAuthenticatedAccountMemberUser(): Promise<

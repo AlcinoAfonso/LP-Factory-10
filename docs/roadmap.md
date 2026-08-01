@@ -1,8 +1,8 @@
 0. Introdução
 
 0.1 Cabeçalho
-• Data: 30/07/2026
-• Versão: v1.5.117
+• Data: 01/08/2026
+• Versão: v1.5.119
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -1233,49 +1233,76 @@ Repositório — Ajustados
 
 11.2.1 Objetivo e status
 - Objetivo: conectar os papéis da E11 ao sinal canônico de entitlement da E9, separando autoridade financeira, elegibilidade para novos convites e ações de manutenção dos vínculos existentes.
-- Status: planejado; plano-base v1 aprovado; Processo automatizado escolhido; aguardando merge humano.
+- Status: implementação e validação concluídas; Preview autenticado aprovado; HEAD funcional validado `7557f7053a95df07cd4c33b1224deed657671bfb`; merge humano do PR #667 pendente.
 - Plano-base: `docs/lousa-plano-base-e11-2.md`.
 - Automação: não.
 
+11.2.2 Registros do recorte
+- Repositório:
+  - Criados:
+    - `app/a/[account]/_components/commercial-page/checkout-policy.ts`
+    - `app/a/[account]/_components/commercial-page/checkout-validation-cases.ts`
+    - `app/a/[account]/_components/commercial-page/commercial-experience-policy.ts`
+    - `app/a/[account]/_components/commercial-page/commercial-experience-validation-cases.ts`
+  - Ajustados:
+    - `app/a/[account]/_components/commercial-page/CommercialActivationTrackingScope.tsx`
+    - `app/a/[account]/_components/commercial-page/GenericCommercialPage.tsx`
+    - `app/a/[account]/_components/commercial-page/PublishedCommercialActivationPage.tsx`
+    - `app/a/[account]/_components/commercial-page/checkout-actions.ts`
+    - `app/a/[account]/page.tsx`
+    - `app/a/[account]/members/page.tsx`
+    - `lib/access/account-members/contracts.ts`
+    - `lib/access/account-members/index.ts`
+    - `lib/access/account-members/policy.ts`
+    - `lib/access/account-members/validation-cases.ts`
+    - `lib/access/guards.ts`
+    - `lib/conversion-content/commercial-activation/renderer.tsx`
+    - `package.json`
+
 11.2.3 Autoridade para o checkout
-- Status: planejado.
+- Status: implementado.
 - Conteúdo:
   - somente owner ativo de conta ativa e sem entitlement comercial válido pode visualizar a ação de contratação e iniciar o checkout existente;
   - admin, editor e viewer não iniciam checkout, com bloqueio server-side independente da UI;
   - owner com `isCommerciallyEligible=true` não cria nova assinatura pela action atual;
+  - decisões server-side de checkout emitem evento estruturado seguro para `allowed`, `denied` e `error`, sem PII e sem alterar o resultado da operação;
   - preço, recorrência, webhook, gestão de assinatura e outros fluxos de billing permanecem fora do recorte.
 
 11.2.4 Elegibilidade para criação e reenvio de convites
-- Status: planejado.
+- Status: implementado.
 - Conteúdo:
   - owner e admin só criam ou reenviam convites quando `isCommerciallyEligible=true`;
-  - o guard ocorre no boundary server-side existente antes de criação no Auth, preparação do membership ou envio;
+  - a conta precisa estar `active`, com `accountStatus` derivado do Access Context, e os guards ocorrem antes de leitura ou criação no Auth, preparação do membership, canal ou envio;
   - ausência ou erro do sinal bloqueia criação e reenvio;
+  - o fluxo preserva `inviteUserByEmail` e o template nativo `Invite user`, sem envio customizado;
+  - decisões server-side de convite e reenvio emitem evento estruturado seguro sem interferir no resultado da operação;
   - editor e viewer permanecem sem gestão de membros.
 
 11.2.5 Experiência da conta sem entitlement
-- Status: planejado.
+- Status: implementado e aprovado em validação humana autenticada no Preview; HEAD funcional validado `7557f7053a95df07cd4c33b1224deed657671bfb`.
 - Conteúdo:
-  - owner sem entitlement mantém a página comercial e os CTAs do checkout existente;
-  - admin, editor e viewer sem entitlement recebem estado simples de espera pela ativação comercial do proprietário;
-  - nenhum não-owner recebe cards ou CTA financeiro;
+  - `GenericCommercialPage` e `PublishedCommercialActivationPage` aplicam a mesma política de autoridade financeira;
+  - owner sem entitlement mantém a variante comercial vigente e inicia o checkout existente; owner com entitlement não inicia nova compra;
+  - admin, editor e viewer sem entitlement recebem estado simples de espera pela ativação comercial do proprietário, e nenhum não-owner recebe cards ou CTA financeiro;
+  - a variante publicada preserva bundle, conteúdo persistido, composição, ordem e schemas da E10.7;
   - a E11.2 não cria novo dashboard produtivo nem antecipa a E10.5.1.
 
 11.2.6 Preservação dos vínculos e ações existentes
-- Status: planejado.
+- Status: implementado e coberto pela validação automatizada.
 - Conteúdo:
   - listagem, aceite, recusa, revogação, desativação e alteração de papel permanecem regidos pela E11.1 e independentes de entitlement;
   - memberships existentes não são apagados, desativados ou alterados retroativamente;
   - a decisão comercial consome exclusivamente `CommercialEntitlementSignal.isCommerciallyEligible`, sem reinterpretar origem, plano ou provedor.
 
 11.2.7 Validação técnica, visual e humana
-- Status: planejado.
+- Status: validações automatizada e humana autenticada aprovadas.
 - Conteúdo:
-  - validar owner, admin, editor e viewer com e sem entitlement nos fluxos de página, checkout e membros;
-  - comprovar que bloqueios de checkout e convite ocorrem antes de efeitos externos ou persistência;
-  - confirmar que as ações preservadas continuam funcionando sem entitlement;
-  - validar o estado de espera em desktop e mobile, sem CTA financeiro para não-owner;
-  - concluir no mesmo recorte os checks aplicáveis, a prova em Preview e o fechamento documental pelo Prompt ABC.
+  - a matriz automatizada de variante genérica/publicada, owner/admin/editor/viewer e `isCommerciallyEligible=false/true` foi aprovada, incluindo visibilidade, chamada direta e comportamento preservado;
+  - os bloqueios de checkout e convite antes de efeitos externos ou persistência foram comprovados;
+  - os resultados `allowed`, `denied` e `error`, com exatamente um evento seguro por decisão e logging sem interferência no fluxo, foram comprovados;
+  - as ações preservadas continuaram funcionando sem entitlement;
+  - a validação humana autenticada em Preview aprovou owner e non-owner em desktop e mobile, incluindo conteúdo, responsividade, foco, ausência de CTA financeiro indevido e ausência de erro ou quebra visual;
+  - `npm ci`, `npm run check`, as validações específicas e `git diff --check` foram aprovados no fechamento final.
 
 
 12. E12 — Admin Dashboard

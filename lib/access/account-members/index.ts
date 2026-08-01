@@ -4,6 +4,7 @@ import type {
   AccountMembersManagerContext,
   AccountMemberUserContext,
 } from "@/lib/access/guards";
+import { getCommercialEntitlementSignal } from "../../commercial-entitlements";
 
 import {
   applyAdminMemberOperation,
@@ -36,11 +37,16 @@ import type {
 } from "./contracts";
 import { createSignedInviteState } from "./invite-state";
 import {
+  createAccountMemberInviteDecisionRecorder,
+  decideAccountMemberInviteEligibility,
   decideInviteChannel,
   isManageableMemberRole,
   isSelfServiceInviteEligible,
   isValidMemberEmail,
   normalizeMemberEmail,
+  runAccountMemberInviteWhenEligible,
+  runPreservedAccountMemberOperation,
+  type AccountMemberInviteDecisionEvent,
 } from "./policy";
 
 export type {
@@ -63,29 +69,35 @@ export async function listAccountMembers(
 ): Promise<AccountMemberResult<readonly AccountMember[]>> {
   if (!isAccountMembersEnabled()) return { ok: false, error: "feature_disabled" };
 
-  const memberships = await listAccountMemberships(context.accountId);
-  if (!memberships.ok) return memberships;
+  return runPreservedAccountMemberOperation({
+    operation: "list",
+    execute: async () => {
 
-  const authUsers = await getAuthUsersByUserIds(
-    memberships.value.map((member) => member.userId),
-  );
-  if (!authUsers.ok) return authUsers;
+      const memberships = await listAccountMemberships(context.accountId);
+      if (!memberships.ok) return memberships;
 
-  const members = memberships.value.map((member) => {
-    const authUser = authUsers.value.get(member.userId);
-    return authUser
-      ? { ...member, email: authUser.email, isConfirmed: authUser.isConfirmed }
-      : null;
+      const authUsers = await getAuthUsersByUserIds(
+        memberships.value.map((member) => member.userId),
+      );
+      if (!authUsers.ok) return authUsers;
+
+      const members = memberships.value.map((member) => {
+        const authUser = authUsers.value.get(member.userId);
+        return authUser
+          ? { ...member, email: authUser.email, isConfirmed: authUser.isConfirmed }
+          : null;
+      });
+
+      if (members.some((member) => member === null)) {
+        return { ok: false, error: "auth_lookup_failed" };
+      }
+
+      return {
+        ok: true,
+        value: members.filter((member): member is AccountMember => member !== null),
+      };
+    },
   });
-
-  if (members.some((member) => member === null)) {
-    return { ok: false, error: "auth_lookup_failed" };
-  }
-
-  return {
-    ok: true,
-    value: members.filter((member): member is AccountMember => member !== null),
-  };
 }
 
 export async function inviteAccountMember(
@@ -94,6 +106,15 @@ export async function inviteAccountMember(
 ): Promise<AccountMemberResult<AccountMemberInvitationResult>> {
   if (!isAccountMembersEnabled()) return { ok: false, error: "feature_disabled" };
 
+  return runEligibleInviteOperation(context, "invite", () =>
+    performInviteAccountMember(context, input),
+  );
+}
+
+async function performInviteAccountMember(
+  context: AccountMembersManagerContext,
+  input: Readonly<{ email: string; role: ManageableMemberRole }>,
+): Promise<AccountMemberResult<AccountMemberInvitationResult>> {
   const email = normalizeMemberEmail(input.email);
   if (!isValidMemberEmail(email)) return { ok: false, error: "invalid_email" };
   if (!isManageableMemberRole(input.role)) return { ok: false, error: "invalid_role" };
@@ -174,6 +195,15 @@ export async function resendAccountMemberInvite(
 ): Promise<AccountMemberResult<AccountMemberInvitationResult>> {
   if (!isAccountMembersEnabled()) return { ok: false, error: "feature_disabled" };
 
+  return runEligibleInviteOperation(context, "resend", () =>
+    performResendAccountMemberInvite(context, input),
+  );
+}
+
+async function performResendAccountMemberInvite(
+  context: AccountMembersManagerContext,
+  input: Readonly<{ memberId: string }>,
+): Promise<AccountMemberResult<AccountMemberInvitationResult>> {
   const membership = await getAccountMembershipById(context.accountId, input.memberId);
   if (!membership.ok) return membership;
   if (!membership.value) return { ok: false, error: "member_not_found" };
@@ -216,6 +246,58 @@ export async function resendAccountMemberInvite(
   };
 }
 
+async function runEligibleInviteOperation<T>(
+  context: AccountMembersManagerContext,
+  operation: "invite" | "resend",
+  onAllowed: () => Promise<AccountMemberResult<T>>,
+): Promise<AccountMemberResult<T>> {
+  const startedAt = Date.now();
+  const recorder = createAccountMemberInviteDecisionRecorder((event) => {
+    console.log(JSON.stringify(event));
+  });
+  const recordDecision = (
+    result: AccountMemberInviteDecisionEvent["result"],
+    reason: string,
+  ) => {
+    recorder.record({
+      event: "account_member_invite_decision",
+      operation,
+      result,
+      reason,
+      account_id: context.accountId,
+      actor_role: context.actorRole,
+      request_id: context.requestId,
+      latency_ms: Date.now() - startedAt,
+    });
+  };
+
+  if (context.accountStatus !== "active") {
+    return runAccountMemberInviteWhenEligible({
+      decision: decideAccountMemberInviteEligibility({
+        accountStatus: context.accountStatus,
+        isCommerciallyEligible: false,
+      }),
+      recordDecision,
+      onAllowed,
+    });
+  }
+
+  try {
+    const entitlement = await getCommercialEntitlementSignal({ accountId: context.accountId });
+    return runAccountMemberInviteWhenEligible({
+      decision: decideAccountMemberInviteEligibility({
+        accountStatus: context.accountStatus,
+        isCommerciallyEligible: entitlement.isCommerciallyEligible,
+      }),
+      recordDecision,
+      onAllowed,
+    });
+  } catch {
+    recordDecision("error", "commercial_entitlement_unavailable");
+    return { ok: false, error: "read_failed" };
+  }
+}
+
 export async function mutateAccountMember(
   context: AccountMembersManagerContext,
   input: Readonly<{
@@ -225,11 +307,14 @@ export async function mutateAccountMember(
 ) {
   if (!isAccountMembersEnabled()) return { ok: false, error: "feature_disabled" } as const;
 
-  return applyAdminMemberOperation({
-    accountId: context.accountId,
-    memberId: input.memberId,
-    actorUserId: context.actorUserId,
-    operation: input.operation,
+  return runPreservedAccountMemberOperation({
+    operation: input.operation.type,
+    execute: () => applyAdminMemberOperation({
+      accountId: context.accountId,
+      memberId: input.memberId,
+      actorUserId: context.actorUserId,
+      operation: input.operation,
+    }),
   });
 }
 
@@ -243,14 +328,19 @@ export async function respondToInAppAccountMemberInvite(
 ) {
   if (!isAccountMembersEnabled()) return { ok: false, error: "feature_disabled" } as const;
 
-  const validated = await validatePendingAccountMemberInvite(context, input);
-  if (!validated.ok) return validated;
-
-  return applySelfServiceInviteOperation({
-    accountId: input.accountId,
-    memberId: input.memberId,
-    actorUserId: context.actorUserId,
+  return runPreservedAccountMemberOperation({
     operation: input.operation,
+    execute: async () => {
+      const validated = await validatePendingAccountMemberInvite(context, input);
+      if (!validated.ok) return validated;
+
+      return applySelfServiceInviteOperation({
+        accountId: input.accountId,
+        memberId: input.memberId,
+        actorUserId: context.actorUserId,
+        operation: input.operation,
+      });
+    },
   });
 }
 
@@ -260,17 +350,22 @@ export async function activateAccountMemberEmailInvite(
 ) {
   if (!isAccountMembersEnabled()) return { ok: false, error: "feature_disabled" } as const;
 
-  const channel = await getInviteChannel(input);
-  if (!channel.ok) return channel;
-  if (channel.value !== "email") {
-    return { ok: false, error: "invalid_transition" } as const;
-  }
-
-  return applySelfServiceInviteOperation({
-    accountId: input.accountId,
-    memberId: input.memberId,
-    actorUserId: context.actorUserId,
+  return runPreservedAccountMemberOperation({
     operation: "accept",
+    execute: async () => {
+      const channel = await getInviteChannel(input);
+      if (!channel.ok) return channel;
+      if (channel.value !== "email") {
+        return { ok: false, error: "invalid_transition" } as const;
+      }
+
+      return applySelfServiceInviteOperation({
+        accountId: input.accountId,
+        memberId: input.memberId,
+        actorUserId: context.actorUserId,
+        operation: "accept",
+      });
+    },
   });
 }
 
@@ -278,7 +373,10 @@ export async function listPendingAccountMemberInvites(
   context: AccountMemberUserContext,
 ): Promise<AccountMemberResult<readonly PendingAccountMemberInvite[]>> {
   if (!isAccountMembersEnabled()) return { ok: false, error: "feature_disabled" };
-  return listSelfServicePendingMemberships(context.actorUserId);
+  return runPreservedAccountMemberOperation({
+    operation: "list",
+    execute: () => listSelfServicePendingMemberships(context.actorUserId),
+  });
 }
 
 export async function validatePendingAccountMemberInvite(

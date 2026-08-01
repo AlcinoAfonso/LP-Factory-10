@@ -9,7 +9,9 @@ import {
 } from "./invite-state-codec";
 
 import {
+  createAccountMemberInviteDecisionRecorder,
   classifyInviteCycle,
+  decideAccountMemberInviteEligibility,
   decideInviteChannel,
   decideInviteAuthRequest,
   decideAdminMemberTransition,
@@ -18,16 +20,190 @@ import {
   isSelfServiceInviteEligible,
   isValidMemberEmail,
   normalizeMemberEmail,
+  runAccountMemberInviteWhenEligible,
+  runPreservedAccountMemberOperation,
   selectLatestInviteChannels,
   shouldDiscardInviteStateAfterActivationError,
 } from "./policy";
+import type { AccountMemberInviteDecisionEvent } from "./policy";
 
 const ACTOR_ID = "10000000-0000-4000-8000-000000000001";
 const TARGET_ID = "10000000-0000-4000-8000-000000000002";
 const ACCOUNT_ID = "10000000-0000-4000-8000-000000000003";
 const INVITE_STATE_SECRET = "test-only-secret-with-at-least-32-characters";
 
-const cases: readonly Readonly<{ name: string; run: () => void }>[] = [
+const cases: readonly Readonly<{ name: string; run: () => void | Promise<void> }>[] = [
+  {
+    name: "covers owner and admin entitlement decisions for invite and resend",
+    run: async () => {
+      let allowedEffects = 0;
+      for (const operation of ["invite", "resend"] as const) {
+        for (const actorRole of ["owner", "admin"] as const) {
+          for (const isCommerciallyEligible of [true, false]) {
+            const events: AccountMemberInviteDecisionEvent[] = [];
+            const decision = decideAccountMemberInviteEligibility({
+              accountStatus: "active",
+              isCommerciallyEligible,
+            });
+            const result = await runAccountMemberInviteWhenEligible({
+              decision,
+              recordDecision: (eventResult, reason) => {
+                events.push({
+                  event: "account_member_invite_decision",
+                  operation,
+                  result: eventResult,
+                  reason,
+                  account_id: ACCOUNT_ID,
+                  actor_role: actorRole,
+                  request_id: "request-test",
+                  latency_ms: 1,
+                });
+              },
+              onAllowed: async () => {
+                allowedEffects += 1;
+                return { ok: true, value: operation } as const;
+              },
+            });
+
+            assert.equal(result.ok, isCommerciallyEligible);
+            assert.equal(events.length, 1);
+            assert.equal(events[0]?.operation, operation);
+            assert.equal(events[0]?.actor_role, actorRole);
+            assert.equal(events[0]?.result, isCommerciallyEligible ? "allowed" : "denied");
+          }
+        }
+      }
+      assert.equal(allowedEffects, 4);
+    },
+  },
+  {
+    name: "account and entitlement blocks never continue to Auth, membership, channel or delivery effects",
+    run: async () => {
+      const effectCalls = {
+        auth: 0,
+        membership: 0,
+        channel: 0,
+        delivery: 0,
+      };
+      const recorded: string[] = [];
+      for (const operation of ["invite", "resend"] as const) {
+        for (const decision of [
+          decideAccountMemberInviteEligibility({
+            accountStatus: "pending_setup",
+            isCommerciallyEligible: true,
+          }),
+          decideAccountMemberInviteEligibility({
+            accountStatus: "active",
+            isCommerciallyEligible: false,
+          }),
+        ]) {
+          const result = await runAccountMemberInviteWhenEligible({
+            decision,
+            recordDecision: (result, reason) => recorded.push(`${result}:${reason}`),
+            onAllowed: async () => {
+              void operation;
+              effectCalls.auth += 1;
+              effectCalls.membership += 1;
+              effectCalls.channel += 1;
+              effectCalls.delivery += 1;
+              return { ok: true, value: "effect" } as const;
+            },
+          });
+          assert.equal(result.ok, false);
+        }
+      }
+      assert.deepEqual(effectCalls, { auth: 0, membership: 0, channel: 0, delivery: 0 });
+      assert.deepEqual(recorded, [
+        "denied:account_not_active",
+        "denied:commercial_entitlement_required",
+        "denied:account_not_active",
+        "denied:commercial_entitlement_required",
+      ]);
+    },
+  },
+  {
+    name: "deduplicates allowed, denied and error events for invite and resend without forbidden fields",
+    run: () => {
+      for (const operation of ["invite", "resend"] as const) {
+        for (const result of ["allowed", "denied", "error"] as const) {
+          const events: AccountMemberInviteDecisionEvent[] = [];
+          const recorder = createAccountMemberInviteDecisionRecorder((event) => events.push(event));
+          const event: AccountMemberInviteDecisionEvent = {
+            event: "account_member_invite_decision",
+            operation,
+            result,
+            reason: `test_${result}`,
+            account_id: ACCOUNT_ID,
+            actor_role: "admin",
+            request_id: "request-test",
+            latency_ms: 1,
+          };
+          recorder.record(event);
+          recorder.record({ ...event, result: "error" });
+
+          assert.equal(events.length, 1);
+          assert.equal(events[0]?.result, result);
+          for (const forbidden of ["email", "form", "payload", "url", "token", "secret"]) {
+            assert.equal(forbidden in (events[0] ?? {}), false);
+          }
+        }
+      }
+    },
+  },
+  {
+    name: "records allowed before effects and keeps logging non-blocking for invite and resend",
+    run: async () => {
+      for (const operation of ["invite", "resend"] as const) {
+        const events: AccountMemberInviteDecisionEvent[] = [];
+        const order: string[] = [];
+        const recorder = createAccountMemberInviteDecisionRecorder((event) => {
+          order.push("log");
+          events.push(event);
+          throw new Error("logging unavailable");
+        });
+        const event: AccountMemberInviteDecisionEvent = {
+          event: "account_member_invite_decision",
+          operation,
+          result: "allowed",
+          reason: "commercial_entitlement_confirmed",
+          account_id: ACCOUNT_ID,
+          actor_role: "owner",
+          request_id: "request-test",
+          latency_ms: 1,
+        };
+
+        const result = await runAccountMemberInviteWhenEligible({
+          decision: { allowed: true },
+          recordDecision: () => recorder.record(event),
+          onAllowed: async () => {
+            order.push("effect");
+            return { ok: true, value: "effect" } as const;
+          },
+        });
+
+        assert.deepEqual(result, { ok: true, value: "effect" });
+        assert.deepEqual(order, ["log", "effect"]);
+        assert.equal(events.length, 1);
+      }
+    },
+  },
+  {
+    name: "executes preserved entrypoint effects without a commercial entitlement gate",
+    run: async () => {
+      const executed: string[] = [];
+      for (const operation of ["list", "change_role", "deactivate", "revoke", "accept", "decline"] as const) {
+        const value = await runPreservedAccountMemberOperation({
+          operation,
+          execute: async () => {
+            executed.push(operation);
+            return operation;
+          },
+        });
+        assert.equal(value, operation);
+      }
+      assert.deepEqual(executed, ["list", "change_role", "deactivate", "revoke", "accept", "decline"]);
+    },
+  },
   {
     name: "normalizes email once and accepts only manageable roles",
     run: () => {
@@ -368,7 +544,14 @@ const cases: readonly Readonly<{ name: string; run: () => void }>[] = [
   },
 ];
 
-for (const validationCase of cases) {
-  validationCase.run();
-  console.log(`ok - ${validationCase.name}`);
+async function main() {
+  for (const validationCase of cases) {
+    await validationCase.run();
+    console.log(`ok - ${validationCase.name}`);
+  }
 }
+
+main().catch((error: unknown) => {
+  console.error(error);
+  process.exitCode = 1;
+});
