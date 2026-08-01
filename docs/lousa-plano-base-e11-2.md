@@ -1,8 +1,8 @@
 # Plano-base E11.2 — Autoridade comercial e elegibilidade para gestão de membros
 
-- Versão: v2
-- Data: 30/07/2026
-- Status: planejado; v2 consolidada pelo Processo automatizado; aguardando gate do Analista.
+- Versão: v2.1
+- Data: 01/08/2026
+- Status: implementado e validado; validação humana autenticada em Preview aprovada; HEAD funcional validado `7557f7053a95df07cd4c33b1224deed657671bfb`; PR #667 pronto para merge humano.
 - Recorte no roadmap: `11.2 — Autoridade comercial e elegibilidade para gestão de membros`
 - Path canônico: `docs/lousa-plano-base-e11-2.md`
 - Plano conceitual: N/A — debate realizado entre humano, Analista e Estrategista antes da v1.
@@ -243,7 +243,7 @@
 
 ### 3.1. E11.2.3 — Autoridade para o checkout
 
-- Status: planejada; execução pelo Processo automatizado somente após o merge humano da v1.
+- Status: implementada e validada no checkpoint `LP-Factory-Phase: E11.2.3`.
 - Automação: não.
 - Objetivo: restringir o checkout existente ao owner sem entitlement comercial válido e impedir nova compra pela mesma action quando a conta já estiver elegível.
 - Execução:
@@ -270,7 +270,7 @@
 
 ### 3.2. E11.2.4 — Elegibilidade para criação e reenvio de convites
 
-- Status: planejada; sucede a E11.2.3 no Processo automatizado.
+- Status: implementada e validada no checkpoint `LP-Factory-Phase: E11.2.4`.
 - Automação: não.
 - Objetivo: exigir entitlement comercial válido somente para criar e reenviar convites, preservando as ações de manutenção dos vínculos existentes.
 - Execução:
@@ -303,7 +303,7 @@
 
 ### 3.3. E11.2.5 — Experiência da conta sem entitlement
 
-- Status: planejada; sucede a E11.2.4 no Processo automatizado.
+- Status: implementada e validada no checkpoint `LP-Factory-Phase: E11.2.5`; validação humana autenticada em Preview aprovada no HEAD funcional `7557f7053a95df07cd4c33b1224deed657671bfb`.
 - Automação: não.
 - Objetivo: separar a experiência comercial do owner do estado de espera dos demais papéis, sem criar novo dashboard produtivo.
 - Execução:
@@ -341,10 +341,11 @@
 
 ### 3.4. Próxima ação
 
-- O PR #666 foi incorporado à `main` e o Processo automatizado está em execução na branch única de orquestração.
-- A reconciliação do Roadmap anterior a `plan-v2-approved` registra que o PR #666 já foi incorporado à `main`; essa atualização não integra a fase E11.2.5.
-- A v2 deve passar pelas duas passagens do Analista e pela reconciliação do Roadmap antes do checkpoint `LP-Factory-Stage: plan-v2-approved`.
-- Depois do checkpoint aprovado, executar E11.2.3, E11.2.4 e E11.2.5 no mesmo PR, sem repetir especialistas nem criar branch ou PR por fase.
+- E11.2.3, E11.2.4 e E11.2.5 foram implementadas e aprovadas no mesmo PR, preservando a matriz de consolidação e os checkpoints do Processo automatizado.
+- A validação humana autenticada em Preview aprovou owner e non-owner em desktop e mobile, incluindo conteúdo, responsividade, foco, ausência de CTA financeiro indevido e ausência de erro ou quebra visual.
+- `npm ci`, `npm run check`, as validações específicas e `git diff --check` foram aprovados após a reconciliação com a `main`.
+- O HEAD funcional validado permanece `7557f7053a95df07cd4c33b1224deed657671bfb`; a reconciliação documental posterior não altera o runtime da E11.2.
+- Próxima ação: merge humano do PR #667 pelo GitHub Web.
 
 ## 4. Escopo negativo e critérios de parada
 
@@ -378,7 +379,7 @@
 
 ### 4.3. Decisão atual
 
-- Decisão: debate concluído, PR #666 incorporado à `main`, v2 consolidada e Processo automatizado em execução.
-- Fases executáveis: E11.2.3, E11.2.4 e E11.2.5, todas sem automação.
-- Preservação dos vínculos e validação das subseções 11.2.6 e 11.2.7 integram os critérios de aceite das fases correspondentes.
-- Execução: autorizada somente após a aprovação da v2 e do Roadmap pelo Analista no checkpoint `LP-Factory-Stage: plan-v2-approved`, cabendo exclusivamente ao orquestrador previsto no item 3.4.
+- Decisão: E11.2 concluída no recorte de implementação e validação, sem automação, banco, rota, boundary ou infraestrutura nova.
+- Fases E11.2.3, E11.2.4 e E11.2.5 aprovadas; preservação dos vínculos e validações das subseções 11.2.6 e 11.2.7 comprovadas.
+- HEAD funcional validado: `7557f7053a95df07cd4c33b1224deed657671bfb`.
+- Pendência única: merge humano do PR #667.

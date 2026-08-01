@@ -1,8 +1,8 @@
 0. Introdução
 
 0.1 Cabeçalho
-• Data: 30/07/2026
-• Versão: v1.5.118
+• Data: 01/08/2026
+• Versão: v1.5.119
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -1233,7 +1233,7 @@ Repositório — Ajustados
 
 11.2.1 Objetivo e status
 - Objetivo: conectar os papéis da E11 ao sinal canônico de entitlement da E9, separando autoridade financeira, elegibilidade para novos convites e ações de manutenção dos vínculos existentes.
-- Status: planejado; plano-base v2 aprovado; Processo automatizado em execução; PR #666 incorporado à main.
+- Status: implementação e validação concluídas; Preview autenticado aprovado; HEAD funcional validado `7557f7053a95df07cd4c33b1224deed657671bfb`; merge humano do PR #667 pendente.
 - Plano-base: `docs/lousa-plano-base-e11-2.md`.
 - Automação: não.
 
@@ -1279,7 +1279,7 @@ Repositório — Ajustados
   - editor e viewer permanecem sem gestão de membros.
 
 11.2.5 Experiência da conta sem entitlement
-- Status: implementado; validação visual autenticada em Preview pendente.
+- Status: implementado e aprovado em validação humana autenticada no Preview; HEAD funcional validado `7557f7053a95df07cd4c33b1224deed657671bfb`.
 - Conteúdo:
   - `GenericCommercialPage` e `PublishedCommercialActivationPage` aplicam a mesma política de autoridade financeira;
   - owner sem entitlement mantém a variante comercial vigente e inicia o checkout existente; owner com entitlement não inicia nova compra;
@@ -1295,14 +1295,14 @@ Repositório — Ajustados
   - a decisão comercial consome exclusivamente `CommercialEntitlementSignal.isCommerciallyEligible`, sem reinterpretar origem, plano ou provedor.
 
 11.2.7 Validação técnica, visual e humana
-- Status: validação automatizada aprovada; Preview autenticado desktop/mobile pendente.
+- Status: validações automatizada e humana autenticada aprovadas.
 - Conteúdo:
-  - validar a matriz de variante genérica/publicada, owner/admin/editor/viewer e `isCommerciallyEligible=false/true`, incluindo visibilidade, chamada direta e comportamento preservado;
-  - comprovar que bloqueios de checkout e convite ocorrem antes de efeitos externos ou persistência;
-  - comprovar `allowed`, `denied` e `error`, exatamente um evento seguro por decisão e logging sem interferência no fluxo;
-  - confirmar que as ações preservadas continuam funcionando sem entitlement;
-  - validar em Preview os estados visualmente distintos em desktop e mobile, sem CTA financeiro para não-owner;
-  - concluir no mesmo recorte os checks aplicáveis, a prova em Preview e o fechamento documental pelo Prompt ABC.
+  - a matriz automatizada de variante genérica/publicada, owner/admin/editor/viewer e `isCommerciallyEligible=false/true` foi aprovada, incluindo visibilidade, chamada direta e comportamento preservado;
+  - os bloqueios de checkout e convite antes de efeitos externos ou persistência foram comprovados;
+  - os resultados `allowed`, `denied` e `error`, com exatamente um evento seguro por decisão e logging sem interferência no fluxo, foram comprovados;
+  - as ações preservadas continuaram funcionando sem entitlement;
+  - a validação humana autenticada em Preview aprovou owner e non-owner em desktop e mobile, incluindo conteúdo, responsividade, foco, ausência de CTA financeiro indevido e ausência de erro ou quebra visual;
+  - `npm ci`, `npm run check`, as validações específicas e `git diff --check` foram aprovados no fechamento final.
 
 
 12. E12 — Admin Dashboard
