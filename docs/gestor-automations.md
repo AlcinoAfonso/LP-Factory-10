@@ -3,8 +3,9 @@
 ## 1. Objetivo
 
 Este documento orienta decisões sobre automações, uso de IA e comportamento agentic no LP Factory 10.
-O Gestor deve decidir se o caso deve ser automatizado, escolher a natureza e o ambiente adequados e recomendar a solução mínima suficiente.
-A decisão deve considerar benefício, custo, complexidade, risco, segurança, observabilidade, manutenção, aprovação humana e adequação ao MVP.
+O Gestor atua em dois momentos: antes do plano-base v1, recomenda se o caso deve ser automatizado, sua natureza e ambiente; na avaliação formal da v1, detalha a solução mínima suficiente dentro da categoria aprovada.
+A adoção e a categoria são submetidas ao humano no fluxo do Estrategista, e eventual mudança de categoria exige nova decisão humana.
+A avaliação deve considerar benefício, custo, complexidade, risco, segurança, observabilidade, manutenção, participação humana e adequação ao MVP.
 Deve começar pela alternativa mais simples, preservar a stack e os contratos aprovados, evitar overengineering e não transformar recurso novo em autorização automática de implementação.
 
 ## 2. Mapa de categorias
@@ -38,11 +39,12 @@ Todo parecer deve classificar o caso em uma das seguintes naturezas:
 
 ### 2.2 Ambiente de execução
 
-A natureza da solução e o ambiente de execução são dimensões diferentes. Codex é ambiente, não natureza de automação.
+A natureza da solução e o ambiente de execução são dimensões diferentes. Todo parecer deve identificar o ambiente principal e, quando aplicável, ambientes ou plataformas dependentes. Codex é ambiente, não natureza de automação.
 
 #### 2.2.1 Runtime do LP Factory
 
 * Execução dentro da aplicação ou dos serviços que suportam diretamente o produto.
+* Pode ocorrer no Core ou em service dedicado do projeto; services reutilizáveis com deploy independente devem ser registrados em `docs/services.md`.
 * Deve seguir os contratos de `docs/base-tecnica.md`, `docs/platform-config.md`, código real e demais fontes canônicas do recorte.
 
 #### 2.2.2 Infraestrutura operacional
@@ -55,29 +57,29 @@ A natureza da solução e o ambiente de execução são dimensões diferentes. C
 * Execução usada para desenvolvimento, investigação, validação, edição de arquivos, testes ou produção de artefatos internos.
 * Recursos e limites desse ambiente devem ser registrados em `docs/gestor-codex.md`.
 
-#### 2.2.4 Serviço ou plataforma externa
+#### 2.2.4 Plataforma ou serviço externo
 
-* Execução realizada por fornecedor, API, plataforma ou integração externa.
+* Execução realizada por fornecedor, API, plataforma ou integração externa ao projeto.
 * A recomendação deve considerar dependência, custo, segurança, disponibilidade, portabilidade e operação.
 
 ## 3. Regra obrigatória de avaliação
 
 * Confirmar o problema real, o recorte, as fontes do projeto e a evidência disponível.
 * Comparar as quatro naturezas da seção 2 e escolher uma única classificação.
-* Identificar separadamente o ambiente de execução.
+* Identificar o ambiente principal de execução e, quando aplicável, ambientes ou plataformas dependentes.
 * Começar por não automatizar ou por solução determinística sem OpenAI.
 * Usar IA somente onde interpretação, geração, classificação, extração, revisão ou estruturação trouxer benefício comprovável.
 * Considerar comportamento agentic somente quando decisão adaptativa, coordenação de ferramentas ou revisão dinâmica forem realmente necessárias.
 * Separar o que pertence à IA do que deve permanecer determinístico no LP Factory.
 * Avaliar benefício, custo, complexidade, risco, segurança, observabilidade, manutenção e adequação ao MVP.
 * Preferir a solução mais simples, segura, mensurável, reversível e compatível com a stack aprovada.
-* Exigir aprovação humana para publicação, envio externo, custo relevante, mutação ou exclusão de dados, configuração sensível e conteúdo comercial público.
+* Definir a participação humana aplicável: autorização de implementação ou ativação, gatilho humano, revisão do resultado ou aprovação por execução. Não exigir intervenção durante a execução quando o contrato aprovado permitir operação autônoma segura.
 * Definir fallback e distinguir falha técnica de ausência de informação.
 * A existência de recurso novo não autoriza implementação.
 
 ### 3.1 Consulta obrigatória à OpenAI
 
-Quando o caso envolver ou puder envolver OpenAI, o Gestor deve consultar a documentação oficial atual antes de concluir o parecer.
+Quando houver hipótese concreta e material de uso da OpenAI, o Gestor deve consultar a documentação oficial atual antes de concluir o parecer.
 
 * No Codex, usar preferencialmente a OpenAI Docs skill, quando disponível.
 * Se a skill não estiver disponível ou não resolver a consulta, usar diretamente a documentação oficial da OpenAI.
@@ -99,12 +101,13 @@ Cada parecer deve ser curto, decisório e declarar:
 
 * Automação: sim ou não.
 * Classificação: uma das quatro naturezas da seção 2.
-* Ambiente: um dos quatro ambientes da seção 2.
+* Ambiente principal e, quando aplicável, ambientes ou plataformas dependentes.
 * OpenAI: sim, não ou condicional.
-* Solução mínima recomendada e divisão entre processamento determinístico, IA e decisão humana.
+* Solução mínima recomendada e divisão entre processamento determinístico, IA e participação humana.
 * Benefício esperado, custo, complexidade, riscos, segurança, observabilidade, manutenção e fallback.
 * Recursos OpenAI materialmente relevantes avaliados, com decisão de adotar agora, rejeitar para o caso, não aplicável ou requer decisão adicional.
-* Recomendação final: aprovar, rejeitar ou indicar decisão adicional necessária.
+* Veredito: `nenhuma automação aplicável`, `automação aplicável com patches autossuficientes`, `requer investigação factual` ou `requer validação material pelo Analista`.
+* Patches aplicáveis pelo orquestrador, investigação factual e validação material pelo Analista, quando correspondentes ao veredito.
 * Fontes do projeto e fontes oficiais efetivamente consultadas.
 
 O parecer não autoriza implementação por si só.
