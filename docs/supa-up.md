@@ -142,45 +142,56 @@ Avaliar implementação somente quando existir:
 
 ---
 
-## 5 — Unified Logs + AI Debugging *(🟦 Estável)*  
+## 5 — Unified Logs *(🧪 Open beta)*
 
 2025-08-15  
+Atualizado em 2026-08-03
 
 ### Status no Projeto
 
-- Status: Em implementação por casos de uso
-- Evidência: docs/roadmap.md (E5.4, E10.4.6) + docs/base-tecnica.md (logs estruturados com request_id/rid)
+- Status: Em uso parcial — logs estruturados existem no runtime; disponibilidade e uso do Unified Logs ainda não foram validados no projeto.
+- Evidência: `docs/base-tecnica.md` `5.3.3 exige logs estruturados com resultado, motivo seguro, `request_id` e latência; o registro anterior confirma uso do Logs Explorer clássico.
+- Lacuna: confirmar no Dashboard se o rollout do Unified Logs já alcançou o projeto.
 
+### Descrição
 
-### Descrição  
+Unified Logs reúne, em uma única visão pesquisável, eventos do API Gateway, Postgres, Auth, Storage, PostgREST, Realtime e poolers. A open beta inclui filtros combináveis, busca, live tail, histograma por nível e detalhamento do percurso da requisição.
 
-Painel de logs unificado com suporte a depuração via IA.  
+O recurso não deve ser descrito como AI Debugging e não substitui os logs estruturados do aplicativo nem Log Drains para retenção externa.
 
-### Valor para o Projeto  
+### Valor para o Projeto
 
-- Melhora diagnóstico e reduz tempo de correção.  
+- Reduz o tempo de correlação de incidentes entre serviços Supabase.
+- Complementa o contrato atual de `request_id` sem criar nova infraestrutura.
+- Pode facilitar smoke tests, deploys e investigação de falhas de Auth ou Data API.
 
-### Valor para o Usuário  
+### Valor para o Usuário
 
-- Maior confiabilidade e tempo de resposta rápido.  
+- Indireto: menor tempo de diagnóstico e maior previsibilidade operacional.
 
-### Ações Recomendadas  
+### Limites no MVP
 
-1. Habilitar IA Debugging.  
+- Open beta, sujeita a mudanças de interface e disponibilidade.
+- Não criar destino externo, agente ou automação apenas por causa do recurso.
+- Não registrar PII, secrets, tokens, prompts ou payloads brutos.
 
-2. Integrar com Observabilidade.
+### Ações Recomendadas
 
-### Registro (Tipo A — Plataforma)  
+1. Confirmar a disponibilidade no Dashboard na próxima investigação operacional.
+2. Usar sob demanda, mantendo os logs estruturados do aplicativo como contrato principal.
+3. Reavaliar Log Drains separadamente somente quando retenção externa for necessária.
 
-- Status: OK  
+### Fonte Oficial
 
-- Verificado em: 08/02/2026  
+- [Supabase Blog — Unified Logs is now in open beta](https://supabase.com/blog/unified-logs-open-beta)
 
-- Ambiente: Supabase Dashboard (projeto LP-Factory-10)  
+### Registro (Tipo A — Plataforma)
 
-- Evidência: Logs & Analytics → Logs Explorer; origem `auth_logs`; consulta padrão carregou; filtros de intervalo e busca “error” disponíveis.  
-
-- Observação: correlação por `request_id` depende do Tipo B no E10.4.6 (logs estruturados).  
+- Status: NÃO VALIDADO NO PROJETO
+- Verificado em: 2026-08-03
+- Ambiente: Supabase Dashboard / Logs
+- Evidência: fonte oficial e repositório no SHA inicial da rodada.
+- Observação: o registro não autoriza nova infraestrutura.
 
 ---
 
@@ -212,34 +223,6 @@ Criação e merge de branches diretamente no dashboard Supabase.
 ### Ações Recomendadas  
 
 1. Testar merges em staging.  
-
----
-
-## 7 — Build via Figma *(🟦 Estável)*  
-
-2025-08-25  
-
-### Status no Projeto
-
-- Status: Não implementado
-- Evidência: docs/roadmap.md (sem adoção definida no escopo atual)
-
-
-### Descrição  
-
-Protótipos criados no Figma geram apps Supabase automaticamente.  
-
-### Valor para o Projeto  
-
-- Acelera criação de templates e LPs.  
-
-### Valor para o Usuário  
-
-- Entregas mais rápidas e consistentes.  
-
-### Ações Recomendadas  
-
-1. Explorar uso no pipeline de design.  
 
 ---
 
@@ -299,270 +282,51 @@ Permite arquivos persistentes dentro de funções edge.
 
 ---
 
-## 10 — Supabase Platform Kit (UI) *(🟦 Estável)*  
-
-2025-09-15  
-
-### Status no Projeto
-
-- Status: Não implementado
-- Evidência: docs/roadmap.md (sem adoção definida no escopo atual)
-
-
-### Descrição  
-
-Novo kit oficial de componentes UI (Auth, Logs, Storage).  
-
-### Valor para o Projeto  
-
-- Substitui shadcn/ui.  
-
-### Valor para o Usuário  
-
-- Interface padronizada e profissional.  
-
-### Ações Recomendadas  
-
-1. Migrar componentes gradualmente.  
-
----
-
-## 12 — Algolia Connector *(🟦 Estável)*  
+## 12 — Algolia Connector *(🟦 Estável; adoção condicional)*
 
 2025-09-25  
+Atualizado em 2026-08-03
 
 ### Status no Projeto
 
-- Status: Não implementado
-- Evidência: docs/roadmap.md (sem adoção definida no escopo atual)
-
-
-### Descrição  
-
-Conector para indexação full-text e busca inteligente.  
-
-### Valor para o Projeto  
-
-- Substitui adapters customizados.  
-
-### Valor para o Usuário  
-
-- Buscas mais rápidas e relevantes.  
-
-### Ações Recomendadas  
-
-1. Criar índices e validar ranking.  
-
----
-
-
-## 14 — Edge Functions Cache Layer *(🟣 Previsto)*  
-
-2025-10-01  
-
-### Status no Projeto
-
-- Status: Não implementado
-- Evidência: docs/roadmap.md (sem adoção definida no escopo atual)
-
-
-### Descrição  
-
-Cache com TTL e *event bust* integrado.  
-
-### Valor para o Projeto  
-
-- Otimiza cold starts e performance edge.  
-
-### Valor para o Usuário  
-
-- LPs e APIs mais rápidas.  
-
-### Ações Recomendadas  
-
-1. Testar em staging.  
-
----
-
-## 15 — Observabilidade com AI *(🟦 Estável)*  
-
-2025-10-05  
-
-### Status no Projeto
-
-- Status: Não implementado
-- Evidência: docs/roadmap.md (sem adoção definida no escopo atual)
-
-
-### Descrição  
-
-Monitoramento automático de latência e falhas críticas com IA.  
-
-### Valor para o Projeto  
-
-- Reduz tempo de reação a falhas.  
-
-### Valor para o Usuário  
-
-- Sistema mais confiável.  
-
-### Ações Recomendadas  
-
-1. Configurar alertas de p95/p99.  
-
----
-
-## 16 — Remote MCP Server *(🟦 Estável)*  
-
-2025-10-10  
-
-### Status no Projeto
-
-- Status: Não implementado
-- Evidência: docs/roadmap.md (sem adoção definida no escopo atual)
-
-
-### Descrição  
-
-Conecta agentes IA (Claude, GPT) ao Supabase via servidor MCP remoto HTTP.  
-
-### Valor para o Projeto  
-
-- Facilita automação de queries e geração de código.  
-
-### Valor para o Usuário  
-
-- Acesso a diagnósticos e automações inteligentes.  
-
-### Ações Recomendadas  
-
-1. Integrar ao pipeline de debug IA.  
-
----
-
-## 18 — AI Reasoning no Dashboard *(🟣 Previsto)*  
-
-2025-10-14  
-
-### Status no Projeto
-
-- Status: Não implementado
-- Evidência: docs/roadmap.md (sem adoção definida no escopo atual)
-
-
-### Descrição  
-
-Módulo de raciocínio com IA para insights automáticos.  
-
-### Valor para o Projeto  
-
-- Complementa Observabilidade IA.  
-
-### Valor para o Usuário  
-
-- Recomendações e diagnósticos proativos.  
-
-### Ações Recomendadas  
-
-1. Integrar métricas com observabilidade.  
-
----
-
-## 19 — Tracking e Analytics Interno *(🟣 Previsto)*  
-
-2025-10-20  
-
-### Status no Projeto
-
-- Status: Não implementado
-- Evidência: docs/roadmap.md (sem adoção definida no escopo atual)
-
-
-### Descrição  
-
-Sistema de tracking nativo de eventos, medindo comportamento e conversão com segurança e LGPD.  
-
-### Valor para o Projeto  
-
-- Reduz dependência de Google Tag e Meta Pixel.  
-
-### Valor para o Usuário  
-
-- Métricas reais e confiáveis no Dashboard.  
-
-### Ações Recomendadas  
-
-1. Implementar `events_analytics`.  
-
-2. Criar views agregadas para relatórios.  
-
----
-
-## 20 — Bundles de Grants por Plano *(🟦 Estável)*  
-
-2025-11-12 
-
-### Status no Projeto
-
-- Status: Em implementação por casos de uso
-- Evidência: docs/roadmap.md (E9.4, E9.8; grants/model_grants/get_feature em evolução por casos)
-
-
-
-### Descrição  
-
-Modelo de controle dinâmico de recursos e permissões por plano, utilizando bundles configuráveis armazenados em `model_grants`.  
-
-### Valor para o Projeto  
-
-- Simplifica manutenção e pricing.  
-
-- Elimina dependência de migrações para novos recursos.  
-
-- Base técnica do Billing Engine (E9).  
-
-### Valor para o Usuário  
-
-- Flexibilidade para upgrades e personalização de planos.  
-
-### Ações Recomendadas  
-
-1. Criar tabela `model_grants` e função `get_feature()`.  
-
-2. Integrar ao Admin Dashboard e Account Setup.  
-
----
-
-## 25  — Política de Dados: TTL Graduado (LGPD + Remarketing) 🟩 Estável)*
-
-2025-11-12
-
-### Status no Projeto
-
-- Status: Não implementado
-- Evidência: docs/roadmap.md (sem adoção definida no escopo atual)
-
+- Status: Não implementado.
+- Evidência: não há Algolia, índice externo, credencial ou sync job no repositório.
+- Relação com a stack: sobreposto à busca Postgres já apoiada por `pg_trgm`; não substitui o caminho atual sem prova de superioridade.
 
 ### Descrição
 
-Retenção por camadas: PII (30–90 dias), eventos brutos (180 dias) e agregados anônimos (18–24 meses), com salting rotativo e RLS.
+O conector oficial usa o Supabase como fonte de dados para sincronizar uma tabela ou view com um índice Algolia por tarefa periódica.
 
 ### Valor para o Projeto
 
-- Equilibra compliance e visão de longo prazo.
+- Pode oferecer ranking e busca externa quando a solução Postgres deixar de atender qualidade, volume ou latência.
+- Preserva uma alternativa gerenciada sem antecipar adoção.
 
-### Valor para o Usuário / Negócio
+### Limites no MVP
 
-- Proteção de dados pessoais e métricas confiáveis.
+- Exige serviço, credenciais, índice e sincronização externos.
+- Introduz custo, consistência eventual, governança de campos e superfície adicional de segurança.
+- Não adotar apenas por modernidade nem para substituir busca interna sem métrica.
+
+### Gatilho futuro de avaliação
+
+Avaliar somente quando houver busca de produto aprovada e:
+
+1. qualidade ou latência do Postgres mensuravelmente insuficiente;
+2. hipótese de superioridade do Algolia com critério de teste;
+3. campos, frequência de sincronização, custo e proteção de dados definidos.
 
 ### Ações Recomendadas
 
-1. Criar/ajustar `visitor_identifiers`, `events_raw`, `metrics_daily`.
+1. Manter como alternativa condicional.
+2. Comparar primeiro com FTS e `pg_trgm` no caso real.
+3. Não criar índice, view, credencial ou job sem plano-base aprovado.
 
-2. Configurar jobs de TTL e rotação de salts.
+### Fonte Oficial
+
+- [Supabase Blog — Algolia Connector for Supabase](https://supabase.com/blog/algolia-connector-for-supabase)
 
 ---
-
 
 ## 26 — Realtime Replay (Alpha) *(🧪 Experimental)*
 
@@ -611,228 +375,100 @@ Reavaliar apenas quando colaboração, preview simultâneo ou recuperação de e
 
 ---
 
-## 27 — Camada Inteligente de Remarketing *(🧪 Experimental)*
+## 32 — Stripe Sync Engine mantido pela Stripe *(🟦 Estável; adoção condicional)*
 
-2025-11-10  
+2025-12-19  
+Atualizado em 2026-08-03
 
 ### Status no Projeto
 
-- Status: Não implementado
-- Evidência: docs/roadmap.md (sem adoção definida no escopo atual)
-
+- Status: Não implementado.
+- Evidência: `docs/platform-config.md` registra checkout e webhook Stripe próprios, com entitlement local liberado somente pelo evento aprovado.
+- Relação com a stack: complementar para reconciliação e analytics; sobreposto ao fluxo atual se usado para decidir entitlement.
 
 ### Descrição
 
-Centraliza, no Supabase, a configuração e ativação de scripts e parâmetros de remarketing (Google Ads, Meta Ads e RD Station). Substitui a necessidade de editar cada LP individualmente, usando tabelas e views para gerenciar pixels e eventos.
+O Stripe Sync Engine continua disponível pela integração do Dashboard Supabase e passou a ser mantido no repositório `stripe/sync-engine`. Ele replica objetos Stripe para um schema Postgres consultável por SQL.
 
 ### Valor para o Projeto
 
-- Orquestração única de pixels e UTM sem tocar no front-end.  
+- Pode simplificar reconciliação financeira, backoffice e análises de MRR ou churn.
+- Permite juntar dados Stripe e dados de aplicação quando houver necessidade operacional comprovada.
 
-- Reduz risco de inconsistência entre LPs.  
+### Limites no MVP
 
-- Cria base técnica para automações orientadas a eventos (A/B, campanhas dinâmicas).
+- Não substituir o webhook atual nem transformar tabelas sincronizadas em fonte automática de entitlement.
+- Introduz Edge Function, Cron, Queue, schema adicional, dados financeiros replicados e dependência operacional.
+- Não instalar enquanto o fluxo atual atender checkout, webhook e entitlement com menor complexidade.
 
-### Valor para o Usuário
+### Gatilho futuro de avaliação
 
-- Pixels sempre atualizados sem necessidade de suporte técnico.  
-
-- Campanhas mais eficientes, com menor custo por lead.  
-
-- Configurações por conta/LP unificadas, previsíveis e seguras.
+Avaliar somente quando houver necessidade recorrente de reconciliação ou analytics que não seja atendida de forma simples pelo Stripe e pelo estado local, com hipótese mensurável de redução de falhas ou esforço.
 
 ### Ações Recomendadas
 
-1. Criar tabela `remarketing_settings` (account_id, lp_id, provider, config_json).  
+1. Manter como alternativa condicional.
+2. Preservar o webhook aprovado como autoridade do fluxo atual.
+3. Se o gatilho ocorrer, comparar custo, segurança, retenção e manutenção antes da adoção.
 
-2. Criar função de leitura com fallback (lp → conta → default).  
+### Fonte Oficial
 
-3. Integrar leitura da camada a uma única função SSR na Vercel Edge.  
-
-4. Mapear eventos do módulo `events_analytics` como gatilhos de remarketing.  
+- [Supabase Blog — We’re Transferring the Stripe Sync Engine to Stripe](https://supabase.com/blog/stripe-sync-engine-transfer)
 
 ---
 
-## 28 — Integração HubSpot ↔ RD Station *(🧪 Experimental)*
+## 33 — Metrics API + Grafana Cloud *(🟦 Estável; adoção condicional)*
 
-2025-11-10  
+2025-12-16  
+Atualizado em 2026-08-03
 
 ### Status no Projeto
 
-- Status: Não implementado
-- Evidência: docs/roadmap.md (sem adoção definida no escopo atual)
-
+- Status: Não implementado.
+- Evidência: não há Grafana, credencial, dashboard ou integração registrada no repositório; a observabilidade atual usa logs estruturados e Supabase Dashboard.
+- Relação com a stack: complementar, sem substituir logs do aplicativo ou Unified Logs.
 
 ### Descrição
 
-Fornece uma ponte leve, via Supabase Functions e Webhooks, para sincronização de leads, tags e eventos entre HubSpot e RD Station — útil para migração, operações híbridas ou para agências que atendem clientes que usam CRMs diferentes.
+A integração oficial cria, a partir do Dashboard Supabase, uma instância Grafana Cloud configurada com autenticação, scraping da Metrics API e dashboard com mais de 200 métricas de banco, pooler, disco, rede, checkpoints, tamanho e queries. A integração foi anunciada para todos os planos, inclusive Free.
 
 ### Valor para o Projeto
 
-- Centraliza tráfego de dados de CRM dentro da infraestrutura existente.  
-
-- Reduz dependência de soluções externas (Zapier/Make).  
-
-- Cria ativo técnico de automação entre plataformas de marketing.
+- Pode reduzir setup de métricas quando o banco entrar em operação comercial contínua.
+- Ajuda a detectar pressão de CPU, memória, disco, conexões e replicação antes de incidentes.
+- Evita construir dashboard próprio de infraestrutura.
 
 ### Valor para o Usuário
 
-- Dados sempre sincronizados entre CRMs sem retrabalho manual.  
+- Indireto: maior estabilidade e menor tempo de diagnóstico.
 
-- Mais consistência em campanhas e funis híbridos.  
+### Limites no MVP
 
-- Possibilidade de usar LP Factory como “hub de dados” da operação.
+- Cria dependência e conta em terceiro, com política própria de acesso, retenção e limites.
+- A entrega atual cobre métricas; logs via Grafana não devem ser presumidos como disponíveis.
+- Não configurar por antecipação sem rotina de monitoramento e responsável definidos.
 
-### Ações Recomendadas
+### Gatilho futuro de avaliação
 
-1. Implementar webhook público (`/api/crm-sync`) com validação assíncrona.  
-
-2. Criar tabela `crm_sync_queue` para armazenar eventos pendentes.  
-
-3. Criar função cron (`supabase.functions.schedule`) para processar fila.  
-
-4. Mapear campos padrão (nome, email, tags, origem, campanha).  
-
----
-
-## 29 — Changelog Técnico Automatizável (Triggers & Policies) *(🧪 Experimental)*
-
-2025-11-11  
-
-### Status no Projeto
-
-- Status: Não implementado
-- Evidência: docs/roadmap.md (sem adoção definida no escopo atual)
-
-
-### Descrição
-
-Define um padrão unificado para rastrear mudanças em triggers, policies e funções do Supabase. Utiliza cabeçalhos YAML em migrations para permitir que uma Function ou GitHub Action gere automaticamente o changelog técnico a cada PR.
-
-### Valor para o Projeto
-
-- Rastreabilidade clara entre versões (ex.: v2.8 → v2.9).  
-
-- Menos risco de drift entre schema, triggers e lógica do projeto.  
-
-- Facilita QA, rollback e auditoria técnica.
-
-### Valor para o Usuário
-
-- Redução de erros em permissões, auditoria, convites e billing.  
-
-- Menos instabilidade técnica ao ativar novas features.  
-
-- Evolução previsível e documentada do backend.
+Avaliar quando houver primeiros clientes ativos, incidente recorrente ou necessidade de baseline operacional que justifique acompanhamento periódico de métricas.
 
 ### Ações Recomendadas
 
-1. Padronizar migrations com cabeçalho YAML (`change_id`, `component`, `breaking`).  
+1. Manter como opção de observabilidade futura.
+2. Priorizar o Dashboard e logs atuais enquanto atenderem o MVP.
+3. Antes de conectar, definir responsáveis, acesso, retenção, custo e alertas mínimos.
 
-2. Criar function `fn_changelog_collect()` para ler cabeçalhos.  
+### Fonte Oficial
 
-3. Gerar arquivo `docs/changelog-tecnico.md` automaticamente via GitHub Action.  
+- [Supabase Blog — Observability for every Supabase project with Grafana Cloud](https://supabase.com/blog/observability-for-every-supabase-project-with-grafana-cloud)
 
-4. Adicionar validação obrigatória em PR (campo ausente → PR bloqueado).  
+### Registro (Tipo B — Integração/Observabilidade)
 
----
-
-## 30 — Auth Email Templates (Templates de Email do Supabase Auth) *(🟩 Estável)*  
-
-2025-12-01  
-
-### Status no Projeto
-
-- Status: Em implementação por casos de uso
-- Evidência: docs/roadmap.md (E5.4, E5.6) + docs/base-tecnica.md (templates de Auth e SMTP via Resend)
-
-
-### Descrição  
-
-Permite editar, no Supabase Dashboard, os templates de emails transacionais do Auth (ex.: invite, reset password, confirmação de cadastro e alertas de segurança), usando variáveis padrão do Supabase para links e contexto.
-
-### Valor para o Projeto  
-
-- Padroniza comunicação de Auth sem criar infraestrutura de email própria.  
-
-- Reduz tickets por confusão em convites, reset e onboarding.  
-
-- Melhora segurança percebida com alertas (senha/email alterados, MFA etc).
-
-### Valor para o Usuário  
-
-- Emails mais claros, com branding e instruções objetivas.  
-
-- Menos risco de erro ao aceitar convites ou redefinir acesso.
-
-### Ações Recomendadas  
-
-1. Supabase Dashboard > Authentication > Email Templates: revisar **Invite user** e **Reset password**.  
-
-2. Criar copy PT-BR padrão (sem lógica condicional) e validar links/redirect em ambiente de preview.  
-
-3. **Ao desenvolver o fluxo de convites (Fluxo 5/6), utilizar obrigatoriamente o template nativo de “Invite user” do Supabase**, evitando implementação de envio de email custom no Next.js.  
-
-4. Ativar alertas de segurança (password/email changed, MFA) quando houver primeiros clientes.
-
----
-
-## 32 — Stripe Sync Engine no Dashboard (1‑click) *(🗾 Estável)*
-
-2025-12-19
-
-### Status no Projeto
-
-- Status: Não implementado
-- Evidência: docs/roadmap.md (sem adoção definida no escopo atual)
-- Observação: Supabase Update May 2026 informa que o Stripe Sync Engine passou a ser mantido pela Stripe e que o app Supabase no Stripe Marketplace está GA; manter sem adoção no E9 neste momento.
-
-
-### Descrição  
-
-Integração do Stripe Sync Engine diretamente no Supabase Dashboard (setup em um clique). Permite consultar **customers**, **subscriptions**, **invoices** e **payments** via SQL.
-
-### Valor para o Projeto  
-
-- Pode simplificar a camada de billing/assinaturas, reduzindo integração manual.  
-
-### Valor para o Usuário  
-
-- Menos falhas de sincronização; dados financeiros mais confiáveis no backoffice.
-
-### Ações Recomendadas  
-
-1. Decidir se essa integração vira caminho padrão do Billing Engine (para reduzir retrabalho).  
-
-2. Se adotar: registrar quais tabelas/objetos do Sync Engine serão fonte de verdade para entitlement/grants.
-
----
-
-## 33 — Metrics API: observabilidade via Prometheus *(🗾 Estável)*
-
-2025-12-16
-
-### Status no Projeto
-
-- Status: Não implementado
-- Evidência: docs/roadmap.md (sem adoção definida no escopo atual)
-
-
-### Descrição  
-
-Documentação aprimorada para exportar telemetria do banco (Metrics API) para stacks compatíveis com Prometheus.
-
-### Valor para o Projeto  
-
-- Caminho claro para monitorar a saúde/performance do Postgres/Supabase com ferramenta padrão de mercado.  
-
-### Valor para o Usuário  
-
-- Maior estabilidade percebida e menos indisponibilidades.
-
-### Ações Recomendadas  
-
-1. Decidir se entra no MVP (agora) ou se fica como setup recomendado após os primeiros clientes.
+- Status: PENDENTE
+- Verificado em: 2026-08-03
+- Ambiente futuro: Supabase Metrics API + Grafana Cloud
+- Evidência: fonte oficial e ausência de integração no repositório.
+- Observação: o registro não autoriza criar conta, credencial, dashboard ou alerta.
 
 ---
 
@@ -898,81 +534,51 @@ Recurso/integração do **index_advisor** para ajudar a identificar índices fal
 
 ---
 
-## 37 — Geração de tipos Python via Supabase CLI *(🗾 Estável)*
-
-2026-01-08
-
-### Status no Projeto
-
-- Status: Não implementado
-- Evidência: docs/roadmap.md (sem adoção definida no escopo atual)
-
-
-### Descrição  
-
-Guia oficial para gerar **tipos Python** via CLI (`supabase gen types --lang=python`), com requisito de versão mínima e opção de geração local/remota.
-
-### Valor para o Projeto  
-
-- Útil se houver serviços auxiliares em Python (ex.: automações internas, jobs, scripts).  
-
-### Valor para o Usuário  
-
-- Menos bugs de contrato (type-safe) em integrações Python.
-
-### Ações Recomendadas  
-
-1. Registrar versão mínima e comando no doc (já descritos no guia).
-
----
-
-
-## 39 — pg_graphql: desativação em avaliação e introspecção off a partir da 1.6.0 *(🗾 Estável)*
+## 39 — Retirada de `pg_graphql` não utilizado *(🟦 Estável; correção pendente)*
 
 2026-02-15  
-Atualizado em 2026-07-13
+Atualizado em 2026-08-03
 
 ### Status no Projeto
 
-- Status: Avaliação final pendente
-- Evidência: inspeção read-only do projeto Supabase em 2026-07-13 encontrou `pg_graphql` 1.5.11 e a função `graphql_public.graphql`
-- Uso no levantamento: nenhum consumidor GraphQL identificado nas fontes consultadas nesta rodada; a confirmação definitiva depende de busca final no repositório
-- Observação: exige busca final no repositório antes da remoção
+- Status: Ausência de consumidor confirmada no repositório; retirada do ambiente ainda pendente.
+- Evidência: busca no SHA inicial por `/graphql/v1`, `graphql_public`, `pg_graphql`, GraphiQL, Relay e codegen não encontrou consumidor de runtime; as ocorrências restantes estão no próprio catálogo, em configuração e inventário/baseline.
+- Estado conhecido: o levantamento anterior encontrou `pg_graphql` 1.5.11 e `graphql_public.graphql` no projeto Supabase.
+- Lacuna documental: a remoção deve ser executada em fase própria e depois refletida em `docs/schema.md` e `docs/platform-config.md`.
 
 ### Descrição
 
-Existem duas mudanças diferentes:
-
-- a extensão `pg_graphql` pode ser desativada quando GraphQL não é utilizado;
-- a partir do `pg_graphql` 1.6.0, a introspecção do schema fica desativada por padrão e só deve ser habilitada por schema quando GraphiQL, Relay ou codegen realmente dependerem dela.
-
-O projeto ainda está em `pg_graphql` 1.5.11; portanto, não deve assumir que o novo padrão de introspecção já foi aplicado.
+`pg_graphql` fornece a Data API GraphQL do Supabase. O projeto usa PostgREST/Data API REST e não possui consumidor GraphQL. A mudança de introspecção da versão 1.6.0 não cria motivo para manter a extensão.
 
 ### Valor para o Projeto
 
-- Se a ausência de uso for confirmada, permite remover uma API desnecessária e reduzir a superfície exposta.
-- Evita dependência implícita e drift entre ambientes.
-- Impede que a atualização para 1.6.x seja confundida com adoção de GraphQL.
+- Reduz superfície exposta e dependência sem uso.
+- Evita drift entre configuração local, inventário e ambiente remoto.
 
-### Valor para o Usuário
+### Limites desta rodada
 
-- Menor superfície de exposição e operação mais previsível.
+- Não alterar banco, migration, schema, configuração ou runtime.
+- Não considerar a extensão removida até apply e validação no ambiente alvo.
+- Não reutilizar o ID após a retirada futura do catálogo.
 
 ### Ações Recomendadas
 
-1. Fazer busca final por `/graphql/v1`, `graphql_public`, `pg_graphql`, GraphiQL, Relay e clientes/codegen GraphQL.
-2. Confirmada a ausência de consumidor, remover `pg_graphql` por migration versionada, sem SQL Editor.
-3. Não habilitar introspecção.
-4. Avaliar retirada de `graphql_public` dos schemas expostos no `supabase/config.toml`.
-5. Após aplicar e documentar a configuração em `docs/schema.md` e `docs/platform-config.md`, retirar `supa#39` do catálogo ativo e aposentar o ID.
+1. Tratar a retirada em recorte técnico próprio com nova migration versionada.
+2. Revisar `supabase/config.toml`, inventário e documentação no mesmo recorte.
+3. Após apply e validação, remover o item do catálogo ativo preservando a lacuna `supa#39`.
+
+### Fontes Oficiais
+
+- [Supabase Changelog — pg_graphql 1.6.0: introspection disabled by default](https://supabase.com/changelog)
+- [Supabase Features — Auto-generated GraphQL API](https://supabase.com/features)
 
 ### Registro (Tipo A — Plataforma)
 
-- Status: PENDENTE
-- Verificado em: 2026-07-13
-- Ambiente: Supabase Cloud / projeto LP-Factory-10
-- Evidência: `pg_graphql` 1.5.11; `graphql_public.graphql` presente
-- Observação: nenhuma alteração de banco foi executada nesta rodada documental.
+- Status: CORREÇÃO PENDENTE
+- Verificado em: 2026-08-03
+- Ambiente: repositório no SHA inicial + estado Supabase registrado na rodada anterior.
+- Evidência: busca de uso concluída; mutação não autorizada neste workflow.
+- Observação: a catalogação não implementa a retirada.
 
 ---
 
@@ -1007,42 +613,50 @@ O Supabase Studio permite **criar e atualizar SQL snippets inline** e salvá-los
 
 ---
 
-## 41 — Supabase Assistant: sugestões de performance de queries *(🗾 Estável)*
+## 41 — Supabase AI Assistant *(🧪 Public alpha; uso assistivo)*
 
-2026-02-10
+2026-02-10  
+Atualizado em 2026-08-03
 
 ### Status no Projeto
 
-- Status: Não implementado
-- Evidência: docs/roadmap.md (sem adoção definida no escopo atual)
-
+- Status: Não implementado como dependência; uso operacional no Dashboard não validado.
+- Evidência: não há integração, automação ou contrato de runtime dependente do Assistant no repositório.
+- Relação com a stack: ferramenta de apoio no Dashboard; não integra o produto nem substitui revisão técnica.
 
 ### Descrição
-O Supabase Assistant passa a ajudar com **performance de queries**, oferecendo sugestões de otimização diretamente no Dashboard/Studio.
+
+O Supabase AI Assistant auxilia desenho de schema, escrita e depuração de SQL, análise de erros, descoberta de dados e sugestões para RLS, functions e triggers. A plataforma o classifica como public alpha.
 
 ### Valor para o Projeto
 
-* Acelera diagnóstico de lentidão sem inventar ferramentas externas.
-* Complementa o uso de Index Advisor e boas práticas de índices/FTS.
+- Pode acelerar investigação e rascunhos técnicos no Dashboard.
+- Consolida o valor anteriormente descrito de forma duplicada em observabilidade com IA, performance e “AI Reasoning”.
 
-### Valor para o Usuário
+### Limites no MVP
 
-* Dashboards mais rápidos e estáveis.
-* Menos degradação de UX em listas/relatórios.
+- Sugestões não são autoridade e podem estar incorretas.
+- Não executar SQL, alterar RLS, functions, triggers ou schema sem migration, revisão e validação.
+- Não enviar PII, secrets ou payloads sensíveis.
+- Não criar dependência de runtime.
 
 ### Ações Recomendadas
 
-1. Usar como passo padrão quando houver suspeita de query lenta.
-2. Registrar “antes/depois” (latência/planos) ao aplicar uma sugestão.
-3. Priorizar índices/ajustes no Postgres quando a sugestão indicar gargalo estrutural.
+1. Usar somente como apoio sob demanda.
+2. Revisar qualquer sugestão contra `docs/base-tecnica.md`, `docs/schema.md` e fontes oficiais.
+3. Manter o fluxo versionado de migrations e merge humano.
+
+### Fonte Oficial
+
+- [Supabase Features — Supabase AI Assistant](https://supabase.com/features/ai-assistant)
 
 ### Registro (Tipo A — Plataforma)
 
-* Status: PENDENTE
-* Verificado em: —
-* Ambiente: Supabase Dashboard (projeto LP-Factory-10)
-* Evidência: —
-* Observação: recurso de apoio (não muda runtime); adotar sob demanda.
+- Status: PENDENTE
+- Verificado em: 2026-08-03
+- Ambiente: Supabase Dashboard
+- Evidência: fonte oficial; uso no projeto não validado.
+- Observação: ferramenta assistiva, sem autoridade de mudança.
 
 ---
 
@@ -1597,40 +1211,51 @@ Melhorias do Schema Visualiser para inspeção de modelagem (relações clicáve
 
 ## 59 — Supabase Plugin para agentes (MCP + Agent Skills) *(🟦 Estável)*
 
-2026-05-19
+2026-05-19  
+Atualizado em 2026-08-03
 
 ### Status no Projeto
 
-- Status: Em implementação por casos de uso
-- Evidência: `docs/gestor-codex.md` §§4–5: plugin em teste, leitura aprovada e escrita não aprovada.
+- Status: Em implementação por casos de uso.
+- Evidência: `docs/gestor-codex.md` ``4–5 registra plugin em teste, leitura aprovada e escrita não aprovada.
+- Relação com a stack: tooling de desenvolvimento; não integra o runtime do SaaS.
 
 ### Descrição
 
-Integração do Supabase com agentes por meio do plugin MCP e das Agent Skills, adotada gradualmente conforme casos de uso validados no projeto.
+O plugin reúne o MCP oficial e Agent Skills para agentes que trabalham com Supabase. O framework e benchmark oficial Supabase Evals, publicado em 31/07/2026, mede agentes em tarefas reais e reforça a necessidade de consultar documentação e skills atuais.
+
+Supabase Evals não é uma dependência do projeto nem justifica criar suíte própria nesta fase; funciona como evidência externa para a governança de agentes já concentrada neste item.
 
 ### Valor para o Projeto
 
-- Pode acelerar investigações técnicas no Supabase e orientar agentes em tarefas relacionadas à plataforma.
-- Permite avaliar a integração de forma incremental, sem antecipar adoção ampla.
-- Mantém `docs/gestor-codex.md` como fonte dos detalhes operacionais, limites e estado dos testes.
+- Pode acelerar investigações técnicas e reduzir uso de conhecimento desatualizado.
+- O benchmark oficial oferece referência para avaliar limites de agentes em schema, Auth, Edge Functions e RLS.
+- Mantém a adoção incremental e controlada por caso de uso.
 
-### Valor para o Usuário
+### Limites no MVP
 
-- Indireto: reduz atrito e risco técnico em entregas que dependem de Supabase.
+- Manter leitura e escrita com permissões distintas.
+- Não executar benchmark, containers, grader, MCP novo ou automação de eval sem caso aprovado.
+- Resultado de benchmark não substitui validação do repositório e do ambiente alvo.
 
 ### Ações Recomendadas
 
-1. Adotar o plugin e as Agent Skills somente em casos de uso previamente delimitados.
-2. Consultar `docs/gestor-codex.md` para regras operacionais, limites e estado de aprovação.
-3. Não duplicar neste registro os detalhes operacionais mantidos no Gestor Codex.
+1. Adotar plugin e skills somente nos casos delimitados em `docs/gestor-codex.md`.
+2. Consultar fontes oficiais e validar qualquer mutação.
+3. Usar Supabase Evals apenas como referência externa até existir necessidade concreta de avaliação própria.
+
+### Fontes Oficiais
+
+- [Supabase Blog — Introducing Supabase Evals](https://supabase.com/blog/introducing-supabase-evals)
+- [Supabase Blog — AI Agents Know About Supabase](https://supabase.com/blog/supabase-agent-skills)
 
 ### Registro (Tipo B — Tooling/Infra)
 
-- Status: PENDENTE
-- Verificado em: —
-- Ambiente: Supabase Plugin MCP / Agent Skills / agentes de IA
-- Evidência: `docs/gestor-codex.md` §§4–5.
-- Observação: adoção gradual por casos de uso; governança operacional centralizada no Gestor Codex.
+- Status: PARCIAL
+- Verificado em: 2026-08-03
+- Ambiente: Supabase Plugin / MCP / Agent Skills / agentes
+- Evidência: `docs/gestor-codex.md` e fontes oficiais.
+- Observação: governança operacional permanece no Gestor Codex.
 
 ---
 
@@ -1713,42 +1338,51 @@ Recurso de Auth para conectar provedores OAuth2 ou OpenID Connect próprios ao p
 
 ---
 
-## 62 — Supabase official ChatGPT app *(🟦 Estável)*
+## 62 — Supabase official ChatGPT app + Sign in with ChatGPT *(🧪 Integração em evolução)*
 
-2026-06-10
+2026-06-10  
+Atualizado em 2026-08-03
 
 ### Status no Projeto
 
-- Status: Não implementado
-- Evidência: Supabase Update June 2026; sem adoção registrada no projeto.
+- Status: Não adotado como integração operacional aprovada.
+- Evidência: `docs/gestor-codex.md` governa o plugin Codex separadamente; não há registro de adoção da app oficial do ChatGPT.
+- Relação com a stack: tooling operacional externo; não é método de login dos usuários do LP Factory.
 
 ### Descrição
 
-Aplicativo oficial da Supabase para uso no ChatGPT, tratado como uma integração própria e separada do Codex Plugin.
+A app oficial conecta projetos Supabase ao ChatGPT. Desde 29/07/2026, o Sign in with ChatGPT em beta reduz o atrito para entrar no Dashboard Supabase e autorizar o plugin no ChatGPT.
+
+Login e consentimento são etapas separadas: o usuário ainda revisa o alcance concedido e pode revogar a conexão. O recurso não adiciona “Entrar com ChatGPT” ao Supabase Auth do produto.
 
 ### Valor para o Projeto
 
-- Pode apoiar consultas e fluxos futuros da Supabase dentro do ChatGPT.
-- Sua eventual adoção deve ser avaliada como integração independente.
-- Não altera o estado, os limites ou as regras registrados em `docs/gestor-codex.md`.
+- Pode simplificar conexão operacional quando a app oficial entrar em caso de uso aprovado.
+- Reduz confusão entre identidade de acesso ao Supabase e autorização do plugin.
 
-### Valor para o Usuário
+### Limites no MVP
 
-- Potencial futuro: acesso assistido a recursos da Supabase por meio do ChatGPT.
+- Não transferir permissões, aprovação de escrita ou decisões do Codex Plugin para a app ChatGPT.
+- Não tratar o beta como autenticação do produto.
+- Não conceder escopo sem revisão e possibilidade de revogação.
 
 ### Ações Recomendadas
 
-1. Não implementar sem caso de uso aprovado.
-2. Avaliar separadamente do Codex Plugin, sem transferir permissões ou decisões entre as integrações.
-3. Se adotado, documentar escopo, permissões, riscos e validações em registro próprio, sem alterar `docs/gestor-codex.md` por consequência automática.
+1. Manter como integração separada.
+2. Avaliar somente com caso de uso e permissões definidos.
+3. Se adotada, registrar escopo, consentimento, revogação e validação em documento operacional próprio.
+
+### Fonte Oficial
+
+- [Supabase Blog — Sign in with ChatGPT is in beta on Supabase](https://supabase.com/blog/sign-in-with-chatgpt-beta)
 
 ### Registro (Tipo B — Integração)
 
 - Status: PENDENTE
-- Verificado em: —
-- Ambiente: Supabase official ChatGPT app
-- Evidência: Supabase Update June 2026; sem adoção registrada no projeto.
-- Observação: integração separada do Codex Plugin; não altera `docs/gestor-codex.md`.
+- Verificado em: 2026-08-03
+- Ambiente futuro: ChatGPT + Supabase
+- Evidência: fonte oficial e ausência de adoção registrada.
+- Observação: não altera o estado do plugin Codex.
 
 ---
 
@@ -1873,30 +1507,158 @@ Avaliar somente quando houver:
 
 ---
 
-## Registro da rodada — Supabase Update July 2026
+## 65 — Passkeys para Supabase Auth *(🧪 Beta; adoção condicional)*
+
+2026-05-28  
+Catalogado em 2026-08-03
+
+### Status no Projeto
+
+- Status: Não implementado.
+- Evidência: o projeto usa email/senha, confirmação, recuperação e convite nativo; não há WebAuthn, passkey ou `navigator.credentials` no repositório.
+- Natureza de uso: Auth do produto.
+- Relação com a stack: complementar aos fluxos atuais, com possibilidade de reduzir dependência de senha; não substitui recuperação e convite sem desenho próprio.
+- Horizonte: após estabilidade da beta e somente com necessidade de reduzir atrito ou phishing no login.
+
+### Descrição
+
+Passkeys são credenciais WebAuthn resistentes a phishing. O usuário autentica com biometria, PIN do dispositivo ou chave física; o Supabase guarda a chave pública e o material privado permanece no autenticador do usuário.
+
+### Valor para o Projeto
+
+- Pode reduzir atrito de login e risco de phishing.
+- Mantém Auth dentro da stack Supabase.
+- Pode melhorar a experiência de contas recorrentes quando o fluxo atual estiver validado comercialmente.
+
+### Gatilho futuro de avaliação
+
+Avaliar somente quando houver:
+
+1. métrica ou feedback real de atrito, abandono ou recuperação de senha;
+2. beta suficientemente madura para o risco do produto;
+3. desenho de enrollment, fallback, recuperação, convite e suporte entre dispositivos;
+4. comparação objetiva com manter email/senha, magic link ou MFA.
+
+### Dependências, riscos e limite
+
+- Compatibilidade de navegador, dispositivo e sincronização de credenciais.
+- Exige UI e testes de enrollment, login, exclusão e recuperação.
+- Não remover o fallback atual sem prova de cobertura.
+- Não implementar nesta rodada.
+
+### Fonte Oficial
+
+- [Supabase Changelog — Passkeys for Supabase Auth (Beta)](https://supabase.com/changelog/46458-passkeys-for-supabase-auth-beta)
+
+### Registro (Tipo A — Auth)
+
+- Status: PENDENTE
+- Verificado em: 2026-08-03
+- Ambiente futuro: Supabase Auth + browsers WebAuthn
+- Evidência: fonte oficial e ausência no repositório.
+- Observação: o registro não autoriza implementação.
+
+---
+
+## 66 — Searchable field-level encryption com CipherStash *(🟦 Disponível; adoção condicional)*
+
+2026-07-09  
+Catalogado em 2026-08-03
+
+### Status no Projeto
+
+- Status: Não implementado.
+- Evidência: não há CipherStash, ZeroKMS, SDK wrapper, proxy ou credencial relacionada no repositório.
+- Natureza de uso: segurança complementar para campos sensíveis pesquisáveis.
+- Relação com a stack: complementar a Supabase/Postgres e RLS; não substitui RLS, grants, criptografia em trânsito, minimização de dados ou LGPD.
+- Horizonte: somente diante de requisito regulatório ou contratual concreto.
+
+### Descrição
+
+A integração aplica criptografia no nível da aplicação e permite buscas, filtros e joins sobre metadados criptográficos, mantendo as chaves sob controle externo por ZeroKMS. É uma integração de terceiro apresentada oficialmente pela Supabase.
+
+### Valor para o Projeto
+
+- Pode reduzir exposição de plaintext em campos selecionados quando um cliente ou vertical exigir proteção além da stack padrão.
+- Preserva capacidade de consulta em casos em que criptografia tradicional inviabilizaria busca.
+
+### Gatilho futuro de avaliação
+
+Avaliar somente quando houver:
+
+1. dado e ameaça claramente identificados;
+2. obrigação regulatória, contratual ou de segurança que RLS e controles atuais não atendam;
+3. necessidade comprovada de pesquisar ou relacionar o campo cifrado;
+4. comparação com minimização, tokenização, criptografia simples ou não armazenar o dado.
+
+### Dependências, riscos e limite
+
+- Novo fornecedor, SDK/proxy, gestão de chaves, disponibilidade, região, custo e lock-in.
+- Exige revisão de backup, recuperação, rotação, observabilidade e acesso administrativo.
+- Não adotar como selo genérico de segurança nem sem responsável operacional.
+- Não criar schema, chave, credencial ou integração nesta rodada.
+
+### Fonte Oficial
+
+- [Supabase Blog — Searchable field-level encryption with CipherStash](https://supabase.com/blog/searchable-field-level-encryption-with-cipherstash)
+
+### Registro (Tipo B — Integração/Security)
+
+- Status: PENDENTE
+- Verificado em: 2026-08-03
+- Ambiente futuro: aplicação TypeScript + Supabase + CipherStash
+- Evidência: fonte oficial e ausência no repositório.
+- Observação: o registro não autoriza implementação ou contratação.
+
+---
+
+## Registro da rodada — Supabase Update August 2026
 
 ### Updates incorporados ao catálogo ativo
 
-- Supabase Pipelines: criado como `supa#64`, condicionado a destino analítico e carga real que justifiquem CDC.
-- MongoDB Foreign Data Wrapper: incorporado ao `supa#4`.
-- Realtime Broadcast com payload binário: registrado como nota complementar do `supa#26`, com maturidade e eventual adoção separadas.
-- Audit Log Drains: incorporado ao `supa#46`.
-- `rlsautotest`: criado como `supa#63`.
-- `pg_graphql` com introspecção off por padrão: usado para corrigir e atualizar o `supa#39`.
+- `supa#5`: corrigido para Unified Logs em open beta, sem alegação de AI Debugging.
+- `supa#12`: preservado como alternativa condicional ao Postgres, com hipótese de superioridade e gatilho.
+- `supa#32`: alinhado ao Stripe Sync Engine mantido pela Stripe e ao webhook/entitlement já aprovados.
+- `supa#33`: incorporada a integração Grafana Cloud baseada na Metrics API.
+- `supa#39`: ausência de consumidor GraphQL confirmada; retirada permanece em recorte técnico próprio.
+- `supa#41`: consolidado como Supabase AI Assistant, absorvendo descrições duplicadas.
+- `supa#59`: Supabase Evals incorporado como evidência de governança, sem adoção de suíte própria.
+- `supa#62`: incorporado Sign in with ChatGPT e esclarecida a separação do Auth do produto.
+- Passkeys: criado `supa#65`, condicionado a métrica real de atrito/segurança e maturidade.
+- CipherStash: criado `supa#66`, condicionado a requisito regulatório ou contratual concreto.
+
+### Itens removidos do catálogo ativo
+
+- `supa#7`: Figma Make cria backends a partir de protótipos e não possui hipótese de superioridade para o repositório existente.
+- `supa#10`: Platform Kit serve a plataformas que oferecem projetos Supabase a usuários e não substitui shadcn/ui.
+- `supa#14`: não foi encontrada capacidade oficial integrada de cache com TTL/event bust; a documentação atual recomenda cache externo.
+- `supa#15` e `supa#18`: descrições duplicadas ou não distintas, absorvidas pelo `supa#5` e `supa#41`.
+- `supa#16`: Remote MCP Server absorvido pela governança atual do `supa#59`.
+- `supa#19`, `supa#20`, `supa#25`, `supa#27`, `supa#28` e `supa#29`: propostas internas de tabelas, jobs, rotas ou automações, não updates oficiais da plataforma.
+- `supa#30`: templates de Auth já configurados e absorvidos por `docs/platform-config.md` e pela Base Técnica.
+- `supa#37`: geração de tipos Python sem serviço Python aprovado nem hipótese de superioridade sobre a stack TypeScript.
+
+Os IDs removidos permanecem aposentados e não serão reutilizados.
 
 ### Updates avaliados e não adicionados
 
-- OpenCode: já coberto pela governança de agentes do `supa#59`; nenhum cliente novo foi adotado.
-- TanStack DB: alpha/experimental e sem requisito atual de sincronização ou colaboração.
-- Multigres: infraestrutura distribuída incompatível com o escopo atual.
-- `log_connections` off por padrão: configuração operacional a ser tratada no Supabase e em `docs/platform-config.md`, não item permanente do catálogo.
-- Connect para `@supabase/server`: SDK não adotado; o projeto usa `@supabase/ssr`.
-- Docker self-hosted: projeto usa Supabase Cloud; configuração local já está em Postgres 17 e contempla `/auth/v1`.
-- Envoy como gateway padrão do Supabase self-hosted: não afeta o projeto hospedado no Supabase Cloud e não constitui capacidade aproveitável separada.
-- `@supabase/supabase-js` exigirá TypeScript 5.0+ a partir de 31/01/2027: o projeto já fixa TypeScript `5.5.4`, portanto não há ação nem item permanente de catálogo.
-- Heym: workflow engine sem caso aprovado e com dependência/licenciamento próprios.
+- Extension version pinning: o repositório não fixa versão explícita nas migrations de extensão; mudança operacional sem item permanente.
+- Lockdown do schema `realtime`: não há objeto ou mutação do projeto nesse schema; nenhuma ação atual.
+- Supabase Evals: não recebeu ID próprio por estar absorvido como evidência do `supa#59`.
+- Sign in with ChatGPT: não recebeu ID próprio por complementar a integração `supa#62` e não ser Auth do produto.
+- Grafana Cloud: não recebeu ID próprio por ser a evolução operacional da Metrics API em `supa#33`.
+- Unified Logs: não recebeu ID novo por corrigir e evoluir `supa#5`.
+- Figma Make, Platform Kit, Python types e propostas internas não foram rejeitados somente por estarem fora do MVP; faltou compatibilidade, natureza de update oficial ou hipótese concreta de superioridade.
+
+### Pontos não validados e lacunas documentais
+
+- Unified Logs: rollout e disponibilidade no projeto ainda precisam de confirmação no Dashboard.
+- `pg_graphql`: retirada do ambiente, config e documentação depende de fase técnica separada.
+- Passkeys e CipherStash: preços, maturidade operacional e adequação só devem ser levantados se os gatilhos ocorrerem.
+- Grafana Cloud: acesso, retenção e responsabilidade operacional ainda não definidos.
 
 ### Limite da rodada
 
 - Nenhuma extensão, biblioteca, tabela, policy, rota, job, agente, automação ou infraestrutura foi criada.
 - Nenhuma configuração do projeto Supabase foi alterada.
+- O catálogo recomenda avaliação futura; não autoriza implementação, contratação ou mudança de stack.
