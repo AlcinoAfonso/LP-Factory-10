@@ -1,6 +1,6 @@
 0.1 Cabeçalho
-Data: 28/07/2026
-Versão: v1.11
+Data: 01/08/2026
+Versão: v1.12
 Status: Alinhado ao Platform Config
 
 0.2 Função do documento
@@ -277,14 +277,17 @@ Recurso utilizado:
 - Structured Outputs
 - Server Action administrativa protegida
 
-Categoria segundo `docs/gestor-automations.md`:
-- APIs e capacidades de IA
-- Automação simples / fluxo controlado
-- Recursos de aplicação Next.js
+Natureza:
+- Automação com IA em fluxo controlado.
 
-Classificação:
-- Automação operacional administrativa assistida por IA
-- Não é agente
+Ambiente principal:
+- Runtime do LP Factory.
+
+Plataforma dependente:
+- OpenAI Platform.
+
+Participação humana:
+- Gatilho administrativo e revisão do draft; sem intervenção durante a execução.
 
 Acesso:
 Action administrativa protegida por permissão administrativa.
@@ -326,9 +329,17 @@ Recurso utilizado:
 - Structured Outputs
 - Server Action administrativa protegida
 
-Classificação:
-- Automação operacional administrativa assistida por IA
-- Não é agente
+Natureza:
+- Automação com IA em fluxo controlado.
+
+Ambiente principal:
+- Runtime do LP Factory.
+
+Plataforma dependente:
+- OpenAI Platform.
+
+Participação humana:
+- Gatilho administrativo e aceite, ajuste ou descarte da proposta após a execução.
 
 Como funciona:
 - Executa somente após ação explícita do administrador.
