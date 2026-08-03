@@ -27,6 +27,8 @@ export type AuthUserSummary = Readonly<{
 }>;
 
 export type AccountMemberError =
+  | "account_not_active"
+  | "commercial_entitlement_required"
   | "invalid_email"
   | "invalid_role"
   | "member_not_found"

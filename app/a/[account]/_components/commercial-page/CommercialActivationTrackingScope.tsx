@@ -3,9 +3,12 @@
 import { useEffect, type MouseEvent, type ReactNode } from 'react';
 
 import { trackCommercialEvent } from './actions';
+import { startStripeCheckoutAction } from './checkout-actions';
+import { decideCommercialCtaInteraction } from './commercial-experience-policy';
 
 type Props = {
   accountSubdomain: string;
+  showFinancialActions: boolean;
   children: ReactNode;
 };
 
@@ -20,6 +23,7 @@ async function waitForTracking(promise: Promise<{ ok: boolean }>) {
 
 export function CommercialActivationTrackingScope({
   accountSubdomain,
+  showFinancialActions,
   children,
 }: Props) {
   useEffect(() => {
@@ -42,8 +46,20 @@ export function CommercialActivationTrackingScope({
     const ctaLocation = anchor.dataset.commercialCta;
     const href = anchor.href;
     if (!href) return;
+    if (ctaLocation !== 'hero' && ctaLocation !== 'plan_card' && ctaLocation !== 'final') {
+      return;
+    }
 
-    if (ctaLocation === 'hero' || ctaLocation === 'final') {
+    const interaction = decideCommercialCtaInteraction({
+      showFinancialActions,
+      ctaLocation,
+    });
+    if (interaction === 'disabled') {
+      event.preventDefault();
+      return;
+    }
+
+    if (interaction === 'navigate') {
       event.preventDefault();
       await waitForTracking(
         trackCommercialEvent({
@@ -57,7 +73,7 @@ export function CommercialActivationTrackingScope({
       return;
     }
 
-    if (ctaLocation === 'plan_card') {
+    if (interaction === 'checkout') {
       const planKey = anchor.dataset.commercialPlanKey;
       if (!planKey) return;
 
@@ -71,7 +87,14 @@ export function CommercialActivationTrackingScope({
           pageVariant: 'commercial_activation_published',
         }),
       );
-      window.location.assign(href);
+      const result = await startStripeCheckoutAction({
+        accountSubdomain,
+        plan_key: planKey,
+        recurrence: 'monthly',
+      });
+      if (result?.ok === false) {
+        window.location.assign(`/a/${accountSubdomain}?checkout=unavailable`);
+      }
     }
   };
 

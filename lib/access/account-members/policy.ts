@@ -1,4 +1,4 @@
-import type { MemberRole, MemberStatus } from "@/lib/types/status";
+import type { AccountStatus, MemberRole, MemberStatus } from "@/lib/types/status";
 
 import {
   MANAGEABLE_MEMBER_ROLES,
@@ -11,6 +11,83 @@ import {
   type MemberTransition,
   type SelfServiceInviteOperation,
 } from "./contracts";
+
+export type AccountMemberInviteEligibilityDecision =
+  | Readonly<{ allowed: true }>
+  | Readonly<{
+      allowed: false;
+      error: Extract<AccountMemberError, "account_not_active" | "commercial_entitlement_required">;
+    }>;
+
+export type AccountMemberInviteDecisionEvent = Readonly<{
+  event: "account_member_invite_decision";
+  operation: "invite" | "resend";
+  result: "allowed" | "denied" | "error";
+  reason: string;
+  account_id: string;
+  actor_role: Extract<MemberRole, "owner" | "admin">;
+  request_id: string | null;
+  latency_ms: number;
+}>;
+
+export type PreservedAccountMemberOperation =
+  | "list"
+  | "change_role"
+  | "deactivate"
+  | "revoke"
+  | "accept"
+  | "decline";
+
+export async function runPreservedAccountMemberOperation<T>(input: Readonly<{
+  operation: PreservedAccountMemberOperation;
+  execute: () => Promise<T>;
+}>): Promise<T> {
+  void input.operation;
+  return input.execute();
+}
+
+export function decideAccountMemberInviteEligibility(input: Readonly<{
+  accountStatus: AccountStatus;
+  isCommerciallyEligible: boolean;
+}>): AccountMemberInviteEligibilityDecision {
+  if (input.accountStatus !== "active") {
+    return { allowed: false, error: "account_not_active" };
+  }
+  if (!input.isCommerciallyEligible) {
+    return { allowed: false, error: "commercial_entitlement_required" };
+  }
+  return { allowed: true };
+}
+
+export function createAccountMemberInviteDecisionRecorder(
+  write: (event: AccountMemberInviteDecisionEvent) => void,
+) {
+  let recorded = false;
+  return {
+    record(event: AccountMemberInviteDecisionEvent) {
+      if (recorded) return;
+      recorded = true;
+      try {
+        write(event);
+      } catch {
+        // Decision logging must never alter the invitation outcome.
+      }
+    },
+  } as const;
+}
+
+export async function runAccountMemberInviteWhenEligible<T>(input: Readonly<{
+  decision: AccountMemberInviteEligibilityDecision;
+  recordDecision: (result: "allowed" | "denied", reason: string) => void;
+  onAllowed: () => Promise<AccountMemberResult<T>>;
+}>): Promise<AccountMemberResult<T>> {
+  if (!input.decision.allowed) {
+    input.recordDecision("denied", input.decision.error);
+    return { ok: false, error: input.decision.error };
+  }
+  input.recordDecision("allowed", "commercial_entitlement_confirmed");
+  return input.onAllowed();
+}
 
 export function normalizeMemberEmail(value: string): string {
   return value.trim().toLowerCase();

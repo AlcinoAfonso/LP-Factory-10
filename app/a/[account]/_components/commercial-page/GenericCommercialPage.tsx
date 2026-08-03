@@ -10,7 +10,10 @@ import {
 import { trackCommercialEvent } from './actions';
 import { startStripeCheckoutAction } from './checkout-actions';
 
-type Props = { accountSubdomain: string };
+type Props = {
+  accountSubdomain: string;
+  showFinancialActions: boolean;
+};
 type PrimaryCtaLocation = 'hero' | 'final';
 
 const TRACKING_TIMEOUT_MS = 350;
@@ -27,7 +30,7 @@ async function waitForTracking(promise: Promise<{ ok: boolean }>) {
   ]);
 }
 
-export function GenericCommercialPage({ accountSubdomain }: Props) {
+export function GenericCommercialPage({ accountSubdomain, showFinancialActions }: Props) {
   const content = genericCommercialPageContent;
 
   useEffect(() => {
@@ -95,13 +98,15 @@ export function GenericCommercialPage({ accountSubdomain }: Props) {
             {content.hero.description}
           </p>
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-            <a
-              href="#planos"
-              onClick={() => trackPrimary('hero')}
-              className="inline-flex min-h-11 items-center justify-center rounded-md bg-white px-5 py-3 text-sm font-semibold text-brand-dark-900 shadow-sm hover:bg-brand-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-brand-dark-900"
-            >
-              {content.hero.primaryCta}
-            </a>
+            {showFinancialActions ? (
+              <a
+                href="#planos"
+                onClick={() => trackPrimary('hero')}
+                className="inline-flex min-h-11 items-center justify-center rounded-md bg-white px-5 py-3 text-sm font-semibold text-brand-dark-900 shadow-sm hover:bg-brand-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-brand-dark-900"
+              >
+                {content.hero.primaryCta}
+              </a>
+            ) : null}
             <a
               href="#como-funciona"
               className="inline-flex min-h-11 items-center justify-center rounded-md border border-white/40 px-5 py-3 text-sm font-semibold text-white hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-brand-dark-900"
@@ -109,9 +114,11 @@ export function GenericCommercialPage({ accountSubdomain }: Props) {
               {content.hero.secondaryCta}
             </a>
           </div>
-          <p className="mt-5 text-sm text-white/65">
-            Próximo passo: compare os planos e fale com a equipe sobre a primeira página.
-          </p>
+          {showFinancialActions ? (
+            <p className="mt-5 text-sm text-white/65">
+              Próximo passo: compare os planos e fale com a equipe sobre a primeira página.
+            </p>
+          ) : null}
         </div>
       </section>
 
@@ -145,6 +152,7 @@ export function GenericCommercialPage({ accountSubdomain }: Props) {
         <div />
       </PageSection>
 
+      {showFinancialActions ? (
       <PageSection
         id="planos"
         eyebrow="Planos ilustrativos"
@@ -193,6 +201,7 @@ export function GenericCommercialPage({ accountSubdomain }: Props) {
           {content.plansDisclaimer}
         </p>
       </PageSection>
+      ) : null}
 
       <PageSection eyebrow="Diferenciais" title="Uma base simples para validar antes de ampliar" muted>
         <div className="grid gap-4 md:grid-cols-3">
@@ -232,6 +241,7 @@ export function GenericCommercialPage({ accountSubdomain }: Props) {
         </div>
       </PageSection>
 
+      {showFinancialActions ? (
       <section className="bg-brand-50 px-6 py-12 text-center sm:px-10 lg:px-14">
         <h2 className="text-2xl font-bold tracking-tight text-brand-dark-900 sm:text-3xl">
           {content.finalCta.title}
@@ -243,6 +253,7 @@ export function GenericCommercialPage({ accountSubdomain }: Props) {
           {content.finalCta.label}
         </a>
       </section>
+      ) : null}
     </article>
   );
 }
