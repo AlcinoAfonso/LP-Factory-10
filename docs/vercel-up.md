@@ -29,35 +29,50 @@ A rejeição ou adoção de cada recurso deve ser decidida caso a caso pelo Gest
 
 ## 1 — Vercel AI Cloud *(🟨 Disponibilidade por recurso/plano)*
 2025-06-30
-Atualizado em 2026-07-20
+Atualizado em 2026-07-31
 
 ### Status no Projeto
 - Status: Não implementado
-- Evidência: `docs/roadmap.md` cita AI Gateway como referência futura (fase IA-ready), sem adoção operacional registrada no stack atual.
-- Observação: monitoramento de mercado; disponibilidade varia por recurso/plano.
+- Evidência: `docs/roadmap.md` cita AI Gateway como referência futura, enquanto `docs/platform-config.md` registra uso direto da OpenAI Responses API; não há AI Gateway, Sandbox ou BotID no runtime atual.
+- Observação: monitoramento de mercado; disponibilidade e cobrança variam por recurso/plano.
 
 ### Descrição
-Conjunto de capacidades de plataforma com disponibilidade e cobrança próprias por recurso/plano:
-- **AI Gateway:** endpoint unificado para acessar múltiplos modelos, acompanhar uso e orçamento, aplicar balanceamento e fallbacks.
+Conjunto de capacidades de plataforma avaliadas separadamente:
+- **AI Gateway:** endpoint unificado para acessar múltiplos modelos, acompanhar uso e orçamento, aplicar regras de roteamento e fallbacks.
 - **Fluid Compute:** execução de Functions otimizada para concorrência e workloads com espera de I/O, com cobrança que distingue CPU ativa do tempo de espera/memória.
 - **Sandbox:** ambientes Linux efêmeros e isolados para executar código não confiável, scripts gerados por agentes, testes e servidores temporários.
-- **BotID:** proteção invisível contra bots para rotas sensíveis, com validação client-side e verificação server-side.
+- **BotID:** proteção contra bots para rotas sensíveis, com validação client-side e verificação server-side.
 
-Observação de varredura oficial: AI Gateway routing rules permitem controlar rewrite/deny de modelos no gateway; Sandbox possui suporte a FUSE-based filesystems e Custom Images em public beta. Esses subrecursos permanecem como avaliação por caso, sem adoção automática no LP Factory 10.
+Na varredura oficial, o AI Gateway ganhou uma página própria de logs com custo, tokens, duração, região, rota e tentativas de fallback por requisição. Também passou a oferecer limites de gasto por equipe, projeto e chave, com alertas e bloqueio ao atingir o orçamento. O suporte a WebSocket para a OpenAI Responses API promete ganho em fluxos longos com muitas tool calls, mas isso não demonstra superioridade para os fluxos lineares atuais do LP Factory 10.
 
-Atualização de custo do Sandbox: desde 17/07/2026, dados baixados da internet para instalar pacotes, clonar repositórios ou obter artefatos não consomem Data Transfer. Tráfego recebido em portas expostas, tráfego enviado pelo Sandbox, CPU ativa, memória provisionada, snapshots e criações continuam sujeitos à cobrança aplicável.
+O Sandbox deixou de cobrar Data Transfer por downloads usados para instalar pacotes, clonar repositórios ou obter artefatos em 17/07/2026. Tráfego em portas expostas ou enviado pelo Sandbox, CPU ativa, memória, snapshots e criações continuam sujeitos à cobrança aplicável.
 
 ### Valor para o Projeto
-- Pode apoiar workloads de IA, execução isolada e proteção de endpoints quando existir um caso de uso aprovado.
-- Permite avaliar custo, segurança e operação por capacidade, sem tratar “AI Cloud” como adoção única ou automática.
+- AI Gateway pode concentrar observabilidade e fallback quando houver uso real de múltiplos provedores ou volume de requisições que justifique nova camada.
+- Sandbox e BotID podem apoiar execução isolada e proteção de endpoints quando existir caso aprovado.
+- Fluid Compute é capacidade da plataforma; não exige criar arquitetura Edge paralela.
 
 ### Valor para o Usuário
-- Benefícios potenciais de resiliência, segurança e desempenho dependem de uma aplicação concreta e validada.
+- Benefícios potenciais de resiliência, segurança e desempenho dependem de aplicação concreta e validada.
+
+### Limites no MVP
+- Não substituir a OpenAI Responses API direta apenas para obter dashboard ou WebSocket.
+- Não introduzir múltiplos provedores, execução de código não confiável ou proteção anti-bot sem caso real.
+- Tratar custos, retenção de dados, região e credenciais como critérios de decisão.
+
+### Gatilho de aplicação
+Avaliar AI Gateway quando houver pelo menos um destes sinais: necessidade comprovada de fallback entre provedores, orçamento/observabilidade centralizados que a integração direta não atende, ou workflow agente com muitas tool calls cujo ganho de latência seja medido. Avaliar Sandbox e BotID somente em casos próprios de execução não confiável ou abuso automatizado.
 
 ### Ações Recomendadas
-1. Manter AI Gateway, Fluid Compute, Sandbox e BotID sem adoção no LP Factory 10 enquanto não houver caso aprovado.
-2. Avaliar separadamente requisitos de plano, custos, dados e segurança antes de qualquer implementação.
+1. Manter AI Gateway, Sandbox e BotID sem adoção enquanto não houver caso e métrica aprovados.
+2. Confirmar plano, custos, dados, segurança e benefício mensurável antes de qualquer implementação.
 3. Não transformar essas capacidades em requisito da primeira entrega da E10.6.
+
+### Fontes Oficiais
+- [AI Gateway logs now have a dedicated page](https://vercel.com/changelog/ai-gateway-logs)
+- [AI Gateway now supports team and project spend budgets](https://vercel.com/changelog/ai-gateway-spend-budgets-and-alerts)
+- [AI Gateway WebSocket support for OpenAI Responses API](https://vercel.com/changelog/ai-gateway-websocket-support-for-openai-responses-api)
+- [Vercel Sandbox removes charges for package installation traffic](https://vercel.com/changelog/vercel-sandbox-removes-charges-for-package-installation-traffic)
 
 ---
 
@@ -83,27 +98,6 @@ Recurso oficial do Next.js 16 para controle de cache por componentes, com adoç�
 
 ---
 
-## 4 — Turbopack *(🟩 Estável)*
-2025-10-22
-
-### Status no Projeto
-- Status: Não implementado
-- Evidência: `docs/base-tecnica.md` registra priorização do Next 16 para Turbopack, sem migração mandatória do projeto como ação concluída.
-
-### Descrição
-Bundler oficial do ecossistema Next.js 16 para desenvolvimento/build, com foco em performance.
-
-### Valor para o Projeto
-- Potencial de reduzir tempo de build e iteração quando aplicável.
-
-### Valor para o Usuário
-- Entregas e ciclos de preview potencialmente mais rápidos.
-
-### Ações Recomendadas
-1. Validar comportamento e compatibilidade do bundler atual no contexto real do projeto.
-2. Ajustar configuração/fallback apenas se surgir necessidade específica.
-
----
 
 ## 6 — DevTools MCP *(🟩 Disponível no ecossistema Next.js 16+)*
 2025-10-22
@@ -254,7 +248,7 @@ Atualizado em 2026-07-14
 ### Status no Projeto
 
 - Status: Não implementado
-- Evidência: sem adoção registrada no stack atual; recurso identificado em varredura web oficial da Vercel.
+- Evidência: não há `@vercel/blob` no `package.json`; o stack já usa Supabase e não registra Vercel Blob como storage.
 
 ### Descrição
 
@@ -283,8 +277,9 @@ Desde julho de 2026, leituras de objetos privados podem solicitar consistência 
 
 1. Manter como recurso aproveitável por caso.
 2. Não adotar no MVP sem caso concreto de arquivo privado.
-3. Antes de adotar, comparar com Supabase Storage e com a estratégia de dados já aprovada.
-4. Se houver sobrescrita no mesmo pathname e exigência real de leitura imediata, avaliar `useCache: false` com custo e latência medidos.
+3. Antes de adotar, comparar com Supabase Storage em segurança, signed URLs, OIDC, custo, egress, consistência e manutenção.
+4. Adotar somente se houver requisito que o storage vigente não atenda ou superioridade mensurável no caso concreto; registrar plano de reversão.
+5. Se houver sobrescrita no mesmo pathname e exigência real de leitura imediata, avaliar `useCache: false` com custo e latência medidos.
 
 ### Fonte Oficial
 
@@ -323,34 +318,51 @@ Comando de dry-run no Vercel CLI para pré-visualizar preset de framework, arqui
 
 ---
 
-## 23 — Service Bindings *(🟩 Disponível na plataforma)*
+## 23 — Vercel Services e Service Bindings *(🧪 Beta)*
 
-2026-07-01
+2026-06-30
+Atualizado em 2026-07-01
 
 ### Status no Projeto
 
-- Status: Não implementado
-- Evidência: o LP Factory 10 não possui arquitetura multi-service aprovada no escopo atual.
+- Status: Não implementado como Vercel Services
+- Evidência: `docs/platform-config.md`, `docs/services.md` e `services/mcp-supabase-inspect/README.md` registram dois projetos Vercel independentes: o Core `lp-factory-10` e o service `lpf-10-services`, com Root Directory e endpoint público próprios. Não há configuração `services`/bindings no mesmo projeto ou deployment.
+- Observação: a existência do service dedicado invalida a evidência antiga de “ausência de arquitetura multi-service”, mas não equivale à adoção do recurso Vercel Services.
 
 ### Descrição
 
-Recurso para comunicação segura entre serviços dentro do mesmo deployment Vercel, com variável de ambiente injetada e roteamento interno gerenciado pela plataforma.
+Vercel Services permite construir e implantar múltiplos serviços no mesmo projeto, com deployment, preview, rollback e domínio compartilhados. Service Bindings injetam uma URL interna para comunicação privada entre serviços do mesmo deployment, com roteamento, autenticação e TLS gerenciados pela Vercel.
 
 ### Valor para o Projeto
 
-- Pode ser útil apenas se o projeto evoluir para arquitetura com mais de um serviço Vercel, por exemplo frontend Next.js e backend separado.
-- Mantém isolamento entre serviços e reduz configuração manual de roteamento interno.
-- Não justifica criar novo serviço no MVP.
+- Poderia substituir a separação atual entre projetos apenas se a operação conjunta trouxer vantagem concreta em deploy, rollback, preview ou comunicação privada.
+- O binding pode evitar tráfego público quando Core e MCP precisarem conversar no mesmo deployment.
+- Não justifica consolidar projetos nem alterar a boundary operacional já documentada.
 
 ### Valor para o Usuário
 
-- Pode melhorar segurança e previsibilidade em arquitetura multi-service futura.
+- Pode melhorar segurança e previsibilidade operacional se uma consolidação futura for comprovadamente superior.
+
+### Limites no MVP
+
+- Recurso em beta.
+- A configuração atual preserva isolamento, deploy e endpoint próprios para o MCP read-only.
+- Uma consolidação afetaria boundary de deploy, variáveis, autenticação, roteamento, blast radius e rollback; exige recorte técnico próprio.
+
+### Gatilho de aplicação
+
+Comparar com os dois projetos atuais somente quando existir consumo Core → service que precise de rede privada, ou quando deploy/preview/rollback separados causarem problema mensurável. Adotar apenas se o ganho superar o isolamento e a simplicidade operacional vigentes, com plano de reversão validado.
 
 ### Ações Recomendadas
 
-1. Manter como recurso condicional futuro.
-2. Não propor backend separado, serviço novo ou arquitetura multi-service apenas por causa deste recurso.
-3. Considerar somente se uma fase aprovada já exigir múltiplos serviços.
+1. Manter como alternativa condicional, sem alterar a topologia atual.
+2. Se o gatilho ocorrer, comparar latência, segurança, custo, blast radius e rollback entre projetos separados e Vercel Services.
+3. Não propor backend novo ou consolidação apenas pela disponibilidade do recurso.
+
+### Fontes Oficiais
+
+- [Run multiple frameworks in one project with Vercel Services](https://vercel.com/changelog/run-multiple-frameworks-in-one-project-with-vercel-services)
+- [Secure internal communication between services](https://vercel.com/changelog/secure-internal-communication-between-services)
 
 ---
 
@@ -457,52 +469,48 @@ Os Runtime Logs da Vercel exibem o motivo associado ao estado de cache de respos
 
 ---
 
-## 27 — Next.js July 2026 Security Release *(🔴 Correção oficial pendente)*
+## 28 — `mcp-handler` 2.0 e MCP 2026-07-28 *(🟨 Avaliação condicional)*
 
-2026-07-20
+2026-07-30
 
 ### Status no Projeto
 
-- Status: Não implementado — atualização de segurança necessária em recorte próprio
-- Evidência: `package.json` declara `next: ^16.1.1` e `eslint-config-next: ^16.1.1`; `package-lock.json` fixa ambos em `16.1.1`; o repositório usa App Router, Server Actions, `middleware.ts` e rewrites; a versão oficial corrigida na linha Active LTS é `16.2.11`
+- Status: Não implementado
+- Evidência: `services/mcp-supabase-inspect/api/mcp.js` implementa manualmente o protocolo `2025-06-18`; `services/mcp-supabase-inspect/package.json` depende apenas de `pg` e não usa `mcp-handler` nem o MCP TypeScript SDK.
+- Observação: o service atual possui autenticação Bearer, limites de payload, conexão read-only e contrato operacional próprios que precisam ser preservados em qualquer avaliação.
 
 ### Descrição
 
-A primeira rodada mensal de segurança do Next.js corrigiu quatro vulnerabilidades de severidade alta e cinco de severidade média. A orientação oficial é atualizar para `16.2.11` na linha Active LTS ou `15.5.21` na linha Maintenance LTS.
-
-Para o LP Factory 10, trata-se de atualização corretiva dentro da stack vigente, não de nova tecnologia ou mudança de arquitetura.
+O `mcp-handler@2` passou a suportar o protocolo MCP `2026-07-28`, o SDK TypeScript v2 e clientes Streamable HTTP de 2025 no mesmo endpoint, sem Redis ou armazenamento de sessão. A major exige Node.js 20+, Zod 4 e novas APIs de registro; o transporte HTTP+SSE legado foi removido.
 
 ### Valor para o Projeto
 
-- Fecha vulnerabilidades oficiais na dependência central do runtime web.
-- O projeto usa superfícies abrangidas pela atualização, incluindo App Router e Server Actions; a correção não é apenas preventiva para tecnologia não utilizada.
-- Mantém o projeto na linha Next.js 16 adotada, com correção oficial.
-- Reduz exposição sem criar infraestrutura nem ampliar o escopo do produto.
+- Pode reduzir código de protocolo mantido manualmente no LPF Supabase Inspect MCP.
+- Pode ampliar compatibilidade com clientes novos sem quebrar clientes Streamable HTTP anteriores.
+- O projeto já atende aos pré-requisitos de Node 22 no service; Zod 4 existe no Core, mas não no pacote isolado do service.
 
 ### Valor para o Usuário
 
-- Benefício indireto por redução de risco de segurança e indisponibilidade no SaaS e nas landing pages.
+- Benefício indireto por maior compatibilidade e menor risco de manutenção do endpoint MCP.
 
 ### Limites no MVP
 
-- Este registro não autoriza alterar dependências neste PR documental.
-- A atualização deve ocorrer em PR técnico próprio, alinhando `next` e `eslint-config-next`, com lockfile, lint, typecheck, build e Preview verificados.
-- Não assumir compatibilidade apenas por permanecer na mesma major.
-- Não migrar para preview do Next.js 16.3 como consequência desta correção.
+- Não migrar apenas por existir uma versão nova do protocolo.
+- Não presumir equivalência da autenticação, dos limites de payload ou do comportamento read-only.
+- A mudança seria de runtime e dependências do service; exige testes de contrato e compatibilidade em recorte próprio.
 
 ### Gatilho de aplicação
 
-Aplicar em recorte técnico prioritário que atualize a linha Next.js 16 para `16.2.11` ou outra versão estável oficialmente corrigida, validando o comportamento real do projeto.
+Avaliar quando um cliente necessário exigir o protocolo `2026-07-28`, ou quando a manutenção do handler manual gerar falha ou custo recorrente. Adotar somente se um protótipo preservar autenticação, tools, limites, respostas, `Cache-Control: no-store` e compatibilidade dos consumidores atuais.
 
 ### Ações Recomendadas
 
-1. Priorizar um PR técnico exclusivo para atualizar `next` e `eslint-config-next` de forma alinhada.
-2. Executar `npm run check`, build e validação do Preview antes do merge.
-3. Confirmar no lockfile as versões efetivamente instaladas.
-4. Remover este item do catálogo ativo quando a correção estiver absorvida e registrada na documentação técnica competente.
+1. Manter como opção condicional do service existente.
+2. Em avaliação futura, comparar handler manual e `mcp-handler@2` com testes de contrato no mesmo conjunto de requests MCP.
+3. Não alterar o endpoint ou o protocolo de produção sem validação de clientes e plano de reversão.
 
 ### Fonte Oficial
 
-- [Next.js — July 2026 Security Release](https://nextjs.org/blog/july-2026-security-release)
+- [Latest MCP spec now supported in mcp-handler](https://vercel.com/changelog/latest-mcp-spec-now-supported-in-mcp-handler)
 
 ---
