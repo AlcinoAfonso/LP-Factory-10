@@ -1469,7 +1469,7 @@ Repositório — Ajustados
 
 12.4 Gestão do perfil de orientação
 - Objetivo: Definir a operação administrativa do perfil de orientação que direciona gerações futuras de landing pages sem materializar nem alterar LPs.
-- Status: E12.4.3 e E12.4.3.1 concluídas; E12.4.3.2 possui implementação candidata no PR técnico, pendente de revisão delta, provas de banco e validação hospedada.
+- Status: E12.4.3, E12.4.3.1 e E12.4.3.2 concluídas e integradas à `main`; correção localizada do contrato de cardinalidade da evolução com IA em implementação, pendente de revisão independente e gate funcional único no Preview.
 
 12.4.1 Objetivo e status
 - Objetivo: Entregar a operação manual completa de criação, edição, revisão, ativação e arquivamento de versões do perfil, com proposta opcional por IA no mesmo editor.
@@ -1503,11 +1503,13 @@ Repositório — Ajustados
   - Não existe conversa persistente, histórico de mensagens, agente ou memória própria.
 
 12.4.3.2 Criação e evolução estrutural baseada em `lp_sections`, catálogo vigente e debate humano–IA
-- Status: Implementação candidata; validações puras e TypeScript aprovadas, com revisão delta, migration, verificador read-only e Preview desktop/mobile ainda pendentes.
+- Status: Implementada e integrada à `main` pelo PR #672; correção localizada de cardinalidade em implementação, sem banco ou migration e sem reabrir lifecycle.
 - Conteúdo:
   - Sem perfil próprio, a ação será `Criar perfil com IA`; com perfil `active` próprio, será `Evoluir perfil com IA`; o fluxo manual permanece completo.
   - A evolução inicializará o editor da nova versão com a estrutura ativa completa como baseline não persistido e revalidará cada recomendação contra as versões vigentes da E10.8 e da E18.5.
   - `coverage[]` avaliará cada item de `lp_sections`; `recommendations[]` será a lista final única por módulo.
+  - `covered` e `partial` exigem identidades compatíveis e escolhidas não vazias; `missing` exige ambas as listas vazias no Zod, no JSON Schema estrito e no validador fail-closed.
+  - A ocorrência `coverage_identity_count_invalid` de 03/08/2026 preservou o `active v1` e não criou `draft v2`; como a resposta rejeitada não foi armazenada, cobertura, status e aliases concretos não são inferidos.
   - `coverage[]`, relações seção–módulo, gaps e estados do diff serão resultados derivados e transitórios; somente recomendações aplicadas e salvas integrarão o perfil.
   - Várias seções poderão convergir para um módulo e uma seção poderá exigir vários módulos.
   - A prioridade será convertida por `3 → P1`, `2 → P2`, `1 → P3`; a ordem final será determinística, positiva e única.
@@ -2349,6 +2351,8 @@ Repositório — Ajustados
   * Não criar novo campo, estado, tabela, resolver ou infraestrutura e não reabrir E20.3.3 ou E20.3.4.
 
 99. Changelog
+v1.5.118 — 03/08/2026 — Registrada a correção localizada do contrato de cardinalidade da evolução do perfil com IA, preservando validação fail-closed, `active v1`, ausência de retry e gate único no Preview após revisão independente.
+
 v1.5.117 — 30/07/2026 — Planejada a E11.2 com fases executáveis E11.2.3, E11.2.4 e E11.2.5; v1 aprovada e Processo automatizado escolhido, aguardando merge humano.
 
 v1.5.116 — 30/07/2026 — Registrados o merge do PR #656, a habilitação da E11, o redeploy e o smoke final aprovado em Production.

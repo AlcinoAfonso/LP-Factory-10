@@ -35,13 +35,13 @@ export async function proposeLandingPageGenerationProfile(input: {
 }): Promise<GenerationProfileProposalResult> {
   const requestId = randomUUID();
   const startedAt = Date.now();
-  const requestKind = input.currentCandidate ? "refinement" : "initial";
+  const interactionKind = input.currentCandidate ? "refinement" : "initial";
   const model = process.env.OPENAI_LANDING_PAGE_GENERATION_PROFILE_MODEL?.trim();
   if (!model || !isGenerationProfileAssistanceConfigured({ apiKey: process.env.OPENAI_API_KEY, model })) {
     return finishFailure(requestId, "technical_failure", "AI assistance is unavailable.", {
       taxonId: input.taxonId,
       platformAdminId: input.actorUserId,
-      requestKind,
+      interactionKind,
       model: model ?? null,
       startedAt,
     });
@@ -57,7 +57,7 @@ export async function proposeLandingPageGenerationProfile(input: {
     return finishFailure(requestId, "invalid_data", "Current editor content is invalid.", {
       taxonId: input.taxonId,
       platformAdminId: input.actorUserId,
-      requestKind,
+      interactionKind,
       model,
       startedAt,
     });
@@ -73,7 +73,7 @@ export async function proposeLandingPageGenerationProfile(input: {
     return finishFailure(requestId, "invalid_data", currentCandidate.message, {
       taxonId: input.taxonId,
       platformAdminId: input.actorUserId,
-      requestKind,
+      interactionKind,
       model,
       startedAt,
     });
@@ -88,14 +88,14 @@ export async function proposeLandingPageGenerationProfile(input: {
       requestId,
       mapResearchErrorToProposalError(research.error.code),
       "Required research is unavailable or invalid.",
-      { taxonId: input.taxonId, platformAdminId: input.actorUserId, requestKind, model, startedAt, researchCode: research.error.code },
+      { taxonId: input.taxonId, platformAdminId: input.actorUserId, interactionKind, model, startedAt, researchCode: research.error.code },
     );
   }
   if (!validateGenerationProfileResearchPriorities(research.value)) {
     return finishFailure(requestId, "invalid_data", "Required research contains an unsupported lp_sections priority.", {
       taxonId: input.taxonId,
       platformAdminId: input.actorUserId,
-      requestKind,
+      interactionKind,
       model,
       startedAt,
       researchVersions: research.value.versions,
@@ -108,7 +108,7 @@ export async function proposeLandingPageGenerationProfile(input: {
     return finishFailure(requestId, "technical_failure", "Generation profile context could not be loaded.", {
       taxonId: input.taxonId,
       platformAdminId: input.actorUserId,
-      requestKind,
+      interactionKind,
       model,
       startedAt,
       researchVersions: research.value.versions,
@@ -116,6 +116,7 @@ export async function proposeLandingPageGenerationProfile(input: {
     });
   }
   const previousActiveProfile = detail.profiles.find((profile) => profile.status === "active") ?? null;
+  const proposalMode = previousActiveProfile ? "evolution" : "creation";
   const moduleIdentities = listLandingPageModuleIdentities();
   const moduleSelectionCatalog = listLandingPageModuleSelectionCatalog();
   const provider = await requestGenerationProfileProposal({
@@ -123,7 +124,7 @@ export async function proposeLandingPageGenerationProfile(input: {
     research: research.value,
     moduleIdentities,
     moduleSelectionCatalog,
-    requestKind: previousActiveProfile ? "evolution" : "creation",
+    requestKind: proposalMode,
     activeBaseline: previousActiveProfile?.recommendations ?? null,
     currentCandidate: currentCandidate?.value ?? null,
     humanFeedback: input.humanFeedback,
@@ -132,7 +133,8 @@ export async function proposeLandingPageGenerationProfile(input: {
     return finishFailure(requestId, mapProviderFailureToProposalError(provider.kind), "AI proposal could not be produced.", {
       taxonId: input.taxonId,
       platformAdminId: input.actorUserId,
-      requestKind,
+      interactionKind,
+      proposalMode,
       model,
       startedAt,
       providerKind: provider.kind,
@@ -157,10 +159,11 @@ export async function proposeLandingPageGenerationProfile(input: {
     previousCandidate: currentCandidate?.value ?? null,
   });
   if (!validated.ok) {
-    return finishFailure(requestId, "invalid_data", "AI proposal violated the generation profile contract.", {
+    return finishFailure(requestId, "invalid_data", "A proposta da IA não atendeu às regras estruturais. Nenhuma alteração foi salva e o perfil ativo permanece preservado.", {
       taxonId: input.taxonId,
       platformAdminId: input.actorUserId,
-      requestKind,
+      interactionKind,
+      proposalMode,
       model,
       startedAt,
       ...buildGenerationProfileInvalidDataMetadata({
@@ -169,6 +172,7 @@ export async function proposeLandingPageGenerationProfile(input: {
         responseId: provider.responseId,
         inputTokens: provider.inputTokens,
         outputTokens: provider.outputTokens,
+        ...(validated.coverageDiagnostic ? { coverageDiagnostic: validated.coverageDiagnostic } : {}),
       }),
       researchVersions: research.value.versions,
       researchProvenance: getResearchProvenance(research.value),
@@ -179,7 +183,8 @@ export async function proposeLandingPageGenerationProfile(input: {
   console.info("generation_profile_proposal", {
     requestId,
     origin: "ai",
-    requestKind,
+    interactionKind,
+    proposalMode,
     platformAdminId: input.actorUserId,
     taxonId: input.taxonId,
     researchVersions: research.value.versions,
