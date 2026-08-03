@@ -39,7 +39,7 @@ Atualizado em 2026-07-22
 ### Status no Projeto
 
 - Status: Aplicável — automação existente; validação operacional pendente.
-- Evidência: `.github/workflows/pipeline-docs-apply-report.yml` usa `peter-evans/create-pull-request@v6` com `contents: write` e `pull-requests: write` para criar PRs automáticos; `.github/workflows/security.yml` executa em `pull_request` para `main` e `macro`.
+- Evidência: `.github/workflows/pipeline-docs-apply-report.yml` usa `peter-evans/create-pull-request@v6` com `contents: write` e `pull-requests: write`; PRs automáticos como `#67` comprovam o fluxo. `.github/workflows/security.yml` executa em `pull_request` para `main` e `macro`, mas não há ocorrência pós-lançamento documentada que confirme a aprovação do run.
 
 ### Descrição
 
@@ -69,64 +69,50 @@ PRs criados por `github-actions[bot]` podem executar workflows de CI/CD após ap
 - [Bot-created pull requests can run workflows if approved](https://github.blog/changelog/2026-06-11-bot-created-pull-requests-can-run-workflows-if-approved/)
 ---
 
-## github#5 — Copilot CLI em GitHub Actions com GITHUB_TOKEN *(🟨 Avaliação futura)*
-
-2026-07-02
-
-### Status no Projeto
-
-- Status: Não implementado.
-- Evidência: não há workflow do LP Factory 10 usando Copilot CLI.
-
-### Descrição
-
-O GitHub permite executar Copilot CLI em GitHub Actions usando o `GITHUB_TOKEN` interno do workflow, sem necessidade de criar e armazenar um PAT de longa duração. O uso exige permissão específica `copilot-requests: write` e política de organização compatível.
-
-### Valor para o Projeto
-
-- Pode reduzir risco operacional se o projeto vier a usar Copilot CLI em workflows.
-- Evita armazenar PATs de longa duração para automações baseadas em Copilot CLI.
-- Mantém a decisão condicionada a custo, permissão, política de uso e caso real.
-
-### Ações Recomendadas
-
-1. Manter como avaliação futura.
-2. Não criar workflow com Copilot CLI sem decisão humana explícita.
-3. Se adotado futuramente, registrar permissão mínima, custo, política de uso e validação no documento técnico apropriado.
-
-### Fonte Oficial
-
-- [Copilot CLI no longer needs a personal access token in GitHub Actions](https://github.blog/changelog/2026-07-02-copilot-cli-no-longer-needs-a-personal-access-token-in-github-actions/)
-
----
-
-## github#6 — AI credit session limits no Copilot CLI/SDK *(🧪 Public preview)*
+## github#5 — Copilot CLI/SDK em Actions: GITHUB_TOKEN e limite de créditos *(🟨 Avaliação futura)*
 
 2026-07-01
+Atualizado em 2026-08-03
 
 ### Status no Projeto
 
 - Status: Não implementado.
-- Evidência: não há uso registrado de Copilot CLI ou Copilot SDK no projeto.
+- Evidência: não há workflow, dependência ou registro operacional do LP Factory 10 usando Copilot CLI ou Copilot SDK; o fluxo atual usa Codex e automações determinísticas próprias.
 
 ### Descrição
 
-Recurso para limitar créditos de IA consumidos em uma sessão do Copilot CLI ou Copilot SDK, inclusive em execuções não interativas com `--max-ai-credits`.
+O Copilot CLI pode executar em GitHub Actions com o `GITHUB_TOKEN` do workflow, usando a permissão `copilot-requests: write`, sem PAT de longa duração. Copilot CLI e SDK também permitem limitar créditos de IA por sessão, inclusive em execuções não interativas com `--max-ai-credits`.
+
+### Relação com a stack
+
+- Sobrepõe-se parcialmente ao Codex e às automações existentes.
+- Não substitui scripts determinísticos, checks ou revisão humana.
+- Exige política de organização/conta, disponibilidade do Copilot, custo e permissão próprios.
 
 ### Valor para o Projeto
 
-- Pode ajudar a controlar custo de agentes ou scripts assistidos por IA.
-- É relevante apenas se o projeto adotar Copilot CLI ou SDK em algum fluxo aprovado.
-- Reduz risco de gasto aberto em automações sem supervisão.
+- Se houver caso aprovado, pode evitar PAT persistente e limitar gasto por execução.
+- Reúne autenticação de menor exposição e controle de custo no mesmo recorte operacional.
+
+### Limites e hipótese de superioridade
+
+- Não adotar Copilot CLI/SDK apenas por estar integrado ao GitHub.
+- A hipótese mínima é que um job hospedado no Actions precise de capacidade agente que o script determinístico ou o fluxo Codex atual não entregue com segurança/custo equivalentes.
+- O benefício deve superar consumo de Actions, créditos de IA, nova permissão, risco de prompt/tool use e manutenção.
+
+### Gatilho de avaliação
+
+Avaliar somente quando existir workflow concreto que exija raciocínio agente dentro do Actions, com inputs, outputs e limite de crédito definidos, e depois de comparar com script determinístico e execução Codex fora do CI.
 
 ### Ações Recomendadas
 
 1. Manter como avaliação futura.
-2. Não adotar Copilot CLI/SDK apenas por causa deste recurso.
-3. Se houver uso futuro, exigir limite explícito de créditos por sessão em scripts não interativos.
+2. Se o gatilho ocorrer, usar `GITHUB_TOKEN` com permissão mínima e limite explícito de créditos; não criar PAT para contornar o modelo.
+3. Registrar custo, política, dados, ferramentas permitidas, falha fechada e revisão humana antes de qualquer adoção.
 
-### Fonte Oficial
+### Fontes Oficiais
 
+- [Copilot CLI no longer needs a personal access token in GitHub Actions](https://github.blog/changelog/2026-07-02-copilot-cli-no-longer-needs-a-personal-access-token-in-github-actions/)
 - [Set AI credit session limits in Copilot CLI and SDK](https://github.blog/changelog/2026-07-01-set-ai-credit-session-limits-in-copilot-cli-and-sdk/)
 
 ---
@@ -167,27 +153,37 @@ Recurso de monitoramento público de secrets para Enterprise, capaz de detectar 
 ## github#8 — Browser tools for GitHub Copilot in VS Code *(🟩 GA)*
 
 2026-07-01
+Atualizado em 2026-08-03
 
 ### Status no Projeto
 
 - Status: Não implementado.
-- Evidência: sem registro de uso operacional no fluxo atual do LP Factory 10.
+- Evidência: `docs/gestor-codex.md` registra navegador integrado/Chrome como não adotados; os workflows `automation-validador-final.yml` e `automation-niche-runtime-tests.yml` já usam Playwright para fluxos determinísticos. Não há padrão operacional de Copilot no VS Code.
 
 ### Descrição
 
-Ferramentas de navegador para GitHub Copilot no VS Code que permitem ao agente abrir páginas, navegar, clicar, digitar, ler conteúdo, capturar erros de console, tirar screenshots e executar fluxos roteirizados, com controles de acesso, privacidade, permissões e domínios.
+Ferramentas de navegador para GitHub Copilot no VS Code permitem ao agente abrir páginas, navegar, clicar, digitar, ler conteúdo, capturar console e screenshots, com controles de acesso, privacidade, permissões e domínios.
 
 ### Valor para o Projeto
 
-- Pode apoiar diagnóstico manual assistido em previews, fluxos de UI e testes exploratórios.
-- Pode ser útil em investigação de bugs visuais ou comportamentais quando houver operador humano.
-- Não substitui QA manual, Playwright, Vercel Toolbar ou validação humana.
+- Pode apoiar investigação exploratória de Preview e bugs visuais com operador humano.
+- Não substitui QA manual, Playwright, Vercel Toolbar nem evidência reprodutível.
+
+### Limites e hipótese de superioridade
+
+- Sobrepõe-se aos navegadores já disponíveis no Codex e à automação Playwright.
+- A hipótese mínima é reduzir o tempo de diagnóstico exploratório dentro do VS Code sem enviar dados sensíveis nem enfraquecer a validação determinística.
+- Não é superior para checks repetíveis, regressão ou gate de merge.
+
+### Gatilho de avaliação
+
+Avaliar apenas se o fluxo de engenharia adotar Copilot no VS Code e surgir incidente de UI/Preview cuja investigação interativa seja recorrente. Comparar tempo, evidência, domínios, dados e reprodutibilidade com o navegador Codex e Playwright.
 
 ### Ações Recomendadas
 
 1. Manter como avaliação futura de produtividade técnica.
-2. Não transformar em requisito do fluxo de QA.
-3. Se usado, registrar limites: domínios permitidos, dados sensíveis, aprovação humana e evidência capturada.
+2. Não transformar em requisito ou substituto do fluxo de QA.
+3. Se usado, registrar domínios permitidos, dados sensíveis, aprovação humana e evidência capturada.
 
 ### Fonte Oficial
 
@@ -286,3 +282,90 @@ Avaliar configuração somente quando:
 
 - [GitHub Changelog — Control who and what triggers GitHub Actions workflows](https://github.blog/changelog/2026-06-18-control-who-and-what-triggers-github-actions-workflows/)
 - [GitHub Docs — About Actions policies](https://docs.github.com/en/enterprise-cloud@latest/admin/enforcing-policies/enforcing-policies-for-your-enterprise/actions-policies/about-actions-policies)
+
+## github#11 — Aprovação de workflows potencialmente maliciosos *(🟩 Proteção automática em repositórios públicos)*
+
+2026-07-28
+
+### Status no Projeto
+
+- Status: Implementado globalmente no projeto pela plataforma; ocorrência local e registro operacional ainda não validados.
+- Evidência: o repositório `AlcinoAfonso/LP-Factory-10` é público. Há workflows com `contents: write`/`pull-requests: write` e outros que acessam secrets; a proteção oficial é automática para repositórios públicos no github.com.
+- Lacuna documental: `docs/base-tecnica.md` contém regras gerais de CI, mas não registra como revisar e aprovar um run retido por esta proteção.
+
+### Descrição
+
+O GitHub Actions pode reter automaticamente um workflow identificado como potencialmente malicioso. O run só continua após um colaborador com permissão de escrita revisar e aprovar em sessão web autenticada. Não há configuração a habilitar.
+
+### Valor para o Projeto
+
+- Reduz o risco de credencial comprometida introduzir workflow destinado a exfiltrar secrets ou credenciais de CI.
+- É relevante porque o projeto possui Actions com escrita, banco, OpenAI, mailbox e outros secrets operacionais.
+- Complementa permissões mínimas, pinning, revisão de diff e `github#10`; não substitui esses controles.
+
+### Valor para o Usuário
+
+- Benefício indireto por reduzir risco de supply chain, alteração indevida e exposição de credenciais.
+
+### Limites
+
+- Aplica-se atualmente a repositórios públicos no github.com e apenas a runs que o GitHub classificar para retenção.
+- A aprovação não afirma que o diff é seguro, não substitui revisão e não autoriza merge.
+- Não aprovar automaticamente nem por rotina; revisar ator, evento, diff do workflow, permissões e secrets alcançáveis.
+
+### Ações Recomendadas
+
+1. Quando surgir um run retido, registrar a ocorrência e revisar ator, evento, diff, permissões e secrets antes de aprovar.
+2. Tratar aprovação como ação humana excepcional e autenticada.
+3. Encaminhar a regra operacional ao documento técnico competente; este catálogo não autoriza alterar workflows ou settings.
+
+### Fonte Oficial
+
+- [GitHub Actions holds potentially malicious workflows for approval](https://github.blog/changelog/2026-07-28-github-actions-holds-potentially-malicious-workflows-for-approval/)
+
+---
+
+## github#12 — Dependabot malware alerts com cobertura OpenSSF ampliada *(🟨 Adoção condicional)*
+
+2026-07-28
+
+### Status no Projeto
+
+- Status: Não implementado; habilitação não validada.
+- Evidência: o projeto usa ecossistema npm com `package-lock.json`, mas não há `.github/dependabot.yml`, registro de malware alerts ou configuração de Advanced Security no repositório documental.
+
+### Descrição
+
+O GitHub Advisory Database passou a ingerir advisories do projeto OpenSSF malicious-packages. Quando malware alerting está habilitado, o Dependabot compara dependências com essa cobertura ampliada, incluindo npm, PyPI e outros ecossistemas, e permite filtrar alertas por `type:malware`.
+
+### Valor para o Projeto
+
+- Pode detectar pacote malicioso já presente no grafo npm, sem depender de version updates automatizados.
+- Complementa lockfile, `npm ci`, revisão de dependências e o cooldown de `github#9`.
+- Não exige adotar PRs automáticos de atualização para ter valor de detecção.
+
+### Valor para o Usuário
+
+- Benefício indireto por reduzir risco de supply chain no runtime e nas automações.
+
+### Limites
+
+- A habilitação e disponibilidade reais na conta/repositório precisam ser confirmadas.
+- O alerta não prova exploração nem corrige dependência; exige triagem, versão afetada, caminho transitivo e validação da remediação.
+- Não habilitar updates automáticos nem merge automático como consequência deste registro.
+
+### Gatilho de avaliação
+
+Verificar a opção em Settings → Advanced security → Dependabot quando houver recorte de segurança aprovado. Adotar somente com responsável por triagem, severidade, SLA e processo de remediação definidos.
+
+### Ações Recomendadas
+
+1. Confirmar se Malware alerts está disponível e habilitado, sem alterar settings nesta atualização.
+2. Se adotado futuramente, validar o primeiro alerta e registrar o fluxo de triagem.
+3. Preservar security updates imediatos e não confundir malware alerts com version updates.
+
+### Fonte Oficial
+
+- [Dependabot alerts on malicious packages across more ecosystems](https://github.blog/changelog/2026-07-28-dependabot-alerts-on-malicious-packages-across-more-ecosystems/)
+
+---
