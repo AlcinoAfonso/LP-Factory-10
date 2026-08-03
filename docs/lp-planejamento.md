@@ -60,9 +60,12 @@ Fontes de referência: `README.md`, `docs/roadmap.md`, `docs/base-tecnica.md`, `
 - O perfil reúne módulos recomendados, variantes preferenciais, prioridades e ordem recomendada; `generation_guidance` e `item_guidance` são exceções humanas opcionais.
 - Prioridade orienta a seleção futura; ordem recomendada indica a posição relativa entre os módulos selecionados; nenhuma delas torna um módulo obrigatório.
 - A E12.4.3 estabelece o Admin Dashboard como fluxo oficial para o `platform_admin` criar, revisar, salvar, ativar e arquivar versões do perfil.
-- A E12.4.3.2 usa `lp_sections` como esqueleto: `coverage[]` avalia cada seção e `recommendations[]` entrega a lista final deduplicada por módulo.
+- A E12.4.3.2 usa `lp_sections` como esqueleto: em cada item de `coverage[]`, `compatible_aliases` registra as identidades semanticamente compatíveis e `selected_aliases` registra somente as identidades efetivamente escolhidas.
+- `recommendations[]` é derivado exclusivamente de `selected_aliases`; o servidor reconstrói versões, deriva prioridade, ordem e gaps, deduplica por módulo e valida conflitos.
 - Várias seções podem convergir para um módulo e uma seção pode exigir vários módulos; a prioridade é convertida por `3 → P1`, `2 → P2`, `1 → P3` e a ordem final é determinística, positiva e única.
-- A IA propõe ou refina somente módulos, variantes, prioridade, ordem e gaps após ação explícita; cada acionamento autoriza uma chamada e nenhuma proposta salva, aprova, ativa ou arquiva automaticamente.
+- A seleção mantém uma identidade global por módulo; conflitos entre módulo-base e variante ou entre variantes do mesmo módulo falham fechados e não são resolvidos por prioridade, ordem ou posição.
+- Após ação explícita, a IA avalia compatibilidade e seleção estrutural, mas não define versões, prioridade ou ordem; não persiste, ativa, cria módulos ou variantes nem altera `generation_guidance` ou `item_guidance`.
+- Cada acionamento autoriza uma chamada e nenhuma proposta salva, aprova, ativa ou arquiva automaticamente.
 - O fluxo manual permanece completo quando a IA não é usada, falha ou está indisponível.
 - A orientação pode guiar escolhas dentro dos contratos vigentes, mas não redefinir, ampliar ou contrariar a E18.4 ou a E18.5; módulos e variantes referenciados devem existir na E18.5.
 - Migration, seed, fixture, script ou insert direto podem apoiar testes, mas não substituem o fluxo oficial de gestão do perfil.
@@ -71,17 +74,25 @@ Fontes de referência: `README.md`, `docs/roadmap.md`, `docs/base-tecnica.md`, `
 
 ### 1.7. Tratar gaps identificados pela IA
 
-- A IA deve separar recomendações válidas, usando apenas o catálogo existente, de necessidades não atendidas por módulos ou variantes atuais.
-- Identidade inexistente não pode entrar nas recomendações oficiais e deve permanecer como gap para decisão humana.
+- A assistência deve separar recomendações válidas, usando apenas o catálogo existente, de necessidades não atendidas pela seleção estrutural.
+- Identidade inexistente não pode entrar nas recomendações oficiais, mas um gap não implica automaticamente novo módulo ou variante.
+- O gap pode representar:
+  - função estrutural ausente;
+  - execução reutilizável ausente;
+  - problema de pesquisa;
+  - problema de modelagem;
+  - característica global de composição;
+  - orientação não representada por identidade modular.
+- `formato_medio` e `formato_longo` comprovaram que uma necessidade não atendida pode exigir revisão da pesquisa ou da modelagem, sem justificar nova identidade na E18.5.
 - A IA não cria novos contratos automaticamente.
 - O administrador decide se o gap:
   - exige `wait_for_modules`, mantém o perfil em `draft` e bloqueia sua ativação;
   - permite `proceed_with_available`, com aviso na sessão corrente.
 - A decisão e o resumo dos gaps são registrados no evento de auditoria vigente ao salvar o rascunho, sem nova tabela.
-- A E12.4.4 deve recalcular os gaps antes da prontidão e, se houver adiamento, registrar justificativa, impacto, responsável e condição de retomada.
-- Gap de função estrutural aponta para novo módulo; diferença reutilizável de execução aponta para nova variante.
-- Quando o gap for impeditivo, a prontidão não é aprovada e a extensão segue por plano e PR próprios da E18.5.
-- Depois do merge da nova identidade versionada, a IA deve refazer ou revalidar o perfil antes da aprovação humana.
+- A E12.4.4 deve recalcular e classificar os gaps antes da prontidão e, se houver adiamento, registrar justificativa, impacto, responsável e condição de retomada.
+- Somente evidência de nova função estrutural reutilizável encaminha novo módulo; somente evidência de nova execução estrutural ou comportamental reutilizável encaminha nova variante.
+- Nenhuma extensão da E18.5 é automática; quando um gap classificado for impeditivo, a prontidão não é aprovada e a eventual extensão segue por plano e PR próprios.
+- Depois do merge de eventual nova identidade versionada, a IA deve refazer ou revalidar o perfil antes da aprovação humana.
 - A ampliação da E18.5 deve permanecer simples. Se uma extensão comum voltar a exigir alterações distribuídas, a arquitetura deve ser otimizada antes de prosseguir, sem remover proteções comprovadas.
 
 ### 1.8. Confirmar prontidão e autorizar a primeira geração
@@ -138,7 +149,7 @@ Fontes de referência: `README.md`, `docs/roadmap.md`, `docs/base-tecnica.md`, `
 ### 2.5. E20.3 — Perfil de orientação para geração
 
 - Preservar a persistência mínima e os três estados do perfil versionado por taxon.
-- Evoluir o contrato pela E20.3.5 para manter recomendações por módulo e tornar `generation_guidance` exceção humana opcional; `item_guidance` permanece opcional por item.
+- Preservar a E20.3.5 já implementada: `generation_guidance` é exceção humana opcional e, quando presente, permanece não vazia; `item_guidance` continua opcional e exclusivamente humano por item.
 - Validar todas as referências contra a E18.5.
 - Resolver perfil próprio ou herdado e entregá-lo por um único boundary server-side.
 - O perfil orienta gerações futuras sem governar ou alterar a LP materializada.
@@ -147,8 +158,10 @@ Fontes de referência: `README.md`, `docs/roadmap.md`, `docs/base-tecnica.md`, `
 
 - Operar criação, edição, salvamento, ativação e arquivamento por decisão humana no Admin Dashboard.
 - Manter `Salvar rascunho`, `Aprovar e ativar` e arquivamento como ações explícitas do `platform_admin`.
-- Pela E12.4.3.2, permitir proposta inicial e refinamento estrutural por IA com `coverage[]`, recomendações deduplicadas e gaps, sem persistência ou ativação automática.
-- Não permitir que a IA preencha ou modifique `generation_guidance` ou `item_guidance`.
+- Preservar a E12.4.3.2 já implementada: proposta inicial e refinamento estrutural por IA usam `coverage[]` com compatibilidade e seleção explícitas, enquanto o servidor deriva recomendações, versões, prioridade, ordem e gaps.
+- Manter candidata, diff, coverage e gaps como resultados transitórios; somente recomendações aplicadas e depois salvas integram o perfil.
+- Manter a aplicação da candidata separada do salvamento e das ações humanas de lifecycle.
+- Não permitir que a IA preencha ou modifique `generation_guidance` ou `item_guidance`, persista, ative ou crie identidades.
 - Exigir uma nova ação humana para cada chamada, sem conversa persistente, memória própria, retry ou continuidade automática.
 - Preservar validação determinística, fallback manual completo e independência das LPs já materializadas.
 
@@ -172,8 +185,7 @@ Fontes de referência: `README.md`, `docs/roadmap.md`, `docs/base-tecnica.md`, `
 
 ## 3. Ordem dos próximos planos-base
 
-- Base consolidada para a jornada: E10.8, E18.4, E18.5, E20.2, E20.3 e E12.4.3.
-- Correção anterior à prontidão — implementar E12.4.3.2 e a evolução E20.3.5 no mesmo PR técnico.
+- Base consolidada para a jornada: E10.8, E18.4, E18.5, E20.2, E20.3, E20.3.5, E12.4.3 e E12.4.3.2.
 - 1º — implementar E12.4.4 para prontidão, autorização e revogação por conta, taxon e plano.
 - 2º — implementar E19.4 como fluxo real e único de geração, revisão, materialização e publicação por conta.
 - 3º — implementar a avaliação e liberação por E20.4 e E12.4.5–12.4.6.
@@ -190,9 +202,10 @@ Fontes de referência: `README.md`, `docs/roadmap.md`, `docs/base-tecnica.md`, `
 ### 4.2. E12
 
 - `12.4.3` opera proposta por IA, revisão, salvamento, aprovação, ativação e arquivamento do perfil.
-- `12.4.3.1` mantém refinamento por ação explícita; após a E12.4.3.2, ele atua somente sobre a estrutura.
-- `12.4.3.2` separa `coverage[]` de `recommendations[]`, restringe a IA à estrutura, audita a decisão sobre gaps e implementa a opcionalidade da orientação geral definida pela E20.3.5.
-- `12.4.4` recalculará gaps e tratará prontidão, autorização e revogação por conta, taxon e plano.
+- `12.4.3.1` mantém refinamento estrutural por ação explícita.
+- `12.4.3.2` está implementada: separa compatibilidade de seleção em `coverage[]`, mantém candidata e diff transitórios, deriva `recommendations[]` no servidor, audita a decisão humana sobre gaps e preserva a orientação textual exclusivamente humana.
+- `12.4.3.3` permanece futuro e não bloqueante para refinamentos do editor e da modelagem do perfil.
+- `12.4.4` recalculará e classificará gaps e tratará prontidão, autorização e revogação por conta, taxon e plano.
 - `12.4.5` e `12.4.6` avaliam a LP real e registram a liberação.
 - A E12 opera decisões humanas; os contratos, estados e resolução pertencem à E20.
 
@@ -207,9 +220,9 @@ Fontes de referência: `README.md`, `docs/roadmap.md`, `docs/base-tecnica.md`, `
 
 - E20.2 permanece responsável pelo catálogo de entradas.
 - E20.3 mantém contrato, persistência, estados, validação e resolução própria ou herdada do perfil de orientação.
-- A E20.3.5 torna `generation_guidance` opcional sem alterar os demais contratos.
+- A E20.3.5 está implementada e mantém `generation_guidance` opcional e exclusivamente humano sem alterar estados, herança, resolução ou recomendações.
 - A operação humana do lifecycle pertence à E12.4.3.
-- Identidades inexistentes não entram nas recomendações oficiais e poderão ser tratadas posteriormente como gaps.
+- Identidades inexistentes não entram nas recomendações oficiais; a E12.4.4 recalcula e classifica os gaps antes da prontidão.
 - E20.4 define critérios de liberação por evidência da LP real.
 
 ### 4.5. E19
