@@ -22,6 +22,7 @@ import {
   buildGenerationProfileResponsesRequest,
   estimateGenerationProfileCostUsd,
   GENERATION_PROFILE_APPROVED_MODEL,
+  GENERATION_PROFILE_INVALID_PROPOSAL_MESSAGE,
   isGenerationProfileAssistanceConfigured,
   mapProviderFailureToProposalError,
   mapResearchErrorToProposalError,
@@ -307,6 +308,16 @@ const cases: readonly Readonly<{
   name: string;
   run: () => void | Promise<void>;
 }>[] = [
+  {
+    name: "invalid proposal message preserves the current profile state for creation and evolution",
+    run: () => {
+      assert.equal(
+        GENERATION_PROFILE_INVALID_PROPOSAL_MESSAGE,
+        "A proposta da IA não atendeu às regras estruturais. Nenhuma alteração foi salva e o estado atual do perfil foi preservado.",
+      );
+      assert.doesNotMatch(GENERATION_PROFILE_INVALID_PROPOSAL_MESSAGE, /perfil ativo/);
+    },
+  },
   {
     name: "valid profile keeps profile and items in one aggregate",
     run: () => {

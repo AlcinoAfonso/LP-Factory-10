@@ -21,6 +21,8 @@ import { deriveGenerationProfileProposalDiff } from "./editor-assistance";
 export const GENERATION_PROFILE_REQUEST_MAX_BYTES = 96 * 1024;
 export const GENERATION_PROFILE_MAX_OUTPUT_TOKENS = 2000;
 export const GENERATION_PROFILE_APPROVED_MODEL = "gpt-5.4-mini";
+export const GENERATION_PROFILE_INVALID_PROPOSAL_MESSAGE =
+  "A proposta da IA não atendeu às regras estruturais. Nenhuma alteração foi salva e o estado atual do perfil foi preservado.";
 const GENERATION_PROFILE_INPUT_USD_PER_TOKEN = 0.00000075;
 const GENERATION_PROFILE_OUTPUT_USD_PER_TOKEN = 0.0000045;
 

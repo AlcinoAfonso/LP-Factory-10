@@ -18,6 +18,7 @@ import {
 import {
   buildGenerationProfileInvalidDataMetadata,
   estimateGenerationProfileCostUsd,
+  GENERATION_PROFILE_INVALID_PROPOSAL_MESSAGE,
   isGenerationProfileAssistanceConfigured,
   mapProviderFailureToProposalError,
   mapResearchErrorToProposalError,
@@ -159,7 +160,7 @@ export async function proposeLandingPageGenerationProfile(input: {
     previousCandidate: currentCandidate?.value ?? null,
   });
   if (!validated.ok) {
-    return finishFailure(requestId, "invalid_data", "A proposta da IA não atendeu às regras estruturais. Nenhuma alteração foi salva e o perfil ativo permanece preservado.", {
+    return finishFailure(requestId, "invalid_data", GENERATION_PROFILE_INVALID_PROPOSAL_MESSAGE, {
       taxonId: input.taxonId,
       platformAdminId: input.actorUserId,
       interactionKind,
