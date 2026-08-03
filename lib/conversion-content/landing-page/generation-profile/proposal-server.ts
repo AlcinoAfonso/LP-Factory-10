@@ -11,7 +11,10 @@ import type {
   GenerationProfileProposalResult,
 } from "./admin-contracts";
 import { validateGenerationProfileDraft } from "./admin-schema";
-import { listLandingPageModuleIdentities } from "../module-catalog";
+import {
+  listLandingPageModuleIdentities,
+  listLandingPageModuleSelectionCatalog,
+} from "../module-catalog";
 import {
   buildGenerationProfileInvalidDataMetadata,
   estimateGenerationProfileCostUsd,
@@ -114,10 +117,12 @@ export async function proposeLandingPageGenerationProfile(input: {
   }
   const previousActiveProfile = detail.profiles.find((profile) => profile.status === "active") ?? null;
   const moduleIdentities = listLandingPageModuleIdentities();
+  const moduleSelectionCatalog = listLandingPageModuleSelectionCatalog();
   const provider = await requestGenerationProfileProposal({
     model,
     research: research.value,
     moduleIdentities,
+    moduleSelectionCatalog,
     requestKind: previousActiveProfile ? "evolution" : "creation",
     activeBaseline: previousActiveProfile?.recommendations ?? null,
     currentCandidate: currentCandidate?.value ?? null,

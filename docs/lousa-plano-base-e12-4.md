@@ -1,8 +1,8 @@
 # Plano-base — E12.4 — Gestão do perfil de orientação
 
-- Data: 30/07/2026.
-- Versão: v2.5.
-- Status: E12.4.3 e E12.4.3.1 implementadas, validadas e reconciliadas na `main`; E12.4.3.2 planejada como correção funcional do fluxo de proposta estrutural.
+- Data: 03/08/2026.
+- Versão: v2.7.
+- Status: E12.4.3, E12.4.3.1 e E12.4.3.2 implementadas; correção do contrato de seleção explícita aprovada no gate hospedado do HEAD funcional `e08acec3`, com reconciliação final do PR #672 e merge humano ainda pendentes.
 - Recorte previsto para o roadmap: `12.4 — Gestão do perfil de orientação`.
 - Recorte executável inicial: `12.4.3 — Proposta, revisão, aprovação e ativação do perfil`.
 - Recorte corretivo planejado: `12.4.3.2 — Criação e evolução estrutural baseada em lp_sections, catálogo vigente e debate humano–IA`.
@@ -20,7 +20,7 @@
   - sem perfil próprio, a ação destacada seja `Criar perfil com IA`;
   - com perfil `active` próprio, a nova versão use `Evoluir perfil com IA` e inicialize o editor com a estrutura completa ativa como baseline;
   - `lp_sections` seja o esqueleto obrigatório da análise;
-  - a IA reavalie cada recomendação contra as pesquisas e o catálogo vigentes, propondo somente módulos e variantes válidos, prioridade e ordem;
+  - a IA reavalie cada recomendação contra as pesquisas e o catálogo vigentes, distinguindo identidades compatíveis das efetivamente escolhidas, enquanto o servidor deriva prioridade e ordem;
   - o debate ocorra sobre a nova versão em `draft`, com proposta candidata e diff transitórios antes de qualquer aplicação ao editor;
   - a IA informe o delta de seções sem módulo ou variante compatível;
   - a pesquisa bruta arquivada seja usada apenas como contexto complementar quando existir e couber integralmente na requisição, sem novo gate;
@@ -52,7 +52,7 @@
   - acionamento exclusivo pelo `platform_admin`;
   - validação determinística, revisão e ativação humanas e fallback manual completo;
   - `lp_sections` como fonte estrutural principal da proposta;
-  - IA limitada a módulos, variantes, prioridade, ordem e delta do catálogo;
+  - IA limitada à compatibilidade e à seleção explícita de módulos e variantes e ao delta do catálogo, com prioridade e ordem derivadas pelo servidor;
   - `generation_guidance` e `item_guidance` como exceções opcionais exclusivamente humanas;
   - independência da LP materializada em relação às fontes usadas na geração inicial.
 
@@ -73,8 +73,10 @@
 - A resposta estrutural separa obrigatoriamente:
   - `coverage[]`, com uma avaliação para cada item de `lp_sections`;
   - `recommendations[]`, com a lista final deduplicada por módulo.
-- Cada item de `coverage[]` preserva `item_key`, nome da seção, prioridade e ordem de origem e informa cobertura `covered`, `partial` ou `missing`, além das identidades compatíveis, motivo e impacto quando aplicáveis.
-- `recommendations[]` contém somente módulo e variante disponíveis, prioridade `P1`, `P2` ou `P3` e ordem recomendada.
+- Cada item de `coverage[]` preserva `item_key`, nome da seção, prioridade e ordem de origem e informa cobertura `covered`, `partial` ou `missing`, além das identidades compatíveis, das identidades efetivamente escolhidas e de motivo e impacto quando aplicáveis.
+- Compatibilidade não implica seleção: `compatible_aliases` registra as identidades semanticamente compatíveis e `selected_aliases`, transitório, registra somente as escolhidas; selecionar o alias do módulo-base recomenda o módulo sem impor variante.
+- `recommendations[]` é derivado exclusivamente das identidades escolhidas e contém somente módulo e variante disponíveis, prioridade `P1`, `P2` ou `P3` e ordem recomendada.
+- Prioridade, ordem e posição em arrays não escolhem módulo-base ou variante; seleções diferentes para o mesmo módulo falham fechadas, sem retry.
 - `coverage[]`, referências entre seções e módulos, gaps e estados do diff são derivados e transitórios; somente `recommendations[]`, depois de aplicada ao editor e persistida por `Salvar rascunho`, integra o perfil.
 - A IA não cria módulo, variante ou identidade e não preenche nem modifica `generation_guidance` ou `item_guidance`.
 - `generation_guidance`, no perfil-pai, e `item_guidance`, no item-filho, são exceções opcionais preenchidas somente pelo humano.
@@ -258,19 +260,19 @@
 
 - A assistência permanece opcional, exclusivamente server-side e protegida por `requirePlatformAdmin()`.
 - Antes da chamada, o boundary resolve a E10.8, exige resultado completo, separa `lp_sections` e obtém módulos e variantes somente pelas APIs públicas da E18.5.
+- O catálogo compacto de seleção complementa o catálogo público de identidades com função estrutural, aliases de variantes, capabilities e kinds de interação, sem expor registry, fields, schema, lifecycle ou versões à IA.
 - `lp_sections` é o esqueleto obrigatório; `strategic_core`, `lp_overview` e `seo` apenas contextualizam prioridade, ordem e escolha entre identidades válidas.
 - A saída da IA contém somente:
-  - correspondências entre itens de `lp_sections` e módulos ou variantes válidos;
-  - prioridade `P1`, `P2` ou `P3`;
-  - ordem recomendada;
+  - `compatible_aliases` para todas as identidades semanticamente compatíveis e `selected_aliases` somente para as identidades efetivamente escolhidas;
   - delta de cobertura parcial ou ausente, com motivo e impacto.
+- O servidor reconstrói versões e deriva prioridade e ordem deterministicamente das `lp_sections`, sem permitir que esses campos escolham módulo-base ou variante.
 - A saída não contém `generation_guidance` nem `item_guidance`.
 - A resposta estruturada separa:
   - `coverage[]`, com exatamente uma avaliação por `item_key`, podendo referenciar zero, uma ou várias identidades válidas;
   - `recommendations[]`, deduplicado por módulo e sem obrigação de relação um para um com as seções.
 - Várias seções podem convergir para uma recomendação; uma seção pode originar várias recomendações quando funções estruturais distintas forem necessárias.
 - `coverage[]`, referências seção–módulo, estados do diff e gaps não integram as tabelas do perfil; somente `recommendations[]` aplicadas e salvas integram o agregado, e a decisão humana sobre gaps é registrada no evento de auditoria existente.
-- A validação determinística comprova cobertura de todos os itens, conversão `3 → P1`, `2 → P2`, `1 → P3`, identidades existentes, vínculo da variante, deduplicação por módulo e ordens finais positivas e únicas.
+- A validação determinística comprova cobertura de todos os itens, subconjunto e cardinalidade das seleções, ausência de conflitos intra e entre coberturas, conversão `3 → P1`, `2 → P2`, `1 → P3`, identidades existentes, vínculo da variante, deduplicação por módulo e ordens finais positivas e únicas.
 - Em cada rodada, o provider recebe o editor original, a proposta candidata transitória quando existir e o feedback estrutural mais recente; o merge local preserva integralmente as exceções humanas.
 - Cada clique em `Criar perfil com IA`, `Evoluir perfil com IA` ou `Refinar novamente` autoriza uma chamada, sem chat persistente, histórico próprio, memória, `previous_response_id`, retry ou encadeamento.
 - A proposta válida é exibida como candidata com diff; somente `Aplicar proposta` substitui a estrutura visível do editor, e salvar, ativar, arquivar e decidir sobre gaps permanecem ações humanas separadas.
@@ -401,7 +403,7 @@
 
 #### 3.1.2. E12.4.3.2 — Proposta estrutural baseada em `lp_sections` e delta do catálogo
 
-- Status: planejada; implementação pendente após aprovação deste plano.
+- Status: implementada, com correção do contrato de seleção explícita aprovada no gate hospedado do HEAD funcional `e08acec3`.
 - Objetivo:
   - corrigir a criação e a evolução estrutural, o debate humano–IA, o contrato da proposta e a opcionalidade das exceções humanas sem refazer o lifecycle entregue.
 - Entregas:
@@ -426,6 +428,8 @@
 - rodadas adicionais recebem draft original, candidata atual e novo feedback; descartar preserva o editor original;
   - `recommendations[]` aceita um-para-muitos e muitos-para-um, mas termina único por módulo;
   - somente identidades válidas entram nas recomendações;
+  - compatibilidades e escolhas permanecem separadas e transitórias; recomendações derivam somente de `selected_aliases`;
+  - módulo-base sem variante exige seleção explícita e conflitos de identidade do mesmo módulo falham fechados sem usar prioridade, ordem ou posição;
   - a prioridade de origem é convertida por `3 → P1`, `2 → P2`, `1 → P3` e a ordem final é determinística, positiva e única;
   - gaps exibem seção, motivo, impacto e decisão humana;
   - a decisão é auditada no salvamento, `wait_for_modules` bloqueia ativação e a E12.4.4 recalcula gaps;
@@ -440,11 +444,10 @@
 
 ### 3.2. Próxima ação
 
-- Aprovar e mergear a v2.5 documental.
-- Implementar a E12.4.3.2 em PR técnico próprio criado a partir da `main` atual.
-- Não usar o PR #656, que permanece restrito à correção e ao reteste da E11.1.7.
-- No PR técnico, aplicar o menor delta em UI, contrato da proposta, normalização, migration incremental, testes e documentos canônicos materialmente afetados.
-- Não marcar a E12.4.3.2 como concluída antes de migration aplicada, verificador read-only aprovado, checks e validação humana hospedada em desktop e mobile.
+- Preservar o PR #669 incorporado, sem revertê-lo.
+- Considerar encerrada a prova funcional hospedada da correção no HEAD `e08acec3`, aprovada por validação humana sobre o `draft v1` preservado.
+- Reconciliar o PR #672 com a `main`, comprovar mecanicamente que o runtime da E12.4.3.2 permanece idêntico ao HEAD funcional e gerar o Preview final sem nova chamada à OpenAI, ativação ou evolução.
+- Após os checks e o Preview finais, manter o PR em draft para revisão independente e merge humano.
 - Preservar `vercel#1 — AI Gateway` e `supa#63 — rlsautotest` apenas como oportunidades estratégicas condicionais.
 
 ## 4. Escopo negativo e critérios de parada
@@ -491,20 +494,20 @@
   - quatro seções principais, numeração e ordem preservadas;
   - E12.4.3.2 registrada como sub-recorte corretivo e E20.3.5 como evolução do contrato de domínio;
   - `lp_sections` como fonte estrutural principal;
-  - IA limitada a módulos, variantes, prioridade, ordem e gaps;
+  - IA limitada a informar `compatible_aliases` e `selected_aliases`, com prioridade e ordem derivadas deterministicamente pelo servidor e gaps derivados da cobertura;
   - `generation_guidance` e `item_guidance` como exceções opcionais humanas;
   - decisão entre aguardar ou prosseguir com aviso;
   - pendências explícitas da E12.4.4 e E19.4;
   - PR #656 preservado fora do escopo;
   - ausência de nova tabela, agente, job, fila, service ou infraestrutura.
-- Para este delta documental, executar revisão do diff e verificação de whitespace; checks de runtime, typecheck e banco pertencem ao futuro PR técnico.
+- Para este delta documental no PR técnico corretivo #672, executar revisão do diff e verificação de whitespace; os checks de runtime e typecheck pertencem ao próprio PR #672, e banco não se aplica porque este PR não contém nem exige alteração de schema ou migration.
 
 ### 4.4. Critérios de encerramento do plano
 
-- O plano v2.5 será encerrado somente após:
+- O plano v2.7 será encerrado somente após:
   - decisão conceitual aprovada;
   - implementação da E12.4.3.2;
-  - migration incremental aplicada e verificada;
+  - migration incremental da implementação histórica incorporada pelo PR #663 aplicada e verificada; o PR #672 não contém nem exige nova migration;
   - validações técnicas e visuais aprovadas;
   - pendência da E12.4.4 e questões ainda não decididas da E19.4 registradas nos documentos próprios;
   - reconciliação documental pelo Prompt ABC;

@@ -23,6 +23,7 @@ import {
   resolveLandingPageModuleCatalogFromRegistry,
 } from "./resolver";
 import { validateLandingPageModuleIdentity } from "./identity-validator";
+import { listLandingPageModuleSelectionCatalog } from "./identity-catalog";
 import * as publicModuleCatalog from "./index";
 import { resolveLandingPageRootParameters } from "../index";
 
@@ -114,6 +115,37 @@ const cases: readonly Case[] = [
     name: "registry values are deeply immutable",
     run: () => {
       assertDeeplyFrozen(landingPageModuleCatalogRegistry);
+    },
+  },
+  {
+    name: "public selection catalog is compact complete unique and deeply immutable",
+    run: () => {
+      const catalog = listLandingPageModuleSelectionCatalog();
+      assertDeeplyFrozen(catalog);
+      assert.equal(catalog.moduleCatalogVersion, landingPageModuleCatalogRegistry.moduleCatalogVersion);
+      assert.deepEqual(catalog.modules.map((moduleEntry) => moduleEntry.moduleAlias).sort(), [...landingPageModuleKeys].sort());
+      assert.equal(new Set(catalog.modules.map((moduleEntry) => moduleEntry.moduleAlias)).size, landingPageModuleKeys.length);
+
+      const variants = catalog.modules.flatMap((moduleEntry) => moduleEntry.variants);
+      assert.equal(new Set(variants.map((variant) => variant.alias)).size, variants.length);
+      const heroStandard = variants.find((variant) => variant.alias === "hero.standard");
+      const heroForm = variants.find((variant) => variant.alias === "hero.form");
+      const faqAccordion = variants.find((variant) => variant.alias === "faq.accordion");
+      assert.ok(heroStandard && heroForm && faqAccordion);
+      assert.deepEqual(heroStandard.capabilities, ["primary_action", "image_asset"]);
+      assert.deepEqual(heroStandard.interactions, []);
+      assert.deepEqual(heroForm.capabilities, ["primary_action", "image_asset", "embedded_form"]);
+      assert.deepEqual(heroForm.interactions, ["form"]);
+      assert.deepEqual(faqAccordion.capabilities, ["accordion_interaction"]);
+      assert.deepEqual(faqAccordion.interactions, ["accordion"]);
+
+      assert.deepEqual(Object.keys(catalog).sort(), ["moduleCatalogVersion", "modules"]);
+      for (const moduleEntry of catalog.modules) {
+        assert.deepEqual(Object.keys(moduleEntry).sort(), ["moduleAlias", "purpose", "variants"]);
+        for (const variant of moduleEntry.variants) {
+          assert.deepEqual(Object.keys(variant).sort(), ["alias", "capabilities", "interactions"]);
+        }
+      }
     },
   },
   {
@@ -1565,6 +1597,7 @@ const cases: readonly Case[] = [
       }
       assert.deepEqual(Object.keys(publicModuleCatalog).sort(), [
         "listLandingPageModuleIdentities",
+        "listLandingPageModuleSelectionCatalog",
         "resolveLandingPageModuleCatalog",
         "validateLandingPageModuleIdentity",
       ]);
