@@ -1,8 +1,8 @@
 # Plano-base — E12.4 — Gestão do perfil de orientação
 
-- Data: 31/07/2026.
-- Versão: v2.6.
-- Status: E12.4.3, E12.4.3.1 e E12.4.3.2 implementadas; correção do contrato de seleção explícita incorporada neste delta, pendente de merge, deployment e comprovação hospedada sobre o `draft v1` preservado.
+- Data: 03/08/2026.
+- Versão: v2.7.
+- Status: E12.4.3, E12.4.3.1 e E12.4.3.2 implementadas; correção do contrato de seleção explícita aprovada no gate hospedado do HEAD funcional `e08acec3`, com reconciliação final do PR #672 e merge humano ainda pendentes.
 - Recorte previsto para o roadmap: `12.4 — Gestão do perfil de orientação`.
 - Recorte executável inicial: `12.4.3 — Proposta, revisão, aprovação e ativação do perfil`.
 - Recorte corretivo planejado: `12.4.3.2 — Criação e evolução estrutural baseada em lp_sections, catálogo vigente e debate humano–IA`.
@@ -403,7 +403,7 @@
 
 #### 3.1.2. E12.4.3.2 — Proposta estrutural baseada em `lp_sections` e delta do catálogo
 
-- Status: implementada, com correção do contrato de seleção explícita incorporada neste delta e comprovação hospedada pendente.
+- Status: implementada, com correção do contrato de seleção explícita aprovada no gate hospedado do HEAD funcional `e08acec3`.
 - Objetivo:
   - corrigir a criação e a evolução estrutural, o debate humano–IA, o contrato da proposta e a opcionalidade das exceções humanas sem refazer o lifecycle entregue.
 - Entregas:
@@ -445,8 +445,9 @@
 ### 3.2. Próxima ação
 
 - Preservar o PR #669 incorporado, sem revertê-lo.
-- Após merge e deployment da correção, executar uma nova chamada manual à OpenAI sobre o mesmo `draft v1` de `Corretor Imóveis`, revisar a candidata, aplicá-la e salvá-la novamente.
-- Manter ativação e testes de evolução parados até a comprovação hospedada dessa nova candidata.
+- Considerar encerrada a prova funcional hospedada da correção no HEAD `e08acec3`, aprovada por validação humana sobre o `draft v1` preservado.
+- Reconciliar o PR #672 com a `main`, comprovar mecanicamente que o runtime da E12.4.3.2 permanece idêntico ao HEAD funcional e gerar o Preview final sem nova chamada à OpenAI, ativação ou evolução.
+- Após os checks e o Preview finais, manter o PR em draft para revisão independente e merge humano.
 - Preservar `vercel#1 — AI Gateway` e `supa#63 — rlsautotest` apenas como oportunidades estratégicas condicionais.
 
 ## 4. Escopo negativo e critérios de parada
@@ -503,7 +504,7 @@
 
 ### 4.4. Critérios de encerramento do plano
 
-- O plano v2.6 será encerrado somente após:
+- O plano v2.7 será encerrado somente após:
   - decisão conceitual aprovada;
   - implementação da E12.4.3.2;
   - migration incremental da implementação histórica incorporada pelo PR #663 aplicada e verificada; o PR #672 não contém nem exige nova migration;

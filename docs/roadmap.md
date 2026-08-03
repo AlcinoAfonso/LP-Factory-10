@@ -1,8 +1,8 @@
 0. Introdução
 
 0.1 Cabeçalho
-• Data: 01/08/2026
-• Versão: v1.5.119
+• Data: 03/08/2026
+• Versão: v1.5.120
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -1523,6 +1523,15 @@ Repositório — Ajustados
     - Admin Dashboard e Server Actions em `app/admin/(protected)/perfis-de-orientacao/`.
     - Contrato estrutural, validação determinística, candidata, diff, carregamento opcional de pesquisa bruta e integração server-only em `lib/conversion-content/`.
     - Migration incremental e provas em `supabase/migrations/`, `supabase/tests/` e `supabase/snippets/`.
+
+12.4.3.3 Refinamentos futuros do editor e da modelagem do perfil
+- Status: Futuro e não bloqueante para o PR #672; não constitui requisito para o merge atual e não possui implementação iniciada.
+- Escopo futuro:
+  - Substituir a digitação livre de módulo e variante por seleção vinculada ao catálogo público vigente.
+  - Derivar automaticamente as versões de módulo e variante, ou apresentá-las como somente leitura, evitando entrada numérica livre.
+  - Desabilitar `Salvar rascunho` quando o editor não possuir alterações pendentes.
+  - Avaliar, no documento próprio da E10.8 ou no recálculo previsto da E12.4.4, se `formato_medio` e `formato_longo` devem permanecer como itens de `lp_sections`.
+  - Os gaps de `formato_medio` e `formato_longo` não autorizam automaticamente a criação de módulo ou variante na E18.5.
 
 13. E13 — Partner Dashboard
 
