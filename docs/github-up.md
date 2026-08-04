@@ -15,13 +15,13 @@ Recursos específicos de Supabase, Vercel, produto ou agentes permanecem nos res
 
 O estado da plataforma deve ser separado do estado no projeto: `Não implementado`, `Em implementação por casos de uso` ou `Implementado globalmente no projeto`.
 
-Identificador canônico: `github#n`. A numeração não deve ser reutilizada.
+Identificador canônico: `github#n`. Todo ID publicado permanece localizável; a numeração não deve ser apagada, renumerada ou reutilizada.
 
 ## Critério do catálogo ativo
 
 Este documento deve manter apenas recursos GitHub que ainda possam ser aproveitados pelo Gestor de Updates em algum caso atual, futuro ou condicional.
 
-Itens já implementados globalmente, absorvidos pela Base Técnica, duplicados, superados, deprecados ou sem aproveitamento concreto não permanecem no catálogo ativo.
+Itens já implementados globalmente, absorvidos pela Base Técnica, duplicados, superados, deprecados ou sem aproveitamento concreto podem sair do catálogo ativo, mas permanecem como registro histórico com estado final, evidências, recortes e eventual substituto.
 
 Recursos pagos, enterprise ou futuros podem permanecer quando ainda tiverem aproveitamento possível em algum caso específico.
 
@@ -113,6 +113,25 @@ Avaliar somente quando existir workflow concreto que exija raciocínio agente de
 ### Fontes Oficiais
 
 - [Copilot CLI no longer needs a personal access token in GitHub Actions](https://github.blog/changelog/2026-07-02-copilot-cli-no-longer-needs-a-personal-access-token-in-github-actions/)
+- [Set AI credit session limits in Copilot CLI and SDK](https://github.blog/changelog/2026-07-01-set-ai-credit-session-limits-in-copilot-cli-and-sdk/)
+
+---
+
+## github#6 — AI credit session limits no Copilot CLI/SDK *(⚪ Registro histórico — absorvido por github#5)*
+
+2026-07-01  
+Atualizado em 2026-08-04
+
+### Estado e rastreabilidade
+
+- Estado: não implementado; conteúdo absorvido por `github#5`.
+- Evidência: `github#5` reúne autenticação por `GITHUB_TOKEN`, limite de créditos, custo, riscos e gatilho do mesmo caso Copilot CLI/SDK.
+- Recortes aplicados: nenhum; o projeto não usa Copilot CLI nem SDK.
+- Gatilho preservado: se um workflow agente for aprovado futuramente, exigir limite explícito de créditos por sessão.
+- O ID permanece histórico e não pode ser reutilizado.
+
+### Fonte Oficial
+
 - [Set AI credit session limits in Copilot CLI and SDK](https://github.blog/changelog/2026-07-01-set-ai-credit-session-limits-in-copilot-cli-and-sdk/)
 
 ---
