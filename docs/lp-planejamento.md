@@ -50,7 +50,7 @@ Fontes de referência: `README.md`, `docs/roadmap.md`, `docs/base-tecnica.md`, `
 
 - A E20.2 mantém um catálogo declarativo único, versionado e separado do perfil de orientação e do conteúdo.
 - A resolução segue `universal → segmento → nicho → ultranicho`, aplicando somente as camadas da cadeia do taxon atendido e do plano informado.
-- O catálogo define quais campos existem, sua aplicabilidade, origem esperada, tipo, validação e obrigação obrigatória, opcional ou condicional.
+- O catálogo define quais campos existem, sua aplicabilidade, origem esperada, tipo, validação e classificação como obrigatório, opcional ou condicional.
 - Os valores concretos pertencem à conta, negócio, oferta, campanha ou LP; a E19 os coleta, valida e persiste e preserva o snapshot da geração.
 - Os campos da E20.2 não são copiados para o perfil da E20.3.
 - `paid_search_keyword_map` permanece opcional para alinhamento entre busca, anúncio e LP.
@@ -121,6 +121,7 @@ Fontes de referência: `README.md`, `docs/roadmap.md`, `docs/base-tecnica.md`, `
 - A LP real é a evidência preferencial, mas não obrigatória; equivalência, comparação, experiência operacional ou outra evidência suficiente podem fundamentar a decisão.
 - Disponibilizar, suspender ou reativar exige justificativa; a referência a uma LP é opcional.
 - Cada plano é decidido e registrado independentemente, sem propagação automática entre planos superiores ou inferiores.
+- Uma mesma decisão humana pode abranger vários planos, desde que cada combinação `taxon + plano` seja registrada explicitamente e sem propagação automática.
 - Não existe herança automática entre taxons ou descendentes; a mesma evidência pode sustentar outra combinação somente por decisão humana justificada.
 - A disponibilidade controla exposição de cards, preços, checkout e novas contratações ou trials públicos.
 - Quando nenhum plano estiver disponível, a página comercial informa a indisponibilidade sem prometer notificação inexistente, e o checkout falha fechado server-side.
@@ -208,7 +209,7 @@ Fontes de referência: `README.md`, `docs/roadmap.md`, `docs/base-tecnica.md`, `
 - 4º — gerar e avaliar a primeira LP piloto pelo fluxo oficial da E19.
 - 5º — planejar a disponibilidade comercial por `taxon + plano` em E20.4 e E12.4.5–12.4.6.
 - A E12.4.4 é retirada da implementação e absorvida pela jornada simplificada; não é concluída nem bloqueia a E19.4.
-- Reabrir E18.4, E18.5, E20.2 ou o perfil de orientação somente diante de aprendizado material obtido com LPs reais.
+- Reabrir E18.4, E18.5 ou o perfil de orientação somente diante de aprendizado material obtido com LPs reais. A E20.2 pode receber refinamento focalizado durante o planejamento ou a implementação da E19.4 quando houver consumidor real, necessidade concreta e aprovação pela barreira de admissão vigente.
 - Gates operacionais remanescentes da E12.4.3 são acompanhados no roadmap e não criam novo plano conceitual.
 
 ## 4. Onde cada ajuste entra no roadmap
