@@ -1,8 +1,8 @@
 # Plano-base — E12.4 — Gestão do perfil de orientação
 
-- Data: 03/08/2026.
-- Versão: v2.8.
-- Status: E12.4.3, E12.4.3.1 e E12.4.3.2 implementadas e incorporadas à `main` pelo PR #672; correção da cardinalidade de cobertura em implementação, com revisão independente e gate funcional único no Preview ainda pendentes.
+- Data: 04/08/2026.
+- Versão: v2.9.
+- Status: E12.4.3, E12.4.3.1 e E12.4.3.2 implementadas e incorporadas à `main` pelo PR #672; correção da cardinalidade de cobertura concluída no PR draft #681, com gate funcional hospedado aprovado e inspeção final ainda pendente.
 - Recorte previsto para o roadmap: `12.4 — Gestão do perfil de orientação`.
 - Recorte executável inicial: `12.4.3 — Proposta, revisão, aprovação e ativação do perfil`.
 - Recorte corretivo planejado: `12.4.3.2 — Criação e evolução estrutural baseada em lp_sections, catálogo vigente e debate humano–IA`.
@@ -405,12 +405,18 @@
 
 #### 3.1.2. E12.4.3.2 — Proposta estrutural baseada em `lp_sections` e delta do catálogo
 
-- Status: implementada e incorporada à `main` pelo PR #672; correção localizada do contrato de cardinalidade em implementação.
+- Status: implementada e incorporada à `main` pelo PR #672; correção localizada do contrato de cardinalidade concluída no PR draft #681 e aprovada no gate funcional hospedado.
 - Ocorrência corretiva de 03/08/2026:
   - a evolução do perfil foi rejeitada de forma fail-closed como `coverage_identity_count_invalid`, sob o Request ID `c2287d63-0ff9-4fe5-8bc0-641f1e387a7a`;
   - o perfil `active v1` permaneceu preservado e nenhum `draft v2` foi criado;
   - a resposta rejeitada não foi armazenada, portanto a cobertura, o status e os aliases concretos que falharam permanecem desconhecidos e não podem ser inferidos;
   - a correção separa `covered`, `partial` e `missing` no contrato, alinha o prompt e mantém integralmente as validações server-side redundantes.
+- Gate funcional hospedado aprovado em 04/08/2026:
+  - execução no Preview correspondente exatamente ao HEAD funcional `e6f694454b11388f30355ddbf231bb8350ecef1f`;
+  - Request ID `e360a900-082a-4707-9610-ef4f9cdfa2d9`, `proposalMode: evolution`, uma única chamada e resultado `success`;
+  - candidata revisada e descartada, sem retry, salvamento ou ativação; somente o perfil `active v1` permaneceu preservado, sem criação de `draft v2`;
+  - como observação não bloqueante, `rodape_contato` foi classificado como `covered`, com `compatible_aliases` `final_cta.standard` e `trust_bar.standard` e `selected_aliases` `final_cta.standard`;
+  - a avaliação humana considera `rodape_contato` uma possível necessidade global de composição não integralmente coberta pelo catálogo modular; a E12.4.4 deverá recalcular e classificar o item, sem criação automática de módulo ou variante.
 - Objetivo:
   - corrigir a criação e a evolução estrutural, o debate humano–IA, o contrato da proposta e a opcionalidade das exceções humanas sem refazer o lifecycle entregue.
 - Entregas:
@@ -454,7 +460,7 @@
 - Preservar o PR #669 incorporado, sem revertê-lo.
 - Preservar o PR #672 incorporado e não reutilizá-lo para a correção de cardinalidade.
 - Manter a correção em PR draft exclusivo até a inspeção do Estrategista e a revisão independente do Analista sobre schema, prompt, regressões, observabilidade e limites.
-- Somente no Preview correspondente exatamente ao HEAD aprovado, executar uma única evolução do perfil `Corretor Imóveis` com feedback vazio, revisar a candidata e descartá-la; não salvar, ativar, criar `draft v2` nem executar retry.
+- Considerar concluído o gate funcional único no Preview do HEAD `e6f694454b11388f30355ddbf231bb8350ecef1f`, sem repetir a chamada à OpenAI; manter o PR draft até a inspeção final e o merge humano.
 - Preservar `vercel#1 — AI Gateway` e `supa#63 — rlsautotest` apenas como oportunidades estratégicas condicionais.
 
 ## 4. Escopo negativo e critérios de parada
