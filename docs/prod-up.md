@@ -25,7 +25,8 @@ A pesquisa deve usar prioritariamente documentação oficial de:
 
 * OpenAI, para IA, agentes e experiências assistidas;
 * Google Search Central e web.dev, para SEO, performance e experiência web;
-* Meta e Google Ads, para aquisição, conversão e tracking;
+* Meta Ads e Google Ads, para aquisição, conversão e tracking;
+* WhatsApp Business Platform e Meta Business Messaging, para mensageria, campanhas, atendimento, qualificação, venda, automação e IA conversacional;
 * Stripe, para billing, checkout, pricing e monetização;
 * W3C/WAI, para acessibilidade e WCAG.
 
@@ -41,83 +42,111 @@ Antes de registrar ou atualizar um item:
 2. identificar valor concreto para o LP Factory 10;
 3. verificar custo, plano, maturidade e dependências;
 4. definir se o recurso deve ser adotado, avaliado depois ou descartado;
-5. confirmar no roadmap e no repositório se já existe implementação.
+5. confirmar no roadmap e no repositório se já existe implementação;
+6. buscar referências pelo ID e semanticamente pela capacidade, incluindo recortes, código, migrations, testes e decisões;
+7. confirmar a cobertura dos canais estratégicos do `README.md`, especialmente WhatsApp.
 
 ## Convenção de referência
 
 O identificador canônico dos itens deste catálogo é `prod#n`.
 
-Esse identificador deve ser usado no roadmap, Base Técnica, briefings, relatórios e referências cruzadas. A numeração não deve ser reutilizada após remoção, depreciação ou substituição de um item.
+Esse identificador deve ser usado no roadmap, Base Técnica, briefings, relatórios e referências cruzadas. Todo ID publicado deve permanecer localizável. A numeração não deve ser apagada, renumerada ou reutilizada após implementação, absorção, rejeição, depreciação ou substituição.
 
 ## Critério do catálogo ativo
 
-Este documento deve manter apenas práticas, capacidades e tendências de produto que ainda possam ser aproveitadas pelo Gestor de Updates em algum caso atual, futuro ou condicional.
+Este documento mantém práticas, capacidades e tendências de produto aproveitáveis em casos atuais, futuros ou condicionais, além dos registros históricos necessários à rastreabilidade.
 
-Itens já absorvidos pela Base Técnica, duplicados em catálogos técnicos, genéricos demais ou sem aproveitamento concreto não permanecem no catálogo ativo.
+Itens absorvidos, implementados, duplicados, superados ou sem aproveitamento concreto podem sair do catálogo ativo, mas permanecem como registro histórico compacto com estado final, evidências, recortes e eventual substituto.
 
 Recursos pagos, enterprise ou futuros podem permanecer quando ainda tiverem aproveitamento possível em algum caso específico.
 
 A rejeição ou adoção de cada item deve ser decidida caso a caso pelo Gestor de Updates, conforme o plano-base avaliado.
 
-## 1 — SSO Self-Service *(🟩 Estável)*  
+## 1 — SSO Self-Service *(🟨 Futuro condicional — Pro/Ultra)*
+
 2025-05-11  
+Reavaliado em 2026-08-04
 
-### Descrição  
-Permite configuração autônoma de logins corporativos (Google Workspace, Azure AD, Okta) no Dashboard.  
+### Status no Projeto
 
-### Valor para o Projeto  
-- Reduz suporte técnico.  
-- Reforça governança multi-tenant.  
+- Status: não implementado; capacidade de produto preservada para clientes empresariais.
+- Evidência: não há configuração autônoma de Google Workspace, Microsoft Entra ID/Azure AD ou Okta no Dashboard; `supa#61` mantém a capacidade técnica de provedores OAuth/OIDC customizados.
+- Relação com a arquitetura: `prod#1` representa a experiência comercial e administrativa; `supa#61` representa a capacidade técnica. Não são substitutos documentais.
+- Horizonte sugerido: Pro/Ultra, sujeito à decisão do Estrategista e a demanda enterprise real.
 
-### Valor para o Usuário  
-- Simplifica onboarding em empresas.  
+### Valor para o Projeto
+
+- Pode reduzir suporte e ampliar competitividade em contas empresariais.
+- Preserva a evolução multi-tenant sem antecipar complexidade no Starter.
+
+### Gatilho futuro de avaliação
+
+Avaliar quando houver cliente ou venda enterprise que exija provedor corporativo, domínio verificado, governança de acesso e configuração administrável.
+
+### Limites
+
+- Exige segurança, recuperação, auditoria, suporte e confirmação de disponibilidade/custo do provedor.
+- Não criar UI, rota, banco, integração ou promessa comercial por causa deste registro.
 
 ---
 
-## 3 — Speed Insights *(🟩 Estável)*  
+## 3 — Speed Insights para validar performance percebida *(🟨 Adoção condicional)*
 2025-06-01  
+Atualizado em 2026-08-03
 
-### Descrição  
-Monitoramento de experiência real com LCP, CLS e INP, além de métricas complementares como FCP, TBT e TTFB. O painel consolida os dados no Real Experience Score e permite filtrar resultados por desktop/mobile e por ambiente, incluindo Preview e produção. A disponibilidade, a janela de retenção, o volume de data points e os custos variam conforme o plano Vercel.
+### Status no Projeto
 
-### Valor para o Projeto  
-- Integra métricas da Vercel para diagnósticos de UX com recortes por dispositivo e ambiente.
-- Permite comparar o primeiro Preview funcional com produção sem transformar analytics em requisito de entrega.
+- Status: Não implementado — mensuração real de usuários ainda não adotada.
+- Evidência: o repositório não contém `@vercel/speed-insights`, `SpeedInsights` nem registro de ativação; a E10.6 já foi validada sem transformar analytics em requisito de entrega.
 
-### Valor para o Usuário  
-- Experiência mais fluida, responsiva e visualmente estável.
+### Descrição
 
-### Observação de fonte oficial
+Speed Insights coleta dados reais de experiência para Core Web Vitals e ajuda a identificar regressões percebidas por dispositivo e ambiente. Neste catálogo, o interesse é de produto: obter uma baseline antes de priorizar trabalho de performance, sem duplicar detalhes técnicos da Vercel.
 
-- INP é métrica estável de Core Web Vitals para avaliar responsividade de interações ao longo da vida da página.
-- INP sucede FID por medir mais do que apenas a primeira interação.
-- Usar essa referência para QA de performance percebida, sem transformar analytics em bloqueio da primeira entrega.
+### Valor para o Projeto
 
-### Registro (Tipo A — Plataforma)  
-- Status: DEFERIDO  
-- Observação: reavaliar na E10.6 após o primeiro Preview funcional; não bloquear a primeira entrega.
+- Apoia decisões de UX com comportamento real, em vez de otimização baseada apenas em teste sintético.
+- Permite comparar Preview e produção quando houver tráfego suficiente.
+- Evita bloquear a primeira entrega por uma instrumentação que ainda não tem rotina de leitura.
 
----
+### Valor para o Usuário
 
-## 4 — Agent Experience (AX) para acesso por navegador *(🟨 Avaliação futura)*
-2025-07-01  
-Atualizado em 2026-07-20
+- Pode orientar correções de lentidão, instabilidade visual e baixa responsividade que afetem conversão.
 
-### Descrição  
-Preparar páginas reais para que pessoas e agentes de navegador consigam compreender e operar a interface por estrutura técnica clara, conteúdo legível, DOM semântico e árvore de acessibilidade. A orientação oficial do Google não exige protocolo, arquivo ou marcação especial para experiências agentic.
+### Gatilho futuro de avaliação
 
-### Valor para o Projeto  
-- Reforça decisões já úteis para usuários humanos: HTML semântico, acessibilidade, rótulos claros e fluxos previsíveis.
-- Mantém compatibilidade futura com agentes sem criar endpoint ou infraestrutura antecipada.
+Avaliar somente quando houver:
 
-### Valor para o Usuário  
-- Interfaces mais compreensíveis e operáveis por pessoas e tecnologias assistivas.
+1. página funcional com tráfego suficiente para produzir amostra útil;
+2. responsável e frequência definidos para revisar os dados;
+3. hipótese de regressão ou objetivo mensurável de experiência;
+4. plano, retenção, custo e tratamento de dados confirmados.
 
 ### Ações Recomendadas
 
-1. Aplicar semântica e acessibilidade nos fluxos reais conforme `prod#17`.
-2. Não criar API, protocolo ou metadado exclusivo para agentes sem caso aprovado.
-3. Avaliar experiências agentic somente quando houver fluxo de usuário e risco definidos.
+1. Manter deferido até o gatilho ocorrer.
+2. Se adotado, registrar baseline e priorizar apenas regressões com impacto real.
+3. Não usar o score isoladamente como prova de conversão nem como bloqueio automático de release.
+
+### Fontes Oficiais
+
+- [Vercel — Speed Insights](https://vercel.com/docs/speed-insights)
+- [web.dev — Interaction to Next Paint (INP)](https://web.dev/articles/inp)
+
+---
+
+## 4 — Agent Experience (AX) para acesso por navegador *(⚪ Registro histórico — absorvido)*
+
+2025-07-01  
+Atualizado em 2026-08-04
+
+### Estado e rastreabilidade
+
+- Estado: não implementado como capacidade independente; princípios absorvidos por `prod#6` e `prod#17`.
+- Evidência: conteúdo legível, HTML semântico, acessibilidade, rótulos claros e fluxos previsíveis beneficiam pessoas, tecnologias assistivas e agentes sem exigir protocolo especial.
+- Recortes relacionados: conteúdo útil para busca generativa e baseline de acessibilidade.
+- Horizonte: reavaliar somente se surgir experiência agentic real com requisito não coberto pelas práticas atuais.
+- O ID permanece histórico e não pode ser reutilizado.
 
 ### Fonte Oficial
 
@@ -231,177 +260,242 @@ Recurso em beta no nível da campanha para orientar assets criados exclusivament
 
 ---
 
-## 12 — Navegação Multi-contas e LPs (UX mínima viável) *(🟣 Ideia Inicial)*  
+## 12 — Navegação multi-contas e LPs *(🟨 Adoção condicional)*
 2025-11-20  
+Atualizado em 2026-08-03
 
-### Descrição  
-Definir uma navegação hierárquica clara — **Parceiro → Conta → LP → Seção** — com breadcrumbs clicáveis, troca rápida via atalho (⌘K/ctrl+K), favoritos/recentes e identificação visual por cores/avatars em cada nível.
+### Status no Projeto
 
-### Valor para o Projeto  
-- Reduz a complexidade de uso em cenários multi-conta e multi-LP.  
-- Cria base de UX para o **Partner Dashboard** e para operação de agências.  
-- Prepara terreno para futuras automações contextuais (IA, relatórios, ações em massa).
-
-### Valor para o Usuário  
-- Entende rapidamente “onde está” e “de quem é” cada LP.  
-- Encontra contas, LPs e seções com menos cliques e mais previsibilidade.  
-- Ganha velocidade no dia a dia, especialmente em agências com muitos clientes.
-
-### Ações Recomendadas  
-1. Definir padrão canônico de breadcrumbs (Parceiro/Conta/LP/Seção) e estados vazios.  
-2. Implementar um **Switcher global (⌘K/ctrl+K)** com busca unificada e favoritos/recentes.  
-3. Padronizar cores e avatars por entidade (Parceiro, Conta, LP, Seção).  
-4. Integrar telemetria de navegação (aberturas, trocas, favoritos) ao dashboard de contas.  
-
----
-
-## 14 — Priorizar Reconhecimento nos Testes Iniciais *(🟣 Ideia Inicial)*  
-2025-11-20  
-
-### Descrição  
-Estabelecer diretrizes de UX e roteiros de teste que privilegiem **ações visíveis e reconhecimento** (o usuário “vê o que pode fazer”), evitando interfaces escondidas e o “mito dos 3 cliques” como métrica única.
-
-### Valor para o Projeto  
-- Melhora a taxa de sucesso em testes internos (dogfooding) e pilotos com clientes.  
-- Reduz ruído na avaliação de features, focando em clareza e não apenas em profundidade de navegação.  
-- Cria um padrão de UX testável e replicável para novos módulos do produto.  
-
-### Valor para o Usuário  
-- Entende mais rápido o que o painel oferece logo nos primeiros acessos.  
-- Encontra caminhos óbvios para “próximas ações” (criar LP, ver resultados, ajustar plano).  
-- Ganha confiança na plataforma ao perceber controle e transparência desde o início.  
-
-### Ações Recomendadas  
-1. Definir um conjunto de **cenários de onboarding** focados em reconhecimento (ex.: “criar primeira LP”, “ver resultados”, “convidar alguém”).  
-2. Padronizar layouts iniciais com CTAs claros e seções prioritárias sempre visíveis na primeira dobra.  
-3. Incluir métricas de sucesso específicas em testes (tempo até a primeira ação, ações descobertas sem ajuda, abandono).  
-4. Incorporar essas diretrizes no checklist de UX dos próximos releases (E10, E12, novos dashboards).
-5. Aplicar diretamente na E10.6 à revisão do hero, primeira dobra, cards e CTAs.
-
----
-
-## 15 — Automação de Microeventos em LPs *(🧪 Experimental)*
-2025-11-17
+- Status: Não implementado — oportunidade futura para operação de parceiros e agências.
+- Evidência: não há breadcrumbs, switcher global, favoritos ou recentes no runtime; o roadmap mantém o Partner Dashboard como evolução e exclui navegação global multi-contas do recorte atual.
 
 ### Descrição
-Implementar um fluxo de marketing que detecta microeventos da Landing Page (ex.: scroll 25/50/75%, visualização de preços, clique em CTA, envio de formulário) para taguear dinamicamente os leads (e.g. `interesse_preço`, `scroll_75`, `form_enviado`) e disparar ações em RD Station e Meta Ads. As tags alimentam segmentações de remarketing e fluxos de follow‑up (e‑mail/WhatsApp), encurtando o ciclo de vendas e aumentando o ROI.
+
+Evoluir a navegação para deixar explícito o contexto **Parceiro → Conta → LP → Seção** e permitir troca rápida entre entidades quando a operação real superar o fluxo atual.
 
 ### Valor para o Projeto
-- Conecta a camada de tracking interno e a camada de remarketing em um modelo de automação reutilizável.
-- Aproveita integrações existentes (events_analytics, RD, Meta) para oferecer uma solução pronta de “microeventos → tags → fluxos”.
-- Testa, em ambiente controlado, a eficácia de eventos contextuais antes de escalar para outras verticais.
+
+- Pode reduzir erro de contexto em cenários com muitas contas e LPs.
+- Oferece uma direção de UX para o Partner Dashboard sem antecipar um sistema de navegação completo.
+- Preserva a hierarquia de acesso existente como fonte de autorização server-side.
 
 ### Valor para o Usuário
-- Aumenta a relevância dos contatos ao reagir em minutos ao comportamento real do visitante.
-- Diminui o custo de aquisição reaproveitando o tráfego da própria LP com remarketing segmentado.
-- Permite otimizar criativos e mensagens por contexto (interesse em preços, FAQ, scroll avançado).
+
+- Ajuda operadores a entender onde estão e a trocar de conta ou LP com menos passos.
+- Pode reduzir retrabalho causado por editar ou consultar a entidade errada.
+
+### Gatilho futuro de avaliação
+
+Avaliar somente quando houver:
+
+1. Partner Dashboard ou fluxo equivalente aprovado;
+2. usuários operando múltiplas contas ou LPs de forma recorrente;
+3. evidência de perda de tempo ou erro de contexto no fluxo atual;
+4. autorização server-side e estados bloqueados definidos para cada destino.
 
 ### Ações Recomendadas
-1. Antes de depender de eventos server-side, verificar o plano Vercel/Analytics e definir uma estratégia única de tracking.
-2. Não aplicar esta automação à primeira entrega genérica da E10.6.
-3. Definir a taxonomia de microeventos (`scroll_25/50/75`, `cta_click`, `faq_open`, `pricing_view`, `form_submit`) e padrão de nomes (`lp.{slug}.{evento}`).
-4. Registrar esses eventos no `events_analytics` e expor função server‑side para enviá‑los a RD Station e Meta (via Camada de Remarketing).
-5. Configurar tags e fluxos no RD: sequências específicas para quem visualizou preços sem converter, abriu FAQ sem clicar, enviou formulário etc.
-6. Criar públicos de remarketing e lookalike em Meta Ads com base nas tags (`pricing_view`, `scroll_75`, `form_submit`), com criativos adaptados.
-7. Medir KPIs essenciais: tempo até primeiro contato, taxa de qualificação (MQL), CPL/CPA por microevento e redução no ciclo de vendas.
+
+1. Validar primeiro breadcrumbs e um switcher de contexto enxuto.
+2. Adicionar favoritos, recentes, avatares ou telemetria apenas se houver necessidade observada.
+3. Não fazer o client reinterpretar acesso nem expor destinos sem autorização.
+4. Não criar nova infraestrutura por causa deste registro.
 
 ---
 
-## 16 — QA visual e validação de UX em Preview *(🟩 Prática de validação)*
-2026-06-12
+## 14 — Priorizar Reconhecimento nos Testes Iniciais *(✅ Implementado em recortes)*
+
+2025-11-20  
+Atualizado em 2026-08-04
+
+### Estado e rastreabilidade
+
+- Estado: incorporado parcialmente como critério de UX, sem telemetria ou programa próprio de testes.
+- Evidência: o roadmap registra `prod#14` como aplicado; a matriz E11.2 incorporou reconhecimento do próximo passo correto para owner e non-owner.
+- Recortes: E10.7 e E11.2.
+- Escopo remanescente: aplicar o princípio em novos fluxos quando pertinente, sem transformar tempo de clique ou descoberta em métrica obrigatória por padrão.
+- O ID permanece como referência do critério aplicado.
+
+---
+
+## 15 — Automação de Microeventos em LPs *(🟨 Estratégico; implementação progressiva)*
+
+2025-11-17  
+Atualizado em 2026-08-04
+
+### Status no Projeto
+
+- Status: implementado parcialmente no tracking mínimo; automação, segmentação e integrações permanecem futuras.
+- Evidência: a E10.6 implementou `commercial_page_view`, `commercial_primary_cta_click` e `commercial_plan_cta_click`; não há `events_analytics`, taxonomia ampliada, RD Station, Meta Ads ou WhatsApp Business Platform integrados.
+- Relação com `supa#19` e `supa#27`: esses IDs preservam a origem técnica das propostas de analytics e remarketing; `prod#15` é a referência de produto para sua evolução comercial.
 
 ### Descrição
-Prática de produto para revisar páginas em Preview antes da aprovação, usando comentários localizados e inspeções de acessibilidade, foco, timing de interação e layout shift. Os recursos técnicos — Vercel Toolbar, Comments, Accessibility Audit Tool, Interaction Timing Tool e Layout Shift Tool — estão detalhados no `docs/vercel-up.md`.
+
+Evoluir o tracking mínimo para microeventos selecionados — como scroll qualificado, visualização de preço, abertura de FAQ, início ou envio de formulário e clique contextual — capazes de alimentar análise, segmentação e follow-up por canais aprovados, incluindo e-mail e WhatsApp.
+
+O valor está na cadeia `comportamento → sinal → segmentação → ação comercial`, não na coleta indiscriminada de eventos.
+
+### Horizonte sugerido
+
+- Starter: preservar os três eventos comerciais canônicos já implementados.
+- Lite: adicionar somente microeventos internos com hipótese de decisão e taxonomia mínima.
+- Pro: permitir segmentações e integrações aprovadas com CRM, Meta Ads e WhatsApp.
+- Ultra: avaliar otimização multicanal e assistência por IA com mensuração e revisão humana.
+
+A distribuição é hipótese estratégica e não decisão comercial final de plano.
 
 ### Valor para o Projeto
-- Estrutura a revisão da E10.6 em hero, benefícios, serviços, cards, FAQ, CTAs e responsividade.
-- Centraliza feedback visual e de copy no contexto da página, reduzindo prints soltos e retrabalho.
 
-### Valor para o Usuário
-- Aumenta clareza, acessibilidade, estabilidade visual e resposta percebida antes da publicação.
+- Cria diferenciação por inteligência comercial progressiva.
+- Permite melhorar conversão e priorizar leads sem exigir todo o pacote na primeira LP.
+- Pode conectar LP, CRM, mídia e WhatsApp quando existir operação real.
 
-### Ações Recomendadas
-1. Aplicar como prática de validação no Preview da E10.6 após existir uma página funcional.
-2. Usar os recursos disponíveis no ambiente/plano sem criar nova infraestrutura, banco, IA ou experimento A/B.
-3. Manter validação manual de conteúdo, navegação, foco e responsividade como parte da aprovação.
+### Gatilho futuro de avaliação
+
+Avaliar cada avanço somente quando houver:
+
+1. pergunta de negócio que o evento responderá;
+2. ação concreta ligada ao sinal;
+3. volume mínimo, consentimento, finalidade e retenção definidos;
+4. canal e integração reais;
+5. responsável por interpretar resultado e interromper automações inadequadas.
+
+### Dependências, riscos e limites
+
+- Evitar eventos sem uso, duplicação client/server, identificação excessiva e atribuição falsa de causalidade.
+- WhatsApp, Meta Ads e RD Station exigem contas, autenticação, políticas, consentimento e contratos próprios.
+- Follow-up automático exige opt-in, frequência, handoff humano, exclusão e observabilidade.
+- Não criar tabela, rota, job, pixel, fila, agente ou automação nesta rodada.
+
+### Fontes Oficiais
+
+- [Meta — Conversions API](https://developers.facebook.com/documentation/ads-commerce/conversions-api)
+- [RD Station — Conversão via API](https://developers.rdstation.com/reference/conversao)
+- [Meta — Centralized Campaigns, AI Support and More for Businesses on WhatsApp](https://about.fb.com/news/2025/07/centralized-campaigns-ai-support-businesses-whatsapp/)
+
+---
+
+## 16 — QA visual e validação de UX em Preview *(✅ Implementado em recortes)*
+
+2026-06-12  
+Atualizado em 2026-08-04
+
+### Estado e rastreabilidade
+
+- Estado: prática incorporada em recortes, sem depender obrigatoriamente de ferramenta paga.
+- Evidência: o roadmap registra `prod#16` como aplicado; a matriz E11.2 incorporou validação em Preview, desktop/mobile, papéis e estados de entitlement.
+- Recortes: E10.6/E10.7 e E11.2.
+- Escopo remanescente: repetir a validação proporcionalmente em novas superfícies, usando ferramentas disponíveis sem substituir revisão manual.
+- Relação técnica: `vercel#15` permanece como opção de ferramenta; `prod#16` preserva a prática de produto.
+- O ID permanece como referência dos critérios aplicados.
 
 ---
 
 ## 17 — WCAG 2.2 como baseline de acessibilidade *(🟩 Recomendação W3C)*
+2026-07-04  
+Atualizado em 2026-08-03
 
-2026-07-04
+### Status no Projeto
+
+- Status: Parcialmente incorporado — baseline aplicada em recortes, sem alegação de conformidade integral.
+- Evidência: a matriz E11 incorporou teclado, foco, labels, erros, feedback, contraste, toque e ausência de interação exclusiva por hover; o Design System já contém guardrails acessíveis, mas não há auditoria WCAG 2.2 global do produto.
 
 ### Descrição
 
-Usar WCAG 2.2 como referência de produto para acessibilidade em LPs, dashboards e fluxos de onboarding, especialmente em contraste, foco, navegação por teclado, rótulos, mensagens de erro, alvo de toque e autenticação acessível.
+Usar WCAG 2.2 como referência de produto para LPs, dashboards, autenticação e onboarding, priorizando critérios aplicáveis ao fluxo real e combinando inspeção automática com validação manual.
 
 ### Valor para o Projeto
 
-- Cria um baseline claro para QA de UX e acessibilidade.
-- Ajuda a evitar decisões subjetivas em revisões visuais.
-- Complementa o uso de ferramentas de Preview sem substituir validação manual.
+- Mantém um baseline consistente para decisões de UX e critérios de aceite.
+- Reduz regressões em navegação por teclado, foco, mensagens, contraste, alvos de toque e autenticação acessível.
+- Continua reutilizável em módulos ainda não avaliados.
 
 ### Valor para o Usuário
 
-- Melhora legibilidade, navegação, compreensão e uso por pessoas com diferentes necessidades de acesso.
+- Melhora compreensão, legibilidade e operação por pessoas com diferentes necessidades de acesso.
 
 ### Ações Recomendadas
 
-1. Usar como referência de checklist em revisões de UX.
-2. Não transformar em auditoria completa de conformidade no MVP.
-3. Priorizar critérios aplicáveis a LPs, auth, onboarding e dashboards reais.
+1. Aplicar critérios relevantes por fluxo e registrar evidência nas validações do caso.
+2. Tratar ferramentas automáticas como apoio, não como prova suficiente de conformidade.
+3. Não declarar conformidade WCAG integral sem auditoria, escopo e evidências próprios.
+4. Remover este item do catálogo ativo somente quando o baseline estiver absorvido de forma canônica e abrangente.
+
+### Fonte Oficial
+
+- [W3C — Web Content Accessibility Guidelines (WCAG) 2.2](https://www.w3.org/TR/WCAG22/)
 
 ---
 
-## 18 — OpenAI Apps SDK / ChatGPT Apps *(🟨 Avaliação futura)*
+## 18 — OpenAI Plugins e MCP Apps *(🟨 Avaliação futura)*
+2026-07-04  
+Atualizado em 2026-08-03
 
-2026-07-04
+### Status no Projeto
+
+- Status: Fundação parcial, sem produto distribuído.
+- Evidência: o repositório possui o service read-only `LPF Supabase Inspect MCP` e contratos operacionais de MCP, mas não possui manifesto de plugin, UI MCP Apps, autenticação de usuário final, submissão ou caso comercial aprovado.
 
 ### Descrição
 
-Framework da OpenAI para criar apps que estendem o ChatGPT com servidor MCP, UI própria, autenticação, estado, monetização, deploy, conexão e submissão para distribuição.
+A arquitetura atual da OpenAI permite empacotar skills e conexões a serviços externos em plugins reutilizáveis para ChatGPT e Codex. Capacidades com dados vivos ou ações usam servidor MCP; uma UI baseada no padrão MCP Apps é opcional quando o fluxo se beneficia de interação visual.
 
 ### Valor para o Projeto
 
-- Pode virar canal futuro para experiências assistidas por IA ligadas ao LP Factory 10.
-- Pode apoiar casos como diagnóstico de LP, orientação comercial, briefing assistido, análise de campanhas ou consulta de relatórios.
-- Não substitui o produto web nem deve entrar no MVP sem caso aprovado.
+- Pode transformar capacidades já úteis em um canal assistido e distribuível, sem substituir o produto web.
+- Permite começar por instruções e tools existentes, adicionando UI apenas quando houver ganho de experiência.
+- Torna explícita a diferença entre um MCP técnico interno e um produto com autenticação, política de dados e suporte.
 
 ### Valor para o Usuário
 
-- Pode permitir interação assistida por IA em um ambiente já usado pelo cliente, com fluxos mais guiados e contextuais.
+- Pode oferecer diagnóstico, briefing, consulta de relatórios ou orientação comercial no ambiente em que o cliente já trabalha.
 
-### Ações Recomendadas
+### Gatilho futuro de avaliação
 
-1. Manter como avaliação futura.
-2. Não criar app ChatGPT sem plano próprio.
-3. Só considerar quando houver caso real, política de dados, UX e critério de distribuição aprovados.
+Avaliar somente quando houver:
+
+1. um fluxo recorrente melhor do que a experiência web ou manual atual;
+2. público, dados acessados, política de retenção e responsável pelo suporte definidos;
+3. autenticação e escopos mínimos compatíveis com o consumidor;
+4. critério de distribuição, manutenção e custo aprovado;
+5. confirmação humana para qualquer operação irreversível ou que altere dados.
+
+### Dependências, riscos e limites
+
+- Validar inputs no servidor e assumir exposição a prompt injection.
+- Não enviar secrets ou dados além do necessário no conteúdo retornado.
+- Começar por leitura; writes exigem autorização, confirmação e trilha de auditoria.
+- Não confundir existência do MCP interno com prontidão para publicação.
+- Não criar plugin, UI, auth, rota, banco ou nova infraestrutura por causa deste registro.
+
+### Fontes Oficiais
+
+- [OpenAI — Plugins](https://developers.openai.com/plugins)
+- [OpenAI — MCP server and UI quickstart](https://developers.openai.com/plugins/build/app-quickstart)
+- [OpenAI — Security & Privacy for Plugins](https://developers.openai.com/plugins/guides/security-privacy)
 
 ---
 
-## 19 — Stripe Entitlements como referência de feature access *(🟩 Estável)*
+## 19 — Stripe Entitlements como referência de feature access *(✅ Aplicado como benchmark e trava)*
 
-2026-07-04
+2026-07-04  
+Atualizado em 2026-08-04
 
-### Descrição
+### Estado e rastreabilidade
 
-Referência externa da Stripe para concessão e revogação de acesso a features de produto conforme assinatura, plano ou entitlement.
+- Estado: aplicado como referência de produto e limite arquitetural; Stripe Entitlements não foi adotado como autoridade do runtime.
+- Evidência: E9 implementou `account_commercial_entitlements`, view efetiva, adapter Admin e webhook Stripe; roadmap e matriz E11.2 preservam `prod#19` como referência/trava.
+- Recortes: E9, E9.7, E11.2 e superfícies comerciais relacionadas.
+- Decisão preservada: plano, assinatura ou feature externa não substituem o sinal e a persistência internos.
 
 ### Valor para o Projeto
 
-- Serve como benchmark de produto para mapear acesso por plano, feature e conta.
-- Pode apoiar a evolução conceitual de billing, upgrades, trials e permissões comerciais.
-- Não substitui o modelo interno do LP Factory 10 nem `public.account_commercial_entitlements`.
+- Mantém previsibilidade de upgrades, downgrades e liberação comercial sem acoplar autorização ao provedor.
+- Registra por que a referência externa foi estudada e parcialmente absorvida pelo modelo local.
 
-### Valor para o Usuário
+### Limites
 
-- Pode contribuir para upgrades, downgrades e liberações de recursos mais previsíveis.
-
-### Ações Recomendadas
-
-1. Manter como referência de produto.
-2. Não substituir o modelo interno de grants/entitlements já definido no projeto.
-3. Avaliar apenas em conjunto com E9, Base Técnica e schema vigente.
+- Não usar API, SDK ou tabela da Stripe para decidir acesso automaticamente sem novo recorte aprovado.
+- O ID não autoriza migrar o modelo local.
 
 ---
 
@@ -498,59 +592,112 @@ Avaliar somente quando houver:
 
 ---
 
-
-## 22 — Propriedades de plataformas sociais no Search Console *(🧪 Rollout gradual; uso condicional)*
-
-2026-07-07
+## 22 — Propriedades de plataformas sociais no Search Console *(🟩 Disponível globalmente; uso condicional)*
+2026-07-07  
+Atualizado em 2026-08-03
 
 ### Status no Projeto
 
-- Status: Não implementado — capacidade externa de mensuração, sem integração própria
-- Evidência: o repositório não possui propriedade de plataforma social, autorização de conta social ou relatório consolidado de Search Console; não há implementação necessária na landing page
+- Status: Disponível externamente, não adotado no projeto.
+- Evidência: desde 2026-07-29, as propriedades de Instagram, TikTok, X e YouTube estão disponíveis globalmente; o repositório não possui autorização de conta social nem relatório consolidado de Search Console.
 
 ### Descrição
 
-O Google Search Console passou a aceitar propriedades de Instagram, TikTok, X e YouTube. Depois de autorizar e verificar a conta da plataforma, o responsável pode consultar como posts sociais e vídeos são descobertos no Google Search e Discover.
-
-Os relatórios oficiais incluem cliques, impressões, consultas, posts com melhor desempenho, tendências recentes e marcos de crescimento. A disponibilidade está sendo liberada gradualmente.
+Após autorizar e verificar uma conta de plataforma compatível, o Search Console permite analisar como posts sociais e vídeos aparecem no Google Search, Discover e Google News. Os relatórios incluem cliques, impressões, consultas, posts de melhor desempenho, tendências e marcos de crescimento.
 
 ### Valor para o Projeto
 
-- Pode complementar a análise de aquisição de clientes que combinam landing pages com conteúdo social ou em vídeo.
-- Permite observar descoberta orgânica desses canais em uma fonte oficial, sem construir coleta própria.
-- Ajuda a separar desempenho de conteúdo social no Google de métricas da landing page, anúncios e conversões.
+- Pode complementar a análise de aquisição de clientes que já operam conteúdo social ou em vídeo.
+- Oferece mensuração oficial sem criar coleta própria.
+- Separa descoberta orgânica no Google das métricas da landing page, mídia paga e conversão.
 
 ### Valor para o Usuário
 
-- Oferece uma visão consolidada de quais posts, vídeos e consultas geram descoberta no Search e Discover.
-- Pode orientar temas e canais de conteúdo quando o cliente já tiver operação social recorrente.
+- Mostra quais conteúdos e consultas geram descoberta nos produtos do Google.
+- Pode orientar temas e canais quando já existe uma operação editorial recorrente.
 
 ### Gatilho futuro de avaliação
 
 Avaliar somente quando houver:
 
-1. cliente com conta ativa e estratégia recorrente em ao menos uma plataforma suportada;
-2. responsável autorizado a conectar a conta ao Search Console;
-3. necessidade real de analisar descoberta orgânica do conteúdo social;
-4. disponibilidade da propriedade para a conta, devido ao rollout gradual.
+1. cliente com conta ativa em ao menos uma plataforma suportada;
+2. responsável autorizado a conectar e verificar a conta;
+3. necessidade real de analisar descoberta orgânica desse conteúdo;
+4. plano para interpretar os dados junto das demais fontes de aquisição.
 
 ### Dependências, riscos e limites
 
-- Exige autorização e verificação da conta de Instagram, TikTok, X ou YouTube.
-- Mede descoberta no Google Search e Discover; não mede alcance total da plataforma, desempenho de mídia paga, leads ou receita.
-- Não substitui analytics da landing page, dados nativos da rede social, Google Ads, Meta Ads ou CRM.
+- Exige autorização e verificação da conta da plataforma.
+- Não mede alcance total da rede social, mídia paga, leads ou receita.
+- Não substitui analytics da LP, dados nativos da plataforma, Ads ou CRM.
 - Não criar integração, banco, dashboard ou promessa comercial por causa deste registro.
 - O registro não autoriza conexão de contas nem tratamento de dados de clientes.
 
 ### Ações Recomendadas
 
-1. Manter como capacidade condicional de mensuração de aquisição.
-2. Verificar disponibilidade no Search Console apenas diante do gatilho definido.
-3. Em uso futuro, interpretar cliques e impressões como descoberta orgânica, sem atribuir conversão automaticamente.
-4. Manter autorização da conta e acesso aos relatórios sob responsabilidade definida com o cliente.
+1. Manter como capacidade condicional de mensuração.
+2. Conectar apenas diante do gatilho definido e com responsável pelo acesso.
+3. Interpretar cliques e impressões como descoberta orgânica, sem atribuir conversão automaticamente.
 
-### Fonte Oficial
+### Fontes Oficiais
 
-- [Google Search Central — See how content from social and video platforms performs on Google Search](https://developers.google.com/search/blog/2026/07/search-console-social-video-platforms)
+- [Google Search Central — Platform properties roll out globally](https://developers.google.com/search/blog/2026/07/platform-properties-social-video-guide)
+- [Google Search Central — Social and video platform performance](https://developers.google.com/search/blog/2026/07/search-console-social-video-platforms)
 
 ---
+
+## 23 — WhatsApp Business Platform e Meta Business Agent *(🟨 Estratégico; adoção progressiva)*
+
+2026-06-03  
+Catalogado em 2026-08-04
+
+### Status no Projeto
+
+- Status: não implementado; canal existente apenas em recortes básicos de preferência e CTA.
+- Evidência: o produto registra WhatsApp como canal e possui CTAs/fallbacks, mas não há WhatsApp Business Platform, Cloud API, Business Agent, campanhas centralizadas, voz, vídeo ou automação oficial integrados.
+- Relação com a stack: complementar ao produto e potencialmente sobreposto à arquitetura própria de IA/OpenAI; exige comparação antes de adoção.
+
+### Descrição
+
+A Meta reúne capacidades para atendimento, qualificação, recomendações, agendamento, venda, handoff humano e campanhas no WhatsApp. O Meta Business Agent e sua plataforma ampliam esse caminho com IA, conexões a sistemas, controles, guardrails e mensuração. A WhatsApp Business Platform também evolui campanhas pelo Ads Manager e opções de chamada, voz e vídeo.
+
+### Horizonte sugerido
+
+- Starter: CTA, preferência de canal e continuidade manual segura.
+- Lite: melhorar entrada, contexto e mensuração da conversa sem automação complexa.
+- Pro: avaliar Business Platform, campanhas, templates, integrações e handoff humano.
+- Ultra: avaliar Business Agent Platform, IA multicanal, ações integradas e mensuração avançada.
+
+A distribuição é hipótese de evolução, não promessa comercial nem autorização técnica.
+
+### Valor para o Projeto
+
+- Mantém o produto competitivo no canal comercial prioritário.
+- Pode reduzir tempo de resposta, qualificar leads e aproximar aquisição, atendimento e venda.
+- Preserva alternativa oficial antes de construir mensageria ou agente próprios.
+
+### Gatilho futuro de avaliação
+
+Avaliar somente quando houver:
+
+1. disponibilidade e elegibilidade confirmadas para o Brasil e para a conta;
+2. operação comercial real com volume, responsáveis e metas;
+3. preço, templates, opt-in, consentimento, retenção e políticas mapeados;
+4. handoff humano, fallback e desligamento definidos;
+5. comparação objetiva com operação manual, integração própria e agentes OpenAI.
+
+### Dependências, riscos e limites
+
+- Exige conta empresarial, número, verificação, permissões e conformidade com políticas da Meta.
+- Pode introduzir lock-in, custo por mensagem/assinatura, tratamento de dados e dependência operacional.
+- IA não pode responder ou agir sem limites, fontes, revisão, handoff e mensuração adequados.
+- Não criar app Meta, Cloud API, rota, webhook, banco, job, agente ou automação nesta rodada.
+
+### Fontes Oficiais
+
+- [Meta — Be There for Every Customer With Meta Business Agent](https://about.fb.com/news/2026/06/meta-business-agent/)
+- [Meta — Centralized Campaigns, AI Support and More for Businesses on WhatsApp](https://about.fb.com/news/2025/07/centralized-campaigns-ai-support-businesses-whatsapp/)
+- [Meta — New AI Tools, Meta Verified and More for Businesses on WhatsApp](https://about.fb.com/news/2024/06/new-ai-tools-meta-verified-and-more-for-businesses-on-whatsapp/)
+
+---
+
