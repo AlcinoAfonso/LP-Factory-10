@@ -1,8 +1,8 @@
 # Plano-base — E12.4 — Gestão do perfil de orientação
 
-- Data: 03/08/2026.
-- Versão: v2.7.
-- Status: E12.4.3, E12.4.3.1 e E12.4.3.2 implementadas; correção do contrato de seleção explícita aprovada no gate hospedado do HEAD funcional `e08acec3`, com reconciliação final do PR #672 e merge humano ainda pendentes.
+- Data: 04/08/2026.
+- Versão: v2.9.
+- Status: E12.4.3, E12.4.3.1 e E12.4.3.2 implementadas e incorporadas à `main` pelo PR #672; correção técnica aprovada no PR draft #681, gate funcional hospedado aprovado e inspeção final do Estrategista aprovada; somente o merge humano permanece pendente.
 - Recorte previsto para o roadmap: `12.4 — Gestão do perfil de orientação`.
 - Recorte executável inicial: `12.4.3 — Proposta, revisão, aprovação e ativação do perfil`.
 - Recorte corretivo planejado: `12.4.3.2 — Criação e evolução estrutural baseada em lp_sections, catálogo vigente e debate humano–IA`.
@@ -265,6 +265,8 @@
 - A saída da IA contém somente:
   - `compatible_aliases` para todas as identidades semanticamente compatíveis e `selected_aliases` somente para as identidades efetivamente escolhidas;
   - delta de cobertura parcial ou ausente, com motivo e impacto.
+- O contrato de cardinalidade é idêntico no Zod, no JSON Schema estrito e no validador fail-closed: `covered` e `partial` exigem listas compatível e escolhida não vazias; `missing` exige ambas vazias.
+- O diagnóstico adicional da falha de cardinalidade registra somente `coverageId`, `coverageStatus`, contagens e índice; `proposalMode` e `interactionKind` distinguem o fluxo, enquanto aliases, pesquisa bruta, prompt, payload, candidata e feedback humano não integram o log.
 - O servidor reconstrói versões e deriva prioridade e ordem deterministicamente das `lp_sections`, sem permitir que esses campos escolham módulo-base ou variante.
 - A saída não contém `generation_guidance` nem `item_guidance`.
 - A resposta estruturada separa:
@@ -403,7 +405,18 @@
 
 #### 3.1.2. E12.4.3.2 — Proposta estrutural baseada em `lp_sections` e delta do catálogo
 
-- Status: implementada, com correção do contrato de seleção explícita aprovada no gate hospedado do HEAD funcional `e08acec3`.
+- Status: implementada e incorporada à `main` pelo PR #672; correção localizada do contrato de cardinalidade aprovada no PR draft #681, com gate funcional e inspeção final do Estrategista aprovados; somente o merge humano permanece pendente.
+- Ocorrência corretiva de 03/08/2026:
+  - a evolução do perfil foi rejeitada de forma fail-closed como `coverage_identity_count_invalid`, sob o Request ID `c2287d63-0ff9-4fe5-8bc0-641f1e387a7a`;
+  - o perfil `active v1` permaneceu preservado e nenhum `draft v2` foi criado;
+  - a resposta rejeitada não foi armazenada, portanto a cobertura, o status e os aliases concretos que falharam permanecem desconhecidos e não podem ser inferidos;
+  - a correção separa `covered`, `partial` e `missing` no contrato, alinha o prompt e mantém integralmente as validações server-side redundantes.
+- Gate funcional hospedado aprovado em 04/08/2026:
+  - execução no Preview correspondente exatamente ao HEAD funcional `e6f694454b11388f30355ddbf231bb8350ecef1f`;
+  - Request ID `e360a900-082a-4707-9610-ef4f9cdfa2d9`, `proposalMode: evolution`, uma única chamada e resultado `success`;
+  - candidata revisada e descartada, sem retry, salvamento ou ativação; somente o perfil `active v1` permaneceu preservado, sem criação de `draft v2`;
+  - como observação não bloqueante, `rodape_contato` foi classificado como `covered`, com `compatible_aliases` `final_cta.standard` e `trust_bar.standard` e `selected_aliases` `final_cta.standard`;
+  - a avaliação humana considera `rodape_contato` uma possível necessidade global de composição não integralmente coberta pelo catálogo modular; a E12.4.4 deverá recalcular e classificar o item, sem criação automática de módulo ou variante.
 - Objetivo:
   - corrigir a criação e a evolução estrutural, o debate humano–IA, o contrato da proposta e a opcionalidade das exceções humanas sem refazer o lifecycle entregue.
 - Entregas:
@@ -445,9 +458,9 @@
 ### 3.2. Próxima ação
 
 - Preservar o PR #669 incorporado, sem revertê-lo.
-- Considerar encerrada a prova funcional hospedada da correção no HEAD `e08acec3`, aprovada por validação humana sobre o `draft v1` preservado.
-- Reconciliar o PR #672 com a `main`, comprovar mecanicamente que o runtime da E12.4.3.2 permanece idêntico ao HEAD funcional e gerar o Preview final sem nova chamada à OpenAI, ativação ou evolução.
-- Após os checks e o Preview finais, manter o PR em draft para revisão independente e merge humano.
+- Preservar o PR #672 incorporado e não reutilizá-lo para a correção de cardinalidade.
+- Considerar aprovadas a correção técnica, o gate funcional único no Preview do HEAD `e6f694454b11388f30355ddbf231bb8350ecef1f` e a inspeção final do Estrategista, sem repetir a chamada à OpenAI.
+- Manter o PR draft; somente o merge humano permanece pendente.
 - Preservar `vercel#1 — AI Gateway` e `supa#63 — rlsautotest` apenas como oportunidades estratégicas condicionais.
 
 ## 4. Escopo negativo e critérios de parada
@@ -500,16 +513,9 @@
   - pendências explícitas da E12.4.4 e E19.4;
   - PR #656 preservado fora do escopo;
   - ausência de nova tabela, agente, job, fila, service ou infraestrutura.
-- Para este delta documental no PR técnico corretivo #672, executar revisão do diff e verificação de whitespace; os checks de runtime e typecheck pertencem ao próprio PR #672, e banco não se aplica porque este PR não contém nem exige alteração de schema ou migration.
+- Para este delta corretivo, executar `npm ci`, `npm run check`, as validações do catálogo e do perfil, revisão do diff e verificação de whitespace; banco não se aplica porque a correção não contém nem exige schema ou migration.
 
 ### 4.4. Critérios de encerramento do plano
 
-- O plano v2.7 será encerrado somente após:
-  - decisão conceitual aprovada;
-  - implementação da E12.4.3.2;
-  - migration incremental da implementação histórica incorporada pelo PR #663 aplicada e verificada; o PR #672 não contém nem exige nova migration;
-  - validações técnicas e visuais aprovadas;
-  - pendência da E12.4.4 e questões ainda não decididas da E19.4 registradas nos documentos próprios;
-  - reconciliação documental pelo Prompt ABC;
-  - merge humano;
-  - confirmação do estado final no ambiente alvo.
+- O plano v2.9 está tecnicamente concluído, com decisão conceitual, implementação, migration histórica, validações técnicas e visuais, registro das pendências futuras e reconciliação documental aprovados.
+- Permanece pendente somente o merge humano.

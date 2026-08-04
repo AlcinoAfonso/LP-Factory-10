@@ -21,6 +21,8 @@ import { deriveGenerationProfileProposalDiff } from "./editor-assistance";
 export const GENERATION_PROFILE_REQUEST_MAX_BYTES = 96 * 1024;
 export const GENERATION_PROFILE_MAX_OUTPUT_TOKENS = 2000;
 export const GENERATION_PROFILE_APPROVED_MODEL = "gpt-5.4-mini";
+export const GENERATION_PROFILE_INVALID_PROPOSAL_MESSAGE =
+  "A proposta da IA não atendeu às regras estruturais. Nenhuma alteração foi salva e o estado atual do perfil foi preservado.";
 const GENERATION_PROFILE_INPUT_USD_PER_TOKEN = 0.00000075;
 const GENERATION_PROFILE_OUTPUT_USD_PER_TOKEN = 0.0000045;
 
@@ -67,15 +69,25 @@ export type GenerationProfileProviderValidationReason =
   | "coverage_selected_module_conflict"
   | "coverage_selected_identity_conflict";
 
+export type GenerationProfileCoverageFailureDiagnostic = Readonly<{
+  coverageId: string;
+  coverageStatus: "covered" | "partial" | "missing";
+  compatibleAliasCount: number;
+  selectedAliasCount: number;
+  coverageIndex: number;
+}>;
+
 export function buildGenerationProfileInvalidDataMetadata(input: Readonly<{
   model: string;
   validationReason: GenerationProfileProviderValidationReason;
   responseId: string | null;
   inputTokens: number | null;
   outputTokens: number | null;
+  coverageDiagnostic?: GenerationProfileCoverageFailureDiagnostic;
 }>) {
   return {
     validationReason: input.validationReason,
+    ...(input.coverageDiagnostic ?? {}),
     responseId: input.responseId,
     inputTokens: input.inputTokens,
     outputTokens: input.outputTokens,
@@ -117,21 +129,30 @@ function isUnknownRecord(value: unknown): value is Record<string, unknown> {
 const coveredSchema = z.object({
   coverage_id: z.string().trim().min(1),
   status: z.literal("covered"),
-  compatible_aliases: z.array(z.string().trim().min(1)),
-  selected_aliases: z.array(z.string().trim().min(1)),
+  compatible_aliases: z.array(z.string().trim().min(1)).min(1),
+  selected_aliases: z.array(z.string().trim().min(1)).min(1),
 }).strict();
 
-const gapCoverageSchema = z.object({
+const partialCoverageSchema = z.object({
   coverage_id: z.string().trim().min(1),
-  status: z.enum(["partial", "missing"]),
-  compatible_aliases: z.array(z.string().trim().min(1)),
-  selected_aliases: z.array(z.string().trim().min(1)),
+  status: z.literal("partial"),
+  compatible_aliases: z.array(z.string().trim().min(1)).min(1),
+  selected_aliases: z.array(z.string().trim().min(1)).min(1),
+  reason: z.string().trim().min(1),
+  impact: z.string().trim().min(1),
+}).strict();
+
+const missingCoverageSchema = z.object({
+  coverage_id: z.string().trim().min(1),
+  status: z.literal("missing"),
+  compatible_aliases: z.array(z.string().trim().min(1)).max(0),
+  selected_aliases: z.array(z.string().trim().min(1)).max(0),
   reason: z.string().trim().min(1),
   impact: z.string().trim().min(1),
 }).strict();
 
 const providerPayloadSchema = z.object({
-  coverage: z.array(z.discriminatedUnion("status", [coveredSchema, gapCoverageSchema])),
+  coverage: z.array(z.discriminatedUnion("status", [coveredSchema, partialCoverageSchema, missingCoverageSchema])),
 }).strict();
 
 const candidateIdentitySchema = z.object({
@@ -157,20 +178,42 @@ const candidateGapSchema = z.object({
   impact: z.string().trim().min(1),
 }).strict();
 
-const candidateSchema = z.object({
-  coverage: z.array(z.object({
+const candidateCoverageBase = {
     coverageId: z.string().trim().min(1),
     audienceScope: z.enum(["business_buyer", "end_customer"]),
     itemKey: z.string().trim().min(1),
     sectionName: z.string().trim().min(1),
     sourcePriority: z.union([z.literal(1), z.literal(2), z.literal(3)]),
     sourceOrder: z.number().int().positive(),
-    status: z.enum(["covered", "partial", "missing"]),
-    compatibleIdentities: z.array(candidateIdentitySchema),
-    selectedIdentities: z.array(candidateIdentitySchema),
-    reason: z.string().trim().min(1).optional(),
-    impact: z.string().trim().min(1).optional(),
-  }).strict()),
+} as const;
+
+const candidateCoverageSchema = z.discriminatedUnion("status", [
+  z.object({
+    ...candidateCoverageBase,
+    status: z.literal("covered"),
+    compatibleIdentities: z.array(candidateIdentitySchema).min(1),
+    selectedIdentities: z.array(candidateIdentitySchema).min(1),
+  }).strict(),
+  z.object({
+    ...candidateCoverageBase,
+    status: z.literal("partial"),
+    compatibleIdentities: z.array(candidateIdentitySchema).min(1),
+    selectedIdentities: z.array(candidateIdentitySchema).min(1),
+    reason: z.string().trim().min(1),
+    impact: z.string().trim().min(1),
+  }).strict(),
+  z.object({
+    ...candidateCoverageBase,
+    status: z.literal("missing"),
+    compatibleIdentities: z.array(candidateIdentitySchema).max(0),
+    selectedIdentities: z.array(candidateIdentitySchema).max(0),
+    reason: z.string().trim().min(1),
+    impact: z.string().trim().min(1),
+  }).strict(),
+]);
+
+const candidateSchema = z.object({
+  coverage: z.array(candidateCoverageSchema),
   recommendations: z.array(candidateIdentitySchema.safeExtend({
     priority: z.enum(["P1", "P2", "P3"]),
     recommendedOrder: z.number().int().positive(),
@@ -362,7 +405,7 @@ function createRequest(userInput: Record<string, unknown>) {
             coverage: {
               type: "array",
               items: {
-                anyOf: [coveredJsonSchema, gapCoverageJsonSchema],
+                anyOf: [coveredJsonSchema, partialCoverageJsonSchema, missingCoverageJsonSchema],
               },
             },
           },
@@ -379,20 +422,34 @@ const coveredJsonSchema = {
   properties: {
     coverage_id: { type: "string", minLength: 1 },
     status: { type: "string", enum: ["covered"] },
-    compatible_aliases: { type: "array", items: { type: "string", minLength: 1 } },
-    selected_aliases: { type: "array", items: { type: "string", minLength: 1 } },
+    compatible_aliases: { type: "array", minItems: 1, items: { type: "string", minLength: 1 } },
+    selected_aliases: { type: "array", minItems: 1, items: { type: "string", minLength: 1 } },
   },
 } as const;
 
-const gapCoverageJsonSchema = {
+const partialCoverageJsonSchema = {
   type: "object",
   additionalProperties: false,
   required: ["coverage_id", "status", "compatible_aliases", "selected_aliases", "reason", "impact"],
   properties: {
     coverage_id: { type: "string", minLength: 1 },
-    status: { type: "string", enum: ["partial", "missing"] },
-    compatible_aliases: { type: "array", items: { type: "string", minLength: 1 } },
-    selected_aliases: { type: "array", items: { type: "string", minLength: 1 } },
+    status: { type: "string", enum: ["partial"] },
+    compatible_aliases: { type: "array", minItems: 1, items: { type: "string", minLength: 1 } },
+    selected_aliases: { type: "array", minItems: 1, items: { type: "string", minLength: 1 } },
+    reason: { type: "string", minLength: 1 },
+    impact: { type: "string", minLength: 1 },
+  },
+} as const;
+
+const missingCoverageJsonSchema = {
+  type: "object",
+  additionalProperties: false,
+  required: ["coverage_id", "status", "compatible_aliases", "selected_aliases", "reason", "impact"],
+  properties: {
+    coverage_id: { type: "string", minLength: 1 },
+    status: { type: "string", enum: ["missing"] },
+    compatible_aliases: { type: "array", maxItems: 0, items: { type: "string", minLength: 1 } },
+    selected_aliases: { type: "array", maxItems: 0, items: { type: "string", minLength: 1 } },
     reason: { type: "string", minLength: 1 },
     impact: { type: "string", minLength: 1 },
   },
@@ -402,8 +459,8 @@ const generationProfileSystemPrompt = [
   "Objetivo\n\nCrie ou evolua somente a análise estrutural do perfil de orientação. Avalie exatamente cada lp_section e escolha identidades válidas do module_catalog.",
   "Contexto conceitual\n\nUma lp_section representa uma necessidade de comunicação e não possui relação obrigatória de um para um com um módulo.\n\nmodule_alias representa a identidade do módulo-base. Selecioná-la significa recomendar o módulo sem impor uma variante.\n\nO alias de uma variante, como hero.standard, representa o par módulo e variante.\n\nUma seção pode selecionar identidades de vários módulos. Várias seções podem selecionar a mesma identidade.",
   "Coerência global obrigatória\n\nTrate module_alias e seus aliases de variante como opções mutuamente exclusivas da mesma decisão global. Antes de montar coverage, escolha no máximo um alias por módulo a partir das necessidades conjuntas de todas as lp_sections. Reutilize exatamente esse alias em toda cobertura que selecionar o módulo. Se nenhuma identidade única servir às coberturas relacionadas, não selecione aliases diferentes: omita o módulo onde necessário e use partial ou missing. Nunca desempate por prioridade, ordem ou posição das coberturas ou dos aliases.",
-  "Contrato da resposta\n\ncompatible_aliases deve conter todas as identidades semanticamente compatíveis com a seção.\n\nselected_aliases deve conter somente as identidades efetivamente escolhidas e deve ser subconjunto de compatible_aliases.\n\nDentro da mesma seção, selecione no máximo uma identidade por módulo.\n\nUse covered quando houver cobertura completa, partial quando apenas parte da necessidade puder ser recomendada e missing quando nenhuma identidade puder ser selecionada.",
-  "Limites\n\nUse exclusivamente aliases presentes em module_catalog. Não invente aliases, módulos ou variantes.\n\nNão derive versões, prioridade, ordem, recommendations, gaps ou diff. O servidor fará essas derivações deterministicamente a partir de selected_aliases e das lp_sections.\n\nNão produza copy, generation_guidance, item_guidance, LP, avisos ou ações.\n\nEm evolution, reavalie active_baseline contra a pesquisa e o catálogo vigentes. Não preserve uma identidade somente por herança.\n\nEm refinamento, current_candidate é a candidata transitória anterior e human_feedback é apenas o feedback estrutural mais recente.",
+  "Contrato da resposta\n\ncompatible_aliases deve conter todas as identidades semanticamente compatíveis com a seção. selected_aliases deve conter somente as identidades efetivamente escolhidas e deve ser subconjunto de compatible_aliases. Dentro da mesma seção, selecione no máximo uma identidade por módulo.\n\nMatriz obrigatória: covered = compatíveis > 0 e escolhidas > 0; partial = compatíveis > 0 e escolhidas > 0; missing = compatíveis = 0 e escolhidas = 0. Nunca use missing quando existir identidade selecionável. Nunca use covered ou partial com arrays vazios.",
+  "Limites\n\nUse exclusivamente aliases presentes em module_catalog. Não invente aliases, módulos ou variantes.\n\nNão derive versões, prioridade, ordem, recommendations, gaps ou diff. O servidor fará essas derivações deterministicamente a partir de selected_aliases e das lp_sections.\n\nNão produza copy, generation_guidance, item_guidance, LP, avisos ou ações.\n\nEm evolution, active_baseline é a referência estrutural a ser reavaliada contra a pesquisa e o catálogo vigentes. Preservar uma identidade quando continuar adequada é válido; omitir uma identidade do baseline não autoriza um estado incompatível. Decida o status pela cobertura real da seção e não preserve uma identidade somente por herança.\n\nEm refinamento, current_candidate é a candidata transitória anterior e human_feedback é apenas o feedback estrutural mais recente.",
   "Entrega\n\nDevolva somente coverage_id, status, compatible_aliases, selected_aliases e, para partial ou missing, reason e impact.",
 ].join("\n\n");
 
@@ -414,10 +471,38 @@ export function validateGenerationProfileProviderPayload(input: {
   currentEditor?: GenerationProfileEditorContent;
   previousCandidate?: GenerationProfileProposal | null;
 }) {
+  const diagnosticSections = readLpSections(input.research);
+  const coverageDiagnostic = diagnosticSections
+    ? findCoverageIdentityCountIssue(
+        input.payload,
+        new Set(diagnosticSections.map((section) => coverageIdentityKey(section))),
+      )
+    : null;
   const parsed = providerPayloadSchema.safeParse(input.payload);
-  if (!parsed.success) return { ok: false as const, reason: "payload_schema_invalid" as const, message: "Proposal payload is invalid." };
+  if (!parsed.success && coverageDiagnostic) {
+    const validationReason = isCoverageIdentityCountValid(
+      coverageDiagnostic.coverageStatus,
+      coverageDiagnostic.compatibleAliasCount,
+    )
+      ? "coverage_selected_identity_count_invalid" as const
+      : "coverage_identity_count_invalid" as const;
+    return {
+      ok: false as const,
+      reason: validationReason,
+      message: validationReason === "coverage_identity_count_invalid"
+        ? "Coverage identity count is inconsistent with its status."
+        : "Coverage selected identity count is inconsistent with its status.",
+      coverageDiagnostic,
+    };
+  }
+  if (!parsed.success) return {
+    ok: false as const,
+    reason: "payload_schema_invalid" as const,
+    message: "Proposal payload is invalid.",
+    ...(coverageDiagnostic ? { coverageDiagnostic } : {}),
+  };
 
-  const sections = readLpSections(input.research);
+  const sections = diagnosticSections;
   if (!sections) {
     return { ok: false as const, reason: "coverage_source_priority_invalid" as const, message: "lp_sections contains an unsupported priority." };
   }
@@ -432,7 +517,7 @@ export function validateGenerationProfileProviderPayload(input: {
   const decodedCompatible = new Map<string, readonly GenerationProfileCoverageIdentity[]>();
   const decodedSelected = new Map<string, readonly GenerationProfileCoverageIdentity[]>();
   const globallySelectedByModule = new Map<string, string>();
-  for (const coverage of parsed.data.coverage) {
+  for (const [coverageIndex, coverage] of parsed.data.coverage.entries()) {
     if (!sectionsByKey.has(coverage.coverage_id)) {
       return { ok: false as const, reason: "coverage_items_mismatch" as const, message: "Coverage must contain every lp_sections item exactly once." };
     }
@@ -444,7 +529,12 @@ export function validateGenerationProfileProviderPayload(input: {
       return { ok: false as const, reason: "coverage_identity_invalid" as const, message: "Coverage contains an invalid identity alias." };
     }
     if (!isCoverageIdentityCountValid(coverage.status, compatibleIdentities.length)) {
-      return { ok: false as const, reason: "coverage_identity_count_invalid" as const, message: "Coverage identity count is inconsistent with its status." };
+      return {
+        ok: false as const,
+        reason: "coverage_identity_count_invalid" as const,
+        message: "Coverage identity count is inconsistent with its status.",
+        coverageDiagnostic: createCoverageFailureDiagnostic(coverage, coverageIndex),
+      };
     }
     if (new Set(coverage.selected_aliases).size !== coverage.selected_aliases.length) {
       return { ok: false as const, reason: "coverage_selected_identity_invalid" as const, message: "Coverage contains a repeated selected identity alias." };
@@ -454,7 +544,12 @@ export function validateGenerationProfileProviderPayload(input: {
       return { ok: false as const, reason: "coverage_selected_identity_invalid" as const, message: "Coverage contains an invalid selected identity alias." };
     }
     if (!isSelectedIdentityCountValid(coverage.status, selectedIdentities.length)) {
-      return { ok: false as const, reason: "coverage_selected_identity_count_invalid" as const, message: "Coverage selected identity count is inconsistent with its status." };
+      return {
+        ok: false as const,
+        reason: "coverage_selected_identity_count_invalid" as const,
+        message: "Coverage selected identity count is inconsistent with its status.",
+        coverageDiagnostic: createCoverageFailureDiagnostic(coverage, coverageIndex),
+      };
     }
     const normalizedCompatibleIdentities = [...compatibleIdentities as readonly GenerationProfileCoverageIdentity[]]
       .sort((left, right) => identityAlias(left).localeCompare(identityAlias(right)));
@@ -628,6 +723,51 @@ function isCoverageIdentityCountValid(status: "covered" | "partial" | "missing",
 
 function isSelectedIdentityCountValid(status: "covered" | "partial" | "missing", identityCount: number) {
   return status === "missing" ? identityCount === 0 : identityCount > 0;
+}
+
+function findCoverageIdentityCountIssue(payload: unknown, allowedCoverageIds: ReadonlySet<string>) {
+  if (!isUnknownRecord(payload) || !Array.isArray(payload.coverage)) return null;
+  for (const [coverageIndex, rawCoverage] of payload.coverage.entries()) {
+    if (!isUnknownRecord(rawCoverage)) continue;
+    const coverageId = readNonEmptyString(rawCoverage.coverage_id);
+    const coverageStatus = rawCoverage.status;
+    const compatibleAliases = rawCoverage.compatible_aliases;
+    const selectedAliases = rawCoverage.selected_aliases;
+    if (
+      !coverageId
+      || !allowedCoverageIds.has(coverageId)
+      || (coverageStatus !== "covered" && coverageStatus !== "partial" && coverageStatus !== "missing")
+      || !Array.isArray(compatibleAliases)
+      || !Array.isArray(selectedAliases)
+    ) continue;
+    if (
+      !isCoverageIdentityCountValid(coverageStatus, compatibleAliases.length)
+      || !isSelectedIdentityCountValid(coverageStatus, selectedAliases.length)
+    ) {
+      return createCoverageFailureDiagnostic({
+        coverage_id: coverageId,
+        status: coverageStatus,
+        compatible_aliases: compatibleAliases,
+        selected_aliases: selectedAliases,
+      }, coverageIndex);
+    }
+  }
+  return null;
+}
+
+function createCoverageFailureDiagnostic(coverage: Readonly<{
+  coverage_id: string;
+  status: "covered" | "partial" | "missing";
+  compatible_aliases: readonly unknown[];
+  selected_aliases: readonly unknown[];
+}>, coverageIndex: number): GenerationProfileCoverageFailureDiagnostic {
+  return {
+    coverageId: coverage.coverage_id,
+    coverageStatus: coverage.status,
+    compatibleAliasCount: coverage.compatible_aliases.length,
+    selectedAliasCount: coverage.selected_aliases.length,
+    coverageIndex,
+  };
 }
 
 function priorityRank(value: "P1" | "P2" | "P3") {

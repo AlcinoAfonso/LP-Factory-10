@@ -22,6 +22,7 @@ import {
   buildGenerationProfileResponsesRequest,
   estimateGenerationProfileCostUsd,
   GENERATION_PROFILE_APPROVED_MODEL,
+  GENERATION_PROFILE_INVALID_PROPOSAL_MESSAGE,
   isGenerationProfileAssistanceConfigured,
   mapProviderFailureToProposalError,
   mapResearchErrorToProposalError,
@@ -307,6 +308,16 @@ const cases: readonly Readonly<{
   name: string;
   run: () => void | Promise<void>;
 }>[] = [
+  {
+    name: "invalid proposal message preserves the current profile state for creation and evolution",
+    run: () => {
+      assert.equal(
+        GENERATION_PROFILE_INVALID_PROPOSAL_MESSAGE,
+        "A proposta da IA não atendeu às regras estruturais. Nenhuma alteração foi salva e o estado atual do perfil foi preservado.",
+      );
+      assert.doesNotMatch(GENERATION_PROFILE_INVALID_PROPOSAL_MESSAGE, /perfil ativo/);
+    },
+  },
   {
     name: "valid profile keeps profile and items in one aggregate",
     run: () => {
@@ -640,17 +651,36 @@ const cases: readonly Readonly<{
         ...structuralPayload,
         coverage: [{ ...structuralPayload.coverage[0], compatible_aliases: ["invented"] }, structuralPayload.coverage[1]],
       }).ok, false);
-      assert.equal(validate({
+      const coveredWithoutCompatibleAliases = validate({
         ...structuralPayload,
         coverage: [{ ...structuralPayload.coverage[0], compatible_aliases: [] }, structuralPayload.coverage[1]],
-      }).ok, false);
+      });
+      assert.equal(coveredWithoutCompatibleAliases.ok, false);
+      if (!coveredWithoutCompatibleAliases.ok) {
+        assert.equal(coveredWithoutCompatibleAliases.reason, "coverage_identity_count_invalid");
+        assert.deepEqual(coveredWithoutCompatibleAliases.coverageDiagnostic, {
+          coverageId: BUYER_COVERAGE_ID,
+          coverageStatus: "covered",
+          compatibleAliasCount: 0,
+          selectedAliasCount: 1,
+          coverageIndex: 0,
+        });
+      }
       assert.equal(validate({
         ...structuralPayload,
         coverage: [{ ...structuralPayload.coverage[0], status: "partial", compatible_aliases: [], reason: "Cobertura parcial.", impact: "Estrutura incompleta." }, structuralPayload.coverage[1]],
       }).ok, false);
       assert.equal(validate({
         ...structuralPayload,
+        coverage: [{ ...structuralPayload.coverage[0], status: "partial", selected_aliases: [], reason: "Cobertura parcial.", impact: "Estrutura incompleta." }, structuralPayload.coverage[1]],
+      }).ok, false);
+      assert.equal(validate({
+        ...structuralPayload,
         coverage: [{ ...structuralPayload.coverage[0], status: "missing", compatible_aliases: ["faq.accordion"], reason: "Modulo indisponivel.", impact: "Estrutura incompleta." }, structuralPayload.coverage[1]],
+      }).ok, false);
+      assert.equal(validate({
+        ...structuralPayload,
+        coverage: [{ ...structuralPayload.coverage[0], status: "missing", compatible_aliases: [], reason: "Modulo indisponivel.", impact: "Estrutura incompleta." }, structuralPayload.coverage[1]],
       }).ok, false);
     },
   },
@@ -835,6 +865,27 @@ const cases: readonly Readonly<{
           .map((item: { coverage_id: string }) => item.coverage_id),
         REALTOR_COVERAGE_IDS,
       );
+      const evolutionRequest = buildGenerationProfileResponsesRequest({
+        model: GENERATION_PROFILE_APPROVED_MODEL,
+        research,
+        moduleIdentities,
+        moduleSelectionCatalog,
+        requestKind: "evolution",
+        activeBaseline: expectedStructuralRecommendations,
+        currentCandidate: null,
+        humanFeedback: "",
+      });
+      const evolutionInput = JSON.parse(evolutionRequest.body.input[1].content[0].text);
+      assert.equal(evolutionRequest.ok, true);
+      assert.equal(evolutionInput.request_kind, "evolution");
+      assert.equal(evolutionInput.human_feedback, null);
+      assert.deepEqual(evolutionInput.active_baseline, expectedStructuralRecommendations.map((item) => ({
+        alias: item.variantKey ?? item.moduleKey,
+        priority: item.priority,
+        order: item.recommendedOrder,
+      })));
+      assert.equal(evolutionInput.module_catalog.length, moduleSelectionCatalog.modules.length);
+      assert.equal(validate({ coverage: coherentCoverage }).ok, true);
       const prompt = request.body.input[0].content[0].text;
       assert.match(prompt, /opções mutuamente exclusivas da mesma decisão global/);
       assert.match(prompt, /necessidades conjuntas de todas as lp_sections/);
@@ -1077,8 +1128,22 @@ const cases: readonly Readonly<{
       assert.equal(request.bytes < 96 * 1024, true);
       assert.deepEqual(request.body.text.format.schema.required, ["coverage"]);
       const itemSchemas = request.body.text.format.schema.properties.coverage.items.anyOf;
+      assert.equal(itemSchemas.length, 3);
       assert.deepEqual(itemSchemas[0].required, ["coverage_id", "status", "compatible_aliases", "selected_aliases"]);
       assert.deepEqual(itemSchemas[1].required, ["coverage_id", "status", "compatible_aliases", "selected_aliases", "reason", "impact"]);
+      assert.deepEqual(itemSchemas[2].required, ["coverage_id", "status", "compatible_aliases", "selected_aliases", "reason", "impact"]);
+      assert.deepEqual(itemSchemas.map((schema) => schema.properties.status.enum), [["covered"], ["partial"], ["missing"]]);
+      assert.equal("minItems" in itemSchemas[0].properties.compatible_aliases ? itemSchemas[0].properties.compatible_aliases.minItems : undefined, 1);
+      assert.equal("minItems" in itemSchemas[0].properties.selected_aliases ? itemSchemas[0].properties.selected_aliases.minItems : undefined, 1);
+      assert.equal("minItems" in itemSchemas[1].properties.compatible_aliases ? itemSchemas[1].properties.compatible_aliases.minItems : undefined, 1);
+      assert.equal("minItems" in itemSchemas[1].properties.selected_aliases ? itemSchemas[1].properties.selected_aliases.minItems : undefined, 1);
+      assert.equal("maxItems" in itemSchemas[2].properties.compatible_aliases ? itemSchemas[2].properties.compatible_aliases.maxItems : undefined, 0);
+      assert.equal("maxItems" in itemSchemas[2].properties.selected_aliases ? itemSchemas[2].properties.selected_aliases.maxItems : undefined, 0);
+      const prompt = request.body.input[0].content[0].text;
+      assert.match(prompt, /covered = compatíveis > 0 e escolhidas > 0/);
+      assert.match(prompt, /partial = compatíveis > 0 e escolhidas > 0/);
+      assert.match(prompt, /missing = compatíveis = 0 e escolhidas = 0/);
+      assert.match(prompt, /Preservar uma identidade quando continuar adequada é válido/);
       assert.equal(Object.hasOwn(request.body.text.format.schema.properties, "recommendations"), false);
       const oversized = buildGenerationProfileResponsesRequest({
         model: GENERATION_PROFILE_APPROVED_MODEL,
@@ -1121,7 +1186,7 @@ const cases: readonly Readonly<{
         requestKind: "evolution",
         activeBaseline: currentEditor.recommendations,
         currentCandidate: null,
-        humanFeedback: "Priorize a prova antes da FAQ.",
+        humanFeedback: "",
       });
       const evolutionInput = JSON.parse(evolution.body.input[1].content[0].text);
       assert.equal(evolutionInput.request_kind, "evolution");
@@ -1134,11 +1199,19 @@ const cases: readonly Readonly<{
       })));
       assert.equal(Object.hasOwn(evolutionInput.active_baseline[0], "itemGuidance"), false);
       assert.equal(Object.hasOwn(evolutionInput.active_baseline[0], "moduleVersion"), false);
-      assert.equal(evolutionInput.human_feedback, "Priorize a prova antes da FAQ.");
+      assert.equal(evolutionInput.human_feedback, null);
 
       const validated = validateGenerationProfileProviderPayload({ payload: structuralPayload, research: structuralResearch, moduleIdentities: listLandingPageModuleIdentities(), currentEditor });
       assert.equal(validated.ok, true);
       if (!validated.ok) return;
+      assert.deepEqual(validated.value.recommendations.find((item) => item.moduleKey === "hero"), {
+        moduleKey: "hero",
+        moduleVersion: 1,
+        variantKey: "hero.form",
+        variantVersion: 1,
+        priority: "P1",
+        recommendedOrder: 10,
+      });
       const candidate = { ...validated.value, researchVersions: structuralResearch.versions, requestId: "50000000-0000-4000-8000-000000000010" };
       assert.equal(normalizeGenerationProfileCandidate(candidate).ok, true);
       assert.equal(normalizeGenerationProfileCandidate({ ...candidate, generationGuidance: "Nao autorizado" }).ok, false);
@@ -1163,6 +1236,14 @@ const cases: readonly Readonly<{
         coverage: candidate.coverage.map((item, index) => index === 0 ? {
           ...item,
           selectedIdentities: [],
+        } : item),
+      }).ok, false);
+      assert.equal(normalizeGenerationProfileCandidate({
+        ...candidate,
+        coverage: candidate.coverage.map((item, index) => index === 0 ? {
+          ...item,
+          reason: "Nao permitido para covered.",
+          impact: "Nao permitido para covered.",
         } : item),
       }).ok, false);
       const nextRound = buildGenerationProfileResponsesRequest({
@@ -1276,18 +1357,41 @@ const cases: readonly Readonly<{
         responseId: "resp_invalid_123",
         inputTokens: 20856,
         outputTokens: 4000,
+        coverageDiagnostic: {
+          coverageId: BUYER_COVERAGE_ID,
+          coverageStatus: "covered" as const,
+          compatibleAliasCount: 0,
+          selectedAliasCount: 1,
+          coverageIndex: 0,
+        },
         payload: "sensitive candidate content",
         research: "raw research must not cross the boundary",
       } as const;
       const metadata = buildGenerationProfileInvalidDataMetadata(unsafeInput);
       assert.deepEqual(metadata, {
         validationReason: "coverage_items_mismatch",
+        coverageId: BUYER_COVERAGE_ID,
+        coverageStatus: "covered",
+        compatibleAliasCount: 0,
+        selectedAliasCount: 1,
+        coverageIndex: 0,
         responseId: "resp_invalid_123",
         inputTokens: 20856,
         outputTokens: 4000,
         estimatedCostUsd: 0.033642,
       });
-      assert.deepEqual(Object.keys(metadata).sort(), ["estimatedCostUsd", "inputTokens", "outputTokens", "responseId", "validationReason"]);
+      assert.deepEqual(Object.keys(metadata).sort(), [
+        "compatibleAliasCount",
+        "coverageId",
+        "coverageIndex",
+        "coverageStatus",
+        "estimatedCostUsd",
+        "inputTokens",
+        "outputTokens",
+        "responseId",
+        "selectedAliasCount",
+        "validationReason",
+      ]);
     },
   },
   {
