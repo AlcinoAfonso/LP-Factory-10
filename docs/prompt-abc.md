@@ -1,4 +1,4 @@
-# docs/prompt-abc.md vs16
+# docs/prompt-abc.md vs17
 
 PROMPT ABC
 
@@ -57,12 +57,15 @@ Um assunto deve ter uma única residência. Não duplicar fonte canônica.
 ### 6.1 Roadmap
 
 * Consultar `docs/template-roadmap.md`.
-* Respeitar as subseções indicadas no relatório.
+* Respeitar a estrutura do template e as subseções indicadas no relatório; registros materiais de Banco, Repositório, Updates e Referências pertencem exclusivamente a `X.Y.2`, reconciliados com o estado e o diff do recorte, sem duplicação em `X.Y.3+`.
+* Em `ETAPA: consolidação final`, considerar o estado final e o diff acumulado do recorte.
+* Se `X.Y.2` estiver ocupado por conteúdo legado de outra natureza, usar `SUBSTITUIR_SECAO` no mesmo fluxo quando a estrutura final e seus impactos estiverem integralmente determinados dentro do recorte autorizado; parar somente diante de ambiguidade material, referência externa não reconciliada ou ampliação de escopo.
+* Para o recorte afetado, a conformidade com o template prevalece sobre o menor delta textual; não normalizar recortes não afetados.
 * Não criar blocos vazios.
 * Não listar ações que não ocorreram.
 * Usar `N/A` somente quando o template exigir.
 * Em registros, usar somente nomes ou paths.
-* Não registrar `docs/**` como artefato.
+* Não registrar `docs/**` como artefato de Repositório; referências canônicas seguem o bloco `Referências`.
 
 ### 6.2 Base Técnica
 
@@ -122,6 +125,7 @@ Regras:
 * Preferir TRECHO.
 * Usar SEÇÃO somente para mudança estrutural.
 * Adição exige âncora clara.
+* Ao retirar item ou seção numerada, preservar título, identificador, status de depreciação com data, motivo e destino canônico quando houver somente se a fonte estrutural aplicável exigir estabilidade do identificador ou existir referência externa comprovada; remover subseções e não reutilizar o identificador. Nos demais casos, usar `REMOVER_*`.
 * `CONTEUDO` deve ser literal e sem reticências.
 
 ## 8. Versionamento

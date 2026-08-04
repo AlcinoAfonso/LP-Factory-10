@@ -1,10 +1,10 @@
 0.1 Cabeçalho
-Data: 01/08/2026
-Versão: v1.12
+Data: 04/08/2026
+Versão: v1.13
 Status: Alinhado ao Platform Config
 
 0.2 Função do documento
-Registrar a camada de automações operacionais do LP Factory 10 como referência operacional para plataformas usadas nessa camada, integrações, automações operacionais, componentes consumidores e aprendizados operacionais, sem expor segredos.
+Registrar a camada de automações operacionais do LP Factory 10 como referência para integrações, automações operacionais e componentes consumidores, sem expor segredos.
 
 0.3 Relação com outros documentos
 docs/services.md: services implantáveis, MCPs, endpoints e infraestrutura reutilizável com identidade própria.
@@ -27,7 +27,7 @@ docs/platform-config.md: configurações operacionais de plataformas, secrets po
 - `pipelines/validador-final/`, `pipelines/supabase-inspect/` e `pipelines/docs-apply-report/` deixaram de ser paths oficiais.
 
 1. Objetivo e escopo
-Registrar a camada de automações operacionais do LP Factory 10: catálogo de automações, status, como usar, componentes consumidores, dependências e aprendizados operacionais.
+Registrar a camada de automações operacionais do LP Factory 10: catálogo de automações, status, como usar, componentes consumidores e dependências.
 
 Configurações de plataformas, secrets por nome, ambientes, endpoints e lista consolidada de workflows devem ficar em `docs/platform-config.md`.
 
@@ -37,34 +37,21 @@ Este documento não substitui:
 - `docs/schema.md`, para banco, tabelas, views, policies e functions;
 - `docs/roadmap.md`, para evolução funcional.
 
+Regra de vínculo com o roadmap:
+- automação funcional que materialize parte do estado final de um caso deve informar `Aplicação funcional no roadmap` ou `Aplicações funcionais no roadmap`, com a seção E* correspondente;
+- facilitador de testes deve informar `Caso funcional validado`, sem se tornar referência funcional inversa no roadmap;
+- infraestrutura genérica deve omitir esses blocos quando não estiver ligada materialmente a um caso E* específico.
+
 Regra de segurança:
 Nunca registrar segredos brutos. Registrar apenas nome da credencial, plataforma, ambiente, localização, finalidade e escopo.
 
 2. Plataformas e configuração global
-Configurações operacionais de plataformas, secrets por nome, ambientes, endpoints e lista consolidada de workflows ficam em `docs/platform-config.md`.
 
-Esta seção mantém apenas o contexto de uso das plataformas pela camada de automações.
+Status: Deprecada em 04/08/2026.
 
-2.1 OpenAI
-- Papel na automação: execução de modelos e integração com pipelines/agentes.
-- Caminhos futuros: Agents SDK para fluxos programáticos; Workspace Agents em ChatGPT para agentes definidos por prompting/linguagem natural.
-- Ambientes operacionais: `LPF10-DEV` e `LPF10-PROD`; desenvolvimento prioriza DEV e a análise de consumo deve ser feita por projeto.
+Motivo: configurações operacionais de plataformas, secrets por nome, ambientes, endpoints e workflows estão consolidados em `docs/platform-config.md`.
 
-2.2 GitHub
-- Papel: repositório principal, GitHub Actions, pipelines, PRs e secrets.
-- Contexto de uso: orquestração dos workflows e execução das automações em `automations/`.
-
-2.3 Supabase
-- Papel: banco, Auth e fonte para inspeções/verificações read-only.
-- Contexto de uso: automações podem consumir acesso read-only quando aplicável, sem mutações.
-
-2.4 Vercel
-- Papel: hospedagem do Core SaaS e de services dedicados consumidos por automações.
-- Contexto de uso: previews e produção podem ser usados como alvo de execução dos workflows.
-
-2.5 Resend
-- Papel no ecossistema: plataforma relacionada ao projeto para fluxos de e-mail transacional.
-- Estado atual: não há automação operacional formalizada de Resend neste documento.
+Destino canônico: `docs/platform-config.md`.
 
 3. Catálogo de automações operacionais
 
@@ -201,13 +188,57 @@ Estado persistido: `automations/validador-final/state/test-account.json`
 3.5 Resolver IA de Nicho no pending_setup
 
 Objetivo:
-Interpretar o nicho bruto informado pelo lead no `pending_setup` e encaminhar a resolução do taxon/slug conforme o contrato funcional do E10.5.6, sem duplicar neste catálogo o detalhamento do caso.
+Interpretar o nicho bruto informado no `pending_setup` quando o matching determinístico não resolver com segurança e preparar uma saída estruturada para confirmação, escolha ou revisão, sem criar taxon, alias ou vínculo oficial.
 
-Referência:
-`docs/roadmap.md` — E10.5.6.
+Status:
+Implementada e integrada ao fluxo server-side do onboarding.
 
-Observação:
-O contrato funcional, status, escopo, critérios e artefatos do caso ficam no roadmap para evitar duplicação neste catálogo.
+Recurso utilizado:
+- Responses API
+- Structured Outputs com JSON Schema estrito
+- Server Action existente do `pending_setup`
+
+Natureza:
+- Automação com IA em fluxo controlado.
+
+Ambiente principal:
+- Runtime do LP Factory.
+
+Plataforma dependente:
+- OpenAI Platform.
+
+Participação humana:
+- Gatilho no salvamento do `pending_setup` e confirmação, escolha ou revisão posterior quando indicada; sem intervenção durante a execução.
+
+Acesso:
+Execução server-side durante `saveSetupAndContinueAction`, após validação e persistência do onboarding.
+
+Como funciona:
+- Executa primeiro o matching determinístico e a avaliação tipada de confiança.
+- Chama a Responses API somente quando a decisão determinística exige escalonamento.
+- Produz saída estruturada com modo de UX, mensagem, até três opções, sinais de confirmação ou revisão e motivo.
+- Persiste o resultado operacional, o modelo, a versão do schema e o estado da execução em `account_niche_resolutions`.
+- Mantém a criação do vínculo oficial em `account_taxonomy` restrita à alta confiança determinística; a saída da IA nunca cria vínculo oficial.
+- Registra logs estruturados com status, contagens e correlação, sem registrar prompt ou resposta completa nos logs.
+- Ausência de configuração ou falha da IA é registrada como `skipped` ou `failed` e não bloqueia a conclusão do setup.
+
+Limites:
+- Não cria nem aprova taxon ou alias.
+- Não grava `account_taxonomy`.
+- Não executa retry automático nem chamada em loop.
+- Não é agente e não usa Agents SDK, Sandbox Agents, tool, job, fila ou execução recorrente.
+- Não substitui o matching determinístico nem o contrato funcional da E10.5.6.
+
+Aplicação funcional no roadmap:
+- `docs/roadmap.md` — E10.5.6.5, dentro do recorte E10.5.6.
+
+Referências / dependências:
+Regra técnica: `docs/base-tecnica.md`
+Configuração de modelo: `docs/platform-config.md`
+Action consumidora: `app/a/[account]/actions.ts`
+Adapter OpenAI: `lib/onboarding/niche-resolution/adapters/openAiResolver.ts`
+Persistência operacional: `lib/onboarding/niche-resolution/adapters/accountNicheResolutionAdapter.ts`
+Decisão determinística: `lib/onboarding/niche-resolution/deterministicConfidence.ts`
 
 3.6 Apply automático de migrations no Supabase
 
@@ -238,6 +269,12 @@ Validar em runtime real o fluxo de criação de conta e preenchimento de `pendin
 
 Status:
 Implementada como piloto operacional flexível.
+
+Tipo de uso:
+- Facilitador de testes; não integra o runtime funcional do produto.
+
+Caso funcional validado:
+- `docs/roadmap.md` — E10.5.6.
 
 Acesso:
 GitHub → Actions → workflow `automation-niche-runtime-tests`
@@ -308,9 +345,11 @@ Limites:
 - Não é agente.
 - Não usa Agents SDK, Sandbox Agents, job, fila nem execução recorrente.
 
+Aplicação funcional no roadmap:
+- `docs/roadmap.md` — E10.7.3.
+
 Referências / dependências:
 Regra técnica: `docs/base-tecnica.md`
-Status funcional: `docs/roadmap.md`
 Configuração de modelo: `docs/platform-config.md`
 Action administrativa: `app/admin/(protected)/templates/actions.ts`
 Adapter de geração: `lib/conversion-content/commercial-activation/draft-generation.ts`
@@ -322,7 +361,7 @@ Objetivo:
 Propor orientação e recomendações de módulos para um taxon elegível, preservando a revisão humana e o fluxo manual completo.
 
 Status:
-Implementada no repositório; ativação e validação operacional permanecem pendentes da migration, das variáveis de ambiente e do teste humano em Preview.
+Implementada e validada operacionalmente, com migration aplicada, configuração da OpenAI e testes humanos autenticados aprovados.
 
 Recurso utilizado:
 - Responses API
@@ -352,104 +391,19 @@ Limites:
 - Falha ou ausência da assistência não bloqueia a operação manual.
 - Não usa Agents SDK, ferramenta, agente, job, fila, execução recorrente nem `previous_response_id`.
 
+Aplicações funcionais no roadmap:
+- `docs/roadmap.md` — E12.4.3.
+- `docs/roadmap.md` — E12.4.3.1.
+- `docs/roadmap.md` — E12.4.3.2.
+
 Referências / dependências:
 Regra técnica: `docs/base-tecnica.md`
-Status funcional: `docs/roadmap.md`
 Configuração de modelo: `docs/platform-config.md`
 Action administrativa: `app/admin/(protected)/perfis-de-orientacao/actions.ts`
 Adapter de proposta: `lib/conversion-content/adapters/landingPageGenerationProfileOpenAiAdapter.ts`
 
 4. Aprendizados operacionais
-4.1 Princípios identificados
-Integração entre plataformas não garante utilidade real.
-Automações devem reduzir trabalho humano.
-Agentes úteis tendem a filtrar, resumir, priorizar ou alertar.
 
-4.2 Agent Builder
-Uso prático principal: validação funcional e prototipação operacional de fluxos.
-Para MVP e prova funcional, o Builder atende.
-Não deve ser tratado como camada final mais confiável para orquestração robusta, parsing determinístico, múltiplos SQLs no mesmo input e contrato final de saída estável.
-Builder e SDK não são dois agentes diferentes: o Builder é a camada visual; o SDK é a camada programática para execução, controle e orquestração fora da UI.
-O código exibido em Code → Agents SDK é exportação do workflow, não um arquivo vivo editável dentro do Builder.
+Status: Deprecada em 04/08/2026.
 
-4.3 Integração versus utilidade
-Valor prático aparece quando o agente filtra informação, prioriza o que importa, resume conteúdo, reduz carga cognitiva e entrega ação útil.
-
-4.4 MCP e conectores externos
-
-MCP funciona como ponte entre o agente e sistemas externos.
-Para Supabase, a abordagem exige implementação própria.
-Na operação via ChatGPT, a compatibilidade de autenticação do app MCP deve ser validada antes de assumir reuso direto de um MCP já existente.
-Bearer token estático no endpoint MCP não deve ser presumido como compatível com a camada de consumo do ChatGPT.
-
-4.5 Critério para o primeiro agente útil
-Começar por um agente com função concreta e ganho prático claro.
-
-4.6 Operação prática no Agent Builder
-- o caminho correto de teste operacional foi Preview, com apoio dos logs e das tool calls
-- teste operacional no Agent Builder deve usar a seta de execução, não `Evaluate`
-- `Evaluate` não substitui o teste operacional do fluxo
-- no caso `3.3`, o gargalo atual está na confiabilidade da camada final de orquestração, especialmente no encadeamento do output do workflow e no comportamento do End node
-- validação madura deve considerar também traces, critérios de avaliação e regressão quando o caso sair da fase experimental
-
-4.7 Experimento reclassificado como aprendizado
-Item de origem: antigo `3.7 Agente experimental de aprendizado`.
-Leitura correta: experimento criado para aprendizado da plataforma, sem ativo operacional versionado relevante no repositório.
-Destino documental: manter apenas como aprendizado / histórico operacional.
-Observação: pode ser descontinuado após a extração do aprendizado útil.
-
-4.8 MCP e segurança operacional
-MCP não deve receber confiança automática só por ser servidor conhecido.
-O risco de prompt injection continua existindo.
-O acesso deve permanecer minimizado.
-Dados sensíveis não devem ser expandidos no contrato nem nas tools além do necessário.
-Parâmetros e escopo expostos devem ser revisados conforme o caso evoluir.
-
-4.9 Consumo, projeto e bonificação
-
-Consumo OpenAI deve ser lido por projeto no Usage.
-API keys e service accounts pertencem ao projeto OpenAI em que foram criados.
-Agent Builder, ChatKit e Agents SDK consomem no projeto OpenAI em que a execução está vinculada.
-MCP atua como ponte para sistemas externos e não define projeto, billing ou bonificação OpenAI.
-Bonificação elegível deve ser interpretada como cota diária e não como saldo acumulado.
-Weekly evals e complimentary daily tokens são benefícios distintos.
-
-4.10 Validador Final (3.4)
-
-4.10.1 Fluxos de auth complexos devem ser estabilizados com execução real e logs fortes primeiro, e só depois simplificados.
-
-4.10.2 Em automações de auth com e-mail:
-- separar UI automation de mailbox helper reduziu acoplamento
-- leitura programática da caixa postal foi mais confiável do que depender de webmail
-
-4.10.3 Em fluxos determinísticos:
-- persistir `sequence` entre runs ajudou a evitar loops e colisões cegas
-- manter 1 conta ativa por vez simplificou o controle operacional
-
-4.10.4 Em callbacks de e-mail:
-- a seleção do link deve considerar a intenção do fluxo, não apenas host ou base URL
-- sanitização e observabilidade do link foram decisivas na estabilização
-
-4.10.5 Em reset de senha:
-- o fluxo mais simples foi aproveitar a sessão autenticada aberta pela própria app após o reset bem-sucedido, em vez de forçar logout intermediário antes do reset
-
-4.10.6 Após validação ponta a ponta:
-- primeiro consolidar o fluxo
-- depois refatorar e remover legado
-- e só por último reduzir observabilidade e logs
-
-4.10.7 Regra reutilizável pré-merge:
-- para feature branch sem alteração de pipeline, usar `workflow` da `main` + `app_url` da preview da feature
-- para feature branch com alteração de pipeline, usar `workflow` e `app_url` da própria feature branch
-
-4.11 Niche Runtime Tests (3.7)
-
-4.11.1 O núcleo estável da automação é criação de conta + confirmação + preenchimento de `pending_setup`. Isso já valida funcionamento real do fluxo.
-
-4.11.2 Nichos livres devem usar `verification_mode = setup_only`, porque a expectativa correta de banco depende da etapa funcional e não deve ser presumida.
-
-4.11.3 Presets versionados são o lugar correto para expectativa rígida de banco. Quando a regra muda, criar ou ajustar preset, em vez de engessar o workflow genérico.
-
-4.11.4 O uso de `start_sequence` e aliases `alcinoafonso380+conviteXX@gmail.com` permite criar múltiplas contas em uma mesma execução e reduz colisões previsíveis.
-
-4.11.5 Contas criadas por esse fluxo são evidência funcional temporária. Cleanup permanece manual até existir regra aprovada para remoção segura.
+Motivo: seção histórica e parcialmente superada; regras operacionais vigentes permanecem nos itens correspondentes do catálogo e nas demais fontes canônicas aplicáveis.
