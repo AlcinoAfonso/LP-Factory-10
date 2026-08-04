@@ -1,8 +1,8 @@
 0. Introdução
 0.1. Cabeçalho
 • Documento: README — LP Factory 10 (MVP)
-• Versão: 5 — 21/07/2026
-• Data: 21/07/2026
+• Versão: 6 — 04/08/2026
+• Data: 04/08/2026
 • Escopo: visão geral do produto + documentos de referência + pendências estratégicas
 
 1. Visão geral do produto
@@ -46,6 +46,7 @@
 • Todo recurso candidato deve ser classificado quanto à relação com a stack e a arquitetura — complementar, sobreposto, substituto ou incompatível — e avaliado por benefício, maturidade das fontes, custo, complexidade, segurança, manutenção e horizonte de adoção.
 • Incompatibilidade pode justificar descarte. Recursos sobrepostos ou substitutos só devem permanecer como condicionais quando houver hipótese concreta de superioridade e gatilho objetivo para comparação ou adoção.
 • A simplicidade do MVP limita a implementação do momento, não o radar tecnológico nem a preservação de diferenciais estratégicos para a evolução dos planos.
+• O WhatsApp é canal comercial prioritário para aquisição, atendimento, qualificação, venda e nutrição; suas capacidades oficiais de mensageria, automação e IA devem permanecer no radar e ser distribuídas progressivamente entre os planos, sem autorizar adoção antecipada.
 • Avaliação ou catalogação não autoriza implementação, mudança de stack, nova infraestrutura nem ampliação de escopo.
 • Em cada plano-base, fase ou recorte, o Gestor de Updates recomenda a aplicabilidade dos recursos catalogados, e o Estrategista decide sua consolidação no plano-base dentro do escopo aprovado.
 • A intervenção humana é necessária somente quando faltar autoridade ou definição indispensável de produto, ou quando houver ampliação do escopo aprovado; a materialidade, isoladamente, não constitui bloqueio.
