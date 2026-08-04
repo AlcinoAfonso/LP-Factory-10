@@ -25,7 +25,8 @@ A pesquisa deve usar prioritariamente documentação oficial de:
 
 * OpenAI, para IA, agentes e experiências assistidas;
 * Google Search Central e web.dev, para SEO, performance e experiência web;
-* Meta e Google Ads, para aquisição, conversão e tracking;
+* Meta Ads e Google Ads, para aquisição, conversão e tracking;
+* WhatsApp Business Platform e Meta Business Messaging, para mensageria, campanhas, atendimento, qualificação, venda, automação e IA conversacional;
 * Stripe, para billing, checkout, pricing e monetização;
 * W3C/WAI, para acessibilidade e WCAG.
 
@@ -41,23 +42,53 @@ Antes de registrar ou atualizar um item:
 2. identificar valor concreto para o LP Factory 10;
 3. verificar custo, plano, maturidade e dependências;
 4. definir se o recurso deve ser adotado, avaliado depois ou descartado;
-5. confirmar no roadmap e no repositório se já existe implementação.
+5. confirmar no roadmap e no repositório se já existe implementação;
+6. buscar referências pelo ID e semanticamente pela capacidade, incluindo recortes, código, migrations, testes e decisões;
+7. confirmar a cobertura dos canais estratégicos do `README.md`, especialmente WhatsApp.
 
 ## Convenção de referência
 
 O identificador canônico dos itens deste catálogo é `prod#n`.
 
-Esse identificador deve ser usado no roadmap, Base Técnica, briefings, relatórios e referências cruzadas. A numeração não deve ser reutilizada após remoção, depreciação ou substituição de um item.
+Esse identificador deve ser usado no roadmap, Base Técnica, briefings, relatórios e referências cruzadas. Todo ID publicado deve permanecer localizável. A numeração não deve ser apagada, renumerada ou reutilizada após implementação, absorção, rejeição, depreciação ou substituição.
 
 ## Critério do catálogo ativo
 
-Este documento deve manter apenas práticas, capacidades e tendências de produto que ainda possam ser aproveitadas pelo Gestor de Updates em algum caso atual, futuro ou condicional.
+Este documento mantém práticas, capacidades e tendências de produto aproveitáveis em casos atuais, futuros ou condicionais, além dos registros históricos necessários à rastreabilidade.
 
-Itens já absorvidos pela Base Técnica, duplicados em catálogos técnicos, genéricos demais ou sem aproveitamento concreto não permanecem no catálogo ativo.
+Itens absorvidos, implementados, duplicados, superados ou sem aproveitamento concreto podem sair do catálogo ativo, mas permanecem como registro histórico compacto com estado final, evidências, recortes e eventual substituto.
 
 Recursos pagos, enterprise ou futuros podem permanecer quando ainda tiverem aproveitamento possível em algum caso específico.
 
 A rejeição ou adoção de cada item deve ser decidida caso a caso pelo Gestor de Updates, conforme o plano-base avaliado.
+
+## 1 — SSO Self-Service *(🟨 Futuro condicional — Pro/Ultra)*
+
+2025-05-11  
+Reavaliado em 2026-08-04
+
+### Status no Projeto
+
+- Status: não implementado; capacidade de produto preservada para clientes empresariais.
+- Evidência: não há configuração autônoma de Google Workspace, Microsoft Entra ID/Azure AD ou Okta no Dashboard; `supa#61` mantém a capacidade técnica de provedores OAuth/OIDC customizados.
+- Relação com a arquitetura: `prod#1` representa a experiência comercial e administrativa; `supa#61` representa a capacidade técnica. Não são substitutos documentais.
+- Horizonte sugerido: Pro/Ultra, sujeito à decisão do Estrategista e a demanda enterprise real.
+
+### Valor para o Projeto
+
+- Pode reduzir suporte e ampliar competitividade em contas empresariais.
+- Preserva a evolução multi-tenant sem antecipar complexidade no Starter.
+
+### Gatilho futuro de avaliação
+
+Avaliar quando houver cliente ou venda enterprise que exija provedor corporativo, domínio verificado, governança de acesso e configuração administrável.
+
+### Limites
+
+- Exige segurança, recuperação, auditoria, suporte e confirmação de disponibilidade/custo do provedor.
+- Não criar UI, rota, banco, integração ou promessa comercial por causa deste registro.
+
+---
 
 ## 3 — Speed Insights para validar performance percebida *(🟨 Adoção condicional)*
 2025-06-01  
@@ -101,6 +132,25 @@ Avaliar somente quando houver:
 
 - [Vercel — Speed Insights](https://vercel.com/docs/speed-insights)
 - [web.dev — Interaction to Next Paint (INP)](https://web.dev/articles/inp)
+
+---
+
+## 4 — Agent Experience (AX) para acesso por navegador *(⚪ Registro histórico — absorvido)*
+
+2025-07-01  
+Atualizado em 2026-08-04
+
+### Estado e rastreabilidade
+
+- Estado: não implementado como capacidade independente; princípios absorvidos por `prod#6` e `prod#17`.
+- Evidência: conteúdo legível, HTML semântico, acessibilidade, rótulos claros e fluxos previsíveis beneficiam pessoas, tecnologias assistivas e agentes sem exigir protocolo especial.
+- Recortes relacionados: conteúdo útil para busca generativa e baseline de acessibilidade.
+- Horizonte: reavaliar somente se surgir experiência agentic real com requisito não coberto pelas práticas atuais.
+- O ID permanece histórico e não pode ser reutilizado.
+
+### Fonte Oficial
+
+- [Google — Optimizing for generative AI features: Explore agentic experiences](https://developers.google.com/search/docs/fundamentals/ai-optimization-guide)
 
 ---
 
@@ -252,6 +302,94 @@ Avaliar somente quando houver:
 
 ---
 
+## 14 — Priorizar Reconhecimento nos Testes Iniciais *(✅ Implementado em recortes)*
+
+2025-11-20  
+Atualizado em 2026-08-04
+
+### Estado e rastreabilidade
+
+- Estado: incorporado parcialmente como critério de UX, sem telemetria ou programa próprio de testes.
+- Evidência: o roadmap registra `prod#14` como aplicado; a matriz E11.2 incorporou reconhecimento do próximo passo correto para owner e non-owner.
+- Recortes: E10.7 e E11.2.
+- Escopo remanescente: aplicar o princípio em novos fluxos quando pertinente, sem transformar tempo de clique ou descoberta em métrica obrigatória por padrão.
+- O ID permanece como referência do critério aplicado.
+
+---
+
+## 15 — Automação de Microeventos em LPs *(🟨 Estratégico; implementação progressiva)*
+
+2025-11-17  
+Atualizado em 2026-08-04
+
+### Status no Projeto
+
+- Status: implementado parcialmente no tracking mínimo; automação, segmentação e integrações permanecem futuras.
+- Evidência: a E10.6 implementou `commercial_page_view`, `commercial_primary_cta_click` e `commercial_plan_cta_click`; não há `events_analytics`, taxonomia ampliada, RD Station, Meta Ads ou WhatsApp Business Platform integrados.
+- Relação com `supa#19` e `supa#27`: esses IDs preservam a origem técnica das propostas de analytics e remarketing; `prod#15` é a referência de produto para sua evolução comercial.
+
+### Descrição
+
+Evoluir o tracking mínimo para microeventos selecionados — como scroll qualificado, visualização de preço, abertura de FAQ, início ou envio de formulário e clique contextual — capazes de alimentar análise, segmentação e follow-up por canais aprovados, incluindo e-mail e WhatsApp.
+
+O valor está na cadeia `comportamento → sinal → segmentação → ação comercial`, não na coleta indiscriminada de eventos.
+
+### Horizonte sugerido
+
+- Starter: preservar os três eventos comerciais canônicos já implementados.
+- Lite: adicionar somente microeventos internos com hipótese de decisão e taxonomia mínima.
+- Pro: permitir segmentações e integrações aprovadas com CRM, Meta Ads e WhatsApp.
+- Ultra: avaliar otimização multicanal e assistência por IA com mensuração e revisão humana.
+
+A distribuição é hipótese estratégica e não decisão comercial final de plano.
+
+### Valor para o Projeto
+
+- Cria diferenciação por inteligência comercial progressiva.
+- Permite melhorar conversão e priorizar leads sem exigir todo o pacote na primeira LP.
+- Pode conectar LP, CRM, mídia e WhatsApp quando existir operação real.
+
+### Gatilho futuro de avaliação
+
+Avaliar cada avanço somente quando houver:
+
+1. pergunta de negócio que o evento responderá;
+2. ação concreta ligada ao sinal;
+3. volume mínimo, consentimento, finalidade e retenção definidos;
+4. canal e integração reais;
+5. responsável por interpretar resultado e interromper automações inadequadas.
+
+### Dependências, riscos e limites
+
+- Evitar eventos sem uso, duplicação client/server, identificação excessiva e atribuição falsa de causalidade.
+- WhatsApp, Meta Ads e RD Station exigem contas, autenticação, políticas, consentimento e contratos próprios.
+- Follow-up automático exige opt-in, frequência, handoff humano, exclusão e observabilidade.
+- Não criar tabela, rota, job, pixel, fila, agente ou automação nesta rodada.
+
+### Fontes Oficiais
+
+- [Meta — Conversions API](https://developers.facebook.com/documentation/ads-commerce/conversions-api)
+- [RD Station — Conversão via API](https://developers.rdstation.com/reference/conversao)
+- [Meta — Centralized Campaigns, AI Support and More for Businesses on WhatsApp](https://about.fb.com/news/2025/07/centralized-campaigns-ai-support-businesses-whatsapp/)
+
+---
+
+## 16 — QA visual e validação de UX em Preview *(✅ Implementado em recortes)*
+
+2026-06-12  
+Atualizado em 2026-08-04
+
+### Estado e rastreabilidade
+
+- Estado: prática incorporada em recortes, sem depender obrigatoriamente de ferramenta paga.
+- Evidência: o roadmap registra `prod#16` como aplicado; a matriz E11.2 incorporou validação em Preview, desktop/mobile, papéis e estados de entitlement.
+- Recortes: E10.6/E10.7 e E11.2.
+- Escopo remanescente: repetir a validação proporcionalmente em novas superfícies, usando ferramentas disponíveis sem substituir revisão manual.
+- Relação técnica: `vercel#15` permanece como opção de ferramenta; `prod#16` preserva a prática de produto.
+- O ID permanece como referência dos critérios aplicados.
+
+---
+
 ## 17 — WCAG 2.2 como baseline de acessibilidade *(🟩 Recomendação W3C)*
 2026-07-04  
 Atualizado em 2026-08-03
@@ -334,6 +472,30 @@ Avaliar somente quando houver:
 - [OpenAI — Plugins](https://developers.openai.com/plugins)
 - [OpenAI — MCP server and UI quickstart](https://developers.openai.com/plugins/build/app-quickstart)
 - [OpenAI — Security & Privacy for Plugins](https://developers.openai.com/plugins/guides/security-privacy)
+
+---
+
+## 19 — Stripe Entitlements como referência de feature access *(✅ Aplicado como benchmark e trava)*
+
+2026-07-04  
+Atualizado em 2026-08-04
+
+### Estado e rastreabilidade
+
+- Estado: aplicado como referência de produto e limite arquitetural; Stripe Entitlements não foi adotado como autoridade do runtime.
+- Evidência: E9 implementou `account_commercial_entitlements`, view efetiva, adapter Admin e webhook Stripe; roadmap e matriz E11.2 preservam `prod#19` como referência/trava.
+- Recortes: E9, E9.7, E11.2 e superfícies comerciais relacionadas.
+- Decisão preservada: plano, assinatura ou feature externa não substituem o sinal e a persistência internos.
+
+### Valor para o Projeto
+
+- Mantém previsibilidade de upgrades, downgrades e liberação comercial sem acoplar autorização ao provedor.
+- Registra por que a referência externa foi estudada e parcialmente absorvida pelo modelo local.
+
+### Limites
+
+- Não usar API, SDK ou tabela da Stripe para decidir acesso automaticamente sem novo recorte aprovado.
+- O ID não autoriza migrar o modelo local.
 
 ---
 
@@ -483,3 +645,59 @@ Avaliar somente quando houver:
 - [Google Search Central — Social and video platform performance](https://developers.google.com/search/blog/2026/07/search-console-social-video-platforms)
 
 ---
+
+## 23 — WhatsApp Business Platform e Meta Business Agent *(🟨 Estratégico; adoção progressiva)*
+
+2026-06-03  
+Catalogado em 2026-08-04
+
+### Status no Projeto
+
+- Status: não implementado; canal existente apenas em recortes básicos de preferência e CTA.
+- Evidência: o produto registra WhatsApp como canal e possui CTAs/fallbacks, mas não há WhatsApp Business Platform, Cloud API, Business Agent, campanhas centralizadas, voz, vídeo ou automação oficial integrados.
+- Relação com a stack: complementar ao produto e potencialmente sobreposto à arquitetura própria de IA/OpenAI; exige comparação antes de adoção.
+
+### Descrição
+
+A Meta reúne capacidades para atendimento, qualificação, recomendações, agendamento, venda, handoff humano e campanhas no WhatsApp. O Meta Business Agent e sua plataforma ampliam esse caminho com IA, conexões a sistemas, controles, guardrails e mensuração. A WhatsApp Business Platform também evolui campanhas pelo Ads Manager e opções de chamada, voz e vídeo.
+
+### Horizonte sugerido
+
+- Starter: CTA, preferência de canal e continuidade manual segura.
+- Lite: melhorar entrada, contexto e mensuração da conversa sem automação complexa.
+- Pro: avaliar Business Platform, campanhas, templates, integrações e handoff humano.
+- Ultra: avaliar Business Agent Platform, IA multicanal, ações integradas e mensuração avançada.
+
+A distribuição é hipótese de evolução, não promessa comercial nem autorização técnica.
+
+### Valor para o Projeto
+
+- Mantém o produto competitivo no canal comercial prioritário.
+- Pode reduzir tempo de resposta, qualificar leads e aproximar aquisição, atendimento e venda.
+- Preserva alternativa oficial antes de construir mensageria ou agente próprios.
+
+### Gatilho futuro de avaliação
+
+Avaliar somente quando houver:
+
+1. disponibilidade e elegibilidade confirmadas para o Brasil e para a conta;
+2. operação comercial real com volume, responsáveis e metas;
+3. preço, templates, opt-in, consentimento, retenção e políticas mapeados;
+4. handoff humano, fallback e desligamento definidos;
+5. comparação objetiva com operação manual, integração própria e agentes OpenAI.
+
+### Dependências, riscos e limites
+
+- Exige conta empresarial, número, verificação, permissões e conformidade com políticas da Meta.
+- Pode introduzir lock-in, custo por mensagem/assinatura, tratamento de dados e dependência operacional.
+- IA não pode responder ou agir sem limites, fontes, revisão, handoff e mensuração adequados.
+- Não criar app Meta, Cloud API, rota, webhook, banco, job, agente ou automação nesta rodada.
+
+### Fontes Oficiais
+
+- [Meta — Be There for Every Customer With Meta Business Agent](https://about.fb.com/news/2026/06/meta-business-agent/)
+- [Meta — Centralized Campaigns, AI Support and More for Businesses on WhatsApp](https://about.fb.com/news/2025/07/centralized-campaigns-ai-support-businesses-whatsapp/)
+- [Meta — New AI Tools, Meta Verified and More for Businesses on WhatsApp](https://about.fb.com/news/2024/06/new-ai-tools-meta-verified-and-more-for-businesses-on-whatsapp/)
+
+---
+
