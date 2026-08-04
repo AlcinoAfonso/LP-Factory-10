@@ -2362,6 +2362,8 @@ Repositório — Ajustados
   * Não criar novo campo, estado, tabela, resolver ou infraestrutura e não reabrir E20.3.3 ou E20.3.4.
 
 99. Changelog
+v1.5.122 — 04/08/2026 — Garantido no máximo um taxon primário ativo por conta e reconciliada a retirada da E12.4.4 da implementação.
+
 v1.5.121 — 04/08/2026 — Concluída documentalmente a correção de cardinalidade da E12.4.3.2 após gate funcional aprovado; registrada a E12.4.4 para classificar gaps modulares, problemas de pesquisa ou modelagem e requisitos globais de composição, sem implementação no PR #681.
 
 v1.5.118 — 03/08/2026 — Registrada a correção localizada do contrato de cardinalidade da evolução do perfil com IA, preservando validação fail-closed, `active v1`, ausência de retry e gate único no Preview após revisão independente.
