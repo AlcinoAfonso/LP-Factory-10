@@ -16,12 +16,15 @@ X.1.2 Registros do recorte
 - Banco:
   - Criados:
   - Ajustados:
+  - Excluídos:
 - Repositório:
   - Criados:
   - Ajustados:
   - Excluídos:
 - Updates:
   - Aplicados:
+- Referências:
+  - [Assunto]: `[documento]` — [seção].
 X.1.3 [Implementação, definição, contrato, previsão, critério ou limite]
 - Status:
 - Conteúdo:
@@ -37,13 +40,15 @@ X.1.n [Implementação, definição, contrato, previsão, critério ou limite]
 
 4. Regras de registros
 - `Criados`: artefatos novos; `Ajustados`: artefatos existentes alterados materialmente; `Excluídos`: artefatos removidos.
-- Consumo, leitura, citação, dependência ou reaproveitamento sem alteração material não entram em registros.
+- Consumo, leitura, citação, dependência ou reaproveitamento sem alteração material não entram em `Criados`, `Ajustados` ou `Excluídos`.
+- Documento canônico que mantenha parte material do estado final do recorte pode entrar em `Referências`, com indicação do assunto e da seção correspondente.
+- `Referências` não deve listar todos os documentos consultados, dependências genéricas ou arquivos já registrados em `Repositório`.
 - Update apenas avaliado, rejeitado ou monitorado não entra em registros do roadmap.
 - Se a avaliação gerar decisão permanente, registrar no conteúdo específico do recorte, não em `Updates`.
-- `X.Y.2 Registros do recorte` deve ser usado quando houver implementação material ou registros reais.
+- `X.Y.2 Registros do recorte` deve ser usado quando houver implementação material, registros reais, update aplicado ou referência canônica material ao estado final.
 - Recortes previstos, conceituais ou não implementados podem omitir `Registros do recorte`.
 
 5. Regras anti-inflação
 - Não criar seção de notas por padrão, observações gerais em `Objetivo e status`, registros fora de `X.Y.2` ou subseções vazias.
-- Não criar blocos vazios de Banco, Repositório ou Updates apenas para preservar simetria.
+- Não criar blocos vazios de Banco, Repositório, Updates ou Referências apenas para preservar simetria.
 - Não transformar previsão futura em implementação.

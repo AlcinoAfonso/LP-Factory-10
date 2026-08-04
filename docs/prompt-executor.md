@@ -118,10 +118,12 @@ Quando houver frontend, validar superficies, viewports e evidencias definidas no
 
 ## 9. Etapa 6 - Fechamento documental pelo ABC
 
-Depois de implementar e validar o recorte, antes da entrega:
+Durante a implementacao e antes da entrega:
 
 - identificar os documentos canonicos previstos no plano ou materialmente afetados pela implementacao, sem ampliar o escopo aprovado;
 - executar `$lp-factory-abc` separadamente para cada `DOC_ALVO`, usando como `RELATORIO` somente o estado implementado, as validacoes concluidas, o escopo aprovado e as fontes canonicas consultadas;
+- nas subsecoes nao finais, usar somente `ETAPA: intermediária` e aplicar o delta antes do gate da etapa;
+- na ultima subseção ou no encerramento do recorte, executar as validacoes integradas, corrigir regressoes e avaliar explicitamente a necessidade de teste humano; quando exigido, obter a evidencia antes de uma unica execucao por documento com `ETAPA: consolidação final`, usando o estado final e o diff acumulado do recorte, antes do gate final ja existente;
 - ler integralmente `docs/prompt-abc.md`, o documento-alvo atual e a fonte estrutural aplicavel;
 - aplicar literalmente somente as operacoes emitidas pelo ABC;
 - quando o ABC retornar `SEM ALTERACOES NECESSARIAS`, nao modificar o documento;
