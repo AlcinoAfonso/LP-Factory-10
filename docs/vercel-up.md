@@ -6,8 +6,8 @@
 
 - O heading/badge de cada item representa o estado do recurso no mercado/plataforma Vercel, Next.js ou React, quando aplicável.
 - Este documento não é histórico completo de updates da Vercel, Next.js ou React.
-- O catálogo deve manter apenas recursos ainda aproveitáveis pelo LP Factory 10.
-- Itens removidos por estarem globais, absorvidos, duplicados, deprecados, superados ou redundantes não têm seus IDs reutilizados.
+- O documento mantém o catálogo ativo e registros históricos compactos necessários à rastreabilidade do projeto.
+- Todo ID publicado permanece localizável; IDs absorvidos, implementados, duplicados, deprecados, superados ou redundantes não são apagados nem reutilizados.
 
 ---
 
@@ -21,7 +21,7 @@ Esse identificador deve ser usado no roadmap, Base Técnica, briefings, relatór
 
 Este documento deve manter apenas recursos Vercel, Next.js ou React que ainda possam ser aproveitados pelo Gestor de Updates em algum caso atual, futuro ou condicional.
 
-Itens já implementados globalmente, absorvidos pela Base Técnica, superados, duplicados, deprecados ou redundantes não permanecem no catálogo ativo.
+Itens já implementados globalmente, absorvidos pela Base Técnica, superados, duplicados, deprecados ou redundantes podem sair do catálogo ativo, mas permanecem como registro histórico com estado final, evidências, recortes e eventual substituto.
 
 Recursos pagos, enterprise ou futuros podem permanecer quando ainda tiverem aproveitamento possível em algum caso específico.
 
@@ -98,6 +98,25 @@ Recurso oficial do Next.js 16 para controle de cache por componentes, com adoç�
 
 ---
 
+
+## 4 — Turbopack *(✅ Incorporado pelo Next.js 16)*
+
+2025-10-22  
+Atualizado em 2026-08-04
+
+### Estado e rastreabilidade
+
+- Estado: implementado globalmente pelo framework e absorvido pela Base Técnica.
+- Evidência: `docs/base-tecnica.md` orienta preferir os defaults do Next.js, incluindo Turbopack quando aplicável; o projeto está em Next.js 16 e não registra configuração Webpack substituta como caminho canônico.
+- Recortes: stack global do Core e builds/previews atuais.
+- Escopo remanescente: somente investigar configuração ou fallback se surgir incompatibilidade mensurável.
+- O ID permanece histórico e não pode ser reutilizado.
+
+### Fonte Oficial
+
+- [Next.js 16](https://nextjs.org/blog/next-16)
+
+---
 
 ## 6 — DevTools MCP *(🟩 Disponível no ecossistema Next.js 16+)*
 2025-10-22
@@ -466,6 +485,25 @@ Os Runtime Logs da Vercel exibem o motivo associado ao estado de cache de respos
 ### Fonte Oficial
 
 - [Runtime logs now show cache reasons](https://vercel.com/changelog/runtime-logs-now-show-cache-reasons)
+
+---
+
+## 27 — Next.js July 2026 Security Release *(✅ Correção aplicada)*
+
+2026-07-20  
+Atualizado em 2026-08-04
+
+### Estado e rastreabilidade
+
+- Estado: concluído; versão corrigida incorporada.
+- Evidência: `package.json` e `package-lock.json` fixam `next` e `eslint-config-next` em `16.2.11`, versão corrigida indicada pela fonte oficial.
+- Recortes: atualização técnica do Core; matrizes E11, E11.2 e E12.4 preservam a decisão de não reabrir dependências quando o requisito já está satisfeito.
+- Limite: o registro comprova a correção desta rodada de segurança, não dispensa futuras atualizações ou validações.
+- O ID permanece histórico e não pode ser reutilizado.
+
+### Fonte Oficial
+
+- [Next.js — July 2026 Security Release](https://nextjs.org/blog/july-2026-security-release)
 
 ---
 
