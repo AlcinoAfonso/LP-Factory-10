@@ -2,7 +2,7 @@
 
 - Data: 04/08/2026.
 - Versão: v2.9.
-- Status: E12.4.3, E12.4.3.1 e E12.4.3.2 implementadas e incorporadas à `main` pelo PR #672; correção da cardinalidade de cobertura concluída no PR draft #681, com gate funcional hospedado aprovado e inspeção final ainda pendente.
+- Status: E12.4.3, E12.4.3.1 e E12.4.3.2 implementadas e incorporadas à `main` pelo PR #672; correção técnica aprovada no PR draft #681, gate funcional hospedado aprovado e inspeção final do Estrategista aprovada; somente o merge humano permanece pendente.
 - Recorte previsto para o roadmap: `12.4 — Gestão do perfil de orientação`.
 - Recorte executável inicial: `12.4.3 — Proposta, revisão, aprovação e ativação do perfil`.
 - Recorte corretivo planejado: `12.4.3.2 — Criação e evolução estrutural baseada em lp_sections, catálogo vigente e debate humano–IA`.
@@ -405,7 +405,7 @@
 
 #### 3.1.2. E12.4.3.2 — Proposta estrutural baseada em `lp_sections` e delta do catálogo
 
-- Status: implementada e incorporada à `main` pelo PR #672; correção localizada do contrato de cardinalidade concluída no PR draft #681 e aprovada no gate funcional hospedado.
+- Status: implementada e incorporada à `main` pelo PR #672; correção localizada do contrato de cardinalidade aprovada no PR draft #681, com gate funcional e inspeção final do Estrategista aprovados; somente o merge humano permanece pendente.
 - Ocorrência corretiva de 03/08/2026:
   - a evolução do perfil foi rejeitada de forma fail-closed como `coverage_identity_count_invalid`, sob o Request ID `c2287d63-0ff9-4fe5-8bc0-641f1e387a7a`;
   - o perfil `active v1` permaneceu preservado e nenhum `draft v2` foi criado;
@@ -459,8 +459,8 @@
 
 - Preservar o PR #669 incorporado, sem revertê-lo.
 - Preservar o PR #672 incorporado e não reutilizá-lo para a correção de cardinalidade.
-- Manter a correção em PR draft exclusivo até a inspeção do Estrategista e a revisão independente do Analista sobre schema, prompt, regressões, observabilidade e limites.
-- Considerar concluído o gate funcional único no Preview do HEAD `e6f694454b11388f30355ddbf231bb8350ecef1f`, sem repetir a chamada à OpenAI; manter o PR draft até a inspeção final e o merge humano.
+- Considerar aprovadas a correção técnica, o gate funcional único no Preview do HEAD `e6f694454b11388f30355ddbf231bb8350ecef1f` e a inspeção final do Estrategista, sem repetir a chamada à OpenAI.
+- Manter o PR draft; somente o merge humano permanece pendente.
 - Preservar `vercel#1 — AI Gateway` e `supa#63 — rlsautotest` apenas como oportunidades estratégicas condicionais.
 
 ## 4. Escopo negativo e critérios de parada
@@ -517,12 +517,5 @@
 
 ### 4.4. Critérios de encerramento do plano
 
-- O plano v2.8 será encerrado somente após:
-  - decisão conceitual aprovada;
-  - implementação da E12.4.3.2;
-  - migration incremental da implementação histórica incorporada pelo PR #663 aplicada e verificada; o PR #672 e a correção de cardinalidade não contêm nem exigem nova migration;
-  - validações técnicas e visuais aprovadas;
-  - pendência da E12.4.4 e questões ainda não decididas da E19.4 registradas nos documentos próprios;
-  - reconciliação documental pelo Prompt ABC;
-  - merge humano;
-  - confirmação do estado final no ambiente alvo.
+- O plano v2.9 está tecnicamente concluído, com decisão conceitual, implementação, migration histórica, validações técnicas e visuais, registro das pendências futuras e reconciliação documental aprovados.
+- Permanece pendente somente o merge humano.

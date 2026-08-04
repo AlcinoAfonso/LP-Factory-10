@@ -1469,7 +1469,7 @@ Repositório — Ajustados
 
 12.4 Gestão do perfil de orientação
 - Objetivo: Definir a operação administrativa do perfil de orientação que direciona gerações futuras de landing pages sem materializar nem alterar LPs.
-- Status: E12.4.3, E12.4.3.1 e E12.4.3.2 concluídas e integradas à `main`; correção localizada do contrato de cardinalidade concluída no PR draft #681, com gate funcional único no Preview aprovado e inspeção final ainda pendente.
+- Status: E12.4.3, E12.4.3.1 e E12.4.3.2 concluídas e integradas à `main`; correção técnica aprovada no PR draft #681, gate funcional único no Preview aprovado e inspeção final do Estrategista aprovada; somente o merge humano permanece pendente.
 
 12.4.1 Objetivo e status
 - Objetivo: Entregar a operação manual completa de criação, edição, revisão, ativação e arquivamento de versões do perfil, com proposta opcional por IA no mesmo editor.
@@ -1503,7 +1503,7 @@ Repositório — Ajustados
   - Não existe conversa persistente, histórico de mensagens, agente ou memória própria.
 
 12.4.3.2 Criação e evolução estrutural baseada em `lp_sections`, catálogo vigente e debate humano–IA
-- Status: Implementada e integrada à `main` pelo PR #672; correção localizada de cardinalidade concluída e aprovada no Preview do HEAD funcional `e6f694454b11388f30355ddbf231bb8350ecef1f`, sem banco ou migration e sem reabrir lifecycle.
+- Status: Implementada e integrada à `main` pelo PR #672; correção localizada de cardinalidade aprovada no Preview do HEAD funcional `e6f694454b11388f30355ddbf231bb8350ecef1f`, com inspeção final do Estrategista aprovada e somente o merge humano pendente, sem banco ou migration e sem reabrir lifecycle.
 - Conteúdo:
   - Sem perfil próprio, a ação será `Criar perfil com IA`; com perfil `active` próprio, será `Evoluir perfil com IA`; o fluxo manual permanece completo.
   - A evolução inicializará o editor da nova versão com a estrutura ativa completa como baseline não persistido e revalidará cada recomendação contra as versões vigentes da E10.8 e da E18.5.
