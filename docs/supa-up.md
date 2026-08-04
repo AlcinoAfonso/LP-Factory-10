@@ -6,8 +6,8 @@
 
 - O badge/título de cada item representa a maturidade/estado do recurso na plataforma Supabase, quando aplicável.
 - Este documento não é histórico completo de updates da Supabase.
-- O catálogo deve manter apenas recursos ainda aproveitáveis pelo LP Factory 10.
-- Itens removidos por estarem globais, absorvidos, duplicados, deprecados ou superados não têm seus IDs reutilizados.
+- O documento mantém o catálogo ativo e registros históricos compactos necessários à rastreabilidade do projeto.
+- Todo ID publicado permanece localizável; IDs absorvidos, implementados, rejeitados, deprecados ou superados não são apagados nem reutilizados.
 
 ---
 
@@ -21,7 +21,7 @@ Esse identificador deve ser usado no roadmap, Base Técnica, briefings, relatór
 
 Este documento deve manter apenas recursos Supabase que ainda possam ser aproveitados pelo Gestor de Updates em algum caso atual, futuro ou condicional.
 
-Itens já implementados globalmente, absorvidos pela Base Técnica, superados, duplicados ou deprecados não permanecem no catálogo ativo.
+Itens já implementados globalmente, absorvidos pela Base Técnica, superados, duplicados ou deprecados podem sair do catálogo ativo, mas permanecem como registro histórico com estado final, evidências, recortes e eventual substituto.
 
 Recursos pagos, enterprise ou futuros podem permanecer quando ainda tiverem aproveitamento possível em algum caso específico.
 
@@ -226,6 +226,22 @@ Criação e merge de branches diretamente no dashboard Supabase.
 
 ---
 
+## 7 — Build via Figma *(⚪ Registro histórico — não adotado)*
+
+2025-08-25  
+Reavaliado em 2026-08-04
+
+### Estado e rastreabilidade
+
+- Estado final: não implementado; retirado do catálogo ativo.
+- Evidência: não há Figma Make nem geração de backend Supabase no repositório.
+- Motivo: o item original não demonstrou superioridade sobre o repositório, o catálogo de módulos e o fluxo de design existentes.
+- Preservação estratégica: ferramentas de design-to-code continuam avaliáveis no catálogo competente quando houver caso, sem reativar este ID por modernidade.
+- Recortes aplicados: nenhum.
+- O ID permanece histórico e não pode ser reutilizado.
+
+---
+
 ## 8 — Storage 500 GB + Egress 3× Mais Barato *(🟦 Estável)*  
 
 2025-08-30  
@@ -282,6 +298,21 @@ Permite arquivos persistentes dentro de funções edge.
 
 ---
 
+## 10 — Supabase Platform Kit (UI) *(⚪ Registro histórico — não adotado)*
+
+2025-09-15  
+Reavaliado em 2026-08-04
+
+### Estado e rastreabilidade
+
+- Estado final: não implementado; retirado do catálogo ativo.
+- Evidência: o projeto utiliza design system e shadcn/ui próprios e não oferece projetos Supabase aos seus usuários.
+- Motivo: o Platform Kit não substitui o design system do produto e atende outro caso de plataforma.
+- Recortes aplicados: nenhum.
+- O ID permanece histórico e não pode ser reutilizado.
+
+---
+
 ## 12 — Algolia Connector *(🟦 Estável; adoção condicional)*
 
 2025-09-25  
@@ -325,6 +356,107 @@ Avaliar somente quando houver busca de produto aprovada e:
 ### Fonte Oficial
 
 - [Supabase Blog — Algolia Connector for Supabase](https://supabase.com/blog/algolia-connector-for-supabase)
+
+---
+
+## 14 — Edge Functions Cache Layer *(⚪ Registro histórico — capacidade não validada)*
+
+2025-10-01  
+Reavaliado em 2026-08-04
+
+### Estado e rastreabilidade
+
+- Estado final: não validado como recurso oficial integrado com TTL e invalidação por evento.
+- Evidência: a pesquisa oficial não confirmou a capacidade descrita no registro original; alternativas externas de cache não equivalem ao item.
+- Recortes aplicados: nenhum.
+- O ID permanece histórico e não autoriza criar cache ou infraestrutura.
+
+---
+
+## 15 — Observabilidade com AI *(⚪ Registro histórico — absorvido)*
+
+2025-10-05  
+Reavaliado em 2026-08-04
+
+### Estado e rastreabilidade
+
+- Estado final: absorvido por `supa#5` e `supa#41`.
+- Evidência: Unified Logs e Supabase AI Assistant cobrem separadamente logs e assistência; não foi validado produto autônomo com o escopo original.
+- Recortes aplicados: nenhum como recurso independente.
+- O ID permanece histórico e não pode ser reutilizado.
+
+---
+
+## 16 — Remote MCP Server *(⚪ Registro histórico — absorvido)*
+
+2025-10-10  
+Reavaliado em 2026-08-04
+
+### Estado e rastreabilidade
+
+- Estado final: absorvido por `supa#59`.
+- Evidência: a governança atual de MCP e Agent Skills está registrada no item substituto; o LPF Supabase Inspect MCP é serviço próprio e não prova adoção deste item original.
+- Recortes relacionados: governança MCP em `docs/gestor-codex.md` e service de inspeção read-only.
+- O ID permanece histórico e não pode ser reutilizado.
+
+---
+
+## 18 — AI Reasoning no Dashboard *(⚪ Registro histórico — absorvido)*
+
+2025-10-14  
+Reavaliado em 2026-08-04
+
+### Estado e rastreabilidade
+
+- Estado final: absorvido por `supa#41`.
+- Evidência: o Supabase AI Assistant é a capacidade oficial identificada; não foi validado módulo separado com o escopo original.
+- Recortes aplicados: nenhum como recurso independente.
+- O ID permanece histórico e não pode ser reutilizado.
+
+---
+
+## 19 — Tracking e Analytics Interno *(🟨 Implementação parcial; transferido para produto)*
+
+2025-10-20  
+Reavaliado em 2026-08-04
+
+### Estado e rastreabilidade
+
+- Estado: tracking canônico implementado parcialmente; analytics interno agregado e automações não implementados.
+- Evidência: a E10.6 registra `commercial_page_view`, `commercial_primary_cta_click` e `commercial_plan_cta_click`; não há `events_analytics` nem views agregadas.
+- Relação atual: a evolução estratégica de microeventos, remarketing e follow-up permanece em `prod#15`; este item não é tratado como update oficial autônomo do Supabase.
+- Horizonte: posterior ao Starter, a definir pelo Estrategista.
+- O ID permanece como referência histórica do recorte parcial.
+
+---
+
+## 20 — Bundles de Grants por Plano *(🟨 Implementado parcialmente; arquitetura evoluída)*
+
+2025-11-12  
+Reavaliado em 2026-08-04
+
+### Estado e rastreabilidade
+
+- Estado: implementado parcialmente por casos de uso; o modelo comercial evoluiu para entitlements locais.
+- Evidência: `docs/base-tecnica.md` mantém `get_feature(account_id, feature_key)`; E9 implementou `account_commercial_entitlements` e a view efetiva, sem confirmar a tabela `model_grants` proposta originalmente.
+- Recortes: E9.4, E9.8 e evolução comercial da E9.
+- Limite: não declarar implementação integral do desenho original nem criar `model_grants` por causa deste registro.
+- O ID permanece rastreável para explicar a evolução de grants para entitlements.
+
+---
+
+## 25 — Política de Dados: TTL Graduado (LGPD + Remarketing) *(⚪ Registro histórico — proposta não implementada)*
+
+2025-11-12  
+Reavaliado em 2026-08-04
+
+### Estado e rastreabilidade
+
+- Estado: não implementado; retirado do catálogo ativo como proposta interna, não como rejeição definitiva do valor.
+- Evidência: não há `visitor_identifiers`, `events_raw`, `metrics_daily`, jobs de TTL ou rotação de salts correspondentes.
+- Horizonte: reavaliar apenas junto de tracking, consentimento, remarketing e requisitos reais de retenção.
+- Limite: prazos de retenção dependem de finalidade, base legal e desenho aprovado; o registro não define política LGPD.
+- O ID permanece histórico e não pode ser reutilizado.
 
 ---
 
@@ -372,6 +504,68 @@ Reavaliar apenas quando colaboração, preview simultâneo ou recuperação de e
 2. Aguardar maturidade do Replay.
 3. Quando houver caso aprovado para Replay, pesquisar novamente sua maturidade, consumo de mensagens e alternativas de sincronização.
 4. Avaliar Broadcast binário separadamente apenas se surgir necessidade real de transporte binário.
+
+---
+
+## 27 — Camada Inteligente de Remarketing *(🟨 Registro estratégico transferido para produto)*
+
+2025-11-10  
+Reavaliado em 2026-08-04
+
+### Estado e rastreabilidade
+
+- Estado: não implementado; capacidade estratégica preservada em `prod#15`.
+- Evidência: não há `remarketing_settings`, pixels centralizados, integração RD Station ou Meta correspondente.
+- Horizonte: posterior ao tracking mínimo, potencialmente Lite/Pro, sujeito à decisão do Estrategista.
+- Limite: não criar tabelas, scripts ou automações por causa deste registro.
+- O ID permanece histórico para preservar a origem da proposta.
+
+---
+
+## 28 — Integração HubSpot ↔ RD Station *(⚪ Registro histórico — condicional)*
+
+2025-11-10  
+Reavaliado em 2026-08-04
+
+### Estado e rastreabilidade
+
+- Estado: não implementado; fora do catálogo ativo por não ser update oficial do Supabase.
+- Evidência: não há HubSpot, RD Station, rota de sincronização ou fila correspondente no projeto.
+- Preservação estratégica: integração com CRM pode ser reavaliada no catálogo de produto ou automações quando houver cliente e sistema-alvo reais.
+- O ID permanece histórico e não pode ser reutilizado.
+
+---
+
+## 29 — Changelog Técnico Automatizável (Triggers & Policies) *(⚪ Registro histórico — não implementado)*
+
+2025-11-11  
+Reavaliado em 2026-08-04
+
+### Estado e rastreabilidade
+
+- Estado: desenho interno não implementado como descrito.
+- Evidência: não há cabeçalhos YAML, função coletora nem changelog automatizado correspondente; migrations e Git já preservam rastreabilidade técnica por mecanismos próprios.
+- Gatilho: reavaliar somente se auditoria de migrations demonstrar lacuna concreta.
+- O ID permanece histórico e não autoriza workflow, função ou tabela.
+
+---
+
+## 30 — Auth Email Templates *(✅ Implementado em recortes)*
+
+2025-12-01  
+Atualizado em 2026-08-04
+
+### Estado e rastreabilidade
+
+- Estado: implementado no recorte de convites da E11; outros templates e alertas permanecem condicionais.
+- Evidência: `docs/platform-config.md` registra o template nativo `Invite user` em português, transporte por `{{ .RedirectTo }}` e uso de `inviteUserByEmail`; as matrizes E11 e E11.2 registram o update como incorporado.
+- Recortes: E11.1.7 e E11.2.
+- Escopo remanescente: revisar reset de senha e alertas somente quando houver caso e validação próprios.
+- Limite: preservar o envio nativo; o registro não autoriza e-mail customizado no Core.
+
+### Fonte Oficial
+
+- [Supabase Docs — Email Templates](https://supabase.com/docs/guides/auth/auth-email-templates)
 
 ---
 
@@ -531,6 +725,25 @@ Recurso/integração do **index_advisor** para ajudar a identificar índices fal
 ### Ações Recomendadas  
 
 1. Adotar como checklist em incidentes de lentidão antes de mexer em arquitetura.
+
+---
+
+## 37 — Geração de tipos Python via Supabase CLI *(🟨 Futuro condicional)*
+
+2026-01-08  
+Reavaliado em 2026-08-04
+
+### Estado e rastreabilidade
+
+- Estado: não implementado; preservado como capacidade oficial condicional.
+- Evidência: não há serviço Python aprovado no projeto; a stack atual é TypeScript.
+- Horizonte: Pro/Ultra ou indefinido, apenas se surgir serviço Python real.
+- Gatilho: adotar somente quando um serviço Python aprovado consumir o schema Supabase e tipos gerados reduzirem risco de contrato.
+- Limite: não criar serviço, dependência ou pipeline Python por causa deste registro.
+
+### Fonte Oficial
+
+- [Supabase Docs — Generating Python Types](https://supabase.com/docs/guides/api/rest/generating-python-types)
 
 ---
 
@@ -1612,43 +1825,57 @@ Avaliar somente quando houver:
 
 ---
 
+## 67 — Depreciação de version pinning em extensões *(🟦 Mudança operacional)*
+
+2026-07-22  
+Catalogado em 2026-08-04
+
+### Status no Projeto
+
+- Status: aplicável como verificação de migrations; nenhuma mudança técnica autorizada nesta rodada.
+- Evidência: a Supabase anunciou que, a partir de 05/08/2026, versões explícitas em `create extension` e `alter extension ... update` passam a ser ignoradas com aviso; futura rejeição será anunciada separadamente.
+- Relação com a stack: afeta somente migrations que tentem fixar ou atualizar extensão para versão específica.
+- Horizonte: atual, como regra preventiva de revisão.
+
+### Valor para o Projeto
+
+- Evita confiar em pinning que a plataforma não aplicará.
+- Reduz risco de migration parecer instalar versão específica quando a versão default foi usada.
+
+### Ações Recomendadas
+
+1. Em recorte técnico próprio, buscar cláusulas explícitas de versão nas migrations antes de alterar qualquer arquivo.
+2. Em novas migrations, não depender de version pinning para extensões hospedadas.
+3. Tratar a versão default efetiva como estado de plataforma a ser verificado, não presumido.
+
+### Limites
+
+- Extensões já instaladas não são alteradas por este anúncio.
+- Não executar `alter extension`, migration ou mudança de ambiente nesta rodada.
+- Self-hosted não é afetado segundo a fonte oficial.
+
+### Fonte Oficial
+
+- [Supabase Changelog — Extension version pinning is deprecated](https://supabase.com/changelog/extension-version-pinning-ignored)
+
+---
+
 ## Registro da rodada — Supabase Update August 2026
 
-### Updates incorporados ao catálogo ativo
+### Updates ajustados ou incorporados
 
-- `supa#5`: corrigido para Unified Logs em open beta, sem alegação de AI Debugging.
-- `supa#12`: preservado como alternativa condicional ao Postgres, com hipótese de superioridade e gatilho.
-- `supa#32`: alinhado ao Stripe Sync Engine mantido pela Stripe e ao webhook/entitlement já aprovados.
-- `supa#33`: incorporada a integração Grafana Cloud baseada na Metrics API.
-- `supa#39`: ausência de consumidor GraphQL confirmada; retirada permanece em recorte técnico próprio.
-- `supa#41`: consolidado como Supabase AI Assistant, absorvendo descrições duplicadas.
-- `supa#59`: Supabase Evals incorporado como evidência de governança, sem adoção de suíte própria.
-- `supa#62`: incorporado Sign in with ChatGPT e esclarecida a separação do Auth do produto.
-- Passkeys: criado `supa#65`, condicionado a métrica real de atrito/segurança e maturidade.
-- CipherStash: criado `supa#66`, condicionado a requisito regulatório ou contratual concreto.
+- `supa#5`, `supa#12`, `supa#32`, `supa#33`, `supa#39`, `supa#41`, `supa#59` e `supa#62` foram reconciliados com fontes oficiais e o estado do projeto.
+- `supa#65` e `supa#66` foram adicionados como capacidades condicionais.
+- `supa#67` foi adicionado para registrar a depreciação de version pinning em extensões.
 
-### Itens removidos do catálogo ativo
+### IDs preservados por rastreabilidade
 
-- `supa#7`: Figma Make cria backends a partir de protótipos e não possui hipótese de superioridade para o repositório existente.
-- `supa#10`: Platform Kit serve a plataformas que oferecem projetos Supabase a usuários e não substitui shadcn/ui.
-- `supa#14`: não foi encontrada capacidade oficial integrada de cache com TTL/event bust; a documentação atual recomenda cache externo.
-- `supa#15` e `supa#18`: descrições duplicadas ou não distintas, absorvidas pelo `supa#5` e `supa#41`.
-- `supa#16`: Remote MCP Server absorvido pela governança atual do `supa#59`.
-- `supa#19`, `supa#20`, `supa#25`, `supa#27`, `supa#28` e `supa#29`: propostas internas de tabelas, jobs, rotas ou automações, não updates oficiais da plataforma.
-- `supa#30`: templates de Auth já configurados e absorvidos por `docs/platform-config.md` e pela Base Técnica.
-- `supa#37`: geração de tipos Python sem serviço Python aprovado nem hipótese de superioridade sobre a stack TypeScript.
-
-Os IDs removidos permanecem aposentados e não serão reutilizados.
-
-### Updates avaliados e não adicionados
-
-- Extension version pinning: o repositório não fixa versão explícita nas migrations de extensão; mudança operacional sem item permanente.
-- Lockdown do schema `realtime`: não há objeto ou mutação do projeto nesse schema; nenhuma ação atual.
-- Supabase Evals: não recebeu ID próprio por estar absorvido como evidência do `supa#59`.
-- Sign in with ChatGPT: não recebeu ID próprio por complementar a integração `supa#62` e não ser Auth do produto.
-- Grafana Cloud: não recebeu ID próprio por ser a evolução operacional da Metrics API em `supa#33`.
-- Unified Logs: não recebeu ID novo por corrigir e evoluir `supa#5`.
-- Figma Make, Platform Kit, Python types e propostas internas não foram rejeitados somente por estarem fora do MVP; faltou compatibilidade, natureza de update oficial ou hipótese concreta de superioridade.
+- `supa#7`, `supa#10`, `supa#14`, `supa#15`, `supa#16` e `supa#18` permanecem como registros históricos com estado final ou item substituto.
+- `supa#19` preserva a implementação parcial do tracking canônico e sua transferência estratégica para `prod#15`.
+- `supa#20` preserva a evolução parcial de grants para o modelo local de entitlements.
+- `supa#25`, `supa#27`, `supa#28` e `supa#29` permanecem rastreáveis como propostas internas não implementadas ou transferidas.
+- `supa#30` registra a implementação dos templates nativos no recorte E11.
+- `supa#37` permanece como capacidade oficial condicional para eventual serviço Python.
 
 ### Pontos não validados e lacunas documentais
 
@@ -1656,6 +1883,13 @@ Os IDs removidos permanecem aposentados e não serão reutilizados.
 - `pg_graphql`: retirada do ambiente, config e documentação depende de fase técnica separada.
 - Passkeys e CipherStash: preços, maturidade operacional e adequação só devem ser levantados se os gatilhos ocorrerem.
 - Grafana Cloud: acesso, retenção e responsabilidade operacional ainda não definidos.
+- Version pinning: a presença de cláusulas explícitas nas migrations deve ser confirmada em recorte técnico antes de qualquer ajuste.
+
+### Validação de IDs
+
+- Nenhum ID publicado desapareceu, foi renumerado ou reutilizado.
+- Implementação, absorção, rejeição ou distância do Starter não foram tratadas como autorização para apagar referências.
+- Registros históricos não autorizam implementação nem reativam propostas superadas.
 
 ### Limite da rodada
 
