@@ -38,7 +38,6 @@ export async function getActivePrimaryAccountTaxon(input: {
       .eq("account_id", input.accountId)
       .eq("is_primary", true)
       .eq("status", ACCOUNT_TAXONOMY_STATUS)
-      .limit(1)
       .maybeSingle();
 
     if (primaryError) {
@@ -141,7 +140,6 @@ async function upsertPrimaryAccountTaxonomyLink(input: {
       .eq("account_id", input.accountId)
       .eq("is_primary", true)
       .eq("status", ACCOUNT_TAXONOMY_STATUS)
-      .limit(1)
       .maybeSingle();
 
     if (existingPrimaryError) {

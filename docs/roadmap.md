@@ -2,7 +2,7 @@
 
 0.1 Cabeçalho
 • Data: 04/08/2026
-• Versão: v1.5.121
+• Versão: v1.5.122
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -812,6 +812,9 @@
 • `account_taxonomy` é o vínculo oficial da conta com taxon aprovado.
 • Gravação automática apenas em alta confiança determinística.
 • Não substitui automaticamente vínculo primário diferente.
+• O banco garante no máximo um vínculo com `is_primary = true` e `status = 'active'` por conta; zero primários ativos e múltiplos vínculos não primários ou inativos permanecem permitidos.
+• As leituras de primário ativo não limitam o resultado antes de `maybeSingle()`: zero continua ausência e cardinalidade maior que um falha fechada, sem escolha silenciosa.
+• Artefatos: `supabase/migrations/20260804201831_account_taxonomy_one_active_primary.sql`, `supabase/tests/account_taxonomy_one_active_primary.test.sql`, `supabase/snippets/account_taxonomy_one_active_primary_verify.sql` e `lib/onboarding/niche-resolution/adapters/accountTaxonomyAdapter.ts`.
 
 10.5.6.5 IA estruturada e persistência `ai_*`
 • Status: Concluído
@@ -1469,7 +1472,7 @@ Repositório — Ajustados
 
 12.4 Gestão do perfil de orientação
 - Objetivo: Definir a operação administrativa do perfil de orientação que direciona gerações futuras de landing pages sem materializar nem alterar LPs.
-- Status: E12.4.3, E12.4.3.1 e E12.4.3.2 concluídas e integradas à `main`; correção técnica aprovada no PR draft #681, gate funcional único no Preview aprovado e inspeção final do Estrategista aprovada; somente o merge humano permanece pendente.
+- Status: E12.4.3, E12.4.3.1 e E12.4.3.2 concluídas e integradas à `main`, incluindo a correção técnica do PR #681; gate funcional único no Preview e inspeção final do Estrategista aprovados.
 
 12.4.1 Objetivo e status
 - Objetivo: Entregar a operação manual completa de criação, edição, revisão, ativação e arquivamento de versões do perfil, com proposta opcional por IA no mesmo editor.
@@ -1485,7 +1488,7 @@ Repositório — Ajustados
   - A E12.4.3 reutiliza o contrato e a persistência da E20.3 sem alterar o resolver público do perfil ativo próprio ou herdado.
   - Dependência técnica atendida em 28/07/2026: PR #655 mergeado, branch sincronizada com a `main` e `next`/`eslint-config-next` confirmados em `16.2.11` no lockfile antes da implementação.
   - A proposta por IA exige resolução completa da E10.8 e identidades públicas vigentes da E18.5; ausência ou indisponibilidade da assistência não bloqueia o fluxo manual.
-  - E12.4.4 e subseções posteriores, autorização por conta, geração, materialização, preview, publicação e alteração de LP permanecem fora do recorte.
+  - A E12.4.4 foi retirada da implementação e absorvida pela jornada simplificada; geração, materialização, preview, publicação e alteração de LP permanecem fora do recorte.
 - Registros de implementação:
   - Admin Dashboard: listagem e editor em `app/admin/(protected)/perfis-de-orientacao/`, com salvar draft, ativar e arquivar protegidos por `platform_admin`.
   - Boundary e adapters: contratos administrativos, validação estrita, correlação da proposta, acesso server-only e integração opcional com Responses API em `lib/conversion-content/`.
@@ -1503,7 +1506,7 @@ Repositório — Ajustados
   - Não existe conversa persistente, histórico de mensagens, agente ou memória própria.
 
 12.4.3.2 Criação e evolução estrutural baseada em `lp_sections`, catálogo vigente e debate humano–IA
-- Status: Implementada e integrada à `main` pelo PR #672; correção localizada de cardinalidade aprovada no Preview do HEAD funcional `e6f694454b11388f30355ddbf231bb8350ecef1f`, com inspeção final do Estrategista aprovada e somente o merge humano pendente, sem banco ou migration e sem reabrir lifecycle.
+- Status: Implementada e integrada à `main` pelo PR #672, com correção localizada de cardinalidade integrada pelo PR #681; gate funcional no HEAD `e6f694454b11388f30355ddbf231bb8350ecef1f` e inspeção final do Estrategista aprovados, sem banco ou migration e sem reabrir lifecycle.
 - Conteúdo:
   - Sem perfil próprio, a ação será `Criar perfil com IA`; com perfil `active` próprio, será `Evoluir perfil com IA`; o fluxo manual permanece completo.
   - A evolução inicializará o editor da nova versão com a estrutura ativa completa como baseline não persistido e revalidará cada recomendação contra as versões vigentes da E10.8 e da E18.5.
@@ -1517,8 +1520,8 @@ Repositório — Ajustados
   - Aplicar alterará somente o editor; `Salvar rascunho`, aprovação, ativação e arquivamento continuarão separados e humanos.
   - A pesquisa bruta será contexto complementar opcional, resolvido pela proveniência efetiva da E10.8 e incluído apenas quando existir e couber integralmente no limite da requisição; ausência ou omissão não criarão gate.
   - A IA não preencherá nem modificará `generation_guidance` ou `item_guidance`, que serão exceções humanas opcionais.
-  - A decisão `wait_for_modules` ou `proceed_with_available` será registrada no evento de auditoria do rascunho; aguardar bloqueará ativação.
-  - A E12.4.4 recalculará os gaps antes da prontidão, sem nova tabela neste recorte.
+  - A decisão `wait_for_modules` ou `proceed_with_available` é registrada no evento de auditoria do rascunho; `wait_for_modules` bloqueia a ativação e `proceed_with_available` permite a ativação com a decisão auditada.
+  - Não existe dependência futura de recálculo dos gaps pela E12.4.4 nem novo gate de autorização por conta.
   - A evolução E20.3.5 tornará `generation_guidance` opcional no mesmo PR técnico, sem reabrir E20.3.3 ou E20.3.4.
   - Snapshot e independência da LP permanecem consolidados; liberdade de edição e comportamento de regeneração serão decididos apenas no futuro plano-base da E19.4.
   - Registros da implementação candidata:
@@ -1532,18 +1535,16 @@ Repositório — Ajustados
   - Substituir a digitação livre de módulo e variante por seleção vinculada ao catálogo público vigente.
   - Derivar automaticamente as versões de módulo e variante, ou apresentá-las como somente leitura, evitando entrada numérica livre.
   - Desabilitar `Salvar rascunho` quando o editor não possuir alterações pendentes.
-  - Avaliar, no documento próprio da E10.8 ou no recálculo previsto da E12.4.4, se `formato_medio` e `formato_longo` devem permanecer como itens de `lp_sections`.
+  - Avaliar no documento próprio da E10.8 se `formato_medio` e `formato_longo` devem permanecer como itens de `lp_sections`.
   - Os gaps de `formato_medio` e `formato_longo` não autorizam automaticamente a criação de módulo ou variante na E18.5.
 
 12.4.4 Prontidão, autorização e revogação por conta, taxon e plano
-- Status: Planejada; não implementada no PR #681.
-- Objetivo: Recalcular e classificar as pendências antes da prontidão e da autorização, preservando revogação explícita por conta, taxon e plano.
-- Classificação futura obrigatória:
-  - gaps de módulo ou variante;
-  - problemas de pesquisa ou modelagem;
-  - requisitos globais de composição não representados integralmente pelo catálogo modular.
-- Evidência factual para o recálculo futuro: no gate funcional da correção, `rodape_contato` foi classificado como `covered`, com compatíveis `final_cta.standard` e `trust_bar.standard` e escolha `final_cta.standard`; a avaliação humana registrou possível necessidade global de composição.
-- Limite: essa evidência não antecipa a classificação da E12.4.4 e não autoriza criação automática de módulo ou variante, alteração da E18.5 ou implementação neste PR.
+- Status: Retirada da implementação e absorvida pela jornada simplificada; não concluída.
+- Conteúdo:
+  - A decisão sobre gaps permanece no lifecycle vigente da E12.4.3.2: `wait_for_modules` bloqueia a ativação e `proceed_with_available` permite a ativação com auditoria.
+  - Não haverá recálculo posterior obrigatório dos gaps, prontidão persistida, autorização ou revogação por `conta + taxon + plano` neste recorte.
+  - A jornada futura não depende da implementação da E12.4.4 e não cria novo gate de autorização por conta.
+  - A observação sobre `rodape_contato` não autoriza criação automática de módulo ou variante nem alteração da E18.5.
 
 13. E13 — Partner Dashboard
 
@@ -2361,6 +2362,8 @@ Repositório — Ajustados
   * Não criar novo campo, estado, tabela, resolver ou infraestrutura e não reabrir E20.3.3 ou E20.3.4.
 
 99. Changelog
+v1.5.122 — 04/08/2026 — Garantido no máximo um taxon primário ativo por conta e reconciliada a retirada da E12.4.4 da implementação.
+
 v1.5.121 — 04/08/2026 — Concluída documentalmente a correção de cardinalidade da E12.4.3.2 após gate funcional aprovado; registrada a E12.4.4 para classificar gaps modulares, problemas de pesquisa ou modelagem e requisitos globais de composição, sem implementação no PR #681.
 
 v1.5.118 — 03/08/2026 — Registrada a correção localizada do contrato de cardinalidade da evolução do perfil com IA, preservando validação fail-closed, `active v1`, ausência de retry e gate único no Preview após revisão independente.

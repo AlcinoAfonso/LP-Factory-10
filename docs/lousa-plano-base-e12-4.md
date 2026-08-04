@@ -1,8 +1,8 @@
 # Plano-base — E12.4 — Gestão do perfil de orientação
 
 - Data: 04/08/2026.
-- Versão: v2.9.
-- Status: E12.4.3, E12.4.3.1 e E12.4.3.2 implementadas e incorporadas à `main` pelo PR #672; correção técnica aprovada no PR draft #681, gate funcional hospedado aprovado e inspeção final do Estrategista aprovada; somente o merge humano permanece pendente.
+- Versão: v2.10.
+- Status: E12.4.3, E12.4.3.1 e E12.4.3.2 implementadas e incorporadas à `main`, incluindo a correção técnica do PR #681; gate funcional hospedado e inspeção final do Estrategista aprovados. A E12.4.4 foi retirada da implementação e absorvida pela jornada simplificada, sem ser concluída.
 - Recorte previsto para o roadmap: `12.4 — Gestão do perfil de orientação`.
 - Recorte executável inicial: `12.4.3 — Proposta, revisão, aprovação e ativação do perfil`.
 - Recorte corretivo planejado: `12.4.3.2 — Criação e evolução estrutural baseada em lp_sections, catálogo vigente e debate humano–IA`.
@@ -89,7 +89,7 @@
   - prosseguir com os disponíveis, mantendo aviso explícito da pendência.
 - E18.4, E18.5, E10.8 e o perfil orientam somente a geração inicial.
 - Depois de materializada, a LP pertence à conta e permanece independente dessas fontes; mudanças nelas não alteram nem governam automaticamente a LP existente.
-- A E12.4.4 e a E19.4 permanecem fora da implementação deste plano, com pendências explícitas registradas em 1.4.
+- A E12.4.4 foi retirada da implementação e absorvida pela jornada simplificada, sem ser concluída; a E19.4 permanece fora da implementação deste plano.
 
 ### 1.4. Fronteiras de responsabilidade
 
@@ -97,12 +97,9 @@
 - E18.4 e E18.5 fornecem limites e identidades vigentes para a geração inicial; a E12.4.3.2 não os redefine nem cria módulos.
 - Tornar `generation_guidance` opcional altera o contrato de domínio da E20.3; a evolução é formalizada na E20.3.5 e implementada no mesmo PR técnico da E12.4.3.2.
 - E12.4.3.2 corrige a criação e o refinamento estrutural do perfil no Admin Dashboard.
-- E12.4.4 deverá, obrigatoriamente:
-  - recalcular ou recuperar os gaps antes de autorizar geração;
-  - registrar adiamento com justificativa, impacto, responsável e condição de retomada;
-  - classificar se o gap é impeditivo;
-  - bloquear autorização enquanto houver gap impeditivo;
-  - verificar incompatibilidades entre exceções humanas e os contratos usados na geração inicial.
+- A E12.4.4 não será implementada neste fluxo e não constitui dependência futura de recálculo ou reclassificação de gaps.
+- A decisão do lifecycle vigente é suficiente: `wait_for_modules` bloqueia a ativação e `proceed_with_available` permite a ativação com a decisão auditada.
+- Não existe novo gate de autorização ou revogação por conta; validações dos consumidores futuros permanecem nos domínios responsáveis.
 - O snapshot das fontes e a independência da LP materializada permanecem decisões consolidadas para consumo futuro pela E19.4.
 - O futuro plano-base da E19.4 deverá decidir, sem antecipação neste plano:
   - quais edições o cliente poderá fazer após a materialização;
@@ -160,7 +157,7 @@
   - `Prosseguir com os disponíveis` usa somente recomendações válidas e mantém aviso visível na sessão corrente;
   - nenhuma nova tabela é criada e os gaps não integram as tabelas do perfil;
   - ao salvar o rascunho, registrar no evento de auditoria vigente a decisão `wait_for_modules` ou `proceed_with_available`, os `item_key` afetados, quantidade de gaps, impacto resumido, versões das fontes usadas e, quando utilizada, referência segura da pesquisa bruta com path, versão declarada, commit ou blob, público e taxon de origem;
-  - a auditoria preserva a decisão, mas não substitui o recálculo obrigatório dos gaps pela E12.4.4 antes da prontidão.
+  - a auditoria preserva a decisão do lifecycle; não existe recálculo obrigatório posterior pela E12.4.4.
 - Validação:
   - validar taxon, agregado, identidades e versões antes de salvar, ativar ou arquivar;
   - rejeitar saída ou mutação incompatível sem alterar o `draft` nem o `active`.
@@ -214,7 +211,7 @@
 - Prioridade e ordem permanecem orientativas e nenhum campo transforma módulo em obrigatório.
 - Identidade ausente ou incompatível falha fechado e não é criada ou corrigida automaticamente.
 - A E12.4.3.2 não interpreta semanticamente as exceções humanas nem permite que alterem E18.4 ou E18.5.
-- Exceção humana incompatível pode permanecer no perfil, mas não autoriza geração: a E12.4.4 deve classificá-la como não pronta e a futura geração deve falhar fechado.
+- Exceção humana incompatível pode permanecer no perfil; ela não cria dependência de recálculo pela E12.4.4, e cada consumidor futuro deve validar seu próprio contrato de forma fail-closed.
 - Os gaps da proposta não são persistidos nas tabelas do perfil neste recorte.
 
 ### 2.3. Lifecycle, atomicidade e auditoria
@@ -301,7 +298,7 @@
 - Quando houver gaps, mostrar seção, prioridade, ordem, motivo e impacto, com:
   - `Aguardar criação dos módulos`;
   - `Prosseguir com os disponíveis`.
-- O aviso permanece visível na sessão corrente quando o humano prosseguir; após recarga, a E12.4.3.2 não promete reconstruí-lo pelas tabelas do perfil, e a E12.4.4 deverá recalcular os gaps.
+- O aviso permanece visível na sessão corrente quando o humano prosseguir; após recarga, a E12.4.3.2 não promete reconstruí-lo pelas tabelas do perfil.
 - Ações visuais:
   - criar nova versão;
   - `Criar perfil com IA` ou `Evoluir perfil com IA`, conforme o contexto;
@@ -405,7 +402,7 @@
 
 #### 3.1.2. E12.4.3.2 — Proposta estrutural baseada em `lp_sections` e delta do catálogo
 
-- Status: implementada e incorporada à `main` pelo PR #672; correção localizada do contrato de cardinalidade aprovada no PR draft #681, com gate funcional e inspeção final do Estrategista aprovados; somente o merge humano permanece pendente.
+- Status: implementada e incorporada à `main` pelo PR #672, com correção localizada do contrato de cardinalidade incorporada pelo PR #681; gate funcional e inspeção final do Estrategista aprovados.
 - Ocorrência corretiva de 03/08/2026:
   - a evolução do perfil foi rejeitada de forma fail-closed como `coverage_identity_count_invalid`, sob o Request ID `c2287d63-0ff9-4fe5-8bc0-641f1e387a7a`;
   - o perfil `active v1` permaneceu preservado e nenhum `draft v2` foi criado;
@@ -416,7 +413,7 @@
   - Request ID `e360a900-082a-4707-9610-ef4f9cdfa2d9`, `proposalMode: evolution`, uma única chamada e resultado `success`;
   - candidata revisada e descartada, sem retry, salvamento ou ativação; somente o perfil `active v1` permaneceu preservado, sem criação de `draft v2`;
   - como observação não bloqueante, `rodape_contato` foi classificado como `covered`, com `compatible_aliases` `final_cta.standard` e `trust_bar.standard` e `selected_aliases` `final_cta.standard`;
-  - a avaliação humana considera `rodape_contato` uma possível necessidade global de composição não integralmente coberta pelo catálogo modular; a E12.4.4 deverá recalcular e classificar o item, sem criação automática de módulo ou variante.
+  - a avaliação humana considera `rodape_contato` uma possível necessidade global de composição não integralmente coberta pelo catálogo modular; a observação não cria dependência de recálculo pela E12.4.4 nem autoriza criação automática de módulo ou variante.
 - Objetivo:
   - corrigir a criação e a evolução estrutural, o debate humano–IA, o contrato da proposta e a opcionalidade das exceções humanas sem refazer o lifecycle entregue.
 - Entregas:
@@ -433,7 +430,7 @@
   - tornar `generation_guidance` opcional por migration incremental;
   - preservar `item_guidance` opcional;
   - impedir alteração de exceções humanas pela IA;
-  - registrar em E12.4.4 a obrigação de recuperar gaps e decidir prontidão;
+  - registrar a retirada da E12.4.4 e a ausência de dependência futura de recálculo de gaps ou autorização por conta;
   - registrar em E19.4 a independência da LP materializada.
 - Critérios de aceite:
   - `coverage[]` avalia exatamente cada item de `lp_sections` como atendido, parcialmente atendido ou faltante e não é persistido;
@@ -445,7 +442,7 @@
   - módulo-base sem variante exige seleção explícita e conflitos de identidade do mesmo módulo falham fechados sem usar prioridade, ordem ou posição;
   - a prioridade de origem é convertida por `3 → P1`, `2 → P2`, `1 → P3` e a ordem final é determinística, positiva e única;
   - gaps exibem seção, motivo, impacto e decisão humana;
-  - a decisão é auditada no salvamento, `wait_for_modules` bloqueia ativação e a E12.4.4 recalcula gaps;
+  - a decisão é auditada no salvamento, `wait_for_modules` bloqueia a ativação e `proceed_with_available` permite a ativação;
   - IA não produz nem altera `generation_guidance` ou `item_guidance`;
   - prosseguir não oculta a pendência e aguardar não cria módulo automaticamente;
   - lifecycle, auditoria e resolver active-only permanecem funcionais;
@@ -460,14 +457,14 @@
 - Preservar o PR #669 incorporado, sem revertê-lo.
 - Preservar o PR #672 incorporado e não reutilizá-lo para a correção de cardinalidade.
 - Considerar aprovadas a correção técnica, o gate funcional único no Preview do HEAD `e6f694454b11388f30355ddbf231bb8350ecef1f` e a inspeção final do Estrategista, sem repetir a chamada à OpenAI.
-- Manter o PR draft; somente o merge humano permanece pendente.
+- Preservar o PR #681 incorporado, sem reabri-lo para esta reconciliação.
 - Preservar `vercel#1 — AI Gateway` e `supa#63 — rlsautotest` apenas como oportunidades estratégicas condicionais.
 
 ## 4. Escopo negativo e critérios de parada
 
 ### 4.1. Escopo negativo
 
-- Implementação da E12.4.4; somente o registro explícito de suas pendências integra este plano.
+- Implementação da E12.4.4, retirada e absorvida pela jornada simplificada sem ser concluída.
 - Autorização ou revogação por conta, taxon e plano.
 - E12.4.5, E12.4.6 e implementação da E19.4; somente o registro da independência da LP integra este plano.
 - Geração, materialização, preview, publicação ou alteração de LP.
@@ -490,7 +487,7 @@
 ### 4.2. Critérios de parada imediata
 
 - Parar e devolver ao Estrategista se:
-  - o fluxo exigir ampliar a E12.4.3 ou alcançar a E12.4.4;
+  - o fluxo exigir ampliar a E12.4.3 ou reintroduzir a E12.4.4;
   - surgir necessidade de perfil próprio de ultranicho;
   - a mutação segura e atômica exigir nova tabela, nova infraestrutura ou mudança material de arquitetura;
   - a categoria aprovada não atender ao requisito;
@@ -510,12 +507,11 @@
   - IA limitada a informar `compatible_aliases` e `selected_aliases`, com prioridade e ordem derivadas deterministicamente pelo servidor e gaps derivados da cobertura;
   - `generation_guidance` e `item_guidance` como exceções opcionais humanas;
   - decisão entre aguardar ou prosseguir com aviso;
-  - pendências explícitas da E12.4.4 e E19.4;
+  - retirada da E12.4.4, ausência de dependência futura de recálculo e E19.4 fora do escopo;
   - PR #656 preservado fora do escopo;
   - ausência de nova tabela, agente, job, fila, service ou infraestrutura.
 - Para este delta corretivo, executar `npm ci`, `npm run check`, as validações do catálogo e do perfil, revisão do diff e verificação de whitespace; banco não se aplica porque a correção não contém nem exige schema ou migration.
 
 ### 4.4. Critérios de encerramento do plano
 
-- O plano v2.9 está tecnicamente concluído, com decisão conceitual, implementação, migration histórica, validações técnicas e visuais, registro das pendências futuras e reconciliação documental aprovados.
-- Permanece pendente somente o merge humano.
+- O plano v2.10 está tecnicamente concluído, com decisão conceitual, implementação, migration histórica, validações técnicas e visuais e reconciliação documental aprovados.

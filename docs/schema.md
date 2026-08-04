@@ -1,8 +1,8 @@
 0. Introdução
 
 0.1 Cabeçalho
-• Data da última atualização: 28/07/2026
-• Documento: LP Factory 10 — Schema (DB Contract) v1.0.36
+• Data da última atualização: 04/08/2026
+• Documento: LP Factory 10 — Schema (DB Contract) v1.0.37
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -346,7 +346,7 @@
 • CHECK: account_taxonomy_source_type_chk (source_type IN ('manual', 'taxonomy_match', 'user_confirmed_ai'))
 • FK: account_id → accounts(id) ON UPDATE CASCADE ON DELETE CASCADE
 • FK: taxon_id → business_taxons(id) ON UPDATE CASCADE ON DELETE RESTRICT
-• Nota: não há constraint/índice garantindo apenas um `is_primary = true` por conta nesta etapa.
+• UNIQUE parcial: account_taxonomy_one_active_primary_idx em (account_id) WHERE is_primary = true AND status = 'active'; garante no máximo um vínculo primário ativo por conta, permite zero e preserva múltiplos vínculos não primários ou inativos.
 
 1.13.2 Campos
 • account_id uuid not null
