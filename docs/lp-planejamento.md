@@ -54,7 +54,7 @@ Fontes de referência: `README.md`, `docs/roadmap.md`, `docs/base-tecnica.md`, `
 - Os valores concretos pertencem à conta, negócio, oferta, campanha ou LP; a E19 os coleta, valida e persiste e preserva o snapshot da geração.
 - Os campos da E20.2 não são copiados para o perfil da E20.3.
 - `paid_search_keyword_map` permanece opcional para alinhamento entre busca, anúncio e LP.
-- Antes ou durante o plano da E19.4, revisar os campos somente diante de necessidade concreta do piloto e da barreira de admissão vigente da E20.2, sem inclusão preventiva.
+- Antes ou durante o plano da E19.2, revisar os campos somente diante de necessidade concreta do piloto e da barreira de admissão vigente da E20.2, sem inclusão preventiva.
 
 ### 1.6. Manter o perfil de orientação do taxon
 
@@ -99,21 +99,27 @@ Fontes de referência: `README.md`, `docs/roadmap.md`, `docs/base-tecnica.md`, `
 
 - Em cada tentativa, a E19 prossegue somente quando o pacote atual de fontes puder ser resolvido com sucesso.
 - Um único boundary server-side compõe E10.8, E18.4, E18.5, E20.2 e E20.3, preservando versões e proveniência sem duplicar as regras de cada domínio.
+- Na geração da LP concreta, a seleção efetiva de módulos e variantes pertence à E19.2 e deve ocorrer de forma determinística no servidor; o plano-base fechará como plano, prioridade, valores operacionais disponíveis e ordem recomendada afetam essa seleção.
+- A IA não escolhe taxon, plano, módulos, variantes, versões, prioridade ou ordem na geração; módulo que dependa de informação ou evidência operacional ausente não entra na LP concreta.
 - O resultado de pacote resolvível não é persistido e não cria status de prontidão, fingerprint, obsolescência ou autorização paralela.
 - A conta piloto usa o fluxo administrativo vigente de entitlement com origem `liberacao_manual`, plano, justificativa, operador e validade opcional.
 - Entitlement válido controla o acesso da conta à E19; a indisponibilidade pública da combinação não bloqueia a geração piloto.
 - A E19 deve derivar ou validar o taxon atendido com base na taxonomia autoritativa da conta, sem aceitar taxon arbitrário.
-- Ausência, inatividade ou ambiguidade do taxon autoritativo falha fechada; a regra entre taxon primário e descendente compatível será definida na E19.4.
+- Ausência, inatividade ou ambiguidade do taxon autoritativo falha fechada; a regra entre taxon primário e descendente compatível será definida na E19.2.
 - O entitlement manual preserva as capacidades normais já vinculadas ao entitlement, inclusive as regras vigentes de membros e convites.
 
 ### 1.9. Gerar, revisar e publicar a LP real
 
 - A E19 é o único fluxo de LPs para contas com entitlement válido.
-- Pelo fluxo da E19, a conta fornece os valores aplicáveis, e o sistema valida a completude, gera, revisa e publica a LP conforme o recorte aprovado.
+- Pelo fluxo da E19, a conta fornece os valores aplicáveis, e o sistema valida a completude e gera conteúdo candidato para a LP em `draft`.
+- Revisão e correção são ações humanas e não publicam automaticamente; publicação é uma ação separada, e o plano-base da E19.2 decidirá se a publicação básica integra o primeiro recorte implementável.
+- Se houver IA, ela produz somente conteúdo estruturado para os fields dos módulos e variantes previamente selecionados pelo servidor; taxon, entitlement, plano, versões, cardinalidades, destinos de conversão, validação, persistência, estados e publicação permanecem determinísticos.
+- A saída da IA permanece estruturada, validada, candidata e sujeita à revisão humana, sem HTML, CSS, JSX, identidade inventada ou fato, preço, prova, garantia ou condição não fornecidos.
 - A geração usa o pacote composto de pesquisas E10.8, base E18.4, catálogo E18.5, catálogo de entradas E20.2 e perfil E20.3, sem alterar essas fontes.
 - A E20.2 define os campos; a E19 coleta, valida e persiste os valores concretos.
-- A LP é materializada como artefato independente; o snapshot preserva taxon, plano, valores e versões das fontes usadas, mas mudanças futuras nessas fontes não alteram LPs existentes.
-- A regra exata de edição, regeneração, evolução entre planos, renderer e publicação permanece para o plano da E19.4.
+- A LP é materializada como artefato independente; o snapshot preserva os valores efetivamente usados, taxon atendido, plano, pesquisas e versões consumidas, perfil e versão própria ou herdada, versão do catálogo E20.2, root ou preset, módulos e variantes selecionados, ordem efetiva e versão do contrato de saída.
+- O snapshot não copia registries completos, módulos disponíveis não selecionados, pesquisas não utilizadas, prompts integrais, resposta bruta não validada, secrets nem todos os perfis ou taxons da plataforma.
+- A regra exata de edição, regeneração, evolução entre planos e renderer permanece para o plano da E19.2; a disponibilidade comercial continua posterior em E20.4 e E12.4.5–12.4.6.
 
 ### 1.10. Validar e disponibilizar por plano
 
@@ -126,7 +132,7 @@ Fontes de referência: `README.md`, `docs/roadmap.md`, `docs/base-tecnica.md`, `
 - A disponibilidade controla exposição de cards, preços, checkout e novas contratações ou trials públicos.
 - Quando nenhum plano estiver disponível, a página comercial informa a indisponibilidade sem prometer notificação inexistente, e o checkout falha fechado server-side.
 - Depois do entitlement, as capacidades da conta continuam governadas pelo entitlement; suspensão comercial não cancela automaticamente entitlements, assinaturas ou LPs existentes.
-- A regra exata para evoluir ou reutilizar a LP entre `starter`, `lite`, `pro` e `ultra` permanece para E19.4, E20.4 e E12.4.5–12.4.6.
+- A regra exata para evoluir ou reutilizar a LP entre `starter`, `lite`, `pro` e `ultra` permanece para E19.2, E20.4 e E12.4.5–12.4.6.
 
 ## 2. O que precisa ser preservado ou implementado no projeto
 
@@ -155,7 +161,7 @@ Fontes de referência: `README.md`, `docs/roadmap.md`, `docs/base-tecnica.md`, `
 
 - Preservar o catálogo declarativo, suas camadas, resolução por taxon e plano, proveniência, validação e barreira de admissão já concluídos.
 - Não copiar os campos resolvidos para o perfil da E20.3.
-- Revisar candidatos adicionais apenas a partir de consumidor real e necessidade comprovada na E19.4.
+- Revisar candidatos adicionais apenas a partir de consumidor real e necessidade comprovada na E19.2.
 - Valores operacionais, avaliação das condições concretas e snapshot permanecem para a E19.
 
 ### 2.5. E20.3 — Perfil de orientação para geração
@@ -178,12 +184,16 @@ Fontes de referência: `README.md`, `docs/roadmap.md`, `docs/base-tecnica.md`, `
 - Exigir uma nova ação humana para cada chamada, sem conversa persistente, memória própria, retry ou continuidade automática.
 - Preservar validação determinística, fallback manual completo e independência das LPs já materializadas.
 
-### 2.6. E19.4 — Fluxo único da LP por conta
+### 2.6. E19.2 — Próxima evolução do fluxo único da LP por conta
 
-- Evoluir a criação mínima existente para compor o pacote de fontes, coletar e persistir valores, gerar, revisar, publicar, preservar tracking mínimo e snapshot.
+- A E19.1 já mantém a identidade mínima da LP em `draft`, vinculada à conta e protegida pelos gates de conta, membership e entitlement; a E19.2 evolui essa mesma LP, sem criar entidade, persistência ou boundary paralelos.
+- Compor o pacote de fontes, coletar e persistir valores, gerar conteúdo, preservar snapshot e sustentar revisão, materialização e publicação conforme o recorte aprovado.
+- Definir a seleção efetiva server-side e o limite da IA conforme as seções 1.8 e 1.9, sem transferir ao modelo decisões estruturais ou operacionais.
 - Exigir conta e membership permitidos e entitlement válido conforme a E9, sem autorização adicional da E12.4.4.
 - Derivar ou validar o taxon atendido pela taxonomia autoritativa da conta e falhar fechado diante de ausência, inatividade, ambiguidade ou taxon arbitrário.
 - Usar a mesma resolução do pacote na geração piloto e nas gerações posteriores, sem persistir prontidão paralela.
+- Separar geração, revisão humana, correção e publicação; o plano-base decidirá se o primeiro recorte termina no `draft` gerado e revisável, no preview materializado ou na publicação básica.
+- Plano, intenção, canal, taxon atendido, imagens, provas, forma de correção e evolução entre planos da primeira LP piloto permanecem decisões humanas do plano-base da E19.2.
 - Não criar fluxo especial para LP teste.
 
 ### 2.7. E20.4 e E12.4.5–12.4.6 — Disponibilidade comercial
@@ -203,13 +213,13 @@ Fontes de referência: `README.md`, `docs/roadmap.md`, `docs/base-tecnica.md`, `
 ## 3. Ordem dos próximos planos-base
 
 - Base consolidada para a jornada: E10.8, E18.4, E18.5, E20.2, E20.3, incluindo E20.3.5, e E12.4.3, incluindo E12.4.3.1–12.4.3.2.
-- 1º — reconciliar os documentos derivados da E12.4 e o roadmap com este planejamento.
-- 2º — avaliar os gates residuais da E19.4: campos mínimos da E20.2, fontes do taxon piloto, taxonomia autoritativa da conta, contrato do pacote e persistência mínima dos valores.
-- 3º — preparar e implementar a E19.4 como fluxo real e único de geração, revisão, materialização e publicação por conta.
+- 1º — preparar o plano-base v1 da E19.2 e reconciliar no mesmo PR as referências ativas do roadmap, preservando como históricos os planos já encerrados.
+- 2º — no plano-base, fechar os gates e decisões humanas residuais: campos mínimos da E20.2, fontes e taxon da conta piloto, contrato do pacote, persistência mínima dos valores, seleção efetiva e ponto de parada do primeiro recorte.
+- 3º — implementar a E19.2 em fases pequenas como evolução do fluxo real e único da E19.1.
 - 4º — gerar e avaliar a primeira LP piloto pelo fluxo oficial da E19.
 - 5º — planejar a disponibilidade comercial por `taxon + plano` em E20.4 e E12.4.5–12.4.6.
-- A E12.4.4 é retirada da implementação e absorvida pela jornada simplificada; não é concluída nem bloqueia a E19.4.
-- Reabrir E18.4, E18.5 ou o perfil de orientação somente diante de aprendizado material obtido com LPs reais. A E20.2 pode receber refinamento focalizado durante o planejamento ou a implementação da E19.4 quando houver consumidor real, necessidade concreta e aprovação pela barreira de admissão vigente.
+- A E12.4.4 é retirada da implementação e absorvida pela jornada simplificada; não é concluída nem bloqueia a E19.2.
+- Reabrir E18.4, E18.5 ou o perfil de orientação somente diante de aprendizado material obtido com LPs reais. A E20.2 pode receber refinamento focalizado durante o planejamento ou a implementação da E19.2 quando houver consumidor real, necessidade concreta e aprovação pela barreira de admissão vigente.
 - Gates operacionais remanescentes da E12.4.3 são acompanhados no roadmap e não criam novo plano conceitual.
 
 ## 4. Onde cada ajuste entra no roadmap
@@ -248,7 +258,7 @@ Fontes de referência: `README.md`, `docs/roadmap.md`, `docs/base-tecnica.md`, `
 
 ### 4.5. E19
 
-- E19.4 compõe o pacote atual de fontes e gera e mantém a LP real da conta com entitlement válido.
+- A E19.2 deverá evoluir a criação mínima da E19.1 para compor o pacote atual de fontes e gerar e manter a LP real da conta com entitlement válido.
 - A E19 coleta, valida e persiste os valores concretos e preserva o snapshot das fontes e dos valores usados.
 - Conta piloto e cliente usam o mesmo fluxo; o entitlement manual válido permite o piloto antes da disponibilidade pública.
 - Não existe LP teste paralela, geração pelo Admin Dashboard, prontidão persistida nem dependência implementável da E12.4.4.
