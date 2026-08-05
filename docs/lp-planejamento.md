@@ -117,7 +117,7 @@ Fontes de referência: `README.md`, `docs/roadmap.md`, `docs/base-tecnica.md`, `
 - A saída da IA permanece estruturada, validada, candidata e sujeita à revisão humana, sem HTML, CSS, JSX, identidade inventada ou fato, preço, prova, garantia ou condição não fornecidos.
 - A geração usa o pacote composto de pesquisas E10.8, base E18.4, catálogo E18.5, catálogo de entradas E20.2 e perfil E20.3, sem alterar essas fontes.
 - A E20.2 define os campos; a E19 coleta, valida e persiste os valores concretos.
-- A LP é materializada como artefato independente; o snapshot preserva os valores efetivamente usados, taxon atendido, plano, pesquisas e versões consumidas, perfil e versão própria ou herdada, versão do catálogo E20.2, root ou preset, módulos e variantes selecionados, ordem efetiva e versão do contrato de saída.
+- A LP é materializada como artefato independente; o snapshot preserva os valores efetivamente usados, taxon atendido, plano, pesquisas e versões consumidas, perfil e versão própria ou herdada, versão do catálogo E20.2, root ou preset, módulos e variantes selecionados, ordem efetiva e versão do contrato de saída, sem que evoluções futuras dessas fontes alterem a LP existente.
 - O snapshot não copia registries completos, módulos disponíveis não selecionados, pesquisas não utilizadas, prompts integrais, resposta bruta não validada, secrets nem todos os perfis ou taxons da plataforma.
 - A regra exata de edição, regeneração, evolução entre planos e renderer permanece para o plano da E19.2; a disponibilidade comercial continua posterior em E20.4 e E12.4.5–12.4.6.
 
@@ -187,7 +187,7 @@ Fontes de referência: `README.md`, `docs/roadmap.md`, `docs/base-tecnica.md`, `
 ### 2.6. E19.2 — Próxima evolução do fluxo único da LP por conta
 
 - A E19.1 já mantém a identidade mínima da LP em `draft`, vinculada à conta e protegida pelos gates de conta, membership e entitlement; a E19.2 evolui essa mesma LP, sem criar entidade, persistência ou boundary paralelos.
-- Compor o pacote de fontes, coletar e persistir valores, gerar conteúdo, preservar snapshot e sustentar revisão, materialização e publicação conforme o recorte aprovado.
+- Compor o pacote de fontes, coletar e persistir valores, gerar conteúdo, preservar snapshot e tracking mínimo e sustentar revisão, materialização e publicação conforme o recorte aprovado.
 - Definir a seleção efetiva server-side e o limite da IA conforme as seções 1.8 e 1.9, sem transferir ao modelo decisões estruturais ou operacionais.
 - Exigir conta e membership permitidos e entitlement válido conforme a E9, sem autorização adicional da E12.4.4.
 - Derivar ou validar o taxon atendido pela taxonomia autoritativa da conta e falhar fechado diante de ausência, inatividade, ambiguidade ou taxon arbitrário.
