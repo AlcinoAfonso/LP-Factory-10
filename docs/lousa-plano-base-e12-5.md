@@ -30,6 +30,16 @@
 - Não implementar barra global de contexto, switcher, favoritos, recentes ou nova área de prontidão.
 - O wireframe é referência de hierarquia e clareza, não especificação pixel-perfect.
 
+### 1.4. Updates aplicáveis
+
+- `prod#14` — aplicar reconhecimento imediato do estado, do bloqueio e da próxima ação nas listas, detalhes e testes humanos.
+- `prod#16` — aplicar QA visual proporcional em Preview, incluindo desktop, mobile e superfícies de gerenciamento afetadas.
+- `prod#17` — usar WCAG 2.2 como baseline de acessibilidade aplicável, com teclado, foco, labels, feedback e estados que não dependam somente de cor, sem declarar conformidade integral.
+- `prod#12` — reutilizar somente o princípio de navegação contextual entre taxon, página comercial e perfil; não implementar switcher global, favoritos, recentes ou navegação multi-contas.
+- `vercel#15` — usar Vercel Toolbar apenas como apoio opcional ao QA de Preview, sem torná-la dependência ou substituir validação manual.
+- `supa#40` — usar ou ajustar snippet SQL read-only somente se a implementação exigir prova das consultas administrativas; o snippet não cria regra de produto nem autoriza banco novo.
+- Esses updates funcionam como referências e critérios aplicados. Não autorizam nova dependência, rota, tabela, serviço, integração, automação ou infraestrutura.
+
 ## 2. Contrato do caso
 
 ### 2.1. Usuário e objetivo operacional
