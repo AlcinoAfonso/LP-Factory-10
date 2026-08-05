@@ -149,3 +149,65 @@ O debate deverá:
   - Criar tabela antes do contrato conceitual pode cristalizar uma estrutura prematura e inadequada.
 - Referências:
   - L-001 e L-002.
+
+### L-004 — Confirmação do objetivo do recorte
+
+- Chat: E9 Estrategista — debate conceitual
+- Data e hora: 05/08/2026 14:07 — horário de Brasília
+- Situação: definido
+- Posição:
+  - A E9 deverá manter a fonte única que transforma o plano efetivo da conta em capacidades, limites, configurações apresentáveis e gates aplicáveis.
+  - A E9 define e resolve o contrato; os domínios consumidores continuam responsáveis por implementar e aplicar seus recursos.
+- Fundamento:
+  - O humano confirmou o objetivo apresentado no início do debate e prosseguiu para a definição conceitual das capacidades.
+- Referências:
+  - L-001.
+
+### L-005 — Debate conceitual antes da estrutura de armazenamento
+
+- Chat: E9 Estrategista — debate conceitual
+- Data e hora: 05/08/2026 14:07 — horário de Brasília
+- Situação: definido
+- Posição:
+  - O debate começará pelo conceito de capacidade, suas categorias, seu ciclo de maturidade, suas fontes e seus critérios de admissão.
+  - Tabela, código versionado ou combinação dos dois somente serão avaliados depois desse contrato conceitual.
+- Fundamento:
+  - O humano definiu que o projeto ainda está no início, terá recursos hoje desconhecidos e não deve cristalizar prematuramente a solução de armazenamento.
+- Referências:
+  - L-003.
+
+### L-006 — Governança da matriz compartilhada
+
+- Chat: E9 Estrategista — debate conceitual
+- Data e hora: 05/08/2026 14:07 — horário de Brasília
+- Situação: definido
+- Posição:
+  - O debate será mantido no PR temporário #691, com lançamentos sequenciais identificados por chat, data e hora.
+  - As consolidações periódicas separarão definido, em definição, pendências e divergências, sem apagar o histórico.
+  - Ao final, o resultado aprovado seguirá para documento próprio e o PR #691 será fechado sem merge.
+- Fundamento:
+  - O humano confirmou expressamente esse modelo antes da criação do PR.
+- Referências:
+  - Regras da seção 3 desta matriz.
+
+### C-001 — Consolidação até L-006
+
+- Data e hora: 05/08/2026 14:07 — horário de Brasília
+- Definido:
+  - A E9 será a fonte única de resolução das capacidades, limites, configurações e gates derivados do plano efetivo.
+  - A E9 define o contrato; cada domínio consumidor implementa e aplica suas próprias capacidades.
+  - O debate será conceitual antes de qualquer decisão sobre tabela, código ou nova infraestrutura.
+  - O PR #691 será a matriz temporária compartilhada, com histórico sequencial e fechamento sem merge.
+- Em definição:
+  - A divisão inicial em oito famílias de capacidades registrada no L-002.
+  - O significado exato de capacidade e seu ciclo de maturidade.
+- Pendências:
+  - Definir os atributos mínimos de uma capacidade.
+  - Validar ou ajustar as categorias iniciais.
+  - Definir fontes, evidências e critérios de admissão no catálogo.
+  - Definir quando uma capacidade pode ser relacionada a um plano.
+  - Decidir posteriormente armazenamento, versionamento, resolução e snapshot.
+- Divergências:
+  - Nenhuma registrada até este ponto.
+- Próxima pergunta:
+  - Qual é a definição conceitual de uma capacidade e quais atributos mínimos toda capacidade deve possuir antes de entrar no catálogo?
