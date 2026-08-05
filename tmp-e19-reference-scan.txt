@@ -1,0 +1,3 @@
+E19.2 / E19.3 explicit references
+docs/schema.md:559:1.19.2 Campos
+docs/schema.md:593:1.19.3 Segurança
