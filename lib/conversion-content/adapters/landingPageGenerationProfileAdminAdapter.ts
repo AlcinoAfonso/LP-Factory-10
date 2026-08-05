@@ -4,9 +4,12 @@ import { z } from "zod";
 
 import { createServiceClient } from "@/lib/supabase/service";
 import { createClient } from "@/lib/supabase/server";
+import { normalizeLandingPageGenerationProfileItemRow } from "./landingPageGenerationProfileRowNormalization";
+import type { LandingPageResearchResolutionResult } from "../landing-page/research-resolution";
 import {
   fingerprintGenerationProfileProposal,
   normalizeGenerationProfileLifecycleReadiness,
+  resolveLandingPageGenerationProfile,
   validateGenerationProfileDraft,
   type AdminGenerationProfile,
   type AdminGenerationProfileListItem,
@@ -15,14 +18,37 @@ import {
   type GenerationProfileLifecycleReadiness,
   type GenerationProfileMutationErrorCode,
   type GenerationProfileMutationResult,
+  type LandingPageGenerationProfile,
+  type LandingPageGenerationProfileItem,
+  type LandingPageGenerationProfileTaxonNode,
 } from "../landing-page/generation-profile";
 
 const PROFILE_SELECT =
   "id,owner_taxon_id,version,status,generation_guidance,created_at,updated_at";
 const ITEM_SELECT =
-  "profile_id,module_key,module_version,variant_key,variant_version,priority,recommended_order,item_guidance";
+  "id,profile_id,module_key,module_version,variant_key,variant_version,priority,recommended_order,item_guidance";
+
+type ProfileTaxonSource = Readonly<{
+  taxon: AdminGenerationProfileTaxon;
+  isActive: boolean;
+}>;
 
 export async function listAdminGenerationProfiles(): Promise<
+  | Readonly<{ ok: true; items: readonly AdminGenerationProfileListItem[] }>
+  | Readonly<{ ok: false; error: string }>
+> {
+  const result = await readAdminGenerationProfileSummaries();
+  return result.ok
+    ? {
+        ok: true,
+        items: result.items.filter(
+          (item) => item.taxon.level === "segment" || item.taxon.level === "niche",
+        ),
+      }
+    : result;
+}
+
+export async function readAdminGenerationProfileSummaries(): Promise<
   | Readonly<{ ok: true; items: readonly AdminGenerationProfileListItem[] }>
   | Readonly<{ ok: false; error: string }>
 > {
@@ -30,37 +56,99 @@ export async function listAdminGenerationProfiles(): Promise<
   const { data: taxonRows, error: taxonError } = await supabase
     .from("business_taxons")
     .select("id,name,slug,level,parent_id,is_active")
-    .in("level", ["segment", "niche"])
-    .eq("is_active", true)
+    .in("level", ["segment", "niche", "ultra_niche"])
     .order("level", { ascending: false })
     .order("name", { ascending: true });
   if (taxonError || !Array.isArray(taxonRows)) {
     return { ok: false, error: "taxon_read_failed" };
   }
 
-  const taxons = taxonRows.map(normalizeTaxon);
-  if (taxons.some((taxon) => taxon === null)) {
+  const taxonSources = taxonRows.map(normalizeProfileTaxonSource);
+  if (taxonSources.some((taxon) => taxon === null)) {
     return { ok: false, error: "taxon_invalid_data" };
   }
-  const validTaxons = taxons as AdminGenerationProfileTaxon[];
+  const validTaxonSources = taxonSources as ProfileTaxonSource[];
+  const activeTaxons = validTaxonSources
+    .filter((source) => source.isActive)
+    .map((source) => source.taxon);
+  if (validTaxonSources.length === 0) return { ok: true, items: [] };
+
   const { data: profileRows, error: profileError } = await supabase
     .from("landing_page_generation_profiles")
     .select(PROFILE_SELECT)
-    .in("owner_taxon_id", validTaxons.map((taxon) => taxon.id))
+    .in("owner_taxon_id", validTaxonSources.map((source) => source.taxon.id))
     .order("version", { ascending: false });
   if (profileError || !Array.isArray(profileRows)) {
     return { ok: false, error: "profile_read_failed" };
   }
 
+  const activeProfileIds = profileRows
+    .filter((row) => row.status === "active")
+    .map((row) => row.id);
+  const itemResult = activeProfileIds.length === 0
+    ? { data: [], error: null }
+    : await supabase
+        .from("landing_page_generation_profile_items")
+        .select(ITEM_SELECT)
+        .in("profile_id", activeProfileIds)
+        .order("recommended_order", { ascending: true });
+  if (itemResult.error || !Array.isArray(itemResult.data)) {
+    return { ok: false, error: "profile_item_read_failed" };
+  }
+
+  const activeProfiles = profileRows
+    .filter((row) => row.status === "active")
+    .map((row) => normalizeResolvedProfile(row, itemResult.data));
+  if (activeProfiles.some((profile) => profile === null)) {
+    return { ok: false, error: "profile_invalid_data" };
+  }
+
+  const taxonSourceById = new Map(
+    validTaxonSources.map((source) => [source.taxon.id, source]),
+  );
+  const taxonNameById = new Map(
+    validTaxonSources.map((source) => [source.taxon.id, source.taxon.name]),
+  );
+
   return {
     ok: true,
-    items: validTaxons.map((taxon) => {
+    items: activeTaxons.map((taxon) => {
       const profiles = profileRows.filter((row) => row.owner_taxon_id === taxon.id);
+      const draftVersion = profiles.find((row) => row.status === "draft")?.version ?? null;
+      const taxonChain = buildProfileTaxonChain(taxon.id, taxonSourceById);
+      const resolved = resolveLandingPageGenerationProfile({
+        taxonChain: {
+          servedTaxonId: taxon.id,
+          nodes: taxonChain,
+        },
+        profiles: (activeProfiles as LandingPageGenerationProfile[]).filter((profile) =>
+          taxonChain.some((node) => node.taxonId === profile.ownerTaxonId),
+        ),
+      });
+
+      const profileState = draftVersion
+        ? "draft_own"
+        : !resolved.ok
+          ? "unavailable"
+          : resolved.value.kind === "absent"
+            ? "absent"
+            : resolved.value.relation === "own"
+              ? "active_own"
+              : "active_inherited";
+      const resolvedProfile = resolved.ok && resolved.value.kind === "resolved"
+        ? resolved.value
+        : null;
+
       return {
         taxon,
-        activeVersion: profiles.find((row) => row.status === "active")?.version ?? null,
-        draftVersion: profiles.find((row) => row.status === "draft")?.version ?? null,
-        archivedCount: profiles.filter((row) => row.status === "archived").length,
+        profileState,
+        profileVersion: draftVersion ?? resolvedProfile?.profileVersion ?? null,
+        ownerTaxonId: draftVersion ? taxon.id : resolvedProfile?.ownerTaxonId ?? null,
+        ownerTaxonName: draftVersion
+          ? taxon.name
+          : resolvedProfile
+            ? taxonNameById.get(resolvedProfile.ownerTaxonId) ?? null
+            : null,
       };
     }),
   };
@@ -135,6 +223,36 @@ export async function readAdminGenerationProfileLifecycleReadiness(): Promise<Ge
   const { data, error } = await supabase.rpc("get_landing_page_generation_profile_lifecycle_status");
   const row = Array.isArray(data) ? data[0] : data;
   return error ? normalizeGenerationProfileLifecycleReadiness(null) : normalizeGenerationProfileLifecycleReadiness(row);
+}
+
+export function getGenerationProfileAssistanceAvailability(input: {
+  aiConfigured: boolean;
+  research: LandingPageResearchResolutionResult | undefined;
+}) {
+  if (!input.aiConfigured) {
+    return {
+      available: false as const,
+      reason: "Assistência por IA não configurada. O fluxo manual continua disponível.",
+    };
+  }
+  if (!input.research) {
+    return {
+      available: false as const,
+      reason: "Assistência indisponível: pesquisa E10.8 não comprovada.",
+    };
+  }
+  if (!input.research.ok) {
+    const incomplete =
+      input.research.error.code === "RESEARCH_INCOMPLETE" ||
+      input.research.error.code === "RESEARCH_MISSING";
+    return {
+      available: false as const,
+      reason: incomplete
+        ? "Assistência indisponível: a pesquisa E10.8 está incompleta."
+        : "Assistência indisponível: o preflight E10.8 não pode ser comprovado.",
+    };
+  }
+  return { available: true as const, reason: null };
 }
 
 export async function saveAdminGenerationProfileDraft(
@@ -270,6 +388,91 @@ function toRpcRecommendation(item: GenerationProfileDraftInput["recommendations"
     priority: item.priority,
     recommended_order: item.recommendedOrder,
     item_guidance: item.itemGuidance ?? null,
+  };
+}
+
+function buildProfileTaxonChain(
+  servedTaxonId: string,
+  taxonSourceById: ReadonlyMap<string, ProfileTaxonSource>,
+): LandingPageGenerationProfileTaxonNode[] {
+  const nodes: LandingPageGenerationProfileTaxonNode[] = [];
+  const visited = new Set<string>();
+  let currentTaxonId: string | null = servedTaxonId;
+
+  while (currentTaxonId && nodes.length < 3 && !visited.has(currentTaxonId)) {
+    visited.add(currentTaxonId);
+    const source = taxonSourceById.get(currentTaxonId);
+    if (!source) break;
+    nodes.push({
+      taxonId: source.taxon.id,
+      level: source.taxon.level,
+      parentId: source.taxon.parentId,
+      status: source.isActive ? "active" : "inactive",
+    });
+    if (source.taxon.level === "segment") break;
+    currentTaxonId = source.taxon.parentId;
+  }
+
+  return nodes;
+}
+
+function normalizeProfileTaxonSource(value: unknown): ProfileTaxonSource | null {
+  if (
+    !isRecord(value) ||
+    typeof value.id !== "string" ||
+    typeof value.name !== "string" ||
+    typeof value.slug !== "string" ||
+    !["segment", "niche", "ultra_niche"].includes(String(value.level)) ||
+    (value.parent_id !== null && typeof value.parent_id !== "string") ||
+    typeof value.is_active !== "boolean"
+  ) {
+    return null;
+  }
+
+  return {
+    taxon: {
+      id: value.id,
+      name: value.name,
+      slug: value.slug,
+      level: value.level as AdminGenerationProfileTaxon["level"],
+      parentId: value.parent_id as string | null,
+    },
+    isActive: value.is_active,
+  };
+}
+
+function normalizeResolvedProfile(
+  value: unknown,
+  itemRows: unknown[],
+): LandingPageGenerationProfile | null {
+  if (
+    !isRecord(value) ||
+    typeof value.id !== "string" ||
+    typeof value.owner_taxon_id !== "string" ||
+    !Number.isInteger(value.version) ||
+    value.status !== "active" ||
+    (value.generation_guidance !== null && typeof value.generation_guidance !== "string")
+  ) {
+    return null;
+  }
+
+  const normalizedItems = itemRows
+    .filter((row) => isRecord(row) && row.profile_id === value.id)
+    .map(normalizeLandingPageGenerationProfileItemRow);
+  if (normalizedItems.some((item) => item === null)) return null;
+
+  return {
+    id: value.id,
+    ownerTaxonId: value.owner_taxon_id,
+    version: value.version as number,
+    status: "active",
+    ...(value.generation_guidance === null
+      ? {}
+      : { generationGuidance: value.generation_guidance }),
+    items: (normalizedItems as Readonly<{
+      profileId: string;
+      item: LandingPageGenerationProfileItem;
+    }>[]).map(({ item }) => item),
   };
 }
 

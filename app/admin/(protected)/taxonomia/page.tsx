@@ -5,6 +5,7 @@ import { AdminStatusBadge } from "@/components/admin/AdminStatusBadge";
 import { EmptyState } from "@/components/ui/empty-state";
 import { getParamValue } from "@/lib/admin/adminFormat";
 import { listAdminTaxons } from "@/lib/admin/adapters/adminReadOnlyAdapter";
+import type { AdminOperationalDiagnosticItem } from "@/lib/admin/adapters/adminReadOnlyTypes";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -117,11 +118,12 @@ export default async function AdminTaxonomyPage({ searchParams }: AdminTaxonomyP
               <thead className="bg-muted/60 text-left text-xs font-medium uppercase text-muted-foreground">
                 <tr>
                   <th className="px-4 py-3">Taxon</th>
-                  <th className="px-4 py-3">Nivel</th>
-                  <th className="px-4 py-3">Pai</th>
-                  <th className="px-4 py-3">Aliases</th>
-                  <th className="px-4 py-3">Status</th>
-                  <th className="px-4 py-3 text-right">Detalhes</th>
+                  <th className="px-4 py-3">Pesquisa BB</th>
+                  <th className="px-4 py-3">Pesquisa EC</th>
+                  <th className="px-4 py-3">Página comercial</th>
+                  <th className="px-4 py-3">Perfil</th>
+                  <th className="px-4 py-3">IA</th>
+                  <th className="px-4 py-3 text-right">Acao</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
@@ -129,18 +131,21 @@ export default async function AdminTaxonomyPage({ searchParams }: AdminTaxonomyP
                   <tr key={taxon.id} className="align-top">
                     <td className="px-4 py-3">
                       <div className="font-medium text-foreground">{taxon.name}</div>
-                    </td>
-                    <td className="px-4 py-3 text-muted-foreground">{taxon.level}</td>
-                    <td className="px-4 py-3 text-muted-foreground">{taxon.parentName ?? "-"}</td>
-                    <td className="px-4 py-3 text-muted-foreground">{taxon.aliasCount}</td>
-                    <td className="px-4 py-3">
+                      <div className="mt-1 text-xs text-muted-foreground">
+                        {taxon.level} / pai: {taxon.parentName ?? "—"}
+                      </div>
                       <AdminStatusBadge tone={taxon.isActive ? "success" : "neutral"}>
                         {taxon.isActive ? "Ativo" : "Inativo"}
                       </AdminStatusBadge>
                     </td>
+                    <DiagnosticCell item={taxon.diagnostic.businessBuyer} />
+                    <DiagnosticCell item={taxon.diagnostic.endCustomer} />
+                    <DiagnosticCell item={taxon.diagnostic.commercialPage} />
+                    <DiagnosticCell item={taxon.diagnostic.profile} />
+                    <DiagnosticCell item={taxon.diagnostic.aiAssistance} />
                     <td className="px-4 py-3 text-right">
                       <Link className="font-medium text-brand-700 hover:underline" href={`/admin/taxonomia/${taxon.id}`}>
-                        Abrir
+                        Abrir diagnóstico
                       </Link>
                     </td>
                   </tr>
@@ -151,5 +156,16 @@ export default async function AdminTaxonomyPage({ searchParams }: AdminTaxonomyP
         </div>
       )}
     </div>
+  );
+}
+
+function DiagnosticCell({ item }: { item: AdminOperationalDiagnosticItem }) {
+  return (
+    <td className="px-4 py-3">
+      <AdminStatusBadge tone={item.tone}>{item.label}</AdminStatusBadge>
+      {item.origin ? (
+        <div className="mt-1 text-xs text-muted-foreground">Origem: {item.origin}</div>
+      ) : null}
+    </td>
   );
 }

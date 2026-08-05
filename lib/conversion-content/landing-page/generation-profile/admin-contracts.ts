@@ -110,7 +110,7 @@ export type AdminGenerationProfileTaxon = Readonly<{
   id: string;
   name: string;
   slug: string;
-  level: "segment" | "niche";
+  level: "segment" | "niche" | "ultra_niche";
   parentId: string | null;
 }>;
 
@@ -128,9 +128,15 @@ export type AdminGenerationProfile = Readonly<{
 
 export type AdminGenerationProfileListItem = Readonly<{
   taxon: AdminGenerationProfileTaxon;
-  activeVersion: number | null;
-  draftVersion: number | null;
-  archivedCount: number;
+  profileState:
+    | "active_own"
+    | "active_inherited"
+    | "draft_own"
+    | "absent"
+    | "unavailable";
+  profileVersion: number | null;
+  ownerTaxonId: string | null;
+  ownerTaxonName: string | null;
 }>;
 
 export type GenerationProfileMutationErrorCode =

@@ -39,7 +39,7 @@ export type AdminAccountDetail = AdminAccountListItem & {
   nicheResolution: AdminNicheResolutionListItem | null;
 };
 
-export type AdminTaxonListItem = {
+export type AdminTaxonSummary = {
   id: string;
   parentId: string | null;
   parentName: string | null;
@@ -48,6 +48,27 @@ export type AdminTaxonListItem = {
   slug: string;
   isActive: boolean;
   aliasCount: number;
+};
+
+export type AdminTaxonListItem = AdminTaxonSummary & {
+  diagnostic: AdminTaxonOperationalDiagnostic;
+};
+
+export type AdminOperationalDiagnosticItem = {
+  label: string;
+  tone: "neutral" | "success" | "warning" | "danger";
+  origin: string | null;
+  reason: string;
+  nextAction: string;
+  href: string | null;
+};
+
+export type AdminTaxonOperationalDiagnostic = {
+  businessBuyer: AdminOperationalDiagnosticItem;
+  endCustomer: AdminOperationalDiagnosticItem;
+  commercialPage: AdminOperationalDiagnosticItem;
+  profile: AdminOperationalDiagnosticItem;
+  aiAssistance: AdminOperationalDiagnosticItem;
 };
 
 export type AdminTaxonLevel = "segment" | "niche" | "ultra_niche";
@@ -74,7 +95,7 @@ export type AdminTaxonDetail = AdminTaxonListItem & {
     aliasText: string;
     isActive: boolean;
   }>;
-  children: AdminTaxonListItem[];
+  children: AdminTaxonSummary[];
   usage: AdminTaxonUsage;
   deleteBlockers: string[];
   canDelete: boolean;
@@ -86,6 +107,7 @@ export type AdminNicheResolutionListItem = {
   rawInput: string;
   selectedTaxonId: string | null;
   selectedTaxonName: string | null;
+  selectedTaxonSlug: string | null;
   aiSuggestedTaxonId: string | null;
   aiSuggestedTaxonName: string | null;
   confidence: string;

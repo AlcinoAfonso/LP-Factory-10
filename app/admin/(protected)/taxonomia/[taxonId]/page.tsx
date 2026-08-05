@@ -7,6 +7,7 @@ import { AdminStatusBadge } from "@/components/admin/AdminStatusBadge";
 import { AdminTaxonManageForm } from "@/components/admin/AdminTaxonManageForm";
 import { EmptyState } from "@/components/ui/empty-state";
 import { getAdminTaxonDetail } from "@/lib/admin/adapters/adminReadOnlyAdapter";
+import type { AdminOperationalDiagnosticItem } from "@/lib/admin/adapters/adminReadOnlyTypes";
 import {
   addTaxonAliasAction,
   deleteTaxonAction,
@@ -68,6 +69,22 @@ export default async function AdminTaxonDetailPage({ params }: AdminTaxonDetailP
         </div>
       </section>
 
+      <section className="rounded-lg border border-border bg-card p-5 shadow-card">
+        <div>
+          <h2 className="text-lg font-semibold text-card-foreground">Diagnóstico operacional</h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Estado, origem, bloqueio e proxima acao sem alterar os fluxos responsaveis.
+          </p>
+        </div>
+        <div className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+          <DiagnosticCard label="Pesquisa BB" item={taxon.diagnostic.businessBuyer} />
+          <DiagnosticCard label="Pesquisa EC" item={taxon.diagnostic.endCustomer} />
+          <DiagnosticCard label="Página comercial" item={taxon.diagnostic.commercialPage} />
+          <DiagnosticCard label="Perfil" item={taxon.diagnostic.profile} />
+          <DiagnosticCard label="Assistência por IA" item={taxon.diagnostic.aiAssistance} />
+        </div>
+      </section>
+
       <AdminTaxonManageForm
         taxon={taxon}
         updateAction={updateTaxonAction}
@@ -96,6 +113,27 @@ export default async function AdminTaxonDetailPage({ params }: AdminTaxonDetailP
         )}
       </section>
     </div>
+  );
+}
+
+function DiagnosticCard({ label, item }: { label: string; item: AdminOperationalDiagnosticItem }) {
+  return (
+    <article className="rounded-md border border-border bg-background p-4">
+      <p className="text-xs font-medium uppercase text-muted-foreground">{label}</p>
+      <div className="mt-2">
+        <AdminStatusBadge tone={item.tone}>{item.label}</AdminStatusBadge>
+      </div>
+      <dl className="mt-3 space-y-2 text-sm">
+        <Detail label="Origem" value={item.origin ?? "—"} />
+        <Detail label="Motivo" value={item.reason} />
+        <Detail label="Próxima ação" value={item.nextAction} />
+      </dl>
+      {item.href ? (
+        <Link className="mt-3 inline-flex font-medium text-brand-700 hover:underline" href={item.href}>
+          {item.nextAction}
+        </Link>
+      ) : null}
+    </article>
   );
 }
 

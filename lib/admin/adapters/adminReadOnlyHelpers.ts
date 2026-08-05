@@ -2,7 +2,7 @@ import "server-only";
 
 import { createServiceClient } from "@/lib/supabase/service";
 import type { AccountStatus } from "@/lib/types/status";
-import type { AdminAccountListItem, AdminTaxonListItem } from "./adminReadOnlyTypes";
+import type { AdminAccountListItem, AdminTaxonSummary } from "./adminReadOnlyTypes";
 
 const ACCOUNT_STATUSES = ["active", "inactive", "suspended", "pending_setup"] as const;
 const TAXON_LEVELS = ["segment", "niche", "ultra_niche"] as const;
@@ -47,7 +47,7 @@ export function mapAdminTaxon(
   row: any,
   parentNames: Map<string, string>,
   aliasCounts: Map<string, number>,
-): AdminTaxonListItem {
+): AdminTaxonSummary {
   return {
     id: row.id,
     parentId: row.parent_id ?? null,

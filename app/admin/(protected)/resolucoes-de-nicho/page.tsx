@@ -115,7 +115,16 @@ export default async function AdminNicheResolutionsPage({ searchParams }: AdminN
                       <div className="mt-1 max-w-md text-xs text-muted-foreground">{resolution.rawInput}</div>
                     </td>
                     <td className="px-4 py-3 text-muted-foreground">
-                      {resolution.selectedTaxonName ?? resolution.aiSuggestedTaxonName ?? "-"}
+                      {resolution.selectedTaxonId && resolution.selectedTaxonName ? (
+                        <Link
+                          className="font-medium text-brand-700 hover:underline"
+                          href={`/admin/taxonomia/${resolution.selectedTaxonId}`}
+                        >
+                          {resolution.selectedTaxonName}
+                        </Link>
+                      ) : (
+                        resolution.aiSuggestedTaxonName ?? "-"
+                      )}
                     </td>
                     <td className="px-4 py-3">
                       <div className="space-y-1">

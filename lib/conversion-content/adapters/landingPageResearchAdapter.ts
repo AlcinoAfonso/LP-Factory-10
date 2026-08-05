@@ -30,180 +30,176 @@ export async function resolveLandingPageResearchForTaxon(input: {
   requestId?: string;
 }): Promise<LandingPageResearchResolutionResult> {
   const taxonId = input.taxonId.trim();
-  if (!isLandingPageResearchUuid(taxonId)) {
-    return finishResolution({
+  const results = await resolveLandingPageResearchForTaxons({
+    taxonIds: [taxonId],
+    requestId: input.requestId,
+  });
+  return results.get(taxonId) as LandingPageResearchResolutionResult;
+}
+
+export async function resolveLandingPageResearchForTaxons(input: {
+  taxonIds: readonly string[];
+  requestId?: string;
+}): Promise<ReadonlyMap<string, LandingPageResearchResolutionResult>> {
+  const taxonIds = [...new Set(input.taxonIds.map((taxonId) => taxonId.trim()))];
+  const results = new Map<string, LandingPageResearchResolutionResult>();
+  const validTaxonIds = taxonIds.filter(isLandingPageResearchUuid);
+
+  for (const taxonId of taxonIds.filter((candidate) => !isLandingPageResearchUuid(candidate))) {
+    results.set(
       taxonId,
-      requestId: input.requestId,
-      source: { status: "ready", taxons: [], researches: [], items: [] },
-    });
+      finishResolution({
+        taxonId,
+        requestId: input.requestId,
+        source: { status: "ready", taxons: [], researches: [], items: [] },
+      }),
+    );
   }
+
+  if (validTaxonIds.length === 0) return results;
 
   const supabase = createServiceClient();
 
   try {
-    const { data: servedRow, error: servedError } = await supabase
+    const { data: servedRows, error: servedError } = await supabase
       .from("business_taxons")
       .select("id,parent_id,is_active")
-      .eq("id", taxonId)
-      .limit(1)
-      .maybeSingle();
+      .in("id", validTaxonIds);
 
     if (servedError) {
-      return finishResolution({
-        taxonId,
-        requestId: input.requestId,
-        source: { status: "read_failed" },
-      });
-    }
-    if (!servedRow) {
-      return finishResolution({
-        taxonId,
-        requestId: input.requestId,
-        source: { status: "ready", taxons: [], researches: [], items: [] },
-      });
+      return finishBatchFailure(results, validTaxonIds, input.requestId, "read_failed");
     }
 
-    const servedTaxon = normalizeTaxon(servedRow);
-    if (!servedTaxon) {
-      return finishResolution({
-        taxonId,
-        requestId: input.requestId,
-        source: { status: "not_normalizable" },
-      });
+    const servedTaxons = normalizeRows(servedRows, normalizeTaxon);
+    if (!servedTaxons) {
+      return finishBatchFailure(results, validTaxonIds, input.requestId, "not_normalizable");
     }
 
-    if (!servedTaxon.isActive) {
-      return finishResolution({
-        taxonId,
-        requestId: input.requestId,
-        source: {
-          status: "ready",
-          taxons: [servedTaxon],
-          researches: [],
-          items: [],
-        },
-      });
-    }
-
-    const ownResearch = await readResearchRows(
-      supabase,
-      servedTaxon.id,
-      AUDIENCE_SCOPES,
-    );
+    const ownResearch = await readResearchRows(supabase, validTaxonIds, AUDIENCE_SCOPES);
     if (!ownResearch.ok) {
-      return finishResolution({
+      return finishBatchFailure(results, validTaxonIds, input.requestId, ownResearch.sourceStatus);
+    }
+    const pendingParent: Array<{
+      taxonId: string;
+      servedTaxon: LandingPageResearchTaxonDto;
+      source: Extract<LandingPageResearchNormalizedSource, { status: "ready" }>;
+    }> = [];
+    for (const taxonId of validTaxonIds) {
+      const servedTaxon = servedTaxons.find((taxon) => taxon.id === taxonId);
+      const researches = ownResearch.researches.filter(
+        (candidate) => candidate.taxonId === taxonId,
+      );
+      const researchIds = new Set(researches.map((candidate) => candidate.id));
+      const source: LandingPageResearchNormalizedSource = {
+        status: "ready",
+        taxons: servedTaxon ? [servedTaxon] : [],
+        researches,
+        items: ownResearch.items.filter((item) => researchIds.has(item.researchId)),
+      };
+      const ownResult = resolveLandingPageResearch({ taxonId, source });
+
+      if (
+        servedTaxon?.parentId &&
+        !ownResult.ok &&
+        ownResult.error.code === "DIRECT_PARENT_NOT_FOUND"
+      ) {
+        pendingParent.push({ taxonId, servedTaxon, source });
+        continue;
+      }
+
+      results.set(
         taxonId,
-        requestId: input.requestId,
-        source: { status: ownResearch.sourceStatus },
-      });
+        finishResolution({
+          taxonId,
+          requestId: input.requestId,
+          source,
+        }),
+      );
     }
 
-    const ownSource: LandingPageResearchNormalizedSource = {
-      status: "ready",
-      taxons: [servedTaxon],
-      researches: ownResearch.researches,
-      items: ownResearch.items,
-    };
-    const ownResult = resolveLandingPageResearch({ taxonId, source: ownSource });
-    if (ownResult.ok || ownResult.error.code !== "DIRECT_PARENT_NOT_FOUND") {
-      return finishResolution({
-        taxonId,
-        requestId: input.requestId,
-        source: ownSource,
-      });
-    }
-    if (!servedTaxon.parentId) {
-      return finishResolution({
-        taxonId,
-        requestId: input.requestId,
-        source: ownSource,
-      });
-    }
+    if (pendingParent.length === 0) return results;
 
-    const { data: parentRow, error: parentError } = await supabase
+    const parentIds = [...new Set(pendingParent.map(({ servedTaxon }) => servedTaxon.parentId as string))];
+    const { data: parentRows, error: parentError } = await supabase
       .from("business_taxons")
       .select("id,parent_id,is_active")
-      .eq("id", servedTaxon.parentId)
-      .limit(1)
-      .maybeSingle();
-
+      .in("id", parentIds);
     if (parentError) {
-      return finishResolution({
-        taxonId,
-        requestId: input.requestId,
-        source: { status: "read_failed" },
-      });
-    }
-    if (!parentRow) {
-      return finishResolution({
-        taxonId,
-        requestId: input.requestId,
-        source: ownSource,
-      });
+      return finishBatchFailure(
+        results,
+        pendingParent.map(({ taxonId }) => taxonId),
+        input.requestId,
+        "read_failed",
+      );
     }
 
-    const parentTaxon = normalizeTaxon(parentRow);
-    if (!parentTaxon) {
-      return finishResolution({
-        taxonId,
-        requestId: input.requestId,
-        source: { status: "not_normalizable" },
-      });
+    const parentTaxons = normalizeRows(parentRows, normalizeTaxon);
+    if (!parentTaxons) {
+      return finishBatchFailure(
+        results,
+        pendingParent.map(({ taxonId }) => taxonId),
+        input.requestId,
+        "not_normalizable",
+      );
     }
-
-    if (!parentTaxon.isActive) {
-      return finishResolution({
-        taxonId,
-        requestId: input.requestId,
-        source: {
-          ...ownSource,
-          taxons: [servedTaxon, parentTaxon],
-        },
-      });
-    }
-
-    const parentResearch = await readResearchRows(supabase, parentTaxon.id, [
-      "business_buyer",
-    ]);
+    const parentResearch = await readResearchRows(supabase, parentIds, ["business_buyer"]);
     if (!parentResearch.ok) {
-      return finishResolution({
-        taxonId,
-        requestId: input.requestId,
-        source: { status: parentResearch.sourceStatus },
-      });
+      return finishBatchFailure(
+        results,
+        pendingParent.map(({ taxonId }) => taxonId),
+        input.requestId,
+        parentResearch.sourceStatus,
+      );
     }
 
-    return finishResolution({
-      taxonId,
-      requestId: input.requestId,
-      source: {
-        status: "ready",
-        taxons: [servedTaxon, parentTaxon],
-        researches: [
-          ...ownResearch.researches,
-          ...parentResearch.researches,
-        ],
-        items: [...ownResearch.items, ...parentResearch.items],
-      },
-    });
+    for (const pending of pendingParent) {
+      const parentTaxon = parentTaxons.find(
+        (taxon) => taxon.id === pending.servedTaxon.parentId,
+      );
+      const researches = parentResearch.researches.filter(
+        (research) => research.taxonId === pending.servedTaxon.parentId,
+      );
+      const researchIds = new Set(researches.map((research) => research.id));
+      results.set(
+        pending.taxonId,
+        finishResolution({
+          taxonId: pending.taxonId,
+          requestId: input.requestId,
+          source: {
+            status: "ready",
+            taxons: parentTaxon
+              ? [pending.servedTaxon, parentTaxon]
+              : [pending.servedTaxon],
+            researches: [...pending.source.researches, ...researches],
+            items: [
+              ...pending.source.items,
+              ...parentResearch.items.filter((item) => researchIds.has(item.researchId)),
+            ],
+          },
+        }),
+      );
+    }
+
+    return results;
   } catch {
-    return finishResolution({
-      taxonId,
-      requestId: input.requestId,
-      source: { status: "read_failed" },
-    });
+    return finishBatchFailure(
+      results,
+      validTaxonIds.filter((taxonId) => !results.has(taxonId)),
+      input.requestId,
+      "read_failed",
+    );
   }
 }
 
 async function readResearchRows(
   supabase: ServiceClient,
-  taxonId: string,
+  taxonIds: readonly string[],
   audienceScopes: readonly (typeof AUDIENCE_SCOPES)[number][],
 ): Promise<ResearchRowsResult> {
   const { data: researchRows, error: researchError } = await supabase
     .from("taxon_market_research")
     .select("id,taxon_id,research_block,audience_scope,version,status")
-    .eq("taxon_id", taxonId)
+    .in("taxon_id", [...taxonIds])
     .in("research_block", [...LANDING_PAGE_RESEARCH_BLOCKS])
     .in("audience_scope", [...audienceScopes])
     .eq("status", "active");
@@ -231,6 +227,25 @@ async function readResearchRows(
   if (!items) return { ok: false, sourceStatus: "not_normalizable" };
 
   return { ok: true, researches, items };
+}
+
+function finishBatchFailure(
+  results: Map<string, LandingPageResearchResolutionResult>,
+  taxonIds: readonly string[],
+  requestId: string | undefined,
+  sourceStatus: "read_failed" | "not_normalizable",
+) {
+  for (const taxonId of taxonIds) {
+    results.set(
+      taxonId,
+      finishResolution({
+        taxonId,
+        requestId,
+        source: { status: sourceStatus },
+      }),
+    );
+  }
+  return results;
 }
 
 function finishResolution(input: {

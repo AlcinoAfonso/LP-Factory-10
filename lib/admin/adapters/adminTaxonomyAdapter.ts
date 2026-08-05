@@ -1,5 +1,15 @@
 import "server-only";
 
+import { resolveLandingPageResearchForTaxons } from "@/conversion-content/adapters/landingPageResearchAdapter";
+import {
+  getGenerationProfileAssistanceAvailability,
+  readAdminGenerationProfileSummaries,
+} from "@/conversion-content/adapters/landingPageGenerationProfileAdminAdapter";
+import {
+  isGenerationProfileAssistanceConfigured,
+  type AdminGenerationProfileListItem,
+} from "@/conversion-content/landing-page/generation-profile";
+import type { LandingPageResearchResolutionResult } from "@/conversion-content/landing-page/research-resolution";
 import { createServiceClient } from "@/lib/supabase/service";
 import {
   ADMIN_PAGE_SIZE,
@@ -11,11 +21,18 @@ import {
 import type {
   AdminFilters,
   AdminListResult,
+  AdminOperationalDiagnosticItem,
   AdminTaxonDetail,
   AdminTaxonLevel,
   AdminTaxonListItem,
+  AdminTaxonOperationalDiagnostic,
   AdminTaxonParentOption,
+  AdminTaxonSummary,
 } from "./adminReadOnlyTypes";
+import {
+  readAdminCommercialActivationOverview,
+  type AdminCommercialActivationListItem,
+} from "./adminCommercialActivationTemplatesAdapter";
 
 type CreateAdminTaxonInput = {
   name: string;
@@ -92,8 +109,17 @@ export async function listAdminTaxons(filters: AdminFilters = {}): Promise<Admin
   const aliasCounts = new Map<string, number>();
   ((aliases.data as any[]) ?? []).forEach((row) => aliasCounts.set(row.taxon_id, (aliasCounts.get(row.taxon_id) ?? 0) + 1));
   const parentNames = new Map(Array.from(parentTaxons.entries()).map(([id, row]) => [id, row.name]));
+  const taxons = rows.map((row) => mapAdminTaxon(row, parentNames, aliasCounts));
+  const diagnostics = await readAdminTaxonDiagnostics(taxons);
 
-  return { items: rows.map((row) => mapAdminTaxon(row, parentNames, aliasCounts)), total: count ?? 0, error: null };
+  return {
+    items: taxons.map((taxon) => ({
+      ...taxon,
+      diagnostic: diagnostics.get(taxon.id) ?? unavailableTaxonDiagnostic(),
+    })),
+    total: count ?? 0,
+    error: null,
+  };
 }
 
 export async function getAdminTaxonDetail(taxonId: string): Promise<AdminTaxonDetail | null> {
@@ -115,6 +141,7 @@ export async function getAdminTaxonDetail(taxonId: string): Promise<AdminTaxonDe
     aiSuggestedResolutions,
     contentTemplateLinks,
     marketResearch,
+    diagnostics,
   ] = await Promise.all([
     supabase.from("business_taxon_aliases").select("id,alias_text,is_active").eq("taxon_id", taxonId).order("alias_text", { ascending: true }).limit(100),
     supabase.from("business_taxons").select("id,parent_id,level,name,slug,is_active").eq("parent_id", taxonId).order("name", { ascending: true }).limit(100),
@@ -124,6 +151,13 @@ export async function getAdminTaxonDetail(taxonId: string): Promise<AdminTaxonDe
     countRows(supabase.from("account_niche_resolutions").select("account_id", { count: "exact", head: true }).eq("ai_suggested_taxon_id", taxonId), "ai_suggested_resolutions"),
     countRows(supabase.from("content_template_taxons").select("template_id", { count: "exact", head: true }).eq("taxon_id", taxonId), "content_template_taxons"),
     countRows(supabase.from("taxon_market_research").select("id", { count: "exact", head: true }).eq("taxon_id", taxonId), "taxon_market_research"),
+    readAdminTaxonDiagnostics([
+      mapAdminTaxon(
+        taxonRow,
+        new Map(),
+        new Map(),
+      ),
+    ]),
   ]);
 
   const parentNames = new Map(Array.from(parentTaxons.entries()).map(([id, row]) => [id, row.name]));
@@ -142,6 +176,7 @@ export async function getAdminTaxonDetail(taxonId: string): Promise<AdminTaxonDe
 
   return {
     ...mappedTaxon,
+    diagnostic: diagnostics.get(taxonId) ?? unavailableTaxonDiagnostic(),
     aliasCount: ((aliases as any[]) ?? []).length,
     aliases: ((aliases as any[]) ?? []).map((row) => ({
       id: row.id,
@@ -152,6 +187,281 @@ export async function getAdminTaxonDetail(taxonId: string): Promise<AdminTaxonDe
     usage,
     deleteBlockers,
     canDelete: deleteBlockers.length === 0,
+  };
+}
+
+async function readAdminTaxonDiagnostics(
+  taxons: readonly AdminTaxonSummary[],
+): Promise<ReadonlyMap<string, AdminTaxonOperationalDiagnostic>> {
+  const taxonIds = taxons.map((taxon) => taxon.id);
+  const [researchRead, commercialRead, profilesRead] = await Promise.allSettled([
+    resolveLandingPageResearchForTaxons({ taxonIds }),
+    readAdminCommercialActivationOverview(),
+    readAdminGenerationProfileSummaries(),
+  ]);
+  const research = researchRead.status === "fulfilled" ? researchRead.value : new Map();
+  const aiConfigured = isGenerationProfileAssistanceConfigured({
+    apiKey: process.env.OPENAI_API_KEY,
+    model: process.env.OPENAI_LANDING_PAGE_GENERATION_PROFILE_MODEL,
+  });
+  const commercialByTaxonId = new Map<string, AdminCommercialActivationListItem>(
+    commercialRead.status === "fulfilled" && commercialRead.value.ok
+      ? commercialRead.value.items.map((item) => [item.taxon.id, item])
+      : [],
+  );
+  const profileByTaxonId = new Map<string, AdminGenerationProfileListItem>(
+    profilesRead.status === "fulfilled" && profilesRead.value.ok
+      ? profilesRead.value.items.map((item) => [item.taxon.id, item])
+      : [],
+  );
+
+  return new Map<string, AdminTaxonOperationalDiagnostic>(
+    taxons.map((taxon) => {
+      const researchResult = research.get(taxon.id);
+      const researchDiagnostic = describeResearch(researchResult);
+      const commercialItem = commercialByTaxonId.get(taxon.id);
+      const profileItem = profileByTaxonId.get(taxon.id);
+      const assistance = getGenerationProfileAssistanceAvailability({
+        aiConfigured,
+        research: researchResult,
+      });
+
+      return [
+        taxon.id,
+        {
+          ...researchDiagnostic,
+          commercialPage: commercialItem
+            ? describeCommercialPage(taxon.id, commercialItem)
+            : unavailableDiagnostic(
+                taxon.isActive
+                  ? "A leitura comercial nao pode ser comprovada."
+                  : "Taxon inativo nao participa do fluxo comercial.",
+                "Revisar diagnóstico",
+                `/admin/taxonomia/${taxon.id}`,
+              ),
+          profile: profileItem
+            ? describeGenerationProfile(profileItem)
+            : unavailableDiagnostic(
+                taxon.isActive
+                  ? "A leitura do perfil nao pode ser comprovada."
+                  : "Taxon inativo nao possui operacao de perfil.",
+                "Revisar perfis",
+                "/admin/perfis-de-orientacao",
+              ),
+          aiAssistance: assistance.available
+            ? {
+                label: "Disponível",
+                tone: "success",
+                origin: "E12.4.3",
+                reason: "Configuracao e preflight E10.8 comprovados.",
+                nextAction: "Usar no editor do perfil",
+                href: profileItem?.ownerTaxonId
+                  ? `/admin/perfis-de-orientacao/${profileItem.ownerTaxonId}`
+                  : `/admin/perfis-de-orientacao/${taxon.id}`,
+              }
+            : unavailableDiagnostic(
+                assistance.reason ?? "Assistência por IA indisponível.",
+                "Continuar manualmente",
+                profileItem?.ownerTaxonId
+                  ? `/admin/perfis-de-orientacao/${profileItem.ownerTaxonId}`
+                  : "/admin/perfis-de-orientacao",
+              ),
+        },
+      ] as const;
+    }),
+  );
+}
+
+function describeResearch(
+  result: LandingPageResearchResolutionResult | undefined,
+): Pick<AdminTaxonOperationalDiagnostic, "businessBuyer" | "endCustomer"> {
+  if (!result) {
+    return {
+      businessBuyer: unavailableDiagnostic("Pesquisa BB nao comprovada.", "Revisar pesquisa", null),
+      endCustomer: unavailableDiagnostic("Pesquisa EC nao comprovada.", "Revisar pesquisa", null),
+    };
+  }
+
+  if (result.ok) {
+    return {
+      businessBuyer: {
+        label: result.value.businessBuyer.sourceRelation === "own"
+          ? "Completa — própria"
+          : "Completa — pai direto",
+        tone: "success",
+        origin: result.value.businessBuyer.sourceRelation === "own"
+          ? "Propria"
+          : "Herdada do pai direto",
+        reason: `Conjunto E10.8 valido na versao ${result.value.businessBuyer.version}.`,
+        nextAction: "Nenhuma pendencia",
+        href: null,
+      },
+      endCustomer: {
+        label: "Completa — própria",
+        tone: "success",
+        origin: "Propria",
+        reason: `Conjunto E10.8 valido na versao ${result.value.endCustomer.version}.`,
+        nextAction: "Nenhuma pendencia",
+        href: null,
+      },
+    };
+  }
+
+  const failed = describeResearchFailure(result);
+  if (result.error.audienceScope === "business_buyer") {
+    return {
+      businessBuyer: failed,
+      endCustomer: endCustomerValidatedBeforeBusinessBuyerFailure(),
+    };
+  }
+  if (
+    result.error.code === "DIRECT_PARENT_NOT_FOUND" ||
+    result.error.code === "DIRECT_PARENT_INACTIVE"
+  ) {
+    return {
+      businessBuyer: failed,
+      endCustomer: endCustomerValidatedBeforeBusinessBuyerFailure(),
+    };
+  }
+  if (result.error.audienceScope === "end_customer") {
+    return {
+      businessBuyer: unavailableDiagnostic(
+        "BB nao foi avaliada depois da rejeicao segura de EC.",
+        "Resolver EC primeiro",
+        null,
+      ),
+      endCustomer: failed,
+    };
+  }
+  return { businessBuyer: failed, endCustomer: { ...failed } };
+}
+
+function endCustomerValidatedBeforeBusinessBuyerFailure(): AdminOperationalDiagnosticItem {
+  return {
+    label: "Completa — própria",
+    tone: "success",
+    origin: "Propria",
+    reason: "O resolver E10.8 validou EC antes de rejeitar BB.",
+    nextAction: "Nenhuma pendencia",
+    href: null,
+  };
+}
+
+function describeResearchFailure(
+  result: Extract<LandingPageResearchResolutionResult, { ok: false }>,
+): AdminOperationalDiagnosticItem {
+  const incomplete = [
+    "RESEARCH_MISSING",
+    "RESEARCH_INCOMPLETE",
+    "DIRECT_PARENT_NOT_FOUND",
+    "DIRECT_PARENT_INACTIVE",
+  ].includes(result.error.code);
+  const invalid = ["RESEARCH_INVALID", "RESEARCH_AMBIGUOUS"].includes(result.error.code);
+  return {
+    label: incomplete ? "Incompleta" : invalid ? "Inválida ou ambígua" : "Indisponível",
+    tone: incomplete ? "warning" : "danger",
+    origin: result.error.sourceRelation === "direct_parent"
+      ? "Pai direto"
+      : result.error.sourceRelation === "own"
+        ? "Propria"
+        : null,
+    reason: incomplete
+      ? "O conjunto obrigatorio nao esta completo."
+      : invalid
+        ? "O conjunto foi rejeitado pelo contrato E10.8."
+        : "A leitura segura nao pode ser comprovada.",
+    nextAction: incomplete ? "Completar pesquisa" : "Revisar pesquisa",
+    href: null,
+  };
+}
+
+function describeCommercialPage(
+  taxonId: string,
+  item: AdminCommercialActivationListItem,
+): AdminOperationalDiagnosticItem {
+  if (item.eligibility === "ineligible") {
+    return {
+      label: "Não elegível",
+      tone: "warning",
+      origin: "Taxon proprio",
+      reason: item.requirementsLabel,
+      nextAction: "Ver pendências",
+      href: `/admin/taxonomia/${taxonId}`,
+    };
+  }
+  return {
+    label: item.pageState === "not_created" ? "Elegível para gerar" : item.pageStateLabel,
+    tone: item.pageState === "published" ? "success" : item.pageState === "review" ? "warning" : "neutral",
+    origin: "Taxon proprio",
+    reason: item.requirementsLabel,
+    nextAction: item.pageState === "published" ? "Gerenciar pagina" : item.pageState === "review" ? "Revisar draft" : "Gerar draft",
+    href: `/admin/templates/commercial-activation/${encodeURIComponent(item.taxon.slug)}`,
+  };
+}
+
+function describeGenerationProfile(
+  item: AdminGenerationProfileListItem,
+): AdminOperationalDiagnosticItem {
+  const labels = {
+    active_own: "Ativo — próprio",
+    active_inherited: "Ativo — herdado",
+    draft_own: "Rascunho — próprio",
+    absent: "Ausente",
+    unavailable: "Indisponível",
+  } as const;
+  const nextActions = {
+    active_own: "Gerenciar",
+    active_inherited: "Ver perfil",
+    draft_own: "Continuar",
+    absent: "Criar perfil",
+    unavailable: "Revisar perfis",
+  } as const;
+  return {
+    label: labels[item.profileState],
+    tone: item.profileState === "active_own" || item.profileState === "active_inherited"
+      ? "success"
+      : item.profileState === "draft_own"
+        ? "warning"
+        : item.profileState === "unavailable"
+          ? "danger"
+          : "neutral",
+    origin: item.ownerTaxonName,
+    reason: item.profileVersion
+      ? `Versao ${item.profileVersion} comprovada.`
+      : item.profileState === "absent"
+        ? "Nenhum perfil ativo ou rascunho proprio foi encontrado."
+        : "A leitura segura do perfil nao pode ser comprovada.",
+    nextAction: nextActions[item.profileState],
+    href: item.ownerTaxonId
+      ? `/admin/perfis-de-orientacao/${item.ownerTaxonId}`
+      : item.taxon.level === "segment" || item.taxon.level === "niche"
+        ? `/admin/perfis-de-orientacao/${item.taxon.id}`
+        : "/admin/perfis-de-orientacao",
+  };
+}
+
+function unavailableDiagnostic(
+  reason: string,
+  nextAction: string,
+  href: string | null,
+): AdminOperationalDiagnosticItem {
+  return {
+    label: "Indisponível",
+    tone: "danger",
+    origin: null,
+    reason,
+    nextAction,
+    href,
+  };
+}
+
+function unavailableTaxonDiagnostic(): AdminTaxonOperationalDiagnostic {
+  return {
+    businessBuyer: unavailableDiagnostic("Pesquisa BB nao comprovada.", "Revisar pesquisa", null),
+    endCustomer: unavailableDiagnostic("Pesquisa EC nao comprovada.", "Revisar pesquisa", null),
+    commercialPage: unavailableDiagnostic("Página comercial não comprovada.", "Revisar diagnóstico", null),
+    profile: unavailableDiagnostic("Perfil nao comprovado.", "Revisar perfis", "/admin/perfis-de-orientacao"),
+    aiAssistance: unavailableDiagnostic("Assistencia por IA nao comprovada.", "Continuar manualmente", "/admin/perfis-de-orientacao"),
   };
 }
 
