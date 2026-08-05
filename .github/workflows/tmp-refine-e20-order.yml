@@ -91,3 +91,5 @@ jobs:
           git add docs/lp-planejamento.md .github/workflows/tmp-refine-e20-order.yml
           git commit -m 'docs: priorizar refinamento E20.2 antes da E19.2'
           git push origin HEAD:agent/reconciliar-e19-2-planejamento
+
+# trigger: 2
