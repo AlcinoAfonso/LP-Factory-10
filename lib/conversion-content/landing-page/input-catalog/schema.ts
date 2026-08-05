@@ -311,7 +311,11 @@ function validateKeywordMap(value: unknown): boolean {
 function validateAssetReference(value: unknown): boolean {
   if (!value || typeof value !== "object" || Array.isArray(value)) return false;
   const reference = value as Record<string, unknown>;
-  return Object.keys(reference).length === 1 && typeof reference.asset_id === "string" && reference.asset_id.trim().length > 0;
+  if (Object.keys(reference).length !== 1 || typeof reference.asset_id !== "string") return false;
+  const assetId = reference.asset_id.trim();
+  const hasUriScheme = /^[a-z][a-z0-9+.-]*:/i.test(assetId);
+  const isNetworkReference = /^(?:\/\/|\\\\)/.test(assetId);
+  return assetId.length > 0 && !hasUriScheme && !isNetworkReference;
 }
 
 function validateColorPalette(value: unknown): boolean {

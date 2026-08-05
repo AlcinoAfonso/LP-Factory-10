@@ -36,6 +36,18 @@ const baseInput: ResolveLandingPageInputCatalogInput = {
   },
 };
 
+const v2Input: ResolveLandingPageInputCatalogInput = {
+  ...baseInput,
+  version: 2,
+};
+
+const starterV2FieldKeys = [
+  "primary_service_or_offer",
+  "primary_service_or_offer_description",
+  "brand_logo_asset",
+  "brand_color_palette",
+] as const;
+
 const cases: Case[] = [
   {
     name: "registry v1 resolves all 19 ordered fields without operational context",
@@ -56,6 +68,129 @@ const cases: Case[] = [
   {
     name: "unknown version fails closed",
     run: () => assertError({ ...baseInput, version: 999 }, "UNKNOWN_VERSION"),
+  },
+  {
+    name: "registry v2 resolves 23 fields with four deterministic Starter additions",
+    run: () => {
+      const result = resolveLandingPageInputCatalog(v2Input);
+      assert.equal(result.ok, true);
+      assert.equal(result.value.version, 2);
+      assert.equal(result.value.fields.length, 23);
+      assert.deepEqual(
+        result.value.fields.slice(1, 5).map((field) => field.fieldKey),
+        starterV2FieldKeys,
+      );
+      assert.deepEqual(
+        result.value.fields
+          .filter((field) => field.createdInVersion === 1)
+          .map((field) => field.fieldKey),
+        resolveRequired(baseInput).fields.map((field) => field.fieldKey),
+      );
+    },
+  },
+  {
+    name: "v2 Starter fields preserve scope origin obligation plans version and snapshot policy",
+    run: () => {
+      const result = resolveRequired(v2Input);
+      const expected = {
+        primary_service_or_offer: ["offer", "offer_provided", "required"],
+        primary_service_or_offer_description: ["offer", "offer_provided", "required"],
+        brand_logo_asset: ["business", "business_provided", "optional"],
+        brand_color_palette: ["business", "business_provided", "required"],
+      } as const;
+
+      for (const [fieldKey, [valueScope, expectedValueOrigin, obligation]] of Object.entries(expected)) {
+        const field = result.fields.find((candidate) => candidate.fieldKey === fieldKey);
+        assert.ok(field);
+        assert.equal(field.valueScope, valueScope);
+        assert.equal(field.expectedValueOrigin, expectedValueOrigin);
+        assert.equal(field.obligation, obligation);
+        assert.deepEqual(field.allowedPlans, ["starter", "lite", "pro", "ultra"]);
+        assert.equal(field.createdInVersion, 2);
+        assert.equal(field.snapshotPolicy, "include_if_used");
+      }
+    },
+  },
+  {
+    name: "v2 required text fields reject empty strings without invented length limits",
+    run: () => {
+      const fields = resolveRequired(v2Input).fields;
+      for (const fieldKey of [
+        "primary_service_or_offer",
+        "primary_service_or_offer_description",
+      ]) {
+        const field = fields.find((candidate) => candidate.fieldKey === fieldKey);
+        assert.ok(field);
+        assert.equal(validateLandingPageInputValue(field, "").ok, false);
+        assert.equal(validateLandingPageInputValue(field, "   ").ok, false);
+        assert.equal(validateLandingPageInputValue(field, "X").ok, true);
+      }
+    },
+  },
+  {
+    name: "v2 brand asset accepts only a strict opaque asset reference",
+    run: () => {
+      const field = resolveRequired(v2Input).fields.find(
+        (candidate) => candidate.fieldKey === "brand_logo_asset",
+      );
+      assert.ok(field);
+      assert.equal(validateLandingPageInputValue(field, { asset_id: "asset_123" }).ok, true);
+      for (const invalidValue of [
+        "asset_123",
+        "https://example.com/logo.png",
+        {},
+        { asset_id: "" },
+        { asset_id: "https://example.com/logo.png" },
+        { asset_id: "https:example.com/logo.png" },
+        { asset_id: "//example.com/logo.png" },
+        { asset_id: "data:image/png;base64,AAAA" },
+        { asset_id: "mailto:logo@example.com" },
+        { asset_id: "s3://bucket/logo.png" },
+        { asset_id: "\\\\server\\logo.png" },
+        { asset_id: "asset_123", url: "https://example.com/logo.png" },
+      ]) {
+        assert.equal(validateLandingPageInputValue(field, invalidValue).ok, false);
+      }
+    },
+  },
+  {
+    name: "v2 brand palette requires exactly five hexadecimal roles",
+    run: () => {
+      const field = resolveRequired(v2Input).fields.find(
+        (candidate) => candidate.fieldKey === "brand_color_palette",
+      );
+      assert.ok(field);
+      const validPalette = {
+        primary: "#123456",
+        secondary: "#ABCDEF",
+        accent: "#fedcba",
+        background: "#FFFFFF",
+        text: "#000000",
+      };
+      const missingTextPalette = {
+        primary: validPalette.primary,
+        secondary: validPalette.secondary,
+        accent: validPalette.accent,
+        background: validPalette.background,
+      };
+      assert.equal(validateLandingPageInputValue(field, validPalette).ok, true);
+      assert.equal(
+        validateLandingPageInputValue(field, missingTextPalette).ok,
+        false,
+      );
+      assert.equal(
+        validateLandingPageInputValue(field, { ...validPalette, extra: "#111111" }).ok,
+        false,
+      );
+      assert.equal(
+        validateLandingPageInputValue(field, { ...validPalette, accent: "123456" }).ok,
+        false,
+      );
+      assert.equal(
+        validateLandingPageInputValue(field, { ...validPalette, accent: "#12345G" }).ok,
+        false,
+      );
+    },
   },
   {
     name: "unknown plan fails closed",
@@ -374,11 +509,17 @@ const cases: Case[] = [
     },
   },
   {
-    name: "starter lite pro and ultra are functionally equivalent",
+    name: "starter lite pro and ultra all receive the four v2 base fields",
     run: () => {
       const snapshots = ["starter", "lite", "pro", "ultra"].map((plan) => {
-        const result = resolveLandingPageInputCatalog({ ...baseInput, plan });
+        const result = resolveLandingPageInputCatalog({ ...v2Input, plan });
         assert.equal(result.ok, true);
+        assert.deepEqual(
+          result.value.fields
+            .filter((field) => field.createdInVersion === 2)
+            .map((field) => field.fieldKey),
+          starterV2FieldKeys,
+        );
         return result.value.fields;
       });
       for (const snapshot of snapshots.slice(1)) assert.deepEqual(snapshot, snapshots[0]);
@@ -387,9 +528,9 @@ const cases: Case[] = [
   {
     name: "result and registry contain no operational values entitlement or generation snapshot",
     run: () => {
-      const result = resolveLandingPageInputCatalog(baseInput);
+      const result = resolveLandingPageInputCatalog(v2Input);
       assert.equal(result.ok, true);
-      const serialized = JSON.stringify(result.value);
+      const serialized = JSON.stringify({ registry: landingPageInputCatalogRegistry[2], result: result.value });
       assert.equal(/providedValues|operationalValues|entitlement|subscription|stripe|generationSnapshot/i.test(serialized), false);
       assert.equal(serialized.includes("include_if_used"), true);
     },
@@ -399,10 +540,11 @@ const cases: Case[] = [
     run: () => {
       assert.equal(Object.isFrozen(landingPageInputCatalogRegistry), true);
       assert.equal(Object.isFrozen(landingPageInputCatalogRegistry[1].universal.entries), true);
+      assert.equal(Object.isFrozen(landingPageInputCatalogRegistry[2].universal.entries), true);
       assert.throws(() => {
         (landingPageInputCatalogRegistry[1].universal.entries as LandingPageInputCatalogLayerEntry[]).push(fixtureField("forbidden"));
       }, TypeError);
-      const result = resolveLandingPageInputCatalog(baseInput);
+      const result = resolveLandingPageInputCatalog(v2Input);
       assert.equal(result.ok, true);
       assert.equal(Object.isFrozen(result.value.fields[0].evidence.references), true);
       assert.throws(() => {
@@ -437,6 +579,12 @@ function assertError(input: ResolveLandingPageInputCatalogInput, code: string) {
   const result = resolveLandingPageInputCatalog(input);
   assert.equal(result.ok, false);
   assert.equal(result.error.code, code);
+}
+
+function resolveRequired(input: ResolveLandingPageInputCatalogInput) {
+  const result = resolveLandingPageInputCatalog(input);
+  assert.equal(result.ok, true);
+  return result.value;
 }
 
 function assertRegistryError(input: ResolveLandingPageInputCatalogInput, registry: LandingPageInputCatalogRegistry, code: string) {
