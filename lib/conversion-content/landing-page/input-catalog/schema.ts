@@ -3,6 +3,7 @@ import { z } from "zod";
 import {
   landingPageInputCatalogEvidenceReferences,
   landingPageInputCatalogPlans,
+  landingPageInputColorPaletteRoles,
   type LandingPageInputFieldDefinition,
   type LandingPageInputValueValidationResult,
 } from "./contracts";
@@ -112,6 +113,8 @@ const validationSchema = z.discriminatedUnion("kind", [
   z.object({ kind: z.literal("email") }).strict(),
   z.object({ kind: z.literal("https_url") }).strict(),
   z.object({ kind: z.literal("keyword_map") }).strict(),
+  z.object({ kind: z.literal("asset_reference") }).strict(),
+  z.object({ kind: z.literal("color_palette") }).strict(),
 ]);
 
 const evidenceSchema = z
@@ -140,6 +143,8 @@ export const landingPageInputFieldDefinitionSchema = z
       "boolean",
       "number_range",
       "keyword_map",
+      "asset_reference",
+      "color_palette",
     ]),
     valueScope: z.enum([
       "account",
@@ -258,6 +263,10 @@ function validateValue(field: LandingPageInputFieldDefinition, value: unknown): 
       return validateNumberRange(field, value);
     case "keyword_map":
       return validateKeywordMap(value);
+    case "asset_reference":
+      return field.validation.kind === "asset_reference" && validateAssetReference(value);
+    case "color_palette":
+      return field.validation.kind === "color_palette" && validateColorPalette(value);
   }
 }
 
@@ -299,6 +308,21 @@ function validateKeywordMap(value: unknown): boolean {
   return true;
 }
 
+function validateAssetReference(value: unknown): boolean {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return false;
+  const reference = value as Record<string, unknown>;
+  return Object.keys(reference).length === 1 && typeof reference.asset_id === "string" && reference.asset_id.trim().length > 0;
+}
+
+function validateColorPalette(value: unknown): boolean {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return false;
+  const palette = value as Record<string, unknown>;
+  const allowedRoles = new Set<string>(landingPageInputColorPaletteRoles);
+  const keys = Object.keys(palette);
+  if (keys.length !== landingPageInputColorPaletteRoles.length || keys.some((key) => !allowedRoles.has(key))) return false;
+  return landingPageInputColorPaletteRoles.every((role) => typeof palette[role] === "string" && /^#[0-9a-fA-F]{6}$/.test(palette[role]));
+}
+
 function validateValueTypeAndValidation(field: z.infer<typeof landingPageInputFieldDefinitionSchema>, context: z.RefinementCtx) {
   const expectedKind: Partial<Record<typeof field.valueType, typeof field.validation.kind>> = {
     phone: "e164",
@@ -308,6 +332,8 @@ function validateValueTypeAndValidation(field: z.infer<typeof landingPageInputFi
     string_list: "string_list",
     number_range: "number_range",
     keyword_map: "keyword_map",
+    asset_reference: "asset_reference",
+    color_palette: "color_palette",
   };
   const expected = expectedKind[field.valueType];
   if (expected && field.validation.kind !== expected) {
