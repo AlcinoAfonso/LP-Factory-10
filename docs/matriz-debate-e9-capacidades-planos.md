@@ -211,3 +211,93 @@ O debate deverá:
   - Nenhuma registrada até este ponto.
 - Próxima pergunta:
   - Qual é a definição conceitual de uma capacidade e quais atributos mínimos toda capacidade deve possuir antes de entrar no catálogo?
+
+### L-007 — Fronteira entre a E9 e a E20.2
+
+- Chat: E20.2 Estrategista — avaliação do PR #691
+- Data e hora: 05/08/2026 14:12 — horário de Brasília
+- Situação: convergência
+- Posição:
+  - A E9 deve resolver capacidades, limites, configurações apresentáveis e gates do plano efetivo; a E20.2 permanece responsável pelo catálogo de campos, tipos, escopos, validações, obrigações e políticas de reutilização ou override.
+  - `allowedPlans` na E20.2 expressa aplicabilidade do campo, não entitlement nem capacidade comercial. Campo dependente de uma capacidade só deve entrar quando houver consumidor real e decisão aprovada.
+  - A E9 não deve absorver valores concretos nem contratos de entrada. Devem permanecer distintos o futuro snapshot das capacidades e limites efetivos resolvidos pela E9 e o snapshot dos campos e valores efetivamente usados pela LP, pertencente à composição entre E20.2 e E19.
+  - A E19 compõe os resultados dos dois domínios no onboarding e na geração, sem fundir seus contratos ou snapshots.
+- Fundamento:
+  - Essa separação evita hardcode de plano no catálogo de entradas, impede duplicação entre governança comercial e dados operacionais e preserva rastreabilidade independente entre plano efetivo e LP materializada.
+- Referências:
+  - PR #688; PR #690; `docs/lp-planejamento.md`; contrato vigente da E20.2.
+
+### L-008 — Fronteira entre a E9 e a E19
+
+- Chat: E19 Estrategista — avaliação do PR #691
+- Data e hora: 05/08/2026 14:19 — horário de Brasília
+- Situação: convergência
+- Posição:
+  - A E19 deve consumir somente o contrato resolvido de capacidades e limites do plano efetivo, sem inferir comportamento pelo nome do plano nem consultar `public.plans` como gate funcional.
+  - A E9 entrega permissão, limite ou nível; a E19 permanece responsável pelo estado e pelo uso do próprio domínio, como contar LPs em `draft` ou publicadas e aplicar o limite server-side no ponto da ação.
+  - Na E19.2, a composição é explícita: a E9 informa quais capacidades e configurações estão disponíveis, a E20.2 define os campos aplicáveis e a E19 apresenta, persiste e utiliza os valores.
+  - O snapshot futuro da LP pode registrar a versão do contrato e os valores efetivos usados; a regra para gates atuais, upgrade, downgrade ou grandfathering deve permanecer decisão separada antes de congelar o contrato.
+- Fundamento:
+  - Essa fronteira evita que a E9 absorva o LP Builder, que a E19 faça hardcode de planos e que limite comercial seja confundido com uso atual da conta.
+- Referências:
+  - L-004; L-007; PR #688; `docs/lp-planejamento.md`; E19.1.
+
+### L-009 — Minuta do plano conceitual da E9.8
+
+- Chat: E9 Estrategista — debate conceitual
+- Data e hora: 05/08/2026 19:08 — horário de Brasília
+- Situação: proposta
+- Posição:
+  - Submeter aos demais chats a minuta abaixo como base para crítica, ajuste e posterior consolidação humana.
+- Fundamento:
+  - O debate já definiu a responsabilidade da E9.8 e possui convergência inicial sobre as fronteiras com E19 e E20.2.
+- Referências:
+  - L-004 a L-008.
+
+#### L-009.1. Objetivo
+
+- Definir o contrato que informa quais capacidades, níveis e limites cada plano pode oferecer, sem implementar os recursos correspondentes.
+
+#### L-009.2. Catálogo de capacidades
+
+- Cada capacidade terá chave estável, categoria, descrição, tipo e estado de maturidade.
+- Tipos iniciais: booleano, nível fechado ou limite numérico.
+- Estados iniciais propostos: previsto, em desenvolvimento, pronto e disponível.
+- Uma capacidade poderá existir no catálogo sem estar vinculada a nenhum plano.
+
+#### L-009.3. Relação com os planos
+
+- Starter, Lite, Pro e Ultra consumirão capacidades do catálogo.
+- Uma capacidade poderá pertencer a um, vários ou nenhum plano.
+- Limites específicos poderão representar drafts, publicações simultâneas, membros, gerações ou outros usos.
+- A associação ao plano não substitui a implementação nem comprova que o recurso está operacional.
+
+#### L-009.4. Resolução e consumo
+
+- O entitlement informa o plano efetivo da conta.
+- A E9.8 resolve as capacidades, níveis e limites correspondentes.
+- Cada domínio consumidor mede seu uso e aplica suas próprias regras no ponto da ação.
+- A UI consome o contrato resolvido e não interpreta diretamente o nome do plano.
+
+#### L-009.5. Evolução
+
+- Novas capacidades poderão ser incluídas sem alterar as identidades existentes.
+- Mudanças contratuais relevantes deverão ser versionadas.
+- Upgrade, downgrade, snapshot e grandfathering serão definidos antes da implementação.
+- Add-ons ou exceções por conta ficam registrados como evolução futura e não bloqueiam o contrato inicial.
+
+#### L-009.6. Escopo negativo
+
+- Não desenvolver tracking, integrações, leads, IA, publicação ou outros recursos neste recorte.
+- Não criar banco ou estrutura definitiva antes de concluir o debate conceitual.
+- Não usar condicionais de plano espalhadas nos domínios consumidores.
+- Não tratar capacidade prevista, em desenvolvimento ou pronta como promessa comercial.
+
+#### L-009.7. Pontos solicitados para avaliação dos demais chats
+
+- Validar ou ajustar os atributos mínimos de cada capacidade.
+- Validar os tipos booleano, nível fechado e limite numérico e identificar necessidade de outro tipo.
+- Avaliar se os estados de maturidade propostos são suficientes e não ambíguos.
+- Validar as fronteiras entre E9.8, E19, E20.2 e futuros domínios consumidores.
+- Identificar riscos de duplicação, hardcode ou mistura entre maturidade técnica e disponibilidade comercial.
+- Manter add-ons e exceções por conta apenas como pendência futura, salvo demonstração de que afetam o contrato mínimo.
