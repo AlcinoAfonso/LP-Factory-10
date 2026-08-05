@@ -721,7 +721,7 @@
 • Objetivo: padronizar a expansão de `business_taxons` e `business_taxon_aliases` com investigação, proposta, aprovação, carga e validação sem drift entre chats.
 • Implementado:
 • guia operacional do Grupo A versionado em `docs/`
-• snippets SQL operacionais do Grupo A versionado em `supabase/snippets/`
+• snippets SQL operacionais do Grupo A versionados em `supabase/snippets/`
 • investigação prévia, proposta, aprovação, carga e validação consolidadas como fluxo operacional
 • `parent_slug` nulo aceito para `niche` e `ultra_niche`
 • `parent_slug` preenchido e inexistente aborta explicitamente a carga
@@ -2115,15 +2115,15 @@ Repositório — Ajustados
 
 19. E19 — LP Builder
 - Objetivo: Consolidar o fluxo Core de landing pages por conta, da identidade mínima em `draft` às futuras etapas de geração, revisão, materialização e publicação, sempre por recortes aprovados.
-- Status: Em evolução por recortes. O recorte 19.2 está concluído; a próxima evolução é a E19.4, ainda sem plano-base e condicionada à avaliação residual.
+- Status: Em evolução por recortes. O recorte 19.1 está concluído. A próxima evolução será definida após a avaliação residual e o respectivo plano-base.
 
-19.2 Criação produtiva mínima de LP por conta
+19.1 Criação produtiva mínima de LP por conta
 
-19.2.1 Objetivo e status
+19.1.1 Objetivo e status
 - Objetivo: Criar a identidade mínima de uma LP real pertencente à conta, sem antecipar geração de conteúdo, revisão ou publicação.
 - Status: Concluído em 30/06/2026.
 
-19.2.2 Registros do recorte
+19.1.2 Registros do recorte
 - Banco:
   - Criados:
     - `public.account_landing_pages`
@@ -2141,7 +2141,7 @@ Repositório — Ajustados
   - Contrato de banco: `docs/schema.md` — `account_landing_pages`.
   - Plano encerrado: `docs/lousa-plano-base-E19.md`.
 
-19.2.3 Identidade mínima e persistência
+19.1.3 Identidade mínima e persistência
 - Status: Implementadas.
 - Conteúdo:
   - A LP nasce com status inicial `draft` e pertence a uma conta.
@@ -2149,7 +2149,7 @@ Repositório — Ajustados
   - Nome não pode ser vazio.
   - Slug segue formato seguro e é único por conta.
 
-19.2.4 Gate comercial e operacional
+19.1.4 Gate comercial e operacional
 - Status: Implementado server-side antes da persistência.
 - Conteúdo:
   - A criação exige conta `active`.
@@ -2158,13 +2158,13 @@ Repositório — Ajustados
   - Ausência de entitlement falha fechado antes do insert.
   - O recorte não resolve taxon, pesquisas, catálogo de entradas ou perfil de orientação.
 
-19.2.5 Boundary e limites do recorte
+19.1.5 Boundary e limites do recorte
 - Status: Consolidados.
 - Conteúdo:
   - E19 pertence à camada Core; o boundary vigente é `lib/lp-builder/` e a action server-side canônica é `app/lp-builder/actions.ts`.
   - Account Dashboard, Admin Dashboard e Partner Dashboard podem fornecer superfícies consumidoras, mas não são proprietários do domínio da E19.
   - O recorte concluído não gera conteúdo, não coleta valores da E20.2, não compõe E10.8/E18.4/E18.5/E20.2/E20.3 e não cria snapshot.
-  - Revisão, materialização, renderer, publicação, edição, regeneração e evolução entre planos permanecem para o plano-base próprio da E19.4.
+  - Revisão, materialização, renderer, publicação, edição, regeneração e evolução entre planos permanecem para o plano-base próprio da próxima evolução da E19.
   - Editor visual, domínio customizado, analytics, teste A/B, automação, agente, job e rotina recorrente permanecem fora deste recorte.
 
 20. E20 — Preparação e liberação de taxons para geração de landing pages
@@ -2267,7 +2267,7 @@ Repositório — Ajustados
   * Não criar novo campo, estado, tabela, resolver ou infraestrutura e não reabrir E20.3.3 ou E20.3.4.
 
 99. Changelog
-v1.5.123 — 04/08/2026 — Reorganizada a E19 conforme `docs/template-roadmap.md`: removidos os blocos redundantes e defasados 19.1 e 19.3, preservado o recorte material 19.2, eliminados registros vazios e referências futuras superadas e registrada a E19.4 como próxima evolução sem antecipar seu plano-base.
+v1.5.123 — 04/08/2026 — Reorganizada a E19 conforme `docs/template-roadmap.md`: removidos os blocos redundantes e defasados, renumerado o recorte material concluído para 19.1, eliminados registros vazios e referências futuras superadas e mantida a próxima evolução sem numeração antecipada até a avaliação residual e o respectivo plano-base.
 
 v1.5.122 — 04/08/2026 — Garantido no máximo um taxon primário ativo por conta e reconciliada a retirada da E12.4.4 da implementação.
 
