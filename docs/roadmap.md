@@ -2,7 +2,7 @@
 
 0.1 Cabeçalho
 • Data: 04/08/2026
-• Versão: v1.5.122
+• Versão: v1.5.123
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -2114,65 +2114,21 @@ Repositório — Ajustados
   - resolver inalterado e E18.5 independente do registry da E20.2.
 
 19. E19 — LP Builder
-- Objetivo: Consolidar a seção do Core responsável pela criação, edição e organização de landing pages. No recorte atual, limitar E19 à criação mínima de LP por conta com status inicial `draft`.
-- Status: Em execução faseada — Fase 3 concluída em 30/06/2026. Criação produtiva mínima de LP por conta implementada; persistência mínima em `public.account_landing_pages` criada; boundary próprio do LP Builder criado em `lib/lp-builder/`; gate E9 aplicado antes da persistência. Editor visual, publicação, render público, domínio customizado, analytics, A/B, IA runtime e automações permanecem fora do recorte.
+- Objetivo: Consolidar o fluxo Core de landing pages por conta, da identidade mínima em `draft` às futuras etapas de geração, revisão, materialização e publicação, sempre por recortes aprovados.
+- Status: Em evolução por recortes. O recorte 19.1 está concluído. A próxima evolução será definida após a avaliação residual e o respectivo plano-base.
 
-19.1 Contrato do LP Builder
+19.1 Criação produtiva mínima de LP por conta
 
 19.1.1 Objetivo e status
-- Objetivo: Consolidar a identidade da E19 como seção Core própria para criação, edição e organização de landing pages, separada dos dashboards.
-- Status: Contrato consolidado para o recorte atual, com fronteiras futuras preservadas sem obrigação de nova implementação agora.
+- Objetivo: Criar a identidade mínima de uma LP real pertencente à conta, sem antecipar geração de conteúdo, revisão ou publicação.
+- Status: Concluído em 30/06/2026.
 
 19.1.2 Registros do recorte
-- Banco:
-  - Criados: N/A.
-  - Ajustados: N/A.
-- Repositório:
-  - Criados: N/A.
-  - Ajustados: N/A.
-  - Excluídos: N/A.
-- Updates:
-  - Aplicados: N/A.
-
-19.1.3 Boundary do LP Builder
-- Status: Criado.
-- Conteúdo:
-  - E19 pertence à camada Core.
-  - E19 é seção própria, separada de Account Dashboard, Admin Dashboard e Partner Dashboard.
-  - Boundary criado: `lib/lp-builder/`.
-  - Action server-side canônica criada: `app/lp-builder/actions.ts`.
-
-19.1.4 Relação com dashboards
-- Status: Separação consolidada.
-- Conteúdo:
-  - E19 não pertence ao Account Dashboard.
-  - E19 não pertence ao Admin Dashboard.
-  - E19 não pertence ao Partner Dashboard.
-  - E19 é seção Core própria.
-
-19.1.5 Fronteiras preservadas
-- Status: Preservadas como evolução futura, sem implementação no recorte atual.
-- Conteúdo:
-  - E19 pode futuramente consumir página comercial publicada por taxon.
-  - E10.7 não implementa LP Builder.
-  - E10.7 não implementa regra de liberação para criação de LPs.
-  - E10.7 não implementa continuidade de contas.
-  - E10.7 não implementa bloqueio de novas ativações.
-  - Esta referência não cria obrigação de nova implementação agora.
-
-19.2 Criação produtiva mínima de LP por conta
-
-19.2.1 Objetivo e status
-- Objetivo: Consolidar o recorte efetivamente implementado e validado na Fase 3 para criação mínima de LP por conta.
-- Status: Implementado. LPs são criadas com status inicial `draft`, persistidas em `public.account_landing_pages` e protegidas por gate comercial e operacional antes do insert.
-
-19.2.2 Registros do recorte
 - Banco:
   - Criados:
     - `public.account_landing_pages`
     - `account_landing_pages_select_member_or_platform`
     - `account_landing_pages_set_updated_at`
-  - Ajustados: N/A.
 - Repositório:
   - Criados:
     - `app/lp-builder/actions.ts`
@@ -2181,86 +2137,35 @@ Repositório — Ajustados
     - `lib/lp-builder/index.ts`
     - `supabase/migrations/20260630210213_e19_account_landing_pages.sql`
     - `supabase/snippets/e19_account_landing_pages_verify.sql`
-  - Ajustados: N/A.
-  - Excluídos: N/A.
-- Updates:
-  - Aplicados: N/A.
+- Referências:
+  - Contrato de banco: `docs/schema.md` — `account_landing_pages`.
+  - Plano encerrado: `docs/lousa-plano-base-E19.md`.
 
-19.2.3 Criação mínima
-- Status: Implementada.
+19.1.3 Identidade mínima e persistência
+- Status: Implementadas.
 - Conteúdo:
-  - LP nasce com status inicial `draft`.
-  - Persistência mínima ocorre em `public.account_landing_pages`.
-  - Slug é único por conta.
+  - A LP nasce com status inicial `draft` e pertence a uma conta.
+  - A persistência mínima ocorre em `public.account_landing_pages`.
   - Nome não pode ser vazio.
-  - Slug deve seguir formato seguro.
+  - Slug segue formato seguro e é único por conta.
 
-19.2.4 Gate comercial e operacional
+19.1.4 Gate comercial e operacional
 - Status: Implementado server-side antes da persistência.
 - Conteúdo:
-  - Criação de LP exige conta `active`.
-  - Criação de LP exige membership `active` com role `owner` ou `admin`.
-  - Criação de LP exige entitlement comercial válido via E9.
-  - Gate é aplicado server-side antes do insert.
+  - A criação exige conta `active`.
+  - A criação exige membership `active` com papel `owner` ou `admin`.
+  - A criação exige entitlement comercial válido via E9.
+  - Ausência de entitlement falha fechado antes do insert.
+  - O recorte não resolve taxon, pesquisas, catálogo de entradas ou perfil de orientação.
 
-19.2.5 Updates avaliados no recorte
-- Status: Avaliados; não registrados como updates aplicados.
+19.1.5 Boundary e limites do recorte
+- Status: Consolidados.
 - Conteúdo:
-  - `github#499`
-  - `supa#20260630210213`
-  - `e9#gate`
-  - `automation#E19`
-
-19.3 Limites, dependências e evolução futura
-
-19.3.1 Objetivo e status
-- Objetivo: Consolidar limites do recorte atual, dependências e fronteiras futuras da E19 sem antecipar implementação.
-- Status: Limites e dependências preservados. Evoluções futuras permanecem fora da Fase 3 e não criam obrigação de implementação agora.
-
-19.3.2 Registros do recorte
-- Banco:
-  - Criados: N/A.
-  - Ajustados: N/A.
-- Repositório:
-  - Criados: N/A.
-  - Ajustados: N/A.
-  - Excluídos: N/A.
-- Updates:
-  - Aplicados: N/A.
-
-19.3.3 Fora do escopo da Fase 3
-- Status: Fora do recorte atual.
-- Conteúdo:
-  - Editor visual.
-  - Publicação.
-  - Render público.
-  - Domínio customizado.
-  - Analytics.
-  - Teste A/B.
-  - IA runtime.
-  - Automações.
-  - Agentes.
-  - Jobs.
-  - Rotinas recorrentes.
-
-19.3.4 Dependências e referências
-- Status: Preservadas.
-- Conteúdo:
-  - E9 — Billing, trial e entitlements.
-  - E10 — Account Dashboard.
-  - E12 — Admin Dashboard.
-  - E13 — Partner Dashboard.
-  - E18 — Base transversal de templates, módulos, composições e artefatos.
-
-19.3.5 Fronteiras futuras preservadas
-- Status: Preservadas como evolução futura, sem implementação no recorte atual.
-- Conteúdo:
-  - E19 pode futuramente consumir página comercial publicada por taxon.
-  - E10.7 não implementa LP Builder.
-  - E10.7 não implementa regra de liberação para criação de LPs.
-  - E10.7 não implementa continuidade de contas.
-  - E10.7 não implementa bloqueio de novas ativações.
-  - Esta referência não cria obrigação de nova implementação agora.
+  - E19 pertence à camada Core; o boundary vigente é `lib/lp-builder/` e a action server-side canônica é `app/lp-builder/actions.ts`.
+  - Account Dashboard, Admin Dashboard e Partner Dashboard podem fornecer superfícies consumidoras, mas não são proprietários do domínio da E19.
+  - O recorte concluído não gera conteúdo, não coleta valores da E20.2, não compõe E10.8/E18.4/E18.5/E20.2/E20.3 e não cria snapshot.
+  - Revisão, materialização, renderer, publicação, edição, regeneração e evolução entre planos permanecem para o plano-base próprio da próxima evolução da E19.
+  - Editor visual, domínio customizado, analytics, teste A/B, automação, agente, job e rotina recorrente permanecem fora deste recorte.
 
 20. E20 — Preparação e liberação de taxons para geração de landing pages
 
@@ -2362,6 +2267,8 @@ Repositório — Ajustados
   * Não criar novo campo, estado, tabela, resolver ou infraestrutura e não reabrir E20.3.3 ou E20.3.4.
 
 99. Changelog
+v1.5.123 — 04/08/2026 — Reorganizada a E19 conforme `docs/template-roadmap.md`: removidos os blocos redundantes e defasados, renumerado o recorte material concluído para 19.1, eliminados registros vazios e referências futuras superadas e mantida a próxima evolução sem numeração antecipada até a avaliação residual e o respectivo plano-base.
+
 v1.5.122 — 04/08/2026 — Garantido no máximo um taxon primário ativo por conta e reconciliada a retirada da E12.4.4 da implementação.
 
 v1.5.121 — 04/08/2026 — Concluída documentalmente a correção de cardinalidade da E12.4.3.2 após gate funcional aprovado; registrada a E12.4.4 para classificar gaps modulares, problemas de pesquisa ou modelagem e requisitos globais de composição, sem implementação no PR #681.
