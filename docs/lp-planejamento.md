@@ -53,14 +53,21 @@ Fontes de referência: `README.md`, `docs/roadmap.md`, `docs/base-tecnica.md`, `
 - A E20.2 mantém um catálogo declarativo único, versionado e separado do perfil de orientação e do conteúdo.
 - A resolução segue `universal → segmento → nicho → ultranicho`, aplicando somente as camadas da cadeia do taxon atendido e do plano informado.
 - O catálogo define quais campos existem, sua aplicabilidade, origem esperada, tipo, validação e classificação como obrigatório, opcional ou condicional.
+- Cada campo preserva um escopo explícito entre `account`, `business`, `offer`, `campaign` e `landing_page`.
+- Valores de conta ou negócio funcionam como padrões reutilizáveis; valores de oferta podem alimentar várias LPs; valores de campanha pertencem ao contexto de aquisição; valores de `landing_page` pertencem somente à página concreta.
+- O contrato de cada campo deve indicar se o valor é herdado, se admite substituição por LP e se a substituição integra o snapshot; não existe override genérico para qualquer campo.
+- Nome do negócio, nome fantasia e logo oficial são valores da conta ou negócio. A LP pode decidir exibir ou omitir a logo, mas não substitui silenciosamente a fonte oficial por outra logo.
+- A paleta visual é um padrão reutilizável da conta e pode admitir substituição explícita na LP.
+- O estágio de funil pertence à LP.
+- Configuração de Google Ads possui dois níveis: conexão e padrões reutilizáveis no nível da conta; associação de campanha, objetivo de conversão e mensuração específica no nível da LP.
+- Credenciais, tokens e secrets de Google Ads não são campos comuns da E20.2 e pertencem ao boundary seguro da integração responsável.
 - Os valores concretos pertencem à conta, negócio, oferta, campanha ou LP; a E19 os coleta, valida e persiste e preserva o snapshot da geração.
 - Os campos da E20.2 não são copiados para o perfil da E20.3.
 - Para a configuração mínima Starter, a conta deve informar ao menos o serviço ou oferta principal e uma descrição factual curta do que realmente entrega.
 - Logo ou asset da marca é opcional; sua ausência não bloqueia o onboarding nem a futura geração.
-- A paleta visual confirmada pela conta é um valor reutilizável do negócio, mas pode ser substituída por decisão específica de cada LP.
 - `paid_search_keyword_map` permanece opcional para alinhamento entre busca, anúncio e LP.
 - A experiência apresenta somente os campos exigidos pelas capacidades do plano vigente; upgrade solicita apenas novos valores efetivamente consumidos, sem repetir toda a configuração.
-- A E20.2 v1 ainda aplica campos equivalentes aos quatro planos; a E19.2 pode exigir refinamento focalizado de `allowedPlans`, tipos ou campos quando houver consumidor real e aprovação pela barreira de admissão vigente, sem catálogo preventivo.
+- A E20.2 v1 ainda aplica campos equivalentes aos quatro planos; a E19.2 pode exigir refinamento focalizado de `allowedPlans`, tipos, escopos ou política de override quando houver consumidor real e aprovação pela barreira de admissão vigente, sem catálogo preventivo.
 
 ### 1.6. Manter o perfil de orientação do taxon
 
@@ -113,6 +120,7 @@ Fontes de referência: `README.md`, `docs/roadmap.md`, `docs/base-tecnica.md`, `
 - O taxon primário ativo é exibido como contexto autoritativo; ausência, inatividade ou ambiguidade falha fechada e nenhum taxon arbitrário pode ser escolhido.
 - Owner ou admin ativo configura a conta; os valores permanecem pertencentes à conta ou ao negócio.
 - Dados reutilizáveis do negócio devem permanecer separados dos valores específicos da oferta, campanha ou LP.
+- Durante o primeiro onboarding, os campos essenciais permanecem visíveis em jornada guiada; depois da conclusão, valores reutilizáveis e alterações futuras ficam organizados na área ou seletor `Configurações`.
 - A conta piloto usa o fluxo administrativo vigente de entitlement com origem `liberacao_manual`, plano, justificativa, operador e validade opcional, sem autorização paralela.
 - O entitlement manual preserva as capacidades normais já vinculadas ao entitlement, inclusive as regras vigentes de membros e convites.
 
@@ -152,6 +160,26 @@ Fontes de referência: `README.md`, `docs/roadmap.md`, `docs/base-tecnica.md`, `
 - Depois do entitlement, as capacidades da conta continuam governadas pelo entitlement; suspensão comercial não cancela automaticamente entitlements, assinaturas ou LPs existentes.
 - A regra exata para evoluir ou reutilizar a LP entre `starter`, `lite`, `pro` e `ultra` permanece para a evolução posterior da E19, E20.4 e E12.4.5–12.4.6.
 
+### 1.11. Governar capacidades e limites por plano
+
+- A E9 deve manter um catálogo canônico único de capacidades e limites para `starter`, `lite`, `pro` e `ultra`.
+- O entitlement informa o `planKey` efetivo da conta; o catálogo informa o que esse plano permite; cada domínio aplica server-side a capacidade ou o limite correspondente.
+- Disponibilidade comercial por `taxon + plano`, entitlement da conta e capacidades do plano são decisões distintas e não devem ser fundidas.
+- A E20.2 define informações necessárias e não define quantidade de LPs, publicação, tracking, relatórios, leads ou CRM.
+- Capacidades usam chaves estáveis e limites explícitos, sem condições espalhadas do tipo `if plan === ...` em páginas ou componentes.
+- A UI consome o resultado resolvido e não reinterpreta o nome do plano.
+- O contrato inicial do Starter deve prever:
+  - quantidade limitada de LPs em `draft`, com número exato ainda sujeito a decisão humana;
+  - no máximo uma LP publicada simultaneamente;
+  - tracking mínimo confiável;
+  - dashboard mínimo de resultados;
+  - ausência de CRM completo;
+  - eventual lista simples de leads somente quando existir captura real e recorte aprovado.
+- O tracking mínimo deve começar por visualizações da LP, cliques no CTA principal e conversão confirmável quando aplicável.
+- O dashboard mínimo deve informar LP, período, visualizações, cliques e conversões disponíveis, sem analytics avançado.
+- Novos planos revelam capacidades e configurações adicionais de forma progressiva; upgrade não repete dados já confirmados e não promete recurso ainda não implementado e disponibilizado.
+- A evolução contínua ocorre adicionando ou ajustando capacidades no catálogo canônico e implementando-as no domínio responsável, sem duplicar o contrato em E19, E20.2 ou na UI.
+
 ## 2. O que precisa ser preservado ou implementado no projeto
 
 ### 2.1. E10.8 — Pesquisas resolvidas
@@ -182,6 +210,9 @@ Fontes de referência: `README.md`, `docs/roadmap.md`, `docs/base-tecnica.md`, `
 - Preservar o catálogo declarativo, suas camadas, resolução por taxon e plano, proveniência, validação e barreira de admissão já concluídos.
 - Não copiar os campos resolvidos para o perfil da E20.3.
 - Refinar focalmente o catálogo para a E19.2 quando necessário para representar serviço ou oferta principal, descrição factual curta, logo opcional e paleta confirmada, com escopo, origem, tipo, validação, obrigação, plano e snapshot definidos.
+- Formalizar em cada campo a política de reutilização, herança e eventual override por LP.
+- Manter logo e nome do negócio como valores da conta ou negócio; manter funil como valor da LP; permitir paleta padrão da conta com override explícito por LP.
+- Representar apenas configurações e referências não secretas de Google Ads; credenciais e tokens permanecem fora do catálogo.
 - Não criar catálogo completo de produtos, serviços, mídias ou identidade visual antes de necessidade real.
 - Valores operacionais, avaliação das condições concretas e snapshot permanecem para a E19.
 
@@ -214,7 +245,9 @@ Fontes de referência: `README.md`, `docs/roadmap.md`, `docs/base-tecnica.md`, `
 - Coletar separadamente valores da conta ou negócio e valores específicos da primeira LP.
 - Exigir para Starter serviço ou oferta principal e descrição factual curta; manter logo opcional.
 - Sugerir e confirmar paleta visual conforme a seção 1.9, preservando possibilidade de alteração e override por LP.
-- Aplicar progressive disclosure por plano: Starter solicita o mínimo e upgrades apresentam somente campos adicionais consumidos pelas novas capacidades.
+- Aplicar progressive disclosure conforme as capacidades efetivas resolvidas pela E9, sem hardcode do nome do plano.
+- Organizar configurações reutilizáveis de conta em seletor ou área própria depois do primeiro onboarding.
+- Separar configuração padrão de tracking no nível da conta da associação e mensuração específicas da LP.
 - Não criar novo status de onboarding na conta; derivar completude do catálogo aplicável.
 - Exigir owner ou admin ativo e entitlement válido, sem autorização adicional da E12.4.4.
 - Derivar o taxon pela taxonomia autoritativa e falhar fechado diante de ausência, inatividade ou ambiguidade.
@@ -236,16 +269,29 @@ Fontes de referência: `README.md`, `docs/roadmap.md`, `docs/base-tecnica.md`, `
 - Benchmark Blueprint permanece opcional e não altera contratos automaticamente.
 - Não criar catálogo multicanal, editor visual, agente ou nova infraestrutura sem evidência e plano-base próprios.
 
+### 2.9. E9 — Catálogo de capacidades e limites por plano
+
+- A E9 continua responsável pelo entitlement comercial e passa a planejar o contrato canônico de capacidades e limites por plano.
+- O catálogo não substitui entitlement, disponibilidade comercial, taxonomia, E20.2 ou gates operacionais.
+- O resolver recebe o plano efetivo e entrega capabilities e limites tipados para consumo server-side.
+- O contrato deve distinguir, no mínimo, limites de LPs em `draft`, LPs publicadas, nível de tracking, nível de relatórios, captura ou gestão de leads e demais recursos evolutivos.
+- O Starter começa com uma LP publicada simultaneamente, tracking e dashboard mínimos e sem CRM completo; a quantidade de rascunhos e a eventual lista simples de leads permanecem decisões humanas do plano-base.
+- `public.plans`, `max_lps`, `max_conversions` e `features` são fontes atuais a avaliar, sem presumir que o contrato vigente já distingue todos os limites necessários.
+- Cada domínio continua responsável por implementar e validar suas capacidades; a E9 não implementa LP Builder, tracking, analytics ou CRM.
+- Novas capacidades entram de forma versionada e contínua, sem feature flags ou condicionais paralelas espalhadas pela aplicação.
+
 ## 3. Ordem dos próximos planos-base
 
-- Base consolidada para a jornada: E10.8, E18.4, E18.5, E20.2, E20.3, incluindo E20.3.5, E12.4.3, incluindo E12.4.3.1–12.4.3.2, e E19.1.
-- 1º — preparar o plano-base v1 da E19.2 para onboarding e configuração mínima Starter e reconciliar no mesmo PR as referências ativas do roadmap, preservando como históricos os planos já encerrados.
-- 2º — no plano-base, fechar contratos de valores, logo, paleta, escopos, persistência, completude, progressive disclosure e transição da página comercial para o espaço operacional.
-- 3º — implementar a E19.2 em fases pequenas, sem geração de conteúdo.
-- 4º — validar o onboarding com a conta piloto e confirmar que o brief mínimo Starter está completo.
-- 5º — avaliar e preparar o plano-base da evolução posterior da E19 para composição, geração, revisão, materialização e publicação.
-- 6º — gerar e avaliar a primeira LP piloto pelo fluxo oficial da E19.
-- 7º — planejar a disponibilidade comercial por `taxon + plano` em E20.4 e E12.4.5–12.4.6.
+- Base consolidada para a jornada: E10.8, E18.4, E18.5, E20.2, E20.3, incluindo E20.3.5, E12.4.3, incluindo E12.4.3.1–12.4.3.2, E19.1 e entitlement comercial da E9.
+- 1º — preparar no E9 o plano-base do catálogo canônico de capacidades e limites por plano, começando pelo contrato mínimo do Starter.
+- 2º — refinar focalmente a E20.2 para escopos, política de override e campos realmente consumidos pelo onboarding Starter.
+- 3º — preparar o plano-base v1 da E19.2 para onboarding e configuração mínima Starter e reconciliar no mesmo PR as referências ativas do roadmap, preservando como históricos os planos já encerrados.
+- 4º — no plano-base da E19.2, fechar contratos de valores, logo, paleta, tracking por nível, persistência, completude, progressive disclosure e transição da página comercial para o espaço operacional.
+- 5º — implementar a E19.2 em fases pequenas, sem geração de conteúdo.
+- 6º — validar o onboarding com a conta piloto e confirmar que o brief mínimo Starter está completo.
+- 7º — avaliar e preparar o plano-base da evolução posterior da E19 para composição, geração, revisão, materialização e publicação.
+- 8º — gerar e avaliar a primeira LP piloto pelo fluxo oficial da E19.
+- 9º — planejar a disponibilidade comercial por `taxon + plano` em E20.4 e E12.4.5–12.4.6.
 - A E12.4.4 é retirada da implementação e absorvida pela jornada simplificada; não é concluída nem bloqueia a E19.2.
 - Reabrir E18.4, E18.5 ou o perfil de orientação somente diante de aprendizado material obtido com LPs reais. A E20.2 pode receber refinamento focalizado durante o planejamento ou a implementação da E19.2 quando houver consumidor real, necessidade concreta e aprovação pela barreira de admissão vigente.
 - Gates operacionais remanescentes da E12.4.3 são acompanhados no roadmap e não criam novo plano conceitual.
@@ -278,7 +324,8 @@ Fontes de referência: `README.md`, `docs/roadmap.md`, `docs/base-tecnica.md`, `
 ### 4.4. E20
 
 - E20.2 define e resolve o catálogo de entradas; a E19 coleta, valida e persiste os valores concretos e preserva o snapshot.
-- O refinamento focalizado da E20.2 para a E19.2 deve cobrir somente valores realmente consumidos no onboarding Starter, inclusive serviço ou oferta principal, descrição factual, logo opcional e paleta confirmada.
+- O refinamento focalizado da E20.2 para a E19.2 deve cobrir somente valores realmente consumidos no onboarding Starter, inclusive serviço ou oferta principal, descrição factual, logo opcional, paleta confirmada, escopos e overrides autorizados.
+- E20.2 não define capacidades ou limites comerciais do plano.
 - E20.3 mantém contrato, persistência, estados, validação e resolução própria ou herdada do perfil de orientação, sem copiar a E20.2.
 - A E20.3.5 mantém `generation_guidance` opcional e exclusivamente humano sem alterar estados, herança, resolução ou recomendações.
 - A operação humana do lifecycle pertence à E12.4.3.
@@ -288,7 +335,15 @@ Fontes de referência: `README.md`, `docs/roadmap.md`, `docs/base-tecnica.md`, `
 ### 4.5. E19
 
 - A E19.1 mantém a identidade mínima da LP real em `draft` e os gates já implementados.
-- A E19.2 implementa o onboarding pós-entitlement, coleta e confirmação dos valores mínimos Starter, identidade visual e preparação do brief, sem gerar conteúdo.
+- A E19.2 implementa o onboarding pós-entitlement, coleta e confirmação dos valores mínimos Starter, identidade visual, configuração de tracking por nível e preparação do brief, sem gerar conteúdo.
+- A E19.2 consome capacidades e limites resolvidos pela E9 para controlar progressive disclosure e impedir hardcode do plano.
 - Uma evolução posterior da E19 compõe o pacote atual de fontes e gera e mantém a LP real da conta com entitlement válido.
 - Conta piloto e cliente usam o mesmo onboarding e o mesmo fluxo; o entitlement manual válido permite o piloto antes da disponibilidade pública.
 - Não existe LP teste paralela, geração pelo Admin Dashboard, prontidão persistida nem dependência implementável da E12.4.4.
+
+### 4.6. E9
+
+- A E9 mantém entitlement, plano efetivo e o catálogo canônico de capacidades e limites.
+- O catálogo começa pelo Starter e evolui para Lite, Pro e Ultra por chaves estáveis e limites explícitos.
+- A E9 não implementa os recursos dos domínios consumidores; entrega o contrato resolvido que cada domínio aplica server-side.
+- Disponibilidade comercial por taxon, entitlement da conta e capacidades do plano permanecem separados.
