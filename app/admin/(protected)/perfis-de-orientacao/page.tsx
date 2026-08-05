@@ -10,7 +10,10 @@ import {
   listAdminGenerationProfiles,
 } from "@/conversion-content/adapters/landingPageGenerationProfileAdminAdapter";
 import { resolveLandingPageResearchForTaxons } from "@/conversion-content/adapters/landingPageResearchAdapter";
-import { isGenerationProfileAssistanceConfigured } from "@/conversion-content/landing-page/generation-profile";
+import {
+  getAdminGenerationProfilePresentation,
+  isGenerationProfileAssistanceConfigured,
+} from "@/conversion-content/landing-page/generation-profile";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -22,7 +25,9 @@ export default async function AdminGenerationProfilesPage() {
 
   const research = result.ok
     ? await resolveLandingPageResearchForTaxons({
-        taxonIds: result.items.map((item) => item.taxon.id),
+        taxonIds: [...new Set(result.items.map(
+          (item) => getAdminGenerationProfilePresentation(item).assistanceTaxonId,
+        ))],
       })
     : new Map();
   const aiConfigured = isGenerationProfileAssistanceConfigured({
@@ -55,7 +60,8 @@ export default async function AdminGenerationProfilesPage() {
               <thead className="bg-muted/60 text-left text-xs font-medium uppercase text-muted-foreground">
                 <tr>
                   <th className="px-4 py-3">Taxon</th>
-                  <th className="px-4 py-3">Perfil</th>
+                  <th className="px-4 py-3">Perfil ativo</th>
+                  <th className="px-4 py-3">Rascunho próprio</th>
                   <th className="px-4 py-3">Origem</th>
                   <th className="px-4 py-3">Assistência por IA</th>
                   <th className="px-4 py-3">Ação</th>
@@ -63,13 +69,11 @@ export default async function AdminGenerationProfilesPage() {
               </thead>
               <tbody className="divide-y divide-border">
                 {result.items.map((item) => {
+                  const presentation = getAdminGenerationProfilePresentation(item);
                   const assistance = getGenerationProfileAssistanceAvailability({
                     aiConfigured,
-                    research: research.get(item.taxon.id),
+                    research: research.get(presentation.assistanceTaxonId),
                   });
-                  const href = item.ownerTaxonId
-                    ? `/admin/perfis-de-orientacao/${item.ownerTaxonId}`
-                    : `/admin/perfis-de-orientacao/${item.taxon.id}`;
 
                   return (
                     <tr key={item.taxon.id} className="align-top">
@@ -80,9 +84,13 @@ export default async function AdminGenerationProfilesPage() {
                         </p>
                       </td>
                       <td className="px-4 py-3">
-                        <AdminStatusBadge tone={profileStateTone(item.profileState)}>
-                          {profileStateLabel(item.profileState)}
-                          {item.profileVersion ? ` v${item.profileVersion}` : ""}
+                        <AdminStatusBadge tone={presentation.active.tone}>
+                          {presentation.active.label}
+                        </AdminStatusBadge>
+                      </td>
+                      <td className="px-4 py-3">
+                        <AdminStatusBadge tone={presentation.draft.tone}>
+                          {presentation.draft.label}
                         </AdminStatusBadge>
                       </td>
                       <td className="px-4 py-3 text-muted-foreground">
@@ -99,8 +107,8 @@ export default async function AdminGenerationProfilesPage() {
                         ) : null}
                       </td>
                       <td className="px-4 py-3">
-                        <Link className="font-medium text-brand-700 hover:underline" href={href}>
-                          {profileActionLabel(item.profileState)}
+                        <Link className="font-medium text-brand-700 hover:underline" href={presentation.action.href}>
+                          {presentation.action.label}
                         </Link>
                       </td>
                     </tr>
@@ -113,27 +121,4 @@ export default async function AdminGenerationProfilesPage() {
       )}
     </div>
   );
-}
-
-function profileStateLabel(state: "active_own" | "active_inherited" | "draft_own" | "absent" | "unavailable") {
-  if (state === "active_own") return "Ativo — próprio";
-  if (state === "active_inherited") return "Ativo — herdado";
-  if (state === "draft_own") return "Rascunho — próprio";
-  if (state === "unavailable") return "Indisponível";
-  return "Ausente";
-}
-
-function profileStateTone(state: "active_own" | "active_inherited" | "draft_own" | "absent" | "unavailable") {
-  if (state === "active_own" || state === "active_inherited") return "success";
-  if (state === "draft_own") return "warning";
-  if (state === "unavailable") return "danger";
-  return "neutral";
-}
-
-function profileActionLabel(state: "active_own" | "active_inherited" | "draft_own" | "absent" | "unavailable") {
-  if (state === "draft_own") return "Continuar";
-  if (state === "active_own") return "Gerenciar";
-  if (state === "active_inherited") return "Ver perfil";
-  if (state === "absent") return "Criar perfil";
-  return "Revisar";
 }

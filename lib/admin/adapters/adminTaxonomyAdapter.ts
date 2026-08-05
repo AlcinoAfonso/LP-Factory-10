@@ -6,6 +6,7 @@ import {
   readAdminGenerationProfileSummaries,
 } from "@/conversion-content/adapters/landingPageGenerationProfileAdminAdapter";
 import {
+  getAdminGenerationProfilePresentation,
   isGenerationProfileAssistanceConfigured,
   type AdminGenerationProfileListItem,
 } from "@/conversion-content/landing-page/generation-profile";
@@ -194,12 +195,10 @@ async function readAdminTaxonDiagnostics(
   taxons: readonly AdminTaxonSummary[],
 ): Promise<ReadonlyMap<string, AdminTaxonOperationalDiagnostic>> {
   const taxonIds = taxons.map((taxon) => taxon.id);
-  const [researchRead, commercialRead, profilesRead] = await Promise.allSettled([
-    resolveLandingPageResearchForTaxons({ taxonIds }),
+  const [commercialRead, profilesRead] = await Promise.allSettled([
     readAdminCommercialActivationOverview(),
     readAdminGenerationProfileSummaries(),
   ]);
-  const research = researchRead.status === "fulfilled" ? researchRead.value : new Map();
   const aiConfigured = isGenerationProfileAssistanceConfigured({
     apiKey: process.env.OPENAI_API_KEY,
     model: process.env.OPENAI_LANDING_PAGE_GENERATION_PROFILE_MODEL,
@@ -214,6 +213,18 @@ async function readAdminTaxonDiagnostics(
       ? profilesRead.value.items.map((item) => [item.taxon.id, item])
       : [],
   );
+  const researchTaxonIds = [...new Set([
+    ...taxonIds,
+    ...[...profileByTaxonId.values()].map(
+      (item) => getAdminGenerationProfilePresentation(item).assistanceTaxonId,
+    ),
+  ])];
+  const [researchRead] = await Promise.allSettled([
+    resolveLandingPageResearchForTaxons({ taxonIds: researchTaxonIds }),
+  ]);
+  const research = researchRead.status === "fulfilled"
+    ? researchRead.value
+    : new Map<string, LandingPageResearchResolutionResult>();
 
   return new Map<string, AdminTaxonOperationalDiagnostic>(
     taxons.map((taxon) => {
@@ -221,33 +232,46 @@ async function readAdminTaxonDiagnostics(
       const researchDiagnostic = describeResearch(researchResult);
       const commercialItem = commercialByTaxonId.get(taxon.id);
       const profileItem = profileByTaxonId.get(taxon.id);
+      const profilePresentation = profileItem
+        ? getAdminGenerationProfilePresentation(profileItem)
+        : null;
       const assistance = getGenerationProfileAssistanceAvailability({
         aiConfigured,
-        research: researchResult,
+        research: research.get(profilePresentation?.assistanceTaxonId ?? taxon.id),
       });
+      const profileDiagnostic = profileItem
+        ? describeGenerationProfile(profileItem)
+        : {
+            activeProfile: unavailableDiagnostic(
+              taxon.isActive
+                ? "A leitura do perfil ativo nao pode ser comprovada."
+                : "Taxon inativo nao possui operacao de perfil.",
+              "Revisar perfis",
+              "/admin/perfis-de-orientacao",
+            ),
+            draftProfile: unavailableDiagnostic(
+              taxon.isActive
+                ? "A leitura do rascunho proprio nao pode ser comprovada."
+                : "Taxon inativo nao possui rascunho proprio.",
+              "Revisar perfis",
+              "/admin/perfis-de-orientacao",
+            ),
+          };
 
       return [
         taxon.id,
         {
           ...researchDiagnostic,
           commercialPage: commercialItem
-            ? describeCommercialPage(taxon.id, commercialItem)
+            ? describeCommercialPage(commercialItem)
             : unavailableDiagnostic(
                 taxon.isActive
                   ? "A leitura comercial nao pode ser comprovada."
                   : "Taxon inativo nao participa do fluxo comercial.",
                 "Revisar diagnóstico",
-                `/admin/taxonomia/${taxon.id}`,
+                null,
               ),
-          profile: profileItem
-            ? describeGenerationProfile(profileItem)
-            : unavailableDiagnostic(
-                taxon.isActive
-                  ? "A leitura do perfil nao pode ser comprovada."
-                  : "Taxon inativo nao possui operacao de perfil.",
-                "Revisar perfis",
-                "/admin/perfis-de-orientacao",
-              ),
+          ...profileDiagnostic,
           aiAssistance: assistance.available
             ? {
                 label: "Disponível",
@@ -255,16 +279,12 @@ async function readAdminTaxonDiagnostics(
                 origin: "E12.4.3",
                 reason: "Configuracao e preflight E10.8 comprovados.",
                 nextAction: "Usar no editor do perfil",
-                href: profileItem?.ownerTaxonId
-                  ? `/admin/perfis-de-orientacao/${profileItem.ownerTaxonId}`
-                  : `/admin/perfis-de-orientacao/${taxon.id}`,
+                href: profilePresentation?.action.href ?? "/admin/perfis-de-orientacao",
               }
             : unavailableDiagnostic(
                 assistance.reason ?? "Assistência por IA indisponível.",
                 "Continuar manualmente",
-                profileItem?.ownerTaxonId
-                  ? `/admin/perfis-de-orientacao/${profileItem.ownerTaxonId}`
-                  : "/admin/perfis-de-orientacao",
+                profilePresentation?.action.href ?? "/admin/perfis-de-orientacao",
               ),
         },
       ] as const;
@@ -376,7 +396,6 @@ function describeResearchFailure(
 }
 
 function describeCommercialPage(
-  taxonId: string,
   item: AdminCommercialActivationListItem,
 ): AdminOperationalDiagnosticItem {
   if (item.eligibility === "ineligible") {
@@ -385,8 +404,8 @@ function describeCommercialPage(
       tone: "warning",
       origin: "Taxon proprio",
       reason: item.requirementsLabel,
-      nextAction: "Ver pendências",
-      href: `/admin/taxonomia/${taxonId}`,
+      nextAction: "Completar requisitos comerciais",
+      href: null,
     };
   }
   return {
@@ -401,42 +420,31 @@ function describeCommercialPage(
 
 function describeGenerationProfile(
   item: AdminGenerationProfileListItem,
-): AdminOperationalDiagnosticItem {
-  const labels = {
-    active_own: "Ativo — próprio",
-    active_inherited: "Ativo — herdado",
-    draft_own: "Rascunho — próprio",
-    absent: "Ausente",
-    unavailable: "Indisponível",
-  } as const;
-  const nextActions = {
-    active_own: "Gerenciar",
-    active_inherited: "Ver perfil",
-    draft_own: "Continuar",
-    absent: "Criar perfil",
-    unavailable: "Revisar perfis",
-  } as const;
+): Pick<AdminTaxonOperationalDiagnostic, "activeProfile" | "draftProfile"> {
+  const presentation = getAdminGenerationProfilePresentation(item);
   return {
-    label: labels[item.profileState],
-    tone: item.profileState === "active_own" || item.profileState === "active_inherited"
-      ? "success"
-      : item.profileState === "draft_own"
-        ? "warning"
-        : item.profileState === "unavailable"
-          ? "danger"
-          : "neutral",
-    origin: item.ownerTaxonName,
-    reason: item.profileVersion
-      ? `Versao ${item.profileVersion} comprovada.`
-      : item.profileState === "absent"
-        ? "Nenhum perfil ativo ou rascunho proprio foi encontrado."
-        : "A leitura segura do perfil nao pode ser comprovada.",
-    nextAction: nextActions[item.profileState],
-    href: item.ownerTaxonId
-      ? `/admin/perfis-de-orientacao/${item.ownerTaxonId}`
-      : item.taxon.level === "segment" || item.taxon.level === "niche"
-        ? `/admin/perfis-de-orientacao/${item.taxon.id}`
-        : "/admin/perfis-de-orientacao",
+    activeProfile: {
+      label: presentation.active.label,
+      tone: presentation.active.tone,
+      origin: item.ownerTaxonName,
+      reason: item.activeVersion !== null
+        ? `Versao ${item.activeVersion} comprovada.`
+        : item.resolvedState === "absent"
+          ? "Nenhum perfil ativo foi encontrado."
+          : "A leitura segura do perfil ativo nao pode ser comprovada.",
+      nextAction: presentation.action.label,
+      href: presentation.action.href,
+    },
+    draftProfile: {
+      label: presentation.draft.label,
+      tone: presentation.draft.tone,
+      origin: item.draftVersion !== null ? "Propria" : null,
+      reason: item.draftVersion !== null
+        ? `Versao ${item.draftVersion} comprovada.`
+        : "Nenhum rascunho proprio foi encontrado.",
+      nextAction: presentation.action.label,
+      href: presentation.action.href,
+    },
   };
 }
 
@@ -460,7 +468,8 @@ function unavailableTaxonDiagnostic(): AdminTaxonOperationalDiagnostic {
     businessBuyer: unavailableDiagnostic("Pesquisa BB nao comprovada.", "Revisar pesquisa", null),
     endCustomer: unavailableDiagnostic("Pesquisa EC nao comprovada.", "Revisar pesquisa", null),
     commercialPage: unavailableDiagnostic("Página comercial não comprovada.", "Revisar diagnóstico", null),
-    profile: unavailableDiagnostic("Perfil nao comprovado.", "Revisar perfis", "/admin/perfis-de-orientacao"),
+    activeProfile: unavailableDiagnostic("Perfil ativo nao comprovado.", "Revisar perfis", "/admin/perfis-de-orientacao"),
+    draftProfile: unavailableDiagnostic("Rascunho proprio nao comprovado.", "Revisar perfis", "/admin/perfis-de-orientacao"),
     aiAssistance: unavailableDiagnostic("Assistencia por IA nao comprovada.", "Continuar manualmente", "/admin/perfis-de-orientacao"),
   };
 }

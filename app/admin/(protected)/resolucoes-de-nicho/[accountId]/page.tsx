@@ -5,6 +5,7 @@ import type { ReactNode } from "react";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { AdminStatusBadge } from "@/components/admin/AdminStatusBadge";
 import { readAdminGenerationProfileSummaries } from "@/conversion-content/adapters/landingPageGenerationProfileAdminAdapter";
+import { getAdminGenerationProfilePresentation } from "@/conversion-content/landing-page/generation-profile";
 import { formatAdminDate, formatPercent } from "@/lib/admin/adminFormat";
 import { getAdminNicheResolutionDetail } from "@/lib/admin/adapters/adminReadOnlyAdapter";
 
@@ -29,13 +30,9 @@ export default async function AdminNicheResolutionDetailPage({ params }: AdminNi
         (item) => item.taxon.id === resolution.selectedTaxonId,
       )
     : null;
-  const profileHref = selectedProfile?.ownerTaxonId
-    ? `/admin/perfis-de-orientacao/${selectedProfile.ownerTaxonId}`
-    : selectedProfile &&
-        (selectedProfile.taxon.level === "segment" ||
-          selectedProfile.taxon.level === "niche")
-      ? `/admin/perfis-de-orientacao/${selectedProfile.taxon.id}`
-      : "/admin/perfis-de-orientacao";
+  const profileHref = selectedProfile
+    ? getAdminGenerationProfilePresentation(selectedProfile).action.href
+    : "/admin/perfis-de-orientacao";
 
   return (
     <div className="space-y-6">

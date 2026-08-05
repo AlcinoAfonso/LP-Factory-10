@@ -8,7 +8,10 @@ import {
   type LandingPageResearchParentDto,
   type LandingPageResearchTaxonDto,
 } from "./contracts";
-import { resolveLandingPageResearch } from "./resolver";
+import {
+  resolveLandingPageResearch,
+  resolveLandingPageResearchBatch,
+} from "./resolver";
 
 const SERVED_TAXON_ID = "11111111-1111-4111-8111-111111111111";
 const PARENT_TAXON_ID = "22222222-2222-4222-8222-222222222222";
@@ -29,6 +32,23 @@ type ValidationCase = Readonly<{
 let nextItemOrdinal = 1;
 
 const cases: readonly ValidationCase[] = [
+  {
+    name: "batched resolution is equivalent to unit resolution",
+    run: () => {
+      const inheritedSource = completeSource();
+      removeSet(inheritedSource, SERVED_TAXON_ID, "business_buyer");
+      const inputs = [
+        { taxonId: SERVED_TAXON_ID, source: completeSource() },
+        { taxonId: SERVED_TAXON_ID, source: inheritedSource },
+        { taxonId: MISSING_TAXON_ID, source: completeSource() },
+      ] as const;
+
+      assert.deepEqual(
+        resolveLandingPageResearchBatch(inputs),
+        inputs.map(resolveLandingPageResearch),
+      );
+    },
+  },
   {
     name: "missing or malformed taxon_id fails closed",
     run: () => {

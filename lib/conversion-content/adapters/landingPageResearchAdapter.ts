@@ -5,6 +5,7 @@ import {
   LANDING_PAGE_RESEARCH_BLOCKS,
   isLandingPageResearchUuid,
   resolveLandingPageResearch,
+  resolveLandingPageResearchBatch,
   type LandingPageResearchItemDto,
   type LandingPageResearchNormalizedSource,
   type LandingPageResearchParentDto,
@@ -79,24 +80,31 @@ export async function resolveLandingPageResearchForTaxons(input: {
     if (!ownResearch.ok) {
       return finishBatchFailure(results, validTaxonIds, input.requestId, ownResearch.sourceStatus);
     }
-    const pendingParent: Array<{
-      taxonId: string;
-      servedTaxon: LandingPageResearchTaxonDto;
-      source: Extract<LandingPageResearchNormalizedSource, { status: "ready" }>;
-    }> = [];
-    for (const taxonId of validTaxonIds) {
+    const ownInputs = validTaxonIds.map((taxonId) => {
       const servedTaxon = servedTaxons.find((taxon) => taxon.id === taxonId);
       const researches = ownResearch.researches.filter(
         (candidate) => candidate.taxonId === taxonId,
       );
       const researchIds = new Set(researches.map((candidate) => candidate.id));
-      const source: LandingPageResearchNormalizedSource = {
-        status: "ready",
-        taxons: servedTaxon ? [servedTaxon] : [],
-        researches,
-        items: ownResearch.items.filter((item) => researchIds.has(item.researchId)),
+      return {
+        taxonId,
+        source: {
+          status: "ready" as const,
+          taxons: servedTaxon ? [servedTaxon] : [],
+          researches,
+          items: ownResearch.items.filter((item) => researchIds.has(item.researchId)),
+        },
       };
-      const ownResult = resolveLandingPageResearch({ taxonId, source });
+    });
+    const ownResults = resolveLandingPageResearchBatch(ownInputs);
+    const pendingParent: Array<{
+      taxonId: string;
+      servedTaxon: LandingPageResearchTaxonDto;
+      source: Extract<LandingPageResearchNormalizedSource, { status: "ready" }>;
+    }> = [];
+    for (const [index, { taxonId, source }] of ownInputs.entries()) {
+      const servedTaxon = servedTaxons.find((taxon) => taxon.id === taxonId);
+      const ownResult = ownResults[index];
 
       if (
         servedTaxon?.parentId &&

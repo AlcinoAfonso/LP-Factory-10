@@ -121,7 +121,7 @@ export default async function AdminTaxonomyPage({ searchParams }: AdminTaxonomyP
                   <th className="px-4 py-3">Pesquisa BB</th>
                   <th className="px-4 py-3">Pesquisa EC</th>
                   <th className="px-4 py-3">Página comercial</th>
-                  <th className="px-4 py-3">Perfil</th>
+                  <th className="px-4 py-3">Perfis</th>
                   <th className="px-4 py-3">IA</th>
                   <th className="px-4 py-3 text-right">Acao</th>
                 </tr>
@@ -141,7 +141,10 @@ export default async function AdminTaxonomyPage({ searchParams }: AdminTaxonomyP
                     <DiagnosticCell item={taxon.diagnostic.businessBuyer} />
                     <DiagnosticCell item={taxon.diagnostic.endCustomer} />
                     <DiagnosticCell item={taxon.diagnostic.commercialPage} />
-                    <DiagnosticCell item={taxon.diagnostic.profile} />
+                    <ProfileDiagnosticCell
+                      active={taxon.diagnostic.activeProfile}
+                      draft={taxon.diagnostic.draftProfile}
+                    />
                     <DiagnosticCell item={taxon.diagnostic.aiAssistance} />
                     <td className="px-4 py-3 text-right">
                       <Link className="font-medium text-brand-700 hover:underline" href={`/admin/taxonomia/${taxon.id}`}>
@@ -166,6 +169,23 @@ function DiagnosticCell({ item }: { item: AdminOperationalDiagnosticItem }) {
       {item.origin ? (
         <div className="mt-1 text-xs text-muted-foreground">Origem: {item.origin}</div>
       ) : null}
+    </td>
+  );
+}
+
+function ProfileDiagnosticCell({
+  active,
+  draft,
+}: {
+  active: AdminOperationalDiagnosticItem;
+  draft: AdminOperationalDiagnosticItem;
+}) {
+  return (
+    <td className="px-4 py-3">
+      <div className="text-xs text-muted-foreground">Ativo</div>
+      <AdminStatusBadge tone={active.tone}>{active.label}</AdminStatusBadge>
+      <div className="mt-2 text-xs text-muted-foreground">Rascunho próprio</div>
+      <AdminStatusBadge tone={draft.tone}>{draft.label}</AdminStatusBadge>
     </td>
   );
 }

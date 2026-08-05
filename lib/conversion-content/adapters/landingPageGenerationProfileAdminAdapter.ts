@@ -7,6 +7,7 @@ import { createClient } from "@/lib/supabase/server";
 import { normalizeLandingPageGenerationProfileItemRow } from "./landingPageGenerationProfileRowNormalization";
 import type { LandingPageResearchResolutionResult } from "../landing-page/research-resolution";
 import {
+  composeAdminGenerationProfileListItem,
   fingerprintGenerationProfileProposal,
   normalizeGenerationProfileLifecycleReadiness,
   resolveLandingPageGenerationProfile,
@@ -126,30 +127,28 @@ export async function readAdminGenerationProfileSummaries(): Promise<
         ),
       });
 
-      const profileState = draftVersion
-        ? "draft_own"
-        : !resolved.ok
-          ? "unavailable"
-          : resolved.value.kind === "absent"
-            ? "absent"
-            : resolved.value.relation === "own"
-              ? "active_own"
-              : "active_inherited";
       const resolvedProfile = resolved.ok && resolved.value.kind === "resolved"
         ? resolved.value
         : null;
 
-      return {
+      return composeAdminGenerationProfileListItem({
         taxon,
-        profileState,
-        profileVersion: draftVersion ?? resolvedProfile?.profileVersion ?? null,
-        ownerTaxonId: draftVersion ? taxon.id : resolvedProfile?.ownerTaxonId ?? null,
-        ownerTaxonName: draftVersion
-          ? taxon.name
-          : resolvedProfile
+        draftVersion,
+        resolved: {
+          state: !resolved.ok
+            ? "unavailable"
+            : resolved.value.kind === "absent"
+              ? "absent"
+              : resolved.value.relation === "own"
+                ? "active_own"
+                : "active_inherited",
+          activeVersion: resolvedProfile?.profileVersion ?? null,
+          ownerTaxonId: resolvedProfile?.ownerTaxonId ?? null,
+          ownerTaxonName: resolvedProfile
             ? taxonNameById.get(resolvedProfile.ownerTaxonId) ?? null
             : null,
-      };
+        },
+      });
     }),
   };
 }
