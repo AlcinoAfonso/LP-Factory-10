@@ -2273,6 +2273,8 @@ Repositório — Ajustados
   * Não criar novo campo, estado, tabela, resolver ou infraestrutura e não reabrir E20.3.3 ou E20.3.4.
 
 99. Changelog
+v1.5.125 — 06/08/2026 — Fechado o contrato mínimo da E20.2 v2 com política explícita de substituição por LP: oferta, descrição e logo usam `forbidden`, paleta usa `explicit_allowed`, campos próprios da LP usam `not_applicable`, e especialização taxonômica permanece distinta da substituição de valores concretos.
+
 v1.5.124 — 05/08/2026 — Refinada a E20.2 com catálogo v2 de 23 campos: preservados integralmente os 19 campos da v1 e adicionados os quatro mínimos do Starter, com validações estritas de strings, referência opaca de asset e paleta hexadecimal, sem banco, UI, persistência, upload, geração ou infraestrutura.
 
 v1.5.123 — 04/08/2026 — Reorganizada a E19 conforme `docs/template-roadmap.md`: removidos os blocos redundantes e defasados, renumerado o recorte material concluído para 19.1, eliminados registros vazios e referências futuras superadas e mantida a próxima evolução sem numeração antecipada até a avaliação residual e o respectivo plano-base.
