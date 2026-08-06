@@ -394,3 +394,21 @@ O debate deverá:
   - Não há divergência material entre os chats; havia duplicidade de numeração e ambiguidade conceitual em `disponível`, ambas corrigidas nesta consolidação.
 - Próxima pergunta:
   - O humano confirma como atributos mínimos `chave estável`, `categoria`, `descrição`, `tipo`, `maturidade técnica`, `domínio consumidor` e `fonte/evidência`, com os tipos iniciais `booleano`, `nível fechado` e `limite numérico`?
+
+### L-014 — Fluxo de avaliação e associação das capacidades aos planos
+
+- Chat: E9 Estrategista — debate conceitual
+- Data e hora: 06/08/2026 19:02 — horário de Brasília
+- Situação: definido
+- Posição:
+  - O recorte passa a ser identificado como `E9.7` no roadmap vigente; referências históricas a E9.7 ou E9.8 fora da estrutura atual não bloqueiam a próxima subseção depois de 9.6.
+  - Capacidades novas podem nascer como candidatas, ser implementadas ou identificadas no produto e ser testadas em LP real antes de receber associação comercial definitiva.
+  - Depois do teste, o humano avalia valor, utilidade, custo, complexidade técnica, manutenção e demais impactos para decidir se a capacidade permanece no Starter ou pertence a outro plano.
+  - Recursos em avaliação ficam separados do catálogo canônico de capacidades aprovadas por plano; associação ao plano só ocorre após decisão humana.
+  - Nem toda capacidade exige desenvolvimento prévio: limites contratuais, como quantidade de LPs publicadas, podem ser definidos e testados como regra do produto.
+  - O Starter começa com recursos simples já existentes ou necessários; novas capacidades podem ser testadas primeiro nele sem presumir que permanecerão no Starter.
+  - Snapshot, upgrade, downgrade, grandfathering, add-ons, exceções por conta e forma de armazenamento permanecem temas posteriores e não bloqueiam o contrato inicial da E9.7.
+- Fundamento:
+  - O humano definiu que a posição comercial de um recurso deve ser decidida a partir de sua existência e avaliação prática, considerando custo e complexidade reais, sem cristalizar antecipadamente seu plano definitivo.
+- Referências:
+  - L-005; L-009; L-013; C-002; debate humano de 06/08/2026.
