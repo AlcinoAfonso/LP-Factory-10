@@ -121,8 +121,8 @@ export default async function AdminTaxonomyPage({ searchParams }: AdminTaxonomyP
                 <col className="w-[12%]" />
                 <col className="w-[14%]" />
                 <col className="w-[18%]" />
-                <col className="w-[10%]" />
                 <col className="w-[12%]" />
+                <col className="w-[10%]" />
               </colgroup>
               <thead className="bg-muted/60 text-left text-xs font-medium uppercase text-muted-foreground">
                 <tr>
@@ -130,8 +130,8 @@ export default async function AdminTaxonomyPage({ searchParams }: AdminTaxonomyP
                   <th className="px-4 py-3">Pesquisa BB</th>
                   <th className="px-4 py-3">Pesquisa EC</th>
                   <th className="px-4 py-3">Página comercial</th>
-                  <th className="px-4 py-3">Perfis</th>
-                  <th className="px-4 py-3">IA</th>
+                  <th className="px-4 py-3">Perfil ativo</th>
+                  <th className="px-4 py-3">Rascunho</th>
                   <th className="px-4 py-3 text-right">Acao</th>
                 </tr>
               </thead>
@@ -150,14 +150,11 @@ export default async function AdminTaxonomyPage({ searchParams }: AdminTaxonomyP
                     <DiagnosticCell item={taxon.diagnostic.businessBuyer} />
                     <DiagnosticCell item={taxon.diagnostic.endCustomer} />
                     <DiagnosticCell item={taxon.diagnostic.commercialPage} />
-                    <ProfileDiagnosticCell
-                      active={taxon.diagnostic.activeProfile}
-                      draft={taxon.diagnostic.draftProfile}
-                    />
-                    <DiagnosticCell item={taxon.diagnostic.aiAssistance} />
+                    <DiagnosticCell item={taxon.diagnostic.activeProfile} />
+                    <DiagnosticCell item={taxon.diagnostic.draftProfile} />
                     <td className="px-4 py-3 text-right">
                       <Link className="font-medium text-brand-700 hover:underline" href={`/admin/taxonomia/${taxon.id}`}>
-                        Abrir diagnóstico
+                        Abrir
                       </Link>
                     </td>
                   </tr>
@@ -175,26 +172,6 @@ function DiagnosticCell({ item }: { item: AdminOperationalDiagnosticItem }) {
   return (
     <td className="px-4 py-3">
       <AdminStatusBadge tone={item.tone}>{item.label}</AdminStatusBadge>
-      {item.origin ? (
-        <div className="mt-1 text-xs text-muted-foreground">Origem: {item.origin}</div>
-      ) : null}
-    </td>
-  );
-}
-
-function ProfileDiagnosticCell({
-  active,
-  draft,
-}: {
-  active: AdminOperationalDiagnosticItem;
-  draft: AdminOperationalDiagnosticItem;
-}) {
-  return (
-    <td className="px-4 py-3">
-      <div className="text-xs text-muted-foreground">Ativo</div>
-      <AdminStatusBadge tone={active.tone}>{active.label}</AdminStatusBadge>
-      <div className="mt-2 text-xs text-muted-foreground">Rascunho próprio</div>
-      <AdminStatusBadge tone={draft.tone}>{draft.label}</AdminStatusBadge>
     </td>
   );
 }
