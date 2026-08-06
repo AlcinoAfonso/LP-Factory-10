@@ -1,8 +1,8 @@
 0. Introdução
 
 0.1 Cabeçalho
-• Data: 04/08/2026
-• Versão: v1.5.123
+• Data: 06/08/2026
+• Versão: v1.5.125
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -2177,7 +2177,7 @@ Repositório — Ajustados
 20.2.1 Objetivo e status
 
 * Objetivo: definir e resolver um catálogo declarativo versionado de entradas de `landing_page` por taxon e plano, separado de valores operacionais, composição, conteúdo e entitlement.
-* Status: Concluído (14/07/2026).
+* Status: Concluído e refinado (06/08/2026).
 
 20.2.2 Registros do recorte
 
@@ -2202,12 +2202,18 @@ Repositório — Ajustados
 * Status: Implementados.
 * Conteúdo:
 
-  * O catálogo é declarativo, versionado no repositório e resolvido por taxon e plano.
-  * O primeiro catálogo imobiliário contém 19 campos.
+  * O catálogo é declarativo, versionado no repositório e resolvido por taxon e plano, sempre com versão explícita e sem fallback automático.
+  * A v1 permanece integralmente preservada com os 19 campos e a ordem anteriores.
+  * A v2 contém 23 campos: os 19 da v1 e os quatro mínimos do Starter — serviço ou oferta principal, descrição factual curta, referência opaca opcional de logo ou asset principal e paleta visual confirmada.
+  * Os quatro campos da v2 permanecem disponíveis em Starter, Lite, Pro e Ultra, sem diferenças adicionais entre planos neste recorte.
+  * Strings obrigatórias rejeitam valor vazio; o asset aceita somente objeto estrito com `asset_id` opaco não vazio; a paleta exige exatamente `primary`, `secondary`, `accent`, `background` e `text` em hexadecimal `#RRGGBB`.
+  * Os campos criados na v2 declaram `landingPageSubstitutionPolicy`: oferta, descrição e logo usam `forbidden`, enquanto a paleta usa `explicit_allowed`; ausência da política nos campos históricos da v1 não autoriza substituição.
+  * Campos próprios da LP usam `not_applicable`; campos reutilizáveis usam `forbidden` ou `explicit_allowed`. Especialização taxonômica de definições e substituição explícita de valores concretos por LP permanecem conceitos distintos, e a especialização não altera essa política.
   * A herança segue `universal → segmento → nicho → ultranicho autorizado`.
   * O ultranicho de corretor de imóveis de médio padrão herda o catálogo sem camada própria.
   * O resultado preserva versão, plano, taxon atendido, camadas aplicadas, ordem determinística, proveniência, validação, evidência e sinal de validade.
   * `requiredWhen` e `applicableWhen` permanecem declarativos e são preservados após o filtro por plano.
+  * Depois do merge da v2, mudança funcional no catálogo resolvido exige nova versão; refatoração interna sem alteração do resultado e novo taxon que apenas herda campos não exigem nova versão.
 
 20.2.4 Dependências e limites
 
@@ -2216,8 +2222,8 @@ Repositório — Ajustados
 
   * O resolver falha fechado para cadeia, camada, especialização, condição ou relação entre planos inválida.
   * A E20.3 é independente deste catálogo: orienta geração por identidade de módulo e variante da E18.5, sem consumir valores da E20.2 nem determinar prontidão.
-  * A avaliação concreta das condições, a completude dos valores operacionais e o snapshot pertencem à futura E19.4.
-  * O recorte não cria banco, rota, API, Server Action, UI, adapter de banco, entitlement, integração Stripe, valor operacional, snapshot, automação, agente ou job.
+  * A E20.2 define os campos e valida o formato dos valores; a futura E19.2 será responsável por coletar, validar, persistir e compor os valores, implementar a substituição explícita por LP e preservar o snapshot dos valores efetivamente usados.
+  * O recorte não cria banco, migration, bucket, Storage, rota, API, Server Action, UI, onboarding, upload, adapter de banco, entitlement, capacidade comercial, tracking, Google Ads, Analytics, integração, valor operacional, snapshot operacional, geração, IA, automação, agente, job ou infraestrutura.
 
 20.3 Perfil de orientação para geração
 
@@ -2267,6 +2273,10 @@ Repositório — Ajustados
   * Não criar novo campo, estado, tabela, resolver ou infraestrutura e não reabrir E20.3.3 ou E20.3.4.
 
 99. Changelog
+v1.5.125 — 06/08/2026 — Fechado o contrato mínimo da E20.2 v2 com política explícita de substituição por LP: oferta, descrição e logo usam `forbidden`, paleta usa `explicit_allowed`, campos próprios da LP usam `not_applicable`, e especialização taxonômica permanece distinta da substituição de valores concretos.
+
+v1.5.124 — 05/08/2026 — Refinada a E20.2 com catálogo v2 de 23 campos: preservados integralmente os 19 campos da v1 e adicionados os quatro mínimos do Starter, com validações estritas de strings, referência opaca de asset e paleta hexadecimal, sem banco, UI, persistência, upload, geração ou infraestrutura.
+
 v1.5.123 — 04/08/2026 — Reorganizada a E19 conforme `docs/template-roadmap.md`: removidos os blocos redundantes e defasados, renumerado o recorte material concluído para 19.1, eliminados registros vazios e referências futuras superadas e mantida a próxima evolução sem numeração antecipada até a avaliação residual e o respectivo plano-base.
 
 v1.5.122 — 04/08/2026 — Garantido no máximo um taxon primário ativo por conta e reconciliada a retirada da E12.4.4 da implementação.
