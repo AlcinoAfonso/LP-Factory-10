@@ -10,7 +10,16 @@ import {
   isGenerationProfileAssistanceConfigured,
   type AdminGenerationProfileListItem,
 } from "@/conversion-content/landing-page/generation-profile";
-import type { LandingPageResearchResolutionResult } from "@/conversion-content/landing-page/research-resolution";
+import {
+  LANDING_PAGE_RESEARCH_BLOCKS,
+  resolveLandingPageResearch,
+  type LandingPageResearchAudienceScope,
+  type LandingPageResearchItemDto,
+  type LandingPageResearchParentDto,
+  type LandingPageResearchResolutionErrorCode,
+  type LandingPageResearchResolutionResult,
+  type LandingPageResearchTaxonDto,
+} from "@/conversion-content/landing-page/research-resolution";
 import { createServiceClient } from "@/lib/supabase/service";
 import {
   ADMIN_PAGE_SIZE,
@@ -74,6 +83,11 @@ type DeleteAdminTaxonInput = {
 
 type ValidateTaxonParentResult = { ok: true } | { ok: false; error: string };
 
+type AdminResearchCandidateAssessment = Readonly<{
+  diagnostic: AdminOperationalDiagnosticItem;
+  errorCode: LandingPageResearchResolutionErrorCode | null;
+}>;
+
 const VALID_TAXON_LEVELS: AdminTaxonLevel[] = ["segment", "niche", "ultra_niche"];
 
 export async function listAdminTaxons(filters: AdminFilters = {}): Promise<AdminListResult<AdminTaxonListItem>> {
@@ -111,16 +125,201 @@ export async function listAdminTaxons(filters: AdminFilters = {}): Promise<Admin
   ((aliases.data as any[]) ?? []).forEach((row) => aliasCounts.set(row.taxon_id, (aliasCounts.get(row.taxon_id) ?? 0) + 1));
   const parentNames = new Map(Array.from(parentTaxons.entries()).map(([id, row]) => [id, row.name]));
   const taxons = rows.map((row) => mapAdminTaxon(row, parentNames, aliasCounts));
-  const diagnostics = await readAdminTaxonDiagnostics(taxons);
+  const [diagnostics, researchListDiagnostics] = await Promise.all([
+    readAdminTaxonDiagnostics(taxons),
+    readAdminTaxonResearchListDiagnostics(taxons),
+  ]);
 
   return {
-    items: taxons.map((taxon) => ({
-      ...taxon,
-      diagnostic: diagnostics.get(taxon.id) ?? unavailableTaxonDiagnostic(),
-    })),
+    items: taxons.map((taxon) => {
+      const diagnostic = diagnostics.get(taxon.id) ?? unavailableTaxonDiagnostic();
+      return {
+        ...taxon,
+        diagnostic: {
+          ...diagnostic,
+          ...(researchListDiagnostics.get(taxon.id) ?? unavailableResearchListDiagnostic()),
+        },
+      };
+    }),
     total: count ?? 0,
     error: null,
   };
+}
+
+async function readAdminTaxonResearchListDiagnostics(
+  taxons: readonly AdminTaxonSummary[],
+): Promise<ReadonlyMap<string, Pick<AdminTaxonOperationalDiagnostic, "businessBuyer" | "endCustomer">>> {
+  if (taxons.length === 0) return new Map();
+
+  const supabase = createServiceClient();
+  const taxonIds = taxons.map((taxon) => taxon.id);
+  const sourceTaxonIds = [...new Set([
+    ...taxonIds,
+    ...taxons.map((taxon) => taxon.parentId).filter((id): id is string => Boolean(id)),
+  ])];
+
+  try {
+    const [taxonRead, researchRead] = await Promise.all([
+      supabase.from("business_taxons").select("id,parent_id,is_active").in("id", sourceTaxonIds),
+      supabase
+        .from("taxon_market_research")
+        .select("id,taxon_id,research_block,audience_scope,version,status")
+        .in("taxon_id", sourceTaxonIds)
+        .in("research_block", [...LANDING_PAGE_RESEARCH_BLOCKS])
+        .in("audience_scope", ["business_buyer", "end_customer"])
+        .eq("status", "active"),
+    ]);
+    if (taxonRead.error || researchRead.error) {
+      return unavailableResearchListDiagnostics(taxonIds, "A leitura das pesquisas falhou.");
+    }
+
+    const researchRows = (researchRead.data as any[]) ?? [];
+    const researchIds = researchRows.map((row) => row.id);
+    const itemRead = researchIds.length > 0
+      ? await supabase
+          .from("taxon_market_research_items")
+          .select("id,research_id,item_key,item_text,priority,sort_order,is_active")
+          .in("research_id", researchIds)
+      : { data: [], error: null };
+    if (itemRead.error) {
+      return unavailableResearchListDiagnostics(taxonIds, "A leitura dos itens de pesquisa falhou.");
+    }
+
+    const sourceTaxons = ((taxonRead.data as any[]) ?? []).map((row) => ({
+      id: row.id,
+      parentId: row.parent_id,
+      isActive: row.is_active,
+    })) as LandingPageResearchTaxonDto[];
+    const researches = researchRows.map((row) => ({
+      id: row.id,
+      taxonId: row.taxon_id,
+      researchBlock: row.research_block,
+      audienceScope: row.audience_scope,
+      version: row.version,
+      status: row.status,
+    })) as LandingPageResearchParentDto[];
+    const items = (((itemRead.data as any[]) ?? []).map((row) => ({
+      id: row.id,
+      researchId: row.research_id,
+      itemKey: row.item_key,
+      itemText: row.item_text,
+      priority: row.priority,
+      sortOrder: row.sort_order,
+      isActive: row.is_active,
+    }))) as LandingPageResearchItemDto[];
+
+    return new Map(taxons.map((taxon) => [
+      taxon.id,
+      projectAdminResearchListDiagnostic(taxon, sourceTaxons, researches, items),
+    ]));
+  } catch {
+    return unavailableResearchListDiagnostics(taxonIds, "A leitura segura das pesquisas não pôde ser concluída.");
+  }
+}
+
+function projectAdminResearchListDiagnostic(
+  taxon: AdminTaxonSummary,
+  taxons: readonly LandingPageResearchTaxonDto[],
+  researches: readonly LandingPageResearchParentDto[],
+  items: readonly LandingPageResearchItemDto[],
+): Pick<AdminTaxonOperationalDiagnostic, "businessBuyer" | "endCustomer"> {
+  const servedMatches = taxons.filter((candidate) => candidate.id === taxon.id);
+  if (servedMatches.length !== 1 || !servedMatches[0].isActive) {
+    return unavailableResearchListDiagnostic("O taxon não participa da resolução E10.8.");
+  }
+
+  const endCustomer = assessAdminResearchCandidate(taxon.id, taxon.id, "end_customer", "Própria", researches, items);
+  const ownBusinessBuyer = assessAdminResearchCandidate(taxon.id, taxon.id, "business_buyer", "Própria", researches, items);
+  let businessBuyer = ownBusinessBuyer.diagnostic;
+
+  if (["RESEARCH_MISSING", "RESEARCH_INCOMPLETE"].includes(ownBusinessBuyer.errorCode ?? "")) {
+    const parentMatches = taxon.parentId
+      ? taxons.filter((candidate) => candidate.id === taxon.parentId && candidate.isActive)
+      : [];
+    if (parentMatches.length === 1) {
+      const parent = assessAdminResearchCandidate(
+        taxon.id,
+        parentMatches[0].id,
+        "business_buyer",
+        "Pai direto",
+        researches,
+        items,
+      );
+      businessBuyer = parent.errorCode === "RESEARCH_MISSING" && ownBusinessBuyer.errorCode === "RESEARCH_INCOMPLETE"
+        ? ownBusinessBuyer.diagnostic
+        : parent.diagnostic;
+    }
+  }
+
+  return { businessBuyer, endCustomer: endCustomer.diagnostic };
+}
+
+function assessAdminResearchCandidate(
+  servedTaxonId: string,
+  sourceTaxonId: string,
+  audienceScope: LandingPageResearchAudienceScope,
+  completeLabel: "Própria" | "Pai direto",
+  allResearches: readonly LandingPageResearchParentDto[],
+  allItems: readonly LandingPageResearchItemDto[],
+): AdminResearchCandidateAssessment {
+  const candidateResearches = allResearches.filter(
+    (research) => research.taxonId === sourceTaxonId && research.audienceScope === audienceScope,
+  );
+  if (candidateResearches.length === 0) {
+    return { diagnostic: researchListItem("Ausente", "neutral", "Nenhum conjunto ativo foi encontrado."), errorCode: "RESEARCH_MISSING" };
+  }
+
+  const researchIds = new Set(candidateResearches.map((research) => research.id));
+  const result = resolveLandingPageResearch({
+    taxonId: servedTaxonId,
+    source: {
+      status: "ready",
+      taxons: [{ id: servedTaxonId, parentId: null, isActive: true }],
+      researches: candidateResearches.flatMap((research) => [
+        { ...research, taxonId: servedTaxonId, audienceScope: "end_customer" },
+        { ...research, taxonId: servedTaxonId, audienceScope: "business_buyer" },
+      ]),
+      items: allItems.filter((item) => researchIds.has(item.researchId)),
+    },
+  });
+  if (result.ok) {
+    return { diagnostic: researchListItem(completeLabel, "success", "Conjunto E10.8 completo e válido."), errorCode: null };
+  }
+  if (["RESEARCH_MISSING", "RESEARCH_INCOMPLETE", "RESEARCH_INVALID", "RESEARCH_AMBIGUOUS"].includes(result.error.code)) {
+    return {
+      diagnostic: researchListItem(
+        result.error.code === "RESEARCH_MISSING" ? "Ausente" : "Revisar",
+        result.error.code === "RESEARCH_MISSING" ? "neutral" : "warning",
+        result.error.message,
+      ),
+      errorCode: result.error.code,
+    };
+  }
+  return { diagnostic: researchListItem("Indisponível", "danger", result.error.message), errorCode: result.error.code };
+}
+
+function unavailableResearchListDiagnostics(
+  taxonIds: readonly string[],
+  reason: string,
+): ReadonlyMap<string, Pick<AdminTaxonOperationalDiagnostic, "businessBuyer" | "endCustomer">> {
+  return new Map(taxonIds.map((taxonId) => [taxonId, unavailableResearchListDiagnostic(reason)]));
+}
+
+function unavailableResearchListDiagnostic(
+  reason = "Não foi possível determinar o estado das pesquisas com segurança.",
+): Pick<AdminTaxonOperationalDiagnostic, "businessBuyer" | "endCustomer"> {
+  return {
+    businessBuyer: researchListItem("Indisponível", "danger", reason),
+    endCustomer: researchListItem("Indisponível", "danger", reason),
+  };
+}
+
+function researchListItem(
+  label: "Própria" | "Pai direto" | "Ausente" | "Revisar" | "Indisponível",
+  tone: AdminOperationalDiagnosticItem["tone"],
+  reason: string,
+): AdminOperationalDiagnosticItem {
+  return { label, tone, origin: null, reason, nextAction: label === "Revisar" ? "Revisar pesquisa" : "Nenhuma pendência", href: null };
 }
 
 export async function getAdminTaxonDetail(taxonId: string): Promise<AdminTaxonDetail | null> {
