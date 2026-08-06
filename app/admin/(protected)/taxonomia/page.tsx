@@ -117,16 +117,18 @@ export default async function AdminTaxonomyPage({ searchParams }: AdminTaxonomyP
             <table className="w-full min-w-[960px] table-fixed divide-y divide-border text-sm">
               <colgroup>
                 <col className="w-[22%]" />
-                <col className="w-[12%]" />
-                <col className="w-[12%]" />
-                <col className="w-[14%]" />
-                <col className="w-[18%]" />
-                <col className="w-[12%]" />
+                <col className="w-[8%]" />
+                <col className="w-[11%]" />
                 <col className="w-[10%]" />
+                <col className="w-[13%]" />
+                <col className="w-[16%]" />
+                <col className="w-[9%]" />
+                <col className="w-[11%]" />
               </colgroup>
               <thead className="bg-muted/60 text-left text-xs font-medium uppercase text-muted-foreground">
                 <tr>
                   <th className="px-4 py-3">Taxon</th>
+                  <th className="px-4 py-3">Status</th>
                   <th className="px-4 py-3">Pesquisa BB</th>
                   <th className="px-4 py-3">Pesquisa EC</th>
                   <th className="px-4 py-3">Página comercial</th>
@@ -143,6 +145,8 @@ export default async function AdminTaxonomyPage({ searchParams }: AdminTaxonomyP
                       <div className="mt-1 text-xs text-muted-foreground">
                         {taxon.level} / pai: {taxon.parentName ?? "—"}
                       </div>
+                    </td>
+                    <td className="px-4 py-3">
                       <AdminStatusBadge tone={taxon.isActive ? "success" : "neutral"}>
                         {taxon.isActive ? "Ativo" : "Inativo"}
                       </AdminStatusBadge>
@@ -150,8 +154,14 @@ export default async function AdminTaxonomyPage({ searchParams }: AdminTaxonomyP
                     <DiagnosticCell item={taxon.diagnostic.businessBuyer} />
                     <DiagnosticCell item={taxon.diagnostic.endCustomer} />
                     <DiagnosticCell item={taxon.diagnostic.commercialPage} />
-                    <DiagnosticCell item={taxon.diagnostic.activeProfile} />
-                    <DiagnosticCell item={taxon.diagnostic.draftProfile} />
+                    <DiagnosticCell
+                      item={taxon.diagnostic.activeProfile}
+                      label={getActiveProfileListLabel(taxon.diagnostic.activeProfile.label)}
+                    />
+                    <DiagnosticCell
+                      item={taxon.diagnostic.draftProfile}
+                      label={getDraftProfileListLabel(taxon.diagnostic.draftProfile.label)}
+                    />
                     <td className="px-4 py-3 text-right">
                       <Link className="font-medium text-brand-700 hover:underline" href={`/admin/taxonomia/${taxon.id}`}>
                         Abrir
@@ -168,10 +178,32 @@ export default async function AdminTaxonomyPage({ searchParams }: AdminTaxonomyP
   );
 }
 
-function DiagnosticCell({ item }: { item: AdminOperationalDiagnosticItem }) {
+function DiagnosticCell({
+  item,
+  label,
+}: {
+  item: AdminOperationalDiagnosticItem;
+  label?: string;
+}) {
   return (
     <td className="px-4 py-3">
-      <AdminStatusBadge tone={item.tone}>{item.label}</AdminStatusBadge>
+      <AdminStatusBadge tone={item.tone}>{label ?? item.label}</AdminStatusBadge>
     </td>
   );
+}
+
+function getActiveProfileListLabel(label: string): string {
+  if (label.startsWith("Ativo — próprio")) {
+    return label.replace("Ativo — próprio", "Próprio");
+  }
+  if (label.startsWith("Ativo — herdado")) {
+    return label.replace("Ativo — herdado", "Herdado");
+  }
+  return label;
+}
+
+function getDraftProfileListLabel(label: string): string {
+  if (label.startsWith("Rascunho — próprio")) return "Sim";
+  if (label === "Sem rascunho") return "Não";
+  return "Indisponível";
 }
