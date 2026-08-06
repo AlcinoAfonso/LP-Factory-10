@@ -60,6 +60,10 @@ export type LandingPageInputObligation =
   | "required"
   | "optional"
   | "conditional";
+export type LandingPageInputSubstitutionPolicy =
+  | "not_applicable"
+  | "forbidden"
+  | "explicit_allowed";
 
 export type LandingPageInputCondition = Readonly<{
   fieldKey: string;
@@ -149,6 +153,7 @@ type LandingPageInputFieldDefinitionBase = Readonly<{
   applicableWhen?: LandingPageInputCondition;
   allowedPlans: readonly LandingPageInputCatalogPlan[];
   snapshotPolicy: "include_if_used";
+  landingPageSubstitutionPolicy?: LandingPageInputSubstitutionPolicy;
   evidence: LandingPageInputEvidence;
   createdInVersion: number;
 }>;

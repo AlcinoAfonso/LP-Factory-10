@@ -89,17 +89,17 @@ const cases: Case[] = [
     },
   },
   {
-    name: "v2 Starter fields preserve scope origin obligation plans version and snapshot policy",
+    name: "v2 Starter fields preserve metadata and explicit substitution policy",
     run: () => {
       const result = resolveRequired(v2Input);
       const expected = {
-        primary_service_or_offer: ["offer", "offer_provided", "required"],
-        primary_service_or_offer_description: ["offer", "offer_provided", "required"],
-        brand_logo_asset: ["business", "business_provided", "optional"],
-        brand_color_palette: ["business", "business_provided", "required"],
+        primary_service_or_offer: ["offer", "offer_provided", "required", "forbidden"],
+        primary_service_or_offer_description: ["offer", "offer_provided", "required", "forbidden"],
+        brand_logo_asset: ["business", "business_provided", "optional", "forbidden"],
+        brand_color_palette: ["business", "business_provided", "required", "explicit_allowed"],
       } as const;
 
-      for (const [fieldKey, [valueScope, expectedValueOrigin, obligation]] of Object.entries(expected)) {
+      for (const [fieldKey, [valueScope, expectedValueOrigin, obligation, substitutionPolicy]] of Object.entries(expected)) {
         const field = result.fields.find((candidate) => candidate.fieldKey === fieldKey);
         assert.ok(field);
         assert.equal(field.valueScope, valueScope);
@@ -108,7 +108,47 @@ const cases: Case[] = [
         assert.deepEqual(field.allowedPlans, ["starter", "lite", "pro", "ultra"]);
         assert.equal(field.createdInVersion, 2);
         assert.equal(field.snapshotPolicy, "include_if_used");
+        assert.equal(field.landingPageSubstitutionPolicy, substitutionPolicy);
       }
+    },
+  },
+  {
+    name: "v2 substitution policy is mandatory known and compatible with field scope",
+    run: () => {
+      const baseV2Fixture = { ...fixtureField("v2_policy_fixture"), createdInVersion: 2 };
+      assert.equal(landingPageInputFieldDefinitionSchema.safeParse(baseV2Fixture).success, false);
+      assert.equal(
+        landingPageInputFieldDefinitionSchema.safeParse({
+          ...baseV2Fixture,
+          landingPageSubstitutionPolicy: "unknown",
+        }).success,
+        false,
+      );
+      assert.equal(
+        landingPageInputFieldDefinitionSchema.safeParse({
+          ...baseV2Fixture,
+          valueScope: "landing_page",
+          expectedValueOrigin: "landing_page_provided",
+          landingPageSubstitutionPolicy: "forbidden",
+        }).success,
+        false,
+      );
+      assert.equal(
+        landingPageInputFieldDefinitionSchema.safeParse({
+          ...baseV2Fixture,
+          landingPageSubstitutionPolicy: "not_applicable",
+        }).success,
+        false,
+      );
+      assert.equal(
+        landingPageInputFieldDefinitionSchema.safeParse({
+          ...baseV2Fixture,
+          valueScope: "landing_page",
+          expectedValueOrigin: "landing_page_provided",
+          landingPageSubstitutionPolicy: "not_applicable",
+        }).success,
+        true,
+      );
     },
   },
   {
@@ -364,6 +404,18 @@ const cases: Case[] = [
     },
   },
   {
+    name: "taxon specialization cannot change landing-page substitution policy",
+    run: () => {
+      const registry = cloneRegistry();
+      mutableEntries(registry[2].taxonLayers[realEstateBrokerNicheTaxon.slug]).push(
+        specialization("brand_color_palette", {
+          landingPageSubstitutionPolicy: "forbidden",
+        }),
+      );
+      assertRegistryError(v2Input, registry, "IMMUTABLE_PROPERTY_CONFLICT");
+    },
+  },
+  {
     name: "more restrictive obligation is accepted and relaxation fails",
     run: () => {
       assert.equal(resolveLandingPageInputCatalogFromRegistry(baseInput, withNicheSpecialization("traffic_source", { obligation: "required" })).ok, true);
@@ -526,12 +578,12 @@ const cases: Case[] = [
     },
   },
   {
-    name: "result and registry contain no operational values entitlement or generation snapshot",
+    name: "result and registry contain no operational values capabilities tracking analytics or generation snapshot",
     run: () => {
       const result = resolveLandingPageInputCatalog(v2Input);
       assert.equal(result.ok, true);
       const serialized = JSON.stringify({ registry: landingPageInputCatalogRegistry[2], result: result.value });
-      assert.equal(/providedValues|operationalValues|entitlement|subscription|stripe|generationSnapshot/i.test(serialized), false);
+      assert.equal(/providedValues|operationalValues|entitlement|subscription|stripe|generationSnapshot|tracking|analytics|googleAds|commercialCapabilities/i.test(serialized), false);
       assert.equal(serialized.includes("include_if_used"), true);
     },
   },

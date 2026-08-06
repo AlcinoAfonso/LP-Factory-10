@@ -166,6 +166,9 @@ export const landingPageInputFieldDefinitionSchema = z
     validation: validationSchema,
     allowedPlans: z.array(planSchema).min(1),
     snapshotPolicy: z.literal("include_if_used"),
+    landingPageSubstitutionPolicy: z
+      .enum(["not_applicable", "forbidden", "explicit_allowed"])
+      .optional(),
     evidence: evidenceSchema,
     createdInVersion: z.number().int().min(1),
   })
@@ -191,6 +194,34 @@ export const landingPageInputFieldDefinitionSchema = z
     }
     if (new Set(field.allowedPlans).size !== field.allowedPlans.length) {
       context.addIssue({ code: "custom", path: ["allowedPlans"], message: "plans must be unique" });
+    }
+    if (field.createdInVersion >= 2 && !field.landingPageSubstitutionPolicy) {
+      context.addIssue({
+        code: "custom",
+        path: ["landingPageSubstitutionPolicy"],
+        message: "fields created in v2 or later require an explicit landing-page substitution policy",
+      });
+    }
+    if (
+      field.landingPageSubstitutionPolicy &&
+      field.valueScope === "landing_page" &&
+      field.landingPageSubstitutionPolicy !== "not_applicable"
+    ) {
+      context.addIssue({
+        code: "custom",
+        path: ["landingPageSubstitutionPolicy"],
+        message: "landing-page scoped fields require not_applicable substitution policy",
+      });
+    }
+    if (
+      field.landingPageSubstitutionPolicy === "not_applicable" &&
+      field.valueScope !== "landing_page"
+    ) {
+      context.addIssue({
+        code: "custom",
+        path: ["landingPageSubstitutionPolicy"],
+        message: "reusable fields cannot use not_applicable substitution policy",
+      });
     }
     validateValueTypeAndValidation(field, context);
   });
