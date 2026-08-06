@@ -15,7 +15,8 @@ Organizar, de forma compartilhada e rastreável, o debate sobre as capacidades q
 O debate deverá:
 
 - identificar famílias e tipos de capacidades;
-- distinguir capacidade candidata, testada, implementada e disponibilizada;
+- distinguir o radar amplo de capacidades candidatas do futuro catálogo canônico executável;
+- separar maturidade técnica, associação e valor no plano e disponibilidade comercial por taxon;
 - registrar fontes, evidências e hipóteses de valor;
 - definir posteriormente como capacidades serão armazenadas, versionadas e relacionadas aos planos;
 - separar catálogo de capacidades, entitlement, disponibilidade comercial e implementação pelos domínios consumidores;
@@ -28,6 +29,7 @@ O debate deverá:
 - Tracking, analytics, identidade, conteúdo, conversão, leads, publicação, infraestrutura, governança e segurança.
 - Critérios para uma capacidade entrar no catálogo e, depois, ser vinculada a um plano.
 - Estratégia futura de armazenamento, versionamento, resolução, snapshot e evolução entre planos.
+- O radar pode permanecer amplo, mas o primeiro contrato executável deve ser restrito às capacidades realmente consumidas pelo Starter e pela E19.2.
 
 ## 3. Regras básicas
 
@@ -35,6 +37,7 @@ O debate deverá:
 
 - Toda contribuição deve ser acrescentada ao final do histórico, sem apagar registros anteriores.
 - Cada lançamento recebe identificador sequencial no formato `L-001`, `L-002` e assim por diante.
+- A numeração oficial é a incorporada no arquivo; contribuições feitas em comentários ou reviews devem ser renumeradas na consolidação quando houver duplicidade.
 - Cada lançamento informa nome do chat, data, hora, tema, posição, fundamento e situação.
 - Correções ou mudanças de posição devem entrar como novo lançamento, referenciando o anterior.
 - As respostas devem ser breves, preferencialmente entre seis e oito linhas de conteúdo.
@@ -65,8 +68,9 @@ O debate deverá:
 
 - Não implementar código, banco, migration, rota, UI, tracking, integração ou automação neste PR.
 - Não transformar exemplos de plataformas em lista fechada de capacidades.
-- Não vincular capacidade a plano antes de definir seu significado, maturidade e disponibilidade real.
+- Não vincular capacidade a plano antes de definir seu significado, tipo, maturidade técnica e consumidor real.
 - Não tratar capacidade catalogada como promessa comercial ou recurso implementado.
+- Não absorver na E9 a disponibilidade comercial por `taxon + plano`, que permanece decisão separada.
 - Não alterar documentos canônicos por este PR temporário.
 
 ### 3.6. Encerramento
@@ -301,3 +305,92 @@ O debate deverá:
 - Validar as fronteiras entre E9.8, E19, E20.2 e futuros domínios consumidores.
 - Identificar riscos de duplicação, hardcode ou mistura entre maturidade técnica e disponibilidade comercial.
 - Manter add-ons e exceções por conta apenas como pendência futura, salvo demonstração de que afetam o contrato mínimo.
+
+### L-010 — Gate da E20.2 diante da E9.8
+
+- Chat: E20.2 Estrategista — avaliação do PR #691
+- Data e hora: 05/08/2026 19:12 — horário de Brasília
+- Situação: convergência
+- Posição:
+  - A E20.2 já pode avançar nos ajustes independentes de capacidades por plano: política de reutilização, herança, override por LP e participação do valor efetivamente usado no snapshot.
+  - Campos dependentes de capacidade, como configurações não secretas de tracking ou Google Ads, não devem entrar antes de o novo recorte da E9 definir chave estável, tipo ou nível e associação ao Starter.
+  - O novo recorte da E9 não precisa listar campos da E20.2; informa a capacidade e seu nível. A E20.2 define somente os campos não secretos realmente exigidos pelo consumidor aprovado.
+  - Assim, a matriz libera o refinamento contratual independente da E20.2, mas ainda não libera campos dependentes de tracking, analytics ou integrações.
+- Fundamento:
+  - Essa separação permite avançar sem bloquear o catálogo por decisões comerciais ainda abertas e evita inclusão preventiva de campos sem consumidor real.
+- Referências:
+  - L-007; L-008; L-009; PR #688; PR #690; contrato vigente da E20.2.
+
+### L-011 — Gate da E19.2 diante do novo recorte da E9 e da E20.2
+
+- Chat: E19 Estrategista — avaliação do PR #691
+- Data e hora: 05/08/2026 22:14 — horário de Brasília
+- Situação: convergência
+- Posição:
+  - A E19.2 já pode avançar no debate e no desenho das partes independentes: estados da experiência pós-entitlement, jornada guiada, separação dos escopos `account`, `business`, `offer`, `campaign` e `landing_page`, persistência, reutilização, override, logo, paleta, validação e fallback.
+  - A E19.2 deve consumir o contrato refinado da E20.2 e não recriar campos, tipos, obrigações ou políticas de snapshot.
+  - Ainda não pode congelar progressive disclosure, critérios completos do Starter, configurações dependentes de tracking ou integrações, nem limites de drafts e publicações antes da definição das capacidades, tipos ou níveis e de sua associação ao Starter.
+  - A E19.2 está liberada para amadurecimento conceitual e preparação estrutural, mas o plano-base executável e a implementação devem preservar gates explícitos para os contratos finais da E20.2 e da E9.
+- Fundamento:
+  - Essa sequência permite avançar a UX e o domínio de dados sem hardcode de plano, sem duplicar a E20.2 e sem implementar uma experiência que depois precise ser refeita.
+- Referências:
+  - L-007; L-008; L-009; L-010; PR #688; PR #690; `docs/lp-planejamento.md`; E19.1.
+
+### L-012 — Tracking, Analytics e limite da E20.2
+
+- Chat: E20.2 Estrategista — revisão do PR #691
+- Data e hora: 06/08/2026 10:58 — horário de Brasília
+- Situação: convergência
+- Nota de incorporação:
+  - A contribuição foi publicada em comentário como `L-011` e renumerada para `L-012` para preservar a sequência oficial do arquivo.
+- Posição:
+  - A E20.2 é o catálogo dos dados factuais que o cliente fornece para configuração e geração assertiva da LP, resolvidos por `universal → segmento → nicho → ultranicho`; não é catálogo de recursos.
+  - Tracking, integrações e Analytics como capacidades, execução, dashboards, limites, tokens ou credenciais ficam fora da E20.2; a E9 define associação e nível, e o domínio consumidor implementa.
+  - A E20.2 só poderá receber futuramente um campo não secreto estritamente necessário para consumir uma capacidade já aprovada e com consumidor real, após a barreira de admissão.
+  - `traffic_source` e `paid_search_keyword_map` permanecem porque informam contexto de aquisição e alinhamento da copy; não implementam tracking ou Analytics.
+  - Essa decisão não cria campos adicionais agora e não bloqueia o refinamento atual da E20.2.
+- Fundamento:
+  - A separação impede que dados de entrada sejam confundidos com capacidades comerciais ou integrações técnicas e evita expansão preventiva do catálogo.
+- Referências:
+  - L-007; L-010; PR #690; contrato vigente da E20.2; debate humano de 06/08/2026.
+
+### L-013 — Correções estruturais da minuta do novo recorte da E9
+
+- Chat: E9 Estrategista — consolidação do PR #691
+- Data e hora: 06/08/2026 11:26 — horário de Brasília
+- Situação: convergência
+- Posição:
+  - O identificador `E9.8` permanece provisório porque o histórico do roadmap já reutilizou `E9.8.2` a `E9.8.5`; até a reconciliação, usar `novo recorte da E9`.
+  - O radar de capacidades candidatas deve permanecer separado do catálogo canônico executável; catalogar uma hipótese não a associa a um plano nem a transforma em promessa.
+  - Maturidade técnica, associação e valor no plano e disponibilidade comercial por `taxon + plano` são dimensões independentes; a última permanece fora da E9.
+  - `booleano`, `nível fechado` e `limite numérico` formam a proposta inicial de tipos, mas ainda dependem de confirmação humana.
+  - O primeiro contrato executável deve limitar-se às capacidades realmente necessárias ao Starter e à E19.2; categorias amplas permanecem como radar.
+- Fundamento:
+  - Os ajustes corrigem a ambiguidade de `disponível`, evitam conflito de numeração no roadmap e impedem que o debate atrase a primeira jornada real do MVP.
+- Referências:
+  - L-009 a L-012; `docs/roadmap.md`; PRs #688, #690 e #691.
+
+### C-002 — Consolidação até L-013
+
+- Data e hora: 06/08/2026 11:26 — horário de Brasília
+- Definido:
+  - A E9 mantém a fonte única que transforma o plano efetivo em capacidades, limites, configurações apresentáveis e gates.
+  - A E9 define e resolve o contrato; os domínios consumidores implementam, medem uso e aplicam seus recursos no ponto da ação.
+  - O debate permanece conceitual antes de decidir armazenamento ou nova infraestrutura.
+  - O PR #691 continua temporário, em draft e destinado ao fechamento sem merge.
+- Em definição:
+  - A fronteira converge para E9 como catálogo de capacidades, E20.2 como catálogo de dados de entrada e E19 como compositora e aplicadora dos gates.
+  - Os atributos candidatos de uma capacidade são chave estável, categoria, descrição, tipo, maturidade técnica, domínio consumidor e fonte ou evidência.
+  - Os tipos iniciais convergentes são booleano, nível fechado e limite numérico.
+  - Maturidade técnica, associação e valor no plano e disponibilidade por `taxon + plano` devem permanecer independentes.
+  - O radar pode abranger integrações, tracking, analytics, IA, infraestrutura e outros recursos, mas o primeiro contrato executável deve atender somente Starter e E19.2.
+- Pendências:
+  - Confirmar humanamente os atributos mínimos e os três tipos iniciais.
+  - Definir os estados exatos de maturidade técnica, sem usar `disponível` como estado misto.
+  - Definir quais capacidades mínimas do Starter são realmente consumidas pela E19.2 e pela primeira jornada da LP.
+  - Reconciliar o identificador definitivo do novo recorte da E9 com o histórico do roadmap.
+  - Manter snapshot, grandfathering, upgrade, downgrade, add-ons, exceções por conta e armazenamento para decisões posteriores ao contrato mínimo.
+- Divergências:
+  - Não há divergência material entre os chats; havia duplicidade de numeração e ambiguidade conceitual em `disponível`, ambas corrigidas nesta consolidação.
+- Próxima pergunta:
+  - O humano confirma como atributos mínimos `chave estável`, `categoria`, `descrição`, `tipo`, `maturidade técnica`, `domínio consumidor` e `fonte/evidência`, com os tipos iniciais `booleano`, `nível fechado` e `limite numérico`?
