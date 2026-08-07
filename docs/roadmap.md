@@ -1600,7 +1600,7 @@ Repositório — Ajustados
 
 12.5.1 Objetivo e status
 - Objetivo: Tornar explícito o diagnóstico operacional por taxon e conectar Taxonomia, Páginas comerciais, Perfis de orientação e Resoluções de nicho sem criar prontidão persistida nem reabrir os contratos de mutação existentes.
-- Status: Implementação candidata no PR draft #689; validações técnicas e QA visual autenticado aprovados, com inspeção final pós-reconciliação com a `main` ainda pendente.
+- Status: Implementação candidata no PR #689; validações técnicas e QA visual autenticado aprovados, com inspeção final pós-reconciliação com a `main` ainda pendente.
 
 12.5.2 Registros do recorte
 - Repositório:
@@ -1640,7 +1640,7 @@ Repositório — Ajustados
 - Conteúdo:
   - `npm ci`, `npm run check`, `git diff --check` e os validadores de pesquisa, perfil e página comercial foram aprovados localmente.
   - O QA autenticado no Preview aprovou a experiência e o comportamento da Taxonomia, Páginas comerciais, Perfis de orientação, Resoluções de nicho e páginas de gerenciamento em desktop e mobile, incluindo teclado, foco e preservação das ações existentes.
-  - O PR deve permanecer draft até a inspeção final do Estrategista; merge continua exclusivamente humano.
+  - O PR aguarda a inspeção final do Estrategista; merge continua exclusivamente humano.
 
 13. E13 — Partner Dashboard
 
