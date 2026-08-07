@@ -9,9 +9,9 @@
 - Objetivo: criar uma área administrativa read-only que torne consultáveis os contratos estruturais já materializados para `landing_page`, sem transformar registries repo-only em editores e sem duplicar regras de domínio.
 - Usuário principal: `platform_admin`.
 - Plano conceitual: `docs/lp-planejamento.md` para as fronteiras da jornada de LP; a organização administrativa deste recorte é definida neste plano.
-- Processo: Estrategista Light em teste por decisão humana deste recorte.
+- Processo autorizado: Estrategista Light.
 - Automação do recorte: não.
-- Status: plano-base Light candidato; parecer do Gestor de Updates incorporado; aguardando aprovação humana para implementação.
+- Status: plano-base Light aprovado pelo humano para implementação no mesmo PR e branch; parecer do Gestor de Updates incorporado; não exigir ciclo v1 → v2 nem `plan-v2-approved`.
 
 ### 1.2. Documentação e implementação usadas
 
@@ -379,12 +379,10 @@
 
 ### 4.3. Próxima ação no fluxo Light
 
-- O parecer obrigatório do Gestor de Updates já foi incorporado ao plano-base.
-- Submeter este plano ao humano para aprovação explícita como plano-base Light.
-- Após aprovação humana, registrar no plano-base ou no PR:
-  - `Status: plano-base Light aprovado para implementação`;
-  - `Processo autorizado: Estrategista Light`;
-  - `Implementação autorizada no mesmo PR/branch`;
-  - `Não exigir ciclo v1 → v2 nem plan-v2-approved`.
-- Após esse registro, entregar o briefing ao Executor para implementação no mesmo PR e branch, sem merge intermediário do plano.
+- Aprovação humana registrada em 07/08/2026.
+- `Status: plano-base Light aprovado para implementação`.
+- `Processo autorizado: Estrategista Light`.
+- `Implementação autorizada no mesmo PR/branch`.
+- `Não exigir ciclo v1 → v2 nem plan-v2-approved`.
+- Próxima ação: entregar o briefing ao Executor para implementar a E12.6.3 no mesmo PR #695 e branch `docs/e12-6-estrutura-lp-admin`, sem merge intermediário do plano.
 - Se surgir qualquer gatilho da seção 4.2 ou do processo completo, interromper a implementação e devolver o caso ao Estrategista.
