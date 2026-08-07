@@ -114,16 +114,16 @@ export default async function AdminTaxonomyPage({ searchParams }: AdminTaxonomyP
       ) : (
         <div className="overflow-hidden rounded-lg border border-border bg-card shadow-card">
           <div className="max-h-[70vh] overflow-auto">
-            <table className="w-full min-w-[960px] table-fixed divide-y divide-border text-sm">
+            <table className="w-full min-w-[900px] table-fixed divide-y divide-border text-sm">
               <colgroup>
-                <col className="w-[22%]" />
+                <col className="w-[23%]" />
                 <col className="w-[8%]" />
                 <col className="w-[11%]" />
                 <col className="w-[10%]" />
                 <col className="w-[13%]" />
-                <col className="w-[16%]" />
-                <col className="w-[9%]" />
-                <col className="w-[11%]" />
+                <col className="w-[14%]" />
+                <col className="w-[7%]" />
+                <col className="w-[14%]" />
               </colgroup>
               <thead className="sticky top-0 z-10 bg-muted text-left text-xs font-medium uppercase text-muted-foreground">
                 <tr>
