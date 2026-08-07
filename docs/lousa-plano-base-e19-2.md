@@ -71,6 +71,8 @@
 - A configuração retomável usa um agregado versionado por conta, com a versão explícita do catálogo e valores indexados por `fieldKey`; cada valor persistido conserva seu escopo E20.2.
 - A leitura efetiva combina fontes autoritativas existentes com o agregado da jornada. Valor autoritativo não é copiado apenas para atender o onboarding nem substituído silenciosamente pelo agregado.
 - Field, escopo, versão ou valor desconhecido ou inválido falha fechado; o payload persistido não constitui catálogo paralelo.
+- O save parcial valida integralmente apenas os valores presentes; ausência de campo obrigatório ou condicional aplicável é aceita durante o progresso e bloqueia somente a conclusão.
+- Um resolver tipado percorre os fields do catálogo E20.2 resolvido e aplica precedência por `fieldKey`: fonte autoritativa existente, quando houver, prevalece; o agregado fornece somente valor legitimamente pertencente à jornada e ausente da fonte autoritativa. O resolver não duplica definição, escopo, obrigação, condição ou validação do catálogo.
 
 ### 1.4. Escopos e reutilização
 
@@ -209,17 +211,20 @@
 - Preservar valores reutilizáveis, valores de oferta, valores específicos da primeira LP/campanha, referência de logo quando houver, paleta confirmada e progresso parcial.
 - A persistência deve permitir sair e retomar o onboarding sem perda de valores válidos.
 - `docs/schema.md` documenta `account_profiles` apenas para niche, canal preferido, WhatsApp e site e `account_landing_pages` apenas para a identidade mínima da LP; não há contrato documentado que autorize reutilizar qualquer uma dessas estruturas como armazenamento genérico dos valores E20.2.
-- Criar `public.account_landing_page_onboarding_configurations` como agregado interno 1:1 por conta para a jornada da primeira LP Starter, usando `account_id` como PK/FK para `public.accounts(id)` com `ON UPDATE CASCADE` e `ON DELETE CASCADE`.
-- O agregado deve conter `catalog_version integer`, `values jsonb`, `revision bigint`, `created_by uuid`, `updated_by uuid`, `created_at timestamptz` e `updated_at timestamptz`; `revision` inicia em 1, permanece positiva e suporta concorrência otimista.
+- Criar `public.account_landing_page_onboarding_configurations` como agregado interno 1:1 por conta para a jornada da primeira LP Starter, usando `account_id uuid primary key` como FK para `public.accounts(id)` com `ON UPDATE CASCADE` e `ON DELETE CASCADE`.
+- O agregado deve conter `landing_page_id uuid null`, `catalog_version integer not null` com valor positivo, `values jsonb not null default '{}'::jsonb`, `revision bigint not null default 1` com valor positivo, `created_by uuid not null`, `updated_by uuid not null`, `created_at timestamptz not null default now()` e `updated_at timestamptz not null default now()`.
+- `created_by` e `updated_by` referenciam `auth.users(id)` com `ON UPDATE CASCADE` e `ON DELETE RESTRICT`. `updated_at` usa o trigger canônico `public.tg_set_updated_at()`; o agregado não participa do Trigger Hub.
+- `landing_page_id` permanece nulo durante o preenchimento. A migration adiciona unicidade em `public.account_landing_pages(id, account_id)` e FK composta `(landing_page_id, account_id)` para esse par, com `ON UPDATE CASCADE` e `ON DELETE RESTRICT`, impedindo associação cruzada entre contas.
 - `values` deve ser objeto JSON estrito indexado por `fieldKey`; cada entrada contém somente `scope` e `value`. O boundary valida `fieldKey`, `scope`, obrigatoriedade, condição e valor contra o catálogo resolvido na `catalog_version` persistida antes de qualquer gravação.
 - Valores provenientes de fonte autoritativa existente são combinados na leitura e não duplicados no agregado somente para atender o onboarding.
 - Não criar coluna de status, flag de completude, snapshot de geração nem linha em `account_landing_pages` para representar a jornada.
-- A tabela nasce em migration incremental versionada e forward-only, com `values` restrito a objeto JSON, versão/revisão positivas, FKs explícitas, unicidade 1:1, `updated_at` automático e RLS habilitado.
-- A tabela é interna ao boundary server-side: revogar acesso de `public`, `anon`, `authenticated` e `ai_readonly`; conceder somente `SELECT`, `INSERT`, `UPDATE` e `DELETE` a `service_role`; não criar policy de cliente nem view. Grants e RLS permanecem decisões independentes.
-- Acesso ocorre somente por adapter de `lib/lp-builder/`, depois dos gates de usuário, conta, membership, entitlement e taxon. UI, provider e Server Action não acessam a tabela diretamente.
-- Escrita usa `revision` e limite de uma linha afetada para impedir overwrite concorrente; conflito, objeto ausente e erro de leitura ou gravação permanecem distintos de configuração ausente.
-- O runtime deve falhar fechado e manter o onboarding indisponível se a migration ainda não estiver aplicada ou se o probe read-only de tabela, RLS e grants não for aprovado.
-- Após a decisão humana sobre a forma física, qualquer objeto novo ou alterado deve nascer em migration incremental versionada e forward-only, com runtime dependente somente depois de apply e verificação no ambiente alvo. A mesma migration deve definir chaves, FKs, cardinalidade, constraints, RLS, policies e GRANTs explícitos aplicáveis; GRANTs e RLS/policies são controles independentes. A v2 deve declarar se o objeto será exposto pela Data API; eventual view exposta deve usar `security_invoker = true`. O acesso de domínio permanece server-side por adapter, e `docs/schema.md` deve ser atualizado no mesmo recorte.
+- A tabela nasce em migration incremental versionada e forward-only, com `values` restrito por CHECK a objeto JSON, versão/revisão positivas, FKs explícitas, unicidade 1:1, `updated_at` automático e RLS habilitado.
+- A tabela reside em `public` e fica exposta ao PostgREST/Data API exclusivamente para o adapter server-side autenticado com `service_role`. Revogar acesso de `public`, `anon`, `authenticated` e `ai_readonly`; conceder somente `SELECT`, `INSERT`, `UPDATE` e `DELETE` a `service_role`; não criar policy de cliente nem view.
+- RLS permanece habilitado como defesa adicional, mas não é tratado como isolamento para `service_role`, que o ignora. Grants e RLS/policies são controles independentes.
+- Acesso ocorre somente por adapter de `lib/lp-builder/`, depois dos gates de usuário, conta, membership, entitlement e taxon. O adapter deriva `account_id` e ator no servidor e escopa toda leitura e mutação por essa conta; UI, provider e Server Action não recebem `account_id` autoritativo do client nem acessam a tabela diretamente.
+- Escrita compara a `revision` esperada, incrementa-a atomicamente e exige exatamente uma linha afetada para impedir overwrite concorrente; conflito, objeto ausente e erro de leitura ou gravação permanecem distintos de configuração ausente.
+- Antes de a migration existir e uma leitura tipada do agregado ser bem-sucedida, a superfície preserva a experiência comercial vigente e não ativa o novo onboarding. Depois do apply, o snippet read-only e a leitura do adapter comprovam disponibilidade; então a resolução derivada passa a habilitar a jornada sem PR precursor.
+- A migration deve definir todos os objetos, constraints, RLS e GRANTs no mesmo recorte; `docs/schema.md` deve registrar o estado final e o snippet read-only deve verificar o apply sem mutação remota pré-merge.
 - Não usar a criação prematura de uma LP `draft` como mecanismo de persistência do onboarding.
 
 #### 2.4.6. Consumo
@@ -227,6 +232,7 @@
 - Retomada do próprio onboarding.
 - Área posterior `Configurações` para valores reutilizáveis.
 - Criação ou seleção da LP `draft` pela E19.1 após completude.
+- Depois de criação ou escolha humana explícita, vincular o agregado ao `draft` pela FK composta. O vínculo é write-once nesta entrega e valores `campaign`/`landing_page` não podem ser consumidos por outro draft.
 - Futura geração/materialização consumirá os valores confirmados e aplicará o contrato de snapshot vigente naquele recorte.
 - Futuros consumidores habilitados por capacidades resolvidas pela E9.7 podem reutilizar os valores quando houver contrato aprovado, sem a E9 consumir valores do onboarding.
 
@@ -295,7 +301,7 @@
   - a migration cria somente `public.account_landing_page_onboarding_configurations` e seus controles indispensáveis, sem bucket, Storage, view ou objeto paralelo;
   - o agregado persiste somente valores válidos associados a `fieldKey`, escopo e versão do catálogo, preserva revisão otimista e não materializa completude;
   - se a forma física aprovada introduzir ou alterar tabela, coluna, constraint, índice, RLS, policy ou grant, o mesmo PR deve incluir snippet SQL read-only versionado em `supabase/snippets/` que verifique existência e shape dos objetos, isolamento por tenant, RLS habilitado, grants mínimos, policies esperadas e ausência de uso de `account_landing_pages` como persistência prematura do onboarding. O snippet não substitui testes comportamentais em ambiente local ou descartável e não pode realizar mutação remota;
-  - testes cobrem casos positivos, negativos e fail-closed aplicáveis.
+  - testes cobrem save parcial sem obrigatórios, conclusão incompleta, precedência autoritativa, duas contas distintas, ator inválido, conflito de revisão, ausência legítima, objeto indisponível e erro operacional, além dos casos positivos e fail-closed aplicáveis.
 
 ### 3.2. E19.2.4 — Jornada guiada pós-entitlement e retomada
 
@@ -357,6 +363,7 @@
   - sem draft existente, permitir criação pelo fluxo E19.1;
   - com draft existente, permitir seleção/continuação;
   - com vários drafts, exigir escolha explícita;
+  - após criar ou selecionar explicitamente um draft da mesma conta, vincular o agregado a ele sem copiar valores para `account_landing_pages` e sem permitir rebind silencioso;
   - manter limites de quantidade fora da E19.2 até capacidade correspondente ser admitida e integrada pela E9.7;
   - direcionar a conta ao espaço operacional após a escolha/criação, sem geração de conteúdo neste recorte.
   - estender a API pública de `lib/lp-builder/` com operação server-only de leitura dos drafts legítimos da conta, implementada por adapter com colunas explícitas e ordenação determinística. O resultado deve distinguir `nenhum draft`, `um ou mais drafts` e `falha operacional`; UI, página e Server Action não consultam `account_landing_pages` diretamente. A autorização deve reutilizar os gates canônicos e não ser inferida da simples presença de linhas.
@@ -365,6 +372,7 @@
   - configuração completa libera a transição;
   - draft existente pode ser selecionado sem duplicação automática;
   - múltiplos drafts nunca são escolhidos silenciosamente;
+  - valores `campaign` e `landing_page` ficam vinculados somente ao draft explicitamente escolhido e não são reutilizados por outro draft;
   - criação continua usando os gates server-side da E19.1;
   - casos executáveis cobrem zero, um e vários drafts, conta divergente, membership inválido e erro de leitura; erro operacional não é convertido em lista vazia;
   - nenhuma geração, revisão de copy, publicação ou tracking é iniciada.
@@ -373,7 +381,7 @@
 
 - Reconciliar `docs/roadmap.md` pelo Prompt ABC somente depois da aprovação da v2, sem registrar implementação inexistente.
 - Executar `E19.2.3`, `E19.2.4`, `E19.2.5` e `E19.2.6` nessa ordem, com checkpoint e gate próprios por subseção.
-- Manter migration e runtime no mesmo PR, sem apply remoto pré-merge; a disponibilidade funcional permanece fail-closed até apply e verificação do objeto.
+- Manter migration e runtime no mesmo PR, sem apply remoto pré-merge; antes do apply e da leitura tipada bem-sucedida, preservar a experiência comercial vigente e manter o onboarding novo desativado.
 
 ## 4. Escopo negativo e critérios de parada
 
