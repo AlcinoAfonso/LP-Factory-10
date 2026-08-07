@@ -572,15 +572,16 @@
 - Status: Planejado.
 
 9.7.3 Contrato canônico e fonte de resolução
-- Status: Planejado.
+- Status: Planejado; plano-base v2 aprovado para execução neste recorte.
 - Conteúdo:
   - definir a identificação mínima de cada capacidade por chave estável, nome ou descrição, categoria classificatória, tipo com contrato de valor inequívoco e domínio consumidor;
   - adotar inicialmente capacidades booleanas, de nível fechado ou de limite numérico;
-  - escolher uma única fonte canônica compatível com a arquitetura vigente e uma resolução fail-closed por `planKey`, sem hardcode disperso nem solução paralela para features ou grants;
-  - manter capacidades candidatas ou ainda em avaliação fora do catálogo canônico.
+  - adotar `lib/commercial-capabilities/` como boundary repo-only, com `index.ts` como única API pública, registry interno e uma única resolução de produção fail-closed por `planKey`;
+  - limitar formalmente para este contrato a regra técnica não materializada de grants, hierarquia e snapshot, sem criar banco, `get_feature` ou solução paralela;
+  - executar somente a infraestrutura contratual da E9.7.3, com fonte runtime inicialmente vazia, mantendo capacidades candidatas ou ainda em avaliação fora do catálogo canônico.
 
 9.7.4 Catálogo inicial do Starter
-- Status: Planejado.
+- Status: Planejado; fora do escopo da execução atual por decisão humana.
 - Conteúdo:
   - incluir somente capacidades admitidas por decisão humana, com consumidor real existente ou já aprovado para a jornada imediata;
   - registrar separadamente a definição da capacidade e seu valor aprovado para o Starter;
@@ -588,7 +589,7 @@
   - distinguir capacidade admitida, consumidor capaz de aplicá-la e recurso efetivamente existente.
 
 9.7.5 Resolução e contrato de consumo pelo plano efetivo
-- Status: Planejado.
+- Status: Planejado; fora do escopo da execução atual por decisão humana.
 - Conteúdo:
   - resolver o contrato canônico a partir do `planKey` efetivo fornecido pelo entitlement;
   - disponibilizar contrato server-side determinístico para os domínios consumidores, preservando no consumidor a medição de uso e a aplicação do gate no ponto da ação;
