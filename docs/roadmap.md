@@ -2,7 +2,7 @@
 
 0.1 Cabeçalho
 • Data: 06/08/2026
-• Versão: v1.5.126
+• Versão: v1.5.127
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -569,18 +569,38 @@
 
 9.7.1 Objetivo e status
 - Objetivo: definir e resolver um contrato canônico único que traduza o plano efetivo da conta em capacidades, níveis, limites e sinais suficientes para os domínios consumidores decidirem quais configurações podem ser apresentadas.
-- Status: Planejado.
+- Status: Em andamento; E9.7.3 concluída, E9.7.4 e E9.7.5 planejadas.
+
+9.7.2 Registros do recorte
+- Repositório:
+  - Criados:
+    - `lib/commercial-capabilities/contracts.ts`
+    - `lib/commercial-capabilities/index.ts`
+    - `lib/commercial-capabilities/registry.ts`
+    - `lib/commercial-capabilities/resolve.ts`
+    - `lib/commercial-capabilities/validation-cases.ts`
+  - Ajustados:
+    - `package.json`
+- Updates:
+  - Aplicados:
+    - `supa#20`
+    - `prod#19`
+- Referências:
+  - Plano-base v2: `docs/lousa-plano-base-e9-7.md` — seção 3.1.
+  - Contrato técnico: `docs/base-tecnica.md` — seção 3.11.
 
 9.7.3 Contrato canônico e fonte de resolução
-- Status: Planejado.
+- Status: Concluído (06/08/2026).
 - Conteúdo:
-  - definir a identificação mínima de cada capacidade por chave estável, nome ou descrição, categoria classificatória, tipo com contrato de valor inequívoco e domínio consumidor;
-  - adotar inicialmente capacidades booleanas, de nível fechado ou de limite numérico;
-  - escolher uma única fonte canônica compatível com a arquitetura vigente e uma resolução fail-closed por `planKey`, sem hardcode disperso nem solução paralela para features ou grants;
-  - manter capacidades candidatas ou ainda em avaliação fora do catálogo canônico.
+  - materializa a identificação mínima por chave estável, nome, descrição, categoria, tipo com contrato de valor inequívoco e domínio consumidor;
+  - suporta tipos booleano, nível fechado e limite numérico, inclusive `-1` somente quando o contrato do limite adota ilimitado explicitamente;
+  - centraliza a fonte repo-only em `lib/commercial-capabilities/`, com `index.ts` como única API pública, registry interno e resolução de produção fail-closed por `planKey` e chave de capacidade;
+  - mantém o registry runtime vazio, sem capacidade Starter inferida, e isola fixtures sintéticas do runtime e da API pública;
+  - valida contrato, duplicidades, valores, desconhecidos, ausência de associação, fonte vazia e imutabilidade pelo comando `validate:commercial-capabilities`, integrado ao `npm run check`;
+  - não cria banco, `get_feature`, grants, snapshot, integração com entitlement ou consumidor, UI, rota, serviço, job, agente ou automação.
 
 9.7.4 Catálogo inicial do Starter
-- Status: Planejado.
+- Status: Planejado; fora do escopo da execução atual por decisão humana.
 - Conteúdo:
   - incluir somente capacidades admitidas por decisão humana, com consumidor real existente ou já aprovado para a jornada imediata;
   - registrar separadamente a definição da capacidade e seu valor aprovado para o Starter;
@@ -588,7 +608,7 @@
   - distinguir capacidade admitida, consumidor capaz de aplicá-la e recurso efetivamente existente.
 
 9.7.5 Resolução e contrato de consumo pelo plano efetivo
-- Status: Planejado.
+- Status: Planejado; fora do escopo da execução atual por decisão humana.
 - Conteúdo:
   - resolver o contrato canônico a partir do `planKey` efetivo fornecido pelo entitlement;
   - disponibilizar contrato server-side determinístico para os domínios consumidores, preservando no consumidor a medição de uso e a aplicação do gate no ponto da ação;
