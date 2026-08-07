@@ -19,6 +19,15 @@ export function resolveLandingPageRootParameters(
   );
 }
 
+export function listLandingPageRootVersions(): readonly number[] {
+  return Object.freeze(
+    Object.keys(landingPageRootRegistry)
+      .map(Number)
+      .filter(Number.isInteger)
+      .sort((left, right) => left - right),
+  );
+}
+
 export function resolveLandingPageRootParametersFromRegistry(
   input: ResolveLandingPageRootParametersInput,
   registry: RegistryLike,

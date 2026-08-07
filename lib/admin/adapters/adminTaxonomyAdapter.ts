@@ -146,6 +146,13 @@ export async function listAdminTaxons(filters: AdminFilters = {}): Promise<Admin
   };
 }
 
+export async function getAdminTaxonResearchDiagnostics(
+  taxon: AdminTaxonSummary,
+): Promise<Pick<AdminTaxonOperationalDiagnostic, "businessBuyer" | "endCustomer">> {
+  const diagnostics = await readAdminTaxonResearchListDiagnostics([taxon]);
+  return diagnostics.get(taxon.id) ?? unavailableResearchListDiagnostic();
+}
+
 async function readAdminTaxonResearchListDiagnostics(
   taxons: readonly AdminTaxonSummary[],
 ): Promise<ReadonlyMap<string, Pick<AdminTaxonOperationalDiagnostic, "businessBuyer" | "endCustomer">>> {
