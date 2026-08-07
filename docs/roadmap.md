@@ -2,7 +2,7 @@
 
 0.1 Cabeçalho
 • Data: 07/08/2026
-• Versão: v1.5.129
+• Versão: v1.5.130
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -2211,7 +2211,7 @@ Repositório — Ajustados
 
 19. E19 — LP Builder
 - Objetivo: Consolidar o fluxo Core de landing pages por conta, da identidade mínima em `draft` às futuras etapas de geração, revisão, materialização e publicação, sempre por recortes aprovados.
-- Status: Em evolução por recortes. O recorte 19.1 está concluído e o recorte 19.2 está em implementação no PR #700.
+- Status: Em evolução por recortes. O recorte 19.1 está concluído e o recorte 19.2 possui implementação candidata completa no PR #700.
 
 19.1 Criação produtiva mínima de LP por conta
 
@@ -2267,7 +2267,7 @@ Repositório — Ajustados
 
 19.2.1 Objetivo e status
 - Objetivo: Criar a experiência pós-entitlement que configura a conta e os valores mínimos necessários para iniciar a primeira LP Starter, sem gerar conteúdo, materializar a LP final ou publicar.
-- Status: Em implementação; E19.2.3, E19.2.4 e E19.2.5 possuem checkpoints aprovados no PR #700, e E19.2.6 possui implementação candidata no mesmo PR, com apply da migration e validação hospedada autenticada pendentes do merge humano.
+- Status: Implementação candidata completa no PR #700; E19.2.3, E19.2.4, E19.2.5 e E19.2.6 possuem checkpoints implementados e aprovados, com apply da migration e validação hospedada autenticada pendentes do merge humano.
 
 19.2.2 Registros do recorte
 - Repositório:
@@ -2324,7 +2324,7 @@ Repositório — Ajustados
 
 19.2.6 Revisão, conclusão e transição para LP `draft`
 - Objetivo: Concluir a configuração derivada e transferir a conta para o espaço operacional sem criar LP antes da hora.
-- Status: Implementação candidata no PR #700; validação autenticada do fluxo integrado permanece pendente do merge/apply.
+- Status: Checkpoint implementado e aprovado no PR #700; validação autenticada do fluxo integrado permanece pendente do merge/apply.
 - Conteúdo:
   - Configuração completa sem vínculo entra em revisão final; configuração incompleta não consulta nem cria LP, e configuração já vinculada segue para o estado operacional sem persistir `onboarding_status`.
   - A leitura server-only do boundary `lib/lp-builder/` retorna zero, um ou vários drafts legítimos da conta em ordem determinística e preserva falha operacional como erro, sem consulta direta da página, UI ou Server Action a `account_landing_pages`.
