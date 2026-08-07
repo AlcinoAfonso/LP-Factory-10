@@ -302,7 +302,9 @@
   - a migration cria somente `public.account_landing_page_onboarding_configurations` e seus controles indispensáveis, sem bucket, Storage, view ou objeto paralelo;
   - o agregado persiste somente valores válidos associados a `fieldKey`, escopo e versão do catálogo, preserva revisão otimista e não materializa completude;
   - se a forma física aprovada introduzir ou alterar tabela, coluna, constraint, índice, RLS, policy ou grant, o mesmo PR deve incluir snippet SQL read-only versionado em `supabase/snippets/` que verifique existência e shape dos objetos, isolamento por tenant, RLS habilitado, grants mínimos, policies esperadas e ausência de uso de `account_landing_pages` como persistência prematura do onboarding. O snippet não substitui testes comportamentais em ambiente local ou descartável e não pode realizar mutação remota;
-  - testes cobrem save parcial sem obrigatórios, conclusão incompleta, precedência autoritativa, duas contas distintas, ator inválido, conflito de revisão, ausência legítima, objeto indisponível e erro operacional, além dos casos positivos e fail-closed aplicáveis.
+  - testes cobrem save parcial sem obrigatórios, conclusão incompleta, precedência autoritativa, duas contas distintas, ator inválido, ausência legítima, objeto indisponível e erro operacional, além dos casos positivos e fail-closed aplicáveis;
+  - testes SQL comprovam `NULL → draft` válido da mesma conta, rejeição de rebind, rejeição de retorno a `NULL`, rejeição de vínculo cruzado e atualização de outros campos sem alteração do vínculo;
+  - casos de concorrência cobrem duas criações simultâneas para a PK 1:1, update com revisão válida e stale, classificação segura do resultado zero e prova de que nenhuma mutação atinge mais de uma linha.
 
 ### 3.2. E19.2.4 — Jornada guiada pós-entitlement e retomada
 
@@ -376,6 +378,7 @@
   - valores `campaign` e `landing_page` ficam vinculados somente ao draft explicitamente escolhido e não são reutilizados por outro draft;
   - criação continua usando os gates server-side da E19.1;
   - casos executáveis cobrem zero, um e vários drafts, conta divergente, membership inválido e erro de leitura; erro operacional não é convertido em lista vazia;
+  - casos de bind cobrem vínculo único bem-sucedido, revisão stale, resultado zero classificado com segurança, tentativa de rebind e garantia de `.maxAffected(1)`;
   - nenhuma geração, revisão de copy, publicação ou tracking é iniciada.
 
 ### 3.5. Execução após aprovação da v2
