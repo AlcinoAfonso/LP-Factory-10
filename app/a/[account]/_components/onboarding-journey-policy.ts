@@ -25,6 +25,8 @@ export type AccountOnboardingState =
   | "complete"
   | "blocked";
 
+export type JourneyFormStep = "business" | "landing_page" | "brand_identity";
+
 export function decideAccountJourney(input: Readonly<{
   actorRole: MemberRole;
   isCommerciallyEligible: boolean;
@@ -67,6 +69,7 @@ export function prepareJourneyStoredValues(input: Readonly<{
   );
   return Object.fromEntries(
     Object.entries(input.storedValues).filter(([fieldKey, stored]) => {
+      if (fieldKey === "brand_logo_asset") return false;
       const field = fieldsByKey.get(fieldKey);
       if (!field) return true;
       const applicable = journeyConditionMatches(
@@ -111,4 +114,17 @@ export function journeyConditionMatches(
   const actual = values[condition.fieldKey];
   if (condition.operator === "equals") return actual === condition.value;
   return Array.isArray(condition.value) && condition.value.includes(actual as never);
+}
+
+export function journeyScopeBelongsToStep(
+  step: JourneyFormStep,
+  scope: ResolvedLandingPageInputField["valueScope"],
+) {
+  if (step === "business") {
+    return ["account", "business", "offer"].includes(scope);
+  }
+  if (step === "landing_page") {
+    return ["campaign", "landing_page"].includes(scope);
+  }
+  return false;
 }

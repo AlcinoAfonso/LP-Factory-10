@@ -18,7 +18,9 @@ export {
   isUnavailableOnboardingConfigurationError,
   resolveAccountLandingPageOnboardingConfiguration,
   stripAuthoritativeOnboardingValues,
+  validateStarterColorPalette,
 } from "./onboardingConfiguration";
+export type { StarterColorPaletteValidationResult } from "./onboardingConfiguration";
 export { createAccountLandingPage } from "./adapters/landingPagesAdapter";
 export {
   getAccountLandingPageOnboardingConfiguration,

@@ -7,6 +7,7 @@ import {
 } from "../../../../lib/conversion-content/landing-page/input-catalog";
 import {
   decideAccountJourney,
+  journeyScopeBelongsToStep,
   parseKeywordMapDraft,
   parseNumberRangeDraft,
   prepareJourneyStoredValues,
@@ -178,6 +179,61 @@ const cases: readonly Readonly<{ name: string; run: () => void }>[] = [
         currency: "BRL",
       });
       assert.equal(parseNumberRangeDraft("", ""), undefined);
+    },
+  },
+  {
+    name: "brand step offers palette confirmation without logo upload or asset persistence",
+    run: () => {
+      const catalog = resolveLandingPageInputCatalog({
+        version: 2,
+        plan: "starter",
+        taxonChain: { segment: realEstateSegmentTaxon },
+      });
+      assert.equal(catalog.ok, true);
+      const prepared = prepareJourneyStoredValues({
+        fields: catalog.value.fields,
+        storedValues: {
+          brand_logo_asset: {
+            scope: "business",
+            value: { asset_id: "asset-existente" },
+          },
+        },
+        effectiveValues: {},
+      });
+      assert.deepEqual(prepared, {});
+
+      const component = readFileSync(
+        new URL("./OnboardingConfigurationJourney.tsx", import.meta.url),
+        "utf8",
+      );
+      assert.match(component, /Identidade visual/);
+      assert.match(component, /type="color"/);
+      assert.match(component, /validateStarterColorPalette/);
+      assert.match(component, /Você pode continuar sem logo/);
+      assert.doesNotMatch(component, /type="file"/);
+      assert.doesNotMatch(component, /upload/i);
+    },
+  },
+  {
+    name: "brand step never repeats business campaign or landing-page fields",
+    run: () => {
+      for (const scope of [
+        "account",
+        "business",
+        "offer",
+        "campaign",
+        "landing_page",
+      ] as const) {
+        assert.equal(journeyScopeBelongsToStep("brand_identity", scope), false);
+      }
+      assert.equal(
+        journeyScopeBelongsToStep("landing_page", "campaign"),
+        true,
+      );
+      assert.equal(
+        journeyScopeBelongsToStep("landing_page", "landing_page"),
+        true,
+      );
     },
   },
 ];

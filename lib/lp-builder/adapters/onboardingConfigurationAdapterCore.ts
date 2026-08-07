@@ -91,9 +91,13 @@ export async function saveAccountLandingPageOnboardingConfigurationFromClient(
     return failure("revision_conflict");
   }
 
-  const persistableValues = stripAuthoritativeOnboardingValues(
-    input.values,
-    runtime.context.authoritativeValues,
+  const persistableValues = Object.fromEntries(
+    Object.entries(
+      stripAuthoritativeOnboardingValues(
+        input.values,
+        runtime.context.authoritativeValues,
+      ),
+    ).filter(([fieldKey]) => fieldKey !== "brand_logo_asset"),
   );
   const candidate = resolveAccountLandingPageOnboardingConfiguration({
     accountId: runtime.context.account.id,

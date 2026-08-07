@@ -21,6 +21,7 @@ import {
   isUnavailableOnboardingConfigurationError,
   resolveAccountLandingPageOnboardingConfiguration,
   stripAuthoritativeOnboardingValues,
+  validateStarterColorPalette,
 } from "./onboardingConfiguration";
 
 const taxonChain = {
@@ -88,6 +89,62 @@ const cases: ReadonlyArray<
       );
       assert.equal(logo?.source, "missing");
       assert.equal(logo?.required, false);
+    },
+  },
+  {
+    name: "starter palette enforces deterministic text and role contrast",
+    run: () => {
+      const valid = validateStarterColorPalette({
+        primary: "#155eef",
+        secondary: "#344054",
+        accent: "#b54708",
+        background: "#ffffff",
+        text: "#101828",
+      });
+      assert.equal(valid.ok, true, JSON.stringify(valid));
+      assert.ok(valid.contrast.text >= 4.5);
+      assert.ok(valid.contrast.primary >= 3);
+
+      assert.deepEqual(
+        validateStarterColorPalette({
+          primary: "#155eef",
+          secondary: "#344054",
+          accent: "#b54708",
+          background: "#ffffff",
+          text: "#777777",
+        }),
+        { ok: false, error: "INSUFFICIENT_TEXT_CONTRAST" },
+      );
+      assert.deepEqual(
+        validateStarterColorPalette({
+          primary: "#dddddd",
+          secondary: "#eeeeee",
+          accent: "#f5f5f5",
+          background: "#ffffff",
+          text: "#101828",
+        }),
+        { ok: false, error: "INSUFFICIENT_ROLE_CONTRAST" },
+      );
+      assert.deepEqual(
+        validateStarterColorPalette({
+          primary: "#155eef",
+          secondary: "#344054",
+          accent: "#b54708",
+          background: "#ffffff",
+          text: "#647a86",
+        }),
+        { ok: false, error: "INSUFFICIENT_TEXT_CONTRAST" },
+      );
+      assert.deepEqual(
+        validateStarterColorPalette({
+          primary: "#7898bb",
+          secondary: "#344054",
+          accent: "#b54708",
+          background: "#ffffff",
+          text: "#101828",
+        }),
+        { ok: false, error: "INSUFFICIENT_ROLE_CONTRAST" },
+      );
     },
   },
   {
@@ -331,7 +388,13 @@ const cases: ReadonlyArray<
           actorUserId: ACTOR_ID,
           catalogVersion: 2,
           expectedRevision: 0,
-          values: segmentValidValues,
+          values: {
+            ...segmentValidValues,
+            brand_logo_asset: {
+              scope: "business",
+              value: { asset_id: "referencia-nao-autoritativa" },
+            },
+          },
         },
         client,
         eligibleEntitlement,
@@ -343,6 +406,13 @@ const cases: ReadonlyArray<
         Object.hasOwn(
           (insert.payload as { values: Record<string, unknown> }).values,
           "business_display_name",
+        ),
+        false,
+      );
+      assert.equal(
+        Object.hasOwn(
+          (insert.payload as { values: Record<string, unknown> }).values,
+          "brand_logo_asset",
         ),
         false,
       );

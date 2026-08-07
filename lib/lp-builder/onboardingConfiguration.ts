@@ -1,4 +1,5 @@
 import {
+  landingPageInputColorPaletteRoles,
   resolveLandingPageInputCatalog,
   validateLandingPageInputValue,
   type LandingPageInputCatalogPlan,
@@ -61,11 +62,23 @@ export function resolveAccountLandingPageOnboardingConfiguration(
     if (!validateLandingPageInputValue(field, stored.value).ok) {
       return { ok: false, error: "INVALID_CONFIGURATION", fieldKey };
     }
+    if (
+      fieldKey === "brand_color_palette" &&
+      !validateStarterColorPalette(stored.value).ok
+    ) {
+      return { ok: false, error: "INVALID_CONFIGURATION", fieldKey };
+    }
   }
 
   for (const [fieldKey, value] of Object.entries(input.authoritativeValues)) {
     const field = fieldsByKey.get(fieldKey);
     if (!field || !validateLandingPageInputValue(field, value).ok) {
+      return { ok: false, error: "INVALID_VALUES", fieldKey };
+    }
+    if (
+      fieldKey === "brand_color_palette" &&
+      !validateStarterColorPalette(value).ok
+    ) {
       return { ok: false, error: "INVALID_VALUES", fieldKey };
     }
   }
@@ -166,6 +179,72 @@ export function isUnavailableOnboardingConfigurationError(
   );
 }
 
+export type StarterColorPaletteValidationResult =
+  | Readonly<{
+      ok: true;
+      contrast: Readonly<{
+        text: number;
+        primary: number;
+        secondary: number;
+        accent: number;
+      }>;
+    }>
+  | Readonly<{
+      ok: false;
+      error:
+        | "INVALID_FORMAT"
+        | "INSUFFICIENT_TEXT_CONTRAST"
+        | "INSUFFICIENT_ROLE_CONTRAST";
+    }>;
+
+export function validateStarterColorPalette(
+  value: unknown,
+): StarterColorPaletteValidationResult {
+  if (!isPlainRecord(value)) return { ok: false, error: "INVALID_FORMAT" };
+  const keys = Object.keys(value);
+  if (
+    keys.length !== landingPageInputColorPaletteRoles.length ||
+    keys.some(
+      (key) =>
+        !landingPageInputColorPaletteRoles.includes(
+          key as (typeof landingPageInputColorPaletteRoles)[number],
+        ),
+    ) ||
+    !landingPageInputColorPaletteRoles.every(
+      (role) =>
+        typeof value[role] === "string" &&
+        /^#[0-9a-f]{6}$/i.test(value[role]),
+    )
+  ) {
+    return { ok: false, error: "INVALID_FORMAT" };
+  }
+
+  const background = value.background as string;
+  const rawContrast = {
+    text: contrastRatio(value.text as string, background),
+    primary: contrastRatio(value.primary as string, background),
+    secondary: contrastRatio(value.secondary as string, background),
+    accent: contrastRatio(value.accent as string, background),
+  };
+  if (rawContrast.text < 4.5) {
+    return { ok: false, error: "INSUFFICIENT_TEXT_CONTRAST" };
+  }
+  if (
+    rawContrast.primary < 3 ||
+    rawContrast.secondary < 3 ||
+    rawContrast.accent < 3
+  ) {
+    return { ok: false, error: "INSUFFICIENT_ROLE_CONTRAST" };
+  }
+  const contrast = Object.fromEntries(
+    Object.entries(rawContrast).map(([role, ratio]) => [
+      role,
+      Number(ratio.toFixed(2)),
+    ]),
+  ) as { text: number; primary: number; secondary: number; accent: number };
+  return { ok: true, contrast: deepFreeze(contrast) };
+}
+
 function conditionMatches(
   condition: LandingPageInputCondition | undefined,
   values: Readonly<Record<string, unknown>>,
@@ -196,6 +275,28 @@ function isStoredValue(
 
 function cloneJson<T>(value: T): T {
   return JSON.parse(JSON.stringify(value)) as T;
+}
+
+function contrastRatio(foreground: string, background: string) {
+  const lighter = Math.max(relativeLuminance(foreground), relativeLuminance(background));
+  const darker = Math.min(relativeLuminance(foreground), relativeLuminance(background));
+  return (lighter + 0.05) / (darker + 0.05);
+}
+
+function relativeLuminance(hex: string) {
+  const channels = [1, 3, 5].map((index) =>
+    Number.parseInt(hex.slice(index, index + 2), 16) / 255,
+  );
+  const [red, green, blue] = channels.map((channel) =>
+    channel <= 0.04045
+      ? channel / 12.92
+      : ((channel + 0.055) / 1.055) ** 2.4,
+  );
+  return 0.2126 * red + 0.7152 * green + 0.0722 * blue;
+}
+
+function isPlainRecord(value: unknown): value is Record<string, string> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
 function deepFreeze<T>(value: T): T {

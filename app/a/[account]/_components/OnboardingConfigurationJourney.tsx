@@ -18,24 +18,25 @@ import {
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import type {
-  AccountLandingPageOnboardingConfiguration,
-  AccountLandingPageOnboardingFieldState,
-  AccountLandingPageOnboardingStoredValues,
+import {
+  type AccountLandingPageOnboardingConfiguration,
+  type AccountLandingPageOnboardingFieldState,
+  type AccountLandingPageOnboardingStoredValues,
 } from "../../../../lib/lp-builder";
+import { validateStarterColorPalette } from "../../../../lib/lp-builder/onboardingConfiguration";
 import { saveOnboardingConfigurationAction } from "../onboarding-configuration-actions";
 import { initialOnboardingConfigurationActionState } from "./onboarding-configuration-action-contract";
 import {
   journeyConditionMatches,
+  journeyScopeBelongsToStep,
+  type JourneyFormStep,
   parseKeywordMapDraft,
   parseNumberRangeDraft,
   prepareJourneyStoredValues,
 } from "./onboarding-journey-policy";
 
-type JourneyStep = "business" | "landing_page";
-
 const STEPS: readonly Readonly<{
-  id: JourneyStep;
+  id: JourneyFormStep;
   title: string;
   description: string;
 }>[] = [
@@ -48,6 +49,65 @@ const STEPS: readonly Readonly<{
     id: "landing_page",
     title: "Objetivo da primeira página",
     description: "Defina a intenção, a origem das visitas e o próximo passo do visitante.",
+  },
+  {
+    id: "brand_identity",
+    title: "Identidade visual",
+    description: "Escolha uma combinação legível para representar sua marca.",
+  },
+];
+
+const PALETTE_ROLES = [
+  "primary",
+  "secondary",
+  "accent",
+  "background",
+  "text",
+] as const;
+
+type StarterPalette = Readonly<Record<(typeof PALETTE_ROLES)[number], string>>;
+
+const PALETTE_ROLE_LABELS: Readonly<Record<(typeof PALETTE_ROLES)[number], string>> = {
+  primary: "Cor principal",
+  secondary: "Cor de apoio",
+  accent: "Cor de destaque",
+  background: "Fundo",
+  text: "Texto",
+};
+
+const PALETTE_PRESETS: readonly Readonly<{
+  name: string;
+  value: StarterPalette;
+}>[] = [
+  {
+    name: "Azul confiança",
+    value: {
+      primary: "#155eef",
+      secondary: "#344054",
+      accent: "#b54708",
+      background: "#ffffff",
+      text: "#101828",
+    },
+  },
+  {
+    name: "Verde profissional",
+    value: {
+      primary: "#087443",
+      secondary: "#344054",
+      accent: "#a15c00",
+      background: "#ffffff",
+      text: "#101828",
+    },
+  },
+  {
+    name: "Noturno elegante",
+    value: {
+      primary: "#84adff",
+      secondary: "#d0d5dd",
+      accent: "#fec84b",
+      background: "#101828",
+      text: "#f9fafb",
+    },
   },
 ];
 
@@ -153,10 +213,14 @@ export function OnboardingConfigurationJourney(props: Readonly<{
     if (!journeyConditionMatches(fieldState.field.applicableWhen, effectiveValues)) {
       return false;
     }
-    return step.id === "business"
-      ? ["account", "business", "offer"].includes(fieldState.field.valueScope)
-      : ["campaign", "landing_page"].includes(fieldState.field.valueScope);
+    return journeyScopeBelongsToStep(step.id, fieldState.field.valueScope);
   });
+  const logoFieldState = props.configuration.fields.find(
+    (fieldState) => fieldState.field.fieldKey === "brand_logo_asset",
+  );
+  const paletteFieldState = props.configuration.fields.find(
+    (fieldState) => fieldState.field.fieldKey === "brand_color_palette",
+  );
 
   useEffect(() => {
     if (
@@ -261,6 +325,15 @@ export function OnboardingConfigurationJourney(props: Readonly<{
             <input type="hidden" name="intent" value="save" />
 
             <div className="grid gap-6 sm:grid-cols-2">
+              {step.id === "brand_identity" && paletteFieldState ? (
+                <BrandIdentityStep
+                  logoFieldState={logoFieldState}
+                  paletteFieldState={paletteFieldState}
+                  value={effectiveValues.brand_color_palette}
+                  error={actionState.fieldErrors?.brand_color_palette}
+                  onChange={(value) => updateValue(paletteFieldState, value)}
+                />
+              ) : null}
               {visibleFields.map((fieldState) => (
                 <OnboardingField
                   key={fieldState.field.fieldKey}
@@ -358,6 +431,162 @@ export function OnboardingConfigurationJourney(props: Readonly<{
         </aside>
       </div>
     </main>
+  );
+}
+
+function BrandIdentityStep(props: Readonly<{
+  logoFieldState?: AccountLandingPageOnboardingFieldState;
+  paletteFieldState: AccountLandingPageOnboardingFieldState;
+  value: unknown;
+  error?: string;
+  onChange: (value: StarterPalette) => void;
+}>) {
+  const palette = readPalette(props.value);
+  const validation = validateStarterColorPalette(props.value);
+  const errorId = "onboarding-brand_color_palette-error";
+  const hintId = "onboarding-brand_color_palette-hint";
+
+  return (
+    <div className="space-y-6 sm:col-span-2">
+      <section className="rounded-xl border border-surface-border bg-graytech-50 p-4 sm:p-5">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h3 className="font-semibold text-ink-900">Logo da marca</h3>
+            <p className="mt-1 text-sm leading-6 text-graytech-600">
+              O logo é opcional e não será solicitado nesta primeira versão.
+            </p>
+          </div>
+          <span className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-graytech-700 ring-1 ring-surface-border">
+            Opcional
+          </span>
+        </div>
+        <p className="mt-3 text-sm font-medium text-ink-800">
+          {props.logoFieldState?.source === "authoritative"
+            ? "Uma referência já confirmada será reutilizada automaticamente."
+            : "Você pode continuar sem logo."}
+        </p>
+      </section>
+
+      <fieldset
+        className="space-y-5 rounded-xl border border-surface-border p-4 sm:p-5"
+        aria-describedby={props.error ? `${hintId} ${errorId}` : hintId}
+      >
+        <legend className="px-1 text-base font-semibold text-ink-900">
+          Paleta da marca <span aria-hidden="true">*</span>
+        </legend>
+        <p id={hintId} className="text-sm leading-6 text-graytech-600">
+          Escolha uma opção e ajuste as cores se quiser. A combinação precisa manter texto e destaques legíveis.
+        </p>
+
+        <div className="grid gap-3 sm:grid-cols-3">
+          {PALETTE_PRESETS.map((preset) => {
+            const selected = palette ? palettesEqual(palette, preset.value) : false;
+            return (
+              <button
+                key={preset.name}
+                type="button"
+                aria-pressed={selected}
+                onClick={() => props.onChange(preset.value)}
+                className="min-h-20 rounded-xl border border-surface-border bg-white p-3 text-left shadow-sm transition hover:border-brand-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-600"
+              >
+                <span className="block text-sm font-semibold text-ink-900">
+                  {preset.name}
+                </span>
+                <span className="mt-3 flex gap-1" aria-hidden="true">
+                  {PALETTE_ROLES.map((role) => (
+                    <span
+                      key={role}
+                      className="h-5 flex-1 rounded-sm border border-black/10"
+                      style={{ backgroundColor: preset.value[role] }}
+                    />
+                  ))}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+
+        {palette ? (
+          <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(16rem,0.8fr)]">
+            <div className="grid gap-4 sm:grid-cols-2">
+              {PALETTE_ROLES.map((role) => (
+                <FormField key={role}>
+                  <FormFieldLabel htmlFor={`onboarding-palette-${role}`}>
+                    {PALETTE_ROLE_LABELS[role]}
+                  </FormFieldLabel>
+                  <div className="flex items-center gap-3">
+                    <Input
+                      id={`onboarding-palette-${role}`}
+                      type="color"
+                      value={palette[role]}
+                      aria-describedby={hintId}
+                      aria-invalid={Boolean(props.error) || !validation.ok}
+                      className="h-11 w-16 cursor-pointer p-1"
+                      onChange={(event) =>
+                        props.onChange({ ...palette, [role]: event.target.value })
+                      }
+                    />
+                    <code className="text-sm font-medium uppercase text-graytech-700">
+                      {palette[role]}
+                    </code>
+                  </div>
+                </FormField>
+              ))}
+            </div>
+
+            <div
+              className="overflow-hidden rounded-xl border border-surface-border"
+              style={{ backgroundColor: palette.background, color: palette.text }}
+            >
+              <div className="p-5">
+                <p className="text-xs font-semibold uppercase tracking-[0.14em]">
+                  Prévia
+                </p>
+                <h3 className="mt-3 text-xl font-bold">Sua próxima oportunidade começa aqui</h3>
+                <p className="mt-2 text-sm opacity-90">
+                  Uma amostra simples para conferir leitura, contraste e destaque.
+                </p>
+                <div className="mt-5 grid gap-3 text-sm font-semibold sm:grid-cols-2">
+                  <span className="flex items-center gap-2">
+                    <span
+                      className="h-6 w-10 rounded-md border border-black/10"
+                      style={{ backgroundColor: palette.primary }}
+                      aria-hidden="true"
+                    />
+                    Ação principal
+                  </span>
+                  <span className="flex items-center gap-2">
+                    <span
+                      className="h-6 w-10 rounded-md border border-black/10"
+                      style={{ backgroundColor: palette.accent }}
+                      aria-hidden="true"
+                    />
+                    Destaque
+                  </span>
+                </div>
+              </div>
+              <div className="h-2" style={{ backgroundColor: palette.secondary }} />
+            </div>
+          </div>
+        ) : (
+          <p className="rounded-lg border border-dashed border-brand-200 bg-brand-50 px-4 py-3 text-sm text-brand-900">
+            Escolha uma combinação para continuar. Depois você poderá editar cada cor.
+          </p>
+        )}
+
+        {palette && validation.ok ? (
+          <p className="text-sm font-medium text-emerald-700" role="status">
+            Contraste validado para texto e elementos de destaque.
+          </p>
+        ) : null}
+        {(palette && !validation.ok) || props.error ? (
+          <FormFieldError id={errorId}>
+            {props.error ??
+              "Esta combinação precisa de mais contraste entre fundo, texto e destaques."}
+          </FormFieldError>
+        ) : null}
+      </fieldset>
+    </div>
   );
 }
 
@@ -600,6 +829,26 @@ function formatTaxonChain(configuration: AccountLandingPageOnboardingConfigurati
 
 function isRecord(value: unknown): value is Record<string, any> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function readPalette(value: unknown): StarterPalette | null {
+  if (!isRecord(value)) return null;
+  if (
+    !PALETTE_ROLES.every(
+      (role) => typeof value[role] === "string" && /^#[0-9a-f]{6}$/i.test(value[role]),
+    )
+  ) {
+    return null;
+  }
+  return Object.fromEntries(
+    PALETTE_ROLES.map((role) => [role, String(value[role]).toLowerCase()]),
+  ) as StarterPalette;
+}
+
+function palettesEqual(first: StarterPalette, second: StarterPalette) {
+  return PALETTE_ROLES.every(
+    (role) => first[role].toLowerCase() === second[role].toLowerCase(),
+  );
 }
 
 type SpecializedControlProps = Readonly<{
