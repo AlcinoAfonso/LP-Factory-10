@@ -7,7 +7,7 @@
 - Recorte: `E9.7`.
 - Path: `docs/lousa-plano-base-e9-7.md`.
 - Plano conceitual: https://github.com/AlcinoAfonso/LP-Factory-10/pull/691
-- Natureza: plano-base v2 candidata à aprovação para execução restrita à E9.7.3.
+- Natureza: plano-base v2 aprovada para execução restrita à E9.7.3.
 - Automação do recorte: não.
 - Frontend próprio da E9.7: N/A nesta v2.
 
