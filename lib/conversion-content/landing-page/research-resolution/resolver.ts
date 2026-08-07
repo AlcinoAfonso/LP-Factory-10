@@ -121,6 +121,12 @@ export function resolveLandingPageResearch(
   };
 }
 
+export function resolveLandingPageResearchBatch(
+  inputs: readonly ResolveLandingPageResearchInput[],
+): readonly LandingPageResearchResolutionResult[] {
+  return inputs.map(resolveLandingPageResearch);
+}
+
 function resolveDirectParent(
   servedTaxon: LandingPageResearchTaxonDto,
   taxons: readonly LandingPageResearchTaxonDto[],

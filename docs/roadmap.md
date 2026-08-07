@@ -1,8 +1,8 @@
 0. Introdução
 
 0.1 Cabeçalho
-• Data: 06/08/2026
-• Versão: v1.5.127
+• Data: 07/08/2026
+• Versão: v1.5.128
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -1596,6 +1596,52 @@ Repositório — Ajustados
   - A jornada futura não depende da implementação da E12.4.4 e não cria novo gate de autorização por conta.
   - A observação sobre `rodape_contato` não autoriza criação automática de módulo ou variante nem alteração da E18.5.
 
+12.5 Diagnóstico e navegação operacional do Admin Dashboard
+
+12.5.1 Objetivo e status
+- Objetivo: Tornar explícito o diagnóstico operacional por taxon e conectar Taxonomia, Páginas comerciais, Perfis de orientação e Resoluções de nicho sem criar prontidão persistida nem reabrir os contratos de mutação existentes.
+- Status: Implementação candidata no PR #689; validações técnicas e QA visual autenticado aprovados, com inspeção final pós-reconciliação com a `main` ainda pendente.
+
+12.5.2 Registros do recorte
+- Repositório:
+  - Ajustados:
+    - `app/admin/(protected)/perfis-de-orientacao/[taxonId]/page.tsx`
+    - `app/admin/(protected)/perfis-de-orientacao/page.tsx`
+    - `app/admin/(protected)/resolucoes-de-nicho/[accountId]/page.tsx`
+    - `app/admin/(protected)/resolucoes-de-nicho/page.tsx`
+    - `app/admin/(protected)/taxonomia/[taxonId]/page.tsx`
+    - `app/admin/(protected)/taxonomia/page.tsx`
+    - `app/admin/(protected)/templates/commercial-activation/[taxonSlug]/page.tsx`
+    - `app/admin/(protected)/templates/page.tsx`
+    - `components/admin/adminNavigation.ts`
+    - `lib/admin/adapters/adminCommercialActivationTemplatesAdapter.ts`
+    - `lib/admin/adapters/adminNicheResolutionsAdapter.ts`
+    - `lib/admin/adapters/adminReadOnlyHelpers.ts`
+    - `lib/admin/adapters/adminReadOnlyTypes.ts`
+    - `lib/admin/adapters/adminTaxonomyAdapter.ts`
+    - `lib/conversion-content/adapters/landingPageGenerationProfileAdminAdapter.ts`
+    - `lib/conversion-content/adapters/landingPageResearchAdapter.ts`
+    - `lib/conversion-content/landing-page/generation-profile/admin-contracts.ts`
+- Referências:
+  - Plano-base aprovado: `docs/lousa-plano-base-e12-5.md` — E12.5.3.
+
+12.5.3 Diagnóstico contextual e navegação
+- Status: Implementação candidata, sem alteração de banco, rota, action, RPC ou chamada de IA.
+- Conteúdo:
+  - Taxonomia resume Status, Pesquisa BB, Pesquisa EC, Página comercial, Perfil ativo e Rascunho em tabela responsiva com cabeçalho fixo; o diagnóstico detalhado preserva a assistência por IA e os motivos completos sem aproximar estados como fatos.
+  - A resolução vigente da E10.8 permanece canônica para pesquisa: BB pode usar o pai direto elegível, enquanto EC permanece própria do taxon servido.
+  - Páginas comerciais mantém a elegibilidade comercial separada da resolução da E10.8, lista taxons elegíveis e não elegíveis e direciona pendências para o diagnóstico do taxon.
+  - Perfis distinguem ativo próprio, ativo herdado, rascunho próprio, ausência e indisponibilidade; a assistência por IA permanece opcional e sua ausência não bloqueia a gestão manual.
+  - Resoluções de nicho permanece centrada na conta e adiciona somente navegação contextual a partir do taxon confirmado, sem inferir vínculo pela sugestão da IA.
+  - Leituras diagnósticas usam projeções server-side em lote e falha isolada por domínio; não há chamadas sequenciais por taxon nem novo domínio de prontidão.
+
+12.5.4 Validação e pendências
+- Status: Gate técnico local e QA visual autenticado aprovados; inspeção final pós-reconciliação com a `main` pendente.
+- Conteúdo:
+  - `npm ci`, `npm run check`, `git diff --check` e os validadores de pesquisa, perfil e página comercial foram aprovados localmente.
+  - O QA autenticado no Preview aprovou a experiência e o comportamento da Taxonomia, Páginas comerciais, Perfis de orientação, Resoluções de nicho e páginas de gerenciamento em desktop e mobile, incluindo teclado, foco e preservação das ações existentes.
+  - O PR aguarda a inspeção final do Estrategista; merge continua exclusivamente humano.
+
 13. E13 — Partner Dashboard
 
 13.1 Status
@@ -2323,6 +2369,10 @@ Repositório — Ajustados
   * Não criar novo campo, estado, tabela, resolver ou infraestrutura e não reabrir E20.3.3 ou E20.3.4.
 
 99. Changelog
+v1.5.128 — 07/08/2026 — Reconciliado o PR #689 com a conclusão da E9.7 integrada à `main`, preservando integralmente o contrato canônico de capacidades e a implementação candidata aprovada da E12.5; inspeção final e merge humano permanecem pendentes.
+
+v1.5.127 — 07/08/2026 — Fechada documentalmente a implementação candidata da E12.5 para diagnóstico e navegação operacional do Admin Dashboard, com contratos existentes preservados, QA visual autenticado aprovado e inspeção final pós-reconciliação com a `main` ainda pendente.
+
 v1.5.125 — 06/08/2026 — Fechado o contrato mínimo da E20.2 v2 com política explícita de substituição por LP: oferta, descrição e logo usam `forbidden`, paleta usa `explicit_allowed`, campos próprios da LP usam `not_applicable`, e especialização taxonômica permanece distinta da substituição de valores concretos.
 
 v1.5.124 — 05/08/2026 — Refinada a E20.2 com catálogo v2 de 23 campos: preservados integralmente os 19 campos da v1 e adicionados os quatro mínimos do Starter, com validações estritas de strings, referência opaca de asset e paleta hexadecimal, sem banco, UI, persistência, upload, geração ou infraestrutura.

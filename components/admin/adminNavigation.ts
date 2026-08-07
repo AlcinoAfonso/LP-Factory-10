@@ -34,16 +34,16 @@ export const adminAreas: AdminArea[] = [
   {
     title: 'Taxonomia',
     href: '/admin/taxonomia',
-    description: 'Consulta read-only da estrutura de taxons.',
+    description: 'Cadastro, diagnóstico e navegação da estrutura de taxons.',
     status: 'Disponível',
     scope: [
-      'Consulta read-only da taxonomia',
+      'Consulta e cadastro da taxonomia',
       'Navegação por hierarquia',
-      'Associações e aliases em leitura',
+      'Gestão de aliases e diagnóstico operacional',
     ],
   },
   {
-    title: 'Templates',
+    title: 'Páginas comerciais',
     href: '/admin/templates',
     description: 'Operação administrativa mínima de drafts comerciais.',
     status: 'Disponível',

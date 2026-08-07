@@ -7,7 +7,9 @@ import {
 } from "../../adapters/landingPageGenerationProfileAdapterCore";
 import { normalizeLandingPageGenerationProfileItemRow } from "../../adapters/landingPageGenerationProfileRowNormalization";
 import {
+  composeAdminGenerationProfileListItem,
   fingerprintGenerationProfileProposal,
+  getAdminGenerationProfilePresentation,
   normalizeGenerationProfileCandidate,
   normalizeGenerationProfileLifecycleReadiness,
   validateGenerationProfileDraft,
@@ -308,6 +310,118 @@ const cases: readonly Readonly<{
   name: string;
   run: () => void | Promise<void>;
 }>[] = [
+  {
+    name: "active own profile remains visible beside own draft",
+    run: () => {
+      const item = composeAdminGenerationProfileListItem({
+        taxon: {
+          id: NICHE_ID,
+          name: "Niche",
+          slug: "niche",
+          level: "niche",
+          parentId: SEGMENT_ID,
+        },
+        draftVersion: 2,
+        resolved: {
+          state: "active_own",
+          activeVersion: 1,
+          ownerTaxonId: NICHE_ID,
+          ownerTaxonName: "Niche",
+        },
+      });
+      const presentation = getAdminGenerationProfilePresentation(item);
+
+      assert.equal(item.resolvedState, "active_own");
+      assert.equal(item.activeVersion, 1);
+      assert.equal(item.draftVersion, 2);
+      assert.equal(presentation.active.label, "Ativo — próprio v1");
+      assert.equal(presentation.draft.label, "Rascunho — próprio v2");
+      assert.equal(presentation.assistanceTaxonId, NICHE_ID);
+      assert.equal(presentation.action.href, `/admin/perfis-de-orientacao/${NICHE_ID}`);
+    },
+  },
+  {
+    name: "active inherited profile remains visible beside own draft",
+    run: () => {
+      const item = composeAdminGenerationProfileListItem({
+        taxon: {
+          id: NICHE_ID,
+          name: "Niche",
+          slug: "niche",
+          level: "niche",
+          parentId: SEGMENT_ID,
+        },
+        draftVersion: 2,
+        resolved: {
+          state: "active_inherited",
+          activeVersion: 1,
+          ownerTaxonId: SEGMENT_ID,
+          ownerTaxonName: "Segment",
+        },
+      });
+      const presentation = getAdminGenerationProfilePresentation(item);
+
+      assert.equal(item.resolvedState, "active_inherited");
+      assert.equal(item.ownerTaxonId, SEGMENT_ID);
+      assert.equal(item.draftVersion, 2);
+      assert.equal(presentation.active.label, "Ativo — herdado v1");
+      assert.equal(presentation.draft.label, "Rascunho — próprio v2");
+      assert.equal(presentation.assistanceTaxonId, NICHE_ID);
+      assert.equal(presentation.action.href, `/admin/perfis-de-orientacao/${NICHE_ID}`);
+    },
+  },
+  {
+    name: "AI assistance research target follows the editor owner",
+    run: () => {
+      const inherited = composeAdminGenerationProfileListItem({
+        taxon: {
+          id: NICHE_ID,
+          name: "Niche",
+          slug: "niche",
+          level: "niche",
+          parentId: SEGMENT_ID,
+        },
+        draftVersion: null,
+        resolved: {
+          state: "active_inherited",
+          activeVersion: 1,
+          ownerTaxonId: SEGMENT_ID,
+          ownerTaxonName: "Segment",
+        },
+      });
+      const own = composeAdminGenerationProfileListItem({
+        taxon: inherited.taxon,
+        draftVersion: null,
+        resolved: {
+          state: "active_own",
+          activeVersion: 1,
+          ownerTaxonId: NICHE_ID,
+          ownerTaxonName: "Niche",
+        },
+      });
+      const absent = composeAdminGenerationProfileListItem({
+        taxon: inherited.taxon,
+        draftVersion: null,
+        resolved: {
+          state: "absent",
+          activeVersion: null,
+          ownerTaxonId: null,
+          ownerTaxonName: null,
+        },
+      });
+
+      assert.equal(
+        getAdminGenerationProfilePresentation(inherited).assistanceTaxonId,
+        SEGMENT_ID,
+      );
+      assert.equal(
+        getAdminGenerationProfilePresentation(inherited).action.href,
+        `/admin/perfis-de-orientacao/${SEGMENT_ID}`,
+      );
+      assert.equal(getAdminGenerationProfilePresentation(own).assistanceTaxonId, NICHE_ID);
+      assert.equal(getAdminGenerationProfilePresentation(absent).assistanceTaxonId, NICHE_ID);
+    },
+  },
   {
     name: "invalid proposal message preserves the current profile state for creation and evolution",
     run: () => {

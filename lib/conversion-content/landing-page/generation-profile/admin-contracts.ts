@@ -110,7 +110,7 @@ export type AdminGenerationProfileTaxon = Readonly<{
   id: string;
   name: string;
   slug: string;
-  level: "segment" | "niche";
+  level: "segment" | "niche" | "ultra_niche";
   parentId: string | null;
 }>;
 
@@ -128,10 +128,103 @@ export type AdminGenerationProfile = Readonly<{
 
 export type AdminGenerationProfileListItem = Readonly<{
   taxon: AdminGenerationProfileTaxon;
+  resolvedState: "active_own" | "active_inherited" | "absent" | "unavailable";
   activeVersion: number | null;
   draftVersion: number | null;
-  archivedCount: number;
+  ownerTaxonId: string | null;
+  ownerTaxonName: string | null;
 }>;
+
+export type AdminGenerationProfileResolvedSummary = Readonly<{
+  state: AdminGenerationProfileListItem["resolvedState"];
+  activeVersion: number | null;
+  ownerTaxonId: string | null;
+  ownerTaxonName: string | null;
+}>;
+
+type AdminGenerationProfilePresentationTone =
+  | "neutral"
+  | "success"
+  | "warning"
+  | "danger";
+
+export function composeAdminGenerationProfileListItem(input: {
+  taxon: AdminGenerationProfileTaxon;
+  draftVersion: number | null;
+  resolved: AdminGenerationProfileResolvedSummary;
+}): AdminGenerationProfileListItem {
+  return {
+    taxon: input.taxon,
+    resolvedState: input.resolved.state,
+    activeVersion: input.resolved.activeVersion,
+    draftVersion: input.draftVersion,
+    ownerTaxonId: input.resolved.ownerTaxonId,
+    ownerTaxonName: input.resolved.ownerTaxonName,
+  };
+}
+
+export function getAdminGenerationProfileEditorTaxonId(
+  item: AdminGenerationProfileListItem,
+): string {
+  if (item.draftVersion !== null) return item.taxon.id;
+  if (item.resolvedState === "active_inherited" && item.ownerTaxonId) {
+    return item.ownerTaxonId;
+  }
+  return item.taxon.id;
+}
+
+export function getAdminGenerationProfilePresentation(
+  item: AdminGenerationProfileListItem,
+): Readonly<{
+  active: Readonly<{ label: string; tone: AdminGenerationProfilePresentationTone }>;
+  draft: Readonly<{ label: string; tone: AdminGenerationProfilePresentationTone }>;
+  action: Readonly<{ label: string; href: string }>;
+  assistanceTaxonId: string;
+}> {
+  const active = {
+    active_own: {
+      label: `Ativo — próprio${item.activeVersion ? ` v${item.activeVersion}` : ""}`,
+      tone: "success" as const,
+    },
+    active_inherited: {
+      label: `Ativo — herdado${item.activeVersion ? ` v${item.activeVersion}` : ""}`,
+      tone: "success" as const,
+    },
+    absent: { label: "Ausente", tone: "neutral" as const },
+    unavailable: { label: "Indisponível", tone: "danger" as const },
+  }[item.resolvedState];
+  const draft = item.draftVersion !== null
+    ? { label: `Rascunho — próprio v${item.draftVersion}`, tone: "warning" as const }
+    : { label: "Sem rascunho", tone: "neutral" as const };
+  const assistanceTaxonId = getAdminGenerationProfileEditorTaxonId(item);
+  const actionLabel = item.draftVersion !== null
+    ? "Continuar"
+    : item.resolvedState === "active_own"
+      ? "Gerenciar"
+      : item.resolvedState === "active_inherited"
+        ? "Ver perfil"
+        : item.resolvedState === "absent"
+          ? "Criar perfil"
+          : "Revisar perfis";
+  const canOpenEditor =
+    item.draftVersion !== null ||
+    item.resolvedState === "active_own" ||
+    item.resolvedState === "active_inherited" ||
+    ((item.taxon.level === "segment" || item.taxon.level === "niche") &&
+      item.resolvedState === "absent");
+
+  return {
+    active,
+    draft,
+    action: {
+      label: actionLabel,
+      href: canOpenEditor
+        ? `/admin/perfis-de-orientacao/${assistanceTaxonId}`
+        : "/admin/perfis-de-orientacao",
+    },
+    assistanceTaxonId,
+  };
+}
 
 export type GenerationProfileMutationErrorCode =
   | "invalid_data"

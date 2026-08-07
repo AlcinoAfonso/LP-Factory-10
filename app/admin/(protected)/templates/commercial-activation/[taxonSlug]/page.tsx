@@ -41,14 +41,26 @@ export default async function AdminCommercialActivationTaxonPage({
       <div className="space-y-6">
         <BackLink />
         <AdminPageHeader
-          title="Operacao commercial_activation"
-          description="Nao foi possivel carregar o taxon selecionado."
+          title={state.reason === "taxon_not_eligible" ? "Página comercial bloqueada" : "Operação commercial_activation"}
+          description={state.reason === "taxon_not_eligible"
+            ? "Este taxon ainda não atende aos requisitos comerciais vigentes."
+            : "Não foi possível carregar o taxon selecionado."}
           meta="commercial_activation"
         />
         <EmptyState
-          title="Operacao indisponivel"
-          description={`Falha segura na leitura administrativa: ${state.reason}.`}
+          title={state.reason === "taxon_not_eligible" ? "Taxon não elegível" : "Operação indisponível"}
+          description={state.reason === "taxon_not_eligible"
+            ? "Revise as pendências no diagnóstico do taxon antes de gerar ou publicar."
+            : `Falha segura na leitura administrativa: ${state.reason}.`}
         />
+        {state.taxon ? (
+          <Link
+            className="font-medium text-brand-700 hover:underline"
+            href={`/admin/taxonomia/${state.taxon.id}`}
+          >
+            Ver diagnóstico do taxon
+          </Link>
+        ) : null}
       </div>
     );
   }
@@ -64,7 +76,15 @@ export default async function AdminCommercialActivationTaxonPage({
 
   return (
     <div className="space-y-6">
-      <BackLink />
+      <div className="flex flex-wrap gap-4">
+        <BackLink />
+        <Link
+          className="text-sm font-medium text-brand-700 hover:underline"
+          href={`/admin/taxonomia/${state.taxon.id}`}
+        >
+          Voltar ao diagnóstico do taxon
+        </Link>
+      </div>
 
       <AdminPageHeader
         title={state.taxon.name}
@@ -290,7 +310,7 @@ function BackLink() {
       className="text-sm font-medium text-brand-700 hover:underline"
       href="/admin/templates"
     >
-      Voltar para templates
+      Voltar para páginas comerciais
     </Link>
   );
 }

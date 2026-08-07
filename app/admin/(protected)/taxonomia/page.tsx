@@ -5,6 +5,7 @@ import { AdminStatusBadge } from "@/components/admin/AdminStatusBadge";
 import { EmptyState } from "@/components/ui/empty-state";
 import { getParamValue } from "@/lib/admin/adminFormat";
 import { listAdminTaxons } from "@/lib/admin/adapters/adminReadOnlyAdapter";
+import type { AdminOperationalDiagnosticItem } from "@/lib/admin/adapters/adminReadOnlyTypes";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -112,16 +113,28 @@ export default async function AdminTaxonomyPage({ searchParams }: AdminTaxonomyP
         />
       ) : (
         <div className="overflow-hidden rounded-lg border border-border bg-card shadow-card">
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-border text-sm">
-              <thead className="bg-muted/60 text-left text-xs font-medium uppercase text-muted-foreground">
+          <div className="max-h-[70vh] overflow-auto">
+            <table className="w-full min-w-[900px] table-fixed divide-y divide-border text-sm">
+              <colgroup>
+                <col className="w-[23%]" />
+                <col className="w-[8%]" />
+                <col className="w-[11%]" />
+                <col className="w-[10%]" />
+                <col className="w-[13%]" />
+                <col className="w-[14%]" />
+                <col className="w-[7%]" />
+                <col className="w-[14%]" />
+              </colgroup>
+              <thead className="sticky top-0 z-10 bg-muted text-left text-xs font-medium uppercase text-muted-foreground">
                 <tr>
                   <th className="px-4 py-3">Taxon</th>
-                  <th className="px-4 py-3">Nivel</th>
-                  <th className="px-4 py-3">Pai</th>
-                  <th className="px-4 py-3">Aliases</th>
                   <th className="px-4 py-3">Status</th>
-                  <th className="px-4 py-3 text-right">Detalhes</th>
+                  <th className="px-4 py-3">Pesquisa BB</th>
+                  <th className="px-4 py-3">Pesquisa EC</th>
+                  <th className="px-4 py-3">Página comercial</th>
+                  <th className="px-4 py-3">Perfil ativo</th>
+                  <th className="px-4 py-3">Rascunho</th>
+                  <th className="px-4 py-3 text-right">Acao</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
@@ -129,15 +142,26 @@ export default async function AdminTaxonomyPage({ searchParams }: AdminTaxonomyP
                   <tr key={taxon.id} className="align-top">
                     <td className="px-4 py-3">
                       <div className="font-medium text-foreground">{taxon.name}</div>
+                      <div className="mt-1 text-xs text-muted-foreground">
+                        {taxon.level} / pai: {taxon.parentName ?? "—"}
+                      </div>
                     </td>
-                    <td className="px-4 py-3 text-muted-foreground">{taxon.level}</td>
-                    <td className="px-4 py-3 text-muted-foreground">{taxon.parentName ?? "-"}</td>
-                    <td className="px-4 py-3 text-muted-foreground">{taxon.aliasCount}</td>
                     <td className="px-4 py-3">
                       <AdminStatusBadge tone={taxon.isActive ? "success" : "neutral"}>
                         {taxon.isActive ? "Ativo" : "Inativo"}
                       </AdminStatusBadge>
                     </td>
+                    <DiagnosticCell item={taxon.diagnostic.businessBuyer} />
+                    <DiagnosticCell item={taxon.diagnostic.endCustomer} />
+                    <DiagnosticCell item={taxon.diagnostic.commercialPage} />
+                    <DiagnosticCell
+                      item={taxon.diagnostic.activeProfile}
+                      label={getActiveProfileListLabel(taxon.diagnostic.activeProfile.label)}
+                    />
+                    <DiagnosticCell
+                      item={taxon.diagnostic.draftProfile}
+                      label={getDraftProfileListLabel(taxon.diagnostic.draftProfile.label)}
+                    />
                     <td className="px-4 py-3 text-right">
                       <Link className="font-medium text-brand-700 hover:underline" href={`/admin/taxonomia/${taxon.id}`}>
                         Abrir
@@ -152,4 +176,34 @@ export default async function AdminTaxonomyPage({ searchParams }: AdminTaxonomyP
       )}
     </div>
   );
+}
+
+function DiagnosticCell({
+  item,
+  label,
+}: {
+  item: AdminOperationalDiagnosticItem;
+  label?: string;
+}) {
+  return (
+    <td className="px-4 py-3">
+      <AdminStatusBadge tone={item.tone}>{label ?? item.label}</AdminStatusBadge>
+    </td>
+  );
+}
+
+function getActiveProfileListLabel(label: string): string {
+  if (label.startsWith("Ativo — próprio")) {
+    return label.replace("Ativo — próprio", "Próprio");
+  }
+  if (label.startsWith("Ativo — herdado")) {
+    return label.replace("Ativo — herdado", "Herdado");
+  }
+  return label;
+}
+
+function getDraftProfileListLabel(label: string): string {
+  if (label.startsWith("Rascunho — próprio")) return "Sim";
+  if (label === "Sem rascunho") return "Não";
+  return "Indisponível";
 }

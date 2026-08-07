@@ -26,7 +26,7 @@ export default async function AdminTemplatesPage() {
       <div className="space-y-6">
         <AdminPageHeader
           title={area.title}
-          description="Lista administrativa de taxons comerciais elegiveis."
+          description="Lista administrativa de taxons comerciais elegiveis e nao elegiveis."
           meta="commercial_activation"
         />
         <EmptyState
@@ -41,14 +41,14 @@ export default async function AdminTemplatesPage() {
     <div className="space-y-6">
       <AdminPageHeader
         title={area.title}
-        description="Lista limpa de taxons comerciais. Selecione um taxon para operar draft, preview, publicacao e historico."
+        description="Reconheca elegibilidade, requisitos e estado da pagina antes de entrar no fluxo operacional."
         meta="commercial_activation"
       />
 
       <section className="overflow-hidden rounded-lg border border-border bg-card shadow-card">
         <div className="border-b border-border px-4 py-3">
           <h2 className="text-sm font-semibold text-card-foreground">
-            Taxons comerciais
+            Taxons ativos
           </h2>
           <p className="mt-1 text-xs text-muted-foreground">
             Esta lista e somente leitura: nao gera draft, nao materializa
@@ -61,10 +61,9 @@ export default async function AdminTemplatesPage() {
               <thead className="bg-muted/60 text-left text-xs font-medium uppercase text-muted-foreground">
                 <tr>
                   <th className="px-4 py-3">Taxon</th>
-                  <th className="px-4 py-3">Estado</th>
-                  <th className="px-4 py-3">Pesquisa</th>
-                  <th className="px-4 py-3">Composicao</th>
-                  <th className="px-4 py-3">Artefatos</th>
+                  <th className="px-4 py-3">Elegibilidade</th>
+                  <th className="px-4 py-3">Requisitos</th>
+                  <th className="px-4 py-3">Estado da pagina</th>
                   <th className="px-4 py-3">Acao</th>
                 </tr>
               </thead>
@@ -78,8 +77,8 @@ export default async function AdminTemplatesPage() {
         ) : (
           <div className="p-4">
             <EmptyState
-              title="Nenhum taxon elegivel"
-              description="A lista sera preenchida quando houver pesquisa estruturada completa."
+              title="Nenhum taxon ativo"
+              description="A lista sera preenchida quando houver taxons ativos."
             />
           </div>
         )}
@@ -96,48 +95,33 @@ function TaxonRow({ item }: { item: AdminCommercialActivationListItem }) {
         <p className="text-xs text-muted-foreground">{item.taxon.slug}</p>
       </td>
       <td className="px-4 py-3">
-        <AdminStatusBadge tone={listStateTone(item.state)}>
-          {item.stateLabel}
+        <AdminStatusBadge tone={item.eligibility === "eligible" ? "success" : "warning"}>
+          {item.eligibilityLabel}
         </AdminStatusBadge>
       </td>
       <td className="px-4 py-3 text-muted-foreground">
-        <span className="whitespace-nowrap">
-          BB {item.research.businessBuyerBlocks}/4 (
-          {item.research.businessBuyerItems})
-        </span>
-        <span className="ml-0 block whitespace-nowrap sm:ml-2 sm:inline">
-          EC {item.research.endCustomerBlocks}/4 (
-          {item.research.endCustomerItems})
-        </span>
+        {item.requirementsLabel}
       </td>
-      <td className="px-4 py-3 text-muted-foreground">
-        {item.hasActiveComposition ? "Pronta" : "Sob demanda"}
-      </td>
-      <td className="px-4 py-3 text-muted-foreground">
-        <span className="whitespace-nowrap">
-          {item.publishedVersion
-            ? `published v${item.publishedVersion}`
-            : "sem published"}
-        </span>
-        <span className="ml-0 block whitespace-nowrap sm:ml-2 sm:inline">
-          {item.latestDraftVersion ? `draft v${item.latestDraftVersion}` : "sem draft"}
-        </span>
+      <td className="px-4 py-3">
+        <AdminStatusBadge tone={pageStateTone(item.pageState)}>
+          {item.pageStateLabel}
+        </AdminStatusBadge>
       </td>
       <td className="px-4 py-3">
         <Link
-          href={`/admin/templates/commercial-activation/${encodeURIComponent(
-            item.taxon.slug,
-          )}`}
+          href={item.eligibility === "eligible"
+            ? `/admin/templates/commercial-activation/${encodeURIComponent(item.taxon.slug)}`
+            : `/admin/taxonomia/${item.taxon.id}`}
           className="text-sm font-medium text-brand-700 hover:underline"
         >
-          Selecionar
+          {item.eligibility === "eligible" ? "Abrir fluxo" : "Ver pendências"}
         </Link>
       </td>
     </tr>
   );
 }
 
-function listStateTone(status: AdminCommercialActivationListItem["state"]) {
+function pageStateTone(status: AdminCommercialActivationListItem["pageState"]) {
   if (status === "published") return "success";
   if (status === "review") return "warning";
   return "neutral";

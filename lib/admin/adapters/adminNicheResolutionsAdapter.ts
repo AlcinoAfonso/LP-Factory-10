@@ -84,6 +84,7 @@ async function mapNicheResolutionRows(rows: any[]): Promise<AdminNicheResolution
       rawInput: row.raw_input ?? "",
       selectedTaxonId: row.selected_taxon_id ?? null,
       selectedTaxonName: selectedTaxon?.name ?? null,
+      selectedTaxonSlug: selectedTaxon?.slug ?? null,
       aiSuggestedTaxonId: row.ai_suggested_taxon_id ?? null,
       aiSuggestedTaxonName: aiSuggestedTaxon?.name ?? null,
       confidence: row.confidence ?? "",
