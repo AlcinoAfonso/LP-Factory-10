@@ -26,7 +26,7 @@
 
 ### 1.1. Problema e responsabilidade da E9.7
 
-- O entitlement comercial já informa o plano efetivo da conta por `planKey`, mas o produto ainda não possui um contrato canônico único que traduza esse plano em capacidades, níveis e limites consumíveis pelos domínios.
+- O entitlement comercial já informa o plano efetivo da conta por `planKey`, mas o produto ainda não possui um contrato canônico único que traduza esse plano em capacidades, níveis, limites e sinais suficientes para que os domínios decidam quais configurações podem ser apresentadas.
 - A E9.7 deve definir e resolver esse contrato; não deve implementar os recursos funcionais dos domínios consumidores.
 - O domínio consumidor mede seu próprio uso e aplica o gate no ponto da ação.
 - A UI não deve inferir comportamento diretamente pelo nome do plano.
@@ -35,6 +35,7 @@
 
 - Entitlement informa qual plano efetivo a conta possui.
 - E9.7 informa o que esse plano permite.
+- A E9.7 informa capacidade, nível ou limite suficiente para o domínio consumidor decidir quais configurações podem ser apresentadas; não define campos concretos, valores de entrada nem implementa sua UI.
 - E20.2 governa dados de entrada e seus contratos, não capacidades comerciais.
 - E19 e futuros domínios consumidores implementam recursos, medem uso e aplicam gates.
 - Disponibilidade comercial por `taxon + plano` permanece decisão separada e não integra este recorte.
@@ -83,9 +84,10 @@
 
 ### 2.1. Resultado esperado
 
-- Disponibilizar uma fonte canônica única e um contrato server-side determinístico capazes de transformar o plano efetivo em capacidades, níveis e limites.
+- Disponibilizar uma fonte canônica única e um contrato server-side determinístico capazes de transformar o plano efetivo em capacidades, níveis, limites e sinais suficientes para que consumidores decidam configurações apresentáveis.
 - Entregar o primeiro catálogo incremental do Starter sem antecipar Lite, Pro ou Ultra completos.
 - Permitir que consumidores reais consultem o contrato sem hardcode de nomes de plano e sem usar `public.plans` isoladamente como gate funcional.
+- Preservar nos consumidores a definição dos campos concretos, dos valores de entrada e da UI associada às configurações apresentadas.
 
 ### 2.2. Usuários e atores
 
@@ -142,15 +144,16 @@
 
 #### 2.4.5. Persistência
 
-- Registrar a definição canônica da capacidade e sua associação/valor por plano em uma única fonte versionada.
+- Registrar a definição canônica da capacidade e sua associação/valor por plano em uma única fonte canônica.
 - A forma física será determinada na E9.7.3 a partir da arquitetura real.
+- Eventual versionamento físico ou mecanismo equivalente será definido somente se necessário na E9.7.3 ou em evolução posterior.
 - Não criar nova persistência de banco na v1 sem fonte técnica real e decisão de escopo correspondente.
 
 #### 2.4.6. Consumo
 
 - Fluxo: `entitlement → planKey efetivo → resolução E9.7 → contrato de capacidades/limites → domínio consumidor`.
-- A E9.7 fornece permissão, nível ou limite.
-- O consumidor mede o estado/uso do próprio domínio e aplica a regra server-side.
+- A E9.7 fornece permissão, nível ou limite, inclusive como sinal para o consumidor decidir quais configurações podem ser apresentadas.
+- O consumidor mede o estado/uso do próprio domínio, define os campos e a UI quando aplicável e aplica a regra server-side.
 - A E9.7 não conta drafts, publicações, conversões, membros ou outros usos pertencentes aos consumidores.
 
 #### 2.4.7. Fallback
