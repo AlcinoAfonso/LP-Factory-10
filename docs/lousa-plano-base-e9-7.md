@@ -195,16 +195,16 @@
 - Objetivo:
   - materializar o contrato canônico mínimo e a fonte única de resolução sem criar sistema paralelo ao contrato técnico vigente.
 - Entrega:
-  - criar o boundary transversal `lib/commercial-capabilities/`, com `contracts.ts`, `registry.ts`, `resolve.ts` e `index.ts` como API pública;
+  - criar `lib/commercial-capabilities/` com `contracts.ts`, `registry.ts`, `resolve.ts`, `index.ts` e `validation-cases.ts`; somente `index.ts` é API pública. `registry.ts` é a única fonte repo-only de definições e associações, permanece interno e inicialmente vazio. `resolve.ts` é a única implementação de resolução de produção e consome exclusivamente o registry canônico;
   - limitar formalmente em `docs/base-tecnica.md` §3.11 a prescrição não materializada de `get_feature`, hierarquia e snapshot, registrando `lib/commercial-capabilities/` como fonte canônica deste contrato;
   - materializar tipos discriminados e validações para chave, categoria, `booleano`, `nível fechado`, `limite numérico`, contrato de valor e domínio consumidor;
-  - manter `registry.ts` como única fonte repo-only, inicialmente sem capacidades runtime admitidas;
   - expor resolução determinística por `{ planKey, capabilityKey }`, com resultado discriminado e fail-closed, sem buscar entitlement, banco ou Stripe;
   - manter candidatas e avaliação fora da fonte runtime canônica;
-  - criar fixtures isoladas e testes aplicáveis para contrato válido, plano/capacidade desconhecidos, valor inválido, duplicidade e fonte runtime vazia;
-  - criar validador dedicado e integrá-lo ao `npm run check`.
+  - manter fixtures sintéticas dentro de `validation-cases.ts` ou em arquivo test-only não exportado por `index.ts` e não importado pelo runtime, com casos para contrato válido, plano/capacidade desconhecidos, valor inválido, duplicidade e fonte runtime vazia;
+  - criar `validate:commercial-capabilities` para executar `tsx lib/commercial-capabilities/validation-cases.ts` e incluir esse comando em `npm run check`.
 - Critérios de aceite:
-  - `lib/commercial-capabilities/registry.ts` é a única fonte de definição/resolução aprovada e não contém capacidade runtime sem admissão humana;
+  - consumidores importam somente `lib/commercial-capabilities`; nenhum export público expõe o registry, aceita registry arbitrário ou permite resolução paralela;
+  - `npm run check` executa o validador; o registry runtime continua vazio; fixtures não são alcançáveis pela API pública nem pelo resolver de produção;
   - nenhum consumidor precisa interpretar nome de plano para conhecer uma capacidade;
   - plano/capacidade/valor inválido falham fechado;
   - `lib/commercial-entitlements/` não é alterado para representar capacidade e nenhuma integração de consumidor é criada;
@@ -215,7 +215,7 @@
 
 - Status: planejada.
 - Automação: não.
-- Execução nesta v2: bloqueada por `DHE9.7-02: 2`, até existir nova admissão humana com chave, valor e consumidor.
+- Execução nesta v2: fora do escopo atual por `DHE9.7-02: 2`; a abertura futura depende de nova admissão humana e não constitui pendência da E9.7.3.
 - Objetivo:
   - preencher o primeiro contrato Starter somente com capacidades e limites admitidos e verificáveis.
 - Entrega:
@@ -235,7 +235,7 @@
 
 - Status: planejada.
 - Automação: não.
-- Execução nesta v2: bloqueada por `DHE9.7-02: 2` e pela E9.7.4 ainda sem catálogo admitido.
+- Execução nesta v2: fora do escopo atual por `DHE9.7-02: 2`; a abertura futura depende da E9.7.4 com catálogo admitido e não constitui pendência da E9.7.3.
 - Objetivo:
   - conectar o `planKey` efetivo do entitlement ao contrato canônico e disponibilizar resolução server-side para consumidores, sem absorver a lógica operacional desses domínios.
 - Entrega:
