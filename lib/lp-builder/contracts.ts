@@ -91,6 +91,9 @@ export type AccountLandingPageOnboardingErrorCode =
   | "configuration_not_found"
   | "invalid_configuration"
   | "invalid_values"
+  | "configuration_incomplete"
+  | "landing_page_not_found"
+  | "landing_page_already_bound"
   | "revision_conflict"
   | "read_failed"
   | "write_failed";
@@ -111,4 +114,20 @@ export type SaveAccountLandingPageOnboardingConfigurationInput = Readonly<{
   catalogVersion: number;
   expectedRevision: number;
   values: AccountLandingPageOnboardingStoredValues;
+}>;
+
+export type AccountLandingPageDraftsResult =
+  | Readonly<{
+      ok: true;
+      drafts: readonly AccountLandingPage[];
+    }>
+  | Readonly<{
+      ok: false;
+      error: AccountLandingPageOnboardingErrorCode;
+    }>;
+
+export type BindAccountLandingPageOnboardingConfigurationInput = Readonly<{
+  accountId: string;
+  landingPageId: string;
+  expectedRevision: number;
 }>;

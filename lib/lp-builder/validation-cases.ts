@@ -13,7 +13,9 @@ import type {
   AccountLandingPageOnboardingStoredValues,
 } from "./contracts";
 import {
+  bindAccountLandingPageOnboardingConfigurationFromClient,
   getAccountLandingPageOnboardingConfigurationFromClient,
+  listAccountLandingPageDraftsFromClient,
   saveAccountLandingPageOnboardingConfigurationFromClient,
 } from "./adapters/onboardingConfigurationAdapterCore";
 import {
@@ -474,6 +476,271 @@ const cases: ReadonlyArray<
     },
   },
   {
+    name: "draft listing distinguishes zero one and many in deterministic order",
+    run: async () => {
+      const draftOne = landingPageDraft("00000000-0000-4000-8000-000000000201", "Primeira");
+      const draftTwo = landingPageDraft("00000000-0000-4000-8000-000000000202", "Segunda");
+      for (const expected of [[], [draftOne], [draftOne, draftTwo]]) {
+        const client = runtimeClient([
+          ...runtimeGateResponses(),
+          response(
+            "account_landing_page_onboarding_configurations",
+            completeConfigurationRow(),
+          ),
+          response("account_landing_pages", expected),
+        ]);
+        const result = await listAccountLandingPageDraftsFromClient(
+          { accountId: ACCOUNT_ID, actorUserId: ACTOR_ID },
+          client,
+          eligibleEntitlement,
+        );
+        assert.deepEqual(result, { ok: true, drafts: expected });
+        const read = client.calls.at(-1);
+        assert.deepEqual(read?.filters, [
+          ["account_id", ACCOUNT_ID],
+          ["status", "draft"],
+        ]);
+        assert.deepEqual(read?.orders, [
+          ["created_at", true],
+          ["id", true],
+        ]);
+      }
+    },
+  },
+  {
+    name: "draft listing fails closed for account drift membership and read errors",
+    run: async () => {
+      const accountDrift = runtimeClient([
+        ...runtimeGateResponses(),
+        response(
+          "account_landing_page_onboarding_configurations",
+          completeConfigurationRow(),
+        ),
+        response("account_landing_pages", [
+          {
+            ...landingPageDraft("00000000-0000-4000-8000-000000000201", "Outra"),
+            account_id: "00000000-0000-4000-8000-000000000999",
+          },
+        ]),
+      ]);
+      assert.deepEqual(
+        await listAccountLandingPageDraftsFromClient(
+          { accountId: ACCOUNT_ID, actorUserId: ACTOR_ID },
+          accountDrift,
+          eligibleEntitlement,
+        ),
+        { ok: false, error: "read_failed" },
+      );
+
+      const inactiveMembership = runtimeClient([
+        response("accounts", accountRow()),
+        response("account_users", { role: "viewer", status: "active" }),
+      ]);
+      assert.deepEqual(
+        await listAccountLandingPageDraftsFromClient(
+          { accountId: ACCOUNT_ID, actorUserId: ACTOR_ID },
+          inactiveMembership,
+          eligibleEntitlement,
+        ),
+        { ok: false, error: "membership_inactive" },
+      );
+
+      const readFailure = runtimeClient([
+        ...runtimeGateResponses(),
+        response(
+          "account_landing_page_onboarding_configurations",
+          completeConfigurationRow(),
+        ),
+        response("account_landing_pages", null, {
+          code: "42501",
+          message: "permission denied",
+        }),
+      ]);
+      assert.deepEqual(
+        await listAccountLandingPageDraftsFromClient(
+          { accountId: ACCOUNT_ID, actorUserId: ACTOR_ID },
+          readFailure,
+          eligibleEntitlement,
+        ),
+        { ok: false, error: "read_failed" },
+      );
+    },
+  },
+  {
+    name: "incomplete configuration never reads or creates a landing page",
+    run: async () => {
+      const client = runtimeClient([
+        ...runtimeGateResponses(),
+        response("account_landing_page_onboarding_configurations", {
+          ...completeConfigurationRow(),
+          values: {},
+        }),
+      ]);
+      assert.deepEqual(
+        await listAccountLandingPageDraftsFromClient(
+          { accountId: ACCOUNT_ID, actorUserId: ACTOR_ID },
+          client,
+          eligibleEntitlement,
+        ),
+        { ok: false, error: "configuration_incomplete" },
+      );
+      assert.equal(
+        client.calls.some((call) => call.relation === "account_landing_pages"),
+        false,
+      );
+    },
+  },
+  {
+    name: "bind is tenant-safe write-once and bounded to one aggregate row",
+    run: async () => {
+      const landingPageId = "00000000-0000-4000-8000-000000000201";
+      const client = runtimeClient([
+        ...runtimeGateResponses(),
+        response(
+          "account_landing_page_onboarding_configurations",
+          completeConfigurationRow(),
+        ),
+        response("account_landing_pages", landingPageDraft(landingPageId, "Primeira")),
+        response(
+          "account_landing_page_onboarding_configurations",
+          completeConfigurationRow({ landingPageId, revision: 2 }),
+          null,
+          "update",
+        ),
+      ]);
+      const result = await bindAccountLandingPageOnboardingConfigurationFromClient(
+        {
+          accountId: ACCOUNT_ID,
+          actorUserId: ACTOR_ID,
+          landingPageId,
+          expectedRevision: 1,
+        },
+        client,
+        eligibleEntitlement,
+      );
+      assert.equal(result.ok, true, JSON.stringify(result));
+      assert.equal(result.configuration.landingPageId, landingPageId);
+      const update = client.calls.find((call) => call.operation === "update");
+      assert.equal(update?.maxAffected, 1);
+      assert.deepEqual(update?.filters, [
+        ["account_id", ACCOUNT_ID],
+        ["revision", 1],
+      ]);
+      assert.deepEqual(update?.nullFilters, [["landing_page_id", null]]);
+      assert.deepEqual(update?.payload, {
+        landing_page_id: landingPageId,
+        revision: 2,
+        updated_by: ACTOR_ID,
+      });
+    },
+  },
+  {
+    name: "bind classifies stale zero-row and rebind attempts without ambiguity",
+    run: async () => {
+      const landingPageId = "00000000-0000-4000-8000-000000000201";
+      const staleBeforeWrite = runtimeClient([
+        ...runtimeGateResponses(),
+        response(
+          "account_landing_page_onboarding_configurations",
+          completeConfigurationRow({ revision: 2 }),
+        ),
+      ]);
+      assert.deepEqual(
+        await bindAccountLandingPageOnboardingConfigurationFromClient(
+          {
+            accountId: ACCOUNT_ID,
+            actorUserId: ACTOR_ID,
+            landingPageId,
+            expectedRevision: 1,
+          },
+          staleBeforeWrite,
+          eligibleEntitlement,
+        ),
+        { ok: false, error: "revision_conflict" },
+      );
+
+      const zeroRow = runtimeClient([
+        ...runtimeGateResponses(),
+        response(
+          "account_landing_page_onboarding_configurations",
+          completeConfigurationRow(),
+        ),
+        response("account_landing_pages", landingPageDraft(landingPageId, "Primeira")),
+        response("account_landing_page_onboarding_configurations", null, null, "update"),
+        response("account_landing_page_onboarding_configurations", {
+          landing_page_id: null,
+          revision: 2,
+        }),
+      ]);
+      assert.deepEqual(
+        await bindAccountLandingPageOnboardingConfigurationFromClient(
+          {
+            accountId: ACCOUNT_ID,
+            actorUserId: ACTOR_ID,
+            landingPageId,
+            expectedRevision: 1,
+          },
+          zeroRow,
+          eligibleEntitlement,
+        ),
+        { ok: false, error: "revision_conflict" },
+      );
+
+      const alreadyBound = runtimeClient([
+        ...runtimeGateResponses(),
+        response(
+          "account_landing_page_onboarding_configurations",
+          completeConfigurationRow({
+            landingPageId: "00000000-0000-4000-8000-000000000202",
+          }),
+        ),
+      ]);
+      assert.deepEqual(
+        await bindAccountLandingPageOnboardingConfigurationFromClient(
+          {
+            accountId: ACCOUNT_ID,
+            actorUserId: ACTOR_ID,
+            landingPageId,
+            expectedRevision: 1,
+          },
+          alreadyBound,
+          eligibleEntitlement,
+        ),
+        { ok: false, error: "landing_page_already_bound" },
+      );
+    },
+  },
+  {
+    name: "bind rejects a draft from another account",
+    run: async () => {
+      const landingPageId = "00000000-0000-4000-8000-000000000201";
+      const client = runtimeClient([
+        ...runtimeGateResponses(),
+        response(
+          "account_landing_page_onboarding_configurations",
+          completeConfigurationRow(),
+        ),
+        response("account_landing_pages", {
+          ...landingPageDraft(landingPageId, "Outra conta"),
+          account_id: "00000000-0000-4000-8000-000000000999",
+        }),
+      ]);
+      assert.deepEqual(
+        await bindAccountLandingPageOnboardingConfigurationFromClient(
+          {
+            accountId: ACCOUNT_ID,
+            actorUserId: ACTOR_ID,
+            landingPageId,
+            expectedRevision: 1,
+          },
+          client,
+          eligibleEntitlement,
+        ),
+        { ok: false, error: "landing_page_not_found" },
+      );
+    },
+  },
+  {
     name: "migration encodes tenant FK write-once RLS grants and optimistic update guard",
     run: () => {
       const migration = readFileSync(
@@ -605,6 +872,31 @@ function taxonRow() {
   };
 }
 
+function completeConfigurationRow(input: Readonly<{
+  landingPageId?: string | null;
+  revision?: number;
+}> = {}) {
+  return {
+    account_id: ACCOUNT_ID,
+    landing_page_id: input.landingPageId ?? null,
+    catalog_version: 2,
+    values: stripAuthoritativeOnboardingValues(segmentValidValues, {
+      business_display_name: "Conta de teste",
+    }),
+    revision: input.revision ?? 1,
+  };
+}
+
+function landingPageDraft(id: string, name: string) {
+  return {
+    id,
+    account_id: ACCOUNT_ID,
+    name,
+    slug: name.toLowerCase().replaceAll(" ", "-"),
+    status: "draft",
+  };
+}
+
 type ScriptedResponse = Readonly<{
   relation: string;
   operation: "select" | "insert" | "update";
@@ -617,6 +909,8 @@ type RecordedCall = {
   operation: "select" | "insert" | "update";
   payload?: unknown;
   filters: Array<[string, unknown]>;
+  nullFilters?: Array<[string, null]>;
+  orders?: Array<[string, boolean]>;
   maxAffected?: number;
 };
 
@@ -659,6 +953,8 @@ class ScriptedQuery {
   private operation: RecordedCall["operation"] = "select";
   private payload: unknown;
   private readonly filters: Array<[string, unknown]> = [];
+  private readonly nullFilters: Array<[string, null]> = [];
+  private readonly orders: Array<[string, boolean]> = [];
   private maximum?: number;
 
   constructor(
@@ -687,6 +983,16 @@ class ScriptedQuery {
     return this;
   }
 
+  is(column: string, value: null) {
+    this.nullFilters.push([column, value]);
+    return this;
+  }
+
+  order(column: string, options: { ascending: boolean }) {
+    this.orders.push([column, options.ascending]);
+    return this;
+  }
+
   limit() {
     return this;
   }
@@ -697,11 +1003,24 @@ class ScriptedQuery {
   }
 
   maybeSingle() {
+    return this.execute();
+  }
+
+  then<TResult1 = { data: unknown; error: unknown }, TResult2 = never>(
+    onfulfilled?: ((value: { data: unknown; error: unknown }) => TResult1 | PromiseLike<TResult1>) | null,
+    onrejected?: ((reason: unknown) => TResult2 | PromiseLike<TResult2>) | null,
+  ): Promise<TResult1 | TResult2> {
+    return this.execute().then(onfulfilled, onrejected);
+  }
+
+  private execute() {
     return this.client.take({
       relation: this.relation,
       operation: this.operation,
       payload: this.payload,
       filters: [...this.filters],
+      nullFilters: [...this.nullFilters],
+      orders: [...this.orders],
       maxAffected: this.maximum,
     });
   }

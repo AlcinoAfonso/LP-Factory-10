@@ -10,6 +10,7 @@ export type AccountJourneyMode =
   | "commercial"
   | "waiting"
   | "onboarding"
+  | "review"
   | "operational"
   | "blocked";
 
@@ -22,7 +23,8 @@ export type AccountOnboardingState =
   | "not_loaded"
   | "unavailable"
   | "incomplete"
-  | "complete"
+  | "complete_unbound"
+  | "complete_bound"
   | "blocked";
 
 export type JourneyFormStep = "business" | "landing_page" | "brand_identity";
@@ -46,7 +48,10 @@ export function decideAccountJourney(input: Readonly<{
   if (input.onboardingState === "incomplete") {
     return { mode: "onboarding", showFinancialActions: false };
   }
-  if (input.onboardingState === "complete") {
+  if (input.onboardingState === "complete_unbound") {
+    return { mode: "review", showFinancialActions: false };
+  }
+  if (input.onboardingState === "complete_bound") {
     return { mode: "operational", showFinancialActions: false };
   }
   if (

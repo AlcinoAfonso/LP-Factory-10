@@ -3,6 +3,8 @@ import { getCommercialActivationHierarchicalBundle } from "@/conversion-content"
 import { getCommercialEntitlementSignal } from "../../../lib/commercial-entitlements";
 import {
   getAccountLandingPageOnboardingConfiguration,
+  listAccountLandingPageDrafts,
+  type AccountLandingPage,
   type AccountLandingPageOnboardingConfiguration,
 } from "../../../lib/lp-builder";
 import { getActionableNicheResolutionForAccount } from "../../../lib/onboarding/niche-resolution/adapters/accountNicheResolutionUserAdapter";
@@ -10,6 +12,7 @@ import { getActivePrimaryAccountTaxon } from "../../../lib/onboarding/niche-reso
 import { PendingSetupFirstSteps } from "./_components/PendingSetupFirstSteps";
 import { NicheResolutionCard } from "./_components/NicheResolutionCard";
 import { OnboardingConfigurationJourney } from "./_components/OnboardingConfigurationJourney";
+import { OnboardingCompletionJourney } from "./_components/OnboardingCompletionJourney";
 import { GenericCommercialPage } from "./_components/commercial-page/GenericCommercialPage";
 import { PublishedCommercialActivationPage } from "./_components/commercial-page/PublishedCommercialActivationPage";
 import {
@@ -21,11 +24,16 @@ type DashState = "auth" | "onboarding" | "public";
 
 type PageProps = {
   params: Promise<{ account: string }> | { account: string };
+  searchParams?:
+    | Promise<Record<string, string | string[] | undefined>>
+    | Record<string, string | string[] | undefined>;
 };
 
-export default async function Page({ params }: PageProps) {
+export default async function Page({ params, searchParams }: PageProps) {
   const resolvedParams = await params;
+  const resolvedSearchParams = searchParams ? await searchParams : {};
   const accountSubdomain = (resolvedParams.account ?? "").trim().toLowerCase();
+  const editOnboarding = resolvedSearchParams.edit_onboarding === "1";
 
   const isHome = accountSubdomain === "home";
   const ctx = isHome
@@ -81,6 +89,7 @@ export default async function Page({ params }: PageProps) {
     let onboardingState: AccountOnboardingState = "not_loaded";
     let onboardingConfiguration: AccountLandingPageOnboardingConfiguration | null =
       null;
+    let onboardingDrafts: readonly AccountLandingPage[] | null = null;
 
     if (
       accountId &&
@@ -91,9 +100,19 @@ export default async function Page({ params }: PageProps) {
         await getAccountLandingPageOnboardingConfiguration({ accountId });
       if (onboardingResult.ok) {
         onboardingConfiguration = onboardingResult.configuration;
-        onboardingState = onboardingResult.configuration.complete
-          ? "complete"
-          : "incomplete";
+        if (!onboardingResult.configuration.complete) {
+          onboardingState = "incomplete";
+        } else if (onboardingResult.configuration.landingPageId) {
+          onboardingState = "complete_bound";
+        } else {
+          const draftsResult = await listAccountLandingPageDrafts({ accountId });
+          if (draftsResult.ok) {
+            onboardingDrafts = draftsResult.drafts;
+            onboardingState = "complete_unbound";
+          } else {
+            onboardingState = "blocked";
+          }
+        }
       } else {
         onboardingState =
           onboardingResult.error === "configuration_unavailable"
@@ -118,6 +137,28 @@ export default async function Page({ params }: PageProps) {
         <OnboardingConfigurationJourney
           accountSubdomain={accountSubdomain}
           configuration={onboardingConfiguration}
+        />
+      );
+    }
+    if (
+      accountJourney.mode === "review" &&
+      onboardingConfiguration &&
+      onboardingDrafts
+    ) {
+      if (editOnboarding) {
+        return (
+          <OnboardingConfigurationJourney
+            accountSubdomain={accountSubdomain}
+            configuration={onboardingConfiguration}
+            reviewMode
+          />
+        );
+      }
+      return (
+        <OnboardingCompletionJourney
+          accountSubdomain={accountSubdomain}
+          configuration={onboardingConfiguration}
+          drafts={onboardingDrafts}
         />
       );
     }
@@ -181,7 +222,7 @@ function OperationalReadyState() {
           Sua conta está pronta para trabalhar na primeira landing page.
         </h1>
         <p className="mt-4 max-w-2xl text-sm leading-6 text-graytech-700 sm:text-base">
-          A criação ou escolha da página será apresentada na etapa de revisão final.
+          O rascunho escolhido está vinculado a esta configuração e pronto para as próximas etapas do produto.
         </p>
       </section>
     </main>

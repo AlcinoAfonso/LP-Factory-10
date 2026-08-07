@@ -1,5 +1,6 @@
 export type {
   AccountLandingPage,
+  AccountLandingPageDraftsResult,
   AccountLandingPageOnboardingConfiguration,
   AccountLandingPageOnboardingErrorCode,
   AccountLandingPageOnboardingFieldState,
@@ -7,6 +8,7 @@ export type {
   AccountLandingPageOnboardingStoredValue,
   AccountLandingPageOnboardingStoredValues,
   AccountLandingPageOnboardingValueSource,
+  BindAccountLandingPageOnboardingConfigurationInput,
   CreateAccountLandingPageError,
   CreateAccountLandingPageInput,
   CreateAccountLandingPageResult,
@@ -23,6 +25,8 @@ export {
 export type { StarterColorPaletteValidationResult } from "./onboardingConfiguration";
 export { createAccountLandingPage } from "./adapters/landingPagesAdapter";
 export {
+  bindAccountLandingPageOnboardingConfiguration,
   getAccountLandingPageOnboardingConfiguration,
+  listAccountLandingPageDrafts,
   saveAccountLandingPageOnboardingConfiguration,
 } from "./adapters/onboardingConfigurationAdapter";

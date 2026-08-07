@@ -4,11 +4,15 @@ import { getCommercialEntitlementSignal } from "../../commercial-entitlements";
 import { createClient } from "../../supabase/server";
 import { createServiceClient } from "../../supabase/service";
 import type {
+  AccountLandingPageDraftsResult,
   AccountLandingPageOnboardingResult,
+  BindAccountLandingPageOnboardingConfigurationInput,
   SaveAccountLandingPageOnboardingConfigurationInput,
 } from "../contracts";
 import {
+  bindAccountLandingPageOnboardingConfigurationFromClient,
   getAccountLandingPageOnboardingConfigurationFromClient,
+  listAccountLandingPageDraftsFromClient,
   saveAccountLandingPageOnboardingConfigurationFromClient,
 } from "./onboardingConfigurationAdapterCore";
 
@@ -32,6 +36,32 @@ export async function saveAccountLandingPageOnboardingConfiguration(
   if (!actorUserId) return { ok: false, error: "unauthenticated" };
 
   return saveAccountLandingPageOnboardingConfigurationFromClient(
+    { ...input, actorUserId },
+    createServiceClient(),
+    getCommercialEntitlementSignal,
+  );
+}
+
+export async function listAccountLandingPageDrafts(input: {
+  accountId: string;
+}): Promise<AccountLandingPageDraftsResult> {
+  const actorUserId = await getAuthenticatedUserId();
+  if (!actorUserId) return { ok: false, error: "unauthenticated" };
+
+  return listAccountLandingPageDraftsFromClient(
+    { accountId: input.accountId, actorUserId },
+    createServiceClient(),
+    getCommercialEntitlementSignal,
+  );
+}
+
+export async function bindAccountLandingPageOnboardingConfiguration(
+  input: BindAccountLandingPageOnboardingConfigurationInput,
+): Promise<AccountLandingPageOnboardingResult> {
+  const actorUserId = await getAuthenticatedUserId();
+  if (!actorUserId) return { ok: false, error: "unauthenticated" };
+
+  return bindAccountLandingPageOnboardingConfigurationFromClient(
     { ...input, actorUserId },
     createServiceClient(),
     getCommercialEntitlementSignal,

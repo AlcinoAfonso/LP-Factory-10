@@ -36,7 +36,7 @@ const cases: readonly Readonly<{ name: string; run: () => void }>[] = [
     },
   },
   {
-    name: "eligible owner or admin enters onboarding only while incomplete",
+    name: "eligible owner or admin follows incomplete review and bound states",
     run: () => {
       for (const actorRole of ["owner", "admin"] as const) {
         assert.equal(
@@ -51,7 +51,15 @@ const cases: readonly Readonly<{ name: string; run: () => void }>[] = [
           decideAccountJourney({
             actorRole,
             isCommerciallyEligible: true,
-            onboardingState: "complete",
+            onboardingState: "complete_unbound",
+          }).mode,
+          "review",
+        );
+        assert.equal(
+          decideAccountJourney({
+            actorRole,
+            isCommerciallyEligible: true,
+            onboardingState: "complete_bound",
           }).mode,
           "operational",
         );
@@ -119,6 +127,53 @@ const cases: readonly Readonly<{ name: string; run: () => void }>[] = [
       assert.match(action, /getAccessContext/);
       assert.match(action, /revalidatePath\(route\)/);
       assert.doesNotMatch(action, /\.from\(/);
+    },
+  },
+  {
+    name: "completion review keeps draft discovery and mutation inside lp-builder boundaries",
+    run: () => {
+      const component = readFileSync(
+        new URL("./OnboardingCompletionJourney.tsx", import.meta.url),
+        "utf8",
+      );
+      const action = readFileSync(
+        new URL("../onboarding-configuration-actions.ts", import.meta.url),
+        "utf8",
+      );
+      const page = readFileSync(new URL("../page.tsx", import.meta.url), "utf8");
+      const journey = readFileSync(
+        new URL("./OnboardingConfigurationJourney.tsx", import.meta.url),
+        "utf8",
+      );
+
+      assert.match(page, /listAccountLandingPageDrafts/);
+      assert.match(page, /complete_unbound/);
+      assert.match(page, /complete_bound/);
+      assert.doesNotMatch(page, /\.from\(/);
+      assert.match(component, /props\.drafts\.length === 0/);
+      assert.match(component, /type="radio"/);
+      assert.match(component, /name="landing_page_id"/);
+      assert.match(component, /Nenhum novo rascunho será criado/);
+      assert.match(component, /edit_onboarding=1/);
+      assert.match(component, /Editar dados confirmados ou opcionais/);
+      assert.doesNotMatch(component, /defaultChecked|checked=\{true\}/);
+      assert.doesNotMatch(component, /\.from\(/);
+      assert.match(page, /editOnboarding/);
+      assert.match(page, /reviewMode/);
+      assert.match(journey, /Voltar à revisão/);
+      assert.match(journey, /brand_logo_asset: "Logo da marca"/);
+      assert.match(journey, /OPTION_LABELS\[value\] \?\? value/);
+      assert.match(journey, /OPTION_LABELS\[item\] \?\? item/);
+      assert.match(action, /getAccountLandingPageOnboardingConfiguration/);
+      assert.match(action, /listAccountLandingPageDrafts/);
+      assert.match(action, /drafts\.drafts\.length > 0/);
+      assert.match(action, /createAccountLandingPage/);
+      assert.match(action, /bindAccountLandingPageOnboardingConfiguration/);
+      assert.doesNotMatch(action, /\.from\(/);
+      assert.doesNotMatch(
+        component + action,
+        /\bOpenAI\b|generateContent|publishLandingPage|\bCRM\b/i,
+      );
     },
   },
   {

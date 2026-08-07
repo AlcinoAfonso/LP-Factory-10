@@ -2211,7 +2211,7 @@ Repositório — Ajustados
 
 19. E19 — LP Builder
 - Objetivo: Consolidar o fluxo Core de landing pages por conta, da identidade mínima em `draft` às futuras etapas de geração, revisão, materialização e publicação, sempre por recortes aprovados.
-- Status: Em evolução por recortes. O recorte 19.1 está concluído e o recorte 19.2 está planejado.
+- Status: Em evolução por recortes. O recorte 19.1 está concluído e o recorte 19.2 está em implementação no PR #700.
 
 19.1 Criação produtiva mínima de LP por conta
 
@@ -2267,7 +2267,7 @@ Repositório — Ajustados
 
 19.2.1 Objetivo e status
 - Objetivo: Criar a experiência pós-entitlement que configura a conta e os valores mínimos necessários para iniciar a primeira LP Starter, sem gerar conteúdo, materializar a LP final ou publicar.
-- Status: Em implementação; E19.2.3 e E19.2.4 possuem checkpoints aprovados no PR #700 e E19.2.5 possui implementação candidata no mesmo PR, com apply da migration e validação hospedada autenticada pendentes do merge humano.
+- Status: Em implementação; E19.2.3, E19.2.4 e E19.2.5 possuem checkpoints aprovados no PR #700, e E19.2.6 possui implementação candidata no mesmo PR, com apply da migration e validação hospedada autenticada pendentes do merge humano.
 
 19.2.2 Registros do recorte
 - Repositório:
@@ -2277,6 +2277,7 @@ Repositório — Ajustados
     - `lib/lp-builder/adapters/onboardingConfigurationAdapterCore.ts`
     - `lib/lp-builder/validation-cases.ts`
     - `app/a/[account]/_components/OnboardingConfigurationJourney.tsx`
+    - `app/a/[account]/_components/OnboardingCompletionJourney.tsx`
     - `app/a/[account]/_components/onboarding-configuration-action-contract.ts`
     - `app/a/[account]/_components/onboarding-journey-policy.ts`
     - `app/a/[account]/_components/onboarding-journey-validation-cases.ts`
@@ -2314,7 +2315,7 @@ Repositório — Ajustados
 
 19.2.5 Identidade visual mínima da conta
 - Objetivo: Permitir confirmar a identidade visual mínima necessária ao Starter sem IA e sem tornar logo obrigatório.
-- Status: Implementação candidata no PR #700; validação visual autenticada em Preview permanece pendente do merge/apply.
+- Status: Checkpoint implementado e aprovado no PR #700; validação visual autenticada em Preview permanece pendente do merge/apply.
 - Conteúdo:
   - A E19.2.5 adiciona um terceiro passo à jornada, com três paletas iniciais e edição humana dos cinco papéis canônicos `primary`, `secondary`, `accent`, `background` e `text`, sem catálogo paralelo de campos.
   - O boundary valida formato e contraste de modo determinístico: texto exige razão mínima 4,5:1 contra o fundo e cores principal, secundária e de destaque exigem 3:1.
@@ -2323,7 +2324,13 @@ Repositório — Ajustados
 
 19.2.6 Revisão, conclusão e transição para LP `draft`
 - Objetivo: Concluir a configuração derivada e transferir a conta para o espaço operacional sem criar LP antes da hora.
-- Status: Planejada.
+- Status: Implementação candidata no PR #700; validação autenticada do fluxo integrado permanece pendente do merge/apply.
+- Conteúdo:
+  - Configuração completa sem vínculo entra em revisão final; configuração incompleta não consulta nem cria LP, e configuração já vinculada segue para o estado operacional sem persistir `onboarding_status`.
+  - A leitura server-only do boundary `lib/lp-builder/` retorna zero, um ou vários drafts legítimos da conta em ordem determinística e preserva falha operacional como erro, sem consulta direta da página, UI ou Server Action a `account_landing_pages`.
+  - Zero drafts permite criação explícita pelo fluxo E19.1; um ou vários drafts exigem seleção humana explícita, sem escolha silenciosa, duplicação automática ou limite de quantidade antecipado.
+  - O agregado é vinculado somente ao draft escolhido da mesma conta, com revisão otimista, predicado de ausência de vínculo e mutação limitada a uma linha; valores não são copiados para `account_landing_pages` e rebind permanece proibido.
+  - A transição não inicia geração, revisão de copy, publicação, tracking, CRM, capability nova ou infraestrutura de assets.
 
 20. E20 — Preparação e liberação de taxons para geração de landing pages
 

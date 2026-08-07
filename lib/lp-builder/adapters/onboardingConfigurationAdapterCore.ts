@@ -2,8 +2,11 @@ import type { LandingPageInputCatalogTaxonChain } from "../../conversion-content
 import type { CommercialEntitlementSignal } from "../../commercial-entitlements";
 import {
   ACCOUNT_LANDING_PAGE_ONBOARDING_CATALOG_VERSION,
+  type AccountLandingPage,
+  type AccountLandingPageDraftsResult,
   type AccountLandingPageOnboardingResult,
   type AccountLandingPageOnboardingStoredValues,
+  type BindAccountLandingPageOnboardingConfigurationInput,
   type SaveAccountLandingPageOnboardingConfigurationInput,
 } from "../contracts";
 import {
@@ -187,6 +190,124 @@ export async function saveAccountLandingPageOnboardingConfigurationFromClient(
   const row = normalizeConfigurationRow(written, runtime.context.account.id);
   if (!row) return failure("write_failed");
 
+  return resolveRuntimeContext({ ...runtime.context, row });
+}
+
+export async function listAccountLandingPageDraftsFromClient(
+  input: { accountId: string; actorUserId: string },
+  client: QueryClient,
+  entitlementLoader: AccountLandingPageOnboardingEntitlementLoader,
+): Promise<AccountLandingPageDraftsResult> {
+  const runtime = await loadRuntimeContext(input, client, entitlementLoader);
+  if (!runtime.ok) return runtime;
+
+  const configuration = resolveRuntimeContext(runtime.context);
+  if (!configuration.ok) return configuration;
+  if (!configuration.configuration.complete) {
+    return failure("configuration_incomplete");
+  }
+
+  const { data, error } = await client
+    .from("account_landing_pages")
+    .select("id,account_id,name,slug,status")
+    .eq("account_id", runtime.context.account.id)
+    .eq("status", "draft")
+    .order("created_at", { ascending: true })
+    .order("id", { ascending: true });
+
+  if (error) {
+    logDatabaseError("landing page drafts read failed", error, input.accountId);
+    return failure("read_failed");
+  }
+  if (!Array.isArray(data)) return failure("read_failed");
+
+  const drafts = data.map((value) =>
+    normalizeLandingPageDraft(value, runtime.context.account.id),
+  );
+  if (drafts.some((draft) => draft === null)) return failure("read_failed");
+  return { ok: true, drafts: drafts as AccountLandingPage[] };
+}
+
+export async function bindAccountLandingPageOnboardingConfigurationFromClient(
+  input: BindAccountLandingPageOnboardingConfigurationInput & {
+    actorUserId: string;
+  },
+  client: QueryClient,
+  entitlementLoader: AccountLandingPageOnboardingEntitlementLoader,
+): Promise<AccountLandingPageOnboardingResult> {
+  if (
+    !UUID_RE.test(String(input.landingPageId ?? "").trim()) ||
+    !Number.isInteger(input.expectedRevision) ||
+    input.expectedRevision <= 0
+  ) {
+    return failure("invalid_values");
+  }
+
+  const runtime = await loadRuntimeContext(input, client, entitlementLoader);
+  if (!runtime.ok) return runtime;
+  const configuration = resolveRuntimeContext(runtime.context);
+  if (!configuration.ok) return configuration;
+  if (!configuration.configuration.complete) {
+    return failure("configuration_incomplete");
+  }
+  if (!runtime.context.row) return failure("configuration_not_found");
+  if (runtime.context.row.revision !== input.expectedRevision) {
+    return failure("revision_conflict");
+  }
+  if (runtime.context.row.landing_page_id !== null) {
+    return failure("landing_page_already_bound");
+  }
+
+  const landingPageId = input.landingPageId.trim();
+  const { data: draft, error: draftError } = await client
+    .from("account_landing_pages")
+    .select("id,account_id,name,slug,status")
+    .eq("id", landingPageId)
+    .eq("account_id", runtime.context.account.id)
+    .eq("status", "draft")
+    .limit(1)
+    .maybeSingle();
+  if (draftError) {
+    logDatabaseError("landing page draft gate failed", draftError, input.accountId);
+    return failure("read_failed");
+  }
+  if (!normalizeLandingPageDraft(draft, runtime.context.account.id)) {
+    return failure("landing_page_not_found");
+  }
+
+  const { data, error } = await client
+    .from("account_landing_page_onboarding_configurations")
+    .update({
+      landing_page_id: landingPageId,
+      revision: input.expectedRevision + 1,
+      updated_by: input.actorUserId,
+    })
+    .eq("account_id", runtime.context.account.id)
+    .eq("revision", input.expectedRevision)
+    .is("landing_page_id", null)
+    .maxAffected(1)
+    .select("account_id,landing_page_id,catalog_version,values,revision")
+    .maybeSingle();
+
+  if (error) {
+    if (isUnavailableOnboardingConfigurationError(error)) {
+      return failure("configuration_unavailable");
+    }
+    logDatabaseError("configuration bind failed", error, input.accountId);
+    return failure("write_failed");
+  }
+  if (!data) {
+    return classifyZeroRowBind(
+      runtime.context.account.id,
+      input.expectedRevision,
+      client,
+    );
+  }
+
+  const row = normalizeConfigurationRow(data, runtime.context.account.id);
+  if (!row || row.landing_page_id !== landingPageId) {
+    return failure("write_failed");
+  }
   return resolveRuntimeContext({ ...runtime.context, row });
 }
 
@@ -398,6 +519,32 @@ async function classifyZeroRowMutation(
   return failure("write_failed");
 }
 
+async function classifyZeroRowBind(
+  accountId: string,
+  expectedRevision: number,
+  client: QueryClient,
+): Promise<AccountLandingPageOnboardingResult> {
+  const { data, error } = await client
+    .from("account_landing_page_onboarding_configurations")
+    .select("landing_page_id,revision")
+    .eq("account_id", accountId)
+    .limit(1)
+    .maybeSingle();
+  if (error) {
+    if (isUnavailableOnboardingConfigurationError(error)) {
+      return failure("configuration_unavailable");
+    }
+    return failure("read_failed");
+  }
+  if (!data) return failure("configuration_not_found");
+  if (!isRecord(data)) return failure("read_failed");
+  if (data.landing_page_id !== null) {
+    return failure("landing_page_already_bound");
+  }
+  if (data.revision !== expectedRevision) return failure("revision_conflict");
+  return failure("write_failed");
+}
+
 function normalizeAccountRow(value: unknown): AccountRow | null {
   if (!isRecord(value)) return null;
   if (typeof value.id !== "string" || !UUID_RE.test(value.id)) return null;
@@ -432,6 +579,32 @@ function normalizeConfigurationRow(
     catalog_version: Number(value.catalog_version),
     values: value.values,
     revision: Number(value.revision),
+  };
+}
+
+function normalizeLandingPageDraft(
+  value: unknown,
+  expectedAccountId: string,
+): AccountLandingPage | null {
+  if (
+    !isRecord(value) ||
+    typeof value.id !== "string" ||
+    !UUID_RE.test(value.id) ||
+    value.account_id !== expectedAccountId ||
+    typeof value.name !== "string" ||
+    !value.name.trim() ||
+    typeof value.slug !== "string" ||
+    !value.slug.trim() ||
+    value.status !== "draft"
+  ) {
+    return null;
+  }
+  return {
+    id: value.id,
+    account_id: expectedAccountId,
+    name: value.name,
+    slug: value.slug,
+    status: "draft",
   };
 }
 

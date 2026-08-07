@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import {
   useActionState,
   useEffect,
@@ -133,6 +134,8 @@ const FIELD_LABELS: Readonly<Record<string, string>> = {
   external_url_destination: "Link externo de destino",
   privacy_policy_url: "Política de privacidade",
   paid_search_keyword_map: "Termos de busca e mensagem",
+  brand_color_palette: "Paleta da marca",
+  brand_logo_asset: "Logo da marca",
 };
 
 const OPTION_LABELS: Readonly<Record<string, string>> = {
@@ -164,6 +167,7 @@ const OPTION_LABELS: Readonly<Record<string, string>> = {
 export function OnboardingConfigurationJourney(props: Readonly<{
   accountSubdomain: string;
   configuration: AccountLandingPageOnboardingConfiguration;
+  reviewMode?: boolean;
 }>) {
   const router = useRouter();
   const [stepIndex, setStepIndex] = useState(0);
@@ -296,6 +300,14 @@ export function OnboardingConfigurationJourney(props: Readonly<{
               Etapa {stepIndex + 1} de {STEPS.length}
             </span>
           </div>
+          {props.reviewMode ? (
+            <Link
+              href={`/a/${props.accountSubdomain}`}
+              className="mt-4 inline-flex min-h-11 items-center rounded-lg border border-surface-border bg-white px-4 text-sm font-semibold text-ink-900 hover:bg-graytech-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-600"
+            >
+              Voltar à revisão
+            </Link>
+          ) : null}
 
           <div className="mt-5 h-2 overflow-hidden rounded-full bg-graytech-100" aria-hidden="true">
             <div
@@ -802,7 +814,7 @@ function isRequired(
   );
 }
 
-function fieldLabel(fieldKey: string) {
+export function fieldLabel(fieldKey: string) {
   return FIELD_LABELS[fieldKey] ?? "Informação para a página";
 }
 
@@ -810,11 +822,52 @@ function optionLabel(option: string) {
   return OPTION_LABELS[option] ?? option.replaceAll("_", " ");
 }
 
-function formatDisplayValue(value: unknown) {
-  if (typeof value === "string") return value;
+export function formatDisplayValue(value: unknown) {
+  if (typeof value === "string") return OPTION_LABELS[value] ?? value;
   if (typeof value === "boolean") return value ? "Sim" : "Não";
-  if (Array.isArray(value)) return value.join(", ");
+  if (Array.isArray(value)) {
+    return value
+      .map((item) => {
+        if (typeof item === "string") return OPTION_LABELS[item] ?? item;
+        if (!isRecord(item)) return null;
+        const keyword =
+          typeof item.keyword_or_cluster === "string"
+            ? item.keyword_or_cluster
+            : null;
+        const anchor =
+          typeof item.message_anchor === "string" ? item.message_anchor : null;
+        return [keyword, anchor].filter(Boolean).join(" — ") || null;
+      })
+      .filter(Boolean)
+      .join(", ");
+  }
+  if (isRecord(value)) {
+    if (
+      typeof value.minimum === "number" ||
+      typeof value.maximum === "number"
+    ) {
+      const minimum =
+        typeof value.minimum === "number" ? formatCurrency(value.minimum) : "sem mínimo";
+      const maximum =
+        typeof value.maximum === "number" ? formatCurrency(value.maximum) : "sem máximo";
+      return `${minimum} a ${maximum}`;
+    }
+    const palette = readPalette(value);
+    if (palette) {
+      return PALETTE_ROLES.map(
+        (role) => `${PALETTE_ROLE_LABELS[role]} ${palette[role].toUpperCase()}`,
+      ).join(", ");
+    }
+  }
   return "Valor confirmado";
+}
+
+function formatCurrency(value: number) {
+  return new Intl.NumberFormat("pt-BR", {
+    style: "currency",
+    currency: "BRL",
+    maximumFractionDigits: 2,
+  }).format(value);
 }
 
 function formatTaxonChain(configuration: AccountLandingPageOnboardingConfiguration) {

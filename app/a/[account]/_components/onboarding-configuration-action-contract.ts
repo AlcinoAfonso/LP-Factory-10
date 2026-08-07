@@ -14,3 +14,12 @@ export type OnboardingConfigurationActionState = Readonly<{
 
 export const initialOnboardingConfigurationActionState: OnboardingConfigurationActionState =
   { status: "idle" };
+
+export type OnboardingCompletionActionState = Readonly<{
+  status: "idle" | "success" | "error";
+  landingPageId?: string;
+  formError?: string;
+}>;
+
+export const initialOnboardingCompletionActionState: OnboardingCompletionActionState =
+  { status: "idle" };
