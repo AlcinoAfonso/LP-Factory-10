@@ -2,7 +2,7 @@
 
 0.1 Cabeçalho
 • Data: 07/08/2026
-• Versão: v1.5.128
+• Versão: v1.5.129
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -2211,7 +2211,7 @@ Repositório — Ajustados
 
 19. E19 — LP Builder
 - Objetivo: Consolidar o fluxo Core de landing pages por conta, da identidade mínima em `draft` às futuras etapas de geração, revisão, materialização e publicação, sempre por recortes aprovados.
-- Status: Em evolução por recortes. O recorte 19.1 está concluído. A próxima evolução será definida após a avaliação residual e o respectivo plano-base.
+- Status: Em evolução por recortes. O recorte 19.1 está concluído e o recorte 19.2 está planejado.
 
 19.1 Criação produtiva mínima de LP por conta
 
@@ -2262,6 +2262,28 @@ Repositório — Ajustados
   - O recorte concluído não gera conteúdo, não coleta valores da E20.2, não compõe E10.8/E18.4/E18.5/E20.2/E20.3 e não cria snapshot.
   - Revisão, materialização, renderer, publicação, edição, regeneração e evolução entre planos permanecem para o plano-base próprio da próxima evolução da E19.
   - Editor visual, domínio customizado, analytics, teste A/B, automação, agente, job e rotina recorrente permanecem fora deste recorte.
+
+19.2 Onboarding e configuração mínima da conta para LP Starter
+
+19.2.1 Objetivo e status
+- Objetivo: Criar a experiência pós-entitlement que configura a conta e os valores mínimos necessários para iniciar a primeira LP Starter, sem gerar conteúdo, materializar a LP final ou publicar.
+- Status: Planejado.
+
+19.2.3 Contrato de configuração, completude e persistência mínima
+- Objetivo: Materializar no boundary E19 a resolução da configuração mínima, a completude derivada e a persistência retomável dos valores sem criar LP prematuramente.
+- Status: Planejada.
+
+19.2.4 Jornada guiada pós-entitlement e retomada
+- Objetivo: Substituir a permanência na experiência comercial por uma jornada curta de onboarding quando a conta elegível estiver incompleta.
+- Status: Planejada.
+
+19.2.5 Identidade visual mínima da conta
+- Objetivo: Permitir confirmar a identidade visual mínima necessária ao Starter sem IA e sem tornar logo obrigatório.
+- Status: Planejada.
+
+19.2.6 Revisão, conclusão e transição para LP `draft`
+- Objetivo: Concluir a configuração derivada e transferir a conta para o espaço operacional sem criar LP antes da hora.
+- Status: Planejada.
 
 20. E20 — Preparação e liberação de taxons para geração de landing pages
 
