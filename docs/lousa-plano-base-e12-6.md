@@ -93,15 +93,28 @@
 - Auditoria:
   - permanece no estado atual e fora deste plano.
 
-### 1.6. Updates aplicáveis
+### 1.6. Updates avaliados
 
-- `prod#14` — aplicar reconhecimento rápido de estado, origem e contrato nas visões administrativas.
-- `prod#16` — usar Preview para QA visual proporcional das quatro visões.
-- `prod#17` — usar WCAG 2.2 como baseline de acessibilidade aplicável, sem declarar conformidade integral.
-- `prod#12` — usar navegação contextual apenas dentro de `Estrutura da LP` e para retorno a Taxonomia quando houver taxon selecionado; não criar switcher global.
-- `vercel#15` — Vercel Toolbar somente como apoio opcional ao QA.
-- `supa#40` — reutilizar como referência read-only para cadeia taxonômica quando necessário; não criar regra de negócio ou banco novo.
-- Esses updates não autorizam nova dependência, serviço, banco, automação ou infraestrutura.
+#### 1.6.1. Aplicar agora
+
+- `prod#14` — aplicar reconhecimento rápido de estado, lifecycle, origem, proveniência, validade e contrato nas quatro visões administrativas, sem criar telemetria ou programa próprio de testes.
+- `prod#16` — aplicar QA visual proporcional em Preview cobrindo as quatro visões, desktop, mobile, teclado, foco, estados de erro e console.
+- `prod#17` — usar WCAG 2.2 como baseline proporcional de acessibilidade, sem declarar conformidade integral.
+
+#### 1.6.2. Usar como referência, validação ou trava
+
+- `vercel#15` — Vercel Toolbar pode ser usada somente como apoio opcional à inspeção do Preview; não é dependência técnica nem requisito para aprovação.
+- `supa#40` — quando útil para validar a cadeia taxonômica consumida pela visão `Entradas`, reutilizar somente o snippet read-only já versionado `supabase/snippets/e20_2_taxon_chain_verify.sql` como evidência complementar de QA. O snippet não é fonte da regra de negócio, não integra o runtime e não autoriza SQL novo ou alteração de banco.
+
+#### 1.6.3. Oportunidade estratégica condicional
+
+- `prod#12` — preservar para eventual evolução de navegação global entre múltiplas contas ou LPs quando houver fluxo recorrente, erro de contexto ou Partner Dashboard aprovado. Não implementar switcher global, breadcrumbs multi-entidade, favoritos, recentes ou expansão equivalente nesta E12.6. A navegação local entre as quatro visões de `/admin/estrutura-lp` não caracteriza adoção de `prod#12`.
+
+#### 1.6.4. Limite comum
+
+- Nenhum update desta avaliação autoriza nova dependência, serviço, banco, migration, rota adicional, mutation, IA, automação, agente, workflow, infraestrutura ou novo domínio relevante.
+- Nenhum update altera as fontes canônicas da E18.4, E18.5, E20.2 ou E10.8.
+- Nenhum `github-up` exige adoção ou alteração neste recorte.
 
 ## 2. Contrato do caso
 
@@ -278,6 +291,12 @@
   - ordem lógica de TAB;
   - foco visível;
   - links e seletores operáveis por teclado.
+- Acessibilidade:
+  - usar WCAG 2.2 como baseline proporcional;
+  - preservar foco visível e ordem lógica de navegação;
+  - links, seletores e demais controles devem possuir nome/rótulo acessível;
+  - estado, validade ou falha não podem depender somente de cor;
+  - ferramentas automáticas são apoio e não prova de conformidade integral.
 
 ## 3. Fases e próxima ação
 
@@ -307,6 +326,7 @@
   - E10.8 apresentada com BB e EC independentes e sem duplicação da regra canônica;
   - nenhuma consulta N+1 por lista;
   - nenhum banco, migration, RPC, policy, job, agente, automação ou chamada de IA nova;
+  - quando houver necessidade de prova independente da cadeia taxonômica usada pela visão `Entradas`, o QA pode reutilizar `supabase/snippets/e20_2_taxon_chain_verify.sql` como smoke read-only complementar, sem criar ou alterar SQL, schema ou regra de runtime;
   - `npm ci`, `npm run check`, validadores aplicáveis existentes e `git diff --check` aprovados;
   - QA autenticado em Preview cobrindo desktop, mobile, teclado, foco, console e as quatro visões;
   - relatório final de delta separando código produtivo, testes, docs e formatação, com justificativa para arquivos e linhas novas.
