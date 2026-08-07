@@ -18,7 +18,8 @@
     "validate:landing-page-research": "tsx lib/conversion-content/landing-page/research-resolution/validation-cases.ts",
     "validate:landing-page-input-catalog": "tsx lib/conversion-content/landing-page/input-catalog/validation-cases.ts",
     "validate:landing-page-module-catalog": "tsx lib/conversion-content/landing-page/module-catalog/validation-cases.ts",
-    "validate:landing-page-generation-profile": "tsx lib/conversion-content/landing-page/generation-profile/validation-cases.ts"
+    "validate:landing-page-generation-profile": "tsx lib/conversion-content/landing-page/generation-profile/validation-cases.ts",
+    "validate:lp-builder-onboarding": "tsx lib/lp-builder/validation-cases.ts"
   },
   "dependencies": {
     "@radix-ui/react-dialog": "1.1.7",

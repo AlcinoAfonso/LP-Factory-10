@@ -2267,11 +2267,33 @@ Repositório — Ajustados
 
 19.2.1 Objetivo e status
 - Objetivo: Criar a experiência pós-entitlement que configura a conta e os valores mínimos necessários para iniciar a primeira LP Starter, sem gerar conteúdo, materializar a LP final ou publicar.
-- Status: Planejado.
+- Status: Em implementação; E19.2.3 possui implementação candidata no PR #700, com apply e validação hospedada da migration pendentes do merge humano.
+
+19.2.2 Registros do recorte
+- Repositório:
+  - Criados:
+    - `lib/lp-builder/onboardingConfiguration.ts`
+    - `lib/lp-builder/adapters/onboardingConfigurationAdapter.ts`
+    - `lib/lp-builder/adapters/onboardingConfigurationAdapterCore.ts`
+    - `lib/lp-builder/validation-cases.ts`
+    - `supabase/migrations/20260807162417_e19_2_3_account_landing_page_onboarding_configuration.sql`
+    - `supabase/snippets/e19_2_3_account_landing_page_onboarding_configuration_verify.sql`
+    - `supabase/tests/e19_2_3_account_landing_page_onboarding_configuration.test.sql`
+  - Ajustados:
+    - `lib/lp-builder/contracts.ts`
+    - `lib/lp-builder/index.ts`
+    - `package.json`
+- Updates:
+  - Aplicados:
+    - `supa#40`
 
 19.2.3 Contrato de configuração, completude e persistência mínima
-- Objetivo: Materializar no boundary E19 a resolução da configuração mínima, a completude derivada e a persistência retomável dos valores sem criar LP prematuramente.
-- Status: Planejada.
+- Status: Implementação candidata no PR #700; migration versionada, apply e validação SQL hospedada pendentes do merge humano.
+- Conteúdo:
+  - O boundary `lib/lp-builder/` resolve o catálogo E20.2 por versão e taxonomia autoritativa, valida valores por `fieldKey` e escopo, reutiliza fontes autoritativas sem duplicá-las e deriva completude sem `onboarding_status`.
+  - A persistência candidata usa um agregado 1:1 por conta, revisão otimista, FK tenant-safe e vínculo de `landing_page_id` write-once; o Data API permanece restrito ao adapter server-only com `service_role`, sem grants de cliente ou DELETE operacional.
+  - O runtime distingue ausência legítima, objeto ainda indisponível e falha operacional; nenhum `draft`, bucket, upload, Storage, UI ou infraestrutura de assets foi criado nesta subseção.
+  - Casos executáveis cobrem progresso parcial, completude derivada, precedência autoritativa, isolamento por conta, ator autorizado, contrato da migration, concorrência otimista e proteções de vínculo.
 
 19.2.4 Jornada guiada pós-entitlement e retomada
 - Objetivo: Substituir a permanência na experiência comercial por uma jornada curta de onboarding quando a conta elegível estiver incompleta.

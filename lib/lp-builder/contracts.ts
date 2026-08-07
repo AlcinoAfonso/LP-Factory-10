@@ -1,3 +1,10 @@
+import type {
+  LandingPageInputCatalogPlan,
+  LandingPageInputCatalogTaxonChain,
+  LandingPageInputValueScope,
+  ResolvedLandingPageInputField,
+} from "../conversion-content/landing-page/input-catalog";
+
 export type CreateAccountLandingPageInput = {
   accountId: string;
   name: string;
@@ -33,3 +40,75 @@ export type CreateAccountLandingPageResult =
       ok: false;
       error: CreateAccountLandingPageError;
     };
+
+export const ACCOUNT_LANDING_PAGE_ONBOARDING_CATALOG_VERSION = 2;
+
+export type AccountLandingPageOnboardingStoredValue = Readonly<{
+  scope: LandingPageInputValueScope;
+  value: unknown;
+}>;
+
+export type AccountLandingPageOnboardingStoredValues = Readonly<
+  Record<string, AccountLandingPageOnboardingStoredValue>
+>;
+
+export type AccountLandingPageOnboardingValueSource =
+  | "authoritative"
+  | "configuration"
+  | "missing";
+
+export type AccountLandingPageOnboardingFieldState = Readonly<{
+  field: ResolvedLandingPageInputField;
+  source: AccountLandingPageOnboardingValueSource;
+  value?: unknown;
+  applicable: boolean;
+  required: boolean;
+}>;
+
+export type AccountLandingPageOnboardingConfiguration = Readonly<{
+  accountId: string;
+  landingPageId: string | null;
+  catalogVersion: number;
+  revision: number;
+  planKey: LandingPageInputCatalogPlan;
+  taxonChain: LandingPageInputCatalogTaxonChain;
+  storedValues: AccountLandingPageOnboardingStoredValues;
+  fields: readonly AccountLandingPageOnboardingFieldState[];
+  missingRequiredFieldKeys: readonly string[];
+  complete: boolean;
+}>;
+
+export type AccountLandingPageOnboardingErrorCode =
+  | "unauthenticated"
+  | "invalid_account_id"
+  | "account_not_found"
+  | "account_not_active"
+  | "membership_inactive"
+  | "commercial_entitlement_required"
+  | "taxon_unavailable"
+  | "catalog_unavailable"
+  | "configuration_unavailable"
+  | "configuration_not_found"
+  | "invalid_configuration"
+  | "invalid_values"
+  | "revision_conflict"
+  | "read_failed"
+  | "write_failed";
+
+export type AccountLandingPageOnboardingResult =
+  | Readonly<{
+      ok: true;
+      configuration: AccountLandingPageOnboardingConfiguration;
+    }>
+  | Readonly<{
+      ok: false;
+      error: AccountLandingPageOnboardingErrorCode;
+      fieldKey?: string;
+    }>;
+
+export type SaveAccountLandingPageOnboardingConfigurationInput = Readonly<{
+  accountId: string;
+  catalogVersion: number;
+  expectedRevision: number;
+  values: AccountLandingPageOnboardingStoredValues;
+}>;
