@@ -3,7 +3,7 @@
 ## 1. Referências congeladas
 
 - Plano-base v1: `8b58926043b28f8b900817a623fb8330bb84645b:docs/lousa-plano-base-e9-7.md`, blob `9d1e278310f097d4a1197d9bd7daae236b473305`.
-- Plano-base v2: checkpoint `9651912acd677404024543e5faedd150863f4f0a` e delta obrigatório da Passagem 1 ainda não commitado na criação desta matriz.
+- Plano-base v2 consolidada: `ea3ed9edf4869162af654a5eecadab3ef8e13ebd:docs/lousa-plano-base-e9-7.md`, blob `277847d0bf4aaa07b6bedf63bc4551939082e231`; checkpoint anterior às correções da Passagem 1: `9651912acd677404024543e5faedd150863f4f0a`.
 - Plano conceitual: PR #691, head `4c86e9d7001b35c8314ca125b59ec3d98f90a33e`, decisões `L-014`, `L-015` e `C-003`.
 - Roadmap/base: merge do PR #693, `8b58926043b28f8b900817a623fb8330bb84645b`.
 - Decisões humanas: `DHE9.7-01: 2` e `DHE9.7-02: 2`.
@@ -20,10 +20,10 @@
 | Gestor Estrutural | `GE-E9.7-006` | Roadmap já havia sido reconciliado no PR #693. | Não bloqueante | Correção documental | Removida a tarefa repetida; preservado apenas o ABC posterior à aprovação. | Plano §3.4 | Merge `8b58926043b28f8b900817a623fb8330bb84645b`. |
 | Gestor Updates | `supa#20` | Histórico de grants locais e trava contra presumir `model_grants`. | Atual, complementar; usar como referência/validação/trava | Direta | Aplicado como fonte e trava; adaptado à decisão humana que limita §3.11 neste contrato. | Plano §§0.2 e 1.6 | Não autoriza banco, `model_grants`, snapshot ou segundo resolver. |
 | Gestor Updates | `prod#19` | Stripe Entitlements como benchmark, não autoridade runtime. | Atual, complementar; usar como referência/trava | Direta | Aplicado mecanicamente como fonte e trava de autoridade local. | Plano §§0.2 e 2.4.6 | Nenhuma adoção ou integração Stripe. |
-| Gestor Updates | `supa#61` | SSO empresarial por OAuth/OIDC customizado. | Oportunidade estratégica condicional | Futura e fora do recorte | Preservado somente nesta matriz; não entra no plano executável nem no catálogo runtime. | N/A nesta v2 | Gatilho futuro: demanda enterprise formal. |
-| Gestor Updates | `prod#1` | SSO Self-Service. | Oportunidade estratégica condicional | Futura e fora do recorte | Preservado somente nesta matriz; sem UI, integração ou promessa comercial. | N/A nesta v2 | Gatilho futuro: demanda enterprise administrável. |
-| Gestor Updates | `prod#15` | Microeventos e progressão por plano. | Oportunidade estratégica condicional | Futura e fora do recorte | Preservado somente nesta matriz; nenhum evento ou capacidade foi admitido. | N/A nesta v2 | Depende de pergunta de negócio, ação e governança próprias. |
-| Gestor Updates | `prod#23` | Capacidades oficiais de WhatsApp. | Oportunidade estratégica condicional, sobreposta | Futura e fora do recorte | Preservado somente nesta matriz; nenhuma integração, webhook ou automação. | N/A nesta v2 | Depende de caso real, operação e comparação aprovada. |
+| Gestor Updates | `supa#61` | SSO empresarial por OAuth/OIDC customizado. | Oportunidade estratégica condicional | Futura e fora do recorte | Preservado em `docs/supa-up.md`, `supa#61`; sem delta no plano ou catálogo runtime. | `docs/supa-up.md`, `supa#61` | Gatilho futuro: demanda enterprise formal. |
+| Gestor Updates | `prod#1` | SSO Self-Service. | Oportunidade estratégica condicional | Futura e fora do recorte | Preservado em `docs/prod-up.md`, `prod#1`; sem UI, integração ou promessa comercial. | `docs/prod-up.md`, `prod#1` | Gatilho futuro: demanda enterprise administrável. |
+| Gestor Updates | `prod#15` | Microeventos e progressão por plano. | Oportunidade estratégica condicional | Futura e fora do recorte | Preservado em `docs/prod-up.md`, `prod#15`; nenhum evento ou capacidade foi admitido. | `docs/prod-up.md`, `prod#15` | Depende de pergunta de negócio, ação e governança próprias. |
+| Gestor Updates | `prod#23` | Capacidades oficiais de WhatsApp. | Oportunidade estratégica condicional, sobreposta | Futura e fora do recorte | Preservado em `docs/prod-up.md`, `prod#23`; nenhuma integração, webhook ou automação. | `docs/prod-up.md`, `prod#23` | Depende de caso real, operação e comparação aprovada. |
 | Gestor Updates | `supa#32` | Stripe Sync Engine como autoridade da E9.7. | Incompatível; não aplicável | Contraria autoridade local | Rejeitado no recorte. | N/A | Não instalado; não resolve entitlement ou capacidade. |
 | Gestor Updates | `vercel#20` | Vercel Flags como fonte comercial. | Incompatível; não aplicável | Criaria resolver paralelo | Rejeitado no recorte. | N/A | Rollout/targeting não equivale a capacidade comercial. |
 | Gestor Updates | `github:N/A` | Nenhum update proporcional e específico. | Não aplicável | Sem relação material | Nenhum delta. | N/A | Parecer do Gestor Updates. |
