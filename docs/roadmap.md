@@ -2267,7 +2267,7 @@ Repositório — Ajustados
 
 19.2.1 Objetivo e status
 - Objetivo: Criar a experiência pós-entitlement que configura a conta e os valores mínimos necessários para iniciar a primeira LP Starter, sem gerar conteúdo, materializar a LP final ou publicar.
-- Status: Em implementação; E19.2.3 possui implementação candidata no PR #700, com apply e validação hospedada da migration pendentes do merge humano.
+- Status: Em implementação; E19.2.3 possui checkpoint aprovado no PR #700 e E19.2.4 possui implementação candidata no mesmo PR, com apply da migration e validação hospedada autenticada pendentes do merge humano.
 
 19.2.2 Registros do recorte
 - Repositório:
@@ -2276,19 +2276,27 @@ Repositório — Ajustados
     - `lib/lp-builder/adapters/onboardingConfigurationAdapter.ts`
     - `lib/lp-builder/adapters/onboardingConfigurationAdapterCore.ts`
     - `lib/lp-builder/validation-cases.ts`
+    - `app/a/[account]/_components/OnboardingConfigurationJourney.tsx`
+    - `app/a/[account]/_components/onboarding-configuration-action-contract.ts`
+    - `app/a/[account]/_components/onboarding-journey-policy.ts`
+    - `app/a/[account]/_components/onboarding-journey-validation-cases.ts`
+    - `app/a/[account]/onboarding-configuration-actions.ts`
     - `supabase/migrations/20260807162417_e19_2_3_account_landing_page_onboarding_configuration.sql`
     - `supabase/snippets/e19_2_3_account_landing_page_onboarding_configuration_verify.sql`
     - `supabase/tests/e19_2_3_account_landing_page_onboarding_configuration.test.sql`
   - Ajustados:
     - `lib/lp-builder/contracts.ts`
     - `lib/lp-builder/index.ts`
+    - `app/a/[account]/page.tsx`
     - `package.json`
 - Updates:
   - Aplicados:
     - `supa#40`
+    - `prod#14`
+    - `prod#17`
 
 19.2.3 Contrato de configuração, completude e persistência mínima
-- Status: Implementação candidata no PR #700; migration versionada, apply e validação SQL hospedada pendentes do merge humano.
+- Status: Checkpoint implementado e aprovado no PR #700; migration versionada, apply e validação SQL hospedada pendentes do merge humano.
 - Conteúdo:
   - O boundary `lib/lp-builder/` resolve o catálogo E20.2 por versão e taxonomia autoritativa, valida valores por `fieldKey` e escopo, reutiliza fontes autoritativas sem duplicá-las e deriva completude sem `onboarding_status`.
   - A persistência candidata usa um agregado 1:1 por conta, revisão otimista, FK tenant-safe e vínculo de `landing_page_id` write-once; o Data API permanece restrito ao adapter server-only com `service_role`, sem grants de cliente ou DELETE operacional.
@@ -2297,7 +2305,12 @@ Repositório — Ajustados
 
 19.2.4 Jornada guiada pós-entitlement e retomada
 - Objetivo: Substituir a permanência na experiência comercial por uma jornada curta de onboarding quando a conta elegível estiver incompleta.
-- Status: Planejada.
+- Status: Implementação candidata no PR #700; validação visual autenticada em Preview permanece pendente do merge/apply.
+- Conteúdo:
+  - A superfície autenticada deriva os estados comercial, onboarding, operacional e bloqueado a partir de papel, entitlement e configuração; conta sem entitlement preserva a experiência comercial e objeto de configuração ainda indisponível mantém o fallback anterior.
+  - Owner ou admin elegível com configuração incompleta recebe uma jornada responsiva em dois passos, com taxon somente leitura, valores autoritativos reutilizados e campos existentes derivados do catálogo E20.2, sem lista de domínio paralela.
+  - Avançar, voltar e sair salvam o agregado por Server Action fina e boundary `lib/lp-builder/`; erro localizado preserva os demais valores e conflito de revisão solicita recarga explícita.
+  - A jornada usa componentes vigentes, associação entre label, hint e erro, foco após transição ou falha, alvos de ação ampliados e operação por teclado; identidade visual, logo, draft, geração, tracking e IA permanecem fora desta subseção.
 
 19.2.5 Identidade visual mínima da conta
 - Objetivo: Permitir confirmar a identidade visual mínima necessária ao Starter sem IA e sem tornar logo obrigatório.
