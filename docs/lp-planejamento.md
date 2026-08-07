@@ -127,12 +127,12 @@ Fontes de referência: `README.md`, `docs/roadmap.md`, `docs/base-tecnica.md`, `
 ### 1.9. Configurar identidade visual e preparar a geração posterior
 
 - A E19.2 coleta e confirma a configuração mínima da conta e o brief da primeira LP Starter; não gera conteúdo da LP.
-- A logo é opcional e pode orientar a sugestão visual, mas suas cores não limitam obrigatoriamente a LP.
-- Com logo, o sistema usa suas cores como candidatas; sem logo, utiliza a orientação visual resolvida para o taxon e o contexto da LP.
-- A sugestão de paleta considera logo, quando houver, itens estruturais de `lp_overview` como `visual_tone`, `color_direction`, `image_style` e `typography_direction`, e os limites visuais da E18.4.
+- A logo é opcional e pode orientar a proposta visual, mas suas cores não limitam obrigatoriamente a LP.
+- Com logo, o sistema pode usar suas cores como candidatas; sem logo, usa a orientação visual resolvida para o taxon e o contexto da LP para apresentar poucas paletas pré-validadas.
+- Na E19.2 v1, a proposta inicial de paleta é manual ou determinística e pode considerar logo, quando houver, itens estruturais de `lp_overview` como `visual_tone`, `color_direction`, `image_style` e `typography_direction`, e os limites visuais da E18.4, sem depender de IA.
 - A paleta apresenta funções compreensíveis para cor principal, secundária e de destaque, além de combinações acessíveis de fundo e texto.
-- A conta pode aceitar, reorganizar, alterar ou solicitar outra sugestão; cada nova sugestão assistida é uma ação explícita e não cria conversa persistente ou memória própria.
-- Contraste, legibilidade, foco e demais limites de acessibilidade permanecem validados deterministicamente; assistência por IA não pode aprovar combinação incompatível.
+- A conta pode aceitar, reorganizar, alterar ou escolher outra opção pré-validada; o fluxo separa proposta, edição e confirmação para que a origem da proposta possa evoluir sem alterar o contrato final.
+- Contraste, legibilidade, foco e demais limites de acessibilidade permanecem validados deterministicamente.
 - A paleta confirmada funciona como padrão reutilizável da conta, sem impedir outra escolha em uma LP específica.
 - O plano-base da E19.2 define o contrato de logo, armazenamento seguro do asset, formatos, limites, remoção e persistência da paleta, sem presumir que uma URL livre ou JSON existente resolva o domínio.
 - Ao concluir o onboarding, a conta fica apta a criar ou selecionar a identidade mínima de uma LP `draft` pelo fluxo vigente da E19.1.
@@ -244,7 +244,8 @@ Fontes de referência: `README.md`, `docs/roadmap.md`, `docs/base-tecnica.md`, `
 - Reutilizar nome, contatos, site, taxon e demais valores existentes quando válidos e solicitar somente os dados ausentes.
 - Coletar separadamente valores da conta ou negócio e valores específicos da primeira LP.
 - Exigir para Starter serviço ou oferta principal e descrição factual curta; manter logo opcional.
-- Sugerir e confirmar paleta visual conforme a seção 1.9, preservando possibilidade de alteração e override por LP.
+- Apresentar e confirmar a paleta visual conforme a seção 1.9 por caminho manual ou determinístico na E19.2 v1, preservando possibilidade de alteração e override por LP.
+- A E19.2 v1 deve permanecer integralmente utilizável sem IA; assistência futura pode produzir candidatas sem alterar os contratos da E20.2 nem a confirmação humana.
 - Aplicar progressive disclosure conforme as capacidades efetivas resolvidas pela E9, sem hardcode do nome do plano.
 - Organizar configurações reutilizáveis de conta em seletor ou área própria depois do primeiro onboarding.
 - Separar configuração padrão de tracking no nível da conta da associação e mensuração específicas da LP.
@@ -336,6 +337,7 @@ Fontes de referência: `README.md`, `docs/roadmap.md`, `docs/base-tecnica.md`, `
 
 - A E19.1 mantém a identidade mínima da LP real em `draft` e os gates já implementados.
 - A E19.2 implementa o onboarding pós-entitlement, coleta e confirmação dos valores mínimos Starter, identidade visual, configuração de tracking por nível e preparação do brief, sem gerar conteúdo.
+- A E19.2 v1 deve permanecer utilizável sem IA; propostas futuras por IA devem produzir candidatas editáveis e confirmáveis, sem alterar contratos, ownership ou completude.
 - A E19.2 consome capacidades e limites resolvidos pela E9 para controlar progressive disclosure e impedir hardcode do plano.
 - Uma evolução posterior da E19 compõe o pacote atual de fontes e gera e mantém a LP real da conta com entitlement válido.
 - Conta piloto e cliente usam o mesmo onboarding e o mesmo fluxo; o entitlement manual válido permite o piloto antes da disponibilidade pública.
@@ -347,3 +349,18 @@ Fontes de referência: `README.md`, `docs/roadmap.md`, `docs/base-tecnica.md`, `
 - O catálogo começa pelo Starter e evolui para Lite, Pro e Ultra por chaves estáveis e limites explícitos.
 - A E9 não implementa os recursos dos domínios consumidores; entrega o contrato resolvido que cada domínio aplica server-side.
 - Disponibilidade comercial por taxon, entitlement da conta e capacidades do plano permanecem separados.
+
+## 5. Evoluções prioritárias após a primeira LP real
+
+- Gatilho comum: reavaliar somente após gerar e validar a primeira LP real pelo fluxo oficial, sem competir com o caminho crítico atual.
+
+### 5.1. `pending_setup` e taxon assistidos por IA
+
+- Reavaliar E10.4/E10.5.6 para uma experiência conversacional assistida por IA sobre negócio e oferta, com dois objetivos: apoiar a precisão e confirmação do taxon pelo fluxo autoritativo existente e gerar encantamento na primeira experiência relevante do lead.
+- A evolução deve reutilizar o pipeline de resolução vigente; a IA não cria nem altera silenciosamente o taxon, e a E19 continua apenas consumindo o taxon autoritativo.
+
+### 5.2. Assistência por IA na configuração da LP
+
+- Manter a E19.2 v1 integralmente utilizável sem IA; após a primeira LP validada, avaliar assistência opcional para serviço/oferta e identidade visual.
+- A IA futura produz somente candidatas; o cliente edita e confirma, enquanto campos, ownership, validação e completude da E20.2 permanecem inalterados.
+- O desenho atual deve separar a origem da proposta do valor confirmado para permitir essa evolução sem reconstruir domínio, persistência ou jornada.
