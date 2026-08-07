@@ -2,7 +2,7 @@
 
 0.1 Cabeçalho
 • Data: 06/08/2026
-• Versão: v1.5.125
+• Versão: v1.5.126
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -564,6 +564,36 @@
 
 9.6.4 Fora do escopo atual
 • Permanece fora do escopo atual.
+
+9.7 Catálogo canônico de capacidades e limites por plano
+
+9.7.1 Objetivo e status
+- Objetivo: definir e resolver um contrato canônico único que traduza o plano efetivo da conta em capacidades, níveis, limites e sinais suficientes para os domínios consumidores decidirem quais configurações podem ser apresentadas.
+- Status: Planejado.
+
+9.7.3 Contrato canônico e fonte de resolução
+- Status: Planejado.
+- Conteúdo:
+  - definir a identificação mínima de cada capacidade por chave estável, nome ou descrição, categoria classificatória, tipo com contrato de valor inequívoco e domínio consumidor;
+  - adotar inicialmente capacidades booleanas, de nível fechado ou de limite numérico;
+  - escolher uma única fonte canônica compatível com a arquitetura vigente e uma resolução fail-closed por `planKey`, sem hardcode disperso nem solução paralela para features ou grants;
+  - manter capacidades candidatas ou ainda em avaliação fora do catálogo canônico.
+
+9.7.4 Catálogo inicial do Starter
+- Status: Planejado.
+- Conteúdo:
+  - incluir somente capacidades admitidas por decisão humana, com consumidor real existente ou já aprovado para a jornada imediata;
+  - registrar separadamente a definição da capacidade e seu valor aprovado para o Starter;
+  - manter capacidades ainda candidatas como dependências, sem completar Lite, Pro ou Ultra por extrapolação;
+  - distinguir capacidade admitida, consumidor capaz de aplicá-la e recurso efetivamente existente.
+
+9.7.5 Resolução e contrato de consumo pelo plano efetivo
+- Status: Planejado.
+- Conteúdo:
+  - resolver o contrato canônico a partir do `planKey` efetivo fornecido pelo entitlement;
+  - disponibilizar contrato server-side determinístico para os domínios consumidores, preservando no consumidor a medição de uso e a aplicação do gate no ponto da ação;
+  - manter entitlement como prova do plano e a E9.7 como prova da capacidade, sem inferência de comportamento pela UI a partir do nome do plano;
+  - falhar fechado para plano, capacidade, associação ou valor ausente, desconhecido ou inválido.
 
 10. E10 — Account Dashboard (UX)
 
