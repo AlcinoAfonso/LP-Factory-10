@@ -412,3 +412,61 @@ O debate deverá:
   - O humano definiu que a posição comercial de um recurso deve ser decidida a partir de sua existência e avaliação prática, considerando custo e complexidade reais, sem cristalizar antecipadamente seu plano definitivo.
 - Referências:
   - L-005; L-009; L-013; C-002; debate humano de 06/08/2026.
+
+### L-015 — Fechamento conceitual da E9.7
+
+- Chat: E9 Estrategista — consolidação final
+- Data e hora: 06/08/2026 21:12 — horário de Brasília
+- Situação: definido
+- Posição:
+  - O fluxo de admissão fica definido como `candidata → avaliação → decisão humana`; identificação, implementação e teste em LP real são meios possíveis da avaliação quando aplicáveis, não etapas obrigatórias para toda capacidade.
+  - Candidatas e itens em avaliação permanecem fora do catálogo canônico; somente capacidades admitidas entram no catálogo, e associação/valor por plano são decisões independentes da definição da capacidade.
+  - A definição canônica mínima contém chave estável, nome/descrição, categoria classificatória, tipo com contrato de valor e domínio consumidor; categoria não funciona como gate.
+  - Os tipos iniciais ficam definidos como `booleano`, `nível fechado` e `limite numérico`; não haverá quarto tipo sem consumidor real que o exija.
+  - No Starter, somente capacidade admitida entra no catálogo; necessidade ainda não admitida permanece dependência/candidata até decisão humana. Limite contratual pode ser admitido sem desenvolver recurso novo quando houver domínio consumidor capaz de aplicá-lo.
+  - Devem permanecer distintos: capacidade/regra admitida, domínio consumidor capaz de aplicá-la e implementação efetivamente existente quando a capacidade exigir implementação.
+  - Snapshot, upgrade, downgrade, grandfathering, add-ons, exceções por conta, retirada/versionamento detalhado e armazenamento permanecem posteriores; o humano confirmou o encerramento do debate e a passagem ao item 2 do `prompt-estrategista.md`.
+- Fundamento:
+  - O Analista aprovou as quatro decisões conceituais com ajustes focais, e o humano confirmou expressamente que o debate pode ser encerrado.
+- Referências:
+  - L-014; C-002; `README.md`; `docs/prompt-estrategista.md`; PR #692; debate humano e parecer do Analista de 06/08/2026.
+
+### C-003 — Consolidação final até L-015
+
+- Data e hora: 06/08/2026 21:12 — horário de Brasília
+- Definido:
+  - Recorte: `E9.7`.
+  - Problema: o produto já resolve o plano efetivo da conta, mas ainda não possui contrato canônico único que traduza esse plano em capacidades, níveis, limites, configurações apresentáveis e gates consumíveis sem hardcode pelos domínios.
+  - Resultado esperado: estabelecer o contrato conceitual e o primeiro catálogo executável incremental, começando pelo Starter, mantendo separadas admissão, associação ao plano e implementação pelos consumidores.
+  - Usuários e atores: o humano responsável pelas decisões de produto admite capacidades e decide associação a plano; os domínios consumidores usam o contrato resolvido e aplicam seus próprios gates; a conta cliente recebe os efeitos indiretamente pela experiência do produto.
+  - Fluxo de admissão: `candidata → avaliação → decisão humana`; somente capacidade admitida entra no catálogo canônico.
+  - Atributos mínimos: chave estável, nome/descrição, categoria classificatória, tipo com contrato de valor e domínio consumidor.
+  - Tipos iniciais: `booleano`, `nível fechado` e `limite numérico`.
+  - Starter inicial: somente capacidades admitidas, com consumidor real existente ou já aprovado para a jornada imediata; capacidade indispensável ainda candidata permanece dependência até admissão humana.
+  - Fronteiras: entitlement informa o plano efetivo; E9 resolve o que ele permite; E20.2 governa dados de entrada; E19 e futuros domínios consumidores implementam, medem uso e aplicam gates; disponibilidade comercial por `taxon + plano` permanece separada.
+  - Automação/agentes: não. O recorte é contratual e determinístico e não exige processo assíncrono, rotina recorrente ou agente.
+  - Subsections previstas para o recorte: `E9.7.3 — Contrato canônico e admissão de capacidades`; `E9.7.4 — Catálogo inicial do Starter`; `E9.7.5 — Resolução e consumo por plano efetivo`, sujeitas ao detalhamento do plano-base conforme `docs/template-roadmap.md`.
+- Limites:
+  - Não implementar neste debate capacidades como tracking, Analytics, CRM, integrações, IA, publicação ou Teste A/B apenas para preencher o catálogo.
+  - Não fechar Lite, Pro ou Ultra completos e não transformar radar amplo em promessa comercial.
+  - Não decidir armazenamento, tabela, migration, rota, UI administrativa ou nova infraestrutura antes do plano-base.
+  - Snapshot, upgrade/downgrade, grandfathering, add-ons, exceções por conta, retirada e versionamento detalhado permanecem fora do caminho crítico inicial.
+- Riscos:
+  - catálogo especulativo sem consumidor real;
+  - confundir capacidade admitida com implementação operacional existente;
+  - hardcode de nomes de plano nos consumidores ou na UI;
+  - misturar entitlement, capacidade por plano e disponibilidade comercial por taxon;
+  - cristalizar categoria, armazenamento ou lifecycle técnico antes de necessidade real.
+- Em definição:
+  - Nenhuma decisão conceitual bloqueante permanece para encerrar o item 1 do `docs/prompt-estrategista.md`.
+- Pendências posteriores:
+  - definição física de armazenamento e resolução;
+  - conteúdo progressivo de Lite, Pro e Ultra;
+  - snapshot e regras de evolução contratual;
+  - upgrade/downgrade, grandfathering, add-ons e exceções por conta;
+  - capacidades futuras identificadas pelo radar e seus respectivos consumidores reais.
+- Divergências:
+  - Nenhuma material permanece aberta.
+- Próxima ação:
+  - Seguir ao item 2 do `docs/prompt-estrategista.md` e usar `docs/lousa-plano-base-e9-7.md` como path do novo plano-base; o PR #692 já removeu o plano histórico que ocupava esse path.
+  - O PR #691 permanece apenas como registro temporário até a transferência das decisões para o plano-base e então deve ser fechado sem merge, conforme sua regra de governança.
