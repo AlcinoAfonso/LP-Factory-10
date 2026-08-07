@@ -587,7 +587,6 @@
     - `prod#19`
 - Referências:
   - Plano-base v2: `docs/lousa-plano-base-e9-7.md` — seção 3.1.
-  - Consolidação dos pareceres: `docs/matriz-consolidacao-e9-7.md` — seções 2 e 3.
   - Contrato técnico: `docs/base-tecnica.md` — seção 3.11.
 
 9.7.3 Contrato canônico e fonte de resolução
