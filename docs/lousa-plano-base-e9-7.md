@@ -1,4 +1,4 @@
-06/08/2026 — Plano-base E9.7 v1 — Catálogo canônico de capacidades e limites por plano
+06/08/2026 — Plano-base E9.7 v2 — Catálogo canônico de capacidades e limites por plano
 
 ## 0. Identificação e fontes
 
@@ -7,9 +7,9 @@
 - Recorte: `E9.7`.
 - Path: `docs/lousa-plano-base-e9-7.md`.
 - Plano conceitual: https://github.com/AlcinoAfonso/LP-Factory-10/pull/691
-- Natureza: plano-base v1.
+- Natureza: plano-base v2 candidata à aprovação para execução restrita à E9.7.3.
 - Automação do recorte: não.
-- Frontend próprio da E9.7: N/A nesta v1.
+- Frontend próprio da E9.7: N/A nesta v2.
 
 ### 0.2. Documentação usada
 
@@ -21,6 +21,8 @@
 - `docs/schema.md` — estado real de `public.plans`, `account_commercial_entitlements` e `account_landing_pages`.
 - `docs/prompt-abc.md` — atualização documental do roadmap durante a execução.
 - PR #691 — debate conceitual temporário, especialmente `L-014`, `L-015` e `C-003`.
+- `docs/supa-up.md`, `supa#20` — registro da evolução de grants por plano para entitlements locais; usado somente como referência e trava contra presumir ou recriar `model_grants`.
+- `docs/prod-up.md`, `prod#19` — Stripe Entitlements como benchmark de feature access e trava contra substituir a autoridade local de entitlement e capacidades.
 
 ## 1. Estado e decisões fixas
 
@@ -70,23 +72,35 @@
 - Somente entram capacidades admitidas com consumidor real existente ou já aprovado para a jornada imediata.
 - Uma capacidade necessária, mas ainda não admitida, permanece dependência/candidata até decisão humana.
 - Limite contratual pode ser admitido sem desenvolvimento de recurso novo quando houver domínio consumidor capaz de aplicá-lo e valor aprovado.
-- A E9.7 não fecha nesta v1 todo o pacote comercial do Starter; `README.md` mantém Starter mínimo como definição estratégica progressiva.
+- Nenhuma capacidade Starter possui, nas fontes atuais, chave, valor e consumidor conjuntamente admitidos; a E9.7.3 não deve criar entrada runtime para preencher essa lacuna.
+- A E9.7 não fecha nesta v2 todo o pacote comercial do Starter; `README.md` mantém Starter mínimo como definição estratégica progressiva.
+- E9.7.4 e E9.7.5 permanecem planejadas e fora da execução atual até nova decisão humana de admissão.
 
 ### 1.6. Estado técnico que deve ser reconciliado
 
 - `CommercialEntitlementSignal` já expõe `isCommerciallyEligible`, `effectiveStatus` e `planKey`.
 - `public.plans` possui metadados e limites parciais, mas `docs/schema.md` declara que essa tabela não é fonte suficiente para todo o contrato comercial.
 - `docs/base-tecnica.md` proíbe hardcode disperso de lógica de planos/limites e prescreve uma resolução por feature/grant.
-- A inspeção atual do repositório e do schema não identificou implementação materializada de `get_feature(account_id, feature_key)`; a E9.7 não deve presumir que esse mecanismo já exista nem criar um segundo sistema paralelo sem reconciliar essa regra.
-- A forma física da fonte canônica não é fixada nesta v1; a E9.7.3 deve escolher a menor solução compatível com o estado real e devolver ao Estrategista qualquer necessidade de nova tabela, rota, UI, serviço, job, agente, automação ou infraestrutura.
+- A inspeção atual do repositório e do schema não identificou implementação materializada de `get_feature(account_id, feature_key)` nem de snapshot de recursos por conta.
+- Por decisão humana `DHE9.7-01: 2`, a regra de `docs/base-tecnica.md` §3.11 não é autoridade runtime deste contrato enquanto permanecer não materializada; a E9.7.3 deve limitar formalmente essa regra na Base Técnica e não recriar grants, overrides ou snapshots.
+- A fonte canônica será repo-only no boundary transversal próprio `lib/commercial-capabilities/`, separado de `lib/commercial-entitlements/`, que continua responsável apenas pelo plano efetivo.
+- `lib/access/plan.ts`, `accounts.plan_id`, `get_account_effective_limits`, `public.plans` isoladamente e um segundo resolver não podem ser usados como fonte ou gate da E9.7.
+- A reconciliação da E9.7.3 deve tratar `supa#20` apenas como registro da evolução de grants para entitlements locais: o item não prova a existência de `model_grants`, não autoriza criá-la e não dispensa confirmar, no repositório e no schema, como a regra vigente de `get_feature(account_id, feature_key)` e o snapshot de recursos por conta serão preservados. Para este recorte, essa preservação ocorre pela limitação documental explícita de §3.11; um catálogo global mutável consultado diretamente por `planKey` ou um segundo resolver paralelo não satisfaz o contrato.
+
+### 1.7. Decisões humanas que destravaram a v2
+
+- `DHE9.7-01: 2` — aprovar fonte repo-only por `planKey` em boundary transversal próprio e limitar formalmente `docs/base-tecnica.md` §3.11 para este contrato, sem banco, `get_feature`, hierarquia de overrides ou snapshot.
+- `DHE9.7-02: 2` — executar somente E9.7.3; manter E9.7.4 e E9.7.5 planejadas até capacidades Starter serem admitidas por decisão humana.
+- Essas decisões não admitem capacidade, valor, consumidor ou resultado funcional por inferência.
 
 ## 2. Contrato do caso
 
 ### 2.1. Resultado esperado
 
 - Disponibilizar uma fonte canônica única e um contrato server-side determinístico capazes de transformar o plano efetivo em capacidades, níveis, limites e sinais suficientes para que consumidores decidam configurações apresentáveis.
-- Entregar o primeiro catálogo incremental do Starter sem antecipar Lite, Pro ou Ultra completos.
-- Permitir que consumidores reais consultem o contrato sem hardcode de nomes de plano e sem usar `public.plans` isoladamente como gate funcional.
+- Nesta execução, materializar apenas o contrato, a fonte repo-only e a resolução fail-closed da E9.7.3, sem entradas runtime de capacidade.
+- Preparar o boundary para que a futura E9.7.4 entregue o primeiro catálogo incremental do Starter e a futura E9.7.5 conecte consumidores reais, sem antecipar Lite, Pro ou Ultra completos.
+- Não integrar consumidor real nem usar `public.plans` isoladamente como gate funcional nesta execução.
 - Preservar nos consumidores a definição dos campos concretos, dos valores de entrada e da UI associada às configurações apresentadas.
 
 ### 2.2. Usuários e atores
@@ -145,9 +159,10 @@
 #### 2.4.5. Persistência
 
 - Registrar a definição canônica da capacidade e sua associação/valor por plano em uma única fonte canônica.
-- A forma física será determinada na E9.7.3 a partir da arquitetura real.
-- Eventual versionamento físico ou mecanismo equivalente será definido somente se necessário na E9.7.3 ou em evolução posterior.
-- Não criar nova persistência de banco na v1 sem fonte técnica real e decisão de escopo correspondente.
+- A forma física desta execução é repo-only, em `lib/commercial-capabilities/`.
+- A fonte runtime inicial permanece sem capacidades admitidas; fixtures de teste não integram o catálogo canônico.
+- Eventual versionamento, snapshot ou persistência serão definidos somente em evolução posterior aprovada.
+- Não criar tabela, migration ou outra persistência de banco na E9.7.3.
 
 #### 2.4.6. Consumo
 
@@ -155,6 +170,7 @@
 - A E9.7 fornece permissão, nível ou limite, inclusive como sinal para o consumidor decidir quais configurações podem ser apresentadas.
 - O consumidor mede o estado/uso do próprio domínio, define os campos e a UI quando aplicável e aplica a regra server-side.
 - A E9.7 não conta drafts, publicações, conversões, membros ou outros usos pertencentes aos consumidores.
+- `prod#19` permanece referência e trava: Stripe Entitlements pode orientar a modelagem de feature access, mas não é autoridade de runtime; nenhum consumidor consulta Stripe, tabela sincronizada ou feature externa para decidir capacidade. A autoridade permanece no plano efetivo persistido localmente e na resolução canônica da E9.7.
 
 #### 2.4.7. Fallback
 
@@ -166,7 +182,7 @@
 
 ### 2.5. Frontend
 
-- N/A nesta v1.
+- N/A nesta v2.
 - Não criar Admin Dashboard de capacidades, editor de catálogo ou UI de gestão neste recorte.
 - Caso uma superfície administrativa se torne necessária, devolver ao Estrategista antes de incluí-la.
 
@@ -179,23 +195,27 @@
 - Objetivo:
   - materializar o contrato canônico mínimo e a fonte única de resolução sem criar sistema paralelo ao contrato técnico vigente.
 - Entrega:
-  - confirmar classificação, boundary e path canônico na arquitetura real antes de criar artefatos;
-  - reconciliar a prescrição de feature/grant de `docs/base-tecnica.md` com o que efetivamente existe no repositório e no schema;
-  - materializar tipos e validações para chave, categoria, tipo, contrato de valor e domínio consumidor;
-  - materializar resolução fail-closed por `planKey` sem hardcode disperso nos consumidores;
+  - criar o boundary transversal `lib/commercial-capabilities/`, com `contracts.ts`, `registry.ts`, `resolve.ts` e `index.ts` como API pública;
+  - limitar formalmente em `docs/base-tecnica.md` §3.11 a prescrição não materializada de `get_feature`, hierarquia e snapshot, registrando `lib/commercial-capabilities/` como fonte canônica deste contrato;
+  - materializar tipos discriminados e validações para chave, categoria, `booleano`, `nível fechado`, `limite numérico`, contrato de valor e domínio consumidor;
+  - manter `registry.ts` como única fonte repo-only, inicialmente sem capacidades runtime admitidas;
+  - expor resolução determinística por `{ planKey, capabilityKey }`, com resultado discriminado e fail-closed, sem buscar entitlement, banco ou Stripe;
   - manter candidatas e avaliação fora da fonte runtime canônica;
-  - criar testes aplicáveis para capacidade/plano conhecido, desconhecido e valor inválido.
+  - criar fixtures isoladas e testes aplicáveis para contrato válido, plano/capacidade desconhecidos, valor inválido, duplicidade e fonte runtime vazia;
+  - criar validador dedicado e integrá-lo ao `npm run check`.
 - Critérios de aceite:
-  - existe uma única fonte de definição/resolução aprovada;
+  - `lib/commercial-capabilities/registry.ts` é a única fonte de definição/resolução aprovada e não contém capacidade runtime sem admissão humana;
   - nenhum consumidor precisa interpretar nome de plano para conhecer uma capacidade;
   - plano/capacidade/valor inválido falham fechado;
-  - não existe segunda solução concorrente para grants/features;
-  - nenhuma nova tabela, rota, UI, serviço, job, agente, automação ou infraestrutura é criada sem retorno explícito ao Estrategista.
+  - `lib/commercial-entitlements/` não é alterado para representar capacidade e nenhuma integração de consumidor é criada;
+  - não existe segunda solução concorrente para grants/features nem dependência de `lib/access/plan.ts`, `accounts.plan_id`, `get_account_effective_limits`, `public.plans` ou Stripe;
+  - nenhuma tabela, migration, rota, UI, serviço, job, agente, automação ou infraestrutura é criada.
 
 ### 3.2. E9.7.4 — Catálogo inicial do Starter
 
 - Status: planejada.
 - Automação: não.
+- Execução nesta v2: bloqueada por `DHE9.7-02: 2`, até existir nova admissão humana com chave, valor e consumidor.
 - Objetivo:
   - preencher o primeiro contrato Starter somente com capacidades e limites admitidos e verificáveis.
 - Entrega:
@@ -215,6 +235,7 @@
 
 - Status: planejada.
 - Automação: não.
+- Execução nesta v2: bloqueada por `DHE9.7-02: 2` e pela E9.7.4 ainda sem catálogo admitido.
 - Objetivo:
   - conectar o `planKey` efetivo do entitlement ao contrato canônico e disponibilizar resolução server-side para consumidores, sem absorver a lógica operacional desses domínios.
 - Entrega:
@@ -230,18 +251,12 @@
   - `public.plans` não é usado isoladamente como gate funcional;
   - a E9.7 não mede uso nem altera comportamento específico de E19, E20.2 ou outro consumidor sem recorte próprio aprovado.
 
-### 3.4. Próxima ação após a v1
+### 3.4. Próxima ação após a v2
 
-- Orientar o Executor a ajustar `docs/roadmap.md` neste mesmo PR, conforme `docs/prompt-abc.md` e `docs/template-roadmap.md`.
-- O roadmap deve registrar somente:
-  - `E9.7 — Catálogo canônico de capacidades e limites por plano`;
-  - objetivo e status planejado;
-  - `E9.7.3 — Contrato canônico e fonte de resolução`;
-  - `E9.7.4 — Catálogo inicial do Starter`;
-  - `E9.7.5 — Resolução e contrato de consumo pelo plano efetivo`.
-- Não registrar implementação inexistente.
-- Após a reconciliação do roadmap, seguir ao item 5 de `docs/prompt-estrategista.md` para decisão humana entre processo atual e processo automatizado.
-- Não iniciar implementação antes do fluxo posterior aplicável e da consolidação da v2.
+- `docs/roadmap.md` já foi reconciliado no merge commit `8b58926043b28f8b900817a623fb8330bb84645b`, com E9.7.3, E9.7.4 e E9.7.5 em estado planejado; não repetir essa atualização antes do ABC da v2 aprovada.
+- Consolidar esta v2, registrar a matriz de tratamento e submetê-la às duas passagens do Analista.
+- Após aprovação da v2 e do ABC documental aplicável, executar somente E9.7.3.
+- Não iniciar E9.7.4 nem E9.7.5 sem nova decisão humana que admita ao menos uma capacidade Starter com chave, tipo, valor e consumidor.
 
 ## 4. Escopo negativo e critérios de parada
 
@@ -252,14 +267,15 @@
 - Definir disponibilidade comercial por `taxon + plano`.
 - Criar Admin Dashboard ou editor de capacidades.
 - Criar nova tabela, rota, job, agente, automação, serviço, engine ou infraestrutura sem fonte real e aprovação de escopo.
+- Criar qualquer capacidade runtime Starter, integração com entitlement ou consumidor nesta execução.
 - Definir snapshot, upgrade/downgrade, grandfathering, add-ons, exceções por conta ou retirada/versionamento detalhado.
 - Espalhar condicionais por nome de plano em UI ou domínios consumidores.
 - Tratar `public.plans`, `accounts.plan_id` ou qualquer metadado legado isoladamente como prova de capacidade.
 
 ### 4.2. Critérios de parada
 
-- Parar e devolver ao Estrategista se a E9.7.3 não puder reconciliar a regra vigente de grants/features com o estado real sem criar solução paralela.
-- Parar se a fonte canônica exigir nova infraestrutura não prevista nesta v1.
+- Parar e devolver ao Estrategista se a limitação documental de `docs/base-tecnica.md` §3.11 não puder ser feita sem manter dois contratos concorrentes.
+- Parar se a fonte canônica exigir nova infraestrutura não prevista nesta v2.
 - Parar se uma capacidade do Starter depender de recurso funcional ainda não aprovado no domínio consumidor.
 - Parar diante de valor, nível ou limite sem decisão humana necessária de produto.
 - Parar se houver necessidade de alterar o entitlement para representar capacidade, pois plano efetivo e capacidades devem permanecer separados.
