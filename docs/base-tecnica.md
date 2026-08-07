@@ -2,8 +2,8 @@
 
 0.1 Cabeçalho
 • Documento: Base Técnica LP Factory 10
-• Versão: v2.0.60
-• Data: 30/07/2026
+• Versão: v2.0.61
+• Data: 06/08/2026
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -185,11 +185,12 @@
 • Modificar SULB fora dos arquivos autorizados
 • Manipular last_account_subdomain no client
 
-3.11 Sistema de Grants
-• Nunca usar plan_id para liberar features
-• Usar sempre get_feature(account_id, feature_key)
-• Hierarquia: section → lp → account → plan → default
-• Cada conta preserva seu snapshot de recursos
+3.11 Capacidades comerciais e grants
+• Nunca usar `plan_id`, nome de plano ou metadado legado isoladamente para liberar capacidade.
+• O boundary canônico de capacidades comerciais é `lib/commercial-capabilities/`; sua fonte é repo-only, o registry permanece interno e consumidores usam somente a API pública fail-closed.
+• `lib/commercial-entitlements/` informa o plano efetivo; o boundary de capacidades informa o que esse plano permite; medição de uso e gate operacional permanecem no domínio consumidor.
+• `get_feature(account_id, feature_key)`, a hierarquia `section → lp → account → plan → default` e snapshot por conta não estão materializados e não regem o contrato atual de capacidades comerciais.
+• Grants, overrides ou snapshots futuros exigem recorte aprovado e substituição explícita da fonte canônica; não criar resolver paralelo.
 
 3.12 PostgREST e Data API
 • `search_path` deve permanecer fixado conforme o contrato de banco aplicável.
