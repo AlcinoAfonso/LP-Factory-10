@@ -1,4 +1,4 @@
-# Plano-base v1 — E12.6 Estrutura da LP no Admin Dashboard
+# Plano-base — E12.6 Estrutura da LP no Admin Dashboard
 
 ## 1. Estado e decisões fixas
 
@@ -9,13 +9,14 @@
 - Objetivo: criar uma área administrativa read-only que torne consultáveis os contratos estruturais já materializados para `landing_page`, sem transformar registries repo-only em editores e sem duplicar regras de domínio.
 - Usuário principal: `platform_admin`.
 - Plano conceitual: `docs/lp-planejamento.md` para as fronteiras da jornada de LP; a organização administrativa deste recorte é definida neste plano.
+- Processo: Estrategista Light em teste por decisão humana deste recorte.
 - Automação do recorte: não.
-- Status: plano-base v1 para avaliação antes da execução.
+- Status: plano-base Light candidato; parecer do Gestor de Updates incorporado; aguardando aprovação humana para implementação.
 
 ### 1.2. Documentação e implementação usadas
 
 - `README.md` — visão do produto, princípios do MVP e papel do Dashboard.
-- `docs/prompt-estrategista.md` — fluxo do Estrategista e requisitos do plano-base v1.
+- `docs/prompt-estrategista.md` — fallback para o processo completo se surgir gatilho de escalada fora do Light.
 - `docs/template-roadmap.md` — hierarquia e regras anti-inflação do roadmap.
 - `docs/roadmap.md` — estado vigente da E12, E18 e E20.
 - `docs/base-tecnica.md` — boundaries, server-side, fail-closed e regras de implementação segura.
@@ -376,8 +377,14 @@
   - mudança de escopo da E9.7, E19 ou E20.3;
   - nova regra de produto não documentada nas fontes canônicas.
 
-### 4.3. Próxima ação após a v1
+### 4.3. Próxima ação no fluxo Light
 
-- Avaliar o plano-base completo conforme `docs/prompt-estrategista.md` antes da execução.
-- Após a decisão humana sobre o processo, consolidar a v2 ou acionar o processo automatizado aplicável.
-- Não entregar briefing de implementação ao Executor antes do gate correspondente do plano-base.
+- O parecer obrigatório do Gestor de Updates já foi incorporado ao plano-base.
+- Submeter este plano ao humano para aprovação explícita como plano-base Light.
+- Após aprovação humana, registrar no plano-base ou no PR:
+  - `Status: plano-base Light aprovado para implementação`;
+  - `Processo autorizado: Estrategista Light`;
+  - `Implementação autorizada no mesmo PR/branch`;
+  - `Não exigir ciclo v1 → v2 nem plan-v2-approved`.
+- Após esse registro, entregar o briefing ao Executor para implementação no mesmo PR e branch, sem merge intermediário do plano.
+- Se surgir qualquer gatilho da seção 4.2 ou do processo completo, interromper a implementação e devolver o caso ao Estrategista.
