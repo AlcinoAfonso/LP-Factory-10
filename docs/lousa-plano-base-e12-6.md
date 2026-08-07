@@ -303,7 +303,7 @@
 
 ### 3.1. E12.6.3 — Estrutura da LP read-only no Admin
 
-- Status: planejada.
+- Status: implementação e QA concluídos; aguardando merge humano.
 - Automação: não.
 - Objetivo:
   - implementar a rota única `Estrutura da LP` com as quatro visões read-only e as adaptações mínimas de leitura necessárias aos boundaries existentes.
@@ -384,5 +384,5 @@
 - `Processo autorizado: Estrategista Light`.
 - `Implementação autorizada no mesmo PR/branch`.
 - `Não exigir ciclo v1 → v2 nem plan-v2-approved`.
-- Próxima ação: entregar o briefing ao Executor para implementar a E12.6.3 no mesmo PR #695 e branch `docs/e12-6-estrutura-lp-admin`, sem merge intermediário do plano.
+- Próxima ação: inspeção final do PR #695 e merge humano pelo GitHub Web.
 - Se surgir qualquer gatilho da seção 4.2 ou do processo completo, interromper a implementação e devolver o caso ao Estrategista.
