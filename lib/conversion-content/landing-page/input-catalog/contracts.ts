@@ -13,10 +13,20 @@ export const landingPageInputCatalogEvidenceReferences = [
   "context:real-estate-pilot",
 ] as const;
 
+export const landingPageInputColorPaletteRoles = [
+  "primary",
+  "secondary",
+  "accent",
+  "background",
+  "text",
+] as const;
+
 export type LandingPageInputCatalogPlan =
   (typeof landingPageInputCatalogPlans)[number];
 export type LandingPageInputCatalogEvidenceReference =
   (typeof landingPageInputCatalogEvidenceReferences)[number];
+export type LandingPageInputColorPaletteRole =
+  (typeof landingPageInputColorPaletteRoles)[number];
 export type LandingPageInputCatalogLayerLevel =
   | "universal"
   | "segment"
@@ -31,7 +41,9 @@ export type LandingPageInputValueType =
   | "string_list"
   | "boolean"
   | "number_range"
-  | "keyword_map";
+  | "keyword_map"
+  | "asset_reference"
+  | "color_palette";
 export type LandingPageInputValueScope =
   | "account"
   | "business"
@@ -48,6 +60,10 @@ export type LandingPageInputObligation =
   | "required"
   | "optional"
   | "conditional";
+export type LandingPageInputSubstitutionPolicy =
+  | "not_applicable"
+  | "forbidden"
+  | "explicit_allowed";
 
 export type LandingPageInputCondition = Readonly<{
   fieldKey: string;
@@ -73,7 +89,9 @@ export type LandingPageInputValidation =
   | Readonly<{ kind: "e164" }>
   | Readonly<{ kind: "email" }>
   | Readonly<{ kind: "https_url" }>
-  | Readonly<{ kind: "keyword_map" }>;
+  | Readonly<{ kind: "keyword_map" }>
+  | Readonly<{ kind: "asset_reference" }>
+  | Readonly<{ kind: "color_palette" }>;
 
 export type LandingPageInputTypeValidationContract =
   | Readonly<{
@@ -107,6 +125,14 @@ export type LandingPageInputTypeValidationContract =
   | Readonly<{
       valueType: "keyword_map";
       validation: Extract<LandingPageInputValidation, { kind: "keyword_map" }>;
+    }>
+  | Readonly<{
+      valueType: "asset_reference";
+      validation: Extract<LandingPageInputValidation, { kind: "asset_reference" }>;
+    }>
+  | Readonly<{
+      valueType: "color_palette";
+      validation: Extract<LandingPageInputValidation, { kind: "color_palette" }>;
     }>;
 
 export type LandingPageInputEvidence = Readonly<{
@@ -127,6 +153,7 @@ type LandingPageInputFieldDefinitionBase = Readonly<{
   applicableWhen?: LandingPageInputCondition;
   allowedPlans: readonly LandingPageInputCatalogPlan[];
   snapshotPolicy: "include_if_used";
+  landingPageSubstitutionPolicy?: LandingPageInputSubstitutionPolicy;
   evidence: LandingPageInputEvidence;
   createdInVersion: number;
 }>;
@@ -244,3 +271,11 @@ export type LandingPageKeywordMapItem = Readonly<{
   message_anchor: string;
   ad_context?: string;
 }>;
+
+export type LandingPageInputAssetReference = Readonly<{
+  asset_id: string;
+}>;
+
+export type LandingPageInputColorPalette = Readonly<
+  Record<LandingPageInputColorPaletteRole, string>
+>;

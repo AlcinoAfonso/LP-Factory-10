@@ -1,8 +1,8 @@
 0. Introdução
 
 0.1 Cabeçalho
-• Data: 05/08/2026
-• Versão: v1.5.124
+• Data: 07/08/2026
+• Versão: v1.5.127
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -564,6 +564,36 @@
 
 9.6.4 Fora do escopo atual
 • Permanece fora do escopo atual.
+
+9.7 Catálogo canônico de capacidades e limites por plano
+
+9.7.1 Objetivo e status
+- Objetivo: definir e resolver um contrato canônico único que traduza o plano efetivo da conta em capacidades, níveis, limites e sinais suficientes para os domínios consumidores decidirem quais configurações podem ser apresentadas.
+- Status: Planejado.
+
+9.7.3 Contrato canônico e fonte de resolução
+- Status: Planejado.
+- Conteúdo:
+  - definir a identificação mínima de cada capacidade por chave estável, nome ou descrição, categoria classificatória, tipo com contrato de valor inequívoco e domínio consumidor;
+  - adotar inicialmente capacidades booleanas, de nível fechado ou de limite numérico;
+  - escolher uma única fonte canônica compatível com a arquitetura vigente e uma resolução fail-closed por `planKey`, sem hardcode disperso nem solução paralela para features ou grants;
+  - manter capacidades candidatas ou ainda em avaliação fora do catálogo canônico.
+
+9.7.4 Catálogo inicial do Starter
+- Status: Planejado.
+- Conteúdo:
+  - incluir somente capacidades admitidas por decisão humana, com consumidor real existente ou já aprovado para a jornada imediata;
+  - registrar separadamente a definição da capacidade e seu valor aprovado para o Starter;
+  - manter capacidades ainda candidatas como dependências, sem completar Lite, Pro ou Ultra por extrapolação;
+  - distinguir capacidade admitida, consumidor capaz de aplicá-la e recurso efetivamente existente.
+
+9.7.5 Resolução e contrato de consumo pelo plano efetivo
+- Status: Planejado.
+- Conteúdo:
+  - resolver o contrato canônico a partir do `planKey` efetivo fornecido pelo entitlement;
+  - disponibilizar contrato server-side determinístico para os domínios consumidores, preservando no consumidor a medição de uso e a aplicação do gate no ponto da ação;
+  - manter entitlement como prova do plano e a E9.7 como prova da capacidade, sem inferência de comportamento pela UI a partir do nome do plano;
+  - falhar fechado para plano, capacidade, associação ou valor ausente, desconhecido ou inválido.
 
 10. E10 — Account Dashboard (UX)
 
@@ -1550,7 +1580,7 @@ Repositório — Ajustados
 
 12.5.1 Objetivo e status
 - Objetivo: Tornar explícito o diagnóstico operacional por taxon e conectar Taxonomia, Páginas comerciais, Perfis de orientação e Resoluções de nicho sem criar prontidão persistida nem reabrir os contratos de mutação existentes.
-- Status: Implementação candidata no PR draft #689; validações técnicas locais aprovadas, com QA autenticado no Preview e inspeção final do Estrategista ainda pendentes.
+- Status: Implementação candidata no PR draft #689; validações técnicas e QA visual autenticado aprovados, com inspeção final pós-reconciliação com a `main` ainda pendente.
 
 12.5.2 Registros do recorte
 - Repositório:
@@ -1578,7 +1608,7 @@ Repositório — Ajustados
 12.5.3 Diagnóstico contextual e navegação
 - Status: Implementação candidata, sem alteração de banco, rota, action, RPC ou chamada de IA.
 - Conteúdo:
-  - Taxonomia passa a resumir Pesquisa BB, Pesquisa EC, Página comercial, Perfil e assistência por IA, preservando estados próprios, herdados, ausentes, inválidos, incompletos e indisponíveis sem aproximá-los como fatos.
+  - Taxonomia resume Status, Pesquisa BB, Pesquisa EC, Página comercial, Perfil ativo e Rascunho em tabela responsiva com cabeçalho fixo; o diagnóstico detalhado preserva a assistência por IA e os motivos completos sem aproximar estados como fatos.
   - A resolução vigente da E10.8 permanece canônica para pesquisa: BB pode usar o pai direto elegível, enquanto EC permanece própria do taxon servido.
   - Páginas comerciais mantém a elegibilidade comercial separada da resolução da E10.8, lista taxons elegíveis e não elegíveis e direciona pendências para o diagnóstico do taxon.
   - Perfis distinguem ativo próprio, ativo herdado, rascunho próprio, ausência e indisponibilidade; a assistência por IA permanece opcional e sua ausência não bloqueia a gestão manual.
@@ -1586,11 +1616,11 @@ Repositório — Ajustados
   - Leituras diagnósticas usam projeções server-side em lote e falha isolada por domínio; não há chamadas sequenciais por taxon nem novo domínio de prontidão.
 
 12.5.4 Validação e pendências
-- Status: Gate técnico local aprovado; gate funcional hospedado pendente.
+- Status: Gate técnico local e QA visual autenticado aprovados; inspeção final pós-reconciliação com a `main` pendente.
 - Conteúdo:
   - `npm ci`, `npm run check`, `git diff --check` e os validadores de pesquisa, perfil e página comercial foram aprovados localmente.
-  - O ambiente local não possui configuração Supabase e a sessão disponível no navegador redireciona o Preview para login; por isso, screenshots, matriz autenticada desktop/mobile, teclado/foco e HEAD exato validado permanecem pendentes.
-  - O PR deve permanecer draft até o QA autenticado e a inspeção final do Estrategista; merge continua exclusivamente humano.
+  - O QA autenticado no Preview aprovou a experiência e o comportamento da Taxonomia, Páginas comerciais, Perfis de orientação, Resoluções de nicho e páginas de gerenciamento em desktop e mobile, incluindo teclado, foco e preservação das ações existentes.
+  - O PR deve permanecer draft até a inspeção final do Estrategista; merge continua exclusivamente humano.
 
 13. E13 — Partner Dashboard
 
@@ -2223,7 +2253,7 @@ Repositório — Ajustados
 20.2.1 Objetivo e status
 
 * Objetivo: definir e resolver um catálogo declarativo versionado de entradas de `landing_page` por taxon e plano, separado de valores operacionais, composição, conteúdo e entitlement.
-* Status: Concluído (14/07/2026).
+* Status: Concluído e refinado (06/08/2026).
 
 20.2.2 Registros do recorte
 
@@ -2248,12 +2278,18 @@ Repositório — Ajustados
 * Status: Implementados.
 * Conteúdo:
 
-  * O catálogo é declarativo, versionado no repositório e resolvido por taxon e plano.
-  * O primeiro catálogo imobiliário contém 19 campos.
+  * O catálogo é declarativo, versionado no repositório e resolvido por taxon e plano, sempre com versão explícita e sem fallback automático.
+  * A v1 permanece integralmente preservada com os 19 campos e a ordem anteriores.
+  * A v2 contém 23 campos: os 19 da v1 e os quatro mínimos do Starter — serviço ou oferta principal, descrição factual curta, referência opaca opcional de logo ou asset principal e paleta visual confirmada.
+  * Os quatro campos da v2 permanecem disponíveis em Starter, Lite, Pro e Ultra, sem diferenças adicionais entre planos neste recorte.
+  * Strings obrigatórias rejeitam valor vazio; o asset aceita somente objeto estrito com `asset_id` opaco não vazio; a paleta exige exatamente `primary`, `secondary`, `accent`, `background` e `text` em hexadecimal `#RRGGBB`.
+  * Os campos criados na v2 declaram `landingPageSubstitutionPolicy`: oferta, descrição e logo usam `forbidden`, enquanto a paleta usa `explicit_allowed`; ausência da política nos campos históricos da v1 não autoriza substituição.
+  * Campos próprios da LP usam `not_applicable`; campos reutilizáveis usam `forbidden` ou `explicit_allowed`. Especialização taxonômica de definições e substituição explícita de valores concretos por LP permanecem conceitos distintos, e a especialização não altera essa política.
   * A herança segue `universal → segmento → nicho → ultranicho autorizado`.
   * O ultranicho de corretor de imóveis de médio padrão herda o catálogo sem camada própria.
   * O resultado preserva versão, plano, taxon atendido, camadas aplicadas, ordem determinística, proveniência, validação, evidência e sinal de validade.
   * `requiredWhen` e `applicableWhen` permanecem declarativos e são preservados após o filtro por plano.
+  * Depois do merge da v2, mudança funcional no catálogo resolvido exige nova versão; refatoração interna sem alteração do resultado e novo taxon que apenas herda campos não exigem nova versão.
 
 20.2.4 Dependências e limites
 
@@ -2262,8 +2298,8 @@ Repositório — Ajustados
 
   * O resolver falha fechado para cadeia, camada, especialização, condição ou relação entre planos inválida.
   * A E20.3 é independente deste catálogo: orienta geração por identidade de módulo e variante da E18.5, sem consumir valores da E20.2 nem determinar prontidão.
-  * A avaliação concreta das condições, a completude dos valores operacionais e o snapshot pertencem à futura E19.4.
-  * O recorte não cria banco, rota, API, Server Action, UI, adapter de banco, entitlement, integração Stripe, valor operacional, snapshot, automação, agente ou job.
+  * A E20.2 define os campos e valida o formato dos valores; a futura E19.2 será responsável por coletar, validar, persistir e compor os valores, implementar a substituição explícita por LP e preservar o snapshot dos valores efetivamente usados.
+  * O recorte não cria banco, migration, bucket, Storage, rota, API, Server Action, UI, onboarding, upload, adapter de banco, entitlement, capacidade comercial, tracking, Google Ads, Analytics, integração, valor operacional, snapshot operacional, geração, IA, automação, agente, job ou infraestrutura.
 
 20.3 Perfil de orientação para geração
 
@@ -2313,7 +2349,11 @@ Repositório — Ajustados
   * Não criar novo campo, estado, tabela, resolver ou infraestrutura e não reabrir E20.3.3 ou E20.3.4.
 
 99. Changelog
-v1.5.124 — 05/08/2026 — Registrada a implementação candidata da E12.5 para diagnóstico e navegação operacional do Admin Dashboard, com contratos existentes preservados, validações técnicas aprovadas e QA autenticado no Preview ainda pendente.
+v1.5.127 — 07/08/2026 — Fechada documentalmente a implementação candidata da E12.5 para diagnóstico e navegação operacional do Admin Dashboard, com contratos existentes preservados, QA visual autenticado aprovado e inspeção final pós-reconciliação com a `main` ainda pendente.
+
+v1.5.125 — 06/08/2026 — Fechado o contrato mínimo da E20.2 v2 com política explícita de substituição por LP: oferta, descrição e logo usam `forbidden`, paleta usa `explicit_allowed`, campos próprios da LP usam `not_applicable`, e especialização taxonômica permanece distinta da substituição de valores concretos.
+
+v1.5.124 — 05/08/2026 — Refinada a E20.2 com catálogo v2 de 23 campos: preservados integralmente os 19 campos da v1 e adicionados os quatro mínimos do Starter, com validações estritas de strings, referência opaca de asset e paleta hexadecimal, sem banco, UI, persistência, upload, geração ou infraestrutura.
 
 v1.5.123 — 04/08/2026 — Reorganizada a E19 conforme `docs/template-roadmap.md`: removidos os blocos redundantes e defasados, renumerado o recorte material concluído para 19.1, eliminados registros vazios e referências futuras superadas e mantida a próxima evolução sem numeração antecipada até a avaliação residual e o respectivo plano-base.
 
