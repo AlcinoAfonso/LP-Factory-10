@@ -1,8 +1,8 @@
 0. Introdução
 
 0.1 Cabeçalho
-• Data: 07/08/2026
-• Versão: v1.5.130
+• Data: 08/08/2026
+• Versão: v1.5.131
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -2267,7 +2267,7 @@ Repositório — Ajustados
 
 19.2.1 Objetivo e status
 - Objetivo: Criar a experiência pós-entitlement que configura a conta e os valores mínimos necessários para iniciar a primeira LP Starter, sem gerar conteúdo, materializar a LP final ou publicar.
-- Status: Implementação candidata completa no PR #700; E19.2.3, E19.2.4, E19.2.5 e E19.2.6 possuem checkpoints implementados e aprovados, com apply da migration e validação hospedada autenticada pendentes do merge humano.
+- Status: Concluído: PR #700 mergeado, migration aplicada, verificador SQL read-only aprovado e validação funcional hospedada autenticada concluída.
 
 19.2.2 Registros do recorte
 - Repositório:
@@ -2297,7 +2297,7 @@ Repositório — Ajustados
     - `prod#17`
 
 19.2.3 Contrato de configuração, completude e persistência mínima
-- Status: Checkpoint implementado e aprovado no PR #700; migration versionada, apply e validação SQL hospedada pendentes do merge humano.
+- Status: Implementado e validado após o merge: migration aplicada e verificador SQL hospedado aprovado.
 - Conteúdo:
   - O boundary `lib/lp-builder/` resolve o catálogo E20.2 por versão e taxonomia autoritativa, valida valores por `fieldKey` e escopo, reutiliza fontes autoritativas sem duplicá-las e deriva completude sem `onboarding_status`.
   - A persistência candidata usa um agregado 1:1 por conta, revisão otimista, FK tenant-safe e vínculo de `landing_page_id` write-once; o Data API permanece restrito ao adapter server-only com `service_role`, sem grants de cliente ou DELETE operacional.
@@ -2306,7 +2306,7 @@ Repositório — Ajustados
 
 19.2.4 Jornada guiada pós-entitlement e retomada
 - Objetivo: Substituir a permanência na experiência comercial por uma jornada curta de onboarding quando a conta elegível estiver incompleta.
-- Status: Checkpoint implementado e aprovado no PR #700; validação visual autenticada em Preview permanece pendente do merge/apply.
+- Status: Implementado e validado na jornada hospedada autenticada.
 - Conteúdo:
   - A superfície autenticada deriva os estados comercial, onboarding, operacional e bloqueado a partir de papel, entitlement e configuração; conta sem entitlement preserva a experiência comercial e objeto de configuração ainda indisponível mantém o fallback anterior.
   - Owner ou admin elegível com configuração incompleta recebe uma jornada responsiva em dois passos, com taxon somente leitura, valores autoritativos reutilizados e campos existentes derivados do catálogo E20.2, sem lista de domínio paralela.
@@ -2315,7 +2315,7 @@ Repositório — Ajustados
 
 19.2.5 Identidade visual mínima da conta
 - Objetivo: Permitir confirmar a identidade visual mínima necessária ao Starter sem IA e sem tornar logo obrigatório.
-- Status: Checkpoint implementado e aprovado no PR #700; validação visual autenticada em Preview permanece pendente do merge/apply.
+- Status: Implementado e validado na jornada hospedada autenticada.
 - Conteúdo:
   - A E19.2.5 adiciona um terceiro passo à jornada, com três paletas iniciais e edição humana dos cinco papéis canônicos `primary`, `secondary`, `accent`, `background` e `text`, sem catálogo paralelo de campos.
   - O boundary valida formato e contraste de modo determinístico: texto exige razão mínima 4,5:1 contra o fundo e cores principal, secundária e de destaque exigem 3:1.
@@ -2324,7 +2324,7 @@ Repositório — Ajustados
 
 19.2.6 Revisão, conclusão e transição para LP `draft`
 - Objetivo: Concluir a configuração derivada e transferir a conta para o espaço operacional sem criar LP antes da hora.
-- Status: Checkpoint implementado e aprovado no PR #700; validação autenticada do fluxo integrado permanece pendente do merge/apply.
+- Status: Implementado e validado no fluxo hospedado autenticado integrado.
 - Conteúdo:
   - Configuração completa sem vínculo entra em revisão final; configuração incompleta não consulta nem cria LP, e configuração já vinculada segue para o estado operacional sem persistir `onboarding_status`.
   - A leitura server-only do boundary `lib/lp-builder/` retorna zero, um ou vários drafts legítimos da conta em ordem determinística e preserva falha operacional como erro, sem consulta direta da página, UI ou Server Action a `account_landing_pages`.
@@ -2438,6 +2438,8 @@ Repositório — Ajustados
   * Não criar novo campo, estado, tabela, resolver ou infraestrutura e não reabrir E20.3.3 ou E20.3.4.
 
 99. Changelog
+v1.5.131 — 08/08/2026 — Fechada a E19.2 após o merge do PR #700: migration aplicada, verificador SQL read-only aprovado e validação funcional hospedada autenticada concluída; preservados os limites de não geração, não publicação, ausência de tracking/CRM/capability nova e ausência de infraestrutura de assets.
+
 v1.5.128 — 07/08/2026 — Reconciliado o PR #689 com a conclusão da E9.7 integrada à `main`, preservando integralmente o contrato canônico de capacidades e a implementação candidata aprovada da E12.5; inspeção final e merge humano permanecem pendentes.
 
 v1.5.127 — 07/08/2026 — Fechada documentalmente a implementação candidata da E12.5 para diagnóstico e navegação operacional do Admin Dashboard, com contratos existentes preservados, QA visual autenticado aprovado e inspeção final pós-reconciliação com a `main` ainda pendente.
