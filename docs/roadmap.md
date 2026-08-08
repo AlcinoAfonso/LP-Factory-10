@@ -2242,7 +2242,7 @@ Repositório — Ajustados
 
 19. E19 — LP Builder
 - Objetivo: Consolidar o fluxo Core de landing pages por conta, da identidade mínima em `draft` às futuras etapas de geração, revisão, materialização e publicação, sempre por recortes aprovados.
-- Status: Em evolução por recortes. O recorte 19.1 está concluído e o recorte 19.2 está planejado.
+- Status: Em evolução por recortes. O recorte 19.1 está concluído e o recorte 19.2 possui implementação candidata completa no PR #700.
 
 19.1 Criação produtiva mínima de LP por conta
 
@@ -2298,23 +2298,70 @@ Repositório — Ajustados
 
 19.2.1 Objetivo e status
 - Objetivo: Criar a experiência pós-entitlement que configura a conta e os valores mínimos necessários para iniciar a primeira LP Starter, sem gerar conteúdo, materializar a LP final ou publicar.
-- Status: Planejado.
+- Status: Implementação candidata completa no PR #700; E19.2.3, E19.2.4, E19.2.5 e E19.2.6 possuem checkpoints implementados e aprovados, com apply da migration e validação hospedada autenticada pendentes do merge humano.
+
+19.2.2 Registros do recorte
+- Repositório:
+  - Criados:
+    - `lib/lp-builder/onboardingConfiguration.ts`
+    - `lib/lp-builder/adapters/onboardingConfigurationAdapter.ts`
+    - `lib/lp-builder/adapters/onboardingConfigurationAdapterCore.ts`
+    - `lib/lp-builder/validation-cases.ts`
+    - `app/a/[account]/_components/OnboardingConfigurationJourney.tsx`
+    - `app/a/[account]/_components/OnboardingCompletionJourney.tsx`
+    - `app/a/[account]/_components/onboarding-configuration-action-contract.ts`
+    - `app/a/[account]/_components/onboarding-journey-policy.ts`
+    - `app/a/[account]/_components/onboarding-journey-validation-cases.ts`
+    - `app/a/[account]/onboarding-configuration-actions.ts`
+    - `supabase/migrations/20260807162417_e19_2_3_account_landing_page_onboarding_configuration.sql`
+    - `supabase/snippets/e19_2_3_account_landing_page_onboarding_configuration_verify.sql`
+    - `supabase/tests/e19_2_3_account_landing_page_onboarding_configuration.test.sql`
+  - Ajustados:
+    - `lib/lp-builder/contracts.ts`
+    - `lib/lp-builder/index.ts`
+    - `app/a/[account]/page.tsx`
+    - `package.json`
+- Updates:
+  - Aplicados:
+    - `supa#40`
+    - `prod#14`
+    - `prod#17`
 
 19.2.3 Contrato de configuração, completude e persistência mínima
-- Objetivo: Materializar no boundary E19 a resolução da configuração mínima, a completude derivada e a persistência retomável dos valores sem criar LP prematuramente.
-- Status: Planejada.
+- Status: Checkpoint implementado e aprovado no PR #700; migration versionada, apply e validação SQL hospedada pendentes do merge humano.
+- Conteúdo:
+  - O boundary `lib/lp-builder/` resolve o catálogo E20.2 por versão e taxonomia autoritativa, valida valores por `fieldKey` e escopo, reutiliza fontes autoritativas sem duplicá-las e deriva completude sem `onboarding_status`.
+  - A persistência candidata usa um agregado 1:1 por conta, revisão otimista, FK tenant-safe e vínculo de `landing_page_id` write-once; o Data API permanece restrito ao adapter server-only com `service_role`, sem grants de cliente ou DELETE operacional.
+  - O runtime distingue ausência legítima, objeto ainda indisponível e falha operacional; nenhum `draft`, bucket, upload, Storage, UI ou infraestrutura de assets foi criado nesta subseção.
+  - Casos executáveis cobrem progresso parcial, completude derivada, precedência autoritativa, isolamento por conta, ator autorizado, contrato da migration, concorrência otimista e proteções de vínculo.
 
 19.2.4 Jornada guiada pós-entitlement e retomada
 - Objetivo: Substituir a permanência na experiência comercial por uma jornada curta de onboarding quando a conta elegível estiver incompleta.
-- Status: Planejada.
+- Status: Checkpoint implementado e aprovado no PR #700; validação visual autenticada em Preview permanece pendente do merge/apply.
+- Conteúdo:
+  - A superfície autenticada deriva os estados comercial, onboarding, operacional e bloqueado a partir de papel, entitlement e configuração; conta sem entitlement preserva a experiência comercial e objeto de configuração ainda indisponível mantém o fallback anterior.
+  - Owner ou admin elegível com configuração incompleta recebe uma jornada responsiva em dois passos, com taxon somente leitura, valores autoritativos reutilizados e campos existentes derivados do catálogo E20.2, sem lista de domínio paralela.
+  - Avançar, voltar e sair salvam o agregado por Server Action fina e boundary `lib/lp-builder/`; erro localizado preserva os demais valores e conflito de revisão solicita recarga explícita.
+  - A jornada usa componentes vigentes, associação entre label, hint e erro, foco após transição ou falha, alvos de ação ampliados e operação por teclado; identidade visual, logo, draft, geração, tracking e IA permanecem fora desta subseção.
 
 19.2.5 Identidade visual mínima da conta
 - Objetivo: Permitir confirmar a identidade visual mínima necessária ao Starter sem IA e sem tornar logo obrigatório.
-- Status: Planejada.
+- Status: Checkpoint implementado e aprovado no PR #700; validação visual autenticada em Preview permanece pendente do merge/apply.
+- Conteúdo:
+  - A E19.2.5 adiciona um terceiro passo à jornada, com três paletas iniciais e edição humana dos cinco papéis canônicos `primary`, `secondary`, `accent`, `background` e `text`, sem catálogo paralelo de campos.
+  - O boundary valida formato e contraste de modo determinístico: texto exige razão mínima 4,5:1 contra o fundo e cores principal, secundária e de destaque exigem 3:1.
+  - Somente paleta válida pode ser persistida e participar da completude derivada; a prévia exibe leitura e destaques antes do save.
+  - Logo permanece opcional e ausente quando não existe referência canônica autoritativa; nenhum campo livre, upload, bucket, Storage, Blob, URL ou infraestrutura de assets foi criado, e referência não autoritativa não é persistida pelo runtime.
 
 19.2.6 Revisão, conclusão e transição para LP `draft`
 - Objetivo: Concluir a configuração derivada e transferir a conta para o espaço operacional sem criar LP antes da hora.
-- Status: Planejada.
+- Status: Checkpoint implementado e aprovado no PR #700; validação autenticada do fluxo integrado permanece pendente do merge/apply.
+- Conteúdo:
+  - Configuração completa sem vínculo entra em revisão final; configuração incompleta não consulta nem cria LP, e configuração já vinculada segue para o estado operacional sem persistir `onboarding_status`.
+  - A leitura server-only do boundary `lib/lp-builder/` retorna zero, um ou vários drafts legítimos da conta em ordem determinística e preserva falha operacional como erro, sem consulta direta da página, UI ou Server Action a `account_landing_pages`.
+  - Zero drafts permite criação explícita pelo fluxo E19.1; um ou vários drafts exigem seleção humana explícita, sem escolha silenciosa, duplicação automática ou limite de quantidade antecipado.
+  - O agregado é vinculado somente ao draft escolhido da mesma conta, com revisão otimista, predicado de ausência de vínculo e mutação limitada a uma linha; valores não são copiados para `account_landing_pages` e rebind permanece proibido.
+  - A transição não inicia geração, revisão de copy, publicação, tracking, CRM, capability nova ou infraestrutura de assets.
 
 20. E20 — Preparação e liberação de taxons para geração de landing pages
 

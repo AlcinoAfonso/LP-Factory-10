@@ -1,4 +1,4 @@
-07/08/2026 — Plano-base E19.2 v1 — Onboarding e configuração mínima da conta para LP Starter
+07/08/2026 — Plano-base E19.2 v2 — Onboarding e configuração mínima da conta para LP Starter
 
 ## 0. Identificação e fontes
 
@@ -7,9 +7,9 @@
 - Recorte: `E19.2`.
 - Path: `docs/lousa-plano-base-e19-2.md`.
 - Plano conceitual: N/A — debate humano e do Analista consolidado nas decisões abaixo e em `docs/lp-planejamento.md`.
-- Natureza: plano-base v1.
+- Natureza: plano-base v2.
 - Automação do recorte: não.
-- OpenAI na v1: não.
+- OpenAI na primeira entrega: não.
 - Frontend próprio: sim, na superfície autenticada da conta.
 
 ### 0.2. Documentação usada
@@ -37,6 +37,13 @@
 - PR #690 — refinamento concluído da E20.2.
 - PR #694 — E9.7.3 concluída.
 
+### 0.4. Decisões humanas que destravaram a v2
+
+- Persistência pré-`draft`: usar agregado versionado por conta para a jornada da primeira LP, orientado pelo contrato E20.2, com valores associados a `fieldKey`, escopo e versão do catálogo. A completude permanece derivada e não existe `onboarding_status`.
+- Forma física: materializar a menor persistência segura com isolamento tenant e RLS, sem normalizar preventivamente cada campo do catálogo.
+- Logo: não implementar upload na primeira entrega. Reutilizar somente referência canônica já existente, quando houver; na ausência, seguir sem logo.
+- Assets: não criar bucket, Storage, upload ou infraestrutura de assets neste recorte; preservar essa evolução para depois da primeira LP real.
+
 ## 1. Estado e decisões fixas
 
 ### 1.1. Objetivo do recorte
@@ -61,6 +68,11 @@
 - Campo opcional ausente não bloqueia a conclusão.
 - Não criar `onboarding_status` em `accounts` nem outro estado persistido equivalente.
 - O contrato de snapshot da E20.2 deve ser preservado para a futura geração/materialização; a E19.2 não materializa snapshot de geração.
+- A configuração retomável usa um agregado versionado por conta, com a versão explícita do catálogo e valores indexados por `fieldKey`; cada valor persistido conserva seu escopo E20.2.
+- A leitura efetiva combina fontes autoritativas existentes com o agregado da jornada. Valor autoritativo não é copiado apenas para atender o onboarding nem substituído silenciosamente pelo agregado.
+- Field, escopo, versão ou valor desconhecido ou inválido falha fechado; o payload persistido não constitui catálogo paralelo.
+- O save parcial valida integralmente apenas os valores presentes; ausência de campo obrigatório ou condicional aplicável é aceita durante o progresso e bloqueia somente a conclusão.
+- Um resolver tipado percorre os fields do catálogo E20.2 resolvido e aplica precedência por `fieldKey`: fonte autoritativa existente, quando houver, prevalece; o agregado fornece somente valor legitimamente pertencente à jornada e ausente da fonte autoritativa. O resolver não duplica definição, escopo, obrigação, condição ou validação do catálogo.
 
 ### 1.4. Escopos e reutilização
 
@@ -84,15 +96,18 @@
 - Desktop, mobile, teclado, foco visível e acessibilidade integram o critério de aceite.
 - Depois do primeiro onboarding, valores reutilizáveis e alterações futuras devem ficar em área ou seletor `Configurações`, sem poluir o espaço operacional de LPs.
 
-### 1.6. Identidade visual na v1
+### 1.6. Identidade visual na primeira entrega
 
 - Logo é opcional.
 - Paleta confirmada é obrigatória.
-- A v1 não usa OpenAI nem automação para analisar taxon, oferta, logo ou gerar paleta personalizada.
+- A primeira entrega não usa OpenAI nem automação para analisar taxon, oferta, logo ou gerar paleta personalizada.
 - A experiência oferece caminho manual simples com opções pré-validadas, edição humana, validação determinística e confirmação.
 - O contrato separa `proposta/opção disponível → edição → validação → confirmação`, preservando futura evolução da origem da proposta sem alterar o valor canônico.
 - Contraste, legibilidade e demais limites de acessibilidade permanecem determinísticos.
-- A forma física de armazenamento do asset de logo não é presumida nesta v1; qualquer nova infraestrutura de asset exige fonte real e retorno ao Estrategista antes de implementação.
+- Não há captura, upload, substituição, remoção nem gestão de logo neste recorte.
+- `brand_logo_asset` somente pode reutilizar uma referência opaca proveniente de fonte canônica já existente; URL livre, path inventado ou `asset_id` digitado pelo usuário são proibidos.
+- Sem referência canônica existente, o logo permanece ausente e não bloqueia a conclusão.
+- Bucket, Supabase Storage, Vercel Blob ou outra infraestrutura de assets permanecem fora do recorte e exigem evolução própria depois da primeira LP real.
 
 ### 1.7. Transição para LP `draft`
 
@@ -107,16 +122,17 @@
 ### 1.8. Capacidades, tracking e evolução de planos
 
 - E9.7.3 definiu o boundary arquitetural de capacidades; E9.7.4 e E9.7.5 ainda não possuem contrato Starter runtime integrado à E19.
-- A E19.2 v1 não interpreta nomes de plano, não consulta `public.plans` como gate funcional e não cria resolver paralelo de capabilities.
+- A E19.2 não interpreta nomes de plano, não consulta `public.plans` como gate funcional e não cria resolver paralelo de capabilities.
 - Progressive disclosure condicionado por capacidade só entra quando existir capacidade admitida e integração canônica disponível.
 - Tracking por plano não é fechado neste recorte.
 - Preservar apenas a fronteira conceitual entre configuração reutilizável da conta e associação/mensuração específica da LP, sem implementar tracking, Analytics ou Google Ads.
 - Os dois P2 pós-merge da E9.7.3 — proteção `server-only` e correlação tipada entre definição e valor — são gates técnicos antes de consumo real do boundary por E19, não responsabilidade da E19.2.
+- `prod#19` permanece como referência e trava: sinal de Stripe, nome de plano, assinatura ou feature externa não decide autorização da E19.2. Entitlement efetivo deve vir do boundary interno de `commercial-entitlements`; capacidade comercial, quando existir contrato admitido, deve vir separadamente da E9.7 e ser aplicada pelo consumidor server-side. O update não autoriza adotar Stripe Entitlements nem migrar o modelo interno.
 
 ### 1.9. Automação e IA
 
 - Automação: não.
-- OpenAI: não na v1.
+- OpenAI: não nesta entrega.
 - Serviço/oferta usa preenchimento humano orientado.
 - Taxon chega previamente resolvido e autoritativo.
 - Identidade visual usa caminho manual/determinístico simples sem análise automática personalizada.
@@ -195,8 +211,21 @@
 - Preservar valores reutilizáveis, valores de oferta, valores específicos da primeira LP/campanha, referência de logo quando houver, paleta confirmada e progresso parcial.
 - A persistência deve permitir sair e retomar o onboarding sem perda de valores válidos.
 - `docs/schema.md` documenta `account_profiles` apenas para niche, canal preferido, WhatsApp e site e `account_landing_pages` apenas para a identidade mínima da LP; não há contrato documentado que autorize reutilizar qualquer uma dessas estruturas como armazenamento genérico dos valores E20.2.
-- A v1 não fixa tabela, coluna, JSON ou Storage para resolver essa lacuna.
-- Na v2, a forma física deve ser escolhida somente após inspeção do schema e avaliação dos especialistas; se nenhuma estrutura vigente atender com isolamento tenant, RLS, scopes e retomada, devolver ao Estrategista antes de propor migration, bucket ou nova infraestrutura.
+- Criar `public.account_landing_page_onboarding_configurations` como agregado interno 1:1 por conta para a jornada da primeira LP Starter, usando `account_id uuid primary key` como FK para `public.accounts(id)` com `ON UPDATE CASCADE` e `ON DELETE CASCADE`.
+- O agregado deve conter `landing_page_id uuid null`, `catalog_version integer not null` com valor positivo, `values jsonb not null default '{}'::jsonb`, `revision bigint not null default 1` com valor positivo, `created_by uuid not null`, `updated_by uuid not null`, `created_at timestamptz not null default now()` e `updated_at timestamptz not null default now()`.
+- `created_by` e `updated_by` referenciam `auth.users(id)` com `ON UPDATE CASCADE` e `ON DELETE RESTRICT`. `updated_at` usa o trigger canônico `public.tg_set_updated_at()`; o agregado não participa do Trigger Hub.
+- `landing_page_id` permanece nulo durante o preenchimento. A migration adiciona unicidade em `public.account_landing_pages(id, account_id)` e FK composta `(landing_page_id, account_id)` para esse par, com `ON UPDATE CASCADE` e `ON DELETE RESTRICT`, impedindo associação cruzada entre contas.
+- A mesma migration deve criar proteção write-once no banco para `landing_page_id`. Um trigger `BEFORE UPDATE`, implementado por função table-specific `SECURITY INVOKER` com `search_path` fixado, deve rejeitar qualquer transição em que `OLD.landing_page_id` já seja não nulo e `NEW.landing_page_id` seja distinto, inclusive retorno a `NULL`. Somente a transição `NULL → draft` válido da mesma conta é permitida. A função não integra API pública e deve permanecer sem `EXECUTE` concedido a `public`, `anon` ou `authenticated`.
+- `values` deve ser objeto JSON estrito indexado por `fieldKey`; cada entrada contém somente `scope` e `value`. O boundary valida `fieldKey`, `scope`, obrigatoriedade, condição e valor contra o catálogo resolvido na `catalog_version` persistida antes de qualquer gravação.
+- Valores provenientes de fonte autoritativa existente são combinados na leitura e não duplicados no agregado somente para atender o onboarding.
+- Não criar coluna de status, flag de completude, snapshot de geração nem linha em `account_landing_pages` para representar a jornada.
+- A tabela nasce em migration incremental versionada e forward-only, com `values` restrito por CHECK a objeto JSON, versão/revisão positivas, FKs explícitas, unicidade 1:1, `updated_at` automático e RLS habilitado.
+- A tabela reside em `public` e fica exposta ao PostgREST/Data API exclusivamente para o adapter server-side autenticado com `service_role`. Revogar acesso de `public`, `anon`, `authenticated` e `ai_readonly`; conceder somente `SELECT`, `INSERT` e `UPDATE` a `service_role`; `DELETE` permanece revogado, pois não existe lifecycle de exclusão ou reset do agregado nesta entrega. A exclusão decorrente da remoção da conta permanece responsabilidade da FK `ON DELETE CASCADE`. Não criar policy de cliente nem view.
+- RLS permanece habilitado como defesa adicional, mas não é tratado como isolamento para `service_role`, que o ignora. Grants e RLS/policies são controles independentes.
+- Acesso ocorre somente por adapter de `lib/lp-builder/`, depois dos gates de usuário, conta, membership, entitlement e taxon. O adapter deriva `account_id` e ator no servidor e escopa toda leitura e mutação por essa conta; UI, provider e Server Action não recebem `account_id` autoritativo do client nem acessam a tabela diretamente.
+- Toda mutação 1:1 do agregado deve aplicar `.maxAffected(1)`. Save e bind filtram pelo `account_id` derivado no servidor e pela `revision` esperada; o bind também exige `landing_page_id IS NULL`. A mutação bem-sucedida grava `revision = expectedRevision + 1` e exige exatamente uma linha afetada. Zero linhas deve ser classificado por leitura segura posterior como ausência, conflito de revisão ou vínculo já existente; nenhum desses estados pode virar sucesso, ausência genérica ou rebind. Inserção concorrente que colida com a PK 1:1 deve retornar conflito explícito, sem upsert que contorne a revisão.
+- Antes de a migration existir e uma leitura tipada do agregado ser bem-sucedida, a superfície preserva a experiência comercial vigente e não ativa o novo onboarding. Depois do apply, o snippet read-only e a leitura do adapter comprovam disponibilidade; então a resolução derivada passa a habilitar a jornada sem PR precursor.
+- A migration deve definir todos os objetos, constraints, RLS e GRANTs no mesmo recorte; `docs/schema.md` deve registrar o estado final e o snippet read-only deve verificar o apply sem mutação remota pré-merge.
 - Não usar a criação prematura de uma LP `draft` como mecanismo de persistência do onboarding.
 
 #### 2.4.6. Consumo
@@ -204,6 +233,7 @@
 - Retomada do próprio onboarding.
 - Área posterior `Configurações` para valores reutilizáveis.
 - Criação ou seleção da LP `draft` pela E19.1 após completude.
+- Depois de criação ou escolha humana explícita, vincular o agregado ao `draft` pela FK composta. O vínculo é write-once nesta entrega e valores `campaign`/`landing_page` não podem ser consumidos por outro draft.
 - Futura geração/materialização consumirá os valores confirmados e aplicará o contrato de snapshot vigente naquele recorte.
 - Futuros consumidores habilitados por capacidades resolvidas pela E9.7 podem reutilizar os valores quando houver contrato aprovado, sem a E9 consumir valores do onboarding.
 
@@ -218,7 +248,7 @@
 - Interrupção da sessão ou saída da jornada: preservar progresso e permitir retomada.
 - Taxon, entitlement, conta ou membership inválidos: falhar fechado e não oferecer correção como campo comum do onboarding.
 - Capacidade comercial ausente ou ainda não admitida: não inventar permissão nem impedir o onboarding base quando a capacidade não fizer parte do contrato vigente.
-- OpenAI indisponível: N/A, pois a v1 não depende de IA.
+- OpenAI indisponível: N/A, pois a entrega não depende de IA.
 
 ### 2.5. Frontend e evidência esperada
 
@@ -229,6 +259,9 @@
 - Progresso da jornada deve ser compreensível sem exigir conhecimento técnico.
 - Valores previamente válidos devem permanecer após erro, navegação para trás, saída e retorno.
 - A experiência deve evidenciar claramente a transição de “configurando” para “pronto para trabalhar na LP”.
+- A Vercel Toolbar pode ser usada no Preview autorizado como apoio para comentários, auditoria de acessibilidade, interaction timing e layout shift quando estiver disponível. Seu uso é opcional, não cria dependência do produto e não substitui validação manual, evidência dos estados do caso nem os checks do repositório.
+- Cada PR que alterar a jornada E19.2 deve ser validado no Preview autorizado, em desktop e mobile, cobrindo ao menos: conta sem entitlement, owner/admin elegível incompleto, retomada de progresso parcial, erro localizado com preservação dos demais valores, bloqueio autoritativo fail-closed, conclusão sem criação prematura de draft e seleção explícita entre múltiplos drafts. A validação deve incluir teclado e inspeção de erros visíveis de runtime.
+- Usar WCAG 2.2 como baseline proporcional da jornada, verificando por inspeção manual e apoio automatizado: operação somente por teclado, ordem e visibilidade de foco, foco após transição ou erro, associação programática entre label, hint, controle e erro, anúncio de feedback dinâmico, contraste aplicável, alvos de toque e ausência de ação disponível apenas por hover. Ferramenta automática isolada não comprova conformidade, e o recorte não pode declarar conformidade WCAG 2.2 integral sem auditoria própria.
 - Evidências humanas futuras devem cobrir pelo menos:
   - conta sem entitlement permanece na experiência comercial;
   - conta elegível e incompleta entra no onboarding;
@@ -257,7 +290,7 @@
   - consumir o catálogo E20.2 por versão explícita e cadeia autoritativa de taxon;
   - definir contratos tipados para leitura, gravação e completude por escopo, sem duplicar definições da E20.2;
   - reutilizar valores existentes quando válidos;
-  - materializar a menor persistência compatível com o schema real, somente depois de fechar a forma física na v2;
+  - materializar o agregado 1:1 `public.account_landing_page_onboarding_configurations` definido nesta v2, sem normalização preventiva por campo;
   - preservar progresso parcial e retomada;
   - manter conta, membership, entitlement e taxon como gates server-side fail-closed;
   - não criar `onboarding_status`, snapshot de geração ou LP `draft` nesta fase.
@@ -266,8 +299,12 @@
   - obrigatório/condicional aplicável ausente bloqueia conclusão; opcional ausente não bloqueia;
   - configuração parcial válida pode ser lida novamente sem perda;
   - nenhuma lista paralela de campos, hardcode de plano ou resolver paralelo é introduzido;
-  - nenhuma nova tabela, migration, bucket ou infraestrutura é criada sem forma física aprovada na v2 e fonte real do projeto;
-  - testes cobrem casos positivos, negativos e fail-closed aplicáveis.
+  - a migration cria somente `public.account_landing_page_onboarding_configurations` e seus controles indispensáveis, sem bucket, Storage, view ou objeto paralelo;
+  - o agregado persiste somente valores válidos associados a `fieldKey`, escopo e versão do catálogo, preserva revisão otimista e não materializa completude;
+  - se a forma física aprovada introduzir ou alterar tabela, coluna, constraint, índice, RLS, policy ou grant, o mesmo PR deve incluir snippet SQL read-only versionado em `supabase/snippets/` que verifique existência e shape dos objetos, isolamento por tenant, RLS habilitado, grants mínimos, policies esperadas e ausência de uso de `account_landing_pages` como persistência prematura do onboarding. O snippet não substitui testes comportamentais em ambiente local ou descartável e não pode realizar mutação remota;
+  - testes cobrem save parcial sem obrigatórios, conclusão incompleta, precedência autoritativa, duas contas distintas, ator inválido, ausência legítima, objeto indisponível e erro operacional, além dos casos positivos e fail-closed aplicáveis;
+  - testes SQL comprovam `NULL → draft` válido da mesma conta, rejeição de rebind, rejeição de retorno a `NULL`, rejeição de vínculo cruzado e atualização de outros campos sem alteração do vínculo;
+  - casos de concorrência cobrem duas criações simultâneas para a PK 1:1, update com revisão válida e stale, classificação segura do resultado zero e prova de que nenhuma mutação atinge mais de uma linha.
 
 ### 3.2. E19.2.4 — Jornada guiada pós-entitlement e retomada
 
@@ -283,6 +320,7 @@
   - exibir obrigatório, opcional, pendência recuperável e bloqueio autoritativo de forma compreensível;
   - preservar UX responsiva, teclado, foco e componentes do design system;
   - manter E9.7.4/E9.7.5, tracking e IA fora desta fase.
+  - a UI específica da jornada deve residir em `app/a/[account]/_components/`, com composição na superfície autenticada `app/a/[account]/`. Guards de acesso permanecem no boundary `access` e no guard SSR existente. Contratos, completude, leitura e persistência de domínio permanecem em `lib/lp-builder/`, com DB somente por adapters server-side. Server Actions da jornada apenas validam entrada, invocam a API pública do boundary, revalidam a rota e traduzem o resultado para a UI. `AccessProvider` não deve receber lógica de completude, valores E20.2 nem acesso a banco; novo provider só é permitido se houver estado client compartilhado real e não autoritativo.
 - Critérios de aceite:
   - conta sem entitlement não entra no onboarding;
   - owner/admin elegível com configuração incompleta entra na jornada;
@@ -291,6 +329,7 @@
   - erro localizado não apaga os demais valores;
   - saída e retorno retomam a configuração parcial;
   - desktop, mobile e teclado são validados com evidência proporcional.
+  - em teste humano guiado, owner ou admin elegível deve reconhecer, sem explicação de vocabulário interno, o próximo passo, quais valores são obrigatórios ou opcionais, quais pendências são recuperáveis e quais bloqueios são autoritativos. Não transformar tempo de clique, descoberta ou conclusão em métrica obrigatória sem hipótese e plano de medição próprios.
 
 ### 3.3. E19.2.5 — Identidade visual mínima da conta
 
@@ -300,7 +339,7 @@
   - permitir confirmar a identidade visual mínima necessária ao Starter sem IA e sem tornar logo obrigatório.
 - Entrega:
   - suportar `brand_logo_asset` como valor opcional conforme a E20.2, sem inventar URL livre como contrato do asset;
-  - definir na v2, a partir da infraestrutura real, formatos, limites, remoção e armazenamento seguro do logo; devolver ao Estrategista antes de criar bucket ou serviço novo;
+  - reutilizar `brand_logo_asset` somente quando uma fonte canônica existente fornecer a referência opaca válida; não oferecer campo livre, upload, remoção ou substituição de logo;
   - apresentar opções simples de paleta, permitir edição humana e validar o contrato de cinco papéis da E20.2;
   - validar contraste e legibilidade de forma determinística;
   - persistir somente a paleta confirmada como valor canônico reutilizável;
@@ -310,6 +349,7 @@
   - paleta válida e confirmada é necessária para completude;
   - combinação inválida não pode ser confirmada;
   - nenhuma chamada OpenAI, extração automática de cores ou geração personalizada de paleta é introduzida;
+  - nenhum bucket, Storage, Blob, URL de asset ou infraestrutura de upload é criado;
   - experiência permanece compreensível sem exigir conhecimento técnico de cinco cores.
 
 ### 3.4. E19.2.6 — Revisão, conclusão e transição para LP `draft`
@@ -326,25 +366,30 @@
   - sem draft existente, permitir criação pelo fluxo E19.1;
   - com draft existente, permitir seleção/continuação;
   - com vários drafts, exigir escolha explícita;
+  - após criar ou selecionar explicitamente um draft da mesma conta, vincular o agregado a ele sem copiar valores para `account_landing_pages` e sem permitir rebind silencioso;
   - manter limites de quantidade fora da E19.2 até capacidade correspondente ser admitida e integrada pela E9.7;
   - direcionar a conta ao espaço operacional após a escolha/criação, sem geração de conteúdo neste recorte.
+  - estender a API pública de `lib/lp-builder/` com operação server-only de leitura dos drafts legítimos da conta, implementada por adapter com colunas explícitas e ordenação determinística. O resultado deve distinguir `nenhum draft`, `um ou mais drafts` e `falha operacional`; UI, página e Server Action não consultam `account_landing_pages` diretamente. A autorização deve reutilizar os gates canônicos e não ser inferida da simples presença de linhas.
 - Critérios de aceite:
   - configuração incompleta não cria LP nova;
   - configuração completa libera a transição;
   - draft existente pode ser selecionado sem duplicação automática;
   - múltiplos drafts nunca são escolhidos silenciosamente;
+  - valores `campaign` e `landing_page` ficam vinculados somente ao draft explicitamente escolhido e não são reutilizados por outro draft;
   - criação continua usando os gates server-side da E19.1;
+  - casos executáveis cobrem zero, um e vários drafts, conta divergente, membership inválido e erro de leitura; erro operacional não é convertido em lista vazia;
+  - casos de bind cobrem vínculo único bem-sucedido, revisão stale, resultado zero classificado com segurança, tentativa de rebind e garantia de `.maxAffected(1)`;
   - nenhuma geração, revisão de copy, publicação ou tracking é iniciada.
 
-### 3.5. Próxima ação após a v1
+### 3.5. Execução após aprovação da v2
 
-- Orientar o Executor a ajustar `docs/roadmap.md` no mesmo PR conforme `docs/prompt-abc.md` e `docs/template-roadmap.md`.
-- Registrar somente `19.2`, `19.2.1`, `19.2.2` quando materialmente aplicável e as subseções planejadas `19.2.3` a `19.2.6`, com títulos, objetivos e status planejado; não registrar implementação inexistente.
-- Depois da reconciliação do roadmap, apresentar ao humano as opções do item 5 de `docs/prompt-estrategista.md`.
+- Reconciliar `docs/roadmap.md` pelo Prompt ABC somente depois da aprovação da v2, sem registrar implementação inexistente.
+- Executar `E19.2.3`, `E19.2.4`, `E19.2.5` e `E19.2.6` nessa ordem, com checkpoint e gate próprios por subseção.
+- Manter migration e runtime no mesmo PR, sem apply remoto pré-merge; antes do apply e da leitura tipada bem-sucedida, preservar a experiência comercial vigente e manter o onboarding novo desativado.
 
 ## 4. Escopo negativo e critérios de parada
 
-### 4.1. Fora do escopo da E19.2 v1
+### 4.1. Fora do escopo da E19.2
 
 - Geração de copy ou conteúdo da LP.
 - Seleção efetiva de módulos e variantes para geração.
@@ -361,15 +406,16 @@
 - Novo editor visual, drag-and-drop ou redesign amplo do Account Dashboard.
 - Catálogo amplo de produtos, serviços, assets ou mídias.
 - Override de logo por LP.
+- Upload, bucket, Storage, Blob ou gestão de assets.
 - Implementação preventiva de recursos para Lite, Pro ou Ultra.
 
 ### 4.2. Critérios de parada
 
-- Se o schema vigente não possuir estrutura segura para persistir os valores pré-`draft` com isolamento tenant, scopes e retomada, parar antes de criar migration ou tabela e devolver ao Estrategista com a alternativa mínima baseada nas fontes reais.
-- Se o logo exigir bucket, serviço ou nova infraestrutura não existente/aprovada, parar antes de criá-la e devolver ao Estrategista.
+- Se a migration candidata não puder materializar o agregado 1:1 aprovado com isolamento tenant, RLS, grants mínimos e retomada, parar antes de criar alternativa física ou normalizar campos por conta própria.
+- Se o logo exigir captura, upload, bucket, serviço ou nova infraestrutura, manter logo ausente e parar a ampliação; assets pertencem a evolução futura.
 - Se a E19.2 precisar de campo não existente na E20.2, devolver ao recorte responsável pela E20.2; não criar campo paralelo.
 - Se uma regra depender de capacidade ainda não admitida na E9.7.4, preservar a dependência e não inventar valor ou gate.
 - Se o consumo real de `lib/commercial-capabilities/` exigir os P2 pós-merge ainda não corrigidos, tratar o ajuste no recorte da E9 antes da integração.
 - Se taxon, entitlement, conta ou membership estiverem ausentes ou inválidos, falhar fechado; não criar fallback permissivo.
-- Se surgir necessidade de IA ou automação na v1, interromper a ampliação e voltar ao fluxo do Estrategista antes de mudar `Automação: não`.
+- Se surgir necessidade de IA ou automação nesta entrega, interromper a ampliação e voltar ao fluxo do Estrategista antes de mudar `Automação: não`.
 - Se qualquer fase começar a incorporar geração, publicação, tracking, CRM ou capacidades comerciais não aprovadas, parar e devolver ao humano como ampliação de escopo.
