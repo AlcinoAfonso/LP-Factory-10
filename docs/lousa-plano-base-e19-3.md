@@ -10,10 +10,14 @@
 - Durante o debate, registrar somente definições aceitas pelo humano e questões ainda abertas que sejam necessárias ao fechamento do recorte.
 - Ao encerrar o debate, este rascunho será consolidado como plano-base v1, sem criar arquivo paralelo.
 
-### 0.2. Recorte
+### 0.2. Recorte e objetivo
 
 - `E19.3 — Composição e geração da primeira LP real`.
-- Objetivo prioritário do projeto: chegar rapidamente à primeira landing page real gerada pelo fluxo oficial, preservando o princípio de menor solução suficiente.
+- Objetivo do recorte: implementar o menor mecanismo universal capaz de transformar qualquer `landing_page` legítima em `draft`, já configurada pelo fluxo oficial, em uma landing page real e avaliável, compondo as fontes canônicas vigentes, determinando server-side sua estrutura efetiva, usando IA somente para gerar o conteúdo autorizado pelos contratos, validando deterministicamente o resultado e materializando conteúdo e proveniência suficientes para sua visualização e avaliação humana.
+- O mecanismo deve funcionar da mesma forma para qualquer taxon, plano e LP admitidos pelos contratos vigentes; diferenças de nicho entram somente pelas fontes canônicas responsáveis por essas diferenças.
+- A primeira LP piloto é somente a primeira validação real desse mecanismo universal.
+- O recorte termina com a LP ainda em `draft`; publicação, edição avançada, regeneração, tracking e demais evoluções não integram esse objetivo.
+- Objetivo prioritário do projeto: chegar rapidamente à primeira landing page real gerada pelo fluxo oficial, preservando o princípio de menor solução suficiente sem criar solução descartável específica para o piloto.
 
 ### 0.3. Fontes obrigatórias do debate
 
