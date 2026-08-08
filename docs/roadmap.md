@@ -1642,6 +1642,37 @@ Repositório — Ajustados
   - O QA autenticado no Preview aprovou a experiência e o comportamento da Taxonomia, Páginas comerciais, Perfis de orientação, Resoluções de nicho e páginas de gerenciamento em desktop e mobile, incluindo teclado, foco e preservação das ações existentes.
   - O PR aguarda a inspeção final do Estrategista; merge continua exclusivamente humano.
 
+12.6 Estrutura da LP no Admin Dashboard
+
+12.6.1 Objetivo e status
+- Objetivo: Expor no Admin uma consulta estrutural read-only da landing page, reunindo parâmetros, módulos e variantes, entradas e pesquisas em uma única rota.
+- Status: Implementação candidata no PR #695; validações técnicas e QA autenticado aprovados, aguardando inspeção final do Estrategista.
+
+12.6.2 Registros do recorte
+- Repositório:
+  - Criados:
+    - `app/admin/(protected)/estrutura-lp/page.tsx`
+    - `lib/admin/adapters/adminLandingPageStructureAdapter.ts`
+  - Ajustados:
+    - `components/admin/adminNavigation.ts`
+    - `lib/admin/adapters/adminTaxonomyAdapter.ts`
+    - `lib/conversion-content/landing-page/index.ts`
+    - `lib/conversion-content/landing-page/root-resolver.ts`
+- Updates:
+  - Aplicados: `prod#14`, `prod#16`, `prod#17`.
+- Referências:
+  - Plano-base aprovado: `docs/lousa-plano-base-e12-6.md` — E12.6.3.
+
+12.6.3 Consulta estrutural read-only
+- Status: Implementação candidata, sem alteração de banco, persistência, mutation, IA, automação ou infraestrutura.
+- Conteúdo:
+  - O Admin possui um único item `Estrutura da LP` e uma única rota `/admin/estrutura-lp`; as visões Parâmetros, Módulos e variantes, Entradas e Pesquisas permanecem na mesma rota por query string.
+  - Parâmetros consulta o contrato público vigente da E18.4; Módulos e variantes reutiliza identidades, seleção, validação e resolução canônicas da E18.5.
+  - Entradas resolve o catálogo da E20.2 por versão, plano e taxon ativo; Pesquisas preserva a resolução independente de BB e EC da E10.8 e explicita estados próprio, herdado, ausente ou indisponível.
+  - A leitura administrativa usa um único adapter novo e consultas server-side em lote, sem exportar registry ou schema privado, sem N+1 e sem regra de domínio em React.
+  - `npm ci`, `npm run check`, `git diff --check` e os validadores canônicos da E18.4, E18.5, E20.2 e E10.8 foram aprovados; o QA autenticado aprovou as quatro visões em desktop e mobile, teclado, foco e console.
+  - O PR permanece draft e o merge continua exclusivamente humano.
+
 13. E13 — Partner Dashboard
 
 13.1 Status
