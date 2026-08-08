@@ -67,7 +67,7 @@ Fontes de referência: `README.md`, `docs/roadmap.md`, `docs/base-tecnica.md`, `
 - Logo ou asset da marca é opcional; sua ausência não bloqueia o onboarding nem a futura geração.
 - `paid_search_keyword_map` permanece opcional para alinhamento entre busca, anúncio e LP.
 - A experiência apresenta somente os campos exigidos pelas capacidades do plano vigente; upgrade solicita apenas novos valores efetivamente consumidos, sem repetir toda a configuração.
-- A E20.2 v1 ainda aplica campos equivalentes aos quatro planos; a E19.2 pode exigir refinamento focalizado de `allowedPlans`, tipos, escopos ou política de override quando houver consumidor real e aprovação pela barreira de admissão vigente, sem catálogo preventivo.
+- A E20.2 v2 materializa os campos usados pela E19.2; novas diferenças por plano só entram com consumidor real e decisão aprovada, sem catálogo preventivo.
 
 ### 1.6. Manter o perfil de orientação do taxon
 
@@ -129,12 +129,12 @@ Fontes de referência: `README.md`, `docs/roadmap.md`, `docs/base-tecnica.md`, `
 - A E19.2 coleta e confirma a configuração mínima da conta e o brief da primeira LP Starter; não gera conteúdo da LP.
 - A logo é opcional e pode orientar a proposta visual, mas suas cores não limitam obrigatoriamente a LP.
 - Com logo, o sistema pode usar suas cores como candidatas; sem logo, usa a orientação visual resolvida para o taxon e o contexto da LP para apresentar poucas paletas pré-validadas.
-- Na E19.2 v1, a proposta inicial de paleta é manual ou determinística e pode considerar logo, quando houver, itens estruturais de `lp_overview` como `visual_tone`, `color_direction`, `image_style` e `typography_direction`, e os limites visuais da E18.4, sem depender de IA.
+- Na E19.2 concluída, a proposta inicial de paleta é manual ou determinística e pode considerar logo, quando houver, itens estruturais de `lp_overview` como `visual_tone`, `color_direction`, `image_style` e `typography_direction`, e os limites visuais da E18.4, sem depender de IA.
 - A paleta apresenta funções compreensíveis para cor principal, secundária e de destaque, além de combinações acessíveis de fundo e texto.
 - A conta pode aceitar, reorganizar, alterar ou escolher outra opção pré-validada; o fluxo separa proposta, edição e confirmação para que a origem da proposta possa evoluir sem alterar o contrato final.
 - Contraste, legibilidade, foco e demais limites de acessibilidade permanecem validados deterministicamente.
 - A paleta confirmada funciona como padrão reutilizável da conta, sem impedir outra escolha em uma LP específica.
-- O plano-base da E19.2 define o contrato de logo, armazenamento seguro do asset, formatos, limites, remoção e persistência da paleta, sem presumir que uma URL livre ou JSON existente resolva o domínio.
+- O recorte concluído não criou upload nem infraestrutura de assets; logo opcional só pode reutilizar referência canônica existente.
 - Ao concluir o onboarding, a conta fica apta a criar ou selecionar a identidade mínima de uma LP `draft` pelo fluxo vigente da E19.1.
 - A E19 permanece o único fluxo de LPs para contas com entitlement válido; uma evolução posterior compõe E10.8, E18.4, E18.5, E20.2 e E20.3 e usa os valores confirmados no onboarding, sem alterar essas fontes.
 - Na LP concreta, a seleção efetiva de módulos e variantes pertence ao servidor e deve considerar plano, prioridade, ordem recomendada e dados ou evidências operacionais disponíveis.
@@ -209,7 +209,7 @@ Fontes de referência: `README.md`, `docs/roadmap.md`, `docs/base-tecnica.md`, `
 
 - Preservar o catálogo declarativo, suas camadas, resolução por taxon e plano, proveniência, validação e barreira de admissão já concluídos.
 - Não copiar os campos resolvidos para o perfil da E20.3.
-- Refinar focalmente o catálogo para a E19.2 quando necessário para representar serviço ou oferta principal, descrição factual curta, logo opcional e paleta confirmada, com escopo, origem, tipo, validação, obrigação, plano e snapshot definidos.
+- Preservar o refinamento v2 já concluído para serviço ou oferta principal, descrição factual curta, logo opcional, paleta confirmada, escopos e overrides autorizados.
 - Formalizar em cada campo a política de reutilização, herança e eventual override por LP.
 - Manter logo e nome do negócio como valores da conta ou negócio; manter funil como valor da LP; permitir paleta padrão da conta com override explícito por LP.
 - Representar apenas configurações e referências não secretas de Google Ads; credenciais e tokens permanecem fora do catálogo.
@@ -239,14 +239,14 @@ Fontes de referência: `README.md`, `docs/roadmap.md`, `docs/base-tecnica.md`, `
 ### 2.6. E19.2 — Onboarding e configuração mínima da conta para LP Starter
 
 - A E19.1 já mantém a identidade mínima de uma LP `draft`, vinculada à conta e protegida pelos gates de conta, membership e entitlement.
-- A E19.2 cria a experiência pós-entitlement da conta e prepara os valores reutilizáveis do negócio e o brief mínimo da primeira LP Starter, sem gerar conteúdo.
+- A E19.2 está concluída e validada no ambiente hospedado; prepara os valores reutilizáveis do negócio e o brief mínimo da primeira LP Starter, sem gerar conteúdo.
 - Substituir a permanência na página comercial por onboarding quando houver entitlement válido e configuração incompleta; depois da conclusão, direcionar ao espaço operacional da E19.
 - Reutilizar nome, contatos, site, taxon e demais valores existentes quando válidos e solicitar somente os dados ausentes.
 - Coletar separadamente valores da conta ou negócio e valores específicos da primeira LP.
 - Exigir para Starter serviço ou oferta principal e descrição factual curta; manter logo opcional.
-- Apresentar e confirmar a paleta visual conforme a seção 1.9 por caminho manual ou determinístico na E19.2 v1, preservando possibilidade de alteração e override por LP.
-- A E19.2 v1 deve permanecer integralmente utilizável sem IA; assistência futura pode produzir candidatas sem alterar os contratos da E20.2 nem a confirmação humana.
-- Aplicar progressive disclosure conforme as capacidades efetivas resolvidas pela E9, sem hardcode do nome do plano.
+- Apresentar e confirmar a paleta visual conforme a seção 1.9 por caminho manual ou determinístico, preservando possibilidade de alteração e override por LP.
+- O fluxo concluído permanece integralmente utilizável sem IA; assistência futura pode produzir candidatas sem alterar os contratos da E20.2 nem a confirmação humana.
+- Progressive disclosure condicionado por capacidade permanece posterior até existir capacidade admitida e integração canônica da E9.7.
 - Organizar configurações reutilizáveis de conta em seletor ou área própria depois do primeiro onboarding.
 - Separar configuração padrão de tracking no nível da conta da associação e mensuração específicas da LP.
 - Não criar novo status de onboarding na conta; derivar completude do catálogo aplicável.
@@ -283,19 +283,13 @@ Fontes de referência: `README.md`, `docs/roadmap.md`, `docs/base-tecnica.md`, `
 
 ## 3. Ordem dos próximos planos-base
 
-- Base consolidada para a jornada: E10.8, E18.4, E18.5, E20.2, E20.3, incluindo E20.3.5, E12.4.3, incluindo E12.4.3.1–12.4.3.2, E19.1 e entitlement comercial da E9.
-- 1º — preparar no E9 o plano-base do catálogo canônico de capacidades e limites por plano, começando pelo contrato mínimo do Starter.
-- 2º — refinar focalmente a E20.2 para escopos, política de override e campos realmente consumidos pelo onboarding Starter.
-- 3º — preparar o plano-base v1 da E19.2 para onboarding e configuração mínima Starter e reconciliar no mesmo PR as referências ativas do roadmap, preservando como históricos os planos já encerrados.
-- 4º — no plano-base da E19.2, fechar contratos de valores, logo, paleta, tracking por nível, persistência, completude, progressive disclosure e transição da página comercial para o espaço operacional.
-- 5º — implementar a E19.2 em fases pequenas, sem geração de conteúdo.
-- 6º — validar o onboarding com a conta piloto e confirmar que o brief mínimo Starter está completo.
-- 7º — avaliar e preparar o plano-base da evolução posterior da E19 para composição, geração, revisão, materialização e publicação.
-- 8º — gerar e avaliar a primeira LP piloto pelo fluxo oficial da E19.
-- 9º — planejar a disponibilidade comercial por `taxon + plano` em E20.4 e E12.4.5–12.4.6.
-- A E12.4.4 é retirada da implementação e absorvida pela jornada simplificada; não é concluída nem bloqueia a E19.2.
-- Reabrir E18.4, E18.5 ou o perfil de orientação somente diante de aprendizado material obtido com LPs reais. A E20.2 pode receber refinamento focalizado durante o planejamento ou a implementação da E19.2 quando houver consumidor real, necessidade concreta e aprovação pela barreira de admissão vigente.
-- Gates operacionais remanescentes da E12.4.3 são acompanhados no roadmap e não criam novo plano conceitual.
+- Base consolidada até a LP `draft` configurada: E10.8, E18.4, E18.5, E20.2, E20.3, incluindo E20.3.5, E12.4.3, incluindo E12.4.3.1–12.4.3.2, E19.1, E19.2 e entitlement comercial da E9.
+- 1º — preparar `E19.3 — Composição e geração da primeira LP real`, limitado ao mínimo necessário para compor as fontes vigentes, selecionar módulos e variantes no servidor, gerar conteúdo estruturado candidato e materializar uma LP avaliável no `draft` existente com snapshot suficiente.
+- 2º — implementar somente o recorte necessário da E19.3 para gerar a primeira LP real, sem antecipar publicação, tracking, analytics, editor visual ou evolução multicanal.
+- 3º — gerar e avaliar a primeira LP piloto pelo fluxo oficial da E19.
+- 4º — somente após essa validação, planejar os recortes posteriores de revisão/publicação e a disponibilidade comercial por `taxon + plano` em E20.4 e E12.4.5–12.4.6.
+- A E12.4.4 permanece retirada da implementação e não cria gate paralelo.
+- Não reabrir E18.4, E18.5, E20.2, E20.3 ou E19.2 sem bloqueio real demonstrado pela geração da primeira LP.
 
 ## 4. Onde cada ajuste entra no roadmap
 
@@ -325,7 +319,7 @@ Fontes de referência: `README.md`, `docs/roadmap.md`, `docs/base-tecnica.md`, `
 ### 4.4. E20
 
 - E20.2 define e resolve o catálogo de entradas; a E19 coleta, valida e persiste os valores concretos e preserva o snapshot.
-- O refinamento focalizado da E20.2 para a E19.2 deve cobrir somente valores realmente consumidos no onboarding Starter, inclusive serviço ou oferta principal, descrição factual, logo opcional, paleta confirmada, escopos e overrides autorizados.
+- O refinamento v2 da E20.2 para a E19.2 está concluído e cobre serviço ou oferta principal, descrição factual, logo opcional, paleta confirmada, escopos e overrides autorizados.
 - E20.2 não define capacidades ou limites comerciais do plano.
 - E20.3 mantém contrato, persistência, estados, validação e resolução própria ou herdada do perfil de orientação, sem copiar a E20.2.
 - A E20.3.5 mantém `generation_guidance` opcional e exclusivamente humano sem alterar estados, herança, resolução ou recomendações.
@@ -336,10 +330,10 @@ Fontes de referência: `README.md`, `docs/roadmap.md`, `docs/base-tecnica.md`, `
 ### 4.5. E19
 
 - A E19.1 mantém a identidade mínima da LP real em `draft` e os gates já implementados.
-- A E19.2 implementa o onboarding pós-entitlement, coleta e confirmação dos valores mínimos Starter, identidade visual, configuração de tracking por nível e preparação do brief, sem gerar conteúdo.
-- A E19.2 v1 deve permanecer utilizável sem IA; propostas futuras por IA devem produzir candidatas editáveis e confirmáveis, sem alterar contratos, ownership ou completude.
-- A E19.2 consome capacidades e limites resolvidos pela E9 para controlar progressive disclosure e impedir hardcode do plano.
-- Uma evolução posterior da E19 compõe o pacote atual de fontes e gera e mantém a LP real da conta com entitlement válido.
+- A E19.2 está concluída: implementa onboarding pós-entitlement, coleta e confirmação dos valores mínimos Starter e identidade visual mínima, sem gerar conteúdo.
+- A E19.2 permanece utilizável sem IA; a otimização futura do onboarding não deve competir com a geração da primeira LP real.
+- A E19.2 não integrou capabilities E9.7 ainda não admitidas; progressive disclosure por capability permanece futuro.
+- `E19.3` é o próximo recorte recomendado para compor as fontes vigentes e gerar/materializar a primeira LP real da conta no `draft` já existente.
 - Conta piloto e cliente usam o mesmo onboarding e o mesmo fluxo; o entitlement manual válido permite o piloto antes da disponibilidade pública.
 - Não existe LP teste paralela, geração pelo Admin Dashboard, prontidão persistida nem dependência implementável da E12.4.4.
 
@@ -361,6 +355,6 @@ Fontes de referência: `README.md`, `docs/roadmap.md`, `docs/base-tecnica.md`, `
 
 ### 5.2. Assistência por IA na configuração da LP
 
-- Manter a E19.2 v1 integralmente utilizável sem IA; após a primeira LP validada, avaliar assistência opcional para serviço/oferta e identidade visual.
+- Manter a E19.2 concluída integralmente utilizável sem IA; após a primeira LP validada, avaliar assistência opcional para serviço/oferta e identidade visual.
 - A IA futura produz somente candidatas; o cliente edita e confirma, enquanto campos, ownership, validação e completude da E20.2 permanecem inalterados.
 - O desenho atual deve separar a origem da proposta do valor confirmado para permitir essa evolução sem reconstruir domínio, persistência ou jornada.
