@@ -51,7 +51,7 @@ export default async function AdminLandingPageStructurePage({ searchParams }: Pa
   return (
     <div className="space-y-4">
       <AdminPageHeader
-        eyebrow="Contrato estrutural read-only"
+        eyebrow="Contrato estrutural somente leitura"
         title="Estrutura da LP"
         description="Consulte parâmetros, módulos, entradas e pesquisas usados pela landing page sem alterar registries ou dados operacionais."
       />
@@ -146,7 +146,7 @@ function RootView({ data }: { data: RootData }) {
         <DataSection title="Critérios visuais" description="Baseline responsiva e de acessibilidade do contrato.">
           <DefinitionList items={[
             ["Baseline", "Referência WCAG 2.2"],
-            ["Mobile first", yesNo(root.visualCriteria.mobileFirst)],
+            ["Prioridade mobile", yesNo(root.visualCriteria.mobileFirst)],
             ["Viewport mínimo", `${root.visualCriteria.minViewportPx}px`],
             ["Viewports de evidência", root.visualCriteria.evidenceViewportsPx.map((value) => `${value}px`).join(", ")],
             ["Foco visível", yesNo(root.visualCriteria.visibleFocusRequired)],
@@ -222,8 +222,8 @@ function ModuleView({ data }: { data: ModuleData }) {
               lifecycleLabel(resolved.module.lifecycleStatus),
             ]}
           />
-          <DataSection title="Fields resolvidos" description="Contrato de conteúdo da variante selecionada.">
-            <Table headings={["Field", "Tipo", "Cardinalidade", "Papel semântico", "Política", "Fonte"]} minWidth="980px">
+          <DataSection title="Campos resolvidos" description="Contrato de conteúdo da variante selecionada.">
+            <Table headings={["Campo", "Tipo", "Cardinalidade", "Papel semântico", "Política", "Fonte"]} minWidth="980px">
               {resolved.fieldContract.fields.map((field) => (
                 <tr key={field.path} className="align-top">
                   <Cell primary={moduleFieldLabel(field.fieldKey)} secondary={field.fieldKey} />
@@ -298,8 +298,8 @@ function InputView({ data }: { data: InputData }) {
               "Válido",
             ]}
           />
-          <DataSection title="Fields resolvidos" description="Condições, validação e evidências ficam como detalhes secundários.">
-            <Table headings={["Field", "Finalidade", "Origem", "Tipo", "Escopo", "Obrigação"]} minWidth="980px">
+          <DataSection title="Campos resolvidos" description="Condições, validação e evidências ficam como detalhes secundários.">
+            <Table headings={["Campo", "Finalidade", "Origem", "Tipo", "Escopo", "Obrigação"]} minWidth="980px">
               {resolved.fields.map((field) => (
                 <Fragment key={field.fieldKey}>
                   <tr className="align-top">
