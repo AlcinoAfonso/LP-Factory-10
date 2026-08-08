@@ -19,9 +19,8 @@ import {
   type LandingPageInputCatalogTaxonChain,
   type LandingPageInputCatalogTaxonIdentity,
 } from "@/conversion-content/landing-page/input-catalog";
-import { resolveLandingPageResearchForTaxon } from "@/conversion-content/adapters/landingPageResearchAdapter";
 import { createServiceClient } from "@/lib/supabase/service";
-import { getAdminTaxonResearchDiagnostics } from "./adminTaxonomyAdapter";
+import { getAdminTaxonResearchPresentation } from "./adminTaxonomyAdapter";
 import type { AdminTaxonSummary } from "./adminReadOnlyTypes";
 
 export const adminLandingPageStructureViews = [
@@ -219,17 +218,13 @@ async function readResearch(query: StructureQuery) {
     };
   }
 
-  const [diagnostics, result] = await Promise.all([
-    getAdminTaxonResearchDiagnostics(selectedTaxon),
-    resolveLandingPageResearchForTaxon({ taxonId: selectedTaxon.id }),
-  ]);
+  const presentation = await getAdminTaxonResearchPresentation(selectedTaxon);
 
   return {
     taxons: taxonRead.taxons,
     taxonError: null,
     selectedTaxon,
-    diagnostics,
-    result,
+    presentation,
   };
 }
 
