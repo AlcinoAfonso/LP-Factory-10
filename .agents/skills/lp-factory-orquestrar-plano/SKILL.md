@@ -63,7 +63,7 @@ Parar somente diante de handoff incompleto, investigação necessária ou decis�
 ## 3. Produzir v2 e matriz
 
 1. Editar somente o plano na branch de automação e preservar objetivo, decisões válidas, ordem, hierarquia e granularidade da v1.
-2. Classificar cada acréscimo como `preservação`, `extensão adjacente necessária e proporcional` ou `expansão`; não incorporar expansão sem decisão humana ou novo recorte.
+2. Classificar cada acréscimo como `preservação`, `extensão adjacente necessária e proporcional` ou `expansão`; não incorporar expansão sem decisão humana ou novo recorte. Durante a consolidação, reduzir o conjunto à menor solução end-to-end suficiente, preservando proteções necessárias e eliminando distinções, camadas ou validações repetidas sem consumidor atual ou proteção indispensável.
 3. Aplicar somente patches autossuficientes e rastreáveis. Oportunidade estratégica condicional de update não autoriza implementação atual.
 4. Preparar uma linha de matriz por achado estrutural, update elegível e decisão de automação com especialista, ID, achado, classificação original, relação com o escopo, tratamento, destino do update quando aplicável, localização e evidência.
 5. Antes da Passagem 1, não gravar nem expor matriz ou pareceres ao Analista. Validar a v2 e criar checkpoint `LP-Factory-Stage: plan-v2` somente com o plano.
