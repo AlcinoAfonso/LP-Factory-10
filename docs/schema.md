@@ -1,8 +1,8 @@
 0. Introdução
 
 0.1 Cabeçalho
-• Data da última atualização: 04/08/2026
-• Documento: LP Factory 10 — Schema (DB Contract) v1.0.37
+• Data da última atualização: 08/08/2026
+• Documento: LP Factory 10 — Schema (DB Contract) v1.0.38
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -244,6 +244,7 @@
 • account_landing_pages_slug_chk: slug no padrão seguro `^[a-z0-9]+(-[a-z0-9]+)*$`.
 • account_landing_pages_name_chk: nome não vazio após trim.
 • account_landing_pages_account_slug_uidx: UNIQUE (account_id, slug).
+• account_landing_pages_id_account_id_key: UNIQUE (id, account_id), usado pelo vínculo tenant-safe da configuração de onboarding.
 
 1.9.5 Índices
 • account_landing_pages_account_id_idx em account_id.
@@ -811,6 +812,45 @@
 • Trigger Hub e auditoria: não.
 • `landing_page_generation_profile_items_set_updated_at`: executa `public.tg_set_updated_at()` antes de UPDATE.
 
+1.26 account_landing_page_onboarding_configurations
+1.26.1 Função
+• Agregado versionado e retomável da configuração mínima de onboarding da primeira LP Starter por conta.
+• A completude é derivada dos valores válidos do catálogo aplicável; não há `onboarding_status` persistido.
+
+1.26.2 Colunas
+• account_id uuid primary key
+• landing_page_id uuid null
+• catalog_version integer not null
+• `values` jsonb not null default '{}'::jsonb
+• revision bigint not null default 1
+• created_by uuid not null
+• updated_by uuid not null
+• created_at timestamptz not null default now()
+• updated_at timestamptz not null default now()
+
+1.26.3 Relacionamentos e constraints
+• account_id referencia public.accounts(id) com ON UPDATE CASCADE e ON DELETE CASCADE.
+• `(landing_page_id, account_id)` referencia `(id, account_id)` de public.account_landing_pages com ON UPDATE CASCADE e ON DELETE RESTRICT.
+• created_by e updated_by referenciam auth.users(id) com ON UPDATE CASCADE e ON DELETE RESTRICT.
+• `catalog_version > 0`, `revision > 0` e `jsonb_typeof(values) = 'object'`.
+• A PK em account_id mantém exatamente uma configuração por conta.
+
+1.26.4 Índice
+• `account_landing_page_onboarding_configurations_landing_page_id_idx`: btree parcial em landing_page_id quando não nulo.
+
+1.26.5 Segurança e triggers
+• RLS habilitado e nenhuma policy.
+• public, anon, authenticated e ai_readonly: sem grants.
+• service_role: SELECT, INSERT e UPDATE; sem DELETE.
+• `account_landing_page_onboarding_configurations_set_updated_at`: executa `public.tg_set_updated_at()` antes de UPDATE.
+• `account_landing_page_onboarding_configurations_prevent_rebind`: trigger BEFORE UPDATE de landing_page_id; permite somente NULL → draft válido da mesma conta e rejeita rebind ou desvinculação.
+• `public.prevent_account_landing_page_onboarding_rebind()`: SECURITY INVOKER, search_path fixado e sem EXECUTE para roles externas.
+
+1.26.6 Observações de escopo
+• A configuração parcial permanece neste agregado e não é copiada para `account_landing_pages`.
+• Logo permanece opcional; não há bucket, Storage, Blob, URL ou infraestrutura de assets neste contrato.
+• O agregado não participa do Trigger Hub.
+
 2. Views
 
 2.1 v_access_context_v2
@@ -1064,6 +1104,8 @@
 • Rollback: não remove automaticamente a extensão, pois pode ser reutilizada por outros recursos
 
 99. Changelog
+v1.0.38 (08/08/2026) — E19.2: registrado o agregado `account_landing_page_onboarding_configurations`, a unicidade composta de `account_landing_pages` usada pelo FK tenant-safe, os checks, RLS, grants mínimos, triggers de atualização/write-once e a ausência de persistência prematura na tabela de LP.
+
 v1.0.33 (26/07/2026) — E20.3: perfil de orientação para geração
 • Registrado o contrato versionado das tabelas `landing_page_generation_profiles` e `landing_page_generation_profile_items`, sem perfis ou itens oficiais.
 • Registradas FKs, checks, unicidades, RLS sem policies, ausência de acesso por papéis públicos e leitura exclusiva por `service_role`.
