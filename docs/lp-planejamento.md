@@ -16,6 +16,8 @@ Fontes de referência: `README.md`, `docs/roadmap.md`, `docs/base-tecnica.md`, `
 - A conta piloto usa a origem `liberacao_manual` pelo fluxo administrativo vigente, sem autorização paralela.
 - Não deve existir fluxo, entidade ou persistência paralela para LP teste; conta piloto e clientes usam o mesmo onboarding e a mesma jornada.
 - A conta é proprietária dos dados reutilizáveis do negócio; owner ou admin são apenas os atores autorizados a configurá-los.
+- **Independência da LP materializada:** as fontes canônicas governam a geração e as edições assistidas pela IA da LP Factory; depois de materializada, a LP possui estado próprio e a edição manual do cliente pode divergir das recomendações de geração sem alterar as fontes canônicas nem outras LPs. Somente restrições explicitamente classificadas pelo contrato responsável como permanentes continuam obrigatórias após a materialização.
+- Edições assistidas pela IA da LP Factory usam o snapshot e o contexto versionado da própria LP, além dos guardrails aplicáveis; adotar versões mais novas das fontes canônicas exige ação explícita.
 
 ### 1.2. Preparar o taxon e resolver os itens estruturados
 
@@ -143,9 +145,9 @@ Fontes de referência: `README.md`, `docs/roadmap.md`, `docs/base-tecnica.md`, `
 - A saída da IA permanece estruturada, validada, candidata e sujeita à revisão humana, sem HTML, CSS, JSX, identidade inventada ou fato, preço, prova, garantia ou condição não fornecidos.
 - Geração cria conteúdo candidato em `draft`; revisão e correção são ações humanas e não publicam automaticamente; publicação é uma ação separada.
 - A E20.2 define os campos; a E19 coleta, valida e persiste os valores concretos.
-- A LP é materializada como artefato independente; o snapshot preserva os valores efetivamente usados, taxon atendido, plano, pesquisas e versões consumidas, perfil e versão própria ou herdada, versão do catálogo E20.2, root ou preset, módulos e variantes selecionados, ordem efetiva e versão do contrato de saída, sem que evoluções futuras dessas fontes alterem a LP existente.
+- O snapshot da LP preserva os valores efetivamente usados, taxon atendido, plano, pesquisas e versões consumidas, perfil e versão própria ou herdada, versão do catálogo E20.2, root ou preset, módulos e variantes selecionados, ordem efetiva e versão do contrato de saída; ele é a referência versionada para futuras edições assistidas pela IA da LP Factory.
 - O snapshot não copia registries completos, módulos disponíveis não selecionados, pesquisas não utilizadas, prompts integrais, resposta bruta não validada, secrets nem todos os perfis ou taxons da plataforma.
-- A regra exata de edição, regeneração, evolução entre planos, renderer e publicação permanece para o plano-base da evolução posterior da E19; a disponibilidade comercial continua posterior em E20.4 e E12.4.5–12.4.6.
+- A mecânica exata de edição, regeneração, evolução entre planos, renderer e publicação permanece para recorte posterior; o princípio de independência da seção 1.1 já é fixo, e a disponibilidade comercial continua posterior em E20.4 e E12.4.5–12.4.6.
 
 ### 1.10. Validar e disponibilizar por plano
 
