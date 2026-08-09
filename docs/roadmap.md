@@ -2,7 +2,7 @@
 
 0.1 Cabeçalho
 • Data: 09/08/2026
-• Versão: v1.5.132
+• Versão: v1.5.133
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -2211,7 +2211,7 @@ Repositório — Ajustados
 
 19. E19 — LP Builder
 - Objetivo: Consolidar o fluxo Core de landing pages por conta, da identidade mínima em `draft` às futuras etapas de geração, revisão, materialização e publicação, sempre por recortes aprovados.
-- Status: E19.1 concluída; E19.2 concluída; E19.3 planejada, com plano-base v1 consolidado; E19.4 é o recorte sucessor planejado, sem implementação iniciada.
+- Status: E19.1 concluída; E19.2 concluída; E19.3 planejada, com plano-base v2 aprovado; E19.4 é o recorte sucessor planejado, sem implementação iniciada.
 
 19.1 Criação produtiva mínima de LP por conta
 
@@ -2336,14 +2336,17 @@ Repositório — Ajustados
 
 19.3.1 Objetivo e status
 - Objetivo: implementar compilador determinístico universal que receba LP legítima já configurada e produza pacote completo, autorizado e testável para a geração futura.
-- Status: planejado; plano-base v1 em `docs/lousa-plano-base-e19-3.md`.
+- Status: planejado; plano-base v2 aprovado em `docs/lousa-plano-base-e19-3.md`.
 - Sem OpenAI, geração de copy, materialização ou renderer.
 
 19.3.3 Contrato e composição determinística do contexto de geração
-- Resolver seleção estrutural, autorização do contexto e interface lógica de saída.
-- Reutilizar os contratos canônicos vigentes.
-- Fazer apenas refinamentos focais indispensáveis ao consumidor real.
-- Status: planejado para execução conforme o plano-base v1.
+- Status: planejado para execução conforme o plano-base v2 aprovado.
+- Conteúdo:
+  - resolver seleção estrutural, autorização do contexto e interface lógica de saída, reutilizando os contratos canônicos vigentes;
+  - selecionar todas as recomendações estruturalmente elegíveis do perfil ativo, preservando `recommendedOrder` e `P1/P2/P3` como metadado sem quota ou corte, com omissões legítimas rastreadas e falha fechada para ausência ou inconsistência;
+  - realizar somente o refinamento focal E20.2 indispensável aos bindings autorizados de `financing_support_available` e `document_support_available` com `applicable_capabilities`, preservando configurações v2 sem migração ou regravação;
+  - produzir sucesso completo com contrato determinístico da LP e matéria-prima autorizada, ou falha determinística explícita, em API pública versionada e imutável;
+  - manter fora do recorte OpenAI, geração de copy, persistência nova, materialização, renderer, rota, UI, agente, job e automação.
 
 19.4 Geração e materialização da landing page em `draft`
 
