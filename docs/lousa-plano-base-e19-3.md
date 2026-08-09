@@ -1,4 +1,4 @@
-08/08/2026 — Rascunho vivo — E19.3 — Composição e geração de landing pages
+08/08/2026 — Rascunho vivo — E19.3 — Contrato e composição determinística do contexto de geração
 
 ## 0. Identificação
 
@@ -12,12 +12,12 @@
 
 ### 0.2. Recorte e objetivo
 
-- `E19.3 — Composição e geração da primeira LP real`.
-- Objetivo do recorte: implementar o menor mecanismo universal capaz de transformar qualquer `landing_page` legítima em `draft`, já configurada pelo fluxo oficial, em uma landing page completa, real, visualizável e avaliável, compondo as fontes canônicas vigentes, determinando server-side sua estrutura efetiva, usando IA somente para gerar o conteúdo autorizado pelos contratos, validando deterministicamente o resultado e materializando conteúdo e proveniência suficientes para sua revisão humana.
+- `E19.3 — Contrato e composição determinística do contexto de geração`.
+- Objetivo do recorte: implementar o menor mecanismo universal capaz de receber uma `landing_page` legítima já configurada pelo fluxo oficial e produzir, server-side, um pacote de geração completo, autorizado e testável, resolvendo estrutura efetiva, módulos, variantes, ordem, fields, bindings, fontes, fatos, evidências, guidance, limites e proveniência a partir dos contratos canônicos vigentes.
+- A E19.3 termina com esse pacote determinístico pronto para consumo; não chama OpenAI, não gera copy, não materializa conteúdo e não renderiza a landing page.
 - O mecanismo deve funcionar da mesma forma para qualquer taxon, plano e LP admitidos pelos contratos vigentes; diferenças de nicho entram somente pelas fontes canônicas responsáveis por essas diferenças.
-- A primeira LP piloto é somente a primeira validação real desse mecanismo universal.
-- O recorte termina com a LP ainda em `draft`; publicação, edição avançada, regeneração, tracking e demais evoluções não integram esse objetivo.
-- Objetivo prioritário do projeto: chegar rapidamente à primeira landing page real gerada pelo fluxo oficial, preservando o princípio de menor solução suficiente sem criar solução descartável específica para o piloto.
+- O objetivo macro do projeto continua sendo chegar rapidamente à primeira landing page real, mas a geração e a materialização passam a depender da implementação real e validada deste compilador.
+- O recorte sucessor previsto é `E19.4 — Geração e materialização da landing page em draft`; seu debate detalhado deve ocorrer somente após a E19.3 estar implementada e validada.
 
 ### 0.3. Fontes obrigatórias do debate
 
@@ -27,6 +27,8 @@
 - `docs/template-roadmap.md`.
 - `docs/base-tecnica.md`.
 - `docs/schema.md`.
+- `docs/prompt-estrategista.md`.
+- `docs/prompt-executor.md`.
 - Planos-base e implementação vigentes de E10.8, E18.4, E18.5, E20.2, E20.3, E19.1 e E19.2.
 - Repositório `AlcinoAfonso/LP-Factory-10`.
 
@@ -34,29 +36,29 @@
 
 ### 1.1. Natureza universal da E19.3
 
-- A E19.3 deve criar um mecanismo universal de composição, geração, validação e materialização de `landing_page`.
+- A E19.3 deve criar um compilador determinístico universal do contexto de geração de `landing_page`.
 - O contrato não pode conter regra de negócio específica do primeiro nicho, da conta piloto ou da primeira LP utilizada na validação.
 - A mesma lógica deve funcionar para qualquer taxon e qualquer LP que chegue legitimamente ao recorte pelos contratos vigentes.
 - Diferenças entre nichos devem entrar somente pelas fontes canônicas já responsáveis por essas diferenças, nunca por condicionais nominais introduzidas na E19.3.
 
 ### 1.2. Papel da primeira LP piloto
 
-- A primeira LP real é o primeiro caso concreto de validação do mecanismo universal, não a referência arquitetural para desenhá-lo.
-- O `draft` piloto serve para provar o fluxo oficial ponta a ponta e revelar bloqueios reais.
+- A primeira LP piloto é o primeiro caso concreto de validação do compilador universal, não a referência arquitetural para desenhá-lo.
+- O `draft` piloto configurado serve para provar que a E19.3 consegue produzir um pacote determinístico completo e revelar bloqueios reais antes da geração por IA.
 - Evidência encontrada no piloto pode justificar correção de contrato universal quando demonstrar um problema geral.
 - Evidência exclusiva do nicho ou da conta piloto não autoriza regra específica dentro da E19.3.
 
 ### 1.3. Princípio de simplificação
 
-- O critério macro permanece: incluir somente o que for indispensável para transformar um `draft` legítimo em uma landing page real e avaliável.
+- O critério macro permanece: incluir somente o que for indispensável para fornecer à geração posterior um contexto completo, seguro e reutilizável.
 - Universal não significa genérico em excesso nem infraestrutura preventiva.
-- O recorte deve ser pequeno, mas o pequeno contrato precisa ser reutilizável por qualquer LP futura que satisfaça as mesmas interfaces canônicas.
 - Se uma capacidade puder ser adicionada depois sem retrabalho relevante, deve permanecer fora da primeira implementação.
+- Crescimento motivado principalmente por generalizações sem consumidor atual é sinal para parar e simplificar.
 
 ### 1.4. Fronteira de composição
 
 - A E19.3 compõe fontes vigentes e não reconstrói seus contratos.
-- E10.8 permanece responsável pelo contexto de pesquisa resolvido para `end_customer` e `business_buyer`, incluindo os blocos `strategic_core`, `lp_overview`, `lp_sections` e `seo` e seus itens estruturados.
+- E10.8 permanece responsável pelo contexto de pesquisa resolvido para `end_customer` e `business_buyer`, incluindo `strategic_core`, `lp_overview`, `lp_sections` e `seo`.
 - E18.4 permanece responsável pela parametrização raiz de `landing_page`.
 - E18.5 permanece responsável pelos módulos, variantes, fields e contratos estruturais.
 - E20.2 permanece responsável pelo catálogo declarativo de entradas.
@@ -66,66 +68,55 @@
 
 ### 1.5. Autoridade estrutural
 
-- A IA não escolhe taxon, plano, módulo, variante, versão, prioridade ou ordem.
-- A seleção efetiva deve ser determinada server-side a partir dos contratos vigentes.
-- Regras de seleção e aplicabilidade devem ser universais e derivadas dos contratos, sem condicionais por nicho.
+- A IA não participa da E19.3.
+- Taxon, plano, módulo, variante, versão, prioridade, ordem, aplicabilidade, bindings e fontes autorizadas são resolvidos server-side.
 - `P1 > P2 > P3` representa prioridade relativa entre recomendações, sem transformar prioridade em obrigatoriedade e sem criar quotas arbitrárias.
 - Todas as recomendações válidas do perfil entram inicialmente como candidatas; a ordem efetiva dos módulos selecionados preserva `recommendedOrder`.
 
-### 1.6. Lifecycle do `draft` e fronteira da publicação
+### 1.6. Fronteira de saída da E19.3
 
-- `draft` é estado de lifecycle, não sinônimo de LP incompleta.
-- A E19.3 deve terminar com uma LP completa, funcional, visualizável e revisável, ainda em `draft`.
-- Esse `draft` pode sofrer ajustes antes da publicação; o mecanismo de edição, regeneração, aprovação e versionamento desses ajustes não precisa ser antecipado na E19.3.
-- Uma LP publicada também poderá evoluir futuramente, mas o contrato de alteração pós-publicação pertence a recorte posterior.
-- Publicação permanece etapa separada da geração inicial em `draft`.
+- A E19.3 começa com uma LP legítima já configurada pela E19.2 e termina com um pacote determinístico pronto para o consumidor seguinte.
+- A saída deve ser completamente testável sem OpenAI.
+- Persistência de conteúdo gerado, copy final, materialização, renderização, visualização e revisão da LP não pertencem à E19.3.
+- A E19.3 pode preservar na saída a proveniência necessária para explicar as decisões do compilador, sem antecipar o modelo durável de snapshot da LP materializada.
 
-### 1.7. Experiência de geração
+### 1.7. Consumidor futuro E19.4
 
-- Depois de a configuração aplicável estar completa, o fluxo oficial deve oferecer uma ação explícita para gerar a LP; o rótulo inicial pode ser `Gerar LP`.
-- Para o usuário, a experiência pretendida é simples: configuração completa → `Gerar LP` → LP em `draft` disponível para visualização e revisão.
-- O clique é somente o gatilho de uma execução server-side; a simplicidade da UX não reduz as validações e composições internas necessárias.
-- A geração inicial é acionada pelo humano e não constitui automação recorrente ou processo autônomo.
+- `E19.4 — Geração e materialização da landing page em draft` é o recorte sucessor previsto.
+- A E19.4 receberá como entrada a saída real implementada e validada da E19.3.
+- O debate da E19.4 deverá definir, sobre evidência real do compilador, o mecanismo mínimo de IA, contrato da resposta, validação pós-IA, materialização e visualização necessárias para chegar à primeira LP real.
+- Não antecipar no plano da E19.3 decisões detalhadas de IA ou materialização que dependam da implementação efetiva do compilador.
 
 ### 1.8. Determinismo antes da IA
 
 - A E19.3 deve usar determinismo em tudo que possa ser decidido objetivamente pelos contratos e dados vigentes.
-- Antes da IA, o servidor deve resolver contexto, estrutura, fontes permitidas, valores concretos aplicáveis, fatos autorizados, evidências necessárias e bindings operacionais.
-- A IA entra apenas onde há tarefa genuinamente generativa, principalmente síntese, linguagem e copy dentro dos limites resolvidos.
-- Regra orientadora: se existe uma resposta correta derivável dos contratos e dos dados, o sistema decide; se existem várias formulações válidas e o valor está na comunicação, a IA decide dentro do pacote autorizado.
-- A saída da IA volta a passar por validação determinística antes de qualquer materialização.
+- O servidor deve resolver contexto, estrutura, fontes permitidas, valores concretos aplicáveis, fatos autorizados, evidências necessárias e bindings operacionais.
+- Regra orientadora para a fronteira futura: se existe uma resposta correta derivável dos contratos e dos dados, o sistema decide; apenas formulações genuinamente generativas ficam para a E19.4.
 
 ### 1.9. Ponte determinística entre E18.5 e E20.2
 
-- A E18.5 define o que cada módulo e field admite: estrutura, cardinalidade, política, fontes de pesquisa, suporte ou evidência operacional e bindings já explicitamente contratados.
+- A E18.5 define o que cada módulo e field admite: estrutura, cardinalidade, política, fontes de pesquisa, suporte ou evidência operacional e bindings explicitamente contratados.
 - A E20.2 define quais dados concretos existem: `fieldKey`, escopo, origem, obrigação, aplicabilidade, validação e valores resolvidos pela jornada da E19.
-- A E19.3 é responsável por resolver, para cada módulo/field efetivamente selecionado, quais valores concretos da E20.2 são pertinentes e autorizados a compor o pacote de geração daquela LP.
-- A IA não consulta a E20.2 diretamente nem decide livremente quais dados concretos usar; recebe somente o pacote previamente resolvido.
-- Não criar preventivamente uma matriz ou catálogo completo `field E18.5 ↔ fieldKey E20.2`.
-- A primeira implementação deve materializar somente as regras de composição exigidas pelos fields realmente consumidos pela geração universal.
-- Não inferir bindings a partir de `purpose`, nomes de fields, semelhança textual ou classificação semântica em runtime.
-- `research` usa somente os `itemKeys` explicitamente declarados; `operational_evidence` usa somente a evidência explicitamente indicada; binding operacional usa o `fieldKey` formal; `research_with_operational_support` usa a pesquisa declarada e apenas slots de suporte que possuam resolução determinística explícita.
-- Slots abstratos de suporte, como `applicable_capabilities`, devem ser resolvidos pela menor regra explícita necessária, sem acoplar diretamente cada field de E18.5 a todos os inputs da E20.2.
+- A E19.3 cruza essas declarações para determinar quais valores concretos podem compor o pacote de cada módulo/field selecionado.
+- Não criar preventivamente matriz ou catálogo completo `field E18.5 ↔ fieldKey E20.2`.
+- Não inferir bindings por `purpose`, nomes de fields, semelhança textual ou classificação semântica em runtime.
+- `research` usa somente `itemKeys` explicitamente declarados; `operational_evidence` usa somente a evidência indicada; binding operacional usa o `fieldKey` formal; `research_with_operational_support` usa a pesquisa declarada e slots de suporte com resolução explícita.
 - Ausência de suporte factual retira autorização para a afirmação correspondente; field técnico permanece server-side e action usa binding operacional vigente.
 
-### 1.10. Unidade do recorte E19.3
+### 1.10. Desmembramento E19.3 → E19.4
 
-- Composição determinística, geração estruturada, validação, materialização e visualização permanecem no mesmo recorte E19.3, em fases internas separadas.
-- Não criar E19.4 apenas para deslocar a geração neste momento.
-- A composição determinística possui consumidor imediato na própria geração e ainda não demonstrou lifecycle, persistência, operação, autoridade ou consumidores independentes.
-- A separação futura só deve ser reavaliada se surgir evidência real de contrato autônomo, como registry versionado próprio de bindings, lifecycle independente, consumidores externos, liberação independente ou matriz material de compatibilidade que não possa ser derivada dos contratos atuais.
-- Tamanho de código ou quantidade de arquivos, isoladamente, não justificam novo recorte.
+- Decisão humana: separar o compilador determinístico da geração por IA.
+- A justificativa é material e prática: o debate sobre geração por IA tende a ser extenso e depende do comportamento real, das exceções e da interface efetivamente implementada na E19.3.
+- A separação evita congelar agora decisões de IA, resposta estruturada, validação pós-IA, materialização e visualização com base apenas em um compilador ainda conceitual.
+- A E19.3 deve ser implementada e validada antes de iniciar o debate detalhado da E19.4.
+- Esse desmembramento não autoriza infraestrutura nova nem uma camada abstrata entre os dois recortes; E19.4 deve consumir diretamente o contrato real produzido pela E19.3.
 
-### 1.11. E19.3.3 como compilador de contexto com guardrails
+### 1.11. E19.3.3 como fase implementável do compilador
 
-- A primeira fase implementável prevista é `E19.3.3 — Contrato e composição determinística do contexto de geração`.
-- A E19.3.3 deve compilar E10.8 + E18.4 + E18.5 + E20.2 + E20.3 + valores concretos da E19.2 em uma interface única, limpa e autorizada para a geração.
-- A E19.3.3 deve ser completamente testável sem OpenAI; nenhuma decisão semântica livre da IA pertence a essa fase.
-- A função do compilador é simultaneamente organizar contexto e aplicar guardrails: facilitar o trabalho da IA e limitar quais fontes, fatos, fields e afirmações podem chegar à geração.
-- A E18.4 fornece parâmetros globais, papéis semânticos, limites editoriais, visuais, responsivos e de acessibilidade aplicáveis; ela não cria vínculo semântico entre um dado E20.2 e um field E18.5.
-- Resolver uma fonte não significa entregá-la integralmente à IA. Cada consumidor recebe somente a parcela explicitamente autorizada pelo contrato responsável.
-- Em E10.8, `strategic_core`, `lp_overview`, `lp_sections` e `seo` integram o contexto resolvido; sua entrega a módulo, field ou contexto global depende de relação estruturada ou regra explícita, nunca de uma inferência livre de pertinência.
-- `lp_sections` permanece prioritariamente estrutural; `lp_overview` pode fornecer contexto narrativo ou visual quando houver consumo explicitamente contratado; itens de pesquisa entram por `itemKey` quando a E18.5 já os referencia.
+- A fase implementável prevista permanece `E19.3.3 — Contrato e composição determinística do contexto de geração`.
+- A fase deve compilar E10.8 + E18.4 + E18.5 + E20.2 + E20.3 + valores concretos da E19.2 em uma interface única e autorizada.
+- Nenhuma decisão semântica livre da IA pertence a essa fase.
+- A implementação esperada deve permanecer próxima de: ler contratos existentes → resolver seleção → filtrar autorização → montar a saída determinística → validar.
 
 ### 1.12. Gate 1 da E19.3.3 — seleção estrutural
 
@@ -136,77 +127,60 @@
 - Se a variante preferencial for ausente ou inelegível e existir uma única alternativa elegível do mesmo módulo, a alternativa é selecionada.
 - Se houver mais de uma alternativa elegível sem preferência válida capaz de desempatar, a composição falha por ambiguidade; não inventar default.
 - Se nenhuma variante for elegível por incompatibilidade objetiva com o contexto legítimo da LP, o módulo pode ser omitido, pois a E20.3 não torna módulos obrigatórios.
-- Fallback de variante só pode ocorrer por compatibilidade explicitamente verificável; semelhança, conveniência ou heurística não autorizam substituição.
-- Quando a variante efetiva divergir da preferência E20.3, preservar na proveniência e no snapshot a variante recomendada, a causa objetiva da inelegibilidade e a variante efetivamente selecionada.
-- A ordem final preserva `recommendedOrder` entre os módulos que permanecerem selecionados.
+- Fallback de variante só pode ocorrer por compatibilidade explicitamente verificável.
+- Quando a variante efetiva divergir da preferência E20.3, preservar na proveniência a variante recomendada, a causa objetiva da inelegibilidade e a variante efetiva.
+- Antes da execução, validar o perfil real usado na primeira prova; se ele cair em ambiguidade, tratar como gap do contrato/perfil e nunca introduzir fallback improvisado.
 
-### 1.13. Independência após materialização
+### 1.13. Fronteira com materialização futura
 
-- Fontes e guardrails governam a geração, mas sua aplicação durante a geração não transforma automaticamente cada regra em restrição permanente da LP materializada.
-- O snapshot deve preservar a composição, as fontes, versões, fatos, regras e decisões efetivamente usados na geração original e servir como referência versionada para futuras edições assistidas pela IA da LP Factory.
-- Versões novas das fontes canônicas não passam a governar silenciosamente a LP existente.
-- Somente restrição explicitamente classificada pelo contrato responsável como permanente continua obrigatória após a materialização.
-- A mecânica de edição manual ou assistida permanece para recorte posterior e não deve ser antecipada na E19.3.3.
+- Os guardrails compilados governam a geração futura, mas não devem ser tratados antecipadamente como restrições permanentes da LP materializada.
+- A decisão sobre snapshot durável, adoção de versões novas e edição manual ou assistida pertence ao recorte de materialização/edição correspondente, começando pela E19.4 apenas no que for indispensável à primeira LP real.
+- A E19.3 limita-se a produzir proveniência e classificação suficientes para seu consumidor interpretar corretamente o contrato.
 
 ### 1.14. Gate 2 da E19.3.3 — autorização do contexto
 
 - Gate 2 considerado conceitualmente fechado pela solução mínima orientada ao consumo real.
-- Regra-base: reutilizar primeiro as relações estruturadas já existentes; identificar gap concreto; acrescentar somente a menor relação declarativa necessária ao consumidor real.
-- E10.8 entra por `researchPath`, `itemKeys` e demais relações explicitamente contratadas; blocos ou itens não devem ser enviados por simples julgamento de pertinência.
-- E18.4 fornece ao field apenas o papel semântico e os limites de geração efetivamente necessários; regras visuais, responsivas e de acessibilidade permanecem server-side quando não forem entrada real da geração de copy.
-- E18.5 continua sendo a autoridade sobre `policy`, `copySourceMap`, suporte, cardinalidade, evidência e bindings.
-- E20.3 fornece `generationGuidance` como orientação global e `itemGuidance` somente ao módulo correspondente.
-- Um valor E20.2 só pode participar quando pertencer ao catálogo resolvido, estiver aplicável e válido e houver relação explícita que autorize seu consumo; autorização nunca é inferida por `fieldKey`, `purpose` ou semelhança textual.
-- Depois de autorizado, o fato pode ser transportado diretamente por seu `fieldKey`, valor e proveniência; o `purpose` existente pode acompanhar o fato como descrição para a IA, mas nunca autoriza sua seleção.
+- Regra-base: reutilizar relações estruturadas existentes → identificar gap concreto → acrescentar somente a menor relação declarativa necessária ao consumidor real.
+- E10.8 entra por `researchPath`, `itemKeys` e demais relações explicitamente contratadas; nunca por julgamento livre de pertinência.
+- E18.4 fornece apenas os parâmetros efetivamente necessários ao consumidor; regras exclusivamente visuais, responsivas ou de acessibilidade permanecem server-side quando não forem entrada do contexto futuro de copy.
+- E18.5 continua sendo autoridade sobre `policy`, `copySourceMap`, suporte, cardinalidade, evidência e bindings.
+- E20.3 fornece `generationGuidance` global e `itemGuidance` somente ao módulo correspondente.
+- Um valor E20.2 só participa quando pertencer ao catálogo resolvido, estiver aplicável e válido e houver relação explícita que autorize seu consumo.
+- Depois de autorizado, o fato pode ser transportado por `fieldKey`, valor e proveniência; `purpose` pode acompanhar como descrição, mas nunca autoriza a seleção.
 - Não criar `factIdentity`, taxonomia geral de `contextRole`, registry de fatos, DSL, engine ou framework genérico de resolvers sem consumidor real.
-- O slot abstrato atualmente demonstrado é `applicable_capabilities`, consumido por `benefits`; implementar apenas o vínculo mínimo necessário entre esse slot e os inputs E20.2 que realmente o sustentarem na primeira geração.
-- A E19.3.3 não pode conter bindings nominais de nicho; quando um slot abstrato da E18.5 exigir dados concretos, a relação mínima entre esse slot e os inputs que podem fornecê-lo deve ser declarada na camada responsável da E20.2 resolvida, permitindo que cada taxon forneça seus próprios inputs sem alterar o algoritmo universal da E19.3.3.
-- Para booleanos explicitamente autorizados a `applicable_capabilities`, `true` fornece suporte para afirmar a capacidade correspondente e `false` não fornece esse suporte; essa regra não deve ser generalizada preventivamente para todos os booleanos ou futuros slots.
-- Inputs centrais já contratados para a geração, como `primary_service_or_offer` e `primary_service_or_offer_description`, podem integrar explicitamente o contexto factual global sem criar um papel intermediário artificial.
+- O slot abstrato atualmente demonstrado é `applicable_capabilities`, consumido por `benefits`; implementar apenas o vínculo mínimo necessário aos inputs que realmente o sustentarem.
+- A E19.3.3 não pode conter bindings nominais de nicho; a relação entre slot abstrato E18.5 e inputs concretos deve ser declarada na camada responsável da E20.2 resolvida, permitindo que cada taxon forneça seus próprios inputs sem alterar o algoritmo da E19.3.3.
+- Para booleanos explicitamente autorizados a `applicable_capabilities`, `true` fornece suporte e `false` não fornece suporte para afirmar aquela capacidade; não generalizar preventivamente essa semântica.
+- Inputs centrais já contratados, como `primary_service_or_offer` e `primary_service_or_offer_description`, podem integrar explicitamente o contexto factual global sem papel intermediário artificial.
 - Dado obrigatório e aplicável ausente ou inválido falha fechado.
-- Em `required_when_claimed`, ausência de suporte proíbe a afirmação factual correspondente, mas não elimina automaticamente o field.
-- Em `operational_required`, ausência da evidência requerida impede produzir o field; se isso romper cardinalidade mínima, a variante pode se tornar inelegível e o tratamento retorna às regras do Gate 1.
-- A implementação da E19.3.3 não deve transformar este modelo conceitual em infraestrutura extensível preventiva; crescimento motivado principalmente por generalizações sem consumidor atual é sinal para parar e simplificar.
+- Em `required_when_claimed`, ausência de suporte proíbe a afirmação factual correspondente, sem eliminar automaticamente o field.
+- Em `operational_required`, ausência da evidência impede produzir o field; se isso romper cardinalidade mínima, a variante pode tornar-se inelegível e o tratamento retorna ao Gate 1.
 
 ## 2. Questões ainda abertas para o debate
 
-### 2.1. Composição mínima e interface da E19.3.3
+### 2.1. Gate 3 — interface lógica de saída da E19.3
 
-- Gates 1 — seleção estrutural e 2 — autorização do contexto estão fechados; resta o Gate 3 — interface lógica de saída.
-- Definir o pacote autoritativo mínimo produzido pela E19.3.3 antes da chamada à IA.
-- Distinguir conceitualmente o contrato determinístico da LP do contexto autorizado entregue à IA.
+- Gates 1 — seleção estrutural e 2 — autorização do contexto estão fechados; resta somente o Gate 3.
+- Definir a interface lógica mínima que sai do compilador, sem antecipar schema físico ou infraestrutura extensível.
+- Parte A — contrato determinístico da LP: identidade e versões necessárias, taxon e plano, root/preset, composição efetiva, variante recomendada e efetiva quando divergirem, ordem, fields/cardinalidades, bindings, proveniência e restrições aplicáveis.
+- Parte B — contexto autorizado para o consumidor futuro: papel semântico, limites de geração, pesquisas e itens autorizados, fatos autorizados, evidências, tratamentos permitidos/restritos/proibidos e guidance aplicável.
+- A Parte B é preparada para a futura E19.4, mas a E19.3 não chama IA nem define ainda o contrato da resposta da IA.
+- Gate 3 deve permanecer curto: definir fronteira e conteúdo lógico, não DTOs preventivos, dezenas de tipos ou schema de persistência.
 
-### 2.2. Gate 3 — interface lógica de saída
+### 2.2. Consolidação da v1
 
-- Definir logicamente duas partes da saída, sem antecipar schema físico.
-- Parte A — contrato determinístico da LP: identidade e versões, taxon e plano, root/preset, composição efetiva, variante recomendada e efetiva quando divergirem, ordem, fields/cardinalidades, bindings, proveniência e restrições.
-- Parte B — contexto autorizado para IA: papel semântico, limites aplicáveis à geração, pesquisas e itens estruturais autorizados, fatos autorizados, evidências, tratamentos permitidos/restritos/proibidos e guidance aplicável.
-- Distinguir guardrail de geração de eventual restrição permanente; permanência só existe quando o contrato responsável a classificar explicitamente.
-
-### 2.3. Papel mínimo da IA e contrato de saída da geração
-
-- O fluxo linear `pacote resolvido → geração estruturada → validação determinística → candidata` é a direção inicial aceita para a fase posterior E19.3.4.
-- Não avançar ao detalhamento da E19.3.4 antes de fechar o Gate 3 da E19.3.3.
-- Depois disso, definir exatamente quais fields podem ser preenchidos pela IA e o menor formato estruturado da resposta da geração.
-- Preservar HTML, CSS, JSX, identidades estruturais, destinos operacionais e fatos não fornecidos fora da autoridade da IA.
-
-### 2.4. Materialização e visualização
-
-- Definir a menor materialização durável vinculada à LP que permita visualizar a página real sem antecipar editor, publicação ou versionamento editorial completo.
-- Não presumir tabela, coluna, renderer ou rota antes da avaliação estrutural e do estado real do repositório.
-
-### 2.5. Snapshot
-
-- Definir o mínimo suficiente para reproduzir e explicar a geração original e servir de referência para futuras edições assistidas, sem copiar registries completos, fontes não utilizadas, prompts integrais, respostas brutas inválidas ou secrets.
-- Snapshot não transforma recomendações ou guardrails de geração em restrições permanentes de edição manual.
-
-### 2.6. Revisão humana
-
-- Definir apenas a experiência mínima para visualizar e avaliar a primeira geração.
-- Edição, regeneração, workflow de aprovação e publicação permanecem fora enquanto não forem indispensáveis.
+- Após fechar o Gate 3, compactar o rascunho antes da v1, removendo repetições entre princípios, ponte E18.5/E20.2, guardrails e gates.
+- A v1 deve deixar executável apenas o recorte determinístico E19.3 e registrar E19.4 como consumidor futuro planejado, sem detalhá-lo.
+- A reconciliação do `docs/roadmap.md` deve refletir o desmembramento conforme o fluxo vigente do Estrategista e `docs/template-roadmap.md`.
 
 ## 3. Escopo negativo preservado durante o debate
 
+- chamada à OpenAI ou qualquer geração de copy;
+- contrato detalhado da resposta da IA;
+- validação pós-IA;
+- materialização do conteúdo gerado;
+- renderer ou visualização da landing page;
+- snapshot durável da LP materializada além da proveniência necessária à saída do compilador;
 - publicação pública;
 - domínio customizado;
 - tracking;
@@ -230,9 +204,7 @@
 - catálogo ou matriz preventiva completa de bindings E18.5 ↔ E20.2;
 - inferência de binding por `purpose`, nome de field ou semelhança textual;
 - taxonomia geral de fatos, registry de `contextRole`, DSL ou framework genérico de resolvers sem consumidor real;
-- classificar preventivamente todas as regras da E18.4 como permanentes ou editáveis;
-- projetar editor, regeneração ou sistema de créditos dentro da E19.3.3;
-- E19.4 criado apenas para separar a geração sem evidência de contrato autônomo.
+- antecipar no E19.3 o debate técnico detalhado da E19.4.
 
 ## 4. Registro do processo do rascunho
 
