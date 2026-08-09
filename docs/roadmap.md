@@ -1,8 +1,8 @@
 0. Introdução
 
 0.1 Cabeçalho
-• Data: 08/08/2026
-• Versão: v1.5.131
+• Data: 09/08/2026
+• Versão: v1.5.132
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -2211,7 +2211,7 @@ Repositório — Ajustados
 
 19. E19 — LP Builder
 - Objetivo: Consolidar o fluxo Core de landing pages por conta, da identidade mínima em `draft` às futuras etapas de geração, revisão, materialização e publicação, sempre por recortes aprovados.
-- Status: Em evolução por recortes. O recorte 19.1 está concluído e o recorte 19.2 possui implementação candidata completa no PR #700.
+- Status: E19.1 concluída; E19.2 concluída; E19.3 planejada, com plano-base v1 consolidado; E19.4 é o recorte sucessor planejado, sem implementação iniciada.
 
 19.1 Criação produtiva mínima de LP por conta
 
@@ -2331,6 +2331,26 @@ Repositório — Ajustados
   - Zero drafts permite criação explícita pelo fluxo E19.1; um ou vários drafts exigem seleção humana explícita, sem escolha silenciosa, duplicação automática ou limite de quantidade antecipado.
   - O agregado é vinculado somente ao draft escolhido da mesma conta, com revisão otimista, predicado de ausência de vínculo e mutação limitada a uma linha; valores não são copiados para `account_landing_pages` e rebind permanece proibido.
   - A transição não inicia geração, revisão de copy, publicação, tracking, CRM, capability nova ou infraestrutura de assets.
+
+19.3 Contrato e composição determinística do contexto de geração
+
+19.3.1 Objetivo e status
+- Objetivo: implementar compilador determinístico universal que receba LP legítima já configurada e produza pacote completo, autorizado e testável para a geração futura.
+- Status: planejado; plano-base v1 em `docs/lousa-plano-base-e19-3.md`.
+- Sem OpenAI, geração de copy, materialização ou renderer.
+
+19.3.3 Contrato e composição determinística do contexto de geração
+- Resolver seleção estrutural, autorização do contexto e interface lógica de saída.
+- Reutilizar os contratos canônicos vigentes.
+- Fazer apenas refinamentos focais indispensáveis ao consumidor real.
+- Status: planejado para execução conforme o plano-base v1.
+
+19.4 Geração e materialização da landing page em `draft`
+
+19.4.1 Objetivo e status
+- Objetivo: consumir a saída real implementada e validada da E19.3 para a futura geração por IA, validação pós-IA, materialização e visualização mínimas necessárias à primeira LP real em `draft`.
+- Status: planejado como recorte sucessor.
+- Debate detalhado e implementação somente depois da E19.3 implementada e validada.
 
 20. E20 — Preparação e liberação de taxons para geração de landing pages
 
