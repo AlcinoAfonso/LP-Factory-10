@@ -2,7 +2,7 @@
 
 0.1 Cabeçalho
 • Data: 09/08/2026
-• Versão: v1.5.133
+• Versão: v1.5.134
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -2211,7 +2211,7 @@ Repositório — Ajustados
 
 19. E19 — LP Builder
 - Objetivo: Consolidar o fluxo Core de landing pages por conta, da identidade mínima em `draft` às futuras etapas de geração, revisão, materialização e publicação, sempre por recortes aprovados.
-- Status: E19.1 concluída; E19.2 concluída; E19.3 planejada, com plano-base v2 aprovado; E19.4 é o recorte sucessor planejado, sem implementação iniciada.
+- Status: E19.1 concluída; E19.2 concluída; E19.3 concluída conforme o plano-base v2 aprovado; E19.4 é o recorte sucessor planejado, sem implementação iniciada.
 
 19.1 Criação produtiva mínima de LP por conta
 
@@ -2336,16 +2336,38 @@ Repositório — Ajustados
 
 19.3.1 Objetivo e status
 - Objetivo: implementar compilador determinístico universal que receba LP legítima já configurada e produza pacote completo, autorizado e testável para a geração futura.
-- Status: planejado; plano-base v2 aprovado em `docs/lousa-plano-base-e19-3.md`.
+- Status: implementado e validado conforme o plano-base v2 aprovado em `docs/lousa-plano-base-e19-3.md`.
 - Sem OpenAI, geração de copy, materialização ou renderer.
 
+19.3.2 Registros do recorte
+- Repositório:
+  - Criados:
+    - `lib/lp-builder/generationContextContracts.ts`
+    - `lib/lp-builder/generationContext.ts`
+    - `lib/lp-builder/adapters/generationContextAdapterCore.ts`
+    - `lib/lp-builder/adapters/generationContextAdapter.ts`
+    - `lib/lp-builder/generation-context-validation-cases.ts`
+  - Ajustados:
+    - `lib/conversion-content/landing-page/input-catalog/contracts.ts`
+    - `lib/conversion-content/landing-page/input-catalog/registry.ts`
+    - `lib/conversion-content/landing-page/input-catalog/schema.ts`
+    - `lib/conversion-content/landing-page/input-catalog/validation-cases.ts`
+    - `lib/lp-builder/index.ts`
+    - `package.json`
+- Banco, migration, rota, UI e infraestrutura: N/A.
+
 19.3.3 Contrato e composição determinística do contexto de geração
-- Status: planejado para execução conforme o plano-base v2 aprovado.
+- Status: implementado e validado.
 - Conteúdo:
-  - resolver seleção estrutural, autorização do contexto e interface lógica de saída, reutilizando os contratos canônicos vigentes;
-  - selecionar todas as recomendações estruturalmente elegíveis do perfil ativo, preservando `recommendedOrder` e `P1/P2/P3` como metadado sem quota ou corte, com omissões legítimas rastreadas e falha fechada para ausência ou inconsistência;
-  - realizar somente o refinamento focal E20.2 indispensável aos bindings autorizados de `financing_support_available` e `document_support_available` com `applicable_capabilities`, preservando configurações v2 sem migração ou regravação;
-  - produzir sucesso completo com contrato determinístico da LP e matéria-prima autorizada, ou falha determinística explícita, em API pública versionada e imutável;
+  - O compilador puro e o boundary server-only resolvem seleção estrutural, autorização do contexto e interface lógica de saída pelas APIs públicas canônicas vigentes.
+  - Todas as recomendações estruturalmente elegíveis do perfil ativo são selecionadas em `recommendedOrder`; `P1/P2/P3` permanece metadado sem quota ou corte, fallback exige alternativa única elegível e cada omissão legítima fica rastreada.
+  - O catálogo E20.2 v3 preserva os 23 fields e a estrutura integral da v2 e acrescenta somente os bindings autorizados de `financing_support_available` e `document_support_available` com `applicable_capabilities`; valores persistidos v2 permanecem sem migração ou regravação.
+  - A API pública v1 retorna somente sucesso completo com Parte A determinística e Parte B filtrada pelas fontes autorizadas, ou falha explícita sem pacote parcial; o resultado é profundamente imutável.
+  - O boundary valida conta, membership, entitlement, draft vinculado, configuração completa, pesquisa e perfil, faz somente leituras server-side e registra apenas resultado, motivo seguro, `request_id` e latência quando disponíveis.
+  - A primeira prova read-only confirmou o draft legítimo vinculado, a configuração v2 completa, o plano Starter, o taxon ativo, as pesquisas completas e o perfil próprio ativo; `lead_capture.form` e `social_proof.standard` foram omitidos por inelegibilidade contextual objetiva, sem ambiguidade ou fallback inventado.
+    - `landingPageId`: `4d91020a-07e5-4bf9-a1aa-272bbc0366ff`.
+    - Ordem e decisão: `10 hero.standard` selecionado; `20 trust_bar.standard` selecionado; `30 lead_capture.form` omitido porque o canal efetivo é `whatsapp` e a variante exige `form`; `40 problem_solution.standard` selecionado; `50 offer.standard` selecionado; `60 process.standard` selecionado; `70 social_proof.standard` omitido porque não existe evidência operacional autorizada para cumprir a cardinalidade mínima; `80 technical_assurance.standard` selecionado; `90 faq.standard` selecionado; `100 benefits.standard` selecionado; `110 final_cta.standard` selecionado.
+  - O validador focal e as regressões de raiz, pesquisa, catálogo de entradas, catálogo de módulos, perfil de geração e onboarding E19.2 foram integrados ao `npm run check`.
   - manter fora do recorte OpenAI, geração de copy, persistência nova, materialização, renderer, rota, UI, agente, job e automação.
 
 19.4 Geração e materialização da landing page em `draft`
@@ -2353,7 +2375,7 @@ Repositório — Ajustados
 19.4.1 Objetivo e status
 - Objetivo: consumir a saída real implementada e validada da E19.3 para a futura geração por IA, validação pós-IA, materialização e visualização mínimas necessárias à primeira LP real em `draft`.
 - Status: planejado como recorte sucessor.
-- Debate detalhado e implementação somente depois da E19.3 implementada e validada.
+- Debate detalhado e implementação ainda não iniciados; devem ocorrer em recorte próprio, sem antecipação pela E19.3.
 
 20. E20 — Preparação e liberação de taxons para geração de landing pages
 
@@ -2365,7 +2387,7 @@ Repositório — Ajustados
 20.2.1 Objetivo e status
 
 * Objetivo: definir e resolver um catálogo declarativo versionado de entradas de `landing_page` por taxon e plano, separado de valores operacionais, composição, conteúdo e entitlement.
-* Status: Concluído e refinado (06/08/2026).
+* Status: Concluído e refinado (09/08/2026).
 
 20.2.2 Registros do recorte
 
@@ -2393,6 +2415,7 @@ Repositório — Ajustados
   * O catálogo é declarativo, versionado no repositório e resolvido por taxon e plano, sempre com versão explícita e sem fallback automático.
   * A v1 permanece integralmente preservada com os 19 campos e a ordem anteriores.
   * A v2 contém 23 campos: os 19 da v1 e os quatro mínimos do Starter — serviço ou oferta principal, descrição factual curta, referência opaca opcional de logo ou asset principal e paleta visual confirmada.
+  * A v3 preserva integralmente os 23 campos, a ordem e a estrutura da v2 e acrescenta somente metadata declarativo que autoriza `financing_support_available` e `document_support_available` a sustentar `applicable_capabilities` quando o valor booleano for `true`; a v2 permanece imutável e continua validando os valores persistidos.
   * Os quatro campos da v2 permanecem disponíveis em Starter, Lite, Pro e Ultra, sem diferenças adicionais entre planos neste recorte.
   * Strings obrigatórias rejeitam valor vazio; o asset aceita somente objeto estrito com `asset_id` opaco não vazio; a paleta exige exatamente `primary`, `secondary`, `accent`, `background` e `text` em hexadecimal `#RRGGBB`.
   * Os campos criados na v2 declaram `landingPageSubstitutionPolicy`: oferta, descrição e logo usam `forbidden`, enquanto a paleta usa `explicit_allowed`; ausência da política nos campos históricos da v1 não autoriza substituição.
