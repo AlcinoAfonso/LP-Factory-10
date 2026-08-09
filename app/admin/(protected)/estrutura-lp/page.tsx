@@ -96,14 +96,15 @@ function RootView({ data }: { data: RootData }) {
           <SelectField className="w-full sm:w-44" label="Versão" name="rootVersion" defaultValue={String(root.rootVersion)}>
             {data.versions.map((version) => <option key={version} value={version}>Versão {version}</option>)}
           </SelectField>
-          <SelectField className="w-full sm:w-72" label="Preset" name="preset" defaultValue={root.resolvedPresetKey}>
+          <SelectField className="w-full sm:w-72" label="Preset consultado" name="preset" defaultValue={root.resolvedPresetKey}>
             {Object.values(root.presets).map((preset) => (
-              <option key={preset.key} value={preset.key}>{presetLabel(preset.key)} — {preset.key}</option>
+              <option key={preset.key} value={preset.key}>{presetLabel(preset.key)}</option>
             ))}
           </SelectField>
           <SubmitButton />
         </div>
         <p className="mt-2 text-sm text-muted-foreground">{presetDescription(root.resolvedPresetKey)}</p>
+        <p className="mt-1 text-xs text-muted-foreground">A consulta não altera o preset padrão nem persiste configuração.</p>
       </form>
 
       <CompactSummary
@@ -184,16 +185,12 @@ function ModuleView({ data }: { data: ModuleData }) {
 
   return (
     <div className="space-y-4">
-      <ModuleStructureFilters
-        key={`${data.moduleIdentity?.moduleKey ?? ""}:${data.variantIdentity?.variantKey ?? ""}:${data.funnelProfileKey}`}
-        modules={modules}
-        initialModuleKey={data.moduleIdentity?.moduleKey ?? ""}
-        initialVariantKey={data.variantIdentity?.variantKey ?? ""}
-        initialFunnelProfileKey={data.funnelProfileKey}
-      />
-
       <DataSection title="Catálogo de módulos" description={`Versão ${data.identities.moduleCatalogVersion}; ${data.identities.modules.length} módulos públicos.`}>
-        <Table headings={["Módulo", "Status", "Função estrutural", "Variantes", "Capacidades", "Interações"]} minWidth="980px">
+        <Table
+          headings={["Módulo", "Status", "Função estrutural", "Variantes", "Capacidades", "Interações"]}
+          minWidth="860px"
+          columnWidths={["16%", "10%", "27%", "16%", "17%", "14%"]}
+        >
           {data.identities.modules.map((module) => {
             const presentation = data.selection.modules.find((item) => item.moduleAlias === module.moduleKey);
             return (
@@ -210,24 +207,26 @@ function ModuleView({ data }: { data: ModuleData }) {
         </Table>
       </DataSection>
 
+      <ModuleStructureFilters
+        key={`${data.moduleIdentity?.moduleKey ?? ""}:${data.variantIdentity?.variantKey ?? ""}:${data.funnelProfileKey}`}
+        modules={modules}
+        initialModuleKey={data.moduleIdentity?.moduleKey ?? ""}
+        initialVariantKey={data.variantIdentity?.variantKey ?? ""}
+        initialFunnelProfileKey={data.funnelProfileKey}
+      />
+
       {!resolved ? <FailureState title="Contrato do módulo indisponível" /> : (
         <>
-          <CompactSummary
-            label="Resumo do módulo resolvido"
-            values={[
-              moduleLabel(resolved.module.moduleKey),
-              `${variantLabel(resolved.variant.variantName)} v${resolved.variant.variantVersion}`,
-              data.funnelProfileKey.toUpperCase(),
-              lifecycleLabel(resolved.module.lifecycleStatus),
-            ]}
-          />
           <DataSection title="Campos resolvidos" description="Contrato de conteúdo da variante selecionada.">
-            <Table headings={["Campo", "Tipo", "Cardinalidade", "Papel semântico", "Política", "Fonte"]} minWidth="980px">
+            <Table
+              headings={["Campo", "Tipo / Cardinalidade", "Papel semântico", "Política", "Fonte"]}
+              minWidth="760px"
+              columnWidths={["17%", "17%", "21%", "20%", "25%"]}
+            >
               {resolved.fieldContract.fields.map((field) => (
                 <tr key={field.path} className="align-top">
                   <Cell primary={moduleFieldLabel(field.fieldKey)} secondary={field.fieldKey} />
-                  <Cell primary={moduleFieldKindLabel(field.fieldKind)} />
-                  <Cell primary={`${field.cardinality.min}–${field.cardinality.max}`} />
+                  <Cell primary={`${moduleFieldKindLabel(field.fieldKind)} · ${field.cardinality.min}–${field.cardinality.max}`} />
                   <Cell primary={"semanticRole" in field ? semanticRoleLabel(field.semanticRole) : "Não se aplica"} />
                   <Cell primary={moduleFieldPolicyLabel(field.policy)} />
                   <Cell primary={moduleFieldSourceLabel(field)} secondary={<ModuleFieldDetails field={field} />} />
@@ -298,19 +297,22 @@ function InputView({ data }: { data: InputData }) {
             ]}
           />
           <DataSection title="Campos resolvidos" description="Condições, validação e evidências ficam como detalhes secundários.">
-            <Table headings={["Campo", "Finalidade", "Origem", "Tipo", "Escopo", "Obrigação"]} minWidth="980px">
+            <Table
+              headings={["Campo", "Finalidade", "Origem", "Tipo / Escopo", "Obrigação"]}
+              minWidth="820px"
+              columnWidths={["18%", "26%", "18%", "20%", "18%"]}
+            >
               {resolved.fields.map((field) => (
                 <Fragment key={field.fieldKey}>
                   <tr className="align-top">
                     <Cell primary={inputFieldLabel(field.fieldKey)} secondary={field.fieldKey} />
                     <Cell primary={field.purpose} />
                     <Cell primary={inputLayerLabel(field.originLayer)} secondary={field.originTaxon?.name ?? "Camada universal"} />
-                    <Cell primary={inputValueTypeLabel(field.valueType)} />
-                    <Cell primary={inputScopeLabel(field.valueScope)} secondary={inputExpectedOriginLabel(field.expectedValueOrigin)} />
+                    <Cell primary={`${inputValueTypeLabel(field.valueType)} · ${inputScopeLabel(field.valueScope)}`} secondary={inputExpectedOriginLabel(field.expectedValueOrigin)} />
                     <Cell primary={inputObligationLabel(field.obligation)} />
                   </tr>
                   <tr>
-                    <td colSpan={6} className="px-4 pb-3 pt-0"><InputFieldDetails field={field} /></td>
+                    <td colSpan={5} className="px-3 pb-3 pt-0"><InputFieldDetails field={field} /></td>
                   </tr>
                 </Fragment>
               ))}
@@ -525,11 +527,17 @@ function DataSection({ title, description, children }: { title: string; descript
   );
 }
 
-function Table({ headings, minWidth, children }: { headings: string[]; minWidth: string; children: ReactNode }) {
+function Table({ headings, minWidth, columnWidths, children }: {
+  headings: string[];
+  minWidth: string;
+  columnWidths?: readonly string[];
+  children: ReactNode;
+}) {
   return (
     <div className="overflow-x-auto rounded-md border border-border">
-      <table className="w-full divide-y divide-border text-sm" style={{ minWidth }}>
-        <thead className="bg-muted text-left text-xs font-medium uppercase text-muted-foreground"><tr>{headings.map((heading) => <th key={heading} scope="col" className="px-4 py-2.5">{heading}</th>)}</tr></thead>
+      <table className={cn("w-full divide-y divide-border text-sm", columnWidths && "table-fixed")} style={{ minWidth }}>
+        {columnWidths ? <colgroup>{columnWidths.map((width, index) => <col key={`${width}-${index}`} style={{ width }} />)}</colgroup> : null}
+        <thead className="bg-muted text-left text-xs font-medium uppercase text-muted-foreground"><tr>{headings.map((heading) => <th key={heading} scope="col" className="whitespace-normal px-3 py-2.5">{heading}</th>)}</tr></thead>
         <tbody className="divide-y divide-border">{children}</tbody>
       </table>
     </div>
@@ -537,7 +545,7 @@ function Table({ headings, minWidth, children }: { headings: string[]; minWidth:
 }
 
 function Cell({ primary, secondary }: { primary: ReactNode; secondary?: ReactNode }) {
-  return <td className="px-4 py-2.5"><div className="max-w-md whitespace-normal text-foreground">{primary || "—"}</div>{secondary ? <div className="mt-1 max-w-md text-xs text-muted-foreground">{secondary}</div> : null}</td>;
+  return <td className="px-3 py-2.5"><div className="max-w-md break-words whitespace-normal text-foreground">{primary || "—"}</div>{secondary ? <div className="mt-1 max-w-md break-words text-xs text-muted-foreground">{secondary}</div> : null}</td>;
 }
 
 function DefinitionList({ items }: { items: readonly (readonly [string, ReactNode])[] }) {
@@ -557,8 +565,8 @@ function presetLabel(value: string) {
 }
 
 function presetDescription(value: string) {
-  if (value === "balanced") return "Distribuição equilibrada, com espaçamento padrão e leitura mais ampla.";
-  if (value === "compact") return "Menos espaço vertical, com largura e tipografia mais compactas.";
+  if (value === "balanced") return "Espaçamento padrão, página até 72rem, leitura até 68ch e títulos mais amplos.";
+  if (value === "compact") return "Espaçamento mais contido, página até 68rem, leitura até 64ch e títulos menores.";
   return "Parâmetros efetivos do preset selecionado.";
 }
 
