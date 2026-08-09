@@ -53,7 +53,6 @@ export default async function AdminLandingPageStructurePage({ searchParams }: Pa
       <AdminPageHeader
         eyebrow="Contrato estrutural somente leitura"
         title="Estrutura da LP"
-        description="Consulte parâmetros, módulos, entradas e pesquisas usados pela landing page sem alterar registries ou dados operacionais."
       />
 
       <nav aria-label="Visões da estrutura da LP" className="-mb-px flex gap-1 overflow-x-auto border-b border-border">
@@ -200,7 +199,7 @@ function ModuleView({ data }: { data: ModuleData }) {
             return (
               <tr key={module.moduleKey} className="align-top">
                 <Cell primary={moduleLabel(module.moduleKey)} secondary={`${module.moduleKey} · v${module.moduleVersion}`} />
-                <Cell primary={lifecycleLabel(module.lifecycleStatus)} secondary={module.lifecycleStatus} />
+                <Cell primary={lifecycleLabel(module.lifecycleStatus)} />
                 <Cell primary={moduleStructuralFunction(module.moduleKey, presentation?.purpose)} />
                 <Cell primary={module.variants.map((variant) => variantLabel(variant.variantKey)).join(", ")} />
                 <Cell primary={unique(presentation?.variants.flatMap((variant) => variant.capabilities) ?? []).map(capabilityLabel).join(", ") || "—"} />

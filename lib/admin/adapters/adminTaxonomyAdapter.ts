@@ -346,7 +346,11 @@ function assessAdminResearchCandidate(
   if (["RESEARCH_MISSING", "RESEARCH_INCOMPLETE", "RESEARCH_INVALID", "RESEARCH_AMBIGUOUS"].includes(result.error.code)) {
     return {
       diagnostic: researchListItem(
-        result.error.code === "RESEARCH_MISSING" ? "Ausente" : "Revisar",
+        result.error.code === "RESEARCH_MISSING"
+          ? "Ausente"
+          : result.error.code === "RESEARCH_INCOMPLETE"
+            ? "Incompleta"
+            : "Revisar",
         result.error.code === "RESEARCH_MISSING" ? "neutral" : "warning",
         result.error.message,
       ),
@@ -388,7 +392,7 @@ function unavailableResearchListDiagnostic(
 }
 
 function researchListItem(
-  label: "Própria" | "Pai direto" | "Ausente" | "Revisar" | "Indisponível",
+  label: "Própria" | "Pai direto" | "Ausente" | "Incompleta" | "Revisar" | "Indisponível",
   tone: AdminOperationalDiagnosticItem["tone"],
   reason: string,
 ): AdminOperationalDiagnosticItem {
@@ -642,27 +646,29 @@ function endCustomerValidatedBeforeBusinessBuyerFailure(): AdminOperationalDiagn
 function describeResearchFailure(
   result: Extract<LandingPageResearchResolutionResult, { ok: false }>,
 ): AdminOperationalDiagnosticItem {
+  const missing = result.error.code === "RESEARCH_MISSING";
   const incomplete = [
-    "RESEARCH_MISSING",
     "RESEARCH_INCOMPLETE",
     "DIRECT_PARENT_NOT_FOUND",
     "DIRECT_PARENT_INACTIVE",
   ].includes(result.error.code);
   const invalid = ["RESEARCH_INVALID", "RESEARCH_AMBIGUOUS"].includes(result.error.code);
   return {
-    label: incomplete ? "Incompleta" : invalid ? "Inválida ou ambígua" : "Indisponível",
-    tone: incomplete ? "warning" : "danger",
+    label: missing ? "Ausente" : incomplete ? "Incompleta" : invalid ? "Inválida ou ambígua" : "Indisponível",
+    tone: missing ? "neutral" : incomplete ? "warning" : "danger",
     origin: result.error.sourceRelation === "direct_parent"
       ? "Pai direto"
       : result.error.sourceRelation === "own"
         ? "Propria"
         : null,
-    reason: incomplete
+    reason: missing
+      ? "Nenhum conjunto ativo foi encontrado."
+      : incomplete
       ? "O conjunto obrigatorio nao esta completo."
       : invalid
         ? "O conjunto foi rejeitado pelo contrato E10.8."
         : "A leitura segura nao pode ser comprovada.",
-    nextAction: incomplete ? "Completar pesquisa" : "Revisar pesquisa",
+    nextAction: missing || incomplete ? "Completar pesquisa" : "Revisar pesquisa",
     href: null,
   };
 }
