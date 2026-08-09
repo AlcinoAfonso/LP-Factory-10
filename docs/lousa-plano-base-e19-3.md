@@ -1,10 +1,10 @@
-09/08/2026 — Plano-base v1 — E19.3 — Contrato e composição determinística do contexto de geração
+09/08/2026 — Plano-base v2 — E19.3 — Contrato e composição determinística do contexto de geração
 
 ## 1. Estado e decisões fixas
 
 ### 1.1. Estado
 
-- Status: plano-base v1.
+- Status: plano-base v2.
 - Recorte: `E19.3 — Contrato e composição determinística do contexto de geração`.
 - Plano conceitual: N/A.
 - O debate conceitual foi encerrado com os Gates 1, 2 e 3 fechados.
@@ -38,8 +38,10 @@
 - E18.5 permanece responsável por módulos, variantes, fields, cardinalidades, policies, suporte, evidência e bindings.
 - E20.2 permanece responsável pelo catálogo declarativo de entradas e por qualquer relação focal necessária entre seus próprios inputs e slots abstratos consumidos.
 - E20.3 permanece responsável pelo perfil de orientação versionado.
+- A E19.3 deve funcionar com o estado documentado atual de `generation_guidance`; sua opcionalidade só pode ser consumida depois da migration incremental aplicada, da verificação read-only e da reconciliação de `docs/schema.md`.
 - E19.2 permanece responsável pelos valores concretos configurados e pela associação ao `draft`.
 - E9 permanece responsável por entitlement e plano efetivo.
+- Residência estrutural: a E19.3 permanece no boundary existente `lib/lp-builder/`. O contrato público e o compilador puro pertencem a esse boundary; a orquestração e toda leitura permanecem server-only em `lib/lp-builder/adapters/`. `lib/lp-builder/index.ts` é a superfície pública. Não criar UI, Provider, guard, rota, novo domínio, acesso direto ao banco fora de adapter ou persistência.
 
 ## 2. Contrato do caso
 
@@ -48,15 +50,18 @@
 - Gatilho: invocação server-side explícita do compilador para obter o pacote determinístico de uma LP legítima já configurada.
 - Entrada: LP legítima já configurada pela E19.2, com taxon e plano efetivos resolvidos e fontes canônicas acessíveis.
 - Processamento: resolver contratos vigentes → selecionar estrutura → autorizar contexto → montar pacote determinístico.
+- A orquestração deve reutilizar exclusivamente `resolveLandingPageRootParameters`, `resolveLandingPageInputCatalog`, `resolveLandingPageModuleCatalog`, `resolveLandingPageResearchForTaxon` e `resolveLandingPageGenerationProfileForTaxon` pelas APIs públicas vigentes. Registry, schema e resolução interna não podem ser importados ou reimplementados pela E19.3. A relação focal E20.2 → slot E18.5 deve integrar os contratos, schema, registry e saída resolvida do boundary `input-catalog/`; o compilador não mantém mapa paralelo.
 - Validação: aplicar falha fechada para inconsistências, ambiguidades e ausências obrigatórias.
 - Persistência: nenhuma nova. A proveniência integra a própria saída lógica do compilador; qualquer necessidade de persistência durável descoberta na execução deve voltar ao Estrategista e não pode ser criada implicitamente.
 - Consumo: a saída real da E19.3 será a entrada da futura E19.4.
 - Fallback: somente os fallbacks explicitamente autorizados pelos contratos; heurística ou default inventado são proibidos.
+- Observabilidade (`supa#5` como referência, sem dependência do Unified Logs): o boundary server-side que invoca o compilador deve emitir log estruturado com resultado, motivo seguro, `request_id` e latência quando disponíveis. O log não pode conter valores da configuração, pesquisas, fatos, evidências, guidance, payloads brutos, PII, secrets, tokens ou prompts; falha do logging não pode bloquear nem alterar o resultado determinístico. Não criar Log Drain, destino externo, agente, automação ou infraestrutura nova neste recorte.
 
 ### 2.2. Gate 1 — seleção estrutural
 
-- `P1 > P2 > P3` representa prioridade relativa, não obrigatoriedade ou quota.
-- Recomendações válidas da E20.3 entram como candidatas e a ordem efetiva preserva `recommendedOrder` entre módulos selecionados.
+- `P1 > P2 > P3` representa metadado de prioridade relativa, sem obrigatoriedade, quota ou corte nesta primeira versão.
+- Em E19.3, todas as recomendações estruturalmente elegíveis do perfil ativo são selecionadas e preservam `recommendedOrder`.
+- Resultado E20.3 com `kind: "absent"` produz falha determinística distinta de erro de leitura e não autoriza composição vazia, recomendação inventada ou fallback. Configuração incompleta, não vinculada ao draft solicitado ou pertencente a outra conta também falha antes da seleção estrutural.
 - Contrato inválido, identidade inexistente, versão incompatível, root incompatível ou inconsistência estrutural falham fechados.
 - Contexto legítimo que não satisfaça requisito explícito de uma variante torna somente essa variante inelegível.
 - Variante preferencial elegível é usada; se ausente ou inelegível e existir exatamente uma alternativa elegível, usar a alternativa.
@@ -76,7 +81,8 @@
 - Depois de autorizado, o fato pode ser transportado por `fieldKey`, valor e proveniência; `purpose` pode acompanhar como descrição, mas nunca autoriza seleção.
 - O slot abstrato atualmente demonstrado é `applicable_capabilities`, consumido por `benefits`; implementar somente a relação mínima necessária aos inputs que realmente o sustentarem.
 - A E19.3.3 não pode conter bindings nominais de nicho; a relação entre slot abstrato E18.5 e inputs concretos deve ser declarada na camada responsável da E20.2 resolvida.
-- Para booleanos explicitamente autorizados a `applicable_capabilities`, `true` fornece suporte e `false` não fornece suporte para afirmar a capacidade; não generalizar preventivamente essa semântica.
+- Nesta primeira versão, `financing_support_available` e `document_support_available` são os únicos `fieldKey`s explicitamente autorizados pela E20.2 a sustentar `applicable_capabilities`; o binding integra os contratos, schema, registry e saída resolvida de E20.2, sem hardcode por nicho na E19.3.3.
+- Para ambos os booleanos autorizados, `true` fornece suporte e `false` não fornece suporte para afirmar a capacidade; não generalizar preventivamente essa semântica.
 - Inputs centrais já contratados, como `primary_service_or_offer` e `primary_service_or_offer_description`, podem integrar explicitamente o contexto factual global sem papel intermediário artificial.
 - Dado obrigatório e aplicável ausente ou inválido falha fechado.
 - Em `required_when_claimed`, ausência de suporte proíbe a afirmação factual correspondente sem eliminar automaticamente o field.
@@ -89,6 +95,7 @@
 - Parte A — contrato determinístico da LP: identidade e versões necessárias, taxon e plano, root/preset, composição efetiva, variante recomendada e efetiva quando divergirem, ordem, fields, `semanticRole`, cardinalidades, `policy`, requisitos de suporte/evidência, bindings, proveniência e restrições aplicáveis.
 - Parte B — matéria-prima autorizada para o consumidor futuro: limites editoriais projetados para o `semanticRole`, pesquisas e itens autorizados, fatos autorizados, suporte/evidência efetivamente disponível, tratamentos permitidos/restritos/proibidos e guidance aplicável.
 - Parte A informa o que o sistema determinou e o que cada field exige; Parte B informa somente com quais informações autorizadas a futura E19.4 poderá cumprir esse contrato.
+- A API pública E19.3 deve expor resultado TypeScript discriminado entre sucesso completo e falha explícita, possuir versão própria de contrato e devolver estrutura profundamente imutável. A Parte A e a Parte B constituem juntas a única saída de sucesso; nenhuma delas pode ser retornada isoladamente. A E19.4 consumirá essa API pública sem DTO paralelo.
 - A E19.3 não define o contrato da resposta da IA, Structured Output, prompt, modelo, validação pós-IA, materialização ou renderer.
 
 ### 2.5. Simplificação obrigatória
@@ -106,15 +113,16 @@
 - Automação: não.
 - Objetivo: implementar integralmente o compilador determinístico descrito na seção 2 e seus testes, sem OpenAI.
 - Implementação: reutilizar os contratos existentes e realizar somente o refinamento focal da E20.2 indispensável aos slots realmente consumidos pela primeira geração futura.
-- Validação: cobrir seleção estrutural, variantes, ambiguidades, omissões legítimas, autorização de pesquisas e fatos, suporte/evidência, bindings, proveniência e sucesso/falha da interface lógica.
+- Validação: criar validator focal da E19.3 sob `lib/lp-builder/`, registrá-lo em `package.json` e integrá-lo ao `npm run check`. Além dos casos próprios, executar regressões de raiz, pesquisa, input catalog, module catalog, generation profile e onboarding E19.2. Usar identidades e contratos vigentes; não criar taxon, plano, slot ou registry fictício apenas para demonstrar extensibilidade.
+- Observabilidade: validar, no boundary server-side de entrada, logs estruturados seguros nos resultados de sucesso e falha determinística e comprovar que falha do logging não bloqueia nem altera o resultado do compilador.
 - Universalidade: demonstrar pelo algoritmo e pelos contratos vigentes, sem criar taxons, planos, slots ou fixtures fictícios apenas para provar extensibilidade futura.
 - Critério de aceite: para qualquer LP válida admitida pelos contratos, produzir deterministicamente Parte A + Parte B coerentes; quando isso não for possível, falhar explicitamente sem heurística, pacote parcial silencioso ou regra nominal de nicho.
-- Critério de primeira prova: validar o draft real destinado à primeira LP e confirmar que o perfil não cai em ambiguidade não resolvida.
+- Critério de primeira prova: executar inspeção read-only do draft real destinado à primeira LP, registrando vínculo, completude, `planKey`, taxon, perfil próprio, herdado ou ausente, recomendações, variantes e ordem; cada recomendação deve produzir uma única seleção ou falha explícita, sem ambiguidade coberta por fallback.
 - Fechamento documental: aplicar o Prompt ABC somente aos documentos canônicos materialmente afetados pela implementação; qualquer atualização posterior de `docs/roadmap.md` deve refletir apenas o estado realmente implementado.
 
 ### 3.2. Próxima ação
 
-- Submeter o plano-base v1 completo aos especialistas previstos em `docs/prompt-estrategista.md` antes de qualquer implementação.
+- Executar a Passagem 1 independente do Analista sobre esta v2; somente depois versionar a matriz de consolidação e executar a Passagem 2 com os pareceres integrais dos especialistas.
 - Não iniciar o debate detalhado da E19.4 antes de a E19.3 estar implementada e validada.
 
 ## 4. Escopo negativo e critérios de parada
