@@ -50,6 +50,15 @@ const cases: readonly Readonly<{ name: string; run: () => void | Promise<void> }
       assert.equal(result.value.partA.versions.bindingInputCatalogVersion, 3);
       assert.equal(result.value.partA.root.rootVersion, 1);
       assert.equal(result.value.partA.root.resolvedPresetKey.length > 0, true);
+      assert.deepEqual(result.value.partA.generationProfile, {
+        profileId: "c211015e-d9c6-4241-a29a-7cd41e93b8fc",
+        ownerTaxonId: TAXON_ID,
+        relation: "own",
+      });
+      assert.equal(
+        result.value.partB.generationGuidance,
+        "Use somente o contexto autorizado.",
+      );
       assert.deepEqual(
         result.value.partA.selection.map((item) => [
           item.recommendation.moduleKey,
@@ -169,7 +178,7 @@ const cases: readonly Readonly<{ name: string; run: () => void | Promise<void> }
     },
   },
   {
-    name: "profile absence and profile read failure remain distinct without partial package",
+    name: "profile absence, read failure, and optional guidance preserve their contracts",
     run: () => {
       const absent = compileLandingPageGenerationContext({
         landingPage,
@@ -210,8 +219,28 @@ const cases: readonly Readonly<{ name: string; run: () => void | Promise<void> }
         research,
         generationProfile: { ok: true, value: profileWithoutCurrentGuidance },
       });
-      assert.equal(withoutCurrentGuidance.ok, false);
-      assert.equal(withoutCurrentGuidance.error.code, "GENERATION_PROFILE_INVALID");
+      assert.equal(withoutCurrentGuidance.ok, true);
+      assert.equal(
+        Object.hasOwn(withoutCurrentGuidance.value.partB, "generationGuidance"),
+        false,
+      );
+      assert.deepEqual(withoutCurrentGuidance.value.partA.generationProfile, {
+        profileId: generationProfile.value.profileId,
+        ownerTaxonId: generationProfile.value.ownerTaxonId,
+        relation: generationProfile.value.relation,
+      });
+
+      const blankGuidance = compileLandingPageGenerationContext({
+        landingPage,
+        configuration,
+        research,
+        generationProfile: {
+          ok: true,
+          value: { ...generationProfile.value, generationGuidance: "   " },
+        },
+      });
+      assert.equal(blankGuidance.ok, false);
+      assert.equal(blankGuidance.error.code, "GENERATION_PROFILE_INVALID");
     },
   },
   {

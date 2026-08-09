@@ -103,6 +103,11 @@ export type LandingPageGenerationContextPackage = Readonly<{
     }>;
     planKey: string;
     servedTaxon: LandingPageInputCatalogTaxonIdentity;
+    generationProfile: Readonly<{
+      profileId: string;
+      ownerTaxonId: string;
+      relation: "own" | "inherited";
+    }>;
     versions: Readonly<{
       valuesInputCatalogVersion: typeof LANDING_PAGE_GENERATION_VALUES_CATALOG_VERSION;
       bindingInputCatalogVersion: typeof LANDING_PAGE_GENERATION_BINDING_CATALOG_VERSION;
@@ -122,7 +127,7 @@ export type LandingPageGenerationContextPackage = Readonly<{
       slotKey: "applicable_capabilities";
       fieldKeys: readonly string[];
     }>[];
-    generationGuidance: string;
+    generationGuidance?: string;
     modules: readonly LandingPageGenerationAuthorizedModuleContext[];
   }>;
 }>;

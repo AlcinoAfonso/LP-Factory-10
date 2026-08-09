@@ -2,7 +2,7 @@
 
 0.1 Cabeçalho
 • Data: 09/08/2026
-• Versão: v1.5.134
+• Versão: v1.5.135
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -1572,7 +1572,7 @@ Repositório — Ajustados
   - A IA não preencherá nem modificará `generation_guidance` ou `item_guidance`, que serão exceções humanas opcionais.
   - A decisão `wait_for_modules` ou `proceed_with_available` é registrada no evento de auditoria do rascunho; `wait_for_modules` bloqueia a ativação e `proceed_with_available` permite a ativação com a decisão auditada.
   - Não existe dependência futura de recálculo dos gaps pela E12.4.4 nem novo gate de autorização por conta.
-  - A evolução E20.3.5 tornará `generation_guidance` opcional no mesmo PR técnico, sem reabrir E20.3.3 ou E20.3.4.
+  - A E20.3.5 tornou `generation_guidance` opcional pela migration `20260730114633`, já aplicada, sem reabrir E20.3.3 ou E20.3.4.
   - Snapshot e independência da LP permanecem consolidados; liberdade de edição e comportamento de regeneração serão decididos apenas no futuro plano-base da E19.4.
   - Registros da implementação candidata:
     - Admin Dashboard e Server Actions em `app/admin/(protected)/perfis-de-orientacao/`.
@@ -2461,27 +2461,17 @@ Repositório — Ajustados
   * Implementar resolução determinística própria ou herdada, recomendações em ordem crescente e bloqueio de fallback distante quando o ancestral elegível mais próximo possuir perfil `active` inválido.
   * A futura E12.4 tratará mutações e atomicidade do lifecycle; a futura E19.4 poderá consumir o perfil resolvido. A conclusão da E20.3 apenas libera o debate da E12.4, sem autorizar sua implementação.
 
-20.3.5 Contrato e limites
+20.3.5 Contrato, limites e opcionalidade da orientação geral
 
-* Status: Definido.
+* Status: Concluída; migration `20260730114633` aplicada, coluna verificada como anulável e reconciliação final de `docs/schema.md` realizada.
 * Conteúdo:
 
-  * O perfil pertence a um taxon, possui versão e estado e reúne itens com módulo e versão, variante e versão opcionais, prioridade `P1`, `P2` ou `P3`, ordem recomendada positiva e orientação específica opcional; `generation_guidance` permanece obrigatória no contrato vigente até a E20.3.5.
+  * O perfil pertence a um taxon, possui versão e estado e reúne itens com módulo e versão, variante e versão opcionais, prioridade `P1`, `P2` ou `P3`, ordem recomendada positiva e orientação específica opcional; `generation_guidance` é anulável, exclusivamente humana e não vazia após trim quando presente.
   * Prioridade e ordem são orientação; não criam módulo obrigatório, composição final, seleção por plano, prontidão, autorização, revogação ou geração.
   * Perfil e itens formam um agregado único, somente leitura server-side, persistido em exatamente duas tabelas e entregue por um único boundary, sem perfil oficial neste recorte.
   * A resolução usa perfil `active` próprio ou do ancestral elegível mais próximo, preserva proveniência e falha fechado para cadeia, leitura, identidade ou perfil inválido; ausência legítima permanece distinta de erro.
   * A E20.3 depende da taxonomia vigente e da identidade pública da E18.5, mas permanece independente do catálogo e dos valores da E20.2.
   * Permanecem fora do recorte mutações e lifecycle operacional do perfil, terceira tabela de domínio, rota, API HTTP, Server Action, UI, composição, copy, geração, IA, automação, job, serviço e nova infraestrutura.
-
-20.3.5 Opcionalidade da orientação geral
-
-* Status: Implementação candidata no mesmo PR técnico da E12.4.3.2; apply, verificação read-only e reconciliação final do schema permanecem pendentes.
-* Conteúdo:
-
-  * Tornar `generation_guidance` anulável, exclusivamente humano e não vazio quando presente, por migration incremental forward-only.
-  * Atualizar contratos, schemas, DTOs, RPCs, normalização, testes e verificador read-only sem alterar estados, herança, resolução active-only ou recomendações.
-  * Preservar `item_guidance` opcional e exclusivamente humano.
-  * Não criar novo campo, estado, tabela, resolver ou infraestrutura e não reabrir E20.3.3 ou E20.3.4.
 
 99. Changelog
 v1.5.131 — 08/08/2026 — Fechada a E19.2 após o merge do PR #700: migration aplicada, verificador SQL read-only aprovado e validação funcional hospedada autenticada concluída; preservados os limites de não geração, não publicação, ausência de tracking/CRM/capability nova e ausência de infraestrutura de assets.

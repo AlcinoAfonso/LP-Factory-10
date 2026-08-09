@@ -98,8 +98,9 @@ function compileValidatedLandingPageGenerationContext(
   const profile = input.generationProfile.value;
   if (
     profile.servedTaxonId !== bindingCatalog.value.servedTaxon.id ||
-    typeof profile.generationGuidance !== "string" ||
-    !profile.generationGuidance.trim() ||
+    (profile.generationGuidance !== undefined &&
+      (typeof profile.generationGuidance !== "string" ||
+        !profile.generationGuidance.trim())) ||
     hasInvalidRecommendationOrder(profile.recommendations)
   ) {
     return failure("GENERATION_PROFILE_INVALID", "Resolved generation profile is incompatible with the landing page.");
@@ -254,6 +255,11 @@ function compileValidatedLandingPageGenerationContext(
       },
       planKey: input.configuration.planKey,
       servedTaxon: bindingCatalog.value.servedTaxon,
+      generationProfile: {
+        profileId: profile.profileId,
+        ownerTaxonId: profile.ownerTaxonId,
+        relation: profile.relation,
+      },
       versions: {
         valuesInputCatalogVersion: LANDING_PAGE_GENERATION_VALUES_CATALOG_VERSION,
         bindingInputCatalogVersion: LANDING_PAGE_GENERATION_BINDING_CATALOG_VERSION,
@@ -272,7 +278,9 @@ function compileValidatedLandingPageGenerationContext(
       capabilitySupport: capabilityFieldKeys.length > 0
         ? [{ slotKey: "applicable_capabilities", fieldKeys: capabilityFieldKeys }]
         : [],
-      generationGuidance: profile.generationGuidance,
+      ...(profile.generationGuidance === undefined
+        ? {}
+        : { generationGuidance: profile.generationGuidance }),
       modules: modules.map((selectedModule) => {
         const recommendation = profile.recommendations.find(
           (item) => item.recommendedOrder === selectedModule.recommendedOrder,
