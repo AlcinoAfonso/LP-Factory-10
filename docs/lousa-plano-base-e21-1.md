@@ -1,15 +1,15 @@
-09/08/2026 — Rascunho vivo — E21.1 — Fundação, normalização e leitura dos workloads OpenAI
+09/08/2026 — Plano-base v1 — E21.1 — Fundação, normalização e leitura dos workloads OpenAI
 
 ## 1. Estado e decisões fixas
 
 ### 1.1. Estado
 
-- Status: rascunho vivo do futuro plano-base v1; ainda não consolidado.
+- Status: plano-base v1 consolidado por decisão humana em 09/08/2026.
 - Caso macro: `E21 — Gestão e governança dos workloads OpenAI`.
 - Recorte: `E21.1 — Fundação, normalização e leitura dos workloads OpenAI`.
 - Plano conceitual: N/A.
-- Este documento registra as decisões aceitas durante o debate e separa delas as questões ainda abertas.
-- Nenhuma implementação está autorizada por este rascunho.
+- Este documento é o contrato executável do recorte aprovado e não possui questão indispensável aberta para a E21.1.
+- A consolidação da v1 não autoriza iniciar a implementação; o próximo fluxo depende da escolha humana prevista em `docs/prompt-estrategista.md`.
 - A E21.1 não escolhe a fonte operacional dinâmica definitiva e não implementa alteração de configuração sem redeploy.
 
 ### 1.2. Objetivo
@@ -39,7 +39,7 @@
 - `.github/workflows/pipeline-supabase-inspect.yml`.
 - `components/admin/adminNavigation.ts` e shell protegido vigente do Admin Dashboard.
 - PR #707, enquanto `docs/openai-model-snapshot.md` ainda não estiver incorporado à `main`.
-- Documentação oficial OpenAI vigente para Responses API, `reasoning.effort`, usage, cached input e reasoning tokens.
+- Documentação oficial OpenAI vigente para Responses API, `reasoning.effort`, usage, cached input, cache write e reasoning tokens.
 
 ### 1.4. Decisões fixas do caso
 
@@ -49,6 +49,10 @@
   - três de produto/runtime;
   - um operacional, Supabase Inspect.
 - O catálogo tipado em código integra a normalização inicial, mas não é a solução final de gestão da configuração ativa.
+- Na E21.1, o catálogo tipado torna-se a fonte inicial ativa de `modelo + effort` dos três workloads de produto.
+- As três variáveis Vercel de modelo deixam de ser lidas e somente são retiradas da configuração após a validação dos três consumers em Preview; `OPENAI_API_KEY` permanece server-side na Vercel.
+- Na E21.1, o usage comum permanece em logs operacionais estruturados e seguros, sem banco ou histórico persistido.
+- `cacheWriteTokens` integra o contrato de observabilidade quando retornado pelo provedor; isso não autoriza prompt caching explícito na E21.1.
 - A configuração operacional dinâmica sem redeploy é requisito fixo da E21 para mudanças ordinárias de `modelo + effort`.
 - A futura ativação exige candidata validada, evidência associada e decisão humana.
 - O futuro rollback reutiliza revisão anteriormente validada e não exige redeploy.
@@ -116,17 +120,20 @@
   - configuração alterável por execução, sem integrar a futura mutação dos workloads de produto.
 - A omissão de effort preserva hoje `none` no `gpt-5.4-mini`, mas não é segura para migrações porque valores suportados e defaults variam por modelo.
 
-### 1.7. Questões abertas indispensáveis antes da v1
+### 1.7. Decisões fechadas para a v1
 
-- Fonte transitória dos três workloads de produto na E21.1:
-  - opção recomendada: o catálogo tipado torna-se a fonte inicial ativa de `modelo + effort`, e as três variáveis Vercel de modelo deixam de ser lidas pelos consumidores e são retiradas de `docs/platform-config.md` após a implantação validada;
-  - alternativa: manter temporariamente as variáveis como fonte do modelo atrás do resolver comum e fixar somente o effort no catálogo;
-  - risco da alternativa: preservar duas origens parciais, drift entre ambientes e um contrato mais difícil de substituir pela fonte dinâmica futura.
-- Destino do usage comum na E21.1:
-  - opção recomendada: registrar eventos estruturados nos logs operacionais seguros já usados pelo runtime, sem tabela, migration ou histórico consultável na página;
-  - alternativa: persistir usage já na E21.1;
-  - risco da alternativa: antecipar o recorte de evidências/histórico e exigir contrato de retenção, autorização, banco e custo ainda não aprovado.
-- Nenhuma outra decisão aberta identificada até o momento bloqueia a E21.1.
+- Fonte transitória dos três workloads de produto:
+  - o catálogo tipado é a fonte inicial ativa de `modelo + effort`;
+  - os consumers deixam de ler as três variáveis Vercel de modelo;
+  - a retirada das variáveis da configuração e de `docs/platform-config.md` ocorre somente após os três consumers serem validados em Preview;
+  - `OPENAI_API_KEY` permanece na Vercel.
+- Destino do usage comum:
+  - eventos estruturados nos logs operacionais seguros já usados pelo runtime;
+  - sem tabela, migration, retenção histórica ou métricas consultáveis na página nesta etapa.
+- Contrato adicional de usage:
+  - normalizar `cacheWriteTokens` quando o provedor retornar `cache_write_tokens`;
+  - não habilitar explicit prompt caching na E21.1.
+- Não permanece questão indispensável aberta para executar a E21.1.
 
 ## 2. Contrato do caso
 
@@ -137,7 +144,7 @@
 - Entrada: identificador do workload, ambiente atual e configuração inicial reconhecida pelo catálogo.
 - Processamento: resolver configuração → validar combinação → entregar `model + reasoningEffort + source + revision` → consumidor constrói sua própria requisição → capturar resposta e usage → registrar evento seguro.
 - Validação: garantir identidade conhecida, configuração explícita, modelo e effort entregues ao request, usage normalizado quando disponível e ausência de dados sensíveis no evento.
-- Persistência: nenhuma nova persistência de domínio na recomendação atual da E21.1; logs operacionais não se tornam histórico canônico de avaliação.
+- Persistência: nenhuma nova persistência de domínio na E21.1; logs operacionais não se tornam histórico canônico de avaliação.
 - Consumo: três consumers de produto/runtime e inventário administrativo read-only; Supabase Inspect entra apenas como item operacional externo no inventário.
 - Fallback: cada workload preserva o fallback funcional vigente; não há fallback automático para outro modelo ou effort.
 
@@ -204,11 +211,14 @@
   - latência;
   - input tokens;
   - cached input tokens;
+  - cache write tokens, quando retornados;
   - output tokens;
   - reasoning tokens;
   - total tokens.
 - Normalizar `cached input` a partir de `usage.input_tokens_details.cached_tokens`.
+- Normalizar `cacheWriteTokens` a partir de `usage.input_tokens_details.cache_write_tokens`, quando o campo for retornado pelo provedor.
 - Normalizar `reasoning tokens` a partir de `usage.output_tokens_details.reasoning_tokens`.
+- A captura de `cacheWriteTokens` não habilita nem autoriza `prompt_cache_options`, `prompt_cache_breakpoint` ou outra configuração de prompt caching explícito na E21.1.
 - Campos indisponíveis em falhas anteriores à resposta permanecem ausentes ou nulos; não fabricar zero quando o provedor não retornou usage.
 - Não registrar prompt integral, pesquisa bruta, resposta completa, dados pessoais, secrets ou payloads de negócio.
 - Não calcular custo monetário no runtime da E21.1.
@@ -282,7 +292,7 @@
   - nenhum consumer depende do default de effort do provedor;
   - fallback funcional vigente preservado.
 - Usage:
-  - input, cached input, output, reasoning e total normalizados;
+  - input, cached input, cache write quando retornado, output, reasoning e total normalizados;
   - ausência e payload inválido tratados sem fabricar métricas;
   - response ID, latência e categoria segura registrados;
   - nenhum prompt, pesquisa bruta, resposta completa ou secret nos eventos.
@@ -308,7 +318,7 @@
 
 ### 3.1. E21.1.3 — Catálogo estrutural e resolução explícita
 
-- Status: proposta para a futura v1; não autorizada para execução neste rascunho.
+- Status: planejada na v1; primeira fase executável, ainda não iniciada.
 - Automação: não.
 - Objetivo:
   - criar identificadores canônicos, catálogo inicial tipado, projeção administrativa segura e interface única de resolução.
@@ -327,7 +337,7 @@
 
 ### 3.2. E21.1.4 — Integração dos consumers e observabilidade comum
 
-- Status: proposta para a futura v1; depende da E21.1.3.
+- Status: planejada na v1; depende da E21.1.3 e ainda não foi iniciada.
 - Automação: não.
 - Objetivo:
   - integrar os três consumers de produto ao resolver, corrigir as regressões e uniformizar os eventos operacionais seguros.
@@ -341,14 +351,14 @@
 - Critérios de aceite:
   - request real de cada workload usa exatamente a configuração resolvida;
   - nenhum default implícito de effort;
-  - cached input e reasoning tokens capturados quando retornados;
+  - cached input, cache write e reasoning tokens capturados quando retornados;
   - nenhuma PII, prompt ou resposta integral em logs;
   - sem cálculo monetário de runtime;
   - validators dos domínios e smoke hospedado aprovados.
 
 ### 3.3. E21.1.5 — Inventário read-only no Admin Dashboard
 
-- Status: proposta para a futura v1; depende da E21.1.3 e do contrato efetivo validado na E21.1.4.
+- Status: planejada na v1; depende da E21.1.3 e do contrato efetivo validado na E21.1.4; ainda não foi iniciada.
 - Automação: não.
 - Objetivo:
   - expor a visão inicial segura dos workloads e de sua configuração efetiva no shell administrativo vigente.
@@ -369,11 +379,10 @@
 
 ### 3.4. Próxima ação
 
-- Submeter ao humano somente as duas decisões da seção 1.7.
-- Atualizar este mesmo rascunho vivo no mesmo PR com as decisões aceitas.
-- Consolidar o plano-base v1 apenas quando a fonte transitória e o destino do usage da E21.1 estiverem fechados.
-- Após a v1, orientar a atualização planejada de `docs/roadmap.md` no mesmo PR conforme `docs/prompt-estrategista.md`, `docs/prompt-abc.md` e `docs/template-roadmap.md`.
-- Não iniciar implementação nem escolher Supabase ou Global Config durante a E21.1.
+- Orientar o Executor a ajustar `docs/roadmap.md` no mesmo PR conforme `docs/prompt-estrategista.md`, `docs/prompt-abc.md` e `docs/template-roadmap.md`, registrando somente seções, subseções, títulos, objetivos e status planejado.
+- Submeter ao humano a escolha entre o processo atual e o processo automatizado definida em `docs/prompt-estrategista.md`.
+- No processo atual, encaminhar depois o plano-base v1 completo ao Analista, ao Gestor Estrutural e ao Gestor de Updates.
+- Não iniciar implementação, escolher Supabase ou Global Config, ou executar fase antes dos gates do processo escolhido.
 
 ## 4. Escopo negativo e critérios de parada
 
@@ -409,20 +418,21 @@
   - a implementação tentar escolher ou promover automaticamente modelo ou effort;
   - o código real divergir do inventário e revelar novo consumer OpenAI não debatido;
   - a remoção das variáveis ou do custo hardcoded causar mudança funcional não prevista;
-  - qualquer questão indispensável da seção 1.7 permanecer aberta na tentativa de consolidar a v1.
+  - surgir mudança que contradiga ou reabra decisão fixa da seção 1.7.
 
 ### 4.3. Validação deste trabalho documental
 
 - Confirmar:
-  - somente `docs/lousa-plano-base-e21-1.md` criado na branch do recorte;
-  - documento marcado como rascunho vivo e não como plano-base v1;
+  - somente `docs/lousa-plano-base-e21-1.md` alterado na consolidação;
+  - documento marcado como plano-base v1;
   - quatro seções preservadas;
-  - três fases propostas, todas com `Automação: não`;
+  - três fases executáveis, todas com `Automação: não`;
   - E21.1 limitada a fundação, normalização, observabilidade comum e leitura administrativa;
   - requisito dinâmico sem redeploy preservado explicitamente como parte fixa da E21;
   - Supabase e Global Config mantidos em comparação;
-  - duas questões abertas claramente separadas das decisões fixas;
-  - nenhuma implementação, roadmap, banco, configuração de plataforma ou arquivo fora do recorte alterado.
+  - decisões da seção 1.7 fechadas;
+  - `cacheWriteTokens` opcional incluído sem autorizar prompt caching explícito;
+  - nenhuma implementação, roadmap, banco ou configuração de plataforma alterados nesta consolidação.
 - Executar validação de whitespace do conteúdo documental.
 - Registrar como não aplicável nesta etapa documental:
   - `npm ci`;
