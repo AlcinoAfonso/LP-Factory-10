@@ -50,7 +50,7 @@
 - Gatilho: invocação server-side explícita do compilador para obter o pacote determinístico de uma LP legítima já configurada.
 - Entrada: LP legítima já configurada pela E19.2, com taxon e plano efetivos resolvidos e fontes canônicas acessíveis.
 - Processamento: resolver contratos vigentes → selecionar estrutura → autorizar contexto → montar pacote determinístico.
-- A orquestração deve reutilizar exclusivamente `resolveLandingPageRootParameters`, `resolveLandingPageInputCatalog`, `resolveLandingPageModuleCatalog`, `resolveLandingPageResearchForTaxon` e `resolveLandingPageGenerationProfileForTaxon` pelas APIs públicas vigentes. Registry, schema e resolução interna não podem ser importados ou reimplementados pela E19.3. A relação focal E20.2 → slot E18.5 deve integrar os contratos, schema, registry e saída resolvida do boundary `input-catalog/`; o compilador não mantém mapa paralelo.
+- A orquestração deve reutilizar exclusivamente `resolveLandingPageRootParameters`, `resolveLandingPageInputCatalog`, `listLandingPageModuleIdentities`, `resolveLandingPageModuleCatalog`, `resolveLandingPageResearchForTaxon` e `resolveLandingPageGenerationProfileForTaxon` pelas APIs públicas vigentes. Registry, schema e resolução interna não podem ser importados ou reimplementados pela E19.3. A relação focal E20.2 → slot E18.5 deve integrar os contratos, schema, registry e saída resolvida do boundary `input-catalog/`; o compilador não mantém mapa paralelo.
 - Validação: aplicar falha fechada para inconsistências, ambiguidades e ausências obrigatórias.
 - Persistência: nenhuma nova. A proveniência integra a própria saída lógica do compilador; qualquer necessidade de persistência durável descoberta na execução deve voltar ao Estrategista e não pode ser criada implicitamente.
 - Consumo: a saída real da E19.3 será a entrada da futura E19.4.
@@ -62,12 +62,14 @@
 - `P1 > P2 > P3` representa metadado de prioridade relativa, sem obrigatoriedade, quota ou corte nesta primeira versão.
 - Em E19.3, todas as recomendações estruturalmente elegíveis do perfil ativo são selecionadas e preservam `recommendedOrder`.
 - Resultado E20.3 com `kind: "absent"` produz falha determinística distinta de erro de leitura e não autoriza composição vazia, recomendação inventada ou fallback. Configuração incompleta, não vinculada ao draft solicitado ou pertencente a outra conta também falha antes da seleção estrutural.
+- Versões e identidades são explícitas: o contrato E19.3 v1 usa `rootVersion: 1`, omite `presetKey` para que E18.4 resolva seu preset canônico e preserva o `resolvedPresetKey`; obtém `moduleCatalogVersion` e enumera variantes por `listLandingPageModuleIdentities()`; usa como `funnelProfileKey` o valor efetivo e validado de `funnel_stage`; e converte `variantKey` em `variantName` somente depois de correspondência exata com a identidade canônica do mesmo módulo e versão. Versão, preset, perfil ou identidade não resolvidos falham fechados.
 - Contrato inválido, identidade inexistente, versão incompatível, root incompatível ou inconsistência estrutural falham fechados.
 - Contexto legítimo que não satisfaça requisito explícito de uma variante torna somente essa variante inelegível.
 - Variante preferencial elegível é usada; se ausente ou inelegível e existir exatamente uma alternativa elegível, usar a alternativa.
 - Mais de uma alternativa elegível sem preferência válida falha por ambiguidade; nenhuma alternativa elegível por contexto legítimo permite omitir o módulo.
 - Fallback só ocorre por compatibilidade explicitamente verificável.
 - Quando a variante efetiva divergir da recomendada, preservar a recomendação original, a causa objetiva da inelegibilidade e a variante efetiva.
+- Cada recomendação original deve permanecer rastreável com a decisão efetiva `selected` ou `omitted` e sua causa objetiva; omissão é permitida somente por inelegibilidade contextual legítima e não equivale a falha do pacote.
 - Antes da execução, validar o perfil real da primeira prova; ambiguidade real é gap do contrato/perfil, nunca motivo para fallback improvisado.
 
 ### 2.3. Gate 2 — autorização do contexto
@@ -83,6 +85,8 @@
 - A E19.3.3 não pode conter bindings nominais de nicho; a relação entre slot abstrato E18.5 e inputs concretos deve ser declarada na camada responsável da E20.2 resolvida.
 - Nesta primeira versão, `financing_support_available` e `document_support_available` são os únicos `fieldKey`s explicitamente autorizados pela E20.2 a sustentar `applicable_capabilities`; o binding integra os contratos, schema, registry e saída resolvida de E20.2, sem hardcode por nicho na E19.3.3.
 - Para ambos os booleanos autorizados, `true` fornece suporte e `false` não fornece suporte para afirmar a capacidade; não generalizar preventivamente essa semântica.
+- O refinamento focal cria a versão 3 do catálogo E20.2, preservando integralmente os 23 fields, ordem, tipos, escopos, obrigações, condições, validações e políticas de substituição da v2 e acrescentando somente o metadata explícito desses dois bindings. A v2 permanece imutável.
+- Configurações persistidas com `catalog_version = 2` continuam resolvidas e validadas pela v2. A E19.3 resolve a v3 somente como contrato de binding e exige compatibilidade estrutural integral entre v2 e v3 antes de associar o metadata aos valores já validados; divergência falha fechada. Não alterar `catalog_version`, regravar valores, migrar dados ou criar mapa paralelo; a saída registra separadamente a versão do catálogo dos valores e a versão do contrato de binding.
 - Inputs centrais já contratados, como `primary_service_or_offer` e `primary_service_or_offer_description`, podem integrar explicitamente o contexto factual global sem papel intermediário artificial.
 - Dado obrigatório e aplicável ausente ou inválido falha fechado.
 - Em `required_when_claimed`, ausência de suporte proíbe a afirmação factual correspondente sem eliminar automaticamente o field.
@@ -93,6 +97,7 @@
 - A E19.3 produz conceitualmente apenas dois resultados possíveis: sucesso com pacote coerente ou falha determinística explícita.
 - Em sucesso, o pacote contém duas partes lógicas; não antecipar schema físico, DTO definitivo ou persistência específica.
 - Parte A — contrato determinístico da LP: identidade e versões necessárias, taxon e plano, root/preset, composição efetiva, variante recomendada e efetiva quando divergirem, ordem, fields, `semanticRole`, cardinalidades, `policy`, requisitos de suporte/evidência, bindings, proveniência e restrições aplicáveis.
+- Parte A preserva também cada recomendação original, sua decisão efetiva `selected` ou `omitted` e a causa objetiva; módulos omitidos não produzem fields, mas permanecem na proveniência da seleção estrutural.
 - Parte B — matéria-prima autorizada para o consumidor futuro: limites editoriais projetados para o `semanticRole`, pesquisas e itens autorizados, fatos autorizados, suporte/evidência efetivamente disponível, tratamentos permitidos/restritos/proibidos e guidance aplicável.
 - Parte A informa o que o sistema determinou e o que cada field exige; Parte B informa somente com quais informações autorizadas a futura E19.4 poderá cumprir esse contrato.
 - A API pública E19.3 deve expor resultado TypeScript discriminado entre sucesso completo e falha explícita, possuir versão própria de contrato e devolver estrutura profundamente imutável. A Parte A e a Parte B constituem juntas a única saída de sucesso; nenhuma delas pode ser retornada isoladamente. A E19.4 consumirá essa API pública sem DTO paralelo.
@@ -117,12 +122,12 @@
 - Observabilidade: validar, no boundary server-side de entrada, logs estruturados seguros nos resultados de sucesso e falha determinística e comprovar que falha do logging não bloqueia nem altera o resultado do compilador.
 - Universalidade: demonstrar pelo algoritmo e pelos contratos vigentes, sem criar taxons, planos, slots ou fixtures fictícios apenas para provar extensibilidade futura.
 - Critério de aceite: para qualquer LP válida admitida pelos contratos, produzir deterministicamente Parte A + Parte B coerentes; quando isso não for possível, falhar explicitamente sem heurística, pacote parcial silencioso ou regra nominal de nicho.
-- Critério de primeira prova: executar inspeção read-only do draft real destinado à primeira LP, registrando vínculo, completude, `planKey`, taxon, perfil próprio, herdado ou ausente, recomendações, variantes e ordem; cada recomendação deve produzir uma única seleção ou falha explícita, sem ambiguidade coberta por fallback.
+- Critério de primeira prova: executar inspeção read-only do draft real destinado à primeira LP, registrando vínculo, completude, `planKey`, taxon, perfil próprio, herdado ou ausente, recomendações, variantes e ordem; cada recomendação deve produzir uma seleção única, uma omissão legítima rastreada ou uma falha explícita, sem ambiguidade coberta por fallback.
 - Fechamento documental: aplicar o Prompt ABC somente aos documentos canônicos materialmente afetados pela implementação; qualquer atualização posterior de `docs/roadmap.md` deve refletir apenas o estado realmente implementado.
 
 ### 3.2. Próxima ação
 
-- Executar a Passagem 1 independente do Analista sobre esta v2; somente depois versionar a matriz de consolidação e executar a Passagem 2 com os pareceres integrais dos especialistas.
+- Submeter estas quatro correções objetivas ao mesmo Analista em `revisao_delta`; somente após aprovação versionar a matriz de consolidação e executar a Passagem 2 com os pareceres integrais dos especialistas.
 - Não iniciar o debate detalhado da E19.4 antes de a E19.3 estar implementada e validada.
 
 ## 4. Escopo negativo e critérios de parada
