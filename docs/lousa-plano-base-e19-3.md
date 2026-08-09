@@ -148,46 +148,58 @@
 - Somente restrição explicitamente classificada pelo contrato responsável como permanente continua obrigatória após a materialização.
 - A mecânica de edição manual ou assistida permanece para recorte posterior e não deve ser antecipada na E19.3.3.
 
+### 1.14. Gate 2 da E19.3.3 — autorização do contexto
+
+- Gate 2 considerado conceitualmente fechado pela solução mínima orientada ao consumo real.
+- Regra-base: reutilizar primeiro as relações estruturadas já existentes; identificar gap concreto; acrescentar somente a menor relação declarativa necessária ao consumidor real.
+- E10.8 entra por `researchPath`, `itemKeys` e demais relações explicitamente contratadas; blocos ou itens não devem ser enviados por simples julgamento de pertinência.
+- E18.4 fornece ao field apenas o papel semântico e os limites de geração efetivamente necessários; regras visuais, responsivas e de acessibilidade permanecem server-side quando não forem entrada real da geração de copy.
+- E18.5 continua sendo a autoridade sobre `policy`, `copySourceMap`, suporte, cardinalidade, evidência e bindings.
+- E20.3 fornece `generationGuidance` como orientação global e `itemGuidance` somente ao módulo correspondente.
+- Um valor E20.2 só pode participar quando pertencer ao catálogo resolvido, estiver aplicável e válido e houver relação explícita que autorize seu consumo; autorização nunca é inferida por `fieldKey`, `purpose` ou semelhança textual.
+- Depois de autorizado, o fato pode ser transportado diretamente por seu `fieldKey`, valor e proveniência; o `purpose` existente pode acompanhar o fato como descrição para a IA, mas nunca autoriza sua seleção.
+- Não criar `factIdentity`, taxonomia geral de `contextRole`, registry de fatos, DSL, engine ou framework genérico de resolvers sem consumidor real.
+- O slot abstrato atualmente demonstrado é `applicable_capabilities`, consumido por `benefits`; implementar apenas o vínculo mínimo necessário entre esse slot e os inputs E20.2 que realmente o sustentarem na primeira geração.
+- Para booleanos explicitamente autorizados a `applicable_capabilities`, `true` fornece suporte para afirmar a capacidade correspondente e `false` não fornece esse suporte; essa regra não deve ser generalizada preventivamente para todos os booleanos ou futuros slots.
+- Inputs centrais já contratados para a geração, como `primary_service_or_offer` e `primary_service_or_offer_description`, podem integrar explicitamente o contexto factual global sem criar um papel intermediário artificial.
+- Dado obrigatório e aplicável ausente ou inválido falha fechado.
+- Em `required_when_claimed`, ausência de suporte proíbe a afirmação factual correspondente, mas não elimina automaticamente o field.
+- Em `operational_required`, ausência da evidência requerida impede produzir o field; se isso romper cardinalidade mínima, a variante pode se tornar inelegível e o tratamento retorna às regras do Gate 1.
+- A implementação da E19.3.3 não deve transformar este modelo conceitual em infraestrutura extensível preventiva; crescimento motivado principalmente por generalizações sem consumidor atual é sinal para parar e simplificar.
+
 ## 2. Questões ainda abertas para o debate
 
 ### 2.1. Composição mínima e interface da E19.3.3
 
-- Gate 1 de seleção estrutural está fechado; restam os gates 2 — autorização e 3 — interface lógica de saída.
+- Gates 1 — seleção estrutural e 2 — autorização do contexto estão fechados; resta o Gate 3 — interface lógica de saída.
 - Definir o pacote autoritativo mínimo produzido pela E19.3.3 antes da chamada à IA.
 - Distinguir conceitualmente o contrato determinístico da LP do contexto autorizado entregue à IA.
 
-### 2.2. Gate 2 — autorização do contexto
-
-- Fechar a menor regra universal que cruza política, fonte e suporte da E18.5 com pesquisas E10.8, parâmetros E18.4 e valores concretos E20.2 aplicáveis, sem criar terceiro catálogo preventivo.
-- Formalizar os resolvers mínimos para slots de suporte operacional realmente consumidos pela primeira geração, como `applicable_capabilities` quando aplicável.
-- Definir quando um dado E20.2 é contexto factual autorizado, quando permanece exclusivamente server-side e quando sua ausência apenas restringe uma afirmação, um field ou um módulo.
-- Definir quais usos de `strategic_core`, `lp_overview`, `lp_sections` e `seo` são autorizados por relação já estruturada e quais exigem regra explícita mínima da E19.3.3.
-
-### 2.3. Gate 3 — interface lógica de saída
+### 2.2. Gate 3 — interface lógica de saída
 
 - Definir logicamente duas partes da saída, sem antecipar schema físico.
 - Parte A — contrato determinístico da LP: identidade e versões, taxon e plano, root/preset, composição efetiva, variante recomendada e efetiva quando divergirem, ordem, fields/cardinalidades, bindings, proveniência e restrições.
 - Parte B — contexto autorizado para IA: papel semântico, limites aplicáveis à geração, pesquisas e itens estruturais autorizados, fatos autorizados, evidências, tratamentos permitidos/restritos/proibidos e guidance aplicável.
 - Distinguir guardrail de geração de eventual restrição permanente; permanência só existe quando o contrato responsável a classificar explicitamente.
 
-### 2.4. Papel mínimo da IA e contrato de saída da geração
+### 2.3. Papel mínimo da IA e contrato de saída da geração
 
 - O fluxo linear `pacote resolvido → geração estruturada → validação determinística → candidata` é a direção inicial aceita para a fase posterior E19.3.4.
-- Não avançar ao detalhamento da E19.3.4 antes de fechar os gates 2 e 3 da E19.3.3.
+- Não avançar ao detalhamento da E19.3.4 antes de fechar o Gate 3 da E19.3.3.
 - Depois disso, definir exatamente quais fields podem ser preenchidos pela IA e o menor formato estruturado da resposta da geração.
 - Preservar HTML, CSS, JSX, identidades estruturais, destinos operacionais e fatos não fornecidos fora da autoridade da IA.
 
-### 2.5. Materialização e visualização
+### 2.4. Materialização e visualização
 
 - Definir a menor materialização durável vinculada à LP que permita visualizar a página real sem antecipar editor, publicação ou versionamento editorial completo.
 - Não presumir tabela, coluna, renderer ou rota antes da avaliação estrutural e do estado real do repositório.
 
-### 2.6. Snapshot
+### 2.5. Snapshot
 
 - Definir o mínimo suficiente para reproduzir e explicar a geração original e servir de referência para futuras edições assistidas, sem copiar registries completos, fontes não utilizadas, prompts integrais, respostas brutas inválidas ou secrets.
 - Snapshot não transforma recomendações ou guardrails de geração em restrições permanentes de edição manual.
 
-### 2.7. Revisão humana
+### 2.6. Revisão humana
 
 - Definir apenas a experiência mínima para visualizar e avaliar a primeira geração.
 - Edição, regeneração, workflow de aprovação e publicação permanecem fora enquanto não forem indispensáveis.
@@ -216,6 +228,7 @@
 - novo E18.6 apenas para acoplar módulos diretamente ao catálogo E20.2 sem evidência real de autonomia;
 - catálogo ou matriz preventiva completa de bindings E18.5 ↔ E20.2;
 - inferência de binding por `purpose`, nome de field ou semelhança textual;
+- taxonomia geral de fatos, registry de `contextRole`, DSL ou framework genérico de resolvers sem consumidor real;
 - classificar preventivamente todas as regras da E18.4 como permanentes ou editáveis;
 - projetar editor, regeneração ou sistema de créditos dentro da E19.3.3;
 - E19.4 criado apenas para separar a geração sem evidência de contrato autônomo.
