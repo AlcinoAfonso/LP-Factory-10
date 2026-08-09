@@ -160,6 +160,7 @@
 - Depois de autorizado, o fato pode ser transportado diretamente por seu `fieldKey`, valor e proveniência; o `purpose` existente pode acompanhar o fato como descrição para a IA, mas nunca autoriza sua seleção.
 - Não criar `factIdentity`, taxonomia geral de `contextRole`, registry de fatos, DSL, engine ou framework genérico de resolvers sem consumidor real.
 - O slot abstrato atualmente demonstrado é `applicable_capabilities`, consumido por `benefits`; implementar apenas o vínculo mínimo necessário entre esse slot e os inputs E20.2 que realmente o sustentarem na primeira geração.
+- A E19.3.3 não pode conter bindings nominais de nicho; quando um slot abstrato da E18.5 exigir dados concretos, a relação mínima entre esse slot e os inputs que podem fornecê-lo deve ser declarada na camada responsável da E20.2 resolvida, permitindo que cada taxon forneça seus próprios inputs sem alterar o algoritmo universal da E19.3.3.
 - Para booleanos explicitamente autorizados a `applicable_capabilities`, `true` fornece suporte para afirmar a capacidade correspondente e `false` não fornece esse suporte; essa regra não deve ser generalizada preventivamente para todos os booleanos ou futuros slots.
 - Inputs centrais já contratados para a geração, como `primary_service_or_offer` e `primary_service_or_offer_description`, podem integrar explicitamente o contexto factual global sem criar um papel intermediário artificial.
 - Dado obrigatório e aplicável ausente ou inválido falha fechado.
