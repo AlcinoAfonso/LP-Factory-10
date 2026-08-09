@@ -45,10 +45,11 @@
 
 ### 2.1. Fluxo lógico
 
+- Gatilho: invocação server-side explícita do compilador para obter o pacote determinístico de uma LP legítima já configurada.
 - Entrada: LP legítima já configurada pela E19.2, com taxon e plano efetivos resolvidos e fontes canônicas acessíveis.
 - Processamento: resolver contratos vigentes → selecionar estrutura → autorizar contexto → montar pacote determinístico.
 - Validação: aplicar falha fechada para inconsistências, ambiguidades e ausências obrigatórias.
-- Persistência: não criar persistência nova por padrão; somente a proveniência necessária à saída do compilador pode ser materializada se a implementação real exigir e houver fonte canônica que a autorize.
+- Persistência: nenhuma nova. A proveniência integra a própria saída lógica do compilador; qualquer necessidade de persistência durável descoberta na execução deve voltar ao Estrategista e não pode ser criada implicitamente.
 - Consumo: a saída real da E19.3 será a entrada da futura E19.4.
 - Fallback: somente os fallbacks explicitamente autorizados pelos contratos; heurística ou default inventado são proibidos.
 
@@ -106,14 +107,14 @@
 - Objetivo: implementar integralmente o compilador determinístico descrito na seção 2 e seus testes, sem OpenAI.
 - Implementação: reutilizar os contratos existentes e realizar somente o refinamento focal da E20.2 indispensável aos slots realmente consumidos pela primeira geração futura.
 - Validação: cobrir seleção estrutural, variantes, ambiguidades, omissões legítimas, autorização de pesquisas e fatos, suporte/evidência, bindings, proveniência e sucesso/falha da interface lógica.
+- Universalidade: demonstrar pelo algoritmo e pelos contratos vigentes, sem criar taxons, planos, slots ou fixtures fictícios apenas para provar extensibilidade futura.
 - Critério de aceite: para qualquer LP válida admitida pelos contratos, produzir deterministicamente Parte A + Parte B coerentes; quando isso não for possível, falhar explicitamente sem heurística, pacote parcial silencioso ou regra nominal de nicho.
 - Critério de primeira prova: validar o draft real destinado à primeira LP e confirmar que o perfil não cai em ambiguidade não resolvida.
-- Fechamento documental: aplicar o Prompt ABC somente aos documentos canônicos materialmente afetados pela implementação; `docs/roadmap.md` deve ser reconciliado com o desmembramento E19.3/E19.4 conforme o fluxo vigente.
+- Fechamento documental: aplicar o Prompt ABC somente aos documentos canônicos materialmente afetados pela implementação; qualquer atualização posterior de `docs/roadmap.md` deve refletir apenas o estado realmente implementado.
 
 ### 3.2. Próxima ação
 
-- Atualizar `docs/roadmap.md` no mesmo PR conforme `docs/prompt-abc.md` e `docs/template-roadmap.md`, registrando E19.3 como compilador determinístico e E19.4 apenas como recorte sucessor planejado.
-- Após essa reconciliação, submeter o plano-base v1 completo aos especialistas previstos em `docs/prompt-estrategista.md` antes de qualquer implementação.
+- Submeter o plano-base v1 completo aos especialistas previstos em `docs/prompt-estrategista.md` antes de qualquer implementação.
 - Não iniciar o debate detalhado da E19.4 antes de a E19.3 estar implementada e validada.
 
 ## 4. Escopo negativo e critérios de parada
