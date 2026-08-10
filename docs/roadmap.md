@@ -125,7 +125,7 @@
 • Implementado (estado final): fluxo sign-up → envio do e-mail de confirmação → clique no link → /auth/confirm → redirect para /a/home executado (happy path).
 • emailRedirectTo: configurado para apontar para /auth/confirm com next=/a/home e rid para correlação (não-PII).
 • UX mínima: página /auth/sign-up-success orientando “cadastro iniciado / confirme no e-mail”.
-• Observability mínima: logs estruturados no client para eventos de signup/resend sem PII, com rid (supa#5) e sinal mínimo via logs no runtime do front em produção (Vercel).
+• Observability mínima: logs estruturados no client para eventos de signup/resend sem PII, com rid (supa#5) e sinal mínimo no runtime do front em produção (Vercel).
 • ARTEFATOS_REPO:
 • Ajustados: components/sign-up-form.tsx
 
@@ -771,7 +771,7 @@
 • Objetivo: padronizar a expansão de `business_taxons` e `business_taxon_aliases` com investigação, proposta, aprovação, carga e validação sem drift entre chats.
 • Implementado:
 • guia operacional do Grupo A versionado em `docs/`
-• snippets SQL operacionais do Grupo A versionado em `supabase/snippets/`
+• snippets SQL operacionais do Grupo A versionados em `supabase/snippets/`
 • investigação prévia, proposta, aprovação, carga e validação consolidadas como fluxo operacional
 • `parent_slug` nulo aceito para `niche` e `ultra_niche`
 • `parent_slug` preenchido e inexistente aborta explicitamente a carga
