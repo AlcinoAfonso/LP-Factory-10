@@ -2,7 +2,7 @@
 
 0.1 Cabeçalho
 • Data: 09/08/2026
-• Versão: v1.5.135
+• Versão: v1.5.136
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -2380,7 +2380,7 @@ Repositório — Ajustados
 20. E20 — Preparação e liberação de taxons para geração de landing pages
 
 * Objetivo: consolidar catálogo de entradas por taxon e plano, perfis versionados de orientação à geração, herança e, em recortes futuros, prontidão e liberação antes da geração de LPs por conta.
-* Status: Em implementação por recortes; 20.2 concluído e 20.3 aprovado para implementação em duas fases.
+* Status: E20.2 concluída e refinada; E20.3 concluída.
 
 20.2 Catálogo de entradas por taxon
 
