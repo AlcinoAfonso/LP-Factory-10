@@ -65,6 +65,17 @@ export const adminAreas: AdminArea[] = [
     ],
   },
   {
+    title: 'Estrutura da LP',
+    href: '/admin/estrutura-lp',
+    description: 'Consulta read-only dos contratos estruturais de landing pages.',
+    status: 'Disponível',
+    scope: [
+      'Parâmetros raiz e critérios visuais',
+      'Módulos, variantes e entradas resolvidas',
+      'Pesquisas estruturadas por taxon',
+    ],
+  },
+  {
     title: 'Auditoria',
     href: '/admin/auditoria',
     description: 'Área prevista para leitura de eventos administrativos.',
