@@ -47,6 +47,8 @@ Na varredura oficial, o AI Gateway ganhou uma página própria de logs com custo
 
 O Sandbox deixou de cobrar Data Transfer por downloads usados para instalar pacotes, clonar repositórios ou obter artefatos em 17/07/2026. Tráfego em portas expostas ou enviado pelo Sandbox, CPU ativa, memória, snapshots e criações continuam sujeitos à cobrança aplicável.
 
+Em 05/08/2026, as cotas padrão de times Pro e Enterprise passaram a suportar até 10.000 sandboxes concorrentes e uma taxa dinâmica de alocação que começa em 150 vCPUs por minuto e pode crescer até 5.000 vCPUs por minuto. A escala disponível não altera o gatilho do projeto: sem workload aprovado, custo medido e necessidade de isolamento, não há razão para adotar Sandbox.
+
 ### Valor para o Projeto
 - AI Gateway pode concentrar observabilidade e fallback quando houver uso real de múltiplos provedores ou volume de requisições que justifique nova camada.
 - Sandbox e BotID podem apoiar execução isolada e proteção de endpoints quando existir caso aprovado.
@@ -73,6 +75,7 @@ Avaliar AI Gateway quando houver pelo menos um destes sinais: necessidade compro
 - [AI Gateway now supports team and project spend budgets](https://vercel.com/changelog/ai-gateway-spend-budgets-and-alerts)
 - [AI Gateway WebSocket support for OpenAI Responses API](https://vercel.com/changelog/ai-gateway-websocket-support-for-openai-responses-api)
 - [Vercel Sandbox removes charges for package installation traffic](https://vercel.com/changelog/vercel-sandbox-removes-charges-for-package-installation-traffic)
+- [Vercel Sandbox now supports 10,000 concurrent sandboxes and 5,000 vCPUs per minute](https://vercel.com/changelog/vercel-sandbox-now-supports-10-000-concurrent-sandboxes-and-5-000-vcpus-per-minute)
 
 ---
 
@@ -552,3 +555,90 @@ Avaliar quando um cliente necessário exigir o protocolo `2026-07-28`, ou quando
 - [Latest MCP spec now supported in mcp-handler](https://vercel.com/changelog/latest-mcp-spec-now-supported-in-mcp-handler)
 
 ---
+
+## 29 — Next.js 16.3: performance de desenvolvimento e navegação instantânea *(🟩 Estável; upgrade não adotado)*
+
+2026-08-03
+Catalogado em 2026-08-10
+
+### Status no Projeto
+
+- Status: não implementado; o projeto permanece em `next` e `eslint-config-next` `16.2.11`.
+- Evidência: `package.json` e `package-lock.json`; nenhuma referência a Next.js 16.3, `instant()` ou `next-cache-components-optimizer` foi encontrada no repositório.
+- Natureza de uso: atualização de framework com ganhos de tooling e capacidades opt-in de navegação.
+- Relação com a stack: evolução direta da stack Next.js atual; não é nova infraestrutura nem substituto de arquitetura.
+- Horizonte: Starter como manutenção candidata para os ganhos gerais, e Lite/Pro ou indefinido para otimizações de navegação dependentes de caso e medição.
+
+### Descrição
+
+Next.js 16.3 foi lançado de forma estável com redução de uso de memória em sessões longas de desenvolvimento, cache persistente para builds repetidos e melhorias de renderização e tooling. O release também consolida as ferramentas de Instant Navigations, incluindo prefetch parcial, teste `instant()` e o skill `next-cache-components-optimizer` para diagnosticar rotas lentas.
+
+Os ganhos gerais dependem de upgrade e validação do projeto. As otimizações de navegação não autorizam habilitar Cache Components, mudar fetch/cache, introduzir prefetch customizado ou reescrever rotas sem uma navegação-alvo e medição próprias.
+
+### Valor para o Projeto
+
+- Pode reduzir pressão de memória e tempo de desenvolvimento em uma máquina com recursos limitados.
+- Pode acelerar builds repetidos e reduzir atrito operacional após validação do upgrade.
+- Oferece um método oficial para provar se uma navegação é instantânea antes de alterar cache, streaming ou prefetch.
+- Pode beneficiar o dashboard e futuras landing pages quando houver atraso de navegação mensurável.
+
+### Gatilho de aplicação
+
+Avaliar o upgrade em recorte técnico próprio quando a versão estiver compatível com as dependências atuais e houver janela para executar a validação completa. Avaliar Instant Navigations somente quando uma rota real apresentar atraso perceptível ou métrica insuficiente, começando pelos defaults do framework e por um teste reproduzível.
+
+### Dependências, riscos e limite
+
+- Upgrade de framework exige revisão de release notes, lockfile, tipos, lint, rotas, Auth, SSR, cookies e Preview hospedado.
+- Cache Components e otimizações de prefetch podem alterar consumo, frescor e comportamento de navegação; não devem ser introduzidos por modernidade.
+- O release não substitui Web Vitals, Speed Insights ou teste humano da jornada.
+- Não alterar dependências, `next.config`, rotas, cache, scripts ou skills nesta rodada.
+
+### Ações Recomendadas
+
+1. Preservar `16.2.11`, já corrigido para a rodada de segurança de julho, até existir recorte de upgrade aprovado.
+2. No recorte competente, comparar memória, check, build autorizado e Preview antes e depois.
+3. Usar `instant()` ou o skill oficial apenas diante de rota-alvo e sem conceder escrita irrestrita a agente.
+
+### Fontes Oficiais
+
+- [Next.js — Next.js 16.3](https://nextjs.org/blog/next-16-3)
+- [Next.js — Instant navigation](https://nextjs.org/docs/app/guides/instant-navigation)
+- [Next.js — AI Coding Agents](https://nextjs.org/docs/app/guides/ai-agents)
+- [Next.js — Turbopack: What's New in Next.js 16.3](https://nextjs.org/blog/next-16-3-turbopack)
+
+---
+
+## Registro da rodada — Vercel + Next.js Update — 10/08/2026
+
+### Updates ajustados ou incorporados
+
+- `vercel#1` foi atualizado com as novas cotas de escala do Vercel Sandbox, sem alterar seu uso condicional.
+- `vercel#29` foi adicionado para preservar a avaliação do Next.js 16.3 sem autorizar upgrade ou otimização de navegação.
+
+### Updates avaliados e não adicionados
+
+- Medição entre etapas no Vercel Workflows: não há Vercel Workflow ou Workflow SDK no projeto; a melhoria isolada de trace não cria caso de adoção.
+- Repositórios públicos no Vercel Container Registry: não há imagem, container registry ou distribuição pública de runtime no projeto; a capacidade não oferece valor concreto ao Core ou ao service atual.
+- Marketplace integrations com instalação automática de provider skills: não há provisionamento de integração pelo Vercel CLI; instalação automática exige governança e não demonstra vantagem sobre os plugins já controlados em `docs/gestor-codex.md`.
+- Agent Plugins 1.0.0: o padrão portátil é relevante ao ecossistema, mas plugin distribuível e MCP Apps já permanecem no radar em `prod#18`; não há skill formalmente adotada nem caso que justifique duplicar o item neste catálogo.
+- Novos modelos no AI Gateway, Project Avatars, domínios pelo Dashboard, Herdr/Devin Outposts e imagens públicas para Sandbox: não alteram os gatilhos dos itens existentes nem apresentam valor concreto para o escopo atual.
+- Nenhum recurso foi excluído somente por estar fora do Starter ou do MVP.
+
+### Cobertura estratégica desta atualização
+
+- Landing pages e dashboard: Next.js 16.3 foi avaliado por performance, navegação, cache e tooling.
+- IA, agentes e automações controladas: Sandbox, Agent Plugins, Marketplace Skills, AI Gateway e Workflows foram pesquisados nas fontes oficiais.
+- Instagram, WhatsApp e e-mail: nenhuma novidade Vercel, Next.js ou React publicada entre 05/08/2026 e 10/08/2026 apresentou caso de uso novo e específico para esses canais.
+
+### Pontos não validados e lacunas documentais
+
+- Compatibilidade real do Next.js 16.3 com o projeto depende de recorte de upgrade, instalação, check e Preview próprios.
+- Ganhos de memória e build precisam ser medidos no ambiente do projeto; números oficiais não garantem o mesmo resultado local.
+- Instant Navigations não possui rota-alvo, baseline nem necessidade aprovada no LP Factory 10.
+
+### Validação de IDs e limite
+
+- Nenhum ID publicado desapareceu, foi renumerado ou reutilizado; somente `vercel#29` foi acrescentado.
+- A busca por referências explícitas e implementação semântica precedeu os ajustes.
+- Nenhuma dependência, configuração, rota, cache, workflow, agente, skill, imagem ou infraestrutura foi criada.
+- O catálogo recomenda avaliação futura; não autoriza implementação, contratação ou mudança de stack.
