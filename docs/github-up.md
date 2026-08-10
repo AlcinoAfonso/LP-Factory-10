@@ -388,3 +388,83 @@ Verificar a opção em Settings → Advanced security → Dependabot quando houv
 - [Dependabot alerts on malicious packages across more ecosystems](https://github.blog/changelog/2026-07-28-dependabot-alerts-on-malicious-packages-across-more-ecosystems/)
 
 ---
+
+## github#13 — Push protection padrão para chaves Resend e outros provedores *(🟩 Disponível em repositórios públicos)*
+
+2026-08-07
+
+### Status no Projeto
+
+- Status: aplicável globalmente por plataforma; bloqueio local e configuração do usuário ainda não validados por ocorrência real.
+- Evidência: o repositório `AlcinoAfonso/LP-Factory-10` é público e `docs/platform-config.md` registra Resend como provedor SMTP do Supabase Auth; não existe SDK Resend nem chave versionada no repositório.
+- Natureza de uso: prevenção de vazamento de credenciais no GitHub, sem alterar o runtime do SaaS.
+- Relação com a stack: complementar às regras de secrets, ao armazenamento em plataformas e ao registro específico de `supa#56`.
+- Horizonte: Starter e operação atual como baseline de segurança.
+
+### Descrição
+
+O GitHub ampliou os detectores incluídos por padrão na push protection para bloquear `resend_api_key`, `posthog_oauth_access_token`, `mistral_ai_api_key` e `apiclub_api_key`. Secret scanning roda gratuitamente em repositórios públicos; push protection para usuários é habilitada por padrão e impede o envio de secrets para repositórios públicos, salvo bypass explícito.
+
+Para o LP Factory 10, a cobertura de Resend é concreta porque o provedor já opera o SMTP transacional, embora sua credencial seja configurada fora do repositório. PostHog e Mistral não são dependências atuais e não justificam adoção.
+
+### Valor para o Projeto
+
+- Pode impedir que uma chave Resend válida entre no histórico Git por commit local, UI, upload, REST API ou interação com o GitHub MCP.
+- Complementa a política de não versionar secrets sem criar action, hook ou scanner próprio.
+- Reduz o risco de comprometimento do envio transacional e da reputação do domínio.
+
+### Limites
+
+- O detector não substitui armazenamento correto, rotação, revisão de diff ou resposta a incidente.
+- Push protection para usuário pode ser desabilitada ou sofrer bypass; o estado efetivo da conta não foi inspecionado nesta atualização.
+- A proteção cobre formatos reconhecidos e versões recentes do token; não garante detecção de toda credencial, valor transformado ou secret genérico.
+- Se uma chave chegar ao GitHub, ela deve ser revogada e rotacionada; remover apenas o commit não é remediação suficiente.
+- Não testar com credencial real nem inserir valor fictício semelhante a um token nesta rodada.
+
+### Ações Recomendadas
+
+1. Manter secrets somente nos provedores e ambientes autorizados.
+2. Quando ocorrer bloqueio real, não fazer bypass por conveniência; remover o valor, revisar a origem e registrar o incidente se houver exposição.
+3. Confirmar o estado de push protection do usuário/repositório em uma revisão operacional de segurança, sem bloquear o MVP por ausência de smoke destrutivo.
+
+### Fontes Oficiais
+
+- [GitHub Changelog — Secret scanning coverage updates](https://github.blog/changelog/2026-08-07-secret-scanning-coverage-updates/)
+- [GitHub Docs — Secret scanning](https://docs.github.com/en/code-security/concepts/secret-security/secret-scanning)
+- [GitHub Docs — Push protection](https://docs.github.com/en/code-security/concepts/secret-security/push-protection)
+- [GitHub Docs — Supported secret scanning patterns](https://docs.github.com/en/code-security/reference/secret-security/supported-secret-scanning-patterns)
+
+---
+
+## Registro da rodada — GitHub Update — 10/08/2026
+
+### Updates ajustados ou incorporados
+
+- `github#13` foi adicionado para registrar a cobertura padrão de push protection para `resend_api_key` e o valor concreto no e-mail transacional já operado pelo projeto.
+
+### Updates avaliados e não adicionados
+
+- Customização de nomes de branches do Dependabot: não existe `.github/dependabot.yml`, version update automatizado nem conflito de naming no projeto.
+- CodeQL 2.26.2 e configuração centralizada de code scanning: o workflow `security.yml` atual executa checks próprios e não usa CodeQL; a escala organizacional não cria caso no repositório pessoal atual.
+- MCP allowlists, instalação de GitHub Apps por enterprises, métricas de Copilot, effort levels de review e Kimi K3: dependem de Copilot/Enterprise ou governança não adotada e sobrepõem ferramentas atuais sem hipótese de superioridade.
+- Depreciação do GitHub Spark e GitHub Models: não há app Spark, chamada `llm()` ou dependência correspondente no repositório.
+- Nenhum recurso foi excluído somente por estar fora do Starter ou do MVP.
+
+### Cobertura estratégica desta atualização
+
+- Desenvolvimento, segurança, Actions, PRs, Dependabot, secret scanning, code scanning, Copilot, Apps e MCP foram pesquisados nas fontes oficiais do GitHub.
+- Landing pages, Instagram, WhatsApp e e-mail foram confrontados com as novidades aplicáveis; apenas o e-mail possui relação concreta, pela proteção da chave Resend.
+- Nenhuma novidade GitHub publicada entre 05/08/2026 e 10/08/2026 alterou diretamente os fluxos de landing pages, Instagram ou WhatsApp.
+
+### Pontos não validados e lacunas documentais
+
+- O estado efetivo da push protection do usuário/repositório não foi confirmado em Settings nem por tentativa de push, pois a validação não deve usar credencial real.
+- Não houve ocorrência registrada de bloqueio ou bypass de chave Resend no projeto.
+- O item não substitui a lacuna mais ampla de revisão operacional de secrets já indicada nos catálogos e documentos técnicos.
+
+### Validação de IDs e limite
+
+- Nenhum ID publicado desapareceu, foi renumerado ou reutilizado; somente `github#13` foi acrescentado.
+- A busca por referências explícitas e implementação semântica precedeu a classificação.
+- Nenhum workflow, setting, secret, regra, app, dependência ou infraestrutura foi criado ou alterado.
+- O catálogo registra a proteção; não autoriza teste com credencial, bypass, implementação ou mudança de plano.
