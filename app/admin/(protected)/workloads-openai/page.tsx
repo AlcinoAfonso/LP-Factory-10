@@ -92,10 +92,12 @@ export default function OpenAiWorkloadsPage() {
                     </div>
                     <div>
                       <dt className="text-xs font-medium uppercase text-muted-foreground">
-                        Ambiente observado
+                        {isEffective ? "Ambiente observado" : "Ambiente da execução"}
                       </dt>
                       <dd className="mt-1 text-foreground">
-                        {environmentLabels[environment]}
+                        {isEffective
+                          ? environmentLabels[environment]
+                          : "Não verificado nesta página"}
                       </dd>
                     </div>
                     <div>
