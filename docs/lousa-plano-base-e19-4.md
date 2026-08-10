@@ -9,7 +9,7 @@
 - Plano conceitual: `docs/lp-planejamento.md`.
 - Predecessor material: E19.3 concluída e integrada à `main`; sua API pública v1 é a entrada canônica para este debate.
 - O roadmap define a E19.4 como o recorte sucessor responsável por geração por IA, validação pós-IA, materialização e visualização mínimas necessárias à primeira LP real em `draft`.
-- Gates A e B fechados conceitualmente no nível da futura v1; Gates C, D e E permanecem abertos.
+- Gates A, B e C fechados conceitualmente no nível da futura v1; Gates D e E permanecem abertos.
 - Este rascunho registra somente decisões aceitas e questões ainda abertas; hipóteses discutidas não se tornam decisões fixas sem aprovação humana explícita.
 
 ### 1.2. Objetivo já confirmado
@@ -34,6 +34,7 @@
 - `docs/lousa-plano-base-e19-3.md`.
 - Contrato público vigente de `lib/lp-builder/`, especialmente `generationContextContracts.ts` e a API E19.3 integrada à `main`.
 - Contratos vigentes de E18.4 e E18.5 para semantic roles, fields, cardinalidades, policies, bindings e referências técnicas.
+- `docs/design-system.md` e as superfícies vigentes do Account Dashboard para o Gate D.
 - Repositório `AlcinoAfonso/LP-Factory-10`.
 
 ## 2. Base confirmada para o contrato da E19.4
@@ -49,7 +50,8 @@
 ### 2.2. Independência da LP após materialização
 
 - As fontes canônicas governam a geração e futuras edições assistidas pela LP Factory.
-- Depois de materializada, a LP possui estado próprio.
+- Depois de materializada, a LP possui estado próprio e autossuficiente para sua visualização.
+- O renderer não deve depender de reler E20.2, pesquisas, perfil vigente ou outra fonte mutável para reproduzir a LP materializada.
 - Edição manual futura pode divergir das recomendações de geração sem alterar fontes canônicas ou outras LPs.
 - Versões futuras das fontes canônicas não passam a reger silenciosamente a LP já materializada; adoção exige ação explícita.
 - Somente restrições classificadas pelo contrato responsável como permanentes continuam obrigatórias após a materialização.
@@ -62,6 +64,7 @@
 - Não antecipar editor visual completo, regeneração ampla, edição assistida por IA, agente, memória, job, fila ou automação recorrente.
 - Não criar abstração geral de geração multicanal; o consumidor atual é `landing_page`.
 - Não criar camada de auditoria semântica, segunda IA revisora ou provenance cognitiva declarada pela própria IA apenas para aparentar garantia factual.
+- Não implementar na E19.4 overwrite, regeneração, histórico de versões da LP materializada ou rollback.
 
 ### 2.4. Automação aprovada para a futura v1
 
@@ -78,6 +81,7 @@
 ### 3.1. Gatilho
 
 - Decisão fixa: uma ação humana explícita inicia uma operação geracional para a LP completa.
+- Enquanto a LP permanecer sem materialização, uma tentativa inválida ou falha não consome a possibilidade de nova tentativa humana.
 - Questão aberta: definir a superfície mínima dessa ação no espaço operacional da LP `draft`, sem inventar rota ou UI antes do Gate D.
 
 ### 3.2. Entrada
@@ -115,21 +119,29 @@
 ### 3.5. Persistência
 
 - O estado atual de `account_landing_pages` guarda apenas identidade mínima e status `draft`; não existe hoje conteúdo materializado da LP nesse contrato.
-- A E19.4 precisa preservar conteúdo estruturado e snapshot suficiente, mas o formato físico e a residência ainda são questões abertas deste debate.
-- Nenhuma tabela, coluna ou nova entidade está autorizada antes do fechamento do Gate C.
+- A primeira candidata integral válida cria uma única materialização inicial vinculada à `landing_page` existente.
+- O agregado lógico da materialização separa conteúdo atual da LP e snapshot imutável da geração, mas ambos passam a existir juntos somente após validação integral.
+- O conteúdo materializado constitui estado próprio e autossuficiente da LP para visualização; inclui a composição efetiva, os valores finais dos fields e todo dado concreto necessário ao renderer que não possa ser relido de fonte mutável sem alterar a LP.
+- O snapshot preserva identidades, versões, decisões e os dados concretos efetivamente disponibilizados à operação geracional que produziu a candidata válida; não copia preventivamente contexto autorizado que não tenha sido exposto ao gerador.
+- O snapshot não registra provenance cognitiva da IA, prompt integral, resposta bruta, raciocínio ou alegação de quais fontes a IA afirma ter usado semanticamente.
+- Falha da IA, candidata inválida ou falha anterior à materialização não cria estado e não impede nova tentativa humana enquanto a LP permanecer sem materialização.
+- Após a primeira materialização válida, a E19.4 não sobrescreve o conteúdo materializado; edição, regeneração, histórico e rollback pertencem a recorte posterior.
+- Residência física, estruturas de banco, JSONB ou outra forma e garantia transacional ficam para investigação e detalhamento da v2; nenhuma tabela, coluna ou nova entidade é autorizada por esta decisão conceitual isoladamente.
 
 ### 3.6. Consumo
 
 - A primeira LP materializada precisa ser visualmente avaliável no fluxo oficial da conta.
+- O renderer do Gate D deve consumir apenas o estado próprio materializado da LP e não recompor geração a partir das fontes canônicas vigentes.
 - Questão aberta: definir a menor visualização capaz de validar a LP real sem antecipar publicação ou editor visual.
 
 ### 3.7. Fallback
 
 - Falha da compilação E19.3 bloqueia a operação geracional.
 - Candidata que viole qualquer regra objetivamente bloqueante do Gate B é rejeitada integralmente e não altera o conteúdo materializado da LP.
+- Falha ou candidata inválida preserva a LP sem nova materialização e permite nova tentativa humana enquanto esse estado persistir.
 - Não há reparo semântico, omissão silenciosa ou materialização parcial como fallback.
-- A regra anterior é funcional e não presume atomicidade física de banco ou uma única chamada ao provider.
-- Questão aberta do Gate C: definir a garantia física de preservação do estado anterior e o snapshot mínimo da materialização válida.
+- Conteúdo e snapshot devem tornar-se válidos juntos; falha de persistência não pode deixar uma materialização parcial aparentando sucesso.
+- A regra anterior é funcional; o mecanismo físico/transacional é detalhado na v2 contra o schema real.
 
 ## 4. Gates do debate
 
@@ -157,12 +169,14 @@
 
 ### 4.3. Gate C — materialização e snapshot
 
-- Status: aberto.
-- Definir o estado materializado mínimo da LP.
-- Separar conteúdo atual da LP do snapshot das fontes/contratos usados na geração.
-- Definir proveniência e versionamento suficientes para futuras edição, regeneração e adoção explícita de novas fontes, sem antecipar esses fluxos.
-- Decidir a residência física somente depois de confirmar o contrato lógico necessário.
-- Garantir fisicamente que uma geração inválida ou falha não substitua nem deixe estado parcial como se fosse materialização válida.
+- Status: conceitualmente fechado no nível da futura v1.
+- A primeira candidata integral válida cria uma única materialização inicial vinculada à `landing_page` existente.
+- O conteúdo materializado constitui o estado próprio e autossuficiente da LP para sua visualização.
+- O snapshot imutável preserva as identidades, versões, decisões e dados concretos efetivamente disponibilizados à operação geracional que produziu essa materialização.
+- Conteúdo e snapshot passam a existir juntos somente após validação integral; não existe materialização parcial.
+- Falha ou candidata inválida não materializa estado e não impede nova tentativa humana enquanto a LP permanecer sem materialização.
+- Após a primeira materialização válida, a E19.4 não sobrescreve a LP; edição, regeneração, histórico e rollback ficam para recorte posterior.
+- A residência física, o formato persistido e a garantia transacional ficam para a v2 após investigação do schema real.
 
 ### 4.4. Gate D — visualização mínima da primeira LP
 
@@ -179,6 +193,6 @@
 
 ## 5. Próxima decisão do debate
 
-- Seguir para o Gate C — materialização e snapshot.
-- O Gate C deve fechar o estado lógico materializado e o snapshot mínimo antes de escolher sua residência física e antes de definir o renderer do Gate D.
+- Seguir para o Gate D — visualização mínima da primeira LP.
+- O Gate D deve definir o menor renderer e a menor superfície necessária para o humano avaliar a LP materializada usando somente seu estado próprio, além das evidências responsivas e de teclado exigidas para o frontend.
 - Não consolidar plano-base v1 enquanto permanecer questão indispensável aberta para executar a E19.4 com segurança e sem inventar contrato.
