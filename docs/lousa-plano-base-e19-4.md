@@ -8,8 +8,7 @@
 - Recorte: `E19.4 — Geração e materialização da landing page em draft`.
 - Plano conceitual: `docs/lp-planejamento.md`.
 - Predecessor material: E19.3 concluída e integrada à `main`; sua API pública v1 é a entrada canônica para este debate.
-- O roadmap define a E19.4 como o recorte sucessor responsável por geração por IA, validação pós-IA, materialização e visualização mínimas necessárias à primeira LP real em `draft`.
-- Gates A, B e C fechados conceitualmente no nível da futura v1; Gates D e E permanecem abertos.
+- Gates A, B, C e D fechados conceitualmente no nível da futura v1; Gate E permanece aberto.
 - Este rascunho registra somente decisões aceitas e questões ainda abertas; hipóteses discutidas não se tornam decisões fixas sem aprovação humana explícita.
 
 ### 1.2. Objetivo já confirmado
@@ -52,6 +51,7 @@
 - As fontes canônicas governam a geração e futuras edições assistidas pela LP Factory.
 - Depois de materializada, a LP possui estado próprio e autossuficiente para sua visualização.
 - O renderer não deve depender de reler E20.2, pesquisas, perfil vigente ou outra fonte mutável para reproduzir a LP materializada.
+- O renderer pode conhecer e suportar identidades e versões estruturais, mas valores efetivos de aparência e conteúdo vêm do estado materializado congelado; atualizar registry futuro não altera silenciosamente uma LP existente.
 - Edição manual futura pode divergir das recomendações de geração sem alterar fontes canônicas ou outras LPs.
 - Versões futuras das fontes canônicas não passam a reger silenciosamente a LP já materializada; adoção exige ação explícita.
 - Somente restrições classificadas pelo contrato responsável como permanentes continuam obrigatórias após a materialização.
@@ -65,6 +65,8 @@
 - Não criar abstração geral de geração multicanal; o consumidor atual é `landing_page`.
 - Não criar camada de auditoria semântica, segunda IA revisora ou provenance cognitiva declarada pela própria IA apenas para aparentar garantia factual.
 - Não implementar na E19.4 overwrite, regeneração, histórico de versões da LP materializada ou rollback.
+- Não criar ACL paralela para preview; a visualização privada reutiliza o controle de acesso autenticado vigente da conta/LP.
+- Não criar backend de interação inexistente apenas para completar a preview; o renderer executa somente comportamentos já contratados.
 
 ### 2.4. Automação aprovada para a futura v1
 
@@ -82,7 +84,7 @@
 
 - Decisão fixa: uma ação humana explícita inicia uma operação geracional para a LP completa.
 - Enquanto a LP permanecer sem materialização, uma tentativa inválida ou falha não consome a possibilidade de nova tentativa humana.
-- Questão aberta: definir a superfície mínima dessa ação no espaço operacional da LP `draft`, sem inventar rota ou UI antes do Gate D.
+- A superfície mínima deve partir do estado operacional vigente de `/a/[account]`; o path técnico exato da visualização e da ação fica para a v2, sem criar jornada paralela.
 
 ### 3.2. Entrada
 
@@ -130,9 +132,17 @@
 
 ### 3.6. Consumo
 
-- A primeira LP materializada precisa ser visualmente avaliável no fluxo oficial da conta.
-- O renderer do Gate D deve consumir apenas o estado próprio materializado da LP e não recompor geração a partir das fontes canônicas vigentes.
-- Questão aberta: definir a menor visualização capaz de validar a LP real sem antecipar publicação ou editor visual.
+- A primeira LP materializada deve ser visualmente avaliável dentro do fluxo oficial da conta.
+- A visualização é privada, autenticada e não publicada; reutiliza o gate de acesso vigente da conta/LP e não cria ACL paralela.
+- O estado operacional atual de `/a/[account]` é o ponto funcional de entrada: LP sem materialização pode oferecer a ação humana de geração; após materialização, a jornada conduz à visualização privada em vez de oferecer nova geração pela E19.4.
+- O renderer é determinístico e read-only, consome somente o estado próprio materializado, não chama IA e não recompõe E19.3 nem relê E20.2, pesquisas ou perfil vigente.
+- A visualização deve representar a página realmente renderizada, não um card ou simulação administrativa; uma moldura externa do produto pode indicar `draft` e não publicação sem integrar o conteúdo da LP.
+- Identidade ou versão estrutural não suportada pelo renderer falha explicitamente; não existe fallback silencioso para outro módulo, variante ou contrato.
+- Módulos, fields, parâmetros visuais, destinos e interações são renderizados a partir do estado materializado congelado e dos comportamentos estruturalmente contratados.
+- O QA de interações cobre somente comportamentos explicitamente contratados: por exemplo, accordion deve preservar teclado, estado expandido, associação e foco quando aplicável; form deve respeitar estrutura, labels, consentimento, teclado e foco em erro, sem exigir backend de submissão de lead inexistente na E18.5; CTA pode usar o destino congelado sem tracking novo.
+- A validação visual hospedada usa os critérios vigentes da E18.4: viewports de evidência 360, 768 e 1280 px, viewport mínimo de 320 px, sem truncamento ou scroll horizontal provocado por texto, target mínimo 44×44, foco visível, hierarquia semântica, contraste, legibilidade e estados interativos.
+- O baseline WCAG 2.2 permanece referência; a E19.4 não declara conformidade integral sem auditoria própria.
+- A evidência humana inclui desktop, tablet, mobile, TAB/foco, overflow/truncamento, comportamentos contratados das interações presentes, confirmação de acesso privado/não publicado e avaliação editorial, factual e semântica da primeira LP.
 
 ### 3.7. Fallback
 
@@ -141,6 +151,7 @@
 - Falha ou candidata inválida preserva a LP sem nova materialização e permite nova tentativa humana enquanto esse estado persistir.
 - Não há reparo semântico, omissão silenciosa ou materialização parcial como fallback.
 - Conteúdo e snapshot devem tornar-se válidos juntos; falha de persistência não pode deixar uma materialização parcial aparentando sucesso.
+- Falha de renderização por identidade ou versão não suportada é explícita e não muda silenciosamente o estado materializado.
 - A regra anterior é funcional; o mecanismo físico/transacional é detalhado na v2 contra o schema real.
 
 ## 4. Gates do debate
@@ -180,19 +191,26 @@
 
 ### 4.4. Gate D — visualização mínima da primeira LP
 
-- Status: aberto.
-- Definir o menor renderer/preview necessário para avaliação humana da LP materializada.
-- Preservar responsividade, acessibilidade e guardrails visuais vigentes sem transformar a E19.4 em editor visual ou publicação pública.
-- Definir evidências esperadas para desktop, mobile e teclado quando houver frontend.
+- Status: conceitualmente fechado no nível da futura v1.
+- A visualização é privada, read-only e não publicada, reutiliza o controle de acesso autenticado vigente da conta/LP e não cria ACL paralela.
+- A menor superfície parte do estado operacional atual de `/a/[account]`; o path técnico exato fica para a v2, sem jornada paralela.
+- O renderer é determinístico, consome somente o estado próprio materializado, não recompõe fontes canônicas nem chama IA e não permite que versões futuras dos registries alterem silenciosamente valores congelados da LP.
+- A preview representa a página real renderizada; uma moldura externa pode identificar `draft` não publicado sem integrar o conteúdo da LP.
+- Identidade ou versão não suportada falha explicitamente, sem fallback silencioso.
+- O QA das interações cobre apenas comportamentos explicitamente contratados; a E19.4 não cria backend, tracking ou capacidade operacional ausente apenas para a preview.
+- A evidência hospedada cobre 360, 768 e 1280 px, mínimo 320 px, targets 44×44, TAB/foco, overflow/truncamento, hierarquia semântica, contraste, legibilidade, estados e comportamentos contratados das interações presentes.
+- O baseline WCAG 2.2 é referência e não representa declaração de conformidade integral.
+- A avaliação humana cobre também fidelidade editorial, factual e semântica da primeira LP antes de qualquer futura publicação.
 
 ### 4.5. Gate E — fronteira da primeira entrega
 
 - Status: aberto.
-- Confirmar se a E19.4 termina em `gerar → validar → materializar → visualizar` ou se algum passo adicional é indispensável para considerar a primeira LP real avaliável.
-- Revisão editorial, correção manual, regeneração, edição assistida e publicação permanecem fora até demonstração de necessidade indispensável neste debate.
+- Confirmar se a E19.4 termina em `gerar → validar → materializar → visualizar → avaliação humana da primeira LP` ou se algum passo adicional é indispensável para considerar a primeira LP real avaliável.
+- Definir como distinguir, na avaliação humana, defeito bloqueante da implementação da E19.4 de melhoria editorial ou evolução que deve seguir para recorte posterior, sem criar workflow de aprovação/publicação.
+- Revisão editorial operacionalizada como feature, correção manual, regeneração, edição assistida e publicação permanecem fora até demonstração de necessidade indispensável neste debate.
 
 ## 5. Próxima decisão do debate
 
-- Seguir para o Gate D — visualização mínima da primeira LP.
-- O Gate D deve definir o menor renderer e a menor superfície necessária para o humano avaliar a LP materializada usando somente seu estado próprio, além das evidências responsivas e de teclado exigidas para o frontend.
+- Seguir para o Gate E — fronteira da primeira entrega.
+- O Gate E deve confirmar o ponto exato de encerramento da E19.4 e o papel da avaliação humana como evidência da primeira LP real, sem antecipar aprovação/publicação, editor ou regeneração.
 - Não consolidar plano-base v1 enquanto permanecer questão indispensável aberta para executar a E19.4 com segurança e sem inventar contrato.
