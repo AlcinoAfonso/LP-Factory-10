@@ -1860,13 +1860,82 @@ Catalogado em 2026-08-04
 
 ---
 
-## Registro da rodada — Supabase Update August 2026
+## 68 — Postgres Changes com filtros compostos e seleção de colunas *(🟦 Disponível; adoção condicional)*
+
+2026-08-05
+Catalogado em 2026-08-10
+
+### Status no Projeto
+
+- Status: não implementado; capacidade futura condicionada a um caso real de atualização em tempo real.
+- Evidência: não há assinatura `postgres_changes`, `channel()` ou publicação de tabela para Realtime no código; `package-lock.json` resolve `@supabase/supabase-js` em `2.89.0`.
+- Natureza de uso: redução de eventos e payloads em assinaturas Realtime, sem alterar a autoridade do Postgres nem da RLS.
+- Relação com a stack: complementar ao Supabase/Postgres; não substitui SSR, consulta sob demanda, polling simples ou Broadcast quando esses mecanismos forem suficientes.
+- Horizonte: Lite, Pro ou indefinido, conforme necessidade mensurável definida pelo Estrategista.
+
+### Descrição
+
+Postgres Changes passou a aceitar filtros combinados por `AND`, novos operadores (`like`, `ilike`, `is`, `match`, `imatch`, `isdistinct` e negações) e seleção explícita das colunas entregues em cada evento.
+
+Filtros rejeitam eventos antes de chegarem ao cliente e a seleção reduz o payload, o que pode diminuir mensagens e egress cobrados. A seleção de colunas exige `@supabase/supabase-js` `2.109.0` ou superior; assinaturas existentes continuam recebendo a linha completa até optarem pelo recurso.
+
+### Valor para o Projeto
+
+- Pode reduzir tráfego e exposição desnecessária de campos em uma futura interface realmente dependente de atualização em tempo real.
+- Permite filtrar no servidor por conta, estado e outro critério autorizado sem entregar ao cliente eventos que ele descartaria localmente.
+- Mantém a RLS como controle obrigatório e pode reduzir custo de mensagens e egress em cenários com vários assinantes.
+
+### Gatilho futuro de avaliação
+
+Avaliar somente quando houver:
+
+1. caso aprovado que exija atualização em tempo real e não seja atendido adequadamente por consulta sob demanda ou polling simples;
+2. tabelas, eventos, papéis e políticas RLS definidos no recorte competente;
+3. benefício mensurável de filtrar eventos ou reduzir payloads;
+4. orçamento de mensagens e egress, limites de DELETE e comportamento de reconexão avaliados;
+5. atualização deliberada e validada do `supabase-js` caso a seleção de colunas seja necessária.
+
+### Dependências, riscos e limite
+
+- Somente composição `AND` está disponível; `OR`, filtros de array/JSON, busca textual e operadores de range não estão incluídos.
+- Eventos DELETE carregam apenas a chave primária e não podem ser avaliados por filtros de coluna.
+- Toda coluna selecionada precisa ser visível ao papel assinante; RLS e grants continuam obrigatórios.
+- Não criar publicação, canal, subscription, migration, rota ou upgrade de dependência nesta rodada.
+
+### Fontes Oficiais
+
+- [Supabase Blog — Postgres Changes gets AND filters, new operators, and column selection](https://supabase.com/blog/postgres-changes-filters-and-column-selection)
+- [Supabase Docs — Postgres Changes](https://supabase.com/docs/guides/realtime/postgres-changes)
+- [Supabase Docs — Realtime Pricing](https://supabase.com/docs/guides/realtime/pricing)
+
+### Registro (Tipo A — Realtime)
+
+- Status: PENDENTE
+- Verificado em: 2026-08-10
+- Ambiente futuro: Supabase Realtime + cliente autorizado
+- Evidência: fontes oficiais e busca semântica no repositório no SHA inicial da rodada.
+- Observação: o registro não autoriza implementação nem atualização de dependência.
+
+---
+
+## Registro da rodada — Supabase Update August 2026 — 10/08/2026
 
 ### Updates ajustados ou incorporados
 
 - `supa#5`, `supa#12`, `supa#32`, `supa#33`, `supa#39`, `supa#41`, `supa#59` e `supa#62` foram reconciliados com fontes oficiais e o estado do projeto.
 - `supa#65` e `supa#66` foram adicionados como capacidades condicionais.
 - `supa#67` foi adicionado para registrar a depreciação de version pinning em extensões.
+- `supa#68` foi adicionado como capacidade condicional para assinaturas Postgres Changes com menor volume de eventos e payloads.
+
+### Updates avaliados e não adicionados nesta atualização
+
+- Conector Supabase para Perplexity Computer: integração oficial disponível, mas sobrepõe conectores e ferramentas assistivas já registrados sem caso operacional aprovado, hipótese de superioridade ou gatilho objetivo para comparação. Não foi descartado por distância do MVP; pode ser reavaliado se houver fluxo multiapp concreto que as ferramentas atuais não atendam.
+
+### Cobertura estratégica desta atualização
+
+- Landing pages, Instagram, WhatsApp e e-mail foram pesquisados contra as fontes oficiais Supabase aplicáveis.
+- A melhoria de Postgres Changes pode apoiar interfaces futuras do produto, mas não altera nem autoriza os fluxos atuais desses canais.
+- Não foi encontrada, entre 05/08/2026 e 10/08/2026, outra novidade oficial Supabase com valor concreto e horizonte plausível para os canais estratégicos do projeto.
 
 ### IDs preservados por rastreabilidade
 
@@ -1884,6 +1953,7 @@ Catalogado em 2026-08-04
 - Passkeys e CipherStash: preços, maturidade operacional e adequação só devem ser levantados se os gatilhos ocorrerem.
 - Grafana Cloud: acesso, retenção e responsabilidade operacional ainda não definidos.
 - Version pinning: a presença de cláusulas explícitas nas migrations deve ser confirmada em recorte técnico antes de qualquer ajuste.
+- Postgres Changes: não há caso Realtime aprovado; seleção de colunas depende de `supabase-js` `2.109.0` ou superior, acima da versão resolvida atual.
 
 ### Validação de IDs
 
