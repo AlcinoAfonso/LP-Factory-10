@@ -1,6 +1,9 @@
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
+import { join, relative } from "node:path";
+import { fileURLToPath } from "node:url";
 
+import { resolveNicheWithOpenAi } from "../onboarding/niche-resolution/adapters/openAiResolver";
 import * as publicApi from "./index";
 import {
   createOpenAiWorkloadFailureEvent,
@@ -10,6 +13,7 @@ import {
   normalizeOpenAiResponseUsage,
   resolveOpenAiProductWorkload,
   resolveOpenAiWorkloadEnvironment,
+  type OpenAiWorkloadEvent,
 } from "./index";
 
 const productIds = [
@@ -19,6 +23,134 @@ const productIds = [
 ] as const;
 
 const cases = [
+  {
+    name: "niche request uses resolved model and effort with deterministic transport",
+    run: async () => {
+      const candidate = {
+        taxonId: "10000000-0000-4000-8000-000000000001",
+        name: "Corretores de imoveis",
+        slug: "corretores-de-imoveis",
+        level: "niche" as const,
+        parentId: null,
+        parentName: null,
+        matchedAliases: ["corretor"],
+        matchSource: "alias",
+        score: 0.72,
+      };
+      const decision = {
+        confidence: "medium" as const,
+        selectedCandidate: candidate,
+        shouldUseDeterministicMatch: false,
+        shouldEscalateToAi: true,
+        aiEscalationMode: "rerank_candidates" as const,
+        needsAdminReview: false,
+        reason: "medium_confidence_below_high_threshold" as const,
+      };
+      let requestBody: Record<string, unknown> | null = null;
+      const events: OpenAiWorkloadEvent[] = [];
+      const result = await resolveNicheWithOpenAi({
+        rawInput: "corretor",
+        decision,
+        candidates: [candidate],
+        apiKey: "test-key",
+      }, {
+        fetchImpl: async (_url, init) => {
+          requestBody = JSON.parse(String(init?.body));
+          return new Response(JSON.stringify({
+            id: "resp_niche_123",
+            usage: {
+              input_tokens: 50,
+              input_tokens_details: { cached_tokens: 20 },
+              output_tokens: 12,
+              output_tokens_details: { reasoning_tokens: 2 },
+              total_tokens: "62",
+            },
+            output_text: JSON.stringify({
+              uxMode: "confirm_single",
+              message: "Voce quis dizer este nicho?",
+              options: [{
+                taxonId: candidate.taxonId,
+                name: candidate.name,
+                slug: candidate.slug,
+                confidence: "medium",
+                reason: "official_candidate",
+                isOfficial: true,
+              }],
+              needsAdminReview: false,
+              needsUserConfirmation: true,
+              shouldCreateOfficialLink: false,
+              suggestedNewTaxonLabel: null,
+              reason: "ai_resolution_completed",
+            }),
+          }), { status: 200, headers: { "Content-Type": "application/json" } });
+        },
+        emitEvent: (event) => events.push(event),
+        now: (() => {
+          let current = 300;
+          return () => (current += 7);
+        })(),
+      });
+
+      assert.equal(result.ok, true);
+      const capturedRequest = requestBody as unknown as Record<string, unknown>;
+      assert.equal(capturedRequest.model, "gpt-5.4-mini");
+      assert.deepEqual(capturedRequest.reasoning, { effort: "none" });
+      assert.equal(events.length, 1);
+      assert.deepEqual(events[0], {
+        workload: "niche_resolution",
+        environment: "unknown",
+        configurationSource: "repo_catalog",
+        configurationRevision: "v1",
+        model: "gpt-5.4-mini",
+        reasoningEffort: "none",
+        responseId: "resp_niche_123",
+        result: "success",
+        failureCategory: null,
+        latencyMs: 7,
+        inputTokens: 50,
+        cachedInputTokens: 20,
+        cacheWriteTokens: null,
+        outputTokens: 12,
+        reasoningTokens: 2,
+        totalTokens: null,
+      });
+
+      const invalidResponseEvents: OpenAiWorkloadEvent[] = [];
+      const invalidResponse = await resolveNicheWithOpenAi({
+        rawInput: "corretor",
+        decision,
+        candidates: [candidate],
+        apiKey: "test-key",
+      }, {
+        fetchImpl: async () => new Response("{", {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        }),
+        emitEvent: (event) => invalidResponseEvents.push(event),
+      });
+      assert.equal(invalidResponse.ok, false);
+      assert.equal(invalidResponseEvents[0]?.failureCategory, "invalid_response");
+
+      let transportCalls = 0;
+      const invalidEvents: OpenAiWorkloadEvent[] = [];
+      const invalid = await resolveNicheWithOpenAi({
+        rawInput: "corretor",
+        decision,
+        candidates: [candidate],
+        apiKey: "",
+      }, {
+        fetchImpl: async () => {
+          transportCalls += 1;
+          return new Response();
+        },
+        emitEvent: (event) => invalidEvents.push(event),
+      });
+      assert.equal(invalid.ok, false);
+      assert.equal(transportCalls, 0);
+      assert.equal(invalidEvents[0]?.failureCategory, "configuration_invalid");
+      assert.equal(invalidEvents[0]?.latencyMs, null);
+    },
+  },
   {
     name: "inventory exposes four unique canonical workloads",
     run: () => {
@@ -218,6 +350,38 @@ const cases = [
     },
   },
   {
+    name: "runtime source has no legacy model env reads or client model hardcode",
+    run: () => {
+      const repositoryRoot = fileURLToPath(new URL("../../", import.meta.url));
+      const sourceFiles = ["app", "components", "lib"]
+        .flatMap((directory) => collectSourceFiles(join(repositoryRoot, directory)))
+        .filter((file) => !file.endsWith("validation-cases.ts"));
+      const legacyModelEnvironmentVariables = [
+        "OPENAI_NICHE_RESOLVER_MODEL",
+        "OPENAI_LANDING_PAGE_GENERATION_PROFILE_MODEL",
+        "OPENAI_COMMERCIAL_ACTIVATION_MODEL",
+      ];
+
+      for (const file of sourceFiles) {
+        const source = readFileSync(file, "utf8");
+        for (const variable of legacyModelEnvironmentVariables) {
+          assert.equal(
+            source.includes(variable),
+            false,
+            `${relative(repositoryRoot, file)} still references ${variable}`,
+          );
+        }
+        if (!file.endsWith(join("lib", "openai-workloads", "registry.ts"))) {
+          assert.equal(
+            source.includes("gpt-5.4-mini"),
+            false,
+            `${relative(repositoryRoot, file)} still hardcodes the product model`,
+          );
+        }
+      }
+    },
+  },
+  {
     name: "production boundary has no transport persistence secrets or business payloads",
     run: () => {
       const productionFiles = [
@@ -236,7 +400,22 @@ const cases = [
   },
 ];
 
-for (const validationCase of cases) {
-  validationCase.run();
-  console.log(`ok - ${validationCase.name}`);
+function collectSourceFiles(directory: string): string[] {
+  return readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
+    const path = join(directory, entry.name);
+    if (entry.isDirectory()) return collectSourceFiles(path);
+    return /\.tsx?$/.test(entry.name) ? [path] : [];
+  });
 }
+
+async function runValidationCases() {
+  for (const validationCase of cases) {
+    await validationCase.run();
+    console.log(`ok - ${validationCase.name}`);
+  }
+}
+
+runValidationCases().catch((error: unknown) => {
+  console.error(error);
+  process.exitCode = 1;
+});

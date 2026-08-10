@@ -155,36 +155,29 @@
 • Valor esperado: `true`
 
 • `OPENAI_API_KEY`
-• Finalidade: chave server-side da OpenAI para resolvedor IA e/ou integrações server-side autorizadas.
-• Escopo: Production e Preview, conforme necessidade do recurso.
+• Finalidade: chave server-side compartilhada pelos três consumidores OpenAI de produto autorizados no Core.
+• Escopo: Production e Preview.
 • Estado atual: configurada em Production e Preview; presença confirmada na configuração em 31/07/2026 sem exposição do valor.
 • Valor real: não versionar.
+• Regra operacional: os três consumidores podem compartilhar a mesma chave; não criar outra sem necessidade aprovada.
 
 • `OPENAI_NICHE_RESOLVER_MODEL`
-• Finalidade: modelo usado pelo resolvedor IA de nicho.
 • Escopo: Production e Preview.
-• Valor atual de referência: `gpt-5.4-mini`
-• Regra: deve conter apenas o ID do modelo; nunca inserir `OPENAI_API_KEY` nessa variável.
+• Estado: legado temporário de reversão, mantido fisicamente até o smoke pós-merge dos três consumidores em Production.
+• Uso runtime atual: nenhum; a configuração efetiva do resolvedor de nicho vem do catálogo versionado no repositório.
+• Regra: não remover antes da evidência de Production e não usar como fonte ordinária de configuração.
 
 • `OPENAI_LANDING_PAGE_GENERATION_PROFILE_MODEL`
-• Plataforma: Vercel.
-• Finalidade: selecionar o modelo usado pela proposta administrativa opcional do perfil de orientação de `landing_page`.
 • Escopo: Production e Preview.
-• Valor permitido: `gpt-5.4-mini`.
-• Estado atual: configurada em Production e Preview com `gpt-5.4-mini`.
-• Validação operacional: redeploy de Production concluído em 31/07/2026 no commit `072d6d3f25368cf80c539519fe5f74bd6c4db359`; assistência habilitada no domínio oficial e primeira chamada real concluída.
-• Preview: configuração presente, sem novo redeploy ou smoke específico comprovado após a correção.
-• Fallback: sem a variável, sem `OPENAI_API_KEY` ou com qualquer outro modelo, a assistência fica indisponível e o fluxo manual permanece funcional.
-• Valor real: não versionar.
-• Regra: deve conter apenas o ID do modelo; nunca inserir `OPENAI_API_KEY` nessa variável.
+• Estado: legado temporário de reversão, mantido fisicamente até o smoke pós-merge dos três consumidores em Production.
+• Uso runtime atual: nenhum; a configuração efetiva da proposta de perfil vem do catálogo versionado no repositório.
+• Regra: não remover antes da evidência de Production e não usar como fonte ordinária de configuração.
 
 • `OPENAI_COMMERCIAL_ACTIVATION_MODEL`
-• Finalidade: modelo usado pela geração administrativa server-side de drafts `commercial_activation` da E10.7.
 • Escopo: Production e Preview.
-• Valor atual de referência: `gpt-5.4-mini`.
-• Valor real de secret: não versionar.
-• Regra: deve conter apenas o ID do modelo; nunca inserir `OPENAI_API_KEY` nessa variável.
-• Regra operacional: usar escopo geral Production e Preview no MVP; evitar configuração presa a branch específica salvo necessidade futura comprovada.
+• Estado: legado temporário de reversão, mantido fisicamente até o smoke pós-merge dos três consumidores em Production.
+• Uso runtime atual: nenhum; a configuração efetiva da geração de drafts `commercial_activation` vem do catálogo versionado no repositório.
+• Regra: não remover antes da evidência de Production e não usar como fonte ordinária de configuração.
 
 • `LPF_MCP_SECRET`
 • Finalidade: secret Bearer usado para autenticar chamadas ao MCP Supabase Inspect.
@@ -292,36 +285,27 @@
 6.3 Variáveis relacionadas
 • `OPENAI_API_KEY`
 • Plataforma: Vercel e/ou GitHub Actions, conforme uso.
-• Finalidade: autenticação com OpenAI API.
+• Finalidade: autenticação com OpenAI API; no Core, a mesma chave server-side pode atender os três consumidores de produto.
 • Valor real: não versionar.
 
 • `OPENAI_NICHE_RESOLVER_MODEL`
 • Plataforma: Vercel.
-• Finalidade: selecionar modelo do resolvedor IA de nicho.
-• Valor atual de referência: `gpt-5.4-mini`
+• Estado: legado temporário de reversão, sem leitura pelo runtime atual; manter até o smoke pós-merge em Production.
 
 • `OPENAI_COMMERCIAL_ACTIVATION_MODEL`
 • Plataforma: Vercel.
-• Finalidade: selecionar o modelo usado pela geração administrativa server-side de drafts `commercial_activation`.
 • Escopo: Production e Preview.
-• Valor atual de referência: `gpt-5.4-mini`.
-• Valor real: não versionar.
-• Regra: deve conter apenas o ID do modelo; nunca inserir `OPENAI_API_KEY` nessa variável.
+• Estado: legado temporário de reversão, sem leitura pelo runtime atual; manter até o smoke pós-merge em Production.
 
 • `OPENAI_LANDING_PAGE_GENERATION_PROFILE_MODEL`
 • Plataforma: Vercel.
-• Finalidade: selecionar o modelo usado pela proposta administrativa opcional do perfil de orientação de `landing_page`.
 • Escopo: Production e Preview.
-• Valor permitido: `gpt-5.4-mini`.
-• Estado operacional: configurada em Production e Preview; validada operacionalmente somente em Production em 31/07/2026; Preview permanece sem novo redeploy ou smoke comprovado; detalhes em 3.5.
-• Fallback: sem a variável, sem `OPENAI_API_KEY` ou com qualquer outro modelo, a assistência fica indisponível e o fluxo manual permanece funcional.
-• Valor real: não versionar.
-• Regra: deve conter apenas o ID do modelo; nunca inserir `OPENAI_API_KEY` nessa variável.
+• Estado: legado temporário de reversão, sem leitura pelo runtime atual; manter até o smoke pós-merge em Production.
 
 6.3.1 Endpoint externo atual
 • Endpoint OpenAI Responses API: `https://api.openai.com/v1/responses`
 • Consumidores atuais conhecidos:
-• `lib/conversion-content/commercial-activation/draft-generation.ts`
+• `lib/conversion-content/adapters/commercialActivationOpenAiAdapter.ts`
 • `lib/conversion-content/adapters/landingPageGenerationProfileOpenAiAdapter.ts`
 • `lib/onboarding/niche-resolution/adapters/openAiResolver.ts`
 • `automations/supabase-inspect/run.mjs`

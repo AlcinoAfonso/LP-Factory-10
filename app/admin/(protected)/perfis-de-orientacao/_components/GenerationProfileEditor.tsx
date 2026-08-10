@@ -68,7 +68,7 @@ export function GenerationProfileEditor({ taxon, profiles, aiConfigured, researc
   const hasUnsavedChanges = proposal !== null || serializeEditorState(generationGuidance, recommendationPayload) !== savedEditorState;
   const aiAvailable = aiConfigured && researchAvailability.available;
   const aiUnavailableReason = !aiConfigured
-    ? "Assistencia indisponivel: use exclusivamente o modelo aprovado gpt-5.4-mini e configure a OpenAI. O fluxo manual continua completo."
+    ? "Assistencia indisponivel: verifique a configuracao server-side da OpenAI. O fluxo manual continua completo."
     : researchAvailability.reason;
   const activationBlockedByGaps = (appliedProposalContext?.decision ?? persistedGapDecision) === "wait_for_modules";
   const editorLockedByCandidate = candidate !== null;

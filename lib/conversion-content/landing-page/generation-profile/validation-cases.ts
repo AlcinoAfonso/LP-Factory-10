@@ -1,5 +1,7 @@
 import assert from "node:assert/strict";
 
+import { requestGenerationProfileProposal } from "../../adapters/landingPageGenerationProfileOpenAiAdapter";
+import type { OpenAiWorkloadEvent } from "../../../openai-workloads";
 import {
   loadLandingPageGenerationProfileSourceFromClient,
   resolveLandingPageGenerationProfileForTaxonFromClient,
@@ -22,8 +24,6 @@ import {
 import {
   buildGenerationProfileInvalidDataMetadata,
   buildGenerationProfileResponsesRequest,
-  estimateGenerationProfileCostUsd,
-  GENERATION_PROFILE_APPROVED_MODEL,
   GENERATION_PROFILE_INVALID_PROPOSAL_MESSAGE,
   isGenerationProfileAssistanceConfigured,
   mapProviderFailureToProposalError,
@@ -46,6 +46,8 @@ import {
 import { resolveLandingPageGenerationProfile } from "./resolver";
 
 const SEGMENT_ID = "10000000-0000-4000-8000-000000000001";
+const GENERATION_PROFILE_MODEL = "gpt-5.4-mini";
+const GENERATION_PROFILE_REASONING_EFFORT = "none" as const;
 const NICHE_ID = "10000000-0000-4000-8000-000000000002";
 const ULTRA_ID = "10000000-0000-4000-8000-000000000003";
 const BUYER_SECTION_ITEM_ID = "42000000-0000-4000-8000-000000000001";
@@ -960,7 +962,8 @@ const cases: readonly Readonly<{
       }
 
       const request = buildGenerationProfileResponsesRequest({
-        model: GENERATION_PROFILE_APPROVED_MODEL,
+        model: GENERATION_PROFILE_MODEL,
+        reasoningEffort: GENERATION_PROFILE_REASONING_EFFORT,
         research,
         moduleIdentities,
         moduleSelectionCatalog,
@@ -980,7 +983,8 @@ const cases: readonly Readonly<{
         REALTOR_COVERAGE_IDS,
       );
       const evolutionRequest = buildGenerationProfileResponsesRequest({
-        model: GENERATION_PROFILE_APPROVED_MODEL,
+        model: GENERATION_PROFILE_MODEL,
+        reasoningEffort: GENERATION_PROFILE_REASONING_EFFORT,
         research,
         moduleIdentities,
         moduleSelectionCatalog,
@@ -1050,7 +1054,8 @@ const cases: readonly Readonly<{
       assert.equal(normalizeGenerationProfileCandidate({ ...candidate, gaps: [...candidate.gaps, candidate.gaps[0]] }).ok, false);
 
       const request = buildGenerationProfileResponsesRequest({
-        model: GENERATION_PROFILE_APPROVED_MODEL,
+        model: GENERATION_PROFILE_MODEL,
+        reasoningEffort: GENERATION_PROFILE_REASONING_EFFORT,
         research,
         moduleIdentities: listLandingPageModuleIdentities(),
         moduleSelectionCatalog: listLandingPageModuleSelectionCatalog(),
@@ -1199,7 +1204,8 @@ const cases: readonly Readonly<{
     name: "Responses API request is compact structural stateless tool-free and bounded",
     run: () => {
       const request = buildGenerationProfileResponsesRequest({
-        model: GENERATION_PROFILE_APPROVED_MODEL,
+        model: GENERATION_PROFILE_MODEL,
+        reasoningEffort: GENERATION_PROFILE_REASONING_EFFORT,
         research: structuralResearch,
         moduleIdentities: listLandingPageModuleIdentities(),
         moduleSelectionCatalog: listLandingPageModuleSelectionCatalog(),
@@ -1260,7 +1266,8 @@ const cases: readonly Readonly<{
       assert.match(prompt, /Preservar uma identidade quando continuar adequada é válido/);
       assert.equal(Object.hasOwn(request.body.text.format.schema.properties, "recommendations"), false);
       const oversized = buildGenerationProfileResponsesRequest({
-        model: GENERATION_PROFILE_APPROVED_MODEL,
+        model: GENERATION_PROFILE_MODEL,
+        reasoningEffort: GENERATION_PROFILE_REASONING_EFFORT,
         research: structuralResearch,
         moduleIdentities: listLandingPageModuleIdentities(),
         moduleSelectionCatalog: listLandingPageModuleSelectionCatalog(),
@@ -1276,7 +1283,8 @@ const cases: readonly Readonly<{
     name: "creation and evolution expose structural baseline candidate and latest feedback only",
     run: () => {
       const initial = buildGenerationProfileResponsesRequest({
-        model: GENERATION_PROFILE_APPROVED_MODEL,
+        model: GENERATION_PROFILE_MODEL,
+        reasoningEffort: GENERATION_PROFILE_REASONING_EFFORT,
         research: structuralResearch,
         moduleIdentities: listLandingPageModuleIdentities(),
         moduleSelectionCatalog: listLandingPageModuleSelectionCatalog(),
@@ -1293,7 +1301,8 @@ const cases: readonly Readonly<{
         recommendations: validProfile.items.map(({ id: _id, ...item }) => item),
       };
       const evolution = buildGenerationProfileResponsesRequest({
-        model: GENERATION_PROFILE_APPROVED_MODEL,
+        model: GENERATION_PROFILE_MODEL,
+        reasoningEffort: GENERATION_PROFILE_REASONING_EFFORT,
         research: structuralResearch,
         moduleIdentities: listLandingPageModuleIdentities(),
         moduleSelectionCatalog: listLandingPageModuleSelectionCatalog(),
@@ -1361,7 +1370,8 @@ const cases: readonly Readonly<{
         } : item),
       }).ok, false);
       const nextRound = buildGenerationProfileResponsesRequest({
-        model: GENERATION_PROFILE_APPROVED_MODEL,
+        model: GENERATION_PROFILE_MODEL,
+        reasoningEffort: GENERATION_PROFILE_REASONING_EFFORT,
         research: structuralResearch,
         moduleIdentities: listLandingPageModuleIdentities(),
         moduleSelectionCatalog: listLandingPageModuleSelectionCatalog(),
@@ -1454,7 +1464,7 @@ const cases: readonly Readonly<{
     },
   },
   {
-    name: "invalid provider payload metadata is safely allowlisted with usage and cost",
+    name: "invalid provider payload metadata is safely allowlisted without runtime cost",
     run: () => {
       const invalid = validateGenerationProfileProviderPayload({
         payload: { ...structuralPayload, coverage: structuralPayload.coverage.slice(1) },
@@ -1466,7 +1476,6 @@ const cases: readonly Readonly<{
       assert.equal(invalid.reason, "coverage_items_mismatch");
 
       const unsafeInput = {
-        model: GENERATION_PROFILE_APPROVED_MODEL,
         validationReason: invalid.reason,
         responseId: "resp_invalid_123",
         inputTokens: 20856,
@@ -1492,14 +1501,12 @@ const cases: readonly Readonly<{
         responseId: "resp_invalid_123",
         inputTokens: 20856,
         outputTokens: 4000,
-        estimatedCostUsd: 0.033642,
       });
       assert.deepEqual(Object.keys(metadata).sort(), [
         "compatibleAliasCount",
         "coverageId",
         "coverageIndex",
         "coverageStatus",
-        "estimatedCostUsd",
         "inputTokens",
         "outputTokens",
         "responseId",
@@ -1527,11 +1534,6 @@ const cases: readonly Readonly<{
         outputTokens: 2000,
       });
       assert.deepEqual(Object.keys(completeMetadata).sort(), ["incompleteReason", "inputTokens", "outputTokens", "responseId"]);
-      assert.equal(estimateGenerationProfileCostUsd(
-        GENERATION_PROFILE_APPROVED_MODEL,
-        completeMetadata.inputTokens,
-        completeMetadata.outputTokens,
-      ), 0.024642);
 
       const nullUsageMetadata = normalizeGenerationProfileIncompleteMetadata({
         id: "resp_null_usage",
@@ -1545,11 +1547,6 @@ const cases: readonly Readonly<{
         inputTokens: null,
         outputTokens: null,
       });
-      assert.equal(estimateGenerationProfileCostUsd(
-        GENERATION_PROFILE_APPROVED_MODEL,
-        nullUsageMetadata.inputTokens,
-        nullUsageMetadata.outputTokens,
-      ), null);
 
       const missingUsageMetadata = normalizeGenerationProfileIncompleteMetadata({
         status: "incomplete",
@@ -1561,11 +1558,6 @@ const cases: readonly Readonly<{
         inputTokens: null,
         outputTokens: null,
       });
-      assert.equal(estimateGenerationProfileCostUsd(
-        GENERATION_PROFILE_APPROVED_MODEL,
-        missingUsageMetadata.inputTokens,
-        missingUsageMetadata.outputTokens,
-      ), null);
 
       const partialUsageMetadata = normalizeGenerationProfileIncompleteMetadata({
         status: "incomplete",
@@ -1574,11 +1566,6 @@ const cases: readonly Readonly<{
       });
       assert.equal(partialUsageMetadata.inputTokens, 20856);
       assert.equal(partialUsageMetadata.outputTokens, null);
-      assert.equal(estimateGenerationProfileCostUsd(
-        GENERATION_PROFILE_APPROVED_MODEL,
-        partialUsageMetadata.inputTokens,
-        partialUsageMetadata.outputTokens,
-      ), null);
 
       assert.deepEqual(normalizeGenerationProfileIncompleteMetadata({
         id: 123,
@@ -1593,18 +1580,95 @@ const cases: readonly Readonly<{
     },
   },
   {
-    name: "provider failures and any unapproved model fail closed",
+    name: "provider request uses resolved model and effort and emits normalized usage",
+    run: async () => {
+      let requestBody: Record<string, unknown> | null = null;
+      const events: OpenAiWorkloadEvent[] = [];
+      const providerInput = {
+        model: GENERATION_PROFILE_MODEL,
+        reasoningEffort: GENERATION_PROFILE_REASONING_EFFORT,
+        research: structuralResearch,
+        moduleIdentities: listLandingPageModuleIdentities(),
+        moduleSelectionCatalog: listLandingPageModuleSelectionCatalog(),
+        requestKind: "creation" as const,
+        activeBaseline: null,
+        currentCandidate: null,
+      };
+      const result = await requestGenerationProfileProposal(providerInput, {
+        apiKey: "test-key",
+        fetchImpl: async (_url, init) => {
+          requestBody = JSON.parse(String(init?.body));
+          return new Response(JSON.stringify({
+            id: "resp_profile_123",
+            usage: {
+              input_tokens: 120,
+              input_tokens_details: { cached_tokens: 80 },
+              output_tokens: 35,
+              output_tokens_details: { reasoning_tokens: 5 },
+              total_tokens: -1,
+            },
+            output: [{
+              content: [{ type: "output_text", text: JSON.stringify(structuralPayload) }],
+            }],
+          }), { status: 200, headers: { "Content-Type": "application/json" } });
+        },
+        emitEvent: (event) => events.push(event),
+        now: (() => {
+          let current = 100;
+          return () => (current += 12);
+        })(),
+      });
+
+      assert.equal(result.ok, true);
+      const capturedRequest = requestBody as unknown as Record<string, unknown>;
+      assert.equal(capturedRequest.model, GENERATION_PROFILE_MODEL);
+      assert.deepEqual(capturedRequest.reasoning, { effort: GENERATION_PROFILE_REASONING_EFFORT });
+      assert.equal(events.length, 1);
+      assert.deepEqual(events[0], {
+        workload: "landing_page_generation_profile_proposal",
+        environment: "unknown",
+        configurationSource: "repo_catalog",
+        configurationRevision: "v1",
+        model: GENERATION_PROFILE_MODEL,
+        reasoningEffort: GENERATION_PROFILE_REASONING_EFFORT,
+        responseId: "resp_profile_123",
+        result: "success",
+        failureCategory: null,
+        latencyMs: 12,
+        inputTokens: 120,
+        cachedInputTokens: 80,
+        cacheWriteTokens: null,
+        outputTokens: 35,
+        reasoningTokens: 5,
+        totalTokens: null,
+      });
+
+      let transportCalls = 0;
+      const invalidEvents: OpenAiWorkloadEvent[] = [];
+      const invalid = await requestGenerationProfileProposal(providerInput, {
+        apiKey: "",
+        fetchImpl: async () => {
+          transportCalls += 1;
+          return new Response();
+        },
+        emitEvent: (event) => invalidEvents.push(event),
+      });
+      assert.equal(invalid.ok, false);
+      assert.equal(transportCalls, 0);
+      assert.equal(invalidEvents[0]?.result, "failure");
+      assert.equal(invalidEvents[0]?.failureCategory, "configuration_invalid");
+      assert.equal(invalidEvents[0]?.latencyMs, null);
+    },
+  },
+  {
+    name: "provider failures and availability fail closed",
     run: () => {
       assert.equal(mapProviderFailureToProposalError("refusal"), "technical_failure");
       assert.equal(mapProviderFailureToProposalError("incomplete"), "technical_failure");
       assert.equal(mapProviderFailureToProposalError("timeout"), "technical_failure");
       assert.equal(mapProviderFailureToProposalError("request_too_large"), "invalid_data");
-      assert.equal(isGenerationProfileAssistanceConfigured({ apiKey: "", model: GENERATION_PROFILE_APPROVED_MODEL }), false);
-      assert.equal(isGenerationProfileAssistanceConfigured({ apiKey: "secret", model: "" }), false);
-      assert.equal(isGenerationProfileAssistanceConfigured({ apiKey: "secret", model: "gpt-5.4" }), false);
-      assert.equal(isGenerationProfileAssistanceConfigured({ apiKey: "secret", model: GENERATION_PROFILE_APPROVED_MODEL }), true);
-      assert.equal(estimateGenerationProfileCostUsd("gpt-5.4", 1000, 1000), null);
-      assert.equal(estimateGenerationProfileCostUsd(GENERATION_PROFILE_APPROVED_MODEL, 1000, 1000), 0.00525);
+      assert.equal(isGenerationProfileAssistanceConfigured({ apiKey: "" }), false);
+      assert.equal(isGenerationProfileAssistanceConfigured({ apiKey: "test-key" }), true);
     },
   },
 ];

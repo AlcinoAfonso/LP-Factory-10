@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
-    "check": "npm run lint && npm run typecheck && npm run validate:commercial-capabilities && npm run validate:openai-workloads && npm run validate:landing-page-root && npm run validate:landing-page-research && npm run validate:landing-page-input-catalog && npm run validate:landing-page-module-catalog && npm run validate:landing-page-generation-profile && npm run validate:lp-builder-onboarding && npm run validate:lp-builder-generation-context",
+    "check": "npm run lint && npm run typecheck && npm run validate:commercial-capabilities && npm run validate:openai-workloads && npm run validate:commercial-activation && npm run validate:landing-page-root && npm run validate:landing-page-research && npm run validate:landing-page-input-catalog && npm run validate:landing-page-module-catalog && npm run validate:landing-page-generation-profile && npm run validate:lp-builder-onboarding && npm run validate:lp-builder-generation-context",
     "validate:account-members": "tsx lib/access/account-members/validation-cases.ts",
     "validate:e11-checkout": "tsx app/a/[account]/_components/commercial-page/checkout-validation-cases.ts",
     "validate:e11-commercial-experience": "tsx app/a/[account]/_components/commercial-page/commercial-experience-validation-cases.ts",

@@ -1,5 +1,3 @@
-import "server-only";
-
 import type {
   AiNicheResolutionOutput,
   AiNicheResolutionUxMode,
@@ -8,6 +6,13 @@ import type {
   TaxonMatchCandidate,
 } from "../contracts";
 import { AI_NICHE_RESOLUTION_SCHEMA_VERSION } from "../contracts";
+import {
+  createOpenAiWorkloadFailureEvent,
+  createOpenAiWorkloadSuccessEvent,
+  emitOpenAiWorkloadEvent,
+  resolveOpenAiProductWorkload,
+  type OpenAiWorkloadEvent,
+} from "../../../openai-workloads";
 
 const OPENAI_RESPONSES_ENDPOINT = "https://api.openai.com/v1/responses";
 const MAX_AI_OPTIONS = 3;
@@ -47,6 +52,8 @@ export type ResolveAiNicheResolutionResult =
     };
 
 type ResponsesApiResponse = {
+  id?: unknown;
+  usage?: unknown;
   output_text?: unknown;
   output?: Array<{
     content?: Array<{
@@ -59,6 +66,12 @@ type ResponsesApiResponse = {
     type?: string;
   };
 };
+
+type OpenAiResolverDependencies = Readonly<{
+  fetchImpl?: typeof fetch;
+  emitEvent?: (event: OpenAiWorkloadEvent) => void;
+  now?: () => number;
+}>;
 
 const AI_NICHE_RESOLUTION_SCHEMA = {
   type: "object",
@@ -134,7 +147,8 @@ export async function resolveNicheWithOpenAi(input: {
   rawInput: string;
   decision: DeterministicMatchDecision;
   candidates: TaxonMatchCandidate[];
-}): Promise<ResolveAiNicheResolutionResult> {
+  apiKey?: string;
+}, dependencies: OpenAiResolverDependencies = {}): Promise<ResolveAiNicheResolutionResult> {
   if (!shouldResolveNicheWithAi(input.decision)) {
     return {
       ok: false,
@@ -145,28 +159,54 @@ export async function resolveNicheWithOpenAi(input: {
     };
   }
 
-  const apiKey = process.env.OPENAI_API_KEY?.trim();
-  const model = process.env.OPENAI_NICHE_RESOLVER_MODEL?.trim();
+  const configuration = resolveOpenAiProductWorkload("niche_resolution");
+  const apiKey = input.apiKey?.trim();
 
-  if (!apiKey || !model) {
+  if (!configuration.ok) {
     return {
       ok: false,
       status: "skipped_missing_env",
-      model: model || null,
+      model: null,
+      schemaVersion: AI_NICHE_RESOLUTION_SCHEMA_VERSION,
+      reason: "invalid_openai_configuration",
+    };
+  }
+
+  const workload = configuration.value;
+  const eventContext = {
+    workload: workload.id,
+    configurationSource: workload.source,
+    configurationRevision: workload.revision,
+    model: workload.model,
+    reasoningEffort: workload.reasoningEffort,
+  } as const;
+  const emitEvent = dependencies.emitEvent ?? emitOpenAiWorkloadEvent;
+
+  if (!apiKey) {
+    emitEvent(createOpenAiWorkloadFailureEvent(eventContext, "configuration_invalid"));
+    return {
+      ok: false,
+      status: "skipped_missing_env",
+      model: workload.model,
       schemaVersion: AI_NICHE_RESOLUTION_SCHEMA_VERSION,
       reason: "missing_openai_env",
     };
   }
 
+  const fetchImpl = dependencies.fetchImpl ?? fetch;
+  const now = dependencies.now ?? Date.now;
+  const startedAt = now();
+
   try {
-    const response = await fetch(OPENAI_RESPONSES_ENDPOINT, {
+    const response = await fetchImpl(OPENAI_RESPONSES_ENDPOINT, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${apiKey}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model,
+        model: workload.model,
+        reasoning: { effort: workload.reasoningEffort },
         input: [
           { role: "system", content: SYSTEM_PROMPT },
           { role: "user", content: JSON.stringify(buildPromptPayload(input)) },
@@ -184,61 +224,128 @@ export async function resolveNicheWithOpenAi(input: {
     });
 
     if (!response.ok) {
+      emitEvent(createOpenAiWorkloadFailureEvent({
+        ...eventContext,
+        latencyMs: now() - startedAt,
+      }, "http_error"));
       return {
         ok: false,
         status: "failed",
-        model,
+        model: workload.model,
         schemaVersion: AI_NICHE_RESOLUTION_SCHEMA_VERSION,
         reason: `openai_http_${response.status}`,
       };
     }
 
-    const data = (await response.json()) as ResponsesApiResponse;
-
-    if (data.error) {
+    let payload: unknown;
+    try {
+      payload = await response.json();
+    } catch {
+      emitEvent(createOpenAiWorkloadFailureEvent({
+        ...eventContext,
+        latencyMs: now() - startedAt,
+      }, "invalid_response"));
       return {
         ok: false,
         status: "failed",
-        model,
+        model: workload.model,
+        schemaVersion: AI_NICHE_RESOLUTION_SCHEMA_VERSION,
+        reason: "invalid_response_json",
+      };
+    }
+
+    if (!isRecord(payload)) {
+      emitEvent(createOpenAiWorkloadFailureEvent({
+        ...eventContext,
+        latencyMs: now() - startedAt,
+      }, "invalid_response"));
+      return {
+        ok: false,
+        status: "failed",
+        model: workload.model,
+        schemaVersion: AI_NICHE_RESOLUTION_SCHEMA_VERSION,
+        reason: "invalid_response_payload",
+      };
+    }
+
+    const data = payload as ResponsesApiResponse;
+
+    if (data.error) {
+      emitEvent(createOpenAiWorkloadFailureEvent({
+        ...eventContext,
+        responseId: data.id,
+        latencyMs: now() - startedAt,
+        usage: data.usage,
+      }, "provider_error"));
+      return {
+        ok: false,
+        status: "failed",
+        model: workload.model,
         schemaVersion: AI_NICHE_RESOLUTION_SCHEMA_VERSION,
         reason: data.error.type ?? "openai_response_error",
       };
     }
 
     const outputText = extractOutputText(data);
-    if (!outputText) {
+    if (outputText.kind !== "text") {
+      emitEvent(createOpenAiWorkloadFailureEvent({
+        ...eventContext,
+        responseId: data.id,
+        latencyMs: now() - startedAt,
+        usage: data.usage,
+      }, outputText.kind === "refusal" ? "refusal" : "invalid_response"));
       return {
         ok: false,
         status: "failed",
-        model,
+        model: workload.model,
         schemaVersion: AI_NICHE_RESOLUTION_SCHEMA_VERSION,
-        reason: "missing_output_text",
+        reason: outputText.kind === "refusal" ? "openai_refusal" : "missing_output_text",
       };
     }
 
-    const parsed = parseJsonObject(outputText);
+    const parsed = parseJsonObject(outputText.value);
     if (!parsed) {
+      emitEvent(createOpenAiWorkloadFailureEvent({
+        ...eventContext,
+        responseId: data.id,
+        latencyMs: now() - startedAt,
+        usage: data.usage,
+      }, "invalid_response"));
       return {
         ok: false,
         status: "failed",
-        model,
+        model: workload.model,
         schemaVersion: AI_NICHE_RESOLUTION_SCHEMA_VERSION,
         reason: "invalid_output_json",
       };
     }
 
+    emitEvent(createOpenAiWorkloadSuccessEvent({
+      ...eventContext,
+      responseId: data.id,
+      latencyMs: now() - startedAt,
+      usage: data.usage,
+    }));
+
     return {
       ok: true,
       status: "resolved",
-      model,
+      model: workload.model,
       schemaVersion: AI_NICHE_RESOLUTION_SCHEMA_VERSION,
       output: normalizeAiOutput(parsed, input.decision, input.candidates),
     };
   } catch (error) {
+    const failureCategory = error instanceof Error && error.name === "AbortError"
+      ? "timeout"
+      : "transport_error";
+    emitEvent(createOpenAiWorkloadFailureEvent({
+      ...eventContext,
+      latencyMs: now() - startedAt,
+    }, failureCategory));
     return {
       ok: false,
       status: "failed",
-      model,
+      model: workload.model,
       schemaVersion: AI_NICHE_RESOLUTION_SCHEMA_VERSION,
       reason: error instanceof Error ? error.name : "openai_resolver_error",
     };
@@ -274,18 +381,23 @@ function buildPromptPayload(input: {
   };
 }
 
-function extractOutputText(data: ResponsesApiResponse): string | null {
-  if (typeof data.output_text === "string") return data.output_text;
+function extractOutputText(data: ResponsesApiResponse):
+  | Readonly<{ kind: "text"; value: string }>
+  | Readonly<{ kind: "refusal" | "invalid_response" }> {
+  if (typeof data.output_text === "string") {
+    return { kind: "text", value: data.output_text };
+  }
 
   for (const item of data.output ?? []) {
     for (const content of item.content ?? []) {
+      if (content.type === "refusal") return { kind: "refusal" };
       if (content.type === "output_text" && typeof content.text === "string") {
-        return content.text;
+        return { kind: "text", value: content.text };
       }
     }
   }
 
-  return null;
+  return { kind: "invalid_response" };
 }
 
 function parseJsonObject(value: string): Record<string, unknown> | null {
