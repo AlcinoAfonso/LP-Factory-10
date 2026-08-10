@@ -1,8 +1,8 @@
 0. Introdução
 
 0.1 Cabeçalho
-• Data: 09/08/2026
-• Versão: v1.5.136
+• Data: 10/08/2026
+• Versão: v1.5.137
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -312,8 +312,6 @@
 9.1.2 Registros do recorte
 - Banco:
   - Criados:
-    - `public.account_commercial_entitlements`
-    - `public.v_account_commercial_entitlement_effective`
   - Ajustados:
 - Repositório:
   - Criados:
@@ -1646,14 +1644,16 @@ Repositório — Ajustados
 
 12.6.1 Objetivo e status
 - Objetivo: Expor no Admin uma consulta estrutural read-only da landing page, reunindo parâmetros, módulos e variantes, entradas e pesquisas em uma única rota.
-- Status: Implementação candidata no PR #695; validações técnicas e QA autenticado aprovados, aguardando inspeção final do Estrategista.
+- Status: Concluído em 10/08/2026 após merge humano do PR #695.
 
 12.6.2 Registros do recorte
 - Repositório:
   - Criados:
+    - `app/admin/(protected)/estrutura-lp/ModuleStructureFilters.tsx`
     - `app/admin/(protected)/estrutura-lp/page.tsx`
     - `lib/admin/adapters/adminLandingPageStructureAdapter.ts`
   - Ajustados:
+    - `components/admin/AdminPageHeader.tsx`
     - `components/admin/adminNavigation.ts`
     - `lib/admin/adapters/adminTaxonomyAdapter.ts`
     - `lib/conversion-content/landing-page/index.ts`
@@ -1664,14 +1664,13 @@ Repositório — Ajustados
   - Plano-base aprovado: `docs/lousa-plano-base-e12-6.md` — E12.6.3.
 
 12.6.3 Consulta estrutural read-only
-- Status: Implementação candidata, sem alteração de banco, persistência, mutation, IA, automação ou infraestrutura.
+- Status: Concluída, sem alteração de banco, persistência, mutation, IA, automação ou infraestrutura.
 - Conteúdo:
   - O Admin possui um único item `Estrutura da LP` e uma única rota `/admin/estrutura-lp`; as visões Parâmetros, Módulos e variantes, Entradas e Pesquisas permanecem na mesma rota por query string.
   - Parâmetros consulta o contrato público vigente da E18.4; Módulos e variantes reutiliza identidades, seleção, validação e resolução canônicas da E18.5.
-  - Entradas resolve o catálogo da E20.2 por versão, plano e taxon ativo; Pesquisas preserva a resolução independente de BB e EC da E10.8 e explicita estados próprio, herdado, ausente ou indisponível.
+  - Entradas resolve o catálogo da E20.2 por versão, plano e taxon ativo; Pesquisas preserva a resolução independente de BB e EC da E10.8 e explicita estados próprio, herdado, ausente, incompleto, revisão ou indisponível.
   - A leitura administrativa usa um único adapter novo e consultas server-side em lote, sem exportar registry ou schema privado, sem N+1 e sem regra de domínio em React.
   - `npm ci`, `npm run check`, `git diff --check` e os validadores canônicos da E18.4, E18.5, E20.2 e E10.8 foram aprovados; o QA autenticado aprovou as quatro visões em desktop e mobile, teclado, foco e console.
-  - O PR permanece draft e o merge continua exclusivamente humano.
 
 13. E13 — Partner Dashboard
 
@@ -2638,7 +2637,8 @@ v1.5.46 (07/05/2026) — E10.4: registra refinamento técnico do PR #226, movend
 
 v1.5.44 (27/04/2026) — Simplificada a seção 10.5.2 do roadmap, fundindo 10.5.2 e 10.5.2.1 no estado final único da base do BD do E10.5.
 
-v1.5.43 (26/04/2026) — 10.5.2.1: ajuste corretivo do Grupo C
+v1.5.43 (26/04/2026)
+• 10.5.2.1: ajuste corretivo do Grupo C
 • Registrado o estado final do ajuste de `audience_scope`: público da pesquisa no registro-pai, itens herdando público por `research_id`, unicidade por `taxon_id + research_block + audience_scope + version` e artefatos de migration/rollback.
 
 v1.5.42 (23/04/2026)
@@ -2714,8 +2714,9 @@ v1.5.15 (04/02/2026)
 v1.5.14 (03/02/2026)
 • Adicionado E9.8.5 para decidir a persistência do sinal comercial (commercial.expires_at) e o destino de accounts.trial_ends_at (manter como legado até decisão).
 v1.5.13 (02/02/2026)
-• E9.8.2 concluído (definição): commercial.inactive_reason com trial_expired e churn (opcional payment_failed), sem alterar accounts.status.
-• Criado E9.8.4 (pendente): decisão sobre persistência/consulta do motivo para CRM/relatórios
+• Adicionado 9.3.1 com definição do trial como entitlement (início pós-setup; expiração `active → inactive`) e contrato mínimo do sinal comercial consumido por SSR/gate/UX.
+• Adicionado 9.8.2 (Briefing) para motivos de `inactive` (trial_expired vs churn) para segmentação de marketing.
+• Adicionado 9.8.3 (Briefing) para execução: remoção do drift `trial` no runtime + alinhamento de docs ao estado final.
 v1.5.12 (01/02/2026)
 • Reestruturado o fluxo pending_setup por subestado via account_setup_completed_at, separando 10.4 (setup incompleto: IS NULL) e 10.5 (pós-setup sem plano/trial: IS NOT NULL).
 • Atualizado 10.4 para focar em UX/CTAs do subestado “setup incompleto” e registrar a transição para 10.5 ao setar setup_completed_at (sem mudar accounts.status).
@@ -2735,12 +2736,7 @@ v1.5.9 (30/01/2026)
 • Adicionado E10.4.1 (infra do marcador setup_completed_at) como pré-requisito para diferenciar subestados de pending_setup.
 • Ajustado 9.3.1 para manter foco em entitlements; remoção do hardcode/allowlist de trial no Access Context foi concluída em E10.4.1.
 • Adicionado placeholder do E10.4 (Briefing) com dependências (E10.4.1, E9.3.1).
-v1.5.8 (27/01/2026)
-• Adicionado E16 (Accounts) para consolidar lifecycle de accounts.status (definições, transições e UX/CTAs), com referências para docs/base-tecnica.md e docs/schema.md (anti-drift).
-• Ajustado E4.2 para remover redundâncias e focar no fluxo/UX do gateway e roteamentos, adicionando subitem de referências numerado.
-• Ajustado E8 para focar em Access Context como decisão única e remover sobreposição com E4/E15/E16, com referências numeradas.
-• Ajustado E15 (15.2–15.4) para reduzir redundâncias, apontar dependências para E16 e reforçar referências para docs/base-tecnica.md e docs/schema.md (anti-drift).
-v1.5.7 (27/01/2026) — F1.1: CTA Criar conta no /a/home direciona para signup
+v1.5.8 (27/01/2026) — F1.1: CTA Criar conta no /a/home direciona para signup
 • E4: registrado que o CTA Criar conta no /a/home (sem sessão) navega para /auth/sign-up (remoção de placeholder/modal).
 v1.5.6 (27/01/2026) — F2: Auto 1ª conta (pending_setup) e atualização do fluxo pós-confirmação
 • E4/E5: usuário autenticado sem membership passa a auto-criar 1ª conta pending_setup e cair em /a/[account] (modo vitrine).
