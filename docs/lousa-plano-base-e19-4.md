@@ -9,7 +9,8 @@
 - Plano conceitual: `docs/lp-planejamento.md`.
 - Predecessor material: E19.3 concluída e integrada à `main`; sua API pública v1 é a entrada canônica para este debate.
 - O roadmap define a E19.4 como o recorte sucessor responsável por geração por IA, validação pós-IA, materialização e visualização mínimas necessárias à primeira LP real em `draft`.
-- Este rascunho registra somente base confirmada e questões abertas; hipóteses discutidas não são decisões fixas até aprovação humana explícita.
+- Gate A fechado conceitualmente no nível da futura v1; Gates B, C, D e E permanecem abertos.
+- Este rascunho registra somente decisões aceitas e questões ainda abertas; hipóteses discutidas não se tornam decisões fixas sem aprovação humana explícita.
 
 ### 1.2. Objetivo já confirmado
 
@@ -28,6 +29,8 @@
 - `docs/base-tecnica.md`.
 - `docs/schema.md`.
 - `docs/prompt-estrategista.md`.
+- `docs/gestor-automations.md`.
+- `docs/automations.md`.
 - `docs/lousa-plano-base-e19-3.md`.
 - Contrato público vigente de `lib/lp-builder/`, especialmente `generationContextContracts.ts` e a API E19.3 integrada à `main`.
 - Repositório `AlcinoAfonso/LP-Factory-10`.
@@ -40,7 +43,7 @@
 - A entrada funcional deve partir do sucesso completo da E19.3: Parte A determinística + Parte B de matéria-prima autorizada.
 - Parte A já contém identidade da LP, plano, taxon, proveniência do perfil, versões, root, seleção estrutural e módulos efetivos.
 - Parte B já contém pesquisa autorizada, fatos autorizados, suporte de capabilities, `generationGuidance` quando presente e contexto por módulo.
-- Falha da E19.3 não autoriza chamada à IA nem materialização parcial.
+- Falha da E19.3 não autoriza iniciar a operação geracional nem materialização parcial.
 
 ### 2.2. Independência da LP após materialização
 
@@ -58,11 +61,22 @@
 - Não antecipar editor visual completo, regeneração ampla, edição assistida por IA, agente, memória, job, fila ou automação recorrente.
 - Não criar abstração geral de geração multicanal; o consumidor atual é `landing_page`.
 
+### 2.4. Automação aprovada para a futura v1
+
+- Automação: sim.
+- Categoria: Automação com IA em fluxo controlado.
+- Participação humana: uma ação humana explícita inicia cada operação geracional da LP completa.
+- Função da IA: produzir conteúdo somente para os fields já autorizados pelo pacote da E19.3.
+- Função determinística: estrutura, módulos, variantes, ordem, autorização de fontes/fatos, validação pós-IA, decisão de materialização e persistência permanecem sob contratos do LP Factory.
+- Não adotar comportamento agentic, decisão estrutural pela IA, geração funcional por módulo, conversa persistente ou materialização parcial nesta primeira versão.
+- O mecanismo técnico concreto de OpenAI e seus parâmetros ficam para a v2 e para a avaliação formal do Gestor de Automação, sem reabrir a categoria aprovada salvo necessidade comprovada.
+
 ## 3. Fluxo lógico em construção
 
 ### 3.1. Gatilho
 
-- Questão aberta: definir a ação humana explícita que inicia a geração no espaço operacional da LP `draft`, sem inventar rota ou superfície antes de confirmar o desenho mínimo do recorte.
+- Decisão fixa: uma ação humana explícita inicia uma operação geracional para a LP completa.
+- Questão aberta: definir a superfície mínima dessa ação no espaço operacional da LP `draft`, sem inventar rota ou UI antes do Gate D.
 
 ### 3.2. Entrada
 
@@ -72,14 +86,17 @@
 
 ### 3.3. Processamento
 
-- Questão aberta: definir a unidade de geração e o contrato de resposta da IA.
-- A IA deve produzir somente conteúdo permitido pelo contrato da E19.3 e pelos fields efetivos de cada módulo.
+- A unidade funcional de geração é a LP completa.
+- A IA produz conteúdo somente para os fields autorizados dos módulos já selecionados pela E19.3.
 - A IA não escolhe novos módulos, variantes, ordem, capabilities, fontes ou fatos fora do pacote autorizado.
+- Não existe geração funcional independente por módulo nesta primeira versão.
+- Uma operação geracional da LP completa não obriga, na v1, uma topologia técnica específica de chamadas ao provider.
+- Responses API, Structured Outputs, schema exato, modelo, `reasoning.effort`, retry e tratamento específico de estados do provider permanecem detalhamento da v2.
 
 ### 3.4. Validação
 
-- A resposta da IA deve ser validada server-side antes da materialização.
-- Questão aberta: fechar o conjunto mínimo de validações pós-IA e separar falha total, correção determinística possível e conteúdo que deve ser rejeitado.
+- A candidata integral deve ser validada server-side antes de qualquer materialização.
+- Questão aberta: fechar o conjunto mínimo de validações pós-IA e separar falha total, eventual correção determinística segura e conteúdo que deve ser rejeitado.
 
 ### 3.5. Persistência
 
@@ -94,25 +111,34 @@
 
 ### 3.7. Fallback
 
-- Falha da compilação E19.3 bloqueia a geração.
-- Questão aberta: definir atomicidade da geração/materialização e comportamento diante de falha da OpenAI ou resposta inválida, preservando o `draft` anterior sem aparentar conclusão parcial.
+- Falha da compilação E19.3 bloqueia a operação geracional.
+- Candidata integral válida pode seguir para materialização; falha ou invalidez não materializa conteúdo parcialmente.
+- A regra anterior é funcional e não presume atomicidade física de banco ou uma única chamada ao provider.
+- Questão aberta: fechar no Gate B o tratamento de resposta inválida e no Gate C a garantia física de preservação do `draft` anterior.
 
-## 4. Gates do debate ainda abertos
+## 4. Gates do debate
 
 ### 4.1. Gate A — unidade de geração e contrato da IA
 
-- Decidir se a primeira geração ocorre em uma resposta estruturada para a LP completa ou em múltiplas gerações coordenadas por módulo.
-- Definir o menor contrato estruturado que represente somente os fields já determinados pela E19.3.
-- Definir limites de retry/correção sem introduzir agente, conversa persistente ou orquestração desnecessária.
+- Status: conceitualmente fechado no nível da futura v1.
+- Categoria aprovada: Automação com IA em fluxo controlado.
+- Unidade funcional: LP completa.
+- Gatilho: uma ação humana explícita inicia uma única operação geracional.
+- A IA produz somente conteúdo para os fields já autorizados pela E19.3.
+- Sem geração funcional por módulo, comportamento agentic, decisão estrutural pela IA ou materialização parcial.
+- Recursos avançados como PTC, multi-agent, persisted reasoning, Agents SDK e prompt caching não são requisitos deste recorte e só podem ser reavaliados diante de necessidade material demonstrada.
+- Fica para a v2: mecanismo OpenAI concreto, quantidade/topologia de chamadas, Structured Outputs e schema exato, modelo e effort, retry, tratamento de refusal/incomplete/error, validação técnica do provider, observabilidade e custo específicos.
 
 ### 4.2. Gate B — validação pós-IA
 
+- Status: aberto.
 - Definir quais regras são puramente estruturais e determinísticas.
 - Definir como validar cardinalidade, fields obrigatórios, tipos, claims factuais, suporte/evidência, tratamentos proibidos e destinos operacionais.
-- Definir se qualquer invalidez rejeita a geração inteira ou se existe correção/omissão segura contratualmente autorizada.
+- Definir se qualquer invalidez rejeita a candidata integral ou se existe correção/omissão segura contratualmente autorizada antes da materialização.
 
 ### 4.3. Gate C — materialização e snapshot
 
+- Status: aberto.
 - Definir o estado materializado mínimo da LP.
 - Separar conteúdo atual da LP do snapshot das fontes/contratos usados na geração.
 - Definir proveniência e versionamento suficientes para futuras edição, regeneração e adoção explícita de novas fontes, sem antecipar esses fluxos.
@@ -120,17 +146,19 @@
 
 ### 4.4. Gate D — visualização mínima da primeira LP
 
+- Status: aberto.
 - Definir o menor renderer/preview necessário para avaliação humana da LP materializada.
 - Preservar responsividade, acessibilidade e guardrails visuais vigentes sem transformar a E19.4 em editor visual ou publicação pública.
 - Definir evidências esperadas para desktop, mobile e teclado quando houver frontend.
 
 ### 4.5. Gate E — fronteira da primeira entrega
 
+- Status: aberto.
 - Confirmar se a E19.4 termina em `gerar → validar → materializar → visualizar` ou se algum passo adicional é indispensável para considerar a primeira LP real avaliável.
 - Revisão editorial, correção manual, regeneração, edição assistida e publicação permanecem fora até demonstração de necessidade indispensável neste debate.
 
 ## 5. Próxima decisão do debate
 
-- Iniciar pelo Gate A, porque a unidade de geração define o contrato de resposta, a validação pós-IA e o tamanho mínimo da materialização.
-- Após fechar o Gate A, atualizar este mesmo rascunho vivo e seguir aos Gates B, C, D e E.
+- Seguir para o Gate B — validação pós-IA.
+- O Gate B deve fechar o que torna uma candidata integral materializável, sem antecipar ainda a residência física do Gate C.
 - Não consolidar plano-base v1 enquanto permanecer questão indispensável aberta para executar a E19.4 com segurança e sem inventar contrato.
