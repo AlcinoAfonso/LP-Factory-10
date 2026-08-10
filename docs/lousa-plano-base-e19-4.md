@@ -22,6 +22,8 @@
 ### 1.3. Usuários e autorização
 
 - A geração parte do estado operacional vigente de `/a/[account]`, atualmente restrito a `owner` ou `admin` ativo da conta elegível; a E19.4 não cria papel ou autorização paralelos.
+- Antes de iniciar a operação geracional, a E19.4 deve revalidar server-side conta ativa, membership ativo com papel autorizado e entitlement comercial vigente, reutilizando as autoridades já existentes de E9/E19 em vez de presumir autorização por ter chegado à superfície operacional.
+- A E19.4 não inventa capacidade comercial de geração. Quando a E9.7 possuir uma capability de geração de LP formalmente admitida e associada ao plano, a E19.4, como domínio consumidor, deverá aplicá-la no mesmo ponto da ação; enquanto essa capability não existir no catálogo canônico, sua ausência não pode ser suprida por hardcode ou inferência local.
 - A visualização privada reutiliza o controle de acesso tenant-aware já vigente da conta/LP e não cria ACL própria.
 - Conta piloto e cliente usam o mesmo fluxo oficial; não existe LP teste, geração administrativa paralela ou autorização especial por conta.
 
@@ -85,6 +87,7 @@
 
 - Gatilho:
   - `owner` ou `admin` no estado operacional da conta aciona explicitamente a geração da LP completa;
+  - o servidor revalida conta, membership e entitlement no ponto da ação; capability E9.7 de geração passa a integrar esse mesmo gate somente quando estiver formalmente admitida no catálogo canônico;
   - enquanto não houver materialização válida, tentativa falha ou inválida não impede nova tentativa humana.
 - Entrada:
   - LP legítima em `draft`, vinculada à configuração concluída;
@@ -173,6 +176,8 @@
   - mecanismo OpenAI concreto e parâmetros ficam para a v2.
 - Critérios de aceite:
   - ação humana autorizada inicia a operação;
+  - o gate server-side revalida conta ativa, membership autorizado e entitlement comercial antes de qualquer chamada ao provider;
+  - capability E9.7 de geração, quando formalmente admitida, é aplicada pelo consumidor neste mesmo ponto sem hardcode local;
   - falha da E19.3 impede provider;
   - candidata válida preserva exatamente a composição autorizada;
   - violações objetivamente detectáveis rejeitam a candidata integral;
