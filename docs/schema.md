@@ -1,8 +1,8 @@
 0. Introdução
 
 0.1 Cabeçalho
-• Data da última atualização: 08/08/2026
-• Documento: LP Factory 10 — Schema (DB Contract) v1.0.38
+• Data da última atualização: 09/08/2026
+• Documento: LP Factory 10 — Schema (DB Contract) v1.0.39
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -758,7 +758,7 @@
 • owner_taxon_id uuid not null
 • version integer not null
 • status text not null
-• generation_guidance text not null
+• generation_guidance text null
 • created_at timestamptz not null default now()
 • updated_at timestamptz not null default now()
 
@@ -766,7 +766,7 @@
 • `landing_page_generation_profiles_owner_taxon_id_fkey`: owner_taxon_id → business_taxons(id) ON UPDATE CASCADE ON DELETE RESTRICT.
 • `landing_page_generation_profiles_version_chk`: version > 0.
 • `landing_page_generation_profiles_status_chk`: status IN (`draft`, `active`, `archived`).
-• `landing_page_generation_profiles_guidance_chk`: orientação não vazia após trim.
+• `landing_page_generation_profiles_guidance_chk`: orientação nula ou não vazia após trim quando presente.
 • `landing_page_generation_profiles_owner_version_uidx`: UNIQUE (owner_taxon_id, version).
 • `landing_page_generation_profiles_one_active_owner_idx`: UNIQUE parcial em owner_taxon_id para status `active`.
 

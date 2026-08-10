@@ -41,6 +41,11 @@ const v2Input: ResolveLandingPageInputCatalogInput = {
   version: 2,
 };
 
+const v3Input: ResolveLandingPageInputCatalogInput = {
+  ...baseInput,
+  version: 3,
+};
+
 const starterV2FieldKeys = [
   "primary_service_or_offer",
   "primary_service_or_offer_description",
@@ -110,6 +115,53 @@ const cases: Case[] = [
         assert.equal(field.snapshotPolicy, "include_if_used");
         assert.equal(field.landingPageSubstitutionPolicy, substitutionPolicy);
       }
+    },
+  },
+  {
+    name: "v3 preserves v2 structure and adds only the two approved capability bindings",
+    run: () => {
+      const v2 = resolveRequired(v2Input);
+      const v3 = resolveRequired(v3Input);
+      assert.equal(v3.version, 3);
+      assert.equal(v3.fields.length, 23);
+      assert.deepEqual(
+        v3.fields.map(withoutCapabilityBindings),
+        v2.fields.map(withoutCapabilityBindings),
+      );
+      assert.equal(
+        v2.fields.some((field) => field.capabilityBindings !== undefined),
+        false,
+      );
+      const boundFields = v3.fields.filter(
+        (field) => field.capabilityBindings !== undefined,
+      );
+      assert.deepEqual(
+        boundFields.map((field) => field.fieldKey),
+        ["financing_support_available", "document_support_available"],
+      );
+      for (const field of boundFields) {
+        assert.deepEqual(field.capabilityBindings, [
+          { slotKey: "applicable_capabilities", supportedWhenValue: true },
+        ]);
+      }
+      assert.equal(
+        landingPageInputFieldDefinitionSchema.safeParse({
+          ...fixtureField("non_boolean_binding"),
+          capabilityBindings: [
+            { slotKey: "applicable_capabilities", supportedWhenValue: true },
+          ],
+        }).success,
+        false,
+      );
+      assert.equal(
+        landingPageInputFieldDefinitionSchema.safeParse({
+          ...boundFields[0],
+          capabilityBindings: [
+            { slotKey: "applicable_capabilities", supportedWhenValue: false },
+          ],
+        }).success,
+        false,
+      );
     },
   },
   {
@@ -593,6 +645,7 @@ const cases: Case[] = [
       assert.equal(Object.isFrozen(landingPageInputCatalogRegistry), true);
       assert.equal(Object.isFrozen(landingPageInputCatalogRegistry[1].universal.entries), true);
       assert.equal(Object.isFrozen(landingPageInputCatalogRegistry[2].universal.entries), true);
+      assert.equal(Object.isFrozen(landingPageInputCatalogRegistry[3].taxonLayers), true);
       assert.throws(() => {
         (landingPageInputCatalogRegistry[1].universal.entries as LandingPageInputCatalogLayerEntry[]).push(fixtureField("forbidden"));
       }, TypeError);
@@ -625,6 +678,11 @@ const cases: Case[] = [
 for (const validationCase of cases) {
   validationCase.run();
   console.log(`ok - ${validationCase.name}`);
+}
+
+function withoutCapabilityBindings(field: ResolvedLandingPageInputField) {
+  const { capabilityBindings: _capabilityBindings, ...rest } = field;
+  return rest;
 }
 
 function assertError(input: ResolveLandingPageInputCatalogInput, code: string) {
