@@ -171,10 +171,9 @@
 • Nomes: `OPENAI_NICHE_RESOLVER_MODEL`, `OPENAI_LANDING_PAGE_GENERATION_PROFILE_MODEL` e `OPENAI_COMMERCIAL_ACTIVATION_MODEL`.
 • Escopo: Production e Preview.
 • Uso runtime atual: nenhum nos três consumidores de produto; a configuração efetiva vem do catálogo versionado no repositório.
-• Estado operacional: retirada preparada e ainda não executada.
-• Procedimento preparado para futura retirada: remover somente essas três variáveis de Production e Preview, preservar `OPENAI_API_KEY`, executar os redeploys necessários e confirmar que a configuração efetiva continua vindo do catálogo.
-• Gate: não executar a retirada sem autorização humana específica para a mudança na Vercel.
-• Regra: qualquer divergência de nome, escopo ou consumidor interrompe a retirada no ambiente afetado; não recriar as variáveis sem necessidade futura aprovada.
+• Estado operacional: ausentes da configuração vigente de Production e Preview, sem branch override, após retirada controlada em 10/08/2026.
+• Validação pós-retirada: `OPENAI_API_KEY` permaneceu configurada nos dois ambientes; os redeploys de Production e Preview ficaram verdes; `/admin/workloads-openai` confirmou nos dois ambientes `repo_catalog`, revisão `v1`, modelo `gpt-5.4-mini` e esforço `none` para os três workloads de produto.
+• Regra: não recriar as variáveis sem necessidade futura aprovada.
 
 • `LPF_MCP_SECRET`
 • Finalidade: secret Bearer usado para autenticar chamadas ao MCP Supabase Inspect.
@@ -286,7 +285,7 @@
 • Valor real: não versionar.
 
 • A seleção de modelo e esforço dos três workloads OpenAI de produto não usa variáveis Vercel no runtime atual; o contrato efetivo está no catálogo versionado do repositório.
-• As três variáveis legadas de modelo permanecem pendentes de retirada controlada da Vercel conforme 3.5.
+• As três variáveis legadas de modelo estão ausentes da configuração vigente da Vercel conforme 3.5.
 
 6.3.1 Endpoint externo atual
 • Endpoint OpenAI Responses API: `https://api.openai.com/v1/responses`
