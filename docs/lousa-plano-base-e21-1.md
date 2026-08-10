@@ -1,15 +1,15 @@
-09/08/2026 — Plano-base v2 — E21.1 — Fundação, normalização e leitura dos workloads OpenAI
+10/08/2026 — Plano-base v2 — E21.1 — Fundação, normalização e leitura dos workloads OpenAI
 
 ## 1. Estado e decisões fixas
 
 ### 1.1. Estado
 
-- Status: plano-base v2 consolidado pela orquestração em 09/08/2026 e submetido ao gate do Analista antes da implementação.
+- Status: plano-base v2 aprovado e executado; implementação candidata da E21.1 concluída e validada no PR draft #710, ainda sujeita à inspeção final e ao merge humano.
 - Caso macro: `E21 — Gestão e governança dos workloads OpenAI`.
 - Recorte: `E21.1 — Fundação, normalização e leitura dos workloads OpenAI`.
 - Plano conceitual: N/A.
-- Este documento é o contrato executável do recorte aprovado e não possui questão indispensável aberta para a E21.1.
-- A escolha humana pelo processo automatizado foi registrada pela instrução `Use $lp-factory-orquestrar-plano no PR #708`; a implementação permanece condicionada à aprovação da v2, à reconciliação mínima do roadmap e ao checkpoint `LP-Factory-Stage: plan-v2-approved`.
+- Este documento permanece como contrato executável do recorte aprovado e não possui questão indispensável aberta para a E21.1.
+- O gate da v2 e o checkpoint `LP-Factory-Stage: plan-v2-approved` foram concluídos antes da implementação; o fechamento foi reconciliado com a `main` preservando E12.6 e E21.1.
 - A E21.1 não escolhe a fonte operacional dinâmica definitiva e não implementa alteração de configuração sem redeploy.
 
 ### 1.2. Objetivo
@@ -355,7 +355,7 @@
 
 ### 3.1. E21.1.3 — Catálogo estrutural e resolução explícita
 
-- Status: planejada na v2; primeira fase executável, ainda não iniciada.
+- Status: implementada e validada.
 - Automação: não.
 - Objetivo:
   - criar identificadores canônicos, catálogo inicial tipado, projeção administrativa segura e interface única de resolução.
@@ -379,7 +379,7 @@
 
 ### 3.2. E21.1.4 — Integração dos consumers e observabilidade comum
 
-- Status: planejada na v2; depende da E21.1.3 e ainda não foi iniciada.
+- Status: implementada e validada técnica e funcionalmente, incluindo smoke hospedado dos três consumidores de produto.
 - Automação: não.
 - Objetivo:
   - integrar os três consumers de produto ao resolver, corrigir as regressões e uniformizar os eventos operacionais seguros.
@@ -403,7 +403,7 @@
 
 ### 3.3. E21.1.5 — Inventário read-only no Admin Dashboard
 
-- Status: planejada na v2; depende da E21.1.3 e do contrato efetivo validado na E21.1.4; ainda não foi iniciada.
+- Status: implementada e validada em Preview para desktop, mobile, navegação por TAB e acessos positivo e negativo.
 - Automação: não.
 - Objetivo:
   - expor no shell administrativo a configuração efetiva dos workloads de produto e o default/referência inventariado do Supabase Inspect.
@@ -427,10 +427,11 @@
 
 ### 3.4. Próxima ação
 
-- Executar as Passagens 1 e 2 do Analista sobre esta v2 e a matriz de consolidação, sem repetir especialistas.
-- Após aprovação da v2, aplicar `$lp-factory-abc` em modo planejamento para registrar E21/E21.1 e as três fases como planejadas no primeiro delta de `docs/roadmap.md` deste PR único, sem alegar artefatos implementados.
-- Criar o checkpoint `LP-Factory-Stage: plan-v2-approved` com plano, matriz e roadmap aprovados; somente então iniciar E21.1.3 no mesmo PR draft.
+- Manter o PR #710 draft até a inspeção final e preservar o merge como decisão humana no GitHub Web.
+- Preservar no PR somente evidência sanitizada dos testes hospedados, sem segredo em código, logs, artifacts, documentação ou commits.
+- Tratar em correção separada a remoção de senha de logs e artifacts da automação, a geração não previsível e o tratamento correto de colisões; não alterar essa automação no PR #710.
 - Após merge, deployment e smoke aprovado dos três consumers em Production, remover fisicamente as três variáveis e atualizar `docs/platform-config.md` em fechamento operacional posterior; nenhuma remoção pode anteceder essa evidência.
+- Não repetir chamadas OpenAI pagas sem mudança relevante que invalide a evidência hospedada já aprovada.
 - Não escolher Supabase ou Global Config, implementar configuração dinâmica ou criar PR por fase.
 
 ## 4. Escopo negativo e critérios de parada
@@ -469,26 +470,12 @@
   - a remoção das variáveis ou do custo hardcoded causar mudança funcional não prevista;
   - surgir mudança que contradiga ou reabra decisão fixa da seção 1.7.
 
-### 4.3. Validação deste trabalho documental
+### 4.3. Validação do fechamento
 
-- Confirmar:
-  - somente `docs/lousa-plano-base-e21-1.md` alterado na consolidação;
-  - documento marcado como plano-base v2;
-  - quatro seções preservadas;
-  - três fases executáveis, todas com `Automação: não`;
-  - E21.1 limitada a fundação, normalização, observabilidade comum e leitura administrativa;
-  - requisito dinâmico sem redeploy preservado explicitamente como parte fixa da E21;
-  - Supabase e Global Config mantidos em comparação;
-  - decisões da seção 1.7 fechadas;
-  - `cacheWriteTokens` opcional incluído sem autorizar prompt caching explícito;
-  - Supabase Inspect descrito como default/referência inventariado, sem afirmar configuração efetiva por execução;
-  - retirada física das variáveis condicionada ao smoke aprovado em Production;
-  - evidências visuais e de acesso esperadas explicitadas;
-  - somente o plano alterado nesta consolidação, sem implementação, roadmap, banco ou configuração de plataforma.
-- Executar validação de whitespace do conteúdo documental.
-- Registrar como não aplicável nesta etapa documental:
-  - `npm ci`;
-  - `npm run check`;
-  - validação material;
-  - teste humano;
-  - smoke visual.
+- A implementação candidata preservou as quatro seções do plano, as três fases com `Automação: não`, o escopo negativo e as decisões fixas da E21.1.
+- O comando agregado `npm run check` cobre `validate:openai-workloads`, `validate:landing-page-generation-profile` e `validate:commercial-activation`, além das demais verificações do repositório.
+- Os três consumidores de produto foram aprovados em smoke hospedado com a configuração comum; nenhuma chamada OpenAI paga precisa ser repetida sem mudança relevante nos respectivos caminhos de execução.
+- O inventário administrativo foi aprovado em desktop e mobile, sem overflow, com navegação por TAB e foco visível, acesso positivo de `platform_admin` e acesso negativo de identidade preexistente sem esse papel.
+- A página preserva os três workloads de produto e identifica o Supabase Inspect como referência operacional externa com a mensagem `Ambiente da execução: não verificado nesta página`.
+- A evidência hospedada preservada no PR é sanitizada; a contenção de segurança foi concluída sem incorporar a correção da automação ao PR #710.
+- O fechamento inclui a reconciliação com a `main`, `npm ci`, `npm run check`, `git diff --check` e Preview verde do novo HEAD; após esses gates, permanecem somente a inspeção humana e o merge.

@@ -1,8 +1,8 @@
 0. Introdução
 
 0.1 Cabeçalho
-• Data: 09/08/2026
-• Versão: v1.5.136
+• Data: 10/08/2026
+• Versão: v1.5.137
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -2506,13 +2506,13 @@ Repositório — Ajustados
 
 21. E21 — Gestão e governança dos workloads OpenAI
 - Objetivo: gerir e governar os workloads OpenAI por recortes aprovados, iniciando pela configuração explícita, observabilidade segura e leitura administrativa; a configuração dinâmica e o histórico permanecem para recortes posteriores, sem otimização automatizada.
-- Status: E21.1 em implementação; E21.1.3 implementada e validada; E21.1.4 implementada com validação técnica aprovada e smoke hospedado pendente; E21.1.5 implementada com validação técnica aprovada e evidências hospedadas de visual e acesso pendentes.
+- Status: E21.1 com implementação candidata concluída e validada no PR draft #710; inspeção final e merge humano pendentes.
 
 21.1 Fundação, normalização e leitura dos workloads OpenAI
 
 21.1.1 Objetivo e status
 - Objetivo: estabelecer catálogo tipado e resolução explícita dos workloads OpenAI, integrar os três consumidores de produto à configuração e à observabilidade comuns e expor inventário administrativo read-only.
-- Status: Em implementação; E21.1.3 concluída, E21.1.4 aguarda smoke hospedado e E21.1.5 aguarda evidências hospedadas de visual e acesso.
+- Status: Implementação candidata concluída e validada; fechamento documental reconciliado com a `main`, preservando E12.6 e E21.1; PR #710 permanece draft até a inspeção final.
 
 21.1.2 Registros do recorte
 - Repositório:
@@ -2555,22 +2555,23 @@ Repositório — Ajustados
   - Nenhum banco, integração remota, cliente universal, preço, prompt, schema funcional ou fallback silencioso foi criado.
 
 21.1.4 Integração dos consumidores e observabilidade comum
-- Status: Implementada, com validação técnica aprovada e smoke hospedado pendente.
+- Status: Implementada e validada técnica e funcionalmente, com smoke hospedado aprovado para os três consumidores de produto.
 - Conteúdo:
   - Os três consumidores resolvem a configuração pelo boundary comum e enviam modelo e reasoning effort explícitos à Responses API, preservando prompts, schemas, limites, persistência e fallbacks funcionais vigentes.
   - Eventos comuns registram por tentativa somente ambiente, configuração, response ID, resultado, categoria segura, latência e usage normalizado completo; métricas ausentes permanecem `null` e nenhum prompt, resposta integral, payload de negócio, PII ou secret é registrado.
   - As três leituras runtime de variáveis de modelo, o hardcode client do perfil e o cálculo monetário local foram removidos; as variáveis externas permanecem apenas como legado temporário de reversão conforme a configuração operacional canônica.
   - O transporte OpenAI comercial foi isolado no adapter previsto e novos drafts registram workload, origem, revisão, modelo e effort resolvidos na proveniência existente, sem migration, backfill ou persistência de usage.
   - Validators determinísticos exercitam os três requests reais, configuração inválida sem transporte, modelo e effort exatos, response ID, usage, `null` sem zero fabricado, evento discriminado e ausência de referências legadas.
-  - O smoke hospedado dos três fluxos de produto permanece pendente e bloqueia o fechamento da fase.
+  - O smoke hospedado aprovou os fluxos de resolução de nicho, proposta de perfil de geração e ativação comercial; nova chamada OpenAI paga somente é necessária se mudança relevante invalidar essa evidência.
+  - Permanece fora do PR #710 a correção separada da automação de smoke para remover senha de logs e artifacts, gerar credenciais não previsíveis e tratar colisões corretamente.
 
 21.1.5 Inventário read-only no Admin Dashboard
-- Status: Implementada, com validação técnica aprovada e evidências hospedadas de visual e acesso pendentes.
+- Status: Implementada e validada técnica e visualmente no Preview, incluindo acesso positivo e negativo.
 - Conteúdo:
   - A rota protegida `/admin/workloads-openai` integra o shell e a navegação administrativos vigentes e projeta diretamente da API pública do boundary os quatro workloads, sem adapter, API, componente client ou controle de mutação novos.
-  - Os três workloads de produto exibem ambiente observado, configuração efetiva, origem e revisão; o Supabase Inspect permanece diferenciado como referência operacional externa cuja configuração efetiva por execução não é verificada pela página.
+  - Os três workloads de produto exibem ambiente observado, configuração efetiva, origem e revisão; o Supabase Inspect permanece diferenciado como referência operacional externa e informa explicitamente `Ambiente da execução: não verificado nesta página`.
   - A superfície é responsiva, sem consulta runtime à OpenAI, GitHub ou Vercel e sem configuração remota, métricas históricas ou capacidades inexistentes.
-  - Permanecem pendentes as evidências hospedadas desktop, mobile, teclado e dos acessos positivo de platform admin e negativo de usuário sem esse papel.
+  - As evidências hospedadas aprovaram desktop, viewport mobile de 390 × 844 sem overflow, navegação lógica por TAB com foco visível, acesso positivo de `platform_admin` e bloqueio da identidade preexistente sem esse papel.
 
 99. Changelog
 v1.5.131 — 08/08/2026 — Fechada a E19.2 após o merge do PR #700: migration aplicada, verificador SQL read-only aprovado e validação funcional hospedada autenticada concluída; preservados os limites de não geração, não publicação, ausência de tracking/CRM/capability nova e ausência de infraestrutura de assets.
