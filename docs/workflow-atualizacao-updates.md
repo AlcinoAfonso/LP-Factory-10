@@ -84,7 +84,6 @@ Fontes secundárias podem apoiar, mas não substituir a fonte oficial.
    - confirmar documento, IDs, referências, resultado do diff e URL do PR ou justificativa antes de seguir.
 3. Seguir automaticamente ao próximo catálogo, sem aguardar aprovação ou merge.
 4. Ao final, conferir a sequência executada, a base comum, os arquivos alterados, a cobertura dos canais estratégicos, os IDs e o estado dos PRs. Se houver divergência, informá-la e não declarar execução integralmente aderente.
-5. Produzir o fechamento consolidado previsto no item 11 do relatório obrigatório, usando os catálogos resultantes da execução como fonte das pendências transversais ativas.
 
 ## 5. Relatório obrigatório
 
@@ -140,10 +139,8 @@ Os itens 1 a 10 compõem o relatório de cada catálogo. O item 11 é produzido 
 11. Fechamento consolidado da execução:
    - entregar um resumo curto do que foi feito, com catálogos analisados, alterações, draft PRs ou justificativas, bloqueios, lacunas e conclusão geral;
    - separar os updates novos ou materialmente ajustados entre dependentes de recorte e transversais ao projeto, indicando prioridade atual, relação com o caminho crítico, momento ou gatilho recomendado e fluxo competente para avaliação;
-   - reapresentar todos os recursos transversais ainda ativos nos catálogos resultantes, mesmo quando não forem novos nem tiverem mudado na rodada;
-   - informar, para cada pendência transversal, ID e título, estado atual, ação pendente, prioridade, motivo da permanência, momento ou gatilho recomendado, mudança desde a rodada anterior e critério de encerramento;
-   - quando nada tiver mudado, registrar: `permanece pendente, sem mudança de prioridade`;
-   - deixar de reapresentar o item somente depois que ele sair do catálogo ativo conforme a regra do item 4.2;
+   - reapresentar todos os recursos transversais ainda ativos nos catálogos resultantes, mesmo quando não forem novos nem tiverem mudado na rodada, deixando de reapresentá-los somente depois que saírem do catálogo ativo conforme a regra do item 4.2;
+   - informar, para cada pendência transversal, ID e título, estado atual, ação pendente, prioridade, motivo da permanência, momento ou gatilho recomendado, mudança desde a rodada anterior — registrando `permanece pendente, sem mudança de prioridade` quando nada tiver mudado — e critério de encerramento;
    - deixar explícito que a orientação de prioridade não autoriza implementação;
    - encerrar com até três melhorias observadas durante a própria execução e convidar o usuário a debatê-las, sem criar automaticamente documento, branch ou PR adicional.
 
@@ -152,7 +149,6 @@ Os itens 1 a 10 compõem o relatório de cada catálogo. O item 11 é produzido 
 - Não alterar código, roadmap, Base Técnica, schema, configuração ou outro catálogo.
 - Não transformar catalogação em implementação, mudança de stack, nova infraestrutura ou novo escopo do MVP.
 - Não decidir aplicação final em plano-base, fase ou recorte; o Gestor de Updates recomenda horizonte e o Estrategista consolida no fluxo competente.
-- O fechamento consolidado pode orientar prioridade e encaminhar avaliação transversal, mas não autoriza implementação.
 - Não criar documento, catálogo, seção permanente ou controle paralelo de pendências transversais; os catálogos são a fonte, e o relatório final apenas as reapresenta.
 - Não adicionar item sem fonte oficial, valor concreto e compatibilidade com o `README.md`.
 - Não realizar merge dos PRs.
