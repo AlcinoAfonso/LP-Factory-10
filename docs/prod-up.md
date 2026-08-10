@@ -234,12 +234,20 @@ Value Rules permitem informar ao sistema de anúncios diferenças de valor por c
 
 ---
 
-## 9 — Google Ads Text Guidelines *(🧪 Beta)*
+## 9 — Google Ads Text Guidelines *(🧪 Beta; migração para AI Max anunciada)*
 2025-10-14  
-Atualizado em 2026-07-20
+Atualizado em 2026-08-10
+
+### Status no Projeto
+
+- Status: não implementado; o repositório não contém integração, configuração ou campanha Google Ads executável.
+- Evidência: `prod#9` aparece somente neste catálogo; as referências a Google Ads no planejamento e nos blueprints são orientações e fronteiras futuras, não uma conta ou campanha conectada.
+- Mudança externa: a partir de setembro de 2026, o Google informa que campanhas Search que já usam Text Customization serão migradas automaticamente para AI Max.
 
 ### Descrição  
 Recurso em beta no nível da campanha para orientar assets criados exclusivamente por Text Customization em campanhas Performance Max e Search, incluindo restrições de termos, mensagens e tom. Text Customization precisa estar habilitado para que as diretrizes tenham efeito.
+
+Em Search, Text Customization passa a operar dentro de AI Max. A migração anunciada exige revisar a configuração completa da campanha: desabilitar Text Customization interrompe os assets gerados e também desabilita Final URL Expansion quando esta estiver ativa.
 
 ### Valor para o Projeto  
 - Pode preservar restrições de marca em campanhas que usem geração automática de texto.
@@ -251,12 +259,16 @@ Recurso em beta no nível da campanha para orientar assets criados exclusivament
 ### Ações Recomendadas
 
 1. Usar somente em campanha real com Text Customization habilitado.
-2. Não tratar o beta como contrato garantido nem como recurso da landing page.
-3. Validar termos, tom e resultados gerados antes de ampliar uso.
+2. Antes de setembro de 2026, auditar campanhas Search existentes que usem a capacidade e revisar explicitamente o upgrade para AI Max, incluindo Final URL Expansion.
+3. Validar no relatório de assets o texto efetivamente veiculado e remover variações inadequadas; não tratar automação, guidelines ou avaliação de força do anúncio como substitutos de revisão humana.
+4. Não tratar o beta como contrato garantido nem como recurso da landing page.
+5. Não habilitar AI Max, alterar campanha ou ampliar escopo por causa deste registro.
 
 ### Fonte Oficial
 
 - [Google Ads — Use text guidelines with Performance Max and Search campaigns](https://support.google.com/google-ads/answer/16489313)
+- [Google Ads — About text customization in Search campaigns](https://support.google.com/google-ads/answer/11259373)
+- [Google Ads — Turn text customization on or off in Search campaigns](https://support.google.com/google-ads/answer/16738708)
 
 ---
 
@@ -701,3 +713,34 @@ Avaliar somente quando houver:
 
 ---
 
+## Registro da rodada de 2026-08-10
+
+### Veredito
+
+- Ajustado `prod#9` para registrar a migração anunciada de Text Customization para AI Max em campanhas Search a partir de setembro de 2026, sem autorizar conexão ou alteração de campanha.
+- Mantidos os demais IDs e estados; nenhum item foi arquivado, absorvido, superado ou adicionado nesta rodada.
+
+### Cobertura estratégica e fontes oficiais
+
+- IA, automações e agentes: changelog e documentação da OpenAI; as novidades da Responses API não criaram caso de uso superior ao recorte já governado, e a desativação da Assistants API não afeta o projeto, que usa Responses API.
+- Landing pages, SEO, performance e aquisição: Google Search Central, web.dev e Google Ads; não houve novidade relevante de Search Central ou web.dev, e a mudança de AI Max foi absorvida em `prod#9`.
+- Instagram e mídia Meta: Meta for Developers e Meta Newsroom; o Meta AI Developer Assistant melhora suporte ao desenvolvedor, mas não acrescenta capacidade de produto ao catálogo.
+- WhatsApp: WhatsApp Business Platform, Meta Business Messaging e fontes oficiais de negócio da WhatsApp; a publicação sobre orquestração de atendimento reforça `prod#23`, sem alterar disponibilidade, integração ou decisão do projeto.
+- E-mail: changelog oficial da Resend; folders de templates não se aplicam ao uso atual por SMTP do Supabase Auth, e o Remote MCP sobrepõe o radar geral de `prod#18` sem caso de uso aprovado.
+- Monetização: changelog e documentação da Stripe; nenhuma mudança validada exigiu ajustar o benchmark e a trava de autoridade interna de `prod#19`.
+- Acessibilidade: W3C/WAI e WCAG 2.2; nenhuma mudança validada substituiu ou alterou o baseline de `prod#17`.
+- Updates técnicos com impacto potencial em produto: os diffs desta execução em Supabase, Vercel e GitHub foram revisados; não houve efeito direto que justificasse duplicação neste catálogo.
+
+### Itens mantidos e avaliados sem adição
+
+- Mantidos `prod#1`, `prod#3`, `prod#4`, `prod#6`, `prod#7`, `prod#8`, `prod#12`, `prod#14`, `prod#15`, `prod#16`, `prod#17`, `prod#18`, `prod#19`, `prod#20`, `prod#21`, `prod#22` e `prod#23` nos estados e horizontes já registrados.
+- Não adicionados: Fast mode e long context da OpenAI, desativação da Assistants API, Meta AI Developer Assistant, mudança de lances do Google Ads para campanhas limitadas por orçamento, Resend Template Folders e Remote MCP, e Web Sustainability Guidelines. Faltou caso de uso atual, superioridade sobre item existente ou maturidade normativa aplicável; nenhum foi descartado apenas por estar fora do Starter ou do MVP.
+- Não validados: estado de contas, campanhas, elegibilidade, planos e custos externos, pois o repositório não contém credenciais nem acesso operacional e a rodada não realizou smoke autenticado.
+
+### Validação e rastreabilidade
+
+- O maior ID histórico permanece `prod#23`; nenhum ID desapareceu, foi renumerado ou reutilizado.
+- Antes do ajuste, foram buscados `prod#9`, título, Text Guidelines, Text Customization, AI Max, Google Ads e artefatos de campanha em documentos e código; não foi encontrada implementação executável.
+- O ajuste segue o `README.md`, preserva revisão humana e não autoriza código, configuração, integração, campanha, nova infraestrutura ou decisão final de plano.
+
+---
