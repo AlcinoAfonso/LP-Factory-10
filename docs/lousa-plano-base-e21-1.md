@@ -235,7 +235,10 @@
 - Normalizar `cacheWriteTokens` a partir de `usage.input_tokens_details.cache_write_tokens`, quando o campo for retornado pelo provedor.
 - Normalizar `reasoning tokens` a partir de `usage.output_tokens_details.reasoning_tokens`.
 - A captura de `cacheWriteTokens` não habilita nem autoriza `prompt_cache_options`, `prompt_cache_breakpoint` ou outra configuração de prompt caching explícito na E21.1.
-- O evento comum usa os campos `workload`, `environment`, `configurationSource`, `configurationRevision`, `model`, `reasoningEffort`, `responseId`, resultado ou categoria segura de falha, `latencyMs`, `inputTokens`, `cachedInputTokens`, `cacheWriteTokens`, `outputTokens`, `reasoningTokens` e `totalTokens`.
+- O evento comum usa os campos `workload`, `environment`, `configurationSource`, `configurationRevision`, `model`, `reasoningEffort`, `responseId`, `result`, `failureCategory`, `latencyMs`, `inputTokens`, `cachedInputTokens`, `cacheWriteTokens`, `outputTokens`, `reasoningTokens` e `totalTokens`.
+- `environment` é a união fechada `"production" | "preview" | "development" | "unknown"`, resolvida somente no servidor por um único helper compartilhado pelos logs e pela projeção administrativa: aceitar `process.env.VERCEL_ENV` apenas quando seu valor for `production`, `preview` ou `development`; se estiver ausente ou fora desse conjunto, usar `development` somente quando `process.env.NODE_ENV === "development"` e `unknown` nos demais casos. Não expor o valor bruto nem inferir Production apenas de `NODE_ENV`.
+- O resultado do evento é uma união discriminada: sucesso exige `result = "success"` e `failureCategory = null`; falha exige `result = "failure"` e uma categoria do conjunto fechado `"configuration_invalid" | "transport_error" | "http_error" | "provider_error" | "timeout" | "invalid_response" | "refusal" | "unknown_error"`.
+- Configuração inválida bloqueia a chamada antes do transporte e registra `configuration_invalid` com `latencyMs = null`; nas demais falhas, a categoria descreve somente a fronteira segura conhecida, sem incluir mensagem, payload ou dado sensível do provedor.
 - Campo ausente ou inválido permanece `null`; nunca fabricar zero. A latência cobre somente a tentativa do provider, e logs funcionais preexistentes dos domínios permanecem separados.
 - Não registrar prompt integral, pesquisa bruta, resposta completa, dados pessoais, secrets ou payloads de negócio.
 - Não calcular custo monetário no runtime da E21.1.
@@ -310,6 +313,9 @@
   - modelo e effort resolvidos chegam exatamente ao body da Responses API;
   - proposta de perfil não usa modelo hardcoded;
   - nenhum consumer depende do default de effort do provedor;
+  - requisições reais dos três consumers são exercitadas por transporte injetado e determinístico: o caso do resolver de nicho em `validate:openai-workloads`, o perfil em `validate:landing-page-generation-profile` e a ativação comercial em `validate:commercial-activation`;
+  - cada caso focal comprova `model` e `reasoning.effort` exatos no body, bloqueio do transporte quando a configuração é inválida, captura de response ID e usage normalizado, preservação de `null` quando uma métrica não existe e emissão da união discriminada de resultado;
+  - `validate:openai-workloads` inclui asserção estática de zero referência runtime às três variáveis de modelo legadas e ao hardcode client de `gpt-5.4-mini`, permitindo o literal do modelo apenas no registry e nos casos de validação que o verificam;
   - fallback funcional vigente preservado.
 - Usage:
   - input, cached input, cache write quando retornado, output, reasoning e total normalizados;
@@ -335,7 +341,8 @@
   - registro da navegação por TAB;
   - resultado positivo com `platform_admin` e negativo com usuário sem autorização de plataforma.
 - Validações técnicas previstas:
-  - `lib/openai-workloads/validation-cases.ts` pelo script `validate:openai-workloads` em `package.json`, cobrindo registry, resolução fail-closed, revisão, projeção segura, distinção effective/reference, normalização de usage e ausência de secrets;
+  - `lib/openai-workloads/validation-cases.ts` pelo script `validate:openai-workloads` em `package.json`, cobrindo registry, resolução fail-closed, revisão, projeção segura, distinção effective/reference, ambiente fechado e compartilhado, união discriminada do evento, normalização de usage, ausência de secrets, requisição focal de nicho e asserções estáticas de zero referência legada;
+  - `validate:landing-page-generation-profile` e `validate:commercial-activation` ampliados para cobrir as requisições reais focalizadas, configuração inválida sem chamada, response ID, usage e `null` sem fabricação de zero;
   - `npm ci`;
   - `npm run validate:openai-workloads`;
   - `npm run validate:landing-page-generation-profile`;
