@@ -65,6 +65,17 @@ export const adminAreas: AdminArea[] = [
     ],
   },
   {
+    title: 'Estrutura da LP',
+    href: '/admin/estrutura-lp',
+    description: 'Consulta read-only dos contratos estruturais de landing pages.',
+    status: 'Disponível',
+    scope: [
+      'Parâmetros raiz e critérios visuais',
+      'Módulos, variantes e entradas resolvidas',
+      'Pesquisas estruturadas por taxon',
+    ],
+  },
+  {
     title: 'Workloads OpenAI',
     href: '/admin/workloads-openai',
     description: 'Inventário read-only das configurações OpenAI conhecidas.',

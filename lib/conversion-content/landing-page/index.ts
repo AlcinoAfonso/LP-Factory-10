@@ -19,4 +19,7 @@ export type {
   ResolveLandingPageRootParametersInput,
   ResolveLandingPageRootParametersResult,
 } from "./contracts";
-export { resolveLandingPageRootParameters } from "./root-resolver";
+export {
+  listLandingPageRootVersions,
+  resolveLandingPageRootParameters,
+} from "./root-resolver";
