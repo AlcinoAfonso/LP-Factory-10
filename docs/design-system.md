@@ -143,9 +143,8 @@ Este documento define o contrato visual vigente do produto, com foco em componen
 - Header administrativo permanece fixo no topo durante rolagem.
 - Desktop usa sidebar esquerda para navegação administrativa.
 - Mobile usa menu superior/hamburger para navegação.
-- A navegação atual cobre: Contas, Resoluções de nicho, Taxonomia, Templates, Auditoria e Documentação.
 - A área Documentação usa filtro superior, select nativo em ordem alfabética e conteúdo read-only abaixo do filtro, com layout responsivo empilhado no mobile.
-- Páginas administrativas usam cabeçalho operacional com título, descrição e marcador de status/contagem quando aplicável.
+- Páginas administrativas usam cabeçalho operacional com título; descrição e marcador de status/contagem são opcionais e só aparecem quando agregam contexto, evitando repetir informação já evidente na própria superfície.
 - Listagens read-only usam filtros simples, tabela e links de detalhe.
 - Páginas de detalhe read-only usam blocos funcionais para dados da entidade e relações associadas.
 - Estados vazios devem ser enxutos, sem ilustração e sem inventar métricas.
