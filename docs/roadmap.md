@@ -2475,19 +2475,34 @@ Repositório — Ajustados
 
 21. E21 — Gestão e governança dos workloads OpenAI
 - Objetivo: gerir e governar os workloads OpenAI por recortes aprovados, iniciando pela configuração explícita, observabilidade segura e leitura administrativa; a configuração dinâmica e o histórico permanecem para recortes posteriores, sem otimização automatizada.
-- Status: E21.1 planejada conforme o plano-base v2 aprovado; nenhuma implementação iniciada.
+- Status: E21.1 em implementação; E21.1.3 implementada e validada; E21.1.4 e E21.1.5 permanecem planejadas.
 
 21.1 Fundação, normalização e leitura dos workloads OpenAI
 
 21.1.1 Objetivo e status
 - Objetivo: estabelecer catálogo tipado e resolução explícita dos workloads OpenAI, integrar os três consumidores de produto à configuração e à observabilidade comuns e expor inventário administrativo read-only.
-- Status: Planejada; implementação ainda não iniciada.
+- Status: Em implementação; E21.1.3 concluída e as duas fases seguintes permanecem planejadas.
+
+21.1.2 Registros do recorte
+- Repositório:
+  - Criados:
+    - `lib/openai-workloads/contracts.ts`
+    - `lib/openai-workloads/registry.ts`
+    - `lib/openai-workloads/resolve.ts`
+    - `lib/openai-workloads/observability.ts`
+    - `lib/openai-workloads/validation-cases.ts`
+    - `lib/openai-workloads/index.ts`
+  - Ajustados:
+    - `package.json`
 
 21.1.3 Catálogo estrutural e resolução explícita
-- Status: Planejada.
+- Status: Implementada e validada.
 - Conteúdo:
-  - Definir catálogo repo-only com configuração efetiva explícita para os três workloads de produto e referência operacional separada para Supabase Inspect.
-  - Preservar resolução fail-closed, revisão rastreável e fronteira substituível por fonte dinâmica futura, sem criar banco, integração remota ou fallback silencioso.
+  - O boundary transversal `lib/openai-workloads/` mantém registry interno, repo-only e profundamente imutável, com três configurações efetivas de produto em `gpt-5.4-mini + none` e uma referência operacional separada do Supabase Inspect em `gpt-4.1-mini + not_applicable`.
+  - O resolver público aceita somente workloads de produto conhecidos, falha fechado para identidade desconhecida ou referência operacional e projeta inventário seguro com classificação, origem, revisão e indicação explícita de configuração efetiva verificada.
+  - Ambiente, união discriminada de resultado e normalização de usage foram definidos como contratos puros comuns; a integração às chamadas reais permanece na E21.1.4.
+  - Doze casos executáveis cobrem unicidade, resolução, separação effective/reference, imutabilidade, projeção sem secrets, ambiente, usage, evento e ausência de transporte, persistência ou payload funcional no boundary.
+  - Nenhum banco, integração remota, cliente universal, preço, prompt, schema funcional ou fallback silencioso foi criado.
 
 21.1.4 Integração dos consumidores e observabilidade comum
 - Status: Planejada.
