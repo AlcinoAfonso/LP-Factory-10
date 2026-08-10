@@ -477,7 +477,6 @@ async function readAdminTaxonDiagnostics(
   ]);
   const aiConfigured = isGenerationProfileAssistanceConfigured({
     apiKey: process.env.OPENAI_API_KEY,
-    model: process.env.OPENAI_LANDING_PAGE_GENERATION_PROFILE_MODEL,
   });
   const commercialByTaxonId = new Map<string, AdminCommercialActivationListItem>(
     commercialRead.status === "fulfilled" && commercialRead.value.ok

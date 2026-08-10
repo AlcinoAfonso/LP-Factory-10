@@ -4,6 +4,13 @@ import { z } from "zod";
 
 import { createServiceClient } from "@/lib/supabase/service";
 import {
+  createOpenAiWorkloadFailureEvent,
+  emitOpenAiWorkloadEvent,
+  resolveOpenAiProductWorkload,
+  type ResolvedOpenAiProductWorkload,
+} from "../../openai-workloads";
+import { requestCommercialActivationOpenAi } from "../adapters/commercialActivationOpenAiAdapter";
+import {
   COMMERCIAL_ACTIVATION_AUDIENCE_SCOPE,
   COMMERCIAL_ACTIVATION_RESEARCH_BLOCKS,
   type CommercialActivationResearchBlock,
@@ -21,10 +28,8 @@ import {
   type PlansCardsContent,
 } from "./schemas";
 
-const OPENAI_RESPONSES_ENDPOINT = "https://api.openai.com/v1/responses";
 const RESEARCH_VERSION = 1;
 const SAFE_CTA_HREF = "/auth/sign-up";
-const MODEL_ENV_NAME = "OPENAI_COMMERCIAL_ACTIVATION_MODEL";
 const MAX_GENERATION_ATTEMPTS = 2;
 
 const generatedCtaSchema = z
@@ -180,10 +185,6 @@ type ResponsesApiResponse = {
       text?: unknown;
     }>;
   }>;
-  error?: {
-    message?: string;
-    type?: string;
-  };
 };
 
 type GenerateDraftSuccess = {
@@ -297,7 +298,9 @@ export async function generateCommercialActivationDraftForTaxon(input: {
 } = {}): Promise<GenerateCommercialActivationDraftResult> {
   const requestId = input.requestId ?? crypto.randomUUID();
   const taxonSlug = input.taxonSlug?.trim() ?? "";
-  const model = process.env[MODEL_ENV_NAME]?.trim() ?? "";
+  const configuration = resolveOpenAiProductWorkload(
+    "commercial_activation_draft_generation",
+  );
   const apiKey = process.env.OPENAI_API_KEY?.trim() ?? "";
 
   if (!taxonSlug) {
@@ -316,7 +319,16 @@ export async function generateCommercialActivationDraftForTaxon(input: {
     };
   }
 
-  if (!apiKey || !model) {
+  if (!configuration.ok || !apiKey) {
+    if (configuration.ok) {
+      emitOpenAiWorkloadEvent(createOpenAiWorkloadFailureEvent({
+        workload: configuration.value.id,
+        configurationSource: configuration.value.source,
+        configurationRevision: configuration.value.revision,
+        model: configuration.value.model,
+        reasoningEffort: configuration.value.reasoningEffort,
+      }, "configuration_invalid"));
+    }
     logDraftEvent("commercial_activation_draft_generation_blocked", {
       requestId,
       taxonId: null,
@@ -334,7 +346,11 @@ export async function generateCommercialActivationDraftForTaxon(input: {
 
   try {
     const context = await readDraftContext({ taxonSlug });
-    const generated = await generateWithOpenAi({ context, model, apiKey });
+    const generated = await generateWithOpenAi({
+      context,
+      configuration: configuration.value,
+      apiKey,
+    });
     const content = buildContentJson({ context, generated });
     const validation = validateCommercialActivationContent({
       composition: context.composition,
@@ -361,7 +377,7 @@ export async function generateCommercialActivationDraftForTaxon(input: {
       requestId,
       context,
       content,
-      model,
+      configuration: configuration.value,
     });
 
     logDraftEvent("commercial_activation_draft_generation_completed", {
@@ -376,7 +392,7 @@ export async function generateCommercialActivationDraftForTaxon(input: {
       requestId,
       artifactId: persisted.artifactId,
       artifactVersion: persisted.artifactVersion,
-      model,
+      model: configuration.value.model,
     };
   } catch (error) {
     const safeError = toSafeErrorReason(error);
@@ -533,17 +549,13 @@ async function readPlans(): Promise<CommercialPlan[]> {
 
 async function generateWithOpenAi(input: {
   context: DraftContext;
-  model: string;
+  configuration: ResolvedOpenAiProductWorkload;
   apiKey: string;
 }): Promise<GeneratedOutput> {
-  const response = await fetch(OPENAI_RESPONSES_ENDPOINT, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${input.apiKey}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      model: input.model,
+  const result = await requestCommercialActivationOpenAi({
+    apiKey: input.apiKey,
+    configuration: input.configuration,
+    request: {
       input: [
         {
           role: "system",
@@ -563,26 +575,43 @@ async function generateWithOpenAi(input: {
         },
       },
       max_output_tokens: 5000,
-    }),
+    },
+    parseResponse: parseGeneratedOutput,
   });
 
-  if (!response.ok) {
-    throw new Error(`openai_http_${response.status}`);
+  if (!result.ok) throw new Error(result.reason);
+  return result.value;
+}
+
+function parseGeneratedOutput(payload: unknown):
+  | Readonly<{ ok: true; value: GeneratedOutput }>
+  | Readonly<{
+      ok: false;
+      kind: "invalid_response" | "refusal";
+      reason: string;
+    }> {
+  if (!isRecord(payload)) {
+    return { ok: false, kind: "invalid_response", reason: "missing_output_text" };
   }
 
-  const data = (await response.json()) as ResponsesApiResponse;
-  if (data.error) {
-    throw new Error(data.error.type ?? "openai_response_error");
+  const response = payload as ResponsesApiResponse;
+  const outputText = extractOutputText(response);
+  if (!outputText) {
+    const refused = response.output?.some((item) =>
+      item.content?.some((content) => content.type === "refusal"),
+    );
+    return {
+      ok: false,
+      kind: refused ? "refusal" : "invalid_response",
+      reason: refused ? "openai_refusal" : "missing_output_text",
+    };
   }
-
-  const outputText = extractOutputText(data);
-  if (!outputText) throw new Error("missing_output_text");
 
   const parsed = parseJsonObject(outputText);
   const validated = generatedOutputSchema.safeParse(parsed);
-  if (!validated.success) throw new Error("generated_output_invalid");
-
-  return validated.data;
+  return validated.success
+    ? { ok: true, value: validated.data }
+    : { ok: false, kind: "invalid_response", reason: "generated_output_invalid" };
 }
 
 function buildContentJson(input: {
@@ -696,7 +725,7 @@ async function persistDraft(input: {
   requestId: string;
   context: DraftContext;
   content: CommercialActivationContentV1;
-  model: string;
+  configuration: ResolvedOpenAiProductWorkload;
 }): Promise<{ artifactId: string; artifactVersion: number }> {
   const supabase = createServiceClient();
 
@@ -704,7 +733,7 @@ async function persistDraft(input: {
     const artifactVersion = await getNextArtifactVersion(input.context);
     const provenance = buildProvenanceJson({
       context: input.context,
-      model: input.model,
+      configuration: input.configuration,
       requestId: input.requestId,
       artifactVersion,
     });
@@ -857,7 +886,7 @@ async function getNextArtifactVersion(context: DraftContext): Promise<number> {
 
 function buildProvenanceJson(input: {
   context: DraftContext;
-  model: string;
+  configuration: ResolvedOpenAiProductWorkload;
   requestId: string;
   artifactVersion: number;
 }) {
@@ -874,8 +903,11 @@ function buildProvenanceJson(input: {
     composition_id: input.context.composition.id,
     composition_version: input.context.composition.version,
     artifact_version: input.artifactVersion,
-    model_env_var: MODEL_ENV_NAME,
-    model: input.model,
+    openai_workload: input.configuration.id,
+    configuration_source: input.configuration.source,
+    configuration_revision: input.configuration.revision,
+    model: input.configuration.model,
+    reasoning_effort: input.configuration.reasoningEffort,
     cta_href_policy: {
       allowed_internal_href: SAFE_CTA_HREF,
     },

@@ -35,7 +35,6 @@ export default async function AdminGenerationProfileDetailPage({
   const current = resolved.ok ? resolved.value : null;
   const aiConfigured = isGenerationProfileAssistanceConfigured({
     apiKey: process.env.OPENAI_API_KEY,
-    model: process.env.OPENAI_LANDING_PAGE_GENERATION_PROFILE_MODEL,
   });
   const researchAvailability = getGenerationProfileAssistanceAvailability({
     aiConfigured,

@@ -309,6 +309,11 @@
 • Assistência por IA é opcional, explícita e não autoritativa: a proposta validada permanece candidata transitória até aplicação humana explícita e não salva, ativa, arquiva nem altera o resolver público; orientações gerais e específicas pertencem exclusivamente ao humano e devem ser preservadas pelo fluxo assistido.
 • Prompts, payloads e respostas integrais não devem ser persistidos nem registrados; correlação deve usar identificadores, fingerprint e metadados operacionais seguros.
 
+3.16 Configuração e observabilidade de workloads OpenAI
+• O boundary transversal canônico é `lib/openai-workloads/`; consumidores de produto usam somente sua API pública para resolver modelo e reasoning effort, sem ler variáveis de modelo nem acessar o registry interno.
+• O boundary comum não executa chamadas OpenAI e não contém secrets, prompts, schemas funcionais, regras de fallback ou persistência; transporte e comportamento funcional permanecem nos domínios consumidores.
+• Cada tentativa de provider deve emitir somente metadados operacionais normalizados e seguros, preservando métricas ausentes como `null`; prompts, respostas integrais, payloads de negócio, PII, secrets e cálculo monetário não entram no evento comum.
+
 4. DB Contract
 • `docs/schema.md` é a fonte única de tabelas, views, functions, RPCs, triggers, policies, constraints, grants e do estado exato do banco.
 • Esta Base Técnica mantém somente guardrails transversais de implementação e não deve duplicar inventários de objetos.

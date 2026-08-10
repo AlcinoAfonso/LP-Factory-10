@@ -76,6 +76,17 @@ export const adminAreas: AdminArea[] = [
     ],
   },
   {
+    title: 'Workloads OpenAI',
+    href: '/admin/workloads-openai',
+    description: 'Inventário read-only das configurações OpenAI conhecidas.',
+    status: 'Disponível',
+    scope: [
+      'Configuração efetiva dos workloads de produto',
+      'Referência operacional do Supabase Inspect',
+      'Sem mutações nem chamadas externas',
+    ],
+  },
+  {
     title: 'Auditoria',
     href: '/admin/auditoria',
     description: 'Área prevista para leitura de eventos administrativos.',

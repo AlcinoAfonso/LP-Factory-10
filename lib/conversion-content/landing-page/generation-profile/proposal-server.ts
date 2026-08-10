@@ -2,6 +2,11 @@ import "server-only";
 
 import { randomUUID } from "node:crypto";
 
+import {
+  createOpenAiWorkloadFailureEvent,
+  emitOpenAiWorkloadEvent,
+  resolveOpenAiProductWorkload,
+} from "../../../openai-workloads";
 import { resolveLandingPageResearchForTaxon } from "../../adapters/landingPageResearchAdapter";
 import { readAdminGenerationProfileDetail } from "../../adapters/landingPageGenerationProfileAdminAdapter";
 import { requestGenerationProfileProposal } from "../../adapters/landingPageGenerationProfileOpenAiAdapter";
@@ -17,9 +22,7 @@ import {
 } from "../module-catalog";
 import {
   buildGenerationProfileInvalidDataMetadata,
-  estimateGenerationProfileCostUsd,
   GENERATION_PROFILE_INVALID_PROPOSAL_MESSAGE,
-  isGenerationProfileAssistanceConfigured,
   mapProviderFailureToProposalError,
   mapResearchErrorToProposalError,
   normalizeGenerationProfileCandidate,
@@ -37,8 +40,21 @@ export async function proposeLandingPageGenerationProfile(input: {
   const requestId = randomUUID();
   const startedAt = Date.now();
   const interactionKind = input.currentCandidate ? "refinement" : "initial";
-  const model = process.env.OPENAI_LANDING_PAGE_GENERATION_PROFILE_MODEL?.trim();
-  if (!model || !isGenerationProfileAssistanceConfigured({ apiKey: process.env.OPENAI_API_KEY, model })) {
+  const configuration = resolveOpenAiProductWorkload(
+    "landing_page_generation_profile_proposal",
+  );
+  const apiKey = process.env.OPENAI_API_KEY?.trim();
+  const model = configuration.ok ? configuration.value.model : null;
+  if (!configuration.ok || !apiKey) {
+    if (configuration.ok) {
+      emitOpenAiWorkloadEvent(createOpenAiWorkloadFailureEvent({
+        workload: configuration.value.id,
+        configurationSource: configuration.value.source,
+        configurationRevision: configuration.value.revision,
+        model: configuration.value.model,
+        reasoningEffort: configuration.value.reasoningEffort,
+      }, "configuration_invalid"));
+    }
     return finishFailure(requestId, "technical_failure", "AI assistance is unavailable.", {
       taxonId: input.taxonId,
       platformAdminId: input.actorUserId,
@@ -121,7 +137,8 @@ export async function proposeLandingPageGenerationProfile(input: {
   const moduleIdentities = listLandingPageModuleIdentities();
   const moduleSelectionCatalog = listLandingPageModuleSelectionCatalog();
   const provider = await requestGenerationProfileProposal({
-    model,
+    model: configuration.value.model,
+    reasoningEffort: configuration.value.reasoningEffort,
     research: research.value,
     moduleIdentities,
     moduleSelectionCatalog,
@@ -129,7 +146,7 @@ export async function proposeLandingPageGenerationProfile(input: {
     activeBaseline: previousActiveProfile?.recommendations ?? null,
     currentCandidate: currentCandidate?.value ?? null,
     humanFeedback: input.humanFeedback,
-  });
+  }, { apiKey });
   if (!provider.ok) {
     return finishFailure(requestId, mapProviderFailureToProposalError(provider.kind), "AI proposal could not be produced.", {
       taxonId: input.taxonId,
@@ -144,7 +161,6 @@ export async function proposeLandingPageGenerationProfile(input: {
         responseId: provider.responseId,
         inputTokens: provider.inputTokens,
         outputTokens: provider.outputTokens,
-        estimatedCostUsd: estimateGenerationProfileCostUsd(model, provider.inputTokens, provider.outputTokens),
       } : {}),
       researchVersions: research.value.versions,
       researchProvenance: getResearchProvenance(research.value),
@@ -168,7 +184,6 @@ export async function proposeLandingPageGenerationProfile(input: {
       model,
       startedAt,
       ...buildGenerationProfileInvalidDataMetadata({
-        model,
         validationReason: validated.reason,
         responseId: provider.responseId,
         inputTokens: provider.inputTokens,
@@ -196,7 +211,6 @@ export async function proposeLandingPageGenerationProfile(input: {
     latencyMs: Date.now() - startedAt,
     inputTokens: provider.inputTokens,
     outputTokens: provider.outputTokens,
-    estimatedCostUsd: estimateGenerationProfileCostUsd(model, provider.inputTokens, provider.outputTokens),
     result: "success",
   });
   return {

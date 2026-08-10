@@ -2,6 +2,10 @@ import { createHash } from "node:crypto";
 
 import { z } from "zod";
 
+import {
+  resolveOpenAiProductWorkload,
+  type OpenAiReasoningEffort,
+} from "../../../openai-workloads";
 import type { ResolvedLandingPageResearch } from "../research-resolution";
 import {
   validateLandingPageModuleIdentity,
@@ -20,14 +24,12 @@ import { deriveGenerationProfileProposalDiff } from "./editor-assistance";
 
 export const GENERATION_PROFILE_REQUEST_MAX_BYTES = 96 * 1024;
 export const GENERATION_PROFILE_MAX_OUTPUT_TOKENS = 2000;
-export const GENERATION_PROFILE_APPROVED_MODEL = "gpt-5.4-mini";
 export const GENERATION_PROFILE_INVALID_PROPOSAL_MESSAGE =
   "A proposta da IA não atendeu às regras estruturais. Nenhuma alteração foi salva e o estado atual do perfil foi preservado.";
-const GENERATION_PROFILE_INPUT_USD_PER_TOKEN = 0.00000075;
-const GENERATION_PROFILE_OUTPUT_USD_PER_TOKEN = 0.0000045;
 
 export type GenerationProfileProviderInput = Readonly<{
   model: string;
+  reasoningEffort: OpenAiReasoningEffort;
   research: ResolvedLandingPageResearch;
   moduleIdentities: LandingPageModuleIdentityCatalog;
   moduleSelectionCatalog: LandingPageModuleSelectionCatalog;
@@ -78,7 +80,6 @@ export type GenerationProfileCoverageFailureDiagnostic = Readonly<{
 }>;
 
 export function buildGenerationProfileInvalidDataMetadata(input: Readonly<{
-  model: string;
   validationReason: GenerationProfileProviderValidationReason;
   responseId: string | null;
   inputTokens: number | null;
@@ -91,7 +92,6 @@ export function buildGenerationProfileInvalidDataMetadata(input: Readonly<{
     responseId: input.responseId,
     inputTokens: input.inputTokens,
     outputTokens: input.outputTokens,
-    estimatedCostUsd: estimateGenerationProfileCostUsd(input.model, input.inputTokens, input.outputTokens),
   } as const;
 }
 
@@ -364,7 +364,7 @@ export function buildGenerationProfileResponsesRequest(input: GenerationProfileP
     request_kind: input.requestKind,
     human_feedback: input.humanFeedback?.trim() || null,
   };
-  const body = createRequest(userInput);
+  const body = createRequest(userInput, input.model, input.reasoningEffort);
   const serialized = JSON.stringify(body);
   return {
     ok: Buffer.byteLength(serialized, "utf8") <= GENERATION_PROFILE_REQUEST_MAX_BYTES,
@@ -374,9 +374,14 @@ export function buildGenerationProfileResponsesRequest(input: GenerationProfileP
   } as const;
 }
 
-function createRequest(userInput: Record<string, unknown>) {
+function createRequest(
+  userInput: Record<string, unknown>,
+  model: string,
+  reasoningEffort: OpenAiReasoningEffort,
+) {
   return {
-    model: GENERATION_PROFILE_APPROVED_MODEL,
+    model,
+    reasoning: { effort: reasoningEffort },
     store: false,
     max_output_tokens: GENERATION_PROFILE_MAX_OUTPUT_TOKENS,
     input: [
@@ -796,11 +801,9 @@ export function mapProviderFailureToProposalError(kind: Exclude<GenerationProfil
   return kind === "request_too_large" ? "invalid_data" : "technical_failure";
 }
 
-export function isGenerationProfileAssistanceConfigured(input: { apiKey?: string; model?: string }) {
-  return Boolean(input.apiKey?.trim() && input.model?.trim() === GENERATION_PROFILE_APPROVED_MODEL);
-}
-
-export function estimateGenerationProfileCostUsd(model: string, inputTokens: number | null, outputTokens: number | null) {
-  if (model !== GENERATION_PROFILE_APPROVED_MODEL || inputTokens === null || outputTokens === null) return null;
-  return Number((inputTokens * GENERATION_PROFILE_INPUT_USD_PER_TOKEN + outputTokens * GENERATION_PROFILE_OUTPUT_USD_PER_TOKEN).toFixed(6));
+export function isGenerationProfileAssistanceConfigured(input: { apiKey?: string }) {
+  return Boolean(
+    input.apiKey?.trim() &&
+    resolveOpenAiProductWorkload("landing_page_generation_profile_proposal").ok,
+  );
 }

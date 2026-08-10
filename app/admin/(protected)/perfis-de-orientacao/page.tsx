@@ -32,7 +32,6 @@ export default async function AdminGenerationProfilesPage() {
     : new Map();
   const aiConfigured = isGenerationProfileAssistanceConfigured({
     apiKey: process.env.OPENAI_API_KEY,
-    model: process.env.OPENAI_LANDING_PAGE_GENERATION_PROFILE_MODEL,
   });
 
   return (

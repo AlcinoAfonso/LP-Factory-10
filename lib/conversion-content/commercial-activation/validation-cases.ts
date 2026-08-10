@@ -1,5 +1,11 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 
+import { requestCommercialActivationOpenAi } from "../adapters/commercialActivationOpenAiAdapter";
+import {
+  resolveOpenAiProductWorkload,
+  type OpenAiWorkloadEvent,
+} from "../../openai-workloads";
 import {
   commercialActivationFixtureComposition,
   commercialActivationFixtureContent,
@@ -30,6 +36,103 @@ const optionalDifferentialsId = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa5";
 const optionalFaqId = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa7";
 
 const cases: Case[] = [
+  {
+    name: "commercial OpenAI transport uses resolved model and effort with safe usage",
+    run: async () => {
+      const configuration = resolveOpenAiProductWorkload(
+        "commercial_activation_draft_generation",
+      );
+      assert.equal(configuration.ok, true);
+      if (!configuration.ok) return;
+
+      let requestBody: Record<string, unknown> | null = null;
+      const events: OpenAiWorkloadEvent[] = [];
+      const result = await requestCommercialActivationOpenAi({
+        apiKey: "test-key",
+        configuration: configuration.value,
+        request: {
+          input: [{ role: "system", content: "test prompt" }],
+          text: { format: { type: "json_schema", name: "test", strict: true } },
+          max_output_tokens: 5000,
+        },
+        parseResponse: (payload) => ({ ok: true, value: payload }),
+      }, {
+        fetchImpl: async (_url, init) => {
+          requestBody = JSON.parse(String(init?.body));
+          return new Response(JSON.stringify({
+            id: "resp_commercial_123",
+            usage: {
+              input_tokens: 90,
+              input_tokens_details: { cached_tokens: 40 },
+              output_tokens: 20,
+              output_tokens_details: { reasoning_tokens: 4 },
+              total_tokens: -1,
+            },
+            output_text: "{}",
+          }), { status: 200, headers: { "Content-Type": "application/json" } });
+        },
+        emitEvent: (event) => events.push(event),
+        now: (() => {
+          let current = 200;
+          return () => (current += 9);
+        })(),
+      });
+
+      assert.equal(result.ok, true);
+      const capturedRequest = requestBody as unknown as Record<string, unknown>;
+      assert.equal(capturedRequest.model, configuration.value.model);
+      assert.deepEqual(capturedRequest.reasoning, {
+        effort: configuration.value.reasoningEffort,
+      });
+      assert.equal(events.length, 1);
+      assert.equal(events[0]?.result, "success");
+      assert.equal(events[0]?.responseId, "resp_commercial_123");
+      assert.equal(events[0]?.inputTokens, 90);
+      assert.equal(events[0]?.cachedInputTokens, 40);
+      assert.equal(events[0]?.cacheWriteTokens, null);
+      assert.equal(events[0]?.reasoningTokens, 4);
+      assert.equal(events[0]?.totalTokens, null);
+      assert.equal(events[0]?.latencyMs, 9);
+
+      let transportCalls = 0;
+      const invalidEvents: OpenAiWorkloadEvent[] = [];
+      const invalid = await requestCommercialActivationOpenAi({
+        apiKey: "",
+        configuration: configuration.value,
+        request: {},
+        parseResponse: (payload) => ({ ok: true, value: payload }),
+      }, {
+        fetchImpl: async () => {
+          transportCalls += 1;
+          return new Response();
+        },
+        emitEvent: (event) => invalidEvents.push(event),
+      });
+      assert.equal(invalid.ok, false);
+      assert.equal(transportCalls, 0);
+      assert.equal(invalidEvents[0]?.failureCategory, "configuration_invalid");
+      assert.equal(invalidEvents[0]?.latencyMs, null);
+    },
+  },
+  {
+    name: "new commercial draft provenance uses resolved workload metadata",
+    run: () => {
+      const source = readFileSync(
+        new URL("draft-generation.ts", import.meta.url),
+        "utf8",
+      );
+      assert.equal(source.includes("model_env_var"), false);
+      for (const field of [
+        "openai_workload",
+        "configuration_source",
+        "configuration_revision",
+        "model",
+        "reasoning_effort",
+      ]) {
+        assert.equal(source.includes(field), true);
+      }
+    },
+  },
   {
     name: "valid content resolves all fixture sections",
     run: () => {

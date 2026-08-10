@@ -475,6 +475,7 @@ export async function saveSetupAndContinueAction(
           rawInput: validated.values.niche,
           decision,
           candidates,
+          apiKey: process.env.OPENAI_API_KEY,
         });
 
         aiResolutionStatus = aiResult.status;
