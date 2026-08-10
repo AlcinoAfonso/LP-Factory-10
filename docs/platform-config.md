@@ -2,8 +2,8 @@
 
 0.1 Cabeçalho
 • Documento: LP Factory 10 — Platform Config
-• Versão: v0.1.16
-• Data: 31/07/2026
+• Versão: v0.1.17
+• Data: 10/08/2026
 
 0.2 Contrato do documento
 • O QUE É: snapshot operacional e fonte única das configurações de plataformas externas do LP Factory 10, refletindo o estado conhecido/cadastrado nas plataformas conforme indicado.
@@ -157,27 +157,24 @@
 • `OPENAI_API_KEY`
 • Finalidade: chave server-side compartilhada pelos três consumidores OpenAI de produto autorizados no Core.
 • Escopo: Production e Preview.
-• Estado atual: configurada em Production e Preview; presença confirmada na configuração em 31/07/2026 sem exposição do valor.
+• Estado atual: configurada em Production e Preview; os três consumidores foram validados em Production em 10/08/2026 sem exposição do valor.
 • Valor real: não versionar.
 • Regra operacional: os três consumidores podem compartilhar a mesma chave; não criar outra sem necessidade aprovada.
 
-• `OPENAI_NICHE_RESOLVER_MODEL`
-• Escopo: Production e Preview.
-• Estado: legado temporário de reversão, mantido fisicamente até o smoke pós-merge dos três consumidores em Production.
-• Uso runtime atual: nenhum; a configuração efetiva do resolvedor de nicho vem do catálogo versionado no repositório.
-• Regra: não remover antes da evidência de Production e não usar como fonte ordinária de configuração.
+• Configuração efetiva dos workloads OpenAI de produto
+• Fonte canônica: `lib/openai-workloads/registry.ts`, com `configurationSource: repo_catalog` e revisão `v1`.
+• Workloads: `niche_resolution`, `landing_page_generation_profile_proposal` e `commercial_activation_draft_generation`.
+• Configuração comum atual: modelo `gpt-5.4-mini` e esforço de raciocínio `none`.
+• Validação operacional: os três workloads foram executados uma única vez em Production em 10/08/2026; os Runtime Logs confirmaram sucesso e telemetria sanitizada, sem prompt, resposta integral, credencial ou dado pessoal.
 
-• `OPENAI_LANDING_PAGE_GENERATION_PROFILE_MODEL`
+• Variáveis legadas de modelo na Vercel
+• Nomes: `OPENAI_NICHE_RESOLVER_MODEL`, `OPENAI_LANDING_PAGE_GENERATION_PROFILE_MODEL` e `OPENAI_COMMERCIAL_ACTIVATION_MODEL`.
 • Escopo: Production e Preview.
-• Estado: legado temporário de reversão, mantido fisicamente até o smoke pós-merge dos três consumidores em Production.
-• Uso runtime atual: nenhum; a configuração efetiva da proposta de perfil vem do catálogo versionado no repositório.
-• Regra: não remover antes da evidência de Production e não usar como fonte ordinária de configuração.
-
-• `OPENAI_COMMERCIAL_ACTIVATION_MODEL`
-• Escopo: Production e Preview.
-• Estado: legado temporário de reversão, mantido fisicamente até o smoke pós-merge dos três consumidores em Production.
-• Uso runtime atual: nenhum; a configuração efetiva da geração de drafts `commercial_activation` vem do catálogo versionado no repositório.
-• Regra: não remover antes da evidência de Production e não usar como fonte ordinária de configuração.
+• Uso runtime atual: nenhum nos três consumidores de produto; a configuração efetiva vem do catálogo versionado no repositório.
+• Estado operacional: retirada preparada e ainda não executada.
+• Procedimento preparado para futura retirada: remover somente essas três variáveis de Production e Preview, preservar `OPENAI_API_KEY`, executar os redeploys necessários e confirmar que a configuração efetiva continua vindo do catálogo.
+• Gate: não executar a retirada sem autorização humana específica para a mudança na Vercel.
+• Regra: qualquer divergência de nome, escopo ou consumidor interrompe a retirada no ambiente afetado; não recriar as variáveis sem necessidade futura aprovada.
 
 • `LPF_MCP_SECRET`
 • Finalidade: secret Bearer usado para autenticar chamadas ao MCP Supabase Inspect.
@@ -288,19 +285,8 @@
 • Finalidade: autenticação com OpenAI API; no Core, a mesma chave server-side pode atender os três consumidores de produto.
 • Valor real: não versionar.
 
-• `OPENAI_NICHE_RESOLVER_MODEL`
-• Plataforma: Vercel.
-• Estado: legado temporário de reversão, sem leitura pelo runtime atual; manter até o smoke pós-merge em Production.
-
-• `OPENAI_COMMERCIAL_ACTIVATION_MODEL`
-• Plataforma: Vercel.
-• Escopo: Production e Preview.
-• Estado: legado temporário de reversão, sem leitura pelo runtime atual; manter até o smoke pós-merge em Production.
-
-• `OPENAI_LANDING_PAGE_GENERATION_PROFILE_MODEL`
-• Plataforma: Vercel.
-• Escopo: Production e Preview.
-• Estado: legado temporário de reversão, sem leitura pelo runtime atual; manter até o smoke pós-merge em Production.
+• A seleção de modelo e esforço dos três workloads OpenAI de produto não usa variáveis Vercel no runtime atual; o contrato efetivo está no catálogo versionado do repositório.
+• As três variáveis legadas de modelo permanecem pendentes de retirada controlada da Vercel conforme 3.5.
 
 6.3.1 Endpoint externo atual
 • Endpoint OpenAI Responses API: `https://api.openai.com/v1/responses`
