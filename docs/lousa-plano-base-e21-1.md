@@ -1,15 +1,15 @@
-09/08/2026 — Plano-base v1 — E21.1 — Fundação, normalização e leitura dos workloads OpenAI
+09/08/2026 — Plano-base v2 — E21.1 — Fundação, normalização e leitura dos workloads OpenAI
 
 ## 1. Estado e decisões fixas
 
 ### 1.1. Estado
 
-- Status: plano-base v1 consolidado por decisão humana em 09/08/2026.
+- Status: plano-base v2 consolidado pela orquestração em 09/08/2026 e submetido ao gate do Analista antes da implementação.
 - Caso macro: `E21 — Gestão e governança dos workloads OpenAI`.
 - Recorte: `E21.1 — Fundação, normalização e leitura dos workloads OpenAI`.
 - Plano conceitual: N/A.
 - Este documento é o contrato executável do recorte aprovado e não possui questão indispensável aberta para a E21.1.
-- A consolidação da v1 não autoriza iniciar a implementação; o próximo fluxo depende da escolha humana prevista em `docs/prompt-estrategista.md`.
+- A escolha humana pelo processo automatizado foi registrada pela instrução `Use $lp-factory-orquestrar-plano no PR #708`; a implementação permanece condicionada à aprovação da v2, à reconciliação mínima do roadmap e ao checkpoint `LP-Factory-Stage: plan-v2-approved`.
 - A E21.1 não escolhe a fonte operacional dinâmica definitiva e não implementa alteração de configuração sem redeploy.
 
 ### 1.2. Objetivo
@@ -120,13 +120,14 @@
   - configuração alterável por execução, sem integrar a futura mutação dos workloads de produto.
 - A omissão de effort preserva hoje `none` no `gpt-5.4-mini`, mas não é segura para migrações porque valores suportados e defaults variam por modelo.
 
-### 1.7. Decisões fechadas para a v1
+### 1.7. Decisões fechadas para a v2
 
 - Fonte transitória dos três workloads de produto:
   - o catálogo tipado é a fonte inicial ativa de `modelo + effort`;
   - os consumers deixam de ler as três variáveis Vercel de modelo;
   - após smoke aprovado dos três consumers em Preview, o primeiro deployment em Production ainda preserva fisicamente as variáveis como janela de reversão;
-  - a retirada física das variáveis da Vercel e de `docs/platform-config.md` ocorre somente após smoke aprovado dos três consumers em Production;
+  - durante a entrega de runtime, `docs/platform-config.md` marca as três variáveis somente como legado temporário de reversão;
+  - a retirada física das variáveis da Vercel e sua remoção definitiva de `docs/platform-config.md` ocorre em fechamento operacional posterior, somente após merge, deployment e smoke aprovado dos três consumers em Production;
   - `OPENAI_API_KEY` permanece na Vercel.
 - Destino do usage comum:
   - eventos estruturados nos logs operacionais seguros já usados pelo runtime;
@@ -153,30 +154,39 @@
 
 - `niche_resolution`:
   - classificação: `product_runtime`;
+  - configuração: `configurationKind = "effective"`;
   - consumidor: resolvedor IA opcional do onboarding;
   - fallback: continuar sem bloquear o onboarding conforme contrato vigente.
 - `landing_page_generation_profile_proposal`:
   - classificação: `product_runtime`;
+  - configuração: `configurationKind = "effective"`;
   - consumidor: proposta administrativa opcional do perfil de orientação;
   - fallback: edição manual permanece funcional.
 - `commercial_activation_draft_generation`:
   - classificação: `product_runtime`;
+  - configuração: `configurationKind = "effective"`;
   - consumidor: geração administrativa de draft comercial;
   - fallback: falha não publica nem substitui conteúdo vigente.
 - `supabase_inspect`:
   - classificação: `operational`;
+  - configuração: `configurationKind = "inventory_reference"`;
   - consumidor: workflow operacional separado do Core;
   - fallback: falha permanece restrita à execução do workflow.
 - Identificador representa uma chamada OpenAI independente, não a página, a rota ou o domínio inteiro.
+- O contrato é uma união discriminada: somente itens `effective` podem ser aceitos por `resolveOpenAiProductWorkload`; `supabase_inspect` aparece apenas em `listOpenAiWorkloadInventory` e é rejeitado pelo resolver de runtime.
 
 ### 2.3. Catálogo estrutural e resolução inicial
 
-- Criar boundary transversal mínimo no Core para:
+- A E21.1 classifica a gestão dos workloads OpenAI como domínio transversal do Core, com boundary canônico em `lib/openai-workloads/`.
+- Criar somente `contracts.ts`, `registry.ts`, `resolve.ts`, `observability.ts`, `validation-cases.ts` e `index.ts` para:
   - declarar os workloads de produto;
   - validar identificadores únicos;
   - resolver `model` e `reasoningEffort` explicitamente;
   - preservar classificação, origem e revisão rastreável;
   - fornecer uma projeção read-only segura ao Admin Dashboard.
+- O registry permanece interno, imutável e repo-only; consumers e UI usam exclusivamente a API pública de `index.ts`.
+- A fonte inicial dos workloads de produto é `repo_catalog`; a referência do Supabase Inspect usa `github_actions_default_reference`.
+- A revisão inicial é o literal opaco `"v1"`, comum ao snapshot repo-only; permanece estável enquanto o registry não mudar e deve ser incrementada quando qualquer configuração efetiva ou referência inventariada mudar. Consumers apenas propagam `source` e `revision`, sem interpretar seu formato.
 - Baseline inicial dos workloads de produto:
   - modelo: `gpt-5.4-mini`;
   - effort: `none`.
@@ -186,6 +196,7 @@
 - O catálogo inicial não contém preços e não mantém resultados comparativos.
 - O catálogo inicial não deve obrigar alteração de código em cada consumer quando a fonte dinâmica futura assumir a configuração ativa; consumers dependem apenas do resolver comum.
 - O resolver comum não executa a chamada OpenAI, não conhece prompts, schemas, limites de output ou regras funcionais dos consumers.
+- O boundary não contém `fetch`, Supabase, secrets, adapter de banco, Global Config, provider OpenAI, cliente universal, router ou engine.
 - Supabase Inspect mantém sua fonte operacional própria; a aplicação conhece somente o default/referência projetado pelo catálogo para inventário e não verifica a configuração efetiva de cada execução.
 
 ### 2.4. Integração e correções de regressão
@@ -197,6 +208,10 @@
 - Remover as constantes de tarifa e o cálculo `estimatedCostUsd` acoplado ao `gpt-5.4-mini`.
 - Contratos e casos de validação que hoje esperam `estimatedCostUsd` devem deixar de tratá-lo como dado de runtime confiável.
 - Prompts, Structured Outputs, limites de output, retries, schemas e regras funcionais permanecem nos domínios consumidores.
+- Ajustar em lugar os providers existentes de nicho e perfil.
+- Extrair somente o transporte OpenAI da ativação comercial para `lib/conversion-content/adapters/commercialActivationOpenAiAdapter.ts`, mantendo prompt, validação funcional e persistência no domínio `commercial-activation`.
+- O boundary `lib/openai-workloads/` fornece resolução da configuração, normalização comum de usage e emissão do evento seguro por tentativa; ele não executa chamadas OpenAI.
+- Eliminar todas as leituras runtime de `OPENAI_NICHE_RESOLVER_MODEL`, `OPENAI_LANDING_PAGE_GENERATION_PROFILE_MODEL` e `OPENAI_COMMERCIAL_ACTIVATION_MODEL`, inclusive nas duas páginas de perfis, em `lib/admin/adapters/adminTaxonomyAdapter.ts` e na mensagem client que fixa `gpt-5.4-mini`.
 - Não refatorar os três consumers para um cliente OpenAI universal.
 
 ### 2.5. Observabilidade comum e custo
@@ -220,7 +235,8 @@
 - Normalizar `cacheWriteTokens` a partir de `usage.input_tokens_details.cache_write_tokens`, quando o campo for retornado pelo provedor.
 - Normalizar `reasoning tokens` a partir de `usage.output_tokens_details.reasoning_tokens`.
 - A captura de `cacheWriteTokens` não habilita nem autoriza `prompt_cache_options`, `prompt_cache_breakpoint` ou outra configuração de prompt caching explícito na E21.1.
-- Campos indisponíveis em falhas anteriores à resposta permanecem ausentes ou nulos; não fabricar zero quando o provedor não retornou usage.
+- O evento comum usa os campos `workload`, `environment`, `configurationSource`, `configurationRevision`, `model`, `reasoningEffort`, `responseId`, resultado ou categoria segura de falha, `latencyMs`, `inputTokens`, `cachedInputTokens`, `cacheWriteTokens`, `outputTokens`, `reasoningTokens` e `totalTokens`.
+- Campo ausente ou inválido permanece `null`; nunca fabricar zero. A latência cobre somente a tentativa do provider, e logs funcionais preexistentes dos domínios permanecem separados.
 - Não registrar prompt integral, pesquisa bruta, resposta completa, dados pessoais, secrets ou payloads de negócio.
 - Não calcular custo monetário no runtime da E21.1.
 - Avaliações de custo usam usage real e snapshot datado com fontes oficiais vigentes; o PR #707 é a referência inicial enquanto seu documento não estiver na `main`.
@@ -229,6 +245,9 @@
 ### 2.6. Inventário read-only no Admin Dashboard
 
 - Criar página protegida em `/admin/workloads-openai`, integrada à navegação administrativa vigente.
+- Criar somente `app/admin/(protected)/workloads-openai/page.tsx` para a rota e ajustar `components/admin/adminNavigation.ts`.
+- A página é Server Component e consome diretamente a projeção segura da API pública de `lib/openai-workloads/`, reutilizando o guard e shell de `app/admin/(protected)/layout.tsx`, `AdminPageHeader` e `AdminStatusBadge`.
+- Não criar novo guard, provider React, adapter Admin, API, Server Action, banco ou componente client.
 - Título administrativo: `Workloads OpenAI`.
 - Exibir somente dados reais disponíveis na E21.1:
   - nome e identificador do workload;
@@ -275,6 +294,8 @@
 - `OPENAI_API_KEY` permanece server-side e fora do catálogo projetado para a UI.
 - O client não recebe secrets, prompts, respostas ou metadados de chamada não necessários ao inventário.
 - A E21.1 não altera RLS, grants, RPCs, audit logs ou schema de banco.
+- Em novos drafts de `commercial_activation`, substituir `model_env_var` de `provenance_json` por `openai_workload`, `configuration_source`, `configuration_revision`, `model` e `reasoning_effort`.
+- Não alterar nem fazer backfill de linhas históricas e não persistir usage, response ID ou latência; a mudança usa a coluna JSON existente e preserva Data API, RLS, policies, grants e acesso server-side vigentes.
 
 ### 2.9. Casos executáveis mínimos
 
@@ -307,13 +328,18 @@
   - nenhuma mutação ou histórico inventado;
   - desktop, mobile e navegação por TAB aprovados.
 - Evidência visual e de acesso esperada:
+  - Aplicar `prod#16` como referência da validação visual e de UX em Preview; ferramentas automáticas são apoio e não substituem a revisão manual.
+  - Aplicar os critérios WCAG 2.2 pertinentes a esta página administrativa, com inspeção automática e validação manual de teclado, foco visível, semântica e rótulos, contraste, estados e alvos de toque; não declarar conformidade WCAG integral sem auditoria própria.
   - URL do Preview hospedado validado;
   - capturas da página em desktop e mobile;
   - registro da navegação por TAB;
   - resultado positivo com `platform_admin` e negativo com usuário sem autorização de plataforma.
 - Validações técnicas previstas:
-  - novo validator focal do catálogo e resolver;
-  - validators vigentes dos três domínios consumidores materialmente afetados;
+  - `lib/openai-workloads/validation-cases.ts` pelo script `validate:openai-workloads` em `package.json`, cobrindo registry, resolução fail-closed, revisão, projeção segura, distinção effective/reference, normalização de usage e ausência de secrets;
+  - `npm ci`;
+  - `npm run validate:openai-workloads`;
+  - `npm run validate:landing-page-generation-profile`;
+  - `npm run validate:commercial-activation`;
   - `npm run check`;
   - `git diff --check`;
   - smoke hospedado dos três fluxos de produto e da página administrativa.
@@ -322,21 +348,22 @@
 
 ### 3.1. E21.1.3 — Catálogo estrutural e resolução explícita
 
-- Status: planejada na v1; primeira fase executável, ainda não iniciada.
+- Status: planejada na v2; primeira fase executável, ainda não iniciada.
 - Automação: não.
 - Objetivo:
   - criar identificadores canônicos, catálogo inicial tipado, projeção administrativa segura e interface única de resolução.
 - Entregas:
-  - boundary transversal mínimo no Core;
+  - domínio transversal do Core em `lib/openai-workloads/`, limitado aos seis arquivos definidos na seção 2.3;
   - baseline explícito dos três workloads de produto em `gpt-5.4-mini + none`;
   - inventário seguro do default/referência do Supabase Inspect em `gpt-4.1-mini + not_applicable`, sem afirmar a configuração efetiva de cada execução;
   - source, revision e classificação rastreáveis;
-  - validator focal de contrato;
+  - validator focal de contrato em `lib/openai-workloads/validation-cases.ts`, exposto por `validate:openai-workloads`;
   - fronteira preparada para futura fonte dinâmica sem criar adapter de banco ou Global Config.
-- Detalhamento obrigatório na v2, antes da implementação:
-  - o Gestor Estrutural deve fechar a classificação e o path canônico do novo boundary transversal;
-  - o Estrategista deve consolidar a semântica estável de `revision` apoiado pelo parecer estrutural;
-  - o Executor não deve inventar path ou significado de revisão.
+- Detalhamento consolidado na v2:
+  - classificação: domínio transversal do Core;
+  - path canônico: `lib/openai-workloads/`;
+  - revisão inicial: literal opaco `"v1"`, estável enquanto o registry não mudar e propagado sem interpretação pelos consumers;
+  - `configurationKind = "effective"` para os três workloads de produto e `configurationKind = "inventory_reference"` para Supabase Inspect.
 - Critérios de aceite:
   - consumidores podem resolver configuração sem conhecer sua origem concreta;
   - nenhum preço, prompt, schema funcional, secret ou chamada OpenAI no boundary;
@@ -345,7 +372,7 @@
 
 ### 3.2. E21.1.4 — Integração dos consumers e observabilidade comum
 
-- Status: planejada na v1; depende da E21.1.3 e ainda não foi iniciada.
+- Status: planejada na v2; depende da E21.1.3 e ainda não foi iniciada.
 - Automação: não.
 - Objetivo:
   - integrar os três consumers de produto ao resolver, corrigir as regressões e uniformizar os eventos operacionais seguros.
@@ -355,7 +382,10 @@
   - remoção da tarifa e do custo hardcoded do perfil;
   - normalização de response ID, latência e usage completo;
   - eventos comuns seguros preservando os fallbacks funcionais;
-  - atualização coordenada de `docs/base-tecnica.md` e `docs/platform-config.md` conforme a decisão da seção 1.7.
+  - ajuste em lugar dos providers de nicho e perfil e extração somente do transporte da ativação comercial para `lib/conversion-content/adapters/commercialActivationOpenAiAdapter.ts`;
+  - eliminação das leituras runtime das três variáveis de modelo, incluindo os três consumidores indiretos do perfil e a mensagem client nominal;
+  - substituição da proveniência `model_env_var` dos novos drafts pelos metadados resolvidos definidos na seção 2.8;
+  - atualização de `docs/base-tecnica.md` e marcação das três variáveis em `docs/platform-config.md` como legado temporário de reversão, sem remoção física antes do smoke de Production.
 - Critérios de aceite:
   - request real de cada workload usa exatamente a configuração resolvida;
   - nenhum default implícito de effort;
@@ -366,13 +396,14 @@
 
 ### 3.3. E21.1.5 — Inventário read-only no Admin Dashboard
 
-- Status: planejada na v1; depende da E21.1.3 e do contrato efetivo validado na E21.1.4; ainda não foi iniciada.
+- Status: planejada na v2; depende da E21.1.3 e do contrato efetivo validado na E21.1.4; ainda não foi iniciada.
 - Automação: não.
 - Objetivo:
   - expor no shell administrativo a configuração efetiva dos workloads de produto e o default/referência inventariado do Supabase Inspect.
 - Entregas:
   - página `/admin/workloads-openai`;
   - item `Workloads OpenAI` na navegação administrativa;
+  - somente `app/admin/(protected)/workloads-openai/page.tsx` e o ajuste de `components/admin/adminNavigation.ts`, sem novo adapter, API ou componente client;
   - listagem read-only dos quatro workloads;
   - classificação, ambiente, modelo, effort, origem, revisão e estado operacional dos workloads de produto;
   - default/referência, origem operacional e estado descritivo do Supabase Inspect;
@@ -389,10 +420,11 @@
 
 ### 3.4. Próxima ação
 
-- Orientar o Executor a ajustar `docs/roadmap.md` no mesmo PR conforme `docs/prompt-estrategista.md`, `docs/prompt-abc.md` e `docs/template-roadmap.md`, registrando somente seções, subseções, títulos, objetivos e status planejado.
-- Submeter ao humano a escolha entre o processo atual e o processo automatizado definida em `docs/prompt-estrategista.md`.
-- No processo atual, encaminhar depois o plano-base v1 completo ao Analista, ao Gestor Estrutural e ao Gestor de Updates.
-- Não iniciar implementação, escolher Supabase ou Global Config, ou executar fase antes dos gates do processo escolhido.
+- Executar as Passagens 1 e 2 do Analista sobre esta v2 e a matriz de consolidação, sem repetir especialistas.
+- Após aprovação da v2, aplicar `$lp-factory-abc` em modo planejamento para registrar E21/E21.1 e as três fases como planejadas no primeiro delta de `docs/roadmap.md` deste PR único, sem alegar artefatos implementados.
+- Criar o checkpoint `LP-Factory-Stage: plan-v2-approved` com plano, matriz e roadmap aprovados; somente então iniciar E21.1.3 no mesmo PR draft.
+- Após merge, deployment e smoke aprovado dos três consumers em Production, remover fisicamente as três variáveis e atualizar `docs/platform-config.md` em fechamento operacional posterior; nenhuma remoção pode anteceder essa evidência.
+- Não escolher Supabase ou Global Config, implementar configuração dinâmica ou criar PR por fase.
 
 ## 4. Escopo negativo e critérios de parada
 
@@ -434,7 +466,7 @@
 
 - Confirmar:
   - somente `docs/lousa-plano-base-e21-1.md` alterado na consolidação;
-  - documento marcado como plano-base v1;
+  - documento marcado como plano-base v2;
   - quatro seções preservadas;
   - três fases executáveis, todas com `Automação: não`;
   - E21.1 limitada a fundação, normalização, observabilidade comum e leitura administrativa;
@@ -445,7 +477,7 @@
   - Supabase Inspect descrito como default/referência inventariado, sem afirmar configuração efetiva por execução;
   - retirada física das variáveis condicionada ao smoke aprovado em Production;
   - evidências visuais e de acesso esperadas explicitadas;
-  - nenhuma implementação, roadmap, banco ou configuração de plataforma alterados nesta consolidação.
+  - somente o plano alterado nesta consolidação, sem implementação, roadmap, banco ou configuração de plataforma.
 - Executar validação de whitespace do conteúdo documental.
 - Registrar como não aplicável nesta etapa documental:
   - `npm ci`;
