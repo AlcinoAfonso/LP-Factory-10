@@ -17,7 +17,7 @@
 - Criar a fundação comum mínima para identificar e resolver cada workload OpenAI por `workload + modelo + reasoning effort`.
 - Normalizar explicitamente a configuração vigente dos consumidores conhecidos, eliminar hardcodes e impedir mudança silenciosa de effort por troca de modelo.
 - Registrar usage completo e metadados operacionais seguros de forma uniforme nos três workloads de produto/runtime.
-- Expor no Admin Dashboard um inventário read-only da configuração efetiva e da origem de cada workload, sem mutação, histórico persistido ou seleção dinâmica nesta etapa.
+- Expor no Admin Dashboard um inventário read-only da configuração efetiva dos três workloads de produto e do default/referência inventariado do Supabase Inspect, sem mutação, histórico persistido ou seleção dinâmica nesta etapa.
 - Preservar uma fronteira única que permita trocar posteriormente a fonte inicial por uma configuração operacional ativa sem alterar novamente cada consumidor.
 
 ### 1.3. Fontes obrigatórias usadas
@@ -50,7 +50,7 @@
   - um operacional, Supabase Inspect.
 - O catálogo tipado em código integra a normalização inicial, mas não é a solução final de gestão da configuração ativa.
 - Na E21.1, o catálogo tipado torna-se a fonte inicial ativa de `modelo + effort` dos três workloads de produto.
-- As três variáveis Vercel de modelo deixam de ser lidas e somente são retiradas da configuração após a validação dos três consumers em Preview; `OPENAI_API_KEY` permanece server-side na Vercel.
+- As três variáveis Vercel de modelo deixam de ser lidas pelos consumers na nova implementação; sua remoção física da Vercel e de `docs/platform-config.md` ocorre somente após smoke aprovado dos três consumers em Production, preservando a reversão do primeiro deployment; `OPENAI_API_KEY` permanece server-side na Vercel.
 - Na E21.1, o usage comum permanece em logs operacionais estruturados e seguros, sem banco ou histórico persistido.
 - `cacheWriteTokens` integra o contrato de observabilidade quando retornado pelo provedor; isso não autoriza prompt caching explícito na E21.1.
 - A configuração operacional dinâmica sem redeploy é requisito fixo da E21 para mudanças ordinárias de `modelo + effort`.
@@ -125,7 +125,8 @@
 - Fonte transitória dos três workloads de produto:
   - o catálogo tipado é a fonte inicial ativa de `modelo + effort`;
   - os consumers deixam de ler as três variáveis Vercel de modelo;
-  - a retirada das variáveis da configuração e de `docs/platform-config.md` ocorre somente após os três consumers serem validados em Preview;
+  - após smoke aprovado dos três consumers em Preview, o primeiro deployment em Production ainda preserva fisicamente as variáveis como janela de reversão;
+  - a retirada física das variáveis da Vercel e de `docs/platform-config.md` ocorre somente após smoke aprovado dos três consumers em Production;
   - `OPENAI_API_KEY` permanece na Vercel.
 - Destino do usage comum:
   - eventos estruturados nos logs operacionais seguros já usados pelo runtime;
@@ -185,7 +186,7 @@
 - O catálogo inicial não contém preços e não mantém resultados comparativos.
 - O catálogo inicial não deve obrigar alteração de código em cada consumer quando a fonte dinâmica futura assumir a configuração ativa; consumers dependem apenas do resolver comum.
 - O resolver comum não executa a chamada OpenAI, não conhece prompts, schemas, limites de output ou regras funcionais dos consumers.
-- Supabase Inspect mantém sua fonte operacional própria; a aplicação apenas conhece sua projeção documental segura para inventário.
+- Supabase Inspect mantém sua fonte operacional própria; a aplicação conhece somente o default/referência projetado pelo catálogo para inventário e não verifica a configuração efetiva de cada execução.
 
 ### 2.4. Integração e correções de regressão
 
@@ -194,7 +195,7 @@
 - A proposta do perfil deve deixar de fixar `gpt-5.4-mini` dentro do request e usar o modelo resolvido.
 - A validação de disponibilidade do perfil deve deixar de funcionar como allowlist exclusiva do modelo atual.
 - Remover as constantes de tarifa e o cálculo `estimatedCostUsd` acoplado ao `gpt-5.4-mini`.
-- Logs, metadados, contratos e UI que hoje esperam `estimatedCostUsd` devem deixar de tratá-lo como dado de runtime confiável.
+- Contratos e casos de validação que hoje esperam `estimatedCostUsd` devem deixar de tratá-lo como dado de runtime confiável.
 - Prompts, Structured Outputs, limites de output, retries, schemas e regras funcionais permanecem nos domínios consumidores.
 - Não refatorar os três consumers para um cliente OpenAI universal.
 
@@ -233,12 +234,10 @@
   - nome e identificador do workload;
   - classificação `produto/runtime` ou `operacional`;
   - ambiente observado pela página;
-  - modelo efetivo;
-  - reasoning effort efetivo;
-  - origem da configuração;
-  - revisão rastreável;
+  - para os três workloads de produto, modelo e reasoning effort efetivos, origem da configuração e revisão rastreável;
+  - para Supabase Inspect, modelo e effort do default/referência inventariado, origem operacional e indicação de que a configuração efetiva de uma execução não é verificada pela página;
   - estado operacional descritivo.
-- Supabase Inspect deve aparecer como operacional externo e sem controle de mutação.
+- Supabase Inspect deve aparecer como operacional externo, sem controle de mutação e sem aparência de dado autoritativo sobre cada execução.
 - A página não consulta GitHub, Vercel ou OpenAI e não infere configuração remota indisponível.
 - A página não mostra resultados comparativos, custo agregado, tokens históricos, latência histórica, candidata, ativação ou rollback enquanto essas fontes não existirem.
 - A UI deve reutilizar shell, navegação e componentes administrativos vigentes, com cabeçalho operacional, listagem read-only e estado vazio enxuto quando aplicável.
@@ -304,9 +303,14 @@
   - acesso de platform admin;
   - inventário dos quatro workloads;
   - configuração inicial efetiva dos workloads de produto;
-  - Supabase Inspect marcado como operacional externo;
+  - Supabase Inspect marcado como operacional externo, com default/referência inventariado e aviso de que a configuração efetiva de uma execução não é verificada;
   - nenhuma mutação ou histórico inventado;
   - desktop, mobile e navegação por TAB aprovados.
+- Evidência visual e de acesso esperada:
+  - URL do Preview hospedado validado;
+  - capturas da página em desktop e mobile;
+  - registro da navegação por TAB;
+  - resultado positivo com `platform_admin` e negativo com usuário sem autorização de plataforma.
 - Validações técnicas previstas:
   - novo validator focal do catálogo e resolver;
   - validators vigentes dos três domínios consumidores materialmente afetados;
@@ -325,10 +329,14 @@
 - Entregas:
   - boundary transversal mínimo no Core;
   - baseline explícito dos três workloads de produto em `gpt-5.4-mini + none`;
-  - inventário seguro do Supabase Inspect em `gpt-4.1-mini + not_applicable`;
+  - inventário seguro do default/referência do Supabase Inspect em `gpt-4.1-mini + not_applicable`, sem afirmar a configuração efetiva de cada execução;
   - source, revision e classificação rastreáveis;
   - validator focal de contrato;
   - fronteira preparada para futura fonte dinâmica sem criar adapter de banco ou Global Config.
+- Detalhamento obrigatório na v2, antes da implementação:
+  - o Gestor Estrutural deve fechar a classificação e o path canônico do novo boundary transversal;
+  - o Estrategista deve consolidar a semântica estável de `revision` apoiado pelo parecer estrutural;
+  - o Executor não deve inventar path ou significado de revisão.
 - Critérios de aceite:
   - consumidores podem resolver configuração sem conhecer sua origem concreta;
   - nenhum preço, prompt, schema funcional, secret ou chamada OpenAI no boundary;
@@ -361,13 +369,14 @@
 - Status: planejada na v1; depende da E21.1.3 e do contrato efetivo validado na E21.1.4; ainda não foi iniciada.
 - Automação: não.
 - Objetivo:
-  - expor a visão inicial segura dos workloads e de sua configuração efetiva no shell administrativo vigente.
+  - expor no shell administrativo a configuração efetiva dos workloads de produto e o default/referência inventariado do Supabase Inspect.
 - Entregas:
   - página `/admin/workloads-openai`;
   - item `Workloads OpenAI` na navegação administrativa;
   - listagem read-only dos quatro workloads;
-  - classificação, ambiente, modelo, effort, origem, revisão e estado operacional;
-  - diferenciação visual e textual do Supabase Inspect como workload externo;
+  - classificação, ambiente, modelo, effort, origem, revisão e estado operacional dos workloads de produto;
+  - default/referência, origem operacional e estado descritivo do Supabase Inspect;
+  - diferenciação visual e textual do Supabase Inspect como workload externo cuja configuração efetiva por execução não é verificada;
   - estados responsivos e acessíveis.
 - Critérios de aceite:
   - somente platform admin acessa a página;
@@ -375,6 +384,7 @@
   - nenhuma consulta externa a GitHub, Vercel ou OpenAI;
   - nenhuma métrica histórica ou custo inventado;
   - desktop, mobile e TAB aprovados;
+  - evidências visuais e de acesso previstas na seção 2.9 anexadas ao PR;
   - `npm run check` e `git diff --check` aprovados.
 
 ### 3.4. Próxima ação
@@ -432,6 +442,9 @@
   - Supabase e Global Config mantidos em comparação;
   - decisões da seção 1.7 fechadas;
   - `cacheWriteTokens` opcional incluído sem autorizar prompt caching explícito;
+  - Supabase Inspect descrito como default/referência inventariado, sem afirmar configuração efetiva por execução;
+  - retirada física das variáveis condicionada ao smoke aprovado em Production;
+  - evidências visuais e de acesso esperadas explicitadas;
   - nenhuma implementação, roadmap, banco ou configuração de plataforma alterados nesta consolidação.
 - Executar validação de whitespace do conteúdo documental.
 - Registrar como não aplicável nesta etapa documental:
