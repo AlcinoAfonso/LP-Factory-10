@@ -312,6 +312,8 @@
 9.1.2 Registros do recorte
 - Banco:
   - Criados:
+    - `public.account_commercial_entitlements`
+    - `public.v_account_commercial_entitlement_effective`
   - Ajustados:
 - Repositório:
   - Criados:
@@ -900,7 +902,6 @@
 • `supabase/migrations/0013__e10_5_6_ai_structured_outputs.sql`
 • `supabase/rollbacks/20260509__e10_5_6_deterministic_taxon_matching.rollback.sql`
 • `supabase/rollbacks/20260511__e10_5_6_account_niche_resolutions.rollback.sql`
-• `supabase/rollbacks/20260511__e10_5_6_account_taxonomy_service_role_grants.rollback.sql`
 • `supabase/rollbacks/20260514__e10_5_6_ai_structured_outputs.rollback.sql`
 • `lib/onboarding/niche-resolution/adapters/taxonMatchAdapter.ts`
 • `lib/onboarding/niche-resolution/adapters/accountNicheResolutionAdapter.ts`
@@ -2637,8 +2638,7 @@ v1.5.46 (07/05/2026) — E10.4: registra refinamento técnico do PR #226, movend
 
 v1.5.44 (27/04/2026) — Simplificada a seção 10.5.2 do roadmap, fundindo 10.5.2 e 10.5.2.1 no estado final único da base do BD do E10.5.
 
-v1.5.43 (26/04/2026)
-• 10.5.2.1: ajuste corretivo do Grupo C
+v1.5.43 (26/04/2026) — 10.5.2.1: ajuste corretivo do Grupo C
 • Registrado o estado final do ajuste de `audience_scope`: público da pesquisa no registro-pai, itens herdando público por `research_id`, unicidade por `taxon_id + research_block + audience_scope + version` e artefatos de migration/rollback.
 
 v1.5.42 (23/04/2026)
@@ -2714,9 +2714,8 @@ v1.5.15 (04/02/2026)
 v1.5.14 (03/02/2026)
 • Adicionado E9.8.5 para decidir a persistência do sinal comercial (commercial.expires_at) e o destino de accounts.trial_ends_at (manter como legado até decisão).
 v1.5.13 (02/02/2026)
-• Adicionado 9.3.1 com definição do trial como entitlement (início pós-setup; expiração `active → inactive`) e contrato mínimo do sinal comercial consumido por SSR/gate/UX.
-• Adicionado 9.8.2 (Briefing) para motivos de `inactive` (trial_expired vs churn) para segmentação de marketing.
-• Adicionado 9.8.3 (Briefing) para execução: remoção do drift `trial` no runtime + alinhamento de docs ao estado final.
+• E9.8.2 concluído (definição): commercial.inactive_reason com trial_expired e churn (opcional payment_failed), sem alterar accounts.status.
+• Criado E9.8.4 (pendente): decisão sobre persistência/consulta do motivo para CRM/relatórios
 v1.5.12 (01/02/2026)
 • Reestruturado o fluxo pending_setup por subestado via account_setup_completed_at, separando 10.4 (setup incompleto: IS NULL) e 10.5 (pós-setup sem plano/trial: IS NOT NULL).
 • Atualizado 10.4 para focar em UX/CTAs do subestado “setup incompleto” e registrar a transição para 10.5 ao setar setup_completed_at (sem mudar accounts.status).
@@ -2736,7 +2735,12 @@ v1.5.9 (30/01/2026)
 • Adicionado E10.4.1 (infra do marcador setup_completed_at) como pré-requisito para diferenciar subestados de pending_setup.
 • Ajustado 9.3.1 para manter foco em entitlements; remoção do hardcode/allowlist de trial no Access Context foi concluída em E10.4.1.
 • Adicionado placeholder do E10.4 (Briefing) com dependências (E10.4.1, E9.3.1).
-v1.5.8 (27/01/2026) — F1.1: CTA Criar conta no /a/home direciona para signup
+v1.5.8 (27/01/2026)
+• Adicionado E16 (Accounts) para consolidar lifecycle de accounts.status (definições, transições e UX/CTAs), com referências para docs/base-tecnica.md e docs/schema.md (anti-drift).
+• Ajustado E4.2 para remover redundâncias e focar no fluxo/UX do gateway e roteamentos, adicionando subitem de referências numerado.
+• Ajustado E8 para focar em Access Context como decisão única e remover sobreposição com E4/E15/E16, com referências numeradas.
+• Ajustado E15 (15.2–15.4) para reduzir redundâncias, apontar dependências para E16 e reforçar referências para docs/base-tecnica.md e docs/schema.md (anti-drift).
+v1.5.7 (27/01/2026) — F1.1: CTA Criar conta no /a/home direciona para signup
 • E4: registrado que o CTA Criar conta no /a/home (sem sessão) navega para /auth/sign-up (remoção de placeholder/modal).
 v1.5.6 (27/01/2026) — F2: Auto 1ª conta (pending_setup) e atualização do fluxo pós-confirmação
 • E4/E5: usuário autenticado sem membership passa a auto-criar 1ª conta pending_setup e cair em /a/[account] (modo vitrine).
