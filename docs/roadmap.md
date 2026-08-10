@@ -2475,13 +2475,13 @@ Repositório — Ajustados
 
 21. E21 — Gestão e governança dos workloads OpenAI
 - Objetivo: gerir e governar os workloads OpenAI por recortes aprovados, iniciando pela configuração explícita, observabilidade segura e leitura administrativa; a configuração dinâmica e o histórico permanecem para recortes posteriores, sem otimização automatizada.
-- Status: E21.1 em implementação; E21.1.3 implementada e validada; E21.1.4 implementada com validação técnica aprovada e smoke hospedado pendente; E21.1.5 permanece planejada.
+- Status: E21.1 em implementação; E21.1.3 implementada e validada; E21.1.4 implementada com validação técnica aprovada e smoke hospedado pendente; E21.1.5 implementada com validação técnica aprovada e evidências hospedadas de visual e acesso pendentes.
 
 21.1 Fundação, normalização e leitura dos workloads OpenAI
 
 21.1.1 Objetivo e status
 - Objetivo: estabelecer catálogo tipado e resolução explícita dos workloads OpenAI, integrar os três consumidores de produto à configuração e à observabilidade comuns e expor inventário administrativo read-only.
-- Status: Em implementação; E21.1.3 concluída, E21.1.4 aguarda smoke hospedado e E21.1.5 permanece planejada.
+- Status: Em implementação; E21.1.3 concluída, E21.1.4 aguarda smoke hospedado e E21.1.5 aguarda evidências hospedadas de visual e acesso.
 
 21.1.2 Registros do recorte
 - Repositório:
@@ -2493,6 +2493,7 @@ Repositório — Ajustados
     - `lib/openai-workloads/validation-cases.ts`
     - `lib/openai-workloads/index.ts`
     - `lib/conversion-content/adapters/commercialActivationOpenAiAdapter.ts`
+    - `app/admin/(protected)/workloads-openai/page.tsx`
   - Ajustados:
     - `app/a/[account]/actions.ts`
     - `app/admin/(protected)/perfis-de-orientacao/page.tsx`
@@ -2507,6 +2508,7 @@ Repositório — Ajustados
     - `lib/conversion-content/landing-page/generation-profile/proposal.ts`
     - `lib/conversion-content/landing-page/generation-profile/validation-cases.ts`
     - `lib/onboarding/niche-resolution/adapters/openAiResolver.ts`
+    - `components/admin/adminNavigation.ts`
     - `package.json`
 - Referências:
   - Contrato técnico: `docs/base-tecnica.md` — 3.16.
@@ -2532,10 +2534,12 @@ Repositório — Ajustados
   - O smoke hospedado dos três fluxos de produto permanece pendente e bloqueia o fechamento da fase.
 
 21.1.5 Inventário read-only no Admin Dashboard
-- Status: Planejada.
+- Status: Implementada, com validação técnica aprovada e evidências hospedadas de visual e acesso pendentes.
 - Conteúdo:
-  - Expor aos platform admins inventário protegido e sem mutação dos workloads de produto e da referência operacional externa do Supabase Inspect.
-  - Não consultar OpenAI, GitHub ou Vercel em runtime e não exibir configuração remota, métricas históricas ou capacidades inexistentes.
+  - A rota protegida `/admin/workloads-openai` integra o shell e a navegação administrativos vigentes e projeta diretamente da API pública do boundary os quatro workloads, sem adapter, API, componente client ou controle de mutação novos.
+  - Os três workloads de produto exibem ambiente observado, configuração efetiva, origem e revisão; o Supabase Inspect permanece diferenciado como referência operacional externa cuja configuração efetiva por execução não é verificada pela página.
+  - A superfície é responsiva, sem consulta runtime à OpenAI, GitHub ou Vercel e sem configuração remota, métricas históricas ou capacidades inexistentes.
+  - Permanecem pendentes as evidências hospedadas desktop, mobile, teclado e dos acessos positivo de platform admin e negativo de usuário sem esse papel.
 
 99. Changelog
 v1.5.131 — 08/08/2026 — Fechada a E19.2 após o merge do PR #700: migration aplicada, verificador SQL read-only aprovado e validação funcional hospedada autenticada concluída; preservados os limites de não geração, não publicação, ausência de tracking/CRM/capability nova e ausência de infraestrutura de assets.
