@@ -2473,6 +2473,34 @@ Repositório — Ajustados
   * A E20.3 depende da taxonomia vigente e da identidade pública da E18.5, mas permanece independente do catálogo e dos valores da E20.2.
   * Permanecem fora do recorte mutações e lifecycle operacional do perfil, terceira tabela de domínio, rota, API HTTP, Server Action, UI, composição, copy, geração, IA, automação, job, serviço e nova infraestrutura.
 
+21. E21 — Gestão e governança dos workloads OpenAI
+- Objetivo: gerir e governar os workloads OpenAI por recortes aprovados, iniciando pela configuração explícita, observabilidade segura e leitura administrativa; a configuração dinâmica e o histórico permanecem para recortes posteriores, sem otimização automatizada.
+- Status: E21.1 planejada conforme o plano-base v2 aprovado; nenhuma implementação iniciada.
+
+21.1 Fundação, normalização e leitura dos workloads OpenAI
+
+21.1.1 Objetivo e status
+- Objetivo: estabelecer catálogo tipado e resolução explícita dos workloads OpenAI, integrar os três consumidores de produto à configuração e à observabilidade comuns e expor inventário administrativo read-only.
+- Status: Planejada; implementação ainda não iniciada.
+
+21.1.3 Catálogo estrutural e resolução explícita
+- Status: Planejada.
+- Conteúdo:
+  - Definir catálogo repo-only com configuração efetiva explícita para os três workloads de produto e referência operacional separada para Supabase Inspect.
+  - Preservar resolução fail-closed, revisão rastreável e fronteira substituível por fonte dinâmica futura, sem criar banco, integração remota ou fallback silencioso.
+
+21.1.4 Integração dos consumidores e observabilidade comum
+- Status: Planejada.
+- Conteúdo:
+  - Fazer os três consumidores enviarem modelo e reasoning effort explícitos à Responses API, preservando providers, contratos funcionais e fallbacks vigentes.
+  - Normalizar usage, response ID, ambiente, resultado e falhas seguras por tentativa, sem persistir histórico, payloads de negócio ou custo monetário no runtime.
+
+21.1.5 Inventário read-only no Admin Dashboard
+- Status: Planejada.
+- Conteúdo:
+  - Expor aos platform admins inventário protegido e sem mutação dos workloads de produto e da referência operacional externa do Supabase Inspect.
+  - Não consultar OpenAI, GitHub ou Vercel em runtime e não exibir configuração remota, métricas históricas ou capacidades inexistentes.
+
 99. Changelog
 v1.5.131 — 08/08/2026 — Fechada a E19.2 após o merge do PR #700: migration aplicada, verificador SQL read-only aprovado e validação funcional hospedada autenticada concluída; preservados os limites de não geração, não publicação, ausência de tracking/CRM/capability nova e ausência de infraestrutura de assets.
 
