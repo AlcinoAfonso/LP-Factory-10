@@ -65,6 +65,11 @@ export type LandingPageInputSubstitutionPolicy =
   | "forbidden"
   | "explicit_allowed";
 
+export type LandingPageInputCapabilityBinding = Readonly<{
+  slotKey: "applicable_capabilities";
+  supportedWhenValue: true;
+}>;
+
 export type LandingPageInputCondition = Readonly<{
   fieldKey: string;
   operator: "equals" | "in";
@@ -154,6 +159,7 @@ type LandingPageInputFieldDefinitionBase = Readonly<{
   allowedPlans: readonly LandingPageInputCatalogPlan[];
   snapshotPolicy: "include_if_used";
   landingPageSubstitutionPolicy?: LandingPageInputSubstitutionPolicy;
+  capabilityBindings?: readonly LandingPageInputCapabilityBinding[];
   evidence: LandingPageInputEvidence;
   createdInVersion: number;
 }>;

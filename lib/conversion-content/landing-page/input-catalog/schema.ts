@@ -126,6 +126,13 @@ const evidenceSchema = z
   })
   .strict();
 
+const capabilityBindingSchema = z
+  .object({
+    slotKey: z.literal("applicable_capabilities"),
+    supportedWhenValue: z.literal(true),
+  })
+  .strict();
+
 export const landingPageInputFieldDefinitionSchema = z
   .object({
     kind: z.literal("field"),
@@ -169,6 +176,7 @@ export const landingPageInputFieldDefinitionSchema = z
     landingPageSubstitutionPolicy: z
       .enum(["not_applicable", "forbidden", "explicit_allowed"])
       .optional(),
+    capabilityBindings: z.array(capabilityBindingSchema).min(1).optional(),
     evidence: evidenceSchema,
     createdInVersion: z.number().int().min(1),
   })
@@ -194,6 +202,24 @@ export const landingPageInputFieldDefinitionSchema = z
     }
     if (new Set(field.allowedPlans).size !== field.allowedPlans.length) {
       context.addIssue({ code: "custom", path: ["allowedPlans"], message: "plans must be unique" });
+    }
+    if (
+      field.capabilityBindings &&
+      new Set(field.capabilityBindings.map((binding) => binding.slotKey)).size !==
+        field.capabilityBindings.length
+    ) {
+      context.addIssue({
+        code: "custom",
+        path: ["capabilityBindings"],
+        message: "capability binding slots must be unique",
+      });
+    }
+    if (field.capabilityBindings && field.valueType !== "boolean") {
+      context.addIssue({
+        code: "custom",
+        path: ["capabilityBindings"],
+        message: "capability bindings require a boolean field",
+      });
     }
     if (field.createdInVersion >= 2 && !field.landingPageSubstitutionPolicy) {
       context.addIssue({

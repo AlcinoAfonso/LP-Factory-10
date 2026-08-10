@@ -2,7 +2,7 @@
 
 0.1 Cabeçalho
 • Data: 09/08/2026
-• Versão: v1.5.132
+• Versão: v1.5.136
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -1572,7 +1572,7 @@ Repositório — Ajustados
   - A IA não preencherá nem modificará `generation_guidance` ou `item_guidance`, que serão exceções humanas opcionais.
   - A decisão `wait_for_modules` ou `proceed_with_available` é registrada no evento de auditoria do rascunho; `wait_for_modules` bloqueia a ativação e `proceed_with_available` permite a ativação com a decisão auditada.
   - Não existe dependência futura de recálculo dos gaps pela E12.4.4 nem novo gate de autorização por conta.
-  - A evolução E20.3.5 tornará `generation_guidance` opcional no mesmo PR técnico, sem reabrir E20.3.3 ou E20.3.4.
+  - A E20.3.5 tornou `generation_guidance` opcional pela migration `20260730114633`, já aplicada, sem reabrir E20.3.3 ou E20.3.4.
   - Snapshot e independência da LP permanecem consolidados; liberdade de edição e comportamento de regeneração serão decididos apenas no futuro plano-base da E19.4.
   - Registros da implementação candidata:
     - Admin Dashboard e Server Actions em `app/admin/(protected)/perfis-de-orientacao/`.
@@ -2211,7 +2211,7 @@ Repositório — Ajustados
 
 19. E19 — LP Builder
 - Objetivo: Consolidar o fluxo Core de landing pages por conta, da identidade mínima em `draft` às futuras etapas de geração, revisão, materialização e publicação, sempre por recortes aprovados.
-- Status: E19.1 concluída; E19.2 concluída; E19.3 planejada, com plano-base v1 consolidado; E19.4 é o recorte sucessor planejado, sem implementação iniciada.
+- Status: E19.1 concluída; E19.2 concluída; E19.3 concluída conforme o plano-base v2 aprovado; E19.4 é o recorte sucessor planejado, sem implementação iniciada.
 
 19.1 Criação produtiva mínima de LP por conta
 
@@ -2336,33 +2336,58 @@ Repositório — Ajustados
 
 19.3.1 Objetivo e status
 - Objetivo: implementar compilador determinístico universal que receba LP legítima já configurada e produza pacote completo, autorizado e testável para a geração futura.
-- Status: planejado; plano-base v1 em `docs/lousa-plano-base-e19-3.md`.
+- Status: implementado e validado conforme o plano-base v2 aprovado em `docs/lousa-plano-base-e19-3.md`.
 - Sem OpenAI, geração de copy, materialização ou renderer.
 
+19.3.2 Registros do recorte
+- Repositório:
+  - Criados:
+    - `lib/lp-builder/generationContextContracts.ts`
+    - `lib/lp-builder/generationContext.ts`
+    - `lib/lp-builder/adapters/generationContextAdapterCore.ts`
+    - `lib/lp-builder/adapters/generationContextAdapter.ts`
+    - `lib/lp-builder/generation-context-validation-cases.ts`
+  - Ajustados:
+    - `lib/conversion-content/landing-page/input-catalog/contracts.ts`
+    - `lib/conversion-content/landing-page/input-catalog/registry.ts`
+    - `lib/conversion-content/landing-page/input-catalog/schema.ts`
+    - `lib/conversion-content/landing-page/input-catalog/validation-cases.ts`
+    - `lib/lp-builder/index.ts`
+    - `package.json`
+- Banco, migration, rota, UI e infraestrutura: N/A.
+
 19.3.3 Contrato e composição determinística do contexto de geração
-- Resolver seleção estrutural, autorização do contexto e interface lógica de saída.
-- Reutilizar os contratos canônicos vigentes.
-- Fazer apenas refinamentos focais indispensáveis ao consumidor real.
-- Status: planejado para execução conforme o plano-base v1.
+- Status: implementado e validado.
+- Conteúdo:
+  - O compilador puro e o boundary server-only resolvem seleção estrutural, autorização do contexto e interface lógica de saída pelas APIs públicas canônicas vigentes.
+  - Todas as recomendações estruturalmente elegíveis do perfil ativo são selecionadas em `recommendedOrder`; `P1/P2/P3` permanece metadado sem quota ou corte, fallback exige alternativa única elegível e cada omissão legítima fica rastreada.
+  - O catálogo E20.2 v3 preserva os 23 fields e a estrutura integral da v2 e acrescenta somente os bindings autorizados de `financing_support_available` e `document_support_available` com `applicable_capabilities`; valores persistidos v2 permanecem sem migração ou regravação.
+  - A API pública v1 retorna somente sucesso completo com Parte A determinística e Parte B filtrada pelas fontes autorizadas, ou falha explícita sem pacote parcial; o resultado é profundamente imutável.
+  - O boundary valida conta, membership, entitlement, draft vinculado, configuração completa, pesquisa e perfil, faz somente leituras server-side e registra apenas resultado, motivo seguro, `request_id` e latência quando disponíveis.
+  - A primeira prova read-only confirmou o draft legítimo vinculado, a configuração v2 completa, o plano Starter, o taxon ativo, as pesquisas completas e o perfil próprio ativo; `lead_capture.form` e `social_proof.standard` foram omitidos por inelegibilidade contextual objetiva, sem ambiguidade ou fallback inventado.
+    - `landingPageId`: `4d91020a-07e5-4bf9-a1aa-272bbc0366ff`.
+    - Ordem e decisão: `10 hero.standard` selecionado; `20 trust_bar.standard` selecionado; `30 lead_capture.form` omitido porque o canal efetivo é `whatsapp` e a variante exige `form`; `40 problem_solution.standard` selecionado; `50 offer.standard` selecionado; `60 process.standard` selecionado; `70 social_proof.standard` omitido porque não existe evidência operacional autorizada para cumprir a cardinalidade mínima; `80 technical_assurance.standard` selecionado; `90 faq.standard` selecionado; `100 benefits.standard` selecionado; `110 final_cta.standard` selecionado.
+  - O validador focal e as regressões de raiz, pesquisa, catálogo de entradas, catálogo de módulos, perfil de geração e onboarding E19.2 foram integrados ao `npm run check`.
+  - manter fora do recorte OpenAI, geração de copy, persistência nova, materialização, renderer, rota, UI, agente, job e automação.
 
 19.4 Geração e materialização da landing page em `draft`
 
 19.4.1 Objetivo e status
 - Objetivo: consumir a saída real implementada e validada da E19.3 para a futura geração por IA, validação pós-IA, materialização e visualização mínimas necessárias à primeira LP real em `draft`.
 - Status: planejado como recorte sucessor.
-- Debate detalhado e implementação somente depois da E19.3 implementada e validada.
+- Debate detalhado e implementação ainda não iniciados; devem ocorrer em recorte próprio, sem antecipação pela E19.3.
 
 20. E20 — Preparação e liberação de taxons para geração de landing pages
 
 * Objetivo: consolidar catálogo de entradas por taxon e plano, perfis versionados de orientação à geração, herança e, em recortes futuros, prontidão e liberação antes da geração de LPs por conta.
-* Status: Em implementação por recortes; 20.2 concluído e 20.3 aprovado para implementação em duas fases.
+* Status: E20.2 concluída e refinada; E20.3 concluída.
 
 20.2 Catálogo de entradas por taxon
 
 20.2.1 Objetivo e status
 
 * Objetivo: definir e resolver um catálogo declarativo versionado de entradas de `landing_page` por taxon e plano, separado de valores operacionais, composição, conteúdo e entitlement.
-* Status: Concluído e refinado (06/08/2026).
+* Status: Concluído e refinado (09/08/2026).
 
 20.2.2 Registros do recorte
 
@@ -2390,6 +2415,7 @@ Repositório — Ajustados
   * O catálogo é declarativo, versionado no repositório e resolvido por taxon e plano, sempre com versão explícita e sem fallback automático.
   * A v1 permanece integralmente preservada com os 19 campos e a ordem anteriores.
   * A v2 contém 23 campos: os 19 da v1 e os quatro mínimos do Starter — serviço ou oferta principal, descrição factual curta, referência opaca opcional de logo ou asset principal e paleta visual confirmada.
+  * A v3 preserva integralmente os 23 campos, a ordem e a estrutura da v2 e acrescenta somente metadata declarativo que autoriza `financing_support_available` e `document_support_available` a sustentar `applicable_capabilities` quando o valor booleano for `true`; a v2 permanece imutável e continua validando os valores persistidos.
   * Os quatro campos da v2 permanecem disponíveis em Starter, Lite, Pro e Ultra, sem diferenças adicionais entre planos neste recorte.
   * Strings obrigatórias rejeitam valor vazio; o asset aceita somente objeto estrito com `asset_id` opaco não vazio; a paleta exige exatamente `primary`, `secondary`, `accent`, `background` e `text` em hexadecimal `#RRGGBB`.
   * Os campos criados na v2 declaram `landingPageSubstitutionPolicy`: oferta, descrição e logo usam `forbidden`, enquanto a paleta usa `explicit_allowed`; ausência da política nos campos históricos da v1 não autoriza substituição.
@@ -2435,27 +2461,17 @@ Repositório — Ajustados
   * Implementar resolução determinística própria ou herdada, recomendações em ordem crescente e bloqueio de fallback distante quando o ancestral elegível mais próximo possuir perfil `active` inválido.
   * A futura E12.4 tratará mutações e atomicidade do lifecycle; a futura E19.4 poderá consumir o perfil resolvido. A conclusão da E20.3 apenas libera o debate da E12.4, sem autorizar sua implementação.
 
-20.3.5 Contrato e limites
+20.3.5 Contrato, limites e opcionalidade da orientação geral
 
-* Status: Definido.
+* Status: Concluída; migration `20260730114633` aplicada, coluna verificada como anulável e reconciliação final de `docs/schema.md` realizada.
 * Conteúdo:
 
-  * O perfil pertence a um taxon, possui versão e estado e reúne itens com módulo e versão, variante e versão opcionais, prioridade `P1`, `P2` ou `P3`, ordem recomendada positiva e orientação específica opcional; `generation_guidance` permanece obrigatória no contrato vigente até a E20.3.5.
+  * O perfil pertence a um taxon, possui versão e estado e reúne itens com módulo e versão, variante e versão opcionais, prioridade `P1`, `P2` ou `P3`, ordem recomendada positiva e orientação específica opcional; `generation_guidance` é anulável, exclusivamente humana e não vazia após trim quando presente.
   * Prioridade e ordem são orientação; não criam módulo obrigatório, composição final, seleção por plano, prontidão, autorização, revogação ou geração.
   * Perfil e itens formam um agregado único, somente leitura server-side, persistido em exatamente duas tabelas e entregue por um único boundary, sem perfil oficial neste recorte.
   * A resolução usa perfil `active` próprio ou do ancestral elegível mais próximo, preserva proveniência e falha fechado para cadeia, leitura, identidade ou perfil inválido; ausência legítima permanece distinta de erro.
   * A E20.3 depende da taxonomia vigente e da identidade pública da E18.5, mas permanece independente do catálogo e dos valores da E20.2.
   * Permanecem fora do recorte mutações e lifecycle operacional do perfil, terceira tabela de domínio, rota, API HTTP, Server Action, UI, composição, copy, geração, IA, automação, job, serviço e nova infraestrutura.
-
-20.3.5 Opcionalidade da orientação geral
-
-* Status: Implementação candidata no mesmo PR técnico da E12.4.3.2; apply, verificação read-only e reconciliação final do schema permanecem pendentes.
-* Conteúdo:
-
-  * Tornar `generation_guidance` anulável, exclusivamente humano e não vazio quando presente, por migration incremental forward-only.
-  * Atualizar contratos, schemas, DTOs, RPCs, normalização, testes e verificador read-only sem alterar estados, herança, resolução active-only ou recomendações.
-  * Preservar `item_guidance` opcional e exclusivamente humano.
-  * Não criar novo campo, estado, tabela, resolver ou infraestrutura e não reabrir E20.3.3 ou E20.3.4.
 
 99. Changelog
 v1.5.131 — 08/08/2026 — Fechada a E19.2 após o merge do PR #700: migration aplicada, verificador SQL read-only aprovado e validação funcional hospedada autenticada concluída; preservados os limites de não geração, não publicação, ausência de tracking/CRM/capability nova e ausência de infraestrutura de assets.

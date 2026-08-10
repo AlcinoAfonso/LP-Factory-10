@@ -2,8 +2,8 @@
 
 0.1 Cabeçalho
 • Documento: Base Técnica LP Factory 10
-• Versão: v2.0.61
-• Data: 06/08/2026
+• Versão: v2.0.62
+• Data: 09/08/2026
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -238,6 +238,11 @@
 • O LP Builder deve consumir o boundary de entitlement existente, sem duplicar sua lógica.
 • Persistência inicial permanece limitada a draft; schema e campos exatos pertencem a `docs/schema.md` e ao código.
 • UI/client não acessa Supabase diretamente para criar LP; evolução funcional fora do runtime atual pertence ao roadmap.
+• O contexto de geração usa o contrato público v1 de `lib/lp-builder/`: sucesso contém conjuntamente contrato determinístico e matéria-prima autorizada; falhas são explícitas e nunca retornam pacote parcial.
+• A composição deve reutilizar as APIs públicas canônicas de raiz, pesquisa, catálogo de entradas, catálogo de módulos e perfil de geração; registries e schemas de outros boundaries não podem ser importados pelo compilador puro.
+• Valores configurados pelo catálogo v2 permanecem validados pela v2; metadata de binding é resolvido pelo catálogo v3 somente após compatibilidade estrutural integral, sem migração, regravação ou mapa paralelo.
+• Seleção estrutural preserva `recommendedOrder`, mantém `P1/P2/P3` apenas como metadado e só usa fallback quando houver exatamente uma alternativa elegível; inelegibilidade contextual pode omitir a recomendação com causa rastreada.
+• O boundary server-only pode registrar somente resultado, motivo seguro, `request_id` e latência quando disponíveis; valores, pesquisa, fatos, evidências, guidance, payload bruto, PII, secrets, tokens e prompts não entram no log.
 
 3.14.5 Resolução de nicho e taxonomia
 • Boundary canônico: `lib/onboarding/niche-resolution/`; contratos, thresholds, reasons, schemas e adapters permanecem canônicos no código.

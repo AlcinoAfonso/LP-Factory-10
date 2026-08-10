@@ -340,9 +340,30 @@ const catalogV2: LandingPageInputCatalogRegistryEntry = {
   taxonLayers: catalogV1.taxonLayers,
 };
 
+const catalogV3 = {
+  ...cloneJson(catalogV2),
+  version: 3,
+} as LandingPageInputCatalogRegistryEntry;
+const brokerV3Layer = catalogV3.taxonLayers[realEstateBrokerNicheTaxon.slug];
+if (!brokerV3Layer) throw new Error("Real-estate broker input layer is unavailable.");
+for (const entry of brokerV3Layer.entries) {
+  if (
+    entry.kind === "field" &&
+    (entry.fieldKey === "financing_support_available" ||
+      entry.fieldKey === "document_support_available")
+  ) {
+    (entry as LandingPageInputFieldDefinition & {
+      capabilityBindings: LandingPageInputFieldDefinition["capabilityBindings"];
+    }).capabilityBindings = [
+      { slotKey: "applicable_capabilities", supportedWhenValue: true },
+    ];
+  }
+}
+
 export const landingPageInputCatalogRegistry = deepFreeze({
   1: catalogV1,
   2: catalogV2,
+  3: catalogV3,
 } satisfies LandingPageInputCatalogRegistry);
 
 function field(
@@ -383,4 +404,8 @@ function deepFreeze<T>(value: T): T {
     Object.freeze(value);
   }
   return value;
+}
+
+function cloneJson<T>(value: T): T {
+  return JSON.parse(JSON.stringify(value)) as T;
 }
