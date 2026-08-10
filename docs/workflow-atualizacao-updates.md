@@ -1,5 +1,5 @@
 22/07/2026 — Workflow de Atualização dos Catálogos de Updates
-Atualizado em 04/08/2026
+Atualizado em 10/08/2026
 
 Fontes: chat, repositório e documentos indicados nos itens 2 e 3
 
@@ -17,6 +17,7 @@ Ao final de uma única execução:
 - todos os IDs publicados continuam localizáveis no catálogo, sem renumeração, reutilização ou desaparecimento físico;
 - itens implementados, parcialmente implementados, absorvidos, superados ou rejeitados preservam registro histórico e referências;
 - ausências de ajuste, bloqueios e exceções foram registradas;
+- existe um relatório final curto que consolida o que foi feito, orienta a prioridade dos updates e reapresenta os recursos transversais ainda ativos;
 - nenhum PR foi mergeado nem a catalogação transformada em implementação.
 
 ### 1.2. Papel
@@ -64,10 +65,14 @@ Fontes secundárias podem apoiar, mas não substituir a fonte oficial.
    - pesquisar recursos novos, alterados, deprecados ou superados, cobrindo os pilares e canais estratégicos do `README.md`;
    - avaliar função, natureza de uso, relação com a stack, caso de uso, valor, maturidade das fontes, custo, complexidade, segurança, manutenção, dependências, riscos e horizonte;
    - registrar horizonte como Starter, Lite, Pro, Ultra ou indefinido quando houver evidência suficiente, sem transformar a classificação em decisão final de plano;
+   - classificar a forma de aplicação como dependente de recorte ou transversal ao projeto:
+     - dependente de recorte quando a utilidade e a aplicação precisarem ser decididas em cada plano-base, fase ou recorte;
+     - transversal quando o recurso afetar stack, segurança, operação ou governança do projeto como um todo e exigir avaliação técnica ou operacional própria antes de eventual implementação;
    - exigir hipótese de superioridade e gatilho objetivo para recurso sobreposto ou substituto;
    - classificar itens existentes como manter, ajustar ou arquivar/absorver, e recursos pesquisados como adicionar, não adicionar ou não validado;
    - nunca apagar um ID publicado; quando o item sair do catálogo ativo, manter registro histórico compacto com título original, estado final, evidências, recortes e eventual substituto;
-   - manter item implementado total ou parcialmente com os recortes aplicados e o escopo ainda não implementado;
+   - manter item parcialmente implementado no catálogo ativo, com os recortes aplicados e o escopo ainda não implementado;
+   - retirar item do catálogo ativo somente após implementação integral e validação, rejeição formal ou superação comprovada, preservando o ID em registro histórico compacto com a evidência e as referências competentes;
    - manter item com uso real sem registro no documento técnico competente como lacuna documental;
    - adicionar somente recurso compatível com o `README.md`, com fonte oficial, valor concreto e horizonte plausível; recurso futuro ou condicional pode entrar sem autorizar implementação;
    - não rejeitar nem arquivar um recurso somente por estar fora do Starter ou do MVP atual;
@@ -81,6 +86,8 @@ Fontes secundárias podem apoiar, mas não substituir a fonte oficial.
 4. Ao final, conferir a sequência executada, a base comum, os arquivos alterados, a cobertura dos canais estratégicos, os IDs e o estado dos PRs. Se houver divergência, informá-la e não declarar execução integralmente aderente.
 
 ## 5. Relatório obrigatório
+
+Os itens 1 a 10 compõem o relatório de cada catálogo. O item 11 é produzido uma única vez, após a conclusão e a auditoria dos quatro ciclos, no mesmo fechamento entregue ao usuário.
 
 1. Veredito.
 2. Fontes consultadas.
@@ -129,12 +136,20 @@ Fontes secundárias podem apoiar, mas não substituir a fonte oficial.
    - confirmar a busca por referências explícitas e implementação semântica antes de cada arquivamento;
    - confirmar aderência ao `README.md`;
    - confirmar que novidade, modernidade ou distância do MVP não determinaram isoladamente a decisão.
+11. Fechamento consolidado da execução:
+   - entregar um resumo curto do que foi feito, com catálogos analisados, alterações, draft PRs ou justificativas, bloqueios, lacunas e conclusão geral;
+   - separar os updates novos ou materialmente ajustados entre dependentes de recorte e transversais ao projeto, indicando prioridade atual, relação com o caminho crítico, momento ou gatilho recomendado e fluxo competente para avaliação;
+   - reapresentar todos os recursos transversais ainda ativos nos catálogos resultantes, mesmo quando não forem novos nem tiverem mudado na rodada, deixando de reapresentá-los somente depois que saírem do catálogo ativo conforme a regra do item 4.2;
+   - informar, para cada pendência transversal, ID e título, estado atual, ação pendente, prioridade, motivo da permanência, momento ou gatilho recomendado, mudança desde a rodada anterior — registrando `permanece pendente, sem mudança de prioridade` quando nada tiver mudado — e critério de encerramento;
+   - deixar explícito que a orientação de prioridade não autoriza implementação;
+   - encerrar com até três melhorias observadas durante a própria execução e convidar o usuário a debatê-las, sem criar automaticamente documento, branch ou PR adicional.
 
 ## 6. Limites e parada
 
 - Não alterar código, roadmap, Base Técnica, schema, configuração ou outro catálogo.
 - Não transformar catalogação em implementação, mudança de stack, nova infraestrutura ou novo escopo do MVP.
 - Não decidir aplicação final em plano-base, fase ou recorte; o Gestor de Updates recomenda horizonte e o Estrategista consolida no fluxo competente.
+- Não criar documento, catálogo, seção permanente ou controle paralelo de pendências transversais; os catálogos são a fonte, e o relatório final apenas as reapresenta.
 - Não adicionar item sem fonte oficial, valor concreto e compatibilidade com o `README.md`.
 - Não realizar merge dos PRs.
 - Quando faltar fonte obrigatória, houver conflito material ou faltar permissão, informar exatamente o bloqueio e parar.
