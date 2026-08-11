@@ -369,21 +369,21 @@ function HeroModule({ module, typography }: { module: MaterializedModule; typogr
     <section className="border-t-8 border-[var(--lp-primary)] bg-[var(--lp-background)] px-5 py-12 text-[var(--lp-text)] first:rounded-t-2xl sm:px-10 sm:py-16 lg:px-14 lg:py-20">
       <div className="min-w-0 max-w-3xl">
         {textValue(module, "eyebrow") ? (
-          <p className="break-words text-sm font-semibold uppercase tracking-[0.18em] text-[var(--lp-primary)]">
+          <p className="break-words text-sm font-semibold uppercase tracking-[0.18em] text-[var(--lp-text)]">
             {textValue(module, "eyebrow")}
           </p>
         ) : null}
         <h1
-          className="mt-4 break-words font-bold leading-tight tracking-tight"
+          className="mt-4 break-words font-bold leading-tight tracking-tight text-[var(--lp-text)]"
           style={{ fontSize: `clamp(${typography.h1.min}, 6vw, ${typography.h1.max})` }}
         >
           {textValue(module, "title")}
         </h1>
-        <p className="mt-5 max-w-2xl break-words text-base leading-7 opacity-85 sm:text-lg">
+        <p className="mt-5 max-w-2xl break-words text-base leading-7 text-[var(--lp-text)] sm:text-lg">
           {textValue(module, "subtitle")}
         </p>
         {textValue(module, "proofShort") ? (
-          <p className="mt-4 max-w-2xl break-words text-sm leading-6 text-[var(--lp-secondary)]">
+          <p className="mt-4 max-w-2xl break-words text-sm leading-6 text-[var(--lp-text)]">
             {textValue(module, "proofShort")}
           </p>
         ) : null}
@@ -397,7 +397,7 @@ function HeroModule({ module, typography }: { module: MaterializedModule; typogr
           <MaterializedAction action={action} className="mt-8" />
         ) : null}
         {field(module, "media")?.kind === "image" ? (
-          <p className="mt-6 break-words text-xs font-medium opacity-70">Imagem de apoio configurada.</p>
+          <p className="mt-6 break-words text-xs font-medium text-[var(--lp-text)]">Imagem de apoio configurada.</p>
         ) : null}
       </div>
     </section>
@@ -437,11 +437,11 @@ function CollectionModule({ module, density, typography }: {
             return (
               <li key={index} className="min-w-0 rounded-xl border border-[var(--lp-secondary)] bg-[var(--lp-background)] p-5 shadow-card">
                 {module.moduleKey === "process" ? (
-                  <span className="text-sm font-bold text-[var(--lp-primary)]">Etapa {index + 1}</span>
+                  <span className="text-sm font-bold text-[var(--lp-text)]">Etapa {index + 1}</span>
                 ) : null}
-                <h3 className="mt-2 break-words text-lg font-semibold">{values[0]}</h3>
+                <h3 className="mt-2 break-words text-lg font-semibold text-[var(--lp-text)]">{values[0]}</h3>
                 {values.slice(1).map((value, valueIndex) => (
-                  <p key={valueIndex} className="mt-2 break-words text-sm leading-6 opacity-75">{value}</p>
+                  <p key={valueIndex} className="mt-2 break-words text-sm leading-6 text-[var(--lp-text)]">{value}</p>
                 ))}
               </li>
             );
@@ -467,18 +467,18 @@ function FaqModule({ module, moduleIndex, typography }: {
           const values = itemTextValues(item.fields);
           return accordion ? (
             <details key={index} name={`landing-page-faq-${moduleIndex}`} className="group rounded-xl border border-[var(--lp-secondary)] bg-[var(--lp-background)] shadow-card">
-              <summary className="min-h-11 cursor-pointer list-none px-5 py-4 font-semibold outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--lp-accent)] [&::-webkit-details-marker]:hidden">
+              <summary className="min-h-11 cursor-pointer list-none px-5 py-4 font-semibold text-[var(--lp-text)] outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--lp-accent)] [&::-webkit-details-marker]:hidden">
                 <span className="flex min-w-0 items-center justify-between gap-4">
                   <span className="min-w-0 break-words">{values[0]}</span>
                   <span aria-hidden="true" className="shrink-0 text-xl text-[var(--lp-primary)] transition-transform group-open:rotate-45">+</span>
                 </span>
               </summary>
-              <p className="break-words border-t border-[var(--lp-secondary)] px-5 py-4 text-sm leading-6 opacity-75">{values[1]}</p>
+              <p className="break-words border-t border-[var(--lp-secondary)] px-5 py-4 text-sm leading-6 text-[var(--lp-text)]">{values[1]}</p>
             </details>
           ) : (
             <article key={index} className="rounded-xl border border-[var(--lp-secondary)] bg-[var(--lp-background)] px-5 py-4 shadow-card">
-              <h3 className="break-words font-semibold">{values[0]}</h3>
-              <p className="mt-2 break-words text-sm leading-6 opacity-75">{values[1]}</p>
+              <h3 className="break-words font-semibold text-[var(--lp-text)]">{values[0]}</h3>
+              <p className="mt-2 break-words text-sm leading-6 text-[var(--lp-text)]">{values[1]}</p>
             </article>
           );
         })}
@@ -493,7 +493,7 @@ function FinalCtaModule({ module, typography }: { module: MaterializedModule; ty
     <section className="rounded-b-2xl border-t-4 border-[var(--lp-primary)] bg-[var(--lp-background)] px-5 py-12 text-center sm:px-10 lg:px-14">
       <SectionHeading module={module} typography={typography} centered />
       {textValue(module, "body") ? (
-        <p className="mx-auto mt-4 max-w-2xl break-words text-sm leading-6 opacity-75 sm:text-base">{textValue(module, "body")}</p>
+        <p className="mx-auto mt-4 max-w-2xl break-words text-sm leading-6 text-[var(--lp-text)] sm:text-base">{textValue(module, "body")}</p>
       ) : null}
       {action ? <MaterializedAction action={action} className="mt-7" /> : null}
     </section>
@@ -506,7 +506,7 @@ function LeadCaptureModule({ module, typography }: { module: MaterializedModule;
   return (
     <section id="lead-capture" className="px-5 py-12 sm:px-10 lg:px-14">
       <SectionHeading module={module} typography={typography} />
-      <p className="mt-4 max-w-2xl break-words text-sm leading-6 opacity-75">{textValue(module, "body")}</p>
+      <p className="mt-4 max-w-2xl break-words text-sm leading-6 text-[var(--lp-text)]">{textValue(module, "body")}</p>
       {interaction?.kind === "form" ? (
         <MaterializedReadOnlyForm action={action} interaction={interaction} scope="lead-capture" />
       ) : null}
@@ -527,16 +527,16 @@ function MaterializedReadOnlyForm({
   return (
     <form
       action={`#${scope}-draft-form`}
-      className="mt-8 grid max-w-2xl gap-4 rounded-xl border border-[var(--lp-secondary)] bg-[var(--lp-background)] p-5"
+      className="mt-8 grid max-w-2xl gap-4 rounded-xl border border-[var(--lp-secondary)] bg-[var(--lp-background)] p-5 text-[var(--lp-text)]"
       id={`${scope}-draft-form`}
     >
-      <p id={instructionsId} className="break-words text-xs leading-5 opacity-75">
+      <p id={instructionsId} className="break-words text-xs leading-5 text-[var(--lp-text)]">
         Preencha os campos obrigatórios para validar o formulário neste preview. Nenhum dado será enviado.
       </p>
       {interaction.fields.map((formField) => {
         const inputId = `${scope}-draft-form-${formField.fieldKey}`;
         return (
-          <label key={formField.fieldKey} htmlFor={inputId} className="grid gap-2 break-words text-sm font-semibold">
+          <label key={formField.fieldKey} htmlFor={inputId} className="grid gap-2 break-words text-sm font-semibold text-[var(--lp-text)]">
             {formFieldLabel(formField.fieldKey)}
             <input
               id={inputId}
@@ -548,7 +548,7 @@ function MaterializedReadOnlyForm({
           </label>
         );
       })}
-      <label htmlFor={`${scope}-draft-form-consent`} className="flex items-start gap-3 break-words text-sm leading-6">
+      <label htmlFor={`${scope}-draft-form-consent`} className="flex items-start gap-3 break-words text-sm leading-6 text-[var(--lp-text)]">
         <input id={`${scope}-draft-form-consent`} aria-describedby={instructionsId} type="checkbox" required className="mt-1 size-4 shrink-0" />
         <span>
           Concordo com o uso dos dados para este contato e com a{" "}
@@ -564,7 +564,7 @@ function MaterializedReadOnlyForm({
       </label>
       <button
         type="submit"
-        className="inline-flex min-h-11 min-w-0 items-center justify-center rounded-lg border-2 border-[var(--lp-primary)] bg-[var(--lp-text)] px-5 py-3 text-sm font-semibold text-[var(--lp-background)] shadow-sm outline-none hover:opacity-90 focus-visible:ring-2 focus-visible:ring-[var(--lp-accent)] focus-visible:ring-offset-2"
+        className="inline-flex min-h-11 min-w-0 items-center justify-center rounded-lg border-2 border-[var(--lp-primary)] bg-[var(--lp-text)] px-5 py-3 text-sm font-semibold text-[var(--lp-background)] shadow-sm outline-none focus-visible:ring-2 focus-visible:ring-[var(--lp-accent)] focus-visible:ring-offset-2"
       >
         <span className="break-words">{action?.label ?? "Validar formulário"}</span>
       </button>
@@ -581,7 +581,7 @@ function SectionHeading({ module, typography, centered = false }: {
   if (!title) return null;
   return (
     <h2
-      className={cn("break-words font-bold leading-tight tracking-tight", centered && "mx-auto max-w-3xl text-center")}
+      className={cn("break-words font-bold leading-tight tracking-tight text-[var(--lp-text)]", centered && "mx-auto max-w-3xl text-center")}
       style={{ fontSize: `clamp(${typography.h2.min}, 4vw, ${typography.h2.max})` }}
     >
       {title}
@@ -595,7 +595,7 @@ function MaterializedAction({ action, className }: {
 }) {
   const href = actionHref(action);
   const classes = cn(
-    "inline-flex min-h-11 min-w-0 items-center justify-center rounded-lg border-2 border-[var(--lp-primary)] bg-[var(--lp-text)] px-5 py-3 text-sm font-semibold text-[var(--lp-background)] shadow-sm outline-none hover:opacity-90 focus-visible:ring-2 focus-visible:ring-[var(--lp-accent)] focus-visible:ring-offset-2",
+    "inline-flex min-h-11 min-w-0 items-center justify-center rounded-lg border-2 border-[var(--lp-primary)] bg-[var(--lp-text)] px-5 py-3 text-sm font-semibold text-[var(--lp-background)] shadow-sm outline-none focus-visible:ring-2 focus-visible:ring-[var(--lp-accent)] focus-visible:ring-offset-2",
     className,
   );
   const label = <span className="break-words">{action.label}</span>;

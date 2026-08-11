@@ -13,6 +13,7 @@ import {
 } from "../conversion-content/landing-page";
 import type { AccountLandingPageMaterialization } from "./landingPageMaterializationContracts";
 import { getLandingPageDraftExperienceStateWithDependencies } from "./landingPagePreview";
+import { validateStarterColorPalette } from "./onboardingConfiguration";
 
 const ACCOUNT_ID = "6ecaf813-957e-4f2b-9ea7-3f2cb204a603";
 const LANDING_PAGE_ID = "4d91020a-07e5-4bf9-a1aa-272bbc0366ff";
@@ -71,6 +72,62 @@ const cases: readonly Readonly<{ name: string; run: () => void | Promise<void> }
       assert.match(html, /Dúvidas frequentes/);
       assert.equal(html.indexOf("Encontre o imóvel ideal") < html.indexOf("Dúvidas frequentes"), true);
       assert.match(html, /https:\/\/wa\.me\/5511999999999/);
+    },
+  },
+  {
+    name: "valid boundary palette keeps normal copy on opaque text roles",
+    run: () => {
+      const boundaryPalette = {
+        primary: "#888888",
+        secondary: "#777777",
+        accent: "#0066CC",
+        background: "#FFFFFF",
+        text: "#111111",
+      } as const;
+      const paletteValidation = validateStarterColorPalette(boundaryPalette);
+      assert.equal(paletteValidation.ok, true);
+      if (!paletteValidation.ok) throw new Error("Boundary palette must satisfy the current Starter contract.");
+      assert.equal(paletteValidation.contrast.text >= 4.5, true);
+      assert.equal(paletteValidation.contrast.primary >= 3, true);
+      assert.equal(paletteValidation.contrast.secondary >= 3, true);
+      assert.equal(paletteValidation.contrast.accent >= 3, true);
+      assert.equal(
+        paletteValidation.contrast.primary < 4.5 || paletteValidation.contrast.secondary < 4.5,
+        true,
+      );
+
+      const content = structuredClone(fixture.content);
+      content.root.brandColorPalette = boundaryPalette;
+      assert.equal(resolveLandingPageMaterializedRendererModel(content).ok, true);
+      const standardHtml = renderToStaticMarkup(createElement(LandingPageMaterializedRenderer, { content }));
+      const formContent = structuredClone(content);
+      formContent.modules = [heroFormModule(), leadCaptureFormModule()];
+      const formHtml = renderToStaticMarkup(createElement(LandingPageMaterializedRenderer, { content: formContent }));
+      const renderedHtml = `${standardHtml}${formHtml}`;
+
+      assert.match(renderedHtml, /--lp-primary:#888888/);
+      assert.match(renderedHtml, /--lp-secondary:#777777/);
+      assert.match(renderedHtml, /--lp-accent:#0066CC/i);
+      assert.match(renderedHtml, /border-\[var\(--lp-primary\)\]/);
+      assert.match(renderedHtml, /border-\[var\(--lp-secondary\)\]/);
+      assert.match(renderedHtml, /focus-visible:ring-\[var\(--lp-accent\)\]/);
+      assert.match(renderedHtml, /decoration-\[var\(--lp-accent\)\]/);
+
+      const normalCopyTags = renderedHtml.match(
+        /<(?:p|h1|h2|h3|summary|label)\b[^>]*class="[^"]*"[^>]*>/g,
+      ) ?? [];
+      assert.equal(normalCopyTags.length > 0, true);
+      for (const tag of normalCopyTags) {
+        assert.match(tag, /text-\[var\(--lp-text\)\]/);
+        assert.doesNotMatch(tag, /opacity-/);
+        assert.doesNotMatch(tag, /text-\[var\(--lp-(?:primary|secondary|accent)\)\]/);
+      }
+
+      const ctaTags = renderedHtml.match(
+        /<(?:a|button)\b[^>]*class="[^"]*bg-\[var\(--lp-text\)\][^"]*text-\[var\(--lp-background\)\][^"]*"[^>]*>/g,
+      ) ?? [];
+      assert.equal(ctaTags.length, 3);
+      for (const tag of ctaTags) assert.doesNotMatch(tag, /opacity-/);
     },
   },
   {
