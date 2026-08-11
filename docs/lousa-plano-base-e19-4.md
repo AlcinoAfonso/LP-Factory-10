@@ -37,9 +37,9 @@
 - Função da IA: produzir somente conteúdo para os fields já autorizados pelo pacote da E19.3.
 - Função determinística: estrutura, módulos, variantes, ordem, autorização de fontes/fatos, validação pós-IA objetivamente comprovável, bindings, decisão de materialização, persistência e renderer permanecem sob autoridade do LP Factory.
 - Não adotar comportamento agentic, geração funcional independente por módulo, decisão estrutural pela IA, conversa persistente ou materialização parcial.
-- A geração usa uma chamada síncrona e não streaming ao OpenAI Responses API por ação humana, com Structured Output estrito, workload `landing_page_draft_generation`, modelo `gpt-5.4-mini`, `reasoning.effort: none`, `store: false` e sem retry automático.
+- Cada invocação server-side aceita, originada por ação humana explícita, usa no máximo uma chamada síncrona e não streaming ao OpenAI Responses API, com Structured Output estrito, workload `landing_page_draft_generation`, modelo `gpt-5.4-mini`, `reasoning.effort: none`, `store: false` e sem retry automático.
 - A chamada não usa tools, busca externa, `previous_response_id`, background mode, Agents SDK, memória conversacional, job, fila, cron, webhook ou segundo revisor de IA.
-- Uma nova tentativa paga exige nova ação humana explícita; a interface impede reenvio enquanto a tentativa estiver em voo, sem lock distribuído ou infraestrutura nova.
+- O fluxo não promete custo exactly-once: a interface impede reenvio enquanto a tentativa estiver em voo e cada invocação aceita não repete automaticamente a chamada, mas requisições concorrentes ou replay ainda podem alcançar o provider; a unicidade protege a materialização, não a cobrança do provider.
 
 ### 1.5. Decisões fixas dos Gates A–E
 
@@ -149,6 +149,15 @@
 - `public.account_landing_page_materializations` contém `landing_page_id` como PK, `account_id`, `content_json`, `generation_context_snapshot_json`, `created_by` e `created_at`.
 - `(landing_page_id, account_id)` referencia tenant-safe `(id, account_id)` de `public.account_landing_pages`; `account_id` e `created_by` preservam as FKs canônicas da conta e do ator.
 - `content_json` e `generation_context_snapshot_json` são obrigatórios e restritos a objetos JSON.
+- O contrato runtime `LandingPageMaterializedContentV1`, validado por schema estrito antes do insert e após a leitura, possui:
+  - `schemaVersion: 1` e `family: "landing_page"`;
+  - raiz congelada com `rootVersion`, `resolvedPresetKey`, `resolvedPreset`, `effectiveSemanticRoles`, `visualRoles` e `visualCriteria` efetivamente usados;
+  - `modules` como array ordenado e não vazio; cada item contém `moduleKey`, `moduleVersion`, `variantKey`, `variantVersion`, `fieldContractKey`, `interactionContracts` e somente os valores concretos dos fields admitidos;
+  - valores de field como união discriminada estrita para `text`, `collection`, `action`, `image` e `technical_reference`; coleções preservam itens e subfields ordenados, e actions preservam label e binding/destino resolvidos deterministicamente;
+  - nenhuma referência ao registry é necessária para renderizar os valores já congelados; identidade, versão, kind ou shape desconhecido falha explicitamente.
+- O contrato runtime `LandingPageGenerationContextSnapshotV1`, também estrito, possui `snapshotVersion: 1`, `generationContextContractVersion: 1`, as identidades/versões estruturais usadas e `exposedGenerationContext`, que reproduz exatamente os dados concretos das Partes A e B enviados ao provider, excluindo instruções do prompt, secret, `safety_identifier`, resposta e conteúdo gerado.
+- O renderer recebe somente `LandingPageMaterializedContentV1`; o snapshot é evidência imutável da geração e não é recomposto nem consultado para renderizar.
+- A validação executável inclui round-trip `materialização → leitura → schema runtime → renderer`, igualdade do conteúdo/ordem/aparência e prova de zero leitura de E19.3, E20.2, pesquisas, perfil ou registries durante a renderização; versões desconhecidas e payload adicional falham fechado.
 - A tabela tem RLS habilitado e nenhuma policy; `public`, `anon`, `authenticated` e `ai_readonly` não recebem grants; `service_role` recebe somente `SELECT` e `INSERT`, sem `UPDATE` ou `DELETE`.
 - Não criar view ou RPC para esta materialização.
 - O conteúdo materializado constitui estado próprio e autossuficiente da LP para sua visualização.
@@ -194,7 +203,7 @@
 - Limites:
   - IA somente nos fields autorizados;
   - sem decisão estrutural, agentic, geração funcional por módulo, segunda IA revisora ou reparo semântico;
-  - uma ação humana produz no máximo uma chamada síncrona e não streaming para a candidata completa;
+  - cada invocação server-side aceita produz no máximo uma chamada síncrona e não streaming para a candidata completa; a UI bloqueia reenvio em voo, sem alegar exactly-once diante de concorrência ou replay;
   - sem tools, busca externa, encadeamento, background, retry automático ou configuração paralela de modelo.
 - Critérios de aceite:
   - ação humana autorizada inicia a operação;
@@ -228,6 +237,8 @@
   - um único insert persiste `content_json` e `generation_context_snapshot_json`; conflito concorrente retorna estado já materializado sem update;
   - casos executáveis cobrem double-submit, conflito, falha do provider, candidata inválida, falha de insert e renderer sem releitura de fonte mutável;
   - conforme `supa#40`, a entrega versiona em `supabase/snippets/` um verificador SQL read-only pós-apply para objetos, constraints, RLS, policies, grants e ausência de estado parcial.
+  - um probe server-side read-only de readiness consulta somente a existência/acessibilidade do agregado; relation ausente, erro de leitura ou verificação ainda não concluída mantêm geração e preview indisponíveis e impedem qualquer chamada OpenAI;
+  - depois do merge, o workflow canônico aplica a migration e executa o verificador; o mesmo probe passa a responder ready sem flag, escrita operacional ou segundo deploy quando o objeto verificado estiver disponível.
 
 ### 3.3. E19.4.5 — Visualização privada e prova humana da primeira LP real
 
@@ -236,7 +247,7 @@
 - Objetivo:
   - renderizar privadamente a LP materializada a partir de seu estado próprio e produzir a evidência humana necessária para concluir o recorte.
 - Critérios de aceite:
-  - acesso privado reutiliza o gate vigente da conta/LP, sem ACL paralela;
+  - acesso privado reutiliza o gate vigente da conta/LP e o probe de readiness do agregado, sem ACL paralela;
   - renderer é determinístico, read-only e não relê fontes mutáveis nem chama IA;
   - identidade/versão não suportada falha explicitamente;
   - conforme `prod#16`, evidências hospedadas em Preview cobrem 360, 768 e 1280 px, TAB/foco, overflow/truncamento, contraste, legibilidade e comportamentos de interação contratados, combinando revisão manual e ferramentas disponíveis sem tornar ferramenta paga requisito;
@@ -252,7 +263,7 @@
 - Submeter esta v2 ao Analista em duas passagens obrigatórias: primeiro sem pareceres nem matriz; depois, no mesmo contexto, com a matriz criada após a Passagem 1 e os pareceres integrais.
 - Corrigir apenas achados materialmente aplicáveis até obter aprovação explícita ou apontamento de decisão humana indispensável.
 - Após aprovação, executar `lp-factory-abc` sobre `docs/roadmap.md`, registrar o checkpoint `LP-Factory-Stage: plan-v2-approved` no único PR draft e iniciar E19.4.3.
-- A implementação segue E19.4.3 → E19.4.4 → E19.4.5; migration e runtime podem compartilhar o mesmo PR, mas a action e o preview só podem ser habilitados após merge, apply e verificação positiva da migration.
+- A implementação segue E19.4.3 → E19.4.4 → E19.4.5 no mesmo PR. Migration e runtime usam estratégia expand segura: antes do apply, o probe read-only falha fechado e a UI não expõe geração nem preview; após merge, apply e verificador positivo, o probe reconhece o agregado e habilita o fluxo sem flag persistida, segundo deploy ou dependência de estado externo adicional.
 - Após implementação comprovada, registrar a automação em `docs/automations.md`, workload/configuração em `docs/platform-config.md`, fronteiras estáveis em `docs/base-tecnica.md`, schema em `docs/schema.md` e estado/evidências em `docs/roadmap.md`; `docs/services.md` permanece N/A.
 
 ## 4. Escopo negativo e critérios de parada
