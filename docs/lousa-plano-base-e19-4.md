@@ -96,6 +96,12 @@
   - `owner` ou `admin` no estado operacional da conta aciona explicitamente a geração da LP completa;
   - o servidor revalida conta, membership e entitlement no ponto da ação; capability E9.7 de geração passa a integrar esse mesmo gate somente quando estiver formalmente admitida no catálogo canônico;
   - enquanto não houver materialização válida, tentativa falha ou inválida não impede nova tentativa humana.
+- Boundaries e autoridade:
+  - contratos, orquestração, validator e adapters de geração/materialização pertencem a `lib/lp-builder/`; o transporte OpenAI fica em adapter server-only desse mesmo domínio e consome apenas a API pública de `lib/openai-workloads/`;
+  - `LandingPageMaterializedContentV1`, seus schemas e o renderer pertencem a `lib/conversion-content/landing-page/` e são expostos somente pela API pública necessária;
+  - Server Action fina e UI permanecem route-local em `app/a/[account]/`; componentes e action não acessam Supabase diretamente nem executam `fetch` OpenAI, delegando ao boundary público do LP Builder;
+  - a action deriva `accountId` do contexto SSR tenant-aware da rota, nunca de campo enviado pelo cliente, e chama `compileLandingPageGenerationContextForDraft` antes do provider;
+  - negações de acesso e falhas operacionais permanecem resultados distintos; qualquer gate negativo encerra a invocação antes da chamada OpenAI.
 - Entrada:
   - LP legítima em `draft`, vinculada à configuração concluída;
   - sucesso completo da API E19.3, com Parte A determinística e Parte B autorizada;
