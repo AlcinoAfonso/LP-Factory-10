@@ -237,8 +237,9 @@
   - um único insert persiste `content_json` e `generation_context_snapshot_json`; conflito concorrente retorna estado já materializado sem update;
   - casos executáveis cobrem double-submit, conflito, falha do provider, candidata inválida, falha de insert e renderer sem releitura de fonte mutável;
   - conforme `supa#40`, a entrega versiona em `supabase/snippets/` um verificador SQL read-only pós-apply para objetos, constraints, RLS, policies, grants e ausência de estado parcial.
-  - um probe server-side read-only de readiness consulta somente a existência/acessibilidade do agregado; relation ausente, erro de leitura ou verificação ainda não concluída mantêm geração e preview indisponíveis e impedem qualquer chamada OpenAI;
-  - depois do merge, o workflow canônico aplica a migration e executa o verificador; o mesmo probe passa a responder ready sem flag, escrita operacional ou segundo deploy quando o objeto verificado estiver disponível.
+  - o próprio probe server-side read-only de readiness seleciona a projeção runtime exata (`landing_page_id`, `account_id`, `content_json`, `generation_context_snapshot_json`, `created_by`, `created_at`) com limite de uma linha e, quando houver registro, valida ambos os JSON pelos schemas v1; relation, coluna, grant, shape ou versão ausente/inválida mantêm geração e preview indisponíveis e impedem qualquer chamada OpenAI;
+  - a migration é transacional, de modo que a projeção só fica acessível após o commit integral do agregado; projeção válida sem linha materializada também responde ready, sem flag, escrita operacional ou segundo deploy;
+  - o workflow canônico permanece responsável apenas pelo apply. O verificador SQL read-only completo é gate pós-apply da execução e da prova hospedada, mas não é apresentado como sinal consumido pelo probe nem como controle causal da UI.
 
 ### 3.3. E19.4.5 — Visualização privada e prova humana da primeira LP real
 
@@ -263,7 +264,7 @@
 - Submeter esta v2 ao Analista em duas passagens obrigatórias: primeiro sem pareceres nem matriz; depois, no mesmo contexto, com a matriz criada após a Passagem 1 e os pareceres integrais.
 - Corrigir apenas achados materialmente aplicáveis até obter aprovação explícita ou apontamento de decisão humana indispensável.
 - Após aprovação, executar `lp-factory-abc` sobre `docs/roadmap.md`, registrar o checkpoint `LP-Factory-Stage: plan-v2-approved` no único PR draft e iniciar E19.4.3.
-- A implementação segue E19.4.3 → E19.4.4 → E19.4.5 no mesmo PR. Migration e runtime usam estratégia expand segura: antes do apply, o probe read-only falha fechado e a UI não expõe geração nem preview; após merge, apply e verificador positivo, o probe reconhece o agregado e habilita o fluxo sem flag persistida, segundo deploy ou dependência de estado externo adicional.
+- A implementação segue E19.4.3 → E19.4.4 → E19.4.5 no mesmo PR. Migration e runtime usam estratégia expand segura: antes do commit transacional da migration, o probe read-only não consegue validar a projeção runtime e a UI não expõe geração nem preview; após o apply, a projeção e os schemas v1 passam a ser a condição observável de readiness. O verificador SQL completo permanece obrigatório antes da prova hospedada e do fechamento, sem ser confundido com flag de runtime.
 - Após implementação comprovada, registrar a automação em `docs/automations.md`, workload/configuração em `docs/platform-config.md`, fronteiras estáveis em `docs/base-tecnica.md`, schema em `docs/schema.md` e estado/evidências em `docs/roadmap.md`; `docs/services.md` permanece N/A.
 
 ## 4. Escopo negativo e critérios de parada
