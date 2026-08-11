@@ -464,7 +464,7 @@
 - Repositório:
   - Criados:
     - `supabase/migrations/20260701202632_e9_stripe_webhook_events.sql`
-    - `supabase/snippets/e9_phase_7_2_entitlements_verify.sql`
+    - `supabase/snippets/e9_phase_7_2_stripe_webhook_verify.sql`
     - `lib/billing-checkout/contracts.ts`
     - `lib/billing-checkout/adapters/stripePriceMap.ts`
     - `lib/billing-checkout/adapters/stripeCheckoutAdapter.ts`
@@ -2683,7 +2683,8 @@ v1.5.57 (20/05/2026)
 • E10.5.6 reorganizado em subitens estáveis (10.5.6.1–10.5.6.7), mantendo estado final enxuto, separação de pendências reais e artefatos consolidados sem misturar escopo do E10.4.
 v1.5.56 (20/05/2026)
 • E10.5 atualizado para refletir somente o estado real do repositório: bloco 10.5 substituído integralmente, removendo promessas de UX pós-setup ainda não implementadas no runtime e consolidando os subcasos 10.5.1/10.5.2/10.5.3/10.5.3.1/10.5.4/10.5.6 com artefatos e pendências alinhados.
-v1.5.55 (20/05/2026) — E10.4 enxugado e consolidado no estado final: bloco substituído para remover histórico intermediário e duplicações internas, absorvendo 10.4.2/10.4.3 e mantendo 10.5+ intacto.
+v1.5.55 (20/05/2026)
+• E10.4 enxugado e consolidado no estado final: bloco substituído para remover histórico intermediário e duplicações internas, absorvendo 10.4.2/10.4.3 e mantendo 10.5+ intacto.
 
 v1.5.54 — 19/05/2026 — E12 atualizado para refletir o estado atual do Admin Dashboard: shell operacional protegido, navegação própria, páginas read-only reais para contas, resoluções de nicho e taxonomia, artefatos criados/ajustados e limites explícitos sem mutações, SQL, migrations ou RLS.
 
@@ -2727,8 +2728,9 @@ v1.5.39 (17/04/2026)
 • E12 limpo de escopo presente amplo (operação consultiva, painel de contas/prospects/status, relatórios/auditoria consultiva e jobs/tracking), mantendo essas frentes apenas como evolução futura.
 • 12.9 desassociado do E12 atual e realinhado ao estado concluído já registrado em E5.6 (Infra Auth — e-mail transacional).
 v1.5.38 (15/04/2026)
-• 10.5.3 atualizado para Concluído (exec): kit operacional do Grupo A versionado em `docs/` e `supabase/snippets/`, com investigação consolidada, regra de `parent_slug` e carga prática reportada para `implante-dentario`.
-• Adicionado 10.5.3.1 (Briefing): curadoria operacional de aliases enxutos vs microvariações textuais, para separar cadastro manual do Grupo A e matching leve futuro do E10.5.6.
+• 10.5 ajustado para “Em evolução”, com dependência explícita de 10.5.2.
+• 10.5.2 adicionado como concluído (exec): base estrutural admin/interna de taxonomia, templates e guides, com migration `0006__e10_5_2_taxonomy_content_base.sql`.
+• 10.5.3 adicionado como planejado para popular a base inicial de taxons, aliases, templates e vínculos.
 v1.5.37 (13/04/2026)
 • Documentação alinhada ao estado pós-remoção do legado de tokens: E7/E7.5/E12.5 atualizados para registrar descontinuação do fluxo por token e planejamento do novo Admin Dashboard sem superfície legada ativa.
 • E1/E3 e registros de E6 ajustados para remover referências ativas ao fluxo legado descontinuado e às superfícies administrativas removidas.
