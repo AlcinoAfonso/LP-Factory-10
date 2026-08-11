@@ -14,6 +14,21 @@ const visualRoleKeys = [
 const spacingValues = ["compact", "default", "spacious"] as const;
 
 const nonEmpty = z.string().trim().min(1);
+const hexadecimalColor = z.string().regex(/^#[0-9a-f]{6}$/i);
+const httpsUrl = z.string().trim().min(1).refine((value) => {
+  try {
+    return new URL(value).protocol === "https:";
+  } catch {
+    return false;
+  }
+});
+const brandColorPalette = z.object({
+  primary: hexadecimalColor,
+  secondary: hexadecimalColor,
+  accent: hexadecimalColor,
+  background: hexadecimalColor,
+  text: hexadecimalColor,
+}).strict();
 const sizeValue = z.string().regex(/^\d+(?:\.\d+)?(?:rem|ch)$/);
 const textRange = z.object({
   recommended: z.object({ min: z.number().int().min(1), max: z.number().int().min(1) }).strict(),
@@ -65,6 +80,7 @@ const visualCriteria = z.object({
 
 const materializedRoot = z.object({
   rootVersion: z.number().int().min(1),
+  brandColorPalette,
   resolvedPresetKey: nonEmpty,
   resolvedPreset: preset,
   effectiveSemanticRoles: z.record(z.string(), semanticRole),
@@ -118,6 +134,7 @@ const formInteraction = z.object({
     fieldKey: nonEmpty,
     purposeKey: nonEmpty,
     privacyPolicyInputFieldKey: nonEmpty,
+    privacyPolicyUrl: httpsUrl,
   }).strict(),
   accessibility: z.object({
     baseline: z.literal("WCAG 2.2"),

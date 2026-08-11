@@ -12,6 +12,13 @@ type CollectionField = Extract<MaterializedField, { kind: "collection" }>;
 type ActionField = Extract<MaterializedField, { kind: "action" }>;
 type FormInteraction = Extract<MaterializedModule["interactionContracts"][number], { kind: "form" }>;
 type Typography = LandingPageMaterializedContentV1["root"]["resolvedPreset"]["typography"];
+type PaletteStyle = CSSProperties & Readonly<{
+  "--lp-primary": string;
+  "--lp-secondary": string;
+  "--lp-accent": string;
+  "--lp-background": string;
+  "--lp-text": string;
+}>;
 
 type SupportedItemField = Readonly<{
   fieldKey: string;
@@ -223,11 +230,18 @@ export function LandingPageMaterializedRenderer({ content }: { content: unknown 
     fontSize: root.resolvedPreset.typography.body.base,
     overflowWrap: "anywhere",
     wordBreak: "break-word",
-  } satisfies CSSProperties;
+    backgroundColor: root.brandColorPalette.background,
+    color: root.brandColorPalette.text,
+    "--lp-primary": root.brandColorPalette.primary,
+    "--lp-secondary": root.brandColorPalette.secondary,
+    "--lp-accent": root.brandColorPalette.accent,
+    "--lp-background": root.brandColorPalette.background,
+    "--lp-text": root.brandColorPalette.text,
+  } satisfies PaletteStyle;
 
   return (
     <article
-      className="mx-auto w-full rounded-2xl border border-surface-border bg-white text-ink-900 shadow-card"
+      className="mx-auto w-full rounded-2xl border border-[var(--lp-secondary)] bg-[var(--lp-background)] text-[var(--lp-text)] shadow-card"
       data-landing-page-schema-version={resolved.value.schemaVersion}
       data-landing-page-root-version={root.rootVersion}
       style={rendererStyle}
@@ -259,12 +273,20 @@ function isSupportedModule(module: MaterializedModule) {
   if (supported.interaction === "form") {
     return module.interactionContracts.length === 1 &&
       module.interactionContracts[0].kind === "form" &&
-      JSON.stringify(module.interactionContracts[0]) === JSON.stringify(CONTACT_FORM_INTERACTION);
+      isSupportedFormInteraction(module.interactionContracts[0]);
   }
   if (supported.interaction === "accordion") {
     return module.interactionContracts.length === 1 && module.interactionContracts[0].kind === "accordion";
   }
   return module.interactionContracts.length === 0;
+}
+
+function isSupportedFormInteraction(interaction: FormInteraction) {
+  const { privacyPolicyUrl, ...consent } = interaction.consent;
+  return isHttpsUrl(privacyPolicyUrl) && JSON.stringify({
+    ...interaction,
+    consent,
+  }) === JSON.stringify(CONTACT_FORM_INTERACTION);
 }
 
 function matchesMaterializedFields(
@@ -344,10 +366,10 @@ function HeroModule({ module, typography }: { module: MaterializedModule; typogr
   const action = actionField(module, "primaryCta");
   const formInteraction = module.interactionContracts.find((candidate) => candidate.kind === "form");
   return (
-    <section className="bg-gradient-to-br from-brand-dark-900 via-brand-dark-800 to-brand-700 px-5 py-12 text-white first:rounded-t-2xl sm:px-10 sm:py-16 lg:px-14 lg:py-20">
+    <section className="border-t-8 border-[var(--lp-primary)] bg-[var(--lp-background)] px-5 py-12 text-[var(--lp-text)] first:rounded-t-2xl sm:px-10 sm:py-16 lg:px-14 lg:py-20">
       <div className="min-w-0 max-w-3xl">
         {textValue(module, "eyebrow") ? (
-          <p className="break-words text-sm font-semibold uppercase tracking-[0.18em] text-brand-50">
+          <p className="break-words text-sm font-semibold uppercase tracking-[0.18em] text-[var(--lp-primary)]">
             {textValue(module, "eyebrow")}
           </p>
         ) : null}
@@ -357,11 +379,11 @@ function HeroModule({ module, typography }: { module: MaterializedModule; typogr
         >
           {textValue(module, "title")}
         </h1>
-        <p className="mt-5 max-w-2xl break-words text-base leading-7 text-white/85 sm:text-lg">
+        <p className="mt-5 max-w-2xl break-words text-base leading-7 opacity-85 sm:text-lg">
           {textValue(module, "subtitle")}
         </p>
         {textValue(module, "proofShort") ? (
-          <p className="mt-4 max-w-2xl break-words text-sm leading-6 text-brand-50">
+          <p className="mt-4 max-w-2xl break-words text-sm leading-6 text-[var(--lp-secondary)]">
             {textValue(module, "proofShort")}
           </p>
         ) : null}
@@ -370,13 +392,12 @@ function HeroModule({ module, typography }: { module: MaterializedModule; typogr
             action={action}
             interaction={formInteraction}
             scope="hero"
-            dark
           />
         ) : action ? (
-          <MaterializedAction action={action} dark className="mt-8" />
+          <MaterializedAction action={action} className="mt-8" />
         ) : null}
         {field(module, "media")?.kind === "image" ? (
-          <p className="mt-6 break-words text-xs font-medium text-white/70">Imagem de apoio configurada.</p>
+          <p className="mt-6 break-words text-xs font-medium opacity-70">Imagem de apoio configurada.</p>
         ) : null}
       </div>
     </section>
@@ -386,10 +407,10 @@ function HeroModule({ module, typography }: { module: MaterializedModule; typogr
 function TrustBarModule({ module }: { module: MaterializedModule }) {
   const items = collectionField(module, "items")?.items ?? [];
   return (
-    <section aria-label="Sinais de confiança" className="border-b border-surface-border bg-brand-50 px-5 py-5 sm:px-10 lg:px-14">
+    <section aria-label="Sinais de confiança" className="border-b border-[var(--lp-secondary)] bg-[var(--lp-background)] px-5 py-5 sm:px-10 lg:px-14">
       <ul className="flex flex-wrap justify-center gap-3">
         {items.map((item, index) => (
-          <li key={index} className="min-w-0 max-w-full break-words rounded-full border border-brand-200 bg-white px-4 py-2 text-sm font-semibold text-brand-dark-900">
+          <li key={index} className="min-w-0 max-w-full break-words rounded-full border border-[var(--lp-primary)] bg-[var(--lp-background)] px-4 py-2 text-sm font-semibold text-[var(--lp-text)]">
             {itemTextValues(item.fields)[0]}
           </li>
         ))}
@@ -407,20 +428,20 @@ function CollectionModule({ module, density, typography }: {
   const sectionPadding = density === "compact" ? "py-9" : density === "spacious" ? "py-16" : "py-12";
   const muted = ["problem_solution", "technical_assurance", "comparison"].includes(module.moduleKey);
   return (
-    <section className={cn("px-5 sm:px-10 lg:px-14", sectionPadding, muted && "border-y border-surface-border bg-surface-app")}>
+    <section className={cn("px-5 sm:px-10 lg:px-14", sectionPadding, muted && "border-y border-[var(--lp-secondary)] bg-[var(--lp-background)]")}>
       <SectionHeading module={module} typography={typography} />
       {collection ? (
         <ol className="mt-8 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {collection.items.map((item, index) => {
             const values = itemTextValues(item.fields);
             return (
-              <li key={index} className="min-w-0 rounded-xl border border-surface-border bg-white p-5 shadow-card">
+              <li key={index} className="min-w-0 rounded-xl border border-[var(--lp-secondary)] bg-[var(--lp-background)] p-5 shadow-card">
                 {module.moduleKey === "process" ? (
-                  <span className="text-sm font-bold text-brand-700">Etapa {index + 1}</span>
+                  <span className="text-sm font-bold text-[var(--lp-primary)]">Etapa {index + 1}</span>
                 ) : null}
-                <h3 className="mt-2 break-words text-lg font-semibold text-ink-900">{values[0]}</h3>
+                <h3 className="mt-2 break-words text-lg font-semibold">{values[0]}</h3>
                 {values.slice(1).map((value, valueIndex) => (
-                  <p key={valueIndex} className="mt-2 break-words text-sm leading-6 text-graytech-600">{value}</p>
+                  <p key={valueIndex} className="mt-2 break-words text-sm leading-6 opacity-75">{value}</p>
                 ))}
               </li>
             );
@@ -439,25 +460,25 @@ function FaqModule({ module, moduleIndex, typography }: {
   const items = collectionField(module, "items")?.items ?? [];
   const accordion = module.variantKey === "faq.accordion@v1";
   return (
-    <section className="border-y border-surface-border bg-surface-app px-5 py-12 sm:px-10 lg:px-14">
+    <section className="border-y border-[var(--lp-secondary)] bg-[var(--lp-background)] px-5 py-12 sm:px-10 lg:px-14">
       <SectionHeading module={module} typography={typography} />
       <div className="mt-8 space-y-3">
         {items.map((item, index) => {
           const values = itemTextValues(item.fields);
           return accordion ? (
-            <details key={index} name={`landing-page-faq-${moduleIndex}`} className="group rounded-xl border border-surface-border bg-white shadow-card">
-              <summary className="min-h-11 cursor-pointer list-none px-5 py-4 font-semibold text-ink-900 outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand-600 [&::-webkit-details-marker]:hidden">
+            <details key={index} name={`landing-page-faq-${moduleIndex}`} className="group rounded-xl border border-[var(--lp-secondary)] bg-[var(--lp-background)] shadow-card">
+              <summary className="min-h-11 cursor-pointer list-none px-5 py-4 font-semibold outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--lp-accent)] [&::-webkit-details-marker]:hidden">
                 <span className="flex min-w-0 items-center justify-between gap-4">
                   <span className="min-w-0 break-words">{values[0]}</span>
-                  <span aria-hidden="true" className="shrink-0 text-xl text-brand-700 transition-transform group-open:rotate-45">+</span>
+                  <span aria-hidden="true" className="shrink-0 text-xl text-[var(--lp-primary)] transition-transform group-open:rotate-45">+</span>
                 </span>
               </summary>
-              <p className="break-words border-t border-surface-border px-5 py-4 text-sm leading-6 text-graytech-600">{values[1]}</p>
+              <p className="break-words border-t border-[var(--lp-secondary)] px-5 py-4 text-sm leading-6 opacity-75">{values[1]}</p>
             </details>
           ) : (
-            <article key={index} className="rounded-xl border border-surface-border bg-white px-5 py-4 shadow-card">
-              <h3 className="break-words font-semibold text-ink-900">{values[0]}</h3>
-              <p className="mt-2 break-words text-sm leading-6 text-graytech-600">{values[1]}</p>
+            <article key={index} className="rounded-xl border border-[var(--lp-secondary)] bg-[var(--lp-background)] px-5 py-4 shadow-card">
+              <h3 className="break-words font-semibold">{values[0]}</h3>
+              <p className="mt-2 break-words text-sm leading-6 opacity-75">{values[1]}</p>
             </article>
           );
         })}
@@ -469,10 +490,10 @@ function FaqModule({ module, moduleIndex, typography }: {
 function FinalCtaModule({ module, typography }: { module: MaterializedModule; typography: Typography }) {
   const action = actionField(module, "primaryCta");
   return (
-    <section className="rounded-b-2xl bg-brand-50 px-5 py-12 text-center sm:px-10 lg:px-14">
+    <section className="rounded-b-2xl border-t-4 border-[var(--lp-primary)] bg-[var(--lp-background)] px-5 py-12 text-center sm:px-10 lg:px-14">
       <SectionHeading module={module} typography={typography} centered />
       {textValue(module, "body") ? (
-        <p className="mx-auto mt-4 max-w-2xl break-words text-sm leading-6 text-graytech-600 sm:text-base">{textValue(module, "body")}</p>
+        <p className="mx-auto mt-4 max-w-2xl break-words text-sm leading-6 opacity-75 sm:text-base">{textValue(module, "body")}</p>
       ) : null}
       {action ? <MaterializedAction action={action} className="mt-7" /> : null}
     </section>
@@ -485,7 +506,7 @@ function LeadCaptureModule({ module, typography }: { module: MaterializedModule;
   return (
     <section id="lead-capture" className="px-5 py-12 sm:px-10 lg:px-14">
       <SectionHeading module={module} typography={typography} />
-      <p className="mt-4 max-w-2xl break-words text-sm leading-6 text-graytech-600">{textValue(module, "body")}</p>
+      <p className="mt-4 max-w-2xl break-words text-sm leading-6 opacity-75">{textValue(module, "body")}</p>
       {interaction?.kind === "form" ? (
         <MaterializedReadOnlyForm action={action} interaction={interaction} scope="lead-capture" />
       ) : null}
@@ -497,53 +518,53 @@ function MaterializedReadOnlyForm({
   action,
   interaction,
   scope,
-  dark = false,
 }: {
   action: ActionField | null;
   interaction: FormInteraction;
   scope: "hero" | "lead-capture";
-  dark?: boolean;
 }) {
   const instructionsId = `${scope}-draft-form-instructions`;
   return (
     <form
       action={`#${scope}-draft-form`}
-      className={cn(
-        "mt-8 grid max-w-2xl gap-4 rounded-xl border p-5",
-        dark ? "border-white/30 bg-white/10" : "border-surface-border bg-surface-app",
-      )}
+      className="mt-8 grid max-w-2xl gap-4 rounded-xl border border-[var(--lp-secondary)] bg-[var(--lp-background)] p-5"
       id={`${scope}-draft-form`}
     >
-      <p id={instructionsId} className={cn("break-words text-xs leading-5", dark ? "text-white/80" : "text-graytech-500")}>
+      <p id={instructionsId} className="break-words text-xs leading-5 opacity-75">
         Preencha os campos obrigatórios para validar o formulário neste preview. Nenhum dado será enviado.
       </p>
       {interaction.fields.map((formField) => {
         const inputId = `${scope}-draft-form-${formField.fieldKey}`;
         return (
-          <label key={formField.fieldKey} htmlFor={inputId} className={cn("grid gap-2 break-words text-sm font-semibold", dark ? "text-white" : "text-ink-900")}>
+          <label key={formField.fieldKey} htmlFor={inputId} className="grid gap-2 break-words text-sm font-semibold">
             {formFieldLabel(formField.fieldKey)}
             <input
               id={inputId}
               aria-describedby={instructionsId}
               type={formField.valueType === "phone" ? "tel" : formField.valueType}
               required={formField.obligation === "required"}
-              className="min-h-11 min-w-0 rounded-lg border border-surface-border bg-white px-3 font-normal text-ink-900 outline-none focus-visible:ring-2 focus-visible:ring-brand-600"
+              className="min-h-11 min-w-0 rounded-lg border border-[var(--lp-secondary)] bg-[var(--lp-background)] px-3 font-normal text-[var(--lp-text)] outline-none focus-visible:ring-2 focus-visible:ring-[var(--lp-accent)]"
             />
           </label>
         );
       })}
-      <label htmlFor={`${scope}-draft-form-consent`} className={cn("flex items-start gap-3 break-words text-sm leading-6", dark ? "text-white/90" : "text-graytech-700")}>
+      <label htmlFor={`${scope}-draft-form-consent`} className="flex items-start gap-3 break-words text-sm leading-6">
         <input id={`${scope}-draft-form-consent`} aria-describedby={instructionsId} type="checkbox" required className="mt-1 size-4 shrink-0" />
-        Concordo com o uso dos dados para este contato e com a política de privacidade informada.
+        <span>
+          Concordo com o uso dos dados para este contato e com a{" "}
+          <a
+            href={interaction.consent.privacyPolicyUrl}
+            target="_blank"
+            rel="noreferrer"
+            className="font-semibold underline decoration-[var(--lp-accent)] underline-offset-2 outline-none focus-visible:ring-2 focus-visible:ring-[var(--lp-accent)]"
+          >
+            política de privacidade
+          </a>.
+        </span>
       </label>
       <button
         type="submit"
-        className={cn(
-          "inline-flex min-h-11 min-w-0 items-center justify-center rounded-lg px-5 py-3 text-sm font-semibold shadow-sm outline-none focus-visible:ring-2 focus-visible:ring-offset-2",
-          dark
-            ? "bg-white text-brand-dark-900 hover:bg-brand-50 focus-visible:ring-white focus-visible:ring-offset-brand-dark-900"
-            : "bg-brand-700 text-white hover:bg-brand-800 focus-visible:ring-brand-600",
-        )}
+        className="inline-flex min-h-11 min-w-0 items-center justify-center rounded-lg border-2 border-[var(--lp-primary)] bg-[var(--lp-text)] px-5 py-3 text-sm font-semibold text-[var(--lp-background)] shadow-sm outline-none hover:opacity-90 focus-visible:ring-2 focus-visible:ring-[var(--lp-accent)] focus-visible:ring-offset-2"
       >
         <span className="break-words">{action?.label ?? "Validar formulário"}</span>
       </button>
@@ -560,7 +581,7 @@ function SectionHeading({ module, typography, centered = false }: {
   if (!title) return null;
   return (
     <h2
-      className={cn("break-words font-bold leading-tight tracking-tight text-ink-900", centered && "mx-auto max-w-3xl text-center")}
+      className={cn("break-words font-bold leading-tight tracking-tight", centered && "mx-auto max-w-3xl text-center")}
       style={{ fontSize: `clamp(${typography.h2.min}, 4vw, ${typography.h2.max})` }}
     >
       {title}
@@ -568,23 +589,27 @@ function SectionHeading({ module, typography, centered = false }: {
   );
 }
 
-function MaterializedAction({ action, className, dark = false }: {
+function MaterializedAction({ action, className }: {
   action: ActionField;
   className?: string;
-  dark?: boolean;
 }) {
   const href = actionHref(action);
   const classes = cn(
-    "inline-flex min-h-11 min-w-0 items-center justify-center rounded-lg px-5 py-3 text-sm font-semibold shadow-sm outline-none focus-visible:ring-2 focus-visible:ring-offset-2",
-    dark
-      ? "bg-white text-brand-dark-900 hover:bg-brand-50 focus-visible:ring-white focus-visible:ring-offset-brand-dark-900"
-      : "bg-brand-700 text-white hover:bg-brand-800 focus-visible:ring-brand-600",
+    "inline-flex min-h-11 min-w-0 items-center justify-center rounded-lg border-2 border-[var(--lp-primary)] bg-[var(--lp-text)] px-5 py-3 text-sm font-semibold text-[var(--lp-background)] shadow-sm outline-none hover:opacity-90 focus-visible:ring-2 focus-visible:ring-[var(--lp-accent)] focus-visible:ring-offset-2",
     className,
   );
   const label = <span className="break-words">{action.label}</span>;
   return href ? <a href={href} className={classes}>{label}</a> : (
     <span aria-disabled="true" className={cn(classes, "cursor-not-allowed opacity-70")}>{label}</span>
   );
+}
+
+function isHttpsUrl(value: string) {
+  try {
+    return new URL(value).protocol === "https:";
+  } catch {
+    return false;
+  }
 }
 
 function actionHref(action: ActionField): string | null {

@@ -62,6 +62,11 @@ const cases: readonly Readonly<{ name: string; run: () => void | Promise<void> }
       assert.match(html, /data-landing-page-schema-version="1"/);
       assert.match(html, /data-landing-page-root-version="1"/);
       assert.equal(html.includes(`max-width:${fixture.content.root.resolvedPreset.maxPageWidth}`), true);
+      assert.match(html, /--lp-primary:#123456/);
+      assert.match(html, /--lp-secondary:#234567/);
+      assert.match(html, /--lp-accent:#345678/);
+      assert.match(html, /--lp-background:#ffffff/i);
+      assert.match(html, /--lp-text:#111111/);
       assert.match(html, /Encontre o imóvel ideal/);
       assert.match(html, /Dúvidas frequentes/);
       assert.equal(html.indexOf("Encontre o imóvel ideal") < html.indexOf("Dúvidas frequentes"), true);
@@ -160,6 +165,8 @@ const cases: readonly Readonly<{ name: string; run: () => void | Promise<void> }
       assert.doesNotMatch(html, /<input[^>]+name=/);
       assert.doesNotMatch(html, /novalidate/);
       assert.match(html, /Nenhum dado será enviado/);
+      assert.equal((html.match(/href="https:\/\/example\.com\/privacy"/g) ?? []).length, 2);
+      assert.match(html, /política de privacidade/);
     },
   },
   {
@@ -192,12 +199,17 @@ const cases: readonly Readonly<{ name: string; run: () => void | Promise<void> }
         "utf8",
       );
       assert.doesNotMatch(rendererSource, /module-catalog|generationContext|research|generationProfile|Supabase|OpenAI/i);
+      assert.doesNotMatch(rendererSource, /brand-/);
       assert.doesNotMatch(previewSource, /generationContext|research|generationProfile|Supabase|OpenAI/i);
       assert.match(previewSource, /await getAccessContext/);
       assert.match(previewSource, /getLandingPageDraftExperienceState/);
       assert.match(previewSource, /LandingPageMaterializedRenderer/);
       assert.match(previewSource, /Draft/);
       assert.match(previewSource, /Não publicada/);
+      assert.match(previewSource, /<p[^>]*>\s*Primeira landing page materializada\s*<\/p>/);
+      assert.doesNotMatch(previewSource, /<h1[^>]*>\s*Primeira landing page materializada/);
+      const readyHtml = renderToStaticMarkup(createElement(LandingPageMaterializedRenderer, { content: fixture.content }));
+      assert.equal((readyHtml.match(/<h1/g) ?? []).length, 1);
     },
   },
   {
@@ -256,6 +268,7 @@ function formInteractionContract() {
       fieldKey: "privacyConsent" as const,
       purposeKey: "privacy_policy_consent",
       privacyPolicyInputFieldKey: "privacy_policy_url",
+      privacyPolicyUrl: "https://example.com/privacy",
     },
     accessibility: {
       baseline: "WCAG 2.2" as const,
@@ -312,6 +325,13 @@ function materializationFixture(): AccountLandingPageMaterialization {
     family: "landing_page",
     root: {
       rootVersion: root.value.rootVersion,
+      brandColorPalette: {
+        primary: "#123456",
+        secondary: "#234567",
+        accent: "#345678",
+        background: "#FFFFFF",
+        text: "#111111",
+      },
       resolvedPresetKey: root.value.resolvedPresetKey,
       resolvedPreset: root.value.resolvedPreset,
       effectiveSemanticRoles: root.value.semanticRoles,

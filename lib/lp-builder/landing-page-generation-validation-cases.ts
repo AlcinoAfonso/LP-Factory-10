@@ -117,11 +117,21 @@ const cases: readonly Readonly<{ name: string; run: () => void | Promise<void> }
       assert.equal(request.maxOutputTokens >= 512 && request.maxOutputTokens <= 16_384, true);
       assert.equal(request.serialized.includes("account-secret"), false);
       assert.equal(request.serialized.includes("landing-page-secret"), false);
+      assert.equal(request.serialized.includes("#123456"), false);
       const format = ((request.body.text as Record<string, unknown>).format as Record<string, unknown>);
       assert.equal(format.type, "json_schema");
       assert.equal(format.strict, true);
       assert.equal(JSON.stringify(format.schema).includes('"additionalProperties":false'), true);
       assert.equal(Object.isFrozen(request.exposedGenerationContext), true);
+
+      const formRequest = buildRequest(
+        buildContext([resolveModule("hero", "form", "bofu")]),
+        safetyIdentifier,
+      );
+      assert.equal(formRequest.ok, true);
+      assert.equal(formRequest.serialized.includes("https://example.com/privacy"), false);
+      assert.equal(formRequest.serialized.includes("brandColorPalette"), false);
+      assert.equal(formRequest.serialized.includes("privacyPolicyUrl"), false);
     },
   },
   {
@@ -402,8 +412,8 @@ function responseWith(providerPayload: unknown) {
 }
 
 function resolveModule(
-  moduleKey: "hero" | "trust_bar" | "problem_solution" | "offer" | "process" | "technical_assurance" | "faq" | "benefits" | "final_cta" | "social_proof",
-  variantName: "standard" | "accordion",
+  moduleKey: "hero" | "trust_bar" | "problem_solution" | "offer" | "lead_capture" | "process" | "technical_assurance" | "faq" | "benefits" | "final_cta" | "social_proof",
+  variantName: "standard" | "form" | "accordion",
   funnelProfileKey: "bofu",
 ) {
   const result = resolveLandingPageModuleCatalog({
@@ -441,6 +451,18 @@ function buildContext(
         research: { contractVersion: 1, effectiveResearchVersion: 1 },
       },
       root: root.value,
+      presentation: {
+        brandColorPalette: {
+          primary: "#123456",
+          secondary: "#234567",
+          accent: "#345678",
+          background: "#FFFFFF",
+          text: "#111111",
+        },
+        ...(resolvedModules.some((resolved) =>
+          resolved.variant.interactionContracts.some((interaction) => interaction.kind === "form"),
+        ) ? { privacyPolicyUrl: "https://example.com/privacy" } : {}),
+      },
       selection: [],
       modules: resolvedModules.map((resolved, index) => ({
         recommendedOrder: (index + 1) * 10,

@@ -66,9 +66,9 @@ export default async function LandingPageDraftPreviewPage({ params }: PreviewPag
             Não publicada
           </span>
         </div>
-        <h1 className="mt-4 break-words text-2xl font-bold tracking-tight text-ink-900 sm:text-3xl">
+        <p className="mt-4 break-words text-2xl font-bold tracking-tight text-ink-900 sm:text-3xl">
           Primeira landing page materializada
-        </h1>
+        </p>
         <p className="mt-3 max-w-3xl break-words text-sm leading-6 text-graytech-700 sm:text-base">
           Revise a página real abaixo. O próximo passo é registrar os findings desta avaliação; publicação, edição e regeneração não fazem parte deste recorte.
         </p>

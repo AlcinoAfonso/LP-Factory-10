@@ -35,6 +35,13 @@ const cases: readonly Readonly<{ name: string; run: () => void | Promise<void> }
       assert.equal(built.ok, true);
       assert.equal(built.content.schemaVersion, 1);
       assert.equal(built.content.family, "landing_page");
+      assert.deepEqual(built.content.root.brandColorPalette, {
+        primary: "#123456",
+        secondary: "#234567",
+        accent: "#345678",
+        background: "#FFFFFF",
+        text: "#111111",
+      });
       assert.equal(built.content.modules[0].variantKey, "hero.standard@v1");
       assert.deepEqual(built.content.modules[0].fields.map((field) => field.fieldKey), [
         "title", "subtitle", "primaryCta",
@@ -84,6 +91,48 @@ const cases: readonly Readonly<{ name: string; run: () => void | Promise<void> }
       assert.equal(snapshot.ok, true);
       assert.deepEqual(content.value, built.content);
       assert.deepEqual(snapshot.value, built.snapshot);
+      assert.deepEqual(content.value.root.brandColorPalette, built.content.root.brandColorPalette);
+    },
+  },
+  {
+    name: "materialized presentation is independent from later source changes",
+    run: () => {
+      const source = fixture();
+      const materialized = buildLandingPageInitialMaterialization(source);
+      assert.equal(materialized.ok, true);
+      const frozenPalette = structuredClone(materialized.content.root.brandColorPalette);
+      const mutableContext = source.context as unknown as {
+        partA: { presentation: { brandColorPalette: { primary: string } } };
+      };
+      mutableContext.partA.presentation.brandColorPalette.primary = "#654321";
+      assert.deepEqual(materialized.content.root.brandColorPalette, frozenPalette);
+      assert.equal(materialized.content.root.brandColorPalette.primary, "#123456");
+    },
+  },
+  {
+    name: "form privacy URL is materialized server side and survives JSON round trip",
+    run: () => {
+      const source = formFixture();
+      const materialized = buildLandingPageInitialMaterialization(source);
+      assert.equal(materialized.ok, true);
+      const interaction = materialized.content.modules[0].interactionContracts[0];
+      assert.equal(interaction.kind, "form");
+      assert.equal(
+        interaction.kind === "form" ? interaction.consent.privacyPolicyUrl : null,
+        "https://example.com/privacy",
+      );
+      assert.equal(JSON.stringify(source.candidate).includes("https://example.com/privacy"), false);
+      const roundTrip = validateLandingPageMaterializedContentV1(
+        JSON.parse(JSON.stringify(materialized.content)),
+      );
+      assert.equal(roundTrip.ok, true);
+      const roundTripInteraction = roundTrip.value.modules[0].interactionContracts[0];
+      assert.equal(
+        roundTripInteraction.kind === "form"
+          ? roundTripInteraction.consent.privacyPolicyUrl
+          : null,
+        "https://example.com/privacy",
+      );
     },
   },
   {
@@ -413,6 +462,15 @@ function fixture() {
         research: { contractVersion: 1, effectiveResearchVersion: 1 },
       },
       root: root.value,
+      presentation: {
+        brandColorPalette: {
+          primary: "#123456",
+          secondary: "#234567",
+          accent: "#345678",
+          background: "#FFFFFF",
+          text: "#111111",
+        },
+      },
       selection: [],
       modules: [{
         recommendedOrder: 10,
@@ -457,6 +515,61 @@ function fixture() {
     candidate,
     exposedGenerationContext: { generationContextContractVersion: 1, planKey: "starter", authorizedContent: { facts: [] } },
   };
+}
+
+function formFixture() {
+  const source = fixture();
+  const resolved = resolveLandingPageModuleCatalog({
+    moduleCatalogVersion: 1,
+    rootVersion: 1,
+    moduleKey: "hero",
+    moduleVersion: 1,
+    variantName: "form",
+    variantVersion: 1,
+    funnelProfileKey: "bofu",
+  });
+  assert.equal(resolved.ok, true);
+  const context = {
+    ...source.context,
+    partA: {
+      ...source.context.partA,
+      presentation: {
+        ...source.context.partA.presentation,
+        privacyPolicyUrl: "https://example.com/privacy",
+      },
+      modules: [{
+        recommendedOrder: 10,
+        priority: "P1" as const,
+        effectiveVariantKey: "hero.form@v1",
+        module: resolved.value.module,
+        variant: resolved.value.variant,
+        effectiveRoot: resolved.value.effectiveRoot,
+        fieldContract: resolved.value.fieldContract,
+      }],
+    },
+  } as LandingPageGenerationContextPackage;
+  const candidate: LandingPageDraftCandidate = {
+    ...source.candidate,
+    modules: [{
+      ...source.candidate.modules[0],
+      variantKey: "hero.form@v1",
+      fieldContractKey: "hero.form@v1",
+      interactionContracts: resolved.value.variant.interactionContracts,
+      fields: {
+        ...source.candidate.modules[0].fields,
+        primaryCta: {
+          kind: "action",
+          label: "Validar contato",
+          binding: {
+            fieldKey: "primary_conversion_channel",
+            channel: "form",
+            destination: null,
+          },
+        },
+      },
+    }],
+  };
+  return { context, candidate, exposedGenerationContext: source.exposedGenerationContext };
 }
 
 async function runValidationCases() {

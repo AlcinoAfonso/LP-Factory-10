@@ -20,16 +20,22 @@ import {
   type CompileLandingPageGenerationContextInput,
   type CompileLandingPageGenerationContextResult,
   type LandingPageGenerationAuthorizedFact,
+  type LandingPageBrandColorPalette,
   type LandingPageGenerationContextFailureCode,
   type LandingPageGenerationSelectionDecision,
   type LandingPageGenerationSelectedModule,
 } from "./generationContextContracts";
+import { validateStarterColorPalette } from "./onboardingConfiguration";
 
 const ROOT_VERSION = 1;
 type LandingPageFieldDefinition = LandingPageVariantFieldContract["fields"][number];
 const CENTRAL_FACT_KEYS = new Set([
   "primary_service_or_offer",
   "primary_service_or_offer_description",
+]);
+const DETERMINISTIC_PRESENTATION_INPUT_KEYS = new Set([
+  "brand_color_palette",
+  "privacy_policy_url",
 ]);
 
 export function compileLandingPageGenerationContext(
@@ -198,13 +204,24 @@ function compileValidatedLandingPageGenerationContext(
     });
   }
 
+  const brandColorPalette = resolveBrandColorPalette(input.configuration.fields);
+  if (!brandColorPalette) {
+    return failure("CONFIGURATION_INCOMPLETE", "Validated brand color palette is unavailable.");
+  }
+  const requiresPrivacyPolicy = modules.some((module) =>
+    module.variant.interactionContracts.some((interaction) => interaction.kind === "form"),
+  );
+  const privacyPolicyUrl = configuredValue(input.configuration.fields, "privacy_policy_url");
+  if (requiresPrivacyPolicy && !isHttpsUrl(privacyPolicyUrl)) {
+    return failure("CONFIGURATION_INCOMPLETE", "Validated privacy policy URL is unavailable.");
+  }
+
   const referencedInputKeys = new Set(CENTRAL_FACT_KEYS);
   for (const selectedModule of modules) {
     collectReferencedInputKeys(selectedModule.fieldContract.fields, referencedInputKeys);
     for (const interaction of selectedModule.variant.interactionContracts) {
       if (interaction.kind === "form") {
         referencedInputKeys.add(interaction.operationalBinding.inputCatalogFieldKey);
-        referencedInputKeys.add(interaction.consent.privacyPolicyInputFieldKey);
       }
     }
   }
@@ -224,6 +241,7 @@ function compileValidatedLandingPageGenerationContext(
     if (
       state.applicable &&
       state.source !== "missing" &&
+      !DETERMINISTIC_PRESENTATION_INPUT_KEYS.has(state.field.fieldKey) &&
       (referencedInputKeys.has(state.field.fieldKey) ||
         isOperationalDependent ||
         hasSupportedBinding)
@@ -269,6 +287,12 @@ function compileValidatedLandingPageGenerationContext(
         research: input.research.value.versions,
       },
       root: root.value,
+      presentation: {
+        brandColorPalette,
+        ...(requiresPrivacyPolicy && typeof privacyPolicyUrl === "string"
+          ? { privacyPolicyUrl }
+          : {}),
+      },
       selection,
       modules,
     },
@@ -366,6 +390,29 @@ function configuredValue(
 ): unknown {
   const state = fields.find((candidate) => candidate.field.fieldKey === fieldKey);
   return state?.applicable && state.source !== "missing" ? state.value : undefined;
+}
+
+function resolveBrandColorPalette(
+  fields: readonly AccountLandingPageOnboardingFieldState[],
+): LandingPageBrandColorPalette | null {
+  const value = configuredValue(fields, "brand_color_palette");
+  if (!validateStarterColorPalette(value).ok || !isRecord(value)) return null;
+  return {
+    primary: String(value.primary),
+    secondary: String(value.secondary),
+    accent: String(value.accent),
+    background: String(value.background),
+    text: String(value.text),
+  };
+}
+
+function isHttpsUrl(value: unknown): value is string {
+  if (typeof value !== "string") return false;
+  try {
+    return new URL(value).protocol === "https:";
+  } catch {
+    return false;
+  }
 }
 
 function variantNameFromIdentity(moduleKey: string, variantKey: string): string | null {

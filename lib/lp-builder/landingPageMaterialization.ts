@@ -67,13 +67,18 @@ export function buildLandingPageInitialMaterialization(input: Readonly<{
     if (!validateMaterializedFields(fields, selected.fieldContract.fields, selected.effectiveRoot)) {
       return { ok: false, error: "INVALID_CANDIDATE" };
     }
+    const interactionContracts = materializeInteractionContracts(
+      candidateModule.interactionContracts,
+      context.partA.presentation.privacyPolicyUrl,
+    );
+    if (!interactionContracts) return { ok: false, error: "INVALID_CANDIDATE" };
     modules.push({
       moduleKey: candidateModule.moduleKey,
       moduleVersion: candidateModule.moduleVersion,
       variantKey: candidateModule.variantKey,
       variantVersion: candidateModule.variantVersion,
       fieldContractKey: candidateModule.fieldContractKey,
-      interactionContracts: structuredClone(candidateModule.interactionContracts) as unknown as LandingPageMaterializedContentV1["modules"][number]["interactionContracts"],
+      interactionContracts,
       fields,
     });
   }
@@ -83,6 +88,7 @@ export function buildLandingPageInitialMaterialization(input: Readonly<{
     family: "landing_page" as const,
     root: {
       rootVersion: context.partA.root.rootVersion,
+      brandColorPalette: context.partA.presentation.brandColorPalette,
       resolvedPresetKey: context.partA.root.resolvedPresetKey,
       resolvedPreset: context.partA.root.resolvedPreset,
       effectiveSemanticRoles: context.partA.root.semanticRoles,
@@ -116,6 +122,31 @@ export function buildLandingPageInitialMaterialization(input: Readonly<{
   const snapshot = validateLandingPageGenerationContextSnapshotV1(snapshotCandidate);
   if (!snapshot.ok) return { ok: false, error: "INVALID_SNAPSHOT" };
   return { ok: true, content: content.value, snapshot: snapshot.value };
+}
+
+function materializeInteractionContracts(
+  interactions: LandingPageDraftCandidate["modules"][number]["interactionContracts"],
+  privacyPolicyUrl: string | undefined,
+): LandingPageMaterializedContentV1["modules"][number]["interactionContracts"] | null {
+  const materialized: LandingPageMaterializedContentV1["modules"][number]["interactionContracts"][number][] = [];
+  for (const interaction of interactions) {
+    if (interaction.kind === "form") {
+      if (!privacyPolicyUrl) return null;
+      materialized.push({
+        kind: "form",
+        fields: interaction.fields.map((field) => ({ ...field })),
+        consent: {
+          ...interaction.consent,
+          privacyPolicyUrl,
+        },
+        accessibility: { ...interaction.accessibility },
+        operationalBinding: { ...interaction.operationalBinding },
+      });
+      continue;
+    }
+    materialized.push(structuredClone(interaction));
+  }
+  return materialized;
 }
 
 type FieldDefinition = LandingPageGenerationContextPackage["partA"]["modules"][number]["fieldContract"]["fields"][number];

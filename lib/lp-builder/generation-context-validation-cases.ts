@@ -50,6 +50,15 @@ const cases: readonly Readonly<{ name: string; run: () => void | Promise<void> }
       assert.equal(result.value.partA.versions.bindingInputCatalogVersion, 3);
       assert.equal(result.value.partA.root.rootVersion, 1);
       assert.equal(result.value.partA.root.resolvedPresetKey.length > 0, true);
+      assert.deepEqual(result.value.partA.presentation, {
+        brandColorPalette: {
+          primary: "#000000",
+          secondary: "#111111",
+          accent: "#222222",
+          background: "#FFFFFF",
+          text: "#000000",
+        },
+      });
       assert.deepEqual(result.value.partA.generationProfile, {
         profileId: "c211015e-d9c6-4241-a29a-7cd41e93b8fc",
         ownerTaxonId: TAXON_ID,
@@ -93,6 +102,10 @@ const cases: readonly Readonly<{ name: string; run: () => void | Promise<void> }
         result.value.partB.facts.some((fact) => fact.fieldKey === "whatsapp_destination"),
         true,
       );
+      assert.equal(
+        result.value.partB.facts.some((fact) => fact.fieldKey === "brand_color_palette"),
+        false,
+      );
       assert.deepEqual(
         result.value.partB.research.endCustomer.researches.flatMap((parent) =>
           parent.items.map((item) => item.itemKey),
@@ -106,6 +119,33 @@ const cases: readonly Readonly<{ name: string; run: () => void | Promise<void> }
       assert.throws(() => {
         (result.value.partA.selection as unknown[]).push({});
       }, TypeError);
+    },
+  },
+  {
+    name: "deterministic presentation carries form privacy without granting prompt authority",
+    run: () => {
+      const privacyPolicyUrl = "https://example.com/privacy";
+      const result = compileLandingPageGenerationContext({
+        landingPage,
+        configuration: buildConfiguration({
+          primary_conversion_channel: "form",
+          privacy_policy_url: privacyPolicyUrl,
+        }),
+        research,
+        generationProfile,
+      });
+      assert.equal(result.ok, true);
+      assert.equal(
+        result.value.partA.modules.some((module) =>
+          module.variant.interactionContracts.some((interaction) => interaction.kind === "form"),
+        ),
+        true,
+      );
+      assert.equal(result.value.partA.presentation.privacyPolicyUrl, privacyPolicyUrl);
+      assert.equal(
+        result.value.partB.facts.some((fact) => fact.fieldKey === "privacy_policy_url"),
+        false,
+      );
     },
   },
   {

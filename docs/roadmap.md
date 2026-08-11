@@ -2441,7 +2441,7 @@ Repositório — Ajustados
   - Validador focal integrado ao `npm run check`.
 - Conteúdo:
   - A primeira candidata integral válida cria uma única materialização 1:1 e write-once, com conteúdo renderizável e snapshot do contexto efetivamente exposto tornando-se válidos juntos.
-  - Conteúdo e snapshot usam contratos runtime v1 estritos; o conteúdo congela raiz, aparência, módulos ordenados, identidades, versões e valores necessários ao renderer, sem releitura futura de fontes mutáveis.
+  - Conteúdo e snapshot usam contratos runtime v1 estritos; o conteúdo congela raiz, aparência, paleta visual validada, módulos ordenados, identidades, versões e, quando houver formulário, a URL HTTPS concreta da política de privacidade, sem conceder esses dados determinísticos à autoridade da IA nem reler fontes mutáveis no futuro.
   - Persistência server-only falha fechado, não permite overwrite e trata concorrência pela unicidade; o conflito relê e retorna o agregado vencedor sem nova chamada ao provider, e migration transacional, probe read-only e verificação SQL pós-apply protegem o rollout.
   - O fluxo prepara autenticação e contexto E19.3 antes da leitura tenant-scoped, consulta ausência antes do provider e não repete chamada nem insert; falha de preparação, provider, candidata ou persistência mantém o draft sem materialização válida.
   - A leitura aceita tabela vazia após apply e valida amostras integralmente, incluindo coerência entre identidades do conteúdo e do snapshot; relação, coluna, grant, payload ou versão incompatível falha fechado, e o consumo renderizável do round-trip não consulta E19.3, registries ou fontes mutáveis.
@@ -2452,8 +2452,8 @@ Repositório — Ajustados
 - Conteúdo:
   - A jornada autenticada expõe uma única ação humana para materializar a primeira candidata quando ainda não existe conteúdo e, após sucesso ou materialização preexistente, conduz ao preview privado sem falso sucesso nem nova chamada automática.
   - Preview autenticado e tenant-aware renderiza somente o conteúdo materializado, sem IA, mutação, publicação, tracking, backend de lead ou recomposição da E19.3.
-  - Identidade, versão ou payload não suportado falha explicitamente; o round-trip preserva conteúdo, ordem e aparência congelados.
-  - O renderer determinístico cobre as identidades v1 suportadas e mantém formulário e accordion acessíveis dentro de interações locais sem persistência nova; estados indisponível, vazio e inválido permanecem explícitos e fail-closed.
+  - Identidade, versão ou payload não suportado falha explicitamente; o round-trip preserva conteúdo, ordem, paleta e URL de privacidade congelados, independentes de alterações posteriores nas fontes de configuração.
+  - O renderer determinístico cobre as identidades v1 suportadas, consome exclusivamente a paleta materializada, mantém o Hero como único `h1` da LP e apresenta a URL de privacidade materializada como link real nos formulários de Hero e captura de lead; formulário e accordion permanecem acessíveis dentro de interações locais sem persistência nova, e estados indisponível, vazio e inválido continuam explícitos e fail-closed.
   - Evidências hospedadas ainda devem cobrir 360, 768 e 1280 px, teclado/foco, overflow, contraste, legibilidade e interações contratadas; revisão humana ainda deve avaliar copy, fidelidade factual, estado `draft`, não publicação e próximo passo.
   - Findings permanecem evidência do PR ou relatório de execução, sem workflow ou estado de domínio novo.
 
