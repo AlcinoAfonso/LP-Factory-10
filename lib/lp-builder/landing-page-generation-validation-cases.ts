@@ -7,7 +7,10 @@ import {
   resolveLandingPageModuleCatalog,
   type ResolvedLandingPageModuleCatalog,
 } from "../conversion-content/landing-page/module-catalog";
-import type { OpenAiWorkloadEvent } from "../openai-workloads";
+import {
+  resolveOpenAiProductWorkload,
+  type OpenAiWorkloadEvent,
+} from "../openai-workloads";
 import {
   createLandingPageDraftSafetyIdentifier,
   requestLandingPageDraftCandidate,
@@ -119,6 +122,38 @@ const cases: readonly Readonly<{ name: string; run: () => void | Promise<void> }
       assert.equal(format.strict, true);
       assert.equal(JSON.stringify(format.schema).includes('"additionalProperties":false'), true);
       assert.equal(Object.isFrozen(request.exposedGenerationContext), true);
+    },
+  },
+  {
+    name: "adapter propagates a resolved non-none reasoning effort unchanged",
+    run: async () => {
+      const effective = resolveOpenAiProductWorkload("landing_page_draft_generation");
+      assert.equal(effective.ok, true);
+      if (!effective.ok) return;
+      assert.equal(effective.value.model, "gpt-5.4-mini");
+      assert.equal(effective.value.reasoningEffort, "none");
+
+      const preview = successfulRequest(context);
+      const providerPayload = validProviderPayload(preview);
+      let capturedBody: Record<string, unknown> | null = null;
+      const result = await requestLandingPageDraftCandidate(
+        { context, actorUserId: ACTOR_ID },
+        {
+          apiKey: "test-key",
+          resolveWorkload: () => ({
+            ok: true,
+            value: { ...effective.value, reasoningEffort: "xhigh" },
+          }),
+          fetchImpl: async (_url, init) => {
+            capturedBody = JSON.parse(String(init?.body));
+            return responseWith(providerPayload);
+          },
+          emitEvent: () => undefined,
+          emitOutcome: () => undefined,
+        },
+      );
+      assert.equal(result.ok, true);
+      assert.deepEqual((capturedBody as unknown as Record<string, unknown>).reasoning, { effort: "xhigh" });
     },
   },
   {
@@ -246,6 +281,7 @@ const cases: readonly Readonly<{ name: string; run: () => void | Promise<void> }
       assert.equal(result.ok, true);
       assert.equal(calls, 1);
       assert.equal((capturedBody as unknown as Record<string, unknown>).model, "gpt-5.4-mini");
+      assert.deepEqual((capturedBody as unknown as Record<string, unknown>).reasoning, { effort: "none" });
       assert.equal((capturedBody as unknown as Record<string, unknown>).store, false);
       assert.equal(Object.hasOwn(capturedBody as unknown as object, "stream"), false);
       assert.equal(events.length, 1);

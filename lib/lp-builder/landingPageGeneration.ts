@@ -1,3 +1,4 @@
+import type { OpenAiReasoningEffort } from "../openai-workloads";
 import type { LandingPageGenerationContextPackage } from "./generationContextContracts";
 import {
   LANDING_PAGE_DRAFT_CANDIDATE_VERSION,
@@ -49,7 +50,7 @@ export type LandingPageDraftGenerationRequest = Readonly<{
 export function buildLandingPageDraftGenerationRequest(input: Readonly<{
   context: LandingPageGenerationContextPackage;
   model: string;
-  reasoningEffort: "none";
+  reasoningEffort: OpenAiReasoningEffort;
   safetyIdentifier: string;
 }>): LandingPageDraftGenerationRequest {
   if (!isGenerationContextUsable(input.context) || !nonEmpty(input.safetyIdentifier)) {

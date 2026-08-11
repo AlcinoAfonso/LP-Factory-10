@@ -28,6 +28,7 @@ export type LandingPageDraftGenerationOutcome = Readonly<{
 type Dependencies = Readonly<{
   apiKey?: string;
   fetchImpl?: typeof fetch;
+  resolveWorkload?: typeof resolveOpenAiProductWorkload;
   emitEvent?: (event: OpenAiWorkloadEvent) => void;
   emitOutcome?: (event: LandingPageDraftGenerationOutcome) => void;
   now?: () => number;
@@ -39,7 +40,7 @@ export async function requestLandingPageDraftCandidate(
   input: AdapterInput,
   dependencies: Dependencies = {},
 ): Promise<LandingPageDraftGenerationResult> {
-  const configuration = resolveOpenAiProductWorkload("landing_page_draft_generation");
+  const configuration = (dependencies.resolveWorkload ?? resolveOpenAiProductWorkload)("landing_page_draft_generation");
   const emitEvent = dependencies.emitEvent ?? emitOpenAiWorkloadEvent;
   const emitOutcome = dependencies.emitOutcome ?? ((event) => console.info(event.event, event));
   const requestId = nonEmpty(input?.requestId) ? input.requestId.trim() : null;
@@ -55,11 +56,6 @@ export async function requestLandingPageDraftCandidate(
 
   const workload = configuration.value;
   const commonContext = eventContext(workload);
-  if (workload.reasoningEffort !== "none") {
-    emitEvent(createOpenAiWorkloadFailureEvent(commonContext, "configuration_invalid"));
-    safeEmitOutcome(emitOutcome, failureOutcome("configuration_invalid", requestId, null));
-    return { ok: false, kind: "configuration_invalid" };
-  }
   const apiKey = (dependencies.apiKey ?? process.env.OPENAI_API_KEY)?.trim();
   if (!apiKey) {
     emitEvent(createOpenAiWorkloadFailureEvent(commonContext, "configuration_invalid"));
