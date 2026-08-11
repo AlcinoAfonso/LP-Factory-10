@@ -2,7 +2,7 @@
 
 0.1 Cabeçalho
 • Data: 11/08/2026
-• Versão: v1.5.140
+• Versão: v1.5.141
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -2242,7 +2242,7 @@ Repositório — Ajustados
 
 19. E19 — LP Builder
 - Objetivo: Consolidar o fluxo Core de landing pages por conta, da identidade mínima em `draft` às futuras etapas de geração, revisão, materialização e publicação, sempre por recortes aprovados.
-- Status: E19.1 concluída; E19.2 concluída; E19.3 concluída conforme o plano-base v2 aprovado; E19.4 em execução conforme o plano-base v2 aprovado, com E19.4.3 e E19.4.4 implementadas no repositório e a E19.4.5 ainda pendente.
+- Status: E19.1 concluída; E19.2 concluída; E19.3 concluída conforme o plano-base v2 aprovado; E19.4 em execução conforme o plano-base v2 aprovado, com E19.4.3, E19.4.4 e E19.4.5 implementadas no repositório e os gates hospedados e humanos ainda pendentes.
 
 19.1 Criação produtiva mínima de LP por conta
 
@@ -2405,10 +2405,10 @@ Repositório — Ajustados
 
 19.4.1 Objetivo e status
 - Objetivo: consumir o pacote real e autorizado da E19.3 para gerar, validar, materializar e visualizar privadamente a primeira LP real em `draft`, com estado próprio reproduzível e prova humana.
-- Status: Em execução conforme o plano-base v2 aprovado em `docs/lousa-plano-base-e19-4.md`; E19.4.3 e E19.4.4 estão implementadas no repositório, com apply da migration e prova hospedada reservados ao fluxo pós-merge e à E19.4.5.
+- Status: Em execução conforme o plano-base v2 aprovado em `docs/lousa-plano-base-e19-4.md`; E19.4.3, E19.4.4 e E19.4.5 estão implementadas no repositório, com apply da migration, geração oficial, round-trip hospedado e prova humana reservados ao fluxo pós-merge.
 
 19.4.3 Geração controlada e validação integral da candidata
-- Status: Implementada no repositório e validada por casos executáveis; integração com materialização, ação na jornada e prova hospedada permanece nas E19.4.4 e E19.4.5.
+- Status: Implementada no repositório e validada por casos executáveis; materialização e ação humana estão integradas no recorte repo-only, enquanto a chamada oficial e a prova hospedada permanecem nos gates pós-merge.
 - Registros do recorte:
   - Criados:
     - `lib/lp-builder/landingPageGenerationContracts.ts`
@@ -2433,7 +2433,7 @@ Repositório — Ajustados
   - `npm ci` e `npm run check` foram aprovados no worktree; não houve chamada OpenAI real, persistência, migration, rota, UI, materialização ou renderer nesta subseção.
 
 19.4.4 Materialização inicial e snapshot imutável
-- Status: Implementada no repositório e validada por casos executáveis; apply da migration, round-trip hospedado e preview permanecem pendentes dos gates pós-merge e da E19.4.5.
+- Status: Implementada no repositório e validada por casos executáveis; o preview privado consumidor está implementado, enquanto apply da migration e round-trip hospedado permanecem pendentes dos gates pós-merge.
 - Registros do recorte:
   - Contratos runtime v1 estritos e materialização determinística no boundary `lib/conversion-content/landing-page/` e `lib/lp-builder/`.
   - Adapter server-only com projeção estável, probe read-only, leitura tenant-scoped e INSERT único por `service_role`.
@@ -2448,11 +2448,13 @@ Repositório — Ajustados
   - Nenhuma chamada OpenAI real ou escrita remota Supabase foi executada nesta subseção.
 
 19.4.5 Visualização privada e prova humana da primeira LP real
-- Status: Planejada.
+- Status: Implementada no repositório e validada por casos executáveis; prova hospedada e revisão humana da primeira LP real permanecem pendentes dos gates pós-merge.
 - Conteúdo:
-  - Preview autenticado e tenant-aware renderiza somente o conteúdo materializado, sem IA, mutação, publicação ou recomposição da E19.3.
+  - A jornada autenticada expõe uma única ação humana para materializar a primeira candidata quando ainda não existe conteúdo e, após sucesso ou materialização preexistente, conduz ao preview privado sem falso sucesso nem nova chamada automática.
+  - Preview autenticado e tenant-aware renderiza somente o conteúdo materializado, sem IA, mutação, publicação, tracking, backend de lead ou recomposição da E19.3.
   - Identidade, versão ou payload não suportado falha explicitamente; o round-trip preserva conteúdo, ordem e aparência congelados.
-  - Evidências hospedadas cobrem 360, 768 e 1280 px, teclado/foco, overflow, contraste, legibilidade e interações contratadas; revisão humana avalia também copy, fidelidade factual, estado `draft`, não publicação e próximo passo.
+  - O renderer determinístico cobre as identidades v1 suportadas e mantém formulário e accordion acessíveis dentro de interações locais sem persistência nova; estados indisponível, vazio e inválido permanecem explícitos e fail-closed.
+  - Evidências hospedadas ainda devem cobrir 360, 768 e 1280 px, teclado/foco, overflow, contraste, legibilidade e interações contratadas; revisão humana ainda deve avaliar copy, fidelidade factual, estado `draft`, não publicação e próximo passo.
   - Findings permanecem evidência do PR ou relatório de execução, sem workflow ou estado de domínio novo.
 
 20. E20 — Preparação e liberação de taxons para geração de landing pages

@@ -3,6 +3,7 @@ import { getCommercialActivationHierarchicalBundle } from "@/conversion-content"
 import { getCommercialEntitlementSignal } from "../../../lib/commercial-entitlements";
 import {
   getAccountLandingPageOnboardingConfiguration,
+  getLandingPageDraftExperienceState,
   listAccountLandingPageDrafts,
   type AccountLandingPage,
   type AccountLandingPageOnboardingConfiguration,
@@ -13,6 +14,7 @@ import { PendingSetupFirstSteps } from "./_components/PendingSetupFirstSteps";
 import { NicheResolutionCard } from "./_components/NicheResolutionCard";
 import { OnboardingConfigurationJourney } from "./_components/OnboardingConfigurationJourney";
 import { OnboardingCompletionJourney } from "./_components/OnboardingCompletionJourney";
+import { LandingPageDraftJourney } from "./_components/LandingPageDraftJourney";
 import { GenericCommercialPage } from "./_components/commercial-page/GenericCommercialPage";
 import { PublishedCommercialActivationPage } from "./_components/commercial-page/PublishedCommercialActivationPage";
 import {
@@ -163,7 +165,19 @@ export default async function Page({ params, searchParams }: PageProps) {
       );
     }
     if (accountJourney.mode === "operational") {
-      return <OperationalReadyState />;
+      const landingPageId = onboardingConfiguration?.landingPageId ?? null;
+      if (!accountId || !landingPageId) return <OnboardingBlockedState />;
+      const landingPageExperience = await getLandingPageDraftExperienceState({
+        accountId,
+        landingPageId,
+      });
+      return (
+        <LandingPageDraftJourney
+          accountSubdomain={accountSubdomain}
+          landingPageId={landingPageId}
+          experienceStatus={landingPageExperience.status}
+        />
+      );
     }
     if (accountJourney.mode === "blocked") {
       return <OnboardingBlockedState />;
@@ -209,24 +223,6 @@ export default async function Page({ params, searchParams }: PageProps) {
   }
 
   return <DashboardPublic />;
-}
-
-function OperationalReadyState() {
-  return (
-    <main className="mx-auto flex min-h-[60vh] max-w-5xl items-center px-4 py-10 sm:px-6">
-      <section className="w-full rounded-2xl border border-emerald-200 bg-emerald-50 p-6 shadow-card sm:p-10">
-        <p className="text-sm font-semibold uppercase tracking-[0.16em] text-emerald-700">
-          Configuração concluída
-        </p>
-        <h1 className="mt-3 text-2xl font-bold tracking-tight text-ink-900 sm:text-3xl">
-          Sua conta está pronta para trabalhar na primeira landing page.
-        </h1>
-        <p className="mt-4 max-w-2xl text-sm leading-6 text-graytech-700 sm:text-base">
-          O rascunho escolhido está vinculado a esta configuração e pronto para as próximas etapas do produto.
-        </p>
-      </section>
-    </main>
-  );
 }
 
 function OnboardingBlockedState() {

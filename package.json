@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
-    "check": "npm run lint && npm run typecheck && npm run validate:commercial-capabilities && npm run validate:openai-workloads && npm run validate:commercial-activation && npm run validate:landing-page-root && npm run validate:landing-page-research && npm run validate:landing-page-input-catalog && npm run validate:landing-page-module-catalog && npm run validate:landing-page-generation-profile && npm run validate:lp-builder-onboarding && npm run validate:lp-builder-generation-context && npm run validate:lp-builder-landing-page-generation && npm run validate:lp-builder-landing-page-materialization",
+    "check": "npm run lint && npm run typecheck && npm run validate:commercial-capabilities && npm run validate:openai-workloads && npm run validate:commercial-activation && npm run validate:landing-page-root && npm run validate:landing-page-research && npm run validate:landing-page-input-catalog && npm run validate:landing-page-module-catalog && npm run validate:landing-page-generation-profile && npm run validate:lp-builder-onboarding && npm run validate:lp-builder-generation-context && npm run validate:lp-builder-landing-page-generation && npm run validate:lp-builder-landing-page-materialization && npm run validate:lp-builder-landing-page-preview",
     "validate:account-members": "tsx lib/access/account-members/validation-cases.ts",
     "validate:e11-checkout": "tsx app/a/[account]/_components/commercial-page/checkout-validation-cases.ts",
     "validate:e11-commercial-experience": "tsx app/a/[account]/_components/commercial-page/commercial-experience-validation-cases.ts",
@@ -24,6 +24,7 @@
     "validate:lp-builder-generation-context": "tsx lib/lp-builder/generation-context-validation-cases.ts",
     "validate:lp-builder-landing-page-generation": "tsx lib/lp-builder/landing-page-generation-validation-cases.ts",
     "validate:lp-builder-landing-page-materialization": "tsx lib/lp-builder/landing-page-materialization-validation-cases.ts",
+    "validate:lp-builder-landing-page-preview": "tsx lib/lp-builder/landing-page-preview-validation-cases.tsx",
     "validate:lp-builder-onboarding-journey": "tsx app/a/[account]/_components/onboarding-journey-validation-cases.ts"
   },
   "dependencies": {

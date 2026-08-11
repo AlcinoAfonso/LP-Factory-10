@@ -36,3 +36,9 @@ export type {
   LandingPageGenerationContextSnapshotV1,
   LandingPageMaterializedContentV1,
 } from "./materialization";
+export {
+  LandingPageMaterializedRenderer,
+  LandingPagePreviewFrame,
+  resolveLandingPageMaterializedRendererModel,
+} from "./materialized-renderer";
+export type { ResolveLandingPageMaterializedRendererResult } from "./materialized-renderer";
