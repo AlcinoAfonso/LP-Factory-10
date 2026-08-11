@@ -2242,7 +2242,7 @@ Repositório — Ajustados
 
 19. E19 — LP Builder
 - Objetivo: Consolidar o fluxo Core de landing pages por conta, da identidade mínima em `draft` às futuras etapas de geração, revisão, materialização e publicação, sempre por recortes aprovados.
-- Status: E19.1 concluída; E19.2 concluída; E19.3 concluída conforme o plano-base v2 aprovado; E19.4 é o recorte sucessor planejado, sem implementação iniciada.
+- Status: E19.1 concluída; E19.2 concluída; E19.3 concluída conforme o plano-base v2 aprovado; E19.4 planejada, sem implementação iniciada.
 
 19.1 Criação produtiva mínima de LP por conta
 
@@ -2405,8 +2405,20 @@ Repositório — Ajustados
 
 19.4.1 Objetivo e status
 - Objetivo: consumir a saída real implementada e validada da E19.3 para a futura geração por IA, validação pós-IA, materialização e visualização mínimas necessárias à primeira LP real em `draft`.
-- Status: planejado como recorte sucessor.
-- Debate detalhado e implementação ainda não iniciados; devem ocorrer em recorte próprio, sem antecipação pela E19.3.
+- Status: Planejada.
+- Plano-base v1 consolidado; implementação ainda não iniciada.
+
+19.4.3 Geração controlada e validação integral da candidata
+- Objetivo: consumir a saída da E19.3 e produzir uma candidata da LP completa, submetendo-a à validação determinística objetiva antes de qualquer persistência.
+- Status: Planejada.
+
+19.4.4 Materialização inicial e snapshot imutável
+- Objetivo: tornar a primeira candidata integral válida em estado próprio da LP, com snapshot suficiente e sem dependência futura de fontes mutáveis para sua reprodução.
+- Status: Planejada.
+
+19.4.5 Visualização privada e prova humana da primeira LP real
+- Objetivo: renderizar privadamente a LP materializada a partir de seu estado próprio e produzir a evidência humana necessária para concluir o recorte.
+- Status: Planejada.
 
 20. E20 — Preparação e liberação de taxons para geração de landing pages
 
