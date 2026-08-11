@@ -2,7 +2,7 @@
 
 0.1 Cabeçalho
 • Data: 11/08/2026
-• Versão: v1.5.138
+• Versão: v1.5.139
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -2242,7 +2242,7 @@ Repositório — Ajustados
 
 19. E19 — LP Builder
 - Objetivo: Consolidar o fluxo Core de landing pages por conta, da identidade mínima em `draft` às futuras etapas de geração, revisão, materialização e publicação, sempre por recortes aprovados.
-- Status: E19.1 concluída; E19.2 concluída; E19.3 concluída conforme o plano-base v2 aprovado; E19.4 planejada conforme o plano-base v2 aprovado, sem implementação iniciada.
+- Status: E19.1 concluída; E19.2 concluída; E19.3 concluída conforme o plano-base v2 aprovado; E19.4 em execução conforme o plano-base v2 aprovado, com E19.4.3 implementada no repositório e as subseções seguintes ainda pendentes.
 
 19.1 Criação produtiva mínima de LP por conta
 
@@ -2405,15 +2405,32 @@ Repositório — Ajustados
 
 19.4.1 Objetivo e status
 - Objetivo: consumir o pacote real e autorizado da E19.3 para gerar, validar, materializar e visualizar privadamente a primeira LP real em `draft`, com estado próprio reproduzível e prova humana.
-- Status: Planejada conforme o plano-base v2 aprovado em `docs/lousa-plano-base-e19-4.md`; implementação ainda não iniciada.
+- Status: Em execução conforme o plano-base v2 aprovado em `docs/lousa-plano-base-e19-4.md`; E19.4.3 está implementada no repositório, sem materialização ou prova hospedada antecipadas.
 
 19.4.3 Geração controlada e validação integral da candidata
-- Status: Planejada.
+- Status: Implementada no repositório e validada por casos executáveis; integração com materialização, ação na jornada e prova hospedada permanece nas E19.4.4 e E19.4.5.
+- Registros do recorte:
+  - Criados:
+    - `lib/lp-builder/landingPageGenerationContracts.ts`
+    - `lib/lp-builder/landingPageGeneration.ts`
+    - `lib/lp-builder/landingPageDraftGeneration.ts`
+    - `lib/lp-builder/adapters/landingPageGenerationOpenAiAdapter.ts`
+    - `lib/lp-builder/adapters/landingPageDraftGenerationAdapter.ts`
+    - `lib/lp-builder/landing-page-generation-validation-cases.ts`
+  - Ajustados:
+    - `lib/lp-builder/index.ts`
+    - `lib/openai-workloads/contracts.ts`
+    - `lib/openai-workloads/registry.ts`
+    - `lib/openai-workloads/validation-cases.ts`
+    - `package.json`
+  - Banco, migration, rota, UI, materialização e renderer: N/A nesta subseção.
 - Conteúdo:
-  - Owner ou admin ativo inicia explicitamente a geração; conta, membership, entitlement, contexto E19.3 e ausência de materialização são revalidados server-side antes do provider.
-  - A IA produz somente conteúdo para os fields autorizados da composição completa; estrutura, identidades, ordem, bindings, referências e fatos permanecem determinísticos.
-  - Cada invocação aceita usa no máximo uma chamada síncrona e não streaming pela configuração canônica de `lib/openai-workloads/`, com saída estruturada estrita, sem tools, agentic, retry automático ou nova variável de modelo.
-  - Falha de gate, provider, resposta ou validação rejeita a tentativa inteira sem materialização; nova tentativa depende de nova ação humana.
+  - O boundary público obtém o ator diretamente da sessão autenticada e compila e revalida server-side conta, membership, entitlement e contexto E19.3 antes do provider; o chamador não fornece identidade do ator e falha desse estágio encerra a operação com zero chamadas.
+  - A IA preenche somente slots opacos dos fields geráveis; o servidor recompõe composição, identidade, variante, ordem, contratos, bindings, referências técnicas autorizadas e omissões opcionais e rejeita a candidata inteira diante de divergência objetiva.
+  - O workload canônico `landing_page_draft_generation` usa a configuração repo-only vigente, Responses API, Structured Output estrito, `store: false`, `safety_identifier` estável e não reversível e limite de saída calculado deterministicamente.
+  - Cada invocação aceita usa uma única chamada síncrona e não streaming, sem tools, busca, agentic, encadeamento ou retry automático; nova tentativa depende de nova ação humana.
+  - Casos executáveis cobrem ator derivado da sessão, gate anterior ao provider, composição piloto integral da E19.3, restauração de identidade/ordem/binding/referência técnica autorizada, ausência opcional, módulo ou field extra/ausente, tipo e limite inválidos, referência obrigatória não resolvida, refusal, incomplete, JSON inválido, telemetria sanitizada e ausência de retry.
+  - `npm ci` e `npm run check` foram aprovados no worktree; não houve chamada OpenAI real, persistência, migration, rota, UI, materialização ou renderer nesta subseção.
 
 19.4.4 Materialização inicial e snapshot imutável
 - Status: Planejada.
@@ -2533,7 +2550,7 @@ Repositório — Ajustados
 21.1 Fundação, normalização e leitura dos workloads OpenAI
 
 21.1.1 Objetivo e status
-- Objetivo: estabelecer catálogo tipado e resolução explícita dos workloads OpenAI, integrar os três consumidores de produto à configuração e à observabilidade comuns e expor inventário administrativo read-only.
+- Objetivo: estabelecer catálogo tipado e resolução explícita dos workloads OpenAI, integrar os consumidores de produto à configuração e à observabilidade comuns e expor inventário administrativo read-only.
 - Status: Implementação candidata concluída e validada; fechamento documental reconciliado com a `main`, preservando E12.6 e E21.1; PR #710 permanece draft até a inspeção final.
 
 21.1.2 Registros do recorte
@@ -2570,7 +2587,7 @@ Repositório — Ajustados
 21.1.3 Catálogo estrutural e resolução explícita
 - Status: Implementada e validada.
 - Conteúdo:
-  - O boundary transversal `lib/openai-workloads/` mantém registry interno, repo-only e profundamente imutável, com três configurações efetivas de produto em `gpt-5.4-mini + none` e uma referência operacional separada do Supabase Inspect em `gpt-4.1-mini + not_applicable`.
+  - O boundary transversal `lib/openai-workloads/` mantém registry interno, repo-only e profundamente imutável, com quatro configurações efetivas de produto em `gpt-5.4-mini + none` e uma referência operacional separada do Supabase Inspect em `gpt-4.1-mini + not_applicable`.
   - O resolver público aceita somente workloads de produto conhecidos, falha fechado para identidade desconhecida ou referência operacional e projeta inventário seguro com classificação, origem, revisão e indicação explícita de configuração efetiva verificada.
   - Ambiente, união discriminada de resultado e normalização de usage foram definidos como contratos puros comuns e integrados às chamadas reais na E21.1.4.
   - Os casos executáveis fundacionais cobrem unicidade, resolução, separação effective/reference, imutabilidade, projeção sem secrets, ambiente, usage, evento e ausência de transporte, persistência ou payload funcional no boundary.
@@ -2579,7 +2596,7 @@ Repositório — Ajustados
 21.1.4 Integração dos consumidores e observabilidade comum
 - Status: Implementada e validada técnica e funcionalmente, com smoke hospedado aprovado para os três consumidores de produto.
 - Conteúdo:
-  - Os três consumidores resolvem a configuração pelo boundary comum e enviam modelo e reasoning effort explícitos à Responses API, preservando prompts, schemas, limites, persistência e fallbacks funcionais vigentes.
+  - Os quatro consumidores resolvem a configuração pelo boundary comum e enviam modelo e reasoning effort explícitos à Responses API, preservando prompts, schemas, limites, persistência e fallbacks funcionais vigentes; os três consumidores anteriores preservam a prova hospedada de 10/08/2026, enquanto `landing_page_draft_generation` possui somente validação executável no repositório nesta etapa.
   - Eventos comuns registram por tentativa somente ambiente, configuração, response ID, resultado, categoria segura, latência e usage normalizado completo; métricas ausentes permanecem `null` e nenhum prompt, resposta integral, payload de negócio, PII ou secret é registrado.
   - As três leituras runtime de variáveis de modelo, o hardcode client do perfil e o cálculo monetário local foram removidos; as variáveis externas permanecem apenas como legado temporário de reversão conforme a configuração operacional canônica.
   - O transporte OpenAI comercial foi isolado no adapter previsto e novos drafts registram workload, origem, revisão, modelo e effort resolvidos na proveniência existente, sem migration, backfill ou persistência de usage.
@@ -2588,10 +2605,10 @@ Repositório — Ajustados
   - Permanece fora do PR #710 a correção separada da automação de smoke para remover senha de logs e artifacts, gerar credenciais não previsíveis e tratar colisões corretamente.
 
 21.1.5 Inventário read-only no Admin Dashboard
-- Status: Implementada e validada técnica e visualmente no Preview, incluindo acesso positivo e negativo.
+- Status: Implementada; a prova técnica e visual hospedada anterior cobre o inventário original de quatro itens, e a projeção do quinto item adicionada pela E19.4.3 permanece pendente da prova hospedada do próprio recorte.
 - Conteúdo:
-  - A rota protegida `/admin/workloads-openai` integra o shell e a navegação administrativos vigentes e projeta diretamente da API pública do boundary os quatro workloads, sem adapter, API, componente client ou controle de mutação novos.
-  - Os três workloads de produto exibem ambiente observado, configuração efetiva, origem e revisão; o Supabase Inspect permanece diferenciado como referência operacional externa e informa explicitamente `Ambiente da execução: não verificado nesta página`.
+  - A rota protegida `/admin/workloads-openai` integra o shell e a navegação administrativos vigentes e projeta diretamente da API pública do boundary os cinco workloads no código atual, sem adapter, API, componente client ou controle de mutação novos.
+  - Os quatro workloads de produto exibem ambiente observado, configuração efetiva, origem e revisão; o Supabase Inspect permanece diferenciado como referência operacional externa e informa explicitamente `Ambiente da execução: não verificado nesta página`.
   - A superfície é responsiva, sem consulta runtime à OpenAI, GitHub ou Vercel e sem configuração remota, métricas históricas ou capacidades inexistentes.
   - As evidências hospedadas aprovaram desktop, viewport mobile de 390 × 844 sem overflow, navegação lógica por TAB com foco visível, acesso positivo de `platform_admin` e bloqueio da identidade preexistente sem esse papel.
 

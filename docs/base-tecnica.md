@@ -2,8 +2,8 @@
 
 0.1 Cabeçalho
 • Documento: Base Técnica LP Factory 10
-• Versão: v2.0.62
-• Data: 09/08/2026
+• Versão: v2.0.63
+• Data: 11/08/2026
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -243,6 +243,9 @@
 • Valores configurados pelo catálogo v2 permanecem validados pela v2; metadata de binding é resolvido pelo catálogo v3 somente após compatibilidade estrutural integral, sem migração, regravação ou mapa paralelo.
 • Seleção estrutural preserva `recommendedOrder`, mantém `P1/P2/P3` apenas como metadado e só usa fallback quando houver exatamente uma alternativa elegível; inelegibilidade contextual pode omitir a recomendação com causa rastreada.
 • O boundary server-only pode registrar somente resultado, motivo seguro, `request_id` e latência quando disponíveis; valores, pesquisa, fatos, evidências, guidance, payload bruto, PII, secrets, tokens e prompts não entram no log.
+• A geração de candidata deve chamar o compilador autorizado antes do provider e usar somente slots geráveis derivados da composição completa; identidade, ordem, variantes, contratos, bindings, destinos e referências técnicas permanecem sob autoridade determinística do servidor.
+• Cada invocação aceita da geração completa usa no máximo uma chamada síncrona e não streaming, sem retry automático; falha do contexto, provider, resposta estruturada ou validator rejeita a candidata inteira.
+• Fields opcionais nulos na saída probabilística são normalizados para ausência, e nenhuma candidata parcial pode avançar para persistência.
 
 3.14.5 Resolução de nicho e taxonomia
 • Boundary canônico: `lib/onboarding/niche-resolution/`; contratos, thresholds, reasons, schemas e adapters permanecem canônicos no código.
