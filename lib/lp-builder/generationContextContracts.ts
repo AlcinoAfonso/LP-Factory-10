@@ -93,6 +93,14 @@ export type LandingPageGenerationAuthorizedModuleContext = Readonly<{
   funnelCopyProfile: LandingPageFunnelCopyProfile;
 }>;
 
+export type LandingPageBrandColorPalette = Readonly<{
+  primary: string;
+  secondary: string;
+  accent: string;
+  background: string;
+  text: string;
+}>;
+
 export type LandingPageGenerationContextPackage = Readonly<{
   contractVersion: typeof LANDING_PAGE_GENERATION_CONTEXT_CONTRACT_VERSION;
   partA: Readonly<{
@@ -117,6 +125,10 @@ export type LandingPageGenerationContextPackage = Readonly<{
       research: ResolvedLandingPageResearch["versions"];
     }>;
     root: LandingPageRootParameters;
+    presentation: Readonly<{
+      brandColorPalette: LandingPageBrandColorPalette;
+      privacyPolicyUrl?: string;
+    }>;
     selection: readonly LandingPageGenerationSelectionDecision[];
     modules: readonly LandingPageGenerationSelectedModule[];
   }>;

@@ -2,8 +2,8 @@
 
 0.1 Cabeçalho
 • Documento: Base Técnica LP Factory 10
-• Versão: v2.0.62
-• Data: 09/08/2026
+• Versão: v2.0.65
+• Data: 11/08/2026
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -243,6 +243,14 @@
 • Valores configurados pelo catálogo v2 permanecem validados pela v2; metadata de binding é resolvido pelo catálogo v3 somente após compatibilidade estrutural integral, sem migração, regravação ou mapa paralelo.
 • Seleção estrutural preserva `recommendedOrder`, mantém `P1/P2/P3` apenas como metadado e só usa fallback quando houver exatamente uma alternativa elegível; inelegibilidade contextual pode omitir a recomendação com causa rastreada.
 • O boundary server-only pode registrar somente resultado, motivo seguro, `request_id` e latência quando disponíveis; valores, pesquisa, fatos, evidências, guidance, payload bruto, PII, secrets, tokens e prompts não entram no log.
+• A geração de candidata deve chamar o compilador autorizado antes do provider e usar somente slots geráveis derivados da composição completa; identidade, ordem, variantes, contratos, bindings, destinos e referências técnicas permanecem sob autoridade determinística do servidor.
+• Cada invocação aceita da geração completa usa no máximo uma chamada síncrona e não streaming, sem retry automático; falha do contexto, provider, resposta estruturada ou validator rejeita a candidata inteira.
+• Fields opcionais nulos na saída probabilística são normalizados para ausência, e nenhuma candidata parcial pode avançar para persistência.
+• A materialização inicial valida prontidão, autenticação e contexto autorizado antes do provider, confirma ausência do agregado e executa um único INSERT server-only; falha ou candidata inválida não produz estado, e conflito relê e retorna o vencedor sem overwrite nem retry automático.
+• Conteúdo e snapshot usam contratos runtime v1 estritos e coerentes entre si; entradas determinísticas de apresentação, como a paleta validada e a URL concreta de política de privacidade quando houver formulário, pertencem ao conteúdo congelado e não à autoridade probabilística; a leitura falha fechado diante de shape, versão ou identidade incompatível, e o consumo para renderização não relê a E19.3, registries ou outras fontes mutáveis.
+• A API pública do boundary expõe a operação integral de materialização; probe, leitura e escrita por `service_role` permanecem internos aos adapters server-only.
+• O renderer determinístico reside em `lib/conversion-content/landing-page/`, recebe somente `LandingPageMaterializedContentV1`, conhece explicitamente as identidades v1 suportadas e falha de forma visível para versão, identidade ou payload incompatível.
+• A moldura da visualização privada identifica `draft`, não publicação e próximo passo; o conteúdo permanece read-only, sem IA, Supabase direto, tracking, edição, publicação ou backend novo de lead.
 
 3.14.5 Resolução de nicho e taxonomia
 • Boundary canônico: `lib/onboarding/niche-resolution/`; contratos, thresholds, reasons, schemas e adapters permanecem canônicos no código.

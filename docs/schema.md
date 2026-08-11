@@ -1,8 +1,8 @@
 0. Introdução
 
 0.1 Cabeçalho
-• Data da última atualização: 09/08/2026
-• Documento: LP Factory 10 — Schema (DB Contract) v1.0.39
+• Data da última atualização: 11/08/2026
+• Documento: LP Factory 10 — Schema (DB Contract) v1.0.40
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -851,6 +851,44 @@
 • Logo permanece opcional; não há bucket, Storage, Blob, URL ou infraestrutura de assets neste contrato.
 • O agregado não participa do Trigger Hub.
 
+1.27 account_landing_page_materializations
+1.27.1 Função e estado
+• Agregado interno 1:1 e write-once da materialização inicial de uma landing page em `draft`.
+• Conteúdo renderizável e snapshot geracional são inseridos atomicamente; não há estado parcial válido.
+• A migration está implementada no repositório e aguarda o fluxo de apply pós-merge; a projeção runtime permanece fail-closed até a aplicação integral.
+
+1.27.2 Colunas
+• landing_page_id uuid primary key
+• account_id uuid not null
+• content_json jsonb not null
+• generation_context_snapshot_json jsonb not null
+• created_by uuid not null
+• created_at timestamptz not null default now()
+
+1.27.3 Relacionamentos e constraints
+• `(landing_page_id, account_id)` referencia `(id, account_id)` de public.account_landing_pages com ON UPDATE RESTRICT e ON DELETE CASCADE.
+• account_id referencia public.accounts(id) com ON UPDATE RESTRICT e ON DELETE CASCADE.
+• created_by referencia auth.users(id) com ON UPDATE RESTRICT e ON DELETE RESTRICT.
+• A PK em landing_page_id impede segunda materialização e overwrite.
+• `content_json` e `generation_context_snapshot_json` devem ser objetos JSON.
+
+1.27.4 Índices
+• `account_landing_page_materializations_account_id_idx`: btree em account_id.
+• `account_landing_page_materializations_created_by_idx`: btree em created_by.
+
+1.27.5 Segurança e acesso
+• RLS habilitado e nenhuma policy.
+• public, anon, authenticated e ai_readonly: sem grants.
+• service_role: SELECT e INSERT; sem UPDATE ou DELETE.
+• Não há view, RPC, trigger ou participação no Trigger Hub.
+
+1.27.6 Contrato operacional
+• A leitura server-only usa a projeção exata `landing_page_id,account_id,content_json,generation_context_snapshot_json,created_by,created_at` e valida integralmente os contratos runtime v1 de conteúdo e snapshot.
+• A prontidão aceita a tabela vazia após o apply e, quando houver amostra, falha fechado diante de relação, coluna, grant, shape, versão ou coerência inválidos.
+• O conteúdo materializado é autossuficiente; o snapshot preserva as identidades estruturais e somente o contexto concretamente exposto à geração válida.
+• Em conflito de unicidade, o adapter relê o agregado vencedor pelo par tenant-scoped e o retorna sem UPDATE, DELETE ou nova chamada ao provider.
+• A migration é `supabase/migrations/20260811133500_e19_4_4_landing_page_materializations.sql`; a verificação read-only é `supabase/snippets/e19_4_4_landing_page_materializations_verify.sql`; os casos SQL estão em `supabase/tests/e19_4_4_landing_page_materializations.test.sql`.
+
 2. Views
 
 2.1 v_access_context_v2
@@ -1104,6 +1142,8 @@
 • Rollback: não remove automaticamente a extensão, pois pode ser reutilizada por outros recursos
 
 99. Changelog
+v1.0.40 (11/08/2026) — E19.4.4: registrado o agregado repo-only `account_landing_page_materializations`, sua materialização 1:1 write-once, conteúdo e snapshot atômicos, projeção runtime estrita, RLS sem policies e acesso exclusivo SELECT/INSERT por `service_role`; apply hospedado permanece pós-merge.
+
 v1.0.38 (08/08/2026) — E19.2: registrado o agregado `account_landing_page_onboarding_configurations`, a unicidade composta de `account_landing_pages` usada pelo FK tenant-safe, os checks, RLS, grants mínimos, triggers de atualização/write-once e a ausência de persistência prematura na tabela de LP.
 
 v1.0.33 (26/07/2026) — E20.3: perfil de orientação para geração
