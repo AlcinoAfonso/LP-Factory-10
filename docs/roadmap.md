@@ -125,7 +125,7 @@
 • Implementado (estado final): fluxo sign-up → envio do e-mail de confirmação → clique no link → /auth/confirm → redirect para /a/home executado (happy path).
 • emailRedirectTo: configurado para apontar para /auth/confirm com next=/a/home e rid para correlação (não-PII).
 • UX mínima: página /auth/sign-up-success orientando “cadastro iniciado / confirme no e-mail”.
-• Observability mínima: logs estruturados no client para eventos de signup/resend sem PII, com rid (supa#5) e sinal mínimo no runtime do front em produção (Vercel).
+• Observability mínima: logs estruturados no client para eventos de signup/resend sem PII, com rid (supa#5) e sinal mínimo via logs no runtime do front em produção (Vercel).
 • ARTEFATOS_REPO:
 • Ajustados: components/sign-up-form.tsx
 
@@ -464,7 +464,7 @@
 - Repositório:
   - Criados:
     - `supabase/migrations/20260701202632_e9_stripe_webhook_events.sql`
-    - `supabase/snippets/e9_phase_7_2_stripe_webhook_verify.sql`
+    - `supabase/snippets/e9_phase_7_2_entitlements_verify.sql`
     - `lib/billing-checkout/contracts.ts`
     - `lib/billing-checkout/adapters/stripePriceMap.ts`
     - `lib/billing-checkout/adapters/stripeCheckoutAdapter.ts`
