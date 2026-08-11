@@ -93,6 +93,7 @@ Quando houver hipótese concreta e material de uso da OpenAI, o Gestor deve cons
 * “Futuro” somente é válido quando houver fase posterior identificada e registrada para reabrir a decisão.
 * Registrar no parecer as fontes oficiais efetivamente consultadas.
 * Quando a recomendação envolver workload OpenAI de produto, identificar explicitamente o workload afetado e respeitar a governança transversal estabelecida em `E21.1 — Fundação, normalização e leitura dos workloads OpenAI` de `docs/roadmap.md`; consultar o contrato técnico vigente em `docs/base-tecnica.md` e a configuração operacional correspondente em `docs/platform-config.md`, sem duplicar neste documento catálogo, modelo, reasoning effort, configuração efetiva ou estado de implementação.
+* Quando a decisão envolver seleção, comparação ou revisão de modelo ou `reasoning.effort`, consultar também `docs/openai-model-snapshot.md` como fotografia interna datada de custo-desempenho e protocolo de comparação por workload; reconfirmar preços, capacidades e parâmetros nas fontes oficiais atuais antes de concluir e atualizar o snapshot quando houver mudança material. O snapshot apoia a decisão, mas não substitui `docs/platform-config.md` como fonte da configuração efetiva nem autoriza mudança por si só.
 
 Este documento não mantém catálogo permanente de modelos, preços, parâmetros ou recursos OpenAI. Esses detalhes devem ser verificados no caso concreto.
 
