@@ -43,13 +43,22 @@
 | Modelo | Papel de referência | Input / 1M | Cached input / 1M | Output / 1M | Contexto | Saída máx. | Reasoning effort |
 |---|---|---:|---:|---:|---:|---:|---|
 | `gpt-5.4-mini` | baseline atual | US$ 0,75 | US$ 0,075 | US$ 4,50 | 400k | 128k | `none`, `low`, `medium`, `high`, `xhigh` |
-| `gpt-5.6-luna` | custo/alto volume | US$ 0,20 | US$ 0,02 | US$ 1,20 | 1,05M | 128k | `none`, `low`, `medium`, `high`, `xhigh`, `max` |
-| `gpt-5.6-terra` | equilíbrio inteligência/custo | US$ 2,00 | US$ 0,20 | US$ 12,00 | 1,05M | 128k | `none`, `low`, `medium`, `high`, `xhigh`, `max` |
+| `gpt-5.6-luna` | custo/alto volume | divergente* | divergente* | divergente* | 1,05M | 128k | `none`, `low`, `medium`, `high`, `xhigh`, `max` |
+| `gpt-5.6-terra` | equilíbrio inteligência/custo | divergente* | divergente* | divergente* | 1,05M | 128k | `none`, `low`, `medium`, `high`, `xhigh`, `max` |
 | `gpt-5.6-sol` | maior capacidade / trabalho complexo | US$ 5,00 | US$ 0,50 | US$ 30,00 | 1,05M | 128k | `none`, `low`, `medium`, `high`, `xhigh`, `max` |
 
 - Luna, Terra e Sol suportam Responses API, function calling, Structured Outputs e reasoning tokens.
 - A orientação oficial atual posiciona Luna para workloads sensíveis a custo e volume, Terra para equilíbrio entre inteligência e custo e Sol para maior capacidade em trabalho profissional complexo.
 - Em GPT-5.6, o effort padrão é `medium` quando omitido. Portanto, comparações devem sempre registrar o effort explicitamente.
+
+#### 3.1.1 Divergência temporária de preços do Luna e do Terra
+
+- Em consulta realizada em 11/08/2026, fontes oficiais atuais da OpenAI apresentam valores conflitantes para Luna e Terra.
+- O anúncio oficial de 30/07/2026 informa, a partir daquela data: Luna a US$ 0,20 por 1M tokens de entrada e US$ 1,20 por 1M tokens de saída; Terra a US$ 2,00 por 1M tokens de entrada e US$ 12,00 por 1M tokens de saída.
+- As páginas oficiais atuais dos modelos exibem: Luna a US$ 1,00 de entrada, US$ 0,10 de cached input e US$ 6,00 de saída; Terra a US$ 2,50 de entrada, US$ 0,25 de cached input e US$ 15,00 de saída.
+- Enquanto essa divergência permanecer, este snapshot não declara nenhum dos dois conjuntos como preço operacional definitivo e não deve usar Luna ou Terra em cálculo financeiro decisório baseado apenas nesses valores publicados.
+- Antes de comparar custo financeiro real de Luna ou Terra, reconfirmar o preço efetivamente aplicável em fonte oficial vigente e, quando possível, confrontar com a cobrança/uso efetivo do ambiente autorizado.
+- A divergência de preço não invalida benchmarks qualitativos de capacidade ou custo-desempenho, mas impede inferir razões precisas de economia entre Luna, Terra e outros modelos até a reconfirmação.
 
 ### 3.2 Como o effort afeta custo
 
@@ -67,6 +76,7 @@
 - Saída total: `output_tokens × tarifa_output`.
 - `output_tokens` inclui os reasoning tokens contabilizados pela API.
 - Custo total estimado: soma das três parcelas, acrescida de custos de tools ou modos especiais quando aplicáveis.
+- Enquanto a divergência da seção 3.1.1 estiver ativa, não aplicar esta fórmula a Luna ou Terra como base de decisão financeira sem reconfirmar previamente as tarifas efetivamente aplicáveis.
 
 ### 3.4 Evidência externa de preço-desempenho
 
