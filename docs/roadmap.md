@@ -1,8 +1,8 @@
 0. Introdução
 
 0.1 Cabeçalho
-• Data: 10/08/2026
-• Versão: v1.5.137
+• Data: 11/08/2026
+• Versão: v1.5.138
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -2242,7 +2242,7 @@ Repositório — Ajustados
 
 19. E19 — LP Builder
 - Objetivo: Consolidar o fluxo Core de landing pages por conta, da identidade mínima em `draft` às futuras etapas de geração, revisão, materialização e publicação, sempre por recortes aprovados.
-- Status: E19.1 concluída; E19.2 concluída; E19.3 concluída conforme o plano-base v2 aprovado; E19.4 planejada, sem implementação iniciada.
+- Status: E19.1 concluída; E19.2 concluída; E19.3 concluída conforme o plano-base v2 aprovado; E19.4 planejada conforme o plano-base v2 aprovado, sem implementação iniciada.
 
 19.1 Criação produtiva mínima de LP por conta
 
@@ -2404,21 +2404,31 @@ Repositório — Ajustados
 19.4 Geração e materialização da landing page em `draft`
 
 19.4.1 Objetivo e status
-- Objetivo: consumir a saída real implementada e validada da E19.3 para a futura geração por IA, validação pós-IA, materialização e visualização mínimas necessárias à primeira LP real em `draft`.
-- Status: Planejada.
-- Plano-base v1 consolidado; implementação ainda não iniciada.
+- Objetivo: consumir o pacote real e autorizado da E19.3 para gerar, validar, materializar e visualizar privadamente a primeira LP real em `draft`, com estado próprio reproduzível e prova humana.
+- Status: Planejada conforme o plano-base v2 aprovado em `docs/lousa-plano-base-e19-4.md`; implementação ainda não iniciada.
 
 19.4.3 Geração controlada e validação integral da candidata
-- Objetivo: consumir a saída da E19.3 e produzir uma candidata da LP completa, submetendo-a à validação determinística objetiva antes de qualquer persistência.
 - Status: Planejada.
+- Conteúdo:
+  - Owner ou admin ativo inicia explicitamente a geração; conta, membership, entitlement, contexto E19.3 e ausência de materialização são revalidados server-side antes do provider.
+  - A IA produz somente conteúdo para os fields autorizados da composição completa; estrutura, identidades, ordem, bindings, referências e fatos permanecem determinísticos.
+  - Cada invocação aceita usa no máximo uma chamada síncrona e não streaming pela configuração canônica de `lib/openai-workloads/`, com saída estruturada estrita, sem tools, agentic, retry automático ou nova variável de modelo.
+  - Falha de gate, provider, resposta ou validação rejeita a tentativa inteira sem materialização; nova tentativa depende de nova ação humana.
 
 19.4.4 Materialização inicial e snapshot imutável
-- Objetivo: tornar a primeira candidata integral válida em estado próprio da LP, com snapshot suficiente e sem dependência futura de fontes mutáveis para sua reprodução.
 - Status: Planejada.
+- Conteúdo:
+  - A primeira candidata integral válida cria uma única materialização 1:1 e write-once, com conteúdo renderizável e snapshot do contexto efetivamente exposto tornando-se válidos juntos.
+  - Conteúdo e snapshot usam contratos runtime v1 estritos; o conteúdo congela raiz, aparência, módulos ordenados, identidades, versões e valores necessários ao renderer, sem releitura futura de fontes mutáveis.
+  - Persistência server-only falha fechado, não permite overwrite e trata concorrência pela unicidade; migration transacional, probe read-only e verificação SQL pós-apply protegem o rollout.
 
 19.4.5 Visualização privada e prova humana da primeira LP real
-- Objetivo: renderizar privadamente a LP materializada a partir de seu estado próprio e produzir a evidência humana necessária para concluir o recorte.
 - Status: Planejada.
+- Conteúdo:
+  - Preview autenticado e tenant-aware renderiza somente o conteúdo materializado, sem IA, mutação, publicação ou recomposição da E19.3.
+  - Identidade, versão ou payload não suportado falha explicitamente; o round-trip preserva conteúdo, ordem e aparência congelados.
+  - Evidências hospedadas cobrem 360, 768 e 1280 px, teclado/foco, overflow, contraste, legibilidade e interações contratadas; revisão humana avalia também copy, fidelidade factual, estado `draft`, não publicação e próximo passo.
+  - Findings permanecem evidência do PR ou relatório de execução, sem workflow ou estado de domínio novo.
 
 20. E20 — Preparação e liberação de taxons para geração de landing pages
 
