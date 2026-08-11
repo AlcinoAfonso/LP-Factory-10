@@ -3,7 +3,13 @@ import "server-only";
 import { createClient } from "../../supabase/server";
 import { compileLandingPageGenerationContextForDraft } from "./generationContextAdapter";
 import { requestLandingPageDraftCandidate } from "./landingPageGenerationOpenAiAdapter";
-import { generateLandingPageDraftCandidateWithDependencies } from "../landingPageDraftGeneration";
+import {
+  generateLandingPageDraftCandidateWithDependencies,
+  prepareLandingPageDraftGenerationWithDependencies,
+  requestPreparedLandingPageDraftCandidateWithDependencies,
+  type PrepareLandingPageDraftGenerationResult,
+  type PreparedLandingPageDraftGeneration,
+} from "../landingPageDraftGeneration";
 import type {
   GenerateLandingPageDraftCandidateInput,
   GenerateLandingPageDraftCandidateResult,
@@ -15,6 +21,23 @@ export function generateLandingPageDraftCandidate(
   return generateLandingPageDraftCandidateWithDependencies(input, {
     loadAuthenticatedActorId,
     compileContext: compileLandingPageGenerationContextForDraft,
+    requestCandidate: requestLandingPageDraftCandidate,
+  });
+}
+
+export function prepareLandingPageDraftGeneration(
+  input: GenerateLandingPageDraftCandidateInput,
+): Promise<PrepareLandingPageDraftGenerationResult> {
+  return prepareLandingPageDraftGenerationWithDependencies(input, {
+    loadAuthenticatedActorId,
+    compileContext: compileLandingPageGenerationContextForDraft,
+  });
+}
+
+export function requestPreparedLandingPageDraftCandidate(
+  prepared: PreparedLandingPageDraftGeneration,
+): Promise<GenerateLandingPageDraftCandidateResult> {
+  return requestPreparedLandingPageDraftCandidateWithDependencies(prepared, {
     requestCandidate: requestLandingPageDraftCandidate,
   });
 }

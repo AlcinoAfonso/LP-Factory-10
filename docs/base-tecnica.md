@@ -2,7 +2,7 @@
 
 0.1 Cabeçalho
 • Documento: Base Técnica LP Factory 10
-• Versão: v2.0.63
+• Versão: v2.0.64
 • Data: 11/08/2026
 
 0.2 Contrato do documento (consulta)
@@ -246,6 +246,9 @@
 • A geração de candidata deve chamar o compilador autorizado antes do provider e usar somente slots geráveis derivados da composição completa; identidade, ordem, variantes, contratos, bindings, destinos e referências técnicas permanecem sob autoridade determinística do servidor.
 • Cada invocação aceita da geração completa usa no máximo uma chamada síncrona e não streaming, sem retry automático; falha do contexto, provider, resposta estruturada ou validator rejeita a candidata inteira.
 • Fields opcionais nulos na saída probabilística são normalizados para ausência, e nenhuma candidata parcial pode avançar para persistência.
+• A materialização inicial valida prontidão, autenticação e contexto autorizado antes do provider, confirma ausência do agregado e executa um único INSERT server-only; falha ou candidata inválida não produz estado, e conflito relê e retorna o vencedor sem overwrite nem retry automático.
+• Conteúdo e snapshot usam contratos runtime v1 estritos e coerentes entre si; a leitura falha fechado diante de shape, versão ou identidade incompatível, e o consumo para renderização não relê a E19.3, registries ou outras fontes mutáveis.
+• A API pública do boundary expõe a operação integral de materialização; probe, leitura e escrita por `service_role` permanecem internos aos adapters server-only.
 
 3.14.5 Resolução de nicho e taxonomia
 • Boundary canônico: `lib/onboarding/niche-resolution/`; contratos, thresholds, reasons, schemas e adapters permanecem canônicos no código.

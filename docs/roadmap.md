@@ -2,7 +2,7 @@
 
 0.1 Cabeçalho
 • Data: 11/08/2026
-• Versão: v1.5.139
+• Versão: v1.5.140
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -2242,7 +2242,7 @@ Repositório — Ajustados
 
 19. E19 — LP Builder
 - Objetivo: Consolidar o fluxo Core de landing pages por conta, da identidade mínima em `draft` às futuras etapas de geração, revisão, materialização e publicação, sempre por recortes aprovados.
-- Status: E19.1 concluída; E19.2 concluída; E19.3 concluída conforme o plano-base v2 aprovado; E19.4 em execução conforme o plano-base v2 aprovado, com E19.4.3 implementada no repositório e as subseções seguintes ainda pendentes.
+- Status: E19.1 concluída; E19.2 concluída; E19.3 concluída conforme o plano-base v2 aprovado; E19.4 em execução conforme o plano-base v2 aprovado, com E19.4.3 e E19.4.4 implementadas no repositório e a E19.4.5 ainda pendente.
 
 19.1 Criação produtiva mínima de LP por conta
 
@@ -2405,7 +2405,7 @@ Repositório — Ajustados
 
 19.4.1 Objetivo e status
 - Objetivo: consumir o pacote real e autorizado da E19.3 para gerar, validar, materializar e visualizar privadamente a primeira LP real em `draft`, com estado próprio reproduzível e prova humana.
-- Status: Em execução conforme o plano-base v2 aprovado em `docs/lousa-plano-base-e19-4.md`; E19.4.3 está implementada no repositório, sem materialização ou prova hospedada antecipadas.
+- Status: Em execução conforme o plano-base v2 aprovado em `docs/lousa-plano-base-e19-4.md`; E19.4.3 e E19.4.4 estão implementadas no repositório, com apply da migration e prova hospedada reservados ao fluxo pós-merge e à E19.4.5.
 
 19.4.3 Geração controlada e validação integral da candidata
 - Status: Implementada no repositório e validada por casos executáveis; integração com materialização, ação na jornada e prova hospedada permanece nas E19.4.4 e E19.4.5.
@@ -2433,11 +2433,19 @@ Repositório — Ajustados
   - `npm ci` e `npm run check` foram aprovados no worktree; não houve chamada OpenAI real, persistência, migration, rota, UI, materialização ou renderer nesta subseção.
 
 19.4.4 Materialização inicial e snapshot imutável
-- Status: Planejada.
+- Status: Implementada no repositório e validada por casos executáveis; apply da migration, round-trip hospedado e preview permanecem pendentes dos gates pós-merge e da E19.4.5.
+- Registros do recorte:
+  - Contratos runtime v1 estritos e materialização determinística no boundary `lib/conversion-content/landing-page/` e `lib/lp-builder/`.
+  - Adapter server-only com projeção estável, probe read-only, leitura tenant-scoped e INSERT único por `service_role`.
+  - Migration transacional, verificador SQL read-only e caso SQL do agregado 1:1 write-once.
+  - Validador focal integrado ao `npm run check`.
 - Conteúdo:
   - A primeira candidata integral válida cria uma única materialização 1:1 e write-once, com conteúdo renderizável e snapshot do contexto efetivamente exposto tornando-se válidos juntos.
   - Conteúdo e snapshot usam contratos runtime v1 estritos; o conteúdo congela raiz, aparência, módulos ordenados, identidades, versões e valores necessários ao renderer, sem releitura futura de fontes mutáveis.
-  - Persistência server-only falha fechado, não permite overwrite e trata concorrência pela unicidade; migration transacional, probe read-only e verificação SQL pós-apply protegem o rollout.
+  - Persistência server-only falha fechado, não permite overwrite e trata concorrência pela unicidade; o conflito relê e retorna o agregado vencedor sem nova chamada ao provider, e migration transacional, probe read-only e verificação SQL pós-apply protegem o rollout.
+  - O fluxo prepara autenticação e contexto E19.3 antes da leitura tenant-scoped, consulta ausência antes do provider e não repete chamada nem insert; falha de preparação, provider, candidata ou persistência mantém o draft sem materialização válida.
+  - A leitura aceita tabela vazia após apply e valida amostras integralmente, incluindo coerência entre identidades do conteúdo e do snapshot; relação, coluna, grant, payload ou versão incompatível falha fechado, e o consumo renderizável do round-trip não consulta E19.3, registries ou fontes mutáveis.
+  - Nenhuma chamada OpenAI real ou escrita remota Supabase foi executada nesta subseção.
 
 19.4.5 Visualização privada e prova humana da primeira LP real
 - Status: Planejada.
@@ -2613,6 +2621,8 @@ Repositório — Ajustados
   - As evidências hospedadas aprovaram desktop, viewport mobile de 390 × 844 sem overflow, navegação lógica por TAB com foco visível, acesso positivo de `platform_admin` e bloqueio da identidade preexistente sem esse papel.
 
 99. Changelog
+v1.5.140 — 11/08/2026 — Implementada no repositório a E19.4.4 com materialização inicial 1:1 write-once, conteúdo e snapshot runtime v1 coerentes, adapter server-only, migration transacional, readiness fail-closed e casos executáveis; apply e prova hospedada permanecem nos gates pós-merge/E19.4.5.
+
 v1.5.131 — 08/08/2026 — Fechada a E19.2 após o merge do PR #700: migration aplicada, verificador SQL read-only aprovado e validação funcional hospedada autenticada concluída; preservados os limites de não geração, não publicação, ausência de tracking/CRM/capability nova e ausência de infraestrutura de assets.
 
 v1.5.128 — 07/08/2026 — Reconciliado o PR #689 com a conclusão da E9.7 integrada à `main`, preservando integralmente o contrato canônico de capacidades e a implementação candidata aprovada da E12.5; inspeção final e merge humano permanecem pendentes.

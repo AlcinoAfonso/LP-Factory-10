@@ -28,6 +28,8 @@ export { compileLandingPageGenerationContext } from "./generationContext";
 export { compileLandingPageGenerationContextForDraft } from "./adapters/generationContextAdapter";
 export * from "./landingPageGenerationContracts";
 export { generateLandingPageDraftCandidate } from "./adapters/landingPageDraftGenerationAdapter";
+export * from "./landingPageMaterializationContracts";
+export { materializeFirstLandingPageDraft } from "./adapters/materializeFirstLandingPageDraftAdapter";
 export { createAccountLandingPage } from "./adapters/landingPagesAdapter";
 export {
   bindAccountLandingPageOnboardingConfiguration,

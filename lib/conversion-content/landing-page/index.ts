@@ -23,3 +23,16 @@ export {
   listLandingPageRootVersions,
   resolveLandingPageRootParameters,
 } from "./root-resolver";
+export {
+  LANDING_PAGE_GENERATION_CONTEXT_SNAPSHOT_VERSION,
+  LANDING_PAGE_MATERIALIZED_CONTENT_SCHEMA_VERSION,
+  landingPageGenerationContextSnapshotV1Schema,
+  landingPageMaterializedContentV1Schema,
+  resolveLandingPageMaterializedContentForRendering,
+  validateLandingPageGenerationContextSnapshotV1,
+  validateLandingPageMaterializedContentV1,
+} from "./materialization";
+export type {
+  LandingPageGenerationContextSnapshotV1,
+  LandingPageMaterializedContentV1,
+} from "./materialization";

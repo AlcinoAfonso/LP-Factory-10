@@ -99,6 +99,7 @@ export type GenerateLandingPageDraftCandidateInput = Readonly<{
 export type GenerateLandingPageDraftCandidateResult =
   | Readonly<{
       ok: true;
+      actorUserId: string;
       context: LandingPageGenerationContextPackage;
       candidate: LandingPageDraftCandidate;
       exposedGenerationContext: Readonly<Record<string, unknown>>;
