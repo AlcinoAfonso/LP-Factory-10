@@ -88,3 +88,48 @@
 - Quando houver teste real, registrar somente o resumo necessário para reproduzir a decisão: data, workload, baseline, combinações comparadas, gates, métricas principais e combinação vencedora.
 - Resultados detalhados ou evidências extensas devem permanecer no PR ou artefato do recorte; este documento mantém apenas o snapshot decisório.
 - Se preços ou capacidades mudarem, atualizar a seção 3 sem apagar decisões históricas já sustentadas por testes; marcar a data da nova fotografia.
+
+## 5. Laboratório futuro de avaliação de custo-benefício
+
+### 5.1 Finalidade
+
+- Preservar como capacidade futura um laboratório de avaliação que substitua escolhas intuitivas de configuração por decisões baseadas em evidência para cada workload real.
+- A unidade mínima de comparação continua sendo `workload + modelo + reasoning effort`, conforme a seção 3.2; não comparar apenas nomes de modelos.
+- Exemplos conceituais de combinações comparáveis incluem `GPT-5.6 Terra + medium`, `GPT-5.6 Terra + high`, `GPT-5.6 Sol + medium` e `GPT-5.6 Sol + high`, sem transformá-las em candidatos permanentes ou preferência antecipada.
+- Princípio de decisão: medir antes de promover uma combinação de modelo + effort como configuração preferencial.
+
+### 5.2 Métricas e método
+
+- O laboratório deverá aplicar o protocolo da seção 4.1 e as regras de custo das seções 3.2 e 3.3 sobre a mesma tarefa representativa, mantendo constantes as demais variáveis sempre que possível.
+- Para cada combinação testada, avaliar: qualidade da entrega, taxa de sucesso, necessidade de correção humana, `input_tokens`, `cached input tokens` quando aplicável, `output_tokens`, `reasoning_tokens`, custo financeiro efetivo, latência e estabilidade/repetibilidade.
+- O preço unitário dos tokens é determinado pelo modelo; alterar o reasoning effort não cria tarifa unitária própria.
+- Effort maior pode produzir mais reasoning/output tokens e, portanto, elevar o custo financeiro total; também pode aumentar a latência.
+- Reasoning tokens fazem parte dos output tokens e não constituem uma terceira tarifa independente.
+
+| Configuração conceitual | Qualidade | Custo | Latência |
+|---|---|---|---|
+| Terra + medium | medir | medir | medir |
+| Terra + high | medir | medir | medir |
+| Sol + medium | medir | medir | medir |
+| Sol + high | medir | medir | medir |
+
+### 5.3 Perguntas de decisão
+
+- O ganho de `high` sobre `medium` justifica custo e espera adicionais?
+- Terra + high entrega resultado equivalente a Sol + medium por custo menor?
+- Quais workloads realmente precisam de configurações mais fortes?
+- Quais workloads podem operar com modelos ou esforços mais econômicos sem perder os gates exigidos?
+
+### 5.4 Escopo e limites
+
+- Esta seção registra somente uma capacidade futura de avaliação; não representa laboratório já implementado.
+- Não define banco, tabela, rota, dashboard, job, engine, agente, automação, migration, código de benchmarking ou nova infraestrutura.
+- A forma de implementação do laboratório permanece em aberto para decisão futura baseada no recorte que vier a planejá-lo.
+- O escopo atual deste documento permanece nos workloads do produto/API. Codex App, tasks e custom agents podem ser extensão futura do conceito, mas seu consumo e sua cobrança não devem ser tratados como equivalentes aos custos da API sem verificação específica.
+
+### 5.5 Governança e fonte dinâmica
+
+- O laboratório deve apoiar decisões futuras por workload; não transforma um modelo em padrão universal, `high` ou `max` em effort padrão nem o modelo mais caro em escolha automática para tarefas críticas.
+- Não manter nesta seção catálogo permanente de preços, modelos disponíveis, efforts, parâmetros ou capacidades específicas da API; esses elementos permanecem voláteis conforme a seção 1.
+- Quando o laboratório vier a ser planejado ou implementado, consultar a documentação oficial vigente da OpenAI, preferencialmente via `$openai-docs` no Codex.
+- O registro interno deve preservar principalmente objetivo, critérios, método, métricas e princípios de decisão.
