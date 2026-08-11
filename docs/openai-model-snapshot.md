@@ -2,7 +2,7 @@
 
 ## 1. Objetivo e validade
 
-- Data do snapshot: 09/08/2026.
+- Data do snapshot: 11/08/2026.
 - Objetivo: manter uma fotografia curta e datada para decisões de custo-desempenho dos workloads OpenAI do LP Factory 10.
 - Este documento compara candidatos; não define sozinho o modelo em produção e não autoriza migração, implementação ou mudança de arquitetura.
 - A configuração efetivamente adotada continua registrada em `docs/platform-config.md`; a governança da decisão continua em `docs/gestor-automations.md`.
@@ -15,20 +15,24 @@
   - `https://developers.openai.com/api/docs/models/gpt-5.6-terra`
   - `https://developers.openai.com/api/docs/models/gpt-5.6-sol`
   - `https://developers.openai.com/api/docs/guides/reasoning`
+  - `https://openai.com/pt-BR/index/gpt-5-6/`
   - `https://openai.com/pt-BR/index/advancing-the-price-performance-frontier-with-gpt-5-6/`
 
 ## 2. Baseline atual do projeto
 
 ### 2.1 Workloads registrados
 
-- `OPENAI_NICHE_RESOLVER_MODEL` → referência atual `gpt-5.4-mini`.
-- `OPENAI_LANDING_PAGE_GENERATION_PROFILE_MODEL` → configurado atualmente com `gpt-5.4-mini`.
-- `OPENAI_COMMERCIAL_ACTIVATION_MODEL` → referência atual `gpt-5.4-mini`.
+- `niche_resolution` → configuração efetiva atual `gpt-5.4-mini + none`.
+- `landing_page_generation_profile_proposal` → configuração efetiva atual `gpt-5.4-mini + none`.
+- `commercial_activation_draft_generation` → configuração efetiva atual `gpt-5.4-mini + none`.
+- Fonte de configuração efetiva: `lib/openai-workloads/registry.ts`, com `configurationSource: repo_catalog` e revisão `v1`, conforme a governança da E21.1.
 - Fonte operacional: `docs/platform-config.md`.
+- Variáveis legadas de modelo não são fonte runtime atual; seu estado operacional permanece exclusivamente em `docs/platform-config.md`.
 
 ### 2.2 Regra de baseline
 
-- O `gpt-5.4-mini` permanece como baseline até decisão específica por workload.
+- `gpt-5.4-mini + none` permanece como baseline validada dos três workloads de produto já registrados, até decisão específica por workload.
+- Novo workload exige decisão explícita de `modelo + reasoning effort`; a configuração dos workloads existentes é baseline comparativa, não default universal.
 - O effort efetivamente usado deve ser confirmado na requisição real antes de cada comparação; não inferir configuração apenas pelo modelo.
 - Na documentação atual da OpenAI, `gpt-5.4-mini` suporta `none`, `low`, `medium`, `high` e `xhigh`, com `none` como padrão quando o parâmetro é omitido.
 
@@ -64,12 +68,23 @@
 - `output_tokens` inclui os reasoning tokens contabilizados pela API.
 - Custo total estimado: soma das três parcelas, acrescida de custos de tools ou modos especiais quando aplicáveis.
 
+### 3.4 Evidência externa de preço-desempenho
+
+![Artificial Analysis Intelligence Index v4.1 — custo estimado por tarefa versus pontuação de inteligência](./artificial-analysis-intelligence-index-v4-1.png)
+
+- Fonte: OpenAI, página oficial do GPT-5.6, com referência ao `Artificial Analysis Intelligence Index v4.1`: `https://openai.com/pt-BR/index/gpt-5-6/`.
+- O índice é apresentado como uma medida ampla de inteligência que combina trabalho agentic, programação, raciocínio científico e capacidades gerais; portanto, serve como evidência externa de eficiência geral, não como benchmark específico da LP Factory.
+- No gráfico, os pontos do GPT-5.6 Luna ocupam uma faixa de custo por tarefa substancialmente menor enquanto a pontuação aumenta com mais computação, reforçando Luna como candidato prioritário quando custo-desempenho for material.
+- O gráfico não identifica cada ponto do Luna por `reasoning.effort`; não inferir que um ponto corresponde a `medium`, `high`, `xhigh` ou `max` sem evidência específica.
+- O benchmark não substitui a comparação representativa do workload prevista na seção 4.1 nem autoriza promover Luna, `xhigh` ou qualquer outra combinação por padrão.
+
 ## 4. Comparação por workload e registro de resultados
 
 ### 4.1 Protocolo mínimo
 
 - Usar o mesmo conjunto de tarefas representativas e os mesmos gates de validade para comparar candidatos.
 - Preservar o modelo atual como baseline até existir evidência suficiente para substituí-lo.
+- Novo workload não herda automaticamente modelo ou effort de outro workload; a primeira configuração deve ser uma hipótese explícita e comparável contra baseline e candidatos pertinentes.
 - Para GPT-5.6, testar `reasoning.effort` explicitamente; usar esforço maior somente quando houver ganho de qualidade mensurável.
 - Registrar por execução: workload, modelo, effort, modo quando aplicável, resultado válido, critério de qualidade, `input_tokens`, `cached_tokens`, `output_tokens`, `reasoning_tokens`, latência e custo estimado.
 - Escolher a combinação mais simples e econômica que cumpra o resultado, a qualidade, a segurança e a latência exigidos pelo workload.
@@ -79,9 +94,9 @@
 
 | Workload | Baseline atual | Candidatos de referência | Resultado vigente |
 |---|---|---|---|
-| resolvedor IA de nicho | `gpt-5.4-mini` | Luna / Terra / Sol + effort aplicável | não comparado neste snapshot |
-| perfil de orientação de landing page | `gpt-5.4-mini` | Luna / Terra / Sol + effort aplicável | não comparado neste snapshot |
-| ativação comercial | `gpt-5.4-mini` | Luna / Terra / Sol + effort aplicável | não comparado neste snapshot |
+| resolvedor IA de nicho | `gpt-5.4-mini + none` | Luna / Terra / Sol + effort aplicável | não comparado neste snapshot |
+| perfil de orientação de landing page | `gpt-5.4-mini + none` | Luna / Terra / Sol + effort aplicável | não comparado neste snapshot |
+| ativação comercial | `gpt-5.4-mini + none` | Luna / Terra / Sol + effort aplicável | não comparado neste snapshot |
 
 ### 4.3 Registro de decisão
 
@@ -95,7 +110,7 @@
 
 - Preservar como capacidade futura um laboratório de avaliação que substitua escolhas intuitivas de configuração por decisões baseadas em evidência para cada workload real.
 - A unidade mínima de comparação continua sendo `workload + modelo + reasoning effort`, conforme a seção 3.2; não comparar apenas nomes de modelos.
-- Exemplos conceituais de combinações comparáveis incluem `GPT-5.6 Terra + medium`, `GPT-5.6 Terra + high`, `GPT-5.6 Sol + medium` e `GPT-5.6 Sol + high`, sem transformá-las em candidatos permanentes ou preferência antecipada.
+- Exemplos conceituais de combinações comparáveis incluem `GPT-5.6 Luna + medium`, `GPT-5.6 Luna + xhigh`, `GPT-5.6 Terra + medium`, `GPT-5.6 Terra + high`, `GPT-5.6 Sol + medium` e `GPT-5.6 Sol + high`, sem transformá-las em candidatos permanentes ou preferência antecipada.
 - Princípio de decisão: medir antes de promover uma combinação de modelo + effort como configuração preferencial.
 
 ### 5.2 Métricas e método
@@ -108,6 +123,8 @@
 
 | Configuração conceitual | Qualidade | Custo | Latência |
 |---|---|---|---|
+| Luna + medium | medir | medir | medir |
+| Luna + xhigh | medir | medir | medir |
 | Terra + medium | medir | medir | medir |
 | Terra + high | medir | medir | medir |
 | Sol + medium | medir | medir | medir |
@@ -115,7 +132,8 @@
 
 ### 5.3 Perguntas de decisão
 
-- O ganho de `high` sobre `medium` justifica custo e espera adicionais?
+- O ganho de `high` ou `xhigh` sobre `medium` justifica custo e espera adicionais?
+- Luna + xhigh entrega a qualidade exigida antes de escalar para Terra ou Sol?
 - Terra + high entrega resultado equivalente a Sol + medium por custo menor?
 - Quais workloads realmente precisam de configurações mais fortes?
 - Quais workloads podem operar com modelos ou esforços mais econômicos sem perder os gates exigidos?
@@ -129,7 +147,7 @@
 
 ### 5.5 Governança e fonte dinâmica
 
-- O laboratório deve apoiar decisões futuras por workload; não transforma um modelo em padrão universal, `high` ou `max` em effort padrão nem o modelo mais caro em escolha automática para tarefas críticas.
+- O laboratório deve apoiar decisões futuras por workload; não transforma um modelo em padrão universal, `high`, `xhigh` ou `max` em effort padrão nem o modelo mais caro em escolha automática para tarefas críticas.
 - Não manter nesta seção catálogo permanente de preços, modelos disponíveis, efforts, parâmetros ou capacidades específicas da API; esses elementos permanecem voláteis conforme a seção 1.
 - Quando o laboratório vier a ser planejado ou implementado, consultar a documentação oficial vigente da OpenAI, preferencialmente via `$openai-docs` no Codex.
 - O registro interno deve preservar principalmente objetivo, critérios, método, métricas e princípios de decisão.
