@@ -295,6 +295,7 @@
   - preservar logging seguro já vigente sem nova infraestrutura;
   - exportar o único contrato público necessário à E19.4 replanejada;
   - remover integralmente os contratos, implementações, adapters e casos executáveis vigentes de geração, candidata, materialização e preview E19.4; remover seus imports, exports e chamadas em `app/a/[account]/page.tsx`, nos índices públicos, no registry de workloads OpenAI e em `package.json`; remover também a Server Action, os componentes e a rota de preview correspondentes. Não conservar implementação privada ou inalcançável como compatibilidade. Preservar exclusivamente os artefatos SQL versionados indicados neste plano.
+  - preservar a continuidade `complete_bound → operational` da jornada E19.2 por um estado mínimo, determinístico e read-only que informe configuração concluída e vinculada e ausência temporária da etapa E19.4; não permitir fallback para a experiência comercial, branch sem resultado, geração, materialização, preview ou capability improvisada.
 - Validação mínima:
   - configuração válida e vinculada produz pacote de sucesso;
   - `end_customer` completo chega sem filtro editorial;
@@ -312,7 +313,8 @@
   - resultado de sucesso é profundamente imutável;
   - não existe segundo DTO de domínio nem mapa paralelo;
   - nenhum export público, Server Action, rota, workload ou jornada alcançável continua invocando geração, materialização ou preview E19.4 sobre o contrato antigo;
-  - entitlement interno ausente, inválido ou bloqueado falha antes da montagem do pacote, sem importar SDK, adapter ou resposta da Stripe.
+  - entitlement interno ausente, inválido ou bloqueado falha antes da montagem do pacote, sem importar SDK, adapter ou resposta da Stripe;
+  - configuração E19.2 `complete_bound` continua resultando em estado `operational` explícito e read-only, sem cair na experiência comercial ou expor ação de geração, materialização ou preview.
 - Regressões obrigatórias:
   - E10.8;
   - E18.4;
@@ -323,7 +325,8 @@
   - executar a nova compilação sobre o mesmo draft real usado na primeira LP e demonstrar, em modo sem OpenAI, que o pacote contém pesquisa `end_customer` completa, fatos concretos válidos e separados corretamente entre `modelContext` e `serverContext`, sem composição prévia.
 - Fechamento documental:
   - aplicar o Prompt ABC apenas aos documentos canônicos materialmente afetados pela implementação;
-  - `docs/roadmap.md` deve refletir somente o estado realmente implementado.
+  - `docs/roadmap.md` deve refletir somente o estado realmente implementado;
+  - `docs/lousa-plano-base-e19-4.md` deve ser marcado como temporariamente superado e não executável pela decisão de 12/08/2026, preservando seu histórico sem iniciar o novo planejamento E19.4.
 
 ### 3.2. Próxima ação
 
@@ -345,11 +348,12 @@
 - criação, evolução ou operação de perfil de orientação;
 - alteração de E10.8, E18.4, E20.2 ou E19.2 sem gap real demonstrado durante a execução;
 - banco, migration, tabela, view, RPC, trigger, RLS, policy ou nova persistência;
-- criação, evolução ou adaptação de rota, UI, editor, Provider, agente, automação, job, fila, cron, webhook ou infraestrutura; a remoção da ação, dos componentes e da rota E19.4 vigentes exigida pela seção 3.1 permanece dentro do recorte;
+- criação, evolução ou adaptação de rota, UI, editor, Provider, agente, automação, job, fila, cron, webhook ou infraestrutura; permanecem dentro do recorte somente a remoção da ação, dos componentes e da rota E19.4 vigentes e o ajuste mínimo da jornada E19.2 para preservar `complete_bound → operational` conforme a seção 3.1;
 - tracking, Analytics, CRM, domínio, publicação, A/B test, Ads ou integrações futuras;
 - regra específica da conta piloto ou de um nicho dentro da E19.3;
 - novo contrato estrutural da candidata, que pertence à E19.4;
 - adaptação da geração, candidata, materialização, snapshot ou renderer E19.4 ao pacote v2; a decisão humana foi retirar temporariamente esse caminho, não migrá-lo neste recorte;
+- novo planejamento da E19.4; marcar o plano anterior como temporariamente superado preserva história e coerência, sem definir o sucessor;
 - limpeza ou aposentadoria definitiva da E18.5/E20.3, que pertence ao recorte condicional posterior à prova do Cenário D.
 
 ### 4.2. Critérios de parada
