@@ -2,7 +2,7 @@
 
 > Status canônico: temporariamente superado e não executável desde 12/08/2026.
 > Motivo: o runtime deste plano dependia do contrato E19.3 `partA + partB`, substituído de forma incompatível pelo pacote v2 do Cenário D.
-> Destino: o conteúdo abaixo permanece somente como histórico; um novo plano-base E19.4 deve ser criado sobre `identities + modelContext + serverContext` após a primeira prova do Cenário D, sem reutilizar estas instruções como briefing executável.
+> Destino: o conteúdo abaixo permanece somente como histórico; o mesmo path canônico `docs/lousa-plano-base-e19-4.md` será reaberto/replanejado posteriormente sobre `identities + modelContext + serverContext` para produzir e avaliar a primeira LP/prova de geração do Cenário D, sem reutilizar estas instruções como briefing executável.
 
 ## 1. Estado e decisões fixas
 
@@ -18,7 +18,7 @@
 
 ### 1.2. Objetivo e resultado esperado
 
-- Consumir o pacote real e autorizado da E19.3 para gerar conteúdo estruturado candidato da primeira LP real.
+- Produzir e avaliar a primeira LP real/prova de geração do Cenário D, consumindo o pacote real e autorizado da E19.3 para gerar conteúdo estruturado candidato.
 - Validar deterministicamente a candidata somente no que os contratos permitem comprovar objetivamente.
 - Materializar a primeira candidata integral válida no `draft` já existente, com estado próprio autossuficiente e snapshot imutável do contexto efetivamente disponibilizado à operação geracional válida.
 - Disponibilizar visualização privada e read-only da LP materializada para avaliação humana real.
@@ -271,11 +271,9 @@
 
 ### 3.4. Próxima ação
 
-- Submeter esta v2 ao Analista em duas passagens obrigatórias: primeiro sem pareceres nem matriz; depois, no mesmo contexto, com a matriz criada após a Passagem 1 e os pareceres integrais.
-- Corrigir apenas achados materialmente aplicáveis até obter aprovação explícita ou apontamento de decisão humana indispensável.
-- Após aprovação, executar `lp-factory-abc` sobre `docs/roadmap.md`, registrar o checkpoint `LP-Factory-Stage: plan-v2-approved` no único PR draft e iniciar E19.4.3.
-- A implementação segue E19.4.3 → E19.4.4 → E19.4.5 no mesmo PR. Migration e runtime usam estratégia expand segura: antes do commit transacional da migration, o probe read-only não consegue validar a projeção runtime e a UI não expõe geração nem preview; após o apply, a projeção e os schemas v1 passam a ser a condição observável de readiness. O verificador SQL completo permanece obrigatório antes da prova hospedada e do fechamento, sem ser confundido com flag de runtime.
-- Após implementação comprovada, registrar a automação em `docs/automations.md`, workload/configuração em `docs/platform-config.md`, fronteiras estáveis em `docs/base-tecnica.md`, schema em `docs/schema.md` e estado/evidências em `docs/roadmap.md`; `docs/services.md` permanece N/A.
+- Manter este plano no mesmo path canônico como histórico temporariamente superado e não executável.
+- Reabrir/replanejar posteriormente a nova E19.4 neste path para produzir e avaliar a primeira LP/prova de geração do Cenário D a partir do pacote v2 da E19.3.
+- Não iniciar neste PR #729 o novo planejamento ou a implementação da E19.4.
 
 ## 4. Escopo negativo e critérios de parada
 

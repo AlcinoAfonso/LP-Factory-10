@@ -4,16 +4,16 @@
 
 ### 1.1. Estado
 
-- Status: plano-base v2 consolidado para o gate do Analista.
+- Status: plano-base v2 aprovado; E19.3.3 implementada e validada no PR #729, aguardando merge humano.
 - Recorte: `E19.3 — Pacote autorizado para geração no Cenário D`.
 - Path canônico: `docs/lousa-plano-base-e19-3.md`.
 - Processo: `docs/prompt-estrategista.md` v29.
 - Plano conceitual: `docs/lp-planejamento.md`.
 - Os Gates 1, 2 e 3 do novo debate foram encerrados em 12/08/2026.
 - Decisão humana: testar o Cenário D controlado; para essa prova, E18.5 vigente e E20.3 deixam de ser dependências obrigatórias da geração.
-- Decisão humana de transição em 12/08/2026: retirar temporariamente o caminho E19.4 vigente que depende do contrato `partA + partB`, sem compatibilidade paralela, e replanejar a E19.4 depois da prova do Cenário D.
+- Decisão humana de transição em 12/08/2026: retirar temporariamente o caminho E19.4 vigente que depende do contrato `partA + partB`, sem compatibilidade paralela; o novo plano E19.4 será reaberto posteriormente no mesmo path canônico para produzir e avaliar a primeira LP/prova de geração do Cenário D.
 - O plano-base v2 anterior permanece apenas como histórico do desenho substituído, no qual a E19.3 selecionava composição, módulos, variantes, ordem e contexto editorial antes da geração.
-- O recorte sucessor coordenado pelo mesmo Estrategista continua sendo `E19.4 — Geração e materialização da landing page em draft`; sua implementação vigente será retirada da superfície canônica neste recorte porque consome o contrato substituído, e o novo plano definirá candidata, Structured Output, contrato estrutural único, validação pós-IA, materialização e renderer sobre o pacote v2.
+- O recorte sucessor coordenado pelo mesmo Estrategista continua sendo `E19.4 — Geração e materialização da landing page em draft`; sua implementação vigente foi retirada da superfície canônica neste recorte porque consome o contrato substituído, e o novo plano definirá candidata, Structured Output, contrato estrutural único, validação pós-IA, materialização e renderer sobre o pacote v2.
 
 ### 1.2. Objetivo e resultado esperado
 
@@ -280,7 +280,7 @@
 
 ### 3.1. E19.3.3 — Pacote autorizado para geração no Cenário D
 
-- Status: planejada para execução após o ciclo de aprovação do plano.
+- Status: implementada e validada no PR #729; aguarda merge humano.
 - Automação: não.
 - Objetivo:
   - substituir a composição determinística anterior por um compilador de contexto autorizado que implemente integralmente o contrato da seção 2.
@@ -322,7 +322,7 @@
   - E19.2;
   - boundaries de autorização e vínculo já consumidos pela E19.3.
 - Critério de primeira prova:
-  - executar a nova compilação sobre o mesmo draft real usado na primeira LP e demonstrar, em modo sem OpenAI, que o pacote contém pesquisa `end_customer` completa, fatos concretos válidos e separados corretamente entre `modelContext` e `serverContext`, sem composição prévia.
+  - no PR #729, a nova compilação foi executada sobre o draft real destinado à primeira LP e demonstrou, em modo sem OpenAI, que o pacote contém pesquisa `end_customer` completa, fatos concretos válidos e separados corretamente entre `modelContext` e `serverContext`, sem composição prévia.
 - Fechamento documental:
   - aplicar o Prompt ABC apenas aos documentos canônicos materialmente afetados pela implementação;
   - `docs/roadmap.md` deve refletir somente o estado realmente implementado;
@@ -330,9 +330,9 @@
 
 ### 3.2. Próxima ação
 
-- Submeter esta v2 ao gate do Analista com os pareceres integrais e a matriz de consolidação do blob v1 congelado.
-- Após aprovação, reconciliar `docs/roadmap.md` pelo Prompt ABC e executar a E19.3.3 na mesma branch e no mesmo PR draft.
-- Não iniciar o novo debate detalhado nem a nova implementação da E19.4 neste recorte; a retirada temporária do caminho vigente serve somente para eliminar a dependência incompatível e tornar a substituição da E19.3 íntegra.
+- Aguardar o merge humano do PR #729, que contém a E19.3.3 implementada e validada.
+- Manter encerrado o recorte E19.3.3; a produção e avaliação da primeira LP/prova de geração do Cenário D pertencem à nova E19.4.
+- Não iniciar o novo planejamento da E19.4 neste recorte; a retirada temporária do caminho vigente serve somente para eliminar a dependência incompatível e manter a substituição da E19.3 íntegra.
 
 ## 4. Escopo negativo e critérios de parada
 

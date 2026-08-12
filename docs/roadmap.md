@@ -2,7 +2,7 @@
 
 0.1 Cabeçalho
 • Data: 12/08/2026
-• Versão: v1.5.143
+• Versão: v1.5.144
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -2243,7 +2243,7 @@ Repositório — Ajustados
 
 19. E19 — LP Builder
 - Objetivo: Consolidar o fluxo Core de landing pages por conta, da identidade mínima em `draft` às futuras etapas de geração, revisão, materialização e publicação, sempre por recortes aprovados.
-- Status: E19.1 concluída; E19.2 concluída; E19.3 concluída no Cenário D, com primeira prova real read-only aprovada; E19.4 temporariamente superada, com o runtime incompatível retirado e novo planejamento ainda não iniciado.
+- Status: E19.1 concluída; E19.2 concluída; E19.3 concluída no Cenário D. A prova real do pacote E19.3 v2 foi aprovada. A primeira LP/prova de geração do Cenário D permanece pendente e pertence à nova E19.4. E19.4 temporariamente superada, com o runtime incompatível retirado e novo planejamento ainda não iniciado.
 
 19.1 Criação produtiva mínima de LP por conta
 
@@ -2368,7 +2368,7 @@ Repositório — Ajustados
 
 19.3.1 Objetivo e status
 - Objetivo: substituir a composição determinística anterior pelo menor boundary capaz de entregar uma única saída autorizada, versionada, tipada e profundamente imutável para a futura E19.4 replanejada.
-- Status: E19.3.3 concluída e validada conforme `docs/lousa-plano-base-e19-3.md`.
+- Status: E19.3.3 implementada e validada no PR #729, aguardando merge humano.
 
 19.3.2 Registros do recorte
 - Repositório:
@@ -2425,7 +2425,7 @@ Repositório — Ajustados
   - `missing` permanece ausente, valores operacionais brutos não entram em `modelContext`, CRECI declarado não recebe marca de verificação e nenhuma evidência artificial é criada.
   - E18.5 e E20.3 não participam do caminho canônico; a E19.3 não escolhe módulos, variantes, ordem, narrativa, layout ou composição e não chama OpenAI, gera copy, persiste, materializa ou renderiza conteúdo.
   - O boundary autoriza conta, membership e entitlement pelo sinal interno vigente antes das demais leituras, retorna falha explícita sem pacote parcial e registra somente resultado, motivo seguro, `request_id` e latência.
-  - A primeira prova read-only sobre o mesmo draft real `4d91020a-07e5-4bf9-a1aa-272bbc0366ff` aprovou os três blocos v2, os quatro blocos completos de pesquisa `end_customer` com 59 itens, 12 fatos semânticos, 2 fatos operacionais, ausência de composição prévia e imutabilidade profunda.
+  - A prova real read-only do pacote E19.3 v2 sobre o draft `4d91020a-07e5-4bf9-a1aa-272bbc0366ff` aprovou os três blocos v2, os quatro blocos completos de pesquisa `end_customer` com 59 itens, 12 fatos semânticos, 2 fatos operacionais, ausência de composição prévia e imutabilidade profunda; a primeira LP/prova de geração do Cenário D permanece pendente.
   - A jornada E19.2 preserva `complete_bound → operational` por estado read-only explícito, sem fallback comercial e sem ação de geração, materialização ou preview.
   - O validador focal, as regressões canônicas e o gate completo foram aprovados; as rotas locais responderam com conteúdo e sem overlay após configuração pública do ambiente.
 
@@ -2433,7 +2433,7 @@ Repositório — Ajustados
 
 19.4.1 Objetivo e status
 - Objetivo: gerar, validar, materializar e visualizar privadamente a primeira LP real em `draft` a partir do pacote v2 da E19.3, conforme futuro plano-base próprio.
-- Status: O plano `docs/lousa-plano-base-e19-4.md` permanece temporariamente superado e não executável pela decisão de 12/08/2026; a primeira prova do Cenário D foi aprovada e o novo planejamento ainda não foi iniciado.
+- Status: O plano `docs/lousa-plano-base-e19-4.md` permanece temporariamente superado e não executável pela decisão de 12/08/2026; a prova real do pacote E19.3 v2 foi aprovada, mas a primeira LP/prova de geração do Cenário D permanece pendente e pertence à nova E19.4; o novo planejamento ainda não foi iniciado.
 
 19.4.3 Geração controlada e validação integral da candidata
 - Status: Temporariamente superada em 12/08/2026 porque dependia do contrato substituído `partA + partB`; o runtime correspondente foi retirado na E19.3.3 e o destino canônico será definido pelo novo plano-base da E19.4.
