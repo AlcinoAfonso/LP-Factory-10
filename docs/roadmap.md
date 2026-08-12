@@ -2,7 +2,7 @@
 
 0.1 Cabeçalho
 • Data: 12/08/2026
-• Versão: v1.5.142
+• Versão: v1.5.143
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -2243,7 +2243,7 @@ Repositório — Ajustados
 
 19. E19 — LP Builder
 - Objetivo: Consolidar o fluxo Core de landing pages por conta, da identidade mínima em `draft` às futuras etapas de geração, revisão, materialização e publicação, sempre por recortes aprovados.
-- Status: E19.1 concluída; E19.2 concluída; E19.3 replanejada para o Cenário D, com E19.3.3 aprovada e aguardando execução; E19.4 temporariamente superada e não executável até novo planejamento após a primeira prova do Cenário D.
+- Status: E19.1 concluída; E19.2 concluída; E19.3 concluída no Cenário D, com primeira prova real read-only aprovada; E19.4 temporariamente superada, com o runtime incompatível retirado e novo planejamento ainda não iniciado.
 
 19.1 Criação produtiva mínima de LP por conta
 
@@ -2368,31 +2368,81 @@ Repositório — Ajustados
 
 19.3.1 Objetivo e status
 - Objetivo: substituir a composição determinística anterior pelo menor boundary capaz de entregar uma única saída autorizada, versionada, tipada e profundamente imutável para a futura E19.4 replanejada.
-- Status: E19.3.3 planejada e aprovada para execução conforme `docs/lousa-plano-base-e19-3.md`.
+- Status: E19.3.3 concluída e validada conforme `docs/lousa-plano-base-e19-3.md`.
+
+19.3.2 Registros do recorte
+- Repositório:
+  - Ajustados:
+    - `app/a/[account]/page.tsx`
+    - `lib/conversion-content/landing-page/index.ts`
+    - `lib/lp-builder/adapters/generationContextAdapter.ts`
+    - `lib/lp-builder/adapters/generationContextAdapterCore.ts`
+    - `lib/lp-builder/generation-context-validation-cases.ts`
+    - `lib/lp-builder/generationContext.ts`
+    - `lib/lp-builder/generationContextContracts.ts`
+    - `lib/lp-builder/index.ts`
+    - `lib/openai-workloads/contracts.ts`
+    - `lib/openai-workloads/registry.ts`
+    - `lib/openai-workloads/validation-cases.ts`
+    - `package.json`
+  - Excluídos:
+    - `app/a/[account]/_components/LandingPageDraftJourney.tsx`
+    - `app/a/[account]/_components/landing-page-generation-action-contract.ts`
+    - `app/a/[account]/landing-page-actions.ts`
+    - `app/a/[account]/landing-pages/[landingPageId]/preview/page.tsx`
+    - `lib/conversion-content/landing-page/materialization.ts`
+    - `lib/conversion-content/landing-page/materialized-renderer.tsx`
+    - `lib/lp-builder/adapters/landingPageDraftGenerationAdapter.ts`
+    - `lib/lp-builder/adapters/landingPageGenerationOpenAiAdapter.ts`
+    - `lib/lp-builder/adapters/landingPageMaterializationAdapter.ts`
+    - `lib/lp-builder/adapters/landingPageMaterializationAdapterCore.ts`
+    - `lib/lp-builder/adapters/landingPagePreviewAdapter.ts`
+    - `lib/lp-builder/adapters/materializeFirstLandingPageDraftAdapter.ts`
+    - `lib/lp-builder/landing-page-generation-validation-cases.ts`
+    - `lib/lp-builder/landing-page-materialization-validation-cases.ts`
+    - `lib/lp-builder/landing-page-preview-validation-cases.tsx`
+    - `lib/lp-builder/landingPageDraftGeneration.ts`
+    - `lib/lp-builder/landingPageGeneration.ts`
+    - `lib/lp-builder/landingPageGenerationContracts.ts`
+    - `lib/lp-builder/landingPageMaterialization.ts`
+    - `lib/lp-builder/landingPageMaterializationContracts.ts`
+    - `lib/lp-builder/landingPagePreview.ts`
+    - `lib/lp-builder/materializeFirstLandingPageDraft.ts`
+- Updates:
+  - Aplicados:
+    - `prod#19`
+- Referências:
+  - Contrato técnico: `docs/base-tecnica.md` — 3.14.4.
+  - Configuração operacional: `docs/platform-config.md` — configuração efetiva dos workloads OpenAI de produto.
+  - Plano executado: `docs/lousa-plano-base-e19-3.md`.
+  - Plano temporariamente superado: `docs/lousa-plano-base-e19-4.md`.
 
 19.3.3 Contrato do pacote autorizado
-- Status: Planejado para execução.
+- Status: Implementado e validado.
 - Conteúdo:
-  - O sucesso terá `contractVersion: 2` e exatamente `identities`, `modelContext` e `serverContext`, sem alias, fallback ou DTO público paralelo para o contrato anterior `partA + partB`.
-  - A matéria-prima reutilizará a pesquisa `end_customer` completa da E10.8, os fatos concretos válidos da E19.2 governados pela E20.2 e a projeção editorial mínima da E18.4, preservando proveniência e separando valores semânticos de valores operacionais pela regra canônica de `valueType`.
-  - E18.5 e E20.3 deixarão de ser dependências do caminho canônico da prova; a E19.3 não escolherá módulos, variantes, ordem, narrativa, layout ou composição e não chamará OpenAI, gerará copy, persistirá, materializará ou renderizará conteúdo.
-  - O entitlement será autorizado exclusivamente pelo boundary interno vigente da E9; estado externo da Stripe não substituirá esse sinal.
-  - A primeira prova usará o mesmo draft real da primeira LP, em modo sem OpenAI, para demonstrar pesquisa `end_customer` completa, fatos válidos e separação entre `modelContext` e `serverContext`, sem composição prévia.
+  - O sucesso usa `contractVersion: 2` e exatamente `identities`, `modelContext` e `serverContext`, sem alias, fallback ou DTO público paralelo para o contrato anterior `partA + partB`.
+  - O pacote preserva identidades e versões efetivas, pesquisa `end_customer` integral da E10.8, fatos aplicáveis e presentes da E19.2/E20.2 e limites editoriais mínimos da E18.4; os 23 fields vigentes são separados entre contexto semântico e operacional exclusivamente pelo `valueType`.
+  - `missing` permanece ausente, valores operacionais brutos não entram em `modelContext`, CRECI declarado não recebe marca de verificação e nenhuma evidência artificial é criada.
+  - E18.5 e E20.3 não participam do caminho canônico; a E19.3 não escolhe módulos, variantes, ordem, narrativa, layout ou composição e não chama OpenAI, gera copy, persiste, materializa ou renderiza conteúdo.
+  - O boundary autoriza conta, membership e entitlement pelo sinal interno vigente antes das demais leituras, retorna falha explícita sem pacote parcial e registra somente resultado, motivo seguro, `request_id` e latência.
+  - A primeira prova read-only sobre o mesmo draft real `4d91020a-07e5-4bf9-a1aa-272bbc0366ff` aprovou os três blocos v2, os quatro blocos completos de pesquisa `end_customer` com 59 itens, 12 fatos semânticos, 2 fatos operacionais, ausência de composição prévia e imutabilidade profunda.
+  - A jornada E19.2 preserva `complete_bound → operational` por estado read-only explícito, sem fallback comercial e sem ação de geração, materialização ou preview.
+  - O validador focal, as regressões canônicas e o gate completo foram aprovados; as rotas locais responderam com conteúdo e sem overlay após configuração pública do ambiente.
 
 19.4 Geração e materialização da landing page em `draft`
 
 19.4.1 Objetivo e status
 - Objetivo: gerar, validar, materializar e visualizar privadamente a primeira LP real em `draft` a partir do pacote v2 da E19.3, conforme futuro plano-base próprio.
-- Status: O plano `docs/lousa-plano-base-e19-4.md` e sua execução vigente foram temporariamente superados e tornados não executáveis pela decisão de 12/08/2026; o novo planejamento ocorrerá somente após a primeira prova do Cenário D.
+- Status: O plano `docs/lousa-plano-base-e19-4.md` permanece temporariamente superado e não executável pela decisão de 12/08/2026; a primeira prova do Cenário D foi aprovada e o novo planejamento ainda não foi iniciado.
 
 19.4.3 Geração controlada e validação integral da candidata
-- Status: Temporariamente superada em 12/08/2026 porque depende do contrato substituído `partA + partB`; o runtime correspondente será retirado na execução da E19.3.3 e o destino canônico será definido pelo novo plano-base da E19.4.
+- Status: Temporariamente superada em 12/08/2026 porque dependia do contrato substituído `partA + partB`; o runtime correspondente foi retirado na E19.3.3 e o destino canônico será definido pelo novo plano-base da E19.4.
 
 19.4.4 Materialização inicial e snapshot imutável
-- Status: Temporariamente superada em 12/08/2026 porque depende do contrato substituído `partA + partB`; o runtime correspondente será retirado na execução da E19.3.3, preservando-se somente migration, teste SQL e snippet versionados, e o destino canônico será definido pelo novo plano-base da E19.4.
+- Status: Temporariamente superada em 12/08/2026 porque dependia do contrato substituído `partA + partB`; o runtime correspondente foi retirado na E19.3.3, preservando-se somente migration, teste SQL e snippet versionados, e o destino canônico será definido pelo novo plano-base da E19.4.
 
 19.4.5 Visualização privada e prova humana da primeira LP real
-- Status: Temporariamente superada em 12/08/2026 porque depende do contrato substituído `partA + partB`; rota, jornada e preview correspondentes serão retirados na execução da E19.3.3 e o destino canônico será definido pelo novo plano-base da E19.4.
+- Status: Temporariamente superada em 12/08/2026 porque dependia do contrato substituído `partA + partB`; rota, jornada e preview correspondentes foram retirados na E19.3.3 e o destino canônico será definido pelo novo plano-base da E19.4.
 
 20. E20 — Preparação e liberação de taxons para geração de landing pages
 
@@ -2534,7 +2584,7 @@ Repositório — Ajustados
 21.1.3 Catálogo estrutural e resolução explícita
 - Status: Implementada e validada.
 - Conteúdo:
-  - O boundary transversal `lib/openai-workloads/` mantém registry interno, repo-only e profundamente imutável, com quatro configurações efetivas de produto em `gpt-5.4-mini + none` e uma referência operacional separada do Supabase Inspect em `gpt-4.1-mini + not_applicable`.
+  - O boundary transversal `lib/openai-workloads/` mantém registry interno, repo-only e profundamente imutável, com três configurações efetivas de produto em `gpt-5.4-mini + none` e uma referência operacional separada do Supabase Inspect em `gpt-4.1-mini + not_applicable`.
   - O resolver público aceita somente workloads de produto conhecidos, falha fechado para identidade desconhecida ou referência operacional e projeta inventário seguro com classificação, origem, revisão e indicação explícita de configuração efetiva verificada.
   - Ambiente, união discriminada de resultado e normalização de usage foram definidos como contratos puros comuns e integrados às chamadas reais na E21.1.4.
   - Os casos executáveis fundacionais cobrem unicidade, resolução, separação effective/reference, imutabilidade, projeção sem secrets, ambiente, usage, evento e ausência de transporte, persistência ou payload funcional no boundary.
@@ -2543,7 +2593,7 @@ Repositório — Ajustados
 21.1.4 Integração dos consumidores e observabilidade comum
 - Status: Implementada e validada técnica e funcionalmente, com smoke hospedado aprovado para os três consumidores de produto.
 - Conteúdo:
-  - Os quatro consumidores resolvem a configuração pelo boundary comum e enviam modelo e reasoning effort explícitos à Responses API, preservando prompts, schemas, limites, persistência e fallbacks funcionais vigentes; os três consumidores anteriores preservam a prova hospedada de 10/08/2026, enquanto `landing_page_draft_generation` possui somente validação executável no repositório nesta etapa.
+  - Os três consumidores resolvem a configuração pelo boundary comum e enviam modelo e reasoning effort explícitos à Responses API, preservando prompts, schemas, limites, persistência e fallbacks funcionais vigentes e a prova hospedada de 10/08/2026.
   - Eventos comuns registram por tentativa somente ambiente, configuração, response ID, resultado, categoria segura, latência e usage normalizado completo; métricas ausentes permanecem `null` e nenhum prompt, resposta integral, payload de negócio, PII ou secret é registrado.
   - As três leituras runtime de variáveis de modelo, o hardcode client do perfil e o cálculo monetário local foram removidos; as variáveis externas permanecem apenas como legado temporário de reversão conforme a configuração operacional canônica.
   - O transporte OpenAI comercial foi isolado no adapter previsto e novos drafts registram workload, origem, revisão, modelo e effort resolvidos na proveniência existente, sem migration, backfill ou persistência de usage.
@@ -2552,10 +2602,10 @@ Repositório — Ajustados
   - Permanece fora do PR #710 a correção separada da automação de smoke para remover senha de logs e artifacts, gerar credenciais não previsíveis e tratar colisões corretamente.
 
 21.1.5 Inventário read-only no Admin Dashboard
-- Status: Implementada; a prova técnica e visual hospedada anterior cobre o inventário original de quatro itens, e a projeção do quinto item adicionada pela E19.4.3 permanece pendente da prova hospedada do próprio recorte.
+- Status: Implementada; a prova técnica e visual hospedada anterior cobre o inventário vigente de quatro itens.
 - Conteúdo:
-  - A rota protegida `/admin/workloads-openai` integra o shell e a navegação administrativos vigentes e projeta diretamente da API pública do boundary os cinco workloads no código atual, sem adapter, API, componente client ou controle de mutação novos.
-  - Os quatro workloads de produto exibem ambiente observado, configuração efetiva, origem e revisão; o Supabase Inspect permanece diferenciado como referência operacional externa e informa explicitamente `Ambiente da execução: não verificado nesta página`.
+  - A rota protegida `/admin/workloads-openai` integra o shell e a navegação administrativos vigentes e projeta diretamente da API pública do boundary os quatro workloads no código atual, sem adapter, API, componente client ou controle de mutação novos.
+  - Os três workloads de produto exibem ambiente observado, configuração efetiva, origem e revisão; o Supabase Inspect permanece diferenciado como referência operacional externa e informa explicitamente `Ambiente da execução: não verificado nesta página`.
   - A superfície é responsiva, sem consulta runtime à OpenAI, GitHub ou Vercel e sem configuração remota, métricas históricas ou capacidades inexistentes.
   - As evidências hospedadas aprovaram desktop, viewport mobile de 390 × 844 sem overflow, navegação lógica por TAB com foco visível, acesso positivo de `platform_admin` e bloqueio da identidade preexistente sem esse papel.
 

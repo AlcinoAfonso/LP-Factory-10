@@ -1,13 +1,17 @@
 11/08/2026 — Plano-base v2 — E19.4 — Geração e materialização da landing page em `draft`
 
+> Status canônico: temporariamente superado e não executável desde 12/08/2026.
+> Motivo: o runtime deste plano dependia do contrato E19.3 `partA + partB`, substituído de forma incompatível pelo pacote v2 do Cenário D.
+> Destino: o conteúdo abaixo permanece somente como histórico; um novo plano-base E19.4 deve ser criado sobre `identities + modelContext + serverContext` após a primeira prova do Cenário D, sem reutilizar estas instruções como briefing executável.
+
 ## 1. Estado e decisões fixas
 
 ### 1.1. Estado
 
-- Status: plano-base v2 consolidado em 11/08/2026 a partir da v1 decidida humanamente, dos pareceres especializados obrigatórios e da inspeção factual do repositório e do schema vigentes.
+- Status: plano-base histórico, temporariamente superado e não executável desde 12/08/2026.
 - Recorte: `E19.4 — Geração e materialização da landing page em draft`.
 - Plano conceitual: `docs/lp-planejamento.md`.
-- Predecessor material: E19.3 concluída e integrada à `main`; sua API pública v1 é a entrada canônica da E19.4.
+- Predecessor material histórico: a API pública v1 da E19.3 foi substituída pelo pacote v2 do Cenário D; este plano não é compatível com o contrato vigente.
 - Gates A–E do debate conceitual estão encerrados.
 - Não permanece questão indispensável aberta para execução: mecanismo OpenAI, residência física, garantia transacional, boundaries e path privado foram definidos na v2 sem reabrir as decisões dos Gates A–E.
 - Base congelada da orquestração: merge commit `f3cce5f85295ab5db7d36a64bd50eed632fdb441` do PR #711; a implementação deve permanecer no único PR draft da branch `codex-app/e19-4-orquestracao`, sem stacked PR.

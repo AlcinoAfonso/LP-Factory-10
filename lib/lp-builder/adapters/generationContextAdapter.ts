@@ -1,7 +1,6 @@
 import "server-only";
 
 import {
-  resolveLandingPageGenerationProfileForTaxon,
   resolveLandingPageResearchForTaxon,
 } from "../../conversion-content";
 import { createServiceClient } from "../../supabase/service";
@@ -20,7 +19,6 @@ export function compileLandingPageGenerationContextForDraft(
     loadConfiguration: getAccountLandingPageOnboardingConfiguration,
     loadLandingPage: readLandingPageDraft,
     loadResearch: resolveLandingPageResearchForTaxon,
-    loadGenerationProfile: resolveLandingPageGenerationProfileForTaxon,
     log: (payload) => console.log(JSON.stringify(payload)),
   });
 }

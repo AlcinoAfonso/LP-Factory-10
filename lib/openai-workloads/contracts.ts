@@ -2,7 +2,6 @@ export const openAiProductWorkloadIds = [
   "niche_resolution",
   "landing_page_generation_profile_proposal",
   "commercial_activation_draft_generation",
-  "landing_page_draft_generation",
 ] as const;
 
 export const openAiOperationalWorkloadIds = ["supabase_inspect"] as const;

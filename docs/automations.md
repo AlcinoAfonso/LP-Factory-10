@@ -1,6 +1,6 @@
 0.1 Cabeçalho
-Data: 11/08/2026
-Versão: v1.14
+Data: 12/08/2026
+Versão: v1.15
 Status: Alinhado ao Platform Config
 
 0.2 Função do documento
@@ -401,51 +401,6 @@ Regra técnica: `docs/base-tecnica.md`
 Configuração de modelo: `docs/platform-config.md`
 Action administrativa: `app/admin/(protected)/perfis-de-orientacao/actions.ts`
 Adapter de proposta: `lib/conversion-content/adapters/landingPageGenerationProfileOpenAiAdapter.ts`
-
-3.10 E19.4.3 — geração controlada da landing page em draft
-
-Objetivo:
-Produzir a candidata integral de uma landing page em `draft` a partir do pacote autorizado da E19.3, sem delegar estrutura, ordem, bindings ou referências técnicas à IA.
-
-Status:
-Implementada no repositório e validada por casos executáveis; materialização, superfície de acionamento e prova hospedada permanecem nas subseções seguintes da E19.4.
-
-Recurso utilizado:
-- Responses API
-- Structured Outputs com JSON Schema estrito
-- Boundary server-side do LP Builder
-
-Natureza:
-- Automação com IA em fluxo controlado.
-
-Ambiente principal:
-- Runtime do LP Factory.
-
-Plataforma dependente:
-- OpenAI Platform.
-
-Participação humana:
-- Cada tentativa depende de nova ação humana explícita; não há retry automático.
-
-Como funciona:
-- Revalida o contexto autorizado da E19.3 antes do provider.
-- Envia somente os slots geráveis da composição completa e reconstrói server-side identidade, ordem, contratos, bindings e omissões autorizadas.
-- Usa uma única chamada síncrona e não streaming por invocação aceita, com `store: false`, sem tools, busca, memória, encadeamento ou segundo revisor de IA.
-- Rejeita integralmente falha HTTP, timeout, refusal, incomplete, JSON inválido, propriedade inesperada ou candidata fora dos tipos, cardinalidades e limites absolutos.
-- Registra somente metadados operacionais seguros; não registra prompt, pesquisa, fatos, guidance, payload, conteúdo, PII, secret ou `safety_identifier`.
-
-Limites:
-- Não materializa, persiste, renderiza nem publica a landing page.
-- Não cria capability comercial, agente, job, fila, cron, webhook ou configuração paralela de modelo.
-
-Aplicação funcional no roadmap:
-- `docs/roadmap.md` — E19.4.3.
-
-Referências / dependências:
-Regra técnica: `docs/base-tecnica.md`
-Configuração de modelo: `docs/platform-config.md`
-Boundary: `lib/lp-builder/`
-Workload: `landing_page_draft_generation`
 
 4. Aprendizados operacionais
 

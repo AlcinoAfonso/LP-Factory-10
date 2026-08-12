@@ -1,17 +1,21 @@
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 
 import {
   realEstateBrokerNicheTaxon,
   realEstateSegmentTaxon,
   resolveLandingPageInputCatalog,
+  type LandingPageInputValueType,
 } from "../conversion-content/landing-page/input-catalog";
-import type { LandingPageResearchResolutionResult } from "../conversion-content/landing-page/research-resolution";
-import type { ResolveLandingPageGenerationProfileResult } from "../conversion-content/landing-page/generation-profile";
+import type {
+  LandingPageResearchResolutionResult,
+  ResolvedLandingPageResearchAudience,
+} from "../conversion-content/landing-page/research-resolution";
 import { compileLandingPageGenerationContextForDraftWithDependencies } from "./adapters/generationContextAdapterCore";
 import type {
   AccountLandingPage,
   AccountLandingPageOnboardingConfiguration,
+  AccountLandingPageOnboardingFieldState,
   AccountLandingPageOnboardingStoredValues,
 } from "./contracts";
 import { compileLandingPageGenerationContext } from "./generationContext";
@@ -25,419 +29,328 @@ const TAXON_ID = realEstateBrokerNicheTaxon.id;
 const landingPage: AccountLandingPage = {
   id: LANDING_PAGE_ID,
   account_id: ACCOUNT_ID,
-  name: "LP deterministica",
-  slug: "lp-deterministica",
+  name: "LP Cenário D",
+  slug: "lp-cenario-d",
   status: "draft",
 };
 
 const configuration = buildConfiguration();
 const research = buildResearch();
-const generationProfile = buildGenerationProfile();
 
 const cases: readonly Readonly<{ name: string; run: () => void | Promise<void> }>[] = [
   {
-    name: "complete package selects every eligible recommendation and tracks legitimate omissions",
+    name: "contract v2 exposes only identities, modelContext and serverContext",
     run: () => {
       const result = compileLandingPageGenerationContext({
         landingPage,
         configuration,
         research,
-        generationProfile,
       });
       assert.equal(result.ok, true);
-      assert.equal(result.value.contractVersion, LANDING_PAGE_GENERATION_CONTEXT_CONTRACT_VERSION);
-      assert.equal(result.value.partA.versions.valuesInputCatalogVersion, 2);
-      assert.equal(result.value.partA.versions.bindingInputCatalogVersion, 3);
-      assert.equal(result.value.partA.root.rootVersion, 1);
-      assert.equal(result.value.partA.root.resolvedPresetKey.length > 0, true);
-      assert.deepEqual(result.value.partA.presentation, {
-        brandColorPalette: {
-          primary: "#000000",
-          secondary: "#111111",
-          accent: "#222222",
-          background: "#FFFFFF",
-          text: "#000000",
-        },
-      });
-      assert.deepEqual(result.value.partA.generationProfile, {
-        profileId: "c211015e-d9c6-4241-a29a-7cd41e93b8fc",
-        ownerTaxonId: TAXON_ID,
-        relation: "own",
-      });
       assert.equal(
-        result.value.partB.generationGuidance,
-        "Use somente o contexto autorizado.",
+        result.value.contractVersion,
+        LANDING_PAGE_GENERATION_CONTEXT_CONTRACT_VERSION,
       );
-      assert.deepEqual(
-        result.value.partA.selection.map((item) => [
-          item.recommendation.moduleKey,
-          item.recommendation.priority,
-          item.recommendation.recommendedOrder,
-          item.decision,
-        ]),
-        [
-          ["hero", "P1", 10, "selected"],
-          ["trust_bar", "P1", 20, "selected"],
-          ["lead_capture", "P1", 30, "omitted"],
-          ["problem_solution", "P1", 40, "selected"],
-          ["offer", "P1", 50, "selected"],
-          ["process", "P1", 60, "selected"],
-          ["social_proof", "P1", 70, "omitted"],
-          ["technical_assurance", "P1", 80, "selected"],
-          ["faq", "P1", 90, "selected"],
-          ["benefits", "P2", 100, "selected"],
-          ["final_cta", "P1", 110, "selected"],
-        ],
-      );
-      assert.deepEqual(result.value.partB.capabilitySupport, [
-        {
-          slotKey: "applicable_capabilities",
-          fieldKeys: [
-            "financing_support_available",
-            "document_support_available",
-          ],
-        },
+      assert.deepEqual(Object.keys(result.value).sort(), [
+        "contractVersion",
+        "identities",
+        "modelContext",
+        "serverContext",
       ]);
+      assert.deepEqual(result.value.identities, {
+        accountId: ACCOUNT_ID,
+        landingPage: { id: LANDING_PAGE_ID, status: "draft" },
+        planKey: "starter",
+        servedTaxon: realEstateBrokerNicheTaxon,
+        catalogVersion: 2,
+        configurationRevision: 7,
+        rootVersion: 1,
+        endCustomerResearchVersion: 1,
+      });
+      assert.deepEqual(
+        result.value.modelContext.research.researches.map(
+          (parent) => parent.researchBlock,
+        ),
+        ["strategic_core", "lp_overview", "lp_sections", "seo"],
+      );
       assert.equal(
-        result.value.partB.facts.some((fact) => fact.fieldKey === "whatsapp_destination"),
+        result.value.modelContext.research.researches.every(
+          (parent) => parent.items.length === 2,
+        ),
         true,
       );
       assert.equal(
-        result.value.partB.facts.some((fact) => fact.fieldKey === "brand_color_palette"),
+        JSON.stringify(result.value.modelContext).includes("business_buyer"),
         false,
       );
-      assert.deepEqual(
-        result.value.partB.research.endCustomer.researches.flatMap((parent) =>
-          parent.items.map((item) => item.itemKey),
+      assert.equal(
+        result.value.modelContext.facts.some(
+          (fact) => fact.fieldKey === "primary_conversion_channel",
         ),
-        ["trigger"],
+        true,
       );
-      assert.deepEqual(result.value.partB.research.businessBuyer.researches, []);
-      assert.equal(Object.isFrozen(result.value), true);
+      assert.equal(
+        result.value.modelContext.facts.some(
+          (fact) => fact.fieldKey === "whatsapp_destination",
+        ),
+        false,
+      );
+      assert.equal(
+        result.value.serverContext.facts.some(
+          (fact) => fact.fieldKey === "whatsapp_destination",
+        ),
+        true,
+      );
+      assert.equal(
+        result.value.serverContext.facts.some(
+          (fact) => fact.fieldKey === "brand_color_palette",
+        ),
+        true,
+      );
+      const creci = result.value.modelContext.facts.find(
+        (fact) => fact.fieldKey === "creci_registration",
+      );
+      assert.ok(creci);
+      assert.equal(Object.hasOwn(creci, "verified"), false);
+      assert.equal(Object.hasOwn(creci, "evidence"), false);
       assert.equal(Object.isFrozen(result), true);
-      assert.equal(Object.isFrozen(result.value.partA.modules[0].fieldContract.fields), true);
+      assert.equal(Object.isFrozen(result.value.modelContext.research), true);
+      assert.equal(Object.isFrozen(result.value.serverContext.facts), true);
       assert.throws(() => {
-        (result.value.partA.selection as unknown[]).push({});
+        (result.value.modelContext.facts as unknown[]).push({});
       }, TypeError);
     },
   },
   {
-    name: "deterministic presentation carries form privacy without granting prompt authority",
+    name: "all 23 current fields are classified only by canonical valueType",
     run: () => {
-      const privacyPolicyUrl = "https://example.com/privacy";
+      assert.equal(configuration.fields.length, 23);
+      const everyFieldConfiguration: AccountLandingPageOnboardingConfiguration = {
+        ...configuration,
+        fields: configuration.fields.map((state) => ({
+          ...state,
+          applicable: true,
+          source: "configuration" as const,
+          value: sampleValue(state.field.valueType, state.field.validation),
+        })),
+      };
       const result = compileLandingPageGenerationContext({
         landingPage,
-        configuration: buildConfiguration({
-          primary_conversion_channel: "form",
-          privacy_policy_url: privacyPolicyUrl,
-        }),
+        configuration: everyFieldConfiguration,
         research,
-        generationProfile,
       });
       assert.equal(result.ok, true);
+      const allFacts = [
+        ...result.value.modelContext.facts,
+        ...result.value.serverContext.facts,
+      ];
+      assert.equal(allFacts.length, 23);
+      assert.equal(new Set(allFacts.map((fact) => fact.fieldKey)).size, 23);
+      const modelTypes = new Set([
+        "string",
+        "enum",
+        "string_list",
+        "boolean",
+        "number_range",
+        "keyword_map",
+      ]);
       assert.equal(
-        result.value.partA.modules.some((module) =>
-          module.variant.interactionContracts.some((interaction) => interaction.kind === "form"),
+        result.value.modelContext.facts.every((fact) =>
+          modelTypes.has(fact.valueType),
         ),
         true,
       );
-      assert.equal(result.value.partA.presentation.privacyPolicyUrl, privacyPolicyUrl);
+      const serverTypes = new Set([
+        "phone",
+        "email",
+        "url",
+        "asset_reference",
+        "color_palette",
+      ]);
       assert.equal(
-        result.value.partB.facts.some((fact) => fact.fieldKey === "privacy_policy_url"),
-        false,
-      );
-    },
-  },
-  {
-    name: "false capability booleans provide no support without making benefits ineligible",
-    run: () => {
-      const result = compileLandingPageGenerationContext({
-        landingPage,
-        configuration: buildConfiguration({
-          financing_support_available: false,
-          document_support_available: false,
-        }),
-        research,
-        generationProfile,
-      });
-      assert.equal(result.ok, true);
-      assert.deepEqual(result.value.partB.capabilitySupport, []);
-      assert.equal(
-        result.value.partA.modules.some((selectedModule) => selectedModule.module.moduleKey === "benefits"),
+        result.value.serverContext.facts.every((fact) =>
+          serverTypes.has(fact.valueType),
+        ),
         true,
       );
     },
   },
   {
-    name: "one eligible alternative is selected and multiple alternatives remain ambiguous",
+    name: "missing facts remain absent and operational values never leak to modelContext",
     run: () => {
-      assert.equal(generationProfile.ok, true);
-      assert.equal(generationProfile.value.kind, "resolved");
-      const hero = generationProfile.value.recommendations[0];
-      const fallback = compileLandingPageGenerationContext({
-        landingPage,
-        configuration,
-        research,
-        generationProfile: {
-          ok: true,
-          value: {
-            ...generationProfile.value,
-            recommendations: [
-              { ...hero, variantKey: "hero.form", variantVersion: 1 },
-            ],
-          },
-        },
-      });
-      assert.equal(fallback.ok, true);
-      assert.equal(fallback.value.partA.selection[0].cause, "single_eligible_alternative");
-      assert.equal(fallback.value.partA.selection[0].effectiveVariantKey, "hero.standard");
-
-      const faq = generationProfile.value.recommendations.find(
-        (item) => item.moduleKey === "faq",
-      );
-      assert.ok(faq);
-      const {
-        variantKey: _variantKey,
-        variantVersion: _variantVersion,
-        ...faqWithoutPreference
-      } = faq;
-      const ambiguous = compileLandingPageGenerationContext({
-        landingPage,
-        configuration,
-        research,
-        generationProfile: {
-          ok: true,
-          value: {
-            ...generationProfile.value,
-            recommendations: [faqWithoutPreference],
-          },
-        },
-      });
-      assert.equal(ambiguous.ok, false);
-      assert.equal(ambiguous.error.code, "MODULE_VARIANT_AMBIGUOUS");
-    },
-  },
-  {
-    name: "profile absence, read failure, and optional guidance preserve their contracts",
-    run: () => {
-      const absent = compileLandingPageGenerationContext({
-        landingPage,
-        configuration,
-        research,
-        generationProfile: {
-          ok: true,
-          value: { kind: "absent", servedTaxonId: TAXON_ID },
-        },
-      });
-      assert.equal(absent.ok, false);
-      assert.equal(absent.error.code, "GENERATION_PROFILE_ABSENT");
-      assert.equal(Object.isFrozen(absent), true);
-      assert.equal(Object.hasOwn(absent, "partA"), false);
-      assert.equal(Object.hasOwn(absent, "partB"), false);
-
-      const readFailed = compileLandingPageGenerationContext({
-        landingPage,
-        configuration,
-        research,
-        generationProfile: {
-          ok: false,
-          error: { code: "READ_FAILED", message: "safe fixture" },
-        },
-      });
-      assert.equal(readFailed.ok, false);
-      assert.equal(readFailed.error.code, "GENERATION_PROFILE_READ_FAILED");
-
-      assert.equal(generationProfile.ok, true);
-      assert.equal(generationProfile.value.kind, "resolved");
-      const {
-        generationGuidance: _generationGuidance,
-        ...profileWithoutCurrentGuidance
-      } = generationProfile.value;
-      const withoutCurrentGuidance = compileLandingPageGenerationContext({
-        landingPage,
-        configuration,
-        research,
-        generationProfile: { ok: true, value: profileWithoutCurrentGuidance },
-      });
-      assert.equal(withoutCurrentGuidance.ok, true);
-      assert.equal(
-        Object.hasOwn(withoutCurrentGuidance.value.partB, "generationGuidance"),
-        false,
-      );
-      assert.deepEqual(withoutCurrentGuidance.value.partA.generationProfile, {
-        profileId: generationProfile.value.profileId,
-        ownerTaxonId: generationProfile.value.ownerTaxonId,
-        relation: generationProfile.value.relation,
-      });
-
-      const blankGuidance = compileLandingPageGenerationContext({
-        landingPage,
-        configuration,
-        research,
-        generationProfile: {
-          ok: true,
-          value: { ...generationProfile.value, generationGuidance: "   " },
-        },
-      });
-      assert.equal(blankGuidance.ok, false);
-      assert.equal(blankGuidance.error.code, "GENERATION_PROFILE_INVALID");
-    },
-  },
-  {
-    name: "binding compatibility and draft binding fail closed",
-    run: () => {
-      const incompatible: AccountLandingPageOnboardingConfiguration = {
+      const missingCreclConfiguration: AccountLandingPageOnboardingConfiguration = {
         ...configuration,
-        fields: configuration.fields.map((state, index) =>
-          index === 0
-            ? { ...state, field: { ...state.field, purpose: "divergent" } }
+        fields: configuration.fields.map((state) =>
+          state.field.fieldKey === "creci_registration"
+            ? { ...state, source: "missing" as const, value: undefined }
             : state,
         ),
       };
-      const incompatibleResult = compileLandingPageGenerationContext({
+      const result = compileLandingPageGenerationContext({
         landingPage,
-        configuration: incompatible,
+        configuration: missingCreclConfiguration,
         research,
-        generationProfile,
       });
-      assert.equal(incompatibleResult.ok, false);
-      assert.equal(incompatibleResult.error.code, "BINDING_CATALOG_INCOMPATIBLE");
-
-      const unbound = compileLandingPageGenerationContext({
-        landingPage,
-        configuration: { ...configuration, landingPageId: null },
-        research,
-        generationProfile,
-      });
-      assert.equal(unbound.ok, false);
-      assert.equal(unbound.error.code, "CONFIGURATION_NOT_BOUND");
-    },
-  },
-  {
-    name: "malformed runtime inputs return a frozen invalid-input failure",
-    run: async () => {
-      for (const malformed of [null, {}, { landingPage: null }]) {
-        const compiled = compileLandingPageGenerationContext(malformed);
-        assert.equal(compiled.ok, false);
-        assert.equal(compiled.error.code, "INVALID_INPUT");
-        assert.equal(Object.isFrozen(compiled), true);
-      }
-      const boundary = await compileLandingPageGenerationContextForDraftWithDependencies(
-        null,
-        {
-          loadConfiguration: async () => ({ ok: true, configuration }),
-          loadLandingPage: async () => ({ ok: true, landingPage }),
-          loadResearch: async () => research,
-          loadGenerationProfile: async () => generationProfile,
-          log: () => undefined,
-          now: () => 1,
-        },
+      assert.equal(result.ok, true);
+      assert.equal(
+        result.value.modelContext.facts.some(
+          (fact) => fact.fieldKey === "creci_registration",
+        ),
+        false,
       );
-      assert.equal(boundary.ok, false);
-      assert.equal(boundary.error.code, "INVALID_INPUT");
-      assert.equal(Object.isFrozen(boundary), true);
+      assert.equal(
+        JSON.stringify(result.value.modelContext).includes("+5511999999999"),
+        false,
+      );
     },
   },
   {
-    name: "server boundary emits only safe outcome metadata and logger failure is inert",
+    name: "canonical authority failures fail closed without a partial package",
+    run: () => {
+      const scenarios = [
+        {
+          expected: "LANDING_PAGE_NOT_DRAFT",
+          input: { landingPage: { ...landingPage, account_id: "other" }, configuration, research },
+        },
+        {
+          expected: "CONFIGURATION_NOT_BOUND",
+          input: { landingPage, configuration: { ...configuration, landingPageId: null }, research },
+        },
+        {
+          expected: "CONFIGURATION_INCOMPLETE",
+          input: { landingPage, configuration: { ...configuration, complete: false }, research },
+        },
+        {
+          expected: "INPUT_CATALOG_INCOMPATIBLE",
+          input: { landingPage, configuration: { ...configuration, catalogVersion: 3 }, research },
+        },
+        {
+          expected: "RESEARCH_UNAVAILABLE",
+          input: {
+            landingPage,
+            configuration,
+            research: {
+              ok: false,
+              error: { code: "READ_FAILED", message: "safe fixture" },
+            },
+          },
+        },
+      ] as const;
+      for (const scenario of scenarios) {
+        const result = compileLandingPageGenerationContext(scenario.input);
+        assert.equal(result.ok, false);
+        assert.equal(result.error.code, scenario.expected);
+        assert.equal(Object.hasOwn(result, "value"), false);
+      }
+    },
+  },
+  {
+    name: "server boundary authorizes first and logs only safe outcome metadata",
     run: async () => {
       const logs: Readonly<Record<string, unknown>>[] = [];
+      const dependencyCalls: string[] = [];
       const dependencies = {
-        loadConfiguration: async () => ({ ok: true as const, configuration }),
-        loadLandingPage: async () => ({ ok: true as const, landingPage }),
-        loadResearch: async () => research,
-        loadGenerationProfile: async () => generationProfile,
+        loadConfiguration: async () => {
+          dependencyCalls.push("configuration");
+          return { ok: true as const, configuration };
+        },
+        loadLandingPage: async () => {
+          dependencyCalls.push("landing-page");
+          return { ok: true as const, landingPage };
+        },
+        loadResearch: async () => {
+          dependencyCalls.push("research");
+          return research;
+        },
         now: (() => {
           let value = 100;
           return () => value++;
         })(),
       };
-      const input = {
-        accountId: ACCOUNT_ID,
-        landingPageId: LANDING_PAGE_ID,
-        requestId: "req-e19-3",
-      };
       const result = await compileLandingPageGenerationContextForDraftWithDependencies(
-        input,
+        {
+          accountId: ACCOUNT_ID,
+          landingPageId: LANDING_PAGE_ID,
+          requestId: "req-e19-3-d",
+        },
         { ...dependencies, log: (payload) => logs.push(payload) },
       );
       assert.equal(result.ok, true);
-      assert.deepEqual(Object.keys(logs[0]).sort(), [
-        "event",
-        "latency_ms",
-        "reason",
-        "request_id",
-        "result",
+      assert.deepEqual(dependencyCalls, [
+        "configuration",
+        "landing-page",
+        "research",
       ]);
       assert.deepEqual(logs[0], {
         event: "landing_page_generation_context_compilation",
         result: "success",
         reason: "compiled",
-        request_id: "req-e19-3",
+        request_id: "req-e19-3-d",
         latency_ms: 1,
       });
-      const withBrokenLogger = await compileLandingPageGenerationContextForDraftWithDependencies(
-        input,
-        {
-          ...dependencies,
-          log: () => {
-            throw new Error("logger unavailable");
-          },
-        },
-      );
-      assert.deepEqual(withBrokenLogger, result);
 
-      const failureLogs: Readonly<Record<string, unknown>>[] = [];
-      const failureDependencies = {
-        ...dependencies,
-        loadConfiguration: async () => ({
-          ok: false as const,
-          error: "membership_inactive" as const,
-        }),
-      };
-      const failed = await compileLandingPageGenerationContextForDraftWithDependencies(
-        input,
-        { ...failureDependencies, log: (payload) => failureLogs.push(payload) },
-      );
-      assert.equal(failed.ok, false);
-      assert.equal(failed.error.code, "ACCOUNT_CONTEXT_UNAUTHORIZED");
-      assert.deepEqual(Object.keys(failureLogs[0]).sort(), [
-        "event",
-        "latency_ms",
-        "reason",
-        "request_id",
-        "result",
-      ]);
-      assert.equal(failureLogs[0].result, "failure");
-      assert.equal(failureLogs[0].reason, "ACCOUNT_CONTEXT_UNAUTHORIZED");
-      const failedWithBrokenLogger = await compileLandingPageGenerationContextForDraftWithDependencies(
-        input,
-        {
-          ...failureDependencies,
-          log: () => {
-            throw new Error("logger unavailable");
+      const unauthorizedCalls: string[] = [];
+      const unauthorized =
+        await compileLandingPageGenerationContextForDraftWithDependencies(
+          { accountId: ACCOUNT_ID, landingPageId: LANDING_PAGE_ID },
+          {
+            loadConfiguration: async () => ({
+              ok: false,
+              error: "commercial_entitlement_required",
+            }),
+            loadLandingPage: async () => {
+              unauthorizedCalls.push("landing-page");
+              return { ok: true, landingPage };
+            },
+            loadResearch: async () => {
+              unauthorizedCalls.push("research");
+              return research;
+            },
+            log: () => undefined,
           },
-        },
-      );
-      assert.deepEqual(failedWithBrokenLogger, failed);
+        );
+      assert.equal(unauthorized.ok, false);
+      assert.equal(unauthorized.error.code, "ACCOUNT_CONTEXT_UNAUTHORIZED");
+      assert.deepEqual(unauthorizedCalls, []);
     },
   },
   {
-    name: "pure compiler and public boundary preserve the approved dependencies",
+    name: "public boundary has no E18.5, E20.3, Stripe or E19.4 runtime dependency",
     run: () => {
-      const compilerSource = readFileSync(new URL("./generationContext.ts", import.meta.url), "utf8");
+      const compilerSource = readFileSync(
+        new URL("./generationContext.ts", import.meta.url),
+        "utf8",
+      );
       const boundaryCoreSource = readFileSync(
         new URL("./adapters/generationContextAdapterCore.ts", import.meta.url),
         "utf8",
       );
-      const publicIndexSource = readFileSync(new URL("./index.ts", import.meta.url), "utf8");
-      assert.equal(
-        /supabase|DBRow|[\\/](?:registry|schema)|from\s+["'][^"']*auth/i.test(compilerSource),
-        false,
+      const publicIndexSource = readFileSync(
+        new URL("./index.ts", import.meta.url),
+        "utf8",
       );
-      assert.equal(/supabase|DBRow|from\s+["'][^"']*auth/i.test(boundaryCoreSource), false);
-      assert.equal(publicIndexSource.includes("compileLandingPageGenerationContext"), true);
-      assert.equal(publicIndexSource.includes("compileLandingPageGenerationContextForDraft"), true);
+      assert.doesNotMatch(
+        compilerSource,
+        /module-catalog|generation-profile|copySourceMap|prioritizedSources|funnelCopyProfiles|generationGuidance|itemGuidance/,
+      );
+      assert.doesNotMatch(
+        boundaryCoreSource,
+        /Stripe|OpenAI|GenerationProfile|loadGenerationProfile/,
+      );
+      assert.doesNotMatch(
+        publicIndexSource,
+        /generateLandingPageDraftCandidate|materializeFirstLandingPageDraft|getLandingPageDraftExperienceState|landingPageGenerationContracts|landingPageMaterializationContracts/,
+      );
+      for (const relativePath of [
+        "../../app/a/[account]/landing-page-actions.ts",
+        "../../app/a/[account]/_components/LandingPageDraftJourney.tsx",
+        "../../app/a/[account]/landing-pages/[landingPageId]/preview/page.tsx",
+        "./landingPageGeneration.ts",
+        "./landingPageMaterialization.ts",
+        "./landingPagePreview.ts",
+      ]) {
+        assert.equal(existsSync(new URL(relativePath, import.meta.url)), false);
+      }
     },
   },
 ];
@@ -451,12 +364,10 @@ async function runCases(): Promise<void> {
   }
 }
 
-function buildConfiguration(
-  overrides: Readonly<Record<string, unknown>> = {},
-): AccountLandingPageOnboardingConfiguration {
+function buildConfiguration(): AccountLandingPageOnboardingConfiguration {
   const values: Readonly<Record<string, unknown>> = {
-    primary_service_or_offer: "Consultoria imobiliaria",
-    primary_service_or_offer_description: "Apoio factual na compra de imoveis",
+    primary_service_or_offer: "Consultoria imobiliária",
+    primary_service_or_offer_description: "Apoio factual na compra de imóveis",
     brand_color_palette: {
       primary: "#000000",
       secondary: "#111111",
@@ -467,12 +378,11 @@ function buildConfiguration(
     funnel_stage: "bofu",
     primary_conversion_channel: "whatsapp",
     whatsapp_destination: "+5511999999999",
-    service_locations: ["Sao Paulo"],
+    service_locations: ["São Paulo"],
     transaction_intent: "buy",
     financing_support_available: true,
     document_support_available: true,
     creci_registration: "CRECI 12345",
-    ...overrides,
   };
   const catalog = resolveLandingPageInputCatalog({
     version: 2,
@@ -483,9 +393,12 @@ function buildConfiguration(
     },
   });
   assert.equal(catalog.ok, true);
+  assert.equal(catalog.value.fields.length, 23);
   const storedValues = Object.fromEntries(
     Object.entries(values).map(([fieldKey, value]) => {
-      const field = catalog.value.fields.find((candidate) => candidate.fieldKey === fieldKey);
+      const field = catalog.value.fields.find(
+        (candidate) => candidate.fieldKey === fieldKey,
+      );
       assert.ok(field);
       return [fieldKey, { scope: field.valueScope, value }];
     }),
@@ -501,7 +414,7 @@ function buildConfiguration(
       niche: realEstateBrokerNicheTaxon,
     },
     storedValues,
-    authoritativeValues: { business_display_name: "Conta legitima" },
+    authoritativeValues: { business_display_name: "Conta legítima" },
   });
   assert.equal(result.ok, true);
   assert.equal(result.configuration.complete, true);
@@ -509,48 +422,42 @@ function buildConfiguration(
 }
 
 function buildResearch(): LandingPageResearchResolutionResult {
-  const audience = (audienceScope: "business_buyer" | "end_customer") => ({
+  const audience = (
+    audienceScope: "business_buyer" | "end_customer",
+  ): ResolvedLandingPageResearchAudience => ({
     audienceScope,
     sourceTaxonId: TAXON_ID,
-    sourceRelation: "own" as const,
+    sourceRelation: "own",
     version: 1,
     researches: [
-      {
-        researchId: audienceScope === "end_customer" ? "research-end" : "research-business",
-        researchBlock: "strategic_core" as const,
-        audienceScope,
-        version: 1,
+      "strategic_core",
+      "lp_overview",
+      "lp_sections",
+      "seo",
+    ].map((researchBlock, blockIndex) => ({
+      researchId: `${audienceScope}-${researchBlock}`,
+      researchBlock: researchBlock as
+        | "strategic_core"
+        | "lp_overview"
+        | "lp_sections"
+        | "seo",
+      audienceScope,
+      version: 1,
+      sourceTaxonId: TAXON_ID,
+      items: [1, 2].map((position) => ({
+        itemId: `${audienceScope}-${researchBlock}-${position}`,
+        researchId: `${audienceScope}-${researchBlock}`,
+        itemKey: `${researchBlock}_item_${position}`,
+        itemText: `Contexto autorizado ${blockIndex + 1}.${position}`,
+        priority: position,
+        sortOrder: position,
+        servedTaxonId: TAXON_ID,
         sourceTaxonId: TAXON_ID,
-        items: [
-          {
-            itemId: `${audienceScope}-trigger`,
-            researchId: audienceScope === "end_customer" ? "research-end" : "research-business",
-            itemKey: "trigger",
-            itemText: "Contexto autorizado",
-            priority: 1,
-            sortOrder: 1,
-            servedTaxonId: TAXON_ID,
-            sourceTaxonId: TAXON_ID,
-            sourceRelation: "own" as const,
-            audienceScope,
-            researchVersion: 1,
-          },
-          {
-            itemId: `${audienceScope}-unrelated`,
-            researchId: audienceScope === "end_customer" ? "research-end" : "research-business",
-            itemKey: "unrelated",
-            itemText: "Nao autorizado pelos contratos selecionados",
-            priority: 2,
-            sortOrder: 2,
-            servedTaxonId: TAXON_ID,
-            sourceTaxonId: TAXON_ID,
-            sourceRelation: "own" as const,
-            audienceScope,
-            researchVersion: 1,
-          },
-        ],
-      },
-    ],
+        sourceRelation: "own",
+        audienceScope,
+        researchVersion: 1,
+      })),
+    })),
   });
   return {
     ok: true,
@@ -563,41 +470,42 @@ function buildResearch(): LandingPageResearchResolutionResult {
   };
 }
 
-function buildGenerationProfile(): ResolveLandingPageGenerationProfileResult {
-  const recommendations = [
-    ["hero", "hero.standard", "P1", 10],
-    ["trust_bar", "trust_bar.standard", "P1", 20],
-    ["lead_capture", "lead_capture.form", "P1", 30],
-    ["problem_solution", "problem_solution.standard", "P1", 40],
-    ["offer", "offer.standard", "P1", 50],
-    ["process", "process.standard", "P1", 60],
-    ["social_proof", "social_proof.standard", "P1", 70],
-    ["technical_assurance", "technical_assurance.standard", "P1", 80],
-    ["faq", "faq.standard", "P1", 90],
-    ["benefits", "benefits.standard", "P2", 100],
-    ["final_cta", "final_cta.standard", "P1", 110],
-  ] as const;
-  return {
-    ok: true,
-    value: {
-      kind: "resolved",
-      servedTaxonId: TAXON_ID,
-      ownerTaxonId: TAXON_ID,
-      profileId: "c211015e-d9c6-4241-a29a-7cd41e93b8fc",
-      profileVersion: 1,
-      relation: "own",
-      generationGuidance: "Use somente o contexto autorizado.",
-      recommendations: recommendations.map(
-        ([moduleKey, variantKey, priority, recommendedOrder], index) => ({
-          id: `recommendation-${index + 1}`,
-          moduleKey,
-          moduleVersion: 1,
-          variantKey,
-          variantVersion: 1,
-          priority,
-          recommendedOrder,
-        }),
-      ),
-    },
-  };
+function sampleValue(
+  valueType: LandingPageInputValueType,
+  validation: AccountLandingPageOnboardingFieldState["field"]["validation"],
+): unknown {
+  switch (valueType) {
+    case "string":
+      return "valor";
+    case "phone":
+      return "+5511999999999";
+    case "email":
+      return "contato@example.com";
+    case "url":
+      return "https://example.com";
+    case "enum":
+      return validation.kind === "enum"
+        ? validation.allowedValues[0]
+        : "valor";
+    case "string_list":
+      return validation.kind === "string_list" && validation.allowedValues?.length
+        ? [validation.allowedValues[0]]
+        : ["valor"];
+    case "boolean":
+      return true;
+    case "number_range":
+      return { minimum: 100, maximum: 200, currency: "BRL" };
+    case "keyword_map":
+      return { principal: ["valor"] };
+    case "asset_reference":
+      return "brand/logo-primary";
+    case "color_palette":
+      return {
+        primary: "#000000",
+        secondary: "#111111",
+        accent: "#222222",
+        background: "#FFFFFF",
+        text: "#000000",
+      };
+  }
 }
