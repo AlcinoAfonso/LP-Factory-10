@@ -49,20 +49,6 @@ export const openAiWorkloadRegistry = deepFreeze([
     },
   },
   {
-    id: "landing_page_draft_generation",
-    displayName: "Geração de landing page em draft",
-    classification: "product_runtime",
-    configurationKind: "effective",
-    consumer: "Geração controlada da primeira landing page em draft",
-    fallback: "Não materializar a candidata e exigir nova ação humana",
-    configuration: {
-      model: "gpt-5.4-mini",
-      reasoningEffort: "none",
-      source: "repo_catalog",
-      revision,
-    },
-  },
-  {
     id: "supabase_inspect",
     displayName: "Supabase Inspect",
     classification: "operational",

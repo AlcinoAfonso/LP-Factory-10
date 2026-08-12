@@ -2,8 +2,8 @@
 
 0.1 Cabeçalho
 • Documento: LP Factory 10 — Platform Config
-• Versão: v0.1.18
-• Data: 11/08/2026
+• Versão: v0.1.19
+• Data: 12/08/2026
 
 0.2 Contrato do documento
 • O QUE É: snapshot operacional e fonte única das configurações de plataformas externas do LP Factory 10, refletindo o estado conhecido/cadastrado nas plataformas conforme indicado.
@@ -155,19 +155,17 @@
 • Valor esperado: `true`
 
 • `OPENAI_API_KEY`
-• Finalidade: chave server-side compartilhada pelos quatro consumidores OpenAI de produto autorizados no Core.
+• Finalidade: chave server-side compartilhada pelos três consumidores OpenAI de produto autorizados no Core.
 • Escopo: Production e Preview.
 • Estado atual: configurada em Production e Preview; os três consumidores foram validados em Production em 10/08/2026 sem exposição do valor.
 • Valor real: não versionar.
-• Regra operacional: os quatro consumidores podem compartilhar a mesma chave; não criar outra sem necessidade aprovada.
+• Regra operacional: os três consumidores podem compartilhar a mesma chave; não criar outra sem necessidade aprovada.
 
 • Configuração efetiva dos workloads OpenAI de produto
 • Fonte canônica: `lib/openai-workloads/registry.ts`, com `configurationSource: repo_catalog` e revisão `v1`.
-• Workloads: `niche_resolution`, `landing_page_generation_profile_proposal`, `commercial_activation_draft_generation` e `landing_page_draft_generation`.
+• Workloads: `niche_resolution`, `landing_page_generation_profile_proposal` e `commercial_activation_draft_generation`.
 • Configuração comum atual: modelo `gpt-5.4-mini` e esforço de raciocínio `none`.
 • Validação operacional: os três workloads foram executados uma única vez em Production em 10/08/2026; os Runtime Logs confirmaram sucesso e telemetria sanitizada, sem prompt, resposta integral, credencial ou dado pessoal.
-• Estado de `landing_page_draft_generation`: configuração e transporte validados no repositório por casos executáveis; ainda sem chamada OpenAI ou prova hospedada, reservadas à execução integral da E19.4.
-
 • Variáveis legadas de modelo na Vercel
 • Nomes: `OPENAI_NICHE_RESOLVER_MODEL`, `OPENAI_LANDING_PAGE_GENERATION_PROFILE_MODEL` e `OPENAI_COMMERCIAL_ACTIVATION_MODEL`.
 • Escopo: Production e Preview.
@@ -282,10 +280,10 @@
 6.3 Variáveis relacionadas
 • `OPENAI_API_KEY`
 • Plataforma: Vercel e/ou GitHub Actions, conforme uso.
-• Finalidade: autenticação com OpenAI API; no Core, a mesma chave server-side pode atender os quatro consumidores de produto.
+• Finalidade: autenticação com OpenAI API; no Core, a mesma chave server-side pode atender os três consumidores de produto.
 • Valor real: não versionar.
 
-• A seleção de modelo e esforço dos quatro workloads OpenAI de produto não usa variáveis Vercel no runtime atual; o contrato efetivo está no catálogo versionado do repositório.
+• A seleção de modelo e esforço dos três workloads OpenAI de produto não usa variáveis Vercel no runtime atual; o contrato efetivo está no catálogo versionado do repositório.
 • As três variáveis legadas de modelo estão ausentes da configuração vigente da Vercel conforme 3.5.
 
 6.3.1 Endpoint externo atual

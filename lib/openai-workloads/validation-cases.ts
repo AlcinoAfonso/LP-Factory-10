@@ -20,7 +20,6 @@ const productIds = [
   "niche_resolution",
   "landing_page_generation_profile_proposal",
   "commercial_activation_draft_generation",
-  "landing_page_draft_generation",
 ] as const;
 
 const cases = [
@@ -153,11 +152,11 @@ const cases = [
     },
   },
   {
-    name: "inventory exposes five unique canonical workloads",
+    name: "inventory exposes four unique canonical workloads",
     run: () => {
       const inventory = listOpenAiWorkloadInventory();
-      assert.equal(inventory.length, 5);
-      assert.equal(new Set(inventory.map((item) => item.id)).size, 5);
+      assert.equal(inventory.length, 4);
+      assert.equal(new Set(inventory.map((item) => item.id)).size, 4);
       assert.deepEqual(
         inventory.map((item) => item.id),
         [...productIds, "supabase_inspect"],

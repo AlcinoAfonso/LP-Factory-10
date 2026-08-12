@@ -1,4 +1,3 @@
-import type { ResolveLandingPageGenerationProfileResult } from "../../conversion-content/landing-page/generation-profile";
 import type { LandingPageResearchResolutionResult } from "../../conversion-content/landing-page/research-resolution";
 import type {
   AccountLandingPage,
@@ -20,7 +19,6 @@ export type LandingPageGenerationContextBoundaryDependencies = Readonly<{
     | Readonly<{ ok: false; error: "not_found" | "read_failed" }>
   >;
   loadResearch: (input: { taxonId: string; requestId?: string }) => Promise<LandingPageResearchResolutionResult>;
-  loadGenerationProfile: (input: { taxonId: string }) => Promise<ResolveLandingPageGenerationProfileResult>;
   log?: (payload: Readonly<Record<string, unknown>>) => void;
   now?: () => number;
 }>;
@@ -96,15 +94,14 @@ export async function compileLandingPageGenerationContextForDraftWithDependencie
       configuration.configuration.taxonChain.ultraNiche ??
       configuration.configuration.taxonChain.niche ??
       configuration.configuration.taxonChain.segment;
-    const [research, generationProfile] = await Promise.all([
-      dependencies.loadResearch({ taxonId: servedTaxon.id, ...(requestId ? { requestId } : {}) }),
-      dependencies.loadGenerationProfile({ taxonId: servedTaxon.id }),
-    ]);
+    const research = await dependencies.loadResearch({
+      taxonId: servedTaxon.id,
+      ...(requestId ? { requestId } : {}),
+    });
     result = compileLandingPageGenerationContext({
       landingPage: landingPage.landingPage,
       configuration: configuration.configuration,
       research,
-      generationProfile,
     });
   } catch {
     result = failure("CONTEXT_READ_FAILED", "Generation context dependencies failed.");

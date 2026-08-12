@@ -3,7 +3,6 @@ import { getCommercialActivationHierarchicalBundle } from "@/conversion-content"
 import { getCommercialEntitlementSignal } from "../../../lib/commercial-entitlements";
 import {
   getAccountLandingPageOnboardingConfiguration,
-  getLandingPageDraftExperienceState,
   listAccountLandingPageDrafts,
   type AccountLandingPage,
   type AccountLandingPageOnboardingConfiguration,
@@ -14,7 +13,6 @@ import { PendingSetupFirstSteps } from "./_components/PendingSetupFirstSteps";
 import { NicheResolutionCard } from "./_components/NicheResolutionCard";
 import { OnboardingConfigurationJourney } from "./_components/OnboardingConfigurationJourney";
 import { OnboardingCompletionJourney } from "./_components/OnboardingCompletionJourney";
-import { LandingPageDraftJourney } from "./_components/LandingPageDraftJourney";
 import { GenericCommercialPage } from "./_components/commercial-page/GenericCommercialPage";
 import { PublishedCommercialActivationPage } from "./_components/commercial-page/PublishedCommercialActivationPage";
 import {
@@ -165,19 +163,10 @@ export default async function Page({ params, searchParams }: PageProps) {
       );
     }
     if (accountJourney.mode === "operational") {
-      const landingPageId = onboardingConfiguration?.landingPageId ?? null;
-      if (!accountId || !landingPageId) return <OnboardingBlockedState />;
-      const landingPageExperience = await getLandingPageDraftExperienceState({
-        accountId,
-        landingPageId,
-      });
-      return (
-        <LandingPageDraftJourney
-          accountSubdomain={accountSubdomain}
-          landingPageId={landingPageId}
-          experienceStatus={landingPageExperience.status}
-        />
-      );
+      if (!accountId || !onboardingConfiguration?.landingPageId) {
+        return <OnboardingBlockedState />;
+      }
+      return <LandingPageOperationalState />;
     }
     if (accountJourney.mode === "blocked") {
       return <OnboardingBlockedState />;
@@ -237,6 +226,24 @@ function OnboardingBlockedState() {
         </h1>
         <p className="mt-4 max-w-2xl text-sm leading-6 text-graytech-700 sm:text-base">
           Somente o proprietário ou um administrador ativo pode concluir esta configuração. Se você já tem esse acesso, confirme os dados da conta e tente novamente.
+        </p>
+      </section>
+    </main>
+  );
+}
+
+function LandingPageOperationalState() {
+  return (
+    <main className="mx-auto flex min-h-[60vh] max-w-5xl items-center px-4 py-10 sm:px-6">
+      <section className="w-full rounded-2xl border border-surface-border bg-white p-6 shadow-card sm:p-10">
+        <p className="text-sm font-semibold uppercase tracking-[0.16em] text-brand-700">
+          Configuração concluída
+        </p>
+        <h1 className="mt-3 text-2xl font-bold tracking-tight text-ink-900 sm:text-3xl">
+          Sua conta está vinculada a uma landing page em rascunho.
+        </h1>
+        <p className="mt-4 max-w-2xl text-sm leading-6 text-graytech-700 sm:text-base">
+          A próxima etapa de geração está temporariamente indisponível enquanto o novo fluxo é validado. Nenhuma geração, materialização ou visualização será iniciada nesta tela.
         </p>
       </section>
     </main>
