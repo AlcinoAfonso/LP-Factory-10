@@ -1,8 +1,8 @@
 0. Introdução
 
 0.1 Cabeçalho
-• Data: 11/08/2026
-• Versão: v1.5.141
+• Data: 12/08/2026
+• Versão: v1.5.142
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -2243,7 +2243,7 @@ Repositório — Ajustados
 
 19. E19 — LP Builder
 - Objetivo: Consolidar o fluxo Core de landing pages por conta, da identidade mínima em `draft` às futuras etapas de geração, revisão, materialização e publicação, sempre por recortes aprovados.
-- Status: E19.1 concluída; E19.2 concluída; E19.3 concluída conforme o plano-base v2 aprovado; E19.4 em execução conforme o plano-base v2 aprovado, com E19.4.3, E19.4.4 e E19.4.5 implementadas no repositório e os gates hospedados e humanos ainda pendentes.
+- Status: E19.1 concluída; E19.2 concluída; E19.3 replanejada para o Cenário D, com E19.3.3 aprovada e aguardando execução; E19.4 temporariamente superada e não executável até novo planejamento após a primeira prova do Cenário D.
 
 19.1 Criação produtiva mínima de LP por conta
 
@@ -2364,99 +2364,35 @@ Repositório — Ajustados
   - O agregado é vinculado somente ao draft escolhido da mesma conta, com revisão otimista, predicado de ausência de vínculo e mutação limitada a uma linha; valores não são copiados para `account_landing_pages` e rebind permanece proibido.
   - A transição não inicia geração, revisão de copy, publicação, tracking, CRM, capability nova ou infraestrutura de assets.
 
-19.3 Contrato e composição determinística do contexto de geração
+19.3 Pacote autorizado para geração no Cenário D
 
 19.3.1 Objetivo e status
-- Objetivo: implementar compilador determinístico universal que receba LP legítima já configurada e produza pacote completo, autorizado e testável para a geração futura.
-- Status: implementado e validado conforme o plano-base v2 aprovado em `docs/lousa-plano-base-e19-3.md`.
-- Sem OpenAI, geração de copy, materialização ou renderer.
+- Objetivo: substituir a composição determinística anterior pelo menor boundary capaz de entregar uma única saída autorizada, versionada, tipada e profundamente imutável para a futura E19.4 replanejada.
+- Status: E19.3.3 planejada e aprovada para execução conforme `docs/lousa-plano-base-e19-3.md`.
 
-19.3.2 Registros do recorte
-- Repositório:
-  - Criados:
-    - `lib/lp-builder/generationContextContracts.ts`
-    - `lib/lp-builder/generationContext.ts`
-    - `lib/lp-builder/adapters/generationContextAdapterCore.ts`
-    - `lib/lp-builder/adapters/generationContextAdapter.ts`
-    - `lib/lp-builder/generation-context-validation-cases.ts`
-  - Ajustados:
-    - `lib/conversion-content/landing-page/input-catalog/contracts.ts`
-    - `lib/conversion-content/landing-page/input-catalog/registry.ts`
-    - `lib/conversion-content/landing-page/input-catalog/schema.ts`
-    - `lib/conversion-content/landing-page/input-catalog/validation-cases.ts`
-    - `lib/lp-builder/index.ts`
-    - `package.json`
-- Banco, migration, rota, UI e infraestrutura: N/A.
-
-19.3.3 Contrato e composição determinística do contexto de geração
-- Status: implementado e validado.
+19.3.3 Contrato do pacote autorizado
+- Status: Planejado para execução.
 - Conteúdo:
-  - O compilador puro e o boundary server-only resolvem seleção estrutural, autorização do contexto e interface lógica de saída pelas APIs públicas canônicas vigentes.
-  - Todas as recomendações estruturalmente elegíveis do perfil ativo são selecionadas em `recommendedOrder`; `P1/P2/P3` permanece metadado sem quota ou corte, fallback exige alternativa única elegível e cada omissão legítima fica rastreada.
-  - O catálogo E20.2 v3 preserva os 23 fields e a estrutura integral da v2 e acrescenta somente os bindings autorizados de `financing_support_available` e `document_support_available` com `applicable_capabilities`; valores persistidos v2 permanecem sem migração ou regravação.
-  - A API pública v1 retorna somente sucesso completo com Parte A determinística e Parte B filtrada pelas fontes autorizadas, ou falha explícita sem pacote parcial; o resultado é profundamente imutável.
-  - O boundary valida conta, membership, entitlement, draft vinculado, configuração completa, pesquisa e perfil, faz somente leituras server-side e registra apenas resultado, motivo seguro, `request_id` e latência quando disponíveis.
-  - A primeira prova read-only confirmou o draft legítimo vinculado, a configuração v2 completa, o plano Starter, o taxon ativo, as pesquisas completas e o perfil próprio ativo; `lead_capture.form` e `social_proof.standard` foram omitidos por inelegibilidade contextual objetiva, sem ambiguidade ou fallback inventado.
-    - `landingPageId`: `4d91020a-07e5-4bf9-a1aa-272bbc0366ff`.
-    - Ordem e decisão: `10 hero.standard` selecionado; `20 trust_bar.standard` selecionado; `30 lead_capture.form` omitido porque o canal efetivo é `whatsapp` e a variante exige `form`; `40 problem_solution.standard` selecionado; `50 offer.standard` selecionado; `60 process.standard` selecionado; `70 social_proof.standard` omitido porque não existe evidência operacional autorizada para cumprir a cardinalidade mínima; `80 technical_assurance.standard` selecionado; `90 faq.standard` selecionado; `100 benefits.standard` selecionado; `110 final_cta.standard` selecionado.
-  - O validador focal e as regressões de raiz, pesquisa, catálogo de entradas, catálogo de módulos, perfil de geração e onboarding E19.2 foram integrados ao `npm run check`.
-  - manter fora do recorte OpenAI, geração de copy, persistência nova, materialização, renderer, rota, UI, agente, job e automação.
+  - O sucesso terá `contractVersion: 2` e exatamente `identities`, `modelContext` e `serverContext`, sem alias, fallback ou DTO público paralelo para o contrato anterior `partA + partB`.
+  - A matéria-prima reutilizará a pesquisa `end_customer` completa da E10.8, os fatos concretos válidos da E19.2 governados pela E20.2 e a projeção editorial mínima da E18.4, preservando proveniência e separando valores semânticos de valores operacionais pela regra canônica de `valueType`.
+  - E18.5 e E20.3 deixarão de ser dependências do caminho canônico da prova; a E19.3 não escolherá módulos, variantes, ordem, narrativa, layout ou composição e não chamará OpenAI, gerará copy, persistirá, materializará ou renderizará conteúdo.
+  - O entitlement será autorizado exclusivamente pelo boundary interno vigente da E9; estado externo da Stripe não substituirá esse sinal.
+  - A primeira prova usará o mesmo draft real da primeira LP, em modo sem OpenAI, para demonstrar pesquisa `end_customer` completa, fatos válidos e separação entre `modelContext` e `serverContext`, sem composição prévia.
 
 19.4 Geração e materialização da landing page em `draft`
 
 19.4.1 Objetivo e status
-- Objetivo: consumir o pacote real e autorizado da E19.3 para gerar, validar, materializar e visualizar privadamente a primeira LP real em `draft`, com estado próprio reproduzível e prova humana.
-- Status: Em execução conforme o plano-base v2 aprovado em `docs/lousa-plano-base-e19-4.md`; E19.4.3, E19.4.4 e E19.4.5 estão implementadas no repositório, com apply da migration, geração oficial, round-trip hospedado e prova humana reservados ao fluxo pós-merge.
+- Objetivo: gerar, validar, materializar e visualizar privadamente a primeira LP real em `draft` a partir do pacote v2 da E19.3, conforme futuro plano-base próprio.
+- Status: O plano `docs/lousa-plano-base-e19-4.md` e sua execução vigente foram temporariamente superados e tornados não executáveis pela decisão de 12/08/2026; o novo planejamento ocorrerá somente após a primeira prova do Cenário D.
 
 19.4.3 Geração controlada e validação integral da candidata
-- Status: Implementada no repositório e validada por casos executáveis; materialização e ação humana estão integradas no recorte repo-only, enquanto a chamada oficial e a prova hospedada permanecem nos gates pós-merge.
-- Registros do recorte:
-  - Criados:
-    - `lib/lp-builder/landingPageGenerationContracts.ts`
-    - `lib/lp-builder/landingPageGeneration.ts`
-    - `lib/lp-builder/landingPageDraftGeneration.ts`
-    - `lib/lp-builder/adapters/landingPageGenerationOpenAiAdapter.ts`
-    - `lib/lp-builder/adapters/landingPageDraftGenerationAdapter.ts`
-    - `lib/lp-builder/landing-page-generation-validation-cases.ts`
-  - Ajustados:
-    - `lib/lp-builder/index.ts`
-    - `lib/openai-workloads/contracts.ts`
-    - `lib/openai-workloads/registry.ts`
-    - `lib/openai-workloads/validation-cases.ts`
-    - `package.json`
-  - Banco, migration, rota, UI, materialização e renderer: N/A nesta subseção.
-- Conteúdo:
-  - O boundary público obtém o ator diretamente da sessão autenticada e compila e revalida server-side conta, membership, entitlement e contexto E19.3 antes do provider; o chamador não fornece identidade do ator e falha desse estágio encerra a operação com zero chamadas.
-  - A IA preenche somente slots opacos dos fields geráveis; o servidor recompõe composição, identidade, variante, ordem, contratos, bindings, referências técnicas autorizadas e omissões opcionais e rejeita a candidata inteira diante de divergência objetiva.
-  - O workload canônico `landing_page_draft_generation` usa a configuração repo-only vigente, Responses API, Structured Output estrito, `store: false`, `safety_identifier` estável e não reversível e limite de saída calculado deterministicamente.
-  - Cada invocação aceita usa uma única chamada síncrona e não streaming, sem tools, busca, agentic, encadeamento ou retry automático; nova tentativa depende de nova ação humana.
-  - Casos executáveis cobrem ator derivado da sessão, gate anterior ao provider, composição piloto integral da E19.3, restauração de identidade/ordem/binding/referência técnica autorizada, ausência opcional, módulo ou field extra/ausente, tipo e limite inválidos, referência obrigatória não resolvida, refusal, incomplete, JSON inválido, telemetria sanitizada e ausência de retry.
-  - `npm ci` e `npm run check` foram aprovados no worktree; não houve chamada OpenAI real, persistência, migration, rota, UI, materialização ou renderer nesta subseção.
+- Status: Temporariamente superada em 12/08/2026 porque depende do contrato substituído `partA + partB`; o runtime correspondente será retirado na execução da E19.3.3 e o destino canônico será definido pelo novo plano-base da E19.4.
 
 19.4.4 Materialização inicial e snapshot imutável
-- Status: Implementada no repositório e validada por casos executáveis; o preview privado consumidor está implementado, enquanto apply da migration e round-trip hospedado permanecem pendentes dos gates pós-merge.
-- Registros do recorte:
-  - Contratos runtime v1 estritos e materialização determinística no boundary `lib/conversion-content/landing-page/` e `lib/lp-builder/`.
-  - Adapter server-only com projeção estável, probe read-only, leitura tenant-scoped e INSERT único por `service_role`.
-  - Migration transacional, verificador SQL read-only e caso SQL do agregado 1:1 write-once.
-  - Validador focal integrado ao `npm run check`.
-- Conteúdo:
-  - A primeira candidata integral válida cria uma única materialização 1:1 e write-once, com conteúdo renderizável e snapshot do contexto efetivamente exposto tornando-se válidos juntos.
-  - Conteúdo e snapshot usam contratos runtime v1 estritos; o conteúdo congela raiz, aparência, paleta visual validada, módulos ordenados, identidades, versões e, quando houver formulário, a URL HTTPS concreta da política de privacidade, sem conceder esses dados determinísticos à autoridade da IA nem reler fontes mutáveis no futuro.
-  - Persistência server-only falha fechado, não permite overwrite e trata concorrência pela unicidade; o conflito relê e retorna o agregado vencedor sem nova chamada ao provider, e migration transacional, probe read-only e verificação SQL pós-apply protegem o rollout.
-  - O fluxo prepara autenticação e contexto E19.3 antes da leitura tenant-scoped, consulta ausência antes do provider e não repete chamada nem insert; falha de preparação, provider, candidata ou persistência mantém o draft sem materialização válida.
-  - A leitura aceita tabela vazia após apply e valida amostras integralmente, incluindo coerência entre identidades do conteúdo e do snapshot; relação, coluna, grant, payload ou versão incompatível falha fechado, e o consumo renderizável do round-trip não consulta E19.3, registries ou fontes mutáveis.
-  - Nenhuma chamada OpenAI real ou escrita remota Supabase foi executada nesta subseção.
+- Status: Temporariamente superada em 12/08/2026 porque depende do contrato substituído `partA + partB`; o runtime correspondente será retirado na execução da E19.3.3, preservando-se somente migration, teste SQL e snippet versionados, e o destino canônico será definido pelo novo plano-base da E19.4.
 
 19.4.5 Visualização privada e prova humana da primeira LP real
-- Status: Implementada no repositório e validada por casos executáveis; prova hospedada e revisão humana da primeira LP real permanecem pendentes dos gates pós-merge.
-- Conteúdo:
-  - A jornada autenticada expõe uma única ação humana para materializar a primeira candidata quando ainda não existe conteúdo e, após sucesso ou materialização preexistente, conduz ao preview privado sem falso sucesso nem nova chamada automática.
-  - Preview autenticado e tenant-aware renderiza somente o conteúdo materializado, sem IA, mutação, publicação, tracking, backend de lead ou recomposição da E19.3.
-  - Identidade, versão ou payload não suportado falha explicitamente; o round-trip preserva conteúdo, ordem, paleta e URL de privacidade congelados, independentes de alterações posteriores nas fontes de configuração.
-  - O renderer determinístico cobre as identidades v1 suportadas, consome exclusivamente a paleta materializada, mantém o Hero como único `h1` da LP e apresenta a URL de privacidade materializada como link real nos formulários de Hero e captura de lead; formulário e accordion permanecem acessíveis dentro de interações locais sem persistência nova, e estados indisponível, vazio e inválido continuam explícitos e fail-closed.
-  - Evidências hospedadas ainda devem cobrir 360, 768 e 1280 px, teclado/foco, overflow, contraste, legibilidade e interações contratadas; revisão humana ainda deve avaliar copy, fidelidade factual, estado `draft`, não publicação e próximo passo.
-  - Findings permanecem evidência do PR ou relatório de execução, sem workflow ou estado de domínio novo.
+- Status: Temporariamente superada em 12/08/2026 porque depende do contrato substituído `partA + partB`; rota, jornada e preview correspondentes serão retirados na execução da E19.3.3 e o destino canônico será definido pelo novo plano-base da E19.4.
 
 20. E20 — Preparação e liberação de taxons para geração de landing pages
 
