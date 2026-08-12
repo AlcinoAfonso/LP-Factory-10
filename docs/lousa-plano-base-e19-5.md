@@ -1,17 +1,108 @@
-12/08/2026 — Rascunho vivo — E19.5 — Workspace operacional da conta e laboratório de drafts
+12/08/2026 — Plano-base v1 — E19.5 — Workspace operacional da conta e laboratório de drafts
 
-## 1. Estado do debate
+## 1. Estado e decisões fixas
 
 ### 1.1. Identificação
 
-- Recorte em debate: `E19.5 — Workspace operacional da conta e laboratório de drafts`.
-- Path definitivo: `docs/lousa-plano-base-e19-5.md`.
-- Estado: rascunho vivo; ainda não consolidado como plano-base v1.
+- Recorte: `E19.5 — Workspace operacional da conta e laboratório de drafts`.
+- Path: `docs/lousa-plano-base-e19-5.md`.
+- Estado: plano-base v1 consolidado por decisão humana em 12/08/2026.
 - Plano conceitual: `docs/lp-planejamento.md`.
 - Processo: `docs/prompt-estrategista.md`.
-- Etapa atual do processo: item 2 — fluxo operacional e preparação da consolidação futura da v1.
+- Predecessores materiais: E19.1, E19.2, E19.3 e E19.4 implementadas no fluxo oficial da conta.
 
-### 1.2. Fontes consultadas até aqui
+### 1.2. Problema comprovado
+
+- A primeira LP real comprovou o pipeline técnico de geração, validação, materialização e preview, mas foi reprovada na avaliação humana de qualidade comercial, com nota aproximada de `2/10`.
+- O projeto precisa testar mudanças posteriores de modelo, prompt, perfil, composição e renderer sem destruir resultados anteriores.
+- A superfície atual `/a/[account]` não funciona como workspace permanente da conta: não organiza configurações por contexto, não lista todas as LPs nem oferece um fluxo seguro para criar e preservar múltiplos drafts comparáveis.
+- A persistência da E19.2 foi desenhada como agregado 1:1 por conta para o onboarding da primeira LP e possui `landing_page_id` write-once; ela não pode ser rebindada nem representar sozinha configurações próprias de várias LPs.
+- A materialização da E19.4 é 1:1 e write-once por LP; regeneração não pode sobrescrever silenciosamente o resultado anterior.
+- O objetivo editorial e comercial específico da LP ainda não possui um input explícito suficiente para orientar e identificar cada teste.
+
+### 1.3. Resultado esperado
+
+- Transformar `/a/[account]` em um workspace operacional simples para owner e admin elegíveis.
+- Preservar o onboarding inicial da E19.2 para a primeira LP.
+- Disponibilizar, depois da conclusão do onboarding, acesso organizado às configurações vigentes por contexto.
+- Exibir todas as LPs legítimas da conta com identidade, configuração, estado derivado e ações compatíveis.
+- Permitir criar, duplicar, gerar e produzir novas variações em drafts independentes, preservando os resultados anteriores.
+- Permitir comparação humana de gerações realizadas com diferentes configurações canônicas do projeto, sem criar laboratório paralelo ou engine automática de experimentos.
+
+### 1.4. Atores e gates
+
+- Somente membership `active` com papel `owner` ou `admin` pode alterar configurações, criar drafts, duplicar ou iniciar geração.
+- A conta deve estar `active` e possuir entitlement comercial válido.
+- O taxon primário ativo permanece autoritativo.
+- Toda ação mutável revalida conta, membership e entitlement server-side e deriva `accountId` e ator do contexto autenticado.
+- A E19.5 não inventa capability comercial nem limite local de drafts; quando a E9.7 admitir e integrar limites reais, o workspace passa a consumi-los no ponto competente.
+- Conta piloto e clientes usam o mesmo workspace e os mesmos boundaries.
+
+### 1.5. Preservação da E19.2
+
+- A E19.2 continua responsável pelo primeiro onboarding pós-entitlement e pela configuração mínima necessária à primeira LP Starter.
+- A E20.2 continua sendo a fonte dos fields, scopes, tipos, obrigação, aplicabilidade, validação e política de substituição.
+- O agregado `public.account_landing_page_onboarding_configurations` permanece como registro e bootstrap da primeira jornada por conta.
+- Seu vínculo write-once não é alterado, removido nem rebindado.
+- A área posterior `Configurações` é evolução de consumo da E19.2, mas a lista operacional de LPs e o laboratório de drafts pertencem à E19.5.
+
+### 1.6. Divisão fixa das configurações
+
+- Valores de `account`, `business` e `offer` funcionam como defaults reutilizáveis, respeitando fontes autoritativas e a política da E20.2.
+- Valores de `campaign` e `landing_page` pertencem à LP concreta.
+- Valor reutilizável só pode ser substituído por LP quando a E20.2 declarar `landingPageSubstitutionPolicy: explicit_allowed`.
+- Valor com substituição proibida não é copiado para a configuração específica apenas para facilitar a UI.
+- Alteração de defaults pode orientar futuras gerações ainda não materializadas, mas nunca altera o conteúdo já materializado e congelado de outra LP.
+- A UI agrupa os fields pelos scopes vigentes, mas usa linguagem compreensível para o cliente e não expõe a modelagem interna como formulário técnico gigante.
+
+### 1.7. Configuração específica por LP
+
+- Cada nova LP passa a possuir uma configuração 1:1 própria, orientada pela E20.2.
+- A menor residência física aprovada é `public.account_landing_page_configurations`.
+- O agregado possui conceitualmente:
+  - `landing_page_id` como identidade única;
+  - `account_id` para isolamento tenant-safe;
+  - `catalog_version`;
+  - objeto `values` indexado por `fieldKey`;
+  - `revision` para concorrência otimista;
+  - ator e timestamps de criação e atualização.
+- O objeto `values` conserva somente `scope` e `value` validados; não duplica definição, obrigação, condição, validação ou catálogo.
+- A tabela permanece server-only, com RLS habilitado, sem policy de cliente e sem DELETE operacional neste recorte.
+- A lista e os estados derivados não criam persistência paralela.
+
+### 1.8. Compatibilidade com a primeira LP
+
+- A primeira LP e sua materialização existentes permanecem válidas sem backfill destrutivo.
+- Enquanto a primeira LP não possuir configuração específica própria, seu resolver pode usar os valores `campaign` e `landing_page` do agregado da E19.2 somente quando o `landing_page_id` vinculado corresponder exatamente à LP solicitada.
+- Quando a primeira LP for editada, duplicada ou usada como origem de nova variação, a configuração específica necessária é criada para o novo draft ou para a operação competente, sem rebind do agregado original.
+- Para novas LPs, a configuração específica é obrigatória antes da geração.
+- A resolução efetiva falha fechado diante de mistura entre contas, LP divergente, catálogo incompatível ou configuração específica ausente quando exigida.
+
+### 1.9. Objetivo explícito da LP
+
+- A E20.2 recebe uma nova versão preservando integralmente as versões anteriores.
+- A nova versão adiciona o field universal `landing_page_objective`.
+- O field possui:
+  - scope `landing_page`;
+  - origem esperada `landing_page_provided`;
+  - valor string não vazio;
+  - obrigação `required` para novas configurações por LP;
+  - ausência de substituição genérica por outro scope.
+- O objetivo é diferente de nome, slug, funil ou intenção transacional.
+- Exemplo de valor: `Ajudar pessoas que buscam o primeiro imóvel no Rio a compreender o processo e iniciar uma conversa pelo WhatsApp.`
+- O objetivo aparece na criação, configuração, lista e composição futura da LP.
+- A E19.3 passa a transportar esse objetivo como contexto factual e editorial autorizado da LP concreta.
+- A LP legada já materializada continua visualizável mesmo sem esse field; nova geração ou variação exige objetivo confirmado humanamente.
+
+### 1.10. Automação
+
+- Automação: **não** na E19.5.
+- O recorte não implementa assistente de IA, chat de dúvidas, agente, nova chamada OpenAI, mudança de prompt, modelo, reasoning effort ou workload.
+- A geração já implementada na E19.4 permanece boundary externo acionado por ação humana explícita.
+- A E19.5 apenas prepara a LP concreta e encaminha a ação ao boundary vigente; não redesenha o mecanismo geracional.
+- O Gestor de Automação não participa da avaliação deste plano enquanto a única fase permanecer `Automação: não`.
+
+### 1.11. Fontes usadas
 
 - `README.md`.
 - `docs/roadmap.md`.
@@ -22,319 +113,278 @@
 - `docs/lousa-plano-base-e19-4.md`.
 - `docs/schema.md`.
 - `supabase/migrations/20260807162417_e19_2_3_account_landing_page_onboarding_configuration.sql`.
-- implementação vigente de `app/a/[account]/` e `lib/lp-builder/`.
+- implementação vigente de `app/a/[account]/`, `lib/lp-builder/`, E20.2 e materialização E19.4.
 
-### 1.3. Contexto confirmado
+## 2. Contrato do caso
 
-- A E19.2 permanece responsável pelo primeiro onboarding pós-entitlement e pela configuração mínima necessária à primeira LP Starter.
-- A E20.2 continua sendo a fonte dos campos, escopos, tipos, obrigação, aplicabilidade e validação.
-- A primeira LP real comprovou o pipeline técnico de geração, materialização e preview, mas foi reprovada na avaliação humana de qualidade comercial, com nota aproximada de `2/10`.
-- O projeto precisa agora testar mudanças de modelo, prompt, perfil, composição e renderer sem destruir os resultados anteriores.
-- A superfície atual da conta não oferece workspace permanente, lista operacional de LPs nem acesso organizado às configurações por escopo.
-- No estado operacional vigente, `/a/[account]` resolve apenas a LP vinculada ao onboarding e entrega uma jornada focal dessa LP.
-- A leitura atual de drafts já pertence ao boundary `lib/lp-builder/`, mas é usada na conclusão do primeiro onboarding e retorna apenas `id`, conta, nome, slug e status.
-- A criação de LP `draft` já possui boundary server-side com gates de conta, membership e entitlement, nome obrigatório, slug seguro e unicidade por conta.
-- A persistência da E19.2 foi desenhada como um agregado 1:1 por conta para a primeira jornada e possui vínculo `landing_page_id` write-once; isso não resolve sozinho várias LPs com configurações próprias.
-- A materialização da E19.4 permanece 1:1 e write-once por LP; resultados anteriores não podem ser sobrescritos silenciosamente durante os testes.
+### 2.1. Fluxo lógico
 
-### 1.4. Decisão de automação
+#### 2.1.1. Gatilho
 
-- Automação: **não** no recorte E19.5.
-- A primeira entrega não implementa assistente de IA, chat de dúvidas, recomendação automática, agente, nova chamada OpenAI, alteração de prompt, modelo, reasoning effort ou workload.
-- A superfície pode encaminhar uma ação humana para o boundary de geração já implementado na E19.4, mas essa automação permanece contrato externo e não é redesenhada, detalhada ou ampliada pela E19.5.
-- A E19.5 organiza configurações, LPs e ações determinísticas do workspace; não cria automação própria.
-- O Gestor de Automação não participa da avaliação deste plano enquanto todas as fases permanecerem `Automação: não`.
-- Assistência futura por IA para dúvidas ou configuração exige recorte e decisão próprios, depois de comprovada a capacidade de gerar LPs com qualidade aceitável.
+- Conta operacional com onboarding inicial concluído.
+- Owner ou admin autenticado abre `/a/[account]`.
+- O usuário consulta configurações, cria uma LP, duplica uma configuração, inicia a primeira geração ou produz uma nova variação.
 
-## 2. Problema e resultado esperado
+#### 2.1.2. Entrada
 
-### 2.1. Problema
+- Contexto tenant-aware da conta e do ator.
+- Entitlement efetivo e `planKey`.
+- Taxon primário autoritativo.
+- Catálogo E20.2 resolvido por versão, taxon e plano.
+- Valores autoritativos existentes.
+- Defaults reutilizáveis da primeira jornada E19.2.
+- Configuração específica da LP, quando existente.
+- LPs legítimas da conta.
+- Materializações e snapshots existentes.
 
-- Depois do onboarding, a conta não possui uma área operacional adequada para administrar configurações e várias LPs.
-- Cada teste de qualidade exige hoje uma operação isolada, sem lista comparável de resultados.
-- Não existe ainda uma separação de UX suficientemente clara entre valores reutilizáveis e valores específicos de campanha ou LP.
-- O agregado atual da E19.2 mistura valores de diferentes escopos porque foi criado para a primeira jornada, e seu vínculo write-once não pode ser reutilizado como configuração de várias LPs.
-- A primeira materialização é write-once e não deve ser sobrescrita silenciosamente durante os experimentos.
-- O objetivo editorial/comercial específico da LP não possui hoje representação explícita suficiente para orientar e identificar os testes.
+#### 2.1.3. Processamento
 
-### 2.2. Resultado esperado
+- Resolver server-side a visão operacional completa da conta.
+- Agrupar configurações em:
+  - Conta;
+  - Negócio;
+  - Oferta;
+  - Campanha;
+  - Landing page;
+  - Integrações somente quando houver integração real configurável.
+- Listar todas as LPs da conta sem seleção silenciosa.
+- Derivar configuração efetiva por precedência:
+  - fonte autoritativa existente;
+  - default reutilizável válido;
+  - valor específico da LP ou override explicitamente autorizado.
+- Nunca usar nome de field, `purpose` ou semelhança textual para decidir precedência ou substituição.
+- Encaminhar geração somente para LP `draft`, configurada, pertencente à conta e ainda sem materialização.
 
-- Transformar `/a/[account]` em um workspace operacional simples para owner e admin elegíveis.
-- Preservar o onboarding inicial da E19.2 para a primeira LP.
-- Disponibilizar, depois da conclusão do onboarding, acesso organizado às configurações vigentes por escopo.
-- Exibir a lista de LPs da conta e seus estados relevantes.
-- Permitir produzir e preservar vários drafts para comparação humana durante os testes de qualidade.
-- Permitir repetir testes sem overwrite da LP materializada anterior.
-- Reutilizar o pipeline oficial do produto, sem laboratório paralelo, manipulação manual de banco ou fluxo especial para a conta piloto.
+#### 2.1.4. Validação
 
-## 3. Fronteira preliminar do recorte
+- Validar nome, slug, objetivo e pertencimento da LP.
+- Validar todos os valores presentes contra a versão aplicável da E20.2.
+- Impedir valor específico de uma LP em outra LP.
+- Impedir overwrite da materialização write-once.
+- Impedir rebind do agregado E19.2.
+- Configuração incompleta bloqueia somente a ação que dela depende e preserva os demais valores válidos.
+- Conflito de revisão exige recarga ou nova tentativa explícita, sem last-write-wins silencioso.
 
-### 3.1. Configurações pós-onboarding
+#### 2.1.5. Persistência
 
-- Organizar os valores realmente existentes por contexto compreensível para o cliente:
-  - conta;
-  - negócio;
-  - oferta;
-  - campanha;
-  - landing page;
-  - integrações somente quando houver integração real configurável.
-- Derivar a organização dos escopos vigentes da E20.2 e das fontes autoritativas existentes, sem criar lista paralela de campos.
-- Preservar a distinção entre:
-  - valores reutilizáveis de conta, negócio ou oferta;
-  - valores específicos de campanha ou landing page.
-- Não transformar os nomes técnicos dos scopes em linguagem obrigatória para o cliente.
-- Não substituir a primeira jornada guiada da E19.2 por um painel técnico gigante.
-- A primeira entrega apresenta somente categorias e campos que possuam fonte real no projeto.
+- Identidade e status permanecem em `public.account_landing_pages`.
+- Defaults da primeira jornada permanecem em `public.account_landing_page_onboarding_configurations`.
+- Configuração própria de cada nova LP reside em `public.account_landing_page_configurations`.
+- Conteúdo e snapshot permanecem em `public.account_landing_page_materializations`.
+- Não criar status persistido de geração quando o estado puder ser derivado dessas fontes.
+- Nova configuração, duplicação ou geração não copia conteúdo materializado nem snapshot da LP de origem.
 
-### 3.2. Workspace de LPs
+#### 2.1.6. Consumo
 
-- Exibir uma lista operacional de todas as LPs legítimas da conta, e não apenas a primeira LP vinculada ao onboarding.
-- Separar claramente:
-  - status da LP, inicialmente `draft`;
-  - estado derivado do conteúdo, como sem materialização, materializada ou inválida.
-- Colunas candidatas, ainda sujeitas ao fechamento do contrato:
+- O workspace consome identidade, configuração e materialização para apresentar o estado de cada LP.
+- A E19.3 e a E19.4 passam a consumir a configuração efetiva da LP concreta.
+- Os testes de qualidade usam esse mesmo fluxo oficial para produzir drafts comparáveis.
+- A comparação e a nota permanecem humanas e externas ao estado de domínio.
+
+#### 2.1.7. Fallback
+
+- Falha de leitura mantém estado indisponível explícito; não apresentar lista parcial como completa.
+- Falha ao criar configuração depois da identidade da LP deixa um draft legítimo, porém incompleto e não gerável, permitindo correção posterior.
+- Falha de duplicação ou geração não destrói a origem.
+- Conflito de slug exige correção humana.
+- Materialização existente bloqueia nova geração sobre a mesma LP.
+- Boundary de geração indisponível mantém o novo draft sem materialização.
+- Integração inexistente não produz categoria fictícia.
+
+### 2.2. Workspace principal
+
+- `/a/[account]` passa a parecer um workspace operacional, não a continuação do onboarding.
+- A home contém:
+  - resumo da conta e do plano efetivo;
+  - atalhos para categorias de configuração existentes;
+  - lista operacional de LPs;
+  - ação para nova LP.
+- A lista apresenta, no mínimo:
   - nome;
   - status da LP;
-  - estado derivado da geração/materialização;
+  - estado derivado da configuração e da materialização;
   - slug;
   - objetivo;
   - funil;
   - data de criação ou materialização;
   - ações disponíveis.
-- Ações candidatas, ainda sujeitas ao fechamento do contrato:
-  - abrir preview;
-  - abrir configurações;
-  - criar nova LP;
-  - duplicar configuração para teste;
-  - gerar uma LP ainda não materializada;
-  - regenerar preservando o resultado anterior.
-- Estado derivado não deve criar coluna ou status novo quando puder ser comprovado pela identidade da LP, sua configuração e sua materialização existentes.
+- Estado derivado distingue, sem nova coluna:
+  - configuração incompleta;
+  - pronta para gerar;
+  - materializada;
+  - conteúdo inválido ou versão não suportada.
+- Desktop pode usar tabela responsiva.
+- Mobile deve preservar compreensão por cards ou composição equivalente, sem depender de scroll horizontal.
 
-### 3.3. Laboratório de drafts
+### 2.3. Área Configurações
 
-- Durante a fase de validação de qualidade, não aplicar limite local inventado para a quantidade de drafts.
-- Limites comerciais futuros continuam sob a E9.7 quando houver capability e integração canônicas.
-- Cada alteração de modelo, prompt, E18.5, E20.3 ou renderer deve poder produzir um novo resultado comparável.
-- A hipótese preferencial continua sendo que regeneração produza outro draft, sem overwrite da LP materializada anterior.
-- Comparação humana entre previews é suficiente nesta primeira entrega; não criar engine automática de experimentos.
-- A E19.5 não escolhe modelo, prompt, profile ou renderer pelo workspace; ela apenas preserva resultados produzidos pelas configurações canônicas vigentes em cada tentativa.
+- A home não exibe um formulário gigante.
+- Cada categoria abre uma superfície focal com os fields realmente existentes naquele contexto.
+- `account`, `business` e `offer` são apresentados como configurações reutilizáveis.
+- `campaign` e `landing_page` exigem seleção explícita da LP concreta.
+- Integrações só aparecem quando houver contrato e configuração reais no projeto.
+- Valor autoritativo pode aparecer como somente leitura quando o domínio responsável não autorizar edição pela E19.5.
+- Salvar preserva os demais valores válidos e devolve erro junto do field afetado.
 
-## 4. Fluxo operacional do item 2
+### 2.4. Semântica das ações
 
-### 4.1. Gatilho
+#### 2.4.1. Nova LP
 
-- Conta `active`.
-- Entitlement comercial válido.
-- Membership `active` com papel `owner` ou `admin`.
-- Onboarding inicial da E19.2 concluído.
-- Acesso humano ao workspace autenticado da conta.
+- Solicita nome, slug, `landing_page_objective` e os valores específicos aplicáveis.
+- Reutiliza defaults vigentes de conta, negócio e oferta sem copiá-los como overrides proibidos.
+- Cria a identidade `draft` pelo boundary da E19.1.
+- Cria a configuração específica da LP.
+- Não inicia geração automaticamente.
+- Se a segunda escrita falhar, o draft permanece incompleto e não gerável; a UI não anuncia conclusão integral falsa.
 
-### 4.2. Entrada
+#### 2.4.2. Duplicar configuração
 
-- Contexto tenant-aware da conta e do ator autenticado.
-- Entitlement efetivo e `planKey` vigente.
-- Taxon primário autoritativo.
-- Catálogo E20.2 resolvido para o taxon e plano.
-- Configuração vigente da primeira jornada E19.2.
-- Valores autoritativos já existentes.
-- LPs legítimas da conta.
-- Materializações existentes e estados deriváveis.
-- Configurações reutilizáveis e configurações específicas de LP/campanha, quando sua residência estiver definida.
+- Cria nova identidade `draft` com nome e slug confirmados humanamente.
+- Copia somente os valores específicos de `campaign`, `landing_page` e overrides permitidos da origem.
+- Exige revisão do objetivo e dos valores copiados antes de gerar.
+- Não copia conteúdo, snapshot, estado materializado ou resposta do provider.
+- A LP de origem permanece intacta.
 
-### 4.3. Processamento
+#### 2.4.3. Gerar
 
-- Resolver server-side o estado operacional da conta.
-- Exibir uma visão principal com:
-  - atalhos para configurações por categoria;
-  - lista operacional de LPs;
-  - estado derivado de cada LP;
-  - ações compatíveis com o estado atual.
-- Resolver os campos da área Configurações a partir da E20.2 e das fontes autoritativas, agrupando-os por escopo sem duplicar o catálogo.
-- Ao criar uma nova LP:
-  - solicitar identidade mínima, objetivo e valores específicos necessários;
-  - reutilizar explicitamente valores aplicáveis da conta, negócio e oferta;
-  - criar a identidade `draft` pelo boundary vigente da E19.1;
-  - não gerar conteúdo automaticamente.
-- Ao duplicar para teste:
-  - criar outra identidade `draft`;
-  - copiar somente os valores autorizados pelo contrato de duplicação;
-  - manter a LP de origem intacta;
-  - não copiar materialização como se fosse nova geração.
-- Ao gerar uma LP ainda não materializada:
-  - exigir ação humana explícita;
-  - encaminhar ao boundary vigente da E19.4;
-  - preservar falha sem materialização parcial.
-- Ao regenerar para comparação:
-  - a proposta atual é criar outro draft derivado;
-  - reutilizar a configuração autorizada da LP de origem;
-  - encaminhar uma nova ação humana ao boundary existente de geração;
-  - preservar integralmente a LP e a materialização de origem.
+- Disponível somente para draft configurado e sem materialização.
+- Exige ação humana explícita.
+- Reutiliza o boundary vigente da E19.4.
+- Falha preserva o draft sem conteúdo e permite nova tentativa humana.
 
-### 4.4. Validação
+#### 2.4.4. Gerar nova variação
 
-- Revalidar conta, membership e entitlement em toda ação mutável.
-- Derivar `accountId` e ator server-side.
-- Validar nome, slug e pertencimento da LP à conta.
-- Validar os valores presentes contra o catálogo E20.2, seus escopos, tipos, obrigação, aplicabilidade e políticas de substituição.
-- Impedir que valor específico de uma LP seja aplicado silenciosamente a outra.
-- Impedir mistura entre contas.
-- Impedir overwrite ou rebind do agregado atual da primeira jornada.
-- Impedir overwrite da materialização write-once.
-- Não inventar capability comercial nem limite local de drafts.
-- Não considerar configuração incompleta como pronta para a ação que depende dela.
+- Substitui o termo ambíguo `Regenerar` na primeira entrega.
+- Cria outro draft derivado da configuração autorizada da origem.
+- Exige nome, slug e objetivo confirmados.
+- Usa os defaults reutilizáveis vigentes e a configuração canônica atual do pipeline.
+- Depois da configuração válida, aciona uma nova geração humana pelo boundary da E19.4.
+- Falha de geração preserva o novo draft sem materialização.
+- Nunca sobrescreve a LP de origem.
 
-### 4.5. Persistência
+### 2.5. Metadados mínimos de comparação
 
-- A identidade e o status da LP continuam em `public.account_landing_pages`.
-- A existência e o estado próprio do conteúdo continuam em `public.account_landing_page_materializations`.
-- O agregado atual `public.account_landing_page_onboarding_configurations` permanece preservado como registro da primeira jornada por conta e não pode ser rebindado para outra LP.
-- O contrato lógico precisa distinguir:
-  - valores reutilizáveis de conta, negócio e oferta;
-  - valores específicos de campanha e landing page vinculados a uma LP concreta.
-- A residência física da configuração específica por LP ainda não está definida.
-- Nova tabela, coluna, migration ou mudança do agregado atual só pode entrar depois de inspeção focal do schema e escolha da menor residência segura.
-- A lista e os estados derivados não criam persistência nova por si só.
-- Duplicação ou regeneração não copiam conteúdo materializado nem snapshot da LP de origem.
+- O workspace não cria engine de experimentos, mas deve permitir identificar com qual configuração cada nova geração foi produzida.
+- Novas materializações preservam no snapshot metadados seguros de geração:
+  - workload;
+  - revisão do workload;
+  - modelo;
+  - reasoning effort;
+  - revisão explícita do prompt.
+- O snapshot continua preservando versões de perfil, pesquisa, raiz e catálogos já aplicáveis.
+- Não persistir prompt integral, resposta bruta, raciocínio, PII, secret ou `safety_identifier`.
+- A primeira LP legada pode exibir `não registrado` para metadados ainda ausentes; não realizar backfill inventado.
+- Experimentos futuros de renderer devem preservar compatibilidade por versão de conteúdo/renderer; a E19.5 não cria renderer novo nem altera visual da LP.
 
-### 4.6. Consumo
+### 2.6. Frontend, UX e evidências
 
-- Owner e admin usam o workspace para:
-  - consultar configurações;
-  - administrar várias LPs;
-  - criar drafts;
-  - abrir previews;
-  - produzir resultados comparáveis por ação humana.
-- A E19.3 e a E19.4 consomem a configuração efetiva da LP concreta, depois que o contrato por LP estiver disponível.
-- Os testes de modelo, prompt, perfil, módulos e renderer reutilizam esse mesmo fluxo oficial.
-- A comparação permanece humana e externa ao estado de domínio nesta entrega.
-
-### 4.7. Fallback
-
-- Falha de leitura preserva estado explícito, sem apresentar lista parcial como completa.
-- Falha de criação, duplicação ou geração não destrói drafts anteriores.
-- Conflito de slug solicita correção explícita.
-- Configuração incompleta bloqueia somente a ação que dela depende e preserva os demais valores válidos.
-- LP ou configuração de outra conta falha fechado.
-- Materialização já existente não é sobrescrita.
-- Integração inexistente não produz área ou configuração fictícia.
-- Boundary externo de geração indisponível mantém o draft sem nova materialização.
-
-### 4.8. Contrato de frontend e evidências
-
-- A página principal deve parecer um workspace operacional, não a continuação do formulário de onboarding.
-- Configurações aparecem por categorias claras e com acesso focal, sem formulário gigante na home.
-- Em desktop, a lista pode usar tabela responsiva; em mobile, deve preservar compreensão por cards ou outra composição equivalente sem scroll horizontal obrigatório.
-- Nome, status, slug, objetivo, funil, estado de geração e ações devem permanecer legíveis e distinguíveis.
-- Ações mutáveis devem ter pending visível, impedir duplo clique acidental e devolver sucesso ou erro junto do contexto afetado.
-- Foco deve avançar de forma previsível após criação, erro ou navegação.
-- Estados vazio, carregando, indisponível, incompleto, sem materialização, materializado e inválido devem ser compreensíveis sem jargão interno.
-- Evidência futura deve cobrir:
+- A experiência deve ser clara para usuário não técnico.
+- Pending visível impede duplo clique acidental em ações mutáveis.
+- Sucesso e erro aparecem junto do contexto afetado.
+- Foco avança de forma previsível após criação, erro ou navegação.
+- Estados vazio, indisponível, incompleto, pronto, materializado e inválido são compreensíveis sem jargão interno.
+- Evidências futuras obrigatórias:
   - desktop em 1280 px;
   - tablet em 768 px;
   - mobile em 360 px;
   - teclado e foco visível;
   - ausência de truncamento e overflow indevido;
-  - criação e preservação de mais de um draft;
-  - separação visual entre configurações reutilizáveis e específicas;
-  - abertura do preview correto para cada LP.
+  - categorias de configuração compreensíveis;
+  - criação e preservação de pelo menos três drafts na mesma conta;
+  - duplicação sem copiar materialização;
+  - nova variação sem overwrite da origem;
+  - abertura do preview correto para cada LP;
+  - exibição coerente de objetivo, funil e metadados disponíveis.
 
-## 5. Decisões já aceitas
+### 2.7. Riscos e dependências
 
-### 5.1. Preservação da E19.2
+- O agregado legado da E19.2 não pode ser reinterpretado como configuração genérica de todas as LPs.
+- A nova versão da E20.2 deve preservar as versões anteriores e não reclassificar silenciosamente valores persistidos.
+- A E19.3 deve resolver configuração por LP sem criar fallback aproximado ou mistura de fontes.
+- A E19.4 deve aceitar a configuração específica e registrar metadados seguros sem mudar seu mecanismo geracional.
+- LP materializada permanece independente de defaults e configurações futuras.
+- Limites de drafts continuam dependentes de futura admissão e integração da E9.7.
 
-- O primeiro onboarding permanece vigente.
-- A área posterior de Configurações é evolução do contrato da E19.2 e consome os escopos da E20.2.
-- A E19.2 não passa a ser dona da lista operacional de LPs nem do laboratório de drafts.
-- O agregado write-once da primeira jornada não será rebindado ou usado como configuração mutável de várias LPs.
+## 3. Fases e próxima ação
 
-### 5.2. Novo recorte funcional
+### 3.1. E19.5.3 — Workspace operacional, configuração por LP e laboratório de drafts
 
-- Configurações pós-onboarding, lista de LPs, múltiplos drafts e testes repetidos formam um novo resultado operacional.
-- O identificador adotado durante o debate é E19.5.
-- A implementação deve reutilizar preferencialmente arquivos, boundaries e contratos existentes; novo recorte não significa nova infraestrutura por padrão.
+- Automação: não.
+- Objetivo:
+  - implementar integralmente o workspace da conta, a configuração específica por LP e as ações determinísticas necessárias para produzir e preservar múltiplos drafts comparáveis.
+- Entrega mínima:
+  - nova versão E20.2 com `landing_page_objective`;
+  - agregado 1:1 de configuração específica por LP;
+  - resolução efetiva compatível com a primeira LP legada;
+  - home operacional com categorias de configuração e lista de LPs;
+  - superfícies focais de configuração reutilizável e específica;
+  - ações Nova LP, Duplicar configuração, Gerar e Gerar nova variação;
+  - integração com os boundaries E19.1, E19.3 e E19.4 existentes;
+  - metadados seguros de geração para comparação humana;
+  - validações de banco, boundary, UI e fluxo hospedado.
+- Limites:
+  - sem IA própria;
+  - sem mudança de modelo, prompt, effort ou workload;
+  - sem overwrite, rebind ou cópia de materialização;
+  - sem limite local de drafts;
+  - sem editor, publicação, tracking ou engine de experimentos.
+- Critérios de aceite:
+  - onboarding inicial da E19.2 continua funcional e não é substituído;
+  - owner/admin autorizado acessa o workspace depois da conclusão;
+  - configurações são agrupadas a partir da E20.2, sem lista paralela;
+  - nova LP nasce com configuração própria e objetivo obrigatório;
+  - primeira LP legada permanece visualizável e compatível;
+  - três ou mais drafts legítimos podem coexistir na mesma conta;
+  - duplicação não copia conteúdo nem snapshot;
+  - nova variação preserva integralmente a origem;
+  - LP materializada não pode ser gerada novamente pela mesma identidade;
+  - estados e ações são derivados e tenant-safe;
+  - snapshot novo registra metadados seguros de comparação;
+  - verificadores SQL read-only, casos executáveis e `npm run check` aprovam o contrato;
+  - Preview hospedado aprova desktop, tablet, mobile, teclado, foco e fluxos humanos previstos;
+  - Prompt ABC reconcilia somente os documentos canônicos materialmente afetados.
 
-### 5.3. Prioridade atual
+### 3.2. Próxima ação
 
-- A prioridade é criar a superfície que permita testar iterativamente a qualidade final do produto.
-- Publicação, tracking e expansão comercial não avançam antes de o processo produzir LPs com qualidade aceitável.
+- Ajustar `docs/roadmap.md` no mesmo PR #726 conforme `docs/prompt-abc.md` e `docs/template-roadmap.md`:
+  - registrar E19.5 como planejada;
+  - registrar E19.5.3 com título, objetivo e status planejado;
+  - não antecipar banco, arquivos, evidências ou implementação ainda inexistentes.
+- Depois da reconciliação do roadmap, apresentar ao humano as opções do item 4 de `docs/prompt-estrategista.md`:
+  - Processo atual;
+  - Processo automatizado após o merge da v1.
 
-### 5.4. Ausência de automação própria
+## 4. Escopo negativo e critérios de parada
 
-- Todas as fases da E19.5 serão planejadas inicialmente como `Automação: não`.
-- Não haverá Gestor de Automação neste recorte.
-- A geração com IA já existente na E19.4 permanece dependência externa acionada pelo humano, sem alteração funcional dentro da E19.5.
-
-### 5.5. Invariantes operacionais
-
-- Várias LPs da mesma conta devem ser listadas sem seleção silenciosa.
-- Estado de conteúdo deve ser derivado quando possível, sem status paralelo.
-- Nenhum teste pode destruir ou sobrescrever um resultado anterior.
-- Não existe limite local de drafts enquanto a E9.7 não admitir e integrar essa capacidade.
-- Conta piloto e clientes usam o mesmo workspace e os mesmos boundaries.
-
-## 6. Questões abertas indispensáveis
-
-### 6.1. Propriedade e residência física das configurações
-
-- A divisão lógica está encaminhada:
-  - conta, negócio e oferta funcionam como valores reutilizáveis;
-  - campanha e landing page pertencem à LP concreta.
-- Ainda precisa ser fechado:
-  - qual é a menor residência física segura para a configuração específica por LP;
-  - como preservar a primeira LP já vinculada ao agregado E19.2 sem backfill ou rebind inseguro;
-  - como editar valores reutilizáveis sem alterar silenciosamente LPs já materializadas.
-
-### 6.2. Objetivo da LP
-
-- Qual contrato deve representar explicitamente o objetivo editorial/comercial da LP, como `compra do primeiro imóvel no Rio`?
-- A proposta atual é tratá-lo como input específico de `landing_page`, separado do nome e do slug, mas isso ainda depende de decisão humana e alinhamento com a E20.2.
-- É preciso definir como o objetivo aparece em criação, duplicação, lista e contexto futuro de geração.
-
-### 6.3. Semântica das ações
-
-- O que exatamente é copiado ao criar nova LP, duplicar ou regenerar?
-- A proposta atual é:
-  - nova LP: reutiliza defaults, mas exige confirmação dos valores específicos;
-  - duplicação: copia configuração específica autorizada, sem conteúdo materializado;
-  - regeneração: cria novo draft derivado e inicia nova geração humana, preservando a origem.
-- Essa semântica ainda precisa de aprovação humana antes de se tornar decisão fixa.
-- Quais metadados precisam ficar visíveis para comparar modelo, effort, prompt, perfil e versões estruturais sem criar engine de experimentos?
-
-### 6.4. Fases executáveis
-
-- Ainda não fechar as fases antes de resolver a residência por LP, o objetivo e a semântica definitiva das ações.
-- A v1 deve evitar esconder implementações autônomas em uma única fase.
-- Todas as fases deverão registrar `Automação: não`.
-
-## 7. Escopo negativo preliminar
+### 4.1. Fora da E19.5
 
 - Assistente de IA ou chat de dúvidas.
 - Nova automação OpenAI.
-- Mudança de modelo, prompt, reasoning effort ou workload.
-- Editor visual.
-- Edição manual do conteúdo materializado.
-- Publicação pública.
-- Domínio customizado.
-- Tracking ou analytics.
+- Alteração de modelo, prompt, reasoning effort ou workload.
+- Editor visual ou edição do conteúdo materializado.
+- Publicação pública ou domínio customizado.
+- Tracking, analytics ou CRM.
 - Teste A/B automático.
-- Engine de experimentos.
-- Ranking automático de LPs.
+- Engine de experimentos, ranking ou escolha automática de LP.
 - Tabela de notas ou workflow de aprovação.
 - Histórico de versões dentro da mesma LP.
-- Rollback.
-- Agente autônomo.
-- Job, fila, cron ou webhook novo.
+- Rollback de conteúdo.
+- Comparação visual automatizada.
+- Agente, job, fila, cron ou webhook novo.
 - Limite comercial de drafts inventado localmente.
+- Catálogo de várias ofertas, produtos ou serviços.
+- Área de integração sem integração real no projeto.
 
-## 8. Próximo ponto do debate
+### 4.2. Critérios de parada
 
-- Fechar o primeiro gate do item 2: contrato lógico de configuração para múltiplas LPs.
-- Proposta para decisão humana:
-  - preservar o agregado E19.2 como bootstrap da primeira jornada;
-  - tratar conta, negócio e oferta como defaults reutilizáveis;
-  - criar configuração específica por LP para campanha, objetivo, funil, intenção e conversão;
-  - não reler defaults mutáveis para alterar LP materializada;
-  - nova LP confirma valores específicos;
-  - duplicação copia somente configuração autorizada;
-  - regeneração cria novo draft e preserva a origem.
-- Depois dessa decisão, investigar a menor residência física contra o schema real e fechar as fases executáveis antes da consolidação da v1.
+- Parar e devolver ao Estrategista se a implementação exigir:
+  - rebind ou alteração destrutiva do agregado E19.2;
+  - overwrite de materialização existente;
+  - duplicação de catálogo ou regra por nome de field;
+  - capability ou limite comercial não admitido;
+  - engine de versões ou experimentos para cumprir o fluxo básico;
+  - mudança funcional da geração com IA;
+  - publicação, tracking, editor ou outra ampliação de escopo;
+  - nova infraestrutura sem consumidor indispensável.
+- A E19.5 termina quando a conta consegue organizar configurações, listar suas LPs e produzir múltiplos drafts preservados para comparação humana pelo fluxo oficial.
+- Concluir a E19.5 não valida a qualidade da geração, não aprova nenhuma LP para publicação e não modifica automaticamente E18.4, E18.5, E20.3, modelo ou prompt.
