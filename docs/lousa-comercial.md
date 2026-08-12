@@ -3,9 +3,9 @@
 0.1. Cabeçalho
 
 - Documento: Lousa Comercial — LP Factory 10
-- Versão: v1.1
-- Data: 11/08/2026
-- Status: em construção e operacionalização inicial
+- Versão: v1.2
+- Data: 12/08/2026
+- Status: em construção; fluxo de publicação assistida validado parcialmente
 - Escopo: registrar definições, configurações, implementações, aprendizados e tendências futuras da frente comercial e editorial do LP Factory 10.
 
 0.2. Função do documento
@@ -20,6 +20,7 @@ Ela não substitui os documentos técnicos do projeto. Quando uma decisão comer
 - `docs/automations.md` — referência de automações e integrações operacionais.
 - Discussões deste chat sobre autoridade, conteúdo, Instagram, Metricool e automação editorial.
 - Telas de configuração e autorização enviadas em 11/08/2026.
+- Resultado do teste controlado de mídia e agendamento realizado em 12/08/2026.
 
 1. Plugin e conector Metricool
 
@@ -32,8 +33,9 @@ Ela não substitui os documentos técnicos do projeto. Quando uma decisão comer
 - Instagram conectado: `a2afonso`.
 - Tipo do Instagram: conta profissional.
 - Escopo atual: somente o Instagram `a2afonso` foi conectado para o experimento inicial.
-- Não houve publicação, agendamento ou alteração editorial realizada até este marco.
-- A conexão foi confirmada, mas ainda falta repetir o teste de leitura no ChatGPT depois da vinculação do Instagram para confirmar que o perfil é retornado pelo conector.
+- Teste controlado de agendamento realizado em 12/08/2026, com uma imagem e legenda, para o Instagram `a2afonso`.
+- O conector retornou a marca `a2afonso`, o `blog_id` `6708365` e o fuso `America/Sao_Paulo`.
+- A criação do agendamento foi confirmada; a publicação efetiva no Instagram permanece pendente de verificação após o horário programado.
 
 1.2. Capacidades expostas ou documentadas para o conector
 
@@ -48,7 +50,8 @@ Ela não substitui os documentos técnicos do projeto. Quando uma decisão comer
 1.3. Limites do que está confirmado
 
 - A conexão do aplicativo com o ChatGPT e a vinculação do Instagram ao Metricool foram confirmadas pelas telas apresentadas.
-- A publicação efetiva no Instagram ainda depende de teste controlado e aprovação explícita.
+- A criação de um agendamento com uma imagem foi confirmada em teste controlado, mediante aprovação explícita.
+- A publicação efetiva no Instagram ainda não foi confirmada; o teste validou o agendamento e o recebimento da mídia pelo Metricool.
 - O suporte efetivo a carrosséis pelo fluxo conectado ao ChatGPT ainda depende de teste.
 - A leitura ou resposta de mensagens diretas, a moderação de comentários e a operação da Inbox do Instagram não devem ser tratadas como disponíveis no ChatGPT sem confirmação específica do conector.
 - A autorização técnica do aplicativo não equivale à autorização comercial para publicar conteúdo.
@@ -57,6 +60,7 @@ Ela não substitui os documentos técnicos do projeto. Quando uma decisão comer
 
 - Criar o conteúdo no ChatGPT.
 - Revisar texto, imagens, ordem dos cards, legenda, perfil, data e horário.
+- Garantir que cada mídia esteja disponível em uma URL HTTPS pública antes de solicitar o agendamento.
 - Solicitar explicitamente a criação ou atualização do agendamento no Metricool.
 - Validar o conteúdo agendado antes da publicação.
 - Deixar o Metricool executar a publicação agendada, quando o fluxo estiver confirmado e aprovado.
@@ -68,6 +72,21 @@ Ela não substitui os documentos técnicos do projeto. Quando uma decisão comer
 - A aprovação deve identificar, no mínimo, perfil, conteúdo, formato, data e horário.
 - Para a primeira publicação, a aprovação deve ser específica para o teste e não autoriza conteúdos futuros.
 - A configuração de permissões de baixo risco do ChatGPT não substitui essa regra humana.
+
+
+1.6. Aprendizado operacional confirmado — teste de 12/08/2026
+
+- A imagem criada no ChatGPT foi colocada na branch pública `social-media-assets`, usando o path `media/comercial/lp-factory/instagram/2026/08/2026-08-12-teste-integracao-metricool/v01/teste-integracao-lp-factory-metricool.jpg`.
+- O PNG original foi convertido para JPEG de alta qualidade para reduzir o tamanho da transferência, preservando a mesma arte visual.
+- A URL foi fixada no SHA do commit, respondeu com HTTP 200 e entregou `content-type: image/jpeg`.
+- O Metricool aceitou a URL pública, baixou a mídia e retornou uma cópia hospedada em seu próprio domínio de mídia.
+- A primeira chamada sem legenda falhou porque o conector exigiu o campo `text`, mesmo para uma publicação com uma única imagem.
+- A segunda chamada, com a legenda `Teste de integração LP Factory 10 × Metricool.`, foi aceita.
+- Uma tentativa com horário já passado falhou; o agendamento só foi aceito quando a data e o horário estavam no futuro, no fuso `America/Sao_Paulo`.
+- Resultado confirmado: publicação ID `361407986`, Instagram `a2afonso`, horário `12/08/2026 17:30`, status `Pending`, `autoPublish: true` e uma mídia anexada.
+- Conclusão: o fluxo ChatGPT Work → URL pública do asset → Metricool → agendamento funciona para uma publicação simples com uma imagem.
+- A publicação efetiva no Instagram e o suporte a carrossel ainda precisam de confirmação separada.
+- A branch pública do GitHub deve ser tratada como ponte para assets públicos do próprio LP Factory, não como armazenamento definitivo de imagens privadas ou multi-tenant de clientes.
 
 2. Configurações
 
@@ -167,8 +186,8 @@ Ela não substitui os documentos técnicos do projeto. Quando uma decisão comer
 
 4.4. Condicionais e pendências
 
-- Confirmar o retorno do Instagram no teste de leitura do conector.
-- Confirmar criação de agendamento sem publicação imediata.
+- [Concluído] Confirmar o retorno do Instagram no teste de leitura do conector.
+- [Concluído] Confirmar criação de agendamento sem publicação imediata.
 - Confirmar publicação efetiva no Instagram por meio do Metricool.
 - Confirmar suporte a carrosséis no fluxo conectado ao ChatGPT.
 - Confirmar se publicação imediata, comentários, mensagens diretas e Inbox estão expostos pelo conector.
