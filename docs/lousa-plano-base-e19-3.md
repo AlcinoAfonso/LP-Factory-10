@@ -1,18 +1,19 @@
-12/08/2026 — Plano-base v1 — E19.3 — Pacote autorizado para geração no Cenário D
+12/08/2026 — Plano-base v2 — E19.3 — Pacote autorizado para geração no Cenário D
 
 ## 1. Estado e decisões fixas
 
 ### 1.1. Estado
 
-- Status: plano-base v1 consolidado.
+- Status: plano-base v2 consolidado para o gate do Analista.
 - Recorte: `E19.3 — Pacote autorizado para geração no Cenário D`.
 - Path canônico: `docs/lousa-plano-base-e19-3.md`.
 - Processo: `docs/prompt-estrategista.md` v29.
 - Plano conceitual: `docs/lp-planejamento.md`.
 - Os Gates 1, 2 e 3 do novo debate foram encerrados em 12/08/2026.
 - Decisão humana: testar o Cenário D controlado; para essa prova, E18.5 vigente e E20.3 deixam de ser dependências obrigatórias da geração.
+- Decisão humana de transição em 12/08/2026: retirar temporariamente o caminho E19.4 vigente que depende do contrato `partA + partB`, sem compatibilidade paralela, e replanejar a E19.4 depois da prova do Cenário D.
 - O plano-base v2 anterior permanece apenas como histórico do desenho substituído, no qual a E19.3 selecionava composição, módulos, variantes, ordem e contexto editorial antes da geração.
-- O recorte sucessor coordenado pelo mesmo Estrategista é `E19.4 — Geração e materialização da landing page em draft`, que definirá candidata, Structured Output, contrato estrutural único, validação pós-IA, materialização e renderer.
+- O recorte sucessor coordenado pelo mesmo Estrategista continua sendo `E19.4 — Geração e materialização da landing page em draft`; sua implementação vigente será retirada da superfície canônica neste recorte porque consome o contrato substituído, e o novo plano definirá candidata, Structured Output, contrato estrutural único, validação pós-IA, materialização e renderer sobre o pacote v2.
 
 ### 1.2. Objetivo e resultado esperado
 
@@ -20,7 +21,8 @@
 - A E19.3 deixa de montar previamente a LP.
 - A E19.3 não escolhe módulos, variantes, ordem, função narrativa, seção, layout, intensidade comercial ou fontes concretas por decisão editorial.
 - A E19.3 não usa `copySourceMap`, `prioritizedSources`, `funnelCopyProfiles`, `ctaMode`, `generationGuidance`, `itemGuidance` ou recomendações da E20.3 para filtrar ou montar a futura LP.
-- O resultado de sucesso é um pacote versionado, tipado e profundamente imutável consumido diretamente pela E19.4.
+- O resultado de sucesso é um pacote versionado, tipado e profundamente imutável que será consumido diretamente pela E19.4 replanejada.
+- Até o novo plano da E19.4, nenhum caminho de geração, materialização ou preview pode consumir o pacote nem permanecer alcançável por export público, Server Action, rota ou jornada de conta.
 - A E19.3 não chama OpenAI, não gera copy, não materializa conteúdo e não renderiza a landing page.
 
 ### 1.3. Fontes obrigatórias
@@ -55,6 +57,7 @@
 - E18.5 fica fora do caminho canônico da prova do Cenário D; não participa da seleção editorial, filtragem de pesquisa ou composição. Seus ativos estruturais permanecem preservados no repositório para avaliação posterior.
 - E20.3 fica fora do caminho canônico da prova do Cenário D; ausência de perfil ativo não bloqueia a nova E19.3.
 - A E19.3 permanece no boundary existente `lib/lp-builder/`; não criar novo domínio, rota, UI, persistência, banco, engine ou infraestrutura neste recorte.
+- A retirada temporária da E19.4 alcança todos os artefatos runtime cujo único papel depende do contrato `partA + partB`: consumidores, exports, contratos, implementações, adapters, Server Action, componentes, rota, workload, scripts e validadores. Esses artefatos devem ser removidos no mesmo recorte, sem alias, fallback, feature flag, export privado ou código dormente. Preservam-se somente a migration, o teste SQL e o snippet versionados da materialização, sem rollback, edição de migration aplicada, consumidor runtime ou nova mutação remota.
 
 ### 1.5. Decisões consolidadas dos Gates
 
@@ -101,11 +104,13 @@
   - validar a saída e devolvê-la profundamente imutável.
 - Validação:
   - falhar fechado para LP/configuração inválida, pesquisa `end_customer` indisponível ou inválida, catálogo/valores incompatíveis, fato obrigatório ausente ou outra inconsistência comprovável pelas autoridades responsáveis.
+  - resolver e validar o entitlement exclusivamente pelo boundary interno vigente da E9; plano, assinatura, feature ou resposta externa da Stripe não liberam acesso nem substituem o sinal interno.
 - Persistência:
   - nenhuma nova.
 - Consumo:
-  - a saída de sucesso é a única entrada de domínio da futura E19.4;
-  - a E19.4 não deve reler E18.5 ou E20.3 para decidir narrativa, composição ou pesquisa.
+  - a saída de sucesso é a única entrada de domínio da E19.4 replanejada;
+  - até esse replanejamento, não existe consumidor runtime autorizado do pacote;
+  - a E19.4 replanejada não deve reler E18.5 ou E20.3 para decidir narrativa, composição ou pesquisa.
 - Fallback:
   - somente fallbacks já autorizados pelas fontes responsáveis;
   - sem heurística, mapa editorial, seleção por `itemKey`, default silencioso ou reconstrução de perfil.
@@ -207,6 +212,7 @@
 
 ### 2.6. Interface lógica de saída
 
+- Por substituir de forma incompatível o contrato público vigente `partA + partB`, o pacote `identities + modelContext + serverContext` usa `contractVersion: 2`. É proibido reutilizar `contractVersion: 1`, manter alias ou fallback para a shape anterior ou conservar um DTO público paralelo.
 - O sucesso contém exatamente três blocos lógicos.
 - `identities` preserva:
   - versão do contrato E19.3;
@@ -238,10 +244,10 @@
   - `brand_logo_asset` quando existente;
   - `brand_color_palette`;
   - metadados canônicos necessários ao uso determinístico desses valores.
-- `serverContext` significa que o valor bruto não é matéria-prima textual para a IA; a E19.4 recebe o pacote inteiro e pode usar esses valores deterministicamente.
+- `serverContext` significa que o valor bruto não é matéria-prima textual para a IA; a E19.4 replanejada receberá o pacote inteiro e poderá usar esses valores deterministicamente.
 - A E19.3 expõe um único resultado TypeScript discriminado entre sucesso completo e falha explícita.
-- A saída possui versão própria de contrato e é profundamente imutável.
-- A E19.4 consome essa saída diretamente, sem criar segundo pacote de domínio intermediário.
+- A saída usa `contractVersion: 2` e é profundamente imutável.
+- A E19.4 replanejada consumirá essa saída diretamente, sem criar segundo pacote de domínio intermediário.
 - Serialização específica para o provider pertence ao transporte da E19.4 e não constitui novo contrato de domínio.
 
 ### 2.7. Simplificação obrigatória
@@ -280,14 +286,15 @@
   - substituir a composição determinística anterior por um compilador de contexto autorizado que implemente integralmente o contrato da seção 2.
 - Entregas:
   - manter a residência no boundary `lib/lp-builder/`;
-  - substituir o contrato público anterior pelo pacote `identities + modelContext + serverContext` com versão própria;
+  - substituir o contrato público anterior pelo pacote `identities + modelContext + serverContext` com `contractVersion: 2`;
   - retirar E18.5 e E20.3 do caminho canônico da compilação da E19.3;
   - remover da E19.3 seleção de módulos, variantes, ordem, `copySourceMap`, `prioritizedSources`, `funnelCopyProfiles`, `ctaMode`, `generationGuidance`, `itemGuidance` e gate de perfil ativo;
   - reutilizar a resolução E10.8 sem reimplementar herança ou integridade;
   - reutilizar a configuração resolvida E19.2 e o catálogo E20.2 sem segundo catálogo de binding;
   - projetar a E18.4 apenas no subconjunto definido neste plano;
   - preservar logging seguro já vigente sem nova infraestrutura;
-  - exportar o único contrato público necessário à futura E19.4.
+  - exportar o único contrato público necessário à E19.4 replanejada;
+  - remover integralmente os contratos, implementações, adapters e casos executáveis vigentes de geração, candidata, materialização e preview E19.4; remover seus imports, exports e chamadas em `app/a/[account]/page.tsx`, nos índices públicos, no registry de workloads OpenAI e em `package.json`; remover também a Server Action, os componentes e a rota de preview correspondentes. Não conservar implementação privada ou inalcançável como compatibilidade. Preservar exclusivamente os artefatos SQL versionados indicados neste plano.
 - Validação mínima:
   - configuração válida e vinculada produz pacote de sucesso;
   - `end_customer` completo chega sem filtro editorial;
@@ -299,10 +306,13 @@
   - CRECI declarado não é marcado como prova verificada;
   - ausência de evidência concreta não produz referência artificial;
   - `identities` preserva `catalogVersion`, `configurationRevision`, `rootVersion`, versão E19.3 e versão da pesquisa;
+  - o pacote novo usa exclusivamente `contractVersion: 2` e não existe alias, fallback ou DTO público paralelo para `partA + partB`;
   - nenhuma identidade de módulo ou perfil permanece no pacote;
   - falhas das autoridades canônicas resultam em falha explícita, sem pacote parcial;
   - resultado de sucesso é profundamente imutável;
-  - não existe segundo DTO de domínio nem mapa paralelo.
+  - não existe segundo DTO de domínio nem mapa paralelo;
+  - nenhum export público, Server Action, rota, workload ou jornada alcançável continua invocando geração, materialização ou preview E19.4 sobre o contrato antigo;
+  - entitlement interno ausente, inválido ou bloqueado falha antes da montagem do pacote, sem importar SDK, adapter ou resposta da Stripe.
 - Regressões obrigatórias:
   - E10.8;
   - E18.4;
@@ -317,11 +327,9 @@
 
 ### 3.2. Próxima ação
 
-- Submeter este plano-base v1 ao fluxo previsto em `docs/prompt-estrategista.md`.
-- Antes de qualquer implementação, escolher humanamente entre processo atual e processo automatizado.
-- No processo atual, seguir a avaliação única do plano pelos especialistas previstos no Prompt Estrategista e consolidar a v2 antes da execução.
-- No processo automatizado, após o merge da v1, usar o orquestrador previsto pelo Prompt Estrategista.
-- Não iniciar o debate detalhado da E19.4 nem implementar a E19.3 antes da escolha e dos gates correspondentes.
+- Submeter esta v2 ao gate do Analista com os pareceres integrais e a matriz de consolidação do blob v1 congelado.
+- Após aprovação, reconciliar `docs/roadmap.md` pelo Prompt ABC e executar a E19.3.3 na mesma branch e no mesmo PR draft.
+- Não iniciar o novo debate detalhado nem a nova implementação da E19.4 neste recorte; a retirada temporária do caminho vigente serve somente para eliminar a dependência incompatível e tornar a substituição da E19.3 íntegra.
 
 ## 4. Escopo negativo e critérios de parada
 
@@ -331,16 +339,17 @@
 - modelo, reasoning effort, prompt ou Structured Output;
 - módulos, variantes, layouts, seções ou composição da candidata;
 - validação pós-IA;
-- materialização, snapshot durável ou renderer;
+- criação, evolução, adaptação ou execução de materialização, snapshot durável ou renderer; a remoção dos artefatos E19.4 vigentes exigida pela seção 3.1 permanece dentro do recorte;
 - E18.5 como dependência obrigatória da geração;
 - E20.3 como dependência obrigatória da geração;
 - criação, evolução ou operação de perfil de orientação;
 - alteração de E10.8, E18.4, E20.2 ou E19.2 sem gap real demonstrado durante a execução;
 - banco, migration, tabela, view, RPC, trigger, RLS, policy ou nova persistência;
-- rota, UI, editor, Provider, agente, automação, job, fila, cron, webhook ou nova infraestrutura;
+- criação, evolução ou adaptação de rota, UI, editor, Provider, agente, automação, job, fila, cron, webhook ou infraestrutura; a remoção da ação, dos componentes e da rota E19.4 vigentes exigida pela seção 3.1 permanece dentro do recorte;
 - tracking, Analytics, CRM, domínio, publicação, A/B test, Ads ou integrações futuras;
 - regra específica da conta piloto ou de um nicho dentro da E19.3;
 - novo contrato estrutural da candidata, que pertence à E19.4;
+- adaptação da geração, candidata, materialização, snapshot ou renderer E19.4 ao pacote v2; a decisão humana foi retirar temporariamente esse caminho, não migrá-lo neste recorte;
 - limpeza ou aposentadoria definitiva da E18.5/E20.3, que pertence ao recorte condicional posterior à prova do Cenário D.
 
 ### 4.2. Critérios de parada
@@ -351,4 +360,4 @@
 - Parar se faltar fonte canônica indispensável para validar um fato, pesquisa, limite ou binding.
 - Parar se surgir necessidade de banco, rota, job, agente, automação, engine ou infraestrutura nova não autorizada por fonte real do projeto.
 - Parar e simplificar se a maior parte do crescimento técnico vier de generalizações para consumidores futuros inexistentes.
-- Toda ampliação material de escopo volta ao humano; não é autorizada implicitamente por este plano-base v1.
+- Toda ampliação material de escopo volta ao humano; não é autorizada implicitamente por este plano-base v2.
