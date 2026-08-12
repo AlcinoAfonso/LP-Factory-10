@@ -902,6 +902,7 @@
 • `supabase/migrations/0013__e10_5_6_ai_structured_outputs.sql`
 • `supabase/rollbacks/20260509__e10_5_6_deterministic_taxon_matching.rollback.sql`
 • `supabase/rollbacks/20260511__e10_5_6_account_niche_resolutions.rollback.sql`
+• `supabase/rollbacks/20260511__e10_5_6_account_taxonomy_service_role_grants.rollback.sql`
 • `supabase/rollbacks/20260514__e10_5_6_ai_structured_outputs.rollback.sql`
 • `lib/onboarding/niche-resolution/adapters/taxonMatchAdapter.ts`
 • `lib/onboarding/niche-resolution/adapters/accountNicheResolutionAdapter.ts`
