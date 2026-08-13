@@ -2,8 +2,8 @@
 
 ## 1. Objetivo e validade
 
-- Data do snapshot: 11/08/2026.
-- Objetivo: manter uma fotografia curta e datada para decisões de custo-desempenho dos workloads OpenAI do LP Factory 10.
+- Data do snapshot: 13/08/2026.
+- Objetivo: manter uma referência datada para decisões de custo-desempenho de modelos e avaliação de capacidades de execução dos workloads OpenAI do LP Factory 10.
 - Este documento compara candidatos; não define sozinho o modelo em produção e não autoriza migração, implementação ou mudança de arquitetura.
 - A configuração efetivamente adotada continua registrada em `docs/platform-config.md`; a governança da decisão continua em `docs/gestor-automations.md`.
 - Preços, modelos, capacidades e parâmetros são voláteis. Antes de qualquer decisão, reconfirmar os valores nas fontes oficiais atuais e atualizar este snapshot quando houver mudança material.
@@ -15,6 +15,7 @@
   - `https://developers.openai.com/api/docs/models/gpt-5.6-terra`
   - `https://developers.openai.com/api/docs/models/gpt-5.6-sol`
   - `https://developers.openai.com/api/docs/guides/reasoning`
+  - `https://openai.github.io/openai-agents-js/`
   - `https://openai.com/pt-BR/index/gpt-5-6/`
   - `https://openai.com/pt-BR/index/advancing-the-price-performance-frontier-with-gpt-5-6/`
 
@@ -84,7 +85,7 @@
 
 - Fonte: OpenAI, página oficial do GPT-5.6, com referência ao `Artificial Analysis Intelligence Index v4.1`: `https://openai.com/pt-BR/index/gpt-5-6/`.
 - O índice é apresentado como uma medida ampla de inteligência que combina trabalho agentic, programação, raciocínio científico e capacidades gerais; portanto, serve como evidência externa de eficiência geral, não como benchmark específico da LP Factory.
-- No gráfico, os pontos do GPT-5.6 Luna ocupam uma faixa de custo por tarefa substancialmente menor enquanto a pontuação aumenta com mais computação, reforçando Luna como candidato prioritário quando custo-desempenho for material.
+- O gráfico fornece evidência externa de custo-desempenho a considerar na seleção de candidatos, sem definir prioridade para workloads da LP Factory.
 - O gráfico não identifica cada ponto do Luna por `reasoning.effort`; não inferir que um ponto corresponde a `medium`, `high`, `xhigh` ou `max` sem evidência específica.
 - O benchmark não substitui a comparação representativa do workload prevista na seção 4.1 nem autoriza promover Luna, `xhigh` ou qualquer outra combinação por padrão.
 
@@ -120,16 +121,13 @@
 
 - Preservar como capacidade futura um laboratório de avaliação que substitua escolhas intuitivas de configuração por decisões baseadas em evidência para cada workload real.
 - A unidade mínima de comparação continua sendo `workload + modelo + reasoning effort`, conforme a seção 3.2; não comparar apenas nomes de modelos.
-- Exemplos conceituais de combinações comparáveis incluem `GPT-5.6 Luna + medium`, `GPT-5.6 Luna + xhigh`, `GPT-5.6 Terra + medium`, `GPT-5.6 Terra + high`, `GPT-5.6 Sol + medium` e `GPT-5.6 Sol + high`, sem transformá-las em candidatos permanentes ou preferência antecipada.
-- Princípio de decisão: medir antes de promover uma combinação de modelo + effort como configuração preferencial.
+- O laboratório também deve permitir à governança do projeto distinguir se um problema observado de entrega está principalmente em modelo/effort, contexto, contrato de saída, uso de tools, continuidade, eficiência de contexto ou necessidade real de orquestração agentic.
+- Princípio de decisão: medir antes de promover uma combinação de modelo + effort ou uma capacidade de execução como configuração preferencial.
 
 ### 5.2 Métricas e método
 
 - O laboratório deverá aplicar o protocolo da seção 4.1 e as regras de custo das seções 3.2 e 3.3 sobre a mesma tarefa representativa, mantendo constantes as demais variáveis sempre que possível.
 - Para cada combinação testada, avaliar: qualidade da entrega, taxa de sucesso, necessidade de correção humana, `input_tokens`, `cached input tokens` quando aplicável, `output_tokens`, `reasoning_tokens`, custo financeiro efetivo, latência e estabilidade/repetibilidade.
-- O preço unitário dos tokens é determinado pelo modelo; alterar o reasoning effort não cria tarifa unitária própria.
-- Effort maior pode produzir mais reasoning/output tokens e, portanto, elevar o custo financeiro total; também pode aumentar a latência.
-- Reasoning tokens fazem parte dos output tokens e não constituem uma terceira tarifa independente.
 
 | Configuração conceitual | Qualidade | Custo | Latência |
 |---|---|---|---|
@@ -142,11 +140,9 @@
 
 ### 5.3 Perguntas de decisão
 
-- O ganho de `high` ou `xhigh` sobre `medium` justifica custo e espera adicionais?
-- Luna + xhigh entrega a qualidade exigida antes de escalar para Terra ou Sol?
-- Terra + high entrega resultado equivalente a Sol + medium por custo menor?
-- Quais workloads realmente precisam de configurações mais fortes?
-- Quais workloads podem operar com modelos ou esforços mais econômicos sem perder os gates exigidos?
+- Esforço maior produz ganho suficiente para justificar custo e latência adicionais?
+- Uma combinação mais econômica entrega qualidade equivalente à configuração mais forte para o workload?
+- Qual é a menor configuração que cumpre os gates exigidos daquele workload?
 
 ### 5.4 Escopo e limites
 
@@ -161,3 +157,32 @@
 - Não manter nesta seção catálogo permanente de preços, modelos disponíveis, efforts, parâmetros ou capacidades específicas da API; esses elementos permanecem voláteis conforme a seção 1.
 - Quando o laboratório vier a ser planejado ou implementado, consultar a documentação oficial vigente da OpenAI, preferencialmente via `$openai-docs` no Codex.
 - O registro interno deve preservar principalmente objetivo, critérios, método, métricas e princípios de decisão.
+
+### 5.6 Recursos candidatos à experimentação
+
+- `Responses API` direta, combinada com backend determinístico quando a sequência do processo já for conhecida, permanece como referência de menor complexidade para comparação.
+- Structured Outputs é candidato quando o problema principal for controlar a forma e o contrato da saída; JSON ou schema válido não deve ser tratado como garantia de factualidade ou qualidade editorial.
+- Tool calling é candidato quando o modelo precisar escolher e acionar capacidades externas autorizadas; uma fonte consultada pelo backend não se torna tool apenas por participar do contexto.
+- Programmatic Tool Calling é candidato para workflows delimitados e intensivos em tools quando houver hipótese de ganho por coordenar chamadas e resultados intermediários; comparar sucesso, completude, tokens, latência, custo e complexidade contra o fluxo de referência.
+- Persisted reasoning é candidato para etapas relacionadas em que preservar continuidade cognitiva do modelo possa melhorar qualidade ou eficiência; não substitui estado verificável de negócio ou processo.
+- Explicit prompt caching é candidato quando prefixos estáveis e repetidos do contexto puderem ser reutilizados com benefício mensurável; não é pausa de workflow nem memória escolhida pelo modelo.
+- Multi-agent é candidato para trabalhos complexos que se decomponham de forma limpa em frentes independentes e possam se beneficiar de execução paralela e síntese; não presumir benefício quando as etapas forem fortemente dependentes entre si.
+- Agents SDK deve ser avaliado separadamente como framework de orquestração agentic quando houver benefício concreto em delegar ao runtime gestão de turns, tools, guardrails, handoffs, sessions ou tracing; não é evolução automática de um workflow baseado em Responses API.
+
+### 5.7 Ambientes e progressão dos testes
+
+- Primeiro compreender conceitualmente o recurso e observar o que a aplicação envia, o que a plataforma executa e o que retorna na requisição.
+- Quando útil, realizar experimento isolado fora do runtime da LP Factory, em ambiente a ser definido no recorte do teste, sem criar por esta seção infraestrutura permanente.
+- Comparar o recurso contra uma baseline explícita usando a mesma tarefa representativa e mantendo constantes as demais variáveis sempre que possível.
+- Testar inicialmente um recurso ou variável por vez quando isso for suficiente para atribuir causa ao ganho ou à regressão observada.
+- Somente depois de evidência isolada suficiente, avaliar combinações de recursos aprovados e medir novamente o conjunto.
+- Um resultado positivo em simulação não autoriza automaticamente adoção no runtime; o workload real deve justificar o teste e a promoção.
+- O resultado possível de cada avaliação é adotar, rejeitar ou preservar o recurso como oportunidade condicional para novo teste quando houver gatilho objetivo.
+
+### 5.8 Regra de promoção
+
+- A sequência de decisão deve ser: problema observado → hipótese de causa → recurso ou configuração candidata → teste representativo → métricas → decisão.
+- Nenhum recurso se torna padrão por novidade, sofisticação ou por estar disponível no modelo mais capaz.
+- A promoção exige benefício demonstrável nos gates relevantes do workload, considerando qualidade, taxa de sucesso, intervenção humana, custo, latência, estabilidade e, quando material, segurança, manutenção e complexidade operacional.
+- O recurso mais simples que cumpra os gates permanece preferível a uma arquitetura mais sofisticada sem ganho mensurável.
+- A governança deve produzir evidência compreensível para decisão de produto sem exigir que o proprietário domine a implementação do código; detalhes técnicos permanecem responsabilidade do recorte de implementação.
