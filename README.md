@@ -1,8 +1,8 @@
 0. Introdução
 0.1. Cabeçalho
 • Documento: README — LP Factory 10 (MVP)
-• Versão: 6 — 04/08/2026
-• Data: 04/08/2026
+• Versão: 7 — 13/08/2026
+• Data: 13/08/2026
 • Escopo: visão geral do produto + documentos de referência + pendências estratégicas
 
 1. Visão geral do produto
@@ -16,6 +16,7 @@
 • O produto ajuda empresas a transformar pesquisa, dados e canais comerciais em comunicação pronta para venda.
 • O produto entrega canais de comunicação como landing pages, Instagram, WhatsApp e e-mail.
 • O dashboard prioriza automações internas, recursos de IA e agentes controlados para reduzir operação, validar processos e acelerar melhorias com revisão humana quando necessário.
+• IA, automações e agentes são capacidades evolutivas do produto e podem ampliar qualidade, eficiência e diferenciação comercial sem deslocar o foco atual do MVP em comunicação comercial por nicho.
 
 1.3. Proposta de valor
 • Oferecer comunicação comercial por nicho, com canais prontos para uso e acompanhamento contínuo de performance.
@@ -29,7 +30,7 @@
 
 1.4.2. Inteligente
 • Recursos orientados por dados, tracking, recomendações e automações internas com IA, em fluxos simples, seguros e mensuráveis.
-• Responses API para fluxos lineares de geração, revisão ou adaptação de conteúdo.
+• Responses API como base programática preferencial dos workloads OpenAI, com recursos adicionais avaliados conforme o problema real e o custo-benefício demonstrado.
 • Agents SDK TypeScript quando houver orquestração real e controlada com tools, decisões intermediárias, estado, aprovações ou handoffs.
 • Sandbox Agent como camada de laboratório técnico para tarefas com arquivos, repositório, worktree, branch experimental, testes isolados ou geração de artefatos.
 • As tecnologias citadas representam os padrões vigentes de implementação, não uma proibição de avaliar alternativas capazes de gerar valor e aderentes à arquitetura.
@@ -42,6 +43,8 @@
 • Runtime não pode depender de objetos ou comportamentos de banco ainda não aplicados e validados no ambiente alvo.
 • A stack base do MVP permanece Next.js, Supabase e TypeScript.
 • Automações e agentes devem ser introduzidos de forma incremental, começando por fluxos simples, seguros e mensuráveis.
+• Recursos de IA, automação e agentes devem evoluir por problema real e benefício mensurável em qualidade, custo, latência, controle ou valor ao cliente; sofisticação tecnológica, isoladamente, não justifica adoção.
+• A escolha entre backend determinístico, chamadas de IA, tools e arquitetura agentic deve preservar a menor complexidade capaz de cumprir os gates do workload.
 • A stack e a arquitetura adotadas são o padrão vigente; o produto permanece aberto à avaliação de recursos tecnológicos com caso de uso e valor plausível.
 • Todo recurso candidato deve ser classificado quanto à relação com a stack e a arquitetura — complementar, sobreposto, substituto ou incompatível — e avaliado por benefício, maturidade das fontes, custo, complexidade, segurança, manutenção e horizonte de adoção.
 • Incompatibilidade pode justificar descarte. Recursos sobrepostos ou substitutos só devem permanecer como condicionais quando houver hipótese concreta de superioridade e gatilho objetivo para comparação ou adoção.
@@ -54,6 +57,7 @@
 1.5. Modelo de oferta
 • Planos em camadas (Starter → Lite → Pro → Ultra), com capacidades escalando ao longo do tempo.
 • Capacidades futuras ou condicionais podem ser preservadas como diferenciais potenciais, sem representar promessa comercial, requisito imediato ou autorização técnica.
+• Capacidades de IA, automação e agentes podem compor diferenciais progressivos dos planos e, quando houver validação de demanda e operação, sustentar ofertas ou serviços especializados futuros, sem compromisso comercial adicional no MVP.
 
 2. Documentos de referência
 • docs/base-tecnica.md — regras técnicas de runtime, implementação segura, arquitetura, adapters, imports, SSR, observability e anti-regressão.
