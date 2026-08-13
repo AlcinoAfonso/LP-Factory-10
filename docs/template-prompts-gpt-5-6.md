@@ -37,10 +37,12 @@ Em produção, prefira o identificador explícito do modelo em vez do alias gen�
 
 Defina somente as configurações relevantes:
 
-- endpoint: Responses API quando houver raciocínio, tools ou fluxo em múltiplas etapas
-- `reasoning.effort`: usar o esforço atual como baseline e comparar também um nível inferior
+- endpoint: Responses API como interface programática preferencial para novos workloads OpenAI; ativar raciocínio, tools, continuidade ou recursos de múltiplas etapas somente quando necessários ao caso
+- `reasoning.effort` em migração: começar pela configuração de raciocínio efetivamente validada no workload existente e comparar a mesma configuração e um nível inferior sobre casos representativos
+- `reasoning.effort` em workload novo: não herdar configuração de outro workload; na ausência de evidência própria, `medium` pode ser usado como hipótese inicial equilibrada de teste, sem constituir configuração preferencial ou aprovação antecipada; testar níveis diferentes somente quando os critérios de qualidade, custo ou latência justificarem a comparação
 - `reasoning.mode: pro`: considerar apenas para casos difíceis em que qualidade justifique maior custo e latência
 - `reasoning.context`: usar somente quando o raciocínio anterior permanecer relevante entre chamadas
+- `text.verbosity`: usar `low`, `medium` ou `high` somente quando houver necessidade de controlar o nível geral de detalhe; requisitos específicos de conteúdo, tamanho ou estrutura permanecem no prompt
 - saída estruturada: usar quando o consumidor exigir contrato determinístico
 - tools: expor somente as necessárias ao caso
 - limite de saída: dimensionar pelo contrato real, sem inflar preventivamente
@@ -69,6 +71,7 @@ Use apenas os campos necessários:
 - `reasoning.effort`:
 - modo `pro`, se aplicável:
 - `reasoning.context`, se aplicável:
+- `text.verbosity`, se aplicável:
 - saída estruturada:
 - tools permitidas:
 - orçamento de custo, latência ou tokens:
@@ -86,13 +89,13 @@ Use apenas os campos necessários:
 
 Não alterar o runtime antes de comprovar, com os mesmos casos representativos:
 
-- qualidade igual ou superior ao baseline
+- qualidade igual ou superior ao baseline ou ao critério mínimo definido para workload novo
 - custo e latência aceitáveis
 - estabilidade entre execuções
 - preservação dos contratos de saída
 - ausência de regressão funcional ou de segurança
 
-Ao migrar de GPT-5.4, teste primeiro a mesma configuração de raciocínio e depois um nível inferior. A escolha final deve ser baseada no resultado medido do workload.
+Para `reasoning.effort`, aplicar a regra da seção 3 e escolher a configuração final pelo resultado medido do workload.
 
 ## 7. Limites
 
