@@ -14,6 +14,8 @@ Fluxos auxiliares de GitHub devem respeitar estas regras. Em caso de divergênci
 
 Não editar nem commitar na `main`; usar branch dedicada por tarefa ou etapa. Ao usar a `main` local como base, atualizar com `git pull --ff-only`. O merge final deve ocorrer somente pelo GitHub Web.
 
+Branches e PRs abertos não devem ser sincronizados ou rebaseados apenas porque a `main` avançou. Em frentes paralelas, essa divergência é normal. Atualizar a branch somente quando houver conflito que impeça o merge ou necessidade concreta identificada durante o trabalho.
+
 Se o ambiente não estiver claro, perguntar antes de publicar.
 
 ### Modo simples
