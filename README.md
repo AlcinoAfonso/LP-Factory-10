@@ -16,7 +16,6 @@
 • O produto ajuda empresas a transformar pesquisa, dados e canais comerciais em comunicação pronta para venda.
 • O produto entrega canais de comunicação como landing pages, Instagram, WhatsApp e e-mail.
 • O dashboard prioriza automações internas, recursos de IA e agentes controlados para reduzir operação, validar processos e acelerar melhorias com revisão humana quando necessário.
-• IA, automações e agentes são capacidades evolutivas do produto e podem ampliar qualidade, eficiência e diferenciação comercial sem deslocar o foco atual do MVP em comunicação comercial por nicho.
 
 1.3. Proposta de valor
 • Oferecer comunicação comercial por nicho, com canais prontos para uso e acompanhamento contínuo de performance.
@@ -31,9 +30,8 @@
 1.4.2. Inteligente
 • Recursos orientados por dados, tracking, recomendações e automações internas com IA, em fluxos simples, seguros e mensuráveis.
 • Responses API como base programática preferencial dos workloads OpenAI, com recursos adicionais avaliados conforme o problema real e o custo-benefício demonstrado.
-• Agents SDK TypeScript quando houver orquestração real e controlada com tools, decisões intermediárias, estado, aprovações ou handoffs.
+• Agents SDK TypeScript quando houver benefício concreto em framework de orquestração agentic, como handoffs, sessions, guardrails, tracing ou workflows reutilizáveis; não é evolução automática da Responses API.
 • Sandbox Agent como camada de laboratório técnico para tarefas com arquivos, repositório, worktree, branch experimental, testes isolados ou geração de artefatos.
-• As tecnologias citadas representam os padrões vigentes de implementação, não uma proibição de avaliar alternativas capazes de gerar valor e aderentes à arquitetura.
 
 1.4.3. Dashboard
 • Suporte para ajustes e testes guiados por dados.
@@ -42,10 +40,8 @@
 • O MVP prioriza simplicidade, não fragilidade.
 • Runtime não pode depender de objetos ou comportamentos de banco ainda não aplicados e validados no ambiente alvo.
 • A stack base do MVP permanece Next.js, Supabase e TypeScript.
-• Automações e agentes devem ser introduzidos de forma incremental, começando por fluxos simples, seguros e mensuráveis.
-• Recursos de IA, automação e agentes devem evoluir por problema real e benefício mensurável em qualidade, custo, latência, controle ou valor ao cliente; sofisticação tecnológica, isoladamente, não justifica adoção.
-• A escolha entre backend determinístico, chamadas de IA, tools e arquitetura agentic deve preservar a menor complexidade capaz de cumprir os gates do workload.
-• O grau de determinismo deve acompanhar a natureza do resultado: regras verificáveis, segurança, fatos, estado e contratos permanecem determinísticos quando possível; decisões semânticas, criativas ou persuasivas devem preservar flexibilidade suficiente para a IA produzir a melhor solução dentro dos limites aprovados.
+• IA, automações e agentes devem evoluir incrementalmente, por problema real e benefício mensurável em qualidade, custo, latência, controle ou valor ao cliente; sofisticação tecnológica, isoladamente, não justifica adoção.
+• A escolha entre backend determinístico, chamadas de IA, tools e arquitetura agentic deve preservar a menor complexidade capaz de cumprir os gates, e o grau de determinismo deve acompanhar a natureza do resultado: regras verificáveis, segurança, fatos, estado e contratos permanecem determinísticos quando possível; decisões semânticas, criativas ou persuasivas preservam flexibilidade controlada da IA.
 • Não antecipar deterministicamente uma decisão que o workload existe justamente para a IA tomar.
 • A stack e a arquitetura adotadas são o padrão vigente; o produto permanece aberto à avaliação de recursos tecnológicos com caso de uso e valor plausível.
 • Todo recurso candidato deve ser classificado quanto à relação com a stack e a arquitetura — complementar, sobreposto, substituto ou incompatível — e avaliado por benefício, maturidade das fontes, custo, complexidade, segurança, manutenção e horizonte de adoção.
