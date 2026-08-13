@@ -45,6 +45,8 @@
 • Automações e agentes devem ser introduzidos de forma incremental, começando por fluxos simples, seguros e mensuráveis.
 • Recursos de IA, automação e agentes devem evoluir por problema real e benefício mensurável em qualidade, custo, latência, controle ou valor ao cliente; sofisticação tecnológica, isoladamente, não justifica adoção.
 • A escolha entre backend determinístico, chamadas de IA, tools e arquitetura agentic deve preservar a menor complexidade capaz de cumprir os gates do workload.
+• O grau de determinismo deve acompanhar a natureza do resultado: regras verificáveis, segurança, fatos, estado e contratos permanecem determinísticos quando possível; decisões semânticas, criativas ou persuasivas devem preservar flexibilidade suficiente para a IA produzir a melhor solução dentro dos limites aprovados.
+• Não antecipar deterministicamente uma decisão que o workload existe justamente para a IA tomar.
 • A stack e a arquitetura adotadas são o padrão vigente; o produto permanece aberto à avaliação de recursos tecnológicos com caso de uso e valor plausível.
 • Todo recurso candidato deve ser classificado quanto à relação com a stack e a arquitetura — complementar, sobreposto, substituto ou incompatível — e avaliado por benefício, maturidade das fontes, custo, complexidade, segurança, manutenção e horizonte de adoção.
 • Incompatibilidade pode justificar descarte. Recursos sobrepostos ou substitutos só devem permanecer como condicionais quando houver hipótese concreta de superioridade e gatilho objetivo para comparação ou adoção.
