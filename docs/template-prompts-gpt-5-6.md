@@ -37,9 +37,9 @@ Em produção, prefira o identificador explícito do modelo em vez do alias gen�
 
 Defina somente as configurações relevantes:
 
-- endpoint: Responses API quando houver raciocínio, tools ou fluxo em múltiplas etapas
+- endpoint: Responses API como interface programática preferencial para novos workloads OpenAI; ativar raciocínio, tools, continuidade ou recursos de múltiplas etapas somente quando necessários ao caso
 - `reasoning.effort` em migração: começar pela configuração de raciocínio efetivamente validada no workload existente e comparar a mesma configuração e um nível inferior sobre casos representativos
-- `reasoning.effort` em workload novo: não herdar configuração de outro workload; na ausência de evidência própria, usar `medium` como referência inicial equilibrada e testar níveis diferentes somente quando os critérios de qualidade, custo ou latência justificarem a comparação
+- `reasoning.effort` em workload novo: não herdar configuração de outro workload; na ausência de evidência própria, `medium` pode ser usado como hipótese inicial equilibrada de teste, sem constituir configuração preferencial ou aprovação antecipada; testar níveis diferentes somente quando os critérios de qualidade, custo ou latência justificarem a comparação
 - `reasoning.mode: pro`: considerar apenas para casos difíceis em que qualidade justifique maior custo e latência
 - `reasoning.context`: usar somente quando o raciocínio anterior permanecer relevante entre chamadas
 - `text.verbosity`: usar `low`, `medium` ou `high` somente quando houver necessidade de controlar o nível geral de detalhe; requisitos específicos de conteúdo, tamanho ou estrutura permanecem no prompt
