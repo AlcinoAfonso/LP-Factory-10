@@ -90,6 +90,11 @@ export type AdminTaxonUsage = {
   marketResearch: number;
 };
 
+export type AdminEndCustomerResearchSelection =
+  | { status: "disabled" }
+  | { status: "read_failed"; message: string }
+  | { status: "available"; selectedVersion: number | null };
+
 export type AdminTaxonDetail = AdminTaxonListItem & {
   aliases: Array<{
     id: string;
@@ -100,6 +105,7 @@ export type AdminTaxonDetail = AdminTaxonListItem & {
   usage: AdminTaxonUsage;
   deleteBlockers: string[];
   canDelete: boolean;
+  endCustomerResearchSelection: AdminEndCustomerResearchSelection;
 };
 
 export type AdminNicheResolutionListItem = {

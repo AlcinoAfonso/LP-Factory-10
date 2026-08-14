@@ -2,6 +2,9 @@
 
 const nextConfig = {
   outputFileTracingIncludes: {
+    '/admin/taxonomia/[taxonId]': [
+      './docs/pesquisas-brutas/**/end_customer/v*.md',
+    ],
     '/admin/documentacao': [
       './docs/roadmap.md',
       './docs/base-tecnica.md',

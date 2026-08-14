@@ -2,8 +2,8 @@
 
 0.1 Cabeçalho
 • Documento: LP Factory 10 — Platform Config
-• Versão: v0.1.19
-• Data: 12/08/2026
+• Versão: v0.1.20
+• Data: 14/08/2026
 
 0.2 Contrato do documento
 • O QUE É: snapshot operacional e fonte única das configurações de plataformas externas do LP Factory 10, refletindo o estado conhecido/cadastrado nas plataformas conforme indicado.
@@ -131,6 +131,13 @@
 • Escopo: Production e Preview.
 • Estado atual: `true` em Production e Preview.
 • Estado operacional: PR #656 mergeado, redeploy de Production concluído e smoke final aprovado em 30/07/2026.
+
+• `E20_5_SELECTED_RESEARCH_ENABLED`
+• Finalidade: gate server-only e fail-closed da leitura, seleção administrativa e consumo da pesquisa integral `end_customer` selecionada por taxon.
+• Escopo planejado: Preview e Production do projeto Core, com configuração independente por ambiente.
+• Estado atual: pendente e tratado como desligado; variável ausente ou com valor diferente do literal `true` desabilita todo acesso à nova coluna e sua interface, sem fallback de banco.
+• Ordem de ativação: após merge humano, aguardar o apply canônico da migration, aprovar `supabase/snippets/e20_5_selected_end_customer_research_version_verify.sql`, configurar como `true` no ambiente alvo e executar novo deploy.
+• Regra operacional: validar primeiro em Preview autenticado; Production só pode ser habilitada após as evidências aplicáveis, sem registrar valor sensível ou branch override como estado canônico.
 
 • `INVITE_STATE_SECRET`
 • Finalidade: assinar o estado opaco transportado pelo convite nativo do Supabase Auth.
@@ -433,6 +440,8 @@ Regra:
 • Configurações de plataformas, secrets por nome, workflows, ambientes e endpoints usados por automações devem ser registrados neste documento.
 
 99. Changelog
+v0.1.20 — 14/08/2026 — Registrado `E20_5_SELECTED_RESEARCH_ENABLED` como gate server-only fail-closed, ainda pendente em Preview e Production, com ativação somente após apply, prova SQL e redeploy.
+
 v0.1.16 — 31/07/2026 — Registradas a correção de `OPENAI_LANDING_PAGE_GENERATION_PROFILE_MODEL` para `gpt-5.4-mini`, a ampliação para Production e Preview, o redeploy e a validação operacional da assistência somente em Production no domínio oficial.
 
 v0.1.15 — 30/07/2026 — Registrados o merge do PR #656, a habilitação do gate, o redeploy e o smoke final aprovado em Production.

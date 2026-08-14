@@ -1,11 +1,15 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 
 import type {
   EndCustomerResearchErrorCode,
   LoadEndCustomerResearchCandidateInput,
   LoadEndCustomerResearchCandidateResult,
 } from "./contracts";
-import { loadEndCustomerResearchCandidate } from "./index";
+import {
+  isEndCustomerResearchSelectionEnabled,
+  loadEndCustomerResearchCandidate,
+} from "./index";
 import { loadEndCustomerResearchCandidateForValidation } from "./research";
 
 const VALID_INPUT: LoadEndCustomerResearchCandidateInput = {
@@ -19,6 +23,57 @@ type ValidationCase = Readonly<{
 }>;
 
 const cases: readonly ValidationCase[] = [
+  {
+    name: "selection gate is fail-closed and accepts only literal true",
+    run: async () => {
+      const previousValue = process.env.E20_5_SELECTED_RESEARCH_ENABLED;
+      try {
+        delete process.env.E20_5_SELECTED_RESEARCH_ENABLED;
+        assert.equal(isEndCustomerResearchSelectionEnabled(), false);
+        process.env.E20_5_SELECTED_RESEARCH_ENABLED = "false";
+        assert.equal(isEndCustomerResearchSelectionEnabled(), false);
+        process.env.E20_5_SELECTED_RESEARCH_ENABLED = "TRUE";
+        assert.equal(isEndCustomerResearchSelectionEnabled(), false);
+        process.env.E20_5_SELECTED_RESEARCH_ENABLED = "true";
+        assert.equal(isEndCustomerResearchSelectionEnabled(), true);
+      } finally {
+        if (previousValue === undefined) {
+          delete process.env.E20_5_SELECTED_RESEARCH_ENABLED;
+        } else {
+          process.env.E20_5_SELECTED_RESEARCH_ENABLED = previousValue;
+        }
+      }
+    },
+  },
+  {
+    name: "selection gate precedes every new-column access",
+    run: async () => {
+      const source = readFileSync(
+        new URL("../../../admin/adapters/adminTaxonomyAdapter.ts", import.meta.url),
+        "utf8",
+      );
+      const readStart = source.indexOf("async function readAdminEndCustomerResearchSelection");
+      const mutationStart = source.indexOf("export async function selectAdminEndCustomerResearchVersion");
+      const mutationEnd = source.indexOf("export async function addAdminTaxonAlias", mutationStart);
+      assert.ok(readStart >= 0);
+      assert.ok(mutationStart > readStart);
+      assert.ok(mutationEnd > mutationStart);
+
+      const readBoundary = source.slice(readStart, mutationStart);
+      const readGate = readBoundary.indexOf("if (!isEndCustomerResearchSelectionEnabled())");
+      const readColumn = readBoundary.indexOf('.select("selected_end_customer_research_version")');
+      assert.ok(readGate >= 0);
+      assert.ok(readColumn > readGate);
+
+      const mutationBoundary = source.slice(mutationStart, mutationEnd);
+      const mutationGate = mutationBoundary.indexOf("if (!isEndCustomerResearchSelectionEnabled())");
+      const serviceClient = mutationBoundary.indexOf("createServiceClient()");
+      const mutationColumn = mutationBoundary.indexOf("selected_end_customer_research_version");
+      assert.ok(mutationGate >= 0);
+      assert.ok(serviceClient > mutationGate);
+      assert.ok(mutationColumn > mutationGate);
+    },
+  },
   {
     name: "loads the archived research integrally from the canonical path",
     run: async () => {
