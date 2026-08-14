@@ -54,14 +54,15 @@
 - O runtime não consulta GitHub API para obter a pesquisa.
 - A leitura usa o padrão repo-only já comprovado no projeto com `node:fs/promises`, `process.cwd()` e confinamento de path.
 - O arquivo deve estar incluído no bundle necessário do deploy pelo mecanismo vigente de `outputFileTracingIncludes`, no menor escopo de runtime que consumir o boundary; não criar tracing global por conveniência.
-- A leitura valida antes de devolver conteúdo:
+- A leitura reconhece a seção inicial `## 1. Identificação e uso` por contrato estrito e valida antes de devolver conteúdo:
   - taxon existente e ativo;
   - versão selecionada positiva;
   - arquivo existente;
   - `taxon_slug` exatamente igual ao slug canônico do taxon;
   - `audience_scope = end_customer`;
   - `research_version` exatamente igual à versão selecionada;
-  - conteúdo integral não vazio.
+  - exatamente um item Markdown `- \`<chave>\`: \`<valor>\`` para cada chave obrigatória antes da próxima seção `##`, rejeitando ausência, duplicidade, item malformado ou valor incidental encontrado no restante do corpo;
+  - conteúdo integral não vazio após a seção de identificação.
 - Falha de leitura ou metadata incompatível produz falha fechada e nunca conteúdo parcial.
 - Não criar RAG, chunking, embeddings, cache remoto, serviço de arquivos ou infraestrutura nova.
 
@@ -71,7 +72,7 @@
 - O gate server-only `E20_5_SELECTED_RESEARCH_ENABLED` é fail-closed: ausente ou diferente de `true`, desabilita a leitura da coluna, a ação de seleção, sua interface administrativa e o contrato de consumo da E20.5.5.
 - O gate não é fallback de banco e não pode capturar erro de coluna ausente; ele impede que a consulta dependente da coluna seja construída ou executada.
 - Após o merge humano, o workflow canônico aplica a migration. Em seguida, uma prova SQL read-only valida coluna, check, grants e policies. Somente com essa evidência o gate pode ser habilitado no ambiente e o deploy correspondente promovido ou refeito.
-- A E20.5.3 permanece independente do banco e pode ser validada no Preview antes do apply.
+- A E20.5.3 permanece independente do banco e recebe validação determinística pré-merge; tracing e smoke hospedado pertencem à E20.5.4, primeira subseção com superfície deployada consumidora.
 - Falha no apply ou na prova mantém o gate desligado, sem ativação parcial e sem PR precursor ou PR empilhado.
 
 ### 1.7. Fontes obrigatórias usadas na consolidação
@@ -87,7 +88,10 @@
 - `docs/lousa-plano-base-e10-8.md`.
 - `docs/lousa-plano-base-e20-2.md`.
 - `docs/prompt-nicho-arquivamento-pesquisa.md`.
-- Catálogos de updates aplicáveis a Supabase, Vercel, UX/UI e GitHub.
+- `docs/supa-up.md`: `supa#2`, `supa#40`, `supa#52` e `supa#63`.
+- `docs/vercel-up.md`: `vercel#22`.
+- `docs/prod-up.md`: `prod#14`, `prod#16` e `prod#17`.
+- `docs/github-up.md`, cujo catálogo não possui update material para o recorte.
 - `docs/pesquisas-brutas/corretor-imoveis/end_customer/v1.md`, somente como prova do formato físico atual, sem editar ou promover seu conteúdo automaticamente.
 - `lib/admin/readRepoDoc.ts`, como precedente de leitura repo-only confinada.
 - `next.config.js`, como precedente de tracing explícito de documentos repo-only.
@@ -124,6 +128,7 @@
 ### 2.2. Contrato do arquivo integral
 
 - O boundary trata `end_customer` como audience fixa neste recorte.
+- A metadata ocupa a seção inicial `## 1. Identificação e uso` e contém exatamente um item Markdown `- \`<chave>\`: \`<valor>\`` para `taxon_slug`, `audience_scope` e `research_version` antes da próxima seção `##`; chave ausente, repetida, fora dessa seção, sintaticamente malformada ou com valor inválido rejeita o arquivo inteiro.
 - O nome `vN.md` e `research_version` interno devem apontar para o mesmo inteiro positivo.
 - `taxon_slug` interno deve corresponder ao taxon servido, sem alias, herança ou aproximação.
 - O conteúdo é entregue integralmente como conhecimento autorizado; o boundary não resume, chunka, reordena, classifica ou extrai fatos automaticamente.
@@ -160,6 +165,7 @@
 - `selected_research_valid` pode existir apenas como projeção derivada do sucesso; não é persistido e não substitui o resultado tipado.
 - A E20.6 não pode converter erro operacional, inconsistência ou funcionalidade desabilitada em ausência legítima de seleção.
 - Mesmo o sucesso isolado não significa `taxon preparado`; a E20.6 adicionará o segundo marcador necessário e o predicado final de preparação.
+- A reconciliação de planejamento no roadmap registra a E20.6 somente como recorte futuro para suficiência factual e predicado final de preparação, sem autorizar sua implementação neste PR.
 
 ## 3. Fases e gates executáveis
 
@@ -172,14 +178,12 @@
   - implementar o boundary mínimo da seção 2.3 para receber taxon canônico e versão candidata explícita;
   - derivar path sem persistência adicional;
   - usar `node:fs/promises` e confinamento ao diretório autorizado;
-  - validar `taxon_slug`, `audience_scope`, `research_version` e conteúdo não vazio antes do sucesso;
-  - ajustar `outputFileTracingIncludes` somente no escopo da superfície que realmente executar a leitura no deploy;
+  - reconhecer estritamente `## 1. Identificação e uso`, validar item Markdown único de `taxon_slug`, `audience_scope`, `research_version` inteiro positivo e conteúdo não vazio após essa seção antes do sucesso;
   - adicionar script dedicado e integrá-lo a `npm run check`;
-  - cobrir sucesso, versão inválida, escape de path, arquivo ausente, metadata ausente ou divergente e conteúdo vazio, sempre sem payload parcial.
+  - cobrir sucesso, versão inválida, escape de path, arquivo ausente, metadata ausente, duplicada, malformada ou divergente e conteúdo vazio, sempre sem payload parcial.
 - Validação aplicável:
   - `npm ci`, `npm run check` e `git diff --check`;
-  - dry-run da Vercel CLI como evidência auxiliar de que `docs/pesquisas-brutas/**/end_customer/v*.md` não foi excluído do artefato e de que o tracing não foi ampliado globalmente;
-  - smoke no Preview para a leitura repo-only; o dry-run não substitui o Preview.
+  - inspeção do diff e dos casos determinísticos; esta subseção não cria rota temporária, tracing nem smoke hospedado sem superfície consumidora.
 - Critérios de aceite:
   - conteúdo integral retornado sem transformação;
   - nenhuma chamada runtime à API do GitHub e nenhuma heurística de versão;
@@ -201,13 +205,19 @@
   - implementar o gate fail-closed da seção 1.6;
   - materializar formulário separado e Server Action dedicada na tela existente de detalhe do taxon;
   - exigir `requirePlatformAdmin`, usar `adminTaxonomyAdapter`, validar a candidata pela E20.5.3 e persistir somente por atualização condicional com `.maxAffected(1)`;
+  - ajustar `outputFileTracingIncludes` somente para a rota administrativa consumidora, sem tracing global;
+  - reconciliar `docs/platform-config.md` pelo Prompt ABC com nome, finalidade server-only, escopos Preview/Production, default fail-closed, ordem de habilitação após apply/prova e necessidade de redeploy, sem registrar valor sensível;
   - manter `NULL` como estado legítimo e bloqueante para preparação.
-- Validação aplicável:
-  - `npm ci`, `npm run check`, `git diff --check` e checks do PR;
+- Validação pré-merge aplicável:
+  - `npm ci`, `npm run check`, `git diff --check` e checks do PR, sempre com o gate desligado e prova de que nenhuma consulta à nova coluna é construída ou executada;
+  - dry-run da Vercel CLI como evidência auxiliar de que `docs/pesquisas-brutas/**/end_customer/v*.md` não foi excluído do artefato e de que o tracing não foi ampliado globalmente;
+  - smoke no Preview com gate desligado para a superfície e o empacotamento seguros; o dry-run não substitui o Preview.
+- Validação pós-merge e de ativação:
+  - aguardar o apply canônico, executar o snippet read-only e somente então configurar o gate como `true`, refazer ou promover o deploy e executar os testes autenticados gate-on;
   - reconhecer na interface os estados sem seleção, seleção vigente e candidata, com ação explícita;
   - Preview autenticado em desktop e mobile para `NULL`, seleção válida, candidata inválida, taxon inativo, erro de leitura e sucesso após reload, incluindo acesso negado para papel não autorizado;
   - validar rótulos, associação de feedback, teclado, foco e ausência de comunicação somente por cor; automação é evidência auxiliar e não autoriza alegação de conformidade WCAG plena;
-  - após merge humano e apply canônico, executar o snippet read-only antes de habilitar o gate e refazer ou promover o deploy.
+  - qualquer divergência mantém o gate desligado e a ativação pendente, sem invalidar as evidências pré-merge independentes do schema aplicado.
 - Critérios de aceite:
   - valor `0` ou negativo rejeitado;
   - taxon inativo ou arquivo inválido não recebe nova seleção;
@@ -215,7 +225,7 @@
   - nenhuma tabela, lifecycle ou histórico novo;
   - migration não aplicada ou prova SQL falha mantém toda dependência da nova coluna desabilitada.
 - Gate de saída:
-  - diff restrito à subseção, validações locais e de Preview registradas e aprovação do Analista antes de iniciar E20.5.5; a ativação em produção continua condicionada ao apply e à prova SQL pós-merge.
+  - diff restrito à subseção, validações locais e de Preview gate-off registradas e aprovação do Analista antes de iniciar E20.5.5; apply, prova SQL e testes gate-on permanecem pendências explícitas pós-merge de ativação.
 
 ### 3.3. E20.5.5 — Contrato de consumo da seleção válida
 
