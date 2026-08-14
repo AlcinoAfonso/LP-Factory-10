@@ -50,6 +50,12 @@
 - A pergunta operacional dessa avaliação é se o catálogo E20.2 atualmente resolvido para o taxon é suficiente; o resultado pode ser `avaliado — nenhum ajuste necessário` ou `ajuste necessário`, nunca `não avaliado, mas liberado`.
 - Quando a avaliação identificar dados imprescindíveis ausentes, o ajuste pertence ao recorte próprio da E20.2 e o taxon deve ser reavaliado depois; quando não houver gap, nenhuma especialização adicional é criada.
 - A avaliação pode ser apoiada pela IA usando como fontes principais a pesquisa integral `end_customer` aprovada e o catálogo E20.2 atualmente resolvido; investigação complementar pode ser usada quando necessária, sem transformar uma segunda pesquisa ou um workload runtime permanente em requisito antecipado do MVP.
+- O resultado aprovado da avaliação E20.2 deverá ser representado no próprio `business_taxons` por um marcador versionado, conceitualmente `reviewed_input_catalog_version`, inteiro positivo e anulável, em vez de um booleano sem rastreabilidade.
+- `reviewed_input_catalog_version IS NULL` significa que a avaliação E20.2 ainda não está concluída para liberar o taxon; valor positivo `N` significa que o catálogo E20.2 executável de versão `N`, resolvido para aquele taxon, foi avaliado e considerado suficiente.
+- A versão registrada nesse marcador é a versão executável do registry E20.2, não a versão editorial do documento de plano; o registry vigente possui `catalogV1` com `version: 1`.
+- Se a avaliação identificar gap, `reviewed_input_catalog_version` permanece `NULL` até o ajuste da E20.2 e a nova avaliação; não criar estado persistido adicional como `needs_adjustment` apenas para representar o gate.
+- Se a versão executável aplicável da E20.2 mudar, a avaliação anterior não deve ser presumida atual: o taxon precisa ser reavaliado antes de o marcador ser atualizado para a nova versão.
+- Assim, para este desenho, `taxon preparado` significa cumulativamente: `business_taxons.is_active = true` + `selected_end_customer_research_version` válida + `reviewed_input_catalog_version` correspondente à versão E20.2 efetivamente avaliada e suficiente.
 - Se uma LP real posterior revelar dado indispensável não previsto pela E20.2, isso reabre a avaliação daquele taxon e pode gerar evolução da E20.2; esse aprendizado não caracteriza falha do workflow nem justifica tentar antecipar todas as necessidades antes do primeiro caso real.
 - A prontidão da LP é avaliada depois, no contexto de conta + LP concretas: depende da E19.2 e da completude dos valores obrigatórios/condicionais aplicáveis pela E20.2, além dos demais gates próprios do fluxo de geração; a E19.2 não deve ser puxada para o gate de preparação do taxon.
 - A disponibilidade comercial por `taxon + plano` permanece uma decisão separada, historicamente prevista para E20.4/E12.4.5–12.4.6; ela não deve ser confundida nem com taxon tecnicamente preparado nem com LP concreta pronta para gerar.
@@ -109,7 +115,6 @@
 ### 1.5. Questões ainda abertas e não decididas
 
 - Qual é o menor mecanismo físico compatível com o runtime vigente para ler `business_taxons.selected_end_customer_research_version`, resolver exatamente `docs/pesquisas-brutas/<taxon_slug>/end_customer/vN.md` e fornecer seu conteúdo integral à E19.3, sem criar serviço ou infraestrutura além do necessário.
-- Como registrar minimamente que a avaliação da E20.2 para um taxon foi concluída, distinguindo `pendente`, `avaliado — nenhum ajuste necessário` e necessidade de ajuste/reavaliação, sem criar estrutura ou lifecycle maior do que o necessário.
 - Se a avaliação E20.2 assistida por IA deve permanecer inicialmente como procedimento administrativo fora do runtime ou ganhar workload próprio somente depois de benefício demonstrado; a decisão não bloqueia o princípio já fechado de avaliação obrigatória.
 - Quais critérios e testes mínimos serão usados pelo humano com apoio da IA para decidir se uma nova versão melhora suficientemente a pesquisa e deve substituir a seleção vigente.
 - Dependência: E19.3 deve ser ajustada para transportar pesquisa integral aprovada, preservando `identities + modelContext + serverContext`; o contrato técnico e a implementação desse ajuste pertencem ao plano próprio da E19.3.
@@ -253,7 +258,7 @@
 - Objetivo:
   - transformar o pacote E19.3 do Cenário E em uma candidata completa da primeira LP real, com planejamento narrativo e copy produzidos por IA dentro do contrato estrutural mínimo e validação determinística antes da persistência.
 - Dependências anteriores à execução:
-  - taxon preparado para o fluxo de LP, incluindo pesquisa `end_customer` aprovada e avaliação E20.2 concluída;
+  - taxon preparado para o fluxo de LP, incluindo pesquisa `end_customer` aprovada e avaliação E20.2 concluída contra a versão executável registrada;
   - configuração E19.2 da conta/LP concreta completa conforme os campos aplicáveis da E20.2;
   - pesquisa integral aprovada com contrato operacional mínimo;
   - E19.3 ajustada em seu recorte próprio para transportar essa pesquisa preservando `identities + modelContext + serverContext`.
@@ -297,9 +302,10 @@
 - Fechar exclusivamente o primeiro Gate: contrato operacional mínimo da pesquisa integral aprovada e critérios suficientes de preparação do taxon para seu uso na geração, sem recriar atomização.
 - Decisões já fechadas neste Gate: GitHub preserva as versões integrais; `business_taxons.selected_end_customer_research_version` identifica a versão `end_customer` aprovada; `NULL` mantém o taxon na taxonomia, mas o torna indisponível para geração de LP; não existe fallback implícito para `v1`, nem tabela própria de seleção; `business_buyer` não é requisito desse gate; versões posteriores são avaliadas por testes e decisão humana apoiada pela IA, e a última versão explicitamente aprovada permanece selecionada até nova aprovação.
 - Também está fechado que a avaliação da E20.2 é obrigatória para preparar o taxon, mas uma camada própria por taxon não é: catálogo herdado suficiente pode ser aprovado sem ajuste; gap identificado exige ajuste no recorte da E20.2 e nova avaliação antes de considerar o taxon preparado.
+- O resultado aprovado dessa avaliação fica marcado conceitualmente em `business_taxons.reviewed_input_catalog_version`; `NULL` significa avaliação não concluída para liberação e valor positivo identifica a versão executável E20.2 efetivamente avaliada, evitando booleano sem rastreabilidade.
 - O debate de preparação do taxon permanece separado da prontidão da LP concreta: E19.2 pertence à segunda e não é gate da preparação do taxon.
 - Se uma nova versão de pesquisa não entregar qualidade suficiente, a seleção vigente permanece; prompt e/ou pesquisa podem ser ajustados, uma nova versão produzida e os testes repetidos.
-- O restante desse Gate deve responder como resolver o campo de pesquisa para o conteúdo integral exato do GitHub em runtime, como registrar minimamente o resultado da avaliação E20.2 e qual é o modo inicial mais simples de executar a avaliação assistida por IA.
+- O restante desse Gate deve responder como resolver o campo de pesquisa para o conteúdo integral exato do GitHub em runtime e qual é o modo inicial mais simples de executar a avaliação E20.2 assistida por IA.
 - Depois do fechamento desse Gate, tratar o ajuste necessário da E19.3 em seu documento próprio e somente então retornar aos Gates internos da E19.4.
 - Na E19.4, fechar progressivamente prompt/workflow, contrato estrutural mínimo, factualidade/evidência, modelo/effort, materialização/snapshot, renderer e critérios de avaliação humana.
 - Quando a LP gerada não atingir a qualidade desejada, priorizar diagnóstico nesta ordem: E19.4 quando o contexto estiver correto mas a interpretação/composição falhar; pesquisa quando faltar conhecimento, nuance, atualidade ou evidência; E20.2 quando surgir dado factual necessário que o catálogo não previu; E19.3 somente quando existir gap real de autorização, identidade, separação ou transporte do contexto.
@@ -326,7 +332,7 @@
 - HTML, CSS, React, JavaScript, scripts ou componentes arbitrários gerados pela IA.
 - Catálogo estrutural amplo antecipado, reconstrução da antiga E18.5 ou extensibilidade sem caso concreto para a primeira LP.
 - Agents SDK, multi-agent, job, fila, cron, webhook, browsing ou tools externas sem necessidade real demonstrada e nova decisão humana.
-- Novo banco, tabela, migration, rota, serviço, engine ou infraestrutura antes de demonstrar gap real nas estruturas preservadas do projeto; o campo de versão `end_customer` em `business_taxons` já possui justificativa conceitual, enquanto eventual estado mínimo da avaliação E20.2 ainda deve ser definido antes de qualquer alteração adicional de DB.
+- Novo banco, tabela, migration, rota, serviço, engine ou infraestrutura antes de demonstrar gap real nas estruturas preservadas do projeto; os campos conceituais `selected_end_customer_research_version` e `reviewed_input_catalog_version` em `business_taxons` já possuem justificativa funcional, mas nenhuma migration ou alteração física é criada neste rascunho.
 - Perfil persistido novo de público, persona ou estratégia apenas para facilitar o prompt.
 
 ### 4.2. Critérios de parada imediata
