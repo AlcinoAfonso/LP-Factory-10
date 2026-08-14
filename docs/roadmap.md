@@ -2,7 +2,7 @@
 
 0.1 Cabeçalho
 • Data: 14/08/2026
-• Versão: v1.5.145
+• Versão: v1.5.146
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -2447,7 +2447,7 @@ Repositório — Ajustados
 20. E20 — Preparação e liberação de taxons para geração de landing pages
 
 * Objetivo: consolidar catálogo de entradas por taxon e plano, perfis versionados de orientação à geração, herança e, em recortes futuros, prontidão e liberação antes da geração de LPs por conta.
-* Status: E20.2 concluída e refinada; E20.3 concluída; checkpoints E20.5.3, E20.5.4 e E20.5.5 aprovados pelo mesmo Analista no PR draft #746; correção SQL posterior validada localmente, com inspeção autenticada gate-off e merge humano pendentes.
+* Status: E20.2 concluída e refinada; E20.3 concluída; checkpoints E20.5.3, E20.5.4 e E20.5.5 aprovados pelo mesmo Analista no PR draft #746; correção SQL posterior validada localmente e inspeção autenticada gate-off aprovada, com inspeção final do Estrategista e merge humano pendentes.
 
 20.2 Catálogo de entradas por taxon
 
@@ -2545,7 +2545,7 @@ Repositório — Ajustados
 20.5.1 Objetivo e status
 
 * Objetivo: permitir que um taxon ativo possua exatamente uma versão integral `end_customer` explicitamente selecionada por decisão humana autorizada e que essa versão possa ser lida integralmente por um boundary server-side, com validação de identidade e falha fechada.
-* Status: Plano-base v2 aprovado; checkpoints E20.5.3, E20.5.4 e E20.5.5 aprovados pelo mesmo Analista. A correção SQL posterior está validada localmente, e o dry-run Vercel e a configuração Preview gate-off foram comprovados; inspeção autenticada gate-off e merge humano permanecem pendentes. Apply, prova SQL, ativação e testes gate-on continuam pós-merge.
+* Status: Plano-base v2 aprovado; checkpoints E20.5.3, E20.5.4 e E20.5.5 aprovados pelo mesmo Analista. A correção SQL posterior está validada localmente, e o dry-run Vercel, a configuração gate-off e a inspeção autenticada gate-off foram aprovados; inspeção final do Estrategista e merge humano permanecem pendentes. Apply, prova SQL, ativação e testes gate-on continuam pós-merge.
 
 20.5.2 Registros do recorte
 
@@ -2588,20 +2588,20 @@ Repositório — Ajustados
 20.5.4 Persistência e seleção humana mínima
 
 * Objetivo: adicionar a referência mínima de versão selecionada e permitir sua alteração somente por ação humana administrativa explícita, reutilizando a validação da E20.5.3.
-* Status: Checkpoint aprovado pelo Analista no PR draft #746; correção SQL posterior validada localmente, inspeção autenticada gate-off pendente e ativação pós-merge.
+* Status: Checkpoint aprovado pelo Analista no PR draft #746; correção SQL posterior validada localmente e inspeção autenticada gate-off aprovada; inspeção final do Estrategista e merge humano permanecem pendentes, com ativação pós-merge.
 * Conteúdo:
 
   * A migration adiciona somente `selected_end_customer_research_version integer null`, com check positivo quando preenchida, sem nova tabela, lifecycle ou histórico; ela preserva RLS/policies, revoga o `UPDATE` de tabela inteira de `service_role` e mantém somente os grants de coluna usados pelo editor vigente (`name`, `slug`, `is_active`) e pela seleção. O snippet read-only comprovará esse conjunto exato após o apply.
   * O gate server-only `E20_5_SELECTED_RESEARCH_ENABLED` aceita apenas o literal `true` e antecede toda leitura ou mutação da coluna. Com o gate desligado, a interface e a ação novas permanecem inacessíveis, sem fallback para schema ausente.
   * A tela existente de detalhe do taxon recebe formulário separado com rótulos e associações programáticas; a Server Action exige `requirePlatformAdmin`, valida a candidata repo-only e atualiza somente a seleção por `id + slug + is_active`, com `.maxAffected(1)`.
-  * Validações locais e casos determinísticos permanecem verdes; o deployment Preview do HEAD aprovado está `READY`, e a listagem read-only do branch comprovou a flag ausente.
-  * O dry-run da Vercel CLI foi aprovado com as quatro pesquisas `end_customer` versionadas incluídas no conjunto de arquivos; a inspeção autenticada da superfície gate-off permanece pendente por ausência de sessão de aplicativo disponível.
+  * Validações locais e casos determinísticos permanecem verdes; o deployment Preview do checkpoint intermediário está `READY`, e as listagens read-only comprovaram a flag ausente em Preview e Production.
+  * O dry-run da Vercel CLI foi aprovado com as quatro pesquisas `end_customer` versionadas incluídas no conjunto de arquivos. A inspeção autenticada gate-off foi aprovada nas rotas de lista e detalhe da taxonomia, sem exposição da nova superfície e sem erro de runtime observado.
   * Após merge humano permanecem obrigatórios: apply canônico, execução aprovada do snippet SQL, configuração da flag, redeploy e testes autenticados gate-on em Preview e Production conforme o plano.
 
 20.5.5 Contrato de consumo da seleção válida
 
 * Objetivo: disponibilizar ao recorte seguinte uma leitura única que prove taxon ativo e pesquisa integral selecionada válida, sem antecipar o gate final de preparação.
-* Status: Implementação candidata concluída, validada e aprovada pelo mesmo Analista no PR draft #746; inspeção autenticada gate-off e merge humano permanecem pendentes, e a ativação continua pós-merge.
+* Status: Implementação candidata concluída, validada e aprovada pelo mesmo Analista no PR draft #746; inspeção autenticada gate-off aprovada, com inspeção final do Estrategista e merge humano pendentes; a ativação continua pós-merge.
 * Conteúdo:
 
   * O adapter server-only exige `E20_5_SELECTED_RESEARCH_ENABLED` antes de criar o client Supabase ou alcançar a consulta da nova coluna.
