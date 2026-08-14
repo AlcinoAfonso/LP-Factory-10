@@ -26,14 +26,14 @@ Regras:
 
 - `<taxon_slug>` deve corresponder ao slug confirmado do taxon.
 - `<audience_scope>` deve ser `business_buyer` ou `end_customer`, conforme a pesquisa.
-- `vN.md` deve usar versão sequencial dentro do mesmo `taxon_slug + audience_scope`.
+- `vN.md` representa a versão da pesquisa, não a ordem de upload: preserve versão confirmada; se não houver versão atribuída e for uma nova pesquisa, use a próxima versão disponível no mesmo `taxon_slug + audience_scope`.
 - Pesquisas distintas devem permanecer em arquivos distintos.
 
 ## 5. Tratamento do conteúdo
 
 Para cada pesquisa:
 
-- identifique `taxon_slug`, `audience_scope` e versão;
+- registre no Markdown arquivado `taxon_slug`, `audience_scope`, `research_version` e a origem;
 - se a origem for PDF ou outro formato, converta o conteúdo integral para Markdown;
 - preserve conteúdo, fontes, conclusões, limitações, tabelas e estrutura informacional relevante;
 - não resumir, reinterpretar, corrigir ou complementar a pesquisa;
