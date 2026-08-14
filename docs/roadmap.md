@@ -2,7 +2,7 @@
 
 0.1 Cabeçalho
 • Data: 14/08/2026
-• Versão: v1.5.148
+• Versão: v1.5.149
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -2447,7 +2447,7 @@ Repositório — Ajustados
 20. E20 — Preparação e liberação de taxons para geração de landing pages
 
 * Objetivo: consolidar catálogo de entradas por taxon e plano, perfis versionados de orientação à geração, herança e, em recortes futuros, prontidão e liberação antes da geração de LPs por conta.
-* Status: E20.2 concluída e refinada; E20.3 concluída; E20.5.3 e E20.5.4 com implementação candidata aprovada no PR draft #746; E20.5.5 planejada.
+* Status: E20.2 concluída e refinada; E20.3 concluída; E20.5.3 e E20.5.4 com implementação candidata aprovada no PR draft #746; E20.5.5 com candidata concluída e validada localmente.
 
 20.2 Catálogo de entradas por taxon
 
@@ -2545,7 +2545,7 @@ Repositório — Ajustados
 20.5.1 Objetivo e status
 
 * Objetivo: permitir que um taxon ativo possua exatamente uma versão integral `end_customer` explicitamente selecionada por decisão humana autorizada e que essa versão possa ser lida integralmente por um boundary server-side, com validação de identidade e falha fechada.
-* Status: Plano-base v2 aprovado; E20.5.3 e E20.5.4 com implementação candidata aprovada pelo Analista, e E20.5.5 ainda planejada. Apply, prova SQL e ativação da E20.5.4 permanecem pós-merge.
+* Status: Plano-base v2 aprovado; E20.5.3 e E20.5.4 com implementação candidata aprovada pelo Analista, e E20.5.5 com candidata concluída e validada localmente. Merge, apply, prova SQL e ativação permanecem pendentes.
 
 20.5.2 Registros do recorte
 
@@ -2557,6 +2557,8 @@ Repositório — Ajustados
     * `lib/conversion-content/landing-page/taxon-preparation/research.ts`
     * `lib/conversion-content/landing-page/taxon-preparation/validation-cases.ts`
     * `lib/conversion-content/landing-page/taxon-preparation/index.ts`
+    * `lib/conversion-content/adapters/selectedEndCustomerResearchAdapter.ts`
+    * `lib/conversion-content/adapters/selectedEndCustomerResearchAdapterCore.ts`
     * `components/admin/AdminTaxonResearchSelectionForm.tsx`
     * `supabase/migrations/20260814174500_e20_5_selected_end_customer_research_version.sql`
     * `supabase/snippets/e20_5_selected_end_customer_research_version_verify.sql`
@@ -2600,7 +2602,14 @@ Repositório — Ajustados
 20.5.5 Contrato de consumo da seleção válida
 
 * Objetivo: disponibilizar ao recorte seguinte uma leitura única que prove taxon ativo e pesquisa integral selecionada válida, sem antecipar o gate final de preparação.
-* Status: Planejada.
+* Status: Implementação candidata concluída e validada localmente no PR draft #746; merge e ativação permanecem decisões humanas separadas.
+* Conteúdo:
+
+  * O adapter server-only exige `E20_5_SELECTED_RESEARCH_ENABLED` antes de criar o client Supabase ou alcançar a consulta da nova coluna.
+  * A leitura valida o identificador, exige taxon existente e ativo, distingue `NULL` legítimo de seleção inválida e carrega exatamente a versão persistida pelo boundary repo-only da E20.5.3.
+  * O resultado tipado separa funcionalidade desabilitada, taxon ausente/inativo, ausência de seleção, versão ou identidade inválida, falha de banco e falhas de arquivo, filesystem, metadata ou conteúdo.
+  * Somente o sucesso fornece taxon, slug, versão selecionada, conteúdo integral e a projeção derivada `selectedResearchValid: true`; nenhuma marca `prepared` é criada ou persistida.
+  * Casos determinísticos cobrem todos os estados públicos e comprovam que o gate antecede o acesso à coluna; as validações consolidadas permanecem verdes.
 
 20.6 Avaliação de suficiência factual e preparação final do taxon
 

@@ -40,3 +40,36 @@ export type LoadEndCustomerResearchCandidateResult =
         message: string;
       }>;
     }>;
+
+export type SelectedEndCustomerResearchErrorCode =
+  | "FEATURE_DISABLED"
+  | "INVALID_TAXON_ID"
+  | "TAXON_NOT_FOUND"
+  | "TAXON_INACTIVE"
+  | "TAXON_IDENTITY_INVALID"
+  | "SELECTION_ABSENT"
+  | "SELECTED_VERSION_INVALID"
+  | "DATABASE_READ_FAILED"
+  | "FILE_NOT_FOUND"
+  | "FILESYSTEM_READ_FAILED"
+  | "METADATA_INVALID"
+  | "CONTENT_EMPTY";
+
+export type LoadSelectedEndCustomerResearchResult =
+  | Readonly<{
+      ok: true;
+      value: Readonly<{
+        taxonId: string;
+        taxonSlug: string;
+        selectedResearchVersion: number;
+        selectedResearchValid: true;
+        research: EndCustomerResearchContent;
+      }>;
+    }>
+  | Readonly<{
+      ok: false;
+      error: Readonly<{
+        code: SelectedEndCustomerResearchErrorCode;
+        message: string;
+      }>;
+    }>;

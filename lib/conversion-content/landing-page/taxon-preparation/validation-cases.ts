@@ -5,12 +5,18 @@ import type {
   EndCustomerResearchErrorCode,
   LoadEndCustomerResearchCandidateInput,
   LoadEndCustomerResearchCandidateResult,
+  LoadSelectedEndCustomerResearchResult,
+  SelectedEndCustomerResearchErrorCode,
 } from "./contracts";
 import {
   isEndCustomerResearchSelectionEnabled,
   loadEndCustomerResearchCandidate,
 } from "./index";
 import { loadEndCustomerResearchCandidateForValidation } from "./research";
+import {
+  loadSelectedEndCustomerResearchFromClient,
+  type SelectedEndCustomerResearchReadClient,
+} from "../../adapters/selectedEndCustomerResearchAdapterCore";
 
 const VALID_INPUT: LoadEndCustomerResearchCandidateInput = {
   taxon: { slug: "corretor-imoveis", isActive: true },
@@ -72,6 +78,129 @@ const cases: readonly ValidationCase[] = [
       assert.ok(mutationGate >= 0);
       assert.ok(serviceClient > mutationGate);
       assert.ok(mutationColumn > mutationGate);
+
+      const consumerSource = readFileSync(
+        new URL("../../adapters/selectedEndCustomerResearchAdapter.ts", import.meta.url),
+        "utf8",
+      );
+      const consumerGate = consumerSource.indexOf("if (!isEndCustomerResearchSelectionEnabled())");
+      const consumerClient = consumerSource.indexOf("createServiceClient()");
+      const consumerLoad = consumerSource.indexOf("return loadSelectedEndCustomerResearchFromClient");
+      assert.ok(consumerGate >= 0);
+      assert.ok(consumerClient > consumerGate);
+      assert.ok(consumerLoad > consumerClient);
+      assert.ok(consumerSource.indexOf('code: "FEATURE_DISABLED"') > consumerGate);
+    },
+  },
+  {
+    name: "selected research consumer distinguishes database and selection states",
+    run: async () => {
+      let invalidIdReads = 0;
+      assertSelectedFailure(
+        await loadSelectedEndCustomerResearchFromClient(
+          { taxonId: "invalid" },
+          selectionClient({ data: null, error: null }, () => invalidIdReads += 1),
+        ),
+        "INVALID_TAXON_ID",
+      );
+      assert.equal(invalidIdReads, 0);
+
+      const databaseFailure = await loadSelectedEndCustomerResearchFromClient(
+        { taxonId: VALID_TAXON_ID },
+        selectionClient({ data: null, error: { code: "42501" } }),
+      );
+      assertSelectedFailure(databaseFailure, "DATABASE_READ_FAILED");
+      assertSelectedFailure(
+        await loadSelectedEndCustomerResearchFromClient(
+          { taxonId: VALID_TAXON_ID },
+          selectionClient({ data: null, error: null }),
+        ),
+        "TAXON_NOT_FOUND",
+      );
+      assertSelectedFailure(
+        await loadSelectedEndCustomerResearchFromClient(
+          { taxonId: VALID_TAXON_ID },
+          selectionClient({ data: selectedTaxonRow({ is_active: false }), error: null }),
+        ),
+        "TAXON_INACTIVE",
+      );
+      assertSelectedFailure(
+        await loadSelectedEndCustomerResearchFromClient(
+          { taxonId: VALID_TAXON_ID },
+          selectionClient({ data: selectedTaxonRow(), error: null }),
+        ),
+        "SELECTION_ABSENT",
+      );
+      assertSelectedFailure(
+        await loadSelectedEndCustomerResearchFromClient(
+          { taxonId: VALID_TAXON_ID },
+          selectionClient({
+            data: selectedTaxonRow({ selected_end_customer_research_version: 0 }),
+            error: null,
+          }),
+        ),
+        "SELECTED_VERSION_INVALID",
+      );
+    },
+  },
+  {
+    name: "selected research consumer preserves candidate failure categories",
+    run: async () => {
+      const mappings: readonly [
+        EndCustomerResearchErrorCode,
+        SelectedEndCustomerResearchErrorCode,
+      ][] = [
+        ["FILE_NOT_FOUND", "FILE_NOT_FOUND"],
+        ["READ_FAILED", "FILESYSTEM_READ_FAILED"],
+        ["METADATA_INVALID", "METADATA_INVALID"],
+        ["CONTENT_EMPTY", "CONTENT_EMPTY"],
+        ["INVALID_RESEARCH_VERSION", "SELECTED_VERSION_INVALID"],
+        ["TAXON_INACTIVE", "TAXON_INACTIVE"],
+        ["INVALID_TAXON_SLUG", "TAXON_IDENTITY_INVALID"],
+        ["PATH_OUTSIDE_RESEARCH_ROOT", "TAXON_IDENTITY_INVALID"],
+      ];
+
+      for (const [candidateCode, selectedCode] of mappings) {
+        const result = await loadSelectedEndCustomerResearchFromClient(
+          { taxonId: VALID_TAXON_ID },
+          selectionClient({ data: selectedTaxonRow({ selected_end_customer_research_version: 1 }), error: null }),
+          async () => ({ ok: false, error: { code: candidateCode, message: "failure" } }),
+        );
+        assertSelectedFailure(result, selectedCode);
+      }
+
+      assertSelectedFailure(
+        await loadSelectedEndCustomerResearchFromClient(
+          { taxonId: VALID_TAXON_ID },
+          selectionClient({ data: selectedTaxonRow({ selected_end_customer_research_version: 1 }), error: null }),
+          async () => { throw new Error("filesystem failure"); },
+        ),
+        "FILESYSTEM_READ_FAILED",
+      );
+    },
+  },
+  {
+    name: "selected research consumer returns content only for the persisted valid version",
+    run: async () => {
+      const result = await loadSelectedEndCustomerResearchFromClient(
+        { taxonId: VALID_TAXON_ID },
+        selectionClient({
+          data: selectedTaxonRow({ selected_end_customer_research_version: 1 }),
+          error: null,
+        }),
+        async (input) => {
+          assert.deepEqual(input, VALID_INPUT);
+          return loadWithContent(validContent());
+        },
+      );
+
+      if (!result.ok) assert.fail(`Expected selected research success, received ${result.error.code}`);
+      assert.equal(result.value.taxonId, VALID_TAXON_ID);
+      assert.equal(result.value.taxonSlug, VALID_INPUT.taxon.slug);
+      assert.equal(result.value.selectedResearchVersion, 1);
+      assert.equal(result.value.selectedResearchValid, true);
+      assert.equal(result.value.research.content, validContent());
+      assert.equal("prepared" in result.value, false);
     },
   },
   {
@@ -319,6 +448,51 @@ function assertFailure(
 ): void {
   assert.equal(result.ok, false);
   if (result.ok) throw new Error("Expected failure");
+  assert.equal(result.error.code, code);
+  assert.equal("value" in result, false);
+}
+
+const VALID_TAXON_ID = "00000000-0000-4000-8000-000000000205";
+
+function selectedTaxonRow(
+  overrides: Partial<Record<string, unknown>> = {},
+): Record<string, unknown> {
+  return {
+    id: VALID_TAXON_ID,
+    slug: VALID_INPUT.taxon.slug,
+    is_active: true,
+    selected_end_customer_research_version: null,
+    ...overrides,
+  };
+}
+
+function selectionClient(
+  result: { data: unknown; error: unknown },
+  onRead: () => void = () => undefined,
+): SelectedEndCustomerResearchReadClient {
+  const query = {
+    select: (_columns: string) => {
+      onRead();
+      return query;
+    },
+    eq: () => query,
+    limit: () => query,
+    maybeSingle: async () => result,
+  };
+  return {
+    from: (table: string) => {
+      assert.equal(table, "business_taxons");
+      return query as never;
+    },
+  } as SelectedEndCustomerResearchReadClient;
+}
+
+function assertSelectedFailure(
+  result: LoadSelectedEndCustomerResearchResult,
+  code: SelectedEndCustomerResearchErrorCode,
+): void {
+  assert.equal(result.ok, false);
+  if (result.ok) throw new Error("Expected selected research failure");
   assert.equal(result.error.code, code);
   assert.equal("value" in result, false);
 }
