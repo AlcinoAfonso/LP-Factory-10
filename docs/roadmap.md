@@ -2,7 +2,7 @@
 
 0.1 Cabeçalho
 • Data: 14/08/2026
-• Versão: v1.5.147
+• Versão: v1.5.148
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -2447,7 +2447,7 @@ Repositório — Ajustados
 20. E20 — Preparação e liberação de taxons para geração de landing pages
 
 * Objetivo: consolidar catálogo de entradas por taxon e plano, perfis versionados de orientação à geração, herança e, em recortes futuros, prontidão e liberação antes da geração de LPs por conta.
-* Status: E20.2 concluída e refinada; E20.3 concluída; E20.5.3 implementada e validada localmente no PR draft #746.
+* Status: E20.2 concluída e refinada; E20.3 concluída; E20.5.3 e E20.5.4 com implementação candidata aprovada no PR draft #746; E20.5.5 planejada.
 
 20.2 Catálogo de entradas por taxon
 
@@ -2545,7 +2545,7 @@ Repositório — Ajustados
 20.5.1 Objetivo e status
 
 * Objetivo: permitir que um taxon ativo possua exatamente uma versão integral `end_customer` explicitamente selecionada por decisão humana autorizada e que essa versão possa ser lida integralmente por um boundary server-side, com validação de identidade e falha fechada.
-* Status: Plano-base v2 aprovado; E20.5.3 implementada e validada localmente, com E20.5.4 e E20.5.5 ainda planejadas.
+* Status: Plano-base v2 aprovado; E20.5.3 e E20.5.4 com implementação candidata aprovada pelo Analista, e E20.5.5 ainda planejada. Apply, prova SQL e ativação da E20.5.4 permanecem pós-merge.
 
 20.5.2 Registros do recorte
 
@@ -2557,12 +2557,23 @@ Repositório — Ajustados
     * `lib/conversion-content/landing-page/taxon-preparation/research.ts`
     * `lib/conversion-content/landing-page/taxon-preparation/validation-cases.ts`
     * `lib/conversion-content/landing-page/taxon-preparation/index.ts`
+    * `components/admin/AdminTaxonResearchSelectionForm.tsx`
+    * `supabase/migrations/20260814174500_e20_5_selected_end_customer_research_version.sql`
+    * `supabase/snippets/e20_5_selected_end_customer_research_version_verify.sql`
   * Ajustados:
 
+    * `app/admin/(protected)/taxonomia/[taxonId]/page.tsx`
+    * `app/admin/(protected)/taxonomia/actions.ts`
+    * `lib/admin/adapters/adminReadOnlyAdapter.ts`
+    * `lib/admin/adapters/adminReadOnlyTypes.ts`
+    * `lib/admin/adapters/adminTaxonomyAdapter.ts`
+    * `next.config.js`
     * `package.json`
 * Referências:
 
-  * Plano-base E20.5: `docs/lousa-plano-base-e20-5.md` — seção 3.1.
+  * Plano-base E20.5: `docs/lousa-plano-base-e20-5.md` — seções 3.1 e 3.2.
+  * Contrato de banco: `docs/schema.md` — seção 1.11, `business_taxons`.
+  * Configuração do gate: `docs/platform-config.md` — seção 3.5, secrets e variáveis server-side no Vercel.
 
 20.5.3 Leitura e validação repo-only da pesquisa integral
 
@@ -2576,7 +2587,15 @@ Repositório — Ajustados
 20.5.4 Persistência e seleção humana mínima
 
 * Objetivo: adicionar a referência mínima de versão selecionada e permitir sua alteração somente por ação humana administrativa explícita, reutilizando a validação da E20.5.3.
-* Status: Planejada.
+* Status: Implementação candidata aprovada pelo Analista no PR draft #746; ativação pós-merge pendente.
+* Conteúdo:
+
+  * A migration adiciona somente `selected_end_customer_research_version integer null`, com check positivo quando preenchida, sem nova tabela, lifecycle ou histórico; ela não altera RLS ou policies, e o snippet read-only deverá comprová-los após o apply junto com coluna, check e grants.
+  * O gate server-only `E20_5_SELECTED_RESEARCH_ENABLED` aceita apenas o literal `true` e antecede toda leitura ou mutação da coluna. Com o gate desligado, a interface e a ação novas permanecem inacessíveis, sem fallback para schema ausente.
+  * A tela existente de detalhe do taxon recebe formulário separado com rótulos e associações programáticas; a Server Action exige `requirePlatformAdmin`, valida a candidata repo-only e atualiza somente a seleção por `id + slug + is_active`, com `.maxAffected(1)`.
+  * Validações locais, casos determinísticos e deployment Preview gate-off foram aprovados.
+  * Permanecem pendentes antes do gate final o dry-run da Vercel CLI e a inspeção autenticada da superfície gate-off.
+  * Após merge humano permanecem obrigatórios: apply canônico, execução aprovada do snippet SQL, configuração da flag, redeploy e testes autenticados gate-on em Preview e Production conforme o plano.
 
 20.5.5 Contrato de consumo da seleção válida
 

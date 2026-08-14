@@ -38,6 +38,12 @@ export function AdminTaxonResearchSelectionForm({
   const selectionLabel = selectedVersion === null
     ? "Sem versão selecionada"
     : `Versão v${selectedVersion} selecionada`;
+  const success = state.selectedVersion !== null && !state.error;
+  const versionDescriptionIds = [
+    "end-customer-research-version-help",
+    state.error ? "end-customer-research-version-error" : null,
+    success ? "end-customer-research-version-success" : null,
+  ].filter((value): value is string => value !== null).join(" ");
 
   return (
     <section
@@ -80,7 +86,8 @@ export function AdminTaxonResearchSelectionForm({
               Versão candidata
             </label>
             <input
-              aria-describedby="end-customer-research-version-help"
+              aria-describedby={versionDescriptionIds}
+              aria-invalid={state.error ? true : undefined}
               className="mt-1 h-10 w-full rounded-md border border-border bg-background px-3 text-sm outline-none ring-brand-600/20 transition focus-visible:ring-4 disabled:cursor-not-allowed disabled:opacity-60"
               disabled={!isActive || pending}
               id="end-customer-research-version"
@@ -104,14 +111,16 @@ export function AdminTaxonResearchSelectionForm({
           {state.error ? (
             <p
               className="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
+              id="end-customer-research-version-error"
               role="alert"
             >
               {state.error}
             </p>
           ) : null}
-          {state.selectedVersion !== null && !state.error ? (
+          {success ? (
             <p
               className="rounded-md border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800"
+              id="end-customer-research-version-success"
               role="status"
             >
               Versão v{state.selectedVersion} selecionada com sucesso.
