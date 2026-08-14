@@ -2,7 +2,7 @@
 
 0.1 Cabeçalho
 • Data: 14/08/2026
-• Versão: v1.5.145
+• Versão: v1.5.146
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -2545,7 +2545,7 @@ Repositório — Ajustados
 20.5.1 Objetivo e status
 
 * Objetivo: permitir que um taxon ativo possua exatamente uma versão integral `end_customer` explicitamente selecionada por decisão humana autorizada e que essa versão possa ser lida integralmente por um boundary server-side, com validação de identidade e falha fechada.
-* Status: Plano-base v1 consolidado para avaliação única dos especialistas; execução ainda não autorizada.
+* Status: Plano-base v2 aprovado pelo gate do Analista; execução ainda não iniciada.
 
 20.5.3 Leitura e validação repo-only da pesquisa integral
 
@@ -2561,6 +2561,13 @@ Repositório — Ajustados
 
 * Objetivo: disponibilizar ao recorte seguinte uma leitura única que prove taxon ativo e pesquisa integral selecionada válida, sem antecipar o gate final de preparação.
 * Status: Planejada.
+
+20.6 Avaliação de suficiência factual e preparação final do taxon
+
+20.6.1 Objetivo e status
+
+* Objetivo: avaliar a suficiência factual da pesquisa integral selecionada em conjunto com o catálogo da E20.2 e definir o predicado final de preparação do taxon, sem autorizar geração.
+* Status: Futura; planejamento e implementação ainda não iniciados.
 
 21. E21 — Gestão e governança dos workloads OpenAI
 - Objetivo: gerir e governar os workloads OpenAI por recortes aprovados, iniciando pela configuração explícita, observabilidade segura e leitura administrativa; a configuração dinâmica e o histórico permanecem para recortes posteriores, sem otimização automatizada.
