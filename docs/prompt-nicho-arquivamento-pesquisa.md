@@ -27,6 +27,7 @@ Regras:
 - `<taxon_slug>` deve corresponder ao slug confirmado do taxon.
 - `<audience_scope>` deve ser `business_buyer` ou `end_customer`, conforme a pesquisa.
 - `vN.md` representa a versão da pesquisa, não a ordem de upload: preserve versão confirmada; se não houver versão atribuída e for uma nova pesquisa, use a próxima versão disponível no mesmo `taxon_slug + audience_scope`.
+- Se o path correspondente a uma versão confirmada já existir, verifique se é a mesma pesquisa; se não for possível confirmar igualdade ou se o conteúdo for distinto, pare e peça decisão humana. Não sobrescreva nem renumere automaticamente.
 - Pesquisas distintas devem permanecer em arquivos distintos.
 
 ## 5. Tratamento do conteúdo
