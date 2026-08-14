@@ -1,28 +1,29 @@
-12/08/2026 — Plano-base v2 — E19.3 — Pacote autorizado para geração no Cenário D
+14/08/2026 — Rascunho vivo — E19.3 — Pacote autorizado para geração no Cenário E
 
 ## 1. Estado e decisões fixas
 
 ### 1.1. Estado
 
-- Status: plano-base v2 aprovado; E19.3.3 implementada e validada no PR #729, aguardando merge humano.
-- Recorte: `E19.3 — Pacote autorizado para geração no Cenário D`.
+- Status: rascunho vivo da reformulação da E19.3 para o Cenário E; ainda não executável nem implementado.
+- Recorte: `E19.3 — Pacote autorizado para geração no Cenário E`.
 - Path canônico: `docs/lousa-plano-base-e19-3.md`.
 - Processo: `docs/prompt-estrategista.md` v29.
 - Plano conceitual: `docs/lp-planejamento.md`.
-- Os Gates 1, 2 e 3 do novo debate foram encerrados em 12/08/2026.
-- Decisão humana: testar o Cenário D controlado; para essa prova, E18.5 vigente e E20.3 deixam de ser dependências obrigatórias da geração.
-- Decisão humana de transição em 12/08/2026: retirar temporariamente o caminho E19.4 vigente que depende do contrato `partA + partB`, sem compatibilidade paralela; o novo plano E19.4 será reaberto posteriormente no mesmo path canônico para produzir e avaliar a primeira LP/prova de geração do Cenário D.
-- O plano-base v2 anterior permanece apenas como histórico do desenho substituído, no qual a E19.3 selecionava composição, módulos, variantes, ordem e contexto editorial antes da geração.
-- O recorte sucessor coordenado pelo mesmo Estrategista continua sendo `E19.4 — Geração e materialização da landing page em draft`; sua implementação vigente foi retirada da superfície canônica neste recorte porque consome o contrato substituído, e o novo plano definirá candidata, Structured Output, contrato estrutural único, validação pós-IA, materialização e renderer sobre o pacote v2.
+- A implementação vigente da E19.3.3 foi mergeada pelo PR #729 em 12/08/2026 e permanece como base técnica real até a execução desta reformulação.
+- O PR #729 substituiu `partA + partB` por `identities + modelContext + serverContext`, removeu E18.5 e E20.3 do caminho da compilação e deixou a E19.3 sem composição narrativa prévia.
+- Decisão humana de 14/08/2026: o Cenário E é a única direção ativa para a primeira LP real; o Cenário D deixa de ser direção de implementação.
+- A arquitetura lógica `identities + modelContext + serverContext` é preservada.
+- A mudança central deste recorte é retirar a pesquisa estruturada da E10.8 do caminho de geração e transportar a pesquisa integral `end_customer` aprovada e selecionada para o taxon.
+- Nenhuma alteração de runtime, banco ou migration decorrente desta reformulação foi iniciada neste documento.
 
 ### 1.2. Objetivo e resultado esperado
 
-- Transformar a E19.3 no menor boundary determinístico capaz de receber uma `landing_page` legítima já configurada pelo fluxo oficial e entregar à E19.4 um único pacote autorizado de pesquisa, fatos, proveniência, limites editoriais e contexto operacional.
-- A E19.3 deixa de montar previamente a LP.
-- A E19.3 não escolhe módulos, variantes, ordem, função narrativa, seção, layout, intensidade comercial ou fontes concretas por decisão editorial.
-- A E19.3 não usa `copySourceMap`, `prioritizedSources`, `funnelCopyProfiles`, `ctaMode`, `generationGuidance`, `itemGuidance` ou recomendações da E20.3 para filtrar ou montar a futura LP.
-- O resultado de sucesso é um pacote versionado, tipado e profundamente imutável que será consumido diretamente pela E19.4 replanejada.
-- Até o novo plano da E19.4, nenhum caminho de geração, materialização ou preview pode consumir o pacote nem permanecer alcançável por export público, Server Action, rota ou jornada de conta.
+- Manter a E19.3 como o menor boundary determinístico entre as fontes autorizadas do projeto e a E19.4.
+- Receber uma `landing_page` legítima, configurada pelo fluxo oficial, e entregar à E19.4 um único pacote autorizado com pesquisa integral, fatos concretos, limites editoriais e contexto operacional.
+- Não resumir, atomizar, ranquear, selecionar semanticamente ou reinterpretar a pesquisa integral antes da E19.4.
+- Não escolher módulos, variantes, ordem, função narrativa, seção, layout, intensidade comercial ou copy.
+- Preservar a separação entre valores semanticamente visíveis ao modelo e valores operacionais mantidos server-side.
+- Entregar exatamente os três blocos lógicos `identities + modelContext + serverContext`, profundamente imutáveis e sem DTO de domínio intermediário.
 - A E19.3 não chama OpenAI, não gera copy, não materializa conteúdo e não renderiza a landing page.
 
 ### 1.3. Fontes obrigatórias
@@ -34,51 +35,61 @@
 - `docs/lp-planejamento.md`.
 - `docs/base-tecnica.md`.
 - `docs/schema.md`.
-- `docs/lousa-plano-base-e10-8.md`.
 - `docs/lousa-plano-base-e18-4.md`.
 - `docs/lousa-plano-base-e20-2.md`.
 - `docs/lousa-plano-base-e19-2.md`.
-- Estado histórico e implementação vigente de E18.5, E20.3 e E19.3 somente para identificar dependências a retirar ou proteções a preservar.
-- `lib/conversion-content/landing-page/research-resolution/`.
+- `docs/lousa-plano-base-e19-4.md` como fonte das decisões do Cenário E e da preparação mínima do taxon.
+- `docs/prompt-nicho-arquivamento-pesquisa.md` para identidade e versionamento das pesquisas integrais.
+- `docs/pesquisas-brutas/corretor-imoveis/end_customer/v1.md` como primeiro caso real do novo contrato, sem tornar seu slug regra permanente de identidade.
 - `lib/conversion-content/landing-page/input-catalog/`.
 - `lib/conversion-content/landing-page/` para a API pública da E18.4.
 - `lib/lp-builder/contracts.ts`.
 - `lib/lp-builder/generationContext.ts`.
 - `lib/lp-builder/generationContextContracts.ts`.
-- Pareceres do Analista Sênior de 12/08/2026 sobre os Gates 1, 2 e 3.
+- `lib/lp-builder/adapters/generationContextAdapter.ts`.
+- `lib/lp-builder/adapters/generationContextAdapterCore.ts`.
+- `lib/admin/readRepoDoc.ts` como precedente real de leitura server-side de Markdown com `node:fs/promises`.
+- `next.config.js` como precedente real de `outputFileTracingIncludes` para arquivos Markdown necessários no deploy.
+- E10.8 e sua implementação somente para identificar o acoplamento atual que deve sair do caminho da geração, sem apagar nem prejudicar consumidores independentes que ainda existam.
 
 ### 1.4. Responsabilidades preservadas
 
-- E10.8 permanece responsável por resolver pesquisas estruturadas, versões e proveniência; a E19.3 não reimplementa sua herança, elegibilidade ou integridade.
 - E19.2 permanece responsável pelos valores concretos configurados, sua aplicabilidade, origem, completude e vínculo ao `draft`.
 - E20.2 permanece responsável pelo catálogo declarativo de entradas, tipos, escopos, condições, validações e proveniência das definições; a E19.3 não transforma o catálogo em fonte de valores concretos.
-- E18.4 permanece responsável pela parametrização raiz; a E19.3 projeta somente o subconjunto editorial útil à E19.4.
+- A preparação do taxon deve estar concluída antes da geração: taxon ativo, pesquisa integral `end_customer` aprovada/selecionada e avaliação E20.2 concluída contra a versão executável aplicável.
+- E18.4 permanece responsável pela parametrização raiz; a E19.3 projeta somente o subconjunto editorial útil à geração.
 - E9 e os boundaries vigentes permanecem responsáveis por entitlement, autorização, tenant, membership e vínculo da LP.
-- E18.5 fica fora do caminho canônico da prova do Cenário D; não participa da seleção editorial, filtragem de pesquisa ou composição. Seus ativos estruturais permanecem preservados no repositório para avaliação posterior.
-- E20.3 fica fora do caminho canônico da prova do Cenário D; ausência de perfil ativo não bloqueia a nova E19.3.
-- A E19.3 permanece no boundary existente `lib/lp-builder/`; não criar novo domínio, rota, UI, persistência, banco, engine ou infraestrutura neste recorte.
-- A retirada temporária da E19.4 alcança todos os artefatos runtime cujo único papel depende do contrato `partA + partB`: consumidores, exports, contratos, implementações, adapters, Server Action, componentes, rota, workload, scripts e validadores. Esses artefatos devem ser removidos no mesmo recorte, sem alias, fallback, feature flag, export privado ou código dormente. Preservam-se somente a migration, o teste SQL e o snippet versionados da materialização, sem rollback, edição de migration aplicada, consumidor runtime ou nova mutação remota.
+- E18.5 permanece fora da E19.3; a estrutura permitida da candidata pertence ao contrato da E19.4.
+- E20.3 permanece fora da E19.3; ausência de perfil não bloqueia o Cenário E.
+- E10.8 deixa de ser dependência da geração E19.3 → E19.4; sua existência e seus demais consumidores não são alterados por esta decisão.
+- A E19.3 permanece no boundary `lib/lp-builder/`; não criar novo domínio, rota, API HTTP, serviço, engine, agente ou infraestrutura para carregar a pesquisa.
+- GitHub continua sendo a fonte versionada dos arquivos, mas o runtime não consulta a API do GitHub: o servidor lê o Markdown incluído no próprio deploy.
 
 ### 1.5. Decisões consolidadas dos Gates
 
-- Gate 1 — conteúdo autorizado:
-  - pesquisa `end_customer` completa da E10.8;
-  - fatos concretos válidos e aplicáveis da configuração E19.2 governada pela E20.2;
-  - IDs, versões e proveniência existentes;
-  - evidências concretas somente quando realmente existirem;
-  - projeção editorial mínima da E18.4;
-  - valores operacionais necessários à etapa seguinte preservados server-side.
-- Gate 2 — projeção do valor bruto por `valueType`:
+- Gate 1 — taxon e pesquisa autorizados:
+  - `business_taxons.is_active = true`;
+  - `selected_end_customer_research_version` identifica explicitamente a versão integral aprovada;
+  - `reviewed_input_catalog_version` identifica a versão executável E20.2 avaliada e considerada suficiente para o taxon;
+  - `business_buyer` não é requisito da geração da LP `end_customer`;
+  - ausência ou inconsistência de qualquer um desses sinais falha fechado.
+- Gate 2 — fatos concretos e projeção por `valueType`:
   - valores semanticamente visíveis: `string`, `enum`, `string_list`, `boolean`, `number_range`, `keyword_map`;
   - valores brutos server-side: `phone`, `email`, `url`, `asset_reference`, `color_palette`;
-  - a classificação governa apenas o valor bruto; `fieldKey`, `purpose`, `valueType`, `source`, aplicabilidade e proveniência canônicos permanecem preservados conforme sua função;
-  - não criar allowlist nominal `fieldKey → IA/server`, `contextRole`, registry paralelo ou nova versão E20.2 apenas para essa separação.
+  - `fieldKey`, `purpose`, `valueType`, `source` e proveniência permanecem preservados conforme o contrato vigente;
+  - não criar allowlist nominal `fieldKey → IA/server` nem registry paralelo.
 - Gate 3 — interface lógica mínima:
   - `identities`;
   - `modelContext`;
   - `serverContext`;
   - nenhum quarto bloco;
   - nenhum segundo DTO de domínio entre E19.3 e E19.4.
+- Gate 4 — pesquisa integral no runtime:
+  - o path atual é derivado de `taxon.slug + audience_scope + selected_version` somente como mecanismo físico da primeira prova;
+  - o runtime lê o arquivo do próprio deploy com `node:fs/promises`, sem requisição HTTP à API do GitHub;
+  - o conteúdo carregado deve validar `taxon_slug`, `audience_scope` e `research_version` contra a seleção autorizada;
+  - o path não integra o contrato entregue à E19.4;
+  - eventual migração futura do diretório para identidade por UUID/código do taxon pode ser avaliada após a primeira LP real, sem bloquear esta prova.
 
 ## 2. Contrato do caso
 
@@ -90,49 +101,52 @@
   - LP em `draft`;
   - configuração concluída e vinculada pela E19.2;
   - plano e taxon efetivos;
-  - resolução E10.8;
+  - taxon preparado conforme a seção 1.5;
   - parametrização raiz E18.4.
 - Processamento:
-  - validar LP, configuração e gates vigentes;
-  - reutilizar a resolução canônica da E10.8;
-  - projetar somente o conjunto `end_customer` para matéria-prima da geração;
+  - validar LP, configuração, autorização e entitlement pelos boundaries vigentes;
+  - identificar o taxon servido a partir da configuração autoritativa;
+  - ler em `business_taxons` o estado mínimo necessário à preparação do taxon;
+  - exigir `selected_end_customer_research_version` inteira positiva;
+  - exigir `reviewed_input_catalog_version` compatível com a versão executável E20.2 consumida pela configuração;
+  - derivar o path físico da pesquisa integral `end_customer` selecionada;
+  - ler o Markdown do filesystem do deploy;
+  - validar identidade mínima e versão declaradas no próprio arquivo;
+  - projetar o conteúdo integral da pesquisa sem resumo, atomização ou seleção semântica;
   - projetar fields concretos `applicable = true`, `source != missing` e já validados;
-  - classificar o valor bruto por `valueType` entre contexto semântico e contexto server-side;
-  - preservar metadados canônicos e proveniência;
+  - separar o valor bruto por `valueType` entre contexto semântico e server-side;
   - projetar os limites editoriais mínimos da E18.4;
   - montar `identities + modelContext + serverContext`;
   - validar a saída e devolvê-la profundamente imutável.
 - Validação:
-  - falhar fechado para LP/configuração inválida, pesquisa `end_customer` indisponível ou inválida, catálogo/valores incompatíveis, fato obrigatório ausente ou outra inconsistência comprovável pelas autoridades responsáveis.
-  - resolver e validar o entitlement exclusivamente pelo boundary interno vigente da E9; plano, assinatura, feature ou resposta externa da Stripe não liberam acesso nem substituem o sinal interno.
+  - falhar fechado para LP/configuração inválida, taxon não preparado, versão de pesquisa ausente/inválida, arquivo inexistente, metadata incompatível, catálogo E20.2 não avaliado/obsoleto, fato obrigatório ausente ou outra inconsistência comprovável.
+  - resolver e validar o entitlement exclusivamente pelo boundary interno vigente da E9.
 - Persistência:
-  - nenhuma nova.
+  - nenhuma nova na E19.3.
 - Consumo:
-  - a saída de sucesso é a única entrada de domínio da E19.4 replanejada;
-  - até esse replanejamento, não existe consumidor runtime autorizado do pacote;
-  - a E19.4 replanejada não deve reler E18.5 ou E20.3 para decidir narrativa, composição ou pesquisa.
+  - a saída de sucesso é a única entrada de domínio da E19.4;
+  - a E19.4 não relê diretamente E10.8, E18.4, E20.2, E18.5 ou E20.3 para reconstruir o contexto.
 - Fallback:
-  - somente fallbacks já autorizados pelas fontes responsáveis;
-  - sem heurística, mapa editorial, seleção por `itemKey`, default silencioso ou reconstrução de perfil.
+  - nenhum fallback silencioso para outra versão de pesquisa, arquivo mais recente, pesquisa estruturada da E10.8 ou ancestor;
+  - ausência/inconsistência falha fechado.
 - Observabilidade:
-  - preservar somente logging seguro já autorizado no boundary;
-  - não registrar pesquisa, valores concretos, PII, secrets, payloads ou prompts;
-  - não criar SDK, destino externo, Log Drain ou infraestrutura nova.
+  - preservar logging seguro já autorizado no boundary;
+  - não registrar conteúdo da pesquisa, valores concretos, PII, secrets, payloads ou prompts.
 
 ### 2.2. Pesquisa autorizada
 
-- A matéria-prima de pesquisa enviada à E19.4 é o conjunto `end_customer` resolvido pela E10.8.
-- O conjunto inclui integralmente:
-  - `strategic_core`;
-  - `lp_overview`;
-  - `lp_sections`;
-  - `seo`;
-  - todos os itens ativos integrantes do conjunto resolvido;
-  - IDs, versões e proveniência já fornecidos pela E10.8.
-- `business_buyer` continua podendo ser resolvido pela E10.8 para preservar seu contrato vigente, mas seus textos não integram a matéria-prima da LP `end_customer`.
-- Essa exclusão decorre da fronteira objetiva de `audience_scope`; não constitui seleção editorial por pertinência.
-- Não existe filtragem adicional por módulo, funil, CTA, `itemKey`, `copySourceMap`, fonte priorizada ou julgamento semântico da E19.3.
-- Não criar `researchPath` novo nem nova identidade de pesquisa.
+- A matéria-prima de pesquisa enviada à E19.4 é a pesquisa integral `end_customer` explicitamente selecionada no taxon.
+- A identidade mínima preservada é:
+  - taxon servido;
+  - `taxon_slug`;
+  - `audience_scope = end_customer`;
+  - `research_version`.
+- O conteúdo enviado é o Markdown integral da versão selecionada, preservando fontes, evidências, inferências, condições, exceções, limitações e contexto presentes no arquivo.
+- A E19.3 não cria `strategic_core`, `lp_overview`, `lp_sections`, `seo`, `itemKey`, `priority`, `sortOrder` ou representação equivalente para consumir essa pesquisa.
+- Não existe filtragem por módulo, funil, CTA, seção, pertinência ou julgamento semântico da E19.3.
+- `business_buyer` não é carregado para a geração da LP `end_customer`.
+- O path físico não entra no `modelContext`, não vira fonte de decisão da E19.4 e pode mudar futuramente sem alterar o contrato semântico da pesquisa.
+- Para a primeira prova, mantém-se o padrão existente `docs/pesquisas-brutas/<taxon_slug>/end_customer/vN.md`; eventual adoção de UUID/código no diretório fica fora do caminho crítico atual.
 
 ### 2.3. Fatos e regra de projeção
 
@@ -151,17 +165,16 @@
   - `url`;
   - `asset_reference`;
   - `color_palette`.
-- A regra classifica corretamente os 23 fields vigentes da E20.2 e não possui exceção material conhecida.
-- Os metadados canônicos necessários permanecem preservados independentemente da projeção do valor bruto:
+- Os metadados canônicos permanecem preservados:
   - `fieldKey`;
   - `purpose`;
   - `valueType`;
-  - `source` entre `authoritative` e `configuration`;
-  - proveniência já produzida pelos contratos responsáveis.
+  - `source`;
+  - proveniência existente.
 - `missing` não integra o pacote como fato.
 - `primary_conversion_channel` permanece semanticamente visível; o destino correspondente permanece somente em `serverContext`.
-- `brand_logo_asset` e `brand_color_palette` permanecem com seus valores brutos em `serverContext`; qualquer projeção futura de mera disponibilidade para o provider pertence à E19.4.
-- Se um futuro field não puder ser classificado corretamente pelos tipos vigentes, a evolução deve ocorrer no contrato E20.2; não criar exceção nominal na E19.3.
+- `brand_logo_asset` e `brand_color_palette` permanecem com valores brutos em `serverContext`.
+- Se um futuro field não puder ser classificado corretamente pelos tipos vigentes, a evolução ocorre no contrato E20.2; não criar exceção nominal na E19.3.
 
 ### 2.4. Projeção mínima da E18.4
 
@@ -187,33 +200,29 @@
 
 ### 2.5. Proveniência, fatos declarados e evidências
 
-- Pesquisa reutiliza diretamente as identidades existentes da E10.8, incluindo quando disponíveis:
-  - `itemId`;
-  - `researchId`;
-  - `itemKey`;
-  - `researchBlock`;
+- A pesquisa integral preserva identidade operacional suficiente para demonstrar qual material foi exposto:
+  - `taxonId` servido;
+  - `taxonSlug`;
   - `audienceScope`;
-  - taxon servido e de origem;
-  - relação de origem;
-  - versão da pesquisa.
-- Fato reutiliza:
+  - `researchVersion`.
+- O conteúdo completo da pesquisa já contém suas fontes, limitações e distinções internas; a E19.3 não cria proveniência por trecho, item ou claim.
+- Fato concreto reutiliza:
   - `fieldKey`;
   - valor autorizado;
   - `source` da E19.2;
-  - versão do catálogo;
+  - versão executável do catálogo;
   - proveniência existente.
 - Não criar `fact_id`.
 - A evidência documental da E20.2 justifica a existência do field no catálogo; ela não comprova a veracidade do valor concreto fornecido pela conta.
 - Um valor declarado pode integrar `modelContext` sem se tornar prova verificada.
-- `creci_registration` permanece visível como dado declarado, mas não equivale a CRECI oficialmente verificado.
 - Evidência concreta somente acompanha o pacote quando uma fonte canônica já fornecer uma referência real e autorizada.
-- Ausência de evidência permanece ausência; não criar `verified`, `evidence_id` ou outra marcação artificial para preencher desconhecimento.
-- Testemunho, credencial verificada, resultado, garantia, escassez ou outra prova factual concreta não pode ser tratada como disponível sem suporte real correspondente.
+- Ausência de evidência permanece ausência; não criar `verified`, `evidence_id` ou marcação artificial para preencher desconhecimento.
+- Testemunho, credencial verificada, resultado, garantia, escassez ou outra prova concreta não pode ser tratada como disponível sem suporte real correspondente.
 
 ### 2.6. Interface lógica de saída
 
-- Por substituir de forma incompatível o contrato público vigente `partA + partB`, o pacote `identities + modelContext + serverContext` usa `contractVersion: 2`. É proibido reutilizar `contractVersion: 1`, manter alias ou fallback para a shape anterior ou conservar um DTO público paralelo.
-- O sucesso contém exatamente três blocos lógicos.
+- A estrutura lógica permanece exatamente `identities + modelContext + serverContext`.
+- Como o shape de pesquisa muda de forma incompatível em relação ao contrato implementado pelo PR #729, a implementação do Cenário E deve usar `contractVersion: 3`, sem alias ou fallback para o contrato v2.
 - `identities` preserva:
   - versão do contrato E19.3;
   - identidade da conta;
@@ -221,10 +230,15 @@
   - plano efetivo;
   - taxon servido;
   - `catalogVersion` da configuração;
+  - `reviewedInputCatalogVersion` do taxon;
   - `configurationRevision` da E19.2;
   - `rootVersion` efetivamente resolvida da E18.4;
-  - versão efetivamente usada pela pesquisa `end_customer`.
+  - versão efetivamente usada pela pesquisa integral `end_customer`.
 - `identities` não preserva:
+  - path da pesquisa;
+  - IDs de itens estruturados;
+  - `researchBlock`;
+  - `itemKey`;
   - `moduleCatalogVersion`;
   - `generationProfileId`;
   - `generationProfileVersion`;
@@ -233,7 +247,7 @@
   - ordem;
   - recommendation IDs.
 - `modelContext` preserva:
-  - pesquisa `end_customer` completa;
+  - pesquisa integral `end_customer` com identidade mínima e conteúdo completo;
   - fatos projetados pelos tipos semânticos;
   - metadados e proveniência desses fatos;
   - evidências concretas realmente disponíveis, quando existirem;
@@ -242,126 +256,139 @@
   - valores brutos de destinos operacionais;
   - `privacy_policy_url` quando aplicável;
   - `brand_logo_asset` quando existente;
-  - `brand_color_palette`;
+  - `brand_color_palette` quando existente;
   - metadados canônicos necessários ao uso determinístico desses valores.
-- `serverContext` significa que o valor bruto não é matéria-prima textual para a IA; a E19.4 replanejada receberá o pacote inteiro e poderá usar esses valores deterministicamente.
+- `serverContext` significa que o valor bruto não é matéria-prima textual para a IA.
 - A E19.3 expõe um único resultado TypeScript discriminado entre sucesso completo e falha explícita.
-- A saída usa `contractVersion: 2` e é profundamente imutável.
-- A E19.4 replanejada consumirá essa saída diretamente, sem criar segundo pacote de domínio intermediário.
-- Serialização específica para o provider pertence ao transporte da E19.4 e não constitui novo contrato de domínio.
+- A saída é profundamente imutável.
+- A E19.4 consome essa saída diretamente; serialização específica para o provider pertence à E19.4 e não constitui novo contrato de domínio.
 
 ### 2.7. Simplificação obrigatória
 
 - Implementação esperada:
-  - ler fontes canônicas;
-  - validar;
+  - ler configuração e taxon canônicos;
+  - validar preparação do taxon;
+  - ler a pesquisa integral do filesystem do deploy;
+  - validar metadata e versão;
   - projetar pesquisa, fatos e limites;
   - separar valor semântico de valor operacional;
   - montar saída tipada;
   - validar e devolver.
+- Reutilizar:
+  - `generationContextAdapter.ts` e `generationContextAdapterCore.ts` como boundary existentes;
+  - `node:fs/promises` para leitura server-side;
+  - proteção de path equivalente à já usada em `lib/admin/readRepoDoc.ts`;
+  - `outputFileTracingIncludes` somente no consumer real necessário para garantir os arquivos no deploy.
 - Não criar:
+  - chamada à API GitHub em runtime;
+  - nova rota;
+  - novo serviço;
+  - nova tabela de pesquisa;
+  - RAG, chunking ou embedding;
   - `factIdentity`;
   - registry de fatos;
   - taxonomia geral de contexto;
   - `contextRole`;
-  - `researchPath` novo;
+  - path persistido no banco;
   - allowlist nominal de fields;
   - DSL;
   - engine;
   - framework de claims;
   - mapa E18.5 ↔ E20.2;
-  - perfil de funil substituto;
   - camada intermediária entre E19.3 e E19.4.
-- Não criar nova versão E20.2 somente para classificar valores como IA/server.
-- Não criar nova persistência, tabela, migration, rota, UI, API HTTP, Server Action ou infraestrutura.
+- Não alterar o padrão físico dos diretórios de pesquisa antes da primeira LP apenas para substituir slug por UUID/código; essa robustez pode ser avaliada depois com evidência real.
 - Crescimento motivado principalmente por extensibilidade sem consumidor atual é critério de parada e simplificação.
 
 ## 3. Fases e próxima ação
 
-### 3.1. E19.3.3 — Pacote autorizado para geração no Cenário D
+### 3.1. E19.3.3 — Pacote autorizado para geração no Cenário E
 
-- Status: implementada e validada no PR #729; aguarda merge humano.
+- Status: reformulação aprovada conceitualmente neste rascunho; implementação ainda não iniciada.
 - Automação: não.
 - Objetivo:
-  - substituir a composição determinística anterior por um compilador de contexto autorizado que implemente integralmente o contrato da seção 2.
+  - ajustar a implementação E19.3.3 já mergeada para substituir a pesquisa estruturada da E10.8 pela pesquisa integral selecionada, preservando o boundary, a separação de fatos e a interface lógica de três blocos.
 - Entregas:
-  - manter a residência no boundary `lib/lp-builder/`;
-  - substituir o contrato público anterior pelo pacote `identities + modelContext + serverContext` com `contractVersion: 2`;
-  - retirar E18.5 e E20.3 do caminho canônico da compilação da E19.3;
-  - remover da E19.3 seleção de módulos, variantes, ordem, `copySourceMap`, `prioritizedSources`, `funnelCopyProfiles`, `ctaMode`, `generationGuidance`, `itemGuidance` e gate de perfil ativo;
-  - reutilizar a resolução E10.8 sem reimplementar herança ou integridade;
-  - reutilizar a configuração resolvida E19.2 e o catálogo E20.2 sem segundo catálogo de binding;
-  - projetar a E18.4 apenas no subconjunto definido neste plano;
-  - preservar logging seguro já vigente sem nova infraestrutura;
-  - exportar o único contrato público necessário à E19.4 replanejada;
-  - remover integralmente os contratos, implementações, adapters e casos executáveis vigentes de geração, candidata, materialização e preview E19.4; remover seus imports, exports e chamadas em `app/a/[account]/page.tsx`, nos índices públicos, no registry de workloads OpenAI e em `package.json`; remover também a Server Action, os componentes e a rota de preview correspondentes. Não conservar implementação privada ou inalcançável como compatibilidade. Preservar exclusivamente os artefatos SQL versionados indicados neste plano.
-  - preservar a continuidade `complete_bound → operational` da jornada E19.2 por um estado mínimo, determinístico e read-only que informe configuração concluída e vinculada e ausência temporária da etapa E19.4; não permitir fallback para a experiência comercial, branch sem resultado, geração, materialização, preview ou capability improvisada.
+  - manter a residência em `lib/lp-builder/`;
+  - preservar `identities + modelContext + serverContext`;
+  - evoluir o contrato para `contractVersion: 3` pela mudança incompatível do shape de pesquisa;
+  - retirar `LandingPageResearchResolutionResult`, `resolveLandingPageResearchForTaxon` e demais dependências da E10.8 do caminho da compilação E19.3;
+  - adicionar leitura server-side mínima do taxon preparado e da pesquisa integral selecionada;
+  - validar `selected_end_customer_research_version` e `reviewed_input_catalog_version`;
+  - ler e validar o Markdown integral sem API GitHub;
+  - preservar a configuração resolvida E19.2 e a regra de projeção por `valueType`;
+  - preservar a projeção mínima da E18.4;
+  - preservar logging seguro sem conteúdo da pesquisa ou valores sensíveis;
+  - ajustar `next.config.js` somente na medida necessária para incluir os arquivos de pesquisa no bundle/deploy do consumer real;
+  - atualizar casos executáveis e contratos TypeScript focais;
+  - não implementar E19.4 neste recorte.
 - Validação mínima:
-  - configuração válida e vinculada produz pacote de sucesso;
-  - `end_customer` completo chega sem filtro editorial;
-  - `business_buyer` não entra na matéria-prima da LP `end_customer`;
-  - os 23 fields vigentes são classificados corretamente pela regra de `valueType`;
+  - taxon preparado + LP/configuração válida produz pacote de sucesso;
+  - taxon sem pesquisa selecionada falha fechado;
+  - taxon sem avaliação E20.2 vigente falha fechado;
+  - arquivo inexistente falha fechado;
+  - `taxon_slug`, `audience_scope` ou `research_version` incompatíveis falham fechado;
+  - pesquisa integral chega completa ao `modelContext` sem atomização;
+  - nenhuma dependência da E10.8 participa do caminho de geração;
+  - `business_buyer` não entra no pacote;
+  - fatos semanticamente visíveis e server-side continuam separados por `valueType`;
   - `missing` não vira fato;
   - valores operacionais brutos não aparecem em `modelContext`;
-  - `primary_conversion_channel` pode aparecer em `modelContext` sem expor o destino correspondente;
-  - CRECI declarado não é marcado como prova verificada;
   - ausência de evidência concreta não produz referência artificial;
-  - `identities` preserva `catalogVersion`, `configurationRevision`, `rootVersion`, versão E19.3 e versão da pesquisa;
-  - o pacote novo usa exclusivamente `contractVersion: 2` e não existe alias, fallback ou DTO público paralelo para `partA + partB`;
-  - nenhuma identidade de módulo ou perfil permanece no pacote;
-  - falhas das autoridades canônicas resultam em falha explícita, sem pacote parcial;
+  - `identities` preserva versão de pesquisa, catálogo E20.2 avaliado, configuração e raiz;
+  - o pacote usa exclusivamente `contractVersion: 3`;
+  - nenhum path da pesquisa aparece no contrato entregue à E19.4;
   - resultado de sucesso é profundamente imutável;
-  - não existe segundo DTO de domínio nem mapa paralelo;
-  - nenhum export público, Server Action, rota, workload ou jornada alcançável continua invocando geração, materialização ou preview E19.4 sobre o contrato antigo;
-  - entitlement interno ausente, inválido ou bloqueado falha antes da montagem do pacote, sem importar SDK, adapter ou resposta da Stripe;
-  - configuração E19.2 `complete_bound` continua resultando em estado `operational` explícito e read-only, sem cair na experiência comercial ou expor ação de geração, materialização ou preview.
+  - falhas das autoridades canônicas resultam em falha explícita, sem pacote parcial.
 - Regressões obrigatórias:
-  - E10.8;
   - E18.4;
   - E20.2;
   - E19.2;
-  - boundaries de autorização e vínculo já consumidos pela E19.3.
+  - boundaries de autorização e vínculo já consumidos pela E19.3;
+  - E10.8 somente para comprovar que seus consumidores independentes permanecem íntegros, sem recolocá-la no caminho da geração.
 - Critério de primeira prova:
-  - no PR #729, a nova compilação foi executada sobre o draft real destinado à primeira LP e demonstrou, em modo sem OpenAI, que o pacote contém pesquisa `end_customer` completa, fatos concretos válidos e separados corretamente entre `modelContext` e `serverContext`, sem composição prévia.
+  - executar a compilação sobre o draft real da primeira LP e demonstrar, sem OpenAI, que o pacote contém a pesquisa integral `end_customer` selecionada, fatos concretos válidos e separados corretamente entre `modelContext` e `serverContext`.
 - Fechamento documental:
-  - aplicar o Prompt ABC apenas aos documentos canônicos materialmente afetados pela implementação;
-  - `docs/roadmap.md` deve refletir somente o estado realmente implementado;
-  - `docs/lousa-plano-base-e19-4.md` deve ser marcado como temporariamente superado e não executável pela decisão de 12/08/2026, preservando seu histórico sem iniciar o novo planejamento E19.4.
+  - atualizar somente os documentos canônicos materialmente afetados após a implementação;
+  - não atualizar o roadmap como concluído antes da validação real do novo contrato.
 
 ### 3.2. Próxima ação
 
-- Aguardar o merge humano do PR #729, que contém a E19.3.3 implementada e validada.
-- Manter encerrado o recorte E19.3.3; a produção e avaliação da primeira LP/prova de geração do Cenário D pertencem à nova E19.4.
-- Não iniciar o novo planejamento da E19.4 neste recorte; a retirada temporária do caminho vigente serve somente para eliminar a dependência incompatível e manter a substituição da E19.3 íntegra.
+- Consolidar esta reformulação como briefing executável da E19.3.3 do Cenário E.
+- Implementar primeiro somente o ajuste E19.3 descrito na seção 3.1.
+- Executar prova read-only no draft real antes de qualquer chamada OpenAI.
+- Após a E19.3 produzir o pacote integral válido, retornar à E19.4 e implementar o primeiro workload de geração do Cenário E.
+- Não abrir debate sobre renomear diretórios por UUID/código do taxon antes dessa primeira prova, salvo bloqueio real do path atual.
 
 ## 4. Escopo negativo e critérios de parada
 
 ### 4.1. Escopo negativo
 
 - chamada OpenAI ou geração de copy;
-- modelo, reasoning effort, prompt ou Structured Output;
+- modelo, reasoning effort, prompt ou Structured Output da E19.4;
 - módulos, variantes, layouts, seções ou composição da candidata;
 - validação pós-IA;
-- criação, evolução, adaptação ou execução de materialização, snapshot durável ou renderer; a remoção dos artefatos E19.4 vigentes exigida pela seção 3.1 permanece dentro do recorte;
-- E18.5 como dependência obrigatória da geração;
-- E20.3 como dependência obrigatória da geração;
-- criação, evolução ou operação de perfil de orientação;
-- alteração de E10.8, E18.4, E20.2 ou E19.2 sem gap real demonstrado durante a execução;
-- banco, migration, tabela, view, RPC, trigger, RLS, policy ou nova persistência;
-- criação, evolução ou adaptação de rota, UI, editor, Provider, agente, automação, job, fila, cron, webhook ou infraestrutura; permanecem dentro do recorte somente a remoção da ação, dos componentes e da rota E19.4 vigentes e o ajuste mínimo da jornada E19.2 para preservar `complete_bound → operational` conforme a seção 3.1;
+- materialização, snapshot durável ou renderer;
+- E18.5 como dependência da E19.3;
+- E20.3 como dependência da E19.3;
+- pesquisa estruturada E10.8 como dependência da geração;
+- alteração ou remoção dos demais consumidores legítimos da E10.8;
+- business_buyer como requisito de geração da LP end_customer;
+- alteração de E18.4, E20.2 ou E19.2 sem gap real demonstrado;
+- nova tabela de pesquisa, view, RPC, trigger, RLS, policy ou persistência de conteúdo integral;
+- API GitHub, rota, serviço, Provider, agente, automação, job, fila, cron, webhook, RAG ou infraestrutura nova para carregar a pesquisa;
 - tracking, Analytics, CRM, domínio, publicação, A/B test, Ads ou integrações futuras;
 - regra específica da conta piloto ou de um nicho dentro da E19.3;
 - novo contrato estrutural da candidata, que pertence à E19.4;
-- adaptação da geração, candidata, materialização, snapshot ou renderer E19.4 ao pacote v2; a decisão humana foi retirar temporariamente esse caminho, não migrá-lo neste recorte;
-- novo planejamento da E19.4; marcar o plano anterior como temporariamente superado preserva história e coerência, sem definir o sucessor;
-- limpeza ou aposentadoria definitiva da E18.5/E20.3, que pertence ao recorte condicional posterior à prova do Cenário D.
+- migração imediata do path das pesquisas de slug para UUID/código do taxon sem bloqueio demonstrado pela primeira LP.
 
 ### 4.2. Critérios de parada
 
-- Parar se a regra de projeção IA/server exigir mapa nominal crescente dentro da E19.3; devolver ao Estrategista para localizar a regra no contrato responsável ou simplificar.
+- Parar se a leitura da pesquisa exigir serviço externo, API GitHub ou infraestrutura nova sem evidência de necessidade; reavaliar primeiro o padrão server-side local já existente.
+- Parar se a regra de projeção IA/server exigir mapa nominal crescente dentro da E19.3.
+- Parar se surgir resumo, ranking, chunking, seleção semântica ou outra transformação intermediária da pesquisa integral.
 - Parar se for necessário inventar evidência, prova, claim verificado ou semântica não sustentada pelas fontes.
 - Parar se surgir filtro editorial de pesquisa, seleção de módulo, variante, ordem, narrativa ou layout.
 - Parar se faltar fonte canônica indispensável para validar um fato, pesquisa, limite ou binding.
 - Parar se surgir necessidade de banco, rota, job, agente, automação, engine ou infraestrutura nova não autorizada por fonte real do projeto.
 - Parar e simplificar se a maior parte do crescimento técnico vier de generalizações para consumidores futuros inexistentes.
-- Toda ampliação material de escopo volta ao humano; não é autorizada implicitamente por este plano-base v2.
+- Toda ampliação material de escopo volta ao humano; não é autorizada implicitamente por este rascunho.
