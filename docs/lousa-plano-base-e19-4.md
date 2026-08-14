@@ -12,6 +12,7 @@
 - Base de abertura do PR #731: `main` após o merge do PR #729, commit `40baacbc516a80c2600408a9be63bfa33793ca85`.
 - O plano-base v2 anterior da E19.4 permanece somente no histórico Git como desenho superado; ele dependia do contrato E19.3 `partA + partB` e não pode ser reutilizado como briefing executável.
 - Decisão humana de 14/08/2026: o Cenário E passa a ser a única direção ativa para a primeira geração real; o Cenário D deixa de ser alternativa em desenvolvimento ou comparação obrigatória e não deve ser implementado antes de E.
+- A branch `strategy/e19-4-cenario-d` conserva o nome histórico de abertura do PR #731; esse nome não representa a direção arquitetural vigente e não justifica criar nova branch ou novo PR para o mesmo rascunho.
 - A arquitetura lógica útil da E19.3 permanece válida, com `identities + modelContext + serverContext`, mas seu contrato vigente de pesquisa está tipado contra a resolução estruturada da E10.8 e deverá ser ajustado minimamente antes do consumo canônico do Cenário E.
 - Nenhuma implementação da nova E19.4 foi iniciada neste debate.
 
