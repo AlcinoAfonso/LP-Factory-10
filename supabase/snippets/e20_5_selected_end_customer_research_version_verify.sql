@@ -75,6 +75,11 @@ with checks as (
     'effective_grants',
     case
       when has_table_privilege('service_role', 'public.business_taxons', 'SELECT')
+        and not has_table_privilege(
+          'service_role',
+          'public.business_taxons',
+          'UPDATE'
+        )
         and has_column_privilege(
           'service_role',
           'public.business_taxons',
@@ -93,11 +98,33 @@ with checks as (
           'selected_end_customer_research_version',
           'UPDATE'
         )
+        and (
+          select array_agg(column_name::text order by column_name)
+          from information_schema.role_column_grants
+          where table_schema = 'public'
+            and table_name = 'business_taxons'
+            and grantee = 'service_role'
+            and privilege_type = 'UPDATE'
+        ) = array[
+          'is_active',
+          'name',
+          'selected_end_customer_research_version',
+          'slug'
+        ]::text[]
       then 'ok' else 'unexpected'
     end,
     jsonb_build_object(
       'service_role_select', has_table_privilege('service_role', 'public.business_taxons', 'SELECT'),
+      'service_role_table_update', has_table_privilege('service_role', 'public.business_taxons', 'UPDATE'),
       'service_role_column_update', has_column_privilege('service_role', 'public.business_taxons', 'selected_end_customer_research_version', 'UPDATE'),
+      'service_role_update_columns', (
+        select jsonb_agg(column_name order by column_name)
+        from information_schema.role_column_grants
+        where table_schema = 'public'
+          and table_name = 'business_taxons'
+          and grantee = 'service_role'
+          and privilege_type = 'UPDATE'
+      ),
       'anon_column_update', has_column_privilege('anon', 'public.business_taxons', 'selected_end_customer_research_version', 'UPDATE'),
       'authenticated_column_update', has_column_privilege('authenticated', 'public.business_taxons', 'selected_end_customer_research_version', 'UPDATE')
     )

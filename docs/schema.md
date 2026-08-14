@@ -1,8 +1,8 @@
 0. Introdução
 
 0.1 Cabeçalho
-• Data da última atualização: 14/08/2026
-• Documento: LP Factory 10 — Schema (DB Contract) v1.0.41
+• Data da última atualização: 11/08/2026
+• Documento: LP Factory 10 — Schema (DB Contract) v1.0.40
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -281,7 +281,6 @@
 • PK: id uuid
 • UNIQUE: slug
 • CHECK: business_taxons_level_chk (level IN ('segment', 'niche', 'ultra_niche'))
-• CHECK: business_taxons_selected_end_customer_research_version_chk (selected_end_customer_research_version IS NULL OR selected_end_customer_research_version > 0)
 • FK: parent_id → business_taxons(id) ON UPDATE CASCADE ON DELETE SET NULL
 
 1.11.2 Campos
@@ -290,15 +289,11 @@
 • name text not null
 • slug text not null
 • is_active boolean not null default true
-• selected_end_customer_research_version integer null
-• Regra: `NULL` representa ausência legítima de pesquisa integral `end_customer` selecionada; o path não é persistido.
 
 1.11.3 Segurança
 • Trigger Hub: não
 • RLS: ativo (enable row level security)
-• service_role: SELECT e UPDATE restrito à coluna selected_end_customer_research_version para a seleção administrativa server-side
-• anon/authenticated: nenhum grant novo para selected_end_customer_research_version
-• Estado operacional da extensão E20.5.4: migration versionada no repositório; apply e prova SQL read-only permanecem pendentes pós-merge, portanto nenhum runtime dependente da coluna pode ser habilitado antes dessas evidências.
+• service_role: SELECT
 
 1.11.4 Policies
 • business_taxons_select_admin_only (SELECT to public): is_super_admin() OU is_platform_admin()
@@ -1147,8 +1142,6 @@
 • Rollback: não remove automaticamente a extensão, pois pode ser reutilizada por outros recursos
 
 99. Changelog
-v1.0.41 (14/08/2026) — E20.5.4: versionada a extensão mínima de `business_taxons` com `selected_end_customer_research_version`, check positivo quando preenchida e UPDATE server-side da coluna; apply e verificação read-only permanecem pendentes pós-merge.
-
 v1.0.40 (11/08/2026) — E19.4.4: registrado o agregado repo-only `account_landing_page_materializations`, sua materialização 1:1 write-once, conteúdo e snapshot atômicos, projeção runtime estrita, RLS sem policies e acesso exclusivo SELECT/INSERT por `service_role`; apply hospedado permanece pós-merge.
 
 v1.0.38 (08/08/2026) — E19.2: registrado o agregado `account_landing_page_onboarding_configurations`, a unicidade composta de `account_landing_pages` usada pelo FK tenant-safe, os checks, RLS, grants mínimos, triggers de atualização/write-once e a ausência de persistência prematura na tabela de LP.

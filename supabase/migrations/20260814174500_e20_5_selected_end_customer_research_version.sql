@@ -8,7 +8,11 @@ alter table public.business_taxons
     or selected_end_customer_research_version > 0
   );
 
-grant update (selected_end_customer_research_version)
+revoke update
+  on table public.business_taxons
+  from service_role;
+
+grant update (name, slug, is_active, selected_end_customer_research_version)
   on table public.business_taxons
   to service_role;
 

@@ -1,8 +1,8 @@
 # Plano-base E20.5 — Seleção da pesquisa integral `end_customer` por taxon
 
 - Data: 14/08/2026.
-- Versão: v2 candidata.
-- Status: consolidação técnica concluída; aguarda aprovação do Analista antes de autorizar execução.
+- Versão: v2 aprovada.
+- Status: checkpoints E20.5.3, E20.5.4 e E20.5.5 concluídos, validados e aprovados pelo mesmo Analista; correção SQL posterior validada localmente, dry-run Vercel aprovado e inspeção autenticada gate-off ainda pendente antes do fechamento humano. Apply, prova SQL, ativação e testes gate-on permanecem obrigatoriamente pós-merge.
 - Recorte previsto para roadmap: `20.5 — Seleção da pesquisa integral end_customer por taxon`.
 - Path canônico: `docs/lousa-plano-base-e20-5.md`.
 - Fonte imutável v1: blob `8a53a73f29448a537e0036291e59582cd62c5c91`, integrado à `main` pelo PR #744.
@@ -45,8 +45,8 @@
 - A coluna possui check positivo quando preenchida: `selected_end_customer_research_version IS NULL OR selected_end_customer_research_version > 0`.
 - `NULL` significa ausência de versão integral `end_customer` selecionada.
 - O path não é persistido; deriva exclusivamente de `taxon.slug + audience_scope fixo end_customer + version`.
-- A migration preserva RLS e as policies administrativas vigentes, não concede acesso a `anon` ou `authenticated` e adiciona ao `service_role` somente o `UPDATE` de coluna necessário à mutação server-side, mantendo seu `SELECT` vigente.
-- A reconciliação de `docs/schema.md` e a prova SQL read-only são parte da mesma subseção da migration.
+- A migration preserva RLS e as policies administrativas vigentes, não concede acesso a `anon` ou `authenticated`, revoga o `UPDATE` de tabela inteira de `service_role` e mantém somente os grants de coluna usados pelo editor administrativo vigente (`name`, `slug`, `is_active`) e pela nova seleção (`selected_end_customer_research_version`), além do `SELECT` vigente.
+- `docs/schema.md` só pode ser reconciliado após o apply comprovado; a prova SQL read-only permanece versionada nesta subseção para uso pós-merge.
 - Não criar status de aprovação, lifecycle, data, aprovador, histórico, tabela ou entidade adicional.
 
 ### 1.5. Solução física preservada
@@ -173,7 +173,7 @@
 
 ### 3.1. E20.5.3 — Leitura e validação repo-only da pesquisa integral
 
-- Status: planejada; primeira subseção executável após aprovação da v2.
+- Status: implementação candidata concluída, validada e aprovada pelo Analista no PR draft #746.
 - Objetivo: criar o boundary capaz de validar uma versão candidata antes que qualquer seleção seja persistida.
 - Automação: não.
 - Escopo executável:
@@ -196,14 +196,14 @@
 
 ### 3.2. E20.5.4 — Persistência e seleção humana mínima
 
-- Status: planejada; bloqueada pelo gate de saída da E20.5.3.
+- Status: checkpoint aprovado pelo Analista no PR draft #746; correção SQL posterior validada localmente, dry-run Vercel aprovado e inspeção autenticada gate-off pendente.
 - Objetivo: adicionar a referência mínima de versão selecionada e permitir sua alteração somente por ação humana administrativa explícita, reutilizando a validação da E20.5.3.
 - Automação: não.
 - Escopo executável:
   - criar migration mínima para `selected_end_customer_research_version integer null` com check positivo quando presente;
-  - preservar RLS e policies atuais, negar grants novos a `anon`/`authenticated` e conceder ao `service_role` apenas o `UPDATE` necessário da coluna;
+  - preservar RLS e policies atuais, negar grants novos a `anon`/`authenticated`, remover o `UPDATE` amplo de `service_role` e manter somente os grants de coluna usados pelo editor vigente e pela nova seleção;
   - criar `supabase/snippets/e20_5_selected_end_customer_research_version_verify.sql`, estritamente read-only, para provar tipo/nullability, check, grants e policies após o apply;
-  - reconciliar `docs/schema.md` pelo Prompt ABC;
+  - manter `docs/schema.md` sem delta antes do apply e reconciliá-lo pelo Prompt ABC somente após a evidência hospedada;
   - implementar o gate fail-closed da seção 1.6;
   - materializar formulário separado e Server Action dedicada na tela existente de detalhe do taxon;
   - exigir `requirePlatformAdmin`, usar `adminTaxonomyAdapter`, validar a candidata pela E20.5.3 e persistir somente por atualização condicional com `.maxAffected(1)`;
@@ -231,7 +231,7 @@
 
 ### 3.3. E20.5.5 — Contrato de consumo da seleção válida
 
-- Status: planejada; bloqueada pelo gate de saída da E20.5.4.
+- Status: implementação candidata concluída, validada e aprovada pelo mesmo Analista no PR draft #746; merge e ativação permanecem decisões humanas separadas.
 - Objetivo: disponibilizar ao recorte seguinte uma leitura única que prove taxon ativo e pesquisa integral selecionada válida, sem antecipar o gate final de preparação.
 - Automação: não.
 - Escopo executável:
