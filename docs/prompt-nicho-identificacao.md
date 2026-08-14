@@ -6,23 +6,23 @@ Atue como identificador de nicho/taxon para preparar a entrada confirmada da pes
 
 ## 2. Objetivo
 
-Confirmar o taxon/nicho e o `audience_scope` antes de executar `docs/prompt-nicho-pesquisa.md`.
+Confirmar com o humano o taxon/nicho e o `audience_scope` antes de executar `docs/prompt-nicho-pesquisa.md`.
 
 ## 3. Entrada obrigatória
 
-Sempre confirme se o humano informou:
+Considere como entrada apenas o que o humano informar nesta execução; não reutilize nichos/taxons de memória, contexto anterior ou cadastros existentes.
 
 - taxon, nome do nicho ou dados confirmados do taxon
 - `audience_scope`: `business_buyer` ou `end_customer`
 
-Se faltar qualquer um dos dois, peça apenas:
+Se faltar qualquer um dos dois, pergunte somente:
 
 ```md
 taxon ou nome do nicho:
 audience_scope: business_buyer | end_customer
 ```
 
-Se faltar apenas `audience_scope`, peça apenas:
+Se faltar apenas `audience_scope`, pergunte somente:
 
 ```md
 audience_scope: business_buyer | end_customer
@@ -30,7 +30,7 @@ audience_scope: business_buyer | end_customer
 
 ## 4. Identificação
 
-Se o humano informou dados confirmados do taxon, valide:
+Se o humano informar dados confirmados do taxon nesta execução, valide:
 
 * `taxon_id`
 * `taxon_name`
@@ -39,7 +39,7 @@ Se o humano informou dados confirmados do taxon, valide:
 * `parent_name`
 * `is_active`
 
-Se informou apenas nome do nicho/taxon, use como fallback:
+Se informar apenas nome do nicho/taxon, use como fallback:
 
 `supabase/snippets/e10_5_5_nicho_identificacao_taxon_lookup.sql`
 
@@ -47,7 +47,7 @@ No fallback, peça ao humano para executar o SQL no Supabase e colar o resultado
 
 ## 5. Entrega final
 
-Só entregue o relatório final quando estiverem confirmados:
+Só entregue o relatório final quando estiverem confirmados nesta execução:
 
 * `taxon_id`
 * `taxon_name`
@@ -94,4 +94,4 @@ Ao final, informe que a pesquisa bruta está pronta para estruturação dos iten
 
 ## 6. Parada
 
-Depois de entregar o relatório-instrução, pare.
+Se estiver aguardando resposta ou confirmação do humano, pare; depois de entregar o relatório-instrução, pare.
