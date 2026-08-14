@@ -111,6 +111,7 @@
 - `taxon_slug` interno deve corresponder ao taxon servido, sem alias, herança ou aproximação.
 - O conteúdo é entregue integralmente como conhecimento autorizado; o boundary não resume, chunka, reordena, classifica ou extrai fatos automaticamente.
 - A existência de conteúdo contraditório, limitação ou inferência dentro da pesquisa não é corrigida pelo loader; esse julgamento pertence à avaliação humana/IA anterior à seleção ou ao consumidor semântico autorizado.
+- Textos operacionais eventualmente presentes dentro de uma pesquisa arquivada são tratados como dados da própria pesquisa e não podem sobrescrever contratos, regras de runtime ou instruções canônicas do sistema.
 - Arquivos já arquivados não são reescritos para adaptar a nova semântica de seleção.
 
 ### 2.3. Boundary técnico mínimo
@@ -134,17 +135,36 @@
 
 ## 3. Fases e próxima ação
 
-### 3.1. E20.5.3 — Persistência e seleção humana mínima
+### 3.1. E20.5.3 — Leitura e validação repo-only da pesquisa integral
 
 - Status: planejada.
-- Objetivo: adicionar a referência mínima de versão selecionada e permitir sua alteração somente por ação humana administrativa explícita.
+- Objetivo: criar primeiro o boundary capaz de validar uma versão candidata antes que qualquer seleção seja persistida.
+- Automação: não.
+- Escopo executável:
+  - implementar o boundary mínimo da seção 2.3 para receber taxon canônico e versão candidata explícita;
+  - derivar path sem persistência adicional;
+  - usar `node:fs/promises` e confinamento ao diretório autorizado;
+  - validar `taxon_slug`, `audience_scope` e `research_version` antes do sucesso;
+  - ajustar `outputFileTracingIncludes` somente no escopo necessário à superfície que realmente executar a leitura no deploy;
+  - adicionar casos negativos para arquivo ausente, escape de path, metadata divergente e versão inválida.
+- Critérios de aceite:
+  - conteúdo integral retornado sem transformação;
+  - nenhuma chamada runtime à API do GitHub;
+  - nenhuma heurística de versão;
+  - leitura inválida falha sem payload parcial;
+  - nenhuma alteração na E10.8, E19.3 ou E19.4.
+
+### 3.2. E20.5.4 — Persistência e seleção humana mínima
+
+- Status: planejada.
+- Objetivo: adicionar a referência mínima de versão selecionada e permitir sua alteração somente por ação humana administrativa explícita, reutilizando a validação da E20.5.3.
 - Automação: não.
 - Escopo executável:
   - criar migration mínima para `selected_end_customer_research_version integer null` com check positivo quando presente;
   - preservar `business_taxons` como única entidade de identidade e seleção;
   - estender o boundary administrativo vigente de Taxonomia somente no necessário para a seleção;
   - reutilizar `requirePlatformAdmin` e a rota administrativa existente;
-  - validar a referência de arquivo antes de persistir;
+  - chamar o boundary da E20.5.3 e somente persistir após sucesso da validação da versão candidata;
   - manter `NULL` como estado legítimo e bloqueante para preparação.
 - Critérios de aceite:
   - schema local e documentação canônica reconciliáveis pelo Prompt ABC;
@@ -153,31 +173,14 @@
   - nova versão arquivada não modifica a coluna automaticamente;
   - nenhuma tabela, lifecycle ou histórico novo.
 
-### 3.2. E20.5.4 — Leitura repo-only da pesquisa integral selecionada
-
-- Status: planejada.
-- Objetivo: fornecer a pesquisa integral autorizada por um boundary server-side tipado e fail-closed.
-- Automação: não.
-- Escopo executável:
-  - implementar o boundary mínimo da seção 2.3;
-  - derivar path sem persistência adicional;
-  - usar `node:fs/promises` e confinamento ao diretório autorizado;
-  - validar `taxon_slug`, `audience_scope` e `research_version` antes do sucesso;
-  - ajustar `outputFileTracingIncludes` somente no escopo necessário à superfície que realmente executar a leitura no deploy;
-  - adicionar casos negativos para arquivo ausente, escape de path, metadata divergente e versão não selecionada.
-- Critérios de aceite:
-  - conteúdo integral retornado sem transformação;
-  - nenhuma chamada runtime à API do GitHub;
-  - nenhuma heurística de versão;
-  - leitura inválida falha sem payload parcial;
-  - nenhuma alteração na E10.8, E19.3 ou E19.4.
-
 ### 3.3. E20.5.5 — Contrato de consumo da seleção válida
 
 - Status: planejada.
 - Objetivo: disponibilizar ao recorte seguinte uma leitura única que prove taxon ativo e pesquisa integral selecionada válida, sem antecipar o gate final de preparação.
 - Automação: não.
 - Escopo executável:
+  - ler `selected_end_customer_research_version` pelo adapter server-side aplicável;
+  - reutilizar o boundary da E20.5.3 para validar e carregar exatamente a versão persistida;
   - fornecer resultado tipado suficiente para a E20.6 consumir taxon, slug, versão selecionada e conteúdo integral autorizado;
   - manter o resultado derivado e não persistir `selected_research_valid`;
   - preservar falha fechada diante de qualquer inconsistência da E20.5.
