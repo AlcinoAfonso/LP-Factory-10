@@ -89,7 +89,7 @@ Não refaça a identificação do taxon.
 
 Pesquise apenas os `research_blocks` definidos em `research_blocks_order`.
 
-Ao final, informe que a pesquisa bruta está pronta para estruturação dos itens.
+Ao final, informe que a pesquisa bruta foi concluída.
 ```
 
 ## 6. Parada
