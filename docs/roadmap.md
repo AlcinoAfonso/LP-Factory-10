@@ -1,8 +1,8 @@
 0. Introdução
 
 0.1 Cabeçalho
-• Data: 12/08/2026
-• Versão: v1.5.144
+• Data: 14/08/2026
+• Versão: v1.5.145
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -2539,6 +2539,28 @@ Repositório — Ajustados
   * A resolução usa perfil `active` próprio ou do ancestral elegível mais próximo, preserva proveniência e falha fechado para cadeia, leitura, identidade ou perfil inválido; ausência legítima permanece distinta de erro.
   * A E20.3 depende da taxonomia vigente e da identidade pública da E18.5, mas permanece independente do catálogo e dos valores da E20.2.
   * Permanecem fora do recorte mutações e lifecycle operacional do perfil, terceira tabela de domínio, rota, API HTTP, Server Action, UI, composição, copy, geração, IA, automação, job, serviço e nova infraestrutura.
+
+20.5 Seleção da pesquisa integral `end_customer` por taxon
+
+20.5.1 Objetivo e status
+
+* Objetivo: permitir que um taxon ativo possua exatamente uma versão integral `end_customer` explicitamente selecionada por decisão humana autorizada e que essa versão possa ser lida integralmente por um boundary server-side, com validação de identidade e falha fechada.
+* Status: Plano-base v1 consolidado para avaliação única dos especialistas; execução ainda não autorizada.
+
+20.5.3 Leitura e validação repo-only da pesquisa integral
+
+* Objetivo: criar primeiro o boundary capaz de validar uma versão candidata antes que qualquer seleção seja persistida.
+* Status: Planejada.
+
+20.5.4 Persistência e seleção humana mínima
+
+* Objetivo: adicionar a referência mínima de versão selecionada e permitir sua alteração somente por ação humana administrativa explícita, reutilizando a validação da E20.5.3.
+* Status: Planejada.
+
+20.5.5 Contrato de consumo da seleção válida
+
+* Objetivo: disponibilizar ao recorte seguinte uma leitura única que prove taxon ativo e pesquisa integral selecionada válida, sem antecipar o gate final de preparação.
+* Status: Planejada.
 
 21. E21 — Gestão e governança dos workloads OpenAI
 - Objetivo: gerir e governar os workloads OpenAI por recortes aprovados, iniciando pela configuração explícita, observabilidade segura e leitura administrativa; a configuração dinâmica e o histórico permanecem para recortes posteriores, sem otimização automatizada.
