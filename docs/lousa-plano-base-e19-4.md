@@ -32,11 +32,15 @@
 - Eventual resumo executivo pertence à própria pesquisa integral e não substitui seu conteúdo completo.
 - A própria pesquisa pode ser avaliada e otimizada antes do consumo para melhorar fontes, atualidade, distinção entre evidência e inferência, relações causais, condições, exceções, limitações, dores, desejos, objeções e linguagem.
 - As versões integrais permanecem imutáveis no GitHub em `docs/pesquisas-brutas/<taxon_slug>/<audience_scope>/vN.md`; criar uma nova versão não altera nem substitui automaticamente uma versão anterior.
-- Para cada `taxon + audience_scope`, o Supabase deverá representar somente qual versão integral está selecionada para geração, sem armazenar nesse registro o conteúdo, resumo, score, comparação ou atomização da pesquisa.
-- Quando existir somente `v1` válida para `taxon + audience_scope`, ela permanece como default sem exigir ação humana adicional; quando surgirem versões posteriores, a última versão explicitamente aprovada continua selecionada até nova decisão.
+- Para cada `taxon + audience_scope`, o Supabase representa somente qual versão integral está selecionada para geração, sem armazenar nesse estado o conteúdo, resumo, score, comparação ou atomização da pesquisa.
+- A inspeção de `docs/schema.md` e do schema real confirmou que não existe estrutura vigente adequada para essa seleção: `business_taxons` não possui `audience_scope`, `taxon_market_research` pertence à E10.8 e é segmentada por `research_block`, e `content_artifacts` registra pesquisa usada por artefato produzido, não a seleção operacional global.
+- O gap justifica uma estrutura mínima própria de seleção, conceitualmente `taxon_integral_research_selection`, com identidade única por `taxon_id + audience_scope` e somente `selected_version` e `updated_at` além da identidade; o conteúdo da pesquisa permanece exclusivamente no GitHub.
+- O path da pesquisa não deve ser persistido no Supabase: ele é derivado deterministicamente de `business_taxons.slug + audience_scope + selected_version` no padrão `docs/pesquisas-brutas/<taxon_slug>/<audience_scope>/vN.md`.
+- Quando existir somente `v1` válida para `taxon + audience_scope`, ausência de registro explícito no Supabase equivale a `selected_version = 1`, sem exigir ação humana adicional; se `v1` não existir ou não puder ser validada, o fluxo falha fechado.
+- Quando surgirem versões posteriores, a última versão explicitamente aprovada continua selecionada até nova decisão; a criação de `vN` não modifica automaticamente a seleção.
 - A aprovação ou troca da versão selecionada ocorre após testes e decisão humana apoiada pela IA; uma versão nova que não melhore a qualidade não altera a seleção vigente.
 - Se os testes não entregarem qualidade suficiente, o prompt e/ou a pesquisa podem ser ajustados, uma nova versão é produzida e testada, e a seleção vigente permanece inalterada até aprovação.
-- Após aprovação, o humano ou uma IA autorizada pode atualizar no Supabase a versão selecionada daquele `taxon + audience_scope`; tabela, coluna, migration e mecanismo físico exatos permanecem em aberto até inspeção do schema e fechamento técnico do Gate.
+- Após aprovação, o humano ou uma IA autorizada pode atualizar no Supabase a versão selecionada daquele `taxon + audience_scope`; a migration e o mecanismo runtime de leitura/escrita ainda não são criados neste rascunho e pertencem ao fechamento técnico subsequente.
 - A ausência de versão utilizável ou uma seleção que não possa ser resolvida para conteúdo integral válido deve falhar fechado; o runtime não escolhe silenciosamente a versão mais recente.
 - A E19.3 permanece como fronteira autorizada entre as fontes do projeto e a geração, mas não atua como planejador, resumidor ou camada de inteligência semântica.
 - A matéria-prima textual da IA vem do `modelContext` da E19.3; `serverContext` permanece sob uso determinístico do servidor e não vira matéria-prima textual bruta para o modelo.
@@ -92,8 +96,7 @@
 
 ### 1.5. Questões ainda abertas e não decididas
 
-- Como materializar no schema vigente a seleção operacional da pesquisa integral por `taxon + audience_scope`, preservando a decisão já aceita de GitHub como fonte das versões e Supabase como estado da versão selecionada, sem reutilizar indevidamente a pesquisa estruturada da E10.8.
-- Qual é o menor mecanismo físico compatível com o runtime vigente para fornecer essa pesquisa integral à E19.3, sem presumir banco, rota, serviço ou nova infraestrutura.
+- Qual é o menor mecanismo físico compatível com o runtime vigente para resolver `taxon + audience_scope + selected_version` no conteúdo integral exato do GitHub e fornecê-lo à E19.3, sem criar serviço ou infraestrutura além do necessário.
 - Quais critérios e testes mínimos serão usados pelo humano com apoio da IA para decidir se uma nova versão melhora suficientemente a pesquisa e deve substituir a seleção vigente.
 - Dependência: E19.3 deve ser ajustada para transportar pesquisa integral aprovada, preservando `identities + modelContext + serverContext`; o contrato técnico e a implementação desse ajuste pertencem ao plano próprio da E19.3.
 - Se a geração deve ocorrer em uma única chamada que planeja e escreve a LP ou em mais de uma etapa/chamada controlada, sem transformar o fluxo em agente.
@@ -274,9 +277,9 @@
 ### 3.4. Próxima ação do debate
 
 - Fechar exclusivamente o primeiro Gate: contrato operacional mínimo da pesquisa integral aprovada e critérios suficientes de qualidade para seu uso na geração, sem recriar atomização.
-- Decisão parcial já fechada neste Gate: GitHub preserva as versões integrais; `v1` é o default quando for a única versão; versões posteriores são avaliadas por testes e decisão humana apoiada pela IA; a última versão explicitamente aprovada permanece selecionada no Supabase até nova aprovação.
+- Decisões já fechadas neste Gate: GitHub preserva as versões integrais; `v1` é o default quando for a única versão; versões posteriores são avaliadas por testes e decisão humana apoiada pela IA; a última versão explicitamente aprovada permanece selecionada no Supabase até nova aprovação; a seleção usa estrutura mínima própria por `taxon_id + audience_scope`, sem path ou conteúdo persistido.
 - Se uma nova versão não entregar qualidade suficiente, a seleção vigente permanece; prompt e/ou pesquisa podem ser ajustados, uma nova versão produzida e os testes repetidos.
-- O restante desse Gate deve responder como materializar essa seleção no schema vigente, como obter exatamente o conteúdo usado, como falhar quando não existir e quais testes mínimos sustentam a decisão de aprovação.
+- O restante desse Gate deve responder como resolver a seleção para o conteúdo integral exato do GitHub em runtime e quais testes mínimos sustentam a decisão de aprovação.
 - Depois do fechamento desse Gate, tratar o ajuste necessário da E19.3 em seu documento próprio e somente então retornar aos Gates internos da E19.4.
 - Na E19.4, fechar progressivamente prompt/workflow, contrato estrutural mínimo, factualidade/evidência, modelo/effort, materialização/snapshot, renderer e critérios de avaliação humana.
 - Quando a LP gerada não atingir a qualidade desejada, priorizar diagnóstico nesta ordem: E19.4 quando o contexto estiver correto mas a interpretação/composição falhar; pesquisa quando faltar conhecimento, nuance, atualidade ou evidência; E19.3 somente quando existir gap real de autorização, identidade, separação ou transporte do contexto.
@@ -303,7 +306,7 @@
 - HTML, CSS, React, JavaScript, scripts ou componentes arbitrários gerados pela IA.
 - Catálogo estrutural amplo antecipado, reconstrução da antiga E18.5 ou extensibilidade sem caso concreto para a primeira LP.
 - Agents SDK, multi-agent, job, fila, cron, webhook, browsing ou tools externas sem necessidade real demonstrada e nova decisão humana.
-- Novo banco, tabela, migration, rota, serviço, engine ou infraestrutura antes de demonstrar gap real nas estruturas preservadas do projeto.
+- Novo banco, tabela, migration, rota, serviço, engine ou infraestrutura antes de demonstrar gap real nas estruturas preservadas do projeto; a única exceção conceitual já justificada neste Gate é a futura estrutura mínima de seleção da pesquisa integral.
 - Perfil persistido novo de público, persona ou estratégia apenas para facilitar o prompt.
 
 ### 4.2. Critérios de parada imediata
