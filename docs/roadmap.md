@@ -2573,7 +2573,7 @@ Repositório — Ajustados
     * `package.json`
 * Referências:
 
-  * Plano-base E20.5: `docs/lousa-plano-base-e20-5.md` — seções 3.1 e 3.2.
+  * Plano-base E20.5: `docs/lousa-plano-base-e20-5.md` — seções 3.1, 3.2 e 3.3.
   * Contrato de banco: `docs/schema.md` — seção 1.11, `business_taxons`.
   * Configuração do gate: `docs/platform-config.md` — seção 3.5, secrets e variáveis server-side no Vercel.
 
