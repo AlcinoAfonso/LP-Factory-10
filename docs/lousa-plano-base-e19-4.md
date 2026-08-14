@@ -32,7 +32,7 @@
 - Eventual resumo executivo pertence à própria pesquisa integral e não substitui seu conteúdo completo.
 - A própria pesquisa pode ser avaliada e otimizada antes do consumo para melhorar fontes, atualidade, distinção entre evidência e inferência, relações causais, condições, exceções, limitações, dores, desejos, objeções e linguagem.
 - As versões integrais permanecem imutáveis no GitHub em `docs/pesquisas-brutas/<taxon_slug>/<audience_scope>/vN.md`; criar uma nova versão não altera nem substitui automaticamente uma versão anterior.
-- Para o Cenário E atual, a seleção operacional necessária é somente da pesquisa integral `end_customer`; não generalizar agora a persistência para `business_buyer` sem consumidor real que justifique essa extensão.
+- Para o Cenário E atual, a seleção operacional necessária é somente da pesquisa integral `end_customer`; `business_buyer` deixa de ser requisito de preparação do taxon e do caminho de geração da LP, sem impedir que o comercial futuro reutilize a pesquisa `end_customer` como fonte para comunicar ao B2B os problemas de seus próprios clientes.
 - `business_taxons` permanece a identidade canônica do taxon e deverá receber um campo inteiro positivo e anulável, conceitualmente `selected_end_customer_research_version`, que identifica a versão integral `end_customer` aprovada para geração.
 - Não criar tabela própria de seleção: a alternativa anteriormente considerada `taxon_integral_research_selection` é descartada por adicionar entidade, join e lifecycle sem necessidade demonstrada para o Cenário E atual.
 - `business_taxons.is_active` continua representando atividade taxonômica e não é substituído nem alterado automaticamente pela prontidão de pesquisa; um taxon pode existir e permanecer ativo na taxonomia sem estar disponível para geração de LP.
@@ -44,6 +44,10 @@
 - Se os testes não entregarem qualidade suficiente, o prompt e/ou a pesquisa podem ser ajustados, uma nova versão é produzida e testada, e a seleção vigente permanece inalterada até aprovação.
 - Após aprovação, o humano ou uma IA autorizada pode atualizar no Supabase `business_taxons.selected_end_customer_research_version`; a migration e o mecanismo runtime de leitura/escrita ainda não são criados neste rascunho e pertencem ao fechamento técnico subsequente.
 - Campo `NULL`, versão não positiva, arquivo selecionado inexistente ou conteúdo que não possa ser validado para o taxon/audience/versão esperados deve falhar fechado; o runtime não escolhe silenciosamente a versão mais recente.
+- Separar três estados conceitualmente distintos: preparação do taxon, prontidão de uma LP concreta para geração e disponibilidade comercial; um não deve ser usado como sinônimo ou substituto do outro.
+- A preparação do taxon ocorre antes de existir a configuração concreta de uma LP e não depende da E19.2; no mínimo exige taxon taxonomicamente ativo e pesquisa integral `end_customer` aprovada/selecionada, permanecendo em aberto apenas se uma resolução válida da E20.2 também será gate obrigatório dessa preparação.
+- A prontidão da LP é avaliada depois, no contexto de conta + LP concretas: depende da E19.2 e da completude dos valores obrigatórios/condicionais aplicáveis pela E20.2, além dos demais gates próprios do fluxo de geração; a E19.2 não deve ser puxada para o gate de preparação do taxon.
+- A disponibilidade comercial por `taxon + plano` permanece uma decisão separada, historicamente prevista para E20.4/E12.4.5–12.4.6; ela não deve ser confundida nem com taxon tecnicamente preparado nem com LP concreta pronta para gerar.
 - A E19.3 permanece como fronteira autorizada entre as fontes do projeto e a geração, mas não atua como planejador, resumidor ou camada de inteligência semântica.
 - A matéria-prima textual da IA vem do `modelContext` da E19.3; `serverContext` permanece sob uso determinístico do servidor e não vira matéria-prima textual bruta para o modelo.
 - A pesquisa integral aprovada `end_customer` deverá chegar ao `modelContext` preservando identidade mínima, versão e conteúdo integral, sem depender de `itemKey`, `priority`, `sortOrder`, quatro registros-pai ou 59 registros estruturados.
@@ -100,6 +104,7 @@
 ### 1.5. Questões ainda abertas e não decididas
 
 - Qual é o menor mecanismo físico compatível com o runtime vigente para ler `business_taxons.selected_end_customer_research_version`, resolver exatamente `docs/pesquisas-brutas/<taxon_slug>/end_customer/vN.md` e fornecer seu conteúdo integral à E19.3, sem criar serviço ou infraestrutura além do necessário.
+- Se uma resolução válida do catálogo E20.2 aplicável deve ser requisito adicional para considerar o taxon preparado para o fluxo de LP; essa decisão não implica exigir camada própria do taxon e não envolve valores concretos da E19.2.
 - Quais critérios e testes mínimos serão usados pelo humano com apoio da IA para decidir se uma nova versão melhora suficientemente a pesquisa e deve substituir a seleção vigente.
 - Dependência: E19.3 deve ser ajustada para transportar pesquisa integral aprovada, preservando `identities + modelContext + serverContext`; o contrato técnico e a implementação desse ajuste pertencem ao plano próprio da E19.3.
 - Se a geração deve ocorrer em uma única chamada que planeja e escreve a LP ou em mais de uma etapa/chamada controlada, sem transformar o fluxo em agente.
@@ -130,6 +135,8 @@
   - papéis, entitlement e superfície exatos serão confirmados contra o runtime vigente antes da v1.
 - Entrada:
   - LP legítima em `draft` e configuração vinculada;
+  - taxon previamente preparado para o fluxo de LP, sem usar a completude da E19.2 como critério dessa preparação;
+  - configuração E19.2 da conta/LP concreta completa nos campos obrigatórios e condicionais aplicáveis pela E20.2;
   - pesquisa integral `end_customer` aprovada e identificável por taxon, audience e versão;
   - sucesso integral da E19.3 ajustada ao Cenário E;
   - configuração OpenAI autorizada para o workload E19.4.
@@ -240,6 +247,8 @@
 - Objetivo:
   - transformar o pacote E19.3 do Cenário E em uma candidata completa da primeira LP real, com planejamento narrativo e copy produzidos por IA dentro do contrato estrutural mínimo e validação determinística antes da persistência.
 - Dependências anteriores à execução:
+  - taxon preparado para o fluxo de LP;
+  - configuração E19.2 da conta/LP concreta completa conforme os campos aplicáveis da E20.2;
   - pesquisa integral aprovada com contrato operacional mínimo;
   - E19.3 ajustada em seu recorte próprio para transportar essa pesquisa preservando `identities + modelContext + serverContext`.
 - Questões indispensáveis ainda abertas:
@@ -280,9 +289,10 @@
 ### 3.4. Próxima ação do debate
 
 - Fechar exclusivamente o primeiro Gate: contrato operacional mínimo da pesquisa integral aprovada e critérios suficientes de qualidade para seu uso na geração, sem recriar atomização.
-- Decisões já fechadas neste Gate: GitHub preserva as versões integrais; `business_taxons.selected_end_customer_research_version` identifica a versão `end_customer` aprovada; `NULL` mantém o taxon na taxonomia, mas o torna indisponível para geração de LP; não existe fallback implícito para `v1`, nem tabela própria de seleção; versões posteriores são avaliadas por testes e decisão humana apoiada pela IA, e a última versão explicitamente aprovada permanece selecionada até nova aprovação.
+- Decisões já fechadas neste Gate: GitHub preserva as versões integrais; `business_taxons.selected_end_customer_research_version` identifica a versão `end_customer` aprovada; `NULL` mantém o taxon na taxonomia, mas o torna indisponível para geração de LP; não existe fallback implícito para `v1`, nem tabela própria de seleção; `business_buyer` não é requisito desse gate; versões posteriores são avaliadas por testes e decisão humana apoiada pela IA, e a última versão explicitamente aprovada permanece selecionada até nova aprovação.
+- O debate de preparação do taxon deve permanecer separado da prontidão da LP concreta: E19.2 pertence à segunda; no primeiro gate resta decidir se a resolução válida da E20.2 também será requisito técnico do taxon.
 - Se uma nova versão não entregar qualidade suficiente, a seleção vigente permanece; prompt e/ou pesquisa podem ser ajustados, uma nova versão produzida e os testes repetidos.
-- O restante desse Gate deve responder como resolver o campo para o conteúdo integral exato do GitHub em runtime e quais testes mínimos sustentam a decisão de aprovação.
+- O restante desse Gate deve responder como resolver o campo para o conteúdo integral exato do GitHub em runtime, se E20.2 resolvível entra como gate do taxon e quais testes mínimos sustentam a decisão de aprovação.
 - Depois do fechamento desse Gate, tratar o ajuste necessário da E19.3 em seu documento próprio e somente então retornar aos Gates internos da E19.4.
 - Na E19.4, fechar progressivamente prompt/workflow, contrato estrutural mínimo, factualidade/evidência, modelo/effort, materialização/snapshot, renderer e critérios de avaliação humana.
 - Quando a LP gerada não atingir a qualidade desejada, priorizar diagnóstico nesta ordem: E19.4 quando o contexto estiver correto mas a interpretação/composição falhar; pesquisa quando faltar conhecimento, nuance, atualidade ou evidência; E19.3 somente quando existir gap real de autorização, identidade, separação ou transporte do contexto.
