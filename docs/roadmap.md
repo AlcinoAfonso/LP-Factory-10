@@ -2,7 +2,7 @@
 
 0.1 Cabeçalho
 • Data: 14/08/2026
-• Versão: v1.5.146
+• Versão: v1.5.147
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -2447,7 +2447,7 @@ Repositório — Ajustados
 20. E20 — Preparação e liberação de taxons para geração de landing pages
 
 * Objetivo: consolidar catálogo de entradas por taxon e plano, perfis versionados de orientação à geração, herança e, em recortes futuros, prontidão e liberação antes da geração de LPs por conta.
-* Status: E20.2 concluída e refinada; E20.3 concluída.
+* Status: E20.2 concluída e refinada; E20.3 concluída; E20.5.3 implementada e validada localmente no PR draft #746.
 
 20.2 Catálogo de entradas por taxon
 
@@ -2545,12 +2545,33 @@ Repositório — Ajustados
 20.5.1 Objetivo e status
 
 * Objetivo: permitir que um taxon ativo possua exatamente uma versão integral `end_customer` explicitamente selecionada por decisão humana autorizada e que essa versão possa ser lida integralmente por um boundary server-side, com validação de identidade e falha fechada.
-* Status: Plano-base v2 aprovado pelo gate do Analista; execução ainda não iniciada.
+* Status: Plano-base v2 aprovado; E20.5.3 implementada e validada localmente, com E20.5.4 e E20.5.5 ainda planejadas.
+
+20.5.2 Registros do recorte
+
+* Repositório:
+
+  * Criados:
+
+    * `lib/conversion-content/landing-page/taxon-preparation/contracts.ts`
+    * `lib/conversion-content/landing-page/taxon-preparation/research.ts`
+    * `lib/conversion-content/landing-page/taxon-preparation/validation-cases.ts`
+    * `lib/conversion-content/landing-page/taxon-preparation/index.ts`
+  * Ajustados:
+
+    * `package.json`
+* Referências:
+
+  * Plano-base E20.5: `docs/lousa-plano-base-e20-5.md` — seção 3.1.
 
 20.5.3 Leitura e validação repo-only da pesquisa integral
 
-* Objetivo: criar primeiro o boundary capaz de validar uma versão candidata antes que qualquer seleção seja persistida.
-* Status: Planejada.
+* Status: Implementada e validada localmente no PR draft #746.
+* Conteúdo:
+
+  * O boundary repo-only deriva exclusivamente o path canônico de uma versão candidata `end_customer`, confina a leitura a `docs/pesquisas-brutas/` e nunca consulta a API do GitHub.
+  * A leitura preserva o conteúdo integral e valida taxon ativo, slug canônico, versão inteira positiva e metadata única na seção `## 1. Identificação e uso`; path inválido, arquivo ausente, falha operacional, metadata incompatível ou conteúdo vazio falham sem payload parcial.
+  * Casos determinísticos cobrem sucesso integral e falhas de versão, path, leitura, metadata e conteúdo; o script dedicado integra `npm run check`.
 
 20.5.4 Persistência e seleção humana mínima
 
