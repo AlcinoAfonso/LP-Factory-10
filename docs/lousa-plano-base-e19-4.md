@@ -33,8 +33,11 @@
 - A própria pesquisa pode ser avaliada e otimizada antes do consumo para melhorar fontes, atualidade, distinção entre evidência e inferência, relações causais, condições, exceções, limitações, dores, desejos, objeções e linguagem.
 - As versões integrais permanecem imutáveis no GitHub em `docs/pesquisas-brutas/<taxon_slug>/<audience_scope>/vN.md`; criar uma nova versão não altera nem substitui automaticamente uma versão anterior.
 - Para cada `taxon + audience_scope`, o Supabase deverá representar somente qual versão integral está selecionada para geração, sem armazenar nesse registro o conteúdo, resumo, score, comparação ou atomização da pesquisa.
-- Quando existir somente uma versão integral válida para `taxon + audience_scope`, ela é a vigente natural sem exigir ação humana adicional; quando houver múltiplas versões, a seleção deve ser explícita e pode apontar para qualquer versão existente, não necessariamente a mais recente.
-- A ausência de versão utilizável, a ambiguidade de seleção quando houver múltiplas versões ou uma seleção que não possa ser resolvida para conteúdo integral válido deve falhar fechado; tabela, coluna, migration e mecanismo físico exatos permanecem em aberto até inspeção do schema e fechamento técnico do Gate.
+- Quando existir somente `v1` válida para `taxon + audience_scope`, ela permanece como default sem exigir ação humana adicional; quando surgirem versões posteriores, a última versão explicitamente aprovada continua selecionada até nova decisão.
+- A aprovação ou troca da versão selecionada ocorre após testes e decisão humana apoiada pela IA; uma versão nova que não melhore a qualidade não altera a seleção vigente.
+- Se os testes não entregarem qualidade suficiente, o prompt e/ou a pesquisa podem ser ajustados, uma nova versão é produzida e testada, e a seleção vigente permanece inalterada até aprovação.
+- Após aprovação, o humano ou uma IA autorizada pode atualizar no Supabase a versão selecionada daquele `taxon + audience_scope`; tabela, coluna, migration e mecanismo físico exatos permanecem em aberto até inspeção do schema e fechamento técnico do Gate.
+- A ausência de versão utilizável ou uma seleção que não possa ser resolvida para conteúdo integral válido deve falhar fechado; o runtime não escolhe silenciosamente a versão mais recente.
 - A E19.3 permanece como fronteira autorizada entre as fontes do projeto e a geração, mas não atua como planejador, resumidor ou camada de inteligência semântica.
 - A matéria-prima textual da IA vem do `modelContext` da E19.3; `serverContext` permanece sob uso determinístico do servidor e não vira matéria-prima textual bruta para o modelo.
 - A pesquisa integral aprovada `end_customer` deverá chegar ao `modelContext` preservando identidade mínima, versão e conteúdo integral, sem depender de `itemKey`, `priority`, `sortOrder`, quatro registros-pai ou 59 registros estruturados.
@@ -91,7 +94,7 @@
 
 - Como materializar no schema vigente a seleção operacional da pesquisa integral por `taxon + audience_scope`, preservando a decisão já aceita de GitHub como fonte das versões e Supabase como estado da versão selecionada, sem reutilizar indevidamente a pesquisa estruturada da E10.8.
 - Qual é o menor mecanismo físico compatível com o runtime vigente para fornecer essa pesquisa integral à E19.3, sem presumir banco, rota, serviço ou nova infraestrutura.
-- Quais critérios mínimos de qualidade da pesquisa precisam estar satisfeitos antes de ela ser considerada aprovada para geração, incluindo fontes, evidência versus inferência, condições, exceções, limitações e atualização temporal quando relevante.
+- Quais critérios e testes mínimos serão usados pelo humano com apoio da IA para decidir se uma nova versão melhora suficientemente a pesquisa e deve substituir a seleção vigente.
 - Dependência: E19.3 deve ser ajustada para transportar pesquisa integral aprovada, preservando `identities + modelContext + serverContext`; o contrato técnico e a implementação desse ajuste pertencem ao plano próprio da E19.3.
 - Se a geração deve ocorrer em uma única chamada que planeja e escreve a LP ou em mais de uma etapa/chamada controlada, sem transformar o fluxo em agente.
 - Qual é o menor conjunto de primitivas, layouts, cardinalidades e interações necessário para materializar e renderizar a primeira LP real sem HTML/CSS/JS livre.
@@ -271,8 +274,9 @@
 ### 3.4. Próxima ação do debate
 
 - Fechar exclusivamente o primeiro Gate: contrato operacional mínimo da pesquisa integral aprovada e critérios suficientes de qualidade para seu uso na geração, sem recriar atomização.
-- Decisão parcial já fechada neste Gate: GitHub preserva as versões integrais e Supabase representa a versão selecionada por `taxon + audience_scope`; uma única versão não exige ação humana adicional e versões novas não substituem automaticamente a seleção vigente.
-- O restante desse Gate deve responder como materializar essa seleção no schema vigente, o que significa pesquisa aprovada, como obter exatamente o conteúdo usado, como falhar quando não existir e como garantir qualidade suficiente sem criar nova camada intermediária.
+- Decisão parcial já fechada neste Gate: GitHub preserva as versões integrais; `v1` é o default quando for a única versão; versões posteriores são avaliadas por testes e decisão humana apoiada pela IA; a última versão explicitamente aprovada permanece selecionada no Supabase até nova aprovação.
+- Se uma nova versão não entregar qualidade suficiente, a seleção vigente permanece; prompt e/ou pesquisa podem ser ajustados, uma nova versão produzida e os testes repetidos.
+- O restante desse Gate deve responder como materializar essa seleção no schema vigente, como obter exatamente o conteúdo usado, como falhar quando não existir e quais testes mínimos sustentam a decisão de aprovação.
 - Depois do fechamento desse Gate, tratar o ajuste necessário da E19.3 em seu documento próprio e somente então retornar aos Gates internos da E19.4.
 - Na E19.4, fechar progressivamente prompt/workflow, contrato estrutural mínimo, factualidade/evidência, modelo/effort, materialização/snapshot, renderer e critérios de avaliação humana.
 - Quando a LP gerada não atingir a qualidade desejada, priorizar diagnóstico nesta ordem: E19.4 quando o contexto estiver correto mas a interpretação/composição falhar; pesquisa quando faltar conhecimento, nuance, atualidade ou evidência; E19.3 somente quando existir gap real de autorização, identidade, separação ou transporte do contexto.
