@@ -12,7 +12,7 @@ A entrega deve servir como fonte para uma etapa posterior de estruturação dos 
 
 ## 3. Entrada obrigatória
 
-Use como fonte de verdade o relatório-instrução gerado por `docs/prompt-nicho-identificacao.md`.
+Use somente o relatório-instrução confirmado nesta execução; se ele estiver ausente ou incompleto, peça-o e pare.
 
 A entrada deve conter:
 
@@ -25,7 +25,7 @@ A entrada deve conter:
 - `audience_scope`
 - `research_blocks_order`
 
-As fontes devem ser escolhidas conforme o taxon pesquisado.
+Pesquise em fontes pertinentes ao taxon, priorizando evidência verificável e distinguindo achado de inferência.
 
 ## 4. Direção da pesquisa por bloco
 
@@ -57,9 +57,9 @@ Observe intenção de busca, termos comerciais, termos de apoio, termos locais, 
 
 Não invente fontes, dados de cliente, provas, certificações, garantias, resultados, volume de busca, CPC ou dificuldade de palavra-chave.
 
-Não complete lacunas com suposição.
+Não complete lacunas por suposição; quando faltar evidência, declare a limitação.
 
-Quando faltar evidência, declare a limitação.
+Não prossiga com taxon, `audience_scope` ou `research_blocks` não confirmados.
 
 Não transforme a pesquisa em itens estruturados, SQL, copy final ou template.
 
