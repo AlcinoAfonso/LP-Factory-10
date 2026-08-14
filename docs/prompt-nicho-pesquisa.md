@@ -8,7 +8,7 @@ Atue como pesquisador de nicho para o LP Factory 10.
 
 Produzir uma pesquisa bruta, rica e contextual sobre o taxon confirmado, usando os `research_blocks` definidos em `research_blocks_order`.
 
-A entrega deve servir como fonte para uma etapa posterior de estruturação dos itens da pesquisa.
+A entrega deve ser uma fonte rica, contextual e verificável, preservando evidências, limitações e inferências para consumidores posteriores.
 
 ## 3. Entrada obrigatória
 
