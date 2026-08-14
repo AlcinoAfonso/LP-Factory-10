@@ -4,7 +4,7 @@
 
 ### 1.1. Estado
 
-- Status: rascunho vivo da reformulação da E19.3 para o Cenário E; ainda não executável nem implementado.
+- Status: rascunho vivo da reformulação da E19.3 para o Cenário E; ainda não é briefing executável nem implementação autorizada.
 - Recorte: `E19.3 — Pacote autorizado para geração no Cenário E`.
 - Path canônico: `docs/lousa-plano-base-e19-3.md`.
 - Processo: `docs/prompt-estrategista.md` v29.
@@ -14,6 +14,7 @@
 - Decisão humana de 14/08/2026: o Cenário E é a única direção ativa para a primeira LP real; o Cenário D deixa de ser direção de implementação.
 - A arquitetura lógica `identities + modelContext + serverContext` é preservada.
 - A mudança central deste recorte é retirar a pesquisa estruturada da E10.8 do caminho de geração e transportar a pesquisa integral `end_customer` aprovada e selecionada para o taxon.
+- O schema atual de `business_taxons` ainda não contém `selected_end_customer_research_version` nem `reviewed_input_catalog_version`; portanto, a E19.3 do Cenário E não pode ser tratada como executável antes da extensão mínima desses campos.
 - Nenhuma alteração de runtime, banco ou migration decorrente desta reformulação foi iniciada neste documento.
 
 ### 1.2. Objetivo e resultado esperado
@@ -40,8 +41,9 @@
 - `docs/lousa-plano-base-e19-2.md`.
 - `docs/lousa-plano-base-e19-4.md` como fonte das decisões do Cenário E e da preparação mínima do taxon.
 - `docs/prompt-nicho-arquivamento-pesquisa.md` para identidade e versionamento das pesquisas integrais.
+- `docs/prompt-nicho-pesquisa.md` para o contrato atual de produção da pesquisa integral.
 - `docs/pesquisas-brutas/corretor-imoveis/end_customer/v1.md` como primeiro caso real do novo contrato, sem tornar seu slug regra permanente de identidade.
-- `lib/conversion-content/landing-page/input-catalog/`.
+- `lib/conversion-content/landing-page/input-catalog/registry.ts` para as versões executáveis E20.2 efetivamente disponíveis.
 - `lib/conversion-content/landing-page/` para a API pública da E18.4.
 - `lib/lp-builder/contracts.ts`.
 - `lib/lp-builder/generationContext.ts`.
@@ -49,14 +51,14 @@
 - `lib/lp-builder/adapters/generationContextAdapter.ts`.
 - `lib/lp-builder/adapters/generationContextAdapterCore.ts`.
 - `lib/admin/readRepoDoc.ts` como precedente real de leitura server-side de Markdown com `node:fs/promises`.
-- `next.config.js` como precedente real de `outputFileTracingIncludes` para arquivos Markdown necessários no deploy.
+- `next.config.js` somente como precedente de empacotamento explícito de Markdown; o entrypoint de tracing da pesquisa não é decidido antes de existir consumer runtime real que o exija.
 - E10.8 e sua implementação somente para identificar o acoplamento atual que deve sair do caminho da geração, sem apagar nem prejudicar consumidores independentes que ainda existam.
 
 ### 1.4. Responsabilidades preservadas
 
 - E19.2 permanece responsável pelos valores concretos configurados, sua aplicabilidade, origem, completude e vínculo ao `draft`.
 - E20.2 permanece responsável pelo catálogo declarativo de entradas, tipos, escopos, condições, validações e proveniência das definições; a E19.3 não transforma o catálogo em fonte de valores concretos.
-- A preparação do taxon deve estar concluída antes da geração: taxon ativo, pesquisa integral `end_customer` aprovada/selecionada e avaliação E20.2 concluída contra a versão executável aplicável.
+- A preparação do taxon deve estar concluída antes da geração: taxon ativo, pesquisa integral `end_customer` aprovada/selecionada e avaliação E20.2 concluída contra a versão executável efetivamente consumida pelo fluxo.
 - E18.4 permanece responsável pela parametrização raiz; a E19.3 projeta somente o subconjunto editorial útil à geração.
 - E9 e os boundaries vigentes permanecem responsáveis por entitlement, autorização, tenant, membership e vínculo da LP.
 - E18.5 permanece fora da E19.3; a estrutura permitida da candidata pertence ao contrato da E19.4.
@@ -70,7 +72,9 @@
 - Gate 1 — taxon e pesquisa autorizados:
   - `business_taxons.is_active = true`;
   - `selected_end_customer_research_version` identifica explicitamente a versão integral aprovada;
-  - `reviewed_input_catalog_version` identifica a versão executável E20.2 avaliada e considerada suficiente para o taxon;
+  - `reviewed_input_catalog_version` identifica a versão executável E20.2 efetivamente avaliada e considerada suficiente para o taxon;
+  - o registry E20.2 atual contém versões 1, 2 e 3; não existe regra de que a maior versão do registry seja automaticamente a versão consumida;
+  - a E19.3 implementada pelo PR #729 exige hoje `LANDING_PAGE_GENERATION_VALUES_CATALOG_VERSION = 2`; portanto, na primeira prova o marcador deve ser comparado com a versão efetivamente consumida pela configuração/compilador, e não com uma premissa de `v1` ou com a versão mais alta disponível;
   - `business_buyer` não é requisito da geração da LP `end_customer`;
   - ausência ou inconsistência de qualquer um desses sinais falha fechado.
 - Gate 2 — fatos concretos e projeção por `valueType`:
@@ -89,7 +93,14 @@
   - o runtime lê o arquivo do próprio deploy com `node:fs/promises`, sem requisição HTTP à API do GitHub;
   - o conteúdo carregado deve validar `taxon_slug`, `audience_scope` e `research_version` contra a seleção autorizada;
   - o path não integra o contrato entregue à E19.4;
-  - eventual migração futura do diretório para identidade por UUID/código do taxon pode ser avaliada após a primeira LP real, sem bloquear esta prova.
+  - eventual migração futura do diretório para identidade por UUID/código do taxon pode ser avaliada após a primeira LP real, sem bloquear esta prova;
+  - a decisão de filesystem está fechada, mas o `outputFileTracingIncludes` exato fica para o consumer runtime real que precisar empacotar a pesquisa; não antecipar rota/entrypoint dentro da E19.3 sem necessidade demonstrada.
+- Gate 5 — precondição física mínima do taxon:
+  - os dois campos ainda não existem em `business_taxons` e serão implementados no mesmo recorte executor da E19.3.3, antes da alteração do compilador;
+  - a implementação física será uma extensão mínima da tabela existente, sem nova tabela ou lifecycle paralelo;
+  - ambos permanecem nullable e devem aceitar somente inteiros positivos quando preenchidos;
+  - a migration não atribui automaticamente pesquisa aprovada nem avaliação E20.2: valores operacionais só são preenchidos após as respectivas decisões de aprovação;
+  - somente depois dessa precondição existir a implementação do compilador E19.3 do Cenário E pode ser executada e validada.
 
 ## 2. Contrato do caso
 
@@ -97,6 +108,8 @@
 
 - Gatilho:
   - invocação server-side explícita para obter o pacote autorizado de uma LP legítima já configurada.
+- Precondição física:
+  - `business_taxons` já contém `selected_end_customer_research_version` e `reviewed_input_catalog_version` aplicados e validados no ambiente alvo.
 - Entrada:
   - LP em `draft`;
   - configuração concluída e vinculada pela E19.2;
@@ -108,7 +121,7 @@
   - identificar o taxon servido a partir da configuração autoritativa;
   - ler em `business_taxons` o estado mínimo necessário à preparação do taxon;
   - exigir `selected_end_customer_research_version` inteira positiva;
-  - exigir `reviewed_input_catalog_version` compatível com a versão executável E20.2 consumida pela configuração;
+  - exigir `reviewed_input_catalog_version` igual à versão executável E20.2 efetivamente consumida pela configuração/compilador;
   - derivar o path físico da pesquisa integral `end_customer` selecionada;
   - ler o Markdown do filesystem do deploy;
   - validar identidade mínima e versão declaradas no próprio arquivo;
@@ -119,10 +132,11 @@
   - montar `identities + modelContext + serverContext`;
   - validar a saída e devolvê-la profundamente imutável.
 - Validação:
-  - falhar fechado para LP/configuração inválida, taxon não preparado, versão de pesquisa ausente/inválida, arquivo inexistente, metadata incompatível, catálogo E20.2 não avaliado/obsoleto, fato obrigatório ausente ou outra inconsistência comprovável.
+  - falhar fechado para LP/configuração inválida, taxon não preparado, versão de pesquisa ausente/inválida, arquivo inexistente, metadata incompatível, catálogo E20.2 não avaliado/obsoleto, fato obrigatório ausente ou outra inconsistência comprovável;
+  - falhar fechado se `reviewed_input_catalog_version` não corresponder à versão E20.2 que o fluxo efetivamente usa, mesmo que outra versão mais nova exista no registry;
   - resolver e validar o entitlement exclusivamente pelo boundary interno vigente da E9.
 - Persistência:
-  - nenhuma nova na E19.3.
+  - nenhuma nova de conteúdo ou pacote na E19.3; somente a extensão mínima de `business_taxons` definida como precondição deste mesmo recorte executor.
 - Consumo:
   - a saída de sucesso é a única entrada de domínio da E19.4;
   - a E19.4 não relê diretamente E10.8, E18.4, E20.2, E18.5 ou E20.3 para reconstruir o contexto.
@@ -210,7 +224,7 @@
   - `fieldKey`;
   - valor autorizado;
   - `source` da E19.2;
-  - versão executável do catálogo;
+  - versão executável do catálogo efetivamente consumida;
   - proveniência existente.
 - Não criar `fact_id`.
 - A evidência documental da E20.2 justifica a existência do field no catálogo; ela não comprova a veracidade do valor concreto fornecido pela conta.
@@ -229,8 +243,8 @@
   - identidade da LP;
   - plano efetivo;
   - taxon servido;
-  - `catalogVersion` da configuração;
-  - `reviewedInputCatalogVersion` do taxon;
+  - `catalogVersion` efetivamente consumida pela configuração;
+  - `reviewedInputCatalogVersion` do taxon, que deve corresponder a essa versão consumida;
   - `configurationRevision` da E19.2;
   - `rootVersion` efetivamente resolvida da E18.4;
   - versão efetivamente usada pela pesquisa integral `end_customer`.
@@ -266,6 +280,7 @@
 ### 2.7. Simplificação obrigatória
 
 - Implementação esperada:
+  - aplicar primeiro a precondição mínima de schema em `business_taxons`;
   - ler configuração e taxon canônicos;
   - validar preparação do taxon;
   - ler a pesquisa integral do filesystem do deploy;
@@ -277,13 +292,14 @@
 - Reutilizar:
   - `generationContextAdapter.ts` e `generationContextAdapterCore.ts` como boundary existentes;
   - `node:fs/promises` para leitura server-side;
-  - proteção de path equivalente à já usada em `lib/admin/readRepoDoc.ts`;
-  - `outputFileTracingIncludes` somente no consumer real necessário para garantir os arquivos no deploy.
+  - proteção de path equivalente à já usada em `lib/admin/readRepoDoc.ts`.
+- Adiar:
+  - o `outputFileTracingIncludes` exato até existir consumer runtime de produto que precise empacotar a pesquisa; a prova E19.3 read-only não cria rota ou entrypoint artificial apenas para tracing.
 - Não criar:
   - chamada à API GitHub em runtime;
   - nova rota;
   - novo serviço;
-  - nova tabela de pesquisa;
+  - nova tabela de pesquisa ou de prontidão;
   - RAG, chunking ou embedding;
   - `factIdentity`;
   - registry de fatos;
@@ -303,28 +319,38 @@
 
 ### 3.1. E19.3.3 — Pacote autorizado para geração no Cenário E
 
-- Status: reformulação aprovada conceitualmente neste rascunho; implementação ainda não iniciada.
+- Status: rascunho consolidado tecnicamente, mas ainda não briefing executável enquanto os dois campos de `business_taxons` não tiverem sua implementação física incluída no recorte executor.
 - Automação: não.
 - Objetivo:
   - ajustar a implementação E19.3.3 já mergeada para substituir a pesquisa estruturada da E10.8 pela pesquisa integral selecionada, preservando o boundary, a separação de fatos e a interface lógica de três blocos.
-- Entregas:
+- Ordem obrigatória da execução no mesmo recorte E19.3.3:
+  - 1º — criar e aplicar migration mínima adicionando `selected_end_customer_research_version` e `reviewed_input_catalog_version` a `business_taxons`, ambos nullable e positivos quando preenchidos, sem nova tabela;
+  - 2º — validar o schema aplicado no ambiente alvo e atualizar `docs/schema.md` somente após o estado físico existir;
+  - 3º — preencher os sinais do taxon piloto somente após aprovação explícita da pesquisa e da avaliação E20.2 correspondente; não seedar ou inferir aprovação automaticamente na migration;
+  - 4º — alterar o boundary/compilador E19.3 para ler esses sinais e substituir a E10.8 pela pesquisa integral;
+  - 5º — executar a prova read-only no draft real, sem OpenAI;
+  - 6º — somente depois dessa prova retornar à E19.4.
+- Entregas do compilador:
   - manter a residência em `lib/lp-builder/`;
   - preservar `identities + modelContext + serverContext`;
   - evoluir o contrato para `contractVersion: 3` pela mudança incompatível do shape de pesquisa;
   - retirar `LandingPageResearchResolutionResult`, `resolveLandingPageResearchForTaxon` e demais dependências da E10.8 do caminho da compilação E19.3;
   - adicionar leitura server-side mínima do taxon preparado e da pesquisa integral selecionada;
   - validar `selected_end_customer_research_version` e `reviewed_input_catalog_version`;
+  - comparar a avaliação E20.2 com a versão efetivamente consumida pela configuração/compilador, sem escolher automaticamente `1`, `3` ou a maior versão do registry;
   - ler e validar o Markdown integral sem API GitHub;
   - preservar a configuração resolvida E19.2 e a regra de projeção por `valueType`;
   - preservar a projeção mínima da E18.4;
   - preservar logging seguro sem conteúdo da pesquisa ou valores sensíveis;
-  - ajustar `next.config.js` somente na medida necessária para incluir os arquivos de pesquisa no bundle/deploy do consumer real;
+  - não alterar `next.config.js` nesta prova salvo se surgir consumer hospedado concreto que materialmente exija tracing;
   - atualizar casos executáveis e contratos TypeScript focais;
   - não implementar E19.4 neste recorte.
 - Validação mínima:
+  - schema alvo contém os dois campos com constraints coerentes;
   - taxon preparado + LP/configuração válida produz pacote de sucesso;
   - taxon sem pesquisa selecionada falha fechado;
-  - taxon sem avaliação E20.2 vigente falha fechado;
+  - taxon sem avaliação E20.2 correspondente à versão consumida falha fechado;
+  - existência de versão E20.2 mais nova no registry não invalida nem promove automaticamente a versão efetivamente consumida;
   - arquivo inexistente falha fechado;
   - `taxon_slug`, `audience_scope` ou `research_version` incompatíveis falham fechado;
   - pesquisa integral chega completa ao `modelContext` sem atomização;
@@ -346,16 +372,17 @@
   - boundaries de autorização e vínculo já consumidos pela E19.3;
   - E10.8 somente para comprovar que seus consumidores independentes permanecem íntegros, sem recolocá-la no caminho da geração.
 - Critério de primeira prova:
-  - executar a compilação sobre o draft real da primeira LP e demonstrar, sem OpenAI, que o pacote contém a pesquisa integral `end_customer` selecionada, fatos concretos válidos e separados corretamente entre `modelContext` e `serverContext`.
+  - executar a compilação sobre o draft real da primeira LP e demonstrar, sem OpenAI, que o pacote contém a pesquisa integral `end_customer` explicitamente selecionada, fatos concretos válidos e separados corretamente entre `modelContext` e `serverContext`.
 - Fechamento documental:
   - atualizar somente os documentos canônicos materialmente afetados após a implementação;
   - não atualizar o roadmap como concluído antes da validação real do novo contrato.
 
 ### 3.2. Próxima ação
 
-- Consolidar esta reformulação como briefing executável da E19.3.3 do Cenário E.
-- Implementar primeiro somente o ajuste E19.3 descrito na seção 3.1.
-- Executar prova read-only no draft real antes de qualquer chamada OpenAI.
+- Manter este documento como rascunho até o briefing executor incluir explicitamente a precondição física dos dois campos e a ordem definida na seção 3.1.
+- O próximo recorte material é único: executar E19.3.3 na ordem `migration mínima → sinais aprovados do taxon piloto → compilador v3 → prova read-only`.
+- A pesquisa e a avaliação E20.2 do taxon piloto continuam decisões explícitas; a implementação não pode fabricá-las para fazer o teste passar.
+- Não antecipar `outputFileTracingIncludes` sem consumer runtime real; manter apenas a decisão de filesystem do deploy.
 - Após a E19.3 produzir o pacote integral válido, retornar à E19.4 e implementar o primeiro workload de geração do Cenário E.
 - Não abrir debate sobre renomear diretórios por UUID/código do taxon antes dessa primeira prova, salvo bloqueio real do path atual.
 
@@ -372,12 +399,14 @@
 - E20.3 como dependência da E19.3;
 - pesquisa estruturada E10.8 como dependência da geração;
 - alteração ou remoção dos demais consumidores legítimos da E10.8;
-- business_buyer como requisito de geração da LP end_customer;
+- `business_buyer` como requisito de geração da LP `end_customer`;
 - alteração de E18.4, E20.2 ou E19.2 sem gap real demonstrado;
-- nova tabela de pesquisa, view, RPC, trigger, RLS, policy ou persistência de conteúdo integral;
+- nova tabela de pesquisa, prontidão ou seleção;
+- persistência do conteúdo integral da pesquisa em banco;
 - API GitHub, rota, serviço, Provider, agente, automação, job, fila, cron, webhook, RAG ou infraestrutura nova para carregar a pesquisa;
+- criação de rota ou consumer artificial apenas para justificar `outputFileTracingIncludes`;
 - tracking, Analytics, CRM, domínio, publicação, A/B test, Ads ou integrações futuras;
-- regra específica da conta piloto ou de um nicho dentro da E19.3;
+- regra específica da conta piloto ou de um nicho dentro da lógica E19.3;
 - novo contrato estrutural da candidata, que pertence à E19.4;
 - migração imediata do path das pesquisas de slug para UUID/código do taxon sem bloqueio demonstrado pela primeira LP.
 
@@ -389,6 +418,7 @@
 - Parar se for necessário inventar evidência, prova, claim verificado ou semântica não sustentada pelas fontes.
 - Parar se surgir filtro editorial de pesquisa, seleção de módulo, variante, ordem, narrativa ou layout.
 - Parar se faltar fonte canônica indispensável para validar um fato, pesquisa, limite ou binding.
-- Parar se surgir necessidade de banco, rota, job, agente, automação, engine ou infraestrutura nova não autorizada por fonte real do projeto.
+- Parar se a implementação tentar preencher automaticamente os dois campos de preparação sem a aprovação correspondente.
+- Parar se surgir necessidade de tabela adicional, rota, job, agente, automação, engine ou infraestrutura não sustentada por fonte real do projeto.
 - Parar e simplificar se a maior parte do crescimento técnico vier de generalizações para consumidores futuros inexistentes.
 - Toda ampliação material de escopo volta ao humano; não é autorizada implicitamente por este rascunho.
