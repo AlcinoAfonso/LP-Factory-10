@@ -10,67 +10,37 @@
 - Processo: `docs/prompt-estrategista.md` v29.
 - Plano conceitual: `docs/lp-planejamento.md`.
 - Base de abertura do PR #731: `main` após o merge do PR #729, commit `40baacbc516a80c2600408a9be63bfa33793ca85`.
-- O plano-base v2 anterior da E19.4 permanece somente no histórico Git como desenho superado; ele dependia do contrato E19.3 `partA + partB` e não pode ser reutilizado como briefing executável.
-- Decisão humana de 14/08/2026: o Cenário E passa a ser a única direção ativa para a primeira geração real; o Cenário D deixa de ser alternativa em desenvolvimento ou comparação obrigatória e não deve ser implementado antes de E.
-- A branch `strategy/e19-4-cenario-d` conserva o nome histórico de abertura do PR #731; esse nome não representa a direção arquitetural vigente e não justifica criar nova branch ou novo PR para o mesmo rascunho.
-- A arquitetura lógica útil da E19.3 permanece válida, com `identities + modelContext + serverContext`; sua reformulação para o Cenário E pertence a `docs/lousa-plano-base-e19-3.md`.
-- A E19.3 do Cenário E permanece rascunho até a precondição física mínima de `business_taxons` existir e sua prova read-only ser executada.
+- O plano-base v2 anterior permanece somente no histórico Git como desenho superado dependente do contrato E19.3 `partA + partB`.
+- Decisão humana de 14/08/2026: o Cenário E é a única direção ativa para a primeira geração real; o Cenário D deixa de ser alternativa em desenvolvimento ou comparação obrigatória.
+- A branch `strategy/e19-4-cenario-d` conserva apenas o nome histórico de abertura do PR #731.
+- A arquitetura lógica útil da E19.3 permanece `identities + modelContext + serverContext`; sua reformulação pertence a `docs/lousa-plano-base-e19-3.md`.
+- A Preparação do taxon foi separada em dois recortes próprios anteriores à E19.3; a E19.4 apenas exige taxon previamente preparado e pacote E19.3 válido.
 - Nenhuma implementação da nova E19.4 foi iniciada neste debate.
 
 ### 1.2. Objetivo e resultado esperado
 
-- Produzir e avaliar a primeira landing page real do Cenário E a partir de pesquisa integral aprovada, fatos concretos E19.2/E20.2 e limites E18.4 transportados por uma E19.3 mínima.
-- Dar à IA liberdade controlada para transformar contexto autorizado em uma jornada comercial coerente, sem delegar segurança, autorização, verdade factual da conta/oferta, bindings operacionais, persistência ou renderer.
-- Gerar uma candidata estruturalmente válida, materializá-la no `draft` real já existente e disponibilizar preview privado e read-only para avaliação humana.
-- Incluir na primeira prova uma LP completa e reconhecível como página comercial real, com Header, corpo, CTA(s), Footer, estrutura visual e conteúdo coerentes com o caso concreto.
-- Encerrar a E19.4 quando o fluxo do Cenário E estiver funcional de ponta a ponta e a LP puder ser aberta no navegador e avaliada de forma real; otimização editorial intensiva poderá continuar depois da E19.5 Light por novos drafts independentes.
+- Produzir e avaliar a primeira landing page real do Cenário E a partir do pacote autorizado da E19.3.
+- Dar à IA liberdade controlada para transformar contexto autorizado em jornada comercial coerente, sem delegar segurança, autorização, verdade factual, bindings operacionais, persistência ou renderer.
+- Gerar candidata estruturalmente válida, materializá-la no `draft` real existente e disponibilizar preview privado e read-only para avaliação humana.
+- Incluir na primeira prova LP completa e reconhecível como página comercial real, com Header, corpo, CTA(s), Footer, estrutura visual e conteúdo coerentes.
+- Encerrar a E19.4 quando o fluxo estiver funcional de ponta a ponta e a LP puder ser aberta no navegador e avaliada de forma real; otimização editorial intensiva poderá continuar depois da E19.5 Light por novos drafts independentes.
 
 ### 1.3. Decisões aceitas no debate até aqui
 
-- A hierarquia de autoridade do Cenário E é: configuração concreta E19.2/E20.2 define a realidade da conta, oferta e LP; pesquisa integral fornece contexto consultivo sobre público e mercado; E18.4 fornece limites universais aplicáveis; E19.3 autoriza, organiza e transporta; E19.4 toma as decisões narrativas, criativas e persuasivas.
-- A pesquisa nunca pode ampliar ou contradizer a oferta concreta; quando houver tensão entre conhecimento amplo do taxon e o caso configurado, a configuração concreta prevalece para definir o que esta LP vende e quais capacidades do cliente podem ser afirmadas.
-- Não haverá camada intermediária que resuma ou consolide pesquisa + E19.2 antes da E19.4.
-- Eventual resumo executivo pertence à própria pesquisa integral e não substitui seu conteúdo completo.
-- A própria pesquisa pode ser avaliada e otimizada antes do consumo para melhorar fontes, atualidade, distinção entre evidência e inferência, relações causais, condições, exceções, limitações, dores, desejos, objeções e linguagem.
-- As versões integrais permanecem imutáveis no GitHub em `docs/pesquisas-brutas/<taxon_slug>/<audience_scope>/vN.md`; criar uma nova versão não altera nem substitui automaticamente uma versão anterior.
-- Para o Cenário E atual, a seleção operacional necessária é somente da pesquisa integral `end_customer`; `business_buyer` deixa de ser requisito de preparação do taxon e do caminho de geração da LP, sem impedir que o comercial futuro reutilize a pesquisa `end_customer` para comunicar ao B2B os problemas de seus próprios clientes.
-- `business_taxons` permanece a identidade canônica do taxon e deverá receber `selected_end_customer_research_version`, inteiro positivo e anulável, identificando a versão integral `end_customer` aprovada para geração.
-- Não criar tabela própria de seleção; a alternativa `taxon_integral_research_selection` permanece descartada por adicionar entidade, join e lifecycle sem necessidade demonstrada.
-- `business_taxons.is_active` continua representando atividade taxonômica; um taxon pode permanecer ativo na taxonomia sem estar preparado para geração.
-- `selected_end_customer_research_version IS NULL` significa ausência de pesquisa integral aprovada para o fluxo; valor positivo `N` autoriza resolver exatamente `vN`, sem fallback implícito para `1` ou para a versão mais recente.
-- O path da pesquisa não é persistido no Supabase; para a primeira prova ele é derivado de `business_taxons.slug + end_customer + selected_end_customer_research_version` no padrão existente `docs/pesquisas-brutas/<taxon_slug>/end_customer/vN.md`.
-- Quando surgirem versões posteriores, a última versão explicitamente aprovada continua selecionada até nova decisão; criar `vN` não modifica automaticamente o campo.
-- A aprovação ou troca da versão selecionada ocorre após testes e decisão humana apoiada pela IA; se uma versão nova não entregar qualidade suficiente, a seleção vigente permanece e prompt/pesquisa podem ser ajustados antes de novo teste.
-- Campo `NULL`, versão não positiva, arquivo selecionado inexistente ou conteúdo incompatível com taxon/audience/versão esperados falha fechado.
-- Separar três estados conceitualmente distintos: preparação do taxon, prontidão de uma LP concreta para geração e disponibilidade comercial.
-- A preparação do taxon ocorre antes da configuração concreta de uma LP e não depende da E19.2; exige taxon ativo, pesquisa integral `end_customer` aprovada/selecionada e avaliação concluída da aplicabilidade da E20.2.
-- A avaliação da E20.2 é gate obrigatório da preparação do taxon, mas uma camada própria por taxon não é obrigatória: o catálogo herdado pode ser considerado suficiente.
-- O resultado aprovado da avaliação E20.2 será representado no próprio `business_taxons` por `reviewed_input_catalog_version`, inteiro positivo e anulável, em vez de booleano sem rastreabilidade.
-- `reviewed_input_catalog_version IS NULL` significa avaliação E20.2 não concluída; valor positivo `N` significa que a versão executável E20.2 `N`, efetivamente resolvida e consumida pelo fluxo, foi avaliada e considerada suficiente para aquele taxon.
-- O registry E20.2 atual contém versões executáveis 1, 2 e 3; não existe premissa de que `v1` seja a versão vigente nem de que a maior versão disponível seja automaticamente a versão consumida.
-- A E19.3 implementada atualmente exige `LANDING_PAGE_GENERATION_VALUES_CATALOG_VERSION = 2`; portanto, o marcador deve corresponder à versão que a configuração/compilador efetivamente usa, hoje 2 nesse contrato, e evoluir somente quando o consumidor real também evoluir.
-- Se a avaliação identificar gap, `reviewed_input_catalog_version` permanece `NULL` até ajuste da E20.2 e nova avaliação; não criar estado persistido adicional como `needs_adjustment` apenas para o gate.
-- Se a versão E20.2 efetivamente consumida mudar, a avaliação anterior não é presumida atual; o taxon precisa ser reavaliado antes de o marcador acompanhar a nova versão.
-- Assim, `taxon preparado` significa cumulativamente: `business_taxons.is_active = true` + pesquisa `end_customer` selecionada válida + `reviewed_input_catalog_version` correspondente à versão E20.2 efetivamente avaliada e consumida.
-- Os dois campos ainda não existem fisicamente no schema atual de `business_taxons`; sua extensão mínima, sem nova tabela, pertence ao recorte executor da E19.3.3 e deve ocorrer antes da alteração do compilador E19.3.
-- A migration desses campos não atribui aprovações automaticamente: seleção de pesquisa e avaliação E20.2 continuam decisões explícitas.
-- A prontidão da LP é avaliada depois, no contexto de conta + LP concretas: depende da E19.2 e da completude dos valores obrigatórios/condicionais aplicáveis pela E20.2.
-- A disponibilidade comercial por `taxon + plano` permanece decisão separada, historicamente prevista para E20.4/E12.4.5–12.4.6.
-- A E19.3 permanece como fronteira autorizada entre fontes e geração, sem atuar como planejador, resumidor ou camada de inteligência semântica.
-- A matéria-prima textual da IA vem do `modelContext`; `serverContext` permanece sob uso determinístico do servidor.
-- A pesquisa integral aprovada `end_customer` chega ao `modelContext` preservando identidade mínima, versão e conteúdo integral, sem `itemKey`, `priority`, `sortOrder`, quatro registros-pai ou 59 itens estruturados.
-- Os fatos concretos da LP chegam via configuração E19.2/E20.2 já resolvida e projetada pela E19.3; a IA não decide quais fields são aplicáveis.
-- A IA deve sintetizar o público efetivo a partir da interseção entre pesquisa `end_customer` e fatos concretos, sem criar perfil persistido novo.
-- A narrativa deve possuir começo, desenvolvimento e conversão; AIDA pode ser referência persuasiva, não schema rígido.
-- A IA pode decidir quantidade de seções, sequência, função narrativa, copy, CTA textual, omissões, repetições legítimas e layout dentre opções suportadas pelo contrato estrutural da E19.4.
-- O sistema permanece responsável por autorização, facts, evidências, tipos estruturais, limites absolutos, bindings, destinos, consentimento, credenciais, segurança tenant-aware, schema, materialização, snapshot, versões e renderer.
+- A hierarquia de autoridade é: fatos concretos E19.2/E20.2 definem a realidade da conta, oferta e LP; pesquisa integral fornece contexto consultivo; E18.4 fornece limites universais; E19.3 autoriza, organiza e transporta; E19.4 decide narrativa, estrutura, copy e candidata.
+- A pesquisa nunca pode ampliar ou contradizer a oferta concreta; em conflito, a configuração concreta prevalece.
+- Não haverá camada intermediária que resuma, atomize ou selecione semanticamente pesquisa + fatos antes da E19.4.
+- `business_buyer` não é requisito da geração da LP `end_customer`; E10.8 pode permanecer para consumidores independentes, mas fica fora do caminho E19.3 → E19.4.
+- A E19.4 consome diretamente `identities + modelContext + serverContext` da E19.3 e não conhece path, representação interna ou lifecycle da pesquisa integral.
+- A IA sintetiza o público efetivo a partir da pesquisa `end_customer` e dos fatos concretos, sem criar perfil persistido novo.
+- A LP deve possuir começo, desenvolvimento e conversão; AIDA pode servir como referência persuasiva, não como schema rígido.
+- A IA pode decidir quantidade de seções, sequência, função narrativa, copy, CTA textual, omissões, repetições legítimas e layout entre opções suportadas pelo contrato estrutural.
+- O sistema permanece responsável por autorização, fatos e evidências disponíveis, tipos estruturais, limites absolutos, bindings, destinos, consentimento, credenciais, segurança tenant-aware, schema, materialização, snapshot, versões e renderer.
 - A IA não gera HTML, CSS, React, JavaScript, scripts, componentes desconhecidos, credenciais, webhooks ou estruturas fora do contrato suportado.
-- Header e Footer pertencem à E19.4 e devem fazer parte do contrato da primeira LP real.
-- A E19.4 deve usar uma única fonte canônica de estrutura, da qual sejam derivadas deterministicamente as projeções necessárias para Structured Output, validação, materialização e renderer.
-- E10.8 e os itens estruturados podem permanecer no produto enquanto possuírem consumidores reais, mas deixam de ser requisito do caminho de geração E19.3 → E19.4 no Cenário E.
-- O prompt de runtime será tratado como código versionado da feature, separando instruções estáveis do contexto dinâmico validado da E19.3.
-- Alterações de prompt, modelo ou `reasoning.effort` serão avaliadas com casos representativos e critérios estáveis do workload.
-- A combinação `modelo + reasoning effort` permanece em aberto até o Gate correspondente, conforme `docs/openai-model-snapshot.md`.
+- Header e Footer pertencem ao contrato da primeira LP real.
+- A E19.4 deve usar uma única fonte canônica de estrutura, da qual sejam derivadas as projeções necessárias para Structured Output, validação, materialização e renderer.
+- O prompt de runtime será tratado como código versionado da feature, separado do contexto dinâmico validado da E19.3.
+- Alterações de prompt, modelo ou `reasoning.effort` serão avaliadas com casos representativos e critérios estáveis; a combinação final permanece em aberto conforme `docs/openai-model-snapshot.md`.
 - O prompt seguirá abordagem `outcome-first`, sem pedir cadeia de raciocínio privada.
 - A fase geracional terá participação de IA; a categoria final deve ser reconciliada com o Gestor de Automação antes da consolidação da v1.
 
@@ -84,48 +54,36 @@
 - `docs/base-tecnica.md`.
 - `docs/schema.md`.
 - `docs/design-system.md`.
-- `docs/lousa-plano-base-e19-3.md`.
+- `docs/lousa-plano-base-e19-3.md` como contrato da única entrada de domínio da E19.4.
 - `docs/lousa-plano-base-e19-2.md`.
 - `docs/lousa-plano-base-e20-2.md`.
 - `docs/lousa-plano-base-e18-4.md`.
-- `docs/lousa-plano-base-e10-8.md` somente para identificar contratos/consumidores vigentes e separar a pesquisa estruturada da pesquisa integral.
-- `docs/prompt-nicho-identificacao.md`.
-- `docs/prompt-nicho-pesquisa.md`.
-- `docs/prompt-nicho-arquivamento-pesquisa.md`.
-- `docs/pesquisas-brutas/corretor-imoveis/end_customer/v1.md` como primeira pesquisa integral real para o debate.
 - `docs/template-prompts.md`.
 - `docs/template-prompts-gpt-5-6.md`.
 - `docs/openai-model-snapshot.md`.
-- `docs/gestor-automations.md`.
-- `docs/automations.md`.
-- `lib/conversion-content/landing-page/input-catalog/registry.ts`.
-- `lib/lp-builder/generationContextContracts.ts`.
-- `lib/admin/readRepoDoc.ts`.
-- `next.config.js` somente como precedente técnico; o entrypoint de tracing da pesquisa não é antecipado sem consumer runtime real.
+- `docs/gestor-automations.md` e `docs/automations.md`.
 - PR #726 e `docs/lousa-plano-base-e19-5.md` somente como fonte conceitual da sucessora E19.5 Light.
 - Artefatos SQL da materialização E19.4 preservados pelo PR #729, somente como fonte real já existente para o debate de persistência.
 
 ### 1.5. Questões ainda abertas e não decididas
 
-- Se a avaliação E20.2 assistida por IA deve permanecer inicialmente como procedimento administrativo fora do runtime ou ganhar workload próprio somente depois de benefício demonstrado; isso não bloqueia o gate obrigatório já definido.
-- Quais critérios/testes humanos com apoio da IA aprovam uma versão de pesquisa integral como suficientemente boa para substituir a seleção vigente; `docs/prompt-nicho-pesquisa.md` já melhorou o contrato de qualidade e deve ser testado, não redesenhado preventivamente.
-- Se a geração E19.4 ocorre em uma única chamada que planeja e escreve a LP ou em mais de uma etapa/chamada controlada, sem transformar o fluxo em agente.
+- Se a geração ocorre em uma única chamada que planeja e escreve a LP ou em mais de uma etapa/chamada controlada, sem transformar o fluxo em agente.
 - Qual é o menor conjunto de primitivas, layouts, cardinalidades e interações necessário para materializar e renderizar a primeira LP real sem HTML/CSS/JS livre.
 - Se algum metadata mínimo e seguro derivado de `identities` ou `serverContext` precisa ser projetado ao modelo para decisão estrutural.
-- Como representar no Structured Output o planejamento narrativo e o conteúdo final sem criar segundo DTO de domínio ou registry paralelo ao renderer.
+- Como representar no Structured Output planejamento narrativo e conteúdo final sem criar segundo DTO de domínio ou registry paralelo ao renderer.
 - Quais referências de pesquisa/fatos a candidata deve devolver para permitir validação sem exigir provenance cognitiva ou cadeia de raciocínio.
 - Quais claims podem ser validados objetivamente, quais dependem de evidência concreta e quais só podem ser avaliados humanamente.
 - Qual combinação `modelo + reasoning effort` cumpre os gates com menor complexidade, custo e latência.
 - Como adaptar o snapshot da materialização para registrar workload e contexto efetivamente exposto sem armazenar raciocínio privado.
 - Qual superfície real disponibilizará o preview privado da primeira LP.
-- Quais critérios objetivos e humanos definirão que a primeira LP do Cenário E é funcional e suficientemente avaliável para encerrar a E19.4.
+- Quais critérios objetivos e humanos definirão que a primeira LP é funcional e suficientemente avaliável para encerrar a E19.4.
 
 ### 1.6. Direção aprovada — E → E19.5 Light → iterações
 
-- Prosseguir somente com o Cenário E até existir uma E19.4 funcional ponta a ponta: pesquisa integral aprovada + fatos concretos E19.2/E20.2 + limites E18.4 → E19.3 mínima → geração por IA → candidata estruturada → validação → materialização → renderer → preview privado.
+- Prosseguir somente com o Cenário E até existir E19.4 funcional ponta a ponta: taxon preparado + LP concreta configurada → E19.3 válida → geração por IA → candidata estruturada → validação → materialização → renderer → preview privado.
 - Não implementar E19.4 D antes de E e não manter D como comparação obrigatória.
-- Antes da E19.4, executar a E19.3 do Cenário E com sua precondição mínima de schema e prova read-only; não criar nova camada de inteligência intermediária.
-- Após a E19.4 E funcional, E19.5 Light deverá permitir novos `drafts` independentes para iterações E1/E2/E3, sem overwrite e sem conhecer a representação interna da pesquisa.
+- Antes da E19.4, concluir a E19.3 do Cenário E e sua prova read-only; não criar camada de inteligência intermediária.
+- Após a E19.4 funcional, E19.5 Light deverá permitir novos `drafts` independentes E1/E2/E3, sem overwrite e sem conhecer a representação interna da pesquisa.
 - O contrato detalhado da E19.5 Light pertence ao documento e ao debate próprios.
 
 ## 2. Contrato do caso
@@ -136,19 +94,18 @@
   - ação humana explícita na jornada operacional da conta inicia a geração da LP completa;
   - papéis, entitlement e superfície exatos serão confirmados contra o runtime vigente antes da v1.
 - Entrada:
-  - LP legítima em `draft` e configuração vinculada;
-  - taxon previamente preparado, com pesquisa `end_customer` aprovada e avaliação E20.2 correspondente à versão efetivamente consumida;
-  - configuração E19.2 da conta/LP concreta completa nos fields obrigatórios/condicionais aplicáveis;
-  - sucesso integral da E19.3 ajustada ao Cenário E;
+  - LP legítima em `draft` e configuração E19.2 completa nos fields aplicáveis da E20.2;
+  - taxon previamente preparado pelos recortes responsáveis;
+  - sucesso integral da E19.3 do Cenário E;
   - configuração OpenAI autorizada para o workload E19.4.
 - Processamento:
   - revalidar autorização antes do provider;
-  - obter o pacote E19.3 sem fazer a E19.4 reler diretamente E10.8, E18.4, E20.2, E18.5 ou E20.3;
+  - obter o pacote E19.3 sem reler diretamente as fontes internas do projeto;
   - construir a requisição a partir do prompt canônico versionado e do contexto autorizado;
   - permitir que a IA sintetize público efetivo, oferta, estágio de funil, intenção de conversão e jornada persuasiva, respeitando a precedência dos fatos concretos;
   - produzir candidata completa dentro da fonte estrutural canônica mínima;
   - combinar deterministicamente destinos, bindings, assets e demais valores server-side;
-  - validar integralmente a candidata antes de qualquer materialização.
+  - validar integralmente a candidata antes de materialização.
 - Validação:
   - aplicar validações determinísticas somente ao que for objetivamente comprovável;
   - separar validação estrutural/factual de avaliação humana editorial e visual.
@@ -158,12 +115,12 @@
 - Consumo:
   - renderer privado e read-only reproduz a LP a partir do estado materializado, sem reler fontes mutáveis.
 - Fallback:
-  - falha de autorização, pesquisa, contexto, provider, schema ou validação não materializa candidata.
+  - falha de autorização, contexto, provider, schema ou validação não materializa candidata.
 
 ### 2.2. Papel da IA
 
 - Interpretar o `modelContext` da E19.3 como um todo, preservando a distinção de autoridade entre pesquisa e fatos concretos.
-- Sintetizar internamente o público efetivo e manter toda a narrativa coerente com esse recorte.
+- Sintetizar público efetivo e manter a narrativa coerente com esse recorte.
 - Identificar oferta, intenção comercial, estágio do funil e ação desejada.
 - Escolher progressão persuasiva adequada ao caso, sem fórmula fixa obrigatória.
 - Planejar quantidade, sequência e função narrativa das seções dentro do conjunto estrutural permitido.
@@ -177,7 +134,7 @@
 
 - Autorizar ator, conta, membership e entitlement.
 - Resolver e entregar o pacote E19.3 sem consulta direta do modelo às fontes internas.
-- Definir o menor contrato estrutural finito e derivar dele as projeções para IA, validator, materialização e renderer.
+- Definir o menor contrato estrutural finito e derivar dele projeções para IA, validator, materialização e renderer.
 - Manter valores brutos de `serverContext` fora da matéria-prima textual e usá-los deterministicamente.
 - Resolver bindings, consentimento, credenciais e referências técnicas.
 - Validar schema, tipos, cardinalidades, limites, identidades, componentes e propriedades suportadas.
@@ -208,8 +165,8 @@
 
 ### 2.6. Jornada persuasiva
 
-- A LP é uma sequência comercial completa, não preenchimento independente de blocos.
-- O Hero revalida a atenção, confirma relevância e gera interesse.
+- A LP é sequência comercial completa, não preenchimento independente de blocos.
+- O Hero revalida atenção, confirma relevância e gera interesse.
 - O corpo desenvolve entendimento, valor percebido, desejo, confiança e tratamento de objeções.
 - CTA pode aparecer cedo e se repetir quando estágio de funil e narrativa justificarem.
 - AIDA é referência útil, não define quantidade fixa de seções ou posições obrigatórias.
@@ -222,13 +179,13 @@
 - Ausência de evidência permanece ausência.
 - Claims de resultado, garantia, escassez, credencial verificada, prova social ou comparação objetiva só entram com suporte real autorizado.
 - Pesquisa pode fornecer fatos externos legítimos e atuais, preservando fontes, limitações e natureza.
-- A forma de referenciar partes de pesquisa/fatos na candidata permanece aberta, sem exigir cadeia de raciocínio.
+- A forma de referenciar pesquisa/fatos na candidata permanece aberta, sem exigir cadeia de raciocínio.
 - Factualidade e qualidade narrativa não dependem da antiga representação atomizada.
 
 ### 2.8. Materialização, snapshot e renderer
 
 - Os artefatos SQL da materialização antiga preservados pelo PR #729 devem ser avaliados antes de proposta de banco nova.
-- O estado materializado deve reproduzir a LP sem reler E19.3, E20.2, E10.8, E18.5 ou E20.3.
+- O estado materializado deve reproduzir a LP sem reler E19.3 ou suas fontes.
 - O snapshot preserva somente o necessário para auditar/reproduzir a geração: identidades, versões, configuração do workload e contexto exposto, sem raciocínio privado.
 - O renderer consome projeção derivada da mesma fonte estrutural canônica usada pelo Structured Output e validator.
 - Aparência, Header, Footer, seções, layouts e conteúdo são reproduzidos deterministicamente a partir do estado congelado.
@@ -241,12 +198,11 @@
 - Status: rascunho; fase ainda não consolidada para execução.
 - Automação: sim em princípio pela participação central da IA; categoria final pendente da consulta obrigatória ao Gestor de Automação antes da v1.
 - Objetivo:
-  - transformar o pacote E19.3 do Cenário E em candidata completa da primeira LP real, com planejamento narrativo e copy por IA dentro do contrato estrutural mínimo e validação determinística antes da persistência.
+  - transformar o pacote E19.3 em candidata completa da primeira LP real, com planejamento narrativo e copy por IA dentro do contrato estrutural mínimo e validação determinística antes da persistência.
 - Dependências anteriores à execução:
+  - taxon preparado pelos recortes responsáveis;
   - E19.3 do Cenário E implementada e aprovada em prova read-only;
-  - taxon preparado com os dois sinais físicos válidos;
-  - configuração E19.2 completa conforme E20.2;
-  - pesquisa integral aprovada.
+  - configuração E19.2 completa conforme E20.2.
 - Questões indispensáveis ainda abertas:
   - contrato estrutural mínimo e projeções;
   - prompt canônico;
@@ -284,14 +240,10 @@
 
 ### 3.4. Próxima ação do debate
 
-- O Gate de preparação do taxon está conceitualmente fechado: pesquisa integral explicitamente selecionada, avaliação E20.2 versionada, sem `business_buyer`, sem tabela própria e com leitura da pesquisa pelo filesystem do deploy.
-- O mecanismo físico de leitura está decidido sem API GitHub; o entrypoint específico de `outputFileTracingIncludes` não é antecipado até existir consumer runtime real que o exija.
-- Os dois campos necessários ainda não existem e sua implementação mínima pertence à execução E19.3.3, antes da alteração do compilador.
-- A E20.2 deve ser comparada pela versão efetivamente consumida; o registry contém 1, 2 e 3, enquanto a E19.3 implementada hoje consome 2.
-- O próximo passo material é executar a E19.3.3 na ordem `migration mínima → sinais aprovados do taxon piloto → compilador v3 com pesquisa integral → prova read-only sem OpenAI`.
-- O Gate de qualidade da pesquisa não parte do zero: `docs/prompt-nicho-pesquisa.md` já contém critérios de evidência, inferência, fontes, limitações e proibição de antecipar a solução da LP; a decisão restante é testar seu resultado real e aprovar/reprovar a versão com julgamento humano apoiado pela IA.
+- A Preparação do taxon está delegada aos dois recortes próprios e não é detalhada neste plano.
+- O próximo passo material anterior à E19.4 é concluir e provar a E19.3 do Cenário E.
 - Depois da prova E19.3, retornar diretamente aos Gates internos da E19.4: prompt/workflow, contrato estrutural mínimo, factualidade/evidência, modelo/effort, materialização/snapshot, renderer e avaliação humana.
-- Quando a LP gerada não atingir a qualidade desejada, diagnosticar nesta ordem: E19.4; pesquisa; E20.2 quando surgir dado factual necessário não previsto; E19.3 somente diante de gap real de autorização, identidade, separação ou transporte.
+- Quando a LP gerada não atingir qualidade desejada, diagnosticar nesta ordem: E19.4; pesquisa; E20.2 quando surgir dado factual necessário não previsto; E19.3 somente diante de gap real de autorização, identidade, separação ou transporte.
 - Não atualizar `docs/roadmap.md` enquanto este arquivo permanecer rascunho vivo.
 - Não iniciar implementação da E19.4 antes da prova E19.3 e da consolidação da v1 deste plano.
 
@@ -299,27 +251,25 @@
 
 ### 4.1. Fora da E19.4 neste momento
 
-- Publicação pública, domínio customizado e disponibilidade comercial.
-- Tracking, analytics, CRM, Ads, A/B test e engine de experimentos.
-- Detalhamento/implementação da E19.5 Light dentro deste recorte.
-- Editor visual, edição manual ampla, histórico e rollback.
-- Implementação da E19.4 D ou comparação D × E como requisito.
-- Consulta direta da IA a E10.8, E18.4, E20.2, E18.5 ou E20.3.
-- Reintrodução de E18.5 ou E20.3 como gate obrigatório da geração.
-- Camada intermediária de resumo pesquisa + E19.2.
-- Recriação de `itemKey`, `priority`, `sortOrder`, quatro registros-pai, 59 itens ou equivalente.
-- Detalhamento técnico da E19.3 dentro deste plano; sua implementação pertence ao documento próprio.
-- Acoplamento da E19.4 a path Markdown ou representação interna da pesquisa.
-- HTML, CSS, React, JavaScript, scripts ou componentes arbitrários gerados pela IA.
-- Catálogo estrutural amplo antecipado ou reconstrução da antiga E18.5.
-- Agents SDK, multi-agent, job, fila, cron, webhook, browsing ou tools externas sem necessidade real.
-- Migration dos campos `selected_end_customer_research_version` e `reviewed_input_catalog_version` dentro da E19.4; essa precondição pertence ao recorte executor E19.3.3.
-- Nova tabela de seleção/prontidão, novo serviço ou infraestrutura sem gap real demonstrado.
-- Perfil persistido novo de público/persona/estratégia apenas para facilitar prompt.
+- preparação do taxon, incluindo sua pesquisa selecionada, avaliação E20.2, persistência e aprovação;
+- implementação técnica da E19.3;
+- publicação pública, domínio customizado e disponibilidade comercial;
+- tracking, analytics, CRM, Ads, A/B test e engine de experimentos;
+- detalhamento/implementação da E19.5 Light dentro deste recorte;
+- editor visual, edição manual ampla, histórico e rollback;
+- implementação E19.4 D ou comparação D × E como requisito;
+- consulta direta da IA às fontes internas do projeto fora do pacote E19.3;
+- reintrodução de E18.5, E20.3 ou E10.8 como gate da geração;
+- camada intermediária de resumo, atomização ou seleção semântica;
+- HTML, CSS, React, JavaScript, scripts ou componentes arbitrários gerados pela IA;
+- catálogo estrutural amplo antecipado ou reconstrução da antiga E18.5;
+- Agents SDK, multi-agent, job, fila, cron, webhook, browsing ou tools externas sem necessidade real;
+- nova tabela, serviço, engine ou infraestrutura sem gap real demonstrado;
+- perfil persistido novo de público/persona/estratégia apenas para facilitar prompt.
 
 ### 4.2. Critérios de parada imediata
 
-- Parar e voltar ao debate humano se pesquisa integral ou pacote E19.3 faltar informação indispensável sem fonte canônica autorizada.
+- Parar e voltar ao debate humano se o pacote E19.3 faltar informação indispensável sem fonte canônica autorizada.
 - Parar se a solução tentar compensar pesquisa insuficiente com atomização, ranking, RAG, chunking, allowlist ou seleção semântica sem evidência.
 - Parar se a solução exigir mapa nominal crescente de nichos, fields ou componentes dentro da E19.4.
 - Parar se o contrato estrutural crescer principalmente por extensibilidade hipotética.
@@ -331,10 +281,9 @@
 ### 4.3. Critério provisório de conclusão do recorte
 
 - A E19.4 deverá ser considerada funcionalmente concluída quando uma LP real do fluxo oficial:
-  - for gerada a partir de pesquisa integral aprovada + fatos concretos E19.2/E20.2 + limites E18.4, transportados pela E19.3 do Cenário E;
+  - for gerada a partir do pacote autorizado E19.3;
   - apresentar jornada comercial coerente e avaliável do interesse à ação;
-  - respeitar a autoridade da configuração concreta sobre a pesquisa ampla;
-  - respeitar fatos, limites e evidências autorizados;
+  - respeitar autoridade dos fatos concretos, pesquisa, limites e evidências autorizadas;
   - for materializada integralmente em `draft`;
   - for reproduzida privadamente por renderer determinístico;
   - puder ser avaliada humanamente como landing page real quanto a narrativa, copy, estrutura, responsividade, acessibilidade e qualidade visual.
