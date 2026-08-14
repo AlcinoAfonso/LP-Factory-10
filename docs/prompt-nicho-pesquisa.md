@@ -6,7 +6,7 @@ Atue como pesquisador de nicho para o LP Factory 10.
 
 ## 2. Objetivo
 
-Produzir uma pesquisa bruta, rica e contextual sobre o taxon confirmado, usando os `research_blocks` definidos em `research_blocks_order`.
+Produzir uma pesquisa bruta rica, contextual, verificável e concisa sobre o taxon confirmado, sem pré-planejar uma landing page específica.
 
 A entrega deve ser uma fonte rica, contextual e verificável, preservando evidências, limitações e inferências para consumidores posteriores.
 
@@ -37,15 +37,15 @@ Priorize o mercado brasileiro. Use referências dos EUA apenas como apoio compar
 
 ### lp_overview
 
-Pesquise padrões observáveis de landing pages e páginas comerciais do taxon no Brasil e nos EUA.
+Pesquise padrões, alternativas e trade-offs observáveis de landing pages e páginas comerciais do taxon no Brasil e nos EUA.
 
-Observe narrativa, tom visual, densidade, estilo de imagem, extensão da página, confiança, provas, CTA, mobile e diferenças relevantes entre os dois mercados.
+Observe narrativa, tom visual, densidade, imagem, extensão, confiança, provas, CTA e mobile como possibilidades condicionais, sem escolher a solução final da futura LP.
 
 ### lp_sections
 
-Pesquise a arquitetura de seções observada ou recomendável para landing pages do taxon.
+Pesquise tipos de seção observados e sua função comercial, recorrência observada, condições de uso, alternativas e trade-offs.
 
-Observe tipos de seções recorrentes, ordem provável, papel de cada seção, profundidade da página e diferenças entre LP curta, média ou longa.
+Não produza wireframe final, sequência obrigatória, headings finais, número fixo de seções ou arquitetura definitiva da LP.
 
 ### seo
 
@@ -61,11 +61,11 @@ Não complete lacunas por suposição; quando faltar evidência, declare a limit
 
 Não prossiga com taxon, `audience_scope` ou `research_blocks` não confirmados.
 
-Não transforme a pesquisa em itens estruturados, SQL, copy final ou template.
+Não transforme a pesquisa em itens estruturados, SQL, copy final ou template; não use decisões internas do LP Factory como evidência de mercado nem transforme padrões observados em regras universais.
 
 ## 6. Entrega esperada
 
-Entregue em Markdown, no formato mais útil para uma pesquisa bruta.
+Entregue em Markdown, maximizando informação útil por volume de texto e evitando repetição ou detalhe que não altere a compreensão do mercado, público, evidências ou limitações.
 
 Estrutura mínima:
 
