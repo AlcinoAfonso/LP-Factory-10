@@ -165,9 +165,11 @@
 - `selected_research_valid` pode existir apenas como projeção derivada do sucesso; não é persistido e não substitui o resultado tipado.
 - A E20.6 não pode converter erro operacional, inconsistência ou funcionalidade desabilitada em ausência legítima de seleção.
 - Mesmo o sucesso isolado não significa `taxon preparado`; a E20.6 adicionará o segundo marcador necessário e o predicado final de preparação.
-- A reconciliação de planejamento no roadmap registra a E20.6 somente como recorte futuro para suficiência factual e predicado final de preparação, sem autorizar sua implementação neste PR.
+- A reconciliação de planejamento no roadmap deverá registrar a E20.6 somente como recorte futuro para suficiência factual e predicado final de preparação, sem autorizar sua implementação neste PR.
 
 ## 3. Fases e gates executáveis
+
+- Gate documental pré-execução: após a aprovação da v2 e antes de iniciar E20.5.3, executar o Prompt ABC sobre `docs/roadmap.md`; além de reconciliar objetivo/status planejado da E20.5, o menor delta deve registrar somente objetivo e status futuro da E20.6, sem registros, artefatos ou estado de implementação.
 
 ### 3.1. E20.5.3 — Leitura e validação repo-only da pesquisa integral
 
