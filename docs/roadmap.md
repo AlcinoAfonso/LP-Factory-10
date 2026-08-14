@@ -1,7 +1,7 @@
 0. Introdução
 
 0.1 Cabeçalho
-• Data: 12/08/2026
+• Data: 14/08/2026
 • Versão: v1.5.145
 
 0.2 Contrato do documento (consulta)
