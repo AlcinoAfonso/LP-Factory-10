@@ -31,6 +31,10 @@
 - Não haverá camada intermediária que resuma ou consolide pesquisa + E19.2 antes da E19.4.
 - Eventual resumo executivo pertence à própria pesquisa integral e não substitui seu conteúdo completo.
 - A própria pesquisa pode ser avaliada e otimizada antes do consumo para melhorar fontes, atualidade, distinção entre evidência e inferência, relações causais, condições, exceções, limitações, dores, desejos, objeções e linguagem.
+- As versões integrais permanecem imutáveis no GitHub em `docs/pesquisas-brutas/<taxon_slug>/<audience_scope>/vN.md`; criar uma nova versão não altera nem substitui automaticamente uma versão anterior.
+- Para cada `taxon + audience_scope`, o Supabase deverá representar somente qual versão integral está selecionada para geração, sem armazenar nesse registro o conteúdo, resumo, score, comparação ou atomização da pesquisa.
+- Quando existir somente uma versão integral válida para `taxon + audience_scope`, ela é a vigente natural sem exigir ação humana adicional; quando houver múltiplas versões, a seleção deve ser explícita e pode apontar para qualquer versão existente, não necessariamente a mais recente.
+- A ausência de versão utilizável, a ambiguidade de seleção quando houver múltiplas versões ou uma seleção que não possa ser resolvida para conteúdo integral válido deve falhar fechado; tabela, coluna, migration e mecanismo físico exatos permanecem em aberto até inspeção do schema e fechamento técnico do Gate.
 - A E19.3 permanece como fronteira autorizada entre as fontes do projeto e a geração, mas não atua como planejador, resumidor ou camada de inteligência semântica.
 - A matéria-prima textual da IA vem do `modelContext` da E19.3; `serverContext` permanece sob uso determinístico do servidor e não vira matéria-prima textual bruta para o modelo.
 - A pesquisa integral aprovada `end_customer` deverá chegar ao `modelContext` preservando identidade mínima, versão e conteúdo integral, sem depender de `itemKey`, `priority`, `sortOrder`, quatro registros-pai ou 59 registros estruturados.
@@ -85,7 +89,7 @@
 
 ### 1.5. Questões ainda abertas e não decididas
 
-- Qual é o contrato operacional mínimo da pesquisa integral aprovada, preservando ao menos taxon, `audience_scope`, versão e conteúdo efetivamente usado sem recriar a estrutura dos 59 itens.
+- Como materializar no schema vigente a seleção operacional da pesquisa integral por `taxon + audience_scope`, preservando a decisão já aceita de GitHub como fonte das versões e Supabase como estado da versão selecionada, sem reutilizar indevidamente a pesquisa estruturada da E10.8.
 - Qual é o menor mecanismo físico compatível com o runtime vigente para fornecer essa pesquisa integral à E19.3, sem presumir banco, rota, serviço ou nova infraestrutura.
 - Quais critérios mínimos de qualidade da pesquisa precisam estar satisfeitos antes de ela ser considerada aprovada para geração, incluindo fontes, evidência versus inferência, condições, exceções, limitações e atualização temporal quando relevante.
 - Dependência: E19.3 deve ser ajustada para transportar pesquisa integral aprovada, preservando `identities + modelContext + serverContext`; o contrato técnico e a implementação desse ajuste pertencem ao plano próprio da E19.3.
@@ -267,7 +271,8 @@
 ### 3.4. Próxima ação do debate
 
 - Fechar exclusivamente o primeiro Gate: contrato operacional mínimo da pesquisa integral aprovada e critérios suficientes de qualidade para seu uso na geração, sem recriar atomização.
-- Esse Gate deve responder como identificar taxon/audience/versão, o que significa pesquisa aprovada, como obter exatamente o conteúdo usado, como falhar quando não existir e como garantir qualidade suficiente sem criar nova camada intermediária.
+- Decisão parcial já fechada neste Gate: GitHub preserva as versões integrais e Supabase representa a versão selecionada por `taxon + audience_scope`; uma única versão não exige ação humana adicional e versões novas não substituem automaticamente a seleção vigente.
+- O restante desse Gate deve responder como materializar essa seleção no schema vigente, o que significa pesquisa aprovada, como obter exatamente o conteúdo usado, como falhar quando não existir e como garantir qualidade suficiente sem criar nova camada intermediária.
 - Depois do fechamento desse Gate, tratar o ajuste necessário da E19.3 em seu documento próprio e somente então retornar aos Gates internos da E19.4.
 - Na E19.4, fechar progressivamente prompt/workflow, contrato estrutural mínimo, factualidade/evidência, modelo/effort, materialização/snapshot, renderer e critérios de avaliação humana.
 - Quando a LP gerada não atingir a qualidade desejada, priorizar diagnóstico nesta ordem: E19.4 quando o contexto estiver correto mas a interpretação/composição falhar; pesquisa quando faltar conhecimento, nuance, atualidade ou evidência; E19.3 somente quando existir gap real de autorização, identidade, separação ou transporte do contexto.
