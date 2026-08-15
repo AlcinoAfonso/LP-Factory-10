@@ -1,8 +1,8 @@
 0. Introdução
 
 0.1 Cabeçalho
-• Data da última atualização: 11/08/2026
-• Documento: LP Factory 10 — Schema (DB Contract) v1.0.40
+• Data da última atualização: 15/08/2026
+• Documento: LP Factory 10 — Schema (DB Contract) v1.0.41
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -281,6 +281,7 @@
 • PK: id uuid
 • UNIQUE: slug
 • CHECK: business_taxons_level_chk (level IN ('segment', 'niche', 'ultra_niche'))
+• CHECK: business_taxons_selected_end_customer_research_version_chk (selected_end_customer_research_version IS NULL OR selected_end_customer_research_version > 0)
 • FK: parent_id → business_taxons(id) ON UPDATE CASCADE ON DELETE SET NULL
 
 1.11.2 Campos
@@ -289,11 +290,13 @@
 • name text not null
 • slug text not null
 • is_active boolean not null default true
+• selected_end_customer_research_version integer null
 
 1.11.3 Segurança
 • Trigger Hub: não
 • RLS: ativo (enable row level security)
-• service_role: SELECT
+• service_role: SELECT; UPDATE somente em name, slug, is_active e selected_end_customer_research_version
+• anon/authenticated: sem UPDATE em selected_end_customer_research_version
 
 1.11.4 Policies
 • business_taxons_select_admin_only (SELECT to public): is_super_admin() OU is_platform_admin()

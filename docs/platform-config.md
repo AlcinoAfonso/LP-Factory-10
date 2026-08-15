@@ -2,8 +2,8 @@
 
 0.1 Cabeçalho
 • Documento: LP Factory 10 — Platform Config
-• Versão: v0.1.20
-• Data: 14/08/2026
+• Versão: v0.1.21
+• Data: 15/08/2026
 
 0.2 Contrato do documento
 • O QUE É: snapshot operacional e fonte única das configurações de plataformas externas do LP Factory 10, refletindo o estado conhecido/cadastrado nas plataformas conforme indicado.
@@ -134,9 +134,9 @@
 
 • `E20_5_SELECTED_RESEARCH_ENABLED`
 • Finalidade: gate server-only e fail-closed da leitura, seleção administrativa e consumo da pesquisa integral `end_customer` selecionada por taxon.
-• Escopo planejado: Preview e Production do projeto Core, com configuração independente por ambiente.
-• Estado atual: desligado; a variável estava ausente em Preview e Production na verificação de 14/08/2026, e a inspeção autenticada gate-off foi aprovada sem exposição da nova superfície ou erro de runtime. Ausência ou valor diferente do literal `true` desabilita todo acesso à nova coluna e sua interface, sem fallback de banco.
-• Ordem de ativação: após merge humano, aguardar o apply canônico da migration, aprovar `supabase/snippets/e20_5_selected_end_customer_research_version_verify.sql`, configurar como `true` no ambiente alvo e executar novo deploy.
+• Escopo: Preview e Production do projeto Core, com configuração independente por ambiente.
+• Estado atual: `true` em Production; a ativação gate-on foi validada em Preview e Production em 15/08/2026. Ausência ou valor diferente do literal `true` desabilita todo acesso à nova coluna e sua interface, sem fallback de banco.
+• Estado operacional: migration aplicada pelo workflow canônico, snippet SQL read-only aprovado, redeploy concluído e smokes autenticados gate-on aprovados em Preview e Production.
 • Regra operacional: validar primeiro em Preview autenticado; Production só pode ser habilitada após as evidências aplicáveis, sem registrar valor sensível ou branch override como estado canônico.
 
 • `INVITE_STATE_SECRET`
