@@ -2,7 +2,7 @@
 
 0.1 Cabeçalho
 • Data: 15/08/2026
-• Versão: v1.5.148
+• Versão: v1.5.149
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -2616,22 +2616,23 @@ Repositório — Ajustados
   * Somente o sucesso fornece taxon, slug, versão selecionada, conteúdo integral e a projeção derivada `selectedResearchValid: true`; nenhuma marca `prepared` é criada ou persistida.
   * Casos determinísticos cobrem todos os estados públicos e comprovam que o gate antecede o acesso à coluna; as validações consolidadas permanecem verdes.
 
-20.6 Avaliação de suficiência factual e preparação final do taxon
+20.6 Avaliação de suficiência factual da E20.2 por taxon
 
 20.6.1 Objetivo e status
 
 * Objetivo: avaliar a suficiência factual da pesquisa integral `end_customer` selecionada pela E20.5 em conjunto com uma versão executável explícita do catálogo E20.2 e definir o predicado final de preparação do taxon, sem autorizar geração.
-* Status: Planejada; plano-base v1 aprovado em 15/08/2026 e Processo automatizado (Opção 2) escolhido; implementação ainda não iniciada.
+* Status: Planejada; plano-base v2 aprovado pelo Analista em 15/08/2026; implementação ainda não iniciada.
 
 20.6.3 Avaliação assistida e registro humano da suficiência
 
 * Status: Planejada.
 * Conteúdo:
   * usar o fluxo humano `Admin → Codex → Admin`, com IA em fluxo controlado no ambiente interno do Codex e sem workload OpenAI no runtime do LP Factory;
-  * confrontar integralmente a pesquisa E20.5 autorizada com uma versão executável E20.2 escolhida explicitamente pelo humano, sem `latest` ou fallback;
+  * confrontar integralmente a pesquisa E20.5 autorizada com uma versão executável E20.2 escolhida explicitamente pelo humano, resolvendo e comparando `starter`, `lite`, `pro` e `ultra`, sem `latest` ou fallback;
   * a IA recomenda `suficiente`, `gaps candidatos` ou `inconclusivo`; a decisão final pertence ao humano;
   * somente após suficiência aceita pelo humano registrar a versão avaliada em `business_taxons.reviewed_input_catalog_version`; gap factual real retorna ao recorte próprio da E20.2 e exige nova execução da E20.6 após a evolução aplicável;
-  * reutilizar a Taxonomia administrativa existente para orientar a ida ao Codex por instrução copiável e para registrar ou reabrir a avaliação, sem nova rota nem integração direta com o Codex.
+  * reutilizar a Taxonomia administrativa existente para orientar a ida ao Codex por instrução copiável que inclua a cadeia taxonômica autoritativa integral e para registrar ou reabrir a avaliação, sem nova rota nem integração direta com o Codex;
+  * invalidar a avaliação quando a seleção E20.5 mudar efetivamente e exigir reabertura explícita antes de alterar identidade ou cadeia taxonômica própria ou ancestral que afete avaliação preenchida do taxon ou de descendente.
 
 20.6.4 Gate derivado de preparação do taxon
 

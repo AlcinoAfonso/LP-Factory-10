@@ -3,7 +3,9 @@
 - Data: 15/08/2026.
 - V1 congelada: PR #745, merge `6ff0fb982dd24b8ec785ea5546533c5a36611e55`, blob `da8f7c67cd8ec0667087d0dd7b31fae5f04e9e93`.
 - V2 auditada na Passagem 1: commit `0700e62722dbb23650dbbf09eedcc43be804df6f`, blob `70a69af0374e506a1229a1e6e95157a9ac061b1c`.
+- V2 aprovada pelo Analista após revisão delta: commit `f175c1f4d19d68b1c154d8dd058b517dc531fa46`, blob `b38910450ffe7228914a57865b3651e3e00c2150`; correções obrigatórias remanescentes: N/A.
 - Roadmap congelado: blob `8f00c98e96a94f87800b99938d1f60043ae72c54`.
+- Roadmap reconciliado e aprovado pelo Analista: blob `415c01b04172300ef50ec7ead4aaaed3daed789e`; sem registros de implementação.
 - Regra: oportunidades condicionais não autorizam implementação neste recorte.
 
 | Especialista | ID | Achado fiel | Classificação original | Relação com o escopo | Tratamento | Destino do update | Localização na v2 | Evidência ou justificativa |

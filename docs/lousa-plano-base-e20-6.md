@@ -1,8 +1,8 @@
 # Plano-base E20.6 — Avaliação de suficiência factual da E20.2 por taxon
 
 - Data: 15/08/2026.
-- Versão: v2 candidata à aprovação do Analista.
-- Status: plano-base v2 consolidado em 15/08/2026 a partir da v1 incorporada à `main` pelo PR #745 e dos pareceres read-only dos Gestores Estrutural, de Updates e de Automações; execução ainda não autorizada.
+- Versão: v2 aprovada pelo Analista.
+- Status: plano-base v2 consolidado e aprovado pelo Analista em 15/08/2026 a partir da v1 incorporada à `main` pelo PR #745 e dos pareceres read-only dos Gestores Estrutural, de Updates e de Automações; execução autorizada somente pelo fluxo orquestrado no mesmo PR draft.
 - Recorte previsto para roadmap: `20.6 — Avaliação de suficiência factual da E20.2 por taxon`.
 - Path canônico: `docs/lousa-plano-base-e20-6.md`.
 - Processo: `docs/prompt-estrategista.md` v31.
