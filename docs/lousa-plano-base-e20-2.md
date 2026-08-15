@@ -4,7 +4,7 @@ Fontes: chat, `README.md`, `AGENTS.md`, `docs/prompt-estrategista.md`, `docs/tem
 
 - Versão: v2.
 - Status: plano-base v2 mergeado no PR #573; PR #576 mergeado; E20.2 concluída e encerrada, sem bloqueios e sem nova execução material pendente.
-- Evolução vigente: plano-base v2 da `E20.2.7 — Refinamento de transaction_intent para locação` consolidado em 15/08/2026 para gate do Analista; implementação ainda não iniciada.
+- Evolução vigente: plano-base v2 da `E20.2.7 — Refinamento de transaction_intent para locação` aprovado pelo Analista em 15/08/2026; implementação ainda não iniciada.
 - Recorte previsto para roadmap: `20.2 — Catálogo de entradas por taxon`.
 - Path canônico: `docs/lousa-plano-base-e20-2.md`.
 
@@ -820,7 +820,7 @@ O snippet não pode:
 
 - Data de início do debate: 15/08/2026.
 - Versão do plano: v2.
-- Estado: plano-base v2 consolidado em 15/08/2026 para gate do Analista; implementação não iniciada.
+- Estado: plano-base v2 aprovado pelo Analista em 15/08/2026; implementação não iniciada.
 - Plano conceitual: `docs/lp-planejamento.md`.
 - Recorte previsto: `E20.2.7 — Refinamento de transaction_intent para locação`.
 - Fontes da consolidação: decisões humanas de 15/08/2026; gap factual real confirmado pela avaliação E20.6 do taxon `corretor-imoveis`; `docs/pesquisas-brutas/corretor-imoveis/end_customer/v1.md`; catálogo, resolver e validações vigentes em `lib/conversion-content/landing-page/input-catalog/`; jornada E19.2; consulta administrativa de estrutura da LP; contratos vigentes da E19.3; `docs/prompt-estrategista.md` v31; `docs/template-roadmap.md`; `docs/roadmap.md`; repositório real.
@@ -929,7 +929,7 @@ O snippet não pode:
 
 #### 5.3.1. E20.2.7 — Refinamento de `transaction_intent` para locação
 
-- Status: planejada; plano-base v2 consolidado e implementação não iniciada.
+- Status: planejada; plano-base v2 aprovado pelo Analista e implementação não iniciada.
 - Automação: não.
 - Objetivo: criar a versão executável v4 do catálogo, preservando integralmente v1–v3 e acrescentando `rent` somente ao enum de `transaction_intent`, com rótulos humanos mínimos e regressões proporcionais.
 - Fontes obrigatórias de execução:
@@ -958,7 +958,7 @@ O snippet não pode:
   - as superfícies afetadas exibem `Locação` sem criar nova UI;
   - `npm ci`, `npm run validate:landing-page-input-catalog`, `npm run validate:admin-landing-page-structure`, `npm run validate:lp-builder-onboarding-journey`, `npm run check`, `git diff --check` e a validação visual autenticada obrigatória de `/admin/estrutura-lp?view=entradas` com versão 4 e taxon `corretor-imoveis` aprovados;
   - nenhum banco, migration, rota, API, infraestrutura, automação ou workload OpenAI criado.
-- Próxima ação: executar as Passagens 1 e 2 do Analista sobre esta v2 e, somente após sua aprovação, reconciliar o roadmap pelo Prompt ABC antes da implementação.
+- Próxima ação: reconciliar o roadmap pelo Prompt ABC e criar o checkpoint `plan-v2-approved`; somente depois iniciar a implementação na mesma branch e no mesmo PR draft.
 
 ### 5.4. Escopo negativo e critérios de parada
 
