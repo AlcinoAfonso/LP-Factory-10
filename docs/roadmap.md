@@ -2,7 +2,7 @@
 
 0.1 Cabeçalho
 • Data: 15/08/2026
-• Versão: v1.5.149
+• Versão: v1.5.150
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -2454,7 +2454,7 @@ Repositório — Ajustados
 20.2.1 Objetivo e status
 
 * Objetivo: definir e resolver um catálogo declarativo versionado de entradas de `landing_page` por taxon e plano, separado de valores operacionais, composição, conteúdo e entitlement.
-* Status: Concluído até a versão executável v3; E20.2.7 planejada em plano-base v1 para a candidata v4, sem implementação iniciada.
+* Status: Concluído até a versão executável v3; E20.2.7 planejada em plano-base v2 aprovado para a candidata v4, sem implementação iniciada.
 
 20.2.2 Registros do recorte
 
@@ -2506,7 +2506,7 @@ Repositório — Ajustados
 20.2.7 Refinamento de `transaction_intent` para locação
 
 * Objetivo: criar a versão executável v4 do catálogo, preservando integralmente v1–v3 e acrescentando somente o valor canônico `rent`, com rótulo humano `Locação`, ao field existente `transaction_intent`.
-* Status: Planejada; plano-base v1 consolidado em 15/08/2026 e implementação não iniciada.
+* Status: Planejada; plano-base v2 aprovado em 15/08/2026 e implementação não iniciada.
 * Conteúdo:
 
   * A v4 deve partir de cópia profunda da v3, preservar os 23 fields, sua ordem, camadas, metadata, bindings de capabilities e equivalência entre `starter`, `lite`, `pro` e `ultra`, mantendo `buy`, `sell`, `valuation` e `mixed` e acrescentando `rent` ao final do conjunto permitido.

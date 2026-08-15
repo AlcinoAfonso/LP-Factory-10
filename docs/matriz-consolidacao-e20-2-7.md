@@ -4,8 +4,10 @@
 - Plano-base v1 imutável: commit `3f1050ffedd8224ecd933d3f27279609c35ba9b3`, blob `7fbcfdb87335cdb72c6de343cc0d0eba18dc15da`.
 - Checkpoint inicial do plano-base v2: commit `50f778c0713f671e98720b9e77560936d537259d`, blob `7c300c21bb72f8bc003602d3d6a763209d22f356`.
 - Plano-base v2 corrigido após a Passagem 1: commit `3200178db20b75e0c8b8d1a07d9b5464ea2903ba`, blob `8e67f306ae9e72ee7070cff5ca2bb60ba2e27848`.
+- Plano-base v2 aprovado após as Passagens 1 e 2: commit `06f6630fd62efd6640b021b2332e993b13f1884f`, blob `1652d585c50f204bee33d1e7720f2d69805fcfac`.
 - Plano conceitual: `docs/lp-planejamento.md`.
 - Roadmap anterior imutável: commit `457bae16f41a49fa8dd70f36cf39fd173d296b9c`, blob `95b966a62bfa7570f95fd88367286cbb2068b30f`.
+- Roadmap reconciliado por ABC de planejamento e aprovado pelo Analista: blob `7a922e0c46e996950a6dfe2422c5718618b1f02c`, versão `v1.5.150`, data `15/08/2026`.
 - Gestor de Automações: N/A — a fase está marcada como `Automação: não`.
 
 ## Pareceres especializados
