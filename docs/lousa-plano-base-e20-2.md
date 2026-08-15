@@ -4,6 +4,7 @@ Fontes: chat, `README.md`, `AGENTS.md`, `docs/prompt-estrategista.md`, `docs/tem
 
 - Versão: v2.
 - Status: plano-base v2 mergeado no PR #573; PR #576 mergeado; E20.2 concluída e encerrada, sem bloqueios e sem nova execução material pendente.
+- Evolução vigente: plano-base v1 da `E20.2.7 — Refinamento de transaction_intent para locação` consolidado em 15/08/2026; implementação ainda não iniciada.
 - Recorte previsto para roadmap: `20.2 — Catálogo de entradas por taxon`.
 - Path canônico: `docs/lousa-plano-base-e20-2.md`.
 
@@ -814,3 +815,162 @@ O snippet não pode:
 
 - Registrar somente uma decisão: avançar, ajustar, bloquear ou encerrar.
 - Como existe uma única fase executável, aprovação integral encerra a E20.2 e habilita o relatório final ao Gestor de Docs.
+
+## 5. Plano-base v1 — E20.2.7 — Refinamento de `transaction_intent` para locação
+
+- Data de início do debate: 15/08/2026.
+- Versão do plano: v1.
+- Estado: plano-base v1 consolidado em 15/08/2026; implementação não iniciada.
+- Plano conceitual: `docs/lp-planejamento.md`.
+- Recorte previsto: `E20.2.7 — Refinamento de transaction_intent para locação`.
+- Fontes da consolidação: decisões humanas de 15/08/2026; gap factual real confirmado pela avaliação E20.6 do taxon `corretor-imoveis`; `docs/pesquisas-brutas/corretor-imoveis/end_customer/v1.md`; catálogo, resolver e validações vigentes em `lib/conversion-content/landing-page/input-catalog/`; jornada E19.2; consulta administrativa de estrutura da LP; contratos vigentes da E19.3; `docs/prompt-estrategista.md` v31; `docs/template-roadmap.md`; `docs/roadmap.md`; repositório real.
+- O PR #750 e a E20.6 permanecem congelados e são somente origem da evidência e consumidores posteriores; não pertencem ao delta deste recorte.
+- `docs/roadmap.md` permanece inalterado nesta consolidação e só poderá ser reconciliado após a escolha humana do processo, no momento previsto pelo fluxo v31 e pelo Prompt ABC.
+
+### 5.1. Estado e decisões fixas
+
+#### 5.1.1. Problema e resultado esperado
+
+- A versão executável v3 não representa uma LP exclusivamente de locação porque o field obrigatório `transaction_intent` não admite esse fato operacional e `mixed` seria semanticamente inexato.
+- O resultado esperado é uma versão executável v4 repo-only que preserve integralmente v1–v3 e acrescente somente `rent` ao field existente, com rótulo humano `Locação` nas superfícies já consumidoras do enum.
+- O recorte não promove consumidores para v4, não registra suficiência e não altera o fluxo E20.6; apenas torna a nova versão explicitamente resolvível para avaliação posterior.
+
+#### 5.1.2. Usuários e consumidores
+
+- O humano responsável pela avaliação E20.6 usa a versão explícita v4 para reavaliar a suficiência factual do taxon.
+- O `platform_admin` consulta as definições do catálogo na estrutura administrativa existente e deve ver o rótulo `Locação` em vez do token técnico `rent`.
+- A jornada E19.2 preserva sua versão operacional v2, mas seu mapa local de rótulos deve reconhecer `rent` sem criar novo fluxo ou promover configurações existentes.
+- Registry e resolver da E20.2 são os proprietários do contrato; E19.3 permanece consumidor da v2 e não participa da execução.
+
+#### 5.1.3. Decisões fixas
+
+- A versão executável vigente da E20.2 é a v3.
+- O field existente `transaction_intent` pertence à camada do nicho `corretor-imoveis`, tem escopo `landing_page`, origem `landing_page_provided`, obrigação `required` e atualmente admite `buy`, `sell`, `valuation` e `mixed`.
+- A pesquisa integral selecionada pela E20.5 comprova locação residencial como caso de uso e uma LP exclusivamente orientada a alugar como intenção real; `mixed` não representa esse caso com precisão.
+- Refinar o field existente; não criar novo field, camada taxonômica ou contrato paralelo.
+- Tratar a mudança funcional como candidata à versão executável v4.
+- A v4 deve partir de uma cópia profunda da v3 e acrescentar somente o valor canônico `rent` ao final do conjunto permitido de `transaction_intent`, com evidência resumida coerente com locação.
+- O rótulo humano de `rent` é `Locação`.
+- Preservar integralmente v1, v2 e v3, inclusive campos, ordem, metadata, bindings de capabilities e resultados resolvidos.
+- Preservar na v4 os 23 fields, sua ordem, todas as camadas, todos os valores anteriores de `transaction_intent`, os bindings da v3 e a equivalência factual entre `starter`, `lite`, `pro` e `ultra`.
+- Não promover automaticamente nenhum consumidor hoje fixado em v2 para v4.
+
+#### 5.1.4. Dependências e riscos controlados
+
+- Dependências: v3 executável e imutável; pesquisa E20.5 `end_customer` v1 selecionada para `corretor-imoveis`; resolução explícita por versão; consumidores existentes que derivam enum do catálogo.
+- O principal risco é alterar v3 por referência compartilhada ao derivar v4; a implementação deve usar cópia profunda e regressões de snapshots das três versões anteriores.
+- O segundo risco é promover silenciosamente E19.2 ou E19.3 para v4; seus contratos de versão permanecem inalterados neste recorte.
+- O terceiro risco é exibir `rent` sem tradução em superfície humana; os dois mapas locais realmente afetados devem produzir `Locação`.
+
+### 5.2. Contrato do caso
+
+#### 5.2.1. Consumidores realmente afetados
+
+- Registry e resolver da E20.2:
+  - registrar explicitamente a v4 sem `latest`, fallback ou mutação de versões anteriores;
+  - resolver `rent` somente quando a versão explícita for v4.
+- Consulta administrativa existente em `/admin/estrutura-lp`:
+  - a lista de versões já é derivada do registry e passará a expor a v4 sem novo fluxo;
+  - o renderizador de valores do enum deve reconhecer `rent` como `Locação`, evitando exibir o token técnico em inglês.
+- Jornada E19.2:
+  - a renderização das opções já deriva o enum do catálogo, mas usa `OPTION_LABELS` local;
+  - acrescentar somente `rent: "Locação"` ao mapa de rótulos e sua regressão focal;
+  - preservar `ACCOUNT_LANDING_PAGE_ONBOARDING_CATALOG_VERSION = 2`, configurações existentes e o comportamento atual; adoção operacional da v4 não pertence a este recorte.
+- E19.3:
+  - permanece compatível com a versão 2 e não é alterada, porque v1–v3 continuam imutáveis e a E20.2.7 não promove o compilador para v4.
+- E20.6:
+  - permanece sem alteração neste PR;
+  - depois da integração da v4, o humano deverá retomar o PR #750 e repetir a avaliação E20.6 contra a versão executável 4 antes de qualquer registro de suficiência.
+
+#### 5.2.2. Fluxo operacional
+
+- Gatilho:
+  - decisão humana que reconheceu como gap factual real a ausência de locação em `transaction_intent` durante a primeira avaliação real da E20.6.
+- Entrada:
+  - registry executável v3;
+  - definição vigente de `transaction_intent`;
+  - evidência autorizada da pesquisa integral `end_customer` v1 de `corretor-imoveis`;
+  - decisão humana por `rent` com rótulo `Locação`.
+- Processamento:
+  - clonar profundamente a v3 como candidata v4;
+  - localizar deterministicamente o field `transaction_intent` na camada do nicho `corretor-imoveis`;
+  - preservar os valores existentes e acrescentar `rent` ao conjunto fechado;
+  - atualizar somente a evidência resumida necessária para cobrir locação;
+  - registrar a v4 no registry e ajustar os dois rótulos locais realmente afetados.
+- Validação:
+  - provar que v1, v2 e v3 mantêm snapshots e comportamento anteriores e continuam rejeitando `rent`;
+  - provar que v4 preserva os 23 fields, ordem, metadata e bindings da v3, diferindo somente no enum e na evidência de `transaction_intent`;
+  - provar que v4 aceita `rent` e preserva `buy`, `sell`, `valuation` e `mixed`;
+  - provar equivalência da v4 nos quatro planos;
+  - provar imutabilidade profunda, falha fechada para versão desconhecida e rótulo `Locação` nas superfícies afetadas.
+- Persistência:
+  - somente definição declarativa versionada no repositório; nenhum valor operacional ou registro de suficiência.
+- Consumo:
+  - resolução explícita da v4 pela E20.2 e consulta administrativa existente;
+  - nova avaliação humana E20.6 após a integração da versão.
+- Fallback:
+  - v1–v3 permanecem disponíveis e imutáveis;
+  - versão ausente ou desconhecida continua falhando fechada;
+  - nenhum consumidor é promovido silenciosamente para v4.
+
+#### 5.2.3. Critérios visuais e evidência esperada
+
+- Preservar integralmente layout, hierarquia, controles, responsividade, acessibilidade e interações das superfícies existentes; não criar nova UI.
+- Em `/admin/estrutura-lp`, ao consultar a v4 de `corretor-imoveis`, a lista de valores permitidos de `transaction_intent` deve exibir `Locação` e não `rent`.
+- Na jornada E19.2, a regressão focal deve provar que `OPTION_LABELS.rent` é `Locação`; a opção não precisa ficar visível enquanto a jornada permanecer na versão operacional v2.
+- Evidência esperada: validações focais dos renderizadores e, somente se o gate técnico considerar necessário por alteração visual efetiva, inspeção da superfície administrativa existente sem mudança de layout.
+
+### 5.3. Fases e próxima ação
+
+#### 5.3.1. E20.2.7 — Refinamento de `transaction_intent` para locação
+
+- Status: planejada; plano-base v1 consolidado e implementação não iniciada.
+- Automação: não.
+- Objetivo: criar a versão executável v4 do catálogo, preservando integralmente v1–v3 e acrescentando `rent` somente ao enum de `transaction_intent`, com rótulos humanos mínimos e regressões proporcionais.
+- Fontes obrigatórias de execução:
+  - `AGENTS.md`;
+  - `docs/prompt-executor.md`;
+  - `docs/base-tecnica.md`;
+  - `docs/lp-planejamento.md`;
+  - este plano-base v1;
+  - pesquisa integral autorizada em `docs/pesquisas-brutas/corretor-imoveis/end_customer/v1.md`;
+  - contratos e consumidores reais do repositório no início da execução.
+- Arquivos previstos:
+  - `lib/conversion-content/landing-page/input-catalog/registry.ts`;
+  - `lib/conversion-content/landing-page/input-catalog/validation-cases.ts`;
+  - `app/admin/(protected)/estrutura-lp/page.tsx`;
+  - `app/a/[account]/_components/OnboardingConfigurationJourney.tsx`;
+  - validações focais existentes das superfícies afetadas, somente quando necessárias para provar o contrato;
+  - este plano-base, conforme o fluxo de execução e fechamento aplicável.
+- Critérios de aceite:
+  - v4 registrada explicitamente e resolvida sem fallback;
+  - `transaction_intent` v4 aceita exatamente os quatro valores anteriores mais `rent`;
+  - nenhuma outra definição da v3 muda;
+  - v1, v2 e v3 permanecem imutáveis e com regressões verdes;
+  - `starter`, `lite`, `pro` e `ultra` permanecem equivalentes;
+  - as superfícies afetadas exibem `Locação` sem criar nova UI;
+  - `npm run validate:landing-page-input-catalog`, validações focais das superfícies, `npm run check` e `git diff --check` aprovados;
+  - nenhum banco, migration, rota, API, infraestrutura, automação ou workload OpenAI criado.
+- Próxima ação: apresentar ao humano as opções de processo do Prompt do Estrategista v31; não iniciar especialistas, ABC, implementação ou alteração do roadmap antes da escolha explícita.
+
+### 5.4. Escopo negativo e critérios de parada
+
+#### 5.4.1. Escopo negativo
+
+- Não criar field novo, camada de taxon, especialização, valor substituto de `mixed` ou alias para `rent`.
+- Não remover, renomear ou reordenar valores anteriores.
+- Não alterar v1, v2 ou v3 por referência compartilhada.
+- Não alterar schema genérico, resolver, contratos públicos ou exports sem necessidade demonstrada pela v4.
+- Não criar banco, tabela, coluna, migration, seed, RPC, policy, grant ou adapter.
+- Não criar rota, API, Server Action, nova UI, formulário, infraestrutura ou persistência.
+- Não alterar E20.6, PR #750, E19.3, pesquisa E20.5 ou registro de suficiência.
+- Não alterar o roadmap nesta consolidação; eventual delta planejado depende da escolha humana e do fluxo v31/ABC.
+- Não criar automação, agente, job, workflow, rotina recorrente ou workload OpenAI.
+
+#### 5.4.2. Critérios de parada
+
+- Parar se a v4 exigir migração de valores existentes, promoção obrigatória de consumidor, mudança do contrato de geração, alteração de banco ou qualquer delta além do refinamento focal e dos rótulos mínimos.
+- Parar se surgir necessidade de alterar v1–v3, reordenar os valores existentes ou ampliar `transaction_intent` além de `rent`.
+- Parar se algum consumidor exigir mudança material de contrato, persistência ou experiência em vez do rótulo local previsto.
+- Parar antes de qualquer alteração no PR #750, registro de suficiência ou retomada da E20.6.
+- Devolver ao Estrategista qualquer conflito entre este plano e o repositório real; não adaptar o recorte por inferência.

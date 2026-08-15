@@ -2,7 +2,7 @@
 
 0.1 Cabeçalho
 • Data: 15/08/2026
-• Versão: v1.5.148
+• Versão: v1.5.149
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -2447,14 +2447,14 @@ Repositório — Ajustados
 20. E20 — Preparação e liberação de taxons para geração de landing pages
 
 * Objetivo: consolidar catálogo de entradas por taxon e plano, perfis versionados de orientação à geração, herança e, em recortes futuros, prontidão e liberação antes da geração de LPs por conta.
-* Status: E20.2 concluída e refinada; E20.3 concluída; E20.5 concluída e ativada após merge do PR #746, apply canônico, prova SQL e smokes autenticados em Preview e Production.
+* Status: E20.2 concluída até a v3, com E20.2.7 planejada para a candidata v4; E20.3 concluída; E20.5 concluída e ativada após merge do PR #746, apply canônico, prova SQL e smokes autenticados em Preview e Production.
 
 20.2 Catálogo de entradas por taxon
 
 20.2.1 Objetivo e status
 
 * Objetivo: definir e resolver um catálogo declarativo versionado de entradas de `landing_page` por taxon e plano, separado de valores operacionais, composição, conteúdo e entitlement.
-* Status: Concluído e refinado (09/08/2026).
+* Status: Concluído até a versão executável v3; E20.2.7 planejada em plano-base v1 para a candidata v4, sem implementação iniciada.
 
 20.2.2 Registros do recorte
 
@@ -2502,6 +2502,17 @@ Repositório — Ajustados
   * A E20.3 é independente deste catálogo: orienta geração por identidade de módulo e variante da E18.5, sem consumir valores da E20.2 nem determinar prontidão.
   * A E20.2 define os campos e valida o formato dos valores; a futura E19.2 será responsável por coletar, validar, persistir e compor os valores, implementar a substituição explícita por LP e preservar o snapshot dos valores efetivamente usados.
   * O recorte não cria banco, migration, bucket, Storage, rota, API, Server Action, UI, onboarding, upload, adapter de banco, entitlement, capacidade comercial, tracking, Google Ads, Analytics, integração, valor operacional, snapshot operacional, geração, IA, automação, agente, job ou infraestrutura.
+
+20.2.7 Refinamento de `transaction_intent` para locação
+
+* Objetivo: criar a versão executável v4 do catálogo, preservando integralmente v1–v3 e acrescentando somente o valor canônico `rent`, com rótulo humano `Locação`, ao field existente `transaction_intent`.
+* Status: Planejada; plano-base v1 consolidado em 15/08/2026 e implementação não iniciada.
+* Conteúdo:
+
+  * A v4 deve partir de cópia profunda da v3, preservar os 23 fields, sua ordem, camadas, metadata, bindings de capabilities e equivalência entre `starter`, `lite`, `pro` e `ultra`, mantendo `buy`, `sell`, `valuation` e `mixed` e acrescentando `rent` ao final do conjunto permitido.
+  * A consulta administrativa existente de estrutura deve exibir `Locação`; a jornada E19.2 recebe somente o rótulo local correspondente e permanece na versão operacional v2, sem promoção de configurações ou do compilador E19.3 para v4.
+  * Depois da integração da v4, a E20.6 deve ser executada novamente contra a versão explícita 4 antes de qualquer registro de suficiência.
+  * O recorte não cria field, banco, migration, rota, API, nova UI, persistência, infraestrutura, automação, agente, job ou workload OpenAI e não altera a E20.6.
 
 20.3 Perfil de orientação para geração
 
