@@ -5,7 +5,7 @@
 - Status: plano-base v1 consolidado para avaliação única dos especialistas; execução ainda não autorizada.
 - Recorte previsto para roadmap: `20.6 — Avaliação de suficiência factual da E20.2 por taxon`.
 - Path canônico: `docs/lousa-plano-base-e20-6.md`.
-- Processo: `docs/prompt-estrategista.md` v29.
+- Processo: `docs/prompt-estrategista.md` v30.
 - Plano conceitual: `docs/lp-planejamento.md`, preservado como contexto; a decisão humana de 14/08/2026 redefine somente os critérios anteriores à E19.3 tratados neste recorte.
 - Dependência: E20.5 concluída para o taxon avaliado, com pesquisa integral `end_customer` selecionada e válida.
 
@@ -22,7 +22,7 @@
 
 - A E20 é o caso macro vigente para preparação e liberação de taxons.
 - `E20.4` permanece reservada no planejamento conceitual para disponibilidade comercial por `taxon + plano` e não pertence a este trabalho.
-- `E20.5` passa a responder pela pesquisa integral `end_customer` selecionada.
+- `E20.5` responde pela pesquisa integral `end_customer` selecionada e está concluída/ativa.
 - O identificador seguinte livre para o segundo recorte é `E20.6`.
 - A E19.2 permanece posterior e vinculada à conta e LP concretas; não participa da preparação taxonômica.
 - A E19.3 permanece consumidora posterior; este plano não altera seu contrato, código, documento ou roadmap próprio.
@@ -81,10 +81,11 @@
 - `docs/lousa-plano-base-e20-2.md`.
 - `docs/lousa-plano-base-e19-2.md`, somente para preservar a fronteira da coleta de valores concretos.
 - `docs/lousa-plano-base-e19-3.md`, somente para preservar a fronteira de consumo posterior, sem replanejá-la.
-- futuro `docs/lousa-plano-base-e20-5.md` já consolidado neste mesmo handoff como contrato da pesquisa integral selecionada.
+- `docs/lousa-plano-base-e20-5.md`, como contrato vigente da pesquisa integral selecionada e da leitura válida consumida pela E20.6.
 - `lib/conversion-content/landing-page/input-catalog/registry.ts`.
 - `lib/conversion-content/landing-page/input-catalog/resolver.ts`.
-- `lib/admin/adapters/adminTaxonomyAdapter.ts` e `app/admin/(protected)/taxonomia/actions.ts`, como superfície e boundary administrativos existentes para mutações protegidas por `platform_admin`.
+- `lib/admin/adapters/adminTaxonomyAdapter.ts` e `app/admin/(protected)/taxonomia/actions.ts`, como boundary administrativo existente para mutações protegidas por `platform_admin`.
+- `app/admin/(protected)/taxonomia/[taxonId]/page.tsx` e `components/admin/AdminTaxonResearchSelectionForm.tsx`, como superfície e precedente visual já integrados à Taxonomia para uma decisão humana versionada.
 
 ## 2. Contrato do caso
 
@@ -177,6 +178,10 @@
   - aceitar somente versão inteira positiva explicitamente informada;
   - impedir gravação de suficiência quando a E20.5 estiver inválida;
   - permitir retorno a `NULL` quando a avaliação for reaberta.
+- Critérios visuais e evidência esperada:
+  - reutilizar a página `/admin/taxonomia/[taxonId]`, sem nova rota, com bloco próprio que diferencie claramente `não avaliado` de `versão N avaliada`;
+  - manter ação explícita para registrar `N` e para reabrir a avaliação retornando a `NULL`, com rótulos, feedback e estado pendente compreensíveis sem depender apenas de cor;
+  - comprovar em Preview autenticado, desktop e mobile, o estado `NULL`, a gravação explícita de `N`, a persistência após reload, a reabertura para `NULL` e o bloqueio de papel não autorizado.
 - Critérios de aceite:
   - `0` e negativos rejeitados;
   - `NULL` permanece válido e bloqueante;
@@ -203,23 +208,12 @@
   - mudança da versão requerida invalida o sucesso anterior até nova avaliação;
   - nenhuma leitura da maior versão do registry;
   - E19.2, E19.3 e E19.4 permanecem inalteradas.
-
-### 3.3. E20.6.5 — Prova do procedimento de avaliação e encaminhamento de gaps
-
-- Status: planejada.
-- Objetivo: validar o procedimento operacional de suficiência sobre um taxon real sem automatizar julgamento semântico nem criar field preventivo.
-- Automação: não.
-- Escopo executável:
-  - usar uma pesquisa integral `end_customer` efetivamente selecionada pela E20.5;
-  - analisar uma versão executável E20.2 explicitamente escolhida para a prova;
-  - registrar um dos dois resultados: suficiente ou gap factual real;
-  - se suficiente, comprovar o marcador e o gate derivado;
-  - se houver gap, interromper a E20.6 para aquele taxon, devolver a necessidade ao plano próprio da E20.2 e somente depois reavaliar.
-- Critérios de aceite:
-  - nenhuma camada específica é criada sem gap real;
-  - nenhuma pesquisa é transformada automaticamente em field;
-  - a prova deixa rastreável qual versão executável foi analisada sem adicionar histórico ao banco;
-  - o encerramento do recorte exige ao menos uma prova real do predicado derivado ou um bloqueio factual corretamente encaminhado à E20.2.
+- Validação final do recorte:
+  - usar uma pesquisa integral `end_customer` efetivamente selecionada pela E20.5 e uma versão executável E20.2 explicitamente escolhida sobre um taxon real;
+  - se a avaliação humana concluir suficiência, comprovar a gravação da versão avaliada e o predicado derivado após reload;
+  - se identificar gap factual real, não gravar suficiência, interromper o recorte para aquele taxon e encaminhar a evolução ao plano próprio da E20.2;
+  - nenhuma camada específica nasce sem gap real, nenhuma pesquisa é promovida automaticamente a field e a evidência deve deixar rastreável qual versão executável foi analisada sem criar histórico no banco;
+  - o recorte só encerra com uma prova real do predicado derivado ou com um bloqueio factual corretamente encaminhado à E20.2.
 
 ## 4. Escopo negativo e critérios de parada
 
