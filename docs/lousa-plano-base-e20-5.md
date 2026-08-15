@@ -2,7 +2,7 @@
 
 - Data: 14/08/2026.
 - Versão: v2 aprovada.
-- Status: checkpoints E20.5.3, E20.5.4 e E20.5.5 concluídos, validados e aprovados pelo mesmo Analista; correção SQL posterior validada localmente, dry-run Vercel e inspeção autenticada gate-off aprovados. A inspeção final do Estrategista e o merge humano permanecem pendentes; apply, prova SQL, ativação e testes gate-on continuam obrigatoriamente pós-merge.
+- Status: plano encerrado em 15/08/2026; PR #746 mergeado, migration aplicada pelo workflow canônico, prova SQL aprovada, flag ativada e smokes autenticados gate-on aprovados em Preview e Production. A decisão humana `corretor-imoveis → v1` foi persistida e confirmada após reload.
 - Recorte previsto para roadmap: `20.5 — Seleção da pesquisa integral end_customer por taxon`.
 - Path canônico: `docs/lousa-plano-base-e20-5.md`.
 - Fonte imutável v1: blob `8a53a73f29448a537e0036291e59582cd62c5c91`, integrado à `main` pelo PR #744.
@@ -173,7 +173,7 @@
 
 ### 3.1. E20.5.3 — Leitura e validação repo-only da pesquisa integral
 
-- Status: implementação candidata concluída, validada e aprovada pelo Analista no PR draft #746.
+- Status: concluída, validada e integrada à `main` pelo PR #746.
 - Objetivo: criar o boundary capaz de validar uma versão candidata antes que qualquer seleção seja persistida.
 - Automação: não.
 - Escopo executável:
@@ -196,7 +196,7 @@
 
 ### 3.2. E20.5.4 — Persistência e seleção humana mínima
 
-- Status: checkpoint aprovado pelo Analista no PR draft #746; correção SQL posterior validada localmente, dry-run Vercel e inspeção autenticada gate-off aprovados; inspeção final do Estrategista e merge humano permanecem pendentes.
+- Status: concluída e ativada; migration aplicada, prova SQL aprovada, seleção humana persistida e smokes autenticados gate-on aprovados em Preview e Production.
 - Objetivo: adicionar a referência mínima de versão selecionada e permitir sua alteração somente por ação humana administrativa explícita, reutilizando a validação da E20.5.3.
 - Automação: não.
 - Escopo executável:
@@ -231,7 +231,7 @@
 
 ### 3.3. E20.5.5 — Contrato de consumo da seleção válida
 
-- Status: implementação candidata concluída, validada e aprovada pelo mesmo Analista no PR draft #746; merge e ativação permanecem decisões humanas separadas.
+- Status: concluída, integrada à `main` e validada com a funcionalidade ativa em Preview e Production.
 - Objetivo: disponibilizar ao recorte seguinte uma leitura única que prove taxon ativo e pesquisa integral selecionada válida, sem antecipar o gate final de preparação.
 - Automação: não.
 - Escopo executável:
