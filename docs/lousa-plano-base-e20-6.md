@@ -5,7 +5,7 @@
 - Status: plano-base v1 reconsolidado após decisão humana de 15/08/2026; automação com IA em fluxo controlado no Codex aprovada para a avaliação semântica; execução ainda não autorizada.
 - Recorte previsto para roadmap: `20.6 — Avaliação de suficiência factual da E20.2 por taxon`.
 - Path canônico: `docs/lousa-plano-base-e20-6.md`.
-- Processo: `docs/prompt-estrategista.md` v30.
+- Processo: `docs/prompt-estrategista.md` v31.
 - Plano conceitual: `docs/lp-planejamento.md`, preservado como contexto; as decisões humanas de 14/08/2026 e 15/08/2026 redefinem somente os critérios anteriores à E19.3 tratados neste recorte.
 - Dependência: E20.5 concluída para o taxon avaliado, com pesquisa integral `end_customer` selecionada e válida.
 
@@ -211,6 +211,7 @@ Execute a avaliação E20.6 do taxon `[taxon_slug]`. Use exclusivamente a pesqui
 - Categoria: `2.1.3 — Automação com IA em fluxo controlado`.
 - Objetivo da automação: confrontar semanticamente a pesquisa E20.5 autorizada com uma versão E20.2 explicitamente escolhida e produzir recomendação fundamentada para decisão humana.
 - Limites: ambiente principal Codex; sem workload OpenAI de produto, comportamento agentic, agente, Agents SDK, persistência do relatório, alteração automática da E20.2 ou gravação automática de suficiência.
+- Avaliação formal de Automação na v2: dispensada por decisão humana.
 - Escopo executável:
   - criar migration mínima para `reviewed_input_catalog_version integer null` com check positivo quando presente;
   - preservar `business_taxons` como única entidade;
