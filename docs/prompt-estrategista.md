@@ -74,7 +74,7 @@ Após concluir o item 3, apresentar ao humano as duas opções:
 • Opção 1 — Processo atual: seguir para o item 5.
 
 • Opção 2 — Processo automatizado: após a escolha humana explícita, o Estrategista deve, nesta ordem:
-   • executar `$lp-factory-abc` em modo Planejamento para `DOC_ALVO: docs/roadmap.md`, usando a v1 aprovada como `RELATÓRIO` e o próprio PR da v1 como referência competente;
+   • executar `$lp-factory-abc` em modo Planejamento para `DOC_ALVO: docs/roadmap.md`, usando a v1 aprovada como `RELATÓRIO` e a branch ou o commit atual do PR da v1 como `REF`;
    • aplicar literalmente no mesmo PR somente o delta emitido pelo ABC; se o resultado for `SEM ALTERAÇÕES NECESSÁRIAS`, preservar o roadmap;
    • revisar o PR completo e confirmar que a v1, o roadmap planejado, o diff e os gates aplicáveis estão coerentes e prontos para merge;
    • realizar exclusivamente o merge remoto do PR da v1 por ferramenta GitHub conectada e autorizada, conforme `AGENTS.md`; não fazer merge local pela `main`;
