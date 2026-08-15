@@ -1,8 +1,8 @@
 0. Introdução
 
 0.1 Cabeçalho
-• Data: 12/08/2026
-• Versão: v1.5.144
+• Data: 15/08/2026
+• Versão: v1.5.147
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -2447,7 +2447,7 @@ Repositório — Ajustados
 20. E20 — Preparação e liberação de taxons para geração de landing pages
 
 * Objetivo: consolidar catálogo de entradas por taxon e plano, perfis versionados de orientação à geração, herança e, em recortes futuros, prontidão e liberação antes da geração de LPs por conta.
-* Status: E20.2 concluída e refinada; E20.3 concluída.
+* Status: E20.2 concluída e refinada; E20.3 concluída; E20.5 concluída e ativada após merge do PR #746, apply canônico, prova SQL e smokes autenticados em Preview e Production.
 
 20.2 Catálogo de entradas por taxon
 
@@ -2539,6 +2539,89 @@ Repositório — Ajustados
   * A resolução usa perfil `active` próprio ou do ancestral elegível mais próximo, preserva proveniência e falha fechado para cadeia, leitura, identidade ou perfil inválido; ausência legítima permanece distinta de erro.
   * A E20.3 depende da taxonomia vigente e da identidade pública da E18.5, mas permanece independente do catálogo e dos valores da E20.2.
   * Permanecem fora do recorte mutações e lifecycle operacional do perfil, terceira tabela de domínio, rota, API HTTP, Server Action, UI, composição, copy, geração, IA, automação, job, serviço e nova infraestrutura.
+
+20.5 Seleção da pesquisa integral `end_customer` por taxon
+
+20.5.1 Objetivo e status
+
+* Objetivo: permitir que um taxon ativo possua exatamente uma versão integral `end_customer` explicitamente selecionada por decisão humana autorizada e que essa versão possa ser lida integralmente por um boundary server-side, com validação de identidade e falha fechada.
+* Status: Concluída e ativada em 15/08/2026; PR #746 mergeado, migration aplicada, prova SQL aprovada e smokes autenticados gate-on aprovados em Preview e Production. O taxon `corretor-imoveis` mantém a versão integral `end_customer` v1 selecionada por decisão humana.
+
+20.5.2 Registros do recorte
+
+* Banco:
+
+  * Ajustados:
+
+    * `public.business_taxons`
+
+* Repositório:
+
+  * Criados:
+
+    * `lib/conversion-content/landing-page/taxon-preparation/contracts.ts`
+    * `lib/conversion-content/landing-page/taxon-preparation/research.ts`
+    * `lib/conversion-content/landing-page/taxon-preparation/validation-cases.ts`
+    * `lib/conversion-content/landing-page/taxon-preparation/index.ts`
+    * `lib/conversion-content/adapters/selectedEndCustomerResearchAdapter.ts`
+    * `lib/conversion-content/adapters/selectedEndCustomerResearchAdapterCore.ts`
+    * `components/admin/AdminTaxonResearchSelectionForm.tsx`
+    * `supabase/migrations/20260814174500_e20_5_selected_end_customer_research_version.sql`
+    * `supabase/snippets/e20_5_selected_end_customer_research_version_verify.sql`
+  * Ajustados:
+
+    * `app/admin/(protected)/taxonomia/[taxonId]/page.tsx`
+    * `app/admin/(protected)/taxonomia/actions.ts`
+    * `lib/admin/adapters/adminReadOnlyAdapter.ts`
+    * `lib/admin/adapters/adminReadOnlyTypes.ts`
+    * `lib/admin/adapters/adminTaxonomyAdapter.ts`
+    * `next.config.js`
+    * `package.json`
+* Referências:
+
+  * Plano-base E20.5: `docs/lousa-plano-base-e20-5.md` — seções 3.1, 3.2 e 3.3.
+  * Configuração do gate: `docs/platform-config.md` — seção 3.5, secrets e variáveis server-side no Vercel.
+  * Contrato de banco: `docs/schema.md` — seção 1.11.
+
+20.5.3 Leitura e validação repo-only da pesquisa integral
+
+* Status: Concluída, validada e integrada à `main` pelo PR #746.
+* Conteúdo:
+
+  * O boundary repo-only deriva exclusivamente o path canônico de uma versão candidata `end_customer`, confina a leitura a `docs/pesquisas-brutas/` e nunca consulta a API do GitHub.
+  * A leitura preserva o conteúdo integral e valida taxon ativo, slug canônico, versão inteira positiva e metadata única na seção `## 1. Identificação e uso`; path inválido, arquivo ausente, falha operacional, metadata incompatível ou conteúdo vazio falham sem payload parcial.
+  * Casos determinísticos cobrem sucesso integral e falhas de versão, path, leitura, metadata e conteúdo; o script dedicado integra `npm run check`.
+
+20.5.4 Persistência e seleção humana mínima
+
+* Objetivo: adicionar a referência mínima de versão selecionada e permitir sua alteração somente por ação humana administrativa explícita, reutilizando a validação da E20.5.3.
+* Status: Concluída e ativada; migration aplicada, prova SQL aprovada e seleção humana validada em Preview e Production.
+* Conteúdo:
+
+  * A migration adiciona somente `selected_end_customer_research_version integer null`, com check positivo quando preenchida, sem nova tabela, lifecycle ou histórico; ela preserva RLS/policies, revoga o `UPDATE` de tabela inteira de `service_role` e mantém somente os grants de coluna usados pelo editor vigente (`name`, `slug`, `is_active`) e pela seleção. O snippet read-only comprovou esse conjunto exato após o apply.
+  * O gate server-only `E20_5_SELECTED_RESEARCH_ENABLED` aceita apenas o literal `true` e antecede toda leitura ou mutação da coluna. Com o gate desligado, a interface e a ação novas permanecem inacessíveis, sem fallback para schema ausente.
+  * A tela existente de detalhe do taxon recebe formulário separado com rótulos e associações programáticas; a Server Action exige `requirePlatformAdmin`, valida a candidata repo-only e atualiza somente a seleção por `id + slug + is_active`, com `.maxAffected(1)`.
+  * Apply canônico, prova SQL, ativação da flag e redeploy foram concluídos; os smokes autenticados gate-on aprovaram ausência de seleção, candidata inválida, seleção válida após reload, acesso negado a papel não autorizado, responsividade móvel e ausência de erros observados.
+  * O taxon `corretor-imoveis` possui `selected_end_customer_research_version = 1`, persistido após decisão humana explícita e confirmado no banco e na interface hospedada.
+
+20.5.5 Contrato de consumo da seleção válida
+
+* Objetivo: disponibilizar ao recorte seguinte uma leitura única que prove taxon ativo e pesquisa integral selecionada válida, sem antecipar o gate final de preparação.
+* Status: Concluída, integrada à `main` e validada com a funcionalidade ativa em Preview e Production.
+* Conteúdo:
+
+  * O adapter server-only exige `E20_5_SELECTED_RESEARCH_ENABLED` antes de criar o client Supabase ou alcançar a consulta da nova coluna.
+  * A leitura valida o identificador, exige taxon existente e ativo, distingue `NULL` legítimo de seleção inválida e carrega exatamente a versão persistida pelo boundary repo-only da E20.5.3.
+  * O resultado tipado separa funcionalidade desabilitada, taxon ausente/inativo, ausência de seleção, versão ou identidade inválida, falha de banco e falhas de arquivo, filesystem, metadata ou conteúdo.
+  * Somente o sucesso fornece taxon, slug, versão selecionada, conteúdo integral e a projeção derivada `selectedResearchValid: true`; nenhuma marca `prepared` é criada ou persistida.
+  * Casos determinísticos cobrem todos os estados públicos e comprovam que o gate antecede o acesso à coluna; as validações consolidadas permanecem verdes.
+
+20.6 Avaliação de suficiência factual e preparação final do taxon
+
+20.6.1 Objetivo e status
+
+* Objetivo: avaliar a suficiência factual da pesquisa integral selecionada em conjunto com o catálogo da E20.2 e definir o predicado final de preparação do taxon, sem autorizar geração.
+* Status: Futura; planejamento e implementação ainda não iniciados.
 
 21. E21 — Gestão e governança dos workloads OpenAI
 - Objetivo: gerir e governar os workloads OpenAI por recortes aprovados, iniciando pela configuração explícita, observabilidade segura e leitura administrativa; a configuração dinâmica e o histórico permanecem para recortes posteriores, sem otimização automatizada.
