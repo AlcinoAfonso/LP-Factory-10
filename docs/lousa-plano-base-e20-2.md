@@ -833,6 +833,7 @@ O snippet não pode:
 
 - A versão executável v3 não representa uma LP exclusivamente de locação porque o field obrigatório `transaction_intent` não admite esse fato operacional e `mixed` seria semanticamente inexato.
 - O resultado esperado é uma versão executável v4 repo-only que preserve integralmente v1–v3 e acrescente somente `rent` ao field existente, com rótulo humano `Locação` nas superfícies já consumidoras do enum.
+- A E20.2 permanece uma arquitetura genérica, resolvida por taxon + plano para todos os taxons; `corretor-imoveis` é apenas o primeiro taxon real cuja avaliação revelou este gap, e `rent` pertence somente à camada específica desse nicho, sem restringir, redefinir ou especializar a arquitetura geral para os demais taxons.
 - O recorte não promove consumidores para v4, não registra suficiência e não altera o fluxo E20.6; apenas torna a nova versão explicitamente resolvível para avaliação posterior.
 
 #### 5.1.2. Usuários e consumidores
