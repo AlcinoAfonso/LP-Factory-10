@@ -9,6 +9,7 @@ import {
   createAdminTaxon,
   deleteAdminTaxon,
   deleteAdminTaxonAlias,
+  selectAdminEndCustomerResearchVersion,
   updateAdminTaxon,
 } from "@/lib/admin/adapters/adminReadOnlyAdapter";
 
@@ -18,6 +19,11 @@ export type CreateTaxonActionState = {
 
 export type ManageTaxonActionState = {
   error: string | null;
+};
+
+export type SelectEndCustomerResearchActionState = {
+  error: string | null;
+  selectedVersion: number | null;
 };
 
 export async function createTaxonAction(
@@ -68,6 +74,28 @@ export async function updateTaxonAction(
   revalidatePath("/admin/taxonomia");
   revalidatePath(`/admin/taxonomia/${result.taxonId}`);
   return { error: null };
+}
+
+export async function selectEndCustomerResearchAction(
+  _previousState: SelectEndCustomerResearchActionState,
+  formData: FormData,
+): Promise<SelectEndCustomerResearchActionState> {
+  const gate = await requirePlatformAdmin();
+
+  if (!gate.allowed) {
+    return { error: "Acesso administrativo não autorizado.", selectedVersion: null };
+  }
+
+  const result = await selectAdminEndCustomerResearchVersion({
+    taxonId: String(formData.get("taxonId") ?? ""),
+    researchVersion: Number(formData.get("researchVersion")),
+  });
+
+  if (!result.ok) return { error: result.error, selectedVersion: null };
+
+  revalidatePath("/admin/taxonomia");
+  revalidatePath(`/admin/taxonomia/${result.taxonId}`);
+  return { error: null, selectedVersion: result.selectedVersion };
 }
 
 export async function addTaxonAliasAction(
