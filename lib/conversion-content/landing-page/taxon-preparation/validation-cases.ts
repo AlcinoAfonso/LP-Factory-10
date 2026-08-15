@@ -7,9 +7,13 @@ import type {
   LoadEndCustomerResearchCandidateResult,
   LoadSelectedEndCustomerResearchResult,
   SelectedEndCustomerResearchErrorCode,
+  TaxonPreparationErrorCode,
+  TaxonPreparationResult,
 } from "./contracts";
 import {
   buildInputCatalogReviewHandoff,
+  classifyRequiredInputCatalogVersion,
+  deriveTaxonPreparationForVersion,
   isEndCustomerResearchSelectionEnabled,
   isInputCatalogReviewEnabled,
   loadEndCustomerResearchCandidate,
@@ -19,6 +23,7 @@ import {
   mediumStandardRealEstateBrokerTaxon,
   realEstateBrokerNicheTaxon,
   realEstateSegmentTaxon,
+  isLandingPageInputCatalogVersionExecutable,
   resolveLandingPageInputCatalog,
 } from "../input-catalog";
 import {
@@ -97,6 +102,123 @@ const cases: readonly ValidationCase[] = [
       assert.match(snippet, /set transaction read only/);
       assert.match(snippet, /not has_table_privilege\('service_role', 'public\.business_taxons', 'UPDATE'\)/);
       assert.match(snippet, /select case when bool_and\(ok\) then 'ok' else 'unexpected' end as status/);
+    },
+  },
+  {
+    name: "preparation boundary fails before Data API while either gate is off",
+    run: async () => {
+      const adapterSource = readFileSync(
+        new URL("../../adapters/selectedEndCustomerResearchAdapter.ts", import.meta.url),
+        "utf8",
+      );
+      const start = adapterSource.indexOf("export async function loadTaxonPreparationForVersion");
+      const boundary = adapterSource.slice(start);
+      const reviewGate = boundary.indexOf("if (!isInputCatalogReviewEnabled())");
+      const researchGate = boundary.indexOf("if (!isEndCustomerResearchSelectionEnabled())");
+      const versionValidation = boundary.indexOf("classifyRequiredInputCatalogVersion");
+      const serviceClient = boundary.indexOf("createServiceClient()");
+      const selectedLoad = boundary.indexOf("loadSelectedEndCustomerResearchFromClient");
+      const reviewedColumnOption = boundary.indexOf("includeInputCatalogReview: true");
+      assert.ok(start >= 0);
+      assert.ok(reviewGate >= 0);
+      assert.ok(researchGate > reviewGate);
+      assert.ok(versionValidation > researchGate);
+      assert.ok(serviceClient > versionValidation);
+      assert.ok(selectedLoad > serviceClient);
+      assert.ok(reviewedColumnOption > serviceClient);
+    },
+  },
+  {
+    name: "required input catalog version is explicit valid and executable",
+    run: async () => {
+      for (const version of [0, -1, 1.5, Number.NaN]) {
+        assertPreparationFailure(
+          classifyRequiredInputCatalogVersion(version),
+          "REQUIRED_INPUT_CATALOG_VERSION_INVALID",
+        );
+      }
+      assertPreparationFailure(
+        classifyRequiredInputCatalogVersion(999),
+        "REQUIRED_INPUT_CATALOG_VERSION_NOT_EXECUTABLE",
+      );
+      for (const version of [1, 2, 3]) {
+        assert.equal(isLandingPageInputCatalogVersionExecutable(version), true);
+        assert.equal(classifyRequiredInputCatalogVersion(version), null);
+      }
+      assert.equal(isLandingPageInputCatalogVersionExecutable(999), false);
+
+      const preparationSource = readFileSync(new URL("./preparation.ts", import.meta.url), "utf8");
+      assert.doesNotMatch(preparationSource, /latest|Math\.max/i);
+    },
+  },
+  {
+    name: "preparation requires an equal reviewed version and invalidates when requirement changes",
+    run: async () => {
+      assertPreparationFailure(
+        deriveTaxonPreparationForVersion({
+          selectedResearch: selectedResearchSuccess(null),
+          requiredInputCatalogVersion: 2,
+        }),
+        "INPUT_CATALOG_REVIEW_ABSENT",
+      );
+      assertPreparationFailure(
+        deriveTaxonPreparationForVersion({
+          selectedResearch: selectedResearchSuccess(2),
+          requiredInputCatalogVersion: 3,
+        }),
+        "INPUT_CATALOG_REVIEW_VERSION_MISMATCH",
+      );
+
+      const prepared = deriveTaxonPreparationForVersion({
+        selectedResearch: selectedResearchSuccess(2),
+        requiredInputCatalogVersion: 2,
+      });
+      assert.equal(prepared.ok, true);
+      if (!prepared.ok) throw new Error("Expected taxon preparation success");
+      assert.deepEqual(
+        {
+          prepared: prepared.value.prepared,
+          selectedResearchVersion: prepared.value.selectedResearchVersion,
+          reviewedInputCatalogVersion: prepared.value.reviewedInputCatalogVersion,
+          requiredInputCatalogVersion: prepared.value.requiredInputCatalogVersion,
+        },
+        {
+          prepared: true,
+          selectedResearchVersion: 1,
+          reviewedInputCatalogVersion: 2,
+          requiredInputCatalogVersion: 2,
+        },
+      );
+    },
+  },
+  {
+    name: "preparation preserves every E20.5 failure category",
+    run: async () => {
+      const codes: readonly SelectedEndCustomerResearchErrorCode[] = [
+        "FEATURE_DISABLED",
+        "INVALID_TAXON_ID",
+        "TAXON_NOT_FOUND",
+        "TAXON_INACTIVE",
+        "TAXON_IDENTITY_INVALID",
+        "SELECTION_ABSENT",
+        "SELECTED_VERSION_INVALID",
+        "DATABASE_READ_FAILED",
+        "FILE_NOT_FOUND",
+        "FILESYSTEM_READ_FAILED",
+        "METADATA_INVALID",
+        "CONTENT_EMPTY",
+      ];
+      for (const code of codes) {
+        const selectedResearch: LoadSelectedEndCustomerResearchResult = {
+          ok: false,
+          error: { code, message: `failure:${code}` },
+        };
+        const result = deriveTaxonPreparationForVersion({
+          selectedResearch,
+          requiredInputCatalogVersion: 2,
+        });
+        assert.strictEqual(result, selectedResearch);
+      }
     },
   },
   {
@@ -734,4 +856,35 @@ function assertSelectedFailure(
   if (result.ok) throw new Error("Expected selected research failure");
   assert.equal(result.error.code, code);
   assert.equal("value" in result, false);
+}
+
+function selectedResearchSuccess(
+  reviewedInputCatalogVersion: number | null,
+): Extract<LoadSelectedEndCustomerResearchResult, { ok: true }> {
+  return {
+    ok: true,
+    value: {
+      taxonId: VALID_TAXON_ID,
+      taxonSlug: VALID_INPUT.taxon.slug,
+      selectedResearchVersion: 1,
+      selectedResearchValid: true,
+      reviewedInputCatalogVersion,
+      research: {
+        taxonSlug: VALID_INPUT.taxon.slug,
+        audienceScope: "end_customer",
+        researchVersion: 1,
+        relativePath: "corretor-imoveis/end_customer/v1.md",
+        content: validContent(),
+      },
+    },
+  };
+}
+
+function assertPreparationFailure(
+  result: TaxonPreparationResult | null,
+  code: TaxonPreparationErrorCode,
+): void {
+  assert.notEqual(result, null);
+  if (result === null || result.ok) throw new Error("Expected taxon preparation failure");
+  assert.equal(result.error.code, code);
 }

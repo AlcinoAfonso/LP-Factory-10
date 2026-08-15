@@ -77,3 +77,37 @@ export type LoadSelectedEndCustomerResearchResult =
         message: string;
       }>;
     }>;
+
+export type TaxonPreparationErrorCode =
+  | SelectedEndCustomerResearchErrorCode
+  | "INPUT_CATALOG_REVIEW_DISABLED"
+  | "REQUIRED_INPUT_CATALOG_VERSION_INVALID"
+  | "REQUIRED_INPUT_CATALOG_VERSION_NOT_EXECUTABLE"
+  | "INPUT_CATALOG_REVIEW_ABSENT"
+  | "INPUT_CATALOG_REVIEW_VERSION_MISMATCH";
+
+export type DeriveTaxonPreparationForVersionInput = Readonly<{
+  selectedResearch: LoadSelectedEndCustomerResearchResult;
+  requiredInputCatalogVersion: number;
+}>;
+
+export type TaxonPreparationResult =
+  | Readonly<{
+      ok: true;
+      value: Readonly<{
+        prepared: true;
+        taxonId: string;
+        taxonSlug: string;
+        selectedResearchVersion: number;
+        reviewedInputCatalogVersion: number;
+        requiredInputCatalogVersion: number;
+        research: EndCustomerResearchContent;
+      }>;
+    }>
+  | Readonly<{
+      ok: false;
+      error: Readonly<{
+        code: TaxonPreparationErrorCode;
+        message: string;
+      }>;
+    }>;
