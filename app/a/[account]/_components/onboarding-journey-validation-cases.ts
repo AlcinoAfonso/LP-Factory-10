@@ -162,6 +162,7 @@ const cases: readonly Readonly<{ name: string; run: () => void }>[] = [
       assert.match(page, /reviewMode/);
       assert.match(journey, /Voltar à revisão/);
       assert.match(journey, /brand_logo_asset: "Logo da marca"/);
+      assert.match(journey, /rent: "Locação"/);
       assert.match(journey, /OPTION_LABELS\[value\] \?\? value/);
       assert.match(journey, /OPTION_LABELS\[item\] \?\? item/);
       assert.match(action, /getAccountLandingPageOnboardingConfiguration/);

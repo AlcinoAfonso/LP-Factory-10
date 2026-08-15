@@ -360,10 +360,40 @@ for (const entry of brokerV3Layer.entries) {
   }
 }
 
+const catalogV4 = {
+  ...cloneJson(catalogV3),
+  version: 4,
+} as LandingPageInputCatalogRegistryEntry;
+const brokerV4Layer = catalogV4.taxonLayers[realEstateBrokerNicheTaxon.slug];
+if (!brokerV4Layer) throw new Error("Real-estate broker input layer is unavailable.");
+const transactionIntentV4 = brokerV4Layer.entries.find(
+  (entry) => entry.kind === "field" && entry.fieldKey === "transaction_intent",
+);
+if (
+  !transactionIntentV4 ||
+  transactionIntentV4.kind !== "field" ||
+  transactionIntentV4.validation.kind !== "enum"
+) {
+  throw new Error("Real-estate broker transaction intent is unavailable.");
+}
+const mutableTransactionIntentV4 = transactionIntentV4 as unknown as {
+  validation: { kind: "enum"; allowedValues: string[] };
+  evidence: LandingPageInputEvidence;
+};
+mutableTransactionIntentV4.validation = {
+  ...transactionIntentV4.validation,
+  allowedValues: [...transactionIntentV4.validation.allowedValues, "rent"],
+};
+mutableTransactionIntentV4.evidence = evidence(
+  "A pesquisa diferencia compra, venda, avaliação, fluxo híbrido e locação exclusiva.",
+  "empirical:real-estate-research",
+);
+
 export const landingPageInputCatalogRegistry = deepFreeze({
   1: catalogV1,
   2: catalogV2,
   3: catalogV3,
+  4: catalogV4,
 } satisfies LandingPageInputCatalogRegistry);
 
 function field(
