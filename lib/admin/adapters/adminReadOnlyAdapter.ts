@@ -8,6 +8,7 @@ export {
   getAdminTaxonDetail,
   listAdminTaxonParentOptions,
   listAdminTaxons,
+  selectAdminEndCustomerResearchVersion,
   updateAdminTaxon,
 } from "./adminTaxonomyAdapter";
 export type {
@@ -18,6 +19,7 @@ export type {
   AdminNicheResolutionDetail,
   AdminNicheResolutionListItem,
   AdminTaxonDetail,
+  AdminEndCustomerResearchSelection,
   AdminTaxonLevel,
   AdminTaxonListItem,
   AdminTaxonParentOption,

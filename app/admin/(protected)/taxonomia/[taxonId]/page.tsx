@@ -5,6 +5,7 @@ import type { ReactNode } from "react";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { AdminStatusBadge } from "@/components/admin/AdminStatusBadge";
 import { AdminTaxonManageForm } from "@/components/admin/AdminTaxonManageForm";
+import { AdminTaxonResearchSelectionForm } from "@/components/admin/AdminTaxonResearchSelectionForm";
 import { EmptyState } from "@/components/ui/empty-state";
 import { getAdminTaxonDetail } from "@/lib/admin/adapters/adminReadOnlyAdapter";
 import type { AdminOperationalDiagnosticItem } from "@/lib/admin/adapters/adminReadOnlyTypes";
@@ -12,6 +13,7 @@ import {
   addTaxonAliasAction,
   deleteTaxonAction,
   deleteTaxonAliasAction,
+  selectEndCustomerResearchAction,
   updateTaxonAction,
 } from "../actions";
 
@@ -93,6 +95,15 @@ export default async function AdminTaxonDetailPage({ params }: AdminTaxonDetailP
         deleteAliasAction={deleteTaxonAliasAction}
         deleteAction={deleteTaxonAction}
       />
+
+      {taxon.endCustomerResearchSelection.status === "disabled" ? null : (
+        <AdminTaxonResearchSelectionForm
+          action={selectEndCustomerResearchAction}
+          isActive={taxon.isActive}
+          selection={taxon.endCustomerResearchSelection}
+          taxonId={taxon.id}
+        />
+      )}
 
       <section className="rounded-lg border border-border bg-card p-5 shadow-card">
         <h2 className="text-sm font-semibold text-card-foreground">Filhos diretos</h2>

@@ -22,6 +22,10 @@ import {
   type LandingPageResearchTaxonDto,
   type ResolvedLandingPageResearchAudience,
 } from "@/conversion-content/landing-page/research-resolution";
+import {
+  isEndCustomerResearchSelectionEnabled,
+  loadEndCustomerResearchCandidate,
+} from "@/conversion-content/landing-page/taxon-preparation";
 import { createServiceClient } from "@/lib/supabase/service";
 import {
   ADMIN_PAGE_SIZE,
@@ -67,6 +71,15 @@ type UpdateAdminTaxonInput = {
   slug?: string;
   isActive: boolean;
 };
+
+type SelectAdminEndCustomerResearchInput = {
+  taxonId: string;
+  researchVersion: number;
+};
+
+type SelectAdminEndCustomerResearchResult =
+  | { ok: true; taxonId: string; selectedVersion: number }
+  | { ok: false; error: string };
 
 type AddAdminTaxonAliasInput = {
   taxonId: string;
@@ -419,6 +432,7 @@ export async function getAdminTaxonDetail(taxonId: string): Promise<AdminTaxonDe
     contentTemplateLinks,
     marketResearch,
     diagnostics,
+    endCustomerResearchSelection,
   ] = await Promise.all([
     supabase.from("business_taxon_aliases").select("id,alias_text,is_active").eq("taxon_id", taxonId).order("alias_text", { ascending: true }).limit(100),
     supabase.from("business_taxons").select("id,parent_id,level,name,slug,is_active").eq("parent_id", taxonId).order("name", { ascending: true }).limit(100),
@@ -435,6 +449,7 @@ export async function getAdminTaxonDetail(taxonId: string): Promise<AdminTaxonDe
         new Map(),
       ),
     ]),
+    readAdminEndCustomerResearchSelection(supabase, taxonId),
   ]);
 
   const parentNames = new Map(Array.from(parentTaxons.entries()).map(([id, row]) => [id, row.name]));
@@ -464,7 +479,41 @@ export async function getAdminTaxonDetail(taxonId: string): Promise<AdminTaxonDe
     usage,
     deleteBlockers,
     canDelete: deleteBlockers.length === 0,
+    endCustomerResearchSelection,
   };
+}
+
+async function readAdminEndCustomerResearchSelection(
+  supabase: ReturnType<typeof createServiceClient>,
+  taxonId: string,
+): Promise<AdminTaxonDetail["endCustomerResearchSelection"]> {
+  if (!isEndCustomerResearchSelectionEnabled()) return { status: "disabled" };
+
+  const { data, error } = await supabase
+    .from("business_taxons")
+    .select("selected_end_customer_research_version")
+    .eq("id", taxonId)
+    .maybeSingle();
+
+  if (error || !data) {
+    return {
+      status: "read_failed",
+      message: "Não foi possível ler a seleção da pesquisa integral.",
+    };
+  }
+
+  const selectedVersion = data.selected_end_customer_research_version;
+  if (
+    selectedVersion !== null &&
+    (!Number.isSafeInteger(selectedVersion) || selectedVersion <= 0)
+  ) {
+    return {
+      status: "read_failed",
+      message: "A seleção persistida da pesquisa integral é inválida.",
+    };
+  }
+
+  return { status: "available", selectedVersion };
 }
 
 async function readAdminTaxonDiagnostics(
@@ -876,6 +925,80 @@ export async function updateAdminTaxon(input: UpdateAdminTaxonInput): Promise<Ad
   }
 
   return { ok: true, taxonId: input.id };
+}
+
+export async function selectAdminEndCustomerResearchVersion(
+  input: SelectAdminEndCustomerResearchInput,
+): Promise<SelectAdminEndCustomerResearchResult> {
+  if (!isEndCustomerResearchSelectionEnabled()) {
+    return { ok: false, error: "A seleção de pesquisa integral está desabilitada." };
+  }
+  if (!input.taxonId) return { ok: false, error: "Taxon não informado." };
+  if (!Number.isSafeInteger(input.researchVersion) || input.researchVersion <= 0) {
+    return { ok: false, error: "Informe uma versão inteira positiva." };
+  }
+
+  const supabase = createServiceClient();
+  const { data: taxon, error: taxonError } = await supabase
+    .from("business_taxons")
+    .select("id,slug,is_active,selected_end_customer_research_version")
+    .eq("id", input.taxonId)
+    .maybeSingle();
+
+  if (taxonError) {
+    console.error("selectAdminEndCustomerResearchVersion read failed:", {
+      code: taxonError.code,
+      message: taxonError.message,
+      taxonId: input.taxonId,
+    });
+    return { ok: false, error: "Não foi possível ler o taxon agora." };
+  }
+  if (!taxon) return { ok: false, error: "Taxon não encontrado." };
+  if (!taxon.is_active) return { ok: false, error: "O taxon precisa estar ativo." };
+
+  const candidate = await loadEndCustomerResearchCandidate({
+    taxon: { slug: taxon.slug, isActive: taxon.is_active },
+    researchVersion: input.researchVersion,
+  });
+  if (!candidate.ok) {
+    return {
+      ok: false,
+      error: candidate.error.code === "FILE_NOT_FOUND"
+        ? "A versão candidata não está arquivada."
+        : "A versão candidata não possui uma pesquisa integral válida.",
+    };
+  }
+
+  const { data: updated, error: updateError } = await supabase
+    .from("business_taxons")
+    .update({ selected_end_customer_research_version: input.researchVersion })
+    .eq("id", taxon.id)
+    .eq("slug", taxon.slug)
+    .eq("is_active", true)
+    .select("id")
+    .maxAffected(1)
+    .maybeSingle();
+
+  if (updateError) {
+    console.error("selectAdminEndCustomerResearchVersion update failed:", {
+      code: updateError.code,
+      message: updateError.message,
+      taxonId: input.taxonId,
+    });
+    return { ok: false, error: "Não foi possível salvar a seleção agora." };
+  }
+  if (!updated) {
+    return {
+      ok: false,
+      error: "O taxon mudou durante a seleção. Recarregue a página e tente novamente.",
+    };
+  }
+
+  return {
+    ok: true,
+    taxonId: taxon.id,
+    selectedVersion: input.researchVersion,
+  };
 }
 
 export async function addAdminTaxonAlias(input: AddAdminTaxonAliasInput): Promise<AdminTaxonActionResult> {

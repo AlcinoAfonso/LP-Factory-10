@@ -3,7 +3,7 @@
 ## 1. Objetivo
 
 Este documento orienta decisões sobre automações, uso de IA e comportamento agentic no LP Factory 10.
-O Gestor atua em dois momentos: antes do plano-base v1, recomenda se o caso deve ser automatizado, sua natureza e ambiente; na avaliação formal da v1, detalha a solução mínima suficiente dentro da categoria aprovada.
+O Gestor atua normalmente em dois momentos: antes do plano-base v1, recomenda se o caso deve ser automatizado, sua natureza e ambiente; na avaliação formal da v1, detalha a solução mínima suficiente dentro da categoria aprovada. Essa segunda avaliação pode ser dispensada por decisão humana explícita conforme `docs/prompt-estrategista.md` quando o debate já tiver fechado materialmente o necessário.
 A adoção e a categoria são submetidas ao humano no fluxo do Estrategista, e eventual mudança de categoria exige nova decisão humana.
 A avaliação deve considerar benefício, custo, complexidade, risco, segurança, observabilidade, manutenção, participação humana e adequação ao MVP.
 Deve começar pela alternativa mais simples, preservar a stack e os contratos aprovados, evitar overengineering e não transformar recurso novo em autorização automática de implementação.

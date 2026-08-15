@@ -2,8 +2,8 @@
 
 0.1 Cabeçalho
 • Documento: LP Factory 10 — Platform Config
-• Versão: v0.1.19
-• Data: 12/08/2026
+• Versão: v0.1.21
+• Data: 15/08/2026
 
 0.2 Contrato do documento
 • O QUE É: snapshot operacional e fonte única das configurações de plataformas externas do LP Factory 10, refletindo o estado conhecido/cadastrado nas plataformas conforme indicado.
@@ -131,6 +131,13 @@
 • Escopo: Production e Preview.
 • Estado atual: `true` em Production e Preview.
 • Estado operacional: PR #656 mergeado, redeploy de Production concluído e smoke final aprovado em 30/07/2026.
+
+• `E20_5_SELECTED_RESEARCH_ENABLED`
+• Finalidade: gate server-only e fail-closed da leitura, seleção administrativa e consumo da pesquisa integral `end_customer` selecionada por taxon.
+• Escopo: Preview e Production do projeto Core, com configuração independente por ambiente.
+• Estado atual: `true` em Production; a ativação gate-on foi validada em Preview e Production em 15/08/2026. Ausência ou valor diferente do literal `true` desabilita todo acesso à nova coluna e sua interface, sem fallback de banco.
+• Estado operacional: migration aplicada pelo workflow canônico, snippet SQL read-only aprovado, redeploy concluído e smokes autenticados gate-on aprovados em Preview e Production.
+• Regra operacional: validar primeiro em Preview autenticado; Production só pode ser habilitada após as evidências aplicáveis, sem registrar valor sensível ou branch override como estado canônico.
 
 • `INVITE_STATE_SECRET`
 • Finalidade: assinar o estado opaco transportado pelo convite nativo do Supabase Auth.
