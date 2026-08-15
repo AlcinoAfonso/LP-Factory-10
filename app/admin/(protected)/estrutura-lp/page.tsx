@@ -735,7 +735,7 @@ function inputValidationLabel(validation: InputField["validation"]) {
 }
 
 function inputOptionLabel(value: string) {
-  const labels: Record<string, string> = { form: "Formulário", whatsapp: "WhatsApp", phone: "Telefone", email: "E-mail", external_url: "URL externa", paid_search: "Mídia paga", organic: "Orgânico" };
+  const labels: Record<string, string> = { form: "Formulário", whatsapp: "WhatsApp", phone: "Telefone", email: "E-mail", external_url: "URL externa", paid_search: "Mídia paga", organic: "Orgânico", rent: "Locação" };
   return labels[value] ?? humanize(value);
 }
 
