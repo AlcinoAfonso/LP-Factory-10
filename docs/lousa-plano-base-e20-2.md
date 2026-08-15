@@ -3,8 +3,8 @@
 Fontes: chat, `README.md`, `AGENTS.md`, `docs/prompt-estrategista.md`, `docs/template-roadmap.md`, `docs/template-briefing-codex.md`, `docs/prompt-executor.md`, `docs/roadmap.md`, `docs/base-tecnica.md`, `docs/schema.md`, `docs/lp-planejamento.md`, `docs/lousa-plano-base-e10-8.md`, `docs/supa-up.md`, `docs/prod-up.md`, contratos atuais de planos, contas, taxons e landing pages, `Pesquisa bruta para corretor de imóveis de médio padrão.pdf`, `Projeto Piloto Imobiliário.pdf`, avaliações do Analista, do Gestor Estrutural e do Gestor de Updates e decisões humanas de 14/07/2026.
 
 - Versão: v2.
-- Status da base consolidada: plano-base v2 mergeado no PR #573; PR #576 mergeado; catálogo posteriormente refinado até a versão executável v3.
-- Evolução em debate: `E20.2.7 — Refinamento de transaction_intent para locação`, em rascunho vivo e ainda não consolidada como plano-base v1.
+- Status: plano-base v2 mergeado no PR #573; PR #576 mergeado; E20.2 concluída e encerrada, sem bloqueios e sem nova execução material pendente.
+- Evolução vigente: plano-base v1 da `E20.2.7 — Refinamento de transaction_intent para locação` consolidado em 15/08/2026; implementação ainda não iniciada.
 - Recorte previsto para roadmap: `20.2 — Catálogo de entradas por taxon`.
 - Path canônico: `docs/lousa-plano-base-e20-2.md`.
 
@@ -816,17 +816,33 @@ O snippet não pode:
 - Registrar somente uma decisão: avançar, ajustar, bloquear ou encerrar.
 - Como existe uma única fase executável, aprovação integral encerra a E20.2 e habilita o relatório final ao Gestor de Docs.
 
-## 5. Rascunho vivo — E20.2.7 — Refinamento de `transaction_intent` para locação
+## 5. Plano-base v1 — E20.2.7 — Refinamento de `transaction_intent` para locação
 
 - Data de início do debate: 15/08/2026.
-- Estado: rascunho vivo; ainda não consolidado como plano-base v1.
+- Versão do plano: v1.
+- Estado: plano-base v1 consolidado em 15/08/2026; implementação não iniciada.
 - Plano conceitual: `docs/lp-planejamento.md`.
 - Recorte previsto: `E20.2.7 — Refinamento de transaction_intent para locação`.
-- Fontes deste debate: decisão humana de 15/08/2026; gap factual real confirmado pela avaliação E20.6 do taxon `corretor-imoveis`; `docs/pesquisas-brutas/corretor-imoveis/end_customer/v1.md`; catálogo, resolver e validações vigentes em `lib/conversion-content/landing-page/input-catalog/`; jornada E19.2; consulta administrativa de estrutura da LP; contratos vigentes da E19.3; `docs/prompt-estrategista.md` v31; `docs/template-roadmap.md`; `docs/roadmap.md`; repositório real.
+- Fontes da consolidação: decisões humanas de 15/08/2026; gap factual real confirmado pela avaliação E20.6 do taxon `corretor-imoveis`; `docs/pesquisas-brutas/corretor-imoveis/end_customer/v1.md`; catálogo, resolver e validações vigentes em `lib/conversion-content/landing-page/input-catalog/`; jornada E19.2; consulta administrativa de estrutura da LP; contratos vigentes da E19.3; `docs/prompt-estrategista.md` v31; `docs/template-roadmap.md`; `docs/roadmap.md`; repositório real.
 - O PR #750 e a E20.6 permanecem congelados e são somente origem da evidência e consumidores posteriores; não pertencem ao delta deste recorte.
-- `docs/roadmap.md` permanece inalterado durante o rascunho vivo e só poderá ser reconciliado no momento previsto pelo fluxo v31 e pelo Prompt ABC.
+- `docs/roadmap.md` permanece inalterado nesta consolidação e só poderá ser reconciliado após a escolha humana do processo, no momento previsto pelo fluxo v31 e pelo Prompt ABC.
 
-### 5.1. Estado confirmado e decisões aceitas
+### 5.1. Estado e decisões fixas
+
+#### 5.1.1. Problema e resultado esperado
+
+- A versão executável v3 não representa uma LP exclusivamente de locação porque o field obrigatório `transaction_intent` não admite esse fato operacional e `mixed` seria semanticamente inexato.
+- O resultado esperado é uma versão executável v4 repo-only que preserve integralmente v1–v3 e acrescente somente `rent` ao field existente, com rótulo humano `Locação` nas superfícies já consumidoras do enum.
+- O recorte não promove consumidores para v4, não registra suficiência e não altera o fluxo E20.6; apenas torna a nova versão explicitamente resolvível para avaliação posterior.
+
+#### 5.1.2. Usuários e consumidores
+
+- O humano responsável pela avaliação E20.6 usa a versão explícita v4 para reavaliar a suficiência factual do taxon.
+- O `platform_admin` consulta as definições do catálogo na estrutura administrativa existente e deve ver o rótulo `Locação` em vez do token técnico `rent`.
+- A jornada E19.2 preserva sua versão operacional v2, mas seu mapa local de rótulos deve reconhecer `rent` sem criar novo fluxo ou promover configurações existentes.
+- Registry e resolver da E20.2 são os proprietários do contrato; E19.3 permanece consumidor da v2 e não participa da execução.
+
+#### 5.1.3. Decisões fixas
 
 - A versão executável vigente da E20.2 é a v3.
 - O field existente `transaction_intent` pertence à camada do nicho `corretor-imoveis`, tem escopo `landing_page`, origem `landing_page_provided`, obrigação `required` e atualmente admite `buy`, `sell`, `valuation` e `mixed`.
@@ -838,9 +854,17 @@ O snippet não pode:
 - Preservar integralmente v1, v2 e v3, inclusive campos, ordem, metadata, bindings de capabilities e resultados resolvidos.
 - Preservar na v4 os 23 fields, sua ordem, todas as camadas, todos os valores anteriores de `transaction_intent`, os bindings da v3 e a equivalência factual entre `starter`, `lite`, `pro` e `ultra`.
 - Não promover automaticamente nenhum consumidor hoje fixado em v2 para v4.
-- Automação: não.
 
-### 5.2. Consumidores realmente afetados
+#### 5.1.4. Dependências e riscos controlados
+
+- Dependências: v3 executável e imutável; pesquisa E20.5 `end_customer` v1 selecionada para `corretor-imoveis`; resolução explícita por versão; consumidores existentes que derivam enum do catálogo.
+- O principal risco é alterar v3 por referência compartilhada ao derivar v4; a implementação deve usar cópia profunda e regressões de snapshots das três versões anteriores.
+- O segundo risco é promover silenciosamente E19.2 ou E19.3 para v4; seus contratos de versão permanecem inalterados neste recorte.
+- O terceiro risco é exibir `rent` sem tradução em superfície humana; os dois mapas locais realmente afetados devem produzir `Locação`.
+
+### 5.2. Contrato do caso
+
+#### 5.2.1. Consumidores realmente afetados
 
 - Registry e resolver da E20.2:
   - registrar explicitamente a v4 sem `latest`, fallback ou mutação de versões anteriores;
@@ -858,7 +882,7 @@ O snippet não pode:
   - permanece sem alteração neste PR;
   - depois da integração da v4, o humano deverá retomar o PR #750 e repetir a avaliação E20.6 contra a versão executável 4 antes de qualquer registro de suficiência.
 
-### 5.3. Contrato operacional em debate
+#### 5.2.2. Fluxo operacional
 
 - Gatilho:
   - decisão humana que reconheceu como gap factual real a ausência de locação em `transaction_intent` durante a primeira avaliação real da E20.6.
@@ -889,21 +913,36 @@ O snippet não pode:
   - versão ausente ou desconhecida continua falhando fechada;
   - nenhum consumidor é promovido silenciosamente para v4.
 
-### 5.4. Fase executável prevista
+#### 5.2.3. Critérios visuais e evidência esperada
 
-#### 5.4.1. E20.2.7 — Refinamento de `transaction_intent` para locação
+- Preservar integralmente layout, hierarquia, controles, responsividade, acessibilidade e interações das superfícies existentes; não criar nova UI.
+- Em `/admin/estrutura-lp`, ao consultar a v4 de `corretor-imoveis`, a lista de valores permitidos de `transaction_intent` deve exibir `Locação` e não `rent`.
+- Na jornada E19.2, a regressão focal deve provar que `OPTION_LABELS.rent` é `Locação`; a opção não precisa ficar visível enquanto a jornada permanecer na versão operacional v2.
+- Evidência esperada: validações focais dos renderizadores e, somente se o gate técnico considerar necessário por alteração visual efetiva, inspeção da superfície administrativa existente sem mudança de layout.
 
-- Status: rascunho vivo; fase ainda não consolidada como plano-base v1 e implementação não iniciada.
+### 5.3. Fases e próxima ação
+
+#### 5.3.1. E20.2.7 — Refinamento de `transaction_intent` para locação
+
+- Status: planejada; plano-base v1 consolidado e implementação não iniciada.
 - Automação: não.
 - Objetivo: criar a versão executável v4 do catálogo, preservando integralmente v1–v3 e acrescentando `rent` somente ao enum de `transaction_intent`, com rótulos humanos mínimos e regressões proporcionais.
-- Arquivos candidatos, sujeitos à consolidação da v1:
+- Fontes obrigatórias de execução:
+  - `AGENTS.md`;
+  - `docs/prompt-executor.md`;
+  - `docs/base-tecnica.md`;
+  - `docs/lp-planejamento.md`;
+  - este plano-base v1;
+  - pesquisa integral autorizada em `docs/pesquisas-brutas/corretor-imoveis/end_customer/v1.md`;
+  - contratos e consumidores reais do repositório no início da execução.
+- Arquivos previstos:
   - `lib/conversion-content/landing-page/input-catalog/registry.ts`;
   - `lib/conversion-content/landing-page/input-catalog/validation-cases.ts`;
   - `app/admin/(protected)/estrutura-lp/page.tsx`;
   - `app/a/[account]/_components/OnboardingConfigurationJourney.tsx`;
   - validações focais existentes das superfícies afetadas, somente quando necessárias para provar o contrato;
   - este plano-base, conforme o fluxo de execução e fechamento aplicável.
-- Critérios de aceite em debate:
+- Critérios de aceite:
   - v4 registrada explicitamente e resolvida sem fallback;
   - `transaction_intent` v4 aceita exatamente os quatro valores anteriores mais `rent`;
   - nenhuma outra definição da v3 muda;
@@ -912,13 +951,11 @@ O snippet não pode:
   - as superfícies afetadas exibem `Locação` sem criar nova UI;
   - `npm run validate:landing-page-input-catalog`, validações focais das superfícies, `npm run check` e `git diff --check` aprovados;
   - nenhum banco, migration, rota, API, infraestrutura, automação ou workload OpenAI criado.
+- Próxima ação: apresentar ao humano as opções de processo do Prompt do Estrategista v31; não iniciar especialistas, ABC, implementação ou alteração do roadmap antes da escolha explícita.
 
-### 5.5. Questões abertas do rascunho
+### 5.4. Escopo negativo e critérios de parada
 
-- Nenhuma decisão material indispensável permanece aberta no estado atual.
-- A promoção operacional da jornada E19.2 ou do compilador E19.3 para a v4 é decisão de consumidor e permanece fora deste recorte; não bloqueia a criação da versão executável nem a nova avaliação E20.6.
-
-### 5.6. Escopo negativo e critérios de parada da E20.2.7
+#### 5.4.1. Escopo negativo
 
 - Não criar field novo, camada de taxon, especialização, valor substituto de `mixed` ou alias para `rent`.
 - Não remover, renomear ou reordenar valores anteriores.
@@ -927,7 +964,13 @@ O snippet não pode:
 - Não criar banco, tabela, coluna, migration, seed, RPC, policy, grant ou adapter.
 - Não criar rota, API, Server Action, nova UI, formulário, infraestrutura ou persistência.
 - Não alterar E20.6, PR #750, E19.3, pesquisa E20.5 ou registro de suficiência.
-- Não alterar o roadmap durante o rascunho vivo.
+- Não alterar o roadmap nesta consolidação; eventual delta planejado depende da escolha humana e do fluxo v31/ABC.
 - Não criar automação, agente, job, workflow, rotina recorrente ou workload OpenAI.
+
+#### 5.4.2. Critérios de parada
+
 - Parar se a v4 exigir migração de valores existentes, promoção obrigatória de consumidor, mudança do contrato de geração, alteração de banco ou qualquer delta além do refinamento focal e dos rótulos mínimos.
-- Antes de consolidar a v1, submeter ao humano somente decisão material que não possa ser resolvida pelas fontes competentes.
+- Parar se surgir necessidade de alterar v1–v3, reordenar os valores existentes ou ampliar `transaction_intent` além de `rent`.
+- Parar se algum consumidor exigir mudança material de contrato, persistência ou experiência em vez do rótulo local previsto.
+- Parar antes de qualquer alteração no PR #750, registro de suficiência ou retomada da E20.6.
+- Devolver ao Estrategista qualquer conflito entre este plano e o repositório real; não adaptar o recorte por inferência.
