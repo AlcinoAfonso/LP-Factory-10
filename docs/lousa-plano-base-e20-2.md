@@ -920,14 +920,15 @@ O snippet não pode:
 - Na jornada E19.2, a regressão focal deve provar que `OPTION_LABELS.rent` é `Locação`; a opção não precisa ficar visível enquanto a jornada permanecer na versão operacional v2.
 - Aplicação de update — `prod#14`: nas superfícies humanas tocadas pela E20.2.7, o valor canônico `rent` deve ser reconhecível como `Locação`; `rent` não pode ser exibido como rótulo ao usuário. Esta aplicação não cria telemetria, novo fluxo, métrica de descoberta nem programa próprio de testes.
 - Aplicação de update — `prod#16`: além das validações focais dos renderizadores, validar proporcionalmente em Preview a superfície administrativa existente `/admin/estrutura-lp`, com o taxon `corretor-imoveis` e a versão explícita 4, comprovando `Locação` em vez de `rent` e ausência de regressão visível de layout, hierarquia, controles, responsividade e interação. A jornada E19.2 permanece coberta apenas por regressão focal enquanto sua versão operacional continuar 2. Não exigir nova UI, matriz visual ampliada nem ferramenta paga.
-- Evidência obrigatória: executar `npm run validate:lp-builder-onboarding-journey`; executar `npm run dev` e abrir `/admin/estrutura-lp?view=entradas` em sessão autenticada de `platform_admin`; selecionar a versão 4 e o taxon `corretor-imoveis`; confirmar que `transaction_intent` exibe `Locação`, não exibe o token `rent`, preserva layout, hierarquia, controles, responsividade, acessibilidade e interações e não apresenta erro visível. Se a conexão falhar, registrar se o servidor iniciou e em qual porta. A jornada E19.2 deve permanecer na versão operacional 2, com regressão focal que prove `OPTION_LABELS.rent === "Locação"` sem tornar a opção visível.
+- Evidência local obrigatória: executar `npm run validate:lp-builder-onboarding-journey`; executar `npm run dev`, abrir localmente `/admin/estrutura-lp?view=entradas` em sessão autenticada de `platform_admin`, selecionar a versão 4 e o taxon `corretor-imoveis` e confirmar `Locação` sem `rent`, sem erro visível ou regressão de layout, hierarquia, controles, responsividade, acessibilidade e interações. Se a conexão local falhar, registrar se o servidor iniciou e em qual porta. A jornada E19.2 deve permanecer na versão operacional 2, com regressão focal que prove `OPTION_LABELS.rent === "Locação"` sem tornar a opção visível.
+- Evidência hospedada obrigatória: no Preview do PR, repetir a inspeção autenticada de `/admin/estrutura-lp?view=entradas` com versão 4 e taxon `corretor-imoveis` em desktop e largura móvel. Indisponibilidade ambiental deve ser registrada como pendência identificada, nunca como decisão humana nem como prova local equivalente a Preview.
 - `vercel#15` permanece oportunidade estratégica condicional e não autoriza habilitar, configurar ou exigir Vercel Toolbar; `supa#40` e `prod#17` não se aplicam ao delta executável deste recorte.
 
 ### 5.3. Fases e próxima ação
 
 #### 5.3.1. E20.2.7 — Refinamento de `transaction_intent` para locação
 
-- Status: planejada; plano-base v1 consolidado e implementação não iniciada.
+- Status: planejada; plano-base v2 consolidado e implementação não iniciada.
 - Automação: não.
 - Objetivo: criar a versão executável v4 do catálogo, preservando integralmente v1–v3 e acrescentando `rent` somente ao enum de `transaction_intent`, com rótulos humanos mínimos e regressões proporcionais.
 - Fontes obrigatórias de execução:
@@ -935,7 +936,7 @@ O snippet não pode:
   - `docs/prompt-executor.md`;
   - `docs/base-tecnica.md`;
   - `docs/lp-planejamento.md`;
-  - este plano-base v1;
+  - este plano-base v2;
   - pesquisa integral autorizada em `docs/pesquisas-brutas/corretor-imoveis/end_customer/v1.md`;
   - contratos e consumidores reais do repositório no início da execução.
 - Arquivos previstos:
