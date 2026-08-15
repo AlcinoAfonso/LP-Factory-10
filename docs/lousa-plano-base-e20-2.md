@@ -4,7 +4,7 @@ Fontes: chat, `README.md`, `AGENTS.md`, `docs/prompt-estrategista.md`, `docs/tem
 
 - Versão: v2.
 - Status: plano-base v2 mergeado no PR #573; PR #576 mergeado; E20.2 concluída e encerrada, sem bloqueios e sem nova execução material pendente.
-- Evolução vigente: plano-base v1 da `E20.2.7 — Refinamento de transaction_intent para locação` consolidado em 15/08/2026; implementação ainda não iniciada.
+- Evolução vigente: plano-base v2 da `E20.2.7 — Refinamento de transaction_intent para locação` consolidado em 15/08/2026 para gate do Analista; implementação ainda não iniciada.
 - Recorte previsto para roadmap: `20.2 — Catálogo de entradas por taxon`.
 - Path canônico: `docs/lousa-plano-base-e20-2.md`.
 
@@ -816,16 +816,16 @@ O snippet não pode:
 - Registrar somente uma decisão: avançar, ajustar, bloquear ou encerrar.
 - Como existe uma única fase executável, aprovação integral encerra a E20.2 e habilita o relatório final ao Gestor de Docs.
 
-## 5. Plano-base v1 — E20.2.7 — Refinamento de `transaction_intent` para locação
+## 5. Plano-base v2 — E20.2.7 — Refinamento de `transaction_intent` para locação
 
 - Data de início do debate: 15/08/2026.
-- Versão do plano: v1.
-- Estado: plano-base v1 consolidado em 15/08/2026; implementação não iniciada.
+- Versão do plano: v2.
+- Estado: plano-base v2 consolidado em 15/08/2026 para gate do Analista; implementação não iniciada.
 - Plano conceitual: `docs/lp-planejamento.md`.
 - Recorte previsto: `E20.2.7 — Refinamento de transaction_intent para locação`.
 - Fontes da consolidação: decisões humanas de 15/08/2026; gap factual real confirmado pela avaliação E20.6 do taxon `corretor-imoveis`; `docs/pesquisas-brutas/corretor-imoveis/end_customer/v1.md`; catálogo, resolver e validações vigentes em `lib/conversion-content/landing-page/input-catalog/`; jornada E19.2; consulta administrativa de estrutura da LP; contratos vigentes da E19.3; `docs/prompt-estrategista.md` v31; `docs/template-roadmap.md`; `docs/roadmap.md`; repositório real.
 - O PR #750 e a E20.6 permanecem congelados e são somente origem da evidência e consumidores posteriores; não pertencem ao delta deste recorte.
-- `docs/roadmap.md` permanece inalterado nesta consolidação e só poderá ser reconciliado após a escolha humana do processo, no momento previsto pelo fluxo v31 e pelo Prompt ABC.
+- O snapshot de `docs/roadmap.md` produzido a partir da v1 permanece congelado; sua reconciliação pelo Prompt ABC ocorrerá somente depois da aprovação desta v2 pelo Analista.
 
 ### 5.1. Estado e decisões fixas
 
@@ -918,7 +918,10 @@ O snippet não pode:
 - Preservar integralmente layout, hierarquia, controles, responsividade, acessibilidade e interações das superfícies existentes; não criar nova UI.
 - Em `/admin/estrutura-lp`, ao consultar a v4 de `corretor-imoveis`, a lista de valores permitidos de `transaction_intent` deve exibir `Locação` e não `rent`.
 - Na jornada E19.2, a regressão focal deve provar que `OPTION_LABELS.rent` é `Locação`; a opção não precisa ficar visível enquanto a jornada permanecer na versão operacional v2.
-- Evidência esperada: validações focais dos renderizadores e, somente se o gate técnico considerar necessário por alteração visual efetiva, inspeção da superfície administrativa existente sem mudança de layout.
+- Aplicação de update — `prod#14`: nas superfícies humanas tocadas pela E20.2.7, o valor canônico `rent` deve ser reconhecível como `Locação`; `rent` não pode ser exibido como rótulo ao usuário. Esta aplicação não cria telemetria, novo fluxo, métrica de descoberta nem programa próprio de testes.
+- Aplicação de update — `prod#16`: além das validações focais dos renderizadores, validar proporcionalmente em Preview a superfície administrativa existente `/admin/estrutura-lp`, com o taxon `corretor-imoveis` e a versão explícita 4, comprovando `Locação` em vez de `rent` e ausência de regressão visível de layout, hierarquia, controles, responsividade e interação. A jornada E19.2 permanece coberta apenas por regressão focal enquanto sua versão operacional continuar 2. Não exigir nova UI, matriz visual ampliada nem ferramenta paga.
+- Evidência obrigatória: executar `npm run validate:lp-builder-onboarding-journey`; executar `npm run dev` e abrir `/admin/estrutura-lp?view=entradas` em sessão autenticada de `platform_admin`; selecionar a versão 4 e o taxon `corretor-imoveis`; confirmar que `transaction_intent` exibe `Locação`, não exibe o token `rent`, preserva layout, hierarquia, controles, responsividade, acessibilidade e interações e não apresenta erro visível. Se a conexão falhar, registrar se o servidor iniciou e em qual porta. A jornada E19.2 deve permanecer na versão operacional 2, com regressão focal que prove `OPTION_LABELS.rent === "Locação"` sem tornar a opção visível.
+- `vercel#15` permanece oportunidade estratégica condicional e não autoriza habilitar, configurar ou exigir Vercel Toolbar; `supa#40` e `prod#17` não se aplicam ao delta executável deste recorte.
 
 ### 5.3. Fases e próxima ação
 
@@ -949,9 +952,9 @@ O snippet não pode:
   - v1, v2 e v3 permanecem imutáveis e com regressões verdes;
   - `starter`, `lite`, `pro` e `ultra` permanecem equivalentes;
   - as superfícies afetadas exibem `Locação` sem criar nova UI;
-  - `npm run validate:landing-page-input-catalog`, validações focais das superfícies, `npm run check` e `git diff --check` aprovados;
+  - `npm ci`, `npm run validate:landing-page-input-catalog`, `npm run validate:lp-builder-onboarding-journey`, `npm run check`, `git diff --check` e a validação visual autenticada obrigatória de `/admin/estrutura-lp?view=entradas` com versão 4 e taxon `corretor-imoveis` aprovados;
   - nenhum banco, migration, rota, API, infraestrutura, automação ou workload OpenAI criado.
-- Próxima ação: apresentar ao humano as opções de processo do Prompt do Estrategista v31; não iniciar especialistas, ABC, implementação ou alteração do roadmap antes da escolha explícita.
+- Próxima ação: executar as Passagens 1 e 2 do Analista sobre esta v2 e, somente após sua aprovação, reconciliar o roadmap pelo Prompt ABC antes da implementação.
 
 ### 5.4. Escopo negativo e critérios de parada
 
