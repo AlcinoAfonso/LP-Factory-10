@@ -22,7 +22,7 @@ Regra:
 • registrar progressivamente no mesmo arquivo as definições aceitas durante o debate e distinguir delas as questões ainda abertas;
 • uma hipótese discutida não se torna decisão fixa apenas por estar registrada no rascunho;
 • o rascunho pode permanecer estruturalmente incompleto durante o debate; o checklist integral da v1 só é exigido após sua consolidação;
-• quando houver possibilidade de automação, consultar o Gestor de Automação e submeter ao humano, antes do plano-base v1, a decisão sobre sua adoção e categoria; o detalhamento técnico fica para a v2.
+• quando houver possibilidade de automação, consultar o Gestor de Automação e submeter ao humano, antes do plano-base v1, a decisão sobre sua adoção e categoria; o detalhamento técnico ainda necessário fica para a v2.
 
 2. Fluxo operacional e consolidação do plano-base v1
    Durante o debate, mapear progressivamente:
@@ -66,7 +66,7 @@ Regra:
 • não criar fase administrativa, de governança, handoff, revisão ou fechamento; validação e fechamento documental pelo Prompt ABC integram a fase implementável correspondente;
 • validação entra como critério de aceite da fase, salvo risco técnico próprio;
 • exclusivamente se o humano escolher a Opção 1 no item 4, orientar o Executor a ajustar `docs/roadmap.md` no mesmo PR, conforme `docs/prompt-abc.md` e `docs/template-roadmap.md`, registrando somente seções, subseções, títulos, objetivos e status planejado, sem registros de implementação;
-• não antecipar na v1 o detalhamento técnico da automação nem criar fase administrativa apenas para essa decisão.
+• não antecipar na v1 detalhamento técnico de automação sem necessidade nem criar fase administrativa apenas para essa decisão.
 
 4. Escolha do processo após o plano-base v1
 
