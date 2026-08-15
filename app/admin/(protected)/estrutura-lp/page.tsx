@@ -263,7 +263,7 @@ function ModuleView({ data }: { data: ModuleData }) {
 
 function InputView({ data }: { data: InputData }) {
   const resolved = data.result?.ok ? data.result.value : null;
-  const chainError = data.chain && !data.chain.ok ? data.chain.error : null;
+  const chainError = data.chain && !data.chain.ok ? data.chain.error.message : null;
   return (
     <div className="space-y-4">
       <form action="/admin/estrutura-lp" className="rounded-lg border border-border bg-card p-3">

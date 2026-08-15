@@ -23,9 +23,18 @@ import {
   type ResolvedLandingPageResearchAudience,
 } from "@/conversion-content/landing-page/research-resolution";
 import {
+  buildLandingPageInputCatalogTaxonChain,
+  type LandingPageInputCatalogTaxonChain,
+  type LandingPageInputCatalogTaxonIdentity,
+} from "@/conversion-content/landing-page/input-catalog";
+import {
+  buildInputCatalogReviewHandoff,
   isEndCustomerResearchSelectionEnabled,
+  isInputCatalogReviewEnabled,
   loadEndCustomerResearchCandidate,
+  resolveInputCatalogReview,
 } from "@/conversion-content/landing-page/taxon-preparation";
+import { loadSelectedEndCustomerResearchFromClient } from "@/conversion-content/adapters/selectedEndCustomerResearchAdapterCore";
 import { createServiceClient } from "@/lib/supabase/service";
 import {
   ADMIN_PAGE_SIZE,
@@ -49,6 +58,12 @@ import {
   readAdminCommercialActivationOverview,
   type AdminCommercialActivationListItem,
 } from "./adminCommercialActivationTemplatesAdapter";
+import {
+  collectAffectedReviewedTaxonIds,
+  planEndCustomerResearchSelectionMutation,
+  sameInputCatalogReviewBaseline,
+  taxonomyMutationAffectsInputCatalogResolution,
+} from "./adminTaxonomyReviewPolicy";
 
 type CreateAdminTaxonInput = {
   name: string;
@@ -79,6 +94,15 @@ type SelectAdminEndCustomerResearchInput = {
 
 type SelectAdminEndCustomerResearchResult =
   | { ok: true; taxonId: string; selectedVersion: number }
+  | { ok: false; error: string };
+
+type RecordAdminInputCatalogReviewInput = {
+  taxonId: string;
+  inputCatalogVersion: number;
+};
+
+type AdminInputCatalogReviewActionResult =
+  | { ok: true; taxonId: string; reviewedVersion: number | null }
   | { ok: false; error: string };
 
 type AddAdminTaxonAliasInput = {
@@ -433,6 +457,7 @@ export async function getAdminTaxonDetail(taxonId: string): Promise<AdminTaxonDe
     marketResearch,
     diagnostics,
     endCustomerResearchSelection,
+    inputCatalogReview,
   ] = await Promise.all([
     supabase.from("business_taxon_aliases").select("id,alias_text,is_active").eq("taxon_id", taxonId).order("alias_text", { ascending: true }).limit(100),
     supabase.from("business_taxons").select("id,parent_id,level,name,slug,is_active").eq("parent_id", taxonId).order("name", { ascending: true }).limit(100),
@@ -450,6 +475,7 @@ export async function getAdminTaxonDetail(taxonId: string): Promise<AdminTaxonDe
       ),
     ]),
     readAdminEndCustomerResearchSelection(supabase, taxonId),
+    readAdminInputCatalogReview(supabase, taxonId),
   ]);
 
   const parentNames = new Map(Array.from(parentTaxons.entries()).map(([id, row]) => [id, row.name]));
@@ -480,6 +506,80 @@ export async function getAdminTaxonDetail(taxonId: string): Promise<AdminTaxonDe
     deleteBlockers,
     canDelete: deleteBlockers.length === 0,
     endCustomerResearchSelection,
+    inputCatalogReview,
+  };
+}
+
+async function readAdminInputCatalogReview(
+  supabase: ReturnType<typeof createServiceClient>,
+  taxonId: string,
+): Promise<AdminTaxonDetail["inputCatalogReview"]> {
+  if (!isInputCatalogReviewEnabled()) return { status: "disabled" };
+  if (!isEndCustomerResearchSelectionEnabled()) {
+    return {
+      status: "blocked",
+      errorCode: "FEATURE_DISABLED",
+      message: "A seleção E20.5 precisa estar habilitada antes da avaliação E20.6.",
+    };
+  }
+
+  const selectedResearch = await loadSelectedEndCustomerResearchFromClient(
+    { taxonId, includeInputCatalogReview: true },
+    supabase,
+  );
+  if (!selectedResearch.ok) {
+    const blockedCodes = new Set([
+      "TAXON_INACTIVE",
+      "SELECTION_ABSENT",
+      "SELECTED_VERSION_INVALID",
+    ]);
+    return {
+      status: blockedCodes.has(selectedResearch.error.code) ? "blocked" : "read_failed",
+      errorCode: selectedResearch.error.code,
+      message: selectedResearch.error.message,
+    };
+  }
+  const selected = selectedResearch.value;
+  if (
+    selected.taxonName === undefined ||
+    selected.taxonLevel === undefined ||
+    selected.parentTaxonId === undefined ||
+    selected.reviewedInputCatalogVersion === undefined
+  ) {
+    return {
+      status: "read_failed",
+      errorCode: "TAXON_IDENTITY_INVALID",
+      message: "A identidade taxonômica da avaliação E20.6 está incompleta.",
+    };
+  }
+
+  const expectedIdentity: LandingPageInputCatalogTaxonIdentity = {
+    id: selected.taxonId,
+    name: selected.taxonName,
+    slug: selected.taxonSlug,
+    level: selected.taxonLevel,
+    isActive: true,
+    parentId: selected.parentTaxonId,
+  };
+  const chain = await readInputCatalogTaxonChain(supabase, taxonId, expectedIdentity);
+  if (!chain.ok) {
+    return { status: "read_failed", errorCode: "INVALID_TAXON_CHAIN", message: chain.error };
+  }
+
+  return {
+    status: "available",
+    selectedResearchVersion: selected.selectedResearchVersion,
+    reviewedVersion: selected.reviewedInputCatalogVersion,
+    handoff: buildInputCatalogReviewHandoff({
+      taxonSlug: selected.taxonSlug,
+      taxonChain: chain.value,
+      researchVersion: selected.selectedResearchVersion,
+    }),
+    taxonName: selected.taxonName,
+    taxonSlug: selected.taxonSlug,
+    taxonLevel: selected.taxonLevel,
+    parentTaxonId: selected.parentTaxonId,
+    chainFingerprint: fingerprintTaxonChain(chain.value),
   };
 }
 
@@ -900,6 +1000,30 @@ export async function updateAdminTaxon(input: UpdateAdminTaxonInput): Promise<Ad
   if (name.length < 2) return { ok: false, error: "Informe um nome com pelo menos 2 caracteres." };
   if (!slug) return { ok: false, error: "Informe um slug valido." };
 
+  const { data: current, error: currentError } = await supabase
+    .from("business_taxons")
+    .select("id,name,slug,is_active")
+    .eq("id", input.id)
+    .maybeSingle();
+  if (currentError || !current) return { ok: false, error: "Taxon nao encontrado." };
+  const materiallyChangesResolution = taxonomyMutationAffectsInputCatalogResolution(
+    { name: current.name, slug: current.slug, isActive: current.is_active },
+    { name, slug, isActive: input.isActive },
+  );
+  if (
+    isInputCatalogReviewEnabled() &&
+    materiallyChangesResolution
+  ) {
+    const reviewBlock = await findAffectedInputCatalogReviews(supabase, input.id);
+    if (!reviewBlock.ok) return { ok: false, error: reviewBlock.error };
+    if (reviewBlock.reviewedTaxonIds.length > 0) {
+      return {
+        ok: false,
+        error: "Reabra a avaliação E20.6 do taxon e dos descendentes afetados antes de alterar nome, slug ou atividade.",
+      };
+    }
+  }
+
   const { data: existingSlug, error: slugError } = await supabase
     .from("business_taxons")
     .select("id")
@@ -914,13 +1038,27 @@ export async function updateAdminTaxon(input: UpdateAdminTaxonInput): Promise<Ad
 
   if (existingSlug) return { ok: false, error: "Ja existe outro taxon com este slug." };
 
-  const { error } = await supabase
+  if (isInputCatalogReviewEnabled() && materiallyChangesResolution) {
+    const latestReviewBlock = await findAffectedInputCatalogReviews(supabase, input.id);
+    if (!latestReviewBlock.ok) return { ok: false, error: latestReviewBlock.error };
+    if (latestReviewBlock.reviewedTaxonIds.length > 0) {
+      return { ok: false, error: "Uma avaliação E20.6 foi registrada durante a alteração. Reabra-a antes de continuar." };
+    }
+  }
+
+  const { data: updated, error } = await supabase
     .from("business_taxons")
     .update({ name, slug, is_active: input.isActive })
-    .eq("id", input.id);
+    .eq("id", input.id)
+    .eq("name", current.name)
+    .eq("slug", current.slug)
+    .eq("is_active", current.is_active)
+    .select("id")
+    .maxAffected(1)
+    .maybeSingle();
 
-  if (error) {
-    console.error("updateAdminTaxon failed:", { code: error.code, message: error.message });
+  if (error || !updated) {
+    console.error("updateAdminTaxon failed:", { code: error?.code, message: error?.message });
     return { ok: false, error: "Nao foi possivel atualizar o taxon." };
   }
 
@@ -939,11 +1077,16 @@ export async function selectAdminEndCustomerResearchVersion(
   }
 
   const supabase = createServiceClient();
-  const { data: taxon, error: taxonError } = await supabase
+  const reviewEnabled = isInputCatalogReviewEnabled();
+  const selectionColumns = reviewEnabled
+    ? "id,slug,is_active,selected_end_customer_research_version,reviewed_input_catalog_version"
+    : "id,slug,is_active,selected_end_customer_research_version";
+  const { data: taxonData, error: taxonError } = await (supabase as any)
     .from("business_taxons")
-    .select("id,slug,is_active,selected_end_customer_research_version")
+    .select(selectionColumns)
     .eq("id", input.taxonId)
     .maybeSingle();
+  const taxon = taxonData as any;
 
   if (taxonError) {
     console.error("selectAdminEndCustomerResearchVersion read failed:", {
@@ -969,12 +1112,28 @@ export async function selectAdminEndCustomerResearchVersion(
     };
   }
 
-  const { data: updated, error: updateError } = await supabase
+  const selectionMutation = planEndCustomerResearchSelectionMutation({
+    currentVersion: taxon.selected_end_customer_research_version,
+    nextVersion: input.researchVersion,
+    inputCatalogReviewEnabled: reviewEnabled,
+  });
+  if (selectionMutation.idempotent) {
+    return { ok: true, taxonId: taxon.id, selectedVersion: input.researchVersion };
+  }
+
+  let updateQuery: any = supabase
     .from("business_taxons")
-    .update({ selected_end_customer_research_version: input.researchVersion })
+    .update(selectionMutation.update)
     .eq("id", taxon.id)
     .eq("slug", taxon.slug)
-    .eq("is_active", true)
+    .eq("is_active", true);
+  updateQuery = taxon.selected_end_customer_research_version === null
+    ? updateQuery.is("selected_end_customer_research_version", null)
+    : updateQuery.eq(
+        "selected_end_customer_research_version",
+        taxon.selected_end_customer_research_version,
+      );
+  const { data: updated, error: updateError } = await updateQuery
     .select("id")
     .maxAffected(1)
     .maybeSingle();
@@ -999,6 +1158,99 @@ export async function selectAdminEndCustomerResearchVersion(
     taxonId: taxon.id,
     selectedVersion: input.researchVersion,
   };
+}
+
+export async function recordAdminInputCatalogReview(
+  input: RecordAdminInputCatalogReviewInput,
+): Promise<AdminInputCatalogReviewActionResult> {
+  if (!isInputCatalogReviewEnabled()) {
+    return { ok: false, error: "A avaliação factual E20.2 está desabilitada." };
+  }
+  if (!isEndCustomerResearchSelectionEnabled()) {
+    return { ok: false, error: "A seleção E20.5 precisa estar habilitada." };
+  }
+  if (!input.taxonId) return { ok: false, error: "Taxon não informado." };
+  if (!Number.isSafeInteger(input.inputCatalogVersion) || input.inputCatalogVersion <= 0) {
+    return { ok: false, error: "Informe uma versão E20.2 inteira positiva." };
+  }
+
+  const supabase = createServiceClient();
+  const review = await readAdminInputCatalogReview(supabase, input.taxonId);
+  if (review.status !== "available") {
+    return {
+      ok: false,
+      error: review.status === "disabled"
+        ? "A avaliação factual E20.2 está desabilitada."
+        : review.message,
+    };
+  }
+  const expectedIdentity: LandingPageInputCatalogTaxonIdentity = {
+    id: input.taxonId,
+    name: review.taxonName,
+    slug: review.taxonSlug,
+    level: review.taxonLevel,
+    isActive: true,
+    parentId: review.parentTaxonId,
+  };
+  const chain = await readInputCatalogTaxonChain(supabase, input.taxonId, expectedIdentity);
+  if (!chain.ok) return { ok: false, error: chain.error };
+  const catalog = resolveInputCatalogReview({
+    version: input.inputCatalogVersion,
+    taxonChain: chain.value,
+  });
+  if (!catalog.ok) return { ok: false, error: catalog.error.message };
+
+  const latest = await readAdminInputCatalogReview(supabase, input.taxonId);
+  if (latest.status !== "available" || !sameInputCatalogReviewBaseline(review, latest)) {
+    return { ok: false, error: "O taxon, a cadeia ou a pesquisa mudaram durante a avaliação. Recarregue a página." };
+  }
+
+  let updateQuery: any = supabase
+    .from("business_taxons")
+    .update({ reviewed_input_catalog_version: input.inputCatalogVersion })
+    .eq("id", input.taxonId)
+    .eq("name", review.taxonName)
+    .eq("slug", review.taxonSlug)
+    .eq("level", review.taxonLevel)
+    .eq("is_active", true)
+    .eq("selected_end_customer_research_version", review.selectedResearchVersion);
+  updateQuery = review.parentTaxonId === null
+    ? updateQuery.is("parent_id", null)
+    : updateQuery.eq("parent_id", review.parentTaxonId);
+  updateQuery = review.reviewedVersion === null
+    ? updateQuery.is("reviewed_input_catalog_version", null)
+    : updateQuery.eq("reviewed_input_catalog_version", review.reviewedVersion);
+  const { data: updated, error } = await updateQuery
+    .select("id")
+    .maxAffected(1)
+    .maybeSingle();
+  if (error || !updated) {
+    return { ok: false, error: "Não foi possível registrar a avaliação sem concorrência." };
+  }
+  return { ok: true, taxonId: input.taxonId, reviewedVersion: input.inputCatalogVersion };
+}
+
+export async function reopenAdminInputCatalogReview(input: {
+  taxonId: string;
+}): Promise<AdminInputCatalogReviewActionResult> {
+  if (!isInputCatalogReviewEnabled()) {
+    return { ok: false, error: "A avaliação factual E20.2 está desabilitada." };
+  }
+  if (!isEndCustomerResearchSelectionEnabled()) {
+    return { ok: false, error: "A seleção E20.5 precisa estar habilitada." };
+  }
+  if (!input.taxonId) return { ok: false, error: "Taxon não informado." };
+
+  const supabase = createServiceClient();
+  const { data: updated, error } = await supabase
+    .from("business_taxons")
+    .update({ reviewed_input_catalog_version: null })
+    .eq("id", input.taxonId)
+    .select("id")
+    .maxAffected(1)
+    .maybeSingle();
+  if (error || !updated) return { ok: false, error: "Não foi possível reabrir a avaliação." };
+  return { ok: true, taxonId: updated.id, reviewedVersion: null };
 }
 
 export async function addAdminTaxonAlias(input: AddAdminTaxonAliasInput): Promise<AdminTaxonActionResult> {
@@ -1046,6 +1298,13 @@ export async function deleteAdminTaxon(input: DeleteAdminTaxonInput): Promise<Ad
   if (!taxon) return { ok: false, error: "Taxon nao encontrado." };
   if (input.confirmSlug.trim() !== taxon.slug) return { ok: false, error: "Digite o slug do taxon para confirmar a exclusao." };
   if (!taxon.canDelete) return { ok: false, error: `Nao e possivel excluir: ${taxon.deleteBlockers.join(", ")}.` };
+  if (isInputCatalogReviewEnabled()) {
+    const reviewBlock = await findAffectedInputCatalogReviews(supabase, input.taxonId);
+    if (!reviewBlock.ok) return { ok: false, error: reviewBlock.error };
+    if (reviewBlock.reviewedTaxonIds.length > 0) {
+      return { ok: false, error: "Reabra a avaliação E20.6 antes de excluir o taxon." };
+    }
+  }
 
   const { error: aliasError } = await supabase
     .from("business_taxon_aliases")
@@ -1084,6 +1343,133 @@ async function validateTaxonParent(level: AdminTaxonLevel, parentId: string | nu
   if (level === "ultra_niche" && parent.level !== "niche") return { ok: false, error: "Ultranichos devem estar abaixo de um nicho." };
 
   return { ok: true };
+}
+
+async function readInputCatalogTaxonChain(
+  supabase: ReturnType<typeof createServiceClient>,
+  taxonId: string,
+  expectedSelected?: LandingPageInputCatalogTaxonIdentity,
+) {
+  const { data, error } = await supabase
+    .from("business_taxons")
+    .select("id,parent_id,level,name,slug,is_active")
+    .in("level", ["segment", "niche", "ultra_niche"]);
+  if (error || !Array.isArray(data)) {
+    return { ok: false as const, error: "Não foi possível ler a cadeia taxonômica." };
+  }
+  const identities = data
+    .map(mapInputCatalogTaxonIdentity)
+    .filter((taxon): taxon is LandingPageInputCatalogTaxonIdentity => taxon !== null);
+  if (identities.length !== data.length) {
+    return { ok: false as const, error: "A cadeia taxonômica contém identidade inválida." };
+  }
+  const selected = identities.find((taxon) => taxon.id === taxonId);
+  if (!selected) {
+    return { ok: false as const, error: "O taxon não pertence à cadeia taxonômica autoritativa." };
+  }
+  if (expectedSelected && !sameInputCatalogTaxonIdentity(selected, expectedSelected)) {
+    return { ok: false as const, error: "O taxon mudou durante a validação da cadeia taxonômica." };
+  }
+  const chain = buildLandingPageInputCatalogTaxonChain(selected, identities);
+  return chain.ok
+    ? chain
+    : { ok: false as const, error: chain.error.message };
+}
+
+function fingerprintTaxonChain(chain: LandingPageInputCatalogTaxonChain): string {
+  return JSON.stringify(chain);
+}
+
+function sameInputCatalogTaxonIdentity(
+  left: LandingPageInputCatalogTaxonIdentity,
+  right: LandingPageInputCatalogTaxonIdentity,
+): boolean {
+  return (
+    left.id === right.id &&
+    left.parentId === right.parentId &&
+    left.level === right.level &&
+    left.name === right.name &&
+    left.slug === right.slug &&
+    left.isActive === right.isActive
+  );
+}
+
+async function findAffectedInputCatalogReviews(
+  supabase: ReturnType<typeof createServiceClient>,
+  rootTaxonId: string,
+) {
+  const { data, error } = await supabase
+    .from("business_taxons")
+    .select("id,parent_id,reviewed_input_catalog_version");
+  if (error || !Array.isArray(data)) {
+    return { ok: false as const, error: "Não foi possível verificar as avaliações E20.6 afetadas." };
+  }
+  const normalized = data.flatMap((row) =>
+    isRecord(row) &&
+    typeof row.id === "string" &&
+    (row.parent_id === null || typeof row.parent_id === "string") &&
+    (row.reviewed_input_catalog_version === null || Number.isSafeInteger(row.reviewed_input_catalog_version))
+      ? [{
+          id: row.id,
+          parentId: row.parent_id,
+          reviewedVersion: row.reviewed_input_catalog_version,
+        }]
+      : [],
+  );
+  if (normalized.length !== data.length) {
+    return { ok: false as const, error: "As avaliações E20.6 afetadas possuem estado inválido." };
+  }
+  const reviewedTaxonIds = collectAffectedReviewedTaxonIds(normalized, rootTaxonId);
+  return { ok: true as const, reviewedTaxonIds };
+}
+
+function mapInputCatalogTaxonIdentity(
+  value: unknown,
+): LandingPageInputCatalogTaxonIdentity | null {
+  if (!isRecord(value)) return null;
+  if (
+    typeof value.id !== "string" ||
+    (value.parent_id !== null && typeof value.parent_id !== "string") ||
+    (value.level !== "segment" && value.level !== "niche" && value.level !== "ultra_niche") ||
+    typeof value.name !== "string" ||
+    typeof value.slug !== "string" ||
+    typeof value.is_active !== "boolean"
+  ) return null;
+  return {
+    id: value.id,
+    parentId: value.parent_id,
+    level: value.level,
+    name: value.name,
+    slug: value.slug,
+    isActive: value.is_active,
+  };
+}
+
+function isInputCatalogReviewTaxonRow(value: unknown): value is {
+  id: string;
+  parent_id: string | null;
+  level: AdminTaxonLevel;
+  name: string;
+  slug: string;
+  is_active: boolean;
+  selected_end_customer_research_version: number | null;
+  reviewed_input_catalog_version: number | null;
+} {
+  if (!isRecord(value)) return false;
+  return (
+    typeof value.id === "string" &&
+    (value.parent_id === null || typeof value.parent_id === "string") &&
+    VALID_TAXON_LEVELS.includes(value.level as AdminTaxonLevel) &&
+    typeof value.name === "string" &&
+    typeof value.slug === "string" &&
+    typeof value.is_active === "boolean" &&
+    (value.selected_end_customer_research_version === null || Number.isSafeInteger(value.selected_end_customer_research_version)) &&
+    (value.reviewed_input_catalog_version === null || Number.isSafeInteger(value.reviewed_input_catalog_version))
+  );
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
 function isCreateTaxonLevel(value: unknown): value is AdminTaxonLevel {

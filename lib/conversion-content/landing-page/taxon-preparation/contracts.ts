@@ -61,8 +61,12 @@ export type LoadSelectedEndCustomerResearchResult =
       value: Readonly<{
         taxonId: string;
         taxonSlug: string;
+        taxonName?: string;
+        taxonLevel?: "segment" | "niche" | "ultra_niche";
+        parentTaxonId?: string | null;
         selectedResearchVersion: number;
         selectedResearchValid: true;
+        reviewedInputCatalogVersion?: number | null;
         research: EndCustomerResearchContent;
       }>;
     }>

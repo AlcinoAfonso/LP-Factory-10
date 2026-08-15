@@ -95,6 +95,22 @@ export type AdminEndCustomerResearchSelection =
   | { status: "read_failed"; message: string }
   | { status: "available"; selectedVersion: number | null };
 
+export type AdminInputCatalogReview =
+  | { status: "disabled" }
+  | { status: "blocked"; errorCode: string; message: string }
+  | { status: "read_failed"; errorCode: string; message: string }
+  | {
+      status: "available";
+      selectedResearchVersion: number;
+      reviewedVersion: number | null;
+      handoff: string;
+      taxonName: string;
+      taxonSlug: string;
+      taxonLevel: AdminTaxonLevel;
+      parentTaxonId: string | null;
+      chainFingerprint: string;
+    };
+
 export type AdminTaxonDetail = AdminTaxonListItem & {
   aliases: Array<{
     id: string;
@@ -106,6 +122,7 @@ export type AdminTaxonDetail = AdminTaxonListItem & {
   deleteBlockers: string[];
   canDelete: boolean;
   endCustomerResearchSelection: AdminEndCustomerResearchSelection;
+  inputCatalogReview: AdminInputCatalogReview;
 };
 
 export type AdminNicheResolutionListItem = {

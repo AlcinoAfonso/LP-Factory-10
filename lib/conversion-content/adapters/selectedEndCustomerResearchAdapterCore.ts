@@ -17,7 +17,7 @@ type CandidateLoader = (input: {
 }) => Promise<LoadEndCustomerResearchCandidateResult>;
 
 export async function loadSelectedEndCustomerResearchFromClient(
-  input: { taxonId: string },
+  input: { taxonId: string; includeInputCatalogReview?: boolean },
   supabase: SelectedEndCustomerResearchReadClient,
   loadCandidate: CandidateLoader = loadEndCustomerResearchCandidate,
 ): Promise<LoadSelectedEndCustomerResearchResult> {
@@ -28,9 +28,12 @@ export async function loadSelectedEndCustomerResearchFromClient(
 
   let row: unknown;
   try {
+    const columns = input.includeInputCatalogReview
+      ? "id,parent_id,level,name,slug,is_active,selected_end_customer_research_version,reviewed_input_catalog_version"
+      : "id,slug,is_active,selected_end_customer_research_version";
     const { data, error } = await supabase
       .from("business_taxons")
-      .select("id,slug,is_active,selected_end_customer_research_version")
+      .select(columns)
       .eq("id", taxonId)
       .limit(1)
       .maybeSingle();
@@ -60,6 +63,27 @@ export async function loadSelectedEndCustomerResearchFromClient(
     return failure("SELECTED_VERSION_INVALID", "A versão selecionada é inválida.");
   }
 
+  if (
+    input.includeInputCatalogReview &&
+    (
+      typeof row.name !== "string" ||
+      (row.level !== "segment" && row.level !== "niche" && row.level !== "ultra_niche") ||
+      (row.parent_id !== null && typeof row.parent_id !== "string")
+    )
+  ) {
+    return failure("TAXON_IDENTITY_INVALID", "A identidade taxonômica persistida é inválida.");
+  }
+  const reviewedVersion = input.includeInputCatalogReview
+    ? row.reviewed_input_catalog_version
+    : undefined;
+  if (
+    reviewedVersion !== undefined &&
+    reviewedVersion !== null &&
+    (!Number.isSafeInteger(reviewedVersion) || Number(reviewedVersion) <= 0)
+  ) {
+    return failure("TAXON_IDENTITY_INVALID", "A versão E20.2 avaliada persistida é inválida.");
+  }
+
   let candidate: LoadEndCustomerResearchCandidateResult;
   try {
     candidate = await loadCandidate({
@@ -77,6 +101,14 @@ export async function loadSelectedEndCustomerResearchFromClient(
     value: Object.freeze({
       taxonId,
       taxonSlug: row.slug,
+      ...(input.includeInputCatalogReview
+        ? {
+            taxonName: row.name as string,
+            taxonLevel: row.level as "segment" | "niche" | "ultra_niche",
+            parentTaxonId: row.parent_id as string | null,
+            reviewedInputCatalogVersion: reviewedVersion as number | null,
+          }
+        : {}),
       selectedResearchVersion: Number(selectedVersion),
       selectedResearchValid: true as const,
       research: candidate.value,
