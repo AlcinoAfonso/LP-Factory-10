@@ -12,7 +12,7 @@ Fluxos auxiliares de GitHub devem respeitar estas regras. Em caso de divergênci
 
 ## Branch, worktree e publicação
 
-Não editar nem commitar na `main`; usar branch dedicada por tarefa ou etapa. Ao usar a `main` local como base, atualizar com `git pull --ff-only`. O merge final deve ocorrer somente pelo GitHub Web.
+Não editar nem commitar na `main`; usar branch dedicada por tarefa ou etapa. Ao usar a `main` local como base, atualizar com `git pull --ff-only`. O merge final deve ocorrer somente pelo GitHub Web. Exceção: após escolha humana explícita da Opção 2 definida em `docs/prompt-estrategista.md` e conclusão dos gates da v1, o Estrategista pode executar exclusivamente o merge remoto do PR da v1 por ferramenta GitHub conectada e autorizada. Essa exceção não se aplica ao merge final da implementação. Merge local pela `main` permanece proibido.
 
 Branches e PRs já abertos não precisam ser sincronizados, rebaseados ou atualizados com a `main` apenas porque ela avançou. Em frentes paralelas, essa divergência é normal. Sincronizar somente quando houver conflito apontado pelo GitHub, quando a tarefa depender materialmente de contrato, arquivo ou dependência alterado na `main`, ou por solicitação humana explícita. Não fazer sincronização preventiva por rotina.
 
