@@ -26,7 +26,7 @@ Ler `docs/orquestracao-plano-base.md` e seguir, sem copiar seus critérios:
 
 - `lp-factory-avaliar-plano-estrutura`;
 - `lp-factory-avaliar-plano-updates`;
-- `lp-factory-avaliar-plano-automacoes`, somente com `Automação: sim`;
+- `lp-factory-avaliar-plano-automacoes`, somente com `Automação: sim` e sem dispensa humana explícita registrada na v1; na ausência desse registro, avaliar;
 - `lp-factory-avaliar-plano-analista`;
 - `lp-factory-executar-plano`;
 - `lp-factory-avaliar-implementacao-analista` nos gates por subseção.
@@ -55,7 +55,7 @@ Se o estágio não for inequívoco, pedir apenas a referência faltante; nunca r
 2. Obter plano conceitual somente por referência competente ou vínculo inequívoco com o recorte; se não existir, registrar `N/A` e continuar.
 3. Exigir em cada fase o identificador exato da subseção do roadmap; não usar aliases ordinais.
 4. Acionar uma vez e preservar integralmente os pareceres do Gestor Estrutural e do Gestor de Updates sobre a mesma v1.
-5. Acionar o Gestor de Automações somente quando houver `Automação: sim`; caso contrário, registrar `N/A`.
+5. Acionar o Gestor de Automações somente quando houver `Automação: sim` e a v1 não registrar dispensa humana da avaliação formal; na ausência de registro, acionar. Quando houver dispensa, registrar `N/A — avaliação formal dispensada na v1`.
 6. Aplicar as regras de conclusão e completude das skills especializadas. Não refazer avaliações no task principal nem completar patch que exija escolha técnica.
 
 Parar somente diante de handoff incompleto, investigação necessária ou decisão material sem autoridade. Não repetir especialista durante a consolidação; questão material nova segue ao domínio indicado pelo Analista.
@@ -65,14 +65,14 @@ Parar somente diante de handoff incompleto, investigação necessária ou decis�
 1. Editar somente o plano na branch de automação e preservar objetivo, decisões válidas, ordem, hierarquia e granularidade da v1.
 2. Classificar cada acréscimo como `preservação`, `extensão adjacente necessária e proporcional` ou `expansão`; não incorporar expansão sem decisão humana ou novo recorte. Durante a consolidação, reduzir o conjunto à menor solução end-to-end suficiente, preservando proteções necessárias e eliminando distinções, camadas ou validações repetidas sem consumidor atual ou proteção indispensável.
 3. Aplicar somente patches autossuficientes e rastreáveis. Oportunidade estratégica condicional de update não autoriza implementação atual.
-4. Preparar uma linha de matriz por achado estrutural, update elegível e decisão de automação com especialista, ID, achado, classificação original, relação com o escopo, tratamento, destino do update quando aplicável, localização e evidência.
+4. Preparar uma linha de matriz por achado estrutural, update elegível e decisão de automação, com parecer especialista quando aplicável, ID, achado, classificação original, relação com o escopo, tratamento, destino do update quando aplicável, localização e evidência.
 5. Antes da Passagem 1, não gravar nem expor matriz ou pareceres ao Analista. Validar a v2 e criar checkpoint `LP-Factory-Stage: plan-v2` somente com o plano.
 
 ## 4. Gate do Analista
 
 1. Executar a Passagem 1 com v1, v2, plano conceitual quando existente ou `N/A`, decisões e fontes do caso, sem pareceres ou matriz.
 2. Preservar a resposta, gravar e versionar `docs/matriz-consolidacao-<caso>.md` e continuar no mesmo Analista.
-3. Executar a Passagem 2 com os pareceres integrais e a matriz.
+3. Executar a Passagem 2 com os pareceres integrais aplicáveis e a matriz.
 4. Em correções objetivas, inclusive conflito resolvido por fonte ou invariante e validação exclusivamente pós-merge, atualizar v2 e matriz e pedir `revisao_delta` ao mesmo Analista. Antes de parar por decisão humana, exigir ausência de fonte determinante e, para precedência de banco, prova de que migration compatível, feature flag ou expand/contract não evita PR precursor. Retornar a especialista somente por questão material nova.
 5. Avançar apenas com `aprovado para merge do plano-base v2`.
 
@@ -96,7 +96,7 @@ Manter a matriz disponível na entrega. Removê-la depois somente por instruçã
 
 ## Devolução
 
-Informar referências de v1, worktree, branch, pareceres, Passagens 1 e 2, ABC e delta do roadmap, ABCs da implementação e seus resultados por documento, checkpoints, validações, arquivos, commits, PR e pendências. Não reescrever pareceres.
+Informar referências de v1, worktree, branch, pareceres aplicáveis, Passagens 1 e 2, ABC e delta do roadmap, ABCs da implementação e seus resultados por documento, checkpoints, validações, arquivos, commits, PR e pendências. Não reescrever pareceres.
 
 ## Limites
 
