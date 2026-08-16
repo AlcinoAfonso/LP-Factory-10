@@ -65,7 +65,7 @@ Regra:
 • não usar X.Y.1 e X.Y.2 como fases; entregas implementáveis usam X.Y.3 até X.Y.n, conforme docs/template-roadmap.md;
 • não criar fase administrativa, de governança, handoff, revisão ou fechamento; validação e fechamento documental pelo Prompt ABC integram a fase implementável correspondente;
 • validação entra como critério de aceite da fase, salvo risco técnico próprio;
-• o ajuste de `docs/roadmap.md` pertence ao Executor/orquestrador durante a execução, conforme `docs/prompt-abc.md` e `docs/template-roadmap.md`, registrando somente seções, subseções, títulos, objetivos e status planejado, sem registros de implementação;
+• o ajuste de planejamento de `docs/roadmap.md` pertence ao Executor/orquestrador durante a execução, conforme `docs/prompt-abc.md` e `docs/template-roadmap.md`, registrando nessa etapa somente seções, subseções, títulos, objetivos e status planejado, sem registros de implementação;
 • não antecipar na v1 detalhamento técnico de automação sem necessidade nem criar fase administrativa apenas para essa decisão.
 
 4. Escolha do processo após o plano-base v1
