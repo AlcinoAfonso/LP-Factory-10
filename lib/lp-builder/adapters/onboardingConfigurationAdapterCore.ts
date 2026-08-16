@@ -5,6 +5,7 @@ import {
   type AccountLandingPage,
   type AccountLandingPageDraftsResult,
   type AccountLandingPageOnboardingResult,
+  type AccountLandingPageOnboardingRevalidationResult,
   type AccountLandingPageOnboardingStoredValues,
   type BindAccountLandingPageOnboardingConfigurationInput,
   type SaveAccountLandingPageOnboardingConfigurationInput,
@@ -61,6 +62,26 @@ export async function getAccountLandingPageOnboardingConfigurationFromClient(
   const runtime = await loadRuntimeContext(input, client, entitlementLoader);
   if (!runtime.ok) return runtime;
   return resolveRuntimeContext(runtime.context);
+}
+
+export async function getAccountLandingPageOnboardingRevalidationAuthorityFromClient(
+  input: { accountId: string; actorUserId: string },
+  client: QueryClient,
+  entitlementLoader: AccountLandingPageOnboardingEntitlementLoader,
+): Promise<AccountLandingPageOnboardingRevalidationResult> {
+  const runtime = await loadRuntimeContext(input, client, entitlementLoader);
+  if (!runtime.ok) return runtime;
+  const configuration = resolveRuntimeContext(runtime.context);
+  if (!configuration.ok) return configuration;
+  return {
+    ok: true,
+    authority: Object.freeze({
+      configuration: configuration.configuration,
+      authoritativeValues: Object.freeze({
+        ...runtime.context.authoritativeValues,
+      }),
+    }),
+  };
 }
 
 export async function saveAccountLandingPageOnboardingConfigurationFromClient(

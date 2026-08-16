@@ -32,6 +32,7 @@ const landingPage: AccountLandingPage = {
 };
 
 const configuration = buildConfiguration();
+const authoritativeValues = { business_display_name: "Conta legítima" };
 const preparation = buildPreparation();
 
 const cases: readonly Readonly<{ name: string; run: () => void | Promise<void> }>[] = [
@@ -41,6 +42,7 @@ const cases: readonly Readonly<{ name: string; run: () => void | Promise<void> }
       const result = compileLandingPageGenerationContext({
         landingPage,
         configuration,
+        authoritativeValues,
         preparation,
       });
       assert.equal(result.ok, true);
@@ -120,6 +122,45 @@ const cases: readonly Readonly<{ name: string; run: () => void | Promise<void> }
     },
   },
   {
+    name: "revalidation uses current E19.2 authority independently of historical fields",
+    run: () => {
+      const historicalConfigurationWithoutAuthorityField = {
+        ...configuration,
+        fields: configuration.fields.filter(
+          (state) => state.field.fieldKey !== "business_display_name",
+        ),
+      };
+      assert.equal(
+        historicalConfigurationWithoutAuthorityField.fields.some(
+          (state) => state.field.fieldKey === "business_display_name",
+        ),
+        false,
+      );
+
+      const result = compileLandingPageGenerationContext({
+        landingPage,
+        configuration: historicalConfigurationWithoutAuthorityField,
+        authoritativeValues: {
+          business_display_name: "Conta atual pela autoridade E19.2",
+        },
+        preparation,
+      });
+
+      assert.equal(result.ok, true);
+      const businessDisplayName = result.value.modelContext.facts.find(
+        (fact) => fact.fieldKey === "business_display_name",
+      );
+      assert.deepEqual(businessDisplayName, {
+        fieldKey: "business_display_name",
+        purpose: businessDisplayName?.purpose,
+        valueType: "string",
+        value: "Conta atual pela autoridade E19.2",
+        source: "authoritative",
+        provenance: businessDisplayName?.provenance,
+      });
+    },
+  },
+  {
     name: "every applicable current field is classified only by canonical valueType",
     run: () => {
       assert.equal(configuration.fields.length, 23);
@@ -155,6 +196,7 @@ const cases: readonly Readonly<{ name: string; run: () => void | Promise<void> }
       const result = compileLandingPageGenerationContext({
         landingPage,
         configuration: everyFieldConfiguration,
+        authoritativeValues,
         preparation,
       });
       assert.equal(result.ok, true);
@@ -228,6 +270,7 @@ const cases: readonly Readonly<{ name: string; run: () => void | Promise<void> }
       const result = compileLandingPageGenerationContext({
         landingPage,
         configuration: missingOptionalConfiguration,
+        authoritativeValues,
         preparation,
       });
       assert.equal(result.ok, true);
@@ -249,15 +292,30 @@ const cases: readonly Readonly<{ name: string; run: () => void | Promise<void> }
       const scenarios = [
         {
           expected: "LANDING_PAGE_NOT_DRAFT",
-          input: { landingPage: { ...landingPage, account_id: "other" }, configuration, preparation },
+          input: {
+            landingPage: { ...landingPage, account_id: "other" },
+            configuration,
+            authoritativeValues,
+            preparation,
+          },
         },
         {
           expected: "CONFIGURATION_NOT_BOUND",
-          input: { landingPage, configuration: { ...configuration, landingPageId: null }, preparation },
+          input: {
+            landingPage,
+            configuration: { ...configuration, landingPageId: null },
+            authoritativeValues,
+            preparation,
+          },
         },
         {
           expected: "CONFIGURATION_INCOMPLETE",
-          input: { landingPage, configuration: { ...configuration, complete: false }, preparation },
+          input: {
+            landingPage,
+            configuration: { ...configuration, complete: false },
+            authoritativeValues,
+            preparation,
+          },
         },
         {
           expected: "CONFIGURATION_REVALIDATION_REQUIRED",
@@ -273,6 +331,7 @@ const cases: readonly Readonly<{ name: string; run: () => void | Promise<void> }
                 },
               },
             },
+            authoritativeValues,
             preparation,
           },
         },
@@ -281,6 +340,7 @@ const cases: readonly Readonly<{ name: string; run: () => void | Promise<void> }
           input: {
             landingPage,
             configuration,
+            authoritativeValues,
             preparation: {
               ok: false,
               error: { code: "FILESYSTEM_READ_FAILED", message: "safe fixture" },
@@ -302,9 +362,12 @@ const cases: readonly Readonly<{ name: string; run: () => void | Promise<void> }
       const logs: Readonly<Record<string, unknown>>[] = [];
       const dependencyCalls: string[] = [];
       const dependencies = {
-        loadConfiguration: async () => {
-          dependencyCalls.push("configuration");
-          return { ok: true as const, configuration };
+        loadRevalidationAuthority: async () => {
+          dependencyCalls.push("revalidation-authority");
+          return {
+            ok: true as const,
+            authority: { configuration, authoritativeValues },
+          };
         },
         loadLandingPage: async () => {
           dependencyCalls.push("landing-page");
@@ -329,7 +392,7 @@ const cases: readonly Readonly<{ name: string; run: () => void | Promise<void> }
       );
       assert.equal(result.ok, true);
       assert.deepEqual(dependencyCalls, [
-        "configuration",
+        "revalidation-authority",
         "landing-page",
         "preparation",
       ]);
@@ -346,7 +409,7 @@ const cases: readonly Readonly<{ name: string; run: () => void | Promise<void> }
         await compileLandingPageGenerationContextForDraftWithDependencies(
           { accountId: ACCOUNT_ID, landingPageId: LANDING_PAGE_ID },
           {
-            loadConfiguration: async () => ({
+            loadRevalidationAuthority: async () => ({
               ok: false,
               error: "commercial_entitlement_required",
             }),

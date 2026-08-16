@@ -34,6 +34,7 @@ export type LandingPageGenerationContextFailureCode =
 export type CompileLandingPageGenerationContextInput = Readonly<{
   landingPage: AccountLandingPage;
   configuration: AccountLandingPageOnboardingConfiguration;
+  authoritativeValues: Readonly<Record<string, unknown>>;
   preparation: TaxonPreparationResult;
 }>;
 

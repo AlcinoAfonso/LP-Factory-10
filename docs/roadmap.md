@@ -2,7 +2,7 @@
 
 0.1 Cabeçalho
 • Data: 16/08/2026
-• Versão: v1.5.155
+• Versão: v1.5.156
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -2437,7 +2437,7 @@ Repositório — Ajustados
 
 19.4.1 Objetivo e status
 - Objetivo: gerar, validar, materializar e visualizar privadamente a primeira LP real em `draft` a partir do pacote v3 da E19.3, conforme futuro plano-base próprio.
-- Status: O plano `docs/lousa-plano-base-e19-4.md` permanece temporariamente superado e não executável pela decisão de 12/08/2026; a prova real do pacote E19.3 v2 foi aprovada, mas a primeira LP/prova de geração do Cenário D permanece pendente e pertence à nova E19.4; o novo planejamento ainda não foi iniciado.
+- Status: `docs/lousa-plano-base-e19-4.md` é o rascunho vivo da E19.4 no Cenário E; a prova real do pacote E19.3 v3 foi aprovada, enquanto a primeira LP real permanece pendente e a E19.4 ainda não foi implementada.
 
 19.4.3 Geração controlada e validação integral da candidata
 - Status: Temporariamente superada em 12/08/2026 porque dependia do contrato substituído `partA + partB`; o runtime correspondente foi retirado na E19.3.3 e o destino canônico será definido pelo novo plano-base da E19.4.

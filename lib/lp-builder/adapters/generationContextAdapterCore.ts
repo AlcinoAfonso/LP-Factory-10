@@ -1,7 +1,7 @@
 import type { TaxonPreparationResult } from "../../conversion-content/landing-page/taxon-preparation";
 import type {
   AccountLandingPage,
-  AccountLandingPageOnboardingResult,
+  AccountLandingPageOnboardingRevalidationResult,
 } from "../contracts";
 import { compileLandingPageGenerationContext } from "../generationContext";
 import type {
@@ -10,7 +10,9 @@ import type {
 } from "../generationContextContracts";
 
 export type LandingPageGenerationContextBoundaryDependencies = Readonly<{
-  loadConfiguration: (input: { accountId: string }) => Promise<AccountLandingPageOnboardingResult>;
+  loadRevalidationAuthority: (input: {
+    accountId: string;
+  }) => Promise<AccountLandingPageOnboardingRevalidationResult>;
   loadLandingPage: (input: {
     accountId: string;
     landingPageId: string;
@@ -58,8 +60,8 @@ export async function compileLandingPageGenerationContextForDraftWithDependencie
   }
 
   try {
-    const configuration = await dependencies.loadConfiguration({ accountId });
-    if (!configuration.ok) {
+    const revalidation = await dependencies.loadRevalidationAuthority({ accountId });
+    if (!revalidation.ok) {
       const unauthorized = [
         "unauthenticated",
         "invalid_account_id",
@@ -67,7 +69,7 @@ export async function compileLandingPageGenerationContextForDraftWithDependencie
         "account_not_active",
         "membership_inactive",
         "commercial_entitlement_required",
-      ].includes(configuration.error);
+      ].includes(revalidation.error);
       result = failure(
         unauthorized ? "ACCOUNT_CONTEXT_UNAUTHORIZED" : "CONTEXT_READ_FAILED",
         unauthorized
@@ -77,6 +79,8 @@ export async function compileLandingPageGenerationContextForDraftWithDependencie
       safeLog(dependencies.log, result, requestId, now() - startedAt);
       return result;
     }
+
+    const { configuration, authoritativeValues } = revalidation.authority;
 
     const landingPage = await dependencies.loadLandingPage({ accountId, landingPageId });
     if (!landingPage.ok) {
@@ -91,15 +95,16 @@ export async function compileLandingPageGenerationContextForDraftWithDependencie
     }
 
     const servedTaxon =
-      configuration.configuration.taxonChain.ultraNiche ??
-      configuration.configuration.taxonChain.niche ??
-      configuration.configuration.taxonChain.segment;
+      configuration.taxonChain.ultraNiche ??
+      configuration.taxonChain.niche ??
+      configuration.taxonChain.segment;
     const preparation = await dependencies.loadPreparation({
       taxonId: servedTaxon.id,
     });
     result = compileLandingPageGenerationContext({
       landingPage: landingPage.landingPage,
-      configuration: configuration.configuration,
+      configuration,
+      authoritativeValues,
       preparation,
     });
   } catch {

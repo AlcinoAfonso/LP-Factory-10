@@ -110,6 +110,7 @@ function compileValidatedLandingPageGenerationContext(
 
   const revalidated = revalidateConfiguration(
     input.configuration,
+    input.authoritativeValues,
     preparation.reviewedInputCatalogVersion,
   );
   if (!revalidated.ok) {
@@ -176,6 +177,7 @@ function compileValidatedLandingPageGenerationContext(
 
 function revalidateConfiguration(
   configuration: CompileLandingPageGenerationContextInput["configuration"],
+  authoritativeValues: CompileLandingPageGenerationContextInput["authoritativeValues"],
   effectiveInputCatalogVersion: number,
 ):
   | Readonly<{
@@ -183,19 +185,6 @@ function revalidateConfiguration(
       configuration: CompileLandingPageGenerationContextInput["configuration"];
     }>
   | Readonly<{ ok: false; catalogFailure: boolean }> {
-  const authoritativeValues: Record<string, unknown> = {};
-  const seenFieldKeys = new Set<string>();
-  for (const state of configuration.fields) {
-    if (seenFieldKeys.has(state.field.fieldKey)) {
-      return { ok: false, catalogFailure: true };
-    }
-    seenFieldKeys.add(state.field.fieldKey);
-    if (state.source === "authoritative") {
-      if (state.value === undefined) return { ok: false, catalogFailure: false };
-      authoritativeValues[state.field.fieldKey] = state.value;
-    }
-  }
-
   const resolved = resolveAccountLandingPageOnboardingConfiguration({
     accountId: configuration.accountId,
     landingPageId: configuration.landingPageId,
@@ -291,6 +280,7 @@ function isMinimumCompilerInput(
   if (!isRecord(value)) return false;
   const landingPage = value.landingPage;
   const configuration = value.configuration;
+  const authoritativeValues = value.authoritativeValues;
   const preparation = value.preparation;
   return (
     isRecord(landingPage) &&
@@ -299,6 +289,7 @@ function isMinimumCompilerInput(
     Array.isArray(configuration.missingRequiredFieldKeys) &&
     isRecord(configuration.taxonChain) &&
     Number.isInteger(configuration.revision) &&
+    isRecord(authoritativeValues) &&
     isRecord(preparation) &&
     typeof preparation.ok === "boolean"
   );

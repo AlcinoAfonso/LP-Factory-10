@@ -7,14 +7,14 @@ import type {
   CompileLandingPageGenerationContextForDraftInput,
   CompileLandingPageGenerationContextResult,
 } from "../generationContextContracts";
-import { getAccountLandingPageOnboardingConfiguration } from "./onboardingConfigurationAdapter";
+import { getAccountLandingPageOnboardingRevalidationAuthority } from "./onboardingConfigurationAdapter";
 import { compileLandingPageGenerationContextForDraftWithDependencies } from "./generationContextAdapterCore";
 
 export function compileLandingPageGenerationContextForDraft(
   input: CompileLandingPageGenerationContextForDraftInput,
 ): Promise<CompileLandingPageGenerationContextResult> {
   return compileLandingPageGenerationContextForDraftWithDependencies(input, {
-    loadConfiguration: getAccountLandingPageOnboardingConfiguration,
+    loadRevalidationAuthority: getAccountLandingPageOnboardingRevalidationAuthority,
     loadLandingPage: readLandingPageDraft,
     loadPreparation: loadTaxonPreparationForReviewedVersion,
     log: (payload) => console.log(JSON.stringify(payload)),

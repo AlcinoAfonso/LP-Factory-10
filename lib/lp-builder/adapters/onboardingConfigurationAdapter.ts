@@ -6,12 +6,14 @@ import { createServiceClient } from "../../supabase/service";
 import type {
   AccountLandingPageDraftsResult,
   AccountLandingPageOnboardingResult,
+  AccountLandingPageOnboardingRevalidationResult,
   BindAccountLandingPageOnboardingConfigurationInput,
   SaveAccountLandingPageOnboardingConfigurationInput,
 } from "../contracts";
 import {
   bindAccountLandingPageOnboardingConfigurationFromClient,
   getAccountLandingPageOnboardingConfigurationFromClient,
+  getAccountLandingPageOnboardingRevalidationAuthorityFromClient,
   listAccountLandingPageDraftsFromClient,
   saveAccountLandingPageOnboardingConfigurationFromClient,
 } from "./onboardingConfigurationAdapterCore";
@@ -23,6 +25,19 @@ export async function getAccountLandingPageOnboardingConfiguration(input: {
   if (!actorUserId) return { ok: false, error: "unauthenticated" };
 
   return getAccountLandingPageOnboardingConfigurationFromClient(
+    { accountId: input.accountId, actorUserId },
+    createServiceClient(),
+    getCommercialEntitlementSignal,
+  );
+}
+
+export async function getAccountLandingPageOnboardingRevalidationAuthority(input: {
+  accountId: string;
+}): Promise<AccountLandingPageOnboardingRevalidationResult> {
+  const actorUserId = await getAuthenticatedUserId();
+  if (!actorUserId) return { ok: false, error: "unauthenticated" };
+
+  return getAccountLandingPageOnboardingRevalidationAuthorityFromClient(
     { accountId: input.accountId, actorUserId },
     createServiceClient(),
     getCommercialEntitlementSignal,

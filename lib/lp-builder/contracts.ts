@@ -109,6 +109,18 @@ export type AccountLandingPageOnboardingResult =
       fieldKey?: string;
     }>;
 
+export type AccountLandingPageOnboardingRevalidationAuthority = Readonly<{
+  configuration: AccountLandingPageOnboardingConfiguration;
+  authoritativeValues: Readonly<Record<string, unknown>>;
+}>;
+
+export type AccountLandingPageOnboardingRevalidationResult =
+  | Readonly<{
+      ok: true;
+      authority: AccountLandingPageOnboardingRevalidationAuthority;
+    }>
+  | Extract<AccountLandingPageOnboardingResult, { ok: false }>;
+
 export type SaveAccountLandingPageOnboardingConfigurationInput = Readonly<{
   accountId: string;
   catalogVersion: number;
