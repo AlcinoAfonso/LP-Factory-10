@@ -2,7 +2,7 @@
 
 0.1 Cabeçalho
 • Documento: Gestor de Segurança (Plataformas)
-• Versão: v0.2.0
+• Versão: v0.2.1
 • Data: 16/08/2026
 
 0.2 Contrato do documento
@@ -59,21 +59,26 @@
 • Não existe staging Supabase ativo decorrente daquele ambiente.
 • Risco correspondente encerrado.
 
+3.2 Triagem do Supabase Security Advisor concluída
+• Triagem realizada em 16/08/2026 sobre 29 ocorrências atuais: 22 WARN e 7 INFO.
+• Os 7 INFO de RLS habilitado sem policy correspondem, conforme `docs/schema.md`, a objetos deliberadamente sem acesso direto por `public`/`anon`/`authenticated`; não criar policies apenas para eliminar o aviso.
+• Os 6 WARN de funções `SECURITY DEFINER` executáveis por `authenticated` correspondem a RPCs privilegiadas documentadas e controladas; não revogar `EXECUTE` nem trocar para `SECURITY INVOKER` sem novo caso técnico.
+• Os 15 WARN de objetos visíveis no schema GraphQL correspondem a objetos com acesso intencional e proteção por RLS/policies ou `security_invoker`; não foi identificada correção simples que justifique o risco de regressão.
+• Resultado: nenhuma alteração de SQL/RLS recomendada apenas para limpar esses avisos.
+• Foi identificado drift documental pontual em `docs/schema.md`; tratar separadamente como manutenção documental, não como vulnerabilidade confirmada.
+
 4. Pendências de segurança
 
-4.1 Prioridade 1 — Supabase Security Advisor
-• Estado verificado em 16/08/2026: o projeto principal está ativo e o Security Advisor apresenta WARN/INFO que exigem triagem técnica.
-• Priorizar a classificação dos WARN relacionados a objetos visíveis no schema GraphQL para `authenticated` e funções `SECURITY DEFINER` executáveis por `authenticated`, verificando em `docs/schema.md` e no runtime se cada exposição é intencional.
-• Os INFO de RLS habilitado sem policy também devem ser classificados, sem presumir vulnerabilidade: podem representar tabelas deliberadamente sem acesso direto.
-• `Leaked Password Protection Disabled` permanece conhecido; o ajuste depende de plano Supabase compatível e deve ser reavaliado quando houver upgrade e, no máximo, antes do GO-LIVE.
-• O Gestor de Segurança não altera SQL/RLS; a validação técnica deve ser executada pelo responsável adequado e o resultado deve retornar para esta pendência.
-
-4.2 Prioridade 2 — Tornar o repositório GitHub privado
+4.1 Prioridade 1 — Tornar o repositório GitHub privado
 • Estado verificado em 16/08/2026: `AlcinoAfonso/LP-Factory-10` permanece público.
 • Objetivo de segurança: tornar o repositório privado, por se tratar de produto comercial proprietário com código, documentação, migrations, workflows e regras internas.
 • Antes da mudança, validar continuidade de acesso para ChatGPT/Codex, Vercel, GitHub Actions, GitGuardian e demais integrações necessárias.
 • As páginas públicas hospedadas na Vercel são independentes da visibilidade do repositório e podem continuar públicas.
-• Ordem atual: tratar primeiro a triagem do Supabase Security Advisor e, em seguida, executar a privatização do repositório com validação das integrações.
+
+4.2 Supabase Auth — Leaked Password Protection
+• `Leaked Password Protection Disabled` permanece como warning conhecido.
+• O ajuste depende de plano Supabase compatível; reavaliar quando houver upgrade e, no máximo, antes do GO-LIVE.
+• Não há ação técnica disponível no plano atual.
 
 5. Temas para debate futuro
 
