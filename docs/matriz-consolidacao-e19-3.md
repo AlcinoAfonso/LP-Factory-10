@@ -1,44 +1,48 @@
-# Matriz de consolidação — E19.3 — Cenário D
+# Matriz de consolidação — E19.3 — Cenário E
 
-- Caso: `E19.3 — Pacote autorizado para geração no Cenário D`.
-- V1 imutável: PR #728, commit de merge `5fb0f11966ca577ba6b0c981f177ee4c15589195`, blob `2e83d3b7b965dc4234ce38d6dc127c37682249c8`.
-- V2 avaliada: commit `cea73ce4cd1080c02733523fdd9de8844d91d9f8`, blob `b43dab84105e2ada4dc5cacb223a31cca4cb5600`.
-- Roadmap congelado: commit `5fb0f11966ca577ba6b0c981f177ee4c15589195`, blob `5f0491bb66e660ab760fa2f113fbb897ab5e9cb3`.
-- Gestor Estrutural: `bloqueado por decisão humana`; o humano escolheu a opção 2, e a revisão delta posterior concluiu `aprovado` após os patches objetivos.
+- Caso: `E19.3 — resolução dinâmica da versão E20.2 revisada, plano efetivo, cadeia taxonômica completa, revalidação read-only da E19.2 e pesquisa integral`.
+- V1 imutável: PR #731, head final `7c22a08a8a8e4e3a01325d19e82da72f1b93d8e5`, merge commit `89125edb73f2169b89e57e787eccd70ced54b112`, blob `7cd692da6e6d665ce2a6713166e14093ce71c25f`.
+- V2 corrigida: commit `bfe32a3d07526b55649c2bd1a690aeef1fe02681`, blob `ba5fe9dda69755626afc5732ee091aacc3145ca7`.
+- Roadmap congelado: commit `f7ceb6fe7d5c995acc5c4cced63824830ac9ae7a`, blob `1ec9b58f54f9689726b0568d0868ce28e6b439f9`.
+- Gestor Estrutural: `rejeitado por conflito com fonte competente`.
 - Gestor de Updates: `updates aplicáveis com patches autossuficientes`.
-- Gestor de Automações: `N/A — nenhuma fase com Automação: sim`.
-- Passagem 1 do Analista: `aprovado com correções obrigatórias`; a `revisao_delta` do mesmo Analista concluiu `aprovado para merge do plano-base v2`.
+- Gestor de Automações: `N/A — a única fase declara Automação: não`.
+- Passagem 1 do Analista: `aprovado com correções obrigatórias`.
 
 | Especialista | ID estável | Achado ou referência fiel | Classificação original | Relação com o escopo | Tratamento | Destino do update | Localização na v2 | Evidência ou justificativa |
 |---|---|---|---|---|---|---|---|---|
-| Gestor Estrutural | `GE-E19.3-001` | Fonte, path e boundary `lib/lp-builder/` são coerentes; compilador puro e adapter server-only permanecem separados, sem UI, provider, rota ou infraestrutura nova na E19.3. | achado favorável | preservação | incorporado | N/A | 1.3, 1.4, 2.1 e 3.1 | A v2 mantém as autoridades E10.8, E18.4, E20.2, E19.2 e E9 e a residência no boundary vigente. |
-| Gestor Estrutural | `GE-E19.3-002` | A substituição deve retirar módulos, variantes, perfil E20.3, `copySourceMap`, perfis de funil e guidance sem criar contrato paralelo. | achado favorável | preservação | incorporado | N/A | 1.2, 1.4, 2.7 e 3.1 | A v2 retira E18.5/E20.3 do caminho canônico, proíbe fallback, alias, DTO paralelo e código dormente. |
-| Gestor Estrutural | `GE-E19.3-003` | A projeção por `valueType`, a pesquisa E10.8 e a E18.4 permitem separar `modelContext` de `serverContext` sem expor valores operacionais como matéria-prima textual. | achado favorável | preservação | incorporado | N/A | 2.2 a 2.6 | A v2 preserva tipos, metadados, proveniência, declaração versus evidência e limites editoriais mínimos. |
-| Gestor Estrutural | `GE-E19.3-004` | A shape incompatível `identities + modelContext + serverContext` não pode reutilizar o contrato v1 `partA + partB`; deve usar `contractVersion: 2`. | requer patch estrutural | extensão adjacente necessária e proporcional | incorporado | N/A | 2.6 e 3.1 | O contrato v2 é explícito; v1, alias, fallback e DTO público paralelo são proibidos e cobertos por aceite. |
-| Gestor Estrutural | `GE-E19.3-005` | A v1 tratava E19.4 como futura, mas roadmap e código registram geração, materialização e preview já implementados. | conflito factual determinante | preservação | incorporado | N/A | 1.1, 1.4, 3.1 e 3.2 | A v2 reconhece o runtime vigente, determina sua retirada temporária e exige marcar o plano E19.4 anterior como superado, sem replanejá-lo. |
-| Gestor Estrutural | `GE-E19.3-006` | Substituir apenas E19.3 quebraria consumidores E19.4 de `partA + partB`; compatibilidade paralela viola o contrato único. | bloqueado por decisão humana | expansão sem decisão; após decisão, extensão adjacente necessária e proporcional | incorporado após decisão humana | N/A | 1.1, 1.4, 3.1 e 4.1 | O humano escolheu retirar temporariamente todo runtime E19.4 dependente da shape antiga e replanejá-lo depois da prova do Cenário D. |
-| Gestor Estrutural | `GE-E19.3-007` | E19.3 não exige migration; objetos de LP, configuração e pesquisa são reutilizados, e os três artefatos SQL E19.4 devem permanecer forward-only. | achado favorável | preservação | incorporado | N/A | 1.4, 2.1, 3.1 e 4.1 | A v2 proíbe rollback, edição de migration, nova migration e mutação remota; preserva somente migration, teste SQL e snippet. |
-| Gestor Estrutural | `GE-D-001` | A retirada da E19.4 deve alcançar todos os artefatos runtime dependentes de `partA + partB`, não apenas exports e superfícies. | requer patch estrutural | extensão adjacente necessária e proporcional | incorporado | N/A | 1.4 e 3.1 | A v2 exige remoção de contratos, implementações, adapters, actions, componentes, rota, workload, scripts e validadores, sem código dormente. |
-| Gestor Estrutural | `GE-D-002` | Os imports, exports, chamadas, registry OpenAI e scripts focais devem ser removidos junto com a implementação E19.4 antiga. | requer patch estrutural | extensão adjacente necessária e proporcional | incorporado | N/A | 3.1 | A entrega e os critérios de aceite exigem ausência de consumidor, workload ou script dependente da shape antiga. |
-| Gestor Estrutural | `GE-D-003` | O escopo negativo não pode proibir as remoções necessárias da E19.4 nem autorizar sua adaptação ao pacote v2. | requer patch estrutural | preservação | incorporado | N/A | 4.1 | A v2 distingue remoção autorizada de criação, evolução, adaptação ou execução proibidas. |
-| Gestor Estrutural | `GE-D-004` | A v2 deve referir-se a si própria como plano-base v2. | requer patch estrutural | preservação | incorporado | N/A | 4.2 | A referência residual à v1 foi corrigida. |
-| Gestor de Updates | `prod#19` | Entitlement deve ser resolvido exclusivamente pelo boundary interno E9; sinal externo Stripe não libera acesso. | complementar; horizonte atual | preservação | incorporado | usar como referência, validação ou trava | 2.1 e 3.1 | A v2 exige falha antes da montagem do pacote e proíbe SDK, adapter ou resposta Stripe na E19.3. |
-| Gestor de Updates | `vercel#1` | AI Gateway pode beneficiar transporte e observabilidade da futura E19.4, mas a E19.3 não chama provider. | sobreposto; horizonte condicional | expansão | não incorporado — oportunidade preservada | preservar como oportunidade estratégica condicional | N/A | Gatilho: necessidade comprovada de múltiplos providers, fallback ou observabilidade insuficiente; não implementar Gateway, Sandbox ou BotID neste recorte. |
-| Gestor de Updates | `prod#6` | Orientação editorial pode beneficiar a geração futura, não a projeção determinística da E19.3. | complementar; horizonte futuro | expansão | não incorporado — oportunidade preservada | preservar como oportunidade estratégica condicional | N/A | Gatilho: E19.4 autorizar geração e critérios editoriais; não filtrar, resumir ou reorganizar pesquisa na E19.3. |
-| Gestor de Updates | `prod#17` | WCAG 2.2 é pertinente ao renderer e à validação visual futura, não ao pacote E19.3. | complementar; horizonte futuro | expansão | não incorporado — oportunidade preservada | preservar como oportunidade estratégica condicional | N/A | Gatilho: E19.4 autorizar renderer e validação visual; não incorporar ARIA, foco, contraste ou viewport ao `modelContext`. |
-| Gestor de Updates | `supa#46` | Retenção externa de logs pode ter valor operacional futuro, mas o plano proíbe novo Log Drain. | complementar; horizonte condicional | expansão | não incorporado — oportunidade preservada | preservar como oportunidade estratégica condicional | N/A | Gatilho: plano apto e necessidade comprovada de retenção/compliance; logging permanece sanitizado e sem destino externo. |
-| Gestor de Automações | `AUT-N/A` | A única fase E19.3.3 declara `Automação: não`. | N/A | preservação | não incorporado — justificado | N/A | 3.1 e 4.1 | Nenhum agente foi acionado; OpenAI, provider, job, fila, cron e automação permanecem fora do recorte. |
+| Gestor Estrutural | `GE-E19.3-01` | O plano e o roadmap projetavam `contractVersion: 3`, enquanto `docs/base-tecnica.md` ainda declarava o pacote atual como v2. | conflito com fonte competente | extensão documental adjacente necessária e proporcional | incorporado após decisão humana | atualização canônica posterior à implementação | 1.1 e 3.1 | A decisão humana determinou tratar o drift da Base Técnica como extensão documental adjacente da v2, sem alterar a v1; o plano prevê ABC da Base Técnica somente após implementação factual. |
+| Gestor Estrutural | `GE-E19.3-02` | Faltava explicitar quem fornece `requiredInputCatalogVersion` sem violar o contrato negativo da E20.6. | conflito estrutural | extensão necessária e proporcional | incorporado após decisão humana | boundary de preparação taxonômica | 2.7 e 3.1 | A autorização já existente na seção 2.7 da v1 foi tornada concreta por operação aditiva que resolve a versão revisada e a entrega explicitamente à derivação canônica, preservando integralmente a operação antiga e seu erro de incompatibilidade. |
+| Gestor Estrutural | `GE-E19.3-03` | O roadmap da E19.4 ainda dizia que ela consumiria o pacote v2, em conflito com o novo `contractVersion: 3`. | conflito com fonte competente | extensão documental adjacente necessária e proporcional | incorporado após decisão humana | ABC de planejamento do roadmap | 1.1 e 3.1 | A decisão humana autorizou somente o delta referencial estritamente necessário em E19.4, sem iniciar ou alterar seu planejamento material. |
+| Gestor Estrutural | `GE-E19.3-04` | Paths, boundaries e separação entre compilador puro, adapter server-only e autoridades canônicas eram estruturalmente adequados. | achado favorável | preservação | incorporado | N/A | 1.4, 2.7 e 3.1 | A v2 preserva os boundaries existentes e proíbe leitura, herança, contrato ou autoridade paralelos. |
+| Gestor Estrutural | `GE-E19.3-05` | O recorte não exige mudança de banco; as evidências hospedadas de migrations, RLS, `service_role`, piloto v1 e catálogo revisado v4 eram compatíveis. | achado favorável | preservação | incorporado | N/A | 2.1, 3.1 e 4.1 | A v2 mantém execução read-only, sem migration, mutação remota ou alteração do contrato persistido da E19.2/E20.6. |
+| Gestor Estrutural | `GE-E19.3-06` | A v1 não tornava explícitos `npm ci` e `npm run check`, embora sejam obrigatórios pela Base Técnica. | lacuna de validação | preservação | incorporado após decisão humana | validação da fase | 3.1 | A decisão humana confirmou ambos como obrigatórios sem necessidade de alterar a v1. |
+| Gestor de Updates | `prod#19` | Entitlement deve ser resolvido exclusivamente pelo boundary interno vigente da E9; plano, assinatura, feature ou resposta de provedor comercial externo são apenas referências ou mecanismos e não substituem esse sinal. | complementar; horizonte atual | preservação | incorporado | usar como referência, validação ou trava | 2.1 | A formulação foi incorporada literalmente e mantém falha anterior à montagem do pacote. |
+| Gestor de Updates | `supa#5` | Inspeção manual poderia ser considerada apenas após falha real e confirmação de disponibilidade, sem criar Log Drain ou expor dados sensíveis. | complementar; horizonte condicional | expansão | não incorporado — justificado | preservar como oportunidade estratégica condicional | N/A | O Analista classificou a menção como adiável e desnecessária ao plano; a linha foi removida sem alterar o escopo autorizado. |
+| Gestor de Updates | `vercel#1` | AI Gateway poderia ser avaliado na E19.4 somente diante de workload real e limitação mensurável da integração direta. | sobreposto; horizonte futuro | expansão | não incorporado — justificado | preservar como oportunidade estratégica condicional | N/A | O Analista determinou que a oportunidade pertence à E19.4 futura e expande este recorte; a linha foi removida. |
+| Gestor de Updates | `supa#54` | RAG não é aplicável à montagem determinística e à pesquisa integral já autoritativa. | não aplicável | expansão | não incorporado — justificado | não aplicável ao plano | 2.7 e 4.1 | A v2 preserva a vedação a RAG, filtragem, resumo ou reorganização da pesquisa. |
+| Gestor de Updates | `prod#17` | WCAG 2.2 pertence a renderer e validação visual futuros, não ao pacote de contexto sem UI. | complementar; horizonte futuro | expansão | não incorporado — justificado | não aplicável ao plano | 2.4 e 4.1 | Não há renderer nem superfície visual neste recorte. |
+| Gestor de Automações | `AUT-N/A` | A única fase E19.3.3 declara `Automação: não`. | N/A | preservação | não incorporado — justificado | N/A | 3.1 e 4.1 | Nenhum especialista de automações foi acionado; provider, agente, job, fila, cron e automação permanecem fora do recorte. |
 
 ## Correções objetivas da Passagem 1
 
-- Preservar `complete_bound → operational` por estado mínimo, determinístico e read-only após retirar E19.4, sem fallback comercial, branch sem resultado ou capability improvisada: incorporado em 3.1 e 4.1.
-- Marcar `docs/lousa-plano-base-e19-4.md` como temporariamente superado e não executável, preservando história sem iniciar o plano sucessor: incorporado em 3.1 e 4.1.
+- Remover a linha que preservava `supa#5` como oportunidade condicional dentro do escopo negativo.
+- Remover a linha que preservava `vercel#1` como oportunidade futura da E19.4 dentro do escopo negativo.
+- Preservar integralmente todas as demais mudanças da v2, inclusive a operação aditiva para a versão revisada, os ABCs documentais adjacentes e as validações obrigatórias.
+
+## Decisão humana de retomada
+
+- Retomar no mesmo checkpoint e na mesma branch, sem novo recorte ou nova referência imutável.
+- Tratar os drifts de `docs/base-tecnica.md` e do roadmap E19.4 como extensões documentais adjacentes necessárias da v2.
+- Tratar `requiredInputCatalogVersion` conforme a autorização já existente na seção 2.7 da v1, preservando integralmente o contrato negativo da E20.6.
+- Considerar `npm ci` e `npm run check` obrigatórios pela Base Técnica, sem alterar a v1.
+- Preservar o parecer do Gestor Estrutural na matriz e não repetir especialistas.
 
 ## Travas preservadas
 
-- A decisão humana autoriza retirar temporariamente a E19.4 antiga; não autoriza adaptar geração, candidata, materialização, snapshot ou renderer ao pacote v2.
+- A decisão humana resolve os conflitos apontados sem apagar, reclassificar ou substituir o parecer do Gestor Estrutural.
+- A operação aditiva não altera a semântica de `loadTaxonPreparationForVersion`, não infere `latest`, não fixa v4 e não enfraquece o erro de incompatibilidade entre versão requerida e revisada.
+- O delta futuro no roadmap E19.4 limita-se à referência estritamente necessária ao pacote v3; não inicia nem replaneja a E19.4.
 - Nenhuma oportunidade condicional autoriza implementação, mudança de stack ou ampliação do recorte.
-- Não criar compatibilidade `partA + partB`, alias, fallback, feature flag, export privado, DTO paralelo ou código dormente.
-- Preservar somente a migration, o teste SQL e o snippet E19.4 versionados; não executar rollback, editar migration ou fazer mutação remota.
-- A primeira prova no draft real pode permanecer como validação ambiental pendente durante o trabalho repo-only, mas é necessária antes de declarar a prova concluída.
+- Não há migration, mutação remota, mudança de RLS, persistência de pesquisa, RAG, provider, UI, rota, publicação ou automação.
 - A matriz permanece disponível até a entrega completa e só pode ser removida por instrução humana.
