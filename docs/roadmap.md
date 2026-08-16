@@ -2,7 +2,7 @@
 
 0.1 Cabeçalho
 • Data: 16/08/2026
-• Versão: v1.5.153
+• Versão: v1.5.154
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -2243,7 +2243,7 @@ Repositório — Ajustados
 
 19. E19 — LP Builder
 - Objetivo: Consolidar o fluxo Core de landing pages por conta, da identidade mínima em `draft` às futuras etapas de geração, revisão, materialização e publicação, sempre por recortes aprovados.
-- Status: E19.1 concluída; E19.2 concluída; o Cenário E é a direção vigente da E19.3, com plano-base v1 consolidado e execução ainda não iniciada; a implementação anterior do Cenário D permanece como histórico material do PR #729; E19.4 não é alterada neste recorte.
+- Status: E19.1 concluída; E19.2 concluída; o Cenário E é a direção vigente da E19.3, com plano-base v2 aprovado e execução ainda não iniciada; a implementação anterior do Cenário D permanece como histórico material do PR #729; E19.4 recebe somente a referência planejada ao pacote v3, sem replanejamento ou implementação.
 
 19.1 Criação produtiva mínima de LP por conta
 
@@ -2368,7 +2368,7 @@ Repositório — Ajustados
 
 19.3.1 Objetivo e status
 - Objetivo: manter a E19.3 como o menor boundary determinístico entre as fontes autorizadas do projeto e a E19.4, entregando um único pacote autorizado com pesquisa integral, fatos concretos revalidados, limites editoriais e contexto operacional.
-- Status: Plano-base v1 consolidado em 16/08/2026; execução da reformulação do Cenário E ainda não iniciada.
+- Status: Plano-base v2 aprovado em 16/08/2026; execução da reformulação do Cenário E ainda não iniciada.
 
 19.3.2 Registros do recorte
 - Repositório:
@@ -2414,11 +2414,11 @@ Repositório — Ajustados
 - Referências:
   - Contrato técnico: `docs/base-tecnica.md` — 3.14.4.
   - Configuração operacional: `docs/platform-config.md` — configuração efetiva dos workloads OpenAI de produto.
-  - Plano-base v1 consolidado: `docs/lousa-plano-base-e19-3.md`.
+  - Plano-base v2 aprovado: `docs/lousa-plano-base-e19-3.md`.
   - Rascunho vivo da sucessora E19.4: `docs/lousa-plano-base-e19-4.md`.
 
 19.3.3 Contrato v3, pesquisa integral e revalidação
-- Status: Planejado no plano-base v1; execução ainda não iniciada.
+- Status: Planejado no plano-base v2 aprovado; execução ainda não iniciada.
 - Conteúdo:
   - A interface permanece exatamente `identities + modelContext + serverContext` e evolui para `contractVersion: 3`, sem alias ou fallback para v2.
   - E20.5 e E20.6 concluídas e ativas são precondições da execução; a E19.3 receberá a Preparação do taxon e a pesquisa integral `end_customer` selecionada e validada pelos boundaries canônicos.
@@ -2434,7 +2434,7 @@ Repositório — Ajustados
 19.4 Geração e materialização da landing page em `draft`
 
 19.4.1 Objetivo e status
-- Objetivo: gerar, validar, materializar e visualizar privadamente a primeira LP real em `draft` a partir do pacote v2 da E19.3, conforme futuro plano-base próprio.
+- Objetivo: gerar, validar, materializar e visualizar privadamente a primeira LP real em `draft` a partir do pacote v3 da E19.3, conforme futuro plano-base próprio.
 - Status: O plano `docs/lousa-plano-base-e19-4.md` permanece temporariamente superado e não executável pela decisão de 12/08/2026; a prova real do pacote E19.3 v2 foi aprovada, mas a primeira LP/prova de geração do Cenário D permanece pendente e pertence à nova E19.4; o novo planejamento ainda não foi iniciado.
 
 19.4.3 Geração controlada e validação integral da candidata
