@@ -9,6 +9,7 @@ import {
 } from "../conversion-content/landing-page/input-catalog";
 import type { TaxonPreparationResult } from "../conversion-content/landing-page/taxon-preparation";
 import { compileLandingPageGenerationContextForDraftWithDependencies } from "./adapters/generationContextAdapterCore";
+import { resolveAccountLandingPageOnboardingRevalidationAuthority } from "./adapters/onboardingConfigurationAdapterCore";
 import type {
   AccountLandingPage,
   AccountLandingPageOnboardingConfiguration,
@@ -33,6 +34,12 @@ const landingPage: AccountLandingPage = {
 
 const configuration = buildConfiguration();
 const authoritativeValues = { business_display_name: "Conta legítima" };
+const revalidationAuthority = {
+  historicalConfiguration: configuration,
+  currentPlanKey: configuration.planKey,
+  currentTaxonChain: configuration.taxonChain,
+  currentAuthoritativeValues: authoritativeValues,
+};
 const preparation = buildPreparation();
 
 const cases: readonly Readonly<{ name: string; run: () => void | Promise<void> }>[] = [
@@ -41,8 +48,7 @@ const cases: readonly Readonly<{ name: string; run: () => void | Promise<void> }
     run: () => {
       const result = compileLandingPageGenerationContext({
         landingPage,
-        configuration,
-        authoritativeValues,
+        revalidationAuthority,
         preparation,
       });
       assert.equal(result.ok, true);
@@ -122,27 +128,53 @@ const cases: readonly Readonly<{ name: string; run: () => void | Promise<void> }
     },
   },
   {
-    name: "revalidation uses current E19.2 authority independently of historical fields",
+    name: "E19.2 boundary preserves later current authority through target revalidation",
     run: () => {
-      const historicalConfigurationWithoutAuthorityField = {
-        ...configuration,
-        fields: configuration.fields.filter(
-          (state) => state.field.fieldKey !== "business_display_name",
+      const laterFieldKeys = new Set([
+        "primary_service_or_offer",
+        "primary_service_or_offer_description",
+        "brand_color_palette",
+      ]);
+      const historicalStoredValues = Object.fromEntries(
+        Object.entries(configuration.storedValues).filter(
+          ([fieldKey]) => !laterFieldKeys.has(fieldKey),
         ),
-      };
+      ) as AccountLandingPageOnboardingStoredValues;
+      const boundary = resolveAccountLandingPageOnboardingRevalidationAuthority({
+        accountId: ACCOUNT_ID,
+        landingPageId: LANDING_PAGE_ID,
+        historicalCatalogVersion: 1,
+        revision: 7,
+        currentPlanKey: "starter",
+        currentTaxonChain: configuration.taxonChain,
+        historicalStoredValues,
+        currentAuthoritativeValues: {
+          business_display_name: "Conta atual pela autoridade E19.2",
+          primary_service_or_offer:
+            configuration.storedValues.primary_service_or_offer.value,
+          primary_service_or_offer_description:
+            configuration.storedValues.primary_service_or_offer_description.value,
+          brand_color_palette:
+            configuration.storedValues.brand_color_palette.value,
+        },
+      });
+
+      assert.equal(boundary.ok, true);
       assert.equal(
-        historicalConfigurationWithoutAuthorityField.fields.some(
-          (state) => state.field.fieldKey === "business_display_name",
+        boundary.authority.historicalConfiguration.fields.some(
+          (state) => state.field.fieldKey === "brand_color_palette",
         ),
         false,
+      );
+      assert.equal(boundary.authority.historicalConfiguration.complete, true);
+      assert.deepEqual(
+        boundary.authority.currentAuthoritativeValues.brand_color_palette,
+        configuration.storedValues.brand_color_palette.value,
       );
 
       const result = compileLandingPageGenerationContext({
         landingPage,
-        configuration: historicalConfigurationWithoutAuthorityField,
-        authoritativeValues: {
-          business_display_name: "Conta atual pela autoridade E19.2",
-        },
+        revalidationAuthority: boundary.authority,
         preparation,
       });
 
@@ -158,6 +190,14 @@ const cases: readonly Readonly<{ name: string; run: () => void | Promise<void> }
         source: "authoritative",
         provenance: businessDisplayName?.provenance,
       });
+      const brandColorPalette = result.value.serverContext.facts.find(
+        (fact) => fact.fieldKey === "brand_color_palette",
+      );
+      assert.equal(brandColorPalette?.source, "authoritative");
+      assert.deepEqual(
+        brandColorPalette?.value,
+        boundary.authority.currentAuthoritativeValues.brand_color_palette,
+      );
     },
   },
   {
@@ -195,8 +235,10 @@ const cases: readonly Readonly<{ name: string; run: () => void | Promise<void> }
       const everyFieldConfiguration = everyFieldResolution.configuration;
       const result = compileLandingPageGenerationContext({
         landingPage,
-        configuration: everyFieldConfiguration,
-        authoritativeValues,
+        revalidationAuthority: {
+          ...revalidationAuthority,
+          historicalConfiguration: everyFieldConfiguration,
+        },
         preparation,
       });
       assert.equal(result.ok, true);
@@ -269,8 +311,10 @@ const cases: readonly Readonly<{ name: string; run: () => void | Promise<void> }
       const missingOptionalConfiguration = missingOptionalResolution.configuration;
       const result = compileLandingPageGenerationContext({
         landingPage,
-        configuration: missingOptionalConfiguration,
-        authoritativeValues,
+        revalidationAuthority: {
+          ...revalidationAuthority,
+          historicalConfiguration: missingOptionalConfiguration,
+        },
         preparation,
       });
       assert.equal(result.ok, true);
@@ -294,8 +338,7 @@ const cases: readonly Readonly<{ name: string; run: () => void | Promise<void> }
           expected: "LANDING_PAGE_NOT_DRAFT",
           input: {
             landingPage: { ...landingPage, account_id: "other" },
-            configuration,
-            authoritativeValues,
+            revalidationAuthority,
             preparation,
           },
         },
@@ -303,8 +346,13 @@ const cases: readonly Readonly<{ name: string; run: () => void | Promise<void> }
           expected: "CONFIGURATION_NOT_BOUND",
           input: {
             landingPage,
-            configuration: { ...configuration, landingPageId: null },
-            authoritativeValues,
+            revalidationAuthority: {
+              ...revalidationAuthority,
+              historicalConfiguration: {
+                ...configuration,
+                landingPageId: null,
+              },
+            },
             preparation,
           },
         },
@@ -312,8 +360,13 @@ const cases: readonly Readonly<{ name: string; run: () => void | Promise<void> }
           expected: "CONFIGURATION_INCOMPLETE",
           input: {
             landingPage,
-            configuration: { ...configuration, complete: false },
-            authoritativeValues,
+            revalidationAuthority: {
+              ...revalidationAuthority,
+              historicalConfiguration: {
+                ...configuration,
+                complete: false,
+              },
+            },
             preparation,
           },
         },
@@ -321,17 +374,19 @@ const cases: readonly Readonly<{ name: string; run: () => void | Promise<void> }
           expected: "CONFIGURATION_REVALIDATION_REQUIRED",
           input: {
             landingPage,
-            configuration: {
-              ...configuration,
-              storedValues: {
-                ...configuration.storedValues,
-                transaction_intent: {
-                  scope: "landing_page",
-                  value: "invalid-intent",
+            revalidationAuthority: {
+              ...revalidationAuthority,
+              historicalConfiguration: {
+                ...configuration,
+                storedValues: {
+                  ...configuration.storedValues,
+                  transaction_intent: {
+                    scope: "landing_page",
+                    value: "invalid-intent",
+                  },
                 },
               },
             },
-            authoritativeValues,
             preparation,
           },
         },
@@ -339,8 +394,7 @@ const cases: readonly Readonly<{ name: string; run: () => void | Promise<void> }
           expected: "TAXON_PREPARATION_UNAVAILABLE",
           input: {
             landingPage,
-            configuration,
-            authoritativeValues,
+            revalidationAuthority,
             preparation: {
               ok: false,
               error: { code: "FILESYSTEM_READ_FAILED", message: "safe fixture" },
@@ -366,7 +420,7 @@ const cases: readonly Readonly<{ name: string; run: () => void | Promise<void> }
           dependencyCalls.push("revalidation-authority");
           return {
             ok: true as const,
-            authority: { configuration, authoritativeValues },
+            authority: revalidationAuthority,
           };
         },
         loadLandingPage: async () => {

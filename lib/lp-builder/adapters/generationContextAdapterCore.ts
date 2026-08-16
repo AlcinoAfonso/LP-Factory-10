@@ -80,7 +80,7 @@ export async function compileLandingPageGenerationContextForDraftWithDependencie
       return result;
     }
 
-    const { configuration, authoritativeValues } = revalidation.authority;
+    const { currentTaxonChain } = revalidation.authority;
 
     const landingPage = await dependencies.loadLandingPage({ accountId, landingPageId });
     if (!landingPage.ok) {
@@ -95,16 +95,15 @@ export async function compileLandingPageGenerationContextForDraftWithDependencie
     }
 
     const servedTaxon =
-      configuration.taxonChain.ultraNiche ??
-      configuration.taxonChain.niche ??
-      configuration.taxonChain.segment;
+      currentTaxonChain.ultraNiche ??
+      currentTaxonChain.niche ??
+      currentTaxonChain.segment;
     const preparation = await dependencies.loadPreparation({
       taxonId: servedTaxon.id,
     });
     result = compileLandingPageGenerationContext({
       landingPage: landingPage.landingPage,
-      configuration,
-      authoritativeValues,
+      revalidationAuthority: revalidation.authority,
       preparation,
     });
   } catch {

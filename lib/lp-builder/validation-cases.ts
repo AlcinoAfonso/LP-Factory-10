@@ -314,10 +314,12 @@ const cases: ReadonlyArray<
 
       assert.equal(result.ok, true);
       assert.deepEqual(Object.keys(result.authority).sort(), [
-        "authoritativeValues",
-        "configuration",
+        "currentAuthoritativeValues",
+        "currentPlanKey",
+        "currentTaxonChain",
+        "historicalConfiguration",
       ]);
-      assert.deepEqual(result.authority.authoritativeValues, {
+      assert.deepEqual(result.authority.currentAuthoritativeValues, {
         business_display_name: "Conta de teste",
       });
       assert.equal(Object.hasOwn(result.authority, "account"), false);

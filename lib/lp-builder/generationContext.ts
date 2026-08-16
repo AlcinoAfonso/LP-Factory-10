@@ -49,24 +49,30 @@ export function compileLandingPageGenerationContext(
 function compileValidatedLandingPageGenerationContext(
   input: CompileLandingPageGenerationContextInput,
 ): CompileLandingPageGenerationContextResult {
+  const {
+    historicalConfiguration,
+    currentPlanKey,
+    currentTaxonChain,
+    currentAuthoritativeValues,
+  } = input.revalidationAuthority;
   if (
     input.landingPage.status !== "draft" ||
-    input.landingPage.account_id !== input.configuration.accountId
+    input.landingPage.account_id !== historicalConfiguration.accountId
   ) {
     return failure(
       "LANDING_PAGE_NOT_DRAFT",
       "Landing page is not an authorized account draft.",
     );
   }
-  if (input.configuration.landingPageId !== input.landingPage.id) {
+  if (historicalConfiguration.landingPageId !== input.landingPage.id) {
     return failure(
       "CONFIGURATION_NOT_BOUND",
       "Configuration is not bound to the requested landing page.",
     );
   }
   if (
-    !input.configuration.complete ||
-    input.configuration.missingRequiredFieldKeys.length > 0
+    !historicalConfiguration.complete ||
+    historicalConfiguration.missingRequiredFieldKeys.length > 0
   ) {
     return failure(
       "CONFIGURATION_INCOMPLETE",
@@ -89,9 +95,9 @@ function compileValidatedLandingPageGenerationContext(
     );
   }
   const servedTaxon =
-    input.configuration.taxonChain.ultraNiche ??
-    input.configuration.taxonChain.niche ??
-    input.configuration.taxonChain.segment;
+    currentTaxonChain.ultraNiche ??
+    currentTaxonChain.niche ??
+    currentTaxonChain.segment;
   const preparation = input.preparation.value;
   if (
     preparation.taxonId !== servedTaxon.id ||
@@ -109,8 +115,7 @@ function compileValidatedLandingPageGenerationContext(
   }
 
   const revalidated = revalidateConfiguration(
-    input.configuration,
-    input.authoritativeValues,
+    input.revalidationAuthority,
     preparation.reviewedInputCatalogVersion,
   );
   if (!revalidated.ok) {
@@ -143,12 +148,12 @@ function compileValidatedLandingPageGenerationContext(
         id: input.landingPage.id,
         status: "draft",
       },
-      planKey: input.configuration.planKey,
+      planKey: currentPlanKey,
       servedTaxon,
-      taxonChain: input.configuration.taxonChain,
-      historicalConfigurationCatalogVersion: input.configuration.catalogVersion,
+      taxonChain: currentTaxonChain,
+      historicalConfigurationCatalogVersion: historicalConfiguration.catalogVersion,
       effectiveInputCatalogVersion: preparation.reviewedInputCatalogVersion,
-      configurationRevision: input.configuration.revision,
+      configurationRevision: historicalConfiguration.revision,
       rootVersion: root.value.rootVersion,
       endCustomerResearchVersion: preparation.selectedResearchVersion,
     },
@@ -176,24 +181,23 @@ function compileValidatedLandingPageGenerationContext(
 }
 
 function revalidateConfiguration(
-  configuration: CompileLandingPageGenerationContextInput["configuration"],
-  authoritativeValues: CompileLandingPageGenerationContextInput["authoritativeValues"],
+  authority: CompileLandingPageGenerationContextInput["revalidationAuthority"],
   effectiveInputCatalogVersion: number,
 ):
   | Readonly<{
       ok: true;
-      configuration: CompileLandingPageGenerationContextInput["configuration"];
+      configuration: typeof authority.historicalConfiguration;
     }>
   | Readonly<{ ok: false; catalogFailure: boolean }> {
   const resolved = resolveAccountLandingPageOnboardingConfiguration({
-    accountId: configuration.accountId,
-    landingPageId: configuration.landingPageId,
+    accountId: authority.historicalConfiguration.accountId,
+    landingPageId: authority.historicalConfiguration.landingPageId,
     catalogVersion: effectiveInputCatalogVersion,
-    revision: configuration.revision,
-    planKey: configuration.planKey,
-    taxonChain: configuration.taxonChain,
-    storedValues: configuration.storedValues,
-    authoritativeValues,
+    revision: authority.historicalConfiguration.revision,
+    planKey: authority.currentPlanKey,
+    taxonChain: authority.currentTaxonChain,
+    storedValues: authority.historicalConfiguration.storedValues,
+    authoritativeValues: authority.currentAuthoritativeValues,
   });
   if (!resolved.ok) {
     return {
@@ -279,17 +283,18 @@ function isMinimumCompilerInput(
 ): value is CompileLandingPageGenerationContextInput {
   if (!isRecord(value)) return false;
   const landingPage = value.landingPage;
-  const configuration = value.configuration;
-  const authoritativeValues = value.authoritativeValues;
+  const authority = value.revalidationAuthority;
   const preparation = value.preparation;
   return (
     isRecord(landingPage) &&
-    isRecord(configuration) &&
-    Array.isArray(configuration.fields) &&
-    Array.isArray(configuration.missingRequiredFieldKeys) &&
-    isRecord(configuration.taxonChain) &&
-    Number.isInteger(configuration.revision) &&
-    isRecord(authoritativeValues) &&
+    isRecord(authority) &&
+    isRecord(authority.historicalConfiguration) &&
+    Array.isArray(authority.historicalConfiguration.fields) &&
+    Array.isArray(authority.historicalConfiguration.missingRequiredFieldKeys) &&
+    typeof authority.currentPlanKey === "string" &&
+    isRecord(authority.currentTaxonChain) &&
+    isRecord(authority.currentAuthoritativeValues) &&
+    Number.isInteger(authority.historicalConfiguration.revision) &&
     isRecord(preparation) &&
     typeof preparation.ok === "boolean"
   );

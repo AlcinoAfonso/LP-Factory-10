@@ -1,4 +1,7 @@
-import type { LandingPageInputCatalogTaxonChain } from "../../conversion-content/landing-page/input-catalog";
+import {
+  resolveLandingPageInputCatalog,
+  type LandingPageInputCatalogTaxonChain,
+} from "../../conversion-content/landing-page/input-catalog";
 import type { CommercialEntitlementSignal } from "../../commercial-entitlements";
 import {
   ACCOUNT_LANDING_PAGE_ONBOARDING_CATALOG_VERSION,
@@ -71,14 +74,74 @@ export async function getAccountLandingPageOnboardingRevalidationAuthorityFromCl
 ): Promise<AccountLandingPageOnboardingRevalidationResult> {
   const runtime = await loadRuntimeContext(input, client, entitlementLoader);
   if (!runtime.ok) return runtime;
-  const configuration = resolveRuntimeContext(runtime.context);
-  if (!configuration.ok) return configuration;
+  return resolveAccountLandingPageOnboardingRevalidationAuthority({
+    accountId: runtime.context.account.id,
+    landingPageId: runtime.context.row?.landing_page_id ?? null,
+    historicalCatalogVersion:
+      runtime.context.row?.catalog_version ??
+      ACCOUNT_LANDING_PAGE_ONBOARDING_CATALOG_VERSION,
+    revision: runtime.context.row?.revision ?? 0,
+    currentPlanKey: runtime.context.planKey,
+    currentTaxonChain: runtime.context.taxonChain,
+    historicalStoredValues: (runtime.context.row?.values ??
+      {}) as AccountLandingPageOnboardingStoredValues,
+    currentAuthoritativeValues: runtime.context.authoritativeValues,
+  });
+}
+
+export function resolveAccountLandingPageOnboardingRevalidationAuthority(input: {
+  accountId: string;
+  landingPageId: string | null;
+  historicalCatalogVersion: number;
+  revision: number;
+  currentPlanKey: string;
+  currentTaxonChain: LandingPageInputCatalogTaxonChain;
+  historicalStoredValues: AccountLandingPageOnboardingStoredValues;
+  currentAuthoritativeValues: Readonly<Record<string, unknown>>;
+}): AccountLandingPageOnboardingRevalidationResult {
+  const historicalCatalog = resolveLandingPageInputCatalog({
+    version: input.historicalCatalogVersion,
+    plan: input.currentPlanKey,
+    taxonChain: input.currentTaxonChain,
+  });
+  if (!historicalCatalog.ok) return failure("catalog_unavailable");
+
+  const historicalFieldKeys = new Set(
+    historicalCatalog.value.fields.map((field) => field.fieldKey),
+  );
+  const historicalAuthoritativeValues = Object.fromEntries(
+    Object.entries(input.currentAuthoritativeValues).filter(([fieldKey]) =>
+      historicalFieldKeys.has(fieldKey),
+    ),
+  );
+  const historicalConfiguration =
+    resolveAccountLandingPageOnboardingConfiguration({
+      accountId: input.accountId,
+      landingPageId: input.landingPageId,
+      catalogVersion: input.historicalCatalogVersion,
+      revision: input.revision,
+      planKey: input.currentPlanKey,
+      taxonChain: input.currentTaxonChain,
+      storedValues: input.historicalStoredValues,
+      authoritativeValues: historicalAuthoritativeValues,
+    });
+  if (!historicalConfiguration.ok) {
+    return failure(
+      historicalConfiguration.error === "CATALOG_UNAVAILABLE"
+        ? "catalog_unavailable"
+        : "invalid_configuration",
+      historicalConfiguration.fieldKey,
+    );
+  }
+
   return {
     ok: true,
     authority: Object.freeze({
-      configuration: configuration.configuration,
-      authoritativeValues: Object.freeze({
-        ...runtime.context.authoritativeValues,
+      historicalConfiguration: historicalConfiguration.configuration,
+      currentPlanKey: historicalConfiguration.configuration.planKey,
+      currentTaxonChain: historicalConfiguration.configuration.taxonChain,
+      currentAuthoritativeValues: Object.freeze({
+        ...input.currentAuthoritativeValues,
       }),
     }),
   };

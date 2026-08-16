@@ -12,7 +12,7 @@ import type {
 } from "../conversion-content/landing-page";
 import type {
   AccountLandingPage,
-  AccountLandingPageOnboardingConfiguration,
+  AccountLandingPageOnboardingRevalidationAuthority,
   AccountLandingPageOnboardingValueSource,
 } from "./contracts";
 
@@ -33,8 +33,7 @@ export type LandingPageGenerationContextFailureCode =
 
 export type CompileLandingPageGenerationContextInput = Readonly<{
   landingPage: AccountLandingPage;
-  configuration: AccountLandingPageOnboardingConfiguration;
-  authoritativeValues: Readonly<Record<string, unknown>>;
+  revalidationAuthority: AccountLandingPageOnboardingRevalidationAuthority;
   preparation: TaxonPreparationResult;
 }>;
 

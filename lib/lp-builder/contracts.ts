@@ -110,8 +110,10 @@ export type AccountLandingPageOnboardingResult =
     }>;
 
 export type AccountLandingPageOnboardingRevalidationAuthority = Readonly<{
-  configuration: AccountLandingPageOnboardingConfiguration;
-  authoritativeValues: Readonly<Record<string, unknown>>;
+  historicalConfiguration: AccountLandingPageOnboardingConfiguration;
+  currentPlanKey: LandingPageInputCatalogPlan;
+  currentTaxonChain: LandingPageInputCatalogTaxonChain;
+  currentAuthoritativeValues: Readonly<Record<string, unknown>>;
 }>;
 
 export type AccountLandingPageOnboardingRevalidationResult =
