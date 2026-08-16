@@ -315,7 +315,7 @@
 • O adapter server-only deve ler pelo caminho único da pesquisa selecionada o taxon ativo, a pesquisa E20.5 integralmente válida e a versão E20.2 avaliada; UI e componentes client não consultam esses marcadores diretamente.
 • O consumidor deve fornecer uma versão executável explícita, validada pela API pública do catálogo E20.2; maior versão, `latest` e qualquer fallback implícito são proibidos.
 • O sucesso exige igualdade exata entre a versão avaliada e a versão requerida; ausência, incompatibilidade, feature gate ou falha operacional devem permanecer erros tipados e fail-closed.
-• A avaliação semântica e a decisão de suficiência permanecem humanas e externas ao runtime; o boundary apenas aplica deterministicamente a decisão já registrada.
+• A avaliação semântica é assistida por IA no Codex App e permanece externa ao runtime do produto; a decisão final de suficiência e seu registro administrativo são humanos, e o boundary apenas aplica deterministicamente a decisão já registrada.
 
 3.16 Configuração e observabilidade de workloads OpenAI
 • O boundary transversal canônico é `lib/openai-workloads/`; consumidores de produto usam somente sua API pública para resolver modelo e reasoning effort, sem ler variáveis de modelo nem acessar o registry interno.
