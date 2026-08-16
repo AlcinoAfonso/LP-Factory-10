@@ -1,10 +1,10 @@
-16/08/2026 — Plano-base v1 — E19.3 — Pacote autorizado para geração no Cenário E
+16/08/2026 — Plano-base v2 — E19.3 — Pacote autorizado para geração no Cenário E
 
 ## 1. Estado e decisões fixas
 
 ### 1.1. Estado
 
-- Status: plano-base v1 consolidado para o Cenário E; implementação desta reformulação ainda não iniciada.
+- Status: plano-base v2 consolidado para o Cenário E; implementação desta reformulação ainda não iniciada.
 - Recorte: `E19.3 — Pacote autorizado para geração no Cenário E`.
 - Path canônico: `docs/lousa-plano-base-e19-3.md`.
 - Processo: `docs/prompt-estrategista.md` v31.
@@ -16,6 +16,7 @@
 - A mudança central deste recorte é retirar a pesquisa estruturada da E10.8 do caminho de geração e transportar a pesquisa integral `end_customer` autorizada pelo taxon.
 - A E20.5 e a E20.6 estão concluídas e materializaram a precondição externa de Preparação do taxon; `corretor-imoveis` foi comprovado como `prepared: true`, com pesquisa integral `end_customer` v1 e `reviewed_input_catalog_version = 4`.
 - O primeiro Gate desta reformulação está fechado: a E19.3 deve operar genericamente sobre versões futuras da E20.2 e sobre a cadeia taxonômica completa, sem hardcode de versão, slug ou nível.
+- Decisão humana de 16/08/2026 para a consolidação v2: os drifts de `docs/base-tecnica.md` e da referência ao pacote E19.3 no roadmap da E19.4 são extensões documentais adjacentes necessárias, a serem reconciliadas pelos ABCs nos gates próprios, sem implementar E19.4; a integração com `requiredInputCatalogVersion` segue a autorização da seção 2.7 e preserva integralmente o contrato negativo vigente da E20.6.
 
 ### 1.2. Objetivo e resultado esperado
 
@@ -29,6 +30,7 @@
 
 ### 1.3. Fontes obrigatórias
 
+- `AGENTS.md`.
 - `README.md`.
 - `docs/prompt-estrategista.md`.
 - `docs/template-roadmap.md`.
@@ -135,7 +137,7 @@
 - Validação:
   - falhar fechado para LP/configuração inválida, taxon não preparado, pesquisa inválida, versão E20.2 não executável, cadeia ou camada inválida, revalidação factual incompleta, fato obrigatório ausente ou outra inconsistência comprovável;
   - classificar gap de dado concreto para E19.2 e defeito/incompatibilidade de catálogo/resolver para E20.2, sem correção silenciosa;
-  - resolver e validar entitlement exclusivamente pelo boundary interno vigente da E9.
+  - resolver e validar entitlement exclusivamente pelo boundary interno vigente da E9; plano, assinatura, feature ou resposta de provedor comercial externo são apenas referências ou mecanismos e não substituem esse sinal.
 - Persistência:
   - nenhuma nova na E19.3;
   - nenhuma regravação da configuração E19.2 apenas por mudança de versão E20.2.
@@ -222,9 +224,11 @@
   - `resolveAccountLandingPageOnboardingConfiguration` para a semântica de revalidação factual quando aplicável;
   - `resolveLandingPageInputCatalog` como única composição taxonômica E20.2;
   - o boundary `taxon-preparation` e seus adapters para seleção, pesquisa integral e revisão E20.2.
-- Ajuste técnico permitido na v2:
-  - se a assinatura atual do adapter E20.6 exigir versão fornecida pelo caller, refiná-la minimamente dentro do boundary existente para que a E19.3 consuma a `reviewed_input_catalog_version` persistida como autoridade explícita, sem duplicar leitura de `business_taxons`, sem hardcode e sem `latest`.
-  - qualquer refinamento para a integração da E19.3 deve ser aditivo e preservar o contrato vigente da E20.6: `requiredInputCatalogVersion` e `reviewedInputCatalogVersion` mantêm papéis distintos, o sucesso exige igualdade e a divergência continua falhando com `INPUT_CATALOG_REVIEW_VERSION_MISMATCH`; não remover nem enfraquecer essa prova negativa.
+- Integração aditiva definida na v2:
+  - preservar integralmente `loadTaxonPreparationForVersion`, seu input explícito `requiredInputCatalogVersion`, seu retorno e seus casos negativos vigentes;
+  - adicionar no adapter existente da E20.6 a operação `loadTaxonPreparationForReviewedVersion({ taxonId })`, que faz uma única leitura canônica com a revisão E20.2, exige `reviewedInputCatalogVersion` presente e executável e chama `deriveTaxonPreparationForVersion` usando essa versão persistida como `requiredInputCatalogVersion` explícita;
+  - a E19.3 consome somente essa nova operação aditiva, sem segunda leitura de `business_taxons`, sem hardcode, `latest` ou maior versão do registry;
+  - `requiredInputCatalogVersion` e `reviewedInputCatalogVersion` permanecem campos distintos no resultado, enquanto a operação existente com versão fornecida pelo caller continua provando que divergência falha com `INPUT_CATALOG_REVIEW_VERSION_MISMATCH`; não remover, contornar nem enfraquecer essa prova negativa.
 - Não criar:
   - leitura direta do filesystem na E19.3;
   - API GitHub em runtime;
@@ -240,7 +244,7 @@
 
 ### 3.1. E19.3.3 — Pacote autorizado para geração no Cenário E
 
-- Status: planejada em plano-base v1; implementação não iniciada.
+- Status: planejada em plano-base v2; implementação não iniciada.
 - Automação: não.
 - Objetivo:
   - ajustar a implementação E19.3.3 já mergeada para consumir a Preparação do taxon E20.5/E20.6, revalidar dinamicamente a configuração E19.2 contra a versão E20.2 revisada e substituir a pesquisa estruturada da E10.8 pela pesquisa integral selecionada, preservando o boundary, a projeção por `valueType` e a interface de três blocos.
@@ -252,6 +256,7 @@
 - Entregas:
   - manter residência em `lib/lp-builder/`;
   - preservar `identities + modelContext + serverContext` e evoluir para `contractVersion: 3`;
+  - adicionar `loadTaxonPreparationForReviewedVersion` no adapter existente da E20.6 e manter intacto o contrato negativo de `loadTaxonPreparationForVersion`;
   - retirar `LandingPageResearchResolutionResult`, `resolveLandingPageResearchForTaxon` e demais dependências da E10.8 do caminho da compilação;
   - consumir a pesquisa integral e a revisão E20.2 pelo boundary de Preparação do taxon, sem leitura filesystem duplicada;
   - eliminar a autoridade fixa de `LANDING_PAGE_GENERATION_VALUES_CATALOG_VERSION = 2` para a revalidação de geração e usar a versão E20.2 revisada do taxon;
@@ -259,10 +264,14 @@
   - resolver plano + cadeia completa pelo resolver canônico e revalidar os valores existentes read-only;
   - preservar projeção por `valueType`, limites E18.4 e logging seguro;
   - atualizar contratos TypeScript e casos executáveis focais;
+  - reconciliar por ABC, após a implementação material, `docs/base-tecnica.md` 3.14.4 para o contrato público v3 efetivamente implementado;
+  - reconciliar por ABC de planejamento a referência da E19.4 no `docs/roadmap.md` para consumir o pacote v3, sem iniciar planejamento ou implementação da E19.4;
   - não implementar E19.4 neste recorte.
 - Validação mínima:
+  - executar `npm ci` e `npm run check` conforme o gate obrigatório do repositório;
   - taxon preparado + LP/configuração válida produz pacote de sucesso;
   - sinais de preparação ausentes/incompatíveis falham fechado;
+  - a nova operação aditiva usa a versão revisada persistida, enquanto a operação E20.6 existente continua falhando com `INPUT_CATALOG_REVIEW_VERSION_MISMATCH` quando caller e revisão divergem;
   - versão revisada é explicitamente executável e nenhuma versão maior no registry é escolhida automaticamente;
   - configuração histórica e versão efetiva de geração permanecem distintas no contrato auditável;
   - resolução usa a cadeia taxonômica completa e o plano efetivo, sem hardcode de nível, slug ou layer;
@@ -288,8 +297,8 @@
 
 ### 3.2. Próxima ação
 
-- Submeter este plano-base v1 ao processo escolhido pelo humano conforme `docs/prompt-estrategista.md` v31.
-- Após aprovação e implementação da E19.3.3, executar a prova read-only real antes de qualquer retomada de E19.4.
+- Submeter este plano-base v2 ao gate do Analista e reconciliar o roadmap por ABC no mesmo fluxo de orquestração.
+- Após aprovação da v2, implementar a E19.3.3 e executar a prova read-only real antes de qualquer retomada de E19.4.
 - Após a prova E19.3 aprovada, retornar à E19.4.
 
 ## 4. Escopo negativo e critérios de parada
@@ -305,6 +314,8 @@
 - alteração de E18.4, E20.2, E20.5, E20.6 ou E19.2 sem gap real demonstrado pelo recorte;
 - migration ou regravação da configuração E19.2 apenas para igualar sua versão histórica à versão E20.2 revisada;
 - nova tabela, persistência da pesquisa em banco, API GitHub, rota, serviço, Provider, agente, automação, job, fila, cron, webhook, RAG ou infraestrutura nova;
+- `supa#5` permanece somente como oportunidade condicional de inspeção manual após falha real e confirmação de disponibilidade, sem Log Drain, integração, agente, automação ou exposição de pesquisa, fatos, PII, secrets, prompts ou payloads;
+- `vercel#1` permanece somente como oportunidade futura da E19.4, condicionada a workload real e limitação mensurável da integração direta, sem implementação na E19.3.3;
 - duplicação da herança E20.2 ou leitura direta de `business_taxons`/filesystem quando o boundary canônico já entregar a informação necessária;
 - tracking, analytics, CRM, domínio, publicação, A/B test, Ads ou integrações futuras;
 - regra específica da conta piloto, versão v4 ou slug `corretor-imoveis` na lógica genérica E19.3;
