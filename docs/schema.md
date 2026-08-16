@@ -2,7 +2,7 @@
 
 0.1 Cabeçalho
 • Data da última atualização: 15/08/2026
-• Documento: LP Factory 10 — Schema (DB Contract) v1.0.41
+• Documento: LP Factory 10 — Schema (DB Contract) v1.0.42
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -282,6 +282,7 @@
 • UNIQUE: slug
 • CHECK: business_taxons_level_chk (level IN ('segment', 'niche', 'ultra_niche'))
 • CHECK: business_taxons_selected_end_customer_research_version_chk (selected_end_customer_research_version IS NULL OR selected_end_customer_research_version > 0)
+• CHECK: business_taxons_reviewed_input_catalog_version_chk (reviewed_input_catalog_version IS NULL OR reviewed_input_catalog_version > 0)
 • FK: parent_id → business_taxons(id) ON UPDATE CASCADE ON DELETE SET NULL
 
 1.11.2 Campos
@@ -291,12 +292,13 @@
 • slug text not null
 • is_active boolean not null default true
 • selected_end_customer_research_version integer null
+• reviewed_input_catalog_version integer null
 
 1.11.3 Segurança
 • Trigger Hub: não
 • RLS: ativo (enable row level security)
-• service_role: SELECT; UPDATE somente em name, slug, is_active e selected_end_customer_research_version
-• anon/authenticated: sem UPDATE em selected_end_customer_research_version
+• service_role: SELECT; sem UPDATE da tabela inteira; UPDATE somente em is_active, name, reviewed_input_catalog_version, selected_end_customer_research_version e slug
+• anon/authenticated: sem UPDATE em selected_end_customer_research_version e reviewed_input_catalog_version
 
 1.11.4 Policies
 • business_taxons_select_admin_only (SELECT to public): is_super_admin() OU is_platform_admin()

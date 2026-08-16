@@ -2,7 +2,7 @@
 
 0.1 Cabeçalho
 • Data: 15/08/2026
-• Versão: v1.5.151
+• Versão: v1.5.152
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -2641,10 +2641,13 @@ Repositório — Ajustados
 20.6.1 Objetivo e status
 
 * Objetivo: avaliar a suficiência factual da pesquisa integral `end_customer` selecionada pela E20.5 em conjunto com uma versão executável explícita do catálogo E20.2 e definir o predicado final de preparação do taxon, sem autorizar geração.
-* Status: Em andamento; implementação repo-side materializada, com rollout e provas operacionais pós-merge pendentes.
+* Status: Concluída em 15/08/2026; implementação, migration, gate operacional, registro humano e prova real do predicado derivado aprovados.
 
 20.6.2 Registros do recorte
 
+* Banco:
+  * Ajustados:
+    * `public.business_taxons`.
 * Repositório:
   * Criados:
     * `app/admin/(protected)/taxonomia/[taxonId]/_components/AdminTaxonInputCatalogReview.tsx`;
@@ -2672,10 +2675,14 @@ Repositório — Ajustados
     * `lib/conversion-content/landing-page/taxon-preparation/validation-cases.ts`.
 * Referências:
   * Plano-base E20.6: `docs/lousa-plano-base-e20-6.md` — seções 2 e 3.
+  * Contrato de banco: `docs/schema.md` — seção 1.11.
+  * Configuração do gate: `docs/platform-config.md` — seção 3.5.
+  * Boundary de preparação: `docs/base-tecnica.md` — seção 3.15.7.
+  * Fluxo assistido: `docs/automations.md` — seção 3.10.
 
 20.6.3 Avaliação assistida e registro humano da suficiência
 
-* Status: Implementada no repositório; a reavaliação real de `corretor-imoveis` contra a versão executável E20.2 `4` resultou em `suficiente` e foi aceita por decisão humana; permanecem pendentes pós-merge a aplicação da migration, a ativação do gate e o registro administrativo de `reviewed_input_catalog_version = 4`.
+* Status: Concluída em 15/08/2026; a reavaliação real de `corretor-imoveis` contra a versão executável E20.2 `4` resultou em `suficiente`, foi aceita por decisão humana e teve `reviewed_input_catalog_version = 4` registrado e confirmado após reload no Admin autenticado.
 * Conteúdo:
   * usar o fluxo humano `Admin → Codex → Admin`, com IA em fluxo controlado no ambiente interno do Codex e sem workload OpenAI no runtime do LP Factory;
   * confrontar integralmente a pesquisa E20.5 autorizada com uma versão executável E20.2 escolhida explicitamente pelo humano, resolvendo e comparando `starter`, `lite`, `pro` e `ultra`, sem `latest` ou fallback;
@@ -2686,10 +2693,12 @@ Repositório — Ajustados
 
 20.6.4 Gate derivado de preparação do taxon
 
-* Status: Implementada no repositório; prova real pendente pós-merge, após migration aplicada, gate habilitado e registro humano da versão explícita `4`.
+* Status: Concluída em 15/08/2026; predicado derivado comprovado para a versão executável explicitamente requerida `4`.
 * Conteúdo:
   * derivar deterministicamente a preparação por `taxon ativo + E20.5 selecionada/válida + reviewed_input_catalog_version compatível com a versão executável explicitamente requerida`;
   * falhar fechado para ausência ou incompatibilidade e não persistir estado adicional de prontidão;
+  * a prova real de `corretor-imoveis`, com pesquisa integral `end_customer` v1, `reviewed_input_catalog_version = 4` e `requiredInputCatalogVersion = 4`, retornou `prepared: true`;
+  * o controle negativo com `requiredInputCatalogVersion = 3` retornou `INPUT_CATALOG_REVIEW_VERSION_MISMATCH`, comprovando igualdade exata sem `latest` ou fallback;
   * preservar E19.2, E19.3 e E19.4 sem alteração neste recorte.
 
 21. E21 — Gestão e governança dos workloads OpenAI
