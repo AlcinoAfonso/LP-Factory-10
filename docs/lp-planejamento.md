@@ -63,7 +63,7 @@ Fontes de referência: `README.md`, `docs/roadmap.md`, `docs/base-tecnica.md`, `
 - Cada field preserva escopo entre `account`, `business`, `offer`, `campaign` e `landing_page`.
 - Valores concretos pertencem à conta, negócio, oferta, campanha ou LP e são coletados/persistidos pela E19.2, não pela E20.2.
 - A versão histórica da configuração E19.2 permanece distinta da versão E20.2 revisada para geração.
-- Na geração, a E19.3 resolve `reviewed_input_catalog_version` com plano efetivo + cadeia taxonômica completa e revalida read-only os valores históricos contra os fields efetivos resultantes.
+- Na geração, a E19.3 consome `reviewed_input_catalog_version` como a versão E20.2 explicitamente revisada e resolve o catálogo E20.2 nessa versão usando o plano efetivo e a cadeia taxonômica autoritativa completa; em seguida, revalida read-only os valores históricos contra os fields efetivos resultantes.
 - Se a revalidação revelar novo field obrigatório aplicável, valor ausente ou incompatível, a E19.3 falha fechado e devolve o gap factual à E19.2 para coleta/correção.
 - Se revelar defeito no catálogo, resolver, camada ou especialização E20.2, o gap retorna à E20.2.
 - Não migrar nem regravar configuração histórica apenas para alinhar número de versão quando os valores continuam válidos.
