@@ -2636,26 +2636,57 @@ Repositório — Ajustados
   * Somente o sucesso fornece taxon, slug, versão selecionada, conteúdo integral e a projeção derivada `selectedResearchValid: true`; nenhuma marca `prepared` é criada ou persistida.
   * Casos determinísticos cobrem todos os estados públicos e comprovam que o gate antecede o acesso à coluna; as validações consolidadas permanecem verdes.
 
-20.6 Avaliação de suficiência factual e preparação final do taxon
+20.6 Avaliação de suficiência factual da E20.2 por taxon
 
 20.6.1 Objetivo e status
 
 * Objetivo: avaliar a suficiência factual da pesquisa integral `end_customer` selecionada pela E20.5 em conjunto com uma versão executável explícita do catálogo E20.2 e definir o predicado final de preparação do taxon, sem autorizar geração.
-* Status: Planejada; plano-base v1 aprovado em 15/08/2026 e Processo automatizado (Opção 2) escolhido; implementação ainda não iniciada.
+* Status: Em andamento; implementação repo-side materializada, com rollout e provas operacionais pós-merge pendentes.
+
+20.6.2 Registros do recorte
+
+* Repositório:
+  * Criados:
+    * `app/admin/(protected)/taxonomia/[taxonId]/_components/AdminTaxonInputCatalogReview.tsx`;
+    * `lib/admin/adapters/adminTaxonomyReviewPolicy.ts`;
+    * `lib/conversion-content/landing-page/input-catalog/taxon-chain.ts`;
+    * `lib/conversion-content/landing-page/taxon-preparation/input-catalog-review.ts`;
+    * `lib/conversion-content/landing-page/taxon-preparation/preparation.ts`;
+    * `supabase/migrations/20260815172449_e20_6_reviewed_input_catalog_version.sql`;
+    * `supabase/snippets/e20_6_reviewed_input_catalog_version_verify.sql`.
+  * Ajustados:
+    * `app/admin/(protected)/estrutura-lp/page.tsx`;
+    * `app/admin/(protected)/taxonomia/[taxonId]/page.tsx`;
+    * `app/admin/(protected)/taxonomia/actions.ts`;
+    * `lib/admin/adapters/adminLandingPageStructureAdapter.ts`;
+    * `lib/admin/adapters/adminReadOnlyAdapter.ts`;
+    * `lib/admin/adapters/adminReadOnlyTypes.ts`;
+    * `lib/admin/adapters/adminTaxonomyAdapter.ts`;
+    * `lib/conversion-content/adapters/selectedEndCustomerResearchAdapter.ts`;
+    * `lib/conversion-content/adapters/selectedEndCustomerResearchAdapterCore.ts`;
+    * `lib/conversion-content/landing-page/input-catalog/index.ts`;
+    * `lib/conversion-content/landing-page/input-catalog/resolver.ts`;
+    * `lib/conversion-content/landing-page/input-catalog/validation-cases.ts`;
+    * `lib/conversion-content/landing-page/taxon-preparation/contracts.ts`;
+    * `lib/conversion-content/landing-page/taxon-preparation/index.ts`;
+    * `lib/conversion-content/landing-page/taxon-preparation/validation-cases.ts`.
+* Referências:
+  * Plano-base E20.6: `docs/lousa-plano-base-e20-6.md` — seções 2 e 3.
 
 20.6.3 Avaliação assistida e registro humano da suficiência
 
-* Status: Planejada.
+* Status: Implementada no repositório; a reavaliação real de `corretor-imoveis` contra a versão executável E20.2 `4` resultou em `suficiente` e foi aceita por decisão humana; permanecem pendentes pós-merge a aplicação da migration, a ativação do gate e o registro administrativo de `reviewed_input_catalog_version = 4`.
 * Conteúdo:
   * usar o fluxo humano `Admin → Codex → Admin`, com IA em fluxo controlado no ambiente interno do Codex e sem workload OpenAI no runtime do LP Factory;
-  * confrontar integralmente a pesquisa E20.5 autorizada com uma versão executável E20.2 escolhida explicitamente pelo humano, sem `latest` ou fallback;
+  * confrontar integralmente a pesquisa E20.5 autorizada com uma versão executável E20.2 escolhida explicitamente pelo humano, resolvendo e comparando `starter`, `lite`, `pro` e `ultra`, sem `latest` ou fallback;
   * a IA recomenda `suficiente`, `gaps candidatos` ou `inconclusivo`; a decisão final pertence ao humano;
   * somente após suficiência aceita pelo humano registrar a versão avaliada em `business_taxons.reviewed_input_catalog_version`; gap factual real retorna ao recorte próprio da E20.2 e exige nova execução da E20.6 após a evolução aplicável;
-  * reutilizar a Taxonomia administrativa existente para orientar a ida ao Codex por instrução copiável e para registrar ou reabrir a avaliação, sem nova rota nem integração direta com o Codex.
+  * reutilizar a Taxonomia administrativa existente para orientar a ida ao Codex por instrução copiável que inclua a cadeia taxonômica autoritativa integral e para registrar ou reabrir a avaliação, sem nova rota nem integração direta com o Codex;
+  * invalidar a avaliação quando a seleção E20.5 mudar efetivamente e exigir reabertura explícita antes de alterar identidade ou cadeia taxonômica própria ou ancestral que afete avaliação preenchida do taxon ou de descendente.
 
 20.6.4 Gate derivado de preparação do taxon
 
-* Status: Planejada.
+* Status: Implementada no repositório; prova real pendente pós-merge, após migration aplicada, gate habilitado e registro humano da versão explícita `4`.
 * Conteúdo:
   * derivar deterministicamente a preparação por `taxon ativo + E20.5 selecionada/válida + reviewed_input_catalog_version compatível com a versão executável explicitamente requerida`;
   * falhar fechado para ausência ou incompatibilidade e não persistir estado adicional de prontidão;

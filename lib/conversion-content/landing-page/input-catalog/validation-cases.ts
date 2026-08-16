@@ -19,6 +19,7 @@ import {
   resolveLandingPageInputCatalog,
   resolveLandingPageInputCatalogFromRegistry,
 } from "./resolver";
+import { buildLandingPageInputCatalogTaxonChain } from "./taxon-chain";
 import {
   landingPageInputFieldDefinitionSchema,
   validateLandingPageInputValue,
@@ -59,6 +60,25 @@ const starterV2FieldKeys = [
 ] as const;
 
 const cases: Case[] = [
+  {
+    name: "public taxon chain builder normalizes segment niche and ultra-niche",
+    run: () => {
+      const result = buildLandingPageInputCatalogTaxonChain(
+        mediumStandardRealEstateBrokerTaxon,
+        [realEstateSegmentTaxon, realEstateBrokerNicheTaxon, mediumStandardRealEstateBrokerTaxon],
+      );
+      assert.equal(result.ok, true);
+      if (!result.ok) throw new Error("Expected valid taxon chain");
+      assert.deepEqual(result.value, baseInput.taxonChain);
+      assert.equal(
+        buildLandingPageInputCatalogTaxonChain(
+          { ...realEstateBrokerNicheTaxon, parentId: "missing" },
+          [realEstateSegmentTaxon],
+        ).ok,
+        false,
+      );
+    },
+  },
   {
     name: "registry v1 resolves all 19 ordered fields without operational context",
     run: () => {

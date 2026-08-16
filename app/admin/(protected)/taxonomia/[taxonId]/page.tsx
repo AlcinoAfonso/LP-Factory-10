@@ -15,7 +15,10 @@ import {
   deleteTaxonAliasAction,
   selectEndCustomerResearchAction,
   updateTaxonAction,
+  recordInputCatalogReviewAction,
+  reopenInputCatalogReviewAction,
 } from "../actions";
+import { AdminTaxonInputCatalogReview } from "./_components/AdminTaxonInputCatalogReview";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -101,6 +104,15 @@ export default async function AdminTaxonDetailPage({ params }: AdminTaxonDetailP
           action={selectEndCustomerResearchAction}
           isActive={taxon.isActive}
           selection={taxon.endCustomerResearchSelection}
+          taxonId={taxon.id}
+        />
+      )}
+
+      {taxon.inputCatalogReview.status === "disabled" ? null : (
+        <AdminTaxonInputCatalogReview
+          recordAction={recordInputCatalogReviewAction}
+          reopenAction={reopenInputCatalogReviewAction}
+          review={taxon.inputCatalogReview}
           taxonId={taxon.id}
         />
       )}

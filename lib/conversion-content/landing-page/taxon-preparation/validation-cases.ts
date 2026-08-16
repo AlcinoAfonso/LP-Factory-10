@@ -7,11 +7,33 @@ import type {
   LoadEndCustomerResearchCandidateResult,
   LoadSelectedEndCustomerResearchResult,
   SelectedEndCustomerResearchErrorCode,
+  TaxonPreparationErrorCode,
+  TaxonPreparationResult,
 } from "./contracts";
 import {
+  buildInputCatalogReviewHandoff,
+  classifyRequiredInputCatalogVersion,
+  deriveTaxonPreparationForVersion,
   isEndCustomerResearchSelectionEnabled,
+  isInputCatalogReviewEnabled,
   loadEndCustomerResearchCandidate,
+  resolveInputCatalogReview,
 } from "./index";
+import {
+  mediumStandardRealEstateBrokerTaxon,
+  realEstateBrokerNicheTaxon,
+  realEstateSegmentTaxon,
+  isLandingPageInputCatalogVersionExecutable,
+  resolveLandingPageInputCatalog,
+} from "../input-catalog";
+import {
+  collectAffectedReviewedTaxonIds,
+  applyInputCatalogReviewPresentation,
+  nextInputCatalogReviewActionRevision,
+  planEndCustomerResearchSelectionMutation,
+  sameInputCatalogReviewBaseline,
+  taxonomyMutationAffectsInputCatalogResolution,
+} from "../../../admin/adapters/adminTaxonomyReviewPolicy";
 import { loadEndCustomerResearchCandidateForValidation } from "./research";
 import {
   loadSelectedEndCustomerResearchFromClient,
@@ -29,6 +51,345 @@ type ValidationCase = Readonly<{
 }>;
 
 const cases: readonly ValidationCase[] = [
+  {
+    name: "input catalog review gate is fail-closed and accepts only literal true",
+    run: async () => {
+      const previousValue = process.env.E20_6_INPUT_CATALOG_REVIEW_ENABLED;
+      try {
+        delete process.env.E20_6_INPUT_CATALOG_REVIEW_ENABLED;
+        assert.equal(isInputCatalogReviewEnabled(), false);
+        process.env.E20_6_INPUT_CATALOG_REVIEW_ENABLED = "TRUE";
+        assert.equal(isInputCatalogReviewEnabled(), false);
+        process.env.E20_6_INPUT_CATALOG_REVIEW_ENABLED = "true";
+        assert.equal(isInputCatalogReviewEnabled(), true);
+      } finally {
+        if (previousValue === undefined) delete process.env.E20_6_INPUT_CATALOG_REVIEW_ENABLED;
+        else process.env.E20_6_INPUT_CATALOG_REVIEW_ENABLED = previousValue;
+      }
+    },
+  },
+  {
+    name: "E20.6 gate precedes Data API access and SQL preserves least privilege",
+    run: async () => {
+      const adminSource = readFileSync(
+        new URL("../../../admin/adapters/adminTaxonomyAdapter.ts", import.meta.url),
+        "utf8",
+      );
+      const reviewReadStart = adminSource.indexOf("async function readAdminInputCatalogReview");
+      const reviewReadEnd = adminSource.indexOf("async function readAdminEndCustomerResearchSelection", reviewReadStart);
+      const reviewRead = adminSource.slice(reviewReadStart, reviewReadEnd);
+      assert.ok(reviewRead.indexOf("if (!isInputCatalogReviewEnabled())") >= 0);
+      assert.ok(reviewRead.indexOf("loadSelectedEndCustomerResearchFromClient") > reviewRead.indexOf("if (!isInputCatalogReviewEnabled())"));
+      const selectedCore = readFileSync(
+        new URL("../../adapters/selectedEndCustomerResearchAdapterCore.ts", import.meta.url),
+        "utf8",
+      );
+      assert.match(selectedCore, /includeInputCatalogReview[\s\S]*reviewed_input_catalog_version/);
+      assert.match(adminSource, /reviewed_input_catalog_version: null/);
+      assert.match(adminSource, /findAffectedInputCatalogReviews/);
+
+      const migration = readFileSync(
+        new URL("../../../../supabase/migrations/20260815172449_e20_6_reviewed_input_catalog_version.sql", import.meta.url),
+        "utf8",
+      );
+      assert.match(migration, /revoke update\s+on table public\.business_taxons\s+from service_role/);
+      assert.match(migration, /grant update \([\s\S]*is_active,[\s\S]*name,[\s\S]*reviewed_input_catalog_version,[\s\S]*selected_end_customer_research_version,[\s\S]*slug[\s\S]*\)/);
+
+      const snippet = readFileSync(
+        new URL("../../../../supabase/snippets/e20_6_reviewed_input_catalog_version_verify.sql", import.meta.url),
+        "utf8",
+      );
+      assert.match(snippet, /set transaction read only/);
+      assert.match(snippet, /not has_table_privilege\('service_role', 'public\.business_taxons', 'UPDATE'\)/);
+      assert.match(snippet, /select case when bool_and\(ok\) then 'ok' else 'unexpected' end as status/);
+    },
+  },
+  {
+    name: "preparation boundary fails before Data API while either gate is off",
+    run: async () => {
+      const adapterSource = readFileSync(
+        new URL("../../adapters/selectedEndCustomerResearchAdapter.ts", import.meta.url),
+        "utf8",
+      );
+      const start = adapterSource.indexOf("export async function loadTaxonPreparationForVersion");
+      const boundary = adapterSource.slice(start);
+      const reviewGate = boundary.indexOf("if (!isInputCatalogReviewEnabled())");
+      const researchGate = boundary.indexOf("if (!isEndCustomerResearchSelectionEnabled())");
+      const versionValidation = boundary.indexOf("classifyRequiredInputCatalogVersion");
+      const serviceClient = boundary.indexOf("createServiceClient()");
+      const selectedLoad = boundary.indexOf("loadSelectedEndCustomerResearchFromClient");
+      const reviewedColumnOption = boundary.indexOf("includeInputCatalogReview: true");
+      assert.ok(start >= 0);
+      assert.ok(reviewGate >= 0);
+      assert.ok(researchGate > reviewGate);
+      assert.ok(versionValidation > researchGate);
+      assert.ok(serviceClient > versionValidation);
+      assert.ok(selectedLoad > serviceClient);
+      assert.ok(reviewedColumnOption > serviceClient);
+    },
+  },
+  {
+    name: "required input catalog version is explicit valid and executable",
+    run: async () => {
+      for (const version of [0, -1, 1.5, Number.NaN]) {
+        assertPreparationFailure(
+          classifyRequiredInputCatalogVersion(version),
+          "REQUIRED_INPUT_CATALOG_VERSION_INVALID",
+        );
+      }
+      assertPreparationFailure(
+        classifyRequiredInputCatalogVersion(999),
+        "REQUIRED_INPUT_CATALOG_VERSION_NOT_EXECUTABLE",
+      );
+      for (const version of [1, 2, 3, 4]) {
+        assert.equal(isLandingPageInputCatalogVersionExecutable(version), true);
+        assert.equal(classifyRequiredInputCatalogVersion(version), null);
+      }
+      assert.equal(isLandingPageInputCatalogVersionExecutable(999), false);
+
+      const preparationSource = readFileSync(new URL("./preparation.ts", import.meta.url), "utf8");
+      assert.doesNotMatch(preparationSource, /latest|Math\.max/i);
+    },
+  },
+  {
+    name: "preparation requires an equal reviewed version and invalidates when requirement changes",
+    run: async () => {
+      assertPreparationFailure(
+        deriveTaxonPreparationForVersion({
+          selectedResearch: selectedResearchSuccess(null),
+          requiredInputCatalogVersion: 2,
+        }),
+        "INPUT_CATALOG_REVIEW_ABSENT",
+      );
+      assertPreparationFailure(
+        deriveTaxonPreparationForVersion({
+          selectedResearch: selectedResearchSuccess(2),
+          requiredInputCatalogVersion: 3,
+        }),
+        "INPUT_CATALOG_REVIEW_VERSION_MISMATCH",
+      );
+
+      const prepared = deriveTaxonPreparationForVersion({
+        selectedResearch: selectedResearchSuccess(2),
+        requiredInputCatalogVersion: 2,
+      });
+      assert.equal(prepared.ok, true);
+      if (!prepared.ok) throw new Error("Expected taxon preparation success");
+      assert.deepEqual(
+        {
+          prepared: prepared.value.prepared,
+          selectedResearchVersion: prepared.value.selectedResearchVersion,
+          reviewedInputCatalogVersion: prepared.value.reviewedInputCatalogVersion,
+          requiredInputCatalogVersion: prepared.value.requiredInputCatalogVersion,
+        },
+        {
+          prepared: true,
+          selectedResearchVersion: 1,
+          reviewedInputCatalogVersion: 2,
+          requiredInputCatalogVersion: 2,
+        },
+      );
+    },
+  },
+  {
+    name: "preparation preserves every E20.5 failure category",
+    run: async () => {
+      const codes: readonly SelectedEndCustomerResearchErrorCode[] = [
+        "FEATURE_DISABLED",
+        "INVALID_TAXON_ID",
+        "TAXON_NOT_FOUND",
+        "TAXON_INACTIVE",
+        "TAXON_IDENTITY_INVALID",
+        "SELECTION_ABSENT",
+        "SELECTED_VERSION_INVALID",
+        "DATABASE_READ_FAILED",
+        "FILE_NOT_FOUND",
+        "FILESYSTEM_READ_FAILED",
+        "METADATA_INVALID",
+        "CONTENT_EMPTY",
+      ];
+      for (const code of codes) {
+        const selectedResearch: LoadSelectedEndCustomerResearchResult = {
+          ok: false,
+          error: { code, message: `failure:${code}` },
+        };
+        const result = deriveTaxonPreparationForVersion({
+          selectedResearch,
+          requiredInputCatalogVersion: 2,
+        });
+        assert.strictEqual(result, selectedResearch);
+      }
+    },
+  },
+  {
+    name: "versions 1 2 3 and 4 resolve equivalent factual projections for all four plans",
+    run: async () => {
+      for (const version of [1, 2, 3, 4]) {
+        const result = resolveInputCatalogReview({
+          version,
+          taxonChain: {
+            segment: realEstateSegmentTaxon,
+            niche: realEstateBrokerNicheTaxon,
+            ultraNiche: mediumStandardRealEstateBrokerTaxon,
+          },
+        });
+        assert.equal(result.ok, true);
+        if (!result.ok) throw new Error("Expected resolvable input catalog review");
+        assert.deepEqual(result.value.plans, ["starter", "lite", "pro", "ultra"]);
+      }
+    },
+  },
+  {
+    name: "material divergence between plan projections stops the review",
+    run: async () => {
+      const result = resolveInputCatalogReview({
+        version: 1,
+        taxonChain: {
+          segment: realEstateSegmentTaxon,
+          niche: realEstateBrokerNicheTaxon,
+          ultraNiche: mediumStandardRealEstateBrokerTaxon,
+        },
+      }, (input) => {
+        const resolved = resolveLandingPageInputCatalog(input);
+        if (!resolved.ok || input.plan !== "ultra") return resolved;
+        return {
+          ok: true,
+          value: { ...resolved.value, fields: [...resolved.value.fields].reverse() },
+        };
+      });
+      assert.equal(result.ok, false);
+      if (result.ok) throw new Error("Expected divergent projections to fail");
+      assert.equal(result.error.code, "PLAN_PROJECTIONS_DIVERGED");
+    },
+  },
+  {
+    name: "selection mutation invalidates review only on an effective version change",
+    run: async () => {
+      assert.deepEqual(
+        planEndCustomerResearchSelectionMutation({ currentVersion: null, nextVersion: 1, inputCatalogReviewEnabled: true }),
+        { idempotent: false, update: { selected_end_customer_research_version: 1, reviewed_input_catalog_version: null } },
+      );
+      assert.deepEqual(
+        planEndCustomerResearchSelectionMutation({ currentVersion: 1, nextVersion: 2, inputCatalogReviewEnabled: true }),
+        { idempotent: false, update: { selected_end_customer_research_version: 2, reviewed_input_catalog_version: null } },
+      );
+      assert.deepEqual(
+        planEndCustomerResearchSelectionMutation({ currentVersion: 1, nextVersion: 1, inputCatalogReviewEnabled: true }),
+        { idempotent: true, update: null },
+      );
+    },
+  },
+  {
+    name: "taxonomy guard covers name slug activity ancestors and descendants",
+    run: async () => {
+      const current = { name: "Imobiliário", slug: "imobiliario", isActive: true };
+      assert.equal(taxonomyMutationAffectsInputCatalogResolution(current, current), false);
+      assert.equal(taxonomyMutationAffectsInputCatalogResolution(current, { ...current, name: "Imóveis" }), true);
+      assert.equal(taxonomyMutationAffectsInputCatalogResolution(current, { ...current, slug: "imoveis" }), true);
+      assert.equal(taxonomyMutationAffectsInputCatalogResolution(current, { ...current, isActive: false }), true);
+      const rows = [
+        { id: "segment", parentId: null, reviewedVersion: null },
+        { id: "niche", parentId: "segment", reviewedVersion: 1 },
+        { id: "ultra", parentId: "niche", reviewedVersion: 2 },
+        { id: "other", parentId: null, reviewedVersion: 3 },
+      ];
+      assert.deepEqual(collectAffectedReviewedTaxonIds(rows, "segment"), ["niche", "ultra"]);
+      assert.deepEqual(collectAffectedReviewedTaxonIds(rows, "niche"), ["niche", "ultra"]);
+      assert.deepEqual(collectAffectedReviewedTaxonIds(rows, "ultra"), ["ultra"]);
+    },
+  },
+  {
+    name: "review baseline rejects concurrent identity research review or chain changes",
+    run: async () => {
+      const baseline = {
+        taxonName: "Corretor Imóveis",
+        taxonSlug: "corretor-imoveis",
+        taxonLevel: "niche" as const,
+        parentTaxonId: "segment",
+        selectedResearchVersion: 1,
+        reviewedVersion: null,
+        chainFingerprint: "chain-v1",
+      };
+      assert.equal(sameInputCatalogReviewBaseline(baseline, { ...baseline }), true);
+      for (const changed of [
+        { ...baseline, taxonName: "Corretores" },
+        { ...baseline, taxonSlug: "corretores" },
+        { ...baseline, parentTaxonId: "other" },
+        { ...baseline, selectedResearchVersion: 2 },
+        { ...baseline, reviewedVersion: 1 },
+        { ...baseline, chainFingerprint: "chain-v2" },
+      ]) assert.equal(sameInputCatalogReviewBaseline(baseline, changed), false);
+    },
+  },
+  {
+    name: "review presentation follows the last successful record or reopen action",
+    run: async () => {
+      let presentation = { reviewedVersion: null, lastAction: null } as {
+        reviewedVersion: number | null;
+        lastAction: "record" | "reopen" | null;
+      };
+      let recordRevision = 0;
+      let reopenRevision = 0;
+
+      recordRevision = nextInputCatalogReviewActionRevision(recordRevision);
+      presentation = applyInputCatalogReviewPresentation(presentation, { type: "record", reviewedVersion: 2 });
+      assert.deepEqual({ presentation, recordRevision, reopenRevision }, {
+        presentation: { reviewedVersion: 2, lastAction: "record" },
+        recordRevision: 1,
+        reopenRevision: 0,
+      });
+
+      reopenRevision = nextInputCatalogReviewActionRevision(reopenRevision);
+      presentation = applyInputCatalogReviewPresentation(presentation, { type: "reopen" });
+      assert.deepEqual({ presentation, recordRevision, reopenRevision }, {
+        presentation: { reviewedVersion: null, lastAction: "reopen" },
+        recordRevision: 1,
+        reopenRevision: 1,
+      });
+
+      recordRevision = nextInputCatalogReviewActionRevision(recordRevision);
+      presentation = applyInputCatalogReviewPresentation(presentation, { type: "record", reviewedVersion: 2 });
+      assert.deepEqual({ presentation, recordRevision, reopenRevision }, {
+        presentation: { reviewedVersion: 2, lastAction: "record" },
+        recordRevision: 2,
+        reopenRevision: 1,
+      });
+
+      reopenRevision = nextInputCatalogReviewActionRevision(reopenRevision);
+      presentation = applyInputCatalogReviewPresentation(presentation, { type: "reopen" });
+      assert.deepEqual({ presentation, recordRevision, reopenRevision }, {
+        presentation: { reviewedVersion: null, lastAction: "reopen" },
+        recordRevision: 2,
+        reopenRevision: 2,
+      });
+
+      const componentSource = readFileSync(
+        new URL("../../../../app/admin/(protected)/taxonomia/[taxonId]/_components/AdminTaxonInputCatalogReview.tsx", import.meta.url),
+        "utf8",
+      );
+      assert.match(componentSource, /recordState\.revision\]\);/);
+      assert.match(componentSource, /reopenState\.revision\]\);/);
+    },
+  },
+  {
+    name: "handoff carries authoritative chain and never selects an E20.2 version",
+    run: async () => {
+      const handoff = buildInputCatalogReviewHandoff({
+        taxonSlug: "corretor-imoveis",
+        taxonChain: {
+          segment: realEstateSegmentTaxon,
+          niche: realEstateBrokerNicheTaxon,
+        },
+        researchVersion: 1,
+      });
+      assert.match(handoff, /corretor-imoveis/);
+      assert.match(handoff, /"segment"/);
+      assert.match(handoff, /end_customer` v1/);
+      assert.match(handoff, /solicite minha escolha/);
+      assert.match(handoff, /Não use pesquisa web, conectores, escrita, subagentes/);
+      assert.doesNotMatch(handoff, /versão E20\.2 3 como/);
+    },
+  },
   {
     name: "selection gate is fail-closed and accepts only literal true",
     run: async () => {
@@ -495,4 +856,35 @@ function assertSelectedFailure(
   if (result.ok) throw new Error("Expected selected research failure");
   assert.equal(result.error.code, code);
   assert.equal("value" in result, false);
+}
+
+function selectedResearchSuccess(
+  reviewedInputCatalogVersion: number | null,
+): Extract<LoadSelectedEndCustomerResearchResult, { ok: true }> {
+  return {
+    ok: true,
+    value: {
+      taxonId: VALID_TAXON_ID,
+      taxonSlug: VALID_INPUT.taxon.slug,
+      selectedResearchVersion: 1,
+      selectedResearchValid: true,
+      reviewedInputCatalogVersion,
+      research: {
+        taxonSlug: VALID_INPUT.taxon.slug,
+        audienceScope: "end_customer",
+        researchVersion: 1,
+        relativePath: "corretor-imoveis/end_customer/v1.md",
+        content: validContent(),
+      },
+    },
+  };
+}
+
+function assertPreparationFailure(
+  result: TaxonPreparationResult | null,
+  code: TaxonPreparationErrorCode,
+): void {
+  assert.notEqual(result, null);
+  if (result === null || result.ok) throw new Error("Expected taxon preparation failure");
+  assert.equal(result.error.code, code);
 }

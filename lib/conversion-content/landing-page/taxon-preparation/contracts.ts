@@ -61,8 +61,12 @@ export type LoadSelectedEndCustomerResearchResult =
       value: Readonly<{
         taxonId: string;
         taxonSlug: string;
+        taxonName?: string;
+        taxonLevel?: "segment" | "niche" | "ultra_niche";
+        parentTaxonId?: string | null;
         selectedResearchVersion: number;
         selectedResearchValid: true;
+        reviewedInputCatalogVersion?: number | null;
         research: EndCustomerResearchContent;
       }>;
     }>
@@ -70,6 +74,40 @@ export type LoadSelectedEndCustomerResearchResult =
       ok: false;
       error: Readonly<{
         code: SelectedEndCustomerResearchErrorCode;
+        message: string;
+      }>;
+    }>;
+
+export type TaxonPreparationErrorCode =
+  | SelectedEndCustomerResearchErrorCode
+  | "INPUT_CATALOG_REVIEW_DISABLED"
+  | "REQUIRED_INPUT_CATALOG_VERSION_INVALID"
+  | "REQUIRED_INPUT_CATALOG_VERSION_NOT_EXECUTABLE"
+  | "INPUT_CATALOG_REVIEW_ABSENT"
+  | "INPUT_CATALOG_REVIEW_VERSION_MISMATCH";
+
+export type DeriveTaxonPreparationForVersionInput = Readonly<{
+  selectedResearch: LoadSelectedEndCustomerResearchResult;
+  requiredInputCatalogVersion: number;
+}>;
+
+export type TaxonPreparationResult =
+  | Readonly<{
+      ok: true;
+      value: Readonly<{
+        prepared: true;
+        taxonId: string;
+        taxonSlug: string;
+        selectedResearchVersion: number;
+        reviewedInputCatalogVersion: number;
+        requiredInputCatalogVersion: number;
+        research: EndCustomerResearchContent;
+      }>;
+    }>
+  | Readonly<{
+      ok: false;
+      error: Readonly<{
+        code: TaxonPreparationErrorCode;
         message: string;
       }>;
     }>;
